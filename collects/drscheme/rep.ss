@@ -21,7 +21,7 @@
   (parameterization-branch-handler
    (lambda ()
      (make-parameterization system-parameterization)))
-  
+	  
   (print-struct #t)
   (break-enabled #f)
   ((in-parameterization eval-thread-parameterization break-enabled) #f)
@@ -511,39 +511,52 @@
 	     (parameterize ([current-custodian user-custodian])
 	       (let-values 
 		   ([(evaluation-thread2 send-scheme2)
-		     (mzlib:thread@:consumer-thread
-		      (opt-lambda (expr [after void])
-			(current-parameterization eval-thread-parameterization)
-			(let/ec k
-			  (error-escape-handler (lambda () (k (void))))
-			  (let* ([user-code-error? #t])
-			    (dynamic-wind
+		     (let* ([error-escape-k void]
+			    [escape-handler
 			     (lambda ()
-			       (current-directory current-thread-directory))
-			     (lambda ()
-			       (set! user-code-error? 
-				     (let/ec k
-				       (call-with-values
-					(lambda ()
-					  (with-handlers ([(lambda (x) #t)
-							   (lambda (exn)
-							     (report-exception-error exn this)
-							     (k #t))])
-					    (with-parameterization param
-					      (lambda ()
-						(primitive-eval expr)))))
-					(lambda anss
-					  (let ([c-locked? locked?])
-					    (unless (andmap void? anss)
-					      (begin-edit-sequence)
-					      (lock #f)
-					      (for-each display-result anss)
-					      (lock c-locked?)
-					      (end-edit-sequence)))))
-				       #f)))
-			     (lambda () 
-			       (set! current-thread-directory (current-directory))
-			       (after user-code-error?)))))))])
+			       (error-escape-k #t))])
+		       (mzlib:thread@:consumer-thread
+			(opt-lambda (expr [after void])
+			  (let/ec k
+			    (set! error-escape-k k)
+			    (let* ([user-code-error? #t])
+			      (dynamic-wind
+			       (lambda ()
+				 (current-directory current-thread-directory))
+			       (lambda ()
+				 (let/ec k
+				   (call-with-values
+				    (lambda ()
+				      (parameterize ([current-exception-handler
+						      (lambda (exn)
+							(with-parameterization system-parameterization
+							  (lambda ()
+							    (report-exception-error exn this)))
+							((error-escape-handler))
+							(with-parameterization system-parameterization
+							  (lambda ()
+							    (mred:message-box "error-escape-handler didn't escape"
+									      "Error Escape")
+							    (set! user-code-error? #t)))
+							(k (void)))])
+					(with-parameterization param
+					  (lambda ()
+					    (primitive-eval expr)))))
+				    (lambda anss
+				      (let ([c-locked? locked?])
+					(unless (andmap void? anss)
+					  (begin-edit-sequence)
+					  (lock #f)
+					  (for-each display-result anss)
+					  (lock c-locked?)
+					  (end-edit-sequence)))))
+				   (set! user-code-error? #f)))
+			       (lambda () 
+				 (set! current-thread-directory (current-directory))
+				 (after user-code-error?))))))
+			(lambda ()
+			  (current-parameterization eval-thread-parameterization)
+			  (error-escape-handler escape-handler))))])
 		 (set! send-scheme send-scheme2)
 		 (set! evaluation-thread evaluation-thread2))))])
 	(public

@@ -454,7 +454,10 @@ enum _Virtual_keycodes {
  WXK_NUMLOCK,
  WXK_SCROLL,
  WXK_PAGEUP,
- WXK_PAGEDOWN 
+ WXK_PAGEDOWN,
+ // included for windows compatibility:
+ WXK_WHEEL_UP,
+ WXK_WHEEL_DOWN
 };
 
 // Colours - see wx_gdi.cc for database

@@ -157,8 +157,15 @@ wxFrame::wxFrame // Constructor (for frame window)
 #endif
 
   // Calculate the platformArea size
-	Rect theStrucRect = wxMacGetStrucRect();
-	Rect theContRect = wxMacGetContRect();
+        Rect theStrucRect;
+        Rect theContRect;
+#ifdef OS_X  
+        GetWindowBounds(theMacWindow,kWindowStructureRgn,&theStrucRect);
+        GetWindowBounds(theMacWindow,kWindowContentRgn,&theContRect);
+#else        
+	theStrucRect = wxMacGetStrucRect();
+	theContRect = wxMacGetContRect();
+#endif        
 	wxMargin platformMargin;
 	platformMargin.SetMargin(theContRect.left - theStrucRect.left, Direction::wxLeft);
 	platformMargin.SetMargin(theContRect.top - theStrucRect.top, Direction::wxTop);
@@ -419,8 +426,15 @@ void wxFrame::Maximize(Bool maximize)
 //-----------------------------------------------------------------------------
 void wxFrame::wxMacRecalcNewSize(Bool resize)
 {
-	Rect theStrucRect = wxMacGetStrucRect();
-	Rect theContRect = wxMacGetContRect();
+	Rect theStrucRect;
+	Rect theContRect;
+#ifdef OS_X
+        GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowStructureRgn,&theStrucRect);
+        GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowContentRgn,&theContRect);
+#else        
+	theStrucRect = wxMacGetStrucRect();
+	theContRect = wxMacGetContRect();
+#endif        
 	cWindowX = theStrucRect.left;
 	cWindowY = theStrucRect.top - GetMBarHeight(); // WCH: kludge
 	if (resize) {
@@ -672,6 +686,8 @@ void wxFrame::wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD,
 	::SetGWorld(oldPort, oldGD);
 }
 
+#ifndef OS_X
+
 //-----------------------------------------------------------------------------
 // Mac platform only; internal use only.
 // Based on code in 2nd edition of "Macintosh Programming Secrets"
@@ -735,6 +751,8 @@ Rect wxFrame::wxMacGetStrucRect(void)
 
 	return theStrucRect; // screen window c.s.
 }
+
+#endif // OS_X
 
 //-----------------------------------------------------------------------------
 void wxFrame::MacUpdateWindow(void)

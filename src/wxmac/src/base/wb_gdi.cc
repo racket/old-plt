@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.23 2000/02/08 03:35:54 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.24 2001/07/12 21:08:59 clements Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -319,76 +319,9 @@ void wxColourDatabase::Initialize (void)
   // Don't initialize for X: colours are found
   // in FindColour below.
 #if defined(wx_msw) || defined(wx_mac)
-#define APPEND(name, c) tmpc = c; tmpc->Lock(1); Append(name, tmpc)
-  wxColour *tmpc;
-  APPEND("AQUAMARINE", new wxColour(112, 216, 144));
-  APPEND("BLACK", new wxColour(0, 0, 0));
-  APPEND("BLUE", new wxColour(80, 80, 248));
-  APPEND("BLUE VIOLET", new wxColour(138, 43, 226));
-  APPEND("BROWN", new wxColour(132, 60, 36));
-  APPEND("CADET BLUE", new wxColour(96, 160, 160));
-  APPEND("CORAL", new wxColour(255, 127, 80));
-  APPEND("CORNFLOWER BLUE", new wxColour(68, 64, 108));
-  APPEND("CYAN", new wxColour(0, 255, 255));
-  APPEND("DARK GRAY", new wxColour(169, 169, 169));
-  APPEND("DARK GREEN", new wxColour(0, 100, 0));
-  APPEND("DARK OLIVE GREEN", new wxColour(85, 107, 47));
-  APPEND("DARK ORCHID", new wxColour(153, 50, 204));
-  APPEND("DARK SLATE BLUE", new wxColour(72, 61, 139));
-  APPEND("DARK SLATE GRAY", new wxColour(47, 79, 79));
-  APPEND("DARK TURQUOISE", new wxColour(0, 206, 209));
-  APPEND("DIM GRAY", new wxColour(105, 105, 105));
-  APPEND("FIREBRICK", new wxColour(178, 34, 34));
-  APPEND("FOREST GREEN", new wxColour(34, 139, 34));
-  APPEND("GOLD", new wxColour(255, 215, 0));
-  APPEND("GOLDENROD", new wxColour(218, 165, 32));
-  APPEND("GRAY", new wxColour(190, 190, 190));
-  APPEND("GREEN", new wxColour(60, 248, 52));
-  APPEND("GREEN YELLOW", new wxColour(173, 255, 47));
-  APPEND("INDIAN RED", new wxColour(205, 92, 92));
-  APPEND("KHAKI", new wxColour(240, 230, 140));
-  APPEND("LIGHT BLUE", new wxColour(173, 216, 230));
-  APPEND("LIGHT GRAY", new wxColour(211, 211, 211));
-  APPEND("LIGHT STEEL BLUE", new wxColour(176, 196, 222));
-  APPEND("LIME GREEN", new wxColour(50, 205, 50));
-  APPEND("MAGENTA", new wxColour(255, 0, 255));
-  APPEND("MAROON", new wxColour(176, 48, 96));
-  APPEND("MEDIUM AQUAMARINE", new wxColour(102, 205, 170));
-  APPEND("MEDIUM BLUE", new wxColour(0, 0, 205));
-  APPEND("MEDIUM FOREST GREEN", new wxColour(107, 142, 35));
-  APPEND("MEDIUM GOLDENROD", new wxColour(234, 234, 173));
-  APPEND("MEDIUM ORCHID", new wxColour(186, 85, 211));
-  APPEND("MEDIUM SEA GREEN", new wxColour(60, 179, 113));
-  APPEND("MEDIUM SLATE BLUE", new wxColour(123, 104, 238));
-  APPEND("MEDIUM SPRING GREEN", new wxColour(0, 250, 154));
-  APPEND("MEDIUM TURQUOISE", new wxColour(72, 209, 204));
-  APPEND("MEDIUM VIOLET RED", new wxColour(199, 21, 133));
-  APPEND("MIDNIGHT BLUE", new wxColour(25, 25, 112));
-  APPEND("NAVY", new wxColour(36, 36, 140));
-  APPEND("ORANGE", new wxColour(255, 165, 0));
-  APPEND("ORANGE RED", new wxColour(255, 69, 0));
-  APPEND("ORCHID", new wxColour(218, 112, 214));
-  APPEND("PALE GREEN", new wxColour(152, 251, 152));
-  APPEND("PINK", new wxColour(255, 192, 203));
-  APPEND("PLUM", new wxColour(221, 160, 221));
-  APPEND("PURPLE", new wxColour(160, 32, 240));
-  APPEND("RED", new wxColour(248, 20, 64));
-  APPEND("SALMON", new wxColour(250, 128, 114));
-  APPEND("SEA GREEN", new wxColour(46, 139, 87));
-  APPEND("SIENNA", new wxColour(160, 82, 45));
-  APPEND("SKY BLUE", new wxColour(135, 206, 235));
-  APPEND("SLATE BLUE", new wxColour(106, 90, 205));
-  APPEND("SPRING GREEN", new wxColour(0, 255, 127));
-  APPEND("STEEL BLUE", new wxColour(70, 130, 180));
-  APPEND("TAN", new wxColour(210, 180, 140));
-  APPEND("THISTLE", new wxColour(216, 191, 216));
-  APPEND("TURQUOISE", new wxColour(64, 224, 208));
-  APPEND("VIOLET", new wxColour(238, 130, 238));
-  APPEND("VIOLET RED", new wxColour(208, 32, 144));
-  APPEND("WHEAT", new wxColour(245, 222, 179));
-  APPEND("WHITE", new wxColour(255, 255, 255));
-  APPEND("YELLOW", new wxColour(255, 255, 0));
-  APPEND("YELLOW GREEN", new wxColour(154, 205, 50));
+#define APPEND_C(name, c) tmpc = c; tmpc->Lock(1); Append(name, tmpc)
+wxColor *tmpc;
+#include "DBColors.inc"
 #endif
 }
 

@@ -64,7 +64,6 @@ OBJS = \
    wx_main.o \
    wx_clipb.o \
    wx_menu.o \
-   wx_comparestrings.o \
    wx_messg.o \
    wxBorder.o \
    wx_dc.o \
@@ -206,8 +205,6 @@ wx_clipb.o : $(srcdir)/mac/wx_clipb.cc $(WXPRECOMP)
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_clipb.o -c $(srcdir)/mac/wx_clipb.cc
 wx_menu.o : $(srcdir)/mac/wx_menu.cc $(WXPRECOMP)
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_menu.o -c $(srcdir)/mac/wx_menu.cc
-wx_comparestrings.o : $(srcdir)/mac/wx_comparestrings.c
-	$(CXX) $(WXMAC_CXXFLAGS) -o wx_comparestrings.o -c $(srcdir)/mac/wx_comparestrings.c
 wx_messg.o : $(srcdir)/mac/wx_messg.cc $(WXPRECOMP)
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_messg.o -c $(srcdir)/mac/wx_messg.cc
 wxBorder.o : $(srcdir)/mac/wxBorder.cc $(WXPRECOMP)
@@ -410,7 +407,6 @@ ALSelectors.o : $(ALISTDEPS) $(ALISTDIR)/ALSelectors.c
 @INCLUDEDEP@ wx_main.d
 @INCLUDEDEP@ wx_clipb.d
 @INCLUDEDEP@ wx_menu.d
-@INCLUDEDEP@ wx_comparestrings.d
 @INCLUDEDEP@ wx_messg.d
 @INCLUDEDEP@ wxBorder.d
 @INCLUDEDEP@ wx_dc.d

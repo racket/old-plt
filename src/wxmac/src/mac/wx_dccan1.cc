@@ -365,6 +365,7 @@ void wxCanvasDC::InstallColor(wxColour *c, int fg)
 void wxCanvasDC::InstallLogicalFunction(int function)
 {
   int theMacPenMode;
+
   switch (function)
     {
     case wxCLEAR:  theMacPenMode = patBic; break;

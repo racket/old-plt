@@ -47,7 +47,7 @@ wxButton::wxButton // Constructor (given parentPanel, label)
  char*		windowName,
  WXTYPE		objectType
  ) :
- wxbButton (parentPanel, x, y, width, height, style, windowName)
+ wxbButton (parentPanel, function, x, y, width, height, style, windowName)
      
 {
   Create(parentPanel, function, label, x, y, width, height, style, windowName, objectType);
@@ -70,6 +70,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   OSErr err;
   Rect boundsRect = {0,0,0,0};
   SInt16 baselineOffset; // ignored
+  CFStringRef title;
 
   buttonBitmap = NULL;
   cColorTable = NULL;
@@ -88,7 +89,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 
   // First, create the control with a bogus rectangle;
   ::OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-  CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+  title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
   ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
   CFRelease(title);
 
@@ -122,11 +123,12 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
  char*		windowName,
  WXTYPE		objectType
  ) :
- wxbButton (parentPanel, x, y, width, height, style, windowName),
- cColorTable(NULL)
+ wxbButton (parentPanel, function, x, y, width, height, style, windowName)
 {
   CGrafPtr theMacGrafPort;
   Rect bounds;
+
+ cColorTable = NULL;
 
   if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
     buttonBitmap = bitmap;
@@ -418,7 +420,8 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
       
       event->Position(&startH, &startV); // client c.s.
       
-      startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
+      startPt.v = startV + SetOriginY; // port c.s.
+      startPt.h = startH + SetOriginX;
 
       if (::StillDown()) {
 	if (buttonBitmap == NULL && cMacControl) {

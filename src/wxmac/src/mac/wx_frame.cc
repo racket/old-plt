@@ -514,7 +514,7 @@ void wxFrame::SetStatusEraser(wxBrush* b)
 void wxFrame::SetMenuBar(wxMenuBar* menu_bar)
 {
   WindowPtr theMacWindow;
-  wxMenuBar* oldMenuBar
+  wxMenuBar* oldMenuBar;
 
   // mflatt: if this menu bar is already in use, give up
   if (menu_bar && menu_bar->menu_bar_frame)

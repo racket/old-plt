@@ -159,8 +159,6 @@ wxColour::wxColour (wxColour *src)
 wxColour::wxColour (const char *col)
 : wxObject(WXGC_NO_CLEANUP)
 {
-  wxColour *the_colour;
-
   __type = wxTYPE_COLOUR;
   CopyFrom(col);
   locked = 0;
@@ -261,8 +259,8 @@ wxColour *wxColourDatabase::FindColour(const char *colour)
   // Insure upcased:
   for (p = colour; *p && !islower(*p); p++);
   if (*p) {
-    char *naya;
-    naya = new char[strlen(colour) + 1], *q;
+    char *naya, *q;
+    naya = new char[strlen(colour) + 1];
     for (p = colour, q = naya; *p; p++, q++) {
       *q = toupper(*p);
     }

@@ -26,6 +26,7 @@ void wxRadioButtonProc(wxRadioButton& radioButton, wxCommandEvent& event)
   wxWindow *rb;
   wxRadioBox* radioBox;
   wxCommandEvent *commandEvent;
+  int radioButtonIndex;
 
   radioPanel = (wxPanel*)radioButton.GetParent();
   rb = radioPanel;
@@ -60,7 +61,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
  long		style,
  char*		windowName,
  WXTYPE		objectType
- ) : wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName)
+ ) : wxbRadioBox (parentPanel, function, Title, x, y, width, height, N, majorDim, style, windowName)
 {
   wxPanel *buttonHolder;
   int i;
@@ -131,7 +132,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
  long		style,
  char*		windowName,
  WXTYPE		objectType
- ) : wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName)
+ ) : wxbRadioBox (parentPanel, function, Title, x, y, width, height, N, majorDim, style, windowName)
 {
   int i;
   wxPanel *buttonHolder;

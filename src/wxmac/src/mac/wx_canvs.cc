@@ -395,7 +395,7 @@ void wxCanvas::SetScrollData
 	scrollRect.top = 0;
 	scrollRect.left = 0;
 	scrollRect.bottom = clientArea->Height();
-	scrollRect.right = clientArea->Width()};
+	scrollRect.right = clientArea->Width();
 	OffsetRect(&scrollRect,SetOriginX,SetOriginY);
 	::ScrollRect(&scrollRect, -dH, -dV, theUpdateRgn);
 	if (!EmptyRgn(theUpdateRgn))

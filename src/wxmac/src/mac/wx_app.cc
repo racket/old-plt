@@ -453,7 +453,7 @@ void wxApp::doMacMouseLeave(void)
   wxMouseEvent *theMouseEvent;
   wxWindow* win;
 
-   _theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
+  theMouseEvent = new wxMouseEvent(wxEVENT_TYPE_LEAVE_WINDOW);
   theMouseEvent->leftDown = isMouseDown && !isRightButton;
   theMouseEvent->middleDown = FALSE;
   theMouseEvent->rightDown = isMouseDown && isRightButton;
@@ -973,7 +973,7 @@ void wxApp::doMacContentClick(wxFrame* frame)
 //-----------------------------------------------------------------------------
 
 static WindowPtr last_drag_click;
-static long last_drag_click_time;
+static unsigned long last_drag_click_time;
 
 void wxApp::doMacInDrag(WindowPtr window)
 {

@@ -41,7 +41,7 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, label)
  char*		windowName,
  WXTYPE		objectType
  ) :
- wxbCheckBox (parentPanel, x, y, width, height, style, windowName)
+ wxbCheckBox (parentPanel, function, x, y, width, height, style, windowName)
 {
   Create(parentPanel, function, label, x, y, width, height, style, windowName, objectType);
 }
@@ -114,7 +114,7 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
  char*		windowName,
  WXTYPE		objectType
  ) :
- wxbCheckBox (parentPanel, x, y, width, height, style, windowName)
+ wxbCheckBox (parentPanel, function, x, y, width, height, style, windowName)
 {
   if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
     buttonBitmap = bitmap;

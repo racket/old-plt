@@ -362,7 +362,7 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
     Point *xpoints;
     int i, j;
-    PolyHandle thePolygon
+    PolyHandle thePolygon;
 
     SetCurrentDC();
     wxMacSetCurrentTool(kPenTool);
@@ -377,7 +377,7 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
     
     thePolygon = OpenPoly();
     MoveTo(xpoints[0].h + SetOriginX, xpoints[0].v + SetOriginY);
-    for (int j = 1; j < n; j++) {
+    for (j = 1; j < n; j++) {
       LineTo(xpoints[j].h + SetOriginX, xpoints[j].v + SetOriginY);
     }
     ClosePoly();

@@ -22,12 +22,13 @@ wxScrollArea::wxScrollArea
  wxWindow*	parentScrollWindow,
  long		style
  ) :
- wxArea (parentWindow),
- cStyle (style),
- cVScrollBar (NULL),
- cHScrollBar (NULL)
+ wxArea (parentWindow)
 {
   Bool bothScrolls;
+
+  cStyle = style;
+  cVScrollBar = NULL;
+  cHScrollBar = NULL;
 
   if (!parentScrollWindow) wxFatalError("No parentScrollWindow for wxScrollArea");
 

@@ -78,7 +78,7 @@ wxWindow::wxWindow // Constructor (for screen window)
  int			height,
  long		style
  ) :
- wxbWindow (windowName),
+ wxbWindow (windowName)
 {
   cStyle = style;
   children = new wxChildList();
@@ -116,7 +116,7 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
  int			height,
  long		style
  ) :
- wxbWindow (windowName),
+ wxbWindow (windowName)
 {
   cStyle = style;
   children = new wxChildList();
@@ -162,7 +162,7 @@ wxWindow::wxWindow // Constructor (given parentArea)
  int			height,
  long		style
  ) :
- wxbWindow (windowName),
+ wxbWindow (windowName)
 {
   cStyle = style;
   children = new wxChildList();
@@ -204,7 +204,7 @@ wxWindow::wxWindow // Constructor (given parentWindow)
  int			height,
  long		style
  ) :
- wxbWindow (windowName),
+ wxbWindow (windowName)
 {
   cStyle = style;
   children = new wxChildList();
@@ -240,7 +240,7 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
 (
  char*		windowName
  ) :
- wxbWindow (windowName),
+ wxbWindow (windowName)
 {
   cStyle = 0;
   children = new wxChildList();
@@ -499,10 +499,10 @@ void wxWindow::SetSize(int x, int y, int width, int height, int flags) // mac pl
 //-----------------------------------------------------------------------------
 void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform only
 {
-  Bool xIsChanged, yIsChanged, widthIsChanged heightIsChanged;
+  Bool xIsChanged, yIsChanged, widthIsChanged, heightIsChanged;
 
   if (x==-1) 
-    x= cWindowX;
+    x = cWindowX;
   if (y==-1) 
     y = cWindowY;
   if (width==-1) 
@@ -1177,11 +1177,11 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *_win, wxMouseEvent *evt)
 static Bool IsCaptureAncestorArea(wxArea *area)
 {
   wxChildNode* childWindowNode;
-  wxWindow* p;
+  wxWindow *p, *w;
 
   childWindowNode = area->Windows()->First();
   while (childWindowNode) { 
-    p = (wxWindow*)childWindowNode->Data(), *w;
+    p = (wxWindow*)childWindowNode->Data();
     for (w = wxWindow::gMouseWindow; w; w = w->GetParent()) {
       if (w == p)
 	return TRUE;

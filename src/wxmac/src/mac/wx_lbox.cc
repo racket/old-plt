@@ -87,11 +87,10 @@ wxListBox::wxListBox(
 		     long style, 
 		     char *windowName,
 		     WXTYPE		objectType
-		     ) :
-		     wxbListBox (parentPanel, x, y, width, height, N, style, windowName),
-		     cDataList (new wxList(wxKEY_INTEGER))
-
+		     ) 
+: wxbListBox (parentPanel, func, Title, Multiple, x, y, width, height, N, Choices, style, windowName)
 {
+  cDataList = new wxList(wxKEY_INTEGER);
   Create(parentPanel, func, Title, Multiple, x, y, width, height, N, Choices,
          style, windowName);
 }

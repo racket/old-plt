@@ -186,7 +186,7 @@ int wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
 static Bool wx_spline_add_point(float x, float y)
 {
   wxPoint *point;
-POINT  = new wxPoint ;
+  point  = new wxPoint;
   point->x = x;
   point->y = y;
   wx_spline_point_list->Append((wxObject*)point);

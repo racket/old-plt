@@ -26,7 +26,8 @@
 			      (syntax->list (syntax (clauses ...)))))]
 
 		       ;; new syntax system mumbo jumbo to bind super-init and this
-		       [class100* (datum->syntax-object (stx-car stx) 'class100* stx)])
+		       [this (datum->syntax-object (stx-car stx) 'this stx)]
+                       [super-init (datum->syntax-object (stx-car stx) 'super-init stx)])
 	   (syntax
 	    (let ([from-ids from] ...)
 	      (let ([to-ids to] ...)
@@ -63,5 +64,5 @@
 		      (error 'mixin "argument ~s does not implement ~s" super% from-ids))
 		    ...)
 
-		  (class100* super% (to-ids ...) args
+		  (class100*/names (this super-init) super% (to-ids ...) args
 		    clauses ...))))))]))))

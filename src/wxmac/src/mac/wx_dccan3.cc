@@ -140,6 +140,7 @@ void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bo
       && ucs4 
       && (angle == 0.0) 
       && table_key
+      && (font->GetFamily() != wxSYMBOL)
       && (current_bk_mode == wxTRANSPARENT)) {
     int i;
     unsigned int *s = (unsigned int *)text;

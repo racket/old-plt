@@ -1028,6 +1028,37 @@ static int ucs4_strlen(const unsigned int *c)
 #define QUICK_UBUF_SIZE 1024
 static wchar_t u_buf[QUICK_UBUF_SIZE];
 
+int CALLBACK proc(CONST LOGFONT *lplf, CONST TEXTMETRIC *lptm, DWORD dwType, LPARAM lpData)
+{
+  fnt = CreateFontIndirect(lplf);
+  GCP_RESULTSW gcp;
+  wchar_t s[4], gl[4];
+  char classes[4];
+  DWORD ok;
+  HDC = (HDC)lpData;
+
+  s[0] = 0x202D;
+  s[1] = 'a';
+  s[2] = 0x200C;
+  s[3] = 'a';
+  
+  gcp.lStructSize = sizeof(GCP_RESULTSW);
+  gcp.lpOutString = NULL;
+  gcp.lpDx = NULL;
+  gcp.lpCaretPos = NULL;
+  gcp.lpOrder = NULL;
+  gcp.lpClass = classes;
+  gcp.lpGlyphs = gl;
+  gcp.nGlyphs = 1;
+
+  ok = GetCharacterPlacementW(hdc, s, 4, 0, &gcp, 0);
+  
+  if (ok && (gcp.nGlyphs == 2))
+    return 0;
+
+  return 1;
+}
+
 wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, 
 				    Bool combine, wxDC *dc, HDC hdc)
 {
@@ -1038,7 +1069,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
   if (!combine) {
     if (!dc->combine_status) {
       /* Check whether text renderer knows how to deal with ZWNJ, etc. */
-      if (GetFontLanguageInfo(hdc))
+      if (!EnumFonts(hdc, NULL, (FONTENUMPROC)proc, hdc))
 	dc->combine_status = 1;
       else
 	dc->combine_status = -1;

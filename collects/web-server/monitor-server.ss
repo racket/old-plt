@@ -46,6 +46,7 @@
                               (format "Received: ~a" line)))))))
                (custodian-shutdown-all cust))))
           (sleep poll-frequency-seconds)
+          ; the next shutdown is just for paranoia's sake
           (custodian-shutdown-all cust))
         (check-server))))
   

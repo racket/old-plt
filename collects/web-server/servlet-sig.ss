@@ -23,7 +23,7 @@
   (define-struct response/full (code message seconds mime extras body))
   (define-struct (response/incremental response/full) ())
   
-  ; request = (make-request sym URL (listof (cons sym str)) (U (listof (cons sym str))) str str)
+  ; request = (make-request sym URL (listof (cons sym str)) (U str (listof (cons sym str))) str str)
   ; Outside this module, bindings looks like an association list (due to renaming request-bindings).
   ; Inside it is a string for normal requests, but for file uploads it is still an association list.
   ; more here - perhaps it should always be a string inside this module.

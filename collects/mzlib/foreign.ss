@@ -167,9 +167,11 @@
               [else (set! keys (cons (cons key val) keys))]))
            (let loop ([t (local-expand type0 'expression stops)])
              (define (next rest . args) (apply setkey! args) (loop rest))
-             (syntax-case* t (type: bind: pre: post: 1st-arg: prev-arg:) id=?
+             (syntax-case* t (type: expr: bind: pre: post: 1st-arg: prev-arg:)
+                           id=?
                [(type: t x ...)
                 (next #'(x ...) 'type (syntax-case #'t () [#f #f] [_ #'t]))]
+               [(expr:     e  x ...) (next #'(x ...) 'expr #'e)]
                [(bind:     id x ...) (next #'(x ...) 'bind #'id #t)]
                [(pre:      p  x ...) (next #'(x ...) 'pre  (with-arg #'p))]
                [(post:     p  x ...) (next #'(x ...) 'post (with-arg #'p))]
@@ -214,6 +216,8 @@
              x)
            (when keys
              (set! type (getkey 'type))
+             (cond [(and (not expr) (getkey 'expr)) =>
+                    (lambda (x) (set! expr x))])
              (cond [(getkey 'bind) =>
                     (lambda (x) (bind! #`[#,x #,name]))])
              (cond [(getkey 'pre) =>
@@ -457,6 +461,9 @@
 ;; These macros get expanded by the _fun type.  They can expand to a form that
 ;; looks like (keyword: value ...), where the keyword is one of:
 ;; * `type:'     for the type that will be used,
+;; * `expr:'     an expression that will always be used for these arguments, as
+;;               if `= expr' is always given, when an expression is actually
+;;               given in an argument specification, it supersedes this.
 ;; * `bind:'     for an additional binding that holds the initial value,
 ;; * `1st-arg:'  is used to name an identifier that will be bound to the value
 ;;               of the 1st foreign argument in pre/post chunks (good for

@@ -20,6 +20,11 @@
       (when interp (register-finalizer interp delete-interp))
       interp)))
 
+;; This is for arguments that always use the value of current-interp
+(define-syntax _interp*
+  (syntax-id-rules ()
+    [_ (type: _interp expr: (current-interp))]))
+
 (define* create-interp
   (get-ffi-obj "Tcl_CreateInterp" libtcl (_fun -> _interp)))
 (define delete-interp
@@ -39,7 +44,6 @@
       x)))
 
 (define* eval-tcl
-  (get-ffi-obj "Tcl_Eval" libtcl
-    (_fun (interp : _interp = (current-interp)) (expr : _string) -> _tclret)))
+  (get-ffi-obj "Tcl_Eval" libtcl (_fun _interp* (expr : _string) -> _tclret)))
 
 )

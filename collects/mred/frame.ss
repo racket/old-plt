@@ -803,14 +803,10 @@
 	      [find-canvas (make-object canvas% left-panel)]
 	      [replace-canvas (make-object canvas% left-panel)]
 
-	      [middle-panel (make-object mred:container:horizontal-panel% search-panel)]
+	      [middle-left-panel (make-object mred:container:vertical-panel% search-panel)]
+	      [middle-middle-panel (make-object mred:container:vertical-panel% search-panel)]
+	      [middle-right-panel (make-object mred:container:vertical-panel% search-panel)]
 
-	      [middle-left-panel (make-object mred:container:vertical-panel% middle-panel)]
-	      [middle-middle-panel (make-object mred:container:vertical-panel% middle-panel)]
-	      [middle-right-panel (make-object mred:container:vertical-panel% middle-panel)]
-
-	      [spacing1 (make-object mred:container:horizontal-panel% middle-left-panel)]
-	      [spacing2 (make-object mred:container:horizontal-panel% middle-middle-panel)]
 	      [search-button (make-object mred:container:button% middle-left-panel 
 					  (lambda args (search)) "Search")]
 
@@ -819,8 +815,6 @@
 	      [replace-button (make-object mred:container:button% middle-left-panel (lambda x (replace)) "Replace")]
 	      [replace-all-button (make-object mred:container:button% middle-middle-panel
 					       (lambda x (replace-all)) "Replace All")]
-	      [spacing3 (make-object mred:container:horizontal-panel% middle-left-panel)]
-	      [spacing4 (make-object mred:container:horizontal-panel% middle-middle-panel)]
 
 	      [dir-radio (make-object mred:container:radio-box% middle-right-panel
 				      (lambda (dir-radio evt)
@@ -844,11 +838,12 @@
 			 (send y user-min-width m)))])
 		(align search-button replace-button)
 		(align replace&search-button replace-all-button))
-	      (send search-panel stretchable-in-y #f)
-	      (for-each (lambda (x) (send* x (stretchable-in-y #f) (stretchable-in-x #f)))
-			(list middle-panel))
+	      (for-each (lambda (x) (send x major-align-center))
+			(list middle-left-panel middle-middle-panel))
 	      (for-each (lambda (x) (send x stretchable-in-y #f))
-			(list search-panel left-panel))
+			(list search-panel left-panel middle-left-panel middle-middle-panel middle-right-panel))
+	      (for-each (lambda (x) (send x stretchable-in-x #f))
+			(list middle-left-panel middle-middle-panel middle-right-panel))
 	      (send find-canvas set-media find-edit)
 	      (send replace-canvas set-media replace-edit) 
 	      (send find-edit add-canvas find-canvas)
@@ -1070,7 +1065,6 @@
 	    (private
 	      [info-panel (make-object mred:container:horizontal-panel% 
 				       super-root)]
-	      [space (make-object mred:container:horizontal-panel% info-panel)]
 	      [anchor-message 
 	       (make-object mred:container:canvas-message%
 			    info-panel
@@ -1129,6 +1123,7 @@
 		  (stretchable-in-x #f)
 		  (stretchable-in-y #f)))
 	      (send* info-panel 
+		(major-align-right)
 		(stretchable-in-y #f)
 		(spacing 3)
 		(border 3))

@@ -140,11 +140,11 @@
 			    [_ (make-object mred:message% vert (string-append string "-like Keywords"))]
 			    [box (make-object mred:list-box% vert null "" wx:const-multiple -1 -1 -1 -1 keywords)]
 			    [button-panel (make-object mred:horizontal-panel% vert)]
-			    [_ (make-object mred:vertical-panel% button-panel)]
 			    [add-button (make-object mred:button% button-panel (add-callback string symbol box) "Add")]
-			    [delete-button (make-object mred:button% button-panel (delete-callback box) "Remove")]
-			    [_ (make-object mred:vertical-panel% button-panel)])
-		       (send button-panel stretchable-in-y #f)
+			    [delete-button (make-object mred:button% button-panel (delete-callback box) "Remove")])
+		       (send* button-panel 
+			 (major-align-center)
+			 (stretchable-in-y #f))
 		       (send add-button user-min-width (send delete-button get-width))
 		       box))]
 		  [begin-list-box (make-column "Begin" 'begin begin-keywords)]

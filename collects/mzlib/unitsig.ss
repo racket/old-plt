@@ -318,6 +318,8 @@
 		 (syntax/loc stx
 		   (provide . flattened)))))]))))
   
+  (define (unit/sig? x) (signed-unit? x))
+
   (provide define-signature
 	   let-signature
 	   unit/sig
@@ -328,6 +330,7 @@
 	   verify-linkage-signature-match
 
 	   (struct signed-unit (unit imports exports))
+	   unit/sig?
 	   
 	   define-values/invoke-unit/sig
 	   namespace-variable-bind/invoke-unit/sig

@@ -7,12 +7,13 @@
   ;; full-on COPIED from plt/collects/lang/htdp-langs.ss
   
   (define (wrap-in-module exps language-module-spec)
-    (list (let ([mod (expand #`(module #%htdp #,language-module-spec 
-                                 ; we don't handle teachpacks at  this point ...
-                                 ;(require require-specs ...)
-                                 #,@exps))])
-            (rewrite-module mod))
-          (syntax (require #%htdp))))
+    (let ([new-module-id (gensym "-htdp")])
+      (list (let ([mod (expand #`(module #,new-module-id #,language-module-spec 
+                                   ; we don't handle teachpacks at  this point ...
+                                   ;(require require-specs ...)
+                                   #,@exps))])
+              (rewrite-module mod))
+            #`(require #,new-module-id))))
   
   ;; rewrite-module : syntax -> syntax
   ;; rewrites te module to provide all definitions and 

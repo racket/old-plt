@@ -488,6 +488,10 @@ typedef struct {
 
 static char ghbn_hostname[256];
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long gethostbyname_in_thread(void *data)
 {
   struct hostent *host;
@@ -497,6 +501,10 @@ static long gethostbyname_in_thread(void *data)
   else
     return 0;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 static void release_ghbn_lock(GHBN_Rec *rec)
 {

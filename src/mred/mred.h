@@ -140,6 +140,7 @@ public:
   int val;
   int in_progress;
   int progress_is_resumed;
+  int yielding;
   Scheme_Object *old_param;
   void *progress_base_addr;
   mz_jmp_buf progress_base;

@@ -313,8 +313,18 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 #if wxLOG_EVENTS
   if (!log)
     log = fopen("evtlog", "w");
-  fprintf(log, "[TCHECK %lx %lx (%lx) %lx]\n", scheme_current_thread, 
-	  hWnd, can_trampoline_win, message);
+  fprintf(log, 
+	  "[TCHECK %lx %lx (%lx) %lx"
+# ifdef MZ_PRECISE_GC
+	  " %lx"
+# endif
+	  "]\n", 
+	  scheme_current_thread, 
+	  hWnd, can_trampoline_win, message
+# ifdef MZ_PRECISE_GC
+	  , ((void **)__gc_var_stack__[0])[0]
+# endif
+	  );
   fflush(log);
 #endif
 
@@ -402,14 +412,25 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
 #if wxLOG_EVENTS
   if (!log)
     log = fopen("evtlog", "w");
-  fprintf(log, "(%lx %lx %lx[%d] %s %d\n", scheme_current_thread, hWnd, message, wParam, who, tramp);
+  fprintf(log, "(%lx %lx %lx[%d] %s %d"
+# ifdef MZ_PRECISE_GC
+	  " <%lx %lx %lx>"
+# endif
+	  "\n",
+	  scheme_current_thread, hWnd, message, wParam, who, tramp
+# ifdef MZ_PRECISE_GC
+	  , GC_variable_stack
+	  , ((void **)__gc_var_stack__[0])[0]
+	  , ((void **)((void **)__gc_var_stack__[0])[0])[0]
+# endif
+	  );
   fflush(log);
 #endif
 
   if (!tramp && scheme_current_thread) {
     HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
 
-    if (het && het->in_progress) {
+    if (het) {
       /* we're in restricted mode; general calls into Scheme are bad */
       switch (message) {
 	/* These shouldn't happen; reject them if they do! */
@@ -430,26 +451,58 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
       case WM_VSCROLL:
       case WM_HSCROLL:
 	/* need to re-queue the scroll event (in the MrEd middle queue) */
+#if wxLOG_EVENTS
+	fprintf(log, "_scroll_ %lx\n", GetCurrentThreadId());
+#endif
 	{
 	  MSG *msg;
 	  Scheme_Object *thunk;
 	  msg = (MSG *)scheme_malloc_atomic(sizeof(MSG));
+#if wxLOG_EVENTS
+	  fprintf(log, "_scroll1_\n");
+#endif
 	  msg->hwnd = hWnd;
 	  msg->message = message;
 	  msg->wParam = wParam;
 	  msg->lParam = lParam;
 	  thunk = scheme_make_closed_prim(call_wnd_proc, (Scheme_Object *)msg);
+#if wxLOG_EVENTS
+	fprintf(log, "_scroll2_\n");
+#endif
 	  MrEdQueueInEventspace(MrEdGetContext(NULL), thunk);
 	}
-	if (het->timer_on) {
-	  het->timer_on = 0;
-	  KillTimer(NULL, het->timer_id);
-	}
-	mred_het_run_some(NULL, NULL);
-	if (het->in_progress && !het->timer_on) {
-	  /* Make a timer event so that we get more time... */
-	  het->timer_on = 1;
-	  het->timer_id = SetTimer(0, NULL, 100, HETRunSome);
+#if wxLOG_EVENTS
+	fprintf(log, "_scrolly_ %d\n", het->yielding);
+#endif
+	if (!het->yielding) {
+	  if (het->timer_on) {
+	    het->timer_on = 0;
+	    KillTimer(NULL, het->timer_id);
+	  }
+#if wxLOG_EVENTS
+	  fprintf(log, "{HET\n");
+#endif
+	  mred_het_run_some(NULL, NULL);
+#if wxLOG_EVENTS
+	  fprintf(log, "HET}\n");
+#endif
+	  if (het->in_progress && !het->timer_on) {
+	    /* Make a timer event so that we get more time... */
+	    het->timer_on = 1;
+	    het->timer_id = SetTimer(0, NULL, 100, HETRunSome);
+	  }
+#if wxLOG_EVENTS
+	  if (het->in_progress)
+	    fprintf(log, " HET_START)\n");
+	  else
+	    fprintf(log, " HET_DONE)\n");
+	  fflush(log);
+#endif
+	} else {
+#if wxLOG_EVENTS
+	  fprintf(log, " NESTED)\n");
+	  fflush(log);
+#endif
 	}
 	return 0;
       default:
@@ -473,7 +526,7 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
     case WM_NCMOUSEMOVE:
       if ((wParam != HTVSCROLL) && (wParam != HTHSCROLL))
 	break;
-    case WM_QUERYENDSESSION: /* ^^^^ falltrhrough &&&& */
+    case WM_QUERYENDSESSION: /* ^^^^ fallthrough &&&& */
     case WM_CLOSE:
     case WM_RBUTTONDOWN:
     case WM_RBUTTONUP:
@@ -509,6 +562,10 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
   if (!tramp)
     scheme_start_atomic();
 
+#if wxLOG_EVENTS
+  fprintf(log, " ...\n");
+#endif
+
   return 1;
 }
 
@@ -517,7 +574,17 @@ void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
   /* See wxEventTrampoline notes above. */
 
 #if wxLOG_EVENTS
-  fprintf(log, " %lx %lx %lx %s %d)\n", scheme_current_thread, hWnd, message, who, tramp);
+  fprintf(log, " %lx %lx %lx %s %d)"
+# ifdef MZ_PRECISE_GC
+	  " <%lx %lx>"
+# endif
+	  "\n", 
+	  scheme_current_thread, hWnd, message, who, tramp
+# ifdef MZ_PRECISE_GC
+	  , GC_variable_stack
+	  , ((void **)__gc_var_stack__[0])[0]
+# endif
+	  );
   fflush(log);
 #endif
 
@@ -542,8 +609,16 @@ static Scheme_Object *call_wnd_proc(void *data, int argc, Scheme_Object **argv)
 {
   MSG *msg = (MSG *)data;
 
+#if wxLOG_EVENTS
+  fprintf(log, "{CWP\n");
+#endif
+
   wx_trampolining = 1;
   wxWndProc(msg->hwnd, msg->message, msg->wParam, msg->lParam);
+
+#if wxLOG_EVENTS
+  fprintf(log, " CWP}\n");
+#endif
 
   return scheme_void;
 }
@@ -553,6 +628,9 @@ static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime
   HiEventTramp *het = (HiEventTramp *)scheme_get_param(scheme_config, mred_het_param);
 
   if (het) {
+#if wxLOG_EVENTS
+    fprintf(log, "(HET_TIMER_CONT\n");
+#endif
     if (het->timer_on) {
       het->timer_on = 0;
       KillTimer(NULL, het->timer_id);
@@ -562,6 +640,12 @@ static void CALLBACK HETRunSome(HWND hwnd, UINT uMsg, UINT idEvent, DWORD dwTime
       het->timer_on = 1;
       het->timer_id = SetTimer(0, NULL, 100, HETRunSome);
     }
+#if wxLOG_EVENTS
+    if (het->in_progress)
+      fprintf(log, " HET_TIMER_SUSPEND)\n");
+    else
+      fprintf(log, " HET_TIMER_DONE)\n");
+#endif
   }
 }
 
@@ -593,6 +677,10 @@ int MrEdCheckForBreak(void)
   }
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static long signal_fddone(void *fds)
 {
   win_extended_fd_set *r = (win_extended_fd_set *)fds;
@@ -603,6 +691,10 @@ static long signal_fddone(void *fds)
 
   return 0;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 void MrEdMSWSleep(float secs, void *fds)
 {

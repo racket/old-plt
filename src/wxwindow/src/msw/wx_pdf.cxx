@@ -20,15 +20,18 @@ extern "C" {
   void scheme_forget_thread(struct Scheme_Thread_Memory *);
 };
 
-class PrimData {
-public:
+typedef struct {
   wxPDF f;
   void *data;
   BOOL result;
   BOOL done;
   BOOL usedir;
   HWND hwnd;
-};
+} PrimData;
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 static long DoPrim(void *data)
 {
@@ -43,6 +46,10 @@ static long DoPrim(void *data)
 
   return 0;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 static int Check(void *d)
 {
@@ -65,7 +72,7 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
   wxNode *node;   
   wxChildList *tlw;
 
-  _data = new PrimData;
+  _data = (PrimData *)malloc(sizeof(PrimData));
 
   _data->f = f;
   _data->data = data;
@@ -126,6 +133,8 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 
     result = _data->result;
   }
+
+  free(_data);
 
   /* Restore other windows: */
   for (node = disabled_windows->First(); node; node = node->Next()) {

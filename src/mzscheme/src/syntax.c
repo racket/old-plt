@@ -1429,7 +1429,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 static Scheme_Object *
 case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *first, *last, *args, *body, *c, *orig_form = form;
+  Scheme_Object *first, *last, *args, *body, *c, *new_line, *orig_form = form;
 
   first = SCHEME_STX_CAR(form);
   first = icons(first, scheme_null);
@@ -1454,8 +1454,10 @@ case_lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
     body = scheme_add_env_renames(body, newenv, env);
     args = scheme_add_env_renames(args, newenv, env);
 
-    c = icons(icons(args, scheme_expand_block(body, newenv, depth, scheme_false)),
-	      scheme_null);
+    new_line = icons(args, scheme_expand_block(body, newenv, depth, scheme_false));
+    new_line = scheme_datum_to_syntax(new_line, line_form, line_form, 0, 1);
+
+    c = icons(new_line, scheme_null);
 
     SCHEME_CDR(last) = c;
     last = c;

@@ -1731,15 +1731,18 @@ void wxTimer::Stop(void)
 /*                               Callbacks                                  */
 /****************************************************************************/
 
-class Q_Callback {
-public:
+typedef struct Q_Callback {
+  /* MZ_PRECISE_GC: allocation relies on this struct as the same as
+     array of pointers: */
   MrEdContext *context;
   Scheme_Object *callback;
-  Q_Callback *prev;
-  Q_Callback *next;
-};
+  struct Q_Callback *prev;
+  struct Q_Callback *next;
+} Q_Callback;
 
 typedef struct {
+  /* Collection relies on this struct as the same as array of
+     pointers: */
   Q_Callback *first;
   Q_Callback *last;
 } Q_Callback_Set;
@@ -3331,10 +3334,12 @@ static void suspend_het_progress(void)
   
   scheme_on_atomic_timeout = NULL;
 
+  het->yielding = 0;
   het->in_progress = 1;
   if (scheme_setjmpup(&het->progress_cont->buf, (void*)het->progress_cont, het->progress_base_addr)) {
     /* we're back */
     scheme_reset_jmpup_buf(&het->progress_cont->buf);
+    het->yielding = 0;
 #ifdef MZ_PRECISE_GC
     /* Base addr points to the last valid gc_var_stack address.
        Fixup that link to skip over the part of the stack we're
@@ -3357,11 +3362,13 @@ static void het_run_new(HiEventTramp * volatile het)
     scheme_start_atomic();
     scheme_on_atomic_timeout = CAST_SUSPEND suspend_het_progress;
     /* Due to het param, yield work will be restricted: */
+    het->yielding = 1;
     if (het->do_f) {
       HiEventTrampProc do_f = het->do_f;
       do_f(het->do_data);
     } else
       wxYield();
+    het->yielding = 0;
   }
 
   if (het->progress_is_resumed) {

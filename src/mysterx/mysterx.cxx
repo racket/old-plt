@@ -357,7 +357,7 @@ static MX_PRIM mxPrims[] = {
   { mx_event_to_id,"event-to-id",1,1},
   { mx_event_keycode,"event-keycode",1,1},
   { mx_event_shiftkey,"event-shiftkey",1,1},
-  { mx_event_shiftkey,"event-ctrlkey",1,1},
+  { mx_event_ctrlkey,"event-ctrlkey",1,1},
   { mx_event_altkey,"event-altkey",1,1},
   { mx_event_x,"event-x",1,1},
   { mx_event_y,"event-y",1,1},

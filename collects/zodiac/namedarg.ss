@@ -79,8 +79,7 @@
 	    (if (null? parseds)
 	      (hash-table-put! argument-list-table name
 		(make-argument-list-table-entry
-		  (string->uninterned-symbol
-		    (symbol->string name))
+		  name
 		  (reverse vars)
 		  kwds var-opts kwd-opts))
 	      (let ((first (car parseds))

@@ -24,10 +24,10 @@
     
     (define (make-empty-lambda-case spec)
       (syntax-case spec ()
-        [(id ...) (syntax [(id ...) (void)])]
+        [(id ...) (syntax [(ths id ...) (void)])]
         [id
          (identifier? (syntax id))
-         (syntax [name (void)])]))
+         (syntax [(ths . name) (void)])]))
     
     (define (make-overriding-method method-spec)
       (syntax-case method-spec ()
@@ -63,13 +63,13 @@
           (syntax-case spec ()
             [(id ...) (syntax [(id ...) 
                                (when delegate
-                                 (send delegate name id ...))
+                                 (send delegate name this id ...))
                                (super-name id ...)])]
             [id
              (identifier? (syntax id))
              (syntax [name 
                       (when delegate
-                        (send delegate name . id))
+                        (send delegate name this . id))
                       (super-name . id)])]))))
     
     (syntax-case stx ()
@@ -93,8 +93,10 @@
                  (field [delegate #f])
                  (define/public (set-delegate d)
                    (when delegate
-                     (send delegate on-disable))
+                     (send delegate on-disable this))
                    (when d
+                     (unless (object? d)
+                       (error 'set-delegate "expected an object, got: ~e" d))
                      (let ([methods-to-impl '(on-enable on-disable ids ...)]
                            [i (object-interface d)])
                        (for-each (lambda (x) 
@@ -102,7 +104,7 @@
                                      (error 'set-delegate "expected object to implement an ~s method" x)))
                                  methods-to-impl))
                      (set! delegate d)
-                     (send delegate on-enable)))
+                     (send delegate on-enable this)))
                  (define/public (get-delegate) delegate)
                  
                  overriding-methods ...

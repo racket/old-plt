@@ -1,5 +1,7 @@
 (module built-in mzscheme
   (require "primitives.ss")
-  (provide object)
+  (provide object
+           staticmethod)
   
-  (define object py-object%))
+  (define object py-object%)
+  (define staticmethod py-static-method%))

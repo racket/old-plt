@@ -130,9 +130,10 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so (if (string? value)
-                       (list (py-so 'py-create) (py-so 'py-string%) value)
-                       (list (py-so 'py-create) (py-so 'py-number%) value))))
+        (->orig-so (list (if (string? value)
+                             (py-so 'string->py-string%)
+                             (py-so 'number->py-number%))
+                         value)))
       
       (super-instantiate ())))
   
@@ -423,7 +424,7 @@
       (define/override (to-scheme)
         (->orig-so (let ([args (map (lambda (e)
                                                       (send e to-scheme))
-                                                    pos)])
+                                                    (reverse pos))])
                      (if (is-a? expression attribute-ref%)
                          `(,(py-so 'python-method-call)
                                  ,(send ((class-field-accessor attribute-ref% expression) expression)

@@ -4,6 +4,7 @@
            (lib "etc.ss")
 	   "compiler.ss"
 	   "compiler-expr.ss"
+           "compiler-target.ss"
            "primitives.ss"
            "runtime-context.ss"
            "empty-context.ss")
@@ -81,8 +82,15 @@
       (inherit ->orig-so)
       (define/override (to-scheme)
         (->orig-so (if (= 1 (length targets)) ; simple assignment
-                       `(define ,(send (car targets) to-scheme)
-                          ,(send expression to-scheme)))))
+                       (if (is-a? (car targets) tattribute-ref%)
+                           `(,(py-so 'python-set-member!)
+                                 ,(send ((class-field-accessor tattribute-ref% expression) (car targets))
+                                              to-scheme)
+                                 ',(send ((class-field-accessor tattribute-ref% identifier) (car targets))
+                                              to-scheme)
+                                 ,(send expression to-scheme))
+                           `(define ,(send (car targets) to-scheme)
+                              ,(send expression to-scheme))))))
       
       (super-instantiate ())))
   
@@ -557,26 +565,28 @@
                         ,(let* ([exprs null]
                                 [keys null]
                                 [values null]
-                                [defs (map (lambda (def)
-                                             (begin0
-                                               `(lambda (this-class)
-                                                  (list #cs',(first def)
-                                                      ,(if (null? keys)
-                                                           (second def)
-                                                           `(let-values ([,keys (values ,@(map (lambda (key)
+                                [defs
+                                 (map (lambda (def)
+                                        (begin0
+                                          `(lambda (this-class)
+                                             (list #cs',(first def)
+                                                   ,(if (null? keys)
+                                                        (second def)
+                                                        `(let-values ([,keys
+                                                                       (values ,@(map (lambda (key)
                                                                                         `(,(py-so 'python-get-member)
                                                                                           this-class
                                                                                           #cs',key
                                                                                           #f))
                                                                                       keys))])
-                                                              ,(second def)))))
-                                               (set! keys (cons (first def) keys))
-                                               (set! values (cons (second def) values))))
-                                           (filter (lambda (def-or-expr)
-                                                     (or (list? def-or-expr)
-                                                         (begin (set! exprs (cons def-or-expr exprs))
-                                                                #f)))
-                                                   (send body defs-and-exprs)))])
+                                                           ,(second def)))))
+                                          (set! keys (cons (first def) keys))
+                                          (set! values (cons (second def) values))))
+                                      (filter (lambda (def-or-expr)
+                                                (or (list? def-or-expr)
+                                                    (begin (set! exprs (cons def-or-expr exprs))
+                                                           #f)))
+                                              (send body defs-and-exprs)))])
                            `(begin ,@(reverse exprs)
                                    (list ,@defs))))))))
                            

@@ -65,7 +65,7 @@
       ;;daniel
       ;; to-scheme: -> syntax-object?
       (define/public (to-scheme)
-        (stx-err "Invalid usage of to-scheme on an ast-node% (I'm purely virtual)"))
+        (stx-err (format "Invalid usage of to-scheme on an ast-node% (I'm purely virtual) ~a" this)))
       
       (super-instantiate ())))
 

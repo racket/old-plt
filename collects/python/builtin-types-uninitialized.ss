@@ -33,6 +33,7 @@
   (define py-tuple% (immutable-type 'tuple))
   (define py-function% (immutable-type 'function))
   (define py-method% (immutable-type '|instance method|))
+  (define py-static-method% (immutable-type '|static method|))
 
 
   (define (python-add-members node assoc-list)

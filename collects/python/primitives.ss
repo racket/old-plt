@@ -8,6 +8,13 @@
            (all-from "builtin-types-uninitialized.ss"))
   
 
+  (define-syntax (key->sym stx)
+    (syntax-case stx ()
+      [(_ key) (let ([key (syntax key)]) (syntax-property key
+                                                          'bound-in-source
+                                                          (cons
+                                                           (syntax-local-introduce key)
+                                                           (syntax-local-introduce key))))]))
   
   (define (py-function%->procedure f)
     (python-get-member f scheme-procedure-key #f))
@@ -79,7 +86,7 @@
   ;; py-create: py-type X ... -> py-object%
   ;; create a new instance of a type
   (define (py-create class . init-args)
-    (let ([obj (python-method-call class '__new__)])
+    (let ([obj (python-method-call class '__new__)]) ; class)]) ;; class is not auto-passed, __new__ is static
       (unless (has-member? class '__init__)
           (raise (format "class ~a has no initializer!" (py-object%->string (python-get-type-name class)))))
       (py-call (python-get-member class '__init__ #f)
@@ -105,7 +112,7 @@
     (opt-lambda (obj member-name [wrap? #t])
       (if (eq? member-name '__dict__)
           (py-create py-dict% (python-node-dict obj))
-          (let ([member (hash-table-get (python-node-dict obj)
+          (let* ([member (hash-table-get (python-node-dict obj)
                                         member-name
                                         (lambda ()
                                           (let ([bases (python-get-bases obj)])
@@ -115,16 +122,28 @@
                                                                (py-string%->string (python-get-type-name obj))))
                                                     (ormap (lambda (base)
                                                              (python-get-member base member-name wrap?))
-                                                           bases)))))])
-                (if wrap?
-                    (if (and (python-node? member)
-                             (py-is-a? member py-function%))  ;; wrap member functions
-                        (python-wrap-method member (if (py-type? obj) #f obj))
-                        (begin
-                          (when (and (python-node? member) (py-is-a? member py-method%))
-                            (python-set-member! member 'im_self (if (py-type? obj) #f obj)))
-                          member))
-                    member)))))
+                                                           bases)))))]
+                [post-wrap (if wrap?
+                               (if (and (python-node? member)
+                                        (py-is-a? member py-function%))  ;; wrap member functions
+                                   (python-wrap-method member
+                                                       (if (py-type? obj)  ;; bound or unbound method?
+                                                           obj
+                                                           (python-node-type obj))
+                                                       (if (py-type? obj) py-none obj))
+                                   (begin
+                                     (when (and (python-node? member)
+                                                (py-is-a? member py-method%)) ;; change the binding
+                                       (python-set-member! member 'im_self (if (py-type? obj) py-none obj)))
+                                     member))
+                               member)])
+            (if (and (python-node? post-wrap)
+                     (py-is-a? post-wrap py-static-method%))
+                (let ([fun (python-get-member post-wrap 'static-method-function #f)])
+                  (unless fun
+                    (error "Uninitialized static method object"))
+                  fun)
+                post-wrap)))))
     
   
   ;; python-set-name!: py-object% symbol ->
@@ -223,12 +242,13 @@
   
 
 
-  ;; python-wrap-method: (union procedure py-function%) python-object -> python-method%
-  (define (python-wrap-method method obj)
+  ;; python-wrap-method: (union procedure py-function%) class instance -> python-method%
+  (define (python-wrap-method method class obj)
     (py-create py-method%
                (if (procedure? method)  ;; if it's not wrapped as a proc already...
                    (py-create py-function% 'python-function method)
                    method)
+               class
                obj))
   
   ;; py-repr: python-node -> py-string%
@@ -244,8 +264,12 @@
   
   ;; python-method-call: python-object symbol X ... -> ?
   (define (python-method-call obj method-name . args)
-    (py-call (python-get-member obj method-name false)
-             (cons obj args)))
+    (let ([fn (python-get-member obj method-name false)])
+      (py-call fn
+               (if (and (python-node? fn)
+                        (py-is-a? fn py-static-method%))
+                   args
+                   (cons obj args)))))
   
 
 
@@ -281,9 +305,26 @@
   
   ;;;;;;;;;;;;;;; complete the basic types now ;;;;;;;;;;;;;;;;;;;;;;;;;;
   
+  (python-add-members py-static-method%
+                      `((__new__ ,(lambda (class)
+                                     (unless (or (py-is? class py-static-method%)
+                                                 (py-is-a? class py-static-method%))
+                                       (error (py-object%->string class)
+                                              "is not a subtype of staticmethod."))
+                                     (let ([sm (python-method-call py-object%
+                                                                   '__new__
+                                                                   class)])
+                                       (python-set-member! sm 'static-method-function #f)
+                                       sm)))
+                        (__init__ ,(lambda (this function-to-wrap)
+                                     (python-set-member! this 'static-method-function
+                                                         function-to-wrap)))))
+  
   
   (python-add-members py-object%
-                      `((__new__ ,python-new-object) ;; TODO: make this a staticmember
+                      `((__new__ ,python-new-object);,(let ([sm (python-new-object py-static-method%)])
+                                 ;   (python-method-call sm '__init__ python-new-object)
+                                 ;   sm)) ;; object.__new__ is a staticmethod
                         (__init__ ,(lambda (this) (void)))
                         (__call__ ,py-create)
                         (__repr__ ,py-repr)))
@@ -326,19 +367,37 @@
   
   (define py-none (make-python-node py-none% (make-hash-table) #f))
 
+  (define (python-method-bound? method)
+    (not (py-is? (python-get-member method 'im_self)
+                 py-none)))
+  
   
   (python-add-members py-method%
-                        `((__init__ ,(opt-lambda (this fun [self py-none])
+                        `((__init__ ,(opt-lambda (this fun class [self py-none])
+                                       (python-set-member! this 'im_class class)
                                        (python-set-member! this 'im_func fun)
                                        (python-set-member! this 'im_self self)))
                           (__call__ ,(py-create py-function%
                                                 'wrapped-method
                                                 (lambda (this-method . args)
                                                   (py-call (python-get-member this-method 'im_func false)
-                                                           (let ([self (python-get-member this-method 'im_self)])
-                                                             (if (not (py-is? self py-none))
-                                                                 (cons self args)
-                                                                 args))))))
+                                                           (if (python-method-bound? this-method)
+                                                               (cons (python-get-member this-method 'im_self)
+                                                                     args)
+                                                               (let ([class (python-get-member this-method
+                                                                                               'im_class)])
+                                                                 (if (and (not (null? args))
+                                                                          (py-is-a? (car args) class))
+                                                                     args
+                                                                     (error (py-object%->string this-method)
+                                                                            "must be called with"
+                                                                            (py-string%->string
+                                                                             (python-get-type-name class))
+                                                                            "instance as first argument."
+                                                                            "Got"
+                                                                            (if (null? args)
+                                                                                "no arguments!"
+                                                                                (py-object%->string (car args)))))))))))
                           (im_func ,py-none) ; py-procedure%
                           (im_self ,py-none))) ; py-object%
   

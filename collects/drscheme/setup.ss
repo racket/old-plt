@@ -9,8 +9,8 @@
 				 (list (cons "Toy" (build-path "drscheme" "toy.ss"))
 				       (cons "Donkey" (build-path "donkey" "donkey.ss"))
 				       (cons "The Debugger" (build-path "drscheme" "debugger" "debugger.ss"))
-				       (cons "Syntax Checker" (build-path "zodiac" "scheck.ss"))
-				       (cons "Spidey" (build-path "mrspidey" "mrspidey.ss"))))
+				       (cons "Syntax Checker" (build-path "drscheme" "zodiac" "scheck.ss"))
+				       (cons "MrSpidey" (build-path "mrspidey" "mrspidey.ss"))))
 
     (mred:set-preference-default 'drscheme:config #f)
     (mred:set-preference-default 'drscheme:use-setup? (eq? (mred:get-preference 'drscheme:config) 'mzschemeowl))

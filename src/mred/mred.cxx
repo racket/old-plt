@@ -2872,11 +2872,6 @@ extern "C" char *scheme_get_exec_path();
 char *MrEdApp::GetDefaultAboutItemName()
 {
 # ifdef OS_X
-#  define ep_SEP '/'
-# else
-#  define ep_SEP ':'
-# endif
-
   if (!about_label) {
     char *p, *s;
     int i, len;
@@ -2884,7 +2879,7 @@ char *MrEdApp::GetDefaultAboutItemName()
     p = wx_original_argv_zero;
     len = strlen(p);
     for (i = len - 1; i; i--) {
-      if (p[i] == ep_SEP) {
+      if (p[i] == '/') {
 	i++;
 	break;
       }
@@ -2896,6 +2891,9 @@ char *MrEdApp::GetDefaultAboutItemName()
   }
 
   return about_label;
+# else
+  return "About...";
+# endif
 }
 
 void MrEdApp::DoDefaultAboutItem()

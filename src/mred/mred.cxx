@@ -1018,12 +1018,8 @@ static void DoTheEvent(MrEdContext *c)
 void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
 {
   wxTimer *timer;
-  Scheme_Config *save_config;
   MrEdEvent evt;
   int restricted = 0;
-
-  save_config = scheme_config;
-  scheme_config = c->main_config;
 
 #ifdef wx_msw
   /* see mredmsw.cxx for info on mred_het_param: */
@@ -1031,7 +1027,9 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     restricted = 1;
 #endif
 
-  if (check_q_callbacks(2, MrEdSameContext, c, 1)) {
+  if (alt && alt(altdata)) {
+    /* did nothing since alt fired */
+  } else if (check_q_callbacks(2, MrEdSameContext, c, 1)) {
     c->q_callback = 3;
     DoTheEvent(c);
   } else if ((timer = TimerReady(c))) {
@@ -1054,9 +1052,6 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     c->alternate = alt;
     c->alt_data = altdata;
 
-    /* Temp restore config: */
-    scheme_config = save_config;
-
     scheme_current_thread->block_descriptor = -1;
     scheme_current_thread->blocker = (Scheme_Object *)c;
     scheme_current_thread->block_check = CAST_BLKCHK check_for_nested_event;
@@ -1066,9 +1061,6 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     } while (!check_for_nested_event((Scheme_Object *)c));
     scheme_current_thread->block_descriptor = 0;
     scheme_current_thread->ran_some = 1;
-
-    /* un-'Temp restore config': */
-    scheme_config = c->main_config;
 
     c->alternate = NULL;
     c->alt_data = NULL;
@@ -1080,8 +1072,6 @@ void MrEdDoNextEvent(MrEdContext *c, int (*alt)(void *), void *altdata)
     } else
       DoTheEvent(c);
   }
-
-  scheme_config = save_config;
 }
 
 void wxDoNextEvent()
@@ -1181,8 +1171,6 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
   fprintf(stderr, "new thread\n");
 #endif
 
-  scheme_config = c->main_config;
-
   this_thread = scheme_current_thread;
   c->handler_running = this_thread;
   this_thread->on_kill = CAST_TOK on_handler_killed;
@@ -1198,10 +1186,6 @@ static Scheme_Object *handle_events(void *cx, int, Scheme_Object **)
 
       while(1) {
 	while (MrEdEventReady(c)) {
-	  /* reset parameterization in case the last event handler 
-	     changed it */
-	  scheme_config = c->main_config;
-	  
 	  MrEdDoNextEvent(c, NULL, NULL);
 	}
 

@@ -1022,6 +1022,11 @@ Scheme_Object *scheme_stx_shift_rename(Scheme_Object *mrn,
   return nmrn;
 }
 
+Scheme_Hash_Table *scheme_module_rename_marked_names(Scheme_Object *rn)
+{
+  return ((Module_Renames *)rn)->marked_names;
+}
+
 /******************** wrap manipulations ********************/
 
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)

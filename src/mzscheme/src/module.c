@@ -1378,6 +1378,11 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
       rn = scheme_make_module_rename(0, mzMOD_RENAME_NORMAL, NULL);
       scheme_append_module_rename(v, rn);
       menv->rename = rn;
+      if (!menv->marked_names) {
+	Scheme_Hash_Table *mn;
+	mn = scheme_module_rename_marked_names(rn);
+	menv->marked_names = mn;
+      }
     }
   }
 
@@ -1432,6 +1437,11 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
       rn = scheme_make_module_rename(1, mzMOD_RENAME_NORMAL, NULL);
       scheme_append_module_rename(v, rn);
       menv->exp_env->rename = rn;
+      if (!menv->exp_env->marked_names) {
+	Scheme_Hash_Table *mn;
+	mn = scheme_module_rename_marked_names(rn);
+	menv->exp_env->marked_names = mn;
+      }
     }
   }
 
@@ -3411,6 +3421,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *post_ex_rn, *post_ex_et_rn; /* renames for ids introduced by expansion */
   void *tables[3], *et_tables[3], *tt_tables[3];
   Scheme_Object **exs, **exsns, **exss, **exis, *exclude_hint = scheme_false, *lift_data;
+  Scheme_Hash_Table *et_mn;
   char *exps;
   int excount, exvcount, exicount;
   int reprovide_kernel;
@@ -4153,6 +4164,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   }
   /* first =  a list of expanded/compiled expressions */
 
+  et_mn = env->genv->exp_env->marked_names;
+
   scheme_clean_dead_env(env->genv);
 
   /* If compiling, drop expressions that are constants: */
@@ -4624,11 +4637,11 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     env->genv->module->comp_prefix = cenv->prefix;
     env->genv->module->max_let_depth = max_let_depth;
-    
+
     if (all_simple_renames && (env->genv->marked_names->count == 0)) {
       env->genv->module->rn_stx = scheme_true;
     }
-    if (et_all_simple_renames) {
+    if (et_all_simple_renames && (et_mn->count == 0)) {
       env->genv->module->et_rn_stx = scheme_true;
     }
     if (tt_all_simple_renames) {

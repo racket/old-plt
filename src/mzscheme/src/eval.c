@@ -2225,7 +2225,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
-  if (!var && !env->genv->module && looking_for_top) {
+  if (!var && /* !env->genv->module && */ looking_for_top) {
     /* If form is a marked name, then force #%top binding.
        This is so temporaries can be used as defined ids. */
     Scheme_Object *nm;

@@ -1685,8 +1685,17 @@ Scheme_Object *scheme_tl_id_sym(Scheme_Env *env, Scheme_Object *id, int is_def)
 	
 	best_match = scheme_intern_exact_parallel_symbol(buf, strlen(buf));
 
-	if (!scheme_stx_parallel_is_used(best_match, id))
-	  break;
+	if (!scheme_stx_parallel_is_used(best_match, id)) {
+	  /* Also check environment's rename tables. This
+	     last check turns out to matter for compiling in
+	     `module->namespace' contexts, because no renaming
+	     is added after expansion to record the rename table. */
+	  if (!scheme_tl_id_is_sym_used(marked_names, best_match)) {
+	    /* Ok, no matches, so this name is fine. */
+	    break;
+	  }
+	}
+
 	/* Otherwise, increment counter and try again... */
       }
     }

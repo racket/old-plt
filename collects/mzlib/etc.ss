@@ -443,26 +443,22 @@
    (syntax-case stx ()
      [(_)
       (let* ([source (syntax-source stx)]
-	     [local (lambda ()
-		      (or (current-load-relative-directory)
-			  (current-directory)))]
+             [source (cond [(path?   source) source]
+                           [(bytes?  source) (bytes->path  source)]
+                           [(string? source) (string->path source)]
+                           [else #f])]
+             [local (or (current-load-relative-directory) (current-directory))]
 	     [dir (plthome-ify
-                   (or (and source (string? source) (file-exists? source)
+                   (or (and source (file-exists? source)
                             (let-values ([(base file dir?) (split-path source)])
-                              (and (string? base)
-                                   (path->complete-path
-                                    base
-                                    (or (current-load-relative-directory)
-                                        (current-directory))))))
-                       (local)))])
+                              (and (path? base)
+                                   (path->complete-path base local))))
+                       local))])
         (if (and (pair? dir) (eq? 'plthome (car dir)))
-	    (with-syntax ([d dir])
-	      (syntax (un-plthome-ify 'd)))
-	    (datum->syntax-object (quote-syntax here) 
-				  (if (path? dir)
-				      (path->string dir)
-				      dir)
-				  stx)))]))
+          (with-syntax ([d dir])
+            (syntax (un-plthome-ify 'd)))
+          (with-syntax ([d (path->bytes dir)])
+            (syntax (bytes->path d)))))]))
 
  ;; This is a macro-generating macro that wants to expand
  ;; expressions used in the generated macro. So it's weird,

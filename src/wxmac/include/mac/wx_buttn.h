@@ -109,7 +109,6 @@ public:
 
 	virtual void OnEvent(wxMouseEvent *event); // mac platform only
  	virtual void Highlight(Bool flag); // mac platform only, to make items look "pressed".
-
 };
 
 #endif // IN_CPROTO

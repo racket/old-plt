@@ -227,10 +227,14 @@ void wxMessage::Paint(void)
     if (sBitmap) {
       sBitmap->DrawMac();
     } else {
-      FontInfo info;
-      ::GetFontInfo(&info);
-      MoveTo(SetOriginX, SetOriginY + clientHeight - info.descent);
-      DrawLatin1Text(cMessage, 0);
+      Rect r = { SetOriginY, SetOriginX, 
+		 SetOriginY + clientHeight, SetOriginX + clientWidth };
+      CFStringRef str = CFStringCreateWithCString(NULL, cMessage, kCFStringEncodingISOLatin1);
+
+      DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
+		       0, &r, teJustLeft, NULL);
+
+      CFRelease(str);
     }
   }
 }

@@ -27,7 +27,7 @@ void wxRadioButtonProc(wxRadioButton& radioButton, wxCommandEvent& event)
   while (wxSubType(rb->__type, wxTYPE_PANEL))
     rb = rb->GetParent();
   wxRadioBox* radioBox = (wxRadioBox *)rb;
-  long radioButtonIndex = radioBox->cRadioButtons.MemberIndex(&radioButton);
+  long radioButtonIndex = radioBox->cRadioButtons->MemberIndex(&radioButton);
   radioBox->SetSelection(radioButtonIndex);
 
   wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
@@ -56,21 +56,9 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
  WXTYPE		objectType
  ) :
   wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName),
-  cRadioButtons (wxList(wxList::kNoDestroyData))
+  cRadioButtons (new wxList(wxList::kNoDestroyData))
 {
   Callback(function);
-
-#if 0
-  // EMBEDDING
-  // create an embedding control so that embedded controls get moved.
-  SetCurrentMacDCNoMargin();
-  Rect cRect;
-  Str255 embeddingTitle = "\pebmedding title";
-  SetRect(&cRect,0,0,width,height);
-  OffsetRect(&cRect,SetOriginX,SetOriginY);
-  cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
-				   kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
-#endif
 
   cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
 
@@ -78,28 +66,26 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
   cRadioPanel->SetLabelFont(labelFont);
 
   wxPanel *buttonHolder = cRadioPanel;
-	
 
-  if (Title)
-    {
-      Title = wxItemStripLabel(Title);
-      cRadioTitle = new wxMessage(cRadioPanel, Title, labelFont);
-      if (labelPosition != wxVERTICAL) {
-	buttonHolder = new wxPanel(cRadioPanel->ClientArea(), -1, -1, 0, 0, 0);
-      } else
-	buttonHolder->NewLine();
-    }
-  else cRadioTitle = NULL;
+  if (Title) {
+    Title = wxItemStripLabel(Title);
+    cRadioTitle = new wxMessage(cRadioPanel, Title, labelFont);
+    if (labelPosition != wxVERTICAL) {
+      buttonHolder = new wxPanel(cRadioPanel->ClientArea(), -1, -1, 0, 0, 0);
+      cButtonHolder = buttonHolder;
+    } else
+      buttonHolder->NewLine();
+  } else 
+    cRadioTitle = NULL;
 
-  for (int i = 0; i < N; i++)
-    {
-      char *choice = wxItemStripLabel(Choices[i]);
-      if (i && ((style & wxVERTICAL) == wxVERTICAL))
-	buttonHolder->NewLine();
-      wxRadioButton* radioButton = new wxRadioButton(buttonHolder,
-						     (wxFunction)&wxRadioButtonProc, choice);
-      cRadioButtons.Append(radioButton);
-    }
+  for (int i = 0; i < N; i++) {
+    char *choice = wxItemStripLabel(Choices[i]);
+    if (i && ((style & wxVERTICAL) == wxVERTICAL))
+      buttonHolder->NewLine();
+    wxRadioButton* radioButton = new wxRadioButton(buttonHolder,
+						   (wxFunction)&wxRadioButtonProc, choice);
+    cRadioButtons->Append(radioButton);
+  }
   SetSelection(0);
 
   buttonHolder->Fit();
@@ -110,20 +96,12 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
 
   if (style & wxBORDER) new wxBorderArea(this);
 
-  if (width < 0 || height < 0)
-    {
-      Fit(); // WCH: need wxHorizontal and wxVertical for Fit(direction)
-    }
+  if (width < 0 || height < 0) {
+    Fit();
+  }
 	
   if (GetParent()->IsHidden())
     DoShow(FALSE);
-
-#if 0
-  // EMBEDDING
-  if (cEmbeddingControl) {
-    ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
-  }
-#endif        
 }
 
 //-----------------------------------------------------------------------------
@@ -144,21 +122,9 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
  WXTYPE		objectType
  ) :
   wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName),
-  cRadioButtons (wxList(wxList::kNoDestroyData))
+  cRadioButtons (new wxList(wxList::kNoDestroyData))
 {
   Callback(function);
-
-#if 0
-  // EMBEDDING
-  // create an embedding control so that embedded controls get moved.
-  SetCurrentMacDCNoMargin();
-  Rect cRect;
-  Str255 embeddingTitle = "\pebmedding title";
-  SetRect(&cRect,0,0,width,height);
-  OffsetRect(&cRect,SetOriginX,SetOriginY);
-  cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
-				   kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
-#endif
 
   cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
   cRadioPanel->SetButtonFont(buttonFont);
@@ -171,6 +137,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
       cRadioTitle = new wxMessage(cRadioPanel, Title, labelFont);
       if (labelPosition != wxVERTICAL) {
 	buttonHolder = new wxPanel(cRadioPanel->ClientArea(), -1, -1, 0, 0, 0);
+	cButtonHolder = buttonHolder;
       } else
 	buttonHolder->NewLine();
     }
@@ -182,7 +149,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 	buttonHolder->NewLine();
       wxRadioButton* radioButton = new wxRadioButton(buttonHolder,
 						     (wxFunction)&wxRadioButtonProc, Choices[i]);
-      cRadioButtons.Append(radioButton);
+      cRadioButtons->Append(radioButton);
     }
   SetSelection(0);
 
@@ -198,13 +165,6 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
     {
       Fit(); // WCH: need wxHorizontal and wxVertical for Fit(direction)
     }
-
-#if 0
-  // EMBEDDING        
-  if (cEmbeddingControl) {
-    ::SizeControl(cEmbeddingControl,cWindowWidth,cWindowHeight);
-  }
-#endif         
 }
 
 //=============================================================================
@@ -214,8 +174,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
 //-----------------------------------------------------------------------------
 wxRadioBox::~wxRadioBox(void)
 {
-  //CJC - This shouldn't be neccessary - compiler bug?
-  cRadioButtons.Clear();
+  cRadioButtons->Clear();
 }
 
 
@@ -240,10 +199,10 @@ void wxRadioBox::SetLabel(char* label)
 char* wxRadioBox::GetLabel(int item)
 {
   char* result = NULL;
-  int numberItems = cRadioButtons.Number();
+  int numberItems = cRadioButtons->Number();
   if (0 <= item && item < numberItems)
     {
-      wxNode* node = cRadioButtons.Nth(item);
+      wxNode* node = cRadioButtons->Nth(item);
       wxRadioButton* radioButton = (wxRadioButton*)node->Data();
       result = radioButton->GetLabel();
     }
@@ -253,10 +212,10 @@ char* wxRadioBox::GetLabel(int item)
 //-----------------------------------------------------------------------------
 void wxRadioBox::SetLabel(int item, char* label)
 {
-  int numberItems = cRadioButtons.Number();
+  int numberItems = cRadioButtons->Number();
   if (0 <= item && item < numberItems)
     {
-      wxNode* node = cRadioButtons.Nth(item);
+      wxNode* node = cRadioButtons->Nth(item);
       wxRadioButton* radioButton = (wxRadioButton*)node->Data();
       radioButton->SetLabel(label);
     }
@@ -265,10 +224,10 @@ void wxRadioBox::SetLabel(int item, char* label)
 //-----------------------------------------------------------------------------
 void wxRadioBox::SetLabel(int item, wxBitmap* bitmap)
 {
-  int numberItems = cRadioButtons.Number();
+  int numberItems = cRadioButtons->Number();
   if (0 <= item && item < numberItems)
     {
-      wxNode* node = cRadioButtons.Nth(item);
+      wxNode* node = cRadioButtons->Nth(item);
       wxRadioButton* radioButton = (wxRadioButton*)node->Data();
       radioButton->SetLabel(bitmap);
     }
@@ -278,7 +237,7 @@ void wxRadioBox::SetLabel(int item, wxBitmap* bitmap)
 int wxRadioBox::FindString(char* s)
 {
   int result = -1;
-  int numberItems = cRadioButtons.Number();
+  int numberItems = cRadioButtons->Number();
   for (int i = 0; i < numberItems && result == -1; i++)
     {
       char* radioButtonLabel = GetLabel(i);
@@ -289,27 +248,23 @@ int wxRadioBox::FindString(char* s)
 }
 
 //-----------------------------------------------------------------------------
-void wxRadioBox::SetSelection(int N) // WCH: should use "item" for "N"
+void wxRadioBox::SetSelection(int N)
 {
-  int numberItems = cRadioButtons.Number();
-  if (0 <= N && N < numberItems)
-    {
-      if (selected != N)
-	{
-	  if (0 <= selected && selected < numberItems)
-	    {
-	      wxNode* selectedNode = cRadioButtons.Nth(selected);
-	      wxRadioButton* selectedRadioButton =
-		(wxRadioButton*)selectedNode->Data();
-	      selectedRadioButton->SetValue(FALSE);
-	    }
-		
-	  wxNode* node = cRadioButtons.Nth(N);
-	  wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-	  radioButton->SetValue(TRUE);
-		
-	  selected = N;
+  int numberItems = cRadioButtons->Number();
+  if (0 <= N && N < numberItems) {
+      if (selected != N) {
+	if (0 <= selected && selected < numberItems) {
+	  wxNode* selectedNode = cRadioButtons->Nth(selected);
+	  wxRadioButton* selectedRadioButton = (wxRadioButton*)selectedNode->Data();
+	  selectedRadioButton->SetValue(FALSE);
 	}
+	
+	wxNode* node = cRadioButtons->Nth(N);
+	wxRadioButton* radioButton = (wxRadioButton*)node->Data();
+	radioButton->SetValue(TRUE);
+	
+	selected = N;
+      }
     }
 }
 
@@ -350,10 +305,10 @@ void wxRadioBox::Enable(Bool enable)
 
 void wxRadioBox::Enable(int item, Bool enable)
 {
-  int numberItems = cRadioButtons.Number();
+  int numberItems = cRadioButtons->Number();
   if (0 <= item && item < numberItems)
     {
-      wxNode* node = cRadioButtons.Nth(item);
+      wxNode* node = cRadioButtons->Nth(item);
       wxRadioButton* radioButton = (wxRadioButton*)node->Data();
       radioButton->Enable(enable);
     }
@@ -362,10 +317,10 @@ void wxRadioBox::Enable(int item, Bool enable)
 //-----------------------------------------------------------------------------
 void wxRadioBox::Show(int item, Bool show)
 {
-  int numberItems = cRadioButtons.Number();
+  int numberItems = cRadioButtons->Number();
   if (0 <= item && item < numberItems)
     {
-      wxNode* node = cRadioButtons.Nth(item);
+      wxNode* node = cRadioButtons->Nth(item);
       wxRadioButton* radioButton = (wxRadioButton*)node->Data();
       radioButton->Show(show);
     }
@@ -376,4 +331,24 @@ void wxRadioBox::Show(int item, Bool show)
 int wxRadioBox::ButtonFocus(int)
 {
   return -1;
+}
+
+
+void wxRadioBox::MaybeMoveControls()
+{
+  cRadioPanel->MaybeMoveControls();
+  if (cButtonHolder)
+    cButtonHolder->MaybeMoveControls();
+}
+
+void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
+{
+  wxNode* node = cRadioButtons->First();
+  while (node) {
+    wxWindow* rbut = (wxWindow*)node->Data();
+    rbut->OnClientAreaDSize(dW, dH, dX, dY);
+    node = node->Next();
+  }
+
+ wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }

@@ -25,8 +25,9 @@ class wxRadioBox: public wxbRadioBox
 {
  public:
 	wxPanel*	cRadioPanel;
+	wxPanel*	cButtonHolder;
 	wxMessage*	cRadioTitle;
-	wxList		cRadioButtons; // list of wxRadioButton items
+	wxList*   	cRadioButtons; // list of wxRadioButton items
 
 //=============================================================================
 // Public constructors
@@ -96,12 +97,9 @@ public:
   void ChangeColour(void);
   
   int ButtonFocus(int);
-  
-#if 0
-  // EMBEDDING  
-  ControlHandle cEmbeddingControl;
-  // void OnClientAreaDSize(int dW, int dH, int dX, int dY);
-#endif  
+
+  virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
+  virtual void MaybeMoveControls();
 };
 
 #endif // IN_CPROTO

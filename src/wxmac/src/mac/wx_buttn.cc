@@ -88,7 +88,8 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   ::OffsetRect(&boundsRect,SetOriginX,SetOriginY);
   CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
   ::CreatePushButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, title, &cMacControl);
-  
+  CFRelease(title);
+
   // Now, ignore the font data and let the control find the "best" size 
   ::SetRect(&boundsRect,0,0,0,0);
   SInt16 baselineOffset; // ignored

@@ -7,24 +7,6 @@
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-/**
-  Julian, I've (re)put here parts of my mods about wxFIXED_LENGHT.
-  I've done this because mod is only partially applied, which is not
-  a very good thing!! [you have applied the part after AttachWidget, and not
-  the part before creation]
-  Principle of wxFIXED_LENGTH: when creating a label for a wxItem, says
-  'this is a label' , it is created with  a string of same strlen containing
-  only '0' char. So:
-
-  'this is a label     '  --> '0000000000000000000'
-  'this is a long label'  --> '0000000000000000000'
-
-  Because strings are identical, they are aligned even if font is variable.
-  And after creation, changing attachement to the form has effect of not
-  resizing the label if it is changed back to its original value.
-  Heavy, but that's work!
-  **/
-
 /* When implementing a new item, be sure to:
  *
  * - add the item to the parent panel
@@ -119,7 +101,7 @@ void wxItem::ChangeColour(void)
 //-----------------------------------------------------------------------------
 void wxItem::ChangeToGray(Bool gray)
 {
-  if (cMacControl && cActive) {
+  if (cMacControl) {
     SetCurrentDC();
     if (gray) {
       DisableControl(cMacControl);
@@ -133,7 +115,7 @@ void wxItem::ChangeToGray(Bool gray)
 
 void wxItem::Activate(Bool on)
 {
-  if (cMacControl && OS_Active()) {
+  if (cMacControl) {
     SetCurrentDC();
     if (!on) {
       DeactivateControl(cMacControl);

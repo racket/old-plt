@@ -22,6 +22,7 @@
 #include "wx_dccan.h"
 #include "wx_main.h"
 #include "wx_menu.h"
+#include "wx_rbox.h"
 #include "wxTimeScale.h"
 #include "wx_macevents.h"
 #ifndef WX_CARBON
@@ -643,7 +644,7 @@ void wxWindow::OnAreaDSize(int dW, int dH, int dX, int dY)
 }
 
 //-----------------------------------------------------------------------------
-void wxWindow::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
+void wxWindow::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   if (__type == wxTYPE_FRAME) {
     ::SizeControl(cMacControl, cWindowWidth, cWindowHeight);

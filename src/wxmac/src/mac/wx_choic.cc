@@ -35,7 +35,7 @@
 // Because I never get this right and t,l,b,r makes sense to me - CJC
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
-#define VSLOP 3
+#define VSLOP 0
 #define HSLOP 4
 #define PAD_Y 4
 #define PAD_X 2
@@ -104,7 +104,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     fWidth = fHeight = 0;
   }
   int lblw = (int)(fWidth + (Title ? HSLOP : 0));
-  int lblh = (int)(fHeight+2);
+  int lblh = (int)(fHeight + (Title ? 2 : 0));
 
     
   if (labelPosition == wxVERTICAL) {
@@ -148,16 +148,16 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   // First, create the control with a bogus rectangle;
   OSErr err;
   Rect r = {0,0,0,0};
-  err = ::CreatePopupButtonControl(GetWindowFromPort(cMacDC->macGrafPort()),&r,NULL,-12345,
-				   FALSE,0,0,normal,&cMacControl);
-  err = ::SetControlData(cMacControl,kControlNoPart,kControlPopupButtonOwnedMenuRefTag,sizeof(MenuRef),(void *)(&hDynMenu));
-  ::SetControlMinimum(cMacControl,1);
-  ::SetControlMaximum(cMacControl,no_strings);
+  err = ::CreatePopupButtonControl(GetWindowFromPort(cMacDC->macGrafPort()), &r, NULL, -12345,
+				   FALSE, 0, 0, normal, &cMacControl);
+  err = ::SetControlData(cMacControl, kControlNoPart, kControlPopupButtonOwnedMenuRefTag,
+			 sizeof(MenuRef), (void *)(&hDynMenu));
+  ::SetControlMinimum(cMacControl, 1);
+  ::SetControlMaximum(cMacControl, no_strings);
   
   // Now, ignore the font data and let the control find the "best" size 
-  ::SetRect(&r,0,0,0,0);
   SInt16 baselineOffset; // ignored
-  err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
+  err = ::GetBestControlRect(cMacControl, &r, &baselineOffset);
   maxdfltw = r.right - r.left + (PAD_X * 2);
   maxdflth = r.bottom - r.top + (PAD_Y * 2);
 
@@ -167,29 +167,33 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   if (labelPosition == wxVERTICAL) {
     w = max(lblw, maxdfltw);
     if (Title)
-      SetBounds(&TitleRect,1, 1, lblh+1, w);
+      SetBounds(&TitleRect, 1, 1, lblh+1, w);
     else
-      SetBounds(&TitleRect,1, 1, 1, 1);
+      SetBounds(&TitleRect, 1, 1, 1, 1);
     SetBounds(&ValueRect, TitleRect.bottom + VSLOP, 1,
 	      TitleRect.bottom + maxdflth + 1, maxdfltw);
     valuebase += MSPACEY;
-    SetBounds(&CtlRect, 0, 0, ValueRect.bottom + 2, w+1);
+    SetBounds(&CtlRect, 0, 0, ValueRect.bottom+2, w+1);
   } else {
     h = max(lblh, maxdflth);
-    SetBounds(&ValueRect, 1, lblw+1, h-1, maxdfltw + lblw);
+    SetBounds(&ValueRect, 1, lblw+1, h-1, maxdfltw+lblw+1);
     valuebase += MSPACEY;
     SetBounds(&CtlRect, 0, 0, h+1, lblw+maxdfltw+2);
     int bot = (h - valuebase) + labelbase;
     SetBounds(&TitleRect, bot-lblh, 1, bot, lblw);
   }
+
   if (width < 0 && height < 0) {
     // use the sizes we just calced
     cWindowWidth = CtlRect.right;
     cWindowHeight = CtlRect.bottom;
   } else {
     OnClientAreaDSize((width == -1 ? 0 : width),
-		      (height == -1 ? 0 : height), (x == -1 ? 0 : x), (y == -1 ? 0 : y));
+		      (height == -1 ? 0 : height), 
+		      (x == -1 ? 0 : x), 
+		      (y == -1 ? 0 : y));
   }
+
   SetSelection(0);
 
   ::EmbedControl(cMacControl, GetRootControl());
@@ -215,20 +219,16 @@ wxChoice::~wxChoice (void)
 void wxChoice::DrawChoice(Bool active)
 {
   SetCurrentDC();
-  Rect t = TitleRect;
-  ::MoveTo(t.left + SetOriginX, t.bottom - labelbase + SetOriginY);
-  SetFont(labelFont);
-  SetTextInfo();
-  int w = 0;
-  int i;
   
   if (sTitle) {
-    for (i = 1; i <= sTitle[0] && w < TitleRect.right; i++)
-      w += ::CharWidth(sTitle[i]);
-    for (; w >= TitleRect.right; i--)	// backup
-      w -= ::CharWidth(sTitle[i]);
+    Rect r = { SetOriginY + TitleRect.top, SetOriginX + TitleRect.left, 
+	       SetOriginY + TitleRect.bottom, SetOriginX + TitleRect.right };
+    CFStringRef str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
     
-    DrawLatin1Text((char *)sTitle, 1, i-1);
+    DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
+		     0, &r, teJustLeft, NULL);
+
+    CFRelease(str);
   }
   
   ::Draw1Control(cMacControl);
@@ -259,13 +259,6 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 	  TitleRect.right -= needw;
 	ValueRect.right -= needw;
       } else {
-	// Shrink width of Value, Title strings if we have to
-#if 0
-	if (sTitle) {
-	  TitleRect.right -= needw/2;
-	  ValueRect.left -= needw/2;
-	}
-#endif
 	ValueRect.right -= needw;
       }
       CtlRect.right = clientWidth;
@@ -293,9 +286,9 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 		  ValueRect.bottom - ValueRect.top);
   }
 
-  if (dX || dY) {
-    MaybeMoveControls();
-  }
+  padTop = ValueRect.top+1;
+  padLeft = ValueRect.left;
+  MaybeMoveControls();
 }
 
 //-----------------------------------------------------------------------------

@@ -1892,8 +1892,11 @@ int scheme_stx_list_length(Scheme_Object *list)
     if (SCHEME_PAIRP(list)) {
       len++;
       list = SCHEME_CDR(list);
-    } else
-      list = scheme_null;
+    } else {
+      if (!SCHEME_NULLP(list))
+	len++;
+      break;
+    }
   }
 
   return len;

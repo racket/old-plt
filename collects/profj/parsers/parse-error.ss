@@ -365,7 +365,7 @@
         ((class-body)
          (case tokN
            ((EOF) (parse-error (format "Expected class body to begin after ~a" (output-format (get-tok pre))) ps pe))
-           ((O_BRACE) (parse-definition cur-tok (parse-members null (getter) 'start getter) 'class-body-end getter))
+           ((O_BRACE) (parse-definition cur-tok (parse-members null (getter) 'start getter #f) 'class-body-end getter))
            (else 
             (cond
               ((open-separator? tok)
@@ -405,8 +405,8 @@
             (else (parse-error (format "Expected a } to close interface body, found ~a" out) ps end)))))))
                
               
-  ;parse-members: token token symbol (->token) -> token
-  (define (parse-members pre cur state getter) 
+  ;parse-members: token token symbol (->token) boolean -> token
+  (define (parse-members pre cur state getter abstract-method?) 
     (let* ((tok (get-tok cur))
            (kind (get-token-name tok))
            (out (output-format tok))
@@ -419,19 +419,19 @@
         ((start)
          (cond
            ((or (eof? tok) (c-brace? tok)) cur)
-           ((abstract? tok) (parse-members cur (getter) 'method getter))
-           ((prim-type? tok) (parse-members cur (getter) 'method-or-field getter))
-           ((and (eq? (level) 'intermediate) (void-token? tok)) (parse-members cur (getter) 'method-id getter))
-           ((id-token? tok) (parse-members cur (getter) 'member getter))
+           ((abstract? tok) (parse-members cur (getter) 'method getter #t))
+           ((prim-type? tok) (parse-members cur (getter) 'method-or-field getter #f))
+           ((and (eq? (level) 'intermediate) (void-token? tok)) (parse-members cur (getter) 'method-id getter #f))
+           ((id-token? tok) (parse-members cur (getter) 'member getter #f))
            (else 
             (parse-error 
              (format "Only fields, methods and a constructor may be within the class body, found ~a" out) srt end))))
         ((member)
          (cond
            ((eof? tok) (parse-error "Class member may not end here, class body still requires a }" ps pe))
-           ((dot? tok) (parse-members cur (parse-name (getter) getter) 'method-or-field getter))
-           ((id-token? tok) (parse-members pre cur 'method-or-field getter))
-           ((o-paren? tok) (parse-members cur (getter) 'ctor-parms getter))
+           ((dot? tok) (parse-members cur (parse-name (getter) getter) 'method-or-field getter abstract-method?))
+           ((id-token? tok) (parse-members pre cur 'method-or-field getter abstract-method?))
+           ((o-paren? tok) (parse-members cur (getter) 'ctor-parms getter abstract-method?))
            ((c-paren? tok) (parse-error "( must precede ) in parameter list" srt end))
            ((open-separator? tok) 
             (parse-error (format "( must be used to start parameter list, found ~a" out) srt end))
@@ -456,10 +456,10 @@
                 ((eof? n-tok) 
                  (parse-error "Method or field has not completed, class body still requires a }" srt end))
                 ;Just ended a field
-                ((semi-colon? n-tok) (parse-members next (getter) 'start getter))
+                ((semi-colon? n-tok) (parse-members next (getter) 'start getter #f))
                 ((comma? n-tok) 
                  (if (eq? (level) 'intermediate)
-                     (parse-members next (getter) 'field-list getter)
+                     (parse-members next (getter) 'field-list getter abstract-method?)
                      (parse-error (format "Expected an end to field ~a, fields end in ';', ',' is not allowed" (token-value tok))
                                   srt ne)))
                 ((and (eq? (level) 'intermediate) (teaching-assignment-operator? n-tok))
@@ -467,8 +467,8 @@
                    (if (eof? (get-tok assign-exp))
                        (parse-error (format "Expected an expression to bind to ~a, and class body still needs a }" 
                                             (token-value tok)) srt end)
-                       (parse-members next (parse-expression null assign-exp 'start getter) 'field-init-end getter))))
-                ((o-paren? n-tok) (parse-members next (getter) 'method-parms getter))
+                       (parse-members next (parse-expression null assign-exp 'start getter) 'field-init-end getter #f))))
+                ((o-paren? n-tok) (parse-members next (getter) 'method-parms getter abstract-method?))
                 ((open-separator? n-tok) 
                  (parse-error (format "Method parameters must begin with ( found ~a" n-out) srt ne))
                 ((id-token? n-tok)
@@ -496,14 +496,14 @@
                    (ne (get-end next)))
               (cond
                 ((eof? n-tok) (parse-error "Field has not completed, class body still requires a }" srt end))
-                ((semi-colon? n-tok) (parse-members next (getter) 'start getter))
-                ((comma? n-tok) (parse-members next (getter) 'field-list getter))
+                ((semi-colon? n-tok) (parse-members next (getter) 'start getter #f))
+                ((comma? n-tok) (parse-members next (getter) 'field-list getter #f))
                 ((teaching-assignment-operator? n-tok)
                  (let ((assign-exp (getter)))
                    (if (eof? (get-tok assign-exp))
                        (parse-error (format "Expected an expression to bind to ~a, and class body still needs a }" 
                                             (token-value tok)) srt end)
-                       (parse-members next (parse-expression null assign-exp 'start getter) 'field-init-end getter))))
+                       (parse-members next (parse-expression null assign-exp 'start getter) 'field-init-end getter #f))))
                 ((id-token? n-tok)
                  (parse-error (format "Fields must be separated by commas, ~a not allowed" n-out) srt ne))
                 (else (parse-error (format "Expected ; to end field, or more field names, found ~a" n-out) srt ne)))))
@@ -524,7 +524,7 @@
          (cond
            ((eof? tok) (parse-error "Expected method, and class body still requires a }" ps pe))
            ((or (prim-type? tok) (and (eq? (level) 'intermediate) (void-token? tok)))
-            (parse-members cur (getter) 'method-id getter))
+            (parse-members cur (getter) 'method-id getter abstract-method?))
            ((id-token? tok)
             (let* ((next (getter))
                    (next-tok (get-tok next))
@@ -533,12 +533,12 @@
                    (next-start (get-start next)))
               (cond
                 ((eof? next-tok) (parse-error "Expected method name, and class body still requires a }" srt end))
-                ((dot? next-tok) (parse-members next (parse-name (getter) getter) 'method-id getter))
+                ((dot? next-tok) (parse-members next (parse-name (getter) getter) 'method-id getter abstract-method?))
                 ((o-paren? next-tok) 
                  (parse-error "Declaration is similar to constructor, which cannot be abstract" ps next-end))
                 ((semi-colon? next-tok) 
                  (parse-error "Declaration is similar to a field, which cannot be abstract" ps next-end))
-                ((id-token? next-tok) (parse-members cur next 'method-id getter))
+                ((id-token? next-tok) (parse-members cur next 'method-id getter abstract-method?))
                 ((keyword? next-tok) 
                  (parse-error 
                   (format "Expected method name, found ~a which is reserved and cannot be a method's name" next-kind)
@@ -560,7 +560,7 @@
                    (next-end (get-end next)))
               (cond
                 ((eof? next-tok) (parse-error "Expected method body, and class body still requires a }" srt end))
-                ((o-paren? next-tok) (parse-members next (getter) 'method-parms getter))
+                ((o-paren? next-tok) (parse-members next (getter) 'method-parms getter abstract-method?))
                 ((c-paren? next-tok) 
                  (parse-error "Expected a ( to start parameter list but encountered the closing )" next-start next-end))
                 ((semi-colon? next-tok) 
@@ -595,7 +595,7 @@
                                 (if (eq? (level) 'intermediate)
                                     (parse-intermediate-ctor-body null (getter) getter)
                                     (parse-beginner-ctor-body null (getter) 'start getter))
-                                'ctor-end getter))
+                                'ctor-end getter #f))
                 ((open-separator? next-tok)
                  (parse-error (format "Constructor body begins with a {, found ~a" next-out) next-start next-end))
                 ((semi-colon? next-tok) 
@@ -618,7 +618,7 @@
                    (cond
                      ((eof? afterID-tok) 
                       (parse-error "Expected rest of parameter list, and class body requires a }" next-start next-end))
-                     ((c-paren? afterID-tok) (parse-members next afterID 'ctor-parms getter))
+                     ((c-paren? afterID-tok) (parse-members next afterID 'ctor-parms getter #f))
                      ((close-separator? afterID-tok) 
                       (parse-error (format "Expected a ) to close parameter list, found ~a" (output-format afterID-tok))
                                    (get-start afterID) (get-end afterID)))
@@ -634,7 +634,7 @@
                           ((comma? afterC-tok)
                            (parse-error "Parameter list should not have ,, Only one is needed" 
                                         (get-start afterID) (get-end afterC)))
-                          (else (parse-members afterID afterC 'ctor-parms getter)))))
+                          (else (parse-members afterID afterC 'ctor-parms getter #f)))))
                      ((or (prim-type? afterID-tok) (id-token? afterID-tok))
                       (parse-error (format "~a begins a new parameter. A , is needed in between parameters"
                                            (if (prim-type? afterID-tok) (get-token-name afterID-tok) (token-value afterID-tok)))
@@ -667,15 +667,21 @@
                 ((c-paren? next-tok) 
                  (parse-error "Method parameter list already closed, unneeded )" next-start next-end))
                 ((o-brace? next-tok)
-                 (parse-members next (if (eq? (level) 'intermediate)
-                                         (parse-method-body null (getter) getter)
-                                         (parse-statement null (getter) 'start getter #f))
-                                'method-end getter))                
+                 (if abstract-method?
+                     (parse-error "abstract methods may not have a body. Found { when ; was expected" next-start next-end)
+                     (parse-members next (if (eq? (level) 'intermediate)
+                                             (parse-method-body null (getter) getter)
+                                             (parse-statement null (getter) 'start getter #f))
+                                    'method-end getter abstract-method?)))                
                 ((open-separator? next-tok)
-                 (parse-error (format "Method body begins with a {, found ~a" next-out) next-start next-end))
-                ((semi-colon? next-tok) (parse-members next (getter) 'start getter))
+                 (if abstract-method?
+                     (parse-error (format "abstract methods should end with ';', found ~a" next-out) next-start next-end) 
+                     (parse-error (format "Method body begins with a {, found ~a" next-out) next-start next-end)))
+                ((semi-colon? next-tok) (parse-members next (getter) 'start getter #f))
                 (else
-                 (parse-error (format "Expected a method body, starting with {, found ~a" next-out) next-start next-end)))))
+                 (if abstract-method?
+                     (parse-error (format "Expected a ';' to end abstract method, found ~a" next-out) next-start next-end)
+                     (parse-error (format "Expected a method body, starting with {, found ~a" next-out) next-start next-end))))))
            ((or (prim-type? tok) (id-token? tok))
             (let* ((next (getter))
                    (next-tok (get-tok next))
@@ -692,7 +698,7 @@
                    (cond
                      ((eof? afterID-tok) 
                       (parse-error "Expected rest of parameter list, and class body requires a }" next-start next-end))
-                     ((c-paren? afterID-tok) (parse-members next afterID 'method-parms getter))
+                     ((c-paren? afterID-tok) (parse-members next afterID 'method-parms getter abstract-method?))
                      ((comma? afterID-tok)
                       (let* ((afterC (getter))
                              (afterC-tok (get-tok afterC)))
@@ -705,7 +711,7 @@
                           ((comma? afterC-tok) 
                            (parse-error "Parameter list should not have ,, Only one is needed" 
                                         (get-start afterID) (get-end afterC)))
-                          (else (parse-members afterID afterC 'method-parms getter)))))
+                          (else (parse-members afterID afterC 'method-parms getter abstract-method?)))))
                      ((or (prim-type? afterID-tok) (id-token? afterID-tok))
                       (parse-error (format "~a begins a new parameter. A , is needed in between parameters"
                                            (if (prim-type? afterID-tok) (get-token-name afterID-tok) (token-value afterID-tok)))
@@ -724,14 +730,14 @@
         ((ctor-end)
          (case kind
            ((EOF) (parse-error "Expected } to end constructor body, and class body still requires }" ps pe))
-           ((C_BRACE) (parse-members cur (getter) 'start getter))
+           ((C_BRACE) (parse-members cur (getter) 'start getter #f))
            ((if return) 
             (parse-error (format "Statements are not permitted in the constructor body, found ~a" kind) srt end))
            (else (parse-error (format "Expected a } to end the constructor, found ~a" out) srt end))))
         ((method-end)
          (case kind
            ((EOF) (parse-error "Expected } to end method body, and class body still requires }" ps pe))
-           ((C_BRACE) (parse-members cur (getter) 'start getter))
+           ((C_BRACE) (parse-members cur (getter) 'start getter #f))
            (else 
             (parse-error (format "Expected 1 statement, and then } for method body. Found ~a instead of }" out)
                          srt end)))))))

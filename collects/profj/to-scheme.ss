@@ -1600,6 +1600,7 @@
                                             (format "super.~a" m-name)
                                             m-name)
                                         (id-src method-name))))
+                (printf "~a~n~a~n~a~n" expr m-name (overridden? m-name))
                 (if static?
                     (create-syntax #f `(,name ,@args) (build-src src))
                     (create-syntax #f `(send this ,name ,@args) (build-src src)))))

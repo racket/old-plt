@@ -15,7 +15,6 @@
 #include "common.h"
 #include "wx_obj.h"
 #include "wx_stdev.h"
-#include "wx_mgstr.h"
 #include "wb_main.h"
 
 class wxFrame;

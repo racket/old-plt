@@ -178,7 +178,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 			     int scrollsPP,
 			     wxMediaBuffer *m)
 : wxCanvas(parent, x, y, width, height,
-	   wxRETAINED + wxmeBORDER + wxOVERRIDE_KEY_TRANSLATIONS + INIT_SB, name)
+		   wxmeBORDER + wxOVERRIDE_KEY_TRANSLATIONS + INIT_SB, name)
 {
   static int type_added = FALSE;
 

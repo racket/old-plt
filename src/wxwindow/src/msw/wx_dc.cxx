@@ -1422,8 +1422,6 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
     return FALSE;
 }
 
-IMPLEMENT_CLASS(wxPrinterDC, wxDC)
-
 static BOOL DoPrintDlg(PRINTDLG *pd, HWND parent)
 {
   if (!pd->hwndOwner)

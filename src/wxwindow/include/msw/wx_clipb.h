@@ -34,8 +34,6 @@ Bool wxGetClipboardFormatName(int dataFormat, char *formatName, int maxCount);
    For plain text, a client is not necessary. */
 class wxClipboardClient : public wxObject
 {
-  DECLARE_ABSTRACT_CLASS(wxClipboardClient)
-
  public:
   /* This list should be filled in with strings indicating the formats
      this client can provide. Almost all clients will provide "TEXT".

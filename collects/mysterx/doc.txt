@@ -88,8 +88,8 @@ _MysterX_
   browser window on the desktop, with defaults
   provided by Windows if omitted.  `style-list'
   may contain any of the symbols 'iconize,
-  'maximize, 'no-system-menu, 'no-thick-border, 
-  'scrollbars, and 'visible.  The vertical scrollbar is disabled 
+  'maximize, 'no-system-menu, 'no-thick-border, and  
+  'scrollbars.  The vertical scrollbar is disabled 
   if scrolling is unnecessary; the horizontal scrollbar 
   disappears if scrolling is unnecessary.
 

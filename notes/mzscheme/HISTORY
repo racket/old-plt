@@ -7,10 +7,10 @@ Changed interface: raises an exception if a superinterface
  declares a variable that is also declared in the interface
  expression
 Removed letrec*; letrec has the same semantics
-Only lambda, case-lambda, let, let-values, let*, let*-values,
+Internal definitions are allowed only at the beginning of lambda,
+ case-lambda, let, let-values, let*, let*-values,
  letrec, letrec-values, fluid-let, let-macro, let-id-macro,
  let-expansion-time, parameterize, and with-handlers
- introduce an internal-definition context
 begin expressions are flattened in an internal-definition context
 (begin) allowed in a top-level, unit, or internal-definition
  context

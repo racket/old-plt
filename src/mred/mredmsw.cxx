@@ -215,7 +215,7 @@ void MrEdDispatchEvent(MSG *msg)
       int iterations;
 
       for (iterations = 0; iterations < 10; iterations++) {
-	if (need_trampoline_win == msg->hwnd) {
+	if (msg->hwnd && (need_trampoline_win == msg->hwnd)) {
 	  HWND win = need_trampoline_win;
 	  need_trampoline_win = 0;
 	  wx_trampolining = 1;
@@ -306,7 +306,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
   case WM_INITMENU:
   case WM_DROPFILES:
     tramp = 1;
-    *res = 0;
+    *res = 1;
     break;
     /* These three are for pre-emptive WM_INITMENU 
        and for on-pre-event over scrollbars plus interactive scrolling */

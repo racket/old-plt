@@ -425,12 +425,15 @@ ScanOtherColors(display, colors, ncolors, pixels, mask, cpp, attributes)
 	    XpmFree(xcolors);
 	    return (XpmNoMemory);
 	}
-	c = i2 % MAXPRINTABLE;
-	*s++ = printable[c];
-	for (j = 1; j < cpp; j++, s++) {
-	  i2 = (i2 - c) / MAXPRINTABLE;
-	  c = i2 % MAXPRINTABLE;
-	  *s = printable[c];
+	{
+	  int i3 = i2;
+	  c = i3 % MAXPRINTABLE;
+	  *s++ = printable[c];
+	  for (j = 1; j < cpp; j++, s++) {
+	    i3 = (i3 - c) / MAXPRINTABLE;
+	    c = i3 % MAXPRINTABLE;
+	    *s = printable[c];
+	  }
 	}
 	*s = '\0';
 

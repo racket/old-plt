@@ -81,7 +81,7 @@
 	 (lambda (pos jump-to)
 	   (let ([pos (- pos offset)]
 		 [jump-to (if jump-to (- jump-to offset) #f)])
-	     ;(printf "put: ~a ~a~n" pos jump-to)
+	     (printf "put: ~a -> ~a~n" pos jump-to)
 	     (splay pos)
 	     (if tree
 		 (let ([tpos (node-pos tree)])
@@ -113,7 +113,7 @@
 				    #f))
 			      #f))
 			#f)])
-	       ;(printf "get: ~a~n" ans)
+	       (printf "get: ~a -> ~a~n" pos ans)
 	       ans)))]
 	[delete
 	 (lambda (pos)
@@ -139,7 +139,7 @@
 	[forward-invalidate
 	 (lambda (pos adjust)
 	   ;(printf "forward-invalidate~n")
-	   (when tree	
+	   (when tree
 	     (let ([pos (- pos offset)])
 	       (splay pos)
 	       (if (>= pos (node-pos tree))

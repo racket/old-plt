@@ -1365,7 +1365,6 @@ static Scheme_Object *bundle_symset_dialogStyle(int v) {
 
 
 
-
 // @ p "on-item-event" : void OnItemEvent(wxItem!,wxMouseEvent%); ## INTERACT_METHODS
 // @ p "on-item-left-click" : void OnItemLeftClick(wxItem!,int,int,int); ## INTERACT_METHODS
 // @ p "on-item-right-click" : void OnItemRightClick(wxItem!,int,int,int); ## INTERACT_METHODS
@@ -2105,7 +2104,6 @@ if (os_wxDialogBox_class) {
   objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxDialogBox, wxTYPE_DIALOG_BOX);
 
 }
-  scheme_install_xc_global("default-dialog-style", scheme_make_integer(wxDEFAULT_DIALOG_STYLE), env);
   scheme_install_xc_global("wx:const-default-dialog-style", bundle_symset_dialogStyle(wxDEFAULT_DIALOG_STYLE), env);
 }
 

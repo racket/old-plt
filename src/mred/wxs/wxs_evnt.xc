@@ -142,7 +142,8 @@
 
 @ "key-code" : long KeyCode();
 
-@IVAR "key-code" : SYM[keyCode] keyCode
+// @IVAR "key-code" : SYM[keyCode] keyCode
+@IVAR "key-code" : int keyCode
 @IVAR "shift-down" : bool shiftDown
 @IVAR "control-down" : bool controlDown
 @IVAR "meta-down" : bool metaDown

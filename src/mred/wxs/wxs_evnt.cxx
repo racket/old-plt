@@ -805,6 +805,7 @@ static Scheme_Object *bundle_symset_keyCode(int v) {
 
 
 
+// @IVAR "key-code" : SYM[keyCode] keyCode
 
 
 class os_wxKeyEvent : public wxKeyEvent {
@@ -859,7 +860,7 @@ static Scheme_Object *objscheme_wxKeyEvent_GetkeyCode(Scheme_Object *obj, int n,
   else
     v = ((wxKeyEvent *)cobj->primdata)->keyCode;
 
-  return bundle_symset_keyCode(v);
+  return scheme_make_integer(v);
 }
 
 static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -870,7 +871,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(Scheme_Object *obj, int n,
 
   if (n != 1) scheme_wrong_count("set-key-code", 1, 1, n, p);
 
-  v = unbundle_symset_keyCode(p[0], "wx:key-event%::key-code");
+  v = objscheme_unbundle_integer(p[0], "wx:key-event%::key-code");
   ((wxKeyEvent *)cobj->primdata)->keyCode = v;
 
   return scheme_void;

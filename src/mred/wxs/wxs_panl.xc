@@ -45,7 +45,7 @@
 
 @ "get-horizontal-spacing" : int GetHorizontalSpacing();
 @ "get-vertical-spacing" : int GetVerticalSpacing();
-@ "set-horizontal-spacing" : void SetHorizontalSpacing(int);
+@ "set-horizontal-spacing" : void SetHorizontalSpacing(int)
 @ "set-vertical-spacing" : void SetVerticalSpacing(int)
 
 @ "new-line" : void NewLine(); <> no argument
@@ -76,8 +76,6 @@
 @INCLUDE wxs_dorf.xci
 
 @CREATOR (wxWindow^,nstring,bool=FALSE,int=300,int=300,int=500,int=500,SYM[dialogStyle]=wxDEFAULT_DIALOG_STYLE,string="dialogBox"); : : /DLGORFRAME[0."wx:dialog-box%::initialization"]|NOZERO[5]|NOZERO[6]
-
-@CONSTANT "default-dialog-style" : long wxDEFAULT_DIALOG_STYLE
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.6 1997/07/29 15:17:23 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.7 1997/07/30 20:50:50 krentel Exp $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -188,6 +188,8 @@
 		   (send-mouse-event canvas up)
 		   (void)]))))]))))
   
+  ;; NEED TO MOVE THE CHECK FOR 'ON-EVENT TO HERE.
+  
   (define send-mouse-event
     (lambda (window event)
       (let loop ([l  (ancestor-list window)])
@@ -202,7 +204,9 @@
   ;;
   ;; Move mouse to new window.
   ;; Implement with three events:
-  ;; leave old window, enter new window, set-focus.
+  ;; leave old window, show top-level frame, enter new window, set-focus.
+  ;;
+  ;; NEED TO CLEAN UP ACTIONS FOR MOVING TO NEW FRAME.
   ;;
   
   (define new-window
@@ -217,18 +221,41 @@
 	      (let
 		  ([old-window  (mred:test:get-focused-window)]
 		   [leave   (make-object wx:mouse-event% wx:const-event-type-leave-window)]
-		   [enter   (make-object wx:mouse-event% wx:const-event-type-enter-window)])
+		   [enter   (make-object wx:mouse-event% wx:const-event-type-enter-window)]
+		   [root    (car (ancestor-list new-window))])
 		(send leave  set-x 0)   (send leave  set-y 0)
 		(send enter  set-x 0)   (send enter  set-y 0)
-		(cond
-		  [(not old-window)
-		   (run-error tag "no focused window")]
-		  [else
-		   (send-mouse-event old-window leave)
-		   (send-mouse-event new-window enter)
-		   (send new-window  set-focus)
-		   (void)]))))]))))
-  
+		
+		(when (and old-window (ivar-in-class? 'on-event (object-class old-window)))
+		  (send-mouse-event old-window leave))
+		(send root show #t)
+		(when (ivar-in-class? 'on-event (object-class new-window))
+		  (send-mouse-event new-window enter))
+		(send new-window set-focus)
+		(void))))]))))
+		
   (define new-window-now (do-now new-window))
+  
+  
+  ;;
+  ;; You're getting sleeepy, very sleeeepy, you want to install freebsd
+  ;; on top of your windows partition .... windows bad .... freebsd good.
+  ;;
+  ;; The units for mred:test:sleep are seconds (same as real sleep),
+  ;; but the units for wx:timer% are milliseconds, so we convert.
+  ;;
+  
+  (define sleep 
+    (let ([tag  'mred:test:sleep])
+      (lambda (seconds)
+	(cond
+	  [(not (and (real? seconds) (<= 0 seconds)))
+	   (arg-error tag "expects non-negative real, given ~s" seconds)]
+	  [else
+	   (mred:test:make-sleep
+	    void
+	    (inexact->exact (ceiling (* seconds 1000))))]))))
+  
+  (define sleep-now (do-now sleep))
   
   )

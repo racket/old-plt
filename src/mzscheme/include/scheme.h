@@ -1163,7 +1163,7 @@ extern int (*scheme_actual_main)(int argc, char **argv);
 
 /* GC registration: */
 #ifdef GC_MIGHT_USE_REGISTERED_STATICS
-void scheme_set_stack_base();
+void scheme_set_stack_base(void *base, int no_auto_statics);
 #endif
 
 void scheme_register_static(void *ptr, long size);

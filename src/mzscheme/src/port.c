@@ -1876,14 +1876,15 @@ scheme_ungetc (int ch, Scheme_Object *port)
 {
   Scheme_Input_Port *ip;
 
-  if (ch == EOF)
-    return;
-
   ip = (Scheme_Input_Port *)port;
 
   CHECK_PORT_CLOSED("#<primitive:peek-port-char>", "input", port, ip->closed);
 
-  if (ch == SCHEME_SPECIAL) {
+  if (ch == EOF) {
+    if (ip->pending_eof) /* non-zero means that EOFs are tracked */
+      ip->pending_eof = 2;
+    return;
+  } else if (ch == SCHEME_SPECIAL) {
     ip->ungotten_special = ip->special;
     ip->special = NULL;
   } else if (ch > 127) {

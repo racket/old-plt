@@ -1785,6 +1785,7 @@ make_input_port(int argc, Scheme_Object *argv[])
 			       0);
 
   ip->name = "CUSTOMPORT";
+  ip->pending_eof = 1; /* means that pending EOFs should be tracked */
 
   return (Scheme_Object *)ip;
 }

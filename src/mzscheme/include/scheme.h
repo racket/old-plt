@@ -1033,7 +1033,7 @@ struct Scheme_Input_Port
   char *name;
   Scheme_Object *peeked_read, *peeked_write;
   unsigned char ungotten[24];
-  short ungotten_count;
+  int ungotten_count;
   Scheme_Object *special, *ungotten_special;
   long position, readpos, lineNumber, charsSinceNewline, utf8cont;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */

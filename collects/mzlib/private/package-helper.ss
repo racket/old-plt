@@ -198,12 +198,14 @@
 								    name))))))
       (get-renames (syntax-local-introduce name) err)))
 
-  (define (walk-path path env+rns+subs stx rename)
+  (define (walk-path path env+rns+subs stx rename cp-rename)
     (let loop ([path path][env+rns+subs env+rns+subs][rename rename])
       (cond
        [(null? path) (values env+rns+subs rename)]
-       [else (let* ([new-name (stx-assoc (syntax-local-introduce (car path))
-					 (cadr env+rns+subs))]
+       [else (let* ([id (cp-rename (syntax-local-introduce (car path)))]
+		    [new-name (if (caddr env+rns+subs)
+				  (cons id id)
+				  (stx-assoc id (cadr env+rns+subs)))]
 		    [v (and new-name
 			    (if (caddr env+rns+subs)
 				(bound-identifier-mapping-get (caddr env+rns+subs) 

@@ -88,7 +88,7 @@
 (define (vm->c:emit-symbol-definitions! port)
   (unless (zero? const:symbol-counter)
     (fprintf port "  int i;~n")
-    (fprintf port "  for (i = ~a; i--; )~n    SYMBOLS[i] = scheme_intern_symbol(SYMBOL_STRS[i]);~n"
+    (fprintf port "  for (i = ~a; i--; )~n    SYMBOLS[i] = scheme_intern_exact_symbol(SYMBOL_STRS[i], strlen(SYMBOL_STRS[i]));~n"
 	     const:symbol-counter)))
 
 (define (vm->c:emit-inexact-definitions! port)
@@ -339,9 +339,10 @@
 			  (length names)))
 	 (let loop ([l names][n 0])
 	   (unless (null? l)
-	     (fprintf port "~a  names[~a] = scheme_intern_symbol(~s);~n"
-		      vm->c:indent-spaces n
-		      (symbol->string (zodiac:read-object (car l))))
+	     (let ([s (symbol->string (zodiac:read-object (car l)))])
+	       (fprintf port "~a  names[~a] = scheme_intern_exact_symbol(~s, ~a);~n"
+			vm->c:indent-spaces n
+			s (string-length s)))
 	     (loop (cdr l) (add1 n))))
 	 (fprintf 
 	  port 
@@ -1666,15 +1667,8 @@
 	      [(zodiac:string? ast) 
 	       (fprintf port "scheme_make_string(~s)" (zodiac:read-object ast))]
 	      [(zodiac:symbol? ast) 
-	       (emit-expr "scheme_intern_symbol(~s)" (symbol->string (zodiac:read-object ast)))]
-	      [(zodiac:type-symbol? ast) 
-	       (emit-expr "scheme_intern_type_symbol(scheme_intern_symbol(~s))" 
-			  ; What a pain...
-			  (let* ([s (format "~a" (zodiac:read-object ast))]
-				 [s2 (substring s 2 (sub1 (string-length s)))])
-			    (if (or (char=? (string-ref s2 0) #\|) (regexp-match "\\\\" s2))
-				(symbol->string (read (open-input-string s2)))
-				s2)))]
+	       (let ([s (symbol->string (zodiac:read-object ast))])
+		 (emit-expr "scheme_intern_exact_symbol(~s, ~a)" s (string-length s)))]
 	      [(zodiac:number? ast)
 	       (let process ([num (zodiac:read-object ast)])
 		 (cond

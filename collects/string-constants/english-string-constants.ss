@@ -1192,10 +1192,11 @@ please adhere to these guidelines:
   (test-case-expected "Expected")
   ;; This string is the label of the actual result of the to test expression.
   (test-case-actual "Actual")
-  
+
   ;; Call tracing
   (call-tracing-checkbox "Call tracing") ;; in language dialog
   (call-tracing-show-window "Show Tracing") ;; menu item in view menu
   (call-tracing-hide-window "Hide Tracing") ;; menu item in view menu
   (call-tracing-nothing-to-show "No tracing results are available. Be sure your language supports tracing and it is enabled.")
+
   )

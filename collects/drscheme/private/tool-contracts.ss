@@ -1451,6 +1451,7 @@
      (create-executable (any?
                          (union (is-a?/c dialog%) (is-a?/c frame%))
                          string?
+                         drscheme:teachpack-cache:teachpack-cache?
                          . -> .
                          void?))
      (default-settings (-> any?))

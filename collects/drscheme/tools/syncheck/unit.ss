@@ -127,13 +127,13 @@
 	(let* ([style-list (fw:scheme:get-style-list)]
 	       [name (symbol->string sym)]
 	       [style (send style-list find-named-style name)])
-	  (if (null? style)
+	  (if style
+	      (send style set-delta delta)
 	      (send style-list new-named-style name
 		    (send style-list find-or-create-style
 			  (send style-list
 				find-named-style "Standard")
-			  delta))
-	      (send style set-delta delta)))))
+			  delta))))))
 
     (for-each set-slatex-style delta-symbols (map fw:preferences:get delta-symbols))
 
@@ -157,7 +157,7 @@
 			   "SPRING GREEN" "STEEL BLUE" "TAN" "THISTLE" "TURQUOISE" "VIOLET"
 			   "VIOLET RED" "WHEAT" "WHITE" "YELLOW" "YELLOW GREEN"))
 
-    (for-each (lambda (x) (send mred:the-color-database find-colour x))
+    (for-each (lambda (x) (send mred:the-color-database find-color x))
 	      (append short-colors other-colors))
 
     ;; used for quicker debugging of the preference panel
@@ -256,7 +256,7 @@
 		  (send color-choice stretchable-in-x #f)
 		  (let ([color (send mred:the-color-database find-name (send style get-foreground))])
 		    (cond
-		     [(null? color)
+		     [(not color)
 		      (send delta set-delta-foreground "BLACK")
 		      (fw:preferences:set sym delta)
 		      (send color-choice set-selection
@@ -524,7 +524,7 @@
 	  (sequence (apply super-init args))
 	  (rename [super-disable-evaluation disable-evaluation]
 		  [super-enable-evaluation enable-evaluation])
-	  (public
+	  (override
 	    [enable-evaluation
 	     (lambda ()
 	       (send check-syntax-button enable #t)
@@ -541,10 +541,10 @@
 		 (send* definitions-edit
 			(syncheck:clear-arrows)
 			(syncheck:init-arrows))
-		 (if (null? style)
-		     (printf "Warning: couldn't find Standard style~n")
+		 (if style
 		     (send definitions-edit
-			   change-style style 0 (send definitions-edit last-position)))))])
+			   change-style style 0 (send definitions-edit last-position))
+		     (printf "Warning: couldn't find Standard style~n"))))])
 
 	  (public
 	    [button-callback
@@ -862,11 +862,11 @@
     (define (make-syncheck-interactions-edit% super%)
       (class-asi super%
 	(rename [super-reset-console reset-console])
-	(inherit get-frame)
-	(public
+	(inherit get-top-level-window)
+	(override
 	  [reset-console
 	   (lambda ()
-	     (send (get-frame) syncheck:clear-highlighting)
+	     (send (get-top-level-window) syncheck:clear-highlighting)
 	     (super-reset-console))])))
 
 

@@ -27,12 +27,14 @@
 		     (evaluate (get-text prompt-pos (last-position)))))])
       (private
 	[plain-style (make-object style-delta% 'change-normal)])
+      (inherit delete)
       (public
 	[set-input
 	 (lambda (string)
 	   (begin-edit-sequence)
 	   (delete prompt-pos (last-position))
-	   (insert string (last-position) (last-position)))]
+	   (insert string (last-position) (last-position))
+	   (end-edit-sequence))]
 	[new-prompt (lambda ()
 		      (output "> " #f)
 		      (set! prompt-pos (last-position))
@@ -152,10 +154,11 @@
     (unless (null? previous-expressions)
       (let ([exp (car previous-expressions)])
 	(send repl-buffer set-input exp)
-	(let loop ([l (cdr previous-expressions)])
-	  (cond
-	   [(null? l) (list exp)]
-	   [else (cons (car l) (loop (cdr l)0))])))))
+	(set! previous-expressions
+	      (let loop ([l (cdr previous-expressions)])
+		(cond
+		  [(null? l) (list exp)]
+		  [else (cons (car l) (loop (cdr l)))]))))))
   (define (next-input)
     (unless (null? previous-expressions)
       (let loop ([l previous-expressions])
@@ -166,13 +169,14 @@
   (define (remember exp)
     (set! previous-expressions
 	  (let loop ([n 50]
-		     [l (cons exp previous-expressions)])
+		     [l (cons (substring exp 0 (- (string-length exp) 1))
+			      previous-expressions)])
 	    (cond
 	     [(or (zero? n) (null? l)) previous-expressions]
 	     [else (cons (car l) (loop (- n 1) (cdr l)))]))))
 
   (define (evaluate expr-str)
-    (remember exp)
+    (remember expr-str)
     (parameterize ([current-eventspace user-eventspace])
       (queue-callback
        (lambda ()
@@ -204,18 +208,20 @@
 
   ;; Just a few extra key bindings:
   (install-standard-text-bindings repl-buffer)
-  (define console-keymap (make-object keymap%))
-  (send console-keymap add-key-function
-	"previous-input"
-	(lambda (value key-event) (previous-input)))
-  (send console-keymap add-key-function
-	"next-input"
-	(lambda (value key-event) (next-input)))
-  (send console-keymap map-function "m:p" "previous-input")
-  (send console-keymap map-function "m:n" "next-input")
-  (send console-keymap map-function "a:p" "previous-input")
-  (send console-keymap map-function "a:n" "next-input")
-  (send repl-buffer chain-to-keymap console-keymap)
+  (let ([console-keymap (make-object keymap%)])
+    (send console-keymap add-key-function
+	  "previous-input"
+	  (lambda (value key-event) (previous-input)))
+    (send console-keymap add-key-function
+	  "next-input"
+	  (lambda (value key-event) (next-input)))
+    (send console-keymap map-function "m:p" "previous-input")
+    (send console-keymap map-function "m:n" "next-input")
+    (send console-keymap map-function "c:p" "previous-input")
+    (send console-keymap map-function "c:n" "next-input")
+    (send console-keymap map-function "a:p" "previous-input")
+    (send console-keymap map-function "a:n" "next-input")
+    (send (send repl-buffer get-keymap) chain-to-keymap console-keymap #t))
 
 
 

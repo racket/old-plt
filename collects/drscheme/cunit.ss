@@ -62,6 +62,9 @@
     (drscheme:frame:mixin
      fw:frame:pasteboard-info%))
   
+  (printf "ivar-in-class? ~a~n" (ivar-in-class? 'file-menu:get-open-item fw:frame:pasteboard-info%))
+  (printf "matches-interface ~a~n" (implementation? fw:frame:pasteboard-info% fw:frame:standard-menus<%>))	
+  
   (define frame%
     (class* super-frame% (drscheme:face:compound-unit-frameI) (unit)
       (inherit show show-menu get-area-container)
@@ -74,8 +77,8 @@
       
       (rename [super-update-shown update-shown])
       (private
-	[evaluation-order-id #f])
-      (public
+	[evaluation-order-item #f])
+      (override
 	[update-shown
 	 (lambda ()
 	   (super-update-shown)
@@ -96,7 +99,7 @@
 	[after-remove-export void]
 	[get-unit (lambda () unit)])
 
-      (public
+      (override
 	[file-menu:save-as 
 	 (lambda () 
 	   (let ([file (mred:put-file)])
@@ -110,9 +113,10 @@
 	[get-editor% (lambda () project-pasteboard%)]
 	[get-editor (lambda () (send unit get-buffer))])
       
+      (inherit get-menu-bar)
       (sequence
 	(super-init unit)
-	(let* ([mb (get-make-menu)]
+	(let* ([mb (get-menu-bar)]
 	       [add-menu (make-object mred:menu% mb "Add")])
 	  (set! evaluation-order-item
 		(make-object mred:checkable-menu-item%
@@ -149,7 +153,7 @@
     (class* drscheme:graph:node-snip% (drscheme:face:compound-unit-snipI) (unit)
       (inherit width height set-width set-height invalidate-to)
       (rename [super-draw draw])
-      (public
+      (override
 	[get-name 
 	 (lambda ()
 	   (send unit get-name))])
@@ -165,12 +169,12 @@
       ;;; this won't work, use on-delete from the pasteboard to
       ;;;  send a message to the snip
       (rename [super-release-from-owner release-from-owner])
-      (public
+      (override
 	[release-from-owner
 	 (lambda ()
 	   (and (super-release-from-owner)
 		(send unit remove-snip this)))])
-      (public
+      (override
 	[copy (lambda () (send unit create-snip))]
 	[snipclass compound-unit-snipclass]
 	[draw
@@ -195,7 +199,7 @@
   (define snip-class%
     (let ([s% snip%])
       (class-asi drscheme:unit:snip-class%
-	(public
+	(override
 	  [snip% s%]
 	  [version 1]
 	  [classname "drscheme:compound-unit:snip%"]))))
@@ -206,9 +210,11 @@
     (class-asi drscheme:unit:snip%
       (inherit width height set-width set-height)
       (rename [super-draw draw])
+      (override
+	[snipclass import-snipclass])
       (public
-	[snipclass import-snipclass]
-	[this% snip%]
+	[this% snip%])
+      (override
 	[add-parent
 	 (lambda (c)
 	   (mred:message-box "cannot import into an import"))]
@@ -219,7 +225,7 @@
   (define import-snip-class%
     (let ([s% import-snip%])
       (class-asi drscheme:unit:snip-class%
-	(public
+	(override
 	  [snip% s%]
 	  [version 1]
 	  [classname "drscheme:compound-unit:import-snip%"]))))
@@ -230,7 +236,7 @@
     (let ([f% frame%]
 	  [s% snip%])
       (class* drscheme:unit:unit% (drscheme:face:compound-unitI) (fn . cn)
-	(public
+	(override
 	  [buffer% project-pasteboard%]
 	  [frame% f%]
 	  [snip% s%])

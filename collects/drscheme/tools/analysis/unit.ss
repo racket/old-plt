@@ -52,7 +52,7 @@
 	 (sequence (apply super-init args))
 	  (rename [super-disable-evaluation disable-evaluation]
 		  [super-enable-evaluation enable-evaluation])
-	  (public
+	  (override
 	    [enable-evaluation
 	     (lambda ()
 	       (send analyze-button enable #t)

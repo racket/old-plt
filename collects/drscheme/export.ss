@@ -39,8 +39,7 @@
 	[compound-unit* : drscheme:compound-unit^
 	  ((require-relative-library "cunit.ss")
 	   mred mzlib framework graph unit frame face)]
-	[signature : drscheme:signature^ ((require-relative-library "sig.ss")
-					  mred framework)]
+	;[signature : drscheme:signature^ ((require-relative-library "sig.ss") mred framework)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^
 		    ((require-relative-library "params.ss") 
@@ -49,7 +48,7 @@
 	  (unit frame)
 	  (unit unit)
 	  (unit compound-unit* compound-unit)
-	  (unit signature)
+	  ;(unit signature)
 	  (unit program)
 	  (unit get/extend)
 	  (unit rep)))

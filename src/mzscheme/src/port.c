@@ -189,7 +189,7 @@ typedef struct Scheme_Subprocess {
 #ifdef MZ_FDS
 
 # define MZPORT_FD_BUFFSIZE 4096
-# define MZPORT_FD_DIRECT_THRESHOLD 256
+# define MZPORT_FD_DIRECT_THRESHOLD MZPORT_FD_BUFFSIZE
 
 /* The Scheme_FD type is used for both input and output */
 typedef struct Scheme_FD {
@@ -2971,7 +2971,7 @@ static long fd_get_string(Scheme_Input_Port *port,
 	return bc;
       }
 
-      if (size > MZPORT_FD_DIRECT_THRESHOLD) {
+      if (size >= MZPORT_FD_DIRECT_THRESHOLD) {
 	ext_target = 1;
 	target = buffer;
 	target_offset = offset;

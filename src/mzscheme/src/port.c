@@ -4670,8 +4670,20 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
   switch (pid)
     {
     case -1:
-      scheme_raise_exn(MZEXN_MISC,
-		       "%s: fork failed", name);
+      /* Close unused descriptors. */
+      if (!inport) {
+	MSC_IZE(close)(to_subprocess[0]);
+	MSC_IZE(close)(to_subprocess[1]);
+      }
+      if (!outport) {
+	MSC_IZE(close)(from_subprocess[0]);
+	MSC_IZE(close)(from_subprocess[1]);
+      }
+      if (!errport) {
+	MSC_IZE(close)(err_subprocess[0]);
+	MSC_IZE(close)(err_subprocess[1]);
+      }
+      scheme_raise_exn(MZEXN_MISC, "%s: fork failed", name);
       return scheme_false;
 
     case 0: /* child */

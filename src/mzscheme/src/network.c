@@ -1574,15 +1574,28 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	  status = scheme_block_until(tcp_check_connect, tcp_connect_needs_wakeup, (void *)s, (float)0.0);
 	  END_ESCAPEABLE();
 	  if (status == 1) {
+	    /* Check whether connect succeeded: */
 #ifdef USE_UNIX_SOCKETS_TCP
-	    do {
-	      status = recv(s, NULL, 0, 0); /* test input */
-	    } while ((status == -1) && (errno == EINTR));
-	    if (!status) {
-	      do {
-		status = send(s, NULL, 0, 0); /* test output */
-	      } while ((status == -1) && (errno == EINTR));
+	    {
+	      int so_len = sizeof(status);
+	      if (getsockopt(s, SOL_SOCKET, SO_ERROR, &status, &so_len) != 0)
+		status = errno;
+	      errno = status; /* for error reporting, below */
 	    }
+
+	    /* Old way to test for success.
+	     * This seems to cause a problem on later Linux kernels,
+	     * when 
+	     *
+	     *  do {
+	     *   status = recv(s, NULL, 0, 0); // test input
+	     * } while ((status == -1) && (errno == EINTR));
+	     * if (!status) {
+	     *	 do {
+	     *	   status = send(s, NULL, 0, 0); // test output
+	     *   } while ((status == -1) && (errno == EINTR));
+	     * }
+	     */
 #else
 	    status = send(s, "", 0, 0); /* test output */
 	    if (status)

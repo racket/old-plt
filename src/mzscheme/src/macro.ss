@@ -1282,7 +1282,7 @@
 		    cdaaar cdaadr cdadar cdaddr cddaar cddadr cdddar cddddr
 		    map = < > <= >= max min + - * / 
 		    abs gcd lcm exp log sin cos tan not eq?
-		    call-with-current-continuation
+		    call-with-current-continuation make-string
 		    symbol->string string->symbol make-rectangular exact->inexact inexact->exact number->string string->number 
 		    rationalize output-port? current-input-port current-output-port current-error-port 
 		    open-input-file open-output-file close-input-port close-output-port

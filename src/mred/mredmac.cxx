@@ -378,6 +378,14 @@ int WNE(EventRecord *e, double sleep_secs)
       /* This seems to fix problems with, e.g., option-e e e
 	 producing an accept on the 2nd e */
       SendEventToEventTarget(ref, GetEventDispatcherTarget());
+      /* The above takes care of [Shift-]Cmd-`. So ignore that one, now. */
+      {
+	int mods = (e->modifiers & (shiftKey | cmdKey | controlKey | optionKey));
+	if ((mods == (shiftKey | cmdKey)) || (mods == cmdKey)) {
+	  if ((e->message & charCodeMask) == '`')
+	    ok = 0;
+	}
+      }
     }
 
     ReleaseEvent(ref);

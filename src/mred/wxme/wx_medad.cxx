@@ -11,6 +11,7 @@
 #include <ctype.h>
 
 #include "wx_canvs.h"
+#include "wx_dcmem.h"
 #include "wx_media.h"
 #include "wx_types.h"
 #include "wx_gcrct.h"
@@ -24,6 +25,8 @@
 #ifdef wx_motif
 # define MEDIA_CANVAS_COMBAT_CLIP_BUG
 #endif
+
+static wxMemoryDC *wx_canvasless_offscreen;
 
 class SimpleScroll
 {
@@ -291,14 +294,25 @@ wxMediaCanvas::~wxMediaCanvas()
     blinkTimer = NULL;
   }
 
+  /* If we're managing an editor, we would like to disconnect from the
+     editor --- but we don't want to execute any Scheme code to
+     perform disconnection notices. (After all, this destruction could
+     be a finalization callback.) So we don't disconnect, and
+     fortunately, we have a layer oif indirection through the
+     administrator -- we set the "dead" flag. Later actions directly
+     on the canvas (possible because the Scheme code keeps a list of
+     canvas) will trigger "invalidated object" errors. */
+#if 0
   if (media) {
     if (admin->nextadmin || admin->prevadmin)
       SetMedia(NULL);
     else
       DELETE_OBJ media;
   }
-
   DELETE_OBJ admin;
+#else
+  admin->canvas = NULL;
+#endif
 }
 
 void wxMediaCanvas::OnSize(int w, int h)
@@ -1282,7 +1296,17 @@ wxCanvasMediaAdmin::~wxCanvasMediaAdmin()
 
 wxDC *wxCanvasMediaAdmin::GetDC(float *fx, float *fy)
 {
-  if (canvas->media && canvas->media->printing) {
+  if (!canvas) {
+    if (!wx_canvasless_offscreen) {
+      wxREGGLOB(wx_canvasless_offscreen);
+      wx_canvasless_offscreen = new wxMemoryDC();
+    }
+    if (fx)
+      *fx = 0;
+    if (fy)
+      *fy = 0;      
+    return wx_canvasless_offscreen;
+  } else if (canvas->media && canvas->media->printing) {
     if (fx)
       *fx = 0;
     if (fy)
@@ -1295,7 +1319,16 @@ wxDC *wxCanvasMediaAdmin::GetDC(float *fx, float *fy)
 void wxCanvasMediaAdmin::GetView(float *fx, float *fy, float *fh, float *fw, 
 				 Bool full)
 {
-  if (canvas->media && canvas->media->printing) {
+  if (!canvas) {
+    if (fx)
+      *fx = 0;
+    if (fy)
+      *fy = 0;
+    if (fh)
+      *fh = 1;
+    if (fw)
+      *fw = 1;
+  } else if (canvas->media && canvas->media->printing) {
     if (fx)
       *fx = 0;
     if (fy)
@@ -1311,7 +1344,7 @@ void wxCanvasMediaAdmin::GetView(float *fx, float *fy, float *fh, float *fw,
 void wxCanvasMediaAdmin::GetMaxView(float *fx, float *fy, float *fw, float *fh, 
 				    Bool full)
 {
-  if ((!nextadmin && !prevadmin) || (canvas->media && canvas->media->printing)) {
+  if ((!nextadmin && !prevadmin) || !canvas || (canvas->media && canvas->media->printing)) {
     GetView(fx, fy, fw, fh, full);
   } else {
     wxCanvasMediaAdmin *a;
@@ -1356,6 +1389,9 @@ void wxCanvasMediaAdmin::GetMaxView(float *fx, float *fy, float *fw, float *fh,
 Bool wxCanvasMediaAdmin::ScrollTo(float localx, float localy,
 				  float w, float h, Bool refresh, int bias)
 {
+  if (!canvas)
+    return FALSE;
+
   if (!canvas->IsFocusOn()) {
     wxCanvasMediaAdmin *a;
     
@@ -1374,8 +1410,10 @@ Bool wxCanvasMediaAdmin::ScrollTo(float localx, float localy,
 
 void wxCanvasMediaAdmin::GrabCaret(int dist)
 {
-  if (dist == wxFOCUS_GLOBAL)
-    canvas->SetFocus();
+  if (canvas) {
+    if (dist == wxFOCUS_GLOBAL)
+      canvas->SetFocus();
+  }
 }
 
 void wxCanvasMediaAdmin::NeedsUpdate(float localx, float localy, 
@@ -1384,7 +1422,7 @@ void wxCanvasMediaAdmin::NeedsUpdate(float localx, float localy,
   int is_shown;
   wxWindow *win;
 
-  if (updateBlock)
+  if (updateBlock || !canvas)
     return;
 
   updateBlock = TRUE;
@@ -1419,7 +1457,7 @@ void wxCanvasMediaAdmin::NeedsUpdate(float localx, float localy,
 
 void wxCanvasMediaAdmin::Resized(Bool update)
 {
-  if (resizedBlock)
+  if (resizedBlock || !canvas)
     return;
 
   resizedBlock = TRUE;
@@ -1441,7 +1479,7 @@ void wxCanvasMediaAdmin::Resized(Bool update)
 
 void wxCanvasMediaAdmin::UpdateCursor()
 {
-  if (!updateCursorTimer) {
+  if (!updateCursorTimer && canvas) {
     updateCursorTimer = new wxUpdateCursorTimer(this);
 
     if (nextadmin)
@@ -1456,7 +1494,7 @@ Bool wxCanvasMediaAdmin::PopupMenu(void *m, float x, float y)
   float dx, dy;
   wxMenu *menu;
 
-  if (canvas->media) {
+  if (canvas && canvas->media) {
     menu = canvas->PopupForMedia(canvas->media, m);
     if (menu) {
       (void)canvas->GetDCAndOffset(&dx, &dy);

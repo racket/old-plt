@@ -65,13 +65,14 @@ Several values are also provided:
   rather than at 0.  Offsets must be a list of 3 non-negative integers
   whose car is the line number, whose cadr is the column number and
   whose caddr is the total character offset.
-> (get-position lex-buf) returns a position struct for the next character in
-   the lex buf
-> (position-offset position) extracts the position of the character in the
-   input stream (1 for 1st character, 10 for 10th character, etc.)
-> (position-line position) extracts the line number of the character
-> (position-col position) extracts the position of the character in the 
-    current line
+
+> (get-position lex-buf) returns a position structure for the current
+  state of the lex-buf (modified by the offsets given when creating
+  the lex-buf).
+> (position-offset position) extracts the number of characters read.
+> (position-line position) extracts the number of lines read.
+> (position-col position) extracts the number of characters read on the 
+  current line.
 > (position? x) the question associated with a position struct
 
 Each time the scheme code for a lexer is compiled (e.g. when a .ss

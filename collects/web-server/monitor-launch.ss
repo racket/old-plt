@@ -4,10 +4,10 @@
            "util.ss"
            (lib "cmdline.ss"))
   
-  ; handle-numeric-flag : sym -> str -> (cons sym num)
+  ; handle-numeric-flag : sym -> str str -> (cons sym num)
   (define (handle-numeric-flag name)
-    (lambda (flag port)
-      (cons name (string->number port))))
+    (lambda (dc-flag arg)
+      (cons name (string->number arg))))
   
   (parse-command-line
    "web-server-monitor"
@@ -22,11 +22,10 @@
       [("-t" "--timeout")
        ,(handle-numeric-flag 'timeout)
        ("Assumes failure after <timeout> seconds." "timeout")]))
-   (lambda (flags alert-email host-name)
-     (monitor alert-email host-name
+   (lambda (flags email-address host-name)
+     (monitor email-address
+              host-name
               (extract-flag 'port flags default-server-port)
               (extract-flag 'frequency flags default-poll-frequency-seconds)
               (extract-flag 'timeout flags default-server-response-timeout-seconds)))
-   '("alert-email" "host-name"))
-  
-  (semaphore-wait (make-semaphore)))
+   '("email-address" "host-name")))

@@ -586,7 +586,7 @@
 # if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
 
 #ifdef XONX 
-# define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosxonx"
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-darwin"
 #else
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosx"
 #endif

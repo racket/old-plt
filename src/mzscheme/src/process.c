@@ -1000,6 +1000,7 @@ Scheme_Process *scheme_get_current_process()
 
 #ifndef MZ_REAL_THREADS
 
+extern void GC_free(void *);
 void scheme_swap_process(Scheme_Process *new_process)
 {
   scheme_zero_unneeded_rands(scheme_current_process);

@@ -181,6 +181,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
+# define USE_DYNAMIC_FDSET_SIZE
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -229,7 +231,7 @@ int scheme_solaris_semaphore_try_down(void *);
 # define FREEBSD_CONTROL_387
 # define POW_HANDLES_INF_CORRECTLY
 
-# define UNIX_LIMIT_FDSET_SIZE
+# define USE_DYNAMIC_FDSET_SIZE
 
 # define SIGSET_IS_SIGNAL
 

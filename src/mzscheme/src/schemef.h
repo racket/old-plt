@@ -617,10 +617,11 @@ MZ_EXTERN void scheme_close_input_port(Scheme_Object *port);
 MZ_EXTERN void scheme_close_output_port(Scheme_Object *port);
 
 MZ_EXTERN Scheme_Object *scheme_make_read_evt(const char *who, Scheme_Object *port,
-						   char *str, long start, long size,
-						   int peek, Scheme_Object *peek_skip);
+					      char *str, long start, long size,
+					      int peek, Scheme_Object *peek_skip,
+					      int byte_or_spec);
 MZ_EXTERN Scheme_Object *scheme_make_write_evt(const char *who, Scheme_Object *port,
-						    Scheme_Object *special, char *str, long start, long size);
+					       Scheme_Object *special, char *str, long start, long size);
 
 MZ_EXTERN Scheme_Object *scheme_make_port_type(const char *name);
 MZ_EXTERN Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void *data,

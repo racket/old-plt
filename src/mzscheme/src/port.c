@@ -1885,8 +1885,8 @@ int scheme_peekc_is_ungetc(Scheme_Object *port)
 }
 
 Scheme_Object *make_read_write_evt(Scheme_Type type, 
-				    Scheme_Object *port, Scheme_Object *skip, 
-				    char *str, long start, long size)
+				   Scheme_Object *port, Scheme_Object *skip, 
+				   char *str, long start, long size)
 {
   Scheme_Read_Write_Evt *rww;
 
@@ -1940,24 +1940,30 @@ static int rw_evt_ready(Scheme_Object *_rww, Scheme_Schedule_Info *sinfo)
     /* Read/peek */
     long v;
     Scheme_Object *vo;
+    char str[1];
 
     v = scheme_get_byte_string(((rww->so.type == scheme_peek_evt_type)
 				? "peek-evt"
 				: "read-evt"),
 			       rww->port,
-			       rww->str, rww->start, rww->size,
+			       rww->str ? rww->str : str, rww->start, rww->size,
 			       2,
 			       (rww->so.type == scheme_peek_evt_type),
 			       rww->v);
     if (v) {
       if (v == SCHEME_SPECIAL) {
+	/* At the time that this was written, no built-in ports
+	   produced specials, so this shouldn't happen. */
 	Scheme_Object *s;
 	s = scheme_get_ready_special(rww->port, NULL);
 	vo = s;
       } else if (v == EOF) {
 	vo = scheme_eof;
       } else {
-	vo = scheme_make_integer(v);
+	if (rww->str)
+	  vo = scheme_make_integer(v);
+	else
+	  vo = scheme_make_integer(((unsigned char *)str)[0]);
       }
 
       scheme_set_sync_target(sinfo, vo, NULL, NULL, 0, 0);
@@ -1981,17 +1987,30 @@ static void rw_evt_wakeup(Scheme_Object *_rww, void *fds)
 
 
 Scheme_Object *scheme_make_read_evt(const char *who, Scheme_Object *port,
-					 char *str, long start, long size,
-					 int peek, Scheme_Object *peek_skip)
+				    char *str, long start, long size,
+				    int peek, Scheme_Object *peek_skip,
+				    int byte_or_special)
 {
+  Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
+
+  if (!peek && ip->get_string_evt_fun) {
+    Scheme_Get_String_Evt_Fun gse;
+    gse = ip->get_string_evt_fun;
+    return gse(ip, str, start, size, byte_or_special);
+  } else if (peek && ip->peek_string_evt_fun) {
+    Scheme_Peek_String_Evt_Fun pse;
+    pse = ip->peek_string_evt_fun;
+    return pse(ip, str, start, size, peek_skip, byte_or_special);
+  }
+
   return make_read_write_evt((peek 
-				   ? scheme_peek_evt_type
-				   : scheme_read_evt_type), 
-				  port, peek_skip, str, start, size);
+			      ? scheme_peek_evt_type
+			      : scheme_read_evt_type), 
+			     port, peek_skip, str, start, size);
 }
 
 Scheme_Object *scheme_make_write_evt(const char *who, Scheme_Object *port,
-					  Scheme_Object *special, char *str, long start, long size)
+				     Scheme_Object *special, char *str, long start, long size)
 {
   return make_read_write_evt(scheme_write_evt_type, port, special, str, start, size);
 }

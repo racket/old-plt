@@ -278,19 +278,19 @@ scheme_init_struct (Scheme_Env *env)
 						      2, 3),
 			     env);
 
-  scheme_add_global_constant("make-wrapped-evt",
+  scheme_add_global_constant("wrap-evt",
 			     scheme_make_prim_w_arity(scheme_wrap_evt,
-						      "make-wrapped-evt",
+						      "wrap-evt",
 						      2, 2),
 			     env);
-  scheme_add_global_constant("make-nack-guard-evt",
+  scheme_add_global_constant("nack-guard-evt",
 			     scheme_make_prim_w_arity(nack_evt,
-						      "make-nack-guard-evt",
+						      "nack-guard-evt",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("make-poll-guard-evt",
+  scheme_add_global_constant("poll-guard-evt",
 			     scheme_make_prim_w_arity(poll_evt,
-						      "make-poll-guard-evt",
+						      "poll-guard-evt",
 						      1, 1),
 			     env);
 
@@ -1387,8 +1387,8 @@ Scheme_Object *scheme_wrap_evt(int argc, Scheme_Object *argv[])
   Wrapped_Evt *ww;
 
   if (!scheme_is_evt(argv[0]))
-    scheme_wrong_type("make-wrapped-evt", "evt-object", 0, argc, argv);
-  scheme_check_proc_arity("make-wrapped-evt", 1, 1, argc, argv);
+    scheme_wrong_type("wrap-evt", "evt", 0, argc, argv);
+  scheme_check_proc_arity("wrap-evt", 1, 1, argc, argv);
 
   ww = MALLOC_ONE_TAGGED(Wrapped_Evt);
   ww->so.type = scheme_wrapped_evt_type;
@@ -1402,7 +1402,7 @@ static Scheme_Object *nack_evt(int argc, Scheme_Object *argv[])
 {
   Nack_Guard_Evt *nw;
 
-  scheme_check_proc_arity("make-nack-guard-evt", 1, 0, argc, argv);
+  scheme_check_proc_arity("nack-guard-evt", 1, 0, argc, argv);
 
   nw = MALLOC_ONE_TAGGED(Nack_Guard_Evt);
   nw->so.type = scheme_nack_guard_evt_type;
@@ -1415,7 +1415,7 @@ static Scheme_Object *poll_evt(int argc, Scheme_Object *argv[])
 {
   Nack_Guard_Evt *nw;
 
-  scheme_check_proc_arity("make-poll-guard-evt", 1, 0, argc, argv);
+  scheme_check_proc_arity("poll-guard-evt", 1, 0, argc, argv);
 
   nw = MALLOC_ONE_TAGGED(Nack_Guard_Evt);
   nw->so.type = scheme_poll_evt_type;

@@ -1017,13 +1017,15 @@ typedef struct Scheme_Input_Port Scheme_Input_Port;
 typedef struct Scheme_Output_Port Scheme_Output_Port;
 
 typedef Scheme_Object *(*Scheme_Get_String_Evt_Fun)(Scheme_Input_Port *port,
-							 char *buffer, long offset, long size);
+						    char *buffer, long offset, long size,
+						    int byte_or_special);
 typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port,
 				      char *buffer, long offset, long size,
 				      int nonblock);
 typedef Scheme_Object *(*Scheme_Peek_String_Evt_Fun)(Scheme_Input_Port *port,
-							  char *buffer, long offset, long size,
-							  Scheme_Object *skip);
+						     char *buffer, long offset, long size,
+						     Scheme_Object *skip,
+						     int byte_or_special);
 typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port,
 				       char *buffer, long offset, long size,
 				       Scheme_Object *skip,

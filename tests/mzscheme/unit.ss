@@ -250,15 +250,6 @@
 (define z1 (make-z 8))
 (define z2 (make-z 7))
 
-(define m3
-  (compound-unit
-   (import)
-   (link [Z1 (z1 (Z2 z))][Z2 (z2 (Z1 z))])
-   (export [Z1 (y y1) (z x1)][Z2 (y y2) (z x2)])))
-
-(invoke-open-unit m3)
-(test '(-1 1 8 7) 'invoke-open-unit (list (y1) (y2) x1 x2))
-
 ; Dynamic linking
 
 (let ([u
@@ -276,42 +267,6 @@
 		      (define w 2)
 
 		      (invoke-unit u w)))))
-
-; Linking environemtns
-
-(if (defined? 'x)
-    (undefine 'x))
-
-(define (make--eval)
-  (let ([n (make-namespace)])
-    (lambda (e)
-      (let ([orig (current-namespace)])
-	(dynamic-wind
-	 (lambda () (current-namespace n))
-	 (lambda () (eval e))
-	 (lambda () (current-namespace orig)))))))
-
-(define u
-  (unit
-   (import)
-   (export x)
-   (define x 5)))
-(define e (make--eval))
-(e (list 'invoke-open-unit u #f))
-(test #f defined? 'x)
-(test #t e '(defined? 'x))
-
-(define u2
-  (let ([u u])
-    (unit
-     (import)
-     (export)
-     (invoke-open-unit u #f))))
-(define e (make--eval))
-(e (list 'invoke-open-unit u2 #f))
-(test #f defined? 'x)
-(test #t e '(defined? 'x))
-
 
 ; Misc
 
@@ -507,7 +462,7 @@
 	       (define b 'nested-b)
 	       (list b w a c))
 	     a b)
-	    (invoke-open-unit
+	    (invoke-unit
 	      (compound-unit
 	       (import a)
 	       (link [u ((unit (import c) (export (xa a) (b xb))
@@ -516,7 +471,6 @@
 			       (list a b c))
 			 a)])
 	       (export))
-	      #f
 	      b)
 	    (send
 	     (make-object

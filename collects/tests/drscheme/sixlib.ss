@@ -127,5 +127,30 @@
   (get-mouse-click vd)
   (void))
 
+(let ([v (open-viewport "keyboard" 300 200)]
+      [RED (make-rgb 1 0 0)]
+      [BLACK (make-rgb 0 0 0)])
+  ((draw-string v) (make-posn 5 15) "Type, end with return (red is from key-ready):")
+  (let loop ([x 5])
+    (let* ([kv (or (begin
+		     ((draw-rectangle v) (make-posn 290 0) 10 10 RED)
+		     (ready-key-press v))
+		   (begin
+		     ((draw-rectangle v) (make-posn 290 0) 10 10 BLACK)
+		     (cons 'slow (get-key-press v))))]
+	   [k (key-value (if (pair? kv) (cdr kv) kv))])
+      ((clear-rectangle v) (make-posn 0 290) 10 10)
+      (cond
+       [(eq? k #\return) 'done]
+       [(char? k) (let ([s (string k)])
+		    ((draw-string v) (make-posn x 50) s
+				     (if (pair? kv)
+					 BLACK
+					 RED))
+		    (sleep 0.05) ; slow down so key-ready takes effect
+		    (loop (+ x (car ((get-string-size v) s)))))]
+       [else (loop x)])))
+  (close-viewport v))
+
 (close-graphics)
 

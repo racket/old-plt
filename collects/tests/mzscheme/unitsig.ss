@@ -391,21 +391,6 @@
 			a@)])
 	(export))))
 
-; Export var from embedded unit:
-
-(define-signature e ((unit w : (embedded-v))))
-(invoke-open-unit/sig
- (compound-unit/sig
-  (import)
-  (link [E : e ((compound-unit/sig
-		 (import)
-		 (link [w : (embedded-v) ((unit/sig (embedded-v)
-						    (import)
-						    (define embedded-v 0)))])
-		 (export (unit w))))])
-  (export (var ((E w) embedded-v)))))
-(test 0 'embedded-v embedded-v)
-
 ; Signature ordering
 
 (define o1 (unit/sig (num sym) (import) (define num 5) (define sym 'a)))

@@ -102,6 +102,7 @@
     (when (not (null? (check-list)))
       (check-list (cdr (check-list))))
     (send type-recs set-location! (def-file def))
+    (check-location (def-file def))
     (let ((package-name 
            (send type-recs lookup-path 
                  (id-string (def-name def)) 
@@ -115,8 +116,9 @@
     (when (not (null? (check-list)))
       (check-defs (car (check-list)) level type-recs)))
   
-  ;check-interactions-types: ast symbol type-records -> void
-  (define (check-interactions-types prog level type-recs)
+  ;check-interactions-types: ast symbol location type-records -> void
+  (define (check-interactions-types prog level loc type-recs)
+    (check-location loc)
     (let ((env (add-var-to-env "this" (make-ref-type "scheme-interactions" null) #t #f
                                (create-field-env (send type-recs get-interactions-fields)
                                                  empty-env)))
@@ -124,7 +126,7 @@
       (cond
         ((pair? prog)
          (for-each (lambda (p)
-                     (check-interactions-types p level type-recs)) prog))
+                     (check-interactions-types p level loc type-recs)) prog))
         ((var-init? prog) 
          (check-var-init (var-init-init prog) env type-recs current-class))
         ((var-decl? prog) (void))
@@ -691,64 +693,62 @@
            (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type)))))
        (set-expr-type exp 'boolean))
 
-      ;; 15.26
-      ;; SKIP - worrying about final - doing the check for compound assignment
       ((assignment? exp)
-       (let ((ltype (check-expr (assignment-left exp) env type-recs current-class))
-             (rtype (check-expr (assignment-right exp) env type-recs current-class)))
-         (case (assignment-op exp)
-           ((=)
-            (if (assignment-conversion ltype rtype type-recs)
-                (set-expr-type exp ltype)
-                (raise-error #f #f)))
-           ((+= *= /= %= -= <<= >>= >>>= &= ^= or=)
-            (let* ((t (check-bin-op (symbol-remove-last (assignment-op exp))
-                                    ltype
-                                    rtype
-                                    (expr-src exp)
-                                    'full
-                                    type-records)))
-              (set-expr-type exp ltype))))))))
+       (set-expr-type exp
+                      (check-assignment (assignment-op exp)
+                                        (check-expr (assignment-left exp) env type-recs current-class)
+                                        (check-expr (assignment-right exp) env type-recs current-class)
+                                        (expr-src exp)
+                                        'full
+                                        type-recs)))))
 
-
-  
-  ;; check-bin-op: symbol type type src-loc symbol type-records -> symbol
+  ;;added assignment ops so that error messages will be correct
+  ;;check-bin-op: symbol type type src-loc symbol type-records -> type
   (define (check-bin-op op l r src level type-recs)
     (case op
-      ((* / %)       ;; 15.17
-       (prim-check prim-numeric-type? binary-promotion 'num l r src))
-      ((+ -)      ;; 15.18
+      ((* / % *= /= %=)       ;; 15.17
+       (prim-check prim-numeric-type? binary-promotion 'num l r op src))
+      ((+ - += -=)      ;; 15.18
        (if (and (not (or (eq? level 'beginner) (eq? level 'intermediate)))
                 (symbol=? '+ op) (or (eq? 'string l) (eq? 'string r)))
            'string
-           (prim-check prim-numeric-type? binary-promotion 'num l r src)))
-      ((<< >> >>>)      ;; 15.19
+           (prim-check prim-numeric-type? binary-promotion 'num l r op src)))
+      ((<< >> >>> <<= >>= >>>=)      ;; 15.19
        (prim-check prim-integral-type? 
                    (lambda (l r) (unary-promotion l)) 'int l r src))
       ((< > <= >=)      ;; 15.20
-       (prim-check prim-numeric-type? (lambda (l r) 'boolean) 'num l r src))
+       (prim-check prim-numeric-type? (lambda (l r) 'boolean) 'num l r op src))
       ((== !=)      ;; 15.21
-       (if (or (and (prim-numeric-type? l) (prim-numeric-type? r))
-               (and (eq? 'boolean l) (eq? 'boolean r))
-               (and (reference-type? l) (reference-type? r) (assignment-conversion l r type-recs)))
-           'boolean
-           (raise-error (list src l r) (if (eq? op '==) 'bin-op-eq 'bin-op-not-eq))))
-      ((& ^ or)      ;; 15.22
+       (cond
+         ((or (and (prim-numeric-type? l) (prim-numeric-type? r))
+              (and (eq? 'boolean l) (eq? 'boolean r)))
+          'boolean)
+          ((and (reference-type? l) (reference-type? r))
+           (let ((right-to-left (assignment-conversion l r type-recs))
+                 (left-to-right (assignment-conversion r l type-recs)))
+             (cond
+               ((and right-to-left left-to-right) 'boolean)
+               (right-to-left (raise-error (list src 'dummy l r op) bin-op-eq-left))
+               (left-to-right (raise-error (list src 'dummy l r op) bin-op-eq-right))
+               (else (raise-error (list src 'dummy l r op) bin-op-eq-both)))))
+          (else 
+           (raise-error (list src 'dummy l r op) bin-op-eq-prim))))
+      ((& ^ or &= ^= or=)      ;; 15.22
        (cond
          ((and (prim-numeric-type? l) (prim-numeric-type? r)) (binary-promotion l r))
-         ((and (symbol=? 'boolean l) (symbol=? 'boolean r)) 'boolean)
+         ((and (eq? 'boolean l) (eq? 'boolean r)) 'boolean)
          (else (raise-error (list src l r) 'bin-op-bitwise))))
       ((&& oror)      ;; 15.23, 15.24
        (prim-check (lambda (b) (eq? b 'boolean)) 
-                   (lambda (l r) 'boolean) 'bool l r src))))
+                   (lambda (l r) 'boolean) 'bool l r op src))))
 
   ;prim-check: (type -> bool) (type type -> type) type type src -> type
-  (define (prim-check ok? return expt l r src)
+  (define (prim-check ok? return expt l r op src)
     (cond
       ((and (ok? l) (ok? r)) (return l r))
-      ((ok? l) (raise-error (list src expt l r) 'bin-op-prim-right))
-      ((ok? r) (raise-error (list src expt l r) 'bin-op-prim-left))
-      (else (raise-error (list src expt l r) 'bin-op-prim-both))))
+      ((ok? l) (raise-error (list src expt l r op) bin-op-prim-right))
+      ((ok? r) (raise-error (list src expt l r op) bin-op-prim-left))
+      (else (raise-error (list src expt l r op) bin-op-prim-both))))
 
   ;; 5.6.1
   ;;unary-promotion: symbol -> symbol
@@ -764,24 +764,82 @@
       ((or (eq? 'long t1) (eq? 'long t2)) 'long)
       (else 'int)))
 
+  ;; 15.26
+  ;; SKIP - worrying about final - doing the check for compound assignment
+  ;check-assignment: symbol type type src symbol type-records -> type
+  (define (check-assignment op ltype rtype src level type-recs)
+    (case op
+      ((=)
+       (if (assignment-conversion ltype rtype type-recs)
+           ltype
+           (raise-error #f #f)))
+      ((+= *= /= %= -= <<= >>= >>>= &= ^= or=)
+       (check-bin-op op ltype rtype src level type-recs)
+       ltype)))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Error code
-  
+
+  ;;Binop errors
   (define (bin-op-prim-side side select)
-    (lambda (expt left right)
-      (format "~a hand side of expression should be of type ~a, but given ~a" 
-              side expt (select left right))))
+    (lambda (op expt left right)
+      (format "~a hand side of ~a should be of type ~a, but given ~a" 
+              side op expt (select left right))))
   (define bin-op-prim-right (bin-op-prim-side "Right" (lambda (l r) r)))
   (define bin-op-prim-left (bin-op-prim-side "Left" (lambda (l r) l)))
-  (define (bin-op-prim-both expt left right)
-    (format "This expression expects arguments of type ~a, but given ~a and ~a" expt left right))
+  (define (bin-op-prim-both op expt left right)
+    (format "~a expects arguments of type ~a, but given ~a and ~a" op expt left right))
+
+  (define (bin-op-eq-side side select)
+    (lambda (op d left right)
+      (format "~a hand side of ~a should be assignable to ~a" op (select left right))))
+  (define bin-op-eq-left (bin-op-eq-side "Left" (lambda (l r) r)))
+  (define bin-op-eq-right (bin-op-eq-side "Right" (lambda (l r) l)))
+  (define (bin-op-eq-prim op dummy left right)
+    (format "~a expects arguments to be of equivalent types, given non-equivalent ~a and ~a" op left right))
+  (define (bin-op-eq-both op dummy left right)
+    (format "~a expects arguments to be assignable to each other, ~a and ~a cannot" op left right))
   
   (define (raise-error wrong-code type)
-;    (cond
-;      ((memq type (list bin-op-prim-right bin-op-prim-left bin-op-prim-both))
-;       ;wrong-code = (list src symbol type type)
-       
-    (error 'type-error "This file has a type error in the statements but more likely expressions"))
+    (cond
+      ((memq type (list bin-op-prim-right bin-op-prim-left bin-op-prim-both bin-op-eq-left
+                        bin-op-eq-right bin-op-eq-prim bin-op-eq-both))
+       ;wrong-code = (list src symbol type type)
+       (raise-syntax-error #f (type (caddr (cdr wrong-code))
+                                    (case (cadr wrong-code)
+                                      ((bool) 'boolean)
+                                      ((int) "int, short, byte or char")
+                                      ((num) "double, float, long, int, short, byte or char")
+                                      (else "dummy"))                                 
+                                    (if (or (prim-numeric-type? (caddr wrong-code))
+                                            (eq? 'boolean (caddr wrong-code))
+                                            (symbol? (caddr wrong-code)))
+                                        (caddr wrong-code)
+                                        (ref-type-class/iface (caddr wrong-code)))
+                                    (if (or (prim-numeric-type? (cadddr wrong-code))
+                                            (eq? 'boolean (cadddr wrong-code))
+                                            (symbol? (cadddr wrong-code)))
+                                        (cadddr wrong-code)
+                                        (ref-type-class/iface (cadddr wrong-code))))
+                           (make-so (cadddr (cdr wrong-code)) (car wrong-code))))
+      
+      (else
+       (error 'type-error "This file has a type error in the statements but more likely expressions"))))
   
   
+  (define (make-so id src)
+    (datum->syntax-object #f id (build-src-list src)))
+  
+  (define check-location (make-parameter #f))
+  
+  (define (build-src-list src)
+    (if (not src)
+        src
+        (if (and (= (src-line src) 0)
+                 (= (src-col src) 0)
+                 (= (src-pos src) 0)
+                 (= (src-span src) 0))
+            #f
+            (list (check-location) (src-line src) (src-col src) (src-pos src) (src-span src)))))        
+      
     )

@@ -1,7 +1,10 @@
 (module rectangle mzscheme
   (require (lib "error.ss" "htdp")
 	   (lib "draw-sig.ss" "htdp")
-	   (lib "big-draw.ss" "htdp"))
+	   (lib "big-draw.ss" "htdp")
+           (lib "unitsig.ss")
+           (lib "list.ss")
+           (lib "teach.ss" "lang" "private"))
 
   (provide show)
 

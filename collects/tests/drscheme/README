@@ -37,15 +37,10 @@ the function, all tests will be run.
 
    This tests the launcher feature of drscheme.
 
-|#   sample-solutions.ss #|
-
-   This tests the sample solutions in HtDP
-   
 |#   sample-solutions-one-window.ss #|
 
    This tests the sample solutions in HtDP,
-   but reuses the same drscheme window to 
-   avoid the gc bug.
+   but reuses the same drscheme window.
    
 |#   drscheme-jr.ss #|
 

@@ -5,6 +5,12 @@
 
  (are-you-sure-you-want-to-switch-languages
   "This will change the language of the GUI, which requires you to restart DrScheme. Are you sure?")
+
+ ;; these two should probably be the same in all languages excepet English.
+ ;; they are the button labels (under macos and windows, respectively)
+ ;; that go the with the string above.
+ (accept-and-quit "Accept and Quit")
+ (accept-and-exit "Accept and Exit")
  
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
  (drscheme "DrScheme")
@@ -515,7 +521,6 @@
  (bad-module-language-specs
   "The drscheme-language-position and drscheme-language-modules specifications aren't correct. Expected (listof (cons string (listof string))) and (listof (listof string)) respectively, where the lengths drscheme-language-position and drscheme-language-module lists are the same. Got ~e and ~e")
   
- 
  ;;; debug language
  (backtrace-window-title "Backtrace - DrScheme")
  (files-interactions "~a's interactions") ;; filled with a filename

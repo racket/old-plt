@@ -72,9 +72,9 @@ WARNING: printf is rebound in the mosdule to always print
               (run-in-user-thread
                (lambda ()
                  (namespace-attach-module drs-namespace 'drscheme-secrets)
-                 (error-display-handler (add-error-display (error-display-handler)))
+                 (error-display-handler teaching-languages-error-display-handler)
                  (current-eval (add-debugging (current-eval)))
-                 ;(error-print-source-location #f)
+                 (error-print-source-location #f)
                  (read-decimal-as-inexact #f)
                  (read-dot-as-symbol #t))))
             (super-on-execute settings run-in-user-thread))
@@ -120,10 +120,16 @@ WARNING: printf is rebound in the mosdule to always print
 	(let* ([parent (make-object vertical-panel% _parent)]
 	       
 	       [input-msg (make-object message% (string-constant input-syntax) parent)]
-	       [input-panel (make-object vertical-panel% parent '(border))]
+	       [input-panel (instantiate vertical-panel% ()
+                              (parent parent)
+                              (style '(border))
+                              (alignment '(left center)))]
 	       
 	       [output-msg (make-object message% (string-constant output-syntax) parent)]
-	       [output-panel (make-object vertical-panel% parent '(border))]
+	       [output-panel (instantiate vertical-panel% ()
+                               (parent parent)
+                               (style '(border))
+                               (alignment '(left center)))]
                
 	       [case-sensitive (make-object check-box%
 				 (string-constant case-sensitive-label)
@@ -154,8 +160,6 @@ WARNING: printf is rebound in the mosdule to always print
 	  (send parent stretchable-height #f)
 	  (send parent stretchable-width #f)
           (send parent set-alignment 'center 'center)
-	  (send output-panel stretchable-width #f)
-	  (send output-panel set-alignment 'left 'center)
           
 	  (case-lambda
            [()
@@ -207,19 +211,41 @@ WARNING: printf is rebound in the mosdule to always print
 
       ;; add-error-display : (string (union TST exn) -> void) -> string exn -> void
       ;; adds in the bug icon, if there are contexts to display
-      (define (add-error-display orig-error-display-handler)
-        (define (debug-tool-error-display-handler msg exn)
-          (orig-error-display-handler msg exn)
-          (let ([cms (and (exn? exn) (continuation-mark-set->list (exn-continuation-marks exn) cm-key))]
-                [rep (drscheme:rep:current-rep)])
-            (when (and cms
-		       (not (null? cms)))
-              (let* ([first-cms (car cms)]
-                     [src (car first-cms)]
-                     [start-position (cadr first-cms)]
-                     [end-position (+ start-position (cddr first-cms))])
-                (send rep highlight-error src start-position end-position)))))
-        debug-tool-error-display-handler)
+      (define (teaching-languages-error-display-handler msg exn)
+        (let ([rep (drscheme:rep:current-rep)])
+          (if (exn? exn)
+              (display (exn-message exn) (current-error-port))
+              (fprintf (current-error-port) "uncaught exception: ~e" exn))
+          (fprintf (current-error-port) "\n")
+          (send rep wait-for-io-to-complete/user)
+          (cond
+            [(exn:syntax? exn) 
+             (let ([obj (exn:syntax-expr exn)])
+               (when (syntax? obj)
+                 (let ([src (syntax-source obj)]
+                       [pos (syntax-position obj)]
+                       [span (syntax-span obj)])
+                   (when (and (is-a? src text:basic<%>)
+                              (number? pos)
+                              (number? span))
+                     (send rep highlight-error src (- pos 1) (+ pos -1 span))))))]
+            [(exn:read? exn) 
+             (let ([src (exn:read-source exn)]
+                   [pos (exn:read-position exn)]
+                   [span (exn:read-span exn)])
+               (when (and (is-a? src text:basic<%>)
+                          (number? pos)
+                          (number? span))
+                 (send rep highlight-error src (- pos 1) (+ pos -1 span))))]
+            [(exn? exn) 
+             (let ([cms (continuation-mark-set->list (exn-continuation-marks exn) cm-key)])
+               (when (and cms (not (null? cms)))
+                 (let* ([first-cms (car cms)]
+                        [src (car first-cms)]
+                        [start-position (cadr first-cms)]
+                        [end-position (+ start-position (cddr first-cms))])
+                   (send rep highlight-error src start-position end-position))))]
+            [else (void)])))
 
       ;; wrap : syntax syntax -> syntax
       ;; a member of stacktrace-imports^

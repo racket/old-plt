@@ -3,6 +3,8 @@
 extern "C" {
 # endif
 
+#include <stddef.h>
+
 #define GC_PTR void*
 
 void GC_add_roots(void *start, void *end);

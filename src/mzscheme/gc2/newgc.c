@@ -21,11 +21,11 @@
 
 /* To actually use the space we put in the object header, turn on this.
    You *must* have defined NEWGC_ACCNT for this to work. */
-#define NEWGC_USE_HEADER
+/* #define NEWGC_USE_HEADER */
 
 /* To do precise accounting, turn on this. You *must* have defined both
    NEWGC_ACCNT and NEWGC_USE_HEADER for this to work. */
-#define NEWGC_PRECISE
+/* #define NEWGC_PRECISE */
 
 /* To make things very slow and create very large files, turn on this: */
 /* #define NEWGC_DEBUG */

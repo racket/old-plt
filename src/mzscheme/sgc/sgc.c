@@ -4186,9 +4186,11 @@ static int traced_from_roots, traced_from_stack, traced_from_uncollectable, trac
 #endif
 
 #if 0
-# define GETTIME() ((long)scheme_get_milliseconds())
+extern long scheme_get_milliseconds(void);
+# define GETTIME() scheme_get_milliseconds()
 #else
-# define GETTIME() ((long)scheme_get_process_milliseconds())
+extern long scheme_get_process_milliseconds(void);
+# define GETTIME() scheme_get_process_milliseconds()
 #endif
 
 #if TIME
@@ -4239,7 +4241,7 @@ static void do_GC_gcollect(void *stack_now)
 # elif defined(WIN32) && AUTO_STATIC_ROOTS_IF_POSSIBLE
 	  total_memory_use(),
 # else
-	  0,
+	  (long)0,
 # endif
 	  start_time - last_gc_end);
 # if SHOW_SECTOR_MAPS_AT_GC

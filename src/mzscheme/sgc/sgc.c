@@ -210,7 +210,7 @@
 # define MEM_USE_FACTOR 1.40
 #else
 # define FIRST_GC_LIMIT 100000
-# define MEM_USE_FACTOR 2
+# define MEM_USE_FACTOR 3
 #endif
 
 #ifdef DOS_FAR_POINTERS
@@ -303,6 +303,8 @@
 #define TIME 0
 #define ALWAYS_TRACE 0
 #define CHECK_COLLECTING 0
+#define MARK_STATS 0
+#define ALLOC_STATS 0
 
 #if DETAIL_MEMORY_TRACING
 # undef STD_MEMORY_TRACING
@@ -392,9 +394,9 @@ void (*GC_out_of_memory)(void);
 
 /* Sector types: */
 enum {
+  sector_kind_block,
   sector_kind_free,
   sector_kind_freed,
-  sector_kind_block,
   sector_kind_chunk,
   sector_kind_managed,
   sector_kind_other
@@ -408,6 +410,7 @@ typedef struct MemoryBlock {
   short size;
   short atomic;
   short elem_per_block;
+  int *positions; /* maps displacement in ptrs => position in objects */
 #if KEEP_SET_NO
   short set_no;
 #endif
@@ -559,6 +562,8 @@ static MemoryBlock *uncollectable_atomic_common[NUM_COMMON_SIZE];
 static MemoryBlock *uncollectable_atomic_common_ends[NUM_COMMON_SIZE];
 static MemoryChunk *others, *atomic_others;
 static MemoryChunk *uncollectable_others, *uncollectable_atomic_others;
+
+static int *common_positionses[NUM_COMMON_SIZE];
 
 #if PROVIDE_MALLOC_AND_FREE
 static MemoryBlock *sys_malloc[NUM_COMMON_SIZE];
@@ -1860,7 +1865,7 @@ static void dump_sector_map(char *prefix)
 	for (j = 0; j < SECTOR_LOOKUP_PAGESIZE; j++) {
 	  long kind;
 	  kind = pagetable[j].kind;
-	  if (kind) {
+	  if (kind != sector_kind_free) {
 	    char *same_sec, *diff_sec;
 
 	    if (c++ > 40) {
@@ -2160,6 +2165,40 @@ static void set_pad(void *p, long s, long os)
 }
 #endif
 
+static void init_positions(int cpos, int size, int num_elems)
+{
+  int num_positions = num_elems << LOG_FREE_BIT_PER_ELEM;
+  int block_size = size * num_positions;
+  int num_offsets = block_size >> LOG_PTR_SIZE;
+  int size_in_ptrs = size >> LOG_PTR_SIZE;
+  int i, j, pos;
+  int *positions;
+
+  positions = (int *)malloc_sector(num_offsets * sizeof(int), sector_kind_other);
+
+  for (i = 0, pos = 0, j = 0; i < num_offsets; ) {
+    positions[i++] = pos;
+    if (++j == size_in_ptrs) {
+      pos++;
+      j = 0;
+    }
+  }
+
+  common_positionses[cpos] = positions;
+}
+
+#if ALLOC_STATS
+# define ALLOC_STATISTIC(x) x
+static int num_allocs_stat;
+static int num_nonzero_allocs_stat;
+static int num_common_allocs_stat;
+static int num_block_alloc_checks_stat;
+static int num_chunk_allocs_stat;
+static int num_newblock_allocs_stat;
+#else
+# define ALLOC_STATISTIC(x)
+#endif
+
 #if KEEP_SET_NO
 #define SET_NO_BACKINFO int set_no,
 #define KEEP_SET_INFO_ARG(x) x, 
@@ -2190,8 +2229,12 @@ void *do_malloc(SET_NO_BACKINFO
   }
 #endif
 
+  ALLOC_STATISTIC(num_allocs_stat++);
+
   if (!size)
     return (void *)&zero_ptr;
+
+  ALLOC_STATISTIC(num_nonzero_allocs_stat++);
 
   if (!size_map)
     init_size_map();
@@ -2206,6 +2249,8 @@ void *do_malloc(SET_NO_BACKINFO
     size += PTR_SIZE - (size & (PTR_SIZE-1));
 
   if (size < MAX_COMMON_SIZE) {
+    ALLOC_STATISTIC(num_common_allocs_stat++);
+
     cpos = size_index_map[(size >> LOG_PTR_SIZE) - 1];
 #if 0
     if (size > size_map[cpos]) {
@@ -2220,6 +2265,8 @@ void *do_malloc(SET_NO_BACKINFO
     while (block) {
       if (block->top < block->end)
 	goto block_top;
+
+      ALLOC_STATISTIC(num_block_alloc_checks_stat++);
 
       for (i = block->elem_per_block; i-- ; )
 	if (block->free[i]) {
@@ -2277,6 +2324,8 @@ void *do_malloc(SET_NO_BACKINFO
   } else {
     void *a;
     MemoryChunk *c;
+
+    ALLOC_STATISTIC(num_chunk_allocs_stat++);
 
     cpos = 0;
 
@@ -2352,6 +2401,8 @@ void *do_malloc(SET_NO_BACKINFO
     return s;
   }
 
+  ALLOC_STATISTIC(num_newblock_allocs_stat++);
+
   if (!collect_off && (mem_use >= mem_limit)) {
     GC_gcollect();
     return do_malloc(KEEP_SET_INFO_ARG(set_no)
@@ -2371,7 +2422,7 @@ void *do_malloc(SET_NO_BACKINFO
   } else {
     long alloc_size;
     elem_per_block = 1;
-    /* Add (PTR_SIZE - 1) to ensure engouh room after alignment: */
+    /* Add (PTR_SIZE - 1) to ensure enough room after alignment: */
     alloc_size = sizeof(MemoryBlock) + (PTR_SIZE - 1) + sizeElemBit;
     block = (MemoryBlock *)malloc_sector(alloc_size, sector_kind_block);
   }
@@ -2387,10 +2438,10 @@ void *do_malloc(SET_NO_BACKINFO
   block->set_no = set_no;
 #endif
 
-  /* offset for data (4-byte aligned): */
+  /* offset for data (ptr aligned): */
   c = sizeof(MemoryBlock) + (elem_per_block - 1);
-  if (c & 0x3)
-    c += (4 - (c & 0x3));
+  if (c & (PTR_SIZE - 1))
+    c += (PTR_SIZE - (c & (PTR_SIZE - 1)));
   p = PTR_TO_INT(block) + c;
 
   if (common_ends[cpos] || (find && !common[cpos])) {
@@ -2419,6 +2470,9 @@ void *do_malloc(SET_NO_BACKINFO
   block->size = (short)size;
   block->next = NULL;
   block->atomic = atomic;
+  if (!common_positionses[cpos])
+    init_positions(cpos, size, elem_per_block);
+  block->positions = common_positionses[cpos];
 
   if (!low_plausible || (block->start < low_plausible))
     low_plausible = block->start;
@@ -3230,7 +3284,7 @@ static int collect_stack_count;
 static int collect_stack_size;
 static unsigned long *collect_stack;
 
-static int collect_end_stackbased;
+#define INITIAL_COLLECT_STACK_SIZE 8192
 
 #if KEEP_DETAIL_PATH
 # define PUSH_SRC(src) collect_stack[collect_stack_count++] = src;
@@ -3255,6 +3309,7 @@ static void push_collect(unsigned long start, unsigned long end, unsigned long s
 							  oldsize, 
 							  sizeof(unsigned long) 
 							  * (collect_stack_size + (COLLECT_STACK_FRAME_SIZE - 1)));
+    /* fprintf(stderr, "grow push stack: %d\n", collect_stack_size); */
   }
 
   collect_stack[collect_stack_count++] = start;
@@ -3361,20 +3416,35 @@ static int collect_end_path_elem;
 
 #endif
 
-#define COLLECT collect_follow_interior
-#define FOLLOW_INTERIOR 1
+#if MARK_STATS
+static int num_pairs_stat;
+static int num_checks_stat;
+static int num_plausibles_stat;
+static int num_pages_stat;
+static int num_blocks_stat;
+static int num_blockallocs_stat;
+static int num_blockmarks_stat;
+static int num_chunks_stat;
+static int num_chunkmarks_stat;
+#endif
+
+#define COLLECT semi_collect_stack
+#define STACK_TRACE
 #include "collect.inc"
 
-#undef COLLECT
-#undef FOLLOW_INTERIOR
-
-#if CHECK_SIMPLE_INTERIOR_POINTERS
-# define collect collect_follow_interior
-#else
-# define COLLECT collect
-# define FOLLOW_INTERIOR 0
-# include "collect.inc"
+static void prepare_stack_collect()
+{
+  semi_collect_stack(0);
+#if !NO_STACK_OFFBYONE
+  semi_collect_stack(-PTR_ALIGNMENT);
 #endif
+}
+
+#define COLLECT collect
+#if CHECK_SIMPLE_INTERIOR_POINTERS
+# define FOLLOW_INTERIOR
+#endif
+# include "collect.inc"
 
 static jmp_buf buf;
 
@@ -3412,6 +3482,8 @@ static void push_stack(void *stack_now)
   trace_stack_end = collect_stack[collect_stack_count - (COLLECT_STACK_FRAME_SIZE - 1)];
 #endif
 
+  prepare_stack_collect();
+
   start = PTR_TO_INT((void *)&buf);
   end = start + sizeof(buf);
   PUSH_COLLECT(start, end, 0);
@@ -3420,6 +3492,8 @@ static void push_stack(void *stack_now)
   trace_reg_start = collect_stack[collect_stack_count - COLLECT_STACK_FRAME_SIZE];
   trace_reg_end = collect_stack[collect_stack_count - (COLLECT_STACK_FRAME_SIZE - 1)];
 #endif
+
+  prepare_stack_collect();
 
 #if PRINT && STAMP_AND_REMEMBER_SOURCE
   FPRINTF(STDERR, "jmpbuf in [%lx, %lx]\n", start, end);
@@ -4006,6 +4080,8 @@ void GC_push_all_stack(void *sp, void *ep)
   e = PTR_TO_INT(ep);
 
   PUSH_COLLECT(s, e, 0);
+
+  prepare_stack_collect();
 }
 
 void do_GC_gcollect(void *stack_now)
@@ -4112,6 +4188,8 @@ void do_GC_gcollect(void *stack_now)
   prepare_collect_temp();
 
   collect_stack_size = roots_count ? COLLECT_STACK_FRAME_SIZE * roots_count : 10;
+  if (collect_stack_size < INITIAL_COLLECT_STACK_SIZE)
+    collect_stack_size = INITIAL_COLLECT_STACK_SIZE;
   collect_stack_count = 0;
   collect_stack = (unsigned long *)realloc_collect_temp(NULL,
 							0,
@@ -4157,9 +4235,10 @@ void do_GC_gcollect(void *stack_now)
 
   root_marked = mem_use;
 
+  PRINTTIME((STDERR, "gc: stack push start: %ld\n", scheme_get_process_milliseconds()));
+
   push_stack(stack_now);
   
-  collect_end_stackbased = collect_stack_count;
 # if PRINT && 0
   FPRINTF(STDERR, "stack until: %ld\n", collect_end_stackbased);
 # endif
@@ -4170,20 +4249,19 @@ void do_GC_gcollect(void *stack_now)
 
   PRINTTIME((STDERR, "gc: stack collect start: %ld\n", scheme_get_process_milliseconds()));
 
-  collect_follow_interior();
-
-  PRINTTIME((STDERR, "gc: \"other roots\" start: %ld\n", scheme_get_process_milliseconds()));
+  collect();
 
   if (GC_push_last_roots) {
+    PRINTTIME((STDERR, "gc: last roots push start: %ld\n", scheme_get_process_milliseconds()));
     GC_push_last_roots();
-    collect_end_stackbased = collect_stack_count;
+    PRINTTIME((STDERR, "gc: last roots start: %ld\n", scheme_get_process_milliseconds()));
   }
 
 # if ALLOW_TRACE_PATH
   current_trace_source = "xstack";
 # endif
 
-  collect_follow_interior();
+  collect();
 
 # if ALLOW_TRACE_COUNT
   traced_from_stack = collect_trace_count;
@@ -4286,6 +4364,45 @@ void do_GC_gcollect(void *stack_now)
   PRINTTIME((STDERR, "gc: finalize start: %ld\n", scheme_get_process_milliseconds()));
   run_finalizers();
   PRINTTIME((STDERR, "gc: finalize end: %ld\n", scheme_get_process_milliseconds()));
+
+#if MARK_STATS
+  fprintf(STDERR, 
+	  "mark stats:\n"
+	  " %d pairs\n"
+	  " %d lookups\n"
+	  "   %d plausible\n"
+	  "     %d paged\n"
+	  "       %d block page\n"
+	  "         %d block\n"
+	  "           %d block mark\n"
+	  "       %d chunk page\n"
+	  "         %d chunk mark\n",
+	  num_pairs_stat,
+	  num_checks_stat,
+	  num_plausibles_stat,
+	  num_pages_stat,
+	  num_blocks_stat,
+	  num_blockallocs_stat,
+	  num_blockmarks_stat,
+	  num_chunks_stat,
+	  num_chunkmarks_stat);
+#endif
+#if ALLOC_STATS
+  fprintf(STDERR, 
+	  "alloc stats:\n"
+	  " %d allocs\n"
+	  "   %d nonzero allocs\n"
+	  "   %d common allocs\n"
+	  "     %d common tries\n"
+	  "     %d common newblocks\n"
+	  "   %d chunk allocs\n",
+	  num_allocs_stat,
+	  num_nonzero_allocs_stat,
+	  num_common_allocs_stat,
+	  num_block_alloc_checks_stat,
+	  num_newblock_allocs_stat,
+	  num_chunk_allocs_stat);
+#endif
 }
 
 void GC_gcollect(void)

@@ -180,7 +180,7 @@
 	    [find-message-item (make-object mred:container:message% find-panel "Find:")])
 	  
 	  (sequence
-	    (send bottom-panel stretchable-in-y? #f)
+	    (send bottom-panel stretchable-in-y #f)
 	    (send find-panel spacing 0)
 	    (send replace-panel spacing 0))
 
@@ -203,7 +203,7 @@
 	    [middle-panel (make-object mred:container:horizontal-panel% find-panel)])
 	    
 	  (sequence 
-	    (send middle-panel stretchable-in-y? #f)
+	    (send middle-panel stretchable-in-y #f)
 	    (make-object mred:container:horizontal-panel% middle-panel))
 	  
 	  (private
@@ -234,7 +234,7 @@
 
 	  (sequence 
 	    (make-object mred:container:vertical-panel% replace-button-panel)
-	    (send replace-button-panel stretchable-in-y? #f))
+	    (send replace-button-panel stretchable-in-y #f))
 
 	  (private
 	    [find-button-2 (make-object mred:container:button%
@@ -332,7 +332,7 @@
 	    [hidden? #f]
 	    [anchor 0])
 	  (sequence
-	    (send search-panel stretchable-in-y? #f)
+	    (send search-panel stretchable-in-y #f)
 	    (send search-panel border 1)
 	    (send media-canvas set-media search-edit)
 	    (send search-edit add-canvas media-canvas)

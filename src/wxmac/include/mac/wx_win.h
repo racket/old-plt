@@ -193,6 +193,7 @@ class wxWindow: public wxbWindow
   void GravitateJustify(Direction gravitate, Direction justify,
 			int left, int top, int right, int bottom); /* mac platform only */
   virtual void Fit(void);	/* mac platform only */
+  virtual void SetPhantomSize(int w, int h);
 
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Device context methods */

@@ -553,7 +553,7 @@ void wxWindow::CreatePaintControl(int inset)
   control_inset_extent = inset;
   
   if (!paintControlClass) {
-    EventTypeSpec       eventList[] = {
+    GC_CAN_IGNORE EventTypeSpec eventList[] = {
       { kEventClassHIObject, kEventHIObjectConstruct },
       { kEventClassHIObject, kEventHIObjectInitialize },
       { kEventClassHIObject, kEventHIObjectDestruct },
@@ -561,7 +561,7 @@ void wxWindow::CreatePaintControl(int inset)
       { kEventClassControl, kEventControlDraw },
       { kEventClassControl, kEventControlHitTest },
       { kEventClassControl, kEventControlGetPartRegion } };
-
+    
     HIObjectRegisterSubclass(CFSTR("org.plt-scheme.MrEdPaintControl"),
 			     kHIViewClassID, // base class ID
 			     NULL, // option bits
@@ -608,7 +608,7 @@ void wxWindow::GetPaintControlRegion(RgnHandle hrgn, Bool opaquePart)
 {
   Rect bounds;
  
-  if (!opaquePart) {
+  if (!opaquePart || (cStyle & wxNO_AUTOCLEAR)) {
     GetControlBounds(cPaintControl, &bounds);
     bounds.right -= bounds.left;
     bounds.bottom -= bounds.top;
@@ -695,8 +695,11 @@ void wxWindow::GetSize(int* width, int* height)
 //-----------------------------------------------------------------------------
 void wxWindow::GetClientSize(int* width, int* height)
 {
-  *width = cClientArea->Width();
-  *height = cClientArea->Height();
+  int n;
+  n = cClientArea->Width();
+  *width = n;
+  n = cClientArea->Height();
+  *height = n;
 }
 
 //-----------------------------------------------------------------------------
@@ -725,6 +728,11 @@ void wxWindow::ClientToLogical(int* x, int* y) // mac platform only; testing
 void wxWindow::SetWidthHeight(int width, int height) // mac platform only
 {
   SetSize(cWindowX, cWindowY, width, height);
+}
+
+void wxWindow::SetPhantomSize(int w, int h)
+{
+  /* Do nothing */
 }
 
 //-----------------------------------------------------------------------------
@@ -1611,9 +1619,9 @@ void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* desc
 			     float* externalLeading, wxFont* the_font, Bool use16)
 {
   if (the_font)
-    the_font->GetTextExtent((char *)string, 0, x, y, descent, externalLeading, use16);
+    the_font->GetTextExtent((char *)string, 0, x, y, descent, externalLeading, TRUE, use16);
   else if (font)
-    font->GetTextExtent((char *)string, 0, x, y, descent, externalLeading, use16);
+    font->GetTextExtent((char *)string, 0, x, y, descent, externalLeading, TRUE, use16);
   else {
     *x = -1;
     *y = -1;

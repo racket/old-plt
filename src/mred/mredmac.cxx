@@ -1045,7 +1045,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
 	 || (event->where.h != last_mouse.h)
 	 || last_front_window != FrontWindow())
 	&& (!cont_mouse_context || (cont_mouse_context == keyOk))) {
-          
+      long ticks;
+
       if (which)
 	*which = (cont_mouse_context ? cont_mouse_context : keyOk);
 	
@@ -1062,7 +1063,8 @@ int MrEdGetNextEvent(int check_only, int current_only,
       last_front_window = FrontWindow();
 
       event->what = nullEvent;
-      event->when = TickCount();
+      ticks = TickCount();
+      event->when = ticks;
       if (cont_mouse_context) {
 	/* Dragging... */
 	int mods;
@@ -1782,8 +1784,10 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
 	if (list_in) {
 	  if (AEGetNthDesc(list_in, pos, rtype, &kw, list))
 	    return NULL;
-	  if (record)
-	    *record = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
+	  if (record) {
+	    rec = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
+	    *record = rec;
+	  }
 	} else {
 	  if (AEGetParamDesc(reply, keyDirectObject, rtype, list))
 	    return NULL;
@@ -1832,8 +1836,11 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
     
     if (list_in) {
       _err = AEGetNthPtr(list_in, pos, rtype, &kw, &rtype, data, sz, &sz);
-      if (record)
-        *record = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
+      if (record) {
+	Scheme_Object *rec;
+	rec = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
+	*record = rec;
+      }
       if (_err) {
 	*err = _err;
         *stage = "lost a list value: ";
@@ -1978,6 +1985,7 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   DescType rtype;
   int retval;
   long ret, sz, dst;
+  Scheme_Object *res;
 
   if (!record_symbol) {
     wxREGGLOB(record_symbol);
@@ -2065,9 +2073,11 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   }
   
   if (!AEGetParamPtr(reply, keyErrorString, typeChar, &rtype, NULL, 0, &sz) && sz) {
+    char *st;
     *err = -1;
     if (sz > 256) sz = 256;
-    *stage = (char *)scheme_malloc_atomic(sz + 1);
+    st = (char *)scheme_malloc_atomic(sz + 1);
+    *stage = st;
     (*stage)[sz] = 0;
     AEGetParamPtr(reply, keyErrorString, typeChar, &rtype, *stage, sz, &sz);
     goto fail;
@@ -2080,7 +2090,8 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
     goto fail;
   }
   
-  *result = ae_unmarshall(reply, NULL, 0, &oerr, stage, NULL);
+  res = ae_unmarshall(reply, NULL, 0, &oerr, stage, NULL);
+  *result = res;
   if (!*result) {
     *err = (int)oerr;
     goto fail;

@@ -240,7 +240,7 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
       FMCreateFontFamilyIterator(NULL, NULL, 0, &iterator);
       while (1) {
 	if (FMGetNextFontFamily(&iterator, &fam) != noErr) {
-	  fam != kInvalidFontFamily;
+	  fam = kInvalidFontFamily;
 	  break;
 	}
 	s = wx_get_mac_font_name(fam, fname, &l);
@@ -311,10 +311,10 @@ long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str,
     ::GetFontInfo(&fontInfo);
     
     if (str) {
-	if (len < 0)
-	    strlen(str + d);
-
-      result = TextWidth(str + d, 0, len);
+      if (len < 0)
+	strlen(str XFORM_OK_PLUS d);
+      
+      result = TextWidth(str XFORM_OK_PLUS d, 0, len);
     }
     
     ::SetGWorld(savep, savegd);
@@ -358,7 +358,7 @@ void wxFont::GetTextExtent(char* string, int delta, float* x, float* y,
 		      ucs4, scale_y,
 		      x, y, descent, externalLeading,
 		      qd_spacing, scale_x,
-		      family == wxSYMBOL);
+		      family);
 }
 
 //-----------------------------------------------------------------------------

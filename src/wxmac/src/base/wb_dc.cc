@@ -57,7 +57,7 @@ void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset, int fillStyl
   wxNode *node;
 
   n = list->Number();
-  points  = new wxPoint[n];
+  points  = new WXGC_ATOMIC wxPoint[n];
 
   for (node = list->First(); node; node = node->Next()) {
     point = (wxPoint *)(node->Data());
@@ -76,7 +76,7 @@ void wxbDC::DrawLines(wxList *list, float xoffset, float yoffset)
   wxNode *node;
 
   n = list->Number();
-  points = new wxPoint[n];
+  points = new WXGC_ATOMIC wxPoint[n];
 
   for (node = list->First(); node; node = node->Next()) {
     point = (wxPoint *)(node->Data());

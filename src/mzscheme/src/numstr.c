@@ -960,8 +960,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       cpy = str2;
     } else
       cpy = str;
-    d = STRTOD(cpy + delta, &ptr);
-    if ((ptr - cpy) < len) {
+    d = STRTOD(cpy XFORM_OK_PLUS delta, &ptr);
+    if ((ptr XFORM_OK_MINUS cpy) < len) {
       ptr = NULL; /* because not precise-gc aligned */
       if (report)
 	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,

@@ -41,10 +41,14 @@ class wxTabChoice : public wxItem
   virtual void Activate(Bool gray);
   virtual void MaybeMoveControls();
 
+  virtual void SetPhantomSize(int w, int h);
+
 protected:
   virtual void ChangeToGray(Bool gray);
   virtual void Paint(void);
   virtual void OnEvent(wxMouseEvent *event);
+
+  int phantom_height;
 };
 
 #endif // wx_tabch

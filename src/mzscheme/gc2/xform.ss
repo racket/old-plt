@@ -2377,7 +2377,7 @@
 		 [(and (pair? (cddr e))
 		       (brackets? (caddr e)))
 		  ;; An array of objects
-		  (unless atom?
+		  (unless (or atom? (eq? #cs'wxPoint (tok-n t)))
 		    (log-warning "[ARRAY] ~a in ~a: array of ~a objects, allocating as array of atomic."
 				 (tok-line t) (tok-file t)
 				 (tok-n t)))

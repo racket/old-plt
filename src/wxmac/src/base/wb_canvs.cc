@@ -128,6 +128,6 @@ float wxbCanvas::GetCharWidth(void)
 void wxbCanvas::GetTextExtent(const char* string, float* x, float* y, float* descent,
 			      float* externalLeading, wxFont* the_font, Bool use16)
 {
-  wx_dc->GetTextExtent(string, x, y, descent, externalLeading, the_font, use16);
+  wx_dc->GetTextExtent(string, x, y, descent, externalLeading, the_font, FALSE, use16);
 }
 

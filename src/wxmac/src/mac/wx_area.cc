@@ -147,9 +147,14 @@ int wxArea::Height(void)
 void wxArea::AreaToScreen(int* h, int* v)
 {
   wxMargin screenMargin;
+  int n;
+
   screenMargin = Margin(wxScreen::gScreenWindow);
-  *h += screenMargin.Offset(wxLeft);
-  *v += screenMargin.Offset(wxTop);
+
+  n = screenMargin.Offset(wxLeft);
+  (*h) += n;
+  n = screenMargin.Offset(wxTop);
+  (*v) += n;
 }
 
 //-----------------------------------------------------------------------------
@@ -158,9 +163,14 @@ void wxArea::AreaToScreen(int* h, int* v)
 void wxArea::ScreenToArea(int* h, int* v)
 {
   wxMargin screenMargin;
+  int n;
+
   screenMargin = Margin(wxScreen::gScreenWindow);
-  *h -= screenMargin.Offset(wxLeft);
-  *v -= screenMargin.Offset(wxTop);
+  
+  n = screenMargin.Offset(wxLeft);
+  (*h) -= n;
+  n = screenMargin.Offset(wxTop);
+  (*v) -= n;
 }
 
 //-----------------------------------------------------------------------------
@@ -182,12 +192,16 @@ void wxArea::FrameContentAreaOffset(int* x, int* y)
   wxArea* frameContentArea;
   wxMargin frameContentAreaMargin;
   wxWindow *p;
+  int n;
+
   p = ParentWindow();
   frame = p->GetRootFrame();
   frameContentArea = frame->ContentArea();
   frameContentAreaMargin = Margin(frameContentArea);
-  *x = frameContentAreaMargin.Offset(wxLeft);
-  *y = frameContentAreaMargin.Offset(wxTop);
+  n = frameContentAreaMargin.Offset(wxLeft);
+  *x = n;
+  n = frameContentAreaMargin.Offset(wxTop);
+  *y = n;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

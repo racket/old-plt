@@ -588,9 +588,13 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
     
     cpInfo.theColor.profile = NULL; // use the default ColorSync profile
     if (c) {
-      cpInfo.theColor.color.rgb.red = c->Red() << 8;
-      cpInfo.theColor.color.rgb.green = c->Green() << 8;
-      cpInfo.theColor.color.rgb.blue = c->Blue() << 8;
+      int v;
+      v = c->Red();
+      cpInfo.theColor.color.rgb.red = (v << 8) | v;
+      v = c->Green();
+      cpInfo.theColor.color.rgb.green = (v << 8) | v;
+      v = c->Blue();
+      cpInfo.theColor.color.rgb.blue = (v << 8) | v;
     } else {
       cpInfo.theColor.color.rgb.red = cpInfo.theColor.color.rgb.green = cpInfo.theColor.color.rgb.blue = 0;
     }
@@ -959,7 +963,7 @@ char *wx_get_mac_font_name(FMFontFamily fam, unsigned char *fname, int *_l)
 
   FMGetFontFamilyName(fam, fname);
   
-  s = (char *)fname + 1;
+  s = (char *)fname XFORM_OK_PLUS 1;
   l = fname[0];
 
   /* If the "encoded" name is all ASCII, then don't decode.

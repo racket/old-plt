@@ -93,7 +93,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool combine, Bool
 		      y + (fontInfo.ascent * cos(angle)) - logical_origin_y, 
 		      device_origin_x + SetOriginX,
 		      device_origin_y + SetOriginY,
-		      font->GetFamily() == wxSYMBOL);
+		      font->GetFamily());
   
   CalcBoundingBox(x + w, y + fontInfo.ascent + fontInfo.descent);
   CalcBoundingBox(x, y);
@@ -203,7 +203,7 @@ double DrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd
       }
       theStrlen -= d;
     } else
-      theStrlen = strlen(text+d);
+      theStrlen = strlen(text XFORM_OK_PLUS d);
   }
 
   move_pen_at_end = qd_spacing && ALWAYS_USE_ATSU && !use_start;
@@ -212,7 +212,7 @@ double DrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd
     /* Check whether we need to go into Unicode mode: */
     if (!qd_spacing || ALWAYS_USE_ATSU || ucs4) {
       i = 0;
-    } else if (is_sym)
+    } else if (is_sym == wxSYMBOL)
       /* Symbol font hack: don't convert */
       i = theStrlen;
     else {
@@ -246,7 +246,7 @@ double DrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd
       }
       ::GetPen(&pen_start);
 
-      ::DrawText(text+d, 0, i);
+      ::DrawText(text XFORM_OK_PLUS d, 0, i);
 
       if (reset_size)
 	::TextSize(reset_size);
@@ -307,13 +307,13 @@ void GetUnicodeTextWidth(const char *text, int d, int theStrlen,
 	}
 	theStrlen -= d;
       } else
-	theStrlen = strlen(text+d);
+	theStrlen = strlen(text XFORM_OK_PLUS d);
     }
 
     if (!qd_spacing || ALWAYS_USE_ATSU || ucs4) {
       i = 0;
     } else {
-      if (!is_sym) {
+      if (is_sym != wxSYMBOL) {
 	/* Check whether we need to go into Unicode mode to get UTF-8 output: */
 	for (i = 0; i < theStrlen; i++) {
 	  if (((unsigned char *)text)[i + d] > 127)
@@ -331,21 +331,27 @@ void GetUnicodeTextWidth(const char *text, int d, int theStrlen,
     theStrlen = 0;
 
   /* gets ascent, etc., and gets width if meas is non-NULL: */
-  *x = wxTextFontInfo(txFont, txSize, txFace,
-		      &fontInfo, (char *)meas, 
-		      d, theStrlen);
+  {
+    double dx;
+    dx = wxTextFontInfo(txFont, txSize, txFace,
+			&fontInfo, (char *)meas, 
+			d, theStrlen);
+    *x = dx;
+  }
 
   if (meas) {
     /* it's all ASCII, where MacRoman == UTF-8 */
     /* so *x is right */
   } else if (text) {
     if (!qd_spacing || ALWAYS_USE_ATSU || ucs4) {
-      *x = DrawMeasUnicodeText(text, d, theStrlen, ucs4,
+      double dx;
+      dx = DrawMeasUnicodeText(text, d, theStrlen, ucs4,
 			       1, 1, 
 			       txFont, txSize, txFace,
 			       0, qd_spacing, wxSMOOTHING_DEFAULT, 0.0, is_sym,
 			       scale_x, scale_y,
 			       0.0, 0, 0.0, 0.0, 0.0, 0.0, 0);
+      *x = dx;
     } else {
       /* Need to split the string into parts */
       int again = 0;
@@ -362,9 +368,9 @@ void GetUnicodeTextWidth(const char *text, int d, int theStrlen,
 
 	/* Measure the leading ASCII part, if any: */
 	if (i) {
-	  *x += wxTextFontInfo(txFont, txSize, txFace,
-			       &fontInfo, 
-			       (char *)text, d, i);
+	  (*x) += wxTextFontInfo(txFont, txSize, txFace,
+				 &fontInfo, 
+				 (char *)text, d, i);
 	  d += i;
 	  theStrlen -= i;
 	}
@@ -375,13 +381,13 @@ void GetUnicodeTextWidth(const char *text, int d, int theStrlen,
 
 	  amt = 1;
       
-	  *x += DrawMeasUnicodeText(text, d, amt, ucs4,
-				    1, 1, 
-				    txFont, txSize, txFace,
-				    again, qd_spacing,
-				    wxSMOOTHING_DEFAULT, 0.0, is_sym,
-				    scale_x, scale_y, 
-				    0.0, 0, 0.0, 0.0, 0.0, 0.0, 0);
+	  (*x) += DrawMeasUnicodeText(text, d, amt, ucs4,
+				      1, 1, 
+				      txFont, txSize, txFace,
+				      again, qd_spacing,
+				      wxSMOOTHING_DEFAULT, 0.0, is_sym,
+				      scale_x, scale_y, 
+				      0.0, 0, 0.0, 0.0, 0.0, 0.0, 0);
 	  d += amt;
 	  theStrlen -= amt;
 	  again = 1;
@@ -485,7 +491,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			      NULL, 1 /*UTF-16*/, '?');
   }
 
-  if (is_sym) {
+  if (is_sym == wxSYMBOL) {
     unsigned int i;
     int v, m;
     for (i = 0; i < ulen; i++) {
@@ -589,7 +595,8 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			  ll_theTags, ll_theSizes, ll_theValues);
   }
 
-  ATSUSetTransientFontMatching(layout, TRUE);
+  if (is_sym != wxMODERN) 
+    ATSUSetTransientFontMatching(layout, TRUE);
 
   if (angle != 0.0) {
     GC_CAN_IGNORE ATSUAttributeTag  r_theTags[] = { kATSULineRotationTag };

@@ -107,11 +107,13 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   cWindowWidth = TAB_TITLE_SPACE;
   for (i = 0; i < N; i++) {
     float x, y;
-    font->GetTextExtent(wxItemStripLabel(Choices[i]), 0, &x, &y, NULL, NULL, 0, 1.0);
+    font->GetTextExtent(wxItemStripLabel(Choices[i]), 0, &x, &y, NULL, NULL, TRUE);
     cWindowWidth += TAB_TITLE_SPACE + (int)x;
   }
   padTop = TAB_TOP_SPACE;
 #endif
+
+  phantom_height = -1;
 
   ::SizeControl(cMacControl, cWindowWidth, (style & wxBORDER) ? cWindowHeight : TAB_CONTROL_HEIGHT);
 
@@ -184,8 +186,14 @@ void wxTabChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
     if (cStyle & wxBORDER) {
       wxWindow *parent;
       int pw, ph;
-      parent = GetParent();
-      parent->GetClientSize(&pw, &ph);
+
+      if (phantom_height > 0) {
+	ph = phantom_height;
+	pw = 0;
+      } else {
+	parent = GetParent();
+	parent->GetClientSize(&pw, &ph);
+      }
       ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
 		    ph - (padTop + padBottom));
     } else {
@@ -207,6 +215,11 @@ void wxTabChoice::MaybeMoveControls(void)
 void wxTabChoice::Refresh(void)
 {
   wxItem::Refresh();
+}
+
+void wxTabChoice::SetPhantomSize(int w, int h)
+{
+  phantom_height = h;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -40,7 +40,7 @@ typedef struct {
 # define DELETE_OBJ delete
 # define DELETE_VAL delete
 # define WRAP_SAFEREF(x) x
-# define FREE_SAFEREF(x) 0
+# define FREE_SAFEREF(x) /* empty */
 # define GET_SAFEREF(x) x
 #endif
 #define WXGC_NO_CLEANUP FALSE

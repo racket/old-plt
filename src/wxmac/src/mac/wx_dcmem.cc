@@ -94,11 +94,14 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   pixmapHeight = bitmap->GetHeight();
   if (bitmap->Ok()) {
     if (bitmap->x_pixmap) {
+      int dpth;
+
       cMacDC = new wxMacDC((CGrafPtr)bitmap->x_pixmap);
       // bitmap->DrawMac(0, 0);
       ok = TRUE;
       
-      Colour = (bitmap->GetDepth() > 1);
+      dpth = bitmap->GetDepth();
+      Colour = (dpth > 1);
 
       SetCurrentDC();
       InstallColor(current_background_color, FALSE);

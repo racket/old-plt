@@ -71,7 +71,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   WindowPtr theMacWindow;
   wxArea *carea, *parea;
   wxMargin pam;
-  int metal = 0;
+  int metal = (style & wxMETAL);
   
   InitDefaults();
 
@@ -433,6 +433,7 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
 			      theMacWidth, -1);
 	cStatusPanel->GetClientSize(&w, &h);
 	cStatusText->SetSize(-1, -1, w, -1);
+	cStatusText->MaybeMoveControls();
       }
       
       // Call OnSize handler
@@ -476,6 +477,7 @@ void wxFrame::Maximize(Bool maximize)
 			      theMacWidth, -1);
 	cStatusPanel->GetClientSize(&w, &h);
 	cStatusText->SetSize(-1, -1, w, -1);
+	cStatusText->MaybeMoveControls();
       }
       
       {

@@ -505,7 +505,7 @@ wxBitmap *wxClipboard::GetClipboardBitmap(long time)
   if (!pd || (size < (long)(sizeof(long)+sizeof(Rect))))
     return NULL;
   
-  bbox = *(Rect *)((char *)pd + sizeof(short));
+  bbox = *(Rect *)((char *)pd XFORM_OK_PLUS sizeof(short));
 
   w = bbox.right - bbox.left;
   h = bbox.bottom - bbox.top;

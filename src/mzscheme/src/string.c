@@ -1638,8 +1638,8 @@ int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
   CFStringRef str1, str2;
   CFComparisonResult r;
 
-  str1 = CFStringCreateWithBytes(NULL, s1 + (d1 * 2), (l1 * 2), kCFStringEncodingUnicode, FALSE);
-  str2 = CFStringCreateWithBytes(NULL, s2 + (d2 * 2), (l2 * 2), kCFStringEncodingUnicode, FALSE);
+  str1 = CFStringCreateWithBytes(NULL, s1 XFORM_OK_PLUS (d1 * 2), (l1 * 2), kCFStringEncodingUnicode, FALSE);
+  str2 = CFStringCreateWithBytes(NULL, s2 XFORM_OK_PLUS (d2 * 2), (l2 * 2), kCFStringEncodingUnicode, FALSE);
   
   r = CFStringCompare(str1, str2, (kCFCompareLocalized 
 				   | (cvt_case ? kCFCompareCaseInsensitive : 0)));
@@ -1825,7 +1825,7 @@ char *do_native_recase(int to_up, char *in, int delta, int len, long *olen)
   CFStringRef str;
   char *result;
 
-  str = CFStringCreateWithBytes(NULL, in + (delta * 2), (len * 2), kCFStringEncodingUnicode, FALSE);
+  str = CFStringCreateWithBytes(NULL, in XFORM_OK_PLUS (delta * 2), (len * 2), kCFStringEncodingUnicode, FALSE);
   mstr = CFStringCreateMutableCopy(NULL, 0, str);
   CFRelease(str);
   

@@ -31,11 +31,14 @@ class wxGroupBox : public wxItem
   virtual void Activate(Bool gray);
   virtual void MaybeMoveControls();
 
+  virtual void SetPhantomSize(int w, int h);
+
 protected:
   virtual void ChangeToGray(Bool gray);
   virtual void Paint(void);
 
   int orig_height;
+  int phantom_height;
 };
 
 #endif // wx_gboxh

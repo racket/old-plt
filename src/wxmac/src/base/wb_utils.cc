@@ -46,7 +46,7 @@ char *copystring_to_aligned(const char *s, int d)
   size_t len;
   char *news;
 
-  len = strlen(s + d);
+  len = strlen(s XFORM_OK_PLUS d);
   news = new WXGC_ATOMIC char[len + 1];
   memcpy(news, s + d, len + 1);
   return news;
@@ -75,29 +75,41 @@ wxRegisterId (long id)
 void 
 StringToFloat (char *s, float *number)
 {
-  if (s && *s && number)
-    *number = (float) strtod (s, NULL);
+  if (s && *s && number) {
+    double d;
+    d = strtod(s, NULL);
+    (*number) = d;
+  }
 }
 
 void 
 StringToDouble (char *s, double *number)
 {
-  if (s && *s && number)
-    *number = strtod (s, NULL);
+  if (s && *s && number) {
+    double d;
+    d = strtod(s, NULL);
+    (*number) = d;
+  }
 }
 
 void 
 StringToInt (char *s, int *number)
 {
-  if (s && *s && number)
-    *number = (int) strtol (s, NULL, 10);
+  if (s && *s && number) {
+    long i;
+    i = strtol (s, NULL, 10);
+    (*number) = i;
+  }
 }
 
 void 
 StringToLong (char *s, long *number)
 {
-  if (s && *s && number)
-    *number = strtol (s, NULL, 10);
+  if (s && *s && number) {
+    long i;
+    i = strtol (s, NULL, 10);
+    (*number) = i;
+  }
 }
 
 /****** FILE UTILITIES ******/

@@ -142,6 +142,7 @@ private:
 	virtual void WarpPointer(int x_pos, int y_pos) ;
 
 	void DoShow(Bool show);
+	void ShowAsActive(Bool flag);
 
 	virtual void ClientToLogical(int* x, int* y); // mac platform only; testing
 	// some new methods for wxMedia

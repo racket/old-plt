@@ -63,13 +63,15 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
     float x, y;
     wxFont *bold;
     bold = new wxFont(font->GetPointSize(), font->GetFontId(), font->GetStyle(), wxBOLD, 0);
-    bold->GetTextExtent(wxItemStripLabel(label), 0, &x, &y, NULL, NULL, 0, 1.0);
+    bold->GetTextExtent(wxItemStripLabel(label), 0, &x, &y, NULL, NULL, TRUE, FALSE);
     cWindowWidth = (int)x + GBOX_EXTRA_H_SPACE;
     cWindowHeight = (int)y + GBOX_EXTRA_SPACE;
   }
 #endif
 
   orig_height = cWindowHeight;
+
+  phantom_height = -1;
 
   ::SizeControl(cMacControl, cWindowWidth, cWindowHeight);
 
@@ -118,8 +120,13 @@ void wxGroupBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
 
     GetClientSize(&clientWidth, &clientHeight);
 
-    parent = GetParent();
-    parent->GetClientSize(&pClientWidth, &pClientHeight);
+    if (phantom_height > 0) {
+      pClientHeight = phantom_height;
+      pClientWidth = 0;
+    } else {
+      parent = GetParent();
+      parent->GetClientSize(&pClientWidth, &pClientHeight);
+    }
     ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
 		  pClientHeight - (padTop + padBottom));
   }
@@ -141,6 +148,11 @@ void wxGroupBox::MaybeMoveControls(void)
 void wxGroupBox::Refresh(void)
 {
   wxWindow::Refresh();
+}
+
+void wxGroupBox::SetPhantomSize(int w, int h)
+{
+  phantom_height = h;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -12,6 +12,9 @@
 #include "wx_sbar.h"
 #include "wx_utils.h"
 
+#define kVScrollBarWidth 15
+#define kHScrollBarHeight 15
+
 //=============================================================================
 // Construction methods
 //=============================================================================

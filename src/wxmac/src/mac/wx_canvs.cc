@@ -665,6 +665,12 @@ void wxCanvas::DoShow(Bool show)
 }
 
 //-----------------------------------------------------------------------------
+void wxCanvas::ShowAsActive(Bool flag)
+{
+  /* Do nothing. */
+}
+
+//-----------------------------------------------------------------------------
 void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
 { // Transform point from client c.s. to logical c.s. (virtual canvas, scrolling)
   // trying without all this gunk:
@@ -786,11 +792,14 @@ int wxCanvas::GetScrollRange(int dir)
 void wxCanvas::Paint(void)
 {
   if (!cHidden) {
-    Rect itemRect;
-    GetControlBounds(cPaintControl, &itemRect);
-    BackColor(whiteColor);
-    BackPat(GetWhitePattern());
-    EraseRect(&itemRect);
+    if (!(cStyle & wxTRANSPARENT_WIN)
+	&& !(cStyle & wxNO_AUTOCLEAR)) {
+      Rect itemRect;
+      GetControlBounds(cPaintControl, &itemRect);
+      BackColor(whiteColor);
+      BackPat(GetWhitePattern());
+      EraseRect(&itemRect);
+    }
     
     /* In wx_frame.cc: */
     wxCallOnPaintOrQueue(this);

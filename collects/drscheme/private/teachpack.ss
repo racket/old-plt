@@ -7,7 +7,6 @@
 	   (lib "framework.ss" "framework")
 	   (lib "mred.ss" "mred")
 	   (lib "string-constant.ss" "string-constants")
-	   "reload.ss"
            "drsig.ss")
 
   (provide teachpack@)

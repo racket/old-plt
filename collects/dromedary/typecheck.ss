@@ -558,17 +558,32 @@
 			   (empty-context)
 			   (raise-syntax-error #f (format "Expected ~a but found ~a" type t2) patsyn))) ]
 		    [($ ast:ppat_tuple plist)
-		     (if (istype? <tuple>? type)
-			 (let ([tlist (<tuple>-list type)])
-			   (if (= (length tlist) (length plist))
-			       (let ([nenvs (map patenv plist tlist (repeat context (length plist)))])
-				 (let ([res (foldl union-envs (car nenvs) (cdr nenvs))])
-				   (begin
-				     ;(pretty-print (format "foldl result2: ~a" res))
-				     res))
-)
-			       (raise-syntax-error #f (format "Expected tuple of length ~a but found tuple of length " (length tlist) (length plist)) patsyn)) )
-			 (raise-syntax-error #f (format "Expected ~a but found tuple" type) patsyn) )]
+		     (begin (pretty-print (format "plist: ~a" plist))
+			    
+			    (when (unify type (make-<tuple> (letrec 
+							      ([ftvarlist (lambda (len)
+										(if (= len 0)
+								
+										    null
+										    (cons (fresh-type-var) (ftvarlist (- len 1)))))])
+							    (ftvarlist (length plist))))
+				       (at (car plist) (ast:pattern-ppat_src (car plist))))
+				(let* ([tlist (letrec ([get-list
+							(lambda (type)
+							  (cond
+							   [(tvar? type)
+							    (get-list (unbox (tvar-tbox type)))]
+							   [(<tuple>? type)
+							    (<tuple>-list type)]
+							   [else (raise-syntax-error #f (format "Not a list: ~a" type) #f)]))]) (get-list type))]
+				       [nenvs (map patenv plist tlist (repeat context (length plist)))])
+				  (let ([res (foldl union-envs (car nenvs) (cdr nenvs))])
+				    (begin
+					;(pretty-print (format "foldl result2: ~a" res))
+				      res)))
+))
+		     
+		     ]
 		    [($ ast:ppat_construct longident cpat bool)
 		     (let* ([pat-type (hash-table-get <constructors> (unlongident longident) (lambda () #f))])
 		       (if pat-type
@@ -693,7 +708,10 @@
 		[else (begin (raise-syntax-error #f "Expected an arrow type" syn) #f)])]
 	      [(<tuple>? t1)
 	       (cond
-		[(<tuple>? t2) (andmap unify (<tuple>-list t1) (<tuple>-list t2) (repeat syn (length (<tuple>-list t1))))]
+		[(<tuple>? t2) 
+		 (if (= (length (<tuple>-list t1)) (length (<tuple>-list t2)))
+		     (andmap unify (<tuple>-list t1) (<tuple>-list t2) (repeat syn (length (<tuple>-list t1))))
+		     (begin (raise-syntax-error #f (format "Expected ~a but found ~a" t1 t2) syn) #f))]
 		[(tvar? t2) (unify-var t1 (tvar-tbox t2) syn)]
 		[else (begin (raise-syntax-error #f "Expected a <tuple> type" syn) #f)])]
 	      [(tlist? t1)
@@ -886,7 +904,7 @@
 	     (cond
 	      [(pred rtype) #t]
 	      [(tvar? rtype) (if (null? (unbox (tvar-tbox rtype)))
-				 #f
+				 #t
 				 (istype? pred (unbox (tvar-tbox rtype))))]
 	      [else #f]))
 

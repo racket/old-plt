@@ -117,65 +117,74 @@
 	(hash-table-put! <library-names> "List" <list-funcs>)
 	(hash-table-put! <library-names> "Array" <array-funcs>)
 
-	(define (!= a b)
-	  (not (equal? a b)))
+	(define (!= a)
+	  (lambda (b)
+	    (not (equal? a b))))
 
-	(define (<lt> a b)
-	  (cond
-	   [(number? a)
-	    (< a b)]
-	   [(boolean? a)
-	    (< (boolean-to-number a) (boolean-to-number b))]
-	   [(string? a)
-	    (string<? a b)]
-	   [else
-	    (pretty-print "Uncaught exception: Invalid_argument")]))
+	(define (<lt> a)
+	  (lambda (b)
+	    (cond
+	     [(number? a)
+	      (< a b)]
+	     [(boolean? a)
+	      (< (boolean-to-number a) (boolean-to-number b))]
+	     [(string? a)
+	      (string<? a b)]
+	     [else
+	      (pretty-print "Uncaught exception: Invalid_argument")])))
 
-	(define (<le> a b)
-	  (cond
-	   [(number? a)
-	    (<= a b)]
-	   [(boolean? a)
-	    (<= (boolean-to-number a) (boolean-to-number b))]
-	   [(string? a)
-	    (string<=? a b)]
-	   [else
-	    (pretty-print "Uncaught exception: Invalid_argument")]))
+	(define (<le> a)
+	  (lambda (b)
+	    (cond
+	     [(number? a)
+	      (<= a b)]
+	     [(boolean? a)
+	      (<= (boolean-to-number a) (boolean-to-number b))]
+	     [(string? a)
+	      (string<=? a b)]
+	     [else
+	      (pretty-print "Uncaught exception: Invalid_argument")])))
 
-	(define (<gt> a b)
-	  (cond
-	   [(number? a)
-	    (> a b)]
-	   [(boolean? a)
-	    (> (boolean-to-number a) (boolean-to-number b))]
-	   [(string? a)
-	    (string>? a b)]
-	   [else
-	    (pretty-print "Uncaught exception: Invalid_argument")]))
+	(define (<gt> a)
+	  (lambda (b)
+	    (cond
+	     [(number? a)
+	      (> a b)]
+	     [(boolean? a)
+	      (> (boolean-to-number a) (boolean-to-number b))]
+	     [(string? a)
+	      (string>? a b)]
+	     [else
+	      (pretty-print "Uncaught exception: Invalid_argument")])))
 
-	(define (<ge> a b)
-	  (cond
-	   [(number? a)
-	    (>= a b)]
-	   [(boolean? a)
-	    (>= (boolean-to-number a) (boolean-to-number b))]
-	   [(string? a)
-	    (string>=? a b)]
-	   [else
-	    (pretty-print "Uncaught exception: Invalid_argument")]))
+	(define (<ge> a)
+	  (lambda (b)
+	    (cond
+	     [(number? a)
+	      (>= a b)]
+	     [(boolean? a)
+	      (>= (boolean-to-number a) (boolean-to-number b))]
+	     [(string? a)
+	      (string>=? a b)]
+	     [else
+	      (pretty-print "Uncaught exception: Invalid_argument")])))
 
-	(define (<set-box!> b v)
-	  (begin (set-box! b v)
-		 (make-<unit> #f)))
+	(define (<set-box!> b)
+	  (lambda (v)
+	    (begin (set-box! b v)
+		   (make-<unit> #f))))
 
-	(define (<> a b)
-	  (not (equal? a b)))
+	(define (<> a)
+	  (lambda (b)
+	    (not (equal? a b))))
 
-	(define (<or> a b)
-	  (or a b))
+	(define (<or> a)
+	  (lambda (b)
+	    (or a b)))
 
-	(define (<and> a b)
-	  (and a b))
+	(define (<and> a)
+	  (lambda (b)
+	    (and a b)))
 
 	(define (print_char a)
 	  (begin (display a) (make-<unit> #f)))
@@ -239,7 +248,7 @@
 	(hash-table-put! built-in-and-user-funcs "/." (cons (make-arrow (list "float" "float") "float") /))
 	(hash-table-put! built-in-and-user-funcs "=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'b")) "bool") equal?))
 	(hash-table-put! built-in-and-user-funcs "==" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'b")) "bool") equal?))
-	(hash-table-put! built-in-and-user-funcs "<" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'a")) "bool") <lt>))
+	(hash-table-put! built-in-and-user-funcs "<" (cons (make-arrow (list (make-tvar "'a")) (make-arrow (list (make-tvar "'a")) "bool")) <lt>))
 	(hash-table-put! built-in-and-user-funcs "<=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'a")) "bool") <le>))
 	(hash-table-put! built-in-and-user-funcs ">" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'a")) "bool") <gt>))
 	(hash-table-put! built-in-and-user-funcs ">=" (cons (make-arrow (list (make-tvar "'a") (make-tvar "'a")) "bool") <ge>))
@@ -254,7 +263,7 @@
 	(hash-table-put! built-in-and-user-funcs "@" (cons (make-arrow (list (make-tlist (make-tvar "'a")) (make-tlist (make-tvar "'a"))) (make-tlist (make-tvar "'a"))) append))
 	(hash-table-put! built-in-and-user-funcs "^" (cons (make-arrow (list "string" "string") "string") string-append))
 	(hash-table-put! built-in-and-user-funcs "raise" (cons (make-arrow (list "exception") (make-tvar "'a")) raise))
-	(hash-table-put! built-in-and-user-funcs 'COLONEQUAL (cons (make-arrow (list (make-ref (make-tvar "'a")) (make-tvar "'a")) "unit") <set-box!>))
+	(hash-table-put! built-in-and-user-funcs ":=" (cons (make-arrow (list (make-ref (make-tvar "'a")) (make-tvar "'a")) "unit") <set-box!>))
 	(hash-table-put! built-in-and-user-funcs "ref" (cons (make-arrow (list (make-tvar "'a")) (make-ref (make-tvar "'a"))) box))
 	(hash-table-put! built-in-and-user-funcs "!" (cons (make-arrow (list (make-ref (make-tvar "'a"))) (make-tvar "'a")) unbox))
 	(hash-table-put! built-in-and-user-funcs "print_int" (cons (make-arrow (list "int") "unit") print_int))

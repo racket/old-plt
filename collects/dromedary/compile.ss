@@ -203,9 +203,9 @@
 	      [($ ast:pexp_apply proc lelist)
 	       (let ([fun (compile-ml proc context)]
 		     [args (compile-lelist lelist context)])
-		 (if (ml-primitive? (syntax-object->datum fun) ml-prims)
-		     #`(#,fun #,@args)
-		     (compile-apply fun (reverse args))))]
+;		 (if (ml-primitive? (syntax-object->datum fun) ml-prims)
+;		     #`(#,fun #,@args)
+		     (compile-apply fun (reverse args)))]
 
 	      [($ ast:pexp_let rec bindings expr ksrc isrc)
 	       (compile-let rec bindings expr context ksrc isrc)]
@@ -558,7 +558,7 @@
 	   #f
 	   (or (equal? fun (car primlist)) (ml-primitive? fun (cdr primlist)))))
 
-     (define ml-prims (list + - * / equal? = <> <gt> <ge> <lt> <le> <or> <and> expt != not append string-append set-box! unbox)) 
+     (define ml-prims (list + - * / equal? = <> <gt> <ge> <le> <or> <and> expt != not append string-append set-box! unbox)) 
 
      (define (empty-context) 
        '(("+" operator +)

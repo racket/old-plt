@@ -44,6 +44,11 @@
           (let ([expand/ret-void (lambda (x) (expand x) (void))]) expand/ret-void)
           stx))
   
+  (define (test/no-error sexp)
+    (test (void)
+          eval
+          `(begin ,sexp (void))))
+  
   (test/spec-passed
    'contract-flat1 
    '(contract not #f 'pos 'neg))
@@ -52,6 +57,31 @@
    'contract-flat2 
    '(contract not #t 'pos 'neg)
    "pos")
+  
+  (test/no-error '(-> integer? integer?))
+  (test/no-error '(-> (flat-contract integer?) (flat-contract integer?)))
+  (test/no-error '(-> integer? any))
+  (test/no-error '(-> (flat-contract integer?) any))
+  
+  (test/no-error '(->* (integer?) (integer?)))
+  (test/no-error '(->* (integer?) integer? (integer?)))
+  (test/no-error '(->* (integer?) integer? any))
+  (test/no-error '(->* ((flat-contract integer?)) ((flat-contract integer?))))
+  (test/no-error '(->* ((flat-contract integer?)) (flat-contract integer?) ((flat-contract integer?))))
+  (test/no-error '(->* ((flat-contract integer?)) (flat-contract integer?) any))
+  
+  (test/no-error '(->d integer? (lambda (x) integer?)))
+  (test/no-error '(->d (flat-contract integer?) (lambda (x) (flat-contract integer?))))
+
+  (test/no-error '(->d* (integer?) (lambda (x) integer?)))
+  (test/no-error '(->d* ((flat-contract integer?)) (lambda (x) (flat-contract integer?))))
+  (test/no-error '(->d* (integer?) integer? (lambda (x) integer?)))
+  (test/no-error '(->d* ((flat-contract integer?)) (flat-contract integer?) (lambda (x) (flat-contract integer?))))
+  
+  (test/no-error '(opt-> (integer?) (integer?) integer?))
+  (test/no-error '(opt-> ((flat-contract integer?)) ((flat-contract integer?)) (flat-contract integer?)))
+  (test/no-error '(opt->* (integer?) (integer?) (integer?)))
+  (test/no-error '(opt->* ((flat-contract integer?)) ((flat-contract integer?)) ((flat-contract integer?))))
   
   (test/spec-passed
    'contract-arrow-star0a
@@ -640,267 +670,6 @@
       (eval '(require contract-test-suite6))
       (eval '(define-struct (t s) ()))))
   
-  
-  (test/spec-passed/result
-   'contract-=>flat1
-   '(contract-=> (>=/c 5) (>=/c 10) 1 'badguy)
-   1)
-  (test/spec-passed/result
-   'contract-=>flat2
-   '(contract-=> (>=/c 5) (>=/c 10) 12 'badguy)
-   12)
-  (test/spec-failed
-   'contract-=>flat3
-   '(contract-=> (>=/c 5) (>=/c 10) 6 'badguy)
-   "badguy")
-
-  (test/spec-passed
-   'contract-=>->1
-   '(contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) (lambda (x) x) 'badguy))
-  
-  (test/spec-failed
-   'contract-=>->2
-   '(contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) 'not-a-proc 'badguy)
-   "badguy")
-  
-  (test/spec-passed/result
-   'contract-=>->3
-   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) (lambda (x) x) 'badguy)
-     1)
-   1)
-  
-  (test/spec-passed/result
-   'contract-=>->4
-   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 10)) (lambda (x) x) 'badguy)
-     12)
-   12)
-  
-  (test/spec-failed
-   'contract-=>->5
-   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 5) . -> . (>=/c 5)) (lambda (x) x) 'badguy)
-     7)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>->6
-   '((contract-=> ((>=/c 10) . -> . (>=/c 5)) ((>=/c 10) . -> . (>=/c 10)) (lambda (x) 7) 'badguy)
-     7)
-   "badguy")
-
-  (test/spec-passed
-   'contract-=>->*1
-   '(contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                 (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                 (lambda (x y) (values x y))
-                 'badguy))
-  
-  (test/spec-failed
-   'contract-=>->*2
-   '(contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                 (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                 'not-a-proc
-                 'badguy)
-   "badguy")
-  
-  (test/spec-passed/result
-   'contract-=>->*3
-   '(let-values ([(r1 r2)
-                  ((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                                (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                                (lambda (x y) (values x y))
-                                'badguy)
-                   1 7)])
-      r1)
-   1)
-  
-  (test/spec-passed/result
-   'contract-=>->*4
-   '(let-values ([(r1 r2)
-                  ((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                                (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                                (lambda (x y) (values x y))
-                                'badguy)
-                   11 21)])
-      r1)
-   11)
-  
-  (test/spec-failed
-   'contract-=>->*5
-   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                  (lambda (x y) (values x y))
-                  'badguy)
-     5 21)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>->*6
-   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                  (lambda (x y) (values x y))
-                  'badguy)
-     11 10)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>->*7
-   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                  (lambda (x y) (values 8 25))
-                  'badguy)
-     11 21)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>->*8
-   '((contract-=> (->* ((>=/c 10) (>=/c 20)) ((>=/c 3) (>=/c 8)))
-                  (->* ((>=/c 3) (>=/c 8)) ((>=/c 10) (>=/c 20)))
-                  (lambda (x y) (values 15 10))
-                  'badguy)
-     11 21)
-   "badguy")
-  
-  (test/spec-passed/result
-   'contract-=>->*9
-   '(let-values ([(a b)
-                  ((contract-=> (->* ((>=/c 10) (>=/c 20) (>=/c 30)) ((>=/c 3) (>=/c 8)))
-                                (->* ((>=/c 3) (>=/c 8) (>=/c 30)) ((>=/c 10) (>=/c 20)))
-                                (lambda (x y z) (values x z))
-                                'badguy)
-                   101 102 103)])
-      b)
-   103)
-  
-  (test/spec-failed
-   'contract-=>mismatch
-   '(contract-=> (>=/c 5)
-                 (-> (>=/c 3) (>=/c 8))
-                 1
-                 'badguy)
-   "badguy")
-
-  (test/spec-passed/result
-   'contract-=>->*10
-   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
-                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
-                  (lambda (x . y) 1)
-                  'badguy)
-     100
-     200
-     300)
-   1)
-  
-  (test/spec-failed
-   'contract-=>->*11
-   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
-                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
-                  (lambda (x . y) 1)
-                  'badguy)
-     7
-     200
-     300)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>->*12
-   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
-                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
-                  (lambda (x . y) 1)
-                  'badguy)
-     100
-     10
-     300)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>->*13
-   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
-                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
-                  (lambda (x . y) 1)
-                  'badguy)
-     100
-     200
-     10)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>->*14
-   '((contract-=> (->* ((>=/c 10)) (listof (>=/c 20)) ((>=/c 3)))
-                  (->* ((>=/c 3)) (listof (>=/c 8)) ((>=/c 10)))
-                  (lambda (x . y) 5)
-                  'badguy)
-     100
-     200
-     300)
-   "badguy")
-  
-  (test/spec-passed/result
-   'contract-=>-case->1
-   '((contract-=> (case-> (integer? . -> . integer?)) (case-> (integer? . -> . integer?)) (case-lambda [(x) x]) 'badguy) 1)
-   1)
-  
-  (test/spec-passed/result
-   'contract-=>-case->2
-   '((contract-=> (case->
-                   (-> (>=/c 10) (>=/c 3))
-                   (-> (>=/c 10) (>=/c 10) (>=/c 3)))
-                  (case->
-                   (-> (>=/c 3) (>=/c 10))
-                   (-> (>=/c 3) (>=/c 3) (>=/c 10)))
-                  (case-lambda
-                    [(x) x]
-                    [(x y) x])
-                  'badguy)
-     100)
-   100)
-  
-  (test/spec-passed/result
-   'contract-=>-case->3
-   '((contract-=> (case->
-                   (-> (>=/c 10) (>=/c 3))
-                   (-> (>=/c 10) (>=/c 10) (>=/c 3)))
-                  (case->
-                   (-> (>=/c 3) (>=/c 10))
-                   (-> (>=/c 3) (>=/c 3) (>=/c 10)))
-                  (case-lambda
-                    [(x) x]
-                    [(x y) x])
-                  'badguy)
-     100
-     200)
-   100)
-  
-  (test/spec-failed
-   'contract-=>-case->4
-   '((contract-=> (case->
-                   (-> (>=/c 10) (>=/c 3))
-                   (-> (>=/c 100) (>=/c 100) (>=/c 30)))
-                  (case->
-                   (-> (>=/c 3) (>=/c 10))
-                   (-> (>=/c 30) (>=/c 30) (>=/c 100)))
-                  (case-lambda
-                    [(x) x]
-                    [(x y) x])
-                  'badguy)
-     8)
-   "badguy")
-  
-  (test/spec-failed
-   'contract-=>-case->5
-   '((contract-=> (case->
-                   (-> (>=/c 10) (>=/c 3))
-                   (-> (>=/c 100) (>=/c 100) (>=/c 30)))
-                  (case->
-                   (-> (>=/c 3) (>=/c 10))
-                   (-> (>=/c 30) (>=/c 30) (>=/c 100)))
-                  (case-lambda
-                    [(x) x]
-                    [(x y) x])
-                  'badguy)
-     80
-     80)
-   "badguy")
-  
   (test/spec-passed/result
    'class-contract1
    '(send
@@ -1031,31 +800,6 @@
       (send c m c))
    "c-neg")
 |#
-  (test/spec-failed
-   'class-contract=>1
-   '(let* ([c% (contract (class-contract (public m ((>=/c 10) . -> . (>=/c 10))))
-                         (class object% (define/public (m x) x) (super-instantiate ()))
-                         'pos-c
-                         'neg-c)]
-           [d% (contract (class-contract (override m ((>=/c 15) . -> . (>=/c 5))))
-                         (class c% (define/override (m x) x) (super-instantiate ()))
-                         'pos-d
-                         'neg-d)])
-      (send (make-object d%) m 12))
-   "pos-d")
-  
-  (test/spec-failed
-   'class-contract=>2
-   '(let* ([c% (contract (class-contract (public m ((>=/c 10) . -> . (>=/c 10))))
-                         (class object% (define/public (m x) x) (super-instantiate ()))
-                         'pos-c
-                         'neg-c)]
-           [d% (contract (class-contract (override m ((>=/c 15) . -> . (>=/c 5))))
-                         (class c% (define/override (m x) 8) (super-instantiate ()))
-                         'pos-d
-                         'neg-d)])
-      (send (make-object d%) m 100))
-   "pos-d")  
   
   (test/spec-passed/result
    'class-contract=>3

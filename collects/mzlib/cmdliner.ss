@@ -236,7 +236,7 @@
 			      r-acc
 			      (cons v r-acc)))))))]
 	    [handle-flag
-	     (lambda (flag args r-acc k)
+	     (lambda (flag args r-acc orig-multi k)
 	       (let loop ([table table])
 		 (cond
 		  [(null? table)
@@ -247,9 +247,22 @@
 			   (if (car set)
 			       (let ([flags (cdr set)])
 				 (error (string->symbol program)
-					(if (= 1 (length flags))
-					    (format "the ~a flag can only be specified once" (car flags))
-					    (format "only one instance of one flag from ~a is allowed" flags))))
+					(let ([s (if (= 1 (length flags))
+						     (format "the ~a flag can only be specified once" (car flags))
+						     (format "only one instance of one flag from ~a is allowed" flags))])
+					  (if orig-multi
+					      (format "~a; note that ~s is shorthand for ~s, in contrast to ~s"
+						      s
+						      orig-multi
+						      (let loop ([prefix (string-ref orig-multi 0)]
+								 [flags (string->list (substring orig-multi 1 (string-length orig-multi)))]
+								 [sep ""])
+							(if (null? flags)
+							    ""
+							    (format "~a~a~a~a" sep prefix (car flags)
+								    (loop prefix (cdr flags) " "))))
+						      (string-append (substring orig-multi 0 1) orig-multi))
+					      s))))
 			       (set-car! set #t))))
 		   (call-handler (caddar table) flag args r-acc k)]
 		  [else (loop (cdr table))])))])
@@ -264,7 +277,7 @@
 		[(regexp-match "^--$" arg)
 		 (done (cdr args) r-acc)]
 		[(regexp-match "^[-+][-+]" arg)
-		 (handle-flag arg rest r-acc loop)]
+		 (handle-flag arg rest r-acc #f loop)]
 		[(regexp-match "^[-+]." arg)
 		 (let a-loop ([s (string->list (substring arg 1 (string-length arg)))]
 			      [rest rest]
@@ -273,6 +286,7 @@
 		       (loop rest r-acc)
 		       (handle-flag (string (string-ref arg 0) (car s)) 
 				    rest r-acc
+				    arg
 				    (lambda (args r-acc)
 				      (a-loop (cdr s) args r-acc)))))]
 		[else

@@ -63,7 +63,7 @@ The frame returned by `new-help-frame' provides two extra methods:
     is the search input, `type' is 'keyword, 'keyword+index, or 'all,
     and `mode' is 'exact, 'contains, or 'regexp.
 
-> open-url :: (send a-help-frame open-url url) - opens the given URL
+> goto-url :: (send a-help-frame goto-url url) - opens the given URL
     within the help frame.
 
 All of the helpr.ss unit's imports must be initialized before the Help

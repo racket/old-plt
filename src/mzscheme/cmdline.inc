@@ -439,6 +439,12 @@ static int run_from_cmd_line(int argc, char *argv[],
   }
 #endif /* NO_FILE_SYSTEM_UTILS */
 
+#ifndef MZSCHEME_CMD_LINE  
+  scheme_eval_string("(with-handlers ([void void])"
+		     "  (send (current-ps-setup) set-afm-path (collection-path \"afm\")))",
+		     global_env);
+#endif
+
   fa = (FinishArgs *)scheme_malloc(sizeof(FinishArgs));
 #ifndef DONT_PARSE_COMMAND_LINE
   fa->evals_and_loads = evals_and_loads;

@@ -301,11 +301,13 @@ static void check_tagged(char *where,
 			    "bad syntax (no identifiers provided for %s)",
 			    must_have_ids < 0 ? "exporting" : "linking");
       
+#ifdef NO_SELF_IMPORT
       if (SAME_OBJ(tag, self_check)) {
 	scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
 			    tag, form,
 			    "bad syntax (self-import)");
       }
+#endif
 
       if (check_id)
 	check_id_list(where, rest, form, env, m, tag, rename_ok);
@@ -843,10 +845,13 @@ static int check_compound_unit(Scheme_Object *form, Scheme_Comp_Env *env,
 			      sub->int_id, form,
 			      "bad syntax (not an imported identifier)");
 	
-      } else if (SAME_OBJ(sub->tag, id->tag))
+      }
+#ifdef NO_SELF_IMPORT
+      else if (SAME_OBJ(sub->tag, id->tag))
 	scheme_wrong_syntax(MAKE_COMPOUND_UNIT, 
 			    sub->tag, form,
 			    "bad syntax (self-import)");
+#endif
     }
   }
 

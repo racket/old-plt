@@ -7,6 +7,7 @@ Changed interface: raises an exception if a superinterface
    declares a variable that is also declared in the interface
    expression
 Removed letrec*; letrec has the same semantics
+Self-import is now allowed for unit linking
 Removed constant-name and constant-name-all-globals
 Removed secure-primitive-exception-types
 Removed readable type symbols (e.g., #<procedure>)
@@ -17,7 +18,7 @@ Added current-memory-use
 Asynchronous breaks are now disabled during dynamic-wind
  pre and post thunks
 Removed user-break-poll-handler; spawn a thread that sleeps and
- calls break-thread instead
+ calls break-thread, instead
 Removed dynamic-enable-break (no long needed since dynamic-wind
  post thunks can't be broken), but moved it to MzLib's thread.ss
 Renamed call-with-escaping-continution procedure to

@@ -852,21 +852,7 @@ static void RestoreNormalBackground(wxBrush *eraser)
 
 RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
 {
-  int dx, dy, dw, dh;
-  wxWindow *parent;
-
-  parent = GetParent();
-  if (!parent) return NULL;
-
-  GetPosition(&dx, &dy);
-  GetSize(&dw, &dh);
-
-  x += dx;
-  y += dy;
-  w = dw;
-  h = dh;
-
-  return parent->GetCoveredRegion(x, y, w, h);
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------

@@ -117,12 +117,12 @@ wxCanvasDC::~wxCanvasDC(void)
   
   if (current_reg) {
     ::DisposeRgn(current_reg);
+    current_reg = NULL;
   }
-  current_reg = NULL;
   if (onpaint_reg) {
     ::DisposeRgn(onpaint_reg);
+    onpaint_reg = NULL;
   }
-  onpaint_reg = NULL;
 }
 
 void wxCanvasDC::BeginDrawing(void)
@@ -278,6 +278,8 @@ void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
     GetPortClipRegion(theMacGrafPort,clipRgn);
     GetRegionBounds(clipRgn,&theClipRect);
     
+    DisposeRgn(clipRgn);
+
     theX = theClipRect.left;
     theY = theClipRect.top;
     theWidth = theClipRect.right - theClipRect.left;
@@ -494,7 +496,7 @@ void wxCanvasDC::wxMacSetClip(void)
 {
   /* current GrafPtr is set when this function is called */
 
-  if (canvas && !canvas->WantsFocus()) { // => canvas is hidden
+  if (canvas && canvas->IsHidden()) {
     Rect zeroClipRect = {0, 0, 0, 0};
     ::ClipRect(&zeroClipRect);
   } else {

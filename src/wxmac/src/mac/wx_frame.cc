@@ -1093,30 +1093,7 @@ void wxFrame::Paint(void)
 
 RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
 {
-  if (!(cStyle & wxNO_RESIZE_BORDER)) {
-    int theMacWidth, theMacHeight;
-    wxArea *parea;
-    wxMargin m;
-    parea = PlatformArea();
-    m = parea->Margin();
-    theMacWidth = cWindowWidth - m.Offset(wxHorizontal);
-    theMacHeight = cWindowHeight - m.Offset(wxVertical);
-    if (((theMacWidth-15 >= x && theMacWidth-15 <= x + w)
-	 || (theMacWidth >= x && theMacWidth <= x + w))
-	&& (theMacHeight-15 >= y && theMacHeight-15 <= y + h)
-	|| (theMacHeight >= y && theMacHeight <= y + h)) {
-      RgnHandle rgn;
-      rgn = NewRgn();  // this can fail.  use MaxMem to determine validity?       
-      {
-	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
-	RectRgn(rgn, &growRect);
-      }
-      OffsetRgn(rgn, -x, -y);
-      return rgn;
-    } else
-      return NULL;
-  } else
-    return NULL;
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------

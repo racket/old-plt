@@ -170,12 +170,16 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   wxColour *c;
   wxBitmap *bm;
 
+  old = dc->GetClippingRegion();
+  if (old)
+    r->Intersect(old);
+
+  if (r->Empty())
+    return;
+
   bm = brush->GetStipple();
   style = brush->GetStyle();
   c = brush->GetColour();
-
-  old = dc->GetClippingRegion();
-  if (old) r->Intersect(old);
 
   r->BoundingBox(&x, &y, &w, &h);
   bw = bm->GetWidth();

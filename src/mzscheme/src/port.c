@@ -1140,7 +1140,7 @@ long scheme_get_string(const char *who,
 {
   Scheme_Input_Port *ip;
   long got = 0, total_got = 0, gc, i;
-  int special_ok = special_is_ok;
+  int special_ok = special_is_ok, check_special;
   Scheme_Get_String_Fun gs;
   Scheme_Peek_String_Fun ps;
 
@@ -1213,7 +1213,11 @@ long scheme_get_string(const char *who,
 	} else
 	  peek_skip = scheme_bin_minus(peek_skip, scheme_make_integer(l));
       }
-    } else if (ip->ungotten_special) {
+      check_special = (!got || peek);
+    } else
+      check_special = 1;
+
+    if (check_special && ip->ungotten_special) {
       if (!special_ok)
 	scheme_bad_time_for_special(who, port);
       if (!peek) {
@@ -1537,7 +1541,7 @@ scheme_peekc_special_ok_skip(Scheme_Object *port, Scheme_Object *skip)
 int
 scheme_peekc_special_ok(Scheme_Object *port)
 {
-  return scheme_peekc_skip(port, NULL);
+  return scheme_peekc_special_ok_skip(port, NULL);
 }
 
 int scheme_peekc_is_ungetc(Scheme_Object *port)

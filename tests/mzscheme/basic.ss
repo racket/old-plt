@@ -1706,24 +1706,28 @@
 		 [l (list 1 2 3)]
 		 [v (vector 5 6 7)]
 		 [a (make-a 1 (make-a 2 3))]
-		 [b (box (list 1 2 3))])
+		 [b (box (list 1 2 3))]
+		 [save (let ([x null])
+			 (case-lambda 
+			  [() x]
+			  [(a) (set! x (cons a x)) a]))])
 
 	     ;; Fill in table. Use `puts1' and `puts2' so we can
 	     ;; vary the order of additions.
 	     (let ([puts1 (lambda ()
-			    (hash-table-put! h1 l 'list)
-			    (hash-table-put! h1 "Hello World!" 'string)
-			    (hash-table-put! h1 123456789123456789123456789 'bignum)
-			    (hash-table-put! h1 3.45 'flonum)
-			    (hash-table-put! h1 3/45 'rational)
-			    (hash-table-put! h1 3+45i 'complex))]
+			    (hash-table-put! h1 (save l) 'list)
+			    (hash-table-put! h1 (save "Hello World!") 'string)
+			    (hash-table-put! h1 (save 123456789123456789123456789) 'bignum)
+			    (hash-table-put! h1 (save 3.45) 'flonum)
+			    (hash-table-put! h1 (save 3/45) 'rational)
+			    (hash-table-put! h1 (save 3+45i) 'complex))]
 		   [puts2 (lambda ()
-			    (hash-table-put! h1 (list 5 7) 'another-list)
-			    (hash-table-put! h1 3+0.0i 'izi-complex)
-			    (hash-table-put! h1 v 'vector)
-			    (hash-table-put! h1 a 'struct)
-			    (hash-table-put! h1 an-ax 'structx)
-			    (hash-table-put! h1 b 'box))])
+			    (hash-table-put! h1 (save (list 5 7)) 'another-list)
+			    (hash-table-put! h1 (save 3+0.0i) 'izi-complex)
+			    (hash-table-put! h1 (save v) 'vector)
+			    (hash-table-put! h1 (save a) 'struct)
+			    (hash-table-put! h1 (save an-ax) 'structx)
+			    (hash-table-put! h1 (save b) 'box))])
 	       (if reorder?
 		   (begin (puts2) (puts1))
 		   (begin (puts1) (puts2))))
@@ -1768,6 +1772,7 @@
 	     (let ([c 0])
 	       (hash-table-for-each h1 (lambda (k v) (set! c (add1 c))))
 	       (test 11 'count c))
+	     (save) ; prevents gcing of the ht-registered values
 	     ;; return the hash table:
 	     h1))])
 

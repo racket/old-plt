@@ -2,7 +2,8 @@
 (module toplevel mzscheme
   (require "kerncase.ss")
 
-  (provide eval-compile-time-part-of-top-level)
+  (provide eval-compile-time-part-of-top-level
+	   expand-top-level-with-compile-time-evals)
 
   (define (eval-compile-time-part-of-top-level stx)
     (kernel-syntax-case stx #f
@@ -24,4 +25,17 @@
 				 [undefined (letrec ([x x]) x)])
 		     (eval (syntax (define (id) undefined)))))
 		 (syntax->list (syntax (id ...))))]
-      [_else (void)])))
+      [_else (void)]))
+
+  (define (expand-top-level-with-compile-time-evals expr)
+    (let ([e (expand-to-top-from expr)])
+      (syntax-case e (begin)
+	[(begin expr ...)
+	 (with-syntax ([(expr ...) 
+			;;left-to-right part of this map isimportant:
+			(map expand-top-level-with-compile-time-evals
+			     (syntax->list (syntax (expr ...))))]
+		       [(beg . _) e])
+	   (syntax/loc e (beg expr ...)))]
+	[else (let ([e (expand e)])
+		(eval-compile-time-part-of-top-level e))]))))

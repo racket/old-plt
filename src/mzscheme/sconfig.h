@@ -532,7 +532,9 @@
 # define LINK_EXTENSIONS_BY_TABLE
 
 #ifdef _MSC_VER
-# define NAN_EQUALS_ANYTHING
+# if _MSC_VER < 1300
+#  define NAN_EQUALS_ANYTHING
+# endif
 # define POW_HANDLES_INF_CORRECTLY
 # define SIN_COS_NEED_DEOPTIMIZE
 #endif

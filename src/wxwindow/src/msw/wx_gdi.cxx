@@ -27,8 +27,6 @@ int pen_count, brush_count, font_count, bitmap_count;
 # define COUNT_M(c) 
 #endif
 
-#pragma optimize("", off)
-
 void RegisterGDIObject(HANDLE x);
 void DeleteRegisteredGDIObject(HANDLE x);
 

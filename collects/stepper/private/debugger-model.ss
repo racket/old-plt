@@ -6,7 +6,6 @@
            (lib "etc.ss")
            (lib "mred.ss" "mred")
            (lib "debugger-sig.ss" "stepper")
-           (lib "break.ss" "stepper")
            "my-macros.ss"
            "debugger-annotate.ss"
            "shared.ss"
@@ -41,8 +40,6 @@
       
       (define queue-eventspace (make-eventspace))
       
-      (define current-expr #f)
-      
       (define (queue-result result)
         (send-to-eventspace 
          queue-eventspace
@@ -51,17 +48,16 @@
       
       (define basic-eval (current-eval))
       
-      (define (break)
-        (let ([mark-list (extract-mark-list (current-continuation-marks))])
-          (queue-result (make-normal-breakpoint-info mark-list 'debugger-break null))
+      (define (break mark-set kind final-mark)
+        (let ([mark-list (continuation-mark-set->list mark-set debug-key)])
+          (queue-result (make-normal-breakpoint-info mark-list kind final-mark))
           (queue-result (make-breakpoint-halt))
           (semaphore-wait go-semaphore)))
       
       
       (define (step-through-expression expanded expand-next-expression)
-        (let* ([annotated (annotate-top-level expanded)])
+        (let* ([annotated (annotate expanded break)])
           ; (fprintf (current-error-port) "annotated: ~v\n" (syntax-object->datum annotated))
-          (set! current-expr expanded)
           (let ([expression-result
                  (parameterize ([current-eval basic-eval])
                    (eval annotated))])
@@ -77,9 +73,7 @@
         (parameterize ([current-custodian user-custodian])
           (program-expander
            (lambda ()
-             (namespace-set-variable-value! 'break break #t)
-             (error-display-handler err-display-handler)
-             (current-breakpoint-handler break)) ; init
+             (error-display-handler err-display-handler)) ; init
            (lambda (expanded continue-thunk) ; iter
              (unless (eof-object? expanded)
                (step-through-expression expanded continue-thunk)))))))))

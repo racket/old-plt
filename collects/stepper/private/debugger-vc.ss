@@ -20,6 +20,11 @@
       
       (define (receive-result result)
         (set! event-list (append event-list (list result)))
+        (parameterize ([current-eventspace debugger-eventspace])
+          (queue-callback
+           (lambda ()
+             (namespace-set-variable-value! 'current-event-num (- (length event-list) 1))
+             (namespace-set-variable-value! 'current-frame-num 0))))
         (send-output-to-debugger-window (format-event result) debugger-output))
       
       (define (format-event debugger-event)
@@ -48,15 +53,10 @@
       (parameterize ([current-eventspace debugger-eventspace])
         (queue-callback 
          (lambda ()
-           ; yuck!  hidden dependence on the list of names provided by "debugger-bindings.ss"
            (namespace-set-variable-value! 'go-semaphore go-semaphore)
            (namespace-set-variable-value! 'events events)
            (namespace-set-variable-value! 'user-custodian user-custodian)
-           (namespace-set-variable-value! 'set-event-num! set-event-num!)
-           (namespace-set-variable-value! 'bt bt)
-           (namespace-set-variable-value! 'set-frame-num! set-frame-num!)
-           (namespace-set-variable-value! 'src src)
-           (namespace-set-variable-value! 'binding binding))))))
+           (install-debugger-bindings))))))
   
   ;; Info functions:
   

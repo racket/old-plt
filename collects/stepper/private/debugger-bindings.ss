@@ -12,6 +12,30 @@
                     [set-frame-num! (-> number? void?)]
                     [src (-> void?)]
                     [binding (-> symbol? any)])
+
+  (provide install-debugger-bindings)
+
+  (define (install-debugger-bindings)
+    ; yuck!  dependence on the list of names provided by the module
+    (namespace-set-variable-value! 'e set-event-num!)
+    (namespace-set-variable-value! 'bt bt)
+    (namespace-set-variable-value! 'f set-frame-num!)
+    (namespace-set-variable-value! 'src src)
+    (namespace-set-variable-value! 'v binding)
+    (namespace-set-variable-value! 'c continue)
+    (namespace-set-variable-value! 'help help))
+  
+  (define (help)
+    (printf "Help Summary:\n")
+    (call-with-input-file (build-path (collection-path "stepper" "private") "debugger-summary.txt")
+      (lambda (port)
+	(let loop ([line (read-line port)])
+	  (unless (eof-object? line)
+          (printf "~a\n" line)
+          (loop (read-line port)))))))
+
+  (define (continue)
+    (semaphore-post (namespace-variable-value 'go-semaphore)))
   
   (define (events)
     ((namespace-variable-value 'events)))

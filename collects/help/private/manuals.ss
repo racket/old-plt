@@ -29,6 +29,25 @@
   
   (provide find-manuals)
 
+  ;; type sec = (make-sec name regexp (listof regexp))
+  (define-struct sec (name reg seps))
+  
+  ;; sections : (listof sec)
+  ;; determines the section breakdown for the manuals
+  ;; elements in the outer list:
+  ;;   string : name of section
+  ;;   predicate : determines if a manual is in the section (based on its title)
+  ;;   breaks -- where to insert newlines
+  (define sections
+    (list (make-sec "Getting started" #rx"(Tour)|(Teach Yourself)" '())
+          (make-sec "Languages"
+                    #rx"Language|MrEd"
+                    '(#rx"Beginning Student" #rx"ProfessorJ Beginner"))
+          (make-sec "Tools" #rx"PLT DrScheme|mzc|TeX2page" '())
+          (make-sec "Libraries" #rx"SRFI|MzLib|Framework|PLT Miscellaneous|Teachpack" '())
+          (make-sec "Writing extensions" #rx"Tools|Inside" '())
+          (make-sec "Other" #rx"" '())))
+  
   (define (goto-manual-link cookie manual index-key)
     (let* ([hd-url (finddoc-page-anchor manual index-key)]
 	   [url (prefix-with-server cookie hd-url)])
@@ -186,8 +205,7 @@
 
   (define (find-manuals)
     (let* ([sys-type (system-type)]
-	   [cvs-user? (cvs?)]
-           [docs (let loop ([l (find-doc-directories)])
+	   [docs (let loop ([l (find-doc-directories)])
                    (cond
                      [(null? l) null]
                      [(get-index-file (car l))
@@ -203,59 +221,7 @@
                                  [else (< ap bp)]))))]
            [docs (quicksort docs compare-docs)]
            [names (map get-doc-name docs)]
-	   [names+paths (map cons names docs)]
-	   [is-lang? (lambda (name+path)
-		       (let ([name (car name+path)])
-			 (ormap (lambda (s) (regexp-match s name))
-				'(#rx"Language" #rx"MrEd"))))]
-	   [lang-names+paths (filter is-lang? names+paths)]
-	   [tool-names+paths (filter (lambda (x) (not (is-lang? x))) names+paths)]
-	   [lang-names (map car lang-names+paths)]
-	   [lang-doc-paths (map cdr lang-names+paths)]
-	   [tool-names (map car tool-names+paths)]
-	   [tool-doc-paths (map cdr tool-names+paths)]
-	   [mk-link (lambda (doc-path name)
-                      (let* ([manual-name (let-values ([(base manual-name dir?) (split-path doc-path)])
-                                            manual-name)]
-			     [index-file (get-index-file doc-path)])
-                        (format "<LI> <A HREF=\"/doc/~a/~a\">~a</A>~a"
-			        manual-name
-                                index-file
-                                name
-                                (if (and cvs-user?
-                                         (file-exists? (build-path doc-path index-file)))
-                                    (string-append 
-                                     "<BR>&nbsp;&nbsp;"
-				     "<FONT SIZE=\"-1\">"
-				     (if (is-known-doc? doc-path)
-					 (string-append
-					  (format 
-					   "[<A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>]"
-					   manual-name
-					   name
-                                           (string-constant plt:hd:refresh))
-					  "&nbsp;")
-					 "")
-				     (format (string-constant plt:hd:manual-installed-date)
-                                             (date->string
-                                              (seconds->date
-                                               (file-or-directory-modify-seconds
-                                                (build-path doc-path index-file)))))
-				     "</FONT>")
-				    ""))))]
-	   [para-mark "<P>"]
-           [break-between (lambda (re l)
-			    (if (null? l)
-				l
-				(if (regexp-match re (car l))
-				    (let loop ([l l])
-				      (cond 
-				       [(null? l) null]
-				       [(or (equal? para-mark (car l))
-                                            (regexp-match re (car l)))
-					(cons (car l) (loop (cdr l)))]
-				       [else (cons para-mark l)]))
-				    l)))])
+	   [names+paths (map cons names docs)])
       (let-values ([(collections-doc-files collection-names) (colldocs)])
         (apply
 	 string-append
@@ -269,25 +235,18 @@
 	 (append 
 	  
 	  (list "<H1>Installed Manuals</H1>")
-	  
-	  (if cvs-user?
+	   
+	  (if (cvs?)
 	      (list "<b>CVS:</b> <a mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals))\">"
 		    (string-constant plt:hd:refresh-all-manuals)
 		    "</a>")
 	      '())
 	  
-	  (list "<H3>Languages</H3>"
-		"<UL>")
-	  (break-between 
-           #rx"(ProfessorJ)|(Student)"
-           (break-between
-            #rx"Student"
-            (map mk-link lang-doc-paths lang-names)))
-	  (list "</UL>"
-		"<H3>Tools, Libraries, and Extensions</H3>"
-		"<UL>")
-	  (break-between "DrScheme" (map mk-link tool-doc-paths tool-names))
-	  (list "</UL><P><UL>")
+          
+          (build-known-manuals names+paths)
+          
+          
+          (list "<h3>Doc.txt</h3><ul>")
 	  (map
 	   (lambda (collection-doc-file name)
 	     (format "<LI> <A HREF=\"/servlets/doc-anchor.ss?file=~a&name=~a&caption=Documentation for the ~a collection\">~a collection</A>"
@@ -327,6 +286,98 @@
 		 uninstalled)
 		(list "</UL>")))]))
 	  (list "</body></html>"))))))
+  
+  ;; break-between : regexp
+  ;;                (listof (union string (cons string string))) 
+  ;;             -> (listof (union string (cons string string)))
+  ;; adds the para-mark string into the list at the first place
+  ;; that the regexp fails to match (not counting other para-marks
+  ;; in the list)
+  (define (break-between re l)
+    (let ([para-mark "<p>"])
+      (let loop ([l l])
+        (cond
+          [(null? l) null]
+          [else 
+           (let ([fst (car l)])
+             (cond
+               [(pair? fst)
+                (let ([name (car fst)])
+                  (if (regexp-match re name)
+                      (cons para-mark l)
+                      (cons fst (loop (cdr l)))))]
+               [else (cons fst (loop (cdr l)))]))]))))
+
+  ;; build-known-manuals : (listof (cons string[title] string[path])) -> (listof string)
+  (define (build-known-manuals names+paths)
+    (let loop ([sections sections]
+               [manuals names+paths])
+      (cond
+        [(null? sections) null]
+        [else 
+         (let* ([section (car sections)]
+                [in (filter (lambda (x) (regexp-match (sec-reg section) 
+                                                      (car x)))
+                            manuals)]
+                [out (filter (lambda (x) (not (regexp-match (sec-reg section) 
+                                                       (car x))))
+                             manuals)])
+           (cons (build-known-section section in)
+                 (loop (cdr sections) out)))])))
+  
+  ;; build-known-section : sec (listof (cons string[title] string[path]))) -> string
+  (define (build-known-section sec names+paths)
+    (if (null? names+paths)
+        ""
+        (string-append
+         "<h3>" (sec-name sec) "</h3>"
+         "<ul>"
+         (apply 
+          string-append
+          (map (lambda (x) 
+                 (if (string? x)
+                     x
+                     (mk-link (cdr x) (car x))))
+               (let loop ([breaks (sec-seps sec)]
+                          [names+paths names+paths])
+                 (cond
+                   [(null? breaks) names+paths]
+                   [else
+                    (let ([break (car breaks)])
+                      (loop (cdr breaks)
+                            (break-between (car breaks) names+paths)))]))))
+         "</ul>")))
+
+  ;; mk-link : string string -> string
+  (define (mk-link doc-path name)
+    (let* ([manual-name (let-values ([(base manual-name dir?) (split-path doc-path)])
+                          manual-name)]
+           [index-file (get-index-file doc-path)])
+      (format "<LI> <A HREF=\"/doc/~a/~a\">~a</A>~a"
+              manual-name
+              index-file
+              name
+              (if (and (cvs?)
+                       (file-exists? (build-path doc-path index-file)))
+                  (string-append 
+                   "<BR>&nbsp;&nbsp;"
+                   "<FONT SIZE=\"-1\">"
+                   (if (is-known-doc? doc-path)
+                       (string-append
+                        (format 
+                         "[<A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>]"
+                         manual-name
+                         name
+                         (string-constant plt:hd:refresh))
+                        "&nbsp;")
+                       "")
+                   (format (string-constant plt:hd:manual-installed-date)
+                           (date->string
+                            (seconds->date
+                             (file-or-directory-modify-seconds
+                              (build-path doc-path index-file)))))
+                   "</FONT>")
+                  ""))))
   
   ;; get-doc-name : string -> string
   (define cached-doc-names (make-hash-table 'equal))

@@ -46,7 +46,11 @@
   ;; the second string is the title of the the manual
   ;; the number determines the sorting order for the manuals in the manuals page
   (define docs-and-positions
-    '(("beginning" "Beginning Student Language" -19)
+    '(("r5rs" "Revised^5 Report on the Algorithmic Language Scheme" -50)
+      ("mzscheme" "PLT MzScheme: Language Manual" -49)
+      ("mred" "PLT MrEd: Graphical Toolbox Manual" -48)
+            
+      ("beginning" "Beginning Student Language" -19)
       ("beginning-abbr" "Beginning Student with List Abbreviations Language" -18)
       ("intermediate" "Intermediate Student Language" -17)
       ("intermediate-lambda" "Intermediate Student with Lambda Language" -16)
@@ -60,19 +64,16 @@
       ("tour" "A Brief Tour of DrScheme version 206" 0)
       ("drscheme" "PLT DrScheme: Programming Environment Manual" 1)
       
-      ("r5rs" "Revised^5 Report on the Algorithmic Language Scheme" 2)
       ("srfi" "SRFI documents inside PLT" 3)
-      ("mzscheme" "PLT MzScheme: Language Manual" 4)
+      
       ("mzlib" "PLT MzLib: Libraries Manual" 5)
       ("misclib" "PLT Miscellaneous Libraries: Reference Manual" 6)
-      ("mred" "PLT MrEd: Graphical Toolbox Manual" 7)
       ("framework" "PLT Framework: GUI Application Framework" 8)
 
       ("mzc" "PLT mzc: MzScheme Compiler Manual" 10)
       
       ("tools" "PLT Tools: DrScheme Extension Manual" 30)
       ("insidemz" "Inside PLT MzScheme" 50)
-      
       
       ("t-y-scheme" "Teach Yourself Scheme in Fixnum Days" 100)
       ("tex2page" "TeX2page" 101)))

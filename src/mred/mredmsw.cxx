@@ -601,25 +601,39 @@ void MrEdMSWSleep(float secs, void *fds)
   if (wxCheckMousePosition())
     return;
 
+  /* If the event queue is empty (as reported by GetQueueStatus),
+     everything's ok.
+
+     Otherwise, we have trouble sleeping until an event is ready. We
+     sometimes leave events on th queue because, say, an eventspace is
+     not ready. The problem is that MsgWait... only unbocks when a new
+     event appears. Since we check the queue using a seuqence of
+     PeekMessages, it's possible that an event is added during the
+     middle of our sequence, but doesn't get handled.
+
+     We try to avoid this problem by going through the sequence
+     twice. But that still doesn't always work. For the general case,
+     then, we don't actually sleep indefinitely. Instead, we slep 10
+     ms, then 20 ms, etc. This exponential backoff ensures that we
+     eventually handle a pending event, but we don't spin and eat CPU
+     cycles. */
+
   if (GetQueueStatus(QS_ALLINPUT)) {
     /* Maybe the events are new since we last checked, or maybe
        they're not going to be dispatched until something else
-       unblocks. Go one more time around, and if none of the events
-       are dispatched, then we're willing to sleep.
-
-       We don't leave this up to MsgWaitForNextEvent because it's
-       possible that something other than the PeekMessage() above
-       modifies the "newness" of queue events. */
+       unblocks. Go into exponential-back-off mode. */
     if (found_nothing) {
-      /* Ok, we've already gone around. Go ahead and block. */
+      /* Ok, we gone around at least once. */
       if (max_sleep_time < 0x20000000)
 	max_sleep_time *= 2;
     } else {
+      /* Starting back-off mode */
       found_nothing = 1;
       max_sleep_time = 10;
       return;
     }
   } else {
+    /* Disable back-off mode */
     found_nothing = 0;
     max_sleep_time = 0;
   }

@@ -24,7 +24,8 @@ pict snip :
            (lib "unitsig.ss")
            (lib "string-constant.ss" "string-constants")
            (lib "framework.ss" "framework")
-           (lib "mrpict.ss" "texpict"))
+           (lib "mrpict.ss" "texpict")
+           (lib "list.ss"))
 
   (provide tool@)
 
@@ -282,7 +283,12 @@ pict snip :
       ;;  drscheme extensions
       ;;
       
-      (define-struct p (pict-drawer width height))
+      (define-struct p (pict-drawer width height n))
+      (define new-p
+        (let ([c 0])
+          (lambda (pd w h)
+            (set! c (+ c 1))
+            (make-p pd w h c))))
       
       (define show-picts<%>
         (interface ()
@@ -332,10 +338,16 @@ pict snip :
                                       (let ([new-ht (make-hash-table)])
                                         (hash-table-put! all-picts-ht key new-ht)
                                         new-ht)))])
-              (hash-table-put!
+              ;; store the new pict in the hash-table, unless it is already in there,
+              ;; in which case we leave the current one (so we don't get a new number)
+              (hash-table-get
                picts-ht
                pict
-               (make-p pict-drawer width height))))
+               (lambda ()
+                 (hash-table-put!
+                  picts-ht
+                  pict
+                  (new-p pict-drawer width height))))))
           
           (rename [super-on-event on-event])
           (define/override (on-event evt)
@@ -367,7 +379,7 @@ pict snip :
                   (let* ([frozen-mouse-picts-key (cons text pos)]
                          [picts-ht (hash-table-get all-picts-ht frozen-mouse-picts-key (lambda () #f))])
                     (when picts-ht
-                      (let ([picts (hash-table-map picts-ht (lambda (k v) v))])
+                      (let ([picts (get-all-ps-from-ht picts-ht)])
                         (set! show? #t)
                         (new menu-item%
                              (label sc-freeze-picts)
@@ -403,7 +415,13 @@ pict snip :
                                (let ([picts-ht
                                       (hash-table-get all-picts-ht new-mouse-loc (lambda () #f))])
                                  (and picts-ht
-                                      (hash-table-map picts-ht (lambda (k v) v)))))))))))
+                                      (get-all-ps-from-ht picts-ht))))))))))
+          
+          (define/private (get-all-ps-from-ht picts-ht)
+            (let ([ps (hash-table-map picts-ht (lambda (k v) v))])
+              (quicksort
+               ps
+               (lambda (x y) (<= (p-n x) (p-n y))))))
               
           ;; get-pos/text : event -> (values (union #f text%) (union number #f))
           ;; returns two #fs to indicate the event doesn't correspond to
@@ -436,8 +454,9 @@ pict snip :
           
           (super-new)))
       
-      (define has-info-style (make-object style-delta% 'change-underline #t))
-      (send has-info-style set-delta-background "grey")
+      (define has-info-style (make-object style-delta%))
+      (send has-info-style set-delta-background "black")
+      (send has-info-style set-transparent-text-backing-off #t)
       (send has-info-style set-delta-foreground "hotpink")
       
       (define (unit-frame-mixin %)

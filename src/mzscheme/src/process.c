@@ -3739,10 +3739,12 @@ static void do_nothing(int ignored)
 {
   Scheme_Process *p;
   p = scheme_current_process;
-  p->break_received = 1;
-  if (p->select_tv) {
-    p->select_tv->tv_sec = 0;
-    p->select_tv->tv_usec = 0;
+  if (p) {
+    p->break_received = 1;
+    if (p->select_tv) {
+      p->select_tv->tv_sec = 0;
+      p->select_tv->tv_usec = 0;
+    }
   }
 }
 

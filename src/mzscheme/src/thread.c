@@ -1777,10 +1777,11 @@ static void unschedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
     set_t_set_next(s, NULL);
     
     if (t_set->current == s) {
-      if (next)
+      if (next) {
 	t_set->current = next;
-      else
+      } else {
 	t_set->current = t_set->first;
+      }
     }
     
     if (t_set->current)
@@ -2752,7 +2753,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   np->overflow_set = p->overflow_set;
   np->o_start = p->o_start;
-  memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
+  np->overflow_buf = p->overflow_buf;
 
   /* In case it's not yet set in the main thread... */
   scheme_ensure_stack_start((Scheme_Thread *)np, (int *)&failure);

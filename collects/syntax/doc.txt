@@ -147,19 +147,21 @@ currently exist).
 > (check-module-form stx expected-module-sym filename-string-or-#f) -
   inspects `stx' to check whether evaluating it will declare a module
   named `expected-module-sym' (plus a prefix, if
-  `current-module-name-prefix' is set), at least if `module' is bound
-  in the top-level to MzScheme's `module'. The syntax object `stx' can
-  contain a compiled expression.
+  `current-module-name-prefix' is set) --- at least if `module' is
+  bound in the top-level to MzScheme's `module'. The syntax object
+  `stx' can contain a compiled expression.
 
-  If so, the procedure returns a syntax object that certainly will
-  declare a module (adding explicit context to the leading `module' if
-  necessary). Otherwise, if `filename-string-or-#f' is a string, a
-  soutable exception is raised, and if `filename-string-or-#f' is #f,
-  #f is returned.  > (get-module-code module-path-v) - returns a
-  compiled expression for the declaration of the module specified by
-  `module-path-v', where `module-path-v' is a quoted module path as
-  for MzScheme's `dynamic-require' using the default module path
-  resolver.
+  If `stx' can declare a module in an appropriate top-level, then the
+  `check-module-form' procedure returns a syntax object that certainly
+  will declare a module (adding explicit context to the leading
+  `module' if necessary) in any top-level. Otherwise, if
+  `filename-string-or-#f' is a string, a suitable exception is raised,
+  and if `filename-string-or-#f' is #f, #f is returned.
+
+> (get-module-code module-path-v) - returns a compiled expression for
+  the declaration of the module specified by `module-path-v'. The
+  `module-path-v' argument is a quoted module path, as for MzScheme's
+  `dynamic-require' using the default module path resolver.
 
 > (resolve-module-path module-path-v rel-to-path-string-or-#f) -
   resolves a module path to filename string. The module path is

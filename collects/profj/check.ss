@@ -1401,7 +1401,11 @@
                                     (make-field-access 
                                      #f
                                      (car accs)
-                                     (make-var-access #t #f #f 'temp (class-record-name (car static-class)))))
+                                     (make-var-access #t #f #f 'temp (if (class-record? (car static-class))
+                                                                         (class-record-name (car static-class))
+                                                                         (cons (scheme-record-name (car static-class))
+                                                                               (cons "scheme"
+                                                                                     (scheme-record-path (car static-class))))))))
                        (cdr accs))))
                    ((and (memq level '(beginner intermediate advanced)) (not first-binding) (> (length acc) 1)
                          (with-handlers ((exn:syntax? (lambda (e) #f)))
@@ -1577,40 +1581,42 @@
               (when (not (access? expr)) (raise exn))
               (when (or (field-access? (access-name expr)) (local-access? expr)) (raise exn))
               (if (eq? level 'full)
-                  (let ((record (car (find-static-class 
-                                      (append (access-name expr) (list name))
-                                      level
-                                      type-recs))))
+                  (let ((record (car (find-static-class (append (access-name expr) (list name))
+                                                        level type-recs))))
                     (set-call-expr! call #f)
-                    (unless (equal? (class-record-name record) c-class)
-                      (send type-recs add-req (make-req (car (class-record-name record))
-                                                        (if (null? (cdr (class-record-name record)))
-                                                            (send type-recs lookup-path 
-                                                                  (car (class-record-name record))
-                                                                  (lambda () null))
-                                                            (cdr (class-record-name record))))))
-                    (get-method-records (id-string name) record))
+                    (cond
+                      ((class-record? record)
+                       (unless (equal? (class-record-name record) c-class)
+                         (send type-recs add-req (make-req (car (class-record-name record))
+                                                           (if (null? (cdr (class-record-name record)))
+                                                               (send type-recs lookup-path 
+                                                                     (car (class-record-name record))
+                                                                     (lambda () null))
+                                                               (cdr (class-record-name record))))))
+                       (get-method-records (id-string name) record))
+                      ((scheme-record? record) (raise exn))))
                   (if (and (= (length (access-name expr)) 1)
                            (with-handlers ((exn:syntax? (lambda (exn) #f)))
                              (type-exists? (id-string (car (access-name expr)))
-                                           null
-                                           c-class
+                                           null c-class
                                            (id-src (car (access-name expr)))
-                                           level
-                                           type-recs)))
+                                           level type-recs)))
                       (let ((record (send type-recs get-class-record (list (id-string (car (access-name expr)))))))
                         (set-call-expr! call #f)
-                        (unless (equal? (class-record-name record) c-class)
-                          (send type-recs add-req (make-req (car (class-record-name record))
-                                                            (send type-recs lookup-path 
-                                                                  (car (class-record-name record))
-                                                                  (lambda () null)))))
-                        (let ((methods (get-method-records (id-string name) record)))
-                          (unless (andmap (lambda (x) x) 
-                                          (map (lambda (mrec) (memq 'static (method-record-modifiers mrec)))
-                                               methods))
-                            (class-as-object-call level (id-string (car (access-name expr))) name (id-src name)))
-                          methods))
+                        (cond 
+                          ((class-record? record)
+                           (unless (equal? (class-record-name record) c-class)
+                             (send type-recs add-req (make-req (car (class-record-name record))
+                                                               (send type-recs lookup-path 
+                                                                     (car (class-record-name record))
+                                                                     (lambda () null)))))
+                           (let ((methods (get-method-records (id-string name) record)))
+                             (unless (andmap (lambda (x) x) 
+                                             (map (lambda (mrec) (memq 'static (method-record-modifiers mrec)))
+                                                  methods))
+                               (class-as-object-call level (id-string (car (access-name expr))) name (id-src name)))
+                             methods))
+                          ((scheme-record? record) (raise exn))))
                       (raise exn)))))
            (methods 
             (cond 

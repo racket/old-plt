@@ -15,6 +15,7 @@
   ;; type = symbol-type
   ;;      | reference-type
   ;;      | array-type
+  ;;      | contract
 
   (define-struct ref-type (class/iface path))
   (define-struct array-type (type dim))
@@ -158,7 +159,7 @@
 ;                                                                                                          
 ;                                                                                                          
 ;                                                                                                          
-  
+    
   ;; (make-class-record (list string) (list symbol) boolean (list field-record) 
   ;;                    (list method-records) (list inner-record) (list (list strings)) (list (list strings)))
   ;; After full processing fields and methods should contain all inherited fields 
@@ -179,8 +180,11 @@
   ;;(make-scheme-record string (list string) string (list scheme-val))
   (define-struct scheme-record (name path dir provides))
   
-  ;;(make-scheme-val symbol bool (U #f type function-type))
+  ;;(make-scheme-val symbol bool (U #f contract))
   (define-struct scheme-val (name dynamic? contract))
+  
+  ;;(make-contract (U type function-type))
+  (define-struct contract (type))
   
   ;;(make-function-type type (list type))
   (define-struct function-type (rtype atypes))
@@ -242,6 +246,8 @@
                                (fail)
                                (let ((back-path (reverse path)))
                                  (search-for-record key (car back-path) (reverse (cdr back-path)) (lambda () #f) fail))))))
+;            (printf "~a~n" ctype)
+;            (hash-table-for-each records (lambda (k v) (printf "~a -> ~a~n" k v)))
             (cond
               ((and container 
                     (not (null? outer-record))

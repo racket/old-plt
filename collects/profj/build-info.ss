@@ -264,7 +264,7 @@
            ((not (equal? (cadr path) "lib")) (cons "scheme" (find-directory (cdr path) fail)))
            ((and (equal? (cadr path) "lib") (not (null? (cddr path))))
             (list "scheme" (apply collection-path (cddr path))))
-           (else (error 'temp-error ""))))
+           (else (list "mzlib"))));(error 'temp-error ""))))
         (else
          (let loop ((paths class-path))
            (cond

@@ -182,7 +182,7 @@
         (class-alloc? stmt)
         (inner-alloc? stmt)))
   
-  ;(make-expr (U symbol ??) src)
+  ;(make-expr (U #f type) src)
   (p-define-struct expr (types src)) 
 
   ;Expression => literal
@@ -202,17 +202,17 @@
   ;           |  instanceof
   ;           |  assignment
 
-  ;(make-literal symbol src value)
+  ;(make-literal (U #f type) symbol src value)
   (p-define-struct (literal expr) (val))
   
   ;value => number | string
   
-  ;(make-bin-op ?? src binary-op Expression Expression src)
+  ;(make-bin-op (U #f type) src binary-op Expression Expression src)
   (p-define-struct (bin-op expr) (op left right key-src))
   
   ;binary-op => + - * / % << >> >>> < > <= >= == != & ^ or && oror 
   
-  ;(make-access ?? src (U (list id) field-access local-access))
+  ;(make-access (U #f type) src (U (list id) field-access local-access))
   ;Types before check
   ;After check, (list id) -> (U field-access local-access)
   (p-define-struct (access expr) (name))
@@ -226,58 +226,58 @@
   ;(make-local-access id)
   (p-define-struct local-access (name))
   
-  ;(make-special-name ?? src string)
+  ;(make-special-name (U #f type) src string)
   (p-define-struct (special-name expr) (name))
   
-  ;(make-specified-this ?? src name (U string #f))
+  ;(make-specified-this (U #f type) src name (U string #f))
   (p-define-struct (specified-this expr) (class var))
   
-  ;(make-call ?? src (U #f expression) MethodName (list Expression) (U #f method-record))
+  ;(make-call (U #f type) src (U #f expression) MethodName (list Expression) (U #f method-record))
   (p-define-struct (call expr) (expr method-name args method-record))
   
   ;MethodName => special-name
   ;           |  id
   
-  ;(make-class-alloc ?? src name (list Expression) (U #f method-record) bool)
+  ;(make-class-alloc (U #f type) src name (list Expression) (U #f method-record) bool)
   (p-define-struct (class-alloc expr) (name args ctor-record inner?))
   
-  ;(make-inner-alloc ?? src expr name (list Expression) (U #f method-record))
+  ;(make-inner-alloc (U #f type) src expr name (list Expression) (U #f method-record))
   (p-define-struct (inner-alloc expr) (obj name args ctor-record))
   
-  ;(make-array-alloc ?? src type-spec (list Expression) int)
+  ;(make-array-alloc (U #f type) src type-spec (list Expression) int)
   (p-define-struct (array-alloc expr) (name size dim))
 
-  ;;(make-array-alloc-init ?? src type-spec int array-init)
+  ;;(make-array-alloc-init (U #f type) src type-spec int array-init)
   (p-define-struct (array-alloc-init expr) (name dim init))
 
   
-  ;(make-cond-expression ?? src Expression Expression Expression src)
+  ;(make-cond-expression (U #f type) src Expression Expression Expression src)
   (p-define-struct (cond-expression expr) (cond then else key-src))
   
-  ;(make-array-access ?? src expression Expression)
+  ;(make-array-access (U #f type) src expression Expression)
   (p-define-struct (array-access expr) (name index))
   
-  ;(make-post-expr ?? src Expression PrePost src)
+  ;(make-post-expr (U #f type) src Expression PrePost src)
   (p-define-struct (post-expr expr) (expr op key-src))
   
   ;PrePost => ++ --
   
-  ;(make-pre-expr ?? src PrePost Expression src)
+  ;(make-pre-expr (U #f type) src PrePost Expression src)
   (p-define-struct (pre-expr expr) (op expr key-src))
   
-  ;(make-unary ?? src UnaryOp Expression src)
+  ;(make-unary (U #f type) src UnaryOp Expression src)
   (p-define-struct (unary expr) (op expr key-src))
   
   ;UnaryOp => + - ~ !
   
-  ;(make-cast ?? src type-spec Expression)
+  ;(make-cast (U #f type) src type-spec Expression)
   (p-define-struct (cast expr) (type expr))
   
-  ;(make-instanceof ?? src Expression type-spec src)
+  ;(make-instanceof (U #f type) src Expression type-spec src)
   (p-define-struct (instanceof expr) (expr type key))
   
   ;Note: lefthand side might be incorrect
-  ;(make-assignment ?? src (U access array-access) symbol Expression src)
+  ;(make-assignment (U #f type) src (U access array-access) symbol Expression src)
   (p-define-struct (assignment expr) (left op right key-src))
   
   ;Op -> = *= /= %= += -= <<= >>= >>>= &= ^= or=  

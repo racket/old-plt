@@ -79,8 +79,12 @@ class wxClipboard : public wxObject
   void SetClipboardString(char *, long time);
   /* Set the clipboard string; does not require a client. */
 
+  void SetClipboardBitmap(wxBitmap *, long time);
+  /* Set the clipboard bitmap; does not require a client. */
   char *GetClipboardString(long time);
   /* Get data from the clipboard in the format "TEXT". */
+  wxBitmap *GetClipboardBitmap(long time);
+  /* Get picture from the clipboard. */
   char *GetClipboardData(char *format, long *length, long time);
   /* Get data from the clipboard */
   wxClipboardClient *GetClipboardClient(void);

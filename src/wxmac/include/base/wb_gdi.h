@@ -259,26 +259,27 @@ class wxbBrush: public wxObject
 #define wxBITMAP_DISCARD_COLOURMAP      1
 
 // Hint to indicate filetype
-#define wxBITMAP_TYPE_BMP               2
-#define wxBITMAP_TYPE_BMP_RESOURCE      4
-#define wxBITMAP_TYPE_ICO               8
-#define wxBITMAP_TYPE_ICO_RESOURCE      16
-#define wxBITMAP_TYPE_CUR               32
-#define wxBITMAP_TYPE_CUR_RESOURCE      64
-#define wxBITMAP_TYPE_XBM               128
-#define wxBITMAP_TYPE_XBM_DATA          256
-#define wxBITMAP_TYPE_XPM               1024
-#define wxBITMAP_TYPE_XPM_DATA          2048
-#define wxBITMAP_TYPE_TIF               4096
-#define wxBITMAP_TYPE_GIF               8192
+#define wxBITMAP_TYPE_BMP               0x2
+#define wxBITMAP_TYPE_BMP_RESOURCE      0x4
+#define wxBITMAP_TYPE_ICO               0x8
+#define wxBITMAP_TYPE_ICO_RESOURCE      0x10
+#define wxBITMAP_TYPE_CUR               0x20
+#define wxBITMAP_TYPE_CUR_RESOURCE      0x40
+#define wxBITMAP_TYPE_XBM               0x80
+#define wxBITMAP_TYPE_XBM_DATA          0x100
+#define wxBITMAP_TYPE_XPM               0x400
+#define wxBITMAP_TYPE_XPM_DATA          0x800
+#define wxBITMAP_TYPE_TIF               0x1000
+#define wxBITMAP_TYPE_GIF               0x2000
 #ifdef wx_mac
-#define wxBITMAP_TYPE_PICT				16384
-#define wxBITMAP_TYPE_PICT_RESOURCE		32768
-#define wxBITMAP_TYPE_ANY               65536
+#define wxBITMAP_TYPE_PICT				0x4000
+#define wxBITMAP_TYPE_PICT_RESOURCE		0x8000
+#define wxBITMAP_TYPE_ANY               0x10000
+#define wxBITMAP_TYPE_JPEG				0X20000
 
 #define wxBITMAP_TYPE_RESOURCE wxBITMAP_TYPE_PICT_RESOURCE
 #else
-#define wxBITMAP_TYPE_ANY               16384
+#define wxBITMAP_TYPE_ANY               0x4000
 
 #define wxBITMAP_TYPE_RESOURCE wxBITMAP_TYPE_BMP_RESOURCE
 #endif

@@ -17,7 +17,7 @@
 
   (define mzscheme-launcher-names (list "SLaTeX" "PDF SLaTeX"))
   (define mzscheme-launcher-flags
-    (list (list "-qge" "(require (lib \"pdf-slatex-launcher.ss\" \"slatex\"))")
-          (list "-qge" "(require (lib \"slatex-launcher.ss\" \"slatex\"))")))
+    (list (list "-qge" "(require (lib \"slatex-launcher.ss\" \"slatex\"))")
+          (list "-qge" "(require (lib \"pdf-slatex-launcher.ss\" \"slatex\"))")))
 
   )

@@ -26,8 +26,6 @@
 #include "wx_choic.h"
 #include "wx_check.h"
 #include "wx_menu.h"
-#include "wx_txt.h"
-#include "wx_mtxt.h"
 #include "wx_slidr.h"
 #include "wx_lbox.h"
 

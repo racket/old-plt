@@ -46,16 +46,7 @@
 #pragma implementation "wb_mnuit.h"
 #endif
 #ifdef __GNUG__
-#pragma implementation "wb_txt.h"
-#endif
-#ifdef __GNUG__
-#pragma implementation "wb_mtxt.h"
-#endif
-#ifdef __GNUG__
 #pragma implementation "wb_menu.h"
-#endif
-#ifdef __GNUG__
-#pragma implementation "wb_group.h"
 #endif
 #ifdef __GNUG__
 #pragma implementation "wb_gauge.h"
@@ -75,9 +66,6 @@
 #include "wx_check.h"
 #include "wx_messg.h"
 #include "wx_menu.h"
-#include "wx_txt.h"
-#include "wx_mtxt.h"
-#include "wx_group.h"
 
 #if USE_GAUGE
 #include "wx_gauge.h"
@@ -309,6 +297,19 @@ wxbMenu::wxbMenu (char *Title, wxFunction func)
     title = NULL;
 }
 
+wxbMenu::wxbMenu (char* Title, char* windowName)
+  : wxItem( windowName)
+{
+  __type = wxTYPE_MENU;
+  no_items = 0;
+  menu_bar = NULL;
+  if (Title)
+    title = copystring (Title);
+  else
+    title = NULL;
+}
+
+
 // The wxWindow destructor will take care of deleting the submenus.
 wxbMenu::~wxbMenu (void)
 {
@@ -398,6 +399,34 @@ wxbMenuBar::wxbMenuBar (void)
   menu_bar_frame = NULL;
 }
 
+wxbMenuBar::wxbMenuBar(char* windowName)
+  : wxItem(windowName)
+{
+  __type = wxTYPE_MENU_BAR;
+  n = 0;
+  menus = NULL;
+  titles = NULL;
+  menu_bar_frame = NULL;
+}
+
+//-----------------------------------------------------------------------------
+wxbMenuBar::wxbMenuBar(int N, wxMenu* Menus[],
+		       char* Titles[],
+		       char* windowName)
+  : wxItem( windowName)
+{
+  n = N;
+  menus = Menus;
+  titles = Titles;
+  menu_bar_frame = NULL;
+  __type = wxTYPE_MENU_BAR;
+	
+  for (int i = 0; i < n; i++) {
+    menus[i]->menu_bar = (wxMenuBar*) this;
+    menus[i]->SetTitle(titles[i]);
+  }
+}
+
 wxbMenuBar::wxbMenuBar (int N, wxMenu * Menus[], char *Titles[])
 {
   __type = wxTYPE_MENU_BAR;
@@ -405,8 +434,9 @@ wxbMenuBar::wxbMenuBar (int N, wxMenu * Menus[], char *Titles[])
   menus = Menus;
   titles = Titles;
   menu_bar_frame = NULL;
-  for (int i = 0; i < N; i++)
+  for (int i = 0; i < N; i++) {
     menus[i]->menu_bar = (wxMenuBar *) this;
+  }
 }
 
 wxbMenuBar::~wxbMenuBar (void)
@@ -495,13 +525,7 @@ char *wxbMenuBar::GetHelpString (int Id)
   return NULL;
 }
 
-#ifndef wx_mac // The following doesn't belong in this file! Moved to wb_frame.cc
-void wxbFrame::SetMenuBar (wxMenuBar * menu_bar)
-{
-}
-#endif
-
-wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func, char *Title,
+wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func,
 	     int x, int y, int width, int height, long style, char *name)
 {
   __type = wxTYPE_CHECK_BOX;
@@ -615,26 +639,6 @@ Bool wxbListBox::SetStringSelection (char *s)
     }
   else
     return FALSE;
-}
-
-// Radiobox item
-wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
-	     char *Title,
-	     int x, int y, int width, int height,
-	     int N, char **Choices,
-	     int majorDim, long style, char *name)
-{
-  __type = wxTYPE_RADIO_BOX;
-  windowStyle = style;
-  selected = -1;
-  window_parent = panel;
-  no_items = 0;
-  labelPosition = panel->label_position;
-  buttonFont = panel->buttonFont;
-  labelFont = panel->labelFont;
-  backColour = panel->backColour;
-  labelColour = panel->labelColour;
-  buttonColour = panel->buttonColour;
 }
 
 wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,

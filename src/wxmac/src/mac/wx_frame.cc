@@ -14,19 +14,12 @@
 #include "wxMacDC.h"
 #include "wx_stdev.h"
 #include "wx_panel.h"
-#include "wx_txt.h"
 #include "wx_area.h"
 #include "wx_screen.h"
 #include "wx_mac_utils.h"
 #include "wx_main.h"
 #include "wx_messg.h"
 #include "wx_utils.h"
-#ifndef WX_CARBON
-#include <QuickDraw.h>
-#include <TextEdit.h>
-#include <Menus.h>
-#include <Windows.h>
-#endif
 
 static wxMenuBar *close_menu_bar;
 

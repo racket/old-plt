@@ -163,6 +163,6 @@ void wxbDC::CalcBoundingBox(float x, float y)
 
 void wxbDC::TryColour(wxColour *src, wxColour *dest)
 {
-  *dest = *src;
+  dest->CopyFrom(src);
 }
 

@@ -407,9 +407,9 @@ wxInitializeStockObjects (void)
   wxWHITE_BRUSH->Lock(1);
   wxBLACK_BRUSH->Lock(1);
   
-  wxColour ctlGray(0xE8, 0xE8, 0xE8);
+  wxColour *ctlGray = new wxColour(0xE8, 0xE8, 0xE8);
   wxREGGLOB(wxCONTROL_BACKGROUND_BRUSH);
-  wxCONTROL_BACKGROUND_BRUSH = new wxBrush(&ctlGray, wxSOLID);
+  wxCONTROL_BACKGROUND_BRUSH = new wxBrush(ctlGray, wxSOLID);
   wxCONTROL_BACKGROUND_BRUSH->Lock(1);
 
   wxREGGLOB(wxBLACK);

@@ -69,8 +69,8 @@ public:
 	// Sizing methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	virtual void SetSize(int width, int height);
-	void SetMargin(int margin, Direction direction = Direction::wxAll);
-	void SetMargin(wxMargin margin, Direction direction = Direction::wxAll);
+	void SetMargin(int margin, Direction direction = wxAll);
+	void SetMargin(wxMargin margin, Direction direction = wxAll);
 	void SetMargin(wxMargin margin, Direction direction,
 					int parentWindowWidth, int parentWindowHeight,
 					int parentWindowX, int parentWindowY);

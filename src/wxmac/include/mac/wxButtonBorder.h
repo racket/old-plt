@@ -28,7 +28,7 @@ public:
 	(
 		wxArea*		parentArea,
 		int			margin = 0,
-		Direction	direction = Direction::wxAll,
+		Direction	direction = wxAll,
 		char*		windowName = "ButtonBorder",
 		int 		x = -1,
 		int			y = -1,

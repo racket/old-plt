@@ -24,10 +24,7 @@ class wxbCheckBox: public wxItem
 {
  public:
 
-  wxbCheckBox(wxPanel *panel, wxFunction func, char *Title,
-             int x = -1, int y = -1, int width = -1, int height = -1,
-             long style = 0, char *name = "checkBox");
-  wxbCheckBox(wxPanel *panel, wxFunction func, wxBitmap *bitmap,
+  wxbCheckBox(wxPanel *panel, wxFunction func,
              int x = -1, int y = -1, int width = -1, int height = -1,
              long style = 0, char *name = "checkBox");
 

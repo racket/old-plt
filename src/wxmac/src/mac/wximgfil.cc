@@ -13,7 +13,6 @@
 #include "wx_gdi.h"
 #include "wx_canvs.h"
 #include "wx_dc.h"
-#include "wx_mtxt.h"
 #include "wx_utils.h"
 #include "wx_mac_utils.h"
 #include <string.h>
@@ -150,7 +149,7 @@ BOOL wxGIF::ReadHeader(FILE *fp)
 
   if (dscgif.pflds & 0x80) {
     rgbTable = new unsigned char[3*TabCol.sogct];
-    int errcnt = fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
+    fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
     unsigned char *tp = rgbTable;
     for (i = 0; i < TabCol.sogct; i++) {
       TabCol.paleta[i].r = *tp++;

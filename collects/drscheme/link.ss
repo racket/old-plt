@@ -51,7 +51,8 @@
 
 	[intro : drscheme:intro^ ((require-relative-library "intro.ss")
 				  mred
-				  framework)]
+                                  framework
+                                  (export* help-desk))]
 
 	[main : drscheme:main^ ((require-relative-library "main.ss")
 				i

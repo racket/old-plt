@@ -10,6 +10,8 @@
 	  (framework : framework^)
 	  (frame-mixin))
 
+  (include "startup-url.ss")
+  
   (define last-url-string #f)
 
   (on-installer-run doc-collections-changed)
@@ -76,7 +78,7 @@
       (send d show #t)))
 
   (define go-unit
-    (unit (import startup-url)
+    (unit (import initial-url)
 	  (export)
 
 	  (define collecting-thread #f)
@@ -133,7 +135,7 @@
 				    
 				    (override
 				      [file-menu:new-string (lambda () "Help Desk")]
-				      [file-menu:new (lambda (i e) (new-help-frame startup-url))]
+				      [file-menu:new (lambda (i e) (new-help-frame initial-url))]
 
 				      [file-menu:open-string (lambda () "URL")]
 				      [file-menu:open
@@ -316,6 +318,9 @@
 							     "")))))]
 					      [on-navigate stop-search])
 					    (sequence (super-init #t (send f get-area-container))))))
+          
+          (send html-panel set-init-page startup-url)
+          
 	  (define results (send html-panel get-canvas))
 
 	  (define top (make-object vertical-pane% (send f get-area-container)))
@@ -384,7 +389,11 @@
 
 	  (send f show #t)
 
-	  (send results goto-url startup-url #f)
+          (cond
+            [(equal? initial-url startup-url)
+             (send html-panel goto-init-page)]
+            [else
+             (send results goto-url initial-url #f)])
 
 	  (define searching-message-on? #f)
 	  (define (searching-done editor)
@@ -550,7 +559,7 @@
 	  ; Return the frame as the result
 	  f))
 
-  (define (new-help-frame startup-url)
-    (invoke-unit go-unit startup-url))
+  (define (new-help-frame initial-url)
+    (invoke-unit go-unit initial-url))
 
   (values new-help-frame open-url-from-user))

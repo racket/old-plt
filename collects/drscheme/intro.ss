@@ -1,35 +1,60 @@
 (unit/sig drscheme:intro^
   (import mred^
-	  framework^)
-
-  (define (show-release-notes)
-    (let ([frame (make-object frame% (format "Release Notes for ~a" (version:version))
-			      #f 600 450)]
-	  [text (make-object text%)])
-      (make-object editor-canvas% frame text)
-      (for-each
-       (lambda (fn)
-	 (call-with-input-file (build-path (collection-path "release-notes") fn)
-	   (lambda (port)
-	     (let loop ()
-	       (let ([l (read-line port)])
-		 (unless (eof-object? l)
-		   (send text insert l)
-		   (send text insert #\newline)
-		   (loop)))))
-	   'text)
-	 (send text insert #\newline))
-       (require-library "contents" "release-notes"))
-
-      (send text change-style (make-object style-delta% 'change-family 'modern)
-	    0 (send text last-position))
-      (send text set-position 0 0)
-      (send text lock #t)
+          framework^
+          [help-desk : help:drscheme-interface^])
+  
+  (define (check-new-version)
+    (let ([this-version (version:version)]
+          [last-version (preferences:get 'drscheme:last-version)])
       
-      (send frame show #t)))
-
-  (define (show-intro)
-    (let ([f (make-object frame% "Introduction to DrScheme")])
-      (make-object message% "More to come here.... stay tuned" f)
-      (make-object button% "Release Notes" f (lambda x (show-release-notes)))
+      (when (or (not last-version)
+                (not (equal? last-version this-version)))
+        
+        (show-introduction))))
+  
+  (define (show-introduction)
+    (let* ([f (make-object frame:basic% "Welcome to DrScheme")]
+           [hp (make-object horizontal-panel% (send f get-area-container))]
+           [this-version (version:version)]
+           [last-version (preferences:get 'drscheme:last-version)])
+      
+      (preferences:set 'drscheme:last-version this-version)
+      
+      (let ([vp (make-object vertical-panel% hp)])
+        (make-object message% 
+                     (make-object bitmap% 
+                                  (build-path (collection-path "icons") "plt.gif")
+                                  'gif)
+                     vp)
+        (make-object 
+         message% 
+         (format "Welcome to DrScheme, version ~a" this-version)
+         vp)
+        (when (and last-version 
+                   (not (equal? this-version last-version)))
+          (make-object 
+           message% 
+           (format "(previous version ~a)" last-version)
+           vp)))
+      
+      
+      (let* ([vp (make-object vertical-panel% hp)]
+             [buttons
+              (list
+               
+               (make-object button% "Take a Tour!" vp
+                            (lambda x 
+                              (bell)))
+               
+               (make-object button% "Release Notes" vp
+                            (lambda x 
+                              (help-desk:open-url 
+                               (string-append
+                                "file:"
+                                (build-path (collection-path "doc" "help" "release")
+                                            "notes.html"))))))])
+        (send vp set-alignment 'center 'center)
+        (let ([max-width (apply max (map (lambda (x) (send x get-width)) buttons))])
+          (for-each (lambda (x) (send x min-width max-width)) buttons)))
+      
       (send f show #t))))

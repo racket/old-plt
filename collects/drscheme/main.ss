@@ -24,7 +24,7 @@
      s))
 
   (fw:application:current-app-name "DrScheme")
-  (fw:version:add-spec 'd 5)
+  (fw:version:add-spec 'd 6)
   
   
   ;; add preferences
@@ -84,15 +84,4 @@
 			      (lambda (x)
 				(or (string? x)
 				    (not x))))
-
-  (let ([this-version (fw:version:version)])
-    (cond
-     [(fw:preferences:get 'drscheme:last-version)
-      =>
-      (lambda (last-version)
-	(unless (equal? last-version this-version)
-	  (fw:preferences:set 'drscheme:last-version this-version)
-	  (drscheme:intro:show-release-notes)))]
-     [else
-      (fw:preferences:set 'drscheme:last-version this-version)
-      (drscheme:intro:show-intro)])))
+  (drscheme:intro:check-new-version))

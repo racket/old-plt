@@ -69,7 +69,7 @@ The frame returned by `new-help-frame' provides two extra methods:
 All of the helpr.ss unit's imports must be initialized before the Help
 Desk unit itself. For dynamic-linking convenience, the
 `new-help-frame' and `open-url-from-user' procedures are also returned
-as the value of the unit's initialization expression.
+as the values of the unit's initialization expression.
 
 _Creating Help Desk Documentation_
 ==================================

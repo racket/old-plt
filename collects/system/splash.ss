@@ -26,7 +26,7 @@
 	   [(splash-width-resource) "splash-max-width"]
 	   [(splash-depth-resource) "splash-max-depth"]
 	   [(splash-max-width) (get-resource splash-width-resource (info 'splash-max))]
-	   [(splash-max-depth) (get-resource splash-depth-resource (info 'splash-depth)]
+	   [(splash-max-depth) (get-resource splash-depth-resource (info 'splash-depth))]
 	   
 	   [(splash-sofar-depth) 0]
 	   [(splash-current-width) 0]

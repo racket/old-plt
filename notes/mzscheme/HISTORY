@@ -1,6 +1,10 @@
 
 Version 102/13:
 
+ * Added `provide-library', which lets the programmer install a
+   library-loading procedure for an arbitrary library (if it is not
+   already loaded).
+
  * Changed `find-executable-path' to accept #f as its second argument,
    and fixed the documentation.
 
@@ -349,6 +353,7 @@ Fixed arithmetic-shift for a -32 shift
 Fixed angle on +nan.0
 Fixed expt on 0 and a negative number
 Added 'exec-file flag to find-system-path
+Added provide-library
 Added square and mergesort to MzLib's function.ss
 Added tcp-addresses
 Added -k command-line flag

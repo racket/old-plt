@@ -33,34 +33,86 @@
 	      (fail))
 	    exe)))))
 
+  ;; Find all files to embed for the collection,
+  ;;  and add a wrapper around each to provide it
+  ;;  as a library.
+  (define (find-collect-files collects verbose?)
+    (define plain-namespace (make-namespace))
+    (define (make-provide-expr file collect str)
+      (parameterize ([current-namespace plain-namespace])
+	(compile
+	 `(#%provide-library (#%lambda ()
+			      (#%let ([p (#%open-input-string ,str)])
+			       (#%let loop ([v (#%list (#%void))])
+			         (#%let ([e (#%parameterize ([#%read-accept-compiled #t])
+					      (#%read p))])
+				  (#%if (#%eof-object? e)
+				        (#%apply #%values v)
+				        (loop (#%call-with-values 
+					      (#%lambda () (#%eval e))
+					      #%list)))))))
+			     ,file ,@collect))))
+  
+    (apply
+     append
+     (map (lambda (collect)
+	    (when verbose?
+	      (fprintf (current-error-port)
+		       "Reading collection ~s~n" collect))
+	    (let ([dir (apply collection-path collect)])
+	      (let loop ([files (directory-list dir)])
+		(if (null? files)
+		    null
+		    (let ([full (build-path dir (car files))])
+		      ;; Is a file?
+		      (if (file-exists? full)
+			  ;; Has a .zo form?
+			  (let ([src (let* ([zo (build-path dir "compiled"
+							    (regexp-replace (#%regexp "\\..?.?.?$") 
+									    (car files)
+									    ".zo"))])
+				       (if (file-exists? zo)
+					   zo
+					   full))])
+			    (when verbose?
+			      (fprintf (current-error-port) "  source: ~s~n" src))
+			    (cons
+			     (open-input-string (format "~s" (make-provide-expr
+							      (car files) collect
+							      (with-input-from-file src
+								(lambda ()
+								  (read-string (file-size src)))))))
+			     (loop (cdr files))))
+
+			  ;; Not a file: skip it
+			  (loop (cdr files))))))))
+	  collects)))
+			   
+
+
   (define (add-files files dest)
-    (let ([in (cond
-	       [(port? files) files]
-	       [(string? files) (open-input-file files)]
-	       [(list? files) (begin0
-			       (open-input-file (car files))
-			       (set! files (cdr files)))])]
-	  [out (open-output-file dest 'append)]
+    (let ([out (open-output-file dest 'append)]
 	  [s (make-string 1024)])
 	(let ([count
-	       (let loop ([c 0])
-		 (let ([n (read-string-avail! s in)])
-		   (if (eof-object? n)
-		       (if (pair? files)
-			   (begin
-			     (close-input-port in)
-			     (set! in (open-input-file (car files)))
-			     (set! files (cdr files))
-			     (loop c))
-			   c)
-		       (begin
-			 (display (if (= n (string-length s)) s (substring s 0 n))
-				  out)
-			 (loop (+ c n))))))])
-	  (close-input-port in)
+	       (let floop ([c 0][files files])
+		 (if (null? files)
+		     c
+		     (let ([in (cond
+				[(string? (car files)) (open-input-file (car files))]
+				[else (car files)])])
+		       (let loop ([c c])
+			 (let ([n (read-string-avail! s in)])
+			   (if (eof-object? n)
+			       (begin
+				 (close-input-port in)
+				 (floop c (cdr files)))
+			       (begin
+				 (display (if (= n (string-length s)) s (substring s 0 n))
+					  out)
+				 (loop (+ c n)))))))))])
 	  (close-output-port out)
 	  count)))
-
+  
   ;; Find the magic point in the binary:
   (define (find-cmdline)
     (define magic (string->list "[Replace me for EXE hack"))
@@ -77,15 +129,19 @@
 		   (loop (add1 pos) (cdr l))
 		   (loop (add1 pos) magic)))])))
 
+
   ;; The main function (see doc.txt):
-  (define (make-embedding-executable dest mred? files cmdline)
+  (define (make-embedding-executable dest mred? verbose? files collects cmdline)
     (unless (< (apply + (length cmdline) (map string-length cmdline)) 50)
       (error 'make-embedding-executable "command line too long"))
     (for-each (lambda (f)
 		(unless (file-exists? f)
 		  (error 'make-embedding-executable "can't find file: ~s" f)))
 	      files)
-    (let ([exe (find-exe mred?)])
+    (let ([exe (find-exe mred?)]
+	  [collects (find-collect-files collects verbose?)])
+      (when verbose?
+	(fprintf (current-error-port) "Copying to ~s~n" dest))
       (when (file-exists? dest)
 	(delete-file dest))
       (copy-file exe dest)
@@ -95,8 +151,14 @@
 			   (delete-file dest))
 			 (raise x))])
 	(let ([start (file-size dest)]
-	      [count (add-files files dest)]
+	      [count (add-files (append collects
+					(if (pair? files)
+					    files
+					    (list files)))
+				dest)]
 	      [cmdpos (with-input-from-file dest find-cmdline)])
+	  (when verbose?
+	    (fprintf (current-error-port) "Setting command line~n"))
 	  (let ([out (open-output-file dest 'update)]
 		[start-s (number->string start)]
 		[end-s (number->string (+ start count))])

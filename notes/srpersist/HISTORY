@@ -1,9 +1,15 @@
 SrPersist 
 =========
 
+Version 201
+
+Added support for SQL_C_SBIGINT, SQL_C_UBIGINT with the 
+ gcc compiler
+
 Version 200
 
 Registered bufferTable[] with garbage collector
+Fixed memory allocation problem in extended-fetch
 Added version information procedures srp-version and 
  compiled-odbc-version
 Procedure execute becomes sql-execute

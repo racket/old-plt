@@ -14,8 +14,12 @@
   (define (report-error . x) (error 'report-error))
   (define (report-unlocated-error . x) (error 'report-unlocated-error))
 
-
   (define system-parameterization (current-parameterization))
+  ;; DEBUGGING!
+  (error-escape-handler 
+   (let ([o (error-escape-handler)])
+     (rec system-parameterization-error-escape-handler
+	  (lambda x (apply o x)))))
 
   (define eq?-only-compares-symbols (make-parameter #f))
   (define r4rs-style-printing (make-parameter #f))
@@ -37,6 +41,7 @@
 				whole/fractional-exact-numbers
 				printing))
   
+  ;; settings : (list-of (list symbol setting))
   (define settings
     (list (list 'Beginner (make-setting/parse
 			   `((use-zodiac? #t)
@@ -114,6 +119,7 @@
 			       (whole/fractional-exact-numbers #f)
 			       (printing r4rs-style))))))
 
+  ;; find-setting-name : setting -> symbol
   (define (find-setting-name setting)
     (or (ormap (lambda (x)
 		 (if (equal? (mzlib:function:second x) setting)
@@ -121,27 +127,21 @@
 		     #f))
 	       settings)
 	'Custom))
-  
-  ;; OBSOLETE??
-  '(define set-use-zodiac
-    (lambda ()
-      (use-zodiac
-       (setting-use-zodiac? 
-	(mred:get-preference 'drscheme:settings)))))
 
+  ;; copy-setting : setting -> setting
   (define copy-setting
     (lambda (x)
       (apply make-setting (cdr (vector->list (struct->vector x))))))
   
+  ;; get-default-setting : _ -> setting
   (define (get-default-setting)
     (copy-setting (mzlib:function:second (car (reverse settings)))))
 
-  (define (add-language-level name setting)
-    (set! settings (append settings (list name setting))))
-
+  ;; r4rs-style-printing? : setting -> boolean
   (define (r4rs-style-printing? setting)
     (eq? 'r4rs-style (setting-printing setting)))
 
+  ;; current-setting : (parameter (+ #f setting))
   (define current-setting
     (make-parameter
      #f
@@ -154,6 +154,13 @@
 				 
   (define-struct process-finish (error?))
 
+  ;; process-file/zodiac : setting
+  ;;                       zodiac:vocabulary
+  ;;                       string
+  ;;                       (((+ sexp zodiac:parsed) ( -> A) -> A)
+  ;;                       boolean
+  ;;                    -> A
+  ;; note: the boolean controls which variant of the union the 3rd arg is passed.
   (define (process-file/zodiac setting vocab filename f annotate?)
     (let ([port (with-handlers ([(lambda (x) #t)
 				 (lambda (x) (report-error x))])
@@ -171,6 +178,10 @@
 	 (f x r))
        annotate?)))
 
+  ;; process-file/no-zodiac : setting
+  ;;                          string
+  ;;                          sexp ( -> A) -> A
+  ;;                       -> A
   (define (process-file/no-zodiac setting filename f)
     (call-with-input-file filename
       (lambda (port)
@@ -269,8 +280,8 @@
      (lambda (msg debug)
        ((error-display-handler) msg))))
 
-  ;; drscheme-exception-handler : exn -> void
-  ;; effect: displays 
+  ;; drscheme-exception-handler : exn -> A
+  ;; effect: displays the exn-message and escapes
   (define (drscheme-exception-handler exn)
     ((error-display/debug-handler) (exn-message exn)
 				   (exn-debug-info exn))
@@ -279,10 +290,9 @@
 
   ;; drscheme-branch-handler :  -> parameterization
   ;; parameters: current-parameterization
-  (define (drscheme-branch-handler)
-    (make-parameterization (current-parameterization)))
+  (define (drscheme-branch-handler) (make-parameterization (current-parameterization)))
 
-  ;; TST number -> string
+  ;; drscheme-error-value->string-handler : TST number -> string
   (define (drscheme-error-value->string-handler x n)
     (let ([setting (current-setting)])
       (with-parameterization system-parameterization

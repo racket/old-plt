@@ -10,7 +10,6 @@
   
   (mred:debug:printf 'invoke "drscheme:language@")
   
-  ;; delete?
   (define level->number
     (lambda (x)
       (case x
@@ -18,9 +17,10 @@
 	[(structured) 1]
 	[(side-effecting) 2]
 	[(advanced) 3]
+	[(raw) 4]
 	[else (error 'level->number "unexpected level: ~a" x)])))
-  (define level-symbols (list 'core 'structured 'side-effecting 'advanced))
-  (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS"))
+  (define level-symbols (list 'core 'structured 'side-effecting 'advanced 'raw))
+  (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS" "Raw"))
 
   (mred:set-preference-default 'drscheme:settings
 			       (basis:get-default-setting)
@@ -124,7 +124,7 @@
 				    (mred:set-preference 'drscheme:settings s)))
 				"Vocabulary"
 				-1 -1 -1 -1
-				(append language-levels (list "MrEd"))))
+				language-levels))
 		 input-syntax-panel)]
 	 [case-sensitive? (make-check-box basis:set-setting-case-sensitive?!
 					  basis:setting-case-sensitive?

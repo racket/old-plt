@@ -29,9 +29,7 @@
       `(define-values ,(cons make-parse bindings)
 	 (call-with-values (lambda () ,exp)
 			   (lambda bindings (apply values (cons ,parser bindings))))))))
-				 
 
-(printf ">> defining userspace:basis^~n")
 (define-signature userspace:basis^
   (build-parameterization
    settings

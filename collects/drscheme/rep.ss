@@ -59,7 +59,7 @@
     
   (define exception-reporting-rep (make-parameter #f))
 
-  ;; syntax-checking-primitive-eval : Sexp -> value
+  ;; syntax-checking-primitive-eval : sexp -> value
   ;; effect: raises user-exn if expression ill-formed
   (define (syntax-checking-primitive-eval expr)
     (drscheme:init:primitive-eval
@@ -160,14 +160,16 @@
 	[report-exception-error
 	 (lambda (exn)
 	   (if (exn? exn)
-	       (let ([di (exn-debug-info exn)])
-		 (if (and (zodiac:zodiac? di)
-			  (basis:setting-use-zodiac? user-setting))
-		     (let* ([start (zodiac:zodiac-start di)]
-			    [finish (zodiac:zodiac-finish di)])
-		       (report-error start finish 'dynamic (exn-message exn)))
-		     (report-unlocated-error (exn-message exn))))
+	       (report-located-error (exn-debug-info exn) (exn-message exn))
 	       (report-unlocated-error (format "uncaught exception: ~e" exn))))]
+	[report-located-error
+	 (lambda (message di)
+	   (if (and (zodiac:zodiac? di)
+		    (basis:setting-use-zodiac? user-setting))
+	       (let* ([start (zodiac:zodiac-start di)]
+		      [finish (zodiac:zodiac-finish di)])
+		 (report-error start finish 'dynamic message))
+	       (report-unlocated-error message)))]
 	[report-unlocated-error
 	 (lambda (message)
 	   (let* ([frame (get-frame)]
@@ -175,11 +177,11 @@
 	     (send frame ensure-interactions-shown)
 	     (let ([locked? (ivar interactions-edit locked?)])
 	       (send* interactions-edit
-		      (begin-edit-sequence)
-		      (lock #f)
-		      (this-err-write (string-append message (string #\newline)))
-		      (lock locked?)
-		      (end-edit-sequence)))))]
+		 (begin-edit-sequence)
+		 (lock #f)
+		 (this-err-write (string-append message (string #\newline)))
+		 (lock locked?)
+		 (end-edit-sequence)))))]
 	[report-error
 	 (lambda (start-location end-location type input-string)
 	   (let* ([start (zodiac:location-offset start-location)]
@@ -290,9 +292,9 @@
 	 (let ([count 0])
 	   (lambda (start end)
 	     (set! count (add1 count))
-	     '(when (<= 5 count)
-		(collect-garbage)
-		(set! count 0))
+	     (when (<= 5 count)
+	       (collect-garbage)
+	       (set! count 0))
 	     (let* ([frame (get-frame)]
 		    [definitions-edit (ivar frame definitions-edit)]
 		    [already-warned? (ivar definitions-edit already-warned?)]
@@ -321,27 +323,20 @@
 	   (begin-edit-sequence)	     
 	   (set-caret-owner null wx:const-focus-display)
 
-	   ;; (thread-running? evaluation-thread) is not a meaningful test anymore
-	   (let ([c-locked? locked?])
-	     (lock #f)
-	     (insert-prompt)
-	     (lock c-locked?)
-	     (end-edit-sequence))
-
-	   '(if (thread-running? evaluation-thread)
-		(let ([c-locked? locked?])
-		  (lock #f)
-		  (insert-prompt)
-		  (lock c-locked?)
-		  (end-edit-sequence))
-		(begin (lock #t)
-		       (end-edit-sequence)
-		       (unless shutting-down?
-			 (mred:message-box
-			  (format "The evaluation thread is no longer running, ~
-                                    so no evaluation can take place until ~
-                                    the next execution.")
-			  "Warning")))))]
+	   (if (thread-running? evaluation-thread)
+	       (let ([c-locked? locked?])
+		 (lock #f)
+		 (insert-prompt)
+		 (lock c-locked?)
+		 (end-edit-sequence))
+	       (begin (lock #t)
+		      (end-edit-sequence)
+		      (unless shutting-down?
+			(mred:message-box
+			 (format "The evaluation thread is no longer running, ~
+			 so no evaluation can take place until ~
+			 the next execution.")
+			 "Warning")))))]
 	[display-results
 	 (lambda (anss)
 	   (let ([c-locked? locked?])
@@ -420,23 +415,37 @@
 				   "thread-kill terminating (thread-grace running? ~s)"
 				   (thread-running? thread-grace))))))
 		       (lambda ()
-			 (process-edit edit
-				       (lambda (expr recur)
-					 (cond
-					  [(basis:process-finish? expr)
-					   (mred:debug:printf 'console-threading "posting evaluation-sucessful.1")
-					   (semaphore-post evaluation-sucessful)]
-					  [else
-					   (let-values ([(answers error?) (send-scheme expr)])
-					     (display-results answers)
-					     (if error?
-						 (begin 
-						   (mred:debug:printf 'console-threading "posting evaluation-sucessful.1")
-						   (semaphore-post evaluation-sucessful))
-						 (recur)))]))
-				       start
-				       end
-				       #t))
+			 (with-parameterization user-param
+			   (lambda ()
+			     (let/ec k
+			       (fluid-let ([error-escape-k 
+					    (lambda ()
+					      (mred:debug:printf 'console-threading "error-escape-k: posting evaluation-sucessful")
+					      (semaphore-post evaluation-sucessful)
+					      (k (void)))])
+				 (process-edit edit
+					       (lambda (expr recur)
+						 (mred:debug:printf 'console-threading "process-edit-f: looping~n")
+						 (cond
+						   [(basis:process-finish? expr)
+						    (mred:debug:printf 'console-threading "process-edit-f: posting evaluation-sucessful")
+						    (semaphore-post evaluation-sucessful)]
+						   [else
+						    (let ([answers (call-with-values
+								    (lambda ()
+								      (if (basis:setting-use-zodiac? user-setting)
+									  (with-parameterization user-param
+									    (lambda ()
+									      (syntax-checking-primitive-eval expr)))
+									  (with-parameterization user-param
+									    (lambda ()
+									      (drscheme:init:primitive-eval expr)))))
+								    (lambda x x))])
+						      (display-results answers)
+						      (recur))]))
+					       start
+					       end
+					       #t))))))
 		       (lambda () (void)))))))))])
       (private
 	[shutdown-user-custodian
@@ -473,27 +482,12 @@
 	   (mred:message-box "error-escape-handler didn't escape"
 			     "Error Escape")
 	   (escape-handler))]
-	[exception-handler void]
 	[error-escape-k void]
 	[escape-handler
 	 (rec drscheme-error-escape-handler
 	      (lambda ()
-		(error-escape-k (list (void)) #t)))]
-	[send-scheme 
-	 (lambda (expr)
-	   (let/ec k
-	     (fluid-let ([error-escape-k k])
-	       (call-with-values
-		(lambda ()
-		  (if (basis:setting-use-zodiac? user-setting)
-		      (with-parameterization user-param
-			(lambda ()
-			  (syntax-checking-primitive-eval expr)))
-		      (with-parameterization user-param
-			(lambda ()
-			  (drscheme:init:primitive-eval expr)))))
-		(lambda anss
-		  (values anss #f))))))])
+		(mred:debug:printf 'console-threading "drscheme-error-escape-handler: escaping")
+		(error-escape-k)))])
 
       (private
 	[eval-thread-thunks null]
@@ -521,6 +515,7 @@
 		dummy-s
 		(lambda ()
 		  (set! evaluation-thread (current-thread))
+		  (error-escape-handler escape-handler)
 		  (let loop ()
 		    (semaphore-wait eval-thread-queue-sema)
 		    (semaphore-wait eval-thread-state-sema)
@@ -637,9 +632,10 @@
 		   (current-input-port this-in)
 		   (current-load userspace-load)
 		   (current-eval userspace-eval)
-
 		   (wx:current-eventspace (wx:make-eventspace))
 
+		   (basis:error-display/debug-handler report-located-error)
+		   
 		   (error-display-handler
 		    (rec drscheme-error-display-handler
 			 (lambda (msg)

@@ -394,6 +394,8 @@ BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD menuId)
 }
 
 extern wxMenu **wxCurrentPopupMenu;
+extern void wxResetCurrentCursor(void);
+extern HCURSOR wxMSWSetCursor(HCURSOR c);
 
 Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 {
@@ -413,7 +415,11 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   *ptr = menu;
   wxCurrentPopupMenu = ptr;
 
-  wxwmTrackPopupMenu(hMenu, 0, point.x, point.y, 0, hWnd, NULL);
+  wxMSWSetCursor(wxSTANDARD_CURSOR->ms_cursor);
+  wxwmTrackPopupMenu(hMenu, TPM_LEFTBUTTON | TPM_RIGHTBUTTON, 
+		     point.x, point.y,
+		     0, hWnd, NULL);
+  wxResetCurrentCursor();
   wxYield();
   if (wxCurrentPopupMenu == ptr)
     wxCurrentPopupMenu = NULL;

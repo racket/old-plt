@@ -516,6 +516,9 @@ void wxResetCurrentCursor(void)
   wxWnd *wnd = wxCurrentWindow(0);
   if (!wnd) return;
 
+  if (wxCurrentPopupMenu)
+    return;
+
   wxWindow *w = wnd->wx_window;
   if (!w) return;
 

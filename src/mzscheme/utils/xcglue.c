@@ -29,6 +29,10 @@
 
       (primitive-class? v) - returns #t if v is a primitive class.
 
+      dispatcher-property - a property whose value should be a method
+       dispatcher, which takes two arguments: and object and method
+       name
+
    In addition, the C code generates definitions of classes.
 
    C side:
@@ -457,6 +461,10 @@ void objscheme_init(Scheme_Env *env)
 			   scheme_make_prim_w_arity(find_meth,
 						    "find-in-primitive-class",
 						    2, 2),
+			   env);
+
+  scheme_install_xc_global("dispatcher-property",
+			   dispatcher_property,
 			   env);
 }
 

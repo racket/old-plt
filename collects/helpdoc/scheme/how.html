@@ -1,0 +1,46 @@
+<title>How to Create and Run Scheme Programs</title>
+
+<H2>How to Create and Run Scheme Programs</H2>
+
+<font color="forest green"><H3>- DrScheme -</H3></font>
+
+<B>DrScheme</B> is a user-friendly environment for creating and
+ running Scheme programs. DrScheme supports the Beginner,
+ Intermediate, Advanced, MzScheme, and MrEd dialects of Scheme. (The
+ default language is Beginner.)
+
+<P>
+
+<!-- MZSCHEME="(require-library |launcher.ss| |launcher|)" -->
+
+On this machine, DrScheme is <TT><!--
+MZSCHEME="(mred-program-launcher-path |DrScheme|)" --></TT>.
+
+<P>
+
+<font color="forest green"><H3>- MzScheme and MrEd -</H3></font>
+
+The <B>MzScheme</B> and <B>MrEd</B> executables can run programs
+ written in the MzScheme and MrEd languages without DrScheme (but
+ MzScheme and MrEd programs are typically developed using the DrScheme
+ environment).
+
+<P>
+
+On this machine, MzScheme is <TT><!--
+ MZSCHEME="(mzscheme-program-launcher-path |MzScheme|)" --></TT>, and
+ MrEd is <TT><!-- MZSCHEME="(mred-program-launcher-path |MrEd|)"
+ --></TT>.
+
+<P>
+
+<font color="forest green"><H3>- mzc -</H3></font>
+
+The <B>mzc</B> executable compiles MzScheme and MrEd programs to
+ native code using a C compiler (which your system must provide).
+ The resulting native code can be loaded into MrEd or MzScheme.
+
+<P>
+
+On this machine, mzc is <TT><!-- MZSCHEME="(mzscheme-program-launcher-path |mzc|)" --></TT>.
+

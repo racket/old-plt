@@ -179,16 +179,20 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   err = GetCurrentScrap(&scrap);
   if (err != noErr) {
     return NULL;
-  }    
-  err = GetScrapFlavorSize(scrap, format, &length);
-  if (err != noErr) {
-    if (format == 'TEXT') {
-      /* Wanted text? Try Unicode, too... */
+  }
+  if (format == 'TEXT') {
+    /* Wanted text? Try Unicode, first... */
+    err = GetScrapFlavorSize(scrap, 'utxt', &length);
+    if (err == noErr) {
       format = 'utxt';
-      err = GetScrapFlavorSize(scrap, format, &length);
-      if (err != noErr)
-	return NULL;
     } else
+      err = 1;
+  } else
+    err = 1;
+
+  if (err != noErr) {
+    err = GetScrapFlavorSize(scrap, format, &length);
+    if (err != noErr)
       return NULL;
   }
 
@@ -242,11 +246,11 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
     long sl;
     char *s;
 
-    sl = scheme_utf8_encode((unsigned int *)result, 0, length,
+    sl = scheme_utf8_encode((unsigned int *)result, 0, length >> 1,
 			    NULL, 0,
 			    1 /* UTF-16 */);
     s = new WXGC_ATOMIC char[sl + 1];
-    sl = scheme_utf8_encode((unsigned int *)result, 0, length,
+    sl = scheme_utf8_encode((unsigned int *)result, 0, length >> 1,
 			    (unsigned char *)s, 0,
 			    1 /* UTF-16 */);
     s[sl] = 0;

@@ -126,12 +126,20 @@ parameters that control the setup process:
                    [default: #t]
 > call-install - #t => call collection "info.ss"-specified setup code
                  [default: #t]
+> force-unpack - #t => ignore version and already-installed errors
+                 when upacking a .plt archive [default: #f]
+> pause-on-errors - #t => in the event of an error, prints a summary error
+                 and waits for stdin input before terminating
+                 [default: #f]
 > specific-collections - a list of collections to set up; the empty
            list means set-up all collections if  the archives
            list is also empty [default: null]
 > archives - a list of .plt archives to unpack; any collections specified
             by the archives are set-up in addition to the collections
             listed in specific-collections  [default: null]
+> current-target-directory-getter - a thunk that returns the target
+            directory for unpacking a relative .plt archive;
+            [default: current-directory]
 
 Thus, to unpack a single .plt archive "x.plt", set the `archives'
 parameter to (list "x.plt") and leave `specific-collections' as null.

@@ -3,6 +3,9 @@ Changed class syntax, splitting public clause use into:
   `public' : defines ivars not in superclass
   `override' : defines ivars already in superclass
 Added ivar-in-interface?
+Changed interface: raises an exception if a superinterface
+   declares a variable that is also declared in the interface
+   expression
 Removed letrec*; letrec has the same semantics
 Removed constant-name and constant-name-all-globals
 Removed secure-primitive-exception-types

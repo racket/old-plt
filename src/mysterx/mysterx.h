@@ -489,6 +489,7 @@ MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_process_win_events);
 MX_PRIM_DECL(mx_make_document);
 MX_PRIM_DECL(mx_document_show);
+MX_PRIM_DECL(mx_release_type_table);
   
 void mx_register_com_object(Scheme_Object *,IDispatch *);
 void mx_register_simple_com_object(Scheme_Object *,IUnknown *);

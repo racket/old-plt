@@ -327,6 +327,10 @@ static MX_PRIM mxPrims[] = {
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
   { mx_process_win_events,"process-win-events",0,0},
+
+  // type table
+
+  { mx_release_type_table,"release-type-table",0,0},
 };
 
 DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
@@ -521,14 +525,18 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
 		    MX_TYPEDESC *pTypeDesc) {
   unsigned short hashVal;
   MX_TYPE_TBL_ENTRY *pEntry,*p;
-  
+
+  // we don't call AddRef() for the IDispatch pointer
+  // because it's not used as an interface, only its
+  // pointer value is used, for hashing
+
   pEntry = (MX_TYPE_TBL_ENTRY *)scheme_malloc(sizeof(MX_TYPE_TBL_ENTRY));
   pEntry->pTypeDesc = pTypeDesc;
   pEntry->pIDispatch = pIDispatch;
   pEntry->invKind = invKind;
   pEntry->name = name;
   pEntry->next = NULL;
-  
+
   hashVal = getHashValue(pIDispatch,invKind,name);
   
   p = typeTable[hashVal];
@@ -563,6 +571,22 @@ MX_TYPEDESC *lookupTypeDesc(IDispatch *pIDispatch,char *name,
   }
   
   return NULL;
+}
+
+Scheme_Object *mx_release_type_table(int argc,Scheme_Object **argv) {
+  int i;
+  MX_TYPE_TBL_ENTRY *p;
+
+  for (i = 0; i < sizeray(typeTable); i++) {
+    p = typeTable[i];
+  
+    while(p) {
+      scheme_release_typedesc((void *)p->pTypeDesc,NULL);
+      p = p->next;
+    }
+  }
+
+  return scheme_void;
 }
 
 Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
@@ -3765,7 +3789,7 @@ Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {
   MX_Document_Object *pDoc;
   
   if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("show-document","mx-document",0,argc,argv);
+    scheme_wrong_type("document-show","mx-document",0,argc,argv);
   }
   
   pDoc = (MX_Document_Object *)argv[0];

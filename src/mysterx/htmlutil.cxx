@@ -268,6 +268,8 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
 
   pIHTMLElement->put_outerHTML(htmlBSTR);
 
+  pIHTMLElement->Release();
+
   SysFreeString(htmlBSTR);
 
   return scheme_void;

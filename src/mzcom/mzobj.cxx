@@ -304,9 +304,6 @@ STDMETHODIMP CMzObj::Eval(BSTR input, LPBSTR output) {
 
 BOOL WINAPI dlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM) {
   switch(msg) {
-  case WM_INITDIALOG :
-    SetActiveWindow(hDlg);
-    return TRUE;
   case WM_COMMAND :
     switch (LOWORD(wParam)) { 
     case IDOK :

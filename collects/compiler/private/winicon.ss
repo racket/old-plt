@@ -607,6 +607,10 @@
 	   (get-icons p #t)))
        (lambda () (close-input-port p)))))
 
+  ;; The following is useful for bitmap->icon,
+  ;;  but it uses MrEd, and this module is used by
+  ;;  Setup PLT. Probably this code should just be
+  ;;  moved somewhere else.
   #;
   (begin
     (require (lib "mred.ss" "mred")
@@ -674,11 +678,21 @@
                     ;; non-white mask -> non-zero alpha
                     (string-set! rgba a (integer->char alpha)))))
             (loop (- i 4))))
-        (display rgba o)
-        (display mask o)
+        ;; Windows icons are upside-down:
+        (let ([flip (lambda (str row-width)
+                      (apply
+                       string-append
+                       (reverse
+                        (let loop ([pos 0])
+                          (if (= pos (string-length str))
+                              null
+                              (cons (substring str pos (+ pos row-width))
+                                    (loop (+ pos row-width))))))))])                      
+          (display (flip rgba (* w 4)) o)
+          (display (flip mask (/ row-size 8)) o))
         (make-icon (list w h 0 0 1 32)
                    (cons 0 (get-output-string o))))))
-            
+  
   ;; ------------------------------
   ;;  Image conversion
   ;; ------------------------------

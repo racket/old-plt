@@ -2230,8 +2230,12 @@ do_general_read_string(const char *who, int argc, Scheme_Object *argv[],
   if ((Scheme_Object *)port == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
-  if (!size)
-    return scheme_make_integer(0);
+  if (!size) {
+    if (alloc_mode)
+      return scheme_make_sized_string("", 0, 0);
+    else
+      return scheme_make_integer(0);
+  }
 
   if (alloc_mode) {
     if (size_too_big) {

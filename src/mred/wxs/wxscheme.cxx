@@ -120,6 +120,8 @@ static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip,
 
 static Scheme_Object *wait_symbol;
 
+static Scheme_Object *mono_symbol;
+
 #define CONS scheme_make_pair
 
 void wxsScheme_setup(Scheme_Env *env)
@@ -928,10 +930,24 @@ static int CALLBACK get_font(ENUMLOGFONT FAR*  lpelf,
 
 typedef int (*Indirect_Cmp_Proc)(const void *, const void *);
 
-static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
+static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 {
   Scheme_Object *first = scheme_null, *last = NULL;
+  int mono_only = 0;
 
+  if (argc > 0) {
+    if (!mono_symbol) {
+      wxREGGLOB(mono_symbol);
+      mono_symbol = scheme_intern_symbol("mono");
+    }
+    if (SAME_OBJ(mono_symbol, argv[0]))
+      mono_only = 1;
+    else {
+      scheme_wrong_type("get-face-list", "'mono symbol", 0, argc, argv);
+      return NULL;
+    }
+  }
+  
 #ifdef wx_x
   int count, i = 0;
   char **xnames, **names;
@@ -1057,7 +1073,13 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
     int i, len, ssize;
     char *s, *copy, buf[256];
 
-    fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), NULL, XFT_FAMILY, NULL);
+    if (mono_only) {
+      fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), 
+			XFT_SPACING, XftTypeInteger, XFT_MONO,
+			NULL, 
+			XFT_FAMILY, NULL);
+    } else
+      fs = XftListFonts(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), NULL, XFT_FAMILY, NULL);
 
     for (i = 0; i < fs->nfont; i++) {
       s = buf;
@@ -2599,7 +2621,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("get-face-list",
 			   scheme_make_prim_w_arity(CAST_SP wxSchemeGetFontList,
 						    "get-face-list",
-						    0, 0),
+						    0, 1),
 			   global_env);
   
   scheme_install_xc_global("get-panel-background",

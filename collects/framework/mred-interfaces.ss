@@ -1,6 +1,6 @@
-(unless (equal? (version) "100/34")
+(unless (equal? (version) "100/35")
   (error 'mred-interfaces
-         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/34, not version ~a"
+         "mred-interfaces.ss and mred-interfacess.ss compiled for version 100/35, not version ~a"
          (version)))
 (require-library "mred-interfacess.ss" "framework")
 
@@ -280,13 +280,13 @@
                           print
                           set-cursor
                           refresh
-                          get-canvas
-                          add-canvas
                           get-canvases
                           get-active-canvas
                           set-active-canvas
                           remove-canvas
                           get-max-view-size
+                          get-canvas
+                          add-canvas
                           get-position
                           get-snip-position-and-location
                           begin-write-header-footer-to-file
@@ -517,11 +517,9 @@
                       ($$style-list<%>
                         (interface
                           ()
-                          clear
                           number
                           basic-style
                           convert
-                          copy
                           find-or-create-style
                           find-or-create-join-style
                           find-named-style
@@ -934,13 +932,13 @@
                           set-cursor
                           refresh
                           raise
-                          get-canvas
-                          add-canvas
                           get-canvases
                           get-active-canvas
                           set-active-canvas
                           remove-canvas
                           get-max-view-size
+                          get-canvas
+                          add-canvas
                           begin-write-header-footer-to-file
                           end-write-header-footer-to-file
                           get-inactive-caret-threshold

@@ -46,11 +46,31 @@
                         (lookup (cdr env)))))))
       (lookup (environment-type-env env))))
   
+  ;remove-var-from-env string env -> env
+  (define (remove-var-from-env name env)
+    (letrec ((remove-from-env
+              (lambda (env)
+                (cond
+                  ((null? env) null)
+                  ((equal? name (var-type-var (car env)))
+                   (remove-from-env (cdr env)))
+                  (else (cons (car env) (remove-from-env (cdr env))))))))
+      (make-environment (remove-from-env (environment-type-env env))
+                        (environment-exn-env env)
+                        (environment-label-env env))))
+  
   ;;add-exn-to-env: type env -> env
   (define (add-exn-to-env exn env)
     (make-environment (environment-type-env env)
                       (cons exn (environment-exn-env env))
                       (environment-label-env env)))
+  
+  ;;add-exns-to-env: (list type) env -> env
+  (define (add-exns-to-env exns env)
+    (if (null? exns)
+        env
+        (add-exns-to-env (cdr exns)
+                         (add-exn-to-env (car exns) env))))
   
   ;;lookup-exn: type env type-records-> bool
   (define (lookup-exn type env type-recs)
@@ -121,19 +141,20 @@
          (for-each (lambda (p)
                      (check-interactions-types p level loc type-recs)) prog))
         ((var-init? prog) 
-         (check-var-init (var-init-init prog)
-                         (lambda (e) 
-                           (check-expr e env level type-recs c-class #f #t))
-                         (field-type prog)
-                         (string->symbol (id-string (field-name prog)))
-                         type-recs))
+         (let ((name (id-string (field-name prog))))
+           (check-var-init (var-init-init prog)
+                           (lambda (e) 
+                             (check-expr e (remove-var-from-env name env) level type-recs c-class #f #t))
+                           (type-spec-to-type (field-type prog) type-recs)
+                           (string->symbol name)
+                           type-recs)))
         ((var-decl? prog) (void))
         ((statement? prog)
          (check-statement prog null env level type-recs c-class #f #t #f #f))
         ((expr? prog)
          (check-expr prog env level type-recs c-class #f #t))
         (else
-         (error 'check-interactions "Internal error: check-interactions-types got ~a" prog)))))  
+         (error 'check-interactions "Internal error: check-interactions-types got ~a" prog)))))
   
   ;check-class: class-def (list string) symbol type-records -> void
   (define (check-class class package-name level type-recs)
@@ -161,37 +182,48 @@
   
   ;check-members: (list member) env symbol type-records (U #f (list string)) -> void
   (define (check-members members env level type-recs c-class)
-    (let* ((fields (class-record-fields (send type-recs get-class-record 
-                                              (var-type-type (lookup-var-in-env "this" env)))))
-           (field-env (create-field-env fields env)))
-      (for-each (lambda (member)
-                  (cond
-                    ((method? member)
-                     (if (memq 'static (map modifier-kind (method-modifiers member)))
-                         (check-method member (get-static-fields-env field-env) level type-recs c-class #t)
-                         (check-method member field-env level type-recs c-class #f)))
-                    ((initialize? member)
-                     (if (initialize-static member)
-                         (check-statement (initialize-block member) 'void 
-                                          (get-static-fields-env field-env)
-                                          level type-recs c-class #f #t #f #f)
-                         (check-statement (initialize-block member) 'void field-env level
-                                          type-recs c-class #f #f #f #f)))
-                    ((var-init? member)
-                     (let ((static? (memq 'static (map modifier-kind (field-modifiers member)))))
-                       (check-var-init (var-init-init member)
-                                       (lambda (e) 
-                                         (check-expr e 
-                                                     (if static? 
-                                                         (get-static-fields-env field-env)
-                                                         field-env)
-                                                     level type-recs c-class #f 
-                                                     static?))
-                                       (field-type member)
-                                       (string->symbol (id-string (field-name member)))
-                                       type-recs)))
-                    (else void)))
-                members)))
+    (let* ((class-record (send type-recs get-class-record (var-type-type (lookup-var-in-env "this" env))))
+           (fields (class-record-fields class-record))
+           (field-env (create-field-env fields env))
+           (ctor-throw-env (consolidate-throws 
+                            (get-constructors (class-record-methods class-record)) field-env))
+           (static-env (get-static-fields-env field-env)))
+      (let loop ((rest members) (statics empty-env) (fields env))
+        (unless (null? rest)
+          (let ((member (car rest)))
+            (cond
+              ((method? member)
+               (if (memq 'static (map modifier-kind (method-modifiers member)))
+                   (check-method member static-env level type-recs c-class #t)
+                   (check-method member field-env level type-recs c-class #f))
+               (loop (cdr rest) statics fields))
+              ((initialize? member)
+               (if (initialize-static member)
+                   (check-statement (initialize-block member) 'void static-env
+                                    level type-recs c-class #f #t #f #f)
+                   (check-statement (initialize-block member) 'void ctor-throw-env level
+                                    type-recs c-class #f #f #f #f))
+               (loop (cdr rest) statics fields))
+              ((field? member)
+               (let ((static? (memq 'static (map modifier-kind (field-modifiers member))))
+                     (name (id-string (field-name member)))
+                     (type (type-spec-to-type (field-type member) type-recs)))
+                 (when (var-init? member)
+                   (check-var-init (var-init-init member)
+                                   (lambda (e) 
+                                     (check-expr e 
+                                                 (if static? statics fields)
+                                                 level type-recs c-class #f 
+                                                 static?))
+                                   type
+                                   (string->symbol name)
+                                   type-recs))
+                 (if static?
+                     (loop (cdr rest) 
+                           (add-var-to-env name type #f #t #t statics) 
+                           (add-var-to-env name type #f #t #t fields))
+                     (loop (cdr rest) statics 
+                           (add-var-to-env name type #t #f #t fields)))))))))))
   
   ;create-field-env: (list field-record) env -> env
   (define (create-field-env fields env)
@@ -207,6 +239,21 @@
                                            static?
                                            #t
                                            env))))))
+  
+  ;get-constrcutors: (list method-record) -> (list method-record)
+  (define (get-constructors methods)
+    (filter (lambda (mr)
+              (eq? 'ctor (method-record-rtype mr))) methods))
+
+  ;consolidate-throws: (list method-record) env -> env
+  (define (consolidate-throws mrs env)
+    (let ((first-throws (method-record-throws (car mrs)))
+          (other-throws (map method-record-throws (cdr mrs))))
+      (add-exns-to-env (filter (lambda (throw)
+                                 (andmap (lambda (throws)
+                                           (member throw throws))
+                                         other-throws))
+                               first-throws) env)))
   
   ;get-static-fields-env: env -> env
   (define (get-static-fields-env env)
@@ -234,7 +281,10 @@
               (method-error 'no-reachable sym-name (id-src name)))
             (check-statement body
                              return
-                             (build-method-env (method-parms method) env type-recs)
+                             (add-exns-to-env (map (lambda (n)
+                                                     (java-name->type n type-recs)) 
+                                                   (method-throws method))
+                                              (build-method-env (method-parms method) env type-recs))
                              level
                              type-recs
                              c-class

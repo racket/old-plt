@@ -6152,10 +6152,8 @@ static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_JPEG_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_PNG_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_PNG_MASK_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_PNG_ALPHA_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_MASK_sym = NULL;
-static Scheme_Object *bitmapType_wxBITMAP_TYPE_ALPHA_sym = NULL;
 
 static void init_symset_bitmapType(void) {
   REMEMBER_VAR_STACK();
@@ -6177,20 +6175,16 @@ static void init_symset_bitmapType(void) {
   bitmapType_wxBITMAP_TYPE_PNG_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("png"));
   wxREGGLOB(bitmapType_wxBITMAP_TYPE_PNG_MASK_sym);
   bitmapType_wxBITMAP_TYPE_PNG_MASK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("png/mask"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_PNG_ALPHA_sym);
-  bitmapType_wxBITMAP_TYPE_PNG_ALPHA_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("png/alpha"));
   wxREGGLOB(bitmapType_wxBITMAP_TYPE_UNKNOWN_sym);
   bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unknown"));
   wxREGGLOB(bitmapType_wxBITMAP_TYPE_MASK_sym);
   bitmapType_wxBITMAP_TYPE_MASK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unknown/mask"));
-  wxREGGLOB(bitmapType_wxBITMAP_TYPE_ALPHA_sym);
-  bitmapType_wxBITMAP_TYPE_ALPHA_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unknown/alpha"));
 }
 
 static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!bitmapType_wxBITMAP_TYPE_ALPHA_sym) WITH_VAR_STACK(init_symset_bitmapType());
+  if (!bitmapType_wxBITMAP_TYPE_MASK_sym) WITH_VAR_STACK(init_symset_bitmapType());
   if (0) { }
   else if (v == bitmapType_wxBITMAP_TYPE_BMP_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_BMP; }
   else if (v == bitmapType_wxBITMAP_TYPE_GIF_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_GIF; }
@@ -6201,17 +6195,15 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_JPEG; }
   else if (v == bitmapType_wxBITMAP_TYPE_PNG_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PNG; }
   else if (v == bitmapType_wxBITMAP_TYPE_PNG_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PNG_MASK; }
-  else if (v == bitmapType_wxBITMAP_TYPE_PNG_ALPHA_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PNG_ALPHA; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_UNKNOWN; }
   else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_MASK; }
-  else if (v == bitmapType_wxBITMAP_TYPE_ALPHA_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_ALPHA; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
   READY_TO_RETURN;
   return 0;
 }
 
 static Scheme_Object *bundle_symset_bitmapType(int v) {
-  if (!bitmapType_wxBITMAP_TYPE_ALPHA_sym) init_symset_bitmapType();
+  if (!bitmapType_wxBITMAP_TYPE_MASK_sym) init_symset_bitmapType();
   switch (v) {
   case wxBITMAP_TYPE_BMP: return bitmapType_wxBITMAP_TYPE_BMP_sym;
   case wxBITMAP_TYPE_GIF: return bitmapType_wxBITMAP_TYPE_GIF_sym;
@@ -6222,14 +6214,11 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
   case wxBITMAP_TYPE_JPEG: return bitmapType_wxBITMAP_TYPE_JPEG_sym;
   case wxBITMAP_TYPE_PNG: return bitmapType_wxBITMAP_TYPE_PNG_sym;
   case wxBITMAP_TYPE_PNG_MASK: return bitmapType_wxBITMAP_TYPE_PNG_MASK_sym;
-  case wxBITMAP_TYPE_PNG_ALPHA: return bitmapType_wxBITMAP_TYPE_PNG_ALPHA_sym;
   case wxBITMAP_TYPE_UNKNOWN: return bitmapType_wxBITMAP_TYPE_UNKNOWN_sym;
   case wxBITMAP_TYPE_MASK: return bitmapType_wxBITMAP_TYPE_MASK_sym;
-  case wxBITMAP_TYPE_ALPHA: return bitmapType_wxBITMAP_TYPE_ALPHA_sym;
   default: return NULL;
   }
 }
-
 
 
 
@@ -6255,7 +6244,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 class os_wxImageSnip : public wxImageSnip {
  public:
 
-  os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0 = NULL, int x1 = 0, Bool x2 = FALSE, Bool x3 = TRUE));
+  os_wxImageSnip CONSTRUCTOR_ARGS((nstring x0 = NULL, int x1 = wxBITMAP_TYPE_MASK, Bool x2 = FALSE, Bool x3 = TRUE));
 #ifndef MZ_PRECISE_GC
   os_wxImageSnip CONSTRUCTOR_ARGS((class wxBitmap* x0, class wxBitmap* x1 = NULL));
 #endif
@@ -7331,7 +7320,7 @@ static Scheme_Object *os_wxImageSnipLoadFile(int n,  Scheme_Object *p[])
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "load-file in image-snip%"));
   } else
-    x1 = 0;
+    x1 = wxBITMAP_TYPE_MASK;
   if (n > (POFFSET+2)) {
     x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "load-file in image-snip%"));
   } else
@@ -8163,7 +8152,7 @@ static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(unbundle_symset_bitmapType(p[POFFSET+1], "initialization in image-snip% (filename case)"));
     } else
-      x1 = 0;
+      x1 = wxBITMAP_TYPE_MASK;
     if (n > (POFFSET+2)) {
       x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in image-snip% (filename case)"));
     } else

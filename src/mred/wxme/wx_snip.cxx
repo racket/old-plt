@@ -1183,7 +1183,7 @@ wxSnip *ImageSnipClass::Read(wxMediaStreamIn *f)
 	fclose(fi);
 
 	loadfile = fname;
-	type = ((type == 1) ? wxBITMAP_TYPE_XBM : wxBITMAP_TYPE_XPM);
+	type = wxBITMAP_TYPE_MASK; /* use a mask if available (PNG) */
 	inlined = TRUE;
       }
 
@@ -1298,6 +1298,8 @@ void wxImageSnip::Draw(wxDC *dc, float x, float y,
 		       float WXUNUSED(dx), float WXUNUSED(dy), 
 		       int)
 {
+  wxBitmap *msk;
+
   if (!bm || !bm->Ok()) {
     dc->DrawRectangle(x + 1, y + 1, 
 		      w - 2 + GC_RECT_FRAME_EXTEND, 
@@ -1311,8 +1313,18 @@ void wxImageSnip::Draw(wxDC *dc, float x, float y,
     return;
   }
 
+  if (mask)
+    msk = mask;
+  else {
+    msk = bm->GetMask();
+    if (msk && (!msk->Ok() 
+		|| (msk->GetDepth() != 1)
+		|| (msk->GetWidth() != w)
+		|| (msk->GetHeight() != h)))
+      msk = NULL;
+  }
 
-  dc->Blit(x, y, w, h, bm, 0, 0, wxCOPY, NULL, mask);
+  dc->Blit(x, y, w, h, bm, 0, 0, wxCOPY, NULL, msk);
   return;
 }
 
@@ -1363,7 +1375,7 @@ void wxImageSnip::Write(wxMediaStreamOut *f)
 
     fname = wxGetTempFileName("img", NULL);
 
-    bm->SaveFile(fname, writeBm ? wxBITMAP_TYPE_XBM : wxBITMAP_TYPE_XPM, NULL);
+    bm->SaveFile(fname, wxBITMAP_TYPE_PNG, NULL);
     
     fi = fopen(fname, "rb");
     if (fi) {

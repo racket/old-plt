@@ -91,7 +91,7 @@
 @CLASSBASE wxImageSnip "image-snip":"snip" / nofnl
 
 // This isn't `pathname' because it expands internally
-@CREATOR (nstring=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE); : : //USEALLFUEL[x0] <> filename
+@CREATOR (nstring=NULL,SYM[bitmapType]=wxBITMAP_TYPE_MASK,bool=FALSE,bool=TRUE); : : //USEALLFUEL[x0] <> filename
 @CREATOR (wxBitmap!,wxBitmap!=NULL) : : /CheckBW[1.METHODNAME("image-snip%","initialization")]|CHECKOK[0.METHODNAME("image-snip%","initialization")]|CHECKOK[1.METHODNAME("image-snip%","initialization")]|CheckSizes[0.1.METHODNAME("image-snip%","initialization")] <> bitmap
 
 @CLASSID wxTYPE_IMAGE_SNIP
@@ -100,7 +100,7 @@
 @INCLUDE wxs_snip.xci
 
 // This isn't `pathname' because it expands internally
-@ "load-file" : void LoadFile(nstring,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);  : : //USEALLFUEL[x0]
+@ "load-file" : void LoadFile(nstring,SYM[bitmapType]=wxBITMAP_TYPE_MASK,bool=FALSE,bool=TRUE);  : : //USEALLFUEL[x0]
 
 @ "get-filename" : nstring GetFilename(bool?=NULL);
 @ "get-filetype" : SYM[bitmapType] GetFiletype();

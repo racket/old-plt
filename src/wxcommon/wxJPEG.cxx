@@ -720,14 +720,9 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 
    if (w_mask && !is_mono) {
      /* Add filler (or alpha) byte (before/after each RGB triplet) */
-     if (w_mask > 1) {
-       /* Keep alphas */
-       png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
-     } else {
-       /* Want just a mask: */
-       png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
-       png_set_invert_alpha(png_ptr);
-     }
+     /* Actually, invert so that it's a mask. */
+     png_set_filler(png_ptr, 0, PNG_FILLER_AFTER);
+     png_set_invert_alpha(png_ptr);
    }
 
    /* Turn on interlace handling.  REQUIRED if you are not using
@@ -751,7 +746,7 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
 
    dc = create_dc(width, height, bm, is_mono);
    if (w_mask && !is_mono) {
-     mbm = new wxBitmap(width, height, ((w_mask > 1) ? 0 : 1));
+     mbm = new wxBitmap(width, height, 0);
      if (mbm->Ok())
        mdc = create_dc(-1, -1, mbm, 1);
      else

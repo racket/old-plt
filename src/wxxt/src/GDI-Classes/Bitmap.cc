@@ -310,12 +310,10 @@ Bool wxBitmap::LoadFile(char *fname, long flags, wxColour *bg)
 
   if (flags & wxBITMAP_TYPE_MASK)
     getMask = 1;
-  else if (flags & wxBITMAP_TYPE_ALPHA)
-    getMask = 2;
   else
     getMask = 0;
 
-  if (!flags || (flags == wxBITMAP_TYPE_MASK) || (flags == wxBITMAP_TYPE_ALPHA))
+  if (!flags || (flags == wxBITMAP_TYPE_MASK))
     flags = wxsGetImageType(fname);
 
   /* MATTHEW: move "Xbitmap = new wxBitmap_Xintern" into

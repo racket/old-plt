@@ -18,11 +18,8 @@
 @SYM "jpeg" : wxBITMAP_TYPE_JPEG
 @SYM "png" : wxBITMAP_TYPE_PNG
 @SYM "png/mask" : wxBITMAP_TYPE_PNG_MASK
-@SYM "png/alpha" : wxBITMAP_TYPE_PNG_ALPHA
 @SYM "unknown" : wxBITMAP_TYPE_UNKNOWN
 @SYM "unknown/mask" : wxBITMAP_TYPE_MASK
-@SYM "unknown/alpha" : wxBITMAP_TYPE_ALPHA
 @ENDSYMBOLS
 
 @MACRO USEALLFUEL[ok] = if (<ok>) WITH_VAR_STACK(scheme_thread_block(0.0));
-

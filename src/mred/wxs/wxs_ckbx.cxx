@@ -335,9 +335,8 @@ void os_wxCheckBox::OnKillFocus()
 static Scheme_Object *os_wxCheckBoxSetLabel(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(2);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, p);
-  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxCheckBox_class, "set-label in check-box%", n, p);
   if ((n >= (POFFSET+1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[POFFSET+0], NULL, 0))) {
@@ -585,8 +584,7 @@ static Scheme_Object *os_wxCheckBoxOnKillFocus(int n,  Scheme_Object *p[])
 
 static Scheme_Object *os_wxCheckBox_ConstructScheme(int n,  Scheme_Object *p[])
 {
-  SETUP_PRE_VAR_STACK(2);
-  PRE_VAR_STACK_PUSH(0, obj);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(1, p);
   os_wxCheckBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();

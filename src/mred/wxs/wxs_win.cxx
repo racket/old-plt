@@ -179,7 +179,7 @@ os_wxWindow::~os_wxWindow()
 
 void os_wxWindow::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *p[POFFSET+1] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -190,7 +190,7 @@ void os_wxWindow::OnDropFile(pathname x0)
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 1);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+1);
   VAR_STACK_PUSH(5, x0);
   SET_VAR_STACK();
 
@@ -200,10 +200,11 @@ void os_wxWindow::OnDropFile(pathname x0)
     return;
   } else {
   mz_jmp_buf savebuf;
-  p[0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_pathname((char *)x0));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 1, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+1, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
@@ -211,7 +212,7 @@ void os_wxWindow::OnDropFile(pathname x0)
 
 Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -222,7 +223,7 @@ Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   VAR_STACK_PUSH(5, x0);
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
@@ -233,11 +234,12 @@ Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
     return FALSE;
   } else {
   mz_jmp_buf savebuf;
-  p[0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
-  p[1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxMouseEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-event in window%"", extracting return value"));
@@ -246,7 +248,7 @@ Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -257,7 +259,7 @@ Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   SETUP_VAR_STACK(7);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   VAR_STACK_PUSH(5, x0);
   VAR_STACK_PUSH(6, x1);
   SET_VAR_STACK();
@@ -268,11 +270,12 @@ Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
     return FALSE;
   } else {
   mz_jmp_buf savebuf;
-  p[0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
-  p[1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
+  p[POFFSET+0] = WITH_VAR_STACK(objscheme_bundle_wxWindow(x0));
+  p[POFFSET+1] = WITH_VAR_STACK(objscheme_bundle_wxKeyEvent(x1));
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return 1; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   return WITH_VAR_STACK(objscheme_unbundle_bool(v, "pre-on-char in window%"", extracting return value"));
@@ -281,7 +284,7 @@ Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxWindow::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
+  Scheme_Object *p[POFFSET+2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -292,7 +295,7 @@ void os_wxWindow::OnSize(int x0, int x1)
   SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
-  VAR_STACK_PUSH_ARRAY(2, p, 2);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+2);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "on-size", &mcache);
@@ -301,11 +304,12 @@ void os_wxWindow::OnSize(int x0, int x1)
     return;
   } else {
   
-  p[0] = scheme_make_integer(x0);
-  p[1] = scheme_make_integer(x1);
+  p[POFFSET+0] = scheme_make_integer(x0);
+  p[POFFSET+1] = scheme_make_integer(x1);
   
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 2, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+2, p));
   
   
   }
@@ -313,7 +317,7 @@ void os_wxWindow::OnSize(int x0, int x1)
 
 void os_wxWindow::OnSetFocus()
 {
-  Scheme_Object **p = NULL;
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -321,9 +325,10 @@ void os_wxWindow::OnSetFocus()
 #endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(2);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "on-set-focus", &mcache);
@@ -333,8 +338,9 @@ void os_wxWindow::OnSetFocus()
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
@@ -342,7 +348,7 @@ void os_wxWindow::OnSetFocus()
 
 void os_wxWindow::OnKillFocus()
 {
-  Scheme_Object **p = NULL;
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
   Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
@@ -350,9 +356,10 @@ void os_wxWindow::OnKillFocus()
 #endif
   static void *mcache = 0;
 
-  SETUP_VAR_STACK(2);
+  SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, method);
   VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
   SET_VAR_STACK();
 
   method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxWindow_class, "on-kill-focus", &mcache);
@@ -362,18 +369,19 @@ void os_wxWindow::OnKillFocus()
   } else {
   mz_jmp_buf savebuf;
   COPY_JMPBUF(savebuf, scheme_error_buf); if (scheme_setjmp(scheme_error_buf)) { COPY_JMPBUF(scheme_error_buf, savebuf); return; }
+  p[0] = (Scheme_Object *)__gc_external;
 
-  v = WITH_VAR_STACK(scheme_apply(method, 0, p));
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
   COPY_JMPBUF(scheme_error_buf, savebuf);
   
   }
 }
 
-static Scheme_Object *os_wxWindowOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowOnDropFile(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "on-drop-file in window%", n, p);
   pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -382,25 +390,25 @@ static Scheme_Object *os_wxWindowOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[0], "on-drop-file in window%"));
+  x0 = (pathname)WITH_VAR_STACK(objscheme_unbundle_pathname(p[POFFSET+0], "on-drop-file in window%"));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnDropFile(x0));
   else
-    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0));
+    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnDropFile(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowPreOnEvent(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowPreOnEvent(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "pre-on-event in window%", n, p);
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxMouseEvent* x1 INIT_NULLED_OUT;
 
@@ -411,26 +419,26 @@ static Scheme_Object *os_wxWindowPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   VAR_STACK_PUSH(3, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[0], "pre-on-event in window%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in window%", 0));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-event in window%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxMouseEvent(p[POFFSET+1], "pre-on-event in window%", 0));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    r = WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)obj)->primdata)->PreOnEvent(x0, x1));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnEvent(x0, x1));
   else
-    r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->PreOnEvent(x0, x1));
+    r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnEvent(x0, x1));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxWindowPreOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowPreOnChar(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "pre-on-char in window%", n, p);
   class wxWindow* x0 INIT_NULLED_OUT;
   class wxKeyEvent* x1 INIT_NULLED_OUT;
 
@@ -441,25 +449,25 @@ static Scheme_Object *os_wxWindowPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   VAR_STACK_PUSH(3, x1);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[0], "pre-on-char in window%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in window%", 0));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "pre-on-char in window%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_wxKeyEvent(p[POFFSET+1], "pre-on-char in window%", 0));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    r = WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)obj)->primdata)->PreOnChar(x0, x1));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    r = WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnChar(x0, x1));
   else
-    r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->PreOnChar(x0, x1));
+    r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PreOnChar(x0, x1));
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxWindowOnSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowOnSize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "on-size in window%", n, p);
   int x0;
   int x1;
 
@@ -468,25 +476,25 @@ static Scheme_Object *os_wxWindowOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "on-size in window%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[1], "on-size in window%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "on-size in window%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "on-size in window%"));
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnSize(x0, x1));
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSize(x0, x1));
   else
-    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnSize(x0, x1));
+    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSize(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowOnSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowOnSetFocus(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "on-set-focus in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -495,21 +503,21 @@ static Scheme_Object *os_wxWindowOnSetFocus(Scheme_Object *obj, int n,  Scheme_O
   
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnSetFocus());
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSetFocus());
   else
-    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnSetFocus());
+    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnSetFocus());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowOnKillFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowOnKillFocus(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "on-kill-focus in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -518,22 +526,22 @@ static Scheme_Object *os_wxWindowOnKillFocus(Scheme_Object *obj, int n,  Scheme_
   
 
   
-  if (((Scheme_Class_Object *)obj)->primflag)
-    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnKillFocus());
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnKillFocus());
   else
-    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->OnKillFocus());
+    WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->OnKillFocus());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowwxSchemeWindowGetY(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowwxSchemeWindowGetY(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-y in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -542,19 +550,19 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetY(Scheme_Object *obj, int n,  
   
 
   
-  r = WITH_VAR_STACK(wxSchemeWindowGetY(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)));
+  r = WITH_VAR_STACK(wxSchemeWindowGetY(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxWindowwxSchemeWindowGetX(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowwxSchemeWindowGetX(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-x in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -563,19 +571,19 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetX(Scheme_Object *obj, int n,  
   
 
   
-  r = WITH_VAR_STACK(wxSchemeWindowGetX(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)));
+  r = WITH_VAR_STACK(wxSchemeWindowGetX(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxWindowwxSchemeWindowGetWidth(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowwxSchemeWindowGetWidth(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-width in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -584,19 +592,19 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetWidth(Scheme_Object *obj, int 
   
 
   
-  r = WITH_VAR_STACK(wxSchemeWindowGetWidth(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)));
+  r = WITH_VAR_STACK(wxSchemeWindowGetWidth(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxWindowwxSchemeWindowGetHeight(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowwxSchemeWindowGetHeight(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   int r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-height in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -605,18 +613,18 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetHeight(Scheme_Object *obj, int
   
 
   
-  r = WITH_VAR_STACK(wxSchemeWindowGetHeight(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)));
+  r = WITH_VAR_STACK(wxSchemeWindowGetHeight(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)));
 
   
   
   return scheme_make_integer(r);
 }
 
-static Scheme_Object *os_wxWindowPopupMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowPopupMenu(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "popup-menu in window%", n, p);
   class wxMenu* x0 INIT_NULLED_OUT;
   int x1;
   int x2;
@@ -627,23 +635,23 @@ static Scheme_Object *os_wxWindowPopupMenu(Scheme_Object *obj, int n,  Scheme_Ob
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[0], "popup-menu in window%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 10000, "popup-menu in window%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 0, 10000, "popup-menu in window%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[POFFSET+0], "popup-menu in window%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+1], 0, 10000, "popup-menu in window%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "popup-menu in window%"));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->PopupMenu(x0, x1, x2));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowCenter(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "center in window%", n, p);
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -651,24 +659,24 @@ static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Objec
   VAR_STACK_PUSH(1, obj);
 
   
-  if (n > 0) {
-    x0 = WITH_VAR_STACK(unbundle_symset_direction(p[0], "center in window%"));
+  if (n > (POFFSET+0)) {
+    x0 = WITH_VAR_STACK(unbundle_symset_direction(p[POFFSET+0], "center in window%"));
   } else
     x0 = wxBOTH;
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Center(x0));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->Center(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowGetTextExtent(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-text-extent in window%", n, p);
   string x0 INIT_NULLED_OUT;
   float _x1;
   float* x1 = &_x1;
@@ -689,54 +697,54 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
   VAR_STACK_PUSH(3, x5);
 
   
-  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[0], "get-text-extent in window%"));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
-      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[2], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
-  if (n > 3) {
-    if (XC_SCHEME_NULLP(p[3]))
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "get-text-extent in window%"));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+      *x2 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+2], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+  if (n > (POFFSET+3)) {
+    if (XC_SCHEME_NULLP(p[POFFSET+3]))
     x3 = NULL;
   else
-    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[3], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+    *x3 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+3], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   } else
     x3 = NULL;
-  if (n > 4) {
-    if (XC_SCHEME_NULLP(p[4]))
+  if (n > (POFFSET+4)) {
+    if (XC_SCHEME_NULLP(p[POFFSET+4]))
     x4 = NULL;
   else
-    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[4], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
+    *x4 = (sbox_tmp = WITH_VAR_STACK(objscheme_nullable_unbox(p[POFFSET+4], "get-text-extent in window%")), WITH_VAR_STACK(objscheme_unbundle_float(sbox_tmp, "get-text-extent in window%"", extracting boxed argument")));
   } else
     x4 = NULL;
-  if (n > 5) {
-    x5 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[5], "get-text-extent in window%", 1));
+  if (n > (POFFSET+5)) {
+    x5 = WITH_VAR_STACK(objscheme_unbundle_wxFont(p[POFFSET+5], "get-text-extent in window%", 1));
   } else
     x5 = NULL;
-  if (n > 6) {
-    x6 = WITH_VAR_STACK(objscheme_unbundle_bool(p[6], "get-text-extent in window%"));
+  if (n > (POFFSET+6)) {
+    x6 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+6], "get-text-extent in window%"));
   } else
     x6 = FALSE;
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetTextExtent(x0, x1, x2, x3, x4, x5, x6));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->GetTextExtent(x0, x1, x2, x3, x4, x5, x6));
 
   
-  if (n > 1)
-    WITH_VAR_STACK(objscheme_set_box(p[1], WITH_VAR_STACK(scheme_make_double(_x1))));
-  if (n > 2)
-    WITH_VAR_STACK(objscheme_set_box(p[2], WITH_VAR_STACK(scheme_make_double(_x2))));
-  if (n > 3 && !XC_SCHEME_NULLP(p[3]))
-    WITH_VAR_STACK(objscheme_set_box(p[3], WITH_VAR_STACK(scheme_make_double(_x3))));
-  if (n > 4 && !XC_SCHEME_NULLP(p[4]))
-    WITH_VAR_STACK(objscheme_set_box(p[4], WITH_VAR_STACK(scheme_make_double(_x4))));
+  if (n > (POFFSET+1))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], WITH_VAR_STACK(scheme_make_double(_x1))));
+  if (n > (POFFSET+2))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+2], WITH_VAR_STACK(scheme_make_double(_x2))));
+  if (n > (POFFSET+3) && !XC_SCHEME_NULLP(p[POFFSET+3]))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+3], WITH_VAR_STACK(scheme_make_double(_x3))));
+  if (n > (POFFSET+4) && !XC_SCHEME_NULLP(p[POFFSET+4]))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+4], WITH_VAR_STACK(scheme_make_double(_x4))));
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowGetParent(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowGetParent(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   class wxWindow* r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-parent in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -745,18 +753,18 @@ static Scheme_Object *os_wxWindowGetParent(Scheme_Object *obj, int n,  Scheme_Ob
   
 
   
-  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetParent());
+  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->GetParent());
 
   
   
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxWindow(r));
 }
 
-static Scheme_Object *os_wxWindowRefresh(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowRefresh(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "refresh in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -765,18 +773,18 @@ static Scheme_Object *os_wxWindowRefresh(Scheme_Object *obj, int n,  Scheme_Obje
   
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Refresh());
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->Refresh());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowScreenToClient(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "screen-to-client in window%", n, p);
   int _x0;
   int* x0 = &_x0;
   int _x1;
@@ -788,26 +796,26 @@ static Scheme_Object *os_wxWindowScreenToClient(Scheme_Object *obj, int n,  Sche
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "screen-to-client in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "screen-to-client in window%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "screen-to-client in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "screen-to-client in window%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "screen-to-client in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "screen-to-client in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "screen-to-client in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "screen-to-client in window%"", extracting boxed argument")));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->ScreenToClient(x0, x1));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->ScreenToClient(x0, x1));
 
   
-  if (n > 0)
-    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
-  if (n > 1)
-    WITH_VAR_STACK(objscheme_set_box(p[1], scheme_make_integer(_x1)));
+  if (n > (POFFSET+0))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+  if (n > (POFFSET+1))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowClientToScreen(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "client-to-screen in window%", n, p);
   int _x0;
   int* x0 = &_x0;
   int _x1;
@@ -819,26 +827,26 @@ static Scheme_Object *os_wxWindowClientToScreen(Scheme_Object *obj, int n,  Sche
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "client-to-screen in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "client-to-screen in window%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "client-to-screen in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "client-to-screen in window%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "client-to-screen in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "client-to-screen in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "client-to-screen in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "client-to-screen in window%"", extracting boxed argument")));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->ClientToScreen(x0, x1));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->ClientToScreen(x0, x1));
 
   
-  if (n > 0)
-    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
-  if (n > 1)
-    WITH_VAR_STACK(objscheme_set_box(p[1], scheme_make_integer(_x1)));
+  if (n > (POFFSET+0))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+  if (n > (POFFSET+1))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowDragAcceptFiles(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowDragAcceptFiles(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "drag-accept-files in window%", n, p);
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -846,21 +854,21 @@ static Scheme_Object *os_wxWindowDragAcceptFiles(Scheme_Object *obj, int n,  Sch
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "drag-accept-files in window%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "drag-accept-files in window%"));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->DragAcceptFiles(x0));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->DragAcceptFiles(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowEnable(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowEnable(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "enable in window%", n, p);
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -868,21 +876,21 @@ static Scheme_Object *os_wxWindowEnable(Scheme_Object *obj, int n,  Scheme_Objec
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "enable in window%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "enable in window%"));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Enable(x0));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->Enable(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowGetPosition(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-position in window%", n, p);
   int _x0;
   int* x0 = &_x0;
   int _x1;
@@ -894,26 +902,26 @@ static Scheme_Object *os_wxWindowGetPosition(Scheme_Object *obj, int n,  Scheme_
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-position in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-position in window%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-position in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-position in window%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-position in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-position in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-position in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-position in window%"", extracting boxed argument")));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetPosition(x0, x1));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->GetPosition(x0, x1));
 
   
-  if (n > 0)
-    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
-  if (n > 1)
-    WITH_VAR_STACK(objscheme_set_box(p[1], scheme_make_integer(_x1)));
+  if (n > (POFFSET+0))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+  if (n > (POFFSET+1))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowGetClientSize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-client-size in window%", n, p);
   int _x0;
   int* x0 = &_x0;
   int _x1;
@@ -925,26 +933,26 @@ static Scheme_Object *os_wxWindowGetClientSize(Scheme_Object *obj, int n,  Schem
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-client-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-client-size in window%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-client-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-client-size in window%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-client-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-client-size in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-client-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-client-size in window%"", extracting boxed argument")));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetClientSize(x0, x1));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->GetClientSize(x0, x1));
 
   
-  if (n > 0)
-    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
-  if (n > 1)
-    WITH_VAR_STACK(objscheme_set_box(p[1], scheme_make_integer(_x1)));
+  if (n > (POFFSET+0))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+  if (n > (POFFSET+1))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowGetSize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "get-size in window%", n, p);
   int _x0;
   int* x0 = &_x0;
   int _x1;
@@ -956,26 +964,26 @@ static Scheme_Object *os_wxWindowGetSize(Scheme_Object *obj, int n,  Scheme_Obje
   VAR_STACK_PUSH(1, obj);
 
   
-      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0], "get-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-size in window%"", extracting boxed argument")));
-      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[1], "get-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-size in window%"", extracting boxed argument")));
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+0], "get-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-size in window%"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[POFFSET+1], "get-size in window%")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "get-size in window%"", extracting boxed argument")));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetSize(x0, x1));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->GetSize(x0, x1));
 
   
-  if (n > 0)
-    WITH_VAR_STACK(objscheme_set_box(p[0], scheme_make_integer(_x0)));
-  if (n > 1)
-    WITH_VAR_STACK(objscheme_set_box(p[1], scheme_make_integer(_x1)));
+  if (n > (POFFSET+0))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+0], scheme_make_integer(_x0)));
+  if (n > (POFFSET+1))
+    WITH_VAR_STACK(objscheme_set_box(p[POFFSET+1], scheme_make_integer(_x1)));
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowFit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowFit(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "fit in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -984,19 +992,19 @@ static Scheme_Object *os_wxWindowFit(Scheme_Object *obj, int n,  Scheme_Object *
   
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Fit());
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->Fit());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowIsShown(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowIsShown(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "is-shown? in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1005,18 +1013,18 @@ static Scheme_Object *os_wxWindowIsShown(Scheme_Object *obj, int n,  Scheme_Obje
   
 
   
-  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->IsShown());
+  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->IsShown());
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxWindowShow(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowShow(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "show in window%", n, p);
   Bool x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -1024,22 +1032,22 @@ static Scheme_Object *os_wxWindowShow(Scheme_Object *obj, int n,  Scheme_Object 
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "show in window%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "show in window%"));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Show(x0));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->Show(x0));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowSetCursor(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   class wxCursor* r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "set-cursor in window%", n, p);
   class wxCursor* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -1048,21 +1056,21 @@ static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Ob
   VAR_STACK_PUSH(2, x0);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxCursor(p[0], "set-cursor in window%", 1));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxCursor(p[POFFSET+0], "set-cursor in window%", 1));
 
   if (x0 && !x0->Ok()) x0 = wxSTANDARD_CURSOR;
-  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->SetCursor(x0));
+  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->SetCursor(x0));
 
   
   
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxCursor(r));
 }
 
-static Scheme_Object *os_wxWindowMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowMove(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "move in window%", n, p);
   int x0;
   int x1;
 
@@ -1071,22 +1079,22 @@ static Scheme_Object *os_wxWindowMove(Scheme_Object *obj, int n,  Scheme_Object 
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "move in window%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[1], "move in window%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "move in window%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "move in window%"));
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Move(x0, x1));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->Move(x0, x1));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowSetSize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "set-size in window%", n, p);
   int x0;
   int x1;
   int x2;
@@ -1098,28 +1106,28 @@ static Scheme_Object *os_wxWindowSetSize(Scheme_Object *obj, int n,  Scheme_Obje
   VAR_STACK_PUSH(1, obj);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0], "set-size in window%"));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[1], "set-size in window%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[2], "set-size in window%"));
-  x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[3], "set-size in window%"));
-  if (n > 4) {
-    x4 = WITH_VAR_STACK(unbundle_symset_sizeMode(p[4], "set-size in window%"));
+  x0 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+0], "set-size in window%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "set-size in window%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+2], "set-size in window%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+3], "set-size in window%"));
+  if (n > (POFFSET+4)) {
+    x4 = WITH_VAR_STACK(unbundle_symset_sizeMode(p[POFFSET+4], "set-size in window%"));
   } else
     x4 = wxSIZE_AUTO;
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->SetSize(x0, x1, x2, x3, x4));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->SetSize(x0, x1, x2, x3, x4));
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowSetFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowSetFocus(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "set-focus in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1128,19 +1136,19 @@ static Scheme_Object *os_wxWindowSetFocus(Scheme_Object *obj, int n,  Scheme_Obj
   
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->SetFocus());
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->SetFocus());
 
   
   
   return scheme_void;
 }
 
-static Scheme_Object *os_wxWindowGetsFocus(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowGetsFocus(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "gets-focus? in window%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1149,18 +1157,18 @@ static Scheme_Object *os_wxWindowGetsFocus(Scheme_Object *obj, int n,  Scheme_Ob
   
 
   
-  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->GetsFocus());
+  r = WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->GetsFocus());
 
   
   
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxWindowCentre(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
+  objscheme_check_valid(os_wxWindow_class, "centre in window%", n, p);
   int x0;
 
   SETUP_VAR_STACK_REMEMBERED(2);
@@ -1168,13 +1176,13 @@ static Scheme_Object *os_wxWindowCentre(Scheme_Object *obj, int n,  Scheme_Objec
   VAR_STACK_PUSH(1, obj);
 
   
-  if (n > 0) {
-    x0 = WITH_VAR_STACK(unbundle_symset_direction(p[0], "centre in window%"));
+  if (n > (POFFSET+0)) {
+    x0 = WITH_VAR_STACK(unbundle_symset_direction(p[POFFSET+0], "centre in window%"));
   } else
     x0 = wxBOTH;
 
   
-  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->Centre(x0));
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)p[0])->primdata)->Centre(x0));
 
   
   
@@ -1232,8 +1240,8 @@ int objscheme_istype_wxWindow(Scheme_Object *obj, const char *stop, int nullOK)
 {
   REMEMBER_VAR_STACK();
   if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxWindow_class))
+  if (SAME_TYPE(SCHEME_TYPE(obj), objscheme_object_type)
+      && objscheme_is_subclass(((Scheme_Class_Object *)obj)->sclass, os_wxWindow_class))
     return 1;
   else {
     if (!stop)
@@ -1277,7 +1285,7 @@ class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *obj, const char *wher
 
   (void)objscheme_istype_wxWindow(obj, where, nullOK);
   Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  WITH_REMEMBERED_STACK(objscheme_check_valid(obj));
+  WITH_REMEMBERED_STACK(objscheme_check_valid(NULL, NULL, 0, &obj));
   if (o->primflag)
     return (os_wxWindow *)o->primdata;
   else

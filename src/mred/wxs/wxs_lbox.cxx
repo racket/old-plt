@@ -934,9 +934,8 @@ static Scheme_Object *os_wxListBoxClear(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxListBoxAppend(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(2);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, p);
-  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxListBox_class, "append in list-box%", n, p);
   if ((n >= (POFFSET+2)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[POFFSET+0], NULL)) && 1) {
@@ -1145,7 +1144,7 @@ static Scheme_Object *os_wxListBoxOnKillFocus(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxListBox_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxListBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxPanel* x0 INIT_NULLED_OUT;

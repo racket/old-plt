@@ -101,7 +101,7 @@ static Scheme_Object *objscheme_wxEvent_SettimeStamp(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxEvent_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -354,7 +354,7 @@ static Scheme_Object *objscheme_wxCommandEvent_SeteventType(int n,  Scheme_Objec
 static Scheme_Object *os_wxCommandEvent_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxCommandEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
@@ -529,7 +529,7 @@ static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(int n,  Scheme_Object *p[
 static Scheme_Object *os_wxPopupEvent_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxPopupEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -857,7 +857,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Setpos(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxScrollEvent_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxScrollEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -1585,7 +1585,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Sety(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxKeyEvent_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxKeyEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
@@ -2328,7 +2328,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Sety(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMouseEvent_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxMouseEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;

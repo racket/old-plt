@@ -1116,9 +1116,8 @@ static Scheme_Object *os_wxStyleDeltaEqual(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(2);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, p);
-  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxStyleDelta* r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxStyleDelta_class, "set-delta-foreground in style-delta%", n, p);
@@ -1168,9 +1167,8 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(int n,  Scheme_Object *p
 static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(2);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, p);
-  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxStyleDelta* r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxStyleDelta_class, "set-delta-background in style-delta%", n, p);
@@ -1249,9 +1247,8 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaFace(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxStyleDeltaSetDelta(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(2);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, p);
-  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxStyleDelta* r INIT_NULLED_OUT;
   objscheme_check_valid(os_wxStyleDelta_class, "set-delta in style-delta%", n, p);
@@ -1934,8 +1931,7 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(int n,  Scheme_Obje
 
 static Scheme_Object *os_wxStyleDelta_ConstructScheme(int n,  Scheme_Object *p[])
 {
-  SETUP_PRE_VAR_STACK(2);
-  PRE_VAR_STACK_PUSH(0, obj);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(1, p);
   os_wxStyleDelta *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
@@ -3236,7 +3232,7 @@ static Scheme_Object *os_wxStyleListBasicStyle(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxStyleList_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxStyleList *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 

@@ -2087,7 +2087,7 @@ static Scheme_Object *objscheme_wxSnip_Setsnipclass(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxSnip_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxSnip *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -3880,8 +3880,7 @@ static Scheme_Object *os_wxTextSnipGetExtent(int n,  Scheme_Object *p[])
 
 static Scheme_Object *os_wxTextSnip_ConstructScheme(int n,  Scheme_Object *p[])
 {
-  SETUP_PRE_VAR_STACK(2);
-  PRE_VAR_STACK_PUSH(0, obj);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(1, p);
   os_wxTextSnip *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
@@ -5630,7 +5629,7 @@ static Scheme_Object *os_wxTabSnipGetExtent(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxTabSnip_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxTabSnip *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -7565,8 +7564,7 @@ static Scheme_Object *os_wxImageSnipGetExtent(int n,  Scheme_Object *p[])
 
 static Scheme_Object *os_wxImageSnip_ConstructScheme(int n,  Scheme_Object *p[])
 {
-  SETUP_PRE_VAR_STACK(2);
-  PRE_VAR_STACK_PUSH(0, obj);
+  SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(1, p);
   os_wxImageSnip *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
@@ -9820,7 +9818,7 @@ static Scheme_Object *os_wxMediaSnipGetThisMedia(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxMediaSnip_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxMediaSnip *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   class wxMediaBuffer* x0 INIT_NULLED_OUT;
@@ -10168,7 +10166,7 @@ static Scheme_Object *objscheme_wxBufferDataClass_Setclassname(int n,  Scheme_Ob
 static Scheme_Object *os_wxBufferDataClass_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxBufferDataClass *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
@@ -10688,7 +10686,7 @@ static Scheme_Object *objscheme_wxBufferData_Getnext(int n,  Scheme_Object *p[])
 static Scheme_Object *os_wxBufferData_ConstructScheme(int n,  Scheme_Object *p[])
 {
   SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxBufferData *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 

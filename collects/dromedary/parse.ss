@@ -197,62 +197,6 @@
      (hash-table-put! keyword-table "asr" '(token-INFIXOP4 asr))
 
      (define (lex source-name)
-;       (let ([keyword-table (make-hash-table 'equal)])
-;	 (begin
-;	   (hash-table-put! keyword-table "and" token-AND)
-;	   (hash-table-put! keyword-table "as" token-AS)
-;	   (hash-table-put! keyword-table "assert" token-ASSERT)
-;	   (hash-table-put! keyword-table "begin" token-BEGIN)
-;	   (hash-table-put! keyword-table "class" token-CLASS)
-;	   (hash-table-put! keyword-table "constraint" token-CONSTRAINT)
-;	   (hash-table-put! keyword-table "do" token-DO)
-;	   (hash-table-put! keyword-table "done" token-DONE)
-;	   (hash-table-put! keyword-table "downto" token-DOWNTO)
-;	   (hash-table-put! keyword-table "else" token-ELSE)
-;	   (hash-table-put! keyword-table "end" token-END)
-;	   (hash-table-put! keyword-table "exception" token-EXCEPTION)
-;	   (hash-table-put! keyword-table "external" token-EXTERNAL)
-;	   (hash-table-put! keyword-table "false" token-FALSE)
-;	   (hash-table-put! keyword-table "for" token-FOR)
-;	   (hash-table-put! keyword-table "fun" token-FUN)
-;	   (hash-table-put! keyword-table "function" token-FUNCTION)
-;	   (hash-table-put! keyword-table "functor" token-FUNCTOR)
-;	   (hash-table-put! keyword-table "if" token-IF)
-;	   (hash-table-put! keyword-table "in" token-IN)
-;	   (hash-table-put! keyword-table "include" token-INCLUDE)
-;	   (hash-table-put! keyword-table "inherit" token-INHERIT)
-;	   (hash-table-put! keyword-table "initializer" token-INITIALIZER)
-;	   (hash-table-put! keyword-table "lazy" token-LAZY)
-;	   (hash-table-put! keyword-table "let" token-LET)
-;	   (hash-table-put! keyword-table "match" token-MATCH)
-;	   (hash-table-put! keyword-table "method" token-METHOD)
-;	   (hash-table-put! keyword-table "module" token-MODULE)
-;	   (hash-table-put! keyword-table "new" token-NEW)
-;	   (hash-table-put! keyword-table "object" token-OBJECT)
-;	   (hash-table-put! keyword-table "of" token-OF)
-;	   (hash-table-put! keyword-table "open" token-OPEN)
-;	   (hash-table-put! keyword-table "or" token-OR)
-;	   (hash-table-put! keyword-table "private" token-PRIVATE)
-;	   (hash-table-put! keyword-table "rec" token-REC)
-;	   (hash-table-put! keyword-table "sig" token-SIG)
-;	   (hash-table-put! keyword-table "struct" token-STRUCT)
-;	   (hash-table-put! keyword-table "then" token-THEN)
-;	   (hash-table-put! keyword-table "to" token-TO)
-;	   (hash-table-put! keyword-table "true" token-TRUE) 
-;	   (hash-table-put! keyword-table "try" token-TRY)
-;	   (hash-table-put! keyword-table "type" token-TYPE)
-;	   (hash-table-put! keyword-table "val" token-VAL)
-;	   (hash-table-put! keyword-table "virtual" token-VIRTUAL)
-;	   (hash-table-put! keyword-table "when" token-WHEN)
-;	   (hash-table-put! keyword-table "while" token-WHILE)
-;	   (hash-table-put! keyword-table "with" token-WITH)
-;	   (hash-table-put! keyword-table "mod" '(token-INFIXOP3 mod))
-;	   (hash-table-put! keyword-table "land" '(token-INFIXOP3 land))
-;	   (hash-table-put! keyword-table "lor" '(token-INFIXOP3 lor))
-;	   (hash-table-put! keyword-table "lxor" '(token-INFIXOP3 lxor))
-;	   (hash-table-put! keyword-table "lsl" '(token-INFIXOP4 lsl))
-;	   (hash-table-put! keyword-table "lsr" '(token-INFIXOP4 lsr))
-;	   (hash-table-put! keyword-table "asr" '(token-INFIXOP4 asr))
        (lexer-src-pos
 	[(+ (blank)) (void)]
 	[_ (ttoken UNDERSCORE)]
@@ -288,7 +232,7 @@
 	;; No capitalized keywords
 	[(@ (uppercase) (* (identchar))) (token UIDENT lexeme)]
 	[(: (decimal_literal) (hex_literal) (oct_literal) (bin_literal)) (token INT (string->number lexeme))]
-	[(float_literal) (token FLOAT lexeme)]
+	[(float_literal) (token FLOAT (string->number lexeme))]
 	[#\" (token STRING (list->string (get-string input-port)))]
 	[(@ #\' (: #\^ #\\ #\') #\') 
 	 (token CHAR (string-ref lexeme 1))]
@@ -298,6 +242,8 @@
 	[(@ #\' #\\ (digit) (digit) (digit) #\')
 	 (token CHAR (let ([s lexeme])
 		       (integer->char (string->number (substring s 2 5)))))]
+	[(@ #\' (^ (: #\^ #\\ #\' #\\ )) #\')
+	 (token CHAR (string-ref lexeme 1))]
 	;; Comment
 	[(@ (@ #\( *) 
 	    (* (@ (* (: (^ *))) (+ *) (: (^ * #\)))))
@@ -411,32 +357,52 @@
 	  (left DOT)                            ;; record access, array access
 	  (right PREFIXOP))                     ;; ! 
    
-   (error (lambda (tok-ok name val start-pos end-pos)
-	    (set! parse-error #t)
-	    (pretty-print (list "Parse error near " tok-ok name (syntax-e val) (syntax-source val) (syntax-line val) (syntax-column val) (syntax-position val) (syntax-span val)))))
-;	    (pretty-print (list "Error: " tok-ok name (syntax-object->datum val) start-pos end-pos))))
-;   (error (lambda (a b stx)
-;	    (raise-read-error (format "parse error near ~a" (syntax-e stx))
-;			      (syntax-source stx)
-;			      (syntax-line stx)
-;			      (syntax-column stx)
-;			      (syntax-position stx)
-;			      (syntax-span stx))))
+;   (error (lambda (tok-ok name val start-pos end-pos)
+;	    (set! parse-error #t)
+;	    (pretty-print (list "Parse error near " tok-ok name (syntax-e val) (syntax-source val) (syntax-line val) (syntax-column val) (syntax-position val) (syntax-span val)))))
+   (error (lambda (a b stx spos epos)
+	    (raise-read-error (format "parse error near ~a" (syntax-e stx))
+			      (syntax-source stx)
+			      (syntax-line stx)
+			      (syntax-column stx)
+			      (syntax-position stx)
+			      (syntax-span stx))))
    (src-pos)
    (grammar
     ;; Entry points
     ;(<implementation> [(<structure> EOF) $1])
     ;(<interface> [(<signature> EOF) $1])
     (<toplevel_phrase>
-;;     [(<top_structure> SEMISEMI) $1]
+     [(<top_structure>) $1]
      [(<seq_expr>) $1])
 ;;     [(<toplevel_directive> SEMISEMI) $1])
-;;    (<top_structure>
-;;     [(<structure_item>) (list $1)
-;;      (<structure_item> <top_structure>) (cons $1 $2)])
+    (<top_structure>
+     [(<structure_item>) (list $1)]
+     [(<structure_item> <top_structure>) (cons $1 $2)])
 ;;    (<structure>
 ;;     [(<structure_tail>) $1]
 ;;     [(<seq_expr> <structure_tail>)
+
+    (<structure_item>
+     [(LET <rec_flag> <let_bindings>)
+      (let ([bindings $3])
+	(if (and (ast:pattern? (car bindings)) (ast:ppat_any? (ast:pattern-ppat_desc (car bindings))))
+	    (ast:make-structure_item (ast:make-pstr_eval (cdr bindings)) (build-src 1))
+	    (ast:make-structure_item (ast:make-pstr_value $2 (reverse $3)) (build-src 1))))]
+     [(EXTERNAL <val_ident_colon> <core_type> EQUAL <primitive_declaration>)
+      (ast:make-structure_item (ast:make-pstr_primitive $2 (ast:make-value_description $3 $5)) (build-src 1))]
+     [(TYPE <type_declarations>)
+      (ast:make-structure_item (ast:make-pstr_type (reverse $2)) (build-src 1))]
+     [(EXCEPTION UIDENT <constructor_arguments>)
+      (ast:make-structure_item (ast:make-pstr_exn_rebind $2 $2) (build-src 1))]
+;     [(EXCEPTION UIDENT <module_binding>)
+;      (ast:make-structure_item (ast:make-pstr_module $2 $3) (build-src 1))]
+     [(OPEN <mod_longident>)
+      (ast:make-structure_item (ast:make-pstr_open $2))]
+     ;[(CLASS <class_declarartions)
+     ;[(CLASS TYPE <class_type_declarations>)
+     ;[(INCLUDE <module_expr>
+     )
 
     (<constrain>
      [(<core_type> EQUAL <core_type>) (cons (cons $1 $3) (build-src 1))])
@@ -689,10 +655,8 @@
     (<fun_def>
      [(<match_action>) $1]
      [(<labeled_simple_pattern> <fun_def>)
-      (begin
-	(pretty-print "<labeled_simple_pattern> <fun_def>")
       (let ([pattern $1])
-	(ast:make-expression (ast:make-pexp_function (car pattern) (cadr pattern) (list (cons (cddr pattern) $2))) (build-src 1))))])
+	(ast:make-expression (ast:make-pexp_function (car pattern) (cadr pattern) (list (cons (cddr pattern) $2))) (build-src 1)))])
 
     (<match_action>
      [(MINUSGREATER <seq_expr>) $2]
@@ -829,7 +793,7 @@
 
     (<constraints>
      [(<constraints> CONSTRAINT <constrain>) (cons $3 $1)]
-     [() (null)])
+     [() null])
 
     (<type_kind>
      [() (cons (ast:make-ptype_abstract null) null)]
@@ -847,7 +811,7 @@
       (cons (ast:make-ptype_record (reverse $5) $2))])
 
     (<type_parameters>
-     [() (null)]
+     [() null]
      [(<type_parameter>) (list $1)]
      [(LPAREN <type_parameter_list> RPAREN) (reverse $2)])
 
@@ -871,7 +835,7 @@
      [(<constr_ident> <constructor_arguments>) (cons $1 $2)])
 
     (<constructor_arguments>
-     [() (null)]
+     [() null]
      [(OF <core_type_list>) (reverse $2)])
 
     (<label_declarations>
@@ -1185,9 +1149,7 @@
   
   
   (define (ml-split listtosplit)
-    (begin
-      (pretty-print "ml-split called")
-      (ml-split-helper listtosplit (list null null))))
+      (ml-split-helper listtosplit (list null null)))
   
   (define (ml-split-helper listtosplit newlist)
     (if (null? listtosplit)

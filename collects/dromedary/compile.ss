@@ -8,7 +8,7 @@
 
      (provide compile-all)
 
-     (define next-label 0)
+     (define next-label 0)     
 
      (define (compile-all stmt ctx)
 ;       (datum->syntax-object
@@ -22,8 +22,96 @@
        (match stmt
 	      [($ ast:expression desc src)
 	       (compile-expr desc src context)]
+	      [(a . b)
+	       #`(begin #,@(compile-mls (cons a b) context))]
+;		      [($ ast:structure_item desc src)
+;		       (compile-structure desc src context)]
+;		      )]
+	      [($ ast:structure_item desc src)
+	       (compile-structure desc src context)]
 	      [else
 	       (pretty-print (list "Unknown: " stmt))]))
+
+     (define (compile-mls slist context)
+       (if (null? slist)
+	   null
+	   (cons (compile-ml (car slist) context) (compile-mls (cdr slist) context))))
+
+     (define (compile-structure desc src context)
+       (match desc
+	      [($ ast:pstr_value rec_flag pelist)
+	       (let* ([all-bindings (compile-bindings pelist context)]
+		      [lhss (map car all-bindings)]
+		      [rhss (map cdr all-bindings)])
+		 #`(define-values #,lhss (values #,@rhss)))]
+	      [($ ast:pstr_type stdlist)
+	       (let* ([assumeone (car stdlist)]
+		      [name (eval (car assumeone))]
+		      [typedecl (cdr assumeone)])
+		 (match (ast:type_declaration-kind typedecl)
+			[($ ast:ptype_abstract dummy)
+			 (let ([core (compile-core_type (ast:type_declaration-manifest typedecl))])
+			   (begin
+			     (hash-table-put! user-types name core)
+			     #'"Type"))]
+			[($ ast:ptype_variant scll)
+			 (let ([cscll (compile-scll scll)])
+			   (begin
+			     (hash-table-put! user-types name (lambda (x) (isa-variant? 'a 'b cscll)))
+			     #`(begin #,@(mkdefinestructs scll))))]
+;			     #`(define-struct #,(string->symbol(eval (caar scll))) (tlist))))]
+			 ))]
+	      
+	      [else
+	       (pretty-print (list "Unknown structure: " desc))]))
+
+     (define (mkdefinestructs scll)
+       (if (null? scll)
+	   null
+	   (cons #`(define-struct #,(string->symbol (eval (caar scll))) (tlist) (make-inspector)) (mkdefinestructs (cdr scll)))))
+
+     (define (mkdefine binding)
+       #`(define #,(car binding) #,(cdr binding)))
+
+     (define (compile-core_type ct)
+       (match (ast:core_type-desc ct)
+	      [($ ast:ptyp_any dummy)
+	       any?]
+	      [($ ast:ptyp_constr name ctl)
+	       (hash-table-get user-types (ast:lident-name name))]
+	      [else
+	       (pretty-print (list "Bad core type" ct))]))
+
+     (define (compile-scll scll)
+       (if (null? scll)
+	   null
+	   (let* ([current (car scll)]
+		  [name (eval (car current))]
+		  [compiled-types (map compile-core_type (cdr current))])
+	     (cons (lambda (xname xtypes) (and (string=? name xname) (= (length (compiled-types)) (length (xtypes))) (correct-types? compiled-types xtypes)))
+		   (compile-scll (cdr scll))))))
+
+     (define (isa-variant? name type variants)
+       (if (null? variants)
+	   #f
+	   (if ((car variants) name type)
+	       #t
+	       (isa-variant? name type (cdr variants)))))
+
+     (define (add-types cscll)
+       (if (null? cscll)
+	   null
+	   (let* ([current (car cscll)]
+		  [name (car current)]
+		  [types (cdr current)])
+	     (begin
+	       (hash-table-put! user-types name (lambda (x) (and (= (length x) (length types)) (correct-types? types x))))
+	       (add-types (cdr cscll))))))
+
+     (define (correct-types? types x)
+       (if (null? x)
+	   #t
+	   (and ((car types) (car x)) (correct-types? (cdr types) (cdr x)))))
 
      (define (compile-expr desc src context)
        (match desc
@@ -38,11 +126,9 @@
 	       (let* ([all-bindings (compile-bindings bindings context)]
 		      [lhss (map car all-bindings)]
 		      [rhss (map cdr all-bindings)])
-;	       (let ([lhss (map get-var (map ast:pattern-ppat_desc (map car bindings)))]
-;		     [rhss (compile-exps (map cdr bindings) context)])
 		 (with-syntax ([(lhs ...) lhss]
 			       [(rhs ...) rhss])
-			      #`(letrec ((lhs rhs) ...) #,(compile-ml expr context))))]
+			      #`(#,(if rec #'letrec #'let) ((lhs rhs) ...) #,(compile-ml expr context))))]
 	       
 			       
 
@@ -155,10 +241,13 @@
 	   null
 	   (let* ([cur-bind (car bindings)]
 		  [var (get-var (car cur-bind))]
-		  [val (compile-ml (cdr bindings) context)])
+		  [val (compile-ml (cdr cur-bind) context)])
 	     (if (list? var)
-		 (append (map cons var (tuple-list val)) (compile-bindings (cdr bindings context)))
-		 (cons (cons var val) (compile-bindings (cdr bindings context)))))))
+		 (begin
+		   (pretty-print (list "Var: " var))
+		   (pretty-print (list "Val: " (eval val)))
+		 (append (map cons (flatten-list var) (flatten-tuple (tuple-list (eval val)))) (compile-bindings (cdr bindings) context)))
+		 (cons (cons var val) (compile-bindings (cdr bindings) context))))))
 
      (define (get-var pattern)
        (match (ast:pattern-ppat_desc pattern)
@@ -166,13 +255,30 @@
 	       (string->symbol variable)]
 	      [($ ast:ppat_tuple tlist)
 	       (map get-var tlist)]
+	      [($ ast:ppat_constraint pat ct)
+	       (get-var pat)]
 	      [($ ast:ppat_any dummy)
 	       (begin
 		 (set! next-label (+ 1 next-label))
 		 (string->symbol (format "<dummy~a>" next-label)))]
 	      [else
-	       (pretty-print "Not a variable")]))
+	       (let [(src-loc (ast:pattern-ppat_src pattern))]
+		 (raise-syntax-error #f "Not a variable" pattern))]))
 
+     (define (flatten-list flist)
+       (if (null? flist)
+	   null
+	   (if (list? (car flist))
+	       (append (flatten-list (car flist)) (flatten-list (cdr flist)))
+	       (cons (car flist) (flatten-list (cdr flist))))))
+
+     (define (flatten-tuple tlist)
+       (if (null? tlist)
+	   null
+	   (if (tuple? (car tlist))
+	       (append (flatten-tuple (tuple-list (car tlist))) (flatten-tuple (cdr tlist)))
+	       (cons (car tlist) (flatten-tuple (cdr tlist))))))
+       
      (define (compile-exps bindings context)
        (if (null? bindings)
 	   null
@@ -209,23 +315,32 @@
 
      (define (empty-context) 
        '(("+" operator +)
-	  ("-" operator -)
-	  ("-." operator -)
-	  ("*" operator *)
-	  ("=" operator equal?)
-	  ("==" operator =)
-	  ("<" operator <)
-	  ("<=" operator <=)
-	  (">" operator >)
-	  (">=" operator >=)
-	  ("or" operator or)
-	  ("&&" operator and)
-	  ("!=" operator !=)
-	  ("not" operator not)
-	  ("true" constructor #t)
-	  ("false" constructor #f)
-	  ("[]" constructor ())
-	  ("::" constructor cons)
-	  ("@" operator append)
-	  ("^" operator string-append)))
+	 ("+." operator +)
+	 ("-" operator -)
+	 ("-." operator -)
+	 ("*" operator *)
+	 ("*." operator *)
+	 ("/" operator /)
+	 ("/." operator /)
+	 ("=" operator equal?)
+	 ("==" operator =)
+	 ("<" operator <)
+	 ("<=" operator <=)
+	 (">" operator >)
+	 (">=" operator >=)
+	 ("or" operator or)
+	 ("&&" operator and)
+	 ("!=" operator !=)
+	 ("not" operator not)
+	 ("true" constructor #t)
+	 ("false" constructor #f)
+	 ("[]" constructor ())
+	 ("::" constructor cons)
+	 ("float" constructor float?)
+	 ("int" constructor int?)
+	 ("bool" constructor boolean?)
+	 ("string" constructor string?)
+	 ("char" constructor char?)
+	 ("@" operator append)
+	 ("^" operator string-append)))
 )

@@ -61,6 +61,8 @@
 	(p-define-struct pstr_class_type (class_type_declaration-list))
   ;| pstr_include of module_expr
 
+	;(make-value_description core_type string-list)
+	(p-define-struct value_description (pval_type pval_prim))
 	;(make-core_type core_type_desc src)
 	(p-define-struct core_type (desc src))
 

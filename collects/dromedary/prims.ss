@@ -1,9 +1,10 @@
 (module prims mzscheme
 	(require (lib "list.ss")
 		 (lib "match.ss"))
-	(provide library-names
+	(provide library-names user-types
 		 (struct tuple (list))
 		 !=
+		 float? any?
 		 (all-from (lib "match.ss")))
 
 	(define library-names (make-hash-table 'equal))
@@ -23,4 +24,19 @@
 	(define-struct tuple (list) (make-inspector))
 
 	(define (!= a b)
-	  (not (= a b))))
+	  (not (= a b)))
+
+	(define (float? n)
+	  (number? n))
+
+	(define (any? n) #t)
+
+	(define user-types (make-hash-table 'equal))
+	(hash-table-put! user-types "int" integer?)
+	(hash-table-put! user-types "float" float?)
+	(hash-table-put! user-types "char" char?)
+	(hash-table-put! user-types "string" string?)
+	(hash-table-put! user-types "bool" boolean?)
+	(hash-table-put! user-types "[]" null?)
+	
+)

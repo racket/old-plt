@@ -39,11 +39,14 @@
                                         (drscheme:language:text/pos-end input)))
                                  text)))])
               (lambda ()
-                (if (eof-object? (peek-char port))
-                    eof
-		    (let ([v (compile-all (parse-ml-port port name)
+		(if name
+		    (if (eof-object? (peek-char port))
+			eof
+			(let ([v (compile-all (parse-ml-port port name)
 					  #'base-importing-stx)])
-		      v)))))
+			  v))
+		    (read-syntax input port)
+		    ))))
 	  (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list "Dromedary"))
           (define/public (get-language-name) "Dromedary")

@@ -435,6 +435,8 @@ void scheme_release_com_object(void *comObject,void *pIDispatch) {
 }
 
 void mx_register_com_object(Scheme_Object *obj,IDispatch *pIDispatch) {
+  pIDispatch->AddRef();
+
   scheme_register_finalizer(obj,scheme_release_com_object,pIDispatch,NULL,NULL);
   scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
 		     (Scheme_Object *)obj,
@@ -466,6 +468,8 @@ void scheme_release_simple_com_object(void *comObject,void *pIUnknown) {
 }
 
 void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
+  pIUnknown->AddRef();
+
   scheme_register_finalizer(obj,scheme_release_simple_com_object,pIUnknown,NULL,NULL);
   scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
 		     (Scheme_Object *)obj,
@@ -739,11 +743,6 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
 	    name);
     codedComError(errBuff,hr);
   }
-
-  // should not be necessary ?
-  // but Excel crashes without it when it's ultimately released
-
-  pIDispatch->AddRef();
 
   com_object = (MX_COM_Object *)scheme_malloc(sizeof(MX_COM_Object));
   
@@ -1090,8 +1089,6 @@ Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
   retval->released = FALSE;
   retval->pITypeInfo = pITypeInfo;
   retval->clsId = obj->clsId;
-
-  pITypeInfo->AddRef();
 
   mx_register_simple_com_object((Scheme_Object *)retval,pITypeInfo);
   
@@ -3730,8 +3727,6 @@ Scheme_Object *mx_elements_with_tag(int argc,Scheme_Object **argv) {
     elt->valid = TRUE;
     elt->pIHTMLElement = pIHTMLElement;
 
-    pIHTMLElement->AddRef();  
-
     mx_register_simple_com_object((Scheme_Object *)elt,pIHTMLElement);
   
     retval = scheme_make_pair((Scheme_Object *)elt,retval);
@@ -3918,11 +3913,6 @@ Scheme_Object *mx_find_element(int argc,Scheme_Object **argv) {
   retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
 
-  /* IE seems to give a reference count of 1 for elements */
-  /* but releasing them appears to cause an error */
-  
-  pIHTMLElement->AddRef();  
-
   mx_register_simple_com_object((Scheme_Object *)retval,pIHTMLElement);
   
   return (Scheme_Object *)retval;
@@ -3990,11 +3980,6 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   retval->released = FALSE;
   retval->valid = TRUE;
   retval->pIHTMLElement = pIHTMLElement;
-
-  /* IE seems to give a reference count of 1 for elements */
-  /* but releasing them appears to cause an error */
-  
-  pIHTMLElement->AddRef();  
 
   mx_register_simple_com_object((Scheme_Object *)retval,pIHTMLElement);
   

@@ -67,6 +67,15 @@ static int wxFindFileFlags = 0;
 #ifdef OS_X
 char *wxFSSpecToPath(const FSSpec *spec)
 {
+    FSRef fileRef;
+    OSErr err;
+    
+    // first, convert to an FSRef
+    if (FSpMakeFSRef(spec,&fileRef) != noErr) {
+      return NULL;
+    }
+    
+    return FSRefMakePath(
     wxFatalError("Not Implemented Yet","");
   // hopefully, OS X will give us a nice way to do this.
 }

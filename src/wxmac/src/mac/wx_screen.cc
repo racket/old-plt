@@ -35,12 +35,10 @@ wxScreen::wxScreen // Constructor (for screen window)
 	) :
 		wxWindow (windowName, x, y, width, height, style)
 {
-#ifdef OS_X
-    wxFatalError("Screen Windows are not supported under OS X","");
-#else
-	GrafPtr wPort;
-	::GetWMgrPort(&wPort);
-	Rect wPortRect = wPort->portRect;
+	CGrafPtr wPort;
+        Rect wPortRect;
+        wPort = GetQDGlobalsThePort();
+        GetPortBounds(wPort,&wPortRect);
 	if (x == -1) cWindowX = 0;
 	if (y == -1) cWindowY = 0;
 	if (width < 0) cWindowWidth = wPortRect.right - wPortRect.left;
@@ -48,7 +46,6 @@ wxScreen::wxScreen // Constructor (for screen window)
 
   	cMenuArea = new wxArea(this);
   	cScreenArea = new wxArea(this);
-#endif
 }
 
 //=============================================================================

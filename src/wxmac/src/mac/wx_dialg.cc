@@ -274,6 +274,7 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
   /* Essentially copied from Inside Macintosh: */
     switch (callBackSelector)
     {
+        // never happens in nav services 3.0?:
         case kNavCBEvent:
         	switch (((callBackParms->eventData).eventDataParms.event)->what) {
         		case updateEvt:
@@ -312,7 +313,82 @@ char *wxFileSelector(char *message, char *default_path,
          		       parent, x, y);
        } 
     }
+
+    NavEventUPP   eventProc = NewNavEventUPP(EventFilter);
     
+#ifdef OS_X // Use Navigation Services 3.0
+    static CFStringRef clientName = CFSTR("MrEd");
+
+    NavDialogCreationOptions dialogOptions;
+    NavGetDefaultDialogCreationOptions(&dialogOptions);
+    
+    if (default_filename) {
+        CFStringRef default = CFStringCreateWithCString(NULL,default_filename,kCFStringEncodingMacRoman);
+        dialogOptions->saveFileName = default;
+    }
+    if (message)
+        CFStringRef messageStringRef = CFStringCreateWithCString(NULL,default_filename,kCFStringEncodingMacRoman);
+        dialogOptions->message = messageStringRef;
+    }
+    dialogOptions->modality = kWindowModalityApplicationModal;
+    
+    OSErr err;
+    NavDialogRef outDialog;
+    NavReplyRecord reply;
+    
+    // looks like there's no way to specify a default directory to start in...
+ 
+    // create the dialog:
+    if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN)) {
+      if (NavCreateGetFileDialog(dialogOptions,NULL,eventProc,NULL,NULL,NULL,&outDialog) != noErr) {
+        if (default_filename) 
+          CFRelease(dialogOptions->saveFilename);
+        if (message)
+          CFRelease(dialogOptions->message);
+        return NULL;
+      }
+    } else {
+      if (NavCreatePutFileDialog(dialogOptions,'TEXT','MrEd',eventProc,NULL,&outDialog) != noErr) {
+        if (default_filename)
+          CFRelease(dialogOptions->saveFileName);
+        if (message)
+          CFRelease(dialogOptions->message);
+      }
+    }
+    
+    // run the dialog (ApplicationModal doesn't return until user closes dialog):
+    if (NavDialogRun(outDialog) != noErr) {
+      if (default_filename)
+        CFRelease(dialogOptions->saveFileName);
+      if (message)
+        CFRelease(dialogOptions->message);
+      NavDialogDispose(outDialog);
+      return NULL;
+    }
+    
+    // dump those strings:
+    if (default_filename)
+      CFRelease(dialogOptions->saveFileName);
+    if (message)
+      CFRelease(dialogOptions->message);
+    
+    // did the user cancel?:
+    NavUserAction action = NavDialogGetUserAction(outDialog);
+    if ((action == kNavUserActionCancel) || (action == kNavUserActionNone)) {
+      NavDisposeDialog(outDialog);
+      return NULL;
+    }
+    
+    // get the user's reply:
+    if (NavDialogGetReply(outDialog,&reply) != noErr) {
+      NavDialogDispose(outDialog);
+      return NULL;
+    }
+    
+    
+    
+    
+#else    
     NavDialogOptions *dialogOptions = new NavDialogOptions;
     NavGetDefaultDialogOptions(dialogOptions);
     
@@ -345,20 +421,13 @@ char *wxFileSelector(char *message, char *default_path,
       if (s[len - 1] != ':')
         s[len++] = ':';
       s[len] = 0;
-      
-#ifdef OS_X
-      if (wxPathToFSSpec(s,&fsspec) == noErr) {
-#else      
       if (scheme_mac_path_to_spec(s, &fsspec, &type)) {
-#endif      
         startp = new AEDesc;
         if (AECreateDesc(typeFSS, &fsspec, sizeof(fsspec),  startp)) {
           startp = NULL;
         }
       }
     }
-    
-    NavEventUPP   eventProc = NewNavEventUPP(EventFilter);
     
     if ((flags == 0) || (flags & wxOPEN) || (flags & wxMULTIOPEN))
       err = NavChooseFile(startp, reply, dialogOptions,
@@ -402,12 +471,7 @@ char *wxFileSelector(char *message, char *default_path,
     	    		    &actualType, &fsspec,
     	    		    sizeof(fsspec),
     	    		    &actualSize);
-    	    	
-#ifdef OS_X
-                temp = wxFSSpecToPath(&fsspec);
-#else                
 		temp = scheme_build_mac_filename(&fsspec, 0);
-#endif                
 		newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
 						       strlen(temp) +
 						       log_base_10(strlen(temp)) + 3];
@@ -426,11 +490,7 @@ char *wxFileSelector(char *message, char *default_path,
                         &actualSize);
        
 	    NavDisposeReply(reply);
-#ifdef OS_X
-            return wxFSSpecToPath(&fsspec);
-#else            
 	    return scheme_build_mac_filename(&fsspec, 0);
-#endif            
 	}
      } else 
        return NULL;

@@ -214,7 +214,7 @@ static Scheme_Object *os_wxTimer_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in timer%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in timer%", POFFSET+0, POFFSET+0, n, p));
 
   WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("timer%","initialization")));
   realobj = WITH_VAR_STACK(new os_wxTimer CONSTRUCTOR_ARGS(()));
@@ -259,7 +259,7 @@ int objscheme_istype_wxTimer(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "timer% object or " XC_NULL_STR: "timer% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "timer% object or " XC_NULL_STR: "timer% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -567,7 +567,7 @@ int objscheme_istype_wxClipboard(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "clipboard% object or " XC_NULL_STR: "clipboard% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "clipboard% object or " XC_NULL_STR: "clipboard% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -643,7 +643,7 @@ void objscheme_setup_wxClipboardGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxClipboardGlobalwxGetTheClipboard, "get-the-clipboard", objscheme_modidx, 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxClipboardGlobalwxGetTheClipboard, "get-the-clipboard", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-clipboard", functmp, env));
 }
 
@@ -858,7 +858,7 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(int n,  Scheme_Object
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in clipboard-client%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in clipboard-client%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxClipboardClient CONSTRUCTOR_ARGS(()));
@@ -903,7 +903,7 @@ int objscheme_istype_wxClipboardClient(Scheme_Object *obj, const char *stop, int
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "clipboard-client% object or " XC_NULL_STR: "clipboard-client% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "clipboard-client% object or " XC_NULL_STR: "clipboard-client% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -973,7 +973,7 @@ static int unbundle_symset_psMode(Scheme_Object *v, const char *where) {
   else if (v == psMode_PS_PREVIEW_sym) { return PS_PREVIEW; }
   else if (v == psMode_PS_FILE_sym) { return PS_FILE; }
   else if (v == psMode_PS_PRINTER_sym) { return PS_PRINTER; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "psMode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "psMode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1006,7 +1006,7 @@ static int unbundle_symset_psOrientation(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == psOrientation_PS_PORTRAIT_sym) { return PS_PORTRAIT; }
   else if (v == psOrientation_PS_LANDSCAPE_sym) { return PS_LANDSCAPE; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "psOrientation symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "psOrientation symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1027,7 +1027,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 {
   if ((v == PS_PREVIEW) || (v == PS_PRINTER)) {
     scheme_arg_mismatch(METHODNAME("ps-setup%","set-mode"), 
-	objscheme_modidx, "only file mode is allowed for this platform, given: ",
+	"only file mode is allowed for this platform, given: ",
 	p);
   }
 }
@@ -1653,7 +1653,7 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(int n,  Scheme_Object 
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in ps-setup%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in ps-setup%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxPrintSetupData CONSTRUCTOR_ARGS(()));
@@ -1719,7 +1719,7 @@ int objscheme_istype_wxPrintSetupData(Scheme_Object *obj, const char *stop, int 
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "ps-setup% object or " XC_NULL_STR: "ps-setup% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "ps-setup% object or " XC_NULL_STR: "ps-setup% object", -1, 0, &obj));
     return 0;
   }
 }

@@ -280,49 +280,49 @@ scheme_init_eval (Scheme_Env *env)
   
   scheme_add_global_constant("eval", 
 			     scheme_make_prim_w_arity2(eval, 
-						       "eval", scheme_kernel_symbol, 
+						       "eval", 
 						       1, 2,
 						       0, -1), 
 			     env);
   scheme_add_global_constant("compile", 
 			     scheme_make_prim_w_arity(compile, 
-						      "compile", scheme_kernel_symbol, 
+						      "compile", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("compiled-expression?",
 			     scheme_make_prim_w_arity(compiled_p, 
-						      "compiled-expression?", scheme_kernel_symbol, 
+						      "compiled-expression?", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("expand", 
 			     scheme_make_prim_w_arity(expand, 
-						      "expand", scheme_kernel_symbol,
+						      "expand",
 						      1, 1), 
 			     env);
   scheme_add_global_constant("local-expand", 
 			     scheme_make_prim_w_arity(local_expand, 
-						      "local-expand", scheme_kernel_symbol,
+						      "local-expand",
 						      3, 3), 
 			     env);
   scheme_add_global_constant("expand-once", 
 			     scheme_make_prim_w_arity(expand_once, 
-						      "expand-once", scheme_kernel_symbol, 
+						      "expand-once", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("break-enabled", 
 			     scheme_register_parameter(enable_break, 
-						       "break-enabled", scheme_kernel_symbol,
+						       "break-enabled",
 						       MZCONFIG_ENABLE_BREAK), 
 			     env);
   scheme_add_global_constant("current-eval",
 			     scheme_register_parameter(current_eval, 
-						       "current-eval", scheme_kernel_symbol,
+						       "current-eval",
 						       MZCONFIG_EVAL_HANDLER),
 			     env);
 
   scheme_add_global_constant("compile-allow-set!-undefined", 
 			     scheme_register_parameter(allow_set_undefined, 
-						       "compile-allow-set!-undefined", scheme_kernel_symbol,
+						       "compile-allow-set!-undefined",
 						       MZCONFIG_ALLOW_SET_UNDEFINED), 
 			     env);
 
@@ -2429,7 +2429,7 @@ Scheme_Object *_scheme_apply_closed_prim(Scheme_Object *rator,
 Scheme_Object *scheme_check_one_value(Scheme_Object *v)
 {
   if (v == SCHEME_MULTIPLE_VALUES)
-    scheme_wrong_return_arity(NULL, NULL, 1, scheme_multiple_count, scheme_multiple_array, NULL);
+    scheme_wrong_return_arity(NULL, 1, scheme_multiple_count, scheme_multiple_array, NULL);
   return v;
 }
 
@@ -2632,8 +2632,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       if (num_rands < prim->mina 
 	  || (num_rands > prim->maxa && prim->maxa >= 0)) {
-	scheme_wrong_count(prim->name, prim->srcmod, 
-			   prim->mina, prim->maxa, 
+	scheme_wrong_count(prim->name, prim->mina, prim->maxa, 
 			   num_rands, rands);
 	return NULL; /* Shouldn't get here */
       }
@@ -2677,11 +2676,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  int extra, n;
 
 	  if (num_rands < (num_params - 1)) {
-	    Scheme_Object *srcmod;
-	    const char *name;
 	    UPDATE_THREAD_RSPTR_FOR_ERROR();
-	    name = scheme_get_proc_name(obj, NULL, 1, &srcmod);
-	    scheme_wrong_count(name, srcmod,
+	    scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
 			       num_params - 1, -1,
 			       num_rands, rands);
 	    return NULL; /* Doesn't get here */
@@ -2740,14 +2736,19 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  }
 	} else {
 	  if (num_rands != num_params) {
-	    Scheme_Object *srcmod;
-	    const char *name;
-	    UPDATE_THREAD_RSPTR_FOR_ERROR();
-	    name = scheme_get_proc_name(obj, NULL, 1, &srcmod);
-	    scheme_wrong_count(name, srcmod,
-			       num_params, num_params,
-			       num_rands, rands);
-	    return NULL; /* Doesn't get here */
+	    if (num_rands < num_params) {
+	      UPDATE_THREAD_RSPTR_FOR_ERROR();
+	      scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
+				 num_params, num_params,
+				 num_rands, rands);
+	      return NULL; /* Doesn't get here */
+	    } else {
+	      UPDATE_THREAD_RSPTR_FOR_ERROR();
+	      scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1), 
+				 num_params, num_params,
+				 num_rands, rands);
+	      return NULL; /* Doesn't get here */
+	    }
 	  }
 	
 	  stack = RUNSTACK = old_runstack - num_params;
@@ -2763,11 +2764,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	}
       } else {
 	if (num_rands) {
-	  Scheme_Object *srcmod;
-	  const char *name;
 	  UPDATE_THREAD_RSPTR_FOR_ERROR();
-	  name = scheme_get_proc_name(obj, NULL, 1, &srcmod);
-	  scheme_wrong_count(name, srcmod,
+	  scheme_wrong_count(scheme_get_proc_name(obj, NULL, 1),
 			     0, 0, num_rands, rands);
 	  return NULL; /* Doesn't get here */
 	}
@@ -2821,8 +2819,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       if (num_rands < prim->mina 
 	  || (num_rands > prim->maxa && prim->maxa >= 0)) {
-	scheme_wrong_count(prim->name, prim->srcmod,
-			   prim->mina, prim->maxa, 
+	scheme_wrong_count(prim->name, prim->mina, prim->maxa, 
 			   num_rands, rands);
 	return NULL; /* Shouldn't get here */
       }
@@ -2849,7 +2846,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       }
       
       UPDATE_THREAD_RSPTR_FOR_ERROR();
-      scheme_wrong_count((char *)seq, NULL, -1, -1, num_rands, rands);
+      scheme_wrong_count((char *)seq, -1, -1, num_rands, rands);
 
       return NULL; /* Doesn't get here. */
     } else if (type == scheme_cont_type) {
@@ -2881,14 +2878,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       if (NOT_SAME_OBJ(c->home, p)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 c,
 			 "continuation application: attempted to apply foreign continuation"
 			 " (created in another thread)");
       }
       if (c->ok && !*c->ok) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 c,
 			 "continuation application: attempted to cross a continuation boundary");
       }
@@ -2954,20 +2951,20 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       if (!SCHEME_CONT_HOME(obj)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 obj,
 			 "continuation application: attempt to jump into an escape continuation");
       }
       if (NOT_SAME_OBJ(SCHEME_CONT_HOME(obj), p)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 obj,
 			 "continuation application: attempted to apply foreign escape continuation"
 			 " (created in another thread)");
       }
       if (SCHEME_CONT_OK(obj) && !*SCHEME_CONT_OK(obj)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
 			 obj,
 			 "continuation application: attempted to cross an escape continuation boundary");
       }
@@ -3182,7 +3179,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    value = _scheme_eval_linked_expr_multi_wp(value, p);
 	    c2 = (SAME_OBJ(value, SCHEME_MULTIPLE_VALUES) ? p->ku.multiple.count : 1);
 	    if (c2 != c) {
-	      scheme_wrong_return_arity(NULL, NULL, c, c2, 
+	      scheme_wrong_return_arity(NULL, c, c2, 
 					(c2 == 1) ? (Scheme_Object **)value : p->ku.multiple.array,
 					"lexical binding");
 	      return NULL;
@@ -3368,7 +3365,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES))
     if (get_value > 0) {
-      scheme_wrong_return_arity(NULL, NULL, 1, p->ku.multiple.count, 
+      scheme_wrong_return_arity(NULL, 1, p->ku.multiple.count, 
 				p->ku.multiple.array,
 				NULL);
       return NULL;
@@ -3651,7 +3648,7 @@ eval(int argc, Scheme_Object *argv[])
     Eval_In_Env *ee;
     
     if (SCHEME_TYPE(argv[1]) != scheme_namespace_type)
-      scheme_wrong_type("eval", scheme_kernel_symbol, "namespace", 1, argc, argv);
+      scheme_wrong_type("eval", "namespace", 1, argc, argv);
 
     ee = MALLOC_ONE_RT(Eval_In_Env);
 #ifdef MZTAG_REQUIRED
@@ -3742,7 +3739,7 @@ local_expand(int argc, Scheme_Object **argv)
   env = scheme_current_thread->current_local_env;
 
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, "local-expand: not currently transforming");
+    scheme_raise_exn(MZEXN_MISC, "local-expand: not currently transforming");
 
   if (SAME_OBJ(argv[1], internal_define_symbol))
     kind = SCHEME_INTDEF_FRAME;
@@ -3753,7 +3750,7 @@ local_expand(int argc, Scheme_Object **argv)
   else if (SAME_OBJ(argv[1], expression_symbol))
     kind = 0;
   else {
-    scheme_wrong_type("local-expand", scheme_kernel_symbol, "'expression, 'top-level, 'internal-define, or 'module",
+    scheme_wrong_type("local-expand", "'expression, 'top-level, 'internal-define, or 'module",
 		      1, argc, argv);
     return NULL;
   }
@@ -3776,7 +3773,7 @@ local_expand(int argc, Scheme_Object **argv)
     
     i = SCHEME_CAR(l);
     if (!SCHEME_STX_SYMBOLP(i)) {
-      scheme_wrong_type("local-expand", scheme_kernel_symbol, "list of identifier syntax", 1, argc, argv);
+      scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);
       return NULL;
     }
     
@@ -3784,7 +3781,7 @@ local_expand(int argc, Scheme_Object **argv)
       scheme_set_local_syntax(pos++, i, stop_expander, env);
   }
   if (!SCHEME_NULLP(l)) {
-    scheme_wrong_type("local-expand", scheme_kernel_symbol, "list of identifier syntax", 1, argc, argv);
+    scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);
     return NULL;
   }
 

@@ -9,8 +9,6 @@ strings are types/comments.
 |#
 
 (exn [message "immutable-string" "error message" 
-	      agent "symbol or {\\scmfalse}" "name of the error agent (procedure or form), if any"
-	      module "symbol or {\\scmfalse}" "source module of the error agent, if any"
 	      continuation-marks "mark-set" "value returned by \\scmfirst{current-continuation-marks} immediately after the error is detected"] 
      -
      (user [] "raised by calling \\scmfirst{error}")
@@ -27,7 +25,9 @@ strings are types/comments.
 		  (divide-by-zero [] "divide by zero; \\scm{application-value} is always zero")
 		  (*continuation [] "attempt to cross a continuation boundary or apply another thread's continuation"))
      
-     (syntax [expr "S-expression" "illegal expression (or {\\scmfalse} if unknown)"]
+     (syntax [expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)"
+		   form "symbol" "the syntactic form name that detected the error"
+		   module "symbol or {\\scmfalse}" "the form-defining module (or {\\scmfalse} if unknown)"]
 	     "syntax error, but not a \\scmfirst{read} error")
      
      (read [port "input-port" "port being read"

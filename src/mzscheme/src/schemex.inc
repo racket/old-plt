@@ -157,9 +157,11 @@
   scheme_extension_table->scheme_hash_set = scheme_hash_set;
   scheme_extension_table->scheme_hash_get = scheme_hash_get;
   scheme_extension_table->scheme_make_prim = scheme_make_prim;
+  scheme_extension_table->scheme_make_noneternal_prim = scheme_make_noneternal_prim;
   scheme_extension_table->scheme_make_closed_prim = scheme_make_closed_prim;
   scheme_extension_table->scheme_make_prim_w_arity = scheme_make_prim_w_arity;
   scheme_extension_table->scheme_make_folding_prim = scheme_make_folding_prim;
+  scheme_extension_table->scheme_make_noneternal_prim_w_arity = scheme_make_noneternal_prim_w_arity;
   scheme_extension_table->scheme_make_closed_prim_w_arity = scheme_make_closed_prim_w_arity;
   scheme_extension_table->scheme_make_folding_closed_prim = scheme_make_folding_closed_prim;
   scheme_extension_table->scheme_make_pair = scheme_make_pair;

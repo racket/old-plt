@@ -135,26 +135,26 @@ scheme_init_port_fun(Scheme_Env *env)
   none_symbol = scheme_intern_symbol("none");
   
   scheme_write_proc = scheme_make_prim_w_arity(sch_write, 
-					       "write", scheme_kernel_symbol, 
+					       "write", 
 					       1, 2);
   scheme_display_proc = scheme_make_prim_w_arity(display, 
-						 "display", scheme_kernel_symbol, 
+						 "display", 
 						 1, 2);
   scheme_print_proc = scheme_make_prim_w_arity(sch_print, 
-					       "print", scheme_kernel_symbol, 
+					       "print", 
 					       1, 2);
     
   default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
-						  "default-port-read-handler", scheme_kernel_symbol, 
+						  "default-port-read-handler", 
 						  1, 1);
   default_display_handler = scheme_make_prim_w_arity(sch_default_display_handler,
-						     "default-port-display-handler", scheme_kernel_symbol, 
+						     "default-port-display-handler", 
 						     2, 2);
   default_write_handler = scheme_make_prim_w_arity(sch_default_write_handler,
-						   "default-port-write-handler", scheme_kernel_symbol, 
+						   "default-port-write-handler", 
 						   2, 2);
   default_print_handler = scheme_make_prim_w_arity(sch_default_print_handler,
-						   "default-port-print-handler", scheme_kernel_symbol, 
+						   "default-port-print-handler", 
 						   2, 2);
   
   scheme_init_port_fun_config();
@@ -163,165 +163,165 @@ scheme_init_port_fun(Scheme_Env *env)
 
   scheme_add_global_constant("input-port?", 
 			     scheme_make_folding_prim(input_port_p, 
-						      "input-port?", scheme_kernel_symbol, 
+						      "input-port?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("output-port?", 
 			     scheme_make_folding_prim(output_port_p, 
-						      "output-port?", scheme_kernel_symbol, 
+						      "output-port?", 
 						      1, 1, 1), 
 			     env);
   
   scheme_add_global_constant("file-stream-port?", 
 			     scheme_make_folding_prim(scheme_file_stream_port_p, 
-						      "file-stream-port?", scheme_kernel_symbol, 
+						      "file-stream-port?", 
 						      1, 1, 1), 
 			     env);
   
   scheme_add_global_constant("current-input-port", 
 			     scheme_register_parameter(current_input_port,
-						       "current-input-port", scheme_kernel_symbol,
+						       "current-input-port",
 						       MZCONFIG_INPUT_PORT),
 			     env);
   scheme_add_global_constant("current-output-port", 
 			     scheme_register_parameter(current_output_port,
-						       "current-output-port", scheme_kernel_symbol,
+						       "current-output-port",
 						       MZCONFIG_OUTPUT_PORT),
 			     env);
   scheme_add_global_constant("current-error-port", 
 			     scheme_register_parameter(current_error_port, 
-						       "current-error-port", scheme_kernel_symbol,
+						       "current-error-port",
 						       MZCONFIG_ERROR_PORT),
 			     env);
   
   scheme_add_global_constant("open-input-file", 
 			     scheme_make_prim_w_arity(open_input_file, 
-						      "open-input-file", scheme_kernel_symbol, 
+						      "open-input-file", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("open-input-string", 
 			     scheme_make_prim_w_arity(open_input_string, 
-						      "open-input-string", scheme_kernel_symbol, 
+						      "open-input-string", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("open-output-file", 
 			     scheme_make_prim_w_arity(open_output_file,
-						      "open-output-file", scheme_kernel_symbol,
+						      "open-output-file",
 						      1, 3), 
 			     env);
   scheme_add_global_constant("open-output-string", 
 			     scheme_make_prim_w_arity(open_output_string,
-						      "open-output-string", scheme_kernel_symbol, 
+						      "open-output-string", 
 						      0, 0),
 			     env);
   scheme_add_global_constant("get-output-string", 
 			     scheme_make_prim_w_arity(get_output_string,
-						      "get-output-string", scheme_kernel_symbol,
+						      "get-output-string",
 						      1, 1),
 			     env);
   scheme_add_global_constant("close-input-port", 
 			     scheme_make_prim_w_arity(close_input_port,
-						      "close-input-port", scheme_kernel_symbol, 
+						      "close-input-port", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("close-output-port", 
 			     scheme_make_prim_w_arity(close_output_port, 
-						      "close-output-port", scheme_kernel_symbol, 
+						      "close-output-port", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("call-with-output-file",
 			     scheme_make_prim_w_arity2(call_with_output_file,
-						       "call-with-output-file", scheme_kernel_symbol,
+						       "call-with-output-file",
 						       2, 4,
 						       0, -1),
 			     env);
   scheme_add_global_constant("call-with-input-file",
 			     scheme_make_prim_w_arity2(call_with_input_file,
-						       "call-with-input-file", scheme_kernel_symbol,
+						       "call-with-input-file",
 						       2, 3,
 						       0, -1),
 			     env);
   scheme_add_global_constant("with-output-to-file",
 			     scheme_make_prim_w_arity2(with_output_to_file,
-						       "with-output-to-file", scheme_kernel_symbol,
+						       "with-output-to-file",
 						       2, 4,
 						       0, -1),
 			     env);
   scheme_add_global_constant("with-input-from-file",
 			     scheme_make_prim_w_arity2(with_input_from_file,
-						       "with-input-from-file", scheme_kernel_symbol,
+						       "with-input-from-file",
 						       2, 3,
 						       0, -1),
 			     env);
   scheme_add_global_constant("make-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
-						      "make-input-port", scheme_kernel_symbol, 
+						      "make-input-port", 
 						      3, 5), 
 			     env);
   scheme_add_global_constant("make-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
-						      "make-output-port", scheme_kernel_symbol, 
+						      "make-output-port", 
 						      2, 2), 
 			     env);
   
   scheme_add_global_constant("read", 
 			     scheme_make_prim_w_arity(read_f,
-						      "read", scheme_kernel_symbol, 
+						      "read", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("read-syntax", 
 			     scheme_make_prim_w_arity(read_syntax_f,
-						      "read-syntax", scheme_kernel_symbol, 
+						      "read-syntax", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("read-char", 
 			     scheme_make_prim_w_arity(read_char, 
-						      "read-char", scheme_kernel_symbol, 
+						      "read-char", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("read-line", 
 			     scheme_make_prim_w_arity(read_line, 
-						      "read-line", scheme_kernel_symbol, 
+						      "read-line", 
 						      0, 2), 
 			     env);
   scheme_add_global_constant("read-string", 
 			     scheme_make_prim_w_arity(sch_read_string, 
-						      "read-string", scheme_kernel_symbol, 
+						      "read-string", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("read-string-avail!", 
 			     scheme_make_prim_w_arity(read_string_bang, 
-						      "read-string-avail!", scheme_kernel_symbol, 
+						      "read-string-avail!", 
 						      1, 4), 
 			     env);
   scheme_add_global_constant("read-string-avail!/enable-break", 
 			     scheme_make_prim_w_arity(read_string_bang_break, 
-						      "read-string-avail!/enable-break", scheme_kernel_symbol, 
+						      "read-string-avail!/enable-break", 
 						      1, 4), 
 			     env);
   scheme_add_global_constant("write-string-avail", 
 			     scheme_make_prim_w_arity(scheme_write_string_avail, 
-						      "write-string-avail", scheme_kernel_symbol, 
+						      "write-string-avail", 
 						      1, 4),
 			     env);
   scheme_add_global_constant("write-string-avail/enable-break",
 			     scheme_make_prim_w_arity(write_string_avail_break, 
-						      "write-string-avail/enable-break", scheme_kernel_symbol, 
+						      "write-string-avail/enable-break", 
 						      1, 4),
 			     env);
   scheme_add_global_constant("peek-char", 
 			     scheme_make_prim_w_arity(peek_char, 
-						      "peek-char", scheme_kernel_symbol, 
+						      "peek-char", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("eof-object?", 
 			     scheme_make_folding_prim(eof_object_p, 
-						      "eof-object?", scheme_kernel_symbol, 
+						      "eof-object?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-ready?", 
 			     scheme_make_prim_w_arity(char_ready_p, 
-						      "char-ready?", scheme_kernel_symbol, 
+						      "char-ready?", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("write", scheme_write_proc, env);
@@ -329,96 +329,96 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("print", scheme_print_proc, env);
   scheme_add_global_constant("newline", 
 			     scheme_make_prim_w_arity(newline, 
-						      "newline", scheme_kernel_symbol, 
+						      "newline", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("write-char", 
 			     scheme_make_prim_w_arity(write_char, 
-						      "write-char", scheme_kernel_symbol, 
+						      "write-char", 
 						      1, 2), 
 			     env);
   
   scheme_add_global_constant("port-read-handler", 
 			     scheme_make_prim_w_arity(port_read_handler, 
-						      "port-read-handler", scheme_kernel_symbol, 
+						      "port-read-handler", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("port-display-handler", 
 			     scheme_make_prim_w_arity(port_display_handler, 
-						      "port-display-handler", scheme_kernel_symbol, 
+						      "port-display-handler", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("port-write-handler", 
 			     scheme_make_prim_w_arity(port_write_handler, 
-						      "port-write-handler", scheme_kernel_symbol, 
+						      "port-write-handler", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("port-print-handler", 
 			     scheme_make_prim_w_arity(port_print_handler, 
-						      "port-print-handler", scheme_kernel_symbol, 
+						      "port-print-handler", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("global-port-print-handler",
 			     scheme_register_parameter(global_port_print_handler,
-						       "global-port-print-handler", scheme_kernel_symbol,
+						       "global-port-print-handler",
 						       MZCONFIG_PORT_PRINT_HANDLER),
 			     env);
   
   scheme_add_global_constant("load", 
 			     scheme_make_prim_w_arity2(load, 
-						       "load", scheme_kernel_symbol, 
+						       "load", 
 						       1, 1,
 						       0, -1),
 			      env);
   scheme_add_global_constant("current-load", 
 			     scheme_register_parameter(current_load, 
-						       "current-load", scheme_kernel_symbol,
+						       "current-load",
 						       MZCONFIG_LOAD_HANDLER), 
 			     env);
   scheme_add_global_constant("current-load-relative-directory", 
 			     scheme_register_parameter(current_load_directory, 
-						       "current-load-relative-directory", scheme_kernel_symbol,
+						       "current-load-relative-directory",
 						       MZCONFIG_LOAD_DIRECTORY), 
 			     env);
 
   scheme_add_global_constant("use-compiled-file-kinds",
 			     scheme_register_parameter(use_compiled_kind,
-						       "use-compiled-file-kinds", scheme_kernel_symbol,
+						       "use-compiled-file-kinds",
 						       MZCONFIG_USE_COMPILED_KIND),
 			     env);
 
   scheme_add_global_constant ("transcript-on", 
 			      scheme_make_prim_w_arity(transcript_on,
-						       "transcript-on", scheme_kernel_symbol, 
+						       "transcript-on", 
 						       1, 1),
 			      env);
   scheme_add_global_constant ("transcript-off", 
 			      scheme_make_prim_w_arity(transcript_off,
-						       "transcript-off", scheme_kernel_symbol, 
+						       "transcript-off", 
 						       0, 0),
 			      env);
   
   scheme_add_global_constant("flush-output", 
 			     scheme_make_prim_w_arity(flush_output, 
-						      "flush-output", scheme_kernel_symbol, 
+						      "flush-output", 
 						      0, 1), 
 			     env);
   scheme_add_global_constant("file-position", 
 			     scheme_make_prim_w_arity(scheme_file_position, 
-						      "file-position", scheme_kernel_symbol, 
+						      "file-position", 
 						      1, 2), 
 			     env);
   
   scheme_add_global_constant("make-pipe", 
 			     scheme_make_prim_w_arity2(sch_pipe, 
-						       "make-pipe", scheme_kernel_symbol, 
+						       "make-pipe", 
 						       0, 1,
 						       2, 2), 
 			     env);
 
   scheme_add_global_constant("port-count-lines!", 
 			     scheme_make_prim_w_arity(port_count_lines, 
-						      "port-count-lines!", scheme_kernel_symbol, 
+						      "port-count-lines!", 
 						      1, 1),
 			     env);
 }
@@ -433,7 +433,7 @@ void scheme_init_port_fun_config(void)
   {
     Scheme_Object *dlh;
     dlh = scheme_make_prim_w_arity2(default_load,
-				    "default-load-handler", scheme_kernel_symbol,
+				    "default-load-handler",
 				    1, 1,
 				    0, -1);
     scheme_set_param(config, MZCONFIG_LOAD_HANDLER, dlh);
@@ -442,7 +442,7 @@ void scheme_init_port_fun_config(void)
   {
     Scheme_Object *gpph;
     gpph = scheme_make_prim_w_arity(sch_default_global_port_print_handler,
-				    "default-global-port-print-handler", scheme_kernel_symbol,
+				    "default-global-port-print-handler",
 				    2, 2);
     scheme_set_param(config, MZCONFIG_PORT_PRINT_HANDLER, gpph);
   }
@@ -646,7 +646,7 @@ user_getc (Scheme_Input_Port *port)
       if (scheme_return_eof_for_error()) {
 	return EOF;
       } else {
-	scheme_wrong_type("user port read-char", scheme_kernel_symbol, "character", -1, -1, &val);
+	scheme_wrong_type("user port read-char", "character", -1, -1, &val);
       }
     }
     return (unsigned char)SCHEME_CHAR_VAL(val);
@@ -664,7 +664,7 @@ user_peekc (Scheme_Input_Port *port)
     return EOF;
   else {
     if (!SCHEME_CHARP(val))
-      scheme_wrong_type("user port peek-char", scheme_kernel_symbol, "character", -1, -1, &val);
+      scheme_wrong_type("user port peek-char", "character", -1, -1, &val);
     return (unsigned char)SCHEME_CHAR_VAL(val);
   }
 }
@@ -1096,7 +1096,7 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
       else
 	bufmax = 0;
     } else {
-      scheme_wrong_type("make-pipe", scheme_kernel_symbol, "positive exact integer", 1, argc, args);
+      scheme_wrong_type("make-pipe", "positive exact integer", 1, argc, args);
       return NULL;
     }
   } else
@@ -1155,7 +1155,7 @@ make_input_port(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-input-port", 0, 2, argc, argv);
   if ((argc > 3) && SCHEME_TRUEP(argv[3])) {
     if (!scheme_check_proc_arity(NULL, 0, 3, argc, argv))
-      scheme_wrong_type("make-input-port", scheme_kernel_symbol, "procedure (arity 0) or #f", 3, argc, argv);
+      scheme_wrong_type("make-input-port", "procedure (arity 0) or #f", 3, argc, argv);
   }
   if (argc > 4)
     scheme_check_proc_arity("make-input-port", 0, 4, argc, argv);
@@ -1211,7 +1211,7 @@ static Scheme_Object *
 open_input_string (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("open-input-string", scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type("open-input-string", "string", 0, argc, argv);
 
   return scheme_make_sized_string_input_port(SCHEME_STR_VAL(argv[0]), 
 					     SCHEME_STRTAG_VAL(argv[0]));
@@ -1239,7 +1239,7 @@ get_output_string (int argc, Scheme_Object *argv[])
   op = (Scheme_Output_Port *)argv[0];
   if (!SCHEME_OUTPORTP(argv[0]) 
       || (op->sub_type != scheme_string_output_port_type))
-    scheme_wrong_type("get-output-string", scheme_kernel_symbol, "string output port", 0, argc, argv);
+    scheme_wrong_type("get-output-string", "string output port", 0, argc, argv);
 
   s = scheme_get_sized_string_output(argv[0], &size);
 
@@ -1250,7 +1250,7 @@ static Scheme_Object *
 close_input_port (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("close-input-port", scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type("close-input-port", "input-port", 0, argc, argv);
 
   scheme_close_input_port (argv[0]);
   return (scheme_void);
@@ -1260,7 +1260,7 @@ static Scheme_Object *
 close_output_port (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OUTPORTP(argv[0]))
-    scheme_wrong_type("close-output-port", scheme_kernel_symbol, "output-port", 0, argc, argv);
+    scheme_wrong_type("close-output-port", "output-port", 0, argc, argv);
 
   scheme_close_output_port (argv[0]);
   return (scheme_void);
@@ -1390,7 +1390,7 @@ static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[])
   Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("default-port-read-handler", scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type("default-port-read-handler", "input-port", 0, argc, argv);
 
   if ((Scheme_Object *)argv[0] == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
@@ -1410,7 +1410,7 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
   Scheme_Object *port;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("read", scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type("read", "input-port", 0, argc, argv);
 
   if (argc)
     port = argv[0];
@@ -1441,7 +1441,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   Scheme_Object *port;
 
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-syntax", scheme_kernel_symbol, "input-port", 1, argc, argv);
+    scheme_wrong_type("read-syntax", "input-port", 1, argc, argv);
 
   if (argc > 1)
     port = argv[1];
@@ -1474,7 +1474,7 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek)
   int ch;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type(name, scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type(name, "input-port", 0, argc, argv);
 
   if (argc)
     port = argv[0];
@@ -1514,7 +1514,7 @@ read_line (int argc, Scheme_Object *argv[])
   long size = 31, oldsize, i = 0;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("read-line", scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type("read-line", "input-port", 0, argc, argv);
   if (argc > 1) {
     Scheme_Object *v = argv[1];
     if (SAME_OBJ(v, any_symbol)) {
@@ -1532,7 +1532,7 @@ read_line (int argc, Scheme_Object *argv[])
       lf = cr = 0;
       crlf = 1;
     } else
-      scheme_wrong_type("read-line", scheme_kernel_symbol, "newline specification symbol", 1, argc, argv);
+      scheme_wrong_type("read-line", "newline specification symbol", 1, argc, argv);
   }
 
   if (argc)
@@ -1601,12 +1601,12 @@ sch_read_string(int argc, Scheme_Object *argv[])
     size = SCHEME_INT_VAL(argv[0]);
 
   if (size < 0) {
-    scheme_wrong_type("read-string", scheme_kernel_symbol, "non-negative exact integer", 0, argc, argv);
+    scheme_wrong_type("read-string", "non-negative exact integer", 0, argc, argv);
     return NULL;
   }
 
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-string", scheme_kernel_symbol, "input-port", 1, argc, argv);
+    scheme_wrong_type("read-string", "input-port", 1, argc, argv);
 
   if (argc > 1)
     port = argv[1];
@@ -1641,12 +1641,12 @@ read_string_bang(int argc, Scheme_Object *argv[])
   long size, start, finish, got;
 
   if (!SCHEME_MUTABLE_STRINGP(argv[0])) {
-    scheme_wrong_type("read-string-avail!", scheme_kernel_symbol, "mutable-string", 0, argc, argv);
+    scheme_wrong_type("read-string-avail!", "mutable-string", 0, argc, argv);
     return NULL;
   } else
     str = argv[0];
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-string-avail!", scheme_kernel_symbol, "input-port", 1, argc, argv);
+    scheme_wrong_type("read-string-avail!", "input-port", 1, argc, argv);
   
   scheme_get_substring_indices("read-string-avail!", str, 
 			       argc, argv,
@@ -1765,7 +1765,7 @@ char_ready_p (int argc, Scheme_Object *argv[])
   Scheme_Object *port;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("char-ready?", scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type("char-ready?", "input-port", 0, argc, argv);
 
   if (argc)
     port = argv[0];
@@ -1778,7 +1778,7 @@ char_ready_p (int argc, Scheme_Object *argv[])
 static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OUTPORTP(argv[1]))
-    scheme_wrong_type("default-port-display-handler", scheme_kernel_symbol, "output-port", 1, argc, argv);
+    scheme_wrong_type("default-port-display-handler", "output-port", 1, argc, argv);
 
   scheme_internal_display(argv[0], argv[1], scheme_config);
 
@@ -1788,7 +1788,7 @@ static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[
 static Scheme_Object *sch_default_write_handler(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OUTPORTP(argv[1]))
-    scheme_wrong_type("default-port-write-handler", scheme_kernel_symbol, "output-port", 1, argc, argv);
+    scheme_wrong_type("default-port-write-handler", "output-port", 1, argc, argv);
 
   scheme_internal_write(argv[0], argv[1], scheme_config);
 
@@ -1798,7 +1798,7 @@ static Scheme_Object *sch_default_write_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *sch_default_print_handler(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OUTPORTP(argv[1]))
-    scheme_wrong_type("default-port-print-handler", scheme_kernel_symbol, "output-port", 1, argc, argv);
+    scheme_wrong_type("default-port-print-handler", "output-port", 1, argc, argv);
 
   return _scheme_apply(scheme_get_param(scheme_config,
 					MZCONFIG_PORT_PRINT_HANDLER),
@@ -1808,7 +1808,7 @@ static Scheme_Object *sch_default_print_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *sch_default_global_port_print_handler(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_OUTPORTP(argv[1]))
-    scheme_wrong_type("default-global-port-print-handler", scheme_kernel_symbol, "output-port", 1, argc, argv);
+    scheme_wrong_type("default-global-port-print-handler", "output-port", 1, argc, argv);
 
   scheme_internal_write(argv[0], argv[1], scheme_config);
 
@@ -1824,7 +1824,7 @@ display_write(char *name,
 
   if (argc > 1) {
     if (!SCHEME_OUTPORTP(argv[1]))
-      scheme_wrong_type(name, scheme_kernel_symbol, "output-port", 1, argc, argv);
+      scheme_wrong_type(name, "output-port", 1, argc, argv);
     port = argv[1];
   } else
     port = CURRENT_OUTPUT_PORT(config);
@@ -1906,7 +1906,7 @@ newline (int argc, Scheme_Object *argv[])
   Scheme_Object *port;
 
   if (argc && !SCHEME_OUTPORTP(argv[0]))
-    scheme_wrong_type("newline", scheme_kernel_symbol, "output-port", 0, argc, argv);
+    scheme_wrong_type("newline", "output-port", 0, argc, argv);
 
   if (argc)
     port = argv[0];
@@ -1926,10 +1926,10 @@ write_char (int argc, Scheme_Object *argv[])
   unsigned char buffer[1];
 
   if (argc && !SCHEME_CHARP(argv[0]))
-    scheme_wrong_type("write-char", scheme_kernel_symbol, "character", 0, argc, argv);
+    scheme_wrong_type("write-char", "character", 0, argc, argv);
   if (argc > 1) {
     if (!SCHEME_OUTPORTP(argv[1]))
-      scheme_wrong_type("write-char", scheme_kernel_symbol, "output-port", 1, argc, argv);
+      scheme_wrong_type("write-char", "output-port", 1, argc, argv);
     port = argv[1];
   } else
     port = CURRENT_OUTPUT_PORT(scheme_config);
@@ -1956,7 +1956,7 @@ static Scheme_Object *port_read_handler(int argc, Scheme_Object *argv[])
   Scheme_Input_Port *ip;
 
   if (!SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("port-read-handler", scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type("port-read-handler", "input-port", 0, argc, argv);
 
   ip = (Scheme_Input_Port *)argv[0];
   if (argc == 1) {
@@ -1980,7 +1980,7 @@ static Scheme_Object *port_display_handler(int argc, Scheme_Object *argv[])
   Scheme_Output_Port *op;
 
   if (!SCHEME_OUTPORTP(argv[0]))
-    scheme_wrong_type("port-display-handler", scheme_kernel_symbol, "output-port", 0, argc, argv);
+    scheme_wrong_type("port-display-handler", "output-port", 0, argc, argv);
 
   op = (Scheme_Output_Port *)argv[0];
   if (argc == 1) {
@@ -2004,7 +2004,7 @@ static Scheme_Object *port_write_handler(int argc, Scheme_Object *argv[])
   Scheme_Output_Port *op;
 
   if (!SCHEME_OUTPORTP(argv[0]))
-    scheme_wrong_type("port-write-handler", scheme_kernel_symbol, "output-port", 0, argc, argv);
+    scheme_wrong_type("port-write-handler", "output-port", 0, argc, argv);
 
   op = (Scheme_Output_Port *)argv[0];
   if (argc == 1) {
@@ -2028,7 +2028,7 @@ static Scheme_Object *port_print_handler(int argc, Scheme_Object *argv[])
   Scheme_Output_Port *op;
 
   if (!SCHEME_OUTPORTP(argv[0]))
-    scheme_wrong_type("port-print-handler", scheme_kernel_symbol, "output-port", 0, argc, argv);
+    scheme_wrong_type("port-print-handler", "output-port", 0, argc, argv);
 
   op = (Scheme_Output_Port *)argv[0];
   if (argc == 1) {
@@ -2058,7 +2058,7 @@ static Scheme_Object *global_port_print_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("port-count-lines!", scheme_kernel_symbol, "input-port", 0, argc, argv);
+    scheme_wrong_type("port-count-lines!", "input-port", 0, argc, argv);
 
   scheme_count_lines(argv[0]);
 
@@ -2126,7 +2126,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   LoadHandlerData *lhd;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("default-load-handler", scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type("default-load-handler", "string", 0, argc, argv);
 
   port = scheme_do_open_input_file("default-load-handler", 0, 1, argv);
 
@@ -2218,7 +2218,7 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[],
   Scheme_Object *load_dir;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(who, scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type(who, "string", 0, argc, argv);
 
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
 				    SCHEME_STRTAG_VAL(argv[0]),
@@ -2277,7 +2277,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     len = SCHEME_STRTAG_VAL(d);
 
     if (!scheme_is_complete_path(s, len))
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       d,
 		       scheme_intern_symbol("ill-formed-path"),
 		       "current-load-relative-directory: not a complete path: \"%q\"",
@@ -2286,7 +2286,7 @@ static Scheme_Object *abs_directory_p(int argc, Scheme_Object **argv)
     expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
     ed = scheme_make_immutable_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       ed,
 		       fail_err_symbol,
 		       "current-load-relative-directory: directory not found or not a directory: \"%q\"",
@@ -2351,9 +2351,9 @@ static Scheme_Object *
 transcript_on(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("transcript-on", scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type("transcript-on", "string", 0, argc, argv);
 
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "transcript-on: not supported");
 
   return scheme_void;
@@ -2362,7 +2362,7 @@ transcript_on(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 transcript_off(int argc, Scheme_Object *argv[])
 {
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "transcript-off: not supported");
 
   return scheme_void;
@@ -2374,7 +2374,7 @@ flush_output(int argc, Scheme_Object *argv[])
   Scheme_Object *op;
 
   if (argc && !SCHEME_OUTPORTP(argv[0]))
-    scheme_wrong_type("flush-output", scheme_kernel_symbol, "output-port", 0, argc, argv);
+    scheme_wrong_type("flush-output", "output-port", 0, argc, argv);
 
   if (argc) 
     op = argv[0];

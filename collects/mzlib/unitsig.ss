@@ -172,7 +172,6 @@
 		(format
 		 "~s: expression for \"~s\" is not a signed unit: ~e"
 		 who tag u))
-	       who #f
 	       (current-continuation-marks)))))
 	 units tags)
 	(for-each
@@ -195,7 +194,6 @@
 		  (format
 		   "~s: ~a unit imports ~a units, but ~a units were provided"
 		   who tag n c))
-		 who #f
 		 (current-continuation-marks))))))
 	 units tags isigs)
 	(for-each

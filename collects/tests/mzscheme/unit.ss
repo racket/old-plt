@@ -205,7 +205,7 @@
 	       (export)
 	       (define (filter v)
 		 (if (procedure? v)
-		     `(proc: ,(syntax-e (object-name v)))
+		     `(proc: ,(object-name v))
 		     v))
 	       (display 
 		(map filter (list x v struct:a y make-x x? x-z both))

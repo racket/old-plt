@@ -47,47 +47,47 @@ scheme_init_vector (Scheme_Env *env)
 
   scheme_add_global_constant("vector?", 
 			     scheme_make_folding_prim(vector_p, 
-						      "vector?", scheme_kernel_symbol, 
+						      "vector?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("make-vector", 
 			     scheme_make_prim_w_arity(make_vector, 
-						      "make-vector", scheme_kernel_symbol, 
+						      "make-vector", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("vector", 
 			     scheme_make_prim_w_arity(vector, 
-						      "vector", scheme_kernel_symbol, 
+						      "vector", 
 						      0, -1), 
 			     env);
   scheme_add_global_constant("vector-length", 
 			     scheme_make_folding_prim(vector_length, 
-						      "vector-length", scheme_kernel_symbol, 
+						      "vector-length", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("vector-ref", 
 			     scheme_make_prim_w_arity(vector_ref, 
-						      "vector-ref", scheme_kernel_symbol, 
+						      "vector-ref", 
 						      2, 2), 
 			     env);
   scheme_add_global_constant("vector-set!", 
 			     scheme_make_prim_w_arity(vector_set, 
-						      "vector-set!", scheme_kernel_symbol, 
+						      "vector-set!", 
 						      3, 3), 
 			     env);
   scheme_add_global_constant("vector->list", 
 			     scheme_make_prim_w_arity(vector_to_list, 
-						      "vector->list", scheme_kernel_symbol, 
+						      "vector->list", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("list->vector", 
 			     scheme_make_prim_w_arity(list_to_vector, 
-						      "list->vector", scheme_kernel_symbol, 
+						      "list->vector", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("vector-fill!", 
 			     scheme_make_prim_w_arity(vector_fill, 
-						      "vector-fill!", scheme_kernel_symbol, 
+						      "vector-fill!", 
 						      2, 2), 
 			     env);
 }
@@ -101,7 +101,7 @@ scheme_make_vector (int size, Scheme_Object *fill)
   if (size <= 0) {
     if (size) {
       vec = scheme_make_integer(size);
-      scheme_wrong_type("make-vector", scheme_kernel_symbol, "non-negative exact integer", -1, 0, &vec);
+      scheme_wrong_type("make-vector", "non-negative exact integer", -1, 0, &vec);
     } else
       return zero_length_vector;
   }
@@ -176,7 +176,7 @@ static Scheme_Object *
 vector_length (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_VECTORP(argv[0]))
-    scheme_wrong_type("vector-length", scheme_kernel_symbol, "vector", 0, argc, argv);
+    scheme_wrong_type("vector-length", "vector", 0, argc, argv);
 
   return scheme_make_integer(SCHEME_VEC_SIZE(argv[0]));
 }
@@ -190,7 +190,7 @@ bad_index(char *name, Scheme_Object *i, Scheme_Object *vec)
     char *vstr;
     int vlen;
     vstr = scheme_make_provided_string(vec, 2, &vlen);
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     i,
 		     "%s: index %s out of range [%d, %d] for vector: %t",
 		     name, 
@@ -198,7 +198,7 @@ bad_index(char *name, Scheme_Object *i, Scheme_Object *vec)
 		     0, n,
 		     vstr, vlen);
   } else
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     i,
 		     "%s: bad index %s for empty vector",
 		     name,
@@ -213,7 +213,7 @@ vector_ref (int argc, Scheme_Object *argv[])
   long i, len;
 
   if (!SCHEME_VECTORP(argv[0]))
-    scheme_wrong_type("vector-ref", scheme_kernel_symbol, "vector", 0, argc, argv);
+    scheme_wrong_type("vector-ref", "vector", 0, argc, argv);
 
   len = SCHEME_VEC_SIZE(argv[0]);
 
@@ -231,7 +231,7 @@ vector_set(int argc, Scheme_Object *argv[])
   long i, len;
 
   if (!SCHEME_MUTABLE_VECTORP(argv[0]))
-    scheme_wrong_type("vector-set!", scheme_kernel_symbol, "mutable vector", 0, argc, argv);
+    scheme_wrong_type("vector-set!", "mutable vector", 0, argc, argv);
 
   len = SCHEME_VEC_SIZE(argv[0]);
 
@@ -249,7 +249,7 @@ static Scheme_Object *
 vector_to_list (int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_VECTORP(argv[0]))
-    scheme_wrong_type("vector->list", scheme_kernel_symbol, "vector", 0, argc, argv);
+    scheme_wrong_type("vector->list", "vector", 0, argc, argv);
 
   return scheme_vector_to_list(argv[0]);
 }
@@ -281,7 +281,7 @@ scheme_list_to_vector (Scheme_Object *list)
 
   len = scheme_proper_list_length(list);
   if (len < 0)
-    scheme_wrong_type("list->vector", scheme_kernel_symbol, "proper list", -1, 0, &orig);
+    scheme_wrong_type("list->vector", "proper list", -1, 0, &orig);
 
   vec = scheme_make_vector(len, NULL);
   for (i = 0; i < len; i++) {
@@ -298,7 +298,7 @@ vector_fill (int argc, Scheme_Object *argv[])
   int i;
   
   if (!SCHEME_MUTABLE_VECTORP(argv[0]))
-    scheme_wrong_type("vector-fill!", scheme_kernel_symbol, "mutable vector", 0, argc, argv);
+    scheme_wrong_type("vector-fill!", "mutable vector", 0, argc, argv);
 
   for (i = 0; i < SCHEME_VEC_SIZE(argv[0]); i++) {
     SCHEME_VEC_ELS(argv[0])[i] = argv[1];

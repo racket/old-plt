@@ -76,7 +76,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
 
 static Scheme_Object *modbeg_syntax;
 
-Scheme_Object *scheme_kernel_symbol;
+static Scheme_Object *kernel_symbol;
 static Scheme_Module *kernel;
 
 static Scheme_Object *module_symbol;
@@ -164,6 +164,9 @@ void scheme_init_module(Scheme_Env *env)
 							provide_expand), 
 			    env);
 
+  REGISTER_SO(kernel_symbol);
+  kernel_symbol = scheme_intern_symbol("#%kernel");
+
   REGISTER_SO(module_symbol);
   REGISTER_SO(module_begin_symbol);
   module_symbol = scheme_intern_symbol("module");
@@ -173,7 +176,7 @@ void scheme_init_module(Scheme_Env *env)
   scheme_install_type_reader(scheme_module_type, read_module);
 
   o = scheme_make_prim_w_arity(default_module_resolver,
-			       "default-module-name-resolver", scheme_kernel_symbol,
+			       "default-module-name-resolver",
 			       3, 3);
   scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER, o);
 
@@ -181,56 +184,56 @@ void scheme_init_module(Scheme_Env *env)
 
   scheme_add_global_constant("current-module-name-resolver", 
 			     scheme_register_parameter(current_module_name_resolver, 
-						       "current-module-name-resolver", scheme_kernel_symbol,
+						       "current-module-name-resolver",
 						       MZCONFIG_CURRENT_MODULE_RESOLVER), 
 			     env);
   scheme_add_global_constant("current-module-name-prefix", 
 			     scheme_register_parameter(current_module_name_prefix, 
-						       "current-module-name-prefix", scheme_kernel_symbol,
+						       "current-module-name-prefix",
 						       MZCONFIG_CURRENT_MODULE_PREFIX), 
 			     env);
 
   scheme_add_global_constant("dynamic-require", 
 			     scheme_make_prim_w_arity(dynamic_require,
-						      "dynamic-require", scheme_kernel_symbol,
+						      "dynamic-require",
 						      2, 2),
 			     env);
   scheme_add_global_constant("dynamic-require-for-syntax", 
 			     scheme_make_prim_w_arity(dynamic_require_for_syntax,
-						      "dynamic-require-for-syntax", scheme_kernel_symbol,
+						      "dynamic-require-for-syntax",
 						      2, 2),
 			     env);
 
   scheme_add_global_constant("namespace-require",
 			     scheme_make_prim_w_arity(namespace_require,
-						      "namespace-require", scheme_kernel_symbol,
+						      "namespace-require",
 						      1, 1),
 			     env);
   scheme_add_global_constant("namespace-transformer-require",
 			     scheme_make_prim_w_arity(namespace_trans_require,
-						      "namespace-transformer-require", scheme_kernel_symbol,
+						      "namespace-transformer-require",
 						      1, 1),
 			     env);
   scheme_add_global_constant("namespace-attach-module",
 			     scheme_make_prim_w_arity(namespace_attach_module,
-						      "namespace-attach-module", scheme_kernel_symbol,
+						      "namespace-attach-module",
 						      2, 2),
 			     env);
 
   scheme_add_global_constant("module-path-index?",
 			     scheme_make_folding_prim(module_path_index_p,
-						      "module-path-index?", scheme_kernel_symbol,
+						      "module-path-index?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("module-path-index-split",
 			     scheme_make_prim_w_arity2(module_path_index_split,
-						       "module-path-index-split", scheme_kernel_symbol,
+						       "module-path-index-split",
 						       1, 1,
 						       2, 2),
 			     env);
   scheme_add_global_constant("module-path-index-join",
 			     scheme_make_prim_w_arity(module_path_index_join,
-						      "module-path-index-join", scheme_kernel_symbol,
+						      "module-path-index-join",
 						      2, 2),
 			     env);
 }
@@ -252,7 +255,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   
   scheme_initial_env->module = kernel;
 
-  kernel->modname = scheme_kernel_symbol;
+  kernel->modname = kernel_symbol;
   kernel->requires = scheme_null;
   kernel->et_requires = scheme_null;
   
@@ -300,7 +303,7 @@ void scheme_finish_kernel(Scheme_Env *env)
 
   rn = scheme_make_module_rename(0, 0);
   for (i = kernel->num_provides; i--; ) {
-    scheme_extend_module_rename(rn, scheme_kernel_symbol, exs[i], exs[i]);
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
   }
 
   scheme_sys_wraps(NULL);
@@ -355,7 +358,7 @@ void scheme_require_from_original_env(Scheme_Env *env, int syntax_only)
   c = kernel->num_provides;
   i = (syntax_only ? kernel->num_var_provides : 0);
   for (; i < c; i++) {
-    scheme_extend_module_rename(rn, scheme_kernel_symbol, exs[i], exs[i]);
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
   }
 }
 
@@ -379,7 +382,7 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
   /* Add a module mapping for all kernel provides: */
   scheme_extend_module_rename_with_kernel(rn);
   
-  w = scheme_datum_to_syntax(scheme_kernel_symbol, scheme_false, scheme_false, 0, 0);
+  w = scheme_datum_to_syntax(kernel_symbol, scheme_false, scheme_false, 0, 0);
   w = scheme_add_rename(w, rn);
   if (phase == 0) {
     REGISTER_SO(scheme_sys_wraps0);
@@ -481,7 +484,7 @@ void scheme_install_initial_module_set(Scheme_Env *env)
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv)
 {
-  scheme_arg_mismatch("default-module-name-resolver", scheme_kernel_symbol, 
+  scheme_arg_mismatch("default-module-name-resolver", 
 		      "the kernel's resolver always fails; given: ", 
 		      argv[0]);
   return NULL;
@@ -534,7 +537,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
   name = argv[1];
 
   if (SCHEME_TRUEP(name) && !SCHEME_SYMBOLP(name) && !SCHEME_VOIDP(name)) {
-    scheme_wrong_type((exp_time? "dynamic-require" : "dynamic-require-for-syntax"), scheme_kernel_symbol, "symbol, #f, or void", 1, argc, argv);
+    scheme_wrong_type((exp_time? "dynamic-require" : "dynamic-require-for-syntax"), "symbol, #f, or void", 1, argc, argv);
     return NULL;
   }
 
@@ -572,7 +575,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 	  break;
 	} else {
 	  if (fail_with_error)
-	    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, name,
+	    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
 			     "%s: name is provided as syntax: %V by module: %V",
 			     (exp_time ? "dynamic-require-for-syntax" : "dynamic-require"),
 			     name, srcm->modname);
@@ -603,7 +606,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
       if (i == count) {
 	if (fail_with_error)
-	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, name,
+	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, name,
 			   "%s: name is not provided: %V by module: %V",
 			   (exp_time? "dynamic-require-for-syntax" : "dynamic-require"),
 			   name, srcm->modname);
@@ -708,9 +711,9 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   Scheme_Module *m2;
 
   if (!SCHEME_NAMESPACEP(argv[0]))
-    scheme_wrong_type("namespace-attach-module", scheme_kernel_symbol, "namespace", 0, argc, argv);
+    scheme_wrong_type("namespace-attach-module", "namespace", 0, argc, argv);
   if (!SCHEME_SYMBOLP(argv[1]))
-    scheme_wrong_type("namespace-attach-module", scheme_kernel_symbol, "symbol", 1, argc, argv);
+    scheme_wrong_type("namespace-attach-module", "symbol", 1, argc, argv);
 
   from_env = (Scheme_Env *)argv[0];
   to_env = scheme_get_env(scheme_config);
@@ -730,12 +733,12 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
       todo = SCHEME_CDR(todo);
 
-      if (!SAME_OBJ(name, scheme_kernel_symbol)) {
+      if (!SAME_OBJ(name, kernel_symbol)) {
 	menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(from_modchain), name);
 
 	if (!menv) {
 	  /* Assert: name == argv[1] */
-	  scheme_arg_mismatch("namespace-attach-module", scheme_kernel_symbol,
+	  scheme_arg_mismatch("namespace-attach-module",
 			      "unknown module (in the source namespace): ",
 			      name);
 	}
@@ -752,7 +755,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	  }
 	  
 	  if (m2)
-	    scheme_arg_mismatch("namespace-attach-module", scheme_kernel_symbol,
+	    scheme_arg_mismatch("namespace-attach-module",
 				"a different module with the same name is already "
 				"in the destination namespace, for name: ",
 				name);
@@ -818,7 +821,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
       todo = SCHEME_CDR(todo);
 
-      if (!SAME_OBJ(name, scheme_kernel_symbol)) {
+      if (!SAME_OBJ(name, kernel_symbol)) {
 	menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(from_modchain), name);
       
 	menv2 = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(to_modchain), name);
@@ -873,7 +876,7 @@ static Scheme_Object *module_path_index_split(int argc, Scheme_Object *argv[])
   Scheme_Object *a[2];
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_module_index_type))
-    scheme_wrong_type("module-path-index-split", scheme_kernel_symbol, "module-path-index", 0, argc, argv);
+    scheme_wrong_type("module-path-index-split", "module-path-index", 0, argc, argv);
 
   modidx = (Scheme_Modidx *)argv[0];
   a[0] = modidx->path;
@@ -885,11 +888,11 @@ static Scheme_Object *module_path_index_split(int argc, Scheme_Object *argv[])
 static Scheme_Object *module_path_index_join(int argc, Scheme_Object *argv[])
 {
   if (SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("module-path-index-join", scheme_kernel_symbol, "non-symbol", 0, argc, argv);
+    scheme_wrong_type("module-path-index-join", "non-symbol", 0, argc, argv);
 
   if (SCHEME_TRUEP(argv[1])
       && !SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_module_index_type))
-    scheme_wrong_type("module-path-index-join", scheme_kernel_symbol, "module-path-index or #f", 1, argc, argv);
+    scheme_wrong_type("module-path-index-join", "module-path-index or #f", 1, argc, argv);
 
   return scheme_make_modidx(argv[0], argv[1], scheme_false);
 }
@@ -1031,7 +1034,7 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 
 static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const char *who)
 {
-  if (name == scheme_kernel_symbol)
+  if (name == kernel_symbol)
     return kernel;
   else {
     Scheme_Module *m;
@@ -1049,7 +1052,7 @@ static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const ch
 
 Scheme_Env *scheme_module_access(Scheme_Object *name, Scheme_Env *env)
 {
-  if (name == scheme_kernel_symbol)
+  if (name == kernel_symbol)
     return scheme_initial_env;
   else
     return (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), name);
@@ -1077,7 +1080,7 @@ void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, S
 
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name)
 {
-  if (modname == scheme_kernel_symbol)
+  if (modname == kernel_symbol)
     return scheme_lookup_in_table(scheme_initial_env->syntax, (char *)name);
   else {
     Scheme_Env *menv;
@@ -1406,7 +1409,7 @@ Scheme_Object *scheme_builtin_value(const char *name)
   a[1] = scheme_intern_symbol(name);
 
   /* Try kernel first: */
-  a[0] = scheme_kernel_symbol;
+  a[0] = kernel_symbol;
   v = _dynamic_require(2, a, 0, 0, 0, 0);
 
   if (v)
@@ -1472,7 +1475,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
   {
     const char *symname;
     symname = (name ? scheme_symbol_name(name) : "");
-    scheme_wrong_return_arity("define-syntaxes", scheme_kernel_symbol,
+    scheme_wrong_return_arity("define-syntaxes",
 			      count, g,
 			      (g == 1) ? (Scheme_Object **)vals : scheme_current_thread->ku.multiple.array,
 			      "%s%s%s",
@@ -1500,7 +1503,7 @@ module_execute(Scheme_Object *data)
 	&& (SCHEME_SYM_VAL(m->modname)[1] == '%'))
        || SAME_OBJ(m->modname, mzscheme_symbol))
       && scheme_hash_get(env->module_registry, m->modname)) {
-    scheme_arg_mismatch("module", scheme_kernel_symbol,
+    scheme_arg_mismatch("module",
 			(SAME_OBJ(mzscheme_symbol, m->modname) 
 			 ? "cannot redefine special module name: " 
 			 : "cannot redefine a module name starting with `#%': "),
@@ -2003,7 +2006,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (!SAME_OBJ(iim->kernel_exclusion, exs[i])) {
 	  vec = scheme_make_vector(4, NULL);
 	  SCHEME_VEC_ELS(vec)[0] = nmidx;
-	  SCHEME_VEC_ELS(vec)[1] = scheme_kernel_symbol;
+	  SCHEME_VEC_ELS(vec)[1] = kernel_symbol;
 	  SCHEME_VEC_ELS(vec)[2] = exs[i];
 	  SCHEME_VEC_ELS(vec)[3] = ((i < numvals) ? scheme_true : scheme_false);
 	  scheme_hash_set(required, exs[i], vec);
@@ -2521,7 +2524,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	    ree = SCHEME_CDR(SCHEME_CAR(rx));
 
 	    exns = SCHEME_CDR(ree);
-	    if (SAME_OBJ(modidx, scheme_kernel_symbol))
+	    if (SAME_OBJ(modidx, kernel_symbol))
 	      if (!SCHEME_STX_NULLP(exns))
 		exclude_hint = exns;
 	    
@@ -2540,7 +2543,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	      
 	      scheme_hash_set(provided, name, name);
 
-	      if (SAME_OBJ(modidx, scheme_kernel_symbol) && SAME_OBJ(name, srcname))
+	      if (SAME_OBJ(modidx, kernel_symbol) && SAME_OBJ(name, srcname))
 		reprovide_kernel++;
 	    }
 	  }
@@ -2570,7 +2573,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (n) {
 	  /* may be a single shadowed exclusion, now bound to exclude_hint... */
 	  n = scheme_hash_get(required, n);
-	  if (n && !SAME_OBJ(SCHEME_VEC_ELS(n)[1], scheme_kernel_symbol)) {
+	  if (n && !SAME_OBJ(SCHEME_VEC_ELS(n)[1], kernel_symbol)) {
 	    /* there is a single shadowed exclusion. */
 	  } else
 	    reprovide_kernel = 0;
@@ -2620,7 +2623,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (SCHEME_TRUEP(SCHEME_VEC_ELS(v)[3])) {
 	    /* If this is a kernel re-provide, don't provide after all. */
 	    if (reprovide_kernel
-		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], scheme_kernel_symbol)
+		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
 		&& SAME_OBJ(provided->keys[i], SCHEME_VEC_ELS(v)[2])) {
 	      /* skip */
 	    } else {
@@ -2656,7 +2659,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (SCHEME_FALSEP(SCHEME_VEC_ELS(v)[3])) {
 	    /* If this is a kernel re-provide, don't provide after all. */
 	    if (reprovide_kernel
-		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], scheme_kernel_symbol)
+		&& SAME_OBJ(SCHEME_VEC_ELS(v)[1], kernel_symbol)
 		&& SAME_OBJ(provided->keys[i], SCHEME_VEC_ELS(v)[2])) {
 	      /* skip */
 	    } else {
@@ -2762,7 +2765,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	for (; i < top; i++) {
 	  if (!SAME_OBJ(kernel->provides[i], exclude_hint)) {
 	    a = scheme_make_pair(kernel->provides[i], kernel->provides[i]);
-	    a = scheme_make_pair(scheme_kernel_symbol, a);
+	    a = scheme_make_pair(kernel_symbol, a);
 	    e = scheme_make_pair(a, e);
 	  }
 	}
@@ -2988,7 +2991,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
     else
       expstart_module(m, env, 0, idx);
 
-    is_kern = (SAME_OBJ(idx, scheme_kernel_symbol)
+    is_kern = (SAME_OBJ(idx, kernel_symbol)
 	       && !exns
 	       && !prefix
 	       && !iname
@@ -3082,7 +3085,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
 	scheme_extend_module_rename_with_kernel(rn);
 
       if (m->reprovide_kernel) {
-	idx = scheme_kernel_symbol;
+	idx = kernel_symbol;
 	exns = m->kernel_exclusion;
 	m = kernel;
 	is_kern = !prefix && !unpack_kern;

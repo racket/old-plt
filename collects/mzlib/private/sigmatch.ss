@@ -48,7 +48,6 @@
 					    src-context
 					    (sig-path-name s path)
 					    dest-context)
-					   who #f
 					   (current-continuation-marks)))))])
 		(and v
 		     (begin
@@ -63,7 +62,6 @@
 			      p
 			      dest-context
 			      p)
-			     who #f
 			     (current-continuation-marks)))))
 		       (hash-table-put! table s #f)
 		       #t)))]
@@ -78,7 +76,6 @@
 					    src-context
 					    (sig-path-name (car s) path)
 					    dest-context)
-					   who #f
 					   (current-continuation-marks)))))])
 		(and v
 		     (begin
@@ -93,7 +90,6 @@
 			      p
 			      dest-context
 			      p)
-			     who #f
 			     (current-continuation-marks)))))
 		       (hash-table-put! table (car s) #f)
 		       (check-sig-match v (cdr s) (cons (car s) path)
@@ -115,7 +111,6 @@
 		       (if (symbol? v) 'value 'sub-unit)
 		       p
 		       dest-context)
-		      who #f
 		      (current-continuation-marks)))))))
 	     #t)))
 

@@ -52,7 +52,7 @@ static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "buttonStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "buttonStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -366,10 +366,10 @@ static Scheme_Object *os_wxButtonSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in button% (bitmap label case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("set-label in button% (bitmap label case)", POFFSET+1, POFFSET+1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-label in button% (bitmap label case)", 0));
 
-    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","set-label"), objscheme_modidx, "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","set-label"), objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
+    { if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","set-label"), "bad bitmap: ", p[POFFSET+0])); if (x0 && BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+0])); }
     WITH_VAR_STACK(((wxButton *)((Scheme_Class_Object *)p[0])->primdata)->SetLabel(x0));
 
     
@@ -383,7 +383,7 @@ static Scheme_Object *os_wxButtonSetLabel(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("set-label in button% (string label case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("set-label in button% (string label case)", POFFSET+1, POFFSET+1, n, p));
     x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-label in button% (string label case)"));
 
     
@@ -575,7 +575,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in button% (bitmap label case)", objscheme_modidx, POFFSET+3, POFFSET+9, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in button% (bitmap label case)", POFFSET+3, POFFSET+9, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in button% (bitmap label case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+2], "initialization in button% (bitmap label case)", 0));
@@ -604,7 +604,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
     } else
       x8 = "button";
 
-    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), objscheme_modidx, "bad bitmap: ", p[POFFSET+2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
+    { if (x2 && !x2->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[POFFSET+2])); if (x2 && BM_SELECTED(x2)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("button%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[POFFSET+2])); }if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = WITH_VAR_STACK(new os_wxButton CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
 #ifdef MZ_PRECISE_GC
     WITH_VAR_STACK(realobj->gcInit_wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8));
@@ -632,7 +632,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(int n,  Scheme_Object *p[])
 
     int cb_pos = 0;
     if ((n < (POFFSET+3)) || (n > (POFFSET+9))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in button% (string label case)", objscheme_modidx, POFFSET+3, POFFSET+9, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in button% (string label case)", POFFSET+3, POFFSET+9, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in button% (string label case)", 0));
     x1 = (SCHEME_NULLP(p[POFFSET+1]) ? NULL : (WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[POFFSET+1], CB_USER)), cb_pos = 1, (CB_FUNCTYPE)CB_TOSCHEME));
     x2 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+2], "initialization in button% (string label case)"));
@@ -710,7 +710,7 @@ int objscheme_istype_wxButton(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "button% object or " XC_NULL_STR: "button% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "button% object or " XC_NULL_STR: "button% object", -1, 0, &obj));
     return 0;
   }
 }

@@ -29,7 +29,7 @@
 
 #if PRIM_CHECK_ARITY
   if (argc < prim->mina || (argc > prim->maxa && prim->maxa >= 0)) {
-    scheme_wrong_count(prim->name, prim->srcmod, prim->mina, prim->maxa, argc, argv);
+    scheme_wrong_count(prim->name, prim->mina, prim->maxa, argc, argv);
     return NULL; /* Shouldn't get here */
   }
 #endif
@@ -44,7 +44,7 @@
 
 #if PRIM_CHECK_MULTI
   if (v == SCHEME_MULTIPLE_VALUES) {
-    scheme_wrong_return_arity(NULL, NULL, 1, scheme_multiple_count, scheme_multiple_array, NULL);
+    scheme_wrong_return_arity(NULL, 1, scheme_multiple_count, scheme_multiple_array, NULL);
     return NULL; /* Shouldn't get here */
   }
 #endif

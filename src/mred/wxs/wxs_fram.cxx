@@ -90,7 +90,7 @@ static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "frameStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "frameStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -117,7 +117,7 @@ static int unbundle_symset_iconKind(Scheme_Object *v, const char *where) {
   else if (v == iconKind_0_sym) { return 0; }
   else if (v == iconKind_1_sym) { return 1; }
   else if (v == iconKind_2_sym) { return 2; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "iconKind symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "iconKind symbol", -1, 0, &v));
   return 0;
 }
 
@@ -963,7 +963,7 @@ static Scheme_Object *os_wxFrameSetIcon(int n,  Scheme_Object *p[])
   } else
     x2 = 0;
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), objscheme_modidx, "bad bitmap: ", p[POFFSET+0]);if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), objscheme_modidx, "bad bitmap: ", p[POFFSET+1]);if (x1 && (x1->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), objscheme_modidx, "mask bitmap is not monochrome: ", p[POFFSET+1]);
+  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[POFFSET+0]);if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "bad bitmap: ", p[POFFSET+1]);if (x1 && (x1->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("frame%","set-icon"), "mask bitmap is not monochrome: ", p[POFFSET+1]);
   WITH_VAR_STACK(((wxFrame *)((Scheme_Class_Object *)p[0])->primdata)->SetIcon(x0, x1, x2));
 
   
@@ -1038,7 +1038,7 @@ static Scheme_Object *os_wxFrame_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+2)) || (n > (POFFSET+8))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in frame%", objscheme_modidx, POFFSET+2, POFFSET+8, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in frame%", POFFSET+2, POFFSET+8, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxFrame(p[POFFSET+0], "initialization in frame%", 1));
   x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "initialization in frame%"));
   if (n > (POFFSET+2)) {
@@ -1127,7 +1127,7 @@ int objscheme_istype_wxFrame(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "frame% object or " XC_NULL_STR: "frame% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "frame% object or " XC_NULL_STR: "frame% object", -1, 0, &obj));
     return 0;
   }
 }

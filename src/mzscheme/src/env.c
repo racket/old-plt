@@ -305,10 +305,6 @@ static void make_init_env(void)
   /* The ordering of the first few init calls is important.
 	  Add to the end of the list, not the beginning. */
   MZTIMEIT(symbol-table, scheme_init_symbol_table());
-
-  REGISTER_SO(scheme_kernel_symbol);
-  scheme_kernel_symbol = scheme_intern_symbol("#%kernel");
-
   MZTIMEIT(type, scheme_init_type(env));
   MZTIMEIT(symbol-type, scheme_init_symbol_type(env));
   MZTIMEIT(fun, scheme_init_fun(env));
@@ -353,34 +349,34 @@ static void make_init_env(void)
 
   scheme_add_global_constant("namespace-variable-binding",
 			     scheme_make_prim_w_arity(namespace_variable_binding,
-						      "namespace-variable-binding", scheme_kernel_symbol,
+						      "namespace-variable-binding",
 						      1, 2),
 			     env);
 
   scheme_add_global_constant("syntax-local-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
-						      "syntax-local-value", scheme_kernel_symbol,
+						      "syntax-local-value",
 						      1, 2),
 			     env);
   scheme_add_global_constant("syntax-local-name", 
 			     scheme_make_prim_w_arity(local_exp_time_name,
-						      "syntax-local-name", scheme_kernel_symbol,
+						      "syntax-local-name",
 						      0, 0),
 			     env);
   scheme_add_global_constant("syntax-local-context", 
 			     scheme_make_prim_w_arity(local_context,
-						      "syntax-local-context", scheme_kernel_symbol,
+						      "syntax-local-context",
 						      0, 0),
 			     env);
   scheme_add_global_constant("syntax-local-introduce", 
 			     scheme_make_prim_w_arity(local_introduce,
-						      "syntax-local-introduce", scheme_kernel_symbol,
+						      "syntax-local-introduce",
 						      1, 1),
 			     env);
 
   scheme_add_global_constant("make-set!-transformer", 
 			     scheme_make_prim_w_arity(make_set_transformer,
-						      "make-set!-transformer", scheme_kernel_symbol,
+						      "make-set!-transformer",
 						      1, 1),
 			     env);
 
@@ -1633,7 +1629,7 @@ namespace_variable_binding(int argc, Scheme_Object *argv[])
   Scheme_Env *env;
 
   if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("namespace-defined-value", scheme_kernel_symbol, "symbol", 0, argc, argv);
+    scheme_wrong_type("namespace-defined-value", "symbol", 0, argc, argv);
 
   env = scheme_get_env(scheme_config);
 
@@ -1649,7 +1645,7 @@ namespace_variable_binding(int argc, Scheme_Object *argv[])
     v = scheme_lookup_global(argv[0], env);
     
     if (!v)
-      scheme_raise_exn(MZEXN_VARIABLE, scheme_kernel_symbol, argv[0],
+      scheme_raise_exn(MZEXN_VARIABLE, argv[0],
 		       "namespace-defined-value: %S is not defined",
 		       argv[0]);
 
@@ -1665,13 +1661,13 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, 
+    scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-value: not currently transforming");
 
   sym = argv[0];
 
   if (!(SCHEME_STXP(sym) && SCHEME_SYMBOLP(SCHEME_STX_VAL(sym))))
-    scheme_wrong_type("syntax-local-value", scheme_kernel_symbol, "syntax identifier", 0, argc, argv);
+    scheme_wrong_type("syntax-local-value", "syntax identifier", 0, argc, argv);
 
   if (argc > 1)
     scheme_check_proc_arity("syntax-local-value", 0, 1, argc, argv);
@@ -1709,7 +1705,7 @@ local_exp_time_name(int argc, Scheme_Object *argv[])
 
   sym = scheme_current_thread->current_local_name;
   if (!sym)
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, 
+    scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-name: not currently transforming");
 
   return sym;
@@ -1722,7 +1718,7 @@ local_context(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, 
+    scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-context: not currently transforming");
 
   if (env->flags & SCHEME_INTDEF_FRAME)
@@ -1743,12 +1739,12 @@ local_introduce(int argc, Scheme_Object *argv[])
 
   env = scheme_current_thread->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, 
+    scheme_raise_exn(MZEXN_MISC, 
 		     "syntax-local-introduce: not currently transforming");
 
   s = argv[0];
   if (!SCHEME_STXP(s))
-    scheme_wrong_type("syntax-local-introduce", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-local-introduce", "syntax", 0, argc, argv);
 
   if (scheme_current_thread->current_local_mark)
     s = scheme_add_remove_mark(s, scheme_current_thread->current_local_mark);

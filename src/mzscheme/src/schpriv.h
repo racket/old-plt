@@ -25,6 +25,9 @@ typedef struct Scheme_Env Link_Info;
 /*                         allocation and GC                              */
 /*========================================================================*/
 
+#define MAKE_CLOSED_PRIM(f,v,n,mi,ma) \
+  scheme_make_closed_prim_w_arity((Scheme_Closed_Prim *)f, (void *)v, n, mi, ma)
+
 #define _MALLOC_N(x, n, malloc) ((x*)malloc(sizeof(x)*(n)))
 #define MALLOC_ONE(x) _MALLOC_N(x, 1, scheme_malloc)
 #define MALLOC_ONE_TAGGED(x) _MALLOC_N(x, 1, scheme_malloc_tagged)
@@ -420,8 +423,6 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 			       Scheme_Object *props);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
-Scheme_Object *scheme_make_stx_for_source(Scheme_Object *sym, 
-					  Scheme_Object *modidx);
 
 Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src, 
 				      Scheme_Object *stx_wraps, 
@@ -596,7 +597,7 @@ typedef struct {
 typedef struct {
   Scheme_Type type;
   short count;
-  Scheme_Object *name; /* symbol or (cons name-sym src-modname) */
+  Scheme_Object *name;
   Scheme_Object *array[1];
 } Scheme_Case_Lambda;
 
@@ -614,21 +615,21 @@ typedef struct Scheme_Promise {
 } Scheme_Promise;
 
 Scheme_Object *
-scheme_make_prim_w_everything(Scheme_Prim *fun,
-			      const char *name, Scheme_Object *modidx,
+scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
+			      const char *name,
 			      short mina, short maxa,
 			      short folding,
 			      short minr, short maxr);
 Scheme_Object *
 scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun, 
 				     void *data,
-				     const char *name, Scheme_Object *modidx,
+				     const char *name, 
 				     short mina, short maxa,
 				     short folding,
 				     short minr, short maxr);
 
-#define scheme_make_prim_w_arity2(f, n, mod, mina, maxa, minr, maxr) \
-  scheme_make_prim_w_everything(f, n, mod, mina, maxa, 0, minr, maxr)
+#define scheme_make_prim_w_arity2(f, n, mina, maxa, minr, maxr) \
+  scheme_make_prim_w_everything(f, 0, n, mina, maxa, 0, minr, maxr)
 
 /*========================================================================*/
 /*                              control flow                              */
@@ -1225,7 +1226,7 @@ typedef struct Scheme_Closure_Compilation_Data
   short closure_size;
   short *closure_map;
   Scheme_Object *code;
-  Scheme_Object *name; /* symbol or (cons name-sym src-modname) */
+  Scheme_Object *name;
 } Scheme_Closure_Compilation_Data;
 
 typedef struct {
@@ -1584,8 +1585,6 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
 
 void scheme_clean_dead_env(Scheme_Env *env);
 
-extern Scheme_Object *scheme_kernel_symbol;
-
 /*========================================================================*/
 /*                         errors and exceptions                          */
 /*========================================================================*/
@@ -1786,7 +1785,7 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
 #define CURRENT_OUTPUT_PORT(config) scheme_get_param(config, MZCONFIG_OUTPUT_PORT)
-#define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, scheme_kernel_symbol, port, "%s: " kind " port is closed", who);
+#define CHECK_PORT_CLOSED(who, kind, port, closed) if (closed) scheme_raise_exn(MZEXN_I_O_PORT_CLOSED, port, "%s: " kind " port is closed", who);
 
 #ifdef USE_FCNTL_O_NONBLOCK
 # define MZ_NONBLOCKING O_NONBLOCK

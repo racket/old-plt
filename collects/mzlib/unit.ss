@@ -278,7 +278,6 @@
       (raise
        (make-exn:unit
 	(format "compound-unit: result of expression for tag ~s not a unit: ~e" tag unit)
-	'compound-unit (syntax-source-module (quote-syntax here))
 	(current-continuation-marks))))
     (unless (= num-imports (unit-num-imports unit))
       (raise
@@ -287,7 +286,6 @@
 		tag
 		(unit-num-imports unit)
 		num-imports)
-	'compound-unit (syntax-source-module (quote-syntax here))
 	(current-continuation-marks))))
     (list->vector
      (map (lambda (ex)
@@ -298,7 +296,6 @@
 		 (make-exn:unit
 		  (format "compount-unit: unit for tag ~s has no ~s export" 
 			  tag ex)
-		  'compound-unit (syntax-source-module (quote-syntax here))
 		  (current-continuation-marks)))]
 	       [(eq? (car l) ex)
 		i]
@@ -610,14 +607,12 @@
       (raise
        (make-exn:unit
 	(format "invoke-unit: result of unit expression was not a unit: ~e" u)
-	'invoke-unit (syntax-source-module (quote-syntax here))
 	(current-continuation-marks))))
     (unless (= (unit-num-imports u) n)
       (raise
        (make-exn:unit
 	(format "invoke-unit: expected a unit with ~a imports, given one with ~a imports"
 		n (unit-num-imports u))
-	'invoke-unit (syntax-source-module (quote-syntax here))
 	(current-continuation-marks)))))
 
   (define-syntax invoke-unit

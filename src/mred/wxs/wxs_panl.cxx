@@ -60,7 +60,7 @@ static int unbundle_symset_panelStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "panelStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "panelStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -84,7 +84,7 @@ static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "orientation symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "orientation symbol", -1, 0, &v));
   return 0;
 }
 
@@ -805,7 +805,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in panel% (panel parent case)", objscheme_modidx, POFFSET+1, POFFSET+7, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in panel% (panel parent case)", POFFSET+1, POFFSET+7, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in panel% (panel parent case)", 0));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in panel% (panel parent case)"));
@@ -857,7 +857,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in panel% (dialog case)", objscheme_modidx, POFFSET+1, POFFSET+7, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in panel% (dialog case)", POFFSET+1, POFFSET+7, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxDialogBox(p[POFFSET+0], "initialization in panel% (dialog case)", 0));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in panel% (dialog case)"));
@@ -909,7 +909,7 @@ static Scheme_Object *os_wxPanel_ConstructScheme(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-      WITH_VAR_STACK(scheme_wrong_count("initialization in panel% (frame case)", objscheme_modidx, POFFSET+1, POFFSET+7, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("initialization in panel% (frame case)", POFFSET+1, POFFSET+7, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxFrame(p[POFFSET+0], "initialization in panel% (frame case)", 0));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in panel% (frame case)"));
@@ -995,7 +995,7 @@ int objscheme_istype_wxPanel(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "panel% object or " XC_NULL_STR: "panel% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "panel% object or " XC_NULL_STR: "panel% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1081,7 +1081,7 @@ static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "dialogStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "dialogStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -1687,7 +1687,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+2)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in dialog%", objscheme_modidx, POFFSET+2, POFFSET+9, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in dialog%", POFFSET+2, POFFSET+9, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "initialization in dialog%", 1));
   x1 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+1], "initialization in dialog%"));
   if (n > (POFFSET+2)) {
@@ -1719,7 +1719,7 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(int n,  Scheme_Object *p[])
   } else
     x8 = "dialogBox";
 
-  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), objscheme_modidx, "frame or dialog box", POFFSET+0, n, p);WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("dialog%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
+  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("dialog%","initialization"), "frame or dialog box", POFFSET+0, n, p);WITH_VAR_STACK(wxsCheckEventspace(METHODNAME("dialog%","initialization")));if (!x5) x5 = -1;if (!x6) x6 = -1;
   realobj = WITH_VAR_STACK(new os_wxDialogBox CONSTRUCTOR_ARGS((x0, x1, x2, x3, x4, x5, x6, x7, x8)));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxDialogBox(x0, x1, x2, x3, x4, x5, x6, x7, x8));
@@ -1769,7 +1769,7 @@ int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "dialog% object or " XC_NULL_STR: "dialog% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "dialog% object or " XC_NULL_STR: "dialog% object", -1, 0, &obj));
     return 0;
   }
 }

@@ -128,7 +128,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 {
   if ((v == PS_PREVIEW) || (v == PS_PRINTER)) {
     scheme_arg_mismatch(METHODNAME("ps-setup%","set-mode"), 
-	objscheme_modidx, "only file mode is allowed for this platform, given: ",
+	"only file mode is allowed for this platform, given: ",
 	p);
   }
 }

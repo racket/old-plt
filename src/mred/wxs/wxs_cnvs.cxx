@@ -102,7 +102,7 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "canvasStyle symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "canvasStyle symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -126,7 +126,7 @@ static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "orientation symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "orientation symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1169,7 +1169,7 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n < (POFFSET+1)) || (n > (POFFSET+7))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in canvas%", objscheme_modidx, POFFSET+1, POFFSET+7, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in canvas%", POFFSET+1, POFFSET+7, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in canvas%", 0));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in canvas%"));
@@ -1260,7 +1260,7 @@ int objscheme_istype_wxCanvas(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "canvas% object or " XC_NULL_STR: "canvas% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "canvas% object or " XC_NULL_STR: "canvas% object", -1, 0, &obj));
     return 0;
   }
 }

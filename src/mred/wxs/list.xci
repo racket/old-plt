@@ -22,7 +22,7 @@
 @IFDEFINE l_EXTRA = NULLTERM : 1 : 0
 @IFDEFINE l_TERMINATE = NULLTERM : f[i] = 0; :
 @IFDEFINE l_COPY = POINTWISE : l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y; : l_COPYDEST=l_COPYSRC;
-@IFDEFINE l_OKTEST = DOOKTEST : { if (!((l_COPYDEST)->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, objscheme_modidx, "bad bitmap: ", SCHEME_CAR(l))); if (BM_SELECTED(l_COPYDEST)) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, objscheme_modidx, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l))); }
+@IFDEFINE l_OKTEST = DOOKTEST : { if (!((l_COPYDEST)->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l))); if (BM_SELECTED(l_COPYDEST)) WITH_VAR_STACK(scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l))); }
 @IFDEFINE l_INTTYPE = SIZEISLONG : long : int
 @IFDEFINE l_DIRECTMALLOC = DIRECTMALLOC : 1 : 0
 
@@ -71,7 +71,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   VAR_STACK_PUSH(2, f);
 
   len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, objscheme_modidx, "proper-list", -1, 0, &l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
@@ -85,7 +85,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, objscheme_modidx, "expected a proper list: ", orig_l));
+      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
       return NULL;
     }
 

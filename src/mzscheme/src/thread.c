@@ -357,151 +357,151 @@ void scheme_init_thread(Scheme_Env *env)
 {
   scheme_add_global_constant("dump-memory-stats",
 			     scheme_make_prim_w_arity(scheme_dump_gc_stats,
-						      "dump-memory-stats", scheme_kernel_symbol,
+						      "dump-memory-stats",
 						      0, 1), 
 			     env);
 
   scheme_add_global_constant("make-namespace",
 			     scheme_make_prim_w_arity(scheme_make_namespace,
-						      "make-namespace", scheme_kernel_symbol,
+						      "make-namespace",
 						      0, 1),
 			     env);
 #ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("thread",
 			     scheme_make_prim_w_arity(sch_thread,
-						      "thread", scheme_kernel_symbol,
+						      "thread",
 						      1, 1),
 			     env);
 #endif
   
   scheme_add_global_constant("sleep",
 			     scheme_make_prim_w_arity(sch_sleep,
-						      "sleep", scheme_kernel_symbol,
+						      "sleep",
 						      0, 1),
 			     env);
 
 #ifndef NO_SCHEME_THREADS
   scheme_add_global_constant("thread?",
 			     scheme_make_folding_prim(processp,
-						      "thread?", scheme_kernel_symbol,
+						      "thread?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("thread-running?",
 			     scheme_make_prim_w_arity(process_running_p,
-						      "thread-running?", scheme_kernel_symbol,
+						      "thread-running?",
 						      1, 1),
 			     env);
   scheme_add_global_constant("thread-wait",
 			     scheme_make_prim_w_arity(process_wait,
-						      "thread-wait", scheme_kernel_symbol,
+						      "thread-wait",
 						      1, 1),
 			     env);
   
   scheme_add_global_constant("current-thread", 
 			     scheme_make_prim_w_arity(sch_current,
-						      "current-thread", scheme_kernel_symbol, 
+						      "current-thread", 
 						      0, 0), 
 			     env);
 
   scheme_add_global_constant("kill-thread", 
 			     scheme_make_prim_w_arity(kill_thread,
-						      "kill-thread", scheme_kernel_symbol, 
+						      "kill-thread", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("break-thread", 
 			     scheme_make_prim_w_arity(break_thread,
-						      "break-thread", scheme_kernel_symbol, 
+						      "break-thread", 
 						      1, 1), 
 			     env);
 #endif
 
   scheme_add_global_constant("make-custodian",
 			     scheme_make_prim_w_arity(make_custodian,
-						      "make-custodian", scheme_kernel_symbol,
+						      "make-custodian",
 						      0, 1),
 			     env);
   scheme_add_global_constant("custodian?",
 			     scheme_make_folding_prim(custodian_p,
-						      "custodian?", scheme_kernel_symbol,
+						      "custodian?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("custodian-shutdown-all",
 			     scheme_make_prim_w_arity(custodian_close_all,
-						      "custodian-shutdown-all", scheme_kernel_symbol,
+						      "custodian-shutdown-all",
 						      1, 1),
 			     env);
   scheme_add_global_constant("current-custodian", 
 			     scheme_register_parameter(current_custodian,
-						       "current-custodian", scheme_kernel_symbol,
+						       "current-custodian",
 						       MZCONFIG_CUSTODIAN),
 			     env);
   scheme_add_global_constant("call-in-nested-thread",
 			     scheme_make_prim_w_arity(call_as_nested_thread,
-						      "call-in-nested-thread", scheme_kernel_symbol,
+						      "call-in-nested-thread",
 						      1, 2),
 			     env);
 
   scheme_add_global_constant("current-namespace", 
 			     scheme_register_parameter(current_namespace,
-						       "current-namespace", scheme_kernel_symbol,
+						       "current-namespace",
 						       MZCONFIG_ENV),
 			     env);
 
   scheme_add_global_constant("namespace?", 
 			     scheme_make_prim_w_arity(namespace_p,
-						      "namespace?", scheme_kernel_symbol, 
+						      "namespace?", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("parameter?", 
 			     scheme_make_prim_w_arity(parameter_p,
-						      "parameter?", scheme_kernel_symbol, 
+						      "parameter?", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("make-parameter", 
 			     scheme_make_prim_w_arity(make_parameter,
-						      "make-parameter", scheme_kernel_symbol, 
+						      "make-parameter", 
 						      1, 2), 
 			     env);
   scheme_add_global_constant("parameter-procedure=?", 
 			     scheme_make_prim_w_arity(parameter_procedure_eq,
-						      "parameter-procedure=?", scheme_kernel_symbol, 
+						      "parameter-procedure=?", 
 						      2, 2), 
 			     env);
 
   scheme_add_global_constant("make-will-executor", 
 			     scheme_make_prim_w_arity(make_will_executor,
-						      "make-will-executor", scheme_kernel_symbol, 
+						      "make-will-executor", 
 						      0, 0), 
 			     env);
   scheme_add_global_constant("will-executor?", 
 			     scheme_make_prim_w_arity(will_executor_p,
-						      "will-executor?", scheme_kernel_symbol, 
+						      "will-executor?", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("will-register", 
 			     scheme_make_prim_w_arity(register_will,
-						      "will-register", scheme_kernel_symbol, 
+						      "will-register", 
 						      3, 3), 
 			     env);
   scheme_add_global_constant("will-try-execute", 
 			     scheme_make_prim_w_arity(will_executor_try,
-						      "will-try-execute", scheme_kernel_symbol, 
+						      "will-try-execute", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("will-execute", 
 			     scheme_make_prim_w_arity(will_executor_go,
-						      "will-execute", scheme_kernel_symbol, 
+						      "will-execute", 
 						      1, 1), 
 			     env);
 
   scheme_add_global_constant("collect-garbage", 
 			     scheme_make_prim_w_arity(collect_garbage, 
-						      "collect-garbage", scheme_kernel_symbol,
+						      "collect-garbage",
 						      0, 0), 
 			     env);
   scheme_add_global_constant("current-memory-use", 
 			     scheme_make_prim_w_arity(current_memory_use, 
-						      "current-memory-use", scheme_kernel_symbol,
+						      "current-memory-use",
 						      0, 0), 
 			     env);
 
@@ -924,7 +924,7 @@ static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[])
 
   if (argc) {
     if (!SCHEME_CUSTODIANP(argv[0]))
-      scheme_wrong_type("make-custodian", scheme_kernel_symbol, "custodian", 0, argc, argv);
+      scheme_wrong_type("make-custodian", "custodian", 0, argc, argv);
     m = (Scheme_Custodian *)argv[0];
   } else
     m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
@@ -940,7 +940,7 @@ static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[])
 static Scheme_Object *custodian_close_all(int argc, Scheme_Object *argv[])
 {
   if (!SCHEME_CUSTODIANP(argv[0]))
-    scheme_wrong_type("custodian-shutdown-all", scheme_kernel_symbol, "custodian", 0, argc, argv);
+    scheme_wrong_type("custodian-shutdown-all", "custodian", 0, argc, argv);
 
   scheme_close_managed((Scheme_Custodian *)argv[0]);
 
@@ -1576,7 +1576,7 @@ static Scheme_Object *process_running_p(int argc, Scheme_Object *args[])
   int running;
 
   if (!SCHEME_THREADP(args[0]))
-    scheme_wrong_type("thread-running?", scheme_kernel_symbol, "thread", 0, argc, args);
+    scheme_wrong_type("thread-running?", "thread", 0, argc, args);
 
   running = ((Scheme_Thread *)args[0])->running;
 
@@ -1596,7 +1596,7 @@ static Scheme_Object *process_wait(int argc, Scheme_Object *args[])
   Scheme_Thread *p;
 
   if (!SCHEME_THREADP(args[0]))
-    scheme_wrong_type("thread-wait", scheme_kernel_symbol, "thread", 0, argc, args);
+    scheme_wrong_type("thread-wait", "thread", 0, argc, args);
 
   p = (Scheme_Thread *)args[0];
 
@@ -1747,7 +1747,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     if (SCHEME_CUSTODIANP(argv[1]))
       mgr = (Scheme_Custodian *)argv[1];
     else {
-      scheme_wrong_type("call-in-nested-thread", scheme_kernel_symbol, "custodian", 1, argc, argv);
+      scheme_wrong_type("call-in-nested-thread", "custodian", 1, argc, argv);
       return NULL;
     }
   } else
@@ -1809,7 +1809,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   if (!nested_exn_handler) {
     REGISTER_SO(nested_exn_handler);
     nested_exn_handler = scheme_make_prim_w_arity(def_nested_exn_handler,
-						  "nested-thread-exception-handler", scheme_kernel_symbol,
+						  "nested-thread-exception-handler",
 						  1, 1);
   }
 
@@ -1915,7 +1915,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 
   if (failure) {
     if (!v)
-      scheme_raise_exn(MZEXN_THREAD, scheme_kernel_symbol, "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
+      scheme_raise_exn(MZEXN_THREAD, "call-in-nested-thread: the thread was killed, or it exited via the default error escape handler");
     else
       scheme_raise(v);
   }
@@ -2101,7 +2101,7 @@ int scheme_can_break(Scheme_Thread *p, Scheme_Config *config)
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object **argv)
 {
-  scheme_raise_exn(MZEXN_BREAK, scheme_kernel_symbol, argv[0], "user break");
+  scheme_raise_exn(MZEXN_BREAK, argv[0], "user break");
 
   return scheme_void;
 }
@@ -2556,12 +2556,12 @@ sch_sleep(int argc, Scheme_Object *args[])
   float t;
 
   if (argc && !SCHEME_REALP(args[0]))
-    scheme_wrong_type("sleep", scheme_kernel_symbol, "non-negative real number", 0, argc, args);
+    scheme_wrong_type("sleep", "non-negative real number", 0, argc, args);
 
   if (argc) {
     t = scheme_real_to_double(args[0]);
     if (t < 0)
-      scheme_wrong_type("sleep", scheme_kernel_symbol, "non-negative real number", 0, argc, args);
+      scheme_wrong_type("sleep", "non-negative real number", 0, argc, args);
   } else
     t = 0;
 
@@ -2576,7 +2576,7 @@ static Scheme_Object *break_thread(int argc, Scheme_Object *args[])
   Scheme_Thread *p;
 
   if (!SAME_TYPE(SCHEME_TYPE(args[0]), scheme_thread_type))
-    scheme_wrong_type("break-thread", scheme_kernel_symbol, "thread", 0, argc, args);
+    scheme_wrong_type("break-thread", "thread", 0, argc, args);
 
   p = (Scheme_Thread *)args[0];
 
@@ -2679,7 +2679,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   Scheme_Thread *p = (Scheme_Thread *)argv[0];
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
-    scheme_wrong_type("kill-thread", scheme_kernel_symbol, "thread", 0, argc, argv);
+    scheme_wrong_type("kill-thread", "thread", 0, argc, argv);
 
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
@@ -2691,7 +2691,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   while (NOT_SAME_OBJ(m, current)) {
     m = CUSTODIAN_FAM(m->parent);
     if (!m) {
-      scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_MISC,
 		       "kill-thread: the current custodian does not "
 		       "manage the specified thread");
       return NULL;
@@ -2804,8 +2804,7 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
   data->guard = ((argc > 1) ? argv[1] : NULL);
 
   p = scheme_make_closed_prim_w_arity(do_param, (void *)data, 
-				      "parameter-procedure", NULL, 
-				      0, 1);
+				      "parameter-procedure", 0, 1);
   ((Scheme_Primitive_Proc *)p)->flags |= SCHEME_PRIM_IS_PARAMETER;
 
   return p;
@@ -2820,10 +2819,10 @@ static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object **argv)
 
   if (!((SCHEME_PRIMP(a) || SCHEME_CLSD_PRIMP(a))
 	&& (((Scheme_Primitive_Proc *)a)->flags & SCHEME_PRIM_IS_PARAMETER)))
-    scheme_wrong_type("parameter-procedure=?", scheme_kernel_symbol, "parameter-procedure", 0, argc, argv);
+    scheme_wrong_type("parameter-procedure=?", "parameter-procedure", 0, argc, argv);
   if (!((SCHEME_PRIMP(b) || SCHEME_CLSD_PRIMP(b))
 	&& (((Scheme_Primitive_Proc *)b)->flags & SCHEME_PRIM_IS_PARAMETER)))
-    scheme_wrong_type("parameter-procedure=?", scheme_kernel_symbol, "parameter-procedure", 1, argc, argv);
+    scheme_wrong_type("parameter-procedure=?", "parameter-procedure", 1, argc, argv);
 
   return (SAME_OBJ(a, b)
 	  ? scheme_true
@@ -2891,7 +2890,7 @@ static Scheme_Config *make_initial_config(void)
   {
     Scheme_Object *eh;
     eh = scheme_make_prim_w_arity2(scheme_default_eval_handler,
-				   "default-eval-handler", scheme_kernel_symbol,
+				   "default-eval-handler",
 				   1, 1,
 				   0, -1);
     scheme_set_param(config, MZCONFIG_EVAL_HANDLER, eh);
@@ -2901,12 +2900,12 @@ static Scheme_Config *make_initial_config(void)
     Scheme_Object *ph, *prh;
 
     ph = scheme_make_prim_w_arity(scheme_default_print_handler,
-				  "default-print-handler", scheme_kernel_symbol,
+				  "default-print-handler",
 				  1, 1);
     scheme_set_param(config, MZCONFIG_PRINT_HANDLER, ph);
 
     prh = scheme_make_prim_w_arity(scheme_default_prompt_read_handler,
-				   "default-prompt-read-handler", scheme_kernel_symbol,
+				   "default-prompt-read-handler",
 				   0, 0);
     scheme_set_param(config, MZCONFIG_PROMPT_READ_HANDLER, prh);
   }
@@ -2914,7 +2913,7 @@ static Scheme_Config *make_initial_config(void)
   {
     Scheme_Object *lh;
     lh = scheme_make_prim_w_arity2(scheme_default_load_extension,
-				   "default-load-extension-handler", scheme_kernel_symbol,
+				   "default-load-extension-handler",
 				   1, 1,
 				   0, -1);
     scheme_set_param(config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
@@ -2969,7 +2968,7 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
   return (Scheme_Object *)config;
 }
 
-Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, Scheme_Object *modidx, int which)
+Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int which)
 {
   Scheme_Object *o;
 
@@ -2981,7 +2980,7 @@ Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, Sche
   if (config_map[which])
     return config_map[which];
 
-  o = scheme_make_prim_w_arity(function, name, modidx, 0, 1);
+  o = scheme_make_prim_w_arity(function, name, 0, 1);
   ((Scheme_Primitive_Proc *)o)->flags |= SCHEME_PRIM_IS_PARAMETER;
 
   config_map[which] = o;
@@ -3046,7 +3045,7 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 	    r = NULL;
 	  
 	  if (!r) {
-	    scheme_wrong_type(name, scheme_kernel_symbol, expected, 0, argc, argv);
+	    scheme_wrong_type(name, expected, 0, argc, argv);
 	    return NULL;
 	  }
 	  
@@ -3130,7 +3129,7 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
     if (SAME_OBJ(argv[0], empty_symbol))
       empty = 1;
     else
-      scheme_wrong_type("make-namespace", scheme_kernel_symbol, "'empty", 0, argc, argv);
+      scheme_wrong_type("make-namespace", "'empty", 0, argc, argv);
   }
   
   env = scheme_make_empty_env();
@@ -3258,7 +3257,7 @@ static Scheme_Object *register_will(int argc, Scheme_Object **argv)
   WillRegistration *r;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_will_executor_type))
-    scheme_wrong_type("will-register", scheme_kernel_symbol, "will-executor", 0, argc, argv);
+    scheme_wrong_type("will-register", "will-executor", 0, argc, argv);
   scheme_check_proc_arity("will-register", 1, 2, argc, argv);
 
   r = MALLOC_ONE_RT(WillRegistration);
@@ -3278,7 +3277,7 @@ static Scheme_Object *will_executor_try(int argc, Scheme_Object **argv)
   WillExecutor *w;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_will_executor_type))
-    scheme_wrong_type("will-try-execute", scheme_kernel_symbol, "will-executor", 0, argc, argv);
+    scheme_wrong_type("will-try-execute", "will-executor", 0, argc, argv);
   
   w = (WillExecutor *)argv[0];
 
@@ -3293,7 +3292,7 @@ static Scheme_Object *will_executor_go(int argc, Scheme_Object **argv)
   WillExecutor *w;
 
   if (NOT_SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_will_executor_type))
-    scheme_wrong_type("will-execute", scheme_kernel_symbol, "will-executor", 0, argc, argv);
+    scheme_wrong_type("will-execute", "will-executor", 0, argc, argv);
   
   w = (WillExecutor *)argv[0];
 

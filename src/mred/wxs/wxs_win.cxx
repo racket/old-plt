@@ -97,7 +97,7 @@ static int unbundle_symset_sizeMode(Scheme_Object *v, const char *where) {
   else if (v == sizeMode_wxSIZE_AUTO_sym) { return wxSIZE_AUTO; }
   else if (v == sizeMode_wxSIZE_USE_EXISTING_sym) { return wxSIZE_USE_EXISTING; }
   else if (v == sizeMode_wxPOS_USE_MINUS_ONE_sym) { return wxPOS_USE_MINUS_ONE; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "sizeMode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "sizeMode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -124,7 +124,7 @@ static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
   else if (v == direction_wxBOTH_sym) { return wxBOTH; }
   else if (v == direction_wxVERTICAL_sym) { return wxVERTICAL; }
   else if (v == direction_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "direction symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "direction symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1214,7 +1214,7 @@ int objscheme_istype_wxWindow(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "window% object or " XC_NULL_STR: "window% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "window% object or " XC_NULL_STR: "window% object", -1, 0, &obj));
     return 0;
   }
 }

@@ -106,7 +106,7 @@ void wxsScheme_setup(Scheme_Env *env)
 
   wxREGGLOB(gc_bitmaps);
 
-  objscheme_init(env, scheme_intern_symbol("#%mred-kernel"));
+  objscheme_init(env);
 
   wxREGGLOB(setup_file_symbol);
   wxREGGLOB(init_file_symbol);
@@ -911,7 +911,7 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   char *f;
   
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("play-sound", objscheme_modidx, "string", 0, argc, argv);
+    scheme_wrong_type("play-sound", "string", 0, argc, argv);
   
   async = SCHEME_TRUEP(argv[1]);
   
@@ -1159,7 +1159,7 @@ static Scheme_Object *SpecialCtlKey(int, Scheme_Object *SCK_ARG[])
 static Scheme_Object *DefaultAppFileProc(int n, Scheme_Object *p[])
 {
   if (!SCHEME_STRINGP(p[0]))
-    scheme_wrong_type("default-application-file-handler", objscheme_modidx, "string",
+    scheme_wrong_type("default-application-file-handler", "string",
 		      0, n, p);
 
   return scheme_void;
@@ -1284,7 +1284,7 @@ Bool wxSchemeYield(void *sema)
     void **s;
 
     if (!SCHEME_SEMAP((Scheme_Object *)sema))
-      scheme_wrong_type("yield", objscheme_modidx, "semaphore or 'wait", -1, 0, (Scheme_Object **)&sema);
+      scheme_wrong_type("yield", "semaphore or 'wait", -1, 0, (Scheme_Object **)&sema);
 
     s = new void*;
     *s = sema;
@@ -1343,7 +1343,7 @@ static Scheme_Object *Shutdown_p(int argc, Scheme_Object **argv)
     return wxsIsContextShutdown((void *)argv[0]) ? scheme_true : scheme_false;
   }
 
-  scheme_wrong_type("eventspace-shutdown?", objscheme_modidx, "eventspace", 0, argc, argv);
+  scheme_wrong_type("eventspace-shutdown?", "eventspace", 0, argc, argv);
   return NULL;
 }
 
@@ -1386,7 +1386,7 @@ Scheme_Object *wxSchemeFindDirectory(int argc, Scheme_Object **argv)
   else if (argv[0] == setup_file_symbol)
     which = id_setup_file;
   else {
-    scheme_wrong_type("find-graphical-system-path", objscheme_modidx, "graphical path symbol",
+    scheme_wrong_type("find-graphical-system-path", "graphical path symbol",
 		      0, argc, argv);
     return NULL;
   }
@@ -1654,50 +1654,50 @@ static void wxScheme_Install(Scheme_Env *global_env)
   wxREGGLOB(wxs_app_file_proc);
 
   wxs_app_file_proc = scheme_make_prim_w_arity(DefaultAppFileProc,
-					       "default-application-file-handler", objscheme_modidx,
+					       "default-application-file-handler",
 					       1, 1);
   wxs_app_quit_proc = scheme_make_prim_w_arity(DefaultAppQuitProc,
-					       "default-application-quit-handler", objscheme_modidx,
+					       "default-application-quit-handler",
 					       0, 0);
 
   scheme_install_xc_global("special-control-key", 
 			   scheme_make_prim_w_arity(SpecialCtlKey, 
-						    "special-control-key", objscheme_modidx,
+						    "special-control-key", 
 						    1, 1), 
 			   global_env);
   
   scheme_install_xc_global("application-file-handler",
 			   scheme_make_prim_w_arity(ApplicationFileProc,
-						    "application-file-handler", objscheme_modidx,
+						    "application-file-handler",
 						    0, 1),
 			   global_env);
   scheme_install_xc_global("application-quit-handler",
 			   scheme_make_prim_w_arity(ApplicationQuitProc,
-						    "application-quit-handler", objscheme_modidx,
+						    "application-quit-handler",
 						    0, 1),
 			   global_env);
   
   scheme_install_xc_global("get-color-from-user",
 			   scheme_make_prim_w_arity(wxSchemeGetColourFromUser,
-						    "get-color-from-user", objscheme_modidx,
+						    "get-color-from-user",
 						    0, 3),
 			   global_env);
   
   scheme_install_xc_global("get-font-from-user",
 			   scheme_make_prim_w_arity(wxSchemeGetFontFromUser,
-						    "get-font-from-user", objscheme_modidx,
+						    "get-font-from-user",
 						    0, 3),
 			   global_env);
   
   scheme_install_xc_global("get-face-list",
 			   scheme_make_prim_w_arity(wxSchemeGetFontList,
-						    "get-face-list", objscheme_modidx,
+						    "get-face-list",
 						    0, 0),
 			   global_env);
   
   scheme_install_xc_global("get-panel-background",
 			   scheme_make_prim_w_arity(wxSchemeGetPanelBackground,
-						    "get-panel-background", objscheme_modidx,
+						    "get-panel-background",
 						    0, 0),
 			   global_env);
   
@@ -1706,41 +1706,41 @@ static void wxScheme_Install(Scheme_Env *global_env)
 #else
   scheme_install_xc_global("play-sound", 
 			     scheme_make_prim_w_arity(wxPlaySound, 
-						      "play-sound", objscheme_modidx,
+						      "play-sound", 
 						      2, 2), 
 			     global_env);
 #endif
 
   scheme_install_xc_global("make-eventspace",
 			     scheme_make_prim_w_arity(wxSchemeMakeEventspace,
-						      "make-eventspace", objscheme_modidx,
+						      "make-eventspace",
 						      0, 0),
 			     global_env);
   scheme_install_xc_global("current-eventspace",
 			   scheme_register_parameter(wxSchemeCurrentEventspace,
-						     "current-eventspace", objscheme_modidx,
+						     "current-eventspace",
 						     mred_eventspace_param),
 			   global_env);
   scheme_install_xc_global("event-dispatch-handler",
 			   scheme_register_parameter(wxSchemeEventDispatchHandler,
-						     "event-dispatch-handler", objscheme_modidx,
+						     "event-dispatch-handler",
 						     mred_event_dispatch_param),
 			   global_env);
   scheme_install_xc_global("eventspace?",
 			   scheme_make_prim_w_arity(Eventspace_p,
-						    "eventspace?", objscheme_modidx,
+						    "eventspace?",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("current-ps-setup",
 			   scheme_register_parameter(wxSchemeCurrentPSSetup,
-						     "current-ps-setup", objscheme_modidx,
+						     "current-ps-setup",
 						     mred_ps_setup_param),
 			   global_env);
 
   scheme_install_xc_global("queue-callback",
 			   scheme_make_prim_w_arity(queue_callback,
-						    "queue-callback", objscheme_modidx,
+						    "queue-callback",
 						    1, 2),
 			   global_env);
   MrEd_mid_queue_key = scheme_make_pair(scheme_false, scheme_false);
@@ -1749,85 +1749,85 @@ static void wxScheme_Install(Scheme_Env *global_env)
 
   scheme_install_xc_global("check-for-break",
 			   scheme_make_prim_w_arity(wxSchemeCheckForBreak,
-						    "check-for-break", objscheme_modidx,
+						    "check-for-break",
 						    0, 0),
 			   global_env);
 
 
   scheme_install_xc_global("find-graphical-system-path",
 			   scheme_make_prim_w_arity(wxSchemeFindDirectory,
-						    "find-graphical-system-path", objscheme_modidx,
+						    "find-graphical-system-path",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("get-top-level-windows",
 			   scheme_make_prim_w_arity(wxSchemeGetFrameList,
-						    "get-top-level-windows", objscheme_modidx,
+						    "get-top-level-windows",
 						    0, 0),
 			   global_env);
 
   scheme_install_xc_global("register-collecting-blit",
 			   scheme_make_prim_w_arity(wxSchemeRegisterCollectingBitmap,
-						    "register-collecting-blit", objscheme_modidx,
+						    "register-collecting-blit",
 						    7, 11),
 			   global_env);
   scheme_install_xc_global("unregister-collecting-blit",
 			   scheme_make_prim_w_arity(wxSchemeUnregisterCollectingBitmap,
-						    "unregister-collecting-blit", objscheme_modidx,
+						    "unregister-collecting-blit",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("shortcut-visible-in-label?",
 			   scheme_make_prim_w_arity(wLabelShortcutsVisible,
-						    "shortcut-visible-in-label?", objscheme_modidx,
+						    "shortcut-visible-in-label?",
 						    0, 1),
 			   global_env);
 
 
   scheme_install_xc_global("eventspace-shutdown?",
 			   scheme_make_prim_w_arity(Shutdown_p,
-						    "eventspace-shutdown?", objscheme_modidx,
+						    "eventspace-shutdown?",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("in-atomic-region",
 			   scheme_make_prim_w_arity(wxInAtomicRegion,
-						    "in-atomic-region", objscheme_modidx,
+						    "in-atomic-region",
 						    1, 1),
 			   global_env);
 
   scheme_install_xc_global("set-editor-snip-maker",
 			   scheme_make_prim_w_arity(SetMediaSnipMaker,
-						    "set-editor-snip-maker", objscheme_modidx,
+						    "set-editor-snip-maker",
 						    1, 1),
 			   global_env);
   
   scheme_install_xc_global("set-text-editor-maker",
 			   scheme_make_prim_w_arity(SetMediaEditMaker,
-						    "set-text-editor-maker", objscheme_modidx,
+						    "set-text-editor-maker",
 						    1, 1),
 			   global_env);
   
   scheme_install_xc_global("set-pasteboard-editor-maker",
 			   scheme_make_prim_w_arity(SetMediaPasteboardMaker,
-						    "set-pasteboard-editor-maker", objscheme_modidx,
+						    "set-pasteboard-editor-maker",
 						    1, 1),
 			   global_env);
   scheme_install_xc_global("set-menu-tester",
 			   scheme_make_prim_w_arity(SetIsMenu,
-						    "set-menu-tester", objscheme_modidx,
+						    "set-menu-tester",
 						    1, 1),
 			   global_env);
   
   scheme_install_xc_global("location->window",
 			   scheme_make_prim_w_arity(wxsLocationToWindow,
-						    "location->window", objscheme_modidx,
+						    "location->window",
 						    2, 2),
 			   global_env);
 
   scheme_install_xc_global("set-dialogs",
 			   scheme_make_prim_w_arity(SetDialogs,
-						    "set-dialogs", objscheme_modidx,
+						    "set-dialogs",
 						    4, 4),
 			   global_env);
 

@@ -23,7 +23,7 @@ static Bool IsColor(wxBitmap *bm)
 
 @CLASSBASE wxBitmap "bitmap" : "object"
 
-@MACRO STRINGENOUGH = if (SCHEME_STRTAG_VAL(p[POFFSET]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), objscheme_modidx, "string too short: ", p[POFFSET]));
+@MACRO STRINGENOUGH = if (SCHEME_STRTAG_VAL(p[POFFSET]) < (((x1 * x2) + 7) >> 3)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "string too short: ", p[POFFSET]));
 
 @MACRO USEALLFUEL[ok] = if (<ok>) WITH_VAR_STACK(scheme_thread_block(0.0));
 

@@ -469,34 +469,34 @@ scheme_init_port (Scheme_Env *env)
 
   scheme_add_global_constant("subprocess", 
 			     scheme_make_prim_w_arity2(subprocess, 
-						       "subprocess", scheme_kernel_symbol, 
+						       "subprocess", 
 						       4, -1,
 						       5, 5), 
 			     env);
   scheme_add_global_constant("subprocess-status", 
 			     scheme_make_prim_w_arity(subprocess_status, 
-						      "subprocess-status", scheme_kernel_symbol, 
+						      "subprocess-status", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("subprocess-wait", 
 			     scheme_make_prim_w_arity(subprocess_wait, 
-						      "subprocess-wait", scheme_kernel_symbol, 
+						      "subprocess-wait", 
 						      1, 1),
 			     env);
   scheme_add_global_constant("subprocess-pid", 
 			     scheme_make_prim_w_arity(subprocess_pid, 
-						      "subprocess-pid", scheme_kernel_symbol, 
+						      "subprocess-pid", 
 						      1, 1),
 			     env);
   scheme_add_global_constant("subprocess?", 
 			     scheme_make_prim_w_arity(subprocess_p, 
-						      "subprocess?", scheme_kernel_symbol, 
+						      "subprocess?", 
 						      1, 1),
 			     env);
 
   scheme_add_global_constant("send-event", 
 			     scheme_make_prim_w_arity(sch_send_event,
-						      "send-event", scheme_kernel_symbol, 
+						      "send-event", 
 						      3, 5), 
 			     env);
 }
@@ -1465,7 +1465,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port)
   /* Should be multiple values: */
   if (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES)) {
     if (scheme_multiple_count != 2) {
-      scheme_wrong_return_arity("port read-special result", scheme_kernel_symbol,
+      scheme_wrong_return_arity("port read-special result", 
 				2, scheme_multiple_count, scheme_multiple_array,
 				NULL);
       return NULL;
@@ -1478,13 +1478,13 @@ Scheme_Object *scheme_get_special(Scheme_Object *port)
     } else if (SCHEME_BIGNUMP(pd) && SCHEME_BIGPOS(pd)) {
       pos_delta = -2; /* FIXME - what to do with reading overflows? */
     } else {
-      scheme_wrong_type("port read-special result", scheme_kernel_symbol, 
+      scheme_wrong_type("port read-special result", 
 			"exact non-negative integer", 1, 
 			-scheme_multiple_count, scheme_multiple_array);
       return NULL;
     }
   } else {
-    scheme_wrong_return_arity("port read-special result", scheme_kernel_symbol,
+    scheme_wrong_return_arity("port read-special result", 
 			      2, 1, (Scheme_Object **)r,
 			      NULL);
     return NULL;
@@ -1705,12 +1705,12 @@ scheme_write_string_avail(int argc, Scheme_Object *argv[])
   Scheme_Output_Port *op;
 
   if (!SCHEME_STRINGP(argv[0])) {
-    scheme_wrong_type("write-string-avail", scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type("write-string-avail", "string", 0, argc, argv);
     return NULL;
   } else
     str = argv[0];
   if ((argc > 1) && !SCHEME_OUTPORTP(argv[1]))
-    scheme_wrong_type("write-string-avail", scheme_kernel_symbol, "output-port", 1, argc, argv);
+    scheme_wrong_type("write-string-avail", "output-port", 1, argc, argv);
   
   scheme_get_substring_indices("write-string-avail", str, 
 			       argc, argv,
@@ -1809,7 +1809,7 @@ void scheme_flush_output(Scheme_Object *o)
 
   if (SAME_OBJ(op->sub_type, file_output_port_type)) {
     if (fflush(((Scheme_Output_File *)op->port_data)->f)) {
-      scheme_raise_exn(MZEXN_I_O_PORT_WRITE, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 		       op,
 		       "error flushing file port (%e)",
 		       errno);
@@ -1849,7 +1849,7 @@ scheme_file_stream_port_p (int argc, Scheme_Object *argv[])
       return scheme_true;
 #endif    
   } else {
-    scheme_wrong_type("file-stream-port?", scheme_kernel_symbol, "port", 0, argc, argv);
+    scheme_wrong_type("file-stream-port?", "port", 0, argc, argv);
   }
 
   return scheme_false;
@@ -1878,7 +1878,7 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
   rel = dir ? dir : (drive ? drive : "");
   post = dir ? "\"" : "";
 
-  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   scheme_make_string(filename),
 		   fail_err_symbol,
 		   "%s: %s: \"%q\"%s%q%s (%e)", 
@@ -1903,11 +1903,11 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   Scheme_Object *result;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(name, scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type(name, "string", 0, argc, argv);
 
   for (i = 1 + offset; argc > i; i++) {
     if (!SCHEME_SYMBOLP(argv[i]))
-      scheme_wrong_type(name, scheme_kernel_symbol, "symbol", i, argc, argv);
+      scheme_wrong_type(name, "symbol", i, argc, argv);
     
     if (SAME_OBJ(argv[i], text_symbol)) {
       mode = "rt";
@@ -1920,7 +1920,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
       long alen;
 
       astr = scheme_make_args_string("other ", i, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_APPLICATION_TYPE, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       argv[offset + 1],
 		       scheme_intern_symbol("input file mode"),
 		       "%s: bad mode: %s%t", name,
@@ -1933,7 +1933,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
       long alen;
 
       astr = scheme_make_args_string("", -1, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[i],
 		       "%s: conflicting or redundant "
 		       "file modes given%t", name,
@@ -2017,11 +2017,11 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
   typepos = 1;
   
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type(name, scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type(name, "string", 0, argc, argv);
   
   for (i = 1 + offset; argc > i; i++) {
     if (!SCHEME_SYMBOLP(argv[i]))
-      scheme_wrong_type(name, scheme_kernel_symbol, "symbol", i, argc, argv);
+      scheme_wrong_type(name, "symbol", i, argc, argv);
   
     if (SAME_OBJ(argv[i], append_symbol)) {
       mode[0] = 'a';
@@ -2059,7 +2059,7 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
       long alen;
 
       astr = scheme_make_args_string("other ", i, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_APPLICATION_TYPE, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       argv[i],
 		       scheme_intern_symbol("output file mode"),
 		       "%s: bad mode: %s%s", name,
@@ -2072,7 +2072,7 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
       long alen;
 
       astr = scheme_make_args_string("", -1, argc, argv, &alen);
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       argv[i],
 		       "%s: conflicting or redundant "
 		       "file modes given%t", name,
@@ -2106,20 +2106,20 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
 
   if (fd == -1) {
     if (errno == EISDIR) {
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       argv[0],
 		       scheme_intern_symbol("already-exists"),
 		       "%s: \"%q\" exists as a directory", 
 		       name, filename);
     } else if (errno == EEXIST) {
       if (!existsok)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 scheme_intern_symbol("already-exists"),
 			 "%s: file \"%q\" exists", name, filename);
       else {
 	if (unlink(filename))
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
 			   "%s: error deleting \"%q\"", 
@@ -2144,7 +2144,7 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
 
   if (scheme_directory_exists(filename)) {
     if (!existsok)
-      scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       argv[0],
 		       scheme_intern_symbol("already-exists"),
 		       "%s: \"%q\" exists as a directory", 
@@ -2159,7 +2159,7 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
 #endif
     if (scheme_file_exists(filename)) {
       if (!existsok)
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 scheme_intern_symbol("already-exists"),
 			 "%s: file \"%q\" exists", name, filename);
@@ -2167,7 +2167,7 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
       if (existsok == 1) {
 #endif
 	if (MSC_IZE(unlink)(filename))
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
 			   "%s: error deleting \"%q\" (%e)", 
@@ -2187,7 +2187,7 @@ scheme_do_open_output_file (char *name, int offset, int argc, Scheme_Object *arg
       /* Can't truncate; try to replace */
       if (scheme_file_exists(filename)) {
 	if (MSC_IZE(unlink)(filename))
-	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+	  scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			   argv[0],
 			   fail_err_symbol,
 			   "%s: error deleting \"%q\"", 
@@ -2238,7 +2238,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
   int wis;
 
   if (!SCHEME_OUTPORTP(argv[0]) && !SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("file-position", scheme_kernel_symbol, "port", 0, argc, argv);
+    scheme_wrong_type("file-position", "port", 0, argc, argv);
   if (argc == 2) {
     int ok = 0;
 
@@ -2251,7 +2251,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
     }
 
     if (!ok)
-      scheme_wrong_type("file-position", scheme_kernel_symbol, "non-negative exact integer", 1, argc, argv);
+      scheme_wrong_type("file-position", "non-negative exact integer", 1, argc, argv);
   }
 
   f = NULL;
@@ -2300,7 +2300,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       && !had_fd
 #endif
       && !is)
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[0],
 		     "file-position: setting position allowed for file-stream and string ports only;"
 		     " given %s and position %s",
@@ -2308,7 +2308,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
 		     scheme_make_provided_string(argv[1], 2, NULL));
 
   if ((argc > 1) && SCHEME_BIGNUMP(argv[1]))
-    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     argv[1],
 		     "file-position: new position is too large: %s for port: %s",
 		     scheme_make_provided_string(argv[1], 2, NULL),
@@ -2318,7 +2318,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
     long n = SCHEME_INT_VAL(argv[1]);
     if (f) {
       if (fseek(f, n, 0)) {
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 fail_err_symbol,
 			 "file-position: position change failed on file (%e)",
@@ -2333,7 +2333,7 @@ scheme_file_position(int argc, Scheme_Object *argv[])
       }
 
       if (lseek(fd, n, 0) < 0) {
-	scheme_raise_exn(MZEXN_I_O_FILESYSTEM, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 			 argv[0],
 			 fail_err_symbol,
 			 "file-position: position change failed on stream (%e)",
@@ -2585,7 +2585,7 @@ static int file_getc(Scheme_Input_Port *port)
       if (scheme_return_eof_for_error()) {
 	return c;
       } else {
-	scheme_raise_exn(MZEXN_I_O_PORT_READ, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_I_O_PORT_READ,
 			 port,
 			 "error reading from file port \"%q\" (%e)",
 			 port->name, errno);
@@ -2783,7 +2783,7 @@ static int fd_getc(Scheme_Input_Port *port)
       if (scheme_return_eof_for_error()) {
 	return EOF;
       } else {
-	scheme_raise_exn(MZEXN_I_O_PORT_READ, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_I_O_PORT_READ,
 			 port,
 			 "error reading from stream port \"%q\" (%e)",
 			 port->name, errno);
@@ -3184,7 +3184,7 @@ static int tested_file_getc(Scheme_Input_Port *p)
   } else {
     /* must be an error */
     if (!scheme_return_eof_for_error()) {
-      scheme_raise_exn(MZEXN_I_O_PORT_READ, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_I_O_PORT_READ,
 		       p,
 		       "error reading from file port \"%q\" (%e)",
 		       p->name, tip->err_no);
@@ -3713,7 +3713,7 @@ tested_file_write_string(char *str, long dd, long llen, Scheme_Output_Port *port
 
     if (top->err_no) {
       top->inuse = 0;
-      scheme_raise_exn(MZEXN_I_O_PORT_WRITE, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 		       port,
 		       "error writing to file port (%e)",
 		       top->err_no);
@@ -3906,7 +3906,7 @@ file_write_string(char *str, long d, long len, Scheme_Output_Port *port)
   fp = ((Scheme_Output_File *)port->port_data)->f;
 
   if (fwrite(str + d, len, 1, fp) != 1) {
-    scheme_raise_exn(MZEXN_I_O_PORT_WRITE, scheme_kernel_symbol,
+    scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 		     port,
 		     "error writing to file port (%e)",
 		     errno);
@@ -3916,7 +3916,7 @@ file_write_string(char *str, long d, long len, Scheme_Output_Port *port)
   while (len--) {
     if (str[d] == '\n' || str[d] == '\r') {
       if (fflush(fp)) {
-	scheme_raise_exn(MZEXN_I_O_PORT_WRITE, scheme_kernel_symbol,
+	scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			 port,
 			 "error flushing file port (%e)",
 			 errno);
@@ -4090,7 +4090,7 @@ static int flush_fd(Scheme_Output_Port *op,
 	  END_ESCAPEABLE();
 	} else {
 	  fop->flushing = 0;
-	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE, scheme_kernel_symbol,
+	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			   op,
 			   "error writing to stream port (%e)",
 			   errno);
@@ -4413,7 +4413,7 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
   Scheme_Subprocess *sp = (Scheme_Subprocess *)argv[0];
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
-    scheme_wrong_type("subprocess-status", scheme_kernel_symbol, "subprocess", 0, argc, argv);
+    scheme_wrong_type("subprocess-status", "subprocess", 0, argc, argv);
 
 #if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
   { 
@@ -4455,7 +4455,7 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
       return scheme_make_integer_value(status);
   }
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "%s: not supported on this platform",
 		   "subprocess-status");
 #endif
@@ -4465,7 +4465,7 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
 static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
-    scheme_wrong_type("subprocess-wait", scheme_kernel_symbol, "subprocess", 0, argc, argv);
+    scheme_wrong_type("subprocess-wait", "subprocess", 0, argc, argv);
 
 #if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
   {
@@ -4480,7 +4480,7 @@ static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
     return scheme_void;
   }
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "%s: not supported on this platform",
 		   "subprocess-wait");
 #endif
@@ -4489,7 +4489,7 @@ static Scheme_Object *subprocess_wait(int argc, Scheme_Object **argv)
 static Scheme_Object *subprocess_pid(int argc, Scheme_Object **argv)
 {
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
-    scheme_wrong_type("subprocess-pid", scheme_kernel_symbol, "subprocess", 0, argc, argv);
+    scheme_wrong_type("subprocess-pid", "subprocess", 0, argc, argv);
 
   return scheme_make_integer_value(((Scheme_Subprocess *)argv[0])->pid);
 }
@@ -4718,7 +4718,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 # endif
 #endif
     } else
-      scheme_wrong_type(name, scheme_kernel_symbol, "file-stream-output-port", 0, c, args);
+      scheme_wrong_type(name, "file-stream-output-port", 0, c, args);
   } else
     outport = NULL;
 
@@ -4736,7 +4736,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 # endif
 #endif
     } else
-      scheme_wrong_type(name, scheme_kernel_symbol, "file-stream-input-port", 1, c, args);
+      scheme_wrong_type(name, "file-stream-input-port", 1, c, args);
   } else
     inport = NULL;
 
@@ -4754,12 +4754,12 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 # endif
 #endif
     } else
-      scheme_wrong_type(name, scheme_kernel_symbol, "file-stream-output-port", 2, c, args);
+      scheme_wrong_type(name, "file-stream-output-port", 2, c, args);
   } else
     errport = NULL;
 
   if (!SCHEME_STRINGP(args[3]) || scheme_string_has_null(args[3]))
-    scheme_wrong_type(name, scheme_kernel_symbol, STRING_W_NO_NULLS, 3, c, args);
+    scheme_wrong_type(name, STRING_W_NO_NULLS, 3, c, args);
 
   /*--------------------------------------*/
   /*          Sort out arguments          */
@@ -4784,7 +4784,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     
   for (i = 4; i < c; i++) { 
     if (!SCHEME_STRINGP(args[i]) || scheme_string_has_null(args[i]))
-      scheme_wrong_type(name, scheme_kernel_symbol, STRING_W_NO_NULLS, i, c, args);
+      scheme_wrong_type(name, STRING_W_NO_NULLS, i, c, args);
     argv[i - 3] = SCHEME_STR_VAL(args[i]);
   }
   argv[c - 3] = NULL;
@@ -4796,13 +4796,13 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*--------------------------------------*/
 
   if (!inport && PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, "%s: pipe failed (%e)", name, errno);
+    scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
   if (!outport && PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
     if (!inport) {
       MSC_IZE(close)(to_subprocess[0]);
       MSC_IZE(close)(to_subprocess[1]);
     }
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, "%s: pipe failed (%e)", name, errno);
+    scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
   }
   if (!errport && PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
     if (!inport) {
@@ -4813,7 +4813,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       MSC_IZE(close)(from_subprocess[0]);
       MSC_IZE(close)(from_subprocess[1]);
     }
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, "%s: pipe failed (%e)", name, errno);
+    scheme_raise_exn(MZEXN_MISC, "%s: pipe failed (%e)", name, errno);
   }
 
 #if defined(WINDOWS_PROCESSES) || defined(BEOS_PROCESSES)
@@ -4946,7 +4946,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 	MSC_IZE(close)(err_subprocess[0]);
 	MSC_IZE(close)(err_subprocess[1]);
       }
-      scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, "%s: fork failed", name);
+      scheme_raise_exn(MZEXN_MISC, "%s: fork failed", name);
       return scheme_false;
 
     case 0: /* child */
@@ -5098,7 +5098,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
     for (i = 0; i < 3; i++) {
       if (!SCHEME_FALSEP(args[i]))
-	scheme_arg_mismatch(name, scheme_kernel_symbol, 
+	scheme_arg_mismatch(name, 
 			    "non-#f port argument not allowed on this platform: ", 
 			    args[i]);
     }
@@ -5106,15 +5106,15 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     if (c > 4) {
       if (c == 5) {
 	if (!SCHEME_STRINGP(args[3]) || scheme_string_has_null(args[3]))
-	  scheme_wrong_type(name, scheme_kernel_symbol, STRING_W_NO_NULLS, 3, c, args);
+	  scheme_wrong_type(name, STRING_W_NO_NULLS, 3, c, args);
 	if (!strcmp(SCHEME_STR_VAL(args[3]), "by-id"))
-	  scheme_arg_mismatch(name, scheme_kernel_symbol, 
+	  scheme_arg_mismatch(name, 
 			      "in five-argument mode on this platform, the 4th argument must be \"by-id\": ", 
 			      args[3]);
 	
 	i = scheme_mac_start_app((char *)name, 1, args[4]);
       } else
-	scheme_arg_mismatch(name, scheme_kernel_symbol,
+	scheme_arg_mismatch(name,
 			    "extra arguments after the application id are "
 			    "not allowed on this platform: ",
 			    args[5]);
@@ -5137,7 +5137,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*  Subprocess functionality disabled   */
   /*--------------------------------------*/
 
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "%s: not supported on this platform",
 		   name);
   return NULL;
@@ -5154,9 +5154,9 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
   if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
     return result;
   else
-    scheme_raise_exn(MZEXN_MISC, scheme_kernel_symbol, "send-event: failed (%s%e)", stage, (int)err);
+    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%e)", stage, (int)err);
 #else
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, scheme_kernel_symbol,
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");
   return NULL;
 #endif

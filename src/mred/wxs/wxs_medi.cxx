@@ -78,7 +78,7 @@ static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == bufferType_wxEDIT_BUFFER_sym) { return wxEDIT_BUFFER; }
   else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return wxPASTEBOARD_BUFFER; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bufferType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bufferType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -126,7 +126,7 @@ static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
   else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return wxMEDIA_FF_TEXT_FORCE_CR; }
   else if (v == fileType_wxMEDIA_FF_SAME_sym) { return wxMEDIA_FF_SAME; }
   else if (v == fileType_wxMEDIA_FF_COPY_sym) { return wxMEDIA_FF_COPY; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "fileType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -167,7 +167,7 @@ static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
   else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
   else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
   else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "focus symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "focus symbol", -1, 0, &v));
   return 0;
 }
 
@@ -207,7 +207,7 @@ static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
   else if (v == bias_Sym_START_sym) { return Sym_START; }
   else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
   else if (v == bias_Sym_END_sym) { return Sym_END; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bias symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bias symbol", -1, 0, &v));
   return 0;
 }
 
@@ -245,7 +245,7 @@ static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
   else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
   else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
   else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "caret symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "caret symbol", -1, 0, &v));
   return 0;
 }
 
@@ -317,7 +317,7 @@ static int unbundle_symset_editOp(Scheme_Object *v, const char *where) {
   else if (v == editOp_wxEDIT_INSERT_GRAPHIC_BOX_sym) { return wxEDIT_INSERT_GRAPHIC_BOX; }
   else if (v == editOp_wxEDIT_INSERT_IMAGE_sym) { return wxEDIT_INSERT_IMAGE; }
   else if (v == editOp_wxEDIT_SELECT_ALL_sym) { return wxEDIT_SELECT_ALL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "editOp symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "editOp symbol", -1, 0, &v));
   return 0;
 }
 
@@ -358,7 +358,7 @@ static int unbundle_symset_printMethod(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == printMethod_0_sym) { return 0; }
   else if (v == printMethod_1_sym) { return 1; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "printMethod symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "printMethod symbol", -1, 0, &v));
   return 0;
 }
 
@@ -408,7 +408,7 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
   else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { return wxBITMAP_TYPE_JPEG; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -2986,7 +2986,7 @@ static Scheme_Object *os_wxMediaBufferPrintToDC(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxDC(p[POFFSET+0], "print-to-dc in editor<%>", 0));
 
-  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","print-to-dc"), objscheme_modidx, "bad device context: ", p[POFFSET+0]));
+  if (x0 && !x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","print-to-dc"), "bad device context: ", p[POFFSET+0]));
   WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->PrintToDC(x0));
 
   
@@ -3998,7 +3998,7 @@ static Scheme_Object *os_wxMediaBufferOnPaint(int n,  Scheme_Object *p[])
   x7 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+7], "on-paint in editor<%>"));
   x8 = WITH_VAR_STACK(unbundle_symset_caret(p[POFFSET+8], "on-paint in editor<%>"));
 
-  if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), objscheme_modidx, "bad device context: ", p[POFFSET+1]));
+  if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[POFFSET+1]));
   if (((Scheme_Class_Object *)p[0])->primflag)
     WITH_VAR_STACK(((os_wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else
@@ -5091,7 +5091,7 @@ int objscheme_istype_wxMediaBuffer(Scheme_Object *obj, const char *stop, int nul
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "editor% object or " XC_NULL_STR: "editor% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor% object or " XC_NULL_STR: "editor% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -5414,29 +5414,29 @@ void objscheme_setup_wxMediaGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxGetTheBufferDataClassList, "get-the-editor-data-class-list", objscheme_modidx, 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxGetTheBufferDataClassList, "get-the-editor-data-class-list", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-editor-data-class-list", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxGetTheSnipClassList, "get-the-snip-class-list", objscheme_modidx, 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxGetTheSnipClassList, "get-the-snip-class-list", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-snip-class-list", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxMediaSetXSelectionMode, "editor-set-x-selection-mode", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxMediaSetXSelectionMode, "editor-set-x-selection-mode", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("editor-set-x-selection-mode", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaPasteboardFunctions, "add-pasteboard-keymap-functions", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaPasteboardFunctions, "add-pasteboard-keymap-functions", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("add-pasteboard-keymap-functions", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaEditorFunctions, "add-text-keymap-functions", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaEditorFunctions, "add-text-keymap-functions", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("add-text-keymap-functions", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaBufferFunctions, "add-editor-keymap-functions", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaBufferFunctions, "add-editor-keymap-functions", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("add-editor-keymap-functions", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalFooter, "write-editor-global-footer", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalFooter, "write-editor-global-footer", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("write-editor-global-footer", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalHeader, "write-editor-global-header", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalHeader, "write-editor-global-header", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("write-editor-global-header", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxReadMediaGlobalFooter, "read-editor-global-footer", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxReadMediaGlobalFooter, "read-editor-global-footer", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("read-editor-global-footer", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxReadMediaGlobalHeader, "read-editor-global-header", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxReadMediaGlobalHeader, "read-editor-global-header", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("read-editor-global-header", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxSetMediaPrintMargin, "set-editor-print-margin", objscheme_modidx, 2, 2));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxSetMediaPrintMargin, "set-editor-print-margin", 2, 2));
   WITH_VAR_STACK(scheme_install_xc_global("set-editor-print-margin", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxGetMediaPrintMargin, "get-editor-print-margin", objscheme_modidx, 2, 2));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxMediaGlobalwxGetMediaPrintMargin, "get-editor-print-margin", 2, 2));
   WITH_VAR_STACK(scheme_install_xc_global("get-editor-print-margin", functmp, env));
 }
 

@@ -271,9 +271,7 @@
 		     [constructor-style
 		      (let* ([build-named
 			      (lambda (expr build-unnamed)
-				(let ([answer (let ([a (object-name expr)])
-						(and a
-						     (syntax-e a)))])
+				(let ([answer (object-name expr)])
 				  (if answer
 				      (if (eq? (with-handlers ([not-break-exn?
 								(lambda (x) #f)])
@@ -305,7 +303,7 @@
 			      [(vector? expr) `(vector ,@(map recur (vector->list expr)))]
 			      [(symbol? expr) `',expr]
 			      [(string? expr) expr]
-			      [(primitive? expr) (syntax-e (object-name expr))]
+			      [(primitive? expr) (object-name expr)]
 			      [(procedure? expr)
 			       (build-named 
 				expr

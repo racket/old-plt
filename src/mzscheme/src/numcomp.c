@@ -39,52 +39,52 @@ void scheme_init_numcomp(Scheme_Env *env)
 {
   scheme_add_global_constant("=", 
 			     scheme_make_folding_prim(eq,
-						      "=", scheme_kernel_symbol,
+						      "=",
 						      2, -1, 1),
 			     env);
   scheme_add_global_constant("<", 
 			     scheme_make_folding_prim(lt,
-						      "<", scheme_kernel_symbol,
+						      "<",
 						      2, -1, 1),
 			     env);
   scheme_add_global_constant(">", 
 			     scheme_make_folding_prim(gt,
-						      ">", scheme_kernel_symbol,
+						      ">",
 						      2, -1, 1),
 			     env);
   scheme_add_global_constant("<=", 
 			     scheme_make_folding_prim(lt_eq,
-						      "<=", scheme_kernel_symbol,
+						      "<=",
 						      2, -1, 1),
 			     env);
   scheme_add_global_constant(">=", 
 			     scheme_make_folding_prim(gt_eq,
-						      ">=", scheme_kernel_symbol,
+						      ">=",
 						      2, -1, 1),
 			     env);
   scheme_add_global_constant("zero?", 
 			     scheme_make_folding_prim(scheme_zero_p,
-						      "zero?", scheme_kernel_symbol,
+						      "zero?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("positive?", 
 			     scheme_make_folding_prim(scheme_positive_p,
-						      "positive?", scheme_kernel_symbol,
+						      "positive?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("negative?", 
 			     scheme_make_folding_prim(scheme_negative_p,
-						      "negative?", scheme_kernel_symbol,
+						      "negative?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("max", 
 			     scheme_make_folding_prim(sch_max,
-						      "max", scheme_kernel_symbol,
+						      "max",
 						      1, -1, 1),
 			     env);
   scheme_add_global_constant("min", 
 			     scheme_make_folding_prim(sch_min,
-						      "min", scheme_kernel_symbol,
+						      "min",
 						      1, -1, 1),
 			     env);
 }

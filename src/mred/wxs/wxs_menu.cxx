@@ -381,7 +381,7 @@ static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+3)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("append in menu% (submenu case)", objscheme_modidx, POFFSET+3, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("append in menu% (submenu case)", POFFSET+3, POFFSET+4, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "append in menu% (submenu case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "append in menu% (submenu case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[POFFSET+2], "append in menu% (submenu case)", 0));
@@ -408,7 +408,7 @@ static Scheme_Object *os_wxMenuAppend(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("append in menu% (string item case)", objscheme_modidx, POFFSET+2, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("append in menu% (string item case)", POFFSET+2, POFFSET+4, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "append in menu% (string item case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "append in menu% (string item case)"));
     if (n > (POFFSET+2)) {
@@ -446,7 +446,7 @@ static Scheme_Object *os_wxMenu_ConstructScheme(int n,  Scheme_Object *p[])
 
   int cb_pos = 0;
   if ((n > (POFFSET+2))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu%", objscheme_modidx, POFFSET+POFFSET, POFFSET+2, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in menu%", POFFSET+POFFSET, POFFSET+2, n, p));
   if (n > (POFFSET+0)) {
     x0 = (nstring)WITH_VAR_STACK(objscheme_unbundle_nullable_string(p[POFFSET+0], "initialization in menu%"));
   } else
@@ -507,7 +507,7 @@ int objscheme_istype_wxMenu(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "menu% object or " XC_NULL_STR: "menu% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "menu% object or " XC_NULL_STR: "menu% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -756,7 +756,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-bar%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxMenuBar CONSTRUCTOR_ARGS(()));
@@ -802,7 +802,7 @@ int objscheme_istype_wxMenuBar(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "menu-bar% object or " XC_NULL_STR: "menu-bar% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "menu-bar% object or " XC_NULL_STR: "menu-bar% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -971,7 +971,7 @@ static Scheme_Object *os_wxsMenuItem_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-item%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in menu-item%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxsMenuItem CONSTRUCTOR_ARGS(()));
@@ -1013,7 +1013,7 @@ int objscheme_istype_wxsMenuItem(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "menu-item% object or " XC_NULL_STR: "menu-item% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "menu-item% object or " XC_NULL_STR: "menu-item% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1089,7 +1089,7 @@ void objscheme_setup_wxsMenuItemGlobal(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsMenuItemGlobalwxsIdToMenuItem, "id-to-menu-item", objscheme_modidx, 1, 1));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsMenuItemGlobalwxsIdToMenuItem, "id-to-menu-item", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("id-to-menu-item", functmp, env));
 }
 

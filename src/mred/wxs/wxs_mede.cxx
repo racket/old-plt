@@ -95,7 +95,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   VAR_STACK_PUSH(2, f);
 
   len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, objscheme_modidx, "proper-list", -1, 0, &l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
@@ -109,7 +109,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, objscheme_modidx, "expected a proper list: ", orig_l));
+      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
       return NULL;
     }
 
@@ -153,7 +153,7 @@ static int unbundle_symset_selType(Scheme_Object *v, const char *where) {
   else if (v == selType_wxDEFAULT_SELECT_sym) { return wxDEFAULT_SELECT; }
   else if (v == selType_wxX_SELECT_sym) { return wxX_SELECT; }
   else if (v == selType_wxLOCAL_SELECT_sym) { return wxLOCAL_SELECT; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "selType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "selType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -192,7 +192,7 @@ static int unbundle_symset_moveCode(Scheme_Object *v, const char *where) {
   else if (v == moveCode_WXK_LEFT_sym) { return WXK_LEFT; }
   else if (v == moveCode_WXK_UP_sym) { return WXK_UP; }
   else if (v == moveCode_WXK_DOWN_sym) { return WXK_DOWN; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "moveCode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "moveCode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -223,7 +223,7 @@ static int unbundle_symset_move(Scheme_Object *v, const char *where) {
   else if (v == move_wxMOVE_LINE_sym) { return wxMOVE_LINE; }
   else if (v == move_wxMOVE_PAGE_sym) { return wxMOVE_PAGE; }
   else if (v == move_wxMOVE_WORD_sym) { return wxMOVE_WORD; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "move symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "move symbol", -1, 0, &v));
   return 0;
 }
 
@@ -254,7 +254,7 @@ static int unbundle_symset_findKind(Scheme_Object *v, const char *where) {
   else if (v == findKind_wxSNIP_BEFORE_sym) { return wxSNIP_BEFORE; }
   else if (v == findKind_wxSNIP_AFTER_sym) { return wxSNIP_AFTER; }
   else if (v == findKind_wxSNIP_AFTER_OR_NULL_sym) { return wxSNIP_AFTER_OR_NULL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "findKind symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "findKind symbol", -1, 0, &v));
   return 0;
 }
 
@@ -289,7 +289,7 @@ static int unbundle_symset_breakType(Scheme_Object *v, const char *where) {
   else if (v == breakType_wxBREAK_FOR_SELECTION_sym) { return wxBREAK_FOR_SELECTION; }
   else if (v == breakType_wxBREAK_FOR_USER_1_sym) { return wxBREAK_FOR_USER_1; }
   else if (v == breakType_wxBREAK_FOR_USER_2_sym) { return wxBREAK_FOR_USER_2; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "breakType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "breakType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -326,7 +326,7 @@ static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == direction_Sym_FORWARD_sym) { return Sym_FORWARD; }
   else if (v == direction_Sym_BACKWARD_sym) { return Sym_BACKWARD; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "direction symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "direction symbol", -1, 0, &v));
   return 0;
 }
 
@@ -365,7 +365,7 @@ static int unbundle_symset_horizontalAlignment(Scheme_Object *v, const char *whe
   else if (v == horizontalAlignment_Sym_LEFT_sym) { return Sym_LEFT; }
   else if (v == horizontalAlignment_Sym_RIGHT_sym) { return Sym_RIGHT; }
   else if (v == horizontalAlignment_Sym_CENTER_sym) { return Sym_CENTER; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "horizontalAlignment symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "horizontalAlignment symbol", -1, 0, &v));
   return 0;
 }
 
@@ -389,7 +389,7 @@ static int unbundle_symset_bufferType(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == bufferType_wxEDIT_BUFFER_sym) { return wxEDIT_BUFFER; }
   else if (v == bufferType_wxPASTEBOARD_BUFFER_sym) { return wxPASTEBOARD_BUFFER; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bufferType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bufferType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -437,7 +437,7 @@ static int unbundle_symset_fileType(Scheme_Object *v, const char *where) {
   else if (v == fileType_wxMEDIA_FF_TEXT_FORCE_CR_sym) { return wxMEDIA_FF_TEXT_FORCE_CR; }
   else if (v == fileType_wxMEDIA_FF_SAME_sym) { return wxMEDIA_FF_SAME; }
   else if (v == fileType_wxMEDIA_FF_COPY_sym) { return wxMEDIA_FF_COPY; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "fileType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fileType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -478,7 +478,7 @@ static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
   else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
   else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
   else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "focus symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "focus symbol", -1, 0, &v));
   return 0;
 }
 
@@ -518,7 +518,7 @@ static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
   else if (v == bias_Sym_START_sym) { return Sym_START; }
   else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
   else if (v == bias_Sym_END_sym) { return Sym_END; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bias symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bias symbol", -1, 0, &v));
   return 0;
 }
 
@@ -556,7 +556,7 @@ static int unbundle_symset_caret(Scheme_Object *v, const char *where) {
   else if (v == caret_wxSNIP_DRAW_NO_CARET_sym) { return wxSNIP_DRAW_NO_CARET; }
   else if (v == caret_wxSNIP_DRAW_SHOW_CARET_sym) { return wxSNIP_DRAW_SHOW_CARET; }
   else if (v == caret_wxSNIP_DRAW_SHOW_INACTIVE_CARET_sym) { return wxSNIP_DRAW_SHOW_INACTIVE_CARET; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "caret symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "caret symbol", -1, 0, &v));
   return 0;
 }
 
@@ -617,7 +617,7 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { return wxBITMAP_TYPE_PICT; }
   else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { return wxBITMAP_TYPE_JPEG; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { return wxBITMAP_TYPE_UNKNOWN; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bitmapType symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
   return 0;
 }
 
@@ -670,7 +670,7 @@ static int unbundle_symset_Bias(Scheme_Object *v, const char *where) {
   else if (v == Bias_Sym_NONE_sym) { return Sym_NONE; }
   else if (v == Bias_Sym_END_sym) { return Sym_END; }
   else if (v == Bias_Sym_END_ONLY_sym) { return Sym_END_ONLY; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "Bias symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "Bias symbol", -1, 0, &v));
   return 0;
 }
 
@@ -797,7 +797,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   VAR_STACK_PUSH(2, f);
 
   len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, objscheme_modidx, "proper-list", -1, 0, &l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
@@ -811,7 +811,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, objscheme_modidx, "expected a proper list: ", orig_l));
+      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
       return NULL;
     }
 
@@ -3985,7 +3985,7 @@ static Scheme_Object *os_wxMediaEditWriteToFile(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("write-to-file in text% (with position case)", objscheme_modidx, POFFSET+2, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("write-to-file in text% (with position case)", POFFSET+2, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOut(p[POFFSET+0], "write-to-file in text% (with position case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "write-to-file in text% (with position case)"));
     if (n > (POFFSET+2)) {
@@ -4007,7 +4007,7 @@ static Scheme_Object *os_wxMediaEditWriteToFile(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("write-to-file in text% (without position case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("write-to-file in text% (without position case)", POFFSET+1, POFFSET+1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamOut(p[POFFSET+0], "write-to-file in text% (without position case)", 0));
 
     
@@ -4039,7 +4039,7 @@ static Scheme_Object *os_wxMediaEditReadFromFile(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("read-from-file in text% (with position case)", objscheme_modidx, POFFSET+2, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("read-from-file in text% (with position case)", POFFSET+2, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamIn(p[POFFSET+0], "read-from-file in text% (with position case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "start", "read-from-file in text% (with position case)"));
     if (n > (POFFSET+2)) {
@@ -4062,7 +4062,7 @@ static Scheme_Object *os_wxMediaEditReadFromFile(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+2))) 
-      WITH_VAR_STACK(scheme_wrong_count("read-from-file in text% (without position case)", objscheme_modidx, POFFSET+1, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("read-from-file in text% (without position case)", POFFSET+1, POFFSET+2, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxMediaStreamIn(p[POFFSET+0], "read-from-file in text% (without position case)", 0));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "read-from-file in text% (without position case)"));
@@ -5113,7 +5113,7 @@ static Scheme_Object *os_wxMediaEditChangeStyle(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("change-style in text% (style-delta% and position case)", objscheme_modidx, POFFSET+2, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("change-style in text% (style-delta% and position case)", POFFSET+2, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyleDelta(p[POFFSET+0], "change-style in text% (style-delta% and position case)", 1));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "start", "change-style in text% (style-delta% and position case)"));
     if (n > (POFFSET+2)) {
@@ -5135,7 +5135,7 @@ static Scheme_Object *os_wxMediaEditChangeStyle(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("change-style in text% (style-delta% without position or snip% case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("change-style in text% (style-delta% without position or snip% case)", POFFSET+1, POFFSET+1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyleDelta(p[POFFSET+0], "change-style in text% (style-delta% without position or snip% case)", 1));
 
     
@@ -5154,7 +5154,7 @@ static Scheme_Object *os_wxMediaEditChangeStyle(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("change-style in text% (style% case)", objscheme_modidx, POFFSET+1, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("change-style in text% (style% case)", POFFSET+1, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxStyle(p[POFFSET+0], "change-style in text% (style% case)", 1));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "start", "change-style in text% (style% case)"));
@@ -5248,7 +5248,7 @@ static Scheme_Object *os_wxMediaEditKill(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+3)) 
-      WITH_VAR_STACK(scheme_wrong_count("kill in text% (position case)", objscheme_modidx, POFFSET+3, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("kill in text% (position case)", POFFSET+3, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "kill in text% (position case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "kill in text% (position case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "kill in text% (position case)"));
@@ -5266,7 +5266,7 @@ static Scheme_Object *os_wxMediaEditKill(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+1))) 
-      WITH_VAR_STACK(scheme_wrong_count("kill in text% (without position case)", objscheme_modidx, POFFSET+POFFSET, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("kill in text% (without position case)", POFFSET+POFFSET, POFFSET+1, n, p));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "kill in text% (without position case)"));
     } else
@@ -5318,7 +5318,7 @@ static Scheme_Object *os_wxMediaEditPaste(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("paste in text% (position case)", objscheme_modidx, POFFSET+2, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("paste in text% (position case)", POFFSET+2, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "paste in text% (position case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "end", "paste in text% (position case)"));
     if (n > (POFFSET+2)) {
@@ -5339,7 +5339,7 @@ static Scheme_Object *os_wxMediaEditPaste(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+1))) 
-      WITH_VAR_STACK(scheme_wrong_count("paste in text% (without position case)", objscheme_modidx, POFFSET+POFFSET, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("paste in text% (without position case)", POFFSET+POFFSET, POFFSET+1, n, p));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+0], "paste in text% (without position case)"));
     } else
@@ -5373,7 +5373,7 @@ static Scheme_Object *os_wxMediaEditCopy(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+3)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("copy in text% (position case)", objscheme_modidx, POFFSET+3, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("copy in text% (position case)", POFFSET+3, POFFSET+4, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "copy in text% (position case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "copy in text% (position case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+2], "start", "copy in text% (position case)"));
@@ -5396,7 +5396,7 @@ static Scheme_Object *os_wxMediaEditCopy(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+2))) 
-      WITH_VAR_STACK(scheme_wrong_count("copy in text% (without position case)", objscheme_modidx, POFFSET+POFFSET, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("copy in text% (without position case)", POFFSET+POFFSET, POFFSET+2, n, p));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "copy in text% (without position case)"));
     } else
@@ -5434,7 +5434,7 @@ static Scheme_Object *os_wxMediaEditCut(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+3)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("cut in text% (position case)", objscheme_modidx, POFFSET+3, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("cut in text% (position case)", POFFSET+3, POFFSET+4, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "cut in text% (position case)"));
     x1 = WITH_VAR_STACK(objscheme_unbundle_ExactLong(p[POFFSET+1], "cut in text% (position case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+2], "start", "cut in text% (position case)"));
@@ -5457,7 +5457,7 @@ static Scheme_Object *os_wxMediaEditCut(int n,  Scheme_Object *p[])
 
     
     if ((n > (POFFSET+2))) 
-      WITH_VAR_STACK(scheme_wrong_count("cut in text% (without position case)", objscheme_modidx, POFFSET+POFFSET, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("cut in text% (without position case)", POFFSET+POFFSET, POFFSET+2, n, p));
     if (n > (POFFSET+0)) {
       x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "cut in text% (without position case)"));
     } else
@@ -5513,7 +5513,7 @@ static Scheme_Object *os_wxMediaEditDelete(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+1)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("delete in text% (position case)", objscheme_modidx, POFFSET+1, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("delete in text% (position case)", POFFSET+1, POFFSET+3, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+0], "start", "delete in text% (position case)"));
     if (n > (POFFSET+1)) {
       x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_symbol_integer(p[POFFSET+1], "back", "delete in text% (position case)"));
@@ -5536,7 +5536,7 @@ static Scheme_Object *os_wxMediaEditDelete(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+0)) 
-      WITH_VAR_STACK(scheme_wrong_count("delete in text% (no position case)", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("delete in text% (no position case)", POFFSET+0, POFFSET+0, n, p));
 
     
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Delete());
@@ -5568,7 +5568,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (string and position case)", objscheme_modidx, POFFSET+2, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (string and position case)", POFFSET+2, POFFSET+4, n, p));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert in text% (string and position case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "insert in text% (string and position case)"));
     if (n > (POFFSET+2)) {
@@ -5595,7 +5595,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (string without position case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (string without position case)", POFFSET+1, POFFSET+1, n, p));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "insert in text% (string without position case)"));
 
     x0 = SCHEME_STRTAG_VAL(p[POFFSET+0]);
@@ -5616,7 +5616,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+3)) || (n > (POFFSET+5))) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (length and string without position case)", objscheme_modidx, POFFSET+3, POFFSET+5, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (length and string without position case)", POFFSET+3, POFFSET+5, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "insert in text% (length and string without position case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "insert in text% (length and string without position case)"));
     x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+2], "insert in text% (length and string without position case)"));
@@ -5629,7 +5629,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
     } else
       x4 = TRUE;
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), objscheme_modidx, "bad string length: ", p[POFFSET+0]));
+    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+0]));
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0, x1, x2, x3, x4));
 
     
@@ -5644,11 +5644,11 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+2)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (length, string, and position case)", objscheme_modidx, POFFSET+2, POFFSET+2, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (length, string, and position case)", POFFSET+2, POFFSET+2, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "insert in text% (length, string, and position case)"));
     x1 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+1], "insert in text% (length, string, and position case)"));
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), objscheme_modidx, "bad string length: ", p[POFFSET+0]));
+    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[POFFSET+1]))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[POFFSET+0]));
     WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->Insert(x0, x1));
 
     
@@ -5665,7 +5665,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+4))) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (snip% and position case)", objscheme_modidx, POFFSET+2, POFFSET+4, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (snip% and position case)", POFFSET+2, POFFSET+4, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "insert in text% (snip% and position case)", 0));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "insert in text% (snip% and position case)"));
     if (n > (POFFSET+2)) {
@@ -5691,7 +5691,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (snip% without position case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (snip% without position case)", POFFSET+1, POFFSET+1, n, p));
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+0], "insert in text% (snip% without position case)", 0));
 
     
@@ -5709,7 +5709,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if ((n < (POFFSET+2)) || (n > (POFFSET+3))) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (character and position case)", objscheme_modidx, POFFSET+2, POFFSET+3, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (character and position case)", POFFSET+2, POFFSET+3, n, p));
     x0 = ((unsigned char)WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "insert in text% (character and position case)")));
     x1 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+1], "insert in text% (character and position case)"));
     if (n > (POFFSET+2)) {
@@ -5730,7 +5730,7 @@ static Scheme_Object *os_wxMediaEditInsert(int n,  Scheme_Object *p[])
 
     
     if (n != (POFFSET+1)) 
-      WITH_VAR_STACK(scheme_wrong_count("insert in text% (character without position case)", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+      WITH_VAR_STACK(scheme_wrong_count("insert in text% (character without position case)", POFFSET+1, POFFSET+1, n, p));
     x0 = ((unsigned char)WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "insert in text% (character without position case)")));
 
     
@@ -6575,7 +6575,7 @@ static Scheme_Object *os_wxMediaEditOnPaint(int n,  Scheme_Object *p[])
   x7 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+7], "on-paint in text%"));
   x8 = WITH_VAR_STACK(unbundle_symset_caret(p[POFFSET+8], "on-paint in text%"));
 
-  if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), objscheme_modidx, "bad device context: ", p[POFFSET+1]));
+  if (x1 && !x1->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad device context: ", p[POFFSET+1]));
   if (((Scheme_Class_Object *)p[0])->primflag)
     WITH_VAR_STACK(((os_wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaEdit::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8));
   else
@@ -7390,7 +7390,7 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if ((n > (POFFSET+2))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in text%", objscheme_modidx, POFFSET+POFFSET, POFFSET+2, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in text%", POFFSET+POFFSET, POFFSET+2, n, p));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+0], "initialization in text%"));
   } else
@@ -7578,7 +7578,7 @@ int objscheme_istype_wxMediaEdit(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "text% object or " XC_NULL_STR: "text% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "text% object or " XC_NULL_STR: "text% object", -1, 0, &obj));
     return 0;
   }
 }

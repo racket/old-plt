@@ -1924,7 +1924,6 @@
 	     (make-exn:i/o:filesystem
 	      (string->immutable-string
 	       (format "load/cd: cannot open a directory: ~s" n))
-	      'load/cd 'mzscheme
 	      (current-continuation-marks)
 	      n
 	      #f))
@@ -1938,7 +1937,6 @@
 			 (format 
 			  "load/cd: directory of ~s does not exist (current directory is ~s)" 
 			  n (current-directory)))
-			'load/cd 'mzscheme
 			(current-continuation-marks)
 			base
 			#f)))
@@ -2028,7 +2026,6 @@
       (raise (make-exn:i/o:filesystem
 	      (string->immutable-string
 	       (format "~a: invalid relative path: ~s" who s))
-	      who 'mzscheme
 	      (current-continuation-marks) s 'ill-formed-path))))
 
   (define (-check-collection who collection collection-path)
@@ -2044,7 +2041,6 @@
 	      (string->immutable-string
 	       (format "~a: collection not found: ~s in any of: ~s" 
 		       who collection all-paths))
-	      who 'mzscheme
 	      (current-continuation-marks)
 	      collection
 	      #f))
@@ -2063,7 +2059,6 @@
 				  (string->immutable-string
 				   (format "~a: collection ~s does not have sub-collection: ~s in: ~s"
 					   who c (car l) p))
-				  who 'mzscheme
 				  (current-continuation-marks)
 				  nc
 				  #f)))))))

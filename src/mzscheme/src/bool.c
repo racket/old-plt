@@ -56,27 +56,27 @@ void scheme_init_bool (Scheme_Env *env)
 {
   REGISTER_SO(scheme_not_prim);
 
-  scheme_not_prim = scheme_make_folding_prim(not_prim, "not", scheme_kernel_symbol, 1, 1, 1);
+  scheme_not_prim = scheme_make_folding_prim(not_prim, "not", 1, 1, 1);
 
   scheme_add_global_constant("not", scheme_not_prim, env);
   scheme_add_global_constant("boolean?", 
-			     scheme_make_folding_prim(boolean_p_prim,
-						      "boolean?", scheme_kernel_symbol, 
+			     scheme_make_folding_prim(boolean_p_prim, 
+						      "boolean?",
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("eq?", 
-			     scheme_make_folding_prim(eq_prim,
-						      "eq?", scheme_kernel_symbol, 
+			     scheme_make_folding_prim(eq_prim, 
+						      "eq?",
 						      2, 2, 1), 
 			     env);
   scheme_add_global_constant("eqv?", 
-			     scheme_make_folding_prim(eqv_prim,
-						      "eqv?", scheme_kernel_symbol, 
+			     scheme_make_folding_prim(eqv_prim, 
+						      "eqv?",
 						      2, 2, 1), 
 			     env);
   scheme_add_global_constant("equal?", 
-			     scheme_make_prim_w_arity(equal_prim,
-						      "equal?", scheme_kernel_symbol, 
+			     scheme_make_prim_w_arity(equal_prim, 
+						      "equal?",
 						      2, 2),
 			     env);
 }

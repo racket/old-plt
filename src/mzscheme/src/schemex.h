@@ -46,9 +46,7 @@ Scheme_Object *(*scheme_param_config)(char *name, Scheme_Object *pos,
 				   int arity, 
 				   Scheme_Prim *check, char *expected,
 				   int isbool);
-Scheme_Object *(*scheme_register_parameter)(Scheme_Prim *function, 
-					 char *name, Scheme_Object *modidx, 
-					 int which);
+Scheme_Object *(*scheme_register_parameter)(Scheme_Prim *function, char *name, int which);
 Scheme_Env *(*scheme_get_env)(Scheme_Config *config);
 /*========================================================================*/
 /*                                threads                                 */
@@ -95,22 +93,18 @@ void (*scheme_add_atexit_closer)(Scheme_Exit_Closer_Func f);
 /*                              error handling                            */
 /*========================================================================*/
 void (*scheme_signal_error)(char *msg, ...);
-void (*scheme_raise_exn)(int exnid, Scheme_Object *modidx, ...);
+void (*scheme_raise_exn)(int exnid, ...);
 void (*scheme_warning)(char *msg, ...);
 void (*scheme_raise)(Scheme_Object *exn);
-void (*scheme_wrong_count)(const char *name, Scheme_Object *modidx,
-			int minc, int maxc, int argc,
+void (*scheme_wrong_count)(const char *name, int minc, int maxc, int argc,
 			Scheme_Object **argv);
-void (*scheme_case_lambda_wrong_count)(const char *name, Scheme_Object *modidx,
-				    int argc, Scheme_Object **argv, 
-				    int count, ...);
-void (*scheme_wrong_type)(const char *name, Scheme_Object *modidx,
-		       const char *expected, 
+void (*scheme_case_lambda_wrong_count)(const char *name, int argc, 
+				    Scheme_Object **argv, int count, ...);
+void (*scheme_wrong_type)(const char *name, const char *expected, 
 		       int which, int argc,
 		       Scheme_Object **argv);
-void (*scheme_arg_mismatch)(const char *name, Scheme_Object *modidx,
-			 const char *msg, Scheme_Object *o);
-void (*scheme_wrong_return_arity)(const char *where, Scheme_Object *modidx,
+void (*scheme_arg_mismatch)(const char *name, const char *msg, Scheme_Object *o);
+void (*scheme_wrong_return_arity)(const char *where, 
 			       int expected, int got,
 			       Scheme_Object **argv,
 			       const char *context_detail, ...);
@@ -252,19 +246,22 @@ Scheme_Object *(*scheme_hash_get)(Scheme_Hash_Table *table, Scheme_Object *key);
 /*                   basic Scheme value constructors                      */
 /*========================================================================*/
 Scheme_Object *(*scheme_make_prim)(Scheme_Prim *prim);
+Scheme_Object *(*scheme_make_noneternal_prim)(Scheme_Prim *prim);
 Scheme_Object *(*scheme_make_closed_prim)(Scheme_Closed_Prim *prim, void *data);
-Scheme_Object *(*scheme_make_prim_w_arity)(Scheme_Prim *prim,
-					const char *name, Scheme_Object *modidx,
+Scheme_Object *(*scheme_make_prim_w_arity)(Scheme_Prim *prim, const char *name,
 					short mina, short maxa);
 Scheme_Object *(*scheme_make_folding_prim)(Scheme_Prim *prim, 
-					const char *name, Scheme_Object *modidx,
+					const char *name,
 					short mina, short maxa,
 					short functional);
-Scheme_Object *(*scheme_make_closed_prim_w_arity)(Scheme_Closed_Prim *prim, void *data, 
-					       const char *name, Scheme_Object *modidx,
+Scheme_Object *(*scheme_make_noneternal_prim_w_arity)(Scheme_Prim *prim, 
+						   const char *name, 
+						   short mina, short maxa);
+Scheme_Object *(*scheme_make_closed_prim_w_arity)(Scheme_Closed_Prim *prim, 
+					       void *data, const char *name,
 					       short mina, short maxa);
-Scheme_Object *(*scheme_make_folding_closed_prim)(Scheme_Closed_Prim *prim, void *data,
-					       const char *name, Scheme_Object *modidx,
+Scheme_Object *(*scheme_make_folding_closed_prim)(Scheme_Closed_Prim *prim, 
+					       void *data, const char *name,
 					       short mina, short maxa,
 					       short functional);
 Scheme_Object *(*scheme_make_pair)(Scheme_Object *car, Scheme_Object *cdr);
@@ -293,7 +290,7 @@ Scheme_Object **scheme_char_constants;
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);
 int (*scheme_get_unsigned_int_val)(Scheme_Object *o, unsigned long *v);
 double (*scheme_real_to_double)(Scheme_Object *r);
-const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error, Scheme_Object **srcmod);
+const char *(*scheme_get_proc_name)(Scheme_Object *p, int *len, int for_error);
 /*========================================================================*/
 /*                               bignums                                  */
 /*========================================================================*/

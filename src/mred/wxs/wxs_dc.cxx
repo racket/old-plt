@@ -58,7 +58,7 @@ static int unbundle_symset_textMode(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == textMode_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == textMode_wxSOLID_sym) { return wxSOLID; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "textMode symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "textMode symbol", -1, 0, &v));
   return 0;
 }
 
@@ -94,7 +94,7 @@ static int unbundle_symset_bitmapDrawStyle(Scheme_Object *v, const char *where) 
   else if (v == bitmapDrawStyle_wxSOLID_sym) { return wxSOLID; }
   else if (v == bitmapDrawStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
   else if (v == bitmapDrawStyle_wxXOR_sym) { return wxXOR; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bitmapDrawStyle symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapDrawStyle symbol", -1, 0, &v));
   return 0;
 }
 
@@ -118,7 +118,7 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == fillKind_wxODDEVEN_RULE_sym) { return wxODDEVEN_RULE; }
   else if (v == fillKind_wxWINDING_RULE_sym) { return wxWINDING_RULE; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "fillKind symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "fillKind symbol", -1, 0, &v));
   return 0;
 }
 
@@ -245,7 +245,7 @@ static void* MyGetOrigin(wxDC *dc)
 
 
 
-#define DO_OK_CHECK(name) if (!((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(name, objscheme_modidx, "device context is not ok", THEOBJ));
+#define DO_OK_CHECK(name) if (!((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(name, "device context is not ok", THEOBJ));
 
 
 
@@ -317,7 +317,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
   VAR_STACK_PUSH(2, f);
 
   len = WITH_VAR_STACK(scheme_proper_list_length(l));
-  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, objscheme_modidx, "proper-list", -1, 0, &l));
+  if (len < 0) WITH_VAR_STACK(scheme_wrong_type(who, "proper-list", -1, 0, &l));
   if (c) *c = len;
 
   if (!(len + l_EXTRA))
@@ -331,7 +331,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l)) {
-      WITH_VAR_STACK(scheme_arg_mismatch(who, objscheme_modidx, "expected a proper list: ", orig_l));
+      WITH_VAR_STACK(scheme_arg_mismatch(who, "expected a proper list: ", orig_l));
       return NULL;
     }
 
@@ -960,7 +960,7 @@ static Scheme_Object *os_wxDCMyTextExtent(int n,  Scheme_Object *p[])
   } else
     x3 = 0;
 
-  if (x3 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), objscheme_modidx, "string index too large: ", p[POFFSET+3]));DO_OK_CHECK(METHODNAME("dc<%>","get-text-extent"))
+  if (x3 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","get-text-extent"), "string index too large: ", p[POFFSET+3]));DO_OK_CHECK(METHODNAME("dc<%>","get-text-extent"))
   r = WITH_VAR_STACK(MyTextExtent(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3));
 
   
@@ -1134,7 +1134,7 @@ static Scheme_Object *os_wxDCSetClippingRegion(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxRegion(p[POFFSET+0], "set-clipping-region in dc<%>", 1));
 
-  if (x0 && (x0->GetDC() != ((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), objscheme_modidx, "provided a different dc's region: ", p[POFFSET+0]));
+  if (x0 && (x0->GetDC() != ((wxDC *)((Scheme_Class_Object *)THEOBJ)->primdata))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","set-clipping-region"), "provided a different dc's region: ", p[POFFSET+0]));
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetClippingRegion(x0));
 
   DO_OK_CHECK(METHODNAME("dc<%>","set-clipping-region"))
@@ -1326,7 +1326,7 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   } else
     x4 = 0;
 
-  if (x4 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), objscheme_modidx, "string index too large: ", p[POFFSET+4]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))
+  if (x4 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+4]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawText(x0, x1, x2, x3, x4));
 
   
@@ -1567,7 +1567,7 @@ int objscheme_istype_wxDC(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "dc% object or " XC_NULL_STR: "dc% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "dc% object or " XC_NULL_STR: "dc% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1685,7 +1685,7 @@ static Scheme_Object *os_wxMemoryDCSelectObject(int n,  Scheme_Object *p[])
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "set-bitmap in bitmap-dc%", 1));
 
-  if (x0) { if (!x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), objscheme_modidx, "bad bitmap: ", p[POFFSET+0])); if (BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), objscheme_modidx, "bitmap is already installed into a bitmap-dc%: ", p[POFFSET+0])); if (BM_IN_USE(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), objscheme_modidx, "bitmap is currently installed as a control label or pen/brush stipple: ", p[POFFSET+0])); }
+  if (x0) { if (!x0->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bad bitmap: ", p[POFFSET+0])); if (BM_SELECTED(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[POFFSET+0])); if (BM_IN_USE(x0)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[POFFSET+0])); }
   WITH_VAR_STACK(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata)->SelectObject(x0));
 
   
@@ -1759,7 +1759,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap-dc%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in bitmap-dc%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxMemoryDC CONSTRUCTOR_ARGS(()));
@@ -1805,7 +1805,7 @@ int objscheme_istype_wxMemoryDC(Scheme_Object *obj, const char *stop, int nullOK
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "bitmap-dc% object or " XC_NULL_STR: "bitmap-dc% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "bitmap-dc% object or " XC_NULL_STR: "bitmap-dc% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1905,7 +1905,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
 
   
   if ((n > (POFFSET+2))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in post-script-dc%", objscheme_modidx, POFFSET+POFFSET, POFFSET+2, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in post-script-dc%", POFFSET+POFFSET, POFFSET+2, n, p));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "initialization in post-script-dc%"));
   } else
@@ -1915,7 +1915,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
   } else
     x1 = NULL;
 
-  if (x1 && !wxSubType(((wxObject *)x1)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x1)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("post-script-dc%","initialization"), objscheme_modidx, "frame or dialog box", POFFSET+1, n, p);
+  if (x1 && !wxSubType(((wxObject *)x1)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x1)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("post-script-dc%","initialization"), "frame or dialog box", POFFSET+1, n, p);
   realobj = WITH_VAR_STACK(new os_wxPostScriptDC CONSTRUCTOR_ARGS((x0, x1)));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_wxPostScriptDC(x0, x1));
@@ -1955,7 +1955,7 @@ int objscheme_istype_wxPostScriptDC(Scheme_Object *obj, const char *stop, int nu
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "post-script-dc% object or " XC_NULL_STR: "post-script-dc% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "post-script-dc% object or " XC_NULL_STR: "post-script-dc% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -2016,7 +2016,7 @@ public:
 
 basePrinterDC::basePrinterDC(wxWindow *)
 {
-  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED, objscheme_modidx, 
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "%s", 
 		   METHODNAME("printer-dc%","initialization")": not supported for X Windows");
 }
@@ -2090,13 +2090,13 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(int n,  Scheme_Object *p[
 
   
   if ((n > (POFFSET+1))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in printer-dc%", objscheme_modidx, POFFSET+POFFSET, POFFSET+1, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in printer-dc%", POFFSET+POFFSET, POFFSET+1, n, p));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+0], "initialization in printer-dc%", 1));
   } else
     x0 = NULL;
 
-  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("printer-dc%","initialization"), objscheme_modidx, "frame or dialog box", POFFSET+0, n, p);
+  if (x0 && !wxSubType(((wxObject *)x0)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x0)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("printer-dc%","initialization"), "frame or dialog box", POFFSET+0, n, p);
   realobj = WITH_VAR_STACK(new os_basePrinterDC CONSTRUCTOR_ARGS((x0)));
 #ifdef MZ_PRECISE_GC
   WITH_VAR_STACK(realobj->gcInit_basePrinterDC(x0));
@@ -2136,7 +2136,7 @@ int objscheme_istype_basePrinterDC(Scheme_Object *obj, const char *stop, int nul
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "printer-dc% object or " XC_NULL_STR: "printer-dc% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "printer-dc% object or " XC_NULL_STR: "printer-dc% object", -1, 0, &obj));
     return 0;
   }
 }

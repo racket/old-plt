@@ -14,8 +14,8 @@
 (test #f object-name "hi")
 
 (define (src-name? s)
-  (and (identifier? s)
-       (regexp-match ":[0-9]+.[0-9]+$" (symbol->string (syntax-e s)))
+  (and (symbol? s)
+       (regexp-match ":[0-9]+.[0-9]+$" (symbol->string s))
        #t))
 
 ; Test ok when no name for proc
@@ -35,75 +35,71 @@
 (define f4 (case-lambda [(x) 9]))
 (define f5 (case-lambda [(x) 9][(y z) 10]))
 
-(define (-object-name s)
-  (let ([s (object-name s)])
-    (and s (syntax-e s))))
-
-(test 'f -object-name f)
-(test 'f2 -object-name f2)
-(test 'f3 -object-name f3)
-(test 'f4 -object-name f4)
-(test 'f5 -object-name f5)
+(test 'f object-name f)
+(test 'f2 object-name f2)
+(test 'f3 object-name f3)
+(test 'f4 object-name f4)
+(test 'f5 object-name f5)
 
 ; Test constructs that do provide a name
-(test 'a -object-name (let ([a (lambda () 0)]) a))
-(test 'a -object-name (let ([a (lambda () 0)]) (let ([b a]) b)))
-(test 'b -object-name (let* ([b (lambda () 0)]) b))
-(test 'c -object-name (letrec ([c (lambda () 0)]) c))
-(test 'loop -object-name (let loop () loop))
+(test 'a object-name (let ([a (lambda () 0)]) a))
+(test 'a object-name (let ([a (lambda () 0)]) (let ([b a]) b)))
+(test 'b object-name (let* ([b (lambda () 0)]) b))
+(test 'c object-name (letrec ([c (lambda () 0)]) c))
+(test 'loop object-name (let loop () loop))
 
-(test 'd -object-name (let ([d (begin (lambda () x))]) d))
-(test 'e -object-name (let ([e (begin0 (lambda () x))]) e))
+(test 'd object-name (let ([d (begin (lambda () x))]) d))
+(test 'e object-name (let ([e (begin0 (lambda () x))]) e))
 
-(test 'd2 -object-name (let ([d2 (begin 7 (lambda () x))]) d2))
-(test 'e2 -object-name (let ([e2 (begin0 (lambda () x) 7)]) e2))
+(test 'd2 object-name (let ([d2 (begin 7 (lambda () x))]) d2))
+(test 'e2 object-name (let ([e2 (begin0 (lambda () x) 7)]) e2))
 
-(test 'd3 -object-name (let ([d3 (begin (cons 1 2) (lambda () x))]) d3))
-(test 'e3 -object-name (let ([e3 (begin0 (lambda () x) (cons 1 2))]) e3))
+(test 'd3 object-name (let ([d3 (begin (cons 1 2) (lambda () x))]) d3))
+(test 'e3 object-name (let ([e3 (begin0 (lambda () x) (cons 1 2))]) e3))
 
-(test 'f -object-name (let ([f (begin0 (begin (cons 1 2) (lambda () x)) (cons 1 2))]) f))
+(test 'f object-name (let ([f (begin0 (begin (cons 1 2) (lambda () x)) (cons 1 2))]) f))
 
-(test 'g1 -object-name (let ([g1 (if (cons 1 2) (lambda () x) #f)]) g1))
-(test 'g2 -object-name (let ([g2 (if (negative? (car (cons 1 2))) #t (lambda () x))]) g2))
+(test 'g1 object-name (let ([g1 (if (cons 1 2) (lambda () x) #f)]) g1))
+(test 'g2 object-name (let ([g2 (if (negative? (car (cons 1 2))) #t (lambda () x))]) g2))
 
-(test 'w -object-name (let ([w (let ([x 5]) (lambda () x))]) w))
-(test 'z -object-name (let ([z (let ([x 5]) (cons 1 2) (lambda () x))]) z))
+(test 'w object-name (let ([w (let ([x 5]) (lambda () x))]) w))
+(test 'z object-name (let ([z (let ([x 5]) (cons 1 2) (lambda () x))]) z))
 
 (set! f (lambda () 10))
-(test 'f -object-name f)
+(test 'f object-name f)
 
 ; Test class stuff ok when no name
-(test 'class -object-name (class object% () (super-make-object)))
-(test 'interface -object-name (interface ()))
+(test 'class object-name (class object% () (super-make-object)))
+(test 'interface object-name (interface ()))
 
 ; Test class stuff ok when name
-(test 'class:c1 -object-name (let ([c1 (class object% () (super-make-object))]) c1))
-(test 'interface:i1 -object-name (let ([i1 (interface ())]) i1))
+(test 'class:c1 object-name (let ([c1 (class object% () (super-make-object))]) c1))
+(test 'interface:i1 object-name (let ([i1 (interface ())]) i1))
 
 ; Test unit stuff ok when no name
-(test 'unit -object-name (unit (import) (export)))
-(test 'unit -object-name (compound-unit (import) (link) (export)))
+(test 'unit object-name (unit (import) (export)))
+(test 'unit object-name (compound-unit (import) (link) (export)))
 
 ; Test unit stuff ok when name
-(test 'unit:u1 -object-name (let ([u1 (unit (import) (export))]) u1))
-(test 'unit:u2 -object-name (let ([u2 (compound-unit (import) (link) (export))]) u2))
+(test 'unit:u1 object-name (let ([u1 (unit (import) (export))]) u1))
+(test 'unit:u2 object-name (let ([u2 (compound-unit (import) (link) (export))]) u2))
 
-(test 'x -object-name (invoke-unit
+(test 'x object-name (invoke-unit
 		       (unit (import) (export) (define x (lambda () 0)) x)))
-(test 'x2 -object-name (invoke-unit
+(test 'x2 object-name (invoke-unit
 		        (unit (import) (export x2) (define x2 (lambda () 0)) x2)))
 
 ;; Use external name instead?:
-(test 'x -object-name (invoke-unit
+(test 'x object-name (invoke-unit
 		       (unit (import) (export (x x3)) (define x (lambda () 0)) x)))
 
 ; Test case sensitivity
 (parameterize ([read-case-sensitive #t])
   (test (string->symbol "Capital")
-	-object-name
+	object-name
 	(eval (read (open-input-string "(let ([Capital (lambda () 10)]) Capital)"))))
   (test (string->symbol "make-CP")
-	-object-name
+	object-name
 	(eval (read (open-input-string "(let-struct CP (a) make-CP)")))))
 
 (report-errs)

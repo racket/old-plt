@@ -55,38 +55,38 @@ void scheme_init_numstr(Scheme_Env *env)
 {
   scheme_add_global_constant("number->string", 
 			     scheme_make_prim_w_arity(number_to_string,
-						      "number->string", scheme_kernel_symbol,
+						      "number->string",
 						      1, 2),
 			     env);
   scheme_add_global_constant("string->number", 
 			     scheme_make_folding_prim(string_to_number,
-						      "string->number", scheme_kernel_symbol, 
+						      "string->number", 
 						      1, 2, 1),
 			     env);
 
   scheme_add_global_constant("random", 
 			     scheme_make_prim_w_arity(sch_random,
-						      "random", scheme_kernel_symbol,
+						      "random",
 						      1, 1),
 			     env);
   scheme_add_global_constant("random-seed", 
 			     scheme_make_prim_w_arity(random_seed,
-						      "random-seed", scheme_kernel_symbol,
+						      "random-seed",
 						      1, 1),
 			     env);
   scheme_add_global_constant("make-pseudo-random-generator", 
 			     scheme_make_prim_w_arity(make_pseudo_random_generator,
-						      "make-pseudo-random-generator", scheme_kernel_symbol, 
+						      "make-pseudo-random-generator", 
 						      0, 0), 
 			     env);
   scheme_add_global_constant("pseudo-random-generator?", 
 			     scheme_make_prim_w_arity(pseudo_random_generator_p,
-						      "pseudo-random-generator?", scheme_kernel_symbol, 
+						      "pseudo-random-generator?", 
 						      1, 1), 
 			     env);
   scheme_add_global_constant("current-pseudo-random-generator", 
 			     scheme_register_parameter(current_pseudo_random_generator,
-						       "current-pseudo-random-generator", scheme_kernel_symbol,
+						       "current-pseudo-random-generator",
 						       MZCONFIG_RANDOM_STATE),
 			     env);
 }
@@ -1199,7 +1199,7 @@ number_to_string (int argc, Scheme_Object *argv[])
   long radix;
 
   if (!SCHEME_NUMBERP(o))
-    scheme_wrong_type("number->string", scheme_kernel_symbol, "number", 0, argc, argv);
+    scheme_wrong_type("number->string", "number", 0, argc, argv);
   
   if (argc == 2) {
     if (!SCHEME_INTP(argv[1]))
@@ -1208,7 +1208,7 @@ number_to_string (int argc, Scheme_Object *argv[])
       radix = SCHEME_INT_VAL(argv[1]);
 
     if ((radix != 2) && (radix != 8) && (radix != 10)  && (radix != 16)) {
-      scheme_wrong_type("number->string", scheme_kernel_symbol, "2, 8, 10, or 16", 1, argc, argv);
+      scheme_wrong_type("number->string", "2, 8, 10, or 16", 1, argc, argv);
       ESCAPED_BEFORE_HERE;
     }
     
@@ -1229,7 +1229,7 @@ string_to_number (int argc, Scheme_Object *argv[])
   int decimal_inexact;
 
   if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string->number", scheme_kernel_symbol, "string", 0, argc, argv);
+    scheme_wrong_type("string->number", "string", 0, argc, argv);
   if (argc == 2) {
     if (SCHEME_INTP(argv[1]))
       radix = SCHEME_INT_VAL(argv[1]);
@@ -1237,7 +1237,7 @@ string_to_number (int argc, Scheme_Object *argv[])
       radix = 0;
     
     if ((radix < 2) || (radix > 16)) {
-      scheme_wrong_type("string->number", scheme_kernel_symbol, "exact integer in [2, 16]", 1, argc, argv);
+      scheme_wrong_type("string->number", "exact integer in [2, 16]", 1, argc, argv);
       ESCAPED_BEFORE_HERE;
     }
   } else
@@ -1316,7 +1316,7 @@ char *scheme_number_to_string(int radix, Scheme_Object *obj)
 
   if (SCHEME_FLOATP(obj)) {
     if (radix != 10)
-      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, 
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, 
 		       scheme_make_integer(radix),
 		       "number->string: "
 		       "inexact numbers can only be printed in base 10");
@@ -1377,7 +1377,7 @@ int scheme_check_double(const char *where, double d, const char *dest)
       || MZ_IS_NEG_INFINITY(d)
       || MZ_IS_NAN(d)) {
     if (where)
-      scheme_raise_exn(MZEXN_APPLICATION_TYPE, scheme_kernel_symbol,
+      scheme_raise_exn(MZEXN_APPLICATION_TYPE,
 		       scheme_make_double(d),
 		       scheme_intern_symbol("small integer"),
 		       "%s: no %s representation for %s",
@@ -1408,7 +1408,7 @@ random_seed(int argc, Scheme_Object *argv[])
   }
 
   if (i < 0)
-    scheme_wrong_type("random-seed", scheme_kernel_symbol, "exact integer in [0, 2147483647]", 0, argc, argv);
+    scheme_wrong_type("random-seed", "exact integer in [0, 2147483647]", 0, argc, argv);
 
   sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE));
 
@@ -1427,7 +1427,7 @@ sch_random(int argc, Scheme_Object *argv[])
   }
 
   if (i <= 0)
-    scheme_wrong_type("random", scheme_kernel_symbol, "exact integer in [1, 2147483647]", 0, argc, argv);
+    scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
   
   v = sch_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
 

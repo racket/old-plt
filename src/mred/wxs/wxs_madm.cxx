@@ -73,7 +73,7 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "style symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "style symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -101,7 +101,7 @@ static int unbundle_symset_focus(Scheme_Object *v, const char *where) {
   else if (v == focus_wxFOCUS_IMMEDIATE_sym) { return wxFOCUS_IMMEDIATE; }
   else if (v == focus_wxFOCUS_DISPLAY_sym) { return wxFOCUS_DISPLAY; }
   else if (v == focus_wxFOCUS_GLOBAL_sym) { return wxFOCUS_GLOBAL; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "focus symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "focus symbol", -1, 0, &v));
   return 0;
 }
 
@@ -141,7 +141,7 @@ static int unbundle_symset_bias(Scheme_Object *v, const char *where) {
   else if (v == bias_Sym_START_sym) { return Sym_START; }
   else if (v == bias_Sym_NONE_sym) { return Sym_NONE; }
   else if (v == bias_Sym_END_sym) { return Sym_END; }
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "bias symbol", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bias symbol", -1, 0, &v));
   return 0;
 }
 
@@ -1035,7 +1035,7 @@ static Scheme_Object *os_wxMediaCanvas_ConstructScheme(int n,  Scheme_Object *p[
 
   
   if ((n < (POFFSET+1)) || (n > (POFFSET+9))) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-canvas%", objscheme_modidx, POFFSET+1, POFFSET+9, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-canvas%", POFFSET+1, POFFSET+9, n, p));
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxPanel(p[POFFSET+0], "initialization in editor-canvas%", 0));
   if (n > (POFFSET+1)) {
     x1 = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET+1], "initialization in editor-canvas%"));
@@ -1129,7 +1129,7 @@ int objscheme_istype_wxMediaCanvas(Scheme_Object *obj, const char *stop, int nul
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "editor-canvas% object or " XC_NULL_STR: "editor-canvas% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-canvas% object or " XC_NULL_STR: "editor-canvas% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -1627,7 +1627,7 @@ static Scheme_Object *os_wxMediaAdminPopupMenu(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
-  if (!wxsCheckIsPopupMenu(p[POFFSET+0])) scheme_wrong_type(METHODNAME("editor-admin%","popup-menu"), objscheme_modidx, "popup-menu% object", 0+POFFSET, n, p);
+  if (!wxsCheckIsPopupMenu(p[POFFSET+0])) scheme_wrong_type(METHODNAME("editor-admin%","popup-menu"), "popup-menu% object", 0+POFFSET, n, p);
   x0 = ((void *)p[POFFSET+0]);
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "popup-menu in editor-admin%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "popup-menu in editor-admin%"));
@@ -1967,7 +1967,7 @@ static Scheme_Object *os_wxMediaAdmin_ConstructScheme(int n,  Scheme_Object *p[]
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-admin%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-admin%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaAdmin CONSTRUCTOR_ARGS(()));
@@ -2018,7 +2018,7 @@ int objscheme_istype_wxMediaAdmin(Scheme_Object *obj, const char *stop, int null
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "editor-admin% object or " XC_NULL_STR: "editor-admin% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-admin% object or " XC_NULL_STR: "editor-admin% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -2145,7 +2145,7 @@ int objscheme_istype_wxMediaSnipMediaAdmin(Scheme_Object *obj, const char *stop,
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "editor-snip-editor-admin% object or " XC_NULL_STR: "editor-snip-editor-admin% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-snip-editor-admin% object or " XC_NULL_STR: "editor-snip-editor-admin% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -2686,7 +2686,7 @@ static Scheme_Object *os_wxSnipAdminPopupMenu(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
   VAR_STACK_PUSH(2, x1);
 
-  if (!wxsCheckIsPopupMenu(p[POFFSET+0])) scheme_wrong_type(METHODNAME("snip-admin%","popup-menu"), objscheme_modidx, "popup-menu% object", 0+POFFSET, n, p);
+  if (!wxsCheckIsPopupMenu(p[POFFSET+0])) scheme_wrong_type(METHODNAME("snip-admin%","popup-menu"), "popup-menu% object", 0+POFFSET, n, p);
   x0 = ((void *)p[POFFSET+0]);
   x1 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+1], "popup-menu in snip-admin%", 0));
   x2 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+2], "popup-menu in snip-admin%"));
@@ -3066,7 +3066,7 @@ static Scheme_Object *os_wxSnipAdmin_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in snip-admin%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in snip-admin%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxSnipAdmin CONSTRUCTOR_ARGS(()));
@@ -3119,7 +3119,7 @@ int objscheme_istype_wxSnipAdmin(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "snip-admin% object or " XC_NULL_STR: "snip-admin% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "snip-admin% object or " XC_NULL_STR: "snip-admin% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -3416,7 +3416,7 @@ static Scheme_Object *objscheme_wxSnipClass_Getclassname(int n,  Scheme_Object *
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxSnipClass_class, "get-classname in snip-class%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-classname in snip-class%", objscheme_modidx, POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-classname in snip-class%", POFFSET, POFFSET, n, p));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxSnipClass *)cobj->primdata)->wxSnipClass::classname;
@@ -3434,7 +3434,7 @@ static Scheme_Object *objscheme_wxSnipClass_Setclassname(int n,  Scheme_Object *
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxSnipClass_class, "set-classname in snip-class%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-classname in snip-class%", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-classname in snip-class%", POFFSET+1, POFFSET+1, n, p));
 
   v = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET], "set-classname in snip-class%"));
   ((wxSnipClass *)cobj->primdata)->classname = v;
@@ -3449,7 +3449,7 @@ static Scheme_Object *objscheme_wxSnipClass_Getversion(int n,  Scheme_Object *p[
   REMEMBER_VAR_STACK();
 
   objscheme_check_valid(os_wxSnipClass_class, "get-version in snip-class%", n, p);
-  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-version in snip-class%", objscheme_modidx, POFFSET, POFFSET, n, p));
+  if (n > POFFSET) WITH_REMEMBERED_STACK(scheme_wrong_count("get-version in snip-class%", POFFSET, POFFSET, n, p));
   cobj = (Scheme_Class_Object *)p[0];
   if (cobj->primflag)
     v = ((os_wxSnipClass *)cobj->primdata)->wxSnipClass::version;
@@ -3467,7 +3467,7 @@ static Scheme_Object *objscheme_wxSnipClass_Setversion(int n,  Scheme_Object *p[
   VAR_STACK_PUSH(0, cobj);
 
   WITH_VAR_STACK(objscheme_check_valid(os_wxSnipClass_class, "set-version in snip-class%", n, p));
-  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-version in snip-class%", objscheme_modidx, POFFSET+1, POFFSET+1, n, p));
+  if (n != (POFFSET+1)) WITH_VAR_STACK(scheme_wrong_count("set-version in snip-class%", POFFSET+1, POFFSET+1, n, p));
 
   v = WITH_VAR_STACK(objscheme_unbundle_integer(p[POFFSET], "set-version in snip-class%"));
   ((wxSnipClass *)cobj->primdata)->version = v;
@@ -3488,7 +3488,7 @@ static Scheme_Object *os_wxSnipClass_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in snip-class%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in snip-class%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxSnipClass CONSTRUCTOR_ARGS(()));
@@ -3538,7 +3538,7 @@ int objscheme_istype_wxSnipClass(Scheme_Object *obj, const char *stop, int nullO
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "snip-class% object or " XC_NULL_STR: "snip-class% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "snip-class% object or " XC_NULL_STR: "snip-class% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -3761,7 +3761,7 @@ int objscheme_istype_wxSnipClassList(Scheme_Object *obj, const char *stop, int n
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "snip-class-list% object or " XC_NULL_STR: "snip-class-list% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "snip-class-list% object or " XC_NULL_STR: "snip-class-list% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -4302,7 +4302,7 @@ static Scheme_Object *os_wxKeymap_ConstructScheme(int n,  Scheme_Object *p[])
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in keymap%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in keymap%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxKeymap CONSTRUCTOR_ARGS(()));
@@ -4358,7 +4358,7 @@ int objscheme_istype_wxKeymap(Scheme_Object *obj, const char *stop, int nullOK)
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "keymap% object or " XC_NULL_STR: "keymap% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "keymap% object or " XC_NULL_STR: "keymap% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -4510,7 +4510,7 @@ static int unbundle_symset_breakType(Scheme_Object *v, const char *where) {
   l = SCHEME_CDR(l);
   }
   if (SCHEME_NULLP(l)) return result;
-  if (where) WITH_VAR_STACK(scheme_wrong_type(where, objscheme_modidx, "breakType symbol list", -1, 0, &v));
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "breakType symbol list", -1, 0, &v));
   return 0;
 }
 
@@ -4621,7 +4621,7 @@ static Scheme_Object *os_wxMediaWordbreakMap_ConstructScheme(int n,  Scheme_Obje
 
   
   if (n != (POFFSET+0)) 
-    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-wordbreak-map%", objscheme_modidx, POFFSET+0, POFFSET+0, n, p));
+    WITH_VAR_STACK(scheme_wrong_count("initialization in editor-wordbreak-map%", POFFSET+0, POFFSET+0, n, p));
 
   
   realobj = WITH_VAR_STACK(new os_wxMediaWordbreakMap CONSTRUCTOR_ARGS(()));
@@ -4665,7 +4665,7 @@ int objscheme_istype_wxMediaWordbreakMap(Scheme_Object *obj, const char *stop, i
   else {
     if (!stop)
        return 0;
-    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, objscheme_modidx, nullOK ? "editor-wordbreak-map% object or " XC_NULL_STR: "editor-wordbreak-map% object", -1, 0, &obj));
+    WITH_REMEMBERED_STACK(scheme_wrong_type(stop, nullOK ? "editor-wordbreak-map% object or " XC_NULL_STR: "editor-wordbreak-map% object", -1, 0, &obj));
     return 0;
   }
 }
@@ -4741,7 +4741,7 @@ void objscheme_setup_wxGlobalMediaWordbreakMap(Scheme_Env *env)
   Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap, "get-the-editor-wordbreak-map", objscheme_modidx, 0, 0));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxGlobalMediaWordbreakMapwxGetTheMediaWordbreakMap, "get-the-editor-wordbreak-map", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("get-the-editor-wordbreak-map", functmp, env));
 }
 

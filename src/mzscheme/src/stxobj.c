@@ -48,7 +48,6 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_binding(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv);
-
 static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
 
 static Scheme_Object *barrier_symbol;
@@ -94,7 +93,6 @@ static Module_Renames *krn;
    - A wrap-elem '* is a mark barrier, which is applied to the
          result of an expansion so that top-level marks do not
          break re-expansions
-   - A wrap-elem <module-index> is a module path for syntax-source-module
 
   The lazy_prefix field of a syntax object keeps track of how many of the
   first wraps need to be propagated to sub-syntax.
@@ -112,103 +110,103 @@ void scheme_init_stx(Scheme_Env *env)
 
   scheme_add_global_constant("syntax?", 
 			     scheme_make_folding_prim(syntax_p,
-						      "syntax?", scheme_kernel_symbol,
+						      "syntax?",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("syntax-graph?", 
 			     scheme_make_folding_prim(graph_syntax_p,
-						      "syntax-graph?", scheme_kernel_symbol,
+						      "syntax-graph?",
 						      1, 1, 1),
 			     env);
 
   scheme_add_global_constant("syntax-object->datum", 
 			     scheme_make_folding_prim(syntax_to_datum,
-						      "syntax-object->datum", scheme_kernel_symbol,
+						      "syntax-object->datum",
 						      1, 1 + STX_DEBUG, 1),
 			     env);
   scheme_add_global_constant("datum->syntax-object", 
 			     scheme_make_folding_prim(datum_to_syntax,
-						      "datum->syntax-object", scheme_kernel_symbol,
+						      "datum->syntax-object",
 						      2, 3, 1),
 			     env);
 
   scheme_add_global_constant("syntax-e", 
 			     scheme_make_folding_prim(syntax_e,
-						      "syntax-e", scheme_kernel_symbol,
+						      "syntax-e",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("syntax-line", 
 			     scheme_make_folding_prim(syntax_line,
-						      "syntax-line", scheme_kernel_symbol,
+						      "syntax-line",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("syntax-column", 
 			     scheme_make_folding_prim(syntax_col,
-						      "syntax-column", scheme_kernel_symbol,
+						      "syntax-column",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("syntax-position", 
 			     scheme_make_folding_prim(syntax_pos,
-						      "syntax-position", scheme_kernel_symbol,
+						      "syntax-position",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("syntax-source", 
 			     scheme_make_folding_prim(syntax_src,
-						      "syntax-source", scheme_kernel_symbol,
+						      "syntax-source",
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("syntax->list", 
 			     scheme_make_folding_prim(syntax_to_list,
-						      "syntax->list", scheme_kernel_symbol,
+						      "syntax->list",
 						      1, 1, 1),
 			     env);
 
   scheme_add_global_constant("syntax-original?", 
 			     scheme_make_prim_w_arity(syntax_original_p,
-						      "syntax-original?", scheme_kernel_symbol,
+						      "syntax-original?",
 						      1, 1),
 			     env);
   scheme_add_global_constant("syntax-property", 
 			     scheme_make_prim_w_arity(syntax_property,
-						      "syntax-property", scheme_kernel_symbol,
+						      "syntax-property",
 						      2, 3),
 			     env);
 
   scheme_add_global_constant("bound-identifier=?", 
 			     scheme_make_prim_w_arity(bound_eq,
-						      "bound-identifier=?", scheme_kernel_symbol,
+						      "bound-identifier=?",
 						      2, 2),
 			     env);
   scheme_add_global_constant("free-identifier=?", 
 			     scheme_make_prim_w_arity(free_eq,
-						      "free-identifier=?", scheme_kernel_symbol,
+						      "free-identifier=?",
 						      2, 2),
 			     env);
   scheme_add_global_constant("module-identifier=?", 
 			     scheme_make_prim_w_arity(module_eq,
-						      "module-identifier=?", scheme_kernel_symbol,
+						      "module-identifier=?",
 						      2, 2),
 			     env);
   scheme_add_global_constant("module-transformer-identifier=?", 
 			     scheme_make_prim_w_arity(module_trans_eq,
-						      "module-transformer-identifier=?", scheme_kernel_symbol,
+						      "module-transformer-identifier=?",
 						      2, 2),
 			     env);
 
   scheme_add_global_constant("identifier-binding", 
 			     scheme_make_prim_w_arity(module_binding,
-						      "identifier-binding", scheme_kernel_symbol,
+						      "identifier-binding",
 						      1, 1),
 			     env);
   scheme_add_global_constant("identifier-transformer-binding", 
 			     scheme_make_prim_w_arity(module_trans_binding,
-						      "identifier-transformer-binding", scheme_kernel_symbol,
+						      "identifier-transformer-binding",
 						      1, 1),
 			     env);
 
   scheme_add_global_constant("syntax-source-module", 
 			     scheme_make_folding_prim(syntax_src_module,
-						      "syntax-source-module", scheme_kernel_symbol,
+						      "syntax-source-module",
 						      1, 1, 1),
 			     env);
 
@@ -254,17 +252,6 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
   ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
 
   return stx;
-}
-
-Scheme_Object *scheme_make_stx_for_source(Scheme_Object *sym, Scheme_Object *modidx)
-{
-  Scheme_Stx *stx;
-
-  stx = (Scheme_Stx *)scheme_make_stx(sym, -1, -1, NULL, scheme_null);
-  modidx = scheme_make_pair(modidx, scheme_null);
-  stx->wraps = modidx;
-  
-  return (Scheme_Object *)stx;
 }
 
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
@@ -1161,17 +1148,16 @@ int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 Scheme_Object *scheme_stx_source_module(Scheme_Object *stx, int resolve)
 {
   /* Inspect the wraps to look for a self-modidx shift: */
-  Scheme_Object *w, *a, *srcmod = scheme_false, *chain_from = NULL;
+  Scheme_Object *w, *srcmod = scheme_false, *chain_from = NULL;
 
   w = ((Scheme_Stx *)stx)->wraps;
 
   while (!SCHEME_NULLP(w)) {
-    a = SCHEME_CAR(w);
-    if (SCHEME_BOXP(a)) {
+    if (SCHEME_BOXP(SCHEME_CAR(w))) {
       /* Phase shift:  */
       Scheme_Object *vec, *dest, *src;
 
-      vec = SCHEME_PTR_VAL(a);
+      vec = SCHEME_PTR_VAL(SCHEME_CAR(w));
       
       src = SCHEME_VEC_ELS(vec)[1];
       dest = SCHEME_VEC_ELS(vec)[2];
@@ -1185,9 +1171,6 @@ Scheme_Object *scheme_stx_source_module(Scheme_Object *stx, int resolve)
       }
 
       chain_from = src;
-    } else if (SAME_TYPE(SCHEME_TYPE(a), scheme_module_index_type)) {
-      srcmod = a;
-      /* Nothing else should be in w... */
     }
 
     w = SCHEME_CDR(w);
@@ -1578,8 +1561,8 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */
       stack = scheme_make_pair(a, stack);
-    } else if (SCHEME_BOXP(a)) {
-      /* a phase shift */
+    } else {
+      /* box, a phase shift */
       /* Any more rename tables? */
       Scheme_Object *l = SCHEME_CDR(w);
       while (!SCHEME_NULLP(l)) {
@@ -1591,9 +1574,6 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       if (SCHEME_PAIRP(l)) {
 	stack = scheme_make_pair(a, stack);
       }
-    } else {
-      /* Must be a module index for syntax-module-source */
-      stack = scheme_make_pair(a, stack);
     }
 
     w = SCHEME_CDR(w);
@@ -1951,11 +1931,8 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
     } else if (SCHEME_SYMBOLP(a)) {
       /* mark barrier */
       stack = scheme_make_pair(a, stack);
-    } else if (SCHEME_BOXP(a)) {
-      /* a box for a phase shift */
-      stack = scheme_make_pair(a, stack);
     } else {
-      /* Must be a module index for syntax-module-source */
+      /* must be a box for a phase shift */
       stack = scheme_make_pair(a, stack);
     }
 
@@ -2183,7 +2160,7 @@ static Scheme_Object *syntax_p(int argc, Scheme_Object **argv)
 static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-graph?", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-graph?", "syntax", 0, argc, argv);
 
   return ((((Scheme_Stx *)argv[0])->hash_code & STX_GRAPH_FLAG)
 	  ? scheme_true
@@ -2194,7 +2171,7 @@ static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv)
 static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-object->datum", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-object->datum", "syntax", 0, argc, argv);
     
 #if STX_DEBUG
   if (argc == 2)
@@ -2208,10 +2185,10 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_FALSEP(argv[0]) && !SCHEME_STXP(argv[0]))
-    scheme_wrong_type("datum->syntax-object", scheme_kernel_symbol, "syntax or #f", 0, argc, argv);
+    scheme_wrong_type("datum->syntax-object", "syntax or #f", 0, argc, argv);
   if (argc > 2)
     if (!SCHEME_FALSEP(argv[2]) && !SCHEME_STXP(argv[2]))
-      scheme_wrong_type("datum->syntax-object", scheme_kernel_symbol, "syntax or #f", 2, argc, argv);
+      scheme_wrong_type("datum->syntax-object", "syntax or #f", 2, argc, argv);
     
   return scheme_datum_to_syntax(argv[1], 
 				(argc > 2) ? argv[2] : scheme_false, 
@@ -2222,7 +2199,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 static Scheme_Object *syntax_e(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-e", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-e", "syntax", 0, argc, argv);
     
   return scheme_stx_content(argv[0]);
 }
@@ -2232,7 +2209,7 @@ static Scheme_Object *syntax_line(int argc, Scheme_Object **argv)
   Scheme_Stx *stx = (Scheme_Stx *)argv[0];
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-line", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-line", "syntax", 0, argc, argv);
     
   if (stx->line < 0)
     return scheme_false;
@@ -2245,7 +2222,7 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
   Scheme_Stx *stx = (Scheme_Stx *)argv[0];
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-column", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-column", "syntax", 0, argc, argv);
     
   if (stx->line < 0) /* => col, if present, is really position */
     return scheme_false;
@@ -2258,7 +2235,7 @@ static Scheme_Object *syntax_pos(int argc, Scheme_Object **argv)
   Scheme_Stx *stx = (Scheme_Stx *)argv[0];
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-position", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-position", "syntax", 0, argc, argv);
     
   /* line < 0  => col, if present, is really position */
 
@@ -2273,7 +2250,7 @@ static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)
   Scheme_Stx *stx = (Scheme_Stx *)argv[0];
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-src", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-src", "syntax", 0, argc, argv);
 
   return stx->src;
 }
@@ -2283,7 +2260,7 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv)
   Scheme_Object *l;
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax->list", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax->list", "syntax", 0, argc, argv);
 
   l = scheme_stx_content(argv[0]);
   if (SCHEME_NULLP(l))
@@ -2304,7 +2281,7 @@ static Scheme_Object *syntax_original_p(int argc, Scheme_Object **argv)
   Scheme_Stx *stx;
 
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-original?", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-original?", "syntax", 0, argc, argv);
 
   stx = (Scheme_Stx *)argv[0];
 
@@ -2412,7 +2389,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 static Scheme_Object *syntax_property(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-property", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-property", "syntax", 0, argc, argv);
 
   return scheme_stx_property(argv[0],
 			     argv[1],
@@ -2426,9 +2403,9 @@ static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
   Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STX_IDP(argv[0]))
-    scheme_wrong_type("bound-identifier=?", scheme_kernel_symbol, "identifier syntax", 0, argc, argv);
+    scheme_wrong_type("bound-identifier=?", "identifier syntax", 0, argc, argv);
   if (!SCHEME_STX_IDP(argv[1]))
-    scheme_wrong_type("bound-identifier=?", scheme_kernel_symbol, "identifier syntax", 1, argc, argv);
+    scheme_wrong_type("bound-identifier=?", "identifier syntax", 1, argc, argv);
 
   return (scheme_stx_bound_eq(argv[0], argv[1],
 			      (p->current_local_env
@@ -2443,9 +2420,9 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv)
   Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STX_IDP(argv[0]))
-    scheme_wrong_type("free-identifier=?", scheme_kernel_symbol, "identifier syntax", 0, argc, argv);
+    scheme_wrong_type("free-identifier=?", "identifier syntax", 0, argc, argv);
   if (!SCHEME_STX_IDP(argv[1]))
-    scheme_wrong_type("free-identifier=?", scheme_kernel_symbol, "identifier syntax", 1, argc, argv);
+    scheme_wrong_type("free-identifier=?", "identifier syntax", 1, argc, argv);
 
   return (scheme_stx_free_eq(argv[0], argv[1],
 			     (p->current_local_env
@@ -2460,9 +2437,9 @@ static Scheme_Object *module_eq(int argc, Scheme_Object **argv)
   Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STX_IDP(argv[0]))
-    scheme_wrong_type("module-identifier=?", scheme_kernel_symbol, "identifier syntax", 0, argc, argv);
+    scheme_wrong_type("module-identifier=?", "identifier syntax", 0, argc, argv);
   if (!SCHEME_STX_IDP(argv[1]))
-    scheme_wrong_type("module-identifier=?", scheme_kernel_symbol, "identifier syntax", 1, argc, argv);
+    scheme_wrong_type("module-identifier=?", "identifier syntax", 1, argc, argv);
 
   return (scheme_stx_module_eq(argv[0], argv[1],
 			       (p->current_local_env
@@ -2477,9 +2454,9 @@ static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv)
   Scheme_Thread *p = scheme_current_thread;
 
   if (!SCHEME_STX_IDP(argv[0]))
-    scheme_wrong_type("module-transformer-identifier=?", scheme_kernel_symbol, "identifier syntax", 0, argc, argv);
+    scheme_wrong_type("module-transformer-identifier=?", "identifier syntax", 0, argc, argv);
   if (!SCHEME_STX_IDP(argv[1]))
-    scheme_wrong_type("module-transformer-identifier=?", scheme_kernel_symbol, "identifier syntax", 1, argc, argv);
+    scheme_wrong_type("module-transformer-identifier=?", "identifier syntax", 1, argc, argv);
 
   return (scheme_stx_module_eq(argv[0], argv[1],
 			       1 + (p->current_local_env
@@ -2497,7 +2474,7 @@ static Scheme_Object *do_module_binding(char *name, int argc, Scheme_Object **ar
   a = argv[0];
 
   if (!SCHEME_STXP(a) || !SCHEME_STX_SYM(a))
-    scheme_wrong_type(name, scheme_kernel_symbol, "identifier syntax", 0, argc, argv);
+    scheme_wrong_type(name, "identifier syntax", 0, argc, argv);
 
   m = scheme_stx_module_name(&a, dphase + (p->current_local_env
 					   ? p->current_local_env->genv->phase
@@ -2524,7 +2501,7 @@ static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv)
 static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax-source-module", scheme_kernel_symbol, "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-source-module", "syntax", 0, argc, argv);
 
   return scheme_stx_source_module(argv[0], 1);
 }

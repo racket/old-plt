@@ -83,7 +83,8 @@
                       (lambda ()
                         (channel-put chan-result
                                      (with-handlers ([exn? (lambda (the-exn) the-exn)])
-                                       (thunk)))))
+                                       (thunk)))
+                        ))
          (let ([result (channel-get chan-result)])
            (when (exn? result)
              (raise result))

@@ -19,8 +19,34 @@
   ;; can-create-session?: session-queue -> boolean
   ;; is there enough memory to create a session assuming last GC unknown
   (define (can-create-session? a-session-queue)
-    (or (< (current-memory-use) (session-queue-memory-threshold a-session-queue))
-        (can-create-session/gc? a-session-queue)))
+    (cond
+      [(get-sleep-time a-session-queue)
+       => (lambda (tau)
+            (or (<= tau 0)
+                (enough-memory? a-session-queue)
+                (sleep-cycle tau a-session-queue)))]
+      [else ;; queue is empty
+       (or (enough-memory? a-session-queue)
+           (begin (collect-garbage)
+                  (enough-memory? a-session-queue)))]))
+  
+  ;; sleep-cycle: number session-queue -> boolean
+  (define (sleep-cycle tau a-session-queue)
+    (collect-garbage) ;; gotta sleep anyway
+    (or (enough-memory? a-session-queue)
+        (begin
+          (printf "about to sleep ~a~n" tau)
+          (sleep tau)
+          (printf "   done sleeping~n")
+          (can-create-session? a-session-queue))))
+  
+  ;; enough-memory?: -> boolean
+  (define (enough-memory? a-session-queue)
+    (< (current-memory-use) (session-queue-memory-threshold a-session-queue)))
+                  
+;  (define (can-create-session? a-session-queue)
+;    (or (< (current-memory-use) (session-queue-memory-threshold a-session-queue))
+;        (can-create-session/gc? a-session-queue)))
   
   ;; can-create-session/gc?: session-queue -> boolean
   ;; try a gc first and then see if there is enough memory, 

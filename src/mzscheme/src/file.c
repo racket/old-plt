@@ -886,6 +886,9 @@ int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type)
 
 static int has_null(const char *s, long l)
 {
+  if (!l)
+    return 1;
+
   while (l--) {
     if (!s[l])
       return 1;
@@ -1106,7 +1109,7 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
   if (ilen < 0)
     ilen = strlen(filename);
   else  {
-    if (!ilen || has_null(filename, ilen)) {
+    if (has_null(filename, ilen)) {
       if (errorin)
 	raise_null_error(errorin, scheme_make_sized_string(filename, ilen, 1), "");
       else 
@@ -1544,7 +1547,7 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 
 #ifndef UNIX_FILE_SYSTEM
   /* DOS or MAC: expand isn't called, so check the form now */
-  if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(filename, SCHEME_STRTAG_VAL(argv[0]))) {
+  if (has_null(filename, SCHEME_STRTAG_VAL(argv[0]))) {
     raise_null_error("link-exists?", argv[0], "");
     return NULL;
   }
@@ -2216,7 +2219,7 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
   s = SCHEME_STR_VAL(p);
   len = SCHEME_STRTAG_VAL(p);
 
-  if (!len || has_null(s, len))
+  if (has_null(s, len))
     raise_null_error("path->complete-path", p, "");
   if (wrt) {
     char *ws;
@@ -2225,7 +2228,7 @@ static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv)
     ws = SCHEME_STR_VAL(wrt);
     wlen = SCHEME_STRTAG_VAL(wrt);
     
-    if (!wlen || has_null(ws, wlen))
+    if (has_null(ws, wlen))
       raise_null_error("path->complete-path", p, "");
 
     if (!scheme_is_complete_path(ws, wlen))
@@ -2271,7 +2274,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     char *file;
     
     file = SCHEME_STR_VAL(argv[0]);
-    if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(file, SCHEME_STRTAG_VAL(argv[0])))
+    if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("delete-file", argv[0], "");
     
     if (find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
@@ -2318,10 +2321,10 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 
 #ifdef USE_MAC_FILE_TOOLBOX
   src = SCHEME_STR_VAL(argv[0]);
-  if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(src, SCHEME_STRTAG_VAL(argv[0])))
+  if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
     raise_null_error("rename-file-or-directory", argv[0], "");
   dest = SCHEME_STR_VAL(argv[1]);
-  if (!SCHEME_STRTAG_VAL(argv[1]) || has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
+  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
     raise_null_error("rename-file-or-directory", argv[1], "");
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -2432,10 +2435,10 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
 
 #ifdef MAC_FILE_SYSTEM
   src = SCHEME_STR_VAL(argv[0]);
-  if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(src, SCHEME_STRTAG_VAL(argv[0])))
+  if (has_null(src, SCHEME_STRTAG_VAL(argv[0])))
     raise_null_error("copy-file", argv[0], "");
   dest = SCHEME_STR_VAL(argv[1]);
-  if (!SCHEME_STRTAG_VAL(argv[1]) || has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
+  if (has_null(dest, SCHEME_STRTAG_VAL(argv[1])))
     raise_null_error("copy-file", argv[1], "");
 #else
   src = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -2605,7 +2608,7 @@ static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv)
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
 
-  if (!len || has_null(s, len))
+  if (has_null(s, len))
     return scheme_false;
 
   return (scheme_is_relative_path(s, len)
@@ -2624,7 +2627,7 @@ static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv)
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
 
-  if (!len || has_null(s, len))
+  if (has_null(s, len))
     return scheme_false;
 
   return (scheme_is_complete_path(s, len)
@@ -2643,7 +2646,7 @@ static Scheme_Object *absolute_pathname_p(int argc, Scheme_Object **argv)
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
 
-  if (!len || has_null(s, len))
+  if (has_null(s, len))
     return scheme_false;
 
   return (!scheme_is_relative_path(s, len)
@@ -2857,7 +2860,7 @@ static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[])
   s = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
 
-  if (!len || has_null(s, len))
+  if (has_null(s, len))
     raise_null_error("simplify-path", argv[0], "");
 
   return do_simplify_path(argv[0], scheme_null);
@@ -2967,7 +2970,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 #ifdef USE_MAC_FILE_TOOLBOX
   if (argc) {
     filename = SCHEME_STR_VAL(argv[0]);
-    if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
+    if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
       raise_null_error("directory-list", argv[0], "");
   } else
     filename = "";
@@ -3251,7 +3254,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   file = SCHEME_STR_VAL(argv[0]);
-  if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(file, SCHEME_STRTAG_VAL(argv[0])))
+  if (has_null(file, SCHEME_STRTAG_VAL(argv[0])))
     raise_null_error("file-or-directory-modify-seconds", argv[0], "");
 #else
   file = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -3353,7 +3356,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   filename = SCHEME_STR_VAL(argv[0]);
-  if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
+  if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
     raise_null_error("file-or-directory-permissions", argv[0], "");
 #else
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),
@@ -3459,7 +3462,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   filename = SCHEME_STR_VAL(argv[0]);
-  if (!SCHEME_STRTAG_VAL(argv[0]) || has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
+  if (has_null(filename, SCHEME_STRTAG_VAL(argv[0])))
     raise_null_error("file-size", argv[0], "");
 #else
   filename = scheme_expand_filename(SCHEME_STR_VAL(argv[0]),

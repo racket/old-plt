@@ -74,7 +74,7 @@
 			      (loop (cddr l))]
 			     [else
 			      (bad-arguments "bad level name: ~s" level)])))]
-	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a~n--~n"
+	  [(--help) (printf "MzRice flags:~n  --help~n  --level level, where level is in: ~s~n~a  --~n"
 			    '(core structured  side-effecting advanced)
 			    (let loop ([l simple-args])
 			      (if (null? l)

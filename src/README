@@ -188,7 +188,7 @@ Mac OS Classic (PowerPC only):
 
  4a. ONLY Cygwin: Create the other executables (besides mred.exe and
      mzscheme.exe) by running
-        mzscheme.exe -mvqL- setup.ss setup
+        mzscheme.exe -mvqM- setup
     in the plt directory (one directory up from here). The above makes
     the .zo files, too, but add -n to the end of the command to skip
     the .zo-compiling step. Afterwards, `plt/Setup PLT.exe' and
@@ -198,7 +198,7 @@ Mac OS Classic (PowerPC only):
     not run plt/install for an in-place build, because old .zo files
     typically need to be deleted, first. After an initial in-place
     build, manually run ./install in the plt directory. For later
-    builds, manually run plt/bin/setup-plt with the -c flag.
+    builds, manually run plt/bin/setup-plt.
 
 After an "in-place" install without CVS, the plt/src directory is no
 longer needed, and it can be safely deleted.

@@ -48,7 +48,7 @@ copy-finish:
 
 inplace-finish:
 	if [ ! -d $(srcdir)/CVS ] ; then cd $(prefix); ./install ; fi
-	if [ -d $(srcdir)/CVS ] ; then echo; echo ">> run plt/install or setup-plt -c to finish <<" ; echo; fi
+	if [ -d $(srcdir)/CVS ] ; then cat $(srcdir)/mzscheme/imsg.txt ; fi
 
 copytree:
 	if [ ! -d $(prefix) ] ; then mkdir $(prefix) ; fi

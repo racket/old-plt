@@ -10,7 +10,10 @@
       ;; Data to be kept with the token
       ;; The token's starting offset
       ;; The token's ending offset
-      (init-field get-token prefix)
+      ;;
+      ;; matches is a list of lists of matching paren types.
+      ;; For example, '((|(| |)|) (|[| |]|))
+      (init-field get-token prefix (matches null))
       
       (rename (super-on-disable-surrogate on-disable-surrogate))
       (define/override (on-disable-surrogate text)
@@ -20,7 +23,7 @@
       (rename (super-on-enable-surrogate on-enable-surrogate))
       (define/override (on-enable-surrogate text)
         (super-on-enable-surrogate text)
-        (send text start prefix get-token))
+        (send text start prefix get-token matches))
 
       (super-instantiate ())
       )))

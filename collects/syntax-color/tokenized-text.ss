@@ -37,9 +37,7 @@
       
       ;; ---------------------- Parnethesis matching --------------------------
       
-      (define pairs '((|(| |)|)
-                      (|[| |]|)
-                      (|{| |}|)))
+      (define pairs '())
       (define parens (new paren-tree% (matches pairs)))
 
       
@@ -210,11 +208,13 @@
             (thread-suspend (current-thread))))
         (background-colorer))
       
-      (define/public (start prefix- get-token-)
+      (define/public (start prefix- get-token- pairs-)
         (set! stopped? #f)
         (reset-tokens)
         (set! prefix prefix-)
         (set! get-token get-token-)
+        (set! pairs pairs-)
+        (set! parens (new paren-tree% (matches pairs)))
         (unless remove-prefs-callback-thunk
           (set! remove-prefs-callback-thunk
                 (preferences:add-callback
@@ -242,6 +242,7 @@
                       start-pos end-pos #f)
         (match-parens #t)
         (reset-tokens)
+        (set! pairs null)
         (set! prefix #f)
         (set! get-token #f))
 

@@ -3,7 +3,7 @@
  */
 #include <X11/IntrinsicP.h>
 #include <X11/StringDefs.h>
-#line 263 "XWidgets/xwToggle.w"
+#line 264 "XWidgets/xwToggle.w"
 #include <xwTools3d.h>
 #include <./xwToggleP.h>
 #line 76 "XWidgets/xwToggle.w"
@@ -76,7 +76,7 @@ static void create_indicator_gc(
 Widget
 #endif
 );
-#line 250 "XWidgets/xwToggle.w"
+#line 251 "XWidgets/xwToggle.w"
 static void compute_indicatorcolor(
 #if NeedFunctionPrototypes
 Widget,int ,XrmValue *
@@ -109,6 +109,7 @@ static void create_indicator_gc(self)Widget self;
         values.foreground = WhitePixelOfScreen(XtScreen(self));
         values.stipple    = GetGray(self);
         break;
+    case XfwfBlack:
     case XfwfAuto:
         if (DefaultDepthOfScreen(XtScreen(self)) > 4
             && ((XfwfToggleWidgetClass)self->core.widget_class)->xfwfCommon_class.set_color(self, ((XfwfToggleWidget)self)->core.background_pixel, &values.foreground)) {
@@ -124,16 +125,16 @@ static void create_indicator_gc(self)Widget self;
     }
     ((XfwfToggleWidget)self)->xfwfToggle.indicator_gc = XtGetGC(self, mask, &values);
 }
-#line 250 "XWidgets/xwToggle.w"
+#line 251 "XWidgets/xwToggle.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 250 "XWidgets/xwToggle.w"
+#line 251 "XWidgets/xwToggle.w"
 static void compute_indicatorcolor(Widget self,int  offset,XrmValue * value)
 #else
-#line 250 "XWidgets/xwToggle.w"
+#line 251 "XWidgets/xwToggle.w"
 static void compute_indicatorcolor(self,offset,value)Widget self;int  offset;XrmValue * value;
 #endif
-#line 251 "XWidgets/xwToggle.w"
+#line 252 "XWidgets/xwToggle.w"
 {
     static Pixel color;
 #if 1

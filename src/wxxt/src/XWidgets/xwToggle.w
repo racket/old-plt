@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 # 
-# $Id: xwToggle.w,v 1.2 1998/01/31 01:16:38 mflatt Exp $
+# $Id: xwToggle.w,v 1.3 1998/11/12 18:14:48 mflatt Exp $
 
 @class XfwfToggle(XfwfButton)  @file=xwToggle
 
@@ -231,6 +231,7 @@ button and then possibly adds a tick mark.
         values.foreground = WhitePixelOfScreen(XtScreen($));
         values.stipple    = GetGray($);
         break;
+    case XfwfBlack:
     case XfwfAuto:
         if (DefaultDepthOfScreen(XtScreen($)) > 4
             && $set_color($, $background_pixel, &values.foreground)) {

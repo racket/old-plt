@@ -2855,147 +2855,153 @@
   
   (define -loading-filename (gensym))
 
-  (define standard-module-name-resolver
-    (lambda (s relto stx)
-      ;; If stx is not #f, raise syntax error for ill-formed paths
-      ;; If s is #f, call to resolver is a notification from namespace-attach-module
-      (cond
-       [(and (pair? s) (eq? (car s) 'planet))
-	(let ([id (dynamic-require '(lib "resolver.ss" "planet") 'planet-module-name-resolver)])
-	  (when (symbol? id)
-	    (standard-module-name-resolver #f id #f))
-	  id)]
-       [s
-	(let ([get-dir (lambda ()
-			 (or (and relto
-				  (let ([rts (symbol->string relto)])
-				    (and (regexp-match -re:auto rts)
-					 (let-values ([(base n d?)
-						       (split-path 
-							(substring rts 1 (string-length rts)))])
-					   base))))
-			     (current-load-relative-directory)
-			     (current-directory)))])
-	  (let ([filename
-		 ;; Non-string result represents an error
-		 (cond
-		  [(string? s)
-		   (if (regexp-match -re:ok-relpath s)
-		       ;; Parse Unix-style relative path string
-		       (let loop ([path (get-dir)][s s])
-			 (let ([prefix (regexp-match -re:dir s)])
-			   (if prefix
-			       (loop (build-path path 
-						 (let ([p (cadr prefix)])
-						   (cond
-						    [(string=? p ".") 'same]
-						    [(string=? p "..") 'up]
-						    [else p])))
-				     (caddr prefix))
-			       (build-path path s))))
-		       (list
-			(string-append
-			 " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
-			 "space, with no leading or trailing /)")))]
-		  [(or (not (pair? s))
-		       (not (list? s)))
-		   #f]
-		  [(eq? (car s) 'lib)
-		   (let ([cols (let ([len (length s)])
-				 (if (= len 2)
-				     (list "mzlib")
-				     (if (> len 2)
-					 (cddr s)
-					 #f)))])
-		     (and cols
-			  (andmap (lambda (x) (and (string? x) (relative-path? x))) cols)
-			  (string? (cadr s))
-			  (relative-path? (cadr s))
-			  (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
-			    (build-path p (cadr s)))))]
-		  [(eq? (car s) 'file)
-		   (and (= (length s) 2)
-			(let ([p (cadr s)])
-			  (and (string? p)
-			       (or (relative-path? p)
-				   (absolute-path? p))
-			       (path->complete-path p (get-dir)))))]
-		  [else #f])])
-	    (unless (string? filename)
-	      (if stx
-		  (raise-syntax-error
-		   '(require require mzscheme)
-		   (format "bad module path~a" (if filename
-						   (car filename)
-						   ""))
-		   stx)
-		  (raise-type-error 
-		   'standard-module-name-resolver
-		   (format "module path~a" (if filename
-					       (car filename)
-					       ""))
-		   s)))
-	    ;; At this point, filename is a complete path
-	    (let ([filename (simplify-path (expand-path filename))])
-	      (let-values ([(base name dir?) (split-path filename)])
-		(let ([no-sfx (regexp-replace -re:suffix name "")]
-		      [abase (format ",~a" base)])
-		  (let ([modname (string->symbol (string-append abase no-sfx))]
-			[ht (hash-table-get
-			     -module-hash-table-table
-			     (namespace-module-registry (current-namespace))
-			     (lambda ()
-			       (let ([ht (make-hash-table)])
-				 (hash-table-put! -module-hash-table-table
-						  (namespace-module-registry (current-namespace))
-						  ht)
-				 ht)))])
-		    ;; Loaded already?
-		    (let ([got (hash-table-get ht modname (lambda () #f))]
-			  [suffix (let ([m (regexp-match -re:suffix name)])
-				    (if m (car m) #t))])
-		      (when got
-			;; Check the suffix, which gets lost when creating a key:
-			(unless (or (symbol? got) (equal? suffix got))
-			  (error
-			   'standard-module-name-resolver
-			   "module previously loaded with suffix ~s, cannot load with suffix ~s: ~e"
-			   (if (eq? #t got) "" got)
-			   (if (eq? #t suffix) "" suffix)
-			   filename)))
-		      (unless got
-			;; Currently loading?
-			(let ([l (continuation-mark-set->list
-				  (current-continuation-marks)
-				  -loading-filename)])
-			  (for-each
-			   (lambda (s)
-			     (when (string=? s filename)
-			       (error
-				'standard-module-name-resolver
-				"cycle in loading at ~e: ~e"
-				filename
-				(reverse (cons s l)))))
-			   l))
-			(let ([prefix (string->symbol abase)])
-			  (with-continuation-mark -loading-filename filename
-			    (parameterize ([current-module-name-prefix prefix])
-			      ((current-load/use-compiled) filename (string->symbol no-sfx)))))
-			(hash-table-put! ht modname suffix)))
-		    ;; Result is the module name:
-		    modname))))))]
-       [else
-	;; Just register relto as loaded
-	(let ([ht (hash-table-get
-		   -module-hash-table-table
-		   (namespace-module-registry (current-namespace))
-		   (lambda ()
-		     (let ([ht (make-hash-table)])
-		       (hash-table-put! -module-hash-table-table
-					(namespace-module-registry (current-namespace))
-					ht)
-		       ht)))])
-	  (hash-table-put! ht relto 'attach))])))
+  (define (make-standard-module-name-resolver orig-namespace)
+    (define planet-resolver #f)
+    (define standard-module-name-resolver
+      (lambda (s relto stx)
+	;; If stx is not #f, raise syntax error for ill-formed paths
+	;; If s is #f, call to resolver is a notification from namespace-attach-module
+	(cond
+	 [(and (pair? s) (eq? (car s) 'planet))
+	  (unless planet-resolver
+	    (parameterize ([current-namespace orig-namespace])
+	      (set! planet-resolver (dynamic-require '(lib "resolver.ss" "planet") 'planet-module-name-resolver))))
+	  (planet-resolver s relto stx)]
+	 [s
+	  (let ([get-dir (lambda ()
+			   (or (and relto
+				    (let ([rts (symbol->string relto)])
+				      (and (regexp-match -re:auto rts)
+					   (let-values ([(base n d?)
+							 (split-path 
+							  (substring rts 1 (string-length rts)))])
+					     base))))
+			       (current-load-relative-directory)
+			       (current-directory)))])
+	    (let ([filename
+		   ;; Non-string result represents an error
+		   (cond
+		    [(string? s)
+		     (if (regexp-match -re:ok-relpath s)
+			 ;; Parse Unix-style relative path string
+			 (let loop ([path (get-dir)][s s])
+			   (let ([prefix (regexp-match -re:dir s)])
+			     (if prefix
+				 (loop (build-path path 
+						   (let ([p (cadr prefix)])
+						     (cond
+						      [(string=? p ".") 'same]
+						      [(string=? p "..") 'up]
+						      [else p])))
+				       (caddr prefix))
+				 (build-path path s))))
+			 (list
+			  (string-append
+			   " (relative string form must contain only a-z, A-Z, 0-9, -, _, ., /, and "
+			   "space, with no leading or trailing /)")))]
+		    [(or (not (pair? s))
+			 (not (list? s)))
+		     #f]
+		    [(eq? (car s) 'lib)
+		     (let ([cols (let ([len (length s)])
+				   (if (= len 2)
+				       (list "mzlib")
+				       (if (> len 2)
+					   (cddr s)
+					   #f)))])
+		       (and cols
+			    (andmap (lambda (x) (and (string? x) (relative-path? x))) cols)
+			    (string? (cadr s))
+			    (relative-path? (cadr s))
+			    (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
+			      (build-path p (cadr s)))))]
+		    [(eq? (car s) 'file)
+		     (and (= (length s) 2)
+			  (let ([p (cadr s)])
+			    (and (string? p)
+				 (or (relative-path? p)
+				     (absolute-path? p))
+				 (path->complete-path p (get-dir)))))]
+		    [else #f])])
+	      (unless (string? filename)
+		(if stx
+		    (raise-syntax-error
+		     '(require require mzscheme)
+		     (format "bad module path~a" (if filename
+						     (car filename)
+						     ""))
+		     stx)
+		    (raise-type-error 
+		     'standard-module-name-resolver
+		     (format "module path~a" (if filename
+						 (car filename)
+						 ""))
+		     s)))
+	      ;; At this point, filename is a complete path
+	      (let ([filename (simplify-path (expand-path filename))])
+		(let-values ([(base name dir?) (split-path filename)])
+		  (let ([no-sfx (regexp-replace -re:suffix name "")]
+			[abase (format ",~a" base)])
+		    (let ([modname (string->symbol (string-append abase no-sfx))]
+			  [ht (hash-table-get
+			       -module-hash-table-table
+			       (namespace-module-registry (current-namespace))
+			       (lambda ()
+				 (let ([ht (make-hash-table)])
+				   (hash-table-put! -module-hash-table-table
+						    (namespace-module-registry (current-namespace))
+						    ht)
+				   ht)))])
+		      ;; Loaded already?
+		      (let ([got (hash-table-get ht modname (lambda () #f))]
+			    [suffix (let ([m (regexp-match -re:suffix name)])
+				      (if m (car m) #t))])
+			(when got
+			  ;; Check the suffix, which gets lost when creating a key:
+			  (unless (or (symbol? got) (equal? suffix got))
+			    (error
+			     'standard-module-name-resolver
+			     "module previously loaded with suffix ~s, cannot load with suffix ~s: ~e"
+			     (if (eq? #t got) "" got)
+			     (if (eq? #t suffix) "" suffix)
+			     filename)))
+			(unless got
+			  ;; Currently loading?
+			  (let ([l (continuation-mark-set->list
+				    (current-continuation-marks)
+				    -loading-filename)])
+			    (for-each
+			     (lambda (s)
+			       (when (string=? s filename)
+				 (error
+				  'standard-module-name-resolver
+				  "cycle in loading at ~e: ~e"
+				  filename
+				  (reverse (cons s l)))))
+			     l))
+			  (let ([prefix (string->symbol abase)])
+			    (with-continuation-mark -loading-filename filename
+			      (parameterize ([current-module-name-prefix prefix])
+				((current-load/use-compiled) filename (string->symbol no-sfx)))))
+			  (hash-table-put! ht modname suffix)))
+		      ;; Result is the module name:
+		      modname))))))]
+	 [else
+	  ;; Just register relto as loaded
+	  (when planet-resolver
+	    ;; Let planet resolver register, too:
+	    (planet-resolver s relto stx))
+	  (let ([ht (hash-table-get
+		     -module-hash-table-table
+		     (namespace-module-registry (current-namespace))
+		     (lambda ()
+		       (let ([ht (make-hash-table)])
+			 (hash-table-put! -module-hash-table-table
+					  (namespace-module-registry (current-namespace))
+					  ht)
+			 ht)))])
+	    (hash-table-put! ht relto 'attach))])))
+    standard-module-name-resolver)
     
   (define (find-library-collection-paths)
     (path-list-string->path-list
@@ -3123,7 +3129,7 @@
 	   channel-get channel-try-get channel-put
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment
-	   standard-module-name-resolver))
+	   make-standard-module-name-resolver))
 
 ;;----------------------------------------------------------------------
 ;; #%stxmz-body
@@ -3162,7 +3168,7 @@
   (require #%qqstx)
 
   (provide (all-from #%more-scheme)
-	   (all-from #%misc)
+	   (all-from-except #%misc make-standard-module-name-resolver)
 	   (all-from #%stxcase-scheme)
 	   identifier? ;; from #%stx
 	   (all-from #%qqstx)
@@ -3192,4 +3198,6 @@
   (namespace-require/copy 'mzscheme)
   (require-for-syntax mzscheme))
 
-(current-module-name-resolver standard-module-name-resolver)
+(current-module-name-resolver 
+ ((dynamic-require '#%misc 'make-standard-module-name-resolver) (current-namespace)))
+

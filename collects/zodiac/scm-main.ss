@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.190 1999/07/11 02:01:40 mflatt Exp $
+; $Id: scm-main.ss,v 1.192 1999/07/19 16:24:09 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1353,10 +1353,10 @@
   (define (make-cond-clause-vocab)
     (let([qa-error-msg "Not a clause in question-answer format"])
       (create-vocabulary 'cond-clause-vocab #f
-			 qa-error-msg   ; symbol
-			 qa-error-msg   ; literal
-			 qa-error-msg   ; list
-			 qa-error-msg)) ; ilist
+			 qa-error-msg    ; symbol
+			 qa-error-msg    ; literal
+			 qa-error-msg    ; list
+			 qa-error-msg))) ; ilist
 
   (define nobegin-cond-clause-vocab (make-cond-clause-vocab))
   (define answered-cond-clause-vocab (make-cond-clause-vocab))

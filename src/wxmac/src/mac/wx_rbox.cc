@@ -344,3 +344,10 @@ void wxRadioBox::ChangeToGray(Bool gray)
   ChildrenInternalGray(gray);
   wxWindow::ChangeToGray(gray);
 }
+
+int wxRadioBox::ButtonFocus(int)
+{
+  return -1;
+}
+
+	

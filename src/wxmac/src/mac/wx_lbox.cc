@@ -765,6 +765,7 @@ void wxListBox::SetLabel(char *label)
 //-----------------------------------------------------------------------------
 void wxListBox::OnSetFocus()
 {
+	SetCurrentDC();
 	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxBLACK_BRUSH);
 	if (!cHidden)
 		((wxBorderArea *)cBorderArea)->cBorder->Paint();
@@ -775,6 +776,7 @@ void wxListBox::OnSetFocus()
 //-----------------------------------------------------------------------------
 void wxListBox::OnKillFocus()
 {
+	SetCurrentDC();
 	((wxBorderArea *)cBorderArea)->cBorder->SetBrush(wxCONTROL_BACKGROUND_BRUSH);
 	if (!cHidden)
 		((wxBorderArea *)cBorderArea)->cBorder->Paint();

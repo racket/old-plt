@@ -320,6 +320,8 @@ public:
 	void ForEach(void (*foreach)(wxWindow *w, void *data), void *data);
 	
 	wxCursor *GetEffectiveCursor(void);
+	
+	Bool GetsFocus();
 
 //=============================================================================
 // Private methods

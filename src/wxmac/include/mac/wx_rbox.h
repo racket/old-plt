@@ -95,6 +95,8 @@ public:
 
   void ChangeColour(void);
   void ChangeToGray(Bool gray);
+  
+  int ButtonFocus(int);
 };
 
 #endif // IN_CPROTO

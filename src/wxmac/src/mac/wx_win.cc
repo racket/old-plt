@@ -1644,3 +1644,7 @@ wxCursor *wxWindow::GetEffectiveCursor(void)
   	return NULL;
 }
 
+Bool wxWindow::GetsFocus()
+{
+  return WantsFocus();
+}

@@ -803,6 +803,10 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
   Str255 fname;
   char temp[256];
 
+# ifndef OS_X
+#  define kFMDefaultIterationScope 0
+# endif
+
   FMCreateFontFamilyIterator(NULL, NULL, kFMDefaultIterationScope, &iterator);
 #endif
 #ifdef wx_msw

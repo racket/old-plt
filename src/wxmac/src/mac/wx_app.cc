@@ -287,6 +287,11 @@ void wxApp::doMacMouseDown(void)
       doMacInGrow(window); break;
     case inGoAway:
       doMacInGoAway(window); break;
+    case inCollapseBox:
+      {
+	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inCollapseBox)))
+	  CollapseWindow(window, TRUE);
+      }
     case inZoomIn:
     case inZoomOut:
       doMacInZoom(window, windowPart); break;

@@ -190,10 +190,15 @@
 
       ;; adds certifications back to result of sexp, when needed
       (define/public (recertify stx)
-	(for-each (lambda (orig-stx)
-		    (unless (eq? orig-stx stx)
-		      (syntax-recertify stx orig-stx recert-insp #f)))
-		  cert-stxes))
+	(let ([orig-stx stx])
+	  (let loop ([cert-stxes cert-stxes][stx stx])
+	    (cond
+	     [(null? cert-stxes) stx]
+	     [else (loop (cdr cert-stxes)
+			 (syntax-recertify stx 
+					   (car cert-stxes)
+					   recert-insp 
+					   #f))]))))
 
       ;; returns cert stxes
       (define/public (get-cert-stxes)
@@ -1087,6 +1092,7 @@
                                                (rhs . is-a? . global%))
                                            (send rhs valueable?)))
                         rhss))
+	   (send body merge-certs this)
            (send body substitute
                  (map (lambda (vars rhs) (cons (car vars) 
                                                (if (rhs . is-a? . ref%)
@@ -1228,7 +1234,7 @@
         (set! test (send test simplify (need-bool ctx)))
         (set! then (send then simplify ctx))
         (set! else (send else simplify ctx))
-		    
+
         ;; (if xvar xvar y) when need bool
         ;;   => (if xvar #t y)
         (when (and (eq? 'bool (context-need ctx))

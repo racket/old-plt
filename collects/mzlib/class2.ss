@@ -372,11 +372,13 @@
 			   ;; ---- set up field and method mappings ----
 			   (with-syntax ([(rename-orig ...) (map car renames)]
 					 [(rename-temp ...) (generate-temporaries (map car renames))]
-					 [(method-name ...) local-public-names]
+					 [(method-name ...) (append local-public-names
+								    (map car inherits))]
 					 [(method-accessor ...) (generate-temporaries
 								 (map car
 								      (append publics
-									      overrides)))]
+									      overrides
+									      inherits)))]
 					 [(field-accessor ...) (generate-temporaries
 								(map (lambda (id)
 								       (format "get-~a"

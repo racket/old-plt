@@ -6,10 +6,11 @@
 ;; The main idea is to hide package definitions by "introducing" the
 ;; identifier (i.e., applying a fresh mark for each definition).
 ;;
-;; Beyond the main strategy, there are two central problems:
+;; Beyond the main strategy, there are two major problems:
 ;;
-;;  1. Making `package' declarations available to immediate
-;;     `open' declarations in an internal-definition context.
+;;  1. Making `package' declarations available to immediately
+;;     following `open' declarations in an internal-definition
+;;     context: (let () (package p ...) (open p) ...)
 ;;
 ;;     The problem is that `open' needs to inspect the package
 ;;     to decide what variables it binds, but the package
@@ -23,7 +24,7 @@
 ;;
 ;;  2. Implementing the binding effetc of an `open', which needs
 ;;     to expose the bindings hidden by a `package', but also
-;;     override shadowing.
+;;     needs to override shadowing.
 ;;
 ;;     The `syntax-local-get-shadower' MzScheme function provides
 ;;     the key ingredient for this part, but it doesn't quite work

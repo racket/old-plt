@@ -16,29 +16,43 @@ PLT Release Notes</h2>
 <b>Release Date</b>:<tt> </tt> March 25, 1998.
 
 <p>
-The following is a summary of the major changes in this release of the
-PLT software from the previous one.
+
+This note summarizes the major differences between DrScheme v51 and v50.
+
+<h2> The Future </h2>
+
+PLT intends to conduct a major release by the end of this year or early
+next year. The changes will directly affect users of MrEd, the graphical
+toolbox. Please expect deletions of features, additions, and a few
+modifications. DrScheme will migrate to a graphical multi-module
+environment.  This change should not affect beginners or teachers. 
+
+<P>
 
 <h2> New Programs </h2>
 
 <ul>
 <li>
-<b>DrScheme Jr</b> is a new text-only version of DrScheme. It requires less
-resources, but provides only a read-eval-print loop. DrScheme Jr does
-not provide a built-in program editor or a graphical toolbox.
+<b>DrScheme Jr</b> is a new text-only version of DrScheme.
+It requires fewer resources, but provides only a read-eval-print
+loop with line-column-based error messages. 
+DrScheme Jr does not provide a built-in program editor or a graphical
+toolbox.
 
 <LI>
 <b>mzc</b> is a new compiler that transforms MzScheme
 programs to native code libraries. <b>mzc</b> is not yet an
 optimizing compiler; the performance of its output is comparable
-running the Scheme source directly in MzScheme.
+to running the Scheme source directly in MzScheme.
 
 </ul>
 
 <h2> MrSpidey </h2>
 
-MrSpidey is now distributed as a separate tool.  When
-installed, it may be invoked from DrScheme.
+MrSpidey is now distributed as a separate tool.
+Download instructions are provided when downloading
+DrScheme.  When installed, MrSpidey may be invoked from
+DrScheme.
 
 <h2> Networking facilities </h2>
 
@@ -67,10 +81,18 @@ sends email (preliminary, currently only works under Unix)
 </ul>
 
 Documentation is in a subdirectory `docs', of the net collection
-directory.  That subdirectory contains files named &LT;package&GT;.txt, 
-where &LT;package&GT; ranges over the above names.
+directory.  That subdirectory contains files named
+<i>package</i><code>.txt</code>, 
+where <i>package</i> ranges over the above names.
 
 <h2> Miscellany </h2>
+
+There is a new DrScheme vocabulary named "MrEd".  This
+vocabulary does not provide source correlation for errors, 
+but allows fast parsing and execution.  In the next release,
+the MrEd vocabulary will become a language level. 
+
+<p>
 
 Console I/O has been sped up, and is interruptible by using
 the Break button.
@@ -79,21 +101,6 @@ the Break button.
 
 See the HISTORY files in notes/drscheme, notes/mzscheme, and
 notes/mred for descriptions of other bug fixes and minor changes.
-
-<h2> The Future </h2>
-
-<STRONG>IMPORTANT</STRONG>: Expect major changes in the MrEd graphical
-toolbox with version 53 or so. Likely changes include:
-<ul>
-<li> removing the useless size arguments for initializing <tt>mred:frame%</tt>,
-   <tt>mred:button%</tt>, etc. instances;
-<li> changing the "nothing" value (e.g., no parent frame) from <tt>null</tt> to 
-     <tt>#f</tt>; and
-<li> replacing <tt>bitwise-or</tt>ed <tt>wx:const-XXX</tt> numerical constants with 
-   lists of <tt>'wx:const-XXX</tt> symbols.
-</ul>
-
-<P>
 
 <HR>
 

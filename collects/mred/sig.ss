@@ -157,4 +157,5 @@
    bitmap-dc%
    current-text-keymap-initializer
    sleep/yield
-   get-window-text-extent))
+   get-window-text-extent
+   get-family-builtin-face))

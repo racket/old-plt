@@ -9,6 +9,8 @@ Follows the protocol listed in the PLaneT client file
   
   (require 
    (lib "match.ss")
+   (lib "thread.ss")
+   
    "private/planet-shared.ss"
    "server-config.ss")
   
@@ -40,7 +42,7 @@ Follows the protocol listed in the PLaneT client file
       (let ([bytes (file-size file)]
             [file-port (open-input-file file)])
         (write-line (list seqno 'get 'ok maj min bytes) op)
-        (copy-n-chars bytes file-port op)))
+        (copy-port file-port op)))
     
     ; transmit-failure : Nat FULL-PKG ERROR-CODE string -> void
     ; reports a failure to handle a get request

@@ -3194,13 +3194,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
       DO_CHECK_FOR_BREAK(p, ;);
 
-      if (NOT_SAME_OBJ(c->home, p)) {
-	UPDATE_THREAD_RSPTR_FOR_ERROR();
-	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,
-			 c,
-			 "continuation application: attempted to apply foreign continuation"
-			 " (created in another thread)");
-      }
       if (c->ok && !*c->ok) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();
 	scheme_raise_exn(MZEXN_APPLICATION_CONTINUATION,

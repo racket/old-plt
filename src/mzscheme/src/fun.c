@@ -121,8 +121,11 @@ static int top_next_registered;
 static Scheme_Comp_Env *top_next_env;
 static Scheme_Object *top_next_mark;
 static Scheme_Object *top_next_name;
+static int top_next_use_thread_cc_ok;
 
 static Scheme_Object *is_method_symbol;
+
+static long *thread_init_cc_ok;
 
 static int cont_capture_count;
 
@@ -879,7 +882,15 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   old_cc_start = p->cc_start;
 
   if (eb) {
-    cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
+    if (top_next_use_thread_cc_ok) {
+      top_next_use_thread_cc_ok = 0;
+      if (!thread_init_cc_ok) {
+	REGISTER_SO(thread_init_cc_ok);
+	thread_init_cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
+      }
+      cc_ok = thread_init_cc_ok;
+    } else
+      cc_ok = (long *)scheme_malloc_atomic(sizeof(long));
     p->cc_ok = cc_ok;
 
     if (old_cc_ok)
@@ -1137,25 +1148,31 @@ _apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi, in
 Scheme_Object *
 scheme_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
 {
-  return _apply(rator, num_rands, rands, 0, 0);
+  return _apply(rator, num_rands, rands, 0, 1);
 }
 
 Scheme_Object *
 scheme_apply_multi(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
 {
-  return _apply(rator, num_rands, rands, 1, 0);
-}
-
-Scheme_Object *
-scheme_apply_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
-{
-  return _apply(rator, num_rands, rands, 0, 1);
-}
-
-Scheme_Object *
-scheme_apply_multi_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
-{
   return _apply(rator, num_rands, rands, 1, 1);
+}
+
+Scheme_Object *scheme_apply_thread_thunk(Scheme_Object *rator)
+{
+  top_next_use_thread_cc_ok = 1;
+  return _apply(rator, 0, NULL, 1, 1);
+}
+
+Scheme_Object *
+scheme_apply_no_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
+{
+  return _apply(rator, num_rands, rands, 0, 0);
+}
+
+Scheme_Object *
+scheme_apply_multi_no_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
+{
+  return _apply(rator, num_rands, rands, 1, 0);
 }
 
 Scheme_Object *
@@ -2135,50 +2152,15 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
 
 #define TOTAL_STACK_SIZE (sizeof(Scheme_Object*) * SCHEME_STACK_SIZE)
 
-static Scheme_Object *
-call_cc (int argc, Scheme_Object *argv[])
+static Scheme_Saved_Stack *copy_out_runstack(Scheme_Thread *p)
 {
-  Scheme_Object *ret;
-  Scheme_Cont * volatile cont;
-  Scheme_Dynamic_Wind *dw;
-  Scheme_Thread * volatile p = scheme_current_thread;
   Scheme_Saved_Stack *saved, *isaved, *csaved;
-  long size, cmcount;
-
-  scheme_check_proc_arity("call-with-current-continuation", 1,
-			  0, argc, argv);
-
-  cont = MALLOC_ONE_TAGGED(Scheme_Cont);
-  cont->type = scheme_cont_type;
-  scheme_init_jmpup_buf(&cont->buf);
-  cont->ok = p->cc_ok;
-  cont->dw = p->dw;
-  cont->home = p;
-  cont->suspend_break = p->suspend_break;
-  copy_cjs(&cont->cjs, &p->cjs);
-  cont->save_overflow = p->overflow;
-  memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
-  cont->current_local_env = p->current_local_env;
-  scheme_save_env_stack_w_thread(cont->ss, p);
-
-  {
-    Scheme_Overflow *overflow;
-    /* Mark overflows as captured: */
-    for (overflow = p->overflow; overflow && !overflow->captured; overflow = overflow->prev) {
-      overflow->captured = 1;
-    }
-  }
-  cont_capture_count++;
-
-  /* Hide call/cc's arg off of stack */
-  p->ku.k.p1 = argv[0];
-  argv[0] = NULL;
+  long size;
 
   /* Copy out stack: */
   saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
-  cont->runstack_copied = saved;
 #ifdef MZTAG_REQUIRED
-  cont->runstack_copied->type = scheme_rt_saved_stack;
+  saved->type = scheme_rt_saved_stack;
 #endif
   size = p->runstack_size - (MZ_RUNSTACK - MZ_RUNSTACK_START);
   saved->runstack_size = size;
@@ -2210,29 +2192,163 @@ call_cc (int argc, Scheme_Object *argv[])
   }
   isaved->prev = NULL;
 
+  return saved;
+}
+
+static Scheme_Cont_Mark *copy_out_mark_stack(Scheme_Thread *p)
+{
+  long cmcount;
+  Scheme_Cont_Mark *cont_mark_stack_copied;
+
   /* Copy cont mark stack: */
   cmcount = (long)MZ_CONT_MARK_STACK;
-  {
-    Scheme_Cont_Mark *cm;
-    cm = MALLOC_N(Scheme_Cont_Mark, cmcount);
-    cont->cont_mark_stack_copied = cm;
+  if (cmcount) {
+    cont_mark_stack_copied = MALLOC_N(Scheme_Cont_Mark, cmcount);
+    while (cmcount--) {
+      Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
+      long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
+      Scheme_Cont_Mark *cm = seg + pos;
+      
+      memcpy(cont_mark_stack_copied + cmcount, cm, sizeof(Scheme_Cont_Mark));
+    }
+    
+    return cont_mark_stack_copied;
+  } else
+    return NULL;
+}
+
+static void copy_in_runstack(Scheme_Thread *p, Scheme_Saved_Stack *isaved)
+{
+  Scheme_Saved_Stack *csaved;
+  long size;
+
+  size = isaved->runstack_size;
+  MZ_RUNSTACK = MZ_RUNSTACK_START + (p->runstack_size - size);
+  memcpy(MZ_RUNSTACK, isaved->runstack_start, size * sizeof(Scheme_Object *));
+  for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
+    isaved = isaved->prev;
+    size = isaved->runstack_size;
+    csaved->runstack = csaved->runstack_start + (csaved->runstack_size - size);
+    memcpy(csaved->runstack, isaved->runstack_start, size * sizeof(Scheme_Object *));
+  }
+}
+
+static void copy_in_mark_stack(Scheme_Thread *p, Scheme_Cont_Mark *cont_mark_stack_copied)
+{
+  long cmcount;
+
+  cmcount = (long)MZ_CONT_MARK_STACK;
+  if (cmcount) {
+    /* First, make sure we have enough segments */
+    long needed = ((cmcount - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
+
+    if (needed > p->cont_mark_seg_count) {
+      Scheme_Cont_Mark **segs, **old_segs = p->cont_mark_stack_segments;
+      int newcount = needed, oldcount = p->cont_mark_seg_count;
+
+      /* Note: we perform allocations before changing p to avoid GC trouble,
+	 since MzScheme adjusts a thread's cont_mark_stack_segments on GC. */
+      segs = MALLOC_N(Scheme_Cont_Mark *, needed);
+
+      while (needed--) {
+	if (needed < oldcount)
+	  segs[needed] = old_segs[needed]; /* might be NULL due to GC! */
+	else
+	  segs[needed] = NULL;
+
+	if (!segs[needed]) {
+	  Scheme_Cont_Mark *cm;
+	  cm = scheme_malloc_allow_interior(sizeof(Scheme_Cont_Mark) * SCHEME_MARK_SEGMENT_SIZE);
+	  segs[needed] = cm;
+	}
+      }
+
+      p->cont_mark_seg_count = newcount;
+      p->cont_mark_stack_segments = segs;
+    }
   }
   while (cmcount--) {
     Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
     long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
     Scheme_Cont_Mark *cm = seg + pos;
-
-    memcpy(cont->cont_mark_stack_copied + cmcount, cm, sizeof(Scheme_Cont_Mark));
+    
+    memcpy(cm, cont_mark_stack_copied + cmcount, sizeof(Scheme_Cont_Mark));
   }
+}
+
+static Scheme_Object *
+call_cc (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *ret;
+  Scheme_Cont * volatile cont;
+  Scheme_Dynamic_Wind *dw;
+  Scheme_Thread * volatile p = scheme_current_thread;
+  Scheme_Saved_Stack *saved;
+  Scheme_Cont_Mark *msaved;
+
+  scheme_check_proc_arity("call-with-current-continuation", 1,
+			  0, argc, argv);
+
+  cont = MALLOC_ONE_TAGGED(Scheme_Cont);
+  cont->type = scheme_cont_type;
+  scheme_init_jmpup_buf(&cont->buf);
+  cont->ok = p->cc_ok;
+  cont->dw = p->dw;
+  cont->suspend_break = p->suspend_break;
+  copy_cjs(&cont->cjs, &p->cjs);
+  cont->save_overflow = p->overflow;
+  memcpy(&cont->save_overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
+  cont->current_local_env = p->current_local_env;
+  scheme_save_env_stack_w_thread(cont->ss, p);
+
+  {
+    Scheme_Overflow *overflow;
+    /* Mark overflows as captured: */
+    for (overflow = p->overflow; overflow && !overflow->captured; overflow = overflow->prev) {
+      overflow->captured = 1;
+    }
+  }
+  cont_capture_count++;
+
+  if (p->cc_ok == thread_init_cc_ok) {
+    /* This continuation can be used by other threads,
+       so we need to track ownership of the runstack */
+    if (!p->runstack_owner) {
+      Scheme_Thread **owner;
+      owner = MALLOC_N(Scheme_Thread *, 1);
+      p->runstack_owner = owner;
+      *owner = p;
+    }
+    if (p->cont_mark_stack && !p->cont_mark_stack_owner) {
+      Scheme_Thread **owner;
+      owner = MALLOC_N(Scheme_Thread *, 1);
+      p->cont_mark_stack_owner = owner;
+      *owner = p;
+    }
+  }
+
+  /* Hide call/cc's arg off of stack */
+  p->ku.k.p1 = argv[0];
+  argv[0] = NULL;
+
+  saved = copy_out_runstack(p);
+  cont->runstack_copied = saved;
+  msaved = copy_out_mark_stack(p);
+  cont->cont_mark_stack_copied = msaved;
+
+  cont->runstack_owner = p->runstack_owner;
+  cont->cont_mark_stack_owner = p->cont_mark_stack_owner;
 
   memcpy(&cont->savebuf, &p->error_buf, sizeof(mz_jmp_buf));
 
   scheme_zero_unneeded_rands(p);
 
   if (scheme_setjmpup(&cont->buf, cont, p->cc_start)) {
+    /* We arrive here when the continuation is applied */
     Scheme_Object *result = cont->value;
     cont->value = NULL;
 
+    p = scheme_current_thread; /* maybe different than before */
     p->current_local_env = cont->current_local_env;
 
     memcpy(&p->error_buf, &cont->savebuf, sizeof(mz_jmp_buf));
@@ -2275,55 +2391,13 @@ call_cc (int argc, Scheme_Object *argv[])
     /* Copy stack back in: (p->runstack and p->runstack_saved arrays
        are already restored, so the shape is certainly the same as
        when cont->runstack_copied was made) */
-    isaved = cont->runstack_copied;
-    size = isaved->runstack_size;
-    MZ_RUNSTACK = MZ_RUNSTACK_START + (p->runstack_size - size);
-    memcpy(MZ_RUNSTACK, isaved->runstack_start, size * sizeof(Scheme_Object *));
-    for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
-      isaved = isaved->prev;
-      size = isaved->runstack_size;
-      csaved->runstack = csaved->runstack_start + (csaved->runstack_size - size);
-      memcpy(csaved->runstack, isaved->runstack_start, size * sizeof(Scheme_Object *));
-    }
+    copy_in_runstack(p, cont->runstack_copied);
 
     /* Copy cont mark stack back in. */
-    cmcount = (long)MZ_CONT_MARK_STACK;
-    {
-      /* First, make sure we have enough segments */
-      long needed = ((cmcount - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
+    copy_in_mark_stack(p, cont->cont_mark_stack_copied);
 
-      if (needed > p->cont_mark_seg_count) {
-	Scheme_Cont_Mark **segs, **old_segs = p->cont_mark_stack_segments;
-	int newcount = needed, oldcount = p->cont_mark_seg_count;
-
-	/* Note: we perform allocations before changing p to avoid GC trouble,
-	   since MzScheme adjusts a thread's cont_mark_stack_segments on GC. */
-	segs = MALLOC_N(Scheme_Cont_Mark *, needed);
-
-	while (needed--) {
-	  if (needed < oldcount)
-	    segs[needed] = old_segs[needed]; /* might be NULL due to GC! */
-	  else
-	    segs[needed] = NULL;
-
-	  if (!segs[needed]) {
-	    Scheme_Cont_Mark *cm;
-	    cm = scheme_malloc_allow_interior(sizeof(Scheme_Cont_Mark) * SCHEME_MARK_SEGMENT_SIZE);
-	    segs[needed] = cm;
-	  }
-	}
-
-	p->cont_mark_seg_count = newcount;
-	p->cont_mark_stack_segments = segs;
-      }
-    }
-    while (cmcount--) {
-      Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[cmcount >> SCHEME_LOG_MARK_SEGMENT_SIZE];
-      long pos = cmcount & SCHEME_MARK_SEGMENT_MASK;
-      Scheme_Cont_Mark *cm = seg + pos;
-
-      memcpy(cm, cont->cont_mark_stack_copied + cmcount, sizeof(Scheme_Cont_Mark));
-    }
+    p->runstack_owner = cont->runstack_owner;
+    p->cont_mark_stack_owner = cont->cont_mark_stack_owner;
 
     /* We may have just re-activated breaking: */
     scheme_check_break_now();
@@ -2340,6 +2414,36 @@ call_cc (int argc, Scheme_Object *argv[])
     argv2[0] = (Scheme_Object *)cont;
     ret = _scheme_tail_apply(argv[0], 1, argv2);
     return ret;
+  }
+}
+
+void scheme_takeover_stacks(Scheme_Thread *p)
+     /* When a contination captured in on e thread is invoked in another,
+	the two threads can start using the same runstack, and possibly
+	also the same cont-mark stack. This function swaps out the
+	current owner in favor of p */
+	
+{
+  if (p->runstack_owner && ((*p->runstack_owner) != p)) {
+    Scheme_Thread *op;
+    Scheme_Saved_Stack *swapped;
+    op = *p->runstack_owner;
+    copy_out_runstack(op);
+    op->runstack_swapped = swapped;
+    *(p->runstack_owner) = p;
+    copy_in_runstack(p, p->runstack_swapped);
+    p->runstack_swapped = NULL;
+  }
+
+  if (p->cont_mark_stack_owner && ((*p->cont_mark_stack_owner) != p)) {
+    Scheme_Thread *op;
+    Scheme_Cont_Mark *swapped;
+    op = *p->cont_mark_stack_owner;
+    copy_out_mark_stack(op);
+    op->cont_mark_stack_swapped = swapped;
+    *(p->cont_mark_stack_owner) = p;
+    copy_in_mark_stack(p, p->cont_mark_stack_swapped);
+    p->cont_mark_stack_swapped = NULL;
   }
 }
 

@@ -103,8 +103,8 @@
   scheme_extension_table->_scheme_eval_compiled_multi = _scheme_eval_compiled_multi;
   scheme_extension_table->scheme_apply = scheme_apply;
   scheme_extension_table->scheme_apply_multi = scheme_apply_multi;
-  scheme_extension_table->scheme_apply_eb = scheme_apply_eb;
-  scheme_extension_table->scheme_apply_multi_eb = scheme_apply_multi_eb;
+  scheme_extension_table->scheme_apply_no_eb = scheme_apply_no_eb;
+  scheme_extension_table->scheme_apply_multi_no_eb = scheme_apply_multi_no_eb;
   scheme_extension_table->scheme_apply_to_list = scheme_apply_to_list;
   scheme_extension_table->scheme_eval_string = scheme_eval_string;
   scheme_extension_table->scheme_eval_string_multi = scheme_eval_string_multi;

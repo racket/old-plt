@@ -832,11 +832,12 @@ int cont_proc_MARK(void *p) {
   gcMARK(c->dw);
   gcMARK(c->common);
   gcMARK(c->ok);
-  gcMARK(c->home);
   gcMARK(c->current_local_env);
   gcMARK(c->save_overflow);
   gcMARK(c->runstack_copied);
+  gcMARK(c->runstack_owner);
   gcMARK(c->cont_mark_stack_copied);
+  gcMARK(c->cont_mark_stack_owner);
   
   MARK_jmpup(&c->buf);
   MARK_cjs(&c->cjs);
@@ -852,11 +853,12 @@ int cont_proc_FIXUP(void *p) {
   gcFIXUP(c->dw);
   gcFIXUP(c->common);
   gcFIXUP(c->ok);
-  gcFIXUP(c->home);
   gcFIXUP(c->current_local_env);
   gcFIXUP(c->save_overflow);
   gcFIXUP(c->runstack_copied);
+  gcFIXUP(c->runstack_owner);
   gcFIXUP(c->cont_mark_stack_copied);
+  gcFIXUP(c->cont_mark_stack_owner);
   
   FIXUP_jmpup(&c->buf);
   FIXUP_cjs(&c->cjs);
@@ -1408,6 +1410,7 @@ int thread_val_MARK(void *p) {
 
   gcMARK(pr->cell_values);
   gcMARK(pr->init_config);
+  gcMARK(pr->config_at_swap);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -1415,8 +1418,12 @@ int thread_val_MARK(void *p) {
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
   }
   gcMARK(pr->runstack_saved);
+  gcMARK(pr->runstack_owner);
+  gcMARK(pr->runstack_swapped);
   
   gcMARK(pr->cont_mark_stack_segments);
+  gcMARK(pr->cont_mark_stack_owner);
+  gcMARK(pr->cont_mark_stack_swapped);
   
   MARK_jmpup(&pr->jmpup_buf);
   
@@ -1491,6 +1498,7 @@ int thread_val_FIXUP(void *p) {
 
   gcFIXUP(pr->cell_values);
   gcFIXUP(pr->init_config);
+  gcFIXUP(pr->config_at_swap);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -1498,8 +1506,12 @@ int thread_val_FIXUP(void *p) {
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
   }
   gcFIXUP(pr->runstack_saved);
+  gcFIXUP(pr->runstack_owner);
+  gcFIXUP(pr->runstack_swapped);
   
   gcFIXUP(pr->cont_mark_stack_segments);
+  gcFIXUP(pr->cont_mark_stack_owner);
+  gcFIXUP(pr->cont_mark_stack_swapped);
   
   FIXUP_jmpup(&pr->jmpup_buf);
   

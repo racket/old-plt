@@ -358,6 +358,8 @@ struct Scheme_Config {
 
 extern Scheme_Object *scheme_parameterization_key;
 
+extern Scheme_Object *scheme_apply_thread_thunk(Scheme_Object *rator);
+
 /*========================================================================*/
 /*                       hash tables and globals                          */
 /*========================================================================*/
@@ -830,7 +832,9 @@ typedef struct Scheme_Cont {
   int suspend_break;
   Scheme_Stack_State ss;
   Scheme_Saved_Stack *runstack_copied;
+  Scheme_Thread **runstack_owner;
   Scheme_Cont_Mark *cont_mark_stack_copied;
+  Scheme_Thread **cont_mark_stack_owner;
   struct Scheme_Overflow *save_overflow;
   struct Scheme_Comp_Env *current_local_env;
   mz_jmp_buf savebuf; /* save old error buffer here */
@@ -864,6 +868,8 @@ typedef struct Scheme_Escaping_Cont {
     scheme_save_env_stack_w_thread(ss, scheme_current_thread)
 #define scheme_restore_env_stack(ss) \
     scheme_restore_env_stack_w_thread(ss, scheme_current_thread)
+
+void scheme_takeover_stacks(Scheme_Thread *p);
 
 typedef struct Scheme_Overflow {
   MZTAG_IF_REQUIRED

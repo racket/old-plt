@@ -94,8 +94,8 @@ EXPORTS
  scheme_eval_compiled_multi
  scheme_apply
  scheme_apply_multi
- scheme_apply_eb
- scheme_apply_multi_eb
+ scheme_apply_no_eb
+ scheme_apply_multi_no_eb
  scheme_apply_to_list
  scheme_eval_string
  scheme_eval_string_multi

@@ -746,6 +746,7 @@ typedef struct Scheme_Thread {
 
   Scheme_Thread_Cell_Table *cell_values;
   Scheme_Config *init_config;
+  Scheme_Config *config_at_swap;
 
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
@@ -753,10 +754,16 @@ typedef struct Scheme_Thread {
   struct Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **runstack_tmp_keep;
 
+  struct Scheme_Thread **runstack_owner;
+  struct Scheme_Saved_Stack *runstack_swapped;
+
   MZ_MARK_POS_TYPE cont_mark_pos;     /* depth of the continuation chain */
   MZ_MARK_STACK_TYPE cont_mark_stack; /* current mark stack position */
   struct Scheme_Cont_Mark **cont_mark_stack_segments;
   int cont_mark_seg_count;
+
+  struct Scheme_Thread **cont_mark_stack_owner;
+  struct Scheme_Cont_Mark *cont_mark_stack_swapped;
 
   long engine_weight;
 

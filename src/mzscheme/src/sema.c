@@ -385,9 +385,50 @@ static void get_outof_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
   }
 }
 
+void scheme_get_into_line(Scheme_Object *sema, Waiting *waiting, int i)
+{
+  Scheme_Sema_Waiter *w, *next;
+
+  /* Check whether `waiting' is already in line: */
+  if (SCHEME_CHANNELP(sema)) {
+    Scheme_Channel *ch = (Scheme_Channel *)sema;
+    w = ch->put_first;
+  } else {
+    Scheme_Channel_Put *chp = (Scheme_Channel_Put *)sema;
+    w = chp->ch->get_first;
+  }
+  while (w) {
+    if (w->waiting == waiting) {
+      /* Already in line */
+      return;
+    } else {
+      next = w->next;
+      if (w->waiting->result) {
+	/* Clean-up - drop this one. This function doesn't
+	   have to clean up (and we're not checking for pending
+	   breaks), but it's easy and probably useful */
+	get_outof_line((Scheme_Sema *)sema, w);
+      }
+      w = next;
+    }
+  }
+  
+  /* Not in line, so get in. */
+  w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
+#ifdef MZTAG_REQUIRED
+  w->type = scheme_rt_sema_waiter;
+#endif
+  w->p = scheme_current_thread;
+  w->waiting = waiting;
+  w->waiting_i = i;
+
+  get_into_line((Scheme_Sema *)sema, w);
+}
+
 static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Object **result)
 {
   if (SCHEME_CHANNELP(sema)) {
+    /* GET mode */
     Scheme_Channel *ch = (Scheme_Channel *)sema;
     Scheme_Sema_Waiter *w = ch->put_first, *next;
     int picked = 0;
@@ -427,6 +468,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 
     return 0;
   } else {
+    /* PUT mode */
     Scheme_Channel_Put *chp = (Scheme_Channel_Put *)sema;
     Scheme_Sema_Waiter *w = chp->ch->get_first, *next;
     int picked = 0;
@@ -436,8 +478,6 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	/* can't synchronize with self */
 	w = w->next;
       } else {
-	Scheme_Channel *ch = (Scheme_Channel *)w->waiting->set->argv[w->waiting_i];
-	
 	if (!w->waiting->result && !pending_break(w->p)) {
 	  w->picked = 1;
 	  w->waiting->set->argv[w->waiting_i] = chp->val;
@@ -454,7 +494,7 @@ static int try_channel(Scheme_Sema *sema, Waiting *waiting, int pos, Scheme_Obje
 	}
 	
 	next = w->next;
-	get_outof_line((Scheme_Sema *)ch, w);
+	get_outof_line((Scheme_Sema *)chp->ch, w);
 	w = next;
 	
 	if (picked)

@@ -308,11 +308,12 @@ cont_proc {
   gcMARK(c->dw);
   gcMARK(c->common);
   gcMARK(c->ok);
-  gcMARK(c->home);
   gcMARK(c->current_local_env);
   gcMARK(c->save_overflow);
   gcMARK(c->runstack_copied);
+  gcMARK(c->runstack_owner);
   gcMARK(c->cont_mark_stack_copied);
+  gcMARK(c->cont_mark_stack_owner);
   
   MARK_jmpup(&c->buf);
   MARK_cjs(&c->cjs);
@@ -530,6 +531,7 @@ thread_val {
 
   gcMARK(pr->cell_values);
   gcMARK(pr->init_config);
+  gcMARK(pr->config_at_swap);
 
   {
     Scheme_Object **rs = pr->runstack_start;
@@ -537,8 +539,12 @@ thread_val {
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
   }
   gcMARK(pr->runstack_saved);
+  gcMARK(pr->runstack_owner);
+  gcMARK(pr->runstack_swapped);
   
   gcMARK(pr->cont_mark_stack_segments);
+  gcMARK(pr->cont_mark_stack_owner);
+  gcMARK(pr->cont_mark_stack_swapped);
   
   MARK_jmpup(&pr->jmpup_buf);
   

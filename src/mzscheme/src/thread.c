@@ -2054,10 +2054,25 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
 	f(o);
       }
     }
+    if (scheme_current_thread->cc_ok)
+      *(scheme_current_thread->cc_ok) = 1;
+    if ((scheme_current_thread->runstack_owner
+	 && (*scheme_current_thread->runstack_owner) != scheme_current_thread)
+	|| (scheme_current_thread->cont_mark_stack_owner
+	    && (*scheme_current_thread->cont_mark_stack_owner) != scheme_current_thread)) {
+      scheme_takeover_stacks(scheme_current_thread);
+    }
   } else {
     swap_no_setjmp = 0;
 
     /* We're leaving... */
+    {
+      Scheme_Config *config;
+      config = scheme_current_config();
+      scheme_current_thread->config_at_swap = config;
+    }
+    if (scheme_current_thread->cc_ok)
+      *(scheme_current_thread->cc_ok) = 0;
     scheme_gmp_tls_load(scheme_current_thread->gmp_tls);
 #ifdef RUNSTACK_IS_GLOBAL
     scheme_current_thread->runstack = MZ_RUNSTACK;
@@ -2196,19 +2211,35 @@ static void remove_thread(Scheme_Thread *r)
   }
 #endif
 
+  if (r->runstack_owner) {
+    /* Drop ownership, if active, and clear the stack */
+    if (r == *(r->runstack_owner)) {
+      memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
+      r->runstack_start = NULL;
+      for (saved = r->runstack_saved; saved; saved = saved->prev) {
+	memset(saved->runstack_start, 0, saved->runstack_size * sizeof(Scheme_Object*));
+      }
+      r->runstack_saved = NULL;
+      *(r->runstack_owner) = NULL;
+      r->runstack_owner = NULL;
+    }
+  } else {
+    /* Only this thread used the runstack, so clear/free it
+       as agressively as possible */
 #if defined(SENORA_GC_NO_FREE) || defined(MZ_PRECISE_GC)
-  memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
+    memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
 #else
-  GC_free(r->runstack_start);
+    GC_free(r->runstack_start);
 #endif
-  r->runstack_start = NULL;
-  for (saved = r->runstack_saved; saved; saved = saved->prev) {
+    r->runstack_start = NULL;
+    for (saved = r->runstack_saved; saved; saved = saved->prev) {
 #if defined(SENORA_GC_NO_FREE) || defined(MZ_PRECISE_GC)
-    memset(saved->runstack_start, 0, saved->runstack_size * sizeof(Scheme_Object*));
+      memset(saved->runstack_start, 0, saved->runstack_size * sizeof(Scheme_Object*));
 #else
-    GC_free(saved->runstack_start);
+      GC_free(saved->runstack_start);
 #endif
-    saved->runstack_start = NULL;
+      saved->runstack_start = NULL;
+    }
   }
 
 #ifndef SENORA_GC_NO_FREE
@@ -2278,8 +2309,12 @@ static void start_child(Scheme_Thread * volatile child,
       scheme_check_break_now();
 
       /* run the main thunk: */
-      scheme_apply_multi(child_eval, 0, NULL);
+      scheme_apply_thread_thunk(child_eval);
     }
+
+    /* !! At this point, scheme_current_thread can turn out to be a
+       different thread, which invoked the original thread's
+       continuation. */
     
     remove_thread(scheme_current_thread);
 
@@ -2293,7 +2328,7 @@ static void start_child(Scheme_Thread * volatile child,
     select_thread();
 
     /* Shouldn't get here! */
-    scheme_signal_error("bad process switch");
+    scheme_signal_error("bad thread switch");
   }
 }
 
@@ -2983,8 +3018,12 @@ int scheme_can_break(Scheme_Thread *p)
 {
   if (!p->suspend_break && !p->exn_raised) {
     Scheme_Config *config;
-    config = scheme_current_config();
-    return SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_ENABLE_BREAK));
+    if (p == scheme_current_thread) {
+      config = scheme_current_config();
+    } else {
+      config = p->config_at_swap;
+    }
+    return SCHEME_TRUEP(scheme_get_thread_param(config, p->cell_values, MZCONFIG_ENABLE_BREAK));
   }
   return 0;
 }
@@ -4524,7 +4563,12 @@ static int waiting_ready(Scheme_Object *s, Scheme_Schedule_Info *sinfo)
     w = waitable_set->ws[i];
     ready = w->ready;
 
-    if (!SCHEME_SEMAP(o) && !SCHEME_CHANNELP(o) && !SCHEME_CHANNEL_PUTP(o))
+    if (SCHEME_CHANNELP(o) || SCHEME_CHANNEL_PUTP(o)) {
+      /* In case we're not in line, yet: */
+      scheme_get_into_line(o, waiting, i);
+      /* We don't bother getting out of line, because someone
+	 else will clean up if the channel is used more */
+    } else if (!SCHEME_SEMAP(o))
       all_semas = 0;
 
     if (ready) {
@@ -5920,22 +5964,25 @@ static void prepare_thread_for_GC(Scheme_Object *t)
 # define RUNSTACK_TUNE(x) /* x   - Used for performance tuning */
     RUNSTACK_TUNE( long size; );
 
-    o = p->runstack_start;
-    e = p->runstack;
-    e2 = p->runstack_tmp_keep;
+    if (!p->runstack_owner
+	|| (p == *p->runstack_owner)) {
+      o = p->runstack_start;
+      e = p->runstack;
+      e2 = p->runstack_tmp_keep;
 
-    while (o < e && (o != e2)) {
-      *(o++) = NULL;
-    }
-
-    RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
-
-    for (saved = p->runstack_saved; saved; saved = saved->prev) {
-      o = saved->runstack_start;
-      e = saved->runstack;
-      RUNSTACK_TUNE( size += saved->runstack_size; );
-      while (o < e) {
+      while (o < e && (o != e2)) {
 	*(o++) = NULL;
+      }
+      
+      RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
+      
+      for (saved = p->runstack_saved; saved; saved = saved->prev) {
+	o = saved->runstack_start;
+	e = saved->runstack;
+	RUNSTACK_TUNE( size += saved->runstack_size; );
+	while (o < e) {
+	  *(o++) = NULL;
+	}
       }
     }
 
@@ -5949,9 +5996,11 @@ static void prepare_thread_for_GC(Scheme_Object *t)
     }
   }
       
-  /* release unused cont mark stack segments */
-  {
-    int segcount, i;
+  if (!p->cont_mark_stack_owner
+      || (p == *p->cont_mark_stack_owner)) {
+    int segcount, i, segpos;
+
+    /* release unused cont mark stack segments */
     if (p->cont_mark_stack)
       segcount = ((long)(p->cont_mark_stack - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
     else
@@ -5961,12 +6010,10 @@ static void prepare_thread_for_GC(Scheme_Object *t)
     }
     if (segcount < p->cont_mark_seg_count)
       p->cont_mark_seg_count = segcount;
-  }
       
-  /* zero unused part of last mark stack segment */
-  {
-    int segpos = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE);
-	
+    /* zero unused part of last mark stack segment */
+    segpos = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE);
+    
     if (segpos < p->cont_mark_seg_count) {
       Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[segpos];
       int stackpos = ((long)p->cont_mark_stack & SCHEME_MARK_SEGMENT_MASK), i;

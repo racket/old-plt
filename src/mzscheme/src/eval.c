@@ -104,7 +104,7 @@
 #include <Memory.h>
 #endif
 
-#define EMBEDDED_DEFINES_START_ANYWHERE 1
+#define EMBEDDED_DEFINES_START_ANYWHERE 0
 
 /* globals */
 Scheme_Object *scheme_eval_waiting;

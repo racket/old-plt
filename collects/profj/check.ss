@@ -1494,6 +1494,11 @@
                      (private? (memq 'private mods))
                      (protected? (memq 'protected mods)))
                 
+                (when (and (field-access-access acc)
+                           (var-access-static? (field-access-access acc)))
+                  (unless (memq 'static mods)
+                    (not-static-field-access-error (string->symbol fname) level src)))
+                
                 (when (and (eq? level 'beginner)
                            (eq? (car c-class) (car field-class))
                            (or (not obj) (and (special-name? obj) (not (expr-src obj)))))
@@ -2463,6 +2468,18 @@
                  (format "local variable ~a was not set along all paths reaching this point, and cannot be used"
                          name)
                  name src))     
+  
+  ;not-static-field-access-error symbol symbol src -> void
+  (define (not-static-field-access-error name level src)
+    (raise-error 
+     name
+     (case level
+       ((beginner intermediate) 
+        (format "Field ~a cannot be retrieved from a class, ~a can only be accessed from an instance of the class"
+                name name))
+       ((advanced full)
+        (format "Field ~a accessed as though static; this field is not a static field" name)))
+     name src))
   
   ;beginner-field-access-error: symbol src -> void
   (define (beginner-field-access-error name src)

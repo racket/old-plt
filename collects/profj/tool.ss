@@ -385,8 +385,7 @@
               (lambda ()
                 (if (eof-object? (peek-char-or-special port))
                     eof
-		    (syntax-as-top
-		     (compile-interactions port name execute-types level))))))
+		    (syntax-as-top (compile-interactions port name execute-types level))))))
 
 	  (define/private (syntax-as-top s)
 	    (if (syntax? s)

@@ -87,8 +87,8 @@ string=? ; exec mzscheme -qr $0 "$@"
     (lambda ()
       (define (writeln x) (printf "~s\n" x))
       (printf "(\n")
-      (writeln '("Teachpacks for \"How to Design Programs\""
-                 "index.html" "HtDP" "Arrows GUI teachpack"))
+      (let ([title "Teachpacks for \"How to Design Programs\""])
+        (writeln `(,title "index.html" "HtDP" ,title)))
       (for-each
        (lambda (lib-name)
          (let* ([src (cdr lib-name)]

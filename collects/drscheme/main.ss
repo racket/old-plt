@@ -68,8 +68,6 @@
 	    (send (ivar frame interactions-canvas) focus))))
       (send frame show #t)))
 
-  ((global-defined-value 'drscheme:app:about-drscheme))
-
   (let ([files-to-open (reverse (vector->list i:argv))])
     (if (null? files-to-open)
 	(make-basic)

@@ -54,20 +54,10 @@
       (sequence 
 	(super-init)
 	(let ([s (last-position)])
-	  (insert (format "Welcome to MrEd version ~a." (version)))
+	  (insert (format "Version ~a." (version)))
 	  (let ([e (last-position)])
 	    (insert #\newline)
 	    (change-style (send (make-object style-delta% 'change-bold) set-delta-foreground "BLUE") s e)))
-	(output (format "Copyright (c) 1995-98 PLT (Matthew Flatt and Robby Findler)~n") #f)
-	(insert "This is a simple window for evaluating MrEd Scheme expressions.") (insert #\newline)
-	(let ([s (last-position)])
-	  (insert "Quit now and run DrScheme to get a better window.")
-	  (let ([e (last-position)])
-	    (insert #\newline)
-	    (change-style
-	     (send (make-object style-delta% 'change-style 'slant) set-delta-foreground "RED")
-	     s e)))
-	(insert "The current input port always returns eof.") (insert #\newline)
 	(new-prompt))))
 
   (define frame-size-section "MrEd-REPL-size")
@@ -118,7 +108,7 @@
 					     (semaphore-post waiting))]
 				 [on-drop-file (lambda (f) (evaluate (format "(load ~s)" f)))])
 			       (sequence (apply super-init args) (accept-drop-files #t)))
-			     "Color MrEd REPL"
+			     "DrScheme Debug REPL"
 			     #f
 			     frame-width
 			     frame-height

@@ -1196,6 +1196,10 @@
 	(rename [super-on-local-char on-local-char]
 		[super-on-paint on-paint]
 		[super-after-set-size-constraint after-set-size-constraint])
+
+	(override 
+	 [autosave? (lambda () #f)])
+
 	(private
 	  [edit-sequence-count 0])
 	(public

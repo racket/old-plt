@@ -120,7 +120,7 @@ public:
     virtual void  DrawRoundedRectangle(float x, float y, float w, float h,
 				       float radius=20) = 0;
 
-    virtual void  DrawText(char *text, float x, float y,
+  virtual void  DrawText(char *text, float x, float y, Bool combine=FALSE,
 			   Bool use16 = FALSE, int dt = 0, float angle = 0.0) = 0;
     virtual void  FloodFill(float x, float y, wxColour *col,
 			    int style=wxFLOOD_SURFACE) = 0;
@@ -128,7 +128,8 @@ public:
     virtual float GetCharWidth(void) = 0;
     virtual void  GetTextExtent(const char *s, float *w, float *h,
 				float *descent = 0, float *ext_leading = 0,
-				wxFont *font=NULL, Bool use16bit=FALSE, int dt=0) = 0;
+				wxFont *font=NULL, 
+				Bool combine=FALSE, Bool use16bit=FALSE, int dt=0) = 0;
     virtual void  IntDrawLine(int x1, int y1, int x2, int y2) = 0;
     virtual void  IntDrawLines(int n, wxIntPoint pts[],
 			       int xoff=0, int yoff=0) = 0;

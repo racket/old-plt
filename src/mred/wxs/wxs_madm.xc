@@ -34,6 +34,7 @@ extern Bool wxsCheckIsPopupMenu(void *m);
 @SYM "hide-vscroll" : wxMCANVAS_HIDE_V_SCROLL
 @SYM "deleted" : wxINVISIBLE
 @SYM "control-border" : wxCONTROL_BORDER
+@SYM "transparent" : wxTRANSPARENT_WIN
 @ENDSYMBOLS
 
 @INCLUDE wxs_fcs.xci

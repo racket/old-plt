@@ -114,7 +114,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
-static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
+static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool combine, int offset)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
@@ -124,7 +124,7 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
 
   a[0] = a[1] = a[2] = a[3] = NULL;
 
-  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
+  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, combine, FALSE, offset));
     
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));

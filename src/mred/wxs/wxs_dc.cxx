@@ -211,7 +211,7 @@ static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
-static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
+static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool combine, int offset)
 {
   float w, h, d, asc;
   Scheme_Object *a[4];
@@ -221,7 +221,7 @@ static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, Bool big, int offset)
 
   a[0] = a[1] = a[2] = a[3] = NULL;
 
-  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, big, offset));
+  WITH_VAR_STACK(dc->GetTextExtent(s, &w, &h, &d, &asc, f, combine, FALSE, offset));
     
   a[0] = WITH_VAR_STACK(scheme_make_double(w));
   a[1] = WITH_VAR_STACK(scheme_make_double(h));
@@ -1520,8 +1520,9 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   float x1;
   float x2;
   Bool x3;
-  nnint x4;
-  float x5;
+  Bool x4;
+  nnint x5;
+  float x6;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1536,16 +1537,16 @@ static Scheme_Object *os_wxDCDrawText(int n,  Scheme_Object *p[])
   } else
     x3 = FALSE;
   if (n > (POFFSET+4)) {
-    x4 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+4], "draw-text in dc<%>"));
+    x5 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+4], "draw-text in dc<%>"));
   } else
-    x4 = 0;
+    x5 = 0;
   if (n > (POFFSET+5)) {
-    x5 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "draw-text in dc<%>"));
+    x6 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+5], "draw-text in dc<%>"));
   } else
-    x5 = 0.0;
+    x6 = 0.0;
 
-  if (x4 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+4]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))
-  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawText(x0, x1, x2, x3, x4, x5));
+  if (x5 > SCHEME_STRLEN_VAL(p[POFFSET+0])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-text"), "string index too large: ", p[POFFSET+5]));DO_OK_CHECK(METHODNAME("dc<%>","draw-text"))x4 = FALSE;
+  WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->DrawText(x0, x1, x2, x3, x4, x5, x6));
 
   
   

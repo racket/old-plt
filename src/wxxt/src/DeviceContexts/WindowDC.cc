@@ -1777,7 +1777,8 @@ static unsigned int *convert_to_drawable_format(const char *s, int ds, long *_ul
 # define WX_XFT_ONLY(x) 1
 #endif
 
-void wxWindowDC::DrawText(char *orig_text, float x, float y, Bool isUnicode, int dt,
+void wxWindowDC::DrawText(char *orig_text, float x, float y, 
+			  Bool combine, Bool isUnicode, int dt,
 			  float angle)
 {
   XFontStruct *fontinfo;
@@ -1841,7 +1842,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y, Bool isUnicode, int
 
   {
     float tw, th, td, ts;
-    GetTextExtent(orig_text, &tw, &th, &td, &ts, current_font, isUnicode, dt);
+    GetTextExtent(orig_text, &tw, &th, &td, &ts, current_font, combine, isUnicode, dt);
     cx = (tw * e_scale_x);
     cy = (th * e_scale_y);
     ascent = (int)((th - td) * e_scale_y);
@@ -2029,7 +2030,7 @@ float wxWindowDC::GetCharHeight(void)
   if (!current_font) // no font
     return YDEV2LOGREL(12);
 
-  GetTextExtent("x", &w, &h, &descent, &topspace, current_font, 0, 0);
+  GetTextExtent("x", &w, &h, &descent, &topspace, current_font, 0, 0, 0);
 
   return h;
 }
@@ -2041,14 +2042,14 @@ float wxWindowDC::GetCharWidth(void)
   if (!current_font) // no font
     return YDEV2LOGREL(12);
 
-  GetTextExtent("x", &w, &h, &descent, &topspace, current_font, 0, 0);
+  GetTextExtent("x", &w, &h, &descent, &topspace, current_font, 0, 0, 0);
 
   return w;
 }
 
 void wxWindowDC::GetTextExtent(const char *orig_s, float *_w, float *_h, float *_descent,
 			       float *_topspace, wxFont *_font,
-			       Bool isUnicode, int dt)
+			       Bool combine, Bool isUnicode, int dt)
 {
   wxFont *font_to_use;
   int         ascent, descent;

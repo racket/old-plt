@@ -121,7 +121,9 @@ class wxPostScriptDC: public wxDC
   void DrawRectangle(float x, float y, float width, float height);
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
   void DrawEllipse(float x, float y, float width, float height);
-  void DrawText(DRAW_TEXT_CONST char *text, float x, float y, Bool use16 = FALSE, int dt = 0, float angle = 0.0);
+  void DrawText(DRAW_TEXT_CONST char *text, float x, float y, 
+		Bool combine = FALSE, Bool use16 = FALSE, 
+		int dt = 0, float angle = 0.0);
 
   void Clear(void);
   void SetFont(wxFont *font);
@@ -142,7 +144,8 @@ class wxPostScriptDC: public wxDC
   float GetCharWidth(void);
   void GetTextExtent(const char *string, float *x, float *y,
                      float *descent = NULL, float *externalLeading = NULL, 
-		     wxFont *theFont = NULL, Bool use16 = FALSE, int dt = 0);
+		     wxFont *theFont = NULL, 
+		     Bool combine = FALSE, Bool use16 = FALSE, int dt = 0);
   void SetMapMode(int mode);
   void SetUserScale(float x, float y);
   float DeviceToLogicalX(int x);

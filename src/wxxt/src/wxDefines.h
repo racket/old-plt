@@ -395,6 +395,7 @@ enum {
 #define wxVSCROLL		0x00020000
 #define wxNO_DC			0x00040000
 #define wxINVISIBLE             0x00080000
+#define wxTRANSPARENT_WIN       0x00100000
 
 #define wxDEFAULT_FRAME		0
 #define wxDEFAULT_DIALOG_STYLE	0

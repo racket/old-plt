@@ -1227,7 +1227,7 @@ string_copy_bang(int argc, Scheme_Object *argv[])
 			       argc, argv, 4, 5, 
 			       &ostart, &ofinish);
 
-  if (ofinish - ostart > ifinish - istart) {
+  if ((ofinish - ostart) < (ifinish - istart)) {
     scheme_arg_mismatch("string-copy!",
 			"not enough room in output string: ",
 			argv[3]);
@@ -2623,7 +2623,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
   if (argc > opos) {
     if (!SCHEME_MUTABLE_STRINGP(argv[opos]))
       scheme_wrong_type(who, "mutable string", opos, argc, argv);  
-    r = SCHEME_STR_VAL(argv[4]);
+    r = SCHEME_STR_VAL(argv[opos]);
     scheme_get_substring_indices("substring", argv[opos], argc, argv, opos + 1, opos + 2, &ostart, &ofinish);
   } else {
     r = NULL;
@@ -2643,7 +2643,7 @@ static Scheme_Object *convert_one(const char *who, int opos, int argc, Scheme_Ob
 		 &amt_read, &amt_wrote,
 		 &status);
   
-  if (argc < 5) {
+  if (argc <= opos) {
     a[0] = scheme_make_sized_string(r, amt_wrote, 0);
   } else {
     a[0] = scheme_make_integer(amt_wrote);

@@ -1230,7 +1230,7 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
 }
 
 void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
-			      Bool use16, int dt, float angle)
+			      Bool combine, Bool use16, int dt, float angle)
 {
   float tw, th;
   int i, len, size;
@@ -1240,7 +1240,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
   if (current_font)
     SetFont (current_font);
 
-  GetTextExtent(text, &tw, &th, NULL, NULL, NULL, use16, dt);
+  GetTextExtent(text, &tw, &th, NULL, NULL, NULL, combine, use16, dt);
 
   if (current_bk_mode == wxSOLID) {
     unsigned char red, blue, green;
@@ -1888,7 +1888,7 @@ static int lastWidths[256]; // widths of the characters
 
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
-				    Bool WXUNUSED(use16), int dt)
+				    Bool WXUNUSED(combine), Bool WXUNUSED(use16), int dt)
 {
   wxFont *fontToUse = theFont;
   int family;

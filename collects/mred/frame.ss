@@ -347,7 +347,7 @@
 		 (do-title)
 		 (mred:debug:printf 'matthew "set-title-prefix returned from do-title~n")))]
 	    [get-canvas% (lambda () mred:canvas:frame-title-canvas%)]
-	    [get-edit% (lambda () mred:edit:backup-autosave-edit%)]
+	    [get-edit% (lambda () mred:edit:media-edit%)]
 	    [make-edit (lambda () (make-object (get-edit%)))])
 	  
 	  (public

@@ -43,7 +43,7 @@ class wxWindow: public wxbWindow
   int cyChar;
   int windows_id;
   Bool mouseInWindow ;
-  Bool winEnabled;
+  Bool winEnabled;
   short internal_gray_disabled;
 
   RECT updateRect;             // Bounding box for screen damage area
@@ -99,9 +99,9 @@ class wxWindow: public wxbWindow
   Bool PopupMenu(wxMenu *menu, float x, float y);
 
   void InternalEnable(Bool enable, Bool gray = FALSE);
-  Bool IsGray(void);
-  virtual void ChangeToGray(Bool gray);
-  void InternalGrayChildren(Bool gray);
+  Bool IsGray(void);
+  virtual void ChangeToGray(Bool gray);
+  void InternalGrayChildren(Bool gray);
 
   void Refresh(void);
 

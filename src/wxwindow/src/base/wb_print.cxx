@@ -1067,8 +1067,6 @@ void wxPrintout::GetPageInfo(int *minPage, int *maxPage, int *fromPage, int *toP
 
 LONG APIENTRY _EXPORT wxAbortProc(HDC WXUNUSED(hPr), int WXUNUSED(Code))
 {
-  MSG msg;
-
   if (!wxPrinter::abortWindow)              /* If the abort dialog isn't up yet */
     return(TRUE);
   

@@ -38,7 +38,7 @@ class wxbFrame: public wxWindow
 
   Bool modal_showing;
   wxMenuBar *wx_menu_bar;
-  wxIcon *icon;
+  wxBitmap *icon;
   Bool status_line_exists;
   long frame_type;  // SDI, MDI parent/child
   int nb_status;

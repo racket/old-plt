@@ -62,8 +62,7 @@ class wxFrame: public wxbFrame
   void SetStatusText(char *text, int number = 0);
 
   // Fit frame around subwindows
-  void Fit(void);
-
+  void Fit(void);
   virtual void ChangeToGray(Bool gray);
 
   // Iconize

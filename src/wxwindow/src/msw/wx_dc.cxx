@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.10 1998/09/13 17:47:49 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.11 1998/09/18 23:09:47 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -140,9 +140,8 @@ void wxDC::SelectOldObjects(HDC dc)
       {
         selected_bitmap->selectedInto = NULL;
         selected_bitmap->selectedIntoDC = 0;
-
-        selected_bitmap = NULL;
       }
+      selected_bitmap = NULL;
     }
     old_bitmap = NULL;
     if (old_pen)
@@ -1369,33 +1368,28 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
   if (!dc) return FALSE;
 
-  int xdest1, ydest1, xsrc1, ysrc1;
-
-  ShiftXY(xdest, ydest, xdest1, ydest1);
-
-  xsrc1 = floor(xsrc);
-  ysrc1 = floor(ysrc);
-
   if (!blit_dc)
     blit_dc = new wxMemoryDC(1);
 
+  wxMemoryDC *sel = (wxMemoryDC *)source->selectedInto;
+  if (sel) sel->SelectObject(NULL);
   blit_dc->SelectObject(source);
-
-  if (!blit_dc->Ok()) {
-    blit_dc->SelectObject(NULL);
-    DoneDC(dc);
-    return FALSE;
-  }
 
   HDC dc_src = blit_dc->ThisDC();
 
   if (!dc_src) {
+    blit_dc->SelectObject(NULL);
+    if (sel) sel->SelectObject(source);
     DoneDC(dc);
     return FALSE;
   }
 
-  Bool success;
+  int xdest1, ydest1, xsrc1, ysrc1;
+  ShiftXY(xdest, ydest, xdest1, ydest1);
+  xsrc1 = floor(xsrc);
+  ysrc1 = floor(ysrc);
 
+  Bool success;
   DWORD op = 0;
 
   SetTextColor(dc, 0); /* 0 = black */
@@ -1421,12 +1415,13 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   }
 
   success = BitBlt(dc, xdest1, ydest1, 
-		   XLOG2DEVREL(width), YLOG2DEVREL(height), 
+		   width, height,
 		   dc_src, xsrc1, ysrc1, op);
 
   DoneDC(dc);
-
-  source->DoneDC(dc_src);
+  blit_dc->DoneDC(dc_src);
+  blit_dc->SelectObject(NULL);
+  if (sel) sel->SelectObject(source);
 
   return success;
 }
@@ -1694,10 +1689,12 @@ HDC wxGetPrinterDC(void)
 
 IMPLEMENT_DYNAMIC_CLASS(wxMemoryDC, wxCanvasDC)
 
-wxMemoryDC::wxMemoryDC(void)
+wxMemoryDC::wxMemoryDC(Bool ro)
 {
   __type = wxTYPE_DC_MEMORY;
   device = wxDEVICE_WINDOWS;
+
+  read_only = ro;
 
   cdc = wxwmCreateCompatibleDC(NULL);
   ok = (cdc != NULL);
@@ -1751,9 +1748,10 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
       ::SelectObject(cdc, old_bitmap);
       if (selected_bitmap)
       {
-        selected_bitmap->selectedInto = NULL;
-
-	selected_bitmap->selectedIntoDC = 0;
+	if (!read_only) {
+	  selected_bitmap->selectedInto = NULL;
+	  selected_bitmap->selectedIntoDC = 0;
+	}
         selected_bitmap = NULL;
       }
     }
@@ -1767,7 +1765,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 
   // Do own check for whether the bitmap is already selected into
   // a device context
-  if (bitmap->selectedIntoDC || !bitmap->Ok())
+  if ((!read_only && bitmap->selectedIntoDC) || !bitmap->Ok())
   {
     // wxFatalError("Error in wxMemoryDC::SelectObject\nBitmap is selected in another wxMemoryDC.\nDelete the first wxMemoryDC or use SelectObject(NULL)");
     return;
@@ -1776,25 +1774,28 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 
 
   if (selected_bitmap) {
-    selected_bitmap->selectedInto = NULL;
-    selected_bitmap->selectedIntoDC = 0;
+    if (!read_only) {
+      selected_bitmap->selectedInto = NULL;
+      selected_bitmap->selectedIntoDC = 0;
+    }
   }
   
   selected_bitmap = bitmap;
-  bitmap->selectedInto = this;
+  if (!read_only) {
+    bitmap->selectedInto = this;
+    bitmap->selectedIntoDC = -1;
+  }
 
-  bitmap->selectedIntoDC = -1;
-#if DEBUG > 1
-  wxDebugMsg("wxMemoryDC::SelectObject: Selecting HBITMAP %X\n", bitmap->ms_bitmap);
-#endif
   HBITMAP bm = (HBITMAP)::SelectObject(cdc, bitmap->ms_bitmap);
 
   if (bm == ERROR)
   {
     // wxFatalError("Error in wxMemoryDC::SelectObject\nBitmap may not be loaded, or may be selected in another wxMemoryDC.\nDelete the first wxMemoryDC to deselect bitmap.");
-   selected_bitmap = NULL;
-   bitmap->selectedInto = NULL;
-   bitmap->selectedIntoDC = 0;
+    selected_bitmap = NULL;
+    if (!read_only) {
+      bitmap->selectedInto = NULL;
+      bitmap->selectedIntoDC = 0;
+    }
 
    if (old_bitmap) {
      ::SelectObject(cdc, old_bitmap);
@@ -1818,6 +1819,11 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     RealizePalette(cdc);
     old_palette = NULL;
   }
+}
+
+wxBitmap* wxMemoryDC::GetObject(void)
+{
+  return selected_bitmap;
 }
 
 void wxMemoryDC::GetSize(float *width, float *height)

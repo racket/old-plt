@@ -28,6 +28,7 @@ class wxMemoryDC: public wxbMemoryDC
   DECLARE_DYNAMIC_CLASS(wxMemoryDC)
 
  public:
+  Bool read_only;
   wxMemoryDC(Bool read_only = 0);
   wxMemoryDC(wxCanvasDC *old_dc); // Create compatible DC
 

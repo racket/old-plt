@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.7 1998/09/13 13:02:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.8 1998/09/18 23:09:49 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -957,7 +957,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
   numColors = 0;
   bitmapColourMap = NULL;
 
-  ms_bitmap = CreateBitmap(the_width, the_height, no_bits, 1, bits);
+  ms_bitmap = CreateBitmap(the_width, the_height, 1, 1, bits);
 
   if (ms_bitmap)
     ok = TRUE;

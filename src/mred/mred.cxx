@@ -258,11 +258,45 @@ wxWindow *wxGetModalWindow(wxObject *w)
   return c->modal_window;
 }
 
-void wxPutModalWindow(wxObject *w, wxWindow *win)
+typedef struct MrEd_Saved_Modal {
+  wxWindow *win;
+  struct MrEd_Saved_Modal *next;
+} MrEd_Saved_Modal;
+
+void wxPushModalWindow(wxObject *w, wxWindow *win)
 {
   MrEdContext *c = MrEdGetContext(w);
+  MrEd_Saved_Modal *save = new MrEd_Saved_Modal;
+
+  if (c->modal_window) {
+    save->next = c->modal_stack;
+    save->win = c->modal_window;
+    c->modal_stack = save;
+  }
 
   c->modal_window = win;
+}
+
+void wxPopModalWindow(wxObject *w, wxWindow *win)
+{
+  MrEdContext *c = MrEdGetContext(w);
+  MrEd_Saved_Modal *save, *prev;
+  
+  if (c->modal_window == win)
+    c->modal_window = NULL;
+
+  prev = NULL;
+  for (save = c->modal_stack; save; prev = save, save = save->next) {
+    if ((save->win == win) || !c->modal_window) {
+      if (prev)
+	prev->next = save->next;
+      else
+	c->modal_stack = save->next;
+
+      if (save->win != win)
+	c->modal_window = win;
+    }
+  }
 }
 
 wxStandardSnipClassList *wxGetTheSnipClassList()

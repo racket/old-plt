@@ -305,7 +305,8 @@ extern wxChildList *wxGetTopLevelWindowsList(wxObject *);
 #endif
 
 extern wxWindow *wxGetModalWindow(wxObject*);
-extern void wxPutModalWindow(wxObject*,wxWindow*);
+extern void wxPushModalWindow(wxObject*,wxWindow*);
+extern void wxPopModalWindow(wxObject*,wxWindow*);
 
 extern void *wxGetContextForFrame();
 

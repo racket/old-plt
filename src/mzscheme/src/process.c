@@ -103,6 +103,17 @@ extern HANDLE scheme_break_semaphore;
 # define SENORA_GC_NO_FREE
 #endif
 
+/* If a finalization callback in MrEd invokes Scheme code,
+   we can end up with a thread swap in the middle of a thread
+   swap (where the outer swap was interrupted by GC). The
+   following is a debugging flag to help detect and fix
+   such problems. */
+#define WATCH_FOR_NESTED_SWAPS 0
+
+#if WATCH_FOR_NESTED_SWAPS
+static int swapping = 0;
+#endif
+
 typedef struct ActiveWill {
   Scheme_Object *o;
   Scheme_Object *proc;
@@ -1053,6 +1064,11 @@ void scheme_swap_process(Scheme_Process *new_process)
 {
   scheme_zero_unneeded_rands(scheme_current_process);
 
+#if WATCH_FOR_NESTED_SWAPS
+  if (swapping)
+    printf("death\n");
+  swapping = 1;
+#endif
   if (!swap_no_setjmp && SETJMP(scheme_current_process)) {
     /* We're back! */
 #ifdef RUNSTACK_IS_GLOBAL
@@ -1062,6 +1078,9 @@ void scheme_swap_process(Scheme_Process *new_process)
     MZ_CONT_MARK_POS = scheme_current_process->cont_mark_pos;
 #endif
     RESETJMP(scheme_current_process);
+#if WATCH_FOR_NESTED_SWAPS
+    swapping = 0;
+#endif
   } else {
     swap_no_setjmp = 0;
 
@@ -1179,6 +1198,10 @@ static void start_child(Scheme_Process *child,
 #endif
 
     RESETJMP(child);
+
+#if WATCH_FOR_NESTED_SWAPS
+    swapping = 0;
+#endif
 
 #ifndef MZ_REAL_THREADS
     if (return_to_process)

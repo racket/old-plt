@@ -47,6 +47,9 @@
 		(cond
 		  ((zodiac:bound? id) (zodiac:bound-orig-name id))
 		  ((zodiac:top-level-varref? id) (zodiac:id-var id))
+		  ((zodiac:lexical-varref? id)
+		    (check-for-keyword
+		      (zodiac:lexical-varref-binding id)))
 		  (else
 		    (zodiac:interface:internal-error id
 		      "Given in check-for-keyword")))))

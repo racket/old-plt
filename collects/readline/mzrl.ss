@@ -1,6 +1,6 @@
 (module mzrl mzscheme
 
-(require (lib "foreign.ss"))
+(require (lib "foreign.ss")) (unsafe!)
 (provide readline add-history set-completion-function!)
 
 (define libtermcap  (ffi-lib "libtermcap")) ; needed

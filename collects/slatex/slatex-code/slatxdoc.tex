@@ -38,11 +38,13 @@
 
 % sans-serif
 
-
-
-
 \font\sf cmss10
 
+\newcheapcount\bibitemnumber
+
+\def\bibitem{\par\globaladvancecheapcount\bibitemnumber 1%
+\edef\recentlabel{\bibitemnumber}%
+[\bibitemnumber]\label}
 
 %
 \overfullrule 0pt
@@ -1603,7 +1605,7 @@ script exploits the way your Scheme is called, e.g.,
 matters like whether it accepts \p{echo}'d
 s-expressions (e.g., Chez), whether it loads its first
 command line argument (e.g., SCM), and whether it
-always checks for an ``init'' file (e.g., MIT 
+always checks for an ``init'' file (e.g., MIT
 Scheme).
 
 1.  If your Scheme doesn't fall into either of these
@@ -1783,6 +1785,7 @@ from the Scheme Repository.
 \bibitem{r5rs} {\it Revised$^5$ Report on the Algorithmic
 Language Scheme}, (``R5RS''), eds.\ R. Kelsey,  W. Clinger,
 and J. Rees, 1998.
+
 
 \section{Index}
 

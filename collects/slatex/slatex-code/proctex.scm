@@ -1,7 +1,7 @@
 ;proctex.scm
 ;SLaTeX v. 2.4
 ;Implements SLaTeX's piggyback to LaTeX
-;(c) Dorai Sitaram, Rice U., 1991, 1996
+;(c) Dorai Sitaram, Rice U., 1991, 1999
 
 (eval-if (cl)
   (eval-within slatex
@@ -18,7 +18,7 @@
 
 (eval-within slatex
 	
-  (defvar slatex::version-number "2.4u")
+  (defvar slatex::version-number "2.4v")
 
   (define slatex::disable-slatex-temply
     (lambda (in)

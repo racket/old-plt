@@ -1,7 +1,7 @@
 ;codeset.scm
 ;SLaTeX Version 2.4
 ;Displays the typeset code made by SLaTeX
-;(c) Dorai Sitaram, Rice U., 1991, 1995
+;(c) Dorai Sitaram, Rice U., 1991, 1999
 
 (eval-within slatex 
 
@@ -81,8 +81,12 @@
 		((char=? c #\')
 		 (display-tab (of line =tab / i) *out*)
 		 (write-char c *out*)
-		 (if (not (or *in-qtd-tkn* (> *in-bktd-qtd-exp* 0)))
-		     (set! *in-qtd-tkn* #t))
+                 (if (or *in-qtd-tkn* 
+                         (> *in-bktd-qtd-exp* 0)
+                         (and (pair? *bq-stack*)
+                              (not (of (car *bq-stack*) =in-comma))))
+                     #f
+                     (set! *in-qtd-tkn* #t))
 		 (loop (+ i 1)))
 		((char=? c #\`)
 		 (display-tab (of line =tab / i) *out*)

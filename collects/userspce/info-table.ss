@@ -7,6 +7,7 @@
     (require-library "params.ss" "userspce")
     (require-library "sig.ss" "userspce"))]
  [compile-omit-files ("sig.ss" "errors.ss" "params.ss" "ricedefs.ss"
+	              "init-namespacer.ss"
 		      "launcher-bootstrap.ss"
 		      "launcher-bootstrap-mred.ss"
 		      "launcher-bootstrap-mzscheme.ss")]

@@ -76,7 +76,7 @@
    any)
   . -> .
   void?)
- (input language-settings eval-comile-time-part? init kill-termination iter)
+ (input language-settings eval-compile-time-part? init kill-termination iter)
 
 "Use this function to expand the contents of the definitions"
 "window for use with external program processing tools."

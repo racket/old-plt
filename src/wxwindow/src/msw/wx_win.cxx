@@ -1114,8 +1114,8 @@ static LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, in
 	WORD flags = HIWORD(wParam);
 	HMENU sysmenu = (HMENU)lParam;
 	wnd->OnMenuSelect((WORD)wParam, flags, sysmenu);
-	break;
       }
+      break;
     }
   case WM_NOTIFY:
     {

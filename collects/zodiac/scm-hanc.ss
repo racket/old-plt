@@ -1526,11 +1526,22 @@
 
 (add-micro-form 'invoke-open-unit/sig scheme-vocabulary
   (let* ((kwd '(invoke-open-unit/sig))
-	  (in-pattern '(invoke-open-unit/sig expr name-spec linkage ...))
-	  (m&e (pat:make-match&env in-pattern kwd)))
+	  (in-pattern-1 '(invoke-open-unit/sig expr))
+	  (out-pattern-1 '(invoke-open-unit/sig expr #f))
+	  (in-pattern-2 '(invoke-open-unit/sig expr name-spec linkage ...))
+	  (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	  (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
     (lambda (expr env attributes vocab)
       (cond
-	((pat:match-against m&e expr env)
+	((pat:match-against m&e-1 expr env)
+	  =>
+	  (lambda (p-env)
+	    (expand-expr
+	      (structurize-syntax
+		(pat:pexpand out-pattern-1 p-env kwd)
+		expr)
+	      env attributes vocab)))
+	((pat:match-against m&e-2 expr env)
 	  =>
 	  (lambda (p-env)
 	    (let ((in:expr (pat:pexpand 'expr p-env kwd))

@@ -450,7 +450,7 @@ static void make_init_env(void)
   scheme_add_global_constant("make-rename-transformer", 
 			     scheme_make_prim_w_arity(make_rename_transformer,
 						      "make-rename-transformer",
-						      1, 1),
+						      1, 2),
 			     env);
 
   scheme_add_global_constant("rename-transformer?", 
@@ -2626,7 +2626,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     
     v = SCHEME_PTR_VAL(v);
     if (SAME_TYPE(SCHEME_TYPE(v), scheme_id_macro_type)) {
-      sym = SCHEME_PTR_VAL(v);
+      sym = SCHEME_PTR1_VAL(v);
       renamed = 1;
     } else
       return v;
@@ -2735,10 +2735,15 @@ make_rename_transformer(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_STXP(argv[0]) || !SCHEME_SYMBOLP(SCHEME_STX_VAL(argv[0])))
     scheme_wrong_type("make-rename-transformer", "syntax identifier", 0, argc, argv);
+  if (argc > 1)
+    if (!SCHEME_STXP(argv[1]) || !SCHEME_SYMBOLP(SCHEME_STX_VAL(argv[1])))
+      scheme_wrong_type("make-rename-transformer", "syntax identifier", 1, argc, argv);
 
-  v = scheme_alloc_small_object();
+  v = scheme_alloc_object();
   v->type = scheme_id_macro_type;
-  SCHEME_PTR_VAL(v) = argv[0];
+  SCHEME_PTR1_VAL(v) = argv[0];
+  if (argc > 1)
+    SCHEME_PTR2_VAL(v) = argv[1];
 
   return v;
 }

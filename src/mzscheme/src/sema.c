@@ -453,6 +453,8 @@ static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p)
 }
 
 /**********************************************************************/
+/*                           Precise GC                               */
+/**********************************************************************/
 
 #ifdef MZ_PRECISE_GC
 

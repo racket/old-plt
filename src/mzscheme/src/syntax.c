@@ -1120,7 +1120,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 	
 	return scheme_compile_expr(form, env, rec, drec);
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
-	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+	find_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
 	SCHEME_USE_FUEL(1);
       } else
 	break;
@@ -1198,7 +1198,11 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
 
 	return scheme_expand_expr(form, env, depth, name);
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
-	find_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
+	Scheme_Object *new_name;
+	new_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
+	new_name = scheme_stx_track(new_name, find_name, find_name, 
+				    SCHEME_PTR2_VAL(SCHEME_PTR_VAL(var)));
+	find_name = new_name;
       } else
 	break;
     } else
@@ -2105,7 +2109,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     body = scheme_datum_to_syntax(body, form, form, 0, 0);
 
     first = SCHEME_STX_CAR(form);
-    body = scheme_stx_track(body, form, first);
+    body = scheme_stx_track(body, form, first, NULL);
 
     if (depth > 0)
       --depth;
@@ -2265,7 +2269,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   v = scheme_datum_to_syntax(v, form, form, 0, multi);
   if (!multi) {
     name = SCHEME_STX_CAR(form);
-    v = scheme_stx_track(v, form, name);
+    v = scheme_stx_track(v, form, name, NULL);
   }
 
   return v;
@@ -2449,7 +2453,7 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     return scheme_compile_expr(app, env, rec, drec);
   else {
     name = SCHEME_STX_CAR(form);
-    app = scheme_stx_track(app, form, name);
+    app = scheme_stx_track(app, form, name, NULL);
 
     if (depth > 0)
       --depth;

@@ -1239,7 +1239,9 @@ scheme_apply_macro(Scheme_Object *name,
   Scheme_Object *orig_code = code;
 
  if (SAME_TYPE(SCHEME_TYPE(rator), scheme_id_macro_type)) {
-   rator = SCHEME_PTR_VAL(rator);
+   Scheme_Object *id_mac = rator;
+
+   rator = SCHEME_PTR1_VAL(id_mac);
    /* rator is now an identifier */
 
    /* and it's introduced by this expression: */
@@ -1261,7 +1263,7 @@ scheme_apply_macro(Scheme_Object *name,
      code = scheme_datum_to_syntax(code, orig_code, scheme_sys_wraps(env), 0, 0);
    }
    
-   code = scheme_stx_track(code, orig_code, name);
+   code = scheme_stx_track(code, orig_code, name, SCHEME_PTR2_VAL(id_mac));
    
    return code;
  } else {
@@ -1286,7 +1288,7 @@ scheme_apply_macro(Scheme_Object *name,
    
    code = scheme_add_remove_mark(code, mark);
    
-   code = scheme_stx_track(code, orig_code, name);
+   code = scheme_stx_track(code, orig_code, name, NULL);
    
    return code;
  }

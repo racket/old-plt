@@ -878,6 +878,7 @@ typedef struct Regwork {
   rxpos bol;		  /* Beginning of input, for ^ check. */
   rxpos *startp;	  /* Pointer to startp array. */
   rxpos *endp;		  /* Ditto for endp. */
+  rxpos peekskip;
 } Regwork;
 
 /*
@@ -885,7 +886,7 @@ typedef struct Regwork {
  */
 STATIC int regtry(regexp *, char *, int, int, rxpos *, rxpos *, Regwork *rw, int);
 STATIC int regtry_port(regexp *, Scheme_Object *, rxpos *, rxpos *, 
-		       char **, rxpos *, rxpos *, rxpos, rxpos, int);
+		       char **, rxpos *, rxpos *, rxpos, rxpos, rxpos, int);
 STATIC int regmatch(Regwork *rw, rxpos);
 STATIC int regrepeat(Regwork *rw, rxpos);
 
@@ -903,13 +904,13 @@ STATIC char *regprop();
 static int
 regexec(const char *who,
 	regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, rxpos *endp,
-	Scheme_Object *port, char **stringp, int peek, int nonpeek_offsets,
+	Scheme_Object *port, char **stringp, int peek, int get_offsets,
 	Scheme_Object *discard_oport)
-     /* stringp, peek, and nonpeek_offsets used only with port */
+     /* stringp, peek, and get_offsets used only with port */
 {
   int spos;
   int slen;
-  rxpos dropped = 0; /* used for ports, only */
+  rxpos dropped = 0, peekskip = 0; /* used for ports, only */
  
   /* Check validity of program. */
   if (UCHARAT(prog->program) != MAGIC) {
@@ -938,26 +939,39 @@ regexec(const char *who,
       return 0;
   }
 
-  if (port && !peek && stringpos) {
-    /* In non-pek port mode, skip over stringpos chars: */
-    char *drain;
-    long amt = stringpos, got;
+  if (port && stringpos) {
+    if (peek) {
+      peekskip = stringpos;
+      dropped = stringpos;
+      if (stringlen + dropped > 0)
+	stringlen += dropped; /* because it's subtracted later */
+      stringpos = 0;
+    } else {
+      /* In non-peek port mode, skip over stringpos chars: */
+      char *drain;
+      long amt = stringpos, got;
 
-    if (amt > 4096)
-      amt = 4096;
+      if (amt > 4096)
+	amt = 4096;
 
-    drain = (char *)scheme_malloc_atomic(amt);
-    do {
-      got = scheme_get_string(who, port, drain, 0, amt, 0, 0, 0);
-      if (got != EOF) {
-	if (discard_oport)
-	  scheme_put_string(who, discard_oport, drain, 0, got, 0);
-	dropped += amt;
-	if (amt > (stringpos - dropped))
-	  amt = stringpos - dropped;
-      }
-    } while ((got != EOF) && (dropped < stringpos));
-    stringpos -= dropped;
+      drain = (char *)scheme_malloc_atomic(amt);
+      do {
+	got = scheme_get_string(who, port, drain, 0, amt, 0, 0, 0);
+	if (got != EOF) {
+	  if (discard_oport)
+	    scheme_put_string(who, discard_oport, drain, 0, got, 0);
+	  dropped += amt;
+	  if (amt > (stringpos - dropped))
+	    amt = stringpos - dropped;
+	}
+      } while ((got != EOF) && (dropped < stringpos));
+      if (stringpos > dropped)
+	return 0; /* can't skip far enough, so it fails */
+      stringpos = 0;
+      peekskip = 0;
+      if (stringlen + dropped > 0)
+	stringlen += dropped; /* because it's subtracted later */
+    }
   }
 
   /* Simplest case:  anchored match need be tried only once. */
@@ -966,7 +980,7 @@ regexec(const char *who,
       rxpos len = 0, space = 0;
 
       *stringp = NULL;
-      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, stringpos, stringlen - dropped, 1)) {
+      if (regtry_port(prog, port, startp, endp, stringp, &len, &space, stringpos, stringlen - dropped, peekskip, 1)) {
 	if (!peek) {
 	  /* Need to consume matched chars: */
 	  char *drain;
@@ -975,7 +989,7 @@ regexec(const char *who,
 	  if (discard_oport && *startp)
 	    scheme_put_string(who, discard_oport, *stringp, 0, *startp, 0);
 
-	  if (nonpeek_offsets)
+	  if (get_offsets)
 	    drain = *stringp;
 	  else
 	    /* Allocate fresh in case we get different results from previous peek: */
@@ -983,7 +997,7 @@ regexec(const char *who,
 	  got = scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
 	}
 
-	if (dropped && nonpeek_offsets)
+	if (dropped && get_offsets)
 	  fixup_offsets(startp, endp, prog->nsubexp, dropped);
 
 	return 1;
@@ -1021,7 +1035,7 @@ regexec(const char *who,
     if (port) {
       rxpos len = 0, skip = stringpos, space = 0;
       *stringp = NULL;
-      
+
       do {
 	if (!peek && (skip >= REGPORT_FLUSH_THRESHOLD)) {
 	  if (discard_oport)
@@ -1034,14 +1048,14 @@ regexec(const char *who,
 	  skip = 0;
 	}
 
-	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip, stringlen - dropped, !space)) {
+	if (regtry_port(prog, port, startp, endp, stringp, &len, &space, skip, stringlen - dropped, peekskip, !space)) {
 	  if (!peek) {
 	    char *drain;
 
 	    if (discard_oport && *startp)
 	      scheme_put_string(who, discard_oport, *stringp, 0, *startp, 0);
 
-	    if (nonpeek_offsets)
+	    if (get_offsets)
 	      drain = *stringp;
 	    else
 	      /* Allocate fresh in case we get different results from previous peek: */
@@ -1050,7 +1064,7 @@ regexec(const char *who,
 	    scheme_get_string(who, port, drain, 0, *endp, 0, 0, 0);
 	  }
 
-	  if (dropped && nonpeek_offsets)
+	  if (dropped && get_offsets)
 	    fixup_offsets(startp, endp, prog->nsubexp, dropped);
 
 	  return 1;
@@ -1129,7 +1143,7 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
 static int			/* 0 failure, 1 success */
 regtry_port(regexp *prog, Scheme_Object *port, rxpos *startp, rxpos *endp, 
 	    char **work_string, rxpos *len, rxpos *size, rxpos skip, rxpos maxlen,
-	    int atstart)
+	    rxpos peekskip, int atstart)
 {
   int m;
   Regwork rw;
@@ -1137,6 +1151,7 @@ regtry_port(regexp *prog, Scheme_Object *port, rxpos *startp, rxpos *endp,
   rw.port = port;
   rw.instr_size = *size;
   rw.input_maxend = maxlen;
+  rw.peekskip = peekskip;
 
   m = regtry(prog, *work_string, skip, *len - skip, startp, endp, &rw, atstart);
 
@@ -1186,7 +1201,7 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
   got = scheme_get_string("regexp-match", rw->port, 
 			  rw->instr, rw->input_end, rw->instr_size - rw->input_end,
 			  1, /* read at least one char, and as much as possible */
-			  1, rw->input_end);
+			  1, rw->input_end + rw->peekskip);
 
   regstr = rw->str;
 
@@ -1201,7 +1216,7 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
       got = scheme_get_string("regexp-match", rw->port, 
 			      rw->instr, rw->input_end, need_total - rw->input_end,
 			      0, /* blocking mode */
-			      1, rw->input_end);
+			      1, rw->input_end + rw->peekskip);
       regstr = rw->str;
       
       if (got == EOF)
@@ -1211,7 +1226,6 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
     }
   }
 }
-
 
 #ifdef DO_STACK_CHECK
 
@@ -1776,7 +1790,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   endp = MALLOC_N_ATOMIC(rxpos, r->nsubexp);
 
   m = regexec(name, r, full_s, offset, endset - offset, startp, endp,
-	      iport, &full_s, peek, pos && !peek, oport);
+	      iport, &full_s, peek, pos, oport);
 
   if (m) {
     int i;

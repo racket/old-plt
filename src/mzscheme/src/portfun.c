@@ -1167,6 +1167,16 @@ static void pipe_did_read(Scheme_Pipe *pipe)
   }
 }
 
+static void pipe_did_write(Scheme_Pipe *pipe)
+{
+  while (SCHEME_PAIRP(pipe->wakeup_on_write)) {
+    Scheme_Object *sema;
+    sema = SCHEME_CAR(pipe->wakeup_on_write);
+    pipe->wakeup_on_write = SCHEME_CDR(pipe->wakeup_on_write);
+    scheme_post_sema(sema);
+  }
+}
+
 static long pipe_get_or_peek_string(Scheme_Input_Port *p, 
 				    char *buffer, long offset, long size,
 				    int nonblock,
@@ -1263,8 +1273,19 @@ static long pipe_get_or_peek_string(Scheme_Input_Port *p,
   if (!peek)
     pipe_did_read(pipe);
   else {
-    if (!c && size && pipe->eof)
-      return EOF;
+    if (!c) {
+      if (size && pipe->eof)
+	return EOF;
+      if (!nonblock) {
+	/* must have skipped too far; 
+	   need to sleep until chars are ready */
+	Scheme_Object *my_sema, *wp;
+	my_sema = scheme_make_sema(0);
+	wp = scheme_make_pair(my_sema, pipe->wakeup_on_write);
+	pipe->wakeup_on_write = wp;
+	scheme_wait_sema(my_sema, 0);
+      }
+    }
   }
 
   return c;
@@ -1404,6 +1425,8 @@ static long pipe_write_string(Scheme_Output_Port *p,
 
   pipe->bufend = endpos;
 
+  pipe_did_write(pipe);
+
   return len + wrote;
 }
 
@@ -1427,7 +1450,9 @@ static void pipe_in_close(Scheme_Input_Port *p)
   
   pipe->eof = 1;
 
+  /* to wake up any other threads blocked on pipe I/O: */
   pipe_did_read(pipe);
+  pipe_did_write(pipe);
 }
 
 static void pipe_out_close(Scheme_Output_Port *p)
@@ -1438,8 +1463,9 @@ static void pipe_out_close(Scheme_Output_Port *p)
   
   pipe->eof = 1;
 
-  /* to wake up any other threads blocked on pipe output: */
+  /* to wake up any other threads blocked on pipe I/O: */
   pipe_did_read(pipe);
+  pipe_did_write(pipe);
 }
 
 static int pipe_out_ready(Scheme_Output_Port *p)
@@ -1483,6 +1509,7 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
   pipe->eof = 0;
   pipe->bufmax = queuelimit;
   pipe->wakeup_on_read = scheme_null;
+  pipe->wakeup_on_write = scheme_null;
 
   readp = _scheme_make_input_port(scheme_pipe_read_port_type,
 				  (void *)pipe,

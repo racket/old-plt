@@ -1827,6 +1827,7 @@ typedef struct Scheme_Pipe {
   long bufstart, bufend;
   int eof;
   Scheme_Object *wakeup_on_read;
+  Scheme_Object *wakeup_on_write;
 } Scheme_Pipe;
 
 #ifdef USE_TCP

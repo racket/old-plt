@@ -971,6 +971,7 @@ mark_pipe {
     
   gcMARK(pp->buf);
   gcMARK(pp->wakeup_on_read);
+  gcMARK(pp->wakeup_on_write);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));

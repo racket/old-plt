@@ -2457,6 +2457,7 @@ int mark_pipe_MARK(void *p) {
     
   gcMARK(pp->buf);
   gcMARK(pp->wakeup_on_read);
+  gcMARK(pp->wakeup_on_write);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
@@ -2467,6 +2468,7 @@ int mark_pipe_FIXUP(void *p) {
     
   gcFIXUP(pp->buf);
   gcFIXUP(pp->wakeup_on_read);
+  gcFIXUP(pp->wakeup_on_write);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));

@@ -7,7 +7,8 @@
 			 (require-library "wxs.ss" "system")
 			 (require-library "sig.ss" "mred")
 			 (require-library "graphics.ss" "graphics")
-			 (require-library "turtles.ss" "graphics"))]
+			 (require-library "turtles.ss" "graphics")
+			 (require-library "tmacro.ss" "graphics"))]
     [(compile-omit-files) (list "tmacro.ss"
 				"turtles.ss"
 				"graphics.ss")]

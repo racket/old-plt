@@ -3,7 +3,8 @@
   (import mzlib:command-line^)
 
   (define (restart-mzscheme init-argv adjust-flag-table argv init-namespace)
-    (let* ([args #f]
+    (let* ([result #t]
+	   [args #f]
 	   [mute-banner? #f]
 	   [no-rep? #f]
 	   [no-coll-paths? #f]
@@ -159,20 +160,22 @@
 		     (with-handlers ([void print-error])
 		       (load f)))))
 	       
-	       (let ([result
-		      (let/ec escape
-			(for-each
-			 (lambda (e)
-			   (with-handlers ([void (lambda (e) (print-error e) (escape #f))])
-			     (eval (read (open-input-string e)))))
-			 exprs)
-			#t)])
-		 (let/ec k
-		   (exit-handler
-		    (lambda (status)
-		      (when result
-			(set! result (= status 0)))
-		      (k #f)))
-		   (unless no-rep? (read-eval-print-loop)))
-		 result))))))
-	 `("arg")))))
+	       (let/ec k
+		 (exit-handler
+		  (lambda (status)
+		    (set! result status)
+		    (k #f)))
+		 (let/ec escape
+		   (for-each
+		    (lambda (e)
+		      (with-handlers ([void (lambda (e) 
+					      (print-error e) 
+					      (set! result #f)
+					      (escape #f))])
+			(eval (read (open-input-string e)))))
+		    exprs))
+		 (unless no-rep? 
+		   (read-eval-print-loop)
+		   (set! result #t))))))))
+       `("arg"))
+      result)))

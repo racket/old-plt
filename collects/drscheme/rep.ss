@@ -9,7 +9,8 @@
 	    [zodiac:interface : zodiac:interface^]
 	    [drscheme:language : drscheme:language^]
 	    [drscheme:app : drscheme:app^]
-	    [drscheme:basis : drscheme:basis^])
+	    [drscheme:basis : drscheme:basis^]
+	    [drscheme:edit : drscheme:edit^])
 
     (mred:debug:printf 'invoke "drscheme:spawn@")
 
@@ -100,7 +101,7 @@
 		   set-last-header-position
 		   this-err-write this-err 
 		   this-out this-out-write
-		   this-in this-result
+		   this-in this-result this-result-write
 		   output-delta set-output-delta
 		   do-pre-eval user-parameterization
 		   do-post-eval
@@ -168,13 +169,17 @@
 		 (with-parameterization param
 		   (lambda ()
 		     (primitive-eval expr)))))]
-
 	    [display-result
 	     (lambda (v)
 	       (unless (void? v)
 		 (with-parameterization param
 		   (lambda ()
-		     (mzlib:pretty-print@:pretty-print v this-result)))))]
+		     (parameterize
+			 ([mzlib:pretty-print@:pretty-print-size-hook
+			   (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+			  [mzlib:pretty-print@:pretty-print-print-hook
+			   (lambda (x _ port) (this-result-write x))])
+		       (mzlib:pretty-print@:pretty-print v this-result))))))]
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (get-expr [before void] [after void])
@@ -182,10 +187,12 @@
 				      (mred:get-preference 'drscheme:settings))]
 			[user-code
 			 (lambda ()
-			   '(begin (printf "sending scheme:~n")
-				   (pretty-print (get-expr)))
 			   (call-with-values
-			    (lambda () (user-eval (get-expr)))
+			    (lambda () 
+			      (let ([expr (get-expr)])
+				(print-struct #f)
+				;(mred:message-box (format "~a" expr) "send-scheme")
+				(user-eval expr)))
 			    (lambda anss
 			      (let ([anss (let loop ([v anss])
 					    (cond
@@ -290,13 +297,30 @@
 	  (public
 	    [do-load
 	     (lambda (filename)
-	       (let ([p (open-input-file filename)])
-		 (do-many-evals
-		  (make-get-sexp filename p 0)
-		  (lambda () (do-pre-eval))
-		  (lambda () 
-		    (close-input-port p)
-		    (do-post-eval)))))]
+	       (let* ([p (open-input-file filename)]
+		      [chars (list (read-char p) (read-char p) (read-char p) (read-char p))])
+		 (close-input-port p)
+		 (let ([loc (zodiac:make-location 0 0 0 filename)]
+		       [re-p (void)])
+		   (dynamic-wind
+		    (lambda ()
+		      (set! re-p
+			    (if (equal? chars (list #\W #\X #\M #\E))
+				(let ([edit (make-object drscheme:edit:edit%)])
+				  (send edit load-file filename)
+				  (mred:read-snips/chars-from-buffer edit))
+				(open-input-file filename))))
+		    (lambda ()
+		      (let ([reader (zodiac:read re-p loc)])
+			(let loop ([last (void)]
+				   [z-sexp (reader)])
+			  (if (zodiac:eof? z-sexp)
+			      last
+			      (loop (user-eval (aries:annotate (zodiac:scheme-expand z-sexp)))
+				    (reader))))))
+		    (lambda ()
+		      (when (input-port? re-p)
+			(close-input-port re-p)))))))]
 	    [do-eval
 	     (lambda (start end)
 	       (do-many-evals

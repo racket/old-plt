@@ -165,18 +165,20 @@ void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(size
   if (width < 0)
     GetSize(&width, &height);
 
-  if (!(windowStyle & wxBORDER)) {
-    x -= 2;
-    width += 4;
-    height += 4;
-  }
-
   if (!orig_height)
     orig_height = height;
 
   MoveWindow((HWND)ms_handle, x, y, width, height, TRUE);
-  if (bgStatic)
-    MoveWindow((HWND)bgStatic, 2, orig_height-4, width-5, height-orig_height, TRUE);
+  if (bgStatic) {
+    int dx = 2, dy = orig_height-4, dw = 5, dh = orig_height;
+    if (!(windowStyle & wxBORDER)) {
+      dx -= 3;
+      dw -= 6;
+      dh -= 4;
+    }
+  
+    MoveWindow((HWND)bgStatic, dx, dy, width-dw, height-dh, TRUE);
+  }
 
   OnSize(width, height);
 }

@@ -92,16 +92,34 @@ END_XFORM_SKIP;
 
 class wxsMenuItem : public wxObject
 {
+#ifdef MZ_PRECISE_GC
+  void *my_id;
+#endif
 public:
   wxsMenuItem(void);
+  ~wxsMenuItem();
 
   ExactLong Id(void) {
+#ifdef MZ_PRECISE_GC
+    return (ExactLong)my_id;
+#else
     return (ExactLong)this;
+#endif
   }
 };
 
 wxsMenuItem::wxsMenuItem(void)
 {
+#ifdef MZ_PRECISE_GC
+  my_id = GC_malloc_immobile_box(this);
+#endif
+}
+
+wxsMenuItem::~wxsMenuItem()
+{
+#ifdef MZ_PRECISE_GC
+  GC_free_immobile_box(my_id);
+#endif
 }
 
 #ifdef MZ_PRECISE_GC
@@ -110,7 +128,11 @@ START_XFORM_SKIP;
 
 wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {
+#ifdef MZ_PRECISE_GC
+  return *(wxsMenuItem **)id;
+#else
   return (wxsMenuItem *)id;
+#endif
 }
 
 @CLASSBASE wxsMenuItem "menu-item" : "object"

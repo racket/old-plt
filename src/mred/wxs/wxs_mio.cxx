@@ -1438,6 +1438,9 @@ static Scheme_Object *os_wxMediaStreamInSetBoundary(Scheme_Object *obj, int n,  
 static Scheme_Object *os_wxMediaStreamInGet(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxMediaStreamIn* r;
   objscheme_check_valid(obj);
@@ -1816,6 +1819,9 @@ static Scheme_Object *os_wxMediaStreamOutTell(Scheme_Object *obj, int n,  Scheme
 static Scheme_Object *os_wxMediaStreamOutPut(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxMediaStreamOut* r;
   objscheme_check_valid(obj);

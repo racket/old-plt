@@ -1101,6 +1101,9 @@ static Scheme_Object *os_wxStyleDeltaEqual(Scheme_Object *obj, int n,  Scheme_Ob
 static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxStyleDelta* r;
   objscheme_check_valid(obj);
@@ -1149,6 +1152,9 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaForeground(Scheme_Object *obj, int 
 static Scheme_Object *os_wxStyleDeltaSetDeltaBackground(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxStyleDelta* r;
   objscheme_check_valid(obj);
@@ -1227,6 +1233,9 @@ static Scheme_Object *os_wxStyleDeltaSetDeltaFace(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *os_wxStyleDeltaSetDelta(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxStyleDelta* r;
   objscheme_check_valid(obj);
@@ -1903,6 +1912,9 @@ static Scheme_Object *objscheme_wxStyleDelta_SetalignmentOff(Scheme_Object *obj,
 #pragma argsused
 static Scheme_Object *os_wxStyleDelta_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxStyleDelta *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(istype_symset_changeAlign(p[0], NULL))) {

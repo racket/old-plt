@@ -279,6 +279,22 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
 Scheme_Hash_Table *disabled_widgets;
 
+#ifdef MZ_PRECISE_GC
+static void widget_hash_indices(void *_key, int *_h, int *_h2)
+{
+  long lkey;
+  int h, h2;
+  
+  lkey = (long)_key;
+
+  h = (lkey >> 2);
+  h2 = (lkey >> 3);
+
+  *_h = h;
+  *_h2 = h2;
+}
+#endif
+
 void wxSetSensitive(Widget w, Bool enabled)
 {
   if (!disabled_widgets) {
@@ -287,6 +303,9 @@ void wxSetSensitive(Widget w, Bool enabled)
 
     /* Use SCHEME_hash_weak_ptr so elements can be deleted from the table */
     disabled_widgets = scheme_hash_table(7, SCHEME_hash_weak_ptr, 0, 0);
+#ifdef MZ_PRECISE_GC
+    disabled_widgets->make_hash_indices = widget_hash_indices;
+#endif
   }
 
   if (enabled) {

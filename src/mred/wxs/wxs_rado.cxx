@@ -544,6 +544,9 @@ static Scheme_Object *os_wxRadioBoxButtonFocus(Scheme_Object *obj, int n,  Schem
 static Scheme_Object *os_wxRadioBoxEnable(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
@@ -917,6 +920,9 @@ static Scheme_Object *os_wxRadioBoxOnKillFocus(Scheme_Object *obj, int n,  Schem
 #pragma argsused
 static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxRadioBox *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 8) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0)) && (SCHEME_NULLP(p[1]) || WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], NULL))) && (XC_SCHEME_NULLP(p[2]) || WITH_REMEMBERED_STACK(objscheme_istype_string(p[2], NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[3], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[4], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[5], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[6], NULL)) && (SCHEME_LISTP(p[7]) && (XC_SCHEME_NULLP(p[7]) || WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap((SCHEME_CAR(p[7])), NULL, 0))))) {

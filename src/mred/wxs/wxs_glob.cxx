@@ -204,6 +204,8 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
   Bool r;
   if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[2], NULL))) {
@@ -272,6 +274,8 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(1);
+  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
   Bool r;
   if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && (WITH_REMEMBERED_STACK(objscheme_istype_box(p[2], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(objscheme_unbox(p[2], NULL), NULL)))) {

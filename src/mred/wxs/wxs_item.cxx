@@ -450,6 +450,9 @@ void os_wxMessage::OnKillFocus()
 static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[0], NULL, 0))) {
@@ -661,6 +664,9 @@ static Scheme_Object *os_wxMessageOnKillFocus(Scheme_Object *obj, int n,  Scheme
 #pragma argsused
 static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxMessage *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[1], NULL, 0))) {

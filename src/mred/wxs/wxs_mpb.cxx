@@ -3547,6 +3547,9 @@ static Scheme_Object *os_wxMediaPasteboardNoSelected(Scheme_Object *obj, int n, 
 static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
@@ -3623,6 +3626,9 @@ static Scheme_Object *os_wxMediaPasteboardSetSelected(Scheme_Object *obj, int n,
 static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[1], NULL, 1))) {
@@ -3828,6 +3834,9 @@ static Scheme_Object *os_wxMediaPasteboardResize(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
@@ -4007,6 +4016,9 @@ static Scheme_Object *os_wxMediaPasteboardDoCopy(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
@@ -4051,6 +4063,9 @@ static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Sch
 static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {

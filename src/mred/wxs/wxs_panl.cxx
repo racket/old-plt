@@ -782,6 +782,9 @@ static Scheme_Object *os_wxPanelGetCursor(Scheme_Object *obj, int n,  Scheme_Obj
 #pragma argsused
 static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxPanel *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0))) {

@@ -466,6 +466,9 @@ static Scheme_Object *os_wxFontGetFamily(Scheme_Object *obj, int n,  Scheme_Obje
 #pragma argsused
 static Scheme_Object *os_wxFont_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxFont *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL))) {
@@ -683,6 +686,9 @@ os_wxFontList::~os_wxFontList()
 static Scheme_Object *os_wxFontListFindOrCreateFont(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxFont* r;
   objscheme_check_valid(obj);
@@ -1062,6 +1068,9 @@ static Scheme_Object *os_wxColourCopyFrom(Scheme_Object *obj, int n,  Scheme_Obj
 #pragma argsused
 static Scheme_Object *os_wxColour_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxColour *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
@@ -1483,6 +1492,9 @@ static Scheme_Object *objscheme_wxPoint_Sety(Scheme_Object *obj, int n,  Scheme_
 #pragma argsused
 static Scheme_Object *os_wxPoint_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxPoint *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
@@ -1835,6 +1847,9 @@ static Scheme_Object *os_wxBrushGetStipple(Scheme_Object *obj, int n,  Scheme_Ob
 static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
@@ -1924,6 +1939,9 @@ static Scheme_Object *os_wxBrushGetColour(Scheme_Object *obj, int n,  Scheme_Obj
 #pragma argsused
 static Scheme_Object *os_wxBrush_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxBrush *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
@@ -2121,6 +2139,9 @@ os_wxBrushList::~os_wxBrushList()
 static Scheme_Object *os_wxBrushListFindOrCreateBrush(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxBrush* r;
   objscheme_check_valid(obj);
@@ -2576,6 +2597,9 @@ static Scheme_Object *os_wxPenGetStipple(Scheme_Object *obj, int n,  Scheme_Obje
 static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxColour(p[0], NULL, 0))) {
@@ -2800,6 +2824,9 @@ static Scheme_Object *os_wxPenGetWidth(Scheme_Object *obj, int n,  Scheme_Object
 #pragma argsused
 static Scheme_Object *os_wxPen_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxPen *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
@@ -3008,6 +3035,9 @@ os_wxPenList::~os_wxPenList()
 static Scheme_Object *os_wxPenListFindOrCreatePen(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   class wxPen* r;
   objscheme_check_valid(obj);
@@ -3305,6 +3335,9 @@ static Scheme_Object *os_wxCursorOk(Scheme_Object *obj, int n,  Scheme_Object *p
 #pragma argsused
 static Scheme_Object *os_wxCursor_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxCursor *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(istype_symset_cursor(p[0], NULL))) {

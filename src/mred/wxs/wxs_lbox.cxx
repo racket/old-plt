@@ -911,6 +911,9 @@ static Scheme_Object *os_wxListBoxClear(Scheme_Object *obj, int n,  Scheme_Objec
 static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && 1) {

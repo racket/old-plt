@@ -76,21 +76,25 @@ class wxUpdateCursorTimer : public wxTimer
   wxCanvasMediaAdmin *admin;
  public:
   wxUpdateCursorTimer(wxCanvasMediaAdmin *a);
-  void Notify(void) {
-    Stop();
-    if (admin) {
-      admin->updateCursorTimer = NULL;
-      admin->canvas->UpdateCursorNow();
-    }
-  }
-  void Cancel() {
-    admin = NULL;
-  }
+  void Notify(void);
+  void Cancel();
 };
 
 wxUpdateCursorTimer::wxUpdateCursorTimer(wxCanvasMediaAdmin *a) {
   admin = a;
   Start(0, TRUE);
+}
+
+void wxUpdateCursorTimer::Notify(void) {
+  Stop();
+  if (admin) {
+    admin->updateCursorTimer = NULL;
+    admin->canvas->UpdateCursorNow();
+  }
+}
+
+void wxUpdateCursorTimer::Cancel() {
+  admin = NULL;
 }
 
 #define BLINK_DELAY 500
@@ -100,19 +104,23 @@ class wxBlinkTimer : public wxTimer
   wxMediaCanvas *canvas;
  public:
   wxBlinkTimer(wxMediaCanvas *c);
-  void Notify(void) {
-    wxYield();
-    if (canvas)
-      canvas->BlinkCaret();
-  }
-  void Kill() {
-    canvas = NULL;
-    Stop();
-  }
+  void Notify(void);
+  void Kill();
 };
 
 wxBlinkTimer::wxBlinkTimer(wxMediaCanvas *c) {
   canvas = c;
+}
+
+void wxBlinkTimer::Notify(void) {
+  wxYield();
+  if (canvas)
+    canvas->BlinkCaret();
+}
+
+void wxBlinkTimer::Kill() {
+  canvas = NULL;
+  Stop();
 }
 
 #define AUTO_DRAG_DELAY 100
@@ -123,17 +131,8 @@ class wxAutoDragTimer : public wxTimer
   wxMouseEvent *event;
  public:
   wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e);
-  void Notify(void) {
-    wxYield(); /* In case we get too much time */
-    if (canvas) {
-      event->timeStamp += AUTO_DRAG_DELAY;
-      canvas->OnEvent(event);
-    }
-  }
-  void Kill(void) {
-    canvas = NULL;
-    Stop();
-  }
+  void Notify(void);
+  void Kill(void);
 };
 
 wxAutoDragTimer::wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
@@ -141,6 +140,19 @@ wxAutoDragTimer::wxAutoDragTimer(wxMediaCanvas *c, wxMouseEvent *e) {
   event = new wxMouseEvent(0);
   memcpy(event, e, sizeof(wxMouseEvent));
   Start(AUTO_DRAG_DELAY, TRUE);
+}
+
+void wxAutoDragTimer::Notify(void) {
+  wxYield(); /* In case we get too much time */
+  if (canvas) {
+    event->timeStamp += AUTO_DRAG_DELAY;
+    canvas->OnEvent(event);
+  }
+}
+
+void wxAutoDragTimer::Kill(void) {
+  canvas = NULL;
+  Stop();
 }
 
 /************************************************************************/

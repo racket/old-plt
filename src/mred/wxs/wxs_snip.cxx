@@ -6904,6 +6904,9 @@ static Scheme_Object *os_wxImageSnipGetExtent(Scheme_Object *obj, int n,  Scheme
 #pragma argsused
 static Scheme_Object *os_wxImageSnip_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxImageSnip *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[0], NULL, 0))) {

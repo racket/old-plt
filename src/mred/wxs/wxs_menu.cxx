@@ -383,6 +383,9 @@ static Scheme_Object *os_wxMenuDelete(Scheme_Object *obj, int n,  Scheme_Object 
 static Scheme_Object *os_wxMenuAppend(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_wxMenu(p[2], NULL, 0))) {
@@ -975,6 +978,9 @@ static Scheme_Object *os_wxMenuBarAppend(Scheme_Object *obj, int n,  Scheme_Obje
 #pragma argsused
 static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, obj);
+  PRE_VAR_STACK_PUSH(1, p);
   os_wxMenuBar *realobj;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && SCHEME_LISTP(p[0])) {
@@ -1116,16 +1122,34 @@ END_XFORM_SKIP;
 
 class wxsMenuItem : public wxObject
 {
+#ifdef MZ_PRECISE_GC
+  void *my_id;
+#endif
 public:
   wxsMenuItem(void);
+  ~wxsMenuItem();
 
   ExactLong Id(void) {
+#ifdef MZ_PRECISE_GC
+    return (ExactLong)my_id;
+#else
     return (ExactLong)this;
+#endif
   }
 };
 
 wxsMenuItem::wxsMenuItem(void)
 {
+#ifdef MZ_PRECISE_GC
+  my_id = GC_malloc_immobile_box(this);
+#endif
+}
+
+wxsMenuItem::~wxsMenuItem()
+{
+#ifdef MZ_PRECISE_GC
+  GC_free_immobile_box(my_id);
+#endif
 }
 
 #ifdef MZ_PRECISE_GC
@@ -1134,7 +1158,11 @@ START_XFORM_SKIP;
 
 wxsMenuItem* wxsIdToMenuItem(ExactLong id)
 {
+#ifdef MZ_PRECISE_GC
+  return *(wxsMenuItem **)id;
+#else
   return (wxsMenuItem *)id;
+#endif
 }
 
 

@@ -76,7 +76,9 @@ wxMenu::~wxMenu(void)
 	menu_item *temp = item;
 	item = item->next;
 	FREE_MENU_STRING(temp->label);
-	FREE_MENU_STRING(temp->help_text);
+	FREE_MENU_STRING(temp->key_binding);
+	if (temp->help_text != (char *)-1)
+	  FREE_MENU_STRING(temp->help_text);
 	if (temp->contents) { 	// has submenu?
 	  wxMenu *mnu;
 	  mnu = EXTRACT_TOP_MENU(temp);
@@ -159,6 +161,7 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
     if (topdummy) {
 	item = (menu_item*)topdummy;
 	FREE_MENU_STRING(item->label);
+	FREE_MENU_STRING(item->key_binding);
 	FREE_TOP_POINTER(item->user_data);
 	topdummy = 0;
     } else {
@@ -186,8 +189,13 @@ void wxMenu::Append(long id, char *label, char *help, Bool checkable)
       wxGetLabelAndKey(label, &item->label, &item->key_binding);
       ms = MAKE_MENU_STRING(item->label);
       item->label = ms;
+      ms = MAKE_MENU_STRING(item->key_binding);
+      item->key_binding = ms;
     }
-    ms = MAKE_MENU_STRING(help);
+    if (help == (char *)-1)
+      ms = help;
+    else
+      ms = MAKE_MENU_STRING(help);
     item->help_text = ms;
     item->ID        = id; 
     item->enabled   = TRUE;
@@ -271,7 +279,9 @@ Bool wxMenu::DeleteItem(long id, int pos)
     }
 
     FREE_MENU_STRING(found->label);
-    FREE_MENU_STRING(found->help_text);
+    FREE_MENU_STRING(found->key_binding);
+    if (found->help_text != (char *)-1)
+      FREE_MENU_STRING(found->help_text);
 
     /* If there's a submenu, let it go. */
     if (found->contents) {
@@ -376,7 +386,7 @@ void wxMenu::SetHelpString(long id, char *help)
     menu_item *found;
     found = (menu_item*)FindItemForId(id);
     if (found)
-      found->help_text = help;
+      found->help_text = MAKE_MENU_STRING(help);
 }
 
 void wxMenu::SetLabel(long id, char *label)
@@ -384,8 +394,13 @@ void wxMenu::SetLabel(long id, char *label)
     menu_item *found;
     found = (menu_item*)FindItemForId(id);
     if (found) {
+      char *ms;
       Stop();
       wxGetLabelAndKey(label, &found->label, &found->key_binding);
+      ms = MAKE_MENU_STRING(found->label);
+      found->label = ms;
+      ms = MAKE_MENU_STRING(found->key_binding);
+      found->key_binding= ms;
     }
 }
 

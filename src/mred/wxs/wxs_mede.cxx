@@ -3645,6 +3645,9 @@ static Scheme_Object *os_wxMediaEditGetFileFormat(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *os_wxMediaEditWriteToFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
@@ -3700,6 +3703,9 @@ static Scheme_Object *os_wxMediaEditWriteToFile(Scheme_Object *obj, int n,  Sche
 static Scheme_Object *os_wxMediaEditReadFromFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
@@ -4837,6 +4843,9 @@ static Scheme_Object *os_wxMediaEditSplitSnip(Scheme_Object *obj, int n,  Scheme
 static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL))) {
@@ -4979,6 +4988,9 @@ static Scheme_Object *os_wxMediaEditDoCopy(Scheme_Object *obj, int n,  Scheme_Ob
 static Scheme_Object *os_wxMediaEditKill(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
@@ -5052,6 +5064,9 @@ static Scheme_Object *os_wxMediaEditPasteNext(Scheme_Object *obj, int n,  Scheme
 static Scheme_Object *os_wxMediaEditPaste(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[1], "end", NULL))) {
@@ -5107,6 +5122,9 @@ static Scheme_Object *os_wxMediaEditPaste(Scheme_Object *obj, int n,  Scheme_Obj
 static Scheme_Object *os_wxMediaEditCopy(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_bool(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL))) {
@@ -5169,6 +5187,9 @@ static Scheme_Object *os_wxMediaEditCopy(Scheme_Object *obj, int n,  Scheme_Obje
 static Scheme_Object *os_wxMediaEditCut(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_bool(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_ExactLong(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[2], "start", NULL))) {
@@ -5252,6 +5273,9 @@ static Scheme_Object *os_wxMediaEditErase(Scheme_Object *obj, int n,  Scheme_Obj
 static Scheme_Object *os_wxMediaEditDelete(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[0], "start", NULL))) {
@@ -5305,6 +5329,9 @@ static Scheme_Object *os_wxMediaEditDelete(Scheme_Object *obj, int n,  Scheme_Ob
 static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  SETUP_PRE_VAR_STACK(2);
+  PRE_VAR_STACK_PUSH(0, p);
+  PRE_VAR_STACK_PUSH(1, obj);
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {

@@ -1304,17 +1304,17 @@ wxStyle *wxStyleList::MapIndexToStyle(wxMediaStream *s, int i, long listId)
 	if (ssl->styleMap && i < ssl->numMappedStyles)
 	  return ssl->styleMap[i];
 	else {
-	  wxmeError("Bad style index for snip.");
+	  wxmeError("map-index-to-style: bad style index for snip");
 	  return basic;
 	}
       } else {
-	wxmeError("Can't resolve style index; style list has been cleared.");
+	wxmeError("map-index-to-style: cannot resolve style index; style list has been cleared");
 	return basic;
       }
     }
   }
 
-  wxmeError("Bad style list index for snip.");
+  wxmeError("map-index-to-style: bad style list index for snip");
 
   return basic;
 }
@@ -1510,7 +1510,7 @@ wxStyleList *wxmbReadStylesFromFile(wxStyleList *styleList,
     f->Get(&baseIndex);
 
     if (baseIndex >= i) {
-      wxmeError("Bad style index.");
+      wxmeError("map-index-to-style: bad style index");
       return FALSE;
     }
 

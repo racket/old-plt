@@ -1250,6 +1250,44 @@ static Scheme_Object *SetDialogs(int, Scheme_Object *a[])
   return scheme_void;
 }
 
+static Scheme_Object *snip_class_getter, *editor_data_class_getter;
+
+static Scheme_Object *SetSnipClassGetter(int, Scheme_Object *a[])
+{
+  wxREGGLOB(snip_class_getter);
+  snip_class_getter = a[0];
+  return scheme_void;
+}
+
+static Scheme_Object *SetEditorDataClassGetter(int, Scheme_Object *a[])
+{
+  wxREGGLOB(editor_data_class_getter);
+  editor_data_class_getter = a[0];
+  return scheme_void;
+}
+
+wxSnipClass *wxGetSnipClass(const char *name)
+{
+  if (!snip_class_getter)
+    return NULL;
+  else {
+    Scheme_Object *a[1];
+    a[0] = scheme_make_string(name);
+    return objscheme_unbundle_wxSnipClass(_scheme_apply(snip_class_getter, 1, a), NULL, 1);
+  }
+}
+
+wxBufferDataClass *wxGetEditorDataClass(const char *name)
+{
+  if (!editor_data_class_getter)
+    return NULL;
+  else {
+    Scheme_Object *a[1];
+    a[0] = scheme_make_string(name);
+    return objscheme_unbundle_wxBufferDataClass(_scheme_apply(editor_data_class_getter, 1, a), NULL, 1);
+  }
+}
+
 /***********************************************************************/
 /*                          interapp hooks                             */
 /***********************************************************************/
@@ -2262,6 +2300,17 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("set-menu-tester",
 			   scheme_make_prim_w_arity(CAST_SP SetIsMenu,
 						    "set-menu-tester",
+						    1, 1),
+			   global_env);
+
+  scheme_install_xc_global("set-snip-class-getter",
+			   scheme_make_prim_w_arity(CAST_SP SetSnipClassGetter,
+						    "set-snip-class-getter",
+						    1, 1),
+			   global_env);
+  scheme_install_xc_global("set-editor-data-class-getter",
+			   scheme_make_prim_w_arity(CAST_SP SetEditorDataClassGetter,
+						    "set-editor-data-class-getter",
 						    1, 1),
 			   global_env);
   

@@ -334,15 +334,14 @@ void wxMediaStreamIn::Typecheck(char WX_TYPESAFE_USED(v))
 
   if (boundcount && (f->Tell() >= boundaries[boundcount - 1])) {
     bad = TRUE;
-    wxmeError("Overread caused by file corruption"
-	      " or unknown internal error.");
+    wxmeError("media-stream-in%: overread (caused by file corruption?)");
     return;
   }
 
   bad = f->Bad();
 
   if (bad) {
-    wxmeError("Unknown stream error.");
+    wxmeError("media-stream-in%: stream error");
     return;
   }
 
@@ -352,14 +351,14 @@ void wxMediaStreamIn::Typecheck(char WX_TYPESAFE_USED(v))
   f->Read(&t, 1);
 
   if (bad = f->Bad()) {
-    wxmeError("Unknown stream error.");
+    wxmeError("media-stream-in%: stream error");
     return;
   }
 
   bad = (t != v);
 
   if (bad)
-    wxmeError("Type safety error.");
+    wxmeError("media-stream-in%: type safety error");
 #endif
 }
 
@@ -418,7 +417,7 @@ char *wxMediaStreamIn::GetString(long *n)
 
   r = (char *)wxMallocAtomicIfPossible(m);
   if (!r) {
-    wxmeError("String too large (out of memory) reading stream.");
+    wxmeError("media-stream-in%: string too large (out of memory) while reading stream");
     bad = 1;
     if (n)
       *n = 0;
@@ -661,7 +660,7 @@ void wxMediaStreamOut::Typeset(char WX_TYPESAFE_USED(v))
   bad = f->Bad();
 
   if (bad) {
-    wxmeError("Unknown stream error.");
+    wxmeError("media-stream-out%: stream error");
     return;
   }
 

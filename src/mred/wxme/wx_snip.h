@@ -95,6 +95,8 @@ extern wxStandardSnipClassList *wxMakeTheSnipClassList();
 extern wxStandardSnipClassList *wxGetTheSnipClassList();
 #define wxTheSnipClassList (*wxGetTheSnipClassList())
 
+extern wxSnipClass *wxGetSnipClass(const char *name);
+
 /******************************************************************/
 
 class wxMediaLine;
@@ -504,6 +506,8 @@ class wxBufferDataClassList : public /* should be private */ wxList
 extern wxBufferDataClassList *wxMakeTheBufferDataClassList();
 extern wxBufferDataClassList *wxGetTheBufferDataClassList();
 #define wxTheBufferDataClassList (*wxGetTheBufferDataClassList())
+
+extern wxBufferDataClass *wxGetEditorDataClass(const char *name);
 
 /**********************************************************************/
 

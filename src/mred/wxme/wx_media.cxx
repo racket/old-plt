@@ -1315,8 +1315,13 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
 
     if (!isnip->snipclass)
-      wxmeError("Inserting a snip without a class."
-		" Data will be lost if you try to save the file.");
+      goto give_up;
+    {
+      wxSnipClassList *scl;
+      scl = wxGetTheSnipClassList();
+      if (scl->FindPosition(isnip->snipclass) < 0)
+	goto give_up;
+    }
 
     if ((isnip->flags & wxSNIP_NEWLINE)&&!(isnip->flags & wxSNIP_HARD_NEWLINE))
       isnip->flags -= wxSNIP_NEWLINE;
@@ -2881,7 +2886,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
 
   if (scheme_directory_exists(file)) {
     if (showErrors)
-      wxmeError("Can't load a directory.");
+      wxmeError("load-file in text%: cannot load a directory");
     return FALSE;
   }
 
@@ -2889,7 +2894,7 @@ Bool wxMediaEdit::LoadFile(char *file, int format, Bool showErrors)
   
   if (!f) {
     if (showErrors)
-      wxmeError("Couldn't open the file.");
+      wxmeError("load-file in text%: could not open the file");
     return FALSE;
   }
 
@@ -2960,21 +2965,6 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
     fseek(f, 0, 0);
   }
 
-#ifdef READ_TEXT_WITH_TEXT_FILE_MODE
-  if (*format == wxMEDIA_FF_TEXT || *format == wxMEDIA_FF_TEXT_FORCE_CR) {
-    if (fclose(f)) {
-      if (showErrors)
-	wxmeError("There was an error closing the file.");
-    }
-    f = fopen(wxmeExpandFilename(file, "insert-file in text%", 0), "r");
-    if (!f) {
-      if (showErrors)
-	wxmeError("Couldn't open the file.");
-      return FALSE;
-    }
-  }
-#endif
-
   BeginEditSequence();
 
   fileerr = FALSE;
@@ -2984,7 +2974,7 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
     buffer[MRED_START_STR_LEN] = 0;
     if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)){
       if (showErrors)
-	wxmeError("This is not a MrEd file.");
+	wxmeError("insert-filein text%: not a MrEd editor<%> file");
       fseek(f, 0, 0);
       *format = wxMEDIA_FF_TEXT;
     } else {
@@ -2997,7 +2987,7 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
       fread((char *)mf->read_format, 1, MRED_FORMAT_STR_LEN, f);
       fread((char *)mf->read_version, 1, MRED_VERSION_STR_LEN, f);
       
-      if (wxmeCheckFormatAndVersion(mf)) {
+      if (wxmeCheckFormatAndVersion(mf, showErrors)) {
 	if (wxReadMediaGlobalHeader(mf)) {
 	  if (mf->Ok())
 	    fileerr = !ReadFromFile(mf, clearStyles);
@@ -3021,14 +3011,11 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
     while (!ferror(f) && !feof(f)) {
       buffer[0] = '\r';
       n = fread((char *)buffer + savecr, 1, BUF_SIZE - savecr, f) + savecr;
-#ifndef READ_TEXT_WITH_TEXT_FILE_MODE
       if ((n > 1) && (buffer[n - 1] == '\r')) {
 	savecr = 1;
 	--n;
       } else
-#endif
 	savecr = 0;
-#ifndef READ_TEXT_WITH_TEXT_FILE_MODE
       {
 	int i;
 	for (i = 0; i < n - 1; i++) {
@@ -3038,7 +3025,6 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
 	  }
 	}
       }
-#endif
       Insert(n, (char *)buffer);
     }
     if (savecr)
@@ -3048,10 +3034,10 @@ Bool wxMediaEdit::InsertFile(FILE *f, char *WXUNUSED(file), int *format, Bool cl
   fileerr = fileerr || ferror(f);
 
   if (fclose(f) && showErrors)
-    wxmeError("There was an error closing the file.");
+    wxmeError("insert-file in text%: error closing the file");
 
   if (fileerr && showErrors)
-    wxmeError("There was an error loading the file.");
+    wxmeError("insert-file in text%: error loading the file");
 
   EndEditSequence();
 
@@ -3112,7 +3098,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   
   if (!f) {
     if (showErrors)
-      wxmeError("Couldn't write the file.");
+      wxmeError("save-file in text%: couldn't write the file");
     AfterSaveFile(FALSE);
     return FALSE;
   }
@@ -3132,7 +3118,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
     fileerr = ferror(f);
     if (fclose(f)) {
       if (showErrors)
-	wxmeError("There was an error closing the file.");
+	wxmeError("save-file in text%: error closing the file");
       fileerr = TRUE;
     }
   } else {
@@ -3141,7 +3127,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
     fwrite(MRED_START_STR, 1, MRED_START_STR_LEN, f);
     fwrite(MRED_FORMAT_STR, 1, MRED_FORMAT_STR_LEN, f);
-    fwrite(MRED_VERSION_STR, 1, MRED_VERSION_STR_LEN, f);    
+    fwrite(MRED_VERSION_STR, 1, MRED_VERSION_STR_LEN, f);
 
     b = new wxMediaStreamOutFileBase(f);
     mf = new wxMediaStreamOut(b);
@@ -3155,13 +3141,13 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 
     if (fclose(f)) {
       if (showErrors)
-	wxmeError("There was an error closing the file.");
+	wxmeError("save-file in text%: error closing the file");
       fileerr = TRUE;
     }
   }
 
   if (fileerr && showErrors)
-    wxmeError("There was an error writing the file.");
+    wxmeError("save-file in text%: error writing the file");
 
   if (!no_set_filename && PTRNE(file, filename))
     SetFilename(file, FALSE);

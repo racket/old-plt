@@ -703,16 +703,18 @@ Bool wxWriteMediaGlobalFooter(wxMediaStreamOut *f)
 
 /**********************************************************************/
 
-int wxmeCheckFormatAndVersion(wxMediaStream *s)
+int wxmeCheckFormatAndVersion(wxMediaStream *s, Bool showErrors)
 {
   if (strcmp(s->read_format, MRED_FORMAT_STR)) {
-    wxmeError("Unknown format number.");
+    if (showErrors)
+      wxmeError("load-file: unknown format number");
     return 0;
   }
   if (strcmp(s->read_version, MRED_VERSION_STR)
       && strcmp(s->read_version, "01")
       && strcmp(s->read_version, "02")) {
-    wxmeError("Unknown version number.");
+    if (showErrors)
+      wxmeError("load-file: unknown version number");
     return 0;
   }
 
@@ -723,9 +725,8 @@ Bool wxMediaBuffer::ReadHeaderFromFile(wxMediaStreamIn *, char *headerName)
 {
   char buffer[256];
 
-  sprintf(buffer, "Unknown header data: \"%.100s\"."
-	  " The file will be loaded anyway.", headerName);
-
+  sprintf(buffer, "read-header-from-file: unknown header data: \"%.100s\"", headerName);
+  
   wxmeError(buffer);
 
   return TRUE;
@@ -735,8 +736,7 @@ Bool wxMediaBuffer::ReadFooterFromFile(wxMediaStreamIn *, char *headerName)
 {
   char buffer[256];
 
-  sprintf(buffer, "Unknown header data: \"%.100s\"."
-	  " The file will be loaded anyway.", headerName);
+  sprintf(buffer, "read-footer-from-file: unknown header data: \"%.100s\"", headerName);
 
   wxmeError(buffer);
 
@@ -890,8 +890,7 @@ static wxBufferData *ReadBufferData(wxMediaStreamIn *f)
 	  long rcount;
 	  rcount = f->Tell() - start;
 	  if (rcount < datalen) {
-	    wxmeError("Warning: underread caused by file "
-		      "corruption or unknown internal error.");
+	    wxmeError("read-buffer-data: underread (caused by file corruption?)");
 	    f->Skip(datalen - rcount);
 	  }
 	  f->RemoveBoundary();
@@ -958,8 +957,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 
 	rcount = f->Tell() - start;
 	if (rcount < len) {
-	  wxmeError("Warning: underread caused by file "
-		    "corruption or unknown internal error.");
+	  wxmeError("read-snips-from-file: underread (caused by file corruption?)");
 	  f->Skip(len - rcount);
 	}
 	
@@ -1019,8 +1017,7 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
 	  long rcount;
 	  rcount = f->Tell() - start;
 	  if (rcount < len) {
-	    wxmeError("Warning: underread caused by file "
-		      "corruption or unknown internal error.");
+	    wxmeError("read-snips-from-file: underread (caused by file corruption?)");
 	    f->Skip(len - rcount);
 	  }
 	  f->RemoveBoundary();
@@ -1107,8 +1104,7 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut *f,
   for (snip = startSnip; PTRNE(snip, endSnip); snipCount++) {
     sclass = snip->snipclass;
     if (!sclass) {
-      wxmeError("There's a snip without a class."
-		" Data will be lost.");
+      wxmeError("write-snips-to-file: snip has no snipclass");
     } else if (!f->GetHeaderFlag(sclass)) {
       short mp;
       mp = (short)f->MapPosition(sclass);
@@ -1172,7 +1168,7 @@ Bool wxmbWriteSnipsToFile(wxMediaStreamOut *f,
 
     styleIndex = styleList->StyleToIndex(snip->style);
     if (styleIndex < 0) {
-      wxmeError("Bad style discovered.");
+      wxmeError("write-snips-to-file: bad style discovered");
       styleIndex = 0;
     }
     f->Put(styleIndex);

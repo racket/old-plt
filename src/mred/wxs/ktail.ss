@@ -32,7 +32,9 @@
     set-dialogs
     set-executer
     current-gl-context
-    send-event)
+    send-event
+    set-snip-class-getter
+    set-editor-data-class-getter)
 
 )
 ;; end

@@ -427,7 +427,7 @@
 	       [serror
 		(lambda (msg at)
 		  (raise-syntax-error #f msg in-form at))])
-	   (let loop ([tests form])
+	   (let loop ([tests form][first? #t])
 	     (if (stx-null? tests)
 		 (quote-syntax (void))
 		 (if (not (stx-pair? tests))
@@ -458,20 +458,24 @@
 				       `(,(quote-syntax let) ([,gen ,test])
 					 (,(quote-syntax if) ,gen
 					  (,(stx-car (stx-cdr value)) ,gen)
-					  ,(loop rest))))
+					  ,(loop rest #f))))
 				     (serror
 				      "bad syntax (bad clause form with =>)"
 				      line))
 				 (if else?
-				     (cons (quote-syntax begin) value)
+				     (if first?
+					 ;; first => be careful not to introduce a splicable begin...
+					 `(,(quote-syntax if) #t ,(cons (quote-syntax begin) value))
+					 ;; we're in an `if' branch already...
+					 (cons (quote-syntax begin) value))
 				     (if (stx-null? value)
 					 (let ([gen (gensym)])
 					   `(,(quote-syntax let) ([,gen ,test])
-					     (,(quote-syntax if) ,gen ,gen ,(loop rest))))
+					     (,(quote-syntax if) ,gen ,gen ,(loop rest #f))))
 					 (list
 					  (quote-syntax if) test
 					  (cons (quote-syntax begin) value)
-					  (loop rest))))))))))))
+					  (loop rest #f))))))))))))
 	 in-form))))
 
   (provide cond))
@@ -606,15 +610,24 @@
 			 (not (stx-pair? (stx-cdr code))))
 		     (raise-syntax-error #f "bad syntax" code))
 		 (let ([body (stx-cdr code)])
-		   (let ([first (stx-car body)]) 
+		   (let ([first (stx-car body)]
+			 [check-context
+			  (lambda ()
+			    (if (memq (syntax-local-context) '(expression))
+				(raise-syntax-error 
+				 #f
+				 "allowed only in definition contexts"
+				 code)))])
 		     (cond
 		      [(identifier? first)
 		       (if (and (stx-pair? (stx-cdr body))
 				(stx-null? (stx-cdr (stx-cdr body))))
-			   (datum->syntax-object
-			    here
-			    `(,base (,first) ,@(stx->list (stx-cdr body)))
-			    code)
+			   (begin
+			     (check-context)
+			     (datum->syntax-object
+			      here
+			      `(,base (,first) ,@(stx->list (stx-cdr body)))
+			      code))
 			   (raise-syntax-error
 			    #f
 			    "bad syntax (zero or multiple expressions after identifier)"
@@ -644,11 +657,13 @@
 			      #f
 			      "bad syntax (empty procedure body)"
 			      code))
-			 (datum->syntax-object
-			  (quote-syntax here)
-			  `(,base (,(stx-car first)) 
-				  (lambda ,(stx-cdr first) ,@(stx->list pbody)))
-			  code))]
+			 (begin
+			   (check-context)
+			   (datum->syntax-object
+			    (quote-syntax here)
+			    `(,base (,(stx-car first)) 
+				    (lambda ,(stx-cdr first) ,@(stx->list pbody)))
+			    code)))]
 		      [else
 		       (raise-syntax-error
 			#f
@@ -790,7 +805,7 @@
 			     (syntax-error "field name not a identifier" x)))
 		       (stx->list (cadr body)))
 	     (if (memq (syntax-local-context) '(expression))
-		 (syntax-error "only allowed in definition contexts"))
+		 (syntax-error "allowed only in definition contexts"))
 	     (let ([name (if (identifier? (car body))
 			     (car body)
 			     (stx-car (car body)))]
@@ -2323,27 +2338,20 @@
     (lambda (x)
       (syntax-case x ()
 	((delay exp)
-	 (syntax/loc x (make-a-promise (lambda () exp)))))))
+	 (syntax/loc x (make-promise (lambda () exp)))))))
   
   (define-struct promise (p))
-
-  ;; From Dybvig (mostly):
-  (define make-a-promise
-    (lambda (thunk)
-      (make-promise
-       (let ([result (void)] [set? #f])
-	 (lambda ()
-	   (unless set?
-	     (let ([v (call-with-values thunk list)])
-	       (unless set?
-		 (set! result v)
-		 (set! set? #t))))
-	   (apply values result))))))
   
   (define (force p)
     (unless (promise? p)
       (raise-type-error 'force "promise" p))
-    ((promise-p p)))
+    (let ([v (promise-p p)])
+      (if (procedure? v)
+	  (let ([v (call-with-values v list)])
+	    (when (procedure? (promise-p p))
+	      (set-promise-p! p v))
+	    (apply values (promise-p p)))
+	  (apply values v))))
 
   (define-syntax parameterize
     (lambda (stx)

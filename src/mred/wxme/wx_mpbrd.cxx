@@ -745,8 +745,7 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
     return;
 
   if (!snip->snipclass)
-    wxmeError("Inserting a snip without a class."
-	      " Data will be lost if you try to save the file.");
+    wxmeError("insert in pasteboard%: cannot insert a snip without a snipclass");
 
   writeLocked++;
   BeginEditSequence();
@@ -2518,7 +2517,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
 
   if (::scheme_directory_exists(file)) {
     if (showErrors)
-      wxmeError("Can't load a directory.");
+      wxmeError("load-file in pasteboard%: Can't load a directory");
     AfterLoadFile(FALSE);
     return FALSE;
   }
@@ -2527,7 +2526,7 @@ Bool wxMediaPasteboard::LoadFile(char *file, int WXUNUSED(format), Bool showErro
   
   if (!f) {
     if (showErrors)
-      wxmeError("Couldn't open the file.");
+      wxmeError("load-file in pasteboard%: could not open the file");
     AfterLoadFile(FALSE);
     return FALSE;
   }
@@ -2586,7 +2585,7 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
   buffer[MRED_START_STR_LEN] = 0;
   if ((n != MRED_START_STR_LEN) || strcmp(buffer, MRED_START_STR)){
     if (showErrors)
-      wxmeError("This is not a MrEd file.");
+      wxmeError("insert-file in pasteboard%: not a MrEd editor<%> file");
     fileerr = TRUE;
   } else {
     wxMediaStreamInFileBase *b;
@@ -2598,7 +2597,7 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
     fread((char *)mf->read_format, 1, MRED_FORMAT_STR_LEN, f);
     fread((char *)mf->read_version, 1, MRED_VERSION_STR_LEN, f);
 
-    if (wxmeCheckFormatAndVersion(mf)) {
+    if (wxmeCheckFormatAndVersion(mf,showErrors)) {
       if (wxReadMediaGlobalHeader(mf)) {
 	if (mf->Ok())
 	  fileerr = !ReadFromFile(mf, clearStyles);
@@ -2620,7 +2619,7 @@ Bool wxMediaPasteboard::InsertFile(FILE *f, Bool clearStyles, Bool showErrors)
   fclose(f);
 
   if (fileerr && showErrors)
-    wxmeError("There was an error loading the file.");
+    wxmeError("insert-file in pasteboard%: error loading the file");
 
   return !fileerr;
 }
@@ -2671,7 +2670,7 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   
   if (!f) {
     if (showErrors)
-      wxmeError("Couldn't write the file.");
+      wxmeError("save-file in pasteboard%: could not write the file");
     AfterSaveFile(FALSE);
     return FALSE;
   }
@@ -2701,7 +2700,7 @@ Bool wxMediaPasteboard::SaveFile(char *file, int format, Bool showErrors)
   fclose(f);
 
   if (fileerr && showErrors)
-    wxmeError("There was an error writing the file.");
+    wxmeError("save-file in pasteboard%: error writing the file");
 
   if (!no_set_filename)
     SetFilename(file, FALSE);

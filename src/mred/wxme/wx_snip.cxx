@@ -3,7 +3,7 @@
  * Purpose:     wxSnip implementations
  * Author:      Matthew Flatt
  * Created:     1995
- * Copyright:   (c) 1995-99, Matthew Flatt
+ * Copyright:   (c) 1995-2002, Matthew Flatt
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Library General Public
@@ -1690,6 +1690,14 @@ wxSnipClass *wxSnipClassList::Find(char *name)
   wxNode *node;
 
   node = wxList::Find(name);
+  if (!node) {
+    /* invoke getter and try again */
+    wxSnipClass *sc;
+    sc = wxGetSnipClass(name);
+    if (sc)
+      Add(sc);
+    node = wxList::Find(name);
+  }
 
   return node ? (wxSnipClass *)node->Data() : (wxSnipClass *)NULL;
 }
@@ -1703,15 +1711,12 @@ short wxSnipClassList::FindPosition(wxSnipClass *sclass)
     if (PTREQ(sclass, (wxSnipClass *)node->Data()))
       return i;
   }
-
+  
   return -1;
 }
 
 void wxSnipClassList::Add(wxSnipClass *snipclass)
 {
-  if (wxList::Find(snipclass->classname))
-    return;
-
   Append(snipclass->classname, snipclass);
 }
 
@@ -1948,6 +1953,15 @@ wxBufferDataClass *wxBufferDataClassList::Find(char *name)
 
   node = wxList::Find(name);
 
+  if (!node) {
+    /* invoke getter and try again */
+    wxBufferDataClass *bdc;
+    bdc = wxGetEditorDataClass(name);
+    if (bdc)
+      Add(bdc);
+    node = wxList::Find(name);
+  }
+  
   return node ? (wxBufferDataClass *)node->Data() : (wxBufferDataClass *)NULL;
 }
 
@@ -1955,6 +1969,7 @@ short wxBufferDataClassList::FindPosition(wxBufferDataClass *sclass)
 {
   wxNode *node;
   short i;
+  int k;
   
   for (i = 0, node = First(); node; node = node->Next(), i++) {
     if (PTREQ(sclass, (wxBufferDataClass *)node->Data()))
@@ -1966,9 +1981,6 @@ short wxBufferDataClassList::FindPosition(wxBufferDataClass *sclass)
 
 void wxBufferDataClassList::Add(wxBufferDataClass *dataclass)
 {
-  if (wxList::Find(dataclass->classname))
-    return;
-
   Append(dataclass->classname, dataclass);
 }
 

@@ -17,7 +17,7 @@
 		 (lambda (stx)
 		   (let ([v (syntax-parameter-target-value #'gen-id)])
 		     (apply-transformer v stx #'set!)))
-		 #'gen-id)))))]))
+		 ((syntax-local-certifier) #'gen-id))))))]))
 
   (define-syntax (syntax-parameterize stx)
     (syntax-case stx ()

@@ -449,7 +449,7 @@
 	     ;;   env is an (id-stx . id-stx) mapping - names exported by the package
 	     ;;   rns is an (id-stx . id-stx) mapping - names defined in the package
 	     ;;   subs is a table mapping defined id-stx to sub-package mappings
-	     [cps (syntax-parameter-value #'current-package (lambda () #f))]
+	     [cps (syntax-parameter-value #'current-package)]
 	     [cp-env+rns+subs+ispre/s (map (lambda (cp) (open (car cp) (car cp) stx))
 					   cps)]
 	     ;; Reverse-map renaming due to being in a package body. In other words,

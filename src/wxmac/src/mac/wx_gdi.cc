@@ -420,7 +420,7 @@ static wxMemoryDC *temp_mask_mdc;
 
 wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
 {
-  int w, h, bw, bh, i, j, delta, bit, s;
+  int w, h, bw, bh, i, j, bit;
   unsigned char r, g, b;
   wxColour *c;
   wxMemoryDC *mask_dc, *bitmap_dc;
@@ -473,15 +473,14 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
   cMacCustomCursor = new Cursor;
 
   /* Init arrays */
-  for (i = 0; i < s; i++) {
+  for (i = 0; i < 16; i++) {
     cMacCustomCursor->data[i] = 0;
     cMacCustomCursor->mask[i] = 0;
   }
 
   /* Read bits from mask and bm and set the corresponding bits */
-  bit = 128;
-  delta = 0;
   for (j = 0; j < bh; j++) {
+    bit = 0x8000;
     for (i = 0; i < w; i++) {
       if (i < bw) {
       
@@ -489,22 +488,18 @@ wxCursor::wxCursor(wxBitmap *bm, wxBitmap *mask, int hotSpotX, int hotSpotY)
         bitmap_dc->GetPixel(i, j, c);
 	c->Get(&r, &g, &b);
 
-        if (r || g || b) {
-            cMacCustomCursor->data[delta] += bit;
+        if (!r && !g && !b) {
+            cMacCustomCursor->data[j] += bit;
         }
         
         mask_dc->GetPixel(i, j, c);
         c->Get(&r, &g, &b);
         
-        if (r || g || b) {
-            cMacCustomCursor->mask[delta] += bit;
+        if (!r && !g && !b) {
+            cMacCustomCursor->mask[j] += bit;
         }
       }
       bit = bit >> 1;
-      if (!bit) {
-        delta++;
-        bit = 128;
-      }
     }
   }
 

@@ -4112,6 +4112,9 @@ static void child_done(int ingored)
       } else
 	status = 0;
 
+      /* OS threads: there's no lock here because signals are disabled
+	 when scheme_system_childen is being modified by a thread. */
+
       prev = NULL;
       for (sc = scheme_system_children; sc; prev = sc, sc = sc->next) {
 	if (sc->id == result) {
@@ -4124,6 +4127,7 @@ static void child_done(int ingored)
 	    scheme_system_children = sc->next;
 
 	  scheme_signal_received();
+	  break;
 	}
       }
     }

@@ -291,11 +291,14 @@ void *make_namespace_mutex;
 #endif
 
 #ifndef MZ_REAL_THREADS
-#define GET_WILL_LOCK() /* empty */
-#define RELEASE_WILL_LOCK() /* empty */
+# define GET_WILL_LOCK() /* empty */
+# define RELEASE_WILL_LOCK() /* empty */
 
-#define GET_CUST_LOCK() /* empty */
-#define RELEASE_CUST_LOCK() /* empty */
+# define GET_CUST_LOCK() /* empty */
+# define RELEASE_CUST_LOCK() /* empty */
+
+# define GET_NESTEE_LOCK() /* emtpy */
+# define RELEASE_NESTEE_LOCK() /* empty */
 #else
 static void *will_mutex;
 # ifdef MZ_KEEP_LOCK_INFO
@@ -310,6 +313,13 @@ static int cust_lock_c;
 # endif
 # define GET_CUST_LOCK() (SCHEME_LOCK_MUTEX(cust_mutex) _MZ_LOCK_INFO(cust_lock_c++))
 # define RELEASE_CUST_LOCK()  (MZ_LOCK_INFO_(--cust_lock_c) SCHEME_UNLOCK_MUTEX(cust_mutex))
+
+static void *nestee_mutex;
+# ifdef MZ_KEEP_LOCK_INFO
+static int nestee_lock_c;
+# endif
+# define GET_NESTEE_LOCK() if (nestee_mutex) (SCHEME_LOCK_MUTEX(nestee_mutex) _MZ_LOCK_INFO(nestee_lock_c++))
+# define RELEASE_NESTEE_LOCK()  if (nestee_mutex) (MZ_LOCK_INFO_(--nestee_lock_c) SCHEME_UNLOCK_MUTEX(nestee_mutex))
 #endif
 
 #ifdef WIN32_THREADS
@@ -494,8 +504,10 @@ void scheme_init_process(Scheme_Env *env)
 #ifdef MZ_REAL_THREADS
     REGISTER_SO(make_namespace_mutex);
     REGISTER_SO(will_mutex);
+    REGISTER_SO(nestee_mutex);
     make_namespace_mutex = SCHEME_MAKE_MUTEX();
     will_mutex = SCHEME_MAKE_MUTEX();
+    nestee_mutex = SCHEME_MAKE_MUTEX();
 #endif
 
     REGISTER_SO(keywords_symbol);
@@ -1773,12 +1785,12 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   scheme_init_error_escape_proc(np);
   scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
-  SCHEME_GET_LOCK();
+  GET_NESTEE_LOCK();
   np->nester = p;
   p->nestee = np;
   np->external_break = p->external_break;
   p->external_break = 0;
-  SCHEME_RELEASE_LOCK();
+  RELEASE_NESTEE_LOCK();
 
   {
     Scheme_Process_Manager_Hop *hop;
@@ -1840,11 +1852,11 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   scheme_post_sema(np->done_sema);
 #endif
 
-  SCHEME_GET_LOCK();
+  GET_NESTEE_LOCK();
   p->external_break = np->external_break;
   p->nestee = NULL;
   np->nester = NULL;
-  SCHEME_RELEASE_LOCK();
+  RELEASE_NESTEE_LOCK();
 
   np->runstack_start = NULL;
   np->runstack_saved = NULL;
@@ -2113,12 +2125,12 @@ void scheme_break_thread(Scheme_Process *p)
       return;
   }
 
-  SCHEME_GET_LOCK();
+  GET_NESTEE_LOCK();
   /* Propagate breaks: */
-  while (p->nestee && scheme_can_break(p, p->config)) {
+  while (p->nestee) {
     p = p->nestee;
   }
-  SCHEME_RELEASE_LOCK();
+  RELEASE_NESTEE_LOCK();
 
 #ifdef MZ_REAL_THREADS
   /* Avoid signals to wrapping thread when nested already has died: */
@@ -2506,19 +2518,23 @@ static int do_kill_thread(Scheme_Process *p)
 {
   int kill_self = 0;
 
-#ifdef MZ_REAL_THREADS
   SCHEME_GET_LOCK();
-#endif
 
   if (!p->running || (p->running & MZTHREAD_KILLED)) {
-#ifdef MZ_REAL_THREADS
     SCHEME_RELEASE_LOCK();
-#endif
     return 0;
   }
 
-  if (p->nestee)
-    scheme_break_thread(p->nestee);
+  {
+    Scheme_Process *nestee;
+
+    GET_NESTEE_LOCK();
+    nestee = p->nestee;
+    RELEASE_NESTEE_LOCK();
+
+    if (nestee)
+      scheme_break_thread(nestee);
+  }
 
   scheme_weak_resume_thread(p);
 
@@ -2541,7 +2557,6 @@ static int do_kill_thread(Scheme_Process *p)
     if (!p->nestee)
       SCHEME_BREAK_THREAD(p->thread);
   }
-  SCHEME_RELEASE_LOCK();
 #else
   if (p->running) {
     p->running |= MZTHREAD_KILLED;
@@ -2551,6 +2566,8 @@ static int do_kill_thread(Scheme_Process *p)
   if (p == scheme_current_process)
     kill_self = 1;
 #endif
+
+  SCHEME_RELEASE_LOCK();
 
   return kill_self;
 }

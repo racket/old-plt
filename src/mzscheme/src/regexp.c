@@ -35,6 +35,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/* regcomp and regexec use static variables, unfortunately. */
+#define GET_RE_LOCK() SCHEME_GET_LOCK()
+#define RELEASE_RE_LOCK() SCHEME_RELEASE_LOCK()
+
 typedef struct regexp {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -1391,10 +1395,18 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
 
 static Scheme_Object *make_regexp(int argc, Scheme_Object *argv[])
 {
+  Scheme_Object *re;
+
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("string->regexp", "string", 0, argc, argv);
 
-  return (Scheme_Object *)regcomp(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]));
+  GET_RE_LOCK();
+
+  re = (Scheme_Object *)regcomp(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]));
+
+  RELEASE_RE_LOCK();
+  
+  return re;
 }
 
 static Scheme_Object *gen_compare(char *name, int pos, 
@@ -1403,7 +1415,7 @@ static Scheme_Object *gen_compare(char *name, int pos,
   regexp *r;
   char *s, *full_s, **startp, **endp;
   unsigned long srcbase;
-  int offset = 0, endset;
+  int offset = 0, endset, m;
   
   if (SCHEME_TYPE(argv[0]) != scheme_regexp_type
       && !SCHEME_STRINGP(argv[0]))
@@ -1428,9 +1440,11 @@ static Scheme_Object *gen_compare(char *name, int pos,
     }
   }
 
-  if (SCHEME_STRINGP(argv[0]))
+  if (SCHEME_STRINGP(argv[0])) {
+    GET_RE_LOCK();
     r = regcomp(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]));
-  else
+    RELEASE_RE_LOCK();
+  } else
     r = (regexp *)argv[0];
 
   full_s = SCHEME_STR_VAL(argv[1]);
@@ -1445,7 +1459,11 @@ static Scheme_Object *gen_compare(char *name, int pos,
   srcbase = (unsigned long)s; /* precise gc: srcbase isn't moved */
   /* No GCs during regexc... */
 
-  if (regexec(r, s, endset - offset, startp, endp)) {
+  GET_RE_LOCK();
+  m = regexec(r, s, endset - offset, startp, endp);
+  RELEASE_RE_LOCK();
+
+  if (m) {
     int i;
     Scheme_Object *l = scheme_null;
 
@@ -1506,9 +1524,11 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
   if (!SCHEME_STRINGP(argv[2]))
     scheme_wrong_type("regexp-replace", "string", 2, argc, argv);
 
-  if (SCHEME_STRINGP(argv[0]))
+  if (SCHEME_STRINGP(argv[0])) {
+    GET_RE_LOCK();
     r = regcomp(SCHEME_STR_VAL(argv[0]), SCHEME_STRTAG_VAL(argv[0]));
-  else
+    RELEASE_RE_LOCK();
+  } else
     r = (regexp *)argv[0];
 
   source = SCHEME_STR_VAL(argv[1]);
@@ -1518,9 +1538,16 @@ static Scheme_Object *gen_replace(int argc, Scheme_Object *argv[], int all)
   endp = MALLOC_N_ATOMIC(char *, r->nsubexp);
 
   while (1) {
+    int m;
+
     srcbase = (unsigned long)source + srcoffset; /* precise gc: srcbase isn't moved */
-    /* No GCs during regexc... */
-    if (regexec(r, source + srcoffset, sourcelen - srcoffset, startp, endp)) {
+
+    /* No GCs during regexec... */
+    GET_RE_LOCK();
+    m = regexec(r, source + srcoffset, sourcelen - srcoffset, startp, endp);
+    RELEASE_RE_LOCK();
+
+    if (m) {
       char *insert;
       long len, end, startpd, endpd;
       

@@ -1,6 +1,6 @@
 
 #ifdef USE_FAR_MZ_FDCALLS
-# if def MZ_REAL_THREADS
+# ifdef MZ_REAL_THREADS
 #  define DECL_FDSET(n, c) fd_set *n
 #  define INIT_DECL_FDSET(n, c) (n = (fd_set *)scheme_alloc_fdset_array(c, 1))
 # else

@@ -20,7 +20,7 @@
 	     (define got-id #f) ...
 	     (define (get-procs!)
 	       (unless tried?
-		 (parameterize-break #f
+		 (parameterize ([break-enabled #f])
 		   (set! tried? #t)
 		   (with-handlers ([exn:fail? (lambda (x) #f)])
 		     (set! got-id (dynamic-require '(lib "image.ss" "lang" "private") 'id))
@@ -58,9 +58,9 @@
 	     (outline-rect (w h c) (fake-p 'outline-rect))
 	     (filled-circle (w h c) (fake-p 'filled-circle))
 	     (outline-circle (w h c) (fake-p 'outline-circle))
-	     
-	     (line (x y c) (fake-p 'line))
-	     (text (str c) (fake-p 'text))
+	     	     
+	     (image-inside? (a b))
+	     (find-image (a b))
 
 	     (image-inside? (a b))
 	     (find-image (a b))

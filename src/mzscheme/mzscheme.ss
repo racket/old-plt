@@ -1771,9 +1771,10 @@
 				  #f)))))))
 		  (loop (cdr paths))))))))
 
+  (define -re:suffix (regexp "\\..?.?.?$"))
+	  
   (define -core-load/use-compiled
-    (let ([re:suffix (regexp "\\..?.?.?$")]
-	  [resolve (lambda (s)
+    (let ([resolve (lambda (s)
 		     (if (complete-path? s)
 			 s
 			 (let ([d (current-load-relative-directory)])
@@ -1800,7 +1801,7 @@
 					   "native"
 					   (system-library-subpath)
 					   (regexp-replace 
-					    re:suffix file
+					    -re:suffix file
 					    (case (system-type)
 					      [(windows) ".dll"]
 					      [else ".so"])))
@@ -1819,7 +1820,7 @@
 		 [zo (and comp?
 			  (build-path base
 				      "compiled"
-				      (regexp-replace re:suffix file ".zo")))]
+				      (regexp-replace -re:suffix file ".zo")))]
 		 [so (get-so file)]
 		 [_loader-so (get-so "_loader.ss")]
 		 [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
@@ -1831,7 +1832,7 @@
 	    (cond
 	     [(and (date>=? _loader-so path-d)
 		   (let ([getter (load-extension _loader-so)])
-		     (getter (string->symbol (regexp-replace re:suffix file "")))))
+		     (getter (string->symbol (regexp-replace -re:suffix file "")))))
 	      => (lambda (loader) (with-dir loader))]
 	     [(date>=? so path-d)
 	      (with-dir (lambda () ((current-load-extension) so)))]
@@ -1886,6 +1887,68 @@
 
   (define (load/use-compiled f) (-core-load/use-compiled f #f))
 
+  (define -re:dir (regexp "(.+?)/+(.*)"))
+  
+  (define (make-standard-module-name-resolver)
+    (define ht (make-hash-table))
+    (lambda (s)
+      (let ([filename
+	     (cond
+	      [(string? s)
+	       ;; Parse Unix-style relative path string
+	       (let loop ([path (or (current-load-relative-directory)
+				    (current-directory))]
+			  [s s])
+		 (let ([prefix (regexp-match -re:dir s)])
+		   (if prefix
+		       (loop (build-path path 
+					 (let ([p (cadr prefix)])
+					   (cond
+					    [(string=? p ".") 'same]
+					    [(string=? p ".") 'up]
+					    [else p])))
+			     (caddr s))
+		       (build-path path s))))]
+	      [(or (not (pair? s))
+		   (not (list? s)))
+	       #f]
+	      [(eq? (car s) 'lib)
+	       (and (> (length s) 2)
+		    (let ([p (apply -find-col 'standard-module-name-resolver (cddr s))])
+		      (string-append p (cadr s))))]
+	      [(eq? (car s) 'file)
+	       (and (= (length s) 2)
+		    (let ([p (cadr s)])
+		      (path->complete-path s (current-load-relative-directory))))]
+	      [else #f])])
+	(unless filename
+	  (raise-type-error 
+	   'standard-module-name-resolver
+	   "module selection"
+	   s))
+	;; At this point, filename is a complete path
+	(unless (file-exists? filename)
+	  (raise (make-exn:i/o:filesystem
+		  (string->immutable-string 
+		   (format 
+		    "standard-module-name-resolver: module file does not exist: ~a" 
+		    filename))
+		  (current-continuation-marks)
+		  filename
+		  #f)))
+	(let ([filename (normal-case-path (simplify-path (expand-path filename)))])
+	  (let-values ([(base name dir?) (split-path filename)])
+	    (let ([no-sfx (regexp-replace -re:suffix name "")])
+	      (let ([modname (string->symbol (string-append base no-sfx))])
+		;; unless the module is defined...
+		(unless (hash-table-get ht modname (lambda () #f))
+		  (hash-table-put! ht modname #t)
+		  (let ([prefix (string->symbol (format "~a." base))])
+		    (parameterize ([current-module-name-prefix prefix])
+		      (load filename))))
+		;; Result is the module name:
+		modname)))))))
+
   ;; -------------------------------------------------------------------------
 
   (define (simple-return-primitive? v)
@@ -1907,7 +1970,8 @@
 	  load-relative load-relative-extension
 	  path-list-string->path-list find-executable-path
 	  collection-path load-library load-relative-library load/use-compiled
-	  simple-return-primitive? port? not-break-exn?))
+	  simple-return-primitive? port? not-break-exn?
+	  make-standard-module-name-resolver))
 
 ;;----------------------------------------------------------------------
 ;; startup
@@ -1920,6 +1984,8 @@
 (import-for-syntax .misc)
 (import-for-syntax .stxcase-scheme)
 (import-for-syntax .stx)
+
+(current-module-name-resolver (make-standard-module-name-resolver))
 
 (current-library-collection-paths
  (path-list-string->path-list

@@ -25,6 +25,7 @@ Scheme_Object *scheme_sys_wraps1;
 
 /* locals */
 static Scheme_Object *current_module_name_resolver(int argc, Scheme_Object *argv[]);
+static Scheme_Object *current_module_name_prefix(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *module_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *module_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
@@ -141,10 +142,17 @@ void scheme_init_module(Scheme_Env *env)
 					    "default-module-name-resolver",
 					    1, 1));
 
+  scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX, scheme_false);
+
   scheme_add_global_constant("current-module-name-resolver", 
 			     scheme_register_parameter(current_module_name_resolver, 
 						       "current-module-name-resolver",
 						       MZCONFIG_CURRENT_MODULE_RESOLVER), 
+			     env);
+  scheme_add_global_constant("current-module-name-prefix", 
+			     scheme_register_parameter(current_module_name_prefix, 
+						       "current-module-name-prefix",
+						       MZCONFIG_CURRENT_MODULE_PREFIX), 
 			     env);
 }
 
@@ -310,7 +318,7 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv)
 {
   scheme_arg_mismatch("default-module-name-resolver", 
-		      "the default resolver always fails; given: ", 
+		      "the kernel's resolver always fails; given: ", 
 		      argv[0]);
   return NULL;
 }
@@ -322,6 +330,25 @@ current_module_name_resolver(int argc, Scheme_Object *argv[])
 			     scheme_make_integer(MZCONFIG_CURRENT_MODULE_RESOLVER),
 			     argc, argv,
 			     1, NULL, NULL, 0);
+}
+
+static Scheme_Object *prefix_p(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *o = argv[0];
+  
+  if (SCHEME_FALSEP(o) || SCHEME_SYMBOLP(o))
+    return o;
+
+  return NULL;
+}
+
+static Scheme_Object *
+current_module_name_prefix(int argc, Scheme_Object *argv[])
+{
+  return scheme_param_config("current-module-name-prefix",
+			     scheme_make_integer(MZCONFIG_CURRENT_MODULE_PREFIX),
+			     argc, argv,
+			     -1, prefix_p, "symbol or #f", 1);
 }
 
 /**********************************************************************/
@@ -732,7 +759,23 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   m = MALLOC_ONE_TAGGED(Scheme_Module);
   m->type = scheme_module_type;
   
-  m->modname = SCHEME_STX_VAL(nm); /* must set before calling new_module_env */
+  {
+    Scheme_Object *prefix, *modname;
+
+    modname= SCHEME_STX_VAL(nm);
+    prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+    
+    if (SCHEME_SYMBOLP(prefix)) {
+      char *s;
+      s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(prefix) + 1);
+      memcpy(s, SCHEME_SYM_VAL(prefix), SCHEME_SYM_LEN(prefix));
+      memcpy(s + SCHEME_SYM_LEN(prefix), SCHEME_SYM_VAL(modname), SCHEME_SYM_LEN(modname) + 1);
+      modname = scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(modname));
+    }
+      
+    m->modname = modname; /* must set before calling new_module_env */
+  }
+
   menv = scheme_new_module_env(env->genv, m);
 
   iidx = scheme_make_modidx(scheme_syntax_to_datum(ii, 0, NULL), scheme_false);

@@ -24,6 +24,7 @@
 #include "schpriv.h"
 #include "schmach.h"
 #include "schcpt.h"
+#include "schvers.h"
 #include <ctype.h>
 #ifdef USE_STACKAVAIL
 # include <malloc.h>
@@ -1326,8 +1327,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	symtab = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
 	rnht = scheme_hash_table(10, SCHEME_hash_ptr, 0, 0);
 
-	/* "print" the string once to get a measurement ans symtab size */
+	/* "print" the string once to get a measurement and symtab size */
 	print_substring(v, notdisplay, 1, NULL, symtab, rnht, p, NULL, &slen);
+
+	/* Remember version: */
+	print_compact_number(p, strlen(VERSION));
+	print_this_string(p, VERSION, -1);
 
 	print_compact_number(p, symtab->count);
 	print_compact_number(p, slen);

@@ -29,6 +29,7 @@
 #include "schpriv.h"
 #include "schmach.h"
 #include "schcpt.h"
+#include "schvers.h"
 #include <stdlib.h>
 #include <ctype.h>
 #ifdef USE_STACKAVAIL
@@ -2148,6 +2149,24 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 
   if (!variable_references)
     variable_references = scheme_make_builtin_references_table();
+
+  /* Check version: */
+  size = read_compact_number_from_port(port);
+  {
+    char buf[64];
+    
+    if (size < 0) size = 0;
+    if (size > 63) size = 63;
+
+    got = scheme_get_chars(port, size, buf, 0);
+    buf[got] = 0;
+
+    if (strcmp(buf, VERSION))
+      scheme_raise_exn(MZEXN_READ,
+		       port,
+		       "read (compiled): code compiled for version %s, not %s",
+		       (buf[0] ? buf : "???"), VERSION);
+  }
 
   symtabsize = read_compact_number_from_port(port);
 

@@ -1750,7 +1750,8 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth)
     } else
       body = cons(let_values_symbol, cons(scheme_null, body));
 
-    --depth;
+    if (depth > 0)
+      --depth;
     if (!depth)
       return body;
     else {
@@ -1822,16 +1823,21 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth)
 
     v = SCHEME_STX_CAR(vars);
 
+    /* Make sure names gets their own renames: */
     name = SCHEME_STX_CAR(v);
-    if (!multi)
+    if (!multi) {
+      name = scheme_add_env_renames(name, env, origenv);
       name = cons(name, scheme_null);
+    } else {
+      name = scheme_add_env_renames(name, env, origenv);
+    }
 
-    rhs = SCHEME_STX_CDR(v);
-    rhs = scheme_datum_to_syntax(rhs, v, scheme_sys_wraps);
+    rhs = SCHEME_STX_CADR(v);
     rhs = scheme_add_env_renames(rhs, use_env, origenv);
     
     v = scheme_expand_expr(rhs, use_env, depth);
-    v = cons(cons(name, v), scheme_null);
+
+    v = cons(cons(name, cons(v, scheme_null)), scheme_null);
 
     if (!first)
       first = v;
@@ -1971,7 +1977,8 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   if (rec)
     return scheme_compile_expr(app, env, rec, drec);
   else {
-    --depth;
+    if (depth > 0)
+      --depth;
     if (!depth)
       return app;
     else
@@ -2473,7 +2480,7 @@ do_letmacro(char *where, Scheme_Object *formname,
     v = scheme_make_sequence_compilation(v, 1, 1);
   } else {
     v = scheme_expand_block(body, env, depth);
-    if (depth >= 0)
+    if ((depth >= 0) || (depth == -2))
       v = cons(formname, cons(bindings, v));
     else if (SCHEME_STX_NULLP(SCHEME_STX_CDR(v)))
       v = SCHEME_STX_CAR(v);

@@ -1312,6 +1312,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_ANCHORED_FRAME 32
 #define SCHEME_TOPLEVEL_FRAME 64
 #define SCHEME_PRIM_GLOBALS_ONLY 128
+#define SCHEME_CAPTURE_WITHOUT_RENAME 256
 
 #define ENV_PRIM_GLOBALS_ONLY(env) ((env)->flags & SCHEME_PRIM_GLOBALS_ONLY)
 

@@ -1083,6 +1083,9 @@ static int env_uid_counter;
 
 static Scheme_Object *env_frame_uid(Scheme_Comp_Env *env)
 {
+  if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+    return NULL;
+
   if (!env->uid) {
     char name[20];
     env_uid_counter++;
@@ -1268,7 +1271,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   }
   if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
     if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type)
-	|| SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type))
+	|| SAME_TYPE(SCHEME_TYPE(val), scheme_syntax_type))
       return val;
     else
       scheme_wrong_syntax("set!", NULL, symbol,

@@ -110,6 +110,8 @@ volatile int scheme_fuel_counter;
 
 int scheme_stack_grows_up;
 
+static Scheme_Object *stop_expander;
+
 /* locals */
 static Scheme_Object *eval(int argc, Scheme_Object *argv[]);
 static Scheme_Object *compile(int argc, Scheme_Object *argv[]);
@@ -1273,7 +1275,8 @@ scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
   if (rec)
     return scheme_compile_expr(form, env, rec, drec);
   else {
-    --depth;
+    if (depth > 0)
+      --depth;
     if (depth)
       return scheme_expand_expr(form, env, depth);
     else
@@ -1717,7 +1720,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       if (rec)
 	result = scheme_compile_expr(result, env, rec, drec);
       else {
-	--depth;
+	if (depth > 0)
+	  --depth;
 	if (depth)
 	  result = scheme_expand_expr(result, env, depth);
       }
@@ -3175,72 +3179,73 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
   return _expand(argv[0], env->init, -1, 0);
 }
 
-static Scheme_Comp_Env *local_expand_extend_env(Scheme_Object *locals, 
-						Scheme_Comp_Env *env)
+static Scheme_Object *stop_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
+				  Scheme_Compile_Info *rec, int drec)
 {
-  Scheme_Object *l;
-  
-  for (l = locals; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-    if (!SCHEME_STX_SYMBOLP(SCHEME_CAR(l)))
-      return NULL;
-  }
-  if (!SCHEME_NULLP(l))
-    return NULL;
-  
-  return scheme_add_compilation_frame(locals, env, 0);
+  scheme_signal_error("internal error: shouldn't get to stop syntax");
+  return NULL;
+}
+
+static Scheme_Object *stop_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
+{
+  return form;
 }
 
 static Scheme_Object *
 local_expand(int argc, Scheme_Object **argv)
 {
   Scheme_Comp_Env *env;
+  Scheme_Object *l, *local_mark;
 
   env = scheme_current_process->current_local_env;
-  if (env && (argc > 1)) {
-    env = local_expand_extend_env(argv[1], env);
-    if (!env)
-      scheme_wrong_type("local-expand", "list of symbols", 1, argc, argv);
-  }
+
   if (!env)
-    scheme_raise_exn(MZEXN_MISC,
-		     "local-defmacro: illegal at run-time");
+    scheme_raise_exn(MZEXN_MISC, "local-expand: illegal at run time");
 
-  return _expand(argv[0], env, -1, 0);
-}
+  /* For each given stop-point identifier, shadow any potential syntax
+     in the environment with an identity-expanding syntax expander. */
 
-static Scheme_Object *
-local_expand_body_expression(int argc, Scheme_Object **argv)
-{
-  Scheme_Comp_Env *env;
-  Scheme_Object *expr, *a[2], *gval;
-
-  env = scheme_current_process->current_local_env;
-  if (env && (argc > 1)) {
-    env = local_expand_extend_env(argv[1], env);
-    if (!env)
-      scheme_wrong_type("local-expand-body-expression", "list of symbols", 1, argc, argv);
-  }
-  if (!env)
-    scheme_raise_exn(MZEXN_MISC,
-		     "local-expand-body-expression: illegal at run-time");
-
-  /* Check for macro expansion, which could mask the real define-values */
-  expr = argv[0];
-  if (SCHEME_STX_PAIRP(expr))
-    expr = scheme_check_immediate_macro(argv[0], env, NULL, 0, -1, &gval);
-  else
-    gval = NULL;
-
-  a[0] = expr;
-  if (SAME_OBJ(gval, scheme_begin_syntax)) {
-    a[1] = begin_symbol;
-  } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
-    a[1] = define_values_symbol;
-  } else {
-    a[1] = scheme_false;
+  if (!stop_expander) {
+    REGISTER_SO(stop_expander);
+    stop_expander = scheme_make_compiled_syntax(stop_syntax, 
+						stop_expand);
   }
 
-  return scheme_values(2, a);
+  env = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME, env);
+  local_mark = scheme_current_process->current_local_mark;
+  
+  for (l = argv[1]; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    Scheme_Object *i;
+    
+    i = SCHEME_CAR(l);
+    if (!SCHEME_STX_SYMBOLP(i)) {
+      scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);
+      return NULL;
+    }
+    
+    scheme_add_local_syntax(i, env);
+    scheme_set_local_syntax(i, stop_expander, env);
+  }
+  if (!SCHEME_NULLP(l)) {
+    scheme_wrong_type("local-expand", "list of identifier syntax", 1, argc, argv);
+    return NULL;
+  }
+
+  l = argv[0];
+
+  if (!SCHEME_STXP(l))
+    l = scheme_datum_to_syntax(l, scheme_false, scheme_false);
+
+  /* Since we have an expression from local context,
+     we need to remove the temporary mark... */
+  l = scheme_add_remove_mark(l, local_mark);
+
+  /* Expand the expression. depth = -2 means expand all the way, but
+     preserve letrec-syntax. */
+  l = _expand(l, env, -2, 0);
+
+  /* Put the temporary mark back: */
+  return scheme_add_remove_mark(l, local_mark);
 }
 
 static Scheme_Object *

@@ -76,9 +76,9 @@
 	      [dc (dc-for-text-size)])
 	  (unless dc
 	    (error 'text "no dc<%> object installed for sizing"))
-	  (let-values ([(w h d a) (send dc get-text-extent string s-font)])
+	  (let-values ([(w h d s) (send dc get-text-extent string s-font)])
 	    (if (or sub? sup?)
-		(let-values ([(ww wh wd wa) (send dc get-text-extent "Wy" font)])
+		(let-values ([(ww wh wd ws) (send dc get-text-extent "Wy" font)])
 		  (prog-picture (lambda (dc x y)
 				  (let ([f (send dc get-font)])
 				    (send dc set-font s-font)
@@ -87,13 +87,13 @@
 						(+ y (- wh h))
 						y))
 				    (send dc set-font f)))
-				w wh wa wd))
+				w wh (- wh wd) wd))
 		(prog-picture (lambda (dc x y)
 				(let ([f (send dc get-font)])
 				  (send dc set-font font)
 				  (send dc draw-text string x y)
 				  (send dc set-font f)))
-			      w h a d)))))]))
+			      w h (- h d) d)))))]))
 
   (define connect
     (case-lambda
@@ -182,7 +182,7 @@
 		[else (error 'rander "unknown command: ~a~n" x)])))
 	(loop dx dy (cdr l) color))))
 
-  (define (draw-pict dc p dx dy)
+  (define (draw-pict p dc dx dy)
     (render dc (pict-width p) (pict-height p)
 	    (pict->command-list p) 
 	    dx dy))

@@ -9,12 +9,6 @@
 (dc-for-text-size ps-dc)
 
 (define (show-pict p)
-  (draw-pict ps-dc
-	     p
-	     0 0)
+  (draw-pict p ps-dc 0 0)
   (send ps-dc end-page)
   (send ps-dc end-doc))
-
-  
-  
-  

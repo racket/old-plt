@@ -15,8 +15,7 @@
 			   (override
 			     [on-paint
 			      (lambda ()
-				(draw-pict (send this get-dc)
-					   p
+				(draw-pict p (send this get-dc)
 					   0 0))])
 			   (sequence (super-init f)))))
 

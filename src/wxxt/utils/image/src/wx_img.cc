@@ -54,8 +54,10 @@ void wxImage::Resize(int w, int h)
   byte        *clptr,*elptr,*epptr;
 
   clptr = NULL;  cxarrp = NULL;  cy = 0;  /* shut up compiler */
+#if 0
   /* force w,h into valid ranges */
   RANGE(w,1,(int)dispWIDE);  RANGE(h,1,(int)dispHIGH);
+#endif
 
   /* if same size, and Ximage created, do nothing */
   if (w == (int)eWIDE && h == (int)eHIGH && theImage!=NULL) return;

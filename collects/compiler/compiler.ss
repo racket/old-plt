@@ -148,9 +148,8 @@
 				(delete-file (path->complete-path dest cwd)))
 			      (raise exn))])
         (compile-file src dest
-		      '(use-current-namespace
-			strip-macro-definitions
-			ignore-require-library))
+		      (cons 'use-current-namespace
+			    (zo-compiler-flags)))
 	(printf " [output to \"~a\"]~n" dest)))))
 
  (define (compile-zos prefix)

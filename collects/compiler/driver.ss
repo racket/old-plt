@@ -109,17 +109,33 @@
 ; 5) a dll output path
 ; 6) a scheme_setup suffix
 (define s:process-filenames
-  (lambda (input-name dest-dir c?)
+  (lambda (input-name dest-dir from-c? tmp-c? tmp-o?)
     (let-values ([(basedir file dir?) (split-path input-name)])
-		(let* ([sbase (extract-base-filename/ss file (if c? #f 'mzc))]
-		       [cbase (extract-base-filename/c file (if c? 'mzc #f))]
-		       [base (or sbase cbase)])
+		(let* ([sbase (extract-base-filename/ss file (if from-c? #f 'mzc))]
+		       [cbase (extract-base-filename/c file (if from-c? 'mzc #f))]
+		       [base (or sbase cbase)]
+		       [c-dir (if tmp-c?
+				  (find-system-path 'temp-dir)
+				  dest-dir)]
+		       [c-prefix (if tmp-c?
+				     (lambda (s) (string-append "mzcTMP" s))
+				     values)]
+		       [o-dir (if tmp-o?
+				  (find-system-path 'temp-dir)
+				  dest-dir)]
+		       [o-prefix (if tmp-o?
+				     (lambda (s) (string-append "mzcTMP" s))
+				     values)])
 		  (unless base
 			  (error 'mzc "not a Scheme or C file: ~a" input-name))
-		  (values (if sbase input-name #f)
-			  (if cbase input-name (build-path dest-dir (append-c-suffix base)))
-			  (build-path dest-dir (append-constant-pool-suffix base))
-			  (build-path dest-dir (append-object-suffix base))
+		  (values (if sbase 
+			      input-name
+			      #f)
+			  (if cbase 
+			      input-name 
+			      (build-path c-dir (c-prefix (append-c-suffix base))))
+			  (build-path o-dir (o-prefix (append-constant-pool-suffix base)))
+			  (build-path o-dir (o-prefix (append-object-suffix base)))
 			  (build-path dest-dir (append-extension-suffix base))
 			  (string-append (compiler:clean-string (compiler:option:setup-prefix)) "_" (compiler:clean-string base)))))))
 
@@ -523,7 +539,7 @@
   (define compiler:multi-o-constant-pool? #f)
 
   (define s:compile
-    (lambda (c-only? multi-o? c? input-name dest-directory)
+    (lambda (c-only? multi-o? from-c? input-name dest-directory)
       (define input-directory 
 	(let-values ([(base file dir?)
 		      (split-path (path->complete-path input-name))])
@@ -539,7 +555,9 @@
       (compiler:init-closure-lists!)
       ; process the input string - try to open the input file
       (let-values ([(input-path c-output-path constant-pool-output-path obj-output-path dll-output-path setup-suffix)
-		    (s:process-filenames input-name dest-directory c?)])
+		    (s:process-filenames input-name dest-directory from-c? 
+					 (and (compiler:option:clean-intermediate-files) (not c-only?))
+					 (and (compiler:option:clean-intermediate-files) (not multi-o?)))])
 	(unless (or (not input-path) (file-exists? input-path))
 	  (error 's:compile "could not open ~a for input" input-path))
 	(set! compiler:setup-suffix

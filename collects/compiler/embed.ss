@@ -5,25 +5,67 @@
 ;;  additional command-line arguments as a list of strings; '("-mvq-")
 ;;  should be a popular choice.
 
-(define (make-embedding-executable dest file cmdline)
+(define (make-embedding-executable dest mred? files cmdline)
   (unless (< (apply + (length cmdline) (map string-length cmdline)) 50)
     (error 'make-embedding-executable "command line too long"))
-  (let* ([sp (find-system-path 'exec-file)]
-	 [exe (find-executable-path sp sp)])
+  (for-each (lambda (f)
+	      (unless (file-exists? f)
+		(error 'make-embedding-executable "can't find file: ~s" f)))
+	    files)
+
+  ;; Find executable via (find-system-path 'exec-file), then
+  ;;  fixup name to be MrEd or MzScheme
+  (let* ([exe (let* ([sp (find-system-path 'exec-file)]
+		     [exe (find-executable-path sp 
+						(let-values ([(base name dir?) (split-path sp)])
+						  name))])
+		(and exe
+		     (let-values ([(base name dir?) (split-path exe)])
+		       (let* ([mr (regexp-match
+				   "^(.*)([Mm][Rr][Ee][Dd])(.*)$"
+				   name)]
+			      [mz (regexp-match
+				   "^(.*)([Mm][Zz][Ss][Cc][Hh][Ee][Mm][Ee])(.*)$"
+				   name)]
+			      [r (or mr mz)])
+			 (and r
+			      (build-path base
+					  (string-append (cadr r)
+							 (if mred?
+							     "mred"
+							     "mzscheme")
+							 (cadddr r))))))))])
+    (unless (and exe (file-exists? exe))
+      (error 'make-embedding-executable
+	     "can't find ~a executable"
+	     (if mred? "MrEd" "MzScheme")))
+    (when (file-exists? dest)
+      (delete-file dest))
     (copy-file exe dest)
     (let ([start (file-size dest)]
-	  [in (if (port? file)
-		  file
-		  (open-input-file file))]
+	  [in (cond
+	       [(port? files) files]
+	       [(string? files) (open-input-file files)]
+	       [(list? files) (begin0
+			       (open-input-file (car files))
+			       (set! files (cdr files)))])]
 	  [out (open-output-file dest 'append)]
 	  [s (make-string 1024)])
-      (let loop ()
-	(let ([n (read-string-avail! s in)])
-	  (unless (eof-object? n)
-	    (display (if (= n (string-length s)) s (substring s 0 n))
-		     out)
-	    (loop))))
-      (let ([count (file-position in)])
+      (let ([count
+	     (let loop ([c 0])
+	       (let ([n (read-string-avail! s in)])
+		 (if (eof-object? n)
+		     (if (pair? files)
+			 (begin
+			   (close-input-port in)
+			   (set! in (open-input-file (car files)))
+			   (set! files (cdr files))
+			   (loop c))
+			 c)
+		     (begin
+		       (display (if (= n (string-length s)) s (substring s 0 n))
+				out)
+		       (loop (+ c n))))))])
 	(close-input-port in)
 	(close-output-port out)
 	(let* ([find-cmdline ; Find the magic start
@@ -39,7 +81,7 @@
 			       (error 
 				'make-embedding-executable
 				(format
-				 "Couldn't find cmdline position in executable")))
+				 "can't find cmdline position in executable")))
 			     (if (eq? c (car l))
 				 (loop (add1 pos) (cdr l))
 				 (loop (add1 pos) magic)))])))]

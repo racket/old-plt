@@ -249,7 +249,7 @@
       (lambda ()
 	(if cached-frame
 	    (send cached-frame show #t)
-	    (let* ([f (make-object % "Console History")]
+	    (let* ([f (make-object % "Interactions History")]
 		   [e (send f get-edit)])
 	      (update-edit e (mred:preferences:get-preference 'mred:console-previous-exprs))
 	      (send f show #t))))))
@@ -1383,7 +1383,7 @@
 				   (mred:finder:get-file))])
 		       (when file
 			 (load-file file)))))
-	     (send file-menu append-item "Show Console History" show-interactions-history)
+	     (send file-menu append-item "Show Interactions History" show-interactions-history)
 	     (send file-menu append-separator))])
 	
 	(sequence

@@ -599,7 +599,6 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
       Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)expr;
       wcm->key = scheme_link_expr(wcm->key, info);
       wcm->val = scheme_link_expr(wcm->val, info);
-      info = scheme_link_info_extend(info, MZ_CONT_MARK_SPACE, MZ_CONT_MARK_SPACE, 0);
       wcm->body = scheme_link_expr(wcm->body, info);
       return (Scheme_Object *)wcm;
     }
@@ -1844,7 +1843,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
 {
   Scheme_Type type;
-  Scheme_Object *v, **old_runstack, **old_cont_mark_chain;
+  Scheme_Object *v, **old_runstack;
+  Scheme_Cont_Mark *old_cont_mark_stack;
 #if USE_LOCAL_RUNSTACK
   Scheme_Object **runstack;
 #endif
@@ -1886,8 +1886,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
   }
 #endif
 
-# define RESET_CONT_MARK_CHAIN() (MZ_CONT_MARK_CHAIN = old_cont_mark_chain)
-
 #if USE_LOCAL_RUNSTACK
 # define RUNSTACK runstack
 # if DELAY_THREAD_RUNSTACK_UPDATE
@@ -1911,7 +1909,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   MZ_CONT_MARK_POS++;
   old_runstack = RUNSTACK;
-  old_cont_mark_chain = MZ_CONT_MARK_CHAIN;
+  old_cont_mark_stack = MZ_CONT_MARK_STACK;
 
   if (num_rands >= 0) {
 
@@ -1924,6 +1922,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       p->ku.k.i2 = -1;
       
       UPDATE_THREAD_RSPTR();
+      --MZ_CONT_MARK_POS;
       return scheme_enlarge_runstack(100 * TAIL_COPY_THRESHOLD, (void *(*)(void))do_eval_k);
     }
 
@@ -1991,7 +1990,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	p->ku.k.i2 = -1;
 
 	UPDATE_THREAD_RSPTR();
+	--MZ_CONT_MARK_POS;
 	v = (Scheme_Object *)scheme_enlarge_runstack(data->max_let_depth, (void *(*)(void))do_eval_k);
+	MZ_CONT_MARK_POS++;
 
 	goto returnv;
       }
@@ -2016,7 +2017,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  stack = RUNSTACK = old_runstack - num_params;
 	  CHECK_RUNSTACK(p, RUNSTACK);
 	  RUNSTACK_CHANGED();
-	  RESET_CONT_MARK_CHAIN();
 
 	  extra = num_rands - n;
 	  if (extra) {
@@ -2077,7 +2077,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  stack = RUNSTACK = old_runstack - num_params;
 	  CHECK_RUNSTACK(p, RUNSTACK);
 	  RUNSTACK_CHANGED();
-	  RESET_CONT_MARK_CHAIN();
 
 	  if (rands != stack) {
 	    int n = num_params; 
@@ -2098,7 +2097,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	}
 	RUNSTACK = old_runstack;
 	RUNSTACK_CHANGED();
-	RESET_CONT_MARK_CHAIN();
       }
       
       {
@@ -2635,6 +2633,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	{
 	  Scheme_With_Continuation_Mark *wcm = (Scheme_With_Continuation_Mark *)obj;
 	  Scheme_Object *key, *val;
+	  Scheme_Cont_Mark *cm = NULL, *find;
 	  
 	  UPDATE_THREAD_RSPTR();
 	  key = wcm->key;
@@ -2644,14 +2643,76 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  if (SCHEME_TYPE(val) < _scheme_values_types_)
 	    val = _scheme_eval_compiled_expr_wp(wcm->val, p);
 
-	  PUSH_RUNSTACK(p, RUNSTACK, MZ_CONT_MARK_SPACE);
-	  RUNSTACK_CHANGED();
+	  /* Find existing mark record for this key: */
+	  find = MZ_CONT_MARK_STACK;
+	  {
+	    Scheme_Cont_Mark *limit = p->cont_mark_stack_start + p->cont_mark_stack_size;
+	    Scheme_Saved_Cont_Mark_Stack *saved = NULL;
 
-	  RUNSTACK[0] = (Scheme_Object *)MZ_CONT_MARK_CHAIN;
-	  RUNSTACK[1] = key;
-	  RUNSTACK[2] = val;
-	  RUNSTACK[3] = (Scheme_Object *)MZ_CONT_MARK_POS;
-	  MZ_CONT_MARK_CHAIN = RUNSTACK;
+	  retry:
+	    while ((find < limit) && ((long)find->pos == (long)MZ_CONT_MARK_POS)) {
+	      if (find->key == key) {
+		cm = find;
+		break;
+	      }
+	      find++;
+	    }
+
+	    if (find == limit) {
+	      if (saved)
+		saved = saved->prev;
+	      else
+		saved = p->cont_mark_stack_saved;
+	      
+	      if (saved) {
+		limit = saved->cont_mark_stack_start + saved->cont_mark_stack_size;
+		find = saved->cont_mark_stack;
+		goto retry;
+	      }
+	    }
+	  }
+
+	  if (!cm) {
+	    /* Allocate a new mark record: */
+	    if (MZ_CONT_MARK_STACK == p->cont_mark_stack_start) {
+	      /* Mark stack overflow */
+	      Scheme_Saved_Cont_Mark_Stack *saved = MALLOC_ONE(Scheme_Saved_Cont_Mark_Stack);
+	      saved->prev = p->cont_mark_stack_saved;
+	      saved->cont_mark_stack_size = p->cont_mark_stack_size;
+	      saved->cont_mark_stack_start = p->cont_mark_stack_start;
+	      saved->cont_mark_stack = MZ_CONT_MARK_STACK;
+
+	      p->cont_mark_stack_saved = saved;
+
+	      p->cont_mark_stack_size = SCHEME_CONT_MARK_STACK_SIZE;
+	      p->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, SCHEME_CONT_MARK_STACK_SIZE);
+	      MZ_CONT_MARK_STACK = p->cont_mark_stack_start + SCHEME_CONT_MARK_STACK_SIZE;
+
+	      cm = MZ_CONT_MARK_STACK - 1;  
+	      cm->key = key;
+	      cm->val = val;
+	      cm->pos = MZ_CONT_MARK_POS;
+	      MZ_CONT_MARK_STACK = cm;
+
+	      --MZ_CONT_MARK_POS;
+	      v = scheme_do_eval(wcm->body, -1, NULL, -1);
+	      MZ_CONT_MARK_POS++;
+	      
+	      p->cont_mark_stack_saved = saved->prev;
+	      p->cont_mark_stack_size = saved->cont_mark_stack_size;
+	      p->cont_mark_stack_start =  saved->cont_mark_stack_start;
+	      MZ_CONT_MARK_STACK = saved->cont_mark_stack;
+
+	      goto returnv;
+	    } else {
+	      cm = MZ_CONT_MARK_STACK - 1;  
+	      MZ_CONT_MARK_STACK = cm;
+	    }  
+	  }
+
+	  cm->key = key;
+	  cm->val = val;
+	  cm->pos = MZ_CONT_MARK_POS;
 
 	  obj = wcm->body;
 
@@ -2673,7 +2734,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #endif
     RUNSTACK = old_runstack;
     RUNSTACK_CHANGED();
-    RESET_CONT_MARK_CHAIN();
     goto apply_top;
   }
 
@@ -2698,7 +2758,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
      
     RUNSTACK = old_runstack;
     RUNSTACK_CHANGED();
-    RESET_CONT_MARK_CHAIN();
     old_runstack = kstack;
     
 #if USE_IF_K && USE_LET_K
@@ -2747,7 +2806,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     }
 
   MZ_RUNSTACK = old_runstack;
-  MZ_CONT_MARK_CHAIN = old_cont_mark_chain;
+  MZ_CONT_MARK_STACK = old_cont_mark_stack;
   --MZ_CONT_MARK_POS;
 
   DEBUG_CHECK_TYPE(v);

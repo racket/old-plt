@@ -1710,6 +1710,7 @@ call_cc (int argc, Scheme_Object *argv[])
   Scheme_Dynamic_Wind *dw;
   Scheme_Process *p = scheme_current_process;
   Scheme_Saved_Stack *saved, *isaved, *csaved;
+  Scheme_Saved_Cont_Mark_Stack *cm_saved, *cm_isaved, *cm_csaved;
   long size;
   
   scheme_check_proc_arity("call-with-current-continuation", 1, 
@@ -1752,6 +1753,23 @@ call_cc (int argc, Scheme_Object *argv[])
     memcpy(isaved->runstack_start, csaved->runstack, size * sizeof(Scheme_Object *));
   }
   isaved->prev = NULL;
+
+  /* Copy out cont mark stack: */
+  cont->cont_mark_stack_copied = cm_saved = MALLOC_ONE(Scheme_Saved_Cont_Mark_Stack);
+  size = p->cont_mark_stack_size - (MZ_CONT_MARK_STACK - p->cont_mark_stack_start);
+  cm_saved->cont_mark_stack_size = size;
+  cm_saved->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, size);
+  memcpy(cm_saved->cont_mark_stack_start, MZ_CONT_MARK_STACK, size * sizeof(Scheme_Cont_Mark));
+  cm_isaved = cm_saved;
+  for (cm_csaved = p->cont_mark_stack_saved; cm_csaved; cm_csaved = cm_csaved->prev) {
+    cm_isaved->prev = MALLOC_ONE(Scheme_Saved_Cont_Mark_Stack);
+    cm_isaved = cm_isaved->prev;
+    size = cm_csaved->cont_mark_stack_size - (cm_csaved->cont_mark_stack - cm_csaved->cont_mark_stack_start);
+    cm_isaved->cont_mark_stack_size = size;
+    cm_isaved->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, size);
+    memcpy(cm_isaved->cont_mark_stack_start, cm_csaved->cont_mark_stack, size * sizeof(Scheme_Cont_Mark));
+  }
+  cm_isaved->prev = NULL;  
 
   memcpy(&cont->savebuf, &p->error_buf, sizeof(mz_jmp_buf));
 
@@ -1813,6 +1831,21 @@ call_cc (int argc, Scheme_Object *argv[])
       memcpy(csaved->runstack, isaved->runstack_start, size * sizeof(Scheme_Object *));
     }
 
+    /* Copy cont mark stack back in: (p->cont_mark_stack and 
+       p->const_mark_stack_saved arrays are already restored, 
+       so the shape is certainly the same as 
+       when cont->cont_mark_stack_copied was made) */
+    cm_isaved = cont->cont_mark_stack_copied;
+    size = cm_isaved->cont_mark_stack_size;
+    MZ_CONT_MARK_STACK = p->cont_mark_stack_start + (p->cont_mark_stack_size - size);
+    memcpy(MZ_CONT_MARK_STACK, cm_isaved->cont_mark_stack_start, size * sizeof(Scheme_Cont_Mark));
+    for (cm_csaved = p->cont_mark_stack_saved; cm_csaved; cm_csaved = cm_csaved->prev) {
+      cm_isaved = cm_isaved->prev;
+      size = cm_isaved->cont_mark_stack_size;
+      cm_csaved->cont_mark_stack = cm_csaved->cont_mark_stack_start + (cm_csaved->cont_mark_stack_size - size);
+      memcpy(cm_csaved->cont_mark_stack, cm_isaved->cont_mark_stack_start, size * sizeof(Scheme_Cont_Mark));
+    }
+
     return result;
   } else {
     Scheme_Object *argv2[1];
@@ -1831,23 +1864,27 @@ call_cc (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 cc_marks(int argc, Scheme_Object *argv[])
 {
-#ifndef RUNSTACK_IS_GLOBAL
   Scheme_Process *p = scheme_current_process;
-#endif
-  Scheme_Object *first = scheme_null, *last = NULL, *key, *frame_key = NULL, *skip;
-  Scheme_Object **s;
+  Scheme_Object *first = scheme_null, *last = NULL, *key, *skip;
+  MZ_MARK_POS_TYPE pos = (MZ_MARK_POS_TYPE)0;
+  Scheme_Cont_Mark *find;
 
   key = argv[0];
   skip = (argc > 1) ? argv[1] : NULL;
-  s = MZ_CONT_MARK_CHAIN;
 
-  while (s) {
-    if (SAME_OBJ(key, s[1])) {
-      if (NOT_SAME_OBJ(frame_key, s[3])) {
-	Scheme_Object *pr = scheme_make_pair(s[2], scheme_null);
+  /* Find existing mark record for this key: */
+  find = MZ_CONT_MARK_STACK;
+  {
+    Scheme_Cont_Mark *limit = p->cont_mark_stack_start + p->cont_mark_stack_size;
+    Scheme_Saved_Cont_Mark_Stack *saved = NULL;
+    
+  retry:
+    while (find < limit) {
+      if (find->key == key) {
+	Scheme_Object *pr = scheme_make_pair(find->val, scheme_null);
 
-	if (frame_key && skip) {
-	  if ((long)s[3] < ((long)frame_key) - 1) {
+	if (pos && skip) {
+	  if ((long)find->pos < ((long)pos) - 1) {
 	    Scheme_Object *pr = scheme_make_pair(skip, scheme_null);
 	    SCHEME_CDR(last) = pr;
 	    last = pr;
@@ -1860,11 +1897,21 @@ cc_marks(int argc, Scheme_Object *argv[])
 	  first = pr;
 	last = pr;
 
-	frame_key = s[3];
+	pos = find->pos;
       }
+      find++;
     }
     
-    s = (Scheme_Object **)s[0];
+    if (saved)
+      saved = saved->prev;
+    else
+      saved = p->cont_mark_stack_saved;
+    
+    if (saved) {
+      limit = saved->cont_mark_stack_start + saved->cont_mark_stack_size;
+      find = saved->cont_mark_stack;
+      goto retry;
+    }
   }
 
   return first;

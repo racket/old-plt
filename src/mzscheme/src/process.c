@@ -132,7 +132,7 @@ int *scheme_fuel_counter_ptr;
 #ifdef RUNSTACK_IS_GLOBAL
 Scheme_Object **scheme_current_runstack_start;
 Scheme_Object **scheme_current_runstack;
-Scheme_Object **scheme_current_cont_mark_chain;
+Scheme_Cont_Mark *scheme_current_cont_mark_stack;
 MZ_MARK_POS_TYPE scheme_current_cont_mark_pos;
 #endif
 
@@ -258,6 +258,7 @@ static int num_nsos = 0;
 static Scheme_NSO *namespace_options = NULL;
 
 #define INIT_SCHEME_STACK_SIZE SCHEME_STACK_SIZE
+#define INIT_SCHEME_CONT_MARK_STACK_SIZE 100
 
 #if defined(MZ_REAL_THREADS)
 # define SETJMP(p) 1
@@ -654,7 +655,12 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->runstack_start = MALLOC_N(Scheme_Object*, INIT_SCHEME_STACK_SIZE);
   process->runstack = process->runstack_start + INIT_SCHEME_STACK_SIZE;
   process->runstack_saved = NULL;
+
   process->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
+  process->cont_mark_stack_size = INIT_SCHEME_CONT_MARK_STACK_SIZE;
+  process->cont_mark_stack_start = MALLOC_N(Scheme_Cont_Mark, process->cont_mark_stack_size);
+  process->cont_mark_stack = process->cont_mark_stack_start + process->cont_mark_stack_size;
+
 #ifdef RUNSTACK_IS_GLOBAL
   if (!prefix) {
     REGISTER_SO(MZ_RUNSTACK);
@@ -662,7 +668,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
     MZ_RUNSTACK = process->runstack;
     MZ_RUNSTACK_START = process->runstack_start;
-    MZ_CONT_MARK_CHAIN = process->cont_mark_chain;
+    MZ_CONT_MARK_STACK = process->cont_mark_stack;
     MZ_CONT_MARK_POS = process->cont_mark_pos;
   }
 #endif
@@ -1068,7 +1074,7 @@ void scheme_swap_process(Scheme_Process *new_process)
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
-    MZ_CONT_MARK_CHAIN = scheme_current_process->cont_mark_chain;
+    MZ_CONT_MARK_STACK = scheme_current_process->cont_mark_stack;
     MZ_CONT_MARK_POS = scheme_current_process->cont_mark_pos;
 #endif
     RESETJMP(scheme_current_process);
@@ -1077,7 +1083,7 @@ void scheme_swap_process(Scheme_Process *new_process)
 #ifdef RUNSTACK_IS_GLOBAL
     scheme_current_process->runstack = MZ_RUNSTACK;
     scheme_current_process->runstack_start = MZ_RUNSTACK_START;
-    scheme_current_process->cont_mark_chain = MZ_CONT_MARK_CHAIN;
+    scheme_current_process->cont_mark_stack = MZ_CONT_MARK_STACK;
     scheme_current_process->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
     scheme_current_process = new_process;
@@ -1110,7 +1116,7 @@ static void remove_process(Scheme_Process *r)
   if (r == scheme_current_process) {
     r->runstack = MZ_RUNSTACK;
     r->runstack_start = MZ_RUNSTACK_START;
-    r->cont_mark_chain = MZ_CONT_MARK_CHAIN;
+    r->cont_mark_stack = MZ_CONT_MARK_STACK;
     r->cont_mark_pos = MZ_CONT_MARK_POS;
   }
 #endif
@@ -1145,7 +1151,7 @@ static void start_child(Scheme_Process *child,
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_process->runstack;
     MZ_RUNSTACK_START = scheme_current_process->runstack_start;
-    MZ_CONT_MARK_CHAIN = scheme_current_process->cont_mark_chain;
+    MZ_CONT_MARK_STACK = scheme_current_process->cont_mark_stack;
     MZ_CONT_MARK_POS = scheme_current_process->cont_mark_pos;
 #endif
 
@@ -1553,7 +1559,7 @@ static void get_ready_for_GC()
 #ifdef RUNSTACK_IS_GLOBAL
   scheme_current_process->runstack = MZ_RUNSTACK;
   scheme_current_process->runstack_start = MZ_RUNSTACK_START;
-  scheme_current_process->cont_mark_chain = MZ_CONT_MARK_CHAIN;
+  scheme_current_process->cont_mark_stack = MZ_CONT_MARK_STACK;
   scheme_current_process->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
 

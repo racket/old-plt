@@ -442,14 +442,6 @@ typedef struct Scheme_Continuation_Jump_State {
    mark position counter as a poiner, perhaps due to locality effects. */
 #define MZ_MARK_POS_TYPE char*
 
-typedef struct Scheme_Saved_Stack {
-  Scheme_Object **runstack_start;
-  Scheme_Object **runstack;
-  long runstack_size;
-  Scheme_Object **runstack_last_mark;
-  struct Scheme_Saved_Stack *prev;
-} Scheme_Saved_Stack;
-
 typedef struct Scheme_Process {
   Scheme_Type type;
 
@@ -464,11 +456,14 @@ typedef struct Scheme_Process {
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
   long runstack_size;
-  Scheme_Saved_Stack *runstack_saved;
+  struct Scheme_Saved_Stack *runstack_saved;
   Scheme_Object **runstack_tmp_keep;
 
   MZ_MARK_POS_TYPE cont_mark_pos;
-  Scheme_Object **cont_mark_chain;
+  struct Scheme_Cont_Mark *cont_mark_stack;
+  struct Scheme_Cont_Mark *cont_mark_stack_start;
+  long cont_mark_stack_size;
+  struct Scheme_Saved_Cont_Mark_Stack *cont_mark_stack_saved;
 
   long engine_weight;
 

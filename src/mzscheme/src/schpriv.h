@@ -27,16 +27,16 @@
 #ifdef RUNSTACK_IS_GLOBAL
 extern Scheme_Object **scheme_current_runstack;
 extern Scheme_Object **scheme_current_runstack_start;
-extern Scheme_Object **scheme_current_cont_mark_chain;
+extern struct Scheme_Cont_Mark *scheme_current_cont_mark_stack;
 extern MZ_MARK_POS_TYPE scheme_current_cont_mark_pos;
 # define MZ_RUNSTACK scheme_current_runstack
 # define MZ_RUNSTACK_START scheme_current_runstack_start
-# define MZ_CONT_MARK_CHAIN scheme_current_cont_mark_chain
+# define MZ_CONT_MARK_STACK scheme_current_cont_mark_stack
 # define MZ_CONT_MARK_POS scheme_current_cont_mark_pos
 #else
 # define MZ_RUNSTACK (p->runstack)
 # define MZ_RUNSTACK_START (p->runstack_start)
-# define MZ_CONT_MARK_CHAIN (p->cont_mark_chain)
+# define MZ_CONT_MARK_STACK (p->cont_mark_stack)
 # define MZ_CONT_MARK_POS (p->cont_mark_pos)
 #endif
 
@@ -200,8 +200,6 @@ typedef struct {
   Scheme_Object *body;
 } Scheme_With_Continuation_Mark;
 
-#define MZ_CONT_MARK_SPACE 4
-
 /* ininitializarion */
 void scheme_init_stack_check(void);
 Scheme_Process *scheme_make_process(void);
@@ -318,13 +316,40 @@ void scheme_ensure_stack_start(Scheme_Process *p, void *d);
 void *scheme_top_level_do(void *(*k)(void), int eb);
 #define scheme_top_level_do_w_process(k, eb, p) scheme_top_level_do(k, eb)
 
+typedef struct Scheme_Saved_Stack {
+  Scheme_Object **runstack_start;
+  Scheme_Object **runstack;
+  long runstack_size;
+  Scheme_Object **runstack_last_mark;
+  struct Scheme_Saved_Stack *prev;
+} Scheme_Saved_Stack;
+
+typedef struct Scheme_Cont_Mark {
+  Scheme_Object *key;
+  Scheme_Object *val;
+  MZ_MARK_POS_TYPE pos;
+} Scheme_Cont_Mark;
+
+typedef struct Scheme_Saved_Cont_Mark_Stack {
+  Scheme_Cont_Mark *cont_mark_stack;
+  Scheme_Cont_Mark *cont_mark_stack_start;
+  long cont_mark_stack_size;
+  struct Scheme_Saved_Cont_Mark_Stack *prev;
+} Scheme_Saved_Cont_Mark_Stack;
+
+#define SCHEME_CONT_MARK_STACK_SIZE 256
+
 typedef struct Scheme_Stack_State {
   Scheme_Object **runstack;
   Scheme_Object **runstack_start;
   long runstack_size;
   Scheme_Saved_Stack *runstack_saved;
-  Scheme_Object **cont_mark_chain;
+
   MZ_MARK_POS_TYPE cont_mark_pos;
+  Scheme_Cont_Mark *cont_mark_stack;
+  Scheme_Cont_Mark *cont_mark_stack_start;
+  long cont_mark_stack_size;
+  Scheme_Saved_Cont_Mark_Stack *cont_mark_stack_saved;
 } Scheme_Stack_State;
 
 typedef struct Scheme_Dynamic_Wind {
@@ -354,6 +379,7 @@ typedef struct Scheme_Cont {
   int suspend_break;
   Scheme_Stack_State ss;
   Scheme_Saved_Stack *runstack_copied;
+  Scheme_Saved_Cont_Mark_Stack *cont_mark_stack_copied;
   struct Scheme_Overflow *save_overflow;
   Scheme_Comp_Env *current_local_env;
   mz_jmp_buf savebuf; /* save old error buffer here */
@@ -598,12 +624,16 @@ int scheme_find_type(Scheme_Object *ts);
 
 #define scheme_save_env_stack_w_process(ss, p) \
     (ss.runstack = MZ_RUNSTACK, ss.runstack_start = MZ_RUNSTACK_START, \
-     ss.cont_mark_chain = MZ_CONT_MARK_CHAIN, ss.cont_mark_pos = MZ_CONT_MARK_POS, \
-     ss.runstack_size = p->runstack_size, ss.runstack_saved = p->runstack_saved)
+     ss.cont_mark_stack = MZ_CONT_MARK_STACK, ss.cont_mark_pos = MZ_CONT_MARK_POS, \
+     ss.runstack_size = p->runstack_size, ss.runstack_saved = p->runstack_saved, \
+     ss.cont_mark_stack_start = p->cont_mark_stack_start, ss.cont_mark_stack_size = p->cont_mark_stack_size, \
+     ss.cont_mark_stack_saved = p->cont_mark_stack_saved)
 #define scheme_restore_env_stack_w_process(ss, p) \
     (MZ_RUNSTACK = ss.runstack, MZ_RUNSTACK_START = ss.runstack_start, \
-     MZ_CONT_MARK_CHAIN = ss.cont_mark_chain, MZ_CONT_MARK_POS = ss.cont_mark_pos, \
-     p->runstack_size = ss.runstack_size, p->runstack_saved = ss.runstack_saved)
+     MZ_CONT_MARK_STACK = ss.cont_mark_stack, MZ_CONT_MARK_POS = ss.cont_mark_pos, \
+     p->runstack_size = ss.runstack_size, p->runstack_saved = ss.runstack_saved, \
+     p->cont_mark_stack_start = ss.cont_mark_stack_start, p->cont_mark_stack_size = ss.cont_mark_stack_size, \
+     p->cont_mark_stack_saved = ss.cont_mark_stack_saved)
 #define scheme_save_env_stack(ss) \
     scheme_save_env_stack_w_process(ss, scheme_current_process)
 #define scheme_restore_env_stack(ss) \

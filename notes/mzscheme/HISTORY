@@ -74,6 +74,7 @@ MzLib constan.ss: added constant-signature-content macro
 MzLib pconver.ss: added whole/fractional-exact-numbers and
  empty-list-name
 MzLib pretty.ss: added pretty-print-show-inexactness
+MzLib compile.ss: changed the set of compilation flags
 Removed begin-expansion-time
 Moved begin-elaboration-time from MzLib into MzScheme
 Added MzLib library traceld.ss

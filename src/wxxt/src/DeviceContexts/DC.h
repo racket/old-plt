@@ -231,7 +231,6 @@ public:
 	{ current_text_alignment = new_alignment; }
     // scale and origin methods
     void  SetDeviceOrigin(float x, float y);
-    void  SetLogicalOrigin(float x, float y);
     void  SetLogicalScale(float xs, float ys);
     void  SetMapMode(int mode);
     virtual void  SetUserScale(float xs, float ys);
@@ -252,8 +251,8 @@ protected:
     Bool  auto_setting, optimize, ok;
     // everything needed for sizing
     float mm_to_pix_x, mm_to_pix_y;
-    float origin_x, origin_y, scale_x, scale_y;
-    float logical_origin_x, logical_origin_y, device_origin_x, device_origin_y;
+    float scale_x, scale_y;
+    float device_origin_x, device_origin_y;
     float logical_scale_x, logical_scale_y, user_scale_x, user_scale_y;
     float max_x, max_y, min_x, min_y;
     // Tools for drawing
@@ -273,21 +272,21 @@ protected:
     void  ComputeScaleAndOrigin(void);
     // abbreviations
     float XDEV2LOG(int x)
-      { return float((float(x) + origin_x) / scale_x); }
+      { return (float(x) / scale_x) - device_origin_x; }
     float XDEV2LOGREL(int x)
       { return float(float(x) / scale_x); }
     float YDEV2LOG(int y)
-      { return float((float(y) + origin_y) / scale_y); }
+      { return (float(y) / scale_y) - device_origin_y; }
     float YDEV2LOGREL(int y)
       { return float(float(y) / scale_y); }
     int XLOG2DEV(float x)
-      { float a = (x - origin_x) * scale_x;
+      { float a = (x * scale_x) + device_origin_x;
 	return (int)floor(a); }
     int XLOG2DEVREL(float x)
       { float a = x * scale_x;
 	return (int)floor(a); }
     int YLOG2DEV(float y)
-      { float a = (y - origin_y) * scale_y;
+      { float a = (y * scale_y) + device_origin_y;
 	return (int)floor(a); }
     int YLOG2DEVREL(float y)
       { float a = y * scale_y;

@@ -47,9 +47,7 @@ wxDC::wxDC(void)
     auto_setting = optimize = ok = Colour = FALSE;
 
     mm_to_pix_x = mm_to_pix_y = 1.0; // to be safe
-    logical_origin_x = logical_origin_y
-	= device_origin_x = device_origin_y
-	= origin_x = origin_y = 0.0;
+    device_origin_x = device_origin_y = 0.0;
     logical_scale_x = logical_scale_y
 	= user_scale_x = user_scale_y
 	= scale_x = scale_y = 1.0;
@@ -94,21 +92,12 @@ void wxDC::ComputeScaleAndOrigin(void)
 {
     scale_x =  logical_scale_x * user_scale_x;
     scale_y =  logical_scale_y * user_scale_y;
-    origin_x = logical_origin_x - (device_origin_x / scale_x);
-    origin_y = logical_origin_y - (device_origin_y / scale_y);
 }
 
 void wxDC::SetDeviceOrigin(float x, float y)
 {
     device_origin_x = x;
     device_origin_y = y;
-    ComputeScaleAndOrigin();
-}
-
-void wxDC::SetLogicalOrigin(float x, float y)
-{
-    logical_origin_x = x;
-    logical_origin_y = y;
     ComputeScaleAndOrigin();
 }
 

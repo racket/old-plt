@@ -9,13 +9,11 @@ static void _resolve_inheritance(
 WidgetClass
 #endif
 );
-#line 22 "XWidgets/xwCanvas.w"
 static void realize(
 #if NeedFunctionPrototypes
 Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
-#line 38 "XWidgets/xwCanvas.w"
 static Boolean  set_values(
 #if NeedFunctionPrototypes
 Widget ,Widget ,Widget,ArgList ,Cardinal *
@@ -23,7 +21,6 @@ Widget ,Widget ,Widget,ArgList ,Cardinal *
 );
 
 static XtResource resources[] = {
-#line 16 "XWidgets/xwCanvas.w"
 {XtNbackingStore,XtCBackingStore,XtRInt,sizeof(((XfwfCanvasRec*)NULL)->xfwfCanvas.backingStore),XtOffsetOf(XfwfCanvasRec,xfwfCanvas.backingStore),XtRImmediate,(XtPointer)NotUseful },
 };
 
@@ -112,16 +109,12 @@ WidgetClass class;
   if (class == xfwfCanvasWidgetClass) return;
   super = (XfwfCanvasWidgetClass)class->core_class.superclass;
 }
-#line 22 "XWidgets/xwCanvas.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 22 "XWidgets/xwCanvas.w"
 static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attributes)
 #else
-#line 22 "XWidgets/xwCanvas.w"
 static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
 #endif
-#line 23 "XWidgets/xwCanvas.w"
 {
     if ((((XfwfCanvasWidget)self)->xfwfCanvas.backingStore == Always)
     ||  (((XfwfCanvasWidget)self)->xfwfCanvas.backingStore == NotUseful)
@@ -134,16 +127,12 @@ static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWind
     /* chain to parent method */
     xfwfBoardClassRec.core_class.realize(self, mask, attributes);
 }
-#line 38 "XWidgets/xwCanvas.w"
 /*ARGSUSED*/
 #if NeedFunctionPrototypes
-#line 38 "XWidgets/xwCanvas.w"
 static Boolean  set_values(Widget  old,Widget  request,Widget self,ArgList  args,Cardinal * num_args)
 #else
-#line 38 "XWidgets/xwCanvas.w"
 static Boolean  set_values(old,request,self,args,num_args)Widget  old;Widget  request;Widget self;ArgList  args;Cardinal * num_args;
 #endif
-#line 39 "XWidgets/xwCanvas.w"
 {
     if (((XfwfCanvasWidget)old)->xfwfCanvas.backingStore != ((XfwfCanvasWidget)self)->xfwfCanvas.backingStore) {
 	if ((((XfwfCanvasWidget)self)->xfwfCanvas.backingStore == Always)

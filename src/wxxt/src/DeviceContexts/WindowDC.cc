@@ -1818,7 +1818,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
     if ((angle == 0.0) && (current_text_bgmode == wxSOLID)) {
       /* For B & W target, XftDrawRect doesn't seem to work right. */
       int rw;
-      rw = (int)floor(((x - origin_x) * scale_x) + cx) - dev_x;
+      rw = (int)floor((x * scale_x) + device_origin_x + cx) - dev_x;
       if (Colour) {
 	XftColor bg;
 	bg.pixel = current_text_bg->GetPixel();

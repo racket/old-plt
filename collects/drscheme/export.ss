@@ -1,5 +1,6 @@
 (compound-unit/sig (import [mred : mred^]
 			   [mzlib : mzlib:core^]
+			   [mzlib:date : mzlib:date^]
 			   [framework : framework^]
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
@@ -43,8 +44,8 @@
               help-desk)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
-		mred mzlib framework
-		unit app intro text
+		mred mzlib mzlib:date framework
+		unit app intro
 		help-desk zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")

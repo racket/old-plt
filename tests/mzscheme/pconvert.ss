@@ -168,7 +168,7 @@
      (make-same-test (interface () a b c) '(interface ...))
 
      (make-same-test (delay 1) '(delay ...))
-     (make-same-test (let-struct a (a) (make-a 3)) '(make-a 3))
+     (make-same-test (let () (define-struct a (a) (make-inspector)) (make-a 3)) '(make-a 3))
      (make-same-test (box 3) '(box 3))
      (make-test null 'empty 'empty 'empty '`() '`() '`() 'empty)
      (make-same-test add1 'add1)
@@ -177,6 +177,9 @@
      (make-same-test (make-weak-box 12) '(make-weak-box 12))
      (make-same-test (regexp "1") '(regexp ...))
      (make-same-test (lambda () 0) '(lambda () ...))
+     
+     (make-same-test #'(lambda (x) x) '#'(lambda (x) x)))
+     
      (make-same-test xl 'xl)
      (make-same-test (letrec ([xl (lambda () 1)]) xl) '(lambda () ...))
      (make-same-test (letrec ([xl-ID-BETTER-NOT-BE-DEFINED (lambda () 1)]) 
@@ -355,7 +358,7 @@
   (test-shared "abc" "abc")
   (test-shared (list 1 2 3) '(list 1 2 3))
   (test-shared (vector 1 2 3) '(vector 1 2 3))
-  (let-struct a () (test-shared (make-a) '(make-a)))
+  (let () (define-struct a () (make-inspector)) (test-shared (make-a) '(make-a)))
   (test-shared (box 1) '(box 1))
   (test-shared (make-hash-table) '(make-hash-table)))
 

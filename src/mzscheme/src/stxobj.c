@@ -2888,6 +2888,12 @@ static void simplify_syntax_inner(Scheme_Object *o,
   }
 #endif
   SCHEME_USE_FUEL(1);
+
+  if (stx->hash_code & STX_GRAPH_FLAG) {
+    /* Instead of potentially losing graph sructure
+       (or looping!), give up on simplifying. */
+    return;
+  }
  
   /* Propagate wraps: */
   scheme_stx_content((Scheme_Object *)stx);

@@ -3844,7 +3844,20 @@ static void promote_thread(Scheme_Thread *p, Scheme_Custodian *to_c)
 	  SCHEME_CAR(l) = (Scheme_Object *)mref;
 
 	  /* It's possible that one of the other custodians is also
-	     junior to to_c. Maybe clean that up in the future. */
+	     junior to to_c. Remove it if we find one. */
+	  {
+	    Scheme_Object *prev;
+	    prev = l;
+	    for (l = SCHEME_CDR(l); !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	      mref = (Scheme_Custodian_Reference *)SCHEME_CAR(l);
+	      c = CUSTODIAN_FAM(mref);
+	      for (cx = c; cx && NOT_SAME_OBJ(cx, to_c); ) {
+		cx = CUSTODIAN_FAM(cx->parent);
+	      }
+	      if (cx)
+		SCHEME_CDR(prev) = SCHEME_CDR(l);
+	    }
+	  }
 
 	  return;
 	}

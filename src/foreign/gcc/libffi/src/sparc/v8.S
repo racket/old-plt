@@ -175,13 +175,9 @@ done2:
 	.size	ffi_closure_v8,.ffi_closure_v8_end-ffi_closure_v8
 
 #ifdef SPARC64
-#define WS 8
-#define nword	xword
-#define uanword	uaxword
+# define WS 8
 #else
-#define WS 4
-#define nword	long
-#define uanword	uaword
+# define WS 4
 #endif
 
 #ifdef HAVE_RO_EH_FRAME
@@ -218,8 +214,13 @@ done2:
 	.uaword	.LLFE1-.LLFB1	! FDE address range
 #else
 	.align	WS
-	.nword	.LLFB1
-	.uanword .LLFE1-.LLFB1	! FDE address range
+# ifdef SPARC64
+	.xword	.LLFB1
+	.uaxword .LLFE1-.LLFB1	! FDE address range
+# else
+	.long	.LLFB1
+	.uaword .LLFE1-.LLFB1	! FDE address range
+# endif
 #endif
 	.byte	0x0	! uleb128 0x0; Augmentation size
 	.byte	0x4	! DW_CFA_advance_loc4
@@ -241,8 +242,13 @@ done2:
 	.uaword	.LLFE2-.LLFB2	! FDE address range
 #else
 	.align	WS
-	.nword	.LLFB2
-	.uanword .LLFE2-.LLFB2	! FDE address range
+# ifdef SPARC64
+	.xword	.LLFB2
+	.uaxword .LLFE2-.LLFB2	! FDE address range
+# else
+	.long	.LLFB2
+	.uaword .LLFE2-.LLFB2	! FDE address range
+# endif
 #endif
 	.byte	0x0	! uleb128 0x0; Augmentation size
 	.byte	0x4	! DW_CFA_advance_loc4

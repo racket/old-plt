@@ -5,7 +5,7 @@
   
   (define-parameters 
    (PLANET-SERVER-REPOSITORY (build-path (this-expression-source-directory) "repository"))
-   (PLANET-SERVER-PORT       10000)
+   (PLANET-SERVER-PORT       270)
    
    (METAINFO-FILE            "planet.txt")
    

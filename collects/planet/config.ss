@@ -4,7 +4,7 @@
            (lib "etc.ss"))
   
   (define-parameters (PLANET-SERVER-NAME       "planet.plt-scheme.org")
-                     (PLANET-SERVER-PORT       10000)
+                     (PLANET-SERVER-PORT       270)
                      (PLANET-DIR               (this-expression-source-directory))
                      (CACHE-DIR                (build-path (PLANET-DIR) "planet-cache"))
                      (LINKAGE-FILE             (build-path (PLANET-DIR) "LINKAGE"))                  

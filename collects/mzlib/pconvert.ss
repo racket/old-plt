@@ -323,8 +323,8 @@
                            (lambda (expr)
                              (cond
                                [(null? expr) (guard/quasiquote (lambda () 'empty))]
-                               [(and (list? expr)
-                                     (abbreviate-cons-as-list)
+                               [(and (abbreviate-cons-as-list)
+                                     (list? expr)
                                      (or (and first-time
                                               (doesnt-contain-shared-conses (cdr expr)))
                                          (doesnt-contain-shared-conses expr)))
@@ -371,11 +371,6 @@
                                               expr
                                               (lambda () 
                                                 '(unit ...)))]
-                               [(struct? expr)
-                                `(,(string->symbol
-                                    (string-append
-                                     "make-" (symbol->string (object-name expr))))
-                                  ,@(map recur (cdr (vector->list (struct->vector expr)))))]
                                [(and (number? expr) (exact? expr))
                                 (let-values ([(whole frac whole-i frac-i) (get-whole/frac expr)])
                                   (cond
@@ -396,6 +391,30 @@
                                     [else `(+ (+ ,whole ,frac) (* +1i (+ ,whole-i ,frac-i)))]))]
                                [(eq? expr #f) (if (booleans-as-true/false) 'false #f)]
                                [(eq? expr #t) (if (booleans-as-true/false) 'true #t)]
+                               
+                               [(and (input-port? expr)
+                                     (file-stream-port? expr))
+                                `(open-input-file ,(object-name expr))]
+                               [(and (output-port? expr)
+                                     (file-stream-port? expr))
+                                `(open-output-file ,(object-name expr))]
+                               [(port? expr) expr]
+                               
+                               ;; this case must be next to last, so that all of the
+                               ;; things with object-name's fall into the cases above first
+                               [(object-name expr)
+                                (let* ([name (object-name expr)]
+                                       [str-name (if (string? name)
+                                                     name
+                                                     (symbol->string name))]
+                                       [uniq (box #f)])
+                                  `(,(string->symbol (string-append "make-" str-name))
+                                    ,@(map (lambda (x) 
+                                             (if (eq? uniq x)
+                                                 '...
+                                                 (recur x)))
+                                           (cdr (vector->list (struct->vector expr uniq))))))]
+                               
                                [else expr]))
                            recur)))])
                   (let ([es (convert-share-info-expand-shared? csi)])

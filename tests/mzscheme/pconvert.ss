@@ -4,6 +4,7 @@
 (SECTION 'pconvert)
 
 (require (lib "unit.ss")
+         (lib "file.ss")
          (lib "class.ss")
          (lib "pconvert.ss"))
 
@@ -367,6 +368,21 @@
 (arity-test print-convert-expr 3 3)
 
 (test 'empty print-convert '())
+
+(let ([fn (make-temporary-file "pconvert.ss-test~a")])
+  (let ([in (open-input-file fn)])
+    (test `(open-input-file ,fn) print-convert in)
+    (close-input-port in))
+  (let ([out (open-output-file fn 'truncate)])
+    (test `(open-output-file ,fn) print-convert out)
+    (close-output-port out))
+  (delete-file fn))
+
+(let ()
+  (define-struct hidden (a))
+  (define-struct visible (b) (make-inspector))
+  (test '(make-hidden ...) print-convert (make-hidden 1))
+  (test '(make-visible 2) print-convert (make-visible 2)))
 
 (let ([pc
        (lambda (pv)

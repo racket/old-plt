@@ -61,7 +61,7 @@
   (define semaphore-wait-multiple 
    (case-lambda
     [(semaphores) (semaphore-wait-multiple semaphores #f #f)]
-    [(semaphores timeout) (semaphore-wait-multiple semaphores timeout #f)
+    [(semaphores timeout) (semaphore-wait-multiple semaphores timeout #f)]
     [(semaphores timeout allow-break?)
      (let ([break-enabled? (or allow-break? (break-enabled))])
        (parameterize 

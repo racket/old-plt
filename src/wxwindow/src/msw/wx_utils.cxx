@@ -389,11 +389,17 @@ Bool wxIsBusy(void)
   return (wxGetBusyState() > 0);
 }    
 
-static int hidden = 0;
+static int hidden = 0, hide_not_ok = 0;
+
+/* The hide-cursor functions are used in wx_pdf.cxx from
+   a non-main thread, so make sure there are no GC annotations. */
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
 void wxHideCursor(void)
 {
-  if (!hidden) {
+  if (!hidden && !hide_not_ok) {
     hidden = 1;
     ShowCursor(FALSE);
   }
@@ -406,6 +412,21 @@ void wxUnhideCursor(void)
     ShowCursor(TRUE);
   }
 }
+
+void wxCannotHideCursor(void)
+{
+  hide_not_ok++;
+  wxUnhideCursor();
+}
+
+void wxCanHideCursor(void)
+{
+  --hide_not_ok;
+}
+   
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 /********************************************************************************/
 

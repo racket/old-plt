@@ -310,15 +310,6 @@
 					  ,(annotate expr)))
 				  (z:private-clause-internals clause)
 				  (z:private-clause-exprs clause))))
-			 ((z:inherit-from-clause? clause)
-			   `(inherit-from
-			      ,(z:varref-var
-				 (z:inherit-from-clause-super clause))
-			      ,@(map (lambda (internal inherited)
-				       `(,(z:binding-var internal)
-					  ,(read->raw inherited)))
-				  (z:inherit-clause-internals clause)
-				  (z:inherit-clause-imports clause))))
 			 ((z:inherit-clause? clause)
 			   `(inherit
 			      ,@(map (lambda (internal inherited)
@@ -326,15 +317,6 @@
 					  ,(read->raw inherited)))
 				  (z:inherit-clause-internals clause)
 				  (z:inherit-clause-imports clause))))
-			 ((z:rename-from-clause? clause)
-			   `(rename-from
-			      ,(z:varref-var
-				 (z:rename-from-clause-super clause))
-			      ,@(map (lambda (internal import)
-				       `(,(z:binding-var internal)
-					  ,(read->raw import)))
-				  (z:rename-clause-internals clause)
-				  (z:rename-clause-imports clause))))
 			 ((z:rename-clause? clause)
 			   `(rename
 			      ,@(map (lambda (internal import)

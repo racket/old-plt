@@ -1887,7 +1887,10 @@ static void check_top(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
     }
 
     if (modidx || !scheme_lookup_in_table(env->genv->toplevel, (const char *)SCHEME_STX_SYM(c)))
-      scheme_wrong_syntax(when, NULL, c, "unbound variable in module");
+      scheme_wrong_syntax(when, NULL, c, 
+			  (env->genv->phase
+			   ? "unbound variable in module (transformer environment)"
+			   : "unbound variable in module"));
   }
 }
 

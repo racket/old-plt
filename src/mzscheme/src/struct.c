@@ -163,7 +163,7 @@ scheme_init_struct (Scheme_Env *env)
   scheme_add_global_constant("make-struct-type-property", 
 			    scheme_make_prim_w_arity2(make_struct_type_property,
 						      "make-struct-type-property",
-						      0, 1,
+						      1, 1,
 						      3, 3),
 			    env);
 
@@ -217,14 +217,14 @@ scheme_init_struct (Scheme_Env *env)
 
   /*** Predicates ****/
 
-  scheme_add_global_constant("struct-accessor-procedure?",
+  scheme_add_global_constant("struct-mutator-procedure?",
 			     scheme_make_prim_w_arity(struct_setter_p,
-						      "struct-accessor-procedure?",
+						      "struct-mutator-procedure?",
 						      1, 1),
 			    env);
-  scheme_add_global_constant("struct-mutator-procedure?",
+  scheme_add_global_constant("struct-accessor-procedure?",
 			     scheme_make_prim_w_arity(struct_getter_p,
-						      "struct-mutator-procedure?",
+						      "struct-accessor-procedure?",
 						      1, 1),
 			    env);
   scheme_add_global_constant("struct-predicate-procedure?",

@@ -20,6 +20,8 @@
     (format "result: ~n~v~n" (finish-value os))]
    [else (error (format "oops! received ~v" os))]))
   
+;; expect->str : expectation -> str
+;; creates a printable string for the given expectation
 (define (expect->str expect)
   (string-append
    (cond
@@ -31,6 +33,7 @@
        "")))
 
 ;; format-printed-output-descrip : str -> str
+;; formats a description of printed output.
 (define (format-printed-output-descrip the-str)
   (format "~nPrinted output:~n~v" the-str))
      
@@ -42,12 +45,17 @@
    (format-printed-output-descrip
     (received-print received))))
    
-   
+
+;; The tester GUI's controller, responsible for translating
+;; requests in the model's domain into requests in the view's domain
+;; and vice versa.   
 (define controller%
   (class* object% ()
     
     (public run-test-group test-manifest)
-    
+
+    ;; print-error-message : test x expectation x received -> void
+    ;; side-effect: prints the given error message in the view
     (define print-error-message
       (lambda (test expect received)
         (send view set-text 
@@ -125,39 +133,6 @@
 ;; Program interface -- provides syntax and functions for attaching the
 ;; test suite to particular tests
   
-;;; run-tests -- the main syntax for running tests. This is the syntax
-;;; that the client test programs use.
-;;; (run-tests str (listof test))
-;;; test : (expr (error exn)) | (expr value) | (expr value str)
-;;; see test-suite user's guide for usage
-;(define-syntax (run-tests stx)
-;  (syntax-case stx ()
-;    [(_ name test ...)
-;     (with-syntax
-;      ([(real-test ...) (map
-;                         (lambda (x)
-;                           (syntax-case x ()
-;                             [(test-type descrip body arg ...)
-;                              (with-syntax
-;                                  ([expect
-;                                    (syntax-case (syntax test-type) (runtest test-error test-function)
-;                                      [run-test
-;                                       (syntax-case (syntax (arg ...)) ()
-;                                         [(expect) (syntax (make-finish expect #f))]
-;                                         [(expect out) (syntax (make-finish expect out))])]
-;                                      [test-error
-;                                       (syntax-case (syntax (arg ...)) ()
-;                                         [(exn-str) (syntax (make-error exn-str))])]
-;                                      [test-function
-;                                       (syntax-case (syntax (arg ...)) ()
-;                                         [(fn) (syntax fn)])])])
-;                                (syntax (make-test descrip
-;                                                   (quote body)
-;                                                   (lambda () body)
-;                                                   expect)))]))
-;                         (syntax->list (syntax (test ...))))])
-;       (syntax (run-tests-int name (list real-test ...))))]))
-
 ;; test-struct : (make-test str sexp (-> value) expectation)
 ;; test : (syntax (_ str sexp expectation)) -> (syntax test-struct)
 ;;        (syntax (_ str sexp expectation (union str #f))) -> (syntax test-struct)
@@ -189,7 +164,7 @@
            
 (define tester (make-object controller%))
   
-;; run-tests-int : str (listof test) -> void
+;; run-tests-int : str x test ... -> void
 ;; side effect: runs all the tests.
 (define run-tests
   (lambda (name . tests)
@@ -200,4 +175,5 @@
 (define (test-manifest man)
   (send tester test-manifest man)))
   
+
 

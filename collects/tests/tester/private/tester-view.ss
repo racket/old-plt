@@ -56,12 +56,16 @@
      [m-edit         (make-object menu% "Edit" mb)]
      [my-eventspace  (current-eventspace)]
      [lock           (make-semaphore 1)])
-       
+    
+    ;; single-msgarea-mode : -> void
+    ;; switches the gui into single-message-area mode (no next, back buttons)
     (define single-msgarea-mode
       (lambda ()
         (send message-pane change-children
               (lambda (x) (list (editor-panel one-message-ed))))))
     
+    ;; multi-msgarea-mode : -> void
+    ;; switches the gui into multi-message-area mode (next, back buttons)
     (define multi-msgarea-mode
       (lambda ()
         (send message-pane change-children
@@ -69,6 +73,8 @@
                 (list (editor-panel one-message-ed)
                       button-pane)))))
     
+    ;; set-txt : str -> void
+    ;; clears the current message text and replaces it with the given string
     (define set-txt
       (lambda (text-ed txt)
         (let ((text-obj (editor-text text-ed)))
@@ -92,9 +98,14 @@
     (define get-thread
       (lambda () (current-thread)))
     
+    ;; update-status : str -> void
+    ;; updates the status bar with the given message
     (define update-status
       (lambda (message) (send top-frame set-status-text message)))
     
+    ;; set-gauge-size : positive-natnum -> void
+    ;; sets the minor gauge's size
+    ;; OBTAINS LOCK lock
     (define set-gauge-size
       (lambda (size)
         (with-semaphore lock
@@ -102,26 +113,40 @@
                           (do-reset-gauge)
                           (send gauge-minor set-range size)))))
     
+    ;; set-overall-size : positive-natnum -> void
+    ;; sets the overall gauge's size
+    ;; OBTAINS LOCK lock
     (define set-overall-size
       (lambda (size)
         (with-semaphore lock
                         (lambda ()
                           (send gauge-major set-range size)))))
     
+    ;; reset-overall-gauge : -> void
+    ;; resets the overall gauge's count (but not its size)
+    ;; OBTAINS LOCK lock
     (define reset-overall-gauge
       (lambda ()
         (with-semaphore lock
                         (lambda ()
                           (send gauge-major set-value 0)))))
     
+    ;; reset-gauge : -> void
+    ;; resets the minor gauge's count (but not its size)
+    ;; OBTAINS LOCK lock
     (define reset-gauge
       (lambda ()
         (with-semaphore lock do-reset-gauge)))
     
+    ;; do-reset-gauge : -> void
+    ;; unlocked version of reset-gauge for internal use
     (define do-reset-gauge
       (lambda ()
         (send gauge-minor set-value 0)))
     
+    ;; tick-gauge : -> void
+    ;; ticks the major and minor gauges
+    ;; OBTAINS LOCK lock
     (define tick-gauge
       (lambda ()
         (with-semaphore lock
@@ -129,6 +154,8 @@
              (send gauge-minor tick)
              (send gauge-major tick)))))
 
+    ;; init : -> void
+    ;; initializes the window
     (define init
       (lambda ()
         (send top-frame create-status-line)

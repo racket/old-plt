@@ -275,6 +275,62 @@ int app_rec_FIXUP(void *p) {
 #define app_rec_IS_CONST_SIZE 0
 
 
+int app2_rec_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_App2_Rec));
+}
+
+int app2_rec_MARK(void *p) {
+  Scheme_App2_Rec *r = (Scheme_App2_Rec *)p;
+  gcMARK(r->rator);
+  gcMARK(r->rand);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_App2_Rec));
+}
+
+int app2_rec_FIXUP(void *p) {
+  Scheme_App2_Rec *r = (Scheme_App2_Rec *)p;
+  gcFIXUP(r->rator);
+  gcFIXUP(r->rand);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_App2_Rec));
+}
+
+#define app2_rec_IS_ATOMIC 0
+#define app2_rec_IS_CONST_SIZE 1
+
+
+int app3_rec_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_App3_Rec));
+}
+
+int app3_rec_MARK(void *p) {
+  Scheme_App3_Rec *r = (Scheme_App3_Rec *)p;
+  gcMARK(r->rator);
+  gcMARK(r->rand1);
+  gcMARK(r->rand2);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_App3_Rec));
+}
+
+int app3_rec_FIXUP(void *p) {
+  Scheme_App3_Rec *r = (Scheme_App3_Rec *)p;
+  gcFIXUP(r->rator);
+  gcFIXUP(r->rand1);
+  gcFIXUP(r->rand2);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_App3_Rec));
+}
+
+#define app3_rec_IS_ATOMIC 0
+#define app3_rec_IS_CONST_SIZE 1
+
+
 int seq_rec_SIZE(void *p) {
   Scheme_Sequence *s = (Scheme_Sequence *)p;
 

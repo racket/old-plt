@@ -97,6 +97,27 @@ app_rec {
 		    + ((r->num_args + 1) * sizeof(char))));
 }
 
+app2_rec {
+ mark:
+  Scheme_App2_Rec *r = (Scheme_App2_Rec *)p;
+  gcMARK(r->rator);
+  gcMARK(r->rand);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_App2_Rec));
+}
+
+app3_rec {
+ mark:
+  Scheme_App3_Rec *r = (Scheme_App3_Rec *)p;
+  gcMARK(r->rator);
+  gcMARK(r->rand1);
+  gcMARK(r->rand2);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_App3_Rec));
+}
+
 seq_rec {
   Scheme_Sequence *s = (Scheme_Sequence *)p;
 

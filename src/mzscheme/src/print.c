@@ -1344,6 +1344,33 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	closed = print(scheme_protect_quote(app->args[i]), notdisplay, 1, NULL, symtab, rnht, p);
       }
     }
+  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_application2_type))
+    {
+      Scheme_App2_Rec *app;
+      unsigned char s[1];
+
+      app = (Scheme_App2_Rec *)obj;
+
+      s[0] = CPT_SMALL_APPLICATION_START + 1;
+      print_this_string(p, (char *)s, 0, 1);
+
+      print(scheme_protect_quote(app->rator), notdisplay, 1, NULL, symtab, rnht, p);
+      closed = print(scheme_protect_quote(app->rand), notdisplay, 1, NULL, symtab, rnht, p);
+    }
+  else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_application3_type))
+    {
+      Scheme_App3_Rec *app;
+      unsigned char s[1];
+
+      app = (Scheme_App3_Rec *)obj;
+
+      s[0] = CPT_SMALL_APPLICATION_START + 2;
+      print_this_string(p, (char *)s, 0, 1);
+
+      print(scheme_protect_quote(app->rator), notdisplay, 1, NULL, symtab, rnht, p);
+      print(scheme_protect_quote(app->rand1), notdisplay, 1, NULL, symtab, rnht, p);
+      closed = print(scheme_protect_quote(app->rand2), notdisplay, 1, NULL, symtab, rnht, p);
+    }
   else if (compact && SAME_TYPE(SCHEME_TYPE(obj), scheme_let_one_type))
     {
       Scheme_Let_One *lo;

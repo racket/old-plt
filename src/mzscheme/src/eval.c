@@ -275,6 +275,10 @@ scheme_init_eval (Scheme_Env *env)
 
   scheme_install_type_writer(scheme_application_type, write_application);
   scheme_install_type_reader(scheme_application_type, read_application);
+  scheme_install_type_writer(scheme_application2_type, write_application);
+  scheme_install_type_reader(scheme_application2_type, read_application);
+  scheme_install_type_writer(scheme_application3_type, write_application);
+  scheme_install_type_reader(scheme_application3_type, read_application);
   scheme_install_type_writer(scheme_sequence_type, write_sequence);
   scheme_install_type_reader(scheme_sequence_type, read_sequence);
   scheme_install_type_writer(scheme_branch_type, write_branch);
@@ -569,6 +573,8 @@ int scheme_omittable_expr(Scheme_Object *o, int vals)
 {
   Scheme_Type vtype;
 
+  /* FIXME: can overflow the stack */
+
  try_again:
 
   vtype = SCHEME_TYPE(o);
@@ -635,6 +641,29 @@ int scheme_omittable_expr(Scheme_Object *o, int vals)
     return 0;
   }
 
+  if ((vtype == scheme_application2_type)) {
+    if (vals == 1) {
+      Scheme_App2_Rec *app = (Scheme_App2_Rec *)o;
+      if (SAME_OBJ(scheme_values_func, app->rator)) {
+	if (scheme_omittable_expr(app->rand, 1))
+	  return 1;
+      }
+    }
+    
+  }
+
+  if ((vtype == scheme_application3_type)) {
+    if (vals == 2) {
+      Scheme_App3_Rec *app = (Scheme_App3_Rec *)o;
+      if (SAME_OBJ(scheme_values_func, app->rator)) {
+	if (scheme_omittable_expr(app->rand1, 1)
+	    && scheme_omittable_expr(app->rand2, 1))
+	  return 1;
+      }
+    }
+    
+  }
+
   return 0;
 }
 
@@ -694,7 +723,6 @@ static Scheme_Object *try_apply(Scheme_Object *f, Scheme_Object *args)
 static Scheme_Object *make_application(Scheme_Object *v)
 {
   Scheme_Object *o;
-  Scheme_App_Rec *app;
   int i, nv;
   volatile int n;
 
@@ -730,13 +758,41 @@ static Scheme_Object *make_application(Scheme_Object *v)
     }
   }
 
-  app = scheme_malloc_application(n);
+  if (n == 2) {
+    Scheme_App2_Rec *app;
 
-  for (i = 0; i < n; i++, v = SCHEME_CDR(v)) {
-    app->args[i] = SCHEME_CAR(v);
+    app = MALLOC_ONE_TAGGED(Scheme_App2_Rec);
+    app->type = scheme_application2_type;
+
+    app->rator = SCHEME_CAR(v);
+    v = SCHEME_CDR(v);
+    app->rand = SCHEME_CAR(v);
+
+    return (Scheme_Object *)app;
+  } else if (n == 3) {
+    Scheme_App3_Rec *app;
+
+    app = MALLOC_ONE_TAGGED(Scheme_App3_Rec);
+    app->type = scheme_application3_type;
+
+    app->rator = SCHEME_CAR(v);
+    v = SCHEME_CDR(v);
+    app->rand1 = SCHEME_CAR(v);
+    v = SCHEME_CDR(v);
+    app->rand2 = SCHEME_CAR(v);
+
+    return (Scheme_Object *)app;
+  } else {
+    Scheme_App_Rec *app;
+
+    app = scheme_malloc_application(n);
+    
+    for (i = 0; i < n; i++, v = SCHEME_CDR(v)) {
+      app->args[i] = SCHEME_CAR(v);
+    }
+
+    return (Scheme_Object *)app;
   }
-
-  return (Scheme_Object *)app;
 }
 
 Scheme_App_Rec *scheme_malloc_application(int n)
@@ -796,7 +852,62 @@ static Scheme_Object *resolve_application(Scheme_Object *o, Resolve_Info *info)
     ((char *)app + devals)[i] = et;
   }
 
-  return o;
+  return (Scheme_Object *)app;
+}
+
+static Scheme_Object *resolve_application2(Scheme_Object *o, Resolve_Info *info)
+{
+  Scheme_App2_Rec *app;
+  Scheme_Object *le;
+  short et;
+
+  app = (Scheme_App2_Rec *)o;
+
+  info = scheme_resolve_info_extend(info, 1, 0, 0, 0);
+
+  le = scheme_resolve_expr(app->rator, info);
+  app->rator = le;
+
+  le = scheme_resolve_expr(app->rand, info);
+  app->rand = le;
+
+  et = scheme_get_eval_type(app->rand);
+  et = et << 3;
+  et += scheme_get_eval_type(app->rator);
+  
+  app->flags = et;
+
+  return (Scheme_Object *)app;
+}
+
+static Scheme_Object *resolve_application3(Scheme_Object *o, Resolve_Info *info)
+{
+  Scheme_App3_Rec *app;
+  Scheme_Object *le;
+  short et;
+
+  app = (Scheme_App3_Rec *)o;
+
+  info = scheme_resolve_info_extend(info, 2, 0, 0, 0);
+
+  le = scheme_resolve_expr(app->rator, info);
+  app->rator = le;
+
+  le = scheme_resolve_expr(app->rand1, info);
+  app->rand1 = le;
+
+  le = scheme_resolve_expr(app->rand2, info);
+  app->rand2 = le;
+
+  et = scheme_get_eval_type(app->rand2);
+  et = et << 3;
+  et += scheme_get_eval_type(app->rand1);
+  et = et << 3;
+  et += scheme_get_eval_type(app->rator);
+  
+  app->flags = et;
+
+  return (Scheme_Object *)app;
 }
 
 Scheme_Object *
@@ -1153,6 +1264,10 @@ Scheme_Object *scheme_resolve_expr(Scheme_Object *expr, Resolve_Info *info)
     }
   case scheme_application_type:
     return resolve_application(expr, info);
+  case scheme_application2_type:
+    return resolve_application2(expr, info);
+  case scheme_application3_type:
+    return resolve_application3(expr, info);
   case scheme_sequence_type:
     return resolve_sequence(expr, info);
   case scheme_branch_type:
@@ -1340,7 +1455,9 @@ static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *
 
   result = make_application(form);
 
-  if (SAME_TYPE(SCHEME_TYPE(result), scheme_application_type))
+  if (SAME_TYPE(SCHEME_TYPE(result), scheme_application_type)
+      || SAME_TYPE(SCHEME_TYPE(result), scheme_application2_type)
+      || SAME_TYPE(SCHEME_TYPE(result), scheme_application3_type))
     rec[drec].max_let_depth += (len - 1);
   
   return result;
@@ -3190,6 +3307,146 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       
 	  goto apply_top;
 	}
+
+      case scheme_application2_type:
+	{
+	  Scheme_App2_Rec *app;
+	  Scheme_Object *arg;
+	  short flags;
+	  GC_CAN_IGNORE Scheme_Object *tmpv;
+
+	  app = (Scheme_App2_Rec *)obj;
+	  
+	  obj = app->rator;
+	  flags = app->flags;
+
+	  rands = PUSH_RUNSTACK(p, RUNSTACK, 1);
+	  RUNSTACK_CHANGED();
+	  UPDATE_THREAD_RSPTR();
+	  
+	  /* Inline local & global variable lookups for speed */
+	  switch (flags & 0x7) {
+	  case SCHEME_EVAL_CONSTANT:
+	    break;
+	  case SCHEME_EVAL_GLOBAL:
+	    global_lookup(obj =, obj, tmpv);
+	    break;
+	  case SCHEME_EVAL_LOCAL:
+	    obj = rands[SCHEME_LOCAL_POS(obj)];
+	    break;
+	  case SCHEME_EVAL_LOCAL_UNBOX:
+	    obj = SCHEME_ENVBOX_VAL(rands[SCHEME_LOCAL_POS(obj)]);
+	    break;
+	  default:
+	    obj = _scheme_eval_linked_expr_wp(obj, p);
+	    break;
+	  }
+
+	  arg = app->rand;
+
+	  switch (flags >> 3) {
+	  case SCHEME_EVAL_CONSTANT:
+	    break;
+	  case SCHEME_EVAL_GLOBAL:
+	    global_lookup(arg =, arg, tmpv);
+	    break;
+	  case SCHEME_EVAL_LOCAL:
+	    arg = rands[SCHEME_LOCAL_POS(arg)];
+	    break;
+	  case SCHEME_EVAL_LOCAL_UNBOX:
+	    arg = SCHEME_ENVBOX_VAL(rands[SCHEME_LOCAL_POS(arg)]);
+	    break;
+	  default:
+	    arg = _scheme_eval_linked_expr_wp(arg, p);
+	    break;
+	  }
+
+	  rands[0] = arg;
+	  num_rands = 1;
+      
+	  goto apply_top;
+	}
+	
+      case scheme_application3_type:
+	{
+	  Scheme_App3_Rec *app;
+	  Scheme_Object *arg;
+	  short flags;
+	  GC_CAN_IGNORE Scheme_Object *tmpv;
+
+	  app = (Scheme_App3_Rec *)obj;
+	  
+	  obj = app->rator;
+	  flags = app->flags;
+
+	  rands = PUSH_RUNSTACK(p, RUNSTACK, 2);
+	  RUNSTACK_CHANGED();
+	  UPDATE_THREAD_RSPTR();
+	  
+	  /* Inline local & global variable lookups for speed */
+	  switch (flags & 0x7) {
+	  case SCHEME_EVAL_CONSTANT:
+	    break;
+	  case SCHEME_EVAL_GLOBAL:
+	    global_lookup(obj =, obj, tmpv);
+	    break;
+	  case SCHEME_EVAL_LOCAL:
+	    obj = rands[SCHEME_LOCAL_POS(obj)];
+	    break;
+	  case SCHEME_EVAL_LOCAL_UNBOX:
+	    obj = SCHEME_ENVBOX_VAL(rands[SCHEME_LOCAL_POS(obj)]);
+	    break;
+	  default:
+	    obj = _scheme_eval_linked_expr_wp(obj, p);
+	    break;
+	  }
+
+	  arg = app->rand1;
+
+	  switch ((flags >> 3) & 0x7) {
+	  case SCHEME_EVAL_CONSTANT:
+	    break;
+	  case SCHEME_EVAL_GLOBAL:
+	    global_lookup(arg =, arg, tmpv);
+	    break;
+	  case SCHEME_EVAL_LOCAL:
+	    arg = rands[SCHEME_LOCAL_POS(arg)];
+	    break;
+	  case SCHEME_EVAL_LOCAL_UNBOX:
+	    arg = SCHEME_ENVBOX_VAL(rands[SCHEME_LOCAL_POS(arg)]);
+	    break;
+	  default:
+	    arg = _scheme_eval_linked_expr_wp(arg, p);
+	    break;
+	  }
+
+	  rands[0] = arg;
+
+	  arg = app->rand2;
+
+	  switch (app->flags >> 6) {
+	  case SCHEME_EVAL_CONSTANT:
+	    break;
+	  case SCHEME_EVAL_GLOBAL:
+	    global_lookup(arg =, arg, tmpv);
+	    break;
+	  case SCHEME_EVAL_LOCAL:
+	    arg = rands[SCHEME_LOCAL_POS(arg)];
+	    break;
+	  case SCHEME_EVAL_LOCAL_UNBOX:
+	    arg = SCHEME_ENVBOX_VAL(rands[SCHEME_LOCAL_POS(arg)]);
+	    break;
+	  default:
+	    arg = _scheme_eval_linked_expr_wp(arg, p);
+	    break;
+	  }
+
+	  rands[1] = arg;
+
+	  num_rands = 2;
+      
+	  goto apply_top;
+	}
       
       case scheme_sequence_type:
 	{
@@ -4117,6 +4374,32 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 	scheme_validate_expr(port, app->args[i], stack, depth, delta, num_toplevels);
 	memset(stack, VALID_NOT, delta + n - 1);
       }
+    }
+    break;
+  case scheme_application2_type:
+    {
+      Scheme_App2_Rec *app = (Scheme_App2_Rec *)expr;
+      
+      delta -= 1;
+
+      scheme_validate_expr(port, app->rator, stack, depth, delta, num_toplevels);
+      memset(stack, VALID_NOT, delta + 1);
+      scheme_validate_expr(port, app->rand, stack, depth, delta, num_toplevels);
+      memset(stack, VALID_NOT, delta + 1);
+    }
+    break;
+  case scheme_application3_type:
+    {
+      Scheme_App3_Rec *app = (Scheme_App3_Rec *)expr;
+      
+      delta -= 2;
+
+      scheme_validate_expr(port, app->rator, stack, depth, delta, num_toplevels);
+      memset(stack, VALID_NOT, delta + 2);
+      scheme_validate_expr(port, app->rand1, stack, depth, delta, num_toplevels);
+      memset(stack, VALID_NOT, delta + 2);
+      scheme_validate_expr(port, app->rand2, stack, depth, delta, num_toplevels);
+      memset(stack, VALID_NOT, delta + 2);
     }
     break;
   case scheme_sequence_type:

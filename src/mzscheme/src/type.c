@@ -81,6 +81,8 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_toplevel_type, "<variable-code>");
   set_name(scheme_module_variable_type, "<module-variable-code>");
   set_name(scheme_application_type, "<application-code>");
+  set_name(scheme_application2_type, "<unary-application-code>");
+  set_name(scheme_application3_type, "<binary-application-code>");
   set_name(scheme_compiled_unclosed_procedure_type, "<procedure-semi-code>");
   set_name(scheme_unclosed_procedure_type, "<procedure-code>");
   set_name(scheme_syntax_type, "<syntax-code>");
@@ -355,6 +357,8 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_local_unbox_type, local_obj);
   GC_REG_TRAV(scheme_syntax_type, iptr_obj);
   GC_REG_TRAV(scheme_application_type, app_rec);
+  GC_REG_TRAV(scheme_application2_type, app2_rec);
+  GC_REG_TRAV(scheme_application3_type, app3_rec);
   GC_REG_TRAV(scheme_sequence_type, seq_rec);
   GC_REG_TRAV(scheme_branch_type, branch_rec);
   GC_REG_TRAV(scheme_unclosed_procedure_type, unclosed_proc);

@@ -247,20 +247,20 @@ Scheme_Object *(*scheme_make_prim)(Scheme_Prim *prim);
 Scheme_Object *(*scheme_make_noneternal_prim)(Scheme_Prim *prim);
 Scheme_Object *(*scheme_make_closed_prim)(Scheme_Closed_Prim *prim, void *data);
 Scheme_Object *(*scheme_make_prim_w_arity)(Scheme_Prim *prim, const char *name,
-					short mina, short maxa);
+					mzshort mina, mzshort maxa);
 Scheme_Object *(*scheme_make_folding_prim)(Scheme_Prim *prim, 
 					const char *name,
-					short mina, short maxa,
+					mzshort mina, mzshort maxa,
 					short functional);
 Scheme_Object *(*scheme_make_noneternal_prim_w_arity)(Scheme_Prim *prim, 
 						   const char *name, 
-						   short mina, short maxa);
+						   mzshort mina, mzshort maxa);
 Scheme_Object *(*scheme_make_closed_prim_w_arity)(Scheme_Closed_Prim *prim, 
 					       void *data, const char *name,
-					       short mina, short maxa);
+					       mzshort mina, mzshort maxa);
 Scheme_Object *(*scheme_make_folding_closed_prim)(Scheme_Closed_Prim *prim, 
 					       void *data, const char *name,
-					       short mina, short maxa,
+					       mzshort mina, mzshort maxa,
 					       short functional);
 void (*scheme_prim_is_method)(Scheme_Object *o);
 Scheme_Object *(*scheme_make_pair)(Scheme_Object *car, Scheme_Object *cdr);

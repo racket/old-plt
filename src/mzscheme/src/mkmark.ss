@@ -2,13 +2,13 @@
 (define re:start "^START ([a-z]+);")
 (define re:end "^END ([a-z]+);")
 
-(define re:form "^([a-zA-Z_]+) {")
+(define re:form "^([a-zA-Z0-9_]+) {")
 
 (define re:mark "^ mark:")
 (define re:size "^ size:")
 (define re:close "^}")
 
-(define re:const-size (regexp "^[ \t]*gcBYTES_TO_WORDS[(]sizeof[(][A-Za-z_]*[)][)];[ \t]*$"))
+(define re:const-size (regexp "^[ \t]*gcBYTES_TO_WORDS[(]sizeof[(][A-Za-z0-9_]*[)][)];[ \t]*$"))
 
 (define (upcase s)
   (list->string (map char-upcase (string->list s))))

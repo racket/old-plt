@@ -2528,6 +2528,52 @@ static Scheme_Object *read_compact(CPort *port,
 	v = (Scheme_Object *)a;
       }
       break;
+    case CPT_SMALL_APPLICATION2:
+      {
+	short et;
+	Scheme_App2_Rec *app;
+
+	app = MALLOC_ONE_TAGGED(Scheme_App2_Rec);
+	app->type = scheme_application2_type;
+
+	v = read_compact(port, ht, symtab, 1);
+	app->rator = v;
+	v = read_compact(port, ht, symtab, 1);
+	app->rand = v;
+
+	et = scheme_get_eval_type(app->rand);
+	et = et << 3;
+	et += scheme_get_eval_type(app->rator);
+	app->flags = et;
+	
+	v = (Scheme_Object *)app;
+      }
+      break;
+    case CPT_SMALL_APPLICATION3:
+      {
+	short et;
+	Scheme_App3_Rec *app;
+
+	app = MALLOC_ONE_TAGGED(Scheme_App3_Rec);
+	app->type = scheme_application3_type;
+
+	v = read_compact(port, ht, symtab, 1);
+	app->rator = v;
+	v = read_compact(port, ht, symtab, 1);
+	app->rand1 = v;
+	v = read_compact(port, ht, symtab, 1);
+	app->rand2 = v;
+
+	et = scheme_get_eval_type(app->rand2);
+	et = et << 3;
+	et += scheme_get_eval_type(app->rand1);
+	et = et << 3;
+	et += scheme_get_eval_type(app->rator);
+	app->flags = et;
+	
+	v = (Scheme_Object *)app;
+      }
+      break;
     default:
       v = NULL;
       break;
@@ -2753,6 +2799,10 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
     FILL_IN(SMALL_LOCAL_UNBOX);
     FILL_IN(SMALL_SVECTOR);
     FILL_IN(SMALL_APPLICATION);
+
+    /* These two are handled specially: */
+    cpt_branch[CPT_SMALL_APPLICATION2] = CPT_SMALL_APPLICATION2;
+    cpt_branch[CPT_SMALL_APPLICATION3] = CPT_SMALL_APPLICATION3;
   }
 
   if (!variable_references)

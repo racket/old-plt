@@ -58,6 +58,8 @@ enum {
 
 #define CPT_SMALL_APPLICATION_START 232
 #define CPT_SMALL_APPLICATION_END 240
+#define CPT_SMALL_APPLICATION2 233
+#define CPT_SMALL_APPLICATION3 234
 
 #define CPT_BETWEEN(x, s) ((x >= CPT_ ## s ## _START) && (x < CPT_ ## s ## _END))
 #define CPT_RANGE(s) (CPT_ ## s ## _END - CPT_ ## s ## _START)

@@ -537,6 +537,21 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type;
+  short flags;
+  Scheme_Object *rator;
+  Scheme_Object *rand;
+} Scheme_App2_Rec;
+
+typedef struct {
+  Scheme_Type type;
+  short flags;
+  Scheme_Object *rator;
+  Scheme_Object *rand1;
+  Scheme_Object *rand2;
+} Scheme_App3_Rec;
+
+typedef struct {
+  Scheme_Type type;
   Scheme_Object *test;
   Scheme_Object *tbranch;
   Scheme_Object *fbranch;
@@ -1461,6 +1476,8 @@ Scheme_Object *scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_
 
 Scheme_App_Rec *scheme_malloc_application(int n);
 void scheme_finish_application(Scheme_App_Rec *app);
+void scheme_finish_application2(Scheme_App2_Rec *app);
+void scheme_finish_application3(Scheme_App3_Rec *app);
 
 #define SCHEME_SYNTAX(obj)   ((obj)->u.two_ptr_val.ptr1)
 #define SCHEME_SYNTAX_EXP(obj)   ((obj)->u.two_ptr_val.ptr2)

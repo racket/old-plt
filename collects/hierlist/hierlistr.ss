@@ -1,5 +1,6 @@
 (unit/sig mred:hier:hierlist^
-  (import (mred : mred^))
+  (import (mred : mred^)
+	  (wx : wx^))
 
   (define transparent (make-object wx:brush% "WHITE" wx:const-transparent))
   (define transparent-pen (make-object wx:pen% "WHITE" 1 wx:const-transparent))

@@ -39,7 +39,8 @@ to the original stdout of DrScheme.
           get-sharing-printing
           get-abbreviate-cons-as-list
           get-allow-sharing?
-          get-use-function-output-syntax?))
+          get-use-function-output-syntax?
+          get-accept-quasiquote?))
       
       ;; module-based-language-extension :    (implements drscheme:language:module-based-language<%>) 
       ;;                                   -> (implements drscheme:language:module-based-language<%>)
@@ -62,7 +63,7 @@ to the original stdout of DrScheme.
           
           (override config-panel)
           (rename [super-config-panel config-panel])
-          (inherit get-allow-sharing? get-use-function-output-syntax?)
+          (inherit get-allow-sharing? get-use-function-output-syntax? get-accept-quasiquote?)
           (define (config-panel parent)
             (sharing/not-config-panel (get-allow-sharing?) parent))
           
@@ -70,6 +71,7 @@ to the original stdout of DrScheme.
             (let ([drs-namespace (current-namespace)])
               (run-in-user-thread
                (lambda ()
+                 (read-accept-quasiquote (get-accept-quasiquote?))
                  (namespace-attach-module drs-namespace 'drscheme-secrets)
                  (error-display-handler teaching-languages-error-display-handler)
                  (current-eval (add-debugging (current-eval)))
@@ -313,11 +315,13 @@ to the original stdout of DrScheme.
           (init-field sharing-printing
                       abbreviate-cons-as-list
                       allow-sharing?
-                      use-function-output-syntax?)
+                      (use-function-output-syntax? #f)
+                      (accept-quasiquote? #t))
           (define/public (get-sharing-printing) sharing-printing)
           (define/public (get-abbreviate-cons-as-list) abbreviate-cons-as-list)
           (define/public (get-allow-sharing?) allow-sharing?)
           (define/public (get-use-function-output-syntax?) use-function-output-syntax?)
+          (define/public (get-accept-quasiquote?) accept-quasiquote?)
           (super-instantiate ())))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -345,8 +349,7 @@ to the original stdout of DrScheme.
          (module '(lib "big.ss" "lang"))
          (language-position
           (list (string-constant how-to-design-programs)
-                (string-constant full-language)))
-         (use-function-output-syntax? #f)))
+                (string-constant full-language)))))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -357,8 +360,7 @@ to the original stdout of DrScheme.
          (language-numbers '(-500 5))
          (sharing-printing #t)
          (abbreviate-cons-as-list #t)
-         (allow-sharing? #t)
-         (use-function-output-syntax? #f)))
+         (allow-sharing? #t)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -369,8 +371,7 @@ to the original stdout of DrScheme.
          (language-numbers '(-500 4))
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)
-         (allow-sharing? #f)
-         (use-function-output-syntax? #f)))
+         (allow-sharing? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -394,7 +395,7 @@ to the original stdout of DrScheme.
          (sharing-printing #f)
          (abbreviate-cons-as-list #t)
          (allow-sharing? #f)
-         (use-function-output-syntax? #f)))
+         (accept-quasiquote? #f)))
       
       (add-htdp-language
        (instantiate htdp-language% ()
@@ -406,4 +407,4 @@ to the original stdout of DrScheme.
          (sharing-printing #f)
          (abbreviate-cons-as-list #f)
          (allow-sharing? #f)
-         (use-function-output-syntax? #f))))))
+         (accept-quasiquote? #f))))))

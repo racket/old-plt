@@ -215,7 +215,7 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
 # define mzCAN_LOCALE 1
 #endif
 
-#define GEN_CHAR_COMP(func_name, scheme_name, comp, uc)          \
+#define GEN_CHAR_COMP(func_name, scheme_name, comp, uc, eq)          \
  static Scheme_Object *func_name(int argc, Scheme_Object *argv[])     \
  { int c, prev, i; Scheme_Object *rv = scheme_true; \
    int loc = scheme_locale_on; \
@@ -228,8 +228,8 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
        scheme_wrong_type(#scheme_name, "character", i, argc, argv);     \
      c = ((unsigned char)SCHEME_CHAR_VAL(argv[i]));     \
      if (uc) { c = toupper(c); }     \
-     if (mzCAN_LOCALE && loc) { \
-        unsigned char a[2], b[2]; a[1] = 0; b[1] = 0; a[0] = prev; b[0] = c; \
+     if (!eq && mzCAN_LOCALE && loc) { \
+        char a[2], b[2]; a[1] = 0; b[1] = 0; a[0] = (char)prev; b[0] = (char)c; \
         if (strcoll(a, b) comp 0) rv = scheme_false; \
      } else if (!(prev comp c)) rv = scheme_false;   \
      prev = c;     \
@@ -237,17 +237,17 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
    return rv;     \
  }
 
-GEN_CHAR_COMP(char_eq, char=?, ==, 0)
-GEN_CHAR_COMP(char_lt, char<?, <, 0)
-GEN_CHAR_COMP(char_gt, char>?, >, 0)
-GEN_CHAR_COMP(char_lt_eq, char<=?, <=, 0)
-GEN_CHAR_COMP(char_gt_eq, char>=?, >=, 0)
+GEN_CHAR_COMP(char_eq, char=?, ==, 0, 1)
+GEN_CHAR_COMP(char_lt, char<?, <, 0, 0)
+GEN_CHAR_COMP(char_gt, char>?, >, 0, 0)
+GEN_CHAR_COMP(char_lt_eq, char<=?, <=, 0, 0)
+GEN_CHAR_COMP(char_gt_eq, char>=?, >=, 0, 0)
 
-GEN_CHAR_COMP(char_eq_ci, char-ci=?, ==, 1)
-GEN_CHAR_COMP(char_lt_ci, char-ci<?, <, 1)
-GEN_CHAR_COMP(char_gt_ci, char-ci>?, >, 1)
-GEN_CHAR_COMP(char_lt_eq_ci, char-ci<=?, <=, 1)
-GEN_CHAR_COMP(char_gt_eq_ci, char-ci>=?, >=, 1)
+GEN_CHAR_COMP(char_eq_ci, char-ci=?, ==, 1, 1)
+GEN_CHAR_COMP(char_lt_ci, char-ci<?, <, 1, 0)
+GEN_CHAR_COMP(char_gt_ci, char-ci>?, >, 1, 0)
+GEN_CHAR_COMP(char_lt_eq_ci, char-ci<=?, <=, 1, 0)
+GEN_CHAR_COMP(char_gt_eq_ci, char-ci>=?, >=, 1, 0)
 
 static Scheme_Object *
 char_alphabetic (int argc, Scheme_Object *argv[])

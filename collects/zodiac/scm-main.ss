@@ -3,7 +3,10 @@
 
 (define zodiac:scheme-main@
   (unit/sig zodiac:scheme-main^
-    (import zodiac:misc^ zodiac:structures^ (z : zodiac:reader-structs^)
+    (import zodiac:misc^ zodiac:structures^
+      (z : zodiac:scanner-parameters^)
+      (z : zodiac:reader-structs^)
+      (z : zodiac:reader-code^)
       zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
       zodiac:back-protocol^ zodiac:expander^ zodiac:interface^
       (param : plt:parameters^))
@@ -1504,6 +1507,66 @@
 			(static-error expr "Malformed define-macro")))))))))
       (d-m-handler 'define-macro)
       (d-m-handler '#%define-macro))
+
+    (add-micro-form 'include scheme-vocabulary
+      (let* ((kwd '(include))
+	      (in-pattern '(include filename))
+	      (m&e (pat:make-match&env in-pattern kwd)))
+	(lambda (expr env attributes vocab)
+	  (cond
+	    ((pat:match-against m&e expr env)
+	      =>
+	      (lambda (p-env)
+		(let ((filename (pat:pexpand 'filename p-env kwd)))
+		  (unless (z:string? filename)
+		    (static-error filename "File name must be a string"))
+		  (let ((raw-filename (z:read-object filename)))
+		    (let-values (((base name dir?) (split-path raw-filename)))
+		      (when dir?
+			(static-error filename "Cannot include a directory"))
+		      (let ((original-directory (current-directory))
+			     (p (with-handlers
+				  ((exn:i/o:filesystem:filename?
+				     (lambda (exn)
+				       (static-error filename
+					 "Unable to open file"))))
+				  (open-input-file raw-filename))))
+			(dynamic-wind
+			  (lambda ()
+			    (when (string? base)
+			      (current-directory base)))
+			  (lambda ()
+			    (let ((exprs
+				    (let ((reader
+					    (z:read p
+					      (make-location
+						(location-line
+						  z:default-initial-location)
+						(location-column
+						  z:default-initial-location)
+						(location-offset
+						  z:default-initial-location)
+						(build-path
+						  (current-directory)
+						  name)))))
+				      (let loop ()
+					(let ((input (reader)))
+					  (if (eof? input)
+					    '()
+					    (cons input
+					      (loop))))))))
+			      (expand-expr
+				(structurize-syntax
+				  (if (null? exprs)
+				    `(#%void)
+				    `(begin ,@exprs))
+				  expr)
+				env attributes vocab)))
+			  (lambda ()
+			    (current-directory original-directory)
+			    (close-input-port p)))))))))
+	    (else
+	      (static-error expr "Malformed include"))))))
 
     (add-macro-form 'unquote scheme-vocabulary
       (lambda (expr env)

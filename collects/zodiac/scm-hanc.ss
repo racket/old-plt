@@ -509,55 +509,6 @@
   (lambda (expr env attributes vocab)
     (list expr)))
 
-(add-micro-form 'include u/s-expand-includes-vocab
-  (let* ((kwd '(include))
-	  (in-pattern '(include filename))
-	  (m&e (pat:make-match&env in-pattern kwd)))
-    (lambda (expr env attributes vocab)
-      (cond
-	((pat:match-against m&e expr env)
-	  =>
-	  (lambda (p-env)
-	    (let ((filename (pat:pexpand 'filename p-env kwd)))
-	      (unless (z:string? filename)
-		(static-error filename "File name must be a string"))
-	      (let ((raw-filename (z:read-object filename)))
-		(let-values (((base name dir?) (split-path raw-filename)))
-		  (when dir?
-		    (static-error filename "Cannot include a directory"))
-		  (let ((original-directory (current-directory))
-			 (p (open-input-file raw-filename)))
-		    (dynamic-wind
-		      (lambda ()
-			(when (string? base)
-			  (current-directory base)))
-		      (lambda ()
-			(apply append
-			  (map (lambda (e)
-				 (expand-expr e env attributes
-				   vocab))
-			    (let ((reader (z:read p
-					    (z:make-location
-					      (z:location-line
-						z:default-initial-location)
-					      (z:location-column
-						z:default-initial-location)
-					      (z:location-offset
-						z:default-initial-location)
-					      (build-path (current-directory)
-						name)))))
-			      (let loop ()
-				(let ((input (reader)))
-				  (if (z:eof? input)
-				    '()
-				    (cons input
-				      (loop)))))))))
-		      (lambda ()
-			(current-directory original-directory)
-			(close-input-port p)))))))))
-	(else
-	  (static-error expr "Malformed include"))))))
-
 (add-micro-form 'unit/sig scheme-vocabulary
   (let* ((kwd-1 '(unit/sig import rename))
 	  (in-pattern-1 '(unit/sig signature

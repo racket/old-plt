@@ -227,7 +227,6 @@ static Scheme_Object *break_thread(int argc, Scheme_Object *args[]);
 static void register_thread_wait();
 #endif
 
-static Scheme_Object *object_wait(int argc, Scheme_Object *args[]);
 static Scheme_Object *object_wait_break(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[]);
@@ -506,7 +505,7 @@ void scheme_init_thread(Scheme_Env *env)
   
 
   scheme_add_global_constant("object-wait-multiple", 
-			     scheme_make_prim_w_arity(object_wait,
+			     scheme_make_prim_w_arity(scheme_object_wait_multiple,
 						      "object-wait-multiple", 
 						      2, -1), 
 			     env);
@@ -2675,6 +2674,80 @@ void scheme_add_waitable_through_sema(Scheme_Type type,
   waitables->get_sema = get_sema;
 }
 
+static Waitable *find_waitable(Scheme_Object *o)
+{
+  Scheme_Type t;
+  Waitable *w;
+
+  t = SCHEME_TYPE(o);
+
+  for (w = waitables; w; w = w->next) {
+    if (SAME_TYPE(t, w->wait_type)) {
+      if (w->filter) {
+	Scheme_Wait_Filter_Fun filter;
+	filter = w->filter;
+	if (!filter(o))
+	  return NULL;
+      }
+      return w;
+    }
+  }
+
+  return NULL;
+}
+
+int scheme_is_waitable(Scheme_Object *o)
+{
+  return !!find_waitable(o);
+}
+
+static int block_on_waitable(Waitable *w, Scheme_Object *o, int just_try)
+{
+  if (w->ready) {
+    if (just_try) {
+      Scheme_Ready_Fun r;
+      r = w->ready;
+      return r(o);
+    } else {
+      scheme_block_until(w->ready, w->needs_wakeup, o, 0.0);
+      return 1;
+    }
+  } else if (w->get_sema) {
+    int repost = 0, ok;
+    Scheme_Wait_Sema_Fun get_sema = w->get_sema;
+    Scheme_Object *sema;
+    
+    sema = get_sema(o, &repost);
+    ok = scheme_wait_sema(sema, just_try);
+    if (ok && repost)
+      scheme_post_sema(sema);
+
+    return ok;
+  } else
+    return 1;
+}
+
+void scheme_waitable_needs_wakeup(Scheme_Object *o, void *fds)
+{
+  Waitable *w;
+
+  w = find_waitable(o);
+  if (w && w->needs_wakeup) {
+    w->needs_wakeup(o, fds);
+  }
+}
+
+int scheme_wait_on_waitable(Scheme_Object *o, int just_try)
+{
+  Waitable *w;
+
+  w = find_waitable(o);
+  if (w)
+    return block_on_waitable(w, o, just_try);
+  else
+    return 0;
+}
+
 typedef struct Waiting {
   MZTAG_IF_REQUIRED
   int argc;
@@ -2747,12 +2820,11 @@ static void waiting_needs_wakeup(Scheme_Object *s, void *fds)
   }
 }
 
-static Scheme_Object *object_wait(int argc, Scheme_Object *argv[])
+Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
 {
   Waitable *w, **ws, *qws[1];
   Waiting *waiting;
   Scheme_Object **args;
-  Scheme_Type t;
   int i;
   float timeout = -1.0;
   long start_time;
@@ -2782,44 +2854,19 @@ static Scheme_Object *object_wait(int argc, Scheme_Object *argv[])
 
   /* Find Waitable record for each argument: */
   for (i = 0; i < argc-1; i++) {
-    t = SCHEME_TYPE(argv[i+1]);
-    for (w = waitables; w; w = w->next) {
-      if (SAME_TYPE(t, w->wait_type)){
-	ws[i] = w;
-	if (w->filter) {
-	  Scheme_Wait_Filter_Fun filter;
-	  filter = w->filter;
-	  if (!filter(argv[i+1]))
-	    w = NULL;
-	}
-	break;
-      }
-    }
+    w = find_waitable(argv[i+1]);
     if (!w) {
       scheme_arg_mismatch("object-wait-multiple",
 			  "argument is not waitable: ",
 			  argv[i+1]);
     }
+    ws[i] = w;
   }
 
   /* Special case: one argument, no timeout */
   if ((argc == 2) && SCHEME_FALSEP(argv[0])) {
-    w = ws[0];
-    if (w->ready) {
-      scheme_block_until(w->ready, w->needs_wakeup, argv[1], 0.0);
-      return argv[1];
-    } else if (w->get_sema) {
-      int repost = 0;
-      Scheme_Wait_Sema_Fun get_sema = w->get_sema;
-      Scheme_Object *sema;
-
-      sema = get_sema(argv[1], &repost);
-      scheme_wait_sema(sema, 0);
-      if (repost)
-	scheme_post_sema(sema);
-
-      return argv[1];
-    }
+    block_on_waitable(ws[0], argv[1], 0);
+    return argv[1];
   }
 
   /* Normal case: wait for more than one thing */
@@ -2857,7 +2904,7 @@ static Scheme_Object *object_wait_break(int argc, Scheme_Object *argv[])
     return scheme_void;
   }
 
-  return scheme_call_enable_break(object_wait, argc, argv);
+  return scheme_call_enable_break(scheme_object_wait_multiple, argc, argv);
 }
 
 /*========================================================================*/

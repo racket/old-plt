@@ -1126,7 +1126,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   for (used = offset, i = start = 0; i < flen; i++) {
     if (format[i] == '~') {
       if (start < i) {
-	scheme_write_offset_string((char *)format, start, i - start, port);
+	(void)scheme_put_string(procname, port, format, start, i - start, 0);
       }
       i++;
       if (isspace(format[i])) {
@@ -1223,7 +1223,7 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
   SCHEME_USE_FUEL(flen);
 
   if (start < i) {
-    scheme_write_offset_string((char *)format, start, i - start, port);
+    (void)scheme_put_string(procname, port, (char *)format, start, i - start, 0);
   }
 }
 

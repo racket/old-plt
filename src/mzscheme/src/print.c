@@ -604,11 +604,7 @@ print_to_port(char *name, Scheme_Object *obj, Scheme_Object *port, int notdispla
 
   str = print_to_string(obj, &len, notdisplay, port, maxl, p, config);
 
-  {
-    Write_String_Fun f = op->write_string_fun;
-    f(str, 0, len, op);
-  }
-  op->pos += len;
+  scheme_write_string(str, len, port);
 }
 
 static void print_this_string(Scheme_Thread *p, const char *str, int offset, int autolen)
@@ -665,14 +661,8 @@ static void print_this_string(Scheme_Thread *p, const char *str, int offset, int
     }
   } else if (p->print_position > MAX_PRINT_BUFFER) {
     if (p->print_port) {
-      Scheme_Output_Port *op = (Scheme_Output_Port *)p->print_port;
-
       p->print_buffer[p->print_position] = 0;
-      {
-	Write_String_Fun f = op->write_string_fun;
-	f(p->print_buffer, 0, p->print_position, op);
-      }
-      op->pos += p->print_position;
+      scheme_write_string(p->print_buffer, p->print_position, p->print_port);
       
       p->print_position = 0;
     }

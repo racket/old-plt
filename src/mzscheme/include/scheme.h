@@ -863,7 +863,28 @@ typedef struct Scheme_Config {
 /*                                  ports                                 */
 /*========================================================================*/
 
-typedef struct Scheme_Input_Port
+typedef struct Scheme_Input_Port Scheme_Input_Port;
+typedef struct Scheme_Output_Port Scheme_Output_Port;
+
+typedef long (*Scheme_Get_String_Fun)(Scheme_Input_Port *port, 
+				      char *buffer, long offset, long size,
+				      int *nonblock, int *eof_on_error);
+typedef long (*Scheme_Peek_String_Fun)(Scheme_Input_Port *port, 
+				       char *buffer, long offset, long size,
+				       long skip,
+				       int *nonblock, int *eof_on_error);
+typedef int (*Scheme_In_Ready_Fun)(Scheme_Input_Port *port);
+typedef void (*Scheme_Close_Input_Fun)(Scheme_Input_Port *port);
+typedef void (*Scheme_Need_Wakeup_Input_Fun)(Scheme_Input_Port *, void *);
+
+typedef long (*Scheme_Write_String_Fun)(Scheme_Output_Port *,
+					const char *str, long offset, long size,
+					int rarely_block);
+typedef int (*Scheme_Out_Ready_Fun)(Scheme_Output_Port *port);
+typedef void (*Scheme_Close_Output_Fun)(Scheme_Output_Port *port);
+typedef void (*Scheme_Need_Wakeup_Output_Fun)(Scheme_Output_Port *, void *);
+
+struct Scheme_Input_Port
 {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -871,11 +892,11 @@ typedef struct Scheme_Input_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
-  int (*getc_fun) (struct Scheme_Input_Port *port, int *nonblock, int *eof_on_error);
-  int (*peekc_fun) (struct Scheme_Input_Port *port);
-  int (*char_ready_fun) (struct Scheme_Input_Port *port);
-  void (*close_fun) (struct Scheme_Input_Port *port);
-  void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
+  Scheme_Get_String_Fun get_string_fun;
+  Scheme_Peek_String_Fun peek_string_fun;
+  Scheme_In_Ready_Fun char_ready_fun;
+  Scheme_Close_Input_Fun close_fun;
+  Scheme_Need_Wakeup_Input_Fun need_wakeup_fun;
   Scheme_Object *read_handler;
   char *name;
   unsigned char *ungotten;
@@ -885,9 +906,9 @@ typedef struct Scheme_Input_Port
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
   struct Scheme_Output_Port *output_half;
-} Scheme_Input_Port;
+};
 
-typedef struct Scheme_Output_Port
+struct Scheme_Output_Port
 {
   Scheme_Type type;
   MZ_HASH_KEY_EX
@@ -895,16 +916,16 @@ typedef struct Scheme_Output_Port
   Scheme_Object *sub_type;
   Scheme_Custodian_Reference *mref;
   void *port_data;
-  void (*write_string_fun)(char *str, long d, long len, struct Scheme_Output_Port *);
-  void (*close_fun) (struct Scheme_Output_Port *);
-  int (*ready_fun) (struct Scheme_Output_Port *);
-  void (*need_wakeup_fun)(struct Scheme_Output_Port *, void *);
+  Scheme_Write_String_Fun write_string_fun;
+  Scheme_Close_Output_Fun close_fun;
+  Scheme_Out_Ready_Fun ready_fun;
+  Scheme_Need_Wakeup_Output_Fun need_wakeup_fun;
   long pos;
   Scheme_Object *display_handler;
   Scheme_Object *write_handler;
   Scheme_Object *print_handler;
   struct Scheme_Input_Port *input_half;
-} Scheme_Output_Port;
+};
 
 #define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
 #define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)

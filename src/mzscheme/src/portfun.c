@@ -287,12 +287,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
 						      "make-input-port", 
-						      3, 4), 
+						      4, 4), 
 			     env);
   scheme_add_global_constant("make-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
 						      "make-output-port", 
-						      2, 2), 
+						      4, 4), 
 			     env);
   
   scheme_add_global_constant("read", 
@@ -505,31 +505,40 @@ void scheme_init_port_fun_config(void)
 /*                          string input ports                            */
 /*========================================================================*/
 
-static int 
-string_getc (Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
+static long 
+string_get_string(Scheme_Input_Port *port, 
+		  char *buffer, long offset, long size,
+		  int *nonblock, int *eof_on_error)
 {
   Scheme_Indexed_String *is;
 
   is = (Scheme_Indexed_String *) port->port_data;
   if (is->index >= is->size)
-    return (EOF);
-  else
-    return (unsigned char)(is->string[is->index++]);
+    return EOF;
+  else {
+    long l;
+
+    if (is->index + size <= is->size)
+      l = size;
+    else
+      l = (is->size - is->index);
+      
+    memcpy(buffer + offset, is->string + is->index, l);
+    is->index += l;
+    
+    return l;
+  }
 }
 
 static int
 string_char_ready (Scheme_Input_Port *port)
 {
-  Scheme_Indexed_String *is;
-
-  is = (Scheme_Indexed_String *) port->port_data;
-  return (is->index < is->size);
+  return 1;
 }
 
 static void
 string_close_in (Scheme_Input_Port *port)
 {
-  return;
 }
 
 static Scheme_Indexed_String *
@@ -570,7 +579,7 @@ scheme_make_sized_string_input_port(const char *str, long len)
 
   ip = _scheme_make_input_port(scheme_string_input_port_type,
 			       make_indexed_string(str, len),
-			       string_getc,
+			       string_get_string,
 			       NULL,
 			       string_char_ready,
 			       string_close_in,
@@ -592,8 +601,10 @@ scheme_make_string_input_port(const char *str)
 /*                          string output ports                           */
 /*========================================================================*/
 
-static void
-string_write_string(char *str, long d, long len, Scheme_Output_Port *port)
+static long
+string_write_string(Scheme_Output_Port *port, 
+		    const char *str, long d, long len, 
+		    int rarely_block)
 {
   Scheme_Indexed_String *is;
 
@@ -619,6 +630,8 @@ string_write_string(char *str, long d, long len, Scheme_Output_Port *port)
   
   memcpy(is->string + is->index, str + d, len);
   is->index += len;
+
+  return len;
 }
 
 static void
@@ -635,8 +648,9 @@ scheme_make_string_output_port (void)
   op = scheme_make_output_port (scheme_string_output_port_type,
 				make_indexed_string(NULL, 0),
 				string_write_string,
+				NULL,
 				string_close_out,
-				NULL, NULL,
+				NULL,
 				0);
 
   return (Scheme_Object *)op;
@@ -683,121 +697,389 @@ scheme_get_string_output(Scheme_Object *port)
 /*                 "user" input ports (created from Scheme)               */
 /*========================================================================*/
 
-static int 
-user_getc (Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
-{
-  Scheme_Object *fun, *val;
-  int special_ok;
+typedef struct User_Input_Port {
+  Scheme_Object *waitable;
+  Scheme_Object *read_proc;
+  Scheme_Object *peek_proc;
+  Scheme_Object *close_proc;
+  Scheme_Object *peeked;
+  Scheme_Object *closed_sema;
+  int block_count;
+} User_Input_Port;
 
-  special_ok = scheme_special_ok;
+static long 
+user_get_or_peek_string(Scheme_Input_Port *port, 
+			char *buffer, long offset, long size,
+			int *nonblock, int *eof_on_error,
+			int peek, long peek_skip, int special_is_ok)
+{
+  Scheme_Object *fun, *val, *waitable, *a[3];
+  char *vb;
+  int special_ok;
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
+
+  special_ok = scheme_special_ok || special_is_ok;
   scheme_special_ok = 0;
 
-  fun = ((Scheme_Object **) port->port_data)[0];
+ try_again:
 
-  val = _scheme_apply(fun, 0, NULL);
+  val = uip->peeked;
+  if (SCHEME_TRUEP(val)) {
+    /* leftover from a peek used to implement `char-ready?' */
+    uip->peeked = scheme_false;
+    if (SCHEME_CHARP(val)) {
+      buffer[offset] = SCHEME_CHAR_VAL(val);
+      return 1;
+    } else if (SCHEME_VOIDP(val)) {
+      if (special_ok) {
+	return SCHEME_SPECIAL;
+      } else {
+	scheme_bad_time_for_special(peek ? "peek-char" : "read-char", (Scheme_Object *)port);
+      }
+    } else
+      return EOF;
+  }
+
+  if (eof_on_error) {
+    /* Can't guarantee behavior of Scheme code, so just quit
+       while we're ahead. */
+    *eof_on_error = 1;
+    return EOF;
+  }
+
+  waitable = uip->waitable;
+  if (SCHEME_TRUEP(waitable)) {
+    /* If we're going to block on the waitable, be prepared
+       for a close while we wait: */
+    uip->block_count++;
+    a[0] = nonblock ? scheme_make_integer(0) : scheme_false;
+    a[1] = waitable;
+    a[2] = uip->closed_sema;
+    val = scheme_object_wait_multiple(3, a);
+    --uip->block_count;
+
+    if (SAME_OBJ(val, waitable)) {
+      if (SCHEME_SEMAP(waitable))
+	scheme_post_sema(waitable);
+
+      /* Port may have been closed, or may have been peeked while we
+         were waiting: */
+      if (port->closed) {
+	/* Another thread closed the input port while we were waiting. */
+	/* Call scheme_getc to signal the error */
+	scheme_getc((Scheme_Object *)port);
+      }
+      if (SCHEME_TRUEP(uip->peeked))
+	goto try_again;
+    } else if (SCHEME_FALSEP(val)) {
+      *nonblock = 1;
+      return EOF;
+    } else {
+      /* Another thread closed the input port while we were waiting. */
+      /* Call scheme_getc to signal the error */
+      scheme_getc((Scheme_Object *)port);
+    }
+  }
+
+  if (peek)
+    fun = uip->peek_proc;
+  else
+    fun = uip->read_proc;
+
+  vb = scheme_malloc_atomic(size + 1);
+  a[1] = scheme_make_sized_string(vb, size, 0);
+  a[2] = scheme_make_integer(peek_skip);
+  val = scheme_apply(fun, peek ? 2 : 1, a);
 
   if (SCHEME_EOFP(val))
     return EOF;
   else {
-    if (!SCHEME_CHARP(val)) {
-      if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
+    int n;
+
+    if (!SCHEME_INTP(val) || (SCHEME_INT_VAL(val) < 0)) {
+      if (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val)) {
+	n = -1;
+      } else if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
 	if (special_ok) {
 	  port->special = val;
 	  return SCHEME_SPECIAL;
 	} else {
-	  scheme_bad_time_for_special("read-char", (Scheme_Object *)port);
+	  scheme_bad_time_for_special(peek ? "peek-char" : "read-char", (Scheme_Object *)port);
 	  return 0;
 	}
-      } else if (eof_on_error) {
-	*eof_on_error = 1;
-	return EOF;
       } else {
-	scheme_wrong_type("user port read-char", "character, eof, or procedure of arity 4", -1, -1, &val);
+	scheme_wrong_type(peek ? "user port peek-string" : "user port read-string", 
+			  "non-negative exact integer, eof, or procedure of arity 4", 
+			  -1, -1, &val);
+	return 0;
       }
+    } else
+      n = SCHEME_INT_VAL(val);
+
+    if ((n < 0) || (n > SCHEME_STRLEN_VAL(a[0]))) {
+      scheme_arg_mismatch(peek ? "user port peek-string" : "user port read-string",
+			  "result integer is larger than the supplied string: ",
+			  val);
     }
-    return (unsigned char)SCHEME_CHAR_VAL(val);
+
+    if (n) {
+      memcpy(buffer + offset, SCHEME_STR_VAL(a[0]), n);
+      return n;
+    } else {
+      if (nonblock) {
+	*nonblock = 1;
+	return EOF;
+      }
+      scheme_thread_block(0.0); /* penalty for inaccuracy? */
+      goto try_again;
+    }
   }
 }
 
-static int 
-user_peekc (Scheme_Input_Port *port)
+static long 
+user_get_string(Scheme_Input_Port *port, 
+		char *buffer, long offset, long size,
+		int *nonblock, int *eof_on_error)
 {
-  Scheme_Object *fun, *val;
-  int special_ok;
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 0, 0, 0);
+}
 
-  special_ok = scheme_special_ok;
-  scheme_special_ok = 0;
-
-  fun = ((Scheme_Object **) port->port_data)[3];
-  val = _scheme_apply(fun, 0, NULL);
-  if (SCHEME_EOFP(val))
-    return EOF;
-  else {
-    if (!SCHEME_CHARP(val)) {
-      if (scheme_check_proc_arity(NULL, 4, 0, 1, &val)) {
-	if (special_ok)
-	  return SCHEME_SPECIAL;
-	else
-	  scheme_bad_time_for_special("peek-char", (Scheme_Object *)port);
-      } else
-	scheme_wrong_type("user port peek-char", "character, eof, or procedure of arity 4", -1, -1, &val);
-      return 0;
-    }
-    return (unsigned char)SCHEME_CHAR_VAL(val);
-  }
+static long 
+user_peek_string(Scheme_Input_Port *port, 
+		 char *buffer, long offset, long size,
+		 long skip,
+		 int *nonblock, int *eof_on_error)
+{
+  return user_get_or_peek_string(port, buffer, offset, size, nonblock, eof_on_error, 1, skip, 0);
 }
 
 static int
 user_char_ready(Scheme_Input_Port *port)
 {
-  Scheme_Object *fun, *val;
+  int c, nonblock = 0;
+  char s[1];
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
-  fun = ((Scheme_Object **) port->port_data)[1];
-  val = _scheme_apply(fun, 0, NULL);
-  return SAME_OBJ(val, scheme_true);
+  /* We implement char-ready? by a non-blocking peeking for a single
+     character. If the port provides a precise waitable, it
+     effectively determines the result, because the peek function
+     checks the waitable. */
+
+  c = user_get_or_peek_string(port, s, 0, 1, &nonblock, NULL, 1, 0, 1);
+  if (c == EOF) {
+    if (!nonblock)
+      uip->peeked = scheme_true;
+    return !nonblock;
+  } else {
+    if (c == SCHEME_SPECIAL)
+      uip->peeked = scheme_void;
+    else
+      uip->peeked = scheme_make_character(c);
+    return 1;
+  }
+}
+
+static void
+user_needs_wakeup_input (Scheme_Input_Port *port, void *fds)
+{
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
+
+  if (SCHEME_TRUEP(uip->waitable)) {  
+    scheme_waitable_needs_wakeup(uip->waitable, fds);
+  }
 }
 
 static void
 user_close_input(Scheme_Input_Port *port)
 {
-  Scheme_Object *fun;
+  int v;
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
-  fun = ((Scheme_Object **) port->port_data)[2];
-  _scheme_apply_multi(fun, 0, NULL);
+  scheme_apply_multi(uip->close_proc, 0, NULL);
+
+  /* Wake up anyone who's blocked on the port.  We rely on the fact
+     that port_sema doesn't swap anything in (because port->closed
+     isn't set, yet. */
+  for (v = uip->block_count; v--;) {
+    scheme_post_sema(uip->closed_sema);
+  }
 }
 
 /*========================================================================*/
 /*                 "user" output ports (created from Scheme)              */
 /*========================================================================*/
 
-static void
-user_write(char *str, long d, long len, Scheme_Output_Port *port)
-{
-  Scheme_Object *fun, *p[1];
-  
-  p[0] = scheme_make_sized_offset_string(str, d, len, 1);
+typedef struct User_Output_Port {
+  Scheme_Object *waitable;
+  Scheme_Object *write_proc;
+  Scheme_Object *flush_proc;
+  Scheme_Object *close_proc;
+  Scheme_Object *closed_sema;
+  int block_count;
+} User_Output_Port;
 
-  fun = ((Scheme_Object **) port->port_data)[0];
-  _scheme_apply_multi(fun, 1, p);
+static int
+user_write_ready(Scheme_Output_Port *port)
+{
+  Scheme_Object *waitable;
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+
+  if (port->closed)
+    return 1;
+
+  waitable = uop->waitable;
+  if (SCHEME_TRUEP(waitable)) {
+    return scheme_wait_on_waitable(waitable, 1);
+  }
+
+  return 1;
+}
+
+static long
+user_write_string(Scheme_Output_Port *port, const char *str, long offset, long len, 
+		  int rarely_block)
+{
+  /* As always, rarely_block => flush, !len => flush,
+     rarely_block == 1 => len > 0 */
+  Scheme_Object *p[4], *to_write = NULL, *val;
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+
+ try_again:
+
+  if (!len && !rarely_block) {
+    /* Just a flush request */
+    scheme_apply_multi(uop->flush_proc, 0, NULL);
+    return 0;
+  } else {
+    if (!to_write)
+      to_write = scheme_make_sized_offset_string((char *)str, offset, len, 1);
+    p[0] = to_write;
+    SCHEME_SET_IMMUTABLE(p[0]);
+    p[1] = scheme_make_integer(0);
+    p[2] = scheme_make_integer(len);
+    p[4] = (rarely_block ? scheme_false : scheme_true);
+    
+    val = scheme_apply(uop->write_proc, 4, p);
+  }
+
+  if (SCHEME_FALSEP(val)) {
+    if (!rarely_block)
+      scheme_arg_mismatch("user port write-string",
+			  "bad result for blocking mode: ",
+			  val);
+    if (rarely_block == 2)
+      return -1;
+  } if (SCHEME_INTP(val) 
+      && (SCHEME_INT_VAL(val) >= 0)
+      && (SCHEME_INT_VAL(val) < len)) {
+    int n;
+
+    n = SCHEME_INT_VAL(val);
+    
+    if (!rarely_block && (n != len)) {
+      scheme_arg_mismatch("user port write-string",
+			  "result integer for blocking mode is not the "
+			  "length of the supplied string: ",
+			  val);
+    }
+
+    if (n || (rarely_block != 1))
+      return n;
+
+    /* In this case, no progress when we need to make some progress... */
+  } else {
+    if ((SCHEME_INTP(val) && SCHEME_INT_VAL(val) > 0)
+	&& (SCHEME_BIGNUMP(val) && SCHEME_BIGPOS(val))) {
+      scheme_arg_mismatch("user port write-string",
+			  "result integer is larger than the supplied string: ",
+			  val);
+    } else {
+      scheme_wrong_type("user port write-string",
+			"non-negative exact integer or #f", 
+			-1, -1, &val);
+    }
+    return 0;
+  }
+
+  /* Assert: rarely_block == 1, and we haven't written anything. */
+  {
+    Scheme_Object *waitable;
+
+    scheme_thread_block(0.0);
+
+    waitable = uop->waitable;
+    if (SCHEME_TRUEP(waitable)) {
+      /* We're going to block on the waitable, so be prepared
+	 for a close while we wait: */
+      uop->block_count++;
+      p[0] = scheme_false;
+      p[1] = waitable;
+      p[2] = uop->closed_sema;
+      val = scheme_object_wait_multiple(3, p);
+      --uop->block_count;
+
+      if (SAME_OBJ(val, waitable)) {
+	if (SCHEME_SEMAP(waitable))
+	  scheme_post_sema(waitable);
+      }
+
+      if (port->closed)
+	return 0;
+
+      /* Assert: SAME_OBJ(val, waitable) */
+    }
+
+    goto try_again;
+  }
+
+}
+
+static void
+user_needs_wakeup_output (Scheme_Output_Port *port, void *fds)
+{
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+
+  if (SCHEME_TRUEP(uop->waitable)) {  
+    scheme_waitable_needs_wakeup(uop->waitable, fds);
+  }
 }
 
 static void
 user_close_output (Scheme_Output_Port *port)
 {
-  Scheme_Object *fun;
+  User_Output_Port *uop = (User_Output_Port *)port->port_data;
+  int v;
 
-  fun = ((Scheme_Object **) port->port_data)[1];
-  _scheme_apply_multi(fun, 0, NULL);
+  scheme_apply_multi(uop->close_proc, 0, NULL);
+
+  /* Wake up anyone who's blocked on the port.  We rely on the fact
+     that port_sema doesn't swap anything in (because port->closed
+     isn't set, yet. */
+  for (v = uop->block_count; v--;) {
+    scheme_post_sema(uop->closed_sema);
+  }
 }
 
 /*========================================================================*/
 /*                               pipe ports                               */
 /*========================================================================*/
 
-static int pipe_getc(Scheme_Input_Port *p, int *nonblock, int *eof_on_error)
+static void pipe_did_read(Scheme_Pipe *pipe)
+{
+  while (SCHEME_PAIRP(pipe->wakeup_on_read)) {
+    Scheme_Object *sema;
+    sema = SCHEME_CAR(pipe->wakeup_on_read);
+    pipe->wakeup_on_read = SCHEME_CDR(pipe->wakeup_on_read);
+    scheme_post_sema(sema);
+  }
+}
+
+static long pipe_get_string(Scheme_Input_Port *p, 
+			   char *buffer, long offset, long size,
+			   int *nonblock, int *eof_on_error)
 {
   Scheme_Pipe *pipe;
-  int c;
+  long c;
 
   pipe = (Scheme_Pipe *)(p->port_data);
 
@@ -819,32 +1101,46 @@ static int pipe_getc(Scheme_Input_Port *p, int *nonblock, int *eof_on_error)
       /* Another thread closed the input port while we were waiting. */
       /* Call scheme_getc to signal the error */
       scheme_getc((Scheme_Object *)p);
+      return 0; /* doesn't get here */
     }
   }
   
   if (pipe->bufstart == pipe->bufend)
     c = EOF;
   else {
-    c = pipe->buf[pipe->bufstart];
-    pipe->bufstart = (pipe->bufstart + 1) % pipe->buflen;
+    c = 0;
+    if (pipe->bufstart > pipe->bufend) {
+      int n;
+      n = pipe->buflen - pipe->bufstart;
+      if (n > size)
+	n = size;
+      memcpy(buffer + offset, pipe->buf + pipe->bufstart, n);
+      pipe->bufstart += n;
+      if (pipe->bufstart == pipe->buflen)
+	pipe->bufstart = 0;
+      size -= n;
+      c += n;
+    }
+    if (pipe->bufstart < pipe->bufend) {
+      int n;
+      n = pipe->bufend - pipe->bufstart;
+      if (n > size)
+	n = size;
+      memcpy(buffer + offset, pipe->buf + pipe->bufstart, n);
+      pipe->bufstart += n;
+      size -= n;
+      c += n;
+    }
   }
 
-  scheme_pipe_did_read(pipe);
+  pipe_did_read(pipe);
 
   return c;
 }
 
-void scheme_pipe_did_read(Scheme_Pipe *pipe)
-{
-  while (SCHEME_PAIRP(pipe->wakeup_on_read)) {
-    Scheme_Object *sema;
-    sema = SCHEME_CAR(pipe->wakeup_on_read);
-    pipe->wakeup_on_read = SCHEME_CDR(pipe->wakeup_on_read);
-    scheme_post_sema(sema);
-  }
-}
-
-int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int nonblock)
+static long pipe_write_string(Scheme_Output_Port *p, 
+			      const char *str, long d, long len, 
+			      int rarely_block)
 {
   Scheme_Pipe *pipe;
   long avail, firstpos, firstn, secondn, endpos;
@@ -875,14 +1171,14 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
       Scheme_Object *my_sema;
 
       /* First, write as much as seems immediately possible. */
-      xavail = scheme_pipe_write(str, d, xavail, p, nonblock);
+      xavail = pipe_write_string(p, str, d, xavail, rarely_block);
       wrote += xavail;
       d += xavail;
       len -= xavail;
 
       /* For non-blocking mode, that might be good enough.
-	 nonblock == 2 means that even nothing is good enough. */
-      if ((nonblock && wrote) || (nonblock == 2))
+	 rarely_block == 2 means that even nothing is good enough. */
+      if ((rarely_block && wrote) || (rarely_block == 2))
 	return wrote;
 
       /* Now, wait until we can write more, then start over. */
@@ -892,7 +1188,7 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
 	} else {
 	  avail = pipe->bufstart - pipe->bufend - 1;
 	}
-	if (avail || pipe->eof)
+	if (avail || pipe->eof || p->closed)
 	  goto try_again;
 
 	my_sema = scheme_make_sema(0);
@@ -964,11 +1260,6 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
   return len + wrote;
 }
 
-static void pipe_write(char *str, long d, long len, Scheme_Output_Port *p)
-{
-  scheme_pipe_write(str, d, len, p, 0);
-}
-
 static int pipe_char_ready(Scheme_Input_Port *p)
 {
   Scheme_Pipe *pipe;
@@ -989,7 +1280,7 @@ static void pipe_in_close(Scheme_Input_Port *p)
   
   pipe->eof = 1;
 
-  scheme_pipe_did_read(pipe);
+  pipe_did_read(pipe);
 }
 
 static void pipe_out_close(Scheme_Output_Port *p)
@@ -999,6 +1290,9 @@ static void pipe_out_close(Scheme_Output_Port *p)
   pipe = (Scheme_Pipe *)(p->port_data);
   
   pipe->eof = 1;
+
+  /* to wake up any other threads blocked on pipe output: */
+  pipe_did_read(pipe);
 }
 
 static int pipe_out_ready(Scheme_Output_Port *p)
@@ -1045,7 +1339,7 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
 
   readp = _scheme_make_input_port(scheme_pipe_read_port_type,
 				  (void *)pipe,
-				  pipe_getc,
+				  pipe_get_string,
 				  NULL,
 				  pipe_char_ready,
 				  pipe_in_close,
@@ -1056,9 +1350,9 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
 
   writep = scheme_make_output_port(scheme_pipe_write_port_type,
 				   (void *)pipe,
-				   pipe_write,
-				   pipe_out_close,
+				   pipe_write_string,
 				   pipe_out_ready,
+				   pipe_out_close,
 				   NULL,
 				   0);
 
@@ -1137,28 +1431,37 @@ static Scheme_Object *
 make_input_port(int argc, Scheme_Object *argv[])
 {
   Scheme_Input_Port *ip;
-  Scheme_Object **copy;
+  User_Input_Port *uip;
+  Scheme_Object *s;
 
-  scheme_check_proc_arity("make-input-port", 0, 0, argc, argv);
-  scheme_check_proc_arity("make-input-port", 0, 1, argc, argv);
-  scheme_check_proc_arity("make-input-port", 0, 2, argc, argv);
-  if ((argc > 3) && SCHEME_TRUEP(argv[3])) {
-    if (!scheme_check_proc_arity(NULL, 0, 3, argc, argv))
-      scheme_wrong_type("make-input-port", "procedure (arity 0) or #f", 3, argc, argv);
+  if (!SCHEME_FALSEP(argv[0]) && !scheme_is_waitable(argv[0]))
+    scheme_wrong_type("make-input-port", "waitable or #f", 0, argc, argv);
+  scheme_check_proc_arity("make-input-port", 1, 1, argc, argv);
+  if (SCHEME_TRUEP(argv[2])) {
+    if (!scheme_check_proc_arity(NULL, 2, 2, argc, argv))
+      scheme_wrong_type("make-input-port", "procedure (arity 2) or #f", 2, argc, argv);
   }
+  scheme_check_proc_arity("make-input-port", 0, 3, argc, argv);
   
-  copy = MALLOC_N(Scheme_Object *, argc);
-  memcpy(copy, argv, argc * sizeof(Scheme_Object *));
+  uip = MALLOC_ONE_RT(User_Input_Port);
+
+  uip->waitable = argv[0];
+  uip->read_proc = argv[1];
+  uip->peek_proc = argv[2];
+  uip->close_proc = argv[3];
+  s = scheme_make_sema(0);
+  uip->closed_sema = s;
+  uip->block_count = 0;
 
   ip = _scheme_make_input_port(scheme_user_input_port_type,
-			       copy,
-			       user_getc,
-			       (((argc > 3) && SCHEME_TRUEP(argv[3]))
-				? user_peekc 
+			       uip,
+			       user_get_string,
+			       (SCHEME_TRUEP(uip->peek_proc)
+				? user_peek_string
 				: NULL),
 			       user_char_ready,
 			       user_close_input,
-			       NULL,
+			       user_needs_wakeup_input,
 			       0);
 
   ip->name = "USERPORT";
@@ -1170,20 +1473,31 @@ static Scheme_Object *
 make_output_port (int argc, Scheme_Object *argv[])
 {
   Scheme_Output_Port *op;
-  Scheme_Object **copy;
+  User_Output_Port *uop;
+  Scheme_Object *s;
 
-  scheme_check_proc_arity("make-output-port", 1, 0, argc, argv);
+  if (!SCHEME_FALSEP(argv[0]) && !scheme_is_waitable(argv[0]))
+    scheme_wrong_type("make-output-port", "waitable or #f", 0, argc, argv);
   scheme_check_proc_arity("make-output-port", 0, 1, argc, argv);
+  scheme_check_proc_arity("make-output-port", 4, 2, argc, argv);
+  scheme_check_proc_arity("make-output-port", 0, 3, argc, argv);
 
-  copy = MALLOC_N(Scheme_Object *, 2);
-  memcpy(copy, argv, 2 * sizeof(Scheme_Object *));
+  uop = MALLOC_ONE_RT(User_Output_Port);
+
+  uop->waitable = argv[0];
+  uop->write_proc = argv[1];
+  uop->flush_proc = argv[2];
+  uop->close_proc = argv[3];
+  s = scheme_make_sema(0);
+  uop->closed_sema = s;
+  uop->block_count = 0;
 
   op = scheme_make_output_port(scheme_user_output_port_type,
-			       copy,
-			       user_write,
+			       uop,
+			       user_write_string,
+			       user_write_ready,
 			       user_close_output,
-			       NULL,
-			       NULL,
+			       user_needs_wakeup_output,
 			       0);
 
   return (Scheme_Object *)op;
@@ -1932,14 +2246,9 @@ display_write(char *name,
     if (!((Scheme_Output_Port *)port)->display_handler) {
       Scheme_Object *v = argv[0];
       if (SCHEME_STRINGP(v)) {
-	Scheme_Output_Port *op = (Scheme_Output_Port *)port;
-	int len = SCHEME_STRTAG_VAL(v);
-	CHECK_PORT_CLOSED(name, "output", port, op->closed);
-	{
-	  Write_String_Fun f = op->write_string_fun;
-	  f(SCHEME_STR_VAL(v), 0, len, op);
-	}
-	op->pos += len;
+	scheme_put_string(name, port,
+			  SCHEME_STR_VAL(v), 0, SCHEME_STRLEN_VAL(v),
+			  0);
       } else
 	scheme_internal_display(v, port, config);
     } else {
@@ -2010,7 +2319,7 @@ newline (int argc, Scheme_Object *argv[])
   else
     port = CURRENT_OUTPUT_PORT(scheme_config);
   
-  scheme_write_offset_string("\n", 0, 1, port);
+  (void)scheme_put_string("newline", port, "\n", 0, 1, 0);
 
   return scheme_void;
 }
@@ -2019,7 +2328,6 @@ static Scheme_Object *
 write_char (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *port;
-  Scheme_Output_Port *op;
   unsigned char buffer[1];
 
   if (argc && !SCHEME_CHARP(argv[0]))
@@ -2033,14 +2341,9 @@ write_char (int argc, Scheme_Object *argv[])
 
   buffer[0] = SCHEME_CHAR_VAL(argv[0]);
 
-  op = (Scheme_Output_Port *)port;
-
-  CHECK_PORT_CLOSED("write-char", "output", port, op->closed);
-  {
-    Write_String_Fun f = op->write_string_fun;
-    f((char *)buffer, 0, 1, op);
-  }
-  op->pos++;
+  scheme_put_string("write-char", port,
+		    buffer, 0, 1,
+		    0);
 
   return scheme_void;
 }

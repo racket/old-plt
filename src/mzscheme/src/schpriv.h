@@ -1859,9 +1859,6 @@ Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_file_buffer(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_write_string_avail(int argc, Scheme_Object *argv[]);
 
-int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int nonblock);
-void scheme_pipe_did_read(Scheme_Pipe *pipe);
-
 #ifdef USE_TCP
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
@@ -1872,21 +1869,13 @@ Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, 
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);
 extern int scheme_special_ok;
 
-typedef int (*Getc_Fun)(struct Scheme_Input_Port *port, int *nonblock, int *eof_on_error);
-typedef int (*Peekc_Fun)(struct Scheme_Input_Port *port);
-typedef int (*Char_Ready_Fun)(struct Scheme_Input_Port *port);
-typedef void (*Close_Fun_i)(struct Scheme_Input_Port *port);
-typedef void (*Need_Wakeup_Fun)(struct Scheme_Input_Port *, void *);
-typedef int (*Out_Ready_Fun)(struct Scheme_Output_Port *port);
-typedef void (*Need_Output_Wakeup_Fun)(struct Scheme_Output_Port *, void *);
-
 Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 					   void *data,
-					   Getc_Fun getc_fun,
-					   Peekc_Fun peekc_fun,
-					   Char_Ready_Fun char_ready_fun,
-					   Close_Fun_i close_fun,
-					   Need_Wakeup_Fun need_wakeup_fun,
+					   Scheme_Get_String_Fun get_string_fun,
+					   Scheme_Peek_String_Fun peek_string_fun,
+					   Scheme_In_Ready_Fun char_ready_fun,
+					   Scheme_Close_Input_Fun close_fun,
+					   Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 					   int must_close);
 
 #define CURRENT_INPUT_PORT(config) scheme_get_param(config, MZCONFIG_INPUT_PORT)
@@ -1898,9 +1887,6 @@ Scheme_Input_Port *_scheme_make_input_port(Scheme_Object *subtype,
 #else
 # define MZ_NONBLOCKING FNDELAY
 #endif
-
-typedef void (*Write_String_Fun)(char *str, long d, long len, struct Scheme_Output_Port *);
-typedef void (*Close_Fun_o)(struct Scheme_Output_Port *);
 
 /*========================================================================*/
 /*                         memory debugging                               */

@@ -1047,7 +1047,9 @@ static int tcp_char_ready (Scheme_Input_Port *port)
   return 0;
 }
 
-static int tcp_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_err)
+static long tcp_get_string(Scheme_Input_Port *port, 
+			   char *buffer, long offset, long size,
+			   int *nonblock, int *eof_on_err)
 {
   int errid;
   Scheme_Tcp *data;
@@ -1064,9 +1066,18 @@ static int tcp_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_err)
 #ifdef USE_MAC_TCP
   if (!data->activeRcv)
 #endif
-    if (data->b.bufpos < data->b.bufmax)
-      /* NOTE: this fast path is also inlined in scheme_get_chars */
-      return (unsigned char)data->b.buffer[data->b.bufpos++];
+    if (data->b.bufpos < data->b.bufmax) {
+      int n;
+      n = data->b.bufmax - data->b.bufpos;
+      n = ((size <= n)
+	   ? size
+	   : n);
+      
+      memcpy(buffer + offset, data->b.buffer + data->b.bufpos, n);
+      data->b.bufpos += n;
+
+      return n;
+    }
 
   if (!tcp_char_ready(port)) {
     if (nonblock) {
@@ -1180,9 +1191,16 @@ static int tcp_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_err)
     return EOF;
   }
 
-  data->b.bufpos = 1;
-    
-  return (unsigned char)data->b.buffer[0];
+  {
+    int n;
+    n = data->b.bufmax;
+    if (size < n)
+      n = size;
+    memcpy(buffer + offset, data->b.buffer, n);
+    data->b.bufpos = n;
+
+    return n;
+  }
 }
 
 static void tcp_need_wakeup(Scheme_Input_Port *port, void *fds)
@@ -1228,11 +1246,9 @@ static void tcp_close_input(Scheme_Input_Port *port)
   --scheme_file_open_count;
 }
 
-/* forward decls: */
-static void tcp_write_string(char *s, long d, long len, Scheme_Output_Port *port);
-static void tcp_close_output(Scheme_Output_Port *port);
-
-int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port)
+static long tcp_write_string(Scheme_Output_Port *port, 
+			     const char *s, long len, long offset,
+			     int rarely_block)
 {
   /* TCP writes aren't buffered at all right now. */
   /* If rarely_block is 1, it means only write as much as
@@ -1243,10 +1259,10 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 
   Scheme_Tcp *data;
   int errid, would_block = 0;
-  int sent;
+  long sent;
 
-  if (!len)
-    return 0;
+  if (!len) /* a flush request */
+    return 0; 
 
   data = (Scheme_Tcp *)port->port_data;
 
@@ -1279,15 +1295,15 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
       if (rarely_block)
 	return sent;
       else
-	scheme_tcp_write_nb_string(s, len - sent, offset + sent, rarely_block, port);
+	tcp_write_string(port, s, len - sent, offset + sent, rarely_block);
       errid = 0;
     } else if ((len > 1) && SEND_BAD_MSG_SIZE(errid)) {
       /* split the message and try again: */
       int half = (len / 2);
-      sent = scheme_tcp_write_nb_string(s, half, offset, rarely_block, port);
+      sent = tcp_write_string(port, s, half, offset, rarely_block);
       if (rarely_block)
 	return sent;
-      sent = scheme_tcp_write_nb_string(s, len - half, offset + half, 0, port);
+      sent = tcp_write_string(port, s, len - half, offset + half, 0);
       sent += half;
       errid = 0;
     } else if (SEND_WOULD_BLOCK(errid)) {
@@ -1381,10 +1397,10 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
     } else if (!errid) {
       if (bytes) {
       	/* Do partial write: */
-        sent = scheme_tcp_write_nb_string(s, bytes, offset, rarely_block, port);
+        sent = tcp_write_string(port, s, bytes, offset, rarely_block);
 	if (rarely_block)
 	  return sent;
-        sent = scheme_tcp_write_nb_string(s, len - bytes, offset + bytes, 0, port);
+        sent = tcp_write_string(port, s, len - bytes, offset + bytes, 0);
 	sent += bytes;
       } else
         would_block = 1;
@@ -1403,7 +1419,7 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
     /* Closed while blocking? */
     if (((Scheme_Output_Port *)port)->closed) {
       /* Call write again to signal the error: */
-      scheme_write_offset_string(s, offset, len, (Scheme_Object *)port);
+      scheme_put_string("tcp-write-string", (Scheme_Object *)port, s, offset, len, 0);
       return sent + len; /* shouldn't get here */
     }
 
@@ -1419,11 +1435,6 @@ int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block,
 		     errid);
 
   return sent;
-}
-
-static void tcp_write_string(char *s, long d, long len, Scheme_Output_Port *port)
-{
-  scheme_tcp_write_nb_string(s, len, d, 0, port);
 }
 
 static void tcp_close_output(Scheme_Output_Port *port)
@@ -1461,7 +1472,7 @@ make_named_tcp_input_port(void *data, const char *name)
 
   ip = _scheme_make_input_port(scheme_tcp_input_port_type,
 			       data,
-			       tcp_getc,
+			       tcp_get_string,
 			       NULL,
 			       tcp_char_ready,
 			       tcp_close_input,
@@ -1479,9 +1490,9 @@ make_tcp_output_port(void *data)
   return (Scheme_Object *)scheme_make_output_port(scheme_tcp_output_port_type,
 						  data,
 						  tcp_write_string,
+						  (Scheme_Out_Ready_Fun)tcp_check_write,
 						  tcp_close_output,
-						  (Out_Ready_Fun)tcp_check_write,
-						  (Need_Output_Wakeup_Fun)tcp_write_needs_wakeup,
+						  (Scheme_Need_Wakeup_Output_Fun)tcp_write_needs_wakeup,
 						  1);
 }
 

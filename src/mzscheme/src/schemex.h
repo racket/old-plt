@@ -91,6 +91,10 @@ void (*scheme_add_waitable)(Scheme_Type type,
 void (*scheme_add_waitable_through_sema)(Scheme_Type type,
 						Scheme_Wait_Sema_Fun sema, 
 						Scheme_Wait_Filter_Fun filter);
+int (*scheme_is_waitable)(Scheme_Object *o);
+int (*scheme_wait_on_waitable)(Scheme_Object *o, int just_try);
+void (*scheme_waitable_needs_wakeup)(Scheme_Object *o, void *fds);
+Scheme_Object *(*scheme_object_wait_multiple)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
 /*========================================================================*/
 /*                              error handling                            */
@@ -344,7 +348,9 @@ void (*scheme_display)(Scheme_Object *obj, Scheme_Object *port);
 void (*scheme_write_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
 void (*scheme_display_w_max)(Scheme_Object *obj, Scheme_Object *port, long maxl);
 void (*scheme_write_string)(const char *str, long len, Scheme_Object *port);
-void (*scheme_write_offset_string)(const char *str, long d, long len, Scheme_Object *port);
+long (*scheme_put_string)(const char *who, Scheme_Object *port,
+				 const char *str, long d, long len,
+				 int rarely_block);
 char *(*scheme_write_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_display_to_string)(Scheme_Object *obj, long *len);
 char *(*scheme_write_to_string_w_max)(Scheme_Object *obj, long *len, long maxl);
@@ -361,6 +367,11 @@ void (*scheme_ungetc)(int ch, Scheme_Object *port);
 int (*scheme_char_ready)(Scheme_Object *port);
 int (*scheme_peekc_is_ungetc)(Scheme_Object *port);
 void (*scheme_need_wakeup)(Scheme_Object *port, void *fds);
+long (*scheme_get_string)(const char *who,
+				 Scheme_Object *port, 
+				 char *buffer, long offset, long size,
+				 int only_avail, 
+				 int peek, long peek_skip);
 long (*scheme_get_chars)(Scheme_Object *port, long size, char *buffer, int offset);
 long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);
@@ -369,21 +380,20 @@ long (*scheme_tell_column)(Scheme_Object *port);
 void (*scheme_count_lines)(Scheme_Object *port);
 void (*scheme_close_input_port)(Scheme_Object *port);
 void (*scheme_close_output_port)(Scheme_Object *port);
-int (*scheme_are_all_chars_ready)(Scheme_Object *port);
 Scheme_Object *(*scheme_make_port_type)(const char *name);
 Scheme_Input_Port *(*scheme_make_input_port)(Scheme_Object *subtype, void *data,
-						    int (*getc_fun)(Scheme_Input_Port*, int*, int*),
-						    int (*peekc_fun)(Scheme_Input_Port*),
-						    int (*char_ready_fun)(Scheme_Input_Port*),
-						    void (*close_fun)(Scheme_Input_Port*),
-						    void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+						    Scheme_Get_String_Fun get_string_fun,
+						    Scheme_Peek_String_Fun peek_string_fun,
+						    Scheme_In_Ready_Fun char_ready_fun,
+						    Scheme_Close_Input_Fun close_fun,
+						    Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 						    int must_close);
 Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype,
 						      void *data,
-						      void (*write_string_fun)(char*, long, long, Scheme_Output_Port*),
-						      void (*close_fun)(Scheme_Output_Port*),
-						      int (*ready_fun)(Scheme_Output_Port*),
-						      void (*need_wakeup_fun)(Scheme_Output_Port*, void *),
+						      Scheme_Write_String_Fun write_string_fun,
+						      Scheme_Out_Ready_Fun ready_fun,
+						      Scheme_Close_Output_Fun close_fun,
+						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
 						      int must_close);
 Scheme_Object *(*scheme_make_file_input_port)(FILE *fp);
 Scheme_Object *(*scheme_make_named_file_input_port)(FILE *fp, const char *filename);

@@ -45,6 +45,10 @@
   scheme_extension_table->scheme_add_atexit_closer = scheme_add_atexit_closer;
   scheme_extension_table->scheme_add_waitable = scheme_add_waitable;
   scheme_extension_table->scheme_add_waitable_through_sema = scheme_add_waitable_through_sema;
+  scheme_extension_table->scheme_is_waitable = scheme_is_waitable;
+  scheme_extension_table->scheme_wait_on_waitable = scheme_wait_on_waitable;
+  scheme_extension_table->scheme_waitable_needs_wakeup = scheme_waitable_needs_wakeup;
+  scheme_extension_table->scheme_object_wait_multiple = scheme_object_wait_multiple;
   scheme_extension_table->scheme_add_swap_callback = scheme_add_swap_callback;
   scheme_extension_table->scheme_signal_error = scheme_signal_error;
   scheme_extension_table->scheme_raise_exn = scheme_raise_exn;
@@ -225,7 +229,7 @@
   scheme_extension_table->scheme_write_w_max = scheme_write_w_max;
   scheme_extension_table->scheme_display_w_max = scheme_display_w_max;
   scheme_extension_table->scheme_write_string = scheme_write_string;
-  scheme_extension_table->scheme_write_offset_string = scheme_write_offset_string;
+  scheme_extension_table->scheme_put_string = scheme_put_string;
   scheme_extension_table->scheme_write_to_string = scheme_write_to_string;
   scheme_extension_table->scheme_display_to_string = scheme_display_to_string;
   scheme_extension_table->scheme_write_to_string_w_max = scheme_write_to_string_w_max;
@@ -242,6 +246,7 @@
   scheme_extension_table->scheme_char_ready = scheme_char_ready;
   scheme_extension_table->scheme_peekc_is_ungetc = scheme_peekc_is_ungetc;
   scheme_extension_table->scheme_need_wakeup = scheme_need_wakeup;
+  scheme_extension_table->scheme_get_string = scheme_get_string;
   scheme_extension_table->scheme_get_chars = scheme_get_chars;
   scheme_extension_table->scheme_tell = scheme_tell;
   scheme_extension_table->scheme_output_tell = scheme_output_tell;
@@ -250,7 +255,6 @@
   scheme_extension_table->scheme_count_lines = scheme_count_lines;
   scheme_extension_table->scheme_close_input_port = scheme_close_input_port;
   scheme_extension_table->scheme_close_output_port = scheme_close_output_port;
-  scheme_extension_table->scheme_are_all_chars_ready = scheme_are_all_chars_ready;
   scheme_extension_table->scheme_make_port_type = scheme_make_port_type;
   scheme_extension_table->scheme_make_input_port = scheme_make_input_port;
   scheme_extension_table->scheme_make_output_port = scheme_make_output_port;

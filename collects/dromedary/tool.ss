@@ -182,6 +182,7 @@
 	  (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list "Dromedary"))
           (define/public (get-language-name) "Dromedary")
+          (define/public (get-language-url) #f)
           (define/public (get-language-numbers) (list 10))
           (define/public (get-teachpack-names) null)
           (define/public (marshall-settings x) x)

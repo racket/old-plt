@@ -22,7 +22,7 @@ class wxBorderArea: public wxArea
 	wxBorderArea(wxWindow* parentWindow, int margin = 1,
 		     Direction direction = wxAll,
 		     int whitespace = 0,
-		     Bool te_border = 0);
+		     int te_border = 0);
 	~wxBorderArea(void); 
 
 	wxRectBorder* cBorder;

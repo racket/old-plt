@@ -139,7 +139,7 @@ void wxCanvas::InitDefaults(void)
   if (cStyle & wxCONTROL_BORDER) {
     int direction = wxAll;
 
-    canvas_border = new wxBorderArea(this, 3, direction, 0, TRUE);
+    canvas_border = new wxBorderArea(this, 3, direction, 0, (cStyle & wxCOMBO_SIDE) ? 2 : 1);
   }
 
   if (!(cStyle & wxFLAT)) {

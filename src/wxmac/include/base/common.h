@@ -94,6 +94,7 @@ typedef short int WXTYPE;
 #define wxCONTROL_BORDER   0x00080000
 #define wxTRANSPARENT_WIN  0x00100000
 #define wxRESIZE_CORNER    0x00200000
+#define wxCOMBO_SIDE       0x00400000
 
 # define wxFLAT            0x00000100
 

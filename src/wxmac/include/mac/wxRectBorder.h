@@ -23,6 +23,7 @@ class wxRectBorder: public wxBorder
 private:
 	int cWhitespace; // white border interior width
 	int cPaintFocus;
+	int cTEBorder;
 
 //=============================================================================
 // Public constructors
@@ -35,7 +36,7 @@ public:
 		int			margin = 1,
 		Direction	direction = wxAll,
 		int			whitespace = 0,
-	        Bool            te_border = 0,
+	        int            te_border = 0,
 		char*		windowName = "RectBorder",
 		int 		x = -1,
 		int			y = -1,

@@ -12,6 +12,8 @@
 #include "wxMacDC.h"
 #include "wx_area.h"
 
+#define SIDE_COMBO_WIDTH 18
+
 //=============================================================================
 // Public constructors
 //=============================================================================
@@ -23,7 +25,7 @@ wxRectBorder::wxRectBorder // Constructor (given parentArea)
  int			margin,
  Direction	direction,
  int         whitespace,
- Bool        te_border,
+ int        te_border,
  char*		windowName,
  int 		x,
  int			y,
@@ -38,7 +40,11 @@ wxRectBorder::wxRectBorder // Constructor (given parentArea)
   parentArea->SetMargin(margin, direction);
   if (te_border) {
     cPaintFocus = -1;
+    if (te_border == 2) {
+      parentArea->SetMargin(margin + SIDE_COMBO_WIDTH, wxRight);
+    }
   }
+  cTEBorder = te_border;
   CreatePaintControl(margin);
 }
 
@@ -80,11 +86,30 @@ void wxRectBorder::Paint(void)
 
     if (cPaintFocus) {
       InsetRect(&clientRect, 2, 2);
+      if (cTEBorder == 2)
+	clientRect.right -= SIDE_COMBO_WIDTH;
+
       // if (cPaintFocus < 0)
       // DrawThemeFocusRect (&clientRect, FALSE);
       DrawThemeEditTextFrame(&clientRect, disabled ? kThemeStateInactive : kThemeStateActive);
       if (cPaintFocus > 0)
 	DrawThemeFocusRect (&clientRect, TRUE);
+      if (cTEBorder == 2) {
+	ThemeButtonDrawInfo info;
+	Rect r;
+	
+	r = clientRect;
+	r.left = r.right + 1;
+	r.right = r.left + SIDE_COMBO_WIDTH + 1;
+	r.top--;
+	info.state = ((cEnable && cActive && !internal_gray) ? kThemeStateActive : kThemeStateInactive);
+	info.value = kThemeButtonOff;
+	info.adornment = kThemeAdornmentNone;
+	
+	DrawThemeButton(&r, kThemePopupButton,
+			&info, NULL,
+			NULL, NULL, 0);
+      }
     } else {
       RGBColor c;
 

@@ -29,7 +29,6 @@
 
 // ATL support
 
-#define _ATL_NO_DOCHOSTUIHANDLER /* no context menu */
 #include <atlbase.h>
 extern CComModule _Module;
 #include <atlcom.h>
@@ -4357,7 +4356,7 @@ static BOOL win_event_available(void *) {
   MSG msg;
 
   return (PeekMessage(&msg,NULL,0x400,0x400,PM_NOREMOVE) ||
-	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
+  	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
 }
 
 static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {

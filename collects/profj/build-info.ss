@@ -351,7 +351,7 @@
                                     (process-members members old-methods cname type-recs level))))
                    
                    (unless (has-ctor? m)
-                     (when (eq? level 'beginner)
+                     (when (and (eq? level 'beginner) (not (memq 'abstract test-mods)))
                        (beginner-ctor-error (header-id info) (id-src (header-id info))))
                      (add-ctor class (lambda (rec) (set! m (cons rec m))) old-methods (header-id info) level))
                    
@@ -738,7 +738,6 @@
                        (var-init? field)
                        cname 
                        (type-spec-to-type (field-type field) level type-recs)))
-
                   
   ;; process-method: method (list method-record) (list string) type-records symbol -> method-record  
   (define (process-method method inherited-methods cname type-recs level . args)
@@ -925,7 +924,8 @@
     (make-valid-mods
      (lambda (level)
        (case level
-         ((beginner intermediate) '(private final))
+         ((beginner) '(public final))
+         ((intermediate) '(private))
          ((advanced) '(public protected private static))
          ((full) `(public protected private static final transient volatile))))
      (lambda (x) 'invalid-field)))  

@@ -159,10 +159,16 @@
        [(MethodDeclaration) $1])
       
       ;; 19.8.2
+      ;Changed for TeachJava
       (FieldDeclaration
        [(Type VariableDeclaratorId SEMI_COLON)
-        (build-field-decl (list (make-modifier 'private #f)
-                                (make-modifier 'final #f)) $1 $2)])
+        (build-field-decl (list (make-modifier 'public #f)) $1 $2)])
+;                                (make-modifier 'final #f)) $1 $2)])
+
+      (InteractFieldDeclaration
+       [(Type VariableDeclaratorId = Expression SEMI_COLON)
+        (build-field-decl (list (make-modifier 'public #f)) $1 
+                          (make-var-init $2 $4 (build-src 2 4)))])
       
       (VariableDeclaratorId
        [(IDENTIFIER)
@@ -231,7 +237,8 @@
       
       (BeginnerInteractions
        [(Statement) $1]
-       [(Expression) $1])
+       [(Expression) $1]
+       [(InteractFieldDeclaration) $1])
       
       (Statement
        [(StatementWithoutTrailingSubstatement) $1]

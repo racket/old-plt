@@ -1438,7 +1438,7 @@
                (create-syntax #f 
                               `(if (null? ,expression)
                                    (javaRuntime:nullError 'method)
-                                   (send expression ,c-name ,@args))
+                                   (send ,expression ,c-name ,@args))
                               (build-src src)))))
           
         ;Normal case
@@ -1471,7 +1471,7 @@
                    (create-syntax #f
                                   `(if (null? ,expression)
                                        (javaRuntime:nullError 'method)
-                                       (send expression ,name ,@args))
+                                       (send ,expression ,name ,@args))
                                   (build-src src)))))))))
         
         (else (error 'translate-call (format "Translate call given ~s as method-name" method-name))))))

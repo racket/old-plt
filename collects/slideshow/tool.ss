@@ -363,43 +363,48 @@ pict snip :
               [(send evt button-down? 'right)
                (let-values ([(pos text) (get-pos/text evt)])
                  (if (and pos text)
-                     (show-menu evt text pos)
+                     (unless (show-menu evt text pos)
+                       (super-on-event evt))
                      (super-on-event evt)))]
               [else
                (super-on-event evt)]))
           
+          ;; show-menu : ... -> boolean
+          ;; result indicates if a menu was shown
           (define/private (show-menu evt text pos)
             (let ([frame (let ([canvas (get-canvas)])
                            (and canvas
                                 (send canvas get-top-level-window)))])
-              (when frame
-                (let ([admin (send text get-admin)]
-                      [menu (new popup-menu%)]
-                      [show? #f])
-                  (let* ([frozen-mouse-picts-key (cons text pos)]
-                         [picts-ht (hash-table-get all-picts-ht frozen-mouse-picts-key (lambda () #f))])
-                    (when picts-ht
-                      (let ([picts (get-all-ps-from-ht picts-ht)])
-                        (set! show? #t)
-                        (new menu-item%
-                             (label sc-freeze-picts)
-                             (parent menu)
-                             (callback
-                              (lambda (x y)
-                                (send frame slideshow:set-permanent-picts picts)))))))
-                  (when (send frame slideshow:has-permanent-picts?)
-                    (new menu-item%
-                         (label sc-thaw-picts)
-                         (parent menu)
-                         (callback
-                          (lambda (x y)
-                            (send frame slideshow:set-permanent-picts #f))))
-                    (set! show? #t))
-                  (when show?
-                    (send admin popup-menu 
-                          menu
-                          (send evt get-x)
-                          (send evt get-y)))))))
+              (and frame
+                   (let ([admin (send text get-admin)]
+                         [menu (new popup-menu%)]
+                         [show? #f])
+                     (let* ([frozen-mouse-picts-key (cons text pos)]
+                            [picts-ht (hash-table-get all-picts-ht frozen-mouse-picts-key (lambda () #f))])
+                       (when picts-ht
+                         (let ([picts (get-all-ps-from-ht picts-ht)])
+                           (set! show? #t)
+                           (new menu-item%
+                                (label sc-freeze-picts)
+                                (parent menu)
+                                (callback
+                                 (lambda (x y)
+                                   (send frame slideshow:set-permanent-picts picts)))))))
+                     (when (send frame slideshow:has-permanent-picts?)
+                       (new menu-item%
+                            (label sc-thaw-picts)
+                            (parent menu)
+                            (callback
+                             (lambda (x y)
+                               (send frame slideshow:set-permanent-picts #f))))
+                       (set! show? #t))
+                     (and show?
+                          (begin
+                            (send admin popup-menu 
+                                  menu
+                                  (send evt get-x)
+                                  (send evt get-y))
+                            #t))))))
             
           (define/private (update-mouse text pos)
             (let ([new-mouse-loc (and text pos (cons text pos))])

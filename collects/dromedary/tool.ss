@@ -202,67 +202,73 @@
 		    (format "\"~a\"" value)]
 		   [else value]))
 		
-			  (define/public (config-panel parent)
-			    (case-lambda
-			     [() null]
-			     [(x) (void)]))
-			  (define/public (default-settings) null)
-			  (define/public (default-settings? x) #t)
-			  (define/public (front-end/complete-program input settings) (front-end input settings 0))
-			  (define/public (front-end/interaction input settings) (front-end input settings (drscheme:language:text/pos-start input)))
-			  (define/public (front-end input settings offset)
-			    (let-values ([(port name current-parse)
-					  (if (string? input)
-					      (values (open-input-file input) #f null);(path->complete-path input))
-					      (let ([text (drscheme:language:text/pos-text input)])
-;				(parse-error-port (lambda ()
-;						    (open-input-string
-;						     (send text get-text
-;							   (drscheme:language:text/pos-start input)
-;							   (drscheme:language:text/pos-end input)))))
-						(values
-						 (open-input-string
-						  (send text
-							get-text
-							(drscheme:language:text/pos-start input)
-							(drscheme:language:text/pos-end input)))
-						 text null)))])
-					
-					(lambda ()
-					  (if name
-					      (if (null? current-parse)
-						  (if (eof-object? (peek-char port))
-						      eof
-						      (letrec ([flatten
-								(lambda (ccomp)
-								  (if (null? ccomp)
-								      null
-								      (if (list? (car ccomp))
-									  (append (flatten (car ccomp)) (flatten (cdr ccomp)))
-									  (cons (car ccomp) (flatten (cdr ccomp))))))]
-							       [cur-parse (cur-parser port name offset)]
-							       [syntaxify (lambda (stmt)
-									    (datum->syntax-object #f
-												  stmt
-												  #f))])
-							
-							(begin
-							  (set! current-type (flatten (typecheck-all cur-parse name)))
-							  (set! current-parse (map syntaxify (flatten (compile-all cur-parse name))))
+		(define/public (config-panel parent)
+		  (case-lambda
+		   [() null]
+		   [(x) (void)]))
+		(define/public (default-settings) null)
+		(define/public (default-settings? x) #t)
+		(define/public (front-end/complete-program input settings) (front-end input settings 0))
+		(define/public (front-end/interaction input settings) (front-end input settings (drscheme:language:text/pos-start input)))
+		(define/public (front-end input settings offset)
+		  (let-values ([(port name current-parse)
+				(if (string? input)
+				    (values (open-input-file input) #f null);(path->complete-path input))
+				    (let ([text (drscheme:language:text/pos-text input)])
+					;				(parse-error-port (lambda ()
+					;						    (open-input-string
+					;						     (send text get-text
+					;							   (drscheme:language:text/pos-start input)
+					;							   (drscheme:language:text/pos-end input)))))
+				      (values
+				       (open-input-string
+					(send text
+					      get-text
+					      (drscheme:language:text/pos-start input)
+					      (drscheme:language:text/pos-end input)))
+				       text null)))])
+		    
+		    (lambda ()
+		      (syntax-as-top
+		       (if name
+			   (if (null? current-parse)
+			       (if (eof-object? (peek-char port))
+				   eof
+				   (letrec ([flatten
+					     (lambda (ccomp)
+					       (if (null? ccomp)
+						   null
+						   (if (list? (car ccomp))
+						       (append (flatten (car ccomp)) (flatten (cdr ccomp)))
+						       (cons (car ccomp) (flatten (cdr ccomp))))))]
+					    [cur-parse (cur-parser port name offset)]
+					    [syntaxify (lambda (stmt)
+							 (datum->syntax-object #f
+									       stmt
+									       #f))])
+				     
+				     (begin
+				       (set! current-type (flatten (typecheck-all cur-parse name)))
+				       (set! current-parse (map syntaxify (flatten (compile-all cur-parse name))))
 					;(pretty-print (format "current-type: ~e" current-type))
 					;(pretty-print (format "current-parse: ~e" (map syntax-object->datum current-parse)))
-							  
-							  (let ([firstexp (car current-parse)])
-							    (begin
-							      (set! current-parse (cdr current-parse))
-							      firstexp)))))
-						  (let ([firstexp (car current-parse)])
-						    (begin
-						      (set! current-parse (cdr current-parse))
-						      firstexp)))
-					      (read-syntax input port))
-					  )))
-			  (define cur-parser parser)
+				       
+				       (let ([firstexp (car current-parse)])
+					 (begin
+					   (set! current-parse (cdr current-parse))
+					   firstexp)))))
+			       (let ([firstexp (car current-parse)])
+				 (begin
+				   (set! current-parse (cdr current-parse))
+				   firstexp)))
+			   (read-syntax input port)))
+		      )))
+		(define cur-parser parser)
+		
+		(define/private (syntax-as-top s)
+		  (if (syntax? s)
+		      (namespace-syntax-introduce s)
+		      s))
 			  
 	  (define/public (get-style-delta) #f)
           (define/public (get-language-position) (cons (string-constant experimental-languages) position))

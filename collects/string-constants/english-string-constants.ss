@@ -369,6 +369,7 @@
  (help-menu-label "&Help")
  (about-info "Credits and details for this application")
  (about-menu-item "About...")
+ (help-menu-check-for-updates "Check for Updates...")
  
  ;;; help-desk-specific menus
  (new-help-desk "New Help Desk")

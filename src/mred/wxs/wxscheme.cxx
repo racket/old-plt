@@ -983,18 +983,9 @@ static Scheme_Object *wxSchemeEventDispatchHandler(int argc, Scheme_Object **arg
 			     1, NULL, NULL, 0);
 }
 
-static Scheme_Object *wxSchemeEventspaceConfig(int argc, Scheme_Object **argv)
-{
-  if (SCHEME_TYPE(argv[0]) != mred_eventspace_type)
-    scheme_wrong_type("eventspace-parameterization", "eventspace",
-		      0, argc, argv);
-
-  return MrEdEventspaceConfig(argv[0]);
-}
-
 extern void wxDispatchEventsUntil(int (*f)(void *), void *data);
 
-static Scheme_Object *wxSchemeMakeEventspace(int argc, Scheme_Object **argv)
+static Scheme_Object *wxSchemeMakeEventspace(int, Scheme_Object **)
 {
   return (Scheme_Object *)MrEdMakeEventspace((Scheme_Config *)NULL);
 }

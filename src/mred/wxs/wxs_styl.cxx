@@ -2496,6 +2496,8 @@ class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *obj, const char *where,
 
 
 
+// @ "clear" : void Clear();
+// @ "copy" : void Copy(wxStyleList!);
 
 
 
@@ -2765,40 +2767,6 @@ static Scheme_Object *os_wxStyleListBasicStyle(Scheme_Object *obj, int n,  Schem
 }
 
 #pragma argsused
-static Scheme_Object *os_wxStyleListCopy(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  class wxStyleList* x0;
-
-  
-  x0 = objscheme_unbundle_wxStyleList(p[0], "copy in style-list%", 0);
-
-  
-  ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->Copy(x0);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxStyleListClear(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  
-  ((wxStyleList *)((Scheme_Class_Object *)obj)->primdata)->Clear();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxStyleList_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxStyleList *realobj;
@@ -2822,7 +2790,7 @@ void objscheme_setup_wxStyleList(void *env)
 if (os_wxStyleList_class) {
     objscheme_add_global_class(os_wxStyleList_class, "style-list%", env);
 } else {
-  os_wxStyleList_class = objscheme_def_prim_class(env, "style-list%", "object%", os_wxStyleList_ConstructScheme, 14);
+  os_wxStyleList_class = objscheme_def_prim_class(env, "style-list%", "object%", os_wxStyleList_ConstructScheme, 12);
 
  scheme_add_method_w_arity(os_wxStyleList_class, "forget-notification", os_wxStyleListForgetNotification, 1, 1);
  scheme_add_method_w_arity(os_wxStyleList_class, "notify-on-change", os_wxStyleListNotifyOnChange, 1, 1);
@@ -2836,8 +2804,6 @@ if (os_wxStyleList_class) {
  scheme_add_method_w_arity(os_wxStyleList_class, "find-or-create-style", os_wxStyleListFindOrCreateStyle, 2, 2);
  scheme_add_method_w_arity(os_wxStyleList_class, "number", os_wxStyleListNumber, 0, 0);
  scheme_add_method_w_arity(os_wxStyleList_class, "basic-style", os_wxStyleListBasicStyle, 0, 0);
- scheme_add_method_w_arity(os_wxStyleList_class, "copy", os_wxStyleListCopy, 1, 1);
- scheme_add_method_w_arity(os_wxStyleList_class, "clear", os_wxStyleListClear, 0, 0);
 
 
   scheme_made_class(os_wxStyleList_class);

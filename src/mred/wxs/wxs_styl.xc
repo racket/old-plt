@@ -193,8 +193,8 @@
 
 @CLASSID wxTYPE_STYLE_LIST
 
-@ "clear" : void Clear();
-@ "copy" : void Copy(wxStyleList!);
+// @ "clear" : void Clear();
+// @ "copy" : void Copy(wxStyleList!);
 
 @ "basic-style" : wxStyle! BasicStyle();
 

@@ -1698,13 +1698,13 @@ void wxMediaBuffer::CopySelfTo(wxMediaBuffer *m)
   node = copySnips->First();
   node2 = copySnips2->First();
   for (; node; node = node->Next(), node2 = node2->Next()) {
-	wxSnip *s = (wxSnip *)node->Data();
-	if (m->bufferType == wxEDIT_BUFFER)
-	  m->Insert(s);
-	else {
+    wxSnip *s = (wxSnip *)node->Data();
+    if (m->bufferType == wxEDIT_BUFFER)
+      m->Insert(s);
+    else {
       wxMediaPasteboard *pb = (wxMediaPasteboard *)m;
-	  pb->Insert(s, s); /* before itself -> at end */
-	}
+      pb->Insert(s, s); /* before itself -> at end */
+    }
     m->SetSnipData(s, (wxBufferData *)node2->Data());
   }
 

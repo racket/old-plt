@@ -247,7 +247,7 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
   wxMediaEdit *m;
 
   if (b->bufferType != wxEDIT_BUFFER)
-	return;
+    return;
   m = (wxMediaEdit *)b;
 
   /* Copy parameters, such as tab settings: */
@@ -260,6 +260,14 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
   }
 
   wxMediaBuffer::CopySelfTo(m);
+
+  if (!m->LastPosition()) {
+    /* Make sure only snip in m has a good style (since we called
+       m->styleList->Copy() in wxMediaBuffer::CopySelfTo). */
+    m->snips->style = m->styleList->FindNamedStyle(STD_STYLE);
+    if (!m->snips->style)
+      m->snips->style = m->styleList->BasicStyle();
+  }
 
   m->SetFileFormat(GetFileFormat());
 
@@ -2881,7 +2889,16 @@ Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn &f, long start, Bool overwritesty
 
   readInsert = start;
 
-  return ReadSnipsFromFile(f, overwritestyle);
+  Bool result = ReadSnipsFromFile(f, overwritestyle);
+
+  if (!LastPosition()) {
+    /* We probably destructively changed the style list. Reset the dummy snip. */
+    snips->style = styleList->FindNamedStyle(STD_STYLE);
+    if (!snips->style)
+      snips->style = styleList->BasicStyle();
+  }
+
+  return result;
 }
 
 Bool wxMediaEdit::ReadFromFile(wxMediaStreamIn &f, Bool owrs)

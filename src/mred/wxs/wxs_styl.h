@@ -67,7 +67,6 @@ extern class wxStyle *objscheme_unbundle_wxStyle(Scheme_Object *, const char *, 
 extern class wxStyleDelta *objscheme_unbundle_wxStyleDelta(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxStyle(class wxStyle *);
 extern Scheme_Object *objscheme_bundle_wxStyle(class wxStyle *);
-extern class wxStyleList *objscheme_unbundle_wxStyleList(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxStyleList(void *env);
 #ifndef WXS_SETUP_ONLY

@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.7 1998/12/04 20:26:51 robby Exp $
+;; $Id: testr.ss,v 1.8 1998/12/06 21:34:36 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -297,7 +297,7 @@
     (control-action
      'test:button-push
      'button
-     (find-object mred:button% button)
+     (find-object mred:original:button% button)
      void))
 
 ;; 
@@ -308,7 +308,7 @@
     (control-action
      'test:set-check-box!
      'check-box 
-     (find-object mred:check-box% in-cb)
+     (find-object mred:original:check-box% in-cb)
      (lambda (cb) (send cb set-value state))))
 
 ;;; CHOICE 
@@ -318,7 +318,7 @@
     (control-action
      'test:set-choice!
      'choice
-     (find-object mred:choice% in-choice)
+     (find-object mred:original:choice% in-choice)
      (lambda (choice)
        (cond
 	 [(number? str) (send choice set-selection str)]
@@ -638,7 +638,7 @@
       (lambda (new-window)
 	(cond
 	  [(not (is-a? new-window mred:top-level-window<%>))
-	   (arg-error tag "new-window is not a mred:top-level-window<%>")]
+	   (arg-error tag "new-window is not a top-level-window<%>")]
 	  [else
 	   (run-one
 	    (lambda ()

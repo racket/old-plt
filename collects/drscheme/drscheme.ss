@@ -1,4 +1,10 @@
 (require-library "errortrace.ss" "errortrace")
+(load-relative "start-drs.ss")
+(start-drscheme)
+(yield (make-semaphore))
+
+#|
+(require-library "errortrace.ss" "errortrace")
 (error-print-width 80)
 
 (require-library "refer.ss")
@@ -321,23 +327,14 @@
 
 (define drscheme-custodian #f)
 
+(load-relative "start-drs.ss")
+
 (define (T)
   (when drscheme-custodian (custodian-shutdown-all drscheme-custodian))
   (set! drscheme-custodian (make-custodian))
   (parameterize ([current-custodian drscheme-custodian]
 		 [current-eventspace (make-eventspace)])
-    (let-values ([(change-splash-message shutdown-splash close-splash)
-		  ((require-library "splash.ss" "framework")
-		   (build-path (collection-path "icons") "plt.gif")
-		   "DrScheme"
-		   123
-		   5)])
-      (require-relative-library "drsig.ss")
-      (let ([unit (require-relative-library "link.ss")])
-	(change-splash-message "Invoking...")
-	(shutdown-splash)
-	(invoke-unit/sig unit (program argv))
-	(close-splash)))))
+    (start-drscheme)))
 
 (define start-drscheme-expression '(T))
 
@@ -372,3 +369,4 @@
 
       (graphical-read-eval-print-loop))
     (eval start-drscheme-expression))
+|#

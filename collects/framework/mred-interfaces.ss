@@ -1,7 +1,7 @@
-(unless (equal? (version) "100/23")
+(unless (equal? (version) "100/24")
   (error 'mred-interfaces
          "mred-interfaces.ss and mred-interfacess.ss compiled for version ~a, not version ~a"
-         "100/23"
+         "100/24"
          (version)))
 (require-library "mred-interfacess.ss" "framework")
 
@@ -162,17 +162,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -187,11 +176,23 @@
                           get-alignment
                           get-top-level-window
                           get-graphical-min-size
+                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -207,6 +208,13 @@
                         (interface
                           ()
                           get-parent
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          on-new-child
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -214,12 +222,6 @@
                           container-size
                           place-children
                           delete-child
-                          get-alignment
-                          get-top-level-window
-                          get-graphical-min-size
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
                           min-width
                           min-height
                           vert-margin
@@ -242,11 +244,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -262,6 +259,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -277,11 +279,6 @@
                           print
                           set-cursor
                           refresh
-                          get-canvases
-                          get-active-canvas
-                          set-active-canvas
-                          remove-canvas
-                          get-max-view-size
                           get-snip-position-and-location
                           begin-write-header-footer-to-file
                           end-write-header-footer-to-file
@@ -468,6 +465,11 @@
                           line-paragraph
                           paragraph-end-line
                           last-paragraph
+                          get-canvases
+                          get-active-canvas
+                          set-active-canvas
+                          remove-canvas
+                          get-max-view-size
                           get-canvas
                           add-canvas
                           auto-wrap))
@@ -686,11 +688,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -705,6 +702,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -755,12 +757,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
-                          get-item-label
                           get-selection
                           set-selection
                           get-client-size
@@ -776,6 +772,12 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          get-item-label
                           min-width
                           min-height
                           vert-margin
@@ -806,11 +808,13 @@
                           get-translation
                           get-paper-name
                           get-afm-path
+                          get-editor-margin
                           set-preview-command
                           set-orientation
                           set-translation
                           set-paper-name
-                          set-afm-path))
+                          set-afm-path
+                          set-editor-margin))
                       ($$printer-dc<%>
                         (interface
                           ()
@@ -928,11 +932,6 @@
                           set-cursor
                           refresh
                           raise
-                          get-canvases
-                          get-active-canvas
-                          set-active-canvas
-                          remove-canvas
-                          get-max-view-size
                           begin-write-header-footer-to-file
                           end-write-header-footer-to-file
                           get-inactive-caret-threshold
@@ -1090,6 +1089,11 @@
                           set-dragable
                           get-scroll-step
                           set-scroll-step
+                          get-canvases
+                          get-active-canvas
+                          set-active-canvas
+                          remove-canvas
+                          get-max-view-size
                           get-canvas
                           add-canvas
                           auto-wrap))
@@ -1108,17 +1112,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1133,11 +1126,23 @@
                           get-alignment
                           get-top-level-window
                           get-graphical-min-size
+                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -1153,6 +1158,13 @@
                         (interface
                           ()
                           get-parent
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          on-new-child
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1160,12 +1172,6 @@
                           container-size
                           place-children
                           delete-child
-                          get-alignment
-                          get-top-level-window
-                          get-graphical-min-size
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
                           min-width
                           min-height
                           vert-margin
@@ -1219,11 +1225,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1236,6 +1237,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -1264,11 +1270,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-selections
                           get-selection
                           set-selection
@@ -1298,6 +1299,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -1404,17 +1410,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1429,11 +1424,23 @@
                           get-alignment
                           get-top-level-window
                           get-graphical-min-size
+                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          horiz-margin
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -1449,6 +1456,13 @@
                         (interface
                           ()
                           get-parent
+                          get-alignment
+                          get-top-level-window
+                          get-graphical-min-size
+                          on-new-child
+                          stretchable-width
+                          stretchable-height
+                          set-alignment
                           horiz-margin
                           reflow-container
                           get-children
@@ -1456,12 +1470,6 @@
                           container-size
                           place-children
                           delete-child
-                          get-alignment
-                          get-top-level-window
-                          get-graphical-min-size
-                          stretchable-width
-                          stretchable-height
-                          set-alignment
                           min-width
                           min-height
                           vert-margin
@@ -1483,11 +1491,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1504,6 +1507,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -1534,23 +1542,6 @@
                           get-x
                           get-y
                           on-size
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          get-eventspace
-                          get-focus-window
-                          get-focus-object
-                          on-menu-char
-                          has-status-line?
-                          is-iconized?
-                          on-traverse-char
-                          on-subwindow-char
                           get-menu-bar
                           set-status-text
                           create-status-line
@@ -1571,11 +1562,29 @@
                           get-graphical-min-size
                           get-edit-target-window
                           get-edit-target-object
+                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          get-eventspace
+                          get-focus-window
+                          get-focus-object
+                          on-menu-char
+                          has-status-line?
+                          is-iconized?
+                          on-traverse-char
+                          on-subwindow-char
                           min-width
                           min-height
                           spacing
@@ -1708,15 +1717,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
-                          min-client-width
-                          min-client-height
-                          lazy-refresh
-                          set-line-count
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1741,12 +1741,22 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
+                          min-client-width
+                          min-client-height
+                          lazy-refresh
+                          set-line-count
                           min-width
                           min-height
                           vert-margin
                           on-move
                           has-focus?
                           get-cursor
+                          on-tab-in
                           focus
                           is-enabled?))
                       ($$editor-admin<%>
@@ -1780,20 +1790,6 @@
                           get-x
                           get-y
                           on-size
-                          reflow-container
-                          get-children
-                          change-children
-                          container-size
-                          place-children
-                          delete-child
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          get-eventspace
-                          get-focus-window
-                          get-focus-object
-                          on-traverse-char
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1811,11 +1807,26 @@
                           get-graphical-min-size
                           get-edit-target-window
                           get-edit-target-object
+                          on-new-child
                           get-plain-label
                           accept-drop-files
                           stretchable-width
                           stretchable-height
                           set-alignment
+                          reflow-container
+                          get-children
+                          change-children
+                          container-size
+                          place-children
+                          delete-child
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          get-eventspace
+                          get-focus-window
+                          get-focus-object
+                          on-traverse-char
+                          on-subwindow-char
                           min-width
                           min-height
                           spacing
@@ -1857,11 +1868,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-selection
                           set-selection
                           get-client-size
@@ -1881,6 +1887,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -1895,8 +1906,8 @@
                           ()
                           enable
                           get-parent
-                          check
                           is-checked?
+                          check
                           delete
                           command
                           get-label
@@ -1926,11 +1937,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1945,6 +1951,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -1968,11 +1979,6 @@
                           get-x
                           get-y
                           on-size
-                          horiz-margin
-                          on-subwindow-event
-                          client->screen
-                          screen->client
-                          on-subwindow-char
                           get-client-size
                           on-drop-file
                           on-focus
@@ -1985,6 +1991,11 @@
                           accept-drop-files
                           stretchable-width
                           stretchable-height
+                          horiz-margin
+                          on-subwindow-event
+                          client->screen
+                          screen->client
+                          on-subwindow-char
                           min-width
                           min-height
                           vert-margin
@@ -2774,7 +2785,6 @@
                           snip-class-list%
                           sleep/yield
                           shortcut-menu-item<%>
-                          set-editor-print-margin
                           register-collecting-blit
                           read-editor-global-header
                           read-editor-global-footer
@@ -2806,7 +2816,6 @@
                           get-font-from-user
                           get-file
                           get-face-list
-                          get-editor-print-margin
                           get-display-size
                           get-display-depth
                           get-color-from-user
@@ -2815,6 +2824,7 @@
                           flush-display
                           find-graphical-system-path
                           eventspace?
+                          eventspace-shutdown?
                           eventspace-parameterization
                           event-dispatch-handler
                           end-busy-cursor
@@ -2841,4 +2851,75 @@
                           add-pasteboard-keymap-functions
                           add-editor-keymap-functions
                           add-color<%>)))
+            (unit
+             (mred :
+                   (vertical-panel%
+                     vertical-pane%
+                     timer%
+                     text-field%
+                     text%
+                     tab-snip%
+                     style-list%
+                     style-delta%
+                     string-snip%
+                     snip-class%
+                     snip-admin%
+                     snip%
+                     slider%
+                     separator-menu-item%
+                     scroll-event%
+                     region%
+                     radio-box%
+                     ps-setup%
+                     printer-dc%
+                     post-script-dc%
+                     popup-menu%
+                     point%
+                     pen-list%
+                     pen%
+                     pasteboard%
+                     panel%
+                     pane%
+                     mouse-event%
+                     message%
+                     menu-bar%
+                     menu%
+                     list-box%
+                     keymap%
+                     key-event%
+                     image-snip%
+                     horizontal-panel%
+                     horizontal-pane%
+                     gauge%
+                     frame%
+                     font-list%
+                     font%
+                     event%
+                     editor-wordbreak-map%
+                     editor-stream-out-string-base%
+                     editor-stream-out-base%
+                     editor-stream-out%
+                     editor-stream-in-string-base%
+                     editor-stream-in-base%
+                     editor-stream-in%
+                     editor-snip%
+                     editor-data-class-list%
+                     editor-data-class%
+                     editor-data%
+                     editor-canvas%
+                     editor-admin%
+                     dialog%
+                     cursor%
+                     control-event%
+                     color%
+                     clipboard-client%
+                     choice%
+                     checkable-menu-item%
+                     check-box%
+                     button%
+                     brush-list%
+                     brush%
+                     bitmap-dc%
+                     bitmap%))
+             original)
             (open interfaces))))

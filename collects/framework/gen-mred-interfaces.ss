@@ -40,6 +40,13 @@ string=? ; exec mred -magqvf $0
 			   null
 			   signature-names))
 (define interface-names (map class-name->interface-name class-names))
+(define original-names
+  (foldl (lambda (n l)
+	   (if (member n class-names)
+	       (cons n l)
+	       l))
+	 null
+	 signature-names))
 (define leftover-names
   (foldl (lambda (n l)
 	   (if (member n class-names)
@@ -76,6 +83,7 @@ string=? ; exec mred -magqvf $0
 (define new-signature-definition
   `(define-signature mred-interfaces^
      ((open mred^)
+      (unit original : (,@original-names))
       ,@interface-names)))
 
 (define (build-interface-definition name)
@@ -103,6 +111,7 @@ string=? ; exec mred -magqvf $0
 		     (map build-interface-definition class-names)
 		     (map build-new-class-definition class-names)))))])
       (export (open (mred : (,@leftover-names)))
+	      (unit (mred : (,@original-names)) original)
 	      (open interfaces)))))
 
 (printf "added ~a interface definitions~nmred^ has ~a names, mred-interfaces^ has ~a names~n"

@@ -1,11 +1,81 @@
-(unless (equal? (version) "100/23")
+(unless (equal? (version) "100/24")
   (error 'mred-interfaces
          "mred-interfaces.ss and mred-interfacess.ss compiled for version ~a, not version ~a"
-         "100/23"
+         "100/24"
          (version)))
 (define-signature
   mred-interfaces^
   ((open mred^)
+   (unit original
+         :
+         (vertical-panel%
+           vertical-pane%
+           timer%
+           text-field%
+           text%
+           tab-snip%
+           style-list%
+           style-delta%
+           string-snip%
+           snip-class%
+           snip-admin%
+           snip%
+           slider%
+           separator-menu-item%
+           scroll-event%
+           region%
+           radio-box%
+           ps-setup%
+           printer-dc%
+           post-script-dc%
+           popup-menu%
+           point%
+           pen-list%
+           pen%
+           pasteboard%
+           panel%
+           pane%
+           mouse-event%
+           message%
+           menu-bar%
+           menu%
+           list-box%
+           keymap%
+           key-event%
+           image-snip%
+           horizontal-panel%
+           horizontal-pane%
+           gauge%
+           frame%
+           font-list%
+           font%
+           event%
+           editor-wordbreak-map%
+           editor-stream-out-string-base%
+           editor-stream-out-base%
+           editor-stream-out%
+           editor-stream-in-string-base%
+           editor-stream-in-base%
+           editor-stream-in%
+           editor-snip%
+           editor-data-class-list%
+           editor-data-class%
+           editor-data%
+           editor-canvas%
+           editor-admin%
+           dialog%
+           cursor%
+           control-event%
+           color%
+           clipboard-client%
+           choice%
+           checkable-menu-item%
+           check-box%
+           button%
+           brush-list%
+           brush%
+           bitmap-dc%
+           bitmap%))
    vertical-panel<%>
    vertical-pane<%>
    timer<%>

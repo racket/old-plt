@@ -1,5 +1,5 @@
 (module external-search mzscheme
-  (require "browser.ss"
+  (require (all-except "browser.ss" use-plt-browser?)	
 	   "server-config.ss"
 	   "finddoc.ss"
 	   (lib "contracts.ss")

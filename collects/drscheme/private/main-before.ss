@@ -12,7 +12,7 @@
 	   (lib "include.ss")
            (lib "list.ss")
            (lib "file.ss")
-           (lib "plt-installer" "setup"))
+           (lib "plt-installer.ss" "setup"))
   
   (provide main-before@)
   

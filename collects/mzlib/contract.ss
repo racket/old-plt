@@ -1745,6 +1745,7 @@
 	     (char? x)
 	     (null? x)
 	     (number? x)
+	     (regexp? x)
 	     (and (pair? x)
 		  (printable? (car x))
 		  (printable? (cdr x)))

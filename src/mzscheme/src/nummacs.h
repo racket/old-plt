@@ -30,6 +30,9 @@
 #define WRONG_TYPE(name, expected, value) \
   scheme_wrong_type(name, expected, -1, 0, (Scheme_Object **)&value)
 
+#define rat_from_float(d, sr) force_rat(scheme_rational_from_float(d), sr)
+#define rat_from_double(d, sr) force_rat(scheme_rational_from_double(d), sr)
+
 #ifdef MZ_USE_SINGLE_FLOATS
 # define FLOATWRAP(x) x
 # ifdef USE_SINGLE_FLOATS_AS_DEFAULT
@@ -86,7 +89,8 @@ static Scheme_Object *name (const Scheme_Object *n1, const Scheme_Object *n2)
                       waybigs, swaybigs, waysmalls, swaysmalls, \
                       combinezero, firstzero, sfirstzero, secondzero, ssecondzero, \
                       nanchk, snanchk, \
-                      complexwrap, noniziwrap, exactzerowrapl, exactzerowrapr, numbertype) \
+                      complexwrap, noniziwrap, exactzerowrapl, exactzerowrapr, numbertype,\
+                      toi_or_toe) \
 rettype \
 name (const Scheme_Object *n1, const Scheme_Object *n2) \
 { \
@@ -156,14 +160,16 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
         snanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(swaybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(swaysmallf, n2);) \
-        return fsop(d1, scheme_bignum_to_float(n2)); \
+        return toi_or_toe(fsop(d1, scheme_bignum_to_float(n2)), \
+                          rop(rat_from_float(d1, &sr), scheme_integer_to_rational(n2))); \
       } \
        if (t2 == scheme_rational_type) { \
         snanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(swaybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(swaysmallf, n2);) \
         wrap(if (d1 == 0.0) return combinezero(sfirstzero, n2, d1);) \
-	return fsop(d1, scheme_rational_to_float(n2)); \
+	return toi_or_toe(fsop(d1, scheme_rational_to_float(n2)), \
+                          rop(rat_from_float(d1, &sr), (n2))); \
       } \
       complexwrap( \
       if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
@@ -202,14 +208,16 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
         nanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(waybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(waysmallf, n2);) \
-        return fop(d1, scheme_bignum_to_double(n2)); \
+        return toi_or_toe(fop(d1, scheme_bignum_to_double(n2)), \
+                          rop(rat_from_double(d1, &sr), scheme_integer_to_rational(n2))); \
       } \
        if (t2 == scheme_rational_type) { \
         nanchk(d1); \
         wrap(if (MZ_IS_POS_INFINITY(d1)) return combineinf(waybigf, n2);) \
         wrap(if (MZ_IS_NEG_INFINITY(d1)) return combineinf(waysmallf, n2);) \
         wrap(if (d1 == 0.0) return combinezero(firstzero, n2, d1);) \
-	return fop(d1, scheme_rational_to_double(n2)); \
+	return toi_or_toe(fop(d1, scheme_rational_to_double(n2)), \
+                          rop(rat_from_double(d1, &sr), (n2))); \
       } \
       complexwrap( \
       if (noniziwrap((t2 == scheme_complex_type) ||) (t2 == scheme_complex_izi_type)) { \
@@ -234,7 +242,8 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          snanchk(d2); \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(swaysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(swaybigs, n1);) \
-	 return fsop(scheme_bignum_to_float(n1), d2); \
+	 return toi_or_toe(fsop(scheme_bignum_to_float(n1), d2), \
+                           rop(scheme_integer_to_rational(n1), rat_from_float(d2, &sr))); \
       } \
       ) \
       if (t2 == scheme_double_type) { \
@@ -243,7 +252,8 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          nanchk(d2); \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(waysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(waybigs, n1);) \
-	 return fop(scheme_bignum_to_double(n1), d2); \
+	 return toi_or_toe(fop(scheme_bignum_to_double(n1), d2), \
+                           rop(scheme_integer_to_rational(n1), rat_from_double(d2, &sr))); \
        } \
        if (t2 == scheme_bignum_type) \
          return bn_op((n1), (n2)); \
@@ -274,7 +284,8 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(swaysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(swaybigs, n1);) \
          wrap(if (d2 == 0.0) return combinezero(ssecondzero, n1, d2);) \
-	 return fsop(scheme_rational_to_float(n1), d2); \
+	 return toi_or_toe(fsop(scheme_rational_to_float(n1), d2), \
+                           rop((n1), rat_from_float(d2, &sr))); \
        } \
        ) \
        if (t2 == scheme_double_type) { \
@@ -284,7 +295,8 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
          wrap(if (MZ_IS_POS_INFINITY(d2)) return combineinf(waysmalls, n1);) \
          wrap(if (MZ_IS_NEG_INFINITY(d2)) return combineinf(waybigs, n1);) \
          wrap(if (d2 == 0.0) return combinezero(secondzero, n1, d2);) \
-	 return fop(scheme_rational_to_double(n1), d2); \
+	 return toi_or_toe(fop(scheme_rational_to_double(n1), d2), \
+                           rop((n1), rat_from_double(d2, &sr))); \
        } \
        if (t2 == scheme_bignum_type) \
          return rop((n1), \
@@ -348,6 +360,8 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 #define GEN_APPLY(x, y) x(y)
 #define GEN_APPLY3(x, y, z) x(y, z)
 #define GEN_SCHEME_BOOL_APPLY(x, y, z) SCHEME_TRUEP(x(1, (Scheme_Object **)&y))
+#define GEN_TOI(x, y) x
+#define GEN_TOE(x, y) y
 
 #define GEN_RETURN_0(x) x return zeroi;
 #define GEN_RETURN_0_USUALLY(x) x if (!SCHEME_FLOATP(n2) || GR_NAN_CHK(n2) || (SCHEME_FLOAT_VAL(n2) != 0)) return zeroi;
@@ -392,7 +406,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 0, 0, 0, 0, \
                 GEN_SCHEME_BOOL_APPLY, badfunc, badfunc, badfunc, badfunc, \
                 nanckop, snanckop, \
-                GEN_IDENT, GEN_IDENT, exzeopl, exzeopr, "number")
+                GEN_IDENT, GEN_IDENT, exzeopl, exzeopr, "number", GEN_TOI)
 
 #define GEN_BIN_DIV_OP(name, scheme_name, iop, fop, fsop, bn_op, rop, cxop) \
   GEN_BIN_THING(Scheme_Object *, name, scheme_name, \
@@ -402,7 +416,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                 GEN_MAKE_NZERO, GEN_MAKE_NSZERO, GEN_MAKE_PZERO, GEN_MAKE_PSZERO, \
                 GEN_APPLY3, GEN_MAKE_ZERO_Z, GEN_MAKE_SZERO_Z, GEN_SAME_INF_Z, GEN_SAME_SINF_Z, \
                 NAN_CHECK_NAN_IF_WEIRD, SNAN_CHECK_NAN_IF_WEIRD, \
-                GEN_IDENT, GEN_IDENT, GEN_RETURN_0, GEN_OMIT, "number")
+                GEN_IDENT, GEN_IDENT, GEN_RETURN_0, GEN_OMIT, "number", GEN_TOI)
 
 #define GEN_BIN_COMP(name, scheme_name, iop, fop, bn_op, rop, cxop, waybig, waysmall, firstzero, secondzero, complexwrap, noniziwrap, numbertype) \
  GEN_BIN_THING(int, name, scheme_name, \
@@ -412,7 +426,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                waybig, waybig, waysmall, waysmall, \
                GEN_SCHEME_BOOL_APPLY, firstzero, firstzero, secondzero, secondzero, \
                NAN_CHECK_0_IF_WEIRD, NAN_CHECK_0_IF_WEIRD, \
-               complexwrap, noniziwrap, GEN_OMIT, GEN_OMIT, numbertype)
+               complexwrap, noniziwrap, GEN_OMIT, GEN_OMIT, numbertype, GEN_TOE)
 
 #define GEN_BIN_INT_OP(name, scheme_name, op, bigop) \
 static Scheme_Object * \

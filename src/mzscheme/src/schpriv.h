@@ -1010,6 +1010,7 @@ typedef struct {
 typedef Scheme_Rational Small_Rational;
 
 Scheme_Object *scheme_make_small_rational(long n, Small_Rational *space);
+Scheme_Object *scheme_make_small_bn_rational(Scheme_Object *n, Small_Rational *space);
 Scheme_Object *scheme_integer_to_rational(const Scheme_Object *n);
 Scheme_Object *scheme_make_fixnum_rational(long n, long d);
 int scheme_rational_eq(const Scheme_Object *a, const Scheme_Object *b);

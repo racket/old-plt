@@ -89,6 +89,27 @@ void scheme_init_numcomp(Scheme_Env *env)
 			     env);
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
+static
+#ifndef NO_INLINE_KEYWORD
+MSC_IZE(inline)
+#endif
+Scheme_Object *force_rat(Scheme_Object *n, Small_Rational *sr)
+{
+  Scheme_Type t = SCHEME_TYPE(n);
+  if (t == scheme_rational_type)
+    return n;
+  else
+    return scheme_make_small_bn_rational(n, sr);
+}
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 GEN_NARY_COMP(eq, "=", scheme_bin_eq, SCHEME_NUMBERP, "number")
 GEN_NARY_COMP(lt, "<", scheme_bin_lt, SCHEME_REALP, REAL_NUMBER_STR)
 GEN_NARY_COMP(gt, ">", scheme_bin_gt, SCHEME_REALP, REAL_NUMBER_STR)

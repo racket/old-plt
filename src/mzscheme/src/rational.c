@@ -65,6 +65,15 @@ Scheme_Object *scheme_make_small_rational(long n, Small_Rational *s)
   return (Scheme_Object *)s;
 }
 
+Scheme_Object *scheme_make_small_bn_rational(Scheme_Object *n, Small_Rational *s)
+{
+  s->type = scheme_rational_type;
+  s->num = n;
+  s->denom = one;
+
+  return (Scheme_Object *)s;
+}
+
 #ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;
 #endif

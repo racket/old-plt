@@ -361,17 +361,11 @@ void wxDC::Clear(void)
 
   if (!dc) return;
 
-  if (canvas)
-    GetClientRect(((wxWnd *)canvas->handle)->handle, &rect);
-  else if (selected_bitmap) {
-    rect.left = 0; rect.top = 0;
-    rect.right = selected_bitmap->GetWidth();
-    rect.bottom = selected_bitmap->GetHeight();
-  }
-  (void) ::SetMapMode(dc, MM_TEXT);
-  ::SetViewportOrgEx(dc, 0, 0, NULL);
-  ::SetWindowOrgEx(dc, 0, 0, NULL);
-
+  rect.left = -MAX_INT;
+  rect.top = -MAX_INT;
+  rect.right = MAX_INT;
+  rect.bottom = MAX_INT;
+  
   {
     HBRUSH brush;
     brush = CreateSolidBrush(GetBkColor(dc));
@@ -380,8 +374,6 @@ void wxDC::Clear(void)
   }
 
   DoneDC(dc);
-
-  SetMapMode(mapping_mode);
 }
 
 void wxDC::BeginDrawing(void)
@@ -1304,8 +1296,6 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
 
 void wxDC::SetMapMode(int mode)
 {
-  float mm2pixelsX;
-  float mm2pixelsY;
   HDC dc;
 
   mapping_mode = mode;
@@ -1314,49 +1304,55 @@ void wxDC::SetMapMode(int mode)
 
   if (!dc) return;
 
-  mm2pixelsX = GetDeviceCaps(dc, LOGPIXELSX) * mm2inches;
-  mm2pixelsY = GetDeviceCaps(dc, LOGPIXELSY) * mm2inches;
+  if (mode == MM_TEXT) {
+    logical_scale_x = 1.0;
+    logical_scale_y = 1.0;
+  } else {
+    float mm2pixelsX;
+    float mm2pixelsY;
+  
+    mm2pixelsX = GetDeviceCaps(dc, LOGPIXELSX) * mm2inches;
+    mm2pixelsY = GetDeviceCaps(dc, LOGPIXELSY) * mm2inches;
 
-  if (!mm2pixelsX || !mm2pixelsY) {
-    /* Guess 300 dpi. At least we should start getting bug reports
-       about text too large, instead of too small, if this is where
-       things fail. */
-    mm2pixelsX = 300 * mm2inches;
-    mm2pixelsY = 300 * mm2inches;
-  }
+    if (!mm2pixelsX || !mm2pixelsY) {
+      /* Guess 300 dpi. At least we should start getting bug reports
+	 about text too large, instead of too small, if this is where
+	 things fail. */
+      mm2pixelsX = 300 * mm2inches;
+      mm2pixelsY = 300 * mm2inches;
+    }
 
-  switch (mode)
-  {
+    switch (mode) {
     case MM_TWIPS:
-    {
-      logical_scale_x = (float)(twips2mm * mm2pixelsX);
-      logical_scale_y = (float)(twips2mm * mm2pixelsY);
-      break;
-    }
+      {
+	logical_scale_x = (float)(twips2mm * mm2pixelsX);
+	logical_scale_y = (float)(twips2mm * mm2pixelsY);
+	break;
+      }
     case MM_POINTS:
-    {
-      logical_scale_x = (float)(pt2mm * mm2pixelsX);
-      logical_scale_y = (float)(pt2mm * mm2pixelsY);
-      break;
-    }
+      {
+	logical_scale_x = (float)(pt2mm * mm2pixelsX);
+	logical_scale_y = (float)(pt2mm * mm2pixelsY);
+	break;
+      }
     case MM_METRIC:
-    {
-      logical_scale_x = mm2pixelsX;
-      logical_scale_y = mm2pixelsY;
-      break;
-    }
+      {
+	logical_scale_x = mm2pixelsX;
+	logical_scale_y = mm2pixelsY;
+	break;
+      }
     case MM_LOMETRIC:
-    {
-      logical_scale_x = (float)(mm2pixelsX/10.0);
-      logical_scale_y = (float)(mm2pixelsY/10.0);
-      break;
-    }
+      {
+	logical_scale_x = (float)(mm2pixelsX/10.0);
+	logical_scale_y = (float)(mm2pixelsY/10.0);
+	break;
+      }
     default:
-    case MM_TEXT:
-    {
-      logical_scale_x = 1.0;
-      logical_scale_y = 1.0;
-      break;
+      {
+	logical_scale_x = 1.0;
+	logical_scale_y = 1.0;
+	break;
+      }
     }
   }
 
@@ -1416,15 +1412,10 @@ void wxDC::SetLogicalOrigin(float x, float y)
 
 void wxDC::SetDeviceOrigin(float x, float y)
 {
-  HDC dc;
-
   device_origin_x = x;
   device_origin_y = y;
-  dc = ThisDC();
-
-  if (dc) ::SetViewportOrgEx(dc, (int)device_origin_x, (int)device_origin_y, NULL);
-
-  DoneDC(dc);
+  
+  SetMapMode(mapping_mode);
 }
 
 float wxDC::DeviceToLogicalX(int x)

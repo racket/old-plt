@@ -671,8 +671,8 @@
           (override-access-error 'static level
                                  name parms cname (method-record-class over?)
                                  (id-src (method-name method))))
-        (when (memq level '(advanced full))
-          (check-throws-same throws method cname over? type-recs)))
+        (when (eq? level 'full)
+          (check-throws-match throws method cname over? type-recs)))
       
       (make-method-record name
                           (check-method-modifiers level mods) ; need to add stuff about ctor
@@ -724,80 +724,33 @@
          (override-access-error 'package 'full name parms class (method-record-class over) src))))))
 
   ;check-throws-same: (list type) method (list string) method-record type-records -> void
-  (define (check-throws-same throws method cname over type-recs)
-    (if (= (length throws)
-           (length (method-record-throws over)))
+  (define (check-throws-match throws method cname over type-recs)
+    (if (= 0 (length (method-record-throws over)))
         (for-each (lambda (t) 
-                    (unless (is-subclass-of1? t (method-record-throws over))
-                      (throw-over-error 'subclass 
+                    (unless (is-subclass-of1? t (method-record-throws over) type-recs)
+                      (inherited-throw-error 'subclass 
                                         (method-name method)
                                         (method-parms method)
                                         cname
                                         (method-record-class over)
                                         t
-                                        (id-src (find-type t (method-throws method))))))                           
+                                        (id-src (find-type t (method-throws method))))))
                   throws)
-        (throw-over-error 'num (method-name method) (method-parms method) cname
+        (inherited-throw-error 'num (method-name method) (method-parms method) cname
                           (method-record-class over) #t (method-src method))))
-  
-  ;is-subclass-of1?: type (list type) -> bool
-  (define (is-subclass-of1? throw thrown)
+    
+  ;is-subclass-of1?: type (list type) type-records-> bool
+  (define (is-subclass-of1? throw thrown type-recs)
     (and (not (null? thrown))
-         (or (is-eq-subclass? throw (car thrown))
-             (is-subclass-of1? throw (cdr thrown)))))
+         (or (is-eq-subclass? throw (car thrown) type-recs)
+             (is-subclass-of1? throw (cdr thrown) type-recs))))
   
   ;find-type type (list name) -> src
   (define (find-type throw throws)
     (or (and (equal? (ref-type-class/iface throw)
                      (id-string (name-id (car throws))))
              (name-id (car throws)))
-        (find-type throw (cdr throws))))
-                      
-  ;return-error string (list type) (list string) type type src -> void
-  (define (override-return-error name parms class ret old-ret src)
-    (let ((name (string->symbol name))
-          (m-name (method-name->ext-name name parms)))
-      (raise-error name
-                   (format "Method ~a of class ~a overrides an inherited method, but return has changed from ~a to ~a"
-                          m-name (car class) (type->ext-name old-ret) (type->ext-name ret))
-                   name src)))
-  
-  ;override-access-error symbol symbol string (list type) (list string) string src -> void
-  (define (override-access-error kind level name parms class parent src)
-    (let ((name (string->symbol name))
-          (m-name (method-name->ext-name name parms)))
-      (raise-error name
-                   (case kind
-                     ((final) 
-                      (if (eq? level 'full)
-                          (format "Method ~a in ~a attempts to override final method from ~a"
-                                  m-name (car class) parent)
-                          (format "Method ~a from ~a cannot be overridden in ~a"
-                                  m-name parent (car class))))
-                     ((static)
-                      (format "Method ~a in ~a attempts to override static method from ~a"
-                              m-name (car class) parent))
-                     ((public) 
-                      (format "Method ~a in ~a must be public to override public method from ~a"
-                              m-name (car class) parent))
-                     ((protected) 
-                      (format "Method ~a in ~a must be public or protected to override protected method from ~a"
-                              m-name (car class) parent))
-                     ((package) 
-                      (format "Method ~a in ~a must be public, or have no access modifier, to override method from ~a"
-                              m-name (car class) parent)))
-                   name src)))
-  
-  ;repeated-parm-error: field string (list string) -> void
-  (define (repeated-parm-error parm meth class)
-    (let ((name (id->ext-name (field-name parm))))
-      (raise-error name
-                   (format "Method ~a in ~a has multiple parameters with the name ~a"
-                           meth (car class) name)
-                   name (id-src (field-name parm)))))
-  
-  ;throw-over-error:symbol string (list type) (list string) string type src -> void
-  (define throw-over-error (lambda () null))
+        (find-type throw (cdr throws))))  
   
   ;-----------------------------------------------------------------------------------
   ;Code to check modifiers
@@ -988,6 +941,63 @@
                       (format "Method ~a from ~a is not implemented" m-name class)))
                    m-name src)))
 
+  ;inherited-throw-error:symbol string (list type) (list string) string type src -> void
+  (define (inherited-throw-error kind m-name parms class parent throw src)
+    (raise-error 'throws
+                 (case kind
+                   ((num) 
+                    (format "Method ~a in ~a overrides a method from ~a: Method in ~a should throw no types if original doesn't"
+                            (method-name->ext-name m-name parms) (car class) parent (car class)))
+                   ((subclass)
+                    (format "Method ~a in ~a overrides from a method from ~a~n
+                             All types thrown by overriding method in ~a must be subtypes of original throws: ~a is not"
+                            (method-name->ext-name m-name parms) (car class) parent (car class) (type->ext-name throw))))
+                 'throws src))
+                      
+  ;return-error string (list type) (list string) type type src -> void
+  (define (override-return-error name parms class ret old-ret src)
+    (let ((name (string->symbol name))
+          (m-name (method-name->ext-name name parms)))
+      (raise-error name
+                   (format "Method ~a of class ~a overrides an inherited method, but return has changed from ~a to ~a"
+                          m-name (car class) (type->ext-name old-ret) (type->ext-name ret))
+                   name src)))
+  
+  ;override-access-error symbol symbol string (list type) (list string) string src -> void
+  (define (override-access-error kind level name parms class parent src)
+    (let ((name (string->symbol name))
+          (m-name (method-name->ext-name name parms)))
+      (raise-error name
+                   (case kind
+                     ((final) 
+                      (if (eq? level 'full)
+                          (format "Method ~a in ~a attempts to override final method from ~a"
+                                  m-name (car class) parent)
+                          (format "Method ~a from ~a cannot be overridden in ~a"
+                                  m-name parent (car class))))
+                     ((static)
+                      (format "Method ~a in ~a attempts to override static method from ~a"
+                              m-name (car class) parent))
+                     ((public) 
+                      (format "Method ~a in ~a must be public to override public method from ~a"
+                              m-name (car class) parent))
+                     ((protected) 
+                      (format "Method ~a in ~a must be public or protected to override protected method from ~a"
+                              m-name (car class) parent))
+                     ((package) 
+                      (format "Method ~a in ~a must be public, or have no access modifier, to override method from ~a"
+                              m-name (car class) parent)))
+                   name src)))
+  
+  ;repeated-parm-error: field string (list string) -> void
+  (define (repeated-parm-error parm meth class)
+    (let ((name (id->ext-name (field-name parm))))
+      (raise-error name
+                   (format "Method ~a in ~a has multiple parameters with the name ~a"
+                           meth (car class) name)
+                   name (id-src (field-name parm)))))
+
+  
   ;field-error: id src -> void
   (define (field-error name src)
     (let ((n (id->ext-name name)))

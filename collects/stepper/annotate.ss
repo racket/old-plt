@@ -17,6 +17,14 @@
 ;	  stepper:shared^
 ;          stepper:client-procs^)
 
+  
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                            ;;;
+      ;;;           Support Functions                ;;;
+      ;;;                                            ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+            
+ 
   ;; this looks wrong...
   (define (internal-error . x)
     (error 'annotater-internal-error "~s" x))
@@ -24,8 +32,6 @@
   ;; d->so just replicates the exp argument in a call to datum->syntax-object
   (define (d->so exp datum)
     (datum->syntax-object exp datum exp))
-  
-  ; ANNOTATE SOURCE CODE
   
   ; gensyms for annotation:
   
@@ -141,9 +147,13 @@
   (define (closure-key-maker closure)
     closure)
 
-  ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
-  ; a source expression and a set of binding/value pairs.
-  ;(syntax-object BINDING-SET BINDING-SET BINDING-SET symbol boolean) -> debug-info)
+  ;;;;;;;;;;
+  ;;
+  ;; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
+  ;; a source expression and a set of binding/value pairs.
+  ;; (syntax-object BINDING-SET BINDING-SET BINDING-SET symbol boolean) -> debug-info)
+  ;;
+  ;;;;;;;;;;
      
   (define (make-debug-info source tail-bound free-bindings advance-warning label lifting?)
     (let* ([kept-bindings (if (eq? tail-bound 'all)
@@ -206,7 +216,9 @@
   
   ;;;;;;;;;;
   ;;
-  ;; collapse-let-values
+  ;; collapse-let-values: for the purposes of the annotater, it's easier to simply collapse let's and
+  ;;  let*'s into one big let*.  The lexical-binding information attached to each variable reference
+  ;;  guarantees that this won't 
   ;;
   ;;;;;;;;;;
   
@@ -232,11 +244,44 @@
   ;                (list #'(let* ([a 9] [b a] [c b]) c) '(let*-values ([(a) (#%datum . 9)] [(b) a] [(c) b]) c) 9)
   ;                (list #'(let ([a 3] [b 9]) (let ([b 14]) b)) '(let*-values ([(a) (#%datum . 3)] [(b) (#%datum . 9)] [(b) (#%datum . 14)]) b) 14)))
   
-  ;;;;;;;;;;
-  ;;
-  ;;  annotate
-  ;;
-  ;;;;;;;;;;
+  
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;;                                            ;;;
+      ;;;                Annotate                    ;;;
+      ;;;                                            ;;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  
+  
+  
+  
+  oh-say-can-you-see,by-the-dawn's-early-light,what-so-proudly-we-hailed,at-the-twilight's-last-gle
+  a m i n g . W h o s e b r o a d s t r i                                                         p
+  pe s a n d b r i g h t s t a r s , t hrough-the-perilous-night,o'er-the-ramparts-we-watched,were-
+  s o g a l l a n t l y s t r e a m i n g                                                         .
+  an d t h e r o c k e t ' s r e d g l are,the-bombs-bursting-in-air,gave-proof-through-the-night,,
+  t h a t o u r f l a g w a s s t i l l t                                                         h
+  er e . O h s a y , d o e s t h a t s tar-spangled-banner-yet-wave,o'er-the-land-of-the-free,and-t
+  h e h o m e o f t h e b r a v e ? . . .                                                         .
+  .. . . . . . . . . . . . . . . . . . ............................................................
+  . . . . . . . . . . . . . . . . . . . .                                                         .
+  .................................................................................................
+  .                                                                                               .
+  .................................................................................................
+  .                                                                                               .
+  .................................................................................................
+  .                                                                                               .
+  .................................................................................................
+  .                                                                                               .
+  .................................................................................................
+  .                                                                                               .
+  .................................................................................................
+  .                                                                                               .
+  .................................................................................................
+  .                                                                                               .
+  .................................................................................................
+
+  
   
   ; annotate takes 
   ; a) a list of zodiac:read expressions,

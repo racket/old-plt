@@ -367,21 +367,34 @@ wxMediaStreamIn *wxMediaStreamIn::GetFixed(long *v)
   }
 
   if (!lsb_first) {
-    f->Read((char *)v, sizeof(long));
+    if (f->Read((char *)v, sizeof(long)) != sizeof(long)) {
+      *v = 0;
+      bad = 1;
+    }
   } else {
-    if (WXME_VERSION_ONE(this))
-      f->Read((char *)v, sizeof(long));
-    else {
+    if (WXME_VERSION_ONE(this)) {
+      if (f->Read((char *)v, sizeof(long)) != sizeof(long)) {
+	bad = 1;
+	*v = 0;
+      }
+    } else {
       unsigned char bl[4];
       
-      f->Read((char *)bl, 4);
-      *v = ((((long)bl[0]) << 24) + (((long)bl[1]) << 16)
-	    + (((long)bl[2]) << 8) + bl[3]);
+      if (f->Read((char *)bl, 4) != 4) {
+	bad = 1;
+	*v = 0;
+      } else {
+	*v = ((((long)bl[0]) << 24) + (((long)bl[1]) << 16)
+	      + (((long)bl[2]) << 8) + bl[3]);
+      }
     }
   }
 
   return this;
 }
+
+extern "C" void *scheme_malloc_fail_ok(void *(*f)(size_t), size_t);
+extern "C" void *GC_malloc_atomic(size_t);
 
 char *wxMediaStreamIn::GetString(long *n)
 {
@@ -398,9 +411,23 @@ char *wxMediaStreamIn::GetString(long *n)
 
   Typecheck(st_STRING);
 
+#if 1
+  r = (char *)scheme_malloc_fail_ok(GC_malloc_atomic, m);
+  if (!r) {
+    wxmeError("String too large (out of memory) reading stream.");
+    bad = 1;
+    if (n)
+      *n = 0;
+    return NULL;
+  }
+#else
   r = new char[m];
+#endif
 
-  f->Read(r, m);
+  if (f->Read(r, m) != m) {
+    bad = 1;
+    m = 0;
+  }
   if (n)
     *n = m;
 
@@ -420,11 +447,20 @@ wxMediaStreamIn *wxMediaStreamIn::Get(long *n, char *str)
 
   Typecheck(st_STRING);
 
-  if (m <= *n)
-    f->Read(str, m);
-  else {
-    f->Read(str, *n);
-    f->Skip(m - *n);
+  if (m <= *n) {
+    if (f->Read(str, m) != m) {
+      bad = 1;
+      m = 0;
+    }
+  } else {
+    int d;
+    d = f->Read(str, *n);
+    if (d != *n) {
+      bad = 1;
+      m = 0;
+    } else {
+      f->Skip(m - *n);
+    }
   }
   *n = m;
 
@@ -435,7 +471,6 @@ wxMediaStreamIn* wxMediaStreamIn::Get(long *v)
 {
   char b;
   
-
   Typecheck(st_NUMBER);
 
   if (bad) {
@@ -443,28 +478,44 @@ wxMediaStreamIn* wxMediaStreamIn::Get(long *v)
     return this;
   }
 
-  f->Read((char *)&b, sizeof(char));
+  if (f->Read((char *)&b, sizeof(char)) != sizeof(char)) {
+    bad = 1;
+    b = 0;
+  }
+
   if (b & 0x80) {
     if (b & 0x40) {
       if (b & 0x1) {
 	signed char bv;
-	f->Read((char *)&bv, 1);
-	*v = bv;
+	if (f->Read((char *)&bv, 1) != 1) {
+	  bad = 1;
+	  *v = 0;
+	} else
+	  *v = bv;
       } else if (b & 0x2) {
 	unsigned char bl[2];
-	f->Read((char *)bl, 2);
-	*v = (((int)((signed char *)bl)[0]) << 8) + bl[1];
+	if (f->Read((char *)bl, 2) != 2) {
+	  bad = 1;
+	  *v = 0;
+	} else
+	  *v = (((int)((signed char *)bl)[0]) << 8) + bl[1];
       } else {
 	unsigned char bl[4];
-	f->Read((char *)bl, 4);
-	*v = (((long)((signed char *)bl)[0]) << 24) 
-	  + (((long)bl[1]) << 16)
-	  + (((long)bl[2]) << 8) + bl[3];
+	if (f->Read((char *)bl, 4) != 4) {
+	  bad = 1;
+	  *v = 0;
+	} else
+	  *v = (((long)((signed char *)bl)[0]) << 24) 
+	    + (((long)bl[1]) << 16)
+	    + (((long)bl[2]) << 8) + bl[3];
       }
     } else {
       unsigned char b2;
-      f->Read((char *)&b2, sizeof(char));
-      *v = (((int)(b & 0x3F)) << 8) | b2;
+      if (f->Read((char *)&b2, sizeof(char)) != sizeof(char)) {
+	bad = 1;
+	*v = 0;
+      } else
+	*v = (((int)(b & 0x3F)) << 8) | b2;
     }
   } else
     *v = b;
@@ -512,20 +563,30 @@ wxMediaStreamIn *wxMediaStreamIn::Get(double *v)
   }
 
   if (!lsb_first) {
-    f->Read((char *)v, sizeof(double));
+    if (f->Read((char *)v, sizeof(double)) != sizeof(double)) {
+      bad = 1;
+      *v = 0.0;
+    }
   } else {
-    if (WXME_VERSION_ONE(this))
-      f->Read((char *)v, sizeof(double));
-    else {
+    if (WXME_VERSION_ONE(this)) {
+      if (f->Read((char *)v, sizeof(double)) != sizeof(double)) {
+	bad = 1;
+	*v = 0.0;
+      }
+    } else {
       char num[sizeof(double)], num2[sizeof(double)];
       int i, j;
       
-      f->Read((char *)num, sizeof(double));
-      for (i = 0, j = sizeof(double); i < (int)sizeof(double); ) {
-	num2[i++] = num[--j];
+      if (f->Read((char *)num, sizeof(double))  != sizeof(double)) {
+	bad = 1;
+	*v = 0.0;
+      } else {
+	for (i = 0, j = sizeof(double); i < (int)sizeof(double); ) {
+	  num2[i++] = num[--j];
+	}
+	
+	memcpy((char *)v, num2, sizeof(double));
       }
-      
-      memcpy((char *)v, num2, sizeof(double));
     }
   }
 

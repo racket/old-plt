@@ -273,7 +273,7 @@ object.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h \
           $(srcdir)/schrunst.h $(srcdir)/mzmark.c
 unit.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h  \
          $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/schrunst.h $(srcdir)/mzmark.c
-unitsig.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h  \
+unitsig.o: $(srcdir)/../include/scheme.h $(SCONFIG) $(srcdir)/../src/stypes.h  \
          $(srcdir)/schpriv.h $(srcdir)/schminc.h $(srcdir)/unitsig.inc $(srcdir)/cunitsig.inc
 port.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h  $(srcdir)/schfd.h $(srcdir)/mzmark.c

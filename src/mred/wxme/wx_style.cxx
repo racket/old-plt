@@ -1083,6 +1083,11 @@ wxStyle *wxStyleList::DoNamedStyle(char *name, wxStyle *plainStyle, Bool replac)
     if (style == basic)
       return basic;
 
+    /* plainStyle must not depend on this style
+       (otherwise, we'd create a dependency cycle): */
+    if (CheckForLoop(style, plainStyle))
+      return style;
+
     style->baseStyle->children->DeleteObject(style);
     if (style->join_shiftStyle)
       style->join_shiftStyle->children->DeleteObject(style);

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Net.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: Net.cc,v 1.2 1999/11/24 21:20:20 mflatt Exp $
  *
  * Purpose: host and user net info
  *
@@ -38,7 +38,7 @@ extern "C" {
 #include <sys/types.h>
 #include <unistd.h>
 
-#if defined(__alpha)
+#if defined(__digital__) && defined(__unix__)
 extern "C" {
 extern int gethostname(char *, int);
 };

@@ -1961,9 +1961,38 @@ static Scheme_Object *MrEdMakeStdErr(void)
 }
 #endif
 
+#if WINDOW_STDIO
+# define clean_string(e) e
+#else
+static char *clean_string(const char *msg)
+{
+  /* Avoid garbling terminals. */
+  int i;
+
+  for (i = 0; msg[i]; i++) {
+    if (!isprint(((unsigned char *)msg)[i])) {
+      char *s;
+      
+      s = copystring(msg);
+
+      for (i = 0; s[i]; i++) {
+	if (!isprint(((unsigned char *)s)[i])) {
+	  s[i] = '.';
+	}
+      }
+
+      return s;
+    }
+  }
+
+  return (char *)msg;
+}
+#endif
+
 void wxmeError(const char *e)
 {
   if (scheme_console_printf) {
+    e = clean_string(e);
     scheme_console_printf("%s\n", (char *)e);
   } else {
     wxMessageBox((char *)e, "Error");

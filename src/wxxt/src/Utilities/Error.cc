@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Error.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: Error.cc,v 1.2 1999/11/04 17:25:36 mflatt Exp $
  *
  * Purpose: error routines
  *
@@ -25,7 +25,9 @@
 
 #include "wx.h"
 
-#include <stdarg.h>
+#if 0
+# include <stdarg.h>
+#endif
 
 void wxDebugMsg(const char *WXUNUSED(fmt), ...)
 {
@@ -40,7 +42,7 @@ void wxDebugMsg(const char *WXUNUSED(fmt), ...)
 }
 
 void wxError(const char *msg, const char *title)
-{
+{  
     fprintf(stderr, "%s: %s\n", title, msg);
 }
 

@@ -711,6 +711,7 @@ Bool wxMediaBuffer::ReadHeaderFromFile(wxMediaStreamIn *, char *headerName)
 Bool wxMediaBuffer::ReadFooterFromFile(wxMediaStreamIn *, char *headerName)
 {
   char buffer[256];
+  int i;
 
   sprintf(buffer, "Unknown header data: \"%.100s\"."
 	  " The file will be loaded anyway.", headerName);
@@ -770,12 +771,14 @@ Bool wxMediaBuffer::ReadHeadersFooters(wxMediaStreamIn *f, Bool headers)
   long len, hlen, i, pos, numHeaders;
 
   f->GetFixed(&numHeaders);
+#if 0
   if (numHeaders > 1000) {
     if (wxMessageBox("File contains suspiciously large value for special"
-		     " headers/footers. Should I give up?", "Warning",
+		     " headers/footers. Give up?", "Warning",
 		     wxYES_NO | wxCENTRE) == wxYES)
       return FALSE;
   }
+#endif
 
   for (i = 0; i < numHeaders; i++) {
     f->GetFixed(&len);
@@ -904,12 +907,14 @@ Bool wxMediaBuffer::ReadSnipsFromFile(wxMediaStreamIn *f, Bool overwritestylenam
   
   f->GetFixed(&numHeaders);
   
+#if 0
   if (numHeaders > 100) {
     if (wxMessageBox("File contains suspiciously large value for class"
-		     " headers. Should I give up?", "Warning",
+		     " headers. Give up?", "Warning",
 		     wxYES_NO | wxCENTRE) == wxYES)
       return FALSE;
   }
+#endif
 
   for (i = 0; i < numHeaders; i++) {
     f->Get(&n);
@@ -1870,6 +1875,7 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
   } else if (!strcmp(format, "WXME")) {
     wxMediaStreamOutStringBase *b;
     wxMediaStreamOut *mf;
+    char *result;
 
     b = new wxMediaStreamOutStringBase();
     mf = new wxMediaStreamOut(b);
@@ -1885,7 +1891,8 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
     }
     wxWriteMediaGlobalFooter(mf);
 
-    return b->GetString(size);
+    result = b->GetString(size);
+    return result;
   } else {
     *size = 0;
     return "";

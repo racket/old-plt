@@ -72,7 +72,7 @@ see `ABOUT MzScheme' and `ABOUT MrEd' in that folder.
               Linux (x86, PPC, and 68k)
               Cygwin b20
               BeOS
-              Solaris (x86 and Sparc) [see note below]
+              Solaris (x86 and Sparc)    [see notes below]
               SunOS4 (Sparc)
               IBM AIX (RS6000)
               SGI IRIX (Mips)

@@ -829,7 +829,7 @@ void wxWindowDC::SetPen(wxPen *pen)
   unsigned long mask;
   wxBitmap *bm;
   int scale;
-  int style, xor, js, cs, pw;
+  int style, doXor, js, cs, pw;
   unsigned long pixel;
 
     if (!DRAWABLE) /* MATTHEW: [5] */
@@ -856,29 +856,28 @@ void wxWindowDC::SetPen(wxPen *pen)
     pw = pen->GetWidth();
     scale = XLOG2DEVREL(pw);
     values.line_width = scale;
-    // wxXOR shall work the correct way
     {
       wxColour *pcol;
       pcol = pen->GetColour();
       pixel = pcol->GetPixel(current_cmap, IS_COLOR, 1);
     }
     style = pen->GetStyle();
-    xor = 0;
+    doXor = 0;
 
     switch (style) {
     case wxXOR:
-      xor = 1;
+      doXor = 1;
       break;
     case wxXOR_DOT:
     case wxXOR_SHORT_DASH:
     case wxXOR_LONG_DASH:
     case wxXOR_DOT_DASH:
-      xor = 1;
+      doXor = 1;
       style -= (wxXOR_DOT - wxDOT);
       break;
     }
 
-    if (xor) {
+    if (doXor) {
 	XGCValues values_req;
 	XGetGCValues(DPY, PEN_GC, GCBackground, &values_req);
 	values.foreground = pixel ^ values_req.background;

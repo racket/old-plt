@@ -22,36 +22,40 @@ string                             match its sequence of characters
 To use the _lexer generator_ you must (require (lib "lex.ss" "parser-tools")).
 This gives you the following syntatic forms:
 
-> (define-lex-abbrev name re) which associates a regular expression with name
-to be used in other regular expressions with the (name) form.  The definition 
-of name has the same scoping properties as a normal mzscheme macro definition.
-In particular a (define-syntax name ...) could interfere.
+> (define-lex-abbrev name re) which associates a regular expression
+   with name to be used in other regular expressions with the (symbol)
+   form.  The definition of name has the same scoping properties as a
+   normal mzscheme macro definition.  In particular a 
+   (define-syntax name ...) could interfere.
 
 > (define-lex-abbrevs [name re] ...) defines several lex-abbrevs
 
-> (lex (re action) ...) expands into a function that takes a lex-buf, matches
- the re's against the buffer and returns the result of executing the 
- corresponding action.  Each action is scheme code that can refer to any
- variables that something in the position of the lex definition can.  
- The variables get-start-pos, get-end-pos, get-lexeme and lex-buf are also
- bound in the action (hiding any outside binding).
- > (get-start-pos) returns a position struct for the first character of the 
-     match
- > (get-end-pos) returns a position struct for the last character of the match
- > (get-lexeme) returns a string of the match.
- > lex-buf is the lex-buf passed into the function lex generates.
+> (lex (re action) ...) expands into a function that takes a lex-buf,
+   matches the re's against the buffer and returns the result of
+   executing the corresponding action.  Each action is scheme code
+   that has the same scope as its lexer defintion, except that the
+   variables get-start-pos, get-end-pos, get-lexeme and lex-buf are
+   also bound in the action (hiding any outside binding).
+   > (get-start-pos) returns a position struct for the first character 
+      matched 
+   > (get-end-pos) returns a position struct for the last character
+      matched 
+   > (get-lexeme) returns the matched string
+   > lex-buf is the lex-buf being processed (this is useful for
+      matching input with multiple lexers, see example below)
 
 > (define-tokens group-name (token-name ...)) which binds group-name
-  to the group of tokens being defined.  For each token-name a function
-  (token-token-name expr) is created, which makes a token with name
-  token-name and stores the value of expr in it.  The definition of
-  group-name has the same scoping properties as a normal mzscheme macro
-  definition.  In particular a (define-syntax group-name ...) could
-  interfere.  error cannot be defined as a token since it has special
-  use in the parser.
+   to the group of tokens being defined.  For each token-name, t, a
+   function (token-t expr) is created, which constructs a token with
+   name t and stores the value of expr in it.  The definition of
+   group-name has the same scoping properties as a normal mzscheme
+   macro definition.  In particular a (define-syntax group-name ...)
+   could interfere.  error cannot be defined as a token since it has
+   special use in the parser.
+
 > (define-empty-tokens group-name (token-name ...)) like
-  define-tokens, except the token constructor takes no arguments and
-  stores the value #f into the token.
+   define-tokens, except the resulting token constructors take no
+   arguments and store the value #f into the token.
 
 
 Several values are also provided:
@@ -68,8 +72,10 @@ Several values are also provided:
 Each time the scheme code for a lexer is compiled (e.g. when a .ss
 file containing a (lex ...) is loaded/required) the lexer generator is
 run.  To avoid this overhead place the lexer into a module and compile
-the module to a .zo with 'mzc -z filename' Then place the resulting
-.zo file in a subdirectory named 'compiled'
+the module to a .zo with 'mzc --zo --auto-dir filename'.  This should
+create a .zo file in the 'compiled' subdirectory.
+
+See the combined lexer/parser example below.
 
 
 _yacc.ss_
@@ -82,44 +88,48 @@ This module provides the following syntactic forms:
   long as there are no duplicates and all non-optional arguments are
   present) and are:
 
-> (debug filename) OPTIONAL causes the parser to write the LALR table
-    to the file named filename (unless the file exists).  filename
-    must be a string.
+  > (debug filename) OPTIONAL causes the parser to write the LALR
+     table to the file named filename (unless the file exists).
+     filename must be a string.
 
-> (error expression) expression should evaluate to a thunk which will
-  be executed for its side-effect whenever the parser encounters an
-  error.
+  > (error expression) expression should evaluate to a thunk which
+     will be executed for its side-effect whenever the parser
+     encounters an error.
 
-> (tokens group-name ...) declares that all of the tokens defined in
-  the groups can be handled by this parser.
+  > (tokens group-name ...) declares that all of the tokens defined in
+     the groups can be handled by this parser.
 
-> (start non-terminal-name) declares the starting non-terminal of the
-  grammar.  If it is not present the non-terminal of the first
-  production in the grammar is used.
+  > (start non-terminal-name) declares the starting non-terminal of
+     the grammar.
 
-> (end token-name ...) specifies a set of tokens from which some
-  member must follow any valid parse.  For example an EOF token would
-  be specified for a parser that parses entire files and a NEWLINE
-  token for a parser that parses entire lines individually.
+  > (end token-name ...) specifies a set of tokens from which some
+     member must follow any valid parse.  For example an EOF token
+     would be specified for a parser that parses entire files and a
+     NEWLINE token for a parser that parses entire lines individually.
 
-> (precs ((assoc token-name ...) ...)) OPTIONAL precedence
-  declarations to resolve shift/reduce and reduce/reduce conflicts as
-  in YACC/BISON.  assoc must be one of left, right or nonassoc.
-  States with multiple shift/reduce or reduce/reduce conflicts or some
-  combination thereof are not resolved with precedence.
+  > (precs ((assoc token-name ...) ...)) OPTIONAL precedence
+     declarations to resolve shift/reduce and reduce/reduce conflicts
+     as in YACC/BISON.  assoc must be one of left, right or nonassoc.
+     States with multiple shift/reduce or reduce/reduce conflicts or
+     some combination thereof are not resolved with precedence.
 
-> (grammar (non-terminal ((grammar-symbol ...) (prec token-name) expression)
-                          ...) 
-            ...)
-  declares the grammar to be parsed.  Each grammar-symbol must be a
-  token-name or non-terminal.  The prec declaration is optional.
-  expression is an expression which will be evaluated when the input
-  is found to match its corresponding production.  The identifiers $1,
-  ..., $n are bound in the expression and may hide outside bindings of
-  $1, ... $n.  Here n is the number of grammar-symbols on the right of
-  the production.  All of the productions for a given non-terminal
-  must be grouped with it, i.e. No non-terminal may appear twice on
-  the left hand side in a parser.
+  > (grammar (non-terminal ((grammar-symbol ...) (prec token-name) expression)
+                            ...) 
+              ...)
+     declares the grammar to be parsed.  Each grammar-symbol must be a
+     token-name or non-terminal.  The prec declaration is optional.
+     expression is a semantic action which will be evaluated when the
+     input is found to match its corresponding production.  Each
+     action is scheme code that has the same scope as its parser's
+     defintion, except that the variables $1, ..., $n are bound in the
+     expression and may hide outside bindings of $1, ... $n.  $x is
+     bound to the result of the action for the $xth grammar symbol on
+     the right of the production, if that grammar symbol is a
+     non-terminal, or the value stored in the token if the grammar
+     symbol is a terminal.  Here n is the number of grammar-symbols on
+     the right of the production.  All of the productions for a given
+     non-terminal must be grouped with it, i.e. No non-terminal may
+     appear twice on the left hand side in a parser.
 
 The result of a parser expression is a function, f, that takes one
 argument.  This argument must be a zero argument function, t,
@@ -132,9 +142,10 @@ semantic actions.
 
 Each time the scheme code for a parser is compiled (e.g. when a .ss
 file containing a (parser ...) is loaded/required) the parser
-generator is run.  To avoid this overhead place the parser into a
-module and compile the module to a .zo with 'mzc -z filename' Then
-place the resulting .zo file in a subdirectory named 'compiled'.
+generator is run.  To avoid this overhead place the lexer into a
+module and compile the module to a .zo with 'mzc --zo --auto-dir
+filename'.  This should create a .zo file in the 'compiled'
+subdirectory.
 
 
 As example of both lex and yacc here is a read function that works for

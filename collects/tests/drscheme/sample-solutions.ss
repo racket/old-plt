@@ -73,15 +73,6 @@
       (when frame-to-close (send frame-to-close close))
       (set! frame-to-close drs-frame)
 
-      ;; memory debugging
-      (global-defined-value 'top-level-frames
-			    (cons
-			     (make-weak-box drs-frame)
-			     (global-defined-value 'top-level-frames)))
-      (collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)(collect-garbage)
-      (send drs-frame update-memory-text) 
-      ;(dump-memory-stats)
-
       (set-language-level! language)
       (fw:test:menu-select "Language" "Clear All Teachpacks")
       (for-each (lambda (teachpack)
@@ -138,6 +129,20 @@
 
 ;(for-each test-single-file toc)
 (let loop ()
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
+  (test-single-file (car toc))
+  (test-single-file (cadr toc))
   (test-single-file (car toc))
   (test-single-file (cadr toc))
   (test-single-file (car toc))

@@ -8,6 +8,10 @@
     (set! initialize-tables void)
     (hash-table-put!
       beginning
+      'read
+      '("read: (-> sexp)" "      to read input from the user"))
+    (hash-table-put!
+      beginning
       'number?
       '("number?: (any -> boolean)"
         "         to determine whether some value is a number"))
@@ -284,17 +288,18 @@
       beginning
       'integer->char
       '("integer->char: (int -> char)"
-        "               to lookup the character that corresponds to the<NL>given integer in the ASCII table (if any)"))
+        "               to lookup the character that corresponds to the given integer in the ASCII table (if any)"))
     (hash-table-put!
       beginning
       'random
       '("random: (int -> int)"
-        "        to generate a random natural number <NL> less than some given integer"))
+        "        to generate a random natural number less than some given integer"))
     (hash-table-put!
       beginning
       'current-seconds
       '("current-seconds: (-> int)"
-        "                 to compute the current time in seconds elapsed <NL> (since a platform-specific starting date)"))
+        "                 to compute the current time in seconds elapsed"
+        "                 (since a platform-specific starting date)"))
     (hash-table-put! beginning 'e '("e: real" "   Euler's number"))
     (hash-table-put!
       beginning
@@ -449,17 +454,20 @@
       beginning
       'memq
       '("memq: (any list -> (union false list))"
-        "      to determine whether some value is on some list <NL> (comparing values with eq?)"))
+        "      to determine whether some value is on some list"
+        "      (comparing values with eq?)"))
     (hash-table-put!
       beginning
       'memv
       '("memv: (any list -> (union false list))"
-        "      to determine whether some value is on the list <NL> (comparing values with eqv?)"))
+        "      to determine whether some value is on the list"
+        "      (comparing values with eqv?)"))
     (hash-table-put!
       beginning
       'member
       '("member: (any list -> (union false list))"
-        "        to determine whether some value is on the list <NL> (comparing values with equal?)"))
+        "        to determine whether some value is on the list"
+        "        (comparing values with equal?)"))
     (hash-table-put!
       beginning
       'reverse
@@ -764,6 +772,10 @@
         "                      to load a library"))
     (hash-table-put!
       intermediate
+      'read
+      '("read: (-> sexp)" "      to read input from the user"))
+    (hash-table-put!
+      intermediate
       'number?
       '("number?: (any -> boolean)"
         "         to determine whether some value is a number"))
@@ -1040,17 +1052,18 @@
       intermediate
       'integer->char
       '("integer->char: (int -> char)"
-        "               to lookup the character that corresponds to the<NL>given integer in the ASCII table (if any)"))
+        "               to lookup the character that corresponds to the given integer in the ASCII table (if any)"))
     (hash-table-put!
       intermediate
       'random
       '("random: (int -> int)"
-        "        to generate a random natural number <NL> less than some given integer"))
+        "        to generate a random natural number less than some given integer"))
     (hash-table-put!
       intermediate
       'current-seconds
       '("current-seconds: (-> int)"
-        "                 to compute the current time in seconds elapsed <NL> (since a platform-specific starting date)"))
+        "                 to compute the current time in seconds elapsed"
+        "                 (since a platform-specific starting date)"))
     (hash-table-put! intermediate 'e '("e: real" "   Euler's number"))
     (hash-table-put!
       intermediate
@@ -1205,17 +1218,20 @@
       intermediate
       'memq
       '("memq: (any list -> (union false list))"
-        "      to determine whether some value is on some list <NL> (comparing values with eq?)"))
+        "      to determine whether some value is on some list"
+        "      (comparing values with eq?)"))
     (hash-table-put!
       intermediate
       'memv
       '("memv: (any list -> (union false list))"
-        "      to determine whether some value is on the list <NL> (comparing values with eqv?)"))
+        "      to determine whether some value is on the list"
+        "      (comparing values with eqv?)"))
     (hash-table-put!
       intermediate
       'member
       '("member: (any list -> (union false list))"
-        "        to determine whether some value is on the list <NL> (comparing values with equal?)"))
+        "        to determine whether some value is on the list"
+        "        (comparing values with equal?)"))
     (hash-table-put!
       intermediate
       'reverse
@@ -1523,6 +1539,23 @@
         "                      to load a library"))
     (hash-table-put!
       advanced
+      'read
+      '("read: (-> sexp)" "      to read input from the user"))
+    (hash-table-put!
+      advanced
+      'printf
+      '("printf: (string any ... -> void)"
+        "        to format the rest of the arguments according to the first argument and print it to stdout"))
+    (hash-table-put!
+      advanced
+      'display
+      '("display: (any -> void)" "         to print the argument to stdout"))
+    (hash-table-put!
+      advanced
+      'write
+      '("write: (any -> void)" "       to print the argument to stdout"))
+    (hash-table-put!
+      advanced
       'number?
       '("number?: (any -> boolean)"
         "         to determine whether some value is a number"))
@@ -1799,17 +1832,18 @@
       advanced
       'integer->char
       '("integer->char: (int -> char)"
-        "               to lookup the character that corresponds to the<NL>given integer in the ASCII table (if any)"))
+        "               to lookup the character that corresponds to the given integer in the ASCII table (if any)"))
     (hash-table-put!
       advanced
       'random
       '("random: (int -> int)"
-        "        to generate a random natural number <NL> less than some given integer"))
+        "        to generate a random natural number less than some given integer"))
     (hash-table-put!
       advanced
       'current-seconds
       '("current-seconds: (-> int)"
-        "                 to compute the current time in seconds elapsed <NL> (since a platform-specific starting date)"))
+        "                 to compute the current time in seconds elapsed"
+        "                 (since a platform-specific starting date)"))
     (hash-table-put! advanced 'e '("e: real" "   Euler's number"))
     (hash-table-put!
       advanced
@@ -1964,17 +1998,20 @@
       advanced
       'memq
       '("memq: (any list -> (union false list))"
-        "      to determine whether some value is on some list <NL> (comparing values with eq?)"))
+        "      to determine whether some value is on some list"
+        "      (comparing values with eq?)"))
     (hash-table-put!
       advanced
       'memv
       '("memv: (any list -> (union false list))"
-        "      to determine whether some value is on the list <NL> (comparing values with eqv?)"))
+        "      to determine whether some value is on the list"
+        "      (comparing values with eqv?)"))
     (hash-table-put!
       advanced
       'member
       '("member: (any list -> (union false list))"
-        "        to determine whether some value is on the list <NL> (comparing values with equal?)"))
+        "        to determine whether some value is on the list"
+        "        (comparing values with equal?)"))
     (hash-table-put!
       advanced
       'reverse

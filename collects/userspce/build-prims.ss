@@ -62,9 +62,9 @@
                    (map (lambda (prim)
                           `(hash-table-put! ,ht-sym ',(car prim)
                                            '(,(format "~a: ~a" (car prim) (cadr prim))
-                                             ,(format "~a  ~a" 
-                                                      (make-spaces (car prim))
-                                                      (caddr prim)))))
+                                             ,@(map (lambda (x)
+						      (format "~a  ~a" (make-spaces (car prim)) x))
+						    (cddr prim)))))
                         (cadr cat)))
                  cats)))
 

@@ -131,7 +131,6 @@
    (standard-menus<%>)
    args
    (inherit on-menu-char on-traverse-char)
-   (rename (super-on-close on-close))
    (private
     (remove-prefs-callback
      (preferences:add-callback
@@ -147,9 +146,9 @@
                  (if v
                    (send menu restore-keybinding)
                    (send menu set-shortcut #f)))))))))))
-   (override (on-close (lambda () (remove-prefs-callback) (super-on-close))))
    (inherit get-menu-bar show can-close? get-edit-target-object)
    (sequence (apply super-init args))
+   (override (on-close (lambda () (remove-prefs-callback) (super-on-close))))
    (public (get-menu% (lambda () menu%)))
    (public (get-menu-item% (lambda () menu:can-restore-menu-item%)))
    (public
@@ -430,6 +429,7 @@
      (lambda () "Learn something about this application"))
     (help-menu:about-on-demand void))
    (public (help-menu:after-about (lambda (menu) (void))))
+   (rename (super-on-close on-close))
    (sequence (void))
    (sequence (void))
    (sequence (void))

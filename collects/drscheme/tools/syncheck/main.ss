@@ -531,8 +531,7 @@
 	[rest-panel 'uninitialized-root]
 	[super-root 'uninitialized-super-root]
         [docs-panel 'uninitialized-docs-panel]
-        [docs-line1 'uninitialized-docs-line1]
-        [docs-line2 'uninitialized-docs-line2])
+        [docs-messages 'uninitialized-docs-lines])
       (override
 	[make-root-area-container
 	 (lambda (% parent)
@@ -543,15 +542,12 @@
 	     (set! super-root s-root)
 	     (set! rest-panel r-root)
              (set! docs-panel (make-object mred:vertical-panel% super-root))
+	     (set! docs-messages null)
              (send docs-panel set-label-font
                    (send mred:the-font-list find-or-create-font 
                          (send (send docs-panel get-label-font) get-point-size)
                          'modern 'normal 'normal #f))
-             (set! docs-line1 (make-object mred:message% "" docs-panel))
-             (set! docs-line2 (make-object mred:message% "" docs-panel))
              (send docs-panel stretchable-height #f)
-             (send docs-line1 stretchable-width #t)
-             (send docs-line2 stretchable-width #t)
              (send super-root change-children (lambda (l) (list rest-panel)))
 	     r-root))])
       (private
@@ -565,14 +561,35 @@
                      (list rest-panel)))))]
         [set-docs-messages
          (let ([docs-lines-shown? #f])
-           (lambda (l1 l2)
-             (send docs-line1 set-label l1)
-             (send docs-line2 set-label l2)
-             (unless docs-messages-shown?
-               (set! docs-messages-shown? #t)
-               (send super-root change-children
-                     (lambda (l)
-                       (list rest-panel docs-panel))))))])
+           (lambda (lines)
+	     (when (< (length docs-messages) (length lines))
+	       (set! docs-messages
+		     (append
+		      docs-messages
+		      (let loop ([n (- (length lines) (length docs-messages))])
+			(cond
+			 [(zero? n) null]
+			 [else
+			  (let ([m (make-object mred:message% "" docs-panel)])
+			    (send m stretchable-width #t)
+			    (cons m (loop (- n 1))))])))))
+	     (let ([to-be-shown
+		    (let loop ([lines lines]
+			       [docs-messages docs-messages])
+		      (cond
+		       [(null? lines) null]
+		       [else
+			(send (car docs-messages) set-label (car lines))
+			(cons (car docs-messages)
+			      (loop (cdr lines)
+				    (cdr docs-messages)))]))])
+	       (unless (= (length to-be-shown) (length (send docs-panel get-children)))
+		 (send docs-panel change-children (lambda (l) to-be-shown)))
+	       (unless docs-messages-shown?
+		 (set! docs-messages-shown? #t)
+		 (send super-root change-children
+		       (lambda (l)
+			 (list rest-panel docs-panel)))))))])
       
       (private
         [report-error-frame (make-object mred:frame% "Check Syntax Error" #f 400 10)]
@@ -1024,7 +1041,7 @@
                                                 (make-object mred:menu-item% (format "Show summary of ~a" id)
                                                   m
                                                   (lambda x
-                                                    (set-docs-messages (car txt) (cadr txt))))
+                                                    (set-docs-messages txt)))
                                                 (send 
                                                  (make-object mred:menu-item% "Hide primitive summary pane"
                                                    m

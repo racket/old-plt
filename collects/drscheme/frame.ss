@@ -4,7 +4,6 @@
 	    [mzlib : mzlib:core^]
 	    [drscheme:basis : drscheme:basis^]
 	    [drscheme:setup : drscheme:setup^]
-	    [drscheme:tool : drscheme:tool^]
 	    [drscheme:unit : drscheme:unit^]
 	    [drscheme:compound-unit : drscheme:compound-unit^]
 	    [zodiac : zodiac:system^])

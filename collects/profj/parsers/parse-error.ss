@@ -841,11 +841,91 @@
                  (parse-error (format "Expected variable name after type, found reserved word ~a, which cannot be a name"
                                       (get-token-name next-tok))
                               next-start next-end))
+                ((and (advanced?) (o-bracket? next-tok))
+                 (parse-members cur next 'array-type getter #f))
                 (else (parse-error (format "Expected new parameter name after type, found ~a" (output-format next-tok))
                                    next-start next-end)))))
            ((keyword? tok)
             (parse-error (format "Expected type name, reserved word ~a is not a type" kind) srt end))
            (else (parse-error (format "Expected a parameter or ), found ~a" out) srt end))))
+        ((array-type)
+         (case kind
+           ((EOF) (parse-error "Expected remainder of constructor parameters" ps pe))
+           ((O_BRACKET) 
+            (let* ((next (getter))
+                   (next-tok (get-tok next)))
+              (cond 
+                ((eof? next-tok) (parse-error "Expected remainder of array type" srt end))
+                ((c-bracket? next-tok) (parse-members next (getter) 'array-type getter #f))
+                (else
+                 (parse-error (format "Expected ']' to close array type, found ~a which is not allowed" 
+                                      (output-format next-tok))
+                              srt (get-end next))))))
+           ((COMMA) (parse-error "Expected new paramter name after type, found ','" srt end))
+           ((IDENTIFIER) 
+            (let* ((next (getter))
+                   (next-tok (get-tok next)))
+              (cond
+                ((eof? next-tok) (parse-error "Expected ')' to close parameter list, or more parameters"))
+                
+                ((comma? next-tok)
+                 (let* ((afterC (getter))
+                        (afterC-tok (get-tok afterC)))
+                   (cond
+                     ((eof? afterC-tok) (parse-error "Expected rest of parameter list for constructor"
+                                                     (get-start next) (get-end next)))
+                     ((c-paren? afterC-tok)
+                      (parse-error "Comma is unneeded before ) unless another variable is desired" 
+                                   (get-start next) (get-end afterC)))
+                     ((comma? afterC-tok)
+                      (parse-error "Parameter list should not have ,, Only one is needed" 
+                                   (get-start next) (get-end afterC)))
+                     (else (parse-members next afterC 'ctor-parms getter #f)))))
+                ((c-paren? next-tok) (parse-members cur next 'ctor-parms getter #f))
+                (else (parse-error (format "Expected ',' or ')' in parameters found ~a which is not allowed" 
+                                           (output-format next-tok))
+                                   srt (get-end next))))))
+           (else
+            (parse-error (format "Expected parameter name after type, found ~a" out) srt end))))
+        ((method-array-type)
+         (case kind
+           ((EOF) (parse-error "Expected remainder of method parameters" ps pe))
+           ((O_BRACKET) 
+            (let* ((next (getter))
+                   (next-tok (get-tok next)))
+              (cond 
+                ((eof? next-tok) (parse-error "Expected remainder of array type" srt end))
+                ((c-bracket? next-tok) (parse-members cur (getter) 'method-array-type getter abstract-method?))
+                (else
+                 (parse-error (format "Expected ']' to close array type, found ~a which is not allowed" 
+                                      (output-format next-tok))
+                              srt (get-end next))))))
+           ((COMMA) (parse-error "Expected new paramter name after type, found ','" srt end))
+           ((IDENTIFIER) 
+            (let* ((next (getter))
+                   (next-tok (get-tok next)))
+              (cond
+                ((eof? next-tok) (parse-error "Expected ')' to close parameter list, or more parameters"))
+                
+                ((comma? next-tok)
+                 (let* ((afterC (getter))
+                        (afterC-tok (get-tok afterC)))
+                   (cond
+                     ((eof? afterC-tok) (parse-error "Expected rest of parameter list for method"
+                                                     (get-start next) (get-end next)))
+                     ((c-paren? afterC-tok)
+                      (parse-error "Comma is unneeded before ) unless another variable is desired" 
+                                   (get-start next) (get-end afterC)))
+                     ((comma? afterC-tok)
+                      (parse-error "Parameter list should not have ,, Only one is needed" 
+                                   (get-start next) (get-end afterC)))
+                     (else (parse-members next afterC 'method-parms getter abstract-method?)))))
+                ((c-paren? next-tok) (parse-members cur next 'method-parms getter abstract-method?))
+                (else (parse-error (format "Expected ',' or ')' in parameters found ~a which is not allowed" 
+                                           (output-format next-tok))
+                                   srt (get-end next))))))
+           (else
+            (parse-error (format "Expected parameter name after type, found ~a" out) srt end))))
         ((method-parms)
          (cond
            ((eof? tok) (parse-error "Expceted method parameters, and class body still requires }" ps pe))
@@ -918,6 +998,8 @@
                  (parse-error (format "Expected variable name after type, found reserved word ~a, which cannot be a name"
                                       (get-token-name next-tok))
                               next-start next-end))
+                ((and (advanced?) (o-bracket? next-tok))
+                 (parse-members cur next 'method-array-type getter abstract-method?))
                 (else (parse-error (format "Expected new parameter name after type, found ~a" (output-format next-tok))
                                    next-start next-end)))))
            ((keyword? tok)

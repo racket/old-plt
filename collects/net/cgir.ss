@@ -274,13 +274,21 @@
 	  (cond
 	    ((null? result)
 	      (generate-error-output
-		`(,(string-append "No binding for field `" field-name "' in <p>")
+		`(,(string-append "No binding for field `"
+		     (if (symbol? field-name)
+		       (symbol->string field-name)
+		       field-name)
+		     "' in <p>")
 		   ,@(bindings-as-html bindings))))
 	    ((null? (cdr result))
 	      (car result))
 	    (else
 	      (generate-error-output
-		`(,(string-append "Multiple bindings for field `" field-name "'")
+		`(,(string-append "Multiple bindings for field `"
+		     (if (symbol? field-name)
+		       (symbol->string field-name)
+		       field-name)
+		     "'")
 		   ,(string-append "where only one was expected in <p>")
 		   ,@(bindings-as-html bindings)))))))))
 

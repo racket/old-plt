@@ -2109,7 +2109,7 @@
 "(unless(eq? modname expect-module)"
 "(raise-mismatch-error"
 " 'load-extension"
-" (format \"expected module declaration for `~a', found ~a in file: ~~e\""
+" (format \"expected module declaration for `~a', found ~a through loader: ~~e\""
 " expect-module"
 "(if modname "
 " (format \"module declaration for `~a'\" modname)"

@@ -577,7 +577,8 @@ current_module_name_prefix(int argc, Scheme_Object *argv[])
 /*                            procedures                              */
 /**********************************************************************/
 
-static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[], 
+static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
+				       Scheme_Env *env,
 				       int get_bucket, 
 				       int exp_time, int indirect_ok,
 				       int fail_with_error)
@@ -585,7 +586,7 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
   Scheme_Object *modname, *modidx;
   Scheme_Object *name, *srcname, *srcmname;
   Scheme_Module *m, *srcm;
-  Scheme_Env *env, *menv;
+  Scheme_Env *menv;
   int i, count;
 
   modname = argv[0];
@@ -603,7 +604,6 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
   modname = scheme_module_resolve(modidx);
 
-  env = scheme_get_env(scheme_config);
   if (exp_time) {
     scheme_prepare_exp_env(env);
     env = env->exp_env;
@@ -693,12 +693,12 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
 
 static Scheme_Object *dynamic_require(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 0, 0, 0, 1);
+  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 0, 0, 1);
 }
 
 static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[])
 {
-  return _dynamic_require(argc, argv, 0, 1, 0, 1);
+  return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 1, 0, 1);
 }
 
 static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp)
@@ -1357,9 +1357,10 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
     Scheme_Invoke_Proc ivk = menv->module->prim_et_body;
     Scheme_Env *cenv;
 
-    /* Top simplify mzc's job, we make up an environment where the
+    /* To simplify mzc's job, we make up an environment where the
        syntax table is the same as menv, and the exp_env is exp_env */
     cenv = MALLOC_ONE_TAGGED(Scheme_Env);
+    cenv->type = scheme_namespace_type;
     cenv->module = menv->module;
     cenv->syntax = menv->syntax;
     cenv->exp_env = exp_env;    
@@ -1511,7 +1512,7 @@ Scheme_Bucket *scheme_module_bucket(Scheme_Object *modname, Scheme_Object *var, 
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, 1, 0, 1, 1);
+  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 0, 1, 1);
 }
 
 Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Object *var, Scheme_Env *env)
@@ -1521,7 +1522,7 @@ Scheme_Bucket *scheme_exptime_module_bucket(Scheme_Object *modname, Scheme_Objec
   a[0] = modname;
   a[1] = var;
 
-  return (Scheme_Bucket *)_dynamic_require(2, a, 1, 1, 1, 1);
+  return (Scheme_Bucket *)_dynamic_require(2, a, env, 1, 1, 1, 1);
 }
 
 Scheme_Object *scheme_builtin_value(const char *name)
@@ -1532,14 +1533,14 @@ Scheme_Object *scheme_builtin_value(const char *name)
 
   /* Try kernel first: */
   a[0] = kernel_symbol;
-  v = _dynamic_require(2, a, 0, 0, 0, 0);
+  v = _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0);
 
   if (v)
     return v;
 
   /* Maybe in MzScheme? */
   a[0] = scheme_intern_symbol("mzscheme");
-  return _dynamic_require(2, a, 0, 0, 0, 0);
+  return _dynamic_require(2, a, scheme_get_env(scheme_config), 0, 0, 0, 0);
 }
 
 Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o)

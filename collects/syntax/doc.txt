@@ -222,6 +222,27 @@ currently exist).
   import hierarchy starting from a given module path.
 
 ======================================================================
+_readerr.ss_: signalling parse errors
+======================================================================
+
+> (raise-read-error string input-port source-v line-k col-k pos-k span-k)
+
+Creates and raises an
+>  exn:read
+exception, using `string' as the base error message, `input-port' as
+the input port recorded in the exception, etc.
+
+Source-location information is added to the error message using the
+last five arguments (if the `error-print-source-location' parameter is
+set to #t). The `source-v' argument is an arbitrary value naming the
+source location --- usually a file path string. Each of the `line-k',
+`col-k', and `pos-k' arguments is #f or a positive exact integer
+representing the location within `source-name' (as much as known), and
+`span-k' is #f or a non-negative exact integer for an item range
+starting from the indicated position.
+
+
+======================================================================
 _zodiac.ss_, _zodiac-unit.ss_, and _zodiac-sig.ss_: compatibility
   layer for software that used to use Zodiac
 ======================================================================

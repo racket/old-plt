@@ -11,10 +11,10 @@
          "test-servlets.ss"
          "test-errors.ss")
 
-(make-graphical-ui (list test-channel
- test-web-server
- test-serve-static-html
- test-serve-static-jpeg
- test-authentication
- test-errors
- test-servlets))
+(test/text-ui test-channel)
+(test/text-ui test-web-server)
+(test/text-ui test-serve-static-html)
+(test/text-ui test-serve-static-jpeg)
+(test/text-ui test-authentication)
+(test/text-ui test-errors)
+(test/text-ui test-servlets)

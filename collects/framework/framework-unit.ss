@@ -118,7 +118,7 @@
       (import [mred : mred^]
 	      [pref-file : framework:prefs-file^])
       (link [test : framework:test^ (framework:test@ mred)]
-	    [gui-utils : framework:gui-utils^ (gui-utils@ mred)]
+	    [gui-utils : framework:gui-utils^ (framework:gui-utils@ mred)]
 	    [f : frameworkc^ (framework-small-part@ mred test pref-file gui-utils)])
       (export
        (unit test)

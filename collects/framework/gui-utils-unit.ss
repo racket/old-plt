@@ -4,9 +4,9 @@
 	   (lib "mred-sig.ss" "mred")
 	   "gui-utils-sig.ss")
 
-  (provide gui-utils@)
+  (provide framework:gui-utils@)
 
-  (define gui-utils@
+  (define framework:gui-utils@
 (unit/sig framework:gui-utils^
   (import mred^)
 

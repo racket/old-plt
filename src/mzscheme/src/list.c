@@ -1250,7 +1250,7 @@ static Scheme_Object *do_map_hash_table(int argc,
     bucket = hash->buckets[i];
     if (bucket && bucket->val && bucket->key) {
       if (hash->weak)
-	p[0] = *(Scheme_Object **)bucket->key;
+	p[0] = (Scheme_Object *)HT_EXTRACT_WEAK(bucket->key);
       else
 	p[0] = (Scheme_Object *)bucket->key;
       p[1] = (Scheme_Object *)bucket->val;

@@ -281,7 +281,7 @@ zo:
 	$(MZSCHEME) -qf mkmzlib.ss -e '(make-zo)' -e '(exit)'
 
 mzscheme2k:
-	cd src; $(XMAKE) all
+	$(XMAKE) bin
 	cd gc2; $(XMAKE) all
 	cd gc2; $(XMAKE) $(MZBUILDDIR)mzscheme2k
 

@@ -8,7 +8,7 @@ CFLAGS = $(DEBUGFLAGS) $(CFLAGS_NODBG)
 
 CPPFLAGS = $(OPTIONS) $(THREADFLAGS) $(OPTIONS) -I../include
 
-XFORM = mzscheme -rq xform.ss "$(CPP) $(CPPFLAGS)"
+XFORM = ../$(MZBUILDDIR)mzscheme -rq xform.ss "$(CPP) $(CPPFLAGS)"
 XSRCDIR = xsrc
 SRCDIR = ../src
 

@@ -183,6 +183,106 @@ void GC_add_roots(void *start, void *end)
 
 /******************************************************************************/
 
+typedef struct Fnl {
+  Scheme_Type type;
+  short eager_level;
+  void *p;
+  void (*f)(void *p, void *data);
+  void *data;
+  struct Fnl *next;
+} Fnl;
+
+Fnl *fnls, *run_queue, *last_in_queue;
+void *park[2];
+
+static int mark_finalizer(void *p, Mark_Proc mark)
+{
+  if (mark) {
+    Fnl *fnl = (Fnl *)p;
+    
+    gcMARK(fnl->next);
+    gcMARK(fnl->data);
+    if (!fnl->eager_level) {
+      /* Queued for run: */
+      gcMARK(fnl->p);
+    }
+  }
+
+  return gcBYTES_TO_WORDS(sizeof(Fnl));
+}
+
+void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
+			   void *data, void (**oldf)(void *p, void *data), 
+			   void **olddata)
+{
+  /* Used only for delete */
+  if (f) {
+    printf("Can't register regular finalizer\n");
+    exit(-1);
+  }
+  
+  GC_register_eager_finalizer(p, 0, f, data, oldf, olddata);
+}
+
+void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
+				 void *data, void (**oldf)(void *p, void *data), 
+				 void **olddata)
+{
+  Fnl *fnl, *prev;
+
+  fnl = fnls;
+  prev = NULL;
+  while (fnl) {
+    if (fnl->p == p) {
+      if (oldf) *oldf = fnl->f;
+      if (olddata) *olddata = fnl->data;
+      if (f) {
+	fnl->f = f;
+	fnl->data = data;
+	fnl->eager_level = level;
+      } else {
+	if (prev)
+	  prev->next = fnl->next;
+	else
+	  fnls = fnl->next;
+	return;
+      }
+      return;
+    } else {
+      prev = fnl;
+      fnl = fnl->next;
+    }
+  }
+  
+  if (oldf) *oldf = NULL;
+  if (olddata) *olddata = NULL;
+
+  if (!f)
+    return;
+
+  /* Allcation might trigger GC, so we use park: */
+  park[0] = p;
+  park[1] = data;
+
+  fnl = GC_malloc_one_tagged(sizeof(Fnl));
+
+  p = park[0];
+  park[0] = NULL;
+  data = park[1];
+  park[1] = NULL;
+
+  fnl->type = scheme_rt_gc_finalization;
+  fnl->next = fnls;
+  fnl->p = p;
+  fnl->f = f;
+  fnl->data = data;
+  fnl->eager_level = level;
+
+  fnls = fnl;
+}
+
+/******************************************************************************/
+
 static unsigned long stack_base;
 
 void GC_set_stack_base(void *base)
@@ -406,6 +506,8 @@ static long started, rightnow, old;
 # define PRINTTIME(x) /* empty */
 #endif
 
+static int initialized;
+
 void gcollect(int needsize)
 {
   /* Check old: */
@@ -414,15 +516,25 @@ void gcollect(int needsize)
   long new_size = alloc_size;
   void **tagged_mark, **untagged_mark;
   char *bitmap;
-  int i;
+  int i, did_fnls;
   long diff, iterations;
   GC_Weak_Box *wb;
 
   INITTIME();
   PRINTTIME((STDERR, "gc: start: %ld\n", GETTIMEREL()));
 
-  tag_table[scheme_weak_box_type] = mark_weak_box;
+  if (!initialized) {
+    tag_table[scheme_weak_box_type] = mark_weak_box;
+    tag_table[scheme_rt_gc_finalization] = mark_finalizer;
+    GC_add_roots(&fnls, (char *)&fnls + sizeof(fnls) + 1);
+    GC_add_roots(&run_queue, (char *)&run_queue + sizeof(run_queue) + 1);
+    GC_add_roots(&last_in_queue, (char *)&last_in_queue + sizeof(last_in_queue) + 1);
+    GC_add_roots(&park, (char *)&park + sizeof(park) + 1);
+    initialized = 0;
+  }
+
   weak_boxes = NULL;
+  did_fnls = 0;
 
   if (GC_collect_start_callback)
     GC_collect_start_callback();
@@ -559,39 +671,99 @@ void gcollect(int needsize)
       }
     }
 
-    while (untagged_mark > new_untagged_low) {
-      void **mp, **started;
+    while (1) { /* Loop to do finalization */
 
-      mp = started = new_untagged_low;
-      while (mp < untagged_mark) {
-	long v = *(long *)mp;
-	long size = (v & 0x3FFFFFFF);
+      while (untagged_mark > new_untagged_low) {
+	void **mp, **started;
+	
+	mp = started = new_untagged_low;
+	while (mp < untagged_mark) {
+	  long v = *(long *)mp;
+	  long size = (v & 0x3FFFFFFF);
+	  
+	  if (v & 0xC0000000) {
+	    mp++;	    
+	    if (v & 0x80000000) {
+	      /* Array of pointers */
+	      int i;
+	      /* printf("parray: %d %lx\n", size, (long)mp); */
+	      for (i = size; i--; mp++) {
+		gcMARK(*mp);
+	      }
+	    } else {
+	      /* Array of tagged */
+	      int i, elem_size;
+	      Scheme_Type tag = *(Scheme_Type *)mp;
+	      
+	      elem_size = tag_table[tag](mp, mark);
+	      mp += elem_size;
+	      for (i = elem_size; i < size; i += elem_size, mp += elem_size)
+		tag_table[tag](mp, mark);
+	    }
+	  } else
+	    mp += v + 1;
+	}
+	untagged_mark = started;
+      }
+      
+      if ((did_fnls == 2) || !fnls) {
+	break;
+      } else {
+	int eager_level = did_fnls + 1;
+	Fnl *f, *prev, *queue;
+	
+	f = fnls;
+	prev = NULL;
+	queue = NULL;
+	
+	while (f) {
+	  if (f->eager_level == eager_level) {
+	    void *v;
+	    
+	    v = GC_resolve(f->p);
+	    if (v == f->p) {
+	      /* Not yet marked. Move finalization to run queue. */
+	      Fnl *next = f->next;
 
-	if (v & 0xC0000000) {
-	  mp++;	    
-	  if (v & 0x80000000) {
-	    /* Array of pointers */
-	    int i;
-	    /* printf("parray: %d %lx\n", size, (long)mp); */
-	    for (i = size; i--; mp++) {
-	      gcMARK(*mp);
+	      if (prev)
+		prev->next = next;
+	      else
+		fnls = next;
+	      
+	      f->eager_level = 0; /* indicated queued */
+	      
+	      f->next = NULL;
+	      if (last_in_queue) {
+		last_in_queue->next = f;
+		last_in_queue = f;
+	      } else {
+		run_queue = last_in_queue = f;
+	      }
+	      if (!queue)
+		queue = f;
+
+	      f = next;
+	    } else {
+	      f->p = v;
+	      prev = f;
+	      f = f->next;
 	    }
 	  } else {
-	    /* Array of tagged */
-	    int i, elem_size;
-	    Scheme_Type tag = *(Scheme_Type *)mp;
-	    
-	    elem_size = tag_table[tag](mp, mark);
-	    mp += elem_size;
-	    for (i = elem_size; i < size; i += elem_size, mp += elem_size)
-	      tag_table[tag](mp, mark);
+	    prev = f;
+	    f = f->next;
 	  }
-	} else
-	  mp += v + 1;
+	}
+	
+	/* Mark items added to run queue: */
+	f = queue;
+	while (f) {
+	  gcMARK(f->p);
+	  f = f->next;
+	}
+	
+	did_fnls++;
       }
-      untagged_mark = started;
     }
- 
   }
 
   PRINTTIME((STDERR, "gc: mark/copy (%d): %ld\n", iterations, GETTIMEREL()));
@@ -649,6 +821,21 @@ void gcollect(int needsize)
 
   if (GC_collect_start_callback)
     GC_collect_end_callback();
+
+  /**********************************************************************/
+
+  /* Run Finalizations. Collections may happen */
+
+  while (run_queue) {
+    Fnl *f;
+
+    f = run_queue;
+    run_queue = run_queue->next;
+    if (!run_queue)
+      last_in_queue = NULL;
+
+    f->f(f->p, f->data);
+  }
 }
 
 void *GC_resolve(void *p)
@@ -779,70 +966,6 @@ void *GC_malloc_atomic_uncollectable(size_t size_in_bytes)
 
 void GC_free(void *s) /* noop */
 {
-}
-
-typedef struct Fnl {
-  void *p;
-  void (*f)(void *p, void *data);
-  void *data;
-  struct Fnl *next;
-} Fnl;
-
-Fnl *fnls;
-
-void GC_register_finalizer(void *p, void (*f)(void *p, void *data), 
-			   void *data, void (**oldf)(void *p, void *data), 
-			   void **olddata)
-{
-  /* Used only for delete */
-  if (f) {
-    printf("Can't register regular finalizer\n");
-    exit(-1);
-  }
-  
-  GC_register_eager_finalizer(p, 0, f, data, oldf, olddata);
-}
-
-void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *data), 
-				 void *data, void (**oldf)(void *p, void *data), 
-				 void **olddata)
-{
-  Fnl *fnl = fnls, *prev;
-
-  prev = NULL;
-  while (fnl) {
-    if (fnl->p == p) {
-      if (oldf) *oldf = fnl->f;
-      if (olddata) *olddata = fnl->data;
-      if (f) {
-	fnl->f = f;
-	fnl->data = data;
-      } else {
-	if (prev)
-	  prev->next = fnl->next;
-	else
-	  fnls = fnl->next;
-	free(fnl);
-	return;
-      }
-      return;
-    } else {
-      prev = fnl;
-      fnl = fnl->next;
-    }
-  }
-  
-  if (oldf) *oldf = NULL;
-  if (olddata) *olddata = NULL;
-
-  if (!f)
-    return;
-
-  fnl = malloc(sizeof(Fnl));
-  fnl->next = fnls;
-  fnls = fnl;
-  fnl->f = f;
-  fnl->data = data;
 }
 
 void GC_register_traverser(Scheme_Type tag, Traverse_Proc proc)

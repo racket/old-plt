@@ -94,12 +94,7 @@ Scheme_Object *scheme_make_sema(long v)
   sema->sema = SCHEME_MAKE_SEMA(v);
   scheme_add_finalizer(sema, free_sema, NULL);
 #else
-# if SEMAPHORE_WAITING_IS_COLLECTABLE
-#  define MALLOC_SEMA MALLOC_ONE_TAGGED
-# else
-#  define MALLOC_SEMA MALLOC_ONE_TAGGED_WEAK
-# endif
-  sema = MALLOC_SEMA(Scheme_Sema);
+  sema = MALLOC_ONE_TAGGED(Scheme_Sema);
   sema->value = v;
 #endif
 

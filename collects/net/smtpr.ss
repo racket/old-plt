@@ -3,7 +3,6 @@
   (import)
 
   (define ID "localhost")
-  (define TIMEOUT 9000)
 
   (define debug-via-stdio? #f)
 
@@ -18,17 +17,10 @@
 	 (string=? n (substring l 0 (string-length n)))))
 
   (define (check-reply r v)
-    (let ([t (let ([t (current-thread)])
-	       (thread
-		(lambda ()
-		  (with-handlers ([void void])
-		    (sleep TIMEOUT)
-		    (break-thread t)))))]
-	  [l (read-line r (if debug-via-stdio?
+    (let ([l (read-line r (if debug-via-stdio?
 			      'linefeed
 			      'return-linefeed))])
       (log "server: ~a~n" l)
-      (break-thread t) ; cancel timeout
       (if (eof-object? l)
 	  (error 'check-reply "got EOF")
 	  (let ([n (number->string v)])

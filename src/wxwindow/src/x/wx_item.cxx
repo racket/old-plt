@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	April 1995
- * RCS_ID:      $Id: wx_item.cxx,v 1.1.1.1 1997/12/22 16:12:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.2 1998/02/10 02:50:17 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -24,11 +24,6 @@ static const char sccsid[] = "@(#)wx_item.cc	1.2 5/9/94";
 #include <Xm/Label.h>
 #include <Xm/LabelG.h>
 #include <Xm/PushBG.h>
-
-void wxPanelItemEventHandler (Widget    wid,
-                              XtPointer client_data,
-                              XEvent*   event,
-                              Boolean *continueToDispatch);
 
 // See above notes
 char *
@@ -93,15 +88,6 @@ wxItem::~wxItem (void)
   wxObject *obj = (wxObject *) GetParent ();
   if (!obj || !wxSubType (obj->__type, wxTYPE_PANEL))
     return;
-
-    if (CanAddEventHandler())
-    {
-      XtRemoveEventHandler((Widget)handle,
-         ButtonPressMask | ButtonReleaseMask | PointerMotionMask, // | KeyPressMask,
-         False,
-         wxPanelItemEventHandler,
-         (XtPointer)this);
-    }
 
   if (labelWidget && (labelWidget != (Widget) handle))
     XtDestroyWidget (labelWidget);
@@ -387,25 +373,6 @@ XmString wxFindAcceleratorText (char *s)
   s++;
   XmString text = XmStringCreateSimple (s);
   return text;
-}
-
-void wxPanelItemEventHandler (Widget    wid,
-                              XtPointer client_data,
-                              XEvent*   event,
-                              Boolean *continueToDispatch)
-{
-  *continueToDispatch = True;
-
-  wxItem *item = (wxItem *)wxWidgetHashTable->Get((long)wid);
-  if (item) {
-    wxMouseEvent *_event = new wxMouseEvent(0);
-    wxMouseEvent &wxevent = *_event;
-
-    if (wxTranslateMouseEvent(wxevent, item, event)) {
-      if (item->CallPreOnEvent(item, &wxevent))
-	*continueToDispatch = FALSE;
-    }
-  }
 }
 
 void wxItem::ChangeColour(void)

@@ -93,7 +93,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   window_parent = panel;
   labelPosition = panel->label_position;
   windowStyle = style;
-#ifdef wx_motif
+
 #if !USE_GADGETS
    canAddEventHandler = TRUE;
 #else
@@ -118,17 +118,24 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   Widget buttonWidget = XtVaCreateManagedWidget ("toggle",
 #if USE_GADGETS
 						 style & wxCOLOURED ?
-		      xmToggleButtonWidgetClass : xmToggleButtonGadgetClass,
+						 xmToggleButtonWidgetClass : xmToggleButtonGadgetClass,
 						 formWidget,
 #else
-				      xmToggleButtonWidgetClass, formWidget,
+						 xmToggleButtonWidgetClass, formWidget,
 #endif
 						 XmNlabelString, text,
-					    XmNtopAttachment, XmATTACH_FORM,
-					   XmNleftAttachment, XmATTACH_FORM,
-					 XmNbottomAttachment, XmATTACH_FORM,
-					  XmNrightAttachment, XmATTACH_FORM,
+						 XmNtopAttachment, XmATTACH_FORM,
+						 XmNleftAttachment, XmATTACH_FORM,
+						 XmNbottomAttachment, XmATTACH_FORM,
+						 XmNrightAttachment, XmATTACH_FORM,
 						 NULL);
+
+  Widget evWidget;
+#if USE_GADGETS
+  evWidget = formWidget;
+#else
+  evWidget = buttonWidget;
+#endif
 
   handle = (char *) buttonWidget;
 
@@ -149,51 +156,11 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 
   XmToggleButtonSetState (buttonWidget, FALSE, TRUE);
   XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
-#endif
-#ifdef wx_xview
-  Panel x_panel = (Panel) panel->GetHandle ();
-  Panel_item x_choice;
-
-  int label_position;
-
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
-
-  if (panel->new_line)
-    {
-      x_choice = (Panel_item) xv_create (x_panel, PANEL_CHECK_BOX, PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1, NULL);
-      panel->new_line = FALSE;
-    }
-  else
-    x_choice = (Panel_item) xv_create (x_panel, PANEL_CHECK_BOX, PANEL_LAYOUT, label_position, NULL);
-
-  if (Title)
-    actualLabel = wxStripMenuCodes(Title);
-
-  xv_set (x_choice,
-	  PANEL_NOTIFY_PROC, wxCheckBoxProc,
-	  PANEL_CLIENT_DATA, (char *) this,
-	  PANEL_VALUE, 0,
-//	  PANEL_CHOICE_STRING, 0, Title,
-	  NULL);
-  if (actualLabel)
-    xv_set(x_choice, PANEL_CHOICE_STRING, 0, actualLabel, NULL);
-
-/*
-   if (labelFont)
-   xv_set(x_choice, XV_FONT, labelFont->GetInternalFont(), NULL) ;
- */
-  handle = (char *) x_choice;
-/*
-  if (x > -1 && y > -1)
-    (void) xv_set (x_choice, XV_X, x, XV_Y, y, NULL);
-*/
-  SetSize(x, y, -1, -1);
-#endif
 
   Callback (func);
+
+  wxWidgetHashTable->Put((long)buttonWidget, this);
+  AddPreHandlers(evWidget, buttonWidget);
 
   return TRUE;
 }
@@ -218,11 +185,10 @@ Create (wxPanel * panel, wxFunction func, wxBitmap * bitmap,
   window_parent = panel;
   labelPosition = panel->label_position;
   windowStyle = style;
-#ifdef wx_motif
 #if !USE_GADGETS
-   canAddEventHandler = TRUE;
+  canAddEventHandler = TRUE;
 #else
-   canAddEventHandler = FALSE;
+  canAddEventHandler = FALSE;
 #endif
   windowName = copystring (name);
 
@@ -247,6 +213,13 @@ Create (wxPanel * panel, wxFunction func, wxBitmap * bitmap,
 					 XmNbottomAttachment, XmATTACH_FORM,
 					  XmNrightAttachment, XmATTACH_FORM,
 						 NULL);
+
+  Widget evWidget;
+#if USE_GADGETS
+  evWidget = formWidget;
+#else
+  evWidget = buttonWidget;
+#endif
 
   handle = (char *) buttonWidget;
 
@@ -274,47 +247,11 @@ Create (wxPanel * panel, wxFunction func, wxBitmap * bitmap,
 
   XmToggleButtonSetState (buttonWidget, FALSE, TRUE);
   XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
-#endif
-#ifdef wx_xview
-  Panel x_panel = (Panel) panel->GetHandle ();
-  Panel_item x_choice;
-
-  int label_position;
-
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
-
-  if (panel->new_line)
-    {
-      x_choice = (Panel_item) xv_create (x_panel, PANEL_CHECK_BOX, PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1, NULL);
-      panel->new_line = FALSE;
-    }
-  else
-    x_choice = (Panel_item) xv_create (x_panel, PANEL_CHECK_BOX, PANEL_LAYOUT, label_position, NULL);
-
-  if (!bitmap->x_image)
-    bitmap->CreateServerImage(TRUE);
-
-  xv_set (x_choice,
-	  PANEL_NOTIFY_PROC, wxCheckBoxProc,
-	  PANEL_CLIENT_DATA, (char *) this,
-	  PANEL_VALUE, 0,
-	  PANEL_CHOICE_IMAGE, 0, bitmap->x_image,
-	  NULL);
-/*
-   if (labelFont)
-   xv_set(x_choice, XV_FONT, labelFont->GetInternalFont(), NULL) ;
- */
-
-  if (x > -1 && y > -1)
-    (void) xv_set (x_choice, XV_X, x, XV_Y, y, NULL);
-
-  handle = (char *) x_choice;
-#endif
 
   Callback (func);
+
+  wxWidgetHashTable->Put((long)buttonWidget, this);
+  AddPreHandlers(evWidget, buttonWidget);
 
   return TRUE;
 }
@@ -323,6 +260,7 @@ wxCheckBox::~wxCheckBox (void)
 {
   if (buttonBitmap)
     --buttonBitmap->selectedIntoDC;
+  wxWidgetHashTable->Delete((long)handle);
 }
 
 void wxCheckBox::ChangeColour (void)

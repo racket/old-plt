@@ -307,11 +307,16 @@ Create (wxPanel * panel, wxFunction func,
     XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
 
   Callback (func);
+
+  wxWidgetHashTable->Put((long)listWidget, this);
+  AddPreHandlers(listWidget);
+
   return TRUE;
 }
 
 wxListBox::~wxListBox (void)
 {
+  wxWidgetHashTable->Delete((long)handle);
   if (selections)
     delete[]selections;
 }

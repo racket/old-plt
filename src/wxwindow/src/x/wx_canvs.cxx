@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cc,v 1.3 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.1.1.1 1997/12/22 16:12:03 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -119,11 +119,6 @@ Create (wxWindow * parent, int x, int y, int width, int height,
   pixmapHeight = 0;
   hExtent = 0;
   vExtent = 0;
-#if 0 /* MATTHEW */
-  button1Pressed = FALSE;
-  button2Pressed = FALSE;
-  button3Pressed = FALSE;
-#endif
   pixmapOffsetX = 0;
   pixmapOffsetY = 0;
 
@@ -1443,7 +1438,7 @@ wxCanvasRepaintProc (Widget drawingArea, XtPointer clientData, XmDrawingAreaCall
 
 // Unable to deal with Enter/Leave without a separate EventHandler (Motif 1.1.4)
 void 
-wxCanvasEnterLeave (Widget drawingArea, XtPointer clientData, XCrossingEvent * event)
+wxCanvasEnterLeave (Widget drawingArea, XtPointer, XCrossingEvent * event)
 {
   XmDrawingAreaCallbackStruct cbs;
   XEvent ev;
@@ -1458,11 +1453,9 @@ wxCanvasEnterLeave (Widget drawingArea, XtPointer clientData, XCrossingEvent * e
 }
 
 // Fix to make it work under Motif 1.0 (!)
-void 
-wxCanvasMotionEvent (Widget drawingArea, XButtonEvent * event)
+void wxCanvasMotionEvent(Widget drawingArea, XButtonEvent * event)
 {
 #if   XmVersion<=1000
-
   XmDrawingAreaCallbackStruct cbs;
   XEvent ev;
 
@@ -1483,12 +1476,10 @@ static lose_up = FALSE;
 
 static long timerId;
 
-static void 
-wxDClickCallback (XtPointer ptr)
+static void wxDClickCallback(XtPointer)
 {
   dclick = FALSE;
   wait_dclick = FALSE;
-//wxDebugMsg("Timer dclick\n") ;
 }
 
 void 
@@ -1609,23 +1600,14 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 	    if (local_event.xbutton.button == Button1)
 	      {
 		eventType = dclick ? wxEVENT_TYPE_LEFT_DCLICK : wxEVENT_TYPE_LEFT_DOWN;
-#if 0 /* MATTHEW */
-		canvas->button1Pressed = TRUE;
-#endif
 	      }
 	    else if (local_event.xbutton.button == Button2)
 	      {
 		eventType = dclick ? wxEVENT_TYPE_MIDDLE_DCLICK : wxEVENT_TYPE_MIDDLE_DOWN;
-#if 0 /* MATTHEW */
-		canvas->button2Pressed = TRUE;
-#endif
 	      }
 	    else if (local_event.xbutton.button == Button3)
 	      {
 		eventType = dclick ? wxEVENT_TYPE_RIGHT_DCLICK : wxEVENT_TYPE_RIGHT_DOWN;
-#if 0 /* MATTHEW */
-		canvas->button3Pressed = TRUE;
-#endif
 	      }
 	  }
 	else if (local_event.xany.type == ButtonRelease)
@@ -1634,23 +1616,14 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 	    if (local_event.xbutton.button == Button1)
 	      {
 		eventType = wxEVENT_TYPE_LEFT_UP;
-#if 0 /* MATTHEW */
-		canvas->button1Pressed = FALSE;
-#endif
 	      }
 	    else if (local_event.xbutton.button == Button2)
 	      {
 		eventType = wxEVENT_TYPE_MIDDLE_UP;
-#if 0 /* MATTHEW */
-		canvas->button2Pressed = FALSE;
-#endif
 	      }
 	    else if (local_event.xbutton.button == Button3)
 	      {
 		eventType = wxEVENT_TYPE_RIGHT_UP;
-#if 0 /* MATTHEW */
-		canvas->button3Pressed = FALSE;
-#endif
 	      }
 	  }
 
@@ -1678,12 +1651,6 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 			     || (event_right_is_down (local_event) 
 				 && (eventType != wxEVENT_TYPE_RIGHT_UP)));
 
-#if 0 /* MATTHEW: replaced with above */
-	wxevent.leftDown = canvas->button1Pressed;
-	wxevent.middleDown = canvas->button2Pressed;
-	wxevent.rightDown = canvas->button3Pressed;
-#endif
-
 	wxevent.shiftDown = local_event.xbutton.state & ShiftMask;
 	wxevent.controlDown = local_event.xbutton.state & ControlMask;
         wxevent.altDown = /* local_event.xbutton.state & Mod3Mask */ FALSE;
@@ -1706,23 +1673,14 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 	    if (local_event.xbutton.button == Button1)
 	      {
 		eventType = wxEVENT_TYPE_LEFT_UP;
-#if 0
-		canvas->button1Pressed = FALSE;
-#endif
 	      }
 	    else if (local_event.xbutton.button == Button2)
 	      {
 		eventType = wxEVENT_TYPE_MIDDLE_UP;
-#if 0
-		canvas->button2Pressed = FALSE;
-#endif
 	      }
 	    else if (local_event.xbutton.button == Button3)
 	      {
 		eventType = wxEVENT_TYPE_RIGHT_UP;
-#if 0
-		canvas->button3Pressed = FALSE;
-#endif
 	      }
 	    wxevent.eventType = eventType;
 	    if (!canvas->CallPreOnEvent(canvas, &wxevent))

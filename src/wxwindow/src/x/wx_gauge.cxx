@@ -71,7 +71,7 @@ Create (wxPanel * panel, char *label, int range,
   window_parent = panel;
   labelPosition = panel->label_position;
   windowStyle = style;
-#ifdef wx_motif
+
   canAddEventHandler = TRUE;
   windowName = copystring (name);
 
@@ -210,92 +210,17 @@ Create (wxPanel * panel, char *label, int range,
 	  XmStringFree (text);
 	}
     }
-#endif
-#ifdef wx_xview
-  Panel x_panel = (Panel) (panel->GetHandle ());
-  Panel_item x_slider;
 
-  int label_position;
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
+  wxWidgetHashTable->Put((long)gaugeWidget, this);
 
-  int orientation = (windowStyle & wxHORIZONTAL) ? PANEL_HORIZONTAL : PANEL_VERTICAL;
+  AddPreHandlers(gaugeWidget);
 
-  if (x > -1 && y > -1)
-    {
-      if (panel->new_line)
-	{
-	  x_slider = (Panel_item) xv_create (x_panel, PANEL_GAUGE, PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1,
-                 PANEL_DIRECTION, orientation,
-					     XV_X, x, XV_Y, y, NULL);
-	  panel->new_line = FALSE;
-	}
-      else
-	x_slider = (Panel_item) xv_create (x_panel, PANEL_GAUGE, PANEL_LAYOUT, label_position,
-                 PANEL_DIRECTION, orientation,
-                 XV_X, x, XV_Y, y, NULL);
-
-    }
-  else
-    {
-      if (panel->new_line)
-	{
-	  x_slider = (Panel_item) xv_create (x_panel, PANEL_GAUGE,
-                 PANEL_DIRECTION, orientation,
-                 PANEL_LAYOUT, PANEL_HORIZONTAL, PANEL_NEXT_ROW, -1,
-                 NULL);
-	  panel->new_line = FALSE;
-	}
-      else
-	x_slider = (Panel_item) xv_create (x_panel, PANEL_GAUGE,
-                 PANEL_DIRECTION, orientation,
-                 PANEL_LAYOUT, PANEL_HORIZONTAL,
-                 NULL);
-    }
-
-  if (label)
-    {
-      actualLabel = wxStripMenuCodes(label);
-      if (style & wxFIXED_LENGTH)
-	{
-	  char *the_label = fillCopy (actualLabel);
-	  xv_set (x_slider, PANEL_LABEL_STRING, the_label, NULL);
-
-	  int label_x = (int) xv_get (x_slider, PANEL_LABEL_X);
-	  int item_x = (int) xv_get (x_slider, PANEL_ITEM_X);
-	  xv_set (x_slider, PANEL_LABEL_STRING, actualLabel,
-		  PANEL_LABEL_X, label_x,
-		  PANEL_ITEM_X, item_x,
-		  NULL);
-          delete[] the_label;
-	}
-      else
-	xv_set (x_slider, PANEL_LABEL_STRING, actualLabel, NULL);
-    }
-
-  xv_set (x_slider,
-	  PANEL_MIN_VALUE, 0,
-	  PANEL_MAX_VALUE, range,
-	  PANEL_CLIENT_DATA, (char *) this,
-	  PANEL_VALUE, 0,
-	  NULL);
-
-/*
-   if (buttonFont)
-   xv_set(x_slider, XV_FONT, buttonFont->GetInternalFont(), NULL) ;
- */
-
-  handle = (char *) x_slider;
-
-  SetSize(x, y, width, -1);
-#endif
   return TRUE;
 }
 
 wxGauge::~wxGauge (void)
 {
+  wxWidgetHashTable->Delete((long)handle);
 }
 
 void wxGauge::SetSize (int x, int y, int width, int height, int sizeFlags)

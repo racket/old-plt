@@ -84,7 +84,7 @@ Create (wxPanel * panel, char *label, int x, int y, long style, char *name)
   labelWidget = XtVaCreateManagedWidget ("messageLabel",
 #if USE_MESSG_GADGETS
 					 style & wxCOLOURED ?
-				    xmLabelWidgetClass : xmLabelGadgetClass,
+					 xmLabelWidgetClass : xmLabelGadgetClass,
 					 formWidget,
 #else
 					 xmLabelWidgetClass, formWidget,
@@ -96,6 +96,13 @@ Create (wxPanel * panel, char *label, int x, int y, long style, char *name)
 					 XmNbottomAttachment, XmATTACH_FORM,
 					 XmNrightAttachment, XmATTACH_FORM,
 					 NULL);
+
+  Widget evWidget;
+#if USE_MESSG_GADGETS
+  evWidget = formWidget;
+#else
+  evWidget = labelWidget;
+#endif
 
   XmStringFree (text);
 
@@ -110,6 +117,9 @@ Create (wxPanel * panel, char *label, int x, int y, long style, char *name)
 
   panel->AttachWidget (this, formWidget, x, y, -1, -1);
   ChangeColour ();
+
+  wxWidgetHashTable->Put((long)labelWidget, this);
+  AddPreHandlers(evWidget, labelWidget);
 
   return TRUE;
 }
@@ -155,7 +165,7 @@ Create (wxPanel * panel, wxBitmap *image, int x, int y, long style, char *name)
   labelWidget = XtVaCreateManagedWidget ("messageLabel",
 #if USE_MESSG_GADGETS
 					 style & wxCOLOURED ?
-				    xmLabelWidgetClass : xmLabelGadgetClass,
+					 xmLabelWidgetClass : xmLabelGadgetClass,
 					 formWidget,
 #else
 					 xmLabelWidgetClass, formWidget,
@@ -166,6 +176,13 @@ Create (wxPanel * panel, wxBitmap *image, int x, int y, long style, char *name)
 					 XmNbottomAttachment, XmATTACH_FORM,
 					 XmNrightAttachment, XmATTACH_FORM,
 					 NULL);
+
+  Widget evWidget;
+#if USE_MESSG_GADGETS
+  evWidget = formWidget;
+#else
+  evWidget = labelWidget;
+#endif
 
   XtVaSetValues (labelWidget,
 		 XmNlabelPixmap, image->GetLabelPixmap (labelWidget),
@@ -182,6 +199,9 @@ Create (wxPanel * panel, wxBitmap *image, int x, int y, long style, char *name)
   panel->AttachWidget (this, formWidget, x, y, -1, -1);
   ChangeColour ();
 
+  wxWidgetHashTable->Put((long)labelWidget, this);
+  AddPreHandlers(evWidget, labelWidget);
+
   return TRUE;
 }
 #endif
@@ -190,6 +210,8 @@ wxMessage::~wxMessage (void)
 {
   if (bm_label)
     --bm_label->selectedIntoDC;
+
+  wxWidgetHashTable->Delete((long)labelWidget);
 }
 
 void wxMessage::ChangeColour (void)

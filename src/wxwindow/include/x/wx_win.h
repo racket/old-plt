@@ -112,6 +112,9 @@ class wxWindow: public wxbWindow
   inline int GetScrollPos(int /* orient */) { return 0; };
   inline int GetScrollRange(int /* orient */) { return 0; };
 
+  void AddPreHandlers(Widget w, Widget hash_w = 0);
+  void WindowEventHandler(Widget w, Widget hash_w, XEvent *xev, Boolean *continue_to_dispatch_return);
+
   virtual Bool PreOnChar(wxWindow *win, wxKeyEvent *event);
   Bool CallPreOnChar(wxWindow *win, wxKeyEvent *event);
   virtual Bool PreOnEvent(wxWindow *win, wxMouseEvent *event);

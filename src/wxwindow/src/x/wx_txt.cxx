@@ -328,6 +328,9 @@ Create (wxPanel * panel, wxFunction Function, char *label, char *value,
     }
   XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
 
+  wxWidgetHashTable->Put((long)textWidget, this);
+  AddPreHandlers(textWidget);
+
   Callback (Function);
 
   return TRUE;
@@ -337,6 +340,7 @@ wxText::~wxText (void)
 {
   if (internalTextValue)
     delete[] internalTextValue;
+  wxWidgetHashTable->Delete((long)handle);
 }
 
 void wxText::ChangeColour (void)

@@ -32,110 +32,9 @@
 #include <Xm/ScrollBar.h>
 #endif
 
-#ifdef wx_xview
-#include <xview/panel.h>
-#include <xview/scrollbar.h>
-#include <xview/notify.h>
-#endif
-
 // Scroll Bar
 
-#ifdef wx_xview
-void scrollbar_compute_scroll_proc(Scrollbar scrollBar, int pos,
-					int length, Scroll_motion motion,
-				     unsigned long *offset,
-				     unsigned long *object_length)
-{
-	int viewStart = xv_get(scrollBar, SCROLLBAR_VIEW_START);
-	int viewLength = xv_get(scrollBar, SCROLLBAR_VIEW_LENGTH);
-	int objectLength = xv_get(scrollBar, SCROLLBAR_OBJECT_LENGTH);
-	int pixelsPerUnit = xv_get(scrollBar, SCROLLBAR_PIXELS_PER_UNIT);
- 	int pageLength = xv_get(scrollBar, SCROLLBAR_PAGE_LENGTH);
 
-    pos =  pos * (objectLength - viewLength) / length;
-
-/*	
-    unfortunatly scrollbar_default_compute_scroll_proc can't be used
-	scrollbar_default_compute_scroll_proc(scrollBar, pos, length, motion,
-                                      offset, object_length);
-*/
-    int minus_movement;
-    switch (motion) {
-        case SCROLLBAR_ABSOLUTE:
-            viewStart = pos;
-            break;
-
-        case SCROLLBAR_POINT_TO_MIN:
-            viewStart += pos;
-            break;
-
-        case SCROLLBAR_MIN_TO_POINT:
-            if (pos > viewStart)
-                viewStart = 0;
-            else
-                viewStart -= pos;
-            break;
-
-        case SCROLLBAR_PAGE_FORWARD:
-            viewStart += pageLength;
-            break;
-
-        case SCROLLBAR_PAGE_BACKWARD:
-            minus_movement = pageLength;
-            if (minus_movement > viewStart)
-                viewStart= 0;
-            else
-                viewStart -= minus_movement;
-            break;
-
-        case SCROLLBAR_LINE_FORWARD:
-            viewStart ++;
-            break;
-
-        case SCROLLBAR_LINE_BACKWARD:
-            if (viewStart > 0)
-                viewStart -= pixelsPerUnit;
-            break;
-
-        case SCROLLBAR_TO_END:
-            viewStart = objectLength - viewLength;
-            break;
-
-        case SCROLLBAR_TO_START:
-            viewStart = 0;
-            break;
-
-        default:
-            break;
-    }
-
-	*offset = viewStart;
-    *object_length = objectLength;
-}
-
-void wxScrollBarProc(Panel_item item, int value, Event *x_event)
-{
-    wxScrollBar *scrollBar = (wxScrollBar *)xv_get(item, WIN_CLIENT_DATA);
-    wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_SCROLLBAR_COMMAND);
-    event->commandInt = value;
-    event->eventHandle = (char *)x_event;
-    event->eventObject = scrollBar;
-    if (scrollBar)
-        scrollBar->ProcessCommand(*event);
-}
-
-Notify_value scrollBar_handle_event(Panel_item panel_item, Event *event,
-                            Scrollbar scrollBar, Notify_event_type type)
-{
-   	if (event_id(event) == SCROLLBAR_REQUEST) {
-    	int start_view = (int)xv_get(scrollBar, SCROLLBAR_VIEW_START);
-		wxScrollBarProc(scrollBar, start_view, event);
-	}
-	return NOTIFY_DONE;
-}
-#endif
-
-#ifdef wx_motif
 void wxScrollBarCallback(Widget widget, XtPointer clientData,
                         XmScaleCallbackStruct *cbs)
 {
@@ -146,7 +45,6 @@ void wxScrollBarCallback(Widget widget, XtPointer clientData,
     event->eventObject = scrollBar;
     scrollBar->ProcessCommand(*event);
 }
-#endif
 
 IMPLEMENT_DYNAMIC_CLASS(wxScrollBar, wxItem)
 
@@ -175,7 +73,7 @@ Bool wxScrollBar::Create(wxPanel *panel, wxFunction func,
     buttonColour = panel->buttonColour ;
     window_parent = panel;
     labelPosition = panel->label_position;
-#ifdef wx_motif
+
     windowName = copystring(name);
     Widget panelForm = panel->panelWidget;
 
@@ -212,57 +110,19 @@ Bool wxScrollBar::Create(wxPanel *panel, wxFunction func,
         XtVaSetValues(formWidget,
                   XmNpacking,XmPACK_NONE,
                   NULL);
-#endif
-#ifdef wx_xview
-    Panel x_panel = (Panel)(panel->GetHandle());
-    Scrollbar x_scrollBar = 0;
-    int _direction = direction == wxHORIZONTAL ? SCROLLBAR_HORIZONTAL: SCROLLBAR_VERTICAL;
-
-/*
-    int label_position;
-    if (panel->label_position == wxVERTICAL)
-        label_position = PANEL_VERTICAL;
-    else
-        label_position = PANEL_HORIZONTAL;
-*/
-
-    if (panel->new_line)
-        wxMessageBox("New line isn't implemented for Scroll Bar in XView", "Warning");
-
-    if (x > -1 && y > -1)
-        x_scrollBar = (Scrollbar) xv_create(x_panel, SCROLLBAR,
-                            SCROLLBAR_DIRECTION, _direction,
-                            XV_X, x,
-                            XV_Y, y,
-                            NULL);
-    else
-        x_scrollBar = (Scrollbar) xv_create(x_panel, SCROLLBAR,
-                            SCROLLBAR_DIRECTION, _direction,
-              				NULL);
-
-    xv_set(x_scrollBar,     XV_SHOW, TRUE,
-  							WIN_CLIENT_DATA, (char *)this,
-							SCROLLBAR_NOTIFY_CLIENT, (Notify_client) &x_scrollBar,
-							SCROLLBAR_COMPUTE_SCROLL_PROC, scrollbar_compute_scroll_proc,
-                            NULL);
-
-    if (direction == wxHORIZONTAL && width > 0)
-        xv_set(x_scrollBar, XV_WIDTH, (int) width, NULL);
-    if (direction == wxVERTICAL && height > 0)
-        xv_set(x_scrollBar, XV_HEIGHT, (int) height, NULL);
-
-    handle = (char *)x_scrollBar;
-    notify_set_event_func( (Notify_client) &x_scrollBar,
-			(Notify_func) scrollBar_handle_event, NOTIFY_SAFE);
-#endif
 
     Callback(func);
+
+    wxWidgetHashTable->Put((long)scrollBarWidget, this);
+    AddPreHandlers(scrollBarWidget);
+
     return TRUE;
 }
 
 
 wxScrollBar::~wxScrollBar(void)
 {
+  wxWidgetHashTable->Delete((long)scrollBarWidget);
 }
 
 void wxScrollBar::ChangeColour(void)

@@ -25,26 +25,9 @@
 #include <Xm/Scale.h>
 #endif
 
-#ifdef wx_xview
-void wxSliderProc (Panel_item item, int value, Event * event);
-#endif
 
 // Slider
 
-#ifdef wx_xview
-void 
-wxSliderProc (Panel_item item, int value, Event * x_event)
-{
-  wxSlider *slider = (wxSlider *) xv_get (item, PANEL_CLIENT_DATA);
-  wxCommandEvent event  = new wxCommandEvent (wxEVENT_TYPE_SLIDER_COMMAND);
-  event.commandInt = value;
-  event.eventHandle = (char *) x_event;
-  event.eventObject = slider;
-  slider->ProcessCommand (event);
-}
-#endif
-
-#ifdef wx_motif
 void 
 wxSliderCallback (Widget widget, XtPointer clientData, XmScaleCallbackStruct * cbs)
 {
@@ -55,7 +38,6 @@ wxSliderCallback (Widget widget, XtPointer clientData, XmScaleCallbackStruct * c
   event->eventObject = slider;
   slider->ProcessCommand (*event);
 }
-#endif
 
 IMPLEMENT_DYNAMIC_CLASS(wxSlider, wxItem)
 
@@ -87,7 +69,7 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
   window_parent = panel;
   labelPosition = panel->label_position;
   windowStyle = style;
-#ifdef wx_motif
+
   canAddEventHandler = TRUE;
   windowName = copystring (name);
   Widget panelForm = panel->panelWidget;
@@ -170,108 +152,23 @@ Create (wxPanel * panel, wxFunction func, char *label, int value,
 	  XmStringFree (text);
 	}
     }
-#endif
-#ifdef wx_xview
-  Panel x_panel = (Panel) (panel->GetHandle ());
-  Panel_item x_slider;
-
-  int label_position;
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
-
-  int sliderOrientation =
-   (((windowStyle & wxVERTICAL) == wxVERTICAL) ? PANEL_VERTICAL : PANEL_HORIZONTAL);
-
-  if (x > -1 && y > -1)
-    {
-      if (panel->new_line)
-	{
-	  x_slider = (Panel_item) xv_create (x_panel, PANEL_SLIDER,
-                    PANEL_DIRECTION, sliderOrientation,
-                    PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1,
-                    XV_X, x, XV_Y, y, NULL);
-	  panel->new_line = FALSE;
-	}
-      else
-	x_slider = (Panel_item) xv_create (x_panel, PANEL_SLIDER,
-                    PANEL_DIRECTION, sliderOrientation,
-                    PANEL_LAYOUT, label_position,
-                    XV_X, x, XV_Y, y, NULL);
-
-    }
-  else
-    {
-      if (panel->new_line)
-	{
-	  x_slider = (Panel_item) xv_create (x_panel, PANEL_SLIDER,
-                    PANEL_DIRECTION, sliderOrientation,
-                    PANEL_LAYOUT, PANEL_HORIZONTAL, PANEL_NEXT_ROW, -1,
-					     NULL);
-	  panel->new_line = FALSE;
-	}
-      else
-	x_slider = (Panel_item) xv_create (x_panel, PANEL_SLIDER,
-                    PANEL_DIRECTION, sliderOrientation,
-                    PANEL_LAYOUT, PANEL_HORIZONTAL, NULL);
-    }
-
-  if (label)
-    {
-      actualLabel = wxStripMenuCodes(label);
-      
-      if (style & wxFIXED_LENGTH)
-	{
-	  char *the_label = fillCopy (actualLabel);
-	  xv_set (x_slider, PANEL_LABEL_STRING, the_label, NULL);
-
-	  int label_x = (int) xv_get (x_slider, PANEL_LABEL_X);
-	  int item_x = (int) xv_get (x_slider, PANEL_ITEM_X);
-	  xv_set (x_slider, PANEL_LABEL_STRING, actualLabel,
-		  PANEL_LABEL_X, label_x,
-		  PANEL_ITEM_X, item_x,
-		  NULL);
-          delete[] the_label;
-	}
-      else
-	xv_set (x_slider, PANEL_LABEL_STRING, actualLabel, NULL);
-    }
-
-  xv_set (x_slider,
-	  PANEL_MIN_VALUE, min_value,
-	  PANEL_MAX_VALUE, max_value,
-	  PANEL_NOTIFY_PROC, wxSliderProc,
-	  PANEL_CLIENT_DATA, (char *) this,
-	  PANEL_VALUE, value,
-	  NULL);
-
-/*
-   if (buttonFont)
-   xv_set(x_slider, XV_FONT, buttonFont->GetInternalFont(), NULL) ;
- */
-
-  if (width > 0)
-    {
-      xv_set (x_slider, PANEL_SLIDER_WIDTH, (int) width, NULL);
-    };
-
-
-  handle = (char *) x_slider;
-#endif
 
   Callback (func);
+
+  wxWidgetHashTable->Put((long)sliderWidget, this);
+  AddPreHandlers(sliderWidget);
+
   return TRUE;
 }
 
 
 wxSlider::~wxSlider (void)
 {
+  wxWidgetHashTable->Delete((long)handle);
 }
 
 void wxSlider::ChangeColour (void)
 {
-#ifdef wx_motif
   int change;
 
   wxPanel *panel = (wxPanel *) window_parent;
@@ -324,46 +221,27 @@ void wxSlider::ChangeColour (void)
 		       XmNforeground, itemColors[wxFORE_INDEX].pixel,
 		       NULL);
     }
-#endif
 }
 
 int wxSlider::GetValue (void)
 {
-#ifdef wx_motif
   int val;
   XtVaGetValues ((Widget) handle, XmNvalue, &val, NULL);
   return val;
-#endif
-#ifdef wx_xview
-  Panel_item item = (Panel_item) handle;
-  return (int) xv_get (item, PANEL_VALUE);
-#endif
 }
 
 void wxSlider::SetValue (int value)
 {
-#ifdef wx_motif
   XtVaSetValues ((Widget) handle, XmNvalue, value, NULL);
-#endif
-#ifdef wx_xview
-  Panel_item item = (Panel_item) handle;
-  xv_set (item, PANEL_VALUE, value, NULL);
-#endif
 }
 
 void wxSlider::GetSize (int *width, int *height)
 {
-#ifdef wx_motif
   wxItem::GetSize (width, height);
-#endif
-#ifdef wx_xview
-  wxItem::GetSize (width, height);
-#endif
 }
 
 void wxSlider::SetSize (int x, int y, int width, int height, int sizeFlags)
 {
-#ifdef wx_motif
   Widget sliderWidget = (Widget) handle;
 
   Bool isShow = XtIsManaged(formWidget);
@@ -406,8 +284,4 @@ void wxSlider::SetSize (int x, int y, int width, int height, int sizeFlags)
   sr_width = width;
   sr_height = height;
   OnSize (width, height);
-#endif
-#ifdef wx_xview
-  wxItem::SetSize (x, y, width, height, sizeFlags);
-#endif
 }

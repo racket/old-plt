@@ -19,19 +19,12 @@
 #include "wx_privt.h"
 #include "wx_choic.h"
 
-#ifdef wx_motif
 #include <Xm/Label.h>
 #include <Xm/LabelG.h>
 #include <Xm/PushB.h>
 #include <Xm/PushBG.h>
 #include <Xm/RowColumn.h>
-#endif
 
-#ifdef wx_xview
-void wxChoiceProc (Panel_item item, int value, Event * event);
-#endif
-
-#ifdef wx_motif
 void 
 wxChoiceCallback (Widget w, XtPointer clientData,
 		  XtPointer)
@@ -52,21 +45,15 @@ wxChoiceCallback (Widget w, XtPointer clientData,
     }
 }
 
-#endif
-
 IMPLEMENT_DYNAMIC_CLASS(wxChoice, wxItem)
 
 wxChoice::wxChoice (void)
 {
   no_strings = 0;
-#ifdef wx_motif
   labelWidget = NULL;
   buttonWidget = NULL;
   menuWidget = NULL;
   widgetList = NULL;
-#endif
-#ifdef wx_xview
-#endif
 }
 
 wxChoice::wxChoice (wxPanel * panel, wxFunction func, char *Title,
@@ -94,7 +81,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   window_parent = panel;
   labelPosition = panel->label_position;
   windowStyle = style;
-#ifdef wx_motif
   canAddEventHandler = TRUE;
   no_strings = 0;
   buttonWidget = NULL;
@@ -244,87 +230,22 @@ Doesn't seem to work... Bad boy, Motif!!
     }
 
     XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
-#endif
-#ifdef wx_xview
-  no_strings = N;
-  char *title = NULL;
-  if (Title)
-    title = Title;
-
-  Panel x_panel = (Panel) panel->GetHandle ();
-  Panel_item x_choice;
-
-  int label_position;
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
-
-  if (panel->new_line)
-    {
-      x_choice = (Panel_item) xv_create (x_panel, PANEL_CHOICE_STACK, PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1, NULL);
-      panel->new_line = FALSE;
-    }
-  else
-    x_choice = (Panel_item) xv_create (x_panel, PANEL_CHOICE_STACK, PANEL_LAYOUT, label_position, NULL);
-
-  xv_set (x_choice,
-	      PANEL_NOTIFY_PROC, wxChoiceProc,
-	      PANEL_CLIENT_DATA, (char *) this,
-	      NULL);
-
-  if (Title)
-    {
-      actualLabel = wxStripMenuCodes(Title);
-      if (style & wxFIXED_LENGTH)
-      {
-        char *the_label = fillCopy (actualLabel);
-        xv_set (x_choice, PANEL_LABEL_STRING, the_label, NULL);
-
-        int label_x = (int) xv_get (x_choice, PANEL_LABEL_X);
-        int item_x = (int) xv_get (x_choice, PANEL_ITEM_X);
-        xv_set (x_choice, PANEL_LABEL_STRING, actualLabel,
-	      PANEL_LABEL_X, label_x,
-	      PANEL_ITEM_X, item_x,
-	      NULL);
-        delete[] the_label;
-      }
-      else
-      {
-        xv_set (x_choice, PANEL_LABEL_STRING, actualLabel, NULL);
-      }
-    }
-
-/*
-   if (buttonFont)
-   xv_set(x_choice, XV_FONT, buttonFont->GetInternalFont(), NULL) ;
- */
-
-  if (x > -1 && y > -1)
-    (void) xv_set (x_choice, XV_X, x, XV_Y, y, NULL);
-
-  int i;
-  for (i = 0; i < N; i++)
-    {
-      char *label = Choices[i];
-      xv_set (x_choice, PANEL_CHOICE_STRING, i, label, NULL);
-    }
-  handle = (char *) x_choice;
-
-#endif
 
   Callback (func);
+
+  wxWidgetHashTable->Put((long)buttonWidget, this);
+  AddPreHandlers(buttonWidget);
+
   return TRUE;
 }
 
 wxChoice::~wxChoice (void)
 {
-#ifdef wx_motif
   /* MATTHEW: [11] No need to destroy the menu. Crashes 1.2. */
   /* XtDestroyWidget (menuWidget); */
   if (widgetList)
     delete[]widgetList;
-#endif
+  wxWidgetHashTable->Delete((long)buttonWidget);
 }
 
 int wxChoice::Number(void)
@@ -334,7 +255,6 @@ int wxChoice::Number(void)
 
 void wxChoice::ChangeColour (void)
 {
-#ifdef wx_motif
   int change;
 
   wxPanel *panel = (wxPanel *) window_parent;
@@ -421,12 +341,10 @@ void wxChoice::ChangeColour (void)
 		       NULL);
     }
 
-#endif
 }
 
 void wxChoice::SetSize (int x, int y, int width, int height, int sizeFlags)
 {
-#ifdef wx_motif
   int pw, ph;
   
   GetParent()->GetSize(&pw, &ph);
@@ -514,16 +432,10 @@ void wxChoice::SetSize (int x, int y, int width, int height, int sizeFlags)
   sr_width = width;
   sr_height = height;
   GetEventHandler()->OnSize (width, height);
-#endif
-#ifdef wx_xview
-  wxItem::SetSize (x, y, width, height, sizeFlags);
-  GetEventHandler()->OnSize (width, height);
-#endif
 }
 
 void wxChoice::Append (char *Item)
 {
-#ifdef wx_motif
   // wxStripMenuCodes (Item, wxBuffer);
   Widget w = XtVaCreateManagedWidget (Item,
 #if USE_GADGETS
@@ -575,12 +487,6 @@ void wxChoice::Append (char *Item)
     }
   wxNode *node = stringList.Add (Item);
   XtVaSetValues (w, XmNuserData, node->Data (), NULL);
-#endif
-#ifdef wx_xview
-  Panel_item choice_item = (Panel_item) handle;
-
-  xv_set (choice_item, PANEL_CHOICE_STRING, no_strings, Item, NULL);
-#endif
   no_strings++;
 }
 
@@ -588,7 +494,6 @@ void wxChoice::Append (char *Item)
 // window. Any suggestions folks?
 void wxChoice::Clear (void)
 {
-#ifdef wx_motif
   stringList.Clear ();
   int i, c;
   
@@ -616,39 +521,12 @@ void wxChoice::Clear (void)
     no_strings = 0;
     return;
   }
-#endif
-#ifdef wx_xview
-  Panel_item choice_item = (Panel_item) handle;
-  xv_set(choice_item, PANEL_VALUE, 0, PANEL_CHOICE_STRINGS, "", NULL, NULL);
-/*
-  Rect *rect = (Rect *) xv_get (choice_item, XV_RECT);
-
-  int height = rect->r_height;
-  int width = rect->r_width;
-  int x = (int) xv_get (choice_item, XV_X);
-  int y = (int) xv_get (choice_item, XV_Y);
-  char *label = GetLabel ();
-
-  xv_destroy_safe (choice_item);
-  Panel panel = (Panel) GetParent ()->handle;
-  choice_item = (Panel_item) xv_create (panel, PANEL_CHOICE_STACK,
-					PANEL_LABEL_STRING, label,
-					PANEL_NOTIFY_PROC, wxChoiceProc,
-					PANEL_CLIENT_DATA, (char *) this,
-		       XV_X, x, XV_Y, y, XV_WIDTH, width, XV_HEIGHT, height,
-					XV_SHOW, TRUE,
-					NULL);
-
-  handle = (char *) choice_item;
-*/
-#endif
   no_strings = 0;
 }
 
 
 int wxChoice::GetSelection (void)
 {
-#ifdef wx_motif
   XmString text;
   char *s;
   Widget label = XmOptionButtonGadget (buttonWidget);
@@ -678,17 +556,10 @@ int wxChoice::GetSelection (void)
     }
   XmStringFree(text) ;
   return -1;
-#endif
-#ifdef wx_xview
-  Panel_item x_choice = (Panel_item) handle;
-
-  return xv_get (x_choice, PANEL_VALUE);
-#endif
 }
 
 void wxChoice::SetSelection (int n)
 {
-#ifdef wx_motif
   wxNode *node = stringList.Nth (n);
   if (node)
     {
@@ -720,17 +591,10 @@ void wxChoice::SetSelection (int n)
       XtVaSetValues (buttonWidget, XmNmenuHistory, widgetList[n], NULL);
     }
 */
-#endif
-#ifdef wx_xview
-  Panel_item x_choice = (Panel_item) handle;
-
-  (void) xv_set (x_choice, PANEL_VALUE, n, NULL);
-#endif
 }
 
 int wxChoice::FindString (char *s)
 {
-#ifdef wx_motif
   int i = 0;
   for (wxNode * node = stringList.First (); node; node = node->Next ())
     {
@@ -743,82 +607,33 @@ int wxChoice::FindString (char *s)
 	i++;
     }
   return -1;
-#endif
-#ifdef wx_xview
-  Panel_item choice = (Panel_item) handle;
-
-  int max1 = no_strings;
-
-  int i = 0;
-  int found = -1;
-  while (found == -1 && i < max1)
-    {
-      char *label = (char *) xv_get (choice, PANEL_CHOICE_STRING, i);
-      if (label && strcmp (label, s) == 0)
-	found = i;
-      else
-	i++;
-    }
-  return found;
-#endif
 }
 
 char *wxChoice::GetString (int n)
 {
-#ifdef wx_motif
   wxNode *node = stringList.Nth (n);
   if (node)
     return (char *) node->Data ();
   else
     return NULL;
-#endif
-#ifdef wx_xview
-  Panel_item item = (Panel_item) handle;
-  return (char *) xv_get (item, PANEL_CHOICE_STRING, n);
-#endif
 }
 
 void wxChoice::SetColumns(int n)
 {
   if (n<1) n = 1 ;
 
-#ifdef wx_motif
   short numColumns = n ;
   Arg args[3];
 
   XtSetArg(args[0], XmNnumColumns, numColumns);
   XtSetArg(args[1], XmNpacking, XmPACK_COLUMN);
   XtSetValues(menuWidget,args,2) ;
-#endif
-#ifdef wx_xview
-  xv_set((Xv_opaque)handle,PANEL_CHOICE_NCOLS,n,NULL) ;
-#endif
 }
 
 int  wxChoice::GetColumns(void)
 {
-#ifdef wx_motif
   short numColumns ;
 
   XtVaGetValues(menuWidget,XmNnumColumns,&numColumns,NULL) ;
   return numColumns ;
-#endif
-#ifdef wx_xview
-  return xv_get((Xv_opaque)handle,PANEL_CHOICE_NCOLS) ;
-#endif
 }
-
-#ifdef wx_xview
-void 
-wxChoiceProc (Panel_item item, int value, Event * x_event)
-{
-  wxChoice *choice = (wxChoice *) xv_get (item, PANEL_CLIENT_DATA);
-  wxCommandEvent *event  = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-
-  event.commandString = (char *) xv_get (item, PANEL_CHOICE_STRING, value);
-  event.commandInt = value;
-  event.eventObject = choice;
-
-  choice->ProcessCommand (event);
-}
-#endif

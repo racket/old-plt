@@ -109,17 +109,17 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, char *label,
   // Now #ifdefed independently, JACS 25/4/93
 #if (USE_GADGETS && USE_BUTTON_GADGET)
 						 style & wxCOLOURED ?
-			  xmPushButtonWidgetClass : xmPushButtonGadgetClass,
+						 xmPushButtonWidgetClass : xmPushButtonGadgetClass,
 						 formWidget,
 #else
-					xmPushButtonWidgetClass, formWidget,
+						 xmPushButtonWidgetClass, formWidget,
 #endif
 						 XmNlabelString, text,
-//                  XmNdefaultButtonShadowThickness, 1, // See comment for wxButton::SetDefault
-					    XmNtopAttachment, XmATTACH_FORM,
-					   XmNleftAttachment, XmATTACH_FORM,
-					 XmNbottomAttachment, XmATTACH_FORM,
-					  XmNrightAttachment, XmATTACH_FORM,
+						 // XmNdefaultButtonShadowThickness, 1, // See comment for wxButton::SetDefault
+						 XmNtopAttachment, XmATTACH_FORM,
+						 XmNleftAttachment, XmATTACH_FORM,
+						 XmNbottomAttachment, XmATTACH_FORM,
+						 XmNrightAttachment, XmATTACH_FORM,
 						 NULL);
 
   XmStringFree (text);
@@ -140,18 +140,11 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, char *label,
   XtAddCallback (buttonWidget, XmNactivateCallback, (XtCallbackProc) wxButtonCallback,
 		 (XtPointer) this);
 
-/*
-    XtInsertEventHandler((Widget)buttonWidget,
-       ButtonPressMask | PointerMotionMask | KeyPressMask,
-       True,
-       wxPanelItemEventHandler,
-       (XtPointer)this,
-       XtListHead);
-*/
-
   panel->AttachWidget (this, formWidget, x, y, width, height);
 //  XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
   ChangeColour ();
+
+  AddPreHandlers(buttonWidget);
 
   return TRUE;
 }
@@ -244,6 +237,8 @@ Bool wxButton::Create (wxPanel * panel, wxFunction Function, wxBitmap * bitmap,
   panel->AttachWidget (this, formWidget, x, y, width, height);
 //  XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
   ChangeColour ();
+
+  AddPreHandlers(buttonWidget);
 
   return TRUE;
 }

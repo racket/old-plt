@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_panel.cc,v 1.3 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_panel.cxx,v 1.1.1.1 1997/12/22 16:12:05 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -31,10 +31,6 @@ static const char sccsid[] = "@(#)wx_panel.cc	1.2 5/9/94";
 #include <Xm/PushB.h>
 #include <Xm/Frame.h>
 #include <Xm/RowColumn.h>
-extern void wxPanelItemEventHandler (Widget    wid,
-                              XtPointer client_data,
-                              XEvent*   event,
-                              Boolean *continueToDispatch);
 
 
 // Constructor
@@ -603,15 +599,6 @@ void wxPanel::AttachWidget (wxWindow *item, Widget formWidget,
   {
     wxItem *panelItem = (wxItem *)item;
     panelItem->itemOrientation = label_position;
-
-    if (panelItem->CanAddEventHandler())
-    {
-    XtAddEventHandler((Widget)item->handle,
-       ButtonPressMask | ButtonReleaseMask | PointerMotionMask, // | KeyPressMask,
-       False,
-       wxPanelItemEventHandler,
-       (XtPointer)panelItem);
-    }
   }
 
   if (formWidget)

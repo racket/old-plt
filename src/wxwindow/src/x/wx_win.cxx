@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_win.cc,v 1.5 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.1.1.1 1997/12/22 16:12:05 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -29,10 +29,8 @@ static const char sccsid[] = "@(#)wx_win.cc	1.2 5/9/94";
 #include "wx_dialg.h"
 #include "wx_cmdlg.h"
 
-#ifdef wx_motif
 #include "wx_dialg.h"
 #include <Xm/RowColumn.h>
-#endif
 
 // Constructor
 IMPLEMENT_DYNAMIC_CLASS(wxWindow, wxEvtHandler)
@@ -192,7 +190,7 @@ void wxWindow::Refresh(void)
   XSendEvent(display, thisWindow, False, ExposureMask, (XEvent *)&dummyEvent);
 }
 
-void wxWindow::DragAcceptFiles(Bool accept)
+void wxWindow::DragAcceptFiles(Bool WXUNUSED(accept))
 {
 }
 
@@ -289,7 +287,7 @@ void wxWindow::GetClientSize(int *x, int *y)
   *x = xx; *y = yy;
 }
 
-void wxWindow::SetSize(int x, int y, int width, int height, int sizeFlags)
+void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeFlags))
 {
   Widget widget = (Widget)handle;
 
@@ -426,8 +424,6 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 
 Bool wxWindow:: PopupMenu (wxMenu * menu, float x, float y)
 {
-  Widget widget = (Widget)handle;
-
   /* MATTHEW: [11] safety (revised) */
   /* Always popup menus in the frame. Dunno why, but this seems
      to solve the problem described below for FakePopupMenu(). */
@@ -820,7 +816,8 @@ Bool wxWindow::PreResize(void)
 
 // All widgets should have this as their resize proc.
 // OnSize sent to wxWindow via client data.
-void wxWidgetResizeProc(Widget w, XConfigureEvent *event, String args[], int *num_args)
+void wxWidgetResizeProc(Widget w, XConfigureEvent *WXUNUSED(event), 
+			String WXUNUSED(args)[], int *WXUNUSED(num_args))
 {
   wxWindow *win = (wxWindow *)wxWidgetHashTable->Get((long)w);
   if (!win)
@@ -850,8 +847,6 @@ Bool wxTranslateMouseEvent(wxMouseEvent& wxevent, wxWindow *win, XEvent *xevent)
 {
   switch (xevent->xany.type)
   {
-    case EnterNotify:
-    case LeaveNotify:
     case ButtonPress:
     case ButtonRelease:
     case MotionNotify:
@@ -860,11 +855,6 @@ Bool wxTranslateMouseEvent(wxMouseEvent& wxevent, wxWindow *win, XEvent *xevent)
 
         if (xevent->xany.type == LeaveNotify)
 	{
-#if 0
-          win->button1Pressed = FALSE;
-          win->button2Pressed = FALSE;
-          win->button3Pressed = FALSE;
-#endif
           return FALSE;
 	}
 	else if (xevent->xany.type == MotionNotify)
@@ -873,54 +863,32 @@ Bool wxTranslateMouseEvent(wxMouseEvent& wxevent, wxWindow *win, XEvent *xevent)
 	  }
 	else if (xevent->xany.type == ButtonPress)
 	  {
-//            cout << "Button press\n";
 	    if (xevent->xbutton.button == Button1)
 	      {
 		eventType = wxEVENT_TYPE_LEFT_DOWN;
-#if 0
-		win->button1Pressed = TRUE;
-#endif
-//                cout << "Left button press\n";
 	      }
 	    else if (xevent->xbutton.button == Button2)
 	      {
 		eventType = wxEVENT_TYPE_MIDDLE_DOWN;
-#if 0
-		win->button2Pressed = TRUE;
-#endif
 	      }
 	    else if (xevent->xbutton.button == Button3)
 	      {
 		eventType = wxEVENT_TYPE_RIGHT_DOWN;
-#if 0
-		win->button3Pressed = TRUE;
-#endif
 	      }
 	  }
 	else if (xevent->xany.type == ButtonRelease)
 	  {
-//            cout << "Button release\n";
 	    if (xevent->xbutton.button == Button1)
 	      {
 		eventType = wxEVENT_TYPE_LEFT_UP;
-#if 0
-		win->button1Pressed = FALSE;
-#endif
-//                cout << "Left button release\n";
 	      }
 	    else if (xevent->xbutton.button == Button2)
 	      {
 		eventType = wxEVENT_TYPE_MIDDLE_UP;
-#if 0
-		win->button2Pressed = FALSE;
-#endif
 	      }
 	    else if (xevent->xbutton.button == Button3)
 	      {
 		eventType = wxEVENT_TYPE_RIGHT_UP;
-#if 0
-		win->button3Pressed = FALSE;
-#endif
 	      }
             else return FALSE;
 	  }
@@ -946,18 +914,85 @@ Bool wxTranslateMouseEvent(wxMouseEvent& wxevent, wxWindow *win, XEvent *xevent)
 			     || (event_right_is_down (xevent) 
 				 && (eventType != wxEVENT_TYPE_RIGHT_UP)));
 
-#if 0 /* MATTHEW: replaced with above */
-	wxevent.leftDown = win->button1Pressed;
-	wxevent.middleDown = win->button2Pressed;
-	wxevent.rightDown = win->button3Pressed;
-#endif
-
 	wxevent.shiftDown = xevent->xbutton.state & ShiftMask;
 	wxevent.controlDown = xevent->xbutton.state & ControlMask;
+
+	wxevent.eventObject = win;
+
         return TRUE;
     }
   }
   return FALSE;
+}
+
+void wxWindow::AddPreHandlers(Widget w, Widget hash_w)
+{
+  if (!hash_w)
+    hash_w = w;
+
+  XtInsertEventHandler(w, (KeyPressMask
+			   | ButtonPressMask
+			   | ButtonReleaseMask
+			   | ButtonMotionMask
+			   | PointerMotionMask
+			   | PointerMotionHintMask),
+		       FALSE,
+		       (XtEventHandler)wxWindow::WindowEventHandler,
+		       (XtPointer)hash_w,
+		       XtListHead);
+}
+
+void wxWindow::WindowEventHandler(Widget WXUNUSED(w),
+				  Widget hash_w,
+				  XEvent *xev,
+				  Boolean *continue_to_dispatch_return)
+{
+  wxWindow *win = (wxWindow *)wxWidgetHashTable->Get((long)hash_w);
+
+  if (!win)
+    return;
+
+  switch (xev->xany.type) {
+  case ButtonPress:
+  case ButtonRelease:
+  case MotionNotify:
+    {
+      wxMouseEvent *e = new wxMouseEvent(0);
+      wxTranslateMouseEvent(*e, win, xev);
+      if (win->CallPreOnEvent(win, e)) {
+	*continue_to_dispatch_return = 0;
+	return;
+      }
+    }
+  break;
+  case KeyPress:
+    {
+      KeySym keySym;
+      XComposeStatus compose;
+      XLookupString((XKeyEvent *)xev, wxBuffer, 20, &keySym, &compose);
+      int id = CharCodeXToWX (keySym);
+      
+      wxKeyEvent *e = new wxKeyEvent(wxEVENT_TYPE_CHAR);
+      
+      if (xev->xkey.state & ShiftMask)
+	e->shiftDown = TRUE;
+      if (xev->xkey.state & ControlMask)
+	e->controlDown = TRUE;
+      if (xev->xkey.state & Mod1Mask)
+	e->metaDown = TRUE;
+      e->eventObject = win;
+      e->keyCode = id;
+      e->SetTimestamp(xev->xkey.time);
+
+      if (id > -1) {
+	if (win->CallPreOnChar(win, e)) {
+	  *continue_to_dispatch_return = 0;
+	  return;
+	}
+      }
+    }
+  break;
+  }  
 }
 
 Bool wxWindow::PreOnChar(wxWindow *, wxKeyEvent *)

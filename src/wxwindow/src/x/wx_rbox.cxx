@@ -27,11 +27,6 @@
 #include <Xm/Form.h>
 #endif
 
-#ifdef wx_xview
-void wxRadioBoxProc (Panel_item item, int value, Event * event);
-#endif
-
-#ifdef wx_motif
 void 
 wxRadioBoxCallback (Widget w, XtPointer clientData,
 		    XmToggleButtonCallbackStruct * cbs)
@@ -53,24 +48,6 @@ wxRadioBoxCallback (Widget w, XtPointer clientData,
   event->eventObject = item;
   item->ProcessCommand (*event);
 }
-#endif
-
-#ifdef wx_xview
-void 
-wxRadioBoxProc (Panel_item item, int value, Event * x_event)
-{
-  wxRadioBox *box = (wxRadioBox *) xv_get (item, PANEL_CLIENT_DATA);
-
-  wxCommandEvent *event  = new wxCommandEvent (wxEVENT_TYPE_RADIOBOX_COMMAND);
-
-  event.commandString = (char *) xv_get (item, PANEL_CHOICE_STRING, value);
-  event.commandInt = value;
-  event.eventHandle = (char *) x_event;
-  event.eventObject = box;
-  box->ProcessCommand (event);
-}
-#endif
-
 
 // Radiobox item
 IMPLEMENT_DYNAMIC_CLASS(wxRadioBox, wxItem)
@@ -80,13 +57,9 @@ wxRadioBox::wxRadioBox (void)
   selected = -1;
   no_items = 0;
   buttonBitmap = NULL;
-#ifdef wx_motif
   radioButtons = NULL;
   radioButtonLabels = NULL;
   labelWidget = NULL;
-#endif
-#ifdef wx_xview
-#endif
 }
 
 wxRadioBox::wxRadioBox (wxPanel * panel, wxFunction func,
@@ -136,7 +109,7 @@ Create (wxPanel * panel, wxFunction func,
   if (majorDim == 0)
     majorDim = N;
   windowStyle = style;
-#ifdef wx_motif
+
   canAddEventHandler = TRUE;
   windowName = copystring (name);
   Widget panelForm = panel->panelWidget;
@@ -293,92 +266,12 @@ Create (wxPanel * panel, wxFunction func,
 	  XmStringFree (text);
 	}
     }
-#endif
-#ifdef wx_xview
-  Panel x_panel = (Panel) panel->GetHandle ();
-  Panel_item x_choice;
-
-  int label_position;
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
-
-  if (panel->new_line)
-    {
-      x_choice = (Panel_item) xv_create (x_panel, PANEL_CHOICE, PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1, NULL);
-      panel->new_line = FALSE;
-    }
-  else
-    x_choice = (Panel_item) xv_create (x_panel, PANEL_CHOICE, PANEL_LAYOUT, label_position, NULL);
-
-/*
-   if (buttonFont)
-   xv_set(x_choice, XV_FONT, buttonFont->GetInternalFont(), NULL) ;
- */
-  xv_set (x_choice,
-	  PANEL_NOTIFY_PROC, wxRadioBoxProc,
-	  PANEL_CLIENT_DATA, (char *) this,
-	  NULL);
-
-  // Shouldn't we set PANEL_CHOICE_NROWS if windowStyle is wxVERTICAL?
-/*
-  if (majorDim != N)
-    {
-      majorDim = (N + majorDim - 1) / majorDim;
-      xv_set (x_choice,
-	      PANEL_CHOICE_NCOLS, majorDim,
-	      NULL);
-    }
-*/
-  if (windowStyle & wxVERTICAL)
-    {
-      if (majorDim > 0)
-        xv_set (x_choice,
-	      PANEL_CHOICE_NROWS, majorDim,
-	      NULL);
-    }
-    else
-    {
-      if (majorDim > 0)
-        xv_set (x_choice,
-	      PANEL_CHOICE_NCOLS, majorDim,
-	      NULL);
-    }
-
-  if (x > -1 && y > -1)
-    (void) xv_set (x_choice, XV_X, x, XV_Y, y, NULL);
-
-  for (i = 0; i < N; i++)
-    {
-      char *label = Choices[i];
-      xv_set (x_choice, PANEL_CHOICE_STRING, i, label, NULL);
-    }
-  handle = (char *) x_choice;
-  xv_set (x_choice, PANEL_VALUE, 0, NULL);
-
-  if (Title)
-  {
-    actualLabel = wxStripMenuCodes(Title);
-
-    if (style & wxFIXED_LENGTH)
-    {
-      char *the_label = fillCopy (actualLabel);
-      xv_set (x_choice, PANEL_LABEL_STRING, the_label, NULL);
-      int label_x = (int) xv_get (x_choice, PANEL_LABEL_X);
-      int item_x = (int) xv_get (x_choice, PANEL_ITEM_X);
-      xv_set (x_choice, PANEL_LABEL_STRING, actualLabel,
-  	      PANEL_LABEL_X, label_x,
-  	      PANEL_ITEM_X, item_x,
-	      NULL);
-      delete[] the_label;
-    }
-    else
-      xv_set (x_choice, PANEL_LABEL_STRING, actualLabel, NULL);
-  }
-#endif
 
   Callback (func);
+
+  wxWidgetHashTable->Put((long)radioBoxWidget, this);
+  AddPreHandlers(radioBoxWidget);
+
   return TRUE;
 }
 
@@ -418,7 +311,7 @@ Create (wxPanel * panel, wxFunction func,
       buttonBitmap[i] = NULL;
   }
   windowStyle = style;
-#ifdef wx_motif
+
   canAddEventHandler = TRUE;
   windowName = copystring (name);
   Widget panelForm = panel->panelWidget;
@@ -591,78 +484,12 @@ Create (wxPanel * panel, wxFunction func,
 	  XmStringFree (text);
 	}
     }
-#endif
-#ifdef wx_xview
-  char *title = NULL;
-  if (Title)
-    title = Title;
-
-  Panel x_panel = (Panel) panel->GetHandle ();
-  Panel_item x_choice;
-
-  int label_position;
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
-
-  if (panel->new_line)
-    {
-      x_choice = (Panel_item) xv_create (x_panel, PANEL_CHOICE, PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1, NULL);
-      panel->new_line = FALSE;
-    }
-  else
-    x_choice = (Panel_item) xv_create (x_panel, PANEL_CHOICE, PANEL_LAYOUT, label_position, NULL);
-
-/*
-   if (buttonFont)
-   xv_set(x_choice, XV_FONT, buttonFont->GetInternalFont(), NULL) ;
- */
-  xv_set (x_choice,
-	  PANEL_LABEL_STRING, title,
-	  PANEL_NOTIFY_PROC, wxRadioBoxProc,
-	  PANEL_CLIENT_DATA, (char *) this,
-	  NULL);
-/*
-  if (majorDim != N)
-    {
-      majorDim = (N + majorDim - 1) / majorDim;
-      xv_set (x_choice,
-	      PANEL_CHOICE_NCOLS, majorDim,
-	      NULL);
-    }
-*/
-  if (windowStyle & wxVERTICAL)
-    {
-      if (majorDim > 0)
-        xv_set (x_choice,
-	      PANEL_CHOICE_NROWS, majorDim,
-	      NULL);
-    }
-    else
-    {
-      if (majorDim > 0)
-        xv_set (x_choice,
-	      PANEL_CHOICE_NCOLS, majorDim,
-	      NULL);
-    }
-
-  if (x > -1 && y > -1)
-    (void) xv_set (x_choice, XV_X, x, XV_Y, y, NULL);
-
-  for (i = 0; i < N; i++)
-    {
-      wxBitmap *bitmap = Choices[i];
-      if (!bitmap->x_image)
-        bitmap->CreateServerImage(TRUE);
-
-      xv_set (x_choice, PANEL_CHOICE_IMAGE, i, bitmap->x_image, NULL);
-    }
-  handle = (char *) x_choice;
-  xv_set (x_choice, PANEL_VALUE, 0, NULL);
-#endif
 
   Callback (func);
+
+  wxWidgetHashTable->Put((long)radioBoxWidget, this);
+  AddPreHandlers(radioBoxWidget);
+
   return TRUE;
 }
 
@@ -701,6 +528,8 @@ wxRadioBox::~wxRadioBox (void)
 #endif
     delete[] radioButtons;
   }
+
+  wxWidgetHashTable->Delete((long)handle);
 }
 
 void wxRadioBox::ChangeColour (void)

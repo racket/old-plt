@@ -606,7 +606,7 @@
                     (static-error filename "Cannot include a directory"))
                   (let* ((original-directory (current-load-relative-directory))
 			  (p (with-handlers
-			       ((exn:i/o:filesystem:filename?
+			       ((exn:i/o:filesystem?
 				  (lambda (exn)
 				    (static-error filename
 				      "Unable to open file ~s" raw-filename))))

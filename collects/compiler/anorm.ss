@@ -22,7 +22,7 @@
 
 (define compiler:a-value?
   (one-of zodiac:quote-form? zodiac:varref?))
-    
+
 (define parameterized-a-normalize
   (lambda (a-value?)
     (letrec ([linearize-let-values
@@ -46,14 +46,17 @@
 							(linear (cdr vars) 
 								(cdr vals)))))])))]
 	     [normalize-name
+	      (lambda (ast k)
+		(normalize-name/special-a-values ast k (lambda (x) #f)))]
+	     [normalize-name/special-a-values
 	      ; The magic goodie that names expressions.  If the expression
 	      ; handed in is not an immediate a-value, it is named and the
 	      ; computation continues; syntax correlation exists!
-	      (lambda (ast k)
+	      (lambda (ast k special-a-value?)
 		(a-normalize
 		 ast
 		 (lambda (exp)
-		   (if (a-value? exp)
+		   (if (or (a-value? exp) (special-a-value? exp))
 		       (k exp)
 		       (let* ([tname (gensym)]
 			      [tbound (zodiac:make-lexical-binding
@@ -203,13 +206,16 @@
 		  ;; IF EXPRESSIONS
 		  ;;
 		  ;; We do not make a recursive call for the test since it is in the
-		  ;; current 'context'.  We want only a-values in the test slot.
+		  ;; current 'context'.  We want only a-values in the test slot,
+		  ;; or an application to a-values. We specially allow applications
+		  ;; of a-values so the optimizer can recognize tests that cen be
+		  ;; implemented primitively, e.g., (#%zero? x)
 		  ;;
 		  ;; (norm (if A B C) k) ->
 		  ;;   (name A (lambda test (k (if test (norm B) (norm C)))))
 		  ;;
 		  [(zodiac:if-form? ast)
-		   (normalize-name
+		   (normalize-name/special-a-values
 		    (zodiac:if-form-test ast)
 		    (lambda (test)
 		      (k (zodiac:make-if-form (zodiac:zodiac-origin ast)
@@ -220,7 +226,8 @@
 					      (a-normalize (zodiac:if-form-then ast)
 							   identity)
 					      (a-normalize (zodiac:if-form-else ast)
-							   identity)))))]
+							   identity))))
+		    zodiac:app?)]
 		  
 		  ;;----------------------------------------------------------------
 		  ;; BEGIN EXPRESSIONS
@@ -244,7 +251,7 @@
 		  ;;----------------------------------------------------------------
 		  ;; BEGIN0 EXPRESSIONS
 		  ;;
-		  ;;    The first is named and the rest pass through
+		  ;;    The first is named in a special way, and the rest passes through
 		  ;;
 		  ;; (norm (begin0 A B) k) ->
 		  ;;    (norm A (lambda first (begin0 first (norm B k))))

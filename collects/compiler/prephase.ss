@@ -331,6 +331,32 @@
 		 (list (zodiac:make-special-constant 'void))
 		 (reverse! body-acc))))))
 
+(define (preprocess:adhoc-app-optimization ast prephase-it)
+  (let ([fun (zodiac:app-fun ast)])
+    (and (zodiac:top-level-varref? fun)
+	 (let ([name (zodiac:varref-var fun)]
+	       [args (zodiac:app-args ast)])
+	   (case name
+	     [(#%void) (if (null? args)
+			   (prephase-it (zodiac:make-special-constant 'void))
+			   #f)]
+	     [(#%+ #%-) (when (and (= 2 (length args))
+				   (zodiac:quote-form? (cadr args))
+				   (= 1 (zodiac:read-object (zodiac:quote-form-expr (cadr args)))))
+			  (let ([newname (if (eq? name '#%+) '#%add1 '#%sub1)])
+			    (zodiac:set-app-fun! ast
+						 (prephase-it
+						  (zodiac:make-top-level-varref
+						   (zodiac:zodiac-origin fun)
+						   (zodiac:zodiac-start fun)
+						   (zodiac:zodiac-finish fun)
+						   (make-empty-box)
+						   newname)))
+			    (zodiac:set-app-args! ast
+						  (list (car args)))))
+			#f] ; always return #f => use the (possibly mutated) ast
+	     [else #f])))))
+
 ;;----------------------------------------------------------------------------
 ;; PREPHASE MAIN FUNCTION
 ;;
@@ -364,18 +390,16 @@
 			    (zodiac:lexical-binding? 
 			     (unbox (zodiac:top-level-varref/bind-slot ast))))
 		       ; This is a unit-`defined' variable; change to lexical
-		       (let ([binding (unbox (zodiac:top-level-varref/bind-slot ast))])
-			 (prephase! 
-			  (zodiac:make-lexical-varref
-			   (zodiac:zodiac-origin ast)
-			   (zodiac:zodiac-start ast)
-			   (zodiac:zodiac-finish ast)
-			   (make-empty-box)
-			   (zodiac:binding-var binding)
-			   binding)
-			  in-unit?
-			  need-val?
-			  name))
+		       (let* ([binding (unbox (zodiac:top-level-varref/bind-slot ast))]
+			      [ref (zodiac:make-lexical-varref
+				    (zodiac:zodiac-origin ast)
+				    (zodiac:zodiac-start ast)
+				    (zodiac:zodiac-finish ast)
+				    (make-empty-box)
+				    (zodiac:binding-var binding)
+				    binding)])
+			 (mrspidey:copy-annotations! ref ast)
+			 (prephase! ref in-unit? need-val? name))
 		       
 		       (begin
 			 (set-annotation! ast (varref:empty-attributes))
@@ -467,6 +491,19 @@
 		   (zodiac:set-if-form-else!
 		    ast
 		    ((curry-prephase!) (zodiac:if-form-else ast) in-unit? need-val? name))
+
+		   ;; Ad hoc optimization: (if (#%not x) y z) => (if x z y)
+		   (let ([test (zodiac:if-form-test ast)])
+		     (when (and (zodiac:app? test)
+				(zodiac:top-level-varref? (zodiac:app-fun test))
+				(eq? '#%not (zodiac:varref-var (zodiac:app-fun test)))
+				(= 1 (length (zodiac:app-args test))))
+		       (let ([then (zodiac:if-form-then ast)]
+			     [else (zodiac:if-form-else ast)])
+			 (zodiac:set-if-form-test! ast (car (zodiac:app-args test)))
+			 (zodiac:set-if-form-then! ast else)
+			 (zodiac:set-if-form-else! ast then))))
+
 		   ast]
       
 		  ;;-----------------------------------------------------------
@@ -653,11 +690,18 @@
 			    (zodiac:set-app-fun!
 			     ast
 			     ((curry-prephase!) (zodiac:app-fun ast) in-unit? #t #f))
-			    (zodiac:set-app-args!
-			     ast
-			     (map (lambda (e) ((curry-prephase!) e in-unit? #t #f))
-				  (zodiac:app-args ast)))
-			    ast)])
+			    (let ([adhoc (preprocess:adhoc-app-optimization 
+					  ast
+					  (lambda (x)
+					    ((curry-prephase!) x in-unit? #t #f)))])
+			      (if adhoc
+				  ((curry-prephase!) adhoc in-unit? need-val? name)
+				  (begin
+				    (zodiac:set-app-args!
+				     ast
+				     (map (lambda (e) ((curry-prephase!) e in-unit? #t #f))
+					  (zodiac:app-args ast)))
+				    ast))))])
 		   
 		     (if (and (zodiac:case-lambda-form? (zodiac:app-fun ast))
 			      (= 1 (length (zodiac:case-lambda-form-args 
@@ -769,9 +813,9 @@
 			  #t #t #f)))
 		       ; annotate this dude
 		       (set-annotation! ast (make-unit-code
-					     empty-set empty-set empty-set empty-set
+					     empty-set empty-set empty-set empty-set empty-set
 					     #f #f #f #f
-					     0 name
+					     0 'possible name
 					     defined-bindings
 					     exported-bindings
 					     import-anchors
@@ -921,9 +965,9 @@
 
 		      (set-annotation! ast
 				       (make-class-code
-					empty-set empty-set empty-set empty-set
+					empty-set empty-set empty-set empty-set empty-set
 					#f #f #f #f
-					0 name
+					0 'possible name
 					public-lookup-bindings
 					public-define-bindings
 					private-bindings

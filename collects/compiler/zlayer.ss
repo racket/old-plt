@@ -239,9 +239,9 @@
 
      [(zodiac:let-values-form? ast)
       `(let-values
-	 ,(map list
-	       (map (lambda (l) (map zodiac->sexp l)) (zodiac:let-values-form-vars ast))
-	       (map zodiac->sexp/annotate (zodiac:let-values-form-vals ast)))
+	   ,(map list
+		 (map (lambda (l) (map zodiac->sexp l)) (zodiac:let-values-form-vars ast))
+		 (map zodiac->sexp/annotate (zodiac:let-values-form-vals ast)))
 	 ,(zodiac->sexp/annotate (zodiac:let-values-form-body ast)))]
      
      [(zodiac:letrec*-values-form? ast)
@@ -266,8 +266,10 @@
 
      [(zodiac:unit-form? ast)
       `(unit (import ,@(map zodiac->sexp (zodiac:unit-form-imports ast)))
-	     (export ,@(map zodiac->sexp (zodiac:unit-form-exports ast)))
-	 ,@(map zodiac->sexp/annotate (zodiac:unit-form-clauses ast)))]
+	     (export ,@(map (lambda (a) (list (zodiac->sexp (car a))
+					      (zodiac:read-object (cdr a))))
+			    (zodiac:unit-form-exports ast)))
+	     ,@(map zodiac->sexp/annotate (zodiac:unit-form-clauses ast)))]
 
      [(zodiac:invoke-unit-form? ast)
       `(invoke-unit ,(zodiac->sexp/annotate (zodiac:invoke-unit-form-unit ast))

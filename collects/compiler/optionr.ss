@@ -7,6 +7,7 @@
  (import)
 
  (define use-mrspidey (make-parameter #f))
+ (define use-mrspidey-for-units (make-parameter #f))
  (define propagate-constants (make-parameter #t))
  (define assume-primitives (make-parameter #f))
  (define stupid (make-parameter #f))
@@ -29,5 +30,5 @@
  (define compile-for-embedded (make-parameter #f))
  
  ;; Maybe #f helps for register-poor architectures?
- (define unpack-environments (make-parameter #t)))
+ (define unpack-environments (make-parameter #f)))
 

@@ -16,7 +16,7 @@
  (define (make-extension-compiler mode prefix)
    (let ([u (parameterize ([current-namespace load-namespace])
 	      (require-library "refer.ss")
-	      (if (use-mrspidey)
+	      (if (or (use-mrspidey) (use-mrspidey-for-units))
 		  (begin
 		    (require-library "spsigload.ss" "compiler")
 		    (require-library "sploadr.ss" "compiler"))

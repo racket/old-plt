@@ -63,7 +63,7 @@
   (set! compiler:local-define-list 
 	(cons def compiler:local-define-list)))
 
-(define-struct case-info (body case-code global-vars captured-vars max-arity))
+(define-struct case-info (body case-code global-vars used-vars captured-vars max-arity return-multi))
 
 (define (list->zodiac:quote l ast)
   (zodiac:make-quote-form
@@ -134,7 +134,6 @@
 		      (set! set-body! 
 			    (lambda (v)
 			      (set-car! (cdr (zodiac:begin-form-bodies b)) v))))
-;			      (zodiac:set-begin-form-rest! b v))))
 		    b)))]
 	   [let-form
 	    (zodiac:make-let-values-form 
@@ -156,47 +155,97 @@
 	     body)])
       (values let-form set-body!))))
 
-(define (analyze:valueable? v)
+(define (analyze:prim-fun fun)
+  (and (zodiac:top-level-varref? fun)
+       (varref:has-attribute? fun varref:primitive)
+       (primitive? (global-defined-value (zodiac:varref-var fun)))
+       (zodiac:varref-var fun)))
+
+(define (analyze:valueable? v extra-known-bindings)
   (cond
+   [(and (zodiac:set!-form? v)
+	 (prephase:set!-is-unit-definition? v))
+    (if (analyze:valueable? (zodiac:set!-form-val v) extra-known-bindings)
+	(let* ([var (zodiac:set!-form-var v)]
+	       [binding (get-annotation (zodiac:bound-varref-binding var))])
+	  (set-binding-known?! binding #t)
+	  ; The known `value' may be a quote form that hasn't yet been analyzed
+	  ; (to obtain a constant varref). In this case, it will be cleaned
+	  ; up by setting the constant as the annotation for the quote form
+	  ; and using this annotation at constant-folding time
+	  (set-binding-val! binding (extract-value (zodiac:set!-form-val v)))
+	  #t)
+	#f)]
+   
    [(zodiac:quote-form? v) #t]
    [(zodiac:bound-varref? v)
     ; only if the varref is not unit-i/e? or is already known
-    (let ([b (get-annotation (zodiac:bound-varref-binding v))])
-      (or (and (binding-properties? b)
-	       (not (binding-properties-unit-i/e? b)))
-	  (and (binding? b)
-	       (or (not (binding-unit-i/e? b))
-		   (binding-known? b)))))]
+    (let ([zbinding (zodiac:bound-varref-binding v)])
+      (or (memq zbinding extra-known-bindings)
+	  (let ([b (get-annotation zbinding)])
+	    (or (and (binding-properties? b)
+		     (not (binding-properties-unit-i/e? b)))
+		(and (binding? b)
+		     (or (not (binding-unit-i/e? b))
+			 (binding-known? b)))))))]
    [(zodiac:varref? v) #t]
    [(zodiac:case-lambda-form? v) #t]
    [(zodiac:unit-form? v) #t]
    [(zodiac:begin-form? v)
-    (andmap analyze:valueable? (zodiac:begin-form-bodies v))]
+    (andmap (lambda (v) (analyze:valueable? v extra-known-bindings)) (zodiac:begin-form-bodies v))]
    [(zodiac:begin0-form? v)
-    (andmap analyze:valueable? (zodiac:begin0-form-bodies v))]
+    (andmap (lambda (v) (analyze:valueable? v extra-known-bindings)) (zodiac:begin0-form-bodies))]
    [(zodiac:set!-form? v) #f] ; because it changes a variable
    [(zodiac:struct-form? v)
-    (analyze:valueable? (zodiac:struct-form-super v))]
+    (analyze:valueable? (zodiac:struct-form-super v) extra-known-bindings)]
    [(zodiac:if-form? v)
-    (and (analyze:valueable? (zodiac:if-form-test v))
-	 (analyze:valueable? (zodiac:if-form-then v))
-	 (analyze:valueable? (zodiac:if-form-else v)))]
+    (and (analyze:valueable? (zodiac:if-form-test v) extra-known-bindings)
+	 (analyze:valueable? (zodiac:if-form-then v) extra-known-bindings)
+	 (analyze:valueable? (zodiac:if-form-else v) extra-known-bindings))]
    [(zodiac:let-values-form? v)
-    (and (andmap analyze:valueable? (zodiac:let-values-form-vals v))
-	 (analyze:valueable? (zodiac:let-values-form-body v)))]
+    (and (andmap (lambda (v) (analyze:valueable? v extra-known-bindings)) (zodiac:let-values-form-vals v))
+	 (analyze:valueable? (zodiac:let-values-form-body v)
+			     (append (apply append (zodiac:let-values-form-vars v))
+				     extra-known-bindings)))]
    [(zodiac:letrec*-values-form? v)
-    (and (andmap analyze:valueable? (zodiac:letrec*-values-form-vals v))
-	 (analyze:valueable? (zodiac:letrec*-values-form-body v)))]
+    (and (andmap (lambda (v) (analyze:valueable? v extra-known-bindings)) (zodiac:letrec*-values-form-vals v))
+	 (analyze:valueable? (zodiac:letrec*-values-form-body v)
+			     (append (apply append (zodiac:letrec*-values-form-vars v))
+				     extra-known-bindings)))]
+   [(zodiac:app? v)
+    (let ([fun (analyze:prim-fun (zodiac:app-fun v))]
+	  [args (zodiac:app-args v)])
+      (and (memq fun '(#%void #%list #%cons #%vector #%char->integer))
+	   (andmap (lambda (v) (analyze:valueable? v extra-known-bindings)) args)))]
    [else #f]))
 
 (define (extract-value v)
-  (cond
-   [(zodiac:set!-form? v) (zodiac:make-special-constant 'void)]
-   [(zodiac:begin-form? v) (extract-value (car (last-pair (zodiac:begin-form-bodies v))))]
-   [(zodiac:begin0-form? v) (extract-value (car (zodiac:begin0-form-bodies v)))]
-   [(zodiac:let-values-form? v) (extract-value (zodiac:let-values-form-body v))]
-   [(zodiac:letrec*-values-form? v) (extract-value (zodiac:letrec*-values-form-body v))]
-   [else v]))
+  (let extract-value ([v v])
+    (cond
+     [(zodiac:set!-form? v) (zodiac:make-special-constant 'void)]
+     [(zodiac:begin-form? v) (extract-value (car (last-pair (zodiac:begin-form-bodies v))))]
+     [(zodiac:begin0-form? v) (extract-value (car (zodiac:begin0-form-bodies v)))]
+     [(zodiac:let-values-form? v) (extract-value (zodiac:let-values-form-body v))]
+     [(zodiac:letrec*-values-form? v) (extract-value (zodiac:letrec*-values-form-body v))]
+     [(zodiac:app? v)
+      (let ([fun (analyze:prim-fun (zodiac:app-fun v))])
+	(if fun
+	    (let ([args (map extract-value (zodiac:app-args v))])
+	      (case fun
+		[(#%void) (zodiac:make-special-constant 'void)]
+		[(#%char->integer) 
+		 (with-handlers ([void (lambda (x) v)])
+		   (let ([args (map (lambda (a) (zodiac:read-object (zodiac:quote-form-expr a))) args)])
+		     (let ([new-v (apply (global-defined-value fun) args)])
+		       (zodiac:make-quote-form
+			(zodiac:zodiac-origin v)
+			(zodiac:zodiac-start v)
+			(zodiac:zodiac-finish v)
+			(make-empty-box)
+			(zodiac:structurize-syntax new-v v)))))]
+		[else v]))
+	    v))]
+     [else v])))
 
 (define (extract-varref-known-val v)
   (let loop ([v v])
@@ -209,6 +258,12 @@
 		 (loop v)
 		 v))))))
 
+(define (or-multi a-multi b-multi)
+  (case a-multi
+    [(#f) b-multi]
+    [(possible) (or b-multi 'possible)]
+    [(#t) #t]))
+
 ;; analyze-expression takes 4 arguments
 ;;  1) an AST to transform
 ;;  2) a set of bound variables (the lexical environment)
@@ -216,16 +271,19 @@
 ;;
 ;; it returns 6 values
 ;;  1) a destructively altered AST
-;;  2) a set of variables occurring free in that expression
-;;  3) a set of variables which are bound by lets in that expression
-;;  4) global variables and mutable `constants' used in the expression
-;;  5) those variables which are used or captured by nested lambdas (args and locals)
-;;  6) maximum arity to a call made in this expression
+;;  2) a set of variables occurring free in that expression [free-vars]
+;;  3) a set of variables which are bound by lets in that expression [local-vars]
+;;  4) global variables and mutable `constants' used in the expression [global-vars]
+;;  5) local variables (including given bound set) that are used or captured by nested closures [used-vars]
+;;  6) free and local variables that are captured by nested closures [captured-vars]
+;;  7) maximum arity to a call made in this expression
+;;  8) returns multiple values?: #t, 'possible, or #f
 ;;
 (define analyze-expression!
   (lambda (ast bound-vars tail?)
     (let ([local-vars bound-vars]
-	  [locals-captured empty-set]
+	  [locals-used empty-set]
+	  [captured-vars empty-set]
 	  [free-vars empty-set]
 	  [global-vars empty-set]
 	  [max-arity 1])
@@ -239,9 +297,9 @@
 	   [add-free-var! (lambda (var)
 			    (set! free-vars
 				  (set-union-singleton free-vars var)))]
-	   [add-captured-var! (lambda (var)
-				(set! locals-captured
-				      (set-union-singleton locals-captured var)))]
+	   [add-used-var! (lambda (var)
+				(set! locals-used
+				      (set-union-singleton locals-used var)))]
 	   [add-global-var! (lambda (var)
 			      (set! global-vars
 				    (set-union-singleton global-vars var)))]
@@ -252,15 +310,22 @@
 	      ; free in this closure (since we need them in the
 	      ; environment) except those that are already in the
 	      ; environment: bound-vars (typically the arguments)
-	      ; and local-vars.
+	      ; and local-vars. New captured variables are also
+	      ; added: free variables and captured variables in
+	      ; nested closures. (Captured variables are always
+	      ; a subset of free + local.)
 	      (set! free-vars
 		    (set-union (set-minus (code-free-vars code)
 					  local-vars)
 			       free-vars))
-	      (set! locals-captured
+	      (set! locals-used
 		    (set-union (set-intersect local-vars
 					      (code-free-vars code))
-			       locals-captured))
+			       locals-used))
+	      (set! captured-vars
+		    (set-union (code-captured-vars code)
+			       (set-union (code-free-vars code)
+					  captured-vars)))
 	      
 	      ; If there are no free vars, this closure will be lifted
 	      ; out of the current expression, so don't add global
@@ -274,8 +339,10 @@
 	      (let-values ([(body free-vars
 				  local-vars 
 				  global-vars 
+				  used-vars
 				  captured-vars
-				  L-max-arity)
+				  L-max-arity
+				  multi)
 			    (analyze-expression! ast
 						 locals
 						 tail?)])
@@ -286,10 +353,14 @@
 							 (code-local-vars code)))
 		   (set-code-global-vars! code (set-union global-vars
 							  (code-global-vars code)))
+		   (set-code-captured-vars! code (set-union used-vars
+							    (code-used-vars code)))
 		   (set-code-captured-vars! code (set-union captured-vars
 							    (code-captured-vars code)))
 		   (set-code-max-arity! code (max L-max-arity
 						  (code-max-arity code)))
+
+		   (set-code-return-multi! code multi)
 		   
 		   body))]
 	   [analyze-varref!
@@ -328,55 +399,86 @@
 			       (mrspidey:binding-mutated zbinding)
 			       (binding-mutable? binding)))))
 
-		  (if (and (compiler:option:propagate-constants)
-			   known? 
-			   (can-propagate-constant? val)
-			   (not need-varref?))
+		  (cond 
+		   [(and (compiler:option:propagate-constants)
+			 known? 
+			 (can-propagate-constant? val)
+			 (not need-varref?))
+		    
+		    ; Propogate a mzc-determined constant!
+		    ; This could be a quote-form that was installed
+		    ; as a known unit value before it was
+		    ; analyzed. If so, extract the constructed
+		    ; constant from the backbox.
+		    ; In any case, check for adding PLS to the closure.
+		    (let ([c (if (zodiac:quote-form? val)
 
-		      ; Propogate a constant!
-		      ; This could be a quote-form that was installed
-		      ; as a known unit value before it was
-		      ; analyzed. If so, extract the constructed
-		      ; constant from the backbox.
-		      ; In any case, check for adding PLS to the closure.
-		      (let ([c (if (zodiac:quote-form? val)
-				   
-				   (let ([a (get-annotation val)])
-				     (if (zodiac:varref? a)
-					 a
-					 val))
-				   
-				   val)])
-			(when (and (zodiac:varref? c)
-				   (varref:has-attribute? c varref:per-load-static))
-			   (add-global-var! const:the-per-load-statics-table))
-			c)
-		      
-		      ; otherwise we don't know the value -- therefore just
-		      ; do the normal free-variable analysis
-		      (if (not (set-memq? (zodiac:bound-varref-binding ast)
-					  local-vars))
-			  
-			  (begin 
-			    (add-free-var! (zodiac:bound-varref-binding ast))
-			    (varref:add-attribute! ast varref:env)
-			    
-			    ; If this variable has an anchor, include it in the list of free vars
-			    (let ([a (binding-anchor (get-annotation (zodiac:bound-varref-binding ast)))])
-			      (when a
-				    (add-free-var! a)))
-			    
-			    ast)
-			  
-			  (begin
-			    (add-captured-var! (zodiac:bound-varref-binding ast))
-			    
-			    ; If this variable has an anchor, include it in the list of captured vars
-			    (let ([a (binding-anchor (get-annotation (zodiac:bound-varref-binding ast)))])
-			      (when a
-				    (add-captured-var! a)))
+				 (let ([a (get-annotation val)])
+				   (if (zodiac:varref? a)
+				       a
+				       val))
 
-			    ast))))]
+				 val)])
+
+		      (when (and (zodiac:varref? c)
+				 (varref:has-attribute? c varref:per-load-static))
+			(add-global-var! const:the-per-load-statics-table))
+
+		      c)]
+
+		   [(and (not need-varref?)
+			 (let-values ([(const? c) (mrspidey:constant-value ast)])
+			   (and const?
+				(or (symbol? c) (number? c) (char? c)
+				    (boolean? c))
+				(list c))))
+		    
+		    ; A MrSpidey-computed constant
+		    ; Structurize it and try again
+		    =>
+		    (lambda (sdl-const)
+		      (compiler:warning
+		       ast
+		       (format "Using MrSpidey-determined constant: ~s = ~e" 
+			       (zodiac:binding-orig-name zbinding) 
+			       (car sdl-const)))
+		      (let* ([c (car sdl-const)]
+			     [zc (zodiac:make-quote-form
+				  (zodiac:zodiac-origin ast)
+				  (zodiac:zodiac-start ast)
+				  (zodiac:zodiac-finish ast)
+				  (make-empty-box)
+				  (zodiac:structurize-syntax c ast))])
+			(analyze-quote! zc #f)))]
+			
+		   
+		   [else   
+		    ; otherwise we don't know the value -- therefore just
+		    ; do the normal free-variable analysis
+
+		    (if (not (set-memq? (zodiac:bound-varref-binding ast)
+					local-vars))
+			
+			(begin 
+			  (add-free-var! (zodiac:bound-varref-binding ast))
+			  (varref:add-attribute! ast varref:env)
+			  
+			  ; If this variable has an anchor, include it in the list of free vars
+			  (let ([a (binding-anchor (get-annotation (zodiac:bound-varref-binding ast)))])
+			    (when a
+			      (add-free-var! a)))
+			  
+			  ast)
+			
+			(begin
+			  (add-used-var! (zodiac:bound-varref-binding ast))
+			  
+			  ; If this variable has an anchor, include it in the list of used vars
+			  (let ([a (binding-anchor (get-annotation (zodiac:bound-varref-binding ast)))])
+			    (when a
+			      (add-used-var! a)))
+			  
+			  ast))]))]
 
 	       [(zodiac:top-level-varref? ast)
 		(if (varref:has-attribute? ast varref:primitive)
@@ -421,7 +523,26 @@
 		
 		ret))]
 
+	   [analyze!-ast
+	    ;; Like analyze, but drop the multi-return info in the result
+	    (lambda (ast tail?)
+	      (let-values ([(ast multi) (analyze! ast tail?)])
+		ast))]
+
+	   [analyze!-sv
+	    ;; Like analyze, but make sure the expression is not definitely
+	    ;;  multi-valued
+	    (lambda (ast tail?)
+	      (let-values ([(ast multi) (analyze! ast tail?)])
+		(when (eq? multi #t)
+		  ((if (compiler:option:stupid) compiler:warning compiler:error)
+		   ast
+		   "returning zero or multiple values to a context expecting 1 value"))
+		ast))]
+
 	   [analyze!
+	    ;; Returns (values ast multi)
+	    ;;    where multi = #f, #t, 'possible
 	    (lambda (ast tail?)
 	      (when (compiler:option:debug)
 		(zodiac:print-start! debug:port ast)
@@ -437,7 +558,7 @@
 		;; CONSTANTS (A-VALUES)
 
 		[(zodiac:quote-form? ast)
-		 (analyze-quote! ast #f)]
+		 (values (analyze-quote! ast #f) #f)]
 			
 		;;-----------------------------------------------------------------
 		;; VARIABLE REFERENCES (A-VALUES)
@@ -452,10 +573,10 @@
 		;;    capture the right name in closures.
 		;;
 		[(zodiac:bound-varref? ast) 
-		 (analyze-varref! ast tail? #f)]
+		 (values (analyze-varref! ast tail? #f) #f)]
 
 		[(zodiac:top-level-varref? ast)
-		 (analyze-varref! ast tail? #f)]
+		 (values (analyze-varref! ast tail? #f) #f)]
 						
 		;;--------------------------------------------------------------------
 		;; LAMBDA EXPRESSIONS
@@ -479,8 +600,10 @@
 			      ([(lambda-body free-lambda-vars
 					     local-lambda-vars 
 					     global-lambda-vars 
+					     used-lambda-vars
 					     captured-lambda-vars
-					     L-max-arity)
+					     L-max-arity
+					     multi)
 				
 				(analyze-expression! body
 						     (improper-list->set args)
@@ -488,14 +611,18 @@
 			      
 			      (let ([case-code (make-case-code free-lambda-vars
 							       local-lambda-vars
-							       global-lambda-vars)])
+							       global-lambda-vars
+							       #f)])
 				(make-case-info lambda-body case-code 
-						global-lambda-vars captured-lambda-vars 
-						L-max-arity)))))
+						global-lambda-vars 
+						used-lambda-vars 
+						captured-lambda-vars 
+						L-max-arity
+						multi)))))
 			 (zodiac:case-lambda-form-args ast)
 			 (zodiac:case-lambda-form-bodies ast))])
-		   (let loop ([code (make-procedure-code empty-set empty-set empty-set empty-set
-							 #f #f #f #f 0 (get-annotation ast) ; ann. = name
+		   (let loop ([code (make-procedure-code empty-set empty-set empty-set empty-set empty-set
+							 #f #f #f #f 0 #f (get-annotation ast) ; ann. = name
 							 (map case-info-case-code case-infos) #f)]
 			      [l case-infos])
 		     (if (null? l)
@@ -506,12 +633,12 @@
 			   ; now annotate this lambda form with the code
 			   (set-annotation! ast code)
 
-			   ; Propogate free and captured vars:
+			   ; Propogate free, used, and captured vars:
 			   (register-code-vars! code)
 
 			   ; finally return it
-			   ast)
-
+			   (values ast #f))
+			 
 			 (loop
 			  (make-procedure-code (set-union (case-code-free-vars
 							   (case-info-case-code (car l)))
@@ -521,11 +648,15 @@
 							  (code-local-vars code))
 					       (set-union (case-info-global-vars (car l))
 							  (code-global-vars code))
+					       (set-union (case-info-used-vars (car l))
+							  (code-used-vars code))
 					       (set-union (case-info-captured-vars (car l))
 							  (code-captured-vars code))
 					       #f #f #f #f
 					       (max (code-max-arity code)
 						    (case-info-max-arity (car l)))
+					       (or-multi (code-return-multi code)
+							 (case-info-return-multi (car l)))
 					       (code-name code)
 					       (procedure-code-case-codes code) #f)
 			  (cdr l)))))]
@@ -550,31 +681,35 @@
 		;;    and the value is naturally propagated.
 		;;
 		[(zodiac:let-values-form? ast)
-		 (let* ([val (analyze! (car (zodiac:let-values-form-vals ast)) #f)]
-			[vars (car (zodiac:let-values-form-vars ast))]
-			[bindings 
-			 (map 
-			  (lambda (var)
-			    (make-known-binding var (extract-value val)))
-			  vars)]
-			[convert-set!-val
-			 (lambda ()   
-			   (set-car! (zodiac:let-values-form-vals ast)
-				     (zodiac:make-special-constant 
-				      'void))
-			   (zodiac:make-begin-form 	   
-			    (zodiac:zodiac-origin ast)
-			    (zodiac:zodiac-start ast)
-			    (zodiac:zodiac-finish ast)
-			    (make-empty-box)
-			    (list val
-				  ast)))])
+		 (let*-values ([(val val-multi) (analyze! (car (zodiac:let-values-form-vals ast)) #f)]
+			       [(vars) (car (zodiac:let-values-form-vars ast))]
+			       [(bindings) 
+				(map 
+				 (lambda (var)
+				   (make-known-binding var (extract-value val)))
+				 vars)]
+			       [(convert-set!-val)
+				(lambda ()   
+				  (set-car! (zodiac:let-values-form-vals ast)
+					    (zodiac:make-special-constant 
+					     'void))
+				  (zodiac:make-begin-form 	   
+				   (zodiac:zodiac-origin ast)
+				   (zodiac:zodiac-start ast)
+				   (zodiac:zodiac-finish ast)
+				   (make-empty-box)
+				   (list val ast)))])
 		   
 		   (if (= 1 (length (car (zodiac:let-values-form-vars ast))))
 		       
 		       ; this is a one-value binding let
 		       (let* ([var (car vars)]
 			      [known? (not (prephase:is-mutable? var))])
+			 
+			 (when (eq? val-multi #t)
+			   ((if (compiler:option:stupid) compiler:warning compiler:error)
+			    ast
+			    "returning zero or multiple values to a context expecting 1 value"))
 			 
 			 (set-binding-mutable?! (car bindings) (not known?))
 			 (when (not known?)
@@ -583,7 +718,7 @@
 
 			 (add-local-var! var)
 				 
-			 (let ([body (analyze! (zodiac:let-values-form-body ast) tail?)])
+			 (let-values ([(body body-multi) (analyze! (zodiac:let-values-form-body ast) tail?)])
 
 			   (if (and (compiler:option:propagate-constants)
 				    known? 
@@ -596,7 +731,7 @@
 			       ; discard the let:
 			       (begin
 				 (remove-local-var! var)
-				 body)
+				 (values body body-multi))
 
 			       ; otherwise, process normally
 			       (begin
@@ -610,13 +745,13 @@
 				     ; if we're binding the result of a set!-form, 
 				     ; turn it into
 				     ; a void.
-				     (convert-set!-val)
+				     (values (convert-set!-val) #f)
 				     
 				     ; if it's any other expression, we're done.
 				     (begin
 				       (set-car! (zodiac:let-values-form-vals ast)
 						 val)
-				       ast))))))
+				       (values ast body-multi)))))))
 		       
 		       ; this is a multiple (or zero) value binding let
 		       ; the values are unknown to simple analysis so skip
@@ -631,24 +766,24 @@
 			 ; these are all new bindings
 			 (for-each add-local-var! vars)
 			 ; analyze the body
-			 (let ([body (analyze! (zodiac:let-values-form-body ast) 
-					       tail?)])
-			   (zodiac:set-let-values-form-body! ast body))
+			 (let-values ([(body body-multi) (analyze! (zodiac:let-values-form-body ast) 
+								   tail?)])
+			   (zodiac:set-let-values-form-body! ast body)
 			   
-			 (if (zodiac:set!-form? val)
-			     (begin
-			       ((if (compiler:option:stupid) compiler:warning compiler:error)
-				val
-				(format
-				 "returning 1 value (void) to a context expecting ~a values"
-				 (length vars)))
-			       (if (compiler:option:stupid)
-				   (convert-set!-val)))
-			     ; if it's any other option, we're done
-			     (begin
-			       (set-car! (zodiac:let-values-form-vals ast)
-					 val)
-			       ast)))		       
+			   (if (zodiac:set!-form? val)
+			       (begin
+				 ((if (compiler:option:stupid) compiler:warning compiler:error)
+				  val
+				  (format
+				   "returning 1 value (void) to a context expecting ~a values"
+				   (length vars)))
+				 (when (compiler:option:stupid)
+				   (values (convert-set!-val) #f)))
+			       ; if it's any other option, we're done
+			       (begin
+				 (set-car! (zodiac:let-values-form-vals ast)
+					   val)
+				 (values ast body-multi)))))
 		       
 		       ))]
 
@@ -679,11 +814,12 @@
 					   vars)])
 		       (for-each set-annotation! vars bindings)
 		       (set! local-vars (set-union (list->set vars) local-vars))
-		       (let ([vals (map (lambda (val)
-					  (analyze! val #f))
-					(zodiac:letrec*-values-form-vals ast))]
-			     [body (analyze! (zodiac:letrec*-values-form-body ast) 
-					     tail?)])
+		       (let-values ([(vals) (map (lambda (val)
+						   (analyze!-sv val #f))
+						 (zodiac:letrec*-values-form-vals ast))]
+				    [(body body-multi) (analyze! 
+							(zodiac:letrec*-values-form-body ast) 
+							tail?)])
 			 
 			 (for-each (lambda (binding val)
 				     (set-binding-rec?! binding #t)
@@ -694,7 +830,8 @@
 				   vals)
 			 (zodiac:set-letrec*-values-form-vals! ast vals)
 			 (zodiac:set-letrec*-values-form-body! ast body)
-			 ast))
+
+			 (values ast body-multi)))
 			 
 		     ;-----------------------------------------------------------
 		     ; POSSIBLY POORLY BEHAVED LETREC
@@ -731,12 +868,13 @@
 		;; just analyze the 3 branches.  Very easy
 		[(zodiac:if-form? ast)
 		 (zodiac:set-if-form-test! 
-		  ast (analyze! (zodiac:if-form-test ast) #f))
-		 (zodiac:set-if-form-then! 
-		  ast (analyze! (zodiac:if-form-then ast) tail?))
-		 (zodiac:set-if-form-else! 
-		  ast (analyze! (zodiac:if-form-else ast) tail?))
-		 ast]
+		  ast (analyze!-sv (zodiac:if-form-test ast) #f))
+		 (let-values ([(then then-multi) (analyze! (zodiac:if-form-then ast) tail?)]
+			      [(else else-multi) (analyze! (zodiac:if-form-else ast) tail?)])
+		   (zodiac:set-if-form-then! ast then)
+		   (zodiac:set-if-form-else! ast else)
+		   
+		   (values ast (or-multi then-multi else-multi)))]
 		
 		;;--------------------------------------------------------
 		;; BEGIN EXPRESSIONS
@@ -744,14 +882,17 @@
 		;; analyze the branches
 		[(zodiac:begin-form? ast)
 
-		 (let loop ([bodies (zodiac:begin-form-bodies ast)])
-		   (if (null? (cdr bodies))
-		       (set-car! bodies (analyze! (car bodies) tail?))
-		       (begin
-			 (set-car! bodies (analyze! (car bodies) #f))
-			 (loop (cdr bodies)))))
+		 (let ([last-multi
+			(let loop ([bodies (zodiac:begin-form-bodies ast)])
+			  (if (null? (cdr bodies))
+			      (let-values ([(e last-multi) (analyze! (car bodies) tail?)])
+				(set-car! bodies e)
+				last-multi)
+			      (begin
+				(set-car! bodies (analyze!-ast (car bodies) #f))
+				(loop (cdr bodies)))))])
 
-		 ast]
+		   (values ast last-multi))]
 		 
 		
 		;;--------------------------------------------------------
@@ -759,14 +900,13 @@
 		;;
 		;; analyze the branches
 		[(zodiac:begin0-form? ast)
-		 (zodiac:set-begin0-form-first!
-		  ast (analyze! (zodiac:begin0-form-first ast) #f))
-		 (zodiac:set-begin0-form-rest!
-		  ast (analyze! (zodiac:begin0-form-rest ast) #f))
-		 (let ([var (get-annotation ast)])
-		   (add-local-var! var)
-		   (set-annotation! var (make-begin0-binding var)))
-		 ast]
+		 (let-values ([(0expr 0expr-multi) (analyze! (zodiac:begin0-form-first ast) #f)])
+		   (zodiac:set-begin0-form-first! ast 0expr)
+		   (zodiac:set-begin0-form-rest! ast (analyze!-ast (zodiac:begin0-form-rest ast) #f))
+		   (let ([var (get-annotation ast)])
+		     (add-local-var! var)
+		     (set-annotation! var (make-begin0-binding var)))
+		   (values ast 0expr-multi))]
 		
 		;;--------------------------------------------------------
 		;; SET! EXPRESSIONS
@@ -792,9 +932,9 @@
 		   (zodiac:set-set!-form-var! ast target)
 		   (zodiac:set-set!-form-val! 
 		    ast 
-		    (analyze! (zodiac:set!-form-val ast) #f)))
+		    (analyze!-sv (zodiac:set!-form-val ast) #f)))
 		 
-		 ast]
+		 (values ast #f)]
 		
 		;;---------------------------------------------------------
 		;; DEFINE EXPRESSIONS
@@ -808,8 +948,8 @@
 		       (zodiac:define-values-form-vars ast)))
 		 (zodiac:set-define-values-form-val! 
 		  ast
-		  (analyze! (zodiac:define-values-form-val ast) #f))
-		 ast]
+		  (analyze!-ast (zodiac:define-values-form-val ast) #f))
+		 (values ast #f)]
 		
 		;;-------------------------------------------------------------------
 		;; APPLICATIONS
@@ -819,7 +959,7 @@
 		;;
 		[(zodiac:app? ast)
 
-		 (let* ([fun (let ([v (analyze! (zodiac:app-fun ast) #f)])
+		 (let* ([fun (let ([v (analyze!-sv (zodiac:app-fun ast) #f)])
 			       (if (zodiac:varref? v)
 				   v
 				   ; known non-procedure!
@@ -832,44 +972,43 @@
 				      #t)
 				     (analyze-varref! var #f #t))))]
 			[args (map (lambda (arg)
-				     (analyze! arg #f))
+				     (analyze!-sv arg #f))
 				   (zodiac:app-args ast))]
-			[primfun? (and (zodiac:top-level-varref? fun)
-				       (varref:has-attribute? fun varref:primitive)
-				       (primitive? (global-defined-value (zodiac:varref-var fun))))])
-		   
-		   ;; check the arity for primitive apps -- just an error check
-		   (when primfun?
-		     (let* ([arity 
-			     (arity (global-defined-value (zodiac:varref-var fun)))]
-			    [num-args (length args)]
-			    [arity-correct?
-			     (lambda (n)
-			       (or (and (number? n) (= n num-args))
-				   (and (arity-at-least? n) (>= num-args
-								(arity-at-least-value n)))))]
-			    [arity-ok?
-			     (if (list? arity)
-				 (ormap arity-correct? arity)
-				 (arity-correct? arity))])
-				 
-		       (unless arity-ok?
-			 (compiler:error ast
-					 (format "~a got ~a argument~a"
-						 (zodiac:varref-var fun)
-						 num-args
-						 (if (= num-args 1)
-						     ""
-						     "s"))))))
+			[primfun (analyze:prim-fun fun)]
+			[multi (if primfun
+				   (let ([a (primitive-result-arity (global-defined-value primfun))])
+				     (cond
+				      [(and (number? a) (= a 1)) #f]
+				      [(number? a) #t]
+				      [else 'possible]))
+				   'possible)]
+			[primfun-arity-ok?
+			 ;; check the arity for primitive apps -- just an error check
+			 (and primfun
+			      (let* ([num-args (length args)]
+				     [arity-ok? (procedure-arity-includes?
+						 (global-defined-value (zodiac:varref-var fun))
+						 num-args)])
+				(unless arity-ok?
+				  ((if (compiler:option:stupid) compiler:warning compiler:error)
+				   ast
+				   (format "~a got ~a argument~a"
+					   (zodiac:varref-var fun)
+					   num-args
+					   (if (= num-args 1)
+					       ""
+					       "s"))))
+				arity-ok?))])
+
 		   ; for all functions, do this stuff
 		   (zodiac:set-app-fun! ast fun)
 		   (zodiac:set-app-args! ast args)
 		   (set-annotation! 
 		    ast 
-		    (make-app tail? (and primfun? (zodiac:varref-var fun))))
+		    (make-app tail? (and primfun primfun-arity-ok? (zodiac:varref-var fun))))
 		   (register-arity! (length args))
-		   ast
-		   )]
+
+		   (values ast multi))]
 		
 		;;-------------------------------------------------------------------
 		;; STRUCT
@@ -879,8 +1018,8 @@
 		[(zodiac:struct-form? ast)
 		 (let ([super (zodiac:struct-form-super ast)])
 		   (when super
-		     (zodiac:set-struct-form-super! ast (analyze! super #f)))
-		   ast)]
+		     (zodiac:set-struct-form-super! ast (analyze!-sv super #f)))
+		   (values ast #t))]
 
 		;;--------------------------------------------------------------------
 		;; UNIT
@@ -891,8 +1030,7 @@
 		;;
 		[(zodiac:unit-form? ast)
 
-		 (let* ([imports (zodiac:unit-form-imports ast)]
-			[code (get-annotation ast)]
+		 (let* ([code (get-annotation ast)]
 			[defines (unit-code-defines code)]
 			[import-anchors (unit-code-import-anchors code)]
 			[export-anchors (unit-code-export-anchors code)]
@@ -908,33 +1046,20 @@
 		   ;; check the body to determine known information on the bindings;
 		   ;; all bindings are known up to the first non-valuable expression
 		   ;; in the unit
-		   (let ([not-valueable void])
+		   (let ([not-valueable 
+			  (lambda (context v)
+			    (compiler:warning 
+			     v
+			     (format "end known unit values (at ~a)" context)))])
 		     (let loop ([l (let ([v (car (zodiac:unit-form-clauses ast))])
 				     (if (zodiac:begin-form? v)
 					 (zodiac:begin-form-bodies v)
 					 (list v)))])
 		       (unless (null? l)
-		         (let eloop ([v (car l)])
+		         (let eloop ([v (car l)][extra-known-bindings imports])
 			   (cond
-			    [(and (zodiac:set!-form? v)
-				  (prephase:set!-is-unit-definition? v))
-			     (if (analyze:valueable? (zodiac:set!-form-val v))
-				 (let* ([var (zodiac:set!-form-var v)]
-					[binding (get-annotation (zodiac:bound-varref-binding var))])
-				   (set-binding-known?! binding #t)
-				   ; The known `value' may be a quote form that hasn't yet been analyzed
-				   ; (to obtain a constant varref). In this case, it will be cleaned
-				   ; up by setting the constant as the annotation for the quote form
-				   ; and using this annotation at constant-folding time
-				   (set-binding-val! binding (extract-value (zodiac:set!-form-val v)))
-				   (loop (cdr l)))
-				 (not-valueable (zodiac:set!-form-val v)))]
-			    [(zodiac:let-values-form? v) ; set! can be translated to (let ... (set! ...))
-			     (if (andmap analyze:valueable? (zodiac:let-values-form-vals v))
-				 (eloop (zodiac:let-values-form-body v))
-				 (not-valueable v))]
-			    [(analyze:valueable? v) (loop (cdr l))]
-			    [else (not-valueable v)])))))
+			    [(analyze:valueable? v extra-known-bindings) (loop (cdr l))]
+			    [else (not-valueable "expression" v)])))))
 
 		   ;; recur on the body
 		   (let ([body (analyze-code-body! body
@@ -952,7 +1077,7 @@
 			    "global variables used in unit: ~a"
 			    (set->list (code-global-vars code))))
 
-		   ast)]
+		   (values ast #f))]
 
 		;;-------------------------------------------------------------------
 		;; COMPOUND UNIT
@@ -962,7 +1087,7 @@
 		[(zodiac:compound-unit-form? ast)
 		 (for-each (lambda (link)
 			     (set-car! (cdr link)
-				       (analyze! (cadr link) #f)))
+				       (analyze!-sv (cadr link) #f)))
 			   (zodiac:compound-unit-form-links ast))
 		 
 		 (register-arity! (length (zodiac:compound-unit-form-links ast)))
@@ -1032,7 +1157,7 @@
 						   links)])
 		     (set-annotation! ast info)))
 		 
-		 ast]
+		 (values ast #f)]
 
 		;;-----------------------------------------------------------
 		;; INVOKE
@@ -1042,7 +1167,7 @@
 		[(zodiac:invoke-form? ast)
 		 (zodiac:set-invoke-form-unit!
 		  ast 
-		  (analyze! (zodiac:invoke-form-unit ast) #f))
+		  (analyze!-sv (zodiac:invoke-form-unit ast) #f))
 
 		 (set-annotation!
 		  ast
@@ -1059,7 +1184,7 @@
 		 ; unit + vars + anchors as args:
 		 (register-arity! (+ 1 (* 2 (length (zodiac:invoke-form-variables ast)))))
 		 
-		 ast]
+		 (values ast #t)]
 
 		;;-----------------------------------------------------------
 		;; CLASS
@@ -1091,10 +1216,10 @@
 		   ; Analyze super-expr & interfaces
 		   (zodiac:set-class*/names-form-super-expr! 
 		    ast 
-		    (analyze! (zodiac:class*/names-form-super-expr ast) #f))
+		    (analyze!-sv (zodiac:class*/names-form-super-expr ast) #f))
 		   (zodiac:set-class*/names-form-interfaces! 
 		    ast
-		    (map (lambda (i) (analyze! i #f))
+		    (map (lambda (i) (analyze!-sv i #f))
 			 (zodiac:class*/names-form-interfaces ast)))
 		   
 		   ; To create the class assembly, super + interfaces are collected as args
@@ -1120,7 +1245,7 @@
 
 		   (register-code-vars! code)
 
-		   ast)]
+		   (values ast #f))]
 
 		;;-------------------------------------------------------------------
 		;; INTERFACE
@@ -1130,7 +1255,7 @@
 		[(zodiac:interface-form? ast)
 		 (zodiac:set-interface-form-super-exprs!
 		  ast
-		  (map (lambda (expr) (analyze! expr #f))
+		  (map (lambda (expr) (analyze!-sv expr #f))
 		       (zodiac:interface-form-super-exprs ast)))
 
 		 (register-arity! (length (zodiac:interface-form-super-exprs ast)))
@@ -1138,7 +1263,7 @@
 		 (set-interface-info-assembly! (get-annotation ast) 
 					       (compiler:add-interface! ast))
 		 
-		 ast]
+		 (values ast #f)]
 		
 		[else (compiler:internal-error
 		       ast
@@ -1149,13 +1274,15 @@
 			  	
 	;; analyze the expression and return it with the local variables
 	;; it creates.  
-	(let ([ast (analyze! ast tail?)])
+	(let-values ([(ast multi) (analyze! ast tail?)])
 	  (values ast
 		  free-vars
 		  local-vars
 		  global-vars
-		  locals-captured
-		  max-arity))))))
+		  locals-used
+		  captured-vars
+		  max-arity
+		  multi))))))
 
 )
 

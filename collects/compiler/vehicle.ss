@@ -218,6 +218,7 @@
 	   ;; IF EXPRESSIONS
 	   ;;
 	   [(zodiac:if-form? ast)
+	    (relate! current-lambda (zodiac:if-form-then ast))
 	    (relate! current-lambda (zodiac:if-form-else ast))]
 
 	   ;;------------------------------------------------------------------

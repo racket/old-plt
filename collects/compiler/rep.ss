@@ -95,14 +95,15 @@
 ;; chosing representations.  It takes 3 inputs:
 ;;   1) a <set> of variables occurring local to an expression
 ;;   2) a <set> of those variables which are globals
-;;   3) a <set> of those variables which are captured
+;;   3) a <set> of those variables which are used
+;;   4) a <set> of those variables which are captured
 ;; and returns no values
 ;;
 ;; As a side effect, it sets the representation fields of all those
 ;; struct:bindings living in those compiler:bound guys.
 
 (define choose-binding-representations!
-  (lambda (local-vars global-vars captured-vars)
+  (lambda (local-vars global-vars used-vars captured-vars)
     (let ([set-rep!
 	   (lambda (local-var)
 	     (let ([binding (get-annotation local-var)])

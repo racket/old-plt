@@ -65,6 +65,7 @@
    varref:per-load-static
    varref:primitive
    varref:symbol
+   varref:inexact
    varref:env
    
    (struct compiler:env-varref () (- make-compiler:env-varref))
@@ -85,14 +86,15 @@
 		    known-but-used? ; known value used in an improper way?
 		    rep))      ; reprsentation
 
-   (struct code (free-vars local-vars global-vars captured-vars 
+   (struct code (free-vars local-vars global-vars used-vars captured-vars 
 			   closure-rep closure-alloc-rep label vehicle
 			   max-arity
+			   return-multi ; #f, #t, or 'possible
 			   name))
 
    (struct procedure-code (case-codes case-arities))
 
-   (struct case-code (free-vars local-vars global-vars))
+   (struct case-code (free-vars local-vars global-vars has-continue?))
 
    (struct unit-code (defines   ; a list of lexical-bindings
 		       exports   ; a list of lexical-bindings
@@ -202,6 +204,9 @@
    const:symbol-counter
    const:symbol-table
 
+   const:inexact-counter
+   const:inexact-table
+
    compiler:add-const!
    compiler:get-symbol-const!
    compiler:construct-const-code!
@@ -246,7 +251,7 @@
    compiler:add-local-define-list!
    compiler:add-local-per-load-define-list!
    
-   (struct case-info (body case-code global-vars captured-vars max-arity))
+   (struct case-info (body case-code global-vars used-vars captured-vars max-arity))
 
    extract-varref-known-val
 
@@ -257,6 +262,7 @@
    compiler:once-closures-list
    compiler:once-closures-globals-list
    compiler:init-lambda-lists!
+   compiler:init-once-closure-lists!
    closure-expression!))
 
 (define-signature compiler:vehicle^
@@ -292,6 +298,7 @@
    
    (struct vm:set! (vars val mode))
    (struct vm:generic-args (closure tail? prim vals))
+   (struct vm:register-args (vars vals))
    (struct vm:args (type vals))
    (struct vm:begin0-mark! (var val))
    (struct vm:begin0-setup! (var))
@@ -303,7 +310,8 @@
    (struct vm:make-case-procedure-closure (vehicle num-cases case-arities name empty?))
    (struct vm:make-unit-closure (vehicle num-imports num-exports exports-offset name empty?))
    (struct vm:make-class-closure (assembly))
-   (struct vm:apply (closure argc known? multi? prim))
+   (struct vm:apply (closure argc known? multi? prim simple-tail-prim?))
+   (struct vm:macro-apply (name primitive args tail? bool?))
    (struct vm:struct (type super fields multi?)) ; multi? = #f => always run-time error
    (struct vm:compound (assembly))
    (struct vm:invoke (num-variables open? multi? tail? name-specifier))
@@ -321,6 +329,7 @@
    (struct vm:per-load-static-varref ())
    (struct vm:primitive-varref (var))
    (struct vm:symbol-varref (var))
+   (struct vm:inexact-varref (var))
    (struct vm:struct-ref (field var))
    (struct vm:deref (var))
    (struct vm:ref (var))
@@ -371,7 +380,7 @@
    debug:port))
 
 (define-signature compiler:top-level^
-  ((struct block (source local-vars global-vars captured-vars max-arity))
+  ((struct block (source local-vars global-vars used-vars captured-vars max-arity))
    make-empty-block
    block:register-max-arity!))
 
@@ -385,6 +394,8 @@
    vm->c:emit-symbol-list!
    vm->c:emit-symbol-declarations!
    vm->c:emit-symbol-definitions!
+   vm->c:emit-inexact-declarations!
+   vm->c:emit-inexact-definitions!
    vm->c:emit-export-symbol-definitions!
    vm->c:emit-prim-ref-declarations!
    vm->c:emit-prim-ref-definitions!
@@ -416,7 +427,8 @@
   (copy-annotations!
    analyze-program-sexps
    binding-mutated
-   SDL-type))
+   SDL-type
+   constant-value))
 
 (define-signature compiler:basic-link^
   ((unit ZODIAC : zodiac:system^)

@@ -46,10 +46,13 @@
       sv)))
 
 
-(define (compiler:init-lambda-lists!)
-  (set! compiler:lambda-list null)
+(define (compiler:init-once-closure-lists!)
   (set! compiler:once-closures-list null)
   (set! compiler:once-closures-globals-list null))
+
+(define (compiler:init-lambda-lists!)
+  (set! compiler:lambda-list null)
+  (compiler:init-once-closure-lists!))
 
 (define closure-expression!
   (letrec

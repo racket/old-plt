@@ -10,6 +10,8 @@
 
   (define (SDL-type ast) #f)
   
+  (define (constant-value ast) (values #f (void)))
+
   (define (analyze-program-sexps exprs input-directory)
       exprs))
 

@@ -23,6 +23,7 @@
 (define varref:per-load-static 'varref:per-load-static)
 (define varref:primitive 'varref:primitive)
 (define varref:symbol 'varref:symbol)
+(define varref:inexact 'varref:inexact)
 (define varref:env 'varref:env)
 
 ;;----------------------------------------------------------------------------
@@ -58,14 +59,15 @@
 			rep))      ; reprsentation
 
 ;; This is the annotations given to a body of code.
-(define-struct code (free-vars local-vars global-vars captured-vars 
+(define-struct code (free-vars local-vars global-vars used-vars captured-vars 
 		     closure-rep closure-alloc-rep label vehicle
-		     max-arity
+		     max-arity 
+		     return-multi ; #f, #t, or 'possible
 		     name))
 
 (define-struct (procedure-code struct:code) (case-codes case-arities))
 
-(define-struct case-code (free-vars local-vars global-vars))
+(define-struct case-code (free-vars local-vars global-vars has-continue?))
 
 ;; annotations given to a unit
 (define-struct (unit-code struct:code) (defines   ; a list of lexical-bindings

@@ -40,19 +40,25 @@
       (format "SYMBOLS~a" compiler:setup-suffix)
       "SYMBOLS"))
 
+(define (vm->c:INEXACTS-name)
+  "INEXACTS")
+
 (define (vm->c:make-symbol-const-string sc)
   (format "~a[~a]" (vm->c:SYMBOLS-name) (zodiac:varref-var sc)))
 
-(define (vm->c:emit-symbol-list! port comma)
-  (let ([v (make-vector const:symbol-counter)])
+(define (vm->c:emit-list! port comma table counter -symbol->string)
+  (let ([v (make-vector counter)])
     (hash-table-for-each
-     const:symbol-table
+     table
      (lambda (sym b)
        (vector-set! v (string->number (symbol->string (zodiac:varref-var b))) sym)))
     (for-each
      (lambda (s)
-       (fprintf port "  ~s~a~n" (symbol->string s) comma))
+       (fprintf port "  ~s~a~n" (-symbol->string s) comma))
      (vector->list v))))
+
+(define (vm->c:emit-symbol-list! port comma)
+  (vm->c:emit-list! port comma const:symbol-table const:symbol-counter symbol->string))
 
 (define (vm->c:emit-symbol-declarations! port)
   (unless (zero? const:symbol-counter)
@@ -66,11 +72,30 @@
 	     (vm->c:SYMBOLS-name)
 	     const:symbol-counter)))
 
+(define (vm->c:emit-inexact-list! port comma)
+  (vm->c:emit-list! port comma const:inexact-table const:inexact-counter 
+		    (lambda (x) (string->number (symbol->string x)))))
+
+(define (vm->c:emit-inexact-declarations! port)
+  (unless (zero? const:inexact-counter)
+    (fprintf port "static const double INEXACT_NUMBERS[~a] = {~n" const:inexact-counter)
+    (vm->c:emit-inexact-list! port ",")
+    (fprintf port "}; /* end of INEXACT_NUMBERS */~n~n")
+    (fprintf port "static Scheme_Object * ~a[~a];~n~n" 
+	     (vm->c:INEXACTS-name)
+	     const:inexact-counter)))
+
 (define (vm->c:emit-symbol-definitions! port)
   (unless (zero? const:symbol-counter)
     (fprintf port "  int i;~n")
     (fprintf port "  for (i = ~a; i--; )~n    SYMBOLS[i] = scheme_intern_symbol(SYMBOL_STRS[i]);~n"
 	     const:symbol-counter)))
+
+(define (vm->c:emit-inexact-definitions! port)
+  (unless (zero? const:inexact-counter)
+    (fprintf port "  int i;~n")
+    (fprintf port "  for (i = ~a; i--; )~n    INEXACTS[i] = scheme_make_double(INEXACT_NUMBERS[i]);~n"
+	     const:inexact-counter)))
 
 (define vm->c:emit-export-symbol-definitions!
   (lambda (port)
@@ -136,6 +161,16 @@
 	    (null? compiler:classes)
 	    (null? compiler:interfaces))))
 
+(define (emit-static-variable-fields! port l)
+  (fprintf port "  /* Write fields as an array to help C comiplers */~n")
+  (fprintf port "  /* that don't like really big records. */~n")
+  (fprintf port "  Scheme_Object * _consts_[~a];~n" (length l))
+  (let loop ([l l][n 0])
+    (unless (null? l)
+      (fprintf port "# define ~a _consts_[~a]~n"
+	       (vm->c:convert-symbol (car l)) n)
+      (loop (cdr l) (add1 n)))))
+
 ; when statics have binding information, this will look more like 
 ; emit-local-variable-declarations!
 (define vm->c:emit-static-declarations!
@@ -143,11 +178,7 @@
     (unless (not (compiler:any-statics?))
        (fprintf port "/* compiler written static variables */~n")
        (fprintf port "static struct {~n")
-       (for-each (lambda (name)
-		   (fprintf port
-			    "  Scheme_Object * ~a;~n"
-			    (vm->c:convert-symbol name)))
-		 compiler:static-list)
+       (emit-static-variable-fields! port compiler:static-list)
        (unless (null? compiler:total-unit-exports)
                (fprintf port "  Scheme_Object *unit_exports[~a];~n" (length compiler:total-unit-exports)))
        (unless (null? compiler:case-lambdas)
@@ -168,11 +199,7 @@
     (fprintf port "typedef struct Scheme_Per_Load_Statics {~n")
     (if (null? compiler:per-load-static-list)
 	(fprintf port "  int dummy;~n")
-	(for-each (lambda (name)
-		    (fprintf port
-			     "  Scheme_Object * ~a;~n"
-			     (vm->c:convert-symbol name)))
-		  compiler:per-load-static-list))
+	(emit-static-variable-fields! port compiler:per-load-static-list))
     (fprintf port "} Scheme_Per_Load_Statics;~n")
     (newline port)))
 
@@ -743,7 +770,23 @@
     (let* ([code (get-annotation L)]
 	   [case-code (list-ref (procedure-code-case-codes code) which)]
 	   [label (code-label code)]
-	   [undefines null])
+	   [undefines null]
+	   [used-free-set
+	    ; Only unpack anchors if they're captured
+	    (let* ([free-set (case-code-free-vars case-code)]
+		   [free-list (set->list free-set)]
+		   [captured-list (set->list (code-captured-vars code))]
+		   [uncaptured-anchor-set
+		    (list->set
+		     (let loop ([l free-list])
+		       (if (null? l)
+			   null
+			   (let ([zb (car l)])
+			     (let ([a (binding-anchor (get-annotation zb))])
+			       (if (and a (not (member zb captured-list)))
+				   (cons a (loop (cdr l)))
+				   (loop (cdr l))))))))])
+	      (set-minus free-set uncaptured-anchor-set))])
       ; The foreign entry label      
       (fprintf port "FGN~a~a:~n" label lsuffix)
       ; Pull arguments to global registers      
@@ -755,9 +798,9 @@
       (vm->c:emit-local-variable-declarations! (case-code-local-vars case-code) indent port)
 
       (when (compiler:option:unpack-environments)
-        (vm->c:emit-local-variable-declarations! (case-code-free-vars case-code) indent port)
-        (vm->c:emit-local-bucket-declarations! (case-code-global-vars case-code) indent #f port))
-
+	(vm->c:emit-local-variable-declarations! used-free-set indent port)
+	(vm->c:emit-local-bucket-declarations! (case-code-global-vars case-code) indent #f port))
+    
       (let ([r (code-closure-rep code)])
 	(when r
 	  (fprintf port "~aconst ~a * env;~n" indent (vm->c:convert-type-definition r))))
@@ -812,7 +855,7 @@
       (set! undefines
 	    (append (vm->c:emit-extract-env-variables
 		     code
-		     (set->list (case-code-free-vars case-code))
+		     (set->list used-free-set)
 		     indent port)
 		    undefines))
 
@@ -828,7 +871,8 @@
 ;	       (zodiac:location-line (zodiac:zodiac-start L))
 ;	       (zodiac:location-column (zodiac:zodiac-start L)))
       
-      (fprintf port "~awhile(1)~n" indent)
+      (when (case-code-has-continue? case-code)
+	(fprintf port "~awhile(1)~n" indent))
 
       undefines)))
 
@@ -853,14 +897,14 @@
 	   [import-set (set-union
 			(list->set imports)
 			(list->set import-anchors))]
-	   [captured-imports (set-intersect
-			      (code-captured-vars code)
-			      import-set)])
+	   [used-imports (set-intersect
+			  (code-captured-vars code)
+			  import-set)])
 
-      ; Only unpack import & import-anchors if they are captured
+      ; Only unpack import & import-anchors if they are used
 
       (vm->c:emit-local-variable-declarations! 
-       (set-union (set-minus (code-local-vars code) import-set) captured-imports)
+       (set-union (set-minus (code-local-vars code) import-set) used-imports)
        indent port)
     
       (when (compiler:option:unpack-environments)
@@ -874,10 +918,10 @@
 		    indent (vm->c:convert-type-definition r))))
     
       ; map input boxes and anchors to locals 
-      (let ([captured (append (set->list captured-imports) exports)])
+      (let ([used (append (set->list used-imports) exports)])
 	(let loop ([l (append imports exports)][al (append import-anchors export-anchors)][i 0])
 	  (unless (null? l)
-	    (when (memq (car l) captured)
+	    (when (memq (car l) used)
 	      (fprintf port "~a~a = (Scheme_Object **)boxes[~a];~n" 
 		       indent
 		       (vm->c:convert-symbol (zodiac:binding-var (car l)))
@@ -1106,7 +1150,17 @@
 	       [emit (lambda s (apply fprintf (cons port s)))]
 	       [emit-expr (lambda s
 			    (when own-line? (emit-indentation))
-			    (apply emit s))])
+			    (apply emit s))]
+	       [emit-macro-application
+		(lambda (ast)
+		  (let ([args (vm:macro-apply-args ast)])
+		    (emit "~a(" (vm:macro-apply-name ast))
+		    (process (vm:macro-apply-primitive ast) indent-level #f #f)
+		    (for-each (lambda (a) 
+				(emit ", ~a" (vm->c:convert-symbol (zodiac:binding-var a))))
+			      args)
+		    (emit ")")))])
+
 	(cond
 	 
 	 ;; (%sequence V ...) -> { M; ... }
@@ -1124,12 +1178,20 @@
 	 [(vm:if? ast)
 	  (emit-indentation)
 	  (let loop ([ast ast])
-	    (let ([then (vm:if-then ast)]
+	    (let ([test (vm:if-test ast)]
+		  [then (vm:if-then ast)]
 		  [else (vm:if-else ast)])
 	      
-	      (emit "if (!SCHEME_FALSEP(")
-	      (process (vm:if-test ast) indent-level #f #t)
-	      (emit "))~n")
+	      (emit "if (")
+	      (let ([direct? (and (vm:macro-apply? test)
+				  (vm:macro-apply-bool? test))])
+		(if direct?
+		    (emit-macro-application test)
+		    (begin
+		      (emit "!SCHEME_FALSEP(")
+		      (process test indent-level #f #t)
+		      (emit ")"))))
+	      (emit ")~n")
 	      (process (vm:if-then ast) indent-level #t #t)
 	      (let ([else-vals (vm:sequence-vals else)])
 		(cond 
@@ -1301,6 +1363,19 @@
 		    (emit ";~n"))
 		  (loop (add1 n) (cdr args)))))]
 
+	 [(vm:register-args? ast)
+	  (let ([vars (vm:register-args-vars ast)]
+		[vals (vm:register-args-vals ast)])
+	    (let loop ([vars vars][vals vals])
+	      (let ([var (car vars)]
+		    [val (car vals)])
+		(emit-indentation)
+		(emit "~a = " (vm->c:convert-symbol (zodiac:binding-var var)))
+		(process val indent-level #f #f)
+		(unless (null? (cdr vars))
+		  (emit ";~n")
+		  (loop (cdr vars) (cdr vals))))))]
+
 	 ;; (alloc ) -> malloc
 	 ;; a bit complicated
 	 [(vm:alloc? ast)
@@ -1414,6 +1489,7 @@
 	 
 	 ;; (continue) -> continue;
 	 [(vm:continue? ast)
+	  (emit-expr "_scheme_check_for_break_wp(1, pr);~n")
 	  (emit-expr "continue")]
 	 
 	 ;; use NULL instead of tail_buf if no args
@@ -1433,8 +1509,8 @@
 	    (process (vm:tail-call-closure ast) indent-level #f #t)
 	    (emit ");~n"))
 	  ;; be nice to threads & user breaks:
-	  ;(emit-indentation)
-	  ;(emit "_scheme_check_for_break_wp(1, pr);~n")
+	  (emit-indentation)
+	  (emit "_scheme_check_for_break_wp(1, pr);~n")
 	  (emit-indentation)
 	  ; unless its to a variable arity function! ARGH
 	  (let* ([label (vm:tail-call-label ast)]
@@ -1476,28 +1552,40 @@
 	 ;; 0 args => pass NULL for arg vector
 	 ;; (apply A <argc>) --> _scheme_apply(A, argc, arg)
 	 [(vm:apply? ast)
-	  (emit-expr "_scheme_~a("
-		     (let ([v (global-defined-value* (vm:apply-prim ast))])
-		       (cond
-			[(and (primitive-closure? v) (simple-return-primitive? v))
-			 (if (or (vm:apply-multi? ast)
-				 (primitive-result-arity v))
-			     "direct_apply_closed_primitive_multi"
-			     "direct_apply_closed_primitive")]
-			[(and (primitive? v) (simple-return-primitive? v))
-			 (if (or (vm:apply-multi? ast)
-				 (primitive-result-arity v))
-			     "direct_apply_primitive_multi"
-			     "direct_apply_primitive")]
-			[(vm:apply-known? ast) 
-			 (if (vm:apply-multi? ast)
-			     "apply_known_closed_prim_multi"
-			     "apply_known_closed_prim")]
-			[(vm:apply-multi? ast) "apply_multi"]
-			[else "apply"])))
+	  (emit-expr "")
+	  (when (vm:apply-simple-tail-prim? ast)
+	    (emit "return "))
+	  (emit "_scheme_~a("
+		(let ([v (global-defined-value* (vm:apply-prim ast))])
+		  (cond
+		   [(and (primitive-closure? v) (simple-return-primitive? v))
+		    (if (or (vm:apply-multi? ast)
+			    (primitive-result-arity v))
+			"direct_apply_closed_primitive_multi"
+			"direct_apply_closed_primitive")]
+		   [(and (primitive? v) (simple-return-primitive? v))
+		    (if (or (vm:apply-multi? ast)
+			    (primitive-result-arity v))
+			"direct_apply_primitive_multi"
+			"direct_apply_primitive")]
+		   [(vm:apply-known? ast) 
+		    (if (vm:apply-multi? ast)
+			"apply_known_closed_prim_multi"
+			"apply_known_closed_prim")]
+		   [(vm:apply-multi? ast) "apply_multi"]
+		   [else "apply"])))
 	  (process (vm:apply-closure ast) indent-level #f #t)
 	  (let ([c (vm:apply-argc ast)])
 	    (emit ", ~a, ~a)" c (if (zero? c) "NULL" 'arg)))]
+
+	 ;; Inlined macro-based applications
+	 [(vm:macro-apply? ast) 
+	  (when (vm:macro-apply-tail? ast)
+	    (emit-indentation)
+	    (emit "return "))
+	  (when (vm:macro-apply-bool? ast) (emit "(("))
+	  (emit-macro-application ast)
+	  (when (vm:macro-apply-bool? ast) (emit ") ? scheme_true : scheme_false)"))]
 	 
 	 [(vm:call? ast)
 	  (emit-expr "_scheme_force_value(compiled(SCHEME_CLSD_PRIM_DATA(")
@@ -1541,7 +1629,13 @@
 	  (emit-expr "~a[~a]" 
 		     (vm->c:SYMBOLS-name)
 		     (vm:symbol-varref-var ast))]
-	 
+
+	 ;; (inexact-varref x) -> inexacts[x]
+	 [(vm:inexact-varref? ast)
+	  (emit-expr "~a[~a]" 
+		     (vm->c:INEXACTS-name)
+		     (vm:inexact-varref-var ast))]
+
 	 [(vm:per-load-static-varref? ast)
 	  (emit-expr "PLS->~a" (vm->c:convert-symbol (vm:static-varref-var ast)))]
 	 

@@ -111,23 +111,23 @@
 	    (let-values ([(base file dir?) (split-path prefix)]
 			 ; [(start) (current-process-milliseconds)]
 			 [(p) (open-input-file prefix 'text)])
-	      (let ([results
-		     (s:expand-top-level-expressions! 
-		      (path->complete-path
-		       (if (eq? 'relative base)
-			   (build-path 'same)
-			   base))
-		      (zodiac:read p (zodiac:make-location 1 1 0 prefix))
-		      #f
-		      #f
-		      (lambda (expr)
-			(if (void? expr)
-			    expr
-			    (let ([r (zodiac:parsed->raw expr)])
-			      (call-with-values
-			       (lambda () 
-				 (eval r))
-			       list)))))])
+	      (let* ([results
+		      (s:expand-top-level-expressions! 
+		       (path->complete-path
+			(if (eq? 'relative base)
+			    (build-path 'same)
+			    base))
+		       (zodiac:read p (zodiac:make-location 1 1 0 prefix))
+		       #f
+		       #f
+		       (lambda (expr)
+			 (if (void? expr)
+			     expr
+			     (let ([r (zodiac:parsed->raw expr)])
+			       (call-with-values
+				(lambda () 
+				  (eval r))
+				list)))))])
 		(close-input-port p)
 		; (printf "~a~n" (- (current-process-milliseconds) start))
 		(apply values (car (last-pair results)))))))))
@@ -136,39 +136,41 @@
     (lambda (input-directory reader vocab verbose? r-eval)
       (when verbose? (printf "~n Zodiac: reading... ") (flush-output))
       ; During reads, syntax errors are truly fatal
-      (let ([exprs (let loop ([n 1])
-		     (let ([sexp (let loop () 
-				   ; This loop handles the case where
-				   ; the reader is really unhappy after
-				   ; it encounters an error
-				   (with-handlers ([void (lambda (x) (loop))])
-				     (reader)))])
-		       (if (zodiac:eof? sexp)
-			   null
-			   (begin 
-			     (when (compiler:option:debug)
-			       (debug "~a[~a.~a]_"
-				      n
-				      (zodiac:location-line
-				       (zodiac:zodiac-start sexp))
-				      (zodiac:location-column
-				       (zodiac:zodiac-start sexp))))
-			     (cons sexp (loop (+ n 1)))))))])
+      (let ([exprs (time
+		    (let loop ([n 1])
+		      (let ([sexp (let loop () 
+				    ; This loop handles the case where
+				    ; the reader is really unhappy after
+				    ; it encounters an error
+				    (with-handlers ([void (lambda (x) (loop))])
+				      (reader)))])
+			(if (zodiac:eof? sexp)
+			    null
+			    (begin 
+			      (when (compiler:option:debug)
+				(debug "~a[~a.~a]_"
+				       n
+				       (zodiac:location-line
+					(zodiac:zodiac-start sexp))
+				       (zodiac:location-column
+					(zodiac:zodiac-start sexp))))
+			      (cons sexp (loop (+ n 1))))))))])
 	(unless (null? compiler:messages) (when (compiler:option:verbose) (newline)))
 	(compiler:report-messages! #t)
 	(when verbose? (printf " expanding...~n"))
 	(parameterize ([current-load-relative-directory input-directory]
 		       [current-load load-prefix-file])
-	  (map r-eval (call/nal zodiac:scheme-expand-program/nal
-				zodiac:scheme-expand-program
-				(vocabulary:  vocab)
-				(expressions: exprs)
-				(elaboration-evaluator: (lambda (expr p->r phase)
-							  (if (void? expr)
-							      (void)
-							      (eval (p->r expr)))))
-				(user-macro-body-evaluator: 
-				 (lambda (f . args) (apply f args)))))))))
+	  (time
+	   (map r-eval (call/nal zodiac:scheme-expand-program/nal
+				 zodiac:scheme-expand-program
+				 (vocabulary:  vocab)
+				 (expressions: exprs)
+				 (elaboration-evaluator: (lambda (expr p->r phase)
+							   (if (void? expr)
+							       (void)
+							       (eval (p->r expr)))))
+				 (user-macro-body-evaluator: 
+				  (lambda (f . args) (apply f args))))))))))
 
   (define elaborate-namespace (make-namespace))
 
@@ -183,24 +185,26 @@
 	(compiler:report-messages! #t))))
 
   ; takes a list of a-normalized expressions and analyzes them
-  ; returns the analyzed code, a list of local variable lists, and captured variable lists
+  ; returns the analyzed code, a list of local variable lists, used variable lists, and captured variable lists
   (define s:analyze-source-list
     (lambda (source)
       (let loop ([sexps source] [source-acc null] 
-				[locals-acc null] [globals-acc null] [captured-acc null]
+				[locals-acc null] [globals-acc null] [used-acc null] [captured-acc null]
 				[max-arity 0])
 	(if (null? sexps)
 	    (values (reverse! source-acc)
 		    (reverse! locals-acc)
 		    (reverse! globals-acc)
+		    (reverse! used-acc)
 		    (reverse! captured-acc)
 		    max-arity)
-	    (let-values ([(exp free-vars local-vars global-vars captured-vars new-max-arity)
+	    (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars new-max-arity multi)
 			  (analyze-expression! (car sexps) empty-set (null? (cdr sexps)))])
 	      (loop (cdr sexps) 
 		    (cons exp source-acc) 
 		    (cons local-vars locals-acc)
 		    (cons global-vars globals-acc)
+		    (cons used-vars used-acc)
 		    (cons captured-vars captured-acc)
 		    (max max-arity new-max-arity)))))))
 
@@ -214,12 +218,66 @@
       (set-block-global-vars!
        file-block
        (append! gl (block-global-vars file-block)))
+      (set-block-used-vars!
+       file-block
+       (append! (map (lambda (s) empty-set) l) (block-used-vars file-block)))
       (set-block-captured-vars!
        file-block
        (append! (map (lambda (s) empty-set) l) (block-captured-vars file-block)))
       (set-block-source! 
        file-block
        (append! l (block-source file-block)))]))
+
+  (define (wrap-unit-for-mrspidey expr)
+    ;; Wrap the unit in an expression that drives to unknown all of the imports
+    ;;  and arguments to exported functions.
+    (let* ([imports (zodiac:unit-form-imports expr)]
+	   [exports (map zodiac:read-object (map cdr (zodiac:unit-form-exports expr)))]
+	   [dummies (map (lambda (x) (gensym)) imports)]	   
+	   [my-expr `(let ([u u] 
+			   ,@(map (lambda (d) `(,d (#%read))) dummies))
+		       (invoke-unit
+			(compound-unit 
+			 (import ,@dummies)
+			 (link [U (u ,@dummies)]
+			       [O ((unit (import ,@exports)
+					 (export)
+					 ,@(map (lambda (x) `(#%apply ,x (#%read))) exports))
+				   (U ,@exports))])
+			 (export))
+			,@dummies))]
+	   [wrapper (let-values ([(in out) (make-pipe)])
+		      (write my-expr out)
+		      (close-output-port out)
+		      (car (s:expand-top-level-expressions!
+			    (current-directory)
+			    (zodiac:read in (zodiac:make-location 1 1 0 "wrapper"))
+			    #f
+			    #f
+			    identity)))])
+      (set-car!
+       (zodiac:let-values-form-vals wrapper)
+       expr)
+      wrapper))
+
+  (define (unwrap-unit-from-mrspidey expr)
+    (car (zodiac:let-values-form-vals expr)))
+
+  (define (analyze-units expr)
+    (cond
+     [(zodiac:unit-form? expr)
+      (unwrap-unit-from-mrspidey
+       (car (mrspidey:analyze-program-sexps 
+	     (list (wrap-unit-for-mrspidey expr))
+	     (current-directory))))]
+     [(zodiac:app? expr)
+      (let* ([exprs (cons (zodiac:app-fun expr) (zodiac:app-args expr))]
+	     [exprs2 (map analyze-units exprs)])
+	(unless (andmap eq? exprs exprs2)
+	  (zodiac:set-app-fun! expr (car exprs2))
+	  (zodiac:set-app-args! expr (cdr exprs2)))
+	expr)]
+     [else expr]))
 
   ;;-------------------------------------------------------------------------------
   ;; ERROR/WARNING REPORTING/HANDLING ROUTINES
@@ -417,6 +475,22 @@
 	      
 		(compiler:report-messages! #t))
 
+	      (when (compiler:option:use-mrspidey-for-units)
+		(when (compiler:option:verbose) (printf " MrSpidey: analyzing units~n"))
+
+		(set-block-source! 
+		 s:file-block
+		 (with-handlers ([void (lambda (x)
+					 (compiler:fatal-error
+					  #f
+					  (format "analysis died: ~a"
+						  (if (exn? x)
+						      (exn-message x)
+						      x))))])
+		   (map analyze-units (block-source s:file-block))))
+		
+		(compiler:report-messages! #t))
+
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
 	      
 	      ;;-----------------------------------------------------------------------
@@ -449,7 +523,7 @@
 	       (lambda () (pretty-print (block-source s:file-block))))
 	      
 	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
-
+	      
 	      ;;-----------------------------------------------------------------------
 	      ;; A-normalize input
 	      ;;
@@ -484,12 +558,13 @@
 	      (let ([bnorm-thunk
 		     (lambda ()
 		       (let-values ([(new-source new-local-vars new-global-vars
-						 new-captured-vars max-arity)
+						 new-used-vars new-captured-vars max-arity)
 				     (s:analyze-source-list 
 				      (block-source s:file-block))])
 			 (set-block-source! s:file-block new-source)
 			 (set-block-local-vars! s:file-block new-local-vars)
 			 (set-block-global-vars! s:file-block new-global-vars)
+			 (set-block-used-vars! s:file-block new-used-vars)
 			 (set-block-captured-vars! s:file-block new-captured-vars)
 			 (block:register-max-arity! s:file-block max-arity)
 			 (s:register-max-arity! max-arity))
@@ -507,6 +582,8 @@
 	       'analyze
 	       (lambda () (pretty-print (block-source s:file-block))))
 	      
+	      ; (map (lambda (ast) (pretty-print (zodiac->sexp/annotate ast))) (block-source s:file-block))
+
 	      ;;-----------------------------------------------------------------------
 	      ;; Closure conversion and explicit control transformation
 	      ;;
@@ -524,20 +601,24 @@
 		       (let loop ([el (block-source s:file-block)]
 				  [ll (block-local-vars s:file-block)]
 				  [gl (block-global-vars s:file-block)]
+				  [ul (block-used-vars s:file-block)]
 				  [cl (block-captured-vars s:file-block)]
 				  [e-acc null]
 				  [l-acc null]
 				  [g-acc null]
+				  [u-acc null]
 				  [c-acc null])
 			 (if (null? el)
 			     (begin
 			       (set-block-source! s:file-block (reverse e-acc))
 			       (set-block-local-vars! s:file-block (reverse l-acc))
 			       (set-block-global-vars! s:file-block (reverse g-acc))
+			       (set-block-used-vars! s:file-block (reverse u-acc))
 			       (set-block-captured-vars! s:file-block (reverse c-acc)))
 			     (begin
+			       (compiler:init-once-closure-lists!)
 			       (let ([s (closure-expression! (car el))])
-				 (loop (cdr el) (cdr ll) (cdr gl) (cdr cl)
+				 (loop (cdr el) (cdr ll) (cdr gl) (cdr ul) (cdr cl)
 				       (append (list s)
 					       compiler:once-closures-list
 					       e-acc)
@@ -547,6 +628,9 @@
 				       (append (list (car gl))
 					       compiler:once-closures-globals-list
 					       g-acc)
+				       (append (list (car ul))
+					       (map (lambda (s) empty-set) compiler:once-closures-list)
+					       u-acc)
 				       (append (list (car cl))
 					       (map (lambda (s) empty-set) compiler:once-closures-list)
 					       c-acc)))))))])
@@ -600,14 +684,16 @@
 			choose-binding-representations! 
 			(block-local-vars s:file-block)
 			(block-global-vars s:file-block)
+			(block-used-vars s:file-block)
 			(block-captured-vars s:file-block))
 		       ; code-bodies
 		       (for-each (lambda (L)
 				   (let* ([code (get-annotation L)]
 					  [locals (code-local-vars code)]
 					  [globals (code-global-vars code)]
+					  [used (code-used-vars code)]
 					  [captured (code-captured-vars code)])
-				     (choose-binding-representations! locals globals captured)
+				     (choose-binding-representations! locals globals used captured)
 				     (choose-closure-representation! code)))
 				 compiler:lambda-list))])
 		(verbose-time rep-thunk))
@@ -820,6 +906,7 @@
 			    (fprintf c-port "#include \"mzc.h\"~n~n")
 			    (vm->c:emit-struct-definitions! compiler:structs c-port)
 			    (vm->c:emit-symbol-declarations! c-port)
+			    (vm->c:emit-inexact-declarations! c-port)
 			    (vm->c:emit-prim-ref-declarations! c-port)
 			    (vm->c:emit-static-declarations! c-port)
 			    
@@ -834,6 +921,11 @@
 			      (vm->c:emit-symbol-definitions! c-port)
 			      (fprintf c-port "}~n"))
 			    
+			    (unless (zero? const:inexact-counter)
+			      (fprintf c-port "~nstatic void make_inexacts()~n{~n")
+			      (vm->c:emit-inexact-definitions! c-port)
+			      (fprintf c-port "}~n"))
+
 			    (fprintf c-port "~nstatic void make_export_symbols()~n{~n")
 			    (vm->c:emit-export-symbol-definitions! c-port)
 			    (fprintf c-port "}~n")
@@ -914,6 +1006,9 @@
 				       vm->c:indent-spaces)
 			      (unless compiler:multi-o-constant-pool?
 				(fprintf c-port "~amake_symbols();~n"
+					 vm->c:indent-spaces))
+			      (unless (zero? const:inexact-counter)
+				(fprintf c-port "~amake_inexacts();~n"
 					 vm->c:indent-spaces))
 			      (fprintf c-port "~amake_export_symbols();~n"
 				       vm->c:indent-spaces)

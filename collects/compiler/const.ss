@@ -17,6 +17,8 @@
 
 (define const:symbol-table (make-hash-table))
 (define const:symbol-counter 0)
+(define const:inexact-table (make-hash-table))
+(define const:inexact-counter 0)
 (define const:number-table (make-hash-table))
 
 (define compiler:static-list null)
@@ -25,6 +27,8 @@
 (define (const:init-tables!)
   (set! const:symbol-table (make-hash-table))
   (set! const:symbol-counter 0)
+  (set! const:inexact-table (make-hash-table))
+  (set! const:inexact-counter 0)
   (set! const:number-table (make-hash-table))
   (set! compiler:static-list null)
   (set! compiler:per-load-static-list null))
@@ -69,27 +73,41 @@
 	    (compiler:add-local-define-list! def)))
       sv)))
 
+(define compiler:get-special-const!
+  (lambda (ast sym attrib table counter)
+    (let ([v (hash-table-get table sym (lambda () #f))])
+      (if v
+	  (values v counter)
+	  (let ([sv (zodiac:make-top-level-varref/bind 
+		     (and ast (zodiac:zodiac-origin ast))
+		     (and ast (zodiac:zodiac-start ast))
+		     (and ast (zodiac:zodiac-finish ast))
+		     (make-empty-box) 
+		     (string->symbol (number->string counter))
+		     (box '()))])
+	    
+	    (set-annotation! sv (varref:empty-attributes))
+	    (varref:add-attribute! sv attrib)
+	    
+	    (hash-table-put! table sym sv)
+	    (values sv (add1 counter)))))))
+
 (define compiler:get-symbol-const!
   (lambda (ast sym)
-    (hash-table-get 
-     const:symbol-table
-     sym
-     (lambda ()
-       (let ([sv (zodiac:make-top-level-varref/bind 
-		  (and ast (zodiac:zodiac-origin ast))
-		  (and ast (zodiac:zodiac-start ast))
-		  (and ast (zodiac:zodiac-finish ast))
-		  (make-empty-box) 
-		  (string->symbol (number->string const:symbol-counter))
-		  (box '()))])
+    (let-values ([(sv c) (compiler:get-special-const! ast sym varref:symbol
+						      const:symbol-table
+						      const:symbol-counter)])
+      (set! const:symbol-counter c)
+      sv)))
 
-	 (set! const:symbol-counter (add1 const:symbol-counter))
-
-	 (set-annotation! sv (varref:empty-attributes))
-	 (varref:add-attribute! sv varref:symbol)
-
-	 (hash-table-put! const:symbol-table sym sv)
-	 sv)))))
+(define compiler:get-inexact-real-const!
+  (lambda (v ast)
+    (let ([sym (string->symbol (number->string v))])
+      (let-values ([(sv c) (compiler:get-special-const! ast sym varref:inexact
+							const:inexact-table
+							const:inexact-counter)])
+	(set! const:inexact-counter c)
+	sv))))
 
 (define compiler:re-quote 
   (lambda (ast)
@@ -150,15 +168,19 @@
       
       ; Numbers that must be built
       [(zodiac:number? ast)
-       (let ([sym (string->symbol (number->string (zodiac:read-object ast)))])
-	 (hash-table-get const:number-table
-			 sym
-			 (lambda ()
-			   (let ([num (compiler:add-const! 
-				       (compiler:re-quote ast) 
-				       varref:static)])
-			     (hash-table-put! const:number-table sym num)
-			     num))))]
+       (let ([n (zodiac:read-object ast)])
+	 (if (and (inexact? n) (real? n)
+		  (not (member n '(+inf.0 -inf.0 +nan.0))))
+	     (compiler:get-inexact-real-const! n ast)
+	     (let ([sym (string->symbol (number->string n))])
+	       (hash-table-get const:number-table
+			       sym
+			       (lambda ()
+				 (let ([num (compiler:add-const! 
+					     (compiler:re-quote ast) 
+					     varref:static)])
+				   (hash-table-put! const:number-table sym num)
+				   num))))))]
 
       ; atomic constants that must be built
       [(zodiac:scalar? ast)

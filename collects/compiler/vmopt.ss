@@ -134,16 +134,25 @@
 		  ;; a return, tail-call, etc.
 		  ;;
 		  [(vm:if? ast)
-		   (set-vm:if-then! ast (process! (vm:if-then ast)))
-		   (set-vm:if-else! ast (process! (vm:if-else ast)))
-		   (let* ([seq (vm:sequence-vals (vm:if-then ast))]
-			  [last (and (pair? seq) ; optimizations can make it null
-				     (list-last seq))])
-		     (if (vm:control-return? last)
-			 (begin0
-			   (cons ast (vm:sequence-vals (vm:if-else ast)))
-			   (set-vm:if-else! ast (make-vm:sequence #f #f #f '())))
-			 (list ast)))]
+		   (let*-values ([(test) (apply append (map process! (vm:if-test ast)))]
+				 [(test-setup test) (let loop ([l test][acc null])
+						      (if (null? (cdr l))
+							  (values (reverse! acc) (car l))
+							  (loop (cdr l) (cons (car l) acc))))])
+		     (append
+		      test-setup
+		      (begin
+			(set-vm:if-test! ast test)
+			(set-vm:if-then! ast (process! (vm:if-then ast)))
+			(set-vm:if-else! ast (process! (vm:if-else ast)))
+			(let* ([seq (vm:sequence-vals (vm:if-then ast))]
+			       [last (and (pair? seq) ; optimizations can make it null
+					  (list-last seq))])
+			  (if (vm:control-return? last)
+			      (begin0
+			       (cons ast (vm:sequence-vals (vm:if-else ast)))
+			       (set-vm:if-else! ast (make-vm:sequence #f #f #f '())))
+			      (list ast))))))]
 
 		  
 		  ;;--------------------------------------------------------------------
@@ -231,9 +240,14 @@
 			   ; known tail recursion site
 			   (lambda (label cl-case _ __)
 			     (if (zodiac:list-arglist? arglist)
-				 (make-vm:continue (zodiac:zodiac-origin ast)
-						   (zodiac:zodiac-start ast)
-						   (zodiac:zodiac-finish ast))
+				 (begin
+				   ; Mark the case as having a continue
+				   (set-case-code-has-continue?! 
+				    (list-ref (procedure-code-case-codes (get-annotation L)) cl-case) 
+				    #t)
+				   (make-vm:continue (zodiac:zodiac-origin ast)
+						     (zodiac:zodiac-start ast)
+						     (zodiac:zodiac-finish ast)))
 				 (make-vm:tail-call (zodiac:zodiac-origin ast)
 						    (zodiac:zodiac-start ast)
 						    (zodiac:zodiac-finish ast)
@@ -425,6 +439,13 @@
 							   arg-type:arg)
 						       vals)))))))]
 			      
+		  ;;--------------------------------------------------------------------
+		  ;; ARGS
+		  ;;
+		  ;; args that have already been assigned to register variables
+		  ;;
+		  [(vm:register-args? ast) (list ast)]
+
 		  ;;====================================================================
 		  ;; R-VALUES (ONE STEP COMPUTATIONS)
 		  
@@ -460,7 +481,13 @@
 		       (let*-values ([(closure) (vm:apply-closure ast)]
 				     [(L closure-label) 
 				      (closure-info closure)]
-				     [(cl-case arglist) (select-case L (vm:apply-argc ast))])
+				     [(cl-case arglist) (select-case L (vm:apply-argc ast))]
+				     [(check-known-sv)
+				      (lambda ()
+					(when (not (code-return-multi (get-annotation L)))
+					  ; Known proc returns a single value, so we can
+					  ; use the more efficient multi call form
+					  (set-vm:apply-multi?! ast #t)))])
 			 (if (or (and cl-case (not (zodiac:list-arglist? arglist)))
 				 (and cl-case (not (satisfies-arity? (vm:apply-argc ast) L arglist))))
 			     (list ast)
@@ -472,14 +499,19 @@
 					   
 					   ; known call
 					   (lambda (label _ __ ___) 
+					     (check-known-sv)
 					     (set-vm:apply-known?! ast #t)
 					     (list ast))
 					   
 					   ; known recursion
 					   (lambda (label _ __ ____) 
+					     (check-known-sv)
 					     (set-vm:apply-known?! ast #t)
 					     (list ast)))))
 		       (list ast))]
+
+
+		  [(vm:macro-apply? ast) (list ast)]
 	   
 		  ;;--------------------------------------------------------------------
 		  ;; STRUCT
@@ -504,7 +536,8 @@
 		  ;;====================================================================
 		  ;; A-VALUES, L-VALUES, IMMEDIATES
 
-		  [((one-of vm:global-varref? vm:primitive-varref? vm:symbol-varref? vm:local-varref? 
+		  [((one-of vm:global-varref? vm:primitive-varref? vm:local-varref? 
+			    vm:symbol-varref? vm:inexact-varref? 
 			    vm:static-varref? vm:bucket? vm:per-load-statics-table?
 			    vm:struct-ref? vm:deref? vm:immediate?) 
 		    ast)

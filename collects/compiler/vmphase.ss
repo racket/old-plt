@@ -36,6 +36,52 @@
 		    ref)])
       ref)))
 
+(define (check-primitive-as-macro prim argc prim-k normal-k)
+  (if (and prim (procedure-arity-includes? (global-defined-value prim) argc))
+      (let* ([argc=? (lambda (x) (= x argc))]
+	     [special-bool (case prim
+			     [(#%eq?) "MZC_EQP"]
+			     [(#%null?) "MZC_NULLP"]
+			     [(#%pair?) "MZC_PAIRP"]
+			     [(#%not) "MZC_NOTP"]
+			     [(#%symbol?) "MZC_SYMBOLP"]
+			     [(#%string?) "MZC_STRINGP"]
+			     [(#%vector?) "MZC_VECTORP"]
+			     [(#%number?) "MZC_NUMBERP"]
+			     [(#%procedure?) "MZC_PROCEDUREP"]
+			     [(#%char?) "MZC_CHARP"]
+			     [(#%eof-object?) "MZC_EOFP"]
+			     [(#%zero?) "MZC_ZEROP"]
+			     [(#%<) (and (argc=? 2) "MZC_LTP")]
+			     [(#%>) (and (argc=? 2) "MZC_GTP")]
+			     [(#%<=) (and (argc=? 2) "MZC_LTEP")]
+			     [(#%>=) (and (argc=? 2) "MZC_GTEP")]
+			     [(#%=) (and (argc=? 2) "MZC_EQLP")]
+			     [else #f])])
+	(if special-bool
+	    (prim-k special-bool #t)
+	    (let ([special (case prim
+			     [(#%cons) "MZC_CONS"]
+			     [(#%car) "MZC_CAR"]
+			     [(#%cdr) "MZC_CDR"]
+			     [(#%vector-ref) "MZC_VECTOR_REF"]
+			     [(#%vector-set!) "MZC_VECTOR_SET"]
+			     [(#%char->integer) "MZC_CHAR_TO_INTEGER"]
+			     [(#%add1) "MZC_ADD1"]
+			     [(#%sub1) "MZC_SUB1"]
+			     [else #f])])
+	      (if special
+		  (prim-k special #f)
+		  (normal-k)))))
+      (normal-k)))
+
+
+(define (simple-tail-prim? prim)
+  ; Since "simple" primitives don't end with a tail call,
+  ;  there's no harm in calling them directly when
+  ;  they're in a tail position
+  (and prim (simple-return-primitive? (global-defined-value prim))))
+
 ;; vm-phase takes 2 arguments:
 ;; 1) an s-expression to be transformed
 ;; 2) a value which may be #f for non-tail transformation,
@@ -223,7 +269,7 @@
 	   ;; IF FORM
 	   ;;
 	   [(zodiac:if-form? ast)
-	    (let ([test (convert (zodiac:if-form-test ast) #f identity #f #f)]
+	    (let ([test (convert (zodiac:if-form-test ast) #f list #f #f)]
 		  [then (convert (zodiac:if-form-then ast) multi? leaf tail-pos tail?)]
 		  [else (convert (zodiac:if-form-else ast) multi? leaf tail-pos tail?)])
 	      (list (make-vm:if     
@@ -773,10 +819,11 @@
 	   ;; APPLICATIONS
 	   ;;
 	   ;; distinguish between tail & non-tail calls
+	   ;; implement tail calls to "simple" primitives a regular calls
 	   ;; no need to pass anything to tail here because it's already
-	   ;; a tail value if its a tail-apply
-	   ;; the vm-optimizer will set the multi-ness of this application,
-	   ;; and worry about inter&intra-vehicle calls
+	   ;;  a tail value if its a tail-apply
+	   ;; the vm-optimizer will refine the multi-ness of this application,
+	   ;;  and worry about inter & intra-vehicle calls
 	   ;;
 	   [(zodiac:app? ast)
 	    (unless (eq? tail? (app-tail? (get-annotation ast))) 
@@ -792,6 +839,7 @@
 				  (or (primitive? v) 
 				      (primitive-closure? v)))
 				(zodiac:varref-var (zodiac:app-fun ast))))]
+		   [simple-tail-prim? (and tail? (simple-tail-prim? prim))]
 		   [closure (convert (zodiac:app-fun ast) #f identity #f #f)]
 		   [args (zodiac:app-args ast)]
 		   [argc (length args)]
@@ -799,30 +847,71 @@
 		    (map (lambda (A)
 			   (convert A #f identity #f #f))
 			 args)])
-	      (cons (make-vm:generic-args (zodiac:zodiac-origin ast)
-					  (zodiac:zodiac-start ast)
-					  (zodiac:zodiac-finish ast)
-		     closure
-		     tail?
-		     prim
-		     converted-args)
-		    (if tail?
-			(leaf (make-vm:tail-apply
-			       (zodiac:zodiac-origin ast)
-			       (zodiac:zodiac-start ast)
-			       (zodiac:zodiac-finish ast)
-			       closure
-			       argc
-			       prim))
-			(leaf (make-vm:apply
-			       (zodiac:zodiac-origin ast)
-			       (zodiac:zodiac-start ast)
-			       (zodiac:zodiac-finish ast)
-			       closure 
-			       argc
-			       #f 
-			       multi?
-			       prim)))))]
+	      (check-primitive-as-macro
+	       prim argc
+	       (lambda (special bool?)
+		 (let* ([arg-locals (map (lambda (x)
+					   (let* ([name (gensym 'macapply)]
+						  [b (zodiac:make-binding 
+						      #f #f #f
+						      (make-empty-box)
+						      name name)])
+					     (set-annotation! b
+							      (make-binding #f #t #f #f #f #f #f #f
+									    (make-rep:atomic 'scheme-object)))
+					     b))
+					 args)])
+		   (for-each add-new-local! arg-locals)
+		   (cons (make-vm:register-args (zodiac:zodiac-origin ast)
+						(zodiac:zodiac-start ast)
+						(zodiac:zodiac-finish ast)
+						arg-locals
+						converted-args)
+			 (leaf (make-vm:macro-apply (zodiac:zodiac-origin ast)
+						    (zodiac:zodiac-start ast)
+						    (zodiac:zodiac-finish ast)
+						    special
+						    closure
+						    arg-locals
+						    tail?
+						    bool?)))))
+	       (lambda ()
+		 (cons (make-vm:generic-args (zodiac:zodiac-origin ast)
+					     (zodiac:zodiac-start ast)
+					     (zodiac:zodiac-finish ast)
+					     closure
+					     (and tail? (not simple-tail-prim?))
+					     prim
+					     converted-args)
+		       (if tail?
+			   (if simple-tail-prim?
+			       (leaf (make-vm:apply
+				      (zodiac:zodiac-origin ast)
+				      (zodiac:zodiac-start ast)
+				      (zodiac:zodiac-finish ast)
+				      closure 
+				      argc
+				      #f 
+				      #t ; tail-call: multi always ok
+				      prim
+				      #t))
+			       (leaf (make-vm:tail-apply
+				      (zodiac:zodiac-origin ast)
+				      (zodiac:zodiac-start ast)
+				      (zodiac:zodiac-finish ast)
+				      closure
+				      argc
+				      prim)))
+			   (leaf (make-vm:apply
+				  (zodiac:zodiac-origin ast)
+				  (zodiac:zodiac-start ast)
+				  (zodiac:zodiac-finish ast)
+				  closure 
+				  argc
+				  #f 
+				  multi?
+				  prim
+				  #f)))))))]
 	   
 	   
 	   ;;-----------------------------------------------------------------
@@ -853,6 +942,8 @@
 		     make-vm:primitive-varref]
 		    [(varref:has-attribute? ast varref:symbol)
 		     make-vm:symbol-varref]
+		    [(varref:has-attribute? ast varref:inexact)
+		     make-vm:inexact-varref]
 		    [else
 		     make-vm:global-varref])])
 	      (let ([ref (maker #f #f #f (zodiac:varref-var ast))])

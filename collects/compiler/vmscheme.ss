@@ -24,6 +24,7 @@
 ;; non-tail imperative statements
 (define-struct (vm:set! zodiac:struct:zodiac) (vars val mode))
 (define-struct (vm:generic-args zodiac:struct:zodiac) (closure tail? prim vals))
+(define-struct (vm:register-args zodiac:struct:zodiac) (vars vals))
 (define-struct (vm:args zodiac:struct:zodiac) (type vals))
 (define-struct (vm:begin0-mark! zodiac:struct:zodiac) (var val))
 (define-struct (vm:begin0-setup! zodiac:struct:zodiac) (var))
@@ -41,7 +42,9 @@
 (define-struct (vm:make-class-closure struct:vm:make-closure)
 	       (assembly))
 (define-struct (vm:apply zodiac:struct:zodiac) 
-	       (closure argc known? multi? prim))
+	       (closure argc known? multi? prim simple-tail-prim?))
+(define-struct (vm:macro-apply zodiac:struct:zodiac) 
+	       (name primitive args tail? bool?))
 (define-struct (vm:struct zodiac:struct:zodiac)
 	       (type super fields multi?)) ; multi? = #f => always run-time error
 (define-struct (vm:compound zodiac:struct:zodiac) (assembly))
@@ -62,6 +65,7 @@
 (define-struct (vm:per-load-static-varref struct:vm:static-varref) ())
 (define-struct (vm:primitive-varref zodiac:struct:zodiac) (var))
 (define-struct (vm:symbol-varref zodiac:struct:zodiac) (var))
+(define-struct (vm:inexact-varref zodiac:struct:zodiac) (var))
 (define-struct (vm:struct-ref zodiac:struct:zodiac) (field var))
 (define-struct (vm:deref zodiac:struct:zodiac) (var))
 (define-struct (vm:ref zodiac:struct:zodiac) (var))

@@ -24,7 +24,7 @@
     (mred:debug:printf 'invoke "mred:frame@")
 
     (define frame-width 600)
-    (define frame-height 700)
+    (define frame-height 650)
     (let ([w (box 0)]
 	  [h (box 0)])
       (wx:display-size w h)
@@ -701,6 +701,7 @@
 	      (determine-width "0000:000-0000:000" 
 			       position-canvas
 			       position-edit)
+	      (edit-position-changed)
 	      (send position-edit lock #t)
 	      (semaphore-wait time-semaphore)
 	      (determine-width wide-time time-canvas time-edit)

@@ -788,7 +788,7 @@
 		(parameterization-branch-handler 
 		 (lambda () (make-parameterization user-parameterization)))))))))
       
-    (define console-edit% (make-console-edit% mred:edit:info-edit%))
+    (define console-edit% (make-console-edit% mred:edit:backup-autosave-edit%))
 
     (define make-transparent-io-edit%
       (lambda (super%)
@@ -915,7 +915,8 @@
 	    (apply super-init args)))))
       
       (define transparent-io-edit% 
-	(make-transparent-io-edit% (make-console-edit% mred:edit:edit%)))
+	(make-transparent-io-edit% (make-console-edit%
+				    mred:edit:searching-edit%)))
 
 
     (define make-console-frame%

@@ -97,7 +97,7 @@
 	  [find-string : mred:find-string^ 
 		       ((reference-unit/sig "findstr.ss") wx 
 			constants
-			container canvas edit frame)]
+			container canvas edit frame keymap)]
 	  [editor-frame : mred:editor-frame^ 
 			((reference-unit/sig "edframe.ss") wx 
 			 constants

@@ -5,7 +5,8 @@
 	    [mred:container : mred:container^]
 	    [mred:canvas : mred:canvas^]
 	    [mred:edit : mred:edit^]
-	    [mred:frame : mred:frame^])
+	    [mred:frame : mred:frame^]
+	    [mred:keymap : mred:keymap^])
 	    
     (mred:debug:printf 'invoke "mred:find-string@")
 
@@ -391,6 +392,12 @@
 		     (mred:debug:printf 'matthew "searching frame::on-set-focus.2~n")
 		     (super-on-set-focus)
 		     (mred:debug:printf 'matthew "searching frame::on-set-focus.3~n"))]))])
+	(for-each (lambda (keymap)
+		    (send keymap chain-to-keymap
+			  mred:keymap:global-search-keymap
+			  #t))
+		  (list (send find-edit get-keymap)
+			(send replace-edit get-keymap)))
 	(lambda (super%)
 	  (class super% args
 	    (inherit active-edit active-canvas get-edit)

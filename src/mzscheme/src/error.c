@@ -121,6 +121,7 @@ void scheme_init_format_procedure(Scheme_Env *env)
   %V = scheme_value
 
   %L = line number, -1 means no line
+  %e = error number
 */
 
 static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
@@ -157,6 +158,9 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	break;
       case 'L':	  
 	(void)va_arg(args2, long);
+	break;
+      case 'e':	  
+	(void)va_arg(args2, int);
 	break;
       case 'S':
       case 'V':
@@ -247,6 +251,19 @@ static long scheme_vsprintf(char *s, long maxlen, const char *msg, va_list args)
 	    } else {
 	      t = buf;
 	      tlen = 0;
+	    }
+	  }
+	  break;
+	case 'e':	  
+	  {
+	    int en;
+	    en = va_arg(args, int);
+	    if (en) {
+	      t = strerror(en);
+	      tlen = strlen(t);
+	    } else {
+	      t = "-1";
+	      tlen = 2;
 	    }
 	  }
 	  break;

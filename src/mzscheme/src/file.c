@@ -450,7 +450,7 @@ char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
 	  }
 	}
 
-	scheme_raise_exn(MZEXN_I_O, "current-directory: unknown failure (%d)", errno);
+	scheme_raise_exn(MZEXN_I_O, "current-directory: unknown failure (%e)", errno);
       }
 
       buflen = strlen(r) + 1;
@@ -2964,8 +2964,9 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
     scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		     argv[0],
 		     (errno == EEXIST) ? exists_err_symbol : fail_err_symbol,
-		     "make-directory: cannot make directory: %q",
-		     filename_for_error(argv[0]));
+		     "make-directory: cannot make directory: %q (%e)",
+		     filename_for_error(argv[0]),
+		     errno);
     return NULL;
   } else
     return scheme_void;

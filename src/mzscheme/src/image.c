@@ -209,7 +209,7 @@ extern char **environ;
 
 static void die_now(char *phase, char *file)
 {
-  printf("Restore from \"%q\" failed at %s (%d).\n", file, phase, errno);
+  printf("Restore from \"%q\" failed at %s (%e)\n", file, phase, errno);
   exit(-1);
 }
 

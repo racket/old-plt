@@ -533,6 +533,7 @@
                         (interface
                           ()
                           equal?
+                          get-transparent-text-backing-on
                           copy
                           get-family
                           get-face
@@ -569,8 +570,7 @@
                           set-delta-face
                           set-transparent-text-backing-off
                           get-transparent-text-backing-off
-                          set-transparent-text-backing-on
-                          get-transparent-text-backing-on))
+                          set-transparent-text-backing-on))
                       ($$string-snip<%>
                         (interface
                           ()

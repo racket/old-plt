@@ -150,7 +150,9 @@
 				 resource-files))
 	      (error 'make-executable "resource-files is not a list of paths: ~e" resource-files)))
 
-	  (when (directory-exists? dest)
+	  (when (or (directory-exists? dest)
+		    (file-exists? dest)
+		    (link-exists? dest))
 	    (delete-directory/files dest))
 	  (make-directory* (build-path dest "Contents" "Resources"))
 	  (make-directory* (build-path dest "Contents" "MacOS"))

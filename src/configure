@@ -2571,6 +2571,139 @@ else
   LIBFINISH=echo
 fi
 
+################ X OpenGL ##################
+if test "${enable_mred}" = "yes" ; then
+  echo $ac_n "checking for glXCreateContext in -lGL""... $ac_c" 1>&6
+echo "configure:2577: checking for glXCreateContext in -lGL" >&5
+ac_lib_var=`echo GL'_'glXCreateContext | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lGL $X_LIBS -X11 -lXext -pthread $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 2585 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char glXCreateContext();
+
+int main() {
+glXCreateContext()
+; return 0; }
+EOF
+if { (eval echo configure:2599: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread"
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+  echo $ac_n "checking for glXCreateContext in -lGL""... $ac_c" 1>&6
+echo "configure:2620: checking for glXCreateContext in -lGL" >&5
+ac_lib_var=`echo GL'_'glXCreateContext | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lGL $X_LIBS -lX11 -lXext -pthread $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 2628 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char glXCreateContext();
+
+int main() {
+glXCreateContext()
+; return 0; }
+EOF
+if { (eval echo configure:2642: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  MROPTIONS="$MROPTIONS -DUSE_GL"
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+  echo $ac_n "checking for glXCreateContext in -lGL""... $ac_c" 1>&6
+echo "configure:2663: checking for glXCreateContext in -lGL" >&5
+ac_lib_var=`echo GL'_'glXCreateContext | sed 'y%./+-%__p_%'`
+if eval "test \"`echo '$''{'ac_cv_lib_$ac_lib_var'+set}'`\" = set"; then
+  echo $ac_n "(cached) $ac_c" 1>&6
+else
+  ac_save_LIBS="$LIBS"
+LIBS="-lGL $X_LIBS -lX11 -lXext -pthread $LIBS"
+cat > conftest.$ac_ext <<EOF
+#line 2671 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char glXCreateContext();
+
+int main() {
+glXCreateContext()
+; return 0; }
+EOF
+if { (eval echo configure:2685: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext}; then
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=yes"
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -rf conftest*
+  eval "ac_cv_lib_$ac_lib_var=no"
+fi
+rm -f conftest*
+LIBS="$ac_save_LIBS"
+
+fi
+if eval "test \"`echo '$ac_cv_lib_'$ac_lib_var`\" = yes"; then
+  echo "$ac_t""yes" 1>&6
+  MROPTIONS="$MROPTIONS -DUSE_GL"
+else
+  echo "$ac_t""no" 1>&6
+fi
+
+fi
+
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"

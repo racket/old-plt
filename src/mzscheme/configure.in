@@ -436,6 +436,13 @@ else
   LIBFINISH=echo
 fi
 
+################ X OpenGL ##################
+if test "${enable_mred}" = "yes" ; then
+  AC_CHECK_LIB(GL, glXCreateContext, X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread", , $X_LIBS -X11 -lXext -pthread)
+  AC_CHECK_LIB(GL, glXCreateContext, MROPTIONS="$MROPTIONS -DUSE_GL", , $X_LIBS -lX11 -lXext -pthread)
+  AC_CHECK_LIB(GL, glXCreateContext, MROPTIONS="$MROPTIONS -DUSE_GL", , $X_LIBS -lX11 -lXext -pthread)
+fi
+
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"

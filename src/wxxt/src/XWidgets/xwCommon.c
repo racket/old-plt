@@ -11,6 +11,7 @@
 #include <X11/keysym.h>
 #include "wxAllocColor.h"
 #include "wxAllocColor.c"
+#include "gl.h"
 #include <./xwCommonP.h>
 #define focus_detail(detail) (detail ==NotifyAncestor ?"NotifyAncestor":detail ==NotifyVirtual ?"NotifyVirtual":detail ==NotifyInferior ?"NotifyInferior":detail ==NotifyNonlinear ?"NotifyNonlinear":detail ==NotifyNonlinearVirtual ?"NotifyNonlinearVirtual":detail ==NotifyPointer ?"NotifyPointer":detail ==NotifyPointerRoot ?"NotifyPointerRoot":detail ==NotifyDetailNone ?"NotifyDetailNone":"???")
 
@@ -93,6 +94,11 @@ static XtActionsRec actionsList[] = {
 static void _resolve_inheritance(
 #if NeedFunctionPrototypes
 WidgetClass
+#endif
+);
+static void realize(
+#if NeedFunctionPrototypes
+Widget,XtValueMask *,XSetWindowAttributes *
 #endif
 );
 static void class_initialize(
@@ -414,7 +420,7 @@ XfwfCommonClassRec xfwfCommonClassRec = {
 /* class_inited 	*/  FALSE,
 /* initialize   	*/  initialize,
 /* initialize_hook 	*/  NULL,
-/* realize      	*/  XtInheritRealize,
+/* realize      	*/  realize,
 /* actions      	*/  actionsList,
 /* num_actions  	*/  12,
 /* resources    	*/  resources,
@@ -646,6 +652,36 @@ WidgetClass class;
     c->xfwfCommon_class.darker_color = super->xfwfCommon_class.darker_color;
   if (c->xfwfCommon_class.set_color == XtInherit_set_color)
     c->xfwfCommon_class.set_color = super->xfwfCommon_class.set_color;
+}
+/*ARGSUSED*/
+#if NeedFunctionPrototypes
+static void realize(Widget self,XtValueMask * mask,XSetWindowAttributes * attributes)
+#else
+static void realize(self,mask,attributes)Widget self;XtValueMask * mask;XSetWindowAttributes * attributes;
+#endif
+{
+#ifdef USE_GL
+  if (gl_create_window)
+  {
+    Display *dpy;
+    int screen;
+    XVisualInfo* vi;
+    int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
+
+    dpy = XtDisplay(self);
+    screen = XScreenNumberOfScreen(XtScreen(self));
+
+    // Will need to free this
+    vi = glXChooseVisual(dpy, screen, gl_attribs);
+    XtCreateWindow(self, InputOutput, vi->visual, 0, 0);
+  }
+  else
+  {
+    compositeClassRec.core_class.realize(self, mask, attributes);
+  }
+#else
+compositeClassRec.core_class.realize(self, mask, attributes);
+#endif
 }
 /*ARGSUSED*/
 #if NeedFunctionPrototypes

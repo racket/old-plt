@@ -122,6 +122,7 @@ the color gray75 is returned instead.
     return True;
 }
 
+
 @PUBLIC
 
 @ The resource |traversalOn| determines whether keyboard traversal is
@@ -256,6 +257,31 @@ is positive.
         @var Dimension travMode = 1
 
 @METHODS
+@proc realize
+{
+#ifdef USE_GL
+  if (gl_create_window)
+  {
+    Display *dpy;
+    int screen;
+    XVisualInfo* vi;
+    int gl_attribs[] = { GLX_DOUBLEBUFFER, GLX_RGBA, None };
+
+    dpy = XtDisplay($);
+    screen = XScreenNumberOfScreen(XtScreen($));
+
+    // Will need to free this
+    vi = glXChooseVisual(dpy, screen, gl_attribs);
+    XtCreateWindow($, InputOutput, vi->visual, 0, 0);
+  }
+  else
+  {
+    #realize($, mask, attributes);
+  }
+#else
+#realize($, mask, attributes);
+#endif
+}
 
 @ The type converter |cvtStringToAlignment| is installed in the
 |class_initialize| method, after the quarks for the recognized strings
@@ -1197,3 +1223,5 @@ highlight border with.
 @incl <X11/keysym.h>
 @incl "wxAllocColor.h"
 @incl "wxAllocColor.c"
+@incl "gl.h"
+

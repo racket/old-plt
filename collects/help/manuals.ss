@@ -62,7 +62,8 @@
 				       [(null? l) null]
 				       [(regexp-match re (car l))
 					(cons (car l) (loop (cdr l)))]
-				       [else (cons "<P>" l)])))))])
+				       [else (cons "<P>" l)]))
+				    l)))])
       (let-values ([(collections-doc-files collection-names) (colldocs)])
         (apply
          string-append

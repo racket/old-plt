@@ -1,14 +1,18 @@
 ;;
-;; $Id: stlink.ss,v 1.6 1997/07/22 18:45:11 krentel Exp krentel $
+;; $Id: stlink.ss,v 1.7 1997/08/08 20:38:41 krentel Exp krentel $
 ;;
 ;; Link the gui tester together into compound unit.
 ;;
+;; keymap (keys.ss) must be evaled before stprims.ss,
+;; so mred:shifted-key-list is defined.
+;;   
 
 (compound-unit/sig
 
   (import 
-    [wx : mred:wx^]
-    [testable : mred:testable-window^])
+    [wx       : mred:wx^]
+    [testable : mred:testable-window^]
+    [keymap   : mred:keymap^])
 
   (link
     [struct : mred:test:struct^
@@ -24,7 +28,7 @@
       ((reference-unit/sig "strun.ss") struct)]
     
     [prim : mred:test:primitives^
-      ((reference-unit/sig "stprims.ss") wx testable struct global run)]
+      ((reference-unit/sig "stprims.ss") wx testable keymap struct global run)]
 
     [drscheme : mred:test:drscheme^
       ((reference-unit/sig "stdrs.ss") wx struct global)])

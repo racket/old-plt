@@ -1,5 +1,5 @@
 ;;
-;; $Id: link.ss,v 1.38 1997/07/11 20:10:01 krentel Exp robby $
+;; $Id: link.ss,v 1.39 1997/07/15 15:47:30 robby Exp krentel $
 ;;
 
   (compound-unit/sig
@@ -153,7 +153,7 @@
 			frame canvas group find-string
 			preferences handler)]
           [self-test : mred:self-test^
-             ((reference-unit/sig  "stlink.ss")  wx  testable)]
+             ((reference-unit/sig  "stlink.ss")  wx  testable  keymap)]
 	  [html : mred:html^ ((reference-unit/sig "html.ss") wx 
 			      constants
 			      url (core file@)

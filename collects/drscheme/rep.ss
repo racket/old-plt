@@ -36,8 +36,7 @@
     (lambda (expr)
       (drscheme:init:primitive-eval
        (with-handlers ([(lambda (x) #t)
-			(lambda (x) (error 'internal-syntax-error
-					   (exn-message x)))])
+			(lambda (x) (error 'internal-syntax-error (exn-message x)))])
 	 (expand-defmacro expr)))))
 
 
@@ -161,6 +160,7 @@
 		 set-prompt-mode
 		 delete lock locked?
 		 get-text
+		 line-start-position
 		 reset-console-start-position
 		 last-position
 		 set-resetting
@@ -291,7 +291,9 @@
 	     (unless (void? v)
 	       (let ([v (if (drscheme:language:r4rs-style-printing)
 			    v
-			    (print-convert:print-convert v))])
+			    (with-parameterization drscheme:init:system-parameterization
+			      (lambda ()
+				(print-convert:print-convert v))))])
 		 (parameterize ([mzlib:pretty-print@:pretty-print-size-hook
 				 (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
 				[mzlib:pretty-print@:pretty-print-print-hook
@@ -389,7 +391,7 @@
 	  [process-edit/no-zodiac
 	   (lambda (edit f start end)
 	     (let* ([buffer-thunk (mred:read-snips/chars-from-buffer edit start end)]
-		    [snip-string (string->list " 'image ")]
+		    [snip-string (string->list " 'non-text-snip ")]
 		    [port-thunk (let ([from-snip null])
 				  (rec port-thunk
 				       (lambda ()
@@ -772,9 +774,9 @@
 	(private 
 	  [insert-delta
 	   (lambda (s delta)
-	     (let ([before (get-end-position)])
-	       (insert s)
-	       (let ([after (get-end-position)])
+	     (let ([before (last-position)])
+	       (insert s before before)
+	       (let ([after (last-position)])
 		 (change-style delta before after)
 		 (values before after))))])
 	(public
@@ -824,11 +826,12 @@
 	       (set! vocab (zodiac:create-vocabulary
 			    'scheme-w/user-defined-macros/drscheme
 			    zodiac:scheme-vocabulary))
-	       (unless (mred:get-preference 'drscheme:keep-interactions-history)
-		 (set-resetting #t)
-		 (delete reset-console-start-position (last-position))
-		 (set-prompt-mode #f)
-		 (set-resetting #f))
+	       (if (mred:get-preference 'drscheme:keep-interactions-history)
+		   (insert #\newline (last-position) (last-position))
+		   (begin (set-resetting #t)
+			  (delete (line-start-position 1) (last-position))
+			  (set-prompt-mode #f)
+			  (set-resetting #f)))
 	       (set-position (last-position) (last-position))
 	       (insert-delta "Language: " WELCOME-DELTA)
 	       (insert-delta 
@@ -838,6 +841,8 @@
 		   'drscheme:settings)))
 		    RED-DELTA)
 	       (insert-delta (format ".~n") WELCOME-DELTA)
+	       (unless (mred:get-preference 'drscheme:keep-interactions-history)
+		 (set-last-header-position (last-position)))
 	       (super-reset-console)
 	       (set! repl-initially-active? #t)))]
 	  [initialize-console
@@ -853,7 +858,7 @@
 		 (set-clickback before after 
 				(lambda args (drscheme:app:about-drscheme))
 				CLICK-DELTA)))
-	     (set-last-header-position (get-end-position))
+	     (set-last-header-position (last-position))
 
 	     (if (mred:get-preference 'drscheme:repl-always-active)
 		 (reset-console)

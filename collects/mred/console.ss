@@ -837,6 +837,8 @@
 		  (when starting-at-prompt-mode?
 		    (set! prompt-mode? #f))
 
+		  (unless transparent-edit
+		    (printf "transparent-edit is ~a!" transparent-edit))
 		  (send transparent-edit set-auto-set-wrap #t)
 		  (let ([snip (make-object wx:media-snip% transparent-edit)])
 		    (set! transparent-snip snip)

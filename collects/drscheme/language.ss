@@ -2,6 +2,7 @@
   (import [wx : wx^]
 	  [mred : mred^]
 	  [drscheme:basis : drscheme:basis^]
+	  [drscheme:unit : drscheme:unit^]
 	  [aries : plt:aries^]
 	  [zodiac : drscheme:zodiac^]
 	  mzlib:function^
@@ -390,7 +391,15 @@
 	(send vocab stretchable-in-x #f)
 	(update-to (mred:get-preference 'drscheme:settings))
 	(show-specifics (not (ormap (compose compare-setting-to-gui second) settings)))
-	(mred:add-preference-callback 'drscheme:settings (lambda (p v) (update-to v)))
+	(mred:add-preference-callback 'drscheme:settings 
+				      (lambda (p v) 
+					(send mred:the-frame-group
+					      for-each-frame 
+					      (lambda (x)
+						(when (is-a? x drscheme:unit:frame%)
+						  (send (ivar x definitions-edit)
+							language-changed))))
+					(update-to v)))
 	(for-each (lambda (x) (send x stretchable-in-y #f))
 		  (list language-panel ok-panel main))
 	(send ok-button user-min-width (send cancel-button get-width))

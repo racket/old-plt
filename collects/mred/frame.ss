@@ -221,8 +221,8 @@
 			  `(public
 			     [,(build-between-ivar between) 
 			      ,(if (between-separator between)
-				   '(lambda (m) (send m append-separator))
-				   '(lambda (x) (void)))]))]
+				   `(lambda (m) (send m append-separator))
+				   `(lambda (x) (void)))]))]
 		       [build-make-menu-bar
 			(lambda (items)
 			  (let ([mb (gensym "mb")])

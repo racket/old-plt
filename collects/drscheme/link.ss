@@ -17,7 +17,10 @@
 			     (interface : zodiac:interface^))]
 	[language : drscheme:language^
 		  ((reference-unit/sig "language.ss")
-		   wx mred basis aries drzodiac
+		   wx mred 
+		   basis
+		   (export unit)
+		   aries drzodiac
 		   (mzlib function@) print-convert)]
 	[interface : drscheme:interface^
 		   ((reference-unit/sig "intrface.ss") 

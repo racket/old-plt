@@ -25,9 +25,11 @@
   (print-convert:empty-list-name 'empty)
   (print-convert:current-print-convert-hook
    (lambda (expr basic-convert sub-convert)
-     (if (is-a? expr wx:image-snip%)
-	 expr
-	 (basic-convert expr))))
+     (let ([ans (if (is-a? expr wx:snip%)
+		    expr
+		    (basic-convert expr))])
+       (printf "hook: ~a~n" expr)
+       ans)))
 
   '(define (make-basic)
     (send (drscheme:compound-unit:make-compound-unit #f)

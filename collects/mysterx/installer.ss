@@ -25,11 +25,16 @@
 			   (apply build-path dll-path-list)))
 			 (for-each	
 			  (lambda (dll)
-			    (system
-			     (string-append 
-			      (build-path winsys-dir "REGSVR32.EXE")
-			      " "
-			      dll)))
+			    (if (system
+				 (string-append 
+				  (build-path winsys-dir "REGSVR32.EXE")
+				  " /s " ; silent mode
+				  dll))
+				(printf "MysterX: Registered library ~a~n"
+					dll)
+				(fprintf (current-error-port)
+					 "MysterX: Unable to register library ~a~n"
+					 dll)))
 			  dlls))
 			(fprintf
 			 (current-error-port) 

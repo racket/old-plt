@@ -1,5 +1,28 @@
 SYSTEM HISTORY
 --------------
+Version 50:
+
+- added mred:info-frame%
+
+- split out mred:edit into several edits. The choices for pasteboards
+  and edits are now:
+
+    mred:media-edit%
+    mred:info-edit%
+    mred:searching-edit%
+    mred:clever-file-format-edit%
+    mred:file-edit%
+    mred:backup-autosave-edit%
+    mred:edit%
+    mred:return-edit%
+    mred:pasteboard%
+    mred:file-pasteboard%
+    mred:backup-autosave-pasteboard%
+
+  Probably mred:edit is not the right choice for you now.
+
+- mred:media-snip% objects now defaultly carry a mred:media-edit% object 
+
 Version 49:
 - .htx files are no longer supported
 

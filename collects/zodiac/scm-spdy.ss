@@ -363,10 +363,12 @@
 		      (if (and (quote-form? f)
 			    (z:string? (quote-form-expr f)))
 			(create-reference-unit-form
-			  (path->complete-path (z:read-object
-						 (quote-form-expr f))
-			    (or (current-load-relative-directory)
-			      (current-directory)))
+			  (structurize-syntax
+			    (path->complete-path (z:read-object
+						   (quote-form-expr f))
+			      (or (current-load-relative-directory)
+				(current-directory)))
+			    expr)
 			  'exp
 			  signed?
 			  expr)
@@ -417,13 +419,15 @@
 			    "Library path ~s must be a relative path"
 			    raw-f))
 			(create-reference-unit-form
-			  (path->complete-path
-			    (or (mzlib:find-library raw-f raw-c)
-			      (static-error expr
-				"Unable to locate library ~a in collection ~a"
-				raw-f raw-c))
-			    (or (current-load-relative-directory)
-			      (current-directory)))
+			  (structurize-syntax
+			    (path->complete-path
+			      (or (mzlib:find-library raw-f raw-c)
+				(static-error expr
+				  "Unable to locate library ~a in collection ~a"
+				  raw-f raw-c))
+			      (or (current-load-relative-directory)
+				(current-directory)))
+			    expr)
 			  'exp
 			  signed?
 			  expr))))))

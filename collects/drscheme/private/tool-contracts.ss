@@ -336,8 +336,8 @@
 
 (drscheme:debug:show-backtrace-window
  (string?
-  (listof (cons/p (union symbol? (is-a?/c editor<%>))
-		  (cons/p number? number?)))
+  (listof any?)
+  (union procedure? false?)
   . -> .
   void?)
  (error-message dis)

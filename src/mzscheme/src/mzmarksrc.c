@@ -354,9 +354,10 @@ escaping_cont_proc {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
   gcMARK(c->mark_key);
-  gcMARK(c->f);
+  gcMARK(c->current_local_env);
 
   MARK_cjs(&c->cjs);
+  MARK_stack_state(&c->envss);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Escaping_Cont));

@@ -2076,41 +2076,14 @@ static void copy_cjs(Scheme_Continuation_Jump_State *a, Scheme_Continuation_Jump
   a->is_kill = b->is_kill;
 }
 
-static Scheme_Object *do_call_ec(void *ec)
-{
-  Scheme_Object *p[1], *f;
-
-  p[0] = (Scheme_Object *)ec;
-  f = SCHEME_CONT_F(ec);
-
-  return _scheme_apply_multi(f, 1, p);
-}
-
-static Scheme_Object *handle_call_ec(void *ec)
-{
-  Scheme_Thread *p = scheme_current_thread;
-
-  if ((void *)p->cjs.jumping_to_continuation == ec) {
-    int n = p->cjs.num_vals;
-    Scheme_Object *v = p->cjs.u.val;
-    Scheme_Object **vs = p->cjs.u.vals;
-    copy_cjs(&p->cjs, &((Scheme_Escaping_Cont *)ec)->cjs);
-    p->suspend_break = ((Scheme_Escaping_Cont *)ec)->suspend_break;
-    if (n == 1)
-      return v;
-    else
-      return scheme_values(n, vs);
-  } else
-    return NULL;
-}
-
 Scheme_Object *
 scheme_call_ec (int argc, Scheme_Object *argv[])
 {
-  Scheme_Escaping_Cont *cont;
-  Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *v, *mark_key;
-  Scheme_Cont_Frame_Data cframe;
+  Scheme_Escaping_Cont * volatile cont;
+  Scheme_Thread *p1 = scheme_current_thread;
+  Scheme_Object * volatile v;
+  Scheme_Object *mark_key, *a[1];
+  Scheme_Cont_Frame_Data volatile cframe;
 
   scheme_check_proc_arity("call-with-escaping-continuation", 1,
 			  0, argc, argv);
@@ -2119,20 +2092,40 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
 
   cont = MALLOC_ONE_TAGGED(Scheme_Escaping_Cont);
   cont->type = scheme_escaping_cont_type;
-  cont->f = argv[0];
-  cont->suspend_break = p->suspend_break;
-  copy_cjs(&cont->cjs, &p->cjs);
-  cont->cont_mark_stack = MZ_CONT_MARK_STACK;
-  cont->cont_mark_pos = MZ_CONT_MARK_POS;
   cont->mark_key = mark_key;
+  cont->suspend_break = p1->suspend_break;
+  copy_cjs(&cont->cjs, &p1->cjs);
 
-  scheme_push_continuation_frame(&cframe);
+  memcpy(&cont->saveerr, &scheme_error_buf, sizeof(mz_jmp_buf));
+  scheme_save_env_stack_w_thread(cont->envss, p1);
+  cont->current_local_env = p1->current_local_env;
+
+  scheme_push_continuation_frame((Scheme_Cont_Frame_Data *)&cframe);
   scheme_set_cont_mark(mark_key, scheme_true);
 
-  v = scheme_dynamic_wind(NULL, do_call_ec, NULL,
-			  handle_call_ec, (void *)cont);
+  if (scheme_setjmp(p1->error_buf)) {
+    Scheme_Thread *p2 = scheme_current_thread;
+    if ((void *)p2->cjs.jumping_to_continuation == cont) {
+      int n = p2->cjs.num_vals;
+      Scheme_Object **vs = p2->cjs.u.vals;
+      v = p2->cjs.u.val;
+      copy_cjs(&p2->cjs, &cont->cjs);
+      scheme_restore_env_stack_w_thread(cont->envss, p2);
+      p2->current_local_env = cont->current_local_env;
+      p2->suspend_break = cont->suspend_break;
+      if (n != 1)
+	v = scheme_values(n, vs);
+    } else {
+      scheme_longjmp(cont->saveerr, 1);
+    }
+  } else {
+    a[0] = (Scheme_Object *)cont;
+    v = _scheme_apply_multi(argv[0], 1, a);
+  }
 
-  scheme_pop_continuation_frame(&cframe);
+  memcpy(&scheme_error_buf, &cont->saveerr, sizeof(mz_jmp_buf));
+
+  scheme_pop_continuation_frame((Scheme_Cont_Frame_Data *)&cframe);
 
   return v;
 }
@@ -2161,7 +2154,7 @@ static Scheme_Saved_Stack *copy_out_runstack(Scheme_Thread *p,
 #ifdef MZTAG_REQUIRED
   saved->type = scheme_rt_saved_stack;
 #endif
-  size = p->runstack_size - (runstack - runstack_start);
+  size = p->runstack_size - (runstack XFORM_OK_MINUS runstack_start);
   saved->runstack_size = size;
   {
     Scheme_Object **start;
@@ -2180,7 +2173,7 @@ static Scheme_Saved_Stack *copy_out_runstack(Scheme_Thread *p,
       isaved->prev = ss;
     }
     isaved = isaved->prev;
-    size = csaved->runstack_size - (csaved->runstack - csaved->runstack_start);
+    size = csaved->runstack_size - (csaved->runstack XFORM_OK_MINUS csaved->runstack_start);
     isaved->runstack_size = size;
     {
       Scheme_Object **start;
@@ -2501,8 +2494,8 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
     findpos = (long)cont->ss.cont_mark_stack;
     cmpos = (long)cont->ss.cont_mark_pos;
   } else if (econt) {
-    findpos = (long)((Scheme_Escaping_Cont *)econt)->cont_mark_stack;
-    cmpos = (long)((Scheme_Escaping_Cont *)econt)->cont_mark_pos;
+    findpos = (long)((Scheme_Escaping_Cont *)econt)->envss.cont_mark_stack;
+    cmpos = (long)((Scheme_Escaping_Cont *)econt)->envss.cont_mark_pos;
   } else {
     findpos = (long)MZ_CONT_MARK_STACK;
     cmpos = (long)MZ_CONT_MARK_POS;

@@ -947,9 +947,10 @@ int escaping_cont_proc_MARK(void *p) {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
   gcMARK(c->mark_key);
-  gcMARK(c->f);
+  gcMARK(c->current_local_env);
 
   MARK_cjs(&c->cjs);
+  MARK_stack_state(&c->envss);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Escaping_Cont));
@@ -959,9 +960,10 @@ int escaping_cont_proc_FIXUP(void *p) {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
   gcFIXUP(c->mark_key);
-  gcFIXUP(c->f);
+  gcFIXUP(c->current_local_env);
 
   FIXUP_cjs(&c->cjs);
+  FIXUP_stack_state(&c->envss);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Escaping_Cont));

@@ -846,10 +846,10 @@ typedef struct Scheme_Escaping_Cont {
   MZ_HASH_KEY_EX
   Scheme_Continuation_Jump_State cjs;
   Scheme_Object *mark_key;
-  Scheme_Object *f;
+  struct Scheme_Stack_State envss;
+  struct Scheme_Comp_Env *current_local_env;
+  mz_jmp_buf saveerr;
   int suspend_break;
-  MZ_MARK_STACK_TYPE cont_mark_stack; /* for `continuation-marks' */
-  MZ_MARK_POS_TYPE cont_mark_pos; /* for `continuation-marks' */
 } Scheme_Escaping_Cont;
 
 #define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *)(obj))->f)

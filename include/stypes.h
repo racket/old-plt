@@ -131,15 +131,15 @@ enum {
   scheme_string_converter_type,
   scheme_alarm_type,
   scheme_thread_cell_type,
-  scheme_channel_waiter_type,                /* 150 */
+  scheme_channel_waiter_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,
 
   scheme_rt_comp_env,
   scheme_rt_constant_binding,
-  scheme_rt_resolve_info,
-  scheme_rt_compile_info,               /* 120 */
+  scheme_rt_resolve_info,               /* 120 */
+  scheme_rt_compile_info,
   scheme_rt_cont_mark,
   scheme_rt_saved_stack,
   scheme_rt_reply_item,
@@ -148,8 +148,8 @@ enum {
   scheme_rt_dyn_wind_cell,
   scheme_rt_cont_mark_chain,
   scheme_rt_dyn_wind_info,
-  scheme_rt_dyn_wind,
-  scheme_rt_dup_check,                  /* 130 */
+  scheme_rt_dyn_wind,                   /* 130 */
+  scheme_rt_dup_check,
   scheme_rt_thread_memory,
   scheme_rt_input_file,
   scheme_rt_input_fd,
@@ -158,8 +158,8 @@ enum {
   scheme_rt_tested_output_file,
   scheme_rt_indexed_string,
   scheme_rt_output_file,
-  scheme_rt_load_handler_data,
-  scheme_rt_pipe,                       /* 140 */
+  scheme_rt_load_handler_data,          /* 140 */
+  scheme_rt_pipe,
   scheme_rt_beos_process,
   scheme_rt_system_child,
   scheme_rt_tcp,
@@ -168,7 +168,7 @@ enum {
   scheme_rt_namespace_option,
   scheme_rt_param_data,
   scheme_rt_will,
-  scheme_rt_will_registration,
+  scheme_rt_will_registration,          /* 150 */
   scheme_rt_struct_proc_info,
   scheme_rt_linker_name,
   scheme_rt_param_map,

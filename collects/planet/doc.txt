@@ -1,0 +1,118 @@
+_The PLaneT Module Repository Interaction Collection_
+
+The PLaneT system is a method for automatically sharing code packages,
+both as libraries and as full applications, that gives every user of a
+PLaneT client the illusion of having a local copy of every code
+package on the server, but is parsimonious in its transmission. It
+consists of a centralized server that holds all packages and
+individual clients that hold some portion of the archive
+locally. Maintenance of that archive should be transparent, and is the
+complete responsibility of the PLaneT client. This library provides
+both a client and a server; most users will only ever need to use the
+client.
+
+The PLaneT client receives user requests (i.e., the "(require (planet
+...))" forms) and loads the appropriate modules in response. In the
+course of handling these requests it may download new code packages
+from the PLaneT server.
+
+The structure of user PLaneT invocations is listed below.
+
+PLANET-REQUEST ::= (planet FILE-NAME PKG-SPEC [PATH ...]) 
+FILE-NAME      ::= string
+PKG-SPEC       ::= string | (FILE-PATH ... PKG-NAME) | (FILE-PATH ... PKG-NAME VER-SPEC)
+VER-SPEC       ::= Nat | (Nat MINOR) 
+MINOR          ::= Nat       ; the specified revision or above
+                 | (Nat Nat) ; a revision between the two specified numbers (inclusive)
+                 | (= Nat)   ; exactly the revision specified
+                 | (+ Nat)   ; the specified revision or above
+                 | (- Nat)   ; the specified revision or below
+FILE-PATH      ::= string
+PKG-NAME       ::= string
+OWNER-NAME     ::= string
+PATH           ::= string
+
+All strings must be legal filename strings.
+
+When encountered, a planet-request is interpreted as requiring the
+given file name from the given logical package, specified by the
+client's host language (automatically deduced by the client), the
+package spec and the collection specification, if given. If no
+VER-SPEC is provided, the most recent version is assumed. If no
+owner-name/path ... clause is provided, the default package is
+assumed.
+
+_config.ss: client configuration_
+
+This file provides several parameters useful for configuring how
+PLaneT works. 
+
+Parameters:
+
+> PLANET-SERVER-NAME: parameter[string]
+
+The name of the PLaneT server to which the client should connect if it
+needs to fetch a package. The default value for this parameter is
+"planet.plt-scheme.org".
+
+> PLANET-SERVER-PORT: parameter[Nat]
+
+The port on the server the client should connect to. The default value
+for this parameter is 10000.
+
+> PLANET-DIR: parameter[directory]
+
+The root PLaneT directory. Default is the directory in which config.ss
+is found.
+
+> CACHE-DIR: parameter[directory]
+
+The root of the PLaneT client's cache directory. The default is the
+"planet-cache" subdirectory of the root PLaneT directory.
+
+> LINKAGE-FILE: parameter[file]
+
+The file to use as the first place PLaneT looks to determine how a
+particular PLaneT dependence in a file should be satisfied. The
+contents of this file are used to ensure that no "magic upgrades"
+occur after a package is installed. The default is the file "LINKAGE"
+in the root PLaneT directory.
+
+> LOG-FILE: parameter[file or #f]
+
+If #f, indicates that no logging should take place. Otherwise
+specifies the file into which logging should be written. The default
+is the file "INSTALL-LOG" in the root PLaneT directory.
+
+
+Note that while these parameters can be useful to modify
+programmatically, PLaneT code runs at module-expansion time and so
+most user programs cannot set them until PLaneT has already
+run. Therefore to meaningfully change these settings it is best to
+manually edit the config.ss file.
+
+_util.ss: utility functions_
+
+The functions in this module support examination of the pieces of
+PLaneT. They are meant primarily to support debugging and to allow
+easier development of higher-level package-management tools.
+
+_current-cache-contents_ : -> ((string ((string ((nat (nat ...)) ...)) ...)) ...)
+
+Returns a listing of all package names and versions installed in the
+local cache.
+
+_current-linkage_: -> ((filename (package-name nat nat) ...) ...)
+
+Gives the current linkage table.
+
+_make-planet-archive_: directory [file] -> file
+
+Makes a .plt archive file suitable for PLaneT whose contents are all
+files in the given directory and returns that file's name.  If the
+optional filename argument is provided, that filename will be used as
+the output file's name.
+
+For more information about making packages available on PLaneT, see
+the PLaneT Developer's Guide in the file DEVELOPER.txt in
+collects/planet.

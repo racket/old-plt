@@ -6,7 +6,7 @@
 
   #| The util collection provides a number of useful functions for interacting with the PLaneT system. |#
   
-  (provide current-repository-contents
+  (provide current-cache-contents
            current-linkage
            make-planet-archive)
   
@@ -25,10 +25,10 @@
   
   
   
-  ;; current-repository-contents : -> ((string ((string ((nat (nat ...)) ...)) ...)) ...)
+  ;; current-cache-contents : -> ((string ((string ((nat (nat ...)) ...)) ...)) ...)
   ;; returns the packages installed in the local PLaneT cache
   ;; bug: this code is godawful
-  (define (current-repository-contents)
+  (define (current-cache-contents)
     (let ((tree (cadr (directory->tree (cache-dir) (lambda (x) (not (regexp-match ".*/CVS$" x)))))))
       (map
        (lambda (usr+)
@@ -56,6 +56,11 @@
   (define (current-linkage)
     (void))
   
+  ;; make-planet-archive: directory [file] -> file
+  ;; Makes a .plt archive file suitable for PLaneT whose contents are
+  ;; all files in the given directory and returns that file's name.
+  ;; If the optional filename argument is provided, that filename will 
+  ;; be used as the output file's name.
   (define make-planet-archive
     (case-lambda
       [(dir) 

@@ -263,7 +263,14 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
         [(#f str) #f])))
   
   (require (lib "date.ss"))
-  (define (current-time) (date->string (seconds->date (current-seconds))))
+  (define (current-time) 
+    (let ((date (seconds->date (current-seconds))))
+      (parameterize ((date-display-format 'rfc2822))
+        (format "~a ~a:~a:~a" 
+                (date->string date)
+                (date-hour date)
+                (date-minute date)
+                (date-second date)))))
   
   ; install-pkg : FULL-PKG-SPEC string Nat Nat -> PKG
   ; install the given pkg to the planet cache and return a path to it as a string
@@ -276,17 +283,24 @@ attempted to load version ~a.~a while version ~a.~a was already loaded"
                     (list (pkg-spec-name pkg) (number->string maj) (number->string min))))))
       (if (directory-exists? the-dir)
           (raise (make-exn:module 
-                  "Internal error: trying to install already-installed package" 
+                  "Internal PLaneT error: trying to install already-installed package" 
                   (current-continuation-marks)))
           (begin
             (make-directory* the-dir)
-            (with-output-to-file (LOG-FILE)
-              (lambda () 
+            (let* ((null-out (make-custom-output-port 
+                              #f 
+                              (lambda (s start end buffer-ok?) (- end start))
+                              void void))
+                   (outport
+                    (if (LOG-FILE)
+                        (with-handlers ((exn:i/o? (lambda (e) null-out)))
+                          (open-output-file (LOG-FILE) 'append))
+                        null-out)))
+              (parameterize ((current-output-port outport))
                 (printf "\n============= Installing ~a on ~a =============\n" 
                         (pkg-spec-name pkg)
                         (current-time))
-                (run-single-installer str (lambda () the-dir)))
-              'append)
+                (run-single-installer str (lambda () the-dir))))
             (make-pkg (pkg-spec-name pkg) (pkg-spec-path pkg) maj min the-dir)))))
          
   ; download-package : FULL-PKG-SPEC -> RESPONSE

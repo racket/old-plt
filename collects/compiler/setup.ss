@@ -61,6 +61,7 @@
 			     base))))))))
 
 (printf "PLT home directory is ~a~n" plthome)
+(printf "Collection Paths are: ~a~n" (current-library-collection-paths))
 
 (define (warning s x)
   (printf s

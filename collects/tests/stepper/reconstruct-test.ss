@@ -161,5 +161,19 @@
                  ((,highlight-placeholder) ((if true 3 4)))
                  ((,highlight-placeholder) (3))))
 
+(test-sequence (list #'(cond [false 4] [false 5] [true 3]))
+               `((((cond (,highlight-placeholder 4) (false 5) (true 3))) (false))
+                 (((cond (,highlight-placeholder 4) (false 5) (true 3))) (false))
+                 ((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
+                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
+                 (((cond (,highlight-placeholder 5) (true 3)) (false)))
+                 (((cond (,highlight-placeholder 5) (true 3)) (false)))
+                 ((,highlight-placeholder) ((cond (false 5) (true 3))))
+                 ((,highlight-placeholder) ((cond (true 3))))
+                 (((cond (,highlight-placeholder 3))) (true))
+                 (((cond (,highlight-placeholder 3))) (true))
+                 ((,highlight-placeholder) ((cond (true 3))))
+                 ((,highlight-placeholder) ((cond)))))
+
 
 (report-errs)

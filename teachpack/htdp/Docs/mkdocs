@@ -1,8 +1,7 @@
 #!/bin/sh
 string=? ; exec mzscheme -qr $0 "$@"
 
-; for john
-
+; for john? 
 
 ; This list determines the order of libraries in the index file:
 (define libraries
@@ -23,6 +22,7 @@ string=? ; exec mzscheme -qr $0 "$@"
     "Rectangles"
     "Ping-Pong"
     "Protect-the-Wall"
+    "Scheme Web Servlets"
     ))
 
 ; Defines go to be the go from thtml2html

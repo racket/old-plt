@@ -239,7 +239,7 @@
 		     (eq? 'empty sdl))
 		(and (FlowType? ftype)
 		     (or (eq? 'class sdl)
-			 (and (cons? sdl)
+			 (and (pair? sdl)
 			      (eq? (car sdl) 'class)))))
 	    (mrspidey:add-summary "Class check" open 0)
 	    (add-check! open "class") ; this turns "class" red

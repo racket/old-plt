@@ -9,7 +9,8 @@
  (require-relative-library "bullets.ss"))
 
 (define-signature browser:html^
-  (html-convert))
+  (html-convert
+   html-status-handler))
 
 (define-signature browser^
   (open-url

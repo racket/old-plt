@@ -159,6 +159,8 @@
 			(bell))))))
 	  (bell))]))
 
+  (define last-url-string #f)
+
   (let* ([mb (make-object menu-bar% f)]
 	 [file (make-object menu% "&File" mb)]
 	 [edit (make-object menu% "&Edit" mb)])
@@ -215,8 +217,15 @@
 								    (message-box "Bad URL" 
 										 (format "Bad URL: ~a" (exn-message x))
 										 d))])
-						   (let ([url (string->url s)])
+						   (let ([url (string->url 
+							       (cond
+								[(regexp-match ":" s) s]
+								[(regexp-match "^[a-zA-Z][a-zA-Z.]*($|/)" s)
+								 (string-append "http://" s)]
+								[else
+								 (string-append "file:" s)]))])
 						     (send results goto-url url #f)
+						     (set! last-url-string s)
 						     (send d show #f)))))
 					     '(border))]
 			    [update-ok (lambda () (send ok enable 
@@ -224,6 +233,8 @@
 									 last-position))))]
 			    [cancel (make-object button% "Cancel" p 
 						 (lambda (b e) (send d show #f)))])
+		     (when last-url-string 
+		       (send t set-value last-url-string))
 		     (send p set-alignment 'right 'center)
 		     (send ok enable #f)
 		     (send d center)

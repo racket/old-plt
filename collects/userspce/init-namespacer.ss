@@ -1,4 +1,4 @@
-(require-library "pretty.ss")
+
 (unit/sig plt:init-namespace^
   (import plt:basis-import^
 	  [init-params : plt:init-params^]
@@ -135,9 +135,8 @@
                         : ()
                         ((unit/sig ()
                            (import ,macros-signature)
-                           (printf "adding signatures~n")
-                           ,@(map (lambda (x) `(,extend-vocab vocab ',x ,x)) 
-                                  signature))
+                           ,@(map (lambda (x) `(,extend-vocab (unbox vocab-box) ',x ,x)) 
+                                  macros-signature))
                          macros)])
                  (export)))
             (begin
@@ -187,21 +186,32 @@
            [(zodiac:match-against m&e expr env)
             =>
             (lambda (pattern-env)
-              (let ([elements (zodiac:pexpand '(elements ...) pattern-env kwd)])
+              (let ([cache-table (make-hash-table)]
+		    [elements (zodiac:pexpand '(elements ...) pattern-env kwd)])
                 (unless (procedure-arity-includes? func (length elements))
                   (zodiac:interface:static-error
                    (symbol->string symbol) symbol
                    (zodiac:sexp->raw expr)
                    (format "expected ~a, got ~a" (pp-arity func) (length elements))))
-                (zodiac:expand-expr
-                 (zodiac:structurize-syntax 
-                  (apply func (map zodiac:sexp->raw elements))
-                  expr)
-                 env 
-                 attrib 
-                 (zodiac:create-vocabulary
-                  'scheme-w/user-defined-macros/drscheme
-                  zodiac:scheme-vocabulary))))]
+		(let* ([structurized
+			(zodiac:structurize-syntax 
+			 (apply func (map (lambda (x) (zodiac:sexp->raw x cache-table)) elements))
+			 expr '() cache-table)]
+		       [scheme-vocab
+			(zodiac:create-vocabulary
+			 'scheme-w/user-defined-macros/drscheme
+			 zodiac:scheme-vocabulary)]
+		       [expanded
+			(parameterize ([current-namespace (make-namespace)])
+			  (zodiac:prepare-current-namespace-for-vocabulary scheme-vocab)
+			  (zodiac:expand-expr
+			   structurized
+			   env 
+			   attrib
+			   scheme-vocab))])
+		  ;(printf "structurized~n~a~n~n" structurized)
+		  ;(printf "expanded~n~a~n~n" expanded)
+		  expanded)))]
            [else 
             (zodiac:interface:static-error
              (symbol->string symbol) symbol
@@ -239,70 +249,67 @@
                          (set! bad-teachpacks (cons (car teachpack-strings) bad-teachpacks))
                          (loop (cdr teachpack-strings)
                                link-clauses))))]))]
-           [eeval
-            (lambda (x)
-              ((global-defined-value 'pretty-print) x)
-              (eval x))]
+	   [vocab-box (box #f)]
            [cu
-            (eeval
-             `(lambda (vocab)
-                (compound-unit/sig
-                  (import)
-                  (link
-                   ,@(list*
-                      `[userspace
-                        : plt:userspace^ 
-                        (,(if (defined? 'mred@)
-                              `(compound-unit/sig
-                                 (import)
-                                 (link [core : mzlib:core-flat^ (,core-flat@)]
-                                       [mred : mred^ (,(global-defined-value 'mred@))]
-                                       [turtles : turtle^ ((require-library "turtler.ss" "graphics")
-                                                           (core : mzlib:function^))]
-                                       [posn : ((struct posn (x y)))
-                                             ((unit/sig ((struct posn (x y)))
-                                                (import)
-                                                (define-struct posn (x y))))])
-                                 (export (open core)
-                                         (open mred)
-                                         (open posn)
-                                         (open turtles)))
-                              `(compound-unit/sig 
-                                 (import)
-                                 (link [core : mzlib:core-flat^ (,core-flat@)]
-                                       [posn : ((struct posn (x y)))
-                                             ((unit/sig ((struct posn (x y)))
-                                                (import)
-                                                (define-struct posn (x y))))])
-                                 (export (open core)
-                                         (open posn)))))]
-                      `[language-specific-additions
-                        : ()
-                        ((unit/sig ()
-                           (import plt:userspace^)
-                           
-                           (cond
-                             [(,init-params:beginner-language? (,init-params:current-setting))
-                              ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
-                             [(,init-params:intermediate-language? (,init-params:current-setting))
-                              ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
-                             [(or (,init-params:advanced-language? (,init-params:current-setting))
-                                  (,init-params:setting-teaching-primitives-and-syntax?
-                                   (,init-params:current-setting)))
-                              ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
-                             [else (void)]))
-                         userspace)]
-                      
-                      link-clauses))
-                  (export))))])
+            (eval
+             `(let ([vocab-box ,vocab-box])
+		(compound-unit/sig
+		  (import)
+		  (link
+		   ,@(list*
+		      `[userspace
+			: plt:userspace^ 
+			(,(if (defined? 'mred@)
+			      `(compound-unit/sig
+				 (import)
+				 (link [core : mzlib:core-flat^ (,core-flat@)]
+				       [mred : mred^ (,(global-defined-value 'mred@))]
+				       [turtles : turtle^ ((require-library "turtler.ss" "graphics")
+							   (core : mzlib:function^))]
+				       [posn : ((struct posn (x y)))
+					     ((unit/sig ((struct posn (x y)))
+						(import)
+						(define-struct posn (x y))))])
+				 (export (open core)
+					 (open mred)
+					 (open posn)
+					 (open turtles)))
+			      `(compound-unit/sig 
+				 (import)
+				 (link [core : mzlib:core-flat^ (,core-flat@)]
+				       [posn : ((struct posn (x y)))
+					     ((unit/sig ((struct posn (x y)))
+						(import)
+						(define-struct posn (x y))))])
+				 (export (open core)
+					 (open posn)))))]
+		      `[language-specific-additions
+			: ()
+			((unit/sig ()
+			   (import plt:userspace^)
+			   
+			   (cond
+			    [(,init-params:beginner-language? (,init-params:current-setting))
+			     ,@(build-gdvs (signature->symbols plt:beginner-extras^))]
+			    [(,init-params:intermediate-language? (,init-params:current-setting))
+			     ,@(build-gdvs (signature->symbols plt:intermediate-extras^))]
+			    [(or (,init-params:advanced-language? (,init-params:current-setting))
+				 (,init-params:setting-teaching-primitives-and-syntax?
+				  (,init-params:current-setting)))
+			     ,@(build-gdvs (signature->symbols plt:advanced-extras^))]
+			    [else (void)]))
+			 userspace)]
+		      
+		      link-clauses))
+		  (export))))])
       (values
        (lambda (vocab)
+	 (set-box! vocab-box vocab)
 	 (with-handlers ([(lambda (x) #t)
 			  (lambda (x)
 			    (invalid-teachpack (exn-message x))
 			    #f)])
-	   (invoke-unit/sig
-	    (cu vocab))))
+	   (invoke-unit/sig cu)))
        bad-teachpacks)))
   
   (define (teachpack-ok? x)

@@ -625,41 +625,45 @@
              (lambda (i)
                (let ([e (send message get-editor)]
                      [uid (send i user-data)])
-                 (send e lock #f)
-                 (send e begin-edit-sequence)
-                 (send e erase)
-                 (set-current-selected #f)
-                 (let* ([h (get-header uid)]
-                        [small-h (if show-full-headers?
-                                     h
-                                     (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
-                                                [small-h empty-header])
-                                       (if (null? l)
-                                           small-h
-                                           (let ([v (extract-field (car l) h)])
-                                             (if v
-                                                 (loop (cdr l) (insert-field
-                                                                (car l)
-                                                                v
-                                                                small-h))
-                                                 (loop (cdr l) small-h))))))])
-                   (send e insert (crlf->lf small-h)
-                         0 'same #f))
-                 (send e insert 
-                       (crlf->lf (as-background 
-                                  enable-main-frame
-                                  (lambda (break-bad break-ok) 
-                                    (with-handlers ([void
-                                                     (lambda (x) "<interrupted>")])
-                                      (get-body uid)))
-                                  void))
-                       (send e last-position) 'same #f)
-                 (when SHOW-URLS (hilite-urls e))
-                 ;(handle-formatting e) ; too slow
-                 (send e set-position 0)
-                 (set-current-selected i)
-                 (send e end-edit-sequence)
-                 (send e lock #t)))])
+		 (dynamic-wind
+		     (lambda ()
+		       (send e lock #f)
+		       (send e begin-edit-sequence))
+		     void
+		     (lambda ()
+		       (send e erase)
+		       (set-current-selected #f)
+		       (let* ([h (get-header uid)]
+			      [small-h (if show-full-headers?
+					   h
+					   (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
+						      [small-h empty-header])
+					     (if (null? l)
+						 small-h
+						 (let ([v (extract-field (car l) h)])
+						   (if v
+						       (loop (cdr l) (insert-field
+								      (car l)
+								      v
+								      small-h))
+						       (loop (cdr l) small-h))))))])
+			 (send e insert (crlf->lf small-h)
+			       0 'same #f))
+		       (send e insert 
+			     (crlf->lf (as-background 
+					enable-main-frame
+					(lambda (break-bad break-ok) 
+					  (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
+					    (get-body uid)))
+					void))
+			     (send e last-position) 'same #f)
+		       (when SHOW-URLS (hilite-urls e))
+		       ;;(handle-formatting e) ; too slow
+		       (send e set-position 0)
+		       (set-current-selected i))
+		     (lambda ()
+		       (send e end-edit-sequence)
+		       (send e lock #t)))))])
           (sequence
             (apply super-init args)
             (show-focus #t))))

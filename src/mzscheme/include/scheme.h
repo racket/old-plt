@@ -152,7 +152,7 @@ typedef struct FSSpec mzFSSpec;
 
 /* PPC Linux plays a slimy trick: it defines strcpy() as a macro that
    uses __extension__. This breaks the 3m xform. */
-#if defined(MZ_PRECISE_GC) && defined(strcpy)
+#if defined(MZ_XFORM) && defined(strcpy)
 START_XFORM_SKIP;
 static inline void _mzstrcpy(char *a, const char *b)
 {

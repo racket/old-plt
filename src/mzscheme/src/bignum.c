@@ -117,7 +117,7 @@ static void *copy_to_protected(void *p, long len, int zero)
 # define FINISH_RESULT(digarray, len) /* no-op */
 #endif
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -151,7 +151,7 @@ Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
   return (Scheme_Object *)o;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

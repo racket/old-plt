@@ -73,7 +73,7 @@ static Scheme_Object *print_hash_table(int, Scheme_Object *[]);
 
 #define mzSPAN(port, pos)  (scheme_tell(port) - pos + 1)
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 static long SPAN(Scheme_Object *port, long pos) { return mzSPAN(port, pos); }
 #else
 #define SPAN(port, pos) mzSPAN(port, pos)

@@ -398,7 +398,7 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
   return 0;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -470,7 +470,7 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Thread *p)
   return cycle;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

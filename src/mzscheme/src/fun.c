@@ -2673,7 +2673,7 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 #define CLOCKS_PER_SEC 1000000
 #endif
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -2767,7 +2767,7 @@ long scheme_get_process_milliseconds(void)
 #endif
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

@@ -591,7 +591,7 @@ Scheme_Object * scheme_make_eof (void)
 #ifdef USE_DYNAMIC_FDSET_SIZE
 static int dynamic_fd_size;
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -620,7 +620,7 @@ void *scheme_alloc_fdset_array(int count, int permanent)
     return scheme_malloc_atomic(count * dynamic_fd_size);
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -854,7 +854,7 @@ void scheme_remember_subthread(struct Scheme_Thread_Memory *tm, void *t)
   tm->subhandle = t;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -919,7 +919,7 @@ void scheme_resume_remembered_threads(void)
   }
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -3713,7 +3713,7 @@ make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode, 
 
 # ifdef WINDOWS_FILE_HANDLES
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -3770,7 +3770,7 @@ static void WindowsFDICleanup(Win_FD_Input_Thread *th)
   free(th);
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -4813,7 +4813,7 @@ static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client 
 
 #ifdef WINDOWS_FILE_HANDLES
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -4889,7 +4889,7 @@ static void WindowsFDOCleanup(Win_FD_Output_Thread *oth)
   free(oth);
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -4968,7 +4968,7 @@ static int MyPipe(int *ph, int near_index) {
 
 # define WAITANY(s) waitpid((pid_t)-1, s, WNOHANG)
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -5024,7 +5024,7 @@ static void child_done(int ingored)
 # endif
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -5929,7 +5929,7 @@ typedef struct
   fd_set *rd, *wr, *ex;
 } Tcp_Select_Info;
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -5944,7 +5944,7 @@ static long select_for_tcp(void *data)
   return 0;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -5984,7 +5984,7 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
    is called in a non-main thread. */
 
 #ifdef OS_X
-# ifdef MZ_PRECISE_GC
+# ifdef MZ_XFORM
 START_XFORM_SKIP;
 # endif
 #endif
@@ -6239,12 +6239,12 @@ static void default_sleep(float v, void *fds)
 }
 
 #ifdef OS_X
-# ifdef MZ_PRECISE_GC
+# ifdef MZ_XFORM
 END_XFORM_SKIP;
 # endif
 #endif
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -6259,7 +6259,7 @@ void scheme_signal_received(void)
 #endif
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -6278,7 +6278,7 @@ static HANDLE itimer;
 static OS_SEMAPHORE_TYPE itimer_semaphore;
 static long itimer_delay;
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -6294,7 +6294,7 @@ static long ITimer(void)
   }
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

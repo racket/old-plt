@@ -343,7 +343,7 @@ int osk_not_console = 0;
 static void dangerdanger(int);
 #endif
 
-#ifndef MZ_PRECISE_GC
+#ifndef MZ_XFORM
 # ifndef GC_CAN_IGNORE
 #  define GC_CAN_IGNORE /**/
 # endif

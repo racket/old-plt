@@ -1156,7 +1156,7 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
   return kill_self;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -1196,7 +1196,7 @@ static void for_each_managed(Scheme_Type type, Scheme_For_Each_Func cf)
   }
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -2548,7 +2548,7 @@ void scheme_out_of_fuel(void)
 #ifdef USE_ITIMER
 static int itimer_handler_installed = 0;
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -2560,7 +2560,7 @@ static void timer_expired(int ignored)
 #  endif
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -4603,7 +4603,7 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 /*                              namespaces                                */
 /*========================================================================*/
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -4613,7 +4613,7 @@ Scheme_Env *scheme_get_env(Scheme_Config *c)
   return (Scheme_Env *)o;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 
@@ -4929,7 +4929,7 @@ static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost)
 /*                         GC preparation and timing                      */
 /*========================================================================*/
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -5090,7 +5090,7 @@ static void done_with_GC()
   scheme_total_gc_time += (scheme_get_process_milliseconds() - start_this_gc_time);
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

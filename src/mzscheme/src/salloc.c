@@ -43,6 +43,10 @@ static int dgc_size;
 
 extern int scheme_num_copied_stacks;
 
+#if defined(MZ_XFORM) && !defined(MZ_PRECISE_GC)
+void **GC_variable_stack;
+#endif
+
 extern MZ_DLLIMPORT void (*GC_out_of_memory)(void);
 extern MZ_DLLIMPORT void GC_register_late_disappearing_link(void **link, void *obj);
 
@@ -266,7 +270,7 @@ void *scheme_malloc_eternal(size_t n)
 #endif
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -284,7 +288,7 @@ void scheme_register_static(void *ptr, long size)
 #endif
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

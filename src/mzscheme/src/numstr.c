@@ -213,7 +213,7 @@ static Scheme_Object *read_special_number(const char *str, int pos)
 /* Fixes SunOS problem with numbers like .3e2666666666666 => 0.0 */
 /* Fixes HP/UX problem with numbers like .3e2666666666666 => non-number */
 
-# ifdef MZ_PRECISE_GC
+# ifdef MZ_XFORM
 END_XFORM_ARITH;
 # endif
 
@@ -301,7 +301,7 @@ static double STRTOD(const char *orig_c, char **f)
   /* It's OK if c is ok: */
   return strtod(orig_c, NULL);
 }
-# ifdef MZ_PRECISE_GC
+# ifdef MZ_XFORM_GC
 START_XFORM_ARITH;
 # endif
 #else

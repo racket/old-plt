@@ -96,7 +96,7 @@ MSC_IZE(inline)
 #endif
 Scheme_Object *force_rat(Scheme_Object *n, Small_Rational *sr);
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -113,7 +113,7 @@ Scheme_Object *force_rat(Scheme_Object *n, Small_Rational *sr)
     return scheme_make_small_bn_rational(n, sr);
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

@@ -28,7 +28,7 @@
 ;;       which can break "if (...) return; else ...".
 
 ;; To call for Precise GC:
-;;   mzscheme -qr xform.ss [--notes] [--depends] <cpp> <src> <dest>
+;;   mzscheme -qr xform.ss [--notes] [--depends] [--cgc] <cpp> <src> <dest>
 ;;
 ;; To call for Palm:
 ;;   mzscheme -qr xform.ss [--notes] [--depends] --palm <cpp> <src> <dest> <mapdest>
@@ -72,6 +72,7 @@
 
   (define palm? #f)
   (define pgc? #t)
+  (define pgc-really? #t)
 
   ;; Selects whether to reset GC_variable_stack on return,
   ;; or to just reset it on every call.
@@ -100,12 +101,19 @@
 					  (set! output-depends-info? #t)
 					  (cdr l))
 					l)])
-			     (if (string=? (car l) "--palm")
-				 (begin
-				   (set! palm? #t)
-				   (set! pgc? #f)
-				   (cdr l))
-				 l)))))))
+			     (let ([l (if (string=? (car l) "--palm")
+					  (begin
+					    (set! palm? #t)
+					    (set! pgc? #f)
+					    (set! pgc-really? #f)
+					    (cdr l))
+					  l)])
+			       (let ([l (if (string=? (car l) "--cgc")
+					    (begin
+					      (set! pgc-really? #f)
+					      (cdr l))
+					    l)])
+				 l))))))))
   
   (define (filter-false s)
     (if (string=? s "-")
@@ -496,7 +504,11 @@
   (define cpp-process
     (process2 (format "~a~a~a ~a"
 		      cpp
-		      (if pgc? " -DMZ_PRECISE_GC" "")
+		      (if pgc?
+			  (if pgc-really? 
+			      " -DMZ_XFORM -DMZ_PRECISE_GC"
+			      " -DMZ_XFORM")
+			  "")
 		      (if callee-restore? " -DGC_STACK_CALLEE_RESTORE" "")
 		      file-in)))
   (close-output-port (cadr cpp-process))
@@ -743,6 +755,10 @@
     (printf (if callee-restore?
 		"#define XFORM_RESET_VAR_STACK /* empty */~n"
 		"#define XFORM_RESET_VAR_STACK GC_VARIABLE_STACK = (void **)__gc_var_stack__[0];~n"))
+    
+    (unless pgc-really?
+      (printf "#include \"cgc2.h\"~n"))
+
     (printf "~n"))
 
   (when (and pgc? precompiled-header)

@@ -52,7 +52,7 @@ Scheme_Object *scheme_integer_to_rational(const Scheme_Object *n)
   return make_rational(n, one, 0);
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 START_XFORM_SKIP;
 #endif
 
@@ -74,7 +74,7 @@ Scheme_Object *scheme_make_small_bn_rational(Scheme_Object *n, Small_Rational *s
   return (Scheme_Object *)s;
 }
 
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 END_XFORM_SKIP;
 #endif
 

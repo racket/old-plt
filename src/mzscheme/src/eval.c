@@ -3380,7 +3380,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  Scheme_Object **stack;
 	  int k;
 	  int d_evals;
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 # define GET_FIRST_EVAL ((char *)app)[d_evals]
 #else
 	  char *evals;	  
@@ -3392,7 +3392,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  num_rands = app->num_args;
 	  
 	  d_evals = sizeof(Scheme_App_Rec) + (num_rands * sizeof(Scheme_Object *));
-#ifndef MZ_PRECISE_GC
+#ifndef MZ_XFORM
 	  evals = ((char *)obj) + d_evals;
 #endif
 
@@ -3421,14 +3421,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  }
 
 	  if (num_rands) {
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 	    int evalpos = 1;
 #endif
 
 	    rands = stack;
 	
 	    /* Inline local & global variable lookups for speed */
-#ifdef MZ_PRECISE_GC
+#ifdef MZ_XFORM
 # define GET_NEXT_EVAL ((char *)app)[d_evals + evalpos++]	    
 # define GET_NEXT_ARG app->args[evalpos]
 #else

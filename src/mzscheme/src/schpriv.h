@@ -63,7 +63,7 @@
 # define HT_EXTRACT_WEAK(x) (*(char **)(x))
 #endif
 
-#ifndef MZ_PRECISE_GC
+#ifndef MZ_XFORM
 # define START_XFORM_SKIP /**/
 # define END_XFORM_SKIP /**/
 # define GC_CAN_IGNORE /**/
@@ -101,7 +101,7 @@ void scheme_reset_finalizations(void);
 
 extern unsigned long scheme_get_stack_base();
 
-#ifndef MZ_PRECISE_GC
+#ifndef MZ_XFORM
 # define HIDE_FROM_XFORM(x) x
 #endif
 

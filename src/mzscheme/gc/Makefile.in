@@ -26,7 +26,7 @@ AS= @AS@ $(ABI_FLAG)
 # compiler options; mainly used to allow importing options
 OPTIONS=@OPTIONS@
 
-CFLAGS= -DNO_SIGNALS @CFLAGS@ $(OPTIONS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC
+CFLAGS= -DNO_SIGNALS @CFLAGS@ $(OPTIONS) -DNO_EXECUTE_PERMISSION -DSILENT -DOLD_BLOCK_ALLOC -DLARGE_CONFIG
 # Setjmp_test may yield overly optimistic results when compiled
 #  without optimization.
 # For dynamic library builds, it may be necessary to add flags to generate

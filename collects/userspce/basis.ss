@@ -430,9 +430,11 @@
     (define (drscheme-eval-handler sexp)
       (if (and (setting-use-zodiac? (current-setting))
 	       (eq? (current-namespace) (current-zodiac-namespace)))
-	  (let* ([z (or (unbox aries:error-box)
-			(let ([loc (zodiac:make-location INITIAL-LINE INITIAL-COLUMN INITIAL-OFFSET 'eval)])
-			  (zodiac:make-zodiac 'mzrice-eval loc loc)))]
+	  (let* ([z (let ([continuation-stack (current-continuation-marks aries:w-c-m-key)])
+		      (if (null? continuation-stack)
+			  (let ([loc (zodiac:make-location INITIAL-LINE INITIAL-COLUMN INITIAL-OFFSET 'eval)])
+			    (zodiac:make-zodiac 'mzrice-eval loc loc))
+			  (car continuation-stack)))]
 		 [answer (list (void))]
 		 [f
 		  (lambda (annotated recur)

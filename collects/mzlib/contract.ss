@@ -37,7 +37,8 @@ add struct contracts for immutable structs?
   
   (require "private/class-internal.ss"
            "etc.ss"
-           "list.ss")
+           "list.ss"
+           "pretty.ss")
   
   (require (lib "contract-helpers.scm" "mzlib" "private"))
   (require-for-syntax (prefix a: (lib "contract-helpers.scm" "mzlib" "private")))
@@ -524,23 +525,21 @@ add struct contracts for immutable structs?
                   flat-contract?
                   
                   make-contract
-                  contract-mk-name
+                  contract-name
                   contract-proc
                   contract?)
     (let ()
-      (define-struct contract (mk-name proc))
+      (define-struct contract (name proc))
       (define-struct (flat-contract contract) (predicate))
       (values make-flat-contract
               flat-contract-predicate
               flat-contract?
               
               make-contract
-              contract-mk-name
+              contract-name
               contract-proc
               contract?)))
-   
-  (define (contract-name ctc) ((contract-mk-name ctc) #f))
-  
+
   (define (test-proc/flat-contract f x)
     (if (flat-contract? f)
         ((flat-contract-predicate f) x)
@@ -558,22 +557,17 @@ add struct contracts for immutable structs?
   
   ;; build-compound-type-name : (union contract symbol) ... -> (union path #f) -> sexp
   (define (build-compound-type-name . fs)
-    (lambda (path)
-      (let loop ([subs fs]
-                 [i 0])
-        (cond
-          [(null? subs)
-           '()]
-          [else (let ([sub (car subs)])
-                  (cond
-                    [(contract? sub)
-                     (let ([mk-sub-name (contract-mk-name sub)])
-                       (cond
-                         [(and (pair? path)
-                               (equal? (car path) i))
-                          `((XXX ,(mk-sub-name #f)) ,@(loop (cdr subs) (+ i 1)))]
-                         [else `(,(mk-sub-name #f) ,@(loop (cdr subs) (+ i 1)))]))]
-                    [else `(,sub ,@(loop (cdr subs) i))]))]))))
+    (let loop ([subs fs]
+               [i 0])
+      (cond
+        [(null? subs)
+         '()]
+        [else (let ([sub (car subs)])
+                (cond
+                  [(contract? sub)
+                   (let ([mk-sub-name (contract-name sub)])
+                     `(,mk-sub-name ,@(loop (cdr subs) (+ i 1))))]
+                  [else `(,sub ,@(loop (cdr subs) i))]))])))
   
   (define (flat-contract predicate)
     (unless (and (procedure? predicate)
@@ -592,13 +586,11 @@ add struct contracts for immutable structs?
       (error 'flat-named-contract
              "expected procedure of one argument as second argument, given: ~e, fst arg ~e"
              predicate name))
-    (build-flat-contract
-     (lambda (path) name)
-     predicate))
+    (build-flat-contract name predicate))
   
-  (define (build-flat-contract mk-name predicate)
+  (define (build-flat-contract name predicate)
     (make-flat-contract 
-     mk-name
+     name
      (lambda (pos neg src-info orig-str) 
        (lambda (val)
          (if (predicate val)
@@ -609,7 +601,7 @@ add struct contracts for immutable structs?
               neg
               orig-str
               "expected <~a>, given: ~e"
-              (mk-name #f)
+              name
               val))))
      predicate))
 
@@ -656,8 +648,16 @@ add struct contracts for immutable structs?
     
   ;; raise-contract-error : (union syntax #f) symbol symbol string string args ... -> alpha
   ;; doesn't return
-  (define (raise-contract-error src-info to-blame other-party orig-str fmt . args)
+  (define (raise-contract-error src-info to-blame other-party contract-sexp fmt . args)
     (let ([blame-src (src-info-as-string src-info)]
+          [formatted-contract-sexp
+           (let ([one-line (format "~s" contract-sexp)])
+             (if (< (string-length one-line) 30)
+                 (string-append one-line ": ")
+                 (let ([sp (open-output-string)])
+                   (newline sp)
+                   (pretty-print contract-sexp sp)
+                   (get-output-string sp))))]
 	  [specific-blame
 	   (let ([datum (syntax-object->datum src-info)])
 	     (if (symbol? datum)
@@ -666,12 +666,12 @@ add struct contracts for immutable structs?
       (raise
        (make-exn:fail
         (string->immutable-string
-         (string-append (format "~a~a: ~a ~a ~a: "
+         (string-append (format "~a~a: ~a ~a ~a"
                                 blame-src
                                 other-party
                                 to-blame
                                 specific-blame
-                                orig-str)
+                                formatted-contract-sexp)
                         (apply format fmt args)))
         (current-continuation-marks)))))
   
@@ -1173,8 +1173,9 @@ add struct contracts for immutable structs?
           [else (raise-syntax-error 'object-contract "unknown method contract syntax" stx mtd-stx)]))
       
       ;; build-methods-stx : syntax[list of lambda arg specs] -> syntax[method realized as proc]
-      (define (build-methods-stx arg-spec-stxss)
-        (let loop ([arg-spec-stxss arg-spec-stxss]
+      (define (build-methods-stx mtds)
+        (let loop ([arg-spec-stxss (map mtd-mtd-arg-stx mtds)]
+                   [names (map mtd-name mtds)]
                    [i 0])
           (cond
             [(null? arg-spec-stxss) null]
@@ -1202,10 +1203,13 @@ add struct contracts for immutable structs?
                                                             (wrapper-object-wrapped this)
                                                             rest-ids ...
                                                             last-var)))))])))
-                                        (syntax->list arg-spec-stxs))])
-                      (cons (syntax (lambda (field-ref) (case-lambda cases ...)))
-                            (loop (cdr arg-spec-stxss)
-                                  (+ i 1)))))])))
+                                        (syntax->list arg-spec-stxs))]
+                                  [name (string->symbol (format "~a method" (syntax-object->datum (car names))))])
+                      (with-syntax ([proc (syntax-property (syntax (case-lambda cases ...)) 'method-arity-error #t)])
+                        (cons (syntax (lambda (field-ref) (let ([name proc]) name)))
+                              (loop (cdr arg-spec-stxss)
+                                    (cdr names)
+                                    (+ i 1))))))])))
       
       (define (syntax->improper-list stx)
         (define (se->il se)
@@ -1235,7 +1239,7 @@ add struct contracts for immutable structs?
                          [(method-ctc-var ...) (generate-temporaries mtds)]
                          [(method-var ...) (generate-temporaries mtds)]
                          [(method/app-var ...) (generate-temporaries mtds)]
-                         [(methods ...) (build-methods-stx (map mtd-mtd-arg-stx mtds))]
+                         [(methods ...) (build-methods-stx mtds)]
                          
                          [(field-ctc-stx ...) (map fld-ctc-stx flds)]
                          [(field-name ...) (map fld-name flds)]
@@ -1244,22 +1248,22 @@ add struct contracts for immutable structs?
                          [(field/app-var ...) (generate-temporaries flds)])
              (syntax
               (let ([method-ctc-var method-ctc-stx] ...
-                    [field-ctc-var (coerce-contract object-contract field-ctc-stx)] ...)
+                                                    [field-ctc-var (coerce-contract object-contract field-ctc-stx)] ...)
                 (let ([method-var (contract-proc method-ctc-var)] ...
-                      [field-var (contract-proc field-ctc-var)] ...)
+                                                                  [field-var (contract-proc field-ctc-var)] ...)
                   (make-contract
-                   (lambda (path)
-                     `(object-contract 
-                       ,((build-compound-type-name 'method-name method-ctc-var) path) ...
-                       ,((build-compound-type-name 'field 'field-name field-ctc-var) path) ...))
+                   `(object-contract 
+                     ,(build-compound-type-name 'method-name method-ctc-var) ...
+                     ,(build-compound-type-name 'field 'field-name field-ctc-var) ...)
                    (lambda (pos-blame neg-blame src-info orig-str)
-                     (let ([method/app-var (method-var pos-blame neg-blame src-info orig-str)] ...
-                           [field/app-var (field-var pos-blame neg-blame src-info orig-str)]...)
+                     (let ([method/app-var (method-var pos-blame neg-blame src-info orig-str)] 
+                           ...
+                           [field/app-var (field-var pos-blame neg-blame src-info orig-str)]
+                           ...)
                        (let ([cls (make-wrapper-class 'wrapper-class 
                                                       '(method-name ...)
                                                       (list methods ...)
-                                                      '(field-name ...)
-                                                      )]
+                                                      '(field-name ...))]
                              [field-names-list '(field-name ...)])
                          (lambda (val)
                            (unless (object? val)
@@ -1500,12 +1504,10 @@ add struct contracts for immutable structs?
                           (let ([dom-x (contract-proc dom-contract-x)] ...
                                 [rng-x (contract-proc rng-contract-x)] ...)
                             (let ([name-id 
-                                   (lambda (path)
-                                     ((build-compound-type-name 
-                                       '-> 
-                                       name-dom-contract-x ...
-                                       ((build-compound-type-name 'values rng-contract-x ...) path))
-                                      path))])
+                                   (build-compound-type-name 
+                                    '-> 
+                                    name-dom-contract-x ...
+                                    (build-compound-type-name 'values rng-contract-x ...))])
                               body))))))
                    
                    (lambda (outer-args inner-lambda)
@@ -1617,10 +1619,10 @@ add struct contracts for immutable structs?
                        [rng-contract-x (coerce-contract ->* rng)] ...)
                    (let ([dom-x (contract-proc dom-contract-x)] ...
                          [rng-x (contract-proc rng-contract-x)] ...)
-                     (let ([name-id (build-compound-type-name
-                                     '->*
-                                     (build-compound-type-name name-dom-contract-x ...)
-                                     (build-compound-type-name rng-contract-x ...))])
+                     (let ([name-id  (build-compound-type-name
+                                      '->*
+                                      (build-compound-type-name name-dom-contract-x ...)
+                                      (build-compound-type-name rng-contract-x ...))])
                        body))))))
             
             (lambda (outer-args inner-lambda)
@@ -1742,12 +1744,11 @@ add struct contracts for immutable structs?
                          [dom-rest-x (contract-proc dom-rest-contract-x)]
                          [rng-x (contract-proc rng-contract-x)] ...)
                      (let ([name-id 
-                            (lambda (path)
-                              (build-compound-type-name 
-                               '->*
-                               (build-compound-type-name dom-contract-x ...)
-                               dom-rest-contract-x
-                               (build-compound-type-name rng-contract-x ...)))])
+                            (build-compound-type-name 
+                             '->*
+                             (build-compound-type-name dom-contract-x ...)
+                             dom-rest-contract-x
+                             (build-compound-type-name rng-contract-x ...))])
                        body))))))
             (lambda (outer-args inner-lambda)
               (with-syntax ([(val pos-blame neg-blame src-info orig-str name-id) outer-args]
@@ -2018,7 +2019,7 @@ add struct contracts for immutable structs?
                               rng-mk-x))
                      (let ([name-id (build-compound-type-name 
                                      '->d*
-                                     (build-compound-type-name #f name-dom-contract-x ...)
+                                     (build-compound-type-name name-dom-contract-x ...)
                                      dom-rest-contract-x
                                      '(... ...))])
                        body))))))
@@ -2185,14 +2186,11 @@ add struct contracts for immutable structs?
                                                          (cdr (syntax->list (syntax (x ...))))
                                                          (syntax (x ...)))])
                           (syntax 
-                           (lambda (path)
-                             ((build-compound-type-name '->r
-                                                        `(,((build-compound-type-name 'name-xs '(... ...)) path)
-                                                           ...)
-                                                        'rest-x
-                                                        '(... ...)
-                                                        '(... ...))
-                              path))))])
+                           (build-compound-type-name '->r
+                                                     `(,(build-compound-type-name 'name-xs '(... ...)) ...)
+                                                     'rest-x
+                                                     '(... ...)
+                                                     '(... ...))))])
            (values
             (lambda (outer-args body)
               (with-syntax ([body body]
@@ -2599,7 +2597,7 @@ add struct contracts for immutable structs?
   
   (define any?
     (make-flat-contract
-     (lambda (path) 'any?)
+     'any?
      (lambda (pos neg src-info orig-str) (lambda (val) val))
      (lambda (x) #t)))
 
@@ -2741,7 +2739,7 @@ add struct contracts for immutable structs?
     (unless (flat-contract/predicate? f)
       (error 'not/c "expected a procedure of arity 1 or <flat-named-contract>, given: ~e" f))
     (build-flat-contract
-     (build-compound-type-name 'not/f (proc/ctc->ctc f))
+     (build-compound-type-name 'not/c (proc/ctc->ctc f))
      (lambda (x) (not (test-proc/flat-contract f x)))))
 
   (define (is-a?/c <%>)

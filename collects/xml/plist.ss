@@ -1,9 +1,11 @@
 (module plist mzscheme
 
-   (require "xml.ss")
+  (require "xml.ss"
+           (lib "contract.ss"))
 
-   (provide read-plist write-plist)
-   
+  (provide read-plist)
+  (provide/contract [write-plist (xexpr? output-port? . -> . void?)])
+  
    ; a dict is (list 'dict assoc-pair ...)
    ; an assoc-pair is (list 'assoc-pair key value)
    ; a key is a string

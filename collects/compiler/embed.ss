@@ -13,7 +13,7 @@
                                  #f)
   
   (provide/contract [make-embedding-executable
-                     (opt-> (path?
+                     (opt-> (path-string?
                              any?
                              any?
                              (listof (list/c (union boolean? symbol?) any?))

@@ -1978,8 +1978,24 @@
                'pos
                'neg))
    '(g))
+
   
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;
+  ;; test error message has right format
+  ;;
   
+  (test "procedure m method: expects 1 argument, given 2: 1 2"
+        'wrong-method-arity-error-message
+        (with-handlers ([exn:fail? exn-message])
+          (send (contract (object-contract [m (integer? . -> . integer?)])
+                          (new (class object% (define/public (m x) x) (super-new)))
+                          'pos
+                          'neg)
+                m
+                1
+                2)))
+        
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;
   ;; tests object utilities to be sure wrappers work right
@@ -2608,7 +2624,7 @@
   
   (test-name '(box/c boolean?) (box/c boolean?))
   (test-name '(box/c boolean?) (box/c (flat-contract boolean?)))
-  (test-name "the-name" (flat-rec-contract the-name))
+  (test-name 'the-name (flat-rec-contract the-name))
 
   (test-name '(object-contract) (object-contract))
   (test-name '(object-contract (field x integer?)) (object-contract (field x integer?)))

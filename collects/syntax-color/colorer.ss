@@ -46,6 +46,9 @@
       (define in #f)
       (define input-port-start-pos start-pos)
 
+      ;; The continuation for the background colorer
+      (define background-cont #f)
+      
       
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
@@ -58,10 +61,7 @@
         (set! current-pos start-pos)
         (set! colors null)
         (set! in #f)
-        (set! input-port-start-pos start-pos)
-        (when background-thread
-          (kill-thread background-thread)
-          (set! background-thread #f)))
+        (set! input-port-start-pos start-pos))
       
       (define (color)
         (unless (null? colors)
@@ -162,7 +162,8 @@
                    (set! should-color? on?)
                    (set-surrogate (get-surrogate))))))
         (unless background-thread
-          (set! background-thread (thread (lambda () (background-colorer prefix get-token)))))
+;          (parameterize ((initial-exception-handler background-exn-handler))
+            (set! background-thread (thread (lambda () (background-colorer prefix get-token)))));)
         (do-insert/delete prefix get-token port-wrapper start-pos 0))
         
         
@@ -172,8 +173,33 @@
           (set! remove-prefs-callback-thunk #f))
         (change-style (send (get-style-list) find-named-style "Standard")
                       start-pos end-pos #f)
-        (reset))
+        (reset)
+        (when background-thread
+          (kill-thread background-thread)
+          (set! background-thread #f)))
 
+      
+;      (define (colorer-callback)
+;        (channel-put sync #f)
+;        (sleep .1)
+;        (break-thread background-thread)
+;        (begin-edit-sequence #f)
+;        (color)
+;        (end-edit-sequence)
+;        (queue-callback colorer-callback))
+      
+;      (define (background-exn-handler exn)
+;        (set! background-cont (exn:break-continuation exn))
+;        ((current-error-escape-handler)))
+          
+;      (define (background-colorer prefix get-token)
+;        (channel-get sync)
+;        (if background-cont
+;            (background-cont #f)
+;            (with-handlers ((not-break-exn? void))
+;              (re-tokenize prefix get-token)))
+;        (background-colorer prefix get-token))
+      
       
       (define (colorer-callback)
         (channel-put sync #f)

@@ -61,15 +61,15 @@ L?\"(\\.|[^\\"])*\"     { count(); string(); }
 "!="                    { count(); symbol(); }
 ";"                     { count(); xsymbol(); }
 ("{"|"<%")              { count(); start(); }
-("}"|"%>")              { count(); end('{'); }
+("}"|"%>")              { count(); stop('{'); }
 ","                     { count(); xsymbol(); }
 "::"                    { count(); symbol(); }
 ":"                     { count(); symbol(); }
 "="                     { count(); symbol(); }
 "("                     { count(); start(); }
-")"                     { count(); end('('); }
+")"                     { count(); stop('('); }
 ("["|"<:")              { count(); start(); }
-("]"|":>")              { count(); end('['); }
+("]"|":>")              { count(); stop('['); }
 "."                     { count(); xsymbol(); }
 "&"                     { count(); symbol(); }
 "!"                     { count(); symbol(); }
@@ -307,7 +307,7 @@ start()
   print_rest(0);
 }
 
-end(int c)
+stop(int c)
 {
   printf(")\n");
 }

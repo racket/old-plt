@@ -1788,6 +1788,13 @@ static Bool RecordInput(void *media, wxEvent *event, void *data);
 static Bool SendBreak(void *media, wxEvent *event, void *data);
 static void break_console_reading_threads();
 
+class IOMediaEdit : public wxMediaEdit
+{
+public:
+    Bool CanInsert(long start, long);
+    Bool CanDelete(long start, long);
+};
+
 class IOFrame : public wxFrame
 {
 public:
@@ -1801,7 +1808,7 @@ public:
     {
       display = new wxMediaCanvas(this);
       
-      media = new wxMediaEdit();
+      media = new IOMediaEdit();
       display->SetMedia(media);
       endpos = 0;
       hidden = FALSE;
@@ -1939,6 +1946,16 @@ public:
 };
 
 static IOFrame *ioFrame = NULL;
+
+Bool IOMediaEdit::CanInsert(long start, long)
+{
+    return (start >= ioFrame->endpos);
+}
+
+Bool IOMediaEdit::CanDelete(long start, long)
+{
+    return (start >= ioFrame->endpos);
+}
 
 static Scheme_Object *stdin_pipe;
 

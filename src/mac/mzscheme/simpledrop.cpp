@@ -64,7 +64,7 @@ static char *ThisAppName(void)
   dir = scheme_os_getcwd(NULL, 0, NULL, 1);
   dlen = strlen(dir);
   
-  result = (char *)scheme_malloc_atomic(buffer[0] + dlen + 2);
+  result = (char *)malloc(buffer[0] + dlen + 2);
   memcpy(result, dir, dlen);
   result[dlen] = ':';
   memcpy(result + dlen + 1, buffer + 1, buffer[0]);
@@ -121,7 +121,7 @@ static void parse_commandline(char *s, char *src, int addon)
       char *s, *r;
       int i;
       i = strlen(command[count]) + strlen(src);
-      r = (char *)scheme_malloc_atomic(i + 1);
+      r = (char *)malloc(i + 1);
       s = scheme_strdup(src);
       i = strlen(s) - 1;
       while (i && s[i] != ':')
@@ -137,10 +137,10 @@ static void parse_commandline(char *s, char *src, int addon)
   }	  	
   
   scheme_mac_argc = 1 + count + (addon ? 1 : 0);
-  scheme_mac_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
+  scheme_mac_argv = (char **)malloc(scheme_mac_argc * sizeof(char *));
   scheme_mac_argv[0] = ThisAppName();
   for (i = 0; i < count; i++) {
-    scheme_mac_argv[i + 1] = (char *)scheme_malloc_atomic(strlen(command[i]) + 1);
+    scheme_mac_argv[i + 1] = (char *)malloc(strlen(command[i]) + 1);
     strcpy(scheme_mac_argv[i + 1], command[i]);
   }
   if (addon)
@@ -162,7 +162,7 @@ static void Startup(char **argv, int argc)
   
   if (!argc) {
     scheme_mac_argc = 1;
-    scheme_mac_argv = (char **)scheme_malloc(sizeof(char *));
+    scheme_mac_argv = (char **)malloc(sizeof(char *));
     scheme_mac_argv[0] = ThisAppName();
     return;
   }
@@ -204,7 +204,7 @@ static void Startup(char **argv, int argc)
   
   if (!scheme_mac_argv) {
     scheme_mac_argc = (argc ? argc + 2 : 1);
-    scheme_mac_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
+    scheme_mac_argv = (char **)malloc(scheme_mac_argc * sizeof(char *));
     for (i = 0; i < argc; i++)
       scheme_mac_argv[i + 2] = argv[i];
     if (argc)
@@ -214,7 +214,7 @@ static void Startup(char **argv, int argc)
   }
 #else
   scheme_mac_argc = argc + 1;
-  scheme_mac_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
+  scheme_mac_argv = (char **)malloc(scheme_mac_argc * sizeof(char *));
   for (i = 0; i < argc; i++)
     scheme_mac_argv[i + 1] = argv[i];
   scheme_mac_argv[0] = ThisAppName();
@@ -246,19 +246,31 @@ static pascal OSErr OpenFinderDoc(const AppleEvent *evt, AppleEvent *b, long c)
 {
   AEDescList	docList;
   long		count, size;
-  short		i, loadedAlready=0, j;
+  short		i, j;
   DescType	retType;
   AEKeyword	keywd;
-  FSSpec		fss;
-  char        **files;
+  FSSpec	fss;
+  char          **files, *fl;
   
   AEGetParamDesc(evt, keyDirectObject, typeAEList, &docList);
   AECountItems(&docList, &count);
-  files = (char **)scheme_malloc(sizeof(char *) * count);
+  if (gone)
+      files = (char **)scheme_malloc(sizeof(char *) * count);
+  else
+      files = (char **)malloc(sizeof(char *) * count);
   j = 0;
-  for (i = 0; i < count; i++){
+  for (i = 0; i < count; i++) {
     AEGetNthPtr(&docList, i + 1, typeFSS, &keywd, &retType, (Ptr)&fss, sizeof(FSSpec), &size);
-    files[i + j] = scheme_mac_spec_to_path(&fss);
+    fl = scheme_mac_spec_to_path(&fss);
+    if (gone)
+      files[i + j] = fl;
+    else {
+      /* have to malloc everything */
+      char *fl2;
+      fl2 = (char *)malloc(strlen(fl)+1);
+      memcpy(fl2, fl, strlen(fl)+1);
+      files[i + j] = fl2;
+    }
     if (!files[i + j])
       --j;
   }
@@ -284,7 +296,7 @@ static pascal OSErr CmdLineMessage(const AppleEvent *evt, AppleEvent *b, long c)
 
   AEGetParamDesc(evt, keyDirectObject, typeAEList, &cmdList);
   size = 1023;
-  cmdLine = (char *)NewPtr(size + 1);
+  cmdLine = (char *)malloc(size + 1);
   AEGetNthPtr(&cmdList, 1, typeChar, &keywd, &retType, (Ptr)cmdLine, size, &size);
 
   cmdLine[size] = 0;
@@ -296,6 +308,7 @@ static pascal OSErr CmdLineMessage(const AppleEvent *evt, AppleEvent *b, long c)
 
 static pascal OSErr SetUpQuitMessage(const AppleEvent *a, AppleEvent *b, long c)
 {
+  return 0;
 }
 
 static void Install(void)
@@ -337,7 +350,7 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
       char **new_argv;
       *in_terminal = 0;
       new_argc = (scheme_mac_argc - 1) + (*argc - 2) + 1;
-      new_argv = (char **)scheme_malloc(scheme_mac_argc * sizeof(char *));
+      new_argv = (char **)malloc(scheme_mac_argc * sizeof(char *));
       new_argv[0] = (*argv)[0];
       for (i = 2; i < (*argc); i++) {
 	new_argv[i - 1] = (*argv)[i];
@@ -421,7 +434,7 @@ char *ConvertCFStringRef(CFStringRef str)
   if (!success) {
     return "???";
   }
-  char *result = new char[strlen(buf) + 1];
+  char *result = (char *)malloc(strlen(buf) + 1);
   strcpy(result,buf);
   return result;
 }  
@@ -456,7 +469,7 @@ void GetStarterInfo()
     
     count = CFArrayGetCount(storedArgsArray);
     
-    storedArgs = new char *[scheme_mac_argc + count];
+    storedArgs = (char **)malloc(sizeof(char *) * (scheme_mac_argc + count));
     
     storedArgs[0] = scheme_mac_argv[0];
     for (i = 0; i < count; i++) {

@@ -2232,6 +2232,7 @@ static Scheme_Object *os_wxMediaBufferPrint(int n,  Scheme_Object *p[])
   Bool x1;
   int x2;
   class wxWindow* x3 INIT_NULLED_OUT;
+  Bool x4;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -2254,9 +2255,13 @@ static Scheme_Object *os_wxMediaBufferPrint(int n,  Scheme_Object *p[])
     x3 = WITH_VAR_STACK(objscheme_unbundle_wxWindow(p[POFFSET+3], "print in editor<%>", 1));
   } else
     x3 = NULL;
+  if (n > (POFFSET+4)) {
+    x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "print in editor<%>"));
+  } else
+    x4 = TRUE;
 
   
-  WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->Print(x0, x1, x2, x3));
+  WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->Print(x0, x1, x2, x3, x4));
 
   
   
@@ -5001,7 +5006,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-focus-snip" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFocusSnip, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "end-write-header-footer-to-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferEndWriteHeaderFooterToFile, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "begin-write-header-footer-to-file" " method", (Scheme_Method_Prim *)os_wxMediaBufferBeginWriteHeaderFooterToFile, 3, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "print" " method", (Scheme_Method_Prim *)os_wxMediaBufferPrint, 0, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "print" " method", (Scheme_Method_Prim *)os_wxMediaBufferPrint, 0, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-image" " method", (Scheme_Method_Prim *)os_wxMediaBufferInsertImage, 0, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "insert-box" " method", (Scheme_Method_Prim *)os_wxMediaBufferInsertBox, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-filename" " method", (Scheme_Method_Prim *)os_wxMediaBufferGetFilename, 0, 1));

@@ -6,11 +6,7 @@
 		      ((unit/sig mred:application^
 			 (import)
 			 (define app-name "DrScheme")
-			 (define console
-			   (make-object 
-			    (class-asi wx:frame% (public [show void]))
-			    '() "dummy console" -1 -1 100 100))
-			 (send console show #t)
+			 (define console #f)
 			 (define eval-string void)))]
 	  [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 			 core trigger appliction)]

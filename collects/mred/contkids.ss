@@ -405,7 +405,7 @@
 	  get-height)
 	(private
 	  ; # pixels per possible setting.
-	  [pixels-per-value 3]
+	  [pixels-per-value 1]
 
 	  ; default value for the width parameter (which we ignore
 	  ; completely).

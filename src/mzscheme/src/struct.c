@@ -50,6 +50,9 @@ static Scheme_Object *struct_type_property_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_struct_type(int argc, Scheme_Object *argv[]);
 
+static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[]);
+
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
 
@@ -82,6 +85,14 @@ static Scheme_Object **ts_names;
 static Scheme_Object **ts_values;
 static int ts_count;
 #endif
+
+#define TYPE_NAME(base, blen) make_name("struct:", base, blen, "", NULL, 0, "")
+#define CSTR_NAME(base, blen) make_name("make-", base, blen, "", NULL, 0, "")
+#define PRED_NAME(base, blen) make_name("", base, blen, "?", NULL, 0, "")
+#define GET_NAME(base, blen, field, flen) make_name("", base, blen, "-", field, flen, "")
+#define SET_NAME(base, blen, field, flen) make_name("set-", base, blen, "-", field, flen, "!")
+#define GENGET_NAME(base, blen) make_name("", base, blen, "-ref", NULL, 0, "")
+#define GENSET_NAME(base, blen) make_name("", base, blen, "-set!", NULL, 0, "")
 
 void
 scheme_init_struct (Scheme_Env *env)
@@ -148,6 +159,17 @@ scheme_init_struct (Scheme_Env *env)
 						      "make-struct-type-property",
 						      0, 1,
 						      2, 2),
+			    env);
+
+  scheme_add_global_kerwotd("make-struct-field-accessor",
+			    scheme_make_prim_w_arity(make_struct_field_accessor,
+						     "make-struct-field-accessor",
+						     2, 3),
+			    env);
+  scheme_add_global_kerwotd("make-struct-field-mutator",
+			    scheme_make_prim_w_arity(make_struct_field_mutator,
+						     "make-struct-field-mutator",
+						     2, 3),
 			    env);
 
 
@@ -433,7 +455,7 @@ static Scheme_Object *struct_pred(Scheme_Struct_Type *stype, int argc, Scheme_Ob
     return scheme_false;
 }
 
-static int parse_pos(Struct_Proc_Info *i, Scheme_Object **args, int argc)
+static int parse_pos(const char *who, Struct_Proc_Info *i, Scheme_Object **args, int argc)
 {
   int pos;
 
@@ -441,7 +463,9 @@ static int parse_pos(Struct_Proc_Info *i, Scheme_Object **args, int argc)
     if (SCHEME_BIGNUMP(args[1]) && SCHEME_BIGPOS(args[1])) {
       pos = 32769; /* greater than max field count */
     } else {
-      scheme_wrong_type(scheme_symbol_name(i->func_name), 
+      if (!who)
+	who = scheme_symbol_name(i->func_name);
+      scheme_wrong_type(who, 
 			"non-negative exact integer", 
 			1, argc, args);
       return NULL;
@@ -454,9 +478,12 @@ static int parse_pos(Struct_Proc_Info *i, Scheme_Object **args, int argc)
     pos += i->struct_type->parent_types[i->struct_type->name_pos - 1]->num_slots;
   
   if (pos >= i->struct_type->num_slots) {
+    if (!who)
+      who = scheme_symbol_name(i->func_name);
+
     scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, args[1],
 		     "%s: slot index for <%S> not in [0, %d]: %V",
-		     scheme_symbol_name(i->func_name),
+		     who,
 		     i->struct_type->type_name,
 		     (i->struct_type->name_pos
 		      ? (i->struct_type->num_slots
@@ -492,7 +519,7 @@ static Scheme_Object *struct_getter(Struct_Proc_Info *i, int argc, Scheme_Object
   }
   
   if (argc == 2)
-    pos = parse_pos(i, args, argc);
+    pos = parse_pos(NULL, i, args, argc);
   else
     pos = i->field;
 
@@ -518,7 +545,7 @@ static Scheme_Object *struct_setter(Struct_Proc_Info *i, int argc, Scheme_Object
 		      0, argc, args);
 	
   if (argc == 3) {
-    pos = parse_pos(i, args, argc);
+    pos = parse_pos(NULL, i, args, argc);
     v = args[2];
   } else {
     pos = i->field;
@@ -629,20 +656,47 @@ struct_constr_p(int argc, Scheme_Object *argv[])
 	  ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *make_struct_field_accessor(int argc, Scheme_Object *argv[])
+{
+  Struct_Proc_Info *i;
+  int pos;  
+  Scheme_Object *name;
+
+  if (!STRUCT_PROCP(argv[0], SCHEME_PRIM_IS_STRUCT_GETTER)
+      || (((Scheme_Closed_Primitive_Proc *)o)->mina == 1)) {
+    scheme_wrong_type("make-struct-field-accessor", "accessor procedure that require a field index",
+		      0, argc, argv);
+    return NULL;
+  }
+
+  i = (Struct_Proc_Info *)((Scheme_Closed_Primitive_Proc *)argv[0])->data;
+
+  pos = parse_pos("make-struct-field-accessor", i, argv, argc);
+  
+  if ((argc > 2) && !SCHEME_SYMBOLP(argv[2])) {
+    scheme_wrong_type("make-struct-field-accessor", "symbol", 2, argc, argv);
+    return NULL;
+  }
+
+  name = GET_NAME(SCHEME_SYM_VAL(i->type_name), SCHEME_SYM_LEN(i->type_name),
+		  fieldstr, fieldstdlen);
+
+  return make_struct_proc(i->struct_type, 
+			  name, 
+			  SCHEME_GETTER, pos);
+}
+
+static Scheme_Object *make_struct_field_mutator(int argc, Scheme_Object *argv[])
+{
+return scheme_void;
+}
+
 /*========================================================================*/
 /*                          struct op maker                               */
 /*========================================================================*/
 
 #define NUM_BASE_VALUES 3
 #define NUM_VALUES_PER_FIELD 2
-
-#define TYPE_NAME(base, blen) make_name("struct:", base, blen, "", NULL, 0, "")
-#define CSTR_NAME(base, blen) make_name("make-", base, blen, "", NULL, 0, "")
-#define PRED_NAME(base, blen) make_name("", base, blen, "?", NULL, 0, "")
-#define GET_NAME(base, blen, field, flen) make_name("", base, blen, "-", field, flen, "")
-#define SET_NAME(base, blen, field, flen) make_name("set-", base, blen, "-", field, flen, "!")
-#define GENGET_NAME(base, blen) make_name("", base, blen, "-ref", NULL, 0, "")
-#define GENSET_NAME(base, blen) make_name("", base, blen, "-set!", NULL, 0, "")
 
 Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
 					  Scheme_Object **names,

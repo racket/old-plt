@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.11 1999/03/28 20:38:17 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.12 1999/07/14 23:34:09 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -942,19 +942,32 @@ static void DrawToggleItem(MenuWidget mw, menu_state *ms, menu_item *item,
 			   unsigned x, unsigned y)
 {
     DrawButtonItem(mw, ms, item, x, y);
-    Xaw3dDrawToggle(
-	XtDisplay((Widget)mw), ms->win,
-	mw->menu.top_shadow_GC,
-	mw->menu.bot_shadow_GC,
-	mw->menu.indicator_GC,
-	mw->menu.erase_GC,
-	item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
-	x+mw->menu.shadow_width+mw->menu.hmargin,
-	y+mw->menu.shadow_width+mw->menu.vmargin
-	+(mw->menu.font->ascent
-	  +mw->menu.font->descent
-	  -mw->menu.indicator_size)/2,
-	mw->menu.indicator_size, mw->menu.shadow_width, item->set);
+    if (item->set) {
+      Display *dpy = XtDisplay((Widget)mw);
+      Window win = ms->win;
+      GC gc;
+      int h, h2, h4, h34;
+
+      x += mw->menu.shadow_width + mw->menu.hmargin + 1;
+      y += (mw->menu.shadow_width + mw->menu.vmargin
+	    + (mw->menu.font->ascent
+	       + mw->menu.font->descent
+	       - mw->menu.indicator_size)/2) + 1;
+      h = mw->menu.indicator_size - 2;
+      h2 = h / 2;
+      h4 = h / 4;
+      h34 = h - h4;
+
+      gc = item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC;
+
+      XDrawLine(dpy, win, gc, x + h4, y + h34, x + h2, y + h);
+      XDrawLine(dpy, win, gc, x + h2, y + h, x + h, y);
+
+      x++;
+
+      XDrawLine(dpy, win, gc, x + h4, y + h34, x + h2, y + h);
+      XDrawLine(dpy, win, gc, x + h2, y + h, x + h, y);
+    }
 }
 
 static void DrawCascadeItem(MenuWidget mw, menu_state *ms, menu_item *item,

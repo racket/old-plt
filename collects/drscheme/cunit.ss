@@ -239,7 +239,7 @@
 	    (send panel delete-child button-panel)
 	    (send button-panel show #t)
 	    (send panel change-children (lambda (l) (cons button-panel l))) 
-	    (send button-panel stretchable-in-y? #f)
+	    (send button-panel stretchable-in-y #f)
 	    
 	    (mred:debug:printf 'super-init "before visibility check")
 	    (if visible?

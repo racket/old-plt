@@ -20,6 +20,10 @@ ac_help="$ac_help
 ac_help="$ac_help
 ""  feature: osthreads      use OS threads to implement MzScheme threads"
 ac_help="$ac_help
+""  feature: float          include support for single-precision floats"
+ac_help="$ac_help
+""  feature: floatinstead   compile to use single-precision by default"
+ac_help="$ac_help
 ""  feature: oskit          compile OSKit-based MzScheme kernel"
 ac_help="$ac_help
 ""  feature: smalloskit     compile small OSKit-based MzScheme kernel"
@@ -29,10 +33,6 @@ ac_help="$ac_help
 ""  feature: gprof          compile for profiling with gprof (gcc only)"
 ac_help="$ac_help
 ""  feature: gcov           compile to gather gcov statistics (gcc only)"
-ac_help="$ac_help
-""  feature: float          compile to support for single-precision floats"
-ac_help="$ac_help
-""  feature: floatinstead   compile to use single-precision by default"
 ac_help="$ac_help
   --with-x                use the X Window System"
 
@@ -574,6 +574,19 @@ if test "${enable_osthreads+set}" = set; then
 fi
 
 
+# Check whether --enable-float or --disable-float was given.
+if test "${enable_float+set}" = set; then
+  enableval="$enable_float"
+  :
+fi
+
+# Check whether --enable-floatinstead or --disable-floatinstead was given.
+if test "${enable_floatinstead+set}" = set; then
+  enableval="$enable_floatinstead"
+  :
+fi
+
+
 # Check whether --enable-oskit or --disable-oskit was given.
 if test "${enable_oskit+set}" = set; then
   enableval="$enable_oskit"
@@ -603,19 +616,6 @@ fi
 # Check whether --enable-gcov or --disable-gcov was given.
 if test "${enable_gcov+set}" = set; then
   enableval="$enable_gcov"
-  :
-fi
-
-
-# Check whether --enable-float or --disable-float was given.
-if test "${enable_float+set}" = set; then
-  enableval="$enable_float"
-  :
-fi
-
-# Check whether --enable-floatinstead or --disable-floatinstead was given.
-if test "${enable_floatinstead+set}" = set; then
-  enableval="$enable_floatinstead"
   :
 fi
 

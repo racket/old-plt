@@ -1,7 +1,6 @@
 (module mztext mzscheme
 
-(require (lib "string.ss")
-         (all-except (lib "pp-utils.ss" "preprocessor") stdin))
+(require (lib "string.ss") (lib "pp-utils.ss" "preprocessor"))
 (provide (all-from (lib "pp-utils.ss" "preprocessor")))
 
 ;;=============================================================================
@@ -15,78 +14,79 @@
 ;; list can also hold thunk values -- these thunks will be executed when
 ;; reading input goes past them (when peeking goes past them, nothing happens).
 
+(provide make-composite-input)
 (define (make-composite-input . ports)
   ;; don't care about concurrency, since multiple uses should use different
   ;; input ports.
-  (define (->string-or-port x)
-    (if (or (string? x) (input-port? x)
-            (and (procedure? x) (procedure-arity-includes? x 0)))
-      x (and x (not (null? x)) (not (void? x)) (format "~a" x))))
-  (define (add! . ps)
-    (set! ports (append! (map ->string-or-port ps) ports)))
-  (define (read! str)
-    (let ([len (string-length str)])
-      (let loop ([so-far 0])
-        (cond [(null? ports) eof]
-              [(not (car ports)) (set! ports (cdr ports)) (loop so-far)]
-              [(procedure? (car ports)) ; reading past a thunk: execute it
-               (set-car! ports (->string-or-port ((car ports))))
-               (loop so-far)]
-              [(<= len so-far) so-far]
-              [(not (string? (car ports)))
-               (let ([r '(!!!read-string-avail!* str (car ports) so-far len)])
-                 (cond [(eof-object? r) (set! ports (cdr ports)) (loop so-far)]
-                       ;; this probably doesn't happen
-                       [(not (number? r)) (if (zero? so-far) r so-far)]
-                       [(zero? (+ r so-far)) (car ports)]
-                       [else (+ r so-far)]))]
-              [(<= (- len so-far) (string-length (car ports)))
-               (string-copy! str 0 (car ports) so-far len)
-               (if (< (- len so-far) (string-length (car ports)))
-                 (set-car! ports (substring (car ports) (- len so-far)))
-                 (set! ports (cdr ports)))
-               len]
-              [else
-               (loop (begin0 (+ (string-copy! str 0 (car ports) so-far len)
-                                so-far)
-                       (set! ports (cdr ports))))]))))
-  ;; `peek!' could just call `read!' to fill in a string, then copy the
-  ;; relevant stuff to the target buffer, then call `add!' to add the result
-  ;; back to ports -- but that would lead to a lot of excessive copying.
-  (define (peek! str skip)
-    (let ([len (string-length str)])
-      (let loop ([skip skip] [so-far 0] [ports ports])
-        (cond [(null? ports) (if (zero? so-far) eof so-far)]
-              [(or (not (car ports)) (procedure? (car ports))) ; skip #f+thunks
-               (loop skip so-far (cdr ports))]
-              [(and (zero? skip) (<= len so-far)) so-far]
-              [(input-port? (car ports))
-               (let* ([buf  (make-string (+ skip len))]
-                      [blen '(!!!read-string-avail!* buf (car ports) 0)])
-                 (cond [(eof-object? blen)
-                        (set-car! ports #f) ; mark for removal
-                        (loop skip so-far ports)]
-                       [(or (eq? 0 blen) (not (number? blen)))
-                        (if (> skip 0) (car ports) so-far)]
-                       [else
-                        (set-cdr! ports (cons (car ports) (cdr ports)))
-                        (set-car! ports (if (= blen (+ skip len))
-                                          buf (substring buf 0 blen)))
-                        (loop skip so-far ports)]))]
-              [(and (> skip 0) (<= (string-length (car ports)) skip))
-               (loop (- skip (string-length (car ports))) so-far (cdr ports))]
-              [else
-               (let ([n (string-copy! str skip (car ports) so-far)])
-                 (loop 0 (+ n so-far) (cdr ports)))]))))
+  (define (pop-port!)
+    (begin0 (car ports) (set! ports (cdr ports))))
+  (define (add! x)
+    (cond [(pair? x) (add! (cdr x)) (add! (car x))]
+          [(null? x) #t]
+          [(void? x) #t]
+          [(not x) #t]
+          [(or (input-port? x)
+               (and (procedure? x) (procedure-arity-includes? x 0)))
+           (set! ports (cons x ports))]
+          [(bytes?  x) (add! (open-input-bytes x))]
+          [(string? x) (add! (open-input-string x))]
+          [(path?   x) (add! (path->bytes x))]
+          [(symbol? x) (add! (symbol->string x))]
+          [(number? x) (add! (number->string x))]
+          [(char?   x) (add! (string x))]
+          [else (error 'composite-input "bad object: ~e" x)]))
+  (define (read bstr)
+    (let loop ()
+      (cond [(null? ports) eof]
+            [(procedure? (car ports)) ; reading past a thunk: execute it
+             (add! ((pop-port!)))
+             (loop)]
+            [else
+             (let ([n (read-bytes-avail!* bstr (car ports))])
+               (cond [(eq? n 0) (wrap-evt (car ports) (lambda (x) 0))]
+                     [(eof-object? n) (close-input-port (pop-port!)) (loop)]
+                     [else n]))])))
+  (define (peek bstr skip evt)
+    ;; Peeking is more difficult, due to skips.
+    (let loop ([ports ports] [skip skip])
+      (cond
+       [(null? ports) eof]
+       [(procedure? (car ports)) (loop (cdr ports) skip)]
+       [else (let ([n (peek-bytes-avail!* bstr skip evt (car ports))])
+               (cond [(eq? n 0)
+                      ;; Not ready, yet.
+                      (car ports)]
+                     [(eof-object? n)
+                      ;; Port is exhausted, or we skipped past its input.
+                      ;; If skip is not zero, we need to figure out
+                      ;;  how many chars were skipped.
+                      (loop (cdr ports)
+                            (- skip (compute-avail-to-skip skip (car ports))))]
+                     [else n]))])))
   (define (close)
     (for-each (lambda (p) (when (input-port? p) (close-input-port p))) ports))
-  (let ([p '(!!!make-custom-input-port read! peek! close)])
+  (let ([ps ports]) (set! ports '()) (add! ps))
+  (let ([p (make-input-port 'composite-input read peek close)])
     (port->adder-op p 'set! add!)
     p))
+;; Helper for input-port-append; given a skip count
+;;  and an input port, determine how many characters
+;;  (up to upto) are left in the port. We figure this
+;;  out using binary search.
+(define (compute-avail-to-skip upto p)
+  (let ([str (make-bytes 1)])
+    (let loop ([upto upto][skip 0])
+      (if (zero? upto)
+        skip
+        (let* ([half (quotient upto 2)]
+               [n (peek-bytes-avail!* str (+ skip half) #f p)])
+          (if (eq? n 1)
+            (loop (- upto half 1) (+ skip half 1))
+            (loop half skip)))))))
 
 (provide add-to-input)
 (define (add-to-input . args)
-  (apply port->adder-op (stdin) 'add args))
+  (port->adder-op (stdin) 'add args))
 
 (define port->adder-op
   (let ([table (make-hash-table 'weak)])
@@ -97,23 +97,9 @@
                           (error 'add-to-input
                                  "current input is not a composite port")))
                       args)]
-        [(set!) (apply hash-table-put! table port args)]
+        [(set!) (hash-table-put! table port (car args))]
         [(get?) (hash-table-get table port (lambda () #f))]
         [else (error 'port->adder-op "unknown message: ~e" msg)]))))
-
-;; Define stdin as a parameter that takes care of changing its argument to a
-;; newly generated composite-input-port if needed, and also propagate changes
-;; to current-input-port.
-(provide stdin)
-(define stdin
-  (make-parameter (current-input-port)
-    (lambda (newport)
-      (let ([p (if (port->adder-op newport 'get?)
-                 newport
-                 (apply make-composite-input
-                        (if (list? newport) newport (list newport))))])
-        (current-input-port p)
-        p))))
 
 ;;=============================================================================
 ;; Dispatching
@@ -181,8 +167,8 @@
                 [(pair? v) (value->cont (car v) (value->cont (cdr v) cont))]
                 [(promise? v) (value->cont (force v) cont)]
                 [(not (procedure? v))
-                 (when (or (string? v) (symbol? v) (integer? v) (char? v)
-                           (input-port? v))
+                 (when (or (bytes? v) (string? v) (path? v) (symbol? v)
+                           (number? v) (char? v) (input-port? v))
                    (add-to-input v))
                  cont]
                 [(procedure-arity-includes? v 0) (do-thunk v) cont]
@@ -193,7 +179,7 @@
            (value->cont vs cont))))))
   (cond [(regexp-match/fail-without-reading (command-marker-here-re) (stdin))
          => (lambda (here) (display (car here)) (cont))]
-        [else (do-thunk (lambda () (eval (read))))]))
+        [else (let ((r (read))) (do-thunk (lambda () (eval r))))]))
 
 (provide paren-pairs)
 (define paren-pairs
@@ -237,7 +223,7 @@
 (provide get-arg*)
 (define (get-arg*)
   (let ([buf (open-output-string)])
-    (parameterize ([stdout buf] [stdin (open-input-string (get-arg))])
+    (parameterize ([stdout buf] [stdin (make-composite-input (get-arg))])
       (run) (flush-output buf))
     (get-output-string buf)))
 
@@ -248,7 +234,7 @@
 (define (swallow-newline)
   ;; careful: if there's no match, we don't want to consume the input
   (regexp-match/fail-without-reading #rx"^[ \t]*\r?\n" (stdin))
-  #f)
+  (void))
 
 (define (string->substlist args str)
   (if (null? args)
@@ -305,7 +291,7 @@
   (define (cd+file f)
     (let*-values ([(dir name dir?)
                    (if (input-port? f) (values #f #f #f) (split-path f))]
-                  [(dir) (if (string? dir) dir (cd))])
+                  [(dir) (if (path? dir) dir (cd))])
       ;; could `add-to-input' and then `run' if we wrap this by a (cd dir), but
       ;; instead, plant cd-thunks in the input stream.
       (add-to-input
@@ -320,7 +306,7 @@
 (define (preprocess . files)
   (initialize)
   (unless (null? files)
-    (parameterize ([stdin '()])
+    (parameterize ([stdin (make-composite-input)])
       (apply include files))))
 
 )

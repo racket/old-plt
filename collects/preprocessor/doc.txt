@@ -370,8 +370,7 @@ processing encounters this marker, control is transfered to the command
 dispatcher.  In its turn, the command dispatcher reads a Scheme
 expression (using `read'), evaluates it, and decides what to do next.
 In case of a simple Scheme value, it is converted to a string and pushed
-back on the preprocessed input.  A sample will make things clearer, the
-following text:
+back on the preprocessed input.  For example, the following text:
 
   |foo
   |@"bar"
@@ -413,10 +412,10 @@ The complete behavior of the command dispatcher follows:
 
   * If it is a promise, it is forced and its value is used instead,
 
-  * Strings are pushed back on the input stream,
+  * Strings, bytes, and paths are pushed back on the input stream,
 
-  * Symbols, integers, and characters are converted to strings and
-    pushed back on the input,
+  * Symbols, numbers, and characters are converted to strings and pushed
+    back on the input,
 
   * An input port will be perpended to the input, both processed as a
     single input,
@@ -557,7 +556,18 @@ Dispatching-related bindings:
 
 Input and "output":
 
-> add-to-input
+> (make-composite-input values ...)
+
+  Creates a composite input port, initialized by the given values (input
+  ports, strings, etc).  The resulting port will read data from each of
+  the values in sequence, appending them together to form a single input
+  port.  This is very similar to `input-port-append' from "port.ss", but
+  it is extended to allow perpending additional values to the beginning
+  of the port using `add-to-input'.  mztext relies on this functionality
+  to be able to push text back on the input when it is supposed to be
+  reprocessed, so use only such ports for the current input port.
+
+> (add-to-input value ...)
 
   This should be used to "output" a string (or an input port) back on
   the current composite input port.  As a special case, thunks can be
@@ -566,8 +576,7 @@ Input and "output":
   used to plant handlers that happen when reading beyond a specific
   point (for example, this is how the directory is changed to the
   processed file to allow relative includes).  Other simple values are
-  converted to strings using `format' but this might change.  (See also
-  `stdin' below.)
+  converted to strings using `format' but this might change.
 
 > paren-pairs
 
@@ -664,13 +673,6 @@ Invoking the preprocessor:
 Miscellaneous:
 
 > stdin
-
-  This is a parameter that behaves like `current-input-port', but when
-  set to a new non-composite input port, it will create a composite port
-  from it, and use it.  The change is propagated to current-input-port,
-  so this parameter should be used instead if you expect `add-to-input'
-  to work.
-
 > stdout
 > stderr
 > cd

@@ -4168,20 +4168,23 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	if (SCHEME_STX_NULLP(exns)) {
 	  /* not excluded */
 
-	  /* Check that ree_kw and the identifier have the same
-	     introduction (in case one or the other was introduced by
-	     a macro). We perform this check by getting exname's tl_id
-	     as if it had ree_kw's context, then comparing that result
-	     to the actual tl_id. */
-	  a = scheme_datum_to_syntax(exname, scheme_false, ree_kw, 0, 0);
-	  a = scheme_tl_id_sym(env->genv, a, 0);
-
-	  if (SAME_OBJ(a, name)) {
-	    if (scheme_hash_get(provided, exname))
-	      scheme_wrong_syntax("module", exname, ree, "identifier already provided");
+	  /* But don't export uninterned: */
+	  if (!SCHEME_SYM_UNINTERNEDP(name)) {
+	    /* Also, check that ree_kw and the identifier have the same
+	       introduction (in case one or the other was introduced by
+	       a macro). We perform this check by getting exname's tl_id
+	       as if it had ree_kw's context, then comparing that result
+	       to the actual tl_id. */
+	    a = scheme_datum_to_syntax(exname, scheme_false, ree_kw, 0, 0);
+	    a = scheme_tl_id_sym(env->genv, a, 0);
 	    
-	    scheme_hash_set(provided, exname, 
-			    scheme_make_pair(name, protected ? scheme_true : scheme_false));
+	    if (SAME_OBJ(a, name)) {
+	      if (scheme_hash_get(provided, exname))
+		scheme_wrong_syntax("module", exname, ree, "identifier already provided");
+	      
+	      scheme_hash_set(provided, exname, 
+			      scheme_make_pair(name, protected ? scheme_true : scheme_false));
+	    }
 	  }
 	}
       }
@@ -4880,6 +4883,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	     gensym or parallel symbol. The former is useless. The
 	     latter is supposed to be module-specific, and it could
 	     collide with local module-specific ids. */
+	  iname = NULL;
 	  continue;
 	}
 
@@ -4898,7 +4902,7 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 	  ck(prnt_iname, iname, nominal_modidx, modidx, exsns[j], (j < var_count), data, i, form);
 	
 	if (!is_kern) {
-	  if (copy_vars && start && (j < var_count) && !env->module && !env->phase) {
+    	  if (copy_vars && start && (j < var_count) && !env->module && !env->phase) {
 	    Scheme_Env *menv;
 	    Scheme_Object *val;
 	    modidx = scheme_module_resolve(modidx);

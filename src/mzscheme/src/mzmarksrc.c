@@ -1417,6 +1417,12 @@ END syntax;
 
 START read;
 
+mark_indent {
+ mark:
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indent));
+}
+
 mark_cport {
  mark:
   CPort *cp = (CPort *)p;

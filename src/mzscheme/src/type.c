@@ -174,7 +174,8 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_security_guard_type, "<security-guard>");
 
-  set_name(scheme_reserved_2_type, "<reserved-2>");
+  set_name(scheme_indent_type, "<internal-indentation>");
+
   set_name(scheme_reserved_3_type, "<reserved-3>");
   set_name(scheme_reserved_4_type, "<reserved-4>");
   set_name(scheme_reserved_5_type, "<reserved-5>");

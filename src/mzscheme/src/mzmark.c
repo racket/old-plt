@@ -3528,6 +3528,25 @@ int mark_struct_property_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_READ_C
 
+int mark_indent_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indent));
+}
+
+int mark_indent_MARK(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indent));
+}
+
+int mark_indent_FIXUP(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indent));
+}
+
+#define mark_indent_IS_ATOMIC 1
+#define mark_indent_IS_CONST_SIZE 1
+
+
 int mark_cport_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(CPort));

@@ -104,8 +104,8 @@ enum {
   scheme_lazy_macro_type,
   scheme_resolve_prefix_type,
   scheme_security_guard_type,
+  scheme_indent_type, /* 90 */
 
-  scheme_reserved_2_type, /* 90 */
   scheme_reserved_3_type,
   scheme_reserved_4_type,
   scheme_reserved_5_type,

@@ -40,10 +40,15 @@
        (lambda (req) (error "session not initialized"))
        (encode-session uri new-id))))
   
-  ;; start-session: number -> request -> response
+  ;; start-session: (request -> response) -> void
+  ;; register the session handler.
   (define (start-session handler)
     (let ([ses (current-session)])
-      (set-session-handler! ses handler)
+      (let ([params (current-parameterization)])
+        (set-session-handler!
+         ses
+         (lambda (req)
+           (call-with-parameterization params (lambda () (handler req))))))
       (hash-table-put! the-session-table (session-id ses) ses)))
   
   ;; lookup-session: number -> (union session #f)

@@ -1,7 +1,8 @@
 (module utils mzscheme
   (require (lib "url.ss" "net"))
   (provide url->servlet-path
-           make-session-url)
+           make-session-url
+           split-url-path)
 
   ;; make-session-url: url (listof string) -> url
   ;; produce a new url for this session:
@@ -67,6 +68,7 @@
   ;; url->servlet-path: path url -> (union path #f)
   ;; given a servlet directory and url, find a servlet
   (define (url->servlet-path servlet-dir uri)
+    (printf "   current-directory = ~s~n" (current-directory))
     (let loop ([base-path servlet-dir]
                [servlet-path '()]
                [path-list (simplify-url-path uri)])
@@ -75,6 +77,7 @@
        (values #f #f #f)
        (let* ([next-path-segment (car path-list)]
               [new-base (build-path base-path next-path-segment)])
+         (printf "   new-base = ~s~n" new-base)
          (cond
            [(file-exists? new-base)
             (values new-base
@@ -83,4 +86,17 @@
            [else (loop new-base
                        (cons next-path-segment servlet-path)
                        (cdr path-list))])))))
+  
+  ;; split-url-path: url url -> (union (listof string) #f)
+  ;; the first url's path is a prefix of the path of the second
+  ;; find the suffix and return it as a list of strings
+  (define (split-url-path pref-url suff-url)
+    (let loop ([pref-path (simplify-url-path pref-url)]
+               [suff-path (simplify-url-path suff-url)])
+      (cond
+        [(null? pref-path) suff-path]
+        [(string=? (car pref-path) (car suff-path))
+         (loop (cdr pref-path) (cdr suff-path))]
+        [else
+         (error "split-url-path: first path is not a preffix of the second")])))    
   )

@@ -195,7 +195,14 @@
   ;(resume-session? (string->url "http://localhost:9000/foo/bar"))
 
 
+  
   ;; ************************************************************
+  
+  ;; directory-part: path -> path
+  (define (directory-part a-path)
+    (let-values ([(base name must-be-dir?) (split-path a-path)])
+      base))  
+  
   ;; begin-session: connection request host-info
   (define (begin-session host-info)
     (myprint "begin-session~n")
@@ -204,24 +211,26 @@
                     (url->servlet-path
                      (paths-servlet (host-paths host-info))
                      uri)])
+        (myprint "a-path = ~s~n" a-path)
         (if a-path
-            (let* ([cust (make-custodian top-cust)]
-                   [ns (make-servlet-namespace)]
-                   [ses (new-session cust ns (make-session-url uri url-servlet-path))])
-              (parameterize ([current-custodian cust]
-                             [current-namespace ns]
-                             [current-session ses])
-                (let* ([module-name `(file ,(path->string a-path))])
-                  (dynamic-require module-name #f)))
-              (resume-session (session-id ses) host-info))
+            (parameterize ([current-directory (directory-part a-path)])
+              (let* ([cust (make-custodian top-cust)]
+                     [ns (make-servlet-namespace)]
+                     [ses (new-session cust ns (make-session-url uri url-servlet-path))])
+                (parameterize ([current-custodian cust]
+                               [current-namespace ns]
+                               [current-session ses])
+                  (let* ([module-name `(file ,(path->string a-path))])
+                    (dynamic-require module-name #f)))
+                (resume-session (session-id ses) host-info)))
             (output-response/method
              (connection-state-conn (thread-cell-ref thread-connection-state))
              ((responders-file-not-found (host-responders host-info))  uri)
              (request-method (connection-state-req (thread-cell-ref thread-connection-state))))))))
-
+    
   (define to-be-copied-module-specs
     '(mzscheme
-      (file "session.ss")
+      (lib "session.ss" "prototype-web-server")
       (lib "request-parsing.ss" "web-server")))
 
   ;; get the names of those modules.
@@ -266,8 +275,7 @@
       [(lookup-session ses-id)
        => (lambda (ses)
             (parameterize ([current-custodian (session-cust ses)]
-                           [current-session ses]
-                           [current-namespace (session-namespace ses)])
+                           [current-session ses])
               (with-handlers ([void
                                (lambda (the-exn)
                                  (output-response/method

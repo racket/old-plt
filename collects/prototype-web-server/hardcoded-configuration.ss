@@ -70,7 +70,10 @@
              ;; servlet: url tst -> response 
              (lambda (url exn)
                ; more here - use separate log file
-               (printf "Servlet exception:\n~s\n" (exn-message exn))
+               ;(printf "Servlet exception:\n~s\n" (exn-message exn))
+               ((error-display-handler)
+                (format "Servlet exception:\n~a\n" (exn-message exn))
+                exn)
                (error-response 500 "Servlet error" servlet-error-file))
              
              ;; servlet-loading: url tst -> response
@@ -78,7 +81,7 @@
              ; This is slightly tricky since the (interesting) content comes from the exception.
              (lambda (url exn)
                ((error-display-handler)
-                (format "Servlet loading exception:\n~s\n" (exn-message exn))
+                (format "Servlet loading exception:\n~a\n" (exn-message exn))
                 exn)
                (make-response/full 500 "Servlet didn't load"
                                    (current-seconds)
@@ -134,7 +137,7 @@
              ; file-root
              (build-path server-root-path "htdocs")
              ; servlet-root
-             (build-path "servlets")
+             (build-path "~" "plt-exp" "collects" "prototype-web-server" "servlets")
              ; password-authentication
              (build-path server-root-path "passwords"))
             )])

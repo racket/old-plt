@@ -72,8 +72,8 @@
   
   ;; send/suspend: (continuation -> response) -> request
   ;; produce the current response and wait for the next request
-  (define (send/suspend page-maker)
-    ((lambda (k) (abort (lambda () (page-maker k))))
+  (define (send/suspend response-maker)
+    ((lambda (k) (abort (lambda () (response-maker k))))
      (let ([current-marks
             (reverse
              (continuation-mark-set->list (current-continuation-marks) the-cont-key))])

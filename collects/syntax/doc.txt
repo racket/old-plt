@@ -124,11 +124,11 @@ _struct.ss_: generating the same names as `define-struct'
   The default src-stx is #f; it is used to provide a source location
   to the generated identifiers.
 
-> (build-struct-generation name-id field-ids omit-sel? omit-set? [super-type] [prop-value-list] [immutable-k-list]) -
+> (build-struct-generation name-id field-ids omit-sel? omit-set? [super-type prop-value-list immutable-k-list]) -
   takes the same arguments as `build-struct-names' and generates an
   S-expression for code using `make-struct-type' to generate the
   structure type and return values for the identifiers created by
-  `build-struct-names'.  The optional `super-type', `prop-value-list'
+  `build-struct-names'.  The optional `super-type', `prop-value-list',
   and `immutable-k-list' parameters take s-expression values that are
   used as the corresponding arguments to `make-struct-type'.
 

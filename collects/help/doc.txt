@@ -6,7 +6,9 @@ _Running or Embedding Help Desk_
 
 Loading the _help.ss_ library directly executes the Help Desk
 program. 
+
 The start-help-desk.ss file contains one unit that imports:
+
   mzlib:function^
   mzlib:string^
   mzlib:file^
@@ -23,7 +25,7 @@ startup-url that the stand-alone help desk provides.
 The _helpr.ss_ library provides the Help Desk as a unit with
 the following imports:
 
-> mzlib:function^
+  mzlib:function^
   mzlib:string^
   mzlib:file^
   mzlib:url^ - not really in MzLib; it's in the "net" collection

@@ -77,7 +77,7 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
     [(sparc-solaris i386-solaris)
      (add-flags current-extension-linker-flags
 		(list "-u" "rl_readline_name"))]
-    [(i386-linux i386-freebsd)
+    [(i386-linux i386-freebsd sparc-linux)
      (add-flags current-extension-linker-flags
 		(list "--whole-archive"))]
     [else (fprintf (current-error-port)

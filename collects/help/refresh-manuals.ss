@@ -1,6 +1,7 @@
 (module refresh-manuals mzscheme
   (require "private/docpos.ss"
            "private/search.ss"
+           "private/manuals.ss"
            (lib "plt-installer.ss" "setup")
            (lib "url.ss" "net")
            (lib "mred.ss" "mred")
@@ -17,7 +18,7 @@
   (define sc-refresh-deleting... (string-constant plt:hd:refresh-deleting...))
   (define sc-refresh-installing... (string-constant plt:hd:refresh-installing...))
   (define sc-finished-installation (string-constant plt:hd:refreshing-manuals-finished))
-  (define sc-clearing-cached-indicies "Clearing cached indicies")
+  (define sc-clearing-cached-indicies (string-constant plt:hd:refresh-clearing-indicies))
   
   (define refresh-manuals
     (case-lambda
@@ -129,10 +130,11 @@
   (define/contract delete-known-doc
     (string? string? . -> . any)
     (lambda (doc full-name)
-      (display (format sc-refresh-deleting... full-name))
-      (newline)
-      (let ([doc-dir (build-path (collection-path "doc") doc)])
-        (delete-directory/r doc-dir))))
+      (let ([doc-dir (find-doc-directory doc)])
+        (when doc-dir
+          (display (format sc-refresh-deleting... full-name))
+          (newline)
+          (delete-directory/r doc-dir)))))
       
   (define/contract delete-local-plt-files
     (string? . -> . any)

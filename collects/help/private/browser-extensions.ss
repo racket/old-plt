@@ -1,3 +1,4 @@
+
 (module browser-extensions mzscheme
   (require (lib "framework.ss" "framework")
            (lib "mred.ss" "mred")
@@ -10,7 +11,8 @@
            (lib "bday.ss" "framework" "private")
            "standard-urls.ss"
            "cookie.ss"
-           "docpos.ss")
+           "docpos.ss"
+           "manuals.ss")
   
   (provide make-help-desk-frame-mixin
            make-bug-report/help-desk-mixin)
@@ -142,18 +144,21 @@
                (lambda (s)
                  (let ([m (regexp-match #rx"^/doc/([^/]*)/" s)])
                    (if m
-                       (let ([coll (cadr m)])
+                       (let* ([coll (cadr m)]
+                              [doc-dirs (find-doc-directories)]
+                              [doc-coll-names (map (lambda (x) (let-values ([(base name dir?) (split-path x)]) name))
+                                                   doc-dirs)]
+                              [just-visit-url?
+                               (or (member coll doc-coll-names)
+                                   (not (assoc coll known-docs)))])
                          (cond
-                           [(or (file-exists? (build-path (collection-path "doc") coll "index.htm"))
-                                (not (assoc coll known-docs)))
-                            url]
+                           [just-visit-url? url]
                            [else
                             (let ([doc-pr (assoc coll known-docs)]
                                   [url-str ((hd-cookie-url->string hd-cookie) url)])
                               (make-missing-manual-url hd-cookie coll (cdr doc-pr) url-str))]))
                        url)))]
-              [else 
-               url])))
+              [else url])))
         (super-instantiate ())))
     
     (define sk-bitmap #f)

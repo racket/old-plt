@@ -1,7 +1,6 @@
 (module help-desk mzscheme
   (require "private/standard-urls.ss"
            "private/docpos.ss"
-	   "private/finddoc.ss"
 	   "private/search.ss"
 	   "private/manuals.ss"
 	   "private/installed-components.ss"

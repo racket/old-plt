@@ -1,6 +1,6 @@
 (module howtoscheme mzscheme
   (require (lib "servlet-helpers.ss" "web-server")
-           "private/util.ss")
+           "../private/manuals.ss")
   
   (require "private/headelts.ss")
   (require (lib "servlet.ss" "web-server"))

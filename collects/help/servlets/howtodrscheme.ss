@@ -1,8 +1,8 @@
 (module howtodrscheme mzscheme
   (require (lib "servlet-helpers.ss" "web-server"))
   
-  (require "private/util.ss")
-  (require "private/headelts.ss")
+  (require "private/headelts.ss"
+           "../private/manuals.ss")
   
   (require (lib "servlet.ss" "web-server"))
   (provide interface-version timeout start)

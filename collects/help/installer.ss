@@ -28,6 +28,9 @@
   (define servlet-dir (normalize-path 
 		       (build-path (collection-path "help") "servlets")))
   (define exploded-servlet-dir-len (length (explode-path servlet-dir)))
+  
+  ;; assume that there is only a single `help' collection and that the
+  ;; original PLT tree help directory is a sibling of that.
   (define dest-dir (build-path (collection-path "help") 'up "doc" "help"))
   
   (unless (directory-exists? dest-dir)

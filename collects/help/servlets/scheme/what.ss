@@ -1,7 +1,8 @@
 (module what mzscheme
   (require (lib "servlet-helpers.ss" "web-server"))
   
-  (require "../private/util.ss")
+  (require "../private/util.ss"
+           "../../private/manuals.ss")
   (require "../private/headelts.ss")
   
   (require (lib "servlet.ss" "web-server"))

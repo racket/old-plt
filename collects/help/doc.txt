@@ -280,10 +280,19 @@ documentation directly.
 The HTML Format
 ---------------
 
-HTML documention is put in its own sub-directory in the `doc'
-collection. For example, the MzScheme manual is in the directory
-plt/collects/doc/mzscheme. The starting point for each manual must be
-called "index.htm" (no "l").
+HTML documention is put in its own sub-directory in any
+`doc' collection (Help Desk searches all doc collections,
+not just the first one, unlike `collection-path'). For
+example, the MzScheme manual is in the directory
+plt/collects/doc/mzscheme. The starting point for each
+manual must be called either:
+
+  index.htm
+  index.html
+  <jobname>.html, where <jobname>-Z-H-1.html
+                  also exists in the directory
+
+The last is to support tex2page generation of manuals.
 
 In addition to HTML files, a manual directory can contain a "keywords"
 file, which maps keywords to HTML pages and labels, and an "hdindex"

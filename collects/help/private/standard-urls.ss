@@ -2,7 +2,7 @@
 
   (require "../servlets/private/util.ss"
            "cookie.ss"
-           "finddoc.ss"
+           "manuals.ss"
 	   (lib "contract.ss"))
   
   (provide make-results-url

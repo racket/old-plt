@@ -2,6 +2,7 @@
   (require (lib "servlet-helpers.ss" "web-server")
            (lib "launcher.ss" "launcher")
            "../private/util.ss"
+           "../../private/manuals.ss"
            "../private/headelts.ss"
            "../../private/installed-components.ss"
            (lib "servlet.ss" "web-server"))

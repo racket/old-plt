@@ -2,9 +2,7 @@
   (require (lib "file.ss")
 	   (lib "list.ss")
 	   (lib "xml.ss" "xml")
-           "../../private/finddoc.ss"
-	   (lib "string-constant.ss" "string-constants")
-	   "../../private/docpos.ss")
+           (lib "string-constant.ss" "string-constants"))
 
   (provide get-pref/default
 	   get-bool-pref/default
@@ -17,8 +15,6 @@
 	   color-highlight
 	   color-with
 	   hexify-string
-	   main-manual-page
-	   manual-entry
 	   collection-doc-link
 	   fold-into-web-path
 	   home-page
@@ -72,34 +68,8 @@
   (define (cvs?)
     (directory-exists? 
      (build-path (collection-path "help") "CVS")))
-
-  ; manual is doc collection subdirectory, e.g. "mred"
-  (define (main-manual-page manual)
-    (let* ([entry (assoc manual known-docs)]
-	   [name (or (and entry (cdr entry))
-		      manual)]
-	   [href (string-append "/doc/" manual "/")])
-      `(A ((HREF ,href)) ,name)))
-
-  ; string string string -> xexpr
-  ; man is manual name
-  ; ndx is index into the manual
-  ; txt is the link text
-  ;; warning: if the index file isn't present, this page
-  (define (manual-entry man ndx txt)
-    (with-handlers ([not-break-exn?
-                     (lambda (x)
-                       `(font ((color "red"))
-                              ,txt
-                              " ["
-                              ,(if (exn? x)
-                                   (exn-message x)
-                                   (format "~s" x))
-                              "]"))])
-      `(A ((HREF ,(finddoc-page man ndx))) ,txt)))
   
   (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\> #\+))
-
   
   ; string -> string
   (define (hexify-string s)

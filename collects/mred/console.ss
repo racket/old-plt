@@ -158,26 +158,6 @@
 	     thunk
 	     (lambda () (semaphore-post sema)))))))
 
-    (define mzlib:function:dynamic-delay-break
-      (let ([p (current-output-port)])
-        (lambda (t)
-          (let* ([break? #f]
-                 [old-handler (user-break-poll-handler)]
-                 [new-handler
-                  (lambda ()
-                    (unless break?
-                      '(begin (fprintf p ".") (flush-output p))
-                      (when (old-handler)
-                        '(fprintf p "~nsetting break to #t~n")
-                        (set! break? #t)))
-                    #f)])
-            (begin0
-              (parameterize ([user-break-poll-handler new-handler])
-                            (t))
-              '(fprintf p "~nwill break: ~a~n" break?)
-              (when break?
-                (break-thread (current-thread))))))))
-
     (define make-console-edit%
       (lambda (super%)
 	(class super% args
@@ -458,56 +438,57 @@
 	    [generic-write
 	     (let ([first-time? #t])
 	       (lambda (s style-func)
-		 (let ([handle-insertion
-			(lambda ()
-			  (let ((start (last-position)))
-			    (begin-edit-sequence)
-			    (insert (if (is-a? s wx:snip%)
-					(send s copy)
-					s))
-			    (let ((end (last-position)))
-			      (change-style () start end)
-			      (style-func start end)
-			      (end-edit-sequence))))])
-		 (if first-time?
-		     (begin
-		       (set! first-time? #f)
-		       (handle-insertion))
-		     (mzlib:function:dynamic-delay-break
-		      (lambda ()
-			(semaphore-wait timer-sema)
-			(if timer-on
-			    (begin
-			      (set! timer-writes (add1 timer-writes))
-			      (when (> timer-writes CACHE-WRITE-COUNT)
-				(end-edit-sequence)
-				(begin-edit-sequence #f)
-				(set! timer-writes 0)))
-			    (begin
-			      (set! timer-writes 0)
-			      (let ([on-box (box #t)])
-				(begin-edit-sequence #f)
-				(set! timer-on on-box)
-				(thread 
-				 (lambda ()
-				   (dynamic-wind
-				    void
-				    (lambda ()
-				      (sleep CACHE-TIME))
-				    (lambda ()
-				      (semaphore-wait timer-sema)
-				      (when (unbox on-box)
-					(end-edit-sequence)
-					(set! timer-on #f))
-				      (semaphore-post timer-sema))))))))
-			(semaphore-post timer-sema)
-			(begin-edit-sequence #f)
-			(set-position (last-position))
-			(when (and prompt-mode? autoprompting?)
-			  (insert #\newline))
-			(handle-insertion)
-			(end-edit-sequence)
-			(set-prompt-mode #f)))))))]
+		 (mzlib:function:dynamic-disable-break
+		  (lambda ()
+		    (let ([handle-insertion
+			   (lambda ()
+			     (let ((start (last-position)))
+			       (begin-edit-sequence)
+			       (insert (if (is-a? s wx:snip%)
+					   (send s copy)
+					   s))
+			       (let ((end (last-position)))
+				 (change-style () start end)
+				 (style-func start end)
+				 (end-edit-sequence))))])
+		      (if first-time?
+			  (begin
+			    (set! first-time? #f)
+			    (handle-insertion))
+			  (begin
+			    (semaphore-wait timer-sema)
+			    (if timer-on
+				(begin
+				  (set! timer-writes (add1 timer-writes))
+				  (when (> timer-writes CACHE-WRITE-COUNT)
+				    (end-edit-sequence)
+				    (begin-edit-sequence #f)
+				    (set! timer-writes 0)))
+				(begin
+				  (set! timer-writes 0)
+				  (let ([on-box (box #t)])
+				    (begin-edit-sequence #f)
+				    (set! timer-on on-box)
+				    (thread 
+				     (lambda ()
+				       (dynamic-wind
+					void
+					(lambda ()
+					  (sleep CACHE-TIME))
+					(lambda ()
+					  (semaphore-wait timer-sema)
+					  (when (unbox on-box)
+					    (end-edit-sequence)
+					    (set! timer-on #f))
+					  (semaphore-post timer-sema))))))))
+			    (semaphore-post timer-sema)
+			    (begin-edit-sequence #f)
+			    (set-position (last-position))
+			    (when (and prompt-mode? autoprompting?)
+			      (insert #\newline))
+			    (handle-insertion)
+			    (end-edit-sequence)
+			    (set-prompt-mode #f))))))))]
 	    [generic-close (lambda () '())]
 	    [flush-console-output
 	     (lambda ()
@@ -536,7 +517,7 @@
 	       (set! autoprompting? v))]
 	    [this-out-write
 	     (lambda (s)
-	       (mzlib:function:dynamic-delay-break
+	       (mzlib:function:dynamic-disable-break
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
@@ -551,7 +532,7 @@
 			      (end-edit-sequence))))))))]
 	    [this-err-write
 	     (lambda (s)
-	       (mzlib:function:dynamic-delay-break
+	       (mzlib:function:dynamic-disable-break
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
@@ -609,7 +590,7 @@
 	     (let* ([g (lambda ()
 			 (init-transparent-io #t)
 			 (send transparent-edit fetch-char))]
-		    [f (lambda () (mzlib:function:dynamic-delay-break g))])
+		    [f (lambda () (mzlib:function:dynamic-disable-break g))])
 	       (lambda ()
 		 (single-threader f)))]
 	    [transparent-read
@@ -617,7 +598,7 @@
 			 (init-transparent-io #t)
 			 (send transparent-edit fetch-sexp))]
 		    [f (lambda ()
-			 (mzlib:function:dynamic-delay-break g))])
+			 (mzlib:function:dynamic-disable-break g))])
 	       (lambda () (single-threader f)))])
 	  (public
 	    [set-output-delta

@@ -1273,11 +1273,14 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
 
   if (!parent) {
     if (admin && (admin->standard > 0)) {
-      wxWindow *w = ((wxCanvasMediaAdmin *)admin)->GetCanvas();
+      wxWindow *w;
+
+      w = ((wxCanvasMediaAdmin *)admin)->GetCanvas();
 
       while (w && !wxSubType(w->__type, wxTYPE_FRAME)
-	     && !wxSubType(w->__type, wxTYPE_DIALOG_BOX))
+	     && !wxSubType(w->__type, wxTYPE_DIALOG_BOX)) {
 	w = w->GetParent();
+      }
 
       if (w)
 	parent = w;

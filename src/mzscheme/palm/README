@@ -29,3 +29,9 @@ At the time of our experiment, the debugger didn't handle
 multi-segment programs very well. The debuginfo.ss extracts
 information from the input assembly and disassembled output to
 reconstruct useful process-address information.
+
+----------------------------------------
+
+Bugs in gcc includes: 
+  stdlib.h and string.h have mismatched decls: strtol, strtoul
+  string.h has memset

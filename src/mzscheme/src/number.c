@@ -58,7 +58,6 @@ static Scheme_Object *rational_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *integer_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *exact_p (int argc, Scheme_Object *argv[]);
 static Scheme_Object *even_p (int argc, Scheme_Object *argv[]);
-static Scheme_Object *bitwise_and (int argc, Scheme_Object *argv[]);
 static Scheme_Object *bitwise_or (int argc, Scheme_Object *argv[]);
 static Scheme_Object *bitwise_xor (int argc, Scheme_Object *argv[]);
 static Scheme_Object *bitwise_not (int argc, Scheme_Object *argv[]);
@@ -252,7 +251,7 @@ scheme_init_number (Scheme_Env *env)
 						      1, 1, 1),
 			     env);
   scheme_add_global_constant("bitwise-and", 
-			     scheme_make_folding_prim(bitwise_and,
+			     scheme_make_folding_prim(scheme_bitwise_and,
 						      "bitwise-and",
 						      1, -1, 1),
 			     env);
@@ -2053,7 +2052,7 @@ GEN_BIN_INT_OP(bin_bitwise_and, "bitwise-and", &, scheme_bignum_and)
 GEN_BIN_INT_OP(bin_bitwise_or, "bitwise-ior", |, scheme_bignum_or)
 GEN_BIN_INT_OP(bin_bitwise_xor, "bitwise-xor", ^, scheme_bignum_xor)
 
-GEN_TWOARY_OP(static, bitwise_and, "bitwise-and", bin_bitwise_and, SCHEME_EXACT_INTEGERP, "exact integer")
+GEN_TWOARY_OP(/**/, scheme_bitwise_and, "bitwise-and", bin_bitwise_and, SCHEME_EXACT_INTEGERP, "exact integer")
 GEN_TWOARY_OP(static, bitwise_or, "bitwise-ior", bin_bitwise_or, SCHEME_EXACT_INTEGERP, "exact integer")
 GEN_TWOARY_OP(static, bitwise_xor, "bitwise-xor", bin_bitwise_xor, SCHEME_EXACT_INTEGERP, "exact integer")
 

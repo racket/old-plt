@@ -363,7 +363,7 @@ void mpn_tdiv_qr _PROTO ((mp_ptr, mp_ptr, mp_size_t, mp_srcptr, mp_size_t, mp_sr
         ;						\
   } while (0)
 
-#if defined (__GNUC__) || defined (_FORCE_INLINES)
+#if (defined (__GNUC__) || defined (_FORCE_INLINES)) && !defined(PALMOS_STUFF)
 _EXTERN_INLINE mp_limb_t
 #if (__STDC__-0) || defined (__cplusplus)
 mpn_add_1 (register mp_ptr res_ptr,

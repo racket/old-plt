@@ -906,7 +906,7 @@ scheme_make_input_port(Scheme_Object *subtype,
 				 need_wakeup_fun, must_close);
 }
 
-int waitable_input_port_p(Scheme_Object *p)
+static int waitable_input_port_p(Scheme_Object *p)
 {
   Scheme_Object *sub_type = ((Scheme_Input_Port *)p)->sub_type;
 
@@ -926,7 +926,7 @@ int waitable_input_port_p(Scheme_Object *p)
 	  || SAME_OBJ(sub_type, scheme_pipe_read_port_type));
 }
 
-void register_input_port_wait()
+static void register_input_port_wait()
 {
   scheme_add_waitable(scheme_input_port_type,
 		      scheme_char_ready, scheme_need_wakeup, 

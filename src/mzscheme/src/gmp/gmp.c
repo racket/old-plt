@@ -4493,7 +4493,7 @@ const struct bases __mp_bases[256] =
 };
 #endif
 
-int
+static int
 #if __STDC__
 __gmp_assert_fail (const char *filename, int linenum,
                    const char *expr)

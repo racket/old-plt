@@ -1088,9 +1088,9 @@ static Scheme_Object *link_module_variable(Scheme_Object *modidx,
   return (Scheme_Object *)scheme_global_bucket(varname, menv);
 }
 
-Scheme_Object *scheme_link_toplevel(Scheme_Object *expr, Scheme_Env *env,
-				    Scheme_Object *src_modidx, 
-				    Scheme_Object *dest_modidx)
+static Scheme_Object *scheme_link_toplevel(Scheme_Object *expr, Scheme_Env *env,
+					   Scheme_Object *src_modidx, 
+					   Scheme_Object *dest_modidx)
 {
   if (SAME_TYPE(SCHEME_TYPE(expr), scheme_variable_type)) {
     Scheme_Bucket_With_Home *b = (Scheme_Bucket_With_Home *)expr;

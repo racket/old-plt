@@ -140,8 +140,10 @@ static void eval_module_body(Scheme_Env *menv);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
-void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
-		    int start, int count, int do_uninterned);
+static void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
+			   int start, int count, int do_uninterned);
+
+static int same_modidx(Scheme_Object *a, Scheme_Object *b);
 
 #define MODCHAIN_TABLE(p) ((Scheme_Hash_Table *)(SCHEME_VEC_ELS(p)[0]))
 
@@ -3428,8 +3430,8 @@ module_begin_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme
 }
 
 /* Helper: */
-void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
-		    int start, int count, int do_uninterned)
+static void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
+			   int start, int count, int do_uninterned)
 {
   int i, j;
   Scheme_Object *tmp_ex, *tmp_exsn, *tmp_exs, *pivot;

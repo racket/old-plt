@@ -2141,4 +2141,101 @@
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(test (integer->integer-byte-string 42 2 #f) integer->integer-byte-string 42 2 #f (system-big-endian?))
+
+(test "\0\0" integer->integer-byte-string 0 2 #t)
+(test "\377\377" integer->integer-byte-string -1 2 #t)
+(test "\377\377" integer->integer-byte-string 65535 2 #f)
+;;
+(test "\0\0" integer->integer-byte-string 0 2 #t #t)
+(test "\377\377" integer->integer-byte-string -1 2 #t #t)
+(test "\377\377" integer->integer-byte-string 65535 2 #f #t)
+(test "\377\0" integer->integer-byte-string -256 2 #t #t)
+(test "\377\1" integer->integer-byte-string -255 2 #t #t)
+(test "\1\377" integer->integer-byte-string 511 2 #t #t)
+(test "\1\2" integer->integer-byte-string 513 2 #f #f)
+;;
+(test "\0\0" integer->integer-byte-string 0 2 #t #f)
+(test "\377\377" integer->integer-byte-string -1 2 #t #f)
+(test "\377\377" integer->integer-byte-string 65535 2 #f #f)
+(test "\377\1" integer->integer-byte-string 511 2 #t #f)
+(test "\1\377" integer->integer-byte-string -255 2 #t #f)
+(test "\1\2" integer->integer-byte-string 258 2 #f #t)
+
+(test "\0\0\0\0" integer->integer-byte-string 0 4 #t)
+(test "\377\377\377\377" integer->integer-byte-string -1 4 #t)
+(test "\377\377\377\377" integer->integer-byte-string 4294967295 4 #f)
+;;
+(test "\0\0\0\0" integer->integer-byte-string 0 4 #t #t)
+(test "\377\377\377\377" integer->integer-byte-string -1 4 #t #t)
+(test "\377\377\377\377" integer->integer-byte-string 4294967295 4 #f #t)
+(test "\377\0\0\0" integer->integer-byte-string -16777216 4 #t #t)
+(test "\0\0\0\377" integer->integer-byte-string 255 4 #t #t)
+;;
+(test "\0\0\0\0" integer->integer-byte-string 0 4 #t #f)
+(test "\377\377\377\377" integer->integer-byte-string -1 4 #t #f)
+(test "\377\377\377\377" integer->integer-byte-string 4294967295 4 #f #f)
+(test "\377\0\0\1" integer->integer-byte-string 16777471 4 #t #f)
+(test "\0\0\0\377" integer->integer-byte-string -16777216 4 #t #f)
+(test "\1\0\0\377" integer->integer-byte-string -16777215 4 #t #f)
+
+(test "matt" integer->integer-byte-string 1835103348 4 #t #t)
+(test "matt" integer->integer-byte-string 1953784173 4 #t #f)
+
+(test "\0\0\0\0\0\0\0\0" integer->integer-byte-string 0 8 #t #t)
+(test "\377\377\377\377\377\377\377\377" integer->integer-byte-string -1 8 #t #f)
+(test "\377\377\377\377\377\377\377\377" integer->integer-byte-string 18446744073709551615 8 #f #f)
+(test "\377\377\377\377\0\0\0\0" integer->integer-byte-string 4294967295 8 #t #f)
+(test "\0\0\0\0\377\377\377\377" integer->integer-byte-string -4294967296 8 #t #f)
+(test "\377\377\377\377\1\0\0\0" integer->integer-byte-string 8589934591 8 #t #f)
+(test "\1\0\0\0\377\377\377\377" integer->integer-byte-string -4294967295 8 #t #f)
+;;
+(test "\0\0\0\0\0\0\0\0" integer->integer-byte-string 0 8 #t #f)
+(test "\377\377\377\377\377\377\377\377" integer->integer-byte-string -1 8 #t #f)
+(test "\377\377\377\377\377\377\377\377" integer->integer-byte-string 18446744073709551615 8 #f #f)
+(test "\377\377\377\377\0\0\0\0" integer->integer-byte-string -4294967296 8 #t #t)
+(test "\0\0\0\0\377\377\377\377" integer->integer-byte-string 4294967295 8 #t #t)
+(test "\377\377\377\377\0\0\0\1" integer->integer-byte-string -4294967295 8 #t #t)
+(test "\0\0\0\1\377\377\377\377" integer->integer-byte-string 8589934591 8 #t #t)
+
+(arity-test integer->integer-byte-string 3 5)
+(err/rt-test (integer->integer-byte-string 'ack 2 #t))
+(err/rt-test (integer->integer-byte-string 10 'ack #t))
+(err/rt-test (integer->integer-byte-string 10 20 #t))
+(err/rt-test (integer->integer-byte-string 10 2 #t #t 'ack))
+(err/rt-test (integer->integer-byte-string 10 2 #t #t "ack")) ; <-- immutable string
+(err/rt-test (integer->integer-byte-string 100000 2 #t) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string 65536 2 #f) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string 32768 2 #t) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string -32769 2 #t) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string (expt 2 32) 4 #f) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string (expt 2 31) 4 #t) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string (sub1 (- (expt 2 31))) 4 #t) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string (expt 2 64) 8 #f) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string (expt 2 63) 4 #t) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string (sub1 (- (expt 2 63))) 8 #t) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string 100 2 #t #t (make-string 3)) exn:application:mismatch?)
+(err/rt-test (integer->integer-byte-string 100 4 #t #t (make-string 3)) exn:application:mismatch?)
+
+(map (lambda (v)
+       (let-values ([(n size signed?) (apply values v)])
+	 (test n integer-byte-string->integer (integer->integer-byte-string n size signed? #f) signed? #f)
+	 (test n integer-byte-string->integer (integer->integer-byte-string n size signed? #t) signed? #t)))
+     (list
+      (list 10 2 #t)
+
+      (list (sub1 (expt 2 16)) 2 #f)
+      (list (sub1 (expt 2 15)) 2 #t)
+      (list (- (expt 2 15)) 2 #t)
+
+      (list (sub1 (expt 2 32)) 4 #f)
+      (list (sub1 (expt 2 31)) 4 #t)
+      (list (- (expt 2 31)) 4 #t)
+
+      (list (sub1 (expt 2 64)) 8 #f)
+      (list (sub1 (expt 2 63)) 8 #t)
+      (list (- (expt 2 63)) 8 #t)))
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (report-errs)

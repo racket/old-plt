@@ -53,6 +53,8 @@ static char *minus_infinity_str = "-inf.0";
 static char *not_a_number_str = "+nan.0";
 static char *other_not_a_number_str = "-nan.0";
 
+static Scheme_Object *num_limits[3];
+
 #ifndef SCHEME_BIG_ENDIAN
 # define SCHEME_BIG_ENDIAN 0
 #endif
@@ -125,6 +127,8 @@ void scheme_init_numstr(Scheme_Env *env)
 						       "current-pseudo-random-generator",
 						       MZCONFIG_RANDOM_STATE),
 			     env);
+
+  REGISTER_SO(num_limits);
 }
 
 /*========================================================================*/
@@ -1475,6 +1479,13 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
       return scheme_make_integer_value_from_unsigned(((unsigned int *)str)[0]);
     break;
   default:
+#ifdef SIXTY_FOUR_BIT_INTEGERS
+    if (sgned)
+      return scheme_make_integer_value(((long *)str)[0]);
+    else
+      return scheme_make_integer_value_from_unsigned(((unsigned long *)str)[0]);
+    break;
+#else
     {
       Scheme_Object *h, *l, *a[2];
 
@@ -1499,13 +1510,198 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
       h = scheme_bitwise_shift(2, a);
       return scheme_bin_plus(h, l);
     }
+#endif
     break;
   }
 }
 
+#define MZ_U8HI 0
+#define MZ_S8HI 1
+#define MZ_S8LO 2
+
 static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
 {
-  return scheme_false;
+  Scheme_Object *n, *s;
+  char *str;
+  int size, sgned;
+  long val;
+  int bigend = SCHEME_BIG_ENDIAN, bad;
+
+  n = argv[0];
+  if (!SCHEME_INTP(n) && !SCHEME_BIGNUMP(n))
+    scheme_wrong_type("integer->integer-byte-string", "exact integer", 0, argc, argv);
+
+  if (SCHEME_INTP(argv[1]))
+    size = SCHEME_INT_VAL(argv[1]);
+  else
+    size = 0;
+  if ((size != 2) && (size != 4) &&(size != 8))
+    scheme_wrong_type("integer->integer-byte-string", "exact 2, 4, or 8", 1, argc, argv);
+
+  sgned = SCHEME_TRUEP(argv[2]);
+  if (argc > 3)
+    bigend = SCHEME_TRUEP(argv[3]);
+  
+  if (argc > 4)
+    s = argv[4];
+  else
+    s = scheme_make_sized_string("12345678", size, 1);
+  
+  if (!SCHEME_MUTABLE_STRINGP(s))
+    scheme_wrong_type("integer->integer-byte-string", "mutable string", 4, argc, argv);
+
+  /* Check for mismatch: number doesn't fit */
+  if (size == 2) {
+    if (SCHEME_BIGNUMP(n))
+      bad = 1;
+    else {
+      val = SCHEME_INT_VAL(n);
+      if (sgned) {
+	bad = ((val < -32768) || (val > 32767));
+      } else {
+	bad = ((val < 0) || (val > 65535));
+      }
+    }
+  } else if (size ==4) {
+    if (sgned)
+      bad = !scheme_get_int_val(n, &val);
+    else
+      bad = !scheme_get_unsigned_int_val(n, (unsigned long *)&val);
+#ifdef SIXTY_FOUR_BIT_INTEGERS
+    if (!bad) {
+      if (sgned)
+	bad = ((val > (long)0x7fffffff) || (val < -(long)0x80000000));
+      else
+	bad = (val > (long)0xffffffff);
+    }
+#endif
+  } else  {
+#ifdef SIXTY_FOUR_BIT_INTEGERS
+    if (sgned)
+      bad = !scheme_get_int_val(n, &val);
+    else
+      bad = !scheme_get_unsigned_int_val(n, (unsigned long *)&val);
+#else
+    if (!num_limits[MZ_U8HI]) {
+      Scheme_Object *a[2], *v;
+
+      a[0] = scheme_make_integer(1);
+      a[1] = scheme_make_integer(64);
+      a[0] = scheme_bitwise_shift(2, a);
+      v = scheme_sub1(1, a);
+      num_limits[MZ_U8HI] = v;
+      a[0] = v;
+      a[1] = scheme_make_integer(-1);
+      v = scheme_bitwise_shift(2, a);
+      num_limits[MZ_S8HI] = v;
+      a[0] = v;
+      v = scheme_bin_minus(scheme_make_integer(0), scheme_add1(1, a));
+      num_limits[MZ_S8LO] = v;
+    }
+
+    if (sgned)
+      bad = (scheme_bin_lt(n, num_limits[MZ_S8LO])
+	     || scheme_bin_lt(num_limits[MZ_S8HI], n));
+    else
+      bad = (!scheme_nonneg_exact_p(n)
+	     || scheme_bin_lt(num_limits[MZ_U8HI], n));
+
+    val = 0;
+#endif
+  }
+
+  if (bad) {
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		     n,
+		     "integer->integer-byte-string: integer does not fit into %d %ssigned bytes: %V",
+		     size, (sgned ? "" : "un"), n);
+    return NULL;
+  }
+
+  /* Check for mismatch: string wrong size */
+
+  if (size != SCHEME_STRLEN_VAL(s)) {
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		     s,
+		     "integer->integer-byte-string: string size %d does not match indicated %d bytes: %V",
+		     SCHEME_STRLEN_VAL(s), size, s);
+    return NULL;
+  }
+
+  /* Finally, do the work */
+  str = SCHEME_STR_VAL(s);
+  switch (size) {
+  case 2:
+    {
+      if (sgned) {
+	unsigned short sv = val;
+	*(unsigned short *)str = sv;
+      } else {
+	short sv = val;
+	*(short *)str = sv;
+      }
+    }
+    break;
+  case 4:
+    if (sgned) {
+      unsigned int sv = val;
+      *(unsigned int *)str = sv;
+    } else {
+      int sv = val;
+      *(int *)str = sv;
+    }
+    break;
+  default:
+#ifdef SIXTY_FOUR_BIT_INTEGERS
+    *(long *)str = val;
+#else
+    {
+      Scheme_Object *hi, *lo, *a[2];
+      unsigned long ul;
+      
+      a[0] = n;
+      a[1] = scheme_make_integer_value_from_unsigned((unsigned long)-1);
+      lo = scheme_bitwise_and(2, a);
+      a[1] = scheme_make_integer(-32);
+      hi = scheme_bitwise_shift(2, a);
+
+      scheme_get_unsigned_int_val(lo, &ul);
+      
+      ((unsigned int *)str)[0] = ul;
+      if (sgned) {
+	scheme_get_int_val(hi, &val);
+	((unsigned int *)str)[1] = val;
+      } else {
+	scheme_get_unsigned_int_val(hi, &ul);
+	((unsigned int *)str)[1] = ul;
+      }
+
+#if SCHEME_BIG_ENDIAN
+      {
+	/* We've assumed little endian so far */
+	val = ((int *)str)[0];
+	((int *)str)[0] = ((int *)str)[1];
+	((int *)str)[1] = val;
+      }
+#endif
+
+    }
+#endif
+    break;
+  }
+
+  if (bigend != SCHEME_BIG_ENDIAN) {
+    int i;
+    char buf[8];
+    
+    for (i = 0; i < size; i++)
+      buf[size - i - 1] = str[i];
+    for (i = 0; i < size; i++)
+      str[i] = buf[i];
+  }
+
+
+  return s;
 }
 
 static Scheme_Object *bytes_to_rational (int argc, Scheme_Object *argv[])

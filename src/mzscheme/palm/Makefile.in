@@ -1,7 +1,7 @@
 
 srcdir = @srcdir@
 
-PALMCPP = m68k-palmos-gcc -E
+PALMCPP = m68k-palmos-gcc -E -palmos3.5
 PALMCC = m68k-palmos-gcc -mnoshort -save-temps
 PALMAS = m68k-palmos-as -mno-68881 -m68000 -l
 PALMDISASM = m68k-palmos-objdump --disassemble-all
@@ -39,13 +39,12 @@ OBJS =  salloc.o \
 	hash.o \
 	image.o \
 	list.o \
+	module.o \
 	network.o \
 	numarith.o \
 	number.o \
 	numcomp.o \
 	numstr.o \
-        objclass.o \
-        object.o \
 	port.o \
 	portfun.o \
 	print.o \
@@ -60,8 +59,6 @@ OBJS =  salloc.o \
 	syntax.o \
 	thread.o \
 	type.o \
-        unit.o \
-        unitsig.o \
 	vector.o \
 	gmp.o \
 	sgc.o \
@@ -84,13 +81,12 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/hash.c \
 	$(XSRCDIR)/image.c \
 	$(XSRCDIR)/list.c \
+	$(XSRCDIR)/module.c \
 	$(XSRCDIR)/network.c \
 	$(XSRCDIR)/numarith.c \
 	$(XSRCDIR)/number.c \
 	$(XSRCDIR)/numcomp.c \
 	$(XSRCDIR)/numstr.c \
-        $(XSRCDIR)/objclass.c \
-        $(XSRCDIR)/object.c \
 	$(XSRCDIR)/port.c \
 	$(XSRCDIR)/portfun.c \
 	$(XSRCDIR)/print.c \
@@ -105,8 +101,6 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/syntax.c \
 	$(XSRCDIR)/thread.c \
 	$(XSRCDIR)/type.c \
-        $(XSRCDIR)/unit.c \
-        $(XSRCDIR)/unitsig.c \
 	$(XSRCDIR)/vector.c \
 	$(XSRCDIR)/gmp.c \
 	$(XSRCDIR)/sgc.c
@@ -126,13 +120,12 @@ XMAPS = $(XSRCDIR)/salloc.map \
 	$(XSRCDIR)/hash.map \
 	$(XSRCDIR)/image.map \
 	$(XSRCDIR)/list.map \
+	$(XSRCDIR)/module.map \
 	$(XSRCDIR)/network.map \
 	$(XSRCDIR)/numarith.map \
 	$(XSRCDIR)/number.map \
 	$(XSRCDIR)/numcomp.map \
 	$(XSRCDIR)/numstr.map \
-        $(XSRCDIR)/objclass.map \
-        $(XSRCDIR)/object.map \
 	$(XSRCDIR)/port.map \
 	$(XSRCDIR)/portfun.map \
 	$(XSRCDIR)/print.map \
@@ -147,8 +140,6 @@ XMAPS = $(XSRCDIR)/salloc.map \
 	$(XSRCDIR)/syntax.map \
 	$(XSRCDIR)/thread.map \
 	$(XSRCDIR)/type.map \
-        $(XSRCDIR)/unit.map \
-        $(XSRCDIR)/unitsig.map \
 	$(XSRCDIR)/vector.map \
 	$(XSRCDIR)/gmp.map \
 	$(XSRCDIR)/sgc.map

@@ -20,7 +20,7 @@
 
 (define source (make-hash-table))
 
-(define limit 100)
+(define limit 5)
 
 (define multiple-ok '(malloc free div))
 

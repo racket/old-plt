@@ -89,6 +89,14 @@
 			       (min display-width fw)
 			       (lambda (x) (and (number? x) (<= 0 x 32768))))))
 
+  (define (xywh-okay? n)
+    (and (number? n)
+         (<= 0 n 10000)))
+  (preferences:set-default 'sirmail:folder-window-w 200 xywh-okay?)
+  (preferences:set-default 'sirmail:folder-window-h 400 xywh-okay?)
+  (preferences:set-default 'sirmail:folder-window-x 0 xywh-okay?)
+  (preferences:set-default 'sirmail:folder-window-y 0 xywh-okay?)
+
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;  Preference Manager                                     ;;
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

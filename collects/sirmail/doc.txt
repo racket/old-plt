@@ -30,9 +30,9 @@ Reading panel:
      (build-path (find-system-path 'home-dir) "SirMail")
 
   - Folder List Root: Names a mailbox to use as the root in the mailbox
-    folder list window. If this option is not provided, the reader
-    window will not contain the "Show Folders Window" menu.
-
+    folder list window. If this option is not provided, the folder list
+    window is not available.
+    
   - Auto-File Table File: The file should contain an expression that
     reads as a value of the shape
 

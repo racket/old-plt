@@ -12,6 +12,10 @@
 
   (define shared-password #f)
 
+  ;; The option@ unit gets instanted afresh for every window, but
+  ;; it defers practically all of its work to the "pref.ss" module
+  ;; (which is only instantiated once).
+  
   (provide option@)
   (define option@
     (unit/sig sirmail:options^

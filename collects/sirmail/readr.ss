@@ -668,6 +668,15 @@
             (make-object menu-item% "&Download All" file-menu
               (lambda (i e) (download-all))
               #\l)
+            (make-object separator-menu-item% file-menu)
+            (make-object menu-item%
+              "&Open Folders List"
+              file-menu
+              (lambda x
+                (if (ROOT-MAILBOX-FOR-LIST)
+                    (open-folders-window)
+                    (error "You must first set the Folder List Root preference"))))
+            (make-object separator-menu-item% file-menu)
             (make-object menu-item% "&New Message" file-menu
               (lambda (i e) (start-new-mailer #f "" "" "" "" "" null))
               #\m)
@@ -701,10 +710,6 @@
           
           (define/override (file-menu:between-print-and-close file-menu)
             (make-object separator-menu-item% file-menu)
-            (set! mailboxes-menu (make-object menu% "&Open Mailbox" file-menu))
-            (make-object menu-item% "&Add Mailbox..." file-menu
-              (lambda (i e) (add-mailbox)))
-            (make-object separator-menu-item% file-menu)
             (make-object menu-item% "D&isconnect" file-menu
               (lambda (i e) 
                 (disconnect)
@@ -713,6 +718,22 @@
           
           (define/override (file-menu:create-close?) #f)
           (define/override (file-menu:quit-callback i e) (logout))
+          
+          (rename [super-help-menu:after-about help-menu:after-about])
+          (define/override (help-menu:after-about menu)
+            (make-object menu-item% "&Help" menu
+              (lambda (i e)
+                (let* ([f (instantiate frame% ("Help")
+                            [width 400]
+                            [height 300])]
+                       [e (make-object text%)]
+                       [c (make-object editor-canvas% f e)])
+                  (send e load-file
+                        (build-path (collection-path "sirmail")
+                                    "doc.txt"))
+                  (send f show #t))))
+            (super-help-menu:after-about menu))
+          
           
           (inherit get-edit-target-object)
           (define/override (get-text-to-search) 
@@ -743,10 +764,13 @@
           (when icon
             (set-icon icon icon-mask 'both))))
       
+      (define drag-cursor (make-object cursor% 'hand))      
+      (define plain-cursor (make-object cursor% 'arrow))
+      
       (define header-list%
 	(class hierarchical-list%
 
-          (inherit get-items show-focus)
+          (inherit get-items show-focus set-cursor)
           (field [selected #f])
           
           (define/public (mark marked?)
@@ -817,12 +841,17 @@
           (inherit get-editor client->screen)
           (field (dragging-item #f)
                  (dragging-title #f)
-                 (last-status #f))
+                 (last-status #f)
+                 (drag-start-x 0)
+                 (drag-start-y 0))
           (rename [super-on-event on-event])
           (define/override (on-event evt)
             (cond
               [(send evt button-down?)
-	       (set! dragging-item #f)
+               (when dragging-item
+                 (status "")
+                 (send (get-editor) set-cursor plain-cursor)
+                 (set! dragging-item #f))
                (let ([text (get-editor)])
                  (when text
                    (let ([xb (box (send evt get-x))]
@@ -834,6 +863,8 @@
                                        (send snip get-item))])
                        (set! dragging-title "???")
                        (set! dragging-item item)
+                       (set! drag-start-x (send evt get-x))
+                       (set! drag-start-y (send evt get-y))
                        (when dragging-item
                          (let* ([ud (send dragging-item user-data)]
                                 [message (assoc ud mailbox)]
@@ -849,6 +880,9 @@
                                         (string-append (substring title 0 (- cap-length 3)) "..."))])))))))))]
               [(send evt dragging?)
 	       (when dragging-item
+                 (when (or ((abs (- (send evt get-x) drag-start-x)) . > . 5)
+                           ((abs (- (send evt get-y) drag-start-y)) . > . 5))
+                   (send (get-editor) set-cursor drag-cursor))
 		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
 		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
 		     (if (string? mailbox-name)
@@ -856,18 +890,26 @@
 			 (status "")))))]
               [(send evt button-up?)
 	       (when dragging-item
+                 (send (get-editor) set-cursor plain-cursor)
 		 (let-values ([(gx gy) (client->screen (send evt get-x) (send evt get-y))])
 		   (let ([mailbox-name (send-message-to-window gx gy (list gx gy))])
-		     (when (string? mailbox-name)
-		       (let* ([user-data (send dragging-item user-data)]
-			      [item (assoc user-data mailbox)])
-			 (when item
-			   (copy-messages-to (list item) mailbox-name)
-			   (header-changing-action
-			    #f
-			    (lambda ()
-			      (purge-messages (list item))))))))))
-	       (set! dragging-item #f)])
+		     (if (string? mailbox-name)
+                         (let* ([user-data (send dragging-item user-data)]
+                                [item (assoc user-data mailbox)])
+                           (when item
+                             (copy-messages-to (list item) mailbox-name)
+                             (header-changing-action
+                              #f
+                              (lambda ()
+                                (purge-messages (list item))))))
+                         (status ""))))
+                 (set! dragging-item #f))]
+              [else
+               (when dragging-item
+                 (set! dragging-item #f)
+                 (send (get-editor) set-cursor plain-cursor)
+                 (status ""))])
+
             (super-on-event evt))
 
           (super-instantiate ())
@@ -1294,30 +1336,22 @@
                       "Really delete the marked messages?"
                       main-frame))
             (purge-marked/update-headers))))
-      (define move-menu (make-object menu% "&Copy Marked To" msg-menu))
-      
-      (when (ROOT-MAILBOX-FOR-LIST)
-	(let ([mailbox-menu (make-object menu% "M&ailboxes" mb)])
-	  (make-object menu-item%
-            "&Show Folders Window"
-            mailbox-menu
-            (lambda x
-              (open-folders-window)))
-	  (make-object (class menu-item%
-			 (inherit enable set-label)
-                         (define/override (on-demand)
-                           (let ([folder (get-active-folder)])
-                             (enable folder)
-                             (when folder
-                               (set-label (format "&Copy Selected to ~a" folder)))))
-			 (super-instantiate ()))
-            "&Copy Selected to Folders Window Selection" 
-            mailbox-menu
-            (lambda x
-              (let ([mbox (get-active-folder)])
-                (if mbox
-                    (copy-marked-to mbox)
-                    (bell)))))))
+
+      (make-object (class menu-item%
+                     (inherit enable set-label)
+                     (define/override (on-demand)
+                       (let ([folder (get-active-folder)])
+                         (enable folder)
+                         (when folder
+                           (set-label (format "&Copy Marked to ~a" folder)))))
+                     (super-instantiate ()))
+        "&Copy Marked to Selected Folder" 
+        msg-menu
+        (lambda x
+          (let ([mbox (get-active-folder)])
+            (if mbox
+                (copy-marked-to mbox)
+                (bell)))))
       
       (when (AUTO-FILE-TABLE)
 	(make-object separator-menu-item% msg-menu)
@@ -1585,80 +1619,7 @@
 	   void)))
 
       (define no-status-handler (lambda (x) (status "") (raise x)))
-      
-      (define (add-mailbox)
-	(let ([t (get-text-from-user "New Mailbox" "New mailbox name:" main-frame)])
-	  (when t
-	    
-	    (when (let-values ([(imap count new next-uid) (connect)])
-		    (if (as-background
-			 enable-main-frame
-			 (lambda (break-bad break-ok)
-			   (status "Checking for mailbox...")
-			   (begin0
-                             (with-handlers ([void no-status-handler])
-                               (imap-mailbox-exists? imap t))
-                             (status "")))
-			 void)
-			#t
-			(and (eq? 'yes
-				  (confirm-box "New Mailbox?"
-					       (format "The mailbox ~a does not currently exists.~nCreate it?" t)
-					       main-frame))
-			     
-			     (as-background
-			      enable-main-frame
-			      (lambda (break-bad break-ok) 
-				(status "Creating mailbox...")
-				(with-handlers ([void no-status-handler])
-				  (imap-create-mailbox imap t))
-				(status "")
-				#t)
-			      void))))
-	      
-	      (let ([dir (regexp-replace* "/" t ".")])
-		(with-handlers ([void void]) (make-directory (build-path (LOCAL-DIR) dir)))
-		(set! mailboxes
-		      (append mailboxes
-			      (list (list t dir)))))
-	      (with-output-to-file (build-path (LOCAL-DIR) "mailboxes")
-		(lambda () (write mailboxes))
-		'truncate)
-	      (reset-mailboxes-menus)
-	      (status "Added mailbox")))))
-      
-      ;; goofy definition since this variable
-      ;; is initialized above and we don't want
-      ;; to clobber that initialization with 
-      ;; this one.
-      (define mailboxes-menu mailboxes-menu)
-      
-      (define (reset-mailboxes-menus)
-	(for-each
-	 (lambda (i) (send i delete))
-	 (append (send mailboxes-menu get-items)
-		 (send move-menu get-items)))
-        
-	(for-each
-	 (lambda (mb)
-	   (unless (string=? (car mb) mailbox-name)
-	     (make-object menu-item% (car mb) move-menu
-               (lambda (i e)
-                 (copy-marked-to (car mb))))))
-	 mailboxes)
-        
-	(for-each
-	 (lambda (mb)
-	   (unless (string=? (car mb) mailbox-name)
-	     (make-object menu-item% (car mb) mailboxes-menu
-               (lambda (i e)
-                 (let ([mailbox-name (car mb)]
-                       [mailbox-options (cddr mb)])
-                   (open-mailbox mailbox-name mailbox-options))))))
-	 mailboxes))
-      
-      (reset-mailboxes-menus)
-      
+            
       ;; queue-directory : string
       ;; the directory where queue'd files are stored (created at this point)
       (define queue-directory 

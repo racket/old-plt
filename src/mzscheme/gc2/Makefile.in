@@ -1,5 +1,6 @@
 
 srcdir = @srcdir@
+builddir = @builddir@
 
 # for version.mak:
 mainsrcdir = @srcdir@/../..
@@ -12,7 +13,7 @@ AR = @AR@
 ARFLAGS = @ARFLAGS@
 RANLIB = @RANLIB@
 
-CPPFLAGS = @PREFLAGS@ @OPTIONS@ @GC2OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
+CPPFLAGS = @PREFLAGS@ @OPTIONS@ @GC2OPTIONS@ @MZOPTIONS@ -I$(builddir)/.. -I$(srcdir)/../include
 CFLAGS = @CFLAGS@ $(CPPFLAGS) @COMPFLAGS@ @PROFFLAGS@
 LIBS = @LIBS@
 

@@ -1028,62 +1028,11 @@ static int ucs4_strlen(const unsigned int *c)
 #define QUICK_UBUF_SIZE 1024
 static wchar_t u_buf[QUICK_UBUF_SIZE];
 
-int CALLBACK proc(CONST LOGFONT *lplf, CONST TEXTMETRIC *lptm, DWORD dwType, LPARAM lpData)
-{
-  GCP_RESULTSW gcp;
-  wchar_t s[4], gl[4];
-  char classes[4];
-  DWORD ok;
-  HDC hdc = (HDC)lpData;
-  HFONT fnt, old;
-
-  fnt = CreateFontIndirect(lplf);
-
-  old = (HFONT)::SelectObject(hdc, fnt);
-
-  s[0] = 0x202D;
-  s[1] = 'a';
-  s[2] = 0x200C;
-  s[3] = 'a';
-  
-  gcp.lStructSize = sizeof(GCP_RESULTSW);
-  gcp.lpOutString = NULL;
-  gcp.lpDx = NULL;
-  gcp.lpCaretPos = NULL;
-  gcp.lpOrder = NULL;
-  gcp.lpClass = classes;
-  gcp.lpGlyphs = gl;
-  gcp.nGlyphs = 4;
-
-  ok = GetCharacterPlacementW(hdc, s, 4, 0, &gcp,
-	  FLI_MASK & GetFontLanguageInfo(hdc));
-  
-  ::SelectObject(hdc, old);
-
-  if (ok && (gcp.nGlyphs == 2))
-    return 0;
-
-  return 1;
-}
-
-wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen, 
-				    Bool combine, wxDC *dc, HDC hdc)
+wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ulen)
 {
   int ulen, alloc_ulen;
   wchar_t *unicode;
   int theStrlen;
-
-  if (!combine) {
-    if (!dc->combine_status) {
-      /* Check whether text renderer knows how to deal with ZWNJ, etc. */
-      if (!EnumFonts(hdc, NULL, (FONTENUMPROC)proc, (long)hdc))
-	dc->combine_status = 1;
-      else
-	dc->combine_status = -1;
-    }
-    if (dc->combine_status == -1)
-      combine = 1; /* DC doesn't combine, so no need to avoid combinations */
-  }
 
   if (ucs4) {
     theStrlen = ucs4_strlen((const unsigned int *)text XFORM_OK_PLUS d);
@@ -1102,17 +1051,14 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     }
 
     ulen = theStrlen + extra;
-    if (combine)
-      alloc_ulen = ulen;
-    else
-      alloc_ulen = 2 * (ulen + 1);
+    alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)
       unicode = new WXGC_ATOMIC wchar_t[alloc_ulen];
     else
       unicode = u_buf;
     
     /* UCS-4 -> UTF-16 conversion */
-    for (i = 0, extra = (combine ? 0 : 1); i < theStrlen; i++) {
+    for (i = 0, extra = 0; i < theStrlen; i++) {
       v = ((unsigned int *)text)[d+i];
       if (v > 0xFFFF) {
 	unicode[i+extra] = 0xD8000000 | ((v >> 10) & 0x3FF);
@@ -1126,51 +1072,74 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
     ulen = scheme_utf8_decode((unsigned char *)text, d, 
 			      theStrlen, NULL, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
-    if (combine)
-      alloc_ulen = ulen;
-    else
-      alloc_ulen = 2 * (ulen + 1);
+    alloc_ulen = ulen;
     if (alloc_ulen > QUICK_UBUF_SIZE)
       unicode = new WXGC_ATOMIC wchar_t[alloc_ulen];
     else
       unicode = u_buf;
     ulen = scheme_utf8_decode((unsigned char *)text, d, theStrlen, 
-			      (unsigned int *)unicode, combine ? 0 : 1, -1, 
+			      (unsigned int *)unicode, 0, -1, 
 			      NULL, 1 /*UTF-16*/, '?');
-  }
-
-  /* In non-combine mode, prevent all sorts of glyph combinations */
-  if (!combine) {
-    unsigned int i, j = 0;
-    /* start with left-to-right override: */
-    ulen++;
-    unicode[0] = 0x202D;
-    /* remove other control characters: */
-    for (i = 1; i < ulen; i++) {
-      if (scheme_iscontrol(unicode[i])) {
-	j++;
-      } else {
-	unicode[i - j] = unicode[i];
-      }
-    }
-    ulen -= j;
-    /* Add ZWNJ to prevent other combinations */
-    for (i = ulen; i--; ) {
-      unicode[(2 * i) + 1] = 0x200C;
-      unicode[(2 * i)] = unicode[i];
-	}
-    ulen *= 2;
   }
   
   *_ulen = ulen;
   return unicode;
 }
 
+static wchar_t gl_buf[QUICK_UBUF_SIZE];
+static int dxes_buf[QUICK_UBUF_SIZE];
+
+static DWORD draw_meas(whcar_t *s, long len, HDC hdc, int combine,
+		       int draw, int x, int y, Bool bg)
+{
+  GCP_RESULTSW gcp;
+  wchar_t *gl;
+  char *classes;
+  DWORD sz, flags;
+  int *dxes;
+
+  if (len < QUICK_UBUF_SIZE) 
+    gl = gl_buf;
+  else
+    gl = new WXGC_ATOMIC wchar_t[len];
+  if (draw) {
+    if (len < QUICK_UBUF_SIZE) 
+      dxes = dxes_buf;
+    else
+      dxes = new WXGC_ATOMIC int[len];
+  } else
+    dxes = NULL;
+    
+  gcp.lStructSize = sizeof(GCP_RESULTSW);
+  gcp.lpOutString = NULL;
+  gcp.lpDx = dxes;
+  gcp.lpCaretPos = NULL;
+  gcp.lpOrder = NULL;
+  gcp.lpClass = classes;
+  gcp.lpGlyphs = gl;
+  gcp.nGlyphs = len;
+
+  if (combine) {
+    flags = GetFontLanguageInfo(hdc);
+    flags &= FLI_MASK;
+  } else
+    flags = 0;
+
+  sz = GetCharacterPlacementW(hdc, s, len, 0, &gcp, flags);
+
+  if (draw) {
+    ExtTextOutW(hdc, x, y, bg ? ETO_OPAQUE : 0, NULL, gl, gcp.nGlyphs, dxes);
+  }
+
+  return sz;
+}
+
+
 void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4, int d, float angle)
 {
   int xx1, yy1;
   HDC dc;
-  DWORD old_background;
+  DWORD old_background, sz;
   float w, h;
   wchar_t *ustring;
   long len;
@@ -1199,14 +1168,20 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
     old_background = SetBkColor(dc, current_text_background->pixel);
   }
   
+#if 0
   SetBkMode(dc, (((current_bk_mode == wxTRANSPARENT) 
 		  || (angle != 0.0))
 		 ? TRANSPARENT
 		 : OPAQUE));
+#endif
   
   SetRop(dc, wxSOLID);
 
   ustring = convert_to_drawable_format(text, d, ucs4, &len, combine, this, dc);
+
+  sz = draw_meas(ustring, len, dc, combine,
+		 1, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1),
+		 ((current_bk_mode != wxTRANSPARENT) && (angle == 0.0)));
 
   (void)TextOutW(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy1), ustring, len);
 
@@ -1214,10 +1189,11 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
     (void)SetBkColor(dc, old_background);
 
   DoneDC(dc);
+
+  w = HIWORD(sz);
+  w = LOWORD(sz);
   
   CalcBoundingBox((float)x, (float)y);
-
-  GetTextExtent(text, &w, &h, NULL, NULL, NULL, combine, ucs4, d);
   CalcBoundingBox((float)(x + w), (float)(y + h));
 }
 

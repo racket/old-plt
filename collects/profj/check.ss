@@ -934,7 +934,7 @@
                  kind src))
                  
   ;break-error: src -> void
-  (define (break-error src)
+  (define (break-error level src)
     (raise-error 'break (if (eq? level 'full) 
                             "break must be in either a loop or a switch"
                             "break must be in a loop")

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.122 1997/08/14 18:19:11 shriram Exp $
+; $Id: scm-main.ss,v 1.123 1997/08/22 22:07:49 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1458,18 +1458,20 @@
 		  (let* ((new-vars (map generate-name vars)))
 		    (expand-expr
 		      (structurize-syntax
-			`(let ,(map list new-vars vars)
-			   (#%dynamic-wind
-			     (lambda ()
-			       ,@(map (lambda (var val)
-					`(set! ,var ,val))
-				   vars vals))
-			     (lambda ()
-			       ,@body)
-			     (lambda ()
-			       ,@(map (lambda (var tmp)
-					`(set! ,var ,tmp))
-				   vars new-vars))))
+			(if (null? vars)
+			  `(begin ,@body)
+			  `(let ,(map list new-vars vars)
+			     (#%dynamic-wind
+			       (lambda ()
+				 ,@(map (lambda (var val)
+					  `(set! ,var ,val))
+				     vars vals))
+			       (lambda ()
+				 ,@body)
+			       (lambda ()
+				 ,@(map (lambda (var tmp)
+					  `(set! ,var ,tmp))
+				     vars new-vars)))))
 			expr)
 		      env attributes vocab)))))
 	    (else

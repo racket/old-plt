@@ -1,8 +1,8 @@
 ;; This file is converted to [c]startup.inc and evaluated by
 ;; MzScheme's scheme_basic_env().
 
-;; It implements, in a non-bootstrapping way, all of the MzScheme syntax
-;; and "primitives" that are not implemented in the kernel.
+;; It implements, in a non-bootstrapping way, all of the MzScheme
+;; syntax and "primitives" that are not implemented in the kernel.
 
 ;; Replace the content of this file to get a different set of initial
 ;; module definitions and initial imports. The top-level `require'
@@ -10,8 +10,14 @@
 ;; (non-syntax) import, it copies the binding to a fresh top-level
 ;; variable.
 
-;; Do not use block comments (with #| and |#) in this file. The 
-;; pre-processing script can't handle them.
+;; When using makefiles, `make startup' in [the build directory for]
+;; plt/src/mzscheme creates plt/src/mzscheme/src/cstartup.inc. Note
+;; that `make startup' requires a working MzScheme executable; see
+;; schminc.h for information about avoiding cstartup.inc, and using
+;; startup.inc (requires perl), instead.
+
+;; Do not use block comments (with #| and |#) in this file. The
+;; pre-processing script to build startup.inc can't handle them.
 
 ;;----------------------------------------------------------------------
 ;; basic syntax utilities

@@ -8,7 +8,7 @@
    names shift).
 
    If you make a version with omissions or additions and then run
-   `mzmake cmacro' to recreate the cstartup.inc file, set
+   `make startup' to recreate the cstartup.inc file, set
    EXPECTED_PRIM_COUNT to the new value, and then USE_COMPILED_STARTUP
    can be set to 1 again.  */
 

@@ -1790,9 +1790,23 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   if (next && (!next->running || (next->running == 2))) {
     /* In the process of selecting another thread, it was suspended or
        removed. Very unusual, but possible if a block checker does
-       stange things. */
+       stange things??? */
     next = NULL;
   }
+
+#if 0
+  /* Debugging: next must be in the chain of processes */
+  if (next) {
+    Scheme_Process *p = scheme_first_process;
+    while (p != next) {
+      p = p->next;
+      if (!p) {
+	printf("error: tried to switch to bad thread\n");
+	exit(-1);
+      }
+    }
+  }
+#endif
 
   if (next) {
     if (!p->next) {

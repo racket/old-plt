@@ -71,6 +71,66 @@
 				Name="VCWebDeploymentTool"/>
 		</Configuration>
 		<Configuration
+			Name="Jrm|Win32"
+			OutputDirectory="Debug"
+			IntermediateDirectory="Debug"
+			ConfigurationType="2"
+			CharacterSet="2">
+			<Tool
+				Name="VCCLCompilerTool"
+				Optimization="0"
+				AdditionalIncludeDirectories="..\..\..\include;..\..\mysterx\mysc;..\..\mysterx\myspage;..\..\mysterx\myssink"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;MYSTERX_DOTNET"
+				StringPooling="FALSE"
+				MinimalRebuild="TRUE"
+				ExceptionHandling="TRUE"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
+				BufferSecurityCheck="TRUE"
+				EnableFunctionLevelLinking="FALSE"
+				UsePrecompiledHeader="2"
+				BrowseInformation="1"
+				WarningLevel="3"
+				SuppressStartupBanner="TRUE"
+				Detect64BitPortabilityProblems="TRUE"
+				DebugInformationFormat="3"/>
+			<Tool
+				Name="VCCustomBuildTool"
+				Description="Copy mxmain.dll to collects"
+				CommandLine="copy /y $(OutDir)\mxmain.dll ..\..\..\collects\mysterx\private\compiled\native\win32\i386
+"
+				Outputs="..\..\..\collects\mysterx\private\compiled\native\win32\i386\mxmain.dll"/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalDependencies="..\..\..\lib\msvc\mzdyn.exp ..\..\..\lib\msvc\mzdyn.obj ..\..\..\lib\msvc\libmzgcxxxxxxx.lib ..\..\..\lib\msvc\libmzschxxxxxxx.lib htmlhelp.lib mscoree.lib"
+				OutputFile="$(OutDir)\mxmain.dll"
+				LinkIncremental="2"
+				IgnoreDefaultLibraryNames="LIBCD.lib;LIBCMT.lib"
+				ModuleDefinitionFile=""
+				GenerateDebugInformation="TRUE"
+				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
+				SubSystem="2"
+				ImportLibrary="$(OutDir)\$(InputName).lib"
+				TargetMachine="1"/>
+			<Tool
+				Name="VCMIDLTool"
+				WarningLevel="3"
+				GenerateStublessProxies="TRUE"
+				EnableErrorChecks="2"/>
+			<Tool
+				Name="VCPostBuildEventTool"/>
+			<Tool
+				Name="VCPreBuildEventTool"/>
+			<Tool
+				Name="VCPreLinkEventTool"/>
+			<Tool
+				Name="VCResourceCompilerTool"/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"/>
+			<Tool
+				Name="VCWebDeploymentTool"/>
+		</Configuration>
+		<Configuration
 			Name="Release|Win32"
 			OutputDirectory="Release"
 			IntermediateDirectory="Release"

@@ -11,6 +11,7 @@ Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		ConfigName.0 = Debug
 		ConfigName.1 = Release
+		ConfigName.2 = Jrm
 	EndGlobalSection
 	GlobalSection(ProjectDependencies) = postSolution
 		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.0 = {71042DA0-8212-49BB-A3B2-9387D4D39FA6}
@@ -19,18 +20,26 @@ Global
 	GlobalSection(ProjectConfiguration) = postSolution
 		{71042DA0-8212-49BB-A3B2-9387D4D39FA6}.Debug.ActiveCfg = Debug|Win32
 		{71042DA0-8212-49BB-A3B2-9387D4D39FA6}.Debug.Build.0 = Debug|Win32
+		{71042DA0-8212-49BB-A3B2-9387D4D39FA6}.Jrm.ActiveCfg = Jrm|Win32
+		{71042DA0-8212-49BB-A3B2-9387D4D39FA6}.Jrm.Build.0 = Jrm|Win32
 		{71042DA0-8212-49BB-A3B2-9387D4D39FA6}.Release.ActiveCfg = Release|Win32
 		{71042DA0-8212-49BB-A3B2-9387D4D39FA6}.Release.Build.0 = Release|Win32
 		{4F5E803D-985F-43B1-8BDC-B8F6D12F56B8}.Debug.ActiveCfg = Debug|Win32
 		{4F5E803D-985F-43B1-8BDC-B8F6D12F56B8}.Debug.Build.0 = Debug|Win32
+		{4F5E803D-985F-43B1-8BDC-B8F6D12F56B8}.Jrm.ActiveCfg = Jrm|Win32
+		{4F5E803D-985F-43B1-8BDC-B8F6D12F56B8}.Jrm.Build.0 = Jrm|Win32
 		{4F5E803D-985F-43B1-8BDC-B8F6D12F56B8}.Release.ActiveCfg = Release|Win32
 		{4F5E803D-985F-43B1-8BDC-B8F6D12F56B8}.Release.Build.0 = Release|Win32
 		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.Debug.ActiveCfg = Debug|Win32
 		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.Debug.Build.0 = Debug|Win32
+		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.Jrm.ActiveCfg = Jrm|Win32
+		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.Jrm.Build.0 = Jrm|Win32
 		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.Release.ActiveCfg = Release|Win32
 		{1B8F4E47-9F2D-45EA-9941-7672B28E8285}.Release.Build.0 = Release|Win32
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Debug.ActiveCfg = Debug|Win32
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Debug.Build.0 = Debug|Win32
+		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Jrm.ActiveCfg = Jrm|Win32
+		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Jrm.Build.0 = Jrm|Win32
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Release.ActiveCfg = Release|Win32
 		{68D1B4E0-D9D3-45C3-9BCC-A5491F1F755A}.Release.Build.0 = Release|Win32
 	EndGlobalSection

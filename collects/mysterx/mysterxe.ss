@@ -1590,19 +1590,15 @@
 		 (if (and (>= (string-length actual) 7)
 			  (string=? (substring actual 0 7)
 				    "http://"))
-		     (begin
-		       (semaphore-wait port-mutex)
-		       (let* ([p (get-impure-port (string->url actual))]
-			      [response (read-line p)]
-			      [raw-status 
-			       (regexp-match "[0-9][0-9][0-9]" response)])
-			 (close-input-port p)
-			 (begin0
-			  (list actual 
-				(if raw-status 
-				    (string->number (car raw-status))
-				    #f))
-			  (semaphore-post port-mutex))))
+		     (let* ([p (get-impure-port (string->url actual))]
+			    [response (read-line p)]
+			    [raw-status 
+			     (regexp-match "[0-9][0-9][0-9]" response)])
+		       (close-input-port p)
+		       (list actual 
+			     (if raw-status 
+				 (string->number (car raw-status))
+				 #f)))
 		     (list actual 'no-status))))]
 	    [go-back
 	     (make-navigator mxprims:go-back 'go-back)]

@@ -1035,9 +1035,11 @@ int CALLBACK proc(CONST LOGFONT *lplf, CONST TEXTMETRIC *lptm, DWORD dwType, LPA
   char classes[4];
   DWORD ok;
   HDC hdc = (HDC)lpData;
-  HFONT fnt;
+  HFONT fnt, old;
 
   fnt = CreateFontIndirect(lplf);
+
+  old = (HFONT)::SelectObject(hdc, fnt);
 
   s[0] = 0x202D;
   s[1] = 'a';
@@ -1051,10 +1053,13 @@ int CALLBACK proc(CONST LOGFONT *lplf, CONST TEXTMETRIC *lptm, DWORD dwType, LPA
   gcp.lpOrder = NULL;
   gcp.lpClass = classes;
   gcp.lpGlyphs = gl;
-  gcp.nGlyphs = 1;
+  gcp.nGlyphs = 4;
 
-  ok = GetCharacterPlacementW(hdc, s, 4, 0, &gcp, 0);
+  ok = GetCharacterPlacementW(hdc, s, 4, 0, &gcp,
+	  FLI_MASK & GetFontLanguageInfo(hdc));
   
+  ::SelectObject(hdc, old);
+
   if (ok && (gcp.nGlyphs == 2))
     return 0;
 

@@ -71,24 +71,34 @@
     (sleep-for-a-while s))
   
   (define/provide (bigBang-double-native this accs gets privates i)
-    (big-bang i this)
+                      (big-bang i this)
     (on-tick-event
       (lambda (world)
 	(set! last-world world)
-;	(printf ".~n")
-	(send world onTick)))
+	(let ([next-world (send world onTick)])
+	  (send last-world erase)
+	  (send next-world draw)
+	  next-world)))
     (on-key-event
       (lambda (ke world)
 	(set! last-world world)
-;	(printf "key: ~s~n" ke)
-	(send world onKeyEvent-java.lang.String
-	  (make-java-string (keyevent->string ke)))))
+	(let ([next-world (send world onKeyEvent-java.lang.String
+			   (make-java-string (keyevent->string ke)))])
+	  (send last-world erase)
+	  (send next-world draw)
+	  next-world)))
     #t)
 
   ;; (union Char Symbol) -> String
   (define (keyevent->string ke)
     (if (char? ke) (string ke) (symbol->string ke)))
   
+  (define/provide (draw-native this accs gets privates)
+    #t)
+
+  (define/provide (erase-native this accs gets privates)
+    #t)
+
   (define/provide (onTick-native this accs gets privates)
      this)
 

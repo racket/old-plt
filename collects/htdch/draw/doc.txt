@@ -61,20 +61,23 @@ The _World_ class has the following class interface:
      // wait for s seconds (roughly)
      boolean sleepForAWhile(int s)
 
-     // start the clock and set the world to this canvas 
+     // start the clock and make this world the current one
      boolean bigBang(double s) 
 
-     // the method is called for every tick of the clock
-     World onTick()
+     // process a tick of the clock in this world
+     World onTick() 
 
-     // the method is called for every keystroke event 
+     // process a keystroke event in this world
      World onKeyEvent(String ke) 
 
-     // stop the time 
-     boolean endOfTime()
+     // stop this world's clock
+     World endOfWorld() 
 
-     // stop the world
-     World endOfWorld()
+     // draw this world
+     boolean draw() 
+
+     // erase this world
+     boolean erase() 
 
      // view the last World that onTick or onKeyEvent or bigBang created
      World lastWorld()

@@ -32,6 +32,10 @@ public class World {
 
      public native World onKeyEvent(String ke); 
 
+     public native boolean draw();
+
+     public native boolean erase();
+
      public native boolean endOfTime();
 
      public native World endOfWorld();

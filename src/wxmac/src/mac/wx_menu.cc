@@ -676,14 +676,17 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
  {
    MenuRef mnu;
    MenuItemIndex idx;
-   if (!GetIndMenuItemWithCommandID (NULL, 'quit', 1, &mnu, &idx)) {
-     SetMenuItemCommandKey(mnu, idx, FALSE, 'Q');
+   if (!::GetIndMenuItemWithCommandID (NULL, 'quit', 1, &mnu, &idx)) {
+     ::SetMenuItemCommandKey(mnu, idx, FALSE, 'Q');
    }
 
-   if (wxCan_Do_Pref())
-     EnableMenuCommand(NULL, 'pref');
-   else
-     DisableMenuCommand(NULL, 'pref');
+   if (!::GetIndMenuItemWithCommandID (NULL, 'pref', 1, &mnu, &idx)) {
+     if (wxCan_Do_Pref()) {
+       ::SetMenuItemCommandKey(mnu, idx, FALSE, ';');
+       ::EnableMenuItem(mnu, idx);
+     } else
+       ::DisableMenuItem(mnu, idx);
+   }
  }
 }
 

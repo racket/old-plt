@@ -1022,7 +1022,7 @@ Scheme_Object *readBigIntBuffer(_int64 *buffer,long numElts) {
     sprintf(bigBuff,"%s%s",
 	    scheme_bignum_to_string(bigHi,16),
 	    scheme_bignum_to_string(bigLo,16));
-    retval = scheme_make_pair(scheme_read_bignum(bigBuff,16),retval);
+    retval = scheme_make_pair(scheme_read_bignum(bigBuff,0,16),retval);
   }
 
   return retval;
@@ -1045,8 +1045,8 @@ void writeBigIntBuffer(_int64 *buffer,Scheme_Object *obj) {
 				       scheme_get_env(scheme_config));
     lessThan = scheme_lookup_global(scheme_intern_symbol("#%<"),
 				    scheme_get_env(scheme_config));
-    reallyBigNum = scheme_read_bignum("9223372036854775807",10);
-    reallySmallNum = scheme_read_bignum("-9223372036854775808",10);
+    reallyBigNum = scheme_read_bignum("9223372036854775807",0,10);
+    reallySmallNum = scheme_read_bignum("-9223372036854775808",0,10);
     init = TRUE;
   }
 
@@ -1099,7 +1099,7 @@ Scheme_Object *readUBigIntBuffer(unsigned _int64 *buffer,long numElts) {
     sprintf(bigBuff,"%s%s",
 	    scheme_bignum_to_string(bigHi,16),
 	    scheme_bignum_to_string(bigLo,16));
-    retval = scheme_make_pair(scheme_read_bignum(bigBuff,16),retval);
+    retval = scheme_make_pair(scheme_read_bignum(bigBuff,0,16),retval);
   }
 
   return retval;
@@ -1134,7 +1134,7 @@ void writeUBigIntBuffer(unsigned _int64 *buffer,Scheme_Object *obj) {
   static BOOL init;
 
   if (init == FALSE) {
-    reallyBigNum = scheme_read_bignum("FFFFFFFFFFFFFFFF",16);
+    reallyBigNum = scheme_read_bignum("FFFFFFFFFFFFFFFF",0,16);
     greaterThan = scheme_lookup_global(scheme_intern_symbol("#%>"),
 				       scheme_get_env(scheme_config));
     lessThan = scheme_lookup_global(scheme_intern_symbol("#%<"),

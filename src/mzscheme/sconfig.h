@@ -570,7 +570,11 @@
 #ifdef __BORLANDC__
 # define MSCBOR_IZE(x) _ ## x
 # define DIR_INCLUDE
-# define IGNORE_BY_CONTROL_387
+# define IGNORE_BY_BORLAND_CONTROL_87
+#endif
+
+#if defined(_MSC_VER)
+# define IGNORE_BY_MS_CONTROL_87
 #endif
 
 # define REGISTER_POOR_MACHINE
@@ -756,7 +760,7 @@
 # define USE_STACKAVAIL
 # define STACK_SAFETY_MARGIN 15000
 
-# define IGNORE_BY_CONTROL_387
+# define IGNORE_BY_CONTROL_87
 
 # define DIR_INCLUDE
 # define IO_INCLUDE
@@ -1065,9 +1069,13 @@
     converts (a == a) to TRUE, even if `a' is floating-point. Used
     only when USE_[SCO_]IEEE_FP_PREDS is not defined. */
 
- /* IGNORE_BY_CONTROL_387 turns off floating-point error for
-    Intel '387 with _control87. DONT_IGNORE_PIPE_SIGNAL can be on or
-    off. */
+ /* IGNORE_BY_BORLAND_CONTROL_87 turns off floating-point error for
+    Intel '387 with Borlad-style _control87. DONT_IGNORE_PIPE_SIGNAL
+    can be on or off. */
+
+ /* IGNORE_BY_MS_CONTROL_87 turns off floating-point error for Intel
+    '387 with Microsoft-style _control87. DONT_IGNORE_PIPE_SIGNAL can
+    be on or off. */
 
  /* FREEBSD_CONTROL_387 controls the floating-point processor under i386
     FreeBSD */

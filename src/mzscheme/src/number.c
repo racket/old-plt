@@ -30,7 +30,10 @@
 #ifndef DONT_IGNORE_FPE_SIGNAL
 #include <signal.h>
 #endif
-#ifdef IGNORE_BY_CONTROL_387
+#ifdef IGNORE_BY_BORLAND_CONTROL_87
+#include <float.h>
+#endif
+#ifdef IGNORE_BY_MS_CONTROL_87
 #include <float.h>
 #endif
 
@@ -145,11 +148,17 @@ scheme_init_number (Scheme_Env *env)
 #ifdef LINUX_CONTROL_387
   __setfpucw(_FPU_EXTENDED + _FPU_RC_NEAREST + 0x3F);
 #endif
-#ifdef IGNORE_BY_CONTROL_387
+#ifdef IGNORE_BY_BORLAND_CONTROL_87
   {
     int bits = 0x3F + RC_NEAR + PC_64;
     _control87(bits, 0xFFFF);
   }
+#endif
+#ifdef IGNORE_BY_MS_CONTROL_87
+  /* Shouldn't be necessary, because the C library
+     should do this, but explictly masking exceptions
+     makes MzScheme work under Bochs 2.1.1 with Win95 */
+  _control87(_MCW_EM, _MCW_EM);
 #endif
 #ifdef ALPHA_CONTROL_FP
   {

@@ -1,9 +1,0 @@
-#!/bin/sh
-# This script was created by make-mzscheme-launcher
-
-if [ "$PLTHOME" = '' ] ; then
-  PLTHOME=/usr/local/lib/plt
-  export PLTHOME
-fi
-
-exec "${PLTHOME}/bin/mzscheme" '-mqvL' 'start.ss' 'compiler' '--'   ${1+"$@"}

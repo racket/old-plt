@@ -218,6 +218,7 @@
 	     [(not (pair? l)) 
 	      (raise (make-exn:application:mismatch
 		      (format "~a: second argument must be a (proper) list; given ~e" name list)
+		      name (syntax-source-module (quote-syntax here))
 		      (current-continuation-marks)
 		      list))]
 	     [(f (car l)) (if whole-list? l (car l))]
@@ -246,6 +247,7 @@
 		  frest))]
 	   [else (raise (make-exn:application:mismatch
 			 (format "filter: second argument must be a (proper) list; given ~e" list)
+			 'filter (syntax-source-module (quote-syntax here))
 			 (current-continuation-marks)
 			 list))])))))
   

@@ -1393,7 +1393,7 @@
 
   (define (do-make-object class by-pos-args named-args)
     (unless (class? class)
-      (raise-type-error 'make-object "class" class))
+      (raise-type-error (quote-syntax make-object) "class" class))
     (let ([o ((class-make-object class))])
       ;; Initialize it:
       (let loop ([c class][by-pos-args by-pos-args][named-args named-args])
@@ -1704,6 +1704,7 @@
       (string-append
        (format "~a: " where)
        (apply format msg))
+      where (syntax-source-module (quote-syntax here))
       (current-continuation-marks))))
 
   (define (for-class name)

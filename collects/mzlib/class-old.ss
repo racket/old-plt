@@ -109,6 +109,7 @@
       (string-append
        (format "~a: " where)
        (apply format msg))
+      where (syntax-source-module (quote-syntax here))
       (current-continuation-marks))))
 
   (define (for-class name)

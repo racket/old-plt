@@ -117,12 +117,14 @@
       (raise
        (make-exn:misc:match
          (format "match: no matching clause for ~s" val)
+	 'match (syntax-source-module (quote-syntax here))
          (current-continuation-marks)
          val)))
      ((val expr)
       (raise
        (make-exn:misc:match
          (format "match: no matching clause for ~s: ~s" val expr)
+	 'match (syntax-source-module (quote-syntax here))
          (current-continuation-marks)
          val)))))
 

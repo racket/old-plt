@@ -63,6 +63,8 @@ static char *init_buf(long *len, long *blen);
 static char *prepared_buf;
 static long prepared_buf_len;
 
+static Scheme_Object *wrong_syntax_modidx; /* back-door argument */
+
 typedef struct {
   int args;
   Scheme_Object *type;
@@ -451,6 +453,8 @@ void scheme_init_error(Scheme_Env *env)
   prepared_buf = init_buf(NULL, &prepared_buf_len);
   
   scheme_init_error_config();
+
+  REGISTER_SO(wrong_syntax_modidx);
 }
 
 void scheme_init_error_config(void)
@@ -1035,6 +1039,12 @@ void scheme_wrong_syntax(const char *where,
   long len, slen, vlen, dvlen, blen, plen;
   char *s, *buffer;
   char *v, *dv, *p;
+  Scheme_Object *modidx;
+
+  if (wrong_syntax_modidx)
+    modidx = wrong_syntax_modidx;
+  else
+    modidx = scheme_kernel_symbol;
 
   if (!detail) {
     s = "bad syntax";
@@ -1097,7 +1107,7 @@ void scheme_wrong_syntax(const char *where,
   } else
     blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
   
-  scheme_raise_exn(MZEXN_SYNTAX, scheme_kernel_symbol, form, "%t", buffer, blen);
+  scheme_raise_exn(MZEXN_SYNTAX, modidx, form, "%t", buffer, blen);
 }
 
 void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv)
@@ -1293,18 +1303,24 @@ char *scheme_make_provided_string(Scheme_Object *o, int count, int *lenout)
 
 static Scheme_Object *error(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *newargs[2], *who = scheme_false;
+  Scheme_Object *newargs[2], *who = scheme_false, *modidx = scheme_false;
 
-  if (SCHEME_SYMBOLP(argv[0])) {
-    who = argv[0];
+  if (SCHEME_STX_SYMBOLP(argv[0])) {
+    
+    if (SCHEME_SYMBOLP(argv[0]))
+      who = argv[0];
+    else {
+      who = SCHEME_STX_VAL(argv[0]);
+      modidx = scheme_stx_source_module(argv[0], 1);
+    }
 
     if (argc < 2) {
       /* Just a symbol */
       const char *s;
       int l;
 
-      s = scheme_symbol_val(argv[0]);
-      l = SCHEME_SYM_LEN(argv[0]);
+      s = scheme_symbol_val(who);
+      l = SCHEME_SYM_LEN(who);
 
       newargs[0] = 
 	scheme_append_string(scheme_make_string("error: "),
@@ -1324,9 +1340,9 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 
       s = scheme_get_sized_string_output(port, &l);
 
-      l2 = SCHEME_SYM_LEN(argv[0]);
+      l2 = SCHEME_SYM_LEN(who);
       r = MALLOC_N_ATOMIC(char, l + l2 + 3);
-      memcpy(r, SCHEME_SYM_VAL(argv[0]), l2);
+      memcpy(r, SCHEME_SYM_VAL(who), l2);
       memcpy(r + l2, ": ", 2);
       memcpy(r + l2 + 2, s, l + 1);
 
@@ -1357,7 +1373,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 #ifndef NO_SCHEME_EXNS
   newargs[1] = scheme_void;
   newargs[2] = who;
-  newargs[3] = scheme_false;
+  newargs[3] = modidx;
   do_raise(scheme_make_struct_instance(exn_table[MZEXN_USER].type, 
 				       4, newargs), 
 	   0, 1);
@@ -1373,12 +1389,25 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("raise-syntax-error", scheme_kernel_symbol, "symbol", 0, argc, argv);
+  Scheme_Object *who, *modidx;
+
+  if (!SCHEME_STX_SYMBOLP(argv[0]))
+    scheme_wrong_type("raise-syntax-error", scheme_kernel_symbol, "symbol or identifier syntax", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-syntax-error", scheme_kernel_symbol, "string", 1, argc, argv);
 
-  scheme_wrong_syntax(scheme_symbol_val(argv[0]), 
+  if (SCHEME_SYMBOLP(argv[0])) {
+    who = argv[0];
+    modidx = scheme_false;
+  } else {
+    who = SCHEME_STX_VAL(argv[0]);
+    modidx = scheme_stx_source_module(argv[0], 0);
+  }
+
+  /* really an argument: */
+  wrong_syntax_modidx = modidx;
+
+  scheme_wrong_syntax(scheme_symbol_val(who), 
 		      (argc > 3) ? argv[3] : NULL,
 		      (argc > 2) ? argv[2] : NULL,
 		      "%T", argv[1]);
@@ -1388,15 +1417,25 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("raise-type-error", scheme_kernel_symbol, "symbol", 0, argc, argv);
+  Scheme_Object *who, *modidx;
+
+  if (!SCHEME_STX_SYMBOLP(argv[0]))
+    scheme_wrong_type("raise-type-error", scheme_kernel_symbol, "symbol or identifier syntax", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-type-error", scheme_kernel_symbol, "string", 1, argc, argv);
 
+  if (SCHEME_SYMBOLP(argv[0])) {
+    who = argv[0];
+    modidx = scheme_false;
+  } else {
+    who = SCHEME_STX_VAL(argv[0]);
+    modidx = scheme_stx_source_module(argv[0], 0);
+  }
+  
   if (argc == 3) {
     Scheme_Object *v;
     v = argv[2];
-    scheme_wrong_type(scheme_symbol_val(argv[0]), scheme_kernel_symbol,
+    scheme_wrong_type(scheme_symbol_val(who), modidx,
 		      SCHEME_STR_VAL(argv[1]),
 		      -1, 0, &v);
   } else {
@@ -1407,20 +1446,20 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
 	&& !(SCHEME_BIGNUMP(argv[2]) && SCHEME_BIGPOS(argv[2])))
       scheme_wrong_type("raise-type-error", scheme_kernel_symbol, "exact non-negative integer", 2, argc, argv);
 
-    if ((SCHEME_INTP(argv[2]) && (SCHEME_INT_VAL(argv[2]) >= argc))
+    if ((SCHEME_INTP(argv[2]) && (SCHEME_INT_VAL(argv[2]) >= argc - 3))
 	|| SCHEME_BIGNUMP(argv[2]))
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, scheme_kernel_symbol, argv[2],
 		       "raise-type-error: position index is %V, "
 		       "but only %d arguments provided",
 		       argv[2],
-		       argc);
+		       argc - 3);
 
     args = MALLOC_N(Scheme_Object *, argc - 3);
     for (i = 3; i < argc; i++) {
       args[i - 3] = argv[i];
     }
 
-    scheme_wrong_type(scheme_symbol_val(argv[0]), scheme_kernel_symbol,
+    scheme_wrong_type(scheme_symbol_val(who), modidx,
 		      SCHEME_STR_VAL(argv[1]),
 		      SCHEME_INT_VAL(argv[2]),
 		      argc - 3, args);
@@ -1431,12 +1470,22 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *raise_mismatch_error(int argc, Scheme_Object *argv[])
 {
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("raise-mismatch-error", scheme_kernel_symbol, "symbol", 0, argc, argv);
+  Scheme_Object *who, *modidx;
+
+  if (!SCHEME_STX_SYMBOLP(argv[0]))
+    scheme_wrong_type("raise-mismatch-error", scheme_kernel_symbol, "symbol or identifier syntax", 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-mismatch-error", scheme_kernel_symbol, "string", 1, argc, argv);
 
-  scheme_arg_mismatch(scheme_symbol_val(argv[0]), scheme_kernel_symbol,
+  if (SCHEME_SYMBOLP(argv[0])) {
+    who = argv[0];
+    modidx = scheme_false;
+  } else {
+    who = SCHEME_STX_VAL(argv[0]);
+    modidx = scheme_stx_source_module(argv[0], 0);
+  }
+  
+  scheme_arg_mismatch(scheme_symbol_val(who), modidx,
 		      SCHEME_STR_VAL(argv[1]),
 		      argv[2]);
 

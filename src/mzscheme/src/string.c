@@ -2077,6 +2077,7 @@ static char *do_convert(iconv_t cd,
 				    out, od + dop,
 				    0);
 	  dop += opos;
+	  dip += iilen;
 	  icerr = 0;
 	  r = (size_t)opos;
 	} else {

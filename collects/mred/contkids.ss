@@ -1,5 +1,5 @@
 ;;
-;; $Id: contkids.ss,v 1.38 1997/07/19 17:15:01 robby Exp robby $
+;; $Id: contkids.ss,v 1.39 1997/08/09 18:25:38 robby Exp robby $
 ;;
 
 ; need to export:
@@ -187,29 +187,36 @@
                                         ; if new value is not a non-negative real number.  Forces a
                                         ; redraw upon a set.
 		[user-min-client-width
+		 (let ([offset #f]
+		       [compute-offset
+			(lambda ()
+			  (unless offset
+			    (let ([c-box (box 0)]
+				  [a-box (box 0)])
+			      (get-client-size c-box (box 0))
+			      (get-size a-box (box 0))
+			      (set! offset (- (unbox a-box) (unbox c-box))))))])
 		 (case-lambda 
-		  [() (let ([b (box 0)])
-			(get-client-size b (box 0))
-			(unbox b))]
+		  [() (compute-offset)
+		      (- (user-min-width) offset)]
 		  [(new-width)
-		   (let ([c-box (box 0)]
-			 [a-box (box 0)])
-		     (get-client-size c-box (box 0))
-		     (get-size a-box (box 0))
-		     (user-min-width (+ new-width 
-					(- (unbox a-box) (unbox c-box)))))])]
+		   (compute-offset)
+		   (user-min-width (+ new-width offset))]))]
 		[user-min-client-height
+		 (let ([offset #f]
+		       [compute-offset
+			(lambda ()
+			  (unless offset
+			    (let ([c-box (box 0)]
+				  [a-box (box 0)])
+			      (get-client-size (box 0) c-box)
+			      (get-size (box 0) a-box)
+			      (set! offset (- (unbox a-box) (unbox c-box))))))])
 		 (case-lambda 
-		  [() (let ([b (box 0)])
-			(get-client-size (box 0) b)
-			(unbox b))]
-		  [(new-height)
-		   (let ([c-box (box 0)]
-			 [a-box (box 0)])
-		     (get-client-size (box 0) c-box)
-		     (get-size (box 0) a-box)
-		     (user-min-height (+ new-height 
-					 (- (unbox a-box) (unbox c-box)))))])]
+		  [() (compute-offset)
+		      (- (user-min-height) offset)]
+		  [(new-height) (compute-offset)
+				(user-min-height (+ new-height offset))]))]
 
                 [user-min-width
                   (make-item-param

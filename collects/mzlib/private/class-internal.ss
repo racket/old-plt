@@ -407,7 +407,7 @@
                                            (quote-syntax here)))]
                       [add-method-property (lambda (l)
                                              (syntax-property l 'method-arity-error #t))]
-                      [proc-shape (lambda (name expr xform?)
+                      [proc-shape (lambda (name orig-stx xform?)
                                     ;; expands an expression enough that we can check whether
                                     ;; it has the right form; must use local syntax definitions
                                     (define (expand expr locals)
@@ -436,7 +436,7 @@
                                                                    ""))) 
                                        #f))
                                     ;; -- tranform loop starts here --
-                                    (let loop ([stx expr][can-expand? #t][name name][locals null])
+                                    (let loop ([stx orig-stx][can-expand? #t][name name][locals null])
                                       (syntax-case stx (lambda case-lambda letrec-values let-values)
                                         [(lambda vars body1 body ...)
                                          (vars-ok? (syntax vars))
@@ -502,7 +502,7 @@
                                                                    ids new-ids)
                                                             (loop body #t name body-locals)))])
                                            (unless body
-                                             (bad "bad form for method definition" stx))
+                                             (bad "bad form for method definition" orig-stx))
                                            (with-syntax ([(proc ...) exprs]
                                                          [(new-id ...) new-ids]
                                                          [mappings
@@ -534,7 +534,7 @@
                                         [_else 
                                          (if can-expand?
                                              (loop (expand stx locals) #f name locals)
-                                             (bad "bad form for method definition" stx))])))])
+                                             (bad "bad form for method definition" orig-stx))])))])
                  ;; Do the extraction:
                  (let-values ([(methods          ; (listof (cons id stx))
                                 private-methods  ; (listof (cons id stx))

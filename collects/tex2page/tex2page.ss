@@ -47,7 +47,7 @@
 
 (define *use-closing-p-tag?* #t)
 
-(define *tex2page-version* "4p4j")
+(define *tex2page-version* "4p4k")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -513,16 +513,6 @@
                    (define ,(string->symbol (string-append s-s "?"))
                      (lambda (x)
                        (and (vector? x) (eq? (vector-ref x 0) ',s)))))))))))))
-
-(define hash-table-put!
-  (lambda (tbl k v)
-    (let ((al (table.alist tbl)))
-      (let ((c (lassoc k al (table.equ tbl))))
-        (if c (set-cdr! c v) (set!table.alist tbl (cons (cons k v) al)))))))
-
-(define hash-table-for-each
-  (lambda (tbl p)
-    (for-each (lambda (c) (p (car c) (cdr c))) (table.alist tbl))))
 
 (define lassoc
   (lambda (k al equ?)

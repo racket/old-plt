@@ -44,7 +44,9 @@ Quick Start for Testing:
        NOTE: for real use, you need a new key.
 
  4. Create a file "users.ss" with the following content:
-       ((tester ("pw" "Chester Tester" "123")))
+       ((tester ("8fe4c11451281c094a6578e6ddbf5eed"
+                 "Chester Tester"
+                 "123")))
 
  5. Make an "active" subdirectory in your new directory.
 
@@ -151,20 +153,23 @@ sub-directories:
          most recent submission is "handin0", the next oldest is
          "handin1", next oldest is "handin2", etc.; the default is 9
 
-      'id-regexp : a regular expression used to validate a user id for
-         a created account; the default is #rx"^.*$"
+      'id-regexp : a regular expression used to validate a "free form"
+         user id (possibly a student id) for a created account; the
+         default is #rx"^.*$"
 
       'id-desc : a plain-words description of the acceptable format
-         for an id; the default is "anything"
+         for a "free form" id; the default is "anything"
 
       'allow-new-users : a boolean indicating whether to allow
          new-user requests from a client tool; the default is #f
 
   * users.ss (created if not present if a user is added) --- keeps
-    the list of user accounts, along with the associate password,
-    full name, and id of the account. The file format is
+    the list of user accounts, along with the associated password
+    (actually the MD5 hash of the password), full name, and free-form
+    id (perhaps a student id at a university) of the account. The file
+    format is
 
-      ((<username-sym> (<passwd-str> <full-name-str> <id-str>)) ...)
+      ((<username-sym> (<pw-md5-str> <full-name-str> <id-str>)) ...)
 
     If the 'allow-new-users configuration allows new users, the
     "users.ss" file can be updated by the server with new users. It

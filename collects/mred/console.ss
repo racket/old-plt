@@ -503,7 +503,7 @@
 				    (send edit get-filename)))]
 	    [file-menu:save-as (lambda () (send edit save-file ""))]
 	    [file-menu:print (lambda () (send edit print '()))]
-	    [edit-menu:before-preferences
+	    [edit-menu:between-select-all-and-preferences
 	     (let ([edit-menu:do  (lambda (const) (lambda () (send edit do-edit const)))])
 	       (lambda (edit-menu)
 		 (send edit-menu append-separator)

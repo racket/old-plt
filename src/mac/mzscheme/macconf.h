@@ -18,3 +18,9 @@
 //#define SMALL_CONFIG              // use a smaller heap.
 #define USE_TEMPORARY_MEMORY      // use Macintosh temporary memory.
 #define OLD_BLOCK_ALLOC
+
+// EEXIST --- the error in errno.h returned when a file cannot be
+// created because the file already exists --- is not defined on the mac.
+
+#define EEXIST dupFNErr
+

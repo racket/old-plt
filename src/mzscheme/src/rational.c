@@ -330,17 +330,50 @@ Scheme_Object *scheme_rational_min(const Scheme_Object *a, const Scheme_Object *
   return scheme_rational_normalize(lt ? a : b);
 }
 
+static Scheme_Object *negate_simple(Scheme_Object *v)
+{
+  if (SCHEME_INTP(v))
+    return scheme_make_integer_value(-SCHEME_INT_VAL(v));
+  else
+    return scheme_bignum_negate(v);
+}
+
 Scheme_Object *scheme_rational_divide(const Scheme_Object *n, const Scheme_Object *d)
 { 
   Scheme_Rational *rd = (Scheme_Rational *)d, *rn = (Scheme_Rational *)n;
   Scheme_Rational d_inv;
 
-  if ((SCHEME_INTP(rn->num) && SCHEME_INT_VAL(rn->num) == 1)
+  /* Check for [negative] inverse, which is easy */
+  if ((SCHEME_INTP(rn->num) && ((SCHEME_INT_VAL(rn->num) == 1)
+				|| (SCHEME_INT_VAL(rn->num) == -1)))
       && (SCHEME_INTP(rn->denom) && SCHEME_INT_VAL(rn->denom) == 1)) {
-    /* inverse, which is easy */
-    if ((SCHEME_INTP(rd->num) && SCHEME_INT_VAL(rd->num) == 1))
-      return rd->denom;
-    return make_rational(rd->denom, rd->num, 0);
+    int negate = (SCHEME_INT_VAL(rn->num) == -1);
+    if (SCHEME_INTP(rd->num)) {
+      if ((SCHEME_INT_VAL(rd->num) == 1)) {
+	if (negate)
+	  return negate_simple(rd->denom);
+	else
+	  return rd->denom;
+      }
+      if (SCHEME_INT_VAL(rd->num) == -1) {
+	if (negate)
+	  return rd->denom;
+	else
+	  return negate_simple(rd->denom);
+      }
+    }
+    if (((SCHEME_INTP(rd->num))
+	 && (SCHEME_INT_VAL(rd->num) < 0))
+	|| (!SCHEME_INTP(rd->num)
+	    && !SCHEME_BIGPOS(rd->num))) {
+      Scheme_Object *v;
+      v = negate ? rd->denom : negate_simple(rd->denom);
+      return make_rational(v, negate_simple(rd->num), 0);
+    } else {
+      Scheme_Object *v;
+      v = negate ? negate_simple(rd->denom) : rd->denom;
+      return make_rational(v, rd->num, 0);
+    }
   }
   
   d_inv.so.type = scheme_rational_type;

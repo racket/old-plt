@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.4 1998/09/20 21:48:45 mflatt Exp $
+ * $Id: DC.cc,v 1.5 1998/09/23 00:11:54 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -152,8 +152,13 @@ void wxDC::CalcBoundingBox(float x, float y)
 }
 
 //-----------------------------------------------------------------------------
-// spline code, uses protected virtual method DrawOpenSpline
+// spline code, uses protected virtual method DrawOpenSpline, from XFIG
 //-----------------------------------------------------------------------------
+
+/*
+ * FIG : Facility for Interactive Generation of figures
+ * Copyright (c) 1985 by Supoj Sutanthavibul
+ */
 
 #if USE_SPLINES
 

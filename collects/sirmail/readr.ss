@@ -150,7 +150,8 @@
 			;;  the uidvalidity value. Otherwise, for backward
 			;;  compatibility, we allow the case that it wasn't
 			;;  recorded.
-			(if (or (not (car l)) (integer? (car l)))
+			(if (and (pair? l)
+				 (or (not (car l)) (integer? (car l))))
 			    (begin
 			      (set! uid-validity (car l))
 			      (cdr l))
@@ -378,8 +379,7 @@
       (define (check-for-new)
 	(status "Checking ~a at ~a..." mailbox-name (IMAP-SERVER))
 	(let-values ([(imap count new next-uid) (connect 'next-uid)])
-	  (set! new-messages? (not (and (= next-uid current-next-uid)
-					(= count current-count)))))
+	  (set! new-messages? (not (= next-uid current-next-uid))))
 	(if new-messages?
 	    (begin
 	      (show-new-mail-msg)

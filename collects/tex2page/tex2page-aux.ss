@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2004-09-08")
+(define *tex2page-version* "2004-09-11")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -1804,17 +1804,19 @@
 
 (define make-external-title
   (lambda (title)
-    (bgroup)
-    (let ((s
-           (tex-string->html-string
-             (string-append
-               "\\let\\\\\\ignorespaces"
-               "\\def\\resizebox#1#2#3{}"
-               "\\let\\thanks\\TIIPgobblegroup"
-               "\\let\\urlh\\TIIPgobblegroup "
-               title))))
-      (egroup)
-      s)))
+    (fluid-let
+      ((*outputting-external-title?* #t))
+      (bgroup)
+      (let ((s
+             (tex-string->html-string
+               (string-append
+                 "\\let\\\\\\ignorespaces"
+                 "\\def\\resizebox#1#2#3{}"
+                 "\\let\\thanks\\TIIPgobblegroup"
+                 "\\let\\urlh\\TIIPgobblegroup "
+                 title))))
+        (egroup)
+        s))))
 
 (define output-external-title
   (lambda ()

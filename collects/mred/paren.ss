@@ -289,6 +289,7 @@
     (define prev-rev-quote-pairs null)
 
     (define (backwards pairs) (map (lambda (p) (cons (cdr p) (car p))) pairs))
+
     (define backward-match
       (opt-lambda (edit pos end-pos 
 			paren-pairs quote-pairs eol-comment-list

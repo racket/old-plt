@@ -17,7 +17,7 @@
 #define GROW_FACTOR 1.5
 #define GROW_ADDITION 500000
 
-#define GENERATIONS 0
+#define GENERATIONS 1
 
 #define USE_FREELIST 0
 

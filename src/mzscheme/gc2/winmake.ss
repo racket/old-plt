@@ -75,7 +75,7 @@
 		       (lambda (f)
 			 (>= t (file-or-directory-modify-seconds f)))
 		       deps))))
-    (unless (system- (format "cl.exe ~a /MT /ZI /c ~a /Fdxsrc/ /Fo~a" flags c o))
+    (unless (system- (format "cl.exe ~a /MT /Zi /O2 /c ~a /Fdxsrc/ /Fo~a" flags c o))
       (error "failed compile"))))
 
 (define common-deps (list "xform.ss" "ctok.ss"))

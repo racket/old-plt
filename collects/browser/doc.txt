@@ -30,7 +30,9 @@ input HTML stream with the content of the string. Thus,
  <!-- MZSCHEME="(format |<B>Here</B>: ~a| (current-directory))" -->
 
 inserts the path of the current working directory into the containing
-document (and "Here" is boldfaced).
+document (and "Here" is boldfaced). If the result is a snip instead of
+a string, it replaces the comment in the document. Other types of
+return values are ignored.
 
 
 ----------------------------------------
@@ -193,3 +195,8 @@ document (and "Here" is boldfaced).
 
 > (page->editor page) - Extracts the editor from a page record.
 
+> (on-installer-run [proc]) - Parameter for a procedure to be invoked
+  after the installer is run on a .plt file
+
+> (bullet-size [n]) - Parameter controlling the point size of a
+  bullet

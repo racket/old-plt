@@ -10,5 +10,5 @@
        [HTML : browser:html^ ((require-relative-library "html.ss") 
 			      FILE STRING BTREE URL BULLET MRED)]
        [HYPER : browser^ ((require-relative-library "hyper.ss") 
-			  HTML FUNCTION FILE STRING URL MRED)])
+			  HTML FUNCTION FILE STRING URL BULLET MRED)])
  (export (open HYPER)))

@@ -1,4 +1,5 @@
 
 (define-signature bullet-snip^
   (bullet-snip%
-   bullet-width))
+   bullet-size
+   get-bullet-width))

@@ -48,6 +48,9 @@
 			(raise-type-error 'tex-series-prefix "string or #f" s)))
 		    s)))
 
+(define current-tex-sizer
+  (make-parameter (lambda (t) #f)))
+
 (define-struct pict (draw ; drawing instructions
 		     width ; total width
 		     height ; total height >= ascent + desecnt
@@ -219,7 +222,10 @@
    [(t) (tex t 10 10)]
    [(t guess-width guess-height)
     (let* ([label (make-label t)]
-	   [info (assq label label-sizes)]
+	   [info (or (assq label label-sizes)
+		     (let ([v ((current-tex-sizer) t)])
+		       (and v
+			    (cons label v))))]
 	   [w (if info (cadr info) guess-width)]
 	   [h (if info (caddr info) guess-height)]
 	   [d (if info (cadddr info) guess-height)])

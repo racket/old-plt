@@ -16,6 +16,8 @@
    tex-series-prefix
    serialize-tex-picts
    
+   current-tex-sizer
+
    black-and-white
 
    find-lt  ; (left & top)  ; pict pict-path -> dx dy

@@ -29,4 +29,6 @@
    editor->page
    page->editor
 
-   on-installer-run))
+   on-installer-run
+
+   bullet-size))

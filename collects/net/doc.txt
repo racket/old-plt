@@ -309,7 +309,7 @@ EXCEPTIONS -----------------------------------------------------------
 
 PROCEDURES -----------------------------------------------------------
 
-> (send-smtp-message server-string from-string to-list-of-strings header message-list-of-strings [port]) -> void
+> (smtp-send-message server-string from-string to-list-of-strings header message-list-of-strings [port]) -> void
 
   The first argument is the IP address of the SMTP server. The
   `from-string' argument specifies the mail address of the sender, and
@@ -326,6 +326,15 @@ PROCEDURES -----------------------------------------------------------
 
   See the head package for utilities that construct a message headers
   and validate mail address strings.
+
+> (smtp-sending-end-of-message [proc])
+
+  Parameter that detemines a send-done procedure to be called after
+  `smtp-send-message' has completely sent the message. Before the
+  send-done procedure is called, breaking the thread that is executing
+  `smtp-send-message' cancels the send. After the send-done procedure
+  is called, breaking may or may not cancel the send (and probably
+  won't).
 
 ==========================================================================
 _NNTP_, _newsgroups_

@@ -1,8 +1,15 @@
 (define drscheme:parameters@
   (unit/sig plt:parameters^
-    (import [mred : mred^])
+    (import [mred : mred^]
+	    [drscheme:basis : drscheme:basis^])
 
-    (mred:set-preference-default 'drscheme:scheme-level 'core)
+    ; let the preference default to the most advanced.
+    (mred:set-preference-default 'drscheme:scheme-level
+				 (let loop ([l drscheme:basis:level-symbols])
+				   (cond
+				    [(null? (cdr l)) (car l)]
+				    [else (loop (cdr l))])))
+
     (define pref (mred:get-preference 'drscheme:scheme-level))
 
     (define case-sensitive? #t)
@@ -32,43 +39,6 @@
     (mred:set-preference-default 'drscheme:setup-file "setup.ss")
 
     (mred:set-preference-default 'drscheme:use-setup? #f)
-
-    ; Startup files:
-    (mred:set-preference-default 'drscheme:startup-files '())
-
-    (mred:add-preference-panel
-     "DrScheme"
-     (lambda (parent)
-       (let* ([main (make-object mred:vertical-panel% parent)]
-	      [choice-callback
-	       (let ([state #t])
-		 (lambda (_ evt)
-		   (mred:set-preference 'drscheme:scheme-level
-					(case (send evt get-command-int)
-					  [(0) 'core]
-					  [(1) 'structured]
-					  [(2) 'side-effects]
-					  [(3) 'advanced]))
-		   (when state
-		     (set! state #f)
-		     (unless (mred:get-choice "Any changes to this setting will not take effect until DrScheme is restarted"
-					      "Continue Working"
-					      "Exit")
-		       (mred:exit)))))]
-	     [choice (make-object mred:choice% main choice-callback
-				  "Language"
-				  -1 -1 -1 -1
-				  (list "Functional Scheme"
-					"Functional Scheme Plus Structures"
-					"Side-Effecting Scheme Plus Structures"
-					"R4RS Scheme Plus Structures"))])
-	 (send choice set-selection 
-	       (case (mred:get-preference 'drscheme:scheme-level)
-		 [(core) 0]
-		 [(structured) 1]
-		 [(side-effects) 2]
-		 [(advanced) 3]))
-	 main)))
 
     (define setup-base-dir
       (lambda ()

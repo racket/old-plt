@@ -58,11 +58,31 @@
 	    [quit (lambda () (send console-edit shut-down))]
 	    [project-extension "spj"]
 	    [group% scheme-project-frame-group%]
-	    
-	    [console-edit (make-object drscheme:edit:console-edit%)])
+
+	    [console-edit
+	     (make-object 
+		 (class-asi drscheme:edit:console-edit%
+		   (rename [super-after-insert after-insert]
+			   [super-after-delete after-delete])
+		   (private
+		    [show-console
+		     (lambda ()
+		       (send group for-each-frame
+			     (lambda (frame)
+			       (unless (eq? (ivar frame canvas-show-mode)
+					    'scheme)
+				 (send frame set-show-mode 'both)))))])
+		   (public
+		    [after-insert
+		     (lambda args
+		       (apply super-after-insert args)
+		       (show-console))]
+		    [after-delete
+		     (lambda args
+		       (apply super-after-delete args)
+		       (show-console))])))])
 	  
 	  (public
-	    
 	    [file-menu:close (if mred:debug:on? (lambda () (show #f)) #f)]
 	    
 	    [remove-file
@@ -245,9 +265,7 @@
 	     (lambda ()
 	       (mred:debug:printf 'super-init "initializing console")
 	       (send console-edit do-initialize)
-	       (mred:debug:printf 'super-init "initialized console")
-	       (for-each (lambda (x) (send console-edit load-file-into-scheme x))
-			 (mred:get-preference 'drscheme:startup-files))))))))
+	       (mred:debug:printf 'super-init "initialized console")))))))
 
     (define scheme-project-frame%
       (make-scheme-project-frame% mred:project-frame%))
@@ -258,8 +276,17 @@
     (mred:debug:printf 'super-init "after console")
     (define eval-string (ivar (ivar console console-edit) do-eval))
 
+    (mzlib:pretty-print@:pretty-print-size-hook 
+     (lambda (x _) (and (is-a? x wx:snip%) 1)))
+    (mzlib:pretty-print@:pretty-print-print-hook
+     (lambda (x _) 
+       (let ([edit (ivar console console-edit)])
+	 (send edit insert (send x copy) (send edit last-position)))))
+
     (mred:add-preference-callback 'drscheme:project-visible?
-				  (lambda (p v) (send console show v)))
+				  (lambda (p v) 
+				    (send console show v) 
+				    #t))
 
     (mred:insert-format-handler "Scheme Project" "spj"
 				(lambda (filename group-ignored)

@@ -1,5 +1,6 @@
-(define-sigfunctor (mred:autoload@ mred:autoload^)
-   (import mred:debug^ mzlib:file^)
+(define mred:autoload@
+  (unit/s mred:autoload^
+    (import [mred:debug mred:debug^] [mzlib:file mzlib:file^])
 
    (define autoload-paths '("/usr/local/lib/plt/mred/autoload/"))
 
@@ -9,7 +10,7 @@
 	 (if (defined? name)
 	     (apply (eval name) args)
 	     (catch escape
-		    (let ([path (mzlib:file^:path-only file)]
+		    (let ([path (mzlib:file:path-only file)]
 			  [try-it
 			   (lambda (file)
 			     (load/cd file)
@@ -25,4 +26,4 @@
 				       (try-it file))))
 			     autoload-paths)
 			    (error 'autoload "unable to find file: ~s" file))
-			  (try-it file)))))))))
+			  (try-it file))))))))))

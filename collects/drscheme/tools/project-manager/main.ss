@@ -180,6 +180,22 @@
   (preferences:set-default 'drscheme:project-manager:add-files-as-relative?
 			   #t
 			   boolean?)
+
+  (preferences:set-default 'drscheme:project-manager:window-size-percentage 
+                           1/2
+                           (lambda (x) (and number? (<= 0 x 1))))
+  (define vertical-resizable/pref%
+    (class panel:vertical-resizable% args
+      (inherit get-percentages)
+      (override
+        [on-percentage-change
+         (lambda ()
+           (let ([percentages (get-percentages)])
+             (when (= 2 (length percentages))
+               (preferences:set 'drscheme:project-manager:window-size-percentage (car percentages)))))])
+      (sequence (apply super-init args))))
+
+
   (define project-frame%
     (class/d (drscheme:frame:basics-mixin (frame:searchable-mixin frame:standard-menus%)) (filename)
       ((inherit get-area-container get-menu-bar set-label)
@@ -1117,7 +1133,8 @@
       (define (make-root-area-container class% parent)
         (let ([main (super-make-root-area-container vertical-panel% parent)])
           (set! top-panel (make-object vertical-panel% main))
-          (set! rep-outer-panel (make-object vertical-panel% top-panel))
+          (set! resizable-panel (make-object vertical-resizable/pref% top-panel))
+          (set! rep-outer-panel (make-object vertical-panel% resizable-panel))
           (set! rep-panel (make-object class% rep-outer-panel))
           rep-panel))
       
@@ -1172,6 +1189,7 @@
       (make-object menu-item% "Configure Collection Paths..." project-menu (lambda x (configure-collection-paths)))
 
       (define top-panel top-panel)
+      (define resizable-panel resizable-panel)
       (define rep-outer-panel rep-outer-panel)
       (define rep-panel rep-panel)
       
@@ -1193,8 +1211,8 @@
 			       ((drscheme:unit:make-bitmap "break") this)
 			       button-panel (lambda x (break-project))))
 
-      (define top-horizontal-panel (make-object horizontal-panel% top-panel))
-
+      (define top-horizontal-panel (make-object horizontal-panel% resizable-panel))
+      
       (define (make-files-gui get-files set-files label-str
 			      show-str hide-str)
 	(define files-menu-item
@@ -1436,8 +1454,8 @@
 	 (lambda () to-load-files)
 	 (lambda (x) (set-to-load-files x))
 	 "Main Files"
-	 "Show Project Files"
-	 "Hide Project Files"))
+	 "Show Main Files"
+	 "Hide Main Files"))
 
       (define (anything-shown-in-top-half?)
 	(or (get-elaboration-files-shown?)
@@ -1487,8 +1505,12 @@
       (update-elaboration-files-buttons)
       (update-name-message)
 
-      (send top-panel change-children (lambda (l) (list button-panel top-horizontal-panel rep-outer-panel)))
-
+      (send top-panel change-children (lambda (l) (list button-panel resizable-panel)))
+      (send resizable-panel change-children reverse)
+      (send resizable-panel set-percentages
+            (let ([p (preferences:get 'drscheme:project-manager:window-size-percentage)])
+              (list p (- 1 p))))
+      
       (when (and filename
 		 (file-exists? filename))
 	(load-file filename))

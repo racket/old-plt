@@ -276,7 +276,10 @@
 	     (lambda (file-menu) (send file-menu append-separator))]
 	    [file-menu:between-save-and-close 
 	     (lambda (file-menu) (send file-menu append-separator))]
-	    [file-menu:after-close (lambda (file-menu) (void))]
+	    [file-menu:between-close-and-quit
+	     (lambda (file-menu) (void))]
+	    [file-menu:after-quit (lambda (file-menu) (void))]
+
 	    [edit-menu:after-std-items (lambda (edit-menu) (void))]
 
 	    [file-menu:open (lambda () (void))]
@@ -313,6 +316,11 @@
 				     [(windows) "&Close"]
 				     [(macintosh) (string-append "Close" tab "Cmd+W")]
 				     [else "Close"])]
+	    [file-menu:quit (lambda () (mred:exit:exit))]
+	    [file-menu:quit-string (case wx:platform
+				     [(windows) "E&xit"]
+				     [(macintosh) (string-append "Quit" tab "Cmd+Q")]
+				     [else (string-append "Quit" tab "Ctl-x Ctl-c")])]
 
 	    [edit-menu:undo (lambda () (void))]
 	    [edit-menu:undo-string (case wx:platform
@@ -379,7 +387,10 @@
 		 (file-menu:between-save-and-close file-menu)
 		 (when file-menu:close
 		   (send file-menu append-item file-menu:close-string file-menu:close))
-		 (file-menu:after-close file-menu)
+		 (file-menu:between-close-and-quit file-menu)
+		 (when file-menu:quit
+		   (send file-menu append-item file-menu:quit-string file-menu:quit))
+		 (file-menu:after-quit file-menu)
 		 
 		 (send edit-menu append-item edit-menu:undo-string edit-menu:undo)
 		 (send edit-menu append-item edit-menu:redo-string edit-menu:redo)
@@ -395,8 +406,8 @@
 		 (edit-menu:after-std-items edit-menu)
 		 
 		 (let ([mb (super-make-menu-bar)])
-		   (send mb append file-menu "File")
-		   (send mb append edit-menu "Edit")
+		   (send mb append file-menu "&File")
+		   (send mb append edit-menu "&Edit")
 		   mb)))]))))
 
     ; This defines the standard editing window.
@@ -660,7 +671,7 @@
 		     (edit-menu:do wx:const-edit-insert-text-box))
 	       (send edit-menu append-item "Insert Graphic Box"
 		     (edit-menu:do wx:const-edit-insert-graphic-box))
-	       (send edit-menu append-item "Insert Image"
+	       (send edit-menu append-item "Insert Image..."
 		     (edit-menu:do wx:const-edit-insert-image))
 	       (send edit-menu append-item "Toggle Wrap Text"
 		     (lambda ()

@@ -2090,7 +2090,7 @@
 		     (values
 		      new-methods
 		      override-methods
-		      (lambda (this super/ignored init-args)
+		      (lambda (this super-id/ignored si_c/ignored si_inited?/ignored si_leftovers/ignored init-args)
 			(apply prim-init this 
 			       (if init-arg-names
 				   (extract-primitive-args this name init-arg-names init-args)

@@ -19,8 +19,8 @@
   #define OPAQUE_TOOLBOX_STRUCTS 1
   #define PM_USE_SESSION_APIS 0
 
-  #define USE_SENORA_GC 1
-  #define SGC_STD_DEBUGGING 1
+  //#define USE_SENORA_GC 1
+  //#define SGC_STD_DEBUGGING 1
     
   #include <Carbon/Carbon.h>
 #else

@@ -5,8 +5,8 @@
   #define OPAQUE_TOOLBOX_STRUCTS 1
   #define TARGET_API_MAC_CARBON 1
 
-  #define USE_SENORA_GC 1
-  #define SGC_STD_DEBUGGING 1
+  //#define USE_SENORA_GC 1
+  //#define SGC_STD_DEBUGGING 1
 
   #include <Carbon/Carbon.h>
 #else

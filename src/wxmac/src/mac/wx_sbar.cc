@@ -205,10 +205,8 @@ void wxScrollBar::Enable(Bool enable)
 void wxScrollBar::Paint(void)
 {
 	if (cHidden) return;
-	
- 	*((char *)0L) = 123;
-
-	SetCurrentDC();
+        
+        SetCurrentDC();
  	// GRW
  	if (IsControlVisible(cMacControl))
  	{

@@ -35,7 +35,7 @@
     (define const-default-posn -1);; ditto for position.
     
     ; default spacing between items.
-    (define const-default-spacing 0)
+    (define const-default-spacing 2)
     
     ; default spacing around edge of panel
     (define const-default-border 0)

@@ -1449,7 +1449,7 @@ static char *do_expand_filename(Scheme_Object *o, char* filename, int ilen, cons
       *expanded = 1;
   
     filename = naya;
-    ilen = len + flen;
+    ilen = len + flen + 1;
   }
 
   /* Remove redundant slashes */

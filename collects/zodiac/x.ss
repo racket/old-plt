@@ -1,4 +1,4 @@
-; $Id: x.ss,v 1.51 1999/05/23 17:31:24 mflatt Exp $
+; $Id: x.ss,v 1.52 1999/05/31 11:19:39 mflatt Exp $
 
 (unit/sig zodiac:expander^
   (import
@@ -17,11 +17,18 @@
   ; ----------------------------------------------------------------------
 
   (define-struct vocabulary-record (name this rest
-				     symbol-error literal-error
-				     list-error ilist-error
-				     on-demand))
+					 symbol-error literal-error
+					 list-error ilist-error
+					 on-demand subexpr-vocab))
 
   (define get-vocabulary-name vocabulary-record-name)
+
+  (define (self-subexpr-vocab v)
+    (set-vocabulary-record-subexpr-vocab! v v)
+    v)
+
+  (define (set-subexpr-vocab! v subexpr-v)
+    (set-vocabulary-record-subexpr-vocab! v subexpr-v))
 
   (define create-vocabulary
     (opt-lambda (name (root #f)
@@ -38,24 +45,30 @@
 				 (vocabulary-record-ilist-error root)
 				 "Improper-list syntax invalid in this position")))
       (let ((h (make-hash-table)))
-	(make-vocabulary-record name h root
-	  symbol-error literal-error list-error ilist-error null))))
+	(self-subexpr-vocab
+	 (make-vocabulary-record
+	  name h root
+	  symbol-error literal-error list-error ilist-error
+	  null #f)))))
 
   (define append-vocabulary
     (opt-lambda (new old (name #f))
       (let loop ((this new) (first? #t))
 	(let ((name (if (and first? name) name
 		      (vocabulary-record-name this))))
-	  (make-vocabulary-record name
+	  (self-subexpr-vocab
+	   (make-vocabulary-record
+	    name
 	    (vocabulary-record-this this)
 	    (if (vocabulary-record-rest this)
-	      (loop (vocabulary-record-rest this) #f)
-	      old)
+		(loop (vocabulary-record-rest this) #f)
+		old)
 	    (vocabulary-record-symbol-error this)
 	    (vocabulary-record-literal-error this)
 	    (vocabulary-record-list-error this)
 	    (vocabulary-record-ilist-error this)
-	    (vocabulary-record-on-demand this))))))
+	    (vocabulary-record-on-demand this)
+	    #f))))))
 
   (define add-micro/macro-form
     (lambda (constructor)
@@ -158,7 +171,7 @@
 	    (cond
 	      ((micro-resolution? sym-expander)
 		((micro-resolution-rewriter sym-expander)
-		  expr env attributes vocab))
+		  expr env attributes (vocabulary-record-subexpr-vocab vocab)))
 	      (sym-expander
 		(internal-error expr "Invalid sym expander ~s" sym-expander))
 	      (else
@@ -170,7 +183,7 @@
 	    (cond
 	      ((micro-resolution? lit-expander)
 		((micro-resolution-rewriter lit-expander)
-		  expr env attributes vocab))
+		  expr env attributes (vocabulary-record-subexpr-vocab vocab)))
 	      (lit-expander
 		(internal-error expr
 		  "Invalid lit expander ~s" lit-expander))
@@ -184,7 +197,7 @@
 		      (cond
 			((micro-resolution? list-expander)
 			  ((micro-resolution-rewriter list-expander)
-			    expr env attributes vocab))
+			    expr env attributes (vocabulary-record-subexpr-vocab vocab)))
 			(list-expander
 			  (internal-error expr
 			    "Invalid list expander ~s" list-expander))
@@ -216,7 +229,7 @@
 			    expanded)))
 		      ((micro-resolution? r)
 			((micro-resolution-rewriter r)
-			  expr env attributes vocab))
+			  expr env attributes (vocabulary-record-subexpr-vocab vocab)))
 		      (else
 			(invoke-list-expander))))
 		  (invoke-list-expander))))))
@@ -225,7 +238,7 @@
 	    (cond
 	      ((micro-resolution? ilist-expander)
 		((micro-resolution-rewriter ilist-expander)
-		  expr env attributes vocab))
+		  expr env attributes (vocabulary-record-subexpr-vocab vocab)))
 	      (ilist-expander
 		(internal-error expr
 		  "Invalid ilist expander ~s" ilist-expander))

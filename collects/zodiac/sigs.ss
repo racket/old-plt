@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.67 1999/05/23 17:31:24 mflatt Exp $
+; $Id: sigs.ss,v 1.68 1999/05/27 15:48:13 mflatt Exp $
 
 (begin-elaboration-time (require-library "macro.ss"))
 (begin-elaboration-time (require-library "prettys.ss"))
@@ -42,6 +42,7 @@
     introduce-identifier introduce-fresh-identifier introduce-bound-id
     create-vocabulary append-vocabulary
     add-on-demand-form find-on-demand-form 
+    set-subexpr-vocab!
     (struct vocabulary-record
       (name this rest symbol-error literal-error list-error ilist-error))))
 

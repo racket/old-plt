@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.187 1999/06/13 21:41:25 mflatt Exp $
+; $Id: scm-main.ss,v 1.188 1999/06/18 18:02:52 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -273,6 +273,10 @@
 
   ; ----------------------------------------------------------------------
 
+  (define (make-lambda-error-micro who)
+    (lambda (expr env attributes vocab)
+      (static-error expr (format "~a allowed only in a definition" who))))
+
   (define (make-case-lambda-micro begin? arglist-decls-vocab)
     (let* ((kwd `(else))
 	    (in-pattern `(_
@@ -313,7 +317,14 @@
 	  (else
 	    (static-error expr "Malformed case-lambda"))))))
 
-  (add-primitivized-micro-form 'case-lambda beginner-vocabulary (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
+  (define beginner+lambda-vocabulary
+    (create-vocabulary 'beginner+lambda-vocabulary
+		       beginner-vocabulary))
+  (set-subexpr-vocab! beginner+lambda-vocabulary beginner-vocabulary)
+
+  (add-primitivized-micro-form 'case-lambda
+			       beginner+lambda-vocabulary (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
+  (add-primitivized-micro-form 'case-lambda beginner-vocabulary (make-lambda-error-micro 'case-lambda))
   (add-primitivized-micro-form 'case-lambda intermediate-vocabulary (make-case-lambda-micro #f nonempty-arglist-decls-vocab))
   (add-primitivized-micro-form 'case-lambda advanced-vocabulary (make-case-lambda-micro #t full-arglist-decls-vocab))
   (add-primitivized-micro-form 'case-lambda scheme-vocabulary (make-case-lambda-micro #t full-arglist-decls-vocab))
@@ -328,7 +339,9 @@
 	(or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 	  (static-error expr "Malformed lambda")))))
 
-  (add-primitivized-macro-form 'lambda beginner-vocabulary (make-lambda-macro #f))
+  (add-primitivized-macro-form 'lambda beginner+lambda-vocabulary (make-lambda-macro #f))
+  (add-primitivized-micro-form 'lambda beginner-vocabulary (make-lambda-error-micro 'lambda))
+  (add-primitivized-macro-form 'lambda intermediate-vocabulary (make-lambda-macro #f))
   (add-primitivized-macro-form 'lambda advanced-vocabulary (make-lambda-macro #t))
   (add-primitivized-macro-form 'lambda scheme-vocabulary (make-lambda-macro #t))
 
@@ -340,8 +353,8 @@
 
   (add-primitivized-micro-form 'define-values internal-define-vocab-delta
     (let* ((kwd '())
-	    (in-pattern `(_ (var ...) val))
-	    (m&e (pat:make-match&env in-pattern kwd)))
+	   (in-pattern `(_ (var ...) val))
+	   (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(unless (at-internal-define? attributes)
 	  (static-error expr "Invalid position for internal definition"))
@@ -720,8 +733,8 @@
   (add-primitivized-micro-form 'define nobegin-local-extract-vocab nobegin-local-define-form)
 
   (let* ((kwd '())
-	  (in-pattern-1 `(_ (var ...) val))
-	  (m&e-1 (pat:make-match&env in-pattern-1 kwd)))
+	 (in-pattern-1 `(_ (var ...) val))
+	 (m&e-1 (pat:make-match&env in-pattern-1 kwd)))
     (let ((define-values-helper
 	    (lambda (internal-ok? handler)
 	      (lambda (expr env attributes vocab)
@@ -747,7 +760,7 @@
 		  (else (static-error expr
 			  "Malformed define-values")))))))
       (let ([make-dv-micro
-	     (lambda (internal-ok?)
+	     (lambda (internal-ok? use-beg-lambda-vocab?)
 	       (define-values-helper
 		 internal-ok?
 		 (lambda (expr env attributes vocab vars val)
@@ -759,12 +772,16 @@
 				      attributes
 				      (lambda ()
 					(expand-expr val env
-						     attributes vocab)))))
+						     attributes
+						     (if use-beg-lambda-vocab?
+							 beginner+lambda-vocabulary
+							 vocab))))))
 		     (create-define-values-form id-exprs
 						expr-expr expr)))))])
-	(add-primitivized-micro-form 'define-values beginner-vocabulary (make-dv-micro #f))
-	(add-primitivized-micro-form 'define-values advanced-vocabulary (make-dv-micro #t))
-	(add-primitivized-micro-form 'define-values scheme-vocabulary (make-dv-micro #t)))
+	(add-primitivized-micro-form 'define-values beginner-vocabulary (make-dv-micro #f #t))
+	(add-primitivized-micro-form 'define-values intermediate-vocabulary (make-dv-micro #f #f))
+	(add-primitivized-micro-form 'define-values advanced-vocabulary (make-dv-micro #t #f))
+	(add-primitivized-micro-form 'define-values scheme-vocabulary (make-dv-micro #t #f)))
       (let ([int-dv-micro (define-values-helper
 			    #t
 			    (lambda (expr env attributes vocab vars val)
@@ -774,24 +791,29 @@
 
   (define extract-type&super
     (let* ((kwd '())
-	    (ts-pattern '(type super))
-	    (m&e-ts (pat:make-match&env ts-pattern kwd)))
-      (lambda (type-spec env)
-	(cond
-	  ((pat:match-against m&e-ts type-spec env)
-	    =>
-	    (lambda (tsp-env)
-	      (let* ((type (pat:pexpand 'type tsp-env '()))
-		      (super (pat:pexpand 'super tsp-env '())))
-		(and (or (z:symbol? type)
-		       (static-error type "Not an identifier"))
-		  (values type super)))))
-	  ((z:symbol? type-spec)
-	    (values type-spec #f))
-	  (else
-	    (static-error type-spec "Invalid specification"))))))
+	   (ts-pattern '(type super))
+	   (m&e-ts (pat:make-match&env ts-pattern kwd)))
+      (lambda (type-spec env allow-supertype?)
+	(if allow-supertype?
+	    (cond
+	     ((pat:match-against m&e-ts type-spec env)
+	      =>
+	      (lambda (tsp-env)
+		(let* ((type (pat:pexpand 'type tsp-env '()))
+		       (super (pat:pexpand 'super tsp-env '())))
+		  (and (or (z:symbol? type)
+			   (static-error type "Not an identifier"))
+		       (values type super)))))
+	     ((z:symbol? type-spec)
+	      (values type-spec #f))
+	     (else
+	      (static-error type-spec "Invalid specification")))
+	    (begin
+	      (unless (z:symbol? type-spec)
+		(static-error type-spec "Not an identifier"))
+	      (values type-spec #f))))))
 
-  (define struct-micro
+  (define (make-struct-micro allow-supertype?)
       (let* ((kwd '())
 	      (in-pattern `(_ type-spec (fields ...)))
 	      (m&e-in (pat:make-match&env in-pattern kwd)))
@@ -804,7 +826,7 @@
 			(type-spec (pat:pexpand 'type-spec p-env kwd)))
 		  (distinct-valid-syntactic-id/s? fields)
 		  (let-values (((type super)
-				 (extract-type&super type-spec env)))
+				(extract-type&super type-spec env allow-supertype?)))
 		    (create-struct-form
 		      type
 		      (and super (as-nested attributes (lambda () (expand-expr super env attributes vocab))))
@@ -813,8 +835,9 @@
 	    (else
 	      (static-error expr "Malformed struct"))))))
 
-  (add-primitivized-micro-form 'struct beginner-vocabulary struct-micro)
-  (add-primitivized-micro-form 'struct scheme-vocabulary struct-micro)
+  (add-primitivized-micro-form 'struct beginner-vocabulary (make-struct-micro #f))
+  (add-primitivized-micro-form 'struct advanced-vocabulary (make-struct-micro #t))
+  (add-primitivized-micro-form 'struct scheme-vocabulary (make-struct-micro #t))
 
   (define generate-struct-names
     (opt-lambda (type fields source
@@ -843,60 +866,67 @@
 		    fields)))))))))
 
     (let* ((kwd '())
-	    (in-pattern '(_ type-spec (fields ...)))
-	    (m&e-in (pat:make-match&env in-pattern kwd)))
-      (let ((ds-core
-	      (lambda (handler)
-		(lambda (expr env attributes vocab)
-		  (cond
-		    ((pat:match-against m&e-in expr env)
-		      =>
-		      (lambda (p-env)
-			(let ((fields (pat:pexpand '(fields ...) p-env kwd))
-			       (type-spec (pat:pexpand 'type-spec p-env kwd)))
-			  (distinct-valid-syntactic-id/s? fields)
-			  (let*-values
-			    (((type super) (extract-type&super type-spec env))
-			      ((names) (generate-struct-names type fields expr))
-			      ((struct-expr)
-				`(struct ,type-spec ,fields)))
-			    (handler expr env attributes vocab
-			      names struct-expr)))))
-		    (else
-		      (static-error expr "Malformed define-struct")))))))
-	(let ([ds-micro
-	       (ds-core
-		(lambda (expr env attributes vocab names struct-expr)
-		  (expand-expr
-		   (structurize-syntax
-		    `(define-values ,names ,struct-expr)
-		    expr '(-1)
-		    #f
-		    (make-origin 'micro expr))
-		   env attributes vocab)))])
-	  (add-primitivized-micro-form 'define-struct beginner-vocabulary ds-micro)
-	  (add-primitivized-micro-form 'define-struct scheme-vocabulary ds-micro))
-	(let ([int-ds-micro (ds-core
-			     (lambda (expr env attributes vocab names struct-expr)
-			       (cons names struct-expr)))])
-	  (add-primitivized-micro-form 'define-struct nobegin-local-extract-vocab int-ds-micro)
-	  (add-primitivized-micro-form 'define-struct full-local-extract-vocab int-ds-micro))))
+	   (in-pattern '(_ type-spec (fields ...)))
+	   (m&e-in (pat:make-match&env in-pattern kwd)))
+      (let ((make-ds-micro
+	     (lambda (handler allow-supertype?)
+	       (lambda (expr env attributes vocab)
+		 (cond
+		  ((pat:match-against m&e-in expr env)
+		   =>
+		   (lambda (p-env)
+		     (let ((fields (pat:pexpand '(fields ...) p-env kwd))
+			   (type-spec (pat:pexpand 'type-spec p-env kwd)))
+		       (distinct-valid-syntactic-id/s? fields)
+		       (let*-values
+			   (((type super) (extract-type&super type-spec env allow-supertype?))
+			    ((names) (generate-struct-names type fields expr))
+			    ((struct-expr)
+			     `(struct ,type-spec ,fields)))
+			 (handler expr env attributes vocab
+				  names struct-expr)))))
+		  (else
+		   (static-error expr "Malformed define-struct")))))))
+	(let ([top-level-handler
+	       (lambda (expr env attributes vocab names struct-expr)
+		 (expand-expr
+		  (structurize-syntax
+		   `(define-values ,names ,struct-expr)
+		   expr '(-1)
+		   #f
+		   (make-origin 'micro expr))
+		  env attributes vocab))]
+	      [internal-handler
+	       (lambda (expr env attributes vocab names struct-expr)
+		 (cons names struct-expr))])
+
+	  (add-primitivized-micro-form 'define-struct beginner-vocabulary 
+				       (make-ds-micro top-level-handler #f))
+	  (add-primitivized-micro-form 'define-struct advanced-vocabulary
+				       (make-ds-micro top-level-handler #t))
+	  (add-primitivized-micro-form 'define-struct scheme-vocabulary
+				       (make-ds-micro top-level-handler #t))
+
+	  (add-primitivized-micro-form 'define-struct nobegin-local-extract-vocab
+				       (make-ds-micro internal-handler #f))
+	  (add-primitivized-micro-form 'define-struct full-local-extract-vocab
+				       (make-ds-micro internal-handler #t)))))
 
     (let* ((kwd '())
-	    (in-pattern '(_ (type-spec fields ...)))
-	    (out-pattern '(define-struct type-spec (fields ...)))
-	    (m&e (pat:make-match&env in-pattern kwd)))
+	   (in-pattern '(_ (type-spec fields ...)))
+	   (out-pattern '(define-struct type-spec (fields ...)))
+	   (m&e (pat:make-match&env in-pattern kwd)))
       (add-primitivized-macro-form 'define-structure intermediate-vocabulary
 	(lambda (expr env)
 	  (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
-	    (static-error expr "Malformed define-structure"))))
+	      (static-error expr "Malformed define-structure"))))
       (let ([int-ds-macro (lambda (expr env)
 			    (or (pat:match-and-rewrite expr m&e out-pattern kwd env)
 				(static-error expr "Malformed define-structure")))])
 	(add-primitivized-macro-form 'define-structure nobegin-local-extract-vocab int-ds-macro)
 	(add-primitivized-macro-form 'define-structure full-local-extract-vocab int-ds-macro)))
 
-    (define (make-let-struct-micro begin?)
+    (define (make-let-struct-micro begin? allow-supertype?)
       (let* ((kwd '())
 	     (in-pattern `(_ type-spec (fields ...) ,@(get-expr-pattern begin?)))
 	     (m&e-in (pat:make-match&env in-pattern kwd)))
@@ -917,7 +947,7 @@
 		    (body (pat:pexpand `(,@(get-expr-pattern begin?)) p-env kwd)))
 	       (distinct-valid-syntactic-id/s? fields)
 	       (let-values (((type super)
-			     (extract-type&super type-spec env)))
+			     (extract-type&super type-spec env allow-supertype?)))
 		 (expand-expr
 		  (structurize-syntax
 		   `(let-values
@@ -929,10 +959,10 @@
 		   (make-origin 'micro expr))
 		  env attributes vocab))))))))
 
-    (add-primitivized-micro-form 'let-struct intermediate-vocabulary (make-let-struct-micro #f))
-    (add-primitivized-micro-form 'let-struct advanced-vocabulary (make-let-struct-micro #t))
-    (add-primitivized-micro-form 'let-struct scheme-vocabulary (make-let-struct-micro #t))
-
+    (add-primitivized-micro-form 'let-struct intermediate-vocabulary (make-let-struct-micro #f #f))
+    (add-primitivized-micro-form 'let-struct advanced-vocabulary (make-let-struct-micro #t #t))
+    (add-primitivized-micro-form 'let-struct scheme-vocabulary (make-let-struct-micro #t #t))
+    
   ; ----------------------------------------------------------------------
 
     ; Sometimes a single source symbol appears twice in an expansion.

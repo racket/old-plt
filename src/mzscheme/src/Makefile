@@ -240,7 +240,7 @@ $(OBJDIR)/image.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
 $(OBJDIR)/list.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
         ../src/stypes.h  
 $(OBJDIR)/number.o: schpriv.h schexn.h $(SCONFIG) ../include/scheme.h \
-         ../src/stypes.h   nummacs.h 
+         ../src/stypes.h nummacs.h random.inc
 $(OBJDIR)/object.o: ../include/scheme.h  ../src/stypes.h \
           schpriv.h schexn.h $(SCONFIG) \
         ../gc/gc.h  schrunst.h

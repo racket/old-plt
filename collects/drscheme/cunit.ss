@@ -357,7 +357,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 
     (define frame%
       (class drscheme:frame:frame% (fn [snip #f] [show? #t])
-	(inherit show get-edit show-menu panel)
+	(inherit show get-edit show-menu panel group)
 	(public
 	  [on-close
 	   (lambda ()
@@ -426,6 +426,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	  (send (get-edit) set-filename filename)
 	  (when (file-exists? filename)
 	    (send (get-edit) load-file filename))
+	  (send group insert this)
 	  (when show?
 	    (show #t)))))
 

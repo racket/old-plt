@@ -104,8 +104,7 @@
 	(sequence 
 	  (mred:debug:printf 'super-init "before drscheme:frame%")
 	  (super-init name)
-	  (mred:debug:printf 'super-init "after drscheme:frame%")
-	  (send group insert-frame this))
+	  (mred:debug:printf 'super-init "after drscheme:frame%"))
 	(public
 	  [imports-panel (make-object mred:horizontal-panel% root-panel)]
 	  [imports-message
@@ -131,7 +130,7 @@
     (define unit-frame%
       (class (mred:make-searchable-frame% frame%) (filename snip [show? #t])
 	(inherit get-canvas get-edit imports-panel
-		 set-title-prefix show-menu
+		 set-title-prefix show-menu group
 		 show menu-bar% make-menu
 		 active-edit active-canvas panel 
 		 file-menu file-menu:open-id file-menu:new-id file-menu:save-id 
@@ -518,6 +517,7 @@
 	  (set-title-prefix "DrScheme")
 
 	  (send definitions-canvas set-focus)
+	  (send group insert-frame this)
 	  (when show?
 	    (show #t))
 	  (mred:debug:printf 'super-init "drscheme:frame% finished ivars~n"))))

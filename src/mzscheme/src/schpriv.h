@@ -116,6 +116,7 @@ void scheme_init_symbol_type(Scheme_Env *env);
 void scheme_init_type(Scheme_Env *env);
 void scheme_init_list(Scheme_Env *env);
 void scheme_init_stx(Scheme_Env *env);
+void scheme_init_module(Scheme_Env *env);
 void scheme_init_port(Scheme_Env *env);
 void scheme_init_port_fun(Scheme_Env *env);
 void scheme_init_network(Scheme_Env *env);
@@ -1374,6 +1375,12 @@ int scheme_omittable_expr(Scheme_Object *o);
 int scheme_is_env_variable_boxed(Scheme_Comp_Env *env, int which);
 
 int scheme_get_eval_type(Scheme_Object *obj);
+
+Scheme_Object *scheme_get_stop_expander(void);
+
+void scheme_defmacro_parse(Scheme_Object *form, 
+			   Scheme_Object **name, Scheme_Object **code,
+			   Scheme_Comp_Env *env);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

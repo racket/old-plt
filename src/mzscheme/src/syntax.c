@@ -2271,7 +2271,7 @@ defmacro_execute(Scheme_Object *form)
   return scheme_void;
 }
 
-static void defmacro_parse(Scheme_Object *form, 
+void scheme_defmacro_parse(Scheme_Object *form, 
 			   Scheme_Object **name, Scheme_Object **code,
 			   Scheme_Comp_Env *env)
 {
@@ -2308,7 +2308,7 @@ defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
   
   scheme_compile_rec_done_local(rec, drec);
 
-  defmacro_parse(form, &name, &code, env);
+  scheme_defmacro_parse(form, &name, &code, env);
 
   val = scheme_compile_expr(code, env->eenv->init, rec, drec);
   name = (Scheme_Object *)scheme_global_keyword_bucket(SCHEME_STX_SYM(name),
@@ -2322,7 +2322,7 @@ defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Obj
 {
   Scheme_Object *name, *code, *fpart;
 
-  defmacro_parse(form, &name, &code, env);
+  scheme_defmacro_parse(form, &name, &code, env);
   
   fpart = scheme_expand_expr(code, env, depth, name);
   

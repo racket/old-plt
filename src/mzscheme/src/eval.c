@@ -3261,6 +3261,17 @@ static Scheme_Object *stop_expand(Scheme_Object *form, Scheme_Comp_Env *env, int
   return form;
 }
 
+Scheme_Object *scheme_get_stop_expander(void)
+{
+  if (!stop_expander) {
+    REGISTER_SO(stop_expander);
+    stop_expander = scheme_make_compiled_syntax(stop_syntax, 
+						stop_expand);
+  }
+
+  return stop_expander;
+}
+
 static Scheme_Object *
 local_expand(int argc, Scheme_Object **argv)
 {
@@ -3275,11 +3286,7 @@ local_expand(int argc, Scheme_Object **argv)
   /* For each given stop-point identifier, shadow any potential syntax
      in the environment with an identity-expanding syntax expander. */
 
-  if (!stop_expander) {
-    REGISTER_SO(stop_expander);
-    stop_expander = scheme_make_compiled_syntax(stop_syntax, 
-						stop_expand);
-  }
+  (void)scheme_get_stop_expander();
 
   env = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME, env);
   local_mark = scheme_current_process->current_local_mark;

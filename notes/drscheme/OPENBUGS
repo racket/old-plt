@@ -18,5 +18,5 @@ There are restrictions on using launchers created for 68K Macs.
 See doc.txt in the launcher collection for more information.
 
 For a more complete listing of known bugs, see our
-<a href="http://www.cs.rice.edu/CS/PLT/Bugs/query-pr.shtml">
+<a href="http://bugs.plt-scheme.org/query/">
 online bug report database</a>

@@ -31,11 +31,12 @@ class wxTimer: public wxbTimer
  int interval;
  wxTimer *prev, *next;
 #endif
-  wxTimer(void);
+  wxTimer(void *ctx = NULL);
   ~wxTimer(void);
   Bool Start(int milliseconds = -1,Bool one_shot = FALSE ); // Start timer
   void Stop(void);                   // Stop timer
   void Dequeue();
+ void SetContext(void *ctx);
 };
 
 #endif // IN_CPROTO

@@ -20,12 +20,13 @@
 class wxTimer: public wxbTimer
 {
  public:
-  wxTimer(void);
+  wxTimer(void *ctx = NULL);
   ~wxTimer(void);
   virtual Bool Start(int milliseconds = -1,Bool one_shot = FALSE); // Start timer
   virtual void Stop(void);                   // Stop timer
 
   void Dequeue(void);
+  void SetContext(void *ctx);
 };
 
 #endif // wx_timerh

@@ -71,7 +71,7 @@ are documented in the next section.
       If `dest-dir' is #f, each .zo file is placed in the same directory
       as its source file.
  
- Colelction compilation
+ Collection compilation
  ----------------------
 
    (compile-collection-extension collection sub-collection ...)
@@ -87,7 +87,9 @@ are documented in the next section.
       file to obtain information about compiling the collection.
       The following fields are used:
 
-       `compile-prefix' - an expression to use as the elaboration-time
+       `name' - the name of the collection. as a string.
+
+       `compile-prefix' - an S-expression to use as the elaboration-time
          prefix expression for compiling all files in the collection.
 
        `compile-omit-files' - a list of filenames (without paths); all

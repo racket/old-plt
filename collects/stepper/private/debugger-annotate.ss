@@ -5,6 +5,8 @@
            "marks.ss"
            (lib "contract.ss"))
   
+  (define count 0)
+  
   (provide annotate)
   
   (define (arglist-bindings arglist-stx)
@@ -161,6 +163,11 @@
         
         [else (error 'expr-syntax-object-iterator "unknown expr: ~a"
                      (syntax-object->datum expr))]))
+
+      (set! count (+ count 1))
+      (if (= (modulo count 100) 0)
+          (fprintf (current-error-port) "syntax-source: ~v\nsyntax-position: ~v\n" (syntax-source expr) (syntax-position expr)))
+      
       
       (if (and (eq? (syntax-source expr) breakpoint-origin)
                (memq (- (syntax-position expr) 1) ; syntax positions start at one.

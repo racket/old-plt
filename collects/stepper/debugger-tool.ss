@@ -66,7 +66,7 @@
                                    (format "Current breakpoint positions: ~a\n" (apply string-append
                                                                                        (map (lambda (pos)
                                                                                               (let-values ([(line offset) (position->line-n-offset pos)])
-                                                                                                (format "<~v:~v> " line offset)))
+                                                                                                (format "<~v:~v> (position ~v)\n" line offset pos)))
                                                                                             breakpoints)))
                                    this
                                    '(ok)))))

@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.3 1998/12/08 01:03:03 robby Exp $
+;; $Id: frameworkc.ss,v 1.4 1999/01/16 04:52:07 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -10,71 +10,71 @@
 			   [mred : mred-interfaces^]
 			   [keys : framework:keys^]
 			   [test : framework:test^])
-  (link [application : framework:application^ ((require-relative-library-unit/sig "app.ss"))]
-	[version : framework:version^ ((require-relative-library-unit/sig "version.ss") core:string core:function)]
-	[exn : framework:exn^ ((require-relative-library-unit/sig "exn.ss"))]
-	[exit : framework:exit^ ((require-relative-library-unit/sig "exit.ss") preferences gui-utils)]
+  (link [application : framework:application^ ((require-relative-library "app.ss"))]
+	[version : framework:version^ ((require-relative-library "version.ss") core:string core:function)]
+	[exn : framework:exn^ ((require-relative-library "exn.ss"))]
+	[exit : framework:exit^ ((require-relative-library "exit.ss") preferences gui-utils)]
 	[preferences : framework:preferences^
-		     ((require-relative-library-unit/sig "prefs.ss")
+		     ((require-relative-library "prefs.ss")
 		      mred
 		      exn exit panel core:pretty-print core:function)]
 	[autosave : framework:autosave^
-		  ((require-relative-library-unit/sig "autosave.ss") mred exit preferences)]
+		  ((require-relative-library "autosave.ss") mred exit preferences)]
 	[handler : framework:handler^
-		 ((require-relative-library-unit/sig "handler.ss")
+		 ((require-relative-library "handler.ss")
 		  mred
 		  gui-utils finder group  text preferences frame
 		  core:file)] 
 	[keymap : framework:keymap^
-		((require-relative-library-unit/sig "keymap.ss")
+		((require-relative-library "keymap.ss")
 		 mred keys preferences finder handler scheme-paren frame)]
-	[match-cache : framework:match-cache^ ((require-relative-library-unit/sig "mcache.ss"))]
-	[paren : framework:paren^ ((require-relative-library-unit/sig "paren.ss"))]
+	[match-cache : framework:match-cache^ ((require-relative-library "mcache.ss"))]
+	[paren : framework:paren^ ((require-relative-library "paren.ss"))]
 	[scheme-paren : framework:scheme-paren^
-		      ((require-relative-library-unit/sig "sparen.ss") paren)]
-	[path-utils : framework:path-utils^ ((require-relative-library-unit/sig "fileutil.ss"))]
-	[icon : framework:icon^ ((require-relative-library-unit/sig "icon.ss") mred)]
+		      ((require-relative-library "sparen.ss") paren)]
+	[path-utils : framework:path-utils^ ((require-relative-library "fileutil.ss"))]
+	[icon : framework:icon^ ((require-relative-library "icon.ss") mred)]
 
-	[editor : framework:editor^ ((require-relative-library-unit/sig "editor.ss")
+	[editor : framework:editor^ ((require-relative-library "editor.ss")
 				     mred
 				     autosave finder path-utils keymap icon preferences text pasteboard)]
-	[pasteboard : framework:pasteboard^ ((require-relative-library-unit/sig "pasteboard.ss")
+	[pasteboard : framework:pasteboard^ ((require-relative-library "pasteboard.ss")
 					     mred editor)]
-	[text : framework:text^ ((require-relative-library-unit/sig "text.ss")
+	[text : framework:text^ ((require-relative-library "text.ss")
 				 mred editor preferences keymap gui-utils
 				 core:function)]
 
-	[gui-utils : framework:gui-utils^ ((require-relative-library-unit/sig "guiutils.ss") mred)]
+	[gui-utils : framework:gui-utils^ ((require-relative-library "guiutils.ss") mred)]
 
 	[finder : framework:finder^
-		((require-relative-library-unit/sig "finder.ss")
+		((require-relative-library "finder.ss")
 		 mred
 		 preferences gui-utils
 		 core:string core:function core:file)]
 
 	[group : framework:group^ 
-	       ((require-relative-library-unit/sig "group.ss")
+	       ((require-relative-library "group.ss")
 		mred exit frame
 		core:function core:file)]
 
-	[canvas : framework:canvas^ ((require-relative-library-unit/sig "canvas.ss")
+	[canvas : framework:canvas^ ((require-relative-library "canvas.ss")
 				     mred preferences)]
 
-	[panel : framework:panel^ ((require-relative-library-unit/sig "panel.ss")
+	[panel : framework:panel^ ((require-relative-library "panel.ss")
 				   mred core:function)]
 
 	[frame : framework:frame^ 
-	       ((require-relative-library-unit/sig "frame.ss")
+	       ((require-relative-library "frame.ss")
 		mred
 		group preferences icon handler application
 		panel gui-utils exit finder keymap text editor
 		core:function)]
 	[scheme : framework:scheme^ 
-		((require-relative-library-unit/sig "scheme.ss")
+		((require-relative-library "scheme.ss")
 		 mred preferences match-cache paren
 		 scheme-paren icon keymap text frame
 		 core:thread)]
-	[main : framework:main^ ((require-relative-library-unit/sig "main.ss")
+	[main : framework:main^ ((require-relative-library "main.ss")
 				 mred
 				 preferences exit group
 				 core:function)])

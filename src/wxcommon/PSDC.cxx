@@ -1221,8 +1221,9 @@ void wxPostScriptDC::SetBrush(wxBrush * brush)
 void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
 			      Bool combine, Bool use16, int dt, float angle)
 {
-  float tw, th, size;
+  float tw, th;
   const char *name;
+  int size;
 
   if (!pstream)
     return;
@@ -1316,7 +1317,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
       name = "Times-Roman";
   }
 
-  size = current_font_size;
+  size = current_font->GetPointSize();
 
   if (angle != 0.0) {
     pstream->Out("gsave\n");
@@ -1334,7 +1335,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
     pstream->Out(" moveto\n");
   }
 
-  wxPostScriptDrawText(pstream->f, name, text, dt, combine, use16, size);
+  wxPostScriptDrawText(pstream->f, name, text, dt, combine, use16, current_font_size);
 
   if (angle != 0.0) {
     pstream->Out("grestore\n"); 

@@ -7,8 +7,12 @@ IS                      (u|U|l|L)*
 
 %{
 #include <stdio.h>
+#include <ctype.h>
 
 void count();
+
+static char yysourcefile[1024];
+
 %}
 
 %option yylineno
@@ -117,10 +121,37 @@ line_comment()
 cpp()
 {
   char c, prev;
-  
+  int maybe_source = 0;
+
+  /* Check for line-in-src annotation */
  loop:
-  while ((c = input()) != '\n' && c != 0)
+  while ((c = input()) != '\n' && c != 0) {
+    if (isdigit(c))
+      maybe_source = (maybe_source * 10) + (c - '0');
+    else if ((c == '"') && maybe_source) {
+      char source_name[1024];
+      int i = 0;
+
+      while ((c = input()) != '\n' 
+	     && (c != '"')
+	     && (c != 0)) {
+	if (i < 1024)
+	  source_name[i++] = c;
+	prev = c;
+      }
+
+      if (c == '"') {
+	yylineno = maybe_source;
+	source_name[i] = 0;
+	strcpy(yysourcefile, source_name);
+      }
+
+      if (c != '"')
+	break;
+    }
+
     prev = c;
+  }
 
   if (c && prev == '\\')
     goto loop;
@@ -154,39 +185,58 @@ error()
   exit(-1);
 }
 
+print_rest(int close)
+{
+  if (yysourcefile[0]) {
+    printf(" \"%s\" ", yysourcefile);
+    yysourcefile[0] = 0;
+  } else
+    printf(" #f ");
+
+  printf("%d %d%s\n", start_line, start_col, close ? ")" : "");
+  
+}
+
 symbol()
 {
-  printf("(%s %d %d)\n", yytext, start_line, start_col);
+  printf("(%s ", yytext);
+  print_rest(1);
 }
 
 xsymbol()
 {
-  printf("(\\%s %d %d)\n", yytext, start_line, start_col);
+  printf("(\\%s", yytext);
+  print_rest(1);
 }
 
 or_symbol()
 {
-  printf("(\\|\\| %d %d)\n", start_line, start_col);
+  printf("(\\|\\|");
+  print_rest(1);
 }
 
 bor_symbol()
 {
-  printf("(\\| %d %d)\n", start_line, start_col);
+  printf("(\\|");
+  print_rest(1);
 }
 
 boreq_symbol()
 {
-  printf("(\\|= %d %d)\n", start_line, start_col);
+  printf("(\\|=");
+  print_rest(1);
 }
 
 hh_symbol()
 {
-  printf("(\\#\\# %d %d)\n", start_line, start_col);
+  printf("(\\#\\#");
+  print_rest(1);
 }
 
 h_symbol()
 {
-  printf("(\\# %d %d)\n", start_line, start_col);
+  printf("(\\#");
+  print_rest(1);
 }
 
 number()
@@ -217,7 +267,7 @@ character()
   } else
     printf("|%s|", s);
 
-  printf(" %d %d)\n", start_line, start_col);
+  print_rest(1);
 }
 
 string()
@@ -237,12 +287,14 @@ string()
     putchar(*s);
   }
 
-  printf("\" %d %d)\n", yytext, start_line, start_col);
+  printf("\"");
+  print_rest(1);
 }
 
 start()
 {
-  printf("((\"%s\") %d %d\n", yytext, start_line, start_col);
+  printf("((\"%s\")", yytext);
+  print_rest(0);
 }
 
 end(int c)

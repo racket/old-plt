@@ -35,7 +35,7 @@
 (printf "#define PUSH(v, x) (__gc_var_stack__[x] = (void *)&(v))~n")
 (printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x] = (void *)0, __gc_var_stack__[x+1] = (void *)&(v), __gc_var_stack__[x+2] = (void *)l)")
 
-(define-struct tok (n line col))
+(define-struct tok (n line col file))
 (define-struct (seq struct:tok) (close in))
 (define-struct (parens struct:seq) ())
 (define-struct (brackets struct:seq) ())
@@ -51,21 +51,26 @@
 
 (define-struct live-var-info (maxlive vars))
 
-(define e (letrec ([translate
-		    (lambda (v)
-		      (if (pair? (car v))
-			  ((cond
-			    [(string=? "(" (caar v)) make-parens]
-			    [(string=? "[" (caar v)) make-brackets]
-			    [(string=? "{" (caar v)) make-braces])
-			   (caar v) (cadr v) (caddr v) 
-			   (cond
-			    [(string=? "(" (caar v)) ")"]
-			    [(string=? "[" (caar v)) "]"]
-			    [(string=? "{" (caar v)) "}"])
-			   (map translate (cdddr v)))
-			  (make-tok (car v) (cadr v) (caddr v))))])
-	    (map translate e-raw)))
+(define e (let ([source #f])
+	    (letrec ([translate
+		      (lambda (v)
+			(when (cadr v)
+			  (set! source (cadr v)))
+			(if (pair? (car v))
+			    (let ([body (map translate (cddddr v))])
+			      ((cond
+				[(string=? "(" (caar v)) make-parens]
+				[(string=? "[" (caar v)) make-brackets]
+				[(string=? "{" (caar v)) make-braces])
+			       (caar v) (caddr v) (cadddr v)
+			       source
+			       (cond
+				[(string=? "(" (caar v)) ")"]
+				[(string=? "[" (caar v)) "]"]
+				[(string=? "{" (caar v)) "}"])
+			       body))
+			    (make-tok (car v) (caddr v) (cadddr v) source)))])
+	      (map translate e-raw))))
 
 (define label? #t)
 
@@ -98,6 +103,9 @@
 
 (define (display/indent v s)
   (when next-indent
+    ;; can't get pre-processor line directive to work
+    '(when (and v (tok-file v) (tok-line v))
+      (printf "# ~a ~s~n" (max 1 (- (tok-line v) 1)) (tok-file v)))
     (display (make-string next-indent #\space))
     (set! next-indent #f))
   (display s))
@@ -122,7 +130,7 @@
 				(memq (tok-n prev) '(for)))))
 	    (when (and next-indent (= next-indent subindent))
 	      (set! next-indent indent)))
-	  (display/indent v (seq-close v))
+	  (display/indent #f (seq-close v))
 	  (cond
 	   [(braces? v)
 	    (newline/indent indent)]
@@ -408,10 +416,10 @@
 					      (append
 					       (map 
 						(lambda (v) (if (eq? '|,| (tok-n v))
-								(make-tok semi (tok-line v) (tok-col v))
+								(make-tok semi (tok-line v) (tok-col v) (tok-file v))
 								v))
 						args-e)
-					       (list (make-tok semi #f #f)))
+					       (list (make-tok semi #f #f #f)))
 					      #f)])
 			      (apply
 			       append
@@ -426,6 +434,7 @@
 	(tok-n body-v)
 	(tok-line body-v)
 	(tok-col body-v)
+	(tok-file body-v)
 	(seq-close body-v)
 	(let-values ([(body-e live-vars)
 		      (convert-body body-e arg-vars (make-live-var-info 0 null) #t)])
@@ -465,18 +474,18 @@
 		     (append
 		      decls
 		      (list (append (if label?
-					(list (make-note 'note #f #f (format "/* PTRVARS: ~a */" (map car vars))))
+					(list (make-note 'note #f #f #f (format "/* PTRVARS: ~a */" (map car vars))))
 					null)
 				    (if (and setup-stack? (positive? (live-var-info-maxlive live-vars)))
-					(list (make-note 'note #f #f (format "PREPARE_VAR_STACK(~a);" 
-									     (live-var-info-maxlive live-vars))))
+					(list (make-note 'note #f #f #f (format "PREPARE_VAR_STACK(~a);" 
+										(live-var-info-maxlive live-vars))))
 					null)))
 		      body-x
 		      (if (or setup-stack?
 			      (null? local-vars)
 			      (zero? (live-var-info-maxlive live-vars)))
 			  null
-			  (list (list (make-note 'note #f #f "SETUP(0);"))))))
+			  (list (list (make-note 'note #f #f #f "SETUP(0);"))))))
 		    (make-live-var-info (max orig-maxlive
 					     (live-var-info-maxlive live-vars))
 					(live-var-info-vars live-vars))))))))
@@ -555,6 +564,7 @@
 			       "func call"
 			       #f
 			       #f
+			       #f
 			       func
 			       args
 			       (live-var-info-vars orig-live-vars))
@@ -576,6 +586,7 @@
 		       (tok-n v)
 		       (tok-line v)
 		       (tok-col v)
+		       (tok-file v)
 		       (seq-close v)
 		       e)
 		      result)
@@ -618,6 +629,7 @@
 		 (tok-n v)
 		 (tok-line v)
 		 (tok-col v)
+		 (tok-file v)
 		 (seq-close v)
 		 (apply append el))
 		live-vars)))))

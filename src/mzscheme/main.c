@@ -600,7 +600,7 @@ oskit_error_t oskit_get_call_context(const struct oskit_guid *iid, void **out_if
 
 int main(int argc, char **argv)
 {
-#ifdef USE_SENORA_GC
+#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
   void *mzscheme_stack_start;
 #endif
 #if defined(MZ_STACK_START_HACK) || defined(USE_SENORA_GC)
@@ -609,7 +609,7 @@ int main(int argc, char **argv)
   mzscheme_stack_start = (void *)&start2;
 #endif
 
-#ifdef USE_SENORA_GC
+#if defined(USE_SENORA_GC) || defined(MZ_PRECISE_GC)
   GC_set_stack_base(mzscheme_stack_start);
 #endif
 

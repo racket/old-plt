@@ -1815,33 +1815,48 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
       wxBitmap *bm, float xsrc, float ysrc, int rop, wxColour *c, wxBitmap *mask)
 {
   Bool v;
-  wxMemoryDC *mask_dc = NULL;
+  wxMemoryDC *mask_dc = NULL, *main_dc = NULL;
 
   if (!temp_mdc) {
     wxREGGLOB(temp_mdc);
     temp_mdc = new wxMemoryDC(1);
   }
+
+#ifdef wx_msw
+  main_dc = (wxMemoryDC *)source->selectedInto;
+#endif
+  if (!main_dc) {
+    temp_mdc->SelectObject(bm);
+    /* Might fail, so we double-check: */
+    if (temp_mdc->GetObject())
+      main_dc = temp_mdc;
+  }
+
   if (mask) {
    if (!temp_mask_mdc) {
      wxREGGLOB(temp_mask_mdc);
      temp_mask_mdc = new wxMemoryDC(1);
    } 
-   temp_mask_mdc->SelectObject(mask);
-   if (temp_mask_mdc->GetObject()) {
-     mask_dc = temp_mask_mdc;
+#ifdef wx_msw
+   mask_dc = (wxMemoryDC *)mask->selectedInto;
+#endif
+   if (!mask_dc) {
+     temp_mask_mdc->SelectObject(mask);
+     if (temp_mask_mdc->GetObject()) {
+       mask_dc = temp_mask_mdc;
+     }
    }
   }
   
-  temp_mdc->SelectObject(bm);
-  /* Might fail, so we double-check: */
-   if (temp_mdc->GetObject()) {
+  if (main_dc) {
     v = Blit(xdest, ydest, fwidth, fheight,
-	     temp_mdc, xsrc, ysrc, rop, c, mask_dc);
-    temp_mdc->SelectObject(NULL);
+	     main_dc, xsrc, ysrc, rop, c, mask_dc);
+    if (main_dc == temp_mdc)
+      temp_mdc->SelectObject(NULL);
   } else
     v = FALSE;
 
-  if (mask_dc) {
+  if (mask_dc == temp_mask_mdc) {
     mask_dc->SelectObject(NULL);
   }
 

@@ -157,6 +157,8 @@
 		       (set! min-height new-min-height)
 		       (user-min-height new-min-height))))))])
 	  (public
+	    [style-flags (bitwise-ior wx:const-mcanvas-hide-h-scroll
+				      wx:const-mcanvas-hide-v-scroll)]
 	    [default-y-stretch #f]
 	    [set-media
 	     (lambda (media)

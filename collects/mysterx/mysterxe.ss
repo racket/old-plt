@@ -13,8 +13,6 @@
   (define mx-version mxprims:mx-version)
 
   (define com-invoke mxprims:com-invoke)
-  (define com-set-property! mxprims:com-set-property!)
-  (define com-get-property mxprims:com-get-property)
   (define com-method-type mxprims:com-method-type)
   (define com-get-property-type mxprims:com-get-property-type)
   (define com-set-property-type mxprims:com-set-property-type)
@@ -73,20 +71,20 @@
   (define com-all-controls 
     (make-sorted-thunk mxprims:com-all-controls))
 
-  ;; property paths
+  ;; property getter/setter
 
-  (define (com-get-property* obj . path)
+  (define (com-get-property obj . path)
     (cond 
      [(null? path) 
       (error 'com-get-property*
 	     "Expected one or more property names (strings)")]
      [(null? (cdr path))
 	     (com-get-property obj (car path))]
-     [else (apply com-get-property*
-		  (com-get-property obj (car path))
+     [else (apply com-get-property
+		  (mxprims:com-get-property obj (car path))
 		  (cdr path))]))
-		
-  (define (com-set-property*! obj . path-and-value)
+
+  (define (com-set-property! obj . path-and-value)
     (cond 
      [(or (null? path-and-value) 
 	  (null? (cdr path-and-value)))
@@ -95,7 +93,7 @@
      [(null? (cddr path-and-value))
       (com-set-property! obj (car path-and-value) (cadr path-and-value))]
      [else (apply com-set-property*!
-		  (com-get-property obj (car path-and-value))
+		  (mxprims:com-set-property! obj (car path-and-value))
 		  (cdr path-and-value))]))
 
   ;; style-related procedures 

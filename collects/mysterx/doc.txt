@@ -479,13 +479,7 @@ _MysterX_
   string.  Returns a list of symbols indicating
   the type of the specified property.
 
-> (com-get-property a-com-object property-name)
-
-  `a-com-object' is a <com-object>, and
-  `property-name' is a string.  Returns the value
-  of the requested property.
-
-> (com-get-property* a-com-object property-name-1 property-name-2 ...)
+> (com-get-property a-com-object property-name-1 property-name-2 ...)
 
   `a-com-object' is a <com-object>, and each 
   `property-name' is a string.  Returns the value 
@@ -509,14 +503,7 @@ _MysterX_
   string.  Returns a list of symbols indicating
   the type of the specified property.
 
-> (com-set-property! a-com-object property-name val)
-
-  `a-com-object' is a <com-object>,
-  `property-name' is a string, and `val' is a
-  value of suitable type.  Sets the value of the
-  specified property.
-
-> (com-set-property*! a-com-object property-name-1 property-name-2 ... val)
+> (com-set-property! a-com-object property-name-1 property-name-2 ... val)
 
   `a-com-object' is a <com-object>, each `property-name' is a 
    string, and `val' is a Scheme value.  Sets the value of the 

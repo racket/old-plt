@@ -36,6 +36,6 @@ MzLib tests are run with:
 
 
 Please report bugs using
-  http://www.cs.rice.edu/CS/PLT/Bugs/
+  http://bugs.plt-scheme.org/
 or (as a last resort) send mail to
-  plt-bugs@rice.edu
+  scheme@plt-scheme.org

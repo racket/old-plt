@@ -55,5 +55,5 @@
 	   define quote
 	   list cons car cdr quasiquote unquote unquote-splicing
 	   list* append reverse
-	   path->string build-path collection-path
+	   build-path collection-path
 	   system-library-subpath))

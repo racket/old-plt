@@ -450,13 +450,12 @@
 
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
- (exit-lc "afslut")
- (exit-cap "afslut")
- (quit-lc "afslut")
- (quit-cap "Afslut")
+ (exit "Afslut")
+ (quit "Afslut")
  ;;; in are-you-sure-format, either exit or quit is filled in (from above)
  ;;; based on the platform drscheme is running on.
- (are-you-sure-format "Er du sikker, du vil afslutte?")
+ (are-you-sure-exit "Er du sikker, du vil afslutte?")
+ (are-you-sure-quit "Er du sikker, du vil afslutte?")
  
  ;;; autosaving
  (error-autosaving "Fejl under autosaving \"~a\".")

@@ -963,6 +963,10 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
   return kill_self;
 }
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 typedef void (*Scheme_For_Each_Func)(Scheme_Object *);
 
 static void for_each_managed(Scheme_Type type, Scheme_Custodian *m, Scheme_For_Each_Func cf)
@@ -998,6 +1002,10 @@ static void for_each_managed(Scheme_Type type, Scheme_Custodian *m, Scheme_For_E
     }
   }
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 void scheme_close_managed(Scheme_Custodian *m)
 /* The trick is that we may need to kill the thread

@@ -236,13 +236,14 @@
 	  (procedure-code-liftable code))))
 
   (define (set-liftable! lambda)
-    (let ([v (get-liftable! lambda)])
-      (when v
-	(let ([pls? (or (eq? v 'pls) (eq? v 'pls-cycle))])
-	  (when (compiler:option:verbose)
-	    (compiler:warning lambda (format "found static procedure~a"
-					     (if pls? " (per-load)" ""))))
-	  (compiler:add-lifted-lambda! lambda pls?)))))
+    (when (eq? (procedure-code-liftable (get-annotation lambda)) 'unknown-liftable)
+      (let ([v (get-liftable! lambda)])
+	(when v
+	  (let ([pls? (or (eq? v 'pls) (eq? v 'pls-cycle))])
+	    (when (compiler:option:verbose)
+	      (compiler:warning lambda (format "found static procedure~a"
+					       (if pls? " (per-load)" ""))))
+	    (compiler:add-lifted-lambda! lambda pls?))))))
 
   ;; lift-lambdas! uses the `liftable' procedure annotation with known-value
   ;;  analysis to replace lexical variables referencing known liftable

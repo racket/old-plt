@@ -464,7 +464,7 @@ void scheme_init_stack_check()
     lim = (unsigned long)rl.rlim_cur;
 # ifdef UNIX_STACK_MAXIMUM
     if (lim > UNIX_STACK_MAXIMUM)
-      lim;
+      lim = UNIX_STACK_MAXIMUM;
 # endif
 
     if (scheme_stack_grows_up)

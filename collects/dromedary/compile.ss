@@ -149,12 +149,17 @@
 		 #`(if #,testc #,ifexpc #,(if (not (null? elseexpc)) elseexpc)))]
 	      [($ ast:pexp_construct name expr bool)
 	       (cond
-		[(and (null? expr) (not bool))
+		[(and (null? expr) (not bool) (if (lookup-ident name context) #t #f))
 		 (lookup-ident name context)]
-		[(and (not bool) (ast:pexp_tuple? (ast:expression-pexp_desc expr)))
+		[(and (not bool) (if (lookup-ident name context) #t #f))
 		 (let ([constr (lookup-ident name context)]
 		       [args (compile-exps (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr)) context)])
-		   #`(#,constr #,@args))])]
+		   #`(#,constr #,@args))]
+		[else
+		 (let ([constr (string->symbol (format "make-~a" (ast:lident-name name)))]
+		       [args (if (null? expr) null (compile-ml expr context))])
+		 #`(#,(string->symbol (format "make-~a" (ast:lident-name name))) #,args))]
+		)]
 
 	      [($ ast:pexp_match expr pelist)
 	       (let ([totest (compile-ml expr context)]
@@ -191,9 +196,9 @@
 	       (let ([tests (map compile-test tlist (repeat (length tlist)) (repeat context (length tlist)))])
 	       #`($ tuple #,tests))]
 	      [($ ast:ppat_construct name pat bool)
-	       (cond [(and (null? pat) (not bool))
+	       (cond [(and (null? pat) (not bool) (if (lookup-ident name context) #t #f))
 		      (lookup-ident name context)]
-		     [(and (not (null? pat)) (not bool))
+		     [(not bool)
 		      ;; Best way I can think of to do this is specail case
 		      (if (equal? (lookup-ident name context) 'cons)
 			  ;; The pattern should be a tuple of two
@@ -202,7 +207,7 @@
 				    [tail (compile-test (cadr (ast:ppat_tuple-pattern-list (ast:pattern-ppat_desc pat))) context)])
 				#`(#,head . #,tail))
 			      (pretty-print (list "Not a tuple: " (ast:pattern-ppat_desc pat))))
-			  (pretty-print (list "Not cons: " (lookup-ident name context))))]
+			  #`($ #,(string->symbol (ast:lident-name name)) #,(if (null? pat) pat (compile-test pat context))))]
 		     [else (pretty-print (list "Unknown construct: " name pat bool))])]
 	      [else (pretty-print (list "Unknown pattern: " (ast:pattern-ppat_desc pattern)))]))
 
@@ -302,13 +307,12 @@
 			     (let ([function (hash-table-get lib-map (syntax-object->datum name) (lambda () #f))])
 			       (if function
 				   function
-				   (pretty-print (list "Error: " (syntax-object->datum name) "not found in" library))))
-			     (pretty-print (list "Error: " library "not found"))))])]))
+				   (begin (pretty-print (list "Error: " (syntax-object->datum name) "not found in" library)) #f)))
+			     (begin (pretty-print (list "Error: " library "not found")) #f)))])]))
 
      (define (look-up name context)
        (if (null? context)
-	   (begin
-	     (datum->syntax-object #f (string->symbol name)))
+	   #f
 	   (if (string=? (caar context) name)
 	       (caddar context)
 	       (look-up name (cdr context)))))

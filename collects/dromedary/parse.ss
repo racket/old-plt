@@ -709,7 +709,7 @@
      [(<pattern_comma_list>)
       (ast:make-pattern (ast:make-ppat_tuple (reverse $1)) (build-src 1))]
      [(<constr_longident> <pattern>) ;(prec prec_constr_appl)
-      (ast:make-pattern (ast:make-ppat_construct $1 $2 #f))]
+      (ast:make-pattern (ast:make-ppat_construct $1 $2 #f) (build-src 1))]
      [(<name_tag> <pattern>) ;(prec prec_constr_appl)
       (ast:make-pattern (ast:make-ppat_variant $1 $2) (build-src 1))]
      [(<pattern> COLONCOLON <pattern>)

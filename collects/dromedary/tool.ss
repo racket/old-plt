@@ -29,7 +29,7 @@
           (define/public (front-end input settings)
             (let-values ([(port name)
                           (if (string? input)
-                              (values (open-input-file input) (path->complete-path input))
+                              (values (open-input-file input) #f);(path->complete-path input))
                               (let ([text (drscheme:language:text/pos-text input)])
                                 (values
                                  (open-input-string

@@ -784,7 +784,7 @@ typedef struct Scheme_Input_Port
   unsigned char *ungotten;
   int ungotten_count, ungotten_allocated;
   long position, lineNumber, charsSinceNewline;
-  int eoffound;
+  int count_lines;
 #ifdef MZ_REAL_THREADS
   Scheme_Object *sema;
 #endif
@@ -1124,6 +1124,7 @@ extern int scheme_hash_percent_syntax_only; /* Defaults to 0 */
 #ifdef GC_MIGHT_USE_REGISTERED_STATICS
 extern int GC_use_registered_statics; /* Defaults to 0 */
 #endif
+extern int scheme_binary_mode_stdio; /* Windows-MacOS-specific. Defaults to 0 */
 
 #ifdef MZ_REAL_THREADS
 Scheme_Process *scheme_get_current_process();

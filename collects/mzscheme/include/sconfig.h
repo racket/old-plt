@@ -220,17 +220,29 @@ int scheme_solaris_semaphore_try_down(void *);
 
 #endif
 
-  /************** x86/Linux with gcc ****************/
+  /************** Linux with gcc ****************/
 
-#if defined(linux) && defined(i386)
+#if defined(linux)
 
-# define SCHEME_PLATFORM_LIBRARY_SUBPATH "i386-linux"
+# if defined(i386)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "i386-linux"
+#  define REGISTER_POOR_MACHINE
+# endif
+# if defined(powerpc)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-linux"
+# endif
+# if defined(__mc68000__)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "m68k-linux"
+# endif
+# ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "unknown-linux"
+# endif
 
 # include "uconfig.h"
 # undef HAS_STANDARD_IOB
-#ifndef __ELF__
-# undef UNIX_DYNAMIC_LOAD
-#endif
+# ifndef __ELF__
+#  undef UNIX_DYNAMIC_LOAD
+# endif
 
 # define DIRENT_NO_NAMLEN
 
@@ -248,40 +260,11 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define USE_TIMEZONE_VAR
 
-# define REGISTER_POOR_MACHINE
-
 # ifdef LINUX_THREADS
 #  define MZ_USE_PTHREADS
 #  define MZ_USE_LINUX_PTHREADS
    /* More configuration below for pthreads */
 # endif
-
-# define FLAGS_ALREADY_SET
-
-#endif
-
-  /************** PowerPC/Linux with gcc ****************/
-
-#if defined(linux) && defined(powerpc)
-
-# define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-linux"
-
-# include "uconfig.h"
-# undef HAS_STANDARD_IOB
-
-# define DIRENT_NO_NAMLEN
-
-# define HAS_LINUX_IOB
-
-# define STACK_GROWS_DOWN
-
-# define USE_IEEE_FP_PREDS
-# define USE_EXPLICT_FP_FORM_CHECK
-
-# define SIGSET_IS_SIGNAL
-# define SIGSET_NEEDS_REINSTALL
-
-# define USE_TIMEZONE_VAR
 
 # define FLAGS_ALREADY_SET
 

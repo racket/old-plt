@@ -141,6 +141,7 @@ enum {
   scheme_rt_input_fd,
   scheme_rt_oskit_console_input,
   scheme_rt_tested_input_file,
+  scheme_rt_tested_output_file,
   scheme_rt_indexed_string,
   scheme_rt_output_file,
   scheme_rt_load_handler_data,
@@ -174,6 +175,7 @@ enum {
   scheme_rt_stack_object,
   scheme_rt_preallocated_object,
   scheme_process_hop_type,
+  scheme_rt_breakable,
 #endif
 
   _scheme_last_type_

@@ -433,7 +433,7 @@
                                                                     (lambda (_) *unevaluated*))]
                                       [outer-initialization
                                        (if ankle-wrap?
-                                           `((,binding-names ,unevaluated-list))
+                                           `((,binding-names (#%values ,@unevaluated-list)))
                                            `([,(append lifted-gensyms binding-names)
                                               (#%values ,@(append (map create-index-finder binding-list)
                                                                   unevaluated-list))]))]
@@ -709,7 +709,7 @@
                 (let-abstraction z:letrec-values-form-vars
                                  z:letrec-values-form-vals
                                  z:letrec-values-form-body
-                                 '#%letrec*-values
+                                 '#%letrec-values
                                  (lambda (vals binding-list)
                                    (when (andmap z:case-lambda-form? vals)
                                      (for-each mark-never-undefined binding-list))
@@ -864,7 +864,7 @@
                       (values (appropriate-wrap annotated free-bindings) free-bindings))]
                    [ankle-wrap?
                     (let*-values
-                        ([(process-clause-first-pass)
+                        ([(process-clause)
                           (lambda (clause)
                             (if (z:define-values-form? clause)
                                 (let*-values
@@ -888,9 +888,9 @@
                                  (map z:varref-var (z:define-values-form-vars clause))
                                  null))]
                          [(annotated-clauses free-vars-clauses)
-                          (dual-map process-clause-first-pass (z:unit-form-clauses expr))]
+                          (dual-map process-clause (z:unit-form-clauses expr))]
                          [(defined-vars) (apply append (map extract-defined-vars (z:unit-form-clauses expr)))]
-                         [(final-define)
+                         [(initial-define-list)
                           (if (null? defined-vars)
                               null
                               (list `(#%define-values ,defined-vars (#%values ,@defined-vars))))]
@@ -899,8 +899,8 @@
                          [(annotated-innards)
                           (if (null? annotated-clauses)
                               null
-                              (cons (appropriate-wrap `(#%begin ,@annotated-clauses) free-vars)
-                                    final-define))]
+                              (append initial-define-list
+				      (list (appropriate-wrap `(#%begin ,@annotated-clauses) free-vars))))]
                          [(annotated-unit)
                           `(#%unit
                             (import ,@(map get-binding-name imports))
@@ -1135,7 +1135,7 @@
 (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
-  (printf "annotated: ~n~a~n" (car annotated-exprs))
+  ;(printf "annotated: ~n~a~n" (car annotated-exprs))
   (values annotated-exprs struct-proc-names))))
   
 )

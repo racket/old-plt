@@ -2236,6 +2236,11 @@
       (list (sub1 (expt 2 63)) 8 #t)
       (list (- (expt 2 63)) 8 #t)))
 
+(let ([s (make-string 4)]
+      [n (random 10000)])
+  (test s integer->integer-byte-string n 4 #f #f s)
+  (test s integer->integer-byte-string n 4 #f #f))
+
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Used for comparison after loss of precision in 4-byte conversion
@@ -2270,6 +2275,27 @@
 		     (sqrt (/ (random 3000) 3000.0))
 		     (expt 2.0 (random 300)))
 		  (loop (sub1 n)))))))
+
+(define (there-and-back n)
+  (floating-point-byte-string->real (real->floating-point-byte-string n 8)))
+
+(test 1.0 there-and-back 1.0+0.0i)
+(test 100.0 there-and-back 100.0+0.0i)
+(test 101.0 there-and-back 101)
+(test 1e30 there-and-back 1000000000000000000000000000000)
+(test 0.5 there-and-back 1/2)
+
+(let ([s (make-string 8)]
+      [n (expt (random 100) (- (random 100)))])
+  (test s real->floating-point-byte-string n 8 #f s)
+  (test s real->floating-point-byte-string n 8 #f))
+
+(err/rt-test (real->floating-point-byte-string 1 -4))
+(err/rt-test (real->floating-point-byte-string 1 7))
+(err/rt-test (real->floating-point-byte-string 1 7000000000000000000000000))
+(err/rt-test (real->floating-point-byte-string 1+2i 8))
+(err/rt-test (real->floating-point-byte-string 1.0+2.0i 8))
+(err/rt-test (real->floating-point-byte-string 1.0 8 #f (make-string 7)) exn:application:mismatch?)
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

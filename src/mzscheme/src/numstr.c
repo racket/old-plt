@@ -55,8 +55,10 @@ static char *other_not_a_number_str = "-nan.0";
 
 static Scheme_Object *num_limits[3];
 
-#ifndef SCHEME_BIG_ENDIAN
-# define SCHEME_BIG_ENDIAN 0
+#ifdef SCHEME_BIG_ENDIAN
+# define MZ_IS_BIG_ENDIAN 1
+#else
+# define MZ_IS_BIG_ENDIAN 0
 #endif
 
 #define TO_DOUBLE scheme_TO_DOUBLE
@@ -1443,7 +1445,7 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
   int slen, sgned;
   char *str;
   int buf[2], i;
-  int bigend = SCHEME_BIG_ENDIAN;
+  int bigend = MZ_IS_BIG_ENDIAN;
 
   if (!SCHEME_STRINGP(argv[0]))
     slen = 0;
@@ -1459,7 +1461,7 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
   if (argc > 2)
     bigend = SCHEME_TRUEP(argv[2]);
 
-  if (bigend != SCHEME_BIG_ENDIAN) {
+  if (bigend != MZ_IS_BIG_ENDIAN) {
     for (i = 0; i < slen; i++)
       ((char *)buf)[slen - i - 1] = str[i];
     str = (char *)buf;
@@ -1489,7 +1491,7 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
     {
       Scheme_Object *h, *l, *a[2];
 
-#if SCHEME_BIG_ENDIAN
+#if MZ_IS_BIG_ENDIAN
       /* make little-endian at int level: */
       {
 	int v;
@@ -1525,7 +1527,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   char *str;
   int size, sgned;
   long val;
-  int bigend = SCHEME_BIG_ENDIAN, bad;
+  int bigend = MZ_IS_BIG_ENDIAN, bad;
 
   n = argv[0];
   if (!SCHEME_INTP(n) && !SCHEME_BIGNUMP(n))
@@ -1676,7 +1678,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
 	((unsigned int *)str)[1] = ul;
       }
 
-#if SCHEME_BIG_ENDIAN
+#if MZ_IS_BIG_ENDIAN
       {
 	/* We've assumed little endian so far */
 	val = ((int *)str)[0];
@@ -1690,7 +1692,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
     break;
   }
 
-  if (bigend != SCHEME_BIG_ENDIAN) {
+  if (bigend != MZ_IS_BIG_ENDIAN) {
     int i;
     char buf[8];
     
@@ -1707,7 +1709,7 @@ static Scheme_Object *bytes_to_real (int argc, Scheme_Object *argv[])
 {
   int slen;
   char *str, buf[8];
-  int bigend = SCHEME_BIG_ENDIAN;
+  int bigend = MZ_IS_BIG_ENDIAN;
 
   if (!SCHEME_STRINGP(argv[0]))
     slen = 0;
@@ -1722,7 +1724,7 @@ static Scheme_Object *bytes_to_real (int argc, Scheme_Object *argv[])
   if (argc > 1)
     bigend = SCHEME_TRUEP(argv[1]);
 
-  if (bigend != SCHEME_BIG_ENDIAN) {
+  if (bigend != MZ_IS_BIG_ENDIAN) {
     int i;
     for (i = 0; i < slen; i++)
       buf[slen - i - 1] = str[i];
@@ -1755,7 +1757,7 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *n, *s;
   int size;
-  int bigend = SCHEME_BIG_ENDIAN;
+  int bigend = MZ_IS_BIG_ENDIAN;
   double d;
 
   n = argv[0];
@@ -1795,7 +1797,7 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
   else
     *(double *)(SCHEME_STR_VAL(s)) = d;
 
-  if (bigend != SCHEME_BIG_ENDIAN) {
+  if (bigend != MZ_IS_BIG_ENDIAN) {
     int i;
     char buf[8], *str;
 
@@ -1812,7 +1814,7 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
 
 static Scheme_Object *system_big_endian_p (int argc, Scheme_Object *argv[])
 {
-#if SCHEME_BIG_ENDIAN
+#if MZ_IS_BIG_ENDIAN
   return scheme_true;
 #else
   return scheme_false;

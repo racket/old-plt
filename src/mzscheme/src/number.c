@@ -1132,6 +1132,9 @@ Scheme_Object *scheme_TO_DOUBLE(const Scheme_Object *n)
 
 Scheme_Object *scheme_TO_DOUBLE(const Scheme_Object *n)
 {
+  if (SCHEME_COMPLEX_IZIP(n))
+    n = IZI_REAL_PART(n);
+
   return scheme_exact_to_inexact(1, (Scheme_Object **)&n);
 }
 

@@ -100,6 +100,8 @@ int scheme_num_types(void);
 
 void scheme_reset_finalizations(void);
 
+extern unsigned long scheme_get_stack_base();
+
 /*========================================================================*/
 /*                             initialization                             */
 /*========================================================================*/

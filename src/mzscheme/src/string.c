@@ -242,15 +242,18 @@ scheme_init_string (Scheme_Env *env)
 			     env);
   
 
+  /* In principle, `version' could be foldable, but it invites
+     more problems than it solves... */
+
   scheme_add_global_constant("version", 
-			     scheme_make_folding_prim(version,
+			     scheme_make_prim_w_arity(version,
 						      "version", 
-						      0, 0, 1),
+						      0, 0),
 			     env);
   scheme_add_global_constant("banner", 
-			     scheme_make_folding_prim(banner,
+			     scheme_make_prim_w_arity(banner,
 						      "banner", 
-						      0, 0, 1),
+						      0, 0),
 			     env);
   
   scheme_add_global_constant("getenv", 

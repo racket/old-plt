@@ -70,8 +70,10 @@ void scheme_set_stack_base(void *base, int no_auto_statics)
   /* no_auto_statics must always be true! */
 #else
   GC_stackbottom = base;
-  if (no_auto_statics)
+  if (no_auto_statics) {
     GC_clear_roots();
+    GC_no_dls = 1;
+  }
 #endif
   use_registered_statics = no_auto_statics;
 }

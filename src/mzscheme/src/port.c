@@ -6599,6 +6599,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
 	/* If we get here it failed; give up */
 
+        /* using scheme_signal_error will leave us in the forked process */
+        fprintf(stderr, "mzscheme: exec failed (%d)\n", err);
+
 	/* back to MzScheme signal dispositions: */
 	START_XFORM_SKIP;
 #ifndef DONT_IGNORE_FPE_SIGNAL

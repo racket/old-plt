@@ -211,7 +211,7 @@
                      ((cadr match) v)
                      (error 'homo-vector-length "expects input of homo-vector, given: ~v" v))))
              
-             (provide/contract [#,type-assoc-stx (listof (list/p string? number?))])))]))
+             (provide/contract [#,type-assoc-stx (listof (list/c string? number?))])))]))
   
   (make-all-vector-funs f64 f32 s32 s16 s8 u32 u16 u8))
 

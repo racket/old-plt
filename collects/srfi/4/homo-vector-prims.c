@@ -16,8 +16,7 @@ static int32_t scheme_get_int32(Scheme_Object* o)
 
   result = scheme_get_int_val(o, &l);
   if ((result == 0) || (l > 0x7fffffff) || (l < -0x7fffffff))
-    scheme_raise_exn(MZEXN_APPLICATION_TYPE,o,scheme_intern_symbol("int32"),
-		     homo_vector_int32msg,o);
+    scheme_wrong_type("int32", "int32", 0, -1, &o);
 
   return l;
 }
@@ -37,7 +36,7 @@ static int32_t scheme_get_int(Scheme_Object* o)
 
   result = scheme_get_int_val(o, &l);
   if ((result == 0) || (<enable-check> && (l > <type-largest> || l < <type-smallest>)))
-    scheme_raise_exn(MZEXN_APPLICATION_TYPE,o,scheme_intern_symbol("<type-name>"),homo_vector_anytypemsg,o);
+    scheme_wrong_type("type-name", "type-name", 0, -1, &o);
   
   return l;
 }
@@ -51,7 +50,7 @@ static uint32_t scheme_get_uint(Scheme_Object* o)
 
   result = scheme_get_unsigned_int_val(o, &l);
   if ((result == 0) || (<enable-check> && (l > <type-largest> || l < <type-smallest>)))
-    scheme_raise_exn(MZEXN_APPLICATION_TYPE,o,scheme_intern_symbol("<type-name>"),homo_vector_anytypemsg,o);
+    scheme_wrong_type("type-name", "type-name", 0, -1, &o);
   
   return l;
 }

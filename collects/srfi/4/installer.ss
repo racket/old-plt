@@ -15,7 +15,7 @@
     (collection-path "compiler"))
   
   (define (delete/continue x)
-    (with-handlers ([not-break-exn? void])
+    (with-handlers ([exn:fail? void])
       (delete-file x)))
   
   (make-print-reasons #f)

@@ -25,7 +25,12 @@
            test
            err/rt-test
            arity-test
-           report-errs)
+           report-errs
+
+	   ;; Backward compatibility:
+	   exn:application:mismatch?
+	   exn:application:type?
+	   exn:application:arity?)
   
   ; The format of the next line is important: file.ss relies on it
   ; JBC : not in this version...
@@ -89,22 +94,15 @@
 
   (define exn-table
     (list (cons exn? (cons exn-message string?))
-          (cons exn? (cons exn-continuation-marks continuation-mark-set?))
-          (cons exn:fail:contract:variable? (cons exn:fail:contract:variable-id symbol?))
-          (cons exn:fail:syntax? (cons exn:fail:syntax-exprs (listof syntax?)))
-          (cons exn:fail:read? (cons exn:fail:read-sources (listof any?)))
-          (cons exn:break? (cons exn:break-continuation procedure?))
-          ;; right here
-          
-          (cons exn:i/o:port? (cons exn:i/o:port-port (lambda (x) (or (input-port? x) (output-port? x)))))
-          (cons exn:i/o:port:read? (cons exn:i/o:port-port input-port?))
-          (cons exn:i/o:port:write? (cons exn:i/o:port-port output-port?))
-          (cons exn:i/o:filesystem? (cons exn:i/o:filesystem-pathname string?))
-          (cons exn:i/o:filesystem? (cons exn:i/o:filesystem-detail (lambda (x)
-                                                                      (memq x '(#f
-                                                                                ill-formed-path
-                                                                                already-exists
-                                                                                wrong-version)))))))
+	  (cons exn? (cons exn-continuation-marks continuation-mark-set?))
+	  (cons exn:fail:contract:variable? (cons exn:fail:contract:variable-id symbol?))
+	  (cons exn:fail:syntax? (cons exn:fail:syntax-exprs (lambda (x) (and (list? x) (andmap syntax? x)))))
+	  
+	  (cons exn:fail:read? (cons exn:fail:read-srclocs (lambda (x) (and (list? x) (andmap srcloc? x)))))))
+
+  (define exn:application:mismatch? exn:fail:contract?)
+  (define exn:application:type? exn:fail:contract?)
+  (define exn:application:arity? exn:fail:contract:arity?)
 
   (define mz-test-syntax-errors-allowed? #t)
 
@@ -128,7 +126,7 @@
                             (when (and exn? (not (exn? e)))
                               (printf " WRONG EXN TYPE: ~s " e)
                               (record-error (list e 'exn-type expr)))
-                            (when (and (exn:syntax? e)
+                            (when (and (exn:fail:syntax? e)
                                        (not mz-test-syntax-errors-allowed?))
                               (printf " LATE SYNTAX EXN: ~s " e)
                               (record-error (list e 'exn-late expr)))
@@ -187,9 +185,9 @@
   (define no-extra-if-tests? #f)
 
   (define (syntax-test expr)
-    (error-test expr exn:syntax?)
+    (error-test expr exn:fail:syntax?)
     (unless no-extra-if-tests?
-      (error-test (datum->syntax-object expr `(if #f ,expr) expr) exn:syntax?)))
+      (error-test (datum->syntax-object expr `(if #f ,expr) expr) exn:fail:syntax?)))
 
   (define arity-test 
     (case-lambda
@@ -219,9 +217,7 @@
                 [make-ok?
                  (lambda (v)
                    (lambda (e)
-                     (and (exn:application:arity? e)
-                          (= (exn:application-value e) v)
-                          (aok? (exn:application:arity-expected e)))))]
+		     (exn:application:arity? e)))]
                 [do-test
                  (lambda (f args check?)
                    (set! number-of-error-tests (add1 number-of-error-tests))
@@ -290,7 +286,7 @@
 
   (define type? exn:application:type?)
   (define arity? exn:application:arity?)
-  (define syntaxe? exn:syntax?)
+  (define syntaxe? exn:fail:syntax?)
   
   (define non-z void)
 

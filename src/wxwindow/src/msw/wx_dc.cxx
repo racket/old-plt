@@ -17,6 +17,8 @@
 #include "wx_graphics.h"
 #include "../../../mzscheme/include/scheme.h"
 
+#include "../../../wxcommon/wxGLConfig.h"
+
 #include <math.h>
 
 #include <commdlg.h>
@@ -74,7 +76,7 @@ public:
   void SwapBuffers(void);
   void ThisContextCurrent(void);
 
-  void Reset(HDC dc, int offscreen);
+  void Reset(wxGLConfig *cfg, HDC dc, int offscreen);
 
   void SetupPalette(PIXELFORMATDESCRIPTOR *pfd);
   wxColourMap* CreateDefaultPalette(PIXELFORMATDESCRIPTOR *pfd);
@@ -3022,7 +3024,7 @@ wxGL *wxMemoryDC::GetGL()
       }
 
       wx_gl = new wxWinGL();
-      wx_gl->Reset(selected_bitmap ? selected_bitmap->gl_cfg : gl_cfg, cdc, 1);
+      wx_gl->Reset(selected_bitmap ? selected_bitmap->gl_cfg : wx_gl_cfg, cdc, 1);
     }
   }
 
@@ -3038,6 +3040,9 @@ wxGL *wxMemoryDC::GetGL()
 #include <gl/gl.h>
 #include <gl/glu.h>
 #include <gl/glaux.h>
+#include "wx_wglext.h"
+
+#include "../../../wxcommon/wxGLConfig.cxx"
 
 static wxWinGL *current_gl_context;
 
@@ -3106,29 +3111,29 @@ void wxWinGL::Reset(wxGLConfig *cfg, HDC dc, int offscreen)
     }
 
     if (cfg) {
-      pdf.cDepthBits = cfg->depth;
-      pdf.cStencilBits = cfg->stencil;
+      pfd.cDepthBits = cfg->depth;
+      pfd.cStencilBits = cfg->stencil;
       if (cfg->stereo)
 	pfd.dwFlags |= PFD_STEREO;
       if (cfg->doubleBuffered && !offscreen)
 	pfd.dwFlags |= PFD_DOUBLEBUFFER;
       else
 	pfd.dwFlags -= (pfd.dwFlags & PFD_DOUBLEBUFFER);
-      pdf.cAccumBits = 4 * cfg->accum;
-      pdf.cAccumRedBits = cfg->accum;
-      pdf.cAccumBlueBits = cfg->accum;
-      pdf.cAccumGreenBits = cfg->accum;
-      pdf.cAccumAlphaBits = cfg->accum;
+      pfd.cAccumBits = 4 * cfg->accum;
+      pfd.cAccumRedBits = cfg->accum;
+      pfd.cAccumBlueBits = cfg->accum;
+      pfd.cAccumGreenBits = cfg->accum;
+      pfd.cAccumAlphaBits = cfg->accum;
     }
 
-    if (afg->multisample) {
+    if (cfg->multisample) {
       /* Based on code from http://nehe.gamedev.net/data/lessons/lesson.asp?lesson=46 */
       PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
 
       wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
       if (wglChoosePixelFormatARB) {
 	int a[30];
-	bool valid;
+	BOOL valid;
 	UINT numFormats;
 	float fAttributes[] = {0,0};
 	
@@ -3156,7 +3161,7 @@ void wxWinGL::Reset(wxGLConfig *cfg, HDC dc, int offscreen)
 	a[21] = 0;
 
 	// First we check to see if we can get a pixel format for given samples:
-	valid = wglChoosePixelFormatARB(hDC,a,fAttributes,1,&pixelFormat,&numFormats);
+	valid = wglChoosePixelFormatARB(dc,a,fAttributes,1,&pixelFormat,&numFormats);
  
 	// If returned true, and our format count is greater than 1
 	if (valid && numFormats >= 1) {
@@ -3164,7 +3169,7 @@ void wxWinGL::Reset(wxGLConfig *cfg, HDC dc, int offscreen)
 	} else {
 	  // Our pixel format with the given number of samples failed; test for 2 samples:
 	  a[19] = 2;
-	  valid = wglChoosePixelFormatARB(hDC,a,fAttributes,1,&pixelFormat,&numFormats);
+	  valid = wglChoosePixelFormatARB(dc,a,fAttributes,1,&pixelFormat,&numFormats);
 	  if (valid && numFormats >= 1) {
 	    /* Done */
 	  } else

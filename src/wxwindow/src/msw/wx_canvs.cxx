@@ -38,7 +38,7 @@ wxbCanvas (parent, x, y, width, height, style, name)
 
 Bool wxCanvas::
 Create (wxWindow * parent, int x, int y, int width, int height, long style,
-	char *name, cfg)
+	char *name, wxGLConfig *cfg)
 {
   wxWnd *cparent;
   DWORD msflags = 0, exflags = 0;
@@ -94,7 +94,7 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 		  0, 0, 1, 1, 0, 0, FALSE);
 
   wx_dc = new wxCanvasDC(this);
-  wx_dc->gl_cfg = cfg;
+  wx_dc->wx_gl_cfg = cfg;
 
   if (wxSubType(parent->__type, wxTYPE_PANEL))
     ((wxPanel *)parent)->AdvanceCursor(this);

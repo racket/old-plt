@@ -46,21 +46,56 @@ To build MzCOM, make the MzCOM project in
 To build MrEd, make the MrEd project:
    plt\src\worksp\mred - makes plt\mred.exe
 
-The make processes for MzScheme and MzCOM automatically build the following:
-   libmzgc - makes plt\libmzgc.dll and
-                   plt\src\worksp\libmzgc\Release\libmzgc.lib
-   mzsrc - makes plt\libmzsch.dll and
-                 plt\src\worksp\mzsrc\Release\mzsrc.lib
+The make processes for MzScheme and MzCOM automatically build
+   libmzgc - makes plt\libmzgcxxxxxxx.dll and
+             plt\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib
+   mzsrc - makes plt\libmzschxxxxxxx.dll and
+                 plt\src\worksp\mzsrc\Release\mzsrcxxxxxxx.lib
 
-The make process for MrEd automatically builds the following:
+The make process for MrEd automatically builds
    libmzgc - as above
    libmzsch - as above
-   libmred - makes plt\libmred.dll and
-                   plt\src\worksp\libmred\Release\libmred.lib
+   libmred - makes plt\libmredxxxxxxx.dll and
+             plt\src\worksp\libmred\Release\libmredxxxxxxx.lib
    wxutils - makes plt\src\worksp\wxutils\Release\wxutils.lib
    wxwin - makes plt\src\worksp\wxwin\Release\wxwin.lib
    wxs  - makes plt\src\worksp\wxs\Release\wxs.lib
    wxme  - makes plt\src\worksp\wxme\Release\wxme.lib
+
+To complete a build, run the versioning script described in the next
+section.
+
+----------------------------------------------------------------------
+Versioning
+----------------------------------------------------------------------
+
+The obnoxious "xxxxxxx" in the DLL names is a placeholder for a
+version number. (Embedding a version number in a DLL name appears to
+be the simplest and surest way to avoid confusing versioning
+problems.)
+
+For local testing, you can use the "xxxxxxx" libraries directly. For
+any binaries that wil be distributed, however, the placeholder should
+be replaced with a specific version.
+
+To replace the "xxxxxxx" with a specific version, run
+
+  mzscheme -mvqL winvers.ss setup
+
+in a shell. The "winvers.ss" program will have to make a temporary
+copy of mzscheme.exe, libmzschxxxxxxx.dll, and libmzgcxxxxxxx.dll (in
+the temporary directory), and it will re-launch MzScheme a couple of
+times. The resulting conversions are
+  plt\mzscheme.exe -> plt\mzscheme.exe (updated)
+  plt\mred.exe -> plt\mred.exe         (updated)
+  plt\mzcom.exe -> plt\mzcom.exe       (updated)
+  plt\libmzgcxxxxxxx.dll -> plt\libmzgc<version>.dll
+  plt\libmzschxxxxxxx.dll -> plt\libmzsch<version>.dll
+  plt\libmredxxxxxxx.dll -> plt\libmred<version>.dll
+  plt\src\worksp\libmzsch\Release\libmzschxxxxxxx.lib
+                          -> plt\lib\win32\msvc\libmzsch<version>.lib
+  plt\src\worksp\libmzgc\Release\libmzgcxxxxxxx.lib
+                          -> plt\lib\win32\msvc\libmzgc<version>.lib
 
 ----------------------------------------------------------------------
 Extra stuff for MzScheme and MrEd
@@ -69,15 +104,21 @@ Extra stuff for MzScheme and MrEd
 If you're building from scratch, you'll also want the starter
 programs used by the launcher collection to make drscheme.exe
 and mzc.exe:
+
    mzstart - makes plt\collects\launcher\mzstart.exe
    mrstart - makes plt\collects\launcher\mrstart.exe
+
 You'll also want to install the libraries and object files
 for creating MzScheme extensions (or using mzc):
+
    cd plt\src\mzscheme\dynsrc
    mkmzdyn.bat (requires cl.exe and lib.exe in your path)
+
 Then, set up all the other executables (besides mred.exe
 and mzscheme.exe) by running
-   mzscheme.exe -mvqL- setup.ss setup
+
+   mzscheme.exe -mvqM- setup
+
 (This makes the .zo files, too. To skip compiling .zos, 
 add -n to the end of the above command.)
 
@@ -88,10 +129,13 @@ Embedding MzScheme
 The MzScheme DLLs can be used within an embedding application.
 
 The libraries
-    plt\src\worksp\libmzsch\Release\libmzsch.lib
-    plt\src\worksp\libmzgc\Release\libmzgc.lib
+    plt\src\worksp\libmzsch\Release\libmzschxxxxxxx.lib
+    plt\src\worksp\libmzgc\Release\libmzgcxxxxxxxx.lib
 which are created by the mzsrc and gc projects, provide linking
-information for using the libmzsch.dll and libmzgc.dll DLLs.
+information for using the libmzschxxxxxxx.dll and libmzgcxxxxxxx.dll
+DLLs. The versioning script adjusts the names and puts them in
+    plt\lib\msvc\libmzsch<version>.lib
+    plt\lib\msvc\libmzgc<version>.lib
 
 See the "Inside PLT MzScheme" manual for more information about using
 these libraries to embed MzScheme in an application.

@@ -683,7 +683,7 @@
 (mrflow-syntax-exception "Excepción de sintaxis: ~a")
 (mrflow-syntax-exception-title "Excepción de Sintaxis")
 (mrflow-unknown-exception-title "Excepción Desconocida")
-(mrflow-unknwon-exception "Excepción Desconocida: ~a")
+(mrflow-unknown-exception "Excepción Desconocida: ~a")
 (no-debugging-or-profiling "No depurando o delineando")
 (open-here-menu-item "&Abrir aquí...")
 (pretty-big-scheme "Scheme muy grande")

@@ -1,13 +1,11 @@
 /*
  * File:        wx_clipb.cc
- * Purpose:     Clipboard implementation. DIFFERENT FROM MSW IMPLEMENTATION.
+ * Purpose:     Clipboard implementation.
  * Author:      Julian Smart and Matthew Flatt
  * Created:     1993
  * Updated:	August 1994
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
-
-static const char sccsid[] = "@(#)wx_clipb.cc	1.2 5/9/94";
 
 #ifdef __GNUG__
 #pragma implementation
@@ -26,7 +24,10 @@ static const char sccsid[] = "@(#)wx_clipb.cc	1.2 5/9/94";
 
 wxClipboard *wxTheClipboard;
 
-static Widget clipWindow;
+Widget wx_clipWindow;
+static Widget getClipWindow;
+
+extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 
 #ifdef MZ_PRECISE_GC
 Atom ATOM(char *atom) 
@@ -43,19 +44,30 @@ Atom ATOM(char *atom)
 Atom xa_text, xa_targets;
 
 static wxFrame *clipboard_frame;
+static wxFrame *get_clipboard_frame;
 
 void wxInitClipboard(void)
 {
-  if (!clipWindow) {
+  if (!wx_clipWindow) {
     /* Hack: We need a window for clipboard stuff */
     wxWindow_Xintern *fh;
     wxREGGLOB(clipboard_frame);
+    wxREGGLOB(get_clipboard_frame);
     clipboard_frame = new wxFrame(NULL, "clipboard", 0, 0, 10, 10);
+    get_clipboard_frame = new wxFrame(NULL, "get clipboard", 0, 0, 10, 10);
+
     fh = clipboard_frame->GetHandle();
-    XtRealizeWidget(fh->frame);
-    /* Not in any specific context! */
+    wx_clipWindow = fh->frame;
+    XtRealizeWidget(wx_clipWindow);
+
+    fh = get_clipboard_frame->GetHandle();
+    getClipWindow = fh->frame;
+    XtRealizeWidget(getClipWindow);
+
+    /* Initially not in any specific context. */
     clipboard_frame->context = NULL;
-    clipWindow = fh->frame;
+    /* Not in any specific context. */
+    get_clipboard_frame->context = NULL;
   }
 
   if (!wxTheClipboard) {
@@ -65,6 +77,11 @@ void wxInitClipboard(void)
 
   xa_text = ATOM("TEXT");
   xa_targets = ATOM("TARGETS");
+}
+
+static void AddClipboardFrame(int on)
+{
+  clipboard_frame->context = NULL;
 }
 
 wxClipboardClient::wxClipboardClient()
@@ -179,8 +196,9 @@ static void wxLoseClipboard(Widget WXUNUSED(w), Atom *WXUNUSED(selection))
   cb = wxTheClipboard;
   
   if (cb->clipOwner) {
-    cb->clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(cb->clipOwner);
     cb->clipOwner = NULL;
+    AddClipboardFrame(0);
   }
   cb->cbString = NULL;
 }
@@ -189,18 +207,26 @@ void wxClipboard::SetClipboardClient(wxClipboardClient *client, long time)
 {
   Bool got_selection;
 
-  if (clipOwner)
-    clipOwner->BeingReplaced();
-  clipOwner = client;
+  if (clipOwner) {
+    MrEdQueueBeingReplaced(clipOwner);
+    clipOwner = NULL;
+    AddClipboardFrame(0);
+  }
   cbString = NULL;
 
-  got_selection = XtOwnSelection(clipWindow, XA_PRIMARY, time,
+  clipOwner = client;
+  client->context = wxGetContextForFrame();
+  clipboard_frame->context = client->context;
+  AddClipboardFrame(1);
+
+  got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
 				 wxConvertClipboard, wxLoseClipboard, 
 				 wxSelectionDone);
 
   if (!got_selection) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
+    AddClipboardFrame(0);
   }
 }
 
@@ -214,13 +240,14 @@ void wxClipboard::SetClipboardString(char *str, long time)
   Bool got_selection;
 
   if (clipOwner) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
     clipOwner = NULL;
+    AddClipboardFrame(0);
   }
 
   cbString = str;
 
-  got_selection = XtOwnSelection(clipWindow, XA_PRIMARY, time,
+  got_selection = XtOwnSelection(wx_clipWindow, XA_PRIMARY, time,
 				 wxConvertClipboard, wxLoseClipboard, 
 				 wxStringSelectionDone);
   
@@ -232,7 +259,8 @@ void wxClipboard::SetClipboardString(char *str, long time)
 void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
 {
   if (clipOwner) {
-    clipOwner->BeingReplaced();
+    MrEdQueueBeingReplaced(clipOwner);
+    AddClipboardFrame(0);
     clipOwner = NULL;
   }
 
@@ -309,7 +337,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
 {
   if (clipOwner)  {
     if (clipOwner->formats->Member(format))
-      return clipOwner->GetData(format, length);
+      return wxsGetDataInEventspace(clipOwner, format, length);
     else
       return NULL;
   } else if (cbString) {
@@ -322,7 +350,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     long i;
 
     /* Need to make sure that only one thread is here at a time. */
-    /* Disbaled for now because we haven't handled thread kills and 
+    /* Disabled for now because we haven't handled thread kills and 
        escapes. */
 #if 0
     wxDispatchEventsUntil(CheckNotInProgress, NULL);
@@ -333,7 +361,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
     receivedString = NULL;
     receivedTargets = NULL;
 
-    XtGetSelectionValue(clipWindow, XA_PRIMARY,
+    XtGetSelectionValue(getClipWindow, XA_PRIMARY,
 			xa_targets, wxGetTargets, (XtPointer)NULL, time);
 
     wxDispatchEventsUntil(CheckReadyTarget, NULL);
@@ -358,7 +386,7 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
       return NULL;
     }
 
-    XtGetSelectionValue(clipWindow, XA_PRIMARY,
+    XtGetSelectionValue(getClipWindow, XA_PRIMARY,
 			xa, wxGetSelection, (XtPointer)NULL, 0);
     
     wxDispatchEventsUntil(CheckReadyString, NULL);

@@ -5,6 +5,7 @@
            "web-server.ss"
            "servlet-sig.ss"
            "servlet.ss"
+	   "servlet-tables.ss"
            "internal-structs.ss"
            (lib "xml.ss" "xml")
            (lib "url.ss" "net")

@@ -36,8 +36,8 @@
 	    [gui-utils : mred:gui-utils^ (mred:gui-utils@ debug (core function@) trigger)]
 	    [finder : mred:finder^
 		    (mred:finder@ debug container preferences
-				gui-utils (core string@)
-				(core function@) (core file@))]
+				gui-utils edit canvas
+				(core string@) (core function@) (core file@))]
 	    [icon : mred:icon^ (mred:icon@ debug constants)]
 	    [menu : mred:menu^ (mred:menu@ debug (core function@))]
 	    [edit : mred:edit^ 
@@ -64,7 +64,7 @@
 		     (mred:project@ debug group container gui-utils exit finder
 				  frame handler (core file@) (core function@))]
 	    [console : mred:console^ 
-		     (mred:console@ debug preferences edit frame find-string
+		     (mred:console@ debug preferences edit frame canvas find-string
 				  exit finder handler gui-utils scheme-mode
 				  scheme-paren icon hyper-frame (core function@) 
 				  (core string@) (core pretty-print@) trigger)]

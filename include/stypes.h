@@ -116,8 +116,8 @@ enum {
   scheme_udp_evt_type,
   scheme_id_macro_type,
   scheme_evt_set_type,                  /* 100 */
-  scheme_convert_evt_type,
-  scheme_finish_evt_type,
+  scheme_wrap_evt_type,
+  scheme_handle_evt_type,
   scheme_nack_guard_evt_type,
   scheme_semaphore_repost_type,
   scheme_channel_type,

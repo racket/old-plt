@@ -46,18 +46,21 @@ oe.o: $(srcdir)/oe.c $(HEADERS)
 
 ILIBDIR = $(prefix)/lib
 
+# Prefix might be relative to srcdir, or it might be absolute, so we
+# have to go up and install things from there.
+
 cygwin-install:
 	gcc -c -O2 -I$(srcdir)/../include $(srcdir)/mzdyn.c
 	gcc -c $(srcdir)/init.cc
 	gcc -c $(srcdir)/fixup.c
 	dlltool --def mzdyn.def --output-exp mzdyn.exp
-	if [ ! -d $(ILIBDIR) ] ; then mkdir $(ILIBDIR) ; fi
-	if [ ! -d $(ILIBDIR)/gcc ] ; then mkdir $(ILIBDIR)/gcc ; fi
-	cp mzdyn.def $(ILIBDIR)/gcc
-	cp mzdyn.exp $(ILIBDIR)/gcc
-	cp mzdyn.o $(ILIBDIR)/gcc
-	cp init.o $(ILIBDIR)/gcc
-	cp fixup.o $(ILIBDIR)/gcc
+	cd ../..; if [ ! -d $(ILIBDIR) ] ; then mkdir $(ILIBDIR) ; fi
+	cd ../..; if [ ! -d $(ILIBDIR)/gcc ] ; then mkdir $(ILIBDIR)/gcc ; fi
+	cd ../..; cp mzscheme/dynsrc/mzdyn.def $(ILIBDIR)/gcc
+	cd ../..; cp mzscheme/dynsrc/mzdyn.exp $(ILIBDIR)/gcc
+	cd ../..; cp mzscheme/dynsrc/mzdyn.o $(ILIBDIR)/gcc
+	cd ../..; cp mzscheme/dynsrc/init.o $(ILIBDIR)/gcc
+	cd ../..; cp mzscheme/dynsrc/fixup.o $(ILIBDIR)/gcc
 
 clean:
 	/bin/rm -f *.o Makefile.bak

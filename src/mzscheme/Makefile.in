@@ -195,32 +195,35 @@ LIBIDIR=$(prefix)/lib
 BUILDINFO=$(LIBIDIR)/buildinfo
 ICP=@ICP@
 
+# Prefix might be relative to srcdir, or it might be absolute, so we
+# have to go up and install things from there.
+
 normal-install:
-	if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
-	rm -f $(prefix)/bin/mzscheme
-	$(ICP) mzscheme $(prefix)/bin/mzscheme
-	if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
-	cp mzdyn.o $(LIBIDIR)/mzdyn.o
-	$(ICP) libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
-	$(ICP) libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
-	echo 'CC=@CC@' > $(BUILDINFO)
-	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
-	echo 'LIBS=@LIBS@' >> $(BUILDINFO)
+	cd ..; if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
+	cd ..; rm -f $(prefix)/bin/mzscheme
+	cd ..; $(ICP) mzscheme/mzscheme $(prefix)/bin/mzscheme
+	cd ..; if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
+	cd ..; cp mzscheme/mzdyn.o $(LIBIDIR)/mzdyn.o
+	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(LIBIDIR)/libmzgc.@LIBSFX@
+	cd ..; $(ICP) mzscheme/libmzscheme.@LIBSFX@ $(LIBIDIR)/libmzscheme.@LIBSFX@
+	cd ..; echo 'CC=@CC@' > $(BUILDINFO)
+	cd ..; echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
+	cd ..; echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
 WLIBIDIR=$(prefix)/lib
 WBUILDINFO=$(WLIBIDIR)/buildinfo
 
 cygwin-install:
-	rm -f $(prefix)/mzscheme.exe
-	cp mzscheme.exe $(prefix)/mzscheme.exe
+	cd ..; rm -f $(prefix)/mzscheme.exe
+	cd ..; cp mzscheme/mzscheme.exe $(prefix)/mzscheme.exe
 	cd dynsrc; $(MAKE) cygwin-install
-	$(ICP) mzstart.exe $(prefix)/collects/launcher/mzstart.exe
-	if [ ! -d $(WLIBIDIR) ] ; then mkdir $(WLIBIDIR) ; fi
-	$(ICP) libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
-	$(ICP) libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
-	echo 'CC=gcc' > $(WBUILDINFO)
-	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
-	echo 'LIBS=@LIBS@' >> $(WBUILDINFO)
+	cd ..; $(ICP) mzscheme/mzstart.exe $(prefix)/collects/launcher/mzstart.exe
+	cd ..; if [ ! -d $(WLIBIDIR) ] ; then mkdir $(WLIBIDIR) ; fi
+	cd ..; $(ICP) mzscheme/libmzgc.@LIBSFX@ $(WLIBIDIR)/libmzgc.@LIBSFX@
+	cd ..; $(ICP) mzscheme/libmzscheme.@LIBSFX@ $(WLIBIDIR)/libmzscheme.@LIBSFX@
+	cd ..; echo 'CC=gcc' > $(WBUILDINFO)
+	cd ..; echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(WBUILDINFO)
+	cd ..; echo 'LIBS=@LIBS@' >> $(WBUILDINFO)
 
 config:
 	autoconf $(srcdir)/configure.in | mzscheme -qr $(srcdir)/clean_ac.ss > $(srcdir)/../configure

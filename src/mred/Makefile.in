@@ -136,16 +136,19 @@ clean:
 
 ICP=@ICP@
 
+# Prefix might be relative to srcdir, or it might be absolute, so we
+# have to go up and install things from there.
+
 install-no-lib:
 	echo "no dynamic libs"
 
 install-lib:
-	$(ICP) libmred.@LIBSFX@ $(prefix)/lib/
+	cd ..; $(ICP) mred/libmred.@LIBSFX@ $(prefix)/lib/
 
 install:
-	if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
-	rm -f $(prefix)/bin/mred
-	$(ICP) mred $(prefix)/bin/
+	cd ..; if [ ! -d $(prefix)/bin ] ; then mkdir $(prefix)/bin ; fi
+	cd ..; rm -f $(prefix)/bin/mred
+	cd ..; $(ICP) mred/mred $(prefix)/bin/
 	$(MAKE) @MRLIBINSTALL@
 
 3m:

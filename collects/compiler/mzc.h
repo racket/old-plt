@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-
 #define GLOBAL_VARREF(x) ((x)->val ? (Scheme_Object *)(x)->val : \
   (scheme_unbound_global((Scheme_Object*)(x)->key), (Scheme_Object *)NULL))
 
@@ -16,7 +15,6 @@
     (DO_FUEL_POLL, _scheme_direct_apply_closed_primitive_multi(prim, argc, argv))
 #define _scheme_direct_apply_closed_primitive_poll(prim, argc, argv) \
     (DO_FUEL_POLL, _scheme_direct_apply_closed_primitive(prim, argc, argv))
-
 
 #ifdef KEEP_CLOSURE_COUNT
 static int closure_alloc_cnt;
@@ -283,6 +281,12 @@ static inline Scheme_Object *mzc_force_value(Scheme_Object *v)
     mzc_force_value(_scheme_direct_apply_closed_primitive_multi(prim, argc, argv))
 #define _scheme_direct_apply_closed_primitive_fv(prim, argc, argv) \
     scheme_check_one_value(_scheme_direct_apply_closed_primitive_multi_fv(prim, argc, argv))
+
+static int mzc_strlen(const char *c) {
+  int l;
+  for (l = 0; c[l]; l++);
+  return l;
+}
 
 #if 0
 static Scheme_Object *DEBUG_CHECK(Scheme_Object *v)

@@ -90,7 +90,7 @@
 (define (vm->c:emit-symbol-definitions! port)
   (unless (zero? const:symbol-counter)
     (fprintf port "  int i;~n")
-    (fprintf port "  for (i = ~a; i--; )~n    SYMBOLS[i] = scheme_intern_exact_symbol(SYMBOL_STRS[i], strlen(SYMBOL_STRS[i]));~n"
+    (fprintf port "  for (i = ~a; i--; )~n    SYMBOLS[i] = scheme_intern_exact_symbol(SYMBOL_STRS[i], mzc_strlen(SYMBOL_STRS[i]));~n"
 	     const:symbol-counter)))
 
 (define (vm->c:emit-inexact-definitions! port)

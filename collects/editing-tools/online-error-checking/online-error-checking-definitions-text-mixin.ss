@@ -11,92 +11,123 @@
            
            "../common/drscheme-tool-support.ss"
            "../common/expansion-tool-definitions-text-mixin.ss"
-           
            )
   
+  (define orc<%> (interface () ))  
+  
   (define (online-error-checking-definitions-text-mixin dt% drscheme:eval:expand-program drscheme:language:make-text/pos)
-    (class (expansion-tool-definitions-text-mixin (shared-mixin dt%))
-      
-      ;; from the shared-mixin
-      (inherit kill-autocompile-thread set-autocompile-thread-proc! make-syntax-error-handler)
-      
-      ;; from the expansion-tool-definitions-text-mixin
-      (inherit buffer-directory)
-      (inherit-field latest-expansion)
-      
-      ;; from DrScheme's definitions text
-      (inherit get-text get-next-settings)
-      
-      (super-new)
-
+    (if (implementation? dt% orc<%>)
+        dt%
+        (class* (expansion-tool-definitions-text-mixin (shared-mixin dt%)) (orc<%>)
+          
+          ;; from the shared-mixin
+          (inherit kill-autocompile-thread set-autocompile-thread-proc! make-syntax-error-handler)
+          
+          ;; from the expansion-tool-definitions-text-mixin
+          (inherit buffer-directory)
+          (inherit-field latest-expansion)
+          
+          ;; from DrScheme's definitions text
+          (inherit get-text get-next-settings last-position)
+          
+          (super-new)
+          
+          #|
       (define/augment (after-insert start len)
+(printf "after-insert~n")
         (after-change))
       
       (define/augment (after-delete start len)
+(printf "after-delete~n")
         (after-change))
-
-      (define/private (after-change)
-        (kill-autocompile-thread)
-        (set-autocompile-thread-proc!
-         (lambda ()
-           ;;  If we were only compiling modules, this would be the "drs-expand" code:
-           #|  (parameterize ([current-directory (buffer-directory)])
+|#
+          
+          
+          (define/override (on-char event)
+            (super on-char event)
+            ;(printf "on-char: (~v ~v ~v)~n"
+            ;        (send event get-key-code) (send event get-key-release-code) (send event get-time-stamp))
+            (when (and (eq? 'release (send event get-key-code))
+                       (let ([code (send event get-key-release-code)])
+                         (or (eq? #\space code)
+                             (eq? #\newline code)
+                             (eq? #\) code)
+                             (eq? #\] code)
+                             (eq? #\} code))))
+              ;(printf "firing after-change~n")
+              (after-change)))
+          
+          (define/private (after-change)
+            (kill-autocompile-thread)
+            (set-autocompile-thread-proc!
+             (lambda ()
+               ;;  If we were only compiling modules, this would be the "drs-expand" code:
+               #|  (parameterize ([current-directory (buffer-directory)])
                (with-handlers ([exn:fail:read? void] ;; ignore read errors from mismatched parens, etc
                                [exn:fail:filesystem? void] ;; TODO: handle this error: (require (lib "oops.ss"))
                                [exn:fail:syntax? (make-syntax-error-handler #f)])
                  (define port (open-input-string (get-text)))
                  (port-count-lines! port)
                  (set! latest-expansion (expand (read-syntax #f port))))) |#
-           (drs-expand)
-           )))
-      
-      (define/private (drs-expand)
-        (define text (get-text))
-        (define text/pos (drscheme:language:make-text/pos this
-                                                          0 (string-length text)))
-        (define these-expansions null)
-        (drscheme:eval:expand-program
-         text/pos
-         (get-next-settings)
-         #t
-         (lambda () ;; init, set error handlers, current directory
-           (define old-handler (current-exception-handler))
-           (current-directory (buffer-directory))
-           (current-exception-handler
-            (lambda (exn)
-              (cond
-                [(exn:fail:syntax? exn)
-                 (begin ((make-syntax-error-handler this) exn)
-                        ((error-escape-handler)))]
-                ;; ignore read errors from mismatched parens, etc
-                [(exn:fail:read? exn) (when-debugging
-                                       (printf "oops, read error ~a: ~a~n" exn (exn-message exn)))
-                                      ((error-escape-handler))] 
-                ;; TODO: handle this error: (require (lib "oops.ss"))
-                [(exn:fail:filesystem? exn) (when-debugging
-                                             (printf "oops, fs error ~a: ~a~n" exn (exn-message exn)))
-                                            ((error-escape-handler))] 
-                ;; contract errors show up when expanding (module foo BADLANGUAGE)
-                [(exn:fail:contract? exn) (when-debugging
-                                           (printf "oops, contract error ~a: ~a~n" exn (exn-message exn)))
-                                          ((error-escape-handler))] 
-                [else (begin (when-debugging
-                              (printf "oops, other error ~a: ~a~n" exn (exn-message exn)))
-                             (old-handler exn))]))))
-         void
-         (lambda (stx-obj continue)
-           ;; TODO: is this a good idea? is this the right thread?
-           ;(set-autocompile-thread (current-thread))
-           (if (eof-object? stx-obj)
-               (set! latest-expansion (if (= 1 (length these-expansions))
-                                          (car these-expansions)
-                                          #`(begin #,@these-expansions)))
-               (begin (set! these-expansions (cons stx-obj these-expansions))
-                      (continue))))))
-      
-      
-      
-      ))
+               (drs-expand)
+               )))
+          
+          (define/private (drs-expand)
+            (define text/pos (drscheme:language:make-text/pos this
+                                                              0
+                                                              (last-position)))
+            (define these-expansions null)
+            (define (shutdown)
+              (custodian-shutdown-all (current-custodian)))
+            (drscheme:eval:expand-program
+             text/pos
+             (get-next-settings)
+             #t
+             (lambda () ;; init, set error handlers, current directory
+               (define old-handler (current-exception-handler))
+               ;(printf "init~n")
+               (current-directory (buffer-directory))
+               (current-exception-handler
+                (lambda (exn)
+                  ;; TODO: print the exception in some status message
+                 ; (printf "exn ~v: ~v~n" exn (exn-message exn))
+                  (cond
+                    [(exn:fail:syntax? exn) ;(printf "syntax error~n")
+                     (begin ((make-syntax-error-handler this) exn)
+                            (shutdown))]
+                    ;; ignore read errors from mismatched parens, etc
+                    [(exn:fail:read? exn) (when-debugging
+                                           (printf "oops, read error ~a: ~a~n" exn (exn-message exn)))
+                                          (shutdown)] 
+                    ;; TODO: handle this error: (require (lib "oops.ss"))
+                    [(exn:fail:filesystem? exn) (when-debugging
+                                                 (printf "oops, fs error ~a: ~a~n" exn (exn-message exn)))
+                                                (shutdown)] 
+                    ;; contract errors show up when expanding (module foo BADLANGUAGE)
+                    [(exn:fail:contract? exn) (when-debugging
+                                               (printf "oops, contract error ~a: ~a~n" exn (exn-message exn)))
+                                              (shutdown)] 
+                    [else (begin (when-debugging
+                                  (printf "oops, other error ~a: ~a~n" exn (exn-message exn)))
+                                 (old-handler exn))]))))
+             (lambda ()
+               ;(printf "cleanup~n")
+               (set! these-expansions #f)
+               (set! text/pos #f))
+             (lambda (stx-obj continue)
+               ;(printf "expanded~n")
+               (if (eof-object? stx-obj)
+                   (begin 
+                     ;(printf "finished expanding: ~v~n" (map syntax-object->datum these-expansions))
+                     (set! latest-expansion (if (= 1 (length these-expansions))
+                                                (car these-expansions)
+                                                #`(begin #,@these-expansions)))
+                     (shutdown))
+                   (begin (set! these-expansions (cons stx-obj these-expansions))
+                          ;(printf "expanded more: ~v~n" (syntax-object->datum stx-obj))
+                          (continue))))))
+          
+          )))
   
   
   )

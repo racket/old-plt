@@ -115,10 +115,13 @@
             ;              program-sxp))
             ;(printf "couldn't find anything in: ~v~n" program-sxp)
             null]))
-  
+ 
+  (define tc<%> (interface ()))
   
   (define (tab-completion-definitions-text-mixin dt%)
-    (class (expansion-tool-definitions-text-mixin dt%)
+    (if (implementation? dt% tc<%>)
+        dt%
+    (class* (expansion-tool-definitions-text-mixin dt%) (tc<%>)
       
       (super-new)
       
@@ -129,7 +132,7 @@
       ;; inherited from DrScheme's definitions text
       (inherit get-start-position get-text insert position-location get-admin)
       
-      (rename-super [super-on-char on-char])
+      ;(rename-super [super-on-char on-char])
       (define/override (on-char event)
         (if (and (eq? 'release (send event get-key-code))
                  (send event get-shift-down)
@@ -183,9 +186,9 @@
                         menu (unbox location-x-box) (unbox location-y-box))
                   (when-debugging
                    (printf "popped up the menu!~n"))))
-            (super-on-char event)))
+            (super on-char event)))
       
-      ))
+      )))
   
   
   )

@@ -12,9 +12,13 @@
            "../common/drscheme-tool-support.ss"
            
            )
+
+  (define cos<%> (interface ()))
   
   (define (compile-on-save-definitions-text-mixin dt%)
-    (class (shared-mixin dt%)
+    (if (implementation? dt% cos<%>)
+        dt%
+    (class* (shared-mixin dt%) (cos<%>)
       
       (super-new)
 
@@ -41,7 +45,7 @@
                                                                                   file)))])
             ((make-caching-managed-compile-zo) filename))))
       
-      ))
+      )))
   
   #| In case we want to skip CM, try this:
   (define build-zo

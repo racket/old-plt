@@ -191,23 +191,6 @@
   (define (delta*2 o2 V1 V2)
     (delta*n o2 (list V1 V2)))
 
-  ;; function-reduce*
-  (define (function-reduce* reds expr done?)
-    (cons 
-     expr
-     (if (done? expr)
-	 null
-	 (let ([l (reduce reds expr)])
-	   (cond
-	    [(null? l) null]
-	    [(= 1 (length l))
-	     (function-reduce* reds (car l) done?)]
-	    [else
-	     (error 'function-reduce* 
-		    "found ~a possible steps from ~e"
-		    (length l)
-		    expr)])))))
-
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Abbreviations:
   
@@ -258,8 +241,6 @@
 		    (->v (listof red?))
 		    (:->v (listof red?))
 		    (:->v+letcc (listof red?))
-		    (function-reduce* ((listof red?) any? (any? . -> . boolean?) 
-				       . -> . (listof any?)))
 		    (if0 (M? M? M? . -> . M?))
 		    (true M?)
 		    (false M?)

@@ -21,8 +21,8 @@
     ;; Traverse P as an sexp, and look for class-name uses:
     (let ([l (let loop ([sexp P])
                (cond
-                 [(pair? sexp) (append (loop (car sexp)) (loop (cdr sexp)))]
                  [(? sexp) (list sexp)]
+                 [(pair? sexp) (append (loop (car sexp)) (loop (cdr sexp)))]
                  [else null]))]
           [ht (make-hash-table)])
       ;; Filter duplicates by hashing:
@@ -104,13 +104,33 @@
       [(_ (f . args) body1 body ...)
        (define f (lambda-memoized args body1 body ...))]))
 
+
+  ;; function-reduce*
+  (define (function-reduce* reds expr done?)
+    (cons 
+     expr
+     (if (done? expr)
+	 null
+	 (let ([l (reduce reds expr)])
+	   (cond
+	    [(null? l) null]
+	    [(= 1 (length l))
+	     (function-reduce* reds (car l) done?)]
+	    [else
+	     (error 'function-reduce* 
+		    "found ~a possible steps from ~e"
+		    (length l)
+		    expr)])))))
+
   (provide
    define-memoized
    lambda-memoized
    lang-match-lambda
    lang-match-lambda-memoized)
   (provide/contract
-   (generate-string (-> string?))
+   (function-reduce* ((listof red?) any? (any? . -> . boolean?) 
+		      . -> . (listof any?)))
    (unique-names? ((listof symbol?) . -> . boolean?))
+   (generate-string (-> string?))
    (all-of (any? (any? . -> . any) . -> . (listof any?)))
    (transitive-closure ((listof pair?) . -> . (listof (listof any?))))))

@@ -1,0 +1,31 @@
+(module info (lib "infotab.ss" "setup")
+  (define name "sgl")
+  (define pre-install-collection "makefile.ss")
+  (define compile-omit-files (list))
+  (define clean (list (build-path "gl-vectors" "compiled" "native"
+				  (system-library-subpath))
+                      (build-path "gl-vectors" "compiled")
+                      
+                      (build-path "gl-vectors" "gl-double-vector.h")
+                      (build-path "gl-vectors" "gl-double-vector.c")
+                      (build-path "gl-vectors" "gl-float-vector.h")
+                      (build-path "gl-vectors" "gl-float-vector.c")
+                      (build-path "gl-vectors" "gl-int-vector.h")
+                      (build-path "gl-vectors" "gl-int-vector.c")
+                      (build-path "gl-vectors" "gl-short-vector.h")
+                      (build-path "gl-vectors" "gl-short-vector.c")
+                      (build-path "gl-vectors" "gl-byte-vector.h")
+                      (build-path "gl-vectors" "gl-byte-vector.c")
+                      (build-path "gl-vectors" "gl-uint-vector.h")
+                      (build-path "gl-vectors" "gl-uint-vector.c")
+                      (build-path "gl-vectors" "gl-ushort-vector.h")
+                      (build-path "gl-vectors" "gl-ushort-vector.c")
+                      (build-path "gl-vectors" "gl-ubyte-vector.h")
+                      (build-path "gl-vectors" "gl-ubyte-vector.c")
+                      (build-path "gl-vectors" "gl-boolean-vector.h")
+                      (build-path "gl-vectors" "gl-boolean-vector.c")
+                      
+                      (build-path "compiled" "native" (system-library-subpath))
+                      "compiled"
+                      
+                      )))

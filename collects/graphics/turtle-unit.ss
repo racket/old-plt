@@ -193,7 +193,7 @@
     (lambda (a b c d)
       (set! lines-in-drawing (cons (make-draw-line a b c d) lines-in-drawing))
       (inner-line a b c d)))
-  (define wipe-line
+  (define do-wipe-line
     (lambda (a b c d)
       (set! lines-in-drawing (cons (make-wipe-line a b c d) lines-in-drawing))
       (inner-wipe-line a b c d)))
@@ -324,7 +324,7 @@
 	(flip-icons))))
 
   (define draw (draw/erase (lambda (a b c d) (line a b c d))))
-  (define erase (draw/erase (lambda (a b c d) (wipe-line a b c d))))
+  (define erase (draw/erase (lambda (a b c d) (do-wipe-line a b c d))))
   
   (define move
     (lambda (n)
@@ -362,7 +362,7 @@
 	     (make-turtle newx newy (turtle-angle turtle)))))
 	(flip-icons))))
   
-  (define erase-offset (erase/draw-offset (lambda (a b c d) (wipe-line a b c d))))
+  (define erase-offset (erase/draw-offset (lambda (a b c d) (do-wipe-line a b c d))))
   (define draw-offset (erase/draw-offset (lambda (a b c d) (line a b c d))))
   
   (define splitfn

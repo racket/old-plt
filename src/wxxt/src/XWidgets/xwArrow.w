@@ -3,7 +3,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2
 #
-# $Id: xwArrow.w,v 1.2 1998/01/31 01:16:34 mflatt Exp $
+# $Id: xwArrow.w,v 1.3 1998/05/05 00:07:08 mflatt Exp $
 
 @CLASS XfwfArrow (XfwfBoard)  @file = xwArrow
 
@@ -101,7 +101,8 @@ checks the |direction| resource.
 @proc destroy
 {
    if ($timer) {
-      wxRemoveTimeOut($timer);
+      if ($timer != 0x1)
+        wxRemoveTimeOut($timer);
       $timer = 0;
    }
    if ($arrowgc) XtReleaseGC($, $arrowgc); $arrowgc = NULL;

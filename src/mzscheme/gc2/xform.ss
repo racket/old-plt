@@ -1564,7 +1564,7 @@
 	(let ([name (tok-n (car e))]
 	      [type (let loop ([t (reverse type)])
 		       (if (pair? t)
-			   (if (memq (tok-n (car t)) '(extern static inline virtual __stdcall __cdecl))
+			   (if (memq (tok-n (car t)) '(extern static inline virtual __stdcall __cdecl _inline))
 			       (loop (cdr t))
 			       (cons (car t) (loop (cdr t))))
 			   t))]

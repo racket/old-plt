@@ -304,17 +304,17 @@
       ;; parsing, if necessary.
 
       (define get-server-status-response
-	(let ((+ok-regexp (regexp "^\\+OK (.*)"))
-	      (-err-regexp (regexp "^\\-ERR (.*)")))
+	(let ((+ok-regexp (regexp "^\\+OK(.*)"))
+	      (-err-regexp (regexp "^\\-ERR(.*)")))
 	  (lambda (communicator)
 	    (let ((receiver (communicator-receiver communicator)))
 	      (let ((status-line (get-one-line-from-server receiver)))
 		(let ((r (regexp-match +ok-regexp status-line)))
 		  (if r
-		      (values make-+ok (cadr r))
+		      (values (make-+ok) (cadr r))
 		      (let ((r (regexp-match -err-regexp status-line)))
 			(if r
-			    (values make--err (cadr r))
+			    (values (make--err) (cadr r))
 			    (signal-malformed-response-error communicator))))))))))
 
       ;; get-status-response/basic :

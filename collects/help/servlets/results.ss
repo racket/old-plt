@@ -1,6 +1,7 @@
 (require (lib "unitsig.ss")
 	 (lib "string.ss")
 	 (lib "file.ss")
+	 (lib "list.ss")
 	 (lib "pregexp.ss")
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
@@ -28,66 +29,43 @@
 	  n
 	  (loop (add1 n) (cdr lst)))))
       
-  (define search-response #f)
+  (define search-responses #f)
   (define current-kind #f)
   (define last-header #f)
 
+  (define max-reached #f)
   (define (maxxed-out)
-    (set! search-response
-	  `((DIV ()
-		(H2 ((STYLE "color:red"))
-		    "Too many search results")
-		(H3 ((STYLE "color:red")) 
-		    "Narrow your search and try again"))))
+    (unless max-reached
+      (set! max-reached #t)	    
+      (set! search-responses
+	    (cons `(B ,(color-with 
+			"red"
+			"Search aborted: too many responses"))
+		  search-responses)))
     (raise 'maxxed-out))
 
   (define (add-header s key)
-    (set! last-header s)
-    (set! search-response
-	  (cons `(B ((STYLE "font-family:Verdana,Helvetica,sans-serif")) 
-		     ,s) 
-		(cons `(BR)
-		      search-response))))
+    (unless max-reached
+      (set! last-header s)
+      (set! search-responses
+	    (cons `(B ((STYLE "font-family:Verdana,Helvetica,sans-serif")) 
+		      ,s) 
+		  (cons `(BR)
+			search-responses)))))
 
   (define (set-current-kind! s key)
     (set! current-kind
 	  (cadr (assoc s kind-types))))
 
-  (define windows? (eq? (system-type) 'windows))
-
-  (define (windowize s)
-   (if windows?
-       (pregexp-replace* "\\\\" s "/")
-       s))
-
   (define web-root
-    (let ([s (normalize-path (build-path (collection-path "mzlib") 'up))])
-      (string-lowercase! s)
-      s))
+    (normalize-path (build-path (collection-path "mzlib") 'up)))
 
   (define web-root-len (string-length web-root))
 
-  (define servlet-path
-    (normalize-path (build-path (collection-path "doc") "help" "servlets")))
-
-  (define (tidy-html-url url)
-    (let* ([url-tail (substring url web-root-len (string-length url))]
-	   [tidy-tail (maybe-add-slash (windowize url-tail))])
-      (or (pregexp-replace ; server uses directory to load as a servlet
-	   "^/doc/help/servlets/"
-	   tidy-tail
-	   "/servlets/")
-	  tidy-tail)))
-
-  ;; maybe-add-slash : string -> string
-  ;; returns string with a slash in front of it,
-  ;; adding one if necessary. (this function should not
-  ;; be used, in principle)
-  (define (maybe-add-slash str)
-    (if (and ((string-length str) . >= . 1)
-	     (char=? #\/ (string-ref str 0)))
-	str
-	(string-append "/" str)))
+  ; manual path is an anchored path to a collects/doc manual, never a servlet
+  (define (tidy-manual-path manual-path)
+    (substring manual-path web-root-len 
+	       (string-length manual-path)))
 
   (define (pretty-label label) ; TO DO, maybe
 	label)
@@ -123,12 +101,17 @@
 		    "\"" ,src "\""))))
 
 
-  (define (make-entry-url page-label path)
+  ; page-label is #f or a string that labels an HTML anchor
+  ; path is either an absolute pathname in the format of the native OS, 
+  ;  or, in the case of Help Desk servlets, a forward-slashified path 
+  ;  beginning with "/servlets/"
+  (define (make-anchored-path page-label path)
     (if (and page-label
 	     (string? page-label)
-	     (not (string=? page-label "?")))
-	(string-append (normalize-path path) "#" page-label)
-	(normalize-path path)))
+	     (not (or (string=? page-label "NO TAG") 
+		      (regexp-match "\\?|&" page-label))))
+	(string-append path "#" page-label)
+	path))
 
   (define (doc-txt? url)
     (let ([len (string-length url)])
@@ -139,51 +122,53 @@
 		       len)
 	    "doc.txt"))))
   
-  (define (servlet? url)
-    (regexp-match "^/doc/help/../../servlets/" url))
-
-  (define (make-html-href url)
-    (let ([tidy-url (tidy-html-url url)])
-      (cond
-       [(servlet? tidy-url)
-	tidy-url]
-       [(doc-txt? url)
-	(let ([maybe-coll (maybe-extract-coll last-header)])
-	  (format 
-	   no-anchor-format
-	   (hexify-string url)
-	   (hexify-string (make-caption maybe-coll))
-	   maybe-coll))]
-       [else ; manual
-	(let* ([tidy-url (tidy-html-url url)]
-	       [exploded-url (explode-path tidy-url)]
-	       [doc-dir (caddr exploded-url)]
-	       [full-doc-dir (build-path (collection-path "doc") doc-dir)]
-	       [installed? (hash-table-get installed-table
-					   doc-dir
-					   (lambda () 'installed-unknown))])
-	  (when (eq? installed? 'installed-unknown)
-		(let ([has-index?
-		       (ormap file-exists? 
-			      (map (lambda (s)
-				     (build-path full-doc-dir s))
-				   '("index.htm" "index.html")))])
-		  (hash-table-put! installed-table doc-dir has-index?)
-		  (set! installed? has-index?)))
-	  (if installed?
-	      tidy-url
-	      (let* ([doc-entry (assoc doc-dir known-docs)]
-		     [manual-label (or (and doc-entry (cdr doc-entry)) doc-dir)])
-		(format "/servlets/missing-manual.ss?manual=~a&name=~a"
-			doc-dir (hexify-string manual-label)))))])))
+  (define (make-html-href anchored-path)
+    (cond
+     [(hd-servlet? anchored-path) 
+      anchored-path]
+     [(doc-txt? anchored-path) ; collection doc.txt
+      (let ([maybe-coll (maybe-extract-coll last-header)])
+	(format 
+	 no-anchor-format
+	 (hexify-string anchored-path)
+	 (hexify-string (make-caption maybe-coll))
+	 maybe-coll))]
+     [else ; manual, so have absolute path
+      (let* ([tidy-path (tidy-manual-path anchored-path)]
+	     [base-path (path-only anchored-path)]
+	     [exp-base-path (explode-path base-path)]
+	     [doc-dir (car (last-pair exp-base-path))]
+	     [full-doc-dir (build-path (collection-path "doc") doc-dir)]
+	     [installed? (hash-table-get installed-table
+					 doc-dir
+					 (lambda () 'installed-unknown))])
+	(when (eq? installed? 'installed-unknown)
+	      (let ([has-index?
+		     (ormap file-exists? 
+			    (map (lambda (s)
+				   (build-path full-doc-dir s))
+				 '("index.htm" "index.html")))])
+		(hash-table-put! installed-table doc-dir has-index?)
+		(set! installed? has-index?)))
+	(if installed?
+	    tidy-path
+	    (let* ([doc-entry (assoc doc-dir known-docs)]
+		   [manual-label (or (and doc-entry (cdr doc-entry)) doc-dir)])
+	      (format "/servlets/missing-manual.ss?manual=~a&name=~a"
+		      doc-dir (hexify-string manual-label)))))]))
                             
-  (define (make-text-href url page-label)
-    (let ([maybe-coll (maybe-extract-coll last-header)])
+  ; path is absolute pathname
+  (define (make-text-href path page-label)
+    (let* ([maybe-coll (maybe-extract-coll last-header)]
+	   [hex-path (hexify-string path)]
+	   [hex-caption (if (eq? maybe-coll last-header)
+			hex-path
+			(hexify-string (make-caption maybe-coll)))])
       (format 
        with-anchor-format
-       (hexify-string url)
-       (hexify-string (make-caption maybe-coll))
-       maybe-coll
+       (hexify-string path)
+       hex-caption
+       (hexify-string maybe-coll)
        (or (and (number? page-label)
 		page-label)
 	   0))))
@@ -197,10 +182,10 @@
 		    ".html"))))
 
   (define (goto-lucky-entry ekey label src path page-label key)
-    (let* ([url (make-entry-url page-label path)]
+    (let* ([anchored-path (make-anchored-path page-label path)]
 	   [href (if (html-entry? path)
-		     (make-html-href url)
-		     (make-text-href url page-label))])
+		     (make-html-href anchored-path)
+		     (make-text-href anchored-path page-label))])
       ; can use refresh here, instead of Javscript here - no semicolon in URL
       (send/finish 
        `(HTML
@@ -212,27 +197,37 @@
 	  (A ((HREF ,href)) "click here") ".")))))
 
   (define (add-entry ekey label src path page-label key)
-    (let* ([url (make-entry-url page-label path)]
+    (let* ([anchored-path (make-anchored-path page-label path)]
 	   [entry (if (html-entry? path)
 		      (make-search-link 
-		       (make-html-href url)
+		       (make-html-href anchored-path)
 		       label src)
 		      (make-search-link 
-		       (make-text-href url page-label)
+		       (make-text-href anchored-path page-label)
 		       label src))])
-      (set! search-response
-	    (cons entry search-response))))
+      (set! search-responses
+	    (cons entry search-responses))))
+
+  (define (make-results-page items)
+    `(HTML
+      (HEAD ,hd-css)
+      (BODY
+       (FONT ((SIZE "+2")) 
+	     (B "Search results"))
+       (BR)
+       ,@items)))
 
   (define (search-results lucky? search-string search-type match-type)
     (semaphore-wait search-sem)
-    (set! search-response '())
+    (set! search-responses '())
     (set! installed-table (make-hash-table 'weak 'equal))
+    (set! max-reached #f)
     (let* ([search-level (search-type->search-level search-type)]
 	   [regexp? (string=? match-type "regexp-match")]
 	   [exact-match? (string=? match-type "exact-match")]
 	   [key (gensym)]
 	   [result (with-handlers
-		    (((lambda (exn) (eq? exn 'maxxed-out))
+		    ((void
 		      (lambda (exn) #f)))
 		    (do-search search-string 
 			       search-level
@@ -243,15 +238,10 @@
 			       add-header
 			       set-current-kind!
 			       (if lucky? goto-lucky-entry add-entry)))]
-	   [html `(HTML
-		   (HEAD ,hd-css)
-		   (BODY
-		    (FONT ((SIZE "+2")) 
-			  (B "Search results"))
-		    (BR)
-		    ,@(if (string? result)
-			  `((H2 ((STYLE "color:red")) ,result))
-			  (reverse search-response))))])
+	   [html (make-results-page
+		  (if (string? result) ; error message
+		      `((H2 ((STYLE "color:red")) ,result))
+		      (reverse search-responses)))])
       (semaphore-post search-sem)
       html))
 
@@ -263,7 +253,7 @@
       (BODY
        (H2 "Empty search string")
        (P)
-       "Click on the back button on your browser "
+       "Click on the Back button on your browser "
        "to return to the previous page.")))
   
   (define (lucky-search? bindings)

@@ -16,6 +16,7 @@
 	   sys-link-default
 	   color-highlight
 	   color-with
+	   hd-servlet?
 	   hexify-string
 	   manual-entry
 	   collection-doc-link
@@ -31,6 +32,10 @@
   (define home-page 
     `(A ((HREF "/servlets/home.ss") (TARGET "_top"))
 	"Help Desk home"))
+
+  ; servlet filenames have slashes, independent of OS
+  (define (hd-servlet? path)
+    (regexp-match "^/servlets/" path))
 
   (define password-file
     (build-path (collection-path "doc") "help" "passwd"))

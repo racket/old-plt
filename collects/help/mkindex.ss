@@ -2,11 +2,12 @@
 
   (provide create-index-file)
 
-  (require (lib "pregexp.ss"))
-  (require (lib "file.ss"))
-  (require (lib "list.ss"))
+  (require (lib "pregexp.ss")
+	   (lib "file.ss")
+	   (lib "list.ss"))
 
   (define servlet-dir (build-path (collection-path "help") "servlets"))
+  (define exploded-servlet-dir-len (length (explode-path servlet-dir)))
   (define dest-dir (build-path (collection-path "help") 'up "doc" "help"))
 
   (define old-curr-dir (current-directory))
@@ -48,10 +49,23 @@
 
   (define sys-type (system-type))
 
-  (define (slashify s)
-    (if (eq? sys-type 'windows)
-	(pregexp-replace* "\\\\" s "/")
-	s))
+  ; path is absolute, and has the servlet dir as a prefix 
+  (define (relativize-and-slashify path)
+    (let* ([exp-path (explode-path path)]
+	   [prefix-len (sub1 exploded-servlet-dir-len)]
+	   [relative-exp-path
+	    (let loop ([p exp-path]
+		       [n 0])
+	      ; leave off prefix up to servlet dir
+	      (if (>= n prefix-len)
+		  p
+		  (loop (cdr p) (add1 n))))])
+      (foldr (lambda (s a)
+	       (if a
+		   (string-append s "/" a)
+		   s))
+	     #f
+	     relative-exp-path)))
 
   (define index '())
 
@@ -59,9 +73,8 @@
     (set! index 
 	  (cons
 	   (list val
-		 (format "\"../../servlets/~a\"" 
-			 (slashify (find-relative-path 
-				    servlet-dir file)))
+		 (format "\"/~a\"" 
+			 (relativize-and-slashify file))
 		 name 
 		 title)
 	   index)))

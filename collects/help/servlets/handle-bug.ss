@@ -122,7 +122,7 @@
 	       "and try sending it again.")
 	       (P)
 	       "If the problem continues, please send email to "
-	       (TT "scheme@plt-scheme.org") "describing the problem."))]
+	       (TT "scheme@plt-scheme.org") " describing the problem."))]
 	 [done-page
 	  `(HTML 
 	    (HEAD ,hd-css)

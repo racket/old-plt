@@ -239,6 +239,11 @@ class wxPath : public wxObject
   void Arc(double x, double y, double w, double h, double start, double end, Bool ccw);
   void CurveTo(double x1, double y1, double x2, double y2, double x3, double y3);
 
+  void Rectangle(double x, double y, double width, double height);
+  void RoundedRectangle(double x, double y, double width, double height, double radius = 20.0);
+  void Ellipse(double x, double y, double width, double height);
+  void Lines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);
+
   void Translate(double x, double y);
   void Scale(double x, double y);
   void Rotate(double a);

@@ -1932,7 +1932,6 @@ void wxPath::Arc(double x, double y, double w, double h, double start, double en
     s = start;
     start = end;
     end = s;
-    ccw = !ccw;
   }
 
   if (ccw) {
@@ -2035,6 +2034,54 @@ void wxPath::CurveTo(double x1, double y1, double x2, double y2, double x3, doub
   cmds[cmd_size++] = y2;
   cmds[cmd_size++] = x3;
   cmds[cmd_size++] = y3;
+}
+
+void wxPath::Rectangle(double x, double y, double width, double height)
+{
+  MoveTo(x, y);
+  LineTo(x + width, y);
+  LineTo(x + width, y + height);
+  LineTo(x, y + height);
+  Close();
+}
+
+void wxPath::RoundedRectangle(double x, double y, double width, double height, double radius)
+{
+  // A negative radius value is interpreted to mean
+  // 'the proportion of the smallest X or Y dimension'
+  if (radius < 0.0) {
+    double smallest = 0.0;
+    if (width < height)
+      smallest = width;
+    else
+      smallest = height;
+    radius = (double)(- radius * smallest);
+  }
+    
+  Close();
+  Arc(x, y, radius * 2, radius * 2, wxPI, 0.5 * wxPI, FALSE);
+  LineTo(x + width - radius, y);
+  Arc(x + width - 2 * radius, y, radius * 2, radius * 2, 0.5 * wxPI, 0 * wxPI, FALSE);
+  LineTo(x + width, y + height - radius);
+  Arc(x + width - 2 * radius, y + height - 2 * radius, 2 * radius, 2 * radius, 0 * wxPI, 1.5 * wxPI, FALSE);
+  LineTo(x + radius, y + height);
+  Arc(x, y + height - 2 * radius, 2 * radius, 2 * radius, 1.5 * wxPI, 1.0 * wxPI, FALSE);
+  Close();
+}
+
+void wxPath::Ellipse(double x, double y, double width, double height)
+{
+  Close();
+  Arc(x, y, width, height, 0, 2 * wxPI, TRUE);
+  Close();
+}
+
+void wxPath::Lines(int n, wxPoint points[], double xoffset, double yoffset)
+{
+  int i;
+  for (i = 0; i < n; i++) {
+    LineTo(points[i].x + xoffset, points[i].y + yoffset);
+  }
 }
 
 void wxPath::Translate(double x, double y)
@@ -2450,6 +2497,14 @@ int wxPath::ToPolygons(int **_lens, double ***_ptss, double sx, double sy)
 	  tt = ((double)d / (double)(need_len - 1));
 	  x = ((((((tt * ax) + bx) * tt) + cx) * tt) + dx);
 	  y = ((((((tt * ay) + by) * tt) + cy) * tt) + dy);
+	  if ((d > 0) && (d < need_len-1)) {
+	    /* We've generating points to map to pixels
+	       after scaling, so round intermediate points.
+	       End point have to be floored, for consistency
+	       with everything else, so leave them alone. */
+	    x = round(x * sx) / sx;
+	    y = round(y * sy) / sy;
+	  }
 	  pts[len++] = x;
 	  pts[len++] = y;
 	}

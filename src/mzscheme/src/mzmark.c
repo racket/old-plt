@@ -137,15 +137,15 @@ int cpointer_obj_SIZE(void *p) {
 }
 
 int cpointer_obj_MARK(void *p) {
-  gcMARK(SCHEME_PTR1_VAL((Scheme_Object *)p));
-  gcMARK(SCHEME_PTR2_VAL((Scheme_Object *)p));
+  gcMARK(SCHEME_CPTR_VAL((Scheme_Object *)p));
+  gcMARK(SCHEME_CPTR_TYPE((Scheme_Object *)p));
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
 int cpointer_obj_FIXUP(void *p) {
-  gcFIXUP(SCHEME_PTR1_VAL((Scheme_Object *)p));
-  gcFIXUP(SCHEME_PTR2_VAL((Scheme_Object *)p));
+  gcFIXUP(SCHEME_CPTR_VAL((Scheme_Object *)p));
+  gcFIXUP(SCHEME_CPTR_TYPE((Scheme_Object *)p));
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }

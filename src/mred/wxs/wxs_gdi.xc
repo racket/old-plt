@@ -317,6 +317,11 @@ static void *RgnBoundingBox(wxRegion *r)
 @ "arc" : void Arc(double, double, double, double, double, double, bool=TRUE);
 @ "curve-to" : void CurveTo(double, double, double, double, double, double); : : /CheckOpen["curve-to"]
 
+@ "rectangle" : void Rectangle(double, double, nndouble, nndouble);
+@ "rounded-rectangle" : void RoundedRectangle(double, double, nndouble, nndouble, double=20.0);
+@ "ellipse" : void Ellipse(double, double, nndouble, nndouble);
+@ "lines" : void Lines(-int,wxPoint!/bList/ubList/cList,double=0,double=0); : / methListSet[wxPoint.0.1.0]// : /CheckOpen["lines"]|glueListSet[wxPoint.0.1.0.METHODNAME("path%","lines")]//
+
 @ "translate" : void Translate(double, double);
 @ "scale" : void Scale(double, double);
 @ "rotate" :  void Rotate(double);

@@ -4332,6 +4332,7 @@ class wxRegion *objscheme_unbundle_wxRegion(Scheme_Object *obj, const char *wher
 
 
 
+
 class os_wxPath : public wxPath {
  public:
 
@@ -4470,6 +4471,129 @@ static Scheme_Object *os_wxPathTranslate(int n,  Scheme_Object *p[])
 
   
   WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Translate(x0, x1));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathLines(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "lines in dc-path%", n, p);
+  int x0;
+  class wxPoint* x1 INIT_NULLED_OUT;
+  double x2;
+  double x3;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, x1);
+
+  
+  x1 = NULL;
+  if (n > (POFFSET+1)) {
+    x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "lines in dc-path%"));
+  } else
+    x2 = 0;
+  if (n > (POFFSET+2)) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "lines in dc-path%"));
+  } else
+    x3 = 0;
+
+  if (!((wxPath *)((Scheme_Class_Object *)THEOBJ)->primdata)->IsOpen()) scheme_arg_mismatch(METHODNAME("dc-path%","lines"), "path is not open: ", THEOBJ);x1 = WITH_VAR_STACK(__MakewxPointArray((0+POFFSET < n) ? p[POFFSET+0] : scheme_null, &x0, METHODNAME("path%","lines")));
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Lines(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathEllipse(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "ellipse in dc-path%", n, p);
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "ellipse in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "ellipse in dc-path%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "ellipse in dc-path%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "ellipse in dc-path%"));
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Ellipse(x0, x1, x2, x3));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathRoundedRectangle(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "rounded-rectangle in dc-path%", n, p);
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
+  double x4;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "rounded-rectangle in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "rounded-rectangle in dc-path%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "rounded-rectangle in dc-path%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "rounded-rectangle in dc-path%"));
+  if (n > (POFFSET+4)) {
+    x4 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+4], "rounded-rectangle in dc-path%"));
+  } else
+    x4 = 20.0;
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->RoundedRectangle(x0, x1, x2, x3, x4));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxPathRectangle(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxPath_class, "rectangle in dc-path%", n, p);
+  double x0;
+  double x1;
+  nndouble x2;
+  nndouble x3;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+0], "rectangle in dc-path%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "rectangle in dc-path%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+2], "rectangle in dc-path%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_double(p[POFFSET+3], "rectangle in dc-path%"));
+
+  
+  WITH_VAR_STACK(((wxPath *)((Scheme_Class_Object *)p[0])->primdata)->Rectangle(x0, x1, x2, x3));
 
   
   
@@ -4692,13 +4816,17 @@ void objscheme_setup_wxPath(Scheme_Env *env)
 
   wxREGGLOB(os_wxPath_class);
 
-  os_wxPath_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc-path%", "object%", (Scheme_Method_Prim *)os_wxPath_ConstructScheme, 12));
+  os_wxPath_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "dc-path%", "object%", (Scheme_Method_Prim *)os_wxPath_ConstructScheme, 16));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "append" " method", (Scheme_Method_Prim *)os_wxPathAddPath, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "reverse" " method", (Scheme_Method_Prim *)os_wxPathReverse, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "rotate" " method", (Scheme_Method_Prim *)os_wxPathRotate, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "scale" " method", (Scheme_Method_Prim *)os_wxPathScale, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "translate" " method", (Scheme_Method_Prim *)os_wxPathTranslate, 2, 2));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "lines" " method", (Scheme_Method_Prim *)os_wxPathLines, 1, 3));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "ellipse" " method", (Scheme_Method_Prim *)os_wxPathEllipse, 4, 4));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "rounded-rectangle" " method", (Scheme_Method_Prim *)os_wxPathRoundedRectangle, 4, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "rectangle" " method", (Scheme_Method_Prim *)os_wxPathRectangle, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "curve-to" " method", (Scheme_Method_Prim *)os_wxPathCurveTo, 6, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "arc" " method", (Scheme_Method_Prim *)os_wxPathArc, 6, 7));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPath_class, "line-to" " method", (Scheme_Method_Prim *)os_wxPathLineTo, 2, 2));

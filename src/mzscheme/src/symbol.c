@@ -157,7 +157,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     {
       Scheme_Object **ba;
 #ifdef MZ_PRECISE_GC
-      ba = (Scheme_Bucket **)GC_malloc_weak_array(sizeof(Scheme_Object *) * newsize,
+      ba = (Scheme_Object **)GC_malloc_weak_array(sizeof(Scheme_Object *) * newsize,
 						  SYMTAB_LOST_CELL);
 #else
       ba = MALLOC_N_ATOMIC(Scheme_Object *, newsize);
@@ -235,7 +235,7 @@ static Scheme_Hash_Table *init_one_symbol_table()
   
   size = symbol_table->size * sizeof(Scheme_Object *);
 #ifdef MZ_PRECISE_GC
-  ba = (Scheme_Bucket **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
+  ba = (Scheme_Object **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
 #else
   ba = MALLOC_N_ATOMIC(Scheme_Object *, size);
   memset((char *)ba, 0, size);

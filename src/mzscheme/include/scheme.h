@@ -909,6 +909,9 @@ void scheme_restore_nonmain_thread(void);
 #ifdef MAC_FILE_SYSTEM
 extern long scheme_creator_id;
 #endif
+#ifdef MACINTOSH_EVENTS
+extern void (*scheme_handle_aewait_event)(EventRecord *e);
+#endif
 extern void *(*scheme_get_sema_callback_context)(void);
 
 extern Scheme_Object *(*scheme_make_stdin)(void);

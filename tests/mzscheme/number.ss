@@ -1068,7 +1068,11 @@
 (test 0.0 atan 1 +inf.0)
 (test 22/7 rationalize (inexact->exact (atan 1 -inf.0)) 1/100)
 
-; Is this really right???
+; Note on the following tests with atan and inf.0:
+;  The IEEE standard makes this decision. I think it's a bad one,
+;  since (limit (atan (g x) (f x))) as x -> +inf.0 is not necessarily
+;  (atan 1 1) when (limit (f x)) and (limit (g x)) are +inf.0.
+;  Perhaps IEEE makes this choice because it's easiest to compute.
 (test 7/9 rationalize (inexact->exact (atan +inf.0 +inf.0)) 1/100)
 (test 26/11 rationalize (inexact->exact (atan +inf.0 -inf.0)) 1/100)
 (test -7/9 rationalize (inexact->exact (atan -inf.0 +inf.0)) 1/100)
@@ -1235,5 +1239,14 @@
 (error-test '(string->number "12" 17))
 (error-test '(string->number "1" "1"))
 (error-test '(string->number 1 1))
+
+(test #t andmap (lambda (x) (and (>= x 0) (< x 10))) (map random '(10 10 10 10)))
+(arity-test random-seed 1 1)
+(arity-test random 1 1)
+(error-test '(random-seed "apple"))
+(error-test '(random-seed 4.5))
+(error-test '(random "apple"))
+(error-test '(random 0))
+(error-test '(random -6))
 
 (report-errs)

@@ -146,6 +146,10 @@ static Scheme_Object *record_symbol, *file_symbol;
 # endif
 #endif
 
+#ifdef MACINTOSH_EVENTS
+void (*scheme_handle_aewait_event)(EventRecord *e);
+#endif
+
 void scheme_init_file(Scheme_Env *env)
 {
   if (scheme_starting_up) {
@@ -3064,189 +3068,189 @@ int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
 #endif
 
 static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme_Object *v, 
-                        char *name, OSErr *err, char **stage)
+		       char *name, OSErr *err, char **stage)
 {
-    DescType type;
-    Ptr data;
-    Size size;
-    Boolean x_b;
-    long x_i;
-    double x_d;
-    Handle alias = NULL;
-    int retval = 1;
+  DescType type;
+  Ptr data;
+  Size size;
+  Boolean x_b;
+  long x_i;
+  double x_d;
+  Handle alias = NULL;
+  int retval = 1;
     
-    switch (SCHEME_TYPE(v)) {
-    case scheme_true_type:
-    case scheme_false_type:
-      x_b = SCHEME_TRUEP(v) ? TRUE : FALSE;
-      type = typeBoolean;
-      data = (char *)&x_b;
-      size = sizeof(Boolean);
-      break;
-    case scheme_integer_type:
-      x_i = SCHEME_INT_VAL(v);
-      type = typeLongInteger;
-      data = (char *)&x_i;
-      size = sizeof(long);
-      break;
-    case scheme_string_type:
-      type = typeChar;
-      data = SCHEME_STR_VAL(v);
-      size = SCHEME_STRTAG_VAL(v);
-      break;
-    case scheme_float_type:
-    case scheme_double_type:
-      x_d = SCHEME_FLOAT_VAL(v);
-      type = typeFloat;
-      data = (char *)&x_d;
-      size = sizeof(double);
-      break;
-    case scheme_vector_type: /* vector => record */
-      if ((SCHEME_VEC_SIZE(v) >= 1)
-          && ((SCHEME_VEC_ELS(v)[0] == record_symbol)
-              || (SCHEME_VEC_ELS(v)[0] == file_symbol))) {
-        if (SCHEME_VEC_ELS(v)[0] == file_symbol) {
-          if ((SCHEME_VEC_SIZE(v) == 2)
-              && SCHEME_STRINGP(SCHEME_VEC_ELS(v)[1]))  {
-            char *s = SCHEME_STR_VAL(SCHEME_VEC_ELS(v)[1]);
-            long l = SCHEME_STRTAG_VAL(SCHEME_VEC_ELS(v)[1]);
-            if (!has_null(s, l)) {
-              FSSpec spec;
-              if (scheme_mac_path_to_spec(s, &spec, NULL)) {
-                *err = NewAlias(NULL, &spec, (AliasHandle *)&alias);
-                if (*err) {
-                  *stage = "converting file to alias: ";
-                  return NULL;
-                }
-                type = typeAlias;
-                HLock(alias);
-                data = (char *)*alias;
-                size = GetHandleSize(alias);
-                break;
-              }
-            }
-          }
-          scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		             "%s: cannot interpret vector as a file specification: %s",
-		             name,
-		             scheme_make_provided_string(v, 1, NULL));
-        }
-        /* record case falls through to list */
-      } else {
-        scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		                 "%s: cannot convert ill-tagged or untagged vector: %s",
-		                 name,
-		                 scheme_make_provided_string(v, 1, NULL));
+  switch (SCHEME_TYPE(v)) {
+  case scheme_true_type:
+  case scheme_false_type:
+    x_b = SCHEME_TRUEP(v) ? TRUE : FALSE;
+    type = typeBoolean;
+    data = (char *)&x_b;
+    size = sizeof(Boolean);
+    break;
+  case scheme_integer_type:
+    x_i = SCHEME_INT_VAL(v);
+    type = typeLongInteger;
+    data = (char *)&x_i;
+    size = sizeof(long);
+    break;
+  case scheme_string_type:
+    type = typeChar;
+    data = SCHEME_STR_VAL(v);
+    size = SCHEME_STRTAG_VAL(v);
+    break;
+  case scheme_float_type:
+  case scheme_double_type:
+    x_d = SCHEME_FLOAT_VAL(v);
+    type = typeFloat;
+    data = (char *)&x_d;
+    size = sizeof(double);
+    break;
+  case scheme_vector_type: /* vector => record */
+    if ((SCHEME_VEC_SIZE(v) >= 1)
+	&& ((SCHEME_VEC_ELS(v)[0] == record_symbol)
+	    || (SCHEME_VEC_ELS(v)[0] == file_symbol))) {
+      if (SCHEME_VEC_ELS(v)[0] == file_symbol) {
+	if ((SCHEME_VEC_SIZE(v) == 2)
+	    && SCHEME_STRINGP(SCHEME_VEC_ELS(v)[1]))  {
+	  char *s = SCHEME_STR_VAL(SCHEME_VEC_ELS(v)[1]);
+	  long l = SCHEME_STRTAG_VAL(SCHEME_VEC_ELS(v)[1]);
+	  if (!has_null(s, l)) {
+	    FSSpec spec;
+	    if (scheme_mac_path_to_spec(s, &spec, NULL)) {
+	      *err = NewAlias(NULL, &spec, (AliasHandle *)&alias);
+	      if (*err) {
+		*stage = "converting file to alias: ";
+		return NULL;
+	      }
+	      type = typeAlias;
+	      HLock(alias);
+	      data = (char *)*alias;
+	      size = GetHandleSize(alias);
+	      break;
+	    }
+	  }
+	}
+	scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+			 "%s: cannot interpret vector as a file specification: %s",
+			 name,
+			 scheme_make_provided_string(v, 1, NULL));
       }
-    case scheme_pair_type: /* /\ falls through */
-    case scheme_null_type:
-      {
-        int l;
-        int isrec = SCHEME_VECTORP(v);
-        
-        if (isrec)
-          v = SCHEME_CDR(scheme_vector_to_list(v));
-        
-        l = scheme_proper_list_length(v);
-        if (l >= 0) {
-          AEDescList *list;
-          list = MALLOC_ONE_ATOMIC(AEDescList);
-          
-          *err = AECreateList(NULL, 0, isrec, list);
-		  if (*err) {
-		    *stage = "cannot create list/record: ";
-		    return 0;
-		  }
-		  
-		  while (!SCHEME_NULLP(v)) {
-		    Scheme_Object *a = SCHEME_CAR(v);
-            AEKeyword rkw;
-		    if (isrec) {
-		      Scheme_Object *k;
-		      if (!SCHEME_PAIRP(a)
-		          || !SCHEME_PAIRP(SCHEME_CDR(a))
-		          || !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(a)))
-		          || !SCHEME_STRINGP(SCHEME_CAR(a))) {
-		          /* Bad record form. */
-		          scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		             "%s: cannot interpret vector part as a record field: %s",
-		             name,
-		             scheme_make_provided_string(a, 1, NULL));
-		       }
-		       k = SCHEME_CAR(a);
-		       a = SCHEME_CADR(a);
-		       rkw = check_four(name, 0, 1, &k);
-		    } else
-		      rkw = 0;
-		    if (!ae_marshall(NULL, list, rkw, a, name, err, stage)) {
-		      AEDisposeDesc(list);
-		      return 0;
-		    }
-		    v = SCHEME_CDR(v);
-		  }
-		  
-		  if (list_in) {
-		    if (kw)
-		      *err = AEPutKeyDesc(list_in, kw, list);
-		    else
-		      *err = AEPutDesc(list_in, 0, list);
-		    if (*err) {
-		      *stage = "cannot add list item: ";
-		      AEDisposeDesc(list);
-		      return 0;
-		    }
-		  } else {
-		    if (kw)
-		      *err = AEPutParamDesc(ae, keyDirectObject, list);
-		    else
-		      *err = AEPutParamDesc(ae, kw, list);
-		    if (*err) {
-		      *stage = "cannot install argument: ";
-		      AEDisposeDesc(list);
-              return 0;
-            }
-		  }
-		
-		  AEDisposeDesc(list);
-		  
-		  return 1;
-        }
-      }
-    default:
-      /* Don't know how to marshall */
+      /* record case falls through to list */
+    } else {
       scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		       "%s: cannot convert value for sending: %s",
+		       "%s: cannot convert ill-tagged or untagged vector: %s",
 		       name,
 		       scheme_make_provided_string(v, 1, NULL));
-      return 0;
     }
-    
-    if (list_in) {
-        if (kw)
-          *err = AEPutKeyPtr(list_in, kw, type, data, size);
-        else
-	      *err = AEPutPtr(list_in, 0, type, data, size);
-	    if (alias)
-	      DisposeHandle(alias);
-	    if (*err) {
-	      *stage = "cannot add list item: ";
-	      retval = 0;
+  case scheme_pair_type: /* /\ falls through */
+  case scheme_null_type:
+    {
+      int l;
+      int isrec = SCHEME_VECTORP(v);
+        
+      if (isrec)
+	v = SCHEME_CDR(scheme_vector_to_list(v));
+        
+      l = scheme_proper_list_length(v);
+      if (l >= 0) {
+	AEDescList *list;
+	list = MALLOC_ONE_ATOMIC(AEDescList);
+          
+	*err = AECreateList(NULL, 0, isrec, list);
+	if (*err) {
+	  *stage = "cannot create list/record: ";
+	  return 0;
+	}
+		  
+	while (!SCHEME_NULLP(v)) {
+	  Scheme_Object *a = SCHEME_CAR(v);
+	  AEKeyword rkw;
+	  if (isrec) {
+	    Scheme_Object *k;
+	    if (!SCHEME_PAIRP(a)
+		|| !SCHEME_PAIRP(SCHEME_CDR(a))
+		|| !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(a)))
+		|| !SCHEME_STRINGP(SCHEME_CAR(a))) {
+	      /* Bad record form. */
+	      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+			       "%s: cannot interpret vector part as a record field: %s",
+			       name,
+			       scheme_make_provided_string(a, 1, NULL));
 	    }
+	    k = SCHEME_CAR(a);
+	    a = SCHEME_CADR(a);
+	    rkw = check_four(name, 0, 1, &k);
+	  } else
+	    rkw = 0;
+	  if (!ae_marshall(NULL, list, rkw, a, name, err, stage)) {
+	    AEDisposeDesc(list);
+	    return 0;
+	  }
+	  v = SCHEME_CDR(v);
+	}
+		  
+	if (list_in) {
+	  if (kw)
+	    *err = AEPutKeyDesc(list_in, kw, list);
+	  else
+	    *err = AEPutDesc(list_in, 0, list);
+	  if (*err) {
+	    *stage = "cannot add list item: ";
+	    AEDisposeDesc(list);
+	    return 0;
+	  }
 	} else {
 	  if (kw)
-	    *err = AEPutParamPtr(ae, kw, type, data, size);
+	    *err = AEPutParamDesc(ae, keyDirectObject, list);
 	  else
-	    *err = AEPutParamPtr(ae, keyDirectObject, type, data, size);
-      if (*err) {
-        *stage = "cannot install argument: ";
-        retval = 0;
-      }
+	    *err = AEPutParamDesc(ae, kw, list);
+	  if (*err) {
+	    *stage = "cannot install argument: ";
+	    AEDisposeDesc(list);
+	    return 0;
+	  }
 	}
+		
+	AEDisposeDesc(list);
+		  
+	return 1;
+      }
+    }
+  default:
+    /* Don't know how to marshall */
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "%s: cannot convert value for sending: %s",
+		     name,
+		     scheme_make_provided_string(v, 1, NULL));
+    return 0;
+  }
+    
+  if (list_in) {
+    if (kw)
+      *err = AEPutKeyPtr(list_in, kw, type, data, size);
+    else
+      *err = AEPutPtr(list_in, 0, type, data, size);
+    if (alias)
+      DisposeHandle(alias);
+    if (*err) {
+      *stage = "cannot add list item: ";
+      retval = 0;
+    }
+  } else {
+    if (kw)
+      *err = AEPutParamPtr(ae, kw, type, data, size);
+    else
+      *err = AEPutParamPtr(ae, keyDirectObject, type, data, size);
+    if (*err) {
+      *stage = "cannot install argument: ";
+      retval = 0;
+    }
+  }
 
-	if (alias)
-	  DisposeHandle(alias);
+  if (alias)
+    DisposeHandle(alias);
 	
-   return retval;
+  return retval;
 }
 
 static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int pos,
@@ -3259,11 +3263,11 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
   Scheme_Object *result;
 
   if (list_in) {
-      if (AEGetNthPtr(list_in, pos, typeWildCard, &kw, &rtype, NULL, 0, &sz))
-        return scheme_void;
+    if (AEGetNthPtr(list_in, pos, typeWildCard, &kw, &rtype, NULL, 0, &sz))
+      return scheme_void;
   } else {
-	  if (AEGetParamPtr(reply, keyDirectObject, typeWildCard, &rtype, NULL, 0, &sz))
-	    return scheme_void;
+    if (AEGetParamPtr(reply, keyDirectObject, typeWildCard, &rtype, NULL, 0, &sz))
+      return scheme_void;
   }
   
   {
@@ -3304,62 +3308,62 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
     case typeAEList:
     case typeAERecord:
       {
-         AEDescList *list;
-         Scheme_Object *first = scheme_null, *last = NULL, *v, *rec, **recp;
-         int i;
+	AEDescList *list;
+	Scheme_Object *first = scheme_null, *last = NULL, *v, *rec, **recp;
+	int i;
          
-         list = MALLOC_ONE_ATOMIC(AEDescList);
+	list = MALLOC_ONE_ATOMIC(AEDescList);
           
-         if (list_in) {
-           if (AEGetNthDesc(list_in, pos, rtype, &kw, list))
-             return NULL;
-           if (record)
-             *record = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
-         } else {
-	       if (AEGetParamDesc(reply, keyDirectObject, rtype, list))
-	        return NULL;
-         }
+	if (list_in) {
+	  if (AEGetNthDesc(list_in, pos, rtype, &kw, list))
+	    return NULL;
+	  if (record)
+	    *record = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
+	} else {
+	  if (AEGetParamDesc(reply, keyDirectObject, rtype, list))
+	    return NULL;
+	}
          
-         if (rtype == typeAERecord)
-           recp = &rec;
-         else
-           recp = NULL;
+	if (rtype == typeAERecord)
+	  recp = &rec;
+	else
+	  recp = NULL;
          
-         for (i = 1; v = ae_unmarshall(NULL, list, i, err, stage, recp); i++) {
-           if (v == scheme_void)
-             break;
-           else if (!v) {
-           	 AEDisposeDesc(list);
-             return NULL;
-           } else {
-	           Scheme_Object *pr = scheme_make_pair(v, scheme_null);
-	           if (recp) {
-	             pr = scheme_make_pair(rec, pr);
-	             pr = scheme_make_pair(pr, scheme_null);
-	           }
+	for (i = 1; v = ae_unmarshall(NULL, list, i, err, stage, recp); i++) {
+	  if (v == scheme_void)
+	    break;
+	  else if (!v) {
+	    AEDisposeDesc(list);
+	    return NULL;
+	  } else {
+	    Scheme_Object *pr = scheme_make_pair(v, scheme_null);
+	    if (recp) {
+	      pr = scheme_make_pair(rec, pr);
+	      pr = scheme_make_pair(pr, scheme_null);
+	    }
 	           
-	           if (last)
-	             SCHEME_CDR(last) = pr;
-	           else
-	             first = pr;
-	           last = pr;
-	       }
-         }
+	    if (last)
+	      SCHEME_CDR(last) = pr;
+	    else
+	      first = pr;
+	    last = pr;
+	  }
+	}
          
-         if (recp)
-           first = scheme_list_to_vector(scheme_make_pair(record_symbol, first));
+	if (recp)
+	  first = scheme_list_to_vector(scheme_make_pair(record_symbol, first));
          
-         AEDisposeDesc(list);
-         return first;
+	AEDisposeDesc(list);
+	return first;
       }
     default:
       /* Don't know how to un-marshall */
-	  *err = -1;
-	  *stage = "error translating the reply to a Scheme value: ";
+      *err = -1;
+      *stage = "error translating the reply to a Scheme value: ";
       return NULL;
     }
     
-     if (list_in) {
+    if (list_in) {
       *err = AEGetNthPtr(list_in, pos, rtype, &kw, &rtype, data, sz, &sz);
       if (record)
         *record = scheme_make_sized_string((char *)&kw, sizeof(long), 1);
@@ -3367,8 +3371,8 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
         *stage = "lost a list value: ";
         return NULL;
       }
-     } else {
-	  *err = AEGetParamPtr(reply, keyDirectObject, rtype, &rtype, data, sz, &sz);
+    } else {
+      *err = AEGetParamPtr(reply, keyDirectObject, rtype, &rtype, data, sz, &sz);
       if (*err) {
         *stage = "lost the return value: ";
         return NULL;
@@ -3395,10 +3399,10 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
   }
   
   return result;
- }
+}
 
 int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, 
-		       Scheme_Object **result, OSErr *err, char **stage)
+			  Scheme_Object **result, OSErr *err, char **stage)
 {
   AEEventClass classid;
   AEEventID eventid;
@@ -3486,13 +3490,13 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   if (!*result)
     goto fail;
   
- succeed:
+succeed:
   retval = 1;
   goto done;
- fail:
+fail:
   retval = 0;
    
- done:
+done:
   if (ae) AEDisposeDesc(ae);
   if (reply) AEDisposeDesc(reply);
   if (target) AEDisposeDesc(target);

@@ -83,6 +83,88 @@ MrQueueElem *first, *last;
 
 WindowPtr needsActive, needsDeactive;
 
+static int QueueTransferredEvent(EventRecord *e)
+{
+  MrQueueElem *q;
+  int done;
+  
+  dispatched = 0;
+  
+  done = 0;
+#ifdef USE_OS_QUEUE
+  if ((e.what == mouseDown) 
+      || (e.what == mouseUp)
+      || (e.what == keyDown)
+      || (e.what == keyUp)
+      || (e.what == autoKey)) {
+    /* Throw it away and stop */
+    return 0;
+  } else 
+#endif
+    if (e.what == updateEvt) {
+      WindowPtr w = (WindowPtr)e.message;
+      for (q = first; q; q = q->next) {
+	if ((q->event.what == updateEvt)
+	    && (w == ((WindowPtr)q->event.message))) {
+	  UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
+	  BeginUpdate(w);
+	  EndUpdate(w);
+	  done = 1;
+	  // return 0;
+	}
+      }
+    }
+
+  if (!done) {
+    q = new MrQueueElem;
+    memcpy(&q->event, &e, sizeof(EventRecord));
+    q->next = NULL;
+    q->prev = last;
+    if (last)
+      last->next = q;
+    else
+      first = q;
+    last = q;
+      
+    q->rgn = NULL;
+      
+    if (e.what == updateEvt) {
+      WindowPtr w = (WindowPtr)e.message;
+      q->rgn = NewRgn();
+      CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
+      BeginUpdate(w);
+      EndUpdate(w);
+    } else if ((e.what == osEvt)
+	       && ((e.message >> 24) & 0x0ff) == suspendResumeMessage) {
+#ifdef SELF_SUSPEND_RESUME
+      /* Forget it; we do fg/bg ourselves. See note at top. */
+      last = q->prev;
+      if (last)
+	last->next = NULL;
+      else
+	first = NULL;
+#else
+      int we_are_front = e.message & resumeFlag;
+      WindowPtr front = FrontWindow();
+
+      if (we_are_front) {     
+	TEFromScrap();
+	resume_ticks = TickCount();
+      } else {
+	ZeroScrap();
+	TEToScrap();
+      }
+        
+      q->event.what = activateEvt;
+      q->event.modifiers = we_are_front ? activeFlag : 0;
+      q->event.message = (long)front;
+#endif
+    }
+  }
+
+  return 1;
+}
+
 static void TransferQueue(int all)
 {
   EventRecord e;
@@ -103,82 +185,8 @@ static void TransferQueue(int all)
 #endif
   
   while (WaitNextEvent(mask, &e, dispatched ? SLEEP_TIME : 0, NULL)) {
-    MrQueueElem *q;
-    int done;
-    
-    dispatched = 0;
-
-    done = 0;
-#ifdef USE_OS_QUEUE
-    if ((e.what == mouseDown) 
-    	  || (e.what == mouseUp)
-    	  || (e.what == keyDown)
-    	  || (e.what == keyUp)
-    	  || (e.what == autoKey)) {
-    	/* Throw it away and stop */
-    	return;
-    } else 
-#endif
-    if (e.what == updateEvt) {
-      WindowPtr w = (WindowPtr)e.message;
-      for (q = first; q; q = q->next) {
-	if ((q->event.what == updateEvt)
-	    && (w == ((WindowPtr)q->event.message))) {
-	  UnionRgn(((WindowRecord *)w)->updateRgn, q->rgn, q->rgn);
-	  BeginUpdate(w);
-	  EndUpdate(w);
-	  done = 1;
-	  // break;
-	}
-      }
-    }
-
-    if (!done) {
-      q = new MrQueueElem;
-      memcpy(&q->event, &e, sizeof(EventRecord));
-      q->next = NULL;
-      q->prev = last;
-      if (last)
-	last->next = q;
-      else
-	first = q;
-      last = q;
-      
-      q->rgn = NULL;
-      
-      if (e.what == updateEvt) {
-	WindowPtr w = (WindowPtr)e.message;
-	q->rgn = NewRgn();
-	CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
-	BeginUpdate(w);
-	EndUpdate(w);
-      } else if ((e.what == osEvt)
-      		 && ((e.message >> 24) & 0x0ff) == suspendResumeMessage) {
-#ifdef SELF_SUSPEND_RESUME
-	/* Forget it; we do fg/bg ourselves. See note at top. */
-	last = q->prev;
-	if (last)
-	  last->next = NULL;
-	else
-	  first = NULL;
-#else
-	int we_are_front = e.message & resumeFlag;
-	WindowPtr front = FrontWindow();
-
-	if (we_are_front) {     
-          TEFromScrap();
-          resume_ticks = TickCount();
-        } else {
-          ZeroScrap();
-          TEToScrap();
-        }
-        
-        q->event.what = activateEvt;
-        q->event.modifiers = we_are_front ? activeFlag : 0;
-        q->event.message = (long)front;
-#endif
-      }
-    }
+    if (!QueueTransferredEvent(&e))
+      break;
   }
   
   lastTime = TickCount();

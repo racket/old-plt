@@ -108,7 +108,12 @@ static int check_break_flag()
     q = (EvQEl *)q->qLink;
   }
 #ifdef MACINTOSH_GIVE_TIME
-  WaitNextEvent(0, &event, 0, NULL);
+  {
+    static long last_time;
+    if (TickCount() > last_time + 5)
+      WaitNextEvent(0, &event, 0, NULL);
+    last_time = TickCount();
+  }
 #endif
   return 0;
 }

@@ -4206,7 +4206,7 @@ static Scheme_Object *sch_send_event(int c, Scheme_Object *args[])
   if (scheme_mac_send_event("send-event", c, args, &result, &err, &stage))
     return result;
   else
-    scheme_raise_exn(MZEXN_MISC, "send-event: failed (%s%d)", stage, (int)err);
+    scheme_raise_exn(MZEXN_MISC_SEND_EVENT, "send-event: failed (%s%d)", stage, (int)err);
 #else
   scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
 		   "send-event: not supported on this platform");

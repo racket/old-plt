@@ -3587,13 +3587,12 @@ sch_random(int argc, Scheme_Object *argv[])
   long v, i;
 
   if (!SCHEME_INTP(o))
-    scheme_wrong_type("random", "non-zero fixnum", 0, argc, argv);
+    scheme_wrong_type("random", "positive fixnum", 0, argc, argv);
 
   i = SCHEME_INT_VAL(o);
-  if (!i)
-    scheme_wrong_type("random", "non-zero fixnum", 0, argc, argv);
-    
-
+  if (i <= 0)
+    scheme_wrong_type("random", "positive fixnum", 0, argc, argv);
+  
 #ifdef RAND_NOT_RANDOM
   v = rand() % i;
 #else

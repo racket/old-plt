@@ -35,8 +35,6 @@ static Scheme_Object *vector_to_list (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_to_vector (int argc, Scheme_Object *argv[]);
 static Scheme_Object *vector_fill (int argc, Scheme_Object *argv[]);
 
-static Scheme_Object *vector_append (int argc, Scheme_Object *argv[]);
-
 void
 scheme_init_vector (Scheme_Env *env)
 {

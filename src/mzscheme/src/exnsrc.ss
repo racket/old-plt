@@ -64,7 +64,7 @@ instantiated.
 			    (*argument-type
 			     [expected "symbol" "type expected by formatting tag"]
 			     "argument does not match type expected by formatting tag; \\scm{application-value} is the bad value"))
-		  (*macos:typestring []
+		  (*macos-typestring []
 				     "string is not a four-character string, so it does not specify a MacOS application signature or file type; raised by \\scmfirst{system}, \\scmfirst{execute}, \\scmfirst{send-event}"))
      
      (*else [] "fall-through in \\scmfirst{cond} or \\scmfirst{case}")

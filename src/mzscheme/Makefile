@@ -68,9 +68,6 @@ INSTALLSYS = `../../bin/archsys`
 
 ################################################################################
 
-# Destination for support files installation (Probably PLT only)
-INSTALLDEST = /home/scheme/plt
-
 # Export string for making src & GC
 EXPORT= CC='$(CC)' CXX='$(CXX)' AS='$(AS)' RANLIB='$(RANLIB)' DEBUGFLAGS='$(DEBUGFLAGS)' OPTIONS='$(OPTIONS) $(THREADFLAGS)' DYNOPTIONS='$(DYNOPTIONS)' WARN='$(WARN)' OPT='$(OPT)' OBJDIR='$(OBJDIR)' GCDIR='$(GCDIR)' LIBS='$(LIBS)' GCLIBMAKEEXTRA='$(GCLIBMAKEEXTRA)'
 
@@ -197,18 +194,25 @@ cmacro:
 	$(XMAKE) src/cunitsig.inc
 
 headers:
-	$(XMAKE) ../collects/mzscheme/include/scheme.h
+	$(XMAKE) ../../collects/mzscheme/include/scheme.h
+	$(XMAKE) ../../collects/mzscheme/lib/mzdyn.c
 
-../collects/mzscheme/include/scheme.h: sconfig.h uconfig.h include/escheme.h src/schemef.h \
+# Needed for extension compilation when MzScheme headers change
+../../collects/mzscheme/include/scheme.h: sconfig.h uconfig.h include/escheme.h src/schemef.h \
                                        src/stypes.h src/schemex.h src/schemexm.h src/schexn.h \
                                        include/ext.exp include/mzscheme.exp include/scheme.h
-	rm -rf ../collects/mzscheme/include
-	mkdir ../collects/mzscheme/include
+	rm -rf ../../collects/mzscheme/include
+	mkdir ../../collects/mzscheme/include
 	cp sconfig.h uconfig.h include/escheme.h src/schemef.h \
           src/stypes.h src/schemex.h src/schemexm.h src/schexn.h \
-          include/ext.exp include/mzscheme.exp ../collects/mzscheme/include 
+          include/ext.exp include/mzscheme.exp ../../collects/mzscheme/include 
 	perl -ne 's/\/\*III\*\//\#define INCLUDE_WITHOUT_PATHS/; print' \
-          < include/scheme.h > ../collects/mzscheme/include/scheme.h
+          < include/scheme.h > ../../collects/mzscheme/include/scheme.h
+
+# mzdyn.c, used for MacOS "library"
+../../collects/mzscheme/lib/mzdyn.c: dynsrc/mzdyn.c
+	rm -rf ../../collects/mzscheme/lib/mzdyn.c
+	cp dynsrc/mzdyn.c ../../collects/mzscheme/lib/mzdyn.c
 
 src/$(CMACRODEST): src/macro.ss src/schvers.h
 	cd src; ../$(MZSCHEME) -gqrna sstoinc.ss $(CMACROEXTRA) < macro.ss > $(CMACRODEST)
@@ -239,13 +243,6 @@ clean:
 	cd dynsrc; $(XMAKE) clean
 	cd aixdlfcn; $(XMAKE) clean
 	cd guile; $(XMAKE) clean
-
-# Needed for extension compilation when MzScheme headers change
-install-headers:
-	$(XMAKE) headers
-	@echo --- headers ---
-	rm -rf $(INSTALLDEST)/collects/mzscheme/include/*
-	cp ../collects/mzscheme/include/* $(INSTALLDEST)/collects/mzscheme/include
 
 install:
 	if [ ! -d ../../.bin ] ; then mkdir ../../.bin ; fi

@@ -670,7 +670,8 @@
 		   pp-expr
 		   depth)
 	       (let ((head (car expr)))
-		 (if (symbol? head)
+		 (if (and (symbol? head)
+			  (not (size-hook head display?)))
 		     (let ((proc (style head)))
 		       (if proc
 			   (proc expr col extra depth)

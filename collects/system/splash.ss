@@ -2,7 +2,7 @@
   (lambda (info)
     (let/ec k
       (let*-values
-	  ([(no-splash) (lambda () (k void void))]
+	  ([(no-splash) (lambda () (k void void void))]
 	   [(get-resource)
 	    (lambda (name default)
 	      (let ([b (box 0)])

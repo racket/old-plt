@@ -1,5 +1,7 @@
 /* ssl.c: an extension to PLT MzScheme to allow SSL connections */
 
+#define OPENSSL_NO_KRB5
+
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 #include "escheme.h"

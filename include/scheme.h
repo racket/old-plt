@@ -1255,6 +1255,7 @@ MZ_EXTERN void (*scheme_sleep)(float seconds, void *fds);
 MZ_EXTERN void (*scheme_notify_multithread)(int on);
 MZ_EXTERN void (*scheme_wakeup_on_input)(void *fds);
 MZ_EXTERN int (*scheme_check_for_break)(void);
+MZ_EXTERN Scheme_Object *(*scheme_mzlib_info_hook)(int c, Scheme_Object **a);
 #ifdef MZ_PRECISE_GC
 MZ_EXTERN void *(*scheme_get_external_stack_val)(void);
 MZ_EXTERN void (*scheme_set_external_stack_val)(void *);

@@ -1,16 +1,27 @@
 SrPersist 
 =========
 
+Version 203
+-----------
+
+Updated Unix Makefile to remove dependency on GC library,
+ definition NO_SQLUCODE can be used if driver manager 
+ has no SQLUCODE.H
+Removed support for Mac Classic
+
 Version 202
+-----------
 
 No changes.
 
 Version 201
+-----------
 
 Added support for SQL_C_SBIGINT, SQL_C_UBIGINT with the 
  gcc compiler
 
 Version 200
+-----------
 
 Registered bufferTable[] with garbage collector
 Fixed memory allocation problem in extended-fetch
@@ -40,6 +51,7 @@ added make-boxed-uint, free-boxed-uint!
 added make-row-status
 
 Version 103
+-----------
 
 In srpinfo.tbl, moved entries for 
  'sql_integrity, 'sql_max_catalog_name_len, 
@@ -50,6 +62,7 @@ In srpinfo.tbl, moved entries for
  versions and still appears in the Microsoft header files.
  
 Version 102
+-----------
 
 Registered global variables with garbage collector, 
 Fixed docs to mention the possible signatures of
@@ -58,5 +71,7 @@ Added failure cases when odbc-version < 1.0 or not a
  number
 
 Version 101
+-----------
 
 Initial release.
+

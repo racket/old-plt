@@ -1,4 +1,4 @@
-/* $Id: plctrl.c,v 1.72 2003/03/01 18:52:40 jcard Exp $
+/* $Id: plctrl.c,v 1.1 2003/08/15 22:18:10 cozmic Exp $
 
 	Misc. control routines, like begin, end, exit, change graphics/text
 	mode, change color.  Includes some spillage from plcore.c.  If you
@@ -1263,7 +1263,7 @@ plLibOpenPdfstrm(char *fn)
  * This function is only defined under Unix for now.
 \*--------------------------------------------------------------------------*/
 
-#ifdef __unix
+#ifdef do_not_do // changed, this is unnessisary in this build anyway
 int 
 plFindName(char *p)
 {
@@ -1727,3 +1727,4 @@ plstrdup(const char *src)
 
     return dest;
 }
+ 

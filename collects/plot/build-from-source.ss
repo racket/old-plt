@@ -46,7 +46,13 @@
 
 (make-directory* tmp-dir)
 
-(define wxdir (simplify-path (build-path here 'up 'up "src" "wxcommon")))
+(define wxdir 
+  (simplify-path 
+   (build-path (find-system-path 'exec-file)
+               (alt 
+                (build-path 'up "src" "wxcommon")
+                (build-path 'up 'up "src" "wxcommon")))))
+                    
 
 ; now copy *everything* into tmpdir
 

@@ -17,7 +17,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "4r8d")
+(define *tex2page-version* "4r8f")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -1618,22 +1618,6 @@
        (else (cleanse-tdef lft-def) (set!tdef.delay lft-def rt))))))
 
 (define tex-let-prim (lambda (lft rt) (tex-let lft rt *primitive-texframe*)))
-
-(define tex-let-delay
-  (lambda (cs-new cs-old)
-    (let* ((frame (top-texframe))
-           (cs-new-def
-             (cond
-              ((lassoc cs-new (texframe.definitions frame)) => cdr)
-              (else
-               (let ((cs-new-def (make-tdef)))
-                 (set!texframe.definitions
-                   frame
-                   (cons
-                    (cons cs-new cs-new-def)
-                    (texframe.definitions frame)))
-                 cs-new-def)))))
-      (set!tdef.delay cs-new-def cs-old))))
 
 (define tex-def-thunk
   (lambda (name thunk frame)
@@ -5467,6 +5451,9 @@
         '()
         (number->string
           (+ (string->number (or (resolve-defs ctlseq) ctlseq)) increment))
+        #f
+        #f
+        #f
         #f
         global?))))
 

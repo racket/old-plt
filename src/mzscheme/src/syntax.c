@@ -131,6 +131,8 @@ static void bangboxvalue_validate(Scheme_Object *data, Mz_CPort *port, char *sta
 static Scheme_Object *named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
 					Scheme_Compile_Expand_Info *rec, int drec);
 
+static Scheme_Object *expand_lam(int argc, Scheme_Object **argv);
+
 static Scheme_Object *write_let_value(Scheme_Object *obj);
 static Scheme_Object *read_let_value(Scheme_Object *obj);
 static Scheme_Object *write_let_void(Scheme_Object *obj);
@@ -262,9 +264,17 @@ scheme_init_syntax (Scheme_Env *env)
   scheme_add_global_keyword("lambda", 
 			    scheme_lambda_syntax,
 			    env);
-  scheme_add_global_keyword("\316\273", 
-			    scheme_lambda_syntax,
-			    env);
+  {
+    /* Graak lambda binding: */
+    Scheme_Object *macro, *fn;
+
+    fn = scheme_make_prim_w_arity(expand_lam, "\316\273", 1, 1);
+    macro = scheme_alloc_small_object();
+    macro->type = scheme_macro_type;
+    SCHEME_PTR_VAL(macro) = fn;
+
+    scheme_add_global_keyword("\316\273", macro, env);
+  }
   scheme_add_global_keyword("define-values", scheme_define_values_syntax, env);
   scheme_add_global_keyword("quote", 
 			    scheme_make_compiled_syntax(quote_syntax,
@@ -496,9 +506,6 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *ere
 
   scheme_rec_add_certs(erec, drec, form);
 
-  if (!SAME_OBJ(SCHEME_STX_VAL(fn), lambda_symbol))
-    fn = scheme_datum_to_syntax(lambda_symbol, scheme_false, scheme_sys_wraps(env), 0, 0);
-
   return scheme_datum_to_syntax(icons(fn,
 				      icons(args,
 					    scheme_expand_block(body,
@@ -507,6 +514,25 @@ lambda_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *ere
 								drec))),
 				form, form, 
 				0, 2);
+}
+
+static Scheme_Object *expand_lam(int argc, Scheme_Object **argv)
+{
+  Scheme_Object *form = argv[0], *args, *fn;
+  Scheme_Comp_Env *env;
+
+  env = scheme_current_thread->current_local_env;
+
+  lambda_check(form);
+  
+  args = SCHEME_STX_CDR(form);
+  args = SCHEME_STX_CAR(args);
+
+  lambda_check_args(args, form, env);
+
+  fn = scheme_datum_to_syntax(lambda_symbol, SCHEME_STX_CAR(form), scheme_sys_wraps(env), 0, 0);
+
+  return scheme_datum_to_syntax(icons(fn, SCHEME_STX_CDR(form)), form, fn, 0, 0);
 }
 
 /**********************************************************************/

@@ -46,7 +46,7 @@
 	      (lambda (stx)
 		(raise-syntax-error
 		 #f
-		 "use of a class keyword is not in a class top-level"
+		 "use of a class keyword is not in a class"
 		 stx))))
 	   (define-syntax id
 	     (make-parameter-rename-transformer #'param-id)))

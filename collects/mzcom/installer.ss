@@ -8,7 +8,6 @@
 		   "Error: can't install MzCOM on non-Windows machine~n")
 	  (let ([exe-path (build-path plt-home 
 				      "collects" "mzcom" "mzcom.exe")]) 
-	    (printf "exe-path: ~a~n" exe-path)
 	    (if (not (file-exists? exe-path))
 		(fprintf (current-error-port) 
 			 "Warning: MzCOM binary not installed~n")

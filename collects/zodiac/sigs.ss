@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.45 1997/11/14 21:59:49 mflatt Exp $
+; $Id: sigs.ss,v 1.46 1998/03/04 22:07:53 shriram Exp $
 
 (reference-relative-library "namedarg.ss")
 
@@ -8,7 +8,8 @@
       (lambda (expr parsed->raw phase)
 	(eval (parsed->raw expr))))
     (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      eval)
+      (lambda (x . args)
+	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args)))))
     (opt (kwd attributes: attr) 'previous)
     (opt (kwd vocabulary: vocab) #f))
 
@@ -18,7 +19,8 @@
       (lambda (expr parsed->raw phase)
 	(eval (parsed->raw expr))))
     (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      eval)
+      (lambda (x . args)
+	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args)))))
     (opt (kwd attributes: attr) 'previous)
     (opt (kwd vocabulary: vocab) #f))
 
@@ -27,18 +29,22 @@
     (kwd attributes: attr)
     (kwd vocabulary: vocab)
     (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase) (eval (parsed->raw expr))))
+      (lambda (expr parsed->raw phase)
+	(eval (parsed->raw expr))))
     (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      eval))
+      (lambda (x . args)
+	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))))
 
   (define-argument-list zodiac:expand-program/nal
     (kwd expressions: exprs)
     (kwd attributes: attr)
     (kwd vocabulary: vocab)
     (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase) (eval (parsed->raw expr))))
+      (lambda (expr parsed->raw phase)
+	(eval (parsed->raw expr))))
     (opt (kwd user-macro-body-evaluator: macro-body-eval)
-      eval))
+      (lambda (x . args)
+	(eval `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))))
 
 (define-signature zodiac:misc^
   (pretty-print debug-level symbol-append flush-printf print-and-return))

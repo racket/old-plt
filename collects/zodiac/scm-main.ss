@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.142 1998/03/03 20:02:48 shriram Exp $
+; $Id: scm-main.ss,v 1.143 1998/03/05 04:25:48 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1527,8 +1527,7 @@
 		  (add-user-macro-form real-name vocab
 		    (lambda (m-expr m-env)
 		      (structurize-syntax
-			(apply m3-macro-body-evaluator
-			  real-handler
+			(apply m3-macro-body-evaluator real-handler
 			  (cdr (sexp->raw m-expr cache-table)))
 			m-expr '() cache-table)))
 		  (expand-expr (structurize-syntax '(#%void) expr)
@@ -1569,8 +1568,7 @@
 		    (add-user-macro-form real-name extended-vocab
 		      (lambda (m-expr m-env)
 			(structurize-syntax
-			  (apply m3-macro-body-evaluator
-			    real-handler
+			  (apply m3-macro-body-evaluator real-handler
 			    (cdr (sexp->raw m-expr cache-table)))
 			  m-expr '() cache-table)))
 		    (expand-expr

@@ -39,34 +39,34 @@
 	     (set! library-unit #f)))))
     
     (define add-basis
-      (lambda (n)
-	(let* ([plt:userspace@ (reference-unit/sig
+      (let ([plt:userspace@ (reference-unit/sig
 				(begin-elaboration-time 
 				 (normalize-path
 				  (build-path mred:plt-home-directory
 					      "lib"
-					      "gusrspcu.ss"))))]
-	       [l@
-		(unit/sig ()
-		  (import plt:userspace^)
-		  (when library-unit
-		    (invoke-open-unit/sig library-unit #f plt:userspace^)))]
-	       [params@ (unit/sig plt:parameters^
-			  (import)
-			  (define case-sensitive? params:case-sensitive?) 
-			  (define allow-set!-on-undefined? 
-			    params:allow-set!-on-undefined?)
-			  (define allow-improper-lists? 
-			    params:allow-improper-lists?)
-			  (define unmatched-cond/case-is-error?
-			    params:unmatched-cond/case-is-error?) 
-			  (define check-syntax-level 
-			    params:check-syntax-level))]
-	       [c@
-		(compound-unit/sig (import)
-		  (link [params : plt:parameters^ (params@)]
-			[userspace : plt:userspace^ (plt:userspace@ params)]
-			[library : () (l@ userspace)])
-		  (export (open userspace)))])
-	  (parameterize ([current-namespace n])
-	    (invoke-open-unit/sig c@ #f))))))
+					      "gusrspcu.ss"))))])
+	(lambda (n)
+	  (let* ([l@
+		  (unit/sig ()
+		    (import plt:userspace^)
+		    (when library-unit
+		      (invoke-open-unit/sig library-unit #f plt:userspace^)))]
+		 [params@ (unit/sig plt:parameters^
+			    (import)
+			    (define case-sensitive? params:case-sensitive?) 
+			    (define allow-set!-on-undefined? 
+			      params:allow-set!-on-undefined?)
+			    (define allow-improper-lists? 
+			      params:allow-improper-lists?)
+			    (define unmatched-cond/case-is-error?
+			      params:unmatched-cond/case-is-error?) 
+			    (define check-syntax-level 
+			      params:check-syntax-level))]
+		 [c@
+		  (compound-unit/sig (import)
+				     (link [params : plt:parameters^ (params@)]
+					   [userspace : plt:userspace^ (plt:userspace@ params)]
+					   [library : () (l@ userspace)])
+				     (export (open userspace)))])
+	    (parameterize ([current-namespace n])
+	      (invoke-open-unit/sig c@ #f)))))))

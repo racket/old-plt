@@ -141,16 +141,17 @@
        (update-text (framework:preferences:get 'drscheme:settings))
        (send ex-panel set-alignment 'left 'center)
        (send ex-panel stretchable-height #f)
+       (send canvas allow-tab-exit #t)
        (send options-panel stretchable-height #f)
        (send options-panel set-alignment 'center 'top)
        (send text set-style-list (framework:scheme:get-style-list))
        (send text lock #t)
        main)))
 
-  '(framework:scheme:add-preferences-panel)
-  '(framework:preferences:add-general-panel)
+  (framework:scheme:add-preferences-panel)
+  (framework:preferences:add-general-panel)
 
-  '(framework:preferences:add-panel
+  (framework:preferences:add-panel
    "General II"
    (lambda (panel)
      (let* ([main (make-object vertical-panel% panel)]

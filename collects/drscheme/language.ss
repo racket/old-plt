@@ -66,6 +66,11 @@
                               (send p stretchable-width #f)
                               (send p stretchable-height #t)
                               p)]
+         [full-scheme-radio-box-labels
+          '("Textual (MzScheme)" 
+            "Graphical (MrEd)" 
+            "Textual without Debugging (MzScheme)" 
+            "Graphical without Debugging (MrEd)")]
          [full-scheme-radio-box #f]
          [full-scheme-radio-box-callback
 	  (lambda ()
@@ -73,11 +78,9 @@
 	     'drscheme:settings
 	     (basis:copy-setting
 	      (basis:find-setting-named
-	       (case (send full-scheme-radio-box get-selection)
-		 [(0) "Textual Full Scheme"]
-		 [(1) "Graphical Full Scheme"]
-		 [(2) "MzScheme"]
-                 [(3) "MrEd"])))))]
+               (list-ref
+                (send full-scheme-radio-box get-selection)
+                full-scheme-radio-box-labels)))))]
          [close-full-scheme-radio-box
           (lambda ()
             (when full-scheme-radio-box
@@ -92,10 +95,7 @@
                (set! full-scheme-radio-box
                      (make-object mred:radio-box% 
                                   #f
-                                  (list "Textual Scheme"
-                                        "Graphical Scheme"
-                                        "MzScheme (no debugging)"
-                                        "MrEd (no debugging)")
+                                  full-scheme-radio-box-labels
                                   full-scheme-panel
                                   (lambda x (full-scheme-radio-box-callback))))]))]
 	 [full-scheme "Full Scheme"]

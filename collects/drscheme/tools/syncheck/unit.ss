@@ -156,6 +156,7 @@
 				   (list 'hide-hscroll
 					 'hide-vscroll))]
 		   [_ (send c set-line-count 1)]
+		   [_ (send c allow-tab-exit #t)]
 		   [e (make-object (class-asi simple-scheme-text%
 				     (inherit change-style get-style-list)
 				     (rename [super-after-insert after-insert])

@@ -4,8 +4,8 @@ A compound unit is a class with this data:
   bundle-manager                          ; imports
   (list-of (make-link bundle-manager
                       bundle-manager
-                      sexp))               ; links
-  bundle-manager                           ; exports
+                      sexp))              ; links
+  bundle-manager                          ; exports
 
 It supports these operations:
 
@@ -16,13 +16,14 @@ It supports these operations:
   get-links : (-> (list-of (make-link bundle-manager bundle-manager sexp)))
   set-links : ((list-of (make-link bundle-manager bundle-manager sexp)) -> void)
   
-  create-view : (compound-unit-pasteboard -> void)
-     ;; puts the pasteboard into this pasteboard
+  create-view :  (-> frame)
+     ;; puts the compound unit into the pasteboard
   
 |#
 
 (unit/sig drscheme:bundle:compound-unit^
-  (import mred^)
+  (import mred^
+          framework^)
   
   (define compound-unit<%>
     (interface ()
@@ -30,9 +31,9 @@ It supports these operations:
       get-exports set-exports
       get-links set-links
       
-      install-in-view))
+      create-view))
   
-  (define-struct make-link (import export exp))
+  (define-struct link (import export exp))
   
   (define compound-unit%
     (class* object% (compound-unit<%>) (imports links exports)
@@ -46,18 +47,41 @@ It supports these operations:
       
       
       (public
-        [install-in-view
-         (lambda (pb)
-           (void))])
+        [create-view
+         (lambda ()
+           (let* ([frame (make-object frame:basic% "Compound Unit")]
+                  [main-panel (make-object horizontal-panel% frame)]
+                  [order-pb (make-object pasteboard%)]
+                  [order-canvas (make-object editor-canvas% main-panel order-pb)]
+                  [linking/signature-panel (make-object vertical-panel% main-panel)]
+                  [linking-pb (make-object linking-pasteboard% this)]
+                  [linking-canvas (make-object editor-canvas% linking/signature-panel linking-pb)]
+                  [signature-panel (make-object horizontal-panel% linking/signature-panel '(border))]
+                  [signature-control-panel (make-object vertical-panel% signature-panel)]
+                  [signature-list-box (make-object list-box% #f null linking/signature-panel)]
+                  [signature-message (make-object message% "Signature Files" signature-control-panel)]
+                  [signature-button (make-object button% "Add File" signature-control-panel
+                                                 (lambda xxx
+                                                   (void)))])
+             (send frame show #t)))])
       
       (sequence (super-init))))
-  ;
-  ;(define link-snip%
-  ;  (class snip% (link)
-  ;    (public
-  ;      [
-  ;
-  (define compound-unit-pasteboard%
+  
+  (define link-snip%
+    (class editor-snip% (link)
+      (sequence
+        (let ([text (make-object text%)])
+          (send (link-import link) create-view
+                (lambda (snip)
+                  (send text insert snip)))
+          (send text insert #\newline)
+          (send (link-export link) create-view
+                (lambda (snip)
+                  (send text insert snip)))
+          (super-init text #t)))))
+           
+  
+  (define linking-pasteboard%
     (class pasteboard% (compound-unit)
       (sequence
         (super-init)))))

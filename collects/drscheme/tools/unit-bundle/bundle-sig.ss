@@ -1,3 +1,5 @@
+(require-library "frameworks.ss" "framework")
+
 (define-signature drscheme:bundle:misc^
   (set-box/f!
    
@@ -10,7 +12,9 @@
   ())
 
 (define-signature drscheme:bundle:bundle^
-  (bundle-manager% bundle-manager<%>
+  (new-bundle-frame
+   
+   bundle-manager% bundle-manager<%>
    
    bundle% bundle<%>
    leaf-bundle% leaf-bundle<%>

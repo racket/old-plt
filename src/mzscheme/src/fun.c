@@ -872,7 +872,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   long volatile old_cc_ok_val = 0;
   long * volatile cc_ok;
   volatile long save_list_stack_pos;
-  mz_jmp_buf *save, *oversave = NULL, newbuf, overbuf;
+  mz_jmp_buf *save, * volatile oversave = NULL, newbuf, overbuf;
   Scheme_Stack_State envss;
   Scheme_Comp_Env * volatile save_current_local_env;
   Scheme_Object * volatile save_mark, *  volatile save_name;
@@ -953,8 +953,8 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     if (scheme_setjmp(overbuf)) {
       while (1) {
 	/* We get `p' again because it might be a nestee: */
-	Scheme_Thread *pp;
-	Scheme_Overflow *overflow;
+	Scheme_Thread * volatile pp;
+	Scheme_Overflow * volatile overflow;
 	mz_jmp_buf nestedbuf;
 
 	pp = scheme_current_thread;

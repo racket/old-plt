@@ -5012,11 +5012,12 @@ void scheme_post_syncing_nacks(Syncing *syncing)
 }
 
 static Scheme_Object *do_sync(const char *name, int argc, Scheme_Object *argv[], 
-			      int with_break, int with_timeout, int tailok)
+			      int with_break, int with_timeout, int _tailok)
 {
-  Evt_Set *evt_set;
+  volatile int tailok = _tailok;
+  Evt_Set * volatile evt_set;
   Syncing * volatile syncing;
-  float timeout = -1.0;
+  volatile float timeout = -1.0;
   double start_time;
   Scheme_Cont_Frame_Data cframe;
 

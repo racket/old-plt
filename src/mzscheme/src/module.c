@@ -299,7 +299,7 @@ void scheme_init_module(Scheme_Env *env)
 			     scheme_make_prim_w_arity2(module_compiled_imports,
 						       "module-compiled-imports",
 						       1, 1,
-						       2, 2),
+						       3, 3),
 			     env);
 
   scheme_add_global_constant("module-path-index?",
@@ -1341,7 +1341,7 @@ static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[])
 static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])
 {
   Scheme_Module *m;
-  Scheme_Object *a[2];
+  Scheme_Object *a[3];
       
   m = scheme_extract_compiled_module(argv[0]);
 

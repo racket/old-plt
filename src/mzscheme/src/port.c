@@ -1698,11 +1698,12 @@ int scheme_unless_ready(Scheme_Object *unless)
 }
 
 int scheme_peeked_read_via_get(Scheme_Input_Port *ip,
-			       long size,
+			       long _size,
 			       Scheme_Object *unless_evt,
 			       Scheme_Object *target_evt)
 {
   Scheme_Object *v, *sema, *a[2];
+  volatile long size = _size;
   int did;
 
   if (scheme_wait_sema(unless_evt, 1))

@@ -55,7 +55,7 @@
   (define settings
     (list (make-setting/parse
 	   `((name "Beginner")
-	     (extra-definitions-unit-name "beginner.ss")
+	     (extra-definitions-unit-name "beginnero.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol beginner)
 	     (case-sensitive? #t)
@@ -76,7 +76,7 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Intermediate")
-	     (extra-definitions-unit-name "intermediate.ss")
+	     (extra-definitions-unit-name "intermediateo.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol intermediate)
 	     (case-sensitive? #t)
@@ -97,7 +97,7 @@
 	     (define-argv? #f)))
 	  (make-setting/parse
 	   `((name "Advanced")
-	     (extra-definitions-unit-name "advanced.ss")
+	     (extra-definitions-unit-name "advancedo.ss")
 	     (macro-libraries ())
 	     (vocabulary-symbol advanced)
 	     (case-sensitive? #t)
@@ -587,7 +587,7 @@
 	  (params:allow-improper-lists improper-lists?))
 	(params:eq?-only-compares-symbols (setting-eq?-only-compares-symbols? setting))
 	(params:<=-at-least-two-args (setting-<=-at-least-two-args setting))
-	(invoke-open-unit/sig ricedefs@ #f (params : plt:userspace:params^))
+	(global-define-values/invoke-unit/sig ricedefs^ ricedefs@ #f (params : plt:userspace:params^))
 	;; end ricedefs
 
 	(compile-allow-set!-undefined (setting-allow-set!-on-undefined? setting))
@@ -627,6 +627,6 @@
 	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
 
 	(when extra-definitions
-	  (invoke-open-unit/sig extra-definitions))
+	  (extra-definitions))
 	(for-each (lambda (l) (apply require-library/proc l))
 		  (setting-macro-libraries setting)))))

@@ -8,8 +8,7 @@
 		       (symbol? y))
 	    (error 'eq? "expected symbols as arguments, received ~e and ~e" x y))
 	  (#%eq? x y))
-	(lambda (x y)
-	  (#%eq? x y))))
+	#%eq?))
   
   (define check-second 
     (lambda (prim-name a b)

@@ -16,7 +16,7 @@ HDRS=dlfcn.h
 SRCS=dlfcn.c
 NOSTART=-e _nostart	# for AIX 3
 #NOSTART=-bnoentry	# for AIX 4
-OBJS=$(SRCS:%.c=%.o)
+OBJS=dlfcn.o
 
 all:		$(TARGET) dlfcn.c
 

@@ -392,7 +392,6 @@ typedef struct Scheme_Vector {
 #define GUARANTEE_STRSYM(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_STRINGP, "string or symbol")
 #define GUARANTEE_SYMBOL(fname, argnum)    GUARANTEE_TYPE (fname, argnum, SCHEME_SYMBOLP, "symbol")
 
-
 /*========================================================================*/
 /*                        basic Scheme accessors                          */
 /*========================================================================*/

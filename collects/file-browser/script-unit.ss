@@ -2,6 +2,8 @@
   (require (lib "unitsig.ss")
            (lib "list.ss")
            (lib "pretty.ss")
+           (lib "class.ss")
+           (lib "mred.ss" "mred")
            "sigs.ss")
 
   (define-syntax check-arg
@@ -14,7 +16,7 @@
   
   (define script@
     (unit/sig script^
-      (import (gui : gui^) (fs : file-system^))
+      (import (gui : gui^) (fs : file-system^) (code : code-engine^))
   
       (define-syntax file-arg!
         (syntax-rules ()
@@ -59,6 +61,12 @@
       
       ;; selection: file list
       (define selection null)
+      
+      ;; copy-selection: file list
+      (define copy-selection null)
+      
+      ;; is-cut?: bool
+      (define is-cut? #f)
       
       ;; print-selection: ->
       (define (print-selection)
@@ -105,6 +113,23 @@
       (define (map-selection f)
         (check-arg f procedure? 'map-selection "procedure" 0 f)
         (map f selection))
+      
+      ;; copy: ->
+      (define (copy)
+        (set! is-cut? #f)
+        (set! copy-selection (map (lambda (x) x) selection)))
+      
+      ;; cut: ->
+      (define (cut)
+        (set! is-cut #t)
+        (set! copy-selection (map (lambda (x) x) selection)))
+      
+      ;; paste: ->
+      (define (paste)
+        (for-each
+         (lambda (file)
+           (
+      
       
       ;; directory-list: (file U string) -> file list
       (define (directory-list dir)
@@ -163,6 +188,25 @@
             (let ((new-file (fs:move-file file new-dir)))
               (cons-selection new-file)
               new-file))))
+      
+      ;; edit-scheme: file ->
+      (define (edit-scheme file)
+        (file-arg! file 'edit-scheme 0 file)
+        (code:open-drscheme (file-full-path file)))
+      
+      ;; change-dir: file ->
+      (define (change-dir file)
+        (file-arg! file 'change-dir 0 file)
+        (gui:change-dir file))
+      
+      ;; toolbar-add: (string U bitmap%) * ( -> 'a) ->
+      (define (toolbar-add label action) 
+        (check-arg label (lambda (x) (or (string? label)
+                                         (is-a? label bitmap%))) 
+                   'toolbar-add "string < 200 chars or bitmap% object" 0 label action)
+        (check-arg action procedure? 'toolbar-add "procedure" 1 label action)
+        (gui:toolbar-add label action) 
+        (void))
       
       ;; open-dir-window: (file U string) ->
       (define (open-dir-window dir)

@@ -20,10 +20,10 @@
      selection-added
      selection-removed
      get-current-directory
+     change-dir
      add-window
      close-window
-     disable
-     enable))
+     toolbar-add))
   (define-signature script^ 
     (make-file
      file-name
@@ -48,7 +48,11 @@
      new-directory
      rename-file
      move-file
-
+     copy-file
+     
+     edit-scheme
+     change-dir
      open-dir-window
-     close-dir-window))
-  (define-signature code-engine^ (user-eval get-user-value)))
+     close-dir-window
+     toolbar-add))
+  (define-signature code-engine^ (user-eval get-user-value open-drscheme)))

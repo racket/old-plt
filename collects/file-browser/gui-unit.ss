@@ -92,7 +92,11 @@
                                                                      (send event get-y))))
                    (let ((snip (find-snip x y #f)))
                      (if snip
-                         (let ((file (send snip get-file)))
+                         (let ((file (send snip get-file))
+                               (keys (list (send event get-alt-down)
+                                           (send event get-control-down)
+                                           (send event get-meta-down)
+                                           (send event get-shift-down))))
                            (cond 
                              ((eq? event-type 'left-down)
                               (let ((click-interval (send (get-keymap) get-double-click-interval))
@@ -102,30 +106,30 @@
                                    (set! last-click-time -inf.0)
                                    (cond
                                      ((script:is-directory? file)
-                                      (user-eval `(double-mouse-dir ,file) void))
+                                      (user-eval `(double-mouse-dir ,file ',keys) void))
                                      (else
-                                      (user-eval `(double-mouse-file ,file) void))))
+                                      (user-eval `(double-mouse-file ,file ',keys) void))))
                                   (else
                                    (set! last-click-time click-time)
                                    (cond
                                      ((script:is-directory? file)
-                                      (user-eval `(left-mouse-dir ,file) void))
+                                      (user-eval `(single-mouse-dir ,file 'left ',keys) void))
                                      (else
-                                      (user-eval `(left-mouse-file ,file) void)))))))
+                                      (user-eval `(single-mouse-file ,file 'left ',keys) void)))))))
                              (else
                               (cond
                                 ((script:is-directory? file)
                                  (case event-type
                                    ((middle-down) 
-                                    (user-eval `(middle-mouse-dir ,file) void))
+                                    (user-eval `(single-mouse-dir ,file 'middle ',keys) void))
                                    ((right-down) 
-                                    (user-eval `(right-mouse-dir ,file) void))))
+                                    (user-eval `(single-mouse-dir ,file 'right ',keys) void))))
                                 (else
                                  (case event-type
                                    ((middle-down) 
-                                    (user-eval `(middle-mouse-file ,file) void))
+                                    (user-eval `(single-mouse-file ,file 'middle ',keys) void))
                                    ((right-down)
-                                    (user-eval `(right-mouse-file ,file) void))))))))))))
+                                    (user-eval `(single-mouse-file ,file 'right ',keys) void))))))))))))
                 (else
                  (super-on-event event)))))
           
@@ -154,7 +158,7 @@
       (define file-window%
         (class vertical-panel%
           (public selection-updated select unselect files-changed file-added file-deleted
-                  get-dir)
+                  get-dir history-back change-directory)
           
           ;; dir: file
           (init-field dir)
@@ -209,23 +213,10 @@
                                                    files (get-restricted-selection)))
                            (send file-canvas set-editor file-pasteboard)))))
           
-          (define (callback widget event)
-            (cond
-              ((eq? (send event get-event-type) 'button)
-               (cond
-                 ((eq? widget back-button)
-                  (history-back))
-                 ((eq? widget up-button)
-                  (change-directory (script:file-dir dir)))))))
-          
-          (super-instantiate () (style '(border)))
+           (super-instantiate () (style '(border)))
           (inherit set-label)
           (set-label (script:file-full-path dir))
           (send window-pane set-button-label this (script:file-full-path dir))
-          
-          (define toolbar (instantiate horizontal-panel% (this) (stretchable-height #f)))
-          (define back-button (make-object button% "back" toolbar callback))
-          (define up-button (make-object button% "up" toolbar callback))
           
           (define path-text
             (make-object commit-text-field%
@@ -264,6 +255,13 @@
           (weak-set-add! new-window file-windows)
           (send state register-viewport new-window)))
       
+      (define toolbar #f)
+          
+      (define (toolbar-add label action)
+        (make-object button% label toolbar
+          (lambda (a b)
+            (user-eval `(,action) void))))
+
       (define (close-window)
         (send window-pane close-current))
       
@@ -274,14 +272,26 @@
           (if c
               (send c get-dir)
               (script:make-file (find-system-path 'home-dir)))))
-      
-      (define (disable)
-        (send window-pane enable #f))
-      (define (enable)
-        (send window-pane enable #t))
-      
+
+      (define (change-dir d)
+        (let ((c (send window-pane get-current)))
+          (if c
+              (send c change-directory d))))
+              
       (lambda (frame)
         (cond
           ((not window-pane)
-           (set! window-pane (make-object tabbed-panel% frame))
+           (let ((frame (make-object vertical-panel% frame)))
+             (set! toolbar (instantiate horizontal-panel% (frame) (stretchable-height #f)))
+             (make-object button% "back" toolbar
+               (lambda (a b)
+                 (let ((c (send window-pane get-current)))
+                   (if c
+                       (send c history-back)))))
+             (make-object button% "up" toolbar
+               (lambda (a b)
+                 (let ((c (send window-pane get-current)))
+                   (if c
+                       (send c change-directory (script:file-dir (send c get-dir)))))))
+             (set! window-pane (make-object tabbed-panel% frame)))
            (send frame show #t)))))))

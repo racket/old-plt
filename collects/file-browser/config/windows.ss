@@ -1,22 +1,38 @@
 (module windows (lib "mzrestricted.ss" "file-browser")
-  (require (lib "script.ss" "file-browser"))
+  (require (lib "script.ss" "file-browser")
+           (lib "process.ss"))
   (provide (all-defined))
-  (define (left-mouse-file file)
-    (clear-selection)
-    (cons-selection file))
-  (define (middle-mouse-file file) (printf "2~n"))
-  (define (right-mouse-file file) (printf "3~n"))
-  (define (double-mouse-file file) (printf "4~n"))
+
+  
+  (define (single-mouse file button keys)
+    (if (not (cadr keys))
+        (clear-selection))
+    (case button
+      ((left)
+       (cons-selection file))))
+
+  (define single-mouse-file single-mouse)
+  (define single-mouse-dir single-mouse)
+  
+  (define (double-mouse-file file keys)
+    (if (regexp-match ".*\\.ss" (file-name file))
+        (edit-scheme file)
+        (process (format "emacs ~a" (file-full-path file)))))
+  
   (define (box-select-file file)
     (cons-selection file))
-  (define (left-mouse-dir file) 
-    (clear-selection)
-    (cons-selection file))
-  (define (middle-mouse-dir file) (printf "7~n"))
-  (define (right-mouse-dir file) (printf "8~n"))
-  (define (double-mouse-dir file) (printf "9~n"))
+
+  (define (double-mouse-dir file keys)
+    (change-dir file))
+  
   (define (box-select-dir file)
     (cons-selection file))
+  
   (define filter-files all-files)
+  
   (define sort-files dirs-first)
-  (open-dir-window (get-current-dir)))
+  
+  (add-new-window-button)
+  (add-close-button)
+
+)

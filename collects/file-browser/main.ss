@@ -35,7 +35,7 @@
               (define f-int name) ...)))))))
   
   (define orig-output (current-output-port))
-  (define trace? #t)
+  (define trace? #f)
   (define-syntax trace
     (syntax-rules ()
       ((_ str arg ...)
@@ -83,13 +83,16 @@
            
            (define code-engine@
              (unit/sig code-engine^
-               (import script^ gui^)
+               (import script^)
                
                (trace "invoking code-engine")
                
                (set! script-unit (make-unit script^ (signature->symbols script^)))
                               
                (trace "code-engine through")
+               
+               (define (open-drscheme file)
+                 (drscheme:unit:open-drscheme-window file))
                
                (define (get-user-value sym)
                  (parameterize ((current-namespace
@@ -153,8 +156,8 @@
                  (compound-unit/sig
                    (import)
                    (link (FS : file-system^ ((make-file-system@ state) GUI))
-                         (SCRIPT : script^ (script@ GUI FS))
-                         (CODE : code-engine^ (code-engine@ SCRIPT GUI))
+                         (SCRIPT : script^ (script@ GUI FS CODE))
+                         (CODE : code-engine^ (code-engine@ SCRIPT))
                          (GUI : gui^ ((make-gui@ state)
                                       SCRIPT CODE)))
                    (export))))))

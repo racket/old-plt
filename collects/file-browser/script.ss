@@ -38,4 +38,10 @@
                       (find file func)))
                 files)))
   
+  (define (add-close-button)
+    (toolbar-add "close" (lambda () (close-dir-window))))
+  (define (add-new-window-button)
+    (toolbar-add "new" (lambda () (open-dir-window (get-current-dir)))))
+
+           
   )

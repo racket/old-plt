@@ -25,15 +25,30 @@ NULL=
 NULL=nul
 !ENDIF 
 
+CPP=cl.exe
+MTL=midl.exe
+RSC=rc.exe
+
 !IF  "$(CFG)" == "libmzsch - Win32 Release"
 
 OUTDIR=.\Release
 INTDIR=.\Release
 
+!IF "$(RECURSE)" == "0" 
+
 ALL : "..\..\..\libmzschxxxxxxx.dll"
 
+!ELSE 
 
+ALL : "libmzgc - Win32 Release" "..\..\..\libmzschxxxxxxx.dll"
+
+!ENDIF 
+
+!IF "$(RECURSE)" == "1" 
+CLEAN :"libmzgc - Win32 ReleaseCLEAN" 
+!ELSE 
 CLEAN :
+!ENDIF 
 	-@erase "$(INTDIR)\Bignum.obj"
 	-@erase "$(INTDIR)\Bool.obj"
 	-@erase "$(INTDIR)\builtin.obj"
@@ -43,7 +58,9 @@ CLEAN :
 	-@erase "$(INTDIR)\Env.obj"
 	-@erase "$(INTDIR)\Error.obj"
 	-@erase "$(INTDIR)\Eval.obj"
+	-@erase "$(INTDIR)\ffi.obj"
 	-@erase "$(INTDIR)\File.obj"
+	-@erase "$(INTDIR)\foreign.obj"
 	-@erase "$(INTDIR)\Fun.obj"
 	-@erase "$(INTDIR)\gmp.obj"
 	-@erase "$(INTDIR)\Hash.obj"
@@ -58,6 +75,7 @@ CLEAN :
 	-@erase "$(INTDIR)\numstr.obj"
 	-@erase "$(INTDIR)\Port.obj"
 	-@erase "$(INTDIR)\portfun.obj"
+	-@erase "$(INTDIR)\prep_cif.obj"
 	-@erase "$(INTDIR)\Print.obj"
 	-@erase "$(INTDIR)\Rational.obj"
 	-@erase "$(INTDIR)\Read.obj"
@@ -72,9 +90,11 @@ CLEAN :
 	-@erase "$(INTDIR)\Syntax.obj"
 	-@erase "$(INTDIR)\thread.obj"
 	-@erase "$(INTDIR)\Type.obj"
+	-@erase "$(INTDIR)\types.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\vector.obj"
+	-@erase "$(INTDIR)\win32.obj"
 	-@erase "$(OUTDIR)\libmzschxxxxxxx.exp"
 	-@erase "$(OUTDIR)\libmzschxxxxxxx.lib"
 	-@erase "$(OUTDIR)\libmzschxxxxxxx.pdb"
@@ -83,42 +103,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
-
-.c{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.obj::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.c{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cpp{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-.cxx{$(INTDIR)}.sbr::
-   $(CPP) @<<
-   $(CPP_PROJ) $< 
-<<
-
-MTL=midl.exe
-MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC=rc.exe
+CPP_PROJ=/nologo /MT /W3 /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /I "..\..\mzscheme\src" /I "..\..\foreign\libffi_msvc" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc" 
 BSC32_SBRS= \
@@ -135,7 +120,9 @@ LINK32_OBJS= \
 	"$(INTDIR)\Env.obj" \
 	"$(INTDIR)\Error.obj" \
 	"$(INTDIR)\Eval.obj" \
+	"$(INTDIR)\ffi.obj" \
 	"$(INTDIR)\File.obj" \
+	"$(INTDIR)\foreign.obj" \
 	"$(INTDIR)\Fun.obj" \
 	"$(INTDIR)\gmp.obj" \
 	"$(INTDIR)\Hash.obj" \
@@ -150,6 +137,7 @@ LINK32_OBJS= \
 	"$(INTDIR)\numstr.obj" \
 	"$(INTDIR)\Port.obj" \
 	"$(INTDIR)\portfun.obj" \
+	"$(INTDIR)\prep_cif.obj" \
 	"$(INTDIR)\Print.obj" \
 	"$(INTDIR)\Rational.obj" \
 	"$(INTDIR)\Read.obj" \
@@ -164,7 +152,10 @@ LINK32_OBJS= \
 	"$(INTDIR)\Syntax.obj" \
 	"$(INTDIR)\thread.obj" \
 	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj"
+	"$(INTDIR)\types.obj" \
+	"$(INTDIR)\vector.obj" \
+	"$(INTDIR)\win32.obj" \
+	"..\libmzgc\Release\libmzgcxxxxxxx.lib"
 
 "..\..\..\libmzschxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
     $(LINK32) @<<
@@ -176,10 +167,21 @@ LINK32_OBJS= \
 OUTDIR=.\Debug
 INTDIR=.\Debug
 
+!IF "$(RECURSE)" == "0" 
+
 ALL : "..\..\..\libmzschxxxxxxx.dll"
 
+!ELSE 
 
+ALL : "libmzgc - Win32 Debug" "..\..\..\libmzschxxxxxxx.dll"
+
+!ENDIF 
+
+!IF "$(RECURSE)" == "1" 
+CLEAN :"libmzgc - Win32 DebugCLEAN" 
+!ELSE 
 CLEAN :
+!ENDIF 
 	-@erase "$(INTDIR)\Bignum.obj"
 	-@erase "$(INTDIR)\Bool.obj"
 	-@erase "$(INTDIR)\builtin.obj"
@@ -189,7 +191,9 @@ CLEAN :
 	-@erase "$(INTDIR)\Env.obj"
 	-@erase "$(INTDIR)\Error.obj"
 	-@erase "$(INTDIR)\Eval.obj"
+	-@erase "$(INTDIR)\ffi.obj"
 	-@erase "$(INTDIR)\File.obj"
+	-@erase "$(INTDIR)\foreign.obj"
 	-@erase "$(INTDIR)\Fun.obj"
 	-@erase "$(INTDIR)\gmp.obj"
 	-@erase "$(INTDIR)\Hash.obj"
@@ -204,6 +208,7 @@ CLEAN :
 	-@erase "$(INTDIR)\numstr.obj"
 	-@erase "$(INTDIR)\Port.obj"
 	-@erase "$(INTDIR)\portfun.obj"
+	-@erase "$(INTDIR)\prep_cif.obj"
 	-@erase "$(INTDIR)\Print.obj"
 	-@erase "$(INTDIR)\Rational.obj"
 	-@erase "$(INTDIR)\Read.obj"
@@ -218,9 +223,11 @@ CLEAN :
 	-@erase "$(INTDIR)\Syntax.obj"
 	-@erase "$(INTDIR)\thread.obj"
 	-@erase "$(INTDIR)\Type.obj"
+	-@erase "$(INTDIR)\types.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\vector.obj"
+	-@erase "$(INTDIR)\win32.obj"
 	-@erase "$(OUTDIR)\libmzschxxxxxxx.exp"
 	-@erase "$(OUTDIR)\libmzschxxxxxxx.lib"
 	-@erase "$(OUTDIR)\libmzschxxxxxxx.pdb"
@@ -230,8 +237,66 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP=cl.exe
-CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /I "..\..\mzscheme\src" /I "..\..\foreign\libffi_msvc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+BSC32=bscmake.exe
+BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc" 
+BSC32_SBRS= \
+	
+LINK32=link.exe
+LINK32_FLAGS=../libmzgc/Debug/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
+LINK32_OBJS= \
+	"$(INTDIR)\Bignum.obj" \
+	"$(INTDIR)\Bool.obj" \
+	"$(INTDIR)\builtin.obj" \
+	"$(INTDIR)\Char.obj" \
+	"$(INTDIR)\Complex.obj" \
+	"$(INTDIR)\Dynext.obj" \
+	"$(INTDIR)\Env.obj" \
+	"$(INTDIR)\Error.obj" \
+	"$(INTDIR)\Eval.obj" \
+	"$(INTDIR)\ffi.obj" \
+	"$(INTDIR)\File.obj" \
+	"$(INTDIR)\foreign.obj" \
+	"$(INTDIR)\Fun.obj" \
+	"$(INTDIR)\gmp.obj" \
+	"$(INTDIR)\Hash.obj" \
+	"$(INTDIR)\image.obj" \
+	"$(INTDIR)\List.obj" \
+	"$(INTDIR)\module.obj" \
+	"$(INTDIR)\mzsj86.obj" \
+	"$(INTDIR)\network.obj" \
+	"$(INTDIR)\numarith.obj" \
+	"$(INTDIR)\Number.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\Port.obj" \
+	"$(INTDIR)\portfun.obj" \
+	"$(INTDIR)\prep_cif.obj" \
+	"$(INTDIR)\Print.obj" \
+	"$(INTDIR)\Rational.obj" \
+	"$(INTDIR)\Read.obj" \
+	"$(INTDIR)\Regexp.obj" \
+	"$(INTDIR)\Salloc.obj" \
+	"$(INTDIR)\Sema.obj" \
+	"$(INTDIR)\Setjmpup.obj" \
+	"$(INTDIR)\String.obj" \
+	"$(INTDIR)\Struct.obj" \
+	"$(INTDIR)\stxobj.obj" \
+	"$(INTDIR)\Symbol.obj" \
+	"$(INTDIR)\Syntax.obj" \
+	"$(INTDIR)\thread.obj" \
+	"$(INTDIR)\Type.obj" \
+	"$(INTDIR)\types.obj" \
+	"$(INTDIR)\vector.obj" \
+	"$(INTDIR)\win32.obj" \
+	"..\libmzgc\Debug\libmzgcxxxxxxx.lib"
+
+"..\..\..\libmzschxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
+    $(LINK32) @<<
+  $(LINK32_FLAGS) $(LINK32_OBJS)
+<<
+
+!ENDIF 
 
 .c{$(INTDIR)}.obj::
    $(CPP) @<<
@@ -263,63 +328,7 @@ CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme
    $(CPP_PROJ) $< 
 <<
 
-MTL=midl.exe
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
-RSC=rc.exe
-BSC32=bscmake.exe
-BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc" 
-BSC32_SBRS= \
-	
-LINK32=link.exe
-LINK32_FLAGS=../libmzgc/Debug/libmzgcxxxxxxx.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzschxxxxxxx.pdb" /debug /machine:I386 /out:"../../../libmzschxxxxxxx.dll" /implib:"$(OUTDIR)\libmzschxxxxxxx.lib" 
-LINK32_OBJS= \
-	"$(INTDIR)\Bignum.obj" \
-	"$(INTDIR)\Bool.obj" \
-	"$(INTDIR)\builtin.obj" \
-	"$(INTDIR)\Char.obj" \
-	"$(INTDIR)\Complex.obj" \
-	"$(INTDIR)\Dynext.obj" \
-	"$(INTDIR)\Env.obj" \
-	"$(INTDIR)\Error.obj" \
-	"$(INTDIR)\Eval.obj" \
-	"$(INTDIR)\File.obj" \
-	"$(INTDIR)\Fun.obj" \
-	"$(INTDIR)\gmp.obj" \
-	"$(INTDIR)\Hash.obj" \
-	"$(INTDIR)\image.obj" \
-	"$(INTDIR)\List.obj" \
-	"$(INTDIR)\module.obj" \
-	"$(INTDIR)\mzsj86.obj" \
-	"$(INTDIR)\network.obj" \
-	"$(INTDIR)\numarith.obj" \
-	"$(INTDIR)\Number.obj" \
-	"$(INTDIR)\numcomp.obj" \
-	"$(INTDIR)\numstr.obj" \
-	"$(INTDIR)\Port.obj" \
-	"$(INTDIR)\portfun.obj" \
-	"$(INTDIR)\Print.obj" \
-	"$(INTDIR)\Rational.obj" \
-	"$(INTDIR)\Read.obj" \
-	"$(INTDIR)\Regexp.obj" \
-	"$(INTDIR)\Salloc.obj" \
-	"$(INTDIR)\Sema.obj" \
-	"$(INTDIR)\Setjmpup.obj" \
-	"$(INTDIR)\String.obj" \
-	"$(INTDIR)\Struct.obj" \
-	"$(INTDIR)\stxobj.obj" \
-	"$(INTDIR)\Symbol.obj" \
-	"$(INTDIR)\Syntax.obj" \
-	"$(INTDIR)\thread.obj" \
-	"$(INTDIR)\Type.obj" \
-	"$(INTDIR)\vector.obj"
-
-"..\..\..\libmzschxxxxxxx.dll" : "$(OUTDIR)" $(DEF_FILE) $(LINK32_OBJS)
-    $(LINK32) @<<
-  $(LINK32_FLAGS) $(LINK32_OBJS)
-<<
-
-!ENDIF 
-
 
 !IF "$(NO_EXTERNAL_DEPS)" != "1"
 !IF EXISTS("libmzsch.dep")
@@ -385,9 +394,21 @@ SOURCE=..\..\Mzscheme\Src\Eval.c
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
+SOURCE=..\..\foreign\libffi_msvc\ffi.c
+
+"$(INTDIR)\ffi.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
 SOURCE=..\..\Mzscheme\Src\File.c
 
 "$(INTDIR)\File.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\foreign\foreign.c
+
+"$(INTDIR)\foreign.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
@@ -475,6 +496,12 @@ SOURCE=..\..\mzscheme\src\portfun.c
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
+SOURCE=..\..\foreign\libffi_msvc\prep_cif.c
+
+"$(INTDIR)\prep_cif.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
 SOURCE=..\..\Mzscheme\Src\Print.c
 
 "$(INTDIR)\Print.obj" : $(SOURCE) "$(INTDIR)"
@@ -559,11 +586,49 @@ SOURCE=..\..\Mzscheme\Src\Type.c
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
 
+SOURCE=..\..\foreign\libffi_msvc\types.c
+
+"$(INTDIR)\types.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
 SOURCE=..\..\mzscheme\src\vector.c
 
 "$(INTDIR)\vector.obj" : $(SOURCE) "$(INTDIR)"
 	$(CPP) $(CPP_PROJ) $(SOURCE)
 
+
+SOURCE=..\..\foreign\libffi_msvc\win32.c
+
+"$(INTDIR)\win32.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+!IF  "$(CFG)" == "libmzsch - Win32 Release"
+
+"libmzgc - Win32 Release" : 
+   cd "..\libmzgc"
+   $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" 
+   cd "..\libmzsch"
+
+"libmzgc - Win32 ReleaseCLEAN" : 
+   cd "..\libmzgc"
+   $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Release" RECURSE=1 CLEAN 
+   cd "..\libmzsch"
+
+!ELSEIF  "$(CFG)" == "libmzsch - Win32 Debug"
+
+"libmzgc - Win32 Debug" : 
+   cd "..\libmzgc"
+   $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" 
+   cd "..\libmzsch"
+
+"libmzgc - Win32 DebugCLEAN" : 
+   cd "..\libmzgc"
+   $(MAKE) /$(MAKEFLAGS) /F .\libmzgc.mak CFG="libmzgc - Win32 Debug" RECURSE=1 CLEAN 
+   cd "..\libmzsch"
+
+!ENDIF 
 
 
 !ENDIF 

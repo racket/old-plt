@@ -1,6 +1,9 @@
 Version 102:
 
 Added column numbers for checks in summary window
+Added Beginning Student primitives 
+ empty, empty?, rest, false, true, boolean=?,
+ symbol=?
 Componential analysis works again
 Infinite loops on certain kinds
  of internal Spidey errors eliminated

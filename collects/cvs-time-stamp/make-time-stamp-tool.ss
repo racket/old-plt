@@ -33,8 +33,10 @@
           (provide tool@)
           
           (define tool@
-            (unit/sig ()
+            (unit/sig drscheme:tool-exports^
               (import drscheme:tool^)
+              (define (phase1) (void))
+              (define (phase2) (void))
               (version:add-spec '-cvs ,date-stamp))))
        port))
     'text 'truncate))

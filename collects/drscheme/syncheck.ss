@@ -20,8 +20,11 @@
   (define o (current-output-port))
   
   (define tool@
-    (unit/sig ()
+    (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
+
+      (define (phase1) (void))
+      (define (phase2) (void))
 
       (define (printf . args) (apply fprintf o args))
 

@@ -17,8 +17,12 @@
  
  (define tool@
    (begin
-   (unit/sig ()
+   (unit/sig drscheme:tool-exports^
      (import drscheme:tool^)
+
+     (define (phase1) (void))
+     (define (phase2) (void))
+
      ; used for clickable locations in the program
      (define can-click-style (make-object style-delta% 'change-weight 'bold))
      (send can-click-style set-delta-foreground "purple")

@@ -11,9 +11,12 @@
   (provide tool@)
 
   (define tool@
-    (unit/sig ()
+    (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
       
+      (define (phase1) (void))
+      (define (phase2) (void))
+
       (define test-thread
         (let ([kill-old void])
           (lambda (test thunk)

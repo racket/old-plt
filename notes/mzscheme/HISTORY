@@ -1,12 +1,19 @@
 Version 100, ??, 1998
 Changed class syntax, splitting public clause use into:
-  `public' : defines ivars not in superclass
-  `override' : defines ivars already in superclass
+ `public' : defines ivars not in superclass
+ `override' : defines ivars already in superclass
 Added ivar-in-interface?
 Changed interface: raises an exception if a superinterface
-   declares a variable that is also declared in the interface
-   expression
+ declares a variable that is also declared in the interface
+ expression
 Removed letrec*; letrec has the same semantics
+Only lambda, case-lambda, let, let-values, let*, let*-values,
+ letrec, letrec-values, fluid-let, let-macro, let-id-macro,
+ let-expansion-time, parameterize, and with-handlers
+ introduce an internal-definition context
+begin expressions are flattened in an internal-definition context
+(begin) allowed in a top-level, unit, or internal-definition
+ context
 Self-import is now allowed for unit linking
 Removed constant-name and constant-name-all-globals
 Removed secure-primitive-exception-types
@@ -14,6 +21,8 @@ Removed readable type symbols (e.g., #<procedure>)
 Removed semaphore-callback (MrEd now has queue-callback)
 Fixed unfairness in threads (perpetually creating threads
  would starve certain threads, particularly the main thread)
+Unreachable thread blocked on an unreachable semaphore is
+ garbage-collectable
 Added current-memory-use
 Asynchronous breaks are now disabled during dynamic-wind
  pre and post thunks

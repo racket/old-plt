@@ -1529,22 +1529,19 @@
 				 (string->symbol (format "object:~a" name))
 				 'object)]
 		   ;; Used only for prim classes
-		   [dispatcher (lambda (obj box)
-				 (when (symbol? (unbox box))
-				   ;; Map symbol to number:
-				   (set-box! box (hash-table-get method-ht (unbox box))))
-				 (let ([c (object-ref obj)]
-				       [n (unbox box)])
-				   (if (vector-ref (class-meth-flags c) n)
-				       (vector-ref (class-methods c) n)
-				       #f)))])
+		   [preparer (lambda (name)
+			       ;; Map symbol to number:
+			       (hash-table-get method-ht name))]
+		   [dispatcher (lambda (obj n)
+				 ;; Extract method:
+				 (vector-ref (class-methods (object-ref obj)) n))])
 	      (setup-all-implemented! i)
 	      (vector-set! (class-supers c) (add1 (class-pos super)) c)
 
 	      ;; --- Make the new object struct ---
 	      (let*-values ([(prim-tagged-object-make prim-object? struct:prim-object)
 			     (if make-struct:prim
-				 (make-struct:prim c prop:object dispatcher)
+				 (make-struct:prim c prop:object preparer dispatcher)
 				 (values #f #f #f))]
 			    [(struct:object object-make object? object-field-ref object-field-set!)
 			     (if make-struct:prim
@@ -2584,15 +2581,14 @@
 	   new-methods)         ; list of methods
 
     ; The `make-struct:prim' function takes prop:object, a
-    ;  class, and a dispatcher function, and produces:
+    ;  class, a preparer, and a dispatcher function, and produces:
     ;    * a struct constructor (must have prop:object)
     ;    * a struct predicate
     ;    * a struct type for derived classes (mustn't have prop:object)
     ;
-    ; The supplied dispatched takes an object and a boxed symbol/num
-    ;  (converts a symbol to a num first time) and returns a method if the
-    ;  corresponding method is overridden in the object's class relative to
-    ;  the primitive class, #f otherwise.
+    ; The supplied preparer takes a symbol and returns a num.
+    ; 
+    ; The supplied dispatcher takes an object and a num and returns a method.
     ;
     ; When a primitive class has a superclass, the struct:prim maker
     ;  is responsible for ensuring that the returned struct items match

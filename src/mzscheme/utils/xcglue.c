@@ -18,14 +18,16 @@
         arguments v...
 
       (primitive-class-prepare-struct-type! prim-class gen-property
-        gen-value dispatcher) - prepares a class's struct-type for
+        gen-value preparer dispatcher) - prepares a class's struct-type for
         objects generated C-side; returns a constructor, predicate,
         and a struct:type for derived classes. The constructor and
         struct:type map the given dispatcher to the class.
 
-        The dispatcher takes two arguments: an object, and a
-        method-specific box initially containing the method name. It
-        returns #f (not overridden by a non-primitive method) or a
+        The preparer takes a symbol naming the method. It returns a
+        value to be used in future calls to the dispatcher.
+
+        The dispatcher takes two arguments: an object and a
+        method-specific value produced by the prepaper. It returns a
         method procedure.
 
       (primitive-class-find-method prim-class sym) - gets the method
@@ -91,6 +93,7 @@ Scheme_Type objscheme_class_type;
 static Scheme_Object *object_struct;
 static Scheme_Object *object_property;
 static Scheme_Object *dispatcher_property;
+static Scheme_Object *preparer_property;
 
 #ifdef MZ_PRECISE_GC
 # include "../gc2/gc2.h"
@@ -155,7 +158,7 @@ static Scheme_Object *init_prim_obj(int argc, Scheme_Object **argv)
 static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 {
   Scheme_Object *name, *base_stype, *stype, *derive_stype;
-  Scheme_Object **names, **vals, *a[3];
+  Scheme_Object **names, **vals, *a[3], *props;
   Scheme_Class *c;
   int flags, count;
 
@@ -163,7 +166,8 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
     scheme_wrong_type("primitive-class-prepare-struct-type!", "primitive-class", 0, argc, argv);
   if (SCHEME_TYPE(argv[1]) != scheme_struct_property_type)
     scheme_wrong_type("primitive-class-prepare-struct-type!", "struct-type-property", 1, argc, argv);
-  scheme_check_proc_arity("primitive-class-prepare-struct-type!", 2, 3, argc, argv);
+  scheme_check_proc_arity("primitive-class-prepare-struct-type!", 1, 3, argc, argv);
+  scheme_check_proc_arity("primitive-class-prepare-struct-type!", 2, 4, argc, argv);
 
   objscheme_something_prepared = 1;
 
@@ -198,28 +202,31 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 
   /* Type to use when instantiating from C: */
 
+  props = scheme_make_pair(scheme_make_pair(object_property, 
+					    argv[0]),
+			   scheme_null);
+
   stype = scheme_make_struct_type(name,
 				  base_stype, 
 				  NULL,
 				  0, 0, NULL,
 				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]),
-						   scheme_make_pair(scheme_make_pair(object_property, 
-										     argv[0]),
-								    scheme_null)),
+						   props),
 				  NULL);
   
   c->struct_type = stype;
   
   /* Type to derive from Scheme: */
+
+  props = scheme_make_pair(scheme_make_pair(preparer_property, argv[3]),
+			   scheme_make_pair(scheme_make_pair(dispatcher_property, argv[4]),
+					    props));
   
   derive_stype = scheme_make_struct_type(name,
 					 base_stype, 
 					 NULL,
 					 0, 0, NULL,
-					 scheme_make_pair(scheme_make_pair(dispatcher_property, argv[3]),
-							  scheme_make_pair(scheme_make_pair(object_property, 
-											    argv[0]),
-									   scheme_null)),
+					 props,
 					 NULL);
   
   /* Type to instantiate from Scheme: */
@@ -228,11 +235,7 @@ static Scheme_Object *class_prepare_struct_type(int argc, Scheme_Object **argv)
 				  base_stype, 
 				  NULL,
 				  0, 0, NULL,
-				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]),
-						   scheme_make_pair(scheme_make_pair(dispatcher_property, argv[3]),
-								    scheme_make_pair(scheme_make_pair(object_property, 
-												      argv[0]),
-										     scheme_null))),
+				  scheme_make_pair(scheme_make_pair(argv[1], argv[2]), props),
 				  NULL);
   
   /* Need constructor from instantiate type: */
@@ -503,6 +506,9 @@ void objscheme_init(Scheme_Env *env)
   wxREGGLOB(object_property);
   object_property = scheme_make_struct_type_property(scheme_intern_symbol("primitive-object"));
   
+  wxREGGLOB(preparer_property);
+  preparer_property = scheme_make_struct_type_property(scheme_intern_symbol("primitive-preparer"));
+
   wxREGGLOB(dispatcher_property);
   dispatcher_property = scheme_make_struct_type_property(scheme_intern_symbol("primitive-dispatcher"));
 
@@ -525,7 +531,7 @@ void objscheme_init(Scheme_Env *env)
   scheme_install_xc_global("primitive-class-prepare-struct-type!",
 			   scheme_make_prim_w_arity(class_prepare_struct_type,
 						    "primitive-class-prepare-struct-type!",
-						    4, 4),
+						    5, 5),
 			   env);
   
   scheme_install_xc_global("primitive-class-find-method",
@@ -594,7 +600,7 @@ void objscheme_add_global_interface(Scheme_Object *in, char *name, void *env)
 Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
 				     char *name, void **cache)
 {
-  Scheme_Object *s, *m, *p[2], *dispatcher;
+  Scheme_Object *s, *p[2], *dispatcher;
 
   if (!obj)
     return NULL;
@@ -606,19 +612,19 @@ Scheme_Object *objscheme_find_method(Scheme_Object *obj, Scheme_Object *sclass,
   if (*cache)
     s = (Scheme_Object *)*cache;
   else {
+    s = scheme_intern_symbol(name);
+    p[0] = s;
+    s = scheme_struct_type_property_ref(preparer_property, (Scheme_Object *)obj);
+    if (!s)
+      return NULL;
+    s = scheme_apply(s, 1, p);
     scheme_register_extension_global((void *)cache, sizeof(Scheme_Object*));
-    s = scheme_box(scheme_intern_symbol(name));
     *cache = s;
   }
 
   p[0] = obj;
   p[1] = s;
-  m = scheme_apply(dispatcher, 2, p);
-
-  if (SCHEME_FALSEP(m))
-    return NULL;
-
-  return m;
+  return _scheme_apply(dispatcher, 2, p);
 }
 
 /***************************************************************************/

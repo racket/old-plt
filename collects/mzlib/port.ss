@@ -197,7 +197,7 @@
 	  (do-peek-it s skip unless-evt)))
     (define (peek-it s skip unless-evt)
       (let ([v (peek-bytes-avail!* s skip unless-evt peeked-r)])
-	(if (zero? v)
+	(if (eq? v 0)
 	    (call-with-semaphore
 	     lock-semaphore
 	     peek-it-with-lock
@@ -206,7 +206,7 @@
 	    v)))
     (define (do-peek-it s skip unless-evt)
       (let ([v (peek-bytes-avail!* s skip unless-evt peeked-r)])
-	(if (zero? v)
+	(if (eq? v 0)
 	    ;; The peek may have failed because peeked-r is empty,
 	    ;; because unless-evt is ready, or because the skip is
 	    ;; far. Handle nicely the common case where there are no

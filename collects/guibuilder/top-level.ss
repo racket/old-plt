@@ -187,11 +187,14 @@
 	     (send cur-hilite gb-hilite #f)
 	     (set! cur-hilite #f))
 
-	   (inner (void) after-interactive-move e))]
+	   (inner (void) after-interactive-move e))])
+      (override*
 	[interactive-adjust-move
 	 (lambda (snip x-box y-box)
-	   ;; This doesn't really work very well.
-	   '(let ([parent (send snip gb-get-parent)])
+	   (super interactive-adjust-move snip x-box y-box)
+	   ;; The following doesn't really work very well.
+	   #;
+	   (let ([parent (send snip gb-get-parent)])
 	     (when parent
 	       (let-values ([(x y w h) 
 			     (send (let loop ([p parent])
@@ -203,18 +206,18 @@
 		 (when (and (<= x (unbox x-box) (+ x w))
 			    (<= y (unbox y-box) (+ y h)))
 		   (set-box! x-box (send snip gb-get-stable-x))
-		   (set-box! y-box (send snip gb-get-stable-y))))))
-	   (inner (void) interactive-adjust-move snip x-box y-box))]
+		   (set-box! y-box (send snip gb-get-stable-y)))))))]
 	[interactive-adjust-resize
 	 (lambda (snip wb hb)
+	   (super interactive-adjust-resize snip wb hb)
 	   (let-values ([(x-min y-min) (send snip gb-get-saved-min-size)])
 	     (when (or (not (gb-x-stretch? snip))
 		       (<= (unbox wb) x-min))
 	       (set-box! wb x-min))
 	     (when (or (not (gb-y-stretch? snip))
 		       (<= (unbox hb) y-min))
-	       (set-box! hb y-min)))
-	   (inner (void) interactive-adjust-resize snip wb hb))]
+	       (set-box! hb y-min))))])
+      (augment*
 	[after-interactive-resize
 	 (lambda (snip)
 	   (inner (void) after-interactive-resize snip)
@@ -251,11 +254,11 @@
 		       (set! cur-hilite s)
 		       (send s gb-hilite #t))
 		     (end-edit-sequence))))))
-	   (super on-default-event e))])
-      (augment*
+	   (super on-default-event e))]
 	[on-double-click
 	 (lambda (snip e)
-	   (send snip gb-open-dialog))]
+	   (send snip gb-open-dialog))])
+      (augment*
 	[after-delete
 	 (lambda (snip)
 	   (for-each (lambda (i) (delete i)) (send snip gb-get-children))

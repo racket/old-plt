@@ -2,6 +2,10 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.20
+Changed the interface to `make-primitive-class'; see
+ plt/collects/mzscheme/examples/tree.cxx for details
+
 Version 299.19
 Added locale-string-encoding
 Added pipe-content-length

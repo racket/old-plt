@@ -1179,7 +1179,27 @@ static void inc_pos(Scheme_Input_Port *ip, int a)
   ip->charsSinceNewline += a;
   ip->utf8state = 0;
 }
- 
+
+static Scheme_Object *quick_plus(Scheme_Object *s, long v)
+{
+  if (SCHEME_INTP(s)) {
+    int k;
+    k = SCHEME_INT_VAL(s);
+    if ((k < 0x1000000) && (v < 0x1000000)) {
+      k += v;
+      return scheme_make_integer(v);
+    }
+  }
+
+  /* Generic addition, but we might not be in a position to allow
+     thread swaps */
+  scheme_start_atomic();
+  s = scheme_bin_plus(s, scheme_make_integer(v));
+  scheme_end_atomic_no_swap();
+
+  return s;
+}
+
 #define state_len(state) ((state >> 3) & 0x7)
 
 long scheme_get_byte_string_unless(const char *who,
@@ -1497,11 +1517,8 @@ long scheme_get_byte_string_unless(const char *who,
       gc = 0;
 
     got += gc;
-    if (peek) {
-      scheme_start_atomic();
-      peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(gc));
-      scheme_end_atomic_no_swap();
-    }
+    if (peek)
+      peek_skip = quick_plus(peek_skip, gc);
     size -= gc;
 
     if (!peek) {
@@ -2071,7 +2088,7 @@ long scheme_get_char_string(const char *who,
 	got = scheme_get_byte_string_unless(who, port,
 					    s, leftover, 1,
 					    0, 1, 
-					    scheme_bin_plus(peek_skip, scheme_make_integer(ahead_skip)),
+					    quick_plus(peek_skip, ahead_skip),
 					    NULL);
 	if (got > 0) {
 	  long ulen, glen;
@@ -2107,7 +2124,7 @@ long scheme_get_char_string(const char *who,
 					      0, 0, scheme_make_integer(0),
 					      NULL);
 	      } else {
-		peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(ahead_skip));
+		peek_skip = quick_plus(peek_skip, ahead_skip);
 	      }
 	      ahead_skip = 0;
 	    }
@@ -2158,7 +2175,7 @@ long scheme_get_char_string(const char *who,
       leftover = (got + leftover) - ulen;
       memmove(s, s + ulen, leftover);
       if (peek) {
-	peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(got));
+	peek_skip = quick_plus(peek_skip, got);
       }
     } else {
       read_string_byte_buffer = s;
@@ -2322,7 +2339,7 @@ static int do_peekc_skip(Scheme_Object *port, Scheme_Object *skip,
     if (delta) {
       if (!skip)
 	skip = scheme_make_integer(0);
-      skip2 = scheme_bin_plus(skip, scheme_make_integer(delta));
+      skip2 = quick_plus(skip, delta);
     } else
       skip2 = skip;
 

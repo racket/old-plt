@@ -98,7 +98,7 @@ $(MZFW): libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ $(SPECIALIZINGOBJECTS)
 	if [ ! -d PLT_MzScheme.framework ] ; then mkdir PLT_MzScheme.framework ; fi
 	if [ ! -d PLT_MzScheme.framework/Versions ] ; then mkdir PLT_MzScheme.framework/Versions ; fi
 	if [ ! -d PLT_MzScheme.framework/Versions/$(FWVERSION) ] ; then mkdir PLT_MzScheme.framework/Versions/$(FWVERSION) ; fi
-	$(CC) -o $(MZFW) -dynamiclib -all_load $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LDFLAGS@ @LIBS@
+	$(CC) -o $(MZFW) -framework CoreFoundation -dynamiclib -all_load $(SPECIALIZINGOBJECTS) libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ @LDFLAGS@ @LIBS@
 	rm -f PLT_MzScheme.framework/PLT_MzScheme
 	ln -s Versions/$(FWVERSION)/PLT_MzScheme PLT_MzScheme.framework/PLT_MzScheme
 

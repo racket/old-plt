@@ -32,6 +32,9 @@
 # include <wchar.h>
 # include <wctype.h>
 # include <errno.h>
+# ifdef MACOS_UNICODE_SUPPORT
+#  include <CoreFoundation/CFString.h>
+# endif
 #endif
 
 #ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
@@ -1131,7 +1134,7 @@ char *scheme_locale_convert(char *from_e, char *to_e,
   while (1) {
     ip = in + id + dip;
     op = out + od + dop;
-    r = iconv(cd, &ip, &il, &op, &ol);
+    r = iconv(cd, (const char **)&ip, &il, &op, &ol);
     dip = ip - (in + id);
     dop = op - (out + od);
     ip = op = NULL;
@@ -1182,8 +1185,10 @@ char *scheme_locale_convert(char *from_e, char *to_e,
 }
 
 char *scheme_recase_locale_string(int to_up,
-				  char *in, int id, int iilen, 
-				  char *out, int od, int iolen, /* iolen includes terminator */
+				  /* in must be null-terminated, iilen doesn't include it */ 
+				  char *in, int id, int iilen,
+				  /* iolen, in contrast, includes the terminator */
+				  char *out, int od, int iolen,
 				  long *oolen)
 {
   /* To change the case, convert the string to multibyte, re-case the
@@ -1194,13 +1199,16 @@ char *scheme_recase_locale_string(int to_up,
   wchar_t *wc, *ws, wcbuf[MZ_WC_BUF_SIZE];
   const char *s;
   int j;
+  /* The "n" versions are apparently not too standard: */
+# define mz_mbsnrtowcs(t, f, fl, tl, s) mbsrtowcs(t, f, tl, s) 
+# define mz_wcsnrtombs(t, f, fl, tl, s) wcsrtombs(t, f, tl, s) 
   
   /* ----- to wide char ---- */
 
   /* Get length */
   memset(&state, 0, sizeof(mbstate_t));
   s = in + id;
-  wl = mbsnrtowcs(NULL, &s, iilen, 0, &state);
+  wl = mz_mbsnrtowcs(NULL, &s, iilen, 0, &state);
   s = NULL;
   if (wl < 0) return NULL;
 
@@ -1214,9 +1222,11 @@ char *scheme_recase_locale_string(int to_up,
   /* Convert */
   memset(&state, 0, sizeof(mbstate_t));
   s = in + id;
-  wl2 = mbsrtowcs(wc, &s, wl + 1, &state);
+  wl2 = mz_mbsnrtowcs(wc, &s, iilen, wl + 1, &state);
   s = NULL;
   if (wl2 < 0) return NULL; /* Very strange! */
+
+  wc[wl] = 0; /* just in case */
 
   /* ---- re-case ---- */
 
@@ -1235,7 +1245,7 @@ char *scheme_recase_locale_string(int to_up,
   /* Measure */
   memset(&state, 0, sizeof(mbstate_t));
   ws = wc;
-  ml = wcsnrtombs(NULL, &ws, wl, 0, &state);
+  ml = mz_wcsnrtombs(NULL, (const wchar_t **)&ws, wl, 0, &state);
   ws = NULL;
   if (ml < 0) return NULL;
 
@@ -1249,7 +1259,7 @@ char *scheme_recase_locale_string(int to_up,
   /* Convert */
   memset(&state, 0, sizeof(mbstate_t));
   ws = wc;
-  ml2 = wcsnrtombs(out + od, &ws, wl, ml + 1, &state);
+  ml2 = mz_wcsnrtombs(out + od, (const wchar_t **)&ws, wl, ml + 1, &state);
   ws = NULL;
   if (ml2 < 0) return NULL; /* Very strange! */
 
@@ -1480,7 +1490,7 @@ int do_locale_comp(const char *who, unsigned char *str1, int l1, unsigned char *
 
   xl1 = 0;
   while (ul1--) {
-    if ((utf16 && (!(((char *)us1)[ul1]) || !(((short *)us2)[ul1])))
+    if ((utf16 && (!(((short *)us1)[ul1]) || !(((short *)us2)[ul1])))
 	|| (!utf16 && (!(us1[ul1]) || !(us2[ul1])))) {
       if (utf16) {
 	if (((short *)us1)[ul1])

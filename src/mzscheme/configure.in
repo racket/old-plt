@@ -412,6 +412,7 @@ case $OS in
     # zlib comes with the OS
     ZLIB_A=""
     ZLIB_INC=""
+    LIBS="$LIBS -liconv"
 
     gcc_vers_three=`${CC} -v 2>&1 | grep "version 3[.]"`
     if test "$gcc_vers_three" = "" ; then

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.113 1997/08/11 21:39:56 shriram Exp $
+; $Id: scm-main.ss,v 1.114 1997/08/11 22:20:00 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1162,12 +1162,8 @@
 			    '(else answer ...)))
 	    (get-pattern-1 (if (language<=? 'structured)
 			     'answer '(begin answer ...)))
-	    (in-pattern-2 '(question =>))
-	    (in-pattern-3 (if (language<=? 'structured)
-			    '(question => answer)
-			    '(question => answer ...)))
-	    (get-pattern-3 (if (language<=? 'structured)
-			     'answer '(begin answer ...)))
+	    (in-pattern-3 '(question => answer))
+	    (in-pattern-2 '(question => answer ...))
 	    (in-pattern-5 (if (language<=? 'side-effecting)
 			    '(question => answer) ; will not match
 			    '(question)))
@@ -1188,16 +1184,16 @@
 	    (lambda (p-env)
 	      (let ((answer (pat:pexpand get-pattern-1 p-env kwd)))
 		(make-cond-clause expr #f answer #t #f #f))))
-	  ((pat:match-against m&e-2 expr env)
-	    =>
-	    (lambda (p-env)
-	      (static-error expr "=> not followed by receiver")))
 	  ((pat:match-against m&e-3 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((question (pat:pexpand 'question p-env kwd))
-		     (answer (pat:pexpand get-pattern-3 p-env kwd)))
+		     (answer (pat:pexpand 'answer p-env kwd)))
 		(make-cond-clause expr question answer #f #t #f))))
+	  ((pat:match-against m&e-2 expr env)
+	    =>
+	    (lambda (p-env)
+	      (static-error expr "=> not followed by exactly one receiver")))
 	  ((pat:match-against m&e-5 expr env)
 	    =>
 	    (lambda (p-env)

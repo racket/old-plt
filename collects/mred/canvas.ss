@@ -16,7 +16,7 @@
 	  (public
 	    [get-edit% (lambda () mred:edit:edit%)]
 	    [style-flags 0])
-	  (inherit get-media get-parent frame)
+	  (inherit get-media get-parent shown)
 	  (public
 	    [get-style-flags (lambda () style-flags)]
 	    [make-edit (lambda () (make-object (get-edit%)))]
@@ -33,14 +33,11 @@
 	    [needs-rewrapping #f])
 	  (public
 	    [resize-edit
-	       ;; only resize the edit when the container classes are 
-	       ;; force redrawing or when the frame is shown.
 	     (lambda ()
-	       (let ([frame-shown? (ivar frame shown)])
-		 (mred:debug:printf 'rewrap "resize-edit: ~a" frame-shown?)
-		 (if frame-shown?
-		     (rewrap)
-		     (set! needs-rewrapping #t))))])
+	       (mred:debug:printf 'rewrap "resize-edit: ~a" shown)
+	       (if shown
+		   (rewrap)
+		   (set! needs-rewrapping #t)))])
 	  (rename
 	    [super-show show]
 	    [super-force-redraw force-redraw]
@@ -80,7 +77,7 @@
 		 (resize-edit)))])
 	  (sequence
 	    (super-init parent x y w h
-			name (bitwise-ior style (get-style-flags)) 
+			name (bitwise-ior style (get-style-flags))
 			spp
 			(if (null? m)
 			    (make-initial-edit)

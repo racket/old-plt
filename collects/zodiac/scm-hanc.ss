@@ -481,6 +481,8 @@
 	    (let ((name (pat:pexpand 'name p-env kwd))
 		   (sig (pat:pexpand 'sig p-env kwd)))
 	      (valid-syntactic-id? name)
+	      (unless (get-top-level-status attributes)
+		  (static-error expr "Only supported at top-level"))
 	      (let ((elements
 		      (signature-elements
 			(expand-expr sig env attributes sig-vocab))))

@@ -70,7 +70,7 @@
        "box" "cons" "vec" "eof" "iport" "oport"
        "promise" "unit" "thread" "hash-table" "regexp" "parameterization" 
        "semaphore")
-     (map car
+     (map symbol->string
 	  (filter
 	   (lambda (x) x)
 	   (hash-table-map

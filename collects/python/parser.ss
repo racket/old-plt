@@ -22,7 +22,7 @@
              tok)))))
   
   (define (build-ast-from-file name)
-    (let ((i (open-input-file name)))
+    (let ((i (open-input-file name 'text)))
       (port-count-lines! i)
       (file-path name)
       (begin0

@@ -987,11 +987,10 @@ void wxWindow::CaptureMouse(void)
      /* Allows events only to this window and its children */
      /* I.e., like X-Windows, not like Windows */
 {
-  if (gMouseWindow != this)
-    {
-      if (gMouseWindow) gMouseWindow->ReleaseMouse();
-      gMouseWindow = this;
-    }
+  if (gMouseWindow != this) {
+    if (gMouseWindow) gMouseWindow->ReleaseMouse();
+    gMouseWindow = this;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1691,8 +1690,7 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
 
   if (wxWindow::gMouseWindow == this) {
     wxCursor *c = GetEffectiveCursor();
-    if (c)
-      wxSetCursor(c);
+    wxSetCursor(c);
     return TRUE;
   }
 
@@ -1723,8 +1721,7 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
       if (hitArea == ClientArea()) {
 	result = TRUE;
 	wxCursor *c = GetEffectiveCursor();
-	if (c)
-	  wxSetCursor(c);
+	wxSetCursor(c);
       }
     }
   }

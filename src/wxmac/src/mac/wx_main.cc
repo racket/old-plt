@@ -69,6 +69,8 @@ int wxEntry(int argc, char* argv[])
   static char path_divider = ':';
 #endif
 
+  InitCursor();
+
   RegisterAppearanceClient();
   
   wxGetGDHandle(); /* save original grafptr and device */

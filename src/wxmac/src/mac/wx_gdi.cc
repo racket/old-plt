@@ -582,6 +582,12 @@ wxCursor::wxCursor(wxBitmap *mask, wxBitmap *bm, int hotSpotX, int hotSpotY)
 //-----------------------------------------------------------------------------
 // Cursors by stock number
 //-----------------------------------------------------------------------------
+
+# define hackARROW_CURSOR 0x1
+# define hackWATCH_CURSOR 0x3
+# define hackIBEAM_CURSOR 0x5
+# define hackCROSS_CURSOR 0x7
+
 wxCursor::wxCursor(int cursor_type)
 {
   __type = wxTYPE_CURSOR;
@@ -593,12 +599,12 @@ wxCursor::wxCursor(int cursor_type)
     case wxCURSOR_WAIT:
     case wxCURSOR_WATCH:
       {
-	cMacCursor = GetCursor(watchCursor);
+	cMacCursor = (Cursor **)hackWATCH_CURSOR;
 	break;
       }
     case wxCURSOR_CROSS:
       {
-	cMacCursor = GetCursor(crossCursor);
+	cMacCursor = (Cursor **)hackCROSS_CURSOR;
 	break;
       }
     case wxCURSOR_CHAR:
@@ -624,7 +630,7 @@ wxCursor::wxCursor(int cursor_type)
       }
     case wxCURSOR_IBEAM:
       {
-	cMacCursor = GetCursor(iBeamCursor);
+	cMacCursor = (Cursor **)hackIBEAM_CURSOR;
 	break;
       }
     case wxCURSOR_NO_ENTRY:
@@ -684,7 +690,7 @@ wxCursor::wxCursor(int cursor_type)
     default:
     case wxCURSOR_ARROW:
       {
-	cMacCursor = (Cursor **)0x1;
+	cMacCursor = (Cursor **)hackARROW_CURSOR;
 	break;
       }
     case wxCURSOR_BLANK:
@@ -721,9 +727,6 @@ void wxRegisterCurCursor()
   wxREGGLOB(curCursor);
 }
 
-static Cursor arrow_c;
-static int arrow_c_inited;
-
 void wxSetCursor(wxCursor *cursor)
 {
   if (cursor != curCursor) {
@@ -732,17 +735,21 @@ void wxSetCursor(wxCursor *cursor)
       if (cursor->cMacCustomCursor) {
 	::SetCursor(cursor->cMacCustomCursor);
       } else {
-	if (cursor->cMacCursor && (cursor->cMacCursor != (Cursor **)0x1))
+	if (cursor->cMacCursor == (Cursor **)hackARROW_CURSOR)
+	  SetThemeCursor(kThemeArrowCursor);
+	else if (cursor->cMacCursor == (Cursor **)hackWATCH_CURSOR)
+	  SetThemeCursor(kThemeWatchCursor);
+	else if (cursor->cMacCursor == (Cursor **)hackIBEAM_CURSOR)
+	  SetThemeCursor(kThemeIBeamCursor);
+	else if (cursor->cMacCursor == (Cursor **)hackCROSS_CURSOR)
+	  SetThemeCursor(kThemeCrossCursor);
+	else if (cursor->cMacCursor)
 	  ::SetCursor(*(cursor->cMacCursor));
-	else {
-	  if (!arrow_c_inited) {
-	    GetQDGlobalsArrow(&arrow_c);
-	    arrow_c_inited = 1;
-	  }
-	  ::SetCursor(&arrow_c);
-	}
+	else
+	  SetThemeCursor(kThemeArrowCursor);
       }
-    }
+    } else
+      SetThemeCursor(kThemeArrowCursor);
     curCursor = cursor;
   }
   wxFlushEvents();

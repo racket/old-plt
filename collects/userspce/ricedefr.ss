@@ -28,9 +28,9 @@
 
     (define make-second-checked 
       (lambda (prim prim-name)
-	(if (allow-improper-lists)
-	    prim
-	    (lambda (a b)
+	(lambda (a b)
+	  (if (allow-improper-lists)
+	      (prim a b)
 	      (if (list? b)
 		  (prim a b)
 		  (error prim-name

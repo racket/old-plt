@@ -231,7 +231,7 @@
 		     'do-nothing)
 		   ((not entry)
 		     (static-error uid
-		       "Reference to undefined identifier ~a"
+		       "Reference to unbound unit identifier ~a"
 		       (z:read-object uid)))
 		   (else
 		     (internal-error entry

@@ -33,7 +33,7 @@
 				"List invalid in this position"))
 		  (ilist-error (if root
 				 (vocabulary-record-ilist-error root)
-				 "Improper-list invalid in this position")))
+				 "Improper-list syntax invalid in this position")))
       (let ((h (make-hash-table)))
 	(make-vocabulary-record name h root
 	  symbol-error literal-error list-error ilist-error))))

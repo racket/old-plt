@@ -890,7 +890,7 @@
   (define (stx-memq ssym l)
     (ormap (lambda (p)
 	     (and (syntax? p)
-		  (module-identifier=? ssym p)))
+		  (bound-identifier=? ssym p)))
 	   l))
   
   ;; memq on a list of identifiers and
@@ -900,7 +900,7 @@
       (cond
        [(null? l) #f]
        [(and (syntax? (car l))
-	     (module-identifier=? ssym (car l)))
+	     (bound-identifier=? ssym (car l)))
 	p]
        [else (loop (add1 p) (cdr l))])))
 
@@ -910,11 +910,11 @@
     (let loop ([p 0][l l])
       (cond
        [(null? l) #f]
-       [(module-identifier=? ssym 
-			     (let loop ([i (car l)])
-			       (if (syntax? i)
-				   i
-				   (loop (car i)))))
+       [(bound-identifier=? ssym 
+			    (let loop ([i (car l)])
+			      (if (syntax? i)
+				  i
+				  (loop (car i)))))
 	p]
        [else (loop (add1 p) (cdr l))])))
 
@@ -1119,7 +1119,7 @@
 	      (cond
 	       [(syntax? r)
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
-		  (when (ormap (lambda (i) (module-identifier=? i r)) l)
+		  (when (ormap (lambda (i) (bound-identifier=? i r)) l)
 		    (raise-syntax-error 
 		     syntax-case-stxsrc
 		     "variable used twice in pattern"
@@ -1358,7 +1358,7 @@
 			    (lambda (r)
 			      (let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
 				(unless (and (pair? l)
-					     (ormap (lambda (i) (module-identifier=? i r)) l))
+					     (ormap (lambda (i) (bound-identifier=? i r)) l))
 				  (hash-table-put! ht (syntax-e r) (cons r l)))))))])
       (if proto-r
 	  `(lambda (r src)
@@ -1510,7 +1510,7 @@
 			     [(pair? n)
 			      (loop c (car n))]
 			     [(and (syntax? c) (syntax? n))
-			      (if (module-identifier=? c n)
+			      (if (bound-identifier=? c n)
 				  (cons start (identifier? proto))
 				  #f)]
 			     [else #f]))))
@@ -1545,7 +1545,7 @@
 		  (let loop ([l (car p)])
 		    (cond
 		     [(syntax? l)
-		      (when (module-identifier=? l ssym)
+		      (when (bound-identifier=? l ssym)
 			(raise-syntax-error 
 			 syntax-stxsrc
 			 "missing ellipses with pattern variable in template"

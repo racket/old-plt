@@ -50,10 +50,14 @@ _kerncase.ss_: matching fully-expanded expressions
 
 > (kernel-syntax-case stx-expr trans?-expr clause ...) - a syntactic
   form like `syntax-case*', except that the literals are built-in as
-  the names of the primitive MzScheme forms. The `trans?-expr' boolean
-  expression replaces the comparision procedure, and instead selects
-  simply between normal-phase comparisions or transformer-phase
-  comparisions. The `clause's are the same as in `syntax-case*'.
+  the names of the primitive MzScheme forms. (The primitive syntactic
+  forms must have their normal bindings in the context of the
+  `kernel-syntax-case' expression.)
+
+  The `trans?-expr' boolean expression replaces the comparision
+  procedure, and instead selects simply between normal-phase
+  comparisions or transformer-phase comparisions. The `clause's are
+  the same as in `syntax-case*'.
 
 > (kernel-form-identifier-list syntax) - returns a list of identifiers
   for the names of the primitive MzScheme forms for expressions, with

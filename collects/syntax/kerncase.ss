@@ -4,18 +4,22 @@
   (define-syntax kernel-syntax-case
     (lambda (stx)
       (syntax-case stx ()
-	[(_ stx trans? clause ...)
-	 (syntax (syntax-case* stx (quote 
-				    quote-syntax #%datum #%top
-				    lambda case-lambda
-				    let-values letrec-values
-				    begin begin0 set!
-				    with-continuation-mark
-				    if #%app
-				    define-values define-syntaxes
-				    module #%plain-module-begin require provide require-for-syntax)
-			       (if trans? module-transformer-identifier=? module-identifier=?)
-			  clause ...))])))
+	[(_ stxv trans? clause ...)
+	 (quasisyntax/loc
+	  stx
+	  (syntax-case* stxv #,(datum->syntax-object
+				stx
+				'(quote 
+				  quote-syntax #%datum #%top
+				  lambda case-lambda
+				  let-values letrec-values
+				  begin begin0 set!
+				  with-continuation-mark
+				  if #%app
+				  define-values define-syntaxes
+				  module #%plain-module-begin require provide require-for-syntax))
+			(if trans? module-transformer-identifier=? module-identifier=?)
+	    clause ...))])))
 
   (define (kernel-form-identifier-list stx)
     (map (lambda (s)

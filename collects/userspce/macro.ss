@@ -5,11 +5,14 @@
   (define-syntax (define-struct/parse stx)
     (syntax-case stx ()
       [(_ str (fields ...))
+       (syntax (define-struct/parse str (fields ...) (current-inspector)))]
+      [(_ str (fields ...) inspector-exp)
        (unless (symbol? (syntax-object->datum (syntax str)))
          (error 'define-struct/parse "no super structs allowed"))
-       (let ([defn (local-expand (syntax (define-struct str (fields ...)))
-				 (syntax-local-context)
-				 (list (quote-syntax define-values)))]
+       (let ([defn (local-expand
+		    (syntax (define-struct str (fields ...) inspector-exp))
+		    (syntax-local-context)
+		    (list (quote-syntax define-values)))]
 	     [evens
 	      (lambda (l)
 		(let loop ([l l])

@@ -95,28 +95,30 @@
   (define this-program (with-handlers ([void (lambda (x) "mzscheme")])
 			 (namespace-variable-binding 'program)))
   
-  (define-struct/parse setting (key
-				name
-				language-defining-module
+  (define-struct/parse setting
+    (key
+     name
+     language-defining-module
 
-				read-decimal-as-exact?
-				case-sensitive?
-				allow-reader-quasiquote?
-				disallow-untagged-inexact-numbers
+     read-decimal-as-exact?
+     case-sensitive?
+     allow-reader-quasiquote?
+     disallow-untagged-inexact-numbers
 
-				whole/fractional-exact-numbers
+     whole/fractional-exact-numbers
 
-				printing
-				use-pretty-printer?
-				sharing-printing?
-				abbreviate-cons-as-list?
-				print-tagged-inexact-numbers
-                                print-booleans-as-true/false
-				print-exact-as-decimal?
-				print-.-symbols-without-bars
-				print-whole/part-fractions
-                                
-				define-argv?))
+     printing
+     use-pretty-printer?
+     sharing-printing?
+     abbreviate-cons-as-list?
+     print-tagged-inexact-numbers
+     print-booleans-as-true/false
+     print-exact-as-decimal?
+     print-.-symbols-without-bars
+     print-whole/part-fractions
+     
+     define-argv?)
+    (make-inspector))
   
   ;; settings : (list-of setting)
   (define settings
@@ -485,7 +487,8 @@
   ;;                       -> void
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
-    (let ([namespace (make-namespace 'empty)])
+    (let ([namespace (make-namespace ;'empty
+				     )])
       
       (current-setting setting)
       (current-custodian custodian)
@@ -504,8 +507,15 @@
       
       (current-load-relative-directory #f)
 
-      (current-namespace namespace)
-      (namespace-require (setting-language-defining-module setting))
+      ;; must call the resolver before setting the namespace
+      (let ([lang-module-spec (setting-language-defining-module setting)])
+	(dynamic-require lang-module-spec #f)
+	(let ([orig-namespace (current-namespace)]
+	      [lang-name ((current-module-name-resolver)
+			  lang-module-spec #f #f)])
+	  (current-namespace namespace)
+	  (namespace-attach-module orig-namespace lang-name)
+	  (namespace-require lang-name)))
 
       (read-case-sensitive (setting-case-sensitive? setting))
       

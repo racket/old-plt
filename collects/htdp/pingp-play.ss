@@ -1,6 +1,6 @@
 (module pingp-play mzscheme
-  (require "pingp-sig.ss"
-	   "pingp.ss")
+  (require "pingp.ss"
+           (lib "teach.ss" "lang" "private"))
 
   (define (go s)
     (printf "Have fun playing, ~a~n" s)

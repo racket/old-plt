@@ -1,9 +1,11 @@
 (module pingp mzscheme
   
   (require "error.ss"
-	   "pingp-sig.ss"
 	   "draw-sig.ss"
-	   "big-draw.ss")
+	   (lib "unitsig.ss")
+           (lib "teach.ss" "lang" "private")
+           "pingp-sig.ss"
+           "big-draw.ss")
 
   (provide-signature-elements pingp^)
   (provide-signature-elements draw^)
@@ -55,7 +57,7 @@
     ;; change-speed : int[> 0] -> void
     (define (change-speed s)
       (check-arg 'change-speed (and (integer? s) (> s 0)) "positive integer" '1st s)
-      (set! SLEEP (/ 10 s)))
+      (set! sleep-time (/ 10 s)))
 
     ;; change-wind : int[> 0] -> void
     (define (change-wind s)
@@ -109,13 +111,13 @@
 		 (printf "You caught ~s balls, ~s hit the wall." hits (- objs# hits))])
 	      (begin
 		(for-each draw-ball p0)
-		(sleep SLEEP)
+		(sleep sleep-time)
 		(for-each clear-ball p0)
 		(let* ((ball1 (move-objs ball0))
 		       (ball2 (remove-objs-hit-paddle ball1))
 		       (ball3 (remove-outside-objs ball2))
 		       (p1    (objs-posn ball3)))
-		  (move-paddle east west (ready-mouse-click (get-@VP)))
+		  (move-paddle east west (ready-mouse-click #cs(get-@VP)))
 		  (PLAY ball3 p1 (+ hits (- (length ball1) (length ball2))))))))
 	;; --- clean up
 	(stop)))
@@ -159,10 +161,10 @@
 	;; --- the loop
 	(let play ((ball0 (make-ball posn0 (make-speed (rn-10-10) (rn-10-10)))) (p0 posn0) (i 1))
 	  (unless (or (< (posn-x p0) 0) (< EAST (posn-x p0)))
-	    (draw-ball p0) (sleep SLEEP) (clear-ball p0)
+	    (draw-ball p0) (sleep sleep-time) (clear-ball p0)
 	    (let* ((ball1 (move ball0 1)) (p1 (ball-posn ball1)))
 	      (draw-solid-line p0 p1 TRACE-COLOR)
-	      (move-paddle east west (ready-mouse-click (get-@VP)))
+	      (move-paddle east west (ready-mouse-click #cs(get-@VP)))
 	      (if (zero? (modulo i SWITCH))
 		  (play (make-ball p1 (make-speed (rn-10-10) (rn-10-10))) p1 1)
 		  (play ball1 p1 (add1 i))))))
@@ -191,9 +193,9 @@
     (define (ready-to-go?)
       (start2 EAST SOUTH)
       (draw-solid-rect   (make-posn (- (quotient EAST 2) 100) 10) 200 20 BG-COLOR)
-      ((draw-string (get-@VP)) (make-posn (- (quotient EAST 2)  65) 20)
+      ((draw-string #cs(get-@VP)) (make-posn (- (quotient EAST 2)  65) 20)
        "Click anywhere when ready!")
-      (let loop () (unless (ready-mouse-click (get-@VP)) (loop)))
+      (let loop () (unless (ready-mouse-click #cs(get-@VP)) (loop)))
       (draw-solid-rect   (make-posn (- (quotient EAST 2) 100) 10) 200 20 BG-COLOR))
  
     (define (start2 x y)
@@ -226,11 +228,11 @@
     (define (set-trace) (set! TRACE-COLOR 'green)) 
     (define (unset-trace) (set! TRACE-COLOR 'white)) 
 
-    (define SLEEP .15)
-    (define SWITCH 10000)
-    (define CENTER (quotient EAST 2))
-    (define PADDLE-X EAST)
-    (define PADDLE-Y (quotient SOUTH 2))
+  (define sleep-time .15)
+  (define SWITCH 10000)
+  (define CENTER (quotient EAST 2))
+  (define PADDLE-X EAST)
+  (define PADDLE-Y (quotient SOUTH 2))
 
     ;; The Graphical Paddle Representation
     ;; ------------------------------------

@@ -64,7 +64,7 @@ Version 103.2:
 
 ------------------------------------------------------------------------
 
-Version 199, ???
+Version 200, ???
 Fixed `lambda' and `case-lambda' to signal an error when a keyword
  is used as an argument name
 Fixed leaks (file descriptors, etc.) that could happend with

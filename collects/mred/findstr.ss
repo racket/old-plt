@@ -289,18 +289,24 @@
 	    (class-asi mred:container:horizontal-panel%
 	      (rename [super-on-set-focus on-set-focus]) 
 	      (public
-	       [on-set-focus
-		(lambda ()
-		  (or (send media-canvas set-focus)
-		      (super-on-set-focus)))]))])
+		[on-set-focus
+		 (lambda ()
+		   (or (send media-canvas set-focus)
+		       (super-on-set-focus)))]))])
 	  (public
-	   [make-root-panel
+	    [make-root-panel
 	    (lambda (% parent)
-	      (let* ([super-panel% ((ivar mred:frame:empty-frame%
-					  this get-panel%))]
-		     [s-root (super-make-root-panel super-panel%
-						    parent)]
-		     [root (make-object % s-root)])
+	      (let* ([panel% (class-asi mred:container:vertical-panel%
+			       (public
+				 [default-spacing-width 0]
+				 [default-border-width 0]))]
+		     [s-root (super-make-root-panel panel% parent)]
+		     [root%
+		      (class-asi mred:container:vertical-panel%
+			(public
+			  [default-spacing-width 0]
+			  [default-border-width 0]))]		      
+		     [root (make-object root% s-root)])
 		(set! super-root s-root)
 		root))])
 	  (private

@@ -1,9 +1,9 @@
 ;;
-;; $Id: frameworkr.ss,v 1.6 1998/09/09 13:51:39 robby Exp $
+;; $Id: frameworkr.ss,v 1.7 1998/09/14 03:13:40 robby Exp $
 ;;
 
 (compound-unit/sig (import [core : mzlib:core^]
-			   [mred : mred^])
+			   [mred : mred-interfaces^])
   (link [date : mzlib:date^ ((require-library-unit/sig "dater.ss")
 			     (core function))]
 	[application : framework:application^ ((require-unit/sig "app.ss"))]
@@ -63,7 +63,8 @@
 	[scheme-mode : framework:scheme-mode^ 
 		     ((require-unit/sig "scheme.ss")
 		      mred preferences match-cache paren
-		      scheme-paren icon keymap)])
+		      scheme-paren icon keymap)]
+	[main : () ((require-library "main.ss") preferences exit)])
   (export
    (unit application)
    (unit version)

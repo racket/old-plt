@@ -10,6 +10,7 @@
     ;; server functions
     start-help-server
     hd-cookie->port
+    hd-cookie->exit-proc
     hd-cookie?
     ;; manual ordering
     standard-html-doc-position

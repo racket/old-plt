@@ -68,6 +68,11 @@ the server cannot find an unused port, an error occurs.
 Given a Help Desk server cookie, returns the port number
 used by the server.
 
+> hd-cookie->exit-proc : hd-cookie -> (-> void)
+
+Given a Help Desk server cookie, returns a thunk that 
+shuts down the server when called.
+
 > hd-cookie? : obj -> boolean
 
 Returns #t if `obj' is a Help Desk cookie, #f otherwise. 

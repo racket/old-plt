@@ -2,20 +2,26 @@
 
   (require (lib "etc.ss")
 	   (lib "file.ss")
-           (lib "internal-server.ss" "web-server")
 	   (lib "util.ss" "web-server")
 	   (lib "configuration.ss" "web-server")
 	   (lib "configuration-structures.ss" "web-server"))
+
+  (require (prefix external: 
+		   (lib "web-server.ss" "web-server"))
+	   (prefix internal: 
+		   (lib "internal-server.ss" "web-server")))
 
   (require (lib "external.ss" "help" "servlets" "private"))
 
   (provide start-help-server
 	   hd-cookie->port
+	   hd-cookie->exit-proc
 	   hd-cookie?
            wait-for-connection)
 
   (define-struct hd-cookie (port exit-proc) (make-inspector))
   (define hd-cookie->port hd-cookie-port)
+  (define hd-cookie->exit-proc hd-cookie-exit-proc)
 
   (define min-port 8000)
   (define max-port 8900)
@@ -45,7 +51,7 @@
 	   [file-root (build-normal-path doc-path 'up)]
 	   [host-root (build-normal-path help-path "web-root")]
 	   [servlet-root help-path])
-    `((port 8000)
+    `((port ,min-port)
       (max-waiting 40)
       (initial-connection-timeout 30)
       (default-host-table
@@ -86,18 +92,23 @@
 
   (define start-help-server
     (opt-lambda ([use-port #f][external-connections? #f]) 
-      (let* ([configuration
+      (let ([configuration
 	      (build-developer-configuration
 	       (build-config-exp))]
-	     [help-desk-port (get-free-port use-port)])
-	(set-box! external-box external-connections?)
-	(make-hd-cookie 
-	 help-desk-port  	
-	 (if external-connections?
-	     (serve configuration help-desk-port)
-	     (serve configuration help-desk-port "127.0.0.1")))))))
-
-
+	    [browser-pref
+	     (get-preference 'external-browser (lambda () #f))])
+	(if (eq? browser-pref 'plt)
+	    (make-hd-cookie
+	     min-port ; dummy 
+	     (internal:serve configuration))
+	    (let ([help-desk-port (get-free-port use-port)])
+	      (set-box! external-box external-connections?)
+	      (make-hd-cookie 
+	       help-desk-port  	
+	       (if external-connections?
+		   (external:serve configuration help-desk-port)
+		   (external:serve configuration help-desk-port 
+				   "127.0.0.1")))))))))
 
 
 

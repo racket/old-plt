@@ -265,7 +265,7 @@
    (import)
 
    (define x 5)
-   (define-struct (a (current-inspector)) (b c))
+   (define-struct a (b c) (make-inspector))
    (define v (make-a 5 6))
    (define (y v) (a? v))))
 
@@ -326,10 +326,10 @@
 				  p)))
 		      M@)])
       (export)))
-    (test (string-append "(5 #(struct:a 5 6) #<struct-type> (proc: y)"
+    (test (string-append "(5 #(struct:a 5 6) #<struct-type:a> (proc: y)"
 			 " (proc: make-x) (proc: x?)"
 			 " (proc: x-z) (proc: both) (proc: a?))"
-			 "(5 #t #(struct:a 5 6) #t #f #(struct:x 1 2 3 4) #t #t #f #t)")
+			 "(5 #t #(struct:a 5 6) #t #f #(struct:x 1 2 ...) #t #t #f #t)")
 	  get-output-string p)))
 
 (test 5 'let-sig

@@ -3,17 +3,34 @@
 
 (SECTION 'STRUCT)
 
-(test 7 call-with-values
-      (lambda () (struct a (b c)))
-      (lambda args (length args)))
-(let-values ([(type make pred sel1 set1 sel2 set2) (struct a (b c))])
+(let-values ([(type make pred sel set) (make-struct-type 'a #f 2 0)])
    (test #t struct-type? type)
    (test #t procedure? make)
-   (test 2 arity make)
-   (test 1 arity sel1)
-   (test 2 arity set1)
-   (test #t struct-setter-procedure? set2)
-   (test #f struct-setter-procedure? sel2))
+   (arity-test make 2 2)
+   (arity-test sel 2 2)
+   (arity-test set 3 3)
+   (test #t struct-mutator-procedure? set)
+   (test #t struct-accessor-procedure? sel)
+   (test #f struct-mutator-procedure? sel)
+   (test #f struct-accessor-procedure? set)
+   (let ([sel1 (make-struct-field-accessor sel 0)]
+	 [set1 (make-struct-field-mutator set 0)]
+	 [sel2 (make-struct-field-accessor sel 1)]
+	 [set2 (make-struct-field-mutator set 1)])
+     (err/rt-test (make-struct-field-accessor set 0))
+     (err/rt-test (make-struct-field-mutator sel 0))
+     (arity-test sel1 1 1)
+     (arity-test set1 2 2)
+     (arity-test sel2 1 1)
+     (arity-test set2 2 2)
+     (test #t struct-mutator-procedure? set2)
+     (test #t struct-accessor-procedure? sel2)
+     (test #t struct-mutator-procedure? set1)
+     (test #t struct-accessor-procedure? sel1)
+     (test #f struct-mutator-procedure? sel2)
+     (test #f struct-accessor-procedure? set2)
+     (test #f struct-mutator-procedure? sel1)
+     (test #f struct-accessor-procedure? set1)))
 
 (define-struct a (b c))
 (define-struct aa ())
@@ -47,26 +64,25 @@
 (err/rt-test (a-b ai))
 (err/rt-test (set-a-b! ai 5))
 (err/rt-test (set-a-c! ai 5))
-(err/rt-test (begin (define-struct (a 9) (b c)) (void)) exn:struct?)
+(err/rt-test (begin (define-struct (a 9) (b c)) (void)))
 
 (arity-test struct-type? 1 1)
 
 (define (gen-struct-syntax-test formname suffix)
-  (syntax-test (datum->syntax `(,formname 1 (x) ,@suffix) #f #f))
-  (syntax-test (datum->syntax `(,formname a (1) ,@suffix) #f #f))
-  (syntax-test (datum->syntax `(,formname a (x 1) ,@suffix) #f #f))
-  (syntax-test (datum->syntax `(,formname a (x . y) ,@suffix) #f #f))
-  (syntax-test (datum->syntax `(,formname (a) (x) ,@suffix) #f #f))
-  (syntax-test (datum->syntax `(,formname (a . y) (x) ,@suffix) #f #f))
-  (syntax-test (datum->syntax `(,formname (a 2 3) (x) ,@suffix) #f #f)))
+  (syntax-test (datum->syntax-object #f `(,formname 1 (x) ,@suffix) #f))
+  (syntax-test (datum->syntax-object #f `(,formname a (1) ,@suffix) #f))
+  (syntax-test (datum->syntax-object #f `(,formname a (x 1) ,@suffix) #f))
+  (syntax-test (datum->syntax-object #f `(,formname a (x . y) ,@suffix) #f))
+  (syntax-test (datum->syntax-object #f `(,formname (a) (x) ,@suffix) #f))
+  (syntax-test (datum->syntax-object #f `(,formname (a . y) (x) ,@suffix) #f))
+  (syntax-test (datum->syntax-object #f `(,formname (a 2 3) (x) ,@suffix) #f)))
 (define (struct-syntax-test formname)
-  (syntax-test (datum->syntax `(,formname) #f #f))
-  (syntax-test (datum->syntax `(,formname . a) #f #f))
-  (syntax-test (datum->syntax `(,formname a . x) #f #f))
-  (syntax-test (datum->syntax `(,formname a x) #f #f))
+  (syntax-test (datum->syntax-object #f `(,formname) #f))
+  (syntax-test (datum->syntax-object #f `(,formname . a) #f))
+  (syntax-test (datum->syntax-object #f `(,formname a . x) #f))
+  (syntax-test (datum->syntax-object #f `(,formname a x) #f))
   (gen-struct-syntax-test formname '()))
 
-(struct-syntax-test 'struct)
 (struct-syntax-test 'define-struct)
 (gen-struct-syntax-test 'let-struct '(5))
 
@@ -226,8 +242,5 @@
 		two132-a x132 6
 		one32-y x132 4))))
 
-
-(err/rt-test (list (struct x (y z))) exn:application:arity?)
-(err/rt-test (let ([x (struct x (y z))]) 10) exn:application:arity?)
 
 (report-errs)

@@ -4,7 +4,7 @@
 (unless (defined? 'lines-per-file)
    (global-defined-value 'lines-per-file +inf.0))
 
-(require-library "pretty.ss")
+(import (lib "pretty.ss"))
 
 
 (define line-count 0)
@@ -19,29 +19,31 @@
 (pretty-print '(define section #f) flatp)
 
 (define (flat-pp v)
-  (pretty-print v flatp)
+  (pretty-print (if (syntax? v) (syntax->datum v) v) flatp)
   (set! line-count (add1 line-count))
   (when (>= line-count lines-per-file)
-	(set! line-count 0)
-	(set! file-count (add1 file-count))
-	(close-output-port flatp)
-	(set! flatp
-	      (open-output-file
-	       (format "flat~a.ss" file-count)
-	       'replace))))
+    (set! line-count 0)
+    (set! file-count (add1 file-count))
+    (close-output-port flatp)
+    (set! flatp
+	  (open-output-file
+	   (format "flat~a.ss" file-count)
+	   'replace))))
 
 (define error-test
   (case-lambda
    [(expr) (error-test expr #f)]
    [(expr exn?)
     (unless (eq? exn? exn:syntax?)
-	    (flat-pp `(thunk-error-test (lambda () ,expr)
-					(quote ,expr)
-					,@(if exn?
-					      (list (string->symbol
-						     (primitive-name
-						      exn?)))
-					      null))))]))
+      (let ([dexpr (syntax->datum expr)])
+	(flat-pp 
+	 `(thunk-error-test (lambda () ,dexpr)
+			    (quote ,dexpr)
+			    ,@(if exn?
+				  (list (string->symbol
+					 (primitive-name
+					  exn?)))
+				  null)))))]))
 
 (define building-flat-tests #t)
 
@@ -55,7 +57,7 @@
 		  ;; Skip test use of `eval' on unprintable value:
 		  (and (pair? e) (pair? (cdr e))
 		       (eq? void (cadr e))))
-	      (flat-pp e))
+	(flat-pp e))
       (old-eval e))))
  (lambda ()
    (load-relative flat-load))

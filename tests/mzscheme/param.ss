@@ -7,7 +7,7 @@
   (display (compile '(cons 1 2)) p)
   (close-output-port p))
 
-(define-struct (tester (current-inspector)) (x))
+(define-struct tester (x) (make-inspector))
 (define a-tester (make-tester 5))
 
 (define (check-write-string display v s)
@@ -318,7 +318,7 @@
      (parameterize ([param alt1])
 	  (test (void) void (teval expr)))
      (parameterize ([param alt2])
-	  (error-test (datum->syntax expr #f #f) exn?))))
+	  (error-test (datum->syntax-object #f expr #f) exn?))))
  params)
 
 (define test-param3 (make-parameter 'hi))

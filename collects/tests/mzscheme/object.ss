@@ -8,9 +8,9 @@
 (SECTION 'OBJECT)
 
 (define (stx-test e)
-  (syntax-test (datum->syntax e #f #f)))
+  (syntax-test (datum->syntax-object #f e #f)))
 (define (err-test e exn)
-  (error-test (datum->syntax e #f #f) exn))
+  (error-test (datum->syntax-object #f e #f) exn))
 
 (define (test-class* cl* renames)
   (stx-test  `(,cl*))

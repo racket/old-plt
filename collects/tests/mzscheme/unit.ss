@@ -223,7 +223,7 @@
 	      (M x v struct:a y x? make-x x-z both))])
     (export)))
 
-  (test (string-append "(5 #<struct:a> #<struct-type> (proc: y)"
+  (test (string-append "(5 #<struct:a> #<struct-type:a> (proc: y)"
 		       " (proc: make-x) (proc: x?)"
 		       " (proc: x-z) (proc: both))"
 		       "(5 #t #<struct:a> #t #f #<struct:x> #t #t #f #t)")

@@ -207,14 +207,21 @@
 			(when dir?
 			  (static-error file
 			    "Cannot include a directory"))
-			(let ((original-directory (current-load-relative-directory))
-			       (p (with-handlers
-				    ((exn:i/o:filesystem:filename?
-				       (lambda (exn)
-					 (static-error file
-					   "Unable to open file ~a"
-					   raw-filename))))
-				    (open-input-file raw-filename))))
+			(let* ((original-directory
+				 (current-load-relative-directory))
+				(p (with-handlers
+				     ((exn:i/o:filesystem:filename?
+					(lambda (exn)
+					  (static-error file
+					    "Unable to open file ~a"
+					    raw-filename))))
+				     (open-input-file
+				       (if (complete-path? raw-filename)
+					 raw-filename
+					 (build-path
+					   (or original-directory
+					     (current-directory))
+					   raw-filename))))))
 			  (dynamic-wind
 			    (lambda ()
 			      (when (string? base)

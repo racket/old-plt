@@ -371,7 +371,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   begin0_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin0"), scheme_false, w, 0, 0);
   set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w, 0, 0);
   with_continuation_mark_stx = scheme_datum_to_syntax(scheme_intern_symbol("with-continuation-mark"), scheme_false, w, 0, 0);
-  letrec_syntaxes_stx = scheme_datum_to_syntax(scheme_intern_symbol("letrec-syntaxes"), scheme_false, w, 0, 0);
+  letrec_syntaxes_stx = scheme_datum_to_syntax(scheme_intern_symbol("letrec-syntaxes+values"), scheme_false, w, 0, 0);
   fluid_let_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("fluid-let-syntax"), scheme_false, w, 0, 0);
 
   REGISTER_SO(prefix_symbol);

@@ -1493,7 +1493,7 @@
 					   ;; Tell nested `syntax' forms about the
 					   ;;  pattern-bound variables:
 					   (list
-					    (quote-syntax letrec-syntaxes) 
+					    (quote-syntax letrec-syntaxes+values) 
 					    (map (lambda (pattern-var unflat-pattern-var temp-var)
 						   (list (list pattern-var)
 							 (list
@@ -1509,6 +1509,7 @@
 							   temp-var))))
 						 pattern-vars unflat-pattern-vars
 						 temp-vars)
+					    null
 					    (if fender
 						(list (quote-syntax if) fender
 						      answer
@@ -1713,12 +1714,22 @@
 	 names)
 	#f)))
   
+  (define-syntax letrec-syntaxes
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ ([(id ...) expr] ...) body1 body ...)
+	 (syntax/loc stx
+	     (letrec-syntaxes+values ([(id ...) expr] ...)
+				     ()
+	       body1 body ...))])))
+
   (define-syntax letrec-syntax
     (lambda (stx)
       (syntax-case stx ()
 	[(_ ([id expr] ...) body1 body ...)
 	 (syntax/loc stx
-	     (letrec-syntaxes ([(id) expr] ...)
+	     (letrec-syntaxes+values ([(id) expr] ...)
+				     ()
 	       body1 body ...))])))
 
   (define-syntax let-syntaxes
@@ -1730,10 +1741,11 @@
 			 generate-temporaries 
 			 (syntax->list (syntax ((id ...) ...))))])
 	   (syntax/loc stx
-	       (letrec-syntaxes ([(tmp ...) expr] ...)
-		 (letrec-syntaxes ([(id ...) (values
-					      (syntax-local-value (quote-syntax tmp) void)
-					      ...)] ...)
+	       (letrec-syntaxes+values ([(tmp ...) expr] ...) ()
+		 (letrec-syntaxes+values ([(id ...) (values
+						     (syntax-local-value (quote-syntax tmp) void)
+						     ...)] ...)
+					 ()
 		   body1 body ...))))])))
 
   (define-syntax let-syntax
@@ -1759,7 +1771,7 @@
 
   (provide (all-from #%stxcase) (all-from #%small-scheme)
 	   (all-from #%with-stx) (all-from #%stxloc) check-duplicate-identifier
-	   letrec-syntax let-syntaxes let-syntax syntax-rules))
+	   letrec-syntaxes letrec-syntax let-syntaxes let-syntax syntax-rules))
 
 ;;----------------------------------------------------------------------
 ;; #%more-scheme : case, do, etc. - remaining syntax

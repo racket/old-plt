@@ -2714,6 +2714,11 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
   return scheme_syntax_to_datum(argv[0], 0, NULL);
 }
 
+static int nonneg_exact_or_false_p(Scheme_Object *o)
+{
+  return SCHEME_FALSEP(o) || scheme_nonneg_exact_p(o);
+}
+
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
   Scheme_Object *src = scheme_false;
@@ -2730,15 +2735,15 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
     if (!SCHEME_FALSEP(src) 
 	&& !SCHEME_STXP(src)
 	&& !(((ll == 4) || (ll == 5))
-	     && scheme_nonneg_exact_p(SCHEME_CADR(src))
-	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(src)))
-	     && scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src))))
+	     && nonneg_exact_or_false_p(SCHEME_CADR(src))
+	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(src)))
+	     && nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(src))))
 	     && ((ll == 4)
-		 || scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src)))))))
+		 || nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(src)))))))
 	&& !(((ll == 2) || (ll == 3))
-	     && scheme_nonneg_exact_p(SCHEME_CADR(src))
+	     && nonneg_exact_or_false_p(SCHEME_CADR(src))
 	     && ((ll == 2)
-		 || scheme_nonneg_exact_p(SCHEME_CADR(SCHEME_CDR(src))))))
+		 || nonneg_exact_or_false_p(SCHEME_CADR(SCHEME_CDR(src))))))
       scheme_wrong_type("datum->syntax-object", "syntax, source location list, or #f", 2, argc, argv);
 
     if (ll >= 4) {
@@ -2763,10 +2768,15 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
       if (span && SCHEME_BIGNUMP(span))
 	span = scheme_make_integer(0);
 
+      if (SCHEME_FALSEP(line) != SCHEME_FALSEP(col))
+	scheme_arg_mismatch("datum->syntax-object", 
+			    "line and column positions must both be numbers or #f in: ", 
+			    argv[2]);
+
       src = scheme_make_stx_w_offset(scheme_false,
-				     SCHEME_INT_VAL(line),
-				     SCHEME_INT_VAL(col),
-				     SCHEME_INT_VAL(pos),
+				     SCHEME_FALSEP(line) ? -1 : SCHEME_INT_VAL(line),
+				     SCHEME_FALSEP(col) ? -1 : SCHEME_INT_VAL(col),
+				     SCHEME_FALSEP(pos) ? -1 : SCHEME_INT_VAL(pos),
 				     span ? SCHEME_INT_VAL(span) : -1,
 				     src,
 				     NULL);
@@ -2789,7 +2799,7 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
       src = scheme_make_stx_w_offset(scheme_false,
 				     -1,
 				     -1,
-				     SCHEME_INT_VAL(pos),
+				     SCHEME_FALSEP(pos) ? -1 : SCHEME_INT_VAL(pos),
 				     span ? SCHEME_INT_VAL(span) : -1,
 				     src,
 				     NULL);

@@ -978,21 +978,21 @@ void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
 
 #define MZERR_MAX_SRC_LEN 100
 
-static char *make_srcloc_string(Scheme_Object *form, long *len)
+static char *make_srcloc_string(Scheme_Stx_Srcloc *srcloc, long *len)
 {
   long line, col;
 
-  line = ((Scheme_Stx *)form)->srcloc->line;
-  col = ((Scheme_Stx *)form)->srcloc->col;
+  line = srcloc->line;
+  col = srcloc->col;
   if (col < 0)
-    col = ((Scheme_Stx *)form)->srcloc->pos;
+    col = srcloc->pos;
 
   if (col >= 0) {
     Scheme_Object *src;
     char *srcstr, *result;
     long srclen, rlen;
     
-    src = ((Scheme_Stx *)form)->srcloc->src;
+    src = srcloc->src;
     if (src && SCHEME_STRINGP(src)) {
       /* Strip off prefix matching the current directory: */
       src = scheme_remove_current_directory_prefix(src);
@@ -1032,8 +1032,9 @@ void scheme_read_err(Scheme_Object *port,
 		     const char *detail, ...)
 {
   va_list args;
-  char *s, *ls, lbuf[30];
-  long slen, column;
+  char *s, *ls, lbuf[30], *fn;
+  long slen, fnlen;
+  int show_loc;
 
   /* Precise GC: Don't allocate before getting hidden args off stack */
   s = prepared_buf;
@@ -1043,34 +1044,55 @@ void scheme_read_err(Scheme_Object *port,
   va_end(args);
   
   prepared_buf = init_buf(NULL, &prepared_buf_len);
+
+  ls = "";
+  fnlen = 0;
+
+  show_loc = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_ERROR_PRINT_SRCLOC));
   
   if (stxsrc) {
-    if (SAME_TYPE(SCHEME_TYPE(stxsrc), scheme_stx_offset_type)) {
-      Scheme_Stx_Offset *o = (Scheme_Stx_Offset *)stxsrc;
+    stxsrc = scheme_make_stx_w_offset(scheme_false, line, col, pos, span, stxsrc, STX_SRCTAG);
 
-      if (pos >= 0)
-	pos += o->pos;
-      if (col >= 0) {
-	if (line == 1)
-	  col += o->col;
-      }
-      if (line >= 0)
-	line += o->line;
+    line = ((Scheme_Stx *)stxsrc)->srcloc->line;
+    col = ((Scheme_Stx *)stxsrc)->srcloc->col;
+    pos = ((Scheme_Stx *)stxsrc)->srcloc->pos;
 
-      stxsrc = o->src;
-    } 
-  }
-
-  if (col < 0)
-    column = pos;
-  else
-    column = col;
-
-  if (column >= 0) {
-    scheme_sprintf(lbuf, 30, ":%L%ld", line, column);
-    ls = lbuf;
+    if (show_loc)
+      fn = make_srcloc_string(((Scheme_Stx *)stxsrc)->srcloc, &fnlen);
+    else
+      fn = NULL;
   } else
-    ls = "";
+    fn = NULL;
+
+  if (!fn && show_loc) {
+    long column;
+
+    if (col < 0)
+      column = pos;
+    else
+      column = col;
+
+    if (port) {
+      Scheme_Object *str;
+      fn = SCHEME_IPORT_NAME(port);
+      str = scheme_make_string_without_copying(fn);
+      str = scheme_remove_current_directory_prefix(str);
+      fn = SCHEME_STR_VAL(str);
+    } else
+      fn = "UNKNOWN";
+
+    fnlen = strlen(fn);
+
+    if (column >= 0) {
+      scheme_sprintf(lbuf, 30, ":%L%ld: ", line, column);
+      ls = lbuf;
+    } else
+      ls = ": ";
+  } else if (!show_loc) {
+    fn = "";
+    fnlen = 0;
+  }
+    
 
   scheme_raise_exn((gotc == EOF) ? MZEXN_READ_EOF : ((gotc == SCHEME_SPECIAL) ? MZEXN_READ_NON_CHAR : MZEXN_READ), 
 		   port ? port : scheme_false, 
@@ -1079,9 +1101,9 @@ void scheme_read_err(Scheme_Object *port,
 		   (col < 0) ? scheme_false : scheme_make_integer(col),
 		   (pos < 0) ? scheme_false : scheme_make_integer(pos),
 		   (span < 0) ? scheme_false : scheme_make_integer(span),
-		   "%t in %s%s", 
-		   s, slen, port ? SCHEME_IPORT_NAME(port) : "UNKNOWN",
-		   ls);
+		   "%t%s%t", 
+		   fn, fnlen, ls,
+		   s, slen);
 }
 
 void scheme_wrong_syntax(const char *where, 
@@ -1133,7 +1155,7 @@ void scheme_wrong_syntax(const char *where,
   if (form) {
     Scheme_Object *pform;
     if (SCHEME_STXP(form)) {
-      p = make_srcloc_string(form, &plen);
+      p = make_srcloc_string(((Scheme_Stx *)form)->srcloc, &plen);
       pform = scheme_syntax_to_datum(form, 0, NULL);
 
       /* Try to extract syntax name from syntax, if needed */
@@ -1183,7 +1205,7 @@ void scheme_wrong_syntax(const char *where,
     Scheme_Object *pform;
     if (SCHEME_STXP(detail_form)) {
       if (((Scheme_Stx *)detail_form)->srcloc->line >= 0)
-	p = make_srcloc_string(detail_form, &plen);
+	p = make_srcloc_string(((Scheme_Stx *)detail_form)->srcloc, &plen);
       pform = scheme_syntax_to_datum(detail_form, 0, NULL);
     } else {
       pform = detail_form;

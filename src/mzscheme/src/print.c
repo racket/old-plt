@@ -1230,9 +1230,9 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	    print_this_string(p, ":", 0, 1);
 	  }
 	  if (stx->srcloc->line >= 0)
-	    sprintf(quick_buffer, "%ld.%ld", stx->srcloc->line, stx->srcloc->col);
+	    sprintf(quick_buffer, "%ld:%ld", stx->srcloc->line, stx->srcloc->col);
 	  else
-	    sprintf(quick_buffer, "%ld", stx->srcloc->pos);
+	    sprintf(quick_buffer, ":%ld", stx->srcloc->pos);
 	  print_this_string(p, quick_buffer, 0, -1);
 	  print_this_string(p, ">", 0, 1);
 	} else

@@ -251,7 +251,7 @@ scheme_init_eval (Scheme_Env *env)
   unknown_symbol = scheme_intern_symbol("unknown");
   void_link_symbol = scheme_intern_symbol("-v");
   quote_symbol = scheme_intern_symbol("quote");
-  letrec_syntaxes_symbol = scheme_intern_symbol("letrec-syntaxes");
+  letrec_syntaxes_symbol = scheme_intern_symbol("letrec-syntaxes+values");
   begin_symbol = scheme_intern_symbol("begin");
   
   REGISTER_SO(module_symbol);
@@ -2100,13 +2100,18 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     } else if (SAME_OBJ(gval, scheme_define_values_syntax)
 	       || SAME_OBJ(gval, scheme_define_syntaxes_syntax)) {
       /* Turn defines into a letrec: */
-      Scheme_Object *var, *vars, *v, *link, *l = scheme_null, *start = NULL;
-      int values = SAME_OBJ(gval, scheme_define_values_syntax);
-      GC_CAN_IGNORE char *dname = (values 
-				   ? "define-values (internal)" 
-				   : "define-syntax (internal)");
+      Scheme_Object *var, *vars, *v, *link;
+      Scheme_Object *l = scheme_null, *start = NULL;
+      Scheme_Object *stx_l = scheme_null, *stx_start = NULL;
+      int is_val;
+      GC_CAN_IGNORE char *dname;
 
       while (1) {
+	is_val = SAME_OBJ(gval, scheme_define_values_syntax);
+	dname = (is_val
+		 ? "define-values (internal)" 
+		 : "define-syntax (internal)");
+
 	v = SCHEME_STX_CDR(first);
 	
 	if (!SCHEME_STX_PAIRP(v))
@@ -2122,13 +2127,22 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 				"name must be an identifier");
 	  vars = SCHEME_STX_CDR(vars);
 	}
-	
+
 	link = scheme_make_immutable_pair(v, scheme_null);
-	if (!start)
-	  start = link;
-	else
-	  SCHEME_CDR(l) = link;
-	l = link;
+	if (is_val) {
+	  if (!start)
+	    start = link;
+	  else
+	    SCHEME_CDR(l) = link;
+	  l = link;
+	} else {
+	  if (!stx_start)
+	    stx_start = link;
+	  else
+	    SCHEME_CDR(stx_l) = link;
+	  stx_l = link;
+	}
+
 	result = SCHEME_STX_CDR(result);
 	if (!SCHEME_STX_NULLP(result) && !SCHEME_STX_PAIRP(result))
 	  scheme_wrong_syntax(dname, NULL, forms, NULL);
@@ -2139,8 +2153,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	  first = scheme_datum_to_syntax(first, forms, forms, 0, 0);
 	  first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, 1, &gval);
 	  more = 1;
-	  if ((values && NOT_SAME_OBJ(gval, scheme_define_values_syntax))
-	      || (!values && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax))) {
+	  if (NOT_SAME_OBJ(gval, scheme_define_values_syntax)
+	      && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax)) {
 	    if (SAME_OBJ(gval, scheme_begin_syntax)) {
 	      /* Inline content */
 	      Scheme_Object *content;
@@ -2162,8 +2176,15 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       }
 
       if (SCHEME_STX_PAIRP(result)) {
-	result = scheme_make_immutable_pair(values ? letrec_values_symbol : letrec_syntaxes_symbol, 
-					    scheme_make_immutable_pair(start, result));
+	if (stx_start) {
+	  if (!start)
+	    start = scheme_null;
+	  result = scheme_make_immutable_pair(letrec_syntaxes_symbol,
+					      scheme_make_immutable_pair(stx_start,
+									 scheme_make_immutable_pair(start, result)));
+	} else {
+	  result = scheme_make_immutable_pair(letrec_values_symbol, scheme_make_immutable_pair(start, result));
+	}
 	result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps(env), 0, 1);
 
 	more = 0;

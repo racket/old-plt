@@ -1393,7 +1393,7 @@
 
   (define (do-make-object class by-pos-args named-args)
     (unless (class? class)
-      (raise-type-error (quote-syntax make-object) "class" class))
+      (raise-type-error 'make-object "class" class))
     (let ([o ((class-make-object class))])
       ;; Initialize it:
       (let loop ([c class][by-pos-args by-pos-args][named-args named-args][explict-named-args? #t])
@@ -1417,13 +1417,13 @@
 				    [(null? al) named-args]
 				    [(null? nl)
 				     ;; continue mapping with superclass init args, if allowed
-				     (let ([super (and (eq? 'normal (class-init-mode c))
-						       (positive? (class-pos c))
-						       (vector-ref (class-supers c) (sub1 (class-pos c))))])
+				     (let ([super (and (eq? 'normal (class-init-mode ic))
+						       (positive? (class-pos ic))
+						       (vector-ref (class-supers ic) (sub1 (class-pos ic))))])
 				       (cond
 					[(and super (class-init-args super))
 					 (loop al (class-init-args super) super)]
-					[(eq? 'list (class-init-mode c))
+					[(eq? 'list (class-init-mode ic))
 					 (map (lambda (x) (cons #f x)) al)]
 					[else
 					 (obj-error 'make-object 

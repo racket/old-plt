@@ -1,7 +1,14 @@
+(module annotater mzscheme
+  (require (lib "unitsig.ss")
+	   "sig.ss"
+	   (lib "list.ss")
+	   (lib "zodiac-sig.ss" "syntax"))
+
+  (provide annotater@)
+
+  (define annotater@
 (unit/sig stepper:annotate^
-  (import [z : zodiac:system^]
-	  mzlib:function^
-	  [e : zodiac:interface^]
+  (import [z : zodiac^]
           [utils : stepper:cogen-utils^]
           stepper:marks^
           [s : stepper:model^]
@@ -17,6 +24,9 @@
               (cons result rest)
               rest))))
   
+  (define (internal-error . x)
+    (error 'annotater-internal-error "~s" x))
+
   ; ANNOTATE SOURCE CODE
   
   ; gensyms for annotation:
@@ -74,7 +84,8 @@
   
   (define (binding-set-remove a-set b-set expr) ; removes a from b
     (cond [(eq? a-set 'all) null]
-          [(eq? b-set 'all) (e:internal-error expr "tried to remove finite set of bindings from 'all")]
+          [(eq? b-set 'all)
+	   (internal-error expr "tried to remove finite set of bindings from 'all")]
           [else (remq* a-set b-set)]))
       
   (define never-undefined? never-undefined-getter)
@@ -117,9 +128,9 @@
            [var-clauses (map (lambda (x) 
                                (let ([var (cond [(z:binding? x) (get-binding-name x)]
                                                 [(box? x) (if (null? (unbox x))
-                                                               (e:internal-error source "empty slot in make-debug-info")
+                                                               (internal-error source "empty slot in make-debug-info")
                                                                (z:varref-var (car (unbox x))))]
-                                                [else (e:internal-error source "binding is not a binding or a slot: ~a" x)])])
+                                                [else (internal-error source "binding is not a binding or a slot: ~a" x)])])
                                  (list var x)))
                              kept-bindings)]
            [let-bindings (filter (lambda (x) (and (not (z:lambda-binding? x))
@@ -276,7 +287,7 @@
                  (if (= offset (z:location-offset (z:zodiac-start expr)))
                      expr
                      (cond
-                       ((z:scalar? expr) (e:internal-error expr "starting offset inside scalar:" offset))
+                       ((z:scalar? expr) (internal-error expr "starting offset inside scalar:" offset))
                        ((z:sequence? expr) 
                         (let ([object (z:read-object expr)])
                             (cond
@@ -285,8 +296,8 @@
                              (search-exprs (vector->list object))) ; can source exprs be here?
                             ((z:improper-list? expr)
                              (search-exprs (search-exprs object))) ; can source exprs be here? (is this a bug?)
-                            (else (e:internal-error expr "unknown expression type in sequence")))))
-                       (else (e:internal-error expr "unknown read type"))))))))
+                            (else (internal-error expr "unknown expression type in sequence")))))
+                       (else (internal-error expr "unknown read type"))))))))
   
          (define (struct-procs-defined expr)
            (if (and (z:define-values-form? expr)
@@ -847,7 +858,7 @@
                            free-bindings))]
                
                [foot-wrap?
-                (e:internal-error expr "cannot annotate units or classes in foot-wrap mode")]
+                (internal-error expr "cannot annotate units or classes in foot-wrap mode")]
                
                [(z:unit-form? expr)
                 (let* ([imports (z:unit-form-imports expr)]
@@ -1017,8 +1028,8 @@
                                       (cons (car vars) (loop (cdr vars)))))
                                 free-var-sets)))
                             (else
-                             (e:internal-error paroptarglist
-                                               "Given to paroptarglist->ilist"))))]
+                             (internal-error paroptarglist
+					     "Given to paroptarglist->ilist"))))]
                        [process-clause
                         (lambda (clause)
                           (cond
@@ -1130,7 +1141,7 @@
                      (values (appropriate-wrap annotated free-bindings) free-bindings)))]          
 	       
 	       [else
-		(e:internal-error
+		(internal-error
 		 expr
                  "stepper:annotate/inner: unknown object to annotate, ~a~n"
                  expr)])))
@@ -1147,4 +1158,4 @@
   ;(printf "annotated: ~n~a~n" (car annotated-exprs))
   (values annotated-exprs struct-proc-names))))
   
-)
+)))

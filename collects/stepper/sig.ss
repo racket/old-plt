@@ -1,7 +1,26 @@
-(define-macro ccond
-  (lambda clauses
-    `(cond ,@clauses (else (error 'ccond "fell off end of cond expression")))))
-  
+(module sig mzscheme
+  (provide ccond
+	   stepper:cogen-utils^
+	   plt:aries-no-break^
+	   plt:aries^
+	   stepper:marks^
+	   stepper:client-procs^
+	   stepper:model-input^
+	   stepper:model^
+	   stepper:shared^
+	   stepper:annotate^
+	   stepper:reconstruct^
+	   stepper:mred-extensions^)
+
+  (require (lib "unitsig.ss"))
+
+  (define-syntax (ccond stx)
+    (syntax-case stx ()
+      [(_ (question answer) ...)
+       (syntax
+	(cond
+	 (question answer) ...
+	 (else (error 'ccond "fell off end of cond expression"))))]))
 
 (define-signature stepper:cogen-utils^
   (check-for-keyword
@@ -120,3 +139,4 @@
    image?
    separator-snip% ;; these last two aren't required, but are useful 
    vertical-separator-snip%)) ;; for debugging purposes
+)

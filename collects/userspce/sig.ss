@@ -14,8 +14,6 @@
      intermediate
      advanced))
   
-;; the extras signatures don't include core-flat anymore --
-;; they are now added differently.
   (define-signature plt:beginner-extras^
     ((struct posn (x y) -setters)))
   

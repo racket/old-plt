@@ -1,8 +1,14 @@
+(module marks mzscheme
+  (require (lib "unitsig.ss")
+	   (lib "zodiac-sig.ss" "syntax")
+	   "sig.ss")
+
+  (provide marks@)
+
+  (define marks@
 (unit/sig stepper:marks^
-  (import [z : zodiac:system^]
-          [e : zodiac:interface^]
-          [cp : stepper:client-procs^]
-          mzlib:function^)
+  (import [z : zodiac^]
+          [cp : stepper:client-procs^])
   
   ; debug-key: this key will be used as a key for the continuation marks.
   (define-struct debug-key ())

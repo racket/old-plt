@@ -3,17 +3,24 @@
 ; of the debugger, it doesn't matter, since no breaks are really inserted anyway.
 ; So this unit is a complete farce.
 
-(unit/sig stepper:model^
-  (import)
-  
-  (define check-pre-defined-var
-    (lambda (ignored) #f))
+(module fake-model mzscheme
+  (require (lib "unitsig.ss")
+	   "sig.ss")
 
-  (define true-false-printed? 'fake)
-  (define check-global-defined 'fake)
-  (define global-lookup 'fake)
-  (define constructor-style-printing? 'fake)
-  (define abbreviate-cons-as-list? 'fake)
-  (define special-function? 'fake)
-  (define image? 'fake)
-  (define print-convert 'fake))
+  (provide fake-model@)
+
+  (define fake-model@
+    (unit/sig stepper:model^
+      (import)
+      
+      (define check-pre-defined-var
+	(lambda (ignored) #f))
+
+      (define true-false-printed? 'fake)
+      (define check-global-defined 'fake)
+      (define global-lookup 'fake)
+      (define constructor-style-printing? 'fake)
+      (define abbreviate-cons-as-list? 'fake)
+      (define special-function? 'fake)
+      (define image? 'fake)
+      (define print-convert 'fake))))

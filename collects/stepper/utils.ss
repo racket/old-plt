@@ -1,8 +1,16 @@
+(module utils mzscheme
+  (require (lib "unitsig.ss")
+	   "sig.ss"
+	   (lib "zodiac-sig.ss" "syntax"))
+
+  (provide utils@)
+
 (unit/sig stepper:cogen-utils^
-  (import [z : zodiac:system^]
-          [e : zodiac:interface^])
+  (import [z : zodiac:system^])
   
-  
+  (define (internal-error . x)
+    (error 'stepper:utils "~s" x))
+	   
   ; check whether the supplied id is a keyword. if the id is a syntax or
   ; macro keyword, issue an error.  If disallow-procedures? is true, then
   ; we issue an error for _any_ use of a keyword. These procedures are used
@@ -20,14 +28,13 @@
 		 [(z:symbol? id)
 		  (z:read-object id)]
 		 [else
-		  (e:internal-error id "Given in check-for-keyword")])])
+		  (internal-error id "Given in check-for-keyword")])])
 	  (when (and (keyword-name? real-id)
 		     (or disallow-procedures?
 			 (let ([gdv (global-defined-value real-id)])
 			   (or (syntax? gdv)
 			       (macro? gdv)))))
-	    (e:static-error "keyword" 'term:keyword-out-of-context
-                            id "invalid use of keyword ~s" real-id))))))
+	    (raise-syntax-error 'keyword "invalid use of keyword" id))))))
   
   (define check-for-keyword (check-for-keyword/both #t))
   (define check-for-syntax-or-macro-keyword (check-for-keyword/both #f))
@@ -98,8 +105,7 @@
 	((z:sym-arglist? arglist)
 	 (car (z:arglist-vars arglist)))
 	(else
-	 (e:internal-error arglist
-                           "Given to arglist->ilist")))))
+	 (internal-error arglist "Given to arglist->ilist")))))
   
   (define make-improper
     (lambda (combine)

@@ -1,5 +1,10 @@
-(unit/sig (break)
-  (import [e : zodiac:interface^])
-  
-  (define (break)
-    (e:internal-error #f "break called in drscheme-jr")))
+(module fake-break mzscheme
+  (provide fake-break@)
+
+  (define fake-break@
+    (unit/sig (break)
+      (import)
+      
+      (define (break)
+	(error 'break "break not implemented in drscheme-jr")))))
+

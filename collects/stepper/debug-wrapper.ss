@@ -1,5 +1,13 @@
+(module debug-wrapper mzscheme
+  (require (lib "unitsig.ss")
+	   "sig.ss"
+	   (lib "zodiac-sigs.ss" "syntax"))
+
+  (provide debug-wrapper@)
+
+  (define debug-wrapper@
 (unit/sig plt:aries-no-break^
-  (import [zodiac : zodiac:system^]
+  (import [zodiac : zodiac^]
           [utils : stepper:cogen-utils^]
           [marks : stepper:marks^]
           [annotate : stepper:annotate^])
@@ -31,6 +39,4 @@
   (define ankle-wrap-enabled marks:ankle-wrap-enabled)
     
   (define signal-not-boolean utils:signal-not-boolean)
-  (define signal-undefined utils:signal-undefined))
-
-  
+  (define signal-undefined utils:signal-undefined))))

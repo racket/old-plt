@@ -19,7 +19,7 @@
 			   ascent ; portion of height above top baseline
 			   descent ; portion of height below bottom baseline
 			   children)) ; list of child records
-      (define-struct child (pict dx dy))
+      (define-struct child (pict dx dy sx sy))
 
       (define (quotient* a b)
 	(if (integer? a)
@@ -41,7 +41,7 @@
 	  (make-pict (if draw draw (pict-draw box))
 		     (+ w dw) (+ h da dd) 
 		     (max 0 (+ a da)) (max 0 (+ d dd))
-		     (list (make-child box dx dy)))))
+		     (list (make-child box dx dy 1 1)))))
 
       (define (single-pict-offset pict subbox)
 	(let floop ([box pict]
@@ -50,28 +50,37 @@
 						 "sub-pict: ~a not found in: ~a" 
 						 subbox pict))])
 	  (if (eq? box subbox)
-	      (found 0 0)
+	      (found 0 0 1 1)
 	      (let loop ([c (pict-children box)])
 		(if (null? c) 
 		    (not-found)
 		    (floop (child-pict (car c))
-			   (lambda (dx dy)
-			     (found (+ dx (child-dx (car c)))
-				    (+ dy (child-dy (car c)))))
+			   (lambda (dx dy sx sy)
+			     (let ([tsx (child-sx (car c))]
+				   [tsy (child-sy (car c))])
+			       (found (+ (* tsx dx)
+					 (child-dx (car c)))
+				      (+ (* tsy dy)
+					 (child-dy (car c)))
+				      (* sx tsx)
+				      (* sy tsy))))
 			   (lambda ()
 			     (loop (cdr c)))))))))
 
-      (define (find-lb pict subbox-path)
+      (define (find-lbx pict subbox-path)
 	(if (pict? subbox-path)
 	    (single-pict-offset pict subbox-path)
-	    (let loop ([p pict][l subbox-path][dx 0][dy 0])
+	    (let loop ([p pict][l subbox-path][dx 0][dy 0][sx 1][sy 1])
 	      (if (null? l)
-		  (values dx dy)
-		  (let-values ([(x y) (find-lb p (car l))])
-		    (loop (car l) (cdr l) (+ x dx) (+ y dy)))))))
+		  (values dx dy sx sy)
+		  (let-values ([(x y tsx tsy) (find-lbx p (car l))])
+		    (loop (car l) (cdr l) 
+			  (+ (* sx x) dx) (+ (* sy y) dy)
+			  (* sx tsx) (* sy tsy)))))))
 
       (define-values (find-lt
 		      find-lc
+		      find-lb
 		      find-ltl
 		      find-lbl
 		      find-ct
@@ -84,23 +93,24 @@
 		      find-rb
 		      find-rtl
 		      find-rbl)
-	(let ([lb (lambda (x w d a) x)]
-	      [c (lambda (x w d a) (+ x (quotient* w 2)))]
-	      [rt (lambda (x w d a) (+ x w))]
-	      [tline (lambda (x w d a) (+ x (- w a)))]
-	      [bline (lambda (x w d a) (+ x d))]
+	(let ([lb (lambda (x sx w d a) x)]
+	      [c (lambda (x sx w d a) (+ x (* sx (quotient* w 2))))]
+	      [rt (lambda (x sx w d a) (+ x (* sx w)))]
+	      [tline (lambda (x sx w d a) (+ x (* sx (- w a))))]
+	      [bline (lambda (x sx w d a) (+ x (* sx d)))]
 	      [find (lambda (get-x get-y)
 		      (lambda (pict pict-path)
-			(let-values ([(dx dy) (find-lb pict pict-path)])
+			(let-values ([(dx dy sx sy) (find-lbx pict pict-path)])
 			  (let ([p (let loop ([path pict-path])
 				     (cond
 				      [(pict? path) path]
 				      [(null? (cdr path)) (loop (car path))]
 				      [else (loop (cdr path))]))])
-			    (values (get-x dx (pict-width p) 0 0)
-				    (get-y dy (pict-height p) (pict-descent p) (pict-ascent p)))))))])
+			    (values (get-x dx sx (pict-width p) 0 0)
+				    (get-y dy sy (pict-height p) (pict-descent p) (pict-ascent p)))))))])
 	  (values (find lb rt)
 		  (find lb c)
+		  (find lb lb)
 		  (find lb tline)
 		  (find lb bline)
 		  (find c rt)
@@ -135,7 +145,8 @@
 			    (make-child 
 			     (child-pict c)
 			     (child-dx c)
-			     (+ dh (child-dy c))))
+			     (+ dh (child-dy c))
+			     1 1))
 			  (pict-children p)))))
 
       (define (drop p n)
@@ -357,8 +368,8 @@
                              w h
                              (combine-ascent fd1 rd1 fd2 rd2 fh rh h)
                              (combine-descent fd2 rd2 fd1 rd1 fh rh h)
-                             (list (make-child first dx1 dy1)
-                                   (make-child rest dx2 dy2))))])))))]
+                             (list (make-child first dx1 dy1 1 1)
+                                   (make-child rest dx2 dy2 1 1))))])))))]
 	      [2max (lambda (a b c . rest) (max a b))]
 	      [zero (lambda (fw fh rw rh sep fd1 fd2 rd1 rd2 . args) 0)]
 	      [fv (lambda (a b . args) a)]
@@ -633,8 +644,8 @@
 	   totalwidth totalheight
 	   totalheight 0
 	   (cons
-	    (make-child title 0 title-y)
-	    (map (lambda (child child-y) (make-child child 0 child-y)) fields field-ys)))))
+	    (make-child title 0 title-y 1 1)
+	    (map (lambda (child child-y) (make-child child 0 child-y 1 1)) fields field-ys)))))
 
       (define (picture* w h a d commands)
 	(let loop ([commands commands][translated null][children null])
@@ -702,7 +713,7 @@
 				    `(put ,x ,y ,(pict-draw p))
 				    translated)
 				   (cons
-				    (make-child p x y)
+				    (make-child p x y 1 1)
 				    children)))]
 		  [else (loop rest (cons c translated) children)])))))
 

@@ -1767,18 +1767,23 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
 {
   wxNode *node;
   wxSnip *snip;
-  long l, length = 0;
+  long l, length = 0, sz = 0;
   char *str, *total = NULL, *old;
 
   if (!strcmp(format, "TEXT")) {
     for (node = wxmb_commonCopyBuffer->First(); node; node = node->Next()) {
       snip = (wxSnip *)node->Data();
+
       str = snip->GetText(0, snip->count, TRUE);
       l = strlen(str);
+
       if (total) {
-	old = total;
-	total = new char[length + l + 1];
-	memcpy(total, old, length);
+	if (length + l + 1 >= sz) {
+	  sz = (2 * sz) + length + l + 1;
+	  old = total;
+	  total = new char[sz];
+	  memcpy(total, old, length);
+	}
 	memcpy(total + length, str, l);
 	delete[] old;
       } else

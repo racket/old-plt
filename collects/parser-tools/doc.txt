@@ -101,6 +101,9 @@ This gives you the following syntactic forms:
    define-tokens, except the resulting token constructors take no
    arguments and store the value #f into the token.
 
+> (token-name token) returns the token's name.
+> (token-value token) returns the token's value.
+
 HINT: Token definitions are usually necessary for interoperating with
 a generated parser, but may not be the right choice when using the
 lexer in other situations.

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.cc,v 1.7 1999/11/04 17:25:34 mflatt Exp $
+ * $Id: EvtHandler.cc,v 1.8 1999/11/24 21:20:19 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -150,7 +150,7 @@ int CharCodeXToWX(KeySym key_sym)
 
   // try displayable keysyms
   if (key_sym <= 255)
-    return int(key_sym);
+    return (int)key_sym;
 
   // keysym not handled by wx
   return 0;

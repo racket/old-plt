@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.14 1999/11/27 17:58:46 mflatt Exp $
+ * $Id: AppMain.cc,v 1.15 1999/11/28 17:12:50 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -79,9 +79,12 @@ static void wxCommonInit(void);
 
 void wxInitNewToplevel(void)
 {
-  wxPutAppToplevel(XtAppCreateShell(wxAPP_NAME, wxAPP_CLASS,
-				    applicationShellWidgetClass,
-				    wxAPP_DISPLAY, NULL, 0));
+  Widget tl;
+
+  tl = XtAppCreateShell(wxAPP_NAME, wxAPP_CLASS,
+		       applicationShellWidgetClass,
+			wxAPP_DISPLAY, NULL, 0);
+  wxPutAppToplevel(tl);
 }
 
 typedef struct {

@@ -332,10 +332,12 @@
               (send status-message set-label s)))
           (define/public (change-status-to-search) 
             (when search/status-panel
-              (send search/status-panel active-child field-panel)))
+              (send search/status-panel active-child field-panel)
+              (send search-field focus)))
           
           (field [search/status-panel #f]
                  [field-panel #f]
+                 [search-field #f]
                  [status-panel #f]
                  [status-message #f]
                  [choices-panel #f])
@@ -376,16 +378,17 @@
                                         (parent status-panel)
                                         (stretchable-width #t)
                                         (label ""))))
-            (define search-field (instantiate text-field% ()
+            (define stupid-internal-define-syntax5
+              (set! search-field (instantiate text-field% ()
                                    (label (string-constant plt:hd:find-docs-for))
                                    (callback (lambda (x y)
                                                (let ([on? (not (equal? "" (send search-field get-value)))])
                                                  (send search-button enable on?)
                                                  (send search-menu enable on?))))
-                                   (parent field-panel)))
+                                   (parent field-panel))))
             
             ;; exposed to derived classes
-            (define stupid-internal-define-syntax5
+            (define stupid-internal-define-syntax6
               (set! choices-panel (instantiate horizontal-panel% ()
                                     (parent search-panel)
                                     (alignment '(center center)))))

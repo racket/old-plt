@@ -336,8 +336,8 @@ Each index entry is a list of four values:
 
   * indexed item - a string, e.g., "creating help desk documents"
 
-  * HTML file - a file name relative to the manual's directory, e.g.,
-    "node198.htm"
+  * HTML file - a file name (represented as a bytes)
+    relative to the manual's directory, e.g., #"node198.htm"
 
   * HTML label - a string reprsenting a label within the HTML file
 

@@ -14,26 +14,26 @@ fi
 
 ;; This list determines the order of libraries in the index file:
 (define libraries*
-  '("Animated Images"
-    "Composing Images"
-    "Convert"
-    "Guess"
-    "Mastermind"
-    "Simple Drawing Exercises"
-    "Hangman"
-    "Arrows"
-    "Documents"
-    "Directories"
-    "Graphing Functions"
-    "Graphing Functions 2"
-    "GUI"
-    "Lkup GUI"
-    "Arrows GUI"
-    "Guess GUI"
-    "Elevator"
-    "Simplified Scheme Web Servlets"
-    "Scheme Web Servlets"
-    "Show Queen"))
+  '(#"Images"
+    #"Animated Images"
+    #"Convert"
+    #"Guess"
+    #"Mastermind"
+    #"Simple Drawing Exercises"
+    #"Hangman"
+    #"Arrows"
+    #"Documents"
+    #"Directories"
+    #"Graphing Functions"
+    #"Graphing Functions 2"
+    #"GUI"
+    #"Lkup GUI"
+    #"Arrows GUI"
+    #"Guess GUI"
+    #"Elevator"
+    #"Simplified Scheme Web Servlets"
+    #"Scheme Web Servlets"
+    #"Show Queen"))
 
 (define dest-dir (build-path (collection-path "doc") "teachpack"))
 (printf "writing docs to ~s\n" dest-dir)
@@ -41,7 +41,8 @@ fi
 (require (lib "list.ss"))
 
 (define thtml-files
-  (filter (lambda (x) (regexp-match #rx"[.]thtml$" x)) (directory-list)))
+  (filter (lambda (x) (regexp-match #rx#"[.]thtml$" (path->bytes x)))
+          (directory-list)))
 
 (unless (directory-exists? dest-dir) (make-directory dest-dir))
 
@@ -52,13 +53,13 @@ fi
     (map (lambda (s)
            (let* ([m (or (regexp-match rx (open-input-file s))
                          (error 'mkdocs "LIBNAME+FILENAME not found in ~s" s))]
-                  [basename (regexp-replace #rx"[.]thtml$" s "")])
-             (unless (file-exists?
-                      (build-path 'up (string-append basename ".ss")))
+                  [basename (regexp-replace #rx#"[.]thtml$" (path->bytes s) #"")]
+                  [ss-name (bytes->path (bytes-append basename #".ss"))])
+             (unless (file-exists? (build-path 'up ss-name))
                (error 'mkdocs "Found ~s but no ~s teachpack found"
-                      s (string-append basename ".ss")))
-             (list (cadr m) basename)))
-         (filter (lambda (f) (not (equal? f "index.thtml"))) thtml-files))))
+                      s ss-name))
+             (list (cadr m) (bytes->path basename))))
+         (filter (lambda (f) (not (equal? (path->bytes f) #"index.thtml"))) thtml-files))))
 ;; Check that `lib-names' exactly match `libraires':
 (let ([file-libs (map car lib-names)])
   (define (test x) (and (pair? x) x))
@@ -83,9 +84,9 @@ fi
 (define LIBLINKS
   (map (lambda (lib)
          (format "<li><a href=~s>~a (<tt>~a</tt>)</a></li>\n"
-                 (string-append (cadr lib) ".html")
+                 (string-append (bytes->string/utf-8 (path->bytes (cadr lib))) ".html")
                  (car lib)
-                 (string-append (cadr lib) ".ss")))
+                 (string-append (bytes->string/utf-8 (path->bytes (cadr lib))) ".ss")))
        libraries))
 
 ;; Stuff for the preprocessed files
@@ -104,10 +105,10 @@ fi
 
 ;; Make html files
 (for-each (lambda (thtml)
-            (define html (regexp-replace #rx"[.]thtml" thtml ".html"))
+            (define html (bytes->path (regexp-replace #rx#"[.]thtml" (path->bytes thtml) #".html")))
             (printf "Processing ~a...\n" thtml)
             (set! HTMLNAME html)
-            (set! FILENAME (regexp-replace #rx"[.]thtml" thtml ".ss"))
+            (set! FILENAME (bytes->path (regexp-replace #rx#"[.]thtml" (path->bytes thtml) #".ss")))
             (with-output-to-file (build-path dest-dir html)
               (lambda () (preprocess thtml))
               'replace))
@@ -122,7 +123,7 @@ fi
       (define (do-entry filename libname html entry)
         (let ([entry (format "~a" entry)]
               [title (format "~a teachpack" libname)])
-          (writeln `(,entry ,html ,entry ,title))))
+          (writeln `(,entry ,(bytes->string/utf-8 (path->bytes html)) ,entry ,title))))
       (printf "(\n")
       (let ([title "Teachpacks for \"How to Design Programs\""])
         (writeln `(,title "index.html" "HtDP" ,title)))

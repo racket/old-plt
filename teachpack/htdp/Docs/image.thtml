@@ -1,4 +1,4 @@
-{ (define LIBNAME "Composing Images")
+{ (define LIBNAME "Images")
   (include "head.tinc") }
 
 This teachpack provides primitives for constructing and
@@ -59,6 +59,37 @@ using the next two functions.
  respect to the pinhole of the first image.
 </menu>
 
+The shrink functions trim an image by eliminating extraneous pixels.
+<menu>
+<li><code>{(idx shrink-tl)}</code> : image number number -> image <br>
+to shrink the image, starting from the top-left corner. The
+two numbers indicate how many pixels to save.
+The pinhole of the resulting image is in the middle of the image.
+</li>
+<li><code>{(idx shrink-tr)}</code> : image number number -> image <br>
+to shrink the image, starting from the top-right corner. The
+two numbers indicate how many pixels to save.
+The pinhole of the resulting image is in the middle of the image.
+</li>
+<li><code>{(idx shrink-bl)}</code> : image number number -> image <br>
+to shrink the image, starting from the bottom-left corner. The
+two numbers indicate how many pixels to save.
+The pinhole of the resulting image is in the middle of the image.
+</li>
+<li><code>{(idx shrink-br)}</code> : image number number -> image <br>
+to shrink the image, starting from the bottom-right corner. The
+two numbers indicate how many pixels to save.
+The pinhole of the resulting image is in the middle of the image.
+</li>
+
+<li><code>{(idx shrink)}</code> : image number number number number -> image <br>
+to shrink an image around its pinhole. The numbers are the
+pixels to save to left, above, to the right, and below the
+pinhole, respectively. The pixel directly on the pinhole is
+always saved.
+</li>
+</menu>
+
 These functions provide information about the image's size.
 
 <menu>
@@ -81,6 +112,9 @@ pinhole.
 <li><code>{(idx move-pinhole)}</code> :  image number number -> image <br>
  to move the pinhole down and to the right (by the specified amounts) of 
  its current location. Use negative numbers to move it up or to the left.
+<li><code>{(idx put-pinhole)}</code> :  image number number -> image <br>
+ to put the pinhole in the location specified by the arguments, counting
+ from the left and down from the top, respectively.
 </menu>
  
 This function precisely specifies what a valid image color is.

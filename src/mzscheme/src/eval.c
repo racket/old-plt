@@ -2697,7 +2697,6 @@ static void *eval_k()
       v = _scheme_eval_compiled_expr_wp(v, p);
   } else if (SAME_TYPE(SCHEME_TYPE(v), scheme_compilation_top_type)) {
     Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)v;
-    int multi;
 
     if (!scheme_check_runstack(top->max_let_depth))
       return (Scheme_Object *)scheme_enlarge_runstack(top->max_let_depth, eval_k);

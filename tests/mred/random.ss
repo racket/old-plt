@@ -762,7 +762,8 @@
   (create-all-random)
   (create-all-random))
 
-(with-handlers ([void void])
+(with-handlers ([void (lambda (x)
+			(printf "Warning: couldn't load classhack.so"))])
   (load-relative-extension "classhack.so"))
 
 (printf " Creating Example Instances~n")  

@@ -87,9 +87,13 @@ STDMETHODIMP CEventQueue::GetReaderSemaphore(int *pReadSem) {
   return S_OK;
 }
 
-STDMETHODIMP CEventQueue::BlockUntilWinEvent(void) {
-  MsgWaitForMultipleObjects(0,NULL,FALSE,10,
-			    QS_ALLINPUT | QS_ALLPOSTMESSAGE); 
+STDMETHODIMP CEventQueue::ProcessWinEvents(void) {
+  MSG msg;
+
+  while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
+  }
 
   return S_OK;
 }

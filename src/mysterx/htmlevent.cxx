@@ -47,6 +47,20 @@ Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
+Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
+  MX_Document_Object *doc;
+
+  if (MX_DOCUMENTP(argv[0]) == FALSE) {
+    scheme_wrong_type("block-until-event","mx-document",0,argc,argv) ;
+  }
+
+  doc = (MX_Document_Object *)argv[0];
+
+  doc->pIEventQueue->ProcessWinEvents();
+
+  return scheme_void;
+}
+
 void initEventNames(void) {
   eventNames[click] = L"click";
   eventNames[dblclick] = L"dblclick";

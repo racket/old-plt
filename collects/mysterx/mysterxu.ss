@@ -684,8 +684,12 @@
 	    [handler-thread #f]
 	    [block-until-event 
 	     (lambda () (mxprims:block-until-event doc))]
-	    [block-until-win-event 
-	     (lambda () (mxprims:block-until-win-event doc))]
+	    [process-win-events
+	     (lambda () 
+		(let loop ()
+		  (mxprims:process-win-events doc)
+		  (sleep)
+		  (loop)))]
 	    [make-event-key 
 	     (lambda (tag id) ; string x string -> symbol
 	       (let ([new-tag (string-copy tag)]
@@ -693,13 +697,7 @@
 		 (string-uppercase! new-tag)
 		    (string-uppercase! new-id)
 		    (string->symbol
-		     (string-append new-tag "@" new-id))))]
-	    [unblock-win-events
-	     (lambda ()
-	       (let loop ()
-		 (block-until-win-event)
-		    (sleep)
-		    (loop)))])
+		     (string-append new-tag "@" new-id))))])
 
 	   (public
 	    [show 
@@ -802,7 +800,8 @@
 		thread-post))])
 
 	   (sequence 
-
 	     (super-init)
-	     (thread unblock-win-events)))))
+	     (thread process-win-events)))))
+
+
 

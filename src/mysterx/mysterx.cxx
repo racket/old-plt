@@ -315,7 +315,7 @@ static MX_PRIM mxPrims[] = {
   { mx_event_dblclick_pred,"event-dblclick?",1,1},
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
-  { mx_block_until_win_event,"block-until-win-event",1,1},
+  { mx_process_win_events,"process-win-events",1,1},
 };
 
 DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
@@ -2991,10 +2991,10 @@ void docHwndMsgLoop(LPVOID p) {
       }
     }
 
-    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
+    while (GetMessage(&msg,NULL,0,0)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
-     }
+    }
   }
 }
 
@@ -3189,20 +3189,6 @@ Scheme_Object *mx_make_document(int argc,Scheme_Object **argv) {
   doc->pIEventQueue = pIEventQueue;
 
   return (Scheme_Object *)doc;
-}
-
-Scheme_Object *mx_block_until_win_event(int argc,Scheme_Object **argv) {
-  MX_Document_Object *pDoc;
-
-  if (MX_DOCUMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("block-until-win-event","mx-document",0,argc,argv) ;
-  }
-
-  pDoc = (MX_Document_Object *)argv[0];
-
-  pDoc->pIEventQueue->BlockUntilWinEvent();
-
-  return scheme_void;
 }
 
 Scheme_Object *mx_document_show(int argc,Scheme_Object **argv) {

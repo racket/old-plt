@@ -563,7 +563,8 @@
  (clear-error-highlight-item-help-string "Removes the pink error highlighting")
  (reindent-menu-item-label "&Reindent")
  (reindent-all-menu-item-label "Reindent &All")
- (comment-out-menu-item-label "&Comment Out")
+ (semicolon-comment-out-menu-item-label "&Comment Out with Semicolons")
+ (box-comment-out-menu-item-label "&Comment Out with a Box")
  (uncomment-menu-item-label "&Uncomment")
  
  ;;; executables

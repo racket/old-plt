@@ -287,7 +287,7 @@
   (define (get-assigns members level class)
     (if (eq? level 'beginner)
         (list (get-beginner-assigns members class))
-        (get-instance-assigns members)))  
+        (get-instance-assigns members)))
   
   ;get-beginner-assigns: (list member) string-> (list assignment)
   (define (get-beginner-assigns members class)
@@ -324,7 +324,8 @@
       ((method? (car members))
        (if (eq? 'ctor (method-type (car members)))
            (cons (get-stmt-assigns (method-body (car members)))
-                 (get-instance-assigns members))))
+                 (get-instance-assigns (cdr members)))
+           (get-instance-assigns (cdr members))))
       (else (get-instance-assigns (cdr members)))))
   
   ;get-stmt-assigns: statement -> (list assign)

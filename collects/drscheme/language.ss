@@ -1,13 +1,14 @@
-
-(unit/sig drscheme:language^
-  (import [mred : mred^]
-	  [fw : framework^]
-	  [drscheme:unit : drscheme:unit^]
-	  [zodiac : zodiac:system^]
-	  [basis : plt:basis^]
-	  mzlib:function^
-	  mzlib:file^
-	  mzlib:print-convert^)
+(module language mzscheme
+  (require "mred-wrap.ss"
+           "framework-wrap.ss"
+           (prefix drscheme:unit: "unit.ss")
+           (prefix zodiac: (lib "zodiac.ss" "syntax"))
+           (prefix basis (lib "basis.ss" "userspce"))
+           (lib "list.ss")
+           (lib "file.ss")
+           (lib "pconvert.ss"))
+  
+  (provide language@)
 
   (define settings-preferences-symbol 
     (string->symbol (format "drscheme:~a-settings" (version))))
@@ -388,26 +389,26 @@
 	  #f)))
 
   (define (fill-language-menu frame language-menu)
-    (make-object fw:menu:can-restore-menu-item%
+    (make-object menu:can-restore-menu-item%
       "Choose Language..."
       language-menu
       (lambda (_1 _2)
 	(let ([new-settings (language-dialog
-			     (fw:preferences:get settings-preferences-symbol)
+			     (preferences:get settings-preferences-symbol)
 			     frame)])
 	  (when new-settings
-	    (fw:preferences:set
+	    (preferences:set
 	     settings-preferences-symbol
 	     new-settings))))
       #\l)
     (make-object mred:separator-menu-item% language-menu)
-    (make-object fw:menu:can-restore-menu-item%
+    (make-object menu:can-restore-menu-item%
       "Add Teachpack..."
       language-menu
       (lambda (_1 _2)
 	(let ([lib-file
-	       (parameterize ([fw:finder:dialog-parent-parameter frame])
-		 (fw:finder:get-file 
+	       (parameterize ([finder:dialog-parent-parameter frame])
+		 (finder:get-file 
 		  teachpack-directory
 		  "Select a Teachpack"
 		  ".*\\.(ss|scm)$"))])
@@ -415,7 +416,7 @@
             (parameterize ([basis:teachpack-error-display
                             (lambda (message)
                               (mred:message-box "Invalid Teachpack" message))])
-              (let* ([old-pref (fw:preferences:get 'drscheme:teachpack-file)]
+              (let* ([old-pref (preferences:get 'drscheme:teachpack-file)]
                      [new-item (normalize-path lib-file)])
                 (if (member (normal-case-path new-item) (map normal-case-path old-pref))
                     (mred:message-box "DrScheme Teachpacks"
@@ -423,20 +424,20 @@
                                               new-item)
                                       frame)
                     (when (basis:teachpack-ok? lib-file)
-                      (fw:preferences:set
+                      (preferences:set
                        'drscheme:teachpack-file
                        (append old-pref (list lib-file))))))
               (set! teachpack-directory (path-only lib-file)))))))
-    (make-object (class fw:menu:can-restore-menu-item% args
+    (make-object (class menu:can-restore-menu-item% args
                    (inherit enable)
                    (rename [super-on-demand on-demand])
                    (override
                      [on-demand
                       (lambda ()
-                        (enable (not (null? (fw:preferences:get 'drscheme:teachpack-file))))
+                        (enable (not (null? (preferences:get 'drscheme:teachpack-file))))
                         (super-on-demand))])
                    (sequence (apply super-init args)))
       "Clear All Teachpacks"
       language-menu
-      (lambda (_1 _2) (fw:preferences:set 'drscheme:teachpack-file null)))))
+      (lambda (_1 _2) (preferences:set 'drscheme:teachpack-file null)))))
 

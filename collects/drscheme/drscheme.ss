@@ -16,18 +16,16 @@
 ;(define argv (vector "Cupertino:Desktop Folder:tmp.ss"))
 
 (define-values (get-dropped-files shutdown-splash close-splash)
-  ((require-library "splash.ss" "framework")
+  ((load (build-path (collection-path "framework") "splash.ss"))
    (build-path (collection-path "icons") "plt.gif")
    "DrScheme"
    81))
 
-(require-relative-library "drsig.ss")
+(require "main-before.ss")
+(require "main.ss")
+(shutdown-splash)
+(start-drscheme)
+(close-splash)
 
-(let ([unit (require-relative-library "link.ss")])
-  (shutdown-splash)
-  (global-define-values/invoke-unit/sig drscheme^
-                                        unit
-                                        #f
-                                        (program argv get-dropped-files))
-  (close-splash))
+
 

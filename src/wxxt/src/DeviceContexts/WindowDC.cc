@@ -538,15 +538,8 @@ void wxWindowDC::InitPicture()
 void wxWindowDC::InitPictureClip()
 {
 # ifdef WX_USE_XFT
-    if (CURRENT_REG)
-      XftDrawSetClip(XFTDRAW, CURRENT_REG);
-#  ifndef WX_OLD_XFT
-    {
-      XRenderPictureAttributes attrs;
-      attrs.poly_edge = PolyEdgeSmooth;
-      XRenderChangePicture(DPY, PICTURE, CPPolyEdge, &attrs);
-    }
-#  endif
+  if (CURRENT_REG)
+    XftDrawSetClip(XFTDRAW, CURRENT_REG);
 # endif
 }
 
@@ -1341,7 +1334,7 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
 
   FreeGetPixelCache();
   
-#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
+#ifdef WX_USE_CAIRO
   if (anti_alias) {
     double pw;
     int i;
@@ -1723,7 +1716,7 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
       if (CURRENT_REG)
 	XSetRegion(DPY, BRUSH_GC, CURRENT_REG);
       else
-	XSetRegion(DPY, BRUSH_GC, None);
+	XSetClipMask(DPY, BRUSH_GC, None);
 
       XDestroyRegion(rgn);
     }      
@@ -3556,7 +3549,7 @@ double wxWindowDC::SetCairoPen()
     double *dashes;
     int ndash, r, g, b;
     double offset;
-    
+
     c = current_pen->GetColour();
     r = c->Red();
     g = c->Green();

@@ -1057,7 +1057,8 @@ wxPathRgn::~wxPathRgn()
 
 long wxPathRgn::PrepareScale(long target, Bool oe)
 {
-#ifdef WX_USE_CAIRO
+#ifdef wx_xt
+# ifdef WX_USE_CAIRO
   cairo_matrix_t *m;
   m = cairo_matrix_create();
   cairo_current_matrix(CAIRO_DEV, m);
@@ -1065,6 +1066,9 @@ long wxPathRgn::PrepareScale(long target, Bool oe)
   cairo_translate(CAIRO_DEV, ox, oy);
   cairo_scale(CAIRO_DEV, sx, sy);
   return (long)m;
+# else
+  return 0;
+# endif
 #endif
 #ifdef wx_mac
   current_xform = CGAffineTransformMakeTranslation(ox, oy);
@@ -1327,17 +1331,18 @@ wxPolygonPathRgn::wxPolygonPathRgn(wxDC *dc_for_scale,
 
 Bool wxPolygonPathRgn::Install(long target, Bool reverse)
 {
-  int i;
   long m;
   m = PrepareScale(target, fillStyle == wxODDEVEN_RULE);
 
 #ifdef WX_USE_CAIRO
   if (reverse) {
+    int i;
     cairo_move_to(CAIRO_DEV, points[n-1].x + xoffset, points[n-1].y + yoffset);
     for (i = n-1; i--; ) {
       cairo_line_to(CAIRO_DEV, points[i].x + xoffset, points[i].y + yoffset);
     }
   } else {
+    int i;
     cairo_move_to(CAIRO_DEV, points[0].x + xoffset, points[0].y + yoffset);
     for (i = 1; i < n; i++) {
       cairo_line_to(CAIRO_DEV, points[i].x + xoffset, points[i].y + yoffset);
@@ -1347,11 +1352,13 @@ Bool wxPolygonPathRgn::Install(long target, Bool reverse)
 #endif
 #ifdef wx_mac
   if (reverse) {
+    int i;
     CGPathMoveToPoint(CGPATH, CGXFORM, points[n-1].x + xoffset, points[n-1].y + yoffset);
     for (i = n-1; i--; ) {
       CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
     }
   } else {
+    int i;
     CGPathMoveToPoint(CGPATH, CGXFORM, points[0].x + xoffset, points[0].y + yoffset);
     for (i = 1; i < n; i++) {
       CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
@@ -1361,12 +1368,14 @@ Bool wxPolygonPathRgn::Install(long target, Bool reverse)
 #endif
 #ifdef wx_msw
   if (reverse) {
+    int i;
     for (i = n - 1; i--; ) {
       wxGPathAddLine(CURRENT_GP,
 		     points[i+1].x + xoffset, points[i+1].y + yoffset,
 		     points[i].x + xoffset, points[i].y + yoffset);
     }
   } else {
+    int i;
     for (i = 0; i < n - 1; i++) {
       wxGPathAddLine(CURRENT_GP,
 		     points[i].x + xoffset, points[i].y + yoffset,

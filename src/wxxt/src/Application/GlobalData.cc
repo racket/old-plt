@@ -100,6 +100,7 @@ wxColour* wxBLUE = 0;
 wxColour* wxGREEN = 0;
 wxColour* wxCYAN = 0;
 wxColour* wxLIGHT_GREY = 0;
+wxColour* wxCTL_HILITE = 0;
 
 wxCursor* wxSTANDARD_CURSOR = 0;
 wxCursor* wxHOURGLASS_CURSOR = 0;

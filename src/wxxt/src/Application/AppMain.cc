@@ -457,8 +457,9 @@ void wxCommonInit(void)
 	  }
 	}
       }
-      col = new wxColour(r, g, b);
-      wxCTL_HIGHLIGHT_PIXEL = col->GetPixel(wxAPP_COLOURMAP);
+      wxREGGLOB(wxCTL_HILITE);
+      wxCTL_HILITE = new wxColour(r, g, b);
+      wxCTL_HIGHLIGHT_PIXEL = wxCTL_HILITE->GetPixel(wxAPP_COLOURMAP);
     }
 
     wxREGGLOB(wxSTANDARD_CURSOR);

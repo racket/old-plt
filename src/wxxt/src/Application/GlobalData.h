@@ -149,6 +149,7 @@ extern wxColour* wxBLUE;
 extern wxColour* wxGREEN;
 extern wxColour* wxCYAN;
 extern wxColour* wxLIGHT_GREY;
+extern wxColour* wxCTL_HILITE;
 
 extern unsigned long wxWHITE_PIXEL;
 extern unsigned long wxBLACK_PIXEL;

@@ -171,6 +171,7 @@ enum {
   scheme_rt_finalizations,
   scheme_rt_cpp_object,
   scheme_rt_stack_object,
+  scheme_rt_preallocated_object,
   scheme_process_hop_type,
 #endif
 

@@ -120,8 +120,10 @@
 (printf "~n")
 
 ;; C++ cupport:
+(printf "#define PRE_ALLOCATE(t) GC_pre_allocate(sizeof(t))~n")
 (printf "#define NEW_OBJ(t) (new t,  (t *)GC_pop_current_new())~n")
 (printf "#define NEW_OBJECT(t, args) (new t args,  (t *)GC_pop_current_new())~n")
+(printf "#define NEW_PREALLOCED_OBJECT(t, args) (GC_use_preallocated(), new t args,  (t *)GC_pop_current_new())~n")
 (printf "#define NEW_ARRAY(t, array) (new t array)~n")
 (printf "#define NEW_ATOM(t) (new (AtomicGC) t)~n")
 (printf "#define NEW_PTR(t) (new t)~n")
@@ -130,6 +132,8 @@
 (printf "#define DELETE(x) (delete x)~n")
 (printf "#define DELETE_ARRAY(x) (delete[] x)~n")
 (printf "#define CURRENT_NEW_THIS GC_get_current_new()~n")
+(printf "#define RESTORE_CURRENT_NEW_VAR_STACK GC_restore_current_new_var_stack()~n")
+(printf "#define XFORM_RESET_VAR_STACK GC_variable_stack = (void **)__gc_var_stack__[0];~n")
 (printf "~n")
 
 (define-struct tok (n line file))
@@ -169,8 +173,10 @@
 (define gcMARK_TYPED (string->symbol "gcMARK_TYPED"))
 (define Mark_Proc (string->symbol "Mark_Proc"))
 (define gcBYTES_TO_WORDS (string->symbol "gcBYTES_TO_WORDS"))
+(define PRE_ALLOCATE (string->symbol "PRE_ALLOCATE"))
 (define NEW_OBJ (string->symbol "NEW_OBJ"))
 (define NEW_OBJECT (string->symbol "NEW_OBJECT"))
+(define NEW_PREALLOCED_OBJECT (string->symbol "NEW_PREALLOCED_OBJECT"))
 (define NEW_ARRAY (string->symbol "NEW_ARRAY"))
 (define NEW_ATOM (string->symbol "NEW_ATOM"))
 (define NEW_PTR (string->symbol "NEW_PTR"))
@@ -179,6 +185,8 @@
 (define DELETE (string->symbol "DELETE"))
 (define DELETE_ARRAY (string->symbol "DELETE_ARRAY"))
 (define CURRENT_NEW_THIS (string->symbol "CURRENT_NEW_THIS"))
+(define RESTORE_CURRENT_NEW_VAR_STACK (string->symbol "RESTORE_CURRENT_NEW_VAR_STACK"))
+(define XFORM_RESET_VAR_STACK (string->symbol "XFORM_RESET_VAR_STACK"))
 
 (define non-functions
   '(<= < > >= == != !
@@ -1145,30 +1153,40 @@
 				    arg-vars arg-vars
 				    c++-class
 				    (lambda ()
-				      ;; If this is a constructor, need to patch init args,
-				      ;;  because super constructor may have triggered a GC
-				      (if init-mapping
-					  (apply
-					   append
-					   (map
-					    (lambda (arg init)
-					      (list
-					       (make-tok (car arg) #f #f)
-					       (make-tok '= #f #f)
-					       (make-tok sElF #f #f)
-					       (make-tok '-> #f #f)
-					       (make-tok (car init) #f #f)
-					       (make-tok semi #f #f)
-					       (make-tok sElF #f #f)
-					       (make-tok '-> #f #f)
-					       (make-tok (car init) #f #f)
-					       (make-tok '= #f #f)
-					       (make-tok NULL_ #f #f)
-					       (make-tok semi #f #f)))
-					    arg-vars init-mapping))
-					  
-					  ;; No patches:
-					  null))
+				      (append
+				       ;; If this is a constructor, reser var stack
+				       ;;  because super constructor left it too deep
+				       (if (and c++-class
+						(eq? function-name class-name))
+					   (list
+					    (make-tok RESTORE_CURRENT_NEW_VAR_STACK #f #f)
+					    (make-tok semi #f #f))
+					   null)
+
+				       ;; If this is a constructor, need to patch init args,
+				       ;;  because super constructor may have triggered a GC
+				       (if init-mapping
+					   (apply
+					    append
+					    (map
+					     (lambda (arg init)
+					       (list
+						(make-tok (car arg) #f #f)
+						(make-tok '= #f #f)
+						(make-tok sElF #f #f)
+						(make-tok '-> #f #f)
+						(make-tok (car init) #f #f)
+						(make-tok semi #f #f)
+						(make-tok sElF #f #f)
+						(make-tok '-> #f #f)
+						(make-tok (car init) #f #f)
+						(make-tok '= #f #f)
+						(make-tok NULL_ #f #f)
+						(make-tok semi #f #f)))
+					     arg-vars init-mapping))
+					   
+					   ;; No patches:
+					   null)))
 				    (make-live-var-info #f -1 0 null null null 0) #t)])
 	  (list->seq body-e)))))))
 
@@ -1270,17 +1288,42 @@
 		      paren-arrows?)]
 	       [(and (pair? (cddr e))
 		     (seq? (caddr e)))
-		(loop (list*
-		       (make-tok (if (brackets? (caddr e)) 
-				     (if atom? NEW_ATOM_ARRAY NEW_ARRAY)
-				     (if atom? NEW_ATOM NEW_OBJECT))
-				 (tok-line v) (tok-file v))
-		       (make-parens
-			"(" (tok-line v) (tok-file v) ")"
-			(seq (cadr e) (make-tok '|,| #f #f) (caddr e)))
-		       (cdddr e))
-		      #t
-		      paren-arrows?)]
+		(let* ([normal-alloc? (or atom? 
+					  (brackets? (caddr e))
+					  (null? (seq-in (caddr e))))]
+		       [alloc (list
+			       (make-tok (if (brackets? (caddr e)) 
+					     (if atom? NEW_ATOM_ARRAY NEW_ARRAY)
+					     (if atom? NEW_ATOM (if normal-alloc?
+								    NEW_OBJECT
+								    NEW_PREALLOCED_OBJECT)))
+					 (tok-line v) (tok-file v))
+			       (make-parens
+				"(" (tok-line v) (tok-file v) ")"
+				(seq (cadr e) 
+				     (make-tok '|,| #f #f) 
+				     (caddr e))))])
+		  (loop (if normal-alloc?
+			    ;; Normal allocate:
+			    (append
+			     alloc
+			     (cdddr e))
+			    ;; Pre-allocate object, which may move args
+			    (cons
+			     (make-parens
+			      "(" (tok-line v) (tok-file v) ")"
+			      (list->seq
+			       (append
+				(list
+				 (make-tok PRE_ALLOCATE #f #f)
+				 (make-parens
+				  "(" (tok-line v) (tok-file v) ")"
+				  (seq (cadr e)))
+				 (make-tok '|,| #f #f))
+				alloc)))
+			     (cdddr e)))
+			#t
+			paren-arrows?))]
 	       [else
 		(loop (list*
 		       (make-tok (if atom? NEW_ATOM NEW_OBJ) (tok-line v) (tok-file v))
@@ -1398,6 +1441,9 @@
 								   skip-loop)
 							       (cdr body))])
 				(values (if end? rest (cons (car body) rest)) live-vars)))]
+			   [(eq? (tok-n (caar body)) XFORM_RESET_VAR_STACK)
+			    (let-values ([(rest live-vars) (loop (cdr body))])
+			      (values (cons (car body) rest) live-vars))]
 			   [else
 			    (when (body-var-decl? (car body))
 			      (let ([type (tok-n (caar body))]

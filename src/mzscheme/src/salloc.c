@@ -721,6 +721,11 @@ static long bad_seeds;
 static Scheme_Hash_Table *smc_ht;
 static int trace_path_type;
 
+# define OBJ_BUFFER_SIZE 1048576
+static void *obj_buffer[OBJ_BUFFER_SIZE];
+static int obj_buffer_pos;
+static int obj_type;
+
 void count_tagged(void *p, int size, void *data)
 {
   int which = SCHEME_TYPE((Scheme_Object *)p);
@@ -733,6 +738,12 @@ void count_tagged(void *p, int size, void *data)
       which = NUM_TYPE_SLOTS - 1;
     scheme_memory_count[which]++;
     scheme_memory_size[which] += size;
+  }
+
+  if (which == obj_type) {
+    if (obj_buffer_pos < OBJ_BUFFER_SIZE) {
+      obj_buffer[obj_buffer_pos++] = p;
+    }
   }
 }
 
@@ -837,6 +848,8 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 
 Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 {
+  Scheme_Object *result = scheme_void;
+
   scheme_console_printf("Begin Dump\n");
 
   if (scheme_external_dump_arg)
@@ -844,9 +857,19 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 
 #ifdef USE_TAGGED_ALLOCATION
   trace_path_type = -1;
-  if (c && SCHEME_SYMBOLP(p[0])) {
-    char *s = scheme_symbol_val(p[0]);
+  obj_type = -1;
+  if (c && (SCHEME_SYMBOLP(p[0])
+	    || (SCHEME_PAIRP(p[0]) 
+		&& SCHEME_SYMBOLP(SCHEME_CAR(p[0])) 
+		&& SCHEME_NULLP(SCHEME_CDR(p[0]))))) {
+    Scheme_Object *sym;
+    char *s;
     int i, maxpos;
+
+    sym = p[0];
+    if (SCHEME_PAIRP(sym))
+      sym = SCHEME_CAR(sym);
+    s = scheme_symbol_val(sym);
 
     maxpos = scheme_num_types();
     if (maxpos > NUM_TYPE_SLOTS-1)
@@ -855,12 +878,17 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
     for (i = 0; i < maxpos; i++) {
       void *tn = scheme_get_type_name(i);
       if (tn && !strcmp(tn, s)) {
-	trace_path_type = i;
+	if (SCHEME_SYMBOLP(p[0]))
+	  trace_path_type = i;
+	else
+	  obj_type = i;
 	break;
       }
     }
-    if (SAME_OBJ(p[0], scheme_intern_symbol("stack"))) {
-      trace_path_type = -2;
+    if (SCHEME_SYMBOLP(p[0])) {
+      if (SAME_OBJ(p[0], scheme_intern_symbol("stack"))) {
+	trace_path_type = -2;
+      }
     }
   }
 
@@ -1099,11 +1127,18 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
   scheme_console_printf("   If 'type is 'stack, prints paths to thread stacks.\n");
   /* scheme_console_printf(" (dump-memory-stats #t) - tries harder to find bad data.\n"); */
   scheme_console_printf("End Help\n");
+
+  if (obj_type >= 0) {
+    result = scheme_null;
+    while (obj_buffer_pos--) {
+      result = scheme_make_pair((Scheme_Object *)(obj_buffer[obj_buffer_pos]), result);
+    }
+  }
 #endif
 
   scheme_console_printf("End Dump\n");
 
-  return scheme_void;
+  return result;
 }
 
 

@@ -934,7 +934,6 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
   Scheme_Object *rename_stack[QUICK_STACK_SIZE];
   int stack_pos = 0;
   int is_in_module = 0;
-  int skip_remaining_lexes = 0;
 
   while (1) {
     if (SCHEME_NULLP(wraps)) {
@@ -1016,8 +1015,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	
 	modidx_shift_from = src;
       }
-    } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))
-	       && !skip_remaining_lexes) {
+    } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
       /* Lexical rename: */
       Scheme_Object *rename, *renamed;
       int ri, c, istart, iend;
@@ -1055,8 +1053,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 	    Scheme_Object *other_env, *envname;
 
 	    if (SCHEME_SYMBOLP(renamed)) {
-	      /* Simplified table; skip future tables */
-	      skip_remaining_lexes = 1;
+	      /* Simplified table */
 	      other_env = scheme_false;
 	      envname = SCHEME_VEC_ELS(rename)[2+c+ri];
 	    } else {
@@ -1495,7 +1492,7 @@ static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
 
       if (v) {
 	/* This table is already simplified. */
-	prev = v;
+	prev = w;
 	/* No non-simplified table can follow a simplified one */
 	break;
       } else {
@@ -1506,7 +1503,7 @@ static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
 	  stack = scheme_make_pair(w, stack);
 	} else {
 	  if (!prev)
-	    prev = v;
+	    prev = w;
 	  /* No non-simplified table can follow a simplified one */
 	  break;
 	}
@@ -1522,13 +1519,9 @@ static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
     v = SCHEME_CAR(w);
 
     vsize = (SCHEME_VEC_SIZE(v) - 2) / 2;
-    if (prev)
-      psize = (SCHEME_VEC_SIZE(prev) - 2) / 2;
-    else
-      psize = 0;
 
     /* Initial size; may shrink: */
-    size = vsize + psize;
+    size = vsize;
 
     v2 = scheme_make_vector(2 + (2 * size), NULL);
 
@@ -1545,7 +1538,7 @@ static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
 	int ok = 0;
 
 	if (prev) {
-	  Scheme_Object *other_env;
+	  Scheme_Object *w2, *vp, *other_env;
 
 	  other_env = SCHEME_VEC_ELS(v)[2+vsize+i];
 	  if (SCHEME_VOIDP(other_env)) {
@@ -1553,13 +1546,21 @@ static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
 	    SCHEME_VEC_ELS(v)[2+vsize+i] = other_env;
 	  }
 
-	  for (j = 0; j < psize; j++) {
-	    if (SAME_OBJ(SCHEME_VEC_ELS(prev)[2+j], name)) {
-	      ok = SAME_OBJ(SCHEME_VEC_ELS(prev)[2+psize+j], other_env);
-	      break;
+	  for (w2 = prev; !SCHEME_NULLP(w2); w2 = SCHEME_CDR(w2)) {
+	    vp = SCHEME_CAR(w2);
+	    if (SCHEME_VECTORP(vp)) {
+	      psize = (SCHEME_VEC_SIZE(vp) - 2) / 2;
+	      for (j = 0; j < psize; j++) {
+		if (SAME_OBJ(SCHEME_VEC_ELS(vp)[2+j], name)) {
+		  ok = SAME_OBJ(SCHEME_VEC_ELS(vp)[2+psize+j], other_env);
+		  break;
+		}
+	      }
+	      if (j < size)
+		break;
 	    }
 	  }
-	  if (j >= psize)
+	  if (SCHEME_NULLP(w2))
 	    ok = SCHEME_FALSEP(other_env);
 	} else
 	  ok = 1;
@@ -1571,23 +1572,6 @@ static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
       }
     }
 
-    if (prev) {
-      /* Check for elements in prev not in v; copy them over: */
-      for (i = 0; i < psize; i++) {
-	for (j = 0; j < pos; j++) {
-	  if (SAME_OBJ(SCHEME_VEC_ELS(prev)[2+i], SCHEME_VEC_ELS(v2)[2+j]))
-	    break;
-	}
-
-	if (j >= pos) {
-	  /* Copy: */
-	  SCHEME_VEC_ELS(v2)[2+pos] = SCHEME_VEC_ELS(prev)[2+i];
-	  SCHEME_VEC_ELS(v2)[2+size+pos] = SCHEME_VEC_ELS(prev)[2+psize+i];
-	  pos++;
-	}
-      }
-    }
-    
     if (pos != size) {
       /* Shrink simplified vector */
       if (!pos)
@@ -1607,7 +1591,7 @@ static void simplify_lex_renames(Scheme_Object *w, Scheme_Hash_Table *lex_cache)
 
     scheme_hash_set(lex_cache, w, v2);
 
-    prev = v2;
+    prev = w;
 
     stack = SCHEME_CDR(stack);
   }
@@ -1619,7 +1603,6 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 {
   Scheme_Object *stack, *a, *w = w_in;
   Scheme_Hash_Table *lex_cache;
-  int did_lex_rename = 0;
 
   a = scheme_hash_get(rns, w_in);
   if (a) {
@@ -1651,41 +1634,36 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
       else
 	stack = scheme_make_pair(scheme_make_pair(a, scheme_null), stack);
     } else if (SCHEME_VECTORP(a)) {
-      if (!did_lex_rename) {
-	if (SCHEME_VEC_SIZE(a) > 2) {
+      if (SCHEME_VEC_SIZE(a) > 2) {
 
-	  if (!SCHEME_SYMBOLP(SCHEME_VEC_ELS(a)[2])) {
-	    /* a is not a simplified table; look it up */
-	    a = scheme_hash_get(lex_cache, w);
-	    /* assert: a is not NULL; see the simplify_lex_rename() call above */
-	  }
+	if (!SCHEME_SYMBOLP(SCHEME_VEC_ELS(a)[2])) {
+	  /* a is not a simplified table; look it up */
+	  a = scheme_hash_get(lex_cache, w);
+	  /* assert: a is not NULL; see the simplify_lex_rename() call above */
+	}
 	  
-	  if (just_simplify) {
-	    stack = scheme_make_pair(a, stack);
-	  } else {
-	    Scheme_Object *local_key;
+	if (just_simplify) {
+	  stack = scheme_make_pair(a, stack);
+	} else {
+	  Scheme_Object *local_key;
 	    
-	    local_key = scheme_hash_get(rns, a);
-	    if (local_key) {
-	      stack = scheme_make_pair(local_key, stack);
-	    } else {
-	      local_key = scheme_make_integer(rns->count);
-	      scheme_hash_set(rns, a, local_key);
+	  local_key = scheme_hash_get(rns, a);
+	  if (local_key) {
+	    stack = scheme_make_pair(local_key, stack);
+	  } else {
+	    local_key = scheme_make_integer(rns->count);
+	    scheme_hash_set(rns, a, local_key);
 	      
-	      /* Since this is a simplified table, we can steal the first
-		 slot for local_key: */
+	    /* Since this is a simplified table, we can steal the first
+	       slot for local_key: */
 	      
-	      SCHEME_VEC_ELS(a)[0] = local_key;
+	    SCHEME_VEC_ELS(a)[0] = local_key;
 	      
-	      stack = scheme_make_pair(a, stack);
-	    }
+	    stack = scheme_make_pair(a, stack);
 	  }
 	}
-	/* else empty simplified vector, which we drop */
-
-	did_lex_rename = 1;
       }
-      /* else redundant lexical rename; the simplifed covers it */
+      /* else empty simplified vector, which we drop */
     } else if (SCHEME_RENAMESP(a)) {
       Module_Renames *mrn = (Module_Renames *)a;
       int redundant = 0;

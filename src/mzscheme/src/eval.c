@@ -1534,16 +1534,7 @@ compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
   if (SAME_TYPE(SCHEME_TYPE(xformer), scheme_id_macro_type)) {
     xformer = SCHEME_PTR_VAL(xformer);
   } else if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
-    Scheme_Object *sname;
-    const char *name;
-
-    if (SCHEME_STX_SYMBOLP(form))
-      sname = SCHEME_STX_SYM(form);
-    else
-      sname = SCHEME_STX_SYM(SCHEME_STX_CAR(form));
-    name = scheme_symbol_name(sname);
-    
-    scheme_wrong_syntax(name, NULL, form, "illegal use of syntax");
+    scheme_wrong_syntax(NULL, NULL, form, "illegal use of syntax");
     return NULL;
   }
 
@@ -3597,8 +3588,10 @@ static void *expand_k(void)
 
   obj = scheme_expand_expr(obj, env, depth, scheme_false);
 
-  if (rename)
+  if (rename) {
     obj = scheme_add_mark_barrier(obj);
+    /* scheme_simplify_stx(obj, scheme_new_stx_simplify_cache()); */ /* too expensive */
+  }
 
   return obj;
 }

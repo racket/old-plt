@@ -1987,8 +1987,10 @@ mpn_tdiv_qr (qp, rp, qxn, np, nn, dp, dn)
      1. qxn
      2. pass allocated storage in additional parameter?
   */
+#ifdef DEBUG
   if (qxn != 0)
     abort ();
+#endif
 
   switch (dn)
     {
@@ -2275,8 +2277,10 @@ mpn_tdiv_qr (qp, rp, qxn, np, nn, dp, dn)
 		cy2 = mpn_submul_1 (n2p, qp, qn, dp[in - 1] & (~(mp_limb_t) 0 >> cnt));
 		if (qn != rn)
 		  {
+#ifdef DEBUG
 		    if (n2p[qn] < cy2)
 		      abort ();
+#endif
 		    n2p[qn] -= cy2;
 		  }
 		else
@@ -2297,8 +2301,10 @@ mpn_tdiv_qr (qp, rp, qxn, np, nn, dp, dn)
 		if (in == 0)
 		  {
 		    MPN_COPY (rp, n2p, rn);
+#ifdef DEBUG
 		    if (rn != dn)
 		      abort ();
+#endif
 		    goto foo;
 		  }
 		mpn_mul (tp, qp, qn, dp, in);

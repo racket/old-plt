@@ -379,6 +379,9 @@ scheme_add_fd_eventmask
 scheme_security_check_file
 scheme_security_check_network
 scheme_get_host_address
+scheme_set_type_printer
+scheme_print_bytes
+scheme_print_string
 scheme_make_namespace
 scheme_add_namespace_option
 scheme_require_from_original_env

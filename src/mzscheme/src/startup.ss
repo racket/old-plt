@@ -571,7 +571,7 @@
       ;; if `defined-names' is #f.
       ;; If `expr?' is #t, then generate an expression to build the info,
       ;; otherwise build the info directly.
-      (let ([qs (if gen-expr? (lambda (x) `(syntax-local-certify (quote-syntax ,x))) values)]
+      (let ([qs (if gen-expr? (lambda (x) `((syntax-local-certifier) (quote-syntax ,x))) values)]
 	    [every-other (lambda (l)
 			   (let loop ([l l][r null])
 			     (cond

@@ -531,6 +531,25 @@ static Scheme_Object *wxsGlobalwxBell(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
+static Scheme_Object *wxsGlobalwxHideCursor(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  WITH_VAR_STACK(wxHideCursor());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *wxsGlobalwxEndBusyCursor(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -717,6 +736,8 @@ void objscheme_setup_wxsGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("display-size", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxBell, "bell", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("bell", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxHideCursor, "hide-cursor", 0, 0));
+  WITH_VAR_STACK(scheme_install_xc_global("hide-cursor", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxEndBusyCursor, "end-busy-cursor", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("end-busy-cursor", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxIsBusy, "is-busy?", 0, 0));

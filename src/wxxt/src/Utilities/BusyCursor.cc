@@ -101,55 +101,103 @@ void wxXSetBusyCursor(wxWindow *win, wxCursor *cursor)
   }
 }
 
-void wxBeginBusyCursor(wxCursor * cursor)
+static void set_all_cursors(wxCursor *cursor)
 {
+  wxChildList *cl;
+  wxWindow *win;
   wxChildNode *node;
 
-  wxCursorBusy = wxGetBusyState();
-  wxCursorBusy++;
-  wxSetBusyState(wxCursorBusy);
-
-  if (wxCursorBusy == 1) {
-    wxChildList *cl;
-    cl = wxTopLevelFrames(NULL);
-    for (node = cl->First(); node; node = node->Next()) {
-      wxWindow *win;
-      win = (wxWindow *)node->Data();
-      if (win)
-	wxXSetBusyCursor(win, cursor);
-    }
+  cl = wxTopLevelFrames(NULL);
+  for (node = cl->First(); node; node = node->Next()) {
+    win = (wxWindow *)node->Data();
+    if (win)
+      wxXSetBusyCursor(win, cursor);
   }
 
   XFlush(wxAPP_DISPLAY);
+}
+
+/* Busy state valeus:
+    0    => not busy, not blanked
+    -1   => not busy, blanked
+    < -1 => busy, blanked
+    > 0  => busy, not blanked
+*/
+
+void wxBeginBusyCursor(wxCursor * cursor)
+{
+  int busy;
+
+  busy = wxGetBusyState();
+  if (busy >= 0) {
+    busy++;
+    wxSetBusyState(busy);
+  } else {
+    /* Blanked, so "increment", but don't change cursor */
+    --busy;
+    wxSetBusyState(busy);
+    return;
+  }
+
+  if (busy == 1) {
+    set_all_cursors(cursor);
+  }
 }
 
 // Restore cursor to normal
 void 
 wxEndBusyCursor (void)
 {
-  wxChildNode *node;
+  int busy;
 
-  wxCursorBusy = wxGetBusyState();
-  if (wxCursorBusy == 0)
+  busy = wxGetBusyState();
+  if ((busy == 0) || (busy == -1))
     return;
-  wxCursorBusy--;
-  wxSetBusyState(wxCursorBusy);
-
-  if (wxCursorBusy == 0) {
-    wxChildList *cl;
-    cl = wxTopLevelFrames(NULL);
-    for (node = cl->First(); node; node = node->Next()) {
-      wxWindow *win;
-      win = (wxWindow *)node->Data();
-      if (win)
-	wxXSetBusyCursor(win, NULL);
-    }
+  if (busy > 0) {
+    busy--;
+    wxSetBusyState(busy);
+  } else {
+    /* Blanked, so "decrement", but don't change cursor */
+    busy++;
+    wxSetBusyState(busy);
+    return;
   }
 
-  XFlush(wxAPP_DISPLAY);
+  if (busy == 0) {
+    set_all_cursors(NULL);
+  }
 }
 
 Bool wxIsBusy (void)
 {
-  return !!wxGetBusyState();
+  int busy;
+  busy = wxGetBusyState();
+  return ((busy > 0) || (busy < -1));
 }
+
+void 
+wxHideCursor (void)
+{
+  int busy;
+  busy = wxGetBusyState();
+
+  if (busy >= 0) {
+    busy = -(busy + 1);
+    wxSetBusyState(busy);
+    set_all_cursors(wxBLANK_CURSOR);
+  }
+}
+
+void
+wxUnhideCursor(void)
+{
+  int busy;
+  busy = wxGetBusyState();
+
+  if (busy < 0) {
+    busy = -(busy + 1);
+    wxSetBusyState(busy);
+    set_all_cursors((busy > 0) ? wxHOURGLASS_CURSOR : NULL);
+  }  
+}
+

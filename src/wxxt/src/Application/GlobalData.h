@@ -94,7 +94,6 @@ extern wxFontList*	 wxTheFontList;
 //-- misc ---------------------------------------------------------------------
 
 extern char* wxBuffer;
-extern int   wxCursorBusy;
 
 //-- Printing -----------------------------------------------------------------
 
@@ -160,6 +159,7 @@ extern wxCursor* wxSTANDARD_CURSOR;
 extern wxCursor* wxHOURGLASS_CURSOR;
 extern wxCursor* wxCROSS_CURSOR;
 extern wxCursor* wxIBEAM_CURSOR;
+extern wxCursor* wxBLANK_CURSOR;
 
 //-- Types --------------------------------------------------------------------
 

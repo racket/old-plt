@@ -606,6 +606,8 @@ void wxMediaEdit::OnChar(wxKeyEvent *event)
     return;
   }
 
+  wxHideCursor();
+
   OnLocalChar(event);
 }
 

@@ -464,7 +464,7 @@
 "(if(null? l) null(cons-immutable(car l)(list->immutable-list(cdr l))))))"
 "(define-values(get-stx-info)"
 "(lambda(orig-stx super-id defined-names gen-expr?)"
-"(let((qs(if gen-expr?(lambda(x) `(syntax-local-certify(quote-syntax ,x))) values))"
+"(let((qs(if gen-expr?(lambda(x) `((syntax-local-certifier)(quote-syntax ,x))) values))"
 "(every-other(lambda(l)"
 "(let loop((l l)(r null))"
 "(cond"

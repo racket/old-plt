@@ -389,6 +389,10 @@ Bool wxIsBusy(void)
   return (wxGetBusyState() > 0);
 }    
 
+void wxHideCursor(void)
+{
+}
+
 /********************************************************************************/
 
 #define WC_BUFFER_SIZE 1024

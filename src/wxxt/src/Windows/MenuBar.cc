@@ -504,7 +504,9 @@ int wxMenuBar::InProgress(void)
 void wxMenuBar::SelectAMenu()
 {
   GC_CAN_IGNORE XEvent xevent;
-  Position x, y, new_root_x, new_root_y;
+  Position x, y;
+  int new_root_x, new_root_y;
+  Window child;
 
   if (xwMenuIsPoppedUp(X->handle)) {
     Stop();
@@ -515,8 +517,18 @@ void wxMenuBar::SelectAMenu()
 
   /* Get the menu started: */
   XtVaGetValues(X->handle, XtNx, &x, XtNy, &y, NULL);
-  XtTranslateCoords(X->handle, x, y, &new_root_x, &new_root_y);
-  
+  {
+    Display *disp;
+    Window win;
+    disp = XtDisplay(X->handle);
+    win = XtWindow(X->handle);
+    XTranslateCoordinates(disp, 
+			  win, 
+			  DefaultRootWindow(disp),
+			  x, y, 
+			  &new_root_x, &new_root_y, &child);
+  }
+
   xevent.xmotion.x_root = new_root_x + 5;
   xevent.xmotion.x = 5;
   xevent.xmotion.y_root = new_root_y + 5;

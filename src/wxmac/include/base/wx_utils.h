@@ -143,6 +143,8 @@ void wxEndBusyCursor(void);
 // TRUE if we're between the above two calls
 Bool wxIsBusy(void);
   
+void wxHideCursor(void);
+
 /* Error message functions used by wxWindows */
 
 // Non-fatal error (continues) 

@@ -624,6 +624,9 @@ void (*scheme_add_fd_eventmask)(void *fds, int mask);
 void (*scheme_security_check_file)(const char *who, const char *filename, int guards);
 void (*scheme_security_check_network)(const char *who, const char *host, int port, int client);
 int (*scheme_get_host_address)(const char *address, int id, void *result);
+void (*scheme_set_type_printer)(Scheme_Type stype, Scheme_Type_Printer printer);
+void (*scheme_print_bytes)(Scheme_Print_Params *pp, const char *str, int offset, int len);
+void (*scheme_print_string)(Scheme_Print_Params *pp, const mzchar *str, int offset, int len);
 /*========================================================================*/
 /*                        namespace/environment                           */
 /*========================================================================*/

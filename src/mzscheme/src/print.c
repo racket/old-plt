@@ -38,7 +38,7 @@
 /* locals */
 #define MAX_PRINT_BUFFER 500
 
-typedef struct PrintParams {
+typedef struct Scheme_Print_Params {
   MZTAG_IF_REQUIRED
   
   char print_struct;
@@ -70,8 +70,8 @@ static int print(Scheme_Object *obj, int notdisplay, int compact,
 		 Scheme_Hash_Table *ht,
 		 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht,
 		 PrintParams *p);
-static void print_char_string(char *s, int l, mzchar *us, int ul, int notdisplay, PrintParams *pp);
-static void print_byte_string(char *s, int l, int notdisplay, PrintParams *pp);
+static void print_char_string(const char *s, int l, const mzchar *us, int delta, int ul, int notdisplay, PrintParams *pp);
+static void print_byte_string(const char *s, int l, int notdisplay, PrintParams *pp);
 static void print_pair(Scheme_Object *pair, int notdisplay, int compact, 
 		       Scheme_Hash_Table *ht, 
 		       Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
@@ -87,6 +87,9 @@ static char *print_to_string(Scheme_Object *obj, long * volatile len, int write,
 static Scheme_Object *quote_link_symbol = NULL;
 static char *quick_buffer = NULL;
 static char *quick_encode_buffer = NULL;
+
+static Scheme_Type_Printer *printers;
+static int printers_count;
 
 #define QUICK_ENCODE_BUFFER_SIZE 256
 
@@ -785,6 +788,35 @@ static void print_this_string(PrintParams *pp, const char *str, int offset, int 
   }
 }
 
+void scheme_print_bytes(Scheme_Print_Params *pp, const char *str, int offset, int len)
+{
+  print_this_string(pp, str, offset, len);
+}
+
+void scheme_print_string(Scheme_Print_Params *pp, const mzchar *s, int offset, int l)
+{
+  int el, reset;
+  char *buf;
+
+  el = l * MAX_UTF8_CHAR_BYTES;
+  if (el <= QUICK_ENCODE_BUFFER_SIZE) {
+    if (quick_encode_buffer) {
+      buf = quick_encode_buffer;
+      quick_encode_buffer = NULL;
+    } else
+      buf = (char *)scheme_malloc_atomic(QUICK_ENCODE_BUFFER_SIZE);
+    reset = 1;
+  } else {
+    buf = (char *)scheme_malloc_atomic(el);
+    reset = 0;
+  }
+  el = scheme_utf8_encode(s, offset, offset + l, 
+			  buf, 0, 0);
+  print_char_string(buf, el, s, offset, l, 0, pp);
+  if (reset)
+    quick_encode_buffer = buf;
+}
+
 static void print_compact_number(PrintParams *pp, long n)
 {
   unsigned char s[5];
@@ -1154,7 +1186,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_this_string(pp, buf, 0, el);
       } else {
 	print_char_string(buf, el,
-			  SCHEME_CHAR_STR_VAL(obj), l,
+			  SCHEME_CHAR_STR_VAL(obj), 0, l,
 			  notdisplay, pp);
 	closed = 1;
       }
@@ -1495,31 +1527,9 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
                             SCHEME_BYTE_STRLEN_VAL(SCHEME_CPTR_TYPE(obj)),
                             0, pp);
         } else if (SCHEME_CHAR_STRINGP(SCHEME_CPTR_TYPE(obj))) {
-          /* copied from the SCHEME_CHAR_STRINGP case above */
-          /* this functionality might be moved to a seperate function */
-          int l, el, reset;
-          char *buf;
           Scheme_Object *s = SCHEME_CPTR_TYPE(obj);
-          l = SCHEME_CHAR_STRTAG_VAL(s);
-          el = l * MAX_UTF8_CHAR_BYTES;
-          if (el <= QUICK_ENCODE_BUFFER_SIZE) {
-            if (quick_encode_buffer) {
-              buf = quick_encode_buffer;
-              quick_encode_buffer = NULL;
-            } else
-              buf = (char *)scheme_malloc_atomic(QUICK_ENCODE_BUFFER_SIZE);
-            reset = 1;
-          } else {
-            buf = (char *)scheme_malloc_atomic(el);
-            reset = 0;
-          }
-          el = scheme_utf8_encode_all(SCHEME_CHAR_STR_VAL(s), l, buf);
-          print_char_string(buf, el,
-                            SCHEME_CHAR_STR_VAL(s), l,
-                            0, pp);
+	  scheme_print_string(pp, SCHEME_CHAR_STR_VAL(s), 0, SCHEME_CHAR_STRTAG_VAL(s));
           closed = 1;
-          if (reset)
-            quick_encode_buffer = buf;
         } else {
           print_this_string(pp, "#", 0, 1);
         }
@@ -1847,7 +1857,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     {
       if (compact || !pp->print_unreadable)
 	cannot_print(pp, notdisplay, obj, ht, compact);
-      else {
+      else if ((SCHEME_TYPE(obj) < printers_count)
+	       && printers[SCHEME_TYPE(obj)]) {
+	Scheme_Type_Printer printer;
+	printer = printers[SCHEME_TYPE(obj)];
+	printer(obj, !notdisplay, pp);
+      } else {
 	char *s;
 	long len = -1;
 	s = scheme_get_type_name((SCHEME_TYPE(obj)));
@@ -1869,8 +1884,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 }
 
 static void
-print_char_string(char *str, int len, 
-		  mzchar *ustr, int ulen,
+print_char_string(const char *str, int len, 
+		  const mzchar *ustr, int delta, int ulen,
 		  int notdisplay, PrintParams *pp)
 {
   char minibuf[12], *esc;
@@ -1902,9 +1917,9 @@ print_char_string(char *str, int len,
 	    esc = NULL;
 	  } else {
 	    int clen;
-	    clen = scheme_utf8_encode(ustr, ui, ui+1, NULL, 0, 0);
-	    if (scheme_isgraphic(ustr[ui])
-		|| scheme_isblank(ustr[ui])) {
+	    clen = scheme_utf8_encode(ustr, ui+delta, ui+delta+1, NULL, 0, 0);
+	    if (scheme_isgraphic(ustr[ui+delta])
+		|| scheme_isblank(ustr[ui+delta])) {
 	      cont_utf8 = clen - 1;
 	      esc = NULL;
 	    } else {
@@ -1923,10 +1938,10 @@ print_char_string(char *str, int len,
 
       if (esc) {
 	if (esc == minibuf) {
-	  if (ustr[ui] > 0xFFFF) {
-	    sprintf(minibuf, "\\U%.8X", ustr[ui]);
+	  if (ustr[ui+delta] > 0xFFFF) {
+	    sprintf(minibuf, "\\U%.8X", ustr[ui+delta]);
 	  } else
-	    sprintf(minibuf, "\\u%.4X", ustr[ui]);
+	    sprintf(minibuf, "\\u%.4X", ustr[ui+delta]);
 	}
 
         if (a < i)
@@ -1945,7 +1960,7 @@ print_char_string(char *str, int len,
 }
 
 static void
-print_byte_string(char *str, int len, int notdisplay, PrintParams *pp)
+print_byte_string(const char *str, int len, int notdisplay, PrintParams *pp)
 {
   char minibuf[8], *esc;
   int a, i, v;
@@ -2201,6 +2216,28 @@ Scheme_Object *scheme_protect_quote(Scheme_Object *expr)
     return q;
   } else
     return expr;
+}
+
+/*========================================================================*/
+/*                       external printers                                */
+/*========================================================================*/
+
+void scheme_set_type_printer(Scheme_Type stype, Scheme_Type_Printer printer)
+{
+  if (!printers) {
+    REGISTER_SO(printers);
+  }
+
+  if (stype >= printers_count) {
+    Scheme_Type_Printer *naya;
+    naya = MALLOC_N(Scheme_Type_Printer, stype + 10);
+    memset(naya, 0, sizeof(Scheme_Type_Printer) * (stype + 10));
+    memcpy(naya, printers, sizeof(Scheme_Type_Printer) * printers_count);
+    printers_count = stype + 10;
+    printers = naya;
+  }
+
+  printers[stype] = printer;
 }
 
 /*========================================================================*/

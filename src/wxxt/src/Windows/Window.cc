@@ -1651,6 +1651,7 @@ void wxWindow::WindowEventHandler(Widget w,
         /* Event was handled by OnFunctionKey and/or OnChar */ }
 	break;
     case ButtonPress:
+      wxUnhideCursor();
       /* X grab doesn't work the way we'd like for panels (since they
 	 have children), unless a grab cursor is installed.
 	 Unfortunately, we also need to watch for changes to the
@@ -1687,6 +1688,7 @@ void wxWindow::WindowEventHandler(Widget w,
       }
       Press = TRUE;
     case ButtonRelease:  /* ^^^^ fallthrough */
+      wxUnhideCursor();
       win->current_state = xev->xbutton.state;
       if (!Press)
 	grabbing_panel = NULL;
@@ -1835,6 +1837,7 @@ void wxWindow::WindowEventHandler(Widget w,
     case EnterNotify:
       Enter = TRUE;
     case LeaveNotify: /* ^^^^ fallthrough! */
+      wxUnhideCursor();
       win->current_state = xev->xcrossing.state;
       if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
@@ -1892,6 +1895,8 @@ void wxWindow::WindowEventHandler(Widget w,
       {
 	wxMouseEvent *wxevent;
 	int skip = 0;
+
+	wxUnhideCursor();
 
 	wxevent = new wxMouseEvent(wxEVENT_TYPE_MOTION);
 

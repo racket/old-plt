@@ -63,7 +63,6 @@ wxFontList*	  wxTheFontList = 0;
 //-- misc ---------------------------------------------------------------------
 
 char* wxBuffer = 0;
-int   wxCursorBusy = 0;
 
 //-- Printing -----------------------------------------------------------------
 
@@ -105,6 +104,7 @@ wxCursor* wxSTANDARD_CURSOR = 0;
 wxCursor* wxHOURGLASS_CURSOR = 0;
 wxCursor* wxCROSS_CURSOR = 0;
 wxCursor* wxIBEAM_CURSOR = 0;
+wxCursor* wxBLANK_CURSOR = 0;
 
 wxFont* wxNORMAL_FONT = 0;
 wxFont* wxSMALL_FONT = 0;

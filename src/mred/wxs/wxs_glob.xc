@@ -99,6 +99,7 @@ extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, con
 @ "begin-busy-cursor" : void wxBeginBusyCursor()
 @ "is-busy?" : bool wxIsBusy();
 @ "end-busy-cursor" : void wxEndBusyCursor();
+@ "hide-cursor" : void wxHideCursor()
 @ "bell" : void wxBell();
 @ "display-size" : void wxDisplaySize(int*,int*,int);
 @ "display-origin" : void wxDisplayOrigin(int*,int*);

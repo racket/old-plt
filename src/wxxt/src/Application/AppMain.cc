@@ -466,4 +466,6 @@ void wxCommonInit(void)
     wxCROSS_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_CROSS);
     wxREGGLOB(wxIBEAM_CURSOR);
     wxIBEAM_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_IBEAM);
+    wxREGGLOB(wxBLANK_CURSOR);
+    wxBLANK_CURSOR = DEBUG_NEW wxCursor (wxCURSOR_BLANK);
 }

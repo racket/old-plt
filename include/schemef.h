@@ -749,6 +749,10 @@ MZ_EXTERN void scheme_security_check_network(const char *who, const char *host, 
 
 MZ_EXTERN int scheme_get_host_address(const char *address, int id, void *result);
 
+MZ_EXTERN void scheme_set_type_printer(Scheme_Type stype, Scheme_Type_Printer printer);
+MZ_EXTERN void scheme_print_bytes(Scheme_Print_Params *pp, const char *str, int offset, int len);
+MZ_EXTERN void scheme_print_string(Scheme_Print_Params *pp, const mzchar *str, int offset, int len);
+
 /*========================================================================*/
 /*                        namespace/environment                           */
 /*========================================================================*/

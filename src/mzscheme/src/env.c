@@ -473,10 +473,10 @@ static void make_init_env(void)
 						      "make-syntax-introducer",
 						      0, 1),
 			     env);
-  scheme_add_global_constant("syntax-local-certify", 
+  scheme_add_global_constant("syntax-local-certifier", 
 			     scheme_make_prim_w_arity(local_certify,
-						      "syntax-local-certify",
-						      1, 2),
+						      "syntax-local-certifier",
+						      0, 0),
 			     env);
 
   scheme_add_global_constant("make-set!-transformer", 
@@ -3030,28 +3030,43 @@ local_get_shadower(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-local_certify(int argc, Scheme_Object *argv[])
+certifier(void *_data, int argc, Scheme_Object **argv)
 {
-  Scheme_Object *s;
-
-  if (!scheme_current_thread->current_local_env)
-    scheme_raise_exn(MZEXN_FAIL_CONTRACT, 
-		     "syntax-local-certify: not currently transforming");
+  Scheme_Object *s, **cert_data = (Scheme_Object **)_data;
 
   s = argv[0];
   if (!SCHEME_STXP(s))
-    scheme_wrong_type("syntax-local-certify", "syntax", 0, argc, argv);
-  
-  if (scheme_current_thread->current_local_menv
-      || scheme_current_thread->current_local_certs) {
-    Scheme_Env *menv = scheme_current_thread->current_local_menv;
+    scheme_wrong_type("certifier", "syntax", 0, argc, argv);
+
+  if (cert_data[0] || cert_data[1]) {
     s = scheme_stx_cert(s, scheme_false, 
-			(menv && menv->module) ? menv : NULL,
-			scheme_current_thread->current_local_certs,
+			(Scheme_Env *)cert_data[1],
+			cert_data[0],
 			(argc > 1) ? argv[1] : NULL);
   }
 
   return s;
+}
+
+static Scheme_Object *
+local_certify(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object **cert_data;
+  Scheme_Env *menv;
+
+  if (!scheme_current_thread->current_local_env)
+    scheme_raise_exn(MZEXN_FAIL_CONTRACT, 
+		     "syntax-local-certifier: not currently transforming");
+  menv = scheme_current_thread->current_local_menv;
+
+  cert_data = MALLOC_N(Scheme_Object*, 2);
+  cert_data[0] = scheme_current_thread->current_local_certs;
+  cert_data[1] = (Scheme_Object *)((menv && menv->module) ? menv : NULL);
+  
+  return scheme_make_closed_prim_w_arity(certifier,
+					 cert_data,
+					 "certifier",
+					 1, 2);
 }
 
 static Scheme_Object *

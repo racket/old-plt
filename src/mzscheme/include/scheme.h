@@ -295,6 +295,8 @@ typedef struct Scheme_Vector {
   Scheme_Object *els[1];
 } Scheme_Vector;
 
+typedef struct Scheme_Print_Params Scheme_Print_Params;
+typedef void (*Scheme_Type_Printer)(Scheme_Object *v, int for_display, Scheme_Print_Params *pp);
 
 /* This file defines all the built-in types */
 #ifdef INCLUDE_WITHOUT_PATHS

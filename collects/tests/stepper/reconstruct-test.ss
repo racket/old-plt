@@ -333,16 +333,16 @@
                         `((define a1 true) (define (b1 x) (and a1 true x)) false))
 
 
-
-
-(test-beginner-sequence "(define a4 +) a4"
-                        `(((,highlight-placeholder) (a4))
-                          ((,highlight-placeholder) (+)))
-                        `((define a4 +) +))
-
-(test-beginner-sequence "(define (f123 x) (+ x 13)) f123"
-                        `()
-                        `((define (f123 x) (+ x 13)) f123))
+; no longer legal in beginner:
+;
+;(test-beginner-sequence "(define a4 +) a4"
+;                        `(((,highlight-placeholder) (a4))
+;                          ((,highlight-placeholder) (+)))
+;                        `((define a4 +) +))
+;
+;(test-beginner-sequence "(define (f123 x) (+ x 13)) f123"
+;                        `()
+;                        `((define (f123 x) (+ x 13)) f123))
 
 (test-beginner-sequence "(define (b x) (+ x 13)) (b 9)"
                         `(((,highlight-placeholder) ((b 9)))

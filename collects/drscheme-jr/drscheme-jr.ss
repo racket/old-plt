@@ -243,7 +243,7 @@
   (list (format "Enable/disable ~a" s)
 	"on/off"))
 
-(define user-argv
+(define startup-file
   (parse-command-line
    "DrScheme Jr"
    argv
@@ -292,8 +292,10 @@
 		  (make-implies-string syntax-level))
 	  (exit))
        ("Show the flags implies by a particular language" "language")]])
-   (lambda (accum . rest) rest)
-   '("arg")
+   (case-lambda 
+    [(accum) #f]
+    [(accum file) file])
+   '("Scheme file")
    (lambda (s)
      (display s)
      (printf " If ~a exists, it initializes the language settings.~n"
@@ -610,13 +612,15 @@
 			  (open userspace))))])
 	(lambda ()
 	  (current-namespace namespace)
-	  (eval `(#%define argv ,(list->vector user-argv)))
-	  (eval `(#%define read/zodiac ,read/zodiac))
-	  (eval `(#%define restart ,restart))
+	  (global-defined-value 'read/zodiac read/zodiac)
+	  ; (global-defined-value 'restart restart)
 	  (invoke-open-unit u@)
 	  
 	  ; In case the user uses pretty-print:
-	  (eval `(pretty-print-show-inexactness ,(inexact-needs-#i)))
+	  ((global-defined-value 'pretty-print-show-inexactness) 
+	   (inexact-needs-#i))
+	
+	  (require-library-use-compiled #f)
 
 	  (debug-info-handler debug-info)
 	  (current-load drscheme-jr-load) 
@@ -642,7 +646,7 @@
   (read-eval-print-loop))
 
 (define (go)
-  (let loop ([file #f])
+  (let loop ([file startup-file])
     (define redo #f)
     (define c (make-custodian))
 

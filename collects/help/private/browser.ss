@@ -30,13 +30,22 @@
 	   #f
 	   ss))
 
-  (define (prompt-for-browser-switch hd-cookie)
+  (define (prompt-for-browser-switch hd-cookie exn)
     (eq? 1 
 	 (message-box/custom "Help Desk timeout"
            (fold-string			
-	    `("Help Desk tried to use your Web browser, but"
-	      "the browser has not made a connection to the"
-	      "the Help Desk server."
+	    `(,(if exn
+		   (fold-string
+		    `("When starting a Web browser to connect to"
+		      "the Help Desk server, an exception was"
+		      "raised:"
+		      ,(if (exn? exn)
+			   (format "  ~a" (exn-message exn))
+			   (format "  ~s" exn))))
+		   (fold-string
+		    `("Help Desk tried to use your Web browser, but"
+		      "the browser has not made a connection to the"
+		      "the Help Desk server.")))
 	      ""
 	      "Help Desk can also use a built-in browser."
 	      "Would you like to use it instead?  You can"
@@ -45,7 +54,7 @@
 	      ""
 	      "If you continue with an external browser, "
 	      "the Help Desk home page may be found at"
-	      ,(format home-page-format 
+	      ,(format (string-append home-page-format ".")
 		       (hd-cookie->port hd-cookie))))
 	   "Switch to built-in browser"     ; button 1
 	   "Continue with external browser" ; button 2
@@ -91,6 +100,7 @@
     (when (semaphore-try-wait? nav-mutex)
 	  (set! navigate? #t)
 	  (let* ([nav-sem (make-semaphore 0)]
+		 [start-exn #f]
 		 [debug? (get-preference 'plt:help-debug (lambda () '#f))]
 		    [frame #f]
 		    [debug-msg void])
@@ -119,7 +129,7 @@
 				(sleep 1)
 				(loop (add1 n))))
 			(debug-msg "Timer expired")
-			(when (prompt-for-browser-switch hd-cookie)
+			(when (prompt-for-browser-switch hd-cookie start-exn)
 			      (set-plt-browser!)
 			      (debug-msg "Shutting down external server")
 			      ((hd-cookie->exit-proc hd-cookie))
@@ -132,9 +142,10 @@
 			(semaphore-post nav-sem)))])
 		 (debug-msg "Starting Help Desk browser")
 		 (with-handlers 
-		  ([(lambda _ #t) (lambda _ 
+		  ([(lambda _ #t) (lambda (exn)
 				    (debug-msg 
-				     "Help Desk browser raised exception")
+				     "Starting Help Desk browser raised an exception")
+				    (set! start-exn exn)
 				    (set! timer 0))])
 		  (send-help-desk-url (hd-cookie->browser hd-cookie) 
 				      (build-dispatch-url hd-cookie url)))

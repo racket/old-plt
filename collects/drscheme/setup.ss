@@ -82,7 +82,7 @@
 			     (let ([file (car files-left)])
 			       (if (not (file-exists? 
 					 (mzlib:file@:file-name-from-path file)))
-				   (wx:copy-file 
+				   (copy-file 
 				    file (mzlib:file@:file-name-from-path file))))
 			     (copy-loop (cdr files-left))))
 			 (wx:message-box 

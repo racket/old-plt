@@ -83,7 +83,15 @@
         get-x-min
         get-x-max
         get-y-min
-        get-y-max)
+        get-y-max
+        
+        get-x-label
+        get-y-label
+        
+        start-plot 
+        finish-plot
+        
+        get-renderer)
       
       (init-field
        renderer)
@@ -104,7 +112,9 @@
      
       (inherit 
         set-bitmap
-        load-file)  
+        load-file)
+      
+      (define (get-renderer) renderer)
       
       ; set the initial environment 
       (define (set-plot-environment x-min x-max y-min y-max just other)
@@ -177,17 +187,8 @@
           (begin0
             (send bmdc get-bitmap)
             (send bmdc set-bitmap #f))))
-      
-      (define (plot)
-        (start-plot)
-        (set-plot-environment x-min x-max y-min y-max 0 1)
-        (with-handlers ((exn? (lambda (ex) (finish-plot) (raise ex))))
-          (renderer this))
-        (finish-plot)
-        this)
-      
-      (super-instantiate ())
-      (plot)))
+           
+      (super-instantiate ())))
         
   ;; a 2d plot view
   (define 2d-view% 
@@ -200,7 +201,8 @@
         plot-points
         plot-line
         plot-contours
-        plot-shades)
+        plot-shades
+                )
       
       ; set-labels : string string string -> nothing
       ; sets the x, y and title lables
@@ -258,8 +260,18 @@
       ; plots y error bars given a vector containing the x y and z (error magnitude) points
       (define (plot-y-errors errlist)
         (pl-y-error-bars (length errlist) (map vector-x errlist) (map vector-y errlist) (map vector-z errlist)))
+      
+      (inherit start-plot set-plot-environment finish-plot get-x-min get-x-max get-y-min get-y-max get-renderer)
+      (define (plot)
+        (start-plot)
+        (set-plot-environment (get-x-min) (get-x-max) (get-y-min) (get-y-max) 0 1)
+        (with-handlers ((exn? (lambda (ex) (finish-plot) (raise ex))))
+          ((get-renderer) this))
+        (finish-plot)
+        this)
 
-      (super-instantiate ())))
+      (super-instantiate ())
+      (plot)))
   
   ; 3d view
   ; for making meshes and stuff
@@ -269,7 +281,19 @@
       (public 
         box3d
         world3d
-        plot3d)
+        plot3d
+        get-z-min
+        get-z-max
+        get-alt
+        get-az)
+      
+      
+      (fields-with-accessors      
+       (z-min -5) 
+       (z-max 5) 
+       (alt 30) 
+       (az 45)
+       (z-label "Z-Axis"))
       
       ; define the 3d world
       (define (world3d x y z xmin xmax ymin ymax zmin zmax alt az)
@@ -286,9 +310,24 @@
       
       ; draw a 3d plot
       (define (plot3d x y z)
-        (pl-plot3d x y z))      
+        (pl-plot3d x y z))
       
-      (super-instantiate ())))
+      (inherit start-plot set-plot-environment finish-plot get-x-min 
+               get-x-max get-y-min get-y-max get-renderer get-x-label get-y-label)
+      (define (plot)
+        (start-plot)
+        (set-plot-environment -1 1 -1 1 0 -2)
+        (world3d 1 1 1 (get-x-min) (get-x-max) (get-y-min) (get-y-max) z-min z-max alt az)
+        (box3d 
+         "bnstu" (get-x-label) 0 0
+         "bnstu" (get-y-label) 0 0
+         "bnstu" z-label 0 0)
+        (with-handlers ((exn? (lambda (ex) (finish-plot) (raise ex))))
+          ((get-renderer) this))
+        (finish-plot)
+        this) 
+      (super-instantiate ())
+      (plot)))
  
   (provide
    2d-view%

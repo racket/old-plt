@@ -18,8 +18,8 @@ DATA:
 |	    (error-bars (list-of (vector number number number)) [color symbol])
 |	    (mix 2drenderer 2drenderer)
 |	    (make-your-own (2d-view-snip% -> void))
+purpose: a 2d-renderer takes a 2d graph and transforms it to display the data that it contains
 
-purpose: a 2d-renderer takes a graph and transforms it to display the data that it contains
 
 plot: 2d-renderer (option value)+ -> VIEW
 
@@ -27,8 +27,10 @@ plot: 2d-renderer (option value)+ -> VIEW
 	    (surface (number number -> number) [samples color width])
 |	    (mix 3d-renderer 3d-renderer)
 |	    (make-your-own (3d-view-snip% -> void))
+purpose: a 3d-renderer takes a 3d graph and transforms it
 
 plot3d: 3d-renderer (option value)+ -> VIEW
+
 
 fit-lambda is 
 	   (fit-lambda (x) (param+ ) body)
@@ -95,7 +97,7 @@ fit-result-final-params	; fit-result -> guess-list
 
 fit-result-function	; fit-result -> [(number -> number) u (number number -> number)]
 			; returns the function that was used to make the fit with the 
-			; parameters replaced by their values. useful to see the fit
+			; parameters replaced by their values. useful to see the result of the fit
 
 
 renderer creators:

@@ -653,10 +653,12 @@ static void CreateGCs(MenuWidget mw)
 						    GRAY);
     } else {
 	if (mw->menu.indicator_pixel == -1) {
-	    mw->menu.indicator_pixel
-		= Xaw3dAllocPixel((Widget)mw, mw->core.background_pixel,
-				  mw->menu.indicator_contrast/100.0);
-	    mw->menu.indicator_pxmap = (Pixmap)0;
+	  Pixel res;
+	  get_scaled_color((Widget)mw, 
+			   mw->menu.indicator_contrast/100.0, 
+			   mw->core.background_pixel, &res);
+	  mw->menu.indicator_pixel = res;
+	  mw->menu.indicator_pxmap = (Pixmap)0;
 	}
     }
     mw->menu.indicator_GC = Xaw3dGetGC((Widget)mw, mw->menu.be_nice_to_cmap,
@@ -667,23 +669,21 @@ static void CreateGCs(MenuWidget mw)
 static void CreateShadowGCs(MenuWidget mw)
 {
     Screen  *scr = XtScreen((Widget)mw);
-    Pixel   bg   = mw->core.background_pixel;
+    Pixel   bg   = mw->core.background_pixel, res;
 
     if (mw->menu.be_nice_to_cmap || DefaultDepthOfScreen (scr) == 1) {
 	mw->menu.top_shadow_pxmap = Xaw3dAllocPixmap((Widget)mw, bg, LIGHTER);
 	mw->menu.bot_shadow_pxmap = Xaw3dAllocPixmap((Widget)mw, bg, DARKER);
     } else {
 	if (mw->menu.top_shadow_pixel == -1) {
-	    mw->menu.top_shadow_pixel
-		= Xaw3dAllocPixel((Widget)mw, bg,
-				  mw->menu.top_shadow_contrast/100.0);
-	    mw->menu.top_shadow_pxmap = (Pixmap)0;
+	  get_scaled_color((Widget)mw, mw->menu.top_shadow_contrast/100.0, bg, &res);
+	  mw->menu.top_shadow_pixel = res;
+	  mw->menu.top_shadow_pxmap = (Pixmap)0;
 	}
 	if (mw->menu.bot_shadow_pixel == -1) {
-	    mw->menu.bot_shadow_pixel
-		= Xaw3dAllocPixel((Widget)mw, bg,
-				  mw->menu.bot_shadow_contrast/100.0);
-	    mw->menu.bot_shadow_pxmap = (Pixmap)0;
+	  get_scaled_color((Widget)mw, mw->menu.bot_shadow_contrast/100.0, bg, &res);
+	  mw->menu.bot_shadow_pixel = res;
+	  mw->menu.bot_shadow_pxmap = (Pixmap)0;
 	}
     }
     mw->menu.top_shadow_GC = Xaw3dGetGC((Widget)mw, mw->menu.be_nice_to_cmap,

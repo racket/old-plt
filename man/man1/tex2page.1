@@ -1,4 +1,4 @@
-.TH tex2page 1 "2003-06-20"  \" last change
+.TH tex2page 1 "2003-06-23"  \" last change
 
 .SH NAME
 
@@ -77,49 +77,51 @@ environment variable TIIPINPUTS
 instead of TEXINPUTS, if TIIPINPUTS exists.
 TIIPINPUTS  
 does not support the double-slash mechanism of
-TEXINPUTS.
+\%TEXINPUTS.
 .TP
 TEXEDIT
 .br
 If tex2page encounters a fatal error in the document,
-you can type e to edit the offending file at the 
-line containing the error.  The editor call can
-be specified as a string value assigned to the
-environment variable TEXEDIT, with %d standing 
-for the line number and %s for the filename.  
+you can type e to edit the offending file (which may or
+may not be the main input file) at the line containing
+the error.  The editor call can be specified as a
+string value (e.g., "vim\ +%d\ %s") 
+assigned to the
+environment variable TEXEDIT, with %d standing for the
+line number and %s for the filename.  
 .TP
 EDITOR
 .br
 If TEXEDIT is not set, $EDITOR is chosen as the editor.
-If EDITOR is also not set, "vi" is chosen as the editor.  
-The
-editor is
-called with the arguments " +n f", where n is the 
-line number and f is the
-filename.
+If \%EDITOR is also not set, "vi" is chosen as the
+editor.  The editor is called with the arguments
+"\ +\fIn\fP \fIf\fP", where \fIn\fP is the line
+number and \fIf\fP is the filename.
 
 .SH FILES
+
 .TP 
-jobname.hdir, .tex2page.hdir, ~/.tex2page.hdir
+\fIjobname\fP.hdir, .tex2page.hdir, ~/.tex2page.hdir
 .br
-By default, tex2page generates its output HTML files 
-in the current directory.  You can specify a different
-directory by naming it in the file jobname.hdir in the
-current directory, the file .tex2page.hdir in the current
-directory, or the file .tex2page.hdir in your home
-directory.  The first of these files that exists is
-considered.
+By default, tex2page generates its output HTML files in
+the current directory.  You can specify a different
+directory by naming it in the file \fIjobname\fP.hdir
+(where \fIjobname\fP is the basename of the input
+document) in the current directory, the file
+\&.tex2page.hdir in the current directory, or the file
+\&.tex2page.hdir in your home directory.  The first of
+these files that exists is considered.
 .IP
-The name can be or contain the TeX
+The name in the .hdir file can be, or contain, the TeX
 control-sequence \ejobname, which expands to the
 basename of the input file.
 .PP
 .TP 
-jobname.t2p
+\fIjobname\fP.t2p
 .br
 Before processing a TeX source file whose basename is
-jobname, tex2page will automatically load the file 
-jobname.t2p, if it exists.  jobname.t2p is a good place
+\fIjobname\fP, tex2page will automatically load the file 
+\fIjobname\fP.t2p, if it exists.  \fIjobname\fP.t2p is a good place
 to put macros that are specific to the HTML version of 
 the document.
 
@@ -128,7 +130,7 @@ the document.
 tex2page runs on Scheme or Common Lisp.  It may 
 also make
 use of the following programs: BibTeX, MakeIndex,
-Ghostscript, Dvips, and the NetPBM library.
+Ghostscript, Dvips, MetaPost, and the NetPBM library.
 .PP
 Out of the box, tex2page runs in MzScheme, but
 the distribution includes configuration information
@@ -136,10 +138,13 @@ to allow tex2page to run on a variety of Scheme
 and Common Lisp implementations.
 
 .SH BUGS
+
 Email to dorai <at> ccs <dot> neu <dot> edu.
 
 .SH SEE ALSO
-bibtex(1), tex(1), latex(1), makeindex(1l), mzscheme(1)
+
+tex(1), latex(1), mzscheme(1), bibtex(1),
+makeindex(1L), mpost(1)
 
 .SH COPYRIGHT
 

@@ -516,4 +516,5 @@
   write-media-global-footer
   write-media-global-header
   write-resource
+  wx@
   yield))

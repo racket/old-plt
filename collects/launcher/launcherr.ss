@@ -302,7 +302,8 @@
       (when (or (not (file-exists? extension))                             ; extension is missing altogether, or
                 (and (file-exists? extension-source-file)                  ; extension source file is newer than extension
                      (> (file-or-directory-modify-seconds extension-source-file)
-                        (file-or-directory-modify-seconds extension))))
+                        (file-or-directory-modify-seconds extension))
+                     (directory-exists? (build-path launcher-path "CVS")))); ... and this is a CVS tree
         (unless (file-exists? extension-source-file)
           (error 'maybe-install-aliases "need startup-setup.c to compile startup-setup.so extension"))
         (let ([obj-file (build-path launcher-path "startup-setup.o")])
@@ -325,6 +326,7 @@
   ; 3. try with missing extension (success, reinstalls)
   ; 4. try with missing extension and source file (error)
   ; 5. try with source file newer than extension (success, recompiles extension, reinstalls)
+  ; 5b. try with same exc. no CVS dir (success, does _not_ recompile extension, reinstalls)
   ; 6. try with missing marker file (success, reinstalls)
   ; 7. try with marker file older than any of (gomz, gomr) (success, reinstalls)
   ; 8. try with everything all set (success, no action taken)

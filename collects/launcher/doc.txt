@@ -1,7 +1,8 @@
 
 The _launcherr.ss_ library in the "launcher" collection imports
-mzlib:file^ and exports the following procedures for creating MzScheme and
-MrEd launcher executables:
+mzlib:file^, dynext:compile^, and dynext:link^, and exports the
+following procedures for creating MzScheme and MrEd launcher
+executables:
 
 > (make-mred-launcher args dest) - Creates the launcher `dest'. The
    `dest' executeable (for the current OS platform) will start MrEd
@@ -24,6 +25,15 @@ MrEd launcher executables:
    Windows flag or argument) are then appended after the spliced
    `args'.
 
+   For the Macintosh, the creation of launchers requires the (one-time)
+   use of an extension, starter-setup.so.  This extension is distributed
+   with DrScheme bundles, and can also be built automatically from the 
+   source if necessary (and if the user has a copy of Codewarrior 5).
+   
+   Note also that once created, these launchers are bound in a truly
+   tenacious way to MrEd; short of deleting MrEd entirely, it's nearly 
+   impossible to disconnect them.
+   
 > (make-mzscheme-launcher args dest) - Same as `make-mred-launcher', but
    for starting MzScheme. (No special X windows handling.)
 

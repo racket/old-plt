@@ -17,7 +17,9 @@
            (lib "list.ss")
            (lib "string.ss")
            (lib "file.ss")
-           (lib "url.ss" "net"))
+           (lib "url.ss" "net")
+
+	   "../map.ss")
   
   (provide helpwin@)
   
@@ -380,7 +382,8 @@
                     (class100 hyper-panel% ()
                               (inherit get-canvas)
                               (rename [super-leaving-page leaving-page])
-                              (public
+              
+			      (public
                                 [stop-search
                                  (lambda ()
                                    (set! cycle-key #f)
@@ -391,49 +394,46 @@
                               (override
                                 [on-url-click
                                  (lambda (k url)
-                                   ; Watch for clicks from docs to undownloaded docs
-                                   ((let/ec escape
-                                      ; Try to see if this is a link to missing documentation.
-                                      ; Many things can go wrong; give up if anything does...
-                                      (with-handlers ([(lambda (x) #t)
-                                                       (lambda (x) (void))])
-                                        (let ([start (send (send (get-canvas) get-editor) get-url)])
-                                          (when (or (not start)
-                                                    (string=? "file" (url-scheme start)))
-                                            (let ([url (if (string? url)
-                                                           (if start
-                                                               (combine-url/relative start url)
-                                                               (string->url url))
-                                                           url)])
-                                              (when (string=? "file" (url-scheme url))
-                                                (when (not (file-exists? (url-path url)))
-                                                  ; Try comparing the base-of-base-of-url to
-                                                  ;  the collection directory. Many things can go wrong,
-                                                  ;  in which case we let the normal error happen.
-                                                  (let-values ([(doc-dir)
-                                                                (normalize-path (collection-path "doc"))]
-                                                               [(dest-dir dest-doc dest-file)
-                                                                (let-values ([(base filename dir?)
-                                                                              (split-path
-                                                                               (simplify-path
-                                                                                (url-path url)))]) 
-                                                                  (let-values ([(base name dir?)
-                                                                                (split-path base)])
-                                                                    (values (normalize-path base)
-                                                                            name
-                                                                            filename)))])
-                                                    (when (and (string=? doc-dir dest-dir)
-                                                               (not (string=? dest-doc "help")))
-                                                      ; Looks like the user needs to download some docs,
-                                                      ;  rather than a generic file-not-found error.
-                                                      ; Redirect to information about missing docs:
-                                                      (escape
-                                                       (lambda ()
-                                                         (send (get-canvas) goto-url 
-                                                               (build-notthere-page dest-doc dest-file (url->string url))
-                                                               #f)))))))))))
-                                      (k url)
-                                      void)))]
+					; Watch for clicks from docs to undownloaded docs
+					; Try to see if this is a link to missing documentation.
+					; Many things can go wrong; give up if anything does...
+				   (let/ec escape
+				     (with-handlers ([(lambda (x) #t)
+						      (lambda (x) void)])
+				       (let ([start (send (send (get-canvas) get-editor) get-url)])
+					 (when (or (not start)
+						   (string=? "file" (url-scheme start)))
+					   (let ([url (if (string? url)
+							  (if start
+							      (combine-url/relative start url)
+							      (string->url url))
+							  url)])
+					     (when (string=? "file" (url-scheme url))
+					       (when (not (file-exists? (url-path url)))
+					; Try comparing the base-of-base-of-url to
+					;  the collection directory. Many things can go wrong,
+					;  in which case we let the normal error happen.
+						 (let-values ([(doc-dir)
+							       (normalize-path (collection-path "doc"))]
+							      [(dest-dir dest-doc dest-file)
+							       (let-values ([(base filename dir?)
+									     (split-path
+									      (simplify-path
+									       (url-path url)))]) 
+								 (let-values ([(base name dir?)
+									       (split-path base)])
+								   (values (normalize-path base)
+									   name
+									   filename)))])
+						   (when (and (string=? doc-dir dest-dir)
+							      (not (string=? dest-doc "help")))
+					; Looks like the user needs to download some docs,
+					;  rather than a generic file-not-found error.
+					; Redirect to information about missing docs:
+						     (escape (send (get-canvas) goto-url 
+								   (build-notthere-page dest-doc dest-file (url->string url))
+								   #f))))))))))
+				     (k url)))]
                                 [leaving-page
                                  (lambda (page new-page)
                                    (unless (is-a? (page->editor new-page) results-editor%)

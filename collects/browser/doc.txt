@@ -86,7 +86,8 @@ during the evaluation of the mzscheme code (in both examples)
      Changes the style for the given range to the link style
 
 >   get-url :: (send o get-url)
-     Returns the URL displayed by the editor
+     Returns the URL displayed by the editor, or #f if there
+     is none.
 
 >   get-title :: (send o get-title)
 >   set-title :: (send o set-title string)
@@ -163,10 +164,13 @@ during the evaluation of the mzscheme code (in both examples)
      resolving `url' as a relative URL.
      `url' may also be a port. If it is, relative-to-url must be #f.
 
->   set-page :: (send o goto-page page notify?)
+>   set-page :: (send o set-page page notify?)
      Changes to the given page. If `notify?' is not #f, the canvas's
      parent is notified about the change by calling its `leaving-page'
      method.
+
+>   after-set-page :: (send o after-set-page)
+     Called during `set-page'. Defaultly does nothing.
 
 ----------------------------------------
 

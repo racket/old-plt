@@ -355,12 +355,3 @@ These libraries are used to build dynamic portions of the documentation.
 > (find-manuals)
   It returns a string version of html code that, when rendered, shows
   the installed and known uninstalled manuals.
-
-> Help Desk Map
-  The _map.ss_ library contains a module that defines two procedures:
-> (show-map)
-  which opens and brings to the front the documentation roadmap.
-> (set-map-position dir) - dir is a string or #f
-  which sets the current position in the documentation.
-  This is expected to only be called by the Help Desk window
-  code.

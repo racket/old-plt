@@ -782,7 +782,7 @@
           (unless (message-downloaded? m)
             (send e change-style unread-delta before (+ before 1)))
           (when (memq 'marked (message-flags m))
-            (send e change-style unread-delta before (+ before 1)))
+            (send e change-style marked-delta before (+ before 1)))
           (send e end-edit-sequence)
           i))
 
@@ -875,6 +875,7 @@
       (send global-keymap add-function "disconnect"
 	    (lambda (w e)
 	      (disconnect)
+	      (set! current-next-uid 0)
 	      (send disconnected-msg show #t)))
       (send global-keymap add-function "get-new-mail"
 	    (lambda (w e) (get-new-mail)))
@@ -1002,6 +1003,7 @@
             (make-object menu-item% "D&isconnect" file-menu
               (lambda (i e) 
                 (disconnect)
+		(set! current-next-uid 0)
                 (send disconnected-msg show #t))
               #\i))
           
@@ -1447,6 +1449,7 @@
 					       main-frame))
 				     (send disconnected-msg show #t)
 				     (set! initialized? #f)
+				     (set! current-next-uid 0)
 				     (force-disconnect))))))])
 	  (header-changing-action
 	   #f
@@ -2296,6 +2299,7 @@
                                    (stop)
                                    (send disconnected-msg show #t)
                                    (set! initialized? #f)
+				   (set! current-next-uid 0)
                                    (force-disconnect)
                                    (status "Error connecting: ~s"
                                            (if (exn? x)

@@ -3,7 +3,7 @@
 ;; elaboration.ss
 ;;
 ;; Richard Cobbe
-;; $Id: elaboration.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: elaboration.ss,v 1.2 2004/08/19 21:24:58 cobbe Exp $
 ;;
 ;; Code to type-check and elaborate the program.
 ;;
@@ -104,7 +104,8 @@
   (define elab-class
     (lambda (p new-table c)
       (cond
-       [(hash-table-get new-table (class-name c) (lambda () #f)) =>
+       [(hash-table-get new-table (class-type-name (class-name c))
+                        (lambda () #f)) =>
         (lambda (x) x)]
        [else
         (let ([new-superclass
@@ -126,6 +127,8 @@
                                          (class-methods c)))])
             (hash-table-put! new-table (class-type-name (class-name c)) result)
             result))])))
+  ;; FIXME: add test cases to ensure that elab-class preserves graph structure
+  ;; of original class table!
 
   ;; elab-method :: Program Class -> Method -> Method
   ;; type-checks and elaborates a method definition

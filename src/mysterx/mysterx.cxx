@@ -1023,38 +1023,89 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   }
   else if (hr == E_NOINTERFACE) {
     ITypeLib *pITypeLib;
+    ITypeInfo *pDispatchTypeInfo,*pCandidateTypeInfo;
     TYPEKIND typeKind;
     UINT ndx;
     UINT typeInfoCount;
-    UINT coclassNdx;
-    BOOL foundCoclassNdx;
+    BOOL foundCoclass;
+    UINT j;
 
     /* alternate mechanism */
 
-    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
+    hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pDispatchTypeInfo);
 
-    hr = pITypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
+    hr = pDispatchTypeInfo->GetContainingTypeLib(&pITypeLib,&ndx);
 
     typeInfoCount = pITypeLib->GetTypeInfoCount();
 
-    foundCoclassNdx = FALSE;
+    foundCoclass = FALSE;
 
     for (i = 0; i < typeInfoCount; i++) {
+
       pITypeLib->GetTypeInfoType(i,&typeKind);
+
       if (typeKind == TKIND_COCLASS) {
-	coclassNdx = i;
-	foundCoclassNdx = TRUE;
+
+	hr = pITypeLib->GetTypeInfo(i,&pITypeInfo);
+
+	if (hr != S_OK || pITypeInfo == NULL) {
+	  codedComError("Error getting type info for coclass",hr);
+	}
+  
+	hr = pITypeInfo->GetTypeAttr(&pTypeAttr);
+	
+	if (hr != S_OK || pTypeAttr == NULL) {
+	  codedComError("Error getting type attributes",hr);
+	}
+  
+	typeCount = pTypeAttr->cImplTypes; 
+  
+	pITypeInfo->ReleaseTypeAttr(pTypeAttr);
+  
+	for (j = 0; j < typeCount; j++) {
+	  hr = pITypeInfo->GetRefTypeOfImplType(j,&hRefType);
+  
+	  if (hr != S_OK) {
+	    codedComError("Error retrieving type info handle",hr);
+	  }
+  
+	  hr = pITypeInfo->GetRefTypeInfo(hRefType,&pCandidateTypeInfo);
+
+	  if (hr != S_OK || pCandidateTypeInfo == NULL) {
+	    codedComError("Error retrieving candidate type info",hr);
+	  }
+
+	  pCandidateTypeInfo->Release();
+
+	  if (pCandidateTypeInfo == pDispatchTypeInfo) {
+
+	    // we found the coclass with the typeinfo for our object
+	    // event interface is in the same coclass 
+
+	    foundCoclass = TRUE;
+	    break;
+
+	  }
+	}
+
+	if (foundCoclass == FALSE) {
+	  pITypeInfo->Release();
+	}
+      }
+
+      if (foundCoclass) {
 	break;
       }
     }
 
-    if (foundCoclassNdx) {
-      hr = pITypeLib->GetTypeInfo(coclassNdx,&pITypeInfo);
-    }
-    else {
+    pITypeLib->Release();
+    pDispatchTypeInfo->Release();
+
+    if (foundCoclass == FALSE) {
       hr = E_NOINTERFACE;
     }
   }
+
   else {
     codedComError("Error getting COM event type information",hr);
   }
@@ -1106,6 +1157,8 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   }
   
   hr = pITypeInfo->GetRefTypeInfo(hRefType,&pEventTypeInfo);
+
+  pITypeInfo->Release();
   
   if (hr != S_OK || pEventTypeInfo == NULL) {
     codedComError("Error retrieving event type info",hr);

@@ -998,6 +998,10 @@ wxCursor::wxCursor(int cursor_type)
   __type = wxTYPE_CURSOR;
   switch (cursor_type) {
   case wxCURSOR_WAIT:
+    {
+      ms_cursor = LoadCursor(NULL, IDC_APPSTARTING);
+      break;
+    }
   case wxCURSOR_WATCH:
     {
       ms_cursor = LoadCursor(NULL, IDC_WAIT);

@@ -270,6 +270,9 @@
 
     (define the-language param:check-syntax-level)
 
+    (unless (memq the-language language-levels)
+      (internal-error language-level "Invalid language level setting"))
+
     (define language<=?
       (let ((table
 	      (let loop ((<? #f) (levels language-levels))

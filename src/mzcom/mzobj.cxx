@@ -124,14 +124,32 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
   scheme_dont_gc_ptr(env); 
 
+  // set up exception trapping
+  
   wrapper = 
-    "(#%lambda (thunk)"
-    "  (#%with-handlers ([#%void (#%lambda (exn) (#%cons #f exn))])"
-    "    (#%cons #t (thunk))))";
+    "(#%lambda (thunk) "
+    "(#%with-handlers ([#%void (#%lambda (exn) (#%cons #f exn))]) "
+    "(#%cons #t (thunk))))";
   
   exn_catching_apply = scheme_eval_string(wrapper,env);
   exn_p = scheme_lookup_global(scheme_intern_symbol("exn?"),env);
   exn_message = scheme_lookup_global(scheme_intern_symbol("exn-message"),env);
+
+  // set up collection paths, based on MzScheme startup
+
+  scheme_eval_string("(#%current-library-collection-paths "
+		     "(#%path-list-string->path-list "
+		     "(#%or (#%getenv \"PLTCOLLECTS\") \"\") "
+		     "(#%or "
+		     "(#%ormap "
+		     "(#%lambda (f) (#%let ([p (f)]) "
+		     "(#%and p (#%directory-exists? p) (#%list p)))) "
+		     "(#%list"
+		     "(#%lambda () (#%let ((v (#%getenv \"PLTHOME\"))) "
+		     "(#%and v (#%build-path v \"collects\")))) "
+		     "(#%lambda () \"c:\\Program Files\\PLT\\collects\") "
+		     ")) #%null)))",
+		     env);
 
   while (1) {
 
@@ -304,6 +322,10 @@ STDMETHODIMP CMzObj::Eval(BSTR input, LPBSTR output) {
 
 BOOL WINAPI dlgProc(HWND hDlg,UINT msg,WPARAM wParam,LPARAM) {
   switch(msg) {
+  case WM_INITDIALOG :
+    SetDlgItemText(hDlg,MZCOM_URL,
+		   "http://www.cs.rice.edu/CS/PLT/packages/mzcom/");
+    return TRUE;
   case WM_COMMAND :
     switch (LOWORD(wParam)) { 
     case IDOK :

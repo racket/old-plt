@@ -210,12 +210,12 @@
 			(set! timer-writes (add1 timer-writes))
 			(when (> timer-writes CACHE-WRITE-COUNT)
 			  (end-edit-sequence)
-			  (begin-edit-sequence)
+			  (begin-edit-sequence #f)
 			  (set! timer-writes 0)))
 		      (begin
 			(set! timer-writes 0)
 			(let ([on-box (box #t)])
-			  (begin-edit-sequence)
+			  (begin-edit-sequence #f)
 			  (set! timer-on on-box)
 			  (thread 
 			   (lambda ()
@@ -230,7 +230,7 @@
 				  (set! timer-on #f))
 				(semaphore-post timer-sema))))))))
 		  (semaphore-post timer-sema)
-		  (begin-edit-sequence)
+		  (begin-edit-sequence #f)
 		  (set-position (last-position))
 		  (when (and prompt-mode? autoprompting?)
 		    (insert #\newline))
@@ -279,9 +279,11 @@
 		    (send transparent-edit 
 			  generic-write s 
 			  (lambda (start end)
-			    (send transparent-edit
-				  change-style output-delta 
-				  start end)))))))]
+			    (send* transparent-edit
+				   (begin-edit-sequence #f)
+				   (change-style output-delta 
+						 start end)
+				   (end-edit-sequence))))))))]
 	    [this-err-write
 	     (lambda (s)
 	       (mzlib:function:dynamic-delay-break
@@ -319,7 +321,7 @@
 		 (set! transparent-edit (make-object transparent-io-edit%))
 		 (send transparent-edit enable-autoprompt #f)
 		 (dynamic-wind
-		  (lambda () (begin-edit-sequence))
+		  (lambda () (begin-edit-sequence #f))
 		  (lambda ()		  
 		    (let ([snip (make-object wx:media-snip% transparent-edit)])
 		      (for-each (lambda (c) (send c add-rep-snip snip))
@@ -673,7 +675,8 @@
 		      (print-struct #t)
 		      (mred:gui-utils:message-box (format "~a" x) "Uncaught Exception")
 		      (old x))))
-		 (unless (eq? mred:debug:on? 'no-takeover)
+		 (unless ((if (list? mred:debug:on?) member eq?)
+			  'no-takeover mred:debug:on?)
 		   (let ([doit
 			  (lambda ()
 			    (current-output-port this-out)
@@ -767,6 +770,7 @@
 	(class-asi super%
 	  (inherit change-style prompt-position set-prompt-position resetting? set-resetting lock get-text
 		   flush-console-output set-position last-position get-character
+		   clear-undos
 		   do-pre-eval do-post-eval)
 	  (rename [super-on-insert on-insert]
 		  [super-on-local-char on-local-char]
@@ -815,6 +819,7 @@
 				[text (get-text start end #t)])
 			   (set! potential-sexps (cdr potential-sexps))
 			   (mark-consumed start end)
+			   (clear-undos)
 			   (read (open-input-string text)))])))]
 	    [fetch-char
 	     (lambda ()
@@ -935,7 +940,9 @@
 	    [on-quit mred:exit:exit]
 
 	    [file-menu:revert #f]
-	    [file-menu:close #f]
+	    [file-menu:close (and close-item?
+				  (lambda () (when (on-close)
+					       (show #f))))]
 	    [file-menu:between-open-and-save
 	     (lambda (file-menu)
 	       (send file-menu append-item "&Load Scheme File..."

@@ -1,4 +1,3 @@
-#cs
 (module types mzscheme
 
   (require (lib "etc.ss")
@@ -601,7 +600,23 @@
                  (set-scheme-record-provides! mod-ref (cons val (scheme-record-provides mod-ref)))
                  val))
              (current-namespace old-namespace)))))))
-  
+
+  ;module-has-binding?: scheme-record string (-> void) -> void
+  ;module-has-binding raises an exception when variable is not defined in mod-ref
+  (define (module-has-binding? mod-ref variable fail)
+    (let ((var (string->symbol (java-name->scheme variable))))
+      (or (variable-member? (scheme-record-provides mod-ref) var)
+          (let ((old-namespace (current-namespace)))
+           (current-namespace (make-namespace))
+           (namespace-require (generate-require-spec (scheme-record-name mod-ref)
+                                                     (scheme-record-path mod-ref)))
+           (begin
+             (namespace-variable-value var #t  (lambda () 
+                                                 (current-namespace old-namespace)
+                                                 (fail)))
+             (set-scheme-record-provides! mod-ref (cons var (scheme-record-provides mod-ref)))
+             (current-namespace old-namespace))))))
+          
   ;generate-require-spec: string (list string) -> (U string (list symbol string+))
   (define (generate-require-spec name path)
     (let ((mod (string-append name ".ss")))

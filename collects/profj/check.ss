@@ -1538,39 +1538,44 @@
                 (fname (id-string (field-access-field acc)))
                 (src (id-src (field-access-field acc)))
                 (class-rec null)
-                (record null))
-           (set! record 
-                 (if obj
-                     (field-lookup fname (type/env-t obj-type/env) obj src level type-recs)
-                     (let* ((name (var-access-class (field-access-access acc))))
-                       (set! class-rec
-                             ;First clause: static field of a local inner class
-                             (or (and (or (string? name) (= 1 (length name)))
-                                      (let ((rec? (lookup-local-inner (if (pair? name) (car name) name) env)))
-                                        (and rec? (inner-rec-record rec?))))
-                                 (get-record (send type-recs get-class-record 
-                                                   (if (pair? name) name (list name))
-                                                   #f
-                                                   ((get-importer type-recs) name type-recs level src))
-                                             type-recs)))
-                       (cond
-                         ((class-record? class-rec)
-                          (get-field-record fname class-rec
-                                            (lambda () 
-                                              (let* ((class? (member fname (send type-recs get-class-env)))
-                                                     (method? (not (null? (get-method-records fname class-rec)))))
-                                                (field-lookup-error (if class? 'class-name 
-                                                                        (if method? 'method-name 'not-found))
-                                                                    (string->symbol fname)
-                                                                    (make-ref-type (if (pair? name) (car name) name) null)
-                                                                    src)))))
-                         ((scheme-record? class-rec)
-                          (lookup-scheme class-rec fname 
-                                         (lambda () (field-lookup-error 'not-found
-                                                                        (string->symbol fname)
-                                                                        (make-ref-type (if (pair? name) (car name) name) 
-                                                                                       (list "scheme"))
-                                                                        src))))))))
+                (record
+                 (cond
+                   ((and obj (dynamic-val? (expr-types obj)))
+                    (set-dynamic-val-type! (expr-types obj) 
+                                           (make-unknown-ref (make-field-contract fname (make-dynamic-val #f))))
+                    (expr-types obj))
+                   (obj (field-lookup fname (type/env-t obj-type/env) obj src level type-recs))
+                   (else
+                    (let* ((name (var-access-class (field-access-access acc))))
+                      (set! class-rec
+                            ;First clause: static field of a local inner class
+                            (or (and (or (string? name) (= 1 (length name)))
+                                     (let ((rec? (lookup-local-inner (if (pair? name) (car name) name) env)))
+                                       (and rec? (inner-rec-record rec?))))
+                                (get-record (send type-recs get-class-record 
+                                                  (if (pair? name) name (list name))
+                                                  #f
+                                                  ((get-importer type-recs) name type-recs level src))
+                                            type-recs)))
+                      (cond
+                        ((class-record? class-rec)
+                         (get-field-record fname class-rec
+                                           (lambda () 
+                                             (let* ((class? (member fname (send type-recs get-class-env)))
+                                                    (method? (not (null? (get-method-records fname class-rec)))))
+                                               (field-lookup-error (if class? 'class-name 
+                                                                       (if method? 'method-name 'not-found))
+                                                                   (string->symbol fname)
+                                                                   (make-ref-type (if (pair? name) (car name) name) null)
+                                                                   src)))))
+                        ((scheme-record? class-rec)
+                         (module-has-binding? class-rec fname 
+                                              (lambda () (field-lookup-error 'not-found
+                                                                             (string->symbol fname)
+                                                                             (make-ref-type (if (pair? name) (car name) name) 
+                                                                                            (list "scheme"))
+                                                                             src)))
+                         (make-dynamic-val #f))))))))
            (cond 
              ((field-record? record)
               (let* ((field-class (if (null? (cdr (field-record-class record))) 
@@ -1631,9 +1636,10 @@
                     (restricted-field-access-err (field-access-field acc) field-class src)))
                 (make-type/env (field-record-type record) 
                                (if (type/env? obj-type/env) (type/env-e obj-type/env) env))))
-             ((and (dynamic-val? record) (unknown-ref? (dynamic-val-type record)))
+             ((and (dynamic-val? record) (dynamic-val-type record))
               (set-field-access-access! acc (make-var-access #f #t #t 'public 'unknown))
-              (make-type/env record (type/env-e obj-type/env)))
+              (make-type/env (field-contract-type (unknown-ref-access (dynamic-val-type record)))
+                             obj-type/env))
              ((dynamic-val? record)
               (add-required c-class (scheme-record-name class-rec) 
                             (cons "scheme" (scheme-record-path class-rec)) type-recs)

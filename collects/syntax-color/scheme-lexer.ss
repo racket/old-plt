@@ -35,7 +35,7 @@
    [y (: "y" "Y")]
    [z (: "z" "Z")]
    [digit (- "0" "9")]
-   [whitespace (: #\newline #\return #\tab #\space #\vtab)]
+   [whitespace (: #\newline #\return #\tab #\space #\vtab #\page)]
    [line-comment (@ ";" (* (^ #\newline)))]
    [character (: (@ "#\\" any)
                  (@ "#\\" character-name)
@@ -269,19 +269,20 @@
       (ret "" 'no-color #f start-pos end-pos)]
      [(eof) (values lexeme 'eof #f #f #f)]
      [(: bad-char bad-str bad-id) (ret lexeme 'error #f start-pos end-pos)]
-     [any (extend-error start-pos end-pos input-port)]))
+     [any (extend-error lexeme start-pos end-pos input-port)]))
   
-  (define (extend-error start end in)
+  (define (extend-error lexeme start end in)
     (if (memq (peek-char-or-special in)
               `(special #\newline #\return #\tab #\space #\vtab
                  #\" #\, #\' #\` #\( #\) #\[ #\] #\{ #\} #\;
                  ,eof))
-        (ret "" 'error #f start end)
-        (ret "" 'error #f start (get-chunk in))))
+        (ret lexeme 'error #f start end)
+        (let-values (((rest end-pos) (get-chunk in)))
+          (ret (string-append lexeme rest) 'error #f start end-pos))))
   
   (define get-chunk
     (lexer
-     ((+ (^ identifier-delims)) end-pos)))
+     ((+ (^ identifier-delims)) (values lexeme end-pos))))
   
   
   )

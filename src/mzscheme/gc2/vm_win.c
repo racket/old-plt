@@ -54,8 +54,10 @@ static void protect_pages(void *p, size_t len, int writeable)
 #ifndef DONT_NEED_MAX_HEAP_SIZE
 static unsigned long determine_max_heap_size(void)
 {
+#if 0
   GCPRINT(GCOUTF, 
 	  "Don't know how to get heap size for Windows: assuming 1GB\n");
+#endif
   return (1 * 1024 * 1024 * 1024);
 }
 #endif

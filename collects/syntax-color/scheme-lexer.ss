@@ -239,19 +239,17 @@
       (ret 'comment start-pos end-pos)]
      ["#|" (read-nested-comment 1 start-pos input-port)]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "(")
-      (values 'base '|(| (position-offset start-pos) (position-offset end-pos))]
+      (values 'parenthesis '|(| (position-offset start-pos) (position-offset end-pos))]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "[")
-      (values 'base '|[| (position-offset start-pos) (position-offset end-pos))]
+      (values 'parenthesis '|[| (position-offset start-pos) (position-offset end-pos))]
      [(@ (: "" "#hash" "#hasheq" (@ "#" (* digit10))) "{")
-      (values 'base '|{| (position-offset start-pos) (position-offset end-pos))]
-     [(: ")" "]" "}"
-         "'" "`" "," ",@"
-         "#'" "#`" "#," "#,@"
-         "."  "#&"
-         reader-command
-         script
-         sharing)
-      (values 'base (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
+      (values 'parenthesis '|{| (position-offset start-pos) (position-offset end-pos))]
+     [(: ")" "]" "}")
+      (values 'parenthesis (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
+     [(: "'" "`" "#'" "#`" "#&")
+      (values 'constant (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
+     [(: script sharing reader-command "." "," ",@" "#," "#,@")
+      (values 'other (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos))]
      [identifier (values 'symbol lexeme (position-offset start-pos) (position-offset end-pos))]
      [(special)
       (ret 'white-space start-pos end-pos)]

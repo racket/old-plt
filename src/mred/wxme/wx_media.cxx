@@ -1280,7 +1280,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
       else
 	gsnip = NULL;
 
-      if (!gsnip || caretStyle || !(gsnip->flags & wxSNIP_IS_TEXT)
+      if (!gsnip || (caretStyle && (gsnip->style != caretStyle))
+	  || !(gsnip->flags & wxSNIP_IS_TEXT)
 	  || (gsnip->count + addlen > MAX_COUNT_FOR_SNIP)) {
 	snip = InsertTextSnip(start, 
 			      caretStyle
@@ -1357,10 +1358,11 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	    | wxSNIP_INVISIBLE;
 	  snip->flags -= (snip->flags & wxSNIP_CAN_APPEND);
 
+	  insertedLine = TRUE;
+
 	  if (PTRNE(snip, snip->line->lastSnip)) {
 	    oldLine = snip->line;
 	    snip->line = oldLine->Insert(&lineRoot, TRUE);
-	    insertedLine = TRUE;
 	    numValidLines++;
 	    snip->line->lastSnip = snip;
 	    snip->line->snip = oldLine->snip;
@@ -1381,8 +1383,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	    snip->line->MarkRecalculate();
 	    if (maxWidth > 0)
 	      snip->line->MarkCheckFlow();
-	  } else if (PTREQ(snip, lastSnip))
-	    insertedLine = TRUE; /* b/c added extra ghost line */
+	  }
 	} else {
 	  tabsnip = OnNewTabSnip();
 	  if (tabsnip->IsOwned() || tabsnip->count) {
@@ -2302,6 +2303,8 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
 #define MAX_DIST_TRY 30
 
   if (startp) {
+    int phase1_complete = 0, phase2_complete = 0;
+
     pstart = start = *startp;
 
     lstart = win->FindNewline(-1, start);
@@ -2326,11 +2329,19 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
 
   try_start_again:
 
-    if (start && nonbreak(text[start]))
-      --start;
-    if (reason != wxBREAK_FOR_SELECTION) {
-      while (start && !nonbreak(text[start]))
+    if (!phase1_complete) {
+      if (start && nonbreak(text[start]))
 	--start;
+      if (!nonbreak(text[start]))
+	phase1_complete = 1;
+    }
+    if (reason != wxBREAK_FOR_SELECTION) {
+      if (!phase2_complete) {
+	while (start && !nonbreak(text[start]))
+	  --start;
+	if (nonbreak(text[start]))
+	  phase2_complete = 1;
+      }
     }
     while (start && nonbreak(text[start]))
       --start;
@@ -2352,6 +2363,8 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
   }
 
   if (endp) {
+    int phase1_complete = 0;
+
     end = *endp;
 
     lstart = end;
@@ -2374,9 +2387,14 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     end -= lstart;
     lend -= lstart;
 
-    while ((end < lend) && !nonbreak(text[end]))
-      end++;
   try_end_again:
+
+    if (!phase1_complete) {
+      while ((end < lend) && !nonbreak(text[end]))
+	end++;
+      if (end < lend)
+	phase1_complete = 1;
+    }
     while ((end < lend) && nonbreak(text[end]))
       end++;
 
@@ -2978,7 +2996,7 @@ void wxMediaEdit::SetFilename(char *name, Bool temp)
 
   if (filename)
     delete[] filename;
-  filename = name ? copystring(name) : NULL;
+  filename = name ? copystring(name) : (char *)NULL;
   tempFilename = temp;
 
   Bool wl = writeLocked, fl = flowLocked;

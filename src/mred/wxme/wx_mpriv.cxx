@@ -1060,44 +1060,55 @@ wxTextSnip *wxMediaEdit::InsertTextSnip(long start, wxStyle *style)
   }
   snip->count = 0;
 
-  gsnip = FindSnip(start, +2, &sPos);
-  if (!gsnip) {
-    AppendSnip(snip);
-    snip->line = lastLine;
-    if (PTREQ(lastLine->snip, lastSnip))
-      lastLine->snip = lastLine->lastSnip = snip;
-    else
-      lastLine->lastSnip = snip;
-  } else if (start == sPos) {
-    InsertSnip(gsnip, snip);
+  gsnip = FindSnip(start, -2, &sPos);
+  if (gsnip
+      && (gsnip->count + sPos == start)
+      && (gsnip->flags & wxSNIP_NEWLINE)
+      && !(gsnip->flags & wxSNIP_HARD_NEWLINE)) {
+    /* We want the snip on the same line as the preceeding snip: */
+    InsertSnip(gsnip->next, snip);
     snip->line = gsnip->line;
-    if (PTREQ(snip->line->snip, gsnip))
-      snip->line->snip = snip;
+    snip->line->lastSnip = snip;
   } else {
-    prev = gsnip->prev; next = gsnip->next;
-    gstyle = gsnip->style;
-    line = gsnip->line;
-
-    atStart = PTREQ(line->snip, gsnip);
-    atEnd = PTREQ(line->lastSnip, gsnip);
-
-    SnipSplit(gsnip, start - sPos, &insGsnip, &gsnip);
-    
-    gsnip->style = insGsnip->style = gstyle;
-
-    gsnip->line = insGsnip->line = snip->line = line;
-    if (atStart)
-      line->snip = insGsnip;
-    if (atEnd)
-      line->lastSnip = gsnip;
-
-    SpliceSnip(gsnip, prev, next);
-    snipCount++;
-    InsertSnip(gsnip, snip);
-    InsertSnip(snip, insGsnip);
-
-    SnipSetAdmin(gsnip, snipAdmin);
-    SnipSetAdmin(insGsnip,snipAdmin);
+    gsnip = FindSnip(start, +2, &sPos);
+    if (!gsnip) {
+      AppendSnip(snip);
+      snip->line = lastLine;
+      if (PTREQ(lastLine->snip, lastSnip))
+	lastLine->snip = lastLine->lastSnip = snip;
+      else
+	lastLine->lastSnip = snip;
+    } else if (start == sPos) {
+      InsertSnip(gsnip, snip);
+      snip->line = gsnip->line;
+      if (PTREQ(snip->line->snip, gsnip))
+	snip->line->snip = snip;
+    } else {
+      prev = gsnip->prev; next = gsnip->next;
+      gstyle = gsnip->style;
+      line = gsnip->line;
+      
+      atStart = PTREQ(line->snip, gsnip);
+      atEnd = PTREQ(line->lastSnip, gsnip);
+      
+      SnipSplit(gsnip, start - sPos, &insGsnip, &gsnip);
+      
+      gsnip->style = insGsnip->style = gstyle;
+      
+      gsnip->line = insGsnip->line = snip->line = line;
+      if (atStart)
+	line->snip = insGsnip;
+      if (atEnd)
+	line->lastSnip = gsnip;
+      
+      SpliceSnip(gsnip, prev, next);
+      snipCount++;
+      InsertSnip(gsnip, snip);
+      InsertSnip(snip, insGsnip);
+      
+      SnipSetAdmin(gsnip, snipAdmin);
+      SnipSetAdmin(insGsnip,snipAdmin);
+    }
   }
 
   return snip;

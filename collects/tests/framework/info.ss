@@ -4,6 +4,6 @@
     [(install-collection)
      (lambda (_)
        (require-library "launcher.ss" "launcher")
-       (make-mred-launcher (list "-aqge-" "(require-library \"receive-sexps.ss\" \"tests\" \"framework\")")
+       (make-mred-launcher (list "-aqge-" "(require-library \"framework-test-engine.ss\" \"tests\" \"framework\")")
 			   (mred-program-launcher-path
 			    "Framework Test Engine")))]))

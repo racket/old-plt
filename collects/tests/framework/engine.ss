@@ -5,50 +5,47 @@
     (restart-mred)
     (for-each run-test tests)))
 
-(define restart-mred
-  (let ([running? #f])
-    (lambda ()
-      (case (system-type)
-	[(macos) 
-	 (when running?
-	   (let ([tmp-file (build-path (find-system-path 'temp-dir)
-				       "frameworkempty.ss")])
-	     (call-with-output-file tmp-file
-	       (lambda (port)
-		 (newline port))
-	       'truncate)
-	     (send-event "MrEd" "aevt" "quit")
-	     (let loop ()
-	       (sleep 1)
-	       (with-handlers ([(lambda (x) #t) void])
-		 (printf "looping~n")
-		 (send-event "MrEd" "aevt" "odoc" (vector 'file tmp-file))
-		 (loop)))))
-	 (printf "mred no longer running~n")
-	 (set! running? #t)
-	 (let-values ([(base _1 _2) (split-path program)])
-	   (system* (mred-program-launcher-path "Framework Test Engine")))
-	 (let ([tmp-file (build-path (find-system-path 'temp-dir) 
-				     "frameworktouchme.ss")])
-	   (when (file-exists? tmp-file) (delete-file tmp-file))
-	   (let loop ()
-	     (send-sexp-to-mred
-	      `(call-with-output-file ,tmp-file void))
-	     (sleep 1)
-	     (unless (file-exists? tmp-file) (loop))))]))))
-	   
-(define (send-sexp-to-mred sexp)
-  (let ([tmp-file (build-path (find-system-path 'temp-dir)
-			      "frameworktest.ss")])
-    (printf "file-name ~a~n" tmp-file)
-    (call-with-output-file tmp-file
-      (lambda (port)
-	(write sexp port))
-      'truncate)
-    (case (system-type)
-      [(macos)
-       (printf "result: ~s~n"
-	       (send-event "MrEd" "aevt" "odoc" (vector 'file tmp-file)))])))
+;; old, hopefully unnecessary
+'(case (system-type)
+   [(macos) 
+
+    (when running?
+      (let ([tmp-file (build-path (find-system-path 'temp-dir)
+				  "frameworkempty.ss")])
+	(call-with-output-file tmp-file
+	  (lambda (port)
+	    (newline port))
+	  'truncate)
+	(send-event "MrEd" "aevt" "quit")
+	(let loop ()
+	  (sleep 1)
+	  (with-handlers ([(lambda (x) #t) void])
+	    (printf "looping~n")
+	    (send-event "MrEd" "aevt" "odoc" (vector 'file tmp-file))
+	    (loop)))))
+    (printf "macos: mred no longer running~n")])
+
+(define-values (restart-mred send-sexp-to-mred)
+  (let ([listener #f]
+	[in-port #f]
+	[out-port #f])
+    (values
+     (lambda ()
+       (when listener
+	 (tcp-close listener)
+	 (set! listener #f))
+       (set! listener (tcp-listen (load-relative "receive-sexps-port.ss")))
+       (let-values ([(base _1 _2) (split-path program)])
+	 (system* (mred-program-launcher-path "Framework Test Engine")))
+       (let-values ([(in out) (tcp-accept listener)])
+	 (set! in-port in)
+	 (set! out-port out)))
+     (lambda (sexp)
+       (unless (and in-port out-port listener)
+	 (error 'send-sexp-to-mred "mred not running"))
+       (write sexp out-port)
+       (newline out-port)
+       (read in-port)))))
 
 (restart-mred)
 (restart-mred)

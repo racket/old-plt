@@ -12,6 +12,7 @@
    (lib "framework.ss" "framework")
    (lib "parser.ss" "profj")
    (lib "readerr.ss" "syntax")
+   "table.ss"
    "box-helpers.ss")
   
   (provide example-box@ example-box^)
@@ -110,7 +111,7 @@
            [icon (new snip-wrapper% (parent header) (snip (make-object image-snip%)))])
           (new embedded-message% (parent header) (label "Examples"))
           (field
-           [examples (new examples-field%
+           [examples (new (table example%)
                           (parent main)
                           (copy-constructor examples-to-copy))]
            [button-bar (new horizontal-alignment% (parent main))]
@@ -138,104 +139,21 @@
       (send sc set-classname "example-box%")
       (send sc set-version 1)
       (send (get-the-snip-class-list) add sc)
-  
-      ;; A vertical table of the examples. Used to layout and provide a way to access the examples.
-      (define examples-field%
-        (class vertical-alignment%
-          (inherit-field head tail)
-          (init [copy-constructor #f])
-          
-          #;(-> (is-a?/c example%))
-          ;; The first example in the example field
-          (define/public (get-first-child)
-            (send head next))
-          
-          #;(((is-a?/c example%) . -> . any?) . -> . (listof any?))
-          ;; A list of the results of applying f to each example in the examples field.
-          (define/public (map-children f)
-            (send head map-to-list f))
-          
-          #;(((is-a?/c example%) . -> . void?) . -> . void?)
-          ;; For eaches over the children
-          (define/public (for-each-child f)
-            (send head for-each f))
-          
-          #;((is-a?/c editor-stream-out%) . -> . void?)
-          ;; Write the examples to file
-          (define/public (write f)
-            (let ([num-examples (length (map-children void))])
-              (send f put num-examples)
-              (for-each-child (lambda (c) (send c write f)))))
-          
-          #;((is-a?/c editor-stream-in%) . -> . void?)
-          ;; Reads the examples field's state in from the stream
-          (define/public (read-from-file f)
-            ;; Delete all examples
-            (send head for-each (lambda (c) (send c show false)))
-            (send head next tail)
-            (send tail prev head)
-            ;; Read in all the examples to the file.
-            (let* ([num-examples (box 0)])
-              (send f get num-examples)
-              (let loop ([n (unbox num-examples)])
-                (unless (zero? n)
-                  (let ([example (new example% (parent this))])
-                    (send example read-from-file f)
-                    (link example)
-                    (loop (sub1 n)))))))
-          
-          #;(-> void?)
-          ;; Adds a new example to the examples field.
-          (define/public (add-new)
-            (link-and-focus (new example% (parent this))))
-          
-          #;((is-a?/c example%) . -> . (is-a?/c example%))
-          ;; Adds a new example that is a copy of the given example
-          (define (add-new-copy example-to-copy)
-            (link-and-focus
-             (new example%
-                  (parent this)
-                  (copy-constructor example-to-copy))))
-              
-          #;((is-a?/c example%) . -> . void?)
-          ;; Links a newly inserted example into the tabbing order and gives it focus
-          (define (link-and-focus example)
-            (link example)
-            (focus example))
-            
-          #;((is-a?/c example%) . -> . void?)
-          ;; Link the new example into the tabbing order
-          (define (link example)
-            (let ([previous (send example prev)])
-              (when (is-a? previous example%)
-                (set-tabbing (send previous get-value)
-                             (send example get-type)))
-              (set-tabbing (send example get-type)
-                           (send example get-name)
-                           (send example get-value))
-              (send (send example get-value) set-ahead (lambda () (add-new)))))
-          
-          #;((is-a?/c example%) . -> . void?)
-          ;; Give the new example keyboard focus
-          (define (focus example)
-            (send (send example get-type) set-caret-owner false 'global))
-          
-          (super-new)
-          (when copy-constructor
-            (send copy-constructor for-each-child add-new-copy))
-          ))
       
       ;; An example layed out in a horizontal manner. Allows access to the pieces of an example.
       (define example%
-        (class horizontal-alignment%
-          (inherit get-parent get-pasteboard)
-          
+        (class* horizontal-alignment% (table-item<%>)
+          (inherit get-parent get-pasteboard next prev)
           (init (copy-constructor #f))
           
           (field
            [type (new (get-single-line-editor))]
            [name (new (get-single-line-editor))]
            [value (new (get-program-editor))])
+          
+          #;(-> (is-a?/c text%))
+          ;; The first text in the item that can be typed into
+          (define/public (get-first-text) (get-type))
           
           (define/public (get-type) type)
           (define/public (get-name) name)
@@ -258,12 +176,23 @@
           (super-new)
           
           (when copy-constructor
-            (let ([old-type (send copy-constructor get-type)]
-                  [old-name (send copy-constructor get-name)]
-                  [old-value (send copy-constructor get-value)])
-              (send old-type copy-self-to type)
-              (send old-name copy-self-to name)
-              (send old-value copy-self-to value)))
+            (send (send copy-constructor get-type) copy-self-to type)
+            (send (send copy-constructor get-name) copy-self-to name)
+            (send (send copy-constructor get-value) copy-self-to value))
+          
+          ;;;;;;;;;;
+          ;; Tabbing
+          
+          (when (is-a? (prev) example%)
+            (set-tabbing (send (prev) get-value) type))
+          (set-tabbing type name value)
+          (if (is-a? (next) example%)
+              (set-tabbing value (send (next) get-type))
+              (send value set-ahead (lambda ()
+                                      (send (get-parent) add-new))))
+          
+          ;;;;;;;;;;
+          ;; Layout
           
           (send (get-pasteboard) lock-alignment true)
           (new snip-wrapper%

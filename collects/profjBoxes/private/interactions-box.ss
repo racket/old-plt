@@ -13,7 +13,8 @@
    (lib "readerr.ss" "syntax")
    (lib "parser.ss" "profj")
    (lib "text-syntax-object.ss" "test-suite" "private")
-   (lib "print-to-text.ss" "test-suite" "private"))
+   (lib "print-to-text.ss" "test-suite" "private")
+   "table.ss")
   
   (provide interactions-box@
            interactions-box^)
@@ -26,8 +27,11 @@
       
       (define interactions-box%
         (class* editor-snip% (readable-snip<%>)
-                    
+          
+          (init [interactions-to-copy #f])
+          
           #;(any? (union integer? false?) (union integer? false?) (union integer? false?) . -> . any?)
+          ;; Called to get the syntax object representing this box
           (define/public read-special
             (opt-lambda (index source (line false) (column false) (position false))
               #;((is-a?/c text%) . -> . syntax-object?)
@@ -68,6 +72,22 @@
                     (send (send first-box get-admin) get-snip)
                     'display)))
           
+          ;;;;;;;;;;
+          ;; Reading/Writing
+          
+          #;(-> (is-a?/c interactions-box%))
+          ;; Make an interaction box that is a copy of this interaction box
+          (define/override (copy)
+            (new interactions-box% (interactions-to-copy interactions)))
+          
+          #;((is-a?/c editor-stream-out%) . -> . void?)
+          ;; Writes this interactions box to file
+          (define/override (write f)
+            (send interactions write f))
+            
+          ;;;;;;;;;;
+          ;; Layout
+          
           (field
            [pb (new aligned-pasteboard%)]
            [main (new vertical-alignment% (parent pb))]
@@ -77,31 +97,24 @@
           (new snip-wrapper% (snip (make-object string-snip% "Interactions")) (parent header))
           (new horizontal-alignment% (parent header)) ; right spacer
           
-          (field [interactions (new interactions-field% (parent main))])
+          (field [interactions (new (table interaction%)
+                                    (parent main)
+                                    (copy-constructor interactions-to-copy))])
           
           (super-new (editor pb))
-          (send interactions add-new)))
+          (unless interactions-to-copy
+            (send interactions add-new))))
       
-      (define interactions-field%
-        (class vertical-alignment%
-          (inherit get-pasteboard)
-          (inherit-field head)
-          (define/public (get-first-child)
-            (send head next))
-          (define/public (map-children f)
-            (send head map-to-list f))
-          (define/public add-new
-            (opt-lambda ((after false))
-              (send (get-pasteboard) lock-alignment true)
-              (let (#;[l (new hline% (parent this))]
-                    [i (new interaction% (parent this) (after after))])
-                (send (get-pasteboard) lock-alignment false)
-                (send (send i get-input) set-caret-owner false 'global))))
-          (super-new)))
-      
+      ;; One interaction laid out horizontally
       (define interaction%
-        (class horizontal-alignment%
-          (inherit get-parent)
+        (class* horizontal-alignment% (table-item<%>)
+          (inherit get-parent next)
+          (init [copy-constructor #f])
+          
+          
+          #;(-> (is-a?/c text%))
+          ;; The first text in the item that can be typed into
+          (define/public (get-first-text) (get-input))
           
           #;(-> (is-a?/c text%))
           ;; The input of this interaction
@@ -129,6 +142,13 @@
                 (lock true))
               (send output show true)))
           
+          #;(-> void?)
+          ;; Insert a new interaction after this interaction
+          (define/public (make-new)
+            (send (get-parent) add-new this)
+            (send (send (next) get-input) set-caret-owner
+                  false 'global))
+          
           (super-new)
           
           (define program-editor%
@@ -138,8 +158,8 @@
           (field [input-text (new program-editor%)]
                  [output-text (new text%)])
           
-          (define/public (make-new) (ctrl-enter #f #f))
-          (define (ctrl-enter b e) (send (get-parent) add-new this))
+          (when copy-constructor
+            (send (send copy-constructor get-input) copy-self-to input-text))
           
           (field [io (new vertical-alignment% (parent this))]
                  [input (new horizontal-alignment% (parent io))])
@@ -154,7 +174,7 @@
           (new embedded-text-button%
                (parent input)
                (label "Ctrl + Enter")
-               (callback ctrl-enter))
+               (callback (lambda (b e) (make-new))))
           
           (field [output (new vertical-alignment% (parent io) (show? false))])
           (new snip-wrapper%
@@ -165,9 +185,15 @@
                (parent output))
           ))
       
+      #;((is-a? interaction%) . -> . (is-a?/c text%))
+      ;; A text that is a program editor and also has keybindings that move around the
+      ;; interactions from the given interaction
       (define (interaction-text interaction)
         (class scheme:text%
           
+          #;((is-a?/c interaction%) . -> . void?)
+          ;; Send the mouse cursor to the given interaction's input field
+          ;; NOTE: This function not considered harmful.
           (define (goto inter)
             (when (is-a? inter interaction%)
               (let ([text (send inter get-input)])
@@ -193,6 +219,7 @@
           ;; the list of keymaps associated with this text
           (define/override (get-keymaps)
             (cons movement-keymap (super get-keymaps)))
+          
           (super-new)
           ))
       ))

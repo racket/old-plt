@@ -952,8 +952,8 @@
 	(public
 	  [show
 	    (lambda (now?)
-	      (super-show now?)
-	      (centre wx:const-both))])))
+	      (when now? (centre wx:const-both))
+	      (super-show now?))])))
     
     ; make-get-size: creates a function which returns the minimum possible
     ;   size for a horizontal-panel% or vertical-panel% object.

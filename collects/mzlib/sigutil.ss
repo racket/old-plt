@@ -467,21 +467,23 @@
 				  (loop (cdr e))
 				  (cons (car e) (loop (cdr e)))))))]
 		   [local-vars (append renamed-internals filtered-exported-names imported-names)])
-	      (let loop ([pre-lines null][lines body][port #f][body null][vars null])
+	      (let loop ([pre-lines null][lines body][port #f][port-name #f][body null][vars null])
 		(cond
 		 [(and (null? pre-lines) (not port) (null? lines))
 		  (make-parse-unit imports renames vars body)]
 		 [(and (null? pre-lines) (not port) (not (pair? lines)))
 		  (syntax-error 'unit/sig expr "improper body list form")]
 		 [else
-		  (let-values ([(line) (local-expand
-					(cond
-					 [(pair? pre-lines) (car pre-lines)]
-					 [port (read-syntax port)]
-					 [else (car lines)])
-					(append
-					 user-stx-forms
-					 local-vars))]
+		  (let-values ([(line) (let ([s (cond
+						 [(pair? pre-lines) (car pre-lines)]
+						 [port (read-syntax port-name port)]
+						 [else (car lines)])])
+					 (if (eof-object? s)
+					   s
+					   (local-expand s    
+							 (append
+							  user-stx-forms
+							  local-vars))))]
 			       [(rest-pre-lines) 
 				(if (null? pre-lines)
 				    null
@@ -502,6 +504,7 @@
 			 (loop rest-pre-lines
 			       rest-lines
 			       port
+			       port-name
 			       (cons line body)
 			       (append (syntax->list (syntax (id ...))) vars))]
 			[else
@@ -518,6 +521,7 @@
 			(loop (append (cdr line-list) rest-pre-lines)
 			      rest-lines
 			      port
+			      port-name
 			      body
 			      vars))]
 		     [(and (stx-pair? line)
@@ -532,9 +536,10 @@
 					     (format "cannot include a directory ~s"
 						     file)))
 			     (let* ([old-dir (current-load-relative-directory)]
-				    [p (open-input-file (if (and old-dir (not (complete-path? file)))
-							    (path->complete-path file old-dir)
-							    file))])
+				    [c-file (if (and old-dir (not (complete-path? file)))
+						(path->complete-path file old-dir)
+						file)]
+				    [p (open-input-file c-file)])
 			       (let-values ([(lines body vars)
 					     (parameterize ([current-load-relative-directory
 							     (if (string? base) 
@@ -552,11 +557,12 @@
 						  (loop null
 							rest-lines
 							p
+							c-file
 							body
 							vars))
 						(lambda ()
 						  (close-input-port p))))])
-				 (loop rest-pre-lines lines port body vars)))))]
+				 (loop rest-pre-lines lines port port-name body vars)))))]
 			[else
 			 (syntax-error 'unit/sig expr 
 				       "improper `include' clause form"
@@ -565,6 +571,7 @@
 		      (loop rest-pre-lines
 			    rest-lines
 			    port
+			    port-name
 			    (cons line body)
 			    vars)]))]))))))))
   
@@ -729,11 +736,11 @@
 						 (get-sig 'compound-unit/sig expr
 							  #f
 							  (syntax sig)))]
-					[(elem ...)
+					[(elem1 elem ...)
 					 (andmap (lambda (s)
 						   (and (identifier? s)
 							(not (eq? (syntax-e s) ':))))
-						 (syntax->list (syntax (elem ...))))
+						 (syntax->list (syntax (elem1 elem ...))))
 					 (values path #f)]
 					[else
 					 (syntax-error 'compound-unit/sig expr
@@ -924,9 +931,10 @@
 							       list
 							       flat
 							       (flatten-signature 
-								(symbol->string (if (stx-null? exname)
-										    last
-										    (syntax-e (stx-car exname))))
+								(symbol->string
+								 (if (stx-null? exname)
+								     last
+								     (syntax-e (stx-car exname))))
 								sig)))))
 						     (syntax-error 
 						      'compound-unit/sig expr 
@@ -948,9 +956,8 @@
 				   (map sig-explode-pair-sigpart exports)))
 				 (lambda (name)
 				   (syntax-error 'compound-unit/sig expr
-						 (format 
-						  "the name \"~s\" is exported twice" 
-						  name))))
+						 "name is exported twice"
+						 name)))
 		   (values (map link-name links)
 			   (map link-expr links)
 			   (map (lambda (link) (explode-sig (link-sig link))) links)

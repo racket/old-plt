@@ -1428,7 +1428,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   Scheme_Object *port;
 
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-syntax", "input-port", 0, argc, argv);
+    scheme_wrong_type("read-syntax", "input-port", 1, argc, argv);
 
   if (argc > 1)
     port = argv[1];

@@ -100,7 +100,7 @@
 			exploded-imports
 			exploded-exports)
 		       (parse-compound-unit expr (syntax body))]
-		      [(t) (lambda (l) (datum->syntax l expr (quote-syntax here)))])
+		      [(t) (lambda (l) (datum->syntax l expr expr))])
 	   (with-syntax ([(tag ...) (t tags)]
 			 [(uexpr ...) (t exprs)]
 			 [(tagx ...) (t (map (lambda (t) (string->symbol (format "u:~a" t))) tags))]
@@ -137,9 +137,9 @@
 	[(_ u sig ...)
 	 (let ([sigs (parse-invoke-vars 'invoke-unit/sig (syntax (sig ...)) expr)])
 	   (with-syntax ([exploded-sigs (datum->syntax (explode-named-sigs sigs) 
-						       expr (quote-syntax here))]
+						       expr expr)]
 			 [flat-sigs (datum->syntax (flatten-signatures sigs) 
-						   expr (quote-syntax here))])
+						   expr expr)])
 	     (syntax/loc
 	      expr
 	      (let ([unt u])
@@ -156,15 +156,14 @@
     (lambda (expr)
       (syntax-case expr ()
 	[(_ e (im-sig ...) ex-sig)
-	 (let ([e (syntax e)]
-	       [im-sigs (map (lambda (sig)
+	 (let ([im-sigs (map (lambda (sig)
 			       (get-sig 'unit->unit/sig expr #f sig))
 			     (syntax->list (syntax (im-sig ...))))]
 	       [ex-sig (get-sig 'unit->unit/sig expr #f (syntax ex-sig))])
 	   (with-syntax ([exploded-imports (datum->syntax (explode-named-sigs im-sigs)
-							  expr (quote-syntax here))]
+							  expr expr)]
 			 [exploded-exports (datum->syntax (explode-sig ex-sig)
-							  expr (quote-syntax here))])
+							  expr expr)])
 	     (syntax
 	      (make-unit/sig
 	       e

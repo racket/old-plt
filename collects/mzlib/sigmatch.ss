@@ -74,7 +74,7 @@
 					    "~a: ~a is missing a sub-unit name `~a', required by ~a"
 					    who
 					    src-context
-					    (sig-path-name s path)
+					    (sig-path-name (car s) path)
 					    dest-context)
 					   (current-continuation-marks)))))])
 		(and v

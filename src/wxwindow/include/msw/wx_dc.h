@@ -21,6 +21,8 @@ typedef       void    *wxDC ;
 typedef       void    *wxPrinterDC;
 #else
 
+class wxRegion;
+
 // Since Windows handles DCs quite uniformly, we can have
 // a general wxWindowsDC, and derive canvas and printer DCs from this
 // with minimum extra functionality.
@@ -29,10 +31,6 @@ class wxDC: public wxbDC
   DECLARE_ABSTRACT_CLASS(wxDC)
 
  public:
-  int clip_x1;
-  int clip_y1;
-  int clip_x2;
-  int clip_y2;
   Bool dont_delete;
   Bool screen_font;
   int window_ext_x;
@@ -46,10 +44,10 @@ class wxDC: public wxbDC
 
   HDC cdc;
 
-  HPEN     cur_cpen ;
-  HBRUSH   cur_cbrush ;
-  HDC      cur_dc ;
-  COLORREF cur_bk ;
+  HPEN     cur_cpen;
+  HBRUSH   cur_cbrush;
+  HDC      cur_dc;
+  COLORREF cur_bk;
 
   // Store all old GDI objects when do a SelectObject,
   // so we can select them back in (this unselecting user's
@@ -59,6 +57,9 @@ class wxDC: public wxbDC
   HBRUSH  old_brush;
   HFONT   old_font;
   HPALETTE old_palette;
+
+  HPEN   suspended_pen;
+  HBRUSH suspended_brush;
 
   wxDC(void);
   ~wxDC(void);
@@ -98,14 +99,12 @@ class wxDC: public wxbDC
   void SetFont(wxFont *font);
   void SetPen(wxPen *pen);
   void SetBrush(wxBrush *brush);
-  void SetLogicalFunction(int function);
-  void SetBackground(wxBrush *brush);
+  void SetBackground(wxColour *c);
   void SetBackgroundMode(int mode);
-  void SetClippingRegion(float x, float y, float width, float height);
-  /* MATTHEW: [8] */
-  void GetClippingRegion(float *x, float *y, float *width, float *height);
+  void SetClippingRect(float x, float y, float width, float height);
+  wxRegion* GetClippingRegion();
+  void SetClippingRegion(wxRegion*);
   void SetColourMap(wxColourMap *cmap);
-  void DestroyClippingRegion(void);
   /* MATTHEW: [2] 16-bit flag */
   void DrawText(const char *text, float x, float y, Bool use16bit = FALSE);
 
@@ -136,17 +135,22 @@ class wxDC: public wxbDC
   int LogicalToDeviceYRel(float y);
 
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c=NULL);
             
   Bool CanDrawBitmap(void);
   Bool CanGetTextExtent(void);
 
-  void SetRop(HDC cdc);
+  void SetRop(HDC cdc, int mode);
   void DoClipping(HDC cdc);
   void SelectOldObjects(HDC dc);
    HDC ThisDC();
    void DoneDC(HDC dc);
    void ShiftXY(float x, float y, int &ix, int &iy);
+
+  Bool StartBrush(HDC dc);
+  Bool StartPen(HDC dc);
+  void DoneBrush(HDC dc);
+  void DonePen(HDC dc);
 };
 
 // This class specific to Windows 3.1

@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.8 1998/09/18 23:09:49 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.9 1998/09/19 03:37:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -99,8 +99,6 @@ Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Under
 
 wxFont::~wxFont()
 {
-  int i;
-
   if (screen_cfont)
     DeleteObject(screen_cfont);
   if (general_cfont)
@@ -111,7 +109,6 @@ wxFont::~wxFont()
 
 HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont)
 {
-  int i;
   int nHeight;
 
   if (screenFont && screen_cfont)
@@ -349,7 +346,6 @@ wxPen::wxPen(const char *col, int Width, int Style)
 
 void wxPen::ChangePen(void)
 {
-  // Handled by wxPen::SelectPen() !!
   if (style==wxTRANSPARENT)
     return;
 
@@ -383,17 +379,21 @@ void wxPen::ChangePen(void)
   old_stipple = stipple;
   old_color = ms_colour;
 
-  /* Note: the pen can't be selected anywhere if we're changing it. */
   if (cpen) {
+    /* Note: the pen can't be selected anywhere if we're changing it, so
+       delete is ok */
     DeleteObject(cpen);
     cpen = NULL;
   }
 
+  wxBitmap *bm = GetStipple();
+  if (bm && !bm->Ok())
+    bm = NULL;
+
   if (join==wxJOIN_ROUND        &&
       cap==wxCAP_BUTT           &&
       style!=wxUSER_DASH        &&
-      style!=wxSTIPPLE          &&
-      style!=wxOPAQUE_STIPPLE   &&
+      !bm                       &&
       (width || style == wxSOLID))
     cpen = CreatePen(wx2msPenStyle(style), width, ms_colour);
   else {
@@ -422,42 +422,39 @@ void wxPen::ChangePen(void)
     case wxCAP_ROUND:      ms_style |= PS_ENDCAP_ROUND;  break;
     }
 
-    switch(style) {
-    case wxSTIPPLE:
-    case wxOPAQUE_STIPPLE:
+    if (bm) {
       logb.lbStyle = BS_PATTERN;
-      if (stipple)
-        logb.lbHatch = (LONG)stipple->ms_bitmap;
-      else
-        logb.lbHatch = (LONG)0;
-      break;
-    case wxBDIAGONAL_HATCH:
-      logb.lbStyle = BS_HATCHED;
-      logb.lbHatch = HS_BDIAGONAL;
-      break;
-    case wxCROSSDIAG_HATCH:
-      logb.lbStyle = BS_HATCHED;
-      logb.lbHatch = HS_DIAGCROSS;
-      break;
-    case wxFDIAGONAL_HATCH:
-      logb.lbStyle = BS_HATCHED;
-      logb.lbHatch = HS_FDIAGONAL;
-      break;
-    case wxCROSS_HATCH:
-      logb.lbStyle = BS_HATCHED;
-      logb.lbHatch = HS_CROSS;
-      break;
-    case wxHORIZONTAL_HATCH:
-      logb.lbStyle = BS_HATCHED;
-      logb.lbHatch = HS_HORIZONTAL;
-      break;
-    case wxVERTICAL_HATCH:
-      logb.lbStyle = BS_HATCHED;
-      logb.lbHatch = HS_VERTICAL;
-      break;
-    default:
-      logb.lbStyle = BS_SOLID;
-      break;
+      logb.lbHatch = (LONG)stipple->ms_bitmap;
+    } else {
+      switch(style) {
+      case wxBDIAGONAL_HATCH:
+	logb.lbStyle = BS_HATCHED;
+	logb.lbHatch = HS_BDIAGONAL;
+	break;
+      case wxCROSSDIAG_HATCH:
+	logb.lbStyle = BS_HATCHED;
+	logb.lbHatch = HS_DIAGCROSS;
+	break;
+      case wxFDIAGONAL_HATCH:
+	logb.lbStyle = BS_HATCHED;
+	logb.lbHatch = HS_FDIAGONAL;
+	break;
+      case wxCROSS_HATCH:
+	logb.lbStyle = BS_HATCHED;
+	logb.lbHatch = HS_CROSS;
+	break;
+      case wxHORIZONTAL_HATCH:
+	logb.lbStyle = BS_HATCHED;
+	logb.lbHatch = HS_HORIZONTAL;
+	break;
+      case wxVERTICAL_HATCH:
+	logb.lbStyle = BS_HATCHED;
+	logb.lbHatch = HS_VERTICAL;
+	break;
+      default:
+	logb.lbStyle = BS_SOLID;
+	break;
+      }
     }
     logb.lbColor = ms_colour;
     wxDash *real_dash;
@@ -472,14 +469,7 @@ void wxPen::ChangePen(void)
     cpen = ExtCreatePen(ms_style, xwidth, &logb,
 			style == wxUSER_DASH ? nb_dash : 0,
 			real_dash);
-    
-    if (real_dash)
-      delete[] real_dash;
   }
-
-#ifdef DEBUG_CREATE
-    if (cpen==NULL) wxError("Cannot create pen","Internal error");
-#endif
 
   return;
 }
@@ -502,25 +492,26 @@ int wx2msPenStyle(int wx_style)
 {
   int cstyle;
 
-  switch (wx_style) {
+  switch (wx_style) {  
+  case wxXOR_DOT:
   case wxDOT:
     cstyle = PS_DOT;
     break;
   case wxSHORT_DASH:
+  case wxXOR_SHORT_DASH:
   case wxLONG_DASH:
+  case wxXOR_LONG_DASH:
     cstyle = PS_DASH;
     break;
   case wxDOT_DASH:
+  case wxXOR_DOT_DASH:
     cstyle = PS_DASHDOT;
     break;
   case wxTRANSPARENT:
     cstyle = PS_NULL;
     break;
   case wxUSER_DASH:
-    if (wxGetOsVersion()==wxWINDOWS_NT)
-      cstyle = PS_USERSTYLE;
-    else
-      cstyle = PS_DOT; // We must make a choice... This is mine!
+    cstyle = PS_DOT;
     break;
   case wxSOLID:
   default:
@@ -574,7 +565,6 @@ wxBrush::wxBrush(wxColour& col, int Style)
 
 void wxBrush::ChangeBrush(void) 
 {
-  // Handled by wxBrush::SelectBrush() !!
   if (style==wxTRANSPARENT)
     return;
 
@@ -594,53 +584,51 @@ void wxBrush::ChangeBrush(void)
   if (!must_change)
     return;
 
-  /* Note: brush isn't selected anywhere if we can change it. */
   if (cbrush) {
+    /* Note: brush isn't selected anywhere if we can change it. */
     DeleteObject(cbrush);
     cbrush = NULL;
   }
 
-  switch (style) {
-  case wxTRANSPARENT:
+  wxBitmap *bm = GetStipple();
+  if (bm && !bm->Ok())
+    bm = NULL;
+
+  if (bm) {
+    cbrush = CreatePatternBrush(bm->ms_bitmap);
+  } else {
+    switch (style) {
+    case wxTRANSPARENT:
       break;
-  case wxBDIAGONAL_HATCH:
-    cbrush = CreateHatchBrush(HS_BDIAGONAL, ms_colour);
-    break;
-  case wxCROSSDIAG_HATCH:
-    cbrush = CreateHatchBrush(HS_DIAGCROSS, ms_colour);
-    break;
-  case wxFDIAGONAL_HATCH:
-    cbrush = CreateHatchBrush(HS_FDIAGONAL, ms_colour);
-    break;
-  case wxCROSS_HATCH:
-    cbrush = CreateHatchBrush(HS_CROSS, ms_colour);
-    break;
-  case wxHORIZONTAL_HATCH:
-    cbrush = CreateHatchBrush(HS_HORIZONTAL, ms_colour);
-    break;
-  case wxVERTICAL_HATCH:
-    cbrush = CreateHatchBrush(HS_VERTICAL, ms_colour);
-    break;
-  case wxSTIPPLE:
-  case wxOPAQUE_STIPPLE:
-    if (stipple)
-      cbrush = CreatePatternBrush(stipple->ms_bitmap);
-    else
+    case wxBDIAGONAL_HATCH:
+      cbrush = CreateHatchBrush(HS_BDIAGONAL, ms_colour);
+      break;
+    case wxCROSSDIAG_HATCH:
+      cbrush = CreateHatchBrush(HS_DIAGCROSS, ms_colour);
+      break;
+    case wxFDIAGONAL_HATCH:
+      cbrush = CreateHatchBrush(HS_FDIAGONAL, ms_colour);
+      break;
+    case wxCROSS_HATCH:
+      cbrush = CreateHatchBrush(HS_CROSS, ms_colour);
+      break;
+    case wxHORIZONTAL_HATCH:
+      cbrush = CreateHatchBrush(HS_HORIZONTAL, ms_colour);
+      break;
+    case wxVERTICAL_HATCH:
+      cbrush = CreateHatchBrush(HS_VERTICAL, ms_colour);
+      break;
+      break;
+    case wxSOLID:
+    default:
       cbrush = CreateSolidBrush(ms_colour);
-    break;
-  case wxSOLID:
-  default:
-    cbrush = CreateSolidBrush(ms_colour);
-    break;
+      break;
+    }
   }
+
   old_style = style;
   old_stipple = stipple;
   old_color = ms_colour;
-
-#ifdef DEBUG_CREATE
-  if (cbrush==NULL) wxError("Cannot create brush","Internal error");
-#endif
-
 }
 
 HBRUSH wxBrush::SelectBrush(HDC dc)

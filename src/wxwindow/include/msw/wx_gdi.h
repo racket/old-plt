@@ -182,6 +182,5 @@ class wxCursor: public wxBitmap
   ~wxCursor(void);
 };
 
-
 #endif // IN_CPROTO
 #endif // wx_gdih

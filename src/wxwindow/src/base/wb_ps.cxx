@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_ps.cxx,v 1.6 1998/09/18 23:09:46 mflatt Exp $
+ * RCS_ID:      $Id: PSDC.cc,v 1.13 1998/09/20 21:48:47 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -69,6 +69,8 @@
 
 #endif
 #endif
+
+#include "wx_rgn.h"
 
 #if USE_POSTSCRIPT
 
@@ -300,7 +302,7 @@ Bool wxPostScriptDC::Create(Bool interactive)
 #endif
   current_font = wxNORMAL_FONT;
   device = wxDEVICE_EPS;
-  clipping = FALSE;
+  clipping = NULL;
 
 #ifndef wx_xt
   logical_origin_x = 0;
@@ -320,11 +322,9 @@ Bool wxPostScriptDC::Create(Bool interactive)
   max_x = -10000.0;
   max_y = -10000.0;
 
-  current_logical_function = wxCOPY;
   current_pen = NULL;
   current_brush = NULL;
-  current_background_brush = wxWHITE_BRUSH;
-  current_background_brush->Lock(1);
+  current_background_color = *wxWHITE;
 
   current_text_foreground = *wxBLACK;
 
@@ -334,8 +334,7 @@ Bool wxPostScriptDC::Create(Bool interactive)
   current_pen->Lock(1);
   current_brush = wxWHITE_BRUSH;
   current_brush->Lock(1);
-  current_background_brush = wxWHITE_BRUSH;
-  current_background_brush->Lock(1);
+  current_background_color = wxWHITE;
 #endif
 
   title = NULL;
@@ -411,7 +410,6 @@ wxPostScriptDC::~wxPostScriptDC (void)
 {
   if (current_brush) current_brush->Lock(-1);
   if (current_pen) current_pen->Lock(-1);
-  if (current_background_brush) current_background_brush->Lock(-1);
 
   if (pstream)
     delete pstream;
@@ -461,54 +459,47 @@ Bool wxPostScriptDC::PrinterDialog(Bool interactive)
   return ok;
 }
 
-void wxPostScriptDC::SetClippingRegion (float cx, float cy, float cw, float ch)
+void wxPostScriptDC::SetClippingRect(float cx, float cy, float cw, float ch)
 {
   if (!pstream)
     return;
 
-  *pstream << "gsave\n";
-  *pstream << "newpath\n";
-  *pstream << XSCALE(cx) << " " << YSCALE (cy) << " moveto\n";
-  *pstream << XSCALE(cx + cw) << " " << YSCALE (cy) << " lineto\n";
-  *pstream << XSCALE(cx + cw) << " " << YSCALE (cy + ch) << " lineto\n";
-  *pstream << XSCALE(cx) << " " << YSCALE (cy + ch) << " lineto\n";
-  *pstream << "closepath clip\n";
+  wxRegion *r = new wxRegion(this);
+  r->SetRectangle(cx, cy, cw, ch);
 
-  /* MATTHEW: [8] */
-  clipx = cx;
-  clipy = cy;
-  clipw = cw;
-  cliph = ch;
-
-  clipping = TRUE;
+  SetClippingRegion(r);
 }
 
-/* MATTHEW: [8] */
-void wxPostScriptDC::GetClippingRegion (float *cx, float *cy, float *cw, float *ch)
+wxRegion *wxPostScriptDC::GetClippingRegion()
 {
-  *cx = clipx;
-  *cy = clipy;
-  *cw = clipw;
-  *ch = cliph;
+  if (clipping)
+    return new wxRegion(this, clipping);
+  else
+    return NULL;
 }
 
-void wxPostScriptDC::DestroyClippingRegion (void)
+void wxPostScriptDC::SetClippingRegion(wxRegion *r)
 {
   if (!pstream)
     return;
+  if (r->GetDC() != this)
+    return;
+
   if (clipping) {
-    clipping = FALSE;
+    clipping = NULL;
     *pstream << "grestore\n";
 
     /* Stupid grestore: now we have to be ready to reset anything that changed. */
     resetFont = RESET_FONT | RESET_COLOR;
   }
 
-  /* MATTHEW: [8] */
-  clipx = 0;
-  clipy = 0;
-  clipw = -1;
-  cliph = -1;
+  if (r) {
+    *pstream << "gsave\n";
+    *pstream << r->ps_string;
+    *pstream << "clip\n";
+
+    clipping = r;
+  }
 }
 
 void wxPostScriptDC::Clear (void)
@@ -1195,16 +1186,9 @@ void wxPostScriptDC::DrawText (DRAW_TEXT_CONST char *text, float x, float y,
 }
 
 
-void wxPostScriptDC::SetBackground (wxBrush * brush)
+void wxPostScriptDC::SetBackground (wxColour * c)
 {
-  if (current_background_brush) current_background_brush->Lock(-1);
-  if (brush) brush->Lock(1);
-
-  current_background_brush = brush;
-}
-
-void wxPostScriptDC::SetLogicalFunction (int WXUNUSED(function))
-{
+  current_background_color = *c;
 }
 
 void wxPostScriptDC::SetBackgroundMode(int mode)
@@ -1418,7 +1402,7 @@ void wxPostScriptDC::StartPage (void)
   resetFont = RESET_FONT | RESET_COLOR;
 
   if (clipping)
-    SetClippingRegion(clipx, clipy, clipw, cliph);
+    SetClippingRegion(clipping);
 }
 
 void wxPostScriptDC::EndPage (void)
@@ -1456,7 +1440,7 @@ static void printhex(PSStream *pstream, int v)
 /* MATTHEW: [4] Re-wrote to use colormap */
 Bool wxPostScriptDC::
 Blit (float xdest, float ydest, float fwidth, float fheight,
-      wxMemoryDC *src, float xsrc, float ysrc, int rop)
+      wxMemoryDC *src, float xsrc, float ysrc, int rop, wxColour *dcolor)
 {
   if (!pstream)
     return FALSE;
@@ -1507,15 +1491,18 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
   }
 
   /* Output data as hex digits: */
+  int mono;
   long j, i;
   wxColour c;
   int pixel;
   int pr, pg, pb;
 
-  if (rop == wxCOLOR && current_pen) {
-    pr = current_pen->GetColour().Red();
-    pg = current_pen->GetColour().Green();
-    pb = current_pen->GetColour().Blue();
+  mono = (src->GetObject()->GetDepth() == 1);
+
+  if (mono && dcolor) {
+    pr = dcolor->Red();
+    pg = dcolor->Green();
+    pb = dcolor->Blue();
   } else
     pr = pg = pb = 0;
 
@@ -1528,7 +1515,7 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
       green = c.Green();
       blue = c.Blue();
 
-      if (rop == wxCOLOR && !red && !green && !blue) {
+      if (mono && !red && !green && !blue) {
 	red = pr;
 	green = pg;
 	blue = pb;
@@ -1568,15 +1555,16 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 static wxMemoryDC *temp_mdc;
 
 Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight,
-      wxBitmap *bm, float xsrc, float ysrc, int rop)
+      wxBitmap *bm, float xsrc, float ysrc, int rop, wxColour *c)
 {
   if (!temp_mdc)
     temp_mdc = new wxMemoryDC(1);
 
   temp_mdc->SelectObject(bm);
   Bool v = Blit(xdest, ydest, fwidth, fheight,
-       temp_mdc, xsrc, ysrc, rop);
+		temp_mdc, xsrc, ysrc, rop, c);
   temp_mdc->SelectObject(NULL);
+
   return v;
 }
 
@@ -2092,7 +2080,7 @@ void wxPrintSetupData::copy(wxPrintSetupData& data)
 // wxInitializePrintSetupData
 //-----------------------------------------------------------------------------
 
-void wxInitializePrintSetupData(Bool init)
+void wxInitializePrintSetupData(Bool /* init */)
 {
   wxPrintSetupData *wxThePrintSetupData;
   

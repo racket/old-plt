@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_canvs.cxx,v 1.1.1.1 1997/12/22 16:11:55 mflatt Exp $
+ * RCS_ID:      $Id: wb_canvs.cxx,v 1.2 1998/09/20 22:41:31 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -48,25 +48,6 @@ wxbCanvas::~wxbCanvas(void)
 void wxbCanvas::AllowDoubleClick(int value)
 {
   doubleClickAllowed = value ;
-}
-
-void wxbCanvas::SetClippingRegion(float cx, float cy, float cw, float ch)
-{
-  if (wx_dc)
-    wx_dc->SetClippingRegion(cx, cy, cw, ch);
-}
-
-/* MATTHEW: [8] */
-void wxbCanvas::GetClippingRegion(float *cx, float *cy, float *cw, float *ch)
-{
-  if (wx_dc)
-    wx_dc->GetClippingRegion(cx, cy, cw, ch);
-}
-
-void wxbCanvas::DestroyClippingRegion(void)
-{
-  if (wx_dc)
-    wx_dc->DestroyClippingRegion();
 }
 
 wxCanvasDC *wxbCanvas::GetDC(void)

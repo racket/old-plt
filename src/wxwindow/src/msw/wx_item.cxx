@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_item.cxx,v 1.6 1998/08/11 14:25:05 mflatt Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.7 1998/09/17 05:20:17 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -371,8 +371,8 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	  GetWindowRect((HWND)item->handle,&rect);
 	  pt.x -= rect.left;
 	  pt.y -= rect.top;
-	  event.x = pt.x;
-	  event.y = pt.y;
+	  event.x = (float)pt.x;
+	  event.y = (float)pt.y;
 	  
 	  if (item->CallPreOnChar(item, &event))
 	    return 0;

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_dc.cxx,v 1.1.1.1 1997/12/22 16:11:54 mflatt Exp $
+ * RCS_ID:      $Id: wb_dc.cxx,v 1.2 1998/07/03 21:51:29 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -53,8 +53,8 @@ wxbDC::wxbDC(void)
   __type = wxTYPE_DC;
   min_x = 0; min_y = 0; max_x = 0; max_y = 0;
   title = NULL;
-  clipping = FALSE;
-  autoSetting = TRUE ;
+  clipping = NULL;
+  autoSetting = TRUE;
   dcOptimize = TRUE;
 }
 

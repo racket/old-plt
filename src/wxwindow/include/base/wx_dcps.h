@@ -57,7 +57,6 @@ class wxPostScriptDC: public wxDC
  public:
 #ifdef wx_xt
   char *title;
-  Bool clipping;
 #endif
   int page_number;
   PSStream *pstream;    // PostScript output stream
@@ -134,11 +133,10 @@ class wxPostScriptDC: public wxDC
   void SetFont(wxFont *font);
   void SetPen(wxPen *pen);
   void SetBrush(wxBrush *brush);
-  void SetLogicalFunction(int function);
-  void SetBackground(wxBrush *brush);
-  void SetClippingRegion(float x, float y, float width, float height);
-  /* MATTHEW: [8] */
-  void GetClippingRegion(float *x, float *y, float *width, float *height);
+  void SetBackground(wxColour *c);
+  void SetClippingRect(float x, float y, float width, float height);
+  wxRegion *GetClippingRegion();
+  void SetClippingRegion(wxRegion *r);
   void DestroyClippingRegion(void);
 
   Bool StartDoc(char *message);
@@ -163,9 +161,9 @@ class wxPostScriptDC: public wxDC
   int LogicalToDeviceXRel(float x);
   int LogicalToDeviceYRel(float y);
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
   inline Bool CanGetTextExtent(void) { return USE_AFM_FOR_POSTSCRIPT; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	March 1995
- * RCS_ID:      $Id: wb_item.cxx,v 1.5 1998/08/09 20:55:18 mflatt Exp $
+ * RCS_ID:      $Id: wb_item.cxx,v 1.6 1998/08/16 19:23:12 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -246,7 +246,6 @@ void wxbItem::DrawSelectionHandles(wxPanelDC *dc, Bool WXUNUSED(erase))
   
   dc->SetOptimization(FALSE);
 
-  dc->SetLogicalFunction(wxCOPY);
   dc->SetPen(wxBLACK_PEN);
   dc->SetBrush(wxBLACK_BRUSH);
 

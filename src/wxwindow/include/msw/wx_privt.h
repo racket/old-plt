@@ -66,6 +66,7 @@ public:
     COLORREF background_colour;
     Bool background_transparent;
     Bool canDeleteBackgroundBrush;
+    wxBrush *backgroundBrushAnchor;
 
     wxWindow *wx_window;
 
@@ -147,7 +148,7 @@ public:
 
     // Set background brush, deleting old one if necessary and
     // noting whether we can delete the new one in future.
-    void SetBackgroundBrush(HBRUSH br, Bool canDelete);
+    void SetBackgroundBrush(HBRUSH br, Bool canDelete, wxBrush *wxbr = NULL);
 
     // Detach "Window" menu from menu bar so it doesn't get deleted
     void DetachWindowMenu(void);

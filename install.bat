@@ -8,11 +8,13 @@ set PLTDIR=%~dp0
 if not "%PLTDIR%"=="" FoundPLTDIR
 :NoDPHack
 
-rem  %~dp0 didn't work -- see if we're in the same directory
-if exist "install.bat"
+rem  %~dp0 didn't work -- try to hack into our own directory
+cd "%0\.."
+if not exist "install.bat" goto NoPathFound
 set PLTDIR=.
 goto FoundPLTDIR
 
+:NoPathFound
 echo Cannot guess where this batch file is running from,
 echo Try to run it again from its own directory.
 pause

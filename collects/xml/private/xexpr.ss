@@ -70,7 +70,7 @@
 	 [(pair? x)
 	  (let ([f (lambda (atts body)
 		     (unless (list? body)
-		       (error 'xexpr->xml "expected a list of xexprs a the body in ~e" x))
+		       (error 'xexpr->xml "expected a list of xexprs for the body in ~e" x))
 		     (make-element 'scheme 'scheme (car x)
 				   atts
 				   (map xexpr->xml body)))])

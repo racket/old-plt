@@ -45,6 +45,35 @@
   (define (image? val)
    (is-a? val image-snip%))
   
+  (define print-convert #f)
+  
+  (define (setup-print-convert settings)
+    (let ([print-convert-space (make-eventspace)]
+          [print-convert-result #f]
+          [print-convert-semaphore (make-semaphore)])
+      (parameterize ([current-eventspace print-convert-space])
+        (queue-callback
+         (lambda ()
+           (d:basis:initialize-parameters (make-custodian) settings)
+           (d:rep:invoke-library)
+           (p:current-print-convert-hook 
+               (lambda (v basic-convert sub-convert)
+                 (if (image? v)
+                     v
+                     (basic-convert v)))))))
+      (set! print-convert
+            (lambda (val)
+              (parameterize ([current-eventspace print-convert-space])
+                (queue-callback
+                 (lambda ()
+                   (set! print-convert-result
+                         (p:print-convert val))
+                   (semaphore-post print-convert-semaphore))))
+              (semaphore-wait print-convert-semaphore)
+              print-convert-result))))
+
+      
+  
   (define stepper-frame%
     (d:frame:basics-mixin (f:frame:standard-menus-mixin f:frame:basic%)))
 
@@ -323,7 +352,7 @@
                 (semaphore-post stepper-semaphore))])
       
       
-      
+      (setup-print-convert settings)
       (set! view-currently-updating 0)
       (stepper-start)
       (send button-panel stretchable-width #f)

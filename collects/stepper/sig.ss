@@ -11,7 +11,8 @@
    get-cons
    get-vector
    get-vocabulary
-   image?))
+   image?
+   print-convert))
 
 (define-signature stepper:beginner-checker^
   (check-variable-duplication))

@@ -624,6 +624,27 @@
 
 #endif
 
+  /************** Darwin x86  ****************/
+
+# if defined(__APPLE__) && defined(__MACH__) && defined(__i386__)
+
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "i386-darwin"
+
+# include "uconfig.h"
+
+# define STACK_GROWS_DOWN
+# define USE_MAP_ANON
+
+# define USE_DYNAMIC_FDSET_SIZE
+
+# define SIGSET_IS_SIGNAL
+
+# define USE_TM_GMTOFF_FIELD
+
+# define FLAGS_ALREADY_SET
+
+# endif
+
   /************ Macintosh with CodeWarrior (not OS X) *************/
 
 #if ((defined(__MWERKS__) && !defined(__BEOS__) && !defined(__palmos__) && !defined(OS_X))  \

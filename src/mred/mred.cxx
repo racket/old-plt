@@ -81,12 +81,15 @@
 # endif
 # ifdef OS_X
 int wx_in_terminal;
-extern "C" void _signal_nobind(...);
 # else
 #  define wx_in_terminal 0
 # endif
 #else
 #define wx_in_terminal 0
+#endif
+
+#ifdef OS_X
+extern "C" void _signal_nobind(...);
 #endif
 
 #if defined(wx_x) || defined(wx_msw)

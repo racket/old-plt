@@ -211,9 +211,6 @@
 				RelativePath="..\..\..\mysterx\dotnet\BaseInfo.cpp">
 			</File>
 			<File
-				RelativePath="..\..\..\mysterx\dotnet\BaseInfo.cpp">
-			</File>
-			<File
 				RelativePath="..\..\..\mysterx\dotnet\Patch.cpp">
 			</File>
 			<File

@@ -26,7 +26,7 @@
 				MinimalRebuild="FALSE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
 				BrowseInformation="1"
 				WarningLevel="4"
@@ -46,7 +46,7 @@
 				LinkIncremental="1"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
-				IgnoreDefaultLibraryNames="LIBCMT.lib"
+				IgnoreDefaultLibraryNames="LIBCMT.lib;LIBCMTD.lib"
 				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
@@ -92,7 +92,7 @@
 				MinimalRebuild="FALSE"
 				ExceptionHandling="TRUE"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				UsePrecompiledHeader="2"
 				BrowseInformation="1"
 				WarningLevel="4"
@@ -112,7 +112,7 @@
 				LinkIncremental="2"
 				SuppressStartupBanner="TRUE"
 				AdditionalLibraryDirectories="..\..\..\..\lib\msvc"
-				IgnoreDefaultLibraryNames="LIBCMT.lib"
+				IgnoreDefaultLibraryNames="LIBCMT.lib;LIBCMTD.lib"
 				ModuleDefinitionFile="..\..\..\mysterx\myssink\$(InputName).def"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)\$(InputName).pdb"
@@ -149,8 +149,7 @@
 			ConfigurationType="2"
 			UseOfATL="1"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2"
-			WholeProgramOptimization="TRUE">
+			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
@@ -162,11 +161,10 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;MYSSINK_EXPORTS"
 				StringPooling="TRUE"
 				MinimalRebuild="FALSE"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				BufferSecurityCheck="FALSE"
 				EnableFunctionLevelLinking="FALSE"
 				UsePrecompiledHeader="2"
-				ObjectFile=""
 				ProgramDataBaseFileName=""
 				WarningLevel="4"
 				SuppressStartupBanner="TRUE"
@@ -200,7 +198,8 @@
 				GenerateStublessProxies="TRUE"
 				TypeLibraryName="$(InputName).tlb"
 				OutputDirectory="..\..\..\mysterx\myssink"
-				HeaderFileName="$(InputName).h"/>
+				HeaderFileName="$(InputName).h"
+				EnableErrorChecks="2"/>
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Register $(InputName).dll"

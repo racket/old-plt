@@ -12,27 +12,6 @@
 ;-----------------------------------------------------------------------
 
 ; define list of exported ID's
-(define-signature mred:container^
-  (const-default-size
-    const-default-posn
-    const-default-spacing
-    frame%
-    dialog-box%
-    button%
-    check-box%
-    choice%
-    ;gauge%
-    list-box%
-    message%
-    radio-box%
-    slider%
-    text-window%
-    text%
-    multi-text%
-    panel%
-    horizontal-panel%
-    vertical-panel%
-    single-panel%))
 
 (define mred:container@
   (unit/s mred:container^
@@ -40,6 +19,13 @@
 	    [mzlib:function mzlib:function^])
     ; this constant is used by several MrEd primitives to signify the default
     ; size of an object.
+    
+    (mred:debug:printf 'invoke "mred:container@")
+    
+    (define printf 
+      (lambda args
+	(apply mred:debug:printf (cons `container args))))
+
     (define const-default-size -1)
     (define const-default-posn -1)  ;; ditto for position.
 
@@ -345,7 +331,7 @@
 	  [delete-child
 	    (lambda (child)
 	      (send child show #f)
-	      (add-child child remq))]
+	      (add-child child mzlib:function:remq))]
 	  
 	  ; get-children-info: returns children info list, recomputing it
 	  ;   if needed.
@@ -394,17 +380,17 @@
 			       (gms-helper
 				 (cdr kid-info)
 				 (max x-accum
-				   (+ default-spacing
+				   (+ const-default-spacing
 				      (child-info-x-posn curr-info)
 				      (child-info-x-min curr-info)))
 				 (max y-accum
-				   (+ default-spacing
+				   (+ const-default-spacing
 				      (child-info-y-posn curr-info)
 				      (child-info-y-min
 					curr-info)))))))])
 	      (lambda ()
 		(gms-helper (get-children-info)
-		  default-spacing default-spacing)))]
+		  const-default-spacing const-default-spacing)))]
 	  
 	  ; on-size: called when the container is resized (usu by its
           ;   parent) 
@@ -555,9 +541,7 @@
 			(+ (- f-height delta-h) p-delta-h))
 		      (unless (and (= new-width f-width)
 				(= new-height f-height))
-			(printf "FRAME: Resizing to ~s x ~s~n" f-width
-			  f-height)
-			(flush-output-port)
+			(printf "FRAME: Resizing to ~s x ~s" f-width f-height)
 			(set-size -1 -1 f-width f-height)))))
 		(printf "FRAME: Leaving onsize at the end.~n"))])
 	  (sequence
@@ -577,14 +561,14 @@
     ;          location, the inter-object spacing, and the child-info
     ;          struct corresponding to the current object, and return the
     ;          new x/y locations.
-    ;        spacing: (defaults to default-spacing).  The size of the gap
+    ;        spacing: (defaults to const-default-spacing).  The size of the gap
     ;          between adjacent objects and objects and the edge of the
     ;          panel.
     ; returns: a thunk which returns the minimum possible size of the panel as
     ;  a list of two elements: (min-x min-y).
     (define make-get-size
       (opt-lambda (container compute-x compute-y
-		    [spacing default-spacing])
+		    [spacing const-default-spacing])
 	(letrec ([gs-help
 		   (lambda (kid-info x-accum y-accum)
 		     (if (null? kid-info)
@@ -631,7 +615,7 @@
 		    child-minor-stretch
 		    major-dim minor-dim
 		    get-h-info get-v-info
-		    [spacing default-spacing])
+		    [spacing const-default-spacing])
 	(lambda (width height)
 	  (letrec ([compute-extra-space
 		     (lambda (width kid-info)
@@ -794,6 +778,11 @@
     ; for displaying each of the panel's children.
     (define single-panel%
       (class-asi panel%
+	
+	(inherit
+	  force-redraw
+	  children)
+
 	(public
 	  
 	  ; pointer to currently active child
@@ -808,7 +797,7 @@
 	  [delete-child
 	    (lambda (child)
 	      (send child show #f)
-	      (add-child child remq))]
+	      (add-child child mzlib:function:remq))]
 	  [active-child
 	    (case-lambda
 	      [() active]

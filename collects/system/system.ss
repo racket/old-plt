@@ -4,13 +4,32 @@
 (error-print-width 1000)
 
 (define mred:debug@
-  (let ([debug-on? (string=? (current-directory) "/a/santa/aten/robby/plt/system")])
+  (let ([debug-on? (or (string=? (current-directory)
+				 "/a/santa/aten/robby/plt/system")
+		       (string=? (current-directory)
+				 "/a/santa/jam/cobbe/system"))])
     (unit (import)
-      (export (dprintf printf) exit? new-console new-eval make-new-console)
+      (export (dprintf printf) turn-on turn-off
+	      exit? new-console new-eval make-new-console)
+
+      (define turned-on (list 'startup 'invoke))
+
+      (define turn-on (lambda (s) (set! turned-on (cons s turned-on))))
+      (define turn-off (lambda (s) 
+			 (set! turned-on 
+			       (let loop ([l turned-on])
+				 (cond
+				   [(null? l) null]
+				   [else (if (eq? (car l) s)
+					     (loop (cdr l))
+					     (cons (car l)
+						   (loop (cdr l))))])))))
+
       (define dprintf (if debug-on? 
-			  (lambda args
-			    (apply printf args)
-			    (newline))
+			  (lambda (tag . args)
+			    (when (member tag turned-on)
+			      (apply printf args)
+			      (newline)))
 			  (lambda args (void))))
       (define exit? #t)
 	
@@ -36,7 +55,7 @@
 (define mred:system-source-directory (current-directory))
 (constant-name 'mred:system-source-directory)
 
-(mred:debug:printf "Loading mzlib...")
+(mred:debug:printf 'startup "Loading mzlib...")
 (let ([libdir
        (let ([try-dir (build-path (current-directory) 'up "mzlib")])
 	 (if (directory-exists? try-dir)
@@ -86,19 +105,19 @@
   (printf exit? new-console new-eval make-new-console))
 
 (for-each (lambda (x)
-	    (mred:debug:printf "Loading ~a..." x)
+	    (mred:debug:printf 'startup "Loading ~a..." x)
 	    (load/cd (string-append x ".ss")))
-	  (list "sig" "prefs" "exn"
+	  (list "sig" "prefs" "exn" "containr"
 		"autoload" "autosave" "canvas" "console" "edit" "exit" 
 		"fileutil" "finder" "findstr" "frame" "group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"
 		"paren" "project" "sparen" "ssmode"
 		(build-relative-path "hyper" "hyper")))
 
-(mred:debug:printf "Loaded.")
+(mred:debug:printf 'startup "Loaded.")
 
 (define-signature mred^
-  ((open mred:exn-external^)
+  ((open mred:exn-external^) (open mred:container^)
    (open mred:preferences^) (open mred:autoload^) (open mred:autosave^)
    (open mred:exit^) (open mred:gui-utils^) (open mred:console^)
    (open mred:path-utils^) (open mred:finder^) (open mred:find-string^)
@@ -121,6 +140,7 @@
 	    (link [debug mred:debug^ (mred:debug@)]
 		  [exn mred:exn^ (mred:exn@)]
 		  [preferences mred:preferences^ (mred:preferences@ debug exn ((core function@)))]
+		  [container mred:container^ (mred:container@ debug ((core function@)))]
 		  [autoload mred:autoload^ (mred:autoload@ debug preferences ((core file@)))]
 		  [autosave mred:autosave^ (mred:autosave@ debug preferences)]
 		  [exit mred:exit^ (mred:exit@ debug)]
@@ -180,7 +200,8 @@
 			       (mred:hyper-frame@ debug hyper-edit hyper-dialog
 						frame canvas group handler)])
 	    (export (open exn mred:exn-external^)
-		    (open preferences) (open autoload) (open autosave) (open exit)
+		    (open preferences) (open container)
+		    (open autoload) (open autosave) (open exit)
 		    (open gui-utils) (open console) (open path-utils) (open finder)
 		    (open find-string) (open edit) (open canvas) (open frame)
 		    (open group) (open handler) (open icon) (open keymap)
@@ -189,7 +210,7 @@
 		    (open hyper-edit) (open hyper-dialog) (open hyper-frame))))))
 (mred:make-mred@)
 
-(mred:debug:printf "Compounded.")
+(mred:debug:printf 'startup "Compounded.")
 
 ;; will be redefined by the application
 (define mred:make-application@
@@ -266,7 +287,7 @@
 	      (apply mred:initialize rest)]
 	     [(string-ci=? "-nu" arg)
 	      (mred:non-unit-startup)
-	      (mred:debug:printf "Non-unit startup")
+	      (mred:debug:printf 'startup "Non-unit startup")
 	      (apply mred:initialize rest)]
 	     [else (set! files-to-open (cons arg files-to-open))
 		   (apply mred:initialize rest)]))]))))

@@ -820,6 +820,13 @@
            (send definitions-text get-next-settings)
            (lambda (err? sexp run-in-expansion-thread loop)
              (unless users-namespace
+               (let* ([tmp-b (box #f)]
+                      [fn (send definitions-text get-filename tmp-b)])
+                 (unless (unbox tmp-b)
+                   (when fn
+                     (let-values ([(base name dir?) (split-path fn)])
+                       (current-directory base)
+                       (current-load-relative-directory base)))))
                (set! users-custodian (run-in-expansion-thread current-custodian))
                (set! users-namespace (run-in-expansion-thread current-namespace)))
              (cond

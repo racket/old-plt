@@ -1,6 +1,11 @@
 
 Version 102/11:
 
+ * Added 'update to the set of flags for `open-output-file' et al.
+   'update mode opens an existign file without truncating it, and
+   allows overwriting of the file's existing data, especially in
+   combination with `file-position'.
+
  * Inside MzScheme:
 
     - Not all import ports keep line counts anymore (it's wasteful for
@@ -278,6 +283,7 @@ Changed read-string! to read-string-avail!, added
 Added write-string-avail and write-string-avail/enable-break
 Added process/ports and process*/ports
 Added file-stream-port?
+Added 'update to the set of flags for open-output-file et al.
 Changed default exit handler to return only results in 0 to 255
  as results to the OS, and everything else means 1
 Changed time-apply to return four values, and to take an argument

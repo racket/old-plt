@@ -15,7 +15,7 @@
 	  [definitions-edit (ivar drscheme-frame definitions-edit)]
 	  [definitions-canvas (ivar drscheme-frame definitions-canvas)]
 	  [execute-button (ivar drscheme-frame execute-button)]
-	  [get-int-pos (lambda () (get-text-pos interactions-edit))]
+	  [get-int-pos (lambda () (get-start-of-last-line interactions-edit))]
 	  [wait-for-events
 	   (lambda (nevents)
 	     (let loop ()

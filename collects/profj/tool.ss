@@ -644,7 +644,7 @@
       
       (define java-interactions-box%
         (class* java-box% (readable-snip<%>)
-          (define/override (make-editor) (new color:text%))
+          (define/override (make-editor) (new ((drscheme:unit:get-program-editor-mixin) color:text%)))
           (define/override (make-snip) (make-object java-interactions-box%))
           (define/override (get-corner-bitmap) ji-gif)
           (define/override (get-mesg) "Convert to comment")

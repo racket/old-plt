@@ -12,6 +12,8 @@
 
   (include "startup-url.ss")
   
+  (framework:preferences:add-general-panel)
+
   (define last-url-string #f)
 
   (on-installer-run doc-collections-changed)
@@ -369,7 +371,9 @@
 	  (define top (make-object vertical-pane% (send f get-area-container)))
 	  (define search-text (make-object text-field% "Find docs for:" top
 					   (lambda (t e)
-					     (send search enable (positive? (send (send t get-editor) last-position))))))
+					     (let ([on? (positive? (send (send t get-editor) last-position))])
+					       (send search-menu enable on?)
+					       (send search enable on?)))))
 	  (define search-pane (make-object horizontal-pane% top))
 
 	  (define (lucky-search-callback)
@@ -441,6 +445,7 @@
 
 	  (define menubar (send f get-menu-bar))
 	  (define search-menu (make-object menu% "Search" menubar))
+	  (send search-menu enable #f)
 	  (define regular-search-item (make-object menu-item% "Search" search-menu (lambda (m e) (search-callback)) #\e))
 	  (define lucky-search-item (make-object menu-item% "Feeling Lucky" search-menu (lambda (m e) (lucky-search-callback)) #\l))
 
@@ -609,6 +614,7 @@
 		 (lambda ()
 		   (begin-busy-cursor)
 		   (send search enable #f)
+		   (send search-menu enable #f)
 		   (send where enable #f)
 		   (send exact enable #f)
 		   (set! cycle-key ckey))
@@ -632,6 +638,7 @@
 		   (semaphore-post break-sema) ; breaks ok now because they have no effect
 		   (send stop show #f)
 		   (send search enable #t)
+		   (send search-menu enable #t)
 		   (send where enable #t)
 		   (send exact enable #t)
 		   (end-busy-cursor)))

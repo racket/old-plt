@@ -1,5 +1,5 @@
 (unit/sig drscheme:main^
-  (import [i : (program argv)]
+  (import [top-level : (program argv get-dropped-files)]
 	  [fw : framework^]
 	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
@@ -54,7 +54,8 @@
 	  (send (ivar frame interactions-canvas) focus)))
       (send frame show #t)))
 
-  (let ([files-to-open (reverse (vector->list i:argv))])
+  (let ([files-to-open (append (reverse (top-level:get-dropped-files))
+			       (reverse (vector->list top-level:argv)))])
     (if (null? files-to-open)
 	(make-basic)
 	(for-each drscheme:unit:open-drscheme-window files-to-open)))

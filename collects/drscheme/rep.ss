@@ -1069,6 +1069,8 @@
 	(define kill-evaluation
 	  (lambda () ; =Kernel=, =Handler=
 	    (shutdown)
+	    (send context enable-evaluation)
+	    (lock #t)
 	    (no-user-evaluation-message)))
 
         (define error-escape-k void)

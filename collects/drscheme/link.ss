@@ -1,4 +1,4 @@
-(compound-unit/sig (import [i : (program argv)])
+(compound-unit/sig (import [top-level : (program argv get-dropped-files)])
   (link [mred : mred^ (mred@)]
 	[mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	[mzlib:date : mzlib:date^ ((require-library "dater.ss") (mzlib function))]
@@ -54,7 +54,7 @@
 	       export*)]
 
 	[main : drscheme:main^ ((require-relative-library "main.ss")
-				i
+				top-level
 				framework
 				(mzlib pretty-print)
 				print-convert

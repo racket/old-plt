@@ -3,7 +3,7 @@
 
 ;(define argv (vector "Cupertino:Desktop Folder:tmp.ss"))
 
-(define-values (shutdown-splash close-splash)
+(define-values (get-dropped-files shutdown-splash close-splash)
   ((require-library "splash.ss" "framework")
    (build-path (collection-path "icons") "plt.gif")
    "DrScheme"
@@ -16,6 +16,6 @@
   (global-define-values/invoke-unit/sig framework^
                                         unit
                                         #f
-                                        (program argv))
+                                        (program argv get-dropped-files))
   (close-splash))
 (yield (make-semaphore 0))

@@ -9,14 +9,14 @@
 	    (export)))]
 	 [docpos (car (require-library "docpos.ss" "help"))]
 	 [known-docs (cdr (require-library "docpos.ss" "help"))]
-	 [d (with-handlers ([void (lambda (x) #f)])
+	 [doc-collection-path (with-handlers ([void (lambda (x) #f)])
 	      (collection-path "doc"))]
-	 [docs (let loop ([l (if d
-				 (directory-list d)
+	 [docs (let loop ([l (if doc-collection-path
+				 (directory-list doc-collection-path)
 				 null)])
 		 (cond
 		  [(null? l) null]
-		  [(file-exists? (build-path d (car l) "index.htm"))
+		  [(file-exists? (build-path doc-collection-path (car l) "index.htm"))
 		   (cons (car l) (loop (cdr l)))]
 		  [else (loop (cdr l))]))]
 	 [docs (quicksort docs (lambda (a b)
@@ -25,7 +25,7 @@
 				   (cond
 				    [(= ap bp) (string<? a b)]
 				    [else (< ap bp)]))))]
-	 [doc-paths (map (lambda (doc) (build-path d doc)) docs)]
+	 [doc-paths (map (lambda (doc) (build-path doc-collection-path doc)) docs)]
 	 [names
 	  (map
 	   (lambda (d)
@@ -68,19 +68,24 @@
 			      [(null? l) null]
 			      [(member (caar l) docs) (loop (cdr l))]
 			      [else (cons (car l) (loop (cdr l)))]))])
-	  (if (null? uninstalled)
-	      (list "")
-	      (list*
-	       "<H3>Uninstalled Manuals</H3>"
-	       "<UL>"
-	       (append
-		(map
-		 (lambda (doc-pair)
-		   (format "<LI> <A HREF=\"file:~a\">~a</A>~a"
-			   (build-path d (car doc-pair) "index.htm")
-			   (cdr doc-pair)
-			   (if (file-exists? (build-path d (car doc-pair) "hdindex"))
-			       " (index installed)"
-			       "")))
-		 uninstalled)
-		(list "</UL>"))))))))))
+	  (cond
+            [(null? uninstalled)
+             (list "")]
+            [(not doc-collection-path)
+             (message-box "Help Desk" "Please create a doc collection. You will not be able to install any manuals until you do.")
+             (list "")]
+            [else
+             (list*
+              "<H3>Uninstalled Manuals</H3>"
+              "<UL>"
+              (append
+               (map
+                (lambda (doc-pair)
+                  (format "<LI> <A HREF=\"file:~a\">~a</A>~a"
+                          (build-path doc-collection-path (car doc-pair) "index.htm")
+                          (cdr doc-pair)
+                          (if (file-exists? (build-path doc-collection-path (car doc-pair) "hdindex"))
+                              " (index installed)"
+                              "")))
+                uninstalled)
+               (list "</UL>")))])))))))

@@ -1,7 +1,3 @@
-;;
-;; $Id: frameworkc.ss,v 1.20 2000/02/19 16:56:01 robby Exp $
-;;
-
 (compound-unit/sig (import [core:string : mzlib:string^]
 			   [core:function : mzlib:function^]
 			   [core:pretty-print : mzlib:pretty-print^]
@@ -9,7 +5,8 @@
 			   [core:thread : mzlib:thread^]
 			   [mred : mred^]
 			   [keys : framework:keys^]
-			   [test : framework:test^])
+			   [test : framework:test^]
+			   [pref-file : framework:prefs-file^])
   (link [application : framework:application^ ((require-relative-library "app.ss"))]
 	[version : framework:version^ ((require-relative-library "version.ss")
                                        core:string core:function)]
@@ -20,6 +17,7 @@
 	[preferences : framework:preferences^
 		     ((require-relative-library "prefs.ss")
 		      mred
+		      pref-file
 		      exn exit panel core:pretty-print core:function)]
 	[autosave : framework:autosave^
 		  ((require-relative-library "autosave.ss") mred exit preferences)]

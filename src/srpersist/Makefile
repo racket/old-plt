@@ -7,7 +7,7 @@ ODBCVER=0x0351
 DRIVER_MGR_LIB=odbc
 
 # installation directory
-LIBDIR=/home/steck/unixODBC/unixODBC-2.0.11/DriverManager/.libs
+LIBDIR=/usr/site/unixODBC/lib
 
 MZC=../../bin/mzc 
 
@@ -29,8 +29,13 @@ install : srpmain.so
 	mkdir -p $(NATIVE_DIR)
 	cp -p srpmain.so $(NATIVE_DIR)/
 
+clean :
+	rm -f *.o
+	rm -f *.so
+
 srpmain.so : $(OBJS)
-	$(MZC) --ld srpmain.so $(OBJS) -L$(LIBDIR) -l$(DRIVER_MGR_LIB)
+	$(MZC) --ld srpmain.so $(OBJS) -L$(LIBDIR) -L../../lib \
+	  -l$(DRIVER_MGR_LIB) -lmzgc
 
 srpersist.o : srpersist.cxx srptypes.h srpbuffer.h srpersist.h srpprims.tbl \
 	srpstructs.tbl srpexns.tbl srpconsts.tbl srpinfo.tbl srpbitmask.tbl

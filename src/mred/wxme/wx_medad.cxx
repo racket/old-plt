@@ -543,8 +543,10 @@ void wxMediaCanvas::OnEvent(wxMouseEvent *event)
   last_y = event->y;
 
 #ifdef wx_msw
-  if (!focuson && event->ButtonDown())
+  if (!focuson && event->ButtonDown()) {
     SetFocus();
+    OnFocus(TRUE);
+  }
 #endif
   
   if (media && !media->printing) {

@@ -3416,7 +3416,7 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
     scheme_wrong_type(name, "MacOS type/creator 4-character string", which, argc, argv);
 
   if (SCHEME_STRTAG_VAL(o) != 4)
-    scheme_raise_exn(MZEXN_APPLICATION_MACOS_TYPESTRING,
+    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		     o,
 		     "%s: string is not a 4-character type or creator signature: %s%s",
 		     name,

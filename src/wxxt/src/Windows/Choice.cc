@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.13 1999/10/05 13:32:17 mflatt Exp $
+ * $Id: Choice.cc,v 1.14 1999/10/08 04:33:18 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -121,7 +121,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
       for (int i = 0; i < n; i++) {
 	float w, h;
 	GetTextExtent(choices[i], &w, &h, NULL, NULL, label_font);
-	maxw = w;
+	if (w > maxw)
+	  maxw = w;
       }
       
       if (label && !vert) {

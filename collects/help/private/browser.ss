@@ -117,7 +117,6 @@
 	       (debug-msg "Timer expired")
 	       (when (prompt-for-browser-switch hd-cookie)
 		     (set-plt-browser!)
-		     ; shutdown old server
 		     (debug-msg "Shutting down external server")
 		     ((hd-cookie->exit-proc hd-cookie))
 		     (debug-msg "Starting internal server")
@@ -127,9 +126,8 @@
 	       (kill-thread monitor-thread)
 	       (semaphore-post nav-sem)))])
 	(with-handlers 
-	 ([(lambda _ #f) (lambda _ (fprintf (current-error-port)
-				   (string-append
-				    "Help Desk browser failed.~n")))])
+	 ([(lambda _ #t) (lambda _ (debug-msg
+				    "Help Desk browser failed.~n"))])
 	 (debug-msg "Starting Help Desk browser")
 	 (send-help-desk-url (hd-cookie->browser hd-cookie) 
 			     (build-dispatch-url hd-cookie url))

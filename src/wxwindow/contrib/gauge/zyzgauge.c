@@ -226,7 +226,8 @@ BOOL FAR PASCAL gaugeInit(HINSTANCE hInstance)
         /* good! we have color: blue foreground, white background */
         else 
         {
-            rgbDefTextColor = RGB(0, 0, 255);
+	    rgbDefTextColor = GetSysColor(COLOR_HIGHLIGHT);
+            /* rgbDefTextColor = RGB(0, 0, 255); */
             rgbDefBkColor = RGB(255, 255, 255);
         }
 
@@ -273,6 +274,7 @@ static void NEAR PASCAL gaugePaint(HWND hwnd, HDC hdc)
     WORD        iRange, iPos;
     WORD        wOffset;
     DWORD       dwExtent;
+
     DWORD       dwW, dwH;
     RECT        rc1, rc2;
     HFONT       hFont;
@@ -282,6 +284,7 @@ static void NEAR PASCAL gaugePaint(HWND hwnd, HDC hdc)
  * which needs a SIZE* parameter */
 #if defined(WIN32)
     SIZE size;
+
     TEXTMETRIC tm;
 #endif
 
@@ -373,8 +376,11 @@ static void NEAR PASCAL gaugePaint(HWND hwnd, HDC hdc)
 #if defined(WIN32)
     GetTextExtentPoint(hdc, ach, wGomerX = lstrlen(ach), &size);
     dwW = size.cx;
+
     dwH = size.cy;
+
     GetTextMetrics(hdc, &tm);
+
     dwH -= tm.tmDescent; /* percentage never has a descent */
 #else
     dwExtent = GetTextExtent(hdc, ach, wGomerX = lstrlen(ach));
@@ -399,7 +405,9 @@ static void NEAR PASCAL gaugePaint(HWND hwnd, HDC hdc)
                     (dy - dwH) / 2 + wOffset,
                     ETO_OPAQUE | ETO_CLIPPED, &rc1, ach, wGomerX, NULL);
 
+
     SetBkColor(hdc, pgauge->rgbBkColor);
+
 
     /* unselect the font */
     SelectObject(hdc, hFont);

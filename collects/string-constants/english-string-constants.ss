@@ -577,7 +577,6 @@
  (vc-connecting-version-server "Connecting to PLT version server")
  (vc-network-timeout "Network timeout") 
  (vc-cannot-connect  "Can't connect to PLT version server")
- (vc-update-check "PLT update check")
  (vc-network-failure "Network failure")
  (vc-old-binaries "Installed binaries for DrScheme (or MzScheme) are not up-to-date")
  (vc-binary-information-format "Installed binary version: ~a (iteration ~a)")

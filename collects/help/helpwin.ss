@@ -25,12 +25,14 @@
   (define last-url-string #f)
 
   (define (set-font-size size)
-    (let* ([standard (send hyper-style-list find-named-style "Standard")]
+    (let* ([standard (send hyper-style-list new-named-style "Standard"
+			   (send hyper-style-list find-named-style "Basic"))]
 	   [delta (make-object style-delta%)])
-      (send standard get-delta delta)
-      (send delta set-size-mult 0)
-      (send delta set-size-add size)
-      (send standard set-delta delta)))
+      (when standard
+	(send standard get-delta delta)
+	(send delta set-size-mult 0)
+	(send delta set-size-add size)
+	(send standard set-delta delta))))
 
   (on-installer-run doc-collections-changed)
 
@@ -521,6 +523,8 @@
 	  (define lucky-search-item (make-object menu-item% "Feeling Lucky" search-menu (lambda (m e) (lucky-search-callback)) #\l))
 
 	  (framework:frame:reorder-menus f)
+
+	  (set-font-size (framework:preferences:get 'drscheme:font-size))
 
 	  (send f show #t)
 

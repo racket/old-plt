@@ -1092,6 +1092,7 @@ int scheme_file_exists(char *filename)
 # define FF_HANDLE_TYPE long
 # define FIND_FAILED(h) (h < 0)
 # define GET_FF_ATTRIBS(fd) (fd.attrib)
+# define GET_FF_MODDATE(fd) (fd.time_write)
 #else
 # define FIND_FIRST FindFirstFile
 # define FIND_NEXT FindNextFile
@@ -1101,6 +1102,7 @@ int scheme_file_exists(char *filename)
 # define FIND_FAILED(h) (h == INVALID_HANDLE_VALUE)
 # define _A_RDONLY FILE_ATTRIBUTE_READONLY
 # define GET_FF_ATTRIBS(fd) (fd.dwFileAttributes)
+# define GET_FF_MODDATE(fd) (fd.ftLastWriteTime)
 #endif
 
 #ifdef DOS_FILE_SYSTEM
@@ -1142,7 +1144,7 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
       if (flags)
 	*flags = MZ_UNC_READ | MZ_UNC_EXEC | ((GET_FF_ATTRIBS(fd) & _A_RDONLY) ? 0 : MZ_UNC_WRITE);
       if (date)
-	*date = scheme_make_integer_value_from_time(???);
+	*date = scheme_make_integer_value_from_time(GET_FF_MODDATE(fd));
       FIND_CLOSE(fh);
       return 1;
     }
@@ -1191,15 +1193,14 @@ int scheme_directory_exists(char *dirname)
 # ifdef NO_STAT_PROC
   return 0;
 # else
-  struct MSC_IZE(stat) buf;
-  int v;
-
 #  ifdef DOS_FILE_SYSTEM
   int isdir;
 
   return (UNC_stat(dirname, strlen(dirname), NULL, &isdir, NULL)
 	  && isdir);
 #  else
+  struct MSC_IZE(stat) buf;
+
   return !MSC_IZE(stat)(dirname, &buf) && S_ISDIR(buf.st_mode);
 #  endif
 # endif
@@ -2669,7 +2670,9 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
   long mtime;
   int exists;
 #else
+# ifndef DOS_FILE_SYSTEM
   struct MSC_IZE(stat) buf;
+# endif
 #endif
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -2695,10 +2698,10 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 #else
 # ifdef DOS_FILE_SYSTEM
   {
-    int len = strlen(filename);
+    int len = strlen(file);
     Scheme_Object *secs;
 
-    if (UNC_stat(filename, len, NULL, NULL, &secs))
+    if (UNC_stat(file, len, NULL, NULL, &secs))
       return secs;
     else
       return scheme_false;
@@ -2828,13 +2831,14 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #  ifdef DOS_FILE_SYSTEM
   {
     int len = strlen(filename);
+	int flags;
     
     if (UNC_stat(filename, len, &flags, NULL, NULL)) {
-      if (flags & UNC_READ)
+      if (flags & MZ_UNC_READ)
 	l = scheme_make_pair(read_symbol, l);
-      if (flags & UNC_WRITE)
+      if (flags & MZ_UNC_WRITE)
 	l = scheme_make_pair(write_symbol, l);
-      if (flags & UNC_EXEC)
+      if (flags & MZ_UNC_EXEC)
 	l = scheme_make_pair(execute_symbol, l);
     }
   }

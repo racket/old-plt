@@ -124,227 +124,228 @@
       ;; Actually, Richard, it seems to me like good design -Robby.
       
       (define make-item%
-	(lambda (item% x-margin y-margin stretch-x stretch-y make-default-size)
-	  (class item% args
-	    (inherit
-	      get-width
-	      get-height
-	      get-x
-	      get-y
-	      get-parent)
+        (polymorphic
+          (lambda (item% x-margin y-margin stretch-x stretch-y make-default-size)
+            (class item% args
+              (inherit
+                get-width
+                get-height
+                get-x
+                get-y
+                get-parent)
 	    
-	    (rename
-	      [super-set-size set-size])
+              (rename
+                [super-set-size set-size])
 	    
-	    (public
+              (public
 	      
-	      [on-default-action
-	       (lambda ()
-		 (void))]
+                [on-default-action
+                  (lambda ()
+                    (void))]
 	      
-	      ; a unique numeric ID for the object (for debugging).
-	      object-ID
+                                        ; a unique numeric ID for the object (for debugging).
+                object-ID
 	      
-	      ; store minimum size of item.  Since we no longer support label
-	      ; changes, this will never change, so we don't have to maintain
-	      ; a validity indicator.
-	      min-width
-	      min-height
-	      [set-min-height (lambda (v) (set! min-height v))]
-	      [set-min-width (lambda (v) (set! min-width v))]
+                                        ; store minimum size of item.  Since we no longer support label
+                                        ; changes, this will never change, so we don't have to maintain
+                                        ; a validity indicator.
+                min-width
+                min-height
+                [set-min-height (lambda (v) (set! min-height v))]
+                [set-min-width (lambda (v) (set! min-width v))]
 	      
-	      [default-x-stretch stretch-x]
-	      [default-y-stretch stretch-y]
+                [default-x-stretch stretch-x]
+                [default-y-stretch stretch-y]
 	      
-	      [default-x-margin-width x-margin]
-	      [default-y-margin-height y-margin]
+                [default-x-margin-width x-margin]
+                [default-y-margin-height y-margin]
 	      
-	      ; default-x: gets/sets default x position.  Errors out if new
-	      ; value is not a real number; forces a redraw upon a set.
-	      [default-x
-	       (make-item-param 
-		this 0 real?
-		(lambda (val)
-		  (error 'default-x
-			 "Expected a non-negative real; received ~s" val)))]
+                                        ; default-x: gets/sets default x position.  Errors out if new
+                                        ; value is not a real number; forces a redraw upon a set.
+                [default-x
+                  (make-item-param 
+                    this 0 real?
+                    (lambda (val)
+                      (error 'default-x
+                        "Expected a non-negative real; received ~s" val)))]
 	      
-	      [default-y
-	       (make-item-param
-		this 0 real?
-		(lambda (val)
-		  (error 'default-y
-			 "Expected a non-negative real; received ~s" val)))]
+                [default-y
+                  (make-item-param
+                    this 0 real?
+                    (lambda (val)
+                      (error 'default-y
+                        "Expected a non-negative real; received ~s" val)))]
 	      
-	      ; gets/sets user's requirement for minimum width.  Errors out
-	      ; if new value is not a non-negative real number.  Forces a
-	      ; redraw upon a set.
-	      [user-min-width
-	       (make-item-param
-		this 0 non-negative-number?
-		(lambda (val)
-		  (error 'user-min-width
-			 "Expected a non-negative real; received ~s" val)))]
+                                        ; gets/sets user's requirement for minimum width.  Errors out
+                                        ; if new value is not a non-negative real number.  Forces a
+                                        ; redraw upon a set.
+                [user-min-width
+                  (make-item-param
+                    this 0 non-negative-number?
+                    (lambda (val)
+                      (error 'user-min-width
+                        "Expected a non-negative real; received ~s" val)))]
 	      
-	      ; like user-min-width, but the other direction.
-	      [user-min-height
-	       (make-item-param
-		this 0 non-negative-number?
-		(lambda (val)
-		  (error 'user-min-height
-			 "Expected a non-negative real; received ~s" val)))]
+                                        ; like user-min-width, but the other direction.
+                [user-min-height
+                  (make-item-param
+                    this 0 non-negative-number?
+                    (lambda (val)
+                      (error 'user-min-height
+                        "Expected a non-negative real; received ~s" val)))]
 	      
-	      [x-margin-width
-	       (make-item-param
-		this default-x-margin-width non-negative-number?
-		(lambda (val)
-		  (error 'x-margin-width
-			 "Expected a non-negative real; received ~s" val)))]
-	      [y-margin-height
-	       (make-item-param
-		this default-y-margin-height non-negative-number?
-		(lambda (val)
-		  (error 'y-margin-height
-			 "Expected a non-negative real; received ~s" val)))]
+                [x-margin-width
+                  (make-item-param
+                    this default-x-margin-width non-negative-number?
+                    (lambda (val)
+                      (error 'x-margin-width
+                        "Expected a non-negative real; received ~s" val)))]
+                [y-margin-height
+                  (make-item-param
+                    this default-y-margin-height non-negative-number?
+                    (lambda (val)
+                      (error 'y-margin-height
+                        "Expected a non-negative real; received ~s" val)))]
 	      
-	      ; stretchable-in-x: gets/sets horiz stretchability property.
-	      ; input: either nothing or a boolean.
-	      ; returns: (if nothing passed in) current stretchability
-	      ;   property. 
-	      ; effects: (if boolean value passed in) sets H stretchability
-	      ;   prop. to specified value.
-	      [stretchable-in-x
-	       (make-item-param 
-		this default-x-stretch boolean?
-		(lambda (val)
-		  (error 'stretchable-in-x
-			 "Expected a boolean; received ~s" val)))]
+                                        ; stretchable-in-x: gets/sets horiz stretchability property.
+                                        ; input: either nothing or a boolean.
+                                        ; returns: (if nothing passed in) current stretchability
+                                        ;   property. 
+                                        ; effects: (if boolean value passed in) sets H stretchability
+                                        ;   prop. to specified value.
+                [stretchable-in-x
+                  (make-item-param 
+                    this default-x-stretch boolean?
+                    (lambda (val)
+                      (error 'stretchable-in-x
+                        "Expected a boolean; received ~s" val)))]
 	      
-	      ; stretchable-in-y: see stretchable-in-x but substitute "y"
-	      ;   for "x" and "horizontal" for "vertical".
-	      [stretchable-in-y
-	       (make-item-param
-		this default-y-stretch boolean?
-		(lambda (val)
-		  (error 'stretchable-in-y
-			 "Expected a boolean; received ~s" val)))]
+                                        ; stretchable-in-y: see stretchable-in-x but substitute "y"
+                                        ;   for "x" and "horizontal" for "vertical".
+                [stretchable-in-y
+                  (make-item-param
+                    this default-y-stretch boolean?
+                    (lambda (val)
+                      (error 'stretchable-in-y
+                        "Expected a boolean; received ~s" val)))]
 	      
-	      ; get-info: passes necessary info up to parent.
-	      ; input: none
-	      ; returns: child-info struct containing the info about this
-	      ;   item.
-	      ; intended to be called by item's parent upon resize.
-	      [get-info
-	       (lambda ()
-		 (mred:debug:printf
-		  'container-child-get-info
-		  "container-child-get-info: Entering get-info; object ~s"
-		  object-ID)
-		 (let* ([min-size (get-min-size)]
-			[result (make-child-info (default-x) (default-y)
-						 (car min-size) (cadr min-size)
-						 (x-margin-width) (y-margin-height)
-						 (stretchable-in-x)
-						 (stretchable-in-y))])
-		   (mred:debug:printf 
-		    'container-child-get-info
-		    "container-child-get-info: Result: ~s" result)
-		   result))]
+                                        ; get-info: passes necessary info up to parent.
+                                        ; input: none
+                                        ; returns: child-info struct containing the info about this
+                                        ;   item.
+                                        ; intended to be called by item's parent upon resize.
+                [get-info
+                  (lambda ()
+                    (mred:debug:printf
+                      'container-child-get-info
+                      "container-child-get-info: Entering get-info; object ~s"
+                      object-ID)
+                    (let* ([min-size (get-min-size)]
+                            [result (make-child-info (default-x) (default-y)
+                                      (car min-size) (cadr min-size)
+                                      (x-margin-width) (y-margin-height)
+                                      (stretchable-in-x)
+                                      (stretchable-in-y))])
+                      (mred:debug:printf 
+                        'container-child-get-info
+                        "container-child-get-info: Result: ~s" result)
+                      result))]
 	      
-	      ; force-redraw: unconditionally trigger redraw.
-	      ; input: none
-	      ; returns: nothing
-	      ; effects: forces the item's parent (if it exists) to redraw
-	      ;   itself. This will recompute the min-size cache if it is
-	      ;   invalid.
-	      [force-redraw
-	       (lambda ()
-		 (mred:debug:printf
-		  'container-child-force-redraw
-		  (string-append
-		   "container-child-force-redraw: "
-		   "Entering force-redraw; object ~s")
-		  object-ID)
-		 (let ([parent (get-parent)])
-		   (unless (null? parent)
-		     (mred:debug:printf
-		      'container-child-force-redraw
-		      (string-append
-		       "container-child-force-redraw: "
-		       "calling parent's force-redraw and quitting"))
-		     (send parent child-redraw-request this))))]
+                                        ; force-redraw: unconditionally trigger redraw.
+                                        ; input: none
+                                        ; returns: nothing
+                                        ; effects: forces the item's parent (if it exists) to redraw
+                                        ;   itself. This will recompute the min-size cache if it is
+                                        ;   invalid.
+                [force-redraw
+                  (lambda ()
+                    (mred:debug:printf
+                      'container-child-force-redraw
+                      (string-append
+                        "container-child-force-redraw: "
+                        "Entering force-redraw; object ~s")
+                      object-ID)
+                    (let ([parent (get-parent)])
+                      (unless (null? parent)
+                        (mred:debug:printf
+                          'container-child-force-redraw
+                          (string-append
+                            "container-child-force-redraw: "
+                            "calling parent's force-redraw and quitting"))
+                        (send parent child-redraw-request this))))]
 	      
-	      ; set-size: caches calls to set-size to avoid unnecessary work.
-	      ; input: x/y: new position for object
-	      ;        width/height: new size for object
-	      ; returns: nothing
-	      ; effect: if arguments mark a different geometry than the object's
-	      ;   current geometry, passes args to super-class's set-size.
-	      ;   Otherwise, does nothing.
-	      [set-size
-	       (lambda (x y width height)
-		 (unless (and (same-dimension? x (get-x))
+                                        ; set-size: caches calls to set-size to avoid unnecessary work.
+                                        ; input: x/y: new position for object
+                                        ;        width/height: new size for object
+                                        ; returns: nothing
+                                        ; effect: if arguments mark a different geometry than the object's
+                                        ;   current geometry, passes args to super-class's set-size.
+                                        ;   Otherwise, does nothing.
+                [set-size
+                  (lambda (x y width height)
+                    (unless (and (same-dimension? x (get-x))
 			      (same-dimension? y (get-y))
 			      (same-dimension? width (get-width))
 			      (same-dimension? height (get-height)))
-		   (mred:debug:printf 'container-child-set-size
-			   (string-append
-			    "container-child-set-size: "
-			    "Calling super-set-size ~s ~s ~s ~s")
-			   x y width height)
-		   (super-set-size x y width height)))]
+                      (mred:debug:printf 'container-child-set-size
+                        (string-append
+                          "container-child-set-size: "
+                          "Calling super-set-size ~s ~s ~s ~s")
+                        x y width height)
+                      (super-set-size x y width height)))]
 
-	      [on-container-resize void] ; This object doesn't contain anything
+                [on-container-resize void] ; This object doesn't contain anything
 	      
-	      ; get-min-size: computes the minimum size the item can
-	      ;   reasonably assume.
-	      ; input: none
-	      ; returns: a list containing the minimum width & height.
-	      [get-min-size
-	       (lambda ()
-		 (mred:debug:printf
-		  'container-child-get-min-size
-		  "container-child-get-min-size; object ~s;  "
-		  object-ID)
-		 (let ([w (+ (* 2 (x-margin-width)) (max min-width (user-min-width)))]
-		       [h (+ (* 2 (y-margin-height)) (max min-height (user-min-height)))])
-		   (mred:debug:printf
-		    'container-child-get-min-size
-		    "container-child-get-min-size: Result:  ~s"
-		    (list w h))
-		   (list w h)))])
+                                        ; get-min-size: computes the minimum size the item can
+                                        ;   reasonably assume.
+                                        ; input: none
+                                        ; returns: a list containing the minimum width & height.
+                [get-min-size
+                  (lambda ()
+                    (mred:debug:printf
+                      'container-child-get-min-size
+                      "container-child-get-min-size; object ~s;  "
+                      object-ID)
+                    (let ([w (+ (* 2 (x-margin-width)) (max min-width (user-min-width)))]
+                           [h (+ (* 2 (y-margin-height)) (max min-height (user-min-height)))])
+                      (mred:debug:printf
+                        'container-child-get-min-size
+                        "container-child-get-min-size: Result:  ~s"
+                        (list w h))
+                      (list w h)))])
 	    
-	    (sequence
-	      (mred:debug:printf 'container-child-init
-		      "container-child-init: Args to super-init: ~s"
-		      (apply make-default-size args))
-	      (apply super-init (apply make-default-size args))
-	      (set-min-width (get-width))
-	      (set-min-height (get-height))
+              (sequence
+                (mred:debug:printf 'container-child-init
+                  "container-child-init: Args to super-init: ~s"
+                  (apply make-default-size args))
+                (apply super-init (apply make-default-size args))
+                (set-min-width (get-width))
+                (set-min-height (get-height))
 	      
-	      (set! object-ID counter)
-	      (set! counter (add1 counter))
-	      (default-x (get-x))
-	      (default-y (get-y))
-	      (let ([parent (car args)])  ; this, at least, is consistent
-		(cond
-		  [(or (is-a? parent frame%)
+                (set! object-ID counter)
+                (set! counter (add1 counter))
+                (default-x (get-x))
+                (default-y (get-y))
+                (let ([parent (car args)]) ; this, at least, is consistent
+                  (cond
+                    [(or (is-a? parent frame%)
 		       (is-a? parent dialog-box%))
-		   (if (is-a? this panel%)
-		       (send parent insert-panel this)
-		       (error 'init
-			      (string-append
-			       "Only descendants of mred:panel% can be "
-			       "direct children of mred:frame% or "
-			       "mred:dialog-box% instances; received ~s")
-			      this))]
-		  [(is-a? parent panel%)
-		   (when (eq? wx:window-system 'motif)
-		     (send parent set-item-cursor 0 0))
-		   (send parent add-child this)]
-		  [else (error 'init
-			       "Expected a mred:frame%, mred:dialog-box%, ~s ~s"
-			       "or mred:panel% for parent.  Received"
-			       parent)]))))))
+                      (if (is-a? this panel%)
+                        (send parent insert-panel this)
+                        (error 'init
+                          (string-append
+                            "Only descendants of mred:panel% can be "
+                            "direct children of mred:frame% or "
+                            "mred:dialog-box% instances; received ~s")
+                          this))]
+                    [(is-a? parent panel%)
+                      (when (eq? wx:window-system 'motif)
+                        (send parent set-item-cursor 0 0))
+                      (send parent add-child this)]
+                    [else (error 'init
+                            "Expected a mred:frame%, mred:dialog-box%, ~s ~s"
+                            "or mred:panel% for parent.  Received"
+                            parent)])))))))
       
       ; Justification for make-default-size, and (class item% args ..):
       ; The various classes that we pass through this function do not all

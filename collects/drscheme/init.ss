@@ -27,9 +27,6 @@
       (list current-exception-handler)
       (lambda (x) #f))))
 
-  (define system-eventspace (mred:make-eventspace))
-  (mred:current-eventspace system-eventspace)
-
   (print-struct #t)
   (break-enabled #f)
   ((in-parameterization eval-thread-parameterization break-enabled) #f)

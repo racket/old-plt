@@ -21,6 +21,8 @@
 #include "wx_list.h"
 #include "wx_main.h"
 #include "wx_utils.h"
+#include "wx_dcmem.h"
+#include "wx_gdi.h"
 
 extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 
@@ -58,6 +60,12 @@ static void InitFormats()
   cf = new ClipboardFormat;
   cf->name = "TEXT";
   cf->format = wxCF_TEXT;
+
+  ClipboardFormats->Append(cf);
+
+  cf = new ClipboardFormat;
+  cf->name = "PICT";
+  cf->format = wxCF_BITMAP;
 
   ClipboardFormats->Append(cf);
 }
@@ -483,6 +491,58 @@ void wxClipboard::SetClipboardBitmap(wxBitmap *bm, long time)
 
 wxBitmap *wxClipboard::GetClipboardBitmap(long time)
 {
+  void *pd;
+  long size, w, h;
+  Rect bbox;
+
+  pd = wxGetClipboardData(wxCF_BITMAP, &size);
+  if (!pd || (size < (long)(sizeof(long)+sizeof(Rect))))
+    return NULL;
+  
+  bbox = *(Rect *)((char *)pd + sizeof(short));
+
+  w = bbox.right - bbox.left;
+  h = bbox.bottom - bbox.top;
+
+  if ((w > 0) && (w <= 10000)
+      && (h > 0) && (h <= 10000)) {
+    wxBitmap *bm;
+    wxMemoryDC *mdc;
+
+    bbox.top = bbox.left = 0;
+    bbox.right = w;
+    bbox.bottom = h;
+      
+    bm = new wxBitmap(w, h, 0);
+    mdc = new wxMemoryDC();
+    mdc->SelectObject(bm);
+    if (mdc->Ok()) {
+      Handle h;
+
+      /* Do we have to put it in a real handle?
+	 I'm not sure... */
+      h = NewHandle(size);
+      HLock(h);
+      memcpy(*h, pd, size);
+      HUnlock(h);
+
+      mdc->SetCurrentDC();
+      DrawPicture((PicHandle)h, &bbox);
+      mdc->ReleaseCurrentDC();
+
+      DisposeHandle(h);
+
+      mdc->SelectObject(NULL);
+      DELETE_OBJ mdc;
+
+      return bm;
+    }
+
+    mdc->SelectObject(NULL);
+    DELETE_OBJ bm;
+    DELETE_OBJ mdc;
+  }
+  
   return NULL;
 }
 

@@ -551,15 +551,6 @@
     (define canvas% (make-canvas% wx:canvas%))
     (define media-canvas% (make-canvas% wx:media-canvas%))		    
     (define text-window% (make-canvas% wx:text-window%))
-;      (make-item% wx:text-window% #t #t
-;		  (opt-lambda (parent
-;			       [x const-default-posn]
-;			       [y const-default-posn]
-;			       [w const-default-size]
-;			       [h const-default-size] . args)
-;		    (append (list parent x y const-default-size
-;				  const-default-size)
-;			    args))))
     
     ; panel%: a class with all the functionality of a wx:panel%
     ; that can hold items and reposition them as necessary.  Note that a
@@ -597,13 +588,12 @@
 	  [add-child
 	   (opt-lambda (new-child [show? #t])
 	     (unless (memq new-child children)
+	       (unless (eq? this (send new-child get-parent))
+		 (error 'add-child
+		   "Attempted to add child ~s to panel ~s (not child's parent)"
+		   new-child this))
 	       (send new-child show show?)
-	       (mred:debug:printf 'container "Arity of add-at-end: ~s"
-				  (arity add-at-end))
-	       (let ([function (add-at-end new-child)])
-		 (mred:debug:printf 'container "Arity of adder function ~s"
-				    (arity function))
-		 (change-children function))))]
+	       (change-children (add-at-end new-child))))]
 	  
 	  ; change-children: changes the list of children.
 	  ; input: f is a function which takes the current list of children

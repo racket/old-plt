@@ -1444,9 +1444,6 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 	if (isDefaultParam(pFuncDesc,i)) {
 	  numOptParams++;
 	}
-	else {
-	  break;
-	}
       }
 
       firstOptArg = hiBound - numOptParams + 1;

@@ -56,15 +56,16 @@
 			     kept-vars)])
       `(#%lambda () (list ,source ,@var-clauses)))) |#
   
-  (define (make-debug-info vars bindings-needed source label)
-    (let* ([kept-vars (if bindings-needed vars null)]
+  ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
+  (define (make-debug-info vars bindings-needed source special-vars)
+    (let* ([kept-vars (append special-vars (if bindings-needed vars null))]
 	   [var-clauses (map (lambda (x) 
 			       (let ([var (varref-var x)])
 				 `(cons ,var
 					(cons ,x
 					      null))))
 			     kept-vars)])
-      `(#%lambda () (list ,(z:offset (z:start source)) ,label ,@var-clauses))))
+      `(#%lambda () (list ,source ,@var-clauses))))
     
   ; var-set-union takes some lists of varrefs where no element appears twice in one list, and 
   ; forms a new list which is the union of the sets.  the elements are 
@@ -155,10 +156,11 @@
        (lambda (parsed) (getter (z:parsed-back parsed)))
        (lambda (parsed) (setter (z:parsed-back parsed) #t)))))
 
-  ; no-label : an instance of the no-label structure
+  ; debug-key: this key will be used to register the source expr with reconstructr.ss
+  ; and as a key for the continuation marks.
   
-  (define no-label (make-no-label))
-
+  (define debug-key (gensym "debug-key-"))
+  
   ; How do we know which bindings we need?  For every lambda body, there is a
   ; `tail-spine' of expressions which is the smallest set including:
   ; a) the body itself
@@ -188,11 +190,6 @@
 		   ()
 		   (cons new-expr (read-loop (reader)))))))
 			
-	 ; debug-key: this key will be used to register the source expr with reconstructr.ss
-	 ; and as a key for the continuation marks.
-	 
-	 (define debug-key (gensym "debug-key-"))
-	 
 	 ; expr-source-offset : take a parsed expression and find its offset in the source
 	 ; (z:zodiac -> num)
 	 
@@ -201,6 +198,7 @@
 	 
 	 ; comes-from-cond : determines whether an expression is expanded from a cond in the source
 	 
+         #|
 	 (define (comes-from-cond? expr)
 	   (let ([read (find-source-expr debug-key (expr-source-offset expr))])
 	     (and (z:sequence? read)
@@ -209,11 +207,13 @@
 		    (and (z:scalar? first)
 			 (z:symbol? first)
 			 (eq? (z:symbol-orig-name first) 'cond))))))
+         |#
 	 
 	 ; locate-cond-clause: take a cond expression's start location
 	 ; and a test expression's start location and figure out 
 	 ; which clause of the cond the test comes from.
 	 
+         #|
 	 (define (find-cond-clause cond-expr test-expr)
 	   (let* ([target-offset (expr-source-offset test-expr)]
 		  [cond-source (find-source-expr debug-key (expr-source-offset cond-expr))]
@@ -225,6 +225,7 @@
 		   (if (= target-offset (z:location-offset (z:zodiac-start (car test-exprs))))
 		       index
 		       (loop (cdr test-exprs) (+ index 1)))))))
+         |#
 	 
 	 ; wrap creates the w-c-m expression.
 	 
@@ -250,7 +251,7 @@
 				       (z:binding-orig-name
 					(z:bound-varref-binding expr)))]
 			   [free-vars (list (make-varref v top-level?))]
-			   [debug-info (make-debug-info free-vars on-spine? expr no-label)]
+			   [debug-info (make-debug-info free-vars on-spine? expr)]
 			   [annotated (if (and maybe-undef? (signal-undefined))
 					  `(#%if (#%eq? ,v ,the-undefined-value)
 					    (#%raise (,make-undefined
@@ -293,9 +294,9 @@
 		  [val set!-list (map (lambda (arg-symbol annotated-sub-expr)
 					`(#%set! ,arg-symbol ,annotated-sub-expr))
 				      arg-sym-list annotated-sub-exprs)]
-		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr no-label)]
+		  [val app-debug-info (make-debug-info arg-sym-list on-spine? expr)]
 		  [val final-app (wrap app-debug-info arg-sym-list)]
-		  [val debug-info (make-debug-info (var-set-union arg-sym-list free-vars) on-spine? expr no-label)]
+		  [val debug-info (make-debug-info (var-set-union arg-sym-list free-vars) on-spine? expr)]
 		  [val let-body (wrap debug-info `(#%begin ,@set!-list ,final-app))])
 		 (values `(#%let ,let-clauses ,let-body) free-vars))]
 	       
@@ -333,14 +334,11 @@
 					      ((#%debug-info-handler))
 					      ,if-temp))))]
 		  [val free-vars (var-set-union free-vars-test free-vars-then free-vars-else)]
-		  [val label (if (comes-from-cond? expr)
-				 (make-cond-label (find-cond-clause expr (z:if-form-test expr)))
-				 #f)]
-		  [val debug-info (make-debug-info free-vars on-spine? expr label)])
+		  [val debug-info (make-debug-info free-vars on-spine? expr)])
 		 (values (wrap debug-info annotated) free-vars))]
 	       
 	       [(z:quote-form? expr)
-		(values (wrap (make-debug-info null on-spine? expr no-label) 
+		(values (wrap (make-debug-info null on-spine? expr) 
 			      `(#%quote ,(read->raw (z:quote-form-expr expr))))
 			null)]
 	       
@@ -374,7 +372,7 @@
 		       [annotated-bodies (map car pile-of-results)]
 		       [annotated-case-lambda (list '#%case-lambda annotated-bodies)] 
 		       [new-free-vars (apply var-set-union (map cadr pile-of-results))]
-		       [debug-info (make-debug-info new-free-vars null on-spine? expr no-label)]
+		       [debug-info (make-debug-info new-free-vars null on-spine? expr)]
 		       [closure-info (make-debug-info new-free-vars #t expr no-label)]
 		       [hash-wrapped `(#%let ([,closure-temp ,annotated-case-lambda])
 				       ; that closure-table-put! thing needs to be protected
@@ -395,7 +393,7 @@
       
       ; body of local
       
-      (register debug-key exprs)
       (map (lambda (expr) (annotate/inner expr #t)) exprs)))
-	 
   
+	 
+  )

@@ -1606,11 +1606,11 @@ scheme_raise_exn(int id, ...)
   va_start(args, id);
 
   if (id == MZEXN_OTHER)
-    c = 3;
+    c = 5;
   else
     c = exn_table[id].args;
 
-  for (i = 2; i < c; i++) {
+  for (i = 4; i < c; i++) {
     eargs[i] = va_arg(args, Scheme_Object*);
   }
 

@@ -463,6 +463,8 @@ Scheme_Object *scheme_stx_module_name(Scheme_Object **a, long phase);
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid, long phase);
 
+Scheme_Object *scheme_stx_source_module(Scheme_Object *stx);
+
 Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 				   Scheme_Object *key,
 				   Scheme_Object *val);

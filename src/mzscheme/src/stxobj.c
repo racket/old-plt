@@ -49,6 +49,8 @@ static Scheme_Object *module_trans_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_binding(int argc, Scheme_Object **argv);
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv);
 
+static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv);
+
 static Scheme_Object *barrier_symbol;
 
 static Scheme_Object *source_symbol; /* uninterned! */
@@ -201,6 +203,12 @@ void scheme_init_stx(Scheme_Env *env)
 			     scheme_make_prim_w_arity(module_trans_binding,
 						      "identifier-transformer-binding",
 						      1, 1),
+			     env);
+
+  scheme_add_global_constant("syntax-source-module", 
+			     scheme_make_folding_prim(syntax_src_module,
+						      "syntax-source-module",
+						      1, 1, 1),
 			     env);
 
   REGISTER_SO(barrier_symbol);
@@ -1136,6 +1144,43 @@ int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *u
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b, long phase)
 {
   return scheme_stx_env_bound_eq(a, b, NULL, phase);
+}
+
+Scheme_Object *scheme_stx_source_module(Scheme_Object *stx)
+{
+  /* Inspect the wraps to look for a self-modidx shift: */
+  Scheme_Object *w, *srcmod = scheme_false, *chain_from = NULL;
+
+  w = ((Scheme_Stx *)stx)->wraps;
+
+  while (!SCHEME_NULLP(w)) {
+    if (SCHEME_BOXP(SCHEME_CAR(w))) {
+      /* Phase shift:  */
+      Scheme_Object *vec, *dest, *src;
+
+      vec = SCHEME_PTR_VAL(SCHEME_CAR(w));
+      
+      src = SCHEME_VEC_ELS(vec)[1];
+      dest = SCHEME_VEC_ELS(vec)[2];
+
+      if (!chain_from) {
+	srcmod = dest;
+      } else if (!SAME_OBJ(chain_from, dest)) {
+	srcmod = scheme_modidx_shift(dest,
+				     chain_from,
+				     srcmod);
+      }
+
+      chain_from = src;
+    }
+
+    w = SCHEME_CDR(w);
+  }
+
+  if (SCHEME_TRUEP(srcmod))
+    srcmod = scheme_module_resolve(srcmod);
+
+  return srcmod;
 }
 
 /*========================================================================*/
@@ -2452,6 +2497,14 @@ static Scheme_Object *module_binding(int argc, Scheme_Object **argv)
 static Scheme_Object *module_trans_binding(int argc, Scheme_Object **argv)
 {
   return do_module_binding("identifier-transformer-binding", argc, argv, 1);
+}
+
+static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)
+{
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-source-module", "syntax", 0, argc, argv);
+
+  return scheme_stx_source_module(argv[0]);
 }
 
 /**********************************************************************/

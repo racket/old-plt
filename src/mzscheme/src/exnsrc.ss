@@ -9,6 +9,8 @@ strings are types/comments.
 |#
 
 (exn [message "immutable-string" "error message" 
+	      agent "symbol or {\\scmfalse}" "name of the error agent (procedure or form), if any"
+	      module "symbol or {\\scmfalse}" "source module of the error agent, if any"
 	      continuation-marks "mark-set" "value returned by \\scmfirst{current-continuation-marks} immediately after the error is detected"] 
      -
      (user [] "raised by calling \\scmfirst{error}")

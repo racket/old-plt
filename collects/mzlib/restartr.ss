@@ -141,7 +141,7 @@
 		       (lambda () (find-executable-path program "collects"))
 		       (lambda ()
 			 (case (system-type)
-			   [(unix) "/usr/local/lib/plt/collects"]
+			   [(unix beos) "/usr/local/lib/plt/collects"]
 			   [(windows) "c:\\plt\\collects"]
 			   [else #f]))))
 		     null))))
@@ -150,7 +150,7 @@
 
 	      (unless no-init-file?
 		      (let ([f (case (system-type)
-				 [(unix) "~/.mzschemerc"]
+				 [(unix beos) "~/.mzschemerc"]
 				 [else "mzscheme.rc"])])
 			(when (file-exists? f)
 			      (with-handlers ([void print-error])

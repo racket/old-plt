@@ -25,14 +25,14 @@
    (string-append
     s
     (case (system-type)
-      [(unix macos) ".o"]
+      [(unix beos macos) ".o"]
       [(windows) ".obj"])))
 
  (define (append-extension-suffix s)
    (string-append
     s
     (case (system-type)
-      [(unix macos) ".so"]
+      [(unix beos macos) ".so"]
       [(windows) ".dll"])))
 
  (define-values (extract-base-filename/ss
@@ -57,12 +57,12 @@
       (mk "[cC]" "C" ".c")
       (mk "[kK][pP]" "constant pool" ".kp")
       (mk (case (system-type)
-	    [(unix macos) "[oO]"]
+	    [(unix beos macos) "[oO]"]
 	    [(windows) "[oO][bB][jJ]"])
 	  "compiled object"
 	  (append-object-suffix ""))
       (mk (case (system-type)
-	    [(unix macos) "[sS][oO]"]
+	    [(unix beos macos) "[sS][oO]"]
 	    [(windows) "[dD][lL][lL]"])
 	  "MzScheme extension"
 	  (append-extension-suffix ""))))))

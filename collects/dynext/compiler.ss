@@ -14,7 +14,7 @@
   (define current-extension-compiler 
     (make-parameter 
      (case (system-type) 
-       [(unix) (get-unix-compile)]
+       [(unix beos) (get-unix-compile)]
        [(windows) (get-windows-compile)]
        [else #f])
      (lambda (v)
@@ -46,9 +46,9 @@
   (define current-extension-compiler-flags
     (make-parameter
      (case (system-type)
-       [(unix) (if unix-cc?
-		   unix-compile-flags
-		   gcc-compile-flags)]
+       [(unix beos) (if unix-cc?
+			unix-compile-flags
+			gcc-compile-flags)]
        [(windows) (if win-gcc?
 		      gcc-compile-flags
 		      msvc-compile-flags)]
@@ -64,7 +64,7 @@
   (define current-make-compile-include-strings
     (make-parameter
      (case (system-type)
-       [(unix) unix-compile-include-strings]
+       [(unix beos) unix-compile-include-strings]
        [(windows) (if win-gcc?
 		      unix-compile-include-strings
 		      msvc-compile-include-strings)]
@@ -88,7 +88,7 @@
   (define current-make-compile-output-strings
     (make-parameter
      (case (system-type)
-       [(unix) unix-compile-output-strings]
+       [(unix beos) unix-compile-output-strings]
        [(windows) (if win-gcc?
 		      unix-compile-output-strings
 		      msvc-compile-output-strings)]
@@ -100,7 +100,7 @@
   
   (define (get-standard-compilers)
     (case (system-type)
-      [(unix) '(gcc cc)]
+      [(unix beos) '(gcc cc)]
       [(windows) '(gcc msvc)]
       [(macos) '(cw)]))
 
@@ -108,45 +108,48 @@
     (define (bad-name name)
       (error 'use-standard-compiler "unknown compiler: ~a" name))
     (case (system-type)
-      [(unix) (case name
-		[(cc gcc) (let* ([n (if (eq? name 'gcc) "gcc" "cc")]
-				 [f (find-executable-path n n)])
-			    (unless f
-			      (error 'use-standard-linker "cannot find ~a" n))
-			    (current-extension-compiler f))
-			  (current-extension-compiler-flags (if (eq? name 'gcc)
-								gcc-compile-flags
-								unix-compile-flags))
-			  (current-make-compile-include-strings unix-compile-include-strings)
-			  (current-make-compile-input-strings (lambda (s) (list s)))
-			  (current-make-compile-output-strings unix-compile-output-strings)]
-		[else (bad-name name)])]
-      [(windows) (case name
-		   [(gcc) (let ([f (find-executable-path "gcc.exe" "gcc.exe")])
-			    (unless f
-			      (error 'use-standard-linker "cannot find gcc.exe"))
-			    (current-extension-compiler f))
-			  (current-extension-compiler-flags gcc-compile-flags)
-			  (current-make-compile-include-strings unix-compile-include-strings)
-			  (current-make-compile-input-strings (lambda (s) (list s)))
-			  (current-make-compile-output-strings unix-compile-output-strings)]
-		   [(msvc) (let ([f (find-executable-path "cl.exe" "cl.exe")])
-			    (unless f
-			      (error 'use-standard-linker "cannot find MSVC's cl.exe"))
-			    (current-extension-compiler f))
-			   (current-extension-compiler-flags msvc-compile-flags)
-			   (current-make-compile-include-strings msvc-compile-include-strings)
-			   (current-make-compile-input-strings (lambda (s) (list s)))
-			   (current-make-compile-output-strings msvc-compile-output-strings)]
-		   [else (bad-name name)])]
-      [(macos) (case name
-		 [(cw) (current-extension-compiler #f)
-		       (current-extension-compiler-flags unix-compile-flags)
-		       (current-make-compile-include-strings unix-compile-include-strings)
-		       (current-make-compile-input-strings (lambda (s) (list s)))
-		       (current-make-compile-output-strings unix-compile-output-strings)]
-		 [else (bad-name name)])]))
-
+      [(unix beos) 
+       (case name
+	 [(cc gcc) (let* ([n (if (eq? name 'gcc) "gcc" "cc")]
+			  [f (find-executable-path n n)])
+		     (unless f
+		       (error 'use-standard-linker "cannot find ~a" n))
+		     (current-extension-compiler f))
+		   (current-extension-compiler-flags (if (eq? name 'gcc)
+							 gcc-compile-flags
+							 unix-compile-flags))
+		   (current-make-compile-include-strings unix-compile-include-strings)
+		   (current-make-compile-input-strings (lambda (s) (list s)))
+		   (current-make-compile-output-strings unix-compile-output-strings)]
+	 [else (bad-name name)])]
+      [(windows) 
+       (case name
+	 [(gcc) (let ([f (find-executable-path "gcc.exe" "gcc.exe")])
+		  (unless f
+		    (error 'use-standard-linker "cannot find gcc.exe"))
+		  (current-extension-compiler f))
+		(current-extension-compiler-flags gcc-compile-flags)
+		(current-make-compile-include-strings unix-compile-include-strings)
+		(current-make-compile-input-strings (lambda (s) (list s)))
+		(current-make-compile-output-strings unix-compile-output-strings)]
+	 [(msvc) (let ([f (find-executable-path "cl.exe" "cl.exe")])
+		   (unless f
+		     (error 'use-standard-linker "cannot find MSVC's cl.exe"))
+		   (current-extension-compiler f))
+		 (current-extension-compiler-flags msvc-compile-flags)
+		 (current-make-compile-include-strings msvc-compile-include-strings)
+		 (current-make-compile-input-strings (lambda (s) (list s)))
+		 (current-make-compile-output-strings msvc-compile-output-strings)]
+	 [else (bad-name name)])]
+      [(macos) 
+       (case name
+	 [(cw) (current-extension-compiler #f)
+	       (current-extension-compiler-flags unix-compile-flags)
+	       (current-make-compile-include-strings unix-compile-include-strings)
+	       (current-make-compile-input-strings (lambda (s) (list s)))
+	       (current-make-compile-output-strings unix-compile-output-strings)]
+	 [else (bad-name name)])]))
+  
   (define-values (my-process* stdio-compile)
     (let-values ([(p* do-stdio) (require-library "stdio.ss" "dynext")])
       (values
@@ -184,5 +187,5 @@
   
   (define compile-extension
     (case (system-type)
-      [(unix windows) unix/windows-compile]
+      [(unix beos windows) unix/windows-compile]
       [(macos) macos-compile])))

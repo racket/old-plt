@@ -15,7 +15,7 @@
   (define current-extension-linker 
     (make-parameter 
      (case (system-type) 
-       [(unix) (get-unix-linker)]
+       [(unix beos) (get-unix-linker)]
        [(windows) (get-windows-linker)]
        [else #f])
      (lambda (v)
@@ -53,7 +53,7 @@
   (define current-extension-linker-flags
     (make-parameter
      (case (system-type)
-       [(unix) (get-unix-link-flags)]
+       [(unix beos) (get-unix-link-flags)]
        [(windows) (if win-gcc?
 		      win-gcc-linker-flags
 		      msvc-linker-flags)]
@@ -86,7 +86,7 @@
   (define current-make-link-output-strings
     (make-parameter
      (case (system-type)
-       [(unix) (lambda (s) (list "-o" s))]
+       [(unix beos) (lambda (s) (list "-o" s))]
        [(windows) (if win-gcc?
 		      win-gcc-link-output-strings
 		      msvc-link-output-strings)]
@@ -117,7 +117,7 @@
   (define current-standard-link-libraries
     (make-parameter
      (case (system-type)
-       [(unix macos) (get-unix/macos-link-libraries)]
+       [(unix beos macos) (get-unix/macos-link-libraries)]
        [(windows) (make-win-link-libraries win-gcc?)])
      (lambda (l)
        (unless (and (list? l) (andmap string? l))
@@ -144,39 +144,42 @@
     (define (bad-name name)
       (error 'use-standard-linker "unknown linker: ~a" name))
     (case (system-type)
-      [(unix) (case name
-		[(cc gcc) (current-extension-linker (get-unix-linker))
-			  (current-extension-linker-flags (get-unix-link-flags))
-			  (current-make-link-input-strings (lambda (s) (list s)))
-			  (current-make-link-output-strings (lambda (s) (list "-o" s)))
-			  (current-standard-link-libraries (get-unix/macos-link-libraries))]
-		[else (bad-name name)])]
-      [(windows) (case name
-		   [(gcc) (let ([f (find-executable-path "ld.exe" "ld.exe")])
-			    (unless f
-			      (error 'use-standard-linker "cannot find gcc's ld.exe"))
-			    (current-extension-linker f)
-			    (current-extension-linker-flags win-gcc-linker-flags)
-			    (current-make-link-input-strings (lambda (s) (list s)))
-			    (current-make-link-output-strings win-gcc-link-output-strings)
-			    (current-standard-link-libraries (make-win-link-libraries #t)))]
-		   [(msvc) (let ([f (find-executable-path "cl.exe" "cl.exe")])
-			    (unless f
-			      (error 'use-standard-linker "cannot find MSVC's cl.exe"))
-			    (current-extension-linker f)
-			    (current-extension-linker-flags msvc-linker-flags)
-			    (current-make-link-input-strings (lambda (s) (list s)))
-			    (current-make-link-output-strings msvc-link-output-strings)
-			    (current-standard-link-libraries (make-win-link-libraries #f)))]
-		   [else (bad-name name)])]
-      [(macos) (case name
-		 [(cw) (current-extension-linker #f)
-		       (current-extension-linker-flags null)
-		       (current-make-link-input-strings (lambda (s) (list s)))
-		       (current-make-link-output-strings (lambda (s) (list "-o" s)))
-		       (current-standard-link-libraries (get-unix/macos-link-libraries))]
-		 [else (bad-name name)])]))
-
+      [(unix beos) 
+       (case name
+	 [(cc gcc) (current-extension-linker (get-unix-linker))
+		   (current-extension-linker-flags (get-unix-link-flags))
+		   (current-make-link-input-strings (lambda (s) (list s)))
+		   (current-make-link-output-strings (lambda (s) (list "-o" s)))
+		   (current-standard-link-libraries (get-unix/macos-link-libraries))]
+	 [else (bad-name name)])]
+      [(windows)
+       (case name
+	 [(gcc) (let ([f (find-executable-path "ld.exe" "ld.exe")])
+		  (unless f
+		    (error 'use-standard-linker "cannot find gcc's ld.exe"))
+		  (current-extension-linker f)
+		  (current-extension-linker-flags win-gcc-linker-flags)
+		  (current-make-link-input-strings (lambda (s) (list s)))
+		  (current-make-link-output-strings win-gcc-link-output-strings)
+		  (current-standard-link-libraries (make-win-link-libraries #t)))]
+	 [(msvc) (let ([f (find-executable-path "cl.exe" "cl.exe")])
+		   (unless f
+		     (error 'use-standard-linker "cannot find MSVC's cl.exe"))
+		   (current-extension-linker f)
+		   (current-extension-linker-flags msvc-linker-flags)
+		   (current-make-link-input-strings (lambda (s) (list s)))
+		   (current-make-link-output-strings msvc-link-output-strings)
+		   (current-standard-link-libraries (make-win-link-libraries #f)))]
+	 [else (bad-name name)])]
+      [(macos)
+       (case name
+	 [(cw) (current-extension-linker #f)
+	       (current-extension-linker-flags null)
+	       (current-make-link-input-strings (lambda (s) (list s)))
+	       (current-make-link-output-strings (lambda (s) (list "-o" s)))
+	       (current-standard-link-libraries (get-unix/macos-link-libraries))]
+	 [else (bad-name name)])]))
+  
   (include "macinc.ss")
   
   (define (macos-link quiet? input-files output-file)
@@ -185,6 +188,6 @@
   
   (define link-extension
     (case (system-type)
-      [(unix windows) unix/windows-link]
+      [(unix beos windows) unix/windows-link]
       [(macos) macos-link])))
 

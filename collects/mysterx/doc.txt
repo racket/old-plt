@@ -2022,10 +2022,10 @@ _Remote COM servers_
   -----            ------              -----
   alpha            enabled             boolean
                    finish-opacity      n exact, 0 <= n <= 100
-	           opacity             n exact, 0 <= n <= 100
+                   opacity             n exact, 0 <= n <= 100
                    start-x             exact number
                    start-y             exact number 
-	           finish-x            exact number
+                   finish-x            exact number
                    finish-y            exact number
                    style               in '(uniform linear
                                             radial rectangular)
@@ -2035,8 +2035,8 @@ _Remote COM servers_
   blur             add                 boolean
                    enabled             boolean
                    direction           in '(0 45 90 135 180 
-                                       225 270 315)
-                   strength	           exact n, 1 <= n <= 100
+                                            225 270 315)
+                   strength            exact n, 1 <= n <= 100
   chroma           enabled             boolean
                    color               RGB string
   drop-shadow      enabled             boolean
@@ -2059,7 +2059,7 @@ _Remote COM servers_
   shadow           enabled             boolean
                    color               RGB string
                    direction           in '(0 45 90 135 180 
-                                       225 270 315)   
+                                            225 270 315)   
   wave             enabled             boolean
                    freq                number n, n >= 0
                    light-strength      exact n, 1 <= n <= 100

@@ -1064,6 +1064,11 @@
 (test 0 'get-field2 (let ()
                       (define-local-member-name f)
                       (get-field f (new (class object% (field [f 0]) (super-new))))))
+(let ([o (new (class (class object% (field [f 10]) (super-new))
+		(field [g 11])
+		(super-new)))])
+  (test 10 'get-field3 (get-field f o))
+  (test 11 'get-field3 (get-field g o)))
 
 (syntax-test #'(field-bound?))
 (syntax-test #'(field-bound? a))

@@ -62,8 +62,7 @@ _kerncase.ss_: matching fully-expanded expressions
 > (kernel-form-identifier-list syntax) - returns a list of identifiers
   for the names of the primitive MzScheme forms for expressions, with
   the lexical context of `syntax'. This function is useful for
-  generating a list of stopping points to provide to
-  `syntax-local-expand'.
+  generating a list of stopping points to provide to `local-expand'.
 
 ======================================================================
 _toplevel.ss_: helper for moduleless compilation and expansion

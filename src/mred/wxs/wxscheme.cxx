@@ -1486,9 +1486,11 @@ static Scheme_Object *file_type_and_creator(int argc, Scheme_Object **argv)
     if (argc > 1)
       return scheme_void;
     else {
-      scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
-		       "file-creator-and-type: not supported on this platform");
-      return NULL;
+      Scheme_Object *a[2];
+
+      a[0] = scheme_make_sized_string("????", 4, 0);
+      a[1] = a[0];
+      return scheme_values(2, a);
     }
   } else if (scheme_directory_exists(filename))
     was_dir = 1;

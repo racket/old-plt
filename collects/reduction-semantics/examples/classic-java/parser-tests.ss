@@ -2,7 +2,7 @@
 ;;
 ;; parser-tests.ss
 ;; Richard Cobbe
-;; $Id: parser-tests.ss,v 1.5 2004/08/17 21:12:45 cobbe Exp $
+;; $Id: parser-tests.ss,v 1.6 2004/08/18 19:55:46 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -18,23 +18,27 @@
                                parse-init-program
                                make-final-classes))
 
-  (define-assertion (assert-parse-exn msg val expr)
-    (with-handlers ([exn:cj:parse?
-                     (lambda (exn)
-                       (and (string=? msg (exn-message exn))
-                            (equal? val (exn:application-value exn))))]
-                    [(lambda _ #t) (lambda _ #f)])
-      (begin expr #f)))
+  (provide parser-tests)
 
-  (define-assertion (assert-inheritance-cycle expr)
-    (with-handlers ([exn:cj:parse?
-                     (lambda (exn)
-                       (and (string=? "inheritance cycle" (exn-message exn))
-                            (temp-class? (exn:application-value exn))))]
-                    [(lambda _ #t) (lambda _ #f)])
-      (begin expr #f)))
+  (define-syntax assert-parse-exn
+    (syntax-rules ()
+      [(_ msg value expr)
+       (assert-exn (lambda (exn)
+                     (and (exn:cj:parse? exn)
+                          (string=? msg (exn-message exn))
+                          (equal? value (exn:application-value exn))))
+                   (lambda () expr))]))
 
-  (schemeunit-test
+  (define-syntax assert-inheritance-cycle
+    (syntax-rules ()
+      [(_ expr)
+       (assert-exn (lambda (exn)
+                     (and (exn:cj:parse? exn)
+                          (string=? "inheritance cycle" (exn-message exn))
+                          (temp-class? (exn:application-value exn))))
+                   (lambda () expr))]))
+
+  (define parser-tests
    (make-test-suite "Classic Java parser"
 
      (make-test-case "initial program"
@@ -71,8 +75,11 @@
                                                       (make-num-lit 5)))))
 
      (make-test-case "bad initial program"
-       (assert-parse-exn "bad program" 'Object
-                         (parse-init-program 'Object)))
+       (assert-exn (lambda (exn)
+                     (and (exn:cj:parse? exn)
+                          (string=? "bad program" (exn-message exn))
+                          (equal? 'Object (exn:application-value exn))))
+                (lambda () (parse-init-program 'Object))))
 
      (make-test-case "bad initial program 2"
        (assert-parse-exn "bad program" null (parse-init-program null)))
@@ -351,5 +358,4 @@
            (hash-table ('Object obj) ('foo foo) ('bar bar))
            (make-send (make-new (make-class-type 'bar))
                       'zero
-                      null))
-          ))))))
+                      null))))))))

@@ -1,9 +1,10 @@
 (module store-tests mzscheme
 
   (require (lib "test.ss" "test"))
+  (provide store-tests)
   (require/expose "store.ss" ())
 
-  (schemeunit-test
+  (define store-tests
    (make-test-suite "store ADT tests"
      (make-test-case "deref empty store"
        (assert-false (store-ref empty-store 3 (lambda () #f))))

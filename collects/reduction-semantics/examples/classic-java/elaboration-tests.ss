@@ -3,7 +3,7 @@
 ;; elaboration-tests.ss
 ;;
 ;; Richard Cobbe
-;; $Id: elaboration-tests.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: elaboration-tests.ss,v 1.2 2004/08/19 21:24:58 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -14,19 +14,21 @@
            "environment.ss"
            "ast.ss"
            "program.ss")
+  (provide elaboration-tests)
 
   (require/expose "parser.ss" (parse-expr))
   (require/expose "elaboration.ss"
                   (methods-once fields-once methods-ok elab-class elab-expr
                                 elab-method))
 
-  (define-assertion (assert-elab-exn msg val expr)
-    (with-handlers ([exn:cj:elab?
-                     (lambda (exn)
-                       (and (string=? msg (exn-message exn))
-                            (equal? val (exn:application-value exn))))]
-                    [(lambda _ #t) (lambda _ #f)])
-      (begin expr #f)))
+  (define-syntax assert-elab-exn
+    (syntax-rules ()
+      [(_ msg val expr)
+       (assert-exn (lambda (exn)
+                     (and (exn:cj:elab? exn)
+                          (string=? msg (exn-message exn))
+                          (equal? val (exn:application-value exn))))
+                   (lambda () expr))]))
 
   (define test-program
     (parse-program
@@ -59,12 +61,12 @@
               [c-id (find-class p-id (make-class-type (quote c-id)))])
          body)]))
 
-  (schemeunit-test
+  (define elaboration-tests
    (make-test-suite
     "ClassicJava Elaboration Tests"
 
     (make-test-case "methods unique"
-      (assert-void (methods-once test-program)))
+      (assert-not-exn (lambda () (methods-once test-program))))
 
     (make-test-case "methods-once: duplicate method"
       (with-program/class program foo
@@ -77,7 +79,7 @@
                                            (methods-once program))))
 
     (make-test-case "fields unique"
-      (assert-void (fields-once test-program)))
+      (assert-not-exn (lambda () (fields-once test-program))))
 
     (make-test-case "fields-once: duplicate field name"
       (with-program/class
@@ -89,7 +91,7 @@
                         (fields-once program))))
 
     (make-test-case "methods OK"
-      (assert-void (methods-ok test-program)))
+      (assert-not-exn (lambda () (methods-ok test-program))))
 
     (make-test-case "methods-ok: override breaks type"
       (with-program/class
@@ -110,7 +112,7 @@
                          (class c2 object ()
                            (Object m () null))
                          3))])
-        (assert-void (methods-ok program))))
+        (assert-not-exn (lambda () (methods-ok program)))))
 
     (make-test-case "elab-class: ok"
       (let* ([table (make-hash-table)]

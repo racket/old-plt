@@ -421,9 +421,8 @@
 	     "mred.res"
 	     "xsrc/mrmain.obj"
 	     "../../../libmzsch3mxxxxxxx.lib"
-	     "../../../libmred3mxxxxxxx.lib"
-	     "advapi32.lib")])
-  (link-dll objs null "../../../MrEd3m.exe" "/link /subsystem:windows" #t))
+	     "../../../libmred3mxxxxxxx.lib")])
+  (link-dll objs (list "advapi32.lib") "../../../MrEd3m.exe" "/link /subsystem:windows" #t))
 
 (system- "cl.exe /MT /O2 /DMZ_PRECISE_GC /I../../mzscheme/include /c ../../mzscheme/dynsrc/mzdyn.c /Fomzdyn3m.obj")
 (system- "lib.exe -def:../../mzscheme/dynsrc/mzdyn.def -out:mzdyn3m.lib")

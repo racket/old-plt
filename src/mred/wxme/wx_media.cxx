@@ -360,14 +360,25 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
   if (tracking)
     return customCursor ? customCursor : arrow;
   
+  /* This test needs to be the same as in Refresh(): */
+  if (graphicMaybeInvalid || flowLocked || delayRefresh) {
+    /* We're too busy. Ask again later. */
+    if (customCursorOverrides  &&customCursor)
+      return customCursor;
+    return iBeam;
+  }
+  
+  BeginSequenceLock();
+    
   if (!customCursorOverrides) {
-
     if (caretSnip && event->Dragging()) {
       float x, y;
       GetSnipPositionAndLocation(caretSnip, NULL, &x, &y);
       c = caretSnip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
-      if (c)
+      if (c) {
+	EndSequenceLock();
 	return c;
+      }
     }
     
     /* Find snip: */
@@ -386,19 +397,28 @@ wxCursor *wxMediaEdit::AdjustCursor(wxMouseEvent *event)
       float x, y;
       GetSnipPositionAndLocation(snip, NULL, &x, &y);
       c = snip->AdjustCursor(dc, x - scrollx, y - scrolly, x, y, event);
-      if (c)
+      if (c) {
+	EndSequenceLock();
 	return c;
+      }
     }
   }
   
-  if (customCursor)
+  if (customCursor) {
+    EndSequenceLock();
     return customCursor;
+  }
 
   if (x >= 0) {
+    int cb;
     pos = FindPosition(x, y, NULL);
-    return FindClickback(pos, y) ? arrow : iBeam;
-  } else
+    cb = !!FindClickback(pos, y);
+    EndSequenceLock();
+    return cb ? arrow : iBeam;
+  } else {
+    EndSequenceLock();
     return iBeam;
+  }
 }
 
 void wxMediaEdit::OnEvent(wxMouseEvent *event)
@@ -713,11 +733,13 @@ void wxMediaEdit::BlinkCaret()
     if ((startpos == endpos) 
 	&& !flash 
 	&& hiliteOn) {
+      BeginSequenceLock();
       caretBlinked  = !caretBlinked;
       if (caretBlinked)
 	CaretOff();
       else
 	CaretOn();
+      EndSequenceLock();
     }
   }
 }
@@ -730,6 +752,18 @@ void wxMediaEdit::SizeCacheInvalid(void)
   if (maxWidth > 0)
     flowInvalid = TRUE;
   snipCacheInvalid = TRUE;
+}
+
+Bool wxMediaEdit::IsLockedForRead() { 
+  return readLocked;
+}
+
+Bool wxMediaEdit::IsLockedForFlow() {
+  return flowLocked;
+}
+
+Bool wxMediaEdit::IsLockedForWrite() {
+  return writeLocked;
 }
 
 /****************************************************************/

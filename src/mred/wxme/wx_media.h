@@ -424,9 +424,9 @@ class wxMediaEdit : public wxMediaBuffer
   virtual long MemoryUse(void);
 #endif
 
-  Bool IsLockedForRead() { return readLocked; }
-  Bool IsLockedForFlow() { return flowLocked; }
-  Bool IsLockedForWrite() { return writeLocked; }
+  Bool IsLockedForRead();
+  Bool IsLockedForFlow();
+  Bool IsLockedForWrite();
 
  private:
 #define TF_Flag(var) unsigned var : 1

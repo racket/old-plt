@@ -8,7 +8,7 @@
 	   read-string
 	   parser-error
 	   exn:ssax?
-	   exn:ssax-port exn:ssax-stuff)
+	   exn:ssax-port)
 
   (require (rename (lib "13.ss" "srfi")
 		   string-concatenate-reverse string-concatenate-reverse))
@@ -18,13 +18,19 @@
   (require "char-encodings.ss")
   (require "crementing.ss")
 
-  (define-struct (exn:ssax exn) (port stuff))
+  (define-struct (exn:ssax exn) (port))
+
+  (define (format-list list)
+    (apply string-append (map format-x list)))
+  
+  (define (format-x thing)
+    (format "~a" thing))
 
   (define (parser-error port message . rest)
-    (raise (make-exn:ssax message
+    (raise (make-exn:ssax (string->immutable-string
+			   (format-list (cons message rest)))
 			  (current-continuation-marks)
-			  port
-			  rest)))
+			  port)))
 
   (require (lib "include.ss"))
   (include "input-parse.scm"))

@@ -31,9 +31,36 @@ static int is_number_arg(const char *s)
   return 1;
 }
 
+static char *protect_quote_backslash(const char *file)
+{
+  int i, c;
+  
+  for (i = c = 0; file[i]; i++) {
+    if ((file[i] == '"') || (file[i] == '\\'))
+      c++;
+  }
+
+  if (c) {
+    char *s;
+  
+    s = (char *)malloc(i + c + 1);
+
+    for (i = c = 0; file[i]; i++) {
+      if ((file[i] == '"') || (file[i] == '\\'))
+	s[c++] = '\\';
+      s[c++] = file[i];
+    }
+
+    return s;
+  } else
+    return (char *)file;
+}
+
 static char *make_load_cd(char *file)
 {
   char *s;
+
+  file = protect_quote_backslash(file);
   
   s = (char *)malloc(strlen(file) + 13);
   strcpy(s, "(load/cd \"");
@@ -46,6 +73,8 @@ static char *make_require(char *file)
 {
   char *s;
   
+  file = protect_quote_backslash(file);
+  
   s = (char *)malloc(strlen(file) + 20);
   strcpy(s, "(require (file \"");
   strcat(s, file);
@@ -56,6 +85,9 @@ static char *make_require(char *file)
 static char *make_require_lib(const char *file, const char *coll)
 {
   char *s;
+  
+  file = protect_quote_backslash(file);
+  coll = protect_quote_backslash(coll);
   
   s = (char *)malloc(strlen(file) + strlen(coll) + 31);
   strcpy(s, "(require (lib \"");
@@ -69,7 +101,7 @@ static char *make_require_lib(const char *file, const char *coll)
 static char *make_require_coll(const char *coll)
 {
   char *s;
-  
+
   s = (char *)malloc(strlen(coll) + 4);
   strcpy(s, coll);
   strcat(s, ".ss");

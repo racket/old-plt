@@ -948,7 +948,7 @@ END object;
 
 /**********************************************************************/
 
-START port;
+START portfun;
 
 mark_breakable {
  mark:
@@ -962,18 +962,59 @@ mark_breakable {
   gcBYTES_TO_WORDS(sizeof(Breakable));
 }
 
-mark_listener {
+mark_load_handler_data {
  mark:
-  listener_t *l = (listener_t *)p;
+  LoadHandlerData *d = (LoadHandlerData *)p;
+    
+  gcMARK(d->config);
+  gcMARK(d->port);
+  gcMARK(d->p);
 
-  gcMARK(l->mref);
-#ifdef USE_MAC_TCP
-  gcMARK(l->datas);
+ size:
+  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
+}
+
+mark_load_data {
+ mark:
+  LoadData *d = (LoadData *)p;
+  
+  gcMARK(d->filename);
+  gcMARK(d->config);
+  gcMARK(d->load_dir);
+  gcMARK(d->old_load_dir);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(LoadData));
+}
+
+mark_indexed_string {
+ mark:
+  Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
+    
+  gcMARK(is->string);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
+}
+
+mark_pipe {
+ mark:
+  Scheme_Pipe *pp = (Scheme_Pipe *)p;
+    
+  gcMARK(pp->buf);
+#ifdef MZ_REAL_THREADS
+  gcMARK(pp->wait_sem);
 #endif
 
  size:
-  gcBYTES_TO_WORDS(sizeof(listener_t));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
+
+END portfun;
+
+/**********************************************************************/
+
+START port;
 
 #ifdef WINDOWS_PROCESSES
 mark_thread_memory {
@@ -1018,16 +1059,6 @@ mark_tcp_select_info {
 }
 #endif
 
-mark_indexed_string {
- mark:
-  Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
-    
-  gcMARK(is->string);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
-}
-
 mark_output_file {
  mark:
   Scheme_Output_File *o = (Scheme_Output_File *)p;
@@ -1036,44 +1067,6 @@ mark_output_file {
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_File));
-}
-
-mark_load_handler_data {
- mark:
-  LoadHandlerData *d = (LoadHandlerData *)p;
-    
-  gcMARK(d->config);
-  gcMARK(d->port);
-  gcMARK(d->p);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
-}
-
-mark_load_data {
- mark:
-  LoadData *d = (LoadData *)p;
-  
-  gcMARK(d->filename);
-  gcMARK(d->config);
-  gcMARK(d->load_dir);
-  gcMARK(d->old_load_dir);
-
- size:
-  gcBYTES_TO_WORDS(sizeof(LoadData));
-}
-
-mark_pipe {
- mark:
-  Scheme_Pipe *pp = (Scheme_Pipe *)p;
-    
-  gcMARK(pp->buf);
-#ifdef MZ_REAL_THREADS
-  gcMARK(pp->wait_sem);
-#endif
-
- size:
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
 #ifdef USE_FD_PORTS
@@ -1127,6 +1120,19 @@ END port;
 
 START network;
 
+mark_listener {
+ mark:
+  listener_t *l = (listener_t *)p;
+
+  gcMARK(l->mref);
+#ifdef USE_MAC_TCP
+  gcMARK(l->datas);
+#endif
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(listener_t));
+}
+
 #ifdef USE_TCP
 mark_tcp {
  mark:
@@ -1154,6 +1160,8 @@ mark_write_data {
 }
 # endif
 #endif
+
+END network;
 
 /**********************************************************************/
 

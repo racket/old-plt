@@ -116,6 +116,7 @@ void scheme_init_vector(Scheme_Env *env);
 void scheme_init_string(Scheme_Env *env);
 void scheme_init_number(Scheme_Env *env);
 void scheme_init_numarith(Scheme_Env *env);
+void scheme_init_numcomp(Scheme_Env *env);
 void scheme_init_numstr(Scheme_Env *env);
 void scheme_init_eval(Scheme_Env *env);
 void scheme_init_promise(Scheme_Env *env);
@@ -853,8 +854,7 @@ int scheme_check_float(const char *where, float v, const char *dest);
 double scheme_get_val_as_double(const Scheme_Object *n);
 int scheme_minus_zero_p(double d);
 
-#if !defined(USE_IEEE_FP_PREDS) && !defined(USE_SCO_IEEE_PREDS)
-extern double scheme_infinity_val, scheme_minus_infinity_val;
+#if !defined(USE_IEEE_FP_PREDS) && !defined(USE_SCO_IEEE_PREDS) && !defined(USE_PALM_INF_TESTS)
 # define MZ_IS_POS_INFINITY(d) ((d) == scheme_infinity_val)
 # define MZ_IS_NEG_INFINITY(d) ((d) == scheme_minus_infinity_val)
 # ifdef NAN_EQUALS_ANYTHING
@@ -874,9 +874,18 @@ extern int scheme_both_nan(double a, double b);
 #  define MZ_IS_NEG_INFINITY(d) (fpclass(d) == FP_NINF)
 #  define MZ_IS_NAN(d) isnan(d)
 # else
-#  define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
-#  define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
-#  define MZ_IS_NAN(d) isnan(d)
+#  ifdef USE_PALM_INF_TESTS
+#   define MZ_IS_POS_INFINITY(d) scheme_is_pos_inf(d)
+#   define MZ_IS_NEG_INFINITY(d) scheme_is_neg_inf(d)
+#   define MZ_IS_NAN(d) scheme_is_nan(d)
+extern int scheme_is_pos_inf(double); 
+extern int scheme_is_neg_inf(double); 
+extern int scheme_is_nan(double); 
+#  else
+#   define MZ_IS_POS_INFINITY(d) (isinf(d) && (d > 0))
+#   define MZ_IS_NEG_INFINITY(d) (isinf(d) && (d < 0))
+#   define MZ_IS_NAN(d) isnan(d)
+#  endif
 # endif
 #endif
 

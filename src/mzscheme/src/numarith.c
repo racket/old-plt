@@ -25,13 +25,6 @@
 #include "nummacs.h"
 #include <math.h>
 
-static Scheme_Object *eq (int argc, Scheme_Object *argv[]);
-static Scheme_Object *lt (int argc, Scheme_Object *argv[]);
-static Scheme_Object *gt (int argc, Scheme_Object *argv[]);
-static Scheme_Object *lt_eq (int argc, Scheme_Object *argv[]);
-static Scheme_Object *gt_eq (int argc, Scheme_Object *argv[]);
-static Scheme_Object *sch_max (int argc, Scheme_Object *argv[]);
-static Scheme_Object *sch_min (int argc, Scheme_Object *argv[]);
 static Scheme_Object *plus (int argc, Scheme_Object *argv[]);
 static Scheme_Object *minus (int argc, Scheme_Object *argv[]);
 static Scheme_Object *mult (int argc, Scheme_Object *argv[]);
@@ -43,47 +36,6 @@ static Scheme_Object *rem_prim (int argc, Scheme_Object *argv[]);
 
 void scheme_init_numarith(Scheme_Env *env)
 {
-  scheme_add_global_constant("=", 
-			     scheme_make_folding_prim(eq,
-						      "=",
-						      1, -1, 1),
-			     env);
-  scheme_add_global_constant("<", 
-			     scheme_make_folding_prim(lt,
-						      "<",
-						      1, -1, 1),
-			     env);
-  scheme_add_global_constant(">", 
-			     scheme_make_folding_prim(gt,
-						      ">",
-						      1, -1, 1),
-			     env);
-  scheme_add_global_constant("<=", 
-			     scheme_make_folding_prim(lt_eq,
-						      "<=",
-						      1, -1, 1),
-			     env);
-  scheme_add_global_constant(">=", 
-			     scheme_make_folding_prim(gt_eq,
-						      ">=",
-						      1, -1, 1),
-			     env);
-  scheme_add_global_constant("zero?", 
-			     scheme_make_folding_prim(scheme_zero_p,
-						      "zero?",
-						      1, 1, 1),
-			     env);
-  scheme_add_global_constant("positive?", 
-			     scheme_make_folding_prim(scheme_positive_p,
-						      "positive?",
-						      1, 1, 1),
-			     env);
-  scheme_add_global_constant("negative?", 
-			     scheme_make_folding_prim(scheme_negative_p,
-						      "negative?",
-						      1, 1, 1),
-			     env);
-
   scheme_add_global_constant("add1", 
 			     scheme_make_folding_prim(scheme_add1,
 						      "add1",
@@ -93,16 +45,6 @@ void scheme_init_numarith(Scheme_Env *env)
 			     scheme_make_folding_prim(scheme_sub1,
 						      "sub1",
 						      1, 1, 1),
-			     env);
-  scheme_add_global_constant("max", 
-			     scheme_make_folding_prim(sch_max,
-						      "max",
-						      1, -1, 1),
-			     env);
-  scheme_add_global_constant("min", 
-			     scheme_make_folding_prim(sch_min,
-						      "min",
-						      1, -1, 1),
 			     env);
   scheme_add_global_constant("+", 
 			     scheme_make_folding_prim(plus,
@@ -144,161 +86,6 @@ void scheme_init_numarith(Scheme_Env *env)
 						      "modulo", 
 						      2, 2, 1),
 			     env);
-}
-
-GEN_NARY_COMP(eq, "=", scheme_bin_eq, SCHEME_NUMBERP, "number")
-GEN_NARY_COMP(lt, "<", scheme_bin_lt, SCHEME_REALP, REAL_NUMBER_STR)
-GEN_NARY_COMP(gt, ">", scheme_bin_gt, SCHEME_REALP, REAL_NUMBER_STR)
-GEN_NARY_COMP(lt_eq, "<=", scheme_bin_lt_eq, SCHEME_REALP, REAL_NUMBER_STR)
-GEN_NARY_COMP(gt_eq, ">=", scheme_bin_gt_eq, SCHEME_REALP, REAL_NUMBER_STR)
-
-#define EQUAL(x, y) (x == y)
-#define LESS_THAN(x, y) (x < y)
-#define GREATER_THAN(x, y) (x > y)
-#define LESS_OR_EQUAL(x, y) (x <= y)
-#define GREATER_OR_EQUAL(x, y) (x >= y)
-
-#ifdef NAN_LT_COMPARISON_WRONG
-# define fLESS_THAN(x, y) (!(x >= y) && (x == x) && (y == y))
-# define fLESS_OR_EQUAL(x, y) (!(x > y) && (x == x) && (y == y))
-#else
-# define fLESS_THAN LESS_THAN
-# define fLESS_OR_EQUAL LESS_OR_EQUAL
-#endif
-
-#define COMP_IZI_LT(a, b) scheme_bin_lt(IZI_REAL_PART(a), IZI_REAL_PART(b))
-#define COMP_IZI_GT(a, b) scheme_bin_gt(IZI_REAL_PART(a), IZI_REAL_PART(b))
-#define COMP_IZI_LT_EQ(a, b) scheme_bin_lt_eq(IZI_REAL_PART(a), IZI_REAL_PART(b))
-#define COMP_IZI_GT_EQ(a, b) scheme_bin_gt_eq(IZI_REAL_PART(a), IZI_REAL_PART(b))
-
-#define GEN_IDENT_FOR_IZI GEN_IDENT
-
-GEN_BIN_COMP(scheme_bin_eq, "=", EQUAL, EQUAL, scheme_bignum_eq, scheme_rational_eq, scheme_complex_eq, 0, 0, scheme_inexact_p, scheme_inexact_p, GEN_IDENT, GEN_IDENT, "number")
-GEN_BIN_COMP(scheme_bin_lt, "<", LESS_THAN, fLESS_THAN, scheme_bignum_lt, scheme_rational_lt, COMP_IZI_LT, 0, 1, scheme_positive_p, scheme_negative_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
-GEN_BIN_COMP(scheme_bin_gt, ">", GREATER_THAN, GREATER_THAN, scheme_bignum_gt, scheme_rational_gt, COMP_IZI_GT, 1, 0, scheme_negative_p, scheme_positive_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
-GEN_BIN_COMP(scheme_bin_lt_eq, "<=", LESS_OR_EQUAL, fLESS_OR_EQUAL, scheme_bignum_le, scheme_rational_le, COMP_IZI_LT_EQ, 0, 1, scheme_positive_p, scheme_negative_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
-GEN_BIN_COMP(scheme_bin_gt_eq, ">=", GREATER_OR_EQUAL, GREATER_OR_EQUAL, scheme_bignum_ge, scheme_rational_ge, COMP_IZI_GT_EQ, 1, 0, scheme_negative_p, scheme_positive_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
-
-Scheme_Object *
-scheme_zero_p (int argc, Scheme_Object *argv[])
-{
-  Scheme_Type t;
-  Scheme_Object *o = argv[0];
-
-  if (SCHEME_INTP(o))
-    return (o == zeroi) ? scheme_true : scheme_false;
-  t = _SCHEME_TYPE(o);
-#ifdef MZ_USE_SINGLE_FLOATS
-  if (t == scheme_float_type) {
-# ifdef NAN_EQUALS_ANYTHING
-    if (MZ_IS_NAN(SCHEME_FLT_VAL(o)))
-      return scheme_false;
-# endif
-    return (SCHEME_FLT_VAL(o) == 0.0f) ? scheme_true : scheme_false;
-  }
-#endif
-  if (t == scheme_double_type) {
-#ifdef NAN_EQUALS_ANYTHING
-    if (MZ_IS_NAN(SCHEME_DBL_VAL(o)))
-      return scheme_false;
-#endif
-    return (SCHEME_DBL_VAL(o) == 0.0) ? scheme_true : scheme_false;
-  }
-
-  if (t == scheme_complex_izi_type) {
-    Scheme_Object *r = IZI_REAL_PART(o);
-    return scheme_zero_p(1, &r);
-  }
-
-  if ((t >= scheme_bignum_type) && (t <= scheme_complex_type))
-    return scheme_false;
- 
-  NEED_NUMBER(zero?);
-
-  ESCAPED_BEFORE_HERE;
-}
-
-Scheme_Object *
-scheme_positive_p (int argc, Scheme_Object *argv[])
-{
-  Scheme_Type t;
-  Scheme_Object *o = argv[0];
-
-  if (SCHEME_INTP(o))
-    return (SCHEME_INT_VAL(o) > 0 ? scheme_true : scheme_false);
-  t = _SCHEME_TYPE(o);
-#ifdef MZ_USE_SINGLE_FLOATS
-  if (t == scheme_float_type) {
-    float d = SCHEME_FLT_VAL(o);
-# ifdef NAN_EQUALS_ANYTHING
-    if (MZ_IS_NAN(d))
-      return scheme_false;
-# endif
-    return (d > 0 ? scheme_true : scheme_false);
-  }
-#endif
-  if (t == scheme_double_type) {
-    double d = SCHEME_DBL_VAL(o);
-#ifdef NAN_EQUALS_ANYTHING
-    if (MZ_IS_NAN(d))
-      return scheme_false;
-#endif
-    return (d > 0 ? scheme_true : scheme_false);
-  }
-  if (t == scheme_bignum_type)
-    return (SCHEME_BIGPOS(o) ? scheme_true : scheme_false);
-  if (t == scheme_rational_type)
-    return (scheme_is_rational_positive(o)  ? scheme_true : scheme_false);
-  if (t == scheme_complex_izi_type) {
-    Scheme_Object *r = IZI_REAL_PART(o);
-    return scheme_positive_p(1, &r);
-  }
-
-
-  NEED_REAL(positive?);
-
-  ESCAPED_BEFORE_HERE;
-}
-
-Scheme_Object *
-scheme_negative_p (int argc, Scheme_Object *argv[])
-{
-  Scheme_Type t;
-  Scheme_Object *o = argv[0];
-
-  if (SCHEME_INTP(o))
-    return (SCHEME_INT_VAL(o) < 0 ? scheme_true : scheme_false);
-  t = _SCHEME_TYPE(o);
-#ifdef MZ_USE_SINGLE_FLOATS
-  if (t == scheme_float_type) {
-    float d = SCHEME_FLT_VAL(o);
-# if defined(NAN_EQUALS_ANYTHING) || defined(NAN_LT_COMPARISON_WRONG)
-    if (MZ_IS_NAN(d))
-      return scheme_false;
-# endif
-    return (d < 0 ? scheme_true : scheme_false);
-  }
-#endif
-  if (t == scheme_double_type) {
-    double d = SCHEME_DBL_VAL(o);
-# if defined(NAN_EQUALS_ANYTHING) || defined(NAN_LT_COMPARISON_WRONG)
-    if (MZ_IS_NAN(d))
-      return scheme_false;
-#endif
-    return (d < 0 ? scheme_true : scheme_false);
-  }
-  if (t == scheme_bignum_type)
-    return (!SCHEME_BIGPOS(o) ? scheme_true : scheme_false);
-  if (t == scheme_rational_type)
-    return (!scheme_is_rational_positive(o) ? scheme_true : scheme_false);
-  if (t == scheme_complex_izi_type) {
-    Scheme_Object *r = IZI_REAL_PART(o);
-    return scheme_negative_p(1, &r);
-  }
-
-  NEED_REAL(negative?);
-
-  ESCAPED_BEFORE_HERE;
 }
 
 Scheme_Object *
@@ -367,25 +154,16 @@ scheme_sub1 (int argc, Scheme_Object *argv[])
   ESCAPED_BEFORE_HERE;
 }
 
-GEN_BIN_PROT(bin_max);
-GEN_BIN_PROT(bin_min);
-
 #define F_ADD(x,y) scheme_make_double(x + y)
 #define F_SUBTRACT(x,y) scheme_make_double(x - y)
 #define F_MULTIPLY(x,y) scheme_make_double(x * y)
 #define DIVIDE(x,y) scheme_make_fixnum_rational(x, y)
 #define F_DIVIDE(x,y) scheme_make_double((double)x / (double)y)
-#define MAX(n1,n2) scheme_make_integer((n1>n2) ? n1 : n2)
-#define MIN(n1,n2) scheme_make_integer((n1<n2) ? n1 : n2)
-#define F_MAX(n1,n2) scheme_make_double((n1>n2) ? n1 : n2)
-#define F_MIN(n1,n2) scheme_make_double((n1<n2) ? n1 : n2)
 
 #define FS_ADD(x,y) scheme_make_float(x + y)
 #define FS_SUBTRACT(x,y) scheme_make_float(x - y)
 #define FS_MULTIPLY(x,y) scheme_make_float(x * y)
 #define FS_DIVIDE(x,y) scheme_make_float((float)x / (float)y)
-#define FS_MAX(n1,n2) scheme_make_float((n1>n2) ? n1 : n2)
-#define FS_MIN(n1,n2) scheme_make_float((n1<n2) ? n1 : n2)
 
 static Scheme_Object *ADD(long a, long b)
 {
@@ -447,19 +225,11 @@ static Scheme_Object *MULTIPLY(long a, long b)
   }
 }
 
-#define MAX_IZI(a, b) bin_max(IZI_REAL_PART(a), IZI_REAL_PART(b))
-#define MIN_IZI(a, b) bin_min(IZI_REAL_PART(a), IZI_REAL_PART(b))
-
 GEN_BIN_OP(scheme_bin_plus, "+", ADD, F_ADD, FS_ADD, scheme_bignum_add, scheme_rational_add, scheme_complex_add, GEN_RETURN_N2, GEN_RETURN_N1, NO_NAN_CHECK, NO_NAN_CHECK)
 GEN_BIN_OP(scheme_bin_minus, "-", SUBTRACT, F_SUBTRACT, FS_SUBTRACT, scheme_bignum_subtract, scheme_rational_subtract, scheme_complex_subtract, GEN_SINGLE_SUBTRACT_N2, GEN_RETURN_N1, NO_NAN_CHECK, NO_NAN_CHECK)
 GEN_BIN_OP(scheme_bin_mult, "*", MULTIPLY, F_MULTIPLY, FS_MULTIPLY, scheme_bignum_multiply, scheme_rational_multiply, scheme_complex_multiply, GEN_RETURN_0, GEN_RETURN_0, NO_NAN_CHECK, NO_NAN_CHECK)
 GEN_BIN_DIV_OP(scheme_bin_div, "/", DIVIDE, F_DIVIDE, FS_DIVIDE, scheme_make_rational, scheme_rational_divide, scheme_complex_divide)
 
-static GEN_BIN_OP(bin_max, "max", MAX, F_MAX, FS_MAX, scheme_bignum_max, scheme_rational_max, MAX_IZI, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
-static GEN_BIN_OP(bin_min, "min", MIN, F_MIN, FS_MIN, scheme_bignum_min, scheme_rational_min, MIN_IZI, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
-
-GEN_TWOARY_OP(sch_max, "max", bin_max, SCHEME_REALP, REAL_NUMBER_STR)
-GEN_TWOARY_OP(sch_min, "min", bin_min, SCHEME_REALP, REAL_NUMBER_STR)
 GEN_NARY_OP(plus, "+", scheme_bin_plus, 0, SCHEME_NUMBERP, "number")
 GEN_NARY_OP(mult, "*", scheme_bin_mult, 1, SCHEME_NUMBERP, "number")
 

@@ -2223,7 +2223,9 @@ case $OS in
     EXTRALIBS="$LIBS gmzwin.exp"
     ;;
   BeOS)
-    if test "${enable_sgc_debug}" = "no" ; then
+    if test "${enable_sgc_debug}" = "yes" ; then
+      dummyvar=""
+    else
       enable_sgc=yes
     fi
     ;;
@@ -2261,12 +2263,12 @@ cross_compiling=$ac_cv_prog_cxx_cross
 
  msg="whether new and new[] are different"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2265: checking $msg" >&5
+echo "configure:2267: checking $msg" >&5
   if test "$cross_compiling" = yes; then
     { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
 else
   cat > conftest.$ac_ext <<EOF
-#line 2270 "configure"
+#line 2272 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2279,7 +2281,7 @@ extern "C" void exit(int);
     return (new C) == (new C[10]);       
    }
 EOF
-if { (eval echo configure:2283: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2285: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest${ac_exeext} && (./conftest; exit) 2>/dev/null
 then
   different=yes
 else
@@ -2300,16 +2302,16 @@ fi
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
     echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
-echo "configure:2304: checking whether need to use -fpermissive" >&5
+echo "configure:2306: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2306 "configure"
+#line 2308 "configure"
 #include "confdefs.h"
 #include "X11/Intrinsic.h"
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2313: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2315: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   addperm=no
 else
@@ -2372,7 +2374,8 @@ makefiles="Makefile
            mzscheme/Makefile
              mzscheme/src/Makefile mzscheme/dynsrc/Makefile
              mzscheme/gc/Makefile mzscheme/sgc/Makefile
-             mzscheme/gc2/Makefile mzscheme/guile/Makefile"
+             mzscheme/gc2/Makefile mzscheme/guile/Makefile
+             mzscheme/palm/Makefile"
 
 if test "${enable_mred}" = "yes" ; then
   mk_needed_dir wxxt

@@ -80,6 +80,10 @@ static Scheme_Object *sch_default_write_handler(int argc, Scheme_Object *argv[])
 static Scheme_Object *sch_default_print_handler(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_default_global_port_print_handler(int argc, Scheme_Object *argv[]);
 
+#ifdef MZ_PRECISE_GC
+static void register_traversers(void);
+#endif
+
 static Scheme_Object *any_symbol, *any_one_symbol;
 static Scheme_Object *cr_symbol, *lf_symbol, *crlf_symbol;
 
@@ -98,6 +102,10 @@ void
 scheme_init_port_fun(Scheme_Env *env)
 {
   if (scheme_starting_up) {    
+#ifdef MZ_PRECISE_GC
+    register_traversers();
+#endif
+
     REGISTER_SO(default_read_handler);
     REGISTER_SO(default_display_handler);
     REGISTER_SO(default_write_handler);
@@ -2188,3 +2196,28 @@ flush_output(int argc, Scheme_Object *argv[])
 
   return (scheme_void);
 }
+
+
+/*========================================================================*/
+/*                       precise GC traversers                            */
+/*========================================================================*/
+
+#ifdef MZ_PRECISE_GC
+
+START_XFORM_SKIP;
+
+#define MARKS_FOR_PORTFUN_C
+#include "mzmark.c"
+
+static void register_traversers(void)
+{
+  GC_REG_TRAV(scheme_rt_breakable, mark_breakable);  
+  GC_REG_TRAV(scheme_rt_indexed_string, mark_indexed_string);
+  GC_REG_TRAV(scheme_rt_load_handler_data, mark_load_handler_data);
+  GC_REG_TRAV(scheme_rt_load_data, mark_load_data);
+  GC_REG_TRAV(scheme_rt_pipe, mark_pipe);
+}
+
+END_XFORM_SKIP;
+
+#endif

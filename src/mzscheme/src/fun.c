@@ -2361,7 +2361,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
   DateTimeRec tester;
 #else
 # ifdef USE_PALMTIME
-# define CHECK_TIME_T ULong
+# define CHECK_TIME_T UInt32
   DateTimeType localTime;
 # else
 #  define CHECK_TIME_T time_t

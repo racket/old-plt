@@ -2178,7 +2178,7 @@ int mark_super_init_data_FIXUP(void *p) {
 
 /**********************************************************************/
 
-#ifdef MARKS_FOR_PORT_C
+#ifdef MARKS_FOR_PORTFUN_C
 
 int mark_breakable_SIZE(void *p) {
   return
@@ -2208,35 +2208,123 @@ int mark_breakable_FIXUP(void *p) {
 }
 
 
-int mark_listener_SIZE(void *p) {
+int mark_load_handler_data_SIZE(void *p) {
   return
-  gcBYTES_TO_WORDS(sizeof(listener_t));
+  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
 }
 
-int mark_listener_MARK(void *p) {
-  listener_t *l = (listener_t *)p;
+int mark_load_handler_data_MARK(void *p) {
+  LoadHandlerData *d = (LoadHandlerData *)p;
+    
+  gcMARK(d->config);
+  gcMARK(d->port);
+  gcMARK(d->p);
 
-  gcMARK(l->mref);
-#ifdef USE_MAC_TCP
-  gcMARK(l->datas);
+  return
+  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
+}
+
+int mark_load_handler_data_FIXUP(void *p) {
+  LoadHandlerData *d = (LoadHandlerData *)p;
+    
+  gcFIXUP(d->config);
+  gcFIXUP(d->port);
+  gcFIXUP(d->p);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
+}
+
+
+int mark_load_data_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(LoadData));
+}
+
+int mark_load_data_MARK(void *p) {
+  LoadData *d = (LoadData *)p;
+  
+  gcMARK(d->filename);
+  gcMARK(d->config);
+  gcMARK(d->load_dir);
+  gcMARK(d->old_load_dir);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(LoadData));
+}
+
+int mark_load_data_FIXUP(void *p) {
+  LoadData *d = (LoadData *)p;
+  
+  gcFIXUP(d->filename);
+  gcFIXUP(d->config);
+  gcFIXUP(d->load_dir);
+  gcFIXUP(d->old_load_dir);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(LoadData));
+}
+
+
+int mark_indexed_string_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
+}
+
+int mark_indexed_string_MARK(void *p) {
+  Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
+    
+  gcMARK(is->string);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
+}
+
+int mark_indexed_string_FIXUP(void *p) {
+  Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
+    
+  gcFIXUP(is->string);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
+}
+
+
+int mark_pipe_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
+}
+
+int mark_pipe_MARK(void *p) {
+  Scheme_Pipe *pp = (Scheme_Pipe *)p;
+    
+  gcMARK(pp->buf);
+#ifdef MZ_REAL_THREADS
+  gcMARK(pp->wait_sem);
 #endif
 
   return
-  gcBYTES_TO_WORDS(sizeof(listener_t));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
-int mark_listener_FIXUP(void *p) {
-  listener_t *l = (listener_t *)p;
-
-  gcFIXUP(l->mref);
-#ifdef USE_MAC_TCP
-  gcFIXUP(l->datas);
+int mark_pipe_FIXUP(void *p) {
+  Scheme_Pipe *pp = (Scheme_Pipe *)p;
+    
+  gcFIXUP(pp->buf);
+#ifdef MZ_REAL_THREADS
+  gcFIXUP(pp->wait_sem);
 #endif
 
   return
-  gcBYTES_TO_WORDS(sizeof(listener_t));
+  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
+
+#endif  /* PORTFUN */
+
+/**********************************************************************/
+
+#ifdef MARKS_FOR_PORT_C
 
 #ifdef WINDOWS_PROCESSES
 int mark_thread_memory_SIZE(void *p) {
@@ -2336,30 +2424,6 @@ int mark_tcp_select_info_FIXUP(void *p) {
 
 #endif
 
-int mark_indexed_string_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
-}
-
-int mark_indexed_string_MARK(void *p) {
-  Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
-    
-  gcMARK(is->string);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
-}
-
-int mark_indexed_string_FIXUP(void *p) {
-  Scheme_Indexed_String *is = (Scheme_Indexed_String *)p;
-    
-  gcFIXUP(is->string);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Indexed_String));
-}
-
-
 int mark_output_file_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_File));
@@ -2381,94 +2445,6 @@ int mark_output_file_FIXUP(void *p) {
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_File));
-}
-
-
-int mark_load_handler_data_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
-}
-
-int mark_load_handler_data_MARK(void *p) {
-  LoadHandlerData *d = (LoadHandlerData *)p;
-    
-  gcMARK(d->config);
-  gcMARK(d->port);
-  gcMARK(d->p);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
-}
-
-int mark_load_handler_data_FIXUP(void *p) {
-  LoadHandlerData *d = (LoadHandlerData *)p;
-    
-  gcFIXUP(d->config);
-  gcFIXUP(d->port);
-  gcFIXUP(d->p);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadHandlerData));
-}
-
-
-int mark_load_data_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadData));
-}
-
-int mark_load_data_MARK(void *p) {
-  LoadData *d = (LoadData *)p;
-  
-  gcMARK(d->filename);
-  gcMARK(d->config);
-  gcMARK(d->load_dir);
-  gcMARK(d->old_load_dir);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadData));
-}
-
-int mark_load_data_FIXUP(void *p) {
-  LoadData *d = (LoadData *)p;
-  
-  gcFIXUP(d->filename);
-  gcFIXUP(d->config);
-  gcFIXUP(d->load_dir);
-  gcFIXUP(d->old_load_dir);
-
-  return
-  gcBYTES_TO_WORDS(sizeof(LoadData));
-}
-
-
-int mark_pipe_SIZE(void *p) {
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
-}
-
-int mark_pipe_MARK(void *p) {
-  Scheme_Pipe *pp = (Scheme_Pipe *)p;
-    
-  gcMARK(pp->buf);
-#ifdef MZ_REAL_THREADS
-  gcMARK(pp->wait_sem);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
-}
-
-int mark_pipe_FIXUP(void *p) {
-  Scheme_Pipe *pp = (Scheme_Pipe *)p;
-    
-  gcFIXUP(pp->buf);
-#ifdef MZ_REAL_THREADS
-  gcFIXUP(pp->wait_sem);
-#endif
-
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
 
@@ -2576,6 +2552,36 @@ int mark_oskit_console_input_FIXUP(void *p) {
 
 #ifdef MARKS_FOR_NETWORK_C
 
+int mark_listener_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(listener_t));
+}
+
+int mark_listener_MARK(void *p) {
+  listener_t *l = (listener_t *)p;
+
+  gcMARK(l->mref);
+#ifdef USE_MAC_TCP
+  gcMARK(l->datas);
+#endif
+
+  return
+  gcBYTES_TO_WORDS(sizeof(listener_t));
+}
+
+int mark_listener_FIXUP(void *p) {
+  listener_t *l = (listener_t *)p;
+
+  gcFIXUP(l->mref);
+#ifdef USE_MAC_TCP
+  gcFIXUP(l->datas);
+#endif
+
+  return
+  gcBYTES_TO_WORDS(sizeof(listener_t));
+}
+
+
 #ifdef USE_TCP
 int mark_tcp_SIZE(void *p) {
   return
@@ -2636,9 +2642,11 @@ int mark_write_data_FIXUP(void *p) {
 # endif
 #endif
 
+#endif  /* NETWORK */
+
 /**********************************************************************/
 
-START process;
+#ifdef MARKS_FOR_PROCESS_C
 
 int mark_config_val_SIZE(void *p) {
   return

@@ -2018,6 +2018,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_write_data, mark_write_data);
 # endif
 #endif
+  GC_REG_TRAV(scheme_listener_type, mark_listener);  
 }
 
 END_XFORM_SKIP;

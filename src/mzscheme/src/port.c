@@ -5238,8 +5238,6 @@ START_XFORM_SKIP;
 
 static void register_traversers(void)
 {
-  GC_REG_TRAV(scheme_rt_breakable, mark_breakable);  
-  GC_REG_TRAV(scheme_listener_type, mark_listener);  
 #ifdef WINDOWS_PROCESSES
   GC_REG_TRAV(scheme_rt_thread_memory, mark_thread_memory);
 #endif
@@ -5248,17 +5246,7 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_tested_input_file, mark_tested_input_file);
   GC_REG_TRAV(scheme_rt_tcp_select_info, mark_tcp_select_info);
 #endif
-  GC_REG_TRAV(scheme_rt_indexed_string, mark_indexed_string);
   GC_REG_TRAV(scheme_rt_output_file, mark_output_file);
-  GC_REG_TRAV(scheme_rt_load_handler_data, mark_load_handler_data);
-  GC_REG_TRAV(scheme_rt_load_data, mark_load_data);
-  GC_REG_TRAV(scheme_rt_pipe, mark_pipe);
-#ifdef USE_TCP
-  GC_REG_TRAV(scheme_rt_tcp, mark_tcp);
-# ifdef USE_MAC_TCP
-  GC_REG_TRAV(scheme_rt_write_data, mark_write_data);
-# endif
-#endif
 
 #ifdef USE_FD_PORTS
   GC_REG_TRAV(scheme_rt_input_fd, mark_input_fd);

@@ -1390,7 +1390,7 @@
 			(if (#%eq? x old)
 			  (if (#%null? x)
 			    x
-			    (#%list 'quote x))
+			    (#%list '#%quote x))
 			  x))])
 		(normal
 		  (let qq ([x form][level 0])
@@ -1406,10 +1406,10 @@
 				  (#%list '#%cons 
 				    (normal first old-first)
 				    (normal second old-second)))))])
-		      (cond
+		      (#%cond
 			[(#%pair? x)
 			  (let ([first (#%car x)])
-			    (cond
+			    (#%cond
 			      [(#%eq? first 'unquote)
 				(let ([rest (#%cdr x)])
 				  (if (#%or (#%not (#%pair? rest))
@@ -1451,7 +1451,7 @@
 					  x
 					  (#%list '#%cons 
 					    (#%list '#%cons 
-					      (#%list 'quote 'unquote-splicing)
+					      (#%list '#%quote 'unquote-splicing)
 					      (normal restx rest))
 					    (normal l old-l)))))))]
 			      [else
@@ -1462,6 +1462,12 @@
 			    (if (#%eq? l l2)
 			      x
 			      (#%list '#%list->vector l2)))]
+			[(#%box? x)
+			  (let* ([v (#%unbox x)]
+				  [qv (qq v level)])
+			    (if (#%eq? v qv)
+			      x
+			      (#%list '#%box qv)))]
 			[else x])))
 		  form)))
 	    (cdr (sexp->raw expr)))

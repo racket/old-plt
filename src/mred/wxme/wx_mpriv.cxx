@@ -178,17 +178,18 @@ void wxMediaEdit::_SetPosition(Bool setflash, int bias, long start, long end,
       scrollStart = start;
       scrollEnd = end;
     }
-  
+    
+    caretBlinked = FALSE;
     if (ScrollToPosition(scrollStart, posateol, TRUE, scrollEnd, bias))
       needRefresh = FALSE;
   }
 
   if (needRefresh) {
     if (hiliteOn && admin && (admin->standard > 0) && !delayRefresh 
-	&& oldstart == oldend && start == end && (caretOn || caretBlinked)
+	&& oldstart == oldend && start == end && caretOn
 	&& caretLocationX >= 0 && !flash) {
       /* Try to take a shortcut */
-      if (caretBlinked || CaretOff()) {
+      if (CaretOff()) {
 	/* Shortcut works */
 	caretLocationX = -1;
 	caretBlinked = FALSE;

@@ -288,6 +288,7 @@ void wxArea::OnSiblingDSize(int dW, int dH, int dX, int dY)
 }
 
 //-----------------------------------------------------------------------------
+// 
 void wxArea::OnAreaDSize(int dW, int dH, int dX, int dY)
 {
 	if (dW || dH || dX || dY)

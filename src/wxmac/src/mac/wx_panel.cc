@@ -293,8 +293,6 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
 	Bool widthIsChanged = (width != cWindowWidth);
 	Bool heightIsChanged = (height != cWindowHeight);
 
-    wxWindow::DoSetSize(x,y,width,height);
-
 	if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
 	{
                 SetCurrentMacDCNoMargin();
@@ -302,6 +300,8 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
                 ::MoveControl(cEmbeddingControl,SetOriginX,SetOriginY);
                 ::SizeControl(cEmbeddingControl,width,height);
 	}
+
+    wxWindow::DoSetSize(x,y,width,height);
 
 }
 

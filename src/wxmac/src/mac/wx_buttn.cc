@@ -148,6 +148,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
 	cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
 			drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
 	CheckMemOK(cMacControl);
+	
 #endif        
 
         if (style & 1) OnSetDefault(TRUE);
@@ -444,7 +445,6 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 
 void wxButton::Paint(void)
 {
-	fprintf(stderr,"wxButton::Paint called\n");
 	if (cHidden) return;
 	SetCurrentDC();
 	Rect r = { 0, 0, cWindowHeight, cWindowWidth };

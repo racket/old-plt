@@ -902,16 +902,6 @@ void wxApp::doMacInGrow(WindowPtr window)
 			if (newContentHeight == 0) newContentHeight = contentArea->Height(); // no change
 			contentArea->SetSize(newContentWidth, newContentHeight);
 
-			// TEMPORARY
-			RgnHandle temp = NewRgn();
-			GetWindowRegion(window,kWindowUpdateRgn,temp);
-			Point testPt = {50,10};
-			fprintf(stderr,"end of doMacInGrow: ");
-			if (PtInRgn(testPt,temp)) {
-				fprintf(stderr,"(10,50) is in the update region.\n");
-			} else {
-				fprintf(stderr,"(10,50) is not in the update region.\n");
-			} 
 		}
 	}
 }

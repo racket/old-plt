@@ -88,6 +88,7 @@
 	    (error 'mred:invoke "mred:make-invokable-unit didn't return a unit/sig, returned: ~a~n"
 		   unit/sig))
 	  (mred:change-splash-message "Invoking...")
+	  (mred:no-more-splash-messages)
 	  (invoke-open-unit/sig unit/sig))
 	(mred:user-setup)))))
 

@@ -41,33 +41,28 @@
 (define mred:default-splash-title "MrEd")
 
 (current-library-collection-paths
- (list* (build-path plt:home-directory "collects")
-	mred:system-source-directory
+ (list* (build-path plt:home-directory "mred" "collects")
 	(current-library-collection-paths)))
 
-(let ([libdir
-       (let ([try-dir (build-path mred:system-source-directory 'up "collects")])
-	 (if (directory-exists? try-dir)
-	     try-dir
-	     (let ([try-dir (build-path mred:system-source-directory 'up "mzscheme" "collects")])
-	       (if (directory-exists? try-dir)
-		   try-dir
-		   (let ([try-dir (build-path mred:system-source-directory 'up 'up "mzscheme" "collects")])
-		     (if (directory-exists? try-dir)
-			 try-dir
-			 (let* ([v (getenv "PLTHOME")]
-				[dir (if v 
-					 v 
-					 (cond
-					  [(eq? wx:platform 'unix)
-					   "/usr/local/lib/plt"]
-					  [(eq? wx:platform 'windows)
-					   "c:\\plt"]
-					  [else ; macintosh (there is no good default here)
-					   mred:system-source-directory]))])
-			   (build-path dir "mzscheme" "collects"))))))))])
-
-  (unless (directory-exists? libdir)
+(let* ([libdir
+	(ormap (lambda (dir)
+		 (and (directory-exists? dir)
+		      dir))
+	       (list
+		;(build-path mred:system-source-directory 'up "collects")
+		(build-path mred:system-source-directory 'up "mzscheme" "collects")
+		(build-path mred:system-source-directory 'up 'up "mzscheme" "collects")
+		(build-path (let ([v (getenv "PLTHOME")])
+			      (or v 
+				  (cond
+				   [(eq? wx:platform 'unix)
+				    "/usr/local/lib/plt"]
+				   [(eq? wx:platform 'windows)
+				    "c:\\plt"]
+				   [else ; macintosh (there is no good default here)
+				    mred:system-source-directory])))
+			    "mzscheme" "collects")))])
+  (unless libdir
     (wx:message-box "Cannot find the MzScheme libraries." "Error")
     (error 'mrsystem "cannot find the MzScheme libraries"))
   (current-library-collection-paths
@@ -133,7 +128,6 @@
 	 (mred:invoke)
 	 (when (getenv "MREDCOMPILE")
 	   (wx:exit))
-	 (mred:no-more-splash-messages)
 	 (mred:build-spidey-unit)
 	 (when mred:non-unit-startup?
 	   (set! mred:console (mred:startup)))

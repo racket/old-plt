@@ -237,7 +237,7 @@
 			 (let ([s (get-output-string o)])
 			   (printf "**~a**~n" s)
 			   (unless (char=? #\5 (string-ref s 2))
-				   (error 'print))))
+				   (error "print:" s))))
 		      exn:user?
 		      (list "bad setting" zero-arg-proc two-arg-proc))
 

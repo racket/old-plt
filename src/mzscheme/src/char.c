@@ -23,6 +23,9 @@
 
 #include "schpriv.h"
 #include <ctype.h>
+#ifndef DONT_USE_LOCALE
+# include <locale.h>
+#endif
 
 /* globals */
 
@@ -82,74 +85,74 @@ void scheme_init_char (Scheme_Env *env)
 						      2, -1, 1), 
 			     env);
   scheme_add_global_constant("char<?", 
-			     scheme_make_folding_prim(char_lt, 
-						      "char<?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_lt, 
+								"char<?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char>?", 
-			     scheme_make_folding_prim(char_gt, 
-						      "char>?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_gt, 
+								"char>?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char<=?", 
-			     scheme_make_folding_prim(char_lt_eq, 
-						      "char<=?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_lt_eq, 
+								"char<=?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char>=?", 
-			     scheme_make_folding_prim(char_gt_eq, 
-						      "char>=?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_gt_eq, 
+								"char>=?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci=?", 
-			     scheme_make_folding_prim(char_eq_ci, 
-						      "char-ci=?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_eq_ci, 
+								"char-ci=?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci<?", 
-			     scheme_make_folding_prim(char_lt_ci, 
-						      "char-ci<?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_lt_ci, 
+								"char-ci<?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci>?", 
-			     scheme_make_folding_prim(char_gt_ci, 
-						      "char-ci>?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_gt_ci, 
+								"char-ci>?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci<=?", 
-			     scheme_make_folding_prim(char_lt_eq_ci, 
-						      "char-ci<=?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_lt_eq_ci, 
+								"char-ci<=?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-ci>=?", 
-			     scheme_make_folding_prim(char_gt_eq_ci, 
-						      "char-ci>=?", 
-						      2, -1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_gt_eq_ci, 
+								"char-ci>=?", 
+								2, -1, 1), 
 			     env);
   scheme_add_global_constant("char-alphabetic?", 
-			     scheme_make_folding_prim(char_alphabetic, 
-						      "char-alphabetic?", 
-						      1, 1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_alphabetic, 
+								"char-alphabetic?", 
+								1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-numeric?", 
-			     scheme_make_folding_prim(char_numeric, 
-						      "char-numeric?", 
-						      1, 1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_numeric, 
+								"char-numeric?", 
+								1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-whitespace?", 
-			     scheme_make_folding_prim(char_whitespace, 
-						      "char-whitespace?", 
-						      1, 1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_whitespace, 
+								"char-whitespace?", 
+								1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-upper-case?", 
-			     scheme_make_folding_prim(char_upper_case, 
-						      "char-upper-case?", 
-						      1, 1, 1),
+			     scheme_make_nonlocale_folding_prim(char_upper_case, 
+								"char-upper-case?", 
+								1, 1, 1),
 			     env);
   scheme_add_global_constant("char-lower-case?", 
-			     scheme_make_folding_prim(char_lower_case, 
-						      "char-lower-case?", 
-						      1, 1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_lower_case, 
+								"char-lower-case?", 
+								1, 1, 1), 
 			     env);
   scheme_add_global_constant("char->integer", 
 			     scheme_make_folding_prim(char_to_integer, 
@@ -162,24 +165,24 @@ void scheme_init_char (Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char->latin-1-integer", 
-			     scheme_make_folding_prim(char_to_latin1_integer, 
+			     scheme_make_prim_w_arity(char_to_latin1_integer, 
 						      "char->latin-1-integer", 
-						      1, 1, 1),
+						      1, 1),
 			     env);
   scheme_add_global_constant("latin-1-integer->char",
-			     scheme_make_folding_prim(latin1_integer_to_char, 
+			     scheme_make_prim_w_arity(latin1_integer_to_char, 
 						      "latin-1-integer->char",
-						      1, 1, 1), 
+						      1, 1), 
 			     env);
   scheme_add_global_constant("char-upcase", 
-			     scheme_make_folding_prim(char_upcase, 
-						      "char-upcase", 
-						      1, 1, 1), 
+			     scheme_make_nonlocale_folding_prim(char_upcase, 
+								"char-upcase", 
+								1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-downcase", 
-			     scheme_make_folding_prim(char_downcase, 
-						      "char-downcase", 
-						      1, 1, 1),
+			     scheme_make_nonlocale_folding_prim(char_downcase, 
+								"char-downcase", 
+								1, 1, 1),
 			     env);
 }
 
@@ -206,9 +209,16 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
     scheme_wrong_type(name, "character", 0, argc, argv);
 }
 
+#ifdef DONT_USE_LOCALE
+# define mzCAN_LOCALE 0
+#else
+# define mzCAN_LOCALE 1
+#endif
+
 #define GEN_CHAR_COMP(func_name, scheme_name, comp, uc)          \
  static Scheme_Object *func_name(int argc, Scheme_Object *argv[])     \
  { int c, prev, i; Scheme_Object *rv = scheme_true; \
+   int loc = scheme_locale_on; \
    if (!SCHEME_CHARP(argv[0]))      \
      scheme_wrong_type(#scheme_name, "character", 0, argc, argv);     \
    prev = ((unsigned char)SCHEME_CHAR_VAL(argv[0]));     \
@@ -218,7 +228,10 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
        scheme_wrong_type(#scheme_name, "character", i, argc, argv);     \
      c = ((unsigned char)SCHEME_CHAR_VAL(argv[i]));     \
      if (uc) { c = toupper(c); }     \
-     if (!(prev comp c)) rv = scheme_false;     \
+     if (mzCAN_LOCALE && loc) { \
+        unsigned char a[2], b[2]; a[1] = 0; b[1] = 0; a[0] = prev; b[0] = c; \
+        if (strcoll(a, b) comp 0) rv = scheme_false; \
+     } else if (!(prev comp c)) rv = scheme_false;   \
      prev = c;     \
    }     \
    return rv;     \
@@ -245,6 +258,9 @@ char_alphabetic (int argc, Scheme_Object *argv[])
 
   c = SCHEME_CHAR_VAL(argv[0]);
 
+  /* ensure non-locale consistency above 127: */
+  if (!scheme_locale_on && (c > 127)) return scheme_false;
+
   return isalpha(c) ? scheme_true : scheme_false;
 }
 
@@ -256,6 +272,9 @@ char_numeric (int argc, Scheme_Object *argv[])
   CHAR_UN_CHECK("char-numeric?");
 
   c = SCHEME_CHAR_VAL(argv[0]);
+
+  /* ensure non-locale consistency above 127: */
+  if (!scheme_locale_on && (c > 127)) return scheme_false;
 
   return isdigit(c) ? scheme_true : scheme_false;
 }
@@ -269,6 +288,9 @@ char_whitespace (int argc, Scheme_Object *argv[])
 
   c = SCHEME_CHAR_VAL(argv[0]);
 
+  /* ensure non-locale consistency above 127: */
+  if (!scheme_locale_on && (c > 127)) return scheme_false;
+
   return isspace(c) ? scheme_true : scheme_false;
 }
 
@@ -281,6 +303,9 @@ char_upper_case (int argc, Scheme_Object *argv[])
 
   c = SCHEME_CHAR_VAL(argv[0]);
 
+  /* ensure non-locale consistency above 127: */
+  if (!scheme_locale_on && (c > 127)) return scheme_false;
+
   return isupper(c) ? scheme_true : scheme_false;
 }
 
@@ -292,6 +317,9 @@ char_lower_case (int argc, Scheme_Object *argv[])
   CHAR_UN_CHECK("char-lower-case?");
 
   c = SCHEME_CHAR_VAL(argv[0]);
+
+  /* ensure non-locale consistency above 127: */
+  if (!scheme_locale_on && (c > 127)) return scheme_false;
 
   return islower(c) ? scheme_true : scheme_false;
 }
@@ -415,6 +443,9 @@ char_upcase (int argc, Scheme_Object *argv[])
 
   c = SCHEME_CHAR_VAL(argv[0]);
 
+  /* ensure non-locale consistency above 127: */
+  if (!scheme_locale_on && (c > 127)) return argv[0];
+
   return _scheme_make_char(toupper(c));
 }
 
@@ -426,6 +457,9 @@ char_downcase (int argc, Scheme_Object *argv[])
   CHAR_UN_CHECK("char-downcase");
 
   c = SCHEME_CHAR_VAL(argv[0]);
+
+  /* ensure non-locale consistency above 127: */
+  if (!scheme_locale_on && (c > 127)) return argv[0];
 
   return _scheme_make_char(tolower(c));
 }

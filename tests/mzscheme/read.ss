@@ -16,7 +16,7 @@
   (lambda (x) x))
 
 ; Make sure {whitespace} == {delimiter}
-(let ([with-censor (load-relative "censor.ss")])
+(let ([with-censor (lambda (f) (f))]) ; (load-relative "censor.ss")])
   (with-censor
    (lambda ()
      (let loop ([n 0])

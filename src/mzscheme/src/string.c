@@ -33,6 +33,7 @@
 #endif
 
 /* globals */
+int scheme_locale_on;
 
 /* locals */
 static Scheme_Object *make_string (int argc, Scheme_Object *argv[]);
@@ -70,8 +71,8 @@ static Scheme_Object *system_library_subpath(int argc, Scheme_Object *argv[]);
 static Scheme_Object *cmdline_args(int argc, Scheme_Object *argv[]);
 static Scheme_Object *locale_enabled(int argc, Scheme_Object *argv[]);
 
-static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2);
-static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2);
+static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
+static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq);
 
 static Scheme_Object *sys_symbol;
 static Scheme_Object *platform_path;
@@ -81,8 +82,6 @@ static Scheme_Hash_Table *putenv_str_table;
 
 static char *embedding_banner;
 static Scheme_Object *vers_str, *banner_str;
-
-static int current_locale_on;
 
 void
 scheme_init_string (Scheme_Env *env)
@@ -574,7 +573,7 @@ string_set (int argc, Scheme_Object *argv[])
 
 /* comparisons */
 
-#define GEN_STRING_COMP(name, scheme_name, comp, op) \
+#define GEN_STRING_COMP(name, scheme_name, comp, op, eq) \
 static Scheme_Object * name (int argc, Scheme_Object *argv[]) \
 {  char *s, *prev; int i, sl, pl; int falz = 0;\
    if (!SCHEME_STRINGP(argv[0])) \
@@ -585,23 +584,23 @@ static Scheme_Object * name (int argc, Scheme_Object *argv[]) \
       scheme_wrong_type(scheme_name, "string", i, argc, argv); \
      s = SCHEME_STR_VAL(argv[i]); sl = SCHEME_STRTAG_VAL(argv[i]); \
      if (!falz) if (!(comp((unsigned char *)prev, pl, \
-                           (unsigned char *)s, sl) op 0)) falz = 1; \
+                           (unsigned char *)s, sl, eq) op 0)) falz = 1; \
      prev = s; pl = sl; \
   } \
   return falz ? scheme_false : scheme_true; \
 }
 
-GEN_STRING_COMP(string_eq, "string=?", mz_strcmp, ==)
-GEN_STRING_COMP(string_lt, "string<?", mz_strcmp, <)
-GEN_STRING_COMP(string_gt, "string>?", mz_strcmp, >)
-GEN_STRING_COMP(string_lt_eq, "string<=?", mz_strcmp, <=)
-GEN_STRING_COMP(string_gt_eq, "string>=?", mz_strcmp, >=)
+GEN_STRING_COMP(string_eq, "string=?", mz_strcmp, ==, 1)
+GEN_STRING_COMP(string_lt, "string<?", mz_strcmp, <, 0)
+GEN_STRING_COMP(string_gt, "string>?", mz_strcmp, >, 0)
+GEN_STRING_COMP(string_lt_eq, "string<=?", mz_strcmp, <=, 0)
+GEN_STRING_COMP(string_gt_eq, "string>=?", mz_strcmp, >=, 0)
 
-GEN_STRING_COMP(string_ci_eq, "string-ci=?", mz_strcmp_ci, ==)
-GEN_STRING_COMP(string_ci_lt, "string-ci<?", mz_strcmp_ci, <)
-GEN_STRING_COMP(string_ci_gt, "string-ci>?", mz_strcmp_ci, >)
-GEN_STRING_COMP(string_ci_lt_eq, "string-ci<=?", mz_strcmp_ci, <=)
-GEN_STRING_COMP(string_ci_gt_eq, "string-ci>=?", mz_strcmp_ci, >=)
+GEN_STRING_COMP(string_ci_eq, "string-ci=?", mz_strcmp_ci, ==, 1)
+GEN_STRING_COMP(string_ci_lt, "string-ci<?", mz_strcmp_ci, <, 0)
+GEN_STRING_COMP(string_ci_gt, "string-ci>?", mz_strcmp_ci, >, 0)
+GEN_STRING_COMP(string_ci_lt_eq, "string-ci<=?", mz_strcmp_ci, <=, 0)
+GEN_STRING_COMP(string_ci_gt_eq, "string-ci>=?", mz_strcmp_ci, >=, 0)
 
 void scheme_get_substring_indices(const char *name, Scheme_Object *str, 
 				  int argc, Scheme_Object **argv, 
@@ -839,20 +838,10 @@ static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[])
     return s;
 }
 
-static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2)
+static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq)
 {
-#ifdef USE_LOCALE_STRCMP
-  /* USE_LOCALE_STRCMP contributed by Boris Tobotras, tobotras@jet.msk.su. */
-  /* Caveat emptor. */
-  /* The problem with using strcoll is that MzScheme strings may
-     contain a null character. In that case, if the strings match up
-     to the first null character but differ afterwards, strcoll will
-     return the wrong result. (This is why we use mz_strcmp instead of
-     strcmp in the first place.) */
-  return strcoll(str1, str2);
-#else  
   int endres;
-
+  
   if (l1 > l2) {
     l1 = l2;
     endres = 1;
@@ -862,23 +851,54 @@ static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2)
     else
       endres = 0;
   }
+
+#ifndef DONT_USE_LOCALE
+  if (!eq && scheme_locale_on) {
+    /* Walk back through the strings looking for
+       nul characters. If we find one, compare
+       the part after the null character to update
+       endres, then continue. Unfortunately, we
+       do too much work if an earlier part of the
+       string (tested later) determines the result,
+       but hopefully nul characters are rare. */
+    int v;
+
+    while (l1--) {
+      if (!(str1[l1]) || !(str2[l1])) {
+	if (str1[l1])
+	  endres = 1;
+	else if (str2[l1])
+	  endres = -1;
+
+	v = strcoll(str1 + l1 + 1, str2 + l1 + 1);
+	if (v)
+	  endres = v;
+      }
+    }
+
+    v = strcoll(str1, str2);
+    if (v)
+      endres = v;
+
+    return endres;
+  }
+#endif
 
   while (l1--) {
     unsigned int a, b;
     
     a = *(str1++);
     b = *(str2++);
-
+    
     a = a - b;
     if (a)
       return a;
   }
 
   return endres;
-#endif
 }
 
-static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2)
+static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2, int eq)
 {
   int endres;
 
@@ -892,34 +912,37 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
       endres = 0;
   }
 
-#ifdef USE_LOCALE_STRCMP
+#ifndef DONT_USE_LOCALE
+  if (!eq && scheme_locale_on) {
+# define mzCASE_BUF 100
+    unsigned char *cstr1, *cstr2;
+    unsigned char buf1[mzCASE_BUF], buf2[mzCASE_BUF];
+    int i;
 
-  {
-# define USE_ALLOCA 1
-# if USE_ALLOCA
-#  define LALLOC alloca
-# else
-#  define LALLOC scheme_malloc_atomic
-# endif
-    unsigned char *cstr1 = LALLOC(l1 + 1);
-    unsigned char *cstr2 = LALLOC(l1 + 1);
-    int retCode, i;
+    if (l1 < mzCASE_BUF) {
+      cstr1 = buf1;
+      cstr2 = buf2;
+    } else {
+      cstr1 = scheme_malloc_atomic(l1 + 1);
+      cstr2 = scheme_malloc_atomic(l1 + 1);
+    }
 
-    strncpy(cstr1, str1, l1);
-    strncpy(cstr2, str2, l1);
+    memcpy(cstr1, str1, l1);
+    memcpy(cstr2, str2, l1);
     cstr1[l1] = cstr2[l1] = '\0';
 
     for (i = 0; i < l1; ++i) {
       cstr1[i] = toupper(cstr1[i]);
       cstr2[i] = toupper(cstr2[i]);
     }
-    retCode = strcoll(cstr1, cstr2);
-  
-    if (retCode)
-      return retCode;
-  }
 
-#else /* not USE_LOCALE_STRCMP */
+    i = mz_strcmp(cstr1, l1, cstr2, l1, 0);
+    if (i)
+      endres = i;
+
+    return endres;
+  }
+#endif
 
   while (l1--) {
     unsigned int a, b;
@@ -933,8 +956,6 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
     if (a)
       return a;
   }
-
-#endif /* USE_LOCALE_STRCMP */
 
   return endres;
 }
@@ -1458,11 +1479,11 @@ void scheme_reset_locale(void)
   v = scheme_get_param(scheme_config, MZCONFIG_LOCALE);
   on = SCHEME_TRUEP(v);
 
-  if (on != current_locale_on) {
+  if (on != scheme_locale_on) {
 #ifndef DONT_USE_LOCALE
     setlocale(LC_CTYPE, on ? "" : "C");
 #endif
-    current_locale_on = on;
+    scheme_locale_on = on;
   }
 }
 

@@ -1893,7 +1893,11 @@ Scheme_Object *scheme_copy_list(Scheme_Object *l);
 
 Scheme_Object *scheme_regexp_source(Scheme_Object *re);
 
+extern int scheme_locale_on;
 void scheme_reset_locale(void);
+/* "nonlocale" folding used to be folding, until we started using locales. */
+#define scheme_make_nonlocale_folding_prim(prim, name, mina, maxa, functional) \
+  scheme_make_folding_prim(prim, name, mina, maxa, 0)
 
 #define SCHEME_SYM_UNINTERNED(o) (((Scheme_Symbol *)o)->keyex & 0x1)
 

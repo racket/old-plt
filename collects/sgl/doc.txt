@@ -1,86 +1,87 @@
-_sgl_ _sgl.ss_ _gl_ _gl.ss_ _gl-unsafe_ _gl-unsafe.ss_ _gl-vectors_ _gl-vectors.ss_
-
 
 GL bindings for PLT Scheme
 
-sgl provides access to the system's GL libraries.  sgl supports the
-functionality of GL version 1.3 and before.  If a function defined in
-1.3 is used on a system that supports only a previous version (1.2, 1.1)
-a runtime error will be signaled.  GLenum constansts that are not
-defined on the system have a value of -1.  The GL library does not
-address the way in which GL rendering contexts are attached to displays
-and other system level concerns.  The GL library is only concerned
-rendering.  Thus sgl should work with any other PLT Scheme extension
-that provides GL with access to the system (such as a binding for glx).
-mred (and hence DrScheme) currently supports this type of functionality
-on Windows, Linux and OS X systems.
+Sgl provides access to the system's GL library, version 1.3 and
+earlier.  The GL library and hence the sgl binding do not address the
+attachment of GL rendering contexts to displays or other system level
+concerns; they only include drawing commands.  Thus sgl should work
+with any PLT Scheme extension that provides GL with access to the
+system (such as a binding for glx) but does not itself provide
+functionality for managing screen resources.  mred (and hence
+DrScheme) supports sending GL commands to a window on (at least)
+Windows, Linux and OS X systems (see mred's gl-context<%> interface).
 
-sgl takes a two layered approach.  The gl and gl-unsafe libraries
-provide access to the C-language style GL API.  The sgl library provides
-access to the GL API through a more Scheme-like interface, that should
-be more convenient to use than the C-style bindings.
+The invocation of a function from version x raises an exception
+(exn:fail) on a system with a GL version prior to x.  All GLenum
+constants from version x have values of -1 on systems with previous
+versions.
 
-sgl also defines a homogeneous vector extension to support GL functions
-that consume array arguments.
-
+The sgl bindings has two layers.  The gl and gl-unsafe libraries
+provide access to the C-language style GL API.  The sgl library
+provides access to the GL API through a more Scheme-like interface.
+Sgl also includes a homogeneous vector extension to support GL
+functions that have array arguments.
 
 Many thanks to Robert Kooima who wrote the GL binding that the gl and
 gl-unsafe modules are based on.  Thanks also to Brendan Burns for the
-glu addition.
+GLU addition, bug fixes and the gl-frame.ss and alpha.ss files in the
+examples subdirectory.
+
 
 _gl-vectors.ss_
 
 The gl-vectors module provides homogeneous vectors of the different
-numeric types.  10 functions are provided for each of 9 types of
-vectors, gl-double-vector, gl-float-vector, gl-int-vector,
+kinds of numbers.  10 functions are provided for each of 9 kinds of
+vectors: gl-double-vector, gl-float-vector, gl-int-vector,
 gl-short-vector, gl-byte-vector, gl-uint-vector, gl-ushort-vector,
-gl-ubyte-vector, gl-boolean-vector.
+gl-ubyte-vector, and gl-boolean-vector.
 
-The functions are as follows (replacing [type] with double, float,
-etc...):
+The functions follow (replace [type] with double, float, etc.):
 
-(vector->gl-[type]-vector v): takes a Scheme vector and converts it to a
-gl-[type]vector.  Fails if v is not a vector containing only Scheme real
-numbers.
+(vector->gl-[type]-vector v) takes a Scheme vector and converts it to
+a gl-[type]-vector.  It fails if v is not a vector containing only
+Scheme real numbers.
 
-(gl-[type]-vector->vector v): Takes a gl-[type]-vector and returns a
+(gl-[type]-vector->vector v) takes a gl-[type]-vector and returns a
 Scheme vector with the same numbers.
 
-(gl-[type]-vector-ref v i): Returns the ith element of v.  Fails if i >=
-the length of v.
+(gl-[type]-vector-ref v i) returns the ith element of v.  It fails if
+i is greater than or equal to the length of v.
 
-(gl-[type]-vector-set! v i n): Sets n to be the ith element of
-gl-[type]-vector v.  Fails if i >= length of v or if n is not a Scheme
-real number.
+(gl-[type]-vector-set! v i n) sets the ith element of the
+gl-[type]-vector v to n.  It fails if (i >= length of v) or if n is
+not a Scheme real number.
 
-(gl-[type]-vector-length v): Returns the number of elements in
+(gl-[type]-vector-length v) returns the number of elements in the
 gl-[type]-vector v.
 
-(gl-[type]-vector? v): Return #t if v is a gl-[type]-vector.  Returns #f
+(gl-[type]-vector? v) returns #t if v is a gl-[type]-vector and #f
 otherwise.
 
-(gl-[type]-vector+ v1 v2): Returns a new gl-[type]-vector that is the
+(gl-[type]-vector+ v1 v2) returns a new gl-[type]-vector that is the
 element-by-element sum of gl-[type]-vectors v1 and v2.
 
-(gl-[type]-vector- v1 v2): Returns a new gl-[type]-vector that is the
+(gl-[type]-vector- v1 v2) returns a new gl-[type]-vector that is the
 element-by-element difference of gl-[type]-vectors v1 and v2.
 
-(gl-[type]-vector* r v): Returns a new gl-[type]-vector with element i
+(gl-[type]-vector* r v) returns a new gl-[type]-vector with element i
 equal to r times the ith element of gl-[type]-vector v.
 
-(gl-[type]-vector-norm v): Returns the square root of the sum of the
+(gl-[type]-vector-norm v) returns the square root of the sum of the
 squares of the elements of gl-[type]-vector v.
 
 _gl.ss_
 
-Use the gl module by adding (require (lib "gl.ss" "gl")) to your
-program.  gl provides a direct interface to the systems underlying
-interface closely following the conventions of the C-language GL API.
-However, the functions provided by the gl module check the types of
-their arguments and the size of their array arguments and signal an
-error if the they are incorrect.
+Use the gl module by adding (require (lib "gl.ss" "sgl")) to your
+program.  The gl module provides a direct interface to the system's
+underlying interface closely following the conventions of the
+C-language GL API.  However, the functions provided by the gl module
+check their arguments and raise an exception when given the wrong kind
+of value or an array of the wrong length.  The gl.ss module provides a
+binding for each GLenum constant to its integer value and also a
+binding for each function listed at the end of this document.
 
-Examples:
+Notational Example:
 (require (lib "gl.ss" "sgl")
          (lib "gl-vectors.ss" "sgl"))
 (glBegin GL_TRIANGLES)
@@ -88,48 +89,56 @@ Examples:
 (glVertex4fv (vector->gl-float-vector (vector 1 2 3 4)))
 (glEnd)
 
+See alpha.ss in the examples subdirectory of the sgl collection
+(${PLT-HOME}/collects/sgl/examples/alpha.ss) for a working example.
+Try choosing the sk.jpg file in the icons when this example asks you
+for a file.  You may have to press "t" a few times if the spinning
+cube is blank.
+
 _gl-unsafe.ss_
 
-Use the gl-unsafe module by adding (require (lib "gl-unsafe.ss" "gl"))
-to your program.  The gl-unsafe module follows the conventions of the gl
-module except that function arguments are not necessarily checked, so an
-incorrect call to a gl-unsafe function could crash the entire Scheme
-system.  gl-unsafe consists of the GL functions that are not in gl
+Use the gl-unsafe module by adding (require (lib "gl-unsafe.ss" "sgl"))
+to your program.  The gl-unsafe module follows the conventions of the
+gl module except that function arguments are not necessarily checked,
+so an incorrect call to a gl-unsafe function could crash the entire
+Scheme system.  gl-unsafe includes GL functions that are not in gl
 because appropriate checks have not been added to them or appropriate
 checks cannot be added to them.
 
 _sgl.ss_
 
-Use the sgl module by adding (require (lib "sgl.ss" "sgl)) tp your
+Use the sgl module by adding (require (lib "sgl.ss" "sgl)) to your
 program.  To prefix the function names with "gl-" use the form
-(require (prefix gl- (lib "sgl.ss" "sgl"))) instead.  sgl provides a more
-Scheme-like interface to the GL functions in gl (sgl does not provide an
-interface to the functions of gl-unsafe).
+(require (prefix gl- (lib "sgl.ss" "sgl"))) instead.  The sgl module
+provides a more Scheme-like interface to the GL functions in gl (sgl
+does not provide an interface to the functions of gl-unsafe).
 
-Arguments to GL functions that receive enumerated constants must be
-passed Scheme symbols instead of integers as in the C-language API.
-These symbolic arguments are checked to ensure that the given symbol is
-an appropriate value for that particular function.  Given the name of a
-C-language #define constant, the corresponding symbolic argument is
-determined by removing the leading "GL_", converting the letters to
-lower-case and replacing all underscores with dashes.  For example:
-GL_TRIANGLES becomes 'triangles and GL_TRIANGLE_STRIP becomes
+Functions in sgl take symbols instead of integers for GLenum
+arguments.  Each function checks that the given symbol is an
+acceptable argument and raises an exception if it is not.  Given the
+name of a C-language "#define" constant, determine the corresponding
+symbolic argument by removing the leading "GL_", converting the
+letters to lower-case and replacing all underscores with dashes.  For
+example, GL_TRIANGLES becomes 'triangles and GL_TRIANGLE_STRIP becomes
 'triangle-strip.
 
-Functions have also been renamed.  The leading "gl" has been dropped
-(allowing the programmer to choose whatever prefix he wants with the
-above prefix form of require), all the characters have been converted to
-lower-case and subsequent words are separated with dashes. Furthermore,
-functions that have several variants to accomodate different numbers and
-types of arguments have been collapsed into one or two functions.  For
-example, sgl provides two vertex functions, vertex and vertex-v.  Vertex
-can be passed 2, 3 or 4 numerical arguments, and vertex-v can be passed
-a gl-vector argument of length 2, 3 or 4.
+The functions in sgl use Scheme style names instead of C style names.
+To convert a C GL name to a Scheme GL name, drop the leading "gl" (use
+the require form to choose whatever prefix you desire, as above),
+separate adjacent words with hyphens, and convert to all lower case.
+Functions that have several variants to accommodate different numbers
+and types of arguments are collapsed into one or two functions in sgl.
+For example, sgl provides two vertex functions, vertex and vertex-v.
+The vertex function accepts 2, 3 or 4 numerical arguments, and the
+vertex-v function accepts gl-vectors of length 2, 3 or 4.  The C
+language GL interface has 24 vertex functions glVertex3i, glVertex4fv,
+etc.
 
-The sgl module is still not yet complete and many functions from the gl
-module do not yet have counterparts in the sgl module.
+The sgl module is not yet complete and many functions from the gl
+module do not yet have counterparts in the sgl module.  See the list
+of functions below.
 
-Examples:
+Notational Example:
 (require (prefix gl- (lib "sgl.ss" "sgl"))
          (lib "gl-vectors.ss" "sgl"))
 (gl-begin 'triangles)
@@ -137,7 +146,8 @@ Examples:
 (gl-vertex-v (vector->gl-float-vector (vector 1 2 3 4)))
 (gl-end)
 
-
+See gears.ss in the examples subdirectory of the sgl collection
+(${PLT-HOME}/collects/sgl/examples/gears.ss) for a working example.
 
 Function lists:
 
@@ -642,6 +652,8 @@ glMultiTexCoord4iv
 glMultiTexCoord4s
 glMultiTexCoord4sv
 glSampleCoverage
+gluBuild3DMipmaps
+gluBuild3DMipmapLevels
 
 ------------------------------  gl-unsafe:  --------------------------
 Version 1.1
@@ -692,6 +704,4 @@ glCompressedTexSubImage1D
 glCompressedTexSubImage2D
 glCompressedTexSubImage3D
 glGetCompressedTexImage
-gluBuild3DMipmaps
-gluBuild3DMipmapLevels
  

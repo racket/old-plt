@@ -146,7 +146,23 @@
 					       (current-directory))])
 			     (t)))])
 	  (cond
-	   [(and (date>=? _loader-so path-d)
+	   ;; Use .zo, if it's new enough
+	   [(date>=? zo path-d)
+	    (read-one zo #f)]
+	   ;; Otherwise, use source if it exists
+	   [path-d
+	    (with-dir (lambda () (compiler (read-one path #t))))]
+	   ;; No source --- maybe there's an .so?
+	   [(and (not path-d)
+		 (date>=? so path-d))
+	    (with-dir (lambda () (raise (make-exn:get-module-code 
+					 (string->immutable-string
+					  (format "get-module-code: cannot use extension file; ~e" so))
+					 (current-continuation-marks)
+					 so))))]
+	   ;; Or maybe even a _loader.so?
+	   [(and (not path-d)
+		 (date>=? _loader-so path-d)
 		 (let ([getter (load-extension _loader-so)])
 		   (let-values ([(loader modname) (getter (string->symbol 
 							   (bytes->string/latin-1
@@ -160,21 +176,12 @@
 				  _loader-so))
 			 (current-continuation-marks)
 			 loader)))]
-	   [(date>=? so path-d)
-	    (with-dir (lambda () (raise (make-exn:get-module-code 
-					 (string->immutable-string
-					  (format "get-module-code: cannot use extension file; ~e" so))
-					 (current-continuation-marks)
-					 so))))]
-	   [(date>=? zo path-d)
-	    (read-one zo #f)]
-	   [(not path-d)
+	   ;; Report a not-there error
+	   [else
 	    (raise (make-exn:get-module-code 
 		    (string->immutable-string (format "get-module-code: no such file: ~e" path))
 		    (current-continuation-marks)
-		    #f))]
-	   [else 
-	    (with-dir (lambda () (compiler (read-one path #t))))])))))
+		    #f))])))))
 
   (define re:dir #rx#"(.+?)/+(.*)")
 

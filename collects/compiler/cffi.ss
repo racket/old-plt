@@ -83,7 +83,7 @@
 					     (if (pair? type)
 						 (values #f
 							 (format "(SCHEME_FALSEP(~~a) ~
-                                                                  || (SCHEME_CPTRP(~a) && SCHEME_STRINGP(SCHEME_CPTR_TYPE(~a)) && !strcmp(SCHEME_STR_VAL(SCHEME_CPTR_TYPE(~a)), ~s)))"
+                                                                  || (SCHEME_CPTRP(~a) && SCHEME_BYTE_STRINGP(SCHEME_CPTR_TYPE(~a)) && !strcmp(SCHEME_BYTE_STR_VAL(SCHEME_CPTR_TYPE(~a)), ~s)))"
 								 scheme-var scheme-var scheme-var (cadr type))
 							 (format "(SCHEME_TRUEP(~~a) ? SCHEME_CPTR_VAL(~a) : NULL)"
 								 scheme-var)
@@ -134,16 +134,16 @@
 							    #f)]
 						   [(char-string)
 						    (values #f
-							    (format "SCHEME_FALSEP(~~a) || SCHEME_STRINGP(~a)"
+							    (format "SCHEME_FALSEP(~~a) || SCHEME_BYTE_STRINGP(~a)"
 								    scheme-var)
-							    (format "(SCHEME_FALSEP(~~a) ? NULL : SCHEME_STR_VAL(~a))" 
+							    (format "(SCHEME_FALSEP(~~a) ? NULL : SCHEME_BYTE_STR_VAL(~a))" 
 								    scheme-var)
 							    "string or #f"
 							    #f)]
 						   [(nonnull-char-string)
 						    (values #f
-							    "SCHEME_STRINGP(~a)"
-							    "SCHEME_STR_VAL(~a)" 
+							    "SCHEME_BYTE_STRINGP(~a)"
+							    "SCHEME_BYTE_STR_VAL(~a)" 
 							    "string"
 							    #f)]
 						   [else (error 'cffi "bad type for arg: ~a" type)]))])

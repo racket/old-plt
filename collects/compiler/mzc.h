@@ -84,7 +84,8 @@ typedef struct {
 #define MZC_NULLP(p, av) (SCHEME_NULLP(av))
 #define MZC_PAIRP(p, av) (SCHEME_PAIRP(av))
 #define MZC_SYMBOLP(p, av) (SCHEME_SYMBOLP(av))
-#define MZC_STRINGP(p, av) (SCHEME_STRINGP(av))
+#define MZC_STRINGP(p, av) (SCHEME_CHAR_STRINGP(av))
+#define MZC_BYTESP(p, av) (SCHEME_BYTE_STRINGP(av))
 #define MZC_VECTORP(p, av) (SCHEME_VECTORP(av))
 #define MZC_NUMBERP(p, av) (SCHEME_NUMBERP(av))
 #define MZC_PROCEDUREP(p, av) (SCHEME_PROCP(av))
@@ -111,8 +112,11 @@ typedef struct {
 # define MZC_VECTOR_REF(p, v, i) SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)]
 # define MZC_VECTOR_SET(p, v, i, x) (SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] = x, scheme_void)
 
-# define MZC_STRING_REF(p, v, i) scheme_make_character(SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)])
-# define MZC_STRING_SET(p, v, i, x) (SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_CHAR_VAL(x), scheme_void)
+# define MZC_STRING_REF(p, v, i) scheme_make_character(SCHEME_CHAR_STR_VAL(v)[SCHEME_INT_VAL(i)])
+# define MZC_STRING_SET(p, v, i, x) (SCHEME_CHAR_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_CHAR_VAL(x), scheme_void)
+
+# define MZC_BYTES_REF(p, v, i) scheme_make_integer(SCHEME_BYTE_STR_VAL(v)[SCHEME_INT_VAL(i)])
+# define MZC_BYTES_SET(p, v, i, x) (SCHEME_BYTE_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_INT_VAL(x), scheme_void)
 
 #define MZC_CHAR_TO_INTEGER(p, v) scheme_make_integer((unsigned char)SCHEME_CHAR_VAL(v))
 /* End unsafe versions */
@@ -139,12 +143,21 @@ typedef struct {
                                     && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
                                     ? (SCHEME_VEC_ELS(v)[SCHEME_INT_VAL(i)] = x, scheme_void) \
 				    : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
-# define MZC_STRING_REF(p, v, i) ((SCHEME_INTP(i) && SCHEME_STRINGP(v) && (SCHEME_INT_VAL(i) >= 0) \
-                                  && (SCHEME_INT_VAL(i) < SCHEME_STRLEN_VAL(v)) \
-                                  ? scheme_make_character(SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)]) \
+# define MZC_STRING_REF(p, v, i) ((SCHEME_INTP(i) && SCHEME_CHAR_STRINGP(v) && (SCHEME_INT_VAL(i) >= 0) \
+                                  && (SCHEME_INT_VAL(i) < SCHEME_CHAR_STRLEN_VAL(v)) \
+                                  ? scheme_make_character(SCHEME_CHAR_STR_VAL(v)[SCHEME_INT_VAL(i)]) \
 				  : (arg[0] = v, arg[1] = i, _scheme_direct_apply_primitive_multi(p, 2, arg))))
-# define MZC_STRING_SET(p, v, i, x) ((SCHEME_INTP(i) && SCHEME_MUTABLE_STRINGP(v) && SCHEME_CHARP(x) && (SCHEME_INT_VAL(i) >= 0) \
-                                      && (SCHEME_INT_VAL(i) < SCHEME_VEC_SIZE(v)) \
+# define MZC_STRING_SET(p, v, i, x) ((SCHEME_INTP(i) && SCHEME_MUTABLE_CHAR_STRINGP(v) && SCHEME_CHARP(x) && (SCHEME_INT_VAL(i) >= 0) \
+                                      && (SCHEME_INT_VAL(i) < SCHEME_CHAR_STRLEN_VAL(v)) \
+                                     ? (SCHEME_CHAR_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_CHAR_VAL(x), scheme_void) \
+				     : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
+# define MZC_BYTES_REF(p, v, i) ((SCHEME_INTP(i) && SCHEME_BYTE_STRINGP(v) && (SCHEME_INT_VAL(i) >= 0) \
+                                  && (SCHEME_INT_VAL(i) < SCHEME_BYTE_STRLEN_VAL(v)) \
+                                  ? scheme_make_integer(SCHEME_BYTE_STR_VAL(v)[SCHEME_INT_VAL(i)]) \
+				  : (arg[0] = v, arg[1] = i, _scheme_direct_apply_primitive_multi(p, 2, arg))))
+# define MZC_BYTES_SET(p, v, i, x) ((SCHEME_INTP(i) && SCHEME_MUTABLE_BYTE_STRINGP(v) && SCHEME_INTP(x) \
+                                      && (SCHEME_INT_VAL(x) >= 0) && (SCHEME_INT_VAL(x) <= 255) \
+                                      && (SCHEME_INT_VAL(i) >= 0) && (SCHEME_INT_VAL(i) < SCHEME_BYTE_STRLEN_VAL(v)) \
                                      ? (SCHEME_STR_VAL(v)[SCHEME_INT_VAL(i)] = SCHEME_CHAR_VAL(x), scheme_void) \
 				     : (arg[0] = v, arg[1] = i, arg[2] = x, _scheme_direct_apply_primitive_multi(p, 3, arg))))
 /* End safe versions */

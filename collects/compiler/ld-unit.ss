@@ -70,7 +70,9 @@
 			kps) ; just .kp files
 	  (let loop ([l all-names][ofs null][os null][kps null])
 	    (if (null? l)
-		(values (reverse ofs) (reverse os) (reverse kps))
+		(values (reverse ofs) 
+			(map path->string (reverse os))
+			(reverse kps))
 		(if (eq? (caar l) 'o)
 		    (loop (cdr l) (cons (cadar l) ofs) (cons (caddar l) os) kps)
 		    (loop (cdr l) ofs os (cons (cdar l) kps))))))
@@ -218,11 +220,11 @@
 	      (printf "}~n~n"))
 
 	    (printf "static Scheme_Object * loader_dispatch(void *v, int argc, Scheme_Object * * argv) {~n")
-	    (printf "  Scheme_Env * env = ((Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV));~n")
+	    (printf "  Scheme_Env * env = scheme_get_env(scheme_current_config());~n")
 	    (printf "  return ((Scheme_Object *(*)(Scheme_Env *))v)(env);~n}~n~n")
 	    
 	    (printf "static Scheme_Object * loader_dispatch_all(int argc, Scheme_Object * * argv) {~n")
-	    (printf "  Scheme_Env * env = ((Scheme_Env *)scheme_get_param(scheme_current_thread->config, MZCONFIG_ENV));~n")
+	    (printf "  Scheme_Env * env = scheme_get_env(scheme_current_config());~n")
 	    (printf "  Scheme_Object * v = scheme_void;~n")
 	    (for-each
 	     (lambda (suffix)

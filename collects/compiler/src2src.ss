@@ -35,6 +35,10 @@
   ;;  install functions that can be used later.
   (define (non-valueable-prims) (procedure-calling-prims))
 
+  (define recert-insp (current-code-inspector))
+  (define (recertify stx orig-stx)
+    (syntax-recertify stx orig-stx recert-insp #f))
+
   (define (keep-mzc-property stx-out stx)
     (let ([v (syntax-property stx 'mzc-cffi)]
 	  [v2 (syntax-property stx 'method-arity-error)]
@@ -372,10 +376,11 @@
 
       (define/override (sexpr) 
         (let ([x (send binding sexpr)])
-          (datum->syntax-object
-           x
-           (syntax-e x)
-           src-stx)))
+	  (recertify (datum->syntax-object
+			     x
+			     (syntax-e x)
+			     src-stx)
+			    src-stx)))
       (define/public (get-binding) binding)
       (define/public (orig-name) (send binding orig-name))))
       
@@ -426,11 +431,13 @@
                subs)
           src-stx))
 
-	(define/override (sexpr)
-          (with-syntax ([(body ...) (body-sexpr)])
-            (syntax/loc src-stx (begin body ...))))
+      (define/override (sexpr)
+	(with-syntax ([(body ...) (body-sexpr)])
+	  (recertify
+	   (syntax/loc src-stx (begin body ...))
+	   src-stx)))
       (define/override (body-sexpr)
-        (map get-sexpr subs))))
+	(map get-sexpr subs))))
   
   (define top-def% 
     (class exp% 
@@ -458,7 +465,9 @@
         (with-syntax ([formname formname]
                       [(varname ...) varnames]
                       [rhs (get-sexpr expr)])
-          (syntax/loc src-stx (formname (varname ...) rhs))))
+	  (recertify
+	   (syntax/loc src-stx (formname (varname ...) rhs))
+	   src-stx)))
 
       (define/public (get-vars) varnames)
       (define/public (get-rhs) expr)
@@ -530,19 +539,21 @@
       (define/override (clone env) (make-object constant% val src-stx))
       
       (define/override (sexpr)
-        (let ([vstx (datum->syntax-object (quote-syntax here) val src-stx)])
-          (cond
-	      [(or (number? val)
-		   (string? val)
-		   (boolean? val)
-		   (char? val))
-	       vstx]
-	      [(syntax? val)
-	       (with-syntax ([vstx vstx])
-		 (syntax (quote-syntax vstx)))]
-	      [else
-	       (with-syntax ([vstx vstx])
-		 (syntax (quote vstx)))])))))
+	(recertify
+	 (let ([vstx (datum->syntax-object (quote-syntax here) val src-stx)])
+	   (cond
+	    [(or (number? val)
+		 (string? val)
+		 (boolean? val)
+		 (char? val))
+	     vstx]
+	    [(syntax? val)
+	     (with-syntax ([vstx vstx])
+	       (syntax (quote-syntax vstx)))]
+	    [else
+	     (with-syntax ([vstx vstx])
+	       (syntax (quote vstx)))]))
+	 src-stx))))
 
   (define void%
     (class constant% 
@@ -825,11 +836,13 @@
                                      src-stx))
 
       (define/override (sexpr)
-        (keep-mzc-property
-         (with-syntax ([rator (get-sexpr rator)]
-                       [(rand ...) (map get-sexpr rands)])
-           (syntax/loc src-stx (rator rand ...)))
-         src-stx))
+	(recertify
+	 (keep-mzc-property
+	  (with-syntax ([rator (get-sexpr rator)]
+			[(rand ...) (map get-sexpr rands)])
+	    (syntax/loc src-stx (rator rand ...)))
+	  src-stx)
+	 src-stx))
 
       ;; Checks whether the expression is an app of `values'
       ;; to a particular set of bindings.
@@ -958,15 +971,17 @@
                        (map (lambda (body)
                               (get-body-sexpr body))
                             bodys)])
-          (keep-mzc-property
-           (if (multi?)
-               (syntax/loc src-stx
-                           (case-lambda
-                             [vars . body] ...))
-               (with-syntax ([body (car (syntax->list (syntax (body ...))))])
-                 (syntax/loc src-stx
-                             (lambda vars ... . body))))
-           src-stx)))))
+	  (recertify
+	   (keep-mzc-property
+	    (if (multi?)
+		(syntax/loc src-stx
+		  (case-lambda
+		   [vars . body] ...))
+		(with-syntax ([body (car (syntax->list (syntax (body ...))))])
+		  (syntax/loc src-stx
+		    (lambda vars ... . body))))
+	    src-stx)
+	   src-stx)))))
 
   (define local% 
     (class exp% 
@@ -1078,10 +1093,12 @@
                       [(rhs ...)
                        (map get-sexpr rhss)]
                       [(body ...) (get-body-sexpr body)])
-          (syntax/loc src-stx
-                      (form ([vars rhs] ...) 
-                            body ...))))))
-
+	  (recertify
+	   (syntax/loc src-stx
+	     (form ([vars rhs] ...) 
+		   body ...))
+	   src-stx)))))
+    
   (define let%
     (class local% 
       (init -varss -rhss -body -stx)
@@ -1144,8 +1161,10 @@
 	(define/override (sexpr)
           (with-syntax ([var (get-sexpr var)]
                         [val (get-sexpr val)])
-            (syntax/loc src-stx
-                        (set! var val))))))
+	    (recertify
+	     (syntax/loc src-stx
+	       (set! var val))
+	     src-stx)))))
 
   (define if%
     (class exp% 
@@ -1233,12 +1252,14 @@
       (define/override (sexpr)
         (with-syntax ([test (get-sexpr test)]
                       [then (get-sexpr then)])
-          (if (else . is-a? . void%)
-              (syntax/loc src-stx
-                          (if test then))
-              (with-syntax ([else (get-sexpr else)])
-                (syntax/loc src-stx
-                            (if test then else))))))))
+	  (recertify
+	   (if (else . is-a? . void%)
+	       (syntax/loc src-stx
+		 (if test then))
+	       (with-syntax ([else (get-sexpr else)])
+		 (syntax/loc src-stx
+		   (if test then else))))
+	   src-stx)))))
 
   (define begin0%
     (class exp% 
@@ -1271,8 +1292,10 @@
 	(define/override (sexpr)
           (with-syntax ([first (get-sexpr first)]
                         [(rest ...) (get-body-sexpr rest)])
-            (syntax/loc src-stx
-                        (begin0 first rest ...))))))
+	    (recertify
+	     (syntax/loc src-stx
+	       (begin0 first rest ...))
+	     src-stx)))))
 
   (define wcm%
     (class exp% 
@@ -1298,8 +1321,10 @@
         (with-syntax ([key (get-sexpr key)]
                       [val (get-sexpr val)]
                       [body (get-sexpr body)])
-          (syntax/loc src-stx
-                      (with-continuation-mark key val body))))))
+	  (recertify
+	   (syntax/loc src-stx
+	     (with-continuation-mark key val body))
+	   src-stx)))))
 
   (define module%
     (class exp% 
@@ -1450,20 +1475,22 @@
                        (cdr body)))))))
         (super deorganize))
 
-	(define/override (sexpr)
-          (with-syntax ([name name]
-                        [init-req init-req]
-                        [(body ...) (map get-sexpr body)]
-                        [(et-body ...) (map get-sexpr et-body)]
-                        [(req-prov ...) (map get-sexpr req-prov)])
-            (syntax/loc src-stx
-                        (module name init-req
-                          (#%plain-module-begin
-                           req-prov ...
-                           body ...
-                           et-body ...)))))
+      (define/override (sexpr)
+	(with-syntax ([name name]
+		      [init-req init-req]
+		      [(body ...) (map get-sexpr body)]
+		      [(et-body ...) (map get-sexpr et-body)]
+		      [(req-prov ...) (map get-sexpr req-prov)])
+	  (recertify
+	   (syntax/loc src-stx
+	     (module name init-req
+	       (#%plain-module-begin
+		req-prov ...
+		body ...
+		et-body ...)))
+	   src-stx)))
       (define/override (body-sexpr)
-        (list (sexpr)))))
+	(list (sexpr)))))
 
   ;; requires and provides should really be ignored:
   (define require/provide%

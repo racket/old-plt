@@ -21,6 +21,7 @@
 (load-relative "namespac.ss")
 (unless (or building-flat-tests? in-drscheme?)
   (load-relative "param.ss"))
+(load-relative "port.ss")
 (load-relative "file.ss")
 (load-relative "path.ss")
 (unless (or building-flat-tests? in-drscheme?)

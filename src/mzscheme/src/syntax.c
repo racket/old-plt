@@ -659,7 +659,7 @@ void scheme_define_parse(Scheme_Object *form,
 			 int defmacro,
 			 Scheme_Comp_Env *env)
 {
-  Scheme_Object *vars;
+  Scheme_Object *vars, *rest;
   int len;
   DupCheckRecord r;
 
@@ -680,7 +680,7 @@ void scheme_define_parse(Scheme_Object *form,
   scheme_begin_dup_symbol_check(&r, env);
 
   while (SCHEME_STX_PAIRP(vars)) {
-    Scheme_Object *name, *rest;
+    Scheme_Object *name;
 
     name = SCHEME_STX_CAR(vars);
     scheme_check_identifier(NULL, name, NULL, env, form);

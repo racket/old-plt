@@ -111,3 +111,12 @@ Differences from the book:
   mutate this varable to install an exception-handling
   thunk. Typically, the handler thunk escapes through a continuation.
 
+  The "eopl.ss" module sets this variable to #f in the current
+  namespace when it executes.
+
+> (install-eopl-exception-handler)
+
+  Sets MzScheme's exception handler to one that checks
+  `eopl:error-stop'.
+
+  The "eopl.ss" module calls this function when it executes.

@@ -87,4 +87,4 @@
   ;; escapes
   (define internal-error 
     (lambda (z s . args)
-      (apply (report-error 'internal) #f #f z s args))))
+      (apply (report-error 'internal) "internal" #f z s args))))

@@ -722,9 +722,11 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
     if (i == count) {
       s = "systemfont";
       l = strlen(s);
+      i++;
     } else if (i == count + 1) {
       s = "applicationfont";
       l = strlen(s);
+      i++;
     } else if (i > count)
       break;
     else {

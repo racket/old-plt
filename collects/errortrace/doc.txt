@@ -12,7 +12,7 @@ Quick instructions
 
   0) Throw away .zo versions of your source
 
-  1) Start your program with
+  1) Prefix your program with
       (require-library "errortrace.ss" "errortrace")
      or start MzScheme with the -L flag:
       mzscheme -L errortrace.ss errortrace

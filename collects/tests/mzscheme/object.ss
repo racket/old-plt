@@ -387,10 +387,17 @@
       (send (new (class color-fish% (augment die) (define die (lambda () 'x)) (super-new))) die))
 ;; Can't override (only augment):
 (err/rt-test (class color-fish% (override die) (define die (lambda () 'x))) exn:fail:object?)
+(err/rt-test (class color-fish% (overment die) (define die (lambda () 'x))) exn:fail:object?)
 
 ;; color-fish%'s die2 is final:
 (err/rt-test (class color-fish% (override die2) (define die2 (lambda () 'x))) exn:fail:object?)
 (err/rt-test (class color-fish% (augment die2) (define die2 (lambda () 'x))) exn:fail:object?)
+(err/rt-test (class color-fish% (overment die2) (define die2 (lambda () 'x))) exn:fail:object?)
+(err/rt-test (class color-fish% (augride die2) (define die2 (lambda () 'x))) exn:fail:object?)
+
+;; Can't augment (only override):
+(err/rt-test (class color-fish% (augment eat) (define eat (lambda (f) 'x))) exn:fail:object?)
+(err/rt-test (class color-fish% (augride eat) (define eat (lambda (f) 'x))) exn:fail:object?)
 
 ;; Can't use inner without a `final' here or in superclass
 (syntax-test #'(class object% (define/public (f x) x) (rename-inner [inner-f f])))

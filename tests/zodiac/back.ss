@@ -26,21 +26,19 @@
 
 (set-read-test parsed-2 getter setter 13 #t)
 
-(error-test '(zodiac:register-client 'first-client (lambda () 14))
-            exn:user?)
-
 (define-values (getter-2 setter-2) (zodiac:register-client 'second-client (lambda () 15)))
 (define-values (getter-3 setter-3) (zodiac:register-client 'third-client (lambda () 16)))
 
 (set-read-test parsed-1 getter-3 setter-3 16 'a-symbol)
 (test "a string" getter (zodiac:parsed-back parsed-1))
 
-(test 'not-registered zodiac:lookup-client 'nonexistent-client (lambda () 'not-registered))
+(define-values (getter-4 setter-4) (zodiac:register-client 'bad-client 
+                                                           (lambda () (error "ouch"))))
 
-(define-values (getter-3p setter-3p) 
-  (zodiac:lookup-client 'third-client (lambda () (error))))
+(set-read-test parsed-1 getter-2 setter-2 15 'matador)
 
-(set-read-test parsed-1 getter-3p setter-3p 'a-symbol 'telephone)
+(error-test '(getter-4 (zodiac:parsed-back parsed-1)) exn:user?)
+(error-test '(setter-4 (zodiac:parsed-back parsed-2) 'okay-value) exn:user?)
 
 (report-errs)
 

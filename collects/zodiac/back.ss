@@ -1,4 +1,4 @@
-; $Id: back.ss,v 1.4 1997/07/21 15:51:43 shriram Exp $
+; $Id: back.ss,v 1.5 1998/09/11 12:16:15 mflatt Exp $
 
 (unit/sig zodiac:back-protocol^
   (import zodiac:misc^ zodiac:interface^)
@@ -39,37 +39,35 @@
   (define-struct uninitialized-back ())
   (define uninitialized-flag (make-uninitialized-back))
 
-  (define client-registry (make-hash-table))
-
+  (define getters-setters
+    (lambda (index)
+      (values
+       (lambda (back)		; getter
+         (let ((v (secure-box-value back)))
+           (with-handlers
+               ((exn:application:mismatch?
+                 (lambda (exception)
+                   (vector-ref (extend-back-vector back) index))))
+             (let ((value (vector-ref v index)))
+               (if (uninitialized-back? value)
+                   (let ((correct-value
+                          ((list-ref init-value-list index))))
+                     (vector-set! v index correct-value)
+                     correct-value)
+                   value)))))
+       (lambda (back value)		; setter
+         (let ((v (secure-box-value back)))
+           (with-handlers
+               ((exn:application:mismatch?
+                 (lambda (exception)
+                   (vector-set! (extend-back-vector back) index value))))
+             (vector-set! v index value)))))))
+  
   (define register-client
     (lambda (client-name default-initial-value-thunk)
-      (when (hash-table-get client-registry client-name
-	      (lambda () #f))
-	(internal-error client-name "Attempting duplicate registration"))
-      (hash-table-put! client-registry client-name #t)
       (let ((index (next-client-count)))
 	(register-initial-value index default-initial-value-thunk)
-	(values
-	  (lambda (back)		; getter
-	    (let ((v (secure-box-value back)))
-	      (with-handlers
-		((exn:application:mismatch?
-		   (lambda (exception)
-		     (vector-ref (extend-back-vector back) index))))
-		(let ((value (vector-ref v index)))
-		  (if (uninitialized-back? value)
-		    (let ((correct-value
-			    ((list-ref init-value-list index))))
-		      (vector-set! v index correct-value)
-		      correct-value)
-		    value)))))
-	  (lambda (back value)		; setter
-	    (let ((v (secure-box-value back)))
-	      (with-handlers
-		((exn:application:mismatch?
-		   (lambda (exception)
-		     (vector-set! (extend-back-vector back) index value))))
-		(vector-set! v index value))))))))
+        (getters-setters index))))
 
   (define extend-back-vector
     (lambda (back-box)

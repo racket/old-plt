@@ -116,6 +116,11 @@ This module provides the following syntactic forms:
   > (suppress) OPTIONAL causes the parser generator to not report
      shift/reduce or reduce/reduce conflicts.
 
+  > (src-pos) OPTIONAL causes the generated parser to expect input in
+     the form (list token position position) instead of simply token.
+     Include this option when using the parser with a lexer generated
+     with lexer-src-pos.
+
   > (error expression) expression should evaluate to a function of one
      argument which will be executed for its side-effect whenever the
      parser encounters an error.  The function will be called with the
@@ -141,6 +146,7 @@ This module provides the following syntactic forms:
   > (grammar (non-terminal ((grammar-symbol ...) (prec token-name) expression)
                             ...) 
               ...)
+
      declares the grammar to be parsed.  Each grammar-symbol must be a
      token-name or non-terminal.  The prec declaration is optional.
      expression is a semantic action which will be evaluated when the
@@ -152,7 +158,11 @@ This module provides the following syntactic forms:
      the right of the production, if that grammar symbol is a
      non-terminal, or the value stored in the token if the grammar
      symbol is a terminal.  Here n is the number of grammar-symbols on
-     the right of the production.  All of the productions for a given
+     the right of the production.  If the src-pos option is present in
+     the parser, variables $1-start-pos, ..., $n-start-pos and
+     $1-end-pos, ..., $n-end-pos are also availible and refer to the
+     position structure corresponding to the start and end of the
+     corresponding grammar-symbol.  All of the productions for a given
      non-terminal must be grouped with it, i.e. No non-terminal may
      appear twice on the left hand side in a parser.
 
@@ -253,10 +263,8 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
 
 TODO:
 lexer:
-Default lex abbrevs
 
 parser:
-Make the parser understand lexer-src-pos.
 Document/improve parser error handling.
 
 both:

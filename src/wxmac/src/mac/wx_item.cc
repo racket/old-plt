@@ -164,7 +164,7 @@ char *wxItemStripLabel(char *label)
   for (i = 0; label[i]; i++) {
     if (label[i] == '&') {
       /* Strip it: */
-      naya = new char[strlen(label) + 1];
+      naya = new WXGC_ATOMIC char[strlen(label) + 1];
       j = 0;
       for (i = 0; label[i]; i++) {
         if (label[i] == '&') {

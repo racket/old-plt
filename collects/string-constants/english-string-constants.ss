@@ -1,6 +1,6 @@
 (
 
- ;;; when translating this constant, substitue name of actual langauge for `English'
+ ;;; when translating this constant, substitute name of actual langauge for `English'
  (is-this-your-native-language "Is English Your Native Language?")
 
  (are-you-sure-you-want-to-switch-languages
@@ -665,6 +665,7 @@
  (vc-details-format "~a~nDetails:~n~a")
  (vc-details-text "Details:~n")
  (vc-error-format "Error: ~a") 
+ (vc-current-format "~a v.~a (iteration ~a) is up-to-date")
  (vc-update-format "~a v.~a (iteration ~a) needs updating to v.~a (iteration ~a)")
  (vc-cancel "Cancel") 
  (vc-binary-name "Binary")

@@ -57,6 +57,8 @@ Changed MzLib's pconver.ss libraries; the print-convert-hook@
  (more powerful) hooks.
 Fixed interfaces for compiled-file (.zo) loading across
  MzScheme startups
+Fixed bug in ports returned by make-pipe that caused
+ spurious eofs
 Unused interned symbols are now garbage-collected
 Added support for single-precision floating points (turned
  off in default compilation)

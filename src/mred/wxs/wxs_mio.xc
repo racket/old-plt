@@ -142,8 +142,8 @@ static double GetInexact(wxMediaStreamIn *s)
 /* Subtract 1 here because the nul terminator is already included */
 @MACRO makeSizedStringX = (r ? scheme_make_sized_byte_string(r, _x0 ? _x0 - 1 : 0, 0) : XC_SCHEME_NULL)
 
-@ "get-terminated-bytes" : nbstring/makeSizedStringX GetString(nnlong?=NULL); : : /alwaysPassPtr/
-@ "get-bytes" : nbstring/makeSizedString GetStringPlusOne(nnlong?=NULL); : : /alwaysPassPtr/
+@ "get-bytes" : nbstring/makeSizedStringX GetString(nnlong?=NULL); : : /alwaysPassPtr/
+@ "get-unterminated-bytes" : nbstring/makeSizedString GetStringPlusOne(nnlong?=NULL); : : /alwaysPassPtr/
 @ "get-fixed" : wxMediaStreamIn! GetFixed(long*);
 
 @ m "get-exact" : long GetExact();
@@ -162,7 +162,7 @@ static double GetInexact(wxMediaStreamIn *s)
 
 #define PUT Put
 
-@MACRO CheckBytesLength = if (x0+1 > SCHEME_BYTE_STRTAG_VAL(p[POFFSET+1])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor-stream-out","put"), "byte length too large: ", p[POFFSET]));
+@MACRO CheckBytesLength = if ((x0 - 1) > SCHEME_BYTE_STRTAG_VAL(p[POFFSET+1])) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("editor-stream-out","put"), "byte length too large: ", p[POFFSET]));
 
 @CLASSBASE wxMediaStreamOut "editor-stream-out" : "object"
 

@@ -1462,8 +1462,9 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
     bigend = SCHEME_TRUEP(argv[2]);
 
   if (bigend != MZ_IS_BIG_ENDIAN) {
-    for (i = 0; i < slen; i++)
+    for (i = 0; i < slen; i++) {
       ((char *)buf)[slen - i - 1] = str[i];
+    }
     str = (char *)buf;
   }
 
@@ -1696,10 +1697,12 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
     int i;
     char buf[8];
     
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
       buf[size - i - 1] = str[i];
-    for (i = 0; i < size; i++)
+    }
+    for (i = 0; i < size; i++) {
       str[i] = buf[i];
+    }
   }
 
   return s;
@@ -1726,8 +1729,9 @@ static Scheme_Object *bytes_to_real (int argc, Scheme_Object *argv[])
 
   if (bigend != MZ_IS_BIG_ENDIAN) {
     int i;
-    for (i = 0; i < slen; i++)
+    for (i = 0; i < slen; i++) {
       buf[slen - i - 1] = str[i];
+    }
     str = (char *)buf;
   }
 
@@ -1803,10 +1807,12 @@ static Scheme_Object *real_to_bytes (int argc, Scheme_Object *argv[])
 
     str = SCHEME_STR_VAL(s);
     
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; i++) {
       buf[size - i - 1] = str[i];
-    for (i = 0; i < size; i++)
+    }
+    for (i = 0; i < size; i++) {
       str[i] = buf[i];
+    }
   }
 
   return s;

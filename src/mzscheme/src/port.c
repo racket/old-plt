@@ -260,7 +260,6 @@ static void force_close_input_port(Scheme_Object *port);
 static Scheme_Object *text_symbol, *binary_symbol;
 static Scheme_Object *append_symbol, *error_symbol, *update_symbol;
 static Scheme_Object *replace_symbol, *truncate_symbol, *truncate_replace_symbol;
-static Scheme_Object *count_lines_symbol;
 
 #define fail_err_symbol scheme_false
 
@@ -306,7 +305,6 @@ scheme_init_port (Scheme_Env *env)
   REGISTER_SO(truncate_symbol);
   REGISTER_SO(truncate_replace_symbol);
   REGISTER_SO(update_symbol);
-  REGISTER_SO(count_lines_symbol);
 
   text_symbol = scheme_intern_symbol("text");
   binary_symbol = scheme_intern_symbol("binary");
@@ -316,7 +314,6 @@ scheme_init_port (Scheme_Env *env)
   truncate_symbol = scheme_intern_symbol("truncate");
   truncate_replace_symbol = scheme_intern_symbol("truncate/replace");
   update_symbol = scheme_intern_symbol("update");
-  count_lines_symbol = scheme_intern_symbol("count-lines");
 
   REGISTER_SO(scheme_orig_stdout_port);
   REGISTER_SO(scheme_orig_stderr_port);
@@ -1848,7 +1845,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
   char *mode = "rb";
   char *filename;
   int regfile, i;
-  int m_set = 0, l_set = 0;
+  int m_set = 0;
   Scheme_Object *result;
 
   if (!SCHEME_STRINGP(argv[0]))
@@ -1864,8 +1861,6 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     } else if (SAME_OBJ(argv[i], binary_symbol)) {
       /* This is the default */
       m_set++;
-    } else if (SAME_OBJ(argv[i], count_lines_symbol)) {
-      l_set++;
     } else {
       char *astr;
       long alen;
@@ -1879,7 +1874,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 		       astr, alen);
     }
 
-    if (m_set > 1 || l_set > 1) {
+    if (m_set > 1) {
       char *astr;
       long alen;
 
@@ -1938,9 +1933,6 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 
   result = make_tested_file_input_port(fp, filename, !regfile);
 #endif
-
-  if (l_set)
-    scheme_count_lines(result);
 
   return result;
 }

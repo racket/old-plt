@@ -74,6 +74,7 @@ static Scheme_Object *port_display_handler(int, Scheme_Object **args);
 static Scheme_Object *port_write_handler(int, Scheme_Object **args);
 static Scheme_Object *port_print_handler(int, Scheme_Object **args);
 static Scheme_Object *global_port_print_handler(int, Scheme_Object **args);
+static Scheme_Object *port_count_lines(int, Scheme_Object **args);
 
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[]);
 static Scheme_Object *sch_default_display_handler(int argc, Scheme_Object *argv[]);
@@ -198,7 +199,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("open-input-file", 
 			     scheme_make_prim_w_arity(open_input_file, 
 						      "open-input-file", 
-						      1, 3), 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("open-input-string", 
 			     scheme_make_prim_w_arity(open_input_string, 
@@ -239,7 +240,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("call-with-input-file",
 			     scheme_make_prim_w_arity2(call_with_input_file,
 						       "call-with-input-file",
-						       2, 4,
+						       2, 3,
 						       0, -1),
 			     env);
   scheme_add_global_constant("with-output-to-file",
@@ -251,7 +252,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("with-input-from-file",
 			     scheme_make_prim_w_arity2(with_input_from_file,
 						       "with-input-from-file",
-						       2, 4,
+						       2, 3,
 						       0, -1),
 			     env);
   scheme_add_global_constant("make-input-port", 
@@ -415,6 +416,12 @@ scheme_init_port_fun(Scheme_Env *env)
 						       "make-pipe", 
 						       0, 1,
 						       2, 2), 
+			     env);
+
+  scheme_add_global_constant("port-count-lines!", 
+			     scheme_make_prim_w_arity(port_count_lines, 
+						      "port-count-lines!", 
+						      1, 1),
 			     env);
 }
 
@@ -2033,6 +2040,14 @@ static Scheme_Object *global_port_print_handler(int argc, Scheme_Object *argv[])
 			     scheme_make_integer(MZCONFIG_PORT_PRINT_HANDLER),
 			     argc, argv,
 			     2, NULL, NULL, 0);
+}
+
+static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_INPORTP(argv[0]))
+    scheme_wrong_type("port-count-lines!", "input-port", 0, argc, argv);
+
+  scheme_count_lines(argv[0]);
 }
 
 typedef struct {

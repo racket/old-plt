@@ -47,6 +47,7 @@ OBJS =  salloc.o \
 	setjmpup.o \
 	string.o \
 	struct.o \
+	stxobj.o \
 	symbol.o \
 	syntax.o \
 	type.o \
@@ -90,6 +91,7 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/setjmpup.c \
 	$(XSRCDIR)/string.c \
 	$(XSRCDIR)/struct.c \
+	$(XSRCDIR)/stxobj.c \
 	$(XSRCDIR)/symbol.c \
 	$(XSRCDIR)/syntax.c \
 	$(XSRCDIR)/type.c \
@@ -178,6 +180,8 @@ $(XSRCDIR)/string.c: ../src/string.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/string.c $(XSRCDIR)/string.c -I$(OBJDIR)
 $(XSRCDIR)/struct.c: ../src/struct.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/struct.c $(XSRCDIR)/struct.c
+$(XSRCDIR)/stxobj.c: ../src/stxobj.o $(XFORMDEP)
+	$(XFORM) $(SRCDIR)/stxobj.c $(XSRCDIR)/stxobj.c
 $(XSRCDIR)/symbol.c: ../src/symbol.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/symbol.c $(XSRCDIR)/symbol.c
 $(XSRCDIR)/syntax.c: ../src/syntax.o $(XFORMDEP)
@@ -262,6 +266,8 @@ string.o: $(XSRCDIR)/string.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/string.c -o string.o
 struct.o: $(XSRCDIR)/struct.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/struct.c -o struct.o
+stxobj.o: $(XSRCDIR)/stxobj.c
+	$(CC) $(CFLAGS) -c $(XSRCDIR)/stxobj.c -o stxobj.o
 symbol.o: $(XSRCDIR)/symbol.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/symbol.c -o symbol.o
 syntax.o: $(XSRCDIR)/syntax.c

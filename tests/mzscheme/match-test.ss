@@ -2,6 +2,9 @@
 (SECTION 'MATCH)
 (require  (lib "match.ss"))
 
+
+(test #t (lambda () (match `() [`() #t] [else #f])))
+
 (define-syntax test-mac
   (syntax-rules ()
     ((id to-test eval-to)

@@ -1169,7 +1169,6 @@ void scheme_read_err(Scheme_Object *port,
     
 
   scheme_raise_exn((gotc == EOF) ? MZEXN_READ_EOF : ((gotc == SCHEME_SPECIAL) ? MZEXN_READ_NON_CHAR : MZEXN_READ), 
-		   port ? port : scheme_false, 
 		   stxsrc ? stxsrc : scheme_false,
 		   (line < 0) ? scheme_false : scheme_make_integer(line),
 		   (col < 0) ? scheme_false : scheme_make_integer(col),

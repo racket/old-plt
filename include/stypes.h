@@ -116,8 +116,8 @@ enum {
   scheme_rt_comp_env,
   scheme_rt_constant_binding,
   scheme_rt_resolve_info,
-  scheme_rt_compile_info,
-  scheme_rt_cont_mark, /* 100 */
+  scheme_rt_compile_info, /* 100 */
+  scheme_rt_cont_mark,
   scheme_rt_saved_stack,
   scheme_rt_eval_in_env,
   scheme_rt_reply_item,
@@ -126,8 +126,8 @@ enum {
   scheme_rt_dyn_wind_cell,
   scheme_rt_cont_mark_chain,
   scheme_rt_dyn_wind_info,
-  scheme_rt_dyn_wind,
-  scheme_rt_dup_check, /* 110 */
+  scheme_rt_dyn_wind, /* 110 */
+  scheme_rt_dup_check,
   scheme_rt_thread_memory,
   scheme_rt_input_file,
   scheme_rt_input_fd,
@@ -136,8 +136,8 @@ enum {
   scheme_rt_tested_output_file,
   scheme_rt_indexed_string,
   scheme_rt_output_file,
-  scheme_rt_load_handler_data,
-  scheme_rt_load_data, /* 120 */
+  scheme_rt_load_handler_data, /* 120 */
+  scheme_rt_load_data,
   scheme_rt_pipe,
   scheme_rt_beos_process,
   scheme_rt_system_child,
@@ -146,8 +146,8 @@ enum {
   scheme_rt_tcp_select_info,
   scheme_rt_namespace_option,
   scheme_rt_param_data,
-  scheme_rt_will,
-  scheme_rt_will_registration, /* 130 */
+  scheme_rt_will,             /* 130 */
+  scheme_rt_will_registration,
   scheme_rt_breakable_wait,
   scheme_rt_sema_waiter,
   scheme_rt_struct_proc_info,
@@ -156,8 +156,8 @@ enum {
   scheme_rt_finalization,
   scheme_rt_finalizations,
   scheme_rt_cpp_object,
-  scheme_rt_cpp_array_object,
-  scheme_rt_stack_object, /* 140 */
+  scheme_rt_cpp_array_object, /* 140 */
+  scheme_rt_stack_object, 
   scheme_rt_preallocated_object,
   scheme_thread_hop_type,
   scheme_rt_breakable,

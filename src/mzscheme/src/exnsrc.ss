@@ -30,8 +30,7 @@ strings are types/comments.
 		   module "symbol, module path index, or {\\scmfalse}" "the form-defining module (or {\\scmfalse} if unknown)"]
 	     "syntax error, but not a \\scmfirst{read} error")
      
-     (read [port "input-port" "port being read"
-		 source "value" "source name"
+     (read [source "value" "source name"
 		 line "positive exact integer or {\\scmfalse}" "source line"
 		 column "positive exact integer or {\\scmfalse}" "source column"
 		 position "positive exact integer or {\\scmfalse}" "source position"

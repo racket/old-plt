@@ -509,14 +509,11 @@
 
 #endif
 
-  /******** Windows with MS Visual C++ or CYGWIN **********/
-  /* See the "windows" directory for more MSVC details.   */
-  /* MzScheme is probably no longer Borland-friendly,     */
-  /* since it currently relies on one MSVC-style inline   */
-  /* assembly file. Nevertheless, the old flags and       */
-  /* instructions have been preserved.                    */
+  /**** Windows with MS Visual C, Cygwin gcc, or Borland *****/
+  /* See the "worksp" directory for more MSVC details.       */
+  /* See the "borland" directory for more Borland details.   */
 
-#if (defined(__CYGWIN32__) \
+#if (defined(__CYGWIN32__) || defined(__BORLANDC__) \
      || (defined(_MSC_VER) \
          && (defined(__WIN32__) || defined(WIN32) || defined(_WIN32))))
 
@@ -565,12 +562,21 @@
 # define WINDOWS_DYNAMIC_LOAD
 # define LINK_EXTENSIONS_BY_TABLE
 
-#if defined(_MSC_VER)
+#ifdef _MSC_VER
 # define NAN_EQUALS_ANYTHING
 # define POW_HANDLES_INF_CORRECTLY
 #endif
 #ifdef __CYGWIN32__
 # define USE_DIVIDE_MAKE_INFINITY
+#endif
+#ifdef __BORLANDC__
+# define NAN_EQUALS_ANYTHING
+# define ATAN2_DOESNT_WORK_WITH_INFINITIES
+# define ATAN2_DOESNT_WORK_WITH_NAN
+# define SQRT_NAN_IS_WRONG
+# define LOG_ZERO_ISNT_NEG_INF
+# define TRIG_ZERO_NEEDS_SIGN_CHECK
+# define NEED_TO_DEFINE_MATHERR
 #endif
 
 # define IO_INCLUDE
@@ -607,8 +613,10 @@
 # define DIRECT_INCLUDE
 #endif
 
-#if defined(__BORLANDC__)
+#ifdef __BORLANDC__
+# define MSCBOR_IZE(x) _ ## x
 # define DIR_INCLUDE
+# define IGNORE_BY_CONTROL_387
 #endif
 
 # define REGISTER_POOR_MACHINE
@@ -1108,6 +1116,9 @@
  /* ATAN2_DOESNT_WORK_WITH_INFINITIES indicates that atan2(+/-inf, +/-inf)
     is not the same as atan2(1, 1). */ 
     
+ /* ATAN2_DOESNT_WORK_WITH_NAN indicates that atan2(+nan.0, _) and
+    atan2(_, +nan.0) don't produce +nan.0. */ 
+    
  /* SQRT_NAN_IS_WRONG indicates that (sqrt +nan.0) must be forced to +nan.0
     (i.e., the C library function is bad). */
     
@@ -1123,6 +1134,9 @@
 
  /* LOG_ZERO_ISNT_NEG_INF defines a version of log that checks for an
     inexact zero argument and return negative infinity. */
+
+ /* NEED_TO_DEFINE_MATHERR defines _matherr to quiet warnings from the
+    math library. */
 
   /**************/
  /* Byte Order */

@@ -95,6 +95,9 @@ typedef long FILE;
 #ifndef MSC_IZE
 # define MSC_IZE(x) x
 #endif
+#ifndef MSCBOR_IZE
+# define MSCBOR_IZE(x) MSC_IZE(x)
+#endif
 
 #ifdef SIGSET_IS_SIGNAL
 # define MZ_SIGSET(s, f) signal(s, f)
@@ -117,7 +120,8 @@ typedef jmpbuf jmp_buf[1];
 
 /* Set up MZ_EXTERN for DLL build */
 #if SCHEME_DIRECT_EMBEDDED && defined(WINDOWS_DYNAMIC_LOAD) \
-    && defined(_MSC_VER) && !defined(SCHEME_EMBEDDED_NO_DLL)
+    && (defined(_MSC_VER) || defined(__BORLANDC__)) \
+    && !defined(SCHEME_EMBEDDED_NO_DLL)
 # define MZ_DLLIMPORT __declspec(dllimport)
 # ifdef __mzscheme_private__
 #  define MZ_DLLSPEC __declspec(dllexport)

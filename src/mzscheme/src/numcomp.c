@@ -128,6 +128,8 @@ scheme_zero_p (int argc, Scheme_Object *argv[])
   Scheme_Type t;
   Scheme_Object *o = argv[0];
 
+ top:
+
   if (SCHEME_INTP(o))
     return (o == zeroi) ? scheme_true : scheme_false;
   t = _SCHEME_TYPE(o);
@@ -149,8 +151,8 @@ scheme_zero_p (int argc, Scheme_Object *argv[])
   }
 
   if (t == scheme_complex_izi_type) {
-    Scheme_Object *r = IZI_REAL_PART(o);
-    return scheme_zero_p(1, &r);
+    o = IZI_REAL_PART(o);
+    goto top;
   }
 
   if ((t >= scheme_bignum_type) && (t <= scheme_complex_type))
@@ -166,6 +168,8 @@ scheme_positive_p (int argc, Scheme_Object *argv[])
 {
   Scheme_Type t;
   Scheme_Object *o = argv[0];
+
+ top:
 
   if (SCHEME_INTP(o))
     return (SCHEME_INT_VAL(o) > 0 ? scheme_true : scheme_false);
@@ -193,8 +197,8 @@ scheme_positive_p (int argc, Scheme_Object *argv[])
   if (t == scheme_rational_type)
     return (scheme_is_rational_positive(o)  ? scheme_true : scheme_false);
   if (t == scheme_complex_izi_type) {
-    Scheme_Object *r = IZI_REAL_PART(o);
-    return scheme_positive_p(1, &r);
+    o = IZI_REAL_PART(o);
+    goto top;
   }
 
 
@@ -208,6 +212,8 @@ scheme_negative_p (int argc, Scheme_Object *argv[])
 {
   Scheme_Type t;
   Scheme_Object *o = argv[0];
+
+ top:
 
   if (SCHEME_INTP(o))
     return (SCHEME_INT_VAL(o) < 0 ? scheme_true : scheme_false);
@@ -235,8 +241,8 @@ scheme_negative_p (int argc, Scheme_Object *argv[])
   if (t == scheme_rational_type)
     return (!scheme_is_rational_positive(o) ? scheme_true : scheme_false);
   if (t == scheme_complex_izi_type) {
-    Scheme_Object *r = IZI_REAL_PART(o);
-    return scheme_negative_p(1, &r);
+    o = IZI_REAL_PART(o);
+    goto top;
   }
 
   NEED_REAL(negative?);

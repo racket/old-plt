@@ -65,8 +65,8 @@
 # define TRANS_DIG_DEC_DIG 5
 #endif
 
-static Scheme_Object *bignum_none = NULL;
 static Scheme_Object *bignum_one = NULL;
+static Scheme_Object *bignum_negone = NULL;
 static Scheme_Object *decimal_digits[17];
 
 #ifdef MZ_PRECISE_GC
@@ -504,12 +504,12 @@ Scheme_Object *scheme_bignum_add1(const Scheme_Object *n)
 
 Scheme_Object *scheme_bignum_sub1(const Scheme_Object *n)
 {
-  if (!bignum_none) {
-    REGISTER_SO(bignum_none);
-    bignum_none = scheme_make_bignum(-1);
+  if (!bignum_negone) {
+    REGISTER_SO(bignum_negone);
+    bignum_negone = scheme_make_bignum(-1);
   }
 
-  return scheme_bignum_add(n, bignum_none);
+  return scheme_bignum_add(n, bignum_negone);
 }
 
 static void bignum_double_inplace(Scheme_Object *n, int bs)

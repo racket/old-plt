@@ -270,7 +270,8 @@
 (define-struct (union-type struct:vtype) ())
 (define-struct (non-pointer-type struct:vtype) (base))
 
-(define-struct live-var-info (tag maxlive maxpush vars new-vars pushed-vars num-calls))
+(define-struct live-var-info (tag maxlive maxpush vars new-vars pushed-vars 
+				  num-calls num-noreturn-calls))
 
 (define-struct prototype (type args static? pointer? pointer?-determined?))
 
@@ -391,7 +392,8 @@
 		      new-live-vars
 		      (live-var-info-new-vars live-vars)
 		      (live-var-info-pushed-vars live-vars)
-		      (live-var-info-num-calls live-vars)))
+		      (live-var-info-num-calls live-vars)
+		      (live-var-info-num-noreturn-calls live-vars)))
 
 (define gentag
   (let ([count 0])
@@ -1458,13 +1460,15 @@
 						      (make-tok semi #f #f))))
 					null)
 				    (lambda () null)
-				    (make-live-var-info #f -1 0 null null null 0) #t)])
+				    (make-live-var-info #f -1 0 null null null 0 0) #t)])
 	  (if (and (not important-conversion?)
 		   (not (and function-name
 			     (eq? class-name function-name)))
 		   (null? (live-var-info-new-vars live-vars))
 		   (zero? (live-var-info-maxpush live-vars))
-		   (<= (live-var-info-num-calls live-vars) 1))
+		   (or (<= (live-var-info-num-calls live-vars) 1)
+		       (= (live-var-info-num-calls live-vars)
+			  (live-var-info-num-noreturn-calls live-vars))))
 	      ;; No conversion necessary
 	      (list->seq
 	       (cons
@@ -1756,7 +1760,8 @@
 							      (live-var-info-vars live-vars))
 							     (live-var-info-new-vars live-vars)
 							     (live-var-info-pushed-vars live-vars)
-							     (live-var-info-num-calls live-vars)))]
+							     (live-var-info-num-calls live-vars)
+							     (live-var-info-num-noreturn-calls live-vars)))]
 			   [(eq? (tok-n (caar body)) START_XFORM_SKIP)
 			    (let skip-loop ([body (cdr body)])
 			      (let*-values ([(end?) (eq? (tok-n (caar body)) END_XFORM_SKIP)]
@@ -1909,7 +1914,8 @@
 					    (live-var-info-vars live-vars)
 					    (live-var-info-new-vars live-vars)
 					    (live-var-info-pushed-vars live-vars)
-					    (live-var-info-num-calls live-vars))))))))))
+					    (live-var-info-num-calls live-vars)
+					    (live-var-info-num-noreturn-calls live-vars))))))))))
 
 (define (body-var-decl? e)
   (and (pair? e)
@@ -2056,7 +2062,8 @@
 						      (make-tok semi #f #f)))
 					     (live-var-info-new-vars live-vars))
 				       (live-var-info-pushed-vars live-vars)
-				       (live-var-info-num-calls live-vars))))
+				       (live-var-info-num-calls live-vars)
+				       (live-var-info-num-noreturn-calls live-vars))))
 			      (loop (cdr el) (cons (wrap e) new-args) setups new-vars 
 				    (if must-convert?
 					ok-calls
@@ -2322,7 +2329,9 @@
 					   (let* ([old-pushed (live-var-info-pushed-vars live-vars)]
 						  [new-pushed (filter (lambda (x) (not (assq (car x) old-pushed))) pushed-vars)])
 					     (append new-pushed old-pushed))
-					   (add1 (live-var-info-num-calls live-vars)))))))))]
+					   (add1 (live-var-info-num-calls live-vars))
+					   (+ (if non-returning? 1 0)
+					      (live-var-info-num-noreturn-calls live-vars)))))))))]
        [(eq? 'goto (tok-n (car e-)))
 	;; Goto - assume all vars are live
 	(loop (cdr e-) (cons (car e-) result) 
@@ -2373,7 +2382,8 @@
 					    (make-tok semi #f #f)))
 				   (live-var-info-new-vars live-vars))
 			     (live-var-info-pushed-vars live-vars)
-			     (live-var-info-num-calls live-vars))))
+			     (live-var-info-num-calls live-vars)
+			     (live-var-info-num-noreturn-calls live-vars))))
 		    (begin
 		      (when (and (not (null? assignee))
 				 (or (if (brackets? (car assignee))
@@ -2442,7 +2452,8 @@
 					       new-live-vars
 					       (live-var-info-new-vars live-vars)
 					       new-pushed-vars
-					       (live-var-info-num-calls live-vars))))]
+					       (live-var-info-num-calls live-vars)
+					       (live-var-info-num-noreturn-calls live-vars))))]
 		      [(restore-new-vars)
 		       (lambda (live-vars)
 			 (make-live-var-info (live-var-info-tag live-vars)
@@ -2451,7 +2462,8 @@
 					     (live-var-info-vars live-vars)
 					     orig-new-vars
 					     orig-pushed-vars
-					     (live-var-info-num-calls live-vars)))]
+					     (live-var-info-num-calls live-vars)
+					     (live-var-info-num-noreturn-calls live-vars)))]
 		      [(e live-vars rest extra)
 		       (cond
 			[(and do? (not exit-with-error?))

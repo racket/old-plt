@@ -99,8 +99,10 @@ scheme_add1 (int argc, Scheme_Object *argv[])
     v = SCHEME_INT_VAL(o);
     if (v < 0x3FFFFFFF)
       return scheme_make_integer(v + 1);
-    else
-      return scheme_bignum_add1(scheme_make_bignum(v));
+    else {
+      Small_Bignum b;
+      return scheme_bignum_add1(scheme_make_small_bignum(v, &b));
+    }
   }
   t = _SCHEME_TYPE(o);
 #ifdef MZ_USE_SINGLE_FLOATS
@@ -132,8 +134,10 @@ scheme_sub1 (int argc, Scheme_Object *argv[])
     v = SCHEME_INT_VAL(o);
     if (v > -(0x3FFFFFFF))
       return scheme_make_integer(SCHEME_INT_VAL(o) - 1);
-    else
-      return scheme_bignum_sub1(scheme_make_bignum(v));
+    else {
+      Small_Bignum b;
+      return scheme_bignum_sub1(scheme_make_small_bignum(v, &b));
+    }
   }
   t = _SCHEME_TYPE(o);
 #ifdef MZ_USE_SINGLE_FLOATS

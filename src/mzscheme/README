@@ -113,7 +113,7 @@ and library files are put in
 
 The destination for the `mzscheme' binary does not use the
 MZPLTFORMSUFFIX enrionment variable. (That would be too easy.)
-Instead, the MZBUILDDIR envionrment variable designates a destination
+Instead, the MZBUILDDIR environment variable designates a destination
 directory for the binary. If MZBUILDDIR is not defined, the binary is
 placed in the same directory as the main "Makefile".
 

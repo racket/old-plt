@@ -98,7 +98,8 @@ static bcounter = 0;
 #endif
 
 wxMediaBuffer::wxMediaBuffer()
-{  
+ : wxObject(WXGC_NO_CLEANUP)
+{
   map = new wxKeymap();
   map->AdjustUsage(TRUE);
   // AddBufferFunctions(map);
@@ -107,7 +108,7 @@ wxMediaBuffer::wxMediaBuffer()
   styleList->AdjustUsage(TRUE);
   styleList->NewNamedStyle(STD_STYLE, NULL);
   notifyId = styleList->NotifyOnChange((wxStyleNotifyFunc)MediaStyleNotify, 
-				       this);
+				       this, 1);
 
   filename = NULL;
 
@@ -130,7 +131,7 @@ wxMediaBuffer::wxMediaBuffer()
   InitCutNPaste();
 
   admin = NULL;
-  WXGC_IGNORE(admin);
+  // WXGC_IGNORE(admin);
 
 #ifdef EACH_BUFFER_OWN_OFFSCREEN
   offscreen = NULL;
@@ -469,7 +470,7 @@ void wxMediaBuffer::SetStyleList(wxStyleList *newList)
 #endif
   newList->AdjustUsage(TRUE);
   notifyId = newList->NotifyOnChange((wxStyleNotifyFunc)MediaStyleNotify, 
-				     this);
+				     this, 1);
   styleList = newList;
 
   if (!styleList->FindNamedStyle(STD_STYLE))
@@ -2076,14 +2077,14 @@ long wxMediaBuffer::MemoryUse(void)
 
 /****************************************************************/
 
-wxStandardSnipAdmin::wxStandardSnipAdmin(wxMediaBuffer *m)
+wxStandardSnipAdmin::wxStandardSnipAdmin(wxMediaBuffer *m)  
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_MEDIA_SNIP_ADMIN;
 #endif
 
   media = m;
-  WXGC_IGNORE(media);
+  // WXGC_IGNORE(media);
 }
 
 wxMediaBuffer *wxStandardSnipAdmin::GetMedia(void)

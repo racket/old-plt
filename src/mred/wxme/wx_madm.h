@@ -19,7 +19,7 @@ class wxMediaAdmin : public wxObject
   int standard; /* Used to recognize standard display. Hack. */
   
  public:
-  wxMediaAdmin() 
+  wxMediaAdmin() : wxObject(WXGC_NO_CLEANUP)
     {
       standard = 0; 
 #if USE_OLD_TYPE_SYSTEM

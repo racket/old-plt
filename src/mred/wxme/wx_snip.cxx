@@ -151,7 +151,7 @@ void wxSnip::Init(void)
   next = prev = NULL;
   line = NULL;
 
-  admin_ptr = new WXGC_ATOMIC wxSnipAdmin*;
+  admin_ptr = new /* WXGC_ATOMIC */ wxSnipAdmin*;
   *admin_ptr = NULL;
 
   style = wxTheStyleList->BasicStyle();

@@ -63,6 +63,32 @@ to compile MrEd.
 After MrEd is built, run `gnumake install' to install the binary
 into the plt/ hierarchy.
 
+------------------------------------------------------------------------
+ Compiling for Multiple Unix Platforms
+------------------------------------------------------------------------
+
+MrEd's Unix makefiles are set up to support compilation for
+multiple platforms in the same filesystem. To differentiate platforms
+for the makefiles, set the MZPLTFORMSUFFIX environment
+variable. Object files (.o files) are placed in the subdirectory
+  objects/sys${MZPLTFORMSUFFIX} 
+and library files (.a files) are placed in the subdirectory 
+  objects/lib${MZPLTFORMSUFFIX}
+Instead of the make.env configuration file, compilation uses
+  make${MZPLATFORMSUFFIX}.env
+
+MZPLTFORMSUFFIX does not need to be defined if you are only compiling
+for a single platform. In this case, object files are put in
+  objects/sys
+and library files are put in
+  lib/sys
+
+The destination for the `mred' binary does not use the
+MZPLTFORMSUFFIX enrionment variable. (That would be too easy.)
+Instead, the MRBUILDDIR environment variable designates a destination
+directory for the binary. If MRBUILDDIR is not defined, the binary is
+placed in the same directory as the main "Makefile".
+
 ========================================================================
  Compiling for Windows
 ========================================================================

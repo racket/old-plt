@@ -554,7 +554,7 @@ wxMediaSnipMediaAdmin::wxMediaSnipMediaAdmin(wxMediaSnip *s)
   snip = s;
   state.drawing = 0;
 
-  WXGC_IGNORE(snip);
+  // WXGC_IGNORE(snip);
   WXGC_IGNORE(state.dc);
 }
 

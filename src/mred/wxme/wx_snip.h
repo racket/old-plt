@@ -325,6 +325,8 @@ class wxImageSnip : public wxInternalSnip
 class wxSnipAdmin : public wxObject
 {
  public:
+  wxSnipAdmin() : wxObject(WXGC_NO_CLEANUP) {}
+
   virtual wxMediaBuffer *GetMedia(void) = 0;
 
   virtual wxDC *GetDC() = 0;

@@ -167,7 +167,7 @@
 #define USE_WATCH_FOUND_FUNC SGC_STD_DEBUGGING
 /* Calls GC_found_watch when the watch-for ptr is found. */
 
-#define PAD_BOUNDARY_BYTES (1 && SGC_STD_DEBUGGING)
+#define PAD_BOUNDARY_BYTES (0 && SGC_STD_DEBUGGING)
 /* Put a known padding pattern around every allocated
    block to test for array overflow/underflow.
    Pad-testing is performed at the beginning of every GC.
@@ -4677,7 +4677,7 @@ void GC_store_path(void *v, unsigned long src, void *path_data)
     trace_path_buffer[trace_path_buffer_pos++] = (void *)2;
     trace_path_buffer[trace_path_buffer_pos++] = "truncated";
     trace_path_buffer[trace_path_buffer_pos++] = 0;
-    trace_path_buffer[trace_path_buffer_pos++] = v;
+    trace_path_buffer[trace_path_buffer_pos++] = PAD_FORWARD(v);
     trace_path_buffer[trace_path_buffer_pos++] = 0;
     trace_path_buffer[trace_path_buffer_pos] = 0;
     trace_path_buffer_pos = -1;
@@ -4707,7 +4707,7 @@ void GC_store_path(void *v, unsigned long src, void *path_data)
 
     trace_path_buffer[trace_path_buffer_pos - 1] = (void *)(src - prev);
 
-    trace_path_buffer[trace_path_buffer_pos++] = v;
+    trace_path_buffer[trace_path_buffer_pos++] = PAD_FORWARD(v);
     trace_path_buffer[trace_path_buffer_pos++] = 0;
     trace_path_buffer[trace_path_buffer_pos] = 0;
   }

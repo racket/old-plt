@@ -1125,8 +1125,8 @@ wxCanvasMediaAdmin::wxCanvasMediaAdmin(wxMediaCanvas *c)
   resetFlag = FALSE;
   nextadmin = prevadmin = NULL;
   WXGC_IGNORE(canvas);
-  WXGC_IGNORE(nextadmin);
-  WXGC_IGNORE(prevadmin);
+  // WXGC_IGNORE(nextadmin);
+  // WXGC_IGNORE(prevadmin);
 
   updateCursorTimer = NULL;
 

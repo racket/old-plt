@@ -507,9 +507,9 @@ wxStyle::wxStyle()
 
   textMetricDC = NULL;
 
+  WXGC_IGNORE(styleList);
 #if 0
   /* (styles are not finalized any more) */
-  WXGC_IGNORE(styleList);
   WXGC_IGNORE(baseStyle);
   WXGC_IGNORE(textMetricDC);
 #endif
@@ -1166,10 +1166,15 @@ void wxStyleList::StyleWasChanged(wxStyle *which)
   }
 }
 
-long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data)
+long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak)
 {
-  NotificationRec *rec = new WXGC_ATOMIC NotificationRec;
+  NotificationRec *rec, *orec;
 
+  if (weak)
+    rec = new WXGC_ATOMIC NotificationRec;
+  else
+    rec = new NotificationRec;
+  
   rec->f = f;
   rec->data = data;
   WXGC_IGNORE(rec->data);
@@ -1178,6 +1183,17 @@ long wxStyleList::NotifyOnChange(wxStyleNotifyFunc f, void *data)
 #else
   rec->id = scheme_make_symbol("notify-change-key");
 #endif
+
+  /* Look for dropped weak entries to replace: */
+  wxNode *node;
+  for (node = notifications->First(); node; node = node->Next()) {
+    orec = (NotificationRec *)node->Data();
+    if (!orec->data) {
+      node->SetData((wxObject *)rec);
+      return rec->id;
+    }
+  }
+
   notifications->Append((wxObject *)rec);
 
   return rec->id;

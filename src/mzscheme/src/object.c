@@ -1774,11 +1774,11 @@ static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
   
   /* Add `super-init' */
   objl = cons(superinitname, scheme_null);
-  scheme_dup_symbol_check(r, CLASS_STAR, superinitname, "ivar", form, 0);
+  scheme_dup_symbol_check(r, CLASS_STAR, superinitname, "internal ivar or `super-init' variable", form, 0);
 
   /* Add `this' */
   objl = cons(thisname, objl);
-  scheme_dup_symbol_check(r, CLASS_STAR, thisname, "ivar", form, 0);
+  scheme_dup_symbol_check(r, CLASS_STAR, thisname, "internal ivar or `this' variable", form, 0);
 
   /* Add input args (they end up in reverse order in the environment) */
   item = ivars;

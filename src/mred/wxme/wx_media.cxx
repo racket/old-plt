@@ -2134,7 +2134,7 @@ void wxMediaEdit::FlashOn(long start, long end, Bool ateol, Bool scroll,
     }
     flashTimer = new wxMediaFlashTimer();
     flashTimer->media = this;
-    WXGC_IGNORE(flashTimer->media);
+    // WXGC_IGNORE(flashTimer->media);
     flashTimer->Start(timeout);
   }
   flashscroll = scroll;

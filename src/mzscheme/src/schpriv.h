@@ -819,7 +819,7 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 # define MALLOC_ONE_RT(x) MALLOC_ONE_TAGGED(x)
 # define MALLOC_N_RT(x,c) MALLOC_N_TAGGED(x,c)
 # define MALLOC_ONE_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak)
-# define MALLOC_ONE_TAGGED_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak)
+# define MALLOC_ONE_TAGGED_WEAK(x) _MALLOC_N(x, 1, scheme_malloc_weak_tagged)
 # define MALLOC_ONE_WEAK_RT(x) MALLOC_ONE_TAGGED_WEAK(x)
 #else
 # define scheme_malloc_rt(x) scheme_malloc(x)

@@ -84,6 +84,9 @@ int scheme_num_copied_stacks = 0;
 
 static void push_copied_stacks(int init)
 {
+#ifndef MZ_PRECISE_GC
+  /* FIXME */
+
   /* This is called after everything else is marked.
      Mark from those stacks that are still reachable. If
      we mark from a stack, we need to go back though the list
@@ -121,6 +124,7 @@ static void push_copied_stacks(int init)
 	}
       }
   } while (pushed_one);
+#endif
 }
 
 static void init_push_copied_stacks(void)
@@ -139,8 +143,11 @@ void scheme_init_setjumpup(void)
   first_copied_stack = MALLOC_LINK();
   *first_copied_stack = NULL;
 
+#ifndef MZ_PRECISE_GC
+  /* FIXME */
   GC_push_last_roots = init_push_copied_stacks;
   GC_push_last_roots_again = update_push_copied_stacks;
+#endif
 }
 
 static void remove_cs(void *_cs, void *unused)

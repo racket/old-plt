@@ -36,16 +36,19 @@
 
   ;; Paths that users can set
   ;;  Location of .afm files:
+  (define afm-home
+    (with-handlers ([exn:fail:filesystem? (lambda (x) (current-directory))])
+      (collection-path "afm")))
   (define current-ps-afm-file-paths
     (make-parameter (path-list-string->path-list 
 		     (or (getenv "PLTAFMPATHS") "")
-		     (list (collection-path "afm")))
+		     (list afm-home))
 		    (check-paths 'current-post-script-afm-file-paths)))
   ;;  Location of CMap files (for CID fonts)
   (define current-ps-cmap-file-paths
     (make-parameter (path-list-string->path-list 
 		     (or (getenv "PLTCMAPPATHS") "")
-		     (list (build-path (collection-path "afm") "CMap")))
+		     (list (build-path afm-home "CMap")))
 		    (check-paths 'current-post-script-cmap-file-paths)))
 
   (define (find-path l f)

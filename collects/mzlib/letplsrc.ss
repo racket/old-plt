@@ -110,7 +110,7 @@
 					(values ,@(map (lambda (sub rec) `(cons ,sub ,rec))
 						       sub-names
 						       rec-sub-names))))]
-			[else (error 'rmatch "didn't find a list: ~s, found: ~a" ,t ,above-name)])))]
+			[else (error 'rmatch "didn't find a list: found: ~a" ,above-name)])))]
 					
 
 		[(id? t) above-name]

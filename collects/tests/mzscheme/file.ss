@@ -108,7 +108,7 @@
 (err/rt-test (read (open-input-string "\"\\8\"")) exn:read?)
 
 ;; Test escape printing:
-(parameterize ([locale-enabled #f])
+(parameterize ([current-locale #f])
   (test "\"\\a\\b\\t\\n\\f\\r\\e\\v\\\\\\\"A \\5A\\17P\\17P\\335D\\3777\\0011\""
 	'output-escapes
 	(let ([p (open-output-string)])

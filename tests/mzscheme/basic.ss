@@ -368,7 +368,7 @@
 
 (SECTION 6 6)
 
-(define locale-was-enabled? (locale-enabled))
+(define locale-was-enabled? (current-locale))
 ;; Let Matthew perform some basic sanity checks for locale-sensitive
 ;; comparisons:
 (define known-locale? (and (regexp-match "mflatt" (find-system-path 'home-dir))
@@ -376,7 +376,7 @@
 
 
 ;; The following tests always work in portable mode!
-(locale-enabled #f)
+(current-locale #f)
 
 (define (char-tests)
   (test #t eqv? '#\  #\Space)
@@ -551,7 +551,7 @@
 (char-tests)
 (define (locale-comps char<? char=? char>?
 		      char-ci<? char-ci=? char-ci>?)
-  (parameterize ([locale-enabled #t])
+  (parameterize ([current-locale ""])
     (char-tests)
     (let ([p #\p]
 	  [n #\n]
@@ -569,7 +569,7 @@
       (test #t char-ci=? big-O: o:)
       (test #t char-ci<? n big-O:)
       (test #t char-ci<? big-O: p)
-      (parameterize ([locale-enabled #f])
+      (parameterize ([current-locale #f])
 	(test #t char<? p o:)
 	(test #t char<? n o:)
 	(test #t char<? n big-O:)
@@ -800,7 +800,7 @@
 (define ay (string #\a #\nul #\371 #\x))
 
 ;; The following tests always work in portable mode!
-(locale-enabled #f)
+(current-locale #f)
 
 (define (string-tests)
   (test #t string=? "" "")
@@ -945,7 +945,7 @@
 
 (string-tests)
 (when known-locale?
-  (parameterize ([locale-enabled #t])
+  (parameterize ([current-locale ""])
     (string-tests)))
 
 (when known-locale?
@@ -983,7 +983,7 @@
 	   string-ci>=? 
 	   string-ci<=?))
 
-(locale-enabled locale-was-enabled?)
+(current-locale locale-was-enabled?)
 
 (define r (regexp "(-[0-9]*)+"))
 (test '("-12--345" "-345") regexp-match r "a-12--345b")

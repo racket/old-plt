@@ -1697,10 +1697,10 @@ print_vector(Scheme_Object *vec, int notdisplay, int compact,
 static void
 print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 {
-  char ch, minibuf[4], *str;
+  char ch, minibuf[8], *str;
   int len = -1;
 
-  ch = SCHEME_CHAR_VAL (charobj);
+  ch = SCHEME_CHAR_VAL(charobj);
   if (notdisplay) {
     switch ( ch )
       {
@@ -1732,10 +1732,15 @@ print_char(Scheme_Object *charobj, int notdisplay, Scheme_Thread *p)
 	str = "#\\rubout";
 	break;
       default:
-	minibuf[0] = '#';
-	minibuf[1] = '\\';
-	minibuf[2] = ch;
-	minibuf[3] = 0;
+	if ((scheme_locale_on || (((unsigned char )ch) <= 127))
+	    && isprint(((unsigned char)ch))) {
+	  minibuf[0] = '#';
+	  minibuf[1] = '\\';
+	  minibuf[2] = ch;
+	  minibuf[3] = 0;
+	} else {
+	  sprintf(minibuf, "#\\%03o", (unsigned char)ch);
+	}
 	str = minibuf;
 	break;
       }

@@ -137,6 +137,9 @@ module and compile the module to a .zo with 'mzc -z filename' Then
 place the resulting .zo file in a subdirectory named 'compiled'.
 
 
+KNOWN BUGS:
+epsilon productions are ignored
+
 As example of both lex and yacc here is a read function that works for
 a subset of the R5RS scheme syntax: (and must read an entire file)
 

@@ -1056,6 +1056,8 @@ regexec(const char *who,
 	    peekskip = scheme_bin_plus(peekskip, scheme_make_integer(skip));
 	  }
 
+	  dropped = scheme_bin_plus(dropped, scheme_make_integer(skip));
+
 	  len -= skip;
 	  memmove(*stringp, *stringp + skip, len);
 	  skip = 0;
@@ -1085,13 +1087,12 @@ regexec(const char *who,
       } while (len >= skip);
 
       if (!peek) {
-	/* If we get here, there must be `skip'-1 leftover characters in the port,
-	   and `*stringp' must be at least `skip'-1 characters long: */
-	skip--;
-	if (skip > 0) {
+	/* If we get here, there must be `len' leftover characters in the port,
+	   and `*stringp' must hold the characters: */
+	if (len > 0) {
 	  if (discard_oport)
-	    scheme_put_string(who, discard_oport, *stringp, 0, skip, 0);
-	  scheme_get_string(who, port, *stringp, 0, skip, 0, 0, 0);
+	    scheme_put_string(who, discard_oport, *stringp, 0, len, 0);
+	  scheme_get_string(who, port, *stringp, 0, len, 0, 0, 0);
 	}
       }
     } else {
@@ -1778,26 +1779,28 @@ static Scheme_Object *gen_compare(char *name, int pos,
       
 
     if (argc > 3) {
-      endset = scheme_extract_index(name, 3, argc, argv, len + 1);
+      if (!SCHEME_FALSEP(argv[3])) {
+	endset = scheme_extract_index(name, 3, argc, argv, len + 1);
 
-      if (iport) {
-	if (endset < 0) {
-	  /* argument was a bignum */
-	  endset = 0x7FFFFFFF;
-	}
-	/* compare numbers */
-	if (scheme_bin_lt(argv[3], argv[2])) {
-	  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
-			   argv[3],
-			   "%s: ending index %V is smaller than starting index %V for port",
-			   name, argv[3], argv[2]);
+	if (iport) {
+	  if (endset < 0) {
+	    /* argument was a bignum */
+	    endset = 0x7FFFFFFF;
+	  }
+	  /* compare numbers */
+	  if (scheme_bin_lt(argv[3], argv[2])) {
+	    scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+			     argv[3],
+			     "%s: ending index %V is smaller than starting index %V for port",
+			     name, argv[3], argv[2]);
+	    return NULL;
+	  }
+	} else if (endset < offset || endset > len) {
+	  scheme_out_of_string_range(name, "ending ", argv[3], argv[1], offset, len);
 	  return NULL;
 	}
-      } else if (endset < offset || endset > len) {
-	scheme_out_of_string_range(name, "ending ", argv[3], argv[1], offset, len);
-	return NULL;
+	endv = argv[3];
       }
-      endv = argv[3];
 
       if (argc > 4) {
 	if (!SCHEME_OUTPORTP(argv[4]))

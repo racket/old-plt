@@ -258,6 +258,14 @@ wxPrinter::~wxPrinter(void)
 
 Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 {
+  int fromPage, toPage;
+  int minPage, maxPage;
+  GDHandle gThisGDevice;
+  int logPPIScreenX, logPPIScreenY;
+  PMResolution res;
+  Bool keepGoing = TRUE;
+  int copyCount;
+  
   abortIt = FALSE;
   abortWindow = NULL;
 
@@ -272,8 +280,6 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   printout->OnPreparePrinting();
 
   // Get some parameters from the printout, if defined
-  int fromPage, toPage;
-  int minPage, maxPage;
   printout->GetPageInfo(&minPage, &maxPage, &fromPage, &toPage);
 
   if (maxPage == 0)
@@ -324,14 +330,12 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     return FALSE;
   }
 
-  GDHandle gThisGDevice = GetMainDevice();
-  int logPPIScreenX = (int)Fix2Long((**(**gThisGDevice).gdPMap).hRes);
-  int logPPIScreenY = (int)Fix2Long((**(**gThisGDevice).gdPMap).vRes);
+  gThisGDevice = GetMainDevice();
+  logPPIScreenX = (int)Fix2Long((**(**gThisGDevice).gdPMap).hRes);
+  logPPIScreenY = (int)Fix2Long((**(**gThisGDevice).gdPMap).vRes);
 
   printout->SetPPIScreen(logPPIScreenX, logPPIScreenY);
 
-  PMResolution res;
-  
   PMGetResolution(printData->cPageFormat,&res);
   printout->SetPPIPrinter((int)res.hRes,(int)res.vRes);
 
@@ -350,9 +354,8 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   
   printout->OnBeginPrinting();
   
-  Bool keepGoing = TRUE;
-
-  for (int copyCount = 1; copyCount <= printData->GetNoCopies(); copyCount ++) {
+  for (copyCount = 1; copyCount <= printData->GetNoCopies(); copyCount ++) {
+    int pn;
     if (!printout->OnBeginDocument(printData->GetFromPage(), printData->GetToPage())) {
       //wxEndBusyCursor();
       wxMessageBox("Could not start printing.", "Print Error");
@@ -363,7 +366,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
       new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
       break;
     }
-    for (int pn = printData->GetFromPage(); 
+    for (pn = printData->GetFromPage(); 
 	 keepGoing && 
 	 (pn <= printData->GetToPage()) && printout->HasPage(pn);
 	 pn++) {
@@ -388,9 +391,9 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   PMRelease(printData->cPrintSession);
   printData->cPrintSession = NULL;
 
-  delete dc;
+  DELETE_OBJ dc;
   
-  delete printData;
+  DELETE_OBJ printData;
 
   return TRUE;
 }
@@ -405,7 +408,8 @@ Bool wxPrinter::PrintDialog(wxWindow *parent)
 
 Bool wxPrinter::Setup(wxWindow *parent)
 {
-  wxPrintDialog *dialog = new wxPrintDialog(parent, printData);
+  wxPrintDialog *dialog;
+  dialog = new wxPrintDialog(parent, printData);
   dialog->ShowSetupDialog(TRUE);
   dialog->Show(TRUE);
   delete dialog;
@@ -443,8 +447,6 @@ wxPrintout::wxPrintout(char *title)
 
 wxPrintout::~wxPrintout(void)
 {
-  if (printoutTitle)
-    delete[] printoutTitle;
 }
 
 Bool wxPrintout::OnBeginDocument(int startPage, int endPage)

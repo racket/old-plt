@@ -20,12 +20,12 @@
 wxMenuItem::wxMenuItem
 (
  void
- ) :
-  checkable (FALSE),
-  cIsChecked (FALSE),
-  cIsEnabled (TRUE),
-  parentMenu (NULL)
+ )
 {
+  checkable = FALSE;
+  cIsChecked = FALSE;
+  cIsEnabled = TRUE;
+  parentMenu = NULL;
   WXGC_IGNORE(this, parentMenu);
 }
 
@@ -33,12 +33,12 @@ wxMenuItem::wxMenuItem
 (
  wxMenu* theParentMenu,
  Bool	isCheckable
- ) :
-  checkable (isCheckable),
-  cIsChecked (FALSE),
-  cIsEnabled (TRUE),
-  parentMenu (theParentMenu)
+ )
 {
+  checkable = isCheckable;
+  cIsChecked = FALSE;
+  cIsEnabled = TRUE;
+  parentMenu = theParentMenu;
   if (!theParentMenu) wxFatalError("No parent menu for constructing menu item.");
   WXGC_IGNORE(this, parentMenu);
 }
@@ -118,7 +118,6 @@ char* wxMenuItem::GetHelpString(void) { return helpString; }
 //-----------------------------------------------------------------------------
 void wxMenuItem::SetHelpString(char* theHelpString)
 {
-  if (helpString) delete[] helpString;
   helpString = macCopyString(theHelpString);
 }
 
@@ -128,9 +127,11 @@ char* wxMenuItem::GetLabel(void) {  return itemName; }
 //-----------------------------------------------------------------------------
 void wxMenuItem::SetLabel(char* label)
 {
+  short macMenuItem;
+
   itemName = macCopyString(label);
 
-  short macMenuItem = GetMacItemNumber();
+  macMenuItem = GetMacItemNumber();
   if (macMenuItem > 0) {
     SetMenuItemText(parentMenu->MacMenu(), macMenuItem, label[0] ? wxC2P(label) : "\p ");
   }
@@ -140,11 +141,11 @@ void wxMenuItem::SetLabel(char* label)
 short wxMenuItem::GetMacItemNumber(void) // mac platform only
 {
   short result = 0;
-  if (parentMenu)
-    {
-      long memberIndex = parentMenu->menuItems->MemberIndex(this);
-      if (memberIndex >= 0) result = memberIndex + 1; // mac counts from one
-    }
+  if (parentMenu) {
+    long memberIndex;
+    memberIndex = parentMenu->menuItems->MemberIndex(this);
+    if (memberIndex >= 0) result = memberIndex + 1; // mac counts from one
+  }
 
   return result; // zero result means not found
 }

@@ -63,16 +63,6 @@ int wxEntry(int argc, char* argv[])
   wxTheApp->argc = argc;
   wxTheApp->argv = argv;
 
-  FSSpec spec;
-  SInt16 vRefNum;
-  SInt32 dirID;
-  const Str255 fileName = "\p";
-#ifdef WX_CARBON
-  static char path_divider = '/';
-#else
-  static char path_divider = ':';
-#endif
-
   InitCursor();
 
   RegisterAppearanceClient();

@@ -574,8 +574,9 @@ void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
   wxDC* theDC;
   theDC = GetDC();
   if (theDC) {
-    float fX = theDC->DeviceToLogicalX(*x);
-    float fY = theDC->DeviceToLogicalY(*y);
+    float fX, fY;
+    fX = theDC->DeviceToLogicalX(*x);
+    fY = theDC->DeviceToLogicalY(*y);
     *x = (int)fX;
     *y = (int)fY;
   }

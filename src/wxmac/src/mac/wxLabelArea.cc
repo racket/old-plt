@@ -27,17 +27,20 @@ wxLabelArea::wxLabelArea
  ) :
  wxArea(parentWindow)
 {
+  int labelWidth = 0;
+  int labelHeight = 0;
+  wxFont* labelFont;
+
   __type = wxTYPE_LABEL_AREA;
   cLabelText = new wxMessage(this, label, theFont, xoffset, yoffset);
   cDirection = direction;
 
-  int labelWidth = 0;
-  int labelHeight = 0;
-  wxFont* labelFont = cLabelText->font;
-  if (labelFont)
-    {
-      char* labelText = cLabelText->GetLabel();
+  labelFont = cLabelText->font;
+  if (labelFont) {
+      char* labelText;
       float fLabelWidth, fLabelHeight, fDescent, fExternalLeading;
+
+      labelText = cLabelText->GetLabel();
       labelFont->GetTextExtent(labelText, &fLabelWidth, &fLabelHeight,
 			       &fDescent, &fExternalLeading);
       labelWidth = (int)fLabelWidth;
@@ -45,13 +48,9 @@ wxLabelArea::wxLabelArea
     }
 
   if (cDirection & wxTop)
-    {
-      SetMargin(labelHeight + 3, wxTop);
-    }
+    SetMargin(labelHeight + 3, wxTop);
   else
-    {
-      SetMargin(labelWidth + 3, wxLeft);
-    }
+    SetMargin(labelWidth + 3, wxLeft);
 }
 
 //-----------------------------------------------------------------------------

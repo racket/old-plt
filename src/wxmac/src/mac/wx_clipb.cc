@@ -23,10 +23,6 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_list.h"
 #include "wx_main.h"
 #include "wx_utils.h"
-#ifndef WX_CARBON
-# include <Scrap.h>
-# include <TextEdit.h>
-#endif
 
 extern void MrEdQueueBeingReplaced(wxClipboardClient *clipOwner);
 
@@ -81,17 +77,16 @@ Bool wxEmptyClipboard(void)
 Bool wxIsClipboardFormatAvailable(int dataFormat)
 {
   long format;
-
+  ScrapRef scrap;
+  OSErr err;
+  ScrapFlavorFlags dontcare;
+  
   if (dataFormat == wxCF_OEMTEXT)
     dataFormat = wxCF_TEXT;
 
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
     return FALSE;
 
-  ScrapRef scrap;
-  OSErr err;
-  ScrapFlavorFlags dontcare;
-  
   err = GetCurrentScrap(&scrap);
   return ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr));
 }
@@ -99,7 +94,9 @@ Bool wxIsClipboardFormatAvailable(int dataFormat)
 Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
 {
   long format, length;
-
+  ScrapRef scrap;
+  OSErr err;
+  
   if (dataFormat == wxCF_OEMTEXT)
     dataFormat = wxCF_TEXT;
 
@@ -111,9 +108,6 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   } else {
     length = (long)width * height;
   }
-  
-  ScrapRef scrap;
-  OSErr err;
   
   err = GetCurrentScrap(&scrap);
   if (err != noErr) {
@@ -127,16 +121,15 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
 {
   char *result;
   long format, length, got_length;
-
+  ScrapRef scrap;
+  OSErr err;
+  
   if (dataFormat == wxCF_OEMTEXT)
     dataFormat = wxCF_TEXT;
 
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
     return NULL;
 
-  ScrapRef scrap;
-  OSErr err;
-  
   err = GetCurrentScrap(&scrap);
   if (err != noErr) {
     return NULL;
@@ -186,19 +179,21 @@ int  wxEnumClipboardFormats(int dataFormat)
   for (; node; node = node->Next()) {
     cf = (ClipboardFormat *)node->Data();
     memcpy(&format, cf->name, 4);
+    {
 #ifdef WX_CARBON
-    ScrapRef scrap;
-    OSErr err;
-    ScrapFlavorFlags dontcare;
-    
-    err = GetCurrentScrap(&scrap);
-    if ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
-      return cf->format;
+      ScrapRef scrap;
+      OSErr err;
+      ScrapFlavorFlags dontcare;
+      
+      err = GetCurrentScrap(&scrap);
+      if ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr))
+	return cf->format;
 #else
-    long offset;      
-    if (GetScrap(NULL, format, &offset) > 0)
-      return cf->format;
+      long offset;      
+      if (GetScrap(NULL, format, &offset) > 0)
+	return cf->format;
 #endif
+    }
   }
 
   return 0;

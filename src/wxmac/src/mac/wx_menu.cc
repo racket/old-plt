@@ -165,6 +165,9 @@ wxMenu::wxMenu // Constructor (given objectType)
 //-----------------------------------------------------------------------------
 wxMenu::~wxMenu(void)
 {
+  wxNode* node;
+  wxMenuItem* item;
+
   if (menu_bar) // may have to remove menu from the current mac menu bar
     {
       menu_bar->Delete(this);
@@ -189,20 +192,18 @@ wxMenu::~wxMenu(void)
 
   ::DisposeMenu(cMacMenu); // does not dispose of submenus
 
-  // if (title) delete[] title; // WCH: ~wxbMenu should do this - (cjc - it does)
-  wxNode* node = menuItems->First();
+  node = menuItems->First();
   // mflatt: The menuItems list is not DeleteContents(TRUE).
   //         Also, we need to delete any submenus attached to this menu
-  while (node) 
-    {
-      wxMenuItem* item = (wxMenuItem*)node->Data();
-      if (item->subMenu) {
-	item->subMenu->window_parent = NULL; // so it doesn't try to delete itself
-	delete item->subMenu;
-      }
-      delete item;
-      node = node->Next();
+  while (node) {
+    item = (wxMenuItem*)node->Data();
+    if (item->subMenu) {
+      item->subMenu->window_parent = NULL; // so it doesn't try to delete itself
+      delete item->subMenu;
     }
+    DELETE_OBJ item;
+    node = node->Next();
+  }
 }
 
 // Helper function - Convert a wxMenu String into one you can give
@@ -256,6 +257,9 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
   MenuHandle nmh;
   int helpflg;
   int hId;
+  int cnt;
+  wxNode* node;
+  wxMenuItem* menuItem;
 	
   if (!toHandle)  {
     // Remove accel - not used in Mac Top Level Menus
@@ -298,21 +302,21 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     offset = CountMenuItems(nmh) + 1;
     helpflg = 0;
   }
-  int cnt = menuItems->Number();
+  cnt = menuItems->Number();
   // Create a new Mac Menu 
-  wxNode* node = menuItems->First();
+  node = menuItems->First();
   for (i = 0; i < cnt; i++) {
     // Try to recreate from the wxMenuItem
-    wxMenuItem* menuItem = (wxMenuItem*)node->Data(); 
+    menuItem = (wxMenuItem*)node->Data(); 
     hId = 0;
     if (menuItem->itemId == -1) {
       // Separator
       tmp[0] = t[0] = 1;
       tmp[1] = t[1] = '-';			
-    } 
-    else if (menuItem->subMenu) {
+    } else if (menuItem->subMenu) {
+      wxMenu *subMenu;
       BuildMacMenuString((StringPtr)tmp, (StringPtr)t, menuItem->itemName, TRUE);
-      wxMenu *subMenu = menuItem->subMenu;
+      subMenu = menuItem->subMenu;
       subMenu->wxMacInsertSubmenu();
       hId = subMenu->cMacMenuId;
     } else {
@@ -369,42 +373,44 @@ void wxMenu::MacChangeMenuText(wxMenu *menu, char *new_title)
 //-----------------------------------------------------------------------------
 void wxMenuBar::Enable(int Id, Bool Flag)
 {
-  for (int j = 0; j < n; j++)
-    {
-      wxMenuItem* theMenuItem = menus[j]->FindItemForId(Id);
-      if (theMenuItem)
-    	{
-	  theMenuItem->Enable(Flag);
-	  return;
-	}
+  int j;
+  wxMenuItem* theMenuItem;
+
+  for (j = 0; j < n; j++) {
+    theMenuItem = menus[j]->FindItemForId(Id);
+    if (theMenuItem) {
+      theMenuItem->Enable(Flag);
+      return;
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxMenuBar::Check(int Id, Bool Flag)
 {
-  for (int j = 0; j < n; j++)
-    {
-      wxMenuItem* theMenuItem = menus[j]->FindItemForId(Id);
-      if (theMenuItem)
-    	{
-	  theMenuItem->Check(Flag);
-	  return;
-	}
+  int j;
+  wxMenuItem* theMenuItem;
+
+  for (j = 0; j < n; j++) {
+    theMenuItem = menus[j]->FindItemForId(Id);
+    if (theMenuItem) {
+      theMenuItem->Check(Flag);
+      return;
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 Bool wxMenuBar::Checked(int Id)
 {
-  for (int j = 0; j < n; j++)
-    {
-      wxMenuItem* theMenuItem = menus[j]->FindItemForId(Id);
-      if (theMenuItem)
-    	{
-	  return theMenuItem->IsChecked();
-	}
-    }
+  int j;
+  wxMenuItem* theMenuItem;
+
+  for (j = 0; j < n; j++) {
+    theMenuItem = menus[j]->FindItemForId(Id);
+    if (theMenuItem)
+      return theMenuItem->IsChecked();
+  }
 
   return FALSE;
 }
@@ -412,28 +418,29 @@ Bool wxMenuBar::Checked(int Id)
 //-----------------------------------------------------------------------------
 void wxMenuBar::SetLabel(int Id, char* label)
 {
-  for (int j = 0; j < n; j++)
-    {
-      wxMenuItem* theMenuItem = menus[j]->FindItemForId(Id);
-      if (theMenuItem)
-    	{
-	  theMenuItem->SetLabel(label);
-	  return;
-	}
+  int j;
+  wxMenuItem* theMenuItem;
+
+  for (j = 0; j < n; j++) {
+    theMenuItem = menus[j]->FindItemForId(Id);
+    if (theMenuItem) {
+      theMenuItem->SetLabel(label);
+      return;
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
 char* wxMenuBar::GetLabel(int Id)
 {
-  for (int j = 0; j < n; j++)
-    {
-      wxMenuItem* theMenuItem = menus[j]->FindItemForId(Id);
-      if (theMenuItem)
-    	{
-	  return theMenuItem->GetLabel();
-	}
-    }
+  int j;
+  wxMenuItem* theMenuItem;
+
+  for (j = 0; j < n; j++) {
+    theMenuItem = menus[j]->FindItemForId(Id);
+    if (theMenuItem)
+      return theMenuItem->GetLabel();
+  }
 
   return NULL;
 }
@@ -448,7 +455,8 @@ void wxMenuBar::SetLabelTop(int pos, char* label)
 }
 
 //-----------------------------------------------------------------------------
-char* wxMenuBar::GetLabelTop(int pos) { 
+char* wxMenuBar::GetLabelTop(int pos)
+{ 
   if ((pos >= 0) && (pos < n))
     return menus[pos]->GetTitle();
   else
@@ -490,6 +498,7 @@ wxMenu* wxMenuBar::wxMacFindMenu(int macMenuId)
 {
   wxMenu* result = NULL;
   int i = 0;
+
   while (i < n && !result) // try to find among main menus
     {
       if (menus[i]->GetMacMenuId() == macMenuId)
@@ -514,6 +523,7 @@ wxMenu* wxMenuBar::wxMacFindMenu(int macMenuId)
 Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
 {
   Bool retval = TRUE, new_menu = FALSE;
+  wxMenu *wasHack;
 
   if (!menu->window_parent) {
     menu->Enable(TRUE); /* Force the menu to be enabled (for consistency) */
@@ -527,23 +537,20 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
     return FALSE;
 	
   if (retval) {
-    n++;
-    wxMenu **new_menus = new wxMenu *[n];
-    char **new_titles = new char *[n];
+    wxMenu **new_menus;
+    char **new_titles;
 
+    n++;
+    new_menus = new wxMenu *[n];
+    new_titles = new char *[n];
+    
     int i;
-    for (i = 0; i < n - 1; i++)
-      {
-	new_menus[i] = menus[i];
-	menus[i] = NULL;
-	new_titles[i] = titles[i];
-	titles[i] = NULL;
-      }
-    if (menus)
-      {
-	delete[]menus;
-	delete[]titles;
-      }
+    for (i = 0; i < n - 1; i++) {
+      new_menus[i] = menus[i];
+      menus[i] = NULL;
+      new_titles[i] = titles[i];
+      titles[i] = NULL;
+    }
     menus = new_menus;
     titles = new_titles;
 
@@ -552,8 +559,8 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
 
     menu->menu_bar = (wxMenuBar *) this;
   }  
-
-  wxMenu *wasHack = wxHelpHackMenu;
+  
+  wasHack = wxHelpHackMenu;
   wxHelpHackMenu = NULL;
 
   if (title)
@@ -575,6 +582,8 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
 Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
 {
   int j, was_last = (pos == n - 1);
+  int was_hack;
+  int new_hack;
 
   --n;
   for (j = pos; j < n; j++) {
@@ -585,12 +594,12 @@ Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
   menu->window_parent = NULL;
   menu->menu_bar = NULL;
   
-  int was_hack = (menu == wxHelpHackMenu);
+  was_hack = (menu == wxHelpHackMenu);
   if (was_hack) {
     wxHelpHackMenu = NULL;
     iHelpMenuHackNum = 0;
   }
-  int new_hack = FALSE;
+  new_hack = FALSE;
   if (was_last && n) {
     /* Check for new Help menu: */
     wxMenu *m = menus[n - 1];
@@ -626,11 +635,14 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
   }
   if (mbar && mbar->wxHelpHackMenu && mbar->iHelpMenuHackNum) {
     Str255 t = "\pAboutŠ";
-    wxNode *n = mbar->wxHelpHackMenu->menuItems->Nth(mbar->iHelpMenuHackNum - 1);
+    wxNode *n;
+    n = mbar->wxHelpHackMenu->menuItems->Nth(mbar->iHelpMenuHackNum - 1);
     if (n) {
-      wxMenuItem *i = (wxMenuItem *)n->Data();
+      wxMenuItem *i;
+      i = (wxMenuItem *)n->Data();
       if (i) {
-	char *s = i->GetLabel();
+	char *s;
+	s = i->GetLabel();
 	CopyCStringToPascal(s,t);
       }
     }
@@ -651,9 +663,11 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
     wxNumHelpItems = CountMenuItems(wxHelpMenu);
   }
   if (wxHelpMenu) {
-    int i = CountMenuItems(wxHelpMenu);
-    while (i > wxNumHelpItems)
+    int i;
+    i = CountMenuItems(wxHelpMenu);
+    while (i > wxNumHelpItems) {
       DeleteMenuItem(wxHelpMenu, i--);
+    }
 	    
     if (mbar && mbar->wxHelpHackMenu)
       mbar->wxHelpHackMenu->CreateCopy(NULL, FALSE, wxHelpMenu);
@@ -679,10 +693,13 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
 
 void wxMenuBar::Install(void)
 {
+  int i;
+  wxMenu* menu;
+
   ::ClearMenuBar();
   wxSetUpAppleMenu(this);
-  for (int i = 0; i < n; i ++) {
-    wxMenu* menu = menus[i];
+  for (i = 0; i < n; i ++) {
+    menu = menus[i];
     if (menu != wxHelpHackMenu) {
       ::InsertMenu(menu->MacMenu(), 0);
       menu->wxMacInsertSubmenu();
@@ -719,7 +736,9 @@ void wxMenu::CheckHelpHack(void)
 //-----------------------------------------------------------------------------
 void wxMenu::AppendSeparator(void)
 {
-  wxMenuItem* item = new wxMenuItem(this);
+  wxMenuItem* item;
+
+  item = new wxMenuItem(this);
 
   item->itemId = -1;
   item->itemName = copystring("-");
@@ -738,7 +757,10 @@ void wxMenu::AppendSeparator(void)
 void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
 {
   //	assert(Id >= 1);
-  wxMenuItem* item = new wxMenuItem(this, checkable);
+  wxMenuItem* item;
+  Str255 menusetup, menustr;
+
+  item = new wxMenuItem(this, checkable);
 
   item->itemId = Id;
   item->itemName = macCopyString(Label);
@@ -746,7 +768,6 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   menuItems->Append(item);
   no_items ++;
 
-  Str255 menusetup, menustr;
   BuildMacMenuString(menusetup, menustr, item->itemName, FALSE);
   ::AppendMenu(cMacMenu, (ConstStr255Param)menusetup);
   ::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)menustr);
@@ -762,13 +783,17 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   //	assert(Id >= 1);
   //	assert(SubMenu->window_parent == NULL); // WCH : error if submenu is a child of another
 
+  wxMenuItem* item;
+  Str255 pullrightSetup, pullrightLabel;
+  wxMenu *ancestor;
+
 	// mflatt: If this menu is used, give up
   if (SubMenu->window_parent)
     return;
 
   SubMenu->window_parent = this;
 
-  wxMenuItem* item = new wxMenuItem(this);
+  item = new wxMenuItem(this);
   item->subMenu = SubMenu;
 
   item->itemId = Id;
@@ -778,7 +803,6 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   menuItems->Append(item);
   no_items++;
 
-  Str255 pullrightSetup, pullrightLabel;
   BuildMacMenuString(pullrightSetup, pullrightLabel,item->itemName, TRUE);
 	
   ::AppendMenu(cMacMenu, (ConstStr255Param)pullrightSetup);
@@ -786,7 +810,7 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
   ::SetMenuItemTextEncoding(cMacMenu, no_items, kCFStringEncodingISOLatin1);
   ::SetMenuItemHierarchicalID(cMacMenu, no_items, SubMenu->cMacMenuId);
 
-  wxMenu *ancestor = this;
+  ancestor = this;
   while (ancestor) {
     if (ancestor->menu_bar) {
       if (ancestor->menu_bar == last_installed_bar) {
@@ -849,7 +873,9 @@ int wxMenu::Number()
 //-----------------------------------------------------------------------------
 void wxMenu::Enable(int Id, Bool Flag)
 {
-  wxMenuItem* theMenuItem = FindItemForId(Id);
+  wxMenuItem* theMenuItem;
+
+  theMenuItem = FindItemForId(Id);
   if (theMenuItem)
     theMenuItem->Enable(Flag);
 
@@ -859,7 +885,9 @@ void wxMenu::Enable(int Id, Bool Flag)
 //-----------------------------------------------------------------------------
 void wxMenu::Check(int Id, Bool Flag)
 {
-  wxMenuItem* theMenuItem = FindItemForId(Id);
+  wxMenuItem* theMenuItem;
+
+  theMenuItem = FindItemForId(Id);
   if (theMenuItem)
     theMenuItem->Check(Flag);
 
@@ -869,7 +897,9 @@ void wxMenu::Check(int Id, Bool Flag)
 //-----------------------------------------------------------------------------
 Bool wxMenu::Checked(int Id)
 {
-  wxMenuItem* theMenuItem = FindItemForId(Id);
+  wxMenuItem* theMenuItem;
+
+  theMenuItem = FindItemForId(Id);
   if (theMenuItem)
     return theMenuItem->IsChecked();
   else return FALSE;
@@ -878,15 +908,13 @@ Bool wxMenu::Checked(int Id)
 //-----------------------------------------------------------------------------
 void wxMenu::SetTitle(char* label)
 {
-  if (menu_bar)
-    {
-      // WCH : must reset Macintosh menu label (not easy)
-      // WCH : the duplicate title in menuBar object may now be out of sync
-      MacChangeMenuText(this, label);
-    } else {
-      if (title) delete title;
-      title = macCopyString1(label);
-    }
+  if (menu_bar) {
+    // WCH : must reset Macintosh menu label (not easy)
+    // WCH : the duplicate title in menuBar object may now be out of sync
+    MacChangeMenuText(this, label);
+  } else {
+    title = macCopyString1(label);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -904,7 +932,9 @@ char* wxMenu::GetLabel(int Id)
 //-----------------------------------------------------------------------------
 void wxMenu::SetLabel(int Id , char* label)
 {
-  wxMenuItem* theMenuItem = FindItemForId(Id);
+  wxMenuItem* theMenuItem;
+
+  theMenuItem = FindItemForId(Id);
   if (theMenuItem) {
     theMenuItem->SetLabel(label);
     if (menu_bar)
@@ -969,11 +999,15 @@ short wxMenu::GetMacMenuId(void) { return cMacMenuId; }
 wxMenu* wxMenu::wxMacFindSubmenu(int macMenuId)
 {
   wxMenu* result = NULL;
-  wxNode* node = menuItems->First();
+  wxNode* node;
+  wxMenuItem* menuItem;
+  wxMenu* submenu;
+
+  node = menuItems->First();
   while (node && !result)
     {
-      wxMenuItem* menuItem = (wxMenuItem*)node->Data();
-      wxMenu* submenu = menuItem->subMenu;
+      menuItem = (wxMenuItem*)node->Data();
+      submenu = menuItem->subMenu;
       if (submenu)
 	{
 	  if (submenu->cMacMenuId == macMenuId)
@@ -993,16 +1027,19 @@ wxMenu* wxMenu::wxMacFindSubmenu(int macMenuId)
 //-----------------------------------------------------------------------------
 void wxMenu::wxMacInsertSubmenu(void)
 {
-  wxNode* node = menuItems->First();
+  wxNode* node;
+  wxMenuItem* menuItem;
+      wxMenu* submenu;
+  
+  node = menuItems->First();
   while (node)
     {
-      wxMenuItem* menuItem = (wxMenuItem*)node->Data();
-      wxMenu* submenu = menuItem->subMenu;
-      if (submenu)
-	{
-	  InsertMenu(submenu->cMacMenu, -1);
-	  submenu->wxMacInsertSubmenu();
-	}
+      menuItem = (wxMenuItem*)node->Data();
+      submenu = menuItem->subMenu;
+      if (submenu) {
+	InsertMenu(submenu->cMacMenu, -1);
+	submenu->wxMacInsertSubmenu();
+      }
       node = node->Next();
     }
 }

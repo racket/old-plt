@@ -22,15 +22,21 @@
 void wxRadioButtonProc(wxRadioButton& radioButton, wxCommandEvent& event);
 void wxRadioButtonProc(wxRadioButton& radioButton, wxCommandEvent& event)
 {
-  wxPanel* radioPanel = (wxPanel*)radioButton.GetParent();
-  wxWindow *rb = radioPanel;
-  while (wxSubType(rb->__type, wxTYPE_PANEL))
+  wxPanel* radioPanel;
+  wxWindow *rb;
+  wxRadioBox* radioBox;
+  wxCommandEvent *commandEvent;
+
+  radioPanel = (wxPanel*)radioButton.GetParent();
+  rb = radioPanel;
+  while (wxSubType(rb->__type, wxTYPE_PANEL)) {
     rb = rb->GetParent();
-  wxRadioBox* radioBox = (wxRadioBox *)rb;
-  long radioButtonIndex = radioBox->cRadioButtons->MemberIndex(&radioButton);
+  }
+  radioBox = (wxRadioBox *)rb;
+  radioButtonIndex = radioBox->cRadioButtons->MemberIndex(&radioButton);
   radioBox->SetSelection(radioButtonIndex);
 
-  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
+  commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
   radioBox->ProcessCommand(commandEvent);
 }
 
@@ -54,10 +60,13 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
  long		style,
  char*		windowName,
  WXTYPE		objectType
- ) :
-  wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName),
-  cRadioButtons (new wxList(wxList::kNoDestroyData))
+ ) : wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName)
 {
+  wxPanel *buttonHolder;
+  int i;
+  
+  cRadioButtons = new wxList(wxList::kNoDestroyData);
+
   Callback(function);
 
   cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
@@ -65,7 +74,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
   cRadioPanel->SetButtonFont(buttonFont);
   cRadioPanel->SetLabelFont(labelFont);
 
-  wxPanel *buttonHolder = cRadioPanel;
+  buttonHolder = cRadioPanel;
 
   if (Title) {
     Title = wxItemStripLabel(Title);
@@ -78,12 +87,14 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
   } else 
     cRadioTitle = NULL;
 
-  for (int i = 0; i < N; i++) {
-    char *choice = wxItemStripLabel(Choices[i]);
+  for (i = 0; i < N; i++) {
+    char *choice;
+    wxRadioButton* radioButton;
+
+    choice = wxItemStripLabel(Choices[i]);
     if (i && ((style & wxVERTICAL) == wxVERTICAL))
       buttonHolder->NewLine();
-    wxRadioButton* radioButton = new wxRadioButton(buttonHolder,
-						   (wxFunction)&wxRadioButtonProc, choice);
+    radioButton = new wxRadioButton(buttonHolder, (wxFunction)&wxRadioButtonProc, choice);
     cRadioButtons->Append(radioButton);
   }
   SetSelection(0);
@@ -120,39 +131,40 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
  long		style,
  char*		windowName,
  WXTYPE		objectType
- ) :
-  wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName),
-  cRadioButtons (new wxList(wxList::kNoDestroyData))
+ ) : wxbRadioBox (parentPanel, x, y, width, height, N, style, windowName)
 {
+  int i;
+  wxPanel *buttonHolder;
+
+  cRadioButtons = new wxList(wxList::kNoDestroyData);
+
   Callback(function);
 
   cRadioPanel = new wxPanel(this->ClientArea(), 0, 0, 0, 0, 0);
   cRadioPanel->SetButtonFont(buttonFont);
   cRadioPanel->SetLabelFont(labelFont);
 	
-  wxPanel *buttonHolder = cRadioPanel;
+  buttonHolder = cRadioPanel;
 	
-  if (Title)
-    {
-      cRadioTitle = new wxMessage(cRadioPanel, Title, labelFont);
-      if (labelPosition != wxVERTICAL) {
-	buttonHolder = new wxPanel(cRadioPanel->ClientArea(), -1, -1, 0, 0, 0);
-	cButtonHolder = buttonHolder;
-      } else
-	buttonHolder->NewLine();
-    }
-  else cRadioTitle = NULL;
+  if (Title) {
+    cRadioTitle = new wxMessage(cRadioPanel, Title, labelFont);
+    if (labelPosition != wxVERTICAL) {
+      buttonHolder = new wxPanel(cRadioPanel->ClientArea(), -1, -1, 0, 0, 0);
+      cButtonHolder = buttonHolder;
+    } else
+      buttonHolder->NewLine();
+  } else
+    cRadioTitle = NULL;
 
-  for (int i = 0; i < N; i++)
-    {
-      if (i && ((style & wxVERTICAL) == wxVERTICAL))
-	buttonHolder->NewLine();
-      wxRadioButton* radioButton = new wxRadioButton(buttonHolder,
-						     (wxFunction)&wxRadioButtonProc, Choices[i]);
-      cRadioButtons->Append(radioButton);
-    }
+  for (i = 0; i < N; i++) {
+    wxRadioButton* radioButton;
+    if (i && ((style & wxVERTICAL) == wxVERTICAL))
+      buttonHolder->NewLine();
+    radioButton = new wxRadioButton(buttonHolder, (wxFunction)&wxRadioButtonProc, Choices[i]);
+    cRadioButtons->Append(radioButton);
+  }
   SetSelection(0);
-
+  
   buttonHolder->Fit();
   if (buttonHolder != cRadioPanel) {
     cRadioPanel->Fit();
@@ -201,73 +213,94 @@ void wxRadioBox::SetLabel(char* label)
 char* wxRadioBox::GetLabel(int item)
 {
   char* result = NULL;
-  int numberItems = cRadioButtons->Number();
-  if (0 <= item && item < numberItems)
-    {
-      wxNode* node = cRadioButtons->Nth(item);
-      wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-      result = radioButton->GetLabel();
-    }
+  int numberItems;
+  wxNode* node;
+  wxRadioButton *radioButton;
+
+  numberItems = cRadioButtons->Number();
+  if (0 <= item && item < numberItems) {
+    node = cRadioButtons->Nth(item);
+    radioButton = (wxRadioButton*)node->Data();
+    result = radioButton->GetLabel();
+  }
   return result;
 }
 
 //-----------------------------------------------------------------------------
 void wxRadioBox::SetLabel(int item, char* label)
 {
-  int numberItems = cRadioButtons->Number();
-  if (0 <= item && item < numberItems)
-    {
-      wxNode* node = cRadioButtons->Nth(item);
-      wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-      radioButton->SetLabel(label);
-    }
+  int numberItems;
+  wxNode* node;
+  wxRadioButton* radioButton;
+
+  numberItems = cRadioButtons->Number();
+  
+  if (0 <= item && item < numberItems) {
+    node = cRadioButtons->Nth(item);
+    radioButton = (wxRadioButton*)node->Data();
+    radioButton->SetLabel(label);
+  }
 }
 
 //-----------------------------------------------------------------------------
 void wxRadioBox::SetLabel(int item, wxBitmap* bitmap)
 {
-  int numberItems = cRadioButtons->Number();
-  if (0 <= item && item < numberItems)
-    {
-      wxNode* node = cRadioButtons->Nth(item);
-      wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-      radioButton->SetLabel(bitmap);
-    }
+  int numberItems;
+  wxNode* node;
+  wxRadioButton* radioButton;
+
+  numberItems = cRadioButtons->Number();
+
+  if (0 <= item && item < numberItems) {
+    node = cRadioButtons->Nth(item);
+    radioButton = (wxRadioButton*)node->Data();
+    radioButton->SetLabel(bitmap);
+  }
 }
 
 //-----------------------------------------------------------------------------
 int wxRadioBox::FindString(char* s)
 {
-  int result = -1;
-  int numberItems = cRadioButtons->Number();
-  for (int i = 0; i < numberItems && result == -1; i++)
-    {
-      char* radioButtonLabel = GetLabel(i);
-      if (strcmp(s, radioButtonLabel) == 0) result = i;
-      //		delete [] radioButtonLabel;
-    }
+  int result = -1, i;
+  int numberItems;
+  char* radioButtonLabel;
+
+  numberItems = cRadioButtons->Number();
+
+  for (i = 0; i < numberItems && result == -1; i++) {
+    radioButtonLabel = GetLabel(i);
+    if (strcmp(s, radioButtonLabel) == 0)
+      result = i;
+  }
   return result;
 }
 
 //-----------------------------------------------------------------------------
 void wxRadioBox::SetSelection(int N)
 {
-  int numberItems = cRadioButtons->Number();
+  int numberItems;
+  wxNode* selectedNode;
+  wxRadioButton* selectedRadioButton;
+  wxNode* node;
+  wxRadioButton* radioButton;
+
+  numberItems = cRadioButtons->Number();
+
   if (0 <= N && N < numberItems) {
-      if (selected != N) {
-	if (0 <= selected && selected < numberItems) {
-	  wxNode* selectedNode = cRadioButtons->Nth(selected);
-	  wxRadioButton* selectedRadioButton = (wxRadioButton*)selectedNode->Data();
-	  selectedRadioButton->SetValue(FALSE);
-	}
-	
-	wxNode* node = cRadioButtons->Nth(N);
-	wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-	radioButton->SetValue(TRUE);
-	
-	selected = N;
+    if (selected != N) {
+      if (0 <= selected && selected < numberItems) {
+	selectedNode = cRadioButtons->Nth(selected);
+	selectedRadioButton = (wxRadioButton*)selectedNode->Data();
+	selectedRadioButton->SetValue(FALSE);
       }
+      
+      node = cRadioButtons->Nth(N);
+      radioButton = (wxRadioButton*)node->Data();
+      radioButton->SetValue(TRUE);
+      
+      selected = N;
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -307,25 +340,32 @@ void wxRadioBox::Enable(Bool enable)
 
 void wxRadioBox::Enable(int item, Bool enable)
 {
-  int numberItems = cRadioButtons->Number();
-  if (0 <= item && item < numberItems)
-    {
-      wxNode* node = cRadioButtons->Nth(item);
-      wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-      radioButton->Enable(enable);
-    }
+  int numberItems;
+  wxNode* node;
+  wxRadioButton* radioButton;
+
+  numberItems = cRadioButtons->Number();
+  if (0 <= item && item < numberItems) {
+    node = cRadioButtons->Nth(item);
+    radioButton = (wxRadioButton*)node->Data();
+    radioButton->Enable(enable);
+  }
 }
  
 //-----------------------------------------------------------------------------
 void wxRadioBox::Show(int item, Bool show)
 {
-  int numberItems = cRadioButtons->Number();
-  if (0 <= item && item < numberItems)
-    {
-      wxNode* node = cRadioButtons->Nth(item);
-      wxRadioButton* radioButton = (wxRadioButton*)node->Data();
-      radioButton->Show(show);
-    }
+  int numberItems;
+  wxNode* node;
+  wxRadioButton* radioButton;
+
+  numberItems = cRadioButtons->Number();
+  
+  if (0 <= item && item < numberItems) {
+    node = cRadioButtons->Nth(item);
+    radioButton = (wxRadioButton*)node->Data();
+    radioButton->Show(show);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -345,9 +385,12 @@ void wxRadioBox::MaybeMoveControls()
 
 void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
-  wxNode* node = cRadioButtons->First();
+  wxNode* node;
+  wxWindow* rbut;
+
+  node = cRadioButtons->First();
   while (node) {
-    wxWindow* rbut = (wxWindow*)node->Data();
+    rbut = (wxWindow*)node->Data();
     rbut->OnClientAreaDSize(dW, dH, dX, dY);
     node = node->Next();
   }

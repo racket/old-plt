@@ -48,7 +48,7 @@ wxMemoryDC::~wxMemoryDC(void)
   }
   
   if (cMacDC) {
-    delete cMacDC;
+    DELETE_OBJ cMacDC;
     cMacDC = NULL;
   }
 }
@@ -73,7 +73,7 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   }
 
   if (cMacDC) {
-    delete cMacDC;
+    DELETE_OBJ cMacDC;
     cMacDC = NULL;
   }
   ok = FALSE;

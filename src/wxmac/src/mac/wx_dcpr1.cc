@@ -31,15 +31,17 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 
   cPrintData = printData;
   if (!printData->cPrintSession) {
+    wxPrintDialog *dialog;
+
     PMCreateSession(&printData->cPrintSession);
 
-    wxPrintDialog *dialog = new wxPrintDialog(NULL, printData);
+    dialog = new wxPrintDialog(NULL, printData);
     dialog->ShowSetupDialog(TRUE);
     if (!dialog->UseIt()) {
       PMRelease(printData->cPrintSession);
       printData->cPrintSession = NULL;
     }
-    delete dialog;
+    DELETE_OBJ dialog;
   }
 
   cMacDoingDrawing = FALSE;
@@ -113,10 +115,11 @@ wxPrinterDC::~wxPrinterDC(void)
 //-----------------------------------------------------------------------------
 Bool wxPrinterDC::StartDoc(char *message) 
 { 
+  OSErr rlt;
+
   if (current_phase != 0)
    return FALSE;
 
-  OSErr rlt;
   rlt = PMSessionBeginDocument(cPrintData->cPrintSession, cPrintData->cPrintSettings,cPrintData->cPageFormat);
   if (rlt != noErr) {
     ok = false;

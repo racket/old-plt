@@ -132,16 +132,17 @@ void wxGauge::Paint(void)
   if (cMacControl) {
     Draw1Control(cMacControl);
   } else {
-
     Rect s = valueRect;
+    Rect r, w;
+    long d;
+    RGBColor save;
+
     OffsetRect(&s,SetOriginX,SetOriginY);
     FrameRect(&s);
 
-    Rect r, w;
     r = valueRect;
     InsetRect(&r, 1, 1);
     w = r;
-    long d;
     if (windowStyle & wxVERTICAL) 
       d = (valueRect.bottom - valueRect.top);
     else
@@ -156,7 +157,6 @@ void wxGauge::Paint(void)
       w.left = r.right;
     }
 
-    RGBColor save;
     GetForeColor(&save);
 
     if (value) {
@@ -215,38 +215,39 @@ void wxGauge::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   SetCurrentDC();
 
-  if (dW || dH)
-    {	
-      int clientWidth = ClientArea()->Width();
-      int clientHeight= ClientArea()->Height();
+  if (dW || dH) {	
+    int clientWidth, clientHeight, vwid, vhgt;
 
-      int vwid = valueRect.right - valueRect.left;
-      int vhgt = valueRect.bottom - valueRect.top;
-      
-      if (windowStyle & wxVERTICAL) {
-	// the wid can't change
-	valueRect.left = (clientWidth - vwid) / 2;
-	valueRect.right = valueRect.left + vwid;
-	valueRect.bottom = clientHeight;
-      } else {
-	// the hgt can't change
-	valueRect.top = (clientHeight - vhgt) / 2;
-	valueRect.bottom = valueRect.top + vhgt;
-	valueRect.right = clientWidth;
-      }
-      if (cMacControl) {
-	SizeControl(cMacControl,valueRect.right - valueRect.left, valueRect.bottom - valueRect.top);
-      }
-    }
+    clientWidth = ClientArea()->Width();
+    clientHeight= ClientArea()->Height();
 
-  if (dX || dY)
-    {	// Changing the position
-      cMacDC->setCurrentUser(NULL); // macDC no longer valid
-      SetCurrentDC(); // put newViewRect at (0, 0)
-      if (cMacControl) {
-	MoveControl(cMacControl,SetOriginX + valueRect.left,SetOriginY + valueRect.top);
-      }
+    vwid = valueRect.right - valueRect.left;
+    vhgt = valueRect.bottom - valueRect.top;
+    
+    if (windowStyle & wxVERTICAL) {
+      // the wid can't change
+      valueRect.left = (clientWidth - vwid) / 2;
+      valueRect.right = valueRect.left + vwid;
+      valueRect.bottom = clientHeight;
+    } else {
+      // the hgt can't change
+      valueRect.top = (clientHeight - vhgt) / 2;
+      valueRect.bottom = valueRect.top + vhgt;
+      valueRect.right = clientWidth;
     }
+    if (cMacControl) {
+      SizeControl(cMacControl,valueRect.right - valueRect.left, valueRect.bottom - valueRect.top);
+    }
+  }
+
+  if (dX || dY) {
+    // Changing the position
+    cMacDC->setCurrentUser(NULL); // macDC no longer valid
+    SetCurrentDC(); // put newViewRect at (0, 0)
+    if (cMacControl) {
+      MoveControl(cMacControl,SetOriginX + valueRect.left,SetOriginY + valueRect.top);
+    }
+  }
 }
 
 

@@ -199,14 +199,17 @@ wxMessage::~wxMessage(void)
 //-----------------------------------------------------------------------------
 void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common constructor initialization
 {
+  float clientWidth;
+  float clientHeight;
+
   if (cStyle & wxBORDER) new wxBorderArea(this);
   sBitmap = NULL;
   cMessage = wxItemStripLabel(label);
 	
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
-  float clientWidth = 20;
-  float clientHeight = 14;
+  clientWidth = 20;
+  clientHeight = 14;
   if (theFont) 
     font = theFont;
   if (!font) 
@@ -263,7 +266,6 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 void wxMessage::SetLabel(char* label)
 {
   if (sBitmap || icon_id) return;
-  if (cMessage) delete [] cMessage;
   cMessage = macCopyString0(wxItemStripLabel(label));
   if (!cHidden) {
     Paint();
@@ -309,7 +311,9 @@ void wxMessage::Paint(void)
     } else {
       Rect r = { SetOriginY, SetOriginX, 
 		 SetOriginY + clientHeight, SetOriginX + clientWidth };
-      CFStringRef str = CFStringCreateWithCString(NULL, cMessage, kCFStringEncodingISOLatin1);
+      CFStringRef str;
+
+      str = CFStringCreateWithCString(NULL, cMessage, kCFStringEncodingISOLatin1);
 
       DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 		       0, &r, teJustLeft, NULL);

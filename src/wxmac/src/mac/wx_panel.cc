@@ -261,8 +261,9 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
 void wxPanel::Centre(int direction)
 {
   int width, height, panel_width, panel_height, new_x, new_y;
+  wxPanel* father;
 
-  wxPanel* father = (wxPanel*)GetParent();
+  father = (wxPanel*)GetParent();
   if (!father) return;
 
   father->GetClientSize(&panel_width, &panel_height);
@@ -285,17 +286,20 @@ void wxPanel::Fit(void)
 { // Fit panel around its items
   int maxX = 0;
   int maxY = 0;
-  wxChildNode* childWindowNode = ClientArea()->Windows()->First();
-  while (childWindowNode)
-    {
-      wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-      int x, y, w, h;
-      childWindow->GetPosition(&x, &y);
-      childWindow->GetSize(&w, &h);
-      if ((x + w) > maxX) maxX = x + w;
-      if ((y + h) > maxY) maxY = y + h;
-      childWindowNode = childWindowNode->Next();
-    }
+  wxChildNode* childWindowNode;
+  wxWindow* childWindow;
+
+  childWindowNode = ClientArea()->Windows()->First();
+  while (childWindowNode) {
+    int x, y, w, h;
+
+    childWindow = (wxWindow*)childWindowNode->Data();
+    childWindow->GetPosition(&x, &y);
+    childWindow->GetSize(&w, &h);
+    if ((x + w) > maxX) maxX = x + w;
+    if ((y + h) > maxY) maxY = y + h;
+    childWindowNode = childWindowNode->Next();
+  }
 
   SetClientSize(maxX + initial_hspacing, maxY + initial_vspacing);
 }
@@ -370,6 +374,11 @@ void wxPanel::ChangeColour(void)
 //-----------------------------------------------------------------------------
 void wxPanel::DoShow(Bool show)
 {
+  wxNode* areaNode;
+  wxArea* area;
+  wxChildNode* childWindowNode;
+  wxWindow* childWindow;
+
   if (!CanShow(show))
     return;
 
@@ -379,12 +388,12 @@ void wxPanel::DoShow(Bool show)
   if (show)
     wxWindow::DoShow(show);
 
-  wxNode* areaNode = cAreas->First();
+  areaNode = cAreas->First();
   while (areaNode) {
-    wxArea* area = (wxArea*)areaNode->Data();
-    wxChildNode* childWindowNode = area->Windows()->First();
+    area = (wxArea*)areaNode->Data();
+    childWindowNode = area->Windows()->First();
     while (childWindowNode) {
-      wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
+      childWindow = (wxWindow*)childWindowNode->Data();
       childWindow->DoShow(show);
       childWindowNode = childWindowNode->Next();
     }
@@ -415,11 +424,14 @@ void wxPanel::OnChar(wxKeyEvent *event)
     case 0x09:	// tab
       {
 	// Step through panel items that want focus
-	wxFrame* rootFrame = GetRootFrame();
-	wxWindow* currentWindow = rootFrame->GetFocusWindow();
+	wxFrame* rootFrame;
+	wxWindow* currentWindow;
 	wxChildNode* childWindowNode;
 	wxWindow* childWindow;
 	wxWindow* wrapWindow = NULL;
+
+	rootFrame = GetRootFrame();
+	currentWindow = rootFrame->GetFocusWindow();
 
 	// Tab steps forward, Shift-Tab steps backwards
 #if 0
@@ -488,9 +500,11 @@ void wxPanel::SetSize(int x, int y, int width, int height, int flags)
 void wxPanel::MaybeMoveControls()
 {
   // (foreach maybe-move-controls window-children)
-  wxChildNode *childNode = children->First();
+  wxChildNode *childNode;
+  wxWindow *win;
+
+  childNode = children->First();
   while (childNode) {
-    wxWindow *win;
     win = (wxWindow *)childNode->Data();
     if (win) {
       win->MaybeMoveControls();

@@ -155,10 +155,6 @@ extern "C" {
   }
 }
 
-#if 1
-GDHandle last_device;
-#endif
-
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
   //-----------------------------------------------------------------------------
@@ -174,14 +170,6 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
     ::SetGWorld(theMacGrafPort, wxGetGDHandle());
   }
   
-#if 1
-  { 
-    GDHandle dh;
-    CGrafPtr g;
-    ::GetGWorld(&g, &last_device);
-  }
-#endif
-
   SetOriginX = SetOriginY = 0;
   if (canvas)
     canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
@@ -196,20 +184,6 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 
 void wxCanvasDC::ReleaseCurrentDC(void)
 {
-#if 1
-  if (cMacDC->currentUser() == this) { 
-    GDHandle dh;
-    CGrafPtr g;
-    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-    ::GetGWorld(&g, &dh);
-    if (g != theMacGrafPort)
-      printf("DC ReleaseDC: not grafport!\n");	
-    if (dh != last_device)
-      printf("DC ReleaseDC: not device! %lx %lx\n", dh, last_device);	
-   } else
-    printf("DC ReleaseDC - not current!\n");
-#endif
-
   if (!--dc_set_depth) {
     if (canvas && (cMacCurrentTool != kNoTool)) {
       /* We have to go back to the canvas's drawings settings --- at
@@ -499,7 +473,8 @@ void wxCanvasDC::wxMacSetClip(void)
   } else {
     if (current_reg) {
       if (SetOriginX || SetOriginY) {
-	RgnHandle rgn = ::NewRgn();
+	RgnHandle rgn;
+	rgn = ::NewRgn();
 	::CopyRgn(current_reg,rgn);
 	::OffsetRgn(rgn,SetOriginX,SetOriginY);
 	::SetClip(rgn);
@@ -533,14 +508,15 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     break;
   case kBrushTool:
     {
-      int theBrushStyle = current_brush->GetStyle();
+      int theBrushStyle;
+      theBrushStyle = current_brush->GetStyle();
       if (theBrushStyle == wxPANEL_PATTERN) {
 	int depth;
 	depth = wxDisplayDepth();
 	SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);
 	paint_brush_with_erase = 1;
       } else {
-	int log = theBrushStyle == wxXOR ? patXor : patCopy;
+	int log = (theBrushStyle == wxXOR ? patXor : patCopy);
 	if ((theBrushStyle == wxSOLID) || (theBrushStyle == wxXOR))
 	  PenPat(GetBlackPattern());
 	else if (theBrushStyle == wxTRANSPARENT)
@@ -563,12 +539,18 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     break;
   case kPenTool:
     {
-      int pensize = current_pen->GetWidth();
-      int thePenWidth = (pensize ? pensize : 1);
-      PenSize(thePenWidth, thePenWidth);
+      int pensize;
+      int thePenWidth;
+      int thePenStyle;
+      int log;
+      wxBitmap *bm;
 
-      int thePenStyle = current_pen->GetStyle();
-      int log = patCopy;
+      pensize = current_pen->GetWidth();
+      thePenWidth = (pensize ? pensize : 1);
+      PenSize(thePenWidth, thePenWidth);
+      
+      thePenStyle = current_pen->GetStyle();
+      log = patCopy;
       switch (thePenStyle) {
       case wxXOR:
 	thePenStyle = wxSOLID;
@@ -591,10 +573,11 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
 	log = patXor;
 	break;
       }
-      wxBitmap *bm = current_pen->GetStipple();
+      bm = current_pen->GetStipple();
       if (bm && bm->Ok() && (bm->GetDepth() == 1)
 	  && (bm->GetWidth() == 8) && (bm->GetHeight() == 8)) {
-	GDHandle savegd; CGrafPtr saveport;
+	GDHandle savegd;
+	CGrafPtr saveport;
 	char p[8]; int i, k;
 	GetGWorld(&saveport, &savegd);
 	SetGWorld(bm->x_pixmap, 0);

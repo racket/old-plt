@@ -25,7 +25,8 @@
 
 char *wxP2C(const unsigned char *p)
 {
-  char *c = new WXGC_ATOMIC char[p[0] + 1];
+  char *c;
+  c = new WXGC_ATOMIC char[p[0] + 1];
   memcpy(c, p + 1, p[0]);
   c[p[0]]= 0;
   return c;
@@ -33,10 +34,13 @@ char *wxP2C(const unsigned char *p)
 
 unsigned char *wxC2P(const char *c)
 {
-  int len = strlen(c);
+  int len;
+  char *p;
+
+  len = strlen(c);
   if (len > 255)
     len = 255;
-  char *p = new WXGC_ATOMIC char[len + 1];
+  p = new WXGC_ATOMIC char[len + 1];
   memcpy(p + 1, c, len);
   p[0] = len;
   return (unsigned char *)p;
@@ -85,14 +89,15 @@ char* macCopyString0(char* s)
 
 //-----------------------------------------------------------------------------
 char* macCopyString1(char* s)
-{ // return at least a blank string
-  if (s)
-    {
-      if (strlen(s) > 0)
-	return copystring(s);
-      else return copystring(" ");
-    }
-  else return copystring(" ");
+{
+  // return at least a blank string
+  if (s) {
+    if (strlen(s) > 0)
+      return copystring(s);
+    else
+      return copystring(" ");
+  } else
+    return copystring(" ");
 }
 
 static Pattern bhatch, xhatch;
@@ -138,8 +143,9 @@ void macGetHatchPattern(int hatchStyle, Pattern *pattern)
 	int i;
 	macGetHatchPattern(wxBDIAGONAL_HATCH, NULL);
 	macGetHatchPattern(wxFDIAGONAL_HATCH, &xhatch);
-	for (i = 0; i < 8; i++)
+	for (i = 0; i < 8; i++) {
 	  xhatch.pat[i] |= bhatch.pat[i];
+	}
       }
       memcpy(pattern, &xhatch, sizeof(Pattern));
       return;

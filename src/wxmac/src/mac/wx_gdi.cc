@@ -221,18 +221,11 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
       }
     }
   }
-
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheFontList->Append(this);
-#endif
 }
 
 //-----------------------------------------------------------------------------
 wxFont::~wxFont()
 {
-#if !WXGARBAGE_COLLECTION_ON
-  wxTheFontList->DeleteObject(this);
-#endif
 }
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str,
@@ -367,18 +360,11 @@ wxPen::wxPen(void)
   nb_dash = 0 ;
   dash = NULL ;
   width = 1;
-
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->AddPen(this);
-#endif
 }
 
 //-----------------------------------------------------------------------------
 wxPen::~wxPen()
 {
-#if !WXGARBAGE_COLLECTION_ON
-  wxThePenList->RemovePen(this);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -931,6 +917,11 @@ wxBitmap::~wxBitmap(void)
 
 Bool wxBitmap::Create(int wid, int hgt, int deep)
 {
+  GDHandle savegw;
+  CGrafPtr saveport;
+  QDErr err;
+  GWorldPtr	newGWorld = NULL;
+
   if (!__type) {
     __type = wxTYPE_BITMAP;
     selectedInto = NULL;
@@ -941,10 +932,6 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   depth = deep;
   Rect bounds = {0, 0, height, width};
   // Build a offscreen GWorld to draw the Picture in
-  GDHandle savegw;
-  CGrafPtr saveport;
-  QDErr err;
-  GWorldPtr	newGWorld = NULL;
   err = NewGWorld(&newGWorld, (deep == -1) ? 32 : deep, &bounds, NULL, NULL, 0);
   if (err == noErr) {
     GetGWorld(&saveport, &savegw);
@@ -975,15 +962,16 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
   freePixmap = FALSE;
   XImage	*ximage;
   XpmAttributes xpmAttr;
+  int  ErrorStatus;
 
   ok = FALSE;
 
   xpmAttr.valuemask = XpmReturnInfos;	/* nothing yet, but get infos back */
-  int  ErrorStatus = XpmCreateImageFromData(NULL,	// don't have a Display dpy
-					    data,
-					    &ximage,
-					    NULL,				// don't want a shapemask 
-					    &xpmAttr);
+  ErrorStatus = XpmCreateImageFromData(NULL,	// don't have a Display dpy
+				       data,
+				       &ximage,
+				       NULL,				// don't want a shapemask 
+				       &xpmAttr);
 
   if (ErrorStatus == XpmSuccess) {
     // Set attributes
@@ -1087,12 +1075,12 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
   if (type & wxBITMAP_TYPE_XBM) {
     ok = wxSaveXBMFromBitmap(name, this, NULL);
   } else if (type & wxBITMAP_TYPE_XPM) {
-    if (!Ok()) return FALSE;
-    
-    XImage ximage;
-    
+    XImage ximage;    
     GDHandle savegw;
     CGrafPtr saveport;
+
+    if (!Ok()) return FALSE;
+    
     GetGWorld(&saveport, &savegw);
     
     SetGWorld(x_pixmap, 0);
@@ -1138,13 +1126,16 @@ void wxBitmap::DrawMac(int x, int y, int mode)
   if (x_pixmap) {
     Rect sbounds = {0, 0, height, width};
     Rect dbounds = {y, x, height+y, width+x};
-    OffsetRect(&dbounds,SetOriginX,SetOriginY);
     CGrafPtr portNow;
     GDHandle deviceNow;
+    const BitMap *srcbm;
+    const BitMap *dstbm;
+
+    OffsetRect(&dbounds,SetOriginX,SetOriginY);
     ::GetGWorld(&portNow,&deviceNow);
 
-    const BitMap *srcbm = GetPortBitMapForCopyBits(x_pixmap);
-    const BitMap *dstbm = GetPortBitMapForCopyBits(portNow);
+    srcbm = GetPortBitMapForCopyBits(x_pixmap);
+    dstbm = GetPortBitMapForCopyBits(portNow);
 
     ::CopyBits(srcbm, dstbm, &sbounds, &dbounds, mode, NULL);
   }

@@ -89,7 +89,8 @@ char *wxGetTempFileName (const char *prefix, char *dest)
     sprintf (buf, "%s_%s%d", temp_folder, prefix, (int) suffix);
     if (stat ((char *)buf, &stbuf) != 0) {
       // Touch the file to create it (reserve name)
-      FILE *fd = fopen (buf, "w");
+      FILE *fd;
+      fd = fopen (buf, "w");
       if (fd) {
 	fclose (fd);
 	last_temp = suffix;
@@ -149,12 +150,15 @@ extern void wxSetBusyState(int);
 void 
 wxBeginBusyCursor (wxCursor * cursor)
 {
-  int s = wxGetBusyState();
+  int s;
+  s = wxGetBusyState();
   wxSetBusyState(s + 1);
 
   if (!s) {
-    for (wxChildNode *node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
-      wxFrame *f = (wxFrame *)node->Data();
+    wxChildNode *node;
+    wxFrame *f;
+    for (node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
+      f = (wxFrame *)node->Data();
       f->cBusyCursor = 1;
     }
 
@@ -166,12 +170,16 @@ wxBeginBusyCursor (wxCursor * cursor)
 void 
 wxEndBusyCursor (void)
 {
-  int s = wxGetBusyState();
+  int s;
+
+  s = wxGetBusyState();
   wxSetBusyState(s - 1);
 
   if (s == 1) {
-    for (wxChildNode *node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
-      wxFrame *f = (wxFrame *)node->Data();
+    wxChildNode *node;
+    wxFrame *f;
+    for (node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
+      f = (wxFrame *)node->Data();
       f->cBusyCursor = 0;
     }
     
@@ -245,7 +253,6 @@ int wxGetOsVersion(int *a, int *b)
   return wxMACINTOSH;
 }
 
-// Output a debug mess., in a system dependent fashion.
 void 
 wxDebugMsg (const char *fmt...)
 {
@@ -258,7 +265,6 @@ wxDebugMsg (const char *fmt...)
   va_start (ap, fmt);
 
   vsprintf (buffer, fmt, ap);
-  // cerr << buffer;
 
   va_end (ap);
 }
@@ -266,12 +272,13 @@ wxDebugMsg (const char *fmt...)
 
 // Get hostname.
 Bool wxGetHostName(char *buf, int maxSize)
-{	Bool good = FALSE;
+{	
+  Bool good = FALSE;
 
- if (maxSize>9)
-   {	strcpy(buf,"Macintosh");
+ if (maxSize>9) {
+   strcpy(buf,"Macintosh");
    good = TRUE;
-   }
+ }
  return good;
 }
 

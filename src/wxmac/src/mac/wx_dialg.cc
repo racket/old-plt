@@ -79,23 +79,25 @@ void wxDialogBox::OnSize(int x, int y)
   wxWindow *child = NULL;
   // Count the number of _subwindow_ children
   int noChildren = 0;
-  for(wxChildNode *node = GetChildren()->First(); node; node = node->Next())
-    {
-      wxWindow *win = (wxWindow *)(node->Data());
-      WXTYPE winType = win->__type;
+  wxChildNode *node;
+  wxWindow *win;
+  int client_x, client_y;
 
-      if (wxSubType(winType, wxTYPE_PANEL) ||
-	  wxSubType(winType, wxTYPE_TEXT_WINDOW) ||
-	  wxSubType(winType, wxTYPE_CANVAS))
-	{
-	  child = win;
-	  noChildren ++;
-	}
+  for (node = GetChildren()->First(); node; node = node->Next()) {
+    WXTYPE winType;
+    
+    win = (wxWindow *)(node->Data());
+    winType = win->__type;
+    
+    if (wxSubType(winType, wxTYPE_PANEL) ||
+	wxSubType(winType, wxTYPE_TEXT_WINDOW) ||
+	wxSubType(winType, wxTYPE_CANVAS)) {
+      child = win;
+      noChildren ++;
     }
+  }
   if (!child || (noChildren > 1))
     return;
-
-  int client_x, client_y;
 
   GetClientSize(&client_x, &client_y);
   child->SetSize(0, 0, client_x, client_y, 0x70);
@@ -142,15 +144,12 @@ void wxDialogBox::SetButtonPressed(int buttonPressed)
 Bool wxDialogBox::OnClose(void)
 {
   Bool result;
-  if (IsModal())
-    {
-      Show(FALSE);
-      result = FALSE; // don't want dialog frame deleted
-    }
-  else
-    {
-      result = TRUE;
-    }
+  if (IsModal()) {
+    Show(FALSE);
+    result = FALSE; // don't want dialog frame deleted
+  } else {
+    result = TRUE;
+  }
 
   if (result)
     return cFrame->OnClose();
@@ -189,6 +188,8 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 	  0, 0, width, height),
 	  cButtonPressed (0)
 {
+  int w, h;
+
   WXGC_IGNORE(this, cFrame);
   
   cFrame = (wxFrame *)GetParent();
@@ -196,7 +197,6 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
   cFrame->MakeModal(modal);
   
   /* Set dialog panel to frame's client size: */
-  int w, h;
   cFrame->GetClientSize(&w, &h);
   SetSize(-1, -1, w, h, 0x70);
   
@@ -243,9 +243,7 @@ extern "C" {
 
 static int navinited = 0;
 
-int log_base_10(int i);
-
-int log_base_10(int i)
+static int log_base_10(int i)
 {
   if (i < 10) { 
     return 1;
@@ -419,6 +417,9 @@ char *wxFileSelector(char *message, char *default_path,
     OSErr derr;
     NavDialogCreationOptions dialogOptions;
     wxCallbackInfo *cbi;
+    NavUserAction action;
+    NavReplyRecord *reply;
+    char *temp;
 
     if (!navinited) {
       if (!NavLoad()) {
@@ -518,14 +519,14 @@ char *wxFileSelector(char *message, char *default_path,
       CFRelease(dialogOptions.message);
     
     // did the user cancel?:
-    NavUserAction action = NavDialogGetUserAction(outDialog);
+    action = NavDialogGetUserAction(outDialog);
     if ((action == kNavUserActionCancel) || (action == kNavUserActionNone)) {
       NavDialogDispose(outDialog);
       return NULL;
     }
     
     // get the user's reply:
-    NavReplyRecord *reply = new NavReplyRecord;
+    reply = new NavReplyRecord;
     if (NavDialogGetReply(outDialog,reply) != noErr) {
       NavDialogDispose(outDialog);
       return NULL;
@@ -536,9 +537,6 @@ char *wxFileSelector(char *message, char *default_path,
       return NULL;
     }
     
-    // parse the results
-    char *temp;
-
     if (flags & wxMULTIOPEN) {
       long count, index;
       char *newpath, *aggregate = "";
@@ -571,9 +569,12 @@ char *wxFileSelector(char *message, char *default_path,
       NavDisposeReply(reply);
       return path;
     } else { // saving file
-      int strLen = CFStringGetLength(reply->saveFileName) + 1;
-      char *filename = new char[strLen];
+      int strLen;
+      char *filename;
       char *path, *wholepath;
+
+      strLen = CFStringGetLength(reply->saveFileName) + 1;
+      filename = new char[strLen];
 
       if (CFStringGetCString(reply->saveFileName,filename,strLen,CFStringGetSystemEncoding()) == FALSE) {
 	// Unable to convert string

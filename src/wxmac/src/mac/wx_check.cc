@@ -60,6 +60,13 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
  WXTYPE		objectType
  ) 
 {
+  CGrafPtr theMacGrafPort;
+  Rect boundsRect = {0, 0, 0, 0};
+  Rect r = {0,0,0,0};
+  CFStringRef title;
+  SInt16 baselineOffset; // ignored
+  OSErr err;
+
   buttonBitmap = NULL;
   
   Callback(function);
@@ -69,20 +76,16 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   label = wxItemStripLabel(label);
 
   SetCurrentMacDC();
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-  Rect boundsRect = {0, 0, 0, 0};
+  theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect,SetOriginX + padLeft,SetOriginY + padTop);
 
-  CFStringRef title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
+  title = CFStringCreateWithCString(NULL,label,kCFStringEncodingISOLatin1);
   cMacControl = NULL;
   CreateCheckBoxControl(GetWindowFromPort(theMacGrafPort), &boundsRect, 
 			title, 0, FALSE, &cMacControl);
   CFRelease(title);
   CheckMemOK(cMacControl);
   
-  Rect r = {0,0,0,0};
-  SInt16 baselineOffset; // ignored
-  OSErr err;
   err = ::GetBestControlRect(cMacControl,&r,&baselineOffset);
   
   cWindowWidth = r.right - r.left + (padLeft + padRight);
@@ -124,14 +127,16 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
   Callback(function);
   
   SetCurrentMacDC();
-  Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
-  cWindowHeight = bounds.bottom;
-  cWindowWidth = bounds.right + IC_BOX_SIZE + IC_X_SPACE;
-  if (cWindowHeight < IC_MIN_HEIGHT)
-    cWindowHeight = IC_MIN_HEIGHT;
-  OffsetRect(&bounds,SetOriginX,SetOriginY);
+  {
+    Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
+    cWindowHeight = bounds.bottom;
+    cWindowWidth = bounds.right + IC_BOX_SIZE + IC_X_SPACE;
+    if (cWindowHeight < IC_MIN_HEIGHT)
+      cWindowHeight = IC_MIN_HEIGHT;
+    OffsetRect(&bounds,SetOriginX,SetOriginY);
   
-  ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+  }
 
   if (GetParent()->IsHidden())
     DoShow(FALSE);
@@ -176,7 +181,8 @@ void wxCheckBox::SetLabel(char* label)
   labelString = label ? copystring(wxItemStripLabel(label)) : NULL;
 
   if (label && cMacControl) {
-    CFStringRef llabel = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingISOLatin1);
+    CFStringRef llabel;
+    llabel = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingISOLatin1);
     SetControlTitleWithCFString(cMacControl, llabel);
     CFRelease(llabel);
   } else
@@ -214,7 +220,8 @@ void wxCheckBox::SetValue(Bool value)
 Bool wxCheckBox::GetValue(void)
 {
   if (cMacControl) {
-    short value = ::GetControlValue(cMacControl);
+    short value;
+    value = ::GetControlValue(cMacControl);
     return (value != 0) ? TRUE : FALSE;
   } else
     return bitmapState;
@@ -238,29 +245,28 @@ void wxCheckBox::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platfo
   if (hideToPreventFlicker) ::HideControl(cMacControl);
 #endif
 
-  if (dW || dH)
-    {
-      int clientWidth, clientHeight;
-      GetClientSize(&clientWidth, &clientHeight);
-      ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), clientHeight - (padTop + padBottom));
-    }
+  if (dW || dH) {
+    int clientWidth, clientHeight;
+    GetClientSize(&clientWidth, &clientHeight);
+    ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), clientHeight - (padTop + padBottom));
+  }
 
-  if (dX || dY)
-    {
-      MaybeMoveControls();
-    }
+  if (dX || dY) {
+    MaybeMoveControls();
+  }
 
 #ifndef WX_CARBON
   if (hideToPreventFlicker) ::ShowControl(cMacControl);
 #endif
-  if (!cHidden && (dW || dH || dX || dY))
+  if (!cHidden && (dW || dH || dX || dY)) {
+    int clientWidth, clientHeight;
+    GetClientSize(&clientWidth, &clientHeight);
     {
-      int clientWidth, clientHeight;
-      GetClientSize(&clientWidth, &clientHeight);
       Rect clientRect = {0, 0, clientHeight, clientWidth};
       OffsetRect(&clientRect,SetOriginX,SetOriginY);
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
     }
+  }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -277,43 +283,49 @@ void wxCheckBox::Paint(void)
 {
   if (cHidden) return;
   SetCurrentDC();
-  Rect r = { 0, 0, cWindowHeight, cWindowWidth};
-  ::OffsetRect(&r,SetOriginX,SetOriginY);
-  if (cMacControl)
-    ::Draw1Control(cMacControl);
-  else {
-    ::EraseRect(&r);
-    if (buttonBitmap) {
-      int btop = (cWindowHeight - buttonBitmap->GetHeight()) / 2;
-      buttonBitmap->DrawMac(IC_BOX_SIZE + IC_X_SPACE, btop);
-    } else if (labelString) {
-      float fWidth = 50.0;
-      float fHeight = 12.0;
-      float fDescent = 0.0;
-      float fLeading = 0.0;
-      GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
-      int stop = (int)((cWindowHeight + fHeight) / 2);
-      ::MoveTo(IC_BOX_SIZE + IC_X_SPACE + SetOriginX, (short)(stop - fDescent - fLeading) + SetOriginY);
-      DrawLatin1Text(labelString, 0);
+  {
+    Rect r = { 0, 0, cWindowHeight, cWindowWidth};
+    ::OffsetRect(&r,SetOriginX,SetOriginY);
+    if (cMacControl)
+      ::Draw1Control(cMacControl);
+    else {
+      int top;
+      Rect r;
+
+      ::EraseRect(&r);
+      if (buttonBitmap) {
+	int btop = (cWindowHeight - buttonBitmap->GetHeight()) / 2;
+	buttonBitmap->DrawMac(IC_BOX_SIZE + IC_X_SPACE, btop);
+      } else if (labelString) {
+	float fWidth = 50.0;
+	float fHeight = 12.0;
+	float fDescent = 0.0;
+	float fLeading = 0.0;
+	int stop;
+	GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
+	stop = (int)((cWindowHeight + fHeight) / 2);
+	::MoveTo(IC_BOX_SIZE + IC_X_SPACE + SetOriginX, (short)(stop - fDescent - fLeading) + SetOriginY);
+	DrawLatin1Text(labelString, 0);
+      }
+      top = (cWindowHeight - IC_BOX_SIZE) / 2;
+      ::SetRect(&r, top, 0, top + IC_BOX_SIZE, IC_BOX_SIZE);
+      OffsetRect(&r,SetOriginX,SetOriginY);
+      ForeColor(blackColor);
+      PenSize(1, 1);
+      FrameRect(&r);
+      ForeColor(whiteColor);
+      InsetRect(&r, 1, 1);
+      PaintRect(&r);
+      ForeColor(blackColor);
+      if (bitmapState) {
+	MoveTo(SetOriginX, top + SetOriginY);
+	Line(IC_BOX_SIZE - 1, IC_BOX_SIZE - 1);
+	MoveTo(SetOriginX, top + IC_BOX_SIZE - 1 + SetOriginY);
+	Line(IC_BOX_SIZE - 1, -(IC_BOX_SIZE - 1));
+      } else {
+      }
+      cMacDC->setCurrentUser(NULL);
     }
-    int top = (cWindowHeight - IC_BOX_SIZE) / 2;
-    Rect r = { top, 0, top + IC_BOX_SIZE, IC_BOX_SIZE };
-    OffsetRect(&r,SetOriginX,SetOriginY);
-    ForeColor(blackColor);
-    PenSize(1, 1);
-    FrameRect(&r);
-    ForeColor(whiteColor);
-    InsetRect(&r, 1, 1);
-    PaintRect(&r);
-    ForeColor(blackColor);
-    if (bitmapState) {
-      MoveTo(SetOriginX, top + SetOriginY);
-      Line(IC_BOX_SIZE - 1, IC_BOX_SIZE - 1);
-      MoveTo(SetOriginX, top + IC_BOX_SIZE - 1 + SetOriginY);
-      Line(IC_BOX_SIZE - 1, -(IC_BOX_SIZE - 1));
-    } else {
-    }
-    cMacDC->setCurrentUser(NULL);
   }
 }
 
@@ -359,17 +371,20 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 {
   if (event->LeftDown())
     {
+      int startH;
+      int startV;
+      Point startPt;
+      int trackResult;
+
       this->Enable(true);
       wxWindow::Enable(true);
       
       SetCurrentDC();
       
-      int startH;
-      int startV;
       event->Position(&startH, &startV); // client c.s.
       
-      Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
-      int trackResult;
+      startPt.v = startV + SetOriginY;
+      startPt.h = startH + SetOriginX; // port c.s.
       if (::StillDown()) {
 	if (cMacControl)
 	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
@@ -379,7 +394,8 @@ void wxCheckBox::OnEvent(wxMouseEvent *event) // mac platform only
 	trackResult = 1;
       if (trackResult)
 	{
-	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
+	  wxCommandEvent *commandEvent;
+	  commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHECKBOX_COMMAND);
 	  SetValue(!GetValue()); // toggle checkbox
 	  ProcessCommand(commandEvent);
 	}

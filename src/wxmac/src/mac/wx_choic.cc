@@ -62,6 +62,16 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	int x, int y, int width, int height, int N, char **Choices,
 	long style, char *name)
 {
+  float fWidth, fHeight, fDescent, fLeading;
+  int lblw, lblh;
+  int maxdfltw;
+  int maxdflth;
+  int n,w,h;
+  Str255 temp;
+  OSErr err;
+  Rect r = {0,0,0,0};
+  SInt16 baselineOffset; // ignored
+  
   buttonFont = panel->buttonFont;
   labelFont = panel->labelFont;
   backColour = panel->backColour;
@@ -85,15 +95,16 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   if (Title)
     Title = wxItemStripLabel(Title);
 
-  float fWidth = 50.0;
-  float fHeight = 12.0;
-  float fDescent = 0.0;
-  float fLeading = 0.0;
+  fWidth = 50.0;
+  fHeight = 12.0;
+  fDescent = 0.0;
+  fLeading = 0.0;
   labelbase = 9;
   if (Title) {
+    int n;
     GetTextExtent(Title, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
     if (fHeight < 12) fHeight = 12; 
-    int n = strlen(Title);
+    n = strlen(Title);
     sTitle = (StringPtr)new char[n+1];
     sTitle[0] = n;
     memcpy(&sTitle[1], Title, n);
@@ -102,9 +113,8 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     sTitle = NULL;
     fWidth = fHeight = 0;
   }
-  int lblw = (int)(fWidth + (Title ? HSLOP : 0));
-  int lblh = (int)(fHeight + (Title ? 2 : 0));
-
+  lblw = (int)(fWidth + (Title ? HSLOP : 0));
+  lblh = (int)(fHeight + (Title ? 2 : 0));
     
   if (labelPosition == wxVERTICAL) {
     padTop += lblh + VSLOP;
@@ -112,8 +122,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     padLeft += lblw;
   }
   
-  int maxdfltw;
-  int maxdflth;
   if (N) {
     maxdfltw = 30;
   } else {
@@ -129,8 +137,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   PopUpID = wxMenu::gMenuIdCounter++;
   hDynMenu = NewMenu(PopUpID, "\p");
   CheckMemOK(hDynMenu);
-  int n,w,h;
-  Str255 temp;
   for (n = 0; n < N; n++) {
     // attempt to size control by width of largest string
     GetTextExtent(Choices[n], &fWidth, &fHeight, &fDescent, &fLeading, buttonFont);
@@ -146,8 +152,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   no_strings = N;
 
   // First, create the control with a bogus rectangle;
-  OSErr err;
-  Rect r = {0,0,0,0};
   err = ::CreatePopupButtonControl(GetWindowFromPort(cMacDC->macGrafPort()), &r, NULL, -12345,
 				   FALSE, 0, 0, normal, &cMacControl);
   err = ::SetControlData(cMacControl, kControlNoPart, kControlPopupButtonOwnedMenuRefTag,
@@ -156,7 +160,6 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   ::SetControlMaximum(cMacControl, no_strings);
   
   // Now, ignore the font data and let the control find the "best" size 
-  SInt16 baselineOffset; // ignored
   err = ::GetBestControlRect(cMacControl, &r, &baselineOffset);
   maxdfltw = r.right - r.left + (PAD_X * 2);
   maxdflth = r.bottom - r.top + (PAD_Y * 2);
@@ -233,7 +236,8 @@ void wxChoice::DrawChoice(Bool active)
       MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
       DrawLatin1Text((char *)sTitle, 1, sTitle[0], 0);
     } else {
-      CFStringRef str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
+      CFStringRef str;
+      str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
       
       DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 		       0, &r, teJustLeft, NULL);
@@ -346,7 +350,8 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
 void wxChoice::Append (char *Item)
 {
   Str255 s;
-  int n = strlen(Item);
+  int n;
+  n = strlen(Item);
   memcpy(&s[1], Item, n);
   s[0] = n;
   ::InsertMenuItem(hDynMenu, "\ptemp", no_strings);
@@ -361,8 +366,9 @@ void wxChoice::Append (char *Item)
 void wxChoice::Clear (void)
 {
   int n;
-  for (n = 0; n < no_strings; n++)
+  for (n = 0; n < no_strings; n++){
     ::DeleteMenuItem(hDynMenu, 1);
+  }
   no_strings = 0;
   selection = 0;
   ::SetControlMinimum(cMacControl,0);
@@ -389,8 +395,8 @@ void wxChoice::SetSelection (int n)
 int wxChoice::FindString (char *s)
 {
   int i;
-  Str255	ps;
-  Str255  temp;
+  Str255 ps;
+  Str255 temp;
   CopyCStringToPascal(s,temp);
   for (i = 0; i < no_strings; i++) {
     ::GetMenuItemText(hDynMenu, i+1, ps);
@@ -402,7 +408,7 @@ int wxChoice::FindString (char *s)
 
 char *wxChoice::GetString (int n)
 {
-  Str255	s;
+  Str255 s;
   if (n < 0 || n >= no_strings)
     return NULL; // dummy
   ::GetMenuItemText(hDynMenu, n+1, s);
@@ -436,16 +442,14 @@ char* wxChoice::GetLabel(void)
 
 void wxChoice::SetLabel(char *label)
 {
-  if (sTitle) {
-    delete[] (char *)sTitle;
-  }
   label = wxItemStripLabel(label);
   sTitle = (StringPtr)new char[strlen(label) + 1];
   CopyCStringToPascal(label, sTitle);
   
-  SetCurrentDC();
-  Rect r = TitleRect;
-  OffsetRect(&r,SetOriginX,SetOriginY);
-  EraseRect(&r);
-  Paint();
+  if (SetCurrentDC()) {
+    Rect r = TitleRect;
+    OffsetRect(&r,SetOriginX,SetOriginY);
+    EraseRect(&r);
+    Paint();
+  }
 }

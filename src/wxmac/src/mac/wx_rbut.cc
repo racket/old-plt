@@ -61,6 +61,12 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
  WXTYPE		objectType
  ) 
 {
+  OSErr err;
+  CGrafPtr theMacGrafPort;
+  Rect boundsRect = {0, 0, 0, 0};
+  CFStringRef theMacLabel;
+  SInt16 baselineOffset; // ignored
+
   buttonBitmap = NULL;
   Callback(function);
   
@@ -68,11 +74,9 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
 
   // First, create the control with a bogus rectangle;
   SetCurrentMacDC();
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-  Rect boundsRect = {0, 0, 0, 0};
+  theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-  CFStringRef theMacLabel = CFStringCreateWithCString(NULL, label, kCFStringEncodingISOLatin1);
-  OSErr err;
+  theMacLabel = CFStringCreateWithCString(NULL, label, kCFStringEncodingISOLatin1);
   
   err = CreateRadioButtonControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel,
 				 0, FALSE, &cMacControl);
@@ -80,7 +84,6 @@ void wxRadioButton::Create // Real constructor (given parentPanel, label)
   CFRelease(theMacLabel);
   
   // Now, ignore the font data and let the control find the "best" size 
-  SInt16 baselineOffset; // ignored
   err = ::GetBestControlRect(cMacControl,&boundsRect,&baselineOffset);
   cWindowWidth = boundsRect.right - boundsRect.left;
   cWindowHeight = boundsRect.bottom - boundsRect.top;
@@ -109,6 +112,8 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
  ) :
  wxItem (parentPanel, x, y, width, height, style, windowName)
 {
+  Rect bounds;
+
   if (bitmap->Ok() && (bitmap->selectedIntoDC >= 0)) {
     buttonBitmap = bitmap;
     buttonBitmap->selectedIntoDC++;
@@ -119,7 +124,7 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
   Callback(function);
   cMacControl = NULL;
   
-  Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
+  ::SetRect(&bounds, 0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth());
   cWindowHeight = bounds.bottom;
   cWindowWidth = bounds.right + IR_CIRCLE_SIZE + IR_X_SPACE;
   if (cWindowHeight < IR_MIN_HEIGHT)
@@ -174,7 +179,8 @@ void wxRadioButton::SetLabel(char* label)
     if (cMacControl) {
       SetCurrentDC();
       {
-	CFStringRef llabel = CFStringCreateWithCString(NULL, label, kCFStringEncodingISOLatin1);
+	CFStringRef llabel;
+	llabel = CFStringCreateWithCString(NULL, label, kCFStringEncodingISOLatin1);
 	SetControlTitleWithCFString(cMacControl, llabel);
 	CFRelease(llabel);
       }
@@ -214,7 +220,8 @@ void wxRadioButton::SetValue(Bool val)
 Bool wxRadioButton::GetValue(void)
 {
   if (cMacControl) {
-    short value = ::GetControlValue(cMacControl);
+    short value;
+    value = ::GetControlValue(cMacControl);
     return (value != 0) ? TRUE : FALSE;
   } else
     return bitmapState;
@@ -225,40 +232,48 @@ void wxRadioButton::Paint(void)
 {
   if (cHidden) return;
   SetCurrentDC();
-  Rect r = { 0, 0, cWindowHeight, cWindowWidth};
-  OffsetRect(&r,SetOriginX,SetOriginY);
-  ::EraseRect(&r);
-  if (cMacControl) {
-    ::Draw1Control(cMacControl);
-  } else {
-    if (buttonBitmap) {
-      int btop = (cWindowHeight - buttonBitmap->GetHeight()) / 2;
-      buttonBitmap->DrawMac(IR_CIRCLE_SIZE + IR_X_SPACE, btop);
-    } else if (labelString) {
-      Rect r = { SetOriginY, IR_CIRCLE_SIZE + IR_X_SPACE + SetOriginX, 
-		 SetOriginY + cWindowHeight, SetOriginX + cWindowWidth };
-      CFStringRef str = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingISOLatin1);
-
-      DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
-		       0, &r, teJustLeft, NULL);
-
-      CFRelease(str);
-    }
-    int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
-    Rect r = { top, 0, top + IR_CIRCLE_SIZE, IR_CIRCLE_SIZE };
+  { 
+    Rect r = { 0, 0, cWindowHeight, cWindowWidth};
     OffsetRect(&r,SetOriginX,SetOriginY);
-    PenSize(1, 1);
-    ForeColor(blackColor);
-    FrameOval(&r);
-    InsetRect(&r, 1, 1);
-    ForeColor(whiteColor);
-    PaintOval(&r);
-    ForeColor(blackColor);
-    if (bitmapState) {
-      InsetRect(&r, IR_ON_INSET - 1, IR_ON_INSET - 1);
-      PaintOval(&r);
+    ::EraseRect(&r);
+    if (cMacControl) {
+      ::Draw1Control(cMacControl);
+    } else {
+      if (buttonBitmap) {
+	int btop;
+	btop = (cWindowHeight - buttonBitmap->GetHeight()) / 2;
+	buttonBitmap->DrawMac(IR_CIRCLE_SIZE + IR_X_SPACE, btop);
+      } else if (labelString) {
+	Rect r = { SetOriginY, IR_CIRCLE_SIZE + IR_X_SPACE + SetOriginX, 
+		   SetOriginY + cWindowHeight, SetOriginX + cWindowWidth };
+	CFStringRef str;
+
+	str = CFStringCreateWithCString(NULL, labelString, kCFStringEncodingISOLatin1);
+	
+	DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
+			 0, &r, teJustLeft, NULL);
+
+	CFRelease(str);
+      }
+
+      {
+	int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
+	Rect r = { top, 0, top + IR_CIRCLE_SIZE, IR_CIRCLE_SIZE };
+	OffsetRect(&r,SetOriginX,SetOriginY);
+	PenSize(1, 1);
+	ForeColor(blackColor);
+	FrameOval(&r);
+	InsetRect(&r, 1, 1);
+	ForeColor(whiteColor);
+	PaintOval(&r);
+	ForeColor(blackColor);
+	if (bitmapState) {
+	  InsetRect(&r, IR_ON_INSET - 1, IR_ON_INSET - 1);
+	  PaintOval(&r);
+	}
+	cMacDC->setCurrentUser(NULL);
+      }
     }
-    cMacDC->setCurrentUser(NULL);
   }
 }
 
@@ -266,6 +281,7 @@ void wxRadioButton::Highlight(Bool on)
 {
   int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
   Rect r = { top + 1, 1, top + IR_CIRCLE_SIZE - 1, IR_CIRCLE_SIZE - 1};
+
   OffsetRect(&r,SetOriginX,SetOriginY);
   if (!on)
     ForeColor(whiteColor);
@@ -294,12 +310,15 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
 {
   if (cEnable) {
     if (event->LeftDown()) {
+      int startH, startV;
+      Point startPt;
+
       SetCurrentDC();
       
-      int startH, startV;
       event->Position(&startH, &startV); // client c.s.
       
-      Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
+      startPt.v = startV + SetOriginY; // port c.s.
+      startPt.h = startH + SetOriginX;
       int trackResult;
       if (::StillDown()) {
 	if (cMacControl)
@@ -309,7 +328,8 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
       } else
 	trackResult = 1;
       if (trackResult) {
-	wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
+	wxCommandEvent *commandEvent;
+	commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
 	ProcessCommand(commandEvent);
       }
     }
@@ -323,11 +343,12 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
 //-----------------------------------------------------------------------------
 void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
+  int clientWidth, clientHeight;
+
   if (!cMacControl) return;
 
   SetCurrentDC();
 
-  int clientWidth, clientHeight;
   GetClientSize(&clientWidth, &clientHeight);
 
   ::SizeControl(cMacControl, clientWidth, clientHeight);

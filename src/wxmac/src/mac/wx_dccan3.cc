@@ -31,14 +31,16 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
 {
+  FontInfo fontInfo;
+  Point start, end;
+  float w, h;
+
   if (!Ok()) return;
   
   SetCurrentDC();
 
   wxMacSetCurrentTool(kTextTool);
 
-  FontInfo fontInfo;
-  Point start, end;
   ::GetFontInfo(&fontInfo);
   start.h = XLOG2DEV(x);
   start.v = YLOG2DEV(y) + fontInfo.ascent; /* ascent is already scaled */
@@ -48,7 +50,6 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool use16, int d)
 
   // look at pen, use distance travelled instead of calculating 
   // the length of the string (again)
-  float w, h;
   ::GetPen(&end);
   w = (end.h - start.h) / (logical_scale_x * user_scale_x);
   h = (end.v - start.v) / (logical_scale_y * user_scale_y);

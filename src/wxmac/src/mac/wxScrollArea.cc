@@ -27,9 +27,11 @@ wxScrollArea::wxScrollArea
  cVScrollBar (NULL),
  cHScrollBar (NULL)
 {
+  Bool bothScrolls;
+
   if (!parentScrollWindow) wxFatalError("No parentScrollWindow for wxScrollArea");
 
-  Bool bothScrolls = ((cStyle & wxVSCROLL) && (cStyle & wxHSCROLL));
+  bothScrolls = ((cStyle & wxVSCROLL) && (cStyle & wxHSCROLL));
 
   // mflatt:
   //  While a scrollbar should overap a frame edge when the scrollbar is positioned

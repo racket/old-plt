@@ -143,29 +143,29 @@ void wxItem::Activate(Bool on)
 void wxItem::OnChar(wxKeyEvent *event)
 {
   // Default is to pass chars up to our panel
-  wxPanel *parent = (wxPanel *) GetParent();
-  if (parent)
-    {
-      // parent is not always a wxPanel: can be a wxMenu...
-      if (wxSubType(parent->__type,wxTYPE_PANEL))
-	{
-	  parent->OnChar(event);
-	}
-    }
+  wxPanel *parent;
+  parent = (wxPanel *) GetParent();
+  if (parent) {
+    // parent is not always a wxPanel: can be a wxMenu...
+    if (wxSubType(parent->__type,wxTYPE_PANEL))
+      parent->OnChar(event);
+  }
 }
 
 
 char *wxItemStripLabel(char *label)
 {
+  int i, j;
+  char *naya;
+
   if (!label)
     return NULL;
   
-  int i;
   for (i = 0; label[i]; i++) {
     if (label[i] == '&') {
       /* Strip it: */
-      char *naya = new char[strlen(label) + 1];
-      int j = 0;
+      naya = new char[strlen(label) + 1];
+      j = 0;
       for (i = 0; label[i]; i++) {
         if (label[i] == '&') {
           if (label[i + 1]) {

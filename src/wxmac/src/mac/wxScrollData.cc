@@ -17,18 +17,18 @@
 wxScrollData::wxScrollData
 (
  void
- ) :
-  cOriginX (0),
-  cOriginY (0),
-  cSizeW (0),
-  cSizeH (0),
-  cPositionH (0),
-  cPositionV (0),
-  cUnitW (0),
-  cUnitH (0),
-  cPageW (0),
-  cPageH (0)
+ )
 {
+  cOriginX = 0;
+  cOriginY = 0;
+  cSizeW = 0;
+  cSizeH = 0;
+  cPositionH = 0;
+  cPositionV = 0;
+  cUnitW = 0;
+  cUnitH = 0;
+  cPageW = 0;
+  cPageH = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -36,18 +36,18 @@ wxScrollData::wxScrollData
 (
  int					value,			// initial value for selected items
  wxWhatScrollData	whatScrollData	// what items to initialize with given value
- ) :
-  cOriginX ((long)whatScrollData & wxWhatScrollData::wxOriginX ? value : 0),
-  cOriginY ((long)whatScrollData & wxWhatScrollData::wxOriginY ? value : 0),
-  cSizeW ((long)whatScrollData & wxWhatScrollData::wxSizeW ? value : 0),
-  cSizeH ((long)whatScrollData & wxWhatScrollData::wxSizeH ? value : 0),
-  cPositionH ((long)whatScrollData & wxWhatScrollData::wxPositionH ? value : 0),
-  cPositionV ((long)whatScrollData & wxWhatScrollData::wxPositionV ? value : 0),
-  cUnitW ((long)whatScrollData & wxWhatScrollData::wxUnitW ? value : 0),
-  cUnitH ((long)whatScrollData & wxWhatScrollData::wxUnitH ? value : 0),
-  cPageW ((long)whatScrollData & wxWhatScrollData::wxPageW ? value : 0),
-  cPageH ((long)whatScrollData & wxWhatScrollData::wxPageH ? value : 0)
+ )
 {
+  cOriginX = (long)whatScrollData & wxWhatScrollData::wxOriginX ? value : 0;
+  cOriginY = (long)whatScrollData & wxWhatScrollData::wxOriginY ? value : 0;
+  cSizeW = (long)whatScrollData & wxWhatScrollData::wxSizeW ? value : 0;
+  cSizeH = (long)whatScrollData & wxWhatScrollData::wxSizeH ? value : 0;
+  cPositionH = (long)whatScrollData & wxWhatScrollData::wxPositionH ? value : 0;
+  cPositionV = (long)whatScrollData & wxWhatScrollData::wxPositionV ? value : 0;
+  cUnitW = (long)whatScrollData & wxWhatScrollData::wxUnitW ? value : 0;
+  cUnitH = (long)whatScrollData & wxWhatScrollData::wxUnitH ? value : 0;
+  cPageW = (long)whatScrollData & wxWhatScrollData::wxPageW ? value : 0;
+  cPageH = (long)whatScrollData & wxWhatScrollData::wxPageH ? value : 0;
 }
 
 //=============================================================================

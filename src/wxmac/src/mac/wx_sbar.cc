@@ -92,6 +92,14 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
  char* label
  )
 {
+  const Bool drawNow = TRUE;
+  const short offValue = 0;
+  const short minValue = 0;
+  const short maxValue = 0;
+  CGrafPtr theMacGrafPort;
+  int clientWidth, clientHeight;
+  Rect boundsRect = {0, 0, 0, 0};
+  
   InitDefaults(function);
   
   if (label)
@@ -101,16 +109,12 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
   // do platform stuff
   //////////////////////////////////////////
   SetCurrentMacDC();
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-  int clientWidth = ClientArea()->Width();
-  int clientHeight = ClientArea()->Height();
-  Rect boundsRect = {0, 0, clientHeight, clientWidth};
+  theMacGrafPort = cMacDC->macGrafPort();
+  clientWidth = ClientArea()->Width();
+  clientHeight = ClientArea()->Height();
+  boundsRect.bottom = clientHeight;
+  boundsRect.right = clientWidth;
   OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-  const Bool drawNow = TRUE;
-  const short offValue = 0;
-  const short minValue = 0;
-  const short maxValue = 0;
-  long refCon = (long)this;
 
   if (CreateScrollBarControl(GetWindowFromPort(theMacGrafPort), &boundsRect, 
 			     offValue, minValue, maxValue, 1,
@@ -132,10 +136,12 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
 //-----------------------------------------------------------------------------
 void wxScrollBar::InitDefaults(wxFunction function)
 {
+  wxScrollData* scrollData;
+
   Callback(function);
 
   cStyle = (cStyle & wxHSCROLL ? wxHSCROLL : wxVSCROLL); // kludge
-  wxScrollData* scrollData = new wxScrollData;
+  scrollData = new wxScrollData;
   cScroll = new wxScroll(this, scrollData);
 }
 
@@ -200,11 +206,14 @@ void wxScrollBar::Paint(void)
   else
     {
       // Draw outline of hidden scrollbar (since we're clipping DrawGrowIcon)
-      Rect controlRect = *GetControlBounds(cMacControl,NULL);
+      Rect controlRect;
       PenState oldPenState;
+      Rect r;
+      
+      controlRect = *GetControlBounds(cMacControl,NULL);
       ::GetPenState(&oldPenState);
       ::PenNormal();
-      Rect r = controlRect;
+      r = controlRect;
       OffsetRect(&r,SetOriginX,SetOriginY);
       ::FrameRect(&r);
       ::SetPenState(&oldPenState);
@@ -265,21 +274,28 @@ pascal void TrackActionProc(ControlHandle theControl, short thePart)
 void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 {
   if (event->LeftDown()) {
+    int startH, startV;
+    Point startPt;
+    int thePart;
+
     SetCurrentDC();
     
-    int startH, startV;
     event->Position(&startH, &startV); // frame c.s.
     
-    Point startPt = {startV + SetOriginY, startH + SetOriginX}; // frame c.s.
-    int thePart = ::TestControl(cMacControl, startPt);
+    startPt.v = startV + SetOriginY; // frame c.s.
+    startPt.h = startH + SetOriginX;
+    thePart = ::TestControl(cMacControl, startPt);
     if (thePart) {
       if (thePart == kControlIndicatorPart) {
 	if (!StillDown() || TrackControl(cMacControl, startPt, TrackActionProcUPP)) {
 	  Bool horizontal = cStyle & wxHSCROLL;
 	  wxWhatScrollData positionScrollData =
 	    (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
-	  int newPosition = GetValue();
-	  wxScrollEvent *e = new wxScrollEvent();
+	  int newPosition;
+	  wxScrollEvent *e;
+
+	  newPosition = GetValue();
+	   e = new wxScrollEvent();
 	  e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
 	  e->pos = GetValue();
 	  e->moveType = wxEVENT_TYPE_SCROLL_THUMBTRACK;
@@ -299,14 +315,22 @@ void wxScrollBar::TrackAction(short part) // mac platform only
 {
   if (part && cScroll) {
     Bool horizontal = cStyle & wxHSCROLL;
+    wxScrollData* scrollData;
+    int scrollsPerPage;
+    int maxv;
+    int mtype, delta;
+    int newPosition;
+    wxWhatScrollData positionScrollData;
+    wxScrollEvent *e;
 
-    wxScrollData* scrollData = cScroll->GetScrollData();
-    int scrollsPerPage = scrollData->GetValue
-      (horizontal ? wxWhatScrollData::wxPageW : wxWhatScrollData::wxPageH);
-    int maxv = GetMaxValue();
-    int mtype = 0;
+    scrollData = cScroll->GetScrollData();
+    scrollsPerPage = scrollData->GetValue(horizontal 
+					  ? wxWhatScrollData::wxPageW
+					  : wxWhatScrollData::wxPageH);
+    maxv = GetMaxValue();
+    mtype = 0;
     
-    int delta = 0;
+    delta = 0;
     switch (part)
       {
       case kControlUpButtonPart: delta = -1; mtype = wxEVENT_TYPE_SCROLL_LINEUP; break;
@@ -315,14 +339,15 @@ void wxScrollBar::TrackAction(short part) // mac platform only
       case kControlPageDownPart: delta = scrollsPerPage; mtype = wxEVENT_TYPE_SCROLL_PAGEDOWN; break;
       }
 
-    int newPosition = GetValue() + delta;
+    newPosition = GetValue() + delta;
     if (newPosition < 0) newPosition = 0;
     if (newPosition > maxv) newPosition = maxv;
 
-    wxWhatScrollData positionScrollData =
-      (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
+    positionScrollData = (horizontal 
+			  ? wxWhatScrollData::wxPositionH 
+			  : wxWhatScrollData::wxPositionV);
     SetValue(newPosition);
-    wxScrollEvent *e = new wxScrollEvent();
+    e = new wxScrollEvent();
     e->direction = (horizontal ? wxHORIZONTAL : wxVERTICAL);
     e->pos = GetValue();
     e->moveType = mtype;
@@ -341,32 +366,35 @@ void wxScrollBar::SetScrollData // adjust scrollBar to match scroll data setting
  )
 {
   // if (this == iniatorWindow) return;
+  Bool horizontal = cStyle & wxHSCROLL;
+  wxWhatScrollData sizeScrollData;
+  wxWhatScrollData postionScrollData;
+  wxWhatScrollData pageScrollData;
 
   SetCurrentDC();
 
-  Bool horizontal = cStyle & wxHSCROLL;
-
-  wxWhatScrollData sizeScrollData =
-    (horizontal ? wxWhatScrollData::wxSizeW : wxWhatScrollData::wxSizeH);
+  sizeScrollData = (horizontal ? wxWhatScrollData::wxSizeW : wxWhatScrollData::wxSizeH);
   if ((long)whatScrollData & (long)sizeScrollData)
     {
-      int newSize = scrollData->GetValue(sizeScrollData);
+      int newSize;
+      newSize = scrollData->GetValue(sizeScrollData);
       SetMaxValue(newSize);
     }
 
-  wxWhatScrollData postionScrollData =
+  postionScrollData =
     (horizontal ? wxWhatScrollData::wxPositionH : wxWhatScrollData::wxPositionV);
   if ((long)whatScrollData & (long)postionScrollData)
     {
-      int newPosition = scrollData->GetValue(postionScrollData);
+      int newPosition;
+      newPosition = scrollData->GetValue(postionScrollData);
       SetValue(newPosition);
     }
 
-  wxWhatScrollData pageScrollData =
-    (horizontal ? wxWhatScrollData::wxPageW : wxWhatScrollData::wxPageH);
+  pageScrollData = (horizontal ? wxWhatScrollData::wxPageW : wxWhatScrollData::wxPageH);
   if ((long)whatScrollData & (long)pageScrollData)
     {
-      int newPage = scrollData->GetValue(pageScrollData);
+      int newPage;
+      newPage = scrollData->GetValue(pageScrollData);
       ::SetControlViewSize(cMacControl, newPage);
     }
 
@@ -380,9 +408,10 @@ void wxScrollBar::SetScrollData // adjust scrollBar to match scroll data setting
 //-----------------------------------------------------------------------------
 void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
+  Rect bounds;
+
   SetCurrentDC();
 
-  Rect bounds;
   GetControlBounds(cMacControl, &bounds);
 
   dX = bounds.left - SetOriginX;

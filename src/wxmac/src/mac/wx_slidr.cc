@@ -68,6 +68,16 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 		      int min_value, int max_value, int width, int x, int y,
 		      long style, char *name)
 {
+  float fWidth;
+  float fHeight;
+  float fDescent;
+  float fLeading;
+  int	lblh=0;
+  int lblw=0;
+  int vwid, vhgt, hsp, vsp;
+  int adjust = 0;
+  Rect r;
+
   windowStyle = style;
   window_parent = panel;
   labelPosition = panel->label_position;
@@ -91,18 +101,11 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     page_size = 2;
 
   valueFont = buttonFont;
-  float fWidth;
-  float fHeight;
-  float fDescent;
-  float fLeading;
-  int	lblh=0;
-  int lblw=0;
   if (label) {
     GetTextExtent(label, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
     lblh = (int)fHeight;
     lblw = (int)fWidth;
   }
-  int vwid, vhgt, hsp, vsp;
   if (style & (wxHORIZONTAL << 2)) {
     vwid = 0;
     vhgt = 0;
@@ -120,7 +123,6 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     
   controlRect.top = controlRect.left = 0;
 	
-  int adjust = 0;
   if (style & wxVERTICAL) {
     padLeft = PAD_BOTTOM;
     padRight = PAD_TOP;
@@ -163,7 +165,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   }
   valuebase = (int)fDescent;
     
-  Rect r = controlRect;    
+  r = controlRect;    
   OffsetRect(&r,SetOriginX,SetOriginY);
 #ifdef WX_CARBON    
   InsetSliderRect(&r);
@@ -227,12 +229,14 @@ void wxSlider::Paint(void)
 
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
     Rect r = valueRect;
+    char t[8];
+    CFStringRef str;
+
     OffsetRect(&r,SetOriginX,SetOriginY);
     ::EraseRect(&r);
-    char t[8];
     sprintf(t,"%d",::GetControlValue(cMacControl));
 
-    CFStringRef str = CFStringCreateWithCString(NULL, t, kCFStringEncodingISOLatin1);
+    str = CFStringCreateWithCString(NULL, t, kCFStringEncodingISOLatin1);
     DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
 		     0, &r, teJustCenter, NULL);
     CFRelease(str);
@@ -265,45 +269,49 @@ void wxSlider::DoShow(Bool show)
 void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   SetCurrentDC();
-  if (dW || dH)
-    {	
-      int clientWidth = ClientArea()->Width();
-      int clientHeight= ClientArea()->Height();
+  if (dW || dH) {	
+    int clientWidth, clientHeight;
+    int vwid, vhgt;
+    Rect r;
 
-      int vwid = valueRect.right - valueRect.left;
-      int vhgt = valueRect.bottom - valueRect.top;
-      Rect r;
-			
-      if (windowStyle & wxVERTICAL) {
-	controlRect.bottom = clientHeight;
-	r = controlRect;
-	InsetSliderRect(&r);
-			
-	::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
-	valueRect.top = (clientHeight - vhgt) / 2;
-	valueRect.bottom = valueRect.top + vhgt;
-	valueRect.left = KSCROLLH + HSP;
-	valueRect.right = valueRect.left + vwid;
-      } else {
-	controlRect.right = clientWidth;
-	r = controlRect;
-	InsetSliderRect(&r);
-	::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
-	valueRect.left = (clientWidth - vwid) / 2;
-	valueRect.right = valueRect.left + vwid;
-	valueRect.top = KSCROLLH + VSP;
-	valueRect.bottom = valueRect.top + vhgt;
-      }
-    }
+    clientWidth = ClientArea()->Width();
+    clientHeight= ClientArea()->Height();
 
-  if (dX || dY)
-    {	// Changing the position
-      cMacDC->setCurrentUser(NULL); // macDC no longer valid
-      SetCurrentDC(); // put newcontrolRect at (0, 0)
-      Rect r = controlRect;
+    vwid = valueRect.right - valueRect.left;
+    vhgt = valueRect.bottom - valueRect.top;
+			
+    if (windowStyle & wxVERTICAL) {
+      controlRect.bottom = clientHeight;
+      r = controlRect;
       InsetSliderRect(&r);
-      ::MoveControl(cMacControl,SetOriginX + r.left,SetOriginY + r.top);
+			
+      ::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
+      valueRect.top = (clientHeight - vhgt) / 2;
+      valueRect.bottom = valueRect.top + vhgt;
+      valueRect.left = KSCROLLH + HSP;
+      valueRect.right = valueRect.left + vwid;
+    } else {
+      controlRect.right = clientWidth;
+      r = controlRect;
+      InsetSliderRect(&r);
+      ::SizeControl(cMacControl, r.right - r.left, r.bottom - r.top);
+      valueRect.left = (clientWidth - vwid) / 2;
+      valueRect.right = valueRect.left + vwid;
+      valueRect.top = KSCROLLH + VSP;
+      valueRect.bottom = valueRect.top + vhgt;
     }
+  }
+
+  if (dX || dY) {	
+    // Changing the position
+    Rect r;
+
+    cMacDC->setCurrentUser(NULL); // macDC no longer valid
+    SetCurrentDC(); // put newcontrolRect at (0, 0)
+    r = controlRect;
+    InsetSliderRect(&r);
+    ::MoveControl(cMacControl,SetOriginX + r.left,SetOriginY + r.top);
+  }
 }
 
 #define max(x, y) ((x > y) ? x : y)
@@ -313,10 +321,13 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 {
   if (event->leftDown) {
     int startH, startV;
+    Point pt;
+    int part;
+
     SetCurrentDC();
     event->Position(&startH, &startV); // client c.s.
-    Point pt = {startV + SetOriginY, startH + SetOriginX};
-    int part;
+    pt.v = startV + SetOriginY;
+    pt.h = startH + SetOriginX;
     part = ::TestControl(cMacControl, pt);
     if (StillDown()) {
       if (part) {
@@ -332,7 +343,10 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 
 void wxSlider::TrackPart(int part)
 {
-  int oldval = ::GetControlValue(cMacControl);
+  int oldval;
+  wxCommandEvent *commandEvent;
+
+  oldval = ::GetControlValue(cMacControl);
 
   switch (part) {
   case kControlUpButtonPart:
@@ -354,7 +368,8 @@ void wxSlider::TrackPart(int part)
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
     Paint();
   }
-  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
+ 
+  commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
   ProcessCommand(commandEvent);
 	
   // So update happens correctly as we return...

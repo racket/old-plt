@@ -54,6 +54,8 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
  : wxItem (panel, -1, -1, -1, -1, 0,  "tab-choice")
 {
   int i;
+  CGrafPtr theMacGrafPort;
+  Rect boundsRect = {0, 0, 10, 10};
 
   Callback(function);
 
@@ -63,8 +65,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   font = buttonFont;
   
   SetCurrentMacDC();
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-  Rect boundsRect = {0, 0, 10, 10};
+  theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect, SetOriginX, SetOriginY + TAB_TOP_SPACE);
 
   cMacControl = MakeTabs(theMacGrafPort, N, Choices, &boundsRect);
@@ -133,7 +134,8 @@ void wxTabChoice::SetSelection(Bool value)
 Bool wxTabChoice::GetSelection(void)
 {
   if (cMacControl) {
-    short value = ::GetControlValue(cMacControl);
+    short value;
+    value = ::GetControlValue(cMacControl);
     return value - 1;
   } else
     return -1;
@@ -180,11 +182,12 @@ void wxTabChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 void wxTabChoice::Paint(void)
 {
   if (cHidden) return;
-  SetCurrentDC();
-  Rect r = { 0, 0, cWindowHeight, cWindowWidth};
-  ::OffsetRect(&r,SetOriginX,SetOriginY);
-  if (cMacControl)
-    ::Draw1Control(cMacControl);
+  if (SetCurrentDC()) {
+    Rect r = { 0, 0, cWindowHeight, cWindowWidth};
+    ::OffsetRect(&r,SetOriginX,SetOriginY);
+    if (cMacControl)
+      ::Draw1Control(cMacControl);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -207,32 +210,37 @@ void wxTabChoice::DoShow(Bool show)
 void wxTabChoice::OnEvent(wxMouseEvent *event)
 {
   if (event->LeftDown()) {
-      SetCurrentDC();
+    int startH;
+    int startV;
+    Point startPt;
+    int trackResult;
+
+    SetCurrentDC();
       
-      int startH;
-      int startV;
-      event->Position(&startH, &startV); // client c.s.
+    event->Position(&startH, &startV); // client c.s.
       
-      Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
-      int trackResult;
-      if (::StillDown()) {
-	if (cMacControl)
-	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
-	else
-	  trackResult = Track(startPt);
-      } else
-	trackResult = 1;
-      if (trackResult) {
-	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_TAB_CHOICE_COMMAND);
-	  // SetValue(!GetValue()); // toggle checkbox
-	  ProcessCommand(commandEvent);
-	}
+    startPt.v = startV + SetOriginY; // port c.s.
+    startPt.h = startH + SetOriginX;
+
+    if (::StillDown()) {
+      if (cMacControl)
+	trackResult = ::TrackControl(cMacControl, startPt, NULL);
+      else
+	trackResult = Track(startPt);
+    } else
+      trackResult = 1;
+    if (trackResult) {
+      wxCommandEvent *commandEvent;
+      commandEvent = new wxCommandEvent(wxEVENT_TYPE_TAB_CHOICE_COMMAND);
+      // SetValue(!GetValue()); // toggle checkbox
+      ProcessCommand(commandEvent);
     }
+  }
 }
 
 
 int wxTabChoice::Number(void) { 
-    return tab_count;
+  return tab_count;
 }
 
 void wxTabChoice::Append(char *s)

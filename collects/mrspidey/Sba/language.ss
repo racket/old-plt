@@ -235,6 +235,7 @@
     (add-constructor! 'oport)
     (add-constructor! 'eof  )
     (add-constructor! 'box  #t)
+    (add-constructor! 'top)
 
     ;; for demos
     (add-constructor! 'pair #t #t)
@@ -505,7 +506,7 @@
        (promise?              (_ -> bool) (predicate promise))
        (call-with-current-continuation 
 	(forall (a) (((a *-> empty) ->* (mvalues a)) ->* (mvalues a))))
-       (eval           (sexp -> sexp));; --- Not quite right!!!
+       (eval           (sexp -> top));; --- Not quite right!!!
 
        ;; input and output
        (call-with-input-file  (forall (a) (str (iport -> a) -> a)))
@@ -529,7 +530,7 @@
        (write-char            (char optional oport -> void))
 
        ;; system interface
-       (load           (str -> void)                                          )
+       (load           (str -> top)                                          )
        (transcript-on  (str -> void)                                          )
        (transcript-off (-> void)                                              )
 
@@ -684,11 +685,10 @@
     (add-constructor! 'tcp-listener)
     (add-constructor! 'unit)
     (add-constructor! 'unit/sig)
+    (add-constructor! 'continuation-mark-set)
 
     (add-default-primitives!
-     `(
-       ;; MzSchemes f*cked up void :-)
-       (void           (_ *-> void))
+     `((void           (_ *-> void))
 
        (eof                  eof)
 
@@ -802,9 +802,11 @@
        ;;                                    -> global:CEH))
 
        (raise               (_ -> empty))
+       (raise-type-error    (sym str _ -> empty))
        (current-exception-handler         (optional (empty -> _) -> empty))
        
        (make-exn:else       (_ *-> empty))
+       (not-break-exn?      (_ -> bool))
 
        ;; Flow control
        (call-with-escaping-continuation
@@ -823,6 +825,8 @@
        (arity               ((empty *-> _) -> 
 					   (rec ([r (union num (arity-at-least num))])
 						(union r (listof r)))))
+       (procedure-arity-includes? 
+	(forall (a b) ((a *->* b) num -> bool)))
        (arity-at-least?     (_ -> bool) (predicate arity-at-least))
        (arity-at-least-value (forall (v) ((arity-at-least v) -> v)))
 
@@ -854,6 +858,16 @@
        ;; Dynamic extensions
        (load-extension         (str -> void))
 
+       ;; continuation marks
+
+       (current-continuation-marks 
+	(-> continuation-mark-set))
+       (with-continuation-mark 
+	(forall (a) (_ _ a -> a)))
+       (continuation-mark-set->list
+	(continuation-mark-set -> (listof top)))
+       (continuation-mark-set? (_ -> bool))
+				       
        ;; Operating System Processes
        (system                 (str -> bool))
        (sytem*                 (str (arglistof str) *-> bool))
@@ -976,11 +990,12 @@
        
        ;; -- parameter utilities
        ;; We should arguably have a separate type for parameter procedures
-       ;(make-parameter (forall (x i)
-       ;	 		       (x optional (i -> x) 
-       ;				  -> (optional i -> (union x void)))))
+       (make-parameter (forall (x i)
+       	 		       (x optional (i -> x) 
+       				  -> (optional i -> (union x void)))))
        (parameter?            (_ -> bool))
        (parameter-procedure=? (_ _ -> bool))
+       (check-parameter-procedure (forall (a) (a -> a)))
 
        ;; ---- custodians
        (make-custodian         (custodian -> custodian))

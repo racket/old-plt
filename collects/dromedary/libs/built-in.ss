@@ -634,8 +634,19 @@
 
 	(hash-table-put! <pervasive-funcs> "output" (cons (make-arrow (list "out_channel") (make-arrow (list "string") (make-arrow (list "int") (make-arrow (list "int") "unit")))) <output>))
 	
-	(hash-table-put! <pervasive-funcs> "" (cons (make-arrow (list ) ) ))
+	(hash-table-put! <pervasive-funcs> "output_value" (cons (make-arrow (list "out_channel") (make-arrow (list (make-tvar "'a")) "unit")) <output_value>))
 
+	(hash-table-put! <pervasive-funcs> "seek_out" (cons (make-arrow (list "out_channel") (make-arrow (list "int") "unit")) <seek_out>))
+
+	(hash-table-put! <pervasive-funcs> "pos_out" (cons (make-arrow (list "out_channel") "int") <pos_out>))
+
+	(hash-table-put! <pervasive-funcs> "close_out" (cons (make-arrow (list "out_channel") "unit") <close_out>))
+
+	(hash-table-put! <pervasive-funcs> "open_in" (cons (make-arrow (list "string") "in_channel") <open_in>))
+
+	(hash-table-put! <pervasive-funcs> "open_in_bin" (cons (make-arrow (list "string") "unit") open-input-file))
+
+	(hash-table-put! <pervasive-funcs> "" (cons (make-arrow (list ) ) ))
 	(define (<cons> tuple)
 	  (cons (car (<tuple>-list tuple)) (cadr (<tuple>-list tuple))))
 

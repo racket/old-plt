@@ -24,3 +24,12 @@ tests.  Any errors will be printed in the REPL.
 The behavior that appears in the window that is created
 may be ignored.
 
+Manual tests
+============
+
+Here are some manual tests to run on MysterX:
+
+  - run mxdemo.ss (in the collection) under IE4, IE5, IE5.5
+  - check for no context menu in browsers
+  - load mxdemo.ss into DrScheme; hit Execute a second time,
+     the browser windows should disappear

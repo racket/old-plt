@@ -26,13 +26,11 @@
   (define module-require (make-parameter ""))
     
   (define stx-for-original-property (read-syntax #f (open-input-string "original")))
-  (define (stx-for-source) (read-syntax #f ((my-syntax-source))))
-  (define create-syntax
-    (lambda (oddness sexpression source)
-      (datum->syntax-object (or oddness (syntax-location) (stx-for-source)) sexpression source stx-for-original-property)))
-  (define make-syntax
-    (lambda (oddness sexpression source)
-      (datum->syntax-object (or oddness (syntax-location) (stx-for-source)) sexpression source)))
+  (define (stx-for-source) (read-syntax #f ((input-port))))
+  (define (create-syntax oddness sexpression source)
+    (datum->syntax-object (or oddness (syntax-location) (stx-for-source)) sexpression source stx-for-original-property))
+  (define (make-syntax oddness sexpression source)
+    (datum->syntax-object (or oddness (syntax-location) (stx-for-source)) sexpression source))
   
   ;-------------------------------------------------------------------------------------------------------------
   

@@ -19,16 +19,13 @@
   ;Stores an integer offset for interactions offset
   (define interactions-offset (make-parameter 0))
   
-  ;Stores if we are execution window executing
+  ;Stores if we are the execution window executing
   (define execution? (make-parameter #f))
   
   ;Stores the error function to trigger for parsing
   (define determine-error (make-parameter (lambda () #t)))
   
-  ;Stores a function to get the port for parse errors
-  (define parse-error-port (make-parameter (lambda () void)))
-  
-  ;Stores a function to get the port for syntax-source to be fed to read-syntax
-  (define my-syntax-source (make-parameter #f))
+  ;Stores a function to get the input port in a non-destructive maner
+  (define input-port (make-parameter (lambda () void)))
   
   ) 

@@ -1,27 +1,23 @@
 #cs
 (module tool mzscheme
   (require (lib "tool.ss" "drscheme")
-           (lib "mred.ss" "mred")
-           (lib "framework.ss" "framework")
-           (lib "stacktrace.ss" "errortrace")
-           (lib "unitsig.ss")
+           (lib "mred.ss" "mred") (lib "framework.ss" "framework") (lib "unitsig.ss")
            (lib "class.ss")
 	   (lib "string-constant.ss" "string-constants")
-           (lib "Object.ss" "profj" "libs" "java" "lang")
-           (lib "array.ss" "profj" "libs" "java" "lang")
+           (lib "Object.ss" "profj" "libs" "java" "lang") (lib "array.ss" "profj" "libs" "java" "lang")
            (lib "String.ss" "profj" "libs" "java" "lang")
-           "compile.ss"
-           "parameters.ss"
-           "parsers/lexer.ss")
+           "compile.ss" "parameters.ss" "parsers/lexer.ss")
 
   (provide tool@)
 
+  ;Set the default classpath
   (preferences:set-default 'profj:classpath null (lambda (v) (and (list? v) (andmap string? v))))
   
   (define tool@
     (unit/sig drscheme:tool-exports^
       (import drscheme:tool^)
 
+      ;Set the Java editing colors
       (define color-prefs-table
         `((keyword ,(make-object color% "black") ,(string-constant profj-java-mode-color-keyword))
           (string ,(make-object color% "forestgreen") ,(string-constant profj-java-mode-color-string))
@@ -53,6 +49,7 @@
               (format "~a" sym))))
          color-prefs-table))
       
+      ;Create the Java editing mode
       (define mode-surrogate
         (new color:text-mode%
              (matches (list (list '|{| '|}|)
@@ -61,6 +58,8 @@
              (get-token get-syntax-token)
              (token-sym->style short-sym->style-name)))
       
+      ;repl-submit: text int -> bool
+      ;Determines if the reple should submit or not
       (define (repl-submit text prompt-position)
         (let ((is-if? #f)
               (is-string? #f)
@@ -70,6 +69,7 @@
           (let loop ((index 1) (char (send text get-character prompt-position)))
             (unless (eq? char #\nul)
               (cond 
+                ;beginning of if statement
                 ((and (= index 1) 
                       (eq? char #\i) 
                       (eq? (send text get-character (add1 prompt-position)) #\f)
@@ -94,6 +94,7 @@
                 ((eq? char #\])
                  (unless is-string? (set! open-braces (sub1 open-braces)))
                  (loop (add1 index) (send text get-character (+ index prompt-position))))
+                ;beginning of string
                 ((eq? char #\")
                  (set! is-string? (not is-string?))
                  (loop (add1 index) (send text get-character (+ index prompt-position))))
@@ -106,34 +107,27 @@
       
       ;; matches-language : (union #f (listof string)) -> boolean
       (define (matches-language l)
-        (and l 
-             (pair? l)
-             (pair? (cdr l))
-             (equal? (cadr l) "ProfessorJ")))
+        (and l (pair? l) (pair? (cdr l)) (equal? (cadr l) "ProfessorJ")))
       
       (define (phase1) (void))
+      ;Add all the ProfessorJ languages into DrScheme
       (define (phase2) 
         (drscheme:language-configuration:add-language
-         (make-object ((drscheme:language:get-default-mixin) 
-                       full-lang%)))
+         (make-object ((drscheme:language:get-default-mixin) full-lang%)))
         (drscheme:language-configuration:add-language
-         (make-object ((drscheme:language:get-default-mixin) 
-                       advanced-lang%)))
+         (make-object ((drscheme:language:get-default-mixin) advanced-lang%)))
         (drscheme:language-configuration:add-language
-         (make-object ((drscheme:language:get-default-mixin) 
-                       intermediate-lang%)))
+         (make-object ((drscheme:language:get-default-mixin) intermediate-lang%)))
         (drscheme:language-configuration:add-language
-         (make-object ((drscheme:language:get-default-mixin) 
-                       beginner-lang%))))                 
+         (make-object ((drscheme:language:get-default-mixin) beginner-lang%))))                 
       
       ;(make-profj-settings symbol boolean (list string))
       (define-struct profj-settings (print-style print-full? classpath) (make-inspector))
       
-      (define (java-lang-mixin level name position numbers one-line)
+      ;ProfJ general language mixin
+      (define (java-lang-mixin level name number one-line)
         (class* object% (drscheme:language:language<%>)
 
-          ;(drscheme:get/extend:extend-definitions-text profj-editor)
-          
           ;default-settings: -> profj-settings
           (define/public (default-settings) 
             (if (memq level `(beginner intermediate))
@@ -155,6 +149,8 @@
                 (make-profj-settings (caar s) (caadr s) null)
                 #f))
 
+          ;Create the ProfessorJ settings selection panel
+          ;Note: Should add strings to string constants
           (define/public (config-panel _parent)
             (letrec ([parent (instantiate vertical-panel% ()
                                (parent _parent)
@@ -199,14 +195,11 @@
                                             (parent cp-panel)
                                             (alignment '(center center))
                                             (stretchable-height #f))]
-                     [list-button (make-object button% "Display Current" tp-panel (lambda (x y) (list-callback)))]
-                     
+                     [list-button (make-object button% "Display Current" tp-panel (lambda (x y) (list-callback)))]                     
                      [add-button (make-object button% "Add" bottom-button-panel (lambda (x y) (add-callback)))]
                      [remove-button (make-object button% "Remove" bottom-button-panel (lambda (x y) (remove-callback)))]
-                     
                      [raise-button (make-object button% "Raise" top-button-panel (lambda (x y) (raise-callback)))]
                      [lower-button (make-object button% "Lower" top-button-panel (lambda (x y) (lower-callback)))]
-                     
                      [enable? #f]
                      
                      [update-buttons 
@@ -216,7 +209,6 @@
                           (send remove-button enable (and lb-selection enable?))
                           (send raise-button enable (and lb-selection enable? (not (= lb-selection 0))))
                           (send lower-button enable (and lb-selection enable? (not (= lb-selection (- lb-tot 1)))))))]
-                     
                      [add-callback
                       (lambda ()
                         (let ([dir (get-directory "Choose the directory to add to class path" 
@@ -225,7 +217,6 @@
                             (send lb append dir #f)
                             (preferences:set 'profj:classpath (cons dir (preferences:get 'profj:classpath)))
                             (update-buttons))))]
-                      
                      [list-callback
                       (lambda ()
                         (send lb clear)
@@ -240,78 +231,73 @@
                             (send lb set-selection 0))
                           (set! enable? #t)
                           (update-buttons)))]
-                     
-                      [remove-callback
-                       (lambda ()
-                         (let ([to-delete (send lb get-selection)])
+                     [remove-callback
+                      (lambda ()
+                        (let ([to-delete (send lb get-selection)])
                            (send lb delete to-delete)
-                           (unless (zero? (send lb get-number))
-                             (send lb set-selection (min to-delete (- (send lb get-number) 1))))
-                           (preferences:set 'profj:classpath (get-classpath))
-                           (update-buttons)))]
-                      [lower-callback
-                       (lambda ()
-                         (let* ([sel (send lb get-selection)]
-                                [vec (get-lb-vector)]
-                                [below (vector-ref vec (+ sel 1))])
-                           (vector-set! vec (+ sel 1) (vector-ref vec sel))
-                           (vector-set! vec sel below)
-                           (set-lb-vector vec)
-                           (send lb set-selection (+ sel 1))
-                           (preferences:set 'profj:classpath (get-classpath))
-                           (update-buttons)))]
-                      [raise-callback
-                       (lambda ()
-                         (let* ([sel (send lb get-selection)]
-                                [vec (get-lb-vector)]
-                                [above (vector-ref vec (- sel 1))])
-                           (vector-set! vec (- sel 1) (vector-ref vec sel))
-                           (vector-set! vec sel above)
-                           (set-lb-vector vec)
-                           (send lb set-selection (- sel 1))
-                           (preferences:set 'profj:classpath (get-classpath))
-                           (update-buttons)))]
-                      
-                      [get-lb-vector
-                       (lambda ()
-                         (list->vector
-                          (let loop ([n 0])
-                            (cond
-                              [(= n (send lb get-number)) null]
-                              [else (cons (cons (send lb get-string n)
-                                                (send lb get-data n))
-                                          (loop (+ n 1)))]))))]
-                      
-                      [set-lb-vector
-                       (lambda (vec)
-                         (send lb clear)
-                         (let loop ([n 0])
-                           (cond
-                             [(= n (vector-length vec)) (void)]
-                             [else (send lb append (car (vector-ref vec n)))
-                                   (send lb set-data n (cdr (vector-ref vec n)))
-                                   (loop (+ n 1))])))]
-                      
-                      [get-classpath
-                       (lambda ()
+                          (unless (zero? (send lb get-number))
+                            (send lb set-selection (min to-delete (- (send lb get-number) 1))))
+                          (preferences:set 'profj:classpath (get-classpath))
+                          (update-buttons)))]
+                     [lower-callback
+                      (lambda ()
+                        (let* ([sel (send lb get-selection)]
+                               [vec (get-lb-vector)]
+                               [below (vector-ref vec (+ sel 1))])
+                          (vector-set! vec (+ sel 1) (vector-ref vec sel))
+                          (vector-set! vec sel below)
+                          (set-lb-vector vec)
+                          (send lb set-selection (+ sel 1))
+                          (preferences:set 'profj:classpath (get-classpath))
+                          (update-buttons)))]
+                     [raise-callback
+                      (lambda ()
+                        (let* ([sel (send lb get-selection)]
+                               [vec (get-lb-vector)]
+                               [above (vector-ref vec (- sel 1))])
+                          (vector-set! vec (- sel 1) (vector-ref vec sel))
+                          (vector-set! vec sel above)
+                          (set-lb-vector vec)
+                          (send lb set-selection (- sel 1))
+                          (preferences:set 'profj:classpath (get-classpath))
+                          (update-buttons)))]
+                     [get-lb-vector
+                      (lambda ()
+                        (list->vector
                          (let loop ([n 0])
                            (cond
                              [(= n (send lb get-number)) null]
-                             [else
-                              (let ([data (send lb get-data n)])
-                                (cons (if data
-                                          'default
-                                          (send lb get-string n))
-                                      (loop (+ n 1))))])))]
-                      [install-classpath
-                       (lambda (paths)
-                         (send lb clear)
-                         (for-each (lambda (cp)
-                                     (if (symbol? cp)
-                                         (send lb append "Default" #t)
-                                         (send lb append cp #f)))
-                                   paths))])
-              
+                             [else (cons (cons (send lb get-string n)
+                                               (send lb get-data n))
+                                         (loop (+ n 1)))]))))]
+                     [set-lb-vector
+                      (lambda (vec)
+                        (send lb clear)
+                        (let loop ([n 0])
+                          (cond
+                            [(= n (vector-length vec)) (void)]
+                            [else (send lb append (car (vector-ref vec n)))
+                                  (send lb set-data n (cdr (vector-ref vec n)))
+                                  (loop (+ n 1))])))]
+                     [get-classpath
+                      (lambda ()
+                        (let loop ([n 0])
+                          (cond
+                            [(= n (send lb get-number)) null]
+                            [else
+                             (let ([data (send lb get-data n)])
+                               (cons (if data
+                                         'default
+                                         (send lb get-string n))
+                                     (loop (+ n 1))))])))]
+                     [install-classpath
+                      (lambda (paths)
+                        (send lb clear)
+                        (for-each (lambda (cp)
+                                    (if (symbol? cp)
+                                        (send lb append "Default" #t)
+                                        (send lb append cp #f)))
+                                  paths))])
               (send lb set '())
               (update-buttons)
               
@@ -343,17 +329,10 @@
             (set! execute-types (create-type-record))
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
-                            (parse-error-port (lambda () (open-input-text-editor text 
-                                                                                 (drscheme:language:text/pos-start input)
-                                                                                 (drscheme:language:text/pos-end input))))
-                            (my-syntax-source (lambda () (open-input-text-editor text
-                                                                              (drscheme:language:text/pos-start input)
-                                                                              (drscheme:language:text/pos-end input))))
-                            (values
-                             (open-input-text-editor text 
-                                                     (drscheme:language:text/pos-start input)
-                                                     (drscheme:language:text/pos-end input))
-                             text))])              
+                            (input-port (lambda () (open-input-text-editor text 
+                                                                           (drscheme:language:text/pos-start input)
+                                                                           (drscheme:language:text/pos-end input))))
+                            (values ((input-port)) text))])
               (let ((main-mod #f)
                     (require? #f)
                     (name-to-require #f)
@@ -393,24 +372,11 @@
           (define/public (front-end/interaction input settings teachpack-cache)
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
-                            (parse-error-port (lambda ()
-                                                (open-input-text-editor text 
-                                                     (drscheme:language:text/pos-start input)
-                                                     (drscheme:language:text/pos-end input))))
-                            (my-syntax-source (lambda ()
-                                             (open-input-text-editor text
-                                                                     (drscheme:language:text/pos-start input)
-                                                                     (drscheme:language:text/pos-end input))))
-                            (values
-                             (open-input-text-editor text 
-                                                     (drscheme:language:text/pos-start input)
-                                                     (drscheme:language:text/pos-end input))
-;                             (open-input-string
-;                              (send text
-;                                    get-text
-;                                    (drscheme:language:text/pos-start input)
-;                                    (drscheme:language:text/pos-end input)))
-                             text))])
+                            (input-port (lambda ()
+                                          (open-input-text-editor text 
+                                                                  (drscheme:language:text/pos-start input)
+                                                                  (drscheme:language:text/pos-end input))))
+                            (values ((input-port)) text))])
               (interactions-offset (drscheme:language:text/pos-start input))
               (lambda ()
                 (if (eof-object? (peek-char-or-special port))
@@ -453,9 +419,10 @@
                           (order (cdr mod-lists))))))
               
           (define/public (get-style-delta) #f)
-          (define/public (get-language-position) (cons (string-constant experimental-languages) position))
-          (define/public (get-language-numbers) numbers)
-          (define/public (get-language-name) name)
+          (define/public (get-language-position) 
+            (cons (string-constant experimental-languages) (list "ProfessorJ" name) ))
+          (define/public (get-language-numbers) (list 1000 10 number))
+          (define/public (get-language-name) (string-append "ProfessorJ: " name))
           (define/public (get-language-url) #f)
           (define/public (get-teachpack-names) null)
 
@@ -478,56 +445,39 @@
                    (namespace-require '(prefix javaRuntime: (lib "runtime.scm" "profj" "libs" "java"))))))))
           
           (define/public (render-value value settings port port-write)
-            (if (is-a? value String)
-                (write (send value get-mzscheme-string) port)
-                (let ((out (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings)
-                                        null #f 0)))
-                  (if (< 25 (string-length out))
-                      (display (format-java value (profj-settings-print-full? settings) (profj-settings-print-style settings)
-                                            null #t 0) port)
-                      (display out port)))))
-          ;(write value port))
+            (let ((print-full? (profj-settings-print-full? settings))
+                  (style (profj-settings-print-style settings)))
+              (if (is-a? value String)
+                  (write (send value get-mzscheme-string) port)
+                  (let ((out (format-java value print-full? style null #f 0)))
+                    (if (< 25 (string-length out))
+                        (display (format-java value print-full? style null #t 0) port)
+                        (display out port))))))
           (define/public (render-value/format value settings port port-write width) 
             (render-value value settings port port-write)(newline port))
-            ;(write value port))
-
-          
-
           
           (define/public (create-executable fn parent . args)
 	    (message-box "Unsupported"
-			 "Sorry - executables are not supported for Java"
+			 "Sorry - executables are not supported for Java at this time"
 			 parent))
 	  (define/public (get-one-line-summary) one-line)
           
           (super-instantiate ())))
-
-
       
-      (define full-lang% 
-        (java-lang-mixin 'full "ProfessorJ: Full" (list "ProfessorJ" "Full") (list 1000 10 4) "Like Java 1.0 (some 1.1)"))
-      (define advanced-lang% 
-        (java-lang-mixin 'advanced "ProfessorJ: Advanced" 
-                         (list "ProfessorJ" "Advanced") (list 1000 10 3) "Java-like Advanced teaching language"))
+      ;Create the ProfessorJ languages
+      (define full-lang% (java-lang-mixin 'full "Full" 4 "Like Java 1.0 (some 1.1)"))
+      (define advanced-lang% (java-lang-mixin 'advanced "Advanced" 3 "Java-like Advanced teaching language"))
       (define intermediate-lang% 
-        (java-lang-mixin 'intermediate "ProfessorJ: Intermediate" 
-                         (list "ProfessorJ" "Intermediate") (list 1000 10 2) "Java-like Intermediate teaching language"))
-      (define beginner-lang% (java-lang-mixin 'beginner "ProfessorJ: Beginner" (list "ProfessorJ" "Beginner")
-                                              (list 1000 10 1) "Java-like Beginner teaching language"))
-      
-      
+        (java-lang-mixin 'intermediate "Intermediate" 2 "Java-like Intermediate teaching language"))
+      (define beginner-lang% (java-lang-mixin 'beginner "Beginner" 1 "Java-like Beginner teaching language"))
       
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;
       ;;  Wire up to DrScheme
       ;;
       
-      (drscheme:modes:add-mode (string-constant profj-java-mode)
-                               mode-surrogate
-                               repl-submit
-                               matches-language)
-      (color-prefs:add-to-preferences-panel (string-constant profj-java)
-                                            extend-preferences-panel)
+      (drscheme:modes:add-mode (string-constant profj-java-mode) mode-surrogate repl-submit matches-language)
+      (color-prefs:add-to-preferences-panel (string-constant profj-java) extend-preferences-panel)
       
       (for-each (lambda (line)
                   (let ([sym (car line)]
@@ -535,9 +485,13 @@
                     (color-prefs:register-color-pref (short-sym->pref-name sym)
                                                      (short-sym->style-name sym)
                                                      color)))
-                color-prefs-table)))
+                color-prefs-table)
+      
+      ;;In this location, add box stuff
+      ))
   
   (provide format-java)
+  ;formats a java value (number, character or Object) into a string
   ;format-java: java-value bool symbol (list value) -> string
   (define (format-java value full-print? style already-printed newline? num-tabs)
     (cond

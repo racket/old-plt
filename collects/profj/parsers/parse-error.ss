@@ -18,7 +18,7 @@
   
   ;find-error: -> (U void #t)
   (define (find-beginner-error)
-    (let ((port ((parse-error-port))))
+    (let ((port ((input-port))))
       (port-count-lines! port)
       (let ((getter (lambda () (get-token port))))
         (parse-program null (getter) 'start getter))))
@@ -26,7 +26,7 @@
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
   (define (find-beginner-error-interactions)
-    (let ((port ((parse-error-port))))
+    (let ((port ((input-port))))
       (port-count-lines! port)
       (let* ((getter (lambda () (get-token port)))
              (first-tok (getter)))
@@ -55,7 +55,7 @@
   
   ;find-error: -> (U void #t)
   (define (find-intermediate-error)
-    (let ((port ((parse-error-port))))
+    (let ((port ((input-port))))
       (port-count-lines! port)
       (let ((getter (lambda () (get-token port))))
         (level 'intermediate)
@@ -64,7 +64,7 @@
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
   (define (find-intermediate-error-interactions)
-    (let ((port ((parse-error-port))))
+    (let ((port ((input-port))))
       (port-count-lines! port)
       (let* ((getter (lambda () (get-token port)))
              (first-tok (getter)))
@@ -92,7 +92,7 @@
   
   ;find-error: -> (U void #t)
   (define (find-advanced-error)
-    (let ((port ((parse-error-port))))
+    (let ((port ((input-port))))
       (port-count-lines! port)
       (let ((getter (lambda () (get-token port))))
         (level 'advanced)
@@ -101,7 +101,7 @@
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
   (define (find-advanced-error-interactions)
-    (let ((port ((parse-error-port))))
+    (let ((port ((input-port))))
       (port-count-lines! port)
       (let* ((getter (lambda () (get-token port)))
              (first-tok (getter)))

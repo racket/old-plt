@@ -274,9 +274,11 @@ typedef struct Bucket {
 wxNonlockingHashTable::wxNonlockingHashTable()
 {
   long i;
+  Bucket *bs;
 
   numbuckets = 1001;
-  buckets = (Bucket *)nl_malloc_bucket_array(sizeof(Bucket) * numbuckets);
+  bs = (Bucket *)nl_malloc_bucket_array(sizeof(Bucket) * numbuckets);
+  buckets = bs;
   for (i = 0; i < numbuckets; i++) {
     buckets[i].widget = 0;
   }
@@ -293,14 +295,15 @@ void wxNonlockingHashTable::Put(long widget, wxObject *object)
 
   if (FILL_FACTOR * numused >= numbuckets) {
     /* Rehash */
-    Bucket *oldbuckets = buckets;
+    Bucket *oldbuckets = buckets, *bs;
     long oldnumbuckets = numbuckets;
 
     if (FILL_FACTOR * numwidgets >= numbuckets)
       numbuckets = (numbuckets * FILL_FACTOR) + 1;
     /* else, just need to rehash after many deletions */
 
-    buckets = (Bucket *)nl_malloc_bucket_array(sizeof(Bucket) * numbuckets);
+    bs = (Bucket *)nl_malloc_bucket_array(sizeof(Bucket) * numbuckets);
+    buckets = bs;
     for (i = 0; i < numbuckets; i++) {
       buckets[i].widget = 0;
     }

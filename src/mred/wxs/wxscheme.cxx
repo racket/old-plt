@@ -896,6 +896,7 @@ static int indirect_strcmp(const void *a, const void *b)
 
 #ifdef wx_msw
 typedef struct {
+  int mono_only;
   int count, size;
   char **names;
 } gfData;
@@ -908,6 +909,13 @@ static int CALLBACK get_font(ENUMLOGFONT FAR*  lpelf,
   gfData *data = (gfData *)_data;
   int l;
   char *s;
+
+  if (data->mono_only) {
+    /* TMPF_FIXED_PITCH flag means not monospace */
+    if (lpntm->tmPitchAndFamily & TMPF_FIXED_PITCH) {
+      return 1;
+    }
+  }
   
   if (data->count == data->size) {
     char **naya;
@@ -987,6 +995,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
   FMCreateFontFamilyIterator(NULL, NULL, kFMDefaultIterationScope, &iterator);
 #endif
 #ifdef wx_msw
+  data.mono_only = mono_only;
   data.count = data.size = 0;
   data.names = NULL;
 

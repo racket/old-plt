@@ -3536,7 +3536,9 @@ void *GC_resolve(void *p)
 
 void *malloc_pages_try_hard(size_t len, size_t alignment)
 {
+  void *m;
   int i = 5;
+
   while(i--) {
     m = malloc_pages(len, alignment);
     if (m)
@@ -3563,6 +3565,10 @@ static MPage *get_page_rec(void *p, mtype_t mtype)
   if (!mpage_maps) {
     int i;
     mpage_maps = (MPage **)malloc_pages(sizeof(MPage *) * MAPS_SIZE, 0);
+    if (!mpage_maps) {
+      printf("Can't allocate map list\n");
+      abort();
+    }
     for (i = 0; i < MAPS_SIZE; i++)
       mpage_maps[i] = NULL;
   }
@@ -3571,7 +3577,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype)
   if (!map) {
     int i;
 
-    map = (MPage *)malloc_pages(sizeof(MPage) * MAP_SIZE, 0);
+    map = (MPage *)malloc_pages_try_hard(sizeof(MPage) * MAP_SIZE, 0);
     for (i = 0; i < MAP_SIZE; i++)
       map[i].type = 0;
 
@@ -3616,8 +3622,8 @@ static void new_page(mtype_t mtype, MSet *set)
     return;
   }
   
-  p = (void *)malloc_pages(MPAGE_SIZE, MPAGE_SIZE);
-  offsets = (OffsetArrTy *)malloc_pages(OPAGE_SIZE, 0);
+  p = (void *)malloc_pages_try_hard(MPAGE_SIZE, MPAGE_SIZE);
+  offsets = (OffsetArrTy *)malloc_pages_try_hard(OPAGE_SIZE, 0);
 
   memory_in_use += MPAGE_SIZE;
 
@@ -3656,7 +3662,7 @@ static void * malloc_bigblock(long size_in_bytes, mtype_t mtype)
   
   mtype |= MTYPE_BIGBLOCK;
 
-  p = (void *)malloc_pages(size_in_bytes, MPAGE_SIZE);
+  p = (void *)malloc_pages_try_hard(size_in_bytes, MPAGE_SIZE);
 
   memory_in_use += size_in_bytes;
 

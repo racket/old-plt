@@ -42,8 +42,7 @@
    mark-binding-binding
    expose-mark
    display-mark
-   lookup-binding
-   lookup-dynamic-index))
+   lookup-binding))
 
 (define-signature stepper:client-procs^
   (read-getter
@@ -71,12 +70,10 @@
    (struct error-result (finished-exprs err-msg))
    (struct finished-result (finished-exprs))
    get-binding-name
-   ;lookup-new-binding-name
-   ;set-new-binding-name!
    list-take
    list-partition
    (struct closure-record (name mark constructor?))
-   ;create-bogus-binding
+   bogus-binding?
    *unevaluated* 
    no-sexp
    multiple-highlight

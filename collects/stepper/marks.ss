@@ -1,5 +1,6 @@
 (unit/sig stepper:marks^
   (import [z : zodiac:system^]
+          [e : zodiac:interface^]
           [cp : stepper:client-procs^]
           mzlib:function^)
   
@@ -24,7 +25,8 @@
     (letrec ([pair-off
               (lambda (lst)
                 (cond [(null? lst) null]
-                      [(null? (cdr lst)) (error 'mark-bindings "uneven number of vars and bindings")]
+                      [(null? (cdr lst)) (e:internal-error 'mark-bindings 
+                                                           "uneven number of vars and bindings")]
                       [else (cons (list (car lst) (cadr lst)) (pair-off (cddr lst)))]))])
       (pair-off (cddr (mark)))))
   
@@ -59,20 +61,17 @@
                   (printf " ~a : ~a~n" (car binding-pair) (cadr binding-pair)))
                 (caddr exposed))))
   
-  (define-values (lookup-binding lookup-dynamic-index)
-    (letrec ([helper
-              (lambda (mark-list binding final)
-                (if (null? mark-list)
-                    (error 'lookup-binding "variable not found in environment: ~a" binding)
-                    (let* ([bindings (mark-bindings (car mark-list))]
-                           [matches (filter (lambda (b)
-                                              (eq? binding (mark-binding-binding b)))
-                                            bindings)])
-                      (cond [(null? matches)
-                             (lookup-binding (cdr mark-list) binding)]
-                            [else 
-                             (final matches)]))))])
-      (values (lambda (mark-list binding)
-                (helper mark-list binding car))
-              (lambda (mark-list binding)
-                (helper mark-list binding cadr))))))
+  (define (lookup-binding mark-list binding)
+    (if (null? mark-list)
+        (error 'lookup-binding "variable not found in environment: ~a" binding)
+        (let* ([bindings (mark-bindings (car mark-list))]
+               [_ (printf "bindings on this mark: ~a~n" bindings)]
+               [matches (filter (lambda (b)
+                                  (eq? binding (mark-binding-binding b)))
+                                bindings)])
+          (cond [(null? matches)
+                 (lookup-binding (cdr mark-list) binding)]
+                [(= (length matches) 1)
+                 (car matches)]
+                [else 
+                 (error 'lookup-binding "multiple bindings found for ~a" binding)])))))

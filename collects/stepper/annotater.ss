@@ -82,7 +82,7 @@
   ;((z:parsed (union (list-of z:binding) 'all) (list-of z:binding) symbol) ->
   ; debug-info)
     
-  (define (make-debug-info source tail-bound free-bindings label)
+  (define (make-debug-info source tail-bound free-bindings advance-warning label)
     (let* ([kept-bindings (if (eq? tail-bound 'all)
                               free-bindings
                               (binding-set-intersect tail-bound
@@ -91,10 +91,13 @@
                                (let ([var (get-binding-name x)])
                                  (list var x)))
                              kept-bindings)]
-           [let-bindings (filter (lambda (x) (not (z:lambda-binding? x))) kept-bindings)]
+           [let-bindings (filter (lambda (x) (and (not (z:lambda-binding? x))
+                                                  (not (bogus-binding? x)))) 
+                                 (append advance-warning kept-bindings))]
            [lifter-gensyms (map get-lifted-gensym let-bindings)]
-           [let-clauses (map list let-bindings lifter-gensyms)])
-      (make-full-mark source label (append var-clauses))))
+           [quoted-lifter-gensyms (map (lambda (b) `(#%quote ,b)) lifter-gensyms)]
+           [let-clauses (map list lifter-gensyms quoted-lifter-gensyms)])
+      (make-full-mark source label (append var-clauses let-clauses))))
   
   ; cheap-wrap for non-debugging annotation
   
@@ -285,9 +288,9 @@
                   [let-body-recur (lambda (expr bindings) (annotate/inner expr (binding-set-union tail-bound bindings) #f #f))]
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (non-tail-recur expr)]) ann))]
                   [make-debug-info-normal (lambda (free-bindings)
-                                            (make-debug-info expr tail-bound free-bindings 'none))]
+                                            (make-debug-info expr tail-bound free-bindings null 'none))]
                   [make-debug-info-app (lambda (tail-bound free-bindings label)
-                                         (make-debug-info expr tail-bound free-bindings label))]
+                                         (make-debug-info expr tail-bound free-bindings null label))]
                   [wcm-wrap (if pre-break?
                                 wcm-pre-break-wrap
                                 simple-wcm-wrap)]
@@ -534,7 +537,7 @@
                                      binding-sets))]
                              [dummy-binding-list (apply append dummy-binding-sets)]
                              [create-index-finder (lambda (binding)
-                                                    `(,binding-indexer binding))]
+                                                    `(,binding-indexer ,binding))]
                              [outer-dummy-initialization
                               `([,(append lifted-gensyms (map z:binding-var dummy-binding-list))
                                  (#%values ,@(append (map create-index-finder binding-list)
@@ -556,9 +559,11 @@
                              [middle-begin
                               (double-break-wrap `(#%begin ,@set!-clauses ,inner-let-values))]
                              [wrapped-begin
-                              (wcm-wrap (make-debug-info-app (binding-set-union tail-bound dummy-binding-list)
-                                                             (binding-set-union free-bindings dummy-binding-list)
-                                                             'let-body)
+                              (wcm-wrap (make-debug-info expr 
+                                                         (binding-set-union tail-bound dummy-binding-list)
+                                                         (binding-set-union free-bindings dummy-binding-list)
+                                                         binding-list ; advance warning
+                                                         'let-body)
                                         middle-begin)]
                              [whole-thing
                               `(#%let-values ,outer-dummy-initialization ,wrapped-begin)])
@@ -606,9 +611,11 @@
                                                                                                 lifted-name-gensyms
                                                                                                 annotated-body)))]
                              [wrapped-begin
-                              (wcm-wrap (make-debug-info-app (binding-set-union tail-bound binding-list)
-                                                             (binding-set-union free-bindings-inner binding-list)
-                                                             'let-body)
+                              (wcm-wrap (make-debug-info expr 
+                                                         (binding-set-union tail-bound binding-list)
+                                                         (binding-set-union free-bindings-inner binding-list)
+                                                         binding-list ; advance warning
+                                                         'let-body)
                                         middle-begin)]
                              [whole-thing
                               `(#%letrec-values ,outer-initialization ,wrapped-begin)])

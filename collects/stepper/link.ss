@@ -15,6 +15,7 @@
         [marks : stepper:marks^
                ((require-library-unit/sig "marks.ss" "stepper")
                 zodiac
+                error
                 client-procs
                 (core function))]
         [utils : stepper:cogen-utils^ 

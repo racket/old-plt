@@ -22,8 +22,8 @@
           sharing-printing
           abbreviate-cons-as-list))
             
-      ;; module-based-language-extension :    (implements drscheme:language-tower:module-based-language<%>) 
-      ;;                                   -> (implements drscheme:language-tower:module-based-language<%>)
+      ;; module-based-language-extension :    (implements drscheme:language:module-based-language<%>) 
+      ;;                                   -> (implements drscheme:language:module-based-language<%>)
       ;; changes the default settings and sets a few more paramters during `on-execute'
       (define (module-based-language-extension super%)
         (class* super% ()
@@ -34,7 +34,7 @@
           (inherit sharing-printing abbreviate-cons-as-list)
           
           (define (default-settings)
-            (drscheme:language-tower:make-simple-settings/parse
+            (drscheme:language:make-simple-settings/parse
              `((case-sensitive #t)
                (printing-style constructor)
                (show-sharing ,(sharing-printing))
@@ -68,16 +68,16 @@
 
       ;; add-htdp-language : (implements htdp-language<%>) -> void
       (define (add-htdp-language class%)
-        (let ([% (drscheme:language-tower:module-based-language->language-mixin
+        (let ([% (drscheme:language:module-based-language->language-mixin
                   (module-based-language-extension
-                   (drscheme:language-tower:simple-module-based-language->module-based-language-mixin
+                   (drscheme:language:simple-module-based-language->module-based-language-mixin
                     class%)))])
-          (drscheme:language:add-language
+          (drscheme:language-configuration:add-language
            (make-object %)
            #t)))
 
       (add-htdp-language
-       (class* object% (htdp-language<%>) 
+       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>) 
          (public get-module
                  get-language-position
                  sharing-printing
@@ -91,7 +91,7 @@
          (super-instantiate ())))
       
       (add-htdp-language
-       (class* object% (htdp-language<%>) 
+       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>) 
          (public get-module
                  get-language-position
                  sharing-printing
@@ -105,7 +105,7 @@
          (super-instantiate ())))
       
       (add-htdp-language
-       (class* object% (htdp-language<%>)
+       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>)
          (public get-module
                  get-language-position
                  sharing-printing

@@ -20,8 +20,8 @@
       (import (drscheme:app : drscheme:app^)
               (drscheme:unit : drscheme:unit^)
               (drscheme:get/extend : drscheme:get/extend^)
-              (drscheme:language : drscheme:language/internal^)
-	      (drscheme:language-tower : drscheme:language-tower^)
+              (drscheme:language-configuration : drscheme:language-configuration/internal^)
+	      (drscheme:language : drscheme:language^)
               (drscheme:teachpack : drscheme:teachpack^))
       
       (finder:default-extension "scm")
@@ -206,10 +206,10 @@
                    (send text end-edit-sequence))])
            
            (preferences:add-callback
-            drscheme:language:settings-preferences-symbol
+            drscheme:language-configuration:settings-preferences-symbol
             (lambda (p v)
               (update-text v)))
-           (update-text (preferences:get drscheme:language:settings-preferences-symbol))
+           (update-text (preferences:get drscheme:language-configuration:settings-preferences-symbol))
            (send ex-panel set-alignment 'left 'center)
            (send ex-panel stretchable-height #f)
            (send canvas allow-tab-exit #t)
@@ -253,16 +253,16 @@
       
       (let ([make-simple
 	     (lambda (module position)
-	       (instantiate (drscheme:language-tower:module-based-language->language-mixin
-                             (drscheme:language-tower:simple-module-based-language->module-based-language-mixin
-                              drscheme:language-tower:simple-module-based-language%))
+	       (instantiate (drscheme:language:module-based-language->language-mixin
+                             (drscheme:language:simple-module-based-language->module-based-language-mixin
+                              drscheme:language:simple-module-based-language%))
                  ()
                  (module module)
                  (language-position position)
                  (teachpack-names null)))])
-	(drscheme:language:add-language
+	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mzscheme.ss" "lang") '("Full" "Textual without debugging (MzScheme)")))
-	(drscheme:language:add-language
+	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical without debugging (MrEd)"))))
       
   ;; add a handler to open .plt files.

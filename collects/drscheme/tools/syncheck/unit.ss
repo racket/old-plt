@@ -1,3 +1,9 @@
+;; use some kind of signature predicate to get the primitive
+;; color right. 
+;; Ie allow turtle primitives to be primitive color, but if the
+;; user defines something in the bottom window, and then does
+;; syntax checker, that should be unbound.
+
   (unit/sig ()
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
@@ -420,6 +426,8 @@
 			  (and (<= end-left x end-right)
 			       (<= end-top y end-bottom)))]
 			   
+		       [color-highlight "WHITE"]
+		       [color-background "BLUE"]
 		       [event-fn
 			(let ([last (void)])
 			  (lambda (event x y)
@@ -434,14 +442,21 @@
 				(when (or (and (not this-time) last)
 					  (and this-time (not last)))
 				  (set! tmp-arrow-on? this-time)
-				  (let ([color (if this-time "WHITE" "BLUE")])
-				    (send brush set-colour color))
+				  (send brush set-colour
+					(if this-time
+					    color-highlight
+					    color-background))
 				  (invalidate-bitmap-cache)
 				  (set! last this-time))
 				#f]
 			       [(send event button-up?)
 				(when this-time
 				  (set! perm-arrow-on? (not perm-arrow-on?))
+				  (set! tmp-arrow-on? #f)
+				  (send brush set-colour
+					(if perm-arrow-on?
+					    color-background
+					    color-highlight))
 				  (invalidate-bitmap-cache)
 				  (if head?
 				      (set-position end-pos-left end-pos-right)

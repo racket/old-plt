@@ -758,12 +758,6 @@ scheme_make_immutable_sized_utf8_string(char *chars, long len)
 }
 
 Scheme_Object *
-scheme_make_utf8_string_without_copying(char *chars)
-{
-  return scheme_make_sized_offset_utf8_string(chars, 0, -1);
-}
-
-Scheme_Object *
 scheme_make_utf8_string(const char *chars)
 {
   return scheme_make_sized_offset_utf8_string((char *)chars, 0, -1);

@@ -100,7 +100,7 @@
   scheme_extension_table->scheme_undefined = scheme_undefined;
   scheme_extension_table->scheme_tail_call_waiting = scheme_tail_call_waiting;
   scheme_extension_table->scheme_multiple_values = scheme_multiple_values;
-  scheme_extension_table->int = int;
+  scheme_extension_table->scheme_uchar_table = scheme_uchar_table;
   scheme_extension_table->scheme_uchar_ups = scheme_uchar_ups;
   scheme_extension_table->scheme_uchar_downs = scheme_uchar_downs;
   scheme_extension_table->scheme_uchar_titles = scheme_uchar_titles;
@@ -272,7 +272,7 @@
   scheme_extension_table->scheme_utf8_encode_all = scheme_utf8_encode_all;
   scheme_extension_table->scheme_utf8_encode_to_buffer = scheme_utf8_encode_to_buffer;
   scheme_extension_table->scheme_utf8_encode_to_buffer_len = scheme_utf8_encode_to_buffer_len;
-  scheme_extension_table->short = short;
+  scheme_extension_table->scheme_ucs4_to_utf16 = scheme_ucs4_to_utf16;
   scheme_extension_table->scheme_utf16_to_ucs4 = scheme_utf16_to_ucs4;
   scheme_extension_table->scheme_make_bignum = scheme_make_bignum;
   scheme_extension_table->scheme_make_bignum_from_unsigned = scheme_make_bignum_from_unsigned;

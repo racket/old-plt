@@ -92,7 +92,7 @@ scheme_make_void
 scheme_undefined
 scheme_tail_call_waiting
 scheme_multiple_values
-int
+scheme_uchar_table
 scheme_uchar_ups
 scheme_uchar_downs
 scheme_uchar_titles
@@ -248,7 +248,7 @@ scheme_utf8_encode
 scheme_utf8_encode_all
 scheme_utf8_encode_to_buffer
 scheme_utf8_encode_to_buffer_len
-short
+scheme_ucs4_to_utf16
 scheme_utf16_to_ucs4
 scheme_make_bignum
 scheme_make_bignum_from_unsigned

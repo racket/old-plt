@@ -176,10 +176,10 @@ Scheme_Object *(*scheme_make_void)(void);
 Scheme_Object *scheme_undefined;
 Scheme_Object *scheme_tail_call_waiting;
 Scheme_Object *scheme_multiple_values;
-unsigned int;
-int scheme_uchar_ups;
-int scheme_uchar_downs;
-int scheme_uchar_titles;
+unsigned int ***scheme_uchar_table;
+int *scheme_uchar_ups;
+int *scheme_uchar_downs;
+int *scheme_uchar_titles;
 /*========================================================================*/
 /*                              evaluation                                */
 /*========================================================================*/
@@ -409,7 +409,7 @@ char *(*scheme_utf8_encode_to_buffer)(const mzchar *s, int len,
 					     char *buf, int blen);
 char *(*scheme_utf8_encode_to_buffer_len)(const mzchar *s, int len, 
 						 char *buf, int blen, long *rlen);
-unsigned short;
+unsigned short *(*scheme_ucs4_to_utf16)(const mzchar *text, int start, int end, 
 					       unsigned short *buf, int bufsize,
 					       long *ulen, int term_size);
 mzchar *(*scheme_utf16_to_ucs4)(const unsigned short *text, int start, int end, 

@@ -94,6 +94,7 @@ EXPORTS
  scheme_undefined DATA
  scheme_tail_call_waiting
  scheme_multiple_values
+ scheme_uchar_table
  scheme_uchar_ups
  scheme_uchar_downs
  scheme_uchar_titles
@@ -232,6 +233,7 @@ EXPORTS
  scheme_utf8_encode_all
  scheme_utf8_encode_to_buffer
  scheme_utf8_encode_to_buffer_len
+ scheme_ucs4_to_utf16
  scheme_utf16_to_ucs4
  scheme_make_bignum
  scheme_make_bignum_from_unsigned

@@ -30,6 +30,7 @@ while (<>) {
 		    if ($_ =~ /^MZ_EXTERN /) {
 			$_ = substr($_, 10);
 		    }
+
 		    if ($_ =~ /^volatile /) {
 			$_ = substr($_, 9);
 			$volatile = 'volatile ';
@@ -46,7 +47,15 @@ while (<>) {
 		    } else {
 			$const = '';
 		    }
-		    if ($_ =~ /\[1\];$/) {
+
+		    if ($_ =~ /^unsigned /) {
+			$_ = substr($_, 9);
+			$unsigned = 'unsigned ';
+		    } else {
+			$unsigned = '';
+                    }
+
+		    if ($_ =~ /\[1?\];$/) {
 			$star = '*';
 		    } else {
 			$star = '';
@@ -54,9 +63,9 @@ while (<>) {
 
 		    $_ =~ /([a-zA-Z0-9_]*) ([*]*)([a-zA-Z0-9_]*)(.*)/;
 		    if (substr($4, 0, 1) eq '(') {
-			print "$const$1 $2(*$3)$4\n" unless $list;
+			print "$const$unsigned$1 $2(*$3)$4\n" unless $list;
 		    } else {
-			print "$const$volatile$1 $star$2$3;\n" unless $list;
+			print "$const$volatile$unsigned$1 $star$2$3;\n" unless $list;
 		    }
 		    @exported = (@exported, $3);
 

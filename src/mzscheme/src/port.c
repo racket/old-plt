@@ -409,13 +409,13 @@ scheme_init_port (Scheme_Env *env)
 
   scheme_orig_stdin_port = (scheme_make_stdin
 			    ? scheme_make_stdin()
-#ifdef USE_FD_PORTS
-			    : make_fd_input_port(0, "STDIN", 0)
-#else
-# ifdef USE_OSKIT_CONSOLE
+#ifdef USE_OSKIT_CONSOLE
 			    : (osk_not_console
 			       ? make_tested_file_input_port(stdin, "STDIN", 1)
 			       : make_oskit_console_input_port())
+#else
+# ifdef USE_FD_PORTS
+			    : make_fd_input_port(0, "STDIN", 0)
 # else
 			    : make_tested_file_input_port(stdin, "STDIN", 1)
 # endif

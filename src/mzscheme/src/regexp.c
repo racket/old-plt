@@ -494,7 +494,7 @@ regpiece(int *flagp)
     FAIL("* or + operand could be empty");
   *flagp = (op != '+') ? (WORST|SPSTART) : (WORST|HASWIDTH);
 
-  if (regpase[1] == '?') {
+  if (regparse[1] == '?') {
     greedy = 0;
     regparse++;
   } else
@@ -510,12 +510,14 @@ regpiece(int *flagp)
     regtail(ret, regnode(BRANCH)); /* or */
     regtail(ret, regnode(NOTHING)); /* null. */
   } else if (op == '*' && !greedy) {
-    /* Emit x* as (x|&), where & means "self". */
-    reginsert(BRANCH, ret);	/* Either x */
-    regoptail(ret, regnode(NOTHING)); /* and null */
-    regtail(ret, regnode(BRANCH)); /* or */
-    regtail(ret, regnode(BACK)); /* loop */
-    regtail(ret, ret);	/* back. */
+    /* Emit x* as (|x&), where & means "self". */
+    reginsert(BRANCH, ret);
+    reginsert(NOTHING, ret);
+    reginsert(BRANCH, ret);
+    next = ret + 6; /* how to compute this better? */
+    regtail(ret, next);
+    regoptail(next, regnode(BACK)); /* loop */
+    regoptail(next, ret);	/* back. */
   } else if (op == '+' && (flags&SIMPLE))
     reginsert(greedy ? PLUS : PLUS2, ret);
   else if (op == '+' && greedy) {

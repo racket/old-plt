@@ -1,4 +1,4 @@
-// mysterx.cxx : COM/ActiveX/DHTML extension for MzScheme
+// mysterx.cxx : COM/ActiveX/DHTML extension for PLT Scheme
 // Author: Paul Steckler
 
 #include "stdafx.h"
@@ -53,8 +53,6 @@ HANDLE createHwndSem;
 HANDLE eventSinkMutex;
 
 const CLSID emptyClsId;
-
-static Scheme_Unit *mx_unit;  /* the unit returned by the extension */
 
 static Scheme_Object *mx_omit_obj; /* omitted argument placeholder */
 
@@ -131,10 +129,6 @@ static MX_PRIM mxPrims[] = {
   { mx_com_add_ref,"com-add-ref",1,1 },  
   { mx_com_ref_count,"com-ref-count",1,1 },  
 
-  // COM termination
-
-  { mx_com_terminate,"com-terminate",0,0 },  
-
   // browsers
 
   { mx_make_browser,"make-browser",6,6},
@@ -148,7 +142,7 @@ static MX_PRIM mxPrims[] = {
   { mx_current_url,"current-url",1,1 },
   { mx_register_navigate_handler,"register-navigate-handler",2,2 },
   { mx_current_document,"current-document",1,1 },
-  { mx_print,"print",1,1 },
+  { mx_print,"print-document",1,1 },
 
   // documents 
   
@@ -380,10 +374,6 @@ static MX_PRIM mxPrims[] = {
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
   { mx_process_win_events,"process-win-events",0,0},
-
-  // type table
-
-  { mx_release_type_table,"release-type-table",0,0},
 };
 
 BOOL isEmptyClsId(CLSID clsId) {
@@ -468,14 +458,11 @@ void mx_register_object(Scheme_Object *obj,IUnknown *pIUnknown,
     return;
   }
 
-  /* we should not have to do this */
-  // pIUnknown->AddRef(); 
-
   scheme_register_finalizer(obj,release_fun,pIUnknown,NULL,NULL);
-  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,
-							MZCONFIG_MANAGER),
+  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,
+							  MZCONFIG_CUSTODIAN),
 		     (Scheme_Object *)obj,
-		     (Scheme_Close_Manager_Client *)release_fun,
+		     (Scheme_Close_Custodian_Client *)release_fun,
 		     pIUnknown,0);
 }
 
@@ -693,45 +680,6 @@ MX_TYPEDESC *lookupTypeDesc(IDispatch *pIDispatch,char *name,
   }
   
   return NULL;
-}
-
-Scheme_Object *mx_release_type_table(int argc,Scheme_Object **argv) {
-  int i;
-  MX_TYPE_TBL_ENTRY *p,*psave;
-
-  for (i = 0; i < sizeray(typeTable); i++) {
-    p = typeTable[i];
-
-    while (p) {
-      scheme_release_typedesc((void *)p->pTypeDesc,NULL);
-      psave = p;
-      p = p->next;
-      scheme_gc_ptr_ok(psave);
-    }
-  }
-
-  return scheme_void;
-}
-
-Scheme_Object *mx_unit_init(Scheme_Object **boxes,Scheme_Object **anchors,
-			    Scheme_Unit *m,void *debug_request) {
-  int i;
-
-  for (i = 0; i < sizeray(mxPrims); i++) {
-    SCHEME_ENVBOX_VAL(boxes[i]) = scheme_make_prim_w_arity(mxPrims[i].c_fun,
-							   mxPrims[i].name,
-							   mxPrims[i].minargs,
-							   mxPrims[i].maxargs);
-    anchors[i] = boxes[i];
-  }
-  
-  mx_omit_obj = (Scheme_Object *)scheme_malloc(sizeof(MX_OMIT));
-  mx_omit_obj->type = mx_com_omit_type;
-  
-  SCHEME_ENVBOX_VAL(boxes[sizeray(mxPrims)]) = mx_omit_obj;
-  anchors[sizeray(mxPrims)] = boxes[sizeray(mxPrims)];
-
-  return scheme_void;
 }
 
 void codedComError(char *s,HRESULT hr) {
@@ -1636,9 +1584,9 @@ MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
     pTypeDesc->pVarDesc = pVarDesc;
   }
 
-  scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
+  scheme_add_managed((Scheme_Custodian *)scheme_get_param(scheme_config,MZCONFIG_CUSTODIAN),
 		     (Scheme_Object *)pTypeDesc,
-		     (Scheme_Close_Manager_Client *)scheme_release_typedesc,
+		     (Scheme_Close_Custodian_Client *)scheme_release_typedesc,
 		     NULL,0);
   scheme_register_finalizer(pTypeDesc,scheme_release_typedesc,NULL,NULL,NULL);
 
@@ -4363,11 +4311,16 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
   return scheme_void;
 }
 
+/*
+
+blocking on Win events doesn't seem to work 
+any longer
+
 static BOOL win_event_available(void *) {
   MSG msg;
 
   return (PeekMessage(&msg,NULL,0x400,0x400,PM_NOREMOVE) ||
-  	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
+	  PeekMessage(&msg,NULL,0x113,0x113,PM_NOREMOVE));
 }
 
 static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
@@ -4380,16 +4333,20 @@ static void win_event_sem_fun(MX_Document_Object *doc,void *fds) {
     }
   }
 
-  scheme_add_fd_eventmask(fds,QS_ALLEVENTS);
+  scheme_add_fd_eventmask(fds,QS_ALLINPUT);
   scheme_add_fd_handle(dummySem,fds,TRUE); 
 }
+*/
 
 Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
   MSG msg;
 
-  scheme_block_until((int (*)(Scheme_Object *))win_event_available,
-  		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
-  		     NULL,0.0F);
+  /* this used to work, sort of 
+
+    scheme_block_until((int (*)(Scheme_Object *))win_event_available,
+		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
+		     NULL,0.0F);
+  */
 
   while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE) ||
 	 PeekMessage(&msg,NULL,0x113,0x113,PM_REMOVE)) {
@@ -4421,8 +4378,42 @@ void initMysSinkTable(void) {
   myssink_table.piunknown_val = mx_iunknown_val;
 }
 
+Scheme_Object *mx_release_type_table(void) {
+  int i;
+  MX_TYPE_TBL_ENTRY *p,*psave;
+
+  for (i = 0; i < sizeray(typeTable); i++) {
+    p = typeTable[i];
+
+    while (p) {
+      scheme_release_typedesc((void *)p->pTypeDesc,NULL);
+      psave = p;
+      p = p->next;
+      scheme_gc_ptr_ok(psave);
+    }
+  }
+
+  return scheme_void;
+}
+
+void mx_exit_closer(Scheme_Object *obj,
+		    Scheme_Close_Custodian_Client *fun,void *data) {
+  if ((fun == (Scheme_Close_Custodian_Client *)
+                     scheme_release_com_object) ||
+      (fun == (Scheme_Close_Custodian_Client *)
+       scheme_release_simple_com_object)) {
+    (*fun)(obj,data);
+  }
+}
+
+void mx_cleanup(void) {
+  mx_release_type_table();
+  /* looks like CoUninitialize() gets called automatically */
+}
+
 Scheme_Object *scheme_initialize(Scheme_Env *env) {
   HRESULT hr;
+  Scheme_Object *mx_name,*mx_fun;
   int i;
 
   // should not be necessary, but sometimes
@@ -4432,12 +4423,10 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   // globals in mysterx.cxx
 
-  scheme_register_extension_global(&mx_unit,sizeof(mx_unit));
   scheme_register_extension_global(&mx_omit_obj,sizeof(mx_omit_obj));
   scheme_register_extension_global(&scheme_date_type,sizeof(scheme_date_type));
 
-  scheme_date_type = 
-    scheme_lookup_global(scheme_intern_symbol("#%struct:date"),env);
+  scheme_date_type = scheme_builtin_value("struct:date");
 
   mx_com_object_type = scheme_make_type("<com-object>");
   mx_com_type_type = scheme_make_type("<com-type>");
@@ -4462,20 +4451,22 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   
   // export prims + omit value
   
-  mx_unit = (Scheme_Unit *)scheme_malloc(sizeof(Scheme_Unit));
-  mx_unit->type = scheme_unit_type;
-  mx_unit->num_imports = 0;
-  mx_unit->num_exports = sizeray(mxPrims) + 1;
-  mx_unit->exports = (Scheme_Object **)
-    scheme_malloc((sizeray(mxPrims) + 1) * sizeof(Scheme_Object *));
-  mx_unit->export_debug_names = NULL;
-  mx_unit->init_func = mx_unit_init;
-  
+  mx_name = scheme_intern_symbol("mxmain");
+  env = scheme_primitive_module(mx_name,env);
+
   for (i = 0; i < sizeray(mxPrims); i++) {
-    mx_unit->exports[i] = scheme_intern_symbol(mxPrims[i].name);
+    mx_fun = scheme_make_prim_w_arity(mxPrims[i].c_fun,
+				      mxPrims[i].name,
+				      mxPrims[i].minargs,
+				      mxPrims[i].maxargs);
+    scheme_add_global(mxPrims[i].name,mx_fun,env);
   }
-  
-  mx_unit->exports[sizeray(mxPrims)] = scheme_intern_symbol("com-omit");
+
+  mx_omit_obj = (Scheme_Object *)scheme_malloc(sizeof(MX_OMIT));
+  mx_omit_obj->type = mx_com_omit_type;
+  scheme_add_global("com-omit",mx_omit_obj,env);
+
+  scheme_finish_primitive_module(env);
 
   initEventNames();
   
@@ -4483,19 +4474,17 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   if (isatty(fileno(stdin))) {
     fprintf(stderr,
-	    "MysterX extension for MzScheme, "
+	    "MysterX extension for PLT Scheme, "
 	    "Copyright (c) 1999-2001 PLT (Paul Steckler)\n");
   }
-  
-  return (Scheme_Object *)mx_unit;
+
+  scheme_add_atexit_closer(mx_exit_closer);
+  atexit(mx_cleanup);
+ 
+  return scheme_void;
 }
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
-  return (Scheme_Object *)mx_unit;
-}
-
-Scheme_Object *mx_com_terminate(int argc,Scheme_Object **argv) {
-  CoUninitialize();
   return scheme_void;
 }
 

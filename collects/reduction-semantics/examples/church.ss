@@ -26,12 +26,12 @@
     (list
      (reduction/context lang
                         e-ctxt
-                        (app (lambda ((name x x)) (name b e)) (name a e))
-                        (ch-subst x a b))
+                        (app (lambda (x_1) e_body) e_arg)
+                        (ch-subst (term x_1) (term e_arg) (term e_body)))
      (reduction/context lang
                         e-ctxt
-                        (let ((name x x) (name v v)) (name e e))
-                        (ch-subst x v e))))
+                        (let (x_1 v_1) e_1)
+                        (ch-subst (term x_1) (term v_1) (term e_1)))))
   
   (define ch-subst
     (subst

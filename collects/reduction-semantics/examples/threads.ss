@@ -52,17 +52,23 @@ semaphores make things much more predictable...
     (list
      (reduction lang
                 (in-hole (name c p-ctxt) (begin v (name e1 e) (name e2 e) (name es e) ...))
-                (replace c hole `(begin ,e1 ,e2 ,@es)))
+                (replace 
+                 (term c)
+                 (term hole)
+                 (term (begin e1 e2 es ...))))
      (reduction lang
                 (in-hole (name c p-ctxt) 
-                         (cons (name v v) (list (name vs v) ...)))
-                (replace c hole `(list ,v ,@vs)))
+                         (cons v_1 (list v_2s ...)))
+                (replace 
+                 (term c)
+                 (term hole)
+                 (term (list v_1 v_2s ...))))
      (reduction lang
-                (in-hole (name c p-ctxt) (begin v (name e1 e)))
-                (replace c hole e1))
+                (in-hole (name c p-ctxt) (begin v e_1))
+                (replace (term c) (term hole) (term e_1)))
      (reduction lang
-                (in-hole (name c p-ctxt) (begin (name v v)))
-                (replace c hole v))
+                (in-hole (name c p-ctxt) (begin v_1))
+                (replace (term c) (term hole) (term v_1)))
      (reduction lang
                 ((store
                   (name befores (variable v)) ...
@@ -73,15 +79,16 @@ semaphores make things much more predictable...
                   (name e-before e) ...
                   (in-hole (name c e-ctxt) (name x variable))
                   (name e-after e) ...))
-                `((store
-                   ,@befores
-                   (,x ,v)
-                   ,@afters)
-                  ,semas
+                (term 
+                 ((store
+                   befores ...
+                   (x v)
+                   afters ...)
+                  semas
                   (threads
-                   ,@e-before
-                   ,(replace c hole v)
-                   ,@e-after)))
+                   e-before ...
+                   ,(replace (term c) (term hole) (term v))
+                   e-after ...))))
      (reduction lang
                 ((store
                   (name befores (variable v)) ...
@@ -92,15 +99,16 @@ semaphores make things much more predictable...
                   (name e-before e) ...
                   (in-hole (name c e-ctxt) (set! (name x variable) (name new-v v)))
                   (name e-after e) ...))
-                `((store
-                   ,@befores
-                   (,x ,new-v)
-                   ,@afters)
-                  ,semas
+                (term 
+                 ((store
+                   befores ...
+                   (x new-v)
+                   afters ...)
+                  semas
                   (threads
-                   ,@e-before
-                   ,(replace c hole `(void))
-                   ,@e-after)))
+                   e-before ...
+                   ,(replace (term c) (term hole) (term (void)))
+                   e-after ...))))
      (reduction lang
                 ((name store any)
                  (semas
@@ -111,17 +119,18 @@ semaphores make things much more predictable...
                   (name e-before e) ...
                   (in-hole (name c e-ctxt) (semaphore-wait (semaphore (name x variable))))
                   (name e-after e) ...))
-                `(,store
+                (term 
+                 (store
                   (semas
-                   ,@befores
-                   (,x ,(if (= n 1)
-                            `none
-                            (- n 1)))
-                   ,@afters)
-                  (threads
-                   ,@e-before
-                   ,(replace c hole `(void))
-                   ,@e-after)))
+                   befores ...
+                   (x ,(if (= (term n) 1)
+                           (term none)
+                           (- (term n) 1)))
+                   afters ...)
+                   (threads
+                    e-before ...
+                    ,(replace (term c) (term hole) (term (void)))
+                    e-after ...))))
      (reduction lang
                 ((name store any)
                  (semas
@@ -132,15 +141,16 @@ semaphores make things much more predictable...
                   (name e-before e) ...
                   (in-hole (name c e-ctxt) (semaphore-post (semaphore (name x variable))))
                   (name e-after e) ...))
-                `(,store
+                (term 
+                 (store
                   (semas
-                   ,@befores
-                   (,x ,(+ n 1))
-                   ,@afters)
+                   befores ...
+                   (x ,(+ (term n) 1))
+                   afters ...)
                   (threads
-                   ,@e-before
-                   ,(replace c hole '(void))
-                   ,@e-after)))
+                   e-before ...
+                   ,(replace (term c) (term hole) (term (void)))
+                   e-after ...))))
      
      (reduction lang
                 ((name store any)
@@ -152,15 +162,16 @@ semaphores make things much more predictable...
                   (name e-before e) ...
                   (in-hole (name c e-ctxt) (semaphore-post (semaphore (name x variable))))
                   (name e-after e) ...))
-                `(,store
+                (term 
+                 (store
                   (semas
-                   ,@befores
-                   (,x 1)
-                   ,@afters)
+                   befores ...
+                   (x 1)
+                   afters ...)
                   (threads
-                   ,@e-before
-                   ,(replace c hole '(void))
-                   ,@e-after)))))
+                   e-before ...
+                   ,(replace (term c) (term hole) (term (void)))
+                   e-after ...))))))
   
   (gui lang
        reductions

@@ -41,33 +41,35 @@
      (r--> number 
            'num)
      
-     (r--> (lambda ((name x x) (name t t)) (name body e))
-           `(-> ,t ,(lc-subst x t body)))
+     (r--> (lambda (x_1 t_1) e_body)
+           (term (-> t_1 ,(lc-subst (term x_1) 
+                                    (term t_1)
+                                    (term e_body)))))
      
-     (r--> ((-> (name t1 t) (name t2 t)) (name t1 t))
-           t2)
+     (r--> ((-> t_1 t_2) t_1)
+           (term t_2))
      
-     (e--> (side-condition ((-> (name t1 t) t) (name t2 t))
-                           (not (equal? t1 t2)))
-           (format "app: domain error ~s and ~s" t1 t2))
+     (e--> (side-condition ((-> t_1 t) t_2)
+                           (not (equal? (term t_1) (term t_2))))
+           (format "app: domain error ~s and ~s" (term t_1) (term t_2)))
      
-     (e--> (num (name t t))
-           (format "app: non function error ~s" t))
+     (e--> (num t_1)
+           (format "app: non function error ~s" (term t_1)))
      
-     (r--> (if bool (name t t) (name t t))
-           t)
-     (e--> (side-condition (if bool (name t1 t) (name t2 t))
-                           (not (equal? t1 t2)))
-           (format "if: then and else clause mismatch ~s and ~s" t1 t2))
-     (e--> (side-condition (if (name t t) t t)
-                           (not (equal? t 'bool)))
-           (format "if: test not boolean ~s" t))
+     (r--> (if bool t_1 t_1)
+           (term t_1))
+     (e--> (side-condition (if bool t_1 t_2)
+                           (not (equal? (term t_1) (term t_2))))
+           (format "if: then and else clause mismatch ~s and ~s" (term t_1) (term t_2)))
+     (e--> (side-condition (if t_1 t t)
+                           (not (equal? (term t_1) 'bool)))
+           (format "if: test not boolean ~s" (term t_1)))
      
      (r--> (= num num) 'bool)
-     (e--> (side-condition (= (name t1 t) (name t2 t))
-                           (or (not (equal? t1 'num))
-                               (not (equal? t2 'num))))
-           (format "=: not comparing numbers ~s and ~s" t1 t2))))
+     (e--> (side-condition (= t_1 t_2)
+                           (or (not (equal? (term t_1) 'num))
+                               (not (equal? (term t_2) 'num))))
+           (format "=: not comparing numbers ~s and ~s" (term t_1) (term t_2)))))
   
   (define lc-subst
     (subst
@@ -83,6 +85,6 @@
       (subterm '() f)
       (subterms '() xs)]))
   
-  (define term '((lambda (x num) (lambda (y num) (if (= x y) 0 x))) 1))
-  (gui lang reductions term)
+  (define theterm '((lambda (x num) (lambda (y num) (if (= x y) 0 x))) 1))
+  (gui lang reductions theterm)
   )

@@ -31,26 +31,23 @@
   (define reductions
     (list
      (reduction lang
-                (in-hole (name c c)
-                         (\# (in-hole*
-                              hole#
-                              (name c# c#)
-                              (f (name v v)))))
-                (let ([x (variable-not-in c# 'x)])
-                  (replace c hole `(,v (lambda (,x) ,(replace c# hole# x))))))
+                (in-hole c_1 (\# (in-hole* hole# c#_1 (f v_1))))
+                (let ([x (variable-not-in (term c#) 'x)])
+                  (replace (term c_1) 
+                           (term hole) 
+                           (term (v_1 (lambda (,x) ,(replace (term c#_1) (term hole#) x)))))))
      (reduction lang
-                (in-hole (name c# c#)
-                         (f (name v v)))
-                (let ([x (variable-not-in c# 'x)])
-                  `(,v (lambda (,x) ,(replace c# hole x)))))
+                (in-hole c#_1 (f v_1))
+                (let ([x (variable-not-in (term c#_1) 'x)])
+                  (term (v_1 (lambda (,x) ,(replace (term c#_1) (term hole) x))))))
      (reduction/context lang
                         c
-                        ((lambda ((name x variable)) (name body e)) (name arg v))
-                        (lc-subst x arg body))
+                        ((lambda (variable_x) e_body) v_arg)
+                        (lc-subst (term variable_x) (term v_arg) (term e_body)))
      (reduction/context lang
                         c
-                        (+ (name n1 number) (name n2 number))
-                        (+ n1 n2))))
+                        (+ number_1 number_2)
+                        (+ (term number_1) (term number_2)))))
   
   (define lc-subst
     (subst

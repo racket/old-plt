@@ -30,12 +30,12 @@
     (list
      (reduction/context lang
                         e-ctxt
-                        (i (name x e))
-                        x)
+                        (i e_1)
+                        (term e_1))
      (reduction/context lang
                         e-ctxt
-                        ((((j (name a e)) (name b e)) (name c e)) (name d e))
-                        `((,a ,b) ((,a ,d) ,c)))))
+                        ((((j e_a) e_b) e_c) e_d)
+                        (term ((e_a e_b) ((e_a e_d) e_c))))))
   
   (define reductions
     (append
@@ -43,20 +43,20 @@
      (list
       (reduction/context lang
                          e-ctxt
-                         (((b (name m e)) (name n e)) (name l e))
-                         `(,m (,n ,l)))
+                         (((b e_m) e_n) e_l)
+                         (term (e_m (e_n e_l))))
       (reduction/context lang
                          e-ctxt
-                         (((c (name m e)) (name n e)) (name l e))
-                         `((,m ,l) ,n))
+                         (((c e_m) e_n) e_l)
+                         (term ((e_m e_l) e_n)))
       (reduction/context lang
                          e-ctxt
-                         ((c* (name a e)) (name b e))
-                         `(,b ,a))
+                         ((c* e_a) e_b)
+                         (term (e_b e_a)))
       (reduction/context lang
                          e-ctxt
-                         ((w (name a e)) (name b e))
-                         `((,a ,b) ,b)))))
+                         ((w e_a) e_b)
+                         (term ((e_a e_b) e_b))))))
 
   
   (define c* `((j i) i))

@@ -25,16 +25,20 @@
     (list
      (reduction lang
                 (in-hole c_1 (call/cc v_arg))
-                (let ([v (variable-not-in c_1 'x)])
-                  (replace c_1 hole `(,v_arg (lambda (,v) (abort ,(replace c_1 hole v)))))))
+                (let ([v (variable-not-in (term c_1) 'x)])
+                  (replace 
+                   (term c_1)
+                   (term hole) 
+                   (term (v_arg (lambda (,v) 
+                                  (abort ,(replace (term c_1) (term hole) v))))))))
      (reduction lang
                 (in-hole c (abort e_1))
-                e_1)
+                (term e_1))
      (reduction/context lang
                         c
                         ((lambda (x_format t_1) e_body) v_actual)
                         ;(lc-subst x_format v_actual e_body)
-                        (lc-subst x_format e_body v_actual)
+                        (lc-subst (term x_format) (term e_body) (term v_actual))
                         )))
   
   (define lc-subst

@@ -41,27 +41,29 @@ there are multiple decompositions for each term.
                 (in-hole (name e e-state)
                          (let ((name var variable) (name val v))
                            (name exp m)))
-                (replace e hole (future-subst var val exp)))
+                (replace (term e)
+                         (term hole) 
+                         (future-subst (term var) (term val) (term exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let ((name var variable) (car (cons (name val v) v)))
                            (name exp m)))
-                (replace e hole (future-subst var val exp)))
+                (replace (term e) (term hole) (future-subst (term var) (term val) (term exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let ((name var variable) (cdr (cons v (name val v))))
                            (name exp m)))
-                (replace e hole (future-subst var val exp)))
+                (replace (term e) (term hole) (future-subst (term var) (term val) (term exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let ((name var variable) (if true (name thn m) m))
                            (name exp m)))
-                (replace e hole `(let (,var ,thn) ,exp)))
+                (replace (term e) (term hole) (term (let (var thn) exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let ((name var variable) (if false m (name els m)))
                            (name exp m)))
-                (replace e hole `(let (,var ,els) ,exp)))
+                (replace (term e) (term hole) (term (let (var els) exp))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let ((name var variable) 
@@ -69,21 +71,21 @@ there are multiple decompositions for each term.
                                       (name actual v)))
                            (name exp m)))
                 (replace 
-                 e hole
-                 `(let (,var ,(future-subst format actual body) ,exp))))
+                 (term e) (term hole)
+                 (term (let (var ,(future-subst (term format) (term actual) (term body)) exp)))))
      (reduction lang
                 (in-hole (name e e-state)
                          (let ((name x variable) (future (name m1 m))) (name m2 m)))
-                (let ([p (variable-not-in (list e m1 m2) 'p)])
-                  `(flet (,p ,m1) (let (,x ,p) ,m2))))
+                (let ([p (variable-not-in (list (term e) (term m1) (term m2)) 'p)])
+                  (term (flet (,p m1) (let (x ,p) m2)))))
      (reduction lang
                 (flet ((name p variable) (name v v)) (name body state))
-                (future-subst p v body))
+                (future-subst (term p) (term v) (term body)))
      (reduction lang
                 (flet ((name p2 variable) (flet ((name p1 variable) (name s1 state)) 
                                                 (name s2 state))) 
                       (name s3 state))
-                `(flet (,p1 ,s1) (flet (,p2 ,s2) ,s3)))))
+                (term (flet (p1 s1) (flet (p2 s2) s3))))))
   
   (define future-subst
     (subst

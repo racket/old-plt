@@ -21,15 +21,17 @@
     (list
      (reduction lang
                 (in-hole (name c c) (call/cc (name arg v)))
-                (let ([v (variable-not-in c 'x)])
-                  (replace c hole `(,arg (lambda (,v) (abort ,(replace c hole v)))))))
+                (let ([v (variable-not-in (term c) 'x)])
+                  (replace (term c) 
+                           (term hole)
+                           (term (arg (lambda (,v) (abort ,(replace (term c) (term hole) v))))))))
      (reduction lang
                 (in-hole c (abort (name e e)))
-                e)
+                (term e))
      (reduction/context lang
                         c
                         ((lambda ((name x variable)) (name body e)) (name arg v))
-                        (lc-subst x arg body))))
+                        (lc-subst (term x) (term arg) (term body)))))
   
   (define lc-subst
     (plt-subst
@@ -50,9 +52,9 @@
       (subterm '() x)]))
       
   
-  (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x))))
+  ;(gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x))))
   
-  ;(gui lang reductions '((call/cc call/cc) (call/cc call/cc)))
+  (gui lang reductions '((call/cc call/cc) (call/cc call/cc)))
   ;(gui lang reductions '((lambda (x) ((call/cc call/cc) x)) (call/cc call/cc)))
   
   )

@@ -136,97 +136,98 @@
     (list
      (reduction lang  
                 (in-hole (name p p-ctxt) (/ (name n number) (name m number))) 
-                (if (= m 0)
-                    '(error /)
-                    (replace p hole (/ n m))))
+                (if (= (term m) 0)
+                    (term (error /))
+                    (replace (term p) (term hole) (/ (term n) (term m)))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (* (name n number) (name m number)))
-                (replace p hole (* n m)))
+                (replace (term p) (term hole) (* (term n) (term m))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (+ (name n number) (name m number)))
-                (replace p hole (+ n m)))
+                (replace (term p) (term hole) (+ (term n) (term m))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (- (name n number) (name m number)))
-                (replace p hole (- n m)))
+                (replace (term p) (term hole) (- (term n) (term m))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (>= (name n number) (name m number)))
-                (replace p hole (if (>= n m) 'true 'false)))
+                (replace (term p) (term hole) (if (>= (term n) (term m)) 'true 'false)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (= (name n number) (name m number)))
-                (replace p hole (if (= n m) 'true 'false)))
+                (replace (term p) (term hole) (if (= (term n) (term m)) 'true 'false)))
      (reduction lang  
                 (in-hole (name p p-ctxt) ((lambda ((name x variable)) (name body e)) (name arg v)))
-                (replace p hole (ho-contracts-subst x arg body)))
+                (replace (term p) (term hole) (ho-contracts-subst (term x) (term arg) (term body))))
      (reduction lang  
                 (in-hole (name p p-ctxt) 
                          (let (((name vars variable) (name vals v)) ...) (name body e)))
-                (replace p hole
+                (replace (term p) 
+                         (term hole)
                          (foldl
                           ho-contracts-subst
-                          body
-                          vars
-                          vals)))
+                          (term body)
+                          (term (vars ...))
+                          (term (vals ...)))))
      (reduction lang  
                 (in-hole (name p p-ctxt) (name tot (fix (name x variable) (name body e))))
-                (replace p hole (ho-contracts-subst x tot body)))
+                (replace (term p) (term hole) (ho-contracts-subst (term x) (term tot) (term body))))
      (reduction lang  
                 ((name defns
                        ((valrec (name bvar variable) : (name bctc value) = (name brhs value)) ...
                         (valrec (name var variable) : value = (name rhs value))
                         (valrec variable : value = value) ...))
                  (in-hole (name p e-ctxt) (name var variable)))
-                `((,@defns) ,(replace p hole rhs)))
-     (reduction lang  
+                (term (defns ,(replace (term p) (term hole) (term rhs)))))
+     (reduction lang
                 (in-hole (name p p-ctxt) (if true (name thn e) e))
-                (replace p hole thn))
+                (replace (term p) (term hole) (term thn)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (if false e (name els e)))
-                (replace p hole els))
+                (replace (term p) (term hole) (term els)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (hd (cons (name fst v) v)))
-                (replace p hole fst))
+                (replace (term p) (term hole) (term fst)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (hd empty))
-                '(error hd))
+                (term (error hd)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (tl (cons v (name rst v))))
-                (replace p hole rst))
+                (replace (term p) (term hole) (term rst)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (tl empty))
-                '(error tl))
+                (term (error tl)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (mt empty))
-                (replace p hole 'true))
+                (replace (term p) (term hole) 'true))
      (reduction lang  
                 (in-hole (name p p-ctxt) (mt (cons v v)))
-                (replace p hole 'false))
+                (replace (term p) (term hole) 'false))
      (reduction lang  
                 (in-hole (name p p-ctxt) (flatp (contract v)))
-                (replace p hole 'true))
+                (replace (term p) (term hole) 'true))
      (reduction lang  
                 (in-hole (name p p-ctxt) (flatp (--> v v)))
-                (replace p hole 'false))
+                (replace (term p) (term hole) 'false))
      (reduction lang  
                 (in-hole (name p p-ctxt) (pred (contract (name predicate v))))
-                (replace p hole predicate))
+                (replace (term p) (term hole) (term predicate)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (pred (--> v v)))
-                '(error pred))
+                (term (error pred)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (dom (--> (name dm v) v)))
-                (replace p hole dm))
+                (replace (term p) (term hole) (term dm)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (dom (contract v)))
-                '(error dom))
+                (term (error dom)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (rng (--> v (name rg v))))
-                (replace p hole rg))
+                (replace (term p) (term hole) (term rg)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (rng (contract v)))
-                '(error rng))
+                (term (error rng)))
      (reduction lang  
                 (in-hole (name p p-ctxt) (blame (name x variable)))
-                '(error ,x))))
+                (term (error x)))))
   
   (define (pp v port w spec)
     (parameterize ([current-output-port port])

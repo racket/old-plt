@@ -53,6 +53,7 @@
 		   (memq '3m (available-mzscheme-variants))
 		   (directory-exists? (build-path 'up 'up "src" "mzscheme" "gc2")))
 	  (when (or (not (file-exists? (build-path 3m-dir mzssl.so)))
+		    (not (file-exists? (build-path 3m-dir "mzssl.c")))
 		    ((file-or-directory-modify-seconds (build-path 3m-dir 'up mzssl.so))
 		     . > .
 		     (file-or-directory-modify-seconds (build-path 3m-dir mzssl.so))))
@@ -63,25 +64,29 @@
 			       (list
 				"-qr"
 				(build-path 'up 'up "src" "mzscheme" "gc2" "xform.ss")
-				(let ([inc (build-path 'up 'up "include")]
-				      [extras (cond ((getenv "PLT_EXTENSION_LIB_PATHS") =>
-						     (lambda (ext)
-						       (apply string-append
-							      (map (lambda (p)
-								     (format 
-								      " ~a~s"
-								      (if (eq? 'windows (system-type))
-									  " /I"
-									  " -I")
-								      (build-path p "include")))
-								   (path-list-string->path-list ext '())))))
-						    (else ""))])
+				(let* ([inc (build-path 'up 'up "include")]
+				       [fix-path (lambda (s)
+						   (regexp-replace* " " s "\" \""))]
+				       [extras (cond ((getenv "PLT_EXTENSION_LIB_PATHS") =>
+						      (lambda (ext)
+							(apply string-append
+							       (map (lambda (p)
+								      (format 
+								       " ~a~s"
+								       (if (eq? 'windows (system-type))
+									   " /I"
+									   " -I")
+								       (fix-path
+									(build-path p "include"))))
+								    (path-list-string->path-list ext '())))))
+						     (else ""))])
 				  (if (eq? 'windows (system-type))
-				      (format "cl.exe /MT /E /I~s /I~s~a" 
-					      inc
-					      (build-path (collection-path "openssl") "openssl" "include")
+				      (format "cl.exe /MT /E /I~a /I~a~a" 
+					      (fix-path inc)
+					      (fix-path
+					       (build-path (collection-path "openssl") "openssl" "include"))
 					      extras)
-				      (format "gcc -E -DOS_X -I~s~a" inc extras)))
+				      (format "gcc -E -DOS_X -I~a~a" (fix-path inc) extras)))
 				"mzssl.c"
 				(build-path 3m-dir "mzssl.c")))
 			      void))

@@ -47,12 +47,17 @@
 						  (string-length offset-string))
 					       0))))))))))
 
+(define image-dir (vector-ref argv 0))
+(define sys-dir (vector-ref argv 1))
+(define num-skip-args 2)
+(define skip-args cddr)
+
 (define use-print-convert?
   (or (and (defined? 'mzrice:print-convert)
 	   mzrice:print-convert)
-      (and (<= 1 (vector-length argv))
-	   (or (string=? (vector-ref argv 0) "o")
-	       (string=? (vector-ref argv 0) "print-convert")))))
+      (and (< num-skip-args (vector-length argv))
+	   (or (string=? (vector-ref argv num-skip-args) "o")
+	       (string=? (vector-ref argv num-skip-args) "print-convert")))))
 
 (when use-print-convert?
   (reference-library "pconver.ss"))
@@ -62,7 +67,7 @@
 ;; and once to build the userspace unit (primitives for the user)
 ;; this unit should be obsoleted soon...
 (define parameters@
-  (let ([args (vector->list argv)])
+  (let ([args (skip-args (vector->list argv))])
     (unit/sig plt:parameters^
       (import)
       (define case-sensitive? (not (eq? 'a 'A)))
@@ -142,10 +147,6 @@
       (unit aries))))
 
 (invoke-open-unit/sig z@ #f)
-
-(printf "Language: ~a~nImproper lists: ~a~n"
-	params:check-syntax-level
-	params:allow-improper-lists?)
 
 (define system-parameterization (current-parameterization))
 
@@ -307,7 +308,7 @@
 	       (export (open userspace))))])
     (lambda ()
       (current-namespace namespace)
-      (eval `(#%define argv ,argv))
+      (eval `(#%define argv ,(list->vector (skip-args (vector->list argv)))))
       (eval `(#%define read/zodiac ,read/zodiac))
       (invoke-open-unit u@)
       (read-case-sensitive params:case-sensitive?)
@@ -317,5 +318,21 @@
       (current-exception-handler exception-handler)
       (current-load mzrice-load) 
       (current-eval mzrice-eval))))
-(current-parameterization parameterization)
-(require-library-use-compiled #f)
+
+(define (go)
+  (with-handlers ([void void]) ; If it fails, no matter
+    (unless (directory-exists? image-dir)
+	    (make-directory image-dir))
+    (let ([dir (build-path image-dir sys-dir)])
+      (unless (directory-exists? dir)
+	      (make-directory dir))
+      (let ([file (build-path dir "mzrice")])
+	(write-image-to-file file #t))))
+  (printf "Welcome to MzRice version ~a, Copyright (c) 1995-97 PLT~n"
+	  (version))
+  (printf "Language: ~a~nImproper lists: ~a~n"
+	  params:check-syntax-level
+	  params:allow-improper-lists?)
+
+  (current-parameterization parameterization)
+  (require-library-use-compiled #f))

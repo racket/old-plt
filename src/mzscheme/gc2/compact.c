@@ -20,6 +20,9 @@
 #define GROW_ADDITION 500000
 
 #define GENERATIONS 1
+/* Platform-specific disablers (`and'ed with GENERATIONS): */
+#define OS_X_GENERATIONS 0
+#define WIN32_GENERATIONS 0
 
 #ifdef NO_GC_SIGNALS
 # undef GENERATIONS
@@ -29,12 +32,28 @@
 #ifdef OS_X
 # if GENERATIONS
 #  undef GENERATIONS
-#  define GENERATIONS 0
-/* Under OS, the SIGBUS handler seems not to receive the right
+#  define GENERATIONS OS_X_GENERATIONS
+/* Under OS X, the SIGBUS handler seems not to receive the right
    information about the fault. We figured out where the relevant
    information is on the stack --- as an offset from the last argument
    to the handler --- but it's quite a hack.  So we make it easy to
    disable above. */
+# endif
+#endif
+
+#ifdef _WIN32
+# if GENERATIONS
+#  undef GENERATIONS
+#  define GENERATIONS WIN32_GENERATIONS
+/* Under Windows, setting the unhandled-exception handler doesn't work
+   within Windows callbacks. Perhaps in the future we can fix all
+   callbacks to insert an appropriate wrapper. For now, we use
+   AddVectoredExceptionHandler, but that's only available starting
+   with XP, so we make generations easy to disable. */
+#  if GENERATIONS
+    /* Make AddVectoredExceptionHandler available: */
+#   define _WIN32_WINNT 0x0500
+#  endif
 # endif
 #endif
 
@@ -80,7 +99,7 @@ typedef short Type_Tag;
 /* Debugging and performance tools: */
 #define TIME 0
 #define SEARCH 0
-#define CHECKS 0
+#define CHECKS 1
 #define CHECK_STACK_PTRS 0
 #define NOISY 0
 #define MARK_STATS 0
@@ -3409,7 +3428,7 @@ static void check_variable_stack()
     if (var_stack == limit)
       return;
 
-# ifndef _WIN32
+# ifndef XX_WIN32
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
       CRASH(33);
 # endif
@@ -3515,7 +3534,7 @@ static void init(void)
     }
 # endif
 # ifdef NEED_SIGWIN
-    SetUnhandledExceptionFilter(fault_handler);
+    AddVectoredExceptionHandler(TRUE, fault_handler);
 # endif
 #endif
   }

@@ -16,7 +16,7 @@
   ;; The 0 added in the alpha position apparently means "ignore the alpha
   ;;  and use the mask, instead"
   (define (3/2word->integer p)
-    (integer-bytes->integer (bytes-append (read-bytes 3 p) "\0") #f #f))
+    (integer-bytes->integer (bytes-append (read-bytes 3 p) #"\0") #f #f))
 
   (define (integer->word i p)
     (display (integer->integer-bytes i 2 #f #f) p))

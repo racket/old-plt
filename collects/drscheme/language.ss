@@ -351,8 +351,6 @@
 	   (append-separator)
 	   (append-item "Set Library To..."
 			(lambda ()
-			  (printf "library-directory: ~a~n"
-				  (send *library-directory* get))
 			  (let ([lib-file (mred:get-file 
 					   (send *library-directory* get) 
 					   "Select a library" 

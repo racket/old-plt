@@ -31,7 +31,12 @@
   (semaphore-post s)
   (test 7 channel-get ch)
   (test 7 channel-get ch)
-  (test 7 channel-get ch))
+  (test 7 channel-get ch)
+  (test #f channel-try-get ch)
+  (thread (lambda () (channel-put ch 9)))
+  (sleep SYNC-SLEEP-DELAY)
+  (test 9 channel-try-get ch)
+  (test #f channel-try-get ch))
 
 (arity-test make-semaphore-peek 1 1)
 (err/rt-test (make-semaphore-peek #f))

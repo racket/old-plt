@@ -2975,9 +2975,9 @@
       (raise-type-error 'channel-get "channel" ch))
     (object-wait-multiple #f ch))
 
-  (define (channel-peek ch)
+  (define (channel-try-get ch)
     (unless (channel? ch)
-      (raise-type-error 'channel-peek "channel" ch))
+      (raise-type-error 'channel-try-get "channel" ch))
     (object-wait-multiple 0 ch))
 
   (define (channel-put ch val)
@@ -3057,7 +3057,7 @@
 	   path-list-string->path-list find-executable-path
 	   collection-path load/use-compiled current-load/use-compiled
 	   port? not-break-exn? make-guard-waitable
-	   channel-get channel-peek channel-put
+	   channel-get channel-try-get channel-put
 	   find-library-collection-paths
 	   interaction-environment scheme-report-environment null-environment
 	   standard-module-name-resolver))

@@ -520,7 +520,7 @@ static void highlight_border(self)Widget self;
 {
     XRectangle  rect[4];
     Position    x, y;
-    int   w, h;
+    int   w, h, t;
 
     if (((XfwfEnforcerWidget)self)->xfwfCommon.highlightThickness == 0) return;
 
@@ -532,26 +532,27 @@ static void highlight_border(self)Widget self;
 
     w = max(0, w);
     h = max(0, h);
+    t = 1 /*$highlightThickness */;
 
     rect[0].x = x;
     rect[0].y = y;
     rect[0].width = w;
-    rect[0].height = ((XfwfEnforcerWidget)self)->xfwfCommon.highlightThickness;
+    rect[0].height = t;
 
     rect[1].x = x;
     rect[1].y = y;
-    rect[1].width = ((XfwfEnforcerWidget)self)->xfwfCommon.highlightThickness;
+    rect[1].width = t;
     rect[1].height = h;
 
-    rect[2].x = ((XfwfEnforcerWidget)self)->core.width - ((XfwfEnforcerWidget)self)->xfwfCommon.highlightThickness;
+    rect[2].x = ((XfwfEnforcerWidget)self)->core.width - t;
     rect[2].y = y;
-    rect[2].width = ((XfwfEnforcerWidget)self)->xfwfCommon.highlightThickness;
+    rect[2].width = t;
     rect[2].height = h;
 
     rect[3].x = x;
-    rect[3].y = ((XfwfEnforcerWidget)self)->core.height - ((XfwfEnforcerWidget)self)->xfwfCommon.highlightThickness;
+    rect[3].y = ((XfwfEnforcerWidget)self)->core.height - t;
     rect[3].width = w;
-    rect[3].height = ((XfwfEnforcerWidget)self)->xfwfCommon.highlightThickness;
+    rect[3].height = t;
 
     if (!((XfwfEnforcerWidget)self)->xfwfCommon.bordergc) create_bordergc(self);
     XFillRectangles(XtDisplay(self), XtWindow(self), ((XfwfEnforcerWidget)self)->xfwfCommon.bordergc, &rect[0], 4);

@@ -1,7 +1,7 @@
 #
 # 1.0 (Feb 1995)
 #
-# $Id: xwEnforcer.w,v 1.4 1998/12/05 01:08:21 mflatt Exp $
+# $Id: xwEnforcer.w,v 1.5 1999/07/14 23:34:09 mflatt Exp $
 
 @class XfwfEnforcer (XfwfBoard) @file=xwEnforcer
 
@@ -333,7 +333,7 @@ label.
 {
     XRectangle  rect[4];
     Position    x, y;
-    int   w, h;
+    int   w, h, t;
 
     if ($highlightThickness == 0) return;
 
@@ -345,26 +345,27 @@ label.
 
     w = max(0, w);
     h = max(0, h);
+    t = 1 /*$highlightThickness */;
 
     rect[0].x = x;
     rect[0].y = y;
     rect[0].width = w;
-    rect[0].height = $highlightThickness;
+    rect[0].height = t;
 
     rect[1].x = x;
     rect[1].y = y;
-    rect[1].width = $highlightThickness;
+    rect[1].width = t;
     rect[1].height = h;
 
-    rect[2].x = $width - $highlightThickness;
+    rect[2].x = $width - t;
     rect[2].y = y;
-    rect[2].width = $highlightThickness;
+    rect[2].width = t;
     rect[2].height = h;
 
     rect[3].x = x;
-    rect[3].y = $height - $highlightThickness;
+    rect[3].y = $height - t;
     rect[3].width = w;
-    rect[3].height = $highlightThickness;
+    rect[3].height = t;
 
     if (!$bordergc) create_bordergc($);
     XFillRectangles(XtDisplay($), XtWindow($), $bordergc, &rect[0], 4);

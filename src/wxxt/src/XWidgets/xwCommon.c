@@ -818,22 +818,22 @@ static void highlight_border(self)Widget self;
     rect[0].x = 0;
     rect[0].y = 0;
     rect[0].width = ((XfwfCommonWidget)self)->core.width;
-    rect[0].height = ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness;
+    rect[0].height = 1 /* $highlightThickness */;
 
     rect[1].x = 0;
     rect[1].y = 0;
-    rect[1].width = ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness;
+    rect[1].width = 1 /* $highlightThickness */;
     rect[1].height = ((XfwfCommonWidget)self)->core.height;
 
     rect[2].x = ((XfwfCommonWidget)self)->core.width - ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness;
     rect[2].y = 0;
-    rect[2].width = ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness;
+    rect[2].width = 1 /* $highlightThickness */;
     rect[2].height = ((XfwfCommonWidget)self)->core.height;
 
     rect[3].x = 0;
     rect[3].y = ((XfwfCommonWidget)self)->core.height - ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness;
     rect[3].width = ((XfwfCommonWidget)self)->core.width;
-    rect[3].height = ((XfwfCommonWidget)self)->xfwfCommon.highlightThickness;
+    rect[3].height = 1 /* $highlightThickness */;
 
     if (!((XfwfCommonWidget)self)->xfwfCommon.bordergc) create_bordergc(self);
     XFillRectangles(XtDisplay(self), XtWindow(self), ((XfwfCommonWidget)self)->xfwfCommon.bordergc, &rect[0], 4);

@@ -184,7 +184,7 @@ The html-eval-ok parameter controls the evaluation of
      resolving `url' as a relative URL.
      `url' may also be a port. If it is, relative-to-url must be #f.
 
-     The `progres-proc' procedure is called with a boolean at the
+     The `progress-proc' procedure is called with a boolean at the
      point where the URL has been resolved and enough progress has
      been made to dismiss any message that the URL is being
      resolved. The procedure is called with #t if the URL will be

@@ -396,7 +396,6 @@
 	  (sequence
 	    (when (send mred:icon:icon ok?)
 	      (set-icon mred:icon:icon))
-	    (do-title)
-	    (mred:autosave:register-autosave this)))))
+	    (do-title)))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%)))

@@ -17,23 +17,6 @@
       (define (path-string->string s)
 	(if (string? s) s (path->string s)))
 
-      ;; this will be the part that should replace xxxxxxx's in file names
-      (define filename-version-part
-        (cond [(regexp-match #rx"^([0-9]+(?:p[0-9])?)(?:[.]([0-9]+))?$"
-                             (version))
-               => (lambda (m)
-                    (let ([major (cadr m)] [minor (or (caddr m) #"")])
-                      (string-append major "_"
-                                     (make-string (- (string-length "xxxxxxx")
-                                                     1
-                                                     (string-length major)
-                                                     (string-length minor))
-                                                  #\0)
-                                     minor)))]
-              [else (error 'filename-version-part
-                           "unexpected version string: ~s"
-                           (version))]))
-
       ;; ---- Find a linker for this platform --------------------
 
       (define (get-windows-linker)

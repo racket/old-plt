@@ -290,7 +290,7 @@
    ;; effect: prints out the context surrounding the exception
    (define (print-error-trace p x)
      (let loop ([n (error-context-display-depth)]
-		[l (exn-debug-info x)])
+		[l (continuation-mark-set->list (exn-continuation-marks x) key)])
        (cond
 	 [(or (zero? n) (null? l)) (void)]
 	 [(pair? l)
@@ -329,10 +329,5 @@
 		 (lambda () (set! current-file f))
 		 (lambda () (load f))
 		 (lambda () (set! current-file cf)))))])
-      errortrace-load-handler))
-   
-   (debug-info-handler
-    (let ([errortrace-debug-info-handler
-	   (lambda () (current-continuation-marks key))])
-      errortrace-debug-info-handler))))
+      errortrace-load-handler))))
  

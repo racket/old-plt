@@ -218,11 +218,16 @@ static int do_cpp_array_object(void *p, int fixup)
   gc *obj;
   size_t s;
 
-  size = orig_size - 1;
+  size = orig_size;
   s = size / (*(long *)pp);
   
+  /* FIXME: the count stuff is probably g++-specific: */
   // skip count
   pp++;
+#if gcALIGN_DOUBLE
+  // double alignment...
+  pp++;
+#endif
 
   while (size > 0) {
     obj = (gc *)pp;
@@ -284,7 +289,7 @@ void *GC_cpp_malloc(size_t size)
     initize();
   }
 
-  p = GC_malloc_one_tagged(size + sizeof(long));
+  p = GC_malloc_one_tagged(size + sizeof(align_ty));
 
   ((short *)p)[0] = scheme_rt_cpp_object;
   ((short *)p)[1] = (short)gcBYTES_TO_WORDS(size);
@@ -310,7 +315,7 @@ void *GC_cpp_malloc_array(size_t size)
     initize();
   }
 
-  p = GC_malloc_one_tagged(size + sizeof(long));
+  p = GC_malloc_one_tagged(size + sizeof(align_ty));
 
   ((short *)p)[0] = scheme_rt_cpp_array_object;
   ((short *)p)[1] = (short)gcBYTES_TO_WORDS(size);

@@ -250,16 +250,19 @@
   
   (current-eval
    (let* ([orig (current-eval)]
+	  [ns (current-namespace)]
           [errortrace-eval-handler
            (lambda (e)
-	     (let* ([ex (expand e)]
-		    [a (if (or (compiled-expression? (if (syntax? e) 
-							 (syntax-e e) 
-							 e))
-			       (not (instrumenting-enabled)))
-			   e
-			   (annotate-top ex #f))])
-	       (orig a)))])
+	     (if (eq? ns (current-namespace))
+		 (let* ([ex (expand e)]
+			[a (if (or (compiled-expression? (if (syntax? e) 
+							     (syntax-e e) 
+							     e))
+				   (not (instrumenting-enabled)))
+			       e
+			       (annotate-top ex #f))])
+		   (orig a))
+		 (orig e)))])
      errortrace-eval-handler))
   
   (define (cleanup v)

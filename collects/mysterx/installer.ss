@@ -1,7 +1,7 @@
 (module installer mzscheme
   (require (lib "process.ss"))
 
-  (define installer
+  (define post-installer
     (lambda (mx-path) 
       (if (not (eq? (system-type) 'windows))
 	  (fprintf (current-error-port) 

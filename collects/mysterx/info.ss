@@ -10,6 +10,7 @@
      "MysterX also has a programmable Web browser with support for "
      "Dynamic HTML."))
   (define compile-omit-files '("mxdemo.ss"))
-  (define install-collection "installer.ss")
+  ;; (define install-collection "installer.ss")
+  (define post-install-collection "installer.ss")
   (define release-version "207")
   (define release-iteration "0"))

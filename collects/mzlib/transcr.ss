@@ -1,6 +1,6 @@
 
 (module transcr mzscheme
-  (require (lib "thread.ss"))
+  (require (lib "port.ss"))
   (provide (rename -transcript-on transcript-on)
 	   (rename -transcript-off transcript-off))
 

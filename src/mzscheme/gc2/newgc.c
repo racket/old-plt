@@ -47,7 +47,7 @@
 #define INIT_GEN0_SIZE (1 * 1024 * 1024)
 #define GEN0_GROW_FACTOR 2
 #define GEN0_GROW_ADDITION (1 * 1024 * 1024)
-#define MAX_GEN0_SIZE (128 * 1024 * 1024)
+#define MAX_GEN0_SIZE (64 * 1024 * 1024)
 #define GENERATIONS 2
 
 /* This is the log base 2 of the size of one word, given in bytes */

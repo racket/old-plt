@@ -775,10 +775,8 @@ int wx_read_png(char *file_name, wxBitmap *bm, int w_mask, wxColour *bg)
        
        if (wxGetPreference("gamma", buf, 30)) {
 	 screen_gamma = (double)atof(buf);
-#ifdef MPW_CPLUS
        } else if ((gamma_str = getenv("SCREEN_GAMMA"))) {
 	 screen_gamma = (double)atof(gamma_str);
-#endif
        } else
 	 screen_gamma = 0;
        

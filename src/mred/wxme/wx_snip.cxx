@@ -2066,7 +2066,7 @@ Bool wxBufferDataClassList::Read(wxMediaStreamIn *f)
       return FALSE;
 
     dl = new wxDataClassLink;
-    dl->d = null;
+    dl->d = NULL;
     dl->mapPosition = i + 1;
     dl->next = f->dl;
     f->dl = dl;
@@ -2092,8 +2092,8 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(wxMediaStream *f, sh
 	  char buffer2[256];
 	  sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", dl->name);
 	  wxmeError(buffer2);
-	} elese
-	    dl->d = sclass;
+	} else
+	  dl->d = sclass;
 	dl->name = NULL;
       }
 

@@ -32,6 +32,7 @@
       (define-struct (article-not-in-group nntp) (article))
       (define-struct (no-group-selected nntp) ())
       (define-struct (article-not-found nntp) (article))
+      (define-struct (authentication-rejected nntp) ())
 
       ;; signal-error :
       ;; (exn-args ... -> exn) x format-string x values ... ->
@@ -107,6 +108,38 @@
 			      "unexpected dis-connect response: ~s ~s"
 			      code response)
 		code response))))))
+
+      ;; authenticate-user :
+      ;; communicator x user-name x password -> ()
+      ;; the password is not used if the server does not ask for it.
+
+      (define authenticate-user
+        (lambda (communicator user password)
+          (define (reject code response)
+            ((signal-error make-authentication-rejected
+                           "authentication rejected (~s ~s)"
+                           code response)))
+          (define (unexpected code response)
+            ((signal-error make-unexpected-response
+                           "unexpected response for authentication: ~s ~s"
+                           code response)
+             code response))
+          (send-to-server communicator "AUTHINFO USER ~a" user)
+          (let-values (((code response)
+                        (get-single-line-response communicator)))
+            (case code
+              ((281) (void)) ; server doesn't ask for a password
+              ((381)
+               (send-to-server communicator "AUTHINFO PASS ~a" password)
+               (let-values (((code response)
+                             (get-single-line-response communicator)))
+                 (case code
+                   ((281) (void)) ; done
+                   ((502) (reject code response))
+                   (else (unexpected code response)))))
+              ((502) (reject code response))
+              (else (reject code response)
+                    (unexpected code response))))))
 
       ;; send-to-server :
       ;; communicator x format-string x list (values) -> ()

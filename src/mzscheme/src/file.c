@@ -1309,7 +1309,7 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
   
   return scheme_false;
 #else
-  if (file_exists(dest) || directory_exists(dest))
+  if (scheme_file_exists(dest) || scheme_directory_exists(dest))
     return scheme_false;
   
   if (!rename(src, dest))

@@ -113,14 +113,14 @@
 		   (begin
 ;		     (pretty-print (format "structure-provides: ~a" structure-provides))
 ;		     (pretty-print (format "all bindings: ~a" all-bindings))
-		     (set! structure-number (+ 1 structure-number))
+;		     (set! structure-number (+ 1 structure-number))
 		     
-		   #`(begin
-		       (structure #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))) #,(map datum->syntax-object (repeat (current-compile-context) (length structure-provides)) (map string->symbol structure-provides)) (begin #,@(<flatten> all-bindings)))
-		       (open #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))))
-		       (make-<voidstruct> #f))
-		   )))]
-;		 all-bindings)))]
+;		   #`(begin
+;		       (structure #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))) #,(map datum->syntax-object (repeat (current-compile-context) (length structure-provides)) (map string->symbol structure-provides)) (begin #,@(<flatten> all-bindings)))
+;		       (open #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))))
+;		       (make-<voidstruct> #f))
+;		   )))]
+		 all-bindings)))]
 	      [($ ast:pstr_type stdlist)
 	       (map compile-typedecl stdlist)]
 	      [($ ast:pstr_eval expr lsrc)
@@ -485,12 +485,18 @@
        (if (and rec
 		(not (ast:pexp_function? (ast:expression-pexp_desc (cdr binding)))))
 	   (raise-syntax-error #f "This kind of expression is not allowed on right hand side of let rec" (at (cdr binding) (ast:expression-pexp_src (cdr binding))))
-	   (let ([varpat (get-varpat (car binding) #t)]
-		 [val (compile-ml (cdr binding) context)])
-	     #`(begin
+	   (begin
+	     (set! structure-provides null)
+	     (let ([varpat (get-varpat (car binding) #t)]
+		   [val (compile-ml (cdr binding) context)])
+	       (begin
 ;		 (#,(create-syntax #f `match-define (build-src lsrc)) #,varpat #,val)
-		 (match-define #,varpat #,val)
-		 (make-<voidstruct> #f)))))
+		 (set! structure-number (+ 1 structure-number))
+		     
+		 #`(begin
+		     (structure #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))) #,(map datum->syntax-object (repeat (current-compile-context) (length structure-provides)) (map string->symbol structure-provides)) (match-define #,varpat #,val))
+		     (open #,(datum->syntax-object (current-compile-context) (string->symbol (format "foo~a" structure-number))))
+		     #,val))))))
 
 
      (define (compile-let rec bindings finalexpr context ksrc isrc)

@@ -74,7 +74,10 @@
 						   (vars (cdr names) (cdr variants))))))])
 		    (vars (tvariant-varnames type) (tvariant-variantlist type))))]
 	 [(tlist? type)
-	  (format "~a list" (ml-tstyle (tlist-type type)))]
+	  (format "~a list" (let ([ns (ml-tstyle (tlist-type type))])
+			      (if (<tuple>? (tlist-type type))
+				  (format "(~a)" ns)
+				  ns)))]
 	 [(arrow? type)
 	  (if (> (length (arrow-arglist type)) 1)
 	      "Bad function!"
@@ -88,10 +91,12 @@
 						     (format "~a" (ml-tstyle (car tlist))))])
 				    (if (null? (cdr tlist))
 					fstring
-					(format "~a, ~a" fstring (<tuple>format (cdr tlist))))))])
+					(format "~a * ~a" fstring (<tuple>format (cdr tlist))))))])
 	    (<tuple>format (<tuple>-list type)))]
 	 [(tvar? type)
 	  (tvar-tbox type)]
+	 [(usertype? type)
+	  (usertype-name type)]
 	 [(syntax? type)
 	  "Why the hell is a type a sytnax object?"]
 	 [else type]))
@@ -104,23 +109,28 @@
 			[(ftype) (acc-proc value 0)])
 		       (string-append (format "~a" name-sym)
 				      (cond
-;				       [(<tuple>? ftype) (ml-style ftype)]
+				       [(<tuple>? ftype) (format " (~a) " (ml-style ftype))]
 				       [(not ftype) ""]
-				       [else (format " (~a)" (ml-style ftype))])))]
+				       [else (format " ~a" (ml-style ftype))])))]
 			
-	 [(option? value)
-	  (if (<voidstruct>? (option-type value))
-	      "None"
-	      (format "Some ~a" (ml-style (option-type value))))]
+	 [(|Some|? value) (format "Some ~a" (let [(ns (ml-style (|Some|-tlist value)))]
+					      (if (<tuple>? (|Some|-tlist value))
+						  (format "(~a)" ns)
+						  ns)))]
+	 [(|None|? value) "None"]
 	 [(box? value) (format "{contents = ~a}" (ml-style (unbox value)))]
 	 [(<unit>? value) "()"]
 	 [(list? value)
 	  (letrec ([listformat (lambda (clist)
 				 (if (null? clist)
 				     "]"
-				     (if (null? (cdr clist))
-					 (format "~a~a" (ml-style (car clist)) (listformat (cdr clist)))
-					 (format "~a; ~a" (ml-style (car clist)) (listformat (cdr clist))))))])
+				     (let* ([ns (ml-style (car clist))]
+					    [tns (if (<tuple>? (car clist))
+						     (format "(~a)" ns)
+						     ns)])
+				       (if (null? (cdr clist))
+					   (format "~a~a" tns (listformat (cdr clist)))
+					   (format "~a; ~a" tns (listformat (cdr clist)))))))])
 	    (string-append "[" (listformat value)))]
 	 [(procedure? value) ;(begin (pretty-print (format "procedure ~a" value))
 				    "<fun>"

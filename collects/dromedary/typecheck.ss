@@ -351,7 +351,7 @@
 	     ;(pretty-print "typecheckdefines called")
 	     (let ([contextwithbindings (typecheck-bindings rec bindings context)])
 	       (begin 
-		 ;(pretty-print (format "contextwithbindings: ~a" contextwithbindings))
+;		 (pretty-print (format "contextwithbindings: ~a" contextwithbindings))
 		 (set! cur-var #\a)
 		 (let ([definedtypes (reverse (map car (map unconvert-tvars (map car (map cdr contextwithbindings)) (repeat null (length contextwithbindings)))))])
 		   (begin
@@ -420,6 +420,7 @@
 		   (let* ([btype (typecheck-ml (cdr binding) context)]
 			  [newcont
 			  (patcheck context btype rpat)])
+;		     (pretty-print (format "btype is: ~a, newtype is: ~a" btype newcont))
 		     (if (null? newcont)
 		       ;(pretty-print (format "patcheck result in typecheck-binding ~a" newcont))
 			 `(,(cons #f (cons btype #f)))
@@ -614,7 +615,9 @@
 					 (raise-syntax-error #f "Constructor expects an argument" (at pat (ast:pattern-ppat_src pat))))
 				     (if (null? (tconstructor-argtype cpat-type))
 					 (raise-syntax-error #f "Constructor expects no arguments" (at pat (ast:pattern-ppat_src pat)))
-					 (cons (tconstructor-result cpat-type) (cdr (funenv cpat)))))
+					 (cons (tconstructor-result cpat-type) (let ([fenvpat (funenv cpat)])
+										 (when (unify (tconstructor-argtype cpat-type) (car fenvpat) (at cpat (ast:pattern-ppat_src cpat)))
+										       (cdr fenvpat))))))
 				 (if (null? cpat)
 				     (cons cpat-type (empty-context))
 				     (raise-syntax-error #f "Constructor expects no arguments" (at pat (ast:pattern-ppat_src pat)))))

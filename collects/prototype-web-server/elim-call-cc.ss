@@ -8,7 +8,7 @@
   ;;
   ;; program ::= definition* expr
   ;;
-  ;; definition ::= (define-values (var ...) expr)
+  ;; definition ::= (define-values (var) expr)
   ;;
   ;; expr ::= w
   ;;       |  (if w expr)

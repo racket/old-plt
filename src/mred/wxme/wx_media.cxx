@@ -3223,7 +3223,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
   if (start <= 0) {
     if (wholeLine) {
       if (x)
-	*x = firstLine->paragraph->leftMarginFirst;
+	*x = firstLine->GetLeftLocation(maxWidth);
       if (y) {
 	*y = firstLine->GetLocation();
 	if (!top)
@@ -3244,13 +3244,8 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
     line = lastLine;
 
     if (wholeLine || !len) {
-      if (x) {
-	*x = line->w;
-	if (line->flags & WXLINE_STARTS_PARA)
-	  *x += line->paragraph->leftMarginFirst;
-	else
-	  *x += line->GetParagraphStyle()->leftMargin;
-      }
+      if (x)
+	*x = line->GetRightLocation(maxWidth);
       if (y) {
 	*y = lastLine->GetLocation();
 	if (!top)
@@ -3278,11 +3273,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
   writeLocked = TRUE;
   flowLocked = TRUE;
 
-  if (line->flags & WXLINE_STARTS_PARA)
-    horiz = line->paragraph->leftMarginFirst;
-  else
-    horiz = line->GetParagraphStyle()->leftMargin;
-
+  horiz = line->GetLeftLocation(maxWidth);
   topy = line->GetLocation();
 
   start -= line->GetPosition();

@@ -270,6 +270,7 @@ class wxMediaEdit : public wxMediaBuffer
   long LastParagraph(void);
   
   void SetParagraghMargins(long i, float firstLeft, float left, float right);
+  void SetParagraghAlignment(long i, int align);
 
   void GetExtent(float *w, float *h);
   float GetDescent(void);

@@ -391,6 +391,50 @@ static Scheme_Object *bundle_symset_direction(int v) {
 }
 
 
+# define Sym_RIGHT 1
+# define Sym_CENTER 0
+# define Sym_LEFT -1
+static Scheme_Object *horizontalAlignment_Sym_LEFT_sym = NULL;
+static Scheme_Object *horizontalAlignment_Sym_RIGHT_sym = NULL;
+static Scheme_Object *horizontalAlignment_Sym_CENTER_sym = NULL;
+
+static void init_symset_horizontalAlignment(void) {
+  horizontalAlignment_Sym_LEFT_sym = scheme_intern_symbol("left");
+  horizontalAlignment_Sym_RIGHT_sym = scheme_intern_symbol("right");
+  horizontalAlignment_Sym_CENTER_sym = scheme_intern_symbol("center");
+}
+
+static int unbundle_symset_horizontalAlignment(Scheme_Object *v, const char *where) {
+  if (!horizontalAlignment_Sym_CENTER_sym) init_symset_horizontalAlignment();
+  if (0) { }
+  else if (v == horizontalAlignment_Sym_LEFT_sym) { return Sym_LEFT; }
+  else if (v == horizontalAlignment_Sym_RIGHT_sym) { return Sym_RIGHT; }
+  else if (v == horizontalAlignment_Sym_CENTER_sym) { return Sym_CENTER; }
+  if (where) scheme_wrong_type(where, "horizontalAlignment symbol", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_horizontalAlignment(Scheme_Object *v, const char *where) {
+  if (!horizontalAlignment_Sym_CENTER_sym) init_symset_horizontalAlignment();
+  if (0) { }
+  else if (v == horizontalAlignment_Sym_LEFT_sym) { return 1; }
+  else if (v == horizontalAlignment_Sym_RIGHT_sym) { return 1; }
+  else if (v == horizontalAlignment_Sym_CENTER_sym) { return 1; }
+  if (where) scheme_wrong_type(where, "horizontalAlignment symbol", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_horizontalAlignment(int v) {
+  if (!horizontalAlignment_Sym_CENTER_sym) init_symset_horizontalAlignment();
+  switch (v) {
+  case Sym_LEFT: return horizontalAlignment_Sym_LEFT_sym;
+  case Sym_RIGHT: return horizontalAlignment_Sym_RIGHT_sym;
+  case Sym_CENTER: return horizontalAlignment_Sym_CENTER_sym;
+  default: return NULL;
+  }
+}
+
+
 
 static Scheme_Object *bufferType_wxEDIT_BUFFER_sym = NULL;
 static Scheme_Object *bufferType_wxPASTEBOARD_BUFFER_sym = NULL;
@@ -3464,6 +3508,26 @@ static Scheme_Object *os_wxMediaEditFindString(Scheme_Object *obj, int n,  Schem
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaEditSetParagraghAlignment(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  nnlong x0;
+  int x1;
+
+  
+  x0 = objscheme_unbundle_nonnegative_integer(p[0], "set-paragraph-alignment in text%");
+  x1 = unbundle_symset_horizontalAlignment(p[1], "set-paragraph-alignment in text%");
+
+  
+  ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->SetParagraghAlignment(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaEditSetParagraghMargins(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6014,7 +6078,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class, "text%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 132);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 133);
 
  scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-clickback", os_wxMediaEditSetClickback, 3, 5);
@@ -6057,6 +6121,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-snip", os_wxMediaEditFindSnip, 2, 3);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all", os_wxMediaEditFindStringAll, 1, 6);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string", os_wxMediaEditFindString, 1, 6);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "set-paragraph-alignment", os_wxMediaEditSetParagraghAlignment, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-paragraph-margins", os_wxMediaEditSetParagraghMargins, 4, 4);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "last-paragraph", os_wxMediaEditLastParagraph, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-line", os_wxMediaEditParagraphEndLine, 1, 1);

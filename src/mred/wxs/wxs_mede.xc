@@ -59,6 +59,15 @@
 @SYM "backward" : Sym_BACKWARD
 @ENDSYMBOLS
 
+# define Sym_RIGHT 1
+# define Sym_CENTER 0
+# define Sym_LEFT -1
+@BEGINSYMBOLS horizontalAlignment > ONE
+@SYM "left" : Sym_LEFT
+@SYM "right" : Sym_RIGHT
+@SYM "center" : Sym_CENTER
+@ENDSYMBOLS
+
 @INCLUDE wxs_fcs.xci
 @INCLUDE wxs_bmt.xci
 
@@ -156,6 +165,7 @@
 @ "last-paragraph" : long LastParagraph();
 
 @ "set-paragraph-margins" : void SetParagraghMargins(nnlong,nnfloat,nnfloat,nnfloat);
+@ "set-paragraph-alignment" : void SetParagraghAlignment(nnlong,SYM[horizontalAlignment]);
 
 @MACRO bNegAsFalse = (({x} < 0) ? scheme_false : scheme_make_integer({x}))
 

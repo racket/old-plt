@@ -839,7 +839,7 @@ Bool wxMediaLine::UpdateFlow(wxMediaLine **root,
 
     Bool firstLine;
     wxMediaParagraph *para = GetParagraphStyle(&firstLine);
-    float lineMaxWidth = para->GetLineWidth(maxWidth, firstLine);
+    float lineMaxWidth = para->GetLineMaxWidth(maxWidth, firstLine);
 
     if (media->CheckFlow(lineMaxWidth, dc, GetLocation(), GetPosition(), snip)) {
       wxSnip *asnip;
@@ -1125,6 +1125,41 @@ wxMediaLine *wxMediaLine::Last()
 
 /***************************************************************/
 
+float wxMediaLine::GetLeftLocation(float maxWidth)
+{
+  int left;
+  wxMediaParagraph *para;
+
+  if (flags & WXLINE_STARTS_PARA) {
+    para = paragraph;
+    left = para->leftMarginFirst;
+  } else {
+    para = GetParagraphStyle();
+    left = para->leftMargin;
+  }
+
+  if (para->alignment != WXPARA_LEFT) {
+    if (maxWidth > 0) {
+      float delta = maxWidth - w;
+      if (delta < 0)
+	delta = 0;
+      if (para->alignment == WXPARA_RIGHT)
+	left += delta;
+      else
+	left += (delta / 2);
+    }
+  }
+
+  return left;
+}
+
+float wxMediaLine::GetRightLocation(float maxWidth)
+{
+  return GetLeftLocation(maxWidth) + w;
+}
+
+/***************************************************************/
+
 wxMediaParagraph *wxMediaParagraph::Clone()
 {
   wxMediaParagraph *paragraph = new wxMediaParagraph();
@@ -1137,7 +1172,7 @@ wxMediaParagraph *wxMediaParagraph::Clone()
   return paragraph;
 }
 
-float wxMediaParagraph::GetLineWidth(float maxWidth, Bool first)
+float wxMediaParagraph::GetLineMaxWidth(float maxWidth, Bool first)
 {
   if (maxWidth <= 0)
     return maxWidth;

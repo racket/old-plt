@@ -430,10 +430,7 @@ long wxMediaEdit::_FindPositionInLine(Bool internal, long i, float x,
 
   line = lineRoot->FindLine(i);
 
-  if (line->flags & WXLINE_STARTS_PARA)
-    x -= line->paragraph->leftMarginFirst;
-  else
-    x -= line->GetParagraphStyle()->leftMargin;
+  x -= line->GetLeftLocation(maxWidth);
 
   if (ateol)
     *ateol = FALSE;
@@ -1827,7 +1824,6 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
 			 int show_caret, int show_xsel)
 {
   wxMediaLine *line;
-  wxMediaParagraph *para;
   wxSnip *snip, *first, *last;
   float x, topbase, bottombase, hxs, hxe, hsxs, hsxe, hsys, hsye, down, bottom;
   float tleftx, tstarty, trightx, tendy;
@@ -1898,10 +1894,6 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
   dc->SetBackgroundMode(wxSOLID);
 
   line = lineRoot->FindLocation(starty);
-  if (line)
-    para = line->GetParagraphStyle();
-  else
-    para = NULL;
 
   if (skipBox != this) {
     wxPen *savePen = dc->GetPen();
@@ -1946,11 +1938,7 @@ void wxMediaEdit::Redraw(wxDC *dc, float starty, float endy,
     first = line->snip;
     last = line->lastSnip->next;
 
-    if (line->paragraph) {
-      para = line->paragraph;
-      x = para->leftMarginFirst;
-    } else
-      x = para->leftMargin;
+    x = line->GetLeftLocation(maxWidth);
     
     bottombase = ycounter + line->bottombase;
     topbase = ycounter + line->topbase;
@@ -2830,6 +2818,44 @@ void wxMediaEdit::SetParagraghMargins(long i, float firstLeft, float left, float
       end = ParagraphEndPosition(i);
       NeedRefresh(start, end);
     }
+
+    RefreshByLineDemand();
+  }
+}
+
+void wxMediaEdit::SetParagraghAlignment(long i, int align)
+{
+  switch(align) {
+  case 1:
+    align = WXPARA_RIGHT;
+    break;
+  case 0:
+    align = WXPARA_CENTER;
+    break;
+  case -1:
+  default:
+    align = WXPARA_LEFT;
+    break;
+  }
+  
+  wxMediaLine *l;
+  wxMediaParagraph *p;
+
+  if (i < 0)
+    i = 0;
+  
+  l = lineRoot->FindParagraph(i);
+  if (l) {
+
+    p = l->paragraph->Clone();
+    l->paragraph = p;
+
+    p->alignment = align;
+
+    int start, end;
+    start = ParagraphStartPosition(i);
+    end = ParagraphEndPosition(i);
+    NeedRefresh(start, end);
 
     RefreshByLineDemand();
   }

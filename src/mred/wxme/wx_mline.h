@@ -85,6 +85,9 @@ class wxMediaLine
   wxMediaLine *First();
   wxMediaLine *Last();
 
+  float GetLeftLocation(float maxWidth);
+  float GetRightLocation(float maxWidth);
+
  private:
   void AdjustOffsets(wxMediaLine *newchild);
   void DeadjustOffsets(wxMediaLine *oldchild);
@@ -111,5 +114,5 @@ class wxMediaParagraph
   int alignment;
 
   wxMediaParagraph *Clone();
-  float GetLineWidth(float maxWidth, Bool first);
+  float GetLineMaxWidth(float maxWidth, Bool first);
 };

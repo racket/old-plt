@@ -3,10 +3,17 @@
   (require
    (lib "contract.ss")
    (lib "mred.ss" "mred")
-   (lib "ast.ss" "profj"))
+   (lib "ast.ss" "profj")
+   (lib "types.ss" "profj"));added
   
   (define loc? any?)
   (define gj-info? any?)
+  
+  ;added
+  (define type?
+    (union (symbols 'null 'string 'boolean 'char 'byte 'short 'int 'long 'float 'double 'void)
+           ref-type?
+           array-type?))
   
   (define member?
     (union var-decl?
@@ -16,7 +23,10 @@
            class-def?
            interface-def?))
   
-  (define expression?
+  ;changed
+  (define expression? expr?)
+  
+  #;(define expression?
     (union literal?
            bin-op?
            access?
@@ -78,16 +88,16 @@
                    (all-tail? boolean?)
                    (src opt-src?)))
    (struct block ((stmts (listof (union var-decl? var-init? statement?))) (src opt-src?)))
-   (make-call ((union type-spec? false?)
+   (make-call ((union type? false?) ;changed
                opt-src?
                (union expression? false?)
-               (union name? special-name?)
+               (union name? id? special-name?);changed
                (listof expression?)
-               (union any? #;method-record? false?)
+               (union method-record? false?)
                . -> .
                call?))
-   (make-special-name ((union false? type-spec?) opt-src? string? . -> . special-name?))
-   (make-assignment ((union false? type-spec?)
+   (make-special-name ((union false? type?) opt-src? string? . -> . special-name?))
+   (make-assignment ((union false? type?);changed (and above)
                      opt-src?
                      (union access? array-access?)
                      symbol?
@@ -95,7 +105,7 @@
                      opt-src?
                      . -> .
                      assignment?))
-   (make-access ((union false? type-spec?)
+   (make-access ((union false? type?) ;changed
                  opt-src?
                  (union (listof id?) field-access? local-access?)
                  . -> .

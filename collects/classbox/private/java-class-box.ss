@@ -8,9 +8,9 @@
    (lib "etc.ss")
    (lib "list.ss")
    (lib "framework.ss" "framework")
-   (lib "gui-editor-snip.ss" "alignment")
+   (lib "aligned-pasteboard.ss" "embedded-gui")
    (lib "parser.ss" "profj")
-   (lib "button-snip.ss" "test-suite" "private")
+   (lib "button-snip.ss" "embedded-gui")
    (lib "match.ss")
    "contracted-ast.ss")
   

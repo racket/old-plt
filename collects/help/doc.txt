@@ -229,7 +229,7 @@ _Creating Help Desk Documentation in doc.txt files_
 
 Help Desk reads the files named doc.txt in each top-level
 collection. Additionally, if the info.ss file contains a
-definition of _doc-sub-collection_ bound to a list of
+definition of _doc-sub-collections_ bound to a list of
 strings naming immediate subcollections, those
 sub-collections are also searched for doc.txt files.
 

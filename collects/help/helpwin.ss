@@ -135,6 +135,21 @@
 						 (unless (is-a? (page->editor new-page) results-editor%)
 						   (stop-search))
 						 (super-leaving-page page new-page))]
+					      [filter-notes
+					       (lambda (l)
+						 (let ([lib (ormap (lambda (s)
+								     (let ([m (regexp-match "MzLib=(.*)" s)])
+								       (and m
+									    (format "Mz/Mr: load with (require-library \"~a.ss\")"
+										    (cadr m)))))
+								   l)])
+						   (if lib
+						       (string-append
+							(if (member "Core" l)
+							    ""
+							    "Beg/Int/Adv: not available   ")
+							lib)
+						       "")))]
 					      [on-navigate stop-search])
 					    (sequence (super-init #t (send f get-area-container))))))
 	  (define results (send html-panel get-canvas))

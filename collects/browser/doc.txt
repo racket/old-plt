@@ -142,7 +142,7 @@ document (and "Here" is boldfaced).
 
   The mixin adds a initialization argument, info-line?, which is a
   boolean indicating whether the browser should contain a line to
-  display special "MZINFO" tags in a page. These tags are used
+  display special "DOCNOTE" tags in a page. Such tags are used
   primarily by the PLT documentation.
 
   The mixin adds the following instance variables:
@@ -171,6 +171,11 @@ document (and "Here" is boldfaced).
      panel that the hypertext page changed. The `page' is #f
      if `new-page' is the first page for the canvas. See also
      `page->editor' (decsribed below).
+
+>   filter-notes :: (send o filter-notes list-of-strings)
+     Given the notes from a page as a list of strings (where
+     each string is a note), returns a single string to print
+     above the page.
 
 ----------------------------------------
 

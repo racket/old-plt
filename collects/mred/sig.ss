@@ -90,6 +90,7 @@
          queue-callback
          yield
          eventspace-shutdown?
+         get-panel-background
          button%
          canvas%
          check-box%

@@ -166,6 +166,15 @@ next section.
       function in the "collection.ss" library of the "make"
       collection.
 
+>  (compile-directory-extension path info-function)
+
+      Like `compile-collection-extension', but compiles the given 
+      directory rather than a collection. Also takes an info
+      function (the result of `get-info' or `get-info/full'; see 
+      the setup collection's documentation for more information)
+      that will be used to guide compilation instead of looking for
+      an info.ss file in the directory.
+
 >  (compile-collection-zos collection sub-collection ...)
 
       Compiles the specified (sub-)collection files to .zo files.
@@ -181,6 +190,16 @@ next section.
 
       The compilation process is driven by the `managed-compile-zo'
       function in the "cm.ss" library of the "mzlib" collection.
+
+>  (compile-directory-zos path info-function)
+
+      Like `compile-collection-zos', but compiles the given directory
+      rather than a collection. Also takes an info function (the
+      result of `get-info' or `get-info/full'; see the setup
+      collection's documentation for more information) that will be
+      used to guide compilation instead of looking for an info.ss file
+      in the directory.
+
 
  Loading compiler support
  ------------------------

@@ -2,6 +2,7 @@
 
   (import [GUI : GUI^]
 	  [SOLVE : SOLVE^]
+	  mzlib:pretty-print^
 	  mred^)
 
   (define-struct problem (name rows cols solution))
@@ -17,13 +18,16 @@
 	  (semaphore-post semaphore))])
       (sequence (super-init name))))
   
-  (define frame (make-object sema-frame% "Paint by Numbers"))
+  (define game-name "Paint by Numbers")
+
+  (define frame (make-object sema-frame% game-name))
 
   (define menu-bar (make-object menu-bar% frame))
   (define file-menu (make-object menu% "File" menu-bar))
-  (make-object menu-item% "Close" file-menu (lambda (_1 _2)
-					      (send frame show #f)
-					      (semaphore-post semaphore)))
+  (make-object menu-item% "Open..." file-menu (lambda (_1 _2) (open)) #\o)
+  (define save-item (make-object menu-item% "Save..." file-menu (lambda (_1 _2) (save)) #\s))
+  (make-object menu-item% "Save As..." file-menu (lambda (_1 _2) (save-as)))
+  (make-object menu-item% "Close" file-menu (lambda (_1 _2) (close)) #\c)
   (define edit-menu (make-object menu% "Edit" menu-bar))
   (make-object menu-item% "Undo" edit-menu (lambda (_1 _2) (send canvas undo)) #\z)
   (make-object menu-item% "Redo" edit-menu (lambda (_1 _2) (send canvas redo)) #\y)
@@ -44,7 +48,59 @@
   (define canvas #f)
   (define problem #f)
   
+  (define (close)
+    (send frame show #f)
+    (semaphore-post semaphore))
+
+  (define filename #f)
+  (define (update-filename new-name)
+    (set! filename new-name)
+    (let* ([short-name (if new-name
+			   (let-values ([(_1 name _2) (split-path new-name)])
+			     name)
+			   #f)]
+	   [new-label (if short-name
+			  (format "~a - ~a" short-name game-name)
+			  game-name)])
+      (unless (string=? new-label (send frame get-label))
+	(send frame set-label new-label))))
+
+  (define (do-save filename)
+    (update-filename filename)
+    (send save-item enable #t)
+    (call-with-output-file filename
+      (lambda (port)
+	(pretty-print
+	 (list (problem-name problem)
+	       (problem-cols problem)
+	       (problem-rows problem)
+	       (problem-solution problem)
+	       (send canvas get-grid))
+	 port))
+      'truncate))
+  (define (save)
+    (when filename
+      (do-save filename)))
+
+  (define (save-as)
+    (let ([filename (put-file)])
+      (when filename
+	(do-save filename))))
+
+  (define (open)
+    (let ([filename (get-file)])
+      (when filename
+	(let* ([state (call-with-input-file filename read)]
+	       [name (car state)])
+	  (set-problem (make-problem name (cadr state) (caddr state) (cadddr state)))
+	  (send choice set-string-selection name)
+	  (send canvas set-grid (car (cddddr state)))
+	  (send canvas on-paint)
+	  (update-filename filename)))))
+	    
   (define (set-problem prlmb)
+    (update-filename #f)
+    (send save-item enable #f)
     (send frame change-children (lambda (x) (list top-panel)))
     (send frame stretchable-width #f)
     (send frame stretchable-height #f)

@@ -1,5 +1,3 @@
-(require-library "errortrace.ss" "errortrace")
-
 #|
 
 types:
@@ -14,6 +12,7 @@ types:
 |#
 
 (require-library "functios.ss")
+(require-library "prettys.ss")
 (require-library "spidey.ss")
 
 (define-signature GUI^ (paint-by-numbers-canvas%))

@@ -1263,7 +1263,7 @@ static void check_hash_table_flags(const char *name, int i, int argc, Scheme_Obj
       j = 1;
     else {
       scheme_wrong_type(name, "'weak or 'equal", i, argc, argv);
-      return NULL;
+      return;
     }
 
     if (flags[j])

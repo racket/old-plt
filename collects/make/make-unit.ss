@@ -121,7 +121,7 @@
 						  (string-append " because " reason " changed")]
 						 [else
 						  (string-append 
-						   (format " just because (reason: ~a date: ~a)" 
+						   (format " because (reason: ~a date: ~a)" 
 							   reason date))])
 						""))
 				    (with-handlers ([not-break-exn?

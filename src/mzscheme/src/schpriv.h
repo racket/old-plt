@@ -1929,8 +1929,6 @@ Scheme_Object *scheme_file_buffer(int argc, Scheme_Object *argv[]);
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);
 #endif
 
-Scheme_Object *scheme_call_enable_break(Scheme_Prim *prim, int argc, Scheme_Object *argv[]);
-
 Scheme_Object *scheme_get_special(Scheme_Object *inport, Scheme_Object *stxsrc, long line, long col, long pos, 
 				  Scheme_Object **exn);
 void scheme_bad_time_for_special(const char *name, Scheme_Object *port);

@@ -1887,6 +1887,11 @@ force_close_input_port(Scheme_Object *port)
   scheme_force_port_closed = 0;
 }
 
+int scheme_close_should_force_port_closed()
+{
+  return scheme_force_port_closed;
+}
+
 /****************************** main output writer ******************************/
 
 long

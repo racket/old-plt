@@ -1,4 +1,15 @@
 
+Version 203.1
+Changed equal? to compare hash tables by determining whether
+ they map the same keys to equal? values
+Changed hash-table? to accept 'weak and/or 'equal and return
+ #t only if the first argument is a hash table created with
+ the corresponding flag(s)
+Deprecated normal-case-path
+Changed the symbolic name for a file-based module to be
+ determined without using normal-case-path
+ 
+
 Version 203, December 2002
 Added support for structure types whose instances act as
  procedures

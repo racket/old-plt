@@ -50,6 +50,8 @@
   scheme_extension_table->scheme_waitable_needs_wakeup = scheme_waitable_needs_wakeup;
   scheme_extension_table->scheme_object_wait_multiple = scheme_object_wait_multiple;
   scheme_extension_table->scheme_add_swap_callback = scheme_add_swap_callback;
+  scheme_extension_table->scheme_call_enable_break = scheme_call_enable_break;
+  scheme_extension_table->scheme_close_should_force_port_closed = scheme_close_should_force_port_closed;
   scheme_extension_table->scheme_signal_error = scheme_signal_error;
   scheme_extension_table->scheme_raise_exn = scheme_raise_exn;
   scheme_extension_table->scheme_warning = scheme_warning;

@@ -9,21 +9,20 @@
 
 (define plplotlibdir (get-ffi-obj "plplotLibDir" libplplot _string))
 
-;; set the lib dir to contain the fonts. 
+;; set the lib dir to contain the fonts.
 (set-ffi-obj! "plplotLibDir" libplplot _string
-              (path->string (this-expression-source-directory)))
+  (path->string (this-expression-source-directory)))
 
 (define _plflt _double*)
 (define _plint _int)
 
 (define (_list-of type . len?)
-    (let ([len (and (pair? len?) (car len?))])
-      (make-ctype _pointer
-        (lambda (l) (list->cblock l type))
-        (if len
-          (lambda (b) (cblock->list b type len))
-          (lambda (b) (error "this list type does not specify a size"))))))
-
+  (let ([len (and (pair? len?) (car len?))])
+    (make-ctype _pointer
+      (lambda (l) (list->cblock l type))
+      (if len
+        (lambda (b) (cblock->list b type len))
+        (lambda (b) (error "this list type does not specify a size"))))))
 
 (define (_matrix-of type)
   (_list-of (_list-of type)))

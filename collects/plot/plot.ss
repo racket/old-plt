@@ -76,7 +76,7 @@
    error-bars
    points
    line
-   (rename vector-field field)
+   vector-field
    contour
    shade
    ; 3d-rendereres

@@ -44,12 +44,6 @@
 (when use-print-convert?
   (reference-library "pconver.ss"))
 
-(reference-library (begin-elaboration-time
-		     (build-path plt-dir "lib" "require.ss")))
-(plt:require-library "ariesu.ss")
-(plt:require-library "sparamu.ss")
-(plt:require-library "userspcu.ss")
-
 (reference
   (begin-elaboration-time
     (build-path plt-dir "zodiac" "zsigs")))
@@ -57,12 +51,16 @@
   (begin-elaboration-time
     (build-path plt-dir "zodiac" "sigs")))
 
-(printf "Got here~n") (flush-output)
-
 (define zodiac:system@
   (reference-unit/sig
     (begin-elaboration-time
       (build-path plt-dir "zodiac" "link"))))
+
+(reference-library (begin-elaboration-time
+		     (build-path plt-dir "lib" "require.ss")))
+(plt:require-library "ariesu.ss")
+(plt:require-library "sparamu.ss")
+(plt:require-library "userspcu.ss")
 
 (invoke-open-unit/sig plt:mzscheme-parameters@ params)
 

@@ -12,6 +12,7 @@
 #include "wx_dcpr.h"
 #endif
 #include "wx_rgn.h"
+#include <math.h>
 
 #ifdef wx_msw
 # define USE_GL

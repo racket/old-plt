@@ -113,7 +113,6 @@ class wxbDC: public wxObject
   virtual void DrawArc(double x1,double y1,double x2,double y2,double xc,double yc)=0;
   virtual void DrawPoint(double x, double y) = 0;
   virtual void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0) = 0;
-  virtual void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0) = 0;
   virtual void DrawLines(wxList *list, double xoffset = 0, double yoffset = 0);
   virtual void DrawPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE) = 0;
   virtual void DrawPolygon(wxList *list, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE);

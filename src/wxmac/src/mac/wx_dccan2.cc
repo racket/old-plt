@@ -478,46 +478,6 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
-{
-  if (!Ok() || !cMacDC) return;
-  
-  if (n <= 0) return;
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
-    Point *xpoints;
-    int i, j, dpx, dpy;
-    PolyHandle thePolygon;
-
-    SetCurrentDC();
-    wxMacSetCurrentTool(kPenTool);
-    
-    xpoints = new Point[n];
-    
-    dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
-    dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
-
-    for (i = 0; i < n; i++) {
-      xpoints[i].h = XLOG2DEV(points[i].x + xoffset);
-      xpoints[i].v = YLOG2DEV(points[i].y + yoffset);
-      CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset); // WCH: not in original??
-    }
-    
-    thePolygon = OpenPoly();
-    MoveTo(xpoints[0].h + SetOriginX - dpx, xpoints[0].v + SetOriginY - dpy);
-    for (j = 1; j < n; j++) {
-      LineTo(xpoints[j].h + SetOriginX - dpx, xpoints[j].v + SetOriginY - dpy);
-    }
-    ClosePoly();
-      
-    FramePoly(thePolygon);
-    
-    KillPoly(thePolygon);
-
-    ReleaseCurrentDC();
-  }
-}
-
-//-----------------------------------------------------------------------------
 void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 {
   if (!Ok() || !cMacDC) return;

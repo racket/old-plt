@@ -24,7 +24,6 @@ wxbWindow::wxbWindow(void)
   wx_cursor = NULL /* wxSTANDARD_CURSOR */;
   children = new wxChildList;
   paintingEnabled = TRUE;
-  doubleClickAllowed = 0 ;
   winCaptured = FALSE;
   internal_disabled = 0;
   is_shown = 1;

@@ -34,6 +34,25 @@ wxbFont::~wxbFont ()
 {
 }
 
+char *wxbFont::GetFaceString(void)
+{
+  /* If it's one of the portable faceless fonts, return NULL */
+  switch (GetFamily())
+  {
+  case wxDECORATIVE:
+  case wxROMAN:
+  case wxSCRIPT:
+  case wxSWISS:
+  case wxMODERN:
+  case wxTELETYPE:
+  case wxSYSTEM:
+  case wxSYMBOL:
+    return NULL;
+  default:
+    return wxTheFontNameDirectory->GetFontName(fontid); 
+  }
+}
+
 // Colour
 
 wxColour::wxColour (void)
@@ -280,7 +299,6 @@ wxInitializeStockObjects (void)
   wxREGGLOB(wxTheBrushList);
   wxREGGLOB(wxThePenList);
   wxREGGLOB(wxTheFontList);
-  wxREGGLOB(wxTheBitmapList);
 
   wxREGGLOB(wxNORMAL_FONT);
   wxREGGLOB(wxSMALL_FONT);

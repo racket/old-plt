@@ -63,14 +63,14 @@ class wxbFont: public wxObject
   Bool underlined;
  public:
   wxbFont(void);
-  /* MATTHEW: [4] New font system */
   wxbFont(int PointSize, int FamilyOrFontId, int Style, int Weight, 
 	  Bool underline = FALSE);
   ~wxbFont();
 
   inline int GetPointSize(void) { return point_size; }
   inline int GetFamily(void) { return family; }
-  inline int GetFontId(void) { return fontid; } /* MATTHEW: [4] New font system */
+  char *GetFaceString(void);
+  inline int GetFontId(void) { return fontid; }
   inline int GetStyle(void) { return style; }
   inline int GetWeight(void) { return weight; }
   inline Bool GetUnderlined(void) { return underlined; }

@@ -107,8 +107,6 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
 
   SetName(name);
 
-  is_retained = ((style & wxRETAINED) == wxRETAINED);
-
   if (wxSubType(parent->__type, wxTYPE_PANEL)) {
     wxPanel *parentPanel = (wxPanel *)parent;
     parentPanel->GetValidPosition(&x,&y);

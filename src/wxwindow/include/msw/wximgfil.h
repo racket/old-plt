@@ -111,9 +111,7 @@ public:
   BOOL SetColourMap(wxColourMap* colourmap);
   BOOL SetColourMap(ushort n, byte *r, byte *g, byte *b);
   BOOL SetColourMap(ushort n, ushort array_width, byte **array);
-  wxColourMap* GetColourMap() { return ColourMap; }
-
-
+  
 // Iterators
   Bool ItOK () { return (0 <= ItCount && ItCount < Height); }
   void reset ();

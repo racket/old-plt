@@ -1600,8 +1600,16 @@ void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
   event->rightDown = (flags & MK_RBUTTON);
   event->SetTimestamp(last_msg_time);
 
-  if (wx_window && is_canvas)
-    wx_window->CaptureMouse();
+  if (wx_window && is_canvas) {
+    if ((evttype == wxEVENT_TYPE_LEFT_DOWN)
+	|| (evttype == wxEVENT_TYPE_MIDDLE_DOWN)
+	|| (evttype == wxEVENT_TYPE_RIGHT_DOWN))
+      wx_window->CaptureMouse();
+    if ((evttype == wxEVENT_TYPE_LEFT_UP)
+	|| (evttype == wxEVENT_TYPE_MIDDLE_UP)
+	|| (evttype == wxEVENT_TYPE_RIGHT_UP))
+      wx_window->ReleaseMouse();
+  }
 
   last_x_pos = event->x; last_y_pos = event->y; last_event = evttype;
   if (wx_window)

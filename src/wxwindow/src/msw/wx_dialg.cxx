@@ -18,9 +18,6 @@
 #define wxDIALOG_DEFAULT_X 300
 #define wxDIALOG_DEFAULT_Y 300
 
-extern void wxCreatedWindow(wxWindow *w);
-extern void wxDestroyedWindow(void *context, wxWindow *w);
-
 class wxDialogWnd : public wxSubWnd
 {
 public:
@@ -145,8 +142,6 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   handle = (char *)wnd;
   SetWindowText(wnd->handle, Title);
 
-  wxCreatedWindow(this);
-
   wx_cursor = wxSTANDARD_CURSOR;  
 
   modal = Modal;
@@ -163,8 +158,6 @@ wxDialogBox::~wxDialogBox()
   if (wnd) {
     ShowWindow(wnd->handle, SW_HIDE);
   }
-
-  wxDestroyedWindow(context, this);
 }
 
 void wxDialogBox::Fit(void)

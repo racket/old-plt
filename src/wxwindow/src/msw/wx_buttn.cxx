@@ -50,7 +50,7 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
 {
   if (bitmap) {
     if (!bitmap->Ok() || (bitmap->selectedIntoDC < 0))
-      return Create(panel, Function, "<bad-image>", x, y, width, height, style, name);
+      return Create(panel, Function, "<bad-image>", NULL, x, y, width, height, style, name);
     
     bitmap->selectedIntoDC++;
     bm_label = bitmap;

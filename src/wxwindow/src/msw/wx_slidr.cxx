@@ -30,12 +30,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
            int min_value, int max_value, int width, int x, int y, long style, char *name)
 {
   SetName(name);
-  if (panel) panel->AddChild(this);
-  buttonFont = panel->buttonFont ;
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonColour = panel->buttonColour ;
+  panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
   wxWnd *cparent = NULL;

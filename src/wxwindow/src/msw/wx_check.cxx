@@ -81,8 +81,6 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
     SendMessage((HWND)wx_button,WM_CHANGEBITMAP,
 		(WPARAM)0xFFFF,
 		(LPARAM)bitmap->ms_bitmap);
-
-    SubclassControl(wx_button);
   } else {
     isFafa = FALSE;
     checkWidth = -1;
@@ -95,6 +93,8 @@ Bool wxCheckBox::Create(wxPanel *panel, wxFunction func, char *Title, wxBitmap *
     Ctl3dSubclassCtl(wx_button);
 #endif
   }
+
+  SubclassControl(wx_button);
 
   ms_handle = (HANDLE)wx_button;
 

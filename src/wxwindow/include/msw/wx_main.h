@@ -46,9 +46,6 @@ class wxApp: public wxbApp
   virtual BOOL DoMessage(void);
   virtual BOOL ProcessMessage(MSG* pMsg);
   virtual BOOL OnIdle(void);
-
-  // Windows specific. Intercept keyboard input.
-  virtual Bool OnCharHook(wxKeyEvent *event);
 };
 
 extern HINSTANCE wxhInstance;

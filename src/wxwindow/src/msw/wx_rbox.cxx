@@ -109,10 +109,10 @@ wxRadioBox::wxRadioBox(wxPanel *panel, wxFunction func,
                        int x, int y, int width, int height,
                        int N, wxBitmap **Choices,
                        int MajorDim,long style, char *name):
-  wxbRadioBox(panel, func, Title, x, y, width, height, N, NULL, Choices,
+  wxbRadioBox(panel, func, Title, x, y, width, height, N, Choices,
               MajorDim, style, name)
 {
-  Create(panel, func, Title, x, y, width, height, N, Choices, MajorDim, style, name);
+  Create(panel, func, Title, x, y, width, height, N, NULL, Choices, MajorDim, style, name);
 }
 
 Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
@@ -186,23 +186,20 @@ Bool wxRadioBox::Create(wxPanel *panel, wxFunction func,
       char tmp[32];
       sprintf(tmp, "Toggle%d", i);
       
-      if (bmChoices[i]->Ok() && (bmChoices[i]->selectedIntoDC >= 0)) {
-	bm_labels[i] = bmChoices[i];
-	bm_labels[i]->selectedIntoDC++;
-	radioButtons[i] = wxwmCreateWindowEx(0, FafaChck, tmp,
-					     groupStyle | BITRADIO_FLAGS,
-					     0, 0, 0, 0,
-					     the_handle, (HMENU)newId, wxhInstance, NULL);
-	SubclassRadioButton(radioButtons[i], this, i);
+      bm_labels[i] = bmChoices[i];
+      bm_labels[i]->selectedIntoDC++;
+      radioButtons[i] = wxwmCreateWindowEx(0, FafaChck, tmp,
+					   groupStyle | BITRADIO_FLAGS,
+					   0, 0, 0, 0,
+					   the_handle, (HMENU)newId, wxhInstance, NULL);
 	
-	SetBitmapDimensionEx(bmChoices[i]->ms_bitmap,
-			     bmChoices[i]->GetWidth(),
-			     bmChoices[i]->GetHeight(),
-			     NULL);
-	SendMessage((HWND)radioButtons[i],WM_CHANGEBITMAP,
-		    (WPARAM)0xFFFF,
-		    (LPARAM)bmChoices[i]->ms_bitmap);
-      } 
+      SetBitmapDimensionEx(bmChoices[i]->ms_bitmap,
+			   bmChoices[i]->GetWidth(),
+			   bmChoices[i]->GetHeight(),
+			   NULL);
+      SendMessage((HWND)radioButtons[i],WM_CHANGEBITMAP,
+		  (WPARAM)0xFFFF,
+		  (LPARAM)bmChoices[i]->ms_bitmap);
     } else {
       radioWidth[i] = radioHeight[i] = -1 ;
       radioButtons[i] = wxwmCreateWindowEx(0, RADIO_CLASS, Choices[i],

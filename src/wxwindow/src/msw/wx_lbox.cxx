@@ -50,18 +50,12 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        int N, char **Choices, long style, char *name)
 {
   SetName(name);
-  if (panel) panel->AddChild(this);
-  buttonFont = panel->buttonFont ;
-  labelFont = panel->labelFont ;
-  backColour = panel->backColour ;
-  labelColour = panel->labelColour ;
-  buttonColour = panel->buttonColour ;
+  panel->AddChild(this);
   multiple = Multiple & wxMULTIPLE_MASK;
   wxWinType = wxTYPE_HWND;
   windowStyle = style;
-  wxWnd *cparent = NULL;
-  if (panel)
-    cparent = (wxWnd *)(panel->handle);
+
+  wxWnd *cparent = (wxWnd *)(panel->handle);
 
   labelPosition = panel->label_position;
   panel->GetValidPosition(&x, &y);

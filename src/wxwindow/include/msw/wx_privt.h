@@ -105,17 +105,7 @@ public:
     virtual void OnDropFiles(WPARAM wParam);
 
     // Canvas-type events
-    virtual void OnLButtonDown(int x, int y, UINT flags);
-    virtual void OnLButtonUp(int x, int y, UINT flags);
-    virtual void OnLButtonDClick(int x, int y, UINT flags);
-
-    virtual void OnMButtonDown(int x, int y, UINT flags);
-    virtual void OnMButtonUp(int x, int y, UINT flags);
-    virtual void OnMButtonDClick(int x, int y, UINT flags);
-
-    virtual void OnRButtonDown(int x, int y, UINT flags);
-    virtual void OnRButtonUp(int x, int y, UINT flags);
-    virtual void OnRButtonDClick(int x, int y, UINT flags);
+    virtual void OnButton(int x, int y, UINT flags, int evttype);
 
     virtual void OnMouseMove(int x, int y, UINT flags);
     virtual void OnMouseEnter(int x, int y, UINT flags);

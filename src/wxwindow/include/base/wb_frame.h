@@ -76,8 +76,6 @@ class wxbFrame: public wxWindow
   virtual Bool Iconized(void) = 0;
   virtual void Maximize(Bool maximize) = 0;
 
-  virtual void LoadAccelerators(char *table) = 0;
-
   // Call this to simulate a menu command
   virtual void Command(long id);
   virtual void ProcessCommand(long id);

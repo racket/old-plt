@@ -55,6 +55,8 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
                    int x, int y, int width, int height, int N, char **Choices,
                    long style, char *name)
 {
+  panel->AddChild(this);
+
   SetName(name);
   no_strings = N;
 
@@ -100,11 +102,11 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction func, char *Title,
 
   SubclassControl(wx_combo);
 
-  HDC the_dc = GetWindowDC((HWND)ms_handle) ;
+  HDC the_dc = GetWindowDC((HWND)ms_handle);
   if (panel->buttonFont && panel->buttonFont->GetInternalFont(the_dc))
-    SendMessage((HWND)ms_handle,WM_SETFONT,
-                (WPARAM)panel->buttonFont->GetInternalFont(the_dc),0L);
-  ReleaseDC((HWND)ms_handle,the_dc) ;
+    SendMessage((HWND)ms_handle, WM_SETFONT,
+                (WPARAM)panel->buttonFont->GetInternalFont(the_dc), 0L);
+  ReleaseDC((HWND)ms_handle,the_dc);
 
   int i;
   for (i = 0; i < N; i++)

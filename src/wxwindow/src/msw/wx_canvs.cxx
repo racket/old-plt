@@ -17,9 +17,7 @@ extern char wxCanvasClassName[];
 
 wxCanvas::wxCanvas (void)
 {
-  is_retained = 0;
   wxWinType = wxTYPE_XWND;
-  is_retained = FALSE;
   clipping = FALSE;
   handle = NULL;
   window_parent = NULL;
@@ -41,11 +39,8 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
 {
   SetName(name);
 
-  is_retained = ((style & wxRETAINED) == wxRETAINED);
-
   wxWinType = wxTYPE_XWND;
   windowStyle = style;
-  is_retained = FALSE;
   clipping = FALSE;
   wxWnd *cparent = NULL;
   if (parent)

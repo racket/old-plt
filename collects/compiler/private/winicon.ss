@@ -148,6 +148,8 @@
 	      (printf "~a~n" name))))))))
 
   (define-struct icon (desc data))
+  ;; desc is (list width height colors 0 planes bitcount)
+  ;; data is (cons pos string)
   
   (define (num-colors l)
     (let ([n (caddr l)])
@@ -294,7 +296,18 @@
 						where)])
 			      (file-position p icon-pos)
 			      (cons icon-pos
-				    (read-string size p))))))
+				    (read-string size p)))))
+                         ;; If colors, planes, and bitcount are all 0,
+                         ;;  get the info from the DIB data
+                         (let ([desc (icon-desc icon)])
+                           (when (and (zero? (list-ref desc 2))
+                                      (zero? (list-ref desc 4))
+                                      (zero? (list-ref desc 5)))
+                             (let ([bi (bitmapinfo icon)])
+                               (set-car! (list-tail desc 4)
+                                         (list-ref bi 3))
+                               (set-car! (list-tail desc 5)
+                                         (list-ref bi 4))))))
 		       icons)
 	     icons)))
        (lambda ()

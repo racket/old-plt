@@ -1141,7 +1141,7 @@ PROCEDURES -----------------------------------------------------------
   newline (not CRLF). The procedure returns when it encounters an
   end-of-file from `input-port'.
 
-> (base64-dencode-stream input-port output-port) -> void
+> (base64-decode-stream input-port output-port) -> void
 
   Reads a Base 64 encoding from `input-port' and writes the decoded
   result to `output-port'. The procedure returns when it encounters an

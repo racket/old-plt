@@ -205,7 +205,7 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("current-continuation-marks", 
 			     scheme_make_prim_w_arity(cc_marks,  
 						      "current-continuation-marks", 
-						      1, 2),
+						      1, 1),
 			     env);
 
   scheme_add_global_constant("void", scheme_void_func, env);  
@@ -1865,12 +1865,10 @@ static Scheme_Object *
 cc_marks(int argc, Scheme_Object *argv[])
 {
   Scheme_Process *p = scheme_current_process;
-  Scheme_Object *first = scheme_null, *last = NULL, *key, *skip;
-  MZ_MARK_POS_TYPE pos = (MZ_MARK_POS_TYPE)0;
+  Scheme_Object *first = scheme_null, *last = NULL, *key;
   Scheme_Cont_Mark *find;
 
   key = argv[0];
-  skip = (argc > 1) ? argv[1] : NULL;
 
   /* Find existing mark record for this key: */
   find = MZ_CONT_MARK_STACK;
@@ -1883,21 +1881,11 @@ cc_marks(int argc, Scheme_Object *argv[])
       if (find->key == key) {
 	Scheme_Object *pr = scheme_make_pair(find->val, scheme_null);
 
-	if (pos && skip) {
-	  if ((long)find->pos < ((long)pos) - 1) {
-	    Scheme_Object *pr = scheme_make_pair(skip, scheme_null);
-	    SCHEME_CDR(last) = pr;
-	    last = pr;
-	  }
-	}
-
 	if (last)
 	  SCHEME_CDR(last) = pr;
 	else
 	  first = pr;
 	last = pr;
-
-	pos = find->pos;
       }
       find++;
     }

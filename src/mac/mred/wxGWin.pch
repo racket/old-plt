@@ -7,10 +7,14 @@
  */
 
 #ifdef __MWERKS__
-  #ifdef __powerc
-    #pragma precompile_target ":wxGHeadersPPC"
+  #ifdef OS_X
+  	#pragma precompile_target ":wxGHeadersOSX"
   #else
-    #pragma precompile_target ":wxGHeaders68K" 
+    #ifdef __powerc
+      #pragma precompile_target ":wxGHeadersPPC"
+    #else
+      #pragma precompile_target ":wxGHeaders68K" 
+    #endif
   #endif
 #endif
 
@@ -18,19 +22,10 @@
   #define TARGET_API_MAC_CARBON 1
   #define OPAQUE_TOOLBOX_STRUCTS 1
   #define PM_USE_SESSION_APIS 0
-
-  //#define USE_SENORA_GC 1
-  //#define SGC_STD_DEBUGGING 1
-    
   #include <Carbon/Carbon.h>
 #else
   #define ACCESSOR_CALLS_ARE_FUNCTIONS 1
-  //#include <MacHeaders.h>
   #include <QuickDraw.h>
-  //EXTERN_API(WindowRef) GetWindowFromPort(CGrafPtr port);
-  //extern RgnHandle GetPortVisibleRegion(CGrafPtr port, RgnHandle visRgn);
-  //EXTERN_API( Rect *)GetControlBounds(ControlRef control, Rect *bounds);
-  
 #endif
 
 #define macintosh
@@ -45,11 +40,8 @@ extern int wxOutOfMemory();
 #define OPERATOR_NEW_ARRAY
 
 #ifndef OS_X
-
   #include "wx.h"
-  
   #include <string.h>
-  
 #endif
 
 #undef GUSI

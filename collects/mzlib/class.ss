@@ -1644,7 +1644,7 @@
   (define (find-with-method object name)
     (find-method/who 'with-method object name))
 
-  (define-syntax with-methods
+  (define-syntax with-method
     (lambda (stx)
       (syntax-case stx ()
 	[(_ ([id (obj-expr name)] ...) body0 body1 ...)
@@ -1652,12 +1652,12 @@
 	       [names (syntax->list (syntax (id ...)))])
 	   (for-each (lambda (id name)
 		       (unless (identifier? id)
-			 (raise-syntax-error 'with-methods
+			 (raise-syntax-error 'with-method
 					     "not an identifier for binding"
 					     stx
 					     id))
 		       (unless (identifier? name)
-			 (raise-syntax-error 'with-methods
+			 (raise-syntax-error 'with-method
 					     "not an identifier for method name"
 					     stx
 					     name)))
@@ -1686,7 +1686,7 @@
 			  'ok]
 			 [_else
 			  (raise-syntax-error 
-			   'with-methods
+			   'with-method
 			   "binding clause is not of the form (identifier (object-expr method-identifier))"
 			   stx
 			   clause)]))
@@ -1694,16 +1694,16 @@
 	   ;; If we get here, the body must be bad
 	   (if (stx-null? (syntax body))
 	       (raise-syntax-error 
-		'with-methods
+		'with-method
 		"empty body"
 		stx)
 	       (raise-syntax-error 
-		'with-methods
+		'with-method
 		"bad syntax (illegal use of `.')"
 		stx)))]
 	[(_ x . rest)
 	 (raise-syntax-error 
-	  'with-methods
+	  'with-method
 	  "not a binding sequence"
 	  stx
 	  (syntax x))])))
@@ -1868,7 +1868,7 @@
 	   interface interface?
 	   object% object?
 	   make-object instantiate
-	   send send* make-class-field-accessor make-class-field-mutator with-methods
+	   send send* make-class-field-accessor make-class-field-mutator with-method
 	   (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface

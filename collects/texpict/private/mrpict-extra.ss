@@ -161,17 +161,17 @@
       (define (render dc h+top l dx dy)
 	(define b&w? #f)
 	
-	(with-methods ([draw-line (dc draw-line)]
-		       [draw-spline (dc draw-spline)]
-		       [draw-ellipse (dc draw-ellipse)]
-		       [get-pen (dc get-pen)]
-		       [get-brush (dc get-brush)]
-		       [get-text-foreground (dc get-text-foreground)]
-		       [set-pen (dc set-pen)]
-		       [set-brush (dc set-brush)]
-		       [set-text-foreground (dc set-text-foreground)]
-		       [find-or-create-pen (the-pen-list find-or-create-pen)]
-		       [find-or-create-brush (the-brush-list find-or-create-brush)])
+	(with-method ([draw-line (dc draw-line)]
+		      [draw-spline (dc draw-spline)]
+		      [draw-ellipse (dc draw-ellipse)]
+		      [get-pen (dc get-pen)]
+		      [get-brush (dc get-brush)]
+		      [get-text-foreground (dc get-text-foreground)]
+		      [set-pen (dc set-pen)]
+		      [set-brush (dc set-brush)]
+		      [set-text-foreground (dc set-text-foreground)]
+		      [find-or-create-pen (the-pen-list find-or-create-pen)]
+		      [find-or-create-brush (the-brush-list find-or-create-brush)])
 
 	  (set-brush (find-or-create-brush "black" 'solid))
 	  

@@ -150,7 +150,8 @@ static Scheme_Object *parse_requires(Scheme_Object *form,
 				     Scheme_Object *rn,
 				     Check_Func ck, void *data,
 				     int start, Scheme_Object *redef_modname,
-				     int unpack_kern, int copy_vars);
+				     int unpack_kern, int copy_vars,
+				     int *all_simple);
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime, Scheme_Object *cycle_list);
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime, Scheme_Object *cycle_list);
 static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Object *cycle_list);
@@ -817,7 +818,7 @@ static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int 
   rn = scheme_make_module_rename(for_exp, 1, NULL);
 
   (void)parse_requires(form, scheme_false, env, rn, 
-		       NULL, NULL, !etonly, NULL, 1, copy);
+		       NULL, NULL, !etonly, NULL, 1, copy, NULL);
 
   brn = env->rename;
   if (!brn) {
@@ -1073,6 +1074,34 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
+static int add_require_renames(Scheme_Object *rn, Scheme_Module *im, Scheme_Object *idx)
+{
+  int i, saw_mb;
+  Scheme_Object **exs, **exss, **exsns, *midx;
+
+  saw_mb = 0;
+
+  exs = im->provides;
+  exsns = im->provide_src_names;
+  exss = im->provide_srcs;
+  for (i = im->num_provides; i--; ) {
+    if (exss && !SCHEME_FALSEP(exss[i]))
+      midx = scheme_modidx_shift(exss[i], im->src_modidx, idx);
+    else
+      midx = idx;
+    scheme_extend_module_rename(rn, midx, exs[i], exsns[i], idx, exs[i]);
+    if (SAME_OBJ(exs[i], module_begin_symbol))
+      saw_mb = 1;
+  }
+  
+  if (im->reprovide_kernel) {
+    scheme_extend_module_rename_with_kernel(rn, idx);
+    saw_mb = 1;
+  }
+
+  return saw_mb;
+}
+
 static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
 {
   Scheme_Env *menv, *env;
@@ -1104,6 +1133,48 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
   if (!menv->rename) {
     if (menv->module->rn_stx) {
       Scheme_Object *v, *rn;
+
+      if (SAME_OBJ(scheme_true, menv->module->rn_stx)) {
+	/* Reconstruct renames based on defns and requires */
+	int i;
+	Scheme_Module *m = menv->module, *im;
+	Scheme_Object *l, *idx;
+	Scheme_Hash_Table *mn_ht;
+
+	if (menv->marked_names)
+	  mn_ht = menv->marked_names;
+	else {
+	  mn_ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	  menv->marked_names = mn_ht;
+	}
+
+	rn = scheme_make_module_rename(0, 0, mn_ht);
+
+	/* Local, provided: */
+	for (i = 0; i < m->num_provides; i++) {
+	  if (SCHEME_FALSEP(m->provide_srcs[i])) {
+	    name = m->provides[i];
+	    scheme_extend_module_rename(rn, m->self_modidx, name, name, m->self_modidx, name);
+	  }
+	}
+	/* Local, not provided: */
+	for (i = 0; i < m->num_indirect_provides; i++) {
+	  name = m->indirect_provides[i];
+	  scheme_extend_module_rename(rn, m->self_modidx, name, name, m->self_modidx, name);
+	}
+
+	/* Required: */
+	for (l = menv->require_names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	  idx = SCHEME_CAR(l);
+	  im = (Scheme_Module *)scheme_hash_get(menv->module_registry, idx);
+	 
+	  add_require_renames(rn, im, idx);
+	}
+	
+	rn = scheme_rename_to_stx(rn);
+	menv->module->rn_stx = rn;
+      }
+
       v = scheme_stx_to_rename(menv->module->rn_stx);
       rn = scheme_make_module_rename(0, 0, NULL);
       scheme_append_module_rename(v, rn);
@@ -1115,6 +1186,34 @@ static Scheme_Object *module_to_namespace(int argc, Scheme_Object *argv[])
   if (!menv->exp_env->rename) {
     if (menv->module->et_rn_stx) {
       Scheme_Object *v, *rn;
+
+      if (SAME_OBJ(scheme_true, menv->module->et_rn_stx)) {
+	/* Reconstruct renames based on defns and requires */
+	Scheme_Module *im;
+	Scheme_Object *l, *idx;
+	Scheme_Hash_Table *mn_ht;
+
+	if (menv->exp_env->marked_names)
+	  mn_ht = menv->exp_env->marked_names;
+	else {
+	  mn_ht = scheme_make_hash_table(SCHEME_hash_ptr);
+	  menv->exp_env->marked_names = mn_ht;
+	}
+
+	rn = scheme_make_module_rename(0, 0, mn_ht);
+
+	/* Required for syntax: */
+	for (l = menv->et_require_names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	  idx = SCHEME_CAR(l);
+	  im = (Scheme_Module *)scheme_hash_get(menv->module_registry, idx);
+	 
+	  add_require_renames(rn, im, idx);
+	}
+
+	rn = scheme_rename_to_stx(rn);
+	menv->module->et_rn_stx = rn;
+      }
+
       v = scheme_stx_to_rename(menv->module->et_rn_stx);
       rn = scheme_make_module_rename(1, 0, NULL);
       scheme_append_module_rename(v, rn);
@@ -2324,35 +2423,14 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
   menv->marked_names = mn_ht;
   scheme_prepare_exp_env(menv);
-  menv->exp_env->marked_names = mn_ht;
+  menv->exp_env->marked_names = et_mn_ht;
 
   /* For each (direct) provide in iim, add a module rename to fm */
   if (SAME_OBJ(iim, kernel)) {
     scheme_extend_module_rename_with_kernel(rn, kernel_symbol);
     saw_mb = 1;
   } else {
-    int i;
-    Scheme_Object **exs, **exss, **exsns, *midx;
-
-    saw_mb = 0;
-
-    exs = iim->provides;
-    exsns = iim->provide_src_names;
-    exss = iim->provide_srcs;
-    for (i = iim->num_provides; i--; ) {
-      if (exss && !SCHEME_FALSEP(exss[i]))
-	midx = scheme_modidx_shift(exss[i], iim->src_modidx, iidx);
-      else
-	midx = iidx;
-      scheme_extend_module_rename(rn, midx, exs[i], exsns[i], iidx, exs[i]);
-      if (SAME_OBJ(exs[i], module_begin_symbol))
-	saw_mb = 1;
-    }
-
-    if (iim->reprovide_kernel) {
-      scheme_extend_module_rename_with_kernel(rn, iidx);
-      saw_mb = 1;
-    }
+    saw_mb = add_require_renames(rn, iim, iidx);
   }
 
   if (rec)
@@ -2709,6 +2787,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   int num_to_compile;
   int reprovide_kernel;
   int max_let_depth;
+  int all_simple_renames = 1, et_all_simple_renames = 1;
   Scheme_Compile_Info *recs;
   Scheme_Object *redef_modname;
   Scheme_Object *simplify_cache;
@@ -3025,7 +3104,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Add requires to renaming: */
 	  imods = parse_requires(e, self_modidx, env->genv, 
 				 rn, check_require_name, tables, 0,
-				 redef_modname, 0, 0);
+				 redef_modname, 0, 0,
+				 &all_simple_renames);
 	
 	  /* Add required modules to requires list: */
 	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
@@ -3056,7 +3136,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  /* Add requires to renaming: */
 	  imods = parse_requires(e, self_modidx, env->genv->exp_env,
 				 et_rn, check_require_name, et_tables, 1,
-				 redef_modname, 0, 0);
+				 redef_modname, 0, 0,
+				 &et_all_simple_renames);
 
 	  /* Add required modules to et_requires list: */
 	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
@@ -3759,11 +3840,19 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
     env->genv->module->comp_prefix = cenv->prefix;
     env->genv->module->max_let_depth = max_let_depth;
-
-    rn = scheme_rename_to_stx(rn);
-    env->genv->module->rn_stx = rn;
-    et_rn = scheme_rename_to_stx(et_rn);
-    env->genv->module->et_rn_stx = et_rn;
+    
+    if (all_simple_renames && (env->genv->marked_names->count == 0)) {
+      env->genv->module->rn_stx = scheme_true;
+    } else {
+      rn = scheme_rename_to_stx(rn);
+      env->genv->module->rn_stx = rn;
+    }
+    if (et_all_simple_renames) {
+      env->genv->module->et_rn_stx = scheme_true;
+    } else {
+      et_rn = scheme_rename_to_stx(et_rn);
+      env->genv->module->et_rn_stx = et_rn;
+    }
 
     return (Scheme_Object *)env->genv->module;
   } else {
@@ -3882,7 +3971,8 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 			      Scheme_Object *rn,
 			      Check_Func ck, void *data,
 			      int start, Scheme_Object *redef_modname,
-			      int unpack_kern, int copy_vars) 
+			      int unpack_kern, int copy_vars,
+			      int *all_simple) 
 {
   Scheme_Object *ll = form;
   Scheme_Module *m;
@@ -3910,6 +4000,9 @@ Scheme_Object *parse_requires(Scheme_Object *form,
     if (aa && SAME_OBJ(prefix_symbol, SCHEME_STX_VAL(aa))) {
       /* prefix */
       int len;
+
+      if (all_simple)
+	*all_simple = 0;
 
       len = scheme_stx_proper_list_length(i);
       if (len != 3) {
@@ -3947,6 +4040,9 @@ Scheme_Object *parse_requires(Scheme_Object *form,
       int len;
       int has_prefix;
 
+      if (all_simple)
+	*all_simple = 0;
+
       has_prefix = SAME_OBJ(prefix_all_except_symbol, SCHEME_STX_VAL(aa));
 
       len = scheme_stx_proper_list_length(i);
@@ -3983,6 +4079,9 @@ Scheme_Object *parse_requires(Scheme_Object *form,
       /* rename */
       int len;
       Scheme_Object *rest;
+
+      if (all_simple)
+	*all_simple = 0;
 
       len = scheme_stx_proper_list_length(i);
       if (len != 4) {
@@ -4046,6 +4145,8 @@ Scheme_Object *parse_requires(Scheme_Object *form,
       Scheme_Object *l;
       l = scheme_stx_extract_marks(mark_src);
       has_context = !SCHEME_NULLP(l);
+      if (has_context &&all_simple)
+	*all_simple = 0;
     }
 
     is_kern = (SAME_OBJ(idx, kernel_symbol)
@@ -4241,7 +4342,7 @@ top_level_require_execute(Scheme_Object *data)
 
   (void)parse_requires(form, modidx, env, rn, 
 		       check_dup_require, ht, 1, NULL,
-		       !env->module, 0);
+		       !env->module, 0, NULL);
 
   brn = env->rename;
   if (!brn) {
@@ -4302,7 +4403,7 @@ static Scheme_Object *do_require(Scheme_Object *form, Scheme_Comp_Env *env,
 
   (void)parse_requires(form, modidx, genv, rn, 
 		       check_dup_require, ht, 0, 
-		       NULL, 0, 0);
+		       NULL, 0, 0, NULL);
 
   if (rec) {
     /* Dummy lets us access a top-level environment: */

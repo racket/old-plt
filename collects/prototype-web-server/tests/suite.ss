@@ -3,11 +3,13 @@
          "test-normalizer.ss"
          "closure-tests.ss"
          "labels-tests.ss"
-         "persistent-interaction-tests.ss")
+         "persistent-interaction-tests.ss"
+         "stuff-url-tests.ss")
          
 (test/graphical-ui
  (make-test-suite
   "Main Tests for Prototype Web Server"
+  stuff-url-suite
   test-normalizer-suite
   closure-tests-suite
   labels-tests-suite

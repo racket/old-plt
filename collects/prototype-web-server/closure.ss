@@ -12,7 +12,7 @@
 	(datum->syntax-object
 	 id
 	 (string->symbol
-	  (format "deserialize-info:~a" (syntax-e id)))
+	  (format "web-deserialize-info:~a" (syntax-e id)))
 	 id))
   
   (define (make-closure-definition-syntax tag formals fvars proc-body)
@@ -20,8 +20,7 @@
                        (datum->syntax-object
                         tag (string->symbol (format str (syntax-object->datum tag)))))])
       (let ([deserialize-info:CLOSURE (make-deserialize-name tag)])
-        (with-syntax (;[deserialize-info:CLOSURE ((syntax-local-certifier) (make-id "~a:deserialize-info"))]
-                      [CLOSURE:serialize-info (make-id "~a:serialize-info")]
+        (with-syntax ([CLOSURE:serialize-info (make-id "~a:serialize-info")]
                       [make-CLOSURE (make-id "make-~a")]
                       [CLOSURE? (make-id "~a?")]
                       [CLOSURE-ref (make-id "~a-ref")]

@@ -17,7 +17,7 @@
     (start-session dispatch)
     (start-interaction
      (lambda (req)
-       (or (url->continuation (request-uri req))
+       (or (url/id->continuation (request-uri req))
            (lambda (req) (dispatch-start req))))))
   
   ;; send/suspend: (url -> response) -> request
@@ -25,7 +25,7 @@
   (define (send/suspend page-maker)
     (send/suspend0
      (lambda (k)
-       (page-maker (make-k-url k)))))
+       (page-maker (encode-k-id-in-url k)))))
   
   ;; **********************************************************************
   ;; **********************************************************************
@@ -41,9 +41,9 @@
         (hash-table-put! k-table n k)
         n)))
   
-  ;; url->continuation: url -> (union continuation #f)
+  ;; url/id->continuation: url -> (union continuation #f)
   ;; extract the key from the url and then lookup the continuation
-  (define (url->continuation req-uri)
+  (define (url/id->continuation req-uri)
     (let ([ses-uri (session-url (current-session))])
       (let ([url-path-suffix (split-url-path ses-uri req-uri)])
         (and url-path-suffix
@@ -52,9 +52,9 @@
                              (string->number (car url-path-suffix))
                              (lambda () #f))))))
   
-  ;; make-k-url: continuation -> url
-  ;; encode a continuation in a url
-  (define (make-k-url k)
+  ;; encode-k-id-in-url: continuation -> url
+  ;; encode a continuation id in a url
+  (define (encode-k-id-in-url k)
     (let ([uri (session-url (current-session))])
       (make-url
        (url-scheme uri)

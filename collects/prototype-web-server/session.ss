@@ -6,16 +6,17 @@
   (require-for-syntax (lib "url.ss" "net"))
   (provide current-session)
   
-  (define-struct session (id cust namespace handler url))
+  (define-struct session (id cust namespace handler url mod-path))
   
   (provide/contract
    [struct session ([id number?]
                     [cust custodian?]
                     [namespace namespace?]
                     [handler (request? . -> . response?)]
-                    [url url?])]
+                    [url url?]
+                    [mod-path path?])]
    [lookup-session (number? . -> . (union session? boolean?))]
-   [new-session (custodian? namespace? url? . -> . session?)]
+   [new-session (custodian? namespace? url? path? . -> . session?)]
    [start-session ((request? . -> . response?) . -> . any)])
   
   (define current-session (make-parameter #f))
@@ -29,15 +30,16 @@
   
   (define the-session-table (make-hash-table))
   
-  ;; new-session: namespace -> session
-  (define (new-session cust ns uri)
+  ;; new-session: namespace path -> session
+  (define (new-session cust ns uri mod-path)
     (let ([new-id (new-session-id)])
       (make-session
        new-id
        cust
        ns
        (lambda (req) (error "session not initialized"))
-       (encode-session uri new-id))))
+       (encode-session uri new-id)
+       mod-path)))
   
   ;; start-session: (request -> response) -> void
   ;; register the session handler.

@@ -4,6 +4,11 @@
   (provide make-labeling
            delete-tag-list!)
   
+  ;; REQUIREMENT: The label code must be non-numeric.
+  ;; REQUIREMENT: The first numeric character following the label code
+  ;;              indicates the start of the unique suffix identifying
+  ;;              the closure struct type.
+  
   ;; add1/string: string -> string
   ;; a successor function on strings
   (define (add1/string str)

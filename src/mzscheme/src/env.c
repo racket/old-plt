@@ -1584,14 +1584,21 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	  Scheme_Object *name;
 	  int rcount = 0, rstart, rstart_sec = 0, vstart;
 	  
+	  /* rstart is where the to-be-created rename table starts
+	     (saved from last time around, or initially zero).
+	     vstart is where we start looking for new dups.
+	     rstart_sec is TRUE when we need a different uid for
+	     each frame. */
 	  rstart = env->rename_rstart;
 	  if (env->renames) {
-	    /* Incremental mode. Reverse the list and drop the most
-               recent (last) rename table, because we'll recreate it: */
+	    /* Incremental mode. Drop the most recent (first) rename
+               table, because we'll recreate it: */
 	    if (SCHEME_PAIRP(env->renames))
 	      env->renames = SCHEME_CDR(env->renames);
 	    else
 	      env->renames = NULL;
+	    /* We already know that the first rename_var_count
+	       are distinct (from the last iteration) */
 	    vstart = env->rename_var_count;
 	    rcount = vstart - rstart;
 	  } else
@@ -1636,6 +1643,7 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 		if (ht) {
 		  /* Flush the table for a new set: */
 		  ht = scheme_make_hash_table(SCHEME_hash_ptr);
+		  scheme_hash_set(ht, name, scheme_true);
 		}
 	      } else
 		rcount++;
@@ -1651,7 +1659,7 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	      if (scheme_hash_get(ht, name))
 		found = 1;
 	      else
-		scheme_hash_set(ht, SCHEME_STX_VAL(env->values[i]), scheme_true);
+		scheme_hash_set(ht, name, scheme_true);
 	    } else {
 	      int j;
 	      if (!rstart_sec) {
@@ -1685,6 +1693,7 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
 	      if (ht) {
 		/* Flush the table for a new set: */
 		ht = scheme_make_hash_table(SCHEME_hash_ptr);
+		scheme_hash_set(ht, name, scheme_true);
 	      }
 	    } else
 	      rcount++;

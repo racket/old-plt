@@ -1888,8 +1888,10 @@ wxBufferData::wxBufferData()
 
 wxBufferData::~wxBufferData()
 {
-  if (next)
+  if (next) {
     DELETE_OBJ next;
+    next = NULL;
+  }
 }
 
 class LocationBufferDataClass : public wxBufferDataClass

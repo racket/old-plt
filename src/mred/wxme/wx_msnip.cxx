@@ -84,10 +84,20 @@ wxMediaSnip::wxMediaSnip(wxMediaBuffer *useme,
 
 wxMediaSnip::~wxMediaSnip()
 {
+#if 1
+  /* The only way a snip should be deleted if by GC, and it wouldn't
+     get GC'd if the editor isn't also going to be GCd. It's important
+     *not* to call SetAdmin(), because that can trigger Scheme
+     code. */
+  DELETE_OBJ me;
+  me = NULL;
+#else
   if (me) {
     if (me->GetAdmin() == myAdmin)
       me->SetAdmin(NULL);
   }
+#endif
+
   DELETE_OBJ myAdmin;
 }
 

@@ -1104,9 +1104,9 @@ void objscheme_check_valid(Scheme_Object *sclass, const char *name, int n, Schem
 			obj);
   }
   if (obj->primflag < 0) {
-    scheme_signal_error("%s: %sobject%s: %v",
+    scheme_signal_error("%s: %sobject%s: %V",
 			name,
-			(obj->primflag == -2) ? "" : "invalidated ",
+			(obj->primflag == -1) ? "invalidated " : "",
 			(obj->primflag == -2) ? " (shutdown by a custodian)" : "",
 			obj);
     return;

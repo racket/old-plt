@@ -285,6 +285,7 @@ static MSet *sets[NUM_SETS]; /* First one is tagged, last one is atomic */
 
 /********************* Statistics *********************/
 static long page_allocations = 0;
+static long page_reservations = 0;
 
 static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
 #if USE_FREELIST
@@ -497,6 +498,7 @@ void *malloc_pages(size_t len, size_t alignment)
 	  blockfree[i].start = NULL;
 	  blockfree[i].len = 0;
 	  memset(r, 0, len);
+	  page_allocations += len;
 	  return r;
 	}
       }
@@ -511,6 +513,7 @@ void *malloc_pages(size_t len, size_t alignment)
 	  blockfree[i].start += len;
 	  blockfree[i].len -= len;
 	  memset(r, 0, len);
+	  page_allocations += len;
 	  return r;
 	}
 
@@ -519,6 +522,7 @@ void *malloc_pages(size_t len, size_t alignment)
 	if (!((unsigned long)r & (alignment - 1))) {
 	  blockfree[i].len -= len;
 	  memset(r, 0, len);
+	  page_allocations += len;
 	  return r;
 	}
 
@@ -559,6 +563,7 @@ void *malloc_pages(size_t len, size_t alignment)
   }
 
   page_allocations += len;
+  page_reservations += len;
 
   return r;
 }
@@ -602,6 +607,8 @@ void free_pages(void *p, size_t len)
   if (munmap(p, len)) {
     fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)p, (long)len, errno);
   }
+
+  page_reservations -= len;
 }
 
 void flush_freed_pages(void)
@@ -618,6 +625,7 @@ void flush_freed_pages(void)
 		  (long)blockfree[i].start, blockfree[i].len,
 		  errno);
 	}
+	page_reservations -= blockfree[i].len;
 	blockfree[i].start = NULL;
 	blockfree[i].len = 0;
       } else
@@ -4713,4 +4721,7 @@ void GC_dump(void)
 	  (100.0 * ((double)page_allocations - memory_in_use)) / memory_in_use,
 	  (long)FREE_LIST_DELTA,
 	  (100.0 * FREE_LIST_DELTA) / memory_in_use);
+  fprintf(stderr, "Mmap overhead: %ld (%.2f%%)\n", 
+	  page_reservations - memory_in_use + FREE_LIST_DELTA,
+	  (100.0 * ((double)page_reservations - memory_in_use)) / memory_in_use);
 }

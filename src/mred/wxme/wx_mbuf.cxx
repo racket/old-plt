@@ -45,6 +45,8 @@
 
 #define NUM_MAX_UNDOS 256
 
+#define DELETE_CLIP_LIST_CONTENT 0
+
 #if ALLOW_X_STYLE_SELECTION
 Bool wxMediaXSelectionMode = TRUE;
 wxMediaBuffer *wxMediaXSelectionOwner = NULL;
@@ -1665,13 +1667,15 @@ void wxMediaBuffer::FreeOldCopies(void)
 
   if (copyDepth > 1) {
     /* Delete current "ring" occupant: */
-    wxmb_commonCopyBuffer->DeleteContents(TRUE);
+    wxmb_commonCopyBuffer->DeleteContents(DELETE_CLIP_LIST_CONTENT);
     DELETE_OBJ wxmb_commonCopyBuffer;
-    wxmb_commonCopyBuffer2->DeleteContents(TRUE);
+    wxmb_commonCopyBuffer2->DeleteContents(DELETE_CLIP_LIST_CONTENT);
     DELETE_OBJ wxmb_commonCopyBuffer2;
 
+#if DELETE_CLIP_LIST_CONTENT
     if (wxmb_commonCopyRegionData)
       DELETE_OBJ wxmb_commonCopyRegionData;
+#endif
 
     wxmb_commonCopyBuffer = new wxList(wxKEY_NONE, FALSE);
     wxmb_commonCopyBuffer2 = new wxList(wxKEY_NONE, FALSE);
@@ -1692,16 +1696,18 @@ void wxMediaBuffer::FreeOldCopies(void)
     /* No more space: delete current ring occupant: */
     wxList *dl;
     dl = copyRingBuffer1[copyRingDest];
-    dl->DeleteContents(TRUE);
+    dl->DeleteContents(DELETE_CLIP_LIST_CONTENT);
     DELETE_OBJ dl;
     dl = copyRingBuffer2[copyRingDest];
-    dl->DeleteContents(TRUE);
+    dl->DeleteContents(DELETE_CLIP_LIST_CONTENT);
     DELETE_OBJ dl;
     
     if (copyRingData[copyRingDest]) {
       wxBufferData *data;
       data = copyRingData[copyRingDest];
+#if DELETE_CLIP_LIST_CONTENT
       DELETE_OBJ data;
+#endif
     }
 
     copyRingPos = copyRingDest;

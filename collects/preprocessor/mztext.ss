@@ -264,7 +264,8 @@
   (unless (command-marker) (command-marker "@"))
   (unless (paren-pairs)
     (paren-pairs '(("(" ")") ("[" "]") ("{" "}") ("<" ">"))))
-  (namespace-require '(lib "mztext.ss" "preprocessor")))
+  (namespace-require '(lib "mztext.ss" "preprocessor"))
+  (do-evals))
 
 (define (run)
   (dispatch (dispatcher-table) run void #t))

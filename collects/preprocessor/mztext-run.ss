@@ -19,7 +19,7 @@
    (multi
     [("-E" "--eval") expr "evaluates <expr> before processing starts"
      (parameterize ([read-case-sensitive #t])
-       (eval (read (open-input-string expr))))])
+       (add-eval (read (open-input-string expr))))])
    (=> (lambda (_ . files) (run preprocess run-cmd output files))
        '("input-file")
        (more-help 'mztext "a MzScheme-based preprocessing language"))))

@@ -6,4 +6,8 @@
 (define stderr current-error-port)
 (define cd     current-directory)
 
+(provide add-eval do-evals)
+(define evals (make-parameter '()))
+(define (add-eval expr) (evals (cons expr (evals))))
+(define (do-evals) (for-each eval (reverse (evals))))
 )

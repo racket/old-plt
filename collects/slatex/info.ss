@@ -1,6 +1,10 @@
 
 (module info (lib "infotab.ss" "setup")
   (define name "SLaTeX")
+
+  ;(define tools (list (list "slatex-lang.ss")))
+  ;(define tool-names (list "SLaTeX Language"))
+  
   (define help-desk-message
     "Mz/Mr: (require (lib \"slatex.ss\" \"slatex\"))")
   (define blurb

@@ -120,8 +120,17 @@
 (syntax-test '(compound-unit/sig (import (i : a)) (link (b@ : b (b@))) (export (var ((b@ 7) 5)))))
 (syntax-test '(compound-unit/sig (import (i : a)) (link (b@ : b (b@))) (export (var (b@ x . a)))))
 
-(syntax-test '(compound-unit/sig (import) (link (A : () (0 A))) (export))) ; self-import
-(syntax-test '(compound-unit/sig (import) (link (A : (x) (0 A))) (export))) ; self-import
+; Self-import is now allowed
+; (syntax-test '(compound-unit/sig (import) (link (A : () (0 A))) (export))) ; self-import
+; (syntax-test '(compound-unit/sig (import) (link (A : (x) (0 A))) (export))) ; self-import
+(test (list (letrec ([x x]) x) 5)
+      'self-import
+      (invoke-unit/sig
+       (compound-unit/sig
+	(import)
+	(link [U : (a) ((unit/sig (a) (import (a)) (rename (b a)) (define x a) (define b 5) (list x a))
+			U)])
+	(export))))
 
 (test #t unit/sig? (unit/sig a (import)))
 (test #t unit/sig? (unit/sig b (import) (define x 1) (define y 2)))

@@ -66,9 +66,17 @@
 (error-test '(compound-unit (import) (link (A (0 (B))) (B (0))) (export)) exn:unit?)
 (error-test '(compound-unit (import) (link (A (0)) (B (0))) (export (A x) (B))) exn:unit?)
 
-; Self-import:
-(syntax-test '(compound-unit (import) (link (A (0 (A)))) (export))) 
-(syntax-test '(compound-unit (import) (link (A (0 (A x)))) (export)))
+; Self-import is now allowed
+; (syntax-test '(compound-unit (import) (link (A (0 (A)))) (export))) 
+; (syntax-test '(compound-unit (import) (link (A (0 (A x)))) (export)))
+(test (list (letrec ([x x]) x) 5)
+      'self-import
+      (invoke-unit 
+       (compound-unit
+	(import)
+	(link [U ((unit (import a) (export b) (define x a) (define b 5) (list x a))
+		  (U b))])
+	(export))))
 
 (unless (defined? 'test-global-var)
   (define test-global-var 5)

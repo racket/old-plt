@@ -696,11 +696,13 @@
 
 (define ed-t0 0)
 (test 0 'begin0-define (begin0 0 (define x 5) (set! ed-t0 x)))
-(test 5 'begi0-define ed-t0)
+(test 5 'begin0-define ed-t0)
 
 (begin (define ed-t1 1) (define ed-t2 2))
 (test 1 'begin-define ed-t1)
 (test 2 'begin-define ed-t2)
+(begin (begin (begin (begin 10 (define ed-t2.5 2.5) 12))))
+(test 2.5 'begin-define ed-t2.5)
 (syntax-test '(if (zero? 0) (define ed-t3 3) (define ed-t3 -3)))
 (syntax-test '(if #t (define ed-t3 3) (define ed-t3 -3)))
 (syntax-test '(if #f (define ed-t3 3) (define ed-t3 -3)))

@@ -1217,7 +1217,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
     if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
       /* Redirect to a macro? */
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_set_macro_type)) {
-	form = scheme_apply_macro(name, menv, SCHEME_PTR_VAL(var), form, env, scheme_false, 1);
+	form = scheme_apply_macro(name, menv, SCHEME_PTR_VAL(var), form, env, scheme_false, rec[drec].certs, 1);
 	
 	return scheme_compile_expr(form, env, rec, drec);
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
@@ -1297,7 +1297,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Expand_Info *erec, 
     if ((erec[drec].depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
       /* Redirect to a macro? */
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_set_macro_type)) {
-	form = scheme_apply_macro(name, menv, SCHEME_PTR_VAL(var), form, env, scheme_false, 1);
+	form = scheme_apply_macro(name, menv, SCHEME_PTR_VAL(var), form, env, scheme_false, erec[drec].certs, 1);
       
 	if (erec[drec].depth > 0)
 	  erec[drec].depth--;
@@ -3067,7 +3067,7 @@ do_define_syntaxes_execute(Scheme_Object *form, Scheme_Env *dm_env, int for_stx)
 
   dm_env = scheme_environment_from_dummy(dummy);
 
-  scheme_on_next_top(rhs_env, NULL, scheme_false);
+  scheme_on_next_top(rhs_env, NULL, scheme_false, NULL);
   return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), for_stx ? 2 : 1, rp, dm_env);
 }
 
@@ -3314,7 +3314,7 @@ static void *eval_letmacro_rhs_k(void);
 
 static Scheme_Object *eval_letmacro_rhs(Scheme_Object *a, Scheme_Comp_Env *rhs_env, 
 					int max_let_depth, Resolve_Prefix *rp,
-					int phase)
+					int phase, Scheme_Object *certs)
 {
   Scheme_Object **save_runstack;
   int depth;
@@ -3325,6 +3325,7 @@ static Scheme_Object *eval_letmacro_rhs(Scheme_Object *a, Scheme_Comp_Env *rhs_e
     p->ku.k.p1 = a;
     p->ku.k.p2 = rhs_env;
     p->ku.k.p3 = rp;
+    p->ku.k.p4 = certs;
     p->ku.k.i1 = max_let_depth;
     p->ku.k.i2 = phase;
     return (Scheme_Object *)scheme_enlarge_runstack(depth, eval_letmacro_rhs_k);
@@ -3336,7 +3337,7 @@ static Scheme_Object *eval_letmacro_rhs(Scheme_Object *a, Scheme_Comp_Env *rhs_e
     /* short cut */
     a = _scheme_eval_linked_expr_multi(a);
   } else {
-    scheme_on_next_top(rhs_env, NULL, scheme_false);
+    scheme_on_next_top(rhs_env, NULL, scheme_false, certs);
     a = scheme_eval_linked_expr_multi(a);
   }
 
@@ -3348,7 +3349,7 @@ static Scheme_Object *eval_letmacro_rhs(Scheme_Object *a, Scheme_Comp_Env *rhs_e
 static void *eval_letmacro_rhs_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *a; 
+  Scheme_Object *a, *certs; 
   Scheme_Comp_Env *rhs_env;
   int max_let_depth, phase;
   Resolve_Prefix *rp;
@@ -3356,14 +3357,16 @@ static void *eval_letmacro_rhs_k(void)
   a = (Scheme_Object *)p->ku.k.p1;
   rhs_env = (Scheme_Comp_Env *)p->ku.k.p2;
   rp = (Resolve_Prefix *)p->ku.k.p3;
+  certs = (Scheme_Object *)p->ku.k.p4;
   max_let_depth = p->ku.k.i1;
   phase = p->ku.k.i2;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
 
-  return (void *)eval_letmacro_rhs(a, rhs_env, max_let_depth, rp, phase);
+  return (void *)eval_letmacro_rhs(a, rhs_env, max_let_depth, rp, phase, certs);
 }
 
 static Scheme_Object *
@@ -3557,7 +3560,7 @@ do_letrec_syntaxes(const char *where, int normal,
 
     a = scheme_resolve_expr(a, scheme_resolve_info_create(rp));
 
-    a = eval_letmacro_rhs(a, rhs_env, mrec.max_let_depth, rp, eenv->genv->phase);
+    a = eval_letmacro_rhs(a, rhs_env, mrec.max_let_depth, rp, eenv->genv->phase, rec[drec].certs);
 
     if (SAME_OBJ(a, SCHEME_MULTIPLE_VALUES))
       vc = scheme_current_thread->ku.multiple.count;

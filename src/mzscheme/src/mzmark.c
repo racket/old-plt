@@ -1422,6 +1422,7 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->current_local_env);
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
+  gcMARK(pr->current_local_certs);
   
   gcMARK(pr->overflow_reply);
 
@@ -1504,6 +1505,7 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->current_local_env);
   gcFIXUP(pr->current_local_mark);
   gcFIXUP(pr->current_local_name);
+  gcFIXUP(pr->current_local_certs);
   
   gcFIXUP(pr->overflow_reply);
 

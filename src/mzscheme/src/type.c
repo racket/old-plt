@@ -220,6 +220,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_special_comment_type, "<special-comment>");
 
   set_name(scheme_certifications_type, "<certifications>");
+  set_name(scheme_cert_context_type, "<certification-context>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");

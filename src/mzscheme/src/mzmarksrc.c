@@ -556,6 +556,7 @@ thread_val {
   gcMARK(pr->current_local_env);
   gcMARK(pr->current_local_mark);
   gcMARK(pr->current_local_name);
+  gcMARK(pr->current_local_certs);
   
   gcMARK(pr->overflow_reply);
 

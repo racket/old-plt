@@ -1734,6 +1734,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
   Scheme_Object *name, *val, *certs;
   Scheme_Comp_Env *xenv = (_xenv ? *_xenv : NULL);
   Scheme_Expand_Info erec1;
+  Scheme_Env *menv = NULL;
   int need_cert;
 
  check_top:
@@ -1769,7 +1770,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 				+ ((rec[drec].comp && rec[drec].resolve_module_ids)
 				   ? SCHEME_RESOLVE_MODIDS
 				   : 0),
-				certs, NULL, NULL);
+				certs, &menv, NULL);
     
     if (SCHEME_STX_PAIRP(first))
       *current_val = val;
@@ -1780,6 +1781,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
       if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(val)), scheme_id_macro_type)) {
 	/* It's a rename. Look up the target name and try again. */
 	name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(val));
+	name = scheme_stx_cert(name, scheme_false, menv, name);
+	menv = NULL;
 	SCHEME_USE_FUEL(1);
       } else {
 	/* It's a normal macro; expand once. Also, extend env to indicate
@@ -1832,7 +1835,7 @@ compile_expand_macro_app(Scheme_Object *name, Scheme_Env *menv, Scheme_Object *m
   if (!boundname)
     boundname = scheme_false;
 
-  return scheme_apply_macro(name, menv, xformer, form, env, boundname, 0);
+  return scheme_apply_macro(name, menv, xformer, form, env, boundname, rec[drec].certs, 0);
 
   /* caller expects rec[drec] to be used to compile the result... */
 }
@@ -2398,7 +2401,7 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
        need a pos, because the symbol's gensym-ness (if any) will be
        preserved within the module. */
     c = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, 
-				    c, env->insp,
+				    c, env->genv->module->insp,
 				    -1, env->genv->mod_phase);
   } else
     c = (Scheme_Object *)scheme_global_bucket(c, env->genv);
@@ -4162,7 +4165,7 @@ Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *expr, Scheme_Env *
 static void *expand_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;
-  Scheme_Object *obj;
+  Scheme_Object *obj, *certs;
   Scheme_Comp_Env *env;
   Scheme_Expand_Info erec1;
   int depth, rename, just_to_top;
@@ -4172,9 +4175,11 @@ static void *expand_k(void)
   depth = p->ku.k.i1;
   rename = p->ku.k.i2;
   just_to_top = p->ku.k.i3;
+  certs = (Scheme_Object *)p->ku.k.p3;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
+  p->ku.k.p3 = NULL;
 
   if (!SCHEME_STXP(obj))
     obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false, 1, 0);
@@ -4190,7 +4195,7 @@ static void *expand_k(void)
   erec1.comp = 0;
   erec1.depth = depth;
   erec1.value_name = scheme_false;
-  erec1.certs = NULL;
+  erec1.certs = certs;
 
   if (just_to_top) {
     Scheme_Object *gval;
@@ -4207,7 +4212,8 @@ static void *expand_k(void)
 }
 
 static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env, 
-			      int depth, int rename, int just_to_top, int eb)
+			      int depth, int rename, int just_to_top, int eb,
+			      Scheme_Object *certs)
 {
   Scheme_Thread *p = scheme_current_thread;
 
@@ -4216,6 +4222,7 @@ static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env,
   p->ku.k.i1 = depth;
   p->ku.k.i2 = rename;
   p->ku.k.i3 = just_to_top;
+  p->ku.k.p3 = certs;
 
   return (Scheme_Object *)scheme_top_level_do(expand_k, eb);
 }
@@ -4223,7 +4230,7 @@ static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env,
 Scheme_Object *scheme_expand(Scheme_Object *obj, Scheme_Env *env)
 {
   return _expand(obj, scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 
-		 -1, 1, 0, -1);
+		 -1, 1, 0, -1, NULL);
 }
 
 Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj)
@@ -4411,7 +4418,7 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(NULL);
 
-  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), -1, 1, 0, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), -1, 1, 0, 0, NULL);
 }
 
 static Scheme_Object *expand_stx(int argc, Scheme_Object **argv)
@@ -4423,7 +4430,7 @@ static Scheme_Object *expand_stx(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(NULL);
 
-  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), -1, -1, 0, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), -1, -1, 0, 0, NULL);
 }
 
 static Scheme_Object *stop_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -4530,7 +4537,7 @@ do_local_expand(const char *name, int for_stx, int argc, Scheme_Object **argv)
 
   /* Expand the expression. depth = -2 means expand all the way, but
      preserve letrec-syntax. */
-  l = _expand(l, env, -2, 0, 0, 0);
+  l = _expand(l, env, -2, 0, 0, 0, scheme_current_thread->current_local_certs);
 
   if (local_mark) {
     /* Put the temporary mark back: */
@@ -4559,7 +4566,7 @@ expand_once(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(NULL);
 
-  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, 1, 0, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, 1, 0, 0, NULL);
 }
 
 static Scheme_Object *
@@ -4572,7 +4579,7 @@ expand_stx_once(int argc, Scheme_Object **argv)
   
   env = scheme_get_env(NULL);
 
-  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, -1, 0, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, -1, 0, 0, NULL);
 }
 
 static Scheme_Object *
@@ -4582,7 +4589,7 @@ expand_to_top_form(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(NULL);
 
-  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, 1, 1, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, 1, 1, 0, NULL);
 }
 
 static Scheme_Object *
@@ -4595,7 +4602,7 @@ expand_stx_to_top_form(int argc, Scheme_Object **argv)
   
   env = scheme_get_env(NULL);
 
-  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, -1, 1, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, NULL, SCHEME_TOPLEVEL_FRAME), 1, -1, 1, 0, NULL);
 }
 
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont)

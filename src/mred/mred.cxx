@@ -1868,7 +1868,7 @@ static void call_one_callback(Q_Callback * volatile  cb)
 
   save = scheme_current_thread->error_buf;
   scheme_current_thread->error_buf = &newbuf;
-  if (!scheme_setjmp(scheme_error_buf))
+  if (!scheme_setjmp(newbuf))
     scheme_apply_multi(cb->callback, 0, NULL);
   scheme_clear_escape();
   scheme_current_thread->error_buf = save;

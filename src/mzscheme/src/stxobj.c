@@ -1352,6 +1352,12 @@ Scheme_Object *scheme_stx_cert(Scheme_Object *o, Scheme_Object *mark, Scheme_Env
     if (HAS_MARKS(cert))
       cert = CERT_ONLY(cert);
     
+    if (SCHEME_FALSEP(mark)) {
+      /* Need to invent a mark and apply it */
+      mark = scheme_new_mark();
+      res = (Scheme_Stx *)scheme_add_remove_mark((Scheme_Object *)res, mark);
+    }
+
     cert = cons_cert(mark, menv->module->insp, cert);
     res->certs = cert;
     
@@ -4215,8 +4221,6 @@ static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)
 
 /**********************************************************************/
 
-
-
 static void accum_all_marks(Scheme_Object *naya, 
 			    Scheme_Hash_Table **htp,
 			    int *copy_on_write)
@@ -4226,52 +4230,63 @@ static void accum_all_marks(Scheme_Object *naya,
     if (SCHEME_STXP(naya)) {
       Scheme_Hash_Table *nht;
       if (!HAS_MARKS(((Scheme_Stx *)naya)->certs)) {
+	Scheme_Object *l, *v;
 	Scheme_Cert *certs;
+	int is_protected, cow = 0;
 	/* Is naya an identifier? */
-	if (SCHEME_SYMBOLP(naya)) {
-	  /* Identifer, so check whether it has marks for a protected symbol */
-	  Scheme_Object *v;
+	if (SCHEME_SYMBOLP(SCHEME_STX_VAL(naya))) {
+	  /* Identifer, so check whether it's a protected symbol */
 	  v = scheme_stx_property(naya, protected_symbol, NULL);
-	  if (SCHEME_TRUEP(v)) {
-	    /* Protected, so gather up all of its marks */
-	    Scheme_Object *l;
-	    nht = scheme_make_hash_table(SCHEME_hash_ptr);
-	    l = scheme_stx_extract_marks((Scheme_Object *)naya);
-	    while (SCHEME_PAIRP(l)) {
-	      scheme_hash_set(nht, SCHEME_CAR(l), scheme_true);
-	      l = SCHEME_CDR(l);
-	    }
-	  } else {
-	    /* Not protected, ignore the marks. */
-	    nht = empty_hash_table;
-	  }
+	  is_protected = SCHEME_TRUEP(v);
+	  nht = empty_hash_table;
+	  cow = 1;
 	} else {
-	  /* Not an identifier; recur to accumulate marks */
-	  int cow;
+	  is_protected = 0;
 	  nht = NULL;
 	  accum_all_marks(((Scheme_Stx *)naya)->val, &nht, &cow);
-	  if (!nht)
+	  if (!nht) {
 	    nht = empty_hash_table;
+	    cow = 1;
+	  }
 	}
+
+	/* Gather up all of its marks. If protected, map to true, else
+	   map to false, but don't override an existing true. */
+	l = scheme_stx_extract_marks((Scheme_Object *)naya);
+	while (SCHEME_PAIRP(l)) {
+	  v = scheme_hash_get(nht, SCHEME_CAR(l));
+	  if (!v || (is_protected && SCHEME_FALSEP(v))) {
+	    if (cow) {
+	      nht = scheme_clone_hash_table(nht);
+	      cow = 0;
+	    }
+	    scheme_hash_set(nht, SCHEME_CAR(l), is_protected ? scheme_true : scheme_false);
+	  }
+	  l = SCHEME_CDR(l);
+	}
+	
 	certs = cons_cert(NULL, (Scheme_Object *)nht, ((Scheme_Stx *)naya)->certs);
 	((Scheme_Stx *)naya)->certs = certs;
       }
       nht = (Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)naya)->certs);
 
-      /* If htp was supplied, need to fold nht content into htp */
+      /* If htp was supplied, need to fold nht content into htp. Falses
+         still shouldn't override trues. */
       if (htp) {
 	if (*htp) {
 	  Scheme_Hash_Table *ht = *htp;
+	  Scheme_Object *v;
 	  int i;
 	  for (i = nht->size; i--; ) {
 	    if (nht->vals[i]) {
-	      if (!scheme_hash_get(ht, nht->vals[i])) {
+	      v = scheme_hash_get(ht, nht->keys[i]);
+	      if (!v || (SCHEME_FALSEP(v) && SCHEME_TRUEP(nht->vals[i]))) {
 		if (*copy_on_write) {
 		  *copy_on_write = 0;
 		  ht = scheme_clone_hash_table(ht);
 		  *htp = ht;
 		}
-		scheme_hash_set(ht, nht->vals[i], scheme_true);
+		scheme_hash_set(ht, nht->keys[i], nht->vals[i]);
 	      }
 	    }
 	  }
@@ -4320,14 +4335,11 @@ static Scheme_Object *syntax_recertify_constrained(int argc, Scheme_Object **arg
   while (certs) {
     if (!scheme_is_subinspector(certs->insp, insp)) {
       /* Found an opaque certification. Used anywhere? */
-      Scheme_Hash_Table *ht;
       if (!HAS_MARKS(((Scheme_Stx *)stx)->certs))
 	accum_all_marks(stx, NULL, NULL);
-      ht = (Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)stx)->certs);      
-      if (scheme_hash_get(ht, certs->mark)) {
-	/* Mark for opaque cert is used for a protected id */
+      if (scheme_hash_get((Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)stx)->certs), 
+			  certs->mark))
 	return scheme_true;
-      }
     }
     certs = certs->next;
   }
@@ -4461,6 +4473,7 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 
   if (HAS_CERTS(((Scheme_Stx *)argv[1])->certs)) {
     Scheme_Cert *certs;
+    Scheme_Object *v;
     char *s;
 
     certs = ((Scheme_Stx *)argv[1])->certs;
@@ -4468,26 +4481,34 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
       certs = CERT_ONLY(certs);
    
     while (certs) {
-      if (0 && !scheme_is_subinspector(certs->insp, insp)) {
-	/* Found an opaque certification.
-	   
-	   We assume that opaquely certified macros do not refer
-	   directly to transparently certified macros. Also, an
-	   opaquely certified macro doesn't pass along bits of
-	   certified syntax to a macro-bound identifier (with
-	   transparent certification) that is supplied to the opaquely
-	   certified macro.
+      if (!scheme_is_subinspector(certs->insp, insp)) {
+	/* Found an opaque certification. It only matters if its mark
+	   is used in the new object for a protected identifier. */
 
-	   Thus, the new stx can be re-certified as long as the only
-	   changes compared to the old stx involve parts where the
-	   certificate in question can't apply --- i.e., they aren't
-	   marked by certs->mark. */
-	s = diff_modulo_mark(argv[1], argv[0], certs->mark);
-	if (s) {
-	  scheme_raise_exn(MZEXN_FAIL_CONTRACT,
-			   "syntax-recertify: cannot verify certification of syntax object (%s): %V", 
-			   s, argv[0]);
-	  return NULL;
+	if (!HAS_MARKS(((Scheme_Stx *)argv[1])->certs))
+	  accum_all_marks(argv[1], NULL, NULL);
+
+	v = scheme_hash_get((Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)argv[1])->certs), certs->mark);
+
+	if (v && SCHEME_TRUEP(v)) {
+	  /* We assume that opaquely certified macros do not refer
+	     directly to transparently certified macros. Also, an
+	     opaquely certified macro doesn't pass along bits of
+	     certified syntax to a macro-bound identifier (with
+	     transparent certification) that is supplied to the opaquely
+	     certified macro.
+	     
+	     Thus, the new stx can be re-certified as long as the only
+	     changes compared to the old stx involve parts where the
+	     certificate in question can't apply --- i.e., they aren't
+	     marked by certs->mark. */
+	  s = diff_modulo_mark(argv[1], argv[0], certs->mark);
+	  if (s) {
+	    scheme_raise_exn(MZEXN_FAIL_CONTRACT,
+			     "syntax-recertify: cannot verify certification of syntax object (%s): %V", 
+			     s, argv[0]);
+	    return NULL;
+	  }
 	}
       }
       certs = certs->next;
@@ -4509,7 +4530,9 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 
 static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object **argv)
 {
-  Scheme_Object *o, *cert;
+  Scheme_Object *o;
+  Scheme_Cert *certs, *result;
+  Scheme_Hash_Table *ht;
 
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-extend-certificate-context", "syntax", 0, argc, argv);
@@ -4517,15 +4540,31 @@ static Scheme_Object *syntax_extend_certificate_context(int argc, Scheme_Object 
     scheme_wrong_type("syntax-extend-certificate-context", "certificate context or #f", 1, argc, argv);
 
   if (SCHEME_FALSEP(argv[1]))
-    cert = NULL;
+    result = NULL;
   else
-    cert = SCHEME_PTR_VAL(argv[1]);
+    result = (Scheme_Cert *)SCHEME_PTR_VAL(argv[1]);
 
-  cert = scheme_stx_extract_certs(argv[0], cert);
+  o = argv[0];
+
+  certs = ((Scheme_Stx *)o)->certs;
+  if (HAS_MARKS(certs))
+    certs = CERT_ONLY(certs);
+
+  if (!HAS_MARKS(((Scheme_Stx *)o)->certs))
+    accum_all_marks(o, NULL, NULL);
+  ht = (Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)o)->certs);      
+  
+  for (; certs; certs = certs->next) {
+    o = scheme_hash_get(ht, certs->mark);
+    if (o && SCHEME_TRUEP(o)) {
+      /* Mark for opaque cert is used for a protected id, so keep it. */
+      result = cons_cert(certs->mark, certs->insp, result);
+    }
+  }
 
   o = scheme_alloc_small_object();
   o->type = scheme_cert_context_type;
-  SCHEME_PTR_VAL(o) = cert;
+  SCHEME_PTR_VAL(o) = (Scheme_Object *)result;
 
   return o;
 }

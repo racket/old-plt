@@ -85,7 +85,8 @@ static void eval_defmacro(Scheme_Object *names, int count,
 			  Scheme_Object *expr, 
 			  Scheme_Env *genv, Scheme_Comp_Env *env,
 			  Resolve_Prefix *rp, int let_depth, int shift,
-			  Scheme_Bucket_Table *syntax, int for_stx);
+			  Scheme_Bucket_Table *syntax, int for_stx,
+			  Scheme_Object *certs);
 
 #define cons scheme_make_pair
 
@@ -2241,7 +2242,8 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env,
       e = SCHEME_VEC_ELS(e)[1];
       
       eval_defmacro(names, scheme_proper_list_length(names), e, exp_env, rhs_env,
-		    rp, let_depth, 1, (for_stx ? for_stx_globals : syntax), for_stx);
+		    rp, let_depth, 1, (for_stx ? for_stx_globals : syntax), for_stx,
+		    NULL);
     }
   }
 }
@@ -2544,7 +2546,7 @@ static void *eval_defmacro_k(void)
   Scheme_Thread *p = scheme_current_thread;
   Scheme_Object *names;
   int count, for_stx;
-  Scheme_Object *expr;
+  Scheme_Object *expr, *certs;
   Scheme_Env *genv;
   Scheme_Comp_Env *comp_env;
   Resolve_Prefix *rp;
@@ -2561,13 +2563,15 @@ static void *eval_defmacro_k(void)
   let_depth = p->ku.k.i2;
   shift = p->ku.k.i3;
   for_stx = p->ku.k.i4;
+  certs = (Scheme_Object *)p->ku.k.p5;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
   p->ku.k.p4 = NULL;
+  p->ku.k.p5 = NULL;
 
-  eval_defmacro(names, count, expr, genv, comp_env, rp, let_depth, shift, syntax, for_stx);
+  eval_defmacro(names, count, expr, genv, comp_env, rp, let_depth, shift, syntax, for_stx, certs);
 
   return NULL;
 }
@@ -2577,7 +2581,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
 			  Scheme_Env *genv, Scheme_Comp_Env *comp_env,
 			  Resolve_Prefix *rp,
 			  int let_depth, int shift, Scheme_Bucket_Table *syntax,
-			  int for_stx)
+			  int for_stx, Scheme_Object *certs)
 {
   Scheme_Object *macro, *vals, *name, **save_runstack;
   int i, g, depth;
@@ -2595,6 +2599,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
     p->ku.k.i2 = let_depth;
     p->ku.k.i3 = shift;
     p->ku.k.i4 = for_stx;
+    p->ku.k.p5 = certs;
     (void)scheme_enlarge_runstack(depth, eval_defmacro_k);
     return;
   }
@@ -2604,7 +2609,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
 				     (shift ? genv->link_midx : NULL), 
 				     1, genv->phase);
 	
-  scheme_on_next_top(comp_env, NULL, scheme_false);
+  scheme_on_next_top(comp_env, NULL, scheme_false, certs);
   vals = scheme_eval_linked_expr_multi(expr);
 
   scheme_pop_prefix(save_runstack);
@@ -3645,7 +3650,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  exp_body = scheme_make_pair(vec, exp_body);
 	
 	  eval_defmacro(names, count, m, eenv->genv, rhs_env, rp, mrec.max_let_depth, 0, 
-			(for_stx ? env->genv->exp_env->toplevel : env->genv->syntax), for_stx);
+			(for_stx ? env->genv->exp_env->toplevel : env->genv->syntax), for_stx,
+			rec[drec].certs);
 
 	  /* Add a renaming for each name: */
 	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {

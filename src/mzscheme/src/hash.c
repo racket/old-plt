@@ -308,12 +308,14 @@ Scheme_Hash_Table *scheme_clone_hash_table(Scheme_Hash_Table *ht)
   table = MALLOC_ONE_TAGGED(Scheme_Hash_Table);
   memcpy(table, ht, sizeof(Scheme_Hash_Table));
 
-  ba = MALLOC_N(Scheme_Object *, table->size);
-  memcpy(ba, table->vals, sizeof(Scheme_Object *) * table->size);
-  table->vals = ba;
-  ba = MALLOC_N(Scheme_Object *, table->size);
-  memcpy(ba, table->keys, sizeof(Scheme_Object *) * table->size);
-  table->keys = ba;
+  if (table->size) {
+    ba = MALLOC_N(Scheme_Object *, table->size);
+    memcpy(ba, table->vals, sizeof(Scheme_Object *) * table->size);
+    table->vals = ba;
+    ba = MALLOC_N(Scheme_Object *, table->size);
+    memcpy(ba, table->keys, sizeof(Scheme_Object *) * table->size);
+    table->keys = ba;
+  }
 
   if (table->mutex) {
     Scheme_Object *sema;

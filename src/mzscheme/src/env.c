@@ -2111,14 +2111,14 @@ scheme_lookup_binding(Scheme_Object *find_id, Scheme_Comp_Env *env, int flags,
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, kernel_symbol)) {
     /* Create a module variable reference, so that idx is preserved: */
     return scheme_hash_module_variable(env->genv, modidx, find_id, 
-				       env->insp,
+				       genv->module->insp,
 				       modpos, mod_defn_phase);
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Need to return a variable reference in this case, too. */
     return scheme_hash_module_variable(env->genv, genv->module->self_modidx, find_global_id, 
-				       env->insp,
+				       genv->module->insp,
 				       modpos, genv->mod_phase);
   }
 
@@ -2776,7 +2776,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 			       + SCHEME_RESOLVE_MODIDS
 			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			       + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST),
-			      NULL, NULL, NULL);
+			      scheme_current_thread->current_local_certs, NULL, NULL);
     
     /* Deref globals */
     if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))

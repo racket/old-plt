@@ -71,10 +71,16 @@ static void yield_indefinitely()
 #ifdef MZ_PRECISE_GC
   void *dummy;
 #endif
+  mz_jmp_buf * volatile save, newbuf;
 
-  if (!scheme_setjmp(scheme_error_buf)) {
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+
+  if (!scheme_setjmp(newbuf)) {
     mred_wait_eventspace();
   }
+
+  scheme_current_thread->error_buf = save;
 
 #ifdef MZ_PRECISE_GC
   dummy = NULL; /* makes xform think that dummy is live, so we get a __gc_var_stack__ */
@@ -176,12 +182,19 @@ static FinishArgs *xfa;
 
 static void do_graph_repl(Scheme_Env *env)
 {
-  if (!scheme_setjmp(scheme_error_buf)) {
+  mz_jmp_buf * volatile save, newbuf;
+
+  save = scheme_current_thread->error_buf;
+  scheme_current_thread->error_buf = &newbuf;
+
+  if (!scheme_setjmp(newbuf)) {
     if (xfa->alternate_rep)
       scheme_eval_string("(read-eval-print-loop)", env);
     else
       scheme_eval_string("(graphical-read-eval-print-loop)", env);
   }
+
+  scheme_current_thread->error_buf = save;
 
 #ifdef MZ_PRECISE_GC
   env = NULL; /* makes xform think that env is live, so we get a __gc_var_stack__ */

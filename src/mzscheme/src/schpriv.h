@@ -777,7 +777,8 @@ void scheme_flush_stack_copy_cache(void);
 void *scheme_top_level_do(void *(*k)(void), int eb);
 #define scheme_top_level_do_w_thread(k, eb, p) scheme_top_level_do(k, eb)
 
-void scheme_on_next_top(struct Scheme_Comp_Env *env, Scheme_Object *mark, Scheme_Object *name);
+void scheme_on_next_top(struct Scheme_Comp_Env *env, Scheme_Object *mark, 
+			Scheme_Object *name, Scheme_Object *certs);
 
 Scheme_Object *scheme_call_ec(int argc, Scheme_Object *argv[]);
 
@@ -1486,7 +1487,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 Scheme_Object *scheme_apply_macro(Scheme_Object *name, Scheme_Env *menv,
 				  Scheme_Object *f, Scheme_Object *code,
 				  Scheme_Comp_Env *env, Scheme_Object *boundname,
-				  int for_set);
+				  Scheme_Object *certs, int for_set);
 
 Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags, Scheme_Comp_Env *env);
 void scheme_add_compilation_binding(int index, Scheme_Object *val,

@@ -1094,10 +1094,28 @@
    '(let ()
       (eval '(module contract-test-suite7 mzscheme
                (require (lib "contract.ss"))
+               (define-struct s (a b))
+               (define-struct (t s) (c d))
+               (provide/contract 
+                (struct s ((a any?) (b any?)))
+                (struct (t s) ((a any?) (b any?) (c any?) (d any?))))))
+      (eval '(require contract-test-suite7))
+      (eval '(let ([x (make-t 1 2 3 4)])
+               (s-a x)
+               (s-b x)
+               (t-c x)
+               (t-d x)
+               (void)))))
+   
+  (test/spec-passed
+   'provide/contract8
+   '(let ()
+      (eval '(module contract-test-suite8 mzscheme
+               (require (lib "contract.ss"))
                (provide/contract (rename the-internal-name the-external-name integer?))
                (define the-internal-name 1)
                (+ the-internal-name 1)))
-      (eval '(require contract-test-suite7))
+      (eval '(require contract-test-suite8))
       (eval '(+ the-external-name 1))))
 
   
@@ -1163,6 +1181,27 @@
               (new (class object% (field [x #t] [y 'x]) (super-new)))
               'pos
               'neg))
+  
+  (test/spec-passed/result
+   'object-contract/field6
+   '(send (contract (object-contract [m (integer? . -> . integer?)])
+                    (new (class object% (define x 1) (define/public (m y) x) (super-new)))
+                    'pos
+                    'neg)
+          m
+          2)
+   1)
+  
+  #;
+  (test/spec-passed/result
+   'object-contract/field7
+   '(send (contract (object-contract)
+                    (new (class object% (define x 1) (define/public (m y) x) (super-new)))
+                    'pos
+                    'neg)
+          m
+          2)
+   1)
   
   (test/spec-passed/result
    'object-contract->1
@@ -2378,6 +2417,21 @@
   (test/well-formed #'(case-> (->d* (any? any?) (lambda x any?)) (-> integer? integer?)))
   (test/well-formed #'(case-> (->d* (any? any?) any? (lambda x any?)) (-> integer? integer?)))
 
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;;                                                        ;;
+  ;;   Inferred Name Tests                                  ;;
+  ;;                                                        ;;
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (eval 
+   '(module contract-test-suite-inferred-name1 mzscheme
+      (require (lib "contract.ss"))
+      (define contract-inferred-name-test-contract (-> integer? any))
+      (define (contract-inferred-name-test x) #t)
+      (provide/contract (contract-inferred-name-test contract-inferred-name-test-contract))))
+  (eval '(require contract-test-suite-inferred-name1))
+  (eval '(test 'contract-inferred-name-test object-name contract-inferred-name-test))
+  
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
   ;;   Contract Name Tests                                  ;;

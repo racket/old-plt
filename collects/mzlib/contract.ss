@@ -167,7 +167,7 @@ add struct contracts for immutable structs?
                   [(rename . _)
                    (raise-syntax-error 'provide/contract "malformed rename clause" provide-stx clause)]
                   [(struct struct-name ((field-name contract) ...))
-                   (and (identifier? (syntax struct-name))
+                   (and (well-formed-struct-name? (syntax struct-name))
                         (andmap identifier? (syntax->list (syntax (field-name ...)))))
                    (let ([sc (build-struct-code provide-stx
                                                 (syntax struct-name)
@@ -180,6 +180,11 @@ add struct contracts for immutable structs?
                                        "missing fields"
                                        provide-stx
                                        clause)]
+                  [(struct name . rest)
+                   (not (well-formed-struct-name? (syntax name)))
+                   (raise-syntax-error 'provide/contract "name must be an identifier or two identifiers with parens around them"
+                                       provide-stx
+                                       (syntax name))]
                   [(struct name (fields ...))
                    (for-each (lambda (field)
                                (syntax-case field ()
@@ -220,11 +225,36 @@ add struct contracts for immutable structs?
                                        provide-stx
                                        (syntax unk))]))]))
          
+         ;; well-formed-struct-name? : syntax -> bool
+         (define (well-formed-struct-name? stx)
+           (or (identifier? stx)
+               (syntax-case stx ()
+                 [(name super)
+                  (and (identifier? (syntax name))
+                       (identifier? (syntax super)))
+                  #t]
+                 [else #f])))
+         
          ;; build-struct-code : syntax syntax (listof syntax) (listof syntax) -> syntax
          ;; constructs the code for a struct clause
          ;; first arg is the original syntax object, for source locations
-         (define (build-struct-code stx struct-name field-names field-contracts)
-           (let* ([field-contract-ids (map (lambda (field-name) 
+         (define (build-struct-code stx struct-name-position field-names field-contracts)
+           (let* ([struct-name (syntax-case struct-name-position ()
+                                 [(a b) (syntax a)]
+                                 [else struct-name-position])]
+                  [parent-struct-count (let ([parent-info (extract-parent-struct-info struct-name-position)])
+                                         (and parent-info
+                                              (let ([fields (cadddr parent-info)])
+                                                (cond
+                                                  [(null? fields) 0]
+                                                  [(not (car (last-pair fields)))
+                                                   (raise-syntax-error 
+                                                    'provide/contract
+                                                    "cannot determine the number of fields in super struct"
+                                                    provide-stx
+                                                    struct-name)]
+                                                  [else (length fields)]))))]
+                  [field-contract-ids (map (lambda (field-name) 
                                              (a:mangle-id provide-stx
                                                           "provide/contract-field-contract"
                                                           field-name
@@ -239,25 +269,35 @@ add struct contracts for immutable structs?
                   [predicate-id (build-predicate-id struct-name)]
                   [constructor-id (build-constructor-id struct-name)])
              (with-syntax ([(selector-codes ...)
-                            (map (lambda (selector-id field-contract-id) 
-                                   (code-for-one-id stx
-                                                    selector-id
-                                                    (build-selector-contract struct-name 
-                                                                             predicate-id
-                                                                             field-contract-id)
-                                                    #f))
-                                 selector-ids
-                                 field-contract-ids)]
+                            (filter
+                             (lambda (x) x)
+                             (map/count (lambda (selector-id field-contract-id index)
+                                          (if (or (not parent-struct-count)
+                                                  (parent-struct-count . <= . index))
+                                              (code-for-one-id stx
+                                                               selector-id
+                                                               (build-selector-contract struct-name 
+                                                                                        predicate-id
+                                                                                        field-contract-id)
+                                                               #f)
+                                              #f))
+                                        selector-ids
+                                        field-contract-ids))]
                            [(mutator-codes ...)
-                            (map (lambda (mutator-id field-contract-id)
-                                   (code-for-one-id stx
-                                                    mutator-id 
-                                                    (build-mutator-contract struct-name 
-                                                                            predicate-id
-                                                                            field-contract-id)
-                                                    #f))
-                                 mutator-ids
-                                 field-contract-ids)]
+                            (filter
+                             (lambda (x) x)
+                             (map/count (lambda (mutator-id field-contract-id index)
+                                          (if (or (not parent-struct-count)
+                                                  (parent-struct-count . <= . index))
+                                              (code-for-one-id stx
+                                                               mutator-id 
+                                                               (build-mutator-contract struct-name 
+                                                                                       predicate-id
+                                                                                       field-contract-id)
+                                                               #f)
+                                              #f))
+                                        mutator-ids
+                                        field-contract-ids))]
                            [predicate-code (code-for-one-id stx predicate-id (syntax (-> any? boolean?)) #f)]
                            [constructor-code (code-for-one-id
                                               stx
@@ -283,6 +323,32 @@ add struct contracts for immutable structs?
                   predicate-code
                   constructor-code
                   (provide struct-name struct:struct-name))))))
+ 
+         ;; map/count : (X Y int -> Z) (listof X) (listof Y) -> (listof Z)
+         (define (map/count f l1 l2)
+           (let loop ([l1 l1]
+                      [l2 l2]
+                      [i 0])
+             (cond
+               [(and (null? l1) (null? l2)) '()]
+               [(or (null? l1) (null? l2)) (error 'map/count "mismatched lists")]
+               [else (cons (f (car l1) (car l2) i)
+                           (loop (cdr l1)
+                                 (cdr l2)
+                                 (+ i 1)))])))
+         
+         ;; extract-struct-info : syntax -> (union #f (list syntax syntax (listof syntax) ...))
+         (define (extract-parent-struct-info stx)
+           (syntax-case stx ()
+             [(a b)
+              (syntax-local-value 
+               (syntax b)
+               (lambda ()
+                 (raise-syntax-error 'provide/contract
+                                     "expected a struct name" 
+                                     provide-stx
+                                     (syntax a))))]
+             [a #f]))
          
          ;; build-constructor-contract : syntax (listof syntax) syntax -> syntax
          (define (build-constructor-contract stx field-contract-ids predicate-id)

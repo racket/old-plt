@@ -46,7 +46,7 @@
 	(p-define-struct pstr_primitive (name desc))
 	;(make-pstr_type list)
 	(p-define-struct pstr_type (string*type_declaration-list))
-	;(make-pstr_exception string exception_declaration)
+	;(make-pstr_exception string exception_declaration(core_type list))
 	(p-define-struct pstr_exception (name decl))
 	;(make-pstr_exn_rebind string longident)
 	(p-define-struct pstr_exn_rebind (name ident))

@@ -27,7 +27,7 @@
 	(let ([firsttype (car current-type)])
 	  (begin
 	    (set! current-type (cdr current-type))
-	    (if (void? value)
+	    (if (<voidstruct>? value)
 		(format "~a" (ml-tstyle firsttype))
 		(format "~a = ~a" (ml-tstyle firsttype) (ml-style value))))))
 
@@ -68,6 +68,8 @@
 	    (tupleformat (tuple-list type)))]
 	 [(tvar? type)
 	  (tvar-tbox type)]
+	 [(syntax? type)
+	  "Why the hell is a type a sytnax object?"]
 	 [else type]))
 
       (define (ml-style value)
@@ -132,11 +134,17 @@
 					    (if (list? (car ccomp))
 						(append (flatten (car ccomp)) (flatten (cdr ccomp)))
 						(cons (car ccomp) (flatten (cdr ccomp))))))]
-				     [cur-parse (parse-ml-port port name)])
+				     [cur-parse (parse-ml-port port name)]
+				     [syntaxify (lambda (stmt)
+						  (datum->syntax-object #f
+									stmt
+									#f))])
 			     
 			    (begin
 			      (set! current-type (flatten (typecheck-all cur-parse name)))
-			      (set! current-parse  (flatten (compile-all cur-parse name)))
+			      (set! current-parse (map syntaxify (flatten (compile-all cur-parse name))))
+			      (pretty-print current-type)
+			      (pretty-print (syntax-object->datum (car current-parse)))
 				    
 			      (let ([firstexp (car current-parse)])
 				(begin
@@ -173,9 +181,11 @@
 		   (namespace-require 'mzscheme)
                    (namespace-require path))))))
           (define/public (render-value value settings port port-write) (begin
-									 (pretty-print (format "~a ~a ~a ~a" value settings port port-write))
+									 (pretty-print (format "render-value ~a ~a ~a ~a" value settings port port-write))
 									 (display (format-typevalue (eval value)) port)));(format-typevalue value) port))
-          (define/public (render-value/format value settings port port-write width) (display (format-typevalue value) port))
+          (define/public (render-value/format value settings port port-write width)
+	    (begin (pretty-print (format "render-value/format ~a ~a ~a ~a ~a" value settings port port-write width))
+		   (display (format-typevalue value) port)))
           (define/public (unmarshall-settings x) x)
 	  (define/public (create-executable settings parent src-file dest-file)
 	    '(let ([code (compile-simplified (simplify (parse-a60-file src-file)

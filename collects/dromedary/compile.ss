@@ -58,18 +58,23 @@
 			 (let ([core (compile-core_type (ast:type_declaration-manifest typedecl))])
 			   (begin
 			     (hash-table-put! user-types name core)
-			     #'(void #f)))]
+			     #'(make-<voidstruct> #f)))]
 			[($ ast:ptype_variant scll)
 			 (let ([cscll (compile-scll scll)])
 			   (begin
 			     (hash-table-put! user-types name (lambda (x) (isa-variant? 'a 'b cscll)))
 			     (pretty-print "begining type definitions")
-			     (mkdefinestructs scll)))]
+			     #`(begin #,@(mkdefinestructs scll) (make-<voidstruct> #f))))]
 ;			     #`(define-struct #,(string->symbol(eval (caar scll))) (tlist))))]
 			 ))]
 	      [($ ast:pstr_eval expr)
 	       (compile-ml expr context)]
-	      
+	      [($ ast:pstr_exception name decl)
+	       #`(begin (define-struct (#,(string->symbol (format "exn:~a" (eval name))) exn) ())
+			(make-<voidstruct> #f))]
+	      [($ ast:pstr_exn_rebind name ident)
+	       #'"voigt"]
+	       #`(begin (define-values 
 	      [else
 	       (pretty-print (list "Unknown structure: " desc))]))
 
@@ -193,6 +198,11 @@
 	      [($ ast:pexp_tuple xlist)
 	       #`(make-tuple (list #,@(compile-exps xlist context)))]
 
+	      [($ ast:pexp_try tryexp pelist)
+	       (let ([matches (compile-match pelist)]
+		     [tryres (compile-ml tryexp)])
+		 #`(with-handlers ([(not-break-exn? (match-lambda #,@matches))]) #,tryres))]
+				  
 	      [else
 	       (pretty-print (list "Expression unknown: " desc))]))
 

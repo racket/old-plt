@@ -394,7 +394,7 @@
      [() null]
      [(SEMISEMI) null]
      [(SEMISEMI <seq_expr> <structure_tail>)
-      (ast:make-structure_item (ast:make-pstr_eval (cons $2 $3)) (build-src 2))]
+      (list (ast:make-structure_item (ast:make-pstr_eval (cons $2 $3)) (build-src 2 3)))]
      [(SEMISEMI <structure_item> <structure_tail>) (cons $2 $3)]
      [(<structure_item> <structure_tail>) (cons $1 $2)])
 
@@ -402,14 +402,16 @@
      [(LET <rec_flag> <let_bindings>)
       (let ([bindings $3])
 	(if (and (ast:pattern? (car bindings)) (ast:ppat_any? (ast:pattern-ppat_desc (car bindings))))
-	    (ast:make-structure_item (ast:make-pstr_eval (cdr bindings)) (build-src 1))
-	    (ast:make-structure_item (ast:make-pstr_value $2 (reverse $3)) (build-src 1))))]
+	    (ast:make-structure_item (ast:make-pstr_eval (cdr bindings)) (build-src 3))
+	    (ast:make-structure_item (ast:make-pstr_value $2 (reverse $3)) (build-src 3))))]
      [(EXTERNAL <val_ident_colon> <core_type> EQUAL <primitive_declaration>)
-      (ast:make-structure_item (ast:make-pstr_primitive $2 (ast:make-value_description $3 $5)) (build-src 1))]
+      (ast:make-structure_item (ast:make-pstr_primitive $2 (ast:make-value_description $3 $5)) (build-src 5))]
      [(TYPE <type_declarations>)
-      (ast:make-structure_item (ast:make-pstr_type (reverse $2)) (build-src 1))]
+      (ast:make-structure_item (ast:make-pstr_type (reverse $2)) (build-src 2))]
      [(EXCEPTION UIDENT <constructor_arguments>)
-      (ast:make-structure_item (ast:make-pstr_exn_rebind $2 $2) (build-src 1))]
+      (ast:make-structure_item (ast:make-pstr_exception $2 $3) (build-src 3))]
+     [(EXCEPTION UIDENT EQUAL <constr_longident>)
+      (ast:make-structure_item (ast:make-pstr_exn_rebind $2 $4) (build-src 4))]
 ;     [(EXCEPTION UIDENT <module_binding>)
 ;      (ast:make-structure_item (ast:make-pstr_module $2 $3) (build-src 1))]
      [(OPEN <mod_longident>)
@@ -420,13 +422,13 @@
      )
 
     (<constrain>
-     [(<core_type> EQUAL <core_type>) (cons (cons $1 $3) (build-src 1))])
+     [(<core_type> EQUAL <core_type>) (cons (cons $1 $3) (build-src 3))])
 ;; Core Expressions
 
     (<seq_expr>
      [(<expr>) (prec SEMI) $1]
      [(<expr> SEMI) $1]
-     [(<expr> SEMI <seq_expr>) (ast:make-expression (ast:make-sequence $1 $3) (build-src 1))])
+     [(<expr> SEMI <seq_expr>) (ast:make-expression (ast:make-sequence $1 $3) (build-src 3))])
 
     (<labeled_simple_pattern>
      [(QUESTION LPAREN <label_let_pattern> <opt_default> RPAREN)
@@ -457,99 +459,100 @@
      [(<label_var>) $1]
      [(<label_var> COLON <core_type>)
       (let ([label-pattern $1])
-	(cons (car label-pattern) (ast:make-pattern (ast:make-ppat_constraint (cdr label-pattern) $3))) (build-src 1))])
+	(cons (car label-pattern) (ast:make-pattern (ast:make-ppat_constraint (cdr label-pattern) $3))) (build-src 3))])
 
     (<label_var>
      [(LIDENT) (cons $1 (ast:make-pattern (ast:make-ppat_var $1)) (build-src 1))])
 
     (<let_pattern>
      [(<pattern>) $1]
-     [(<pattern> COLON <core_type>) (ast:make-pattern (ast:make-ppat_constraint $1 $3) (build-src 1))])
+     [(<pattern> COLON <core_type>) (ast:make-pattern (ast:make-ppat_constraint $1 $3) (build-src 3))])
 
     (<expr>
      [(<simple_expr>) $1]
      [(<simple_expr> <simple_labeled_expr_list>) (prec <prec_appl>)
       (ast:make-expression (ast:make-pexp_apply $1 (reverse $2)) (build-src 1 2))]
      [(LET <rec_flag> <let_bindings> IN <seq_expr>) (prec <prec_let>)
-      (ast:make-expression (ast:make-pexp_let $2 (reverse $3) $5) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_let $2 (reverse $3) $5) (build-src 5))]
      ;[(LET MODULE UIDENT <module_binding> IN <seq_expr>) (prec <prec_let>)
      ; (ast:make-expression (ast:make-pexp_letmodule($3, $4, $6)))]
      [(FUNCTION <opt_bar> <match_cases>) (prec <prec_fun>)
-      (ast:make-expression (ast:make-pexp_function "" null (reverse $3)) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_function "" null (reverse $3)) (build-src 3))]
      [(FUN <labeled_simple_pattern> <fun_def>) (prec <prec_fun>)
       (let ([pat $2])
-	(ast:make-expression (ast:make-pexp_function (car (car pat)) (cdr (car pat)) (list (cons (cdr pat) $3))) (build-src 1)))]
+	(ast:make-expression (ast:make-pexp_function (car (car pat)) (cdr (car pat)) (list (cons (cdr pat) $3))) (build-src 3)))]
      [(MATCH <seq_expr> WITH <opt_bar> <match_cases>) (prec <prec_match>)
-      (ast:make-expression (ast:make-pexp_match $2 (reverse $5)) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_match $2 (reverse $5)) (build-src 5))]
      [(TRY <seq_expr> WITH <opt_bar> <match_cases>) (prec <prec_try>)
-      (ast:make-expression (ast:make-pexp_try $2 (reverse $5)) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_try $2 (reverse $5)) (build-src 5))]
      ;[(TRY <seq_expr> WITH <error>) (prec <prec_try>)
      ; (error)]
      [(<expr_comma_list>)
       (ast:make-expression (ast:make-pexp_tuple (reverse $1)) (build-src 1))]
      [(<constr_longident> <simple_expr>) (prec <prec_constr_appl>)
-      (ast:make-expression (ast:make-pexp_construct $1 $2 #f) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_construct $1 $2 #f) (build-src 2))]
      [(<name_tag> <simple_expr>) (prec <prec_constr_appl>)
-      (ast:make-expression (ast:make-pexp_variant $1 $2) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_variant $1 $2) (build-src 2))]
      [(IF <seq_expr> THEN <expr> ELSE <expr>) (prec <prec_if>)
-      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 $6) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 $6) (build-src 6))]
      [(IF <seq_expr> THEN <expr>) (prec <prec_if>)
-      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 null) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_ifthenelse $2 $4 null) (build-src 4))]
      [(WHILE <seq_expr> DO <seq_expr> DONE)
-      (ast:make-expression (ast:make-pexp_while $2 $4) (build-src 1))]
+; woodoo
+      (ast:make-expression (ast:make-pexp_while $2 $4) (build-src 5))]
      [(FOR <val_ident> EQUAL <seq_expr> <direction_flag> <seq_expr> DO <seq_expr> DONE)
-      (ast:make-expression (ast:make-pexp_for $2 $4 $6 $5 $8) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_for $2 $4 $6 $5 $8) (build-src 9))]
      [(<expr> COLONCOLON <expr>)
-      (ast:make-expression (ast:make-pexp_construct (ast:make-lident "::") (ast:make-expression (ast:make-pexp_tuple (list $1 $3)) (build-src 1)) #f) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_construct (ast:make-lident "::") (ast:make-expression (ast:make-pexp_tuple (list $1 $3)) (build-src 3)) #f) (build-src 3))]
      [(<expr> INFIXOP0 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP1 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP2 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP3 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> INFIXOP4 <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $2)) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> PLUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "+")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "+")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> MINUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> MINUSDOT <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-.")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "-.")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> STAR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "*")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "*")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> EQUAL <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "=")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "=")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> LESS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "<")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "<")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> GREATER <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ">")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ">")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> OR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "or")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "or")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> BARBAR <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "||")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "||")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> AMPERSAND <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> AMPERAMPER <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&&")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident "&&")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<expr> COLONEQUAL <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ":=")) (build-src 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident ":=")) (build-src 2 2)) (list (cons "" $1) (cons "" $3))) (build-src 1 3))]
      [(<subtractive> <expr>) (prec <prec_unary_minus>)
       (let ([type (ast:expression-pexp_desc $2)])
 	(if (and (ast:pexp_constant? type) (number? (ast:pexp_constant-const type)))
 	    (ast:make-expression (ast:make-pexp_constant (- (ast:pexp_constant-const type))) (build-src 1 2))
 	    (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident (string-append "~" $1))) (build-src 1)) (list (cons "" $2))) (build-src 1 2))))]
      [(<simple_expr> DOT <label_longident> LESSMINUS <expr>)
-      (ast:make-expression (ast:make-pexp_setfield($1 $3 $5)) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_setfield($1 $3 $5)) (build-src 5))]
      [(<simple_expr> DOT LPAREN <seq_expr> RPAREN LESSMINUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Array") "set")) (build-src 1)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Array") "set")) (build-src 7)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 7))]
      [(<simple_expr> DOT LBRACKET <seq_expr> RBRACKET LESSMINUS <expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "String") "set")) (build-src 1)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "String") "set")) (build-src 7)) (list (cons "" $1) (cons "" $4) (cons "" $7))) (build-src 7))]
 ;;     [(<simple_expr> DOT LBRACE <expr> RBRACE LESSMINUS <expr>)
 ;;      (bigarray_set)]
      [(<label> LESSMINUS <expr>)
-      (ast:make-expression (ast:make-pexp_setinstvar $1 $3) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_setinstvar $1 $3) (build-src 3))]
      [(ASSERT <simple_expr>) (prec <prec_appl>) 
       (ast:make-expression (let ([type (ast:expression-pexp_desc $2)])
 			     (if (and (ast:pexp_construct? type)
@@ -557,9 +560,9 @@
 				      (null? (ast:pexp_construct-expr))
 				      (not (ast:pexp_construct-bool)))
 				 (ast:make-pexp_assertfalse null)
-				 (ast:make-pexp_assert $2))) (build-src 1))]
+				 (ast:make-pexp_assert $2))) (build-src 2))]
      [(LAZY <simple_expr>) (prec <prec_appl>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Pervasive") "ref")) (build-src 1)) (list "" (ast:make-expression (ast:make-pexp_construct (ast:make-ldot (ast:make-lident "Lazy") "Delayed") (ast:make-expression (ast:make-pexp_function "" null (list (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "()") null #f) (build-src 1)) $2)) (build-src 1)) #f) (build-src 1)))) (build-src 1))])
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Pervasive") "ref")) (build-src 2)) (list "" (ast:make-expression (ast:make-pexp_construct (ast:make-ldot (ast:make-lident "Lazy") "Delayed") (ast:make-expression (ast:make-pexp_function "" null (list (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "()") null #f) (build-src 2 2)) $2)) (build-src 2 2)) #f) (build-src 2)))) (build-src 2))])
     (<simple_expr>
      [(<val_longident>)
       (ast:make-expression (ast:make-pexp_ident $1) (build-src 1))]
@@ -576,20 +579,22 @@
      [(BEGIN <seq_expr> END)
       $2]
      [(BEGIN END)
-      (ast:make-expression (ast:make-pexp_construct (ast:make-lident "()") null #f) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_construct (ast:make-lident "()") null #f) (build-src 2))]
 ;;     [(BEGIN <seq_expr> error)
 ;; Unclosed error
      [(LPAREN <seq_expr> <type_constraint> RPAREN)
       (let ([types $3])
-	(ast:make-expression (ast:make-pexp_constraint $2 (car types) (cdr types)) (build-src 1)))]
+	(ast:make-expression (ast:make-pexp_constraint $2 (car types) (cdr types)) (build-src 4)))]
      [(<simple_expr> DOT <label_longident>)
-      (ast:make-expression (ast:make-pexp_field $1 $3) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_field $1 $3) (build-src 3))]
      [(<simple_expr> DOT LPAREN <seq_expr> RPAREN)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Array") "get")) (build-src 1)) (list (cons "" $1) (cons "" $4))) (build-src 1))]
+;woodoo
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "Array") "get")) (build-src 3 5)) (list (cons "" $1) (cons "" $4))) (build-src 5))]
 ;;     [(<simple_expr> DOT LPAREN <seq_expr> error)
 ;; Unclosed error
+;woodoo
      [(<simple_expr> DOT LBRACKET <seq_expr> RBRACKET)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "String") "get")) (build-src 1)) (list (cons "" $1) (cons "" $4))) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-ldot (ast:make-lident "String") "get")) (build-src 3 5)) (list (cons "" $1) (cons "" $4))) (build-src 5))]
 ;;     [(<simple_expr> DOT LBRACKET <seq_expr> error)
 ;; Unclosed error
 ;;     [(<simple_expr> DOT LBRACE <expr> RBRACE)
@@ -598,21 +603,21 @@
 ;; Unclosed error
      [(LBRACE <record_expr> RBRACE)
       (let ([record $2])
-	(ast:make-expression (ast:make-pexp_record (car record) (cdr record)) (build-src 1)))]
+	(ast:make-expression (ast:make-pexp_record (car record) (cdr record)) (build-src 3)))]
 ;;     [(LBRACE <record_expr> error)
 ;; Unclosed error
      [(LBRACKETBAR <expr_semi_list> <opt_semi> BARRBRACKET)
-      (ast:make-expression (ast:make-pexp_array (reverse $2)) (build-src 1))]
+      (ast:make-expression (ast:make-pexp_array (reverse $2)) (build-src 4))]
 ;;     [(LBRACKETBAR <expr_semi_list> <opt_semi> error)
 ;; Unclosed error
      [(LBRACKETBAR BARRBRACKET)
-      (ast:make-expression (ast:make-pexp_array '()))]
+      (ast:make-expression (ast:make-pexp_array '()) (build-src 2))]
      [(LBRACKET <expr_semi_list> <opt_semi> RBRACKET)
-      (mktailexp (reverse $2) (build-src 2))]
+      (mktailexp (reverse $2) (build-src 2 2))]
 ;;     [(LBRACKET <expr_semi_list> <opt_semi> error)
 ;; Unclosed error
      [(PREFIXOP <simple_expr>)
-      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $1)) (build-src 2)) (list (cons "" $2))) (build-src 1 2))])
+      (ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident $1)) (build-src 2 2)) (list (cons "" $2))) (build-src 1 2))])
 ;; Class related expression would go here
 
     (<simple_labeled_expr_list>
@@ -649,7 +654,7 @@
 
     (<let_binding>
      [(<val_ident> <fun_binding>)
-      (cons (ast:make-pattern (ast:make-ppat_var $1) (build-src 1 1)) $2)]
+      (cons (ast:make-pattern (ast:make-ppat_var $1) (build-src 1 2)) $2)]
      [(<pattern> EQUAL <seq_expr>) (prec <prec_let>)
       (cons $1 $3)])
     
@@ -658,10 +663,10 @@
       $2]
      [(<type_constraint> EQUAL <seq_expr>) (prec <prec_let>)
       (let ([binding $1])
-	(ast:make-expression (ast:make-pexp_constraint $3 (car binding) (cdr binding)) (build-src 1)))]
+	(ast:make-expression (ast:make-pexp_constraint $3 (car binding) (cdr binding)) (build-src 3)))]
      [(<labeled_simple_pattern> <fun_binding>)
       (let ([lsp $1])
-	(ast:make-expression (ast:make-pexp_function (caar lsp) (cdar lsp) (list (cons (cdr lsp) $2))) (build-src 1)))])
+	(ast:make-expression (ast:make-pexp_function (caar lsp) (cdar lsp) (list (cons (cdr lsp) $2))) (build-src 2)))])
     
     (<match_cases>
       [(<pattern> <match_action>) (list (cons $1 $2))]
@@ -671,7 +676,7 @@
      [(<match_action>) $1]
      [(<labeled_simple_pattern> <fun_def>)
       (let ([pattern $1])
-	(ast:make-expression (ast:make-pexp_function (car pattern) (cadr pattern) (list (cons (cddr pattern) $2))) (build-src 1)))])
+	(ast:make-expression (ast:make-pexp_function (car pattern) (cadr pattern) (list (cons (cddr pattern) $2))) (build-src 2)))])
 
     (<match_action>
      [(MINUSGREATER <seq_expr>) $2]
@@ -720,15 +725,15 @@
      [(<simple_pattern>)
       $1]
      [(<pattern> AS <val_ident>)
-      (ast:make-pattern (ast:make-ppat_alias $1 $3) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_alias $1 $3) (build-src 3))]
      [(<pattern_comma_list>)
       (ast:make-pattern (ast:make-ppat_tuple (reverse $1)) (build-src 1))]
      [(<constr_longident> <pattern>) (prec <prec_constr_appl>)
-      (ast:make-pattern (ast:make-ppat_construct $1 $2 #f) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_construct $1 $2 #f) (build-src 2))]
      [(<name_tag> <pattern>) (prec <prec_constr_appl>)
-      (ast:make-pattern (ast:make-ppat_variant $1 $2) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_variant $1 $2) (build-src 2))]
      [(<pattern> COLONCOLON <pattern>)
-      (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "::") (ast:make-pattern (ast:make-ppat_tuple (list $1 $3)) (build-src 1)) #f) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_construct (ast:make-lident "::") (ast:make-pattern (ast:make-ppat_tuple (list $1 $3)) (build-src 3)) #f) (build-src 3))]
      [(<pattern> BAR <pattern>)
       (ast:make-pattern (ast:make-ppat_or $1 $3))])
 
@@ -752,27 +757,28 @@
      [(<name_tag>)
       (ast:make-pattern (ast:make-ppat_variant $1 null) (build-src 1))]
      [(SHARP <type_longident>)
-      (ast:make-pattern (ast:make-ppat_type $2) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_type $2) (build-src 2))]
      [(LBRACE <lbl_pattern_list> <opt_semi> RBRACE)
-      (ast:make-pattern (ast:make-ppat_record (reverse $2)) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_record (reverse $2)) (build-src 4))]
 ;;     [(LBRACE <lbl_pattern_list> <opt_semi> error)
 ;; Unclosed error
      [(LBRACKET <pattern_semi_list> <opt_semi> RBRACKET)
-      (mktailpat (reverse $2) (build-src 2))]
+      (mktailpat (reverse $2) (build-src 2 2))]
 ;;     [(LBRACKET <pattern_semi_list> <opt_semi> error)
 ;; Unclosed error
      [(LBRACKETBAR <pattern_semi_list> <opt_semi> BARRBRACKET)
-      (ast:make-pattern (ast:make-ppat_array (reverse $2)) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_array (reverse $2)) (build-src 2 2))]
 ;;     [(LBRACKETBAR <pattern_semi_list> <opt_semi> error)
 ;; Unclosed error
      [(LBRACKETBAR BARRBRACKET)
-      (ast:make-pattern (ast:make-ppat_array null) (build-src 1))]
+      (ast:make-pattern (ast:make-ppat_array null) (build-src 2))]
      [(LPAREN <pattern> RPAREN)
       $2]
 ;;     [(LPAREN <pattern> error)
 ;; Unclosed error
      [(LPAREN <pattern> COLON <core_type> RPAREN)
-      (ast:make-pattern (ast:make-ppat_constraint $2 $4) (build-src 1))]
+;woodoo
+      (ast:make-pattern (ast:make-ppat_constraint $2 $4) (build-src 5))]
 ;;     [(LPAREN <pattern> COLON <core_type> error)
 ;; Unclosed error
      )
@@ -804,7 +810,7 @@
     (<type_declaration>
      [(<type_parameters> LIDENT <type_kind> <constraints>)
       (let ([params-variance (ml-split $1)] [kind-manifest $3])
-	(cons $2 (ast:make-type_declaration (car params-variance) (reverse $4) (car kind-manifest) (cdr kind-manifest) (cdr params-variance) (build-src 1))))])
+	(cons $2 (ast:make-type_declaration (car params-variance) (reverse $4) (car kind-manifest) (cdr kind-manifest) (cdr params-variance) (build-src 4))))])
 
     (<constraints>
      [(<constraints> CONSTRAINT <constrain>) (cons $3 $1)]
@@ -869,23 +875,23 @@
     (<with_constraint>
      [(TYPE <type_parameters> <label_longident> EQUAL <core_type> <constraints>)
       (let ([params-variance (ml-split $2)])
-	(cons $3 (ast:make-pwith_type (ast:make-type_declaration (car params-variance) (reverse $6) (ast:make-ptype_abstract null) $5 (cdr params-variance) (build-src 1)))))])
+	(cons $3 (ast:make-pwith_type (ast:make-type_declaration (car params-variance) (reverse $6) (ast:make-ptype_abstract null) $5 (cdr params-variance) (build-src 6)))))])
     ;; Module stuff might go here
 
     (<core_type>
      [(<core_type2>) $1]
-     [(<core_type2> AS QUOTE <ident>) (ast:make-core_type (ast:make-ptyp_alias $1 $4) (build-src 1))])
+     [(<core_type2> AS QUOTE <ident>) (ast:make-core_type (ast:make-ptyp_alias $1 $4) (build-src 4))])
 
     (<core_type2>
      [(<simple_core_type_or_tuple>) $1]
      [(QUESTION LIDENT COLON <core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
-      (ast:make-core_type (ast:make-ptyp_arrow (string-append "?" $2) (ast:make-core_type (ast:make-ptyp_constr (ast:make-lident "option") (list $4)) (ast:core_type-src $4)) $6) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_arrow (string-append "?" $2) (ast:make-core_type (ast:make-ptyp_constr (ast:make-lident "option") (list $4)) (ast:core_type-src $4)) $6) (build-src 6))]
      [(OPTLABEL <core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
-      (ast:make-core_type (ast:make-ptyp_arrow (string-append "?" $1) (ast:make-core_type (ast:make-ptyp_constr (ast:make-lident "option") (list $2)) (ast:core_type-src $2)) $4) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_arrow (string-append "?" $1) (ast:make-core_type (ast:make-ptyp_constr (ast:make-lident "option") (list $2)) (ast:core_type-src $2)) $4) (build-src 4))]
      [(LIDENT COLON <core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
-      (ast:make-core_type (ast:make-ptyp_arrow $1 $3 $5) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_arrow $1 $3 $5) (build-src 4))]
      [(<core_type2> MINUSGREATER <core_type2>) (prec <prec_type_arrow>)
-      (ast:make-core_type (ast:make-ptyp_arrow "" $1 $3) (build-src 1))])
+      (ast:make-core_type (ast:make-ptyp_arrow "" $1 $3) (build-src 3))])
 
     (<simple_core_type>
      [(<simple_core_type2>) $1]
@@ -898,34 +904,34 @@
 
     (<simple_core_type2>
      [(QUOTE <ident>)
-      (ast:make-core_type (ast:make-ptyp_var $2) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_var $2) (build-src 2))]
      [(UNDERSCORE)
       (ast:make-core_type (ast:make-ptyp_any null) (build-src 1))]
      [(<type_longident>)
       (ast:make-core_type (ast:make-ptyp_constr $1 null) (build-src 1))]
      [(<simple_core_type2> <type_longident>) (prec <prec_constr_appl>)
-      (ast:make-core_type (ast:make-ptyp_constr $2 (list $1)) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_constr $2 (list $1)) (build-src 2))]
      [(LPAREN <core_type_comma_list> RPAREN <type_longident>) (prec <prec_constr_appl>)
-      (ast:make-core_type (ast:make-ptyp_constr $4 (reverse $2)) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_constr $4 (reverse $2)) (build-src 4))]
 ;;     [(LESS <meth_list> GREATER)
 ;;      (ast:make-core_type (ast:make-ptyp_object $2) (build-src 1))]
 ;; And more object-related stuff
      [(LBRACKET <tag_field> RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant (list $2) #f null) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_variant (list $2) #f null) (build-src 3))]
      [(LBRACKET BAR <row_field_list> RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant (reverse $3) #t null) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_variant (reverse $3) #t null) (build-src 3))]
      [(LBRACKETBAR <row_field_list> RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant (reverse $2) #t null) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_variant (reverse $2) #t null) (build-src 3))]
      [(LBRACKET <row_field> BAR <row_field_list> RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant (cons $2 (reverse $4)) #t null) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_variant (cons $2 (reverse $4)) #t null) (build-src 5))]
      [(LBRACKET GREATER <opt_bar> <row_field_list> RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant (reverse $4) #f null) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_variant (reverse $4) #f null) (build-src 5))]
      [(LBRACKETLESS <opt_bar> <row_field_list> RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant (reverse $3) #t null) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_variant (reverse $3) #t null) (build-src 4))]
      [(LBRACKETLESS <opt_bar> <row_field_list> GREATER <name_tag_list> RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant (reverse $3) #t (reverse $5)) (build-src 1))]
+      (ast:make-core_type (ast:make-ptyp_variant (reverse $3) #t (reverse $5)) (build-src 6))]
      [(LBRACKET GREATER RBRACKET)
-      (ast:make-core_type (ast:make-ptyp_variant null #f null) (build-src 1))])
+      (ast:make-core_type (ast:make-ptyp_variant null #f null) (build-src 3))])
 
     (<row_field_list>
      [(<row_field>) (list $1)]
@@ -960,7 +966,7 @@
     (<simple_core_type_or_tuple>
      [(<simple_core_type>) $1]
      [(<simple_core_type> STAR <core_type_list>)
-      (ast:make-core_type (ast:make-ptyp_tuple (cons $1 (reverse $3))) (build-src 1))])
+      (ast:make-core_type (ast:make-ptyp_tuple (cons $1 (reverse $3))) (build-src 3))])
 
     (<core_type_comma_list>
      [(<core_type>) (list $1)]
@@ -1123,7 +1129,7 @@
 (define-syntax mkinfix
   (syntax-rules ()
 		  ([_ lhs op rhs] 
-		   (syntax [ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident op)) (build-src 2)) (list (cons "" lhs) (cons "" rhs))) (build-src 1)]))))
+		   (syntax [ast:make-expression (ast:make-pexp_apply (ast:make-expression (ast:make-pexp_ident (ast:make-lident op)) (build-src 2 2)) (list (cons "" lhs) (cons "" rhs))) (build-src 3)]))))
   
   (define-syntax mkexp
     (syntax-rules ()

@@ -31,24 +31,35 @@
 	       (set! cur-var #\a)
 	       (set! loc location)
 	       (let ([progtype (typecheck-ml stmt (empty-context))])
+		 (begin (pretty-print (format "initial progtype: ~a" progtype))
 		 (if (list? progtype)
 		     (map car (map unconvert-tvars progtype (repeat null (length progtype))))
-		     (list (unconvert-tvars progtype null))))))
+		     (list (unconvert-tvars progtype null)))))))
 
 	   (define (typecheck-ml stmt context)
+;	     (pretty-print (format "typecheck-ml ~a" stmt))
 	     (match stmt
 		    [($ ast:expression desc src)
 		     (typecheck-expr desc context src)]
 		    [(a . b)
-		     (if (null? b)
-			 (typecheck-ml a context)
-			 (cons (typecheck-ml a context) (typecheck-ml b context)))]
+;		     (begin (pretty-print "typechecking a list")
+		     (map typecheck-ml stmt (repeat context (length stmt)))]
+;		     (if (null? b)
+;			 (let ([v (typecheck-ml a context)])
+;			   (begin (pretty-print (format "typechecking last item of list: ~a" v))
+;				  v))
+;			 (let ([f (typecheck-ml a context)]
+;			       [l (typecheck-ml b context)])
+;			   (begin
+;			     (pretty-print (format "typechecking a list: ~a ~a" f l))
+;			 (cons (typecheck-ml a context) (typecheck-ml b context)))))]
 		    [($ ast:structure_item desc src)
 		     (typecheck-structure desc src context)]
 		    [else
 		     (raise-syntax-error #f (format "Cannot typecheck: ~a" stmt) (at stmt (ast:make-src 0 0 0 0)))]))
 
 	   (define (typecheck-structure desc src context)
+;	     (pretty-print (format "typecheck-structure ~a" desc))
 	     (match desc
 		    [($ ast:pstr_value rec_flag pelist)
 		     (typecheck-defines rec_flag pelist context)]
@@ -56,6 +67,12 @@
 		     (map typecheck-typedecl stdlist)]
 		    [($ ast:pstr_eval expr)
 		     (typecheck-ml expr context)]
+		    [($ ast:pstr_exception name decl)
+		     (let ([nconst (make-tconstructor (make-tuple (map typecheck-ml decl)) "exception")])
+		       (begin
+			 (hash-table-put! constructors (eval name) (make-tconstructor (make-tuple (map typecheck-ml decl))) "exception")
+			 (make-mlexn (eval name) nconst)))]
+		       
 		    [else
 		     (raise-syntax-error #f (format "Unrecognized structure: ~a") (at desc src))]))
 
@@ -137,6 +154,12 @@
 			   
 			   (raise-syntax-error #f (format "Constructor not found: ~a" (unlongident name) ) name)))]
 			   
+		    [($ ast:pexp_try tryexp pelist)
+		     (let ([tryt (typecheck-ml tryexp)]
+			   [exnt (typecheck-match pelist "exception" context)])
+		       (if (unify tryt exnt)
+			   tryt))]
+
 		    [else
 		     (raise-syntax-error #f (format "Cannot typecheck expression: ~a" desc) (at desc src))]) )
 

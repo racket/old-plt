@@ -17,27 +17,29 @@
 		  (lambda () (set! tab (string-append " " tab)))
 		  (lambda () 
 		    (if (regexp-match "_loader" filename)
-			(let ([f (load filename)])
-			  (lambda (sym expected-module)
+			(let ([f (load filename #f)])
+			  (lambda (sym)
 			    (fprintf ep
 				     "~atrying ~a's ~a~n" tab filename sym)
-			    (let ([loader (f sym expected-module)])
-			      (and loader
-				   (lambda ()
-				     (fprintf ep
-					      "~astarting ~a's ~a at ~a~n" 
-					      tab filename sym
-					      (current-process-milliseconds))
-				     (let ([s tab])
-				       (begin0
-					(dynamic-wind
-					 (lambda () (set! tab (string-append " " tab)))
-					 (lambda () (loader))
-					 (lambda () (set! tab s)))
-					(fprintf ep
-						 "~adone ~a's ~a at ~a~n"
-						 tab filename sym
-						 (current-process-milliseconds)))))))))
+			    (let-values ([(loader provided-module) (f sym)])
+                              (values
+                               (and loader
+                                    (lambda ()
+                                      (fprintf ep
+                                               "~astarting ~a's ~a at ~a~n" 
+                                               tab filename sym
+                                               (current-process-milliseconds))
+                                      (let ([s tab])
+                                        (begin0
+                                          (dynamic-wind
+                                           (lambda () (set! tab (string-append " " tab)))
+                                           (lambda () (loader))
+                                           (lambda () (set! tab s)))
+                                          (fprintf ep
+                                                   "~adone ~a's ~a at ~a~n"
+                                                   tab filename sym
+                                                   (current-process-milliseconds))))))
+                               provided-module))))
 			(load filename expected-module)))
 		  (lambda () (set! tab s))))
 	       (fprintf ep

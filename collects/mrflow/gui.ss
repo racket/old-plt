@@ -211,46 +211,46 @@
                            snip-types-and-colors
                            #t)
                           ; snips-and-arrows library testing...
-                          ;(saa:init-snips-and-arrows-gui
-                          ; definitions-text
-                          ; sba:get-source-from-label
-                          ; sba:get-mzscheme-position-from-label
-                          ; (lambda (label) (get-span-from-label sba-state label))
-                          ; sba:get-arrows-from-label
-                          ; (lambda (label) (get-style-delta-from-label sba-state label))
-                          ; (lambda (menu labels)
-                          ;   (let* ([new-name-callback
-                          ;           (lambda (item event)
-                          ;             (let ([new-name
-                          ;                    (fw:keymap:call/text-keymap-initializer
-                          ;                     (lambda ()
-                          ;                       (get-text-from-user
-                          ;                        "rename"
-                          ;                        "rename")))]
-                          ;                   [terms (apply
-                          ;                           append
-                          ;                           (map 
-                          ;                            (lambda (label)
-                          ;                              (append
-                          ;                               (map
-                          ;                                (lambda (arrow-info)
-                          ;                                  (cons (car arrow-info) "foo"))
-                          ;                                (sba:get-arrows-from-label label))
-                          ;                               (map
-                          ;                                (lambda (arrow-info)
-                          ;                                  (cons (cadr arrow-info) "foo"))
-                          ;                                (sba:get-arrows-from-label label))
-                          ;                               ))
-                          ;                            labels))])
-                          ;               (user-change-terms terms)))])
-                          ;     (make-object menu-item%
-                          ;       (strcst:string-constant cs-rename-id)
-                          ;       menu
-                          ;       new-name-callback)))
-                          ; get-menu-text-from-snip-type
-                          ; (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
-                          ; snip-types-and-colors
-                          ; #f)
+;                          (saa:init-snips-and-arrows-gui
+;                           definitions-text
+;                           sba:get-source-from-label
+;                           sba:get-mzscheme-position-from-label
+;                           (lambda (label) (get-span-from-label sba-state label))
+;                           sba:get-arrows-from-label
+;                           (lambda (label) (get-style-delta-from-label sba-state label))
+;                           (lambda (menu labels)
+;                             (let* ([new-name-callback
+;                                     (lambda (item event)
+;                                       (let ([new-name
+;                                              (fw:keymap:call/text-keymap-initializer
+;                                               (lambda ()
+;                                                 (get-text-from-user
+;                                                  "rename"
+;                                                  "rename")))]
+;                                             [terms (apply
+;                                                     append
+;                                                     (map 
+;                                                      (lambda (label)
+;                                                        (append
+;                                                         (map
+;                                                          (lambda (arrow-info)
+;                                                            (cons (car arrow-info) "foo"))
+;                                                          (sba:get-arrows-from-label label))
+;                                                         (map
+;                                                          (lambda (arrow-info)
+;                                                            (cons (cadr arrow-info) "foo"))
+;                                                          (sba:get-arrows-from-label label))
+;                                                         ))
+;                                                      labels))])
+;                                         (user-change-terms terms)))])
+;                               (make-object menu-item%
+;                                 (strcst:string-constant cs-rename-id)
+;                                 menu
+;                                 new-name-callback)))
+;                           get-menu-text-from-snip-type
+;                           (lambda (type label) (get-snip-text-from-snip-type sba-state type label))
+;                           snip-types-and-colors
+;                           #f)
                           ]
                          [(sba-state) (sba:make-sba-state register-label-with-gui)])
                       ; disable-evaluation will lock the editor, so hopefully all the other tools

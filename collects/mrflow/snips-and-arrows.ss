@@ -24,9 +24,9 @@
                             get-arrows-from-label
                             ; (symbol symbol -> string)
                             get-menu-text-from-snip-type
-                            ; symbol label -> (listof string)
+                            ; (symbol label -> (listof string))
                             get-snip-text-from-snip-type-and-label
-                            ; popup-menu% (listof label) -> void
+                            ; (popup-menu% (listof label) -> void)
                             extend-menu-for-labels
                             ; (union #f (listof label))
                             previous-labels
@@ -69,9 +69,7 @@
               menu
               (lambda (item event)
                 (for-each (lambda (label)
-                            (let ([snip-strings (get-snip-text-from-snip-type-and-label type label)])
-                              (unless (null? snip-strings)
-                                (saav:add-snips gui-view-state label type editor snip-strings))))
+                            (saav:add-snips gui-view-state label type editor))
                           labels)))))))
   
   ; gui-state menu% (listof label) -> menu-item%
@@ -297,28 +295,21 @@
         ; string symbol -> boolean
         ; We forbid saving if the analysis is in the middle of running or in the middle
         ; of modifying the content of the editor
-        ; If saving is allowed, we remove all snips and arrows before doing so.
         (define/override (can-save-file? filename format)
           (if (symbol? gui-state)
               (super-can-save-file? filename format)
               (if (and (gui-state-term-analysis-done? gui-state)
                        (not (saav:analysis-currently-modifying? gui-view-state)))
-                  (begin
-                    (saav:remove-all-snips-in-all-editors gui-view-state)
-                    (super-can-save-file? filename format))
+                  (super-can-save-file? filename format)
                   #f)))
         
-        (rename [super-do-autosave do-autosave])
-        ; -> (union #f string)
-        ; We forbid autosaving while the analysis is running or while snips and arrows
-        ; are displayed.  There's no real reason to autosave at that point anyway, since
-        ; the user hasn't made any modifications to the code (doing so terminates the
-        ; analysis and resets the state).
-        (define/override (do-autosave)
+        (rename [super-save-file save-file])
+        (define/override (save-file filename format show-errors?)
           (if (symbol? gui-state)
-              (super-do-autosave)
-              #f))
-        
+              (super-save-file filename format show-errors?)
+              (saav:run-thunk-without-snips gui-view-state
+               (lambda () (super-save-file filename format show-errors?)))))
+                  
         ; -> void
         ; colors all registered labels
         ; The analysis proper is only officially done after we've colored everything, otherwise
@@ -511,7 +502,7 @@
            get-arrows-from-label
            ; (label -> style-delta%)
            get-style-delta-from-label
-           ; popup-menu% (listof label) -> void
+           ; (popup-menu% (listof label) -> void)
            extend-menu-for-labels
            ; (symbol symbol -> string)
            get-menu-text-from-snip-type
@@ -526,6 +517,7 @@
                             get-editor-from-label
                             get-mzscheme-position-from-label
                             get-span-from-label
+                            get-snip-text-from-snip-type-and-label
                             get-style-delta-from-label
                             snip-types-and-colors
                             clear-colors-immediately?)]
@@ -575,7 +567,7 @@
                  get-style-delta-from-syntax-object
                  
                  ; OPTIONAL menu stuff
-                 ; popup-menu% (listof syntax-object) -> void
+                 ; (popup-menu% (listof syntax-object) -> void)
                  (extand-menu-for-syntax-objects (lambda (menu stxs) cst:void))
                  
                  ; OPTIONAL snip stuff

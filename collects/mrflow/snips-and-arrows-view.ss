@@ -9,12 +9,14 @@
    
    (prefix cst: "constants.ss")
    (prefix saam: "snips-and-arrows-model.ss")
+   ;"set-list.ss"
+   "set-hash.ss"
    ;"assoc-set-list.ss"
    "assoc-set-hash.ss"
    )
   
   (provide
-   make-gui-view-state ; text% (label -> text%) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (label -> style-delta%) (symbol -> style-delta%) (listof symbol) boolean (label label -> string) -> gui-view-state
+   make-gui-view-state  ; text% (label -> text%) (label -> non-negative-exact-integer) (label -> non-negative-exact-integer) (symbol label -> (listof string)) (label -> style-delta%) (listof (cons symbol style-delta%)) boolean -> gui-view-state
    
    (rename gui-view-state-analysis-currently-modifying? analysis-currently-modifying?) ; gui-view-state -> boolean
    color-registered-labels ; gui-view-state (box (listof text%)) -> void
@@ -36,7 +38,8 @@
    label-has-snips-of-this-type? ; gui-view-state label symbol -> boolean
    snips-currently-displayed-in-editor? ; gui-view-state text% -> boolean
    for-each-snip-type ; gui-view-state (symbol -> void) -> void
-   add-snips ; gui-view-state label symbol text% (listof string) -> void
+   run-thunk-without-snips ; gui-view-state (-> top) -> top
+   add-snips ; gui-view-state label symbol text% -> void
    remove-inserted-snips ; gui-view-state label symbol text% -> void
    remove-all-snips-in-editor ; gui-view-state text% -> void
    remove-all-snips-in-all-editors ; gui-view-state -> void
@@ -57,6 +60,8 @@
                                  ; snips, which triggers calls to after-delete, etc... so after-delete needs to
                                  ; be wrapped to prevent an infinite loop.
                                  analysis-currently-modifying?
+                                 ; (symbol label -> (listof string))
+                                 get-snip-text-from-snip-type-and-label
                                  ; (label -> style-delta%)
                                  get-style-delta-from-label
                                  ; (listof (cons symbol style-delta%))
@@ -69,10 +74,9 @@
   ; (label -> text%)
   ; (label -> non-negative-exact-integer)
   ; (label -> non-negative-exact-integer)
+  ; (symbol label -> (listof string))
   ; (label -> style-delta%)
-  ; (symbol -> style-delta%)
-  ; (listof symbol)
-  ; (label label -> string)
+  ; (listof (cons symbol style-delta%))
   ; boolean
   ; -> gui-view-state
   (set! make-gui-view-state
@@ -81,6 +85,7 @@
                    get-editor-from-label
                    get-mzscheme-position-from-label
                    get-span-from-label
+                   get-snip-text-from-snip-type-and-label
                    get-style-delta-from-label
                    snip-types-and-colors
                    clear-colors-immediately?)
@@ -91,6 +96,7 @@
                                       top-editor
                                       get-editor-from-label
                                       #f
+                                      get-snip-text-from-snip-type-and-label
                                       get-style-delta-from-label
                                       (map (lambda (snip-type-and-color)
                                              (cons (car snip-type-and-color)
@@ -373,79 +379,91 @@
           ; that we need to sort the positions of the labels in decreasing order for a given
           ; editor, otherwise modifying one term would change the actual positions of the
           ; remaining terms to change...)
-          (assoc-set-for-each
-           new-terms-by-positions-by-editor
-           (lambda (editor new-terms-by-positions)
-             (let ([locked? (send editor is-locked?)]
-                   [abort? #f])
-               ; These changes can be undone only when the editor doesn't contain any snips,
-               ; otherwise the undo will undo at the wrong place.  So the user has the choice
-               ; between either first geeting rid of the snips, or force the change and forsake
-               ; the undo.  In all cases, if a change happens, the "save" button will show up.
-               (if (snips-currently-displayed-in-editor? gui-view-state editor)
-                   (if (eq? (message-box (strcst:string-constant snips-and-arrows-changing-terms-warning-title)
-                                         (strcst:string-constant snips-and-arrows-changing-terms-warning)
-                                         #f '(ok-cancel caution))
-                            'ok)
-                       (send editor begin-edit-sequence #f)
-                       (set! abort? #t))
-                   ; no snips -> allow undo
-                   (send editor begin-edit-sequence #t))
-               (unless abort?
-                 (send editor lock #f)
-                 (for-each
-                  (lambda (position-and-new-term-pair)
-                    (let* ([position (car position-and-new-term-pair)]
-                           [new-term (cdr position-and-new-term-pair)]
-                           [labels (get-related-labels-from-drscheme-pos-and-editor gui-view-state position editor)])
-                      (let-values ([(old-ending-pos new-ending-pos)
-                                    (saam:user-change-terms gui-model-state
-                                                            labels editor
-                                                            (string-length new-term))])
-                        (send editor insert new-term position old-ending-pos)
-                        ; the styles for the different labels are hopefully the same...
-                        (send editor change-style
-                              (get-style-delta-from-label (car labels))
-                              position new-ending-pos #f))))
-                  (lst:quicksort (assoc-set-map new-terms-by-positions cons)
-                                 (lambda (pos&term-pair1 pos&term-pair2)
-                                   (> (car pos&term-pair1) (car pos&term-pair2)))))
-                 (send editor lock locked?)
-                 (send editor end-edit-sequence)))))
+          ;
+          ; These changes can be undone only when the editor doesn't contain any snips,
+          ; otherwise the undo will undo at the wrong place.  Even if we were to force
+          ; the change without undo, it would still not work because any previous action
+          ; could later be undone at the wrong place.  The only way out it to put the
+          ; whole thing inside run-thunk-without-snips (which will make it undoable
+          ; from DrScheme's point of view) and provide our own undoer to undo the change.
+          ; XXX to be done later... same thing with user modifications (insert / delete):
+          ; use run-thunk-without-snips and provide our own undoer with add-undo.
+          ; In the meantime we just forbid the change.  Note that we must test all the editors
+          ; for snips before doing any change, because otherwise we might change terms in one
+          ; editor and not in another and break the semantics of the change.
+          (let ([abort? #f])
+            (assoc-set-for-each
+             new-terms-by-positions-by-editor
+             (lambda (editor new-terms-by-positions)
+               (when (snips-currently-displayed-in-editor? gui-view-state editor)
+                 (set! abort? #t))))
+            (if abort?
+                (message-box (strcst:string-constant snips-and-arrows-user-action-disallowed-title)
+                             (strcst:string-constant snips-and-arrows-user-action-disallowed)
+                             #f '(ok caution))
+                ; the "save" button will show up...
+                (assoc-set-for-each
+                 new-terms-by-positions-by-editor
+                 (lambda (editor new-terms-by-positions)
+                   (let ([locked? (send editor is-locked?)])
+                     (send editor begin-edit-sequence #t)
+                     (send editor lock #f)
+                     (for-each
+                      (lambda (position-and-new-term-pair)
+                        (let* ([position (car position-and-new-term-pair)]
+                               [new-term (cdr position-and-new-term-pair)]
+                               [labels (get-related-labels-from-drscheme-pos-and-editor gui-view-state position editor)])
+                          (let-values ([(old-ending-pos new-ending-pos)
+                                        (saam:user-change-terms gui-model-state
+                                                                labels editor
+                                                                (string-length new-term))])
+                            (send editor insert new-term position old-ending-pos)
+                            ; the styles for the different labels are hopefully the same...
+                            (send editor change-style
+                                  (get-style-delta-from-label (car labels))
+                                  position new-ending-pos #f))))
+                      (lst:quicksort (assoc-set-map new-terms-by-positions cons)
+                                     (lambda (pos&term-pair1 pos&term-pair2)
+                                       (> (car pos&term-pair1) (car pos&term-pair2)))))
+                     (send editor lock locked?)
+                     (send editor end-edit-sequence))))))
           (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))))
   
   
   ; SNIPS
-  ; gui-view-state label symbol text% (listof string) -> void
+  ; gui-view-state label symbol text% -> void
   ; Adds snips of given type to given label.
   ; We could get the editor from the label, but there's no reason to bother...
-  (define (add-snips gui-view-state label type editor snips-content)
-    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
-    (let ([snip-style
-           (cdr (assq type (gui-view-state-snip-types-and-colors gui-view-state)))]
-          [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
-                                        label type editor (length snips-content))]
-          [locked? (send editor is-locked?)]
-          [modified? (send editor is-modified?)])
-      (send editor begin-edit-sequence #f)
-      (send editor lock #f)
-      (for-each (lambda (snip-content)
-                  (let* ([snip-text (make-object text%)]
-                         [snip (make-object editor-snip% snip-text)])
-                    (send snip-text insert snip-content)
-                    (send snip-text lock #t)
-                    (send editor insert snip starting-pos starting-pos)
-                    ; XXX bug here on Solaris, can be worked around
-                    ; (invalidate-bitmap-cache gui-view-state)
-                    ; see collects/test/tool2.ss
-                    (send editor change-style snip-style
-                          starting-pos (add1 starting-pos) #f)))
-                snips-content)
-      (send editor set-modified modified?)
-      (send editor lock locked?)
-      (send editor end-edit-sequence))
-    (invalidate-bitmap-cache gui-view-state)
-    (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))
+  (define (add-snips gui-view-state label type editor)
+    (let ([snips-content
+           ((gui-view-state-get-snip-text-from-snip-type-and-label gui-view-state) type label)])
+      (unless (null? snips-content)
+        (set-gui-view-state-analysis-currently-modifying?! gui-view-state #t)
+        (let ([snip-style
+               (cdr (assq type (gui-view-state-snip-types-and-colors gui-view-state)))]
+              [starting-pos (saam:add-snips (gui-view-state-gui-model-state gui-view-state)
+                                            label type editor (length snips-content))]
+              [locked? (send editor is-locked?)]
+              [modified? (send editor is-modified?)])
+          (send editor begin-edit-sequence #f)
+          (send editor lock #f)
+          (for-each (lambda (snip-content)
+                      (let* ([snip-text (make-object text%)]
+                             [snip (make-object editor-snip% snip-text)])
+                        (send snip-text insert snip-content)
+                        (send snip-text lock #t)
+                        (send editor insert snip starting-pos starting-pos)
+                        ; XXX bug here on Solaris, can be worked around
+                        ; (invalidate-bitmap-cache gui-view-state)
+                        ; see collects/test/tool2.ss
+                        (send editor change-style snip-style
+                              starting-pos (add1 starting-pos) #f)))
+                    snips-content)
+          (send editor set-modified modified?)
+          (send editor lock locked?)
+          (send editor end-edit-sequence))
+        (invalidate-bitmap-cache gui-view-state)
+        (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))))
   
   ; gui-view-state label symbol text% -> void
   ; Remove snips for a given label and type.
@@ -466,6 +484,49 @@
       (send editor end-edit-sequence))
     (invalidate-bitmap-cache gui-view-state)
     (set-gui-view-state-analysis-currently-modifying?! gui-view-state #f))
+  
+  ; gui-view-state (-> top) -> top
+  ; removes all the snips (and remembers them), runs the thunk, then puts all the snips back in...
+  ; remove-inserted-snips and add-snips take care of is-locked? and is-modified?, but even
+  ; though they also take care of begin/end-edit-sequence, we still need to wrap everything
+  ; in a sequence here otherwise the user would see the snips suddenly disappear and reappear...
+  (define (run-thunk-without-snips gui-view-state thunk)
+    (let ([gui-model-state (gui-view-state-gui-model-state gui-view-state)]
+          [snip-types-by-label-by-editor (assoc-set-make)])
+      (saam:for-each-source
+       gui-model-state
+       (lambda (editor)
+         (send editor begin-edit-sequence #f)
+         (let ([snip-types-by-label (assoc-set-make)])
+           (assoc-set-set snip-types-by-label-by-editor editor snip-types-by-label)
+           (saam:for-each-label-in-source
+            gui-model-state
+            editor
+            (lambda (label)
+              (saam:for-each-snip-type
+               gui-model-state
+               (lambda (type)
+                 (when (saam:label-has-snips-of-this-type? gui-model-state label type)
+                   (set-set (assoc-set-get snip-types-by-label label
+                                           (lambda ()
+                                             (let ([set (set-make)])
+                                               (assoc-set-set snip-types-by-label label set)
+                                               set)))
+                            type)
+                   (remove-inserted-snips gui-view-state label type editor)))))))))
+      (let ([result (thunk)])
+        (assoc-set-for-each
+         snip-types-by-label-by-editor
+         (lambda (editor snip-types-by-label)
+           (assoc-set-for-each
+            snip-types-by-label
+            (lambda (label types-set)
+              (set-for-each
+               types-set
+               (lambda (type)
+                 (add-snips gui-view-state label type editor)))))
+           (send editor end-edit-sequence)))
+        result)))
   
   
   ; ARROWS

@@ -3382,8 +3382,10 @@ static void check_variable_stack()
     if (var_stack == limit)
       return;
 
+# ifndef _WIN32
     if (*var_stack && ((unsigned long)*var_stack <= (unsigned long)var_stack))
       CRASH(33);
+# endif
 
 # if CHECK_STACK_PTRS
     size = *(long *)(var_stack + 1);

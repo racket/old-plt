@@ -6,8 +6,11 @@
   (fprintf (current-error-port) "~a~n" s)
   (system s))
 
-(define opt-flags "")
+(define opt-flags "/O2")
 (define re:only #f)
+
+(unless (directory-exists? "xsrc")
+  (make-directory "xsrc"))
 
 (define srcs
   '("salloc"
@@ -50,32 +53,38 @@
 
 (define (try src deps dest objdest includes use-precomp extra-compile-flags expand-extra-flags)
   (when (or (not re:only) (regexp-match re:only dest))
-  (unless (and (file-exists? dest)
-	       (let ([t (file-or-directory-modify-seconds dest)])
-		 (andmap
-		  (lambda (dep)
-		    (> t (file-or-directory-modify-seconds dep)))
-		  deps)))
-    (unless (restart-mzscheme #() (lambda (x) x)
-			      (list->vector 
-			       (append
-				(list "-r"
-				      "xform.ss")
-				(if objdest
-				    (if use-precomp
-					(list "--precompiled" use-precomp)
-					null)
-				    (list "--precompile"))
-				(list
-				 (format "cl.exe /MT /E ~a ~a" expand-extra-flags includes)
-				 src
-				 dest)))
-			      void)
-      (when (file-exists? dest)
-	(delete-file dest))
-      (error "error xforming")))
-  (when objdest
-    (compile dest objdest null extra-compile-flags))))
+    (unless (and (file-exists? dest)
+		 (let ([t (file-or-directory-modify-seconds dest)])
+		   (andmap
+		    (lambda (dep)
+		      (> t (file-or-directory-modify-seconds dep)))
+		    (append deps
+			    (if use-precomp (list use-precomp) null)
+			    (let ([deps (regexp-replace "[.].?.?.?$" dest ".sdep")])
+			      (if (file-exists? deps)
+				  (with-input-from-file deps read)
+				  null))))))
+      (unless (restart-mzscheme #() (lambda (x) x)
+				(list->vector 
+				 (append
+				  (list "-r"
+					"../../mzscheme/gc2/xform.ss")
+				  (if objdest
+				      (if use-precomp
+					  (list "--precompiled" use-precomp)
+					  null)
+				      (list "--precompile"))
+				  (list
+				   "--depends"
+				   (format "cl.exe /MT /E ~a ~a" expand-extra-flags includes)
+				   src
+				   dest)))
+				void)
+        (when (file-exists? dest)
+	  (delete-file dest))
+	(error "error xforming")))
+    (when objdest
+      (compile dest objdest null extra-compile-flags))))
 
 (define (compile c o deps flags)
   (unless (and (file-exists? o)
@@ -88,43 +97,48 @@
     (unless (system- (format "cl.exe ~a /MT /Zi ~a /c ~a /Fdxsrc/ /Fo~a" flags opt-flags c o))
       (error "failed compile"))))
 
-(define common-deps (list "xform.ss"))
+(define common-deps (list "../../mzscheme/gc2/xform.ss"))
+
 (define (find-obj f d) (format "../../worksp/~a/release/~a.obj" d f))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(try "precomp.c" common-deps "xsrc/precomp.h" #f "/I ../include /I ../src" #f "" "")
+(define mz-inc "/I ../../mzscheme/include ")
+
+(try "precomp.c" common-deps "xsrc/precomp.h" #f 
+	(string-append mz-inc "/I ../../mzscheme/src")
+	#f "" "")
 
 (for-each
  (lambda (x)
-   (try (format "../src/~a.c" x)
-	(list* (find-obj x "libmzsch")
-	       (format "../src/~a.c" x)
+   (try (format "../../mzscheme/src/~a.c" x)
+	(list* ; (find-obj x "libmzsch")
+	       (format "../../mzscheme/src/~a.c" x)
 	       common-deps)
 	(format "xsrc/~a.c" x)
 	(format "xsrc/~a.obj" x)
-	"/I ../include"
+	mz-inc
 	"xsrc/precomp.h"
 	""
 	""))
  srcs)
 
-(try "../main.c"
-     (list* (find-obj "main" "mzscheme")
-	    "../main.c"
+(try "../../mzscheme/main.c"
+     (list* ; (find-obj "main" "mzscheme")
+	    "../../mzscheme/main.c"
 	    common-deps)
      "xsrc/main.c"
      "xsrc/main.obj"
-     "/I ../include"
+     mz-inc
      #f
      ""
      "")
 
-(compile "gc2.c" "xsrc/gc2.obj" '("compact.c") "/D GC2_AS_EXPORT")
-(compile "../src/mzsj86.c" "xsrc/mzsj86.obj" '() "/I ../include")
+(compile "../../mzscheme/gc2/gc2.c" "xsrc/gc2.obj" '("../../mzscheme/gc2/compact.c") "/D GC2_AS_EXPORT")
+(compile "../../mzscheme/src/mzsj86.c" "xsrc/mzsj86.obj" '() mz-inc)
 
-(define dll "libmzsch3mxxxxxxx.dll")
-(define exe "mzscheme3m.exe")
+(define dll "../../../libmzsch3mxxxxxxx.dll")
+(define exe "../../../MzScheme3m.exe")
 
 (define libs "kernel32.lib user32.lib wsock32.lib shell32.lib")
 
@@ -168,8 +182,8 @@
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define wx-inc (string-append "/I ../include "
-			      "/I ../gc2 "
+(define wx-inc (string-append "/I ../../mzscheme/include "
+			      "/I ../../mzscheme/gc2 "
 			      "/I ../../wxwindow/include/msw "
 			      "/I ../../wxwindow/include/base "
 			      "/I ../../mred/wxme "
@@ -181,14 +195,14 @@
 (define (wx-try base proj x use-precomp? suffix)
   (let ([cxx-file (format "../../~a/~a.~a" base x suffix)])
     (try cxx-file
-	 (list* (find-obj x proj)
+	 (list* ; (find-obj x proj)
 		cxx-file
 		common-deps)
 	 (format "xsrc/~a.~a" x suffix)
 	 (format "xsrc/~a.obj" x)
 	 wx-inc
 	 (and use-precomp? "xsrc/wxprecomp.h")
-	 "-DGC2_JUST_MACROS /FI../gc2.h"
+	 "-DGC2_JUST_MACROS /FI../../../mzscheme/gc2/gc2.h"
 	 "-DGC2_AS_IMPORT")))
 
 (define wxwin-base-srcs
@@ -331,7 +345,7 @@
 			     wxme-srcs
 			     mred-srcs)))]
       [libs (list
-	     "libmzsch3mxxxxxxx.lib"
+	     "../../../libmzsch3mxxxxxxx.lib"
 	     "../../worksp/wxutils/Release/wxutils.lib"
 	     "../../worksp/jpeg/Release/jpeg.lib")]
       [win-libs (list
@@ -339,7 +353,7 @@
 		 "gdi32.lib" "comdlg32.lib" "advapi32.lib" 
 		 "shell32.lib" "ole32.lib" "oleaut32.lib"
 		 "winmm.lib")])
-  (link-dll (append objs libs) win-libs "libmred3mxxxxxxx.dll" "" #f))
+  (link-dll (append objs libs) win-libs "../../../libmred3mxxxxxxx.dll" "" #f))
 
 (wx-try "mred" "mred" "mrmain" #f "cxx")
 
@@ -351,6 +365,6 @@
 (let ([objs (list
 	     "mred.res"
 	     "xsrc/mrmain.obj"
-	     "libmzsch3mxxxxxxx.lib"
-	     "libmred3mxxxxxxx.lib")])
-  (link-dll objs null "MrEd3m.exe" "/link /subsystem:windows" #t))
+	     "../../../libmzsch3mxxxxxxx.lib"
+	     "../../../libmred3mxxxxxxx.lib")])
+  (link-dll objs null "../../../MrEd3m.exe" "/link /subsystem:windows" #t))

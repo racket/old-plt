@@ -28,10 +28,10 @@
 ;;       which can break "if (...) return; else ...".
 
 ;; To call for Precise GC:
-;;   mzscheme -qr xform.ss [--notes] <cpp> <src> <dest>
+;;   mzscheme -qr xform.ss [--notes] [--depends] <cpp> <src> <dest>
 ;;
 ;; To call for Palm:
-;;   mzscheme -qr xform.ss [--notes] --palm <cpp> <src> <dest> <mapdest>
+;;   mzscheme -qr xform.ss [--notes] [--depends] --palm <cpp> <src> <dest> <mapdest>
 
 ;; General code conventions:
 ;;   e means a list of tokens, often ending in a '|;| token
@@ -64,6 +64,7 @@
   (define precompiled-header (getenv "XFORM_USE_PRECOMP"))
 
   (define show-info? #f)
+  (define output-depends-info? #f)
   (define check-arith? #t)
 
   (define palm? #f)
@@ -91,12 +92,17 @@
 					(set! show-info? #t)
 					(cdr l))
 				      l)])
-			   (if (string=? (car l) "--palm")
-			       (begin
-				 (set! palm? #t)
-				 (set! pgc? #f)
-				 (cdr l))
-			       l))))))
+			   (let ([l (if (string=? (car l) "--depends")
+					(begin
+					  (set! output-depends-info? #t)
+					  (cdr l))
+					l)])
+			     (if (string=? (car l) "--palm")
+				 (begin
+				   (set! palm? #t)
+				   (set! pgc? #f)
+				   (cdr l))
+				 l)))))))
   
   (define (filter-false s)
     (if (string=? s "-")
@@ -151,6 +157,9 @@
   (hash-table-put! used-symbols (string->symbol "GC_cpp_delete") 1)
   (hash-table-put! used-symbols (string->symbol "memset") 1)
 
+  ;; For dependency tracking:
+  (define depends-files (make-hash-table 'equal))
+
   (define (make-triple v src line)
     (when (symbol? v)
       (hash-table-put! used-symbols v
@@ -158,6 +167,8 @@
 			      used-symbols
 			      v
 			      (lambda () 0)))))
+    (when (and src output-depends-info?)
+       (hash-table-put! depends-files src #t))
     (make-tok v line src))
 
   (define (make-a-seq opener src line body)
@@ -3664,6 +3675,13 @@
   (close-output-port (current-output-port))
 
   (when exit-with-error?
-    (error 'xform "Errors converting")))
+    (error 'xform "Errors converting"))
+
+  (when output-depends-info?
+    (with-output-to-file (change-suffix file-out ".sdep")
+      (lambda ()
+	(write (hash-table-map depends-files (lambda (k v) k)))
+	(newline))
+      'truncate/replace)))
 
 (require xform)

@@ -852,7 +852,7 @@ extern int scheme_global_lock_c;
 
 /****** Bignums *******/
 
-typedef long bigdig;
+typedef unsigned long bigdig;
 
 typedef struct {
   Scheme_Type type;

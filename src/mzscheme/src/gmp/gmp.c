@@ -25,7 +25,7 @@ MA 02111-1307, USA. */
 /* We use malloc for now; this will have to change. */
 /* The allocation function should not create collectable
    memory, though it can safely GC when allocating. */
-extern void *malloc(long);
+extern void *malloc(unsigned long);
 extern void free(void *);
 #define MALLOC malloc
 #define FREE(p, s) free(p)

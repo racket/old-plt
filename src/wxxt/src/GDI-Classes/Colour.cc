@@ -62,7 +62,7 @@ public:
 // wxColour
 //-----------------------------------------------------------------------------
 
-/* Since destrcutor doesn't do anything: */
+/* Since destructor doesn't do anything: */
 #define COLOR_CLEANUP WXGC_NO_CLEANUP
 
 wxColour::wxColour(void)
@@ -108,6 +108,8 @@ wxColour::~wxColour(void)
   /* If you do anything important here, be sure to change
      COLOR_CLEANUP */
 
+  /* This doesn't count as important, because the MrEd
+     color manage never frees colors: */
   FreePixel(TRUE);
 }
 
@@ -115,13 +117,14 @@ wxColour::~wxColour(void)
 
 wxColour* wxColour::CopyFrom(wxColour *col)
 {
-  FreePixel(TRUE); // free pixel before assignment
-	
   if (col->Ok()) {
-    X  = new wxColour_Xintern; // create new X representation;
+    FreePixel(FALSE);
+    if (!X)
+      X  = new wxColour_Xintern; // create new X representation;
     *X = *(col->X);	       // assign data
     X->have_pixel = FALSE;
-  }
+  } else
+    FreePixel(TRUE);
 
   return this;
 }
@@ -130,15 +133,16 @@ wxColour* wxColour::CopyFrom(const char *col)
 {
   wxColour *the_colour;
 
-  FreePixel(TRUE); // free pixel before assignment
-  
   the_colour = wxTheColourDatabase->FindColour(col); // find colour by name
   
   if (the_colour) {
-    X  = new wxColour_Xintern; // create new X representation
+    FreePixel(FALSE);
+    if (!X)
+       X = new wxColour_Xintern; // create new X representation
     *X = *(the_colour->X);	   // assign data
     X->have_pixel = FALSE;
-  }
+  } else
+    FreePixel(TRUE); // free pixel before assignment
 
   return this;
 }
@@ -147,7 +151,10 @@ wxColour* wxColour::CopyFrom(const char *col)
 
 void wxColour::Set(unsigned char r, unsigned char g, unsigned char b)
 {
-    FreePixel(TRUE); X = new wxColour_Xintern; // create new X representation
+    FreePixel(FALSE);
+
+    if (!X)
+       X = new wxColour_Xintern; // create new X representation
 
     X->xcolor.red   = ((unsigned short)r) << SHIFT; // init XColor structure
     X->xcolor.green = ((unsigned short)g) << SHIFT;
@@ -158,28 +165,28 @@ void wxColour::Set(unsigned char r, unsigned char g, unsigned char b)
 
 void wxColour::Get(unsigned char *r, unsigned char *g, unsigned char *b)
 {
-    if (X) {
-	*r = (unsigned char)(X->xcolor.red   >> SHIFT);
-	*g = (unsigned char)(X->xcolor.green >> SHIFT);
-	*b = (unsigned char)(X->xcolor.blue  >> SHIFT);
-    } else {
-	*r = *g = *b = 0;
-    }
+  if (X) {
+    *r = (unsigned char)(X->xcolor.red   >> SHIFT);
+    *g = (unsigned char)(X->xcolor.green >> SHIFT);
+    *b = (unsigned char)(X->xcolor.blue  >> SHIFT);
+  } else {
+    *r = *g = *b = 0;
+  }
 }
 
 unsigned char wxColour::Red(void)
 {
-    return ( X ? (unsigned char)(X->xcolor.red >> SHIFT) : 0 );
+  return ( X ? (unsigned char)(X->xcolor.red >> SHIFT) : 0 );
 }
 
 unsigned char wxColour::Green(void)
 {
-    return ( X ? (unsigned char)(X->xcolor.green >> SHIFT) : 0 );
+  return ( X ? (unsigned char)(X->xcolor.green >> SHIFT) : 0 );
 }
 
 unsigned char wxColour::Blue(void)
 {
-    return ( X ? (unsigned char)(X->xcolor.blue >> SHIFT) : 0 );
+  return ( X ? (unsigned char)(X->xcolor.blue >> SHIFT) : 0 );
 }
 
 //--- allocate and free X pixel values ----------------------------------------

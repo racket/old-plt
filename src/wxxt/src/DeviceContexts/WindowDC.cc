@@ -41,6 +41,7 @@
 
 extern "C" { 
 #include "XWidgets/wxAllocColor.h"
+extern int wx_alloc_color_is_fast;
 };
 
 // constant to convert radian to degree
@@ -1232,7 +1233,7 @@ void wxWindowDC::TryColour(wxColour *src, wxColour *dest)
   if (IS_COLOR) {
     Colormap cm;
     cm = GETCOLORMAP(current_cmap);
-    XQueryColor(wxAPP_DISPLAY, cm, &xcol);
+    wxQueryColor(wxAPP_DISPLAY, cm, &xcol);
     
     dest->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
   } else if (xcol.pixel == BlackPixel(DPY, DefaultScreen(DPY))) {
@@ -1263,7 +1264,7 @@ void wxWindowDC::FillPrivateColor(wxColour *c)
   cm = GETCOLORMAP(current_cmap);
 
   if (XAllocColor(wxAPP_DISPLAY, cm, &xcol) == 1) {
-    XQueryColor(wxAPP_DISPLAY, cm, &xcol);
+    wxQueryColor(wxAPP_DISPLAY, cm, &xcol);
     c->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
     free = 1;
   } else {
@@ -1672,22 +1673,26 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
 
   pixel = XGetPixel(X->get_pixel_image_cache, i, j);
 
-  for (k = get_pixel_cache_pos; k--; ) {
-    if (get_pixel_color_cache[k].pixel == pixel) {
-      col->Set(get_pixel_color_cache[k].red,
-	       get_pixel_color_cache[k].green,
-	       get_pixel_color_cache[k].blue);
-      return TRUE;
-    }
-  }
+  if (!wx_alloc_color_is_fast
+      || (X->get_pixel_image_cache->depth == 1)) {
 
-  if (get_pixel_cache_full) {
-    for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
+    for (k = get_pixel_cache_pos; k--; ) {
       if (get_pixel_color_cache[k].pixel == pixel) {
 	col->Set(get_pixel_color_cache[k].red,
 		 get_pixel_color_cache[k].green,
 		 get_pixel_color_cache[k].blue);
 	return TRUE;
+      }
+    }
+
+    if (get_pixel_cache_full) {
+      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
+	if (get_pixel_color_cache[k].pixel == pixel) {
+	  col->Set(get_pixel_color_cache[k].red,
+		   get_pixel_color_cache[k].green,
+		   get_pixel_color_cache[k].blue);
+	  return TRUE;
+	}
       }
     }
   }
@@ -1696,24 +1701,24 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
   {
     Colormap cm;
     cm = GETCOLORMAP(current_cmap);
-    XQueryColor(wxAPP_DISPLAY, cm, &xcol);
+    wxQueryColor(wxAPP_DISPLAY, cm, &xcol);
   }
 
-  get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
-  get_pixel_color_cache[get_pixel_cache_pos].red = xcol.red >> SHIFT;
-  get_pixel_color_cache[get_pixel_cache_pos].green = xcol.green >> SHIFT;
-  get_pixel_color_cache[get_pixel_cache_pos].blue = xcol.blue >> SHIFT;
+  col->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
 
-  col->Set(get_pixel_color_cache[get_pixel_cache_pos].red,
-	   get_pixel_color_cache[get_pixel_cache_pos].green,
-	   get_pixel_color_cache[get_pixel_cache_pos].blue);
+  if (!wx_alloc_color_is_fast) {
+    get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
+    get_pixel_color_cache[get_pixel_cache_pos].red = xcol.red >> SHIFT;
+    get_pixel_color_cache[get_pixel_cache_pos].green = xcol.green >> SHIFT;
+    get_pixel_color_cache[get_pixel_cache_pos].blue = xcol.blue >> SHIFT;
+    
+    if (++get_pixel_cache_pos >= NUM_GETPIX_CACHE_COLORS) {
+      get_pixel_cache_pos = 0;
+      X->get_pixel_cache_full = TRUE;
+    }
 
-  if (++get_pixel_cache_pos >= NUM_GETPIX_CACHE_COLORS) {
-    get_pixel_cache_pos = 0;
-    X->get_pixel_cache_full = TRUE;
+    X->get_pixel_cache_pos = get_pixel_cache_pos;
   }
-
-  X->get_pixel_cache_pos = get_pixel_cache_pos;
 
   return TRUE;
 }
@@ -1816,22 +1821,24 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
     else
       pixel = 1;
   } else {
-    for (k = get_pixel_cache_pos; k--; ) {
-      if ((get_pixel_color_cache[k].red == red)
-	  && (get_pixel_color_cache[k].green == green)
-	  && (get_pixel_color_cache[k].blue == blue)) {
-	pixel = get_pixel_color_cache[k].pixel;
-	goto put;
-      }
-    }
-    
-    if (get_pixel_cache_full) {
-      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
+    if (!wx_alloc_color_is_fast) {
+      for (k = get_pixel_cache_pos; k--; ) {
 	if ((get_pixel_color_cache[k].red == red)
 	    && (get_pixel_color_cache[k].green == green)
 	    && (get_pixel_color_cache[k].blue == blue)) {
 	  pixel = get_pixel_color_cache[k].pixel;
 	  goto put;
+	}
+      }
+      
+      if (get_pixel_cache_full) {
+	for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
+	  if ((get_pixel_color_cache[k].red == red)
+	      && (get_pixel_color_cache[k].green == green)
+	      && (get_pixel_color_cache[k].blue == blue)) {
+	    pixel = get_pixel_color_cache[k].pixel;
+	    goto put;
+	  }
 	}
       }
     }
@@ -1848,14 +1855,16 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
     
     pixel = xcol.pixel;
     
-    get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
-    get_pixel_color_cache[get_pixel_cache_pos].red = red;
-    get_pixel_color_cache[get_pixel_cache_pos].green = green;
-    get_pixel_color_cache[get_pixel_cache_pos].blue = blue;
-    
-    if (++(X->get_pixel_cache_pos) >= NUM_GETPIX_CACHE_COLORS) {
-      X->get_pixel_cache_pos = 0;
-      X->get_pixel_cache_full = TRUE;
+    if (!wx_alloc_color_is_fast) {
+      get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
+      get_pixel_color_cache[get_pixel_cache_pos].red = red;
+      get_pixel_color_cache[get_pixel_cache_pos].green = green;
+      get_pixel_color_cache[get_pixel_cache_pos].blue = blue;
+      
+      if (++(X->get_pixel_cache_pos) >= NUM_GETPIX_CACHE_COLORS) {
+	X->get_pixel_cache_pos = 0;
+	X->get_pixel_cache_full = TRUE;
+      }
     }
   }
 

@@ -484,13 +484,14 @@ static int loadBMP24(FILE *fp, byte *pic24, int w, int h)
     pp = pic24 + (i * w * 3);
     
     for (j=0; j<w; j++) {
-      int ac;
-      ac = getc(fp);   /* red   */
-      *pp++ = ac;
-      ac = getc(fp);   /* green */
-      *pp++ = ac;
-      ac = getc(fp);   /* blue  */
-      *pp++ = ac;
+      int rc, grc, bc;
+      /* BMP data is ordered backward: BGR */
+      bc = getc(fp);   /* blue  */
+      grc = getc(fp);   /* green */
+      rc = getc(fp);   /* red   */
+      *pp++ = rc;
+      *pp++ = grc;
+      *pp++ = bc;
     }
 
     for (j=0; j<padb; j++) { getc(fp); }

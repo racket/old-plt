@@ -6,7 +6,7 @@ extern "C"
 
 
 extern Status wxAllocColor(Display *d, Colormap cm, XColor *c);
-
+extern int wxQueryColor(Display *display, Colormap colormap, XColor *def_in_out);
 
 #ifdef __cplusplus
 }

@@ -51,10 +51,10 @@ static int mask_start(unsigned long mask)
 }
 
 /* Take the nb most significant bits in value. */
-static unsigned short n_bits(unsigned short value, int nb)
+static inline unsigned short n_bits(unsigned short value, int nb)
 {
     /* length should be 16. */
-    int length = sizeof(unsigned short) * 8;
+    const int length = sizeof(unsigned short) * 8;
     unsigned short mask;
 
     /*        16 - nb bits
@@ -83,6 +83,8 @@ static int tc_known;
 
 static unsigned int r_length, g_length, b_length;
 static unsigned int r_start, g_start, b_start;
+
+int wx_alloc_color_is_fast;
 
 Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 {
@@ -114,6 +116,8 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
       r_start = mask_start(tc->red_mask);
       g_start = mask_start(tc->green_mask);
       b_start = mask_start(tc->blue_mask);
+
+      wx_alloc_color_is_fast = 1;
     }
     tc_known = 1;
   }
@@ -255,4 +259,23 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
     return OK;
   } else
     return status;
+}
+
+int wxQueryColor(Display *display, Colormap colormap, XColor *def_in_out)
+{
+  if (tc && (colormap == DefaultColormapOfScreen(wxAPP_SCREEN))) {
+    unsigned long pixel = def_in_out->pixel, red, green, blue;
+
+    red = (pixel >> r_start) & ((1 << r_length) - 1);
+    green = (pixel >> g_start) & ((1 << g_length) - 1);
+    blue = (pixel >> b_start) & ((1 << b_length) - 1);
+
+    def_in_out->red = (red << (16 - r_length));
+    def_in_out->green = (green << (16 - g_length));
+    def_in_out->blue = (blue << (16 - b_length));
+    
+    return 1; /* is this the right return value? */
+  }
+
+  return XQueryColor(display, colormap, def_in_out);
 }

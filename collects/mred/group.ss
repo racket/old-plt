@@ -228,8 +228,8 @@
 				       (exit #f))
 				   #t)
 				 #f)))])
-		     (if (and (null? new-frames)
-			      (empty-callback))
+		     (if (or (not (null? new-frames))
+			     (empty-callback))
 			 (begin (set! frames new-frames)
 				#t)
 			 #f))))]

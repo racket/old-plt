@@ -2,7 +2,8 @@
 	(require (lib "list.ss")
 		 (lib "match.ss")
 		 (lib "pretty.ss")
-		 (lib "structure.ss"))
+		 (lib "structure.ss")
+		 (lib "math.ss"))
 	(provide <library-names> built-in-and-user-funcs <constructors> <flatten> <cons>
 		 (struct <tuple> (list))
 		 (struct arrow (arglist result))
@@ -54,9 +55,7 @@
 	(define <library-names> (make-hash-table 'equal))
 
 	;; The list functions
-	(define (<append> a)
-	  (lambda (b)
-	    (append a b)))
+
 
 	(define (<map> a)
 	  (lambda (b)
@@ -387,6 +386,9 @@
 	(hash-table-put! <constructors> "bool" (cons "bool" "some error"))
 	(hash-table-put! <constructors> "string" (cons "string" "some error"))
 	(hash-table-put! <constructors> "char" (cons "char" "some error"))
+	(hash-table-put! <constructors> "exn" (cons (make-ml-exn) "some error"))
+	(hash-table-put! <constructors> "in_channel" (cons "in_channel" "some error"))
+	(hash-table-put! <constructors> "out_channel" (cons "out_channel" "some error"))
 	(hash-table-put! <constructors> "None" (cons (make-tconstructor null (make-option (make-tvar "'a"))) (|make-None| #f)))
 	(hash-table-put! <constructors> "Some" (cons (make-tconstructor (make-tvar "'a") (make-option (make-tvar "'a"))) |make-Some|))
 	

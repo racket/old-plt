@@ -125,15 +125,15 @@
 		       x)))
 
    (define pretty-print-print-line
-     (make-parameter (lambda (line port width)
+     (make-parameter (lambda (line port offset width)
 		       (if (or (and (not line) (number? width)) 
 			       (positive? line))
 			   (write-char #\newline port)))
 		     (lambda (x)
-		       (unless (can-accept-n? 3 x)
+		       (unless (can-accept-n? 4 x)
 			       (raise-type-error 
 				'pretty-print-print-line
-				"procedure of 3 arguments"
+				"procedure of 4 arguments"
 				x))
 		       x)))
 
@@ -156,8 +156,8 @@
 				    (lambda (o display?)
 				      (size-hook o display? port))
 				    (let ([print-line (pretty-print-print-line)])
-				      (lambda (line)
-					(print-line line port width))))
+				      (lambda (line offset)
+					(print-line line port offset width))))
 		     (void)))
 		  ([obj port width print-graph? print-struct? depth size-hook] 
 		   (pretty-print obj port width print-graph? print-struct? depth 
@@ -251,19 +251,21 @@
 			 (sub1 d)
 			 #f)))
 
-     (print-line 0)
+     (print-line 0 0)
 
-     (let generic-write ([obj obj] [display? display?] 
-				   [width width] 
-				   [output output] [output-hooked output-hooked]
-				   [depth depth] [def-box (box #t)])
-
-       (define (read-macro? l)
-	 (define (length1? l) (and (pair? l) (null? (cdr l))))
-	 (let ((head (car l)) (tail (cdr l)))
-	   (case head
-	     ((quote quasiquote unquote unquote-splicing) (length1? tail))
-	     (else                                        #f))))
+     (print-line
+      #f
+      (let generic-write ([obj obj] [display? display?] 
+				    [width width] 
+				    [output output] [output-hooked output-hooked]
+				    [depth depth] [def-box (box #t)])
+	
+	(define (read-macro? l)
+	  (define (length1? l) (and (pair? l) (null? (cdr l))))
+	  (let ((head (car l)) (tail (cdr l)))
+	    (case head
+	      ((quote quasiquote unquote unquote-splicing) (length1? tail))
+	      (else                                        #f))))
 
        (define (read-macro-body l)
 	 (cadr l))
@@ -445,7 +447,7 @@
 		    (and col
 			 (begin 
 			   (set! line-number (add1 line-number))
-			   (print-line line-number)
+			   (print-line line-number col)
 			   (spaces to 0)))
 		    (spaces (- to col) col))))
 
@@ -662,9 +664,7 @@
 
        (if (and width (not (eq? width 'infinity)))
 	   (pp obj 0 depth)
-	   (wr obj 0 depth)))
-
-     (print-line #f))
+	   (wr obj 0 depth)))))
 
    (define pretty-print-handler
      (lambda (v)

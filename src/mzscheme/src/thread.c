@@ -802,6 +802,9 @@ Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent)
   Scheme_Custodian *m;
   Scheme_Custodian_Reference *mw;
 
+  if (!parent)
+    parent = main_custodian; /* still NULL if we're creating main; that's ok */
+  
   m = MALLOC_ONE_TAGGED(Scheme_Custodian);
 
   m->type = scheme_custodian_type;

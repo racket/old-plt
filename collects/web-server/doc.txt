@@ -459,26 +459,5 @@ _Channels_
 
 The library
   (require (lib "channel.ss" "web-server"))
-implements channels---a synchronized queue for communicating between
-threads.  Channels are not specific to the Web server, although that
-was the library's first use.
-
-> (create-channel) : -> Channel
-  creates a new channel
-
-> (channel-put c x) : Channel TST -> Void
-  puts a value into the channel at the end of the queue
-
-> (channel-get c) : Channel -> TST
-  gets a value from the front of the channel queue.  If no value is
-  currently present, the call blocks until a value is ready to dequeue.
-
-> (channel-get-available c k) : Channel (TST -> a) -> (U a void)
-  gets a value from the front of the channel queue, if available, and calls
-  k with the value.  Otherwise, it returns void without calling k.
-  The original use of this function was to process all the remaining values in
-  the queue, but that still does not quite justify the CPSing.
-
-> (channel-try-get c fail) : Channel ( -> TST) -> TST
-  either dequeues and returns a value from the front of the channel or
-  if the queue is empty, returns the result of the fail thunk
+is now only a thin wrapper around mzscheme's built in channels.
+Use mzscheme's instead.

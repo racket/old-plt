@@ -122,14 +122,18 @@
       (override [draw void])
       (sequence (super-init void))))
 
-  ; 
+  ; Keymap to map clicks and double-clicks
   (define item-keymap (make-object keymap%))
 
   (send item-keymap add-function "mouse-select"
-	(lambda (edit event) (if (send event button-down?) (send edit select #t))))
+	(lambda (edit event) (when (send event button-down?)
+			       (send edit select #t)
+			       ; To handle hypertext clicks:
+			       (send edit on-default-event event))))
   (send item-keymap add-function "mouse-double-select"
-	(lambda (edit event) (if (send event button-down?) (send edit double-select))))
-
+	(lambda (edit event) (when (send event button-down?)
+			       (send edit double-select))))
+  
   (send item-keymap map-function "leftbutton" "mouse-select")
   (send item-keymap map-function "leftbuttondouble" "mouse-double-select")
 
@@ -183,7 +187,8 @@
 	       last-position set-position set-keymap
 	       invalidate-bitmap-cache set-max-width
 	       get-view-size)
-      (rename [super-auto-wrap auto-wrap])
+      (rename [super-auto-wrap auto-wrap]
+	      [super-on-default-event on-default-event])
       (private
 	[selected? #f])
       (public
@@ -231,8 +236,7 @@
 	[double-select (lambda () (send top on-double-select item))]
 	[select-prev (lambda () (send top select-prev))])
       (override
-	[on-default-char void]
-	[on-default-event void])
+	[on-default-char void])
       (sequence
 	(super-init)
 	(hide-caret #t)

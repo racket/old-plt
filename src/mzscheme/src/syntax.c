@@ -876,14 +876,19 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec)
 static Scheme_Object *
 set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
+  Scheme_Object *name;
   int l = check_form("set!", form);
   if (l != 3)
     bad_form(form, "set!", l);
 
   env = scheme_no_defines(env);
 
+  name = SCHEME_CADR(form);
+
+  scheme_check_identifier("set!", name, NULL, env, form);
+
   return cons(set_symbol,
-	      cons(SCHEME_CADR(form),
+	      cons(name,
 		   cons(scheme_expand_expr(SCHEME_CADR(SCHEME_CDR(form)), env, depth),
 			scheme_null)));
 }
@@ -1572,12 +1577,17 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   vlist = scheme_null;
   vs = vars;
   while (SCHEME_PAIRP(vs)) {
+    Scheme_Object *v2;
     v = SCHEME_CAR(vs);
-    if (!SCHEME_PAIRP(v))
+    if (SCHEME_PAIRP(v))
+      v2 = SCHEME_CDR(v);
+    else
+      v2 = scheme_false;
+    if (!SCHEME_PAIRP(v2) || !SCHEME_NULLP(SCHEME_CDR(v2)))
       scheme_wrong_syntax(formname, v, form, NULL);
 
     name = SCHEME_CAR(v);
-    
+
     if (multi) {
       Scheme_Object *names = name;
       while (SCHEME_PAIRP(names)) {
@@ -1588,6 +1598,8 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 	
 	names = SCHEME_CDR(names);
       }
+      if (!SCHEME_NULLP(names))
+	scheme_wrong_syntax(formname, names, form, NULL);
     } else {
       scheme_check_identifier(formname, name, NULL, env, form);
       vlist = cons(name, vlist);

@@ -9,7 +9,7 @@
   (for-each (lambda (i)
 	      (when (regexp-match "^-.*c" i)
 		(use-compiled-file-kinds 'none)))
-	    (vector->list (namespace-variable-binding 'argv)))
+	    (vector->list (current-command-line-arguments)))
 
   ;; This has to be dynamic, so we get a chance to turn off
   ;; compiled file loading.

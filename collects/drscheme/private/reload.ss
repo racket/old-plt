@@ -57,9 +57,9 @@
     (with-handlers ([not-break-exn?
 		     (lambda (x)
 		       (let ([ht (make-hash-table)])
-			 (namespace-variable-binding cache-name ht)
+			 (namespace-set-variable-value! cache-name ht)
 			 ht))])
-      (namespace-variable-binding cache-name)))
+      (namespace-variable-value cache-name)))
 
   ;; fetch-from-cache : ht sym (-> TST) -> TST
   ;; returns what ht maps sym to, or if ht doesn't bind sym,

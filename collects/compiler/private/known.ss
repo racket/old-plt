@@ -77,7 +77,7 @@
       (define (analyze:prim-fun fun)
 	(and (zodiac:top-level-varref? fun)
 	     (varref:has-attribute? fun varref:primitive)
-	     (primitive? (namespace-variable-binding (zodiac:varref-var fun)))
+	     (primitive? (namespace-variable-value (zodiac:varref-var fun)))
 	     (zodiac:varref-var fun)))
 
       ;; Some prims call given procedures directly, some install procedures
@@ -220,7 +220,7 @@
 		      [(char->integer) 
 		       (with-handlers ([void (lambda (x) v)])
 			 (let ([args (map (lambda (a) (syntax-e (zodiac:zodiac-stx (zodiac:quote-form-expr a)))) args)])
-			   (let ([new-v (apply (namespace-variable-binding fun) args)])
+			   (let ([new-v (apply (namespace-variable-value fun) args)])
 			     (zodiac:make-quote-form
 			      (zodiac:zodiac-stx v)
 			      (make-empty-box)
@@ -486,7 +486,7 @@
 			      (and primfun
 				   (let* ([num-args (length args)]
 					  [arity-ok? (procedure-arity-includes?
-						      (namespace-variable-binding primfun)
+						      (namespace-variable-value primfun)
 						      num-args)])
 				     (unless arity-ok?
 				       ((if (compiler:option:stupid)

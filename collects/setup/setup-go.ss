@@ -14,7 +14,7 @@
   (define-values (x-specific-collections x-archives)
     (command-line
      "setup-plt"
-     (namespace-variable-binding 'argv)
+     (current-command-line-arguments)
      (once-each
       [("-c" "--clean") "Delete existing compiled files"
 			(clean #t)]

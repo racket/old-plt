@@ -74,8 +74,8 @@
     (let ([ns (make-namespace)])
       (parameterize ([current-namespace ns])
 	(load/use-compiled (build-path (collection-path "slatex") "slatexsrc.ss"))
-	(namespace-variable-binding 'slatex::*texinputs* #f)
-	(namespace-variable-binding 'slatex::*texinputs-list* #f))
+	(namespace-set-variable-value! 'slatex::*texinputs* #f)
+	(namespace-set-variable-value! 'slatex::*texinputs-list* #f))
       (lambda (input-file)
 	(let* ([fixed-file (filename->latex-filename input-file)]
 	       [file (normalize-path fixed-file)])

@@ -23,7 +23,7 @@
       (link [hack : () ((unit/sig ()
                           (import (frame-mixin))
                           ;; communicate the frame-mixin to the bug report window
-                          (namespace-variable-binding 'help-desk:frame-mixin frame-mixin))
+                          (namespace-set-variable-value! 'help-desk:frame-mixin frame-mixin))
                         mixin)]
             [browser : browser^ (browser@ plt-installer mred)]
             [search : search^ (search@ doc-position)]

@@ -2,7 +2,7 @@
 (module pdf-slatex-launcher mzscheme
   (require "slatex.ss")
 
-  (define argv (namespace-variable-binding 'argv))
+  (define argv (current-command-line-arguments))
   
   (case (system-type)
     [(macos)

@@ -332,4 +332,4 @@
 	 " "))
 
       (define (global-defined-value* v)
-	(and v (namespace-variable-binding v))))))
+	(and v (namespace-variable-value v))))))

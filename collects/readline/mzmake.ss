@@ -122,4 +122,4 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
   (dir ()
        (make-directory* dir)))
 
- argv)
+ (current-command-line-arguments))

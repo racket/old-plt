@@ -381,7 +381,8 @@
 				 launcher-libraries
 				 launcher-names
 				 program-launcher-path
-				 make-launcher)
+				 make-launcher
+				 up-to-date?)
 			  (let ([mzlls (call-info info launcher-libraries (lambda () null)
 						  name-list)]
 				[mzlns (call-info info launcher-names (lambda () null)
@@ -389,8 +390,10 @@
 			    (if (= (length mzlls) (length mzlns))
 				(for-each
 				 (lambda (mzll mzln)
-				   (let ([p (program-launcher-path mzln)])
-				     (unless (file-exists? p)
+				   (let ([p (program-launcher-path mzln)]
+					 [aux (build-path (apply collection-path (cc-collection cc))
+							  (regexp-replace "[.]..?.?$" mzll ""))])
+				     (unless (up-to-date? p aux)
 				       (setup-printf "Installing ~a~a launcher ~a" 
 						     kind (if (eq? (current-launcher-variant) 'normal)
 							      ""
@@ -410,8 +413,7 @@
 					      "~s"
 					      `(require (lib ,mzll ,@(cc-collection cc))))))
 					p
-					(build-path (apply collection-path (cc-collection cc))
-						    (regexp-replace "[.]..?.?$" mzll ""))))))
+					aux))))
 				 mzlls mzlns)
 				(setup-printf 
 				 "Warning: ~a launcher library list ~s doesn't match name list ~s"
@@ -424,7 +426,8 @@
 			'mred-launcher-libraries
 			'mred-launcher-names
 			mred-program-launcher-path
-			make-mred-launcher)))
+			make-mred-launcher
+			mred-launcher-up-to-date?)))
 		   (available-mred-variants))
 		  (for-each
 		   (lambda (variant)
@@ -434,7 +437,8 @@
 			'mzscheme-launcher-libraries
 			'mzscheme-launcher-names
 			mzscheme-program-launcher-path
-			make-mzscheme-launcher)))
+			make-mzscheme-launcher
+			mzscheme-launcher-up-to-date?)))
 		   (available-mzscheme-variants))))))
 	   collections-to-compile)))
 

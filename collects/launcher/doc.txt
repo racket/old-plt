@@ -25,10 +25,9 @@ executables:
 
       _.icns_ (Mac OS X) - an icons for the executable
  
-      _.lsr_  (Windows) - creates a "self-replacable launcher"
-               where the launcher executable can be deleted while
-               the launched code is running; the file context is
-               ignored
+      _.lch_  (Windows) - creates an old-style launcher that is
+               independent of the MzScheme or MrEd binary; used
+               for "Setup PLT.exe"
 
    For Unix/X, the script created by `make-mred-launcher' detects and
    handles X flags specially when they appear as the initial arguments
@@ -90,6 +89,14 @@ executables:
    `make-mzscheme-launcher' with the destintation returned by
    (mzscheme-program-launcher-path name); the `file' and `collection'
    arguments are passed on to `make-mzscheme-launcher'.
+
+
+> (mred-launcher-up-to-date? dest [aux]) - Returns #t if the
+    launcher `dest' does not need to be updated, assuming
+    that `dest' is a launcher and its arguments have not changed.
+
+> (mzscheme-launcher-up-to-date? dest [aux]) - Analogous to
+    `mred-launcher-up-to-date?'.
 
 
 > (current-launcher-variant [symbol]) - Gets or sets a symbol

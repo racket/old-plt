@@ -1,0 +1,8 @@
+The context of this file doesn't matter.
+It's existence causes the launcher-maker to
+create a "self-replacable launcher", which
+means that the executable starts MzScheme/MrEd
+in such a way that the launcher executable
+is not in use while the launched code runs
+(e.g., the laucher peforms a process-replacing
+execv()).

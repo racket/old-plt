@@ -263,7 +263,7 @@
       
       (define (make-windows-launcher kind variant flags dest aux-root)
 	(if (not (and aux-root
-		      (file-exists? (string-append aux-root ".lsr"))))
+		      (file-exists? (string-append aux-root ".lch"))))
 	    ;; Normal launcher: 
 	    (make-embedding-executable dest (eq? kind 'mred) #f
 				       null null null
@@ -547,6 +547,21 @@
 		     (build-path l-home-macosx-mzscheme (unix-sfx name))
 		     (current-launcher-variant))]
 	  [else (mred-program-launcher-path name)]))
+
+      (define mred-launcher-up-to-date?
+	(opt-lambda (dest [aux-root #f])
+          (mzscheme-launcher-up-to-date? dest aux-root)))
+
+      (define mzscheme-launcher-up-to-date?
+	(opt-lambda (dest [aux-root #f])
+           (cond
+	    [(eq? 'unix (system-type))
+	     (file-exists? dest)]
+	    [(eq? 'windows (system-type))
+	     (and aux-root
+		  (file-exists? (string-append aux-root ".lch"))
+		  (file-exists? dest))]
+	    [else #f])))
 
       (define (install-mred-program-launcher file collection name)
 	(make-mred-program-launcher file collection (mred-program-launcher-path name)))

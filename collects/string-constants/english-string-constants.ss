@@ -317,8 +317,8 @@ please adhere to these guidelines:
 
  ;; Help desk htty proxy
  (http-proxy "HTTP Proxy")
- (proxy-direct-connection "Direct connection for HTTP downloads")
- (proxy-use-proxy "Use proxy for HTTP downloads:")
+ (proxy-direct-connection "Direct connection")
+ (proxy-use-proxy "Use proxy:")
  (proxy-host "Host")
  (proxy-port "Port")
  (proxy-bad-host "Bad Proxy Host")

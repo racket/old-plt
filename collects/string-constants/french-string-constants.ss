@@ -302,8 +302,8 @@
 
  ; help desk htty proxy
  (http-proxy "Proxy HTTP")
- (proxy-direct-connection "Connexion directe pour les téléchargements HTTP")
- (proxy-use-proxy "Utiliser le proxy pour les téléchargements HTTP :")
+ (proxy-direct-connection "Connexion directe")
+ (proxy-use-proxy "Utiliser le proxy :")
  (proxy-host "Machine")
  (proxy-port "Port")
  (proxy-bad-host "Mauvaise machine proxy")

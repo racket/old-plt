@@ -94,6 +94,21 @@
   (define debugger%
     (class object% (drscheme-frame)
 
+      (public [can-close-frame?
+               (lambda ()
+                 (if break-semaphore
+                     (begin 
+                       (m:message-box "oops!" (string-append "You cannot close the debugger window "
+                                                             "while a breakpoint is waiting.")
+                                      #f '(ok))
+                       #f)
+                     #t))]
+              
+              [on-close-frame
+               (lambda ()
+                 (send frame on-close)
+                 (send frame show #f))])
+      
       (private [parsed #f]
                [needs-update #t]
                [stored-mark-list #f]
@@ -124,20 +139,21 @@
                
                [listbox-callback
                 (lambda (list-box event)
-                  (let* ([selection (context-lbox-selection)]
-                         [mark (send list-box get-data selection)]
-                         [source (marks:mark-source mark)]
-                         [source-file (z:location-file (z:zodiac-start source))]
-                         [source-start (z:location-offset (z:zodiac-start source))]
-                         [source-finish (z:location-offset (z:zodiac-finish source))])
-                    (when clear-highlight-thunk 
-                      (clear-highlight-thunk))
-                    (if (eq? source-file (ivar drscheme-frame definitions-text))
-                        (set! clear-highlight-thunk 
-                              (send defns-text highlight-range source-start source-finish debug-highlight-color))
-                        (m:message-box "source text is not in this buffer" '(ok)))
-                    (clear-var-highlights)
-                    (highlight-vars mark)))]
+                  (unless (= (length (send list-box get-selections)) 0) ; i.e., nothing selected 
+                    (let* ([selection (context-lbox-selection)]
+                           [mark (send list-box get-data selection)]
+                           [source (marks:mark-source mark)]
+                           [source-file (z:location-file (z:zodiac-start source))]
+                           [source-start (z:location-offset (z:zodiac-start source))]
+                           [source-finish (z:location-offset (z:zodiac-finish source))])
+                      (when clear-highlight-thunk 
+                        (clear-highlight-thunk))
+                      (if (eq? source-file (ivar drscheme-frame definitions-text))
+                          (set! clear-highlight-thunk 
+                                (send defns-text highlight-range source-start (+ 1 source-finish) debug-highlight-color #f))
+                          (m:message-box "source text is not in this buffer" '(ok)))
+                      ;(clear-var-highlights)
+                      (highlight-vars mark))))]
 
                [show-var-values
                 (lambda (binding x y)
@@ -172,7 +188,9 @@
                [clear-var-highlights
                 (lambda ()
                   (for-each (lambda (entry)
-                              (send defns-text change-style standard-style (car entry) (cadr entry)))
+                              (send defns-text change-style 
+                                    (send (send defns-text get-style-list) find-named-style "Standard")
+                                    (car entry) (cadr entry)))
                             text-region-table)
                   (set! text-region-table null))]
                
@@ -332,9 +350,12 @@
                  (set! stored-mark-list mark-list)
                  (if needs-update
                      (begin
-                       (send defns-text clear)
+                       (send defns-text lock #f)
+                       (send defns-text erase)
                        (send (ivar drscheme-frame definitions-text) copy-self-to defns-text)
-                       (set! needs-update #f))
+                       (send defns-text lock #t)
+                       ;(set! needs-update #f) ; no mechanism currently for flagging updates to window
+                       )
                      (begin
                        (clear-var-highlights)
                        (when clear-highlight-thunk
@@ -346,6 +367,7 @@
                     (send context-lbox append (zodiac-abbr (marks:mark-source mark)) mark))
                   mark-list)
                  (send context-lbox select (- (send context-lbox get-number) 1))
+                 (listbox-callback context-lbox 'bogus-event)
                  (send frame show #t))])
                  
       (sequence (super-init))
@@ -367,24 +389,10 @@
                [break-semaphore #f])
       
       (sequence (send defns-text set-click-callback! click-callback)
+                (send defns-text hide-caret #t)
                 (send control-panel stretchable-height #f)
                 (make-object m:button% "continue" control-panel continue-callback)
-                (send defns-canvas set-editor defns-text))
-      
-      (public [can-close-frame?
-               (lambda ()
-                 (if break-semaphore
-                     (begin 
-                       (m:message-box "oops!" (string-append "You cannot close the debugger window "
-                                                             "while a breakpoint is waiting.")
-                                      #f '(ok))
-                       #f)
-                     #t))]
-              
-              [on-close-frame
-               (lambda ()
-                 (send frame on-close)
-                 (send frame show #f))])))
+                (send defns-canvas set-editor defns-text))))
   
   
   

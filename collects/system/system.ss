@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 250)
 
-(define mred:debug:turned-on (box (list 'container-change-children 'startup 'invoke)))
+(define mred:debug:turned-on (box (list 'startup 'invoke)))
 
 (define mred:debug@
   (let* ([debug-env (getenv "MREDDEBUG")]

@@ -41,7 +41,7 @@
          (map (lambda (filename) (make-cache-entry filename))
               filenames)))
       
-      ;; install-teachpacks : teqachpack-cache -> void
+      ;; install-teachpacks : teachpack-cache -> void
       ;; =User=
       ;; installs the loaded teachpacks
       ;; updates the cache, removing those teachpacks that failed to run

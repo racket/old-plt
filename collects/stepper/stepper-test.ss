@@ -34,20 +34,21 @@
 				    (ERROR : zodiac:interface^)
 				    PRETTY
 				    MZLIB-FILE)]
-	  [UNPARSE : stepper:unparse^ ((require-library-unit/sig "unparser.ss" "stepper")
-				       ERROR
-				       ZODIAC)]
+	  [SHARED : stepper:shared^ ((require-library-unit/sig "unparser.ss" "stepper")
+				     ERROR
+				     ZODIAC)]
 	  [ANNOTATE : stepper:annotate^
-		    ((require-library-unit/sig "stepper-annotater.ss" "stepper")
+		    ((require-library-unit/sig "annotater.ss" "stepper")
 		     ZODIAC
+		     FUNCTION
 		     ERROR
-		     UNPARSE
+		     SHARED
 		     RECONSTRUCT)]
 	  [RECONSTRUCT : stepper:reconstruct^ 
-		       ((require-library-unit/sig "stepper-reconstructr.ss" "stepper")
+		       ((require-library-unit/sig "reconstructr.ss" "stepper")
 			ZODIAC
 			ERROR
-			UNPARSE)])
+			SHARED)])
     (export (unit STEPPER))))
 
 (invoke-open-unit/sig stepper-test@)

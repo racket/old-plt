@@ -6,8 +6,8 @@
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))
 
-(define-signature stepper:unparse^
-  (read->raw arglist->ilist))
+(define-signature stepper:shared^
+  (read->raw arglist->ilist *unevaluated* get-arg-symbol))
 
 (define-signature stepper:annotate^
   (annotate))

@@ -10,13 +10,11 @@
   ; gensyms for annotation:
   
   ; the mutator-gensym is used in building the mutators that go into certain marks.
-  (define mutator-gensym (gensym "mutator-"))
-  
-  ; *unevaluated* is the value assigned to temps before they are evaluated.
-  (define *unevaluated* (gensym "unevaluated-"))
+  ; (define mutator-gensym (gensym "mutator-"))
   
   ; the `closure-temp' symbol is used for the let which wraps created closures, so
   ; that we can stuff them into the hash table.
+  
   (define closure-temp (gensym "closure-temp-"))
   
   ; the `if-temp' symbol is used for the temp which gets the value of the test

@@ -34,6 +34,7 @@
 #ifdef TIME_SYNTAX
 # ifdef USE_MACTIME
 #  include <OSUtils.h>
+#  include <Timer.h>
 # else
 #  ifndef USE_PALMTIME
 #   if defined(OSKIT) && !defined(OSKIT_TEST)
@@ -2449,7 +2450,11 @@ long scheme_get_process_milliseconds(void)
   return s * 1000 + u / 1000;
 # else
 #  ifdef USE_MACTIME
-  return TickCount() * 1000/60;
+  {
+    UnsignedWide time;
+    Microseconds(&time);
+    return ((unsigned long)time.lo) / 1000;
+  }
 #  else
   return clock()  * 1000 / CLOCKS_PER_SEC;
 #  endif

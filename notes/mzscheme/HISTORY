@@ -2,6 +2,31 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.27:
+
+ * Changed `struct?' to return #t for v only if `struct->vector'
+   exposes one or more fields of v with the current inspector.
+
+ * Changed `struct-info' and `struct->vector' to work on all values.
+
+   [The theory is that all values are implemented by structs at some
+   level, and the only difference is whether the struct is opqaue or
+   not.]
+
+ * Added `send/apply' to "class.ss". (For now, I left the old dotted
+   apply forms in place and improved the documentation.)
+
+ * Added `prefix-all-except' form for `require'.
+
+ * Changed load handler obligations when a module is expected; the
+   load handler must now restore all reader parameter values to their
+   default settings, except `read-accept-compiled' should be #t.
+   
+   The new `with-module-reading-parameterization' procedure in
+   "syntax"'s "moddep.ss" sets the parameters correctly.
+
+
+
 Version 199.26:
 
  * Changed mzc to better support module-less programs. Top-level
@@ -12,8 +37,8 @@ Version 199.26:
    typical programs (especially ones using `require' or
    `define-struct') will compile as expected.
 
-   The new "toplevel.ss" library in "syntax" provides a general-purpose
-   `eval-compile-time-part-of-top-level' procedure for
+   The new "toplevel.ss" library in "syntax" provides a
+   general-purpose `eval-compile-time-part-of-top-level' procedure for
    mzc-like tools.
 
  * Added `namespace-require/expansion-time', which is like

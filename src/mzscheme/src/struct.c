@@ -710,9 +710,15 @@ int scheme_equal_structs(Scheme_Object *obj1, Scheme_Object *obj2)
 static Scheme_Object *
 struct_p(int argc, Scheme_Object *argv[])
 {
-  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)
-	  ? scheme_true 
-	  : scheme_false);
+  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)) {
+    Scheme_Object *insp;
+    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    if (scheme_inspector_sees_part(argv[0], insp, -1))
+      return scheme_true;
+    else
+      return scheme_false;
+  } else 
+    return scheme_false;
 }
 
 static Scheme_Object *
@@ -729,26 +735,25 @@ static Scheme_Object *struct_info(int argc, Scheme_Object *argv[])
   int p;
   Scheme_Object *insp, *a[2];
 
-  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
-    scheme_wrong_type("struct-info", "struct", 0, argc, argv);
+  if (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)) {
+    s = (Scheme_Structure *)argv[0];
 
-  s = (Scheme_Structure *)argv[0];
-
-  insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
-
-  stype = s->stype;
-  p = stype->name_pos + 1;
-
-  while (p--) {
-    stype = stype->parent_types[p];
-    if (scheme_is_subinspector(stype->inspector, insp)) {
-      a[0] = (Scheme_Object *)stype;
-      a[1] = ((SAME_OBJ(stype, s->stype)) ? scheme_false : scheme_true);
-      
-      return scheme_values(2, a);
+    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    
+    stype = s->stype;
+    p = stype->name_pos + 1;
+    
+    while (p--) {
+      stype = stype->parent_types[p];
+      if (scheme_is_subinspector(stype->inspector, insp)) {
+	a[0] = (Scheme_Object *)stype;
+	a[1] = ((SAME_OBJ(stype, s->stype)) ? scheme_false : scheme_true);
+	
+	return scheme_values(2, a);
+      }
     }
   }
-
+  
   a[0] = scheme_false;
   a[1] = scheme_true;
 
@@ -880,8 +885,24 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
 
 static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
 {
-  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type))
-    scheme_wrong_type("struct->vector", "struct", 0, argc, argv);
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_structure_type)) {
+    char *tn, *s;
+    int l;
+    Scheme_Object *v;
+
+    tn = scheme_get_type_name(SCHEME_TYPE(argv[0]));
+    l = strlen(tn) - 2; /* drop < ... > */
+    s = scheme_malloc_atomic(l + 8);
+    strcpy(s, "struct:");
+    memcpy(s + 7, tn + 1, l);
+    s[7 + l] = 0;
+    
+    v = scheme_intern_symbol(s);
+    v = scheme_make_vector(2, v);
+    SCHEME_VEC_ELS(v)[1] = (argc > 1) ? argv[1] : ellipses_symbol;
+
+    return v;
+  }
 
   return scheme_struct_to_vector(argv[0], 
 				 (argc > 1) ? argv[1] : NULL, 

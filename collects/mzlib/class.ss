@@ -1660,24 +1660,35 @@
   ;;  methods and fields
   ;;--------------------------------------------------------------------
   
-  (define-syntax send
-    (lambda (stx)
-      (syntax-case stx ()
-	[(_ obj name . args)
-	 (begin
-	   (unless (identifier? (syntax name))
-	     (raise-syntax-error
-	      #f
-	      "method name is not an identifier"
-	      stx
-	      (syntax name)))
-	   (if (stx-list? (syntax args))
-	       (syntax (let ([this obj])
-			 ((find-method this 'name) this . args)))
-	       (with-syntax ([args (flatten-args (syntax args))])
-		 (syntax (let ([this obj])
-			   (apply (find-method this 'name) this . args))))))])))
-
+  (define-syntaxes (send send/apply)
+    (let ([mk
+	   (lambda (flatten?)
+	     (lambda (stx)
+	       (syntax-case stx ()
+		 [(_ obj name . args)
+		  (begin
+		    (unless (identifier? (syntax name))
+		      (raise-syntax-error
+		       #f
+		       "method name is not an identifier"
+		       stx
+		       (syntax name)))
+		    (if flatten?
+			(if (stx-list? (syntax args))
+			    (syntax (let ([this obj])
+				      (apply (find-method this 'name) this . args)))
+			    (raise-syntax-error
+			     #f
+			     "bad syntax (illegal use of `.')"
+			     stx))
+			(if (stx-list? (syntax args))
+			    (syntax (let ([this obj])
+				      ((find-method this 'name) this . args)))
+			    (with-syntax ([args (flatten-args (syntax args))])
+			      (syntax (let ([this obj])
+					(apply (find-method this 'name) this . args)))))))])))])
+      (values (mk #f) (mk #t))))
+  
   (define-syntax send*
     (lambda (stx)
       (syntax-case stx ()
@@ -2004,7 +2015,7 @@
 	   (rename :interface interface) interface?	   
 	   object% object?
 	   make-object instantiate
-	   send send* make-class-field-accessor make-class-field-mutator with-method
+	   send send/apply send* make-class-field-accessor make-class-field-mutator with-method
 	   private* public* override*
 	   define/private define/public define/override
 	   (rename make-generic/proc make-generic) send-generic

@@ -162,6 +162,9 @@ default module path resolver in MzScheme (which means that the library
 is limited, but certainly useful as no other module path resolvers
 currently exist).
 
+> (with-module-reading-parameterization thunk) - calls `thunk' with
+  all reader parameters reset to their default values.
+
 > (check-module-form stx expected-module-sym filename-string-or-#f) -
   inspects `stx' to check whether evaluating it will declare a module
   named `expected-module-sym' (plus a prefix, if

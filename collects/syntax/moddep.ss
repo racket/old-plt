@@ -1,6 +1,19 @@
 
 (module moddep mzscheme
 
+  (define (with-module-reading-parameterization thunk)
+    (parameterize ((read-case-sensitive #f)
+		   (read-square-bracket-as-paren #t)
+		   (read-curly-brace-as-paren #t)
+		   (read-accept-box #t)
+		   (read-accept-compiled #t)
+		   (read-accept-bar-quote #t)
+		   (read-accept-graph #t)
+		   (read-decimal-as-inexact #f)
+		   (read-dot-as-symbol #f)
+		   (read-accept-quasiquote #t))
+      (thunk)))
+
   (define (check-module-form exp expected-module filename)
     (cond
      [(compiled-module-expression? (syntax-e exp))
@@ -52,26 +65,26 @@
       (dynamic-wind
        void
        (lambda ()
-	 (parameterize ([read-accept-compiled
-			 (or (read-accept-compiled) (not src?))])
-	   (let ([v (read p)])
-	     (when (eof-object? v)
-	       (error 'read-one "empty file; expected a module declaration in: ~a" path))
-	     (when src?
-	       (unless (and (pair? v) (eq? 'module (car v)))
-		 (error 'read-one "expected a module declaration, found: ~e in: ~a" v path))
-	       (let ([name (let-values ([(base name dir?) (split-path path)])
-			     (string->symbol (regexp-replace re:suffix name "")))])
-		 (unless (and (pair? (cdr v))
-			      (eq? (cadr v) name))
-		   (error 'read-one "expected a module declaration named ~a, found: ~e in: ~a" 
-			  name v path))))
-	     (unless (eof-object? (read p))
-	       (error 
-		'read-one 
-		"file has more than one expression; expected a module declaration only in: ~a"
-		path))
-	     v)))
+	 (let ([v (with-module-reading-parameterization
+		   (lambda ()
+		     (read p)))])
+	   (when (eof-object? v)
+	     (error 'read-one "empty file; expected a module declaration in: ~a" path))
+	   (when src?
+	     (unless (and (pair? v) (eq? 'module (car v)))
+	       (error 'read-one "expected a module declaration, found: ~e in: ~a" v path))
+	     (let ([name (let-values ([(base name dir?) (split-path path)])
+			   (string->symbol (regexp-replace re:suffix name "")))])
+	       (unless (and (pair? (cdr v))
+			    (eq? (cadr v) name))
+		 (error 'read-one "expected a module declaration named ~a, found: ~e in: ~a" 
+			name v path))))
+	   (unless (eof-object? (read p))
+	     (error 
+	      'read-one
+	      "file has more than one expression; expected a module declaration only in: ~a"
+	      path))
+	   v))
        (lambda () (close-input-port p)))))
   
   (define (get-module-code path)

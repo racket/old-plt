@@ -2141,11 +2141,56 @@ typedef struct {
   Scheme_Thread *p;
   Scheme_Object *stxsrc;
   Scheme_Object *expected_module;
+  Scheme_Object *reader_params[10];
 } LoadHandlerData;
+
+static void swap_reader_params(void *data)
+{
+  LoadHandlerData *lhd = (LoadHandlerData *)data;
+
+  if (SCHEME_SYMBOLP(lhd->expected_module)) {
+    Scheme_Object *reader_params[10];
+
+    reader_params[0] = scheme_get_param(lhd->config, MZCONFIG_CASE_SENS);
+    reader_params[1] = scheme_get_param(lhd->config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS);
+    reader_params[2] = scheme_get_param(lhd->config, MZCONFIG_CURLY_BRACES_ARE_PARENS);
+    reader_params[3] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_GRAPH);
+    reader_params[4] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_COMPILED);
+    reader_params[5] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_BOX);
+    reader_params[6] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_PIPE_QUOTE);
+    reader_params[7] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_DOT);
+    reader_params[8] = scheme_get_param(lhd->config, MZCONFIG_CAN_READ_QUASI);
+    reader_params[9] = scheme_get_param(lhd->config, MZCONFIG_READ_DECIMAL_INEXACT);
+
+    scheme_set_param(lhd->config, MZCONFIG_CASE_SENS, lhd->reader_params[0]);
+    scheme_set_param(lhd->config, MZCONFIG_SQUARE_BRACKETS_ARE_PARENS, lhd->reader_params[1]);
+    scheme_set_param(lhd->config, MZCONFIG_CURLY_BRACES_ARE_PARENS, lhd->reader_params[2]);
+    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_GRAPH, lhd->reader_params[3]);
+    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_COMPILED, lhd->reader_params[4]);
+    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_BOX, lhd->reader_params[5]);
+    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_PIPE_QUOTE, lhd->reader_params[6]);
+    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_DOT, lhd->reader_params[7]);
+    scheme_set_param(lhd->config, MZCONFIG_CAN_READ_QUASI, lhd->reader_params[8]);
+    scheme_set_param(lhd->config, MZCONFIG_READ_DECIMAL_INEXACT, lhd->reader_params[9]);
+
+    lhd->reader_params[0] = reader_params[0];
+    lhd->reader_params[1] = reader_params[1];
+    lhd->reader_params[2] = reader_params[2];
+    lhd->reader_params[3] = reader_params[3];
+    lhd->reader_params[4] = reader_params[4];
+    lhd->reader_params[5] = reader_params[5];
+    lhd->reader_params[6] = reader_params[6];
+    lhd->reader_params[7] = reader_params[7];
+    lhd->reader_params[8] = reader_params[8];
+    lhd->reader_params[9] = reader_params[9];
+  }
+}
 
 static void post_load_handler(void *data)
 {
   LoadHandlerData *lhd = (LoadHandlerData *)data;
+
+  swap_reader_params(data);
 
   scheme_close_input_port((Scheme_Object *)lhd->port);
 }
@@ -2349,7 +2394,21 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   lhd->stxsrc = name;
   lhd->expected_module = expected_module;
 
-  return scheme_dynamic_wind(NULL, do_load_handler, post_load_handler,
+  if (SCHEME_SYMBOLP(expected_module)) {
+    /* Init reader params: */
+    lhd->reader_params[0] = scheme_false; /* MZCONFIG_CASE_SENS */
+    lhd->reader_params[1] = scheme_true;  /* MZCONFIG_SQUARE_BRACKETS_ARE_PARENS */
+    lhd->reader_params[2] = scheme_true;  /* MZCONFIG_CURLY_BRACES_ARE_PARENS */
+    lhd->reader_params[3] = scheme_true;  /* MZCONFIG_CAN_READ_GRAPH */
+    lhd->reader_params[4] = scheme_true;  /* MZCONFIG_CAN_READ_COMPILED */
+    lhd->reader_params[5] = scheme_false; /* MZCONFIG_CAN_READ_BOX */
+    lhd->reader_params[6] = scheme_true;  /* MZCONFIG_CAN_READ_PIPE_QUOTE */
+    lhd->reader_params[7] = scheme_false; /* MZCONFIG_CAN_READ_DOT */
+    lhd->reader_params[8] = scheme_true;  /* MZCONFIG_CAN_READ_QUASI */
+    lhd->reader_params[9] = scheme_true;  /* MZCONFIG_READ_DECIMAL_INEXACT */
+  }
+
+  return scheme_dynamic_wind(swap_reader_params, do_load_handler, post_load_handler,
 			     NULL, (void *)lhd);
 }
 

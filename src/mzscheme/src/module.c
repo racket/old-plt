@@ -89,6 +89,7 @@ static Scheme_Object *module_begin_symbol;
 static Scheme_Object *prefix_symbol;
 static Scheme_Object *rename_symbol;
 static Scheme_Object *all_except_symbol;
+static Scheme_Object *prefix_all_except_symbol;
 static Scheme_Object *all_from_symbol;
 static Scheme_Object *all_from_except_symbol;
 static Scheme_Object *struct_symbol;
@@ -404,12 +405,14 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(prefix_symbol);
   REGISTER_SO(rename_symbol);
   REGISTER_SO(all_except_symbol);
+  REGISTER_SO(prefix_all_except_symbol);
   REGISTER_SO(all_from_symbol);
   REGISTER_SO(all_from_except_symbol);
   REGISTER_SO(struct_symbol);
   prefix_symbol = scheme_intern_symbol("prefix");
   rename_symbol = scheme_intern_symbol("rename");
   all_except_symbol = scheme_intern_symbol("all-except");
+  prefix_all_except_symbol = scheme_intern_symbol("prefix-all-except");
   all_from_symbol = scheme_intern_symbol("all-from");
   all_from_except_symbol = scheme_intern_symbol("all-from-except");
   struct_symbol = scheme_intern_symbol("struct");
@@ -1224,7 +1227,10 @@ static Scheme_Module *module_load(Scheme_Object *name, Scheme_Env *env, const ch
     m = (Scheme_Module *)scheme_hash_get(env->module_registry, name);
 
     if (!m) {
-      scheme_wrong_syntax(who ? who : "require", NULL, name, "unknown module");
+      scheme_raise_exn(MZEXN_MODULE,
+		       "%s: unknown module: %S",
+		       who ? who : "require", 
+		       name);
       return NULL;
     }
 
@@ -3563,22 +3569,36 @@ Scheme_Object *parse_requires(Scheme_Object *form,
 
       prefix = SCHEME_STX_VAL(prefix);
 
-    } else if (aa && SAME_OBJ(all_except_symbol, SCHEME_STX_VAL(aa))) {
+    } else if (aa && (SAME_OBJ(all_except_symbol, SCHEME_STX_VAL(aa))
+		      || SAME_OBJ(prefix_all_except_symbol, SCHEME_STX_VAL(aa)))) {
       Scheme_Object *l;
       int len;
+      int has_prefix;
+
+      has_prefix = SAME_OBJ(prefix_all_except_symbol, SCHEME_STX_VAL(aa));
 
       len = scheme_stx_proper_list_length(i);
       if (len < 0)
 	scheme_wrong_syntax(NULL, i, form, "bad syntax (" IMPROPER_LIST_FORM ")");
-      else if (len < 2)
+      else if (has_prefix && (len < 2))
+	scheme_wrong_syntax(NULL, i, form, "bad syntax (prefix missing)");
+      else if (len < (has_prefix ? 3 : 2))
 	scheme_wrong_syntax(NULL, i, form, "bad syntax (module name missing)");
 
-      idxstx = SCHEME_STX_CDR(i);      
-      idxstx = SCHEME_STX_CAR(idxstx);
+      idxstx = SCHEME_STX_CDR(i);
+      if (has_prefix) {
+	prefix = SCHEME_STX_CAR(idxstx);
+	idxstx = SCHEME_STX_CDR(idxstx);
 
-      prefix = NULL;
-      exns = SCHEME_STX_CDR(i);
-      exns = SCHEME_STX_CDR(exns);
+	if (!SCHEME_SYMBOLP(SCHEME_STX_VAL(prefix))) {
+	  scheme_wrong_syntax(NULL, prefix, form, "bad prefix (not an identifier)");
+	  return NULL;
+	}
+	prefix = SCHEME_STX_VAL(prefix);
+      } else
+	prefix = NULL;
+      exns = SCHEME_STX_CDR(idxstx);
+      idxstx = SCHEME_STX_CAR(idxstx);
 
       for (l = exns; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
 	if (!SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(l))) {

@@ -29,7 +29,8 @@
     set-pasteboard-editor-maker
     set-menu-tester
     location->window
-    set-dialogs)
+    set-dialogs
+    set-executer)
 
 )
 ;; end

@@ -96,7 +96,9 @@ static void wxScheme_Install(Scheme_Env *global_env);
 
 static Scheme_Object *setup_file_symbol, *init_file_symbol;
 
-static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box, *find_exe, *execute;
+static Scheme_Object *get_file, *put_file, *get_ps_setup_from_user, *message_box;
+
+static Scheme_Object *executer;
 
 static Scheme_Object *make_media_edit, *make_media_pasteboard, *make_media_snip, *none_symbol;
 
@@ -112,11 +114,6 @@ void wxsScheme_setup(Scheme_Env *env)
   wxREGGLOB(put_file);
   wxREGGLOB(get_ps_setup_from_user);
   wxREGGLOB(message_box);
-  wxREGGLOB(execute);
-  wxREGGLOB(find_exe);
-
-  find_exe = scheme_lookup_global(scheme_intern_symbol("find-executable-path"), env);
-  execute = scheme_lookup_global(scheme_intern_symbol("subprocess"), env);
 
   env = scheme_primitive_module(scheme_intern_symbol("#%mred-kernel"), env);
 
@@ -1696,45 +1693,29 @@ int wxsGetImageType(char *fn)
   return type ? type : wxBITMAP_TYPE_XBM;
 }
 
+static Scheme_Object *SetExecuter(int, Scheme_Object *a[])
+{
+  wxREGGLOB(executer);
+  executer = a[0];
+  return scheme_void;
+}
+
 void wxsExecute(char **argv)
 {
   int i, c;
-  Scheme_Object *b[2], *exe, **a, *in, *out, *err;
-
-  b[0] = scheme_make_string(argv[0]);
-  b[1] = scheme_false;
-  
-  exe = scheme_apply_multi(find_exe, 2, b);
-  if (SCHEME_FALSEP(exe))
-    return;
+  Scheme_Object **a;
 
   for (i = 0; argv[i]; i++) {
   }
 
   c = i;
+  a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
 
-  a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * (c + 3));
-
-  for (i = 1; i < c; i++) {
-    a[i + 3] = scheme_make_string(argv[i]);
+  for (i = 0; i < c; i++) {
+    a[i] = scheme_make_string(argv[i]);
   }
 
-  a[0] = scheme_false;
-  a[1] = scheme_false;
-  a[2] = scheme_false;
-  a[3] = exe;
-
-  (void *)scheme_apply_multi(execute, c + 3, a);
-
-  /* Multiple-value-return. */
-  in = scheme_multiple_array[1];
-  out = scheme_multiple_array[2];
-  err = scheme_multiple_array[3];
-
-  /* Close all the ports */
-  scheme_close_input_port(in);
-  scheme_close_output_port(out);
-  scheme_close_input_port(err);
+  (void *)scheme_apply_multi(executer, c, a);
 }
 
 static void wxScheme_Install(Scheme_Env *global_env)
@@ -1882,6 +1863,12 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("in-atomic-region",
 			   scheme_make_prim_w_arity(wxInAtomicRegion,
 						    "in-atomic-region",
+						    1, 1),
+			   global_env);
+
+  scheme_install_xc_global("set-executer",
+			   scheme_make_prim_w_arity(SetExecuter,
+						    "set-executer",
 						    1, 1),
 			   global_env);
 

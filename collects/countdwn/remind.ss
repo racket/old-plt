@@ -287,59 +287,64 @@
   (define main-canvas%
     (class-asi editor-canvas%
       (inherit get-edit)
+      (public
+	[update-snip-size
+	 (let ([width (box 0)]
+	       [height (box 0)]
+	       [leftm (box 0)]
+	       [rightm (box 0)]
+	       [topm (box 0)]
+	       [bottomm (box 0)]
+	       [left-edge-box (box 0)]
+	       [top-edge-box (box 0)])
+	   (lambda (s)
+	     (when (is-a? s editor-snip%)
+	       (let* ([edit (get-edit)]
+		      [snip-media (send s get-edit)]
+		      [admin (send edit get-admin)])
+		 (send admin get-view #f #f width height)
+		 (send s get-margin leftm topm rightm bottomm)
+
+
+		 ;; when the width is to be maximized and there is a
+		 ;; newline just behind the snip, we know that the left
+		 ;; edge is zero. Special case for efficiency in the 
+		 ;; console printer
+		 (let ([fallback
+			(lambda ()
+			  (send edit get-snip-position-and-location
+				s #f left-edge-box top-edge-box))])
+		   (cond
+		    [(let ([prev (send s previous)])
+		       (and prev
+			    (member 'hard-newline (send prev get-flags))))
+		     (set-box! left-edge-box 0)]
+		    [else (fallback)]))
+
+
+		 
+		 (let ([snip-width (- (unbox width)
+				      (unbox left-edge-box)
+				      (unbox leftm)
+				      (unbox rightm)
+				      
+				      ;; this two is the space that 
+				      ;; the caret needs at the right of
+				      ;; a buffer.
+				      2)])
+		   (send* s 
+			  (set-min-width snip-width)
+			  (set-max-width snip-width))
+		   (when snip-media
+		     (send snip-media set-max-width 0)))))))])
       (override
        [on-size
 	(lambda (_1 _2)
-	  (let* ([width (box 0)]
-		 [height (box 0)]
-		 [leftm (box 0)]
-		 [rightm (box 0)]
-		 [topm (box 0)]
-		 [bottomm (box 0)]
-		 [left-edge-box (box 0)]
-		 [top-edge-box (box 0)]
-		 [edit (get-edit)])
+	  (let ([edit (get-edit)])
 	    (when edit
 	      (let loop ([s (send edit find-snip 0 'before)])
 		(when s
-		  (when (is-a? s editor-snip%)
-		    (let ([snip-media (send s get-edit)]
-			  [admin (send edit get-admin)])
-		      (send admin get-view #f #f width height)
-		      (send s get-margin leftm topm rightm bottomm)
-
-
-		      ;; when the width is to be maximized and there is a
-		      ;; newline just behind the snip, we know that the left
-		      ;; edge is zero. Special case for efficiency in the 
-		      ;; console printer
-		      (let ([fallback
-			     (lambda ()
-			       (send edit get-snip-position-and-location
-				     s #f left-edge-box top-edge-box))])
-			(cond
-			 [(let ([prev (send s previous)])
-			    (and prev
-				 (member 'hard-newline (send prev get-flags))))
-			  (set-box! left-edge-box 0)]
-			 [else (fallback)]))
-
-
-		      
-		      (let ([snip-width (- (unbox width)
-					   (unbox left-edge-box)
-					   (unbox leftm)
-					   (unbox rightm)
-					   
-					   ;; this two is the space that 
-					   ;; the caret needs at the right of
-					   ;; a buffer.
-					   2)])
-			(send* s 
-			       (set-min-width snip-width)
-			       (set-max-width snip-width))
-			(when snip-media
-			  (send snip-media set-max-width 0)))))
+		  (update-snip-size s)
 		  (loop (send s next)))))))])))
 
 
@@ -472,7 +477,7 @@
 		 (insert display (send main get-start-position) -1 #f))
 	       (for-each (lambda (e) (send e lock #t))
 			 (list date-edit label-edit main))
-	       '(send (get-canvas) add-wide-snip outer)
+	       (send (get-canvas) update-snip-size outer)
 	       (lock #t)
 	       outer)))]
 	[sync

@@ -1514,6 +1514,7 @@ static Scheme_Object *brushStyle_wxFDIAGONAL_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxCROSS_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxHORIZONTAL_HATCH_sym = NULL;
 static Scheme_Object *brushStyle_wxVERTICAL_HATCH_sym = NULL;
+static Scheme_Object *brushStyle_wxPANEL_PATTERN_sym = NULL;
 
 static void init_symset_brushStyle(void) {
   REMEMBER_VAR_STACK();
@@ -1537,12 +1538,14 @@ static void init_symset_brushStyle(void) {
   brushStyle_wxHORIZONTAL_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal-hatch"));
   wxREGGLOB(brushStyle_wxVERTICAL_HATCH_sym);
   brushStyle_wxVERTICAL_HATCH_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical-hatch"));
+  wxREGGLOB(brushStyle_wxPANEL_PATTERN_sym);
+  brushStyle_wxPANEL_PATTERN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("panel"));
 }
 
 static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!brushStyle_wxVERTICAL_HATCH_sym) WITH_VAR_STACK(init_symset_brushStyle());
+  if (!brushStyle_wxPANEL_PATTERN_sym) WITH_VAR_STACK(init_symset_brushStyle());
   if (0) { }
   else if (v == brushStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == brushStyle_wxSOLID_sym) { return wxSOLID; }
@@ -1554,12 +1557,13 @@ static int unbundle_symset_brushStyle(Scheme_Object *v, const char *where) {
   else if (v == brushStyle_wxCROSS_HATCH_sym) { return wxCROSS_HATCH; }
   else if (v == brushStyle_wxHORIZONTAL_HATCH_sym) { return wxHORIZONTAL_HATCH; }
   else if (v == brushStyle_wxVERTICAL_HATCH_sym) { return wxVERTICAL_HATCH; }
+  else if (v == brushStyle_wxPANEL_PATTERN_sym) { return wxPANEL_PATTERN; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "brushStyle symbol", -1, 0, &v));
   return 0;
 }
 
 static Scheme_Object *bundle_symset_brushStyle(int v) {
-  if (!brushStyle_wxVERTICAL_HATCH_sym) init_symset_brushStyle();
+  if (!brushStyle_wxPANEL_PATTERN_sym) init_symset_brushStyle();
   switch (v) {
   case wxTRANSPARENT: return brushStyle_wxTRANSPARENT_sym;
   case wxSOLID: return brushStyle_wxSOLID_sym;
@@ -1571,6 +1575,7 @@ static Scheme_Object *bundle_symset_brushStyle(int v) {
   case wxCROSS_HATCH: return brushStyle_wxCROSS_HATCH_sym;
   case wxHORIZONTAL_HATCH: return brushStyle_wxHORIZONTAL_HATCH_sym;
   case wxVERTICAL_HATCH: return brushStyle_wxVERTICAL_HATCH_sym;
+  case wxPANEL_PATTERN: return brushStyle_wxPANEL_PATTERN_sym;
   default: return NULL;
   }
 }

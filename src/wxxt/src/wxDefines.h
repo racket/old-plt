@@ -182,6 +182,7 @@ typedef short int WXTYPE;
 #define wxIS_HATCH(h)	   (wxBDIAGONAL_HATCH <= h && h <= wxVERTICAL_HATCH)
 #define wxNUM_HATCH        (wxVERTICAL - wxBDIAGONAL + 1)
 #define wxOPAQUE_STIPPLE   207
+#define wxPANEL_PATTERN    208
 
 #define wxJOIN_BEVEL       0
 #define wxJOIN_MITER       1

@@ -134,6 +134,7 @@
 @SYM "cross-hatch" : wxCROSS_HATCH
 @SYM "horizontal-hatch" : wxHORIZONTAL_HATCH
 @SYM "vertical-hatch" : wxVERTICAL_HATCH
+@SYM "panel" : wxPANEL_PATTERN
 @ENDSYMBOLS
 
 @CLASSBASE wxBrush "brush" : "object"

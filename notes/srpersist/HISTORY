@@ -1,6 +1,10 @@
 SrPersist 
 =========
 
+Version 200
+
+Registered bufferTable[] with garbage collector
+
 Version 103
 
 In srpinfo.tbl, moved entries for 

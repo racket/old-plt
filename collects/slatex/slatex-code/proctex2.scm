@@ -308,7 +308,9 @@
                             "ZZZZschemetopbox")
                            (else (error "trigger-scheme2tex: ~
                                    Unknown triggerer ~s." typ)))))
-                  (scheme2tex in out))))))
+                  (scheme2tex in out)))
+              'text))
+          'text)
         (if *slatex-in-protected-region?*
             (set! *protected-files* (cons aux.tex *protected-files*)))
         (if (memq typ '(envdisplay plaindisplay envbox plainbox

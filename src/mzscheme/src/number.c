@@ -1629,7 +1629,9 @@ Scheme_Object *scheme_sqrt (int argc, Scheme_Object *argv[])
 
 static Scheme_Object *fixnum_expt(int x, int y)
 {
-  int orig_x = x, orig_y = y;
+  int orig_x = x;
+  int orig_y = y;
+
   if ((x == 2) && (y <= MAX_SHIFT_TRY))
     return scheme_make_integer(1 << y);
   else
@@ -1641,7 +1643,7 @@ static Scheme_Object *fixnum_expt(int x, int y)
       x = -x;
     while (y > 0)
     {
-      /* x^y*result is invariant and result <= x*/
+      /* x^y*result is invariant and result <= x */
       if (x > 46339 && y > 1) /* x * x won't fit in 31 bits */
         return scheme_bignum_power(scheme_make_bignum(orig_x), scheme_make_bignum(orig_y));
 
@@ -1656,7 +1658,7 @@ static Scheme_Object *fixnum_expt(int x, int y)
       y = y >> 1;
       x = x * x;
     }
-    return scheme_make_integer(odd_result ? -result : result);
+    return scheme_make_integer_value(odd_result ? -result : result);
   }
 }
 

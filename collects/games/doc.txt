@@ -88,13 +88,24 @@ Implementing new Games
 
 The game-starting console inspects the sub-collections of the "games"
 collection. If a sub-collection has an info.ss definition (see the mzc
-manual) for `game', the result is used as a library name in the
-sub-collection to load for the game. The library must export a
-`game-unit' unsigned unit (see MzLib's `unit' form); the unit is
-invoked with no imports to start the game. The `name' field of the
-info.ss file is used to label the game-starting button in the game
-console, and the icon is loaded as a file in the sub-collection whose
-name macthes the sub-collection name plus a ".png" suffix.
+manual), the following fields of the collection's "info.ss" file are
+used:
+
+ * `game' [required] : used as a library name in the sub-collection to
+    load for the game; the library must export a `game-unit' unsigned
+    unit (see MzLib's `unit' form); the unit is invoked with no
+    imports to start the game.
+
+ * `name' [defauls to the collection name] : used to label the
+   game-starting button in the game console.
+
+ * `game-icon' [defaults to collection name with ".png"] : used as a
+   path to a bitmap file taht is used for the game button's label;
+   this image should be 32 x 32 and have a mask.
+
+ * `game-set' [defaults to "Other Games"] : a label used to group
+   games that declare themselves to be in the same set.
 
 To implement card games, see the documentation for the "cards"
-sub-collection of the "games" collection.
+sub-collection of the "games" collection. Card games typically belong
+in the "Cards" game set.

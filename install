@@ -12,9 +12,19 @@ if [ ! \( \( -x install \) -a \( -d collects \) \) ] ; then
   exit 1
 fi
 
+if [ ! \( -x bin/mzscheme \) ] ; then
+  echo "install: cannot execute bin/mzscheme"
+  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  echo "!!               Install incomplete!               !!"
+  echo "!!                                                 !!"
+  echo "!! If you downloaded the source distribution, see  !!"
+  echo "!!        src/README for build instructions.       !!"
+  echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+  exit 1
+fi
+
 exec ./bin/mzscheme -qr "$0" ${1+"$@"}
-echo Couldn't start MzScheme --- install incomplete!
-exit
+exit 1
 
 |#
 

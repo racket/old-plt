@@ -155,15 +155,13 @@
     (lambda (directory filename)
       (let ([dir (do-explode-path 'find-relative-path directory)]
 	    [file (do-explode-path 'find-relative-path filename)])
-	(if (string=? (normal-case-path (car dir))
-		      (normal-case-path (car file)))
+	(if (string=? (car dir) (car file))
 	    (let loop ([dir (cdr dir)]
 		       [file (cdr file)])
 	      (cond
 	       [(null? dir) (if (null? file) filename (apply build-path file))]
 	       [(null? file) (apply build-path (map (lambda (x) 'up) dir))]
-	       [(string=? (normal-case-path (car dir))
-			  (normal-case-path (car file)))
+	       [(string=? (car dir) (car file))
 		(loop (cdr dir) (cdr file))]
 	       [else
 		(apply build-path 
@@ -202,15 +200,11 @@
   (define (delete-directory/files path)
     (cond
      [(or (link-exists? path) (file-exists? path))
-      (unless (delete-file path)
-	(error 'delete-directory/files
-	       "error deleting file or link: ~a" path))]
+      (delete-file path)]
      [(directory-exists? path)
       (for-each (lambda (e) (delete-directory/files (build-path path e)))
 		(directory-list path))
-      (unless (delete-directory path)
-	(error 'delete-directory/files
-	       "error deleting a directory: ~a" path))]
+      (delete-directory path)]
      [else (error 'delete-directory/files
 		  "encountered ~a, neither a file nor a directory"
 		  path)]))

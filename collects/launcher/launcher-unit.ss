@@ -21,7 +21,7 @@
       (define plthome
 	(with-handlers ([(lambda (x) #t) (lambda (x) #f)])
 	  (or (let ([p (getenv "PLTHOME")])
-		(and p (normal-case-path (expand-path p))))
+		(and p (expand-path p)))
 	      (let ([dir (collection-path "mzlib")])
 		(and dir
 		     (let-values ([(base name dir?) (split-path dir)])
@@ -29,7 +29,7 @@
 			    (let-values ([(base name dir?) (split-path base)])
 			      (and (string? base)
 				   (complete-path? base)
-				   (normal-case-path (expand-path base)))))))))))
+				   (expand-path base))))))))))
       
       (define current-launcher-variant
 	(make-parameter 'normal

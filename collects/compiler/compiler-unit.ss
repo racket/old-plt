@@ -200,20 +200,16 @@
 		      ;; Compile the collection files via make-collection
 		      (let ([sses (filter
 				   extract-base-filename/ss
-				   (map
-				    normal-case-path
-				    (directory-list)))])
+				   (directory-list))])
 			(let ([filtered-sses
 			       (remove*
-				(map normal-case-path
-				     (info 
-				      (if zos? 
-					  'compile-zo-omit-files 
-					  'compile-extension-omit-files)
-				      (lambda () null)))
+				(info 
+				 (if zos? 
+				     'compile-zo-omit-files 
+				     'compile-extension-omit-files)
+				 (lambda () null))
 				(remove*
-				 (map normal-case-path 
-				      (info 'compile-omit-files (lambda () null)))
+				 (info 'compile-omit-files (lambda () null))
 				 sses))])
 			  (if zos?
 			      ;; Verbose compilation manager:

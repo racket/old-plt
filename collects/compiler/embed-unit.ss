@@ -269,7 +269,7 @@
 	(format "#%embedded:~a:" (gensym)))
       
       (define (normalize filename)
-	(normal-case-path (simplify-path (expand-path filename))))
+	(simplify-path (expand-path filename)))
 
       ;; Loads module code, using .zo if there, compiling from .scm if not
       (define (get-code filename module-path codes prefixes verbose?)

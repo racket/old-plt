@@ -95,7 +95,7 @@
       (file-or-directory-modify-seconds (string-append (get-compilation-path path) ".zo"))))
   
   (define (compile-root path up-to-date)
-    (let ([path (normal-case-path (simplify-path (expand-path path)))])
+    (let ([path (simplify-path (expand-path path))])
       (let ((stamp (and up-to-date
 			(hash-table-get up-to-date path (lambda () #f)))))
 	(cond

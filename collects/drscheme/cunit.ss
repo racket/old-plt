@@ -18,14 +18,14 @@
 	  (class drscheme:frame:scheme-project-frame% args
 	    (inherit set-project)
 	    (sequence
-	      (printf "before.1~n")
+	      (mred:debug:printf 'super-init "before.1~n")
 	      (apply super-init args)
-	      (printf "after.1~n")
+	      (mred:debug:printf 'super-init "after.1~n")
 	      (set-project project)))])
 	(sequence
-	  (printf "before.9~n")
+	  (mred:debug:printf 'super-init "before.9~n")
 	  (apply super-init args)
-	  (printf "after.9~n"))))
+	  (mred:debug:printf 'super-init "after.9~n"))))
 
     (mred:set-preference-default 'drscheme:project-visible? #f)
 
@@ -223,9 +223,9 @@
 			       "Sorry"))])
 	  
 	  (sequence
-	    (printf "before.10~n")
+	    (mred:debug:printf 'super-init "before.10~n")
 	    (super-init filename #f)
-	    (printf "after.10~n"))
+	    (mred:debug:printf 'super-init "after.10~n"))
 	  
 	  (public
 	    [button-panel (make-object mred:horizontal-panel% panel)]
@@ -241,11 +241,11 @@
 	    (send panel change-children (lambda (l) (cons button-panel l))) 
 	    (send button-panel stretchable-in-y? #f)
 	    
-	    (printf "before visibility check~n")
+	    (mred:debug:printf 'super-init "before visibility check~n")
 	    (if visible?
 		(show #t)
 		(make-object drscheme:frame:scheme-project-frame% #f #t group))
-	    (printf "after visibility check~n")
+	    (mred:debug:printf 'super-init "after visibility check~n")
 	    
 	    (mred:show-busy-cursor
 	     (lambda ()
@@ -256,9 +256,9 @@
     (define scheme-project-frame%
       (make-scheme-project-frame% mred:project-frame%))
 
-    (printf "before console~n")
+    (mred:debug:printf 'super-init "before console~n")
     (define console (make-object scheme-project-frame%))
-    (printf "after console~n")
+    (mred:debug:printf 'super-init "after console~n")
     (define eval-string (ivar (ivar console console-edit) do-eval))
 
     (mred:insert-format-handler "Scheme Project" "spj"

@@ -1,0 +1,59 @@
+
+You will need:
+
+1. A working installation of the PLT web-server. See help-desk
+for details about setting up the web-server.
+
+2. A directory where student homework submissions will be saved.
+
+******************** Directory Structure ********************
+For the sake of discussion, assume that the directory where homework
+submissions are saved is called submission.
+
+submission should contain two files and should have several sub-directories,
+one sub-directory for each assignment.
+
+1. File: student-accounts
+This file contains the list of accounts used by the system.
+See the sample student-accounts file for details.
+
+2. File: graders
+This file contains the list of graders.
+See the sample graders file for details.
+
+********** Assignment Directories **********
+Each assignment directory must contain a file called assignment.
+See the sample assignment file for details.
+
+When students submit homework a subdirectory will be created beneath
+the assignment directory to store their sumbission. The directory structure
+looks like this:
+
+/submission/<assignment-dir>/<graders name>/<students group>/<homework file(s)>
+
+An information file will also be created when the student submits, which records
+the names and ID's of all students in the group for which the submission was made.
+
+******************** SETUP ********************
+1. copy the file websubmit.scm to the servlets folder of your PLT
+web-server installation. This is the script you specify in your browser
+when you want to login to the submission system.
+
+2. Edit the path in this file to point to your submission directory.
+
+3.You may also want to edit the max/min-partners values. These values represent the number
+of students in a partnership minus 1.
+
+4. Copy the sample graders file to your submission directory and edit.
+
+5. Copy the sample student-accounts file to your submission directory and edit.
+
+6. Create directories for each of the assignments. You may add more later.
+
+7. In each assignment directory, copy the sample assignment file to that directory
+and edit.
+
+
+
+
+

@@ -7,13 +7,13 @@
            "../parameters.ss")
   
   (require (lib "yacc.ss" "parser-tools")
-           (lib "lex.ss" "parser-tools")           
+           (all-except (lib "lex.ss" "parser-tools") input-port)           
            (lib "readerr.ss" "syntax")
            (prefix class: (lib "class.ss")))
   
   ;(require (lib "build-grammar.ss" "tester"))
   
-  (define-syntax testing-parser
+  #;(define-syntax testing-parser
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))
     
@@ -21,7 +21,7 @@
   ;(provide beginner-grammar)
   
   (define parsers
-    (testing-parser
+    (parser
      (start CompilationUnit BeginnerInteractions MethodDeclaration)
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)

@@ -7,7 +7,7 @@
            "../parameters.ss")
   
   (require (lib "yacc.ss" "parser-tools")
-           (lib "lex.ss" "parser-tools")
+           (all-except (lib "lex.ss" "parser-tools") input-port)
            (lib "readerr.ss" "syntax"))
   
   ;(require (lib "build-grammar.ss" "tester"))

@@ -26,7 +26,7 @@
   
   (let ((path (build-path (get-path (current-library-collection-paths)) "profj" "libs" "java" "lang")))
     (with-handlers
-        ((exn:i/o:filesystem? 
+        ((exn:fail:filesystem? 
           (lambda (exn)
             (fprintf (current-error-port) 
                      "Warning: ProfessorJ needs to be able to modify files in ~a in order to run correctly"
@@ -66,7 +66,8 @@
   (define (make-compilation-path file-name)
     (let ((path (explode-path (normalize-path file-name))))
       (build-path (apply build-path (reverse (cdr (reverse path))))
-                  "compiled" (string-append (regexp-replace ".java" (car (reverse path)) "") ".jinfo"))))
+                  "compiled" (string-append 
+                              (regexp-replace ".java" (path->string (car (reverse path))) "") ".jinfo"))))
   
   (define (write-out-jinfos files jinfos)
     (for-each (lambda (file-name jinfo)
@@ -99,7 +100,7 @@
  
   (define (compile-exceptions so)
     (set-syntax-location so)
-    (let* ((files (filter (lambda (f) (regexp-match "Exception[.]java$" f))
+    (let* ((files (filter (lambda (f) (regexp-match "Exception[.]java$" (path->string f)))
                           (directory-list (build-path (collection-path "profj") "libs" "java" "lang")))))
       (let ((cur-dir (current-directory)))
         (current-directory (build-path (collection-path "profj") "libs" "java" "lang"))

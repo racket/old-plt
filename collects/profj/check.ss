@@ -1415,7 +1415,7 @@
                                                                                      (scheme-record-path (car static-class))))))))
                        (cdr accs))))
                    ((and (memq level '(beginner intermediate advanced)) (not first-binding) (> (length acc) 1)
-                         (with-handlers ((exn:syntax? (lambda (e) #f)))
+                         (with-handlers ((exn:fail:syntax? (lambda (e) #f)))
                            (type-exists? first-acc null c-class (id-src (car acc)) level type-recs)))
                     (build-field-accesses
                      (make-access #f
@@ -1603,7 +1603,7 @@
                        (get-method-records (id-string name) record))
                       ((scheme-record? record) (raise exn))))
                   (if (and (= (length (access-name expr)) 1)
-                           (with-handlers ((exn:syntax? (lambda (exn) #f)))
+                           (with-handlers ((exn:fail:syntax? (lambda (exn) #f)))
                              (type-exists? (id-string (car (access-name expr)))
                                            null c-class
                                            (id-src (car (access-name expr)))
@@ -1646,7 +1646,7 @@
                       (get-method-records (id-string name) this)))
                  (expr
                   (let ((call-exp 
-                         (with-handlers ((exn:syntax? handle-call-error))
+                         (with-handlers ((exn:fail:syntax? handle-call-error))
                            (check-sub expr))))
                     (cond
                       ;List of methods found

@@ -8,7 +8,7 @@
            "parsers/lexer.ss"
            "parameters.ss")
   
-  (require (lib "lex.ss" "parser-tools"))
+  (require (all-except (lib "lex.ss" "parser-tools") input-port))
   
   (provide parse parse-interactions parse-method)
   

@@ -5,7 +5,7 @@
            "../parameters.ss"
            (lib "etc.ss")
            (lib "readerr.ss" "syntax")
-           (lib "lex.ss" "parser-tools"))
+           (all-except (lib "lex.ss" "parser-tools") input-port))
   
   (provide find-intermediate-error find-intermediate-error-interactions find-intermediate-error-method
            find-beginner-error find-beginner-error-interactions find-beginner-error-method
@@ -47,7 +47,7 @@
       (let* ((getter (lambda () (get-token port)))
              (first-tok (getter)))
         (let ((returned-tok 
-               (case (get-token-name (car first-tok))
+               (case (get-token-name (get-tok first-tok))
                  ((EOF) #t)
                  ((if return) (parse-statement null first-tok 'start getter #f #f #f))
                  ;Taken from Intermediate to allow interaction to say int x = 4;
@@ -159,13 +159,13 @@
                          (position-offset start))))
 
   ;token = (list lex-token position position)
-  (define (get-tok token) (car token))
-  (define (get-start token) (cadr token))
+  (define get-tok position-token-token)
+  (define get-start position-token-start-pos)
   (define (get-end token) 
     (if (or (eq? (get-token-name (get-tok token)) 'STRING_LIT)
             (eq? (get-token-name (get-tok token)) 'STRING_ERROR))
         (cadr (token-value (get-tok token)))
-        (caddr token)))
+        (position-token-end-pos token)))
   
   ;output-format: token bool -> string
   (define format-out

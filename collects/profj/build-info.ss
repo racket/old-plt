@@ -14,21 +14,34 @@
   (define (name->list n)
     (cons (id-string (name-id n)) (map id-string (name-path n))))
   
-  ;build-require-syntax: string (list string) (list string) bool -> (list syntax)
+  ;same-base-dir?: path path -> bool
+  (define (same-base-dir? full sub)
+    (with-handlers ((exn? (lambda (e) #f)))
+      (letrec ((full-ex (explode-path full))
+               (sub-ex (explode-path sub))
+               (first-of?
+                (lambda (full sub)
+                  (or (null? sub)
+                      (and (equal? (car full) (car sub))
+                           (first-of? (cdr full) (cdr sub)))))))
+        (and (< (length sub-ex) (length full-ex))
+             (first-of? full-ex sub-ex)))))
+  
+  ;build-require-syntax: string (list string) path bool -> (list syntax)
   (define (build-require-syntax name path dir local?)
     (let* ((syn (lambda (acc) (datum->syntax-object #f acc #f)))
-           (profj-lib? (member (car dir) 
-                         (map (lambda (p) (build-path p "profj" "libs"))
-                              (current-library-collection-paths))))
-           (htdch-lib? (member (car dir)
-                               (map (lambda (p) (build-path p "htdch"))
-                                    (current-library-collection-paths))))
+           (profj-lib? (ormap (lambda (p) (same-base-dir? dir p))
+                              (map (lambda (p) (build-path p "profj" "libs"))
+                                   (current-library-collection-paths))))
+           (htdch-lib? (ormap (lambda (p) (same-base-dir? dir p))
+                              (map (lambda (p) (build-path p "htdch"))
+                                   (current-library-collection-paths))))
            (access (lambda (name)
                      (cond
                        (profj-lib? `(lib ,name "profj" "libs" ,@path))
                        (htdch-lib? `(lib ,name "htdch" ,@path))
                        ((and local? (not (to-file))) name)
-                       (else `(file ,(build-path (apply build-path dir) name))))))
+                       (else `(file ,(build-path dir name))))))
            (make-name (lambda ()
                         (if (or (not local?) profj-lib? htdch-lib? (to-file))
                             (string-append name ".ss")
@@ -181,29 +194,29 @@
                   (send type-recs add-package-contents path classes))))
           (import-class name path (find-directory path err) file type-recs level (import-src imp) #t))))
   
-  ;import-class: string (list string) (list string) location type-records symbol src bool-> void
+  ;import-class: string (list string) dir-path location type-records symbol src bool-> void
   (define (import-class class path in-dir loc type-recs level caller-src add-to-env)
-    (let* ((dir (if (and (equal? "scheme" (car in-dir)) (scheme-ok?)) (cdr in-dir) in-dir))
+    (let* ((dir (dir-path-path in-dir))
            (class-name (cons class path))
-           (type-path (string-append (build-path (apply build-path dir) "compiled" class) ".jinfo"))
-           (class-path (build-path (apply build-path dir) class))
+           (type-path (build-path dir "compiled" (string-append class ".jinfo")))
            (new-level (box level))
-           (class-exists? (check-file-exists? class-path new-level))
+           (class-exists? (check-file-exists? class dir new-level))
            (suffix (case (unbox new-level) 
-                                  ((beginner) ".bjava")
-                                  ((intermediate) ".ijava")
-                                  ((advanced) ".ajava")
-                                  ((full) ".java")))
-           (file-path (string-append class-path suffix)))
+                     ((beginner) ".bjava")
+                     ((intermediate) ".ijava")
+                     ((advanced) ".ajava")
+                     ((full) ".java")))
+           (file-path (build-path dir (string-append class suffix))))
       (cond
         ((is-import-restricted? class path level) (used-restricted-import class path caller-src))
         ((send type-recs get-class-record class-name #f (lambda () #f)) void)
-        ((and (file-exists? type-path) (or (core? class-name) (older-than? file-path type-path)) (read-record type-path))
+        ((and (file-exists? type-path) 
+              (or (core? class-name) (older-than? file-path type-path)) (read-record type-path))
          =>
          (lambda (record)
            (send type-recs add-class-record record)
            (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f))))
-        ((and (scheme-ok?) (not (eq? dir in-dir)) (check-scheme-file-exists? class-path))
+        ((and (scheme-ok?) (dir-path-scheme? in-dir) (check-scheme-file-exists? class dir))
          (send type-recs add-to-records class-name (make-scheme-record class (cdr path) dir null))
          (send type-recs add-require-syntax class-name (build-require-syntax class path dir #f)))
         (class-exists?
@@ -214,7 +227,7 @@
                         (ast (begin (input-port 
                                      (lambda () (call-with-input-file file-path (lambda (x) x))))
                                     (call-with-input-file file-path (lambda (p) (parse p location (unbox new-level)))))))
-                   (send type-recs set-compilation-location location (build-path (apply build-path dir) "compiled"))
+                   (send type-recs set-compilation-location location (build-path dir "compiled"))
                    (build-info ast (unbox new-level) type-recs 'not_look_up)
                    (send type-recs get-class-record class-name #f (lambda () 'internal-error "Failed to add record"))
                    )))
@@ -224,7 +237,7 @@
       (send type-recs add-class-req class-name (not add-to-env) loc)))
 
   ;determines if file a is older than file b
-  ;older-than?: string string -> bool
+  ;older-than?: path path -> bool
   (define (older-than? file-a file-b)
     (and (file-exists? file-a)
          (file-exists? file-b)
@@ -240,20 +253,22 @@
                    ("Comparable" "java" "lang")
                    ("Serializable" "java" "io"))))
   
-  ;check-file-exists?: string box -> bool
+  ;check-file-exists?: string path box -> bool
   ;side-effect: modifies contents of box
-  (define (check-file-exists? path level)
-    (cond
-      ((file-exists? (string-append path ".java")) (set-box! level 'full))
-      ((file-exists? (string-append path ".bjava")) (set-box! level 'beginner))
-      ((file-exists? (string-append path ".ijava")) (set-box! level 'intermediate))
-      ((file-exists? (string-append path ".ajava")) (set-box! level 'advanced))
-      (else #f)))
+  (define (check-file-exists? class path level)
+    (let ((exists? 
+           (lambda (suffix lang)
+             (and (file-exists? (build-path path (string-append class suffix)))
+                  (set-box! level lang)))))
+      (or (exists? ".java" 'full)
+          (exists? ".bjava" 'beginner)
+          (exists? ".ijava" 'intermediate)
+          (exists? ".ajava" 'advanced))))
     
-  ;check-scheme-file-exists? string-> bool
-  (define (check-scheme-file-exists? path)
-    (or (file-exists? (string-append path ".ss"))
-        (file-exists? (string-append path ".scm"))))
+  ;check-scheme-file-exists? string path -> bool
+  (define (check-scheme-file-exists? name path)
+    (or (file-exists? (build-path path (string-append name ".ss")))
+        (file-exists? (build-path path (string-append name ".scm")))))
   
   (define (create-scheme-type-rec mod-name req-path) 'scheme-types)
     
@@ -282,37 +297,41 @@
         (begin0 (get-record (send type-recs get-class-record name) type-recs)
                 (send type-recs set-location! original-loc)))))
   
-  ;find-directory: (list string) ( -> void) -> (list string)
+  ;(make-directory path bool)
+  (define-struct dir-path (path scheme?))
+  
+  ;find-directory: (list string) ( -> void) -> dir-path
   (define (find-directory path fail)
-    (if (null? path)
-        (list (build-path 'same))
-        (cond
-          ((and (scheme-ok?) (equal? (car path) "scheme"))
-           (cond
-             ((not (equal? (cadr path) "lib")) (cons "scheme" (find-directory (cdr path) fail)))
-             ((and (equal? (cadr path) "lib") (not (null? (cddr path))))
-              (list "scheme" (apply collection-path (cddr path))))
-             (else (list "mzlib"))))
-          (else
-           (when (null? (classpath)) (classpath (get-classpath)))
-           (let loop ((paths (classpath)))
-             (cond
-               ((null? paths) (fail))
-               ((and (directory-exists? (build-path (car paths) 
-                                                    (apply build-path path))))
-                (cons (car paths) path))
-               (else (loop (cdr paths)))))))))
+    (cond
+      ((null? path) (make-dir-path (build-path 'same) #f))
+      ((and (scheme-ok?) (equal? (car path) "scheme"))
+       (cond
+         ((not (equal? (cadr path) "lib")) 
+          (let ((dir (find-directory (cdr path) fail)))
+            (make-dir-path dir #t)))
+         ((and (equal? (cadr path) "lib") (not (null? (cddr path))))
+          (make-dir-path (apply collection-path (cddr path)) #t))
+         (else (list "mzlib"))))
+      (else
+       (when (null? (classpath)) (classpath (get-classpath)))
+       (let loop ((paths (classpath)))
+         (cond
+           ((null? paths) (fail))
+           ((and (directory-exists? (build-path (car paths) 
+                                                (apply build-path path))))
+            (make-dir-path (build-path (car paths) (apply build-path path)) #f))
+           (else (loop (cdr paths))))))))
 
-  ;get-class-list: (list string) -> (list string)
+  ;get-class-list: dir-path -> (list string)
   (define (get-class-list dir)
-    (if (and (scheme-ok?) (equal? (car dir) "scheme"))
+    (if (and (scheme-ok?) (dir-path-scheme? dir))
         (filter (lambda (f) (or (equal? (filename-extension f) ".ss")
                                 (equal? (filename-extension f) ".scm")))
-                (directory-list (cadr dir)))
+                (directory-list (dir-path-path dir)))
         (filter (lambda (c-name) (not (equal? c-name "")))
                 (map (lambda (fn) (substring fn 0 (- (string-length fn) 5)))
                      (filter (lambda (f) (equal? (filename-extension f) "java"))
-                             (directory-list (apply build-path dir)))))))
+                             (directory-list (dir-path-path dir)))))))
   
   ;load-lang: type-records -> void (adds lang to type-recs)
   (define (load-lang type-recs)
@@ -320,7 +339,7 @@
            (dir (find-directory lang (lambda () (error 'load-lang "Internal-error: Lang not accessible"))))
            (class-list (map (lambda (fn) (substring fn 0 (- (string-length fn) 6)))
                             (filter (lambda (f) (equal? (filename-extension f) "jinfo"))
-                                    (directory-list (build-path (apply build-path dir) "compiled")))))
+                                    (directory-list (build-path (dir-path-path dir) "compiled")))))
            (array (datum->syntax-object #f `(lib "array.ss" "profj" "libs" "java" "lang") #f)))
       (send type-recs add-package-contents lang class-list)
       (for-each (lambda (c) (import-class c lang dir #f type-recs 'full #f #f)) class-list)

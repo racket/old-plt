@@ -1,7 +1,7 @@
 #cs
 (module general-parsing mzscheme
   
-  (require (lib "lex.ss" "parser-tools")
+  (require (all-except (lib "lex.ss" "parser-tools") input-port)
            (lib "string.ss")
            (prefix class: (lib "class.ss"))
            (lib "list.ss"))
@@ -137,10 +137,7 @@
                    (define (name token) (and (token? token) (eq? (token-name token) check)))]))
 
   ;get-token-name: (U symbol token) -> symbol
-  (define (get-token-name token)
-    (cond
-      ((token? token) (token-name token))
-      (else token)))
+  (define get-token-name token-name)
   
   ;Special
   (define-sym-token? eof? 'EOF)

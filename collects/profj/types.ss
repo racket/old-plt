@@ -514,7 +514,7 @@
   (define type-version "version1")
   (define type-length 10)
   
-  ;; read-records: string -> (U class-record #f)
+  ;; read-record: path -> (U class-record #f)
   (define (read-record filename)
     (letrec ((parse-class/iface
               (lambda (input)

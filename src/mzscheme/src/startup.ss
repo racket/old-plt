@@ -45,16 +45,16 @@
 	      (null? (syntax-e p))
 	      #f))))
 
-  ;; null if a syntax null?, else escape
-  (define-values (stx-null/esc)
-    (lambda (p esc)
+  ;; null if a syntax null?, else #f
+  (define-values (stx-null/#f)
+    (lambda (p)
       (if (null? p)
 	  null
 	  (if (syntax? p) 
 	      (if (null? (syntax-e p))
 		  null
-		  (esc #f))
-	      (esc #f)))))
+		  #f)
+	      #f))))
 
   ;; a syntax pair?
   (define-values (stx-pair?)
@@ -88,18 +88,6 @@
 	  (car p)
 	  (car (syntax-e p)))))
 
-  ;; car of a syntax pair or escape
-  (define-values (stx-car/esc)
-    (lambda (p esc)
-      (if (pair? p)
-	  (car p)
-	  (if (syntax? p)
-	      (let ([v (syntax-e p)])
-		(if (pair? v)
-		    (car v)
-		    (esc #f)))
-	      (esc #f)))))
-
   ;; cdr of a syntax pair
   (define-values (stx-cdr)
     (lambda (p)
@@ -132,8 +120,29 @@
 			      flat-end))))
 		e)))))
 
-  (provide identifier? stx-null? stx-null/esc stx-pair? stx-list?
-	   stx-car stx-car/esc stx-cdr stx->list))
+  (define-values (stx-check/esc)
+    (lambda (v esc)
+      (if v
+	  v
+	  (esc #f))))
+
+  (define-values (cons/#f)
+    (lambda (i l)
+      (if l
+	  (cons i l)
+	  #f)))
+
+  (define-values (append/#f)
+    (lambda (l1 l2)
+      (if l1
+	  (if l2
+	      (append l1 l2)
+	      #f)
+	  #f)))
+
+  (provide identifier? stx-null? stx-null/#f stx-pair? stx-list?
+	   stx-car stx-cdr stx->list
+	   stx-check/esc cons/#f append/#f))
 
 ;;----------------------------------------------------------------------
 ;; quasiquote
@@ -725,21 +734,22 @@
 	  (if just-vars?
 	      (map list nestings)
 	      (let ([nest-vars (flatten-nestings nestings (lambda (x) #t))])
-		`(lambda (e esc)
+		`(lambda (e)
 		   (if (stx-list? e)
-		       ,(let ([b (app-e-esc match-head)])
+		       ,(let ([b (app-e match-head)])
 			  (if (equal? b '(list e))
 			      '(list (stx->list e))
-			      `(let ([l (map (lambda (e) ,b)
-					     (stx->list e))])
-				 (if (null? l)
-				     (quote ,(map (lambda (v)
-						    '())
-						  nest-vars))
-				     (apply map
-					    list
-					    l)))))
-		       (esc #f))))))]
+			      `(let/ec esc
+				 (let ([l (map (lambda (e) (stx-check/esc ,b esc))
+					       (stx->list e))])
+				   (if (null? l)
+				       (quote ,(map (lambda (v)
+						      '())
+						    nest-vars))
+				       (apply map
+					      list
+					      l))))))
+		       #f)))))]
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
@@ -759,26 +769,28 @@
 		    [match-tail (m&e (stx-cdr p) local-top use-ellipses? #t)])
 		(if just-vars?
 		    (append match-head match-tail)
-		    `(lambda (e esc)
-		       ,(app-append (app-esc match-head '(stx-car/esc e esc))
-				    (app-esc match-tail '(stx-cdr e))))))))]
+		    `(lambda (e)
+		       (if (stx-pair? e)
+			   ,(app-append (app match-head '(stx-car e))
+					(app match-tail '(stx-cdr e)))
+			   #f))))))]
        [(stx-null? p)
 	(if just-vars?
 	    null
-	    'stx-null/esc)]
+	    'stx-null/#f)]
        [(identifier? p)
 	(if (stx-memq p k)
 	    (if just-vars?
 		null
-		`(lambda (e esc)
+		`(lambda (e)
 		   (if (identifier? e)
 		       ;; This module-identifier=? can be turned into
 		       ;;  module-transformer-identifier=? by an
 		       ;;  enclosing binding.
 		       (if (module-identifier=? e (quote-syntax ,p))
 			   null
-			   (esc #f))
-		       (esc #f))))
+			   #f)
+		       #f)))
 	    (if (and use-ellipses?
 		     (eq? (syntax-e p) '...))
 		(apply
@@ -791,17 +803,17 @@
 		(if just-vars?
 		    (list p)
 		    (if id-is-rest?
-			`(lambda (e esc)
+			`(lambda (e)
 			   (list (datum->syntax-object #f e)))
-			`(lambda (e esc)
+			`(lambda (e)
 			   (list e))))))]
        [else
 	(if just-vars?
 	    null
-	    `(lambda (e esc)
+	    `(lambda (e)
 	       (if (equal? ,(syntax-e p) (syntax-e e))
 		   null
-		   (esc #f))))]))
+		   #f)))]))
     (let ([r (m&e p p #t #f)])
       (if just-vars?
 	  ;; Look for duplicate uses of variable names:
@@ -823,15 +835,14 @@
 	       [else (void)]))
 	    r)
 	  ;; A common trivial case is just return the expression
-	  (if (equal? r '(lambda (e esc) (list e)))
+	  (if (equal? r '(lambda (e) (list e)))
 	      (if phase-param?
 		  '(lambda (e module-identifier=?) (list e))
 		  'list)
 	      `(lambda (e ,@(if phase-param?
 				'(module-identifier=?) 
 				null))
-		 (let/ec esc
-		   ,(app-e-esc r)))))))
+		 ,(app-e r))))))
 
   (define (make-match&env p k phase-param?)
     (make-match&env/extract-vars p k #f phase-param?))
@@ -840,21 +851,20 @@
     (make-match&env/extract-vars p k #t #f))
 
   ;; Create an S-expression that applies
-  ;; rest to `e' and `esc'. Optimize
-  ;; ((lambda (e esc) E) e esc) to E.
-  (define (app-e-esc rest)
+  ;; rest to `e'. Optimize ((lambda (e) E) e) to E.
+  (define (app-e rest)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
-	     (equal? (cadr rest) '(e esc)))
+	     (equal? (cadr rest) '(e)))
 	(caddr rest)
-	`(,rest e esc)))
+	`(,rest e)))
 
   ;; Create an S-expression that applies
-  ;; rest to e and `esc'.
-  (define (app-esc rest e)
+  ;; rest to e.
+  (define (app rest e)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
-	     (equal? (cadr rest) '(e esc)))
+	     (equal? (cadr rest) '(e)))
 	(let ([r (caddr rest)])
 	  ;; special (common) case: body is `(list e)'
 	  (if (and (pair? r)
@@ -863,10 +873,8 @@
 		   (eq? (cadr r) 'e)
 		   (null? (cddr r)))
 	      `(list ,e)
-	      ;; The following could be `((lambda (e) ,r) ,e),
-	      ;;  but that's an anti-lightweight conversion!
-	      `(,rest ,e esc)))
-	`(,rest ,e esc)))
+	      `(,rest ,e)))
+	`(,rest ,e)))
 
   ;; Create an S-expression that appends
   ;; e1 and e2. Optimize...
@@ -875,8 +883,8 @@
 	     (eq? (car e1) 'list)
 	     (pair? (cdr e1))
 	     (null? (cddr e1)))
-	`(cons ,(cadr e1) ,e2)
-	`(append ,e1 ,e2)))
+	`(cons/#f ,(cadr e1) ,e2)
+	`(append/#f ,e1 ,e2)))
 
   ;; ----------------------------------------------------------------------
   ;; Output generator

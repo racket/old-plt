@@ -130,6 +130,8 @@ CSTARTUPDEST = cstartup.inc
 
 startup:
 	$(MAKE) $(srcdir)/src/$(CSTARTUPDEST)
+
+mark:
 	$(MAKE) $(srcdir)/src/mzmark.c
 
 headers:

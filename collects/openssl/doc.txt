@@ -34,8 +34,11 @@ Like `tcp-listen', but the result is an SSL listener (which is a
 waitable object). The extra optional `protocol-symbol' is as for
 `ssl-connect'.
 
-Call `ssl-load-certificate-chain' and `ssl-load-private-key' to
-avoid a _no shared cipher_ error on accepting connections.
+Call `ssl-load-certificate-chain' and `ssl-load-private-key' to avoid
+a _no shared cipher_ error on accepting connections. The file
+"test.pem" in the "openssl" collection is a suitable argument for
+testing; since "test.pem" is public, however, such a test
+configuration obviously provides no security.
 
 > (ssl-close ssl-listener)
 > (ssl-listener? v)

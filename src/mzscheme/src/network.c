@@ -73,7 +73,7 @@ static int mzerrno = 0;
 # define TCP_SOCKSENDBUF_SIZE 32768
 # define NOT_WINSOCK(x) x
 # define SOCK_ERRNO() errno
-# define WAS_EAGAIN(e) ((e == EWOULDBLOCK) || (e == EAGAIN) || (errid == EINPROGRESS) || (errid == EALREADY))
+# define WAS_EAGAIN(e) ((e == EWOULDBLOCK) || (e == EAGAIN) || (e == EINPROGRESS) || (e == EALREADY))
 # define WAS_WSAEMSGSIZE(e) 0
 # define mz_AFNOSUPPORT EAFNOSUPPORT
 #endif

@@ -155,6 +155,8 @@ int daemon_ready(Scheme_Object *ignored)
       check_socket_ready(BIO_get_fd(SSL_get_wbio(cur->ssl), NULL),
 			 (cur->write_blocked_reason == 2));
   }
+
+  return 0;
 }
 
 void deamon_needs_wakeup(Scheme_Object *ignored, void *fds)
@@ -606,8 +608,8 @@ static int shutdown_ready(Scheme_Object *_ssl)
   if (!ssl->write_blocked_reason)
     return 1;
   else
-    check_socket_ready(BIO_get_fd(SSL_get_wbio(ssl->ssl), NULL),
-		       (ssl->write_blocked_reason == 2));
+    return check_socket_ready(BIO_get_fd(SSL_get_wbio(ssl->ssl), NULL),
+			      (ssl->write_blocked_reason == 2));
 }
 
 static void shutdown_need_wakeup(Scheme_Object *_ssl, void *fds)
@@ -1395,8 +1397,8 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
   v = scheme_make_prim_w_arity(ssl_listener_p,"ssl-listener?",1,1);
   scheme_add_global("ssl-listener?", v, env);
 
-  v = scheme_make_prim_w_arity(ssl_load_cert_chain,"ssl-load-certification-chain",2,2);
-  scheme_add_global("ssl-load-certification-chain", v, env);
+  v = scheme_make_prim_w_arity(ssl_load_cert_chain,"ssl-load-certificate-chain",2,2);
+  scheme_add_global("ssl-load-certificate-chain", v, env);
 
   v = scheme_make_prim_w_arity(ssl_load_priv_key,"ssl-load-private-key",2,4);
   scheme_add_global("ssl-load-private-key", v, env);

@@ -1,7 +1,21 @@
 (module mzssl mzscheme
-  (define (ssl-connect . args)
-    (error 'ssl-connect "extension not compiled"))
-  (define (ssl-connect/enable-break . args)
-    (error 'ssl-connect "extension not compiled"))
   (define ssl-available? #f)
-  (provide ssl-connect ssl-connect/enable-break ssl-available?))
+  (provide ssl-available?)
+
+  (define-syntax provide-wrappers
+    (syntax-rules ()
+      [(_) (begin)]
+      [(_ id1 id ...)
+       (begin
+	 (define (id1 . args)
+	   (error 'id1 "extension not compiled"))
+	 (provide id1)
+	 (provide-wrappers id ...))]))
+
+  (provide-wrappers
+   ssl-connect ssl-connect/enable-break
+   ssl-listen ssl-listener? ssl-close
+   ssl-accept ssl-accept/enable-break
+   ssl-load-certificate-chain
+   ssl-load-private-key))
+

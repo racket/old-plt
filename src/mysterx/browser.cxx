@@ -127,7 +127,13 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   WaitForSingleObject(browserHwndMutex,INFINITE);
   
   browserWindowInit.ppIStream = &pBrowserStream;
-  
+
+  browser = (MX_Browser_Object *)scheme_malloc(sizeof(MX_Browser_Object));
+  browser->type = mx_browser_type;
+  browser->destroy = FALSE;
+  browser->hwnd = browserHwnd;
+  browserWindowInit.browserObject = browser;
+
   // use _beginthread instead of CreateThread
   // because the use of HTMLHelp requires the use of
   // multithreaded C library
@@ -139,10 +145,6 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   WaitForSingleObject(createHwndSem,INFINITE);
   
   hr = CoGetInterfaceAndReleaseStream(pBrowserStream,IID_IUnknown,(void **)&pIUnknown);
-  
-  browser = (MX_Browser_Object *)scheme_malloc(sizeof(MX_Browser_Object));
-  browser->type = mx_browser_type;
-  browser->hwnd = browserHwnd;
   
   ReleaseSemaphore(browserHwndMutex,1,NULL);
   
@@ -247,7 +249,7 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   scheme_add_managed((Scheme_Manager *)scheme_get_param(scheme_config,MZCONFIG_MANAGER),
 		     (Scheme_Object *)browser,
 		     (Scheme_Close_Manager_Client *)scheme_release_browser,
-		     NULL,0);
+		     (void *)TRUE,0);
 
   scheme_register_finalizer(browser,scheme_release_browser,NULL,NULL,NULL);
 

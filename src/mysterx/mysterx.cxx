@@ -8,6 +8,7 @@
 #include <float.h>
 #include <limits.h>
 #include <io.h>
+#include <process.h>
 
 #define _WIN32_DCOM
 
@@ -503,23 +504,30 @@ void mx_register_simple_com_object(Scheme_Object *obj,IUnknown *pIUnknown) {
   mx_register_object(obj,pIUnknown,scheme_release_simple_com_object);
 }
 
-void scheme_release_browser(void *wb,void *) {
+void scheme_release_browser(void *wb,void *hwndDestroy) {
+  MX_Browser_Object *b;
 
   if (MX_MANAGED_OBJ_RELEASED(wb)) {
     return;
   }
 
-  if (((MX_Browser_Object *)wb)->pIWebBrowser2) {
-    ((MX_Browser_Object *)wb)->pIWebBrowser2->Release();
+  b = (MX_Browser_Object *)wb;
+
+  if (b->pIWebBrowser2) {
+    b->pIWebBrowser2->Release();
   }
 
   if (((MX_Browser_Object *)wb)->pISink) {
-    ((MX_Browser_Object *)wb)->pISink->Release();
+    b->pISink->Release();
   }
 
-  if (((MX_Browser_Object *)wb)->pIEventQueue) {
-    ((MX_Browser_Object *)wb)->pIEventQueue->Release();
+  if (b->pIEventQueue) {
+    b->pIEventQueue->Release();
   } 
+
+  if (hwndDestroy) {
+    b->destroy = TRUE;
+  }
 
   MX_MANAGED_OBJ_RELEASED(wb) = TRUE;
 }
@@ -4433,6 +4441,7 @@ void browserHwndMsgLoop(LPVOID p) {
   IUnknown *pIUnknown;
   BROWSER_WINDOW_INIT *pBrowserWindowInit;
   LONG hasScrollBars;
+  BOOL *destroy;
   
   pBrowserWindowInit = (BROWSER_WINDOW_INIT *)p;
 
@@ -4472,7 +4481,9 @@ void browserHwndMsgLoop(LPVOID p) {
   SetForegroundWindow(hwnd);
 
   pIUnknown = NULL;
-  
+
+  destroy = &(pBrowserWindowInit->browserObject->destroy);
+
   while (IsWindow(hwnd)) {
     
     if (pIUnknown == NULL) {
@@ -4492,9 +4503,14 @@ void browserHwndMsgLoop(LPVOID p) {
       }
     }
 
-    while (GetMessage(&msg,NULL,0,0)) {
+    while (PeekMessage(&msg,NULL,0,0,PM_REMOVE)) {
       TranslateMessage(&msg);
       DispatchMessage(&msg);
+    }
+
+    if (*destroy) {
+      *destroy = FALSE;
+      DestroyWindow(hwnd);
     }
   }
 }

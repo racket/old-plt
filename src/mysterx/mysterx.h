@@ -91,6 +91,7 @@ typedef struct _mx_com_data_ {
 typedef struct _com_browser_ {
   Scheme_Type type;
   BOOL released;
+  BOOL destroy;
   HWND hwnd;
   IWebBrowser2 *pIWebBrowser2;
   ISink *pISink;
@@ -143,6 +144,7 @@ typedef struct _browser_window_ { // parameters a la MrEd frame% class
 typedef struct _browser_window_init_ {
   BROWSER_WINDOW browserWindow;
   IStream **ppIStream; // for passing COM interface back to main thread
+  MX_Browser_Object *browserObject;
 } BROWSER_WINDOW_INIT;
 
 typedef struct _browser_window_style_option {
@@ -181,6 +183,7 @@ typedef struct _managed_obj_ {
 #define MX_BROWSER_VAL(o) (((MX_Browser_Object *)o)->pIWebBrowser2)
 #define MX_BROWSER_EVENTQUEUE(o) (((MX_Browser_Object *)o)->pIEventQueue)
 #define MX_BROWSER_SINK(o) (((MX_Browser_Object *)o)->pISink)
+#define MX_BROWSER_HWND(o) (((MX_Browser_Object *)o)->hwnd)
 
 #define MX_ELEMENTP(o) TYPE_PRED(o,mx_element_type)
 #define MX_ELEMENT_VALIDITY(o) (((MX_Element *)o)->valid)

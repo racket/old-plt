@@ -99,16 +99,16 @@ in several important ways:
    library, "process.ss". 
 
    MzScheme's new built-in form is `subprocess', which takes the same
-   arguments as `process*/ports'. It treturns four values: a
-   subprocess value, an input port or false (the subprocess's stdout,
-   if one was created), an output port or false (the subprocess's
-   stdin), and an input port (the subprocess's stderr). The new
+   arguments as `process*/ports'. It returns four values: a subprocess
+   value, an input port or false (the subprocess's stdout, if one was
+   created), an output port or false (the subprocess's stdin), and an
+   input port or false (the subprocess's stderr). The new
    `subprocess-status' procedure gets the status or return code of the
    subprocess, and `subprocess-pid' gets its process id.
    
    The `process', etc. functions are implemented in terms of
-   `subprocess'. Consequently, old bugs and gaps in support for
-   Windows have been eliminated.
+   `subprocess'. Consequently, old bugs and gaps in support
+   (especially for Windows) have been eliminated.
 
    The `execute' and `execute*' procedures were eliminated entirely.
 

@@ -167,7 +167,7 @@
 
   (define merge-input
     (case-lambda
-     [(a b) (merge-input a b #f)]
+     [(a b) (merge-input a b 4096)]
      [(a b limit)
       (or (input-port? a)
 	  (raise-type-error 'merge-input "input-port" a))

@@ -232,6 +232,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_status(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_wait(int c, Scheme_Object *args[]);
 static Scheme_Object *subprocess_pid(int c, Scheme_Object *args[]);
+static Scheme_Object *subprocess_p(int c, Scheme_Object *args[]);
 static Scheme_Object *sch_send_event(int c, Scheme_Object *args[]);
 
 Scheme_Object *
@@ -485,6 +486,11 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("subprocess-pid", 
 			     scheme_make_prim_w_arity(subprocess_pid, 
 						      "subprocess-pid", 
+						      1, 1),
+			     env);
+  scheme_add_global_constant("subprocess?", 
+			     scheme_make_prim_w_arity(subprocess_p, 
+						      "subprocess?", 
 						      1, 1),
 			     env);
 
@@ -4486,6 +4492,13 @@ static Scheme_Object *subprocess_pid(int argc, Scheme_Object **argv)
     scheme_wrong_type("subprocess-pid", "subprocess", 0, argc, argv);
 
   return scheme_make_integer_value(((Scheme_Subprocess *)argv[0])->pid);
+}
+
+static Scheme_Object *subprocess_p(int argc, Scheme_Object **argv)
+{
+  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type)
+	  ? scheme_true
+	  : scheme_false);
 }
 
 /*********** Windows: command-line construction *************/

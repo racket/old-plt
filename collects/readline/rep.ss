@@ -2,8 +2,6 @@
 (module rep mzscheme
   (require "pread.ss")
 
-  (require "pread.ss")
-
   (current-prompt-read 
    (let ([orig-read (current-prompt-read)]
 	 [orig-input (current-input-port)])

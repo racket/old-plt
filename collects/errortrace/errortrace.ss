@@ -368,9 +368,10 @@
    (let* ([orig (current-eval)]
           [errortrace-eval-handler
            (lambda (e)
-	     (let* ([a (if (compiled-expression? (if (syntax? e) 
-						     (syntax-e e) 
-						     e))
+	     (let* ([a (if (or (compiled-expression? (if (syntax? e) 
+							 (syntax-e e) 
+							 e))
+			       (not (instrumenting-enabled)))
 			   e
 			   (annotate-top (expand e) null #f))])
 	       (orig a)))])

@@ -27,13 +27,16 @@
 		  (lambda (button evt)			      
 		    (if (and rep-thread
 			     (thread-running? rep-thread))
-			(mred:message-box "already created a rep in the xterm")
+			(begin 
+			  (kill-thread rep-thread)
+			  (set! rep-thread #f)
+			  (printf "REPL killed~n"))
 			(set! rep-thread 
 			      (thread 
 			       (lambda ()
 				 (load "~/.mzschemerc")
 				 (read-eval-print-loop)
-				 (printf "~nREP finished~n"))))))
+				 (printf "~nREPL finished~n"))))))
 		  (if (send bitmap ok?)
 		      bitmap
 		      "Console"))])

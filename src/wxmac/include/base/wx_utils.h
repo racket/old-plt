@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wxb_utilsh
 #define wxb_utilsh
 
@@ -17,14 +15,7 @@
 #include "wx_list.h"
 #include "wx_win.h"
 
-
-// sprintf is often needed, but we don't always want to include the whole
-// of stdio.h!
-#ifdef wx_msw
-extern "C" int sprintf(char *, const char *, ...);
-#elif defined(wx_x) || defined(wx_mac)
 #include <stdio.h>
-#endif
 
 // Forward declaration
 class wxFrame;
@@ -92,9 +83,7 @@ long wxGetFreeMemory(void);
 
 // Consume all events until no more left
 void wxFlushEvents(void);
-#ifdef wx_mac
 void wxFlushResources(void);
-#endif // wx_mac
 
 /*
  * Network and username functions.
@@ -128,14 +117,6 @@ wxWindow *wxFindWindowByName(char *name, wxWindow *parent = NULL);
 
 // Returns menu item id or -1 if none.
 int wxFindMenuItemId(wxFrame *frame, char *menuString, char *itemString);
-
-#if 0
-# if (!defined(__MINMAX_DEFINED) && !defined(max))
-#  define max(a,b)            (((a) > (b)) ? (a) : (b))
-#  define min(a,b)            (((a) < (b)) ? (a) : (b))
-#  define __MINMAX_DEFINED 1
-# endif
-#endif
 
 // Format a message on the standard error (UNIX) or the debugging
 // stream (Windows)

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wxb_typesh
 #define wxb_typesh
 
@@ -100,7 +98,6 @@ class wxTypeDef: public wxObject
   WXTYPE type;
   WXTYPE parent;
   inline wxTypeDef(void) { name = NULL ; }
-  inline ~wxTypeDef(void) { if (name) delete name ; }
 };
 
 class wxTypeTree: public wxHashTable

@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wb_panel.h	1.2 5/9/94" */
-
 #ifndef wxb_panelh
 #define wxb_panelh
 
@@ -27,11 +25,7 @@ class wxPanel;
 class wxColour;
 class wxBrush;
 
-#if (defined(wx_motif) && USE_PANEL_CANVAS_IN_X) || (defined(wx_msw) && USE_PANEL_CANVAS_IN_MSW) || (defined(wx_mac) && USE_PANEL_CANVAS_IN_MAC)
 class wxbPanel: public wxCanvas
-#else
-class wxbPanel: public wxWindow
-#endif
 {
  public:
   Bool new_line;
@@ -100,13 +94,6 @@ class wxbPanel: public wxWindow
   // Update next cursor position
   virtual void AdvanceCursor(wxWindow *item) = 0;
 
-#ifndef wx_mac
-  // If x or y are not specified (i.e. < 0), supply
-  // values based on left to right, top to bottom layout.
-  // Internal use only.
-  virtual void GetValidPosition(int *x, int *y) = 0;
-#endif // wx_mac
-
   inline virtual wxButton *GetDefaultItem(void) { return defaultItem; }
 
   wxObject *GetChild(int number) ;
@@ -115,20 +102,11 @@ class wxbPanel: public wxWindow
   // on a listbox)
   virtual void OnDefaultAction(wxItem *initiatingItem);
 
-#if USE_WX_RESOURCES
-  /*
-   * Optional resource loading facility
-   */
-
-  Bool LoadFromResource(wxWindow *parent, char *resourceName);
-#endif
-#ifdef wx_mac
 // Private methods
 private:
 	void InitDefaults(void);
 	void InitMoreDefaults(void); // Poor name for this method
 
-#endif // wx_mac
 };
 
 #endif // IN_CPROTO

@@ -31,7 +31,7 @@ public:
 	(
 		wxArea*		parentArea,
 		int			margin = 1,
-		Direction	direction = Direction::wxAll,
+		Direction	direction = wxAll,
 		int			whitespace = 0,
 		char*		windowName = "RectBorder",
 		int 		x = -1,

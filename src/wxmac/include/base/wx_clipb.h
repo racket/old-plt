@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_clipb.h	1.2 5/9/94" */
-
 #ifndef wx_clipbh
 #define wx_clipbh
 

@@ -111,7 +111,6 @@ class wxbDC: public wxObject
   virtual void CrossHair(float x, float y) = 0;
   virtual void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)=0;
   virtual void DrawPoint(float x, float y) = 0;
-  inline virtual void DrawPoint(wxPoint& point) { DrawPoint(point.x, point.y); }
   virtual void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0) = 0;
   virtual void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0) = 0;
   virtual void DrawLines(wxList *list, float xoffset = 0, float yoffset = 0);

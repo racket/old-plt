@@ -10,7 +10,11 @@
 #ifndef wxMarginh
 #define wxMarginh
 
-class Direction;
+/* For the precise-GC transformer, we pretend that wxMargin is
+   atomic. It has no pointers, after all. */
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endf
 
 class wxMargin
 {
@@ -32,5 +36,9 @@ class wxMargin
 	void SetMargin(int margin, Direction direction);
 	int Offset(Direction direction);
 };
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endf
 
 #endif // wxMarginh

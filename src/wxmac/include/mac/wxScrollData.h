@@ -10,6 +10,13 @@
 #ifndef wxScrollDatah
 #define wxScrollDatah
 
+
+/* For the precise-GC transformer, we pretend that wxWhatScrollData is
+   atomic. It has no pointers, after all. */
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endf
+
 class wxWhatScrollData // 95-02-19
 {
   public:
@@ -52,6 +59,10 @@ class wxWhatScrollData // 95-02-19
 		return *this;
 	}
 };
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endf
 
 class wxScrollData
 {

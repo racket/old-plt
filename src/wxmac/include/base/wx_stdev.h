@@ -118,7 +118,7 @@ class wxMouseEvent: public wxEvent
   Bool altDown;
   Bool metaDown; // mflatt
   
-  wxMouseEvent& operator = (wxMouseEvent &src); 
+  void CopyFrom(wxMouseEvent *src); 
   
   wxMouseEvent(WXTYPE mouseType);
 

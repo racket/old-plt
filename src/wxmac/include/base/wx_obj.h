@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "@(#)wx_obj.h	1.2 5/9/94" */
-
 #ifndef wxb_objh
 #define wxb_objh
 

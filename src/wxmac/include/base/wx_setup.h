@@ -7,8 +7,6 @@
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
-/* sccsid[] = "%W% %G%" */
-
 #ifndef wx_setuph
 #define wx_setuph
 
@@ -20,12 +18,6 @@
 
 #define USE_POSTSCRIPT 1	// 0 for no PostScript device context
 #define USE_AFM_FOR_POSTSCRIPT 1 // 1 to use font metric files in GetTextExtent
-#define USE_METAFILE   0	// 0 for no Metafile and metafile device context
-#define USE_FORM       0	// 0 for no wxForm
-#define USE_IPC        0	// 0 for no interprocess comms
-// Note: wxHELP uses IPC under X so these are interdependent!
-#define USE_HELP       0	// 0 for no help facility
-#define USE_ENHANCED_DIALOG 0	// 0 for no enhanced dialog
 #define USE_RESOURCES  1	// 0 for no wxGetResource/wxWriteResource
 #define USE_CLIPBOARD  1	// 0 for no clipboard functions
 #define USE_SPLINES    1	// 0 for no splines
@@ -129,104 +121,6 @@
 
 
 /*
- * Windows/NT
- *
- */
-
-	/*
-	 * Special Note about FAFA_LIB, WINDOWS_LOOK, CTL3D
-	 */
-/****************************************************************************
-
-These 3 #define control how graphic controls are managed. Not all combinations
-are valid.
-
-FAFA_LIB=0
-
-	WINDOWS_LOOK is ignored, and forced to 1.
-	CTL3D controls the 3D-rendering using ctl3d.lib
-	All controls are Microsoft
-
-FAFA_LIB=1
-
-	CTL3D=1
-
-		WINDOWS_LOOK is ignored, and forced to 1.
-		3D-rendering is done via ctl3d.lib
-		Only necessary fafa items are created [wxBitmapped'buttons]
-
-	CTL3D=0
-
-		WINDOWS_LOOK=1
-
-			Idem above, but no 3D-rendering.
-
-		WINDOWS_LOOK=0
-
-			3D-rendering is done via fafa.lib.
-			All controls are Fafa.
-
-Recommended configuration:
-
-FAFA_LIB=1 , CTL3D=1 , WINDOWS_LOOK=1
-
-****************************************************************************/
-
-#define ALS_CHOICE_SIZE	           1
-                                    // Lets you choose one of the 2 forms for
-                                    // wxChoice::SetSize
-                                    // EXPERIMENTAL
-
-#define EDITABLE_TEXT_WINDOW       0
-                                    // Editable text window ONLY (a value of 1 compiles
-                                    // OUT the large file support).
-                                    // The editable text window uses
-                                    // an EDIT control, but files must be < 64K
-                                    // If 0, both types of window are allowed.
-#define FAFA_LIB                   1
-                                    // Define 1 for Fafa lib. Mandatory for pixmapped
-                                    // buttons under Windows. If FAFA_LIB is 1
-                                    // and CTL3D is 1, all controls except wxButton
-                                    // will be CTL3D controls: wxButton will
-                                    // be a FAFA button with optional bitmap.
-#define USE_GREY_BACKGROUND        1
-                                    // If 1, uses grey (gray!) panels
-                                    // in FAFA and non-FAFA, non-CTL3D modes.
-                                    // I (JACS) think the controls look better
-                                    // this way. CTL3D always uses grey panels.
-#ifdef WIN32
-#define CTL3D                      0
-                                    // Don't change this
-#elif __WATCOMC__
-#define CTL3D                      0
-                                    // Added by Chubraev for WATCOM. CTL3D & WATCOM
-                                    // don't mix.
-#else
-#define CTL3D                      1
-                                    // Define 1 to use Microsoft CTL3D library.
-                                    // See note above about using FAFA and CTL3D.
-#endif
-
-#define WINDOWS_LOOK		   1
-				    // Define 1 to use as many as possible
-				    // Microsoft controls.
-#define USE_ITSY_BITSY             1
-                                    // Define 1 to use Microsoft's IstyBitsy
-                                    // small title bar library (in contrib)
-
-#define USE_BITMAP_MESSAGE         1
-                                    // Define 1 to use bitmap messages. Windows only so far.
-
-
-#define PROVIDES_DEFAULT_ICONS     0
-                                  // Define the 3 basic icons std,child,mdi
-                                  // if defined to 1. This is useful
-                                  // to avoid BoundChecker Warnings.
-                                  // Unfortunately it breaks SetIcon.
-                                  
-#define USE_PANEL_CANVAS_IN_MSW      1
-                                    // wxPanel inherits from wxCanvas in MSW
-/*
  * Any platform
  *
  */
@@ -251,21 +145,6 @@ FAFA_LIB=1 , CTL3D=1 , WINDOWS_LOOK=1
 				    // MS C7 memory bug. Bounds checker
 				    // complains about deallocating
                                     // arrays of wxPoints if wxPoint is a class.
-
-//#define DEBUGLOG 
-
-/*
- * DO NOT MODIFY THESE LINES!!
- */
-#if !FAFA_LIB
-#undef WINDOWS_LOOK
-#define WINDOWS_LOOK	1
-#else
-#if CTL3D
-#undef WINDOWS_LOOK
-#define WINDOWS_LOOK	1
-#endif
-#endif
 
 #endif // wx_setuph
 

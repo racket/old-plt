@@ -28,7 +28,7 @@
 		    [structurized (zodiac:structurize-syntax
 				   mixed
 				   (zodiac:make-zodiac 'drscheme loc loc))])
-	       (zodiac:expand structurized)))])))
+	       (zodiac:scheme-expand structurized)))])))
 
     (define group (make-object frame-group%))
     (send group set-empty-callback (lambda () (mred:exit) #f))

@@ -4,10 +4,10 @@
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
 	    [print-convert : mzlib:print-convert^]
-	    [params : plt:parameters^]
 	    [aries : plt:aries^]
 	    [zodiac : zodiac:system^]
 	    [zodiac:interface : zodiac:interface^]
+	    [drscheme:language : drscheme:language^]
 	    [drscheme:app : drscheme:app^]
 	    [drscheme:basis : drscheme:basis^])
 
@@ -178,7 +178,9 @@
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (get-expr [before void] [after void])
-		 (let* ([user-code
+		 (let* ([print-style (drscheme:language:setting-printing
+				      (mred:get-preference 'drscheme:settings))]
+			[user-code
 			 (lambda ()
 			   '(begin (printf "sending scheme:~n")
 				   (pretty-print (get-expr)))
@@ -191,7 +193,9 @@
 				   (parameterize ([mzlib:pretty-print@:pretty-print-size-hook size-hook]
 						  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
 				     (mzlib:pretty-print@:pretty-print
-				      (print-convert:print-convert ans)
+				      (if (eq? print-style 'r4rs-style)
+					  ans
+					  (print-convert:print-convert ans))
 				      this-result))))
 			       anss))))])
 		   (set! current-thread-desc
@@ -333,7 +337,7 @@
 				   delta)
 		     (insert-delta 
 		      (format "~a Scheme"
-			      (list-ref
+			      '(list-ref
 			       drscheme:basis:level-strings
 			       (drscheme:basis:level->number
 				(mred:get-preference

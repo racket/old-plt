@@ -1,26 +1,3 @@
-(define drscheme:parameters@
-  (unit/sig plt:parameters^
-    (import [mred : mred^]
-	    [drscheme:basis : drscheme:basis^])
-
-    ; let the preference default to the most advanced.
-    (mred:set-preference-default 'drscheme:scheme-level
-				 (let loop ([l drscheme:basis:level-symbols])
-				   (cond
-				    [(null? (cdr l)) (car l)]
-				    [else (loop (cdr l))])))
-
-    (define pref (mred:get-preference 'drscheme:scheme-level))
-
-    (define case-sensitive? #t)
-    (define allow-set!-on-undefined? (case pref
-				       [(advanced) #t]
-				       [else #f]))
-    (define unmatched-cond/case-is-error? #t)
-    (define allow-improper-lists? (case pref
-				       [(advanced) #t]
-				       [else #f]))
-    (define check-syntax-level pref)))
 
 (define drscheme:setup@
   (unit/sig drscheme:setup^

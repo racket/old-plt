@@ -141,15 +141,15 @@
 		   (drscheme:tool@ mred mzlib print-convert zodiac (language : plt:parameters^)
 				   frame unit compound-unit)]
 	     [rep : drscheme:rep^
-		    (drscheme:rep@ mred mzlib print-convert
-				     (language : plt:parameters^) aries zodiac
-				     interface app basis)]
+		    (drscheme:rep@ mred mzlib print-convert aries zodiac
+				 interface language app basis)]
 	     [frame : drscheme:frame^
 		    (drscheme:frame@ mred mzlib basis
 				   setup tool unit
 				   compound-unit zodiac)]
 	     [language : drscheme:language^
-		       (drscheme:language@ mred basis (mzlib function@))]
+		       (drscheme:language@ mred basis (mzlib function@)
+					 print-convert)]
 	     [unit : drscheme:unit^
 		    (drscheme:unit@ mred mzlib
 				  setup compound-unit

@@ -42,6 +42,7 @@
 #include "widgets.h"
 #include "../../contrib/xpm/lib/xpm.h"
 #include <X11/Xatom.h>
+#include "wx_visual.h"
 
 #include <sys/time.h>
 #include <sys/types.h>
@@ -206,11 +207,18 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 	(name ? name : "shell", transientShellWidgetClass, parent_widget,
 	 XtNsaveUnder, FALSE,
 	 XtNtransientFor, pw,
+	 XtNvisual, wxAPP_VISUAL,
+	 XtNdepth, wx_visual_depth,
+	 XtNcolormap, wx_default_colormap,
 	 NULL);
     } else {
       // create top level shell
       X->frame = XtVaCreatePopupShell
-	(name ? name : "shell", topLevelShellWidgetClass, parent_widget, NULL);
+	(name ? name : "shell", topLevelShellWidgetClass, parent_widget, 
+	 XtNvisual, wxAPP_VISUAL,
+	 XtNdepth, wx_visual_depth,
+	 XtNcolormap, wx_default_colormap,
+	 NULL);
     }
     // set common data
     SetSize(x, y, width, height, wxSIZE_AUTO);

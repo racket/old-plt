@@ -537,7 +537,7 @@ static void move_thumb(self,oldx,oldy,wd,ht,newx,newy)Widget self;int  oldx;int 
     int h, ah;
 
     XCopyArea(XtDisplay(self), XtWindow(self), XtWindow(self),
-	      DefaultGCOfScreen(XtScreen(self)),
+	      ((XfwfSlider2Widget)self)->xfwfLabel.gc,
 	      oldx, oldy, wd, ht, newx, newy);
     /* First check if the old and new areas do not overlap */
     if (newx + wd <= oldx || oldx + wd <= newx

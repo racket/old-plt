@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwSlider2.w,v 1.6 2001/07/25 16:09:40 mflatt Exp $
+# $Id: xwSlider2.w,v 1.7 2002/03/13 22:49:21 mflatt Exp $
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
@@ -300,7 +300,7 @@ and clears the old rectangle to the background color.
     int h, ah;
 
     XCopyArea(XtDisplay($), XtWindow($), XtWindow($),
-	      DefaultGCOfScreen(XtScreen($)),
+	      $gc,
 	      oldx, oldy, wd, ht, newx, newy);
     /* First check if the old and new areas do not overlap */
     if (newx + wd <= oldx || oldx + wd <= newx

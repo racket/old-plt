@@ -222,28 +222,6 @@ Bool wxBitmap::Create(int w, int h, int d)
 
     Destroy(); // destroy old bitmap if any
 
-    /* MATTHEW: [5] */
-    if (d > 1) {
-      int c, *depths, n;
-
-      n = ScreenCount(wxAPP_DISPLAY);
-      while (n--) {
-	int i;
-	depths = XListDepths(wxAPP_DISPLAY, n, &c);
-
-	for (i = 0; i < c; i++) {
-	  if (depths[i] == d)
-	    break; /* good depth */
-	}
-
-	if (i >= c)
-	  break; /* bad depth */
-      }
-
-      if (n >= 0)
-	d = -1; /* bad depth */
-    }
-
     Xbitmap = new wxBitmap_Xintern;
     // set pixmap specific data
     Xbitmap->type   = __BITMAP_NORMAL;

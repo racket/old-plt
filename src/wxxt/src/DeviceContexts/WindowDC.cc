@@ -56,8 +56,7 @@ extern "C" {
 #include "XWidgets/wxAllocColor.h"
 extern int wx_alloc_color_is_fast;
 };
-extern Colormap wx_default_colormap;
-extern Visual *wxAPP_VISUAL;
+#include "wx_visual.h"
 
 // constant to convert radian to degree
 #define RAD2DEG 57.2957795131
@@ -391,7 +390,7 @@ static wxBitmap *IntersectBitmapRegion(GC agc, Region user_reg, Region expose_re
 	  bmrgn = XCreateRegion();
 
 	  if (bmask->GetDepth() == 1)
-	    whiteVal = 0;
+	    whiteVal = WhitePixel(dpy, DefaultScreen(dpy));
 	  
 	  for (mj = 0; mj < scaled_height; mj++) {
 	    encl.y = mj + ty;

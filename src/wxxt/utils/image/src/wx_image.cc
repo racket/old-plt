@@ -43,6 +43,7 @@
 #include "wx_gdi.h"
 #include "wx_dcmem.h"
 #include "wx_utils.h"
+#include "wx_visual.h"
 
 #ifndef wx_x
 #error wxImage should only be compiled under X!
@@ -179,13 +180,13 @@ wxImage::wxImage(void)
   /*****************************************************/
   
   theScreen = DefaultScreen(theDisp);
-  theCmap   = DefaultColormap(theDisp, theScreen);
+  theCmap   = wx_default_colormap;
   rootW     = RootWindow(theDisp,theScreen);
-  theVisual = DefaultVisual(theDisp,theScreen);
+  theVisual = wxAPP_VISUAL;
   ncells    = DisplayCells(theDisp, theScreen);
   dispWIDE  = DisplayWidth(theDisp,theScreen);
   dispHIGH  = DisplayHeight(theDisp,theScreen);
-  dispDEEP  = DisplayPlanes(theDisp,theScreen);
+  dispDEEP  = wx_visual_depth;
 
   /* set up white,black colors */
   white = WhitePixel(theDisp,theScreen);

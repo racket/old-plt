@@ -96,9 +96,14 @@ void wxInitNewToplevel(void)
 {
   Widget tl;
 
-  tl = XtAppCreateShell(wxAPP_NAME, wxAPP_CLASS,
-		        applicationShellWidgetClass,
-			wxAPP_DISPLAY, NULL, 0);
+  tl = XtVaAppCreateShell(wxAPP_NAME, wxAPP_CLASS,
+			  applicationShellWidgetClass,
+			  wxAPP_DISPLAY,
+			  XtNvisual, wxAPP_VISUAL,
+			  XtNdepth, wx_visual_depth,
+			  XtNcolormap, wx_default_colormap,
+			  NULL);
+
   wxPutAppToplevel(tl);
 }
 

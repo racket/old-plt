@@ -33,6 +33,7 @@
 #define  Uses_ShellWidget
 #define  Uses_MenuWidget
 #include "widgets.h"
+#include "wx_visual.h"
 
 static wxMenu *popped_up_menu;
 
@@ -165,6 +166,9 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
     X->shell = XtVaCreatePopupShell
 	("popup", overrideShellWidgetClass, in_w, 
 	 XtNborderWidth, forChoice ? 0 : 1,
+	 XtNvisual, wxAPP_VISUAL,
+	 XtNdepth, wx_visual_depth,
+	 XtNcolormap, wx_default_colormap,
 	 NULL);
     wgt = XtVaCreateManagedWidget
 	("menu", menuWidgetClass, X->shell,

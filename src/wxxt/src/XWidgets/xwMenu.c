@@ -40,6 +40,8 @@ SOFTWARE.
 
 #include <wxtimeout.h>
 
+#include "wx_visual.h"
+
 #define XtNtopShadowPixmap       "topShadowPixmap"
 #define XtCTopShadowPixmap       "TopShadowPixmap"
 #define XtNbottomShadowPixmap    "bottomShadowPixmap"
@@ -1268,18 +1270,21 @@ static void MakeNewMenuWindow(MenuWidget mw, menu_state *prev, menu_item *item,
     xswa.save_under        = TRUE;
     xswa.override_redirect = TRUE;
     xswa.background_pixel  = mw->core.background_pixel;
+    xswa.border_pixel      = mw->core.background_pixel;
     xswa.event_mask        = ExposureMask | ButtonMotionMask | 
 	                     PointerMotionMask | ButtonReleaseMask |
 	                     ButtonPressMask;
     xswa.cursor            = mw->menu.cursor;
-    mask                   = CWSaveUnder | CWOverrideRedirect | CWBackPixel |
-	                     CWEventMask | CWCursor;
-    new->win = XCreateWindow(
-	           XtDisplay(mw),
-		   RootWindowOfScreen(DefaultScreenOfDisplay(XtDisplay(mw))),
-		   new->x, new->y, new->w, new->h,
-		   0, 0, CopyFromParent, CopyFromParent,
-		   mask, &xswa);
+    xswa.colormap          = wx_default_colormap;
+    mask                   = (CWSaveUnder | CWOverrideRedirect | CWBackPixel
+			      | CWBorderPixel | CWEventMask | CWCursor
+			      | CWColormap);
+
+    new->win = XCreateWindow(XtDisplay(mw),
+			     RootWindowOfScreen(DefaultScreenOfDisplay(XtDisplay(mw))),
+			     new->x, new->y, new->w, new->h, 0,
+			     wx_visual_depth, InputOutput, wxAPP_VISUAL,
+			     mask, &xswa);
 }
 
 static void HighlightItem(MenuWidget mw, menu_state *ms, menu_item *item)

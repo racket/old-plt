@@ -361,7 +361,7 @@ strnchr(s, c, n)
 
 int wx_enough_colors(Screen *s)
 {
-  if (DefaultDepthOfScreen(s) > 8)
+  if (wx_visual_depth > 8)
     return 1;
   else
     return 0;

@@ -104,11 +104,6 @@ static void init_compile_data(Scheme_Comp_Env *env);
 /* Precise GC WARNING: this macro produces unaligned pointers: */
 #define COMPILE_DATA(e) (&((Scheme_Full_Comp_Env *)e)->data)
 
-#ifdef MZ_REAL_THREADS
-void *scheme_global_lock;
-int scheme_global_lock_c;
-#endif
-
 /*========================================================================*/
 /*                             initialization                             */
 /*========================================================================*/
@@ -187,12 +182,7 @@ Scheme_Env *scheme_basic_env()
    printf("#if 0\nbasic @ %ld\n", scheme_get_process_milliseconds());
 #endif
 
-#ifdef MZ_REAL_THREADS
-  REGISTER_SO(scheme_global_lock);
-  scheme_global_lock = SCHEME_MAKE_MUTEX();
-#else
   scheme_init_stack_check();
-#endif
 
   {
     int i, k;

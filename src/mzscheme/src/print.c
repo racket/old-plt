@@ -370,10 +370,9 @@ static int check_cycles(Scheme_Object *obj, Scheme_Thread *p, Scheme_Hash_Table 
   return 0;
 }
 
-#ifndef MZ_REAL_THREADS
-# ifdef MZ_PRECISE_GC
+#ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
-# endif
+#endif
 
 /* The fast cycle-checker plays a dangerous game: it changes type
    tags. No GCs can occur here, and no thread switches. If the fast
@@ -435,9 +434,8 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Thread *p)
   return cycle;
 }
 
-# ifdef MZ_PRECISE_GC
+#ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;
-# endif
 #endif
 
 #ifdef DO_STACK_CHECK
@@ -564,12 +562,8 @@ print_to_string(Scheme_Object *obj,
   if (p->quick_print_graph)
     cycles = 1;
   else {
-#ifndef MZ_REAL_THREADS
     fast_checker_counter = 50;
     cycles = check_cycles_fast(obj, p);
-#else
-    cycles = -1;
-#endif
     if (cycles == -1) {
       ht = scheme_make_hash_table(SCHEME_hash_ptr);
       cycles = check_cycles(obj, p, ht);

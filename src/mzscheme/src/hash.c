@@ -133,10 +133,6 @@ Scheme_Hash_Table *scheme_make_hash_table(int type)
     table->compare = (Hash_Compare_Proc)not_stx_bound_eq;
   }
 
-#ifdef MZ_REAL_THREADS
-  table->mutex = SCHEME_MAKE_MUTEX();
-#endif
-
   return table;
 }
 
@@ -248,10 +244,6 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
 
 void scheme_hash_set(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object *val)
 {
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(table->mutex);
-#endif
-
   if (!table->vals) {
     Scheme_Object **ba;
 
@@ -264,28 +256,16 @@ void scheme_hash_set(Scheme_Hash_Table *table, Scheme_Object *key, Scheme_Object
   }
 
   do_hash(table, key, 2, val);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(table->mutex);
-#endif
 }
 
 Scheme_Object *scheme_hash_get(Scheme_Hash_Table *table, Scheme_Object *key)
 {
   Scheme_Object *val;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(table->mutex);
-#endif
-
   if (!table->vals)
     val = NULL;
   else
     val = do_hash(table, key, 0, NULL);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(table->mutex);
-#endif
 
   return val;
 }
@@ -321,10 +301,6 @@ scheme_make_bucket_table (int size, int type)
 
   table->weak = (type == SCHEME_hash_weak_ptr);
   
-#ifdef MZ_REAL_THREADS
-  table->mutex = SCHEME_MAKE_MUTEX();
-#endif
-
   return table;
 }
 
@@ -490,15 +466,7 @@ scheme_bucket_or_null_from_table (Scheme_Bucket_Table *table, const char *key, i
 {
   Scheme_Bucket *b;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(table->mutex);
-#endif
-
   b = get_bucket(table, key, add, NULL);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(table->mutex);
-#endif
 
   return b;
 }
@@ -515,15 +483,7 @@ scheme_add_to_table (Scheme_Bucket_Table *table, const char *key, void *val,
 {
   Scheme_Bucket *b;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(table->mutex);
-#endif
-
   b = get_bucket(table, key, 1, NULL);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(table->mutex);
-#endif
 
   if (val)
     b->val = val;
@@ -541,15 +501,7 @@ scheme_lookup_in_table (Scheme_Bucket_Table *table, const char *key)
 {
   Scheme_Bucket *bucket;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(table->mutex);
-#endif
-
   bucket = get_bucket(table, key, 0, NULL);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(table->mutex);
-#endif
 
   if (bucket)
     return bucket->val;
@@ -562,15 +514,7 @@ scheme_change_in_table (Scheme_Bucket_Table *table, const char *key, void *naya)
 {
   Scheme_Bucket *bucket;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(table->mutex);
-#endif
-
   bucket = get_bucket(table, key, 0, NULL);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(table->mutex);
-#endif
 
   if (bucket)
     bucket->val = naya;

@@ -289,10 +289,6 @@ scheme_intern_exact_symbol(const char *name, int len)
 {
   Scheme_Object *sym;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(scheme_symbol_table->mutex);
-#endif
-
   if (len > scheme_max_found_symbol_name) {
     scheme_max_found_symbol_name = len;
     scheme_reset_prepared_error_buffer();
@@ -307,10 +303,6 @@ scheme_intern_exact_symbol(const char *name, int len)
     sym = make_a_symbol(name, len);
     symbol_bucket(scheme_symbol_table, name, len, sym);
   }
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(scheme_symbol_table->mutex);
-#endif
    
   return sym;
 }

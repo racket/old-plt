@@ -220,9 +220,7 @@ extern Scheme_Object *scheme_date;
 /*                    thread state and maintenance                        */
 /*========================================================================*/
 
-#ifndef MZ_REAL_THREADS
-# define RUNSTACK_IS_GLOBAL
-#endif
+#define RUNSTACK_IS_GLOBAL
 
 #ifdef RUNSTACK_IS_GLOBAL
 extern Scheme_Object **scheme_current_runstack;
@@ -240,9 +238,7 @@ extern MZ_MARK_STACK_TYPE scheme_current_cont_mark_pos;
 # define MZ_CONT_MARK_POS (p->cont_mark_pos)
 #endif
 
-#ifndef MZ_REAL_THREADS
 extern volatile int scheme_fuel_counter;
-#endif
 
 void scheme_out_of_fuel(void);
 #define SCHEME_USE_FUEL(n) { \
@@ -283,11 +279,7 @@ void scheme_zero_unneeded_rands(Scheme_Thread *p);
 
 int scheme_can_break(Scheme_Thread *p, Scheme_Config *config);
 
-#ifdef MZ_REAL_THREADS
-#define MZTHREADELEM(p, x) p->x
-#else
 #define MZTHREADELEM(p, x) scheme_ ## x
-#endif
 
 struct Scheme_Custodian {
   Scheme_Type type;
@@ -800,9 +792,7 @@ void scheme_pop_kill_action();
     || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
     || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS) \
     || defined(PALM_FIND_STACK_BOUNDS)
-# ifndef MZ_REAL_THREADS
 extern unsigned long scheme_stack_boundary;
-# endif
 #endif
 
 /* Compiler helper: */
@@ -814,27 +804,21 @@ extern unsigned long scheme_stack_boundary;
 
 #define SEMAPHORE_WAITING_IS_COLLECTABLE 1
 
-#ifndef MZ_REAL_THREADS
-# if SEMAPHORE_WAITING_IS_COLLECTABLE
+#if SEMAPHORE_WAITING_IS_COLLECTABLE
 typedef struct Scheme_Sema_Waiter {
   MZTAG_IF_REQUIRED
   Scheme_Thread *p;
   int in_line;
   struct Scheme_Sema_Waiter *prev, *next;
 } Scheme_Sema_Waiter;
-# endif
 #endif
 
 typedef struct Scheme_Sema {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-#ifdef MZ_REAL_THREADS
-  void *sema;
-#else
   long value;  
-# if SEMAPHORE_WAITING_IS_COLLECTABLE
+#if SEMAPHORE_WAITING_IS_COLLECTABLE
   Scheme_Sema_Waiter *first, *last;
-# endif
 #endif
 } Scheme_Sema;
 
@@ -844,30 +828,6 @@ typedef struct Scheme_Sema {
 #define SEMA_BLOCKED 3
 #define EVENTLOOP_BLOCKED 4
 #define SLEEP_BLOCKED 10
-
-
-#ifndef MZ_REAL_THREADS
-# define SCHEME_GET_LOCK() /* empty */
-# define SCHEME_RELEASE_LOCK() /* empty */
-#else
-# define SCHEME_SEMA_DOWN(sema) scheme_real_sema_down(sema)
-void scheme_real_sema_down(void *sema);
-
-/* #define MZ_KEEP_LOCK_INFO */
-
-extern void *scheme_global_lock;
-# ifdef MZ_KEEP_LOCK_INFO
-extern int scheme_global_lock_c;
-#  define _MZ_LOCK_INFO(x) , x
-#  define MZ_LOCK_INFO_(x) x,
-# else
-#  define _MZ_LOCK_INFO(x) /**/
-#  define MZ_LOCK_INFO_(x) /**/
-# endif
-
-# define SCHEME_GET_LOCK() (SCHEME_LOCK_MUTEX(scheme_global_lock) _MZ_LOCK_INFO(scheme_global_lock_c++))
-# define SCHEME_RELEASE_LOCK()  (MZ_LOCK_INFO_(--scheme_global_lock_c) SCHEME_UNLOCK_MUTEX(scheme_global_lock))
-#endif
 
 /*========================================================================*/
 /*                                 numbers                                */
@@ -1149,11 +1109,7 @@ Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *expr, int let_depth)
 Scheme_Object *_scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 
-#ifndef MZ_REAL_THREADS
 Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *);
-#else
-Scheme_Object *scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, Scheme_Config *, Scheme_Thread *p);
-#endif
 void scheme_internal_display(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 void scheme_internal_write(Scheme_Object *obj, Scheme_Object *port, Scheme_Config *);
 
@@ -1746,11 +1702,6 @@ typedef struct {
   long bufstart, bufend;
   int eof;
   Scheme_Object *wakeup_on_read;
-#ifdef MZ_REAL_THREADS
-  int num_waiting;
-  void *change_mutex;
-  Scheme_Object *wait_sem;
-#endif
 } Scheme_Pipe;
 
 #ifdef USE_TCP

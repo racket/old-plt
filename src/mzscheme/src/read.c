@@ -66,66 +66,53 @@ static long SPAN(Scheme_Object *port, long pos) { return mzSPAN(port, pos); }
 #define SPAN(port, pos) mzSPAN(port, pos)
 #endif
 
-/* To make reading more efficient with OS threads, pass the
-   process (thread) pointer along. */
-#ifndef MZ_REAL_THREADS
-# define CURRENTPROCPRM /* empty */
-# define CURRENTPROCARG /* empty */
-#else
-# define CURRENTPROCPRM , Scheme_Thread *p
-# define CURRENTPROCARG , p
-#endif
-
 #define SRCLOC_TMPL " in %q[%L%ld]"
 
 static Scheme_Object *read_list(Scheme_Object *port, Scheme_Object *stxsrc,
 				long line, long col, long pos,
 				char closer,
 				int vec, int use_stack,
-				Scheme_Hash_Table **ht 
-				CURRENTPROCPRM);
+				Scheme_Hash_Table **ht);
 static Scheme_Object *read_string(Scheme_Object *port, Scheme_Object *stxsrc,
-				  long line, long col, long pos
-				  CURRENTPROCPRM);
+				  long line, long col, long pos);
 static Scheme_Object *read_quote(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
-				 Scheme_Hash_Table **ht CURRENTPROCPRM);
+				 Scheme_Hash_Table **ht);
 static Scheme_Object *read_syntax_quote(Scheme_Object *port, Scheme_Object *stxsrc,
 					long line, long col, long pos,
-					Scheme_Hash_Table **ht CURRENTPROCPRM);
+					Scheme_Hash_Table **ht);
 static Scheme_Object *read_vector(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
 				  char closer, 
 				  long reqLen, const char *reqBuffer,
-				  Scheme_Hash_Table **ht CURRENTPROCPRM);
+				  Scheme_Hash_Table **ht);
 static Scheme_Object *read_number(Scheme_Object *port, Scheme_Object *stxsrc,
 				  long line, long col, long pos,
-				  int, int, int, int 
-				  CURRENTPROCPRM);
+				  int, int, int, int);
 static Scheme_Object *read_symbol(Scheme_Object *port, Scheme_Object *stxsrc,
-				  long line, long col, long pos
-				  CURRENTPROCPRM);
+				  long line, long col, long pos);
 static Scheme_Object *read_character(Scheme_Object *port, Scheme_Object *stcsrc, 
-				     long line, long col, long pos
-				     CURRENTPROCPRM);
+				     long line, long col, long pos);
 static Scheme_Object *read_quasiquote(Scheme_Object *port, Scheme_Object *stxsrc,
 				      long line, long col, long pos,
-				      Scheme_Hash_Table **ht CURRENTPROCPRM);
+				      Scheme_Hash_Table **ht);
 static Scheme_Object *read_unquote(Scheme_Object *port, Scheme_Object *stxsrc,
 				   long line, long col, long pos,
-				   Scheme_Hash_Table **ht CURRENTPROCPRM);
+				   Scheme_Hash_Table **ht);
 static Scheme_Object *read_unquote_splicing(Scheme_Object *port, Scheme_Object *stxsrc,
 					    long line, long col, long pos,
-					    Scheme_Hash_Table **ht CURRENTPROCPRM);
+					    Scheme_Hash_Table **ht);
 static Scheme_Object *read_box(Scheme_Object *port, Scheme_Object *stxsrc,
 			       long line, long col, long pos,
-			       Scheme_Hash_Table **ht CURRENTPROCPRM);
+			       Scheme_Hash_Table **ht);
 static Scheme_Object *read_compiled(Scheme_Object *port,
-				    Scheme_Hash_Table **ht CURRENTPROCPRM);
+				    Scheme_Hash_Table **ht);
 
 static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc);
 
 /* local_... is copy of parameter values, made before read starts: */
+
+#define THREAD_FOR_LOCALS scheme_current_thread
 
 #define local_can_read_compiled (THREAD_FOR_LOCALS->quick_can_read_compiled)
 #define local_can_read_pipe_quote (THREAD_FOR_LOCALS->quick_can_read_pipe_quote)
@@ -142,12 +129,6 @@ static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc);
 #define local_list_stack_pos (THREAD_FOR_LOCALS->list_stack_pos)
 
 #define local_rename_memory (THREAD_FOR_LOCALS->rn_memory)
-
-#ifndef MZ_REAL_THREADS
-# define THREAD_FOR_LOCALS scheme_current_thread
-#else
-# define THREAD_FOR_LOCALS p
-#endif
 
 /* A list stack is used to speed up the creation of intermediate lists
    during .zo reading. */
@@ -380,8 +361,7 @@ print_vec_shorthand(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *read_inner(Scheme_Object *port, 
 				 Scheme_Object *stxsrc,
-				 Scheme_Hash_Table **ht 
-				 CURRENTPROCPRM);
+				 Scheme_Hash_Table **ht);
 
 static Scheme_Object *read_k(void)
 {
@@ -394,18 +374,14 @@ static Scheme_Object *read_k(void)
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
 
-  return read_inner(o, stxsrc, ht
-#ifdef MZ_REAL_THREADS
-		    , p
-#endif
-		    );
+  return read_inner(o, stxsrc, ht);
 }
 #endif
 
 #define MAX_GRAPH_ID_DIGITS 8
 
 static Scheme_Object *
-read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CURRENTPROCPRM)
+read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
 {
   int ch, ch2, depth;
   long line = 0, col = 0, pos = 0;
@@ -414,9 +390,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
   {
 # include "mzstkchk.h"
     {
-# ifndef MZ_REAL_THREADS
       Scheme_Thread *p = scheme_current_thread;
-# endif
       p->ku.k.p1 = (void *)port;
       p->ku.k.p2 = (void *)ht;
       p->ku.k.p3 = (void *)stxsrc;
@@ -457,39 +431,39 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
     case ']': 
       if (!local_square_brackets_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
+	return read_symbol(port, stxsrc, line, col, pos);
       } else
         scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: unexpected '%c'", ch);
     case '}': 
       if (!local_curly_braces_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
+	return read_symbol(port, stxsrc, line, col, pos);
       } else
         scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: unexpected '%c'", ch);
     case ')': 
       scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: unexpected '%c'", ch);
     case '(': 
-      return read_list(port, stxsrc, line, col, pos, ')', 0, 0, ht CURRENTPROCARG);
+      return read_list(port, stxsrc, line, col, pos, ')', 0, 0, ht);
     case '[': 
       if (!local_square_brackets_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
+	return read_symbol(port, stxsrc, line, col, pos);
       } else
-	return read_list(port, stxsrc, line, col, pos, ']', 0, 0, ht CURRENTPROCARG);
+	return read_list(port, stxsrc, line, col, pos, ']', 0, 0, ht);
     case '{': 
       if (!local_curly_braces_are_parens) {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
+	return read_symbol(port, stxsrc, line, col, pos);
       } else
-	return read_list(port, stxsrc, line, col, pos, '}', 0, 0, ht CURRENTPROCARG);
-    case '"': return read_string(port, stxsrc, line, col, pos CURRENTPROCARG);
-    case '\'': return read_quote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
+	return read_list(port, stxsrc, line, col, pos, '}', 0, 0, ht);
+    case '"': return read_string(port, stxsrc, line, col, pos);
+    case '\'': return read_quote(port, stxsrc, line, col, pos, ht);
     case '`': 
       if (!local_can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: illegal use of backquote");
 	return NULL;
       } else
-	return read_quasiquote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
+	return read_quasiquote(port, stxsrc, line, col, pos, ht);
     case ',':
       if (!local_can_read_quasi) {
 	scheme_read_err(port, stxsrc, line, col, pos, 1, 0, "read: illegal use of `,'");
@@ -497,9 +471,9 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
       } else {
 	if (scheme_peekc_special_ok(port) == '@') {
 	  ch = scheme_getc(port); /* must be '@' */
-	  return read_unquote_splicing(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
+	  return read_unquote_splicing(port, stxsrc, line, col, pos, ht);
 	} else
-	  return read_unquote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
+	  return read_unquote(port, stxsrc, line, col, pos, ht);
       }
     case ';':
       while (((ch = scheme_getc_special_ok(port)) != '\n') && (ch != '\r')) {
@@ -520,10 +494,10 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	  || (ch2 == 'i') || (ch2 == 'I') /* Maybe inf */
 	  || (ch2 == 'n') || (ch2 == 'N') /* Maybe nan*/ ) {
 	scheme_ungetc(ch, port);
-	return read_number(port, stxsrc, line, col, pos, 0, 0, 10, 0 CURRENTPROCARG);
+	return read_number(port, stxsrc, line, col, pos, 0, 0, 10, 0);
       } else {
 	scheme_ungetc(ch, port);
-	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
+	return read_symbol(port, stxsrc, line, col, pos);
       }
     case '#':
       ch = scheme_getc_special_ok(port);
@@ -536,24 +510,24 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	case '%':
 	  scheme_ungetc('%', port);
 	  scheme_ungetc('#', port);
-	  return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
-	case '(': return read_vector(port, stxsrc, line, col, pos, ')', -1, NULL, ht CURRENTPROCARG);
+	  return read_symbol(port, stxsrc, line, col, pos);
+	case '(': return read_vector(port, stxsrc, line, col, pos, ')', -1, NULL, ht);
 	case '[': 
 	  if (!local_square_brackets_are_parens) {
 	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, "read: bad syntax `#['");
 	    return NULL;
 	  } else
-	    return read_vector(port, stxsrc, line, col, pos, ']', -1, NULL, ht CURRENTPROCARG);
+	    return read_vector(port, stxsrc, line, col, pos, ']', -1, NULL, ht);
 	case '{': 
 	  if (!local_curly_braces_are_parens) {
 	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, "read: bad syntax `#{'");
 	    return NULL;
 	  } else
-	    return read_vector(port, stxsrc, line, col, pos, '}', -1, NULL, ht CURRENTPROCARG);
+	    return read_vector(port, stxsrc, line, col, pos, '}', -1, NULL, ht);
 	case '\\': 
 	  {
 	    Scheme_Object *chr;
-	    chr = read_character(port, stxsrc, line, col, pos CURRENTPROCARG);
+	    chr = read_character(port, stxsrc, line, col, pos);
 	    if (stxsrc)
 	      chr = scheme_make_stx_w_offset(chr, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	    return chr;
@@ -567,22 +541,22 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 			  ? scheme_make_stx_w_offset(scheme_false, line, col, pos, 2, stxsrc, STX_SRCTAG) 
 			  : scheme_false);
 	case 'X':
-	case 'x': return read_number(port, stxsrc, line, col, pos, 0, 0, 16, 1 CURRENTPROCARG);
+	case 'x': return read_number(port, stxsrc, line, col, pos, 0, 0, 16, 1);
 	case 'B':
-	case 'b': return read_number(port, stxsrc, line, col, pos, 0, 0, 2, 1 CURRENTPROCARG);
+	case 'b': return read_number(port, stxsrc, line, col, pos, 0, 0, 2, 1);
 	case 'O':
-	case 'o': return read_number(port, stxsrc, line, col, pos, 0, 0, 8, 1 CURRENTPROCARG);
+	case 'o': return read_number(port, stxsrc, line, col, pos, 0, 0, 8, 1);
 	case 'D':
-	case 'd': return read_number(port, stxsrc, line, col, pos, 0, 0, 10, 1 CURRENTPROCARG);
+	case 'd': return read_number(port, stxsrc, line, col, pos, 0, 0, 10, 1);
 	case 'E':
-	case 'e': return read_number(port, stxsrc, line, col, pos, 0, 1, 10, 0 CURRENTPROCARG);
+	case 'e': return read_number(port, stxsrc, line, col, pos, 0, 1, 10, 0);
 	case 'I':
-	case 'i': return read_number(port, stxsrc, line, col, pos, 1, 0, 10, 0 CURRENTPROCARG);
-	case '\'': return read_syntax_quote(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
+	case 'i': return read_number(port, stxsrc, line, col, pos, 1, 0, 10, 0);
+	case '\'': return read_syntax_quote(port, stxsrc, line, col, pos, ht);
 	case '~': 
 	  if (local_can_read_compiled) {
 	    Scheme_Object *cpld;
-	    cpld = read_compiled(port, ht CURRENTPROCARG);
+	    cpld = read_compiled(port, ht);
 	    if (stxsrc) 
 	      cpld = scheme_make_stx_w_offset(cpld, line, col, pos, SPAN(port, pos), stxsrc, STX_SRCTAG);
 	    return cpld;
@@ -617,7 +591,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	  break;
 	case '&':
 	  if (local_can_read_box)
-	    return read_box(port, stxsrc, line, col, pos, ht CURRENTPROCARG);
+	    return read_box(port, stxsrc, line, col, pos, ht);
 	  else {
 	    scheme_read_err(port, stxsrc, line, col, pos, 2, 0, 
 			    "read: #& expressions not currently enabled");
@@ -676,11 +650,11 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    tagbuf[i] = 0;
 
 	    if (ch == '(')
-	      return read_vector(port, stxsrc, line, col, pos, ')', vector_length, vecbuf, ht CURRENTPROCARG);
+	      return read_vector(port, stxsrc, line, col, pos, ')', vector_length, vecbuf, ht);
 	    if (ch == '[' && local_square_brackets_are_parens)
-	      return read_vector(port, stxsrc, line, col, pos, ']', vector_length, vecbuf, ht CURRENTPROCARG);
+	      return read_vector(port, stxsrc, line, col, pos, ']', vector_length, vecbuf, ht);
 	    if (ch == '{' && local_curly_braces_are_parens)
-	      return read_vector(port, stxsrc, line, col, pos, '}', vector_length, vecbuf, ht CURRENTPROCARG);
+	      return read_vector(port, stxsrc, line, col, pos, '}', vector_length, vecbuf, ht);
 	    
 	    if (ch == '#' && (vector_length != -1)) {
 	      /* Not a vector after all: a graph reference */
@@ -738,7 +712,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	      
 	      scheme_hash_set(*ht, scheme_make_integer(vector_length), (void *)ph);
 	      
-	      v = read_inner(port, stxsrc, ht CURRENTPROCARG);
+	      v = read_inner(port, stxsrc, ht);
 	      if (SCHEME_EOFP(v))
 		scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF,
 				"read: expected an element for graph (found end-of-file)");
@@ -768,17 +742,16 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
     default:
       scheme_ungetc(ch, port);
       if (isdigit (ch))
-	return read_number(port, stxsrc, line, col, pos, 0, 0, 10, 0 CURRENTPROCARG);
+	return read_number(port, stxsrc, line, col, pos, 0, 0, 10, 0);
       else
-	return read_symbol(port, stxsrc, line, col, pos CURRENTPROCARG);
+	return read_symbol(port, stxsrc, line, col, pos);
     }
 }
 
 #ifdef DO_STACK_CHECK
 static Scheme_Object *resolve_references(Scheme_Object *obj, 
 					 Scheme_Object *port,
-					 int mkstx
-					 CURRENTPROCPRM);
+					 int mkstx);
 
 static Scheme_Object *resolve_k(void)
 {
@@ -789,14 +762,13 @@ static Scheme_Object *resolve_k(void)
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
-  return resolve_references(o, port, p->ku.k.i1 CURRENTPROCARG);
+  return resolve_references(o, port, p->ku.k.i1);
 }
 #endif
 
 static Scheme_Object *resolve_references(Scheme_Object *obj, 
 					 Scheme_Object *port,
-					 int mkstx
-					 CURRENTPROCPRM)
+					 int mkstx)
 {
   Scheme_Object *start = obj, *result;
 
@@ -804,9 +776,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
   {
 # include "mzstkchk.h"
     {
-# ifndef MZ_REAL_THREADS
       Scheme_Thread *p = scheme_current_thread;
-# endif
       p->ku.k.p1 = (void *)obj;
       p->ku.k.p2 = (void *)port;
       p->ku.k.i1 = mkstx;
@@ -836,13 +806,13 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 
   if (SCHEME_PAIRP(obj)) {
     Scheme_Object *rr;
-    rr = resolve_references(SCHEME_CAR(obj), port, mkstx CURRENTPROCARG);
+    rr = resolve_references(SCHEME_CAR(obj), port, mkstx);
     SCHEME_CAR(obj) = rr;
-    rr = resolve_references(SCHEME_CDR(obj), port, mkstx CURRENTPROCARG);
+    rr = resolve_references(SCHEME_CDR(obj), port, mkstx);
     SCHEME_CDR(obj) = rr;
   } else if (SCHEME_BOXP(obj)) {
     Scheme_Object *rr;
-    rr = resolve_references(SCHEME_BOX_VAL(obj), port, mkstx CURRENTPROCARG);
+    rr = resolve_references(SCHEME_BOX_VAL(obj), port, mkstx);
     SCHEME_BOX_VAL(obj) = rr;
   } else if (SCHEME_VECTORP(obj)) {
     int i, len;
@@ -856,7 +826,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 	rr = prev_rr;
       } else {
 	prev_v = SCHEME_VEC_ELS(obj)[i];
-	rr = resolve_references(prev_v, port, mkstx CURRENTPROCARG);
+	rr = resolve_references(prev_v, port, mkstx);
 	prev_rr = rr;
       }
       SCHEME_VEC_ELS(obj)[i] = rr;
@@ -868,11 +838,9 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 
 Scheme_Object *
 scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, 
-		     Scheme_Config *config CURRENTPROCPRM)
+		     Scheme_Config *config)
 {
-#ifndef MZ_REAL_THREADS
   Scheme_Thread *p = scheme_current_thread;
-#endif
   Scheme_Object *v;
   Scheme_Hash_Table *ht = NULL;
 
@@ -890,11 +858,11 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc,
   if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);
 
-  v = read_inner(port, stxsrc, &ht CURRENTPROCARG);
+  v = read_inner(port, stxsrc, &ht);
 
   if (ht) {
     /* Resolve placeholders: */
-    v = resolve_references(v, port, !!stxsrc CURRENTPROCARG);
+    v = resolve_references(v, port, !!stxsrc);
   }
 
   return v;
@@ -910,8 +878,7 @@ static void *scheme_internal_read_k(void)
   p->ku.k.p2 = NULL;
 
   return (void *)scheme_internal_read(port, stxsrc, local_can_read_compiled,
-				      scheme_current_thread->config
-				      CURRENTPROCARG);
+				      scheme_current_thread->config);
 }
 
 Scheme_Object *
@@ -942,10 +909,8 @@ scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)
 {
-#ifdef MZ_REAL_THREADS
   Scheme_Thread *p = scheme_current_thread;
-#endif
-  return resolve_references(obj, NULL, mkstx CURRENTPROCARG);
+  return resolve_references(obj, NULL, mkstx);
 }
 
 /*========================================================================*/
@@ -957,7 +922,7 @@ static Scheme_Object *
 read_list(Scheme_Object *port, 
 	  Scheme_Object *stxsrc, long line, long col, long pos,
 	  char closer, int vec, int use_stack,
-	  Scheme_Hash_Table **ht CURRENTPROCPRM)
+	  Scheme_Hash_Table **ht)
 {
   Scheme_Object *list = NULL, *last = NULL, *car, *cdr, *pair, *infixed = NULL;
   int ch, next;
@@ -989,7 +954,7 @@ read_list(Scheme_Object *port,
     }
 
     scheme_ungetc(ch, port);
-    car = read_inner(port, stxsrc, ht CURRENTPROCARG);
+    car = read_inner(port, stxsrc, ht);
     /* can't be eof, due to check above */
 
     if (USE_LISTSTACK(use_stack)) {
@@ -1056,7 +1021,7 @@ read_list(Scheme_Object *port,
 	return NULL;
       }
       /* can't be eof, due to check above: */
-      cdr = read_inner(port, stxsrc, ht CURRENTPROCARG);
+      cdr = read_inner(port, stxsrc, ht);
       ch = skip_whitespace_comments(port, stxsrc);
       if (ch != closer) {
 	if (ch == '.') {
@@ -1111,8 +1076,7 @@ read_list(Scheme_Object *port,
 /* '"' has already been read */
 static Scheme_Object *
 read_string(Scheme_Object *port,
-	    Scheme_Object *stxsrc, long line, long col, long pos
-	    CURRENTPROCPRM)
+	    Scheme_Object *stxsrc, long line, long col, long pos)
 {
   char *buf, *oldbuf, onstack[32];
   int i, j, n, n1, ch;
@@ -1243,7 +1207,7 @@ read_vector (Scheme_Object *port,
 	     Scheme_Object *stxsrc, long line, long col, long pos,
 	     char closer, 
 	     long requestLength, const char *reqBuffer,
-	     Scheme_Hash_Table **ht CURRENTPROCPRM)
+	     Scheme_Hash_Table **ht)
 /* requestLength == -1 => no request
    requestLength == -2 => overflow */
 {
@@ -1252,7 +1216,7 @@ read_vector (Scheme_Object *port,
   ListStackRec r;
 
   STACK_START(r);
-  lresult = read_list(port, stxsrc, line, col, pos, closer, 1, 1, ht CURRENTPROCARG);
+  lresult = read_list(port, stxsrc, line, col, pos, closer, 1, 1, ht);
   STACK_END(r);
 
   if (requestLength == -2) {
@@ -1321,7 +1285,7 @@ read_number_or_symbol(Scheme_Object *port,
 		      Scheme_Object *stxsrc, long line, long col, long pos,
 		      int is_float, int is_not_float, 
 		      int radix, int radix_set, 
-		      int is_symbol, int pipe_quote CURRENTPROCPRM)
+		      int is_symbol, int pipe_quote)
 {
   char *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
   int size, oldsize;
@@ -1459,24 +1423,21 @@ static Scheme_Object  *
 read_number(Scheme_Object *port,
 	    Scheme_Object *stxsrc, long line, long col, long pos,
 	    int is_float, int is_not_float, 
-	    int radix, int radix_set CURRENTPROCPRM)
+	    int radix, int radix_set)
 {
   return read_number_or_symbol(port, stxsrc, line, col, pos,
 			       is_float, is_not_float,
 			       radix, radix_set, 0,
-			       local_can_read_pipe_quote
-			       CURRENTPROCARG);
+			       local_can_read_pipe_quote);
 }
 
 static Scheme_Object  *
 read_symbol(Scheme_Object *port,
-	    Scheme_Object *stxsrc, long line, long col, long pos
-	    CURRENTPROCPRM)
+	    Scheme_Object *stxsrc, long line, long col, long pos)
 {
   return read_number_or_symbol(port, stxsrc, line, col, pos,
 			       0, 0, 10, 0, 1, 
-			       local_can_read_pipe_quote
-			       CURRENTPROCARG);
+			       local_can_read_pipe_quote);
 }
 
 /*========================================================================*/
@@ -1486,8 +1447,7 @@ read_symbol(Scheme_Object *port,
 /* "#\" has been read */
 static Scheme_Object *
 read_character(Scheme_Object *port, 
-	       Scheme_Object *stxsrc, long line, long col, long pos
-	       CURRENTPROCPRM)
+	       Scheme_Object *stxsrc, long line, long col, long pos)
 {
   int ch, next;
 
@@ -1609,11 +1569,11 @@ read_character(Scheme_Object *port,
 static Scheme_Object *
 read_quote(Scheme_Object *port,
 	   Scheme_Object *stxsrc, long line, long col, long pos,
-	   Scheme_Hash_Table **ht CURRENTPROCPRM)
+	   Scheme_Hash_Table **ht)
 {
   Scheme_Object *obj, *ret;
 
-  obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  obj = read_inner(port, stxsrc, ht);
   if (SCHEME_EOFP(obj))
     scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
 		    "read: expected an element for quote (found end-of-file)");
@@ -1630,11 +1590,11 @@ read_quote(Scheme_Object *port,
 static Scheme_Object *
 read_quasiquote(Scheme_Object *port,
 		Scheme_Object *stxsrc, long line, long col, long pos,
-		Scheme_Hash_Table **ht CURRENTPROCPRM)
+		Scheme_Hash_Table **ht)
 {
   Scheme_Object *quoted_obj, *ret;
   
-  quoted_obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  quoted_obj = read_inner(port, stxsrc, ht);
   if (SCHEME_EOFP(quoted_obj))
     scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
 		    "read: expected an element for backquote (found end-of-file)");
@@ -1652,11 +1612,11 @@ read_quasiquote(Scheme_Object *port,
 static Scheme_Object *
 read_unquote(Scheme_Object *port,
 	     Scheme_Object *stxsrc, long line, long col, long pos,
-	     Scheme_Hash_Table **ht CURRENTPROCPRM)
+	     Scheme_Hash_Table **ht)
 {
   Scheme_Object *obj, *ret;
 
-  obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  obj = read_inner(port, stxsrc, ht);
   if (SCHEME_EOFP(obj))
     scheme_read_err(port, stxsrc, line, col, pos, 1, EOF,
 		    "read: expected an element for unquoting comma (found end-of-file)");
@@ -1674,11 +1634,11 @@ read_unquote(Scheme_Object *port,
 static Scheme_Object *
 read_unquote_splicing(Scheme_Object *port,
 		      Scheme_Object *stxsrc, long line, long col, long pos,
-		      Scheme_Hash_Table **ht CURRENTPROCPRM)
+		      Scheme_Hash_Table **ht)
 {
   Scheme_Object *obj, *ret;
 
-  obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  obj = read_inner(port, stxsrc, ht);
   if (SCHEME_EOFP(obj))
     scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
 		    "read: expected an element for unquoting ,@ (found end-of-file)");
@@ -1694,12 +1654,11 @@ read_unquote_splicing(Scheme_Object *port,
 /* "#&" has been read */
 static Scheme_Object *read_box(Scheme_Object *port,
 			       Scheme_Object *stxsrc, long line, long col, long pos,
-			       Scheme_Hash_Table **ht
-			       CURRENTPROCPRM)
+			       Scheme_Hash_Table **ht)
 {
   Scheme_Object *o, *bx;
 
-  o = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  o = read_inner(port, stxsrc, ht);
   
   if (SCHEME_EOFP(o))
     scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
@@ -1717,11 +1676,11 @@ static Scheme_Object *read_box(Scheme_Object *port,
 static Scheme_Object *
 read_syntax_quote(Scheme_Object *port,
 		  Scheme_Object *stxsrc, long line, long col, long pos,
-		  Scheme_Hash_Table **ht CURRENTPROCPRM)
+		  Scheme_Hash_Table **ht)
 {
   Scheme_Object *obj, *ret;
 
-  obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
+  obj = read_inner(port, stxsrc, ht);
   if (SCHEME_EOFP(obj))
     scheme_read_err(port, stxsrc, line, col, pos, 2, EOF,
 		    "read: expected an element for #' syntax (found end-of-file)");
@@ -1810,17 +1769,14 @@ typedef struct CPort {
 static Scheme_Object *read_marshalled(int type,
 				      CPort *port,
 				      Scheme_Hash_Table **ht,
-				      Scheme_Object **symtab
-				      CURRENTPROCPRM);
+				      Scheme_Object **symtab);
 static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
 					CPort *port, 
 					Scheme_Hash_Table **ht,
-					Scheme_Object **symtab
-					CURRENTPROCPRM);
+					Scheme_Object **symtab);
 static Scheme_Object *read_compact_quote(CPort *port,
 					 Scheme_Object **symtab,
-					 int embedded
-					 CURRENTPROCPRM);
+					 int embedded);
 
 static long read_compact_number(CPort *port)
 {
@@ -1909,8 +1865,7 @@ static int cpt_branch[256];
 static Scheme_Object *read_compact(CPort *port, 
 				   Scheme_Hash_Table **ht,
 				   Scheme_Object **symtab,
-				   int use_stack
-				   CURRENTPROCPRM)
+				   int use_stack)
 {
 #define BLK_BUF_SIZE 32
   int ch;
@@ -1939,7 +1894,7 @@ static Scheme_Object *read_compact(CPort *port,
 
 	ep = scheme_make_sized_string_input_port(s, len);
 	
-	v = read_inner(ep, NULL, ht CURRENTPROCARG);
+	v = read_inner(ep, NULL, ht);
       }
       break;
     case CPT_SYMBOL:
@@ -1978,13 +1933,13 @@ static Scheme_Object *read_compact(CPort *port,
       v = scheme_void;
       break;
     case CPT_BOX:
-      v = scheme_box(read_compact(port, ht, symtab, 0 CURRENTPROCARG));
+      v = scheme_box(read_compact(port, ht, symtab, 0));
       break;
     case CPT_PAIR:
       if (need_car) {
 	Scheme_Object *car, *cdr;
-	car = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
-	cdr = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	car = read_compact(port, ht, symtab, 0);
+	cdr = read_compact(port, ht, symtab, 0);
 	v = scheme_make_pair(car, cdr);
       } else {
 	need_car = 1;
@@ -1996,11 +1951,11 @@ static Scheme_Object *read_compact(CPort *port,
       if (need_car) {
 	if (l == 1) {
 	  Scheme_Object *car, *cdr;
-	  car = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
-	  cdr = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	  car = read_compact(port, ht, symtab, 0);
+	  cdr = read_compact(port, ht, symtab, 0);
 	  v = scheme_make_pair(car, cdr);
 	} else
-	  v = read_compact_list(l, 0, 0, port, ht, symtab CURRENTPROCARG);
+	  v = read_compact_list(l, 0, 0, port, ht, symtab);
       } else {
 	need_car = l;
 	continue;
@@ -2016,7 +1971,7 @@ static Scheme_Object *read_compact(CPort *port,
       
 	for (i = 0; i < l; i++) {
 	  Scheme_Object *cv;
-	  cv = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	  cv = read_compact(port, ht, symtab, 0);
 	  SCHEME_VEC_ELS(vec)[i] = cv;
 	}
 
@@ -2032,17 +1987,16 @@ static Scheme_Object *read_compact(CPort *port,
 	  local_rename_memory = rht;
 	}
 
-	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	v = read_compact(port, ht, symtab, 1);
 	v = scheme_datum_to_syntax(v, scheme_false, (Scheme_Object *)local_rename_memory,
 				   ch == CPT_GSTX, 0);
       }
       break;
     case CPT_MARSHALLED:
-      v = read_marshalled(read_compact_number(port), port, ht, symtab 
-			  CURRENTPROCARG);
+      v = read_marshalled(read_compact_number(port), port, ht, symtab);
       break;
     case CPT_QUOTE:
-      v = read_compact_quote(port, symtab, 1 CURRENTPROCARG);
+      v = read_compact_quote(port, symtab, 1);
       break;
     case CPT_REFERENCE:
       l = read_compact_number(port);
@@ -2077,7 +2031,7 @@ static Scheme_Object *read_compact(CPort *port,
 	c = read_compact_number(port) + 1;
 	a = scheme_malloc_application(c);
 	for (i = 0; i < c; i++) {
-	  v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	  v = read_compact(port, ht, symtab, 1);
 	  a->args[i] = v;
 	}
 
@@ -2093,9 +2047,9 @@ static Scheme_Object *read_compact(CPort *port,
 	lo = (Scheme_Let_One *)scheme_malloc_tagged(sizeof(Scheme_Let_One));
 	lo->type = scheme_let_one_type;
 
-	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	v = read_compact(port, ht, symtab, 1);
 	lo->value = v;
-	v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	v = read_compact(port, ht, symtab, 1);
 	lo->body = v;
 	et = scheme_get_eval_type(lo->value);
 	lo->eval_type = et;
@@ -2106,9 +2060,9 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_BRANCH:
       {
 	Scheme_Object *test, *tbranch, *fbranch;
-	test = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
-	tbranch = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
-	fbranch = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	test = read_compact(port, ht, symtab, 1);
+	tbranch = read_compact(port, ht, symtab, 1);
+	fbranch = read_compact(port, ht, symtab, 1);
 	v = scheme_make_branch(test, tbranch, fbranch);
       }
       break;
@@ -2117,8 +2071,8 @@ static Scheme_Object *read_compact(CPort *port,
 	  Scheme_Object *path, *base;
 
 	  l = read_compact_number(port); /* symtab index */
-	  path = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
-	  base = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	  path = read_compact(port, ht, symtab, 0);
+	  base = read_compact(port, ht, symtab, 0);
 
 	  v = scheme_make_modidx(path, base, scheme_false);
 
@@ -2130,8 +2084,8 @@ static Scheme_Object *read_compact(CPort *port,
 	Scheme_Object *mod, *var;
 	
 	l = read_compact_number(port); /* symtab index */
-	mod = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
-	var = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	mod = read_compact(port, ht, symtab, 0);
+	var = read_compact(port, ht, symtab, 0);
 
 	v = scheme_alloc_object();
 	v->type = scheme_module_variable_type;
@@ -2165,7 +2119,7 @@ static Scheme_Object *read_compact(CPort *port,
     case CPT_SMALL_MARSHALLED_START:
       {
 	l = ch - CPT_SMALL_MARSHALLED_START;
-	v = read_marshalled(l, port, ht, symtab CURRENTPROCARG);
+	v = read_marshalled(l, port, ht, symtab);
       }
       break;
     case CPT_SMALL_SYMBOL_START:
@@ -2198,13 +2152,13 @@ static Scheme_Object *read_compact(CPort *port,
       	if (need_car) {
 	  if (l == 1) {
 	    Scheme_Object *car, *cdr;
-	    car = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+	    car = read_compact(port, ht, symtab, 0);
 	    cdr = (ppr 
 		   ? scheme_null
-		   : read_compact(port, ht, symtab, 0 CURRENTPROCARG));
+		   : read_compact(port, ht, symtab, 0));
 	    v = scheme_make_pair(car, cdr);
 	  } else
-	    v = read_compact_list(l, ppr, /* use_stack */ 0, port, ht, symtab CURRENTPROCARG);
+	    v = read_compact_list(l, ppr, /* use_stack */ 0, port, ht, symtab);
 	} else {
 	  proper = ppr;
 	  need_car = l;
@@ -2220,7 +2174,7 @@ static Scheme_Object *read_compact(CPort *port,
 	c = (ch - CPT_SMALL_APPLICATION_START) + 1;
 	a = scheme_malloc_application(c);
 	for (i = 0; i < c; i++) {
-	  v = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+	  v = read_compact(port, ht, symtab, 1);
 	  a->args[i] = v;
 	}
 
@@ -2276,12 +2230,11 @@ static Scheme_Object *read_compact(CPort *port,
 static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
 					CPort *port, 
 					Scheme_Hash_Table **ht,
-					Scheme_Object **symtab
-					CURRENTPROCPRM)
+					Scheme_Object **symtab)
 {
   Scheme_Object *v, *first, *last, *pair;
 
-  v = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+  v = read_compact(port, ht, symtab, 0);
   if (USE_LISTSTACK(use_stack)) {
     if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
       /* Overflow */
@@ -2301,7 +2254,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
   first = last;
 
   while (--c) {
-    v = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+    v = read_compact(port, ht, symtab, 0);
 
     if (USE_LISTSTACK(use_stack)) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
@@ -2324,7 +2277,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
   }
 
   if (!proper) {
-    v = read_compact(port, ht, symtab, 0 CURRENTPROCARG);
+    v = read_compact(port, ht, symtab, 0);
     SCHEME_CDR(last) = v;
   }
 
@@ -2333,8 +2286,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
 
 static Scheme_Object *read_compact_quote(CPort *port,
 					 Scheme_Object **symtab,
-					 int embedded
-					 CURRENTPROCPRM)
+					 int embedded)
 {
   Scheme_Hash_Table *q_ht;
   Scheme_Object *v;
@@ -2342,10 +2294,10 @@ static Scheme_Object *read_compact_quote(CPort *port,
   /* Use a new hash table. A compiled quoted form may have graph
      structure, but only local graph structure is allowed. */
   q_ht = NULL;
-  v = read_compact(port, &q_ht, symtab, 0 CURRENTPROCARG);
+  v = read_compact(port, &q_ht, symtab, 0);
 
   if (q_ht)
-    resolve_references(v, NULL, 0 CURRENTPROCARG);
+    resolve_references(v, NULL, 0);
   
   return v;
 }
@@ -2353,15 +2305,14 @@ static Scheme_Object *read_compact_quote(CPort *port,
 static Scheme_Object *read_marshalled(int type,
 				      CPort *port,
 				      Scheme_Hash_Table **ht,
-				      Scheme_Object **symtab
-				      CURRENTPROCPRM)
+				      Scheme_Object **symtab)
 {
   Scheme_Object *l;
   ListStackRec r;
   Scheme_Type_Reader reader;
 
   STACK_START(r);
-  l = read_compact(port, ht, symtab, 1 CURRENTPROCARG);
+  l = read_compact(port, ht, symtab, 1);
   STACK_END(r);
 
   reader = scheme_type_readers[type];
@@ -2409,12 +2360,9 @@ static long read_compact_number_from_port(Scheme_Object *port)
 
 /* "#~" has been read */
 static Scheme_Object *read_compiled(Scheme_Object *port, 
-				    Scheme_Hash_Table **ht
-				    CURRENTPROCPRM)
+				    Scheme_Hash_Table **ht)
 {
-#ifndef MZ_REAL_THREADS
   Scheme_Thread *p = scheme_current_thread;
-#endif
   Scheme_Object *result;
   CPort cp;
   long size, got;
@@ -2483,7 +2431,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 
   symtab = MALLOC_N(Scheme_Object *, symtabsize);
 
-  result = read_marshalled(scheme_compilation_top_type, rp, ht, symtab CURRENTPROCARG);
+  result = read_marshalled(scheme_compilation_top_type, rp, ht, symtab);
 
   local_rename_memory = NULL;
 

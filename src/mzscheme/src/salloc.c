@@ -35,18 +35,6 @@
 # define MALLOC malloc
 #endif
 
-#ifndef MZ_REAL_THREADS
-# define GET_FIN_LOCK() /* empty */
-# define RELEASE_FIN_LOCK() /* empty */
-#else
-static void *fin_mutex = NULL;
-# ifdef MZ_KEEP_LOCK_INFO
-int scheme_fin_lock_c;
-# endif
-# define GET_FIN_LOCK() (SCHEME_LOCK_MUTEX(fin_mutex) _MZ_LOCK_INFO(scheme_fin_lock_c++))
-# define RELEASE_FIN_LOCK()  (MZ_LOCK_INFO_(--scheme_fin_lock_c) SCHEME_UNLOCK_MUTEX(fin_mutex))
-#endif
-
 static void **dgc_array;
 static int *dgc_count;
 static int dgc_size;
@@ -535,17 +523,6 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
   prealloced->type = scheme_rt_finalizations;
 #endif
 
-#ifdef MZ_REAL_THREADS
-  /* This function will be called at least once before threads are
-     created, so there's no need to protect the setting of fin_mutex. */
-  if (!fin_mutex) {
-    REGISTER_SO(fin_mutex);
-    fin_mutex = SCHEME_MAKE_MUTEX();
-  }
-#endif
-
-  GET_FIN_LOCK();
-
   GC_register_eager_finalizer(v, prim ? 2 : 1, do_next_finalization, fns_ptr, &oldf, &olddata);
 
   if (oldf) {
@@ -605,8 +582,6 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
     *_fns = fns;
   if (_fn)
     *_fn = fn;
-
-  RELEASE_FIN_LOCK();
 }
 
 #ifndef MZ_PRECISE_GC

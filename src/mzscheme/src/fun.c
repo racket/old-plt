@@ -805,10 +805,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   void *external_stack;
 #endif
 
-#ifndef MZ_REAL_THREADS
   if (scheme_active_but_sleeping)
     scheme_wake_up();
-#endif
 
   old_cc_ok = p->cc_ok;
   old_ec_ok = p->ec_ok;
@@ -982,10 +980,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   p->ec_ok = old_ec_ok;
   p->cc_start = old_cc_start;
 
-#ifndef MZ_REAL_THREADS
   if (scheme_active_but_sleeping)
     scheme_wake_up();
-#endif
 
   return v;
 }
@@ -1010,23 +1006,10 @@ static void *apply_k(void)
     return (void *)_scheme_apply_wp(rator, num_rands, rands, p);
 }
 
-#ifdef MZ_REAL_THREADS
-# define APP_PROC_FORMAL , Scheme_Thread *p
-# define APP_PROC_ARG    , p
-# define APP_PROC_NAME(x) x ## _wp
-#else
-# define APP_PROC_FORMAL /* empty */
-# define APP_PROC_ARG    /* empty */
-# define APP_PROC_NAME(x)     x
-#endif
-
 static Scheme_Object *
-_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi, 
-       int eb APP_PROC_FORMAL)
+_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi, int eb)
 {
-#ifndef MZ_REAL_THREADS
   Scheme_Thread *p = scheme_current_thread;
-#endif
 
   p->ku.k.p1 = rator;
   p->ku.k.p2 = rands;
@@ -1036,33 +1019,28 @@ _apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands, int multi,
   return (Scheme_Object *)scheme_top_level_do(apply_k, eb);
 }
 
-
 Scheme_Object *
-APP_PROC_NAME(scheme_apply)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
-			    APP_PROC_FORMAL)
+scheme_apply(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
 {
-  return _apply(rator, num_rands, rands, 0, 0 APP_PROC_ARG);
+  return _apply(rator, num_rands, rands, 0, 0);
 }
 
 Scheme_Object *
-APP_PROC_NAME(scheme_apply_multi)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
-				  APP_PROC_FORMAL)
+scheme_apply_multi(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
 {
-  return _apply(rator, num_rands, rands, 1, 0 APP_PROC_ARG);
+  return _apply(rator, num_rands, rands, 1, 0);
 }
 
 Scheme_Object *
-APP_PROC_NAME(scheme_apply_eb)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
-			       APP_PROC_FORMAL)
+scheme_apply_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
 {
-  return _apply(rator, num_rands, rands, 0, 1 APP_PROC_ARG);
+  return _apply(rator, num_rands, rands, 0, 1);
 }
  
 Scheme_Object *
-APP_PROC_NAME(scheme_apply_multi_eb)(Scheme_Object *rator, int num_rands, Scheme_Object **rands
-			       APP_PROC_FORMAL)
+scheme_apply_multi_eb(Scheme_Object *rator, int num_rands, Scheme_Object **rands)
 {
-  return _apply(rator, num_rands, rands, 1, 1 APP_PROC_ARG);
+  return _apply(rator, num_rands, rands, 1, 1);
 }
  
 Scheme_Object *

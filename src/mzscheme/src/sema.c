@@ -80,29 +80,12 @@ void scheme_init_sema(Scheme_Env *env)
 
 }
 
-#ifdef MZ_REAL_THREADS
-static void free_sema(void *s, void *ignored)
-{
-  Scheme_Sema *sema;
-
-  sema = (Scheme_Sema *)s;
-
-  SCHEME_FREE_SEMA(sema->sema);
-}
-#endif
-
 Scheme_Object *scheme_make_sema(long v)
 {
   Scheme_Sema *sema;
 
-#ifdef MZ_REAL_THREADS
-  sema = MALLOC_ONE_TAGGED(Scheme_Sema);
-  sema->sema = SCHEME_MAKE_SEMA(v);
-  scheme_add_finalizer(sema, free_sema, NULL);
-#else
   sema = MALLOC_ONE_TAGGED(Scheme_Sema);
   sema->value = v;
-#endif
 
   sema->type = scheme_sema_type;
 
@@ -140,10 +123,6 @@ void scheme_post_sema(Scheme_Object *o)
 {
   Scheme_Sema *t = (Scheme_Sema *)o;
 
-#ifdef MZ_REAL_THREADS
-  if (SCHEME_SEMA_UP(t->sema))
-    return;
-#else
   int v;
 
   v = t->value + 1;
@@ -170,7 +149,6 @@ void scheme_post_sema(Scheme_Object *o)
 
     return;
   }
-#endif
 
   scheme_raise_exn(MZEXN_MISC,
 		   "semaphore-post: the maximum post count has already been reached");
@@ -227,7 +205,6 @@ static void post_breakable_wait(void *data)
 }
 
 #if SEMAPHORE_WAITING_IS_COLLECTABLE
-# ifndef MZ_REAL_THREADS
 static int out_of_line(Scheme_Object *w)
 {
   Scheme_Thread *p;
@@ -247,7 +224,6 @@ static int out_of_line(Scheme_Object *w)
 
   return 0;
 }
-# endif
 #endif
 
 int scheme_wait_sema(Scheme_Object *o, int just_try)
@@ -257,15 +233,11 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 
   if (just_try) {
     if (just_try > 0) {
-#ifdef MZ_REAL_THREADS
-      v = SCHEME_SEMA_TRY_DOWN(sema->sema);
-#else
       if (sema->value) {
 	--sema->value;
 	v = 1;
       } else
 	v = 0;
-#endif
     } else {
       BreakableWait *bw;
       bw = MALLOC_ONE_RT(BreakableWait);
@@ -284,9 +256,6 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       return 1;
     }
   } else {
-#ifdef MZ_REAL_THREADS
-    SCHEME_SEMA_DOWN(sema->sema);
-#else
     if (sema->value)
       --sema->value;
     else {
@@ -295,9 +264,9 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 
       w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
 
-#ifdef MZTAG_REQUIRED
+#  ifdef MZTAG_REQUIRED
       w->type = scheme_rt_sema_waiter;
-#endif
+#  endif
       
       w->p = scheme_current_thread;
       
@@ -381,7 +350,6 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       scheme_current_thread->ran_some = 1;
 # endif
     }
-#endif
     v = 1;
   }
 

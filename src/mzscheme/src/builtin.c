@@ -42,11 +42,7 @@ Scheme_Object *scheme_eval_compiled_sized_string(const char *str, int len, Schem
 
   saved = scheme_get_param(config, MZCONFIG_ENV);
   scheme_set_param(config, MZCONFIG_ENV, (Scheme_Object *)env);
-  expr = scheme_internal_read(port, NULL, 1, scheme_config
-#ifdef MZ_REAL_THREADS
-			      , p
-#endif
-			      );
+  expr = scheme_internal_read(port, NULL, 1, scheme_config);
   scheme_set_param(config, MZCONFIG_ENV, saved);
 
   return _scheme_eval_compiled(expr, env);

@@ -151,18 +151,14 @@ static int swapping = 0;
 
 static int buffer_init_size = INIT_TB_SIZE;
 
-#ifndef MZ_REAL_THREADS
 Scheme_Thread *scheme_current_thread = NULL;
-#endif
 Scheme_Thread *scheme_main_thread = NULL;
 Scheme_Thread *scheme_first_thread = NULL;
 #ifdef LINK_EXTENSIONS_BY_TABLE
 Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
 #endif
-#ifndef MZ_REAL_THREADS
 static int swap_no_setjmp = 0;
-#endif
 
 #ifdef RUNSTACK_IS_GLOBAL
 Scheme_Object **scheme_current_runstack_start;
@@ -187,13 +183,11 @@ void (*scheme_notify_multithread)(int on);
 void (*scheme_wakeup_on_input)(void *fds);
 int (*scheme_check_for_break)(void);
 
-#ifndef MZ_REAL_THREADS
 static int do_atomic = 0;
 static int missed_context_switch = 0;
 static int have_activity = 0;
 int scheme_active_but_sleeping = 0;
 static int thread_ended_with_activity;
-#endif
 
 static int tls_pos = 0;
 
@@ -261,9 +255,7 @@ static Scheme_Object *will_executor_sema(Scheme_Object *w, int *repost);
 static Scheme_Config *make_initial_config(void);
 static int do_kill_thread(Scheme_Thread *p);
 
-#ifndef MZ_REAL_THREADS
 static int check_sleep(int need_activity, int sleep_now);
-#endif
 
 static void remove_thread(Scheme_Thread *r);
 static void exit_or_escape(Scheme_Thread *p);
@@ -295,51 +287,9 @@ typedef struct {
 static int num_nsos = 0;
 static Scheme_NSO *namespace_options = NULL;
 
-#ifdef MZ_REAL_THREADS
-void *make_namespace_mutex;
-#endif
-
-#if defined(MZ_REAL_THREADS)
-# define SETJMP(p) 1
-# define LONGJMP(p) 0
-# define RESETJMP(p)
-#else /* not USE_REAL_THREADS */
-# define SETJMP(p) scheme_setjmpup(&p->jmpup_buf, p, p->stack_start)
-# define LONGJMP(p) scheme_longjmpup(&p->jmpup_buf)
-# define RESETJMP(p) scheme_reset_jmpup_buf(&p->jmpup_buf)
-#endif
-
-#ifndef MZ_REAL_THREADS
-# define GET_WILL_LOCK() /* empty */
-# define RELEASE_WILL_LOCK() /* empty */
-
-# define GET_CUST_LOCK() /* empty */
-# define RELEASE_CUST_LOCK() /* empty */
-
-# define GET_NESTEE_LOCK() /* emtpy */
-# define RELEASE_NESTEE_LOCK() /* empty */
-#else
-static void *will_mutex;
-# ifdef MZ_KEEP_LOCK_INFO
-static int will_lock_c;
-# endif
-# define GET_WILL_LOCK() (SCHEME_LOCK_MUTEX(will_mutex) _MZ_LOCK_INFO(will_lock_c++))
-# define RELEASE_WILL_LOCK()  (MZ_LOCK_INFO_(--will_lock_c) SCHEME_UNLOCK_MUTEX(will_mutex))
-
-static void *cust_mutex;
-# ifdef MZ_KEEP_LOCK_INFO
-static int cust_lock_c;
-# endif
-# define GET_CUST_LOCK() (SCHEME_LOCK_MUTEX(cust_mutex) _MZ_LOCK_INFO(cust_lock_c++))
-# define RELEASE_CUST_LOCK()  (MZ_LOCK_INFO_(--cust_lock_c) SCHEME_UNLOCK_MUTEX(cust_mutex))
-
-static void *nestee_mutex;
-# ifdef MZ_KEEP_LOCK_INFO
-static int nestee_lock_c;
-# endif
-# define GET_NESTEE_LOCK() if (nestee_mutex) (SCHEME_LOCK_MUTEX(nestee_mutex) _MZ_LOCK_INFO(nestee_lock_c++))
-# define RELEASE_NESTEE_LOCK()  if (nestee_mutex) (MZ_LOCK_INFO_(--nestee_lock_c) SCHEME_UNLOCK_MUTEX(nestee_mutex))
-#endif
+#define SETJMP(p) scheme_setjmpup(&p->jmpup_buf, p, p->stack_start)
+#define LONGJMP(p) scheme_longjmpup(&p->jmpup_buf)
+#define RESETJMP(p) scheme_reset_jmpup_buf(&p->jmpup_buf)
 
 #ifdef WIN32_THREADS
 /* Only set up for Boehm GC that thinks it's a DLL: */
@@ -547,15 +497,6 @@ void scheme_init_thread(Scheme_Env *env)
 
   REGISTER_SO(namespace_options);
 
-#ifdef MZ_REAL_THREADS
-  REGISTER_SO(make_namespace_mutex);
-  REGISTER_SO(will_mutex);
-  REGISTER_SO(nestee_mutex);
-  make_namespace_mutex = SCHEME_MAKE_MUTEX();
-  will_mutex = SCHEME_MAKE_MUTEX();
-  nestee_mutex = SCHEME_MAKE_MUTEX();
-#endif
-
   REGISTER_SO(empty_symbol);
   
   empty_symbol = scheme_intern_symbol("empty");
@@ -736,11 +677,8 @@ static void remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o,
   Scheme_Custodian *m;
   int i;
 
-  GET_CUST_LOCK();
-
   m = CUSTODIAN_FAM(mr);
   if (!m) {
-    RELEASE_CUST_LOCK();
     return;
   }
 
@@ -762,8 +700,6 @@ static void remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o,
   while (m->count && !m->boxes[m->count - 1]) {
     --m->count;
   }
-
-  RELEASE_CUST_LOCK();
 }
 
 static void adjust_custodian_family(void *mgr, void *ignored)
@@ -777,8 +713,6 @@ static void adjust_custodian_family(void *mgr, void *ignored)
   int i;
 
   parent = CUSTODIAN_FAM(r->parent);
-
-  GET_CUST_LOCK();
 
   if (parent) {
     /* Remove from parent's list of children: */
@@ -816,8 +750,6 @@ static void adjust_custodian_family(void *mgr, void *ignored)
   CUSTODIAN_FAM(r->parent) = NULL;
   CUSTODIAN_FAM(r->sibling) = NULL;
   CUSTODIAN_FAM(r->children) = NULL;
-
-  RELEASE_CUST_LOCK();
 }
 
 Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent) 
@@ -926,19 +858,7 @@ Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Objec
   else
     scheme_add_finalizer(o, managed_object_gone, mr);
 
-#ifdef MZ_REAL_THREADS
-  /* GCing while we have the lock would be bad: */
-  ensure_manage_space(m, 1);
-
-  if (!cust_mutex) {
-    REGISTER_SO(cust_mutex);
-    cust_mutex = SCHEME_MAKE_MUTEX();
-  }
-#endif
-
-  GET_CUST_LOCK();
   add_managed_box(m, (Scheme_Object **)b, mr, f, data);
-  RELEASE_CUST_LOCK();
 
   return mr;
 }
@@ -1021,11 +941,9 @@ void scheme_close_managed(Scheme_Custodian *m)
     scheme_thread_block(0.0);
   }
 
-# ifndef MZ_REAL_THREADS
   /* Give killed threads time to die: */
   scheme_thread_block(0);
   scheme_current_thread->ran_some = 1;
-# endif
 #endif
 }
 
@@ -1080,9 +998,7 @@ static void run_closers(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void
 
 static void run_atexit_closers(void)
 {
-#ifndef MZ_REAL_THREADS
   scheme_start_atomic();
-#endif
   scheme_do_close_managed(NULL, run_closers);
 }
 
@@ -1123,18 +1039,11 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
 #ifdef MZ_PRECISE_GC
     register_traversers();
 #endif
-#ifndef MZ_REAL_THREADS
     REGISTER_SO(scheme_current_thread);
-#endif
     REGISTER_SO(scheme_main_thread);
     REGISTER_SO(scheme_first_thread);
 
-#ifdef MZ_REAL_THREADS
-    process->thread = SCHEME_INIT_THREADS();
-    SCHEME_SET_CURRENT_PROCESS(process);
-#else
     scheme_current_thread = process;
-#endif
     scheme_first_thread = scheme_main_thread = process;
     process->prev = NULL;
     process->next = NULL;
@@ -1142,15 +1051,9 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
     GC_collect_start_callback = get_ready_for_GC;
     GC_collect_end_callback = done_with_GC;
 
-#ifndef MZ_REAL_THREADS
 #ifdef LINK_EXTENSIONS_BY_TABLE
     scheme_current_thread_ptr = &scheme_current_thread;
     scheme_fuel_counter_ptr = &scheme_fuel_counter;
-#endif
-#endif
-
-#ifdef MZ_REAL_THREADS
-    scheme_init_stack_check();
 #endif
 
 #ifdef MZ_PRECISE_GC
@@ -1202,7 +1105,6 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
 
   process->list_stack = NULL;
 
-  SCHEME_GET_LOCK();
   if (prefix) {
     if (after) {
       process->prev = after;
@@ -1223,7 +1125,6 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
     process->tail_buffer = tb;
   }
   process->tail_buffer_size = buffer_init_size;
-  SCHEME_RELEASE_LOCK();
 
   process->runstack_size = INIT_SCHEME_STACK_SIZE;
   {
@@ -1252,10 +1153,6 @@ static Scheme_Thread *make_thread(Scheme_Thread *after, Scheme_Config *config,
     MZ_CONT_MARK_STACK = process->cont_mark_stack;
     MZ_CONT_MARK_POS = process->cont_mark_pos;
   }
-#endif
-
-#ifdef MZ_REAL_THREADS
-  process->done_sema = scheme_make_sema(0);
 #endif
 
   process->on_kill = NULL;
@@ -1303,7 +1200,6 @@ Scheme_Thread *scheme_make_thread()
 
 void scheme_set_tail_buffer_size(int s)
 {
-  SCHEME_GET_LOCK();
   if (s > buffer_init_size) {
     Scheme_Thread *p;
 
@@ -1318,7 +1214,6 @@ void scheme_set_tail_buffer_size(int s)
       }
     }
   }
-  SCHEME_RELEASE_LOCK();  
 }
 
 int scheme_tls_allocate()
@@ -1364,14 +1259,6 @@ int scheme_in_main_thread(void)
   return !scheme_current_thread->next;
 }
 
-#ifdef MZ_REAL_THREADS
-Scheme_Thread *scheme_get_current_thread()
-{
-  return scheme_current_thread;
-}
-#endif
-
-#ifndef MZ_REAL_THREADS
 
 void scheme_swap_thread(Scheme_Thread *new_thread)
 {
@@ -1439,17 +1326,11 @@ static void select_thread(Scheme_Thread *start_thread)
   scheme_swap_thread(new_thread);
 }
 
-#endif
-
 static void remove_thread(Scheme_Thread *r)
 {
   Scheme_Saved_Stack *saved;
 
   r->running = 0;
-
-#ifdef MZ_REAL_THREADS
-  scheme_post_sema(r->done_sema);
-#endif
 
   if (r->prev) {
     r->prev->next = r->next;
@@ -1498,13 +1379,11 @@ static void remove_thread(Scheme_Thread *r)
   r->cont_mark_stack_segments = NULL;
   r->overflow = NULL;
 
-#ifndef MZ_REAL_THREADS
   if (r == scheme_current_thread) {
     /* We're going to be swapped out immediately. */
     swap_no_setjmp = 1;
   } else
     RESETJMP(r);
-#endif
 
   scheme_remove_managed(r->mref, (Scheme_Object *)r->mr_hop);
 }
@@ -1527,7 +1406,6 @@ static void start_child(Scheme_Thread * volatile child,
     swapping = 0;
 #endif
 
-#ifndef MZ_REAL_THREADS
     if (return_to_thread)
       scheme_swap_thread(return_to_thread);
 
@@ -1535,82 +1413,25 @@ static void start_child(Scheme_Thread * volatile child,
       /* This thread is dead! Give up now. */
       exit_or_escape(scheme_current_thread);
     }
-#endif
 
     if (!scheme_setjmp(scheme_error_buf)) 
       scheme_apply_multi(child_eval, 0, NULL);
     
-    SCHEME_GET_LOCK();
-    
     remove_thread(scheme_current_thread);
-    SCHEME_RELEASE_LOCK();
-    
-#ifndef MZ_REAL_THREADS
+
     thread_ended_with_activity = 1;
     
     if (scheme_notify_multithread && !scheme_first_thread->next) {
       scheme_notify_multithread(0);
       have_activity = 0;
     }
-#endif
-    
-#ifndef MZ_REAL_THREADS
+
     select_thread(NULL);
     
     /* Shouldn't get here! */
     scheme_signal_error("bad process switch");
-#endif
   }
 }
-
-#if defined(MZ_REAL_THREADS)
-
-typedef struct {
-  Scheme_Thread *sc_child, *sc_rtp;
-  Scheme_Object *sc_eval;
-} ThreadStartData;
-
-static void really_start_child(void *data)
-{
-  long dummy;
-  ThreadStartData *th = (ThreadStartData *)data;
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_SET_CURRENT_PROCESS(th->sc_child);
-  th->sc_child->stack_start = (void *)&dummy;
-#endif
-
-  start_child(th->sc_child, th->sc_rtp, th->sc_eval);
-}
-
-#endif /* defined(MZ_REAL_THREADS) */
-
-#if defined(MZ_REAL_THREADS)
-
-static void do_start_child(Scheme_Thread *child, Scheme_Thread *rtp,
-			   Scheme_Object *child_eval)
-{
-  Scheme_Thread *sc_child, *sc_rtp;
-  Scheme_Object *sc_eval;
-
-  sc_child = child;
-  sc_rtp = rtp;
-  sc_eval = child_eval;
-
-  {
-    ThreadStartData *th = MALLOC_ONE_RT(ThreadStartData);
-    
-    th->sc_child = sc_child;
-    th->sc_rtp = sc_rtp;
-    th->sc_eval = sc_eval;
-
-    SCHEME_CREATE_THREAD(really_start_child, (void *)th, 
-			 (unsigned long *)&sc_child->stack_end,
-			 &sc_child->thread);
-  }
-}
-
-#endif
 
 static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 				      void *child_start, 
@@ -1632,27 +1453,19 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
 
   child->stack_start = child_start;
   
-#ifndef MZ_REAL_THREADS
   if (do_atomic)
     return_to_thread = scheme_current_thread;
   else
-#endif
     return_to_thread = NULL;
 
-#if defined(MZ_REAL_THREADS)
-  do_start_child(child, return_to_thread, child_thunk);
-#else
   start_child(child, return_to_thread, child_thunk);
-#endif
 
-#ifndef MZ_REAL_THREADS
   if (scheme_notify_multithread && turn_on_multi) {
     scheme_notify_multithread(1);
     have_activity = 1;
   }
 
   SCHEME_USE_FUEL(1000);
-#endif
   
   return (Scheme_Object *)child;
 }
@@ -1724,13 +1537,12 @@ static void register_thread_wait()
 /**************************************************************************/
 /* Ensure that a new thread has a reasonable starting stack */
 
-#ifndef MZ_REAL_THREADS
-# ifdef DO_STACK_CHECK
-#  define THREAD_STACK_SPACE (STACK_SAFETY_MARGIN / 2)
+#ifdef DO_STACK_CHECK
+# define THREAD_STACK_SPACE (STACK_SAFETY_MARGIN / 2)
 void scheme_check_stack_ok(char *s); /* prototype, needed for PalmOS */
 
 void scheme_check_stack_ok(char *s) {
-#  include "mzstkchk.h"
+# include "mzstkchk.h"
   {
     s[THREAD_STACK_SPACE] = 1;
   } else {
@@ -1786,8 +1598,8 @@ static Scheme_Object *thread_k(void)
      the __gc_var_stack__ frame. */
   return result;
 }
-# endif
-#endif
+
+#endif /* DO_STACK_CHECK */
 
 Scheme_Object *scheme_thread_w_custodian(Scheme_Object *thunk, Scheme_Config *config, 
 				       Scheme_Custodian *mgr)
@@ -1797,8 +1609,7 @@ Scheme_Object *scheme_thread_w_custodian(Scheme_Object *thunk, Scheme_Config *co
   long dummy;
 #endif
 
-#ifndef MZ_REAL_THREADS
-# ifdef DO_STACK_CHECK
+#ifdef DO_STACK_CHECK
   /* Make sure the thread starts out with a reasonable stack size, so
      it doesn't thrash right away: */
   if (is_stack_too_shallow()) {
@@ -1810,7 +1621,6 @@ Scheme_Object *scheme_thread_w_custodian(Scheme_Object *thunk, Scheme_Config *co
 
     return scheme_handle_stack_overflow(thread_k);
   }
-# endif
 #endif
 
   result = make_subprocess(thunk, 
@@ -1887,11 +1697,6 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->tail_buffer = p->tail_buffer;
   np->tail_buffer_size = p->tail_buffer_size;
 
-#ifdef MZ_REAL_THREADS
-  np->thread = p->thread;
-  np->done_sema = scheme_make_sema(0);
-#endif
-
   np->overflow_set = p->overflow_set;
   np->cc_start = p->cc_start;
   memcpy(&np->overflow_buf, &p->overflow_buf, sizeof(mz_jmp_buf));
@@ -1925,12 +1730,10 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   scheme_init_error_escape_proc(np);
   scheme_set_param(np->config, MZCONFIG_EXN_HANDLER, nested_exn_handler);
 
-  GET_NESTEE_LOCK();
   np->nester = p;
   p->nestee = np;
   np->external_break = p->external_break;
   p->external_break = 0;
-  RELEASE_NESTEE_LOCK();
 
   {
     Scheme_Thread_Custodian_Hop *hop;
@@ -1955,13 +1758,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   MZ_CONT_MARK_POS = np->cont_mark_pos;
 #endif
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_SET_CURRENT_PROCESS(np);
-  if (p->break_received)
-    np->break_received = 1;
-#else
   scheme_current_thread = np;
-#endif
 
   /* Call thunk, catch escape: */
   if (scheme_setjmp(np->error_buf)) {
@@ -1990,15 +1787,10 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->next->prev = np->prev;
 
   np->running = 0;
-#ifdef MZ_REAL_THREADS
-  scheme_post_sema(np->done_sema);
-#endif
 
-  GET_NESTEE_LOCK();
   p->external_break = np->external_break;
   p->nestee = NULL;
   np->nester = NULL;
-  RELEASE_NESTEE_LOCK();
 
   np->runstack_start = NULL;
   np->runstack_saved = NULL;
@@ -2006,13 +1798,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   np->config = NULL;
   np->dw = NULL;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_SET_CURRENT_PROCESS(p);
-  if (np->break_received)
-    p->break_received = 1;
-#else
   scheme_current_thread = p;
-#endif
 
 #ifdef RUNSTACK_IS_GLOBAL
   MZ_CONT_MARK_STACK = p->cont_mark_stack;
@@ -2043,7 +1829,6 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 /*                     thread scheduling and termination                  */
 /*========================================================================*/
 
-#ifndef MZ_REAL_THREADS
 static int check_sleep(int need_activity, int sleep_now)
 /* Signals should be suspended */
 {
@@ -2150,35 +1935,28 @@ static int check_sleep(int need_activity, int sleep_now)
 
   return 0;
 }
-#endif
 
 void scheme_check_threads(void)
 /* Signals should be suspended. */
 {
-#ifndef MZ_REAL_THREADS
   scheme_current_thread->suspend_break++;
   scheme_thread_block((float)0);
   --scheme_current_thread->suspend_break;
 
   check_sleep(have_activity, 0);
-#endif
 }
 
 void scheme_wake_up(void)
 {
-#ifndef MZ_REAL_THREADS
   scheme_active_but_sleeping = 0;
   if (have_activity && scheme_notify_multithread)
     scheme_notify_multithread(1);
-#endif
 }
 
 void scheme_out_of_fuel(void)
 {
-#ifndef MZ_REAL_THREADS
   scheme_thread_block((float)0);
   scheme_current_thread->ran_some = 1;
-#endif
 }
 
 #ifdef USE_ITIMER
@@ -2268,14 +2046,8 @@ static void exit_or_escape(Scheme_Thread *p)
     exit(0);
   }
 
-#ifndef MZ_REAL_THREADS
   remove_thread(p);
   select_thread(NULL);
-#else
-  remove_thread(p);
-  SCHEME_EXIT_THREAD();
-#endif
-
 }
 
 void scheme_break_thread(Scheme_Thread *p)
@@ -2291,22 +2063,13 @@ void scheme_break_thread(Scheme_Thread *p)
       return;
   }
 
-  GET_NESTEE_LOCK();
   /* Propagate breaks: */
   while (p->nestee) {
     p = p->nestee;
   }
-  RELEASE_NESTEE_LOCK();
-
-#ifdef MZ_REAL_THREADS
-  /* Avoid signals to wrapping thread when nested already has died: */
-  if (!MZTHREAD_STILL_RUNNING(p->running))
-    return;
-#endif
 
   p->external_break = 1;
 
-#ifndef MZ_REAL_THREADS
   if (p == scheme_current_thread) {
     if (scheme_can_break(p, p->config))
       scheme_fuel_counter = 0;
@@ -2318,26 +2081,15 @@ void scheme_break_thread(Scheme_Thread *p)
     ReleaseSemaphore(scheme_break_semaphore, 1, NULL);
 #  endif
 # endif
-#else
-  p->fuel_counter = 0;
-  SCHEME_BREAK_THREAD(p->thread);
-#endif
 }
 
-#ifndef MZ_REAL_THREADS
 void scheme_thread_block(float sleep_time)
-#else
-void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p)
-#endif
 /* Auto-resets p's blocking info if an escape occurs. */
 {
   long start, d;
-#ifndef MZ_REAL_THREADS
   Scheme_Thread *next, *p = scheme_current_thread;
-#endif
   Scheme_Config *config = p->config;
 
-#ifndef MZ_REAL_THREADS
   if (p->running & MZTHREAD_KILLED) {
     /* This thread is dead! Give up now. */
     exit_or_escape(p);
@@ -2345,11 +2097,6 @@ void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p)
 
   if (scheme_active_but_sleeping)
     scheme_wake_up();
-#else
-  if (!p->running || (p->running & MZTHREAD_KILLED)) {
-    exit_or_escape(p);
-  }
-#endif
 
   if (sleep_time > 0)
     start = scheme_get_milliseconds();
@@ -2372,7 +2119,6 @@ void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p)
   scheme_check_keyboard_input();
 #endif
 
-#ifndef MZ_REAL_THREADS
   if (!do_atomic && (sleep_time >= 0.0)) {
     /* Find the next process. Skip processes that are definitely
        blocked. */
@@ -2482,43 +2228,7 @@ void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p)
   } else if (p->block_descriptor == -1) {
     p->sleep_time = 0.0;
   }
-#else
-  /* MZ_REAL_THREADS */
-# if defined(USING_FDS)
-  if ((p->block_descriptor == PORT_BLOCKED)
-      || (p->block_descriptor == -1)) {
-    DECL_FDSET(set, 3);
-    fd_set *set1, *set2;
-    void *fds;
-    float sleep_time = 0;
 
-    INIT_DECL_FDSET(set, 3);
-    set1 = (fd_set *) MZ_GET_FDSET(set, 1);
-    set2 = (fd_set *) MZ_GET_FDSET(set, 2);
-
-    fds = (void *)set;
-    MZ_FD_ZERO(set);
-    MZ_FD_ZERO(set1);
-    MZ_FD_ZERO(set2);
-    
-    if (p->block_descriptor == -1) {
-      if (p->block_needs_wakeup) {
-	Block_Needs_Wakeup_Procedure f = p->block_needs_wakeup;
-	f(p->blocker, fds);
-      }
-      sleep_time = p->sleep_time;
-    } else
-      scheme_need_wakeup(p->blocker, fds);
-    
-    if (scheme_sleep)
-      scheme_sleep(sleep_time, fds);
-  } else 
-# endif
-    if ((sleep_time > 0) && scheme_sleep)
-      scheme_sleep(sleep_time, NULL);
-#endif
-
-#ifndef MZ_REAL_THREADS
   /* Killed while I was asleep? */
   if (p->running & MZTHREAD_KILLED) {
     /* This thread is dead! Give up now. */
@@ -2529,11 +2239,6 @@ void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p)
       exit_or_escape(p);
     }
   }
-#else
-  if (!p->running || (p->running & MZTHREAD_KILLED)) {
-    exit_or_escape(p);
-  }
-#endif
 
   /* Check for external break again after swap or sleep */
   if (p->external_break && !p->suspend_break && scheme_can_break(p, config)) {
@@ -2549,10 +2254,8 @@ void scheme_thread_block_w_thread(float sleep_time, Scheme_Thread *p)
     }
   }
 
-#ifndef MZ_REAL_THREADS
   if (do_atomic)
     missed_context_switch = 1;
-#endif
 
 #ifdef USE_ITIMER
   {
@@ -2605,7 +2308,6 @@ int scheme_block_until(int (*f)(Scheme_Object *), void (*fdf)(Scheme_Object *,vo
   return result;
 }
 
-#ifndef MZ_REAL_THREADS
 void scheme_start_atomic(void)
 {
   if (!do_atomic)
@@ -2621,11 +2323,9 @@ void scheme_end_atomic(void)
     scheme_current_thread->ran_some = 1;    
   }
 }
-#endif
 
 void scheme_weak_suspend_thread(Scheme_Thread *r)
 {
-#ifndef MZ_REAL_THREADS
   Scheme_Thread *swap_to = r->next;
 
   if (r->prev) {
@@ -2648,12 +2348,10 @@ void scheme_weak_suspend_thread(Scheme_Thread *r)
     if ((r->running & MZTHREAD_KILLED) && !(r->running & MZTHREAD_NEED_KILL_CLEANUP))
       scheme_thread_block(0);
   }
-#endif
 }
 
 void scheme_weak_resume_thread(Scheme_Thread *r)
 {
-#ifndef MZ_REAL_THREADS
   if (r->running & MZTHREAD_SUSPENDED) {
     r->running -= MZTHREAD_SUSPENDED;
     r->next = scheme_first_thread;
@@ -2662,7 +2360,6 @@ void scheme_weak_resume_thread(Scheme_Thread *r)
     r->next->prev = r;
     r->ran_some = 1;
   }
-#endif
 }
 
 static Scheme_Object *
@@ -2697,13 +2394,11 @@ static Scheme_Object *break_thread(int argc, Scheme_Object *args[])
 
   scheme_break_thread(p);
 
-#ifndef MZ_REAL_THREADS
   /* In case p == scheme_current_thread */
   if (!scheme_fuel_counter) {
     scheme_thread_block(0.0);
     scheme_current_thread->ran_some = 1;
   }
-#endif
 
   return scheme_void;
 }
@@ -2712,19 +2407,14 @@ static int do_kill_thread(Scheme_Thread *p)
 {
   int kill_self = 0;
 
-  SCHEME_GET_LOCK();
-
   if (!p->running || (p->running & MZTHREAD_KILLED)) {
-    SCHEME_RELEASE_LOCK();
     return 0;
   }
 
   {
     Scheme_Thread *nestee;
 
-    GET_NESTEE_LOCK();
     nestee = p->nestee;
-    RELEASE_NESTEE_LOCK();
 
     if (nestee)
       scheme_break_thread(nestee);
@@ -2749,19 +2439,6 @@ static int do_kill_thread(Scheme_Thread *p)
 
   scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
 
-#ifdef MZ_REAL_THREADS
-  p->running |= MZTHREAD_KILLED;
-  if (p == scheme_current_thread)
-    kill_self = 1;
-  else {
-    p->fuel_counter = 0;
-    /* In case it's blocked on a semaphore, send a signal, but don't
-       interrupt a nestee again because we've already sent the
-       nestee a signal: */
-    if (!p->nestee)
-      SCHEME_BREAK_THREAD(p->thread);
-  }
-#else
   if (p->running) {
     p->running |= MZTHREAD_KILLED;
     if (p->running & MZTHREAD_NEED_KILL_CLEANUP)
@@ -2769,9 +2446,6 @@ static int do_kill_thread(Scheme_Thread *p)
   }
   if (p == scheme_current_thread)
     kill_self = 1;
-#endif
-
-  SCHEME_RELEASE_LOCK();
 
   return kill_self;
 }
@@ -2784,11 +2458,9 @@ void scheme_kill_thread(Scheme_Thread *p)
     scheme_thread_block(0.0);
   }
 
-#ifndef MZ_REAL_THREADS
   /* Give killed threads time to die: */
   scheme_thread_block(0.0);
   scheme_current_thread->ran_some = 1;
-#endif
 }
 
 static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
@@ -3475,10 +3147,6 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   int empty = 0;
   Scheme_Env *env;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(make_namespace_mutex);
-#endif
-
   if (argc) {
     if (SAME_OBJ(argv[0], empty_symbol))
       empty = 1;
@@ -3491,10 +3159,6 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
     /* Copy from initial namespace: */
     scheme_install_initial_module_set(env);
   }
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(make_namespace_mutex);
-#endif
 
   return (Scheme_Object *)env;
 }
@@ -3552,7 +3216,6 @@ static void activate_will(void *o, void *data)
   a->o = (Scheme_Object *)o;
   a->proc = r->proc;
   
-  GET_WILL_LOCK();
   w = r->w;
   if (w->last)
     w->last->next = a;
@@ -3560,7 +3223,6 @@ static void activate_will(void *o, void *data)
     w->first = a;
   w->last = a;
   scheme_post_sema(w->sema);
-  RELEASE_WILL_LOCK();
 }
 
 static Scheme_Object *do_next_will(WillExecutor *w)
@@ -3568,12 +3230,10 @@ static Scheme_Object *do_next_will(WillExecutor *w)
   ActiveWill *a;
   Scheme_Object *o[1];
 
-  GET_WILL_LOCK();
   a = w->first;
   w->first = a->next;
   if (!w->first)
     w->last = NULL;
-  RELEASE_WILL_LOCK();
   
   o[0] = a->o;
   a->o = NULL;
@@ -3686,7 +3346,6 @@ static void get_ready_for_GC()
   scheme_current_thread->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
 
-#ifndef MZ_REAL_THREADS
 # define RUNSTACK_TUNE(x) /* x   - Used for performance tuning */
   if (scheme_fuel_counter) {
     Scheme_Thread *p;
@@ -3756,7 +3415,6 @@ static void get_ready_for_GC()
       }
     }
   }
-#endif
    
   scheme_fuel_counter = 0;
 
@@ -3797,939 +3455,6 @@ static void done_with_GC()
 #ifdef MZ_PRECISE_GC
 END_XFORM_SKIP;
 #endif
-
-/*========================================================================*/
-/*                       platform-specific OS threads                     */
-/*========================================================================*/
-
-#ifdef MZ_REAL_THREADS
-
-/* Implementing support for new thread systems:
-
-   MzScheme needs implementations for the following functions (usually
-   these are macros mapped to actual function names in sconfig.h):
-
-   void* SCHEME_INIT_THREADS(void) - initializes thread system, returns
-     the id of the initial (main) thread
-
-   void SCHEME_CREATE_THREAD(void (*f)(void*), void* data, 
-     unsigned long *slimit, void** thp) - starts a new thread, applying `f' 
-     to `data' in the new thread. BEFORE `f' is applied to `data', the id 
-     for the new thread must be in `*thp'. If Unix-style stack-checking is 
-     used, the hottest allowable stack address (with the safely margin 
-     already removed) must be put into `slimit' before `f' is applied; 
-     `slimit' may be NULL, in which case the stack limit is not needed.
-
-   void SCHEME_EXIT_THREAD() - exits the current thread
-
-   void SCHEME_BREAK_THREAD(void* th) - signals a break in the thread `th'.
-     If `th' is waiting on a semaphore or selecting a file descriptor, This
-     breaking signal must cause that wait or select to break. Unix: When
-     receiving the signal, a thread should set the `break_received' flag
-     in the current process record, and if `select_tv' in the current
-     process record is non-NULL, zero it.
-
-   void SCHEME_SET_CURRENT_PROCESS(Scheme_Thread* p) - stores `p' as the
-     Scheme thread pointer for the current thread.
-
-   Scheme_Thread* SCHEME_GET_CURRENT_PROCESS() - retrieves the Scheme thread
-     pointer for the current thread.
-
-   void* SCHEME_MAKE_MUTEX() - creates a new mutex.
-
-   void SCHEME_FREE_MUTEX(void* m) - destroys the mutex `m'.
-
-   void SCHEME_LOCK_MUTEX(void* m) - locks the mutex `m', blocking until
-     it is available.
-
-   void SCHEME_UNLOCK_MUTEX(void* m) - unlocks the mutex `m'.
-
-   void* SCHEME_MAKE_SEMA(int init) - creates a new semaphore with initial
-     count `init'.
-
-   void SCHEME_FREE_SEMA(void* s) - destroys the semaphore `s'.
-
-   int SCHEME_SEMA_UP(void* s) - posts to the semaphore `s', returning 0 if
-     an error occurred. For Unix, this function must work in a signal handler.
-
-   int SCHEME_SEMA_DOWN_BREAKABLE(void* s) - waits on `s' but allows
-     the wait to be terminated by a break, returing 1 if the wait was
-     sucessful (i.e., no break occurred) or 0 if unsuccessful. For
-     Unix, this function must work in a signal handler.
-
-   int SCHEME_SEMA_TRY_DOWN(void* s) - attempts a non-blocking wait on
-     the semaphore `s', immediately returning 1 if the wait was
-     successful or 0 if unsuccessful.  For Unix, this function must
-     work in a signal handler.
-
-*/
-
-void scheme_real_sema_down(void *sema)
-{
-  /* >>>> FIXME: SIGNAL RACE CONDITION HERE! <<<<
-     We try to make problems rare by checking breaks
-     just before blocking, but this is inherently wrong.
-     A signal might happen after we check flags but
-     before the semaphore-wait starts. */
-
-  Scheme_Thread *p = scheme_current_thread;
-  do {
-    scheme_thread_block_w_thread(0, p);
-  } while (!SCHEME_SEMA_DOWN_BREAKABLE(sema));
-  p->ran_some = 1;
-}
-
-#endif
-
-/****************************************/
-
-#ifdef MZ_USE_PTHREADS
-
-static pthread_key_t cp_key;
-typedef struct {
-  void (*f)(void *);
-  void *data;
-  void *stack;
-  long *stackend;
-  sem_t go_sema;
-  sem_t stackset_sema;
-} pthread_closure;
-
-static void do_nothing(int ignored)
-{
-# ifdef SIGSET_NEEDS_REINSTALL
-  MZ_SIGSET(SIGMZTHREAD, do_nothing);
-# endif
-
-  {
-    Scheme_Thread *p;
-    p = scheme_current_thread;
-    p->break_received = 1;
-    if (p->select_tv) {
-      p->select_tv->tv_sec = 0;
-      p->select_tv->tv_usec = 0;
-    }
-  }
-
-# ifdef ____MZ_USE_LINUX_PTHREADS
-  {
-    Scheme_Thread *p;
-    p = scheme_current_thread;
-    if (p->jump_on_signal) {
-      p->jump_on_signal = 0;
-      scheme_longjmp(p->signal_buf, 1);
-    }
-  }
-#endif
-}
-
-void *scheme_pthread_init_threads(void)
-{
-  if (pthread_key_create(&cp_key, NULL)) {
-    printf("init failed\n");
-    exit(1);
-  }
-
-  MZ_SIGSET(SIGMZTHREAD, do_nothing);
-
-  return (void *)pthread_self();
-}
-
-static void *start_pthread_thread(void *_cl)
-{
-  pthread_closure *cl = (pthread_closure *)_cl;
-
-  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
-
-  sem_wait(&cl->go_sema);
-  sem_destroy(&cl->go_sema);
-
-  MZ_SIGSET(SIGMZTHREAD, do_nothing);
-
-#ifdef MZ_USE_LINUX_PTHREADS
-  {
-    /* LinuxThreads: thread stacks are allocated on 2M boundaries and grow
-       to no more than 2M. */
-    int dummy;
-    unsigned long loc;
-
-    loc = ((unsigned long)&dummy);
-    loc -= (loc & 0x1FFFFF);
-    *(cl->stackend) = loc + STACK_SAFETY_MARGIN;
-  }
-#else
-  >>> Need something more specific than ``pthreads'' <<<
-#endif
-
-  sem_post(&cl->stackset_sema);
-
-  cl->f(((pthread_closure *)cl)->data);
-
-  return NULL;
-}
-
-#ifdef MZ_KEEP_LOCK_INFO
-extern int scheme_fin_lock_c;
-extern int scheme_port_lock_c;
-static int sem_wait_c;
-static int made_printer = 0;
-static void print_lock_info(void *ignored)
-{
-  {
-    long start = scheme_get_milliseconds();
-    
-    do {
-      sleep(5);
-    } while ((scheme_get_milliseconds() - start) < 30000);
-  }
-
-  while (1) {
-    Scheme_Thread *p;
-    int c = 0;
-    long start = scheme_get_milliseconds();
-    
-    do {
-      sleep(5);
-    } while ((scheme_get_milliseconds() - start) < 5000);
-    
-    for (p = scheme_first_thread; p; p = p->next) {
-      c++;
-    }
-    
-    printf("gl: %d cl: %d wl: %d fnl: %d pl: %d sw: %d  tc: %d fpb: %d\n", 
-	   scheme_global_lock_c,
-	   cust_lock_c, will_lock_c, scheme_fin_lock_c,
-	   scheme_port_lock_c, sem_wait_c, c,
-	   scheme_first_thread->block_descriptor);
-    for (p = scheme_first_thread; p; p = p->next) {
-      printf("[%d] ", p->block_descriptor);
-    }
-    printf("\n");
-  }
-}
-#endif
-
-void scheme_pthread_create_thread(void (*f)(void *), void *data, 
-				  unsigned long *stackend, void **thp)
-{
-  pthread_t naya;
-  pthread_closure *cl = scheme_malloc(sizeof(pthread_closure));
-
-  cl->f = f;
-  cl->data = data;
-  cl->stackend = stackend;
-
-  sem_init(&cl->go_sema, 0, 0);
-  sem_init(&cl->stackset_sema, 0, 0);
-
-  /* weird trick: as long as the thread's stack is needed, cl will be
-     on it, so let GC decide whether the stack is active and therefore
-     whether "stack" is still active. */
-
-  pthread_create(&naya, NULL, start_pthread_thread, (void *)cl);
-
-  pthread_detach(naya);
-
-  *thp = (void *)naya;
-
-  sem_post(&cl->go_sema);
-
-  sem_wait(&cl->stackset_sema);
-  sem_destroy(&cl->stackset_sema);
-
-#ifdef MZ_KEEP_LOCK_INFO
-  if (!made_printer) {
-    void *th;
-    unsigned long e;
-    made_printer = 1;
-    scheme_pthread_create_thread(print_lock_info, NULL, &e, &th);
-  }
-#endif
-
-}
-
-void scheme_pthread_exit_thread()
-{
-  pthread_exit(0);
-}
-
-void scheme_pthread_break_thread(void *th)
-{
-  pthread_kill((pthread_t)th, SIGMZTHREAD);
-}
-
-Scheme_Thread *scheme_pthread_get_current_thread()
-{
-  return (Scheme_Thread *)pthread_getspecific(cp_key);
-}
-
-void scheme_pthread_set_current_thread(Scheme_Thread *p)
-{
-  pthread_setspecific(cp_key, (void *)p);
-}
-
-void *scheme_pthread_make_mutex()
-{
-  pthread_mutex_t *m;
-  m = (pthread_mutex_t *)scheme_malloc_atomic(sizeof(pthread_mutex_t));
-  pthread_mutex_init(m, NULL);
-
-  return (void *)m;
-}
-
-void scheme_pthread_free_mutex(void *m)
-{
-  pthread_mutex_destroy((pthread_mutex_t *)m);
-}
-
-void scheme_pthread_lock_mutex(void *m)
-{
-  pthread_mutex_lock((pthread_mutex_t *)m);
-}
-
-void scheme_pthread_unlock_mutex(void *m)
-{
-  pthread_mutex_unlock((pthread_mutex_t *)m);
-}
-
-void *scheme_pthread_make_semaphore(int v)
-{
-  sem_t *s;
-  s = (sem_t *)scheme_malloc_atomic(sizeof(sem_t));
-  sem_init(s, 0, v);
-
-  return (void *)s;
-}
-
-void scheme_pthread_free_semaphore(void *s)
-{
-  sem_destroy((sem_t *)s);
-}
-
-int scheme_pthread_semaphore_up(void *s)
-{
-  return !sem_post((sem_t *)s);
-}
-
-int scheme_pthread_semaphore_down_breakable(void *s)
-{
-  int v;
-
-#ifdef MZ_KEEP_LOCK_INFO
-  SCHEME_GET_LOCK();
-  sem_wait_c++;
-  SCHEME_RELEASE_LOCK();
-#endif
-
-#ifdef ___MZ_USE_LINUX_PTHREADS
-  {
-    Scheme_Thread * volatile p = scheme_current_thread;
-
-    if (!scheme_setjmp(p->signal_buf)) {
-      p->jump_on_signal = 1;
-#endif
-
-      v = !sem_wait((sem_t *)s);
-
-#ifdef ___MZ_USE_LINUX_PTHREADS
-      p->jump_on_signal = 0;
-    } else {
-      /* Somehow, the post was consumed, anyway; restore it. */
-      sem_post((sem_t *)s); 
-      v = 0;
-    }
-  }
-#endif
-
-#ifdef MZ_KEEP_LOCK_INFO
-  SCHEME_GET_LOCK();
-  --sem_wait_c;
-  SCHEME_RELEASE_LOCK();
-#endif
-
-  return v;
-}
-
-int scheme_pthread_semaphore_try_down(void *s)
-{
-  return !sem_trywait((sem_t *)s);
-}
-
-#endif /* MZ_USE_PTHREADS */
-
-/****************************************************************/
-
-#ifdef MZ_USE_SOLARIS_THREADS
-
-static thread_key_t cp_key;
-typedef struct {
-  void (*f)(void *);
-  void *data;
-  void *stack;
-} solaris_closure;
-
-static void do_nothing(int ignored)
-{
-  Scheme_Thread *p;
-  p = scheme_current_thread;
-  if (p) {
-    p->break_received = 1;
-    if (p->select_tv) {
-      p->select_tv->tv_sec = 0;
-      p->select_tv->tv_usec = 0;
-    }
-  }
-}
-
-void *scheme_solaris_init_threads(void)
-{
-  if (thr_keycreate(&cp_key, NULL)) {
-    printf("init failed\n");
-    exit(1);
-  }
-
-  MZ_SIGSET(SIGMZTHREAD, do_nothing);
-
-  return (void *)thr_self();
-}
-
-static void *start_solaris_thread(void *cl)
-{
-  sigset(SIGMZTHREAD, do_nothing);
-
-  ((solaris_closure *)cl)->f(((solaris_closure *)cl)->data);
-
-  return NULL;
-}
-
-void scheme_solaris_create_thread(void (*f)(void *), void *data, 
-				  unsigned long *stackend, void **thp)
-{
-  void *stack;
-  size_t size;
-  thread_t naya;
-  solaris_closure *cl = scheme_malloc(sizeof(solaris_closure));
-
-  cl->f = f;
-  cl->data = data;
-
-  if (stackend) {
-    size = 2 * STACK_SAFETY_MARGIN;
-    if (thr_min_stack() > size)
-      size = thr_min_stack();
-    stack = scheme_malloc_atomic(size);
-  
-    *stackend = ((unsigned long)stack) + STACK_SAFETY_MARGIN;
-  } else {
-    stack = NULL;
-    size = 0;
-  }
-
-  cl->stack = stack; /* weird trick: as long as the stack is needed,
-			cl will be on it, so let GC decide whether 
-			the stack is active and therefore whether
-			"stack" is still active. */
-
-  thr_create(stack, size,
-	     start_solaris_thread, (void *)cl, 
-	     THR_SUSPENDED | THR_DETACHED, &naya);
-
-  *thp = (void *)naya;
-  
-  thr_continue(naya);
-}
-
-void scheme_solaris_exit_thread()
-{
-  thr_exit(0);
-}
-
-void scheme_solaris_break_thread(void *th)
-{
-  thr_kill((thread_t)th, SIGMZTHREAD);
-}
-
-Scheme_Thread *scheme_solaris_get_current_thread()
-{
-  Scheme_Thread *p;
-
-  thr_getspecific(cp_key, (void **)&p);
-
-  return p;
-}
-
-void scheme_solaris_set_current_thread(Scheme_Thread *p)
-{
-  thr_setspecific(cp_key, (void *)p);
-}
-
-void *scheme_solaris_make_mutex()
-{
-  mutex_t *m;
-  m = (mutex_t *)scheme_malloc_atomic(sizeof(mutex_t));
-  mutex_init(m, USYNC_THREAD, NULL);
-
-  return (void *)m;
-}
-
-void scheme_solaris_free_mutex(void *m)
-{
-  mutex_destroy(m);
-}
-
-void scheme_solaris_lock_mutex(void *m)
-{
-  mutex_lock(m);
-}
-
-void scheme_solaris_unlock_mutex(void *m)
-{
-  mutex_unlock(m);
-}
-
-void *scheme_solaris_make_semaphore(int v)
-{
-  sema_t *s;
-  s = (sema_t *)scheme_malloc_atomic(sizeof(sema_t));
-  sema_init(s, v, USYNC_THREAD, NULL);
-
-  return (void *)s;
-}
-
-void scheme_solaris_free_semaphore(void *s)
-{
-  sema_destroy(s);
-}
-
-int scheme_solaris_semaphore_up(void *s)
-{
-  return !sema_post((sema_t *)s);
-}
-
-int scheme_solaris_semaphore_down_breakable(void *s)
-{
-  return !sema_wait((sema_t *)s);
-}
-
-int scheme_solaris_semaphore_try_down(void *s)
-{
-  return !sema_trywait((sema_t *)s);
-}
-
-#endif /* MZ_USE_SOLARIS_THREADS */
-
-/****************************************************************/
-
-#ifdef MZ_USE_WIN32_THREADS
-
-typedef struct {
-  long th;
-  HANDLE break_sema;
-} Win32SchemeThread;
-
-typedef struct {
-  void (*f)(void *);
-  void *data;
-  void *stack;
-  HANDLE stack_set;
-  HANDLE thread_go;
-} thread_closure;
-
-static DWORD tls;
-
-void *scheme_win32_init_threads(void)
-{
-  Win32SchemeThread *th = MALLOC_ONE_ATOMIC(Win32SchemeThread);
-
-  tls = TlsAlloc();
-
-  th->th = 0;
-  th->break_sema = NULL; /* use scheme_break_semaphore */
-
-  return th;
-}
-
-static unsigned __stdcall run_win32_thread(void *data)
-{
-  long dummy;
-  thread_closure *cl = (thread_closure *)data;
-
-  cl->stack = (void *)&dummy;
-  
-# ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
-  DllMain(NULL, DLL_THREAD_ATTACH, NULL);
-# endif
-
-  ReleaseSemaphore(cl->stack_set, 1, NULL);
-  WaitForSingleObject(cl->thread_go, INFINITE);
-
-  cl->f(cl->data);
-
-# ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
-  DllMain(NULL, DLL_THREAD_DETACH, NULL);
-# endif
-
-  return 0;
-}
-
-static void free_win32_break_sema(void *th, void *ignored)
-{
-  CloseHandle(((Win32SchemeThread *)th)->break_sema);
-}
-
-void scheme_win32_create_thread(void (*f)(void *), void *data, 
-				unsigned long *stackend, void **thp)
-{
-  Win32SchemeThread *th = MALLOC_ONE_ATOMIC(Win32SchemeThread);
-  thread_closure *cl = MALLOC_ONE(thread_closure);
-  unsigned id;
-
-  cl->f = f;
-  cl->data = data;
-
-  th->break_sema = CreateSemaphore(NULL, 0, 1, NULL);
-  cl->thread_go = th->break_sema;
-  cl->stack_set = stackend ? CreateSemaphore(NULL, 0, 1, NULL) : NULL;
-
-  th->th = _beginthreadex(NULL, 0, run_win32_thread, cl, 0, &id);
-
-  *thp = (void *)th;
-
-  if (stackend) {
-    WaitForSingleObject(cl->stack_set, INFINITE);
-
-# ifdef WINDOWS_FIND_STACK_BOUNDS
-#  ifndef STACK_SAFETY_MARGIN
-#   define STACK_SAFETY_MARGIN 50000
-#  endif
-    *stackend = ((unsigned long)cl->stack + (STACK_SAFETY_MARGIN - 0x100000));
-# else
-    >> not implemented <<
-# endif
-
-    CloseHandle(cl->stack_set);
-  }
-
-  ReleaseSemaphore(cl->thread_go, 1, NULL);
-
-  ResumeThread((HANDLE)th->th);
-
-  scheme_add_finalizer(th, free_win32_break_sema, NULL);
-}
-
-void scheme_win32_exit_thread()
-{
-# ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
-  DllMain(NULL, DLL_THREAD_DETACH, NULL);
-# endif
-
-  _endthreadex(0);
-}
-
-void *scheme_win32_get_break_semaphore(void *th)
-{
-  HANDLE s;
-
-  s = ((Win32SchemeThread *)th)->break_sema;
-  if (!s)
-    s = scheme_break_semaphore;
-
-  return (void *)s;
-}
-
-void scheme_win32_break_thread(void *th)
-{
-  HANDLE s = (HANDLE)scheme_win32_get_break_semaphore(th);
-
-  ReleaseSemaphore(s, 1, NULL);
-}
-
-struct Scheme_Thread *scheme_win32_get_current_thread()
-{
-  return (Scheme_Thread *)TlsGetValue(tls);
-}
-
-void scheme_win32_set_current_thread(struct Scheme_Thread *p)
-{
-  TlsSetValue(tls, (LPVOID)p);
-}
-
-void *scheme_win32_make_mutex()
-{
-  CRITICAL_SECTION *m;
-  m = (CRITICAL_SECTION *)scheme_malloc_atomic(sizeof(CRITICAL_SECTION));
-  InitializeCriticalSection(m);
-
-  return (void *)m;
-}
-
-void scheme_win32_free_mutex(void *m)
-{
-  DeleteCriticalSection((CRITICAL_SECTION *)m);
-}
-
-void scheme_win32_lock_mutex(void *m)
-{
-  EnterCriticalSection((CRITICAL_SECTION *)m);
-}
-
-void scheme_win32_unlock_mutex(void *m)
-{
-  LeaveCriticalSection((CRITICAL_SECTION *)m);
-}
-
-void *scheme_win32_make_semaphore(int init)
-{
-  return (void *)CreateSemaphore(NULL, init, 256, NULL);
-}
-
-void scheme_win32_free_semaphore(void *s)
-{
-  CloseHandle((HANDLE)s);
-}
-
-int scheme_win32_semaphore_up(void *s)
-{
-  return ReleaseSemaphore((HANDLE)s, 1, NULL);
-}
-
-int scheme_win32_semaphore_down_breakable(void *s)
-{
-  int c;
-  HANDLE a[2];
-
-  a[0] = (HANDLE)s;
-  a[1] = scheme_win32_get_break_semaphore((Win32SchemeThread *)scheme_current_thread->thread);
-
-  c = !a[1] ? 1 : 2;
-
-  return WaitForMultipleObjects(c, a, FALSE, INFINITE) == WAIT_OBJECT_0;
-}
-
-int scheme_win32_semaphore_try_down(void *s)
-{
-  return !WaitForSingleObject((HANDLE)s, 0);
-}
-
-#endif /* MZ_USE_WIN32_THREADS */
-
-/****************************************************************/
-
-#ifdef MZ_USE_IRIX_SPROCS
-
-/* Irix sprocs implementation contributed by Fernando D. Mato Mira */
-/* 
-   NOTE TO IMPLEMENTORS:
-   IRIX semaphores are awfully slow to awake a process. 
-   It's better to use ulocks or abilocks, if a count is not really needed.
-   There're are macros in semaphores.h that homogeneize the interfaces
-   for locking, eg:
-
-   SLOW:   slock --> usema_t
-   MEDIUM: ulock --> ulock_t   (good response)
-   QUICK:  qlock --> abilock_t (eats a bit of CPU time, 'cause it spins/nanosleeps)
-
-   --fdmm
-*/
-
-#include <ulocks.h>
-
-static thread_key_t cp_key;
-typedef struct {
-  void (*f)(void *);
-  void *data;
-#ifdef MZ_PRIVATE_SPAWN_MUTEX
-  mutex_t *mutex;
-#endif
-  void *stack;
-} sproc_closure;
-
-void *scheme_sproc_init_threads(void)
-{
-  if (thr_keycreate(&cp_key, NULL)) {
-    printf("init failed\n");
-    exit(1);
-  }
-
-  return (void *)getpid(); /* retrurn the main thread (= current thread) */
-}
-
-static void do_nothing(int ignored)
-{
-  Scheme_Thread *p;
-  p = scheme_current_thread;
-  p->break_received = 1;
-  if (p->select_tv) {
-    p->select_tv->tv_sec = 0;
-    p->select_tv->tv_usec = 0;
-  }
-}
-
-static void start_sproc_thread(void *cl, size_t ignored)
-{
-  sproc_closure *scl = (sproc_closure *)cl;
-
-  sigset(SIGMZTHREAD, do_nothing);
-
-  /* wait until `*stackend' and `*thp' have been set. */
-#ifdef MZ_PRIVATE_SPAWN_MUTEX
-  qlock_1(scl->mutex, "scheme_sproc_mutex_down");
-  freemutex(scl->mutex);
-#else
-  /* (parent does not release the allocation lock */
-  /*  until that is done) */
-  sproc_lock();
-  sproc_unlock();
-#endif
-
-  scl->f(scl->data);
-}
-
-void scheme_sproc_create_thread(void (*f)(void *), void *data, 
-				unsigned long *stackend, void **thp)
-{
-  int naya;
-  void *stack;
-  size_t size;
-  sproc_closure *cl = scheme_malloc(sizeof(sproc_closure));
-
-  cl->f = f;
-  cl->data = data;
-
-  if (stackend) {
-    size = 2 * STACK_SAFETY_MARGIN;
-    stack = scheme_malloc(size); /*scheme_malloc_atomic(size);*/
-    
-    *stackend = ((unsigned long)stack) + STACK_SAFETY_MARGIN;
-  } else {
-    stack = NULL;
-    size = 0;
-  }
-
-  cl->stack = stack; /* weird trick: as long as the stack is needed,
-			cl will be on it, so let GC decide whether 
-			the stack is active and therefore whether
-			"stack" is still active. */
-#ifdef MZ_PRIVATE_SPAWN_MUTEX
-#define SPROCSP sprocsp
-  cl->mutex = newmutex();
-#else
-#define SPROCSP GC_sprocsp_
-  /* I'll deadlock if I call GC-safe unblockproc() before   */
-  /* GC-safe sproc()  completes its housekeeping.           */
-  /* Worse, because of sproc_lock() a process that tries to */
-  /* GC-safely blockproc() before it gets completely        */
-  /* unblockproc'ed will also cause a deadlock.             */
-
-  /* Solution: we call sprocsp_(), which is GC_safe, but   */
-  /*   does not release the allocation lock.               */
-  /*   We could use _GC_unblockproc() then, but it's less  */
-  /*   redundant to just wait for this lock in the child   */ 
-  /*   Hopefully, this will not cause much more contention */
-  /*   with other threads than if we used a separate lock  */
-  /*   just for this.      */
-#endif
-
-  naya = SPROCSP (start_sproc_thread, PR_SALL, (void *)cl, 
-		 (caddr_t)(((char *)stack) + size), 0);
-
-  *thp = (void *)naya;
-
-  /* let thread run, now */
-#ifdef MZ_PRIVATE_SPAWN_MUTEX
-  qunlock_1(cl->mutex, "scheme_sproc_mutex_up");
-#else
-  sproc_unlock();
-#endif
-
-}
-
-void scheme_sproc_exit_thread()
-{
-  exit(0);
-}
-
-void scheme_sproc_break_thread(void *th)
-{
-  kill((int)th, SIGMZTHREAD);
-}
-
-Scheme_Thread *scheme_sproc_get_current_thread()
-{
-  Scheme_Thread *p;
-
-  thr_getspecific(cp_key, (void **)&p);
-
-  return p;
-}
-
-void scheme_sproc_set_current_thread(Scheme_Thread *p)
-{
-  thr_setspecific(cp_key, (void *)p);
-}
-
-void *scheme_sproc_make_semaphore(int v)
-{
-  usema_t *s = usnewsema(semArena, v);
-
-  return (void *)s;
-}
-
-void scheme_sproc_free_semaphore(void *s)
-{
-  usfreesema(s, semArena);
-}
-
-#  ifdef MZ_TASKS
---> Semaphore/lock routines should be revised
-#  endif
-
-int scheme_sproc_semaphore_up(void *s)
-{
-
-  return !seminc((usema_t *)s,"scheme_sproc_semaphore_up");
-}
-
-int scheme_sproc_semaphore_down_breakable(void *s)
-{
-  return (semdec((sema_t *)s,"scheme_sproc_semaphore_down") == 1);
-}
-
-int scheme_sproc_semaphore_try_down(void *s)
-{
-  return (uscpsema((usema_t *)s) == 1);
-}
-
-void *scheme_sproc_make_mutex()
-{
-  mutex_t *s = usnewlock(semArena);
-
-  return (void *)s;
-}
-
-void scheme_sproc_free_mutex(void *s)
-{
-  usfreelock(s, semArena);
-}
-
-int scheme_sproc_mutex_up(void *s)
-{
-
-  return (!uunlock((mutex_t *)s));
-}
-
-int scheme_sproc_mutex_down_breakable(void *s)
-{
-  return (ulock((mutex_t *)s));
-}
-
-int scheme_sproc_mutex_try_down(void *s)
-{
-  return (utrylock((mutex_t *)s));
-}
-
-#endif /* MZ_USE_IRIX_SPROCS */
-
 
 /*========================================================================*/
 /*                               precise GC                               */

@@ -110,9 +110,7 @@
 Scheme_Object *scheme_eval_waiting;
 Scheme_Object *scheme_multiple_values;
 
-#ifndef MZ_REAL_THREADS
 volatile int scheme_fuel_counter;
-#endif
 
 int scheme_stack_grows_up;
 
@@ -188,9 +186,7 @@ typedef void (*DW_PrePost_Proc)(void *);
     || defined(MACOS_FIND_STACK_BOUNDS) || defined(ASSUME_FIXED_STACK_SIZE) \
     || defined(BEOS_FIND_STACK_BOUNDS) || defined(OSKIT_FIXED_STACK_BOUNDS) \
     || defined(PALM_FIND_STACK_BOUNDS)
-# ifndef MZ_REAL_THREADS
 unsigned long scheme_stack_boundary;
-# endif
 #endif
 
 #ifdef MZ_PRECISE_GC
@@ -364,18 +360,11 @@ scheme_init_eval (Scheme_Env *env)
 /*                   C stack and Scheme stack handling                    */
 /*========================================================================*/
 
-#ifndef MZ_REAL_THREADS
 # define DO_CHECK_FOR_BREAK(p, e) \
 	if (DECREMENT_FUEL(scheme_fuel_counter, 1) <= 0) { \
 	  e scheme_thread_block(0); \
           (p)->ran_some = 1; \
 	}
-#else
-# define DO_CHECK_FOR_BREAK(p, e) \
-	if (DECREMENT_FUEL((p)->fuel_counter, 1) <= 0) { \
-	  e scheme_thread_block_w_thread(0, p); \
-	}
-#endif
 
 Scheme_Object *
 scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
@@ -477,11 +466,7 @@ void scheme_init_stack_check()
     else
       bnd += (STACK_SAFETY_MARGIN - (unsigned long)rl.rlim_cur);
 
-# ifndef MZ_REAL_THREADS
     scheme_stack_boundary = bnd;
-# else
-    scheme_current_thread->stack_end = (void *)bnd;
-# endif
   }
 #endif
 }
@@ -2303,9 +2288,6 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
 
 void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
 {
-#ifdef MZ_REAL_THREADS
-  Scheme_Thread *p = scheme_current_thread;
-#endif
   d->cont_mark_pos = MZ_CONT_MARK_POS;
   d->cont_mark_stack = MZ_CONT_MARK_STACK;
 
@@ -2314,9 +2296,6 @@ void scheme_push_continuation_frame(Scheme_Cont_Frame_Data *d)
 
 void scheme_pop_continuation_frame(Scheme_Cont_Frame_Data *d)
 {
-#ifdef MZ_REAL_THREADS
-  Scheme_Thread *p = scheme_current_thread;
-#endif
   MZ_CONT_MARK_POS = d->cont_mark_pos;
   MZ_CONT_MARK_STACK = d->cont_mark_stack;
 }
@@ -2385,17 +2364,11 @@ void scheme_set_cont_mark(Scheme_Object *key, Scheme_Object *val)
 
 void scheme_temp_dec_mark_depth()
 {
-#ifdef MZ_REAL_THREADS
-  Scheme_Thread *p = scheme_current_thread;
-#endif
   MZ_CONT_MARK_POS -= 2;
 }
 
 void scheme_temp_inc_mark_depth()
 {
-#ifdef MZ_REAL_THREADS
-  Scheme_Thread *p = scheme_current_thread;
-#endif
   MZ_CONT_MARK_POS += 2;
 }
 
@@ -2526,15 +2499,9 @@ static Scheme_Object *do_eval_k(void)
 
  */
 
-#ifdef MZ_REAL_THREADS
-Scheme_Object *
-scheme_do_eval_w_thread(Scheme_Object *obj, int num_rands, Scheme_Object **rands, 
-			 int get_value, Scheme_Thread *p)
-#else
 Scheme_Object *
 scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands, 
 		int get_value)
-#endif
 {
   Scheme_Type type;
   Scheme_Object *v;
@@ -2543,19 +2510,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 #if USE_LOCAL_RUNSTACK
   GC_MAYBE_IGNORE_INTERIOR Scheme_Object **runstack;
 #endif
-#ifndef MZ_REAL_THREADS
-# ifdef REGISTER_POOR_MACHINE
-#  define p scheme_current_thread
-# else
+#ifdef REGISTER_POOR_MACHINE
+# define p scheme_current_thread
+#else
   Scheme_Thread *p = scheme_current_thread;
-# endif
 #endif
 
 #ifdef DO_STACK_CHECK
 # define SCHEME_CURRENT_PROCESS p
-# ifdef MZ_REAL_THREADS
-#  define SCHEME_STACK_BOUNDARY ((unsigned long)p->stack_end)
-# endif
 # include "mzstkchk.h"
   {
     p->ku.k.p1 = (void *)obj;
@@ -3415,10 +3377,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   return v;
 
-#ifndef MZ_REAL_THREADS
-# ifdef REGISTER_POOR_MACHINE
-#  undef p
-# endif
+#ifdef REGISTER_POOR_MACHINE
+# undef p
 #endif
 }
 
@@ -3546,17 +3506,10 @@ Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *e
 					       long shift, Scheme_Object *modidx)
 {
   Scheme_Object *port, *expr;
-#ifdef MZ_REAL_THREADS
-  Scheme_Thread *p = scheme_current_thread;
-#endif
 
   port = scheme_make_sized_string_input_port(SCHEME_STR_VAL(str), -SCHEME_STRLEN_VAL(str));
 
-  expr = scheme_internal_read(port, NULL, 1, scheme_config
-#ifdef MZ_REAL_THREADS
-			      , p
-#endif
-			      );
+  expr = scheme_internal_read(port, NULL, 1, scheme_config);
 
   expr = _scheme_eval_compiled(expr, env);
 

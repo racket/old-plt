@@ -1310,8 +1310,6 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
   memcpy(s + varlen + 1, val, vallen + 1);
   s[varlen] = '=';
 
-  SCHEME_GET_LOCK();
-
 #ifdef MZ_PRECISE_GC
   {
     /* Can't put moveable string into array. */
@@ -1333,8 +1331,6 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
     putenv_str_table = scheme_make_hash_table(SCHEME_hash_string);
 
   scheme_hash_set(putenv_str_table, (Scheme_Object *)var, (Scheme_Object *)s);
-
-  SCHEME_RELEASE_LOCK();
 
 #ifdef GETENV_FUNCTION
   return MSC_IZE(putenv)(s) ? scheme_false : scheme_true;

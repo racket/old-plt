@@ -134,9 +134,6 @@ typedef struct System_Child {
   pid_t id;
   short done;
   int status;
-#ifdef MZ_REAL_THREADS
-  Scheme_Object *sema;
-#endif
   struct System_Child *next;
 } System_Child;
 #endif
@@ -465,8 +462,7 @@ scheme_init_port (Scheme_Env *env)
 #endif
 
 #if defined(FILES_HAVE_FDS)
-# ifndef MZ_REAL_THREADS
-#  ifndef USE_OSKIT_CONSOLE
+# ifndef USE_OSKIT_CONSOLE
   /* Set up a pipe for signalling external events: */
   {
     int fds[2];
@@ -477,7 +473,6 @@ scheme_init_port (Scheme_Env *env)
       fcntl(put_external_event_fd, F_SETFL, MZ_NONBLOCKING);
     }
   }
-#  endif
 # endif
 #endif
 
@@ -876,10 +871,6 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->read_handler = NULL;
   ip->count_lines = 0;
 
-#ifdef MZ_REAL_THREADS
-  ip->sema = scheme_make_sema(1);
-#endif
-
   if (must_close) {
     Scheme_Custodian_Reference *mref;    
     mref = scheme_add_managed(NULL,
@@ -957,10 +948,6 @@ scheme_make_output_port(Scheme_Object *subtype,
   op->write_handler = NULL;
   op->print_handler = NULL;
 
-#ifdef MZ_REAL_THREADS
-  op->sema = scheme_make_sema(1);
-#endif
-
   if (must_close) {
     Scheme_Custodian_Reference *mref;
     mref = scheme_add_managed(NULL,
@@ -974,36 +961,6 @@ scheme_make_output_port(Scheme_Object *subtype,
   return op;
 }
 
-#ifdef MZ_REAL_THREADS
-
-# define BEGIN_LOCK_PORT(sema) \
-	{ mz_jmp_buf savebuf; \
-	  ADD_PORT_LOCK() \
-	  scheme_wait_sema(sema, 0); \
-	  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf)); \
-	  if (scheme_setjmp(scheme_error_buf)) { \
-		scheme_post_sema(sema); \
-		scheme_longjmp(savebuf, 1); \
-	  } else {
-# define END_LOCK_PORT(sema) \
-	  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf)); \
-	  SUB_PORT_LOCK() \
-	  scheme_post_sema(sema); } }
-
-# ifdef MZ_KEEP_LOCK_INFO
-int scheme_port_lock_c;
-#  define ADD_PORT_LOCK() SCHEME_GET_LOCK(); scheme_port_lock_c++; SCHEME_RELEASE_LOCK();
-#  define SUB_PORT_LOCK() SCHEME_GET_LOCK(); --scheme_port_lock_c; SCHEME_RELEASE_LOCK();
-# else
-#  define ADD_PORT_LOCK() /* empty */
-#  define SUB_PORT_LOCK() /* empty */
-# endif
-
-#else
-# define BEGIN_LOCK_PORT(sema) /* empty */
-# define END_LOCK_PORT(sema) /* empty */
-#endif
-
 int
 scheme_getc(Scheme_Object *port)
 {
@@ -1013,8 +970,6 @@ scheme_getc(Scheme_Object *port)
   SCHEME_USE_FUEL(1);
 
   ip = (Scheme_Input_Port *)port;
-
-  BEGIN_LOCK_PORT(ip->sema);
 
   if (ip->ungotten_count)
     c = ip->ungotten[--ip->ungotten_count];
@@ -1065,8 +1020,6 @@ scheme_getc(Scheme_Object *port)
     }
   }
 
-  END_LOCK_PORT(ip->sema);
-
   return c;
 }
 
@@ -1110,8 +1063,6 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
   orig_size = size;
   
   ip = (Scheme_Input_Port *)port;
-
-  BEGIN_LOCK_PORT(ip->sema);
 
   CHECK_PORT_CLOSED("#<primitive:get-port-char>", "input", port, ip->closed);
 
@@ -1195,10 +1146,6 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       
       pipe = (Scheme_Pipe *)ip->port_data;
 
-#ifdef MZ_REAL_THREADS
-      SCHEME_LOCK_MUTEX(pipe->change_mutex);
-#endif
-
       if (pipe->bufstart != pipe->bufend) {
 	if (pipe->bufstart > pipe->bufend) {
 	  int n;
@@ -1225,10 +1172,6 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
 
 	scheme_pipe_did_read(pipe);
       }
-
-#ifdef MZ_REAL_THREADS
-      SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
 
       if (size)
 	use_getc = 1;
@@ -1376,8 +1319,6 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
     }
   }
 
-  END_LOCK_PORT(ip->sema);
-
   /************************************/
   /* `read-string' on a generic port? */
   /************************************/
@@ -1411,8 +1352,6 @@ int scheme_peekc(Scheme_Object *port)
   } else {
     int ch;
     
-    BEGIN_LOCK_PORT(ip->sema);
-    
     if (ip->ungotten_count)
       ch = ip->ungotten[ip->ungotten_count - 1];
     else if (ip->ungotten_special) {
@@ -1429,8 +1368,6 @@ int scheme_peekc(Scheme_Object *port)
       f = ip->peekc_fun;
       ch = f(ip);
     }
-
-    END_LOCK_PORT(ip->sema);
 
     return ch;
   }
@@ -1487,8 +1424,6 @@ scheme_ungetc (int ch, Scheme_Object *port)
 
   ip = (Scheme_Input_Port *)port;
 
-  BEGIN_LOCK_PORT(ip->sema);
-
   CHECK_PORT_CLOSED("#<primitive:peek-port-char>", "input", port, ip->closed);
 
   if (ch == SCHEME_SPECIAL) {
@@ -1526,8 +1461,6 @@ scheme_ungetc (int ch, Scheme_Object *port)
     /* If you back up over two lines, then lineNumber and column will be wrong. */
   } else if (ch == '\t')
     ip->column = ip->oldColumn;
-
-  END_LOCK_PORT(ip->sema);
 }
 
 int
@@ -1537,8 +1470,6 @@ scheme_char_ready (Scheme_Object *port)
   int retval;
 
   ip = (Scheme_Input_Port *)port;
-
-  BEGIN_LOCK_PORT(ip->sema);
 
   if (scheme_internal_checking_char && ip->closed) {
     /* never for real threads... */
@@ -1554,8 +1485,6 @@ scheme_char_ready (Scheme_Object *port)
     retval = f(ip);
   }
 
-  END_LOCK_PORT(ip->sema);
-
   return retval;
 }
 
@@ -1568,8 +1497,6 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
   SCHEME_USE_FUEL(1);
 
   ip = (Scheme_Input_Port *)port;
-
-  BEGIN_LOCK_PORT(ip->sema);
 
   /* Only `read' should call this function. It should ensure that
      there are no ungotten characters, and at least two characters
@@ -1639,8 +1566,6 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
   ip->column += pos_delta;
   ip->charsSinceNewline += pos_delta;
 
-  END_LOCK_PORT(ip->sema);
-
   return val;
 }
 
@@ -1670,13 +1595,9 @@ scheme_tell (Scheme_Object *port)
 
   ip = (Scheme_Input_Port *)port;
 
-  BEGIN_LOCK_PORT(ip->sema);
-
   CHECK_PORT_CLOSED("#<primitive:get-file-position>", "input", port, ip->closed);
 
   pos = ip->position;
-
-  END_LOCK_PORT(ip->sema);
 
   return pos;
 }
@@ -1692,13 +1613,9 @@ scheme_tell_line (Scheme_Object *port)
   if (!ip->count_lines || (ip->position < 0))
     return -1;
 
-  BEGIN_LOCK_PORT(ip->sema);
-
   CHECK_PORT_CLOSED("#<primitive:get-file-line>", "input", port, ip->closed);
 
   line = ip->lineNumber;
-
-  END_LOCK_PORT(ip->sema);
 
   return line;
 }
@@ -1714,13 +1631,9 @@ scheme_tell_column (Scheme_Object *port)
   if (!ip->count_lines || (ip->position < 0))
     return -1;
 
-  BEGIN_LOCK_PORT(ip->sema);
-
   CHECK_PORT_CLOSED("#<primitive:get-file-column>", "input", port, ip->closed);
 
   col = ip->column;
-
-  END_LOCK_PORT(ip->sema);
 
   return col;
 }
@@ -1738,8 +1651,6 @@ scheme_close_input_port (Scheme_Object *port)
 
   ip = (Scheme_Input_Port *)port;
 
-  BEGIN_LOCK_PORT(ip->sema);
-
   if (!ip->closed) {
     if (ip->mref)
       scheme_remove_managed(ip->mref, (Scheme_Object *)ip);
@@ -1752,8 +1663,6 @@ scheme_close_input_port (Scheme_Object *port)
     ip->ungotten_count = 0;
     ip->ungotten_special = NULL;
   }
-
-  END_LOCK_PORT(ip->sema);
 }
 
 static void
@@ -1771,8 +1680,6 @@ scheme_write_offset_string(const char *str, long d, long len, Scheme_Object *por
 
   op = (Scheme_Output_Port *)port;
 
-  BEGIN_LOCK_PORT(op->sema);
-
   CHECK_PORT_CLOSED("#<primitive:write-port-string>", "output", port, op->closed);
 
   {
@@ -1780,8 +1687,6 @@ scheme_write_offset_string(const char *str, long d, long len, Scheme_Object *por
     f((char *)str, d, len, op);
   }
   op->pos += len;
-
-  END_LOCK_PORT(op->sema);
 }
 
 void 
@@ -1798,13 +1703,9 @@ scheme_output_tell(Scheme_Object *port)
 
   op = (Scheme_Output_Port *)port;
 
-  BEGIN_LOCK_PORT(op->sema);
-
   CHECK_PORT_CLOSED("#<primitive:get-file-position>", "output", port, op->closed);
 
   pos = op->pos;
-
-  END_LOCK_PORT(op->sema);
 
   return pos;
 }
@@ -1815,8 +1716,6 @@ scheme_close_output_port(Scheme_Object *port)
   Scheme_Output_Port *op;
 
   op = (Scheme_Output_Port *)port;
-
-  BEGIN_LOCK_PORT(op->sema);
 
   if (!op->closed) {
     /* call close function first; it might raise an exception */
@@ -1830,8 +1729,6 @@ scheme_close_output_port(Scheme_Object *port)
 
     op->closed = 1;
   }
-
-  END_LOCK_PORT(op->sema);
 }
 
 static void
@@ -4542,16 +4439,6 @@ static int MyPipe(int *ph, int near_index) {
 
 # define WAITANY(s) waitpid((pid_t)-1, s, WNOHANG)
 
-#ifdef MZ_REAL_THREADS
-static void *sigchld_sema;
-# define WAIT_CHILD_LOCK()   SCHEME_SEMA_UP(sigchld_sema)
-# define WAIT_CHILD_UNLOCK() while (!SCHEME_SEMA_DOWN_BREAKABLE(sigchld_sema)) {}
-#else
-/* Single-threaded case: signal blocking implements lock: */
-# define WAIT_CHILD_LOCK()   /* empty */
-# define WAIT_CHILD_UNLOCK() /* empty */
-#endif
-
 #ifdef MZ_PRECISE_GC
 START_XFORM_SKIP;
 #endif
@@ -4574,8 +4461,6 @@ static void child_done(int ingored)
   int status;
   System_Child *sc, *prev;
 
-  WAIT_CHILD_LOCK();
-
   do {
     do {
       result = WAITANY(&status);
@@ -4592,9 +4477,6 @@ static void child_done(int ingored)
 	if (sc->id == result) {
 	  sc->done = 1;
 	  sc->status = status;
-#ifdef MZ_REAL_THREADS
-	  scheme_post_sema(sc->sema);
-#endif
 
 	  if (prev)
 	    prev->next = sc->next;
@@ -4607,8 +4489,6 @@ static void child_done(int ingored)
       }
     }
   } while (result > 0);
-
-  WAIT_CHILD_UNLOCK();
 
 # ifdef SIGSET_NEEDS_REINSTALL
   MZ_SIGSET(SIGCHLD, child_done);
@@ -4628,11 +4508,6 @@ static void init_sigchld(void)
     START_XFORM_SKIP;
     MZ_SIGSET(SIGCHLD, child_done);
     END_XFORM_SKIP;
-
-#ifdef MZ_REAL_THREADS
-    REGISTER_SO(sigchld_sema);
-    sigchld_sema = SCHEME_MAKE_SEMA(1);
-#endif
 
     sigchld_installed = 1;
   }
@@ -5214,11 +5089,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 #endif
     sc->id = 0;
     sc->done = 0;
-#ifdef MZ_REAL_THREADS
-    sc->sema = scheme_make_sema(0);
-#endif
 
-    WAIT_CHILD_LOCK();
     scheme_block_child_signals(1);
 
     pid = fork();
@@ -5269,7 +5140,6 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
     }
 
     scheme_block_child_signals(0);
-    WAIT_CHILD_UNLOCK();
   }
 
   switch (pid)
@@ -5697,19 +5567,6 @@ static void clean_up_wait(long result, OS_SEMAPHORE_TYPE *array,
 }
 #endif
 
-/********************* RealThreads hack  *******************/
-
-#ifdef MZ_REAL_THREADS
-# define CHECK_MZBREAK_SIGNAL(t) { if (scheme_current_thread->break_received) \
-                                      (t)->tv_sec = 0, (t)->tv_usec = 0; \
-                                   scheme_current_thread->select_tv = t; }
-# define DONE_MZBREAK_CHECK() (scheme_current_thread->select_tv = NULL, \
-                               scheme_current_thread->break_received = 0)
-#else
-# define CHECK_MZBREAK_SIGNAL(t) /* empty */
-# define DONE_MZBREAK_CHECK()    /* empty */
-#endif
-
 /******************** Main sleep function  *****************/
 /* The simple select() stuff is buried in Windows/BeOS
    complexity. */
@@ -5731,8 +5588,6 @@ static void default_sleep(float v, void *fds)
     time.tv_sec = (long)v;
     time.tv_usec = (long)(fmod(v, 1.0) * 1000000);
 
-    CHECK_MZBREAK_SIGNAL(&time);
-
     if (external_event_fd) {
       DECL_FDSET(readfds, 1);
 
@@ -5746,7 +5601,6 @@ static void default_sleep(float v, void *fds)
       select(0, NULL, NULL, NULL, &time);
     }
 
-    DONE_MZBREAK_CHECK();
 #else
 # ifndef NO_SLEEP
 #  ifdef USE_BEOS_SNOOZE
@@ -5933,11 +5787,8 @@ static void default_sleep(float v, void *fds)
       MZ_FD_SET(external_event_fd, rd);
 #endif
 
-    CHECK_MZBREAK_SIGNAL(&time);
-
     select(limit, rd, wr, ex, v ? &time : NULL);
 
-    DONE_MZBREAK_CHECK();
 #endif
   }
 

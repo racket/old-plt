@@ -1056,9 +1056,7 @@ int input_port_MARK(void *p) {
   gcMARK(ip->ungotten);
   gcMARK(ip->read_handler);
   gcMARK(ip->mref);
-#ifdef MZ_REAL_THREADS
-  gcMARK(ip->sema);
-#endif
+  gcMARK(ip->output_half);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -1073,9 +1071,7 @@ int input_port_FIXUP(void *p) {
   gcFIXUP(ip->ungotten);
   gcFIXUP(ip->read_handler);
   gcFIXUP(ip->mref);
-#ifdef MZ_REAL_THREADS
-  gcFIXUP(ip->sema);
-#endif
+  gcFIXUP(ip->output_half);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Input_Port));
@@ -1096,9 +1092,7 @@ int output_port_MARK(void *p) {
   gcMARK(op->write_handler);
   gcMARK(op->print_handler);
   gcMARK(op->mref);
-#ifdef MZ_REAL_THREADS
-  gcMARK(op->sema);
-#endif
+  gcMARK(op->input_half);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_Port));
@@ -1113,9 +1107,7 @@ int output_port_FIXUP(void *p) {
   gcFIXUP(op->write_handler);
   gcFIXUP(op->print_handler);
   gcFIXUP(op->mref);
-#ifdef MZ_REAL_THREADS
-  gcFIXUP(op->sema);
-#endif
+  gcFIXUP(op->input_half);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Output_Port));
@@ -1192,10 +1184,6 @@ int thread_val_MARK(void *p) {
   gcMARK(pr->ku.k.p3);
   gcMARK(pr->ku.k.p4);
   
-#ifdef MZ_REAL_THREADS
-  gcMARK(pr->done_sema);
-#endif
-  
   gcMARK(pr->list_stack);
   
   gcMARK(pr->rn_memory);
@@ -1260,10 +1248,6 @@ int thread_val_FIXUP(void *p) {
   gcFIXUP(pr->ku.k.p2);
   gcFIXUP(pr->ku.k.p3);
   gcFIXUP(pr->ku.k.p4);
-  
-#ifdef MZ_REAL_THREADS
-  gcFIXUP(pr->done_sema);
-#endif
   
   gcFIXUP(pr->list_stack);
   
@@ -2096,9 +2080,6 @@ int mark_pipe_MARK(void *p) {
     
   gcMARK(pp->buf);
   gcMARK(pp->wakeup_on_read);
-#ifdef MZ_REAL_THREADS
-  gcMARK(pp->wait_sem);
-#endif
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
@@ -2109,9 +2090,6 @@ int mark_pipe_FIXUP(void *p) {
     
   gcFIXUP(pp->buf);
   gcFIXUP(pp->wakeup_on_read);
-#ifdef MZ_REAL_THREADS
-  gcFIXUP(pp->wait_sem);
-#endif
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));

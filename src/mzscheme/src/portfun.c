@@ -775,13 +775,6 @@ user_close_output (Scheme_Output_Port *port)
 /*                               pipe ports                               */
 /*========================================================================*/
 
-#ifdef MZ_REAL_THREADS
-static do_unlock_mutx(void *m)
-{
-  SCHEME_UNLOCK_MUTEX(m);
-}
-#endif
-
 static int pipe_getc(Scheme_Input_Port *p)
 {
   Scheme_Pipe *pipe;
@@ -789,19 +782,6 @@ static int pipe_getc(Scheme_Input_Port *p)
 
   pipe = (Scheme_Pipe *)(p->port_data);
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(pipe->change_mutex);
-  c = (pipe->bufstart == pipe->bufend && !pipe->eof) ? 0 : 1;
-  if (!c) {
-    pipe->num_waiting++;
-    SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-    SCHEME_SEMA_DOWN(pipe->wait_sem);
-    SCHEME_LOCK_MUTEX(pipe->change_mutex);
-    BEGIN_ESCAPEABLE(do_unlock_mutex, pipe->change_mutex);
-    scheme_thread_block(0);
-    END_ESCAPEABLE();
-  }
-#else
   scheme_current_thread->block_descriptor = PIPE_BLOCKED;
   scheme_current_thread->blocker = (Scheme_Object *)p;
   while (pipe->bufstart == pipe->bufend && !pipe->eof) {
@@ -809,7 +789,6 @@ static int pipe_getc(Scheme_Input_Port *p)
   }
   scheme_current_thread->block_descriptor = NOT_BLOCKED;
   scheme_current_thread->ran_some = 1;
-#endif
 
   if (p->closed) {
     /* Another thread closed the input port while we were waiting. */
@@ -826,10 +805,6 @@ static int pipe_getc(Scheme_Input_Port *p)
   }
 
   scheme_pipe_did_read(pipe);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
 
   return c;
 }
@@ -857,10 +832,6 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
   if (pipe->eof || !len)
     return len + wrote;
 
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(pipe->change_mutex);
-#endif
-
   if (pipe->bufstart <= pipe->bufend) {
     firstn = pipe->buflen - pipe->bufend;
     avail = firstn + pipe->bufstart - 1;
@@ -878,9 +849,6 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
       /* We must block. */
       Scheme_Object *my_sema;
 
-#ifdef MZ_REAL_THREADS
-      SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
       /* First, write as much as seems immediately possible */
       xavail = scheme_pipe_write(str, d, xavail, p, nonblock);
       wrote += xavail;
@@ -892,32 +860,20 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
 
       /* Now, wait until we can write more, then start over. */
       while (1) {
-#ifdef MZ_REAL_THREADS
-	SCHEME_LOCK_MUTEX(pipe->change_mutex);
-#endif
 	if (pipe->bufstart <= pipe->bufend) {
 	  avail = (pipe->buflen - pipe->bufend) + pipe->bufstart - 1;
 	} else {
 	  avail = pipe->bufstart - pipe->bufend - 1;
 	}
-#ifdef MZ_REAL_THREADS
-	SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
 	if (avail || pipe->eof)
 	  goto try_again;
 
 	my_sema = scheme_make_sema(0);
-#ifdef MZ_REAL_THREADS
-	SCHEME_LOCK_MUTEX(pipe->change_mutex);
-#endif
 	{
 	  Scheme_Object *wp;
 	  wp = scheme_make_pair(my_sema, pipe->wakeup_on_read);
 	  pipe->wakeup_on_read = wp;
 	}
-#ifdef MZ_REAL_THREADS
-	SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
 	
 	scheme_wait_sema(my_sema, 0);
       }
@@ -978,14 +934,6 @@ int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int no
 
   pipe->bufend = endpos;
 
-#ifdef MZ_REAL_THREADS
-  if (pipe->num_waiting) {
-    --pipe->num_waiting;
-    SCHEME_SEMA_UP(pipe->wait_sem);
-  }
-  SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
-
   return len + wrote;
 }
 
@@ -1001,15 +949,7 @@ static int pipe_char_ready(Scheme_Input_Port *p)
 
   pipe = (Scheme_Pipe *)(p->port_data);
   
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(pipe->change_mutex);
-#endif
-
   v = (pipe->bufstart != pipe->bufend || pipe->eof);
-
-#ifdef MZ_REAL_THREADS
-  SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
 
   return v;
 }
@@ -1020,22 +960,9 @@ static void pipe_in_close(Scheme_Input_Port *p)
 
   pipe = (Scheme_Pipe *)(p->port_data);
   
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(pipe->change_mutex);
-#endif
-
   pipe->eof = 1;
 
   scheme_pipe_did_read(pipe);
-
-#ifdef MZ_REAL_THREADS
-  while (pipe->num_waiting) {
-    --pipe->num_waiting;
-    SCHEME_SEMA_UP(pipe->wait_sem);
-  }
-
-  SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
 }
 
 static void pipe_out_close(Scheme_Output_Port *p)
@@ -1044,33 +971,8 @@ static void pipe_out_close(Scheme_Output_Port *p)
 
   pipe = (Scheme_Pipe *)(p->port_data);
   
-#ifdef MZ_REAL_THREADS
-  SCHEME_LOCK_MUTEX(pipe->change_mutex);
-#endif
-
   pipe->eof = 1;
-
-#ifdef MZ_REAL_THREADS
-  while (pipe->num_waiting) {
-    --pipe->num_waiting;
-    SCHEME_SEMA_UP(pipe->wait_sem);
-  }
-
-  SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
-#endif
 }
-
-#ifdef MZ_REAL_THREADS
-static void free_semas(void *p, void *ignored)
-{
-  Scheme_Pipe *pipe;
-
-  pipe = (Scheme_Pipe *)p;
-
-  SCHEME_FREE_SEMA(pipe->wait_sem);
-  SCHEME_FREE_MUTEX(pipe->change_mutex);
-}
-#endif
 
 void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int queuelimit)
 {
@@ -1094,13 +996,6 @@ void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int que
   pipe->eof = 0;
   pipe->bufmax = queuelimit;
   pipe->wakeup_on_read = scheme_null;
-#ifdef MZ_REAL_THREADS
-  pipe->num_waiting = 0;
-  pipe->change_mutex = SCHEME_MAKE_MUTEX();
-  pipe->wait_sem = SCHEME_MAKE_SEMA(0);
-
-  scheme_add_finalizer(pipe, free_semas, NULL);
-#endif
 
   readp = _scheme_make_input_port(scheme_pipe_read_port_type,
 				  (void *)pipe,
@@ -1513,11 +1408,7 @@ static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Ob
 
   return scheme_internal_read(argv[0], src,
 			      SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
-			      p->config
-#ifdef MZ_REAL_THREADS
-			      , p
-#endif
-			      );
+			      p->config);
 }
 
 static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
@@ -1543,11 +1434,7 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
 
     return scheme_internal_read(port, NULL,
 				SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
-				p->config
-#ifdef MZ_REAL_THREADS
-				, p
-#endif
-				);
+				p->config);
   }
 }
 
@@ -1604,11 +1491,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 
     return scheme_internal_read(port, src,
 				SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
-				p->config
-#ifdef MZ_REAL_THREADS
-				, p
-#endif
-				);
+				p->config);
   }
 }
 
@@ -1995,7 +1878,6 @@ display_write(char *name,
   if (escape > 0) {
     if (!((Scheme_Output_Port *)port)->display_handler) {
       Scheme_Object *v = argv[0];
-#ifndef MZ_REAL_THREADS
       if (SCHEME_STRINGP(v)) {
 	Scheme_Output_Port *op = (Scheme_Output_Port *)port;
 	int len = SCHEME_STRTAG_VAL(v);
@@ -2006,7 +1888,6 @@ display_write(char *name,
 	}
 	op->pos += len;
       } else
-#endif
 	scheme_internal_display(v, port, config);
     } else {
       Scheme_Object *a[2];
@@ -2100,16 +1981,13 @@ write_char (int argc, Scheme_Object *argv[])
   buffer[0] = SCHEME_CHAR_VAL(argv[0]);
 
   op = (Scheme_Output_Port *)port;
-#ifdef MZ_REAL_THREADS
-  scheme_write_string((char *)buffer, 1, port);
-#else
+
   CHECK_PORT_CLOSED("write-char", "output", port, op->closed);
   {
     Write_String_Fun f = op->write_string_fun;
     f((char *)buffer, 0, 1, op);
   }
   op->pos++;
-#endif
 
   return scheme_void;
 }
@@ -2260,11 +2138,7 @@ static Scheme_Object *do_load_handler(void *data)
 
   while ((obj = scheme_internal_read(port, lhd->stxsrc,
 				     1,
-				     config
-#ifdef MZ_REAL_THREADS
-				     , p
-#endif
-				     )) 
+				     config)) 
 	 && !SCHEME_EOFP(obj)) {
     save_array = NULL;
 

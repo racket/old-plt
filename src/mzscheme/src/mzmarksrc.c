@@ -514,10 +514,6 @@ thread_val {
   gcMARK(pr->ku.k.p3);
   gcMARK(pr->ku.k.p4);
   
-#ifdef MZ_REAL_THREADS
-  gcMARK(pr->done_sema);
-#endif
-  
   gcMARK(pr->list_stack);
   
   gcMARK(pr->rn_memory);
@@ -906,9 +902,6 @@ mark_pipe {
     
   gcMARK(pp->buf);
   gcMARK(pp->wakeup_on_read);
-#ifdef MZ_REAL_THREADS
-  gcMARK(pp->wait_sem);
-#endif
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));

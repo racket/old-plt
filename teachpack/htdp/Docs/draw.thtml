@@ -21,6 +21,8 @@ draws a disk at posn with given radius and color
 draws a rectangle at posn with given width, height, and color
 <li><code> draw-solid-line</code> : Posn Posn Symbol -> true; <br>
 draws a line from one posn to other
+<li><code> draw-solid-string</code> : Posn String -> true; <br>
+draws a string at posn
 <li><code> wait-for-mouse-click</code> : -> Posn; <br>
 waits for the user to click on the mouse, within the window (the operation 
 is a quasi-constructor for posns)
@@ -51,7 +53,8 @@ Applying the functions to any other symbol triggers an error.
 <br>
 <br>
 The teachpack also provides <code>clear-</code> operations for each
-<code>draw-</code> operation. The arguments are the same. 
+<code>draw-</code> operation. The arguments are the same. Note: use
+<code>clear-rectangle</code> instead of <code>clear-string</code> for now.
 <br>
 <br>
 <br>

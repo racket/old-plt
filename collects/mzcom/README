@@ -49,6 +49,13 @@ COM environments.  MzCOM is compiled as a "dual-mode"
 class, meaning its methods may be called directly or by
 using OLE Automation.
 
+To access collections from MzCOM, evaluate 
+
+  (current-library-collection-paths '("<dir1>" ...))
+
+to tell MzCOM where to find collections.
+
+
 Methods
 -------
 
@@ -90,3 +97,10 @@ Contact us
 
 If you need more information on using MzCOM, please 
 contact us at scheme@cs.rice.edu.
+
+Acknowledgements
+----------------
+
+MzCOM was developed in response to a query by 
+Andre Van Meulebrouck.  Andre also did extensive 
+testing with Visual BASIC.

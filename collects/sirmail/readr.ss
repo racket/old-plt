@@ -1735,7 +1735,7 @@
           (define/private (update-min-width)
             (let-values ([(w h d s) (send (get-dc) get-text-extent message font)])
               (min-width (inexact->exact (ceiling w)))))
-          (super-instantiate ())
+          (super-new (style '(transparent)))
           (update-min-width)
           (inherit stretchable-width)
 	  (horiz-margin 2)

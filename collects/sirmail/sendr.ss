@@ -201,6 +201,7 @@
       (define (get-enclosure-type-and-encoding filename mailer-frame)
         (let ([types '("application/postscript"
                        "text/plain"
+                       "text/html"
                        "image/jpeg"
                        "image/gif"
                        "image/png"
@@ -243,10 +244,11 @@
 				 (send type-list set-selection (findpos types t))
 				 (send encoding-list set-selection (findpos encodings e))
                                  (send inline-check set-value inline?)))]
-                    [suffix (let ([m (regexp-match "[.](.?.?.?)$" (path->string filename))])
+                    [suffix (let ([m (regexp-match #rx"[.](.*)$" (path->string filename))])
                               (and m (cadr m)))])
                 (case (if suffix (string->symbol suffix) '???)
                   [(txt ss scm) (default "text/plain" "quoted-printable" #f)]
+                  [(htm html) (default "text/html" "quoted-printable" #f)]
                   [(ps) (default "application/postscript" "base64" #f)]
                   [(jpeg jpg) (default "image/jpeg" "base64" #t)]
                   [(png) (default "image/png" "base64" #t)]
@@ -626,7 +628,8 @@
 		(send message-editor insert body)
 		(if (string=? to "")
 		    (send message-editor set-position (send message-editor paragraph-end-position 0))
-		    (send message-editor set-position message-start)))))
+		    (send message-editor set-position message-start)))
+	      (send message-editor clear-undos)))
 
 	(send message-editor set-modified #f)
 	(send message-editor scroll-to-position 0)

@@ -28,14 +28,14 @@
 <li> <code>make-text : str -> gui-item</code> 
      <br>to create an item (with label) that allows users to enter text
 
-<li> <code>get-text : gui-item[text%] -> str</code> 
+<li> <code>text-contents : gui-item[text%] -> str</code> 
      <br>to determine the contents of a text field 
 
 <li> <code>make-choice : (listof str) -> gui-item</code> 
      <br>to create a choice menu that permits users to choose from some
      string alternatives 
 
-<li> <code>get-choice : gui-item[choice%] -> num</code> 
+<li> <code>choice-index : gui-item[choice%] -> num</code> 
      <br>to determine which choice is currently selected in a choice-item 
      <br>the result is the 0-based index in the choice menu 
 

@@ -196,8 +196,9 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
 	} else
 	  return table->vals[h];
       } else if (SAME_PTR(tkey, GONE)) {
-	if (set && (useme < 0)) {
+	if (set > 1) {
 	  useme = h;
+	  set = 1;
 	}
       } 
       h = (h + h2) % size;
@@ -235,10 +236,10 @@ static Scheme_Object *do_hash(Scheme_Hash_Table *table, Scheme_Object *key, int 
 
     goto rehash_key;
   } else {
-    table->count++;
     table->mcount++;
   }
 
+  table->count++;
   table->keys[h] = key;
   table->vals[h] = val;
 

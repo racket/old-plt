@@ -1150,8 +1150,7 @@ static int propagate_all_mpages()
 	for (j = 0; j < MAP_SIZE; j++) {
 	  page = map + j;
 	  if (page->type && (page->type & GRAY_BIT)) {
-	    page->type -= GRAY_BIT;
-	    page->type |= BLACK_BIT;
+	    page->type = ((page->type & TYPE_MASK) | BLACK_BIT);
 	    if (!(page->type & MTYPE_ATOMIC)) {
 	      long p;
 
@@ -1266,7 +1265,7 @@ static void compact_tagged_mpage(void **p, MPage *page)
 
   if (!to_near) {
     /* Nothing left in here. Reset color to white: */
-    page->type = page->type & TYPE_MASK;
+    page->type = (page->type & TYPE_MASK);
     printf("t: %lx [all=%d] -> %lx [%d,%d]\n", 
 	   (long)startp, offset,
 	   (long)dest, dest_start_offset, dest_offset);
@@ -1358,7 +1357,7 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
   if (!to_near) {
     /* Nothing left in here. Reset color to white: */
-    page->type = page->type & TYPE_MASK;
+    page->type = (page->type & TYPE_MASK);
     printf("u: %lx -> %lx [all]\n", (long)startp, (long)dest);
   }
 }
@@ -1477,6 +1476,7 @@ static void fixup_tagged_mpage(void **p, MPage *page)
 	fflush(NULL);
 	*(int *)0x0 = 1;
       }
+      prev_var_stack = prev_ptr;
       prev_ptr = p;
 #endif
 
@@ -1540,7 +1540,7 @@ static void fixup_tagged_array_mpage(void **p, MPage *page)
     tag = *(Type_Tag *)mp;
 
     traverse = tag_table[tag];
-    elem_size = traverse(mp, mark);
+    elem_size = traverse(mp, move);
     mp += elem_size;
     for (i = elem_size; i < size; i += elem_size, mp += elem_size)
       traverse(mp, move);
@@ -1749,19 +1749,6 @@ static void mark_roots(Mark_Proc mark)
   int i;
 
 #if KEEP_FROM_PTR
-  mark_source = FROM_STACK;
-#endif
-
-  GC_mark_variable_stack(GC_variable_stack,
-			 0,
-			 (void *)(GC_get_thread_stack_base
-				  ? GC_get_thread_stack_base()
-				  : stack_base),
-			 mark);
-
-  PRINTTIME((STDERR, "gc: stack: %ld\n", GETTIMEREL()));
-
-#if KEEP_FROM_PTR
   mark_source = FROM_ROOT;
 #endif
 
@@ -1774,6 +1761,19 @@ static void mark_roots(Mark_Proc mark)
       s++;
     }
   }
+
+#if KEEP_FROM_PTR
+  mark_source = FROM_STACK;
+#endif
+
+  GC_mark_variable_stack(GC_variable_stack,
+			 0,
+			 (void *)(GC_get_thread_stack_base
+				  ? GC_get_thread_stack_base()
+				  : stack_base),
+			 mark);
+
+  PRINTTIME((STDERR, "gc: stack: %ld\n", GETTIMEREL()));
 
 #if KEEP_FROM_PTR
   mark_source = FROM_IMM;

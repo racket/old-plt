@@ -1184,7 +1184,7 @@
   (define (translate-for init cond incr body src type-recs)
     (let ((loop `(let/ec loop-k
                    (let loop ((continue? #f))
-                     (when continue? ,@incr)
+                     (when continue? ,@(if (null? incr) '((void)) incr))
                      (when ,cond 
                        ,body
                        ,@incr

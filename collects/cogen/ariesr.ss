@@ -167,16 +167,17 @@
 		   v))]
 
 	    [(z:top-level-varref? expr)
-	      (let ((v (z:varref-var expr)))
-		(if (signal-undefined)
-		  (wrap expr
-		    `(#%if (#%eq? ,v ,the-undefined-value)
-		       (#%raise (,make-undefined
-				  ,(format undefined-error-format v)
-				  ((#%debug-info-handler))
-				  (#%quote ,v)))
-		       ,v))
-		  (wrap expr (z:varref-var expr))))]
+	     (check-for-keyword expr)
+	     (let ((v (z:varref-var expr)))
+	       (if (signal-undefined)
+		   (wrap expr
+			 `(#%if (#%eq? ,v ,the-undefined-value)
+			   (#%raise (,make-undefined
+				     ,(format undefined-error-format v)
+				     ((#%debug-info-handler))
+				     (#%quote ,v)))
+			   ,v))
+		   (wrap expr (z:varref-var expr))))]
 
 	    [(z:app? expr)
 	      (let* ([aries:app-arg (gensym 'aries:app-arg)]

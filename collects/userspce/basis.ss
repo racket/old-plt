@@ -563,11 +563,13 @@
 	      [(beginner) zodiac:beginner-vocabulary]
 	      [(intermediate) zodiac:intermediate-vocabulary]
 	      [(advanced) zodiac:advanced-vocabulary]
-	      [(mzscheme-debug) zodiac:scheme-vocabulary]
-	      [(mred-debug) (zodiac:get-mred-vocabulary)]
+	      [(mzscheme-debug mred-debug) zodiac:scheme-vocabulary]
 	      [else (error 'init "bad vocabulary spec: ~a ~e"
 			   (setting-vocabulary-symbol setting) setting)])))
-	  (zodiac:reset-previous-attribute #f))
+	  (zodiac:reset-previous-attribute 
+	   #f
+	   (eq? (setting-vocabulary-symbol setting)
+		'mred-debug)))
 	
 	(read-case-sensitive (setting-case-sensitive? setting))
 

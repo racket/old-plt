@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.54 1999/04/22 21:09:27 mflatt Exp $
+; $Id: scm-core.ss,v 1.55 1999/04/22 21:42:33 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -157,21 +157,6 @@
     (create-vocabulary 'scheme-vocabulary
 		       common-vocabulary))
 
-  (define mred-vocabulary #f)
-  (define (get-mred-vocabulary)
-    (or mred-vocabulary
-	(let ([v (create-vocabulary 'mred-vocabulary
-				    scheme-vocabulary)]
-	      [e (with-input-from-file
-		     (build-path (collection-path "mred") "sig.ss")
-		   read)]
-	      [loc (make-location 0 0 0 "inlined")])
-	  (scheme-expand (structurize-syntax e (make-zodiac #f loc loc))
-			 'previous
-			 v)
-	  (set! mred-vocabulary v)
-	  v)))
-
   (define (check-for-signature-name expr attributes)
     (let ([sig-space (get-attribute attributes 'sig-space)])
       (when sig-space
@@ -309,10 +294,32 @@
 
   (define previous-attribute (make-attributes))
 
-  (define (reset-previous-attribute top?)
+  (define mred-signature #f)
+
+  (define (get-mred-signature attributes)
+    (unless mred-signature
+      (let ([v (create-vocabulary 'mred-vocabulary
+				  scheme-vocabulary)]
+	    [e (with-input-from-file
+		   (build-path (collection-path "mred") "sig.ss")
+		 read)]
+	    [loc (make-location 0 0 0 "inlined")])
+	(scheme-expand (structurize-syntax e (make-zodiac #f loc loc))
+		       attributes
+		       v)
+	(let ([sig-space (get-attribute attributes 'sig-space void)])
+	  (set! mred-signature (hash-table-get sig-space 'mred^ void)))))
+    mred-signature)
+  
+  (define (reset-previous-attribute top? mred?)
     (set! previous-attribute (make-attributes))
     (when top?
-      (put-attribute previous-attribute 'top-levels (make-hash-table))))
+      (put-attribute previous-attribute 'top-levels (make-hash-table)))
+    (when mred?
+      (let ([sig (get-mred-signature previous-attribute)]
+	    [ss (make-hash-table)])
+	(put-attribute previous-attribute 'sig-space ss)
+	(hash-table-put! ss 'mred^ sig))))
   
   (define (reset-internal-attributes attr)
     (set-top-level-status attr #t)

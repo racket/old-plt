@@ -170,13 +170,13 @@ node-bundle-snip%
              (cond
                [(is-a? contents leaf-bundle%)
                 (let ([snip (make-object leaf-bundle-snip% contents)])
-                  (send view insert snip)
+                  (send view insert snip 0 0)
                   snip)]
                [(is-a? contents node-bundle%)
                 (let ([snip (make-object node-bundle-snip%
                                          contents
                                          (map loop (send contents get-children)))])
-                  (send view insert snip)
+                  (send view insert snip 0 0)
                   snip)]
                [else (error 'create-view "fell off cond: ~e~n" contents)])))])
       (public
@@ -194,27 +194,28 @@ node-bundle-snip%
         [bundle-changed
          (lambda ()
            (unless (null? views)
-             (let ([f
-                    (lambda (calc-size)
-                      (lambda (view)
-                        
-                        (let ([old-snips
-                               (let loop ([snip (send view find-first-snip)])
-                                 (if snip
-                                     (cons snip (loop (send snip next)))
-                                     null))])
-                          
-                          ;; delete the old snips (why does this break things?)
-                          (for-each
-                           (lambda (snip) (send view delete snip))
-                           old-snips)
-                          
-                          ;; build new ones
-                          (send view set-contents-snip (build-view-contents view))
-                          (calc-size view)
-                          (position-snips view))))])
+             (let ([update-view
+		    (lambda (view)
+		      
+		      '(send view begin-edit-sequence)
+		      (let ([old-snips
+			     (let loop ([snip (send view find-first-snip)])
+			       (if snip
+				   (cons snip (loop (send snip next)))
+				   null))])
+			
+			;; delete the old snips (why does this break things?)
+			(for-each
+			 (lambda (snip) (send view delete snip))
+			 old-snips)
+			
+			;; build new ones
+			(send view set-contents-snip (build-view-contents view))
+			(calculate-tree-size view)
+			(position-snips view))
+		      '(send view end-edit-sequence))])
                
-               (for-each (f calculate-tree-size) views))))])
+               (for-each update-view views))))])
       (sequence
         (super-init)
         (send contents traverse
@@ -340,8 +341,8 @@ node-bundle-snip%
       (inherit get-bundle-manager)
       (public
         [add-child
-         (lambda (c)
-           (set! bundle (cons c bundle))
+         (lambda (new-child)
+           (set! children (cons new-child children))
            (send (get-bundle-manager) bundle-changed))])
       (sequence
         (super-init)
@@ -375,18 +376,35 @@ node-bundle-snip%
            (let ([yb (box 0)])
              (get-snip-location snip #f yb #t)
              (unbox yb)))])
-      (inherit invalidate-bitmap-cache)
-      (rename [super-after-select after-select])
+
+
+      (inherit get-focus-snip)
+      (rename [super-on-focus on-focus])
       (override
+	[on-focus
+	 (lambda (on?)
+	   '(cond
+	     [on?
+	      (when (is-a? (get-focus-snip) node-bundle-snip%)
+		(send frame enable-children #t))]
+	     [else
+	      (send frame enable-children #f)])
+	   (super-on-focus on?))]
         [after-select
          (lambda (snip on?)
            (super-after-select snip on?)
            (cond
-             [(not on?) 
+             [(not on?)
               (send frame enable-children #f)]
              [(is-a? snip node-bundle-snip%)
               (send frame enable-children #t)]
-             [else (void)]))]
+             [else (void)]))])
+
+
+
+      (inherit invalidate-bitmap-cache)
+      (rename [super-after-select after-select])
+      (override
 	[after-move-to
 	 (lambda (snip x y dragging)
 	   (invalidate-bitmap-cache))]
@@ -514,38 +532,31 @@ node-bundle-snip%
                              button-panel
                              (lambda x
                                (new-bundle)))]
-        [new-leaf-button (make-object button%
-                           "New Leaf"
-                           button-panel
-                           (lambda x
-                             (new-leaf)))]
-        [new-node-button (make-object button%
-                           "New Node"
-                           button-panel
-                           (lambda x
-                             (new-node)))]
-        [canvas (make-object editor-canvas%
-                  this
-                  text)]
+        [new-leaf-button (make-object button% "New Leaf" button-panel (lambda x (new-leaf)))]
+        [new-node-button (make-object button% "New Node" button-panel (lambda x (new-node)))]
+        [canvas (make-object editor-canvas% this text)]
         
         [new-leaf
          (lambda ()
            (let/ec k
-             (let ([out
-                    (lambda ()
-                      (bell)
-                      (k #f))]
+             (let ([out (lambda () (bell) (k #f))]
                    [snip (send text get-focus-snip)])
+	       (printf "1~n")
                (unless (is-a? snip editor-snip%)
                  (out))
+	       (printf "2~n")
                (let ([pb (send snip get-editor)])
                  (unless (is-a? pb bundle-pasteboard%)
                    (out))
                  (let ([snip (send pb find-next-selected-snip #f)])
+		   (printf "3 ~s~n" (list (not (not snip))
+					  (and snip (is-a? snip node-bundle-snip%))
+					  (not (send pb find-next-selected-snip snip))))
                    (unless (and snip
                                 (is-a? snip node-bundle-snip%)
                                 (not (send pb find-next-selected-snip snip)))
                      (out))
+		   (printf "4~n")
                    (let ([node-bundle (send snip get-bundle)])
                      (send node-bundle add-child (make-object leaf-bundle% '(zzz)))))))))]
         

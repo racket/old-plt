@@ -6,6 +6,7 @@
 (invoke-unit/sig
  (compound-unit/sig
    (import [mred : mred^])
+
    (link
     [core : mzlib:core^ ((require-library "corer.ss"))]
     [framework : framework^ ((require-library "frameworkr.ss" "framework") core mred)]

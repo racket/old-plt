@@ -158,6 +158,43 @@ static int unbundle_symset_fillKind(Scheme_Object *v, const char *where) {
 }
 
 
+static Scheme_Object *smoothingMode_0_sym = NULL;
+static Scheme_Object *smoothingMode_1_sym = NULL;
+static Scheme_Object *smoothingMode_2_sym = NULL;
+
+static void init_symset_smoothingMode(void) {
+  REMEMBER_VAR_STACK();
+  wxREGGLOB(smoothingMode_0_sym);
+  smoothingMode_0_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unsmoothed"));
+  wxREGGLOB(smoothingMode_1_sym);
+  smoothingMode_1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("smoothed"));
+  wxREGGLOB(smoothingMode_2_sym);
+  smoothingMode_2_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("compatible"));
+}
+
+static int unbundle_symset_smoothingMode(Scheme_Object *v, const char *where) {
+  SETUP_VAR_STACK(1);
+  VAR_STACK_PUSH(0, v);
+  if (!smoothingMode_2_sym) WITH_VAR_STACK(init_symset_smoothingMode());
+  if (0) { }
+  else if (v == smoothingMode_0_sym) { READY_TO_RETURN; return 0; }
+  else if (v == smoothingMode_1_sym) { READY_TO_RETURN; return 1; }
+  else if (v == smoothingMode_2_sym) { READY_TO_RETURN; return 2; }
+  if (where) WITH_VAR_STACK(scheme_wrong_type(where, "smoothingMode symbol", -1, 0, &v));
+  READY_TO_RETURN;
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_smoothingMode(int v) {
+  if (!smoothingMode_2_sym) init_symset_smoothingMode();
+  switch (v) {
+  case 0: return smoothingMode_0_sym;
+  case 1: return smoothingMode_1_sym;
+  case 2: return smoothingMode_2_sym;
+  default: return NULL;
+  }
+}
+
 
 
 static wxColour* dcGetTextBackground(wxDC *dc)
@@ -1490,8 +1527,8 @@ static Scheme_Object *os_wxDCGetAntiAlias(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  Bool r;
-  objscheme_check_valid(os_wxDC_class, "get-anti-alias in dc<%>", n, p);
+  int r;
+  objscheme_check_valid(os_wxDC_class, "get-smoothing in dc<%>", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
@@ -1504,21 +1541,21 @@ static Scheme_Object *os_wxDCGetAntiAlias(int n,  Scheme_Object *p[])
   
   
   READY_TO_RETURN;
-  return (r ? scheme_true : scheme_false);
+  return WITH_REMEMBERED_STACK(bundle_symset_smoothingMode(r));
 }
 
 static Scheme_Object *os_wxDCSetAntiAlias(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxDC_class, "set-anti-alias in dc<%>", n, p);
-  Bool x0;
+  objscheme_check_valid(os_wxDC_class, "set-smoothing in dc<%>", n, p);
+  int x0;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
-  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "set-anti-alias in dc<%>"));
+  x0 = WITH_VAR_STACK(unbundle_symset_smoothingMode(p[POFFSET+0], "set-smoothing in dc<%>"));
 
   
   WITH_VAR_STACK(((wxDC *)((Scheme_Class_Object *)p[0])->primdata)->SetAntiAlias(x0));
@@ -2116,8 +2153,8 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-width" " method", (Scheme_Method_Prim *)os_wxDCGetCharWidth, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-height" " method", (Scheme_Method_Prim *)os_wxDCGetCharHeight, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-extent" " method", (Scheme_Method_Prim *)os_wxDCMyTextExtent, 1, 4));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-anti-alias" " method", (Scheme_Method_Prim *)os_wxDCGetAntiAlias, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-anti-alias" " method", (Scheme_Method_Prim *)os_wxDCSetAntiAlias, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-smoothing" " method", (Scheme_Method_Prim *)os_wxDCGetAntiAlias, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-smoothing" " method", (Scheme_Method_Prim *)os_wxDCSetAntiAlias, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-foreground" " method", (Scheme_Method_Prim *)os_wxDCSetTextForeground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-background" " method", (Scheme_Method_Prim *)os_wxDCSetTextBackground, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-pen" " method", (Scheme_Method_Prim *)os_wxDCSetPen, 1, 1));

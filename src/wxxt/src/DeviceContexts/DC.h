@@ -223,8 +223,8 @@ public:
     virtual wxGL *GetGL();
 #endif
 
-    Bool GetAntiAlias();
-    virtual void SetAntiAlias(Bool v);
+    int GetAntiAlias();
+    virtual void SetAntiAlias(int v);
   
     // public data members
     Bool  Colour;
@@ -249,7 +249,7 @@ protected:
     int		 current_text_bgmode;
     wxColour*    current_text_fg;
     wxRegion     *clipping;
-    Bool         anti_alias;
+    int          anti_alias;
     // utilities for internal use
     void  CalcBoundingBox(double x, double y);
     void  ComputeScaleAndOrigin(void);

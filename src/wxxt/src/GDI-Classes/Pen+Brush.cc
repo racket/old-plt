@@ -33,6 +33,10 @@
 #define  Uses_wxBitmap
 #include "wx.h"
 
+#ifdef WX_USE_CAIRO
+# include <cairo.h>
+#endif
+
 #include <math.h>
 
 //-----------------------------------------------------------------------------

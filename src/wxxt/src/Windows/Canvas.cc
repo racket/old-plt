@@ -29,6 +29,7 @@
 
 #define  Uses_XtIntrinsic
 #define  Uses_wxCanvas
+#define  Uses_wxWindowDC
 #define  Uses_wxTypeTree
 #include "wx.h"
 #define  Uses_EnforcerWidget
@@ -428,6 +429,16 @@ void wxCanvas::ChangeToGray(Bool gray)
     XtVaSetValues(X->scroll, XtNforeground, gray ? wxGREY_PIXEL : wxDARK_GREY_PIXEL, NULL);
   }
   wxItem::ChangeToGray(gray);
+}
+
+void wxCanvas::Layout(void)
+{
+#ifdef WX_USE_CAIRO
+  wxWindowDC *dc;
+  dc = GetDC();
+  dc->ReleaseCairoDev(); /* in case resize makes a larger area */
+#endif
+  wxWindow::Layout();
 }
 
 //-----------------------------------------------------------------------------

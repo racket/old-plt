@@ -71,6 +71,8 @@ public:
 
     virtual void ChangeToGray(Bool gray);
 
+    virtual void Layout(void);
+
 private:
     int	h_size, h_units, h_units_per_page,
 	v_size, v_units, v_units_per_page;

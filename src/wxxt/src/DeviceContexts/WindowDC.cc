@@ -48,6 +48,10 @@
 #endif
 #include <X11/Intrinsic.h>
 
+#ifdef WX_USE_CAIRO
+# include <cairo.h>
+#endif
+
 #define  UseXtRegions
 #include "wx_rgn.h"
 
@@ -74,6 +78,11 @@ static int join_style[] = { JoinBevel, JoinMiter, JoinRound };
 static int cap_style[]  = { CapRound, CapProjecting, CapButt, CapNotLast };
 static int fill_rule[]  = { EvenOddRule, WindingRule };
 
+#ifdef WX_USE_CAIRO
+static cairo_line_join_t c_join_style[] = { CAIRO_LINE_JOIN_BEVEL, CAIRO_LINE_JOIN_MITER, CAIRO_LINE_JOIN_ROUND };
+static cairo_line_cap_t c_cap_style[]  = { CAIRO_LINE_CAP_ROUND, CAIRO_LINE_CAP_SQUARE, CAIRO_LINE_CAP_BUTT, CAIRO_LINE_CAP_BUTT };
+#endif
+
 // hatches, used for stippling in any DC
 #include <DeviceContexts/bdiag.xbm>
 #include <DeviceContexts/fdiag.xbm>
@@ -99,6 +108,8 @@ static Pixmap* hatch_bitmaps = NULL;
 #define GETCOLORMAP(x) wx_default_colormap
 
 #define wxMINI_SIZE 8
+
+#define wxPI 3.141592653589793
 
 //-----------------------------------------------------------------------------
 // create and destroy wxWindowDC
@@ -1156,62 +1167,6 @@ void wxWindowDC::CrossHair(double x, double y)
   XDrawLine(DPY, DRAWABLE, PEN_GC, xx, 0, xx, (int)h);
 }
 
-void wxWindowDC::RenderAAPoints(void *pts, int npoints, int mode, Bool outline)
-{
-#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
-  long v;
-  wxColor *c;
-  Picture pic, srcpic;
-  XftColor col;
-
-  if (outline)
-    c = current_pen->GetColour();
-  else
-    c = current_brush->GetColour();
-  col.pixel = c->GetPixel();
-  v = c->Red();
-  col.color.red = (v << 8) | v;
-  v = c->Green();
-  col.color.green = (v << 8) | v;
-  v = c->Blue();
-  col.color.blue = (v << 8) | v;
-  col.color.alpha = 0xFFFF;
-  
-  InitPicture();
-  pic = PICTURE;
-  srcpic = XftDrawSrcPicture(XFTDRAW, &col);
-
-  if (mode == 0) {
-    XRenderCompositeTrapezoids(DPY,
-			       PictOpOver,
-			       srcpic,
-			       pic,
-			       NULL,
-			       0, 0,
-			       (XTrapezoid *)pts,
-			       npoints);
-  } else if (mode == 1) {
-    XRenderCompositeTriFan(DPY,
-			   PictOpOver,
-			   srcpic,
-			   pic,
-			   NULL,
-			   0, 0,
-			   (XPointFixed *)pts,
-			   npoints);
-  } else {
-    XRenderCompositeDoublePoly(DPY,
-			       PictOpOver,
-			       srcpic,
-			       pic,
-			       NULL,
-			       0, 0, 0, 0,
-			       (XPointDouble *)pts,
-			       npoints, EvenOddRule);
-  } 
-#endif
-}
-
 void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, double end)
 {
   int xx, yy, ww, hh;
@@ -1223,6 +1178,46 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     return;
   
   FreeGetPixelCache();
+
+#ifdef WX_USE_CAIRO
+  if (anti_alias) {
+    double pw;
+
+    InitCairoDev();
+
+    start = -start;
+    end = -end;
+    
+    if (SetCairoBrush()) {
+      cairo_save(CAIRO_DEV);
+      cairo_translate(CAIRO_DEV, x, y);
+      cairo_scale(CAIRO_DEV, w, h);
+      cairo_new_path(CAIRO_DEV);
+      cairo_move_to(CAIRO_DEV, 0.5, 0.5);
+      cairo_arc_negative(CAIRO_DEV, 0.5, 0.5, 0.5, start, end);
+      cairo_fill(CAIRO_DEV);
+      cairo_restore(CAIRO_DEV);
+    }
+    
+    pw = SetCairoPen();
+    if (pw) {
+      cairo_matrix_t *m;
+      if (anti_alias < 2)
+	pw = 0;
+      m = cairo_matrix_create();
+      cairo_current_matrix (CAIRO_DEV, m);
+      cairo_translate(CAIRO_DEV, x + pw / 2, y + pw / 2);
+      cairo_scale(CAIRO_DEV, w - pw, h - pw);
+      cairo_new_path(CAIRO_DEV);
+      cairo_arc_negative(CAIRO_DEV, 0.5, 0.5, 0.5, start, end);
+      cairo_set_matrix(CAIRO_DEV, m);
+      cairo_stroke(CAIRO_DEV);
+      cairo_matrix_destroy(m);
+    }
+
+    return;
+  }
+#endif
 
   xw = x + w, yh = y + h;
   
@@ -1249,30 +1244,6 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
   CalcBoundingBox(x + w, y + h);
 }
 
-static double *xftHalfRound(int width, double height)
-  /* Maps integral in [0, width] to heights */
-{
-  int iwidth = width + 1, i;
-  double w2 = (double)width / 2.0, w22, ratio;
-  double *p;
-
-#ifdef MZ_PRECISE_GC
-  p = (double *)GC_malloc_atomic(sizeof(double) * iwidth);
-#else
-  p = new double[iwidth];
-#endif
-
-  ratio = (height / width);
-
-  w22 = w2 * w2;
-
-  for (i = 0; i < iwidth; i++) {
-    p[i] = ratio * sqrt(w22 - ((w2 - i) * (w2 - i)));
-  }
-
-  return p;
-}
-
 void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
 {
   int x1, y1, w1, h1;
@@ -1283,118 +1254,9 @@ void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
   
   FreeGetPixelCache();
 
-#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
+#ifdef WX_USE_CAIRO
   if (anti_alias) {
-
-    x = (x * scale_x) + device_origin_x;
-    y = (y * scale_y) + device_origin_y;
-    w = (w * scale_x);
-    h = (h * scale_y);
-    
-    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
-      int ih = (int)(y + h) - (int)y, i;
-      double iy = floor(y), nx;
-      double *p;
-      XTrapezoid *traps;
-
-      p = xftHalfRound(ih, w);
-    
-# ifdef MZ_PRECISE_GC
-      traps = (XTrapezoid *)GC_malloc_atomic(sizeof(XTrapezoid) * ih);
-# else
-      traps = new XTrapezoid[ih];
-# endif
-
-      nx = x + w/2;
-
-      for (i = 0; i < ih; i++) {
-	traps[i].top = XDoubleToFixed(iy + i);
-	traps[i].bottom = XDoubleToFixed(iy + i + 1);
-	traps[i].left.p1.x = XDoubleToFixed(nx - p[i]);
-	traps[i].left.p1.y = traps[i].top;
-	traps[i].left.p2.x = XDoubleToFixed(nx - p[i+1]);
-	traps[i].left.p2.y = traps[i].bottom;
-	traps[i].right.p1.x = XDoubleToFixed(nx + p[i]);
-	traps[i].right.p1.y = traps[i].top;
-	traps[i].right.p2.x = XDoubleToFixed(nx + p[i+1]);
-	traps[i].right.p2.y = traps[i].bottom;
-      }
-
-      RenderAAPoints(traps, ih, 0, 0);
-    }
-
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
-      double pw;
-      int ih, ipw, cnt, pos, i;
-      double iy, xx, yy, hh, ww, xpw;
-      double *p, *p2;
-      XTrapezoid *traps;
-
-      pw = current_pen->GetWidthF();
-      
-      xx = x;
-      yy = y;
-      ww = w;
-      hh = h;
-
-      if (!pw) {
-	pw = 1.0;
-	ipw = (int)1;
-	xpw = 1.0;
-      } else if ((pw != 1.0) || (scale_x != 1.0) || (scale_y != 1.0)) {
-	xx -= (pw * scale_x) / 2;
-	yy -= (pw * scale_y) / 2;
-	ww += (pw * scale_x);
-	hh += (pw * scale_y);
-	ipw = (int)(pw * scale_y);
-	xpw = pw * scale_x;
-      } else {
-	ipw = (int)pw;
-	xpw = pw;
-      }
-
-      ih = (int)(yy + hh) - (int)yy;
-      iy = floor(yy);
-
-      p = xftHalfRound(ih, ww);
-      p2 = xftHalfRound(ih - 2 * ipw, ww - 2 * xpw);
-    
-      cnt = 2 * (ih - ipw);
-
-# ifdef MZ_PRECISE_GC
-      traps = (XTrapezoid *)GC_malloc_atomic(sizeof(XTrapezoid) * cnt);
-# else
-      traps = new XTrapezoid[cnt];
-# endif
-
-      xx += ww/2;
-      pos = 0;
-
-      for (i = 0; i < ih; i++, pos++) {
-	  traps[pos].top = XDoubleToFixed(iy + i);
-	  traps[pos].bottom = XDoubleToFixed(iy + i + 1);
-	  traps[pos].left.p1.x = XDoubleToFixed(xx - p[i]);
-	  traps[pos].left.p1.y = traps[pos].top;
-	  traps[pos].left.p2.x = XDoubleToFixed(xx - p[i+1]);
-	  traps[pos].left.p2.y = traps[pos].bottom;
-	  traps[pos].right.p1.x = XDoubleToFixed(xx + p[i]);
-	  traps[pos].right.p1.y = traps[pos].top;
-	  traps[pos].right.p2.x = XDoubleToFixed(xx + p[i+1]);
-	  traps[pos].right.p2.y = traps[pos].bottom;
-
-	if ((i >= ipw) && ((ih - i) > ipw)) {
-	  traps[pos + 1] = traps[pos];
-	  traps[pos].right.p1.x = XDoubleToFixed(xx - p2[i-ipw]);
-	  traps[pos].right.p2.x = XDoubleToFixed(xx - p2[i-ipw+1]);
-	  traps[pos+1].left.p1.x = XDoubleToFixed(xx + p2[i-ipw]);
-	  traps[pos+1].left.p2.x = XDoubleToFixed(xx + p2[i-ipw+1]);
-	  pos++;
-	}
-      }
-
-      RenderAAPoints(traps, pos, 0, 1);
-    }
-
+    DrawArc(x, y, w, h, 0, 2 * wxPI);
     return;
   }
 #endif
@@ -1424,135 +1286,22 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
     FreeGetPixelCache();
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
-#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
+#ifdef WX_USE_CAIRO
       if (anti_alias) {
-	double dx1, dy1, dx2, dy2, a, pw;
-	XTrapezoid traps[3];
+	double pw;
 
-	/* Make sure point 1 is above 2 */
-	if (y1 > y2) {
-	  dx1 = x1;
-	  dy1 = y1;
-	  x1 = x2;
-	  y1 = y2;
-	  x2 = dx1;
-	  y2 = dy1;
-	}
+	InitCairoDev();
 	
-	x1 = (x1 * scale_x) + device_origin_x;
-	x2 = (x2 * scale_x) + device_origin_x;
-	y1 = (y1 * scale_y) + device_origin_y;
-	y2 = (y2 * scale_y) + device_origin_y;
+	pw = SetCairoPen();
+	if (anti_alias < 2)
+	  pw = 0;
+	else if (pw > 1)
+	  pw = 1;
 
-	pw = current_pen->GetWidthF();
-	
-	if (y2 == y1) {
-	  /* Simple case: one trapezoid, and no need to int-align */
-	  if (!pw || ((pw == 1.0) && (scale_y == 1.0))) {
-	    dy1 = 0;
-	    dy2 = 1;
-	  } else {
-	    dy1 = (pw * scale_y) / 2;
-	    dy2 = dy1;
-	  }
-	  traps[0].top = XDoubleToFixed(y1 - dy1);
-	  traps[0].bottom = XDoubleToFixed(y2 + dy2);
-	  traps[0].left.p1.x = XDoubleToFixed(x1);
-	  traps[0].left.p2.x = traps[0].left.p1.x;
-	  traps[0].right.p1.x = XDoubleToFixed(x2);
-	  traps[0].right.p2.x = traps[0].right.p1.x;
-	  traps[0].left.p1.y = XDoubleToFixed(0);
-	  traps[0].left.p2.y = XDoubleToFixed(1);
-	  traps[0].right.p1.y = XDoubleToFixed(0);
-	  traps[0].right.p2.y = XDoubleToFixed(1);
-	  RenderAAPoints(traps, 1, 0, 1);
-	} else {
-	  /* Complex case: 1 trapezoid for main part of line,
-	     with ends int-aligned. Then one trapezoid on
-	     each end to finish */
-	  double dydx;
-
-	  if (!pw)
-	    pw = 1;
-	  a = atan2(y2 - y1, x2 - x1);
-	  dx2 = (sin(a) * pw) * scale_x;
-	  dy2 = -(cos(a) * pw) * scale_y;
-	  if (pw == 1.0) {
-	    dx1 = dy1 = 0;
-	  } else {
-	    dx2 /= 2.0;
-	    dy2 /= 2.0;
-	    dx1 = dx2;
-	    dy1 = dy2;
-	  }
-	
-	  if (y1 - dy1 < y1 + dy2) {
-	    traps[0].top = XDoubleToFixed(floor(y1 + dy2));
-	    traps[0].bottom = XDoubleToFixed(floor(y2 - dy1));
-	  } else {
-	    traps[0].top = XDoubleToFixed(floor(y1 - dy1));
-	    traps[0].bottom = XDoubleToFixed(floor(y2 + dy2));
-	  }
-
-	  traps[0].left.p1.x = XDoubleToFixed(x1 - dx1);
-	  traps[0].left.p1.y = XDoubleToFixed(y1 - dy1);
-	  traps[0].left.p2.x = XDoubleToFixed(x2 - dx1);
-	  traps[0].left.p2.y = XDoubleToFixed(y2 - dy1);
-
-	  traps[0].right.p1.x = XDoubleToFixed(x1 + dx2);
-	  traps[0].right.p1.y = XDoubleToFixed(y1 + dy2);
-	  traps[0].right.p2.x = XDoubleToFixed(x2 + dx2);
-	  traps[0].right.p2.y = XDoubleToFixed(y2 + dy2);
-
-	  if (x1 == x2) {
-	    RenderAAPoints(traps, 1, 0, 1);
-	  } else {
-	    traps[1].bottom = traps[0].top;
-	    traps[2].top = traps[0].bottom;
-
-	    dydx = (y2 - y1) / (x1 - x2);
-
-	    if (y1 - dy1 > y1 + dy2) {
-	      traps[1].top = XDoubleToFixed(y1 + dy2);
-
-	      traps[1].left.p1.x = XDoubleToFixed(x1 - dx1);
-	      traps[1].left.p1.y = traps[1].bottom;
-	      traps[1].left.p2.x = XDoubleToFixed(x1 - dx1 + (dydx * (dy1 + dy2)) - 0.5); /* 0.5 steers clear of degeneracy */
-	      traps[1].left.p2.y = traps[1].top;
-
-	      traps[1].right = traps[0].right;
-
-	      traps[2].bottom = XDoubleToFixed(y2 - dy1);
-	      
-	      traps[2].right.p1.x = XDoubleToFixed(x2 + dx2);
-	      traps[2].right.p1.y = traps[2].top;
-	      traps[2].right.p2.x = XDoubleToFixed(x2 + dx2 - (dydx * (dy1 + dy2)) + 0.5); /* 0.5 steers clear of degeneracy */
-	      traps[2].right.p2.y = traps[2].bottom;
-
-	      traps[2].left = traps[0].left;
-	    } else {
-	      traps[1].top = XDoubleToFixed(y1 - dy1);
-
-	      traps[1].right.p1.x = XDoubleToFixed(x1 + dx2);
-	      traps[1].right.p1.y = traps[1].bottom;
-	      traps[1].right.p2.x = XDoubleToFixed(x1 + dx2 - (dydx * (dy1 + dy2)) + 0.5); /* 0.5 steers clear of degeneracy */
-	      traps[1].right.p2.y = traps[1].top;
-
-	      traps[1].left = traps[0].left;
-
-	      traps[2].bottom = XDoubleToFixed(y2 + dy2);
-
-	      traps[2].left.p1.x = XDoubleToFixed(x2 - dx1);
-	      traps[2].left.p1.y = traps[2].top;
-	      traps[2].left.p2.x = XDoubleToFixed(x2 - dx1 + (dydx * (dy1 + dy2)) - 0.5); /* 0.5 steers clear of degeneracy */
-	      traps[2].left.p2.y = traps[2].bottom;
-
-	      traps[2].right = traps[0].right;
-	    }
-	    
-	    RenderAAPoints(traps, 3, 0, 1);
-	  }
-	}
+	cairo_new_path(CAIRO_DEV);
+	cairo_move_to(CAIRO_DEV, x1 + pw / 2, y1 + pw / 2);
+	cairo_line_to(CAIRO_DEV, x2 + pw / 2, y2 + pw / 2);
+	cairo_stroke(CAIRO_DEV);
       } else
 #endif
 	XDrawLine(DPY, DRAWABLE, PEN_GC,
@@ -1566,14 +1315,46 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
 {
   XPoint *xpts;
+  int i;
 
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
 
+  if (!current_pen || (current_pen->GetStyle() == wxTRANSPARENT))
+    return;
+
+  if (n < 2)
+    return;
+
   FreeGetPixelCache();
-    
-  xpts = new XPoint[n];
-  for (int i=0; i<n; ++i) {
+  
+#if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
+  if (anti_alias) {
+    int i;
+    double pw;
+
+    InitCairoDev();
+    pw = SetCairoPen();
+    if (anti_alias == 2) {
+      if (pw > 1)
+	pw = 1;
+      xoff += pw / 2;
+      yoff += pw / 2;
+    }
+
+    cairo_new_path(CAIRO_DEV);
+    cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
+    for (i = 1; i < n; i++) {
+      cairo_line_to(CAIRO_DEV, pts[i].x + xoff, pts[i].y + yoff);
+    }
+    cairo_stroke(CAIRO_DEV);    
+
+    return;
+  }
+#endif
+
+  xpts = new WXGC_ATOMIC XPoint[n];
+  for (i=0; i<n; ++i) {
     short x, y;
     x = XLOG2DEV(pts[i].x + xoff);
     xpts[i].x = x;
@@ -1581,8 +1362,7 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
     xpts[i].y = y;
     CalcBoundingBox(xpts[i].x, xpts[i].y);
   }
-  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-    XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
+  XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
 void wxWindowDC::DrawPoint(double x, double y)
@@ -1606,8 +1386,48 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
     return;
 
   FreeGetPixelCache();
+
+#ifdef WX_USE_CAIRO
+  if (anti_alias) {
+    double pw;
+
+    InitCairoDev();
+    if (SetCairoBrush()) {
+      int i;     
+      
+      cairo_new_path(CAIRO_DEV);
+      cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
+      for (i = 1; i < n; i++) {
+	cairo_line_to(CAIRO_DEV, pts[i].x + xoff, pts[i].y + yoff);
+      }
+      cairo_fill(CAIRO_DEV);    
+    }
+
+    pw = SetCairoPen();
+    if (pw) {
+      int i;
+
+      if (anti_alias == 2) {
+	if (pw > 1)
+	  pw = 1;
+      	xoff += pw / 2;
+	yoff += pw / 2;
+      }
+      
+      cairo_new_path(CAIRO_DEV);
+      cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
+      for (i = 1; i < n; i++) {
+	cairo_line_to(CAIRO_DEV, pts[i].x + xoff, pts[i].y + yoff);
+      }
+      cairo_close_path(CAIRO_DEV);
+      cairo_stroke(CAIRO_DEV);
+    }
+
+    return;
+  }
+#endif
   
-  xpts = new XPoint[n+1];
+  xpts = new WXGC_ATOMIC XPoint[n+1];
   for (int i=0; i<n; ++i) {
     short x, y;
     x = XLOG2DEV(pts[i].x + xoff);
@@ -1636,6 +1456,38 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
 
     FreeGetPixelCache();
     
+#ifdef WX_USE_CAIRO
+    if (anti_alias) {
+      double pw;
+      
+      InitCairoDev();
+      if (SetCairoBrush()) {
+	cairo_new_path(CAIRO_DEV);
+	cairo_move_to(CAIRO_DEV, x, y);
+	cairo_line_to(CAIRO_DEV, x+w, y);
+	cairo_line_to(CAIRO_DEV, x+w, y+h);
+	cairo_line_to(CAIRO_DEV, x, y+h);
+	cairo_fill(CAIRO_DEV);    
+      }
+
+      pw = SetCairoPen();
+      if (pw) {
+	if (anti_alias < 2)
+	  pw = 0;
+
+	cairo_new_path(CAIRO_DEV);
+	cairo_move_to(CAIRO_DEV, x + pw / 2, y + pw / 2);
+	cairo_line_to(CAIRO_DEV, x+w - pw/2, y + pw/2);
+	cairo_line_to(CAIRO_DEV, x+w - pw/2, y+h - pw/2);
+	cairo_line_to(CAIRO_DEV, x + pw/2, y+h - pw/2);
+	cairo_close_path(CAIRO_DEV);
+	cairo_stroke(CAIRO_DEV);
+      }
+
+      return;
+    }
+#endif
+
     xw = x + w, yh = y + h;
    
     x1 = XLOG2DEV(x);
@@ -1664,6 +1516,53 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
     
     if (radius < 0.0)
       radius = - radius * ((w < h) ? w : h);
+
+#ifdef WX_USE_CAIRO
+    if (anti_alias) {
+      double pw;
+      
+      InitCairoDev();
+      if (SetCairoBrush()) {
+	cairo_move_to(CAIRO_DEV, x, y + radius);
+	cairo_line_to(CAIRO_DEV, x, y + h - radius);
+	cairo_arc_negative(CAIRO_DEV, x + radius, y + h - radius, radius, wxPI, 0.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, x + w - radius, y + h);
+	cairo_arc_negative(CAIRO_DEV, x + w - radius, y + h - radius, radius, 0.5 * wxPI, 0);
+	cairo_line_to(CAIRO_DEV, x + w, y + radius);
+	cairo_arc_negative(CAIRO_DEV, x + w - radius, y + radius, radius, 2 * wxPI, 1.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, x + radius, y);
+	cairo_arc_negative(CAIRO_DEV, x + radius, y + radius, radius, 1.5 * wxPI, wxPI);
+	cairo_line_to(CAIRO_DEV, x, y + radius);
+	cairo_fill(CAIRO_DEV);    
+      }
+
+      pw = SetCairoPen();
+      if (pw) {
+	double xx = x, yy = y, ww = w, hh = h;
+	if (anti_alias == 2) {
+	  xx += pw/2;
+	  yy += pw/2;
+	  ww -= pw;
+	  hh -= pw;
+	}
+
+	cairo_move_to(CAIRO_DEV, xx, yy + radius);
+	cairo_line_to(CAIRO_DEV, xx, yy + hh - radius);
+	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + hh - radius, radius, wxPI, 0.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + ww - radius, yy + hh);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + hh - radius, radius, 0.5 * wxPI, 0);
+	cairo_line_to(CAIRO_DEV, xx + ww, yy + radius);
+	cairo_arc_negative(CAIRO_DEV, xx + ww - radius, yy + radius, radius, 2 * wxPI, 1.5 * wxPI);
+	cairo_line_to(CAIRO_DEV, xx + radius, yy);
+	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + radius, radius, 1.5 * wxPI, wxPI);
+	cairo_line_to(CAIRO_DEV, xx, yy + radius);
+	cairo_close_path(CAIRO_DEV);
+	cairo_stroke(CAIRO_DEV);
+      }
+
+      return;
+    }
+#endif
 
     xw = x + w, yh = y + h;
     
@@ -2707,6 +2606,10 @@ void wxWindowDC::SetClippingRegion(wxRegion *r)
   if (clipping)
     clipping->locked++;
 
+#ifdef WX_USE_CAIRO
+  X->reset_cairo_clip = 1;
+#endif
+
   if (r) {
     if (r->rgn) {
       USER_REG = r->rgn;
@@ -2984,7 +2887,7 @@ void wxWindowDC::BeginSetPixel(int mini, int near_i, int near_j)
   X->get_pixel_cache_full = FALSE;
   if (!wx_alloc_color_is_fast || (X->get_pixel_image_cache->depth == 1)) {
     XColor *cols;
-    cols = new XColor[NUM_GETPIX_CACHE_COLORS];
+    cols = new WXGC_ATOMIC XColor[NUM_GETPIX_CACHE_COLORS];
     X->get_pixel_color_cache = cols;
   }
   X->set_a_pixel = FALSE;
@@ -3252,6 +3155,9 @@ void wxWindowDC::GetPixelFast(int i, int j, int *r, int *g, int *b)
   }
 }
 
+/********************************************************************/
+/*                              GL                                  */
+/********************************************************************/
 
 // OpenGL
 #ifdef USE_GL
@@ -3485,4 +3391,82 @@ void wxGLNoContext(void)
   current_gl_context = NULL;
 }
 
+#endif
+
+/********************************************************************/
+/*                         Cairo                                    */
+/********************************************************************/
+
+#ifdef WX_USE_CAIRO
+void wxWindowDC::InitCairoDev()
+{
+  if (!X->cairo_dev) {
+    cairo_t *dev;
+
+    dev = cairo_create();
+    cairo_set_target_drawable(dev, wxAPP_DISPLAY, DRAWABLE);
+    X->cairo_dev = (long)dev;
+    X->reset_cairo_clip = 1;
+  }
+
+  cairo_default_matrix(CAIRO_DEV);
+  cairo_translate(CAIRO_DEV, device_origin_x, device_origin_y);
+  cairo_scale(CAIRO_DEV, scale_x, scale_y);
+  if (X->reset_cairo_clip) {
+    if (clipping)
+      clipping->Install(X->cairo_dev);
+    else
+      cairo_init_clip(CAIRO_DEV);
+    X->reset_cairo_clip = 0;
+  }
+}
+
+void wxWindowDC::ReleaseCairoDev()
+{
+  if (X->cairo_dev) {
+    cairo_destroy(CAIRO_DEV);
+    X->cairo_dev = 0;
+  }
+}
+
+double wxWindowDC::SetCairoPen()
+{
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+    wxColour *c;
+    double pw;
+    int cs, js;
+    
+    c = current_pen->GetColour();
+    cairo_set_rgb_color(CAIRO_DEV, c->Red() / 255.0, c->Green() / 255.0, c->Blue() / 255.0);
+
+    pw = current_pen->GetWidthF();
+    if (!pw) {
+      if (scale_y > scale_x)
+	pw = 1 / scale_x;
+      else
+	pw = 1 / scale_y;
+    }
+    cairo_set_line_width(CAIRO_DEV, pw);
+
+    cs = current_pen->GetCap();
+    cairo_set_line_cap(CAIRO_DEV, c_cap_style[cs]);
+
+    js = current_pen->GetJoin();
+    cairo_set_line_join(CAIRO_DEV, c_join_style[js]);
+
+    return pw;
+  } else
+    return 0.0;
+}
+
+Bool wxWindowDC::SetCairoBrush()
+{
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    wxColour *c;
+    c = current_brush->GetColour();
+    cairo_set_rgb_color(CAIRO_DEV, c->Red() / 255.0, c->Green() / 255.0, c->Blue() / 255.0);
+    return TRUE;
+  } else
+    return FALSE;
+}
 #endif

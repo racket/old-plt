@@ -12,6 +12,14 @@ typedef Region XtRegion;
 typedef void *XtRegion;
 #endif
 
+#if defined(WX_USE_CAIRO)
+# define WX_USE_PATH_RGN
+#endif
+
+#ifdef WX_USE_PATH_RGN
+class wxPathRgn;
+#endif
+
 class wxRegion : public wxObject 
 {
  public:
@@ -24,11 +32,15 @@ class wxRegion : public wxObject
 #ifdef wx_mac
   RgnHandle rgn;
 #endif
+#ifdef WX_USE_PATH_RGN
+  wxPathRgn *prgn;
+  double *geometry;
+#endif
   wxDC *dc;
   wxPSRgn *ps;
-  short is_ps, locked;
+  char is_ps, locked, no_prgn;
 
-  wxRegion(wxDC *dc, wxRegion *r = NULL);
+  wxRegion(wxDC *dc, wxRegion *r = NULL, Bool no_prgn = FALSE);
   ~wxRegion();
 
   inline wxDC *GetDC() { return dc; }
@@ -47,13 +59,20 @@ class wxRegion : public wxObject
   void BoundingBox(double *x, double *y, double *w, double *h);
 
   Bool Empty();
+  Bool ReallyEmpty();
   
   void Cleanup();
 
   /* PS Stuff */
   void Put(const char *s);
   void Put(double d);
+
+#ifdef WX_USE_PATH_RGN
+  void Install(long target);  
+#endif
 };
+
+/************************************************************/
 
 class wxPSRgn : public wxObject
 {
@@ -120,5 +139,99 @@ class wxPSRgn_Diff : public wxPSRgn_Composite
   void DebugPrint() { printf("("); a->DebugPrint(); printf(" \\ "); b->DebugPrint(); printf(")"); }
 #endif
 };
+
+/************************************************************/
+
+#ifdef WX_USE_PATH_RGN
+
+class wxPathRgn : public wxObject
+{
+ public:
+  wxPathRgn();
+  ~wxPathRgn();
+  virtual void Install(long target, Bool reverse) = 0;
+  virtual wxPathRgn *Lift();
+  virtual Bool IsIntersect();
+  int FlattenIntersects(wxPathRgn **l, wxPathRgn *r, int i);
+};
+
+class wxRectanglePathRgn : public wxPathRgn
+{
+ public:
+  double x;
+  double y;
+  double width;
+  double height;
+  wxRectanglePathRgn(double x, double y, double width, double height);
+  virtual void Install(long target, Bool reverse);
+};
+
+class wxRoundedRectanglePathRgn : public wxPathRgn
+{
+ public:
+  double x;
+  double y;
+  double width;
+  double height;
+  double radius;
+  wxRoundedRectanglePathRgn(double x, double y, double width, double height, double radius);
+  virtual void Install(long target, Bool reverse);
+};
+
+class wxPolygonPathRgn : public wxPathRgn
+{
+ public:
+  int n;
+  wxPoint *points;
+  double xoffset;
+  double yoffset;
+  int fillStyle;
+  wxPolygonPathRgn(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, 
+		   int fillStyle=wxODDEVEN_RULE);
+  virtual void Install(long target, Bool reverse);
+};
+
+class wxArcPathRgn : public wxPathRgn
+{
+ public:
+  double x;
+  double y;
+  double w;
+  double h;
+  double start;
+  double end;
+  wxArcPathRgn(double x, double y, double w, double h, double start, double end);
+  virtual void Install(long target, Bool reverse);
+};
+
+class wxUnionPathRgn : public wxPathRgn
+{
+ public:
+  wxPathRgn *a, *b;
+  wxUnionPathRgn(wxPathRgn *f, wxPathRgn *s);
+  virtual void Install(long target, Bool reverse);
+  virtual wxPathRgn *Lift();
+};
+
+class wxIntersectPathRgn : public wxPathRgn
+{
+ public:
+  wxPathRgn *a, *b;
+  wxIntersectPathRgn(wxPathRgn *f, wxPathRgn *s);
+  virtual void Install(long target, Bool reverse);
+  virtual wxPathRgn *Lift();
+  virtual Bool IsIntersect();
+};
+
+class wxDiffPathRgn : public wxPathRgn
+{
+ public:
+  wxPathRgn *a, *b;
+  wxDiffPathRgn(wxPathRgn *f, wxPathRgn *s);
+  virtual void Install(long target, Bool reverse);
+  virtual wxPathRgn *Lift();
+};
+
+#endif
 
 #endif

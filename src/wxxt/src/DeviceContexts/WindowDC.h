@@ -63,6 +63,10 @@ public:
 #ifdef WX_USE_XRENDER
     long picture; /* If WX_USE_XFT, picture is actually an XftDraw* */
 #endif
+#ifdef WX_USE_CAIRO
+    long cairo_dev;
+    char reset_cairo_clip;
+#endif
     Window       draw_window;
     unsigned int width, height, depth;
     wxWindow     *owner;
@@ -103,6 +107,7 @@ public:
 #  define TO_PICTURE(x)   ((Picture)x)
 #  define PICTURE         ((Picture)X->picture)
 # endif
+#define CAIRO_DEV       ((cairo_t *)X->cairo_dev)
 #else // not implementation but use!
 class wxWindowDC_Xinit;
 class wxWindowDC_Xintern;
@@ -176,14 +181,19 @@ public:
 
     virtual Bool Ok(void);
 
-    void RenderAAPoints(void *pts, int npoints, int mode, Bool outline);
-
 #ifdef WX_USE_XRENDER
     virtual void InitPicture();
 #endif
 
 #ifdef USE_GL
     virtual wxGL *GetGL();
+#endif
+
+#ifdef WX_USE_CAIRO
+    void InitCairoDev();
+    void ReleaseCairoDev();
+    double SetCairoPen();
+    Bool SetCairoBrush();
 #endif
 
 protected:

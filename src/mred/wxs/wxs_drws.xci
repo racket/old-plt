@@ -4,3 +4,8 @@
 @SYM "winding" : wxWINDING_RULE
 @ENDSYMBOLS
 
+@BEGINSYMBOLS smoothingMode > ONE > PRED
+@SYM "unsmoothed" : 0
+@SYM "smoothed" : 1
+@SYM "compatible" : 2
+@ENDSYMBOLS

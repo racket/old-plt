@@ -249,12 +249,12 @@ void wxDC::DrawSpline(double x1, double y1, double x2, double y2,
 
 //-----------------------------------------------------------------------------
 
-Bool wxDC::GetAntiAlias()
+int wxDC::GetAntiAlias()
 {
   return anti_alias;
 }
 
-void wxDC::SetAntiAlias(Bool v)
+void wxDC::SetAntiAlias(int v)
 {
   anti_alias = v;
 }

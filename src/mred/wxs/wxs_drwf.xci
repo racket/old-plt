@@ -32,5 +32,5 @@
 @ q "set-text-background" : void SetTextBackground(wxColour!); : : /CheckOk[METHODNAME("dc<%>","set-text-background")]
 @ q "set-text-foreground" : void SetTextForeground(wxColour!); : : /CheckOk[METHODNAME("dc<%>","set-text-foreground")]
 
-@ Q "set-anti-alias" : void SetAntiAlias(bool)
-@ q "get-anti-alias" : bool GetAntiAlias()
+@ Q "set-smoothing" : void SetAntiAlias(SYM[smoothingMode])
+@ q "get-smoothing" : SYM[smoothingMode] GetAntiAlias()

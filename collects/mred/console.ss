@@ -672,9 +672,9 @@
 			     (lambda (start end)
 			       (send transparent-edit
 				     change-style output-delta start end))))])
-		    (gw s1)
 		    (when old-saved-newline?
-		      (gw (string #\newline))))))))]
+		      (gw (string #\newline)))
+		    (gw s1))))))]
 	  [this-err-write
 	   (lambda (s)
 	     (mzlib:function:dynamic-disable-break

@@ -1,8 +1,12 @@
 _String Constants_
 
-This library provides the facility for multiple
-langauges in DrScheme's GUI. These are the exported
-syntactic forms and procedures:
+This library provides the facility for multiple langauges in
+DrScheme's GUI. These are the exported syntactic forms and
+procedures from
+
+   (lib "string-constant.ss" "string-constants")
+
+are
         
 > (string-constant name) : string
  
@@ -38,17 +42,20 @@ To add string-constants to DrScheme, see the files:
   _spanish-string-constants.ss_
   _german-string-constants.ss_
   _danish-string-constants.ss_
+  _italian-string-constants.ss_
   
-Each file has the same format. When `read',
-they produce a list of lists of length two.
-Each inner list is contains a symbol that names
-the string constant and a string, in the appropriate
-langauge. The english-string-constants.ss is considered
-the master file -- string constants will be set there
-and translated into each of the other langauge files.
-In addition, the english-string-constants.ss file 
-should contain hints about the context of the strings
-whose symbol name might not be clear.
+Each file has the same format. They are each modules
+in the "string-constant-lang.ss" language. The body of each
+module is a finite mapping table that gives the mapping
+from the symbolic name of a string constant to its
+translation in the appropriate language.
+
+The english-string-constants.ss is considered the master
+file -- string constants will be set there and translated
+into each of the other langauge files.  In addition, the
+english-string-constants.ss file should contain hints about
+the context of the strings whose symbol name might not be
+clear.
 
 ============================================================
 

@@ -7,7 +7,8 @@
                       (prefix german: "german-string-constants.ss")
                       (prefix french: "french-string-constants.ss")
                       (prefix dutch: "dutch-string-constants.ss")
-                      (prefix danish: "danish-string-constants.ss"))
+                      (prefix danish: "danish-string-constants.ss")
+		      (prefix italian: "italian-string-constants.ss"))
   
   (require (lib "file.ss")
            (lib "etc.ss")
@@ -33,7 +34,8 @@
        (make-sc 'french french:string-constants)
        (make-sc 'german german:string-constants)
        (make-sc 'dutch dutch:string-constants)
-       (make-sc 'danish danish:string-constants)))
+       (make-sc 'danish danish:string-constants)
+       (make-sc 'italian italian:string-constants)))
     
     (define first-string-constant-set (car available-string-constant-sets))
     

@@ -878,7 +878,7 @@ please adhere to these guidelines:
  (no-debugging-or-profiling "No debugging or profiling")
  (debugging "Debugging")
  (debugging-and-profiling "Debugging and profiling")
- (test-coverage "Syntactic Test Suite Coverage")
+ (test-coverage "Syntactic test suite coverage")
  (whole/fractional-exact-numbers-label "Print numbers as fractions")
  (booleans-as-true/false-label "Print booleans using true and false")
  (show-details-button-label "Show Details")

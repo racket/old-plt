@@ -14,7 +14,6 @@
     ;; this function will be applied to every frame in the project
     (define to-each-frame 
       (lambda (frame)
-	;; install a menu in each frame
 	(let ([callback
 	       (lambda ()
 		 (let ([edit (send frame get-program-edit)])
@@ -30,8 +29,19 @@
 		  "This is a toy example help string" #f "t"))
 
 	  ;; install a button in each frame
-	  (let ([new-button (make-object mred:button% "Toy" callback)])
-	    (send (ivar frame button-panel) add-child new-button)))))
+	  (let* ([panel (ivar frame button-panel)]
+		 [button (make-object mred:button% panel
+				      (lambda (button evt) (callback))
+				      "Toy")])
+
+	    ;; this moves the button to the right place in the panel.
+	    ;; this needs to be better.
+	    (printf "-- ~a~n" mzlib:function@:remove)
+
+	    (send panel change-children
+		  (lambda (l)
+		    (cons button
+			  (mzlib:function@:remove button l))))))))
 
     ;; apply the function to every frame in the group
     (send group for-each-frame to-each-frame)

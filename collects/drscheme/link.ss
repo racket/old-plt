@@ -7,7 +7,9 @@
 		       ((require-library "pconverr.ss")
 			(mzlib string)
 			(mzlib function))]
-	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss") mred framework)]
+	[prefs : drscheme:prefs^ ((require-relative-library "prefs.ss")
+				  mred framework
+				  (export* basis))]
 	[text : drscheme:text^ ((require-relative-library "edit.ss") framework aries zodiac)]
 	[snip : drscheme:snip^ ((require-relative-library "snip.ss") mred)]
 	[graph : drscheme:graph^ ((require-relative-library "graph.ss") mred framework (mzlib string) (mzlib function))]

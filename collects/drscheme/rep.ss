@@ -1,4 +1,12 @@
 
+; =Kernel= means in DrScheme's thread and parameterization
+; 
+; =User= means the user's thread and parameterization
+; 
+; =Handler= means in the handler thread of some eventspace; it must
+;  be combined with either =Kernel= or =User=
+
+
 (unit/sig drscheme:rep^
   (import [mred : mred^]
 	  [mzlib : mzlib:core^]

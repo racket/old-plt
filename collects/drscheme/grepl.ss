@@ -108,7 +108,7 @@
 					     (semaphore-post waiting))]
 				 [on-drop-file (lambda (f) (evaluate (format "(load ~s)" f)))])
 			       (sequence (apply super-init args) (accept-drop-files #t)))
-			     "DrScheme Debug REPL"
+			     "Debug REPL"
 			     #f
 			     frame-width
 			     frame-height

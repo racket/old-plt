@@ -2144,14 +2144,14 @@
   ;; (unless (= insize 0)
   ;;   (error "inbuf not empty"))
 
-  (let* ([s (read-string size ifd)]
+  (let* ([s (read-bytes size ifd)]
 	 [len (if (eof-object? s)
 		  EOF-const
-		  (string-length s))])
+		  (bytes-length s))])
     (when (positive? len)
       (let rloop ([p 0])
 	(unless (= p len)
-	  (vector-set! window-vec (+ p startpos) (char->integer (string-ref s p)))
+	  (vector-set! window-vec (+ p startpos) (bytes-ref s p))
 	  (rloop (add1 p))))
 
       (updcrc startpos len)
@@ -2160,7 +2160,7 @@
     len))
 
 (define (put_byte c)
-  (string-set! outbuf outcnt (integer->char (bitwise-and #xFF c)))
+  (bytes-set! outbuf outcnt (bitwise-and #xFF c))
   (set! outcnt (add1 outcnt))
   (when (= outcnt OUTBUFSIZ)
     (flush_outbuf)))
@@ -2169,8 +2169,8 @@
 (define (put_short w)
   (if (< outcnt (- OUTBUFSIZ 2))
       (begin
-	(string-set! outbuf outcnt (integer->char (bitwise-and #xFF w)))
-	(string-set! outbuf (add1 outcnt) (integer->char (bitwise-and #xFF (>> w 8))))
+	(bytes-set! outbuf outcnt (bitwise-and #xFF w))
+	(bytes-set! outbuf (add1 outcnt) (bitwise-and #xFF (>> w 8)))
 	(set! outcnt (+ outcnt 2)))
       (begin
 	(put_byte w)
@@ -2183,7 +2183,7 @@
 
 (define outcnt 0)
 (define bytes_out 0)
-(define outbuf (make-string OUTBUFSIZ))
+(define outbuf (make-bytes OUTBUFSIZ))
 
 ;; /* ===========================================================================
 ;;  * Write the output buffer outbuf[0..outcnt-1] and update bytes_out.
@@ -2192,7 +2192,7 @@
 (define (flush_outbuf)
   (unless (= outcnt 0)
 
-    (display (substring outbuf 0 outcnt) ofd)
+    (write-bytes outbuf ofd 0 outcnt)
 
     (set! bytes_out (+ bytes_out outcnt))
     (set! outcnt 0)))

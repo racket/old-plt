@@ -37,7 +37,14 @@
   (define (pretty-name f)
     (with-handlers ([void (lambda (x) f)])
       (let-values ([(base name dir?) (split-path f)])
-	(format "~a in ~a" name base))))
+	(format "~a in ~a" (path->string name) (if (path? base)
+						   (path->string base)
+						   base)))))
+
+  (define (bytes->element b)
+    (if (bytes? b)
+	(bytes->path b)
+	b))
 
   (define (unmztar p filter plthome print-status)
     (let loop ()
@@ -47,7 +54,8 @@
 	    [(dir) (let ([s (let ([v (read p)])
 			      (if (null? v)
 				  'same
-				  (apply build-path v)))])
+				  (apply build-path 
+					 (map bytes->element v))))])
 		     (unless (or (eq? s 'same) (relative-path? s))
 		       (error "expected a directory name relative path string, got" s))
 		     (when (or (eq? s 'same) (filter 'dir s plthome))
@@ -57,7 +65,7 @@
 			    (format "  making directory ~a" (pretty-name d)))
 			   (make-directory* d)))))]
 	    [(file file-replace) 
-	     (let ([s (apply build-path (read p))])
+	     (let ([s (apply build-path (map bytes->element (read p)))])
 	       (unless (relative-path? s)
 		 (error "expected a file name relative path string, got" s))
 	       (let ([len (read p)])

@@ -102,27 +102,31 @@
          paths)
         (close-output-port fileout)
         (thread-wait thd))))
-  
+
+  (define (element->bytes x)
+    (if (path? x) (path->bytes x) x))
+
   (define (mztar path output filter file-mode)
     (define (path->list p)
       (if (eq? p 'same)
 	  null
 	  (let-values ([(base name dir?) (split-path p)])
-	    (if (string? base)
+	    (if (path? base)
 		(append (path->list base) (list name))
 		(list name)))))
     (define-values (init-dir init-files)
       (if (file-exists? path)
           (let-values ([(base name dir?) (split-path path)])
             (values (if (eq? base 'relative) 'same base) (list name)))
-          (values path #f)))
+          (values (if (string? path) (string->path path) path) #f)))
     
     (let loop ([dir init-dir][dpath (path->list init-dir)][files init-files])
       (printf "MzTarring ~a...~n" 
-	      (if files
-		  (build-path dir (car files))
-		  dir))
-      (fprintf output "~s~n~s~n" 'dir dpath)
+	      (path->string
+	       (if files
+		   (build-path dir (car files))
+		   dir)))
+      (fprintf output "~s~n~s~n" 'dir (map element->bytes dpath))
       (for-each
        (lambda (f)
          (let* ([p (build-path dir f)]
@@ -137,7 +141,7 @@
                               [(file) 'file]
                               [(file-replace) 'file-replace]
                               [else file-mode])
-                            (append dpath (list f))
+                            (map element->bytes (append dpath (list f)))
                             len)
                    (call-with-input-file* p
                      (lambda (p)

@@ -942,6 +942,7 @@ typedef struct Regwork {
   char *instr;
   Scheme_Object *port;
   Scheme_Object *unless_evt;
+  int nonblock;
   rxpos instr_size;       /* For port reads */
   rxpos input_maxend;     /* For port reads */
   rxpos input, input_end; /* String-input pointer. */
@@ -955,7 +956,7 @@ typedef struct Regwork {
  * Forwards.
  */
 STATIC int regtry(regexp *, char *, int, int, rxpos *, rxpos *, Regwork *rw, int);
-STATIC int regtry_port(regexp *, Scheme_Object *, Scheme_Object *,
+STATIC int regtry_port(regexp *, Scheme_Object *, Scheme_Object *, int nonblock,
 		       rxpos *, rxpos *, 
 		       char **, rxpos *, rxpos *, rxpos, Scheme_Object*, Scheme_Object*, int);
 STATIC int regmatch(Regwork *rw, rxpos);
@@ -979,7 +980,7 @@ regexec(const char *who,
 	int stringpos, int stringlen, 
 	/* Always used: */
 	rxpos *startp, rxpos *endp,
-	Scheme_Object *port, Scheme_Object *unless_evt, 
+	Scheme_Object *port, Scheme_Object *unless_evt, int nonblock,
 	/* Used only when port is non-NULL: */
 	char **stringp, int peek, int get_offsets,
 	Scheme_Object *discard_oport, 
@@ -1069,7 +1070,9 @@ regexec(const char *who,
       rxpos len = 0, space = 0;
 
       *stringp = NULL;
-      if (regtry_port(prog, port, unless_evt, startp, endp, stringp, &len, &space, 0, portend, peekskip, 1)) {
+      if (regtry_port(prog, port, unless_evt, nonblock, 
+		      startp, endp, stringp, &len, &space, 0, 
+		      portend, peekskip, 1)) {
 	if (!peek) {
 	  /* Need to consume matched chars: */
 	  char *drain;
@@ -1162,7 +1165,8 @@ regexec(const char *who,
 	  skip = 0;
 	}
 
-	if (regtry_port(prog, port, unless_evt, startp, endp, stringp, &len, &space, skip, 
+	if (regtry_port(prog, port, unless_evt, nonblock,
+			startp, endp, stringp, &len, &space, skip, 
 			portend, peekskip, !space)) {
 	  if (!peek) {
 	    char *drain;
@@ -1258,7 +1262,7 @@ regtry(regexp *prog, char *string, int stringpos, int stringlen, rxpos *startp, 
    - regtry - try match in a port
    */
 static int			/* 0 failure, 1 success */
-regtry_port(regexp *prog, Scheme_Object *port, Scheme_Object *unless_evt,
+regtry_port(regexp *prog, Scheme_Object *port, Scheme_Object *unless_evt, int nonblock,
 	    rxpos *startp, rxpos *endp, 
 	    char **work_string, rxpos *len, rxpos *size, rxpos skip, 
 	    Scheme_Object *maxlen, Scheme_Object *peekskip, 
@@ -1269,6 +1273,7 @@ regtry_port(regexp *prog, Scheme_Object *port, Scheme_Object *unless_evt,
 
   rw.port = port;
   rw.unless_evt = unless_evt;
+  rw.nonblock = nonblock;
   rw.instr_size = *size;
   if (maxlen && SCHEME_INTP(maxlen))
     rw.input_maxend = SCHEME_INT_VAL(maxlen);
@@ -1334,7 +1339,9 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
   /* Fill as much of our buffer as possible: */
   got = scheme_get_byte_string_unless("regexp-match", rw->port, 
 				      rw->instr, rw->input_end, got,
-				      1, /* read at least one char, and as much as possible */
+				      (rw->nonblock
+				       ? 2   /* non-blocking read, as much as possible */
+				       : 1), /* read at least one char, and as much as possible */
 				      1, peekskip,
 				      rw->unless_evt);
 
@@ -1348,27 +1355,29 @@ static void read_more_from_regport(Regwork *rw, rxpos need_total)
 
     /* Non-blocking read got enough? If not, try again in blocking mode: */
     if (need_total > rw->input_end) {
-      if (rw->peekskip)
-	peekskip = scheme_bin_plus(scheme_make_integer(rw->input_end), rw->peekskip);
-      else
-	peekskip = scheme_make_integer(rw->input_end);
-
-      rw->str = regstr; /* get_string can swap threads */
-      got = scheme_get_byte_string_unless("regexp-match", rw->port, 
-					  rw->instr, rw->input_end, need_total - rw->input_end,
-					  0, /* blocking mode */
-					  1, peekskip,
-					  rw->unless_evt);
-      regstr = rw->str;
-      
-      if (got == EOF)
+      if (rw->nonblock) {
 	rw->port = NULL; /* turn off further port reading */
-      else
-	rw->input_end += got;
+      } else {
+	if (rw->peekskip)
+	  peekskip = scheme_bin_plus(scheme_make_integer(rw->input_end), rw->peekskip);
+	else
+	  peekskip = scheme_make_integer(rw->input_end);
+
+	rw->str = regstr; /* get_string can swap threads */
+	got = scheme_get_byte_string_unless("regexp-match", rw->port, 
+					    rw->instr, rw->input_end, need_total - rw->input_end,
+					    0, /* blocking mode */
+					    1, peekskip,
+					    rw->unless_evt);
+	regstr = rw->str;
+      
+	if (got == EOF)
+	  rw->port = NULL; /* turn off further port reading */
+	else
+	  rw->input_end += got;
+      }
     }
   }
-
-  rw->instr[rw->input_end] = 0;
 }
 
 #ifdef DO_STACK_CHECK
@@ -2533,7 +2542,7 @@ static regexp *regcomp_object(Scheme_Object *str)
 
 static Scheme_Object *gen_compare(char *name, int pos, 
 				  int argc, Scheme_Object *argv[],
-				  int peek)
+				  int peek, int nonblock)
 {
   regexp *r;
   char *full_s;
@@ -2672,7 +2681,9 @@ static Scheme_Object *gen_compare(char *name, int pos,
   dropped = scheme_make_integer(0);
 
   m = regexec(name, r, full_s, offset, endset - offset, startp, endp,
-	      iport, unless_evt, &full_s, peek, pos, oport, startv, endv, &dropped);
+	      iport, unless_evt, nonblock,
+	      &full_s, peek, pos, oport, 
+	      startv, endv, &dropped);
 
   if (m) {
     int i;
@@ -2743,22 +2754,32 @@ static Scheme_Object *gen_compare(char *name, int pos,
 
 static Scheme_Object *compare(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match", 0, argc, argv, 0);
+  return gen_compare("regexp-match", 0, argc, argv, 0, 0);
 }
 
 static Scheme_Object *positions(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match-positions", 1, argc, argv, 0);
+  return gen_compare("regexp-match-positions", 1, argc, argv, 0, 0);
 }
 
 static Scheme_Object *compare_peek(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match-peek", 0, argc, argv, 1);
+  return gen_compare("regexp-match-peek", 0, argc, argv, 1, 0);
 }
 
 static Scheme_Object *positions_peek(int argc, Scheme_Object *argv[])
 {
-  return gen_compare("regexp-match-peek-positions", 1, argc, argv, 1);
+  return gen_compare("regexp-match-peek-positions", 1, argc, argv, 1, 0);
+}
+
+static Scheme_Object *compare_peek_nonblock(int argc, Scheme_Object *argv[])
+{
+  return gen_compare("regexp-match-peek*", 0, argc, argv, 1, 1);
+}
+
+static Scheme_Object *positions_peek_nonblock(int argc, Scheme_Object *argv[])
+{
+  return gen_compare("regexp-match-peek-positions*", 1, argc, argv, 1, 1);
 }
 
 static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *argv[], int all)
@@ -2820,7 +2841,8 @@ static Scheme_Object *gen_replace(const char *name, int argc, Scheme_Object *arg
     int m;
 
     m = regexec("regexp-replace", r, source, srcoffset, sourcelen - srcoffset, startp, endp,
-		NULL, NULL, NULL, 0, 0, NULL, NULL, NULL, NULL);
+		NULL, NULL, 0,
+		NULL, 0, 0, NULL, NULL, NULL, NULL);
 
     if (m) {
       char *insert;
@@ -2989,6 +3011,16 @@ void scheme_regexp_initialize(Scheme_Env *env)
   scheme_add_global_constant("regexp-match-peek-positions", 
 			     scheme_make_prim_w_arity(positions_peek, 
 						      "regexp-match-peek-positions",
+						      2, 5),
+			     env);
+  scheme_add_global_constant("regexp-match-peek*",
+			     scheme_make_prim_w_arity(compare_peek_nonblock,
+						      "regexp-match-peek*",
+						      2, 5),
+			     env);
+  scheme_add_global_constant("regexp-match-peek-positions(", 
+			     scheme_make_prim_w_arity(positions_peek_nonblock, 
+						      "regexp-match-peek-positions*",
 						      2, 5),
 			     env);
   scheme_add_global_constant("regexp-replace", 

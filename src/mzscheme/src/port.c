@@ -1478,7 +1478,9 @@ long scheme_get_byte_string_unless(const char *who,
 
     got += gc;
     if (peek) {
+      scheme_start_atomic();
       peek_skip = scheme_bin_plus(peek_skip, scheme_make_integer(gc));
+      scheme_end_atomic_no_swap();
     }
     size -= gc;
 

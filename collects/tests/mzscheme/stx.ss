@@ -67,6 +67,7 @@
 (syntax-test (quote-syntax (syntax-case 0 () [((a ...) ...) #'(a ... ... ...)][_else 5])))
 
 (test 'no 'dot-literal (syntax-case #'(1 2) () [(_ . #t) 'yes] [_ 'no]))
+(test 'yes 'dot-literal (syntax-case #'(1 . #t) () [(_ . #t) 'yes] [_ 'no]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test basic expansion and property propagation

@@ -327,17 +327,19 @@
 
   (define imap-root-mailbox (make-parameter "~/IMAP/"))
   (define (imap-list-child-mailboxes imap mailbox)
-    (let ([r (imap-connection-r imap)]
-	  [w (imap-connection-w imap)]
-	  [mailbox-name (format "~a/" mailbox)]
-	  [sub-folders null])
+    (let* ([r (imap-connection-r imap)]
+	   [w (imap-connection-w imap)]
+	   [mailbox-name (format "~a/" mailbox)]
+	   [mailbox-name-sym (string->symbol mailbox-name)]
+	   [sub-folders null])
       (check-ok
        (imap-send r w (format "LIST \"~a\" %" mailbox-name)
 	 (lambda (x)
-	   (unless (equal? (car (cddddr x)) mailbox-name)
-		   (set! sub-folders 
-			 (cons 
-			  (list (cadr x)
-				(car (cddddr x)))
-			  sub-folders))))))
+	   (let ([flags (cadr x)]
+		 [name (car (cddddr x))])
+	     (unless (eq? name mailbox-name-sym)
+		     (set! sub-folders 
+			   (cons 
+			    (list flags name)
+			    sub-folders)))))))
       sub-folders)))

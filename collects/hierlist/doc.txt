@@ -19,8 +19,20 @@ _hierlist_ defines three classes:
 >  new-item :: (send a-list new-item) - creates and returns a new
      (empty) hierarchical-list-item<%>
 
+>  new-item :: (send a-list-item new-item mixin) - creates and returns
+     a new (empty) hierarchical-list-item<%>, but first, applies
+     `mixin' to a class implemeting hierarchical-list-item<%> and uses
+     the result as the class for the new hierarchical-list-item<%>
+     object.
+
 >  new-list :: (send a-list new-list) - creates and returns a new
      (empty) hierarchical-list-compound-item<%>
+
+>  new-list :: (send a-list-item new-list mixin) - creates and returns
+     a new (empty) hierarchical-list-compound-item<%>, but first,
+     applies `mixin' to a class implemeting
+     hierarchical-list-compound-item<%> and uses the result as the
+     class for the new hierarchical-list-compound-item<%> object.
 
 >  delete-item :: (send a-list delete-item i) - delete
      hierarchical-list-item<%> i from the list
@@ -74,11 +86,36 @@ _hierlist_ defines three classes:
 >  new-item :: (send a-list-item new-item) - creates and returns a new
      (empty) hierarchical-list-item<%>
 
+>  new-item :: (send a-list-item new-item mixin) - creates and returns
+     a new (empty) hierarchical-list-item<%>, but first, applies
+     `mixin' to a class implemeting hierarchical-list-item<%> and uses
+     the result as the class for the new hierarchical-list-item<%>
+     object.
+
 >  new-list :: (send a-list-item new-list) - creates and returns a new
      (empty) hierarchical-list-compound-item<%>
+
+>  new-list :: (send a-list-item new-list mixin) - creates and returns
+     a new (empty) hierarchical-list-compound-item<%>, but first,
+     applies `mixin' to a class implemeting
+     hierarchical-list-compound-item<%> and uses the result as the
+     class for the new hierarchical-list-compound-item<%> object.
 
 >  delete-item :: (send a-list delete-item i) - delete
      hierarchical-list-item<%> `i' from the compound item
 
 >  get-items :: (send a-list-item get-items) - returns a list of the
      items in the compound item
+
+
+--------------------------------------------------
+
+_Hierlist keystrokes_
+
+Hierlists support these keystrokes:
+
+ - down:    move to the next entry at the current level (skipping lower levels)
+ - up:      move to the previous entry at the current level (skipping lower levels)
+ - left:    move to the enclosing level (only valid at embedded levels)
+ - right:   move down in one level (only valid for lists)
+ - return:  open / close the current selected level (only valid for lists)

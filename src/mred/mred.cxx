@@ -81,6 +81,7 @@
 # endif
 # ifdef OS_X
 int wx_in_terminal;
+extern "C" void _signal_nobind(...);
 # else
 #  define wx_in_terminal 0
 # endif
@@ -3037,7 +3038,11 @@ wxFrame *MrEdApp::OnInit(void)
   wxscheme_early_gl_init();
 
 #ifdef mred_BREAK_HANDLER
+# ifdef OS_X
+  _signal_nobind(SIGINT, user_break_hit);
+# else
   MZ_SIGSET(SIGINT, user_break_hit);
+# endif
 #endif
 
   wxscheme_prepare_hooks(argc, argv);

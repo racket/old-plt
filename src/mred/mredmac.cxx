@@ -309,8 +309,11 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
 #endif
 }
 
+#ifdef OPTION_KEY_HACK
+/* Use Ctl-F2 instead */
 static int no_modifiers_last_time = 1;
 static int last_was_option_down;
+#endif
 static int WeAreFront(); /* forward decl */
 
 /* WNE: a replacement for WaitNextEvent so we can get things like
@@ -325,6 +328,7 @@ int WNE(EventRecord *e, double sleep_secs)
   if (noErr == ReceiveNextEvent(0, NULL, sleep_secs, TRUE, &ref)) {
     Boolean ok, need_click = FALSE;
 
+#ifdef OPTION_KEY_HACK    
     if ((GetEventClass(ref) == kEventClassKeyboard)
 	&& (GetEventKind(ref) == kEventRawKeyModifiersChanged)) {
       /* Watch for down-up of option => convert to click at 10, 10 */
@@ -355,12 +359,13 @@ int WNE(EventRecord *e, double sleep_secs)
       no_modifiers_last_time = 0;
       last_was_option_down = 0;
     }
+#endif
 
     ok = ConvertEventRefToEventRecord(ref, e);
 
     if (!ok) {
       if (need_click) {
-	/* fake a click to make the menu bar acitve */
+	/* fake a click to make the menu bar acitve (only with OPTION_KEY_HACK) */
 	e->what = mouseMenuDown;
 	e->message = 0;
 	e->modifiers = 0;
@@ -421,8 +426,10 @@ int WNE(EventRecord *e, double sleep_secs)
 
     ReleaseEvent(ref);
 
+#ifdef OPTION_KEY_HACK
     if (ok)
       no_modifiers_last_time = !(e->modifiers & (shiftKey | cmdKey | controlKey | optionKey));
+#endif
 
     return ok;
   }
@@ -1715,7 +1722,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
   DescType rtype;
   long sz;
   AEKeyword kw;
-  Scheme_Object *result;
+  Scheme_Object *result = NULL;
   OSErr _err;
 
   if (list_in) {
@@ -1730,7 +1737,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
     Boolean x_b;
     long x_i;
     double x_d;
-    char *x_s;
+    char *x_s = NULL;
     FSSpec x_f;
     Ptr data;
     

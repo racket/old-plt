@@ -1,4 +1,4 @@
-; $Id$
+; $Id: scm-main.ss,v 1.106 1997/08/11 17:01:41 shriram Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1142,16 +1142,16 @@
 	  (pat:match-and-rewrite expr m&e-7 out-pattern-7 kwd-1 env)
 	  (static-error expr "Malformed cond")))))
 
-  (define-struct cond-term (text question answer else? =>?))
+  (define-struct cond-clause (text question answer else? =>?))
 
-  (define cond-term-vocab
-    (create-vocabulary 'cond-term-vocab scheme-vocabulary
+  (define cond-clause-vocab
+    (create-vocabulary 'cond-clause-vocab scheme-vocabulary
       "Symbol cannot be a cond question-answer pair"
       "Literal cannot be a cond question-answer pair"
       "List cannot be a cond question-answer pair"
       "Improper-list cannot be a cond question-answer pair"))
 
-  (add-list-micro cond-term-vocab
+  (add-list-micro cond-clause-vocab
     (let* ((kwd '(else =>))
 	    (in-pattern-1 '(else answer))
 	    (in-pattern-2 '(question answer))
@@ -1165,20 +1165,20 @@
 	    =>
 	    (lambda (p-env)
 	      (let ((answer (pat:pexpand 'answer p-env kwd)))
-		(make-cond-term expr #f answer #t #f))))
+		(make-cond-clause expr #f answer #t #f))))
 	  ((pat:match-against m&e-2 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((question (pat:pexpand 'question p-env kwd))
 		     (answer (pat:pexpand 'answer p-env kwd)))
-		(make-cond-term expr question answer #f #f))))
+		(make-cond-clause expr question answer #f #f))))
 	  ((pat:match-against m&e-3 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((question (pat:pexpand 'question p-env kwd))
 		     (answer (pat:pexpand 'answer p-env kwd)))
-		(make-cond-term expr question answer #f #t))))
-	  (else (static-error expr "Clause in question-answer format"))))))
+		(make-cond-clause expr question answer #f #t))))
+	  (else (static-error expr "Clause not in question-answer format"))))))
 
   (add-primitivized-micro-form 'cond scheme-vocabulary
     (let* ((kwd '())
@@ -1192,7 +1192,8 @@
 	      (let ((bodies (pat:pexpand '(bodies ...) p-env kwd)))
 		(let ((exp-bodies
 			(map (lambda (e)
-			       (expand-expr e env attributes cond-term-vocab))
+			       (expand-expr e env attributes
+				 cond-clause-vocab))
 			  bodies)))
 		  (expand-expr
 		    (structurize-syntax
@@ -1202,19 +1203,19 @@
 			  (let ((first (car exps))
 				 (rest (cdr exps)))
 			    (cond
-			      ((cond-term-=>? first)
-				`(let ((test ,(cond-term-question first)))
+			      ((cond-clause-=>? first)
+				`(let ((test ,(cond-clause-question first)))
 				   (if test
-				     (,(cond-term-answer first) test)
+				     (,(cond-clause-answer first) test)
 				     ,(loop rest))))
-			      ((cond-term-else? first)
+			      ((cond-clause-else? first)
 				(if (null? rest)
-				  (cond-term-answer first)
-				  (static-error (cond-term-text first)
+				  (cond-clause-answer first)
+				  (static-error (cond-clause-text first)
 				    "else only allowed in last position")))
 			      (else
-				`(if ,(cond-term-question first)
-				   ,(cond-term-answer first)
+				`(if ,(cond-clause-question first)
+				   ,(cond-clause-answer first)
 				   ,(loop rest)))))))
 		      expr)
 		    env attributes vocab)))))

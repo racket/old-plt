@@ -272,8 +272,13 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
       if (newStyle) 
 	caretStyle = newStyle;
       else {
-	gsnip = FindSnip(start, -1);
-	caretStyle = styleList->FindOrCreateStyle(gsnip->style, delta);
+	/* handle delta */
+	if (caretStyle)
+	  caretStyle = styleList->FindOrCreateStyle(caretStyle, delta);
+	else {
+	  gsnip = FindSnip(start, -1);
+	  caretStyle = styleList->FindOrCreateStyle(gsnip->style, delta);
+	}
       }
     }
     return;

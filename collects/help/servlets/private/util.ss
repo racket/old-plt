@@ -14,7 +14,6 @@
 	   search-bg-default
 	   search-text-default
 	   search-link-default
-	   sys-link-default
 	   color-highlight
 	   color-with
 	   hexify-string
@@ -39,11 +38,10 @@
   (define (put-prefs names vals)
     (put-preferences names vals)) 
 
-  (define search-height-default "110")
+  (define search-height-default "85")
   (define search-bg-default "palegreen")
   (define search-text-default "black")
   (define search-link-default "darkblue")
-  (define sys-link-default "dimgray")
 
   (define *the-highlight-color* "forestgreen")
 

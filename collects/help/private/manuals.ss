@@ -46,7 +46,7 @@
 		(let ([ass (assoc short-path known-docs)])
 		  (if ass
 		      (cdr ass)
-		      (with-input-from-file (build-path d "index.htm")
+		      (with-input-from-file (build-path doc-collection-path short-path "index.htm")
 			(lambda ()
 			  (let loop ()
 			    (let ([r (read-line)])
@@ -91,7 +91,8 @@
                                     (string-append 
                                      "<BR>&nbsp;&nbsp;"
 				     "<FONT SIZE=\"-1\">"
-				     (if external-connections?
+				     (if (or external-connections?
+					     (not (assoc manual-dir known-docs)))
 					 ""
 					 (string-append
 					  (format 

@@ -7,7 +7,6 @@
 
 (require "private/util.ss")
 (require "private/search-util.ss")
-(require "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -23,9 +22,6 @@
   (define search-link-color
     (get-pref/default 'search-link search-link-default))
 
-  (define sys-link-color
-    (get-pref/default 'sys-link sys-link-default))
-
   (define (make-make-link color)
     (lambda (url label frame)
       `(A ((HREF ,url)
@@ -34,7 +30,6 @@
 		       `(FONT ((SIZE "-1")) ,label)))))
 
   (define make-search-link (make-make-link search-link-color))
-  (define make-sys-link (make-make-link sys-link-color))
 
   (define (default-option? opt)
     (and (= 3 (length opt))
@@ -69,8 +64,8 @@
 		      (INPUT ((TYPE "text")
 			      (NAME "search-string")
 			      (VALUE "")
-			      (SIZE "35"))))
-		     (TD 
+			      (SIZE "35")))
+		      'nbsp
 		      (INPUT ((TYPE "submit")
 			      (NAME "search")
 			      (VALUE ,(string-constant search))))
@@ -82,7 +77,7 @@
 		    (TR 
 		     (TD ((ALIGN "right")) 
 			 (B  ,(color-with search-fg (string-constant
-						     options))))
+						     options) ":")))
 		     (TD ((COLSPAN "2"))
 			 (SELECT ((NAME "search-type"))
 				 ,@(map make-option
@@ -90,16 +85,8 @@
 			 'nbsp 
 			 (SELECT ((NAME "match-type"))
 				 ,@(map make-option 
-					match-types))))
-		    (TR 
-		     (TD 'nbsp)
-		     ,(if (unbox external-box)
-			  `(TD 'nbsp)
-			  `(TD ((COLSPAN "2"))
-			       ,(make-sys-link
-				 "/servlets/hd-config.ss"
-				 (string-constant configure-hd)
-				 "_top"))))))
+					match-types))))))
+		  (TD 'nbsp)
 		  (TD
 		   (TABLE ((BGCOLOR ,search-bg)
 			   (CELLSPACING "0") 

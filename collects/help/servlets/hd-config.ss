@@ -19,8 +19,6 @@
     (get-pref/default 'search-fg search-text-default))
   (define search-link-color 
     (get-pref/default 'search-link search-link-default))
-  (define sys-link-color 
-    (get-pref/default 'sys-link sys-link-default))
 
   (define (make-labelled-option default)
     (lambda (s-val s-label)
@@ -67,9 +65,6 @@
 	 "function updateLinkColor(new_color) {"
 	 " updateColor(\"sample_link\",new_color)"
 	 "}"
-	 "function updateSysLinkColor(new_color) {"
-	 " updateColor(\"sample_syslink\",new_color)"
-	 "}"
 	 "function updateSelection(item,val) {"
 	 " document.getElementById(item).selectedIndex = val"
 	 "}"
@@ -77,19 +72,16 @@
 	 (js-color-funcall "updateBgColor" search-bg-color)
 	 (js-color-funcall "updateTextColor" search-text-color)
 	 (js-color-funcall "updateLinkColor" search-link-color)
-	 (js-color-funcall "updateSysLinkColor" sys-link-color)
 	 (js-color-funcall "updateTextColor" search-text-color)
          "}"
 	 "function defaultValues() {"
 	 (js-color-funcall "updateBgColor" search-bg-default)
 	 (js-color-funcall "updateTextColor" search-text-default)
 	 (js-color-funcall "updateLinkColor" search-link-default)
-	 (js-color-funcall "updateSysLinkColor" sys-link-default)
 	 (js-color-funcall "updateTextColor" search-text-default)
          (js-color-selection "search_bg_select" search-bg-default)
          (js-color-selection "search_text_select" search-text-default)
          (js-color-selection "search_link_select" search-link-default)
-         (js-color-selection "search_sys_link_select" sys-link-default)
 	 (string-append
 	  " document.getElementById(\"search_height\").value="
 	  search-height-default)
@@ -140,12 +132,6 @@
 				     (ID "search_link_select")
 				     (onChange "updateLinkColor(this.value)"))
 				    ,@(map (make-option search-link-color)
-					   color-choices))))
-		    (TR (TD ((ALIGN "right")) (B "System link color:"))
-			(TD (SELECT ((NAME "sys-link")
-				     (ID "search_sys_link_select")
-				     (onChange "updateSysLinkColor(this.value)"))
-				    ,@(map (make-option sys-link-color)
 					   color-choices)))))
              (P)
 	     (CENTER
@@ -160,11 +146,7 @@
 		     (TR (TD (FONT ((COLOR ,search-link-color)
 				    (ID "sample_link")
 				    (STYLE "text-decoration:underline"))
-				   "Search frame links appear in this color")))
-		     (TR (TD (FONT ((COLOR ,sys-link-color)
-				    (ID "sample_syslink")
-				    (STYLE "text-decoration:underline"))
-				   "System links appear in this color")))))
+				   "Search frame links appear in this color")))))
 	     (P)
 	     (CENTER
 	      (TABLE ((BGCOLOR "white")

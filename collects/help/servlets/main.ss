@@ -1,9 +1,11 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
+	 (lib "string-constant.ss" "string-constants")
          (lib "xml.ss" "xml"))
 
 (require "private/util.ss")
 (require "private/hd-css.ss")
+(require "private/external.ss")
 
 (unit/sig ()
   (import servlet^)
@@ -17,8 +19,15 @@
      (LI
       (B
        (A ((HREF "/servlets/howtouse.ss")) "Help Desk"))
-      ":  How to get help"))
-    
+      ":  How to get help"
+      ,@(if (unbox external-box)
+	    '()
+	    `((BR) 
+	      'nbsp 'nbsp 'nbsp 'nbsp 'nbsp 'nbsp
+	      (FONT ((SIZE "-2"))
+		    (A ((HREF "/servlets/hd-config.ss")
+			(TARGET "_top"))
+		       ,(string-constant configure-hd)))))))
     (UL
      (LI
       (B
@@ -35,7 +44,6 @@
 			   "frequently asked questions"
 			   "FAQ")
 	    "...")))
-    
     (UL
      (LI
       (B

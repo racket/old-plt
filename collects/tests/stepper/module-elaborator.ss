@@ -64,17 +64,9 @@
                                       (void) ; intended to simulate the code in drscheme that actually does something.
                                       )])
                        (syntax 
-                        (let ([already-exited? #f])
-                          (dynamic-wind
-                           void
-                           (lambda ()
-                             (call-with-values
-                              (lambda () body)
-                              (lambda results
-                                (unless already-exited?
-                                  (print-results results)))))
-                           (lambda ()
-                             (set! already-exited? #t))))))])
+                         (call-with-values
+                          (lambda () body)
+                          print-results)))])
                 (cons new-exp (loop (cdr bodies) ids)))]))])))
   
   (define (filter-ids ids)

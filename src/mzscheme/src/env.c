@@ -429,9 +429,9 @@ static void make_init_env(void)
 						      1, 1),
 			     env);  
 
-  scheme_add_global_constant("identifier-expander", 
+  scheme_add_global_constant("set!-expander", 
 			     scheme_make_prim_w_arity(id_macro,
-						      "identifier-expander",
+						      "set!-expander",
 						      1, 1),
 			     env);
 
@@ -1235,7 +1235,13 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     for (i = frame->num_bindings; i--; ) {
       while (c && (c->before > i)) {
-	if (scheme_stx_env_bound_eq(symbol, c->name, uid)) {
+	int issame;
+	if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+	  issame = scheme_stx_free_eq(symbol, c->name);
+	else
+	  issame = scheme_stx_env_bound_eq(symbol, c->name, uid);
+	
+	if (issame) {
 	  val = c->val;
 	  goto found_const;
 	}
@@ -1255,7 +1261,13 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     }
 
     while (c) {
-      if (scheme_stx_env_bound_eq(symbol, c->name, uid)) {
+      int issame;
+      if (env->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+	issame = scheme_stx_free_eq(symbol, c->name);
+      else
+	issame = scheme_stx_env_bound_eq(symbol, c->name, uid);
+
+      if (issame) {
 	val = c->val;
 	goto found_const;
       }
@@ -1699,7 +1711,7 @@ id_macro(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v;
 
-  scheme_check_proc_arity("identifier-expander", 1, 0, argc, argv);
+  scheme_check_proc_arity("set!-expander", 1, 0, argc, argv);
 
   v = scheme_alloc_small_object();
   v->type = scheme_id_macro_type;

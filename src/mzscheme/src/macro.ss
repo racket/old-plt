@@ -37,12 +37,6 @@
 		      (stx-list? l))))
 	    #f))))
 
-(define-values (stx-improper-list?)
-  (lambda (p)
-    (if (stx-pair? p)
-	(not (stx-list? p))
-	#f)))
-
 (define-values (stx-car)
   (lambda (p)
     (if (pair? p)
@@ -474,7 +468,7 @@
 	    (#%if (#%and (stx-pair? (stx-cdr body))
 			 (stx-null? (stx-cdr (stx-cdr body))))
 		  (datum->syntax
-		   `(#%define-values (,first) ,@(stx-cdr body))
+		   `(define-values (,first) ,@(stx-cdr body))
 		   code (quote-syntax here))
 		  (#%raise-syntax-error
 		   'define
@@ -495,8 +489,8 @@
 			   [(stx-symbol? l) #f]
 			   [else (bad-symbol l)])))
 	    (datum->syntax
-	     `(#%define-values (,(stx-car first)) 
-			       (#%lambda ,(stx-cdr first) ,@(stx-cdr body)))
+	     `(define-values (,(stx-car first)) 
+		(#%lambda ,(stx-cdr first) ,@(stx-cdr body)))
 	     code (quote-syntax here))]
 	   [else
 	    (#%raise-syntax-error

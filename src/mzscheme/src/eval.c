@@ -1399,10 +1399,13 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				   + ((rec && drec[rec].dont_mark_local_use) ? 
 				      SCHEME_DONT_MARK_USE 
 				      : 0));
-      if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))
-	scheme_wrong_syntax("compile", NULL, form, 
-			    "illegal use of a syntactic form name");
-      else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+      if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+	if (var == stop_expander)
+	  return form;
+	else
+	  scheme_wrong_syntax("compile", NULL, form, 
+			      "illegal use of a syntactic form name");
+      } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	       || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
 	return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth);
 

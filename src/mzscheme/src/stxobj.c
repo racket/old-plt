@@ -20,6 +20,8 @@
 #include "schpriv.h"
 #include "schmach.h"
 
+/* FIXME: syntax->list and resolve_env need stack checks. */
+
 #define STX_GRAPH_FLAG 0x1
 
 static Scheme_Object *syntax_p(int argc, Scheme_Object **argv);
@@ -970,7 +972,10 @@ static Scheme_Object *syntax_line(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-line", "syntax", 0, argc, argv);
     
-  return scheme_make_integer(stx->line);
+  if (stx->line < 0)
+    return scheme_false;
+  else
+    return scheme_make_integer(stx->line);
 }
 
 static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
@@ -980,7 +985,10 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-column", "syntax", 0, argc, argv);
     
-  return scheme_make_integer(stx->col);
+  if (stx->col < 0)
+    return scheme_false;
+  else
+    return scheme_make_integer(stx->col);
 }
 
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv)
@@ -1016,10 +1024,10 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv)
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
 {
-  if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("bound-identifier=?", "syntax", 0, argc, argv);
-  if (!SCHEME_STXP(argv[1]))
-    scheme_wrong_type("bound-identifier=?", "syntax", 1, argc, argv);
+  if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
+    scheme_wrong_type("bound-identifier=?", "idenfitier syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]) || !SCHEME_STX_SYM(argv[1]))
+    scheme_wrong_type("bound-identifier=?", "idenfitier syntax", 1, argc, argv);
 
   return (scheme_stx_bound_eq(argv[0], argv[1])
 	  ? scheme_true
@@ -1028,10 +1036,10 @@ static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)
 
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv)
 {
-  if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("free-identifier=?", "syntax", 0, argc, argv);
-  if (!SCHEME_STXP(argv[1]))
-    scheme_wrong_type("free-identifier=?", "syntax", 1, argc, argv);
+  if (!SCHEME_STXP(argv[0]) || !SCHEME_STX_SYM(argv[0]))
+    scheme_wrong_type("free-identifier=?", "idenfitier syntax", 0, argc, argv);
+  if (!SCHEME_STXP(argv[1]) || !SCHEME_STX_SYM(argv[1]))
+    scheme_wrong_type("free-identifier=?", "idenfitier syntax", 1, argc, argv);
 
   return (scheme_stx_free_eq(argv[0], argv[1])
 	  ? scheme_true

@@ -7,6 +7,7 @@
     [(mred) 2]
     [(drscheme) 3]
     [(framework) 4]
+    [(mzc) 10]
     [(insidemz) 50]
     [else 100]))
 

@@ -68,7 +68,7 @@
 	 (format "<LI> <A HREF=\"file:~a\">~a</A>"
 		 (build-path doc "index.htm")
 		 name))
-       docs
+       doc-paths
        names)
       (list "</UL><P><UL>")
       (map

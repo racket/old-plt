@@ -36,6 +36,7 @@
 		 (send memory-dc set-pen b-pen))])
       (sequence
 	(send memory-dc select-object bitmap)
+	(send memory-dc clear)
 	(super-init '() name 0 0 width height)
 	'(set-client-size (+ width 16) (+ height 16)))
       

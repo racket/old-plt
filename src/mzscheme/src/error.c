@@ -71,10 +71,12 @@ typedef struct {
 static void default_printf(char *msg, ...)
 {
   va_list args;
+  scheme_blocking_output(1);
   va_start(args, msg);
   vfprintf(stderr, msg, args);
   va_end(args);
   fflush(stderr);
+  scheme_blocking_output(0);
 }
 
 void scheme_init_error_escape_proc(Scheme_Process *p)

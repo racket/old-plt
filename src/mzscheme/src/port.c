@@ -1889,6 +1889,20 @@ static void flush_orig_outputs()
       fflush(((Scheme_Output_File *)op->port_data)->f);
 }
 
+void scheme_blocking_output(int block)
+{
+#ifdef USE_FD_PORTS
+  if (block) {
+    flush_orig_outputs();
+    fcntl(1, F_SETFL, 0);
+    fcntl(2, F_SETFL, 0);
+  } else {
+    fcntl(1, F_SETFL, MZ_NONBLOCKING);
+    fcntl(2, F_SETFL, MZ_NONBLOCKING);
+  }
+#endif
+}
+
 #ifdef SOME_FDS_ARE_NOT_SELECTABLE
 static int try_get_fd_char(int fd, int *ready)
 {
@@ -3247,8 +3261,7 @@ make_fd_output_port(int fd)
 # ifdef NEED_RESET_STDOUT_BLOCKING
 void reset_stdout_blocking_mode(void)
 {
-  fcntl(1, F_SETFL, 0);
-  fcntl(2, F_SETFL, 0);
+  scheme_blocking_output(TRUE);
 }
 # endif
 #endif

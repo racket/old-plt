@@ -303,3 +303,4 @@ EXPORTS
  scheme_make_args_string
  scheme_no_dumps
  scheme_system_library_subpath
+ scheme_blocking_output

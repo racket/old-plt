@@ -167,6 +167,7 @@ static Scheme_Manager *main_manager;
 
 long scheme_total_gc_time;
 static long start_this_gc_time;
+static short delay_breaks = 0, delayed_break_ready = 0;
 
 void (*scheme_sleep)(float seconds, void *fds);
 void (*scheme_notify_multithread)(int on);
@@ -1525,6 +1526,11 @@ Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *conf
 
 void scheme_break_thread(Scheme_Process *p)
 {
+  if (delay_breaks) {
+    delayed_break_ready = 1;
+    return;
+  }
+
   if (!p) {
     p = scheme_main_process;
     if (!p)
@@ -1893,6 +1899,9 @@ static void get_ready_for_GC()
 #ifdef WINDOWS_PROCESSES
   scheme_suspend_remembered_threads();
 #endif
+
+  delayed_break_ready = 0;
+  delay_breaks = 1;
 }
 
 extern int GC_words_allocd;
@@ -1907,6 +1916,10 @@ static void done_with_GC()
 #ifdef WINDOWS_PROCESSES
   scheme_resume_remembered_threads();
 #endif
+
+  delay_breaks = 0;
+  if (delayed_break_ready)
+    scheme_break_thread(NULL);
 
   scheme_total_gc_time += (scheme_get_process_milliseconds() - start_this_gc_time);
 }

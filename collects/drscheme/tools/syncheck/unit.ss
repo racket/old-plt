@@ -125,8 +125,6 @@
 
     (for-each set-slatex-style delta-symbols (map mred:get-preference delta-symbols))
 
-    ;(define wx:const-base -1)
-
     (define others-string "Other...")
 
     (define short-colors '("BLACK" "RED" "BLUE" "NAVY" "GREEN" "DARK OLIVE GREEN"
@@ -522,37 +520,32 @@
 	(inherit button-panel definitions-edit interactions-edit)
 	(sequence (apply super-init args))
 	(private
-	  [transform
-	   (lambda (edit)
-	     (let/ec k
-	       (with-handlers
-		   ([void ; should be: zodiac:interface:zodiac-exn?
-		     (lambda (exn)
-		       (mred:message-box (exn-message exn) "error")
-		       (send interactions-edit insert-prompt)
-		       (k (void)))])
-		 (let* ([thunk (mred:read-snips/chars-from-buffer edit)]
-			[reader (zodiac:read thunk (zodiac:make-location 1 1 0 edit))])
-		   (color-syntax reader edit)))))]
 	  [button-callback
 	   (lambda ()
-	     (let ([edit definitions-edit])
+	     (let ([definitions-edit definitions-edit])
 	       (dynamic-wind
 		(lambda ()
 		  (wx:begin-busy-cursor)
-		  (send edit set-styles-fixed #f)
-		  (send edit begin-edit-sequence #f))
+		  (send definitions-edit set-styles-fixed #f)
+		  '(send definitions-edit begin-edit-sequence #f))
 		(lambda ()
-		  (transform edit))
+		  (with-handlers
+		      ([void ; should be: zodiac:interface:zodiac-exn?
+			(lambda (exn)
+			  (mred:message-box (exn-message exn) "error")
+			  (send interactions-edit insert-prompt))])
+		    (let* ([thunk (mred:read-snips/chars-from-buffer definitions-edit)]
+			   [reader (zodiac:read thunk (zodiac:make-location 1 1 0 definitions-edit))])
+		      (color-syntax reader))))
 		(lambda ()
-		  (send edit end-edit-sequence)
-		  (send edit set-styles-fixed #t)
+		  '(send definitions-edit end-edit-sequence)
+		  (send definitions-edit set-styles-fixed #t)
 		  (wx:end-busy-cursor)))))]
 	  [color-syntax
-	   (lambda (reader edit)
+	   (lambda (reader)
 	     (letrec* ([user-param (ivar interactions-edit param)]
 		       [add-arrow 
-			(let ([aa (ivar edit syncheck:add-arrow)])
+			(let ([aa (ivar definitions-edit syncheck:add-arrow)])
 			  (lambda (start-left start-right finish-left finish-right)
 			    (let* ([start-dx 0]
 				   [start-dy 0]
@@ -566,10 +559,10 @@
 			      (aa start-left start-right 
 				  finish-left finish-right
 				  delta brush pen))))]
-		       [find-string (ivar edit find-string)]
+		       [find-string (ivar definitions-edit find-string)]
 		       [change-style (lambda (s x y)
-				       ((ivar edit change-style) s x y))]
-		       [get-char (ivar edit get-character)]
+				       ((ivar definitions-edit change-style) s x y))]
+		       [get-char (ivar definitions-edit get-character)]
 		       [find-next-whitespace
 			(lambda (start)
 			  (let* ([find (lambda (s)
@@ -598,7 +591,7 @@
 				start)))]
 		       [top-level-varrefs null]
 		       [defineds (make-hash-table)]
-		       [style-list (send edit get-style-list)]
+		       [style-list (send definitions-edit get-style-list)]
 		       [bound-style (send style-list find-named-style "mzprizm:bound variable")]
 		       [unbound-style (send style-list find-named-style "mzprizm:unbound variable")]
 		       [primitive-style (send style-list find-named-style "mzprizm:primitive")]
@@ -632,8 +625,10 @@
 					    (change-style syntax-style
 							  (zodiac:location-offset (zodiac:zodiac-start zobj))
 							  (add1 (zodiac:location-offset 
-								 (zodiac:zodiac-finish zobj))))]
-					   [else (void)])))))]
+								 (zodiac:zodiac-finish zobj))))
+					    (mred:message-box "before change style.2")]
+					   [else (void)]))))
+				    '(mred:message-box "color-syntax ending"))]
 					    
 				 [color
 				  (lambda (delta)
@@ -750,12 +745,12 @@
 	       
 	       ; reset all of the buffer to the default style
 	       ; and clear out arrows
-	       (let* ([list (send edit get-style-list)]
+	       (let* ([list (send definitions-edit get-style-list)]
 		      [style (send list find-named-style "Standard")])
-		 (send edit syncheck:clear-arrows)
+		 (send definitions-edit syncheck:clear-arrows)
 		 (if (null? style)
 		     (printf "Warning: couldn't find Standard style~n")
-		     (change-style style 0 (send edit last-position))))
+		     (change-style style 0 (send definitions-edit last-position))))
 	       
 	       ; read expand and color
 	       (let read-loop ()

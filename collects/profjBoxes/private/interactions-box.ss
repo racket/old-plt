@@ -117,7 +117,7 @@
           #;((is-a?/c editor-stream-in%) . -> . (is-a?/c interactions-box%))
           ;; Produces an interaction box from the given file stream
           (define/override (read f)
-            (let ([box (new interaction-box%)])
+            (let ([box (new interactions-box%)])
               (send box read-from-file f)
               box))
           (super-new)))
@@ -173,12 +173,12 @@
           #;((is-a?/c editor-stream-out%) . -> . void?)
           ;; Writes the interaction to file
           (define/public (write f)
-            (send input write-to-file f))
+            (send input-text write-to-file f))
           
           #;((is-a?/c editor-stream-in%) . -> . void?)
           ;; Reads the interaction from file
           (define/public (read-from-file f)
-            (send input read-from-file f))
+            (send input-text read-from-file f))
           
           (super-new)
           

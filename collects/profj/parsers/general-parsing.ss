@@ -2,7 +2,8 @@
 (module general-parsing mzscheme
   
   (require (lib "lex.ss" "parser-tools")
-           (lib "string.ss"))
+           (lib "string.ss")
+           (lib "list.ss"))
   (require "../ast.ss" "../parameters.ss" "lexer.ss")
   
   (provide (all-defined))
@@ -218,8 +219,40 @@
         (let ((s (string-copy (token-value t))))
           (string-lowercase! s)
           (if (null? args)
-              (keyword? (string->symbol s))
-              (eq? s (car args))))
+              (or (keyword? (string->symbol s))
+                  (member s all-words))
+              (or (eq? (string->symbol s) (car args))
+                  (member s (select-words (car args))))))
         #f))
-                                  
+  
+  (define misspelled-list '((import "mport" "iport" "imort" "imprt" "impot" "impor" "improt")
+                            (class "lass" "cass" "clss" "clas" "calss")
+                            (abstract 
+                             "bstract" "astract" "abtract" "absract" "abstact" "abstrct" "abstrat" "abstract" "abstarct" "abstracts")
+                            (extends "xtends" "etends" "exends" "extnds" "exteds" "extens" "extneds" "extend")
+                            (new "nw" "ne" "nwe")
+                            (this "his" "tis" "ths" "thi" "tihs" "thsi")
+                            (if "fi")
+                            (return "eturn" "rturn" "reurn" "retrn" "retun" "retur" "reutrn" "retrun" "returns")
+                            (true "rue" "tue" "tre" "tru" "ture" "treu")
+                            (false "flse" "fase" "fale" "fals" "flase" "fasle")
+                            (interface
+                                "nterface" "iterface" "inerface" "intrface" "inteface" "interace" "interfce" "interfae" "intreface")
+                            (implements 
+                             "mplements" "iplements" "impements" "implments" "impleents" "implemnts" "implemets" "implemens"
+                             "implement")
+                            (void "oid" "vid" "voi" "viod")
+                            (super "uper" "sper" "supr" "supe" "supper")
+                            (public "ublic" "pblic" "pulic" "pubic" "publc" "publi" "pubilc")
+                            (private "rivate" "pivate" "prvate" "priate" "privte" "privae" "privat" "pravite")
+                            (package "ackage" "pckage" "pakage" "pacage" "packge" "packae" "packag")
+                            (protected "rotected" "portected")
+                            (final "inal" "fnal" "fial" "finl" "finale" "fianl")
+                            ))
+
+  (define (select-words key)
+    (car (filter (lambda (x) (eq? (car x) key)) misspelled-list)))
+  
+  (define all-words (filter string? (apply append misspelled-list)))
+                                
   )

@@ -472,11 +472,23 @@
                 ((open-separator? n-tok) 
                  (parse-error (format "Method parameters must begin with ( found ~a" n-out) srt ne))
                 ((id-token? n-tok)
-                 (parse-error
-                  (if (eq? (level) 'intermediate)
-                      (format "Fields must be separated by commas, method paramters must be in ()s, ~a not allowed" n-out)
-                      (format "Fields must be separatley declared, method paramters must be in ()s, ~a not allowed" n-out))
-                  srt ne))                
+                 (if (and (id-token? (get-tok pre))
+                          (close-to-keyword? (get-tok pre) 'abstract))
+                     (parse-error
+                      (string-append (format "Incorrectly formed field or method declaration.~n")
+                                     (format
+                                      "~a is close to 'abstract' but miscapitalized or misspelled, and might make this a method declaration.~n"
+                                      (output-format (get-tok pre)))
+                                     "Otherwise, "
+                                     (if (eq? (level) 'intermediate)
+                                         (format "Fields must be separated by commas, method paramters must be in ()s, ~a not allowed" n-out)
+                                         (format "Fields must be separatley declared, method paramters must be in ()s, ~a not allowed" n-out)))
+                      ps ne)
+                     (parse-error
+                      (if (eq? (level) 'intermediate)
+                          (format "Fields must be separated by commas, method paramters must be in ()s, ~a not allowed" n-out)
+                          (format "Fields must be separatley declared, method paramters must be in ()s, ~a not allowed" n-out))
+                      srt ne)))
                 (else (parse-error 
                        (format "Expected ; to end field or method parameter list, found ~a" n-out) srt ne)))))
            (else 

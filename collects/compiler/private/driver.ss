@@ -65,7 +65,8 @@
   (require (lib "unitsig.ss")
 	   (lib "list.ss")
 	   (lib "etc.ss")
-	   (lib "pretty.ss"))
+	   (lib "pretty.ss")
+	   (prefix src2src: "../src2src.ss"))
   
   (require (lib "zodiac-sig.ss" "syntax")
 	   (lib "compile-sig.ss" "dynext")
@@ -212,7 +213,7 @@
 	    (when verbose? (printf " expanding...~n"))
 	    (parameterize ([current-load-relative-directory input-directory])
 	      (map (lambda (expr)
-		     (zodiac:syntax->zodiac (expand expr)))
+		     (zodiac:syntax->zodiac (expand (src2src:optimize (expand expr) #t))))
 		   exprs)))))
 
       (define elaborate-namespace (make-namespace))

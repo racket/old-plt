@@ -532,7 +532,7 @@
 (test 31525197391593476 inexact->exact 31525197391593476.0)
 (test 31525197391593476 inexact->exact 31525197391593476.0)
 
-(test 0 apply + (map inexact->exact (list 3.2e+270 -2.4e+270 -8e+269)))
+(test 0 apply + (map inexact->exact (list 3.2d+270 -2.4d+270 -8d+269)))
 (test 0 apply + (map inexact->exact (list 3.2f+7 -2.4f+7 -8f+6)))
 
 (test #t positive? (inexact->exact 0.1))
@@ -1462,10 +1462,10 @@
 ; Should at least be close...
 (test 4.0 round (log (exp 4.0)))
 (test 125.0 round (* 1000 (asin (sin 0.125))))
-(test 125.0 round (* 1000 (asin (sin 0.125+0.0i))))
+(test 125.0d0 round (* 1000 (asin (sin 0.125+0.0d0i))))
 (test 125.0 round (* 1000 (asin (sin 1/8))))
 (test 125.0 round (* 1000 (acos (cos 0.125))))
-(test 125.0 round (* 1000 (acos (cos 0.125+0.0i))))
+(test 125.0d0 round (* 1000 (acos (cos 0.125+0.0d0i))))
 (test 125.0 round (* 1000 (acos (cos 1/8))))
 (test 785.0 round (* 1000 (atan 1 1)))
 (test 785.0 round (* 1000 (atan 1.0 1.0)))
@@ -2060,9 +2060,9 @@
 (test 1.157920892373162e+77 exact->inexact (expt 2 256))
 (test 1.157920892373162e+77 exact->inexact (sub1 (expt 2 256)))
 
-(test 551527030753995340375346347667240734743269800540264151034260072897183744 inexact->exact 5.515270307539953e+71)
+(test 551527030753995340375346347667240734743269800540264151034260072897183744 inexact->exact 5.515270307539953d+71)
 (test (expt 2 64) inexact->exact 1.8446744073709552e+19)
-(test (expt 2 256) inexact->exact 1.157920892373162e+77)
-(test 115792089237316195423570985008687907853269984665640564039457584007913129639936 inexact->exact 1.157920892373162e+77)
+(test (expt 2 256) inexact->exact 1.157920892373162d+77)
+(test 115792089237316195423570985008687907853269984665640564039457584007913129639936 inexact->exact 1.157920892373162d+77)
 
 (report-errs)

@@ -2,11 +2,14 @@
 ; Tests macro expansion by setting the eval handler and
 ;  running all tests
 
-(unless (defined? 'expand-load)
-  (global-defined-value 'expand-load "all.ss"))
+(load-relative "loadtest.ss")
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(with-handlers ([not-break-exn?
+		 (lambda (exn)
+		   (namespace-variable-binding
+		    'expand-load
+		    "quiet.ss"))])
+  (namespace-variable-binding 'expand-load))
 
 (let ([orig (current-eval)])
   (dynamic-wind
@@ -14,10 +17,13 @@
      (current-eval
       (lambda (x)
 	(set! mz-test-syntax-errors-allowed? #t)
-	(let ([x (expand-defmacro
-		  (expand-defmacro
-		   (expand-defmacro-once
-		    (expand-defmacro-once x))))])
+	(let ([x (if (compiled-expression? x)
+		     x
+		     (parameterize ([current-module-name-prefix #f])
+		       (expand
+			(expand
+			 (expand-once
+			  (expand-once x))))))])
 	  (set! mz-test-syntax-errors-allowed? #f)
 	  (orig x)))))
    (lambda ()

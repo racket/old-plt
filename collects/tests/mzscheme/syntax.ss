@@ -602,7 +602,7 @@
 (test 4 'implicit-begin (let ([x 4][y 7]) 'y x))
 (test 4 'implicit-begin (let ([x 4][y 7]) y x))
 
-(test 5 'implicit-begin (let () 10 (begin) 5))
+(test 5 'implicit-begin (let () (begin) 10 5))
 
 (SECTION 4 2 5)
 (define f-check #t)
@@ -798,6 +798,7 @@
 		  lambda))
 (test 5 'intdef (let ()
 		  (define define 5)
+		  'ok
 		  define))
 
 (syntax-test #'(lambda () (define x 10) (begin)))

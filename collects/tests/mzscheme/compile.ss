@@ -2,11 +2,14 @@
 ; Tests compilation and writing/reading compiled code
 ;  by setting the eval handler and running all tests
 
-(unless (defined? 'compile-load)
-  (global-defined-value 'compile-load "all.ss"))
+(load-relative "loadtest.ss")
 
-(if (not (defined? 'SECTION))
-    (load-relative "testing.ss"))
+(with-handlers ([not-break-exn?
+		 (lambda (exn)
+		   (namespace-variable-binding
+		    'compile-load
+		    "quiet.ss"))])
+  (namespace-variable-binding 'compile-load))
 
 (define file
   (if #f
@@ -16,9 +19,15 @@
 (define try-one
   (lambda (e)
     (let ([c (compile e)]
-	  [p (open-output-string)])
+	  [ec (compile (expand e))]
+	  [p (open-output-string)]
+	  [ep (open-output-string)])
       (write c p)
-      (let ([s (get-output-string p)])
+      (write ec ep)
+      (let ([s (get-output-string p)]
+	    [es (get-output-string ep)])
+	(unless (equal? s es)
+	  (error 'try "bad expand ~e~n" e))
 	; (write (string->list s)) (newline)
 	(let ([e (parameterize ([read-accept-compiled #t])
 		     (read (open-input-string s)))])
@@ -48,9 +57,16 @@
 	    ; (fprintf file ": ~a~n" +)
 	    ; (write x file) (newline file)
 	    (let ([p (open-output-string)]
-		  [c (compile x)])
+		  [ep (open-output-string)]
+		  [c (compile x)]
+		  [ec (compile (expand x))])
 	      (write c p)
-	      (let ([s (get-output-string p)])
+	      (write ec ep)
+	      (let ([s (get-output-string p)]
+		    [es (get-output-string ep)])
+		(unless (equal? s es)
+		  (fprintf (current-error-port) "bad expand (~a,~a) ~e~n" 
+			   (string-length s) (string-length es) x))
 		; (display s file) (newline file)
 		(let ([e (parameterize ([read-accept-compiled #t])
 			   (read (open-input-string s)))])

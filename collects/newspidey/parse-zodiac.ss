@@ -23,7 +23,7 @@
                       (read-from-thunk defs-thunk)
                       (zodiac:make-attributes)
                       zodiac:scheme-vocabulary)])
-          (printf "terms: ~a~n" terms)
+          ;;(printf "terms: ~a~n" terms)
 	  (set! *ast* terms)
           (map (lambda (term) (derive-top-term-constraints '() term))
                terms)

@@ -296,24 +296,7 @@ void wxPanel::DoSetSize(int x, int y, int width, int height)
   if (height==-1) 
     height = cWindowHeight;
  		
-  Bool xIsChanged = (x != cWindowX);
-  Bool yIsChanged = (y != cWindowY);
-  Bool widthIsChanged = (width != cWindowWidth);
-  Bool heightIsChanged = (height != cWindowHeight);
-
-#if 0
-  // EMBEDDING
-  if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged))
-    {
-      SetCurrentMacDCNoMargin();
-      MacSetBackground();
-      ::MoveControl(cEmbeddingControl,SetOriginX,SetOriginY);
-      ::SizeControl(cEmbeddingControl,width,height);
-    }
-#endif		
-
   wxWindow::DoSetSize(x,y,width,height);
-
 }
 
 
@@ -482,8 +465,8 @@ void wxPanel::OnChar(wxKeyEvent *event)
 	wxWindow* wrapWindow = NULL;
 
 	// Tab steps forward, Shift-Tab steps backwards
-	Bool backwards = event->shiftDown;
 #if 0
+	Bool backwards = event->shiftDown;
 	if (backwards)
 	  childWindowNode = cClientArea->Windows()->Last();
 	else

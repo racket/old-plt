@@ -204,7 +204,7 @@ void wxPrintData::SetNoCopies(int c)
 
 void wxPrintData::SetAllPages(Bool flag)
 {
-  PMSetPageRange(cPrintSettings,0,kPMPrintAllPages);
+  PMSetPageRange(cPrintSettings,1,kPMPrintAllPages);
 }
 
 void wxPrintData::SetCollate(Bool flag)
@@ -360,7 +360,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     }
     if (abortIt) {
       printData->SetAbortFlag();
-      wxDialogBox *dialog = new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
+      new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
       break;
     }
     for (int pn = printData->GetFromPage(); 
@@ -369,7 +369,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 	 pn++) {
       if (abortIt) {
 	printData->SetAbortFlag();
-	wxDialogBox *dialog = new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
+	new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
 	keepGoing = FALSE;
 	break;
       } else {      

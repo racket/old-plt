@@ -28,7 +28,7 @@
 #include <Windows.h>
 #endif
 
-static wxMenuBar *empty_menu_bar, *close_menu_bar;
+static wxMenuBar *close_menu_bar;
 
 //=============================================================================
 // Public constructors
@@ -64,7 +64,6 @@ wxFrame::wxFrame // Constructor (for frame window)
   ::SetRect(&theBoundsRect, X, Y, X + cWindowWidth, Y + cWindowHeight);
   Str255 theWindowTitle = "\p";
   if (windowTitle) CopyCStringToPascal(windowTitle, theWindowTitle);
-  const Bool WindowIsVisible = TRUE;
 
   cUserHidden = TRUE;
 
@@ -245,11 +244,6 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
   Bool widthIsChanged = (width != cWindowWidth);
   Bool heightIsChanged = (height != cWindowHeight);
 
-  int oldWindowX = cWindowX;
-  int oldWindowY = cWindowY;
-  int oldWindowWidth = cWindowWidth;
-  int oldWindowHeight = cWindowHeight;
-  
   if (! wxTheApp->MacOS85WindowManagerPresent) {
     if (width > cWindowWidth || height > cWindowHeight)
       {
@@ -687,13 +681,13 @@ void wxFrame::Show(Bool show)
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
 #ifdef OS_X
-      if (sheetParent)
-	  ::ShowSheetWindow(theMacWindow, GetWindowFromPort(cParentSheet->cMacDC->macGrafPort()));
+      if (cSheetParent)
+	  ::ShowSheetWindow(theMacWindow, GetWindowFromPort(cSheetParent->cMacDC->macGrafPort()));
       else
 #endif
 	  ::ShowWindow(theMacWindow);
     ::SelectWindow(theMacWindow); 
-    
+      
     if (cMacDC->currentUser() == this)
       /* b/c may be optimized for hidden: */
       cMacDC->setCurrentUser(NULL);
@@ -702,7 +696,12 @@ void wxFrame::Show(Bool show)
       cFocusWindow->OnKillFocus();
       cFocusWindow = NULL;
     }
-    ::HideWindow(theMacWindow);
+#ifdef OS_X
+    if (cSheetParent)
+      ::HideSheetWindow(theMacWindow);
+    else
+#endif
+      ::HideWindow(theMacWindow);
   }
 
   /* Paint(); */
@@ -766,7 +765,7 @@ void wxFrame::Paint(void)
     }
     wxWindow::Paint();
     if (cStatusPanel) {
-      int statusLineHeight = cStatusPanel->Height();
+      /* int statusLineHeight = cStatusPanel->Height(); */
 
       int w, h;
       cStatusPanel->GetSize(&w, &h);

@@ -115,14 +115,14 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
  long		style
  ) :
  wxbWindow (windowName),
+ cStyle (style),
+ children (new wxChildList()),
+ cScroll (NULL),
  cWindowX (x != -1 ? x : 0),
  cWindowY (y != -1 ? y : 0),
- cWindowWidth (width >= 0 ? width : 0),
  cWindowHeight (height >= 0 ? height : 0),
- cStyle (style),
- cScroll (NULL),
- cAreas (new wxList(wxList::kDestroyData)),
- children (new wxChildList())
+ cWindowWidth (width >= 0 ? width : 0),
+ cAreas (new wxList(wxList::kDestroyData))
 {
   cActive = FALSE;
   cEnable = TRUE;
@@ -160,12 +160,12 @@ wxWindow::wxWindow // Constructor (given parentArea)
  long		style
  ) :
  wxbWindow (windowName),
- cWindowWidth (width >= 0 ? width : 0),
- cWindowHeight (height >= 0 ? height : 0),
  cStyle (style),
+ children (new wxChildList()),
  cScroll (NULL),
- cAreas (new wxList(wxList::kDestroyData)),
- children (new wxChildList())
+ cWindowHeight (height >= 0 ? height : 0),
+ cWindowWidth (width >= 0 ? width : 0),
+ cAreas (new wxList(wxList::kDestroyData))
 {
   cActive = FALSE;
   cEnable = TRUE;
@@ -201,12 +201,12 @@ wxWindow::wxWindow // Constructor (given parentWindow)
  long		style
  ) :
  wxbWindow (windowName),
- cWindowWidth (width >= 0 ? width : 0),
- cWindowHeight (height >= 0 ? height : 0),
  cStyle (style),
+ children (new wxChildList()),
  cScroll (NULL),
- cAreas (new wxList(wxList::kDestroyData)),
- children (new wxChildList())
+ cWindowHeight (height >= 0 ? height : 0),
+ cWindowWidth (width >= 0 ? width : 0),
+ cAreas (new wxList(wxList::kDestroyData))
 {
   cActive = FALSE;
   cEnable = TRUE;
@@ -236,14 +236,14 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
  char*		windowName
  ) :
  wxbWindow (windowName),
+ cStyle (0),
+ children (new wxChildList()),
+ cScroll (NULL),
  cWindowX (0),
  cWindowY (0),
- cWindowWidth (0),
  cWindowHeight (0),
- cStyle (0),
- cScroll (NULL),
- cAreas (new wxList(wxList::kDestroyData)),
- children (new wxChildList())
+ cWindowWidth (0),
+ cAreas (new wxList(wxList::kDestroyData))
 {
   cActive = FALSE;
   cEnable = TRUE;

@@ -53,7 +53,6 @@ void wxDialogBox::Show(Bool show)
   cFrame->Show(show);
   if (show) {
     if (cFrame->IsModal()) {
-      wxWindow *oldm = wxGetModalWindow(ContextWindow());
       wxPushModalWindow(ContextWindow(), cFrame);
       
       wxDispatchEventsUntil(IsUnshown, (void *)this);
@@ -319,7 +318,6 @@ char *wxFileSelector(char *message, char *default_path,
 {
   if ((navinited >= 0) && (navinited || NavServicesAvailable())) {
     NavDialogRef outDialog;
-    NavTypeListHandle openListH = NULL;
     OSErr derr;
     NavDialogCreationOptions dialogOptions;
 

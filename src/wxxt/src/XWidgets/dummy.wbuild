@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Just touch the output file (which is the last argument
+#  with .w replaced by .c)
+
 findlast()
 {
   RESULT=${1%%.w}

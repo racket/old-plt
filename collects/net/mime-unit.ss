@@ -648,20 +648,23 @@
                  (cdr ans)))))
       
       ;; parameter := attribute "=" value
+      (define re:parameter (regexp "([^=]+)=(.+)"))
       (define parameter
         (lambda (par)
-          (let* ((r (regexp "([^=]+)=(.+)"))
+          (let* ((r re:parameter)
                  (att (attribute (regexp-replace r par "\\1")))
                  (val (value (regexp-replace r par "\\2"))))
-            (and (regexp-match r par)
-                 att val (cons (lowercase att) val)))))
+            (if (regexp-match r par)
+		(cons (if att (lowercase att) "???") val)
+		(cons "???" par)))))
       
       ;; value := token / quoted-string
       (define value
         (lambda (val)
           (or (token val)
-              (quoted-string val))))
-      
+              (quoted-string val)
+	      val)))
+
       ;; token := 1*<any (US-ASCII) CHAR except SPACE, CTLs,
       ;; 	    or tspecials>
       ;; tspecials :=  "(" / ")" / "<" / ">" / "@" /
@@ -682,10 +685,10 @@
       ;; 	     ; is ALWAYS case-insensitive.
       (define attribute token)
       
-      
+      (define re:quotes (regexp "\"(.+)\""))
       (define quoted-string
         (lambda (str)
-          (let* ((quotes (regexp "\"(.+)\""))
+          (let* ((quotes re:quotes)
                  (ans (regexp-match quotes str)))
             (and ans
                  (regexp-replace quotes str "\\1")))))

@@ -170,9 +170,6 @@
    
    make-console-edit%
    console-edit%
-   
-   make-console-canvas%
-   console-canvas%
 
    make-console-frame%
    console-frame%))
@@ -221,6 +218,9 @@
    make-frame-title-canvas%
    frame-title-canvas%
    
+   make-wide-snip-canvas%
+   wide-snip-canvas%
+
    number-control%))
 
 (define-signature mred:frame^

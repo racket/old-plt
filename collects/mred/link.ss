@@ -62,7 +62,7 @@
 		  (core function@))]
 	  [canvas : mred:canvas^ 
 		  ((reference-unit/sig "canvas.ss")
-		   container edit (core file@))]
+		   container edit preferences (core file@))]
 	  [panel : mred:panel^ ((reference-unit/sig "panel.ss")
 				container canvas (core function@))]
 	  [frame : mred:frame^ 

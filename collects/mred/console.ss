@@ -309,7 +309,7 @@
 	    [set-auto-set-wrap
 	     (lambda (x)
 	       (super-set-auto-set-wrap x)
-	       (for-each (lambda (c) (send c wrap-rep-snips x)) canvases))]
+	       (for-each (lambda (c) (send c widen-snips x)) canvases))]
 	    [init-transparent-io
 	     (lambda ()
 	       (unless transparent-edit
@@ -322,7 +322,7 @@
 		  (lambda () (begin-edit-sequence #f))
 		  (lambda ()		  
 		    (let ([snip (make-object wx:media-snip% transparent-edit)])
-		      (for-each (lambda (c) (send c add-rep-snip snip))
+		      (for-each (lambda (c) (send c add-wide-snip snip))
 				canvases)
 		      (insert snip)
 		      (insert #\newline))
@@ -715,54 +715,6 @@
       
     (define console-edit% (make-console-edit% mred:edit:edit%))
 
-    (define make-console-canvas%
-      (lambda (super%)
-	(class-asi super%
-	  (inherit get-media)
-	  (rename [super-on-size on-size])
-	  (private
-	    [snips null]
-	    [autowrap-snips? (mred:preferences:get-preference 'mred:auto-set-wrap?)]
-	    [update-snip-size
-	     (lambda (s)
-	       (let* ([width (box 0)]
-		      [lefti (box 0)]
-		      [righti (box 0)]
-		      [leftm (box 0)]
-		      [rightm (box 0)]
-		      [snip-media (send s get-this-media)])
-		 (send (send (get-media) get-admin)
-		       get-view null null width null)
-		 (send s get-inset lefti (box 0) righti (box 0))
-		 (send s get-margin leftm (box 0) rightm (box 0))
-		 (let ([snip-width (- (unbox width)
-				      ;(unbox lefti)
-				      ;(unbox righti)
-				      (unbox leftm)
-				      (unbox rightm))])
-		   (send s set-min-width snip-width)
-		   (send s set-max-width snip-width)
-		   (unless (null? snip-media)
-		     (send snip-media set-max-width
-			   (if autowrap-snips?
-			       snip-width
-			       0))))))])
-	  (public
-	    [wrap-rep-snips
-	     (lambda (x)
-	       (set! autowrap-snips? x)
-	       (for-each update-snip-size snips))]
-	    [add-rep-snip
-	     (lambda (snip)
-	       (set! snips (cons snip snips))
-	       (update-snip-size snip))]
-	    [on-size
-	     (lambda (width height)
-	       (super-on-size width height)
-	       (for-each update-snip-size snips))]))))
-			   
-    (define console-canvas% (make-console-canvas% mred:canvas:frame-title-canvas%))
-
     (define make-transparent-io-edit%
       (lambda (super%)
 	(class-asi super%
@@ -882,7 +834,7 @@
 	    edit-offset 
 	    other-offset)
 	  (public
-	    [get-canvas% (lambda () console-canvas%)]
+	    [get-canvas% (lambda () mred:canvas:wide-snip-canvas%)]
 	    [get-edit% (lambda () console-edit%)])
 	  (public 
 	    [make-menu-bar

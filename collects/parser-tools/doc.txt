@@ -143,6 +143,9 @@ This module provides the following syntactic form:
      LALR table to the file named filename (unless the file exists).
      filename must be a string.
 
+  > (yacc-output filename) OPTIONAL causes the parser generator to
+     write a grammar file in the syntax of YACC/Bison.
+
   > (suppress) OPTIONAL causes the parser generator not to report
      shift/reduce or reduce/reduce conflicts.
 

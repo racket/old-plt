@@ -244,6 +244,11 @@
  (are-you-sure-revert-title
   "Revert?")
  
+ ;;; saving a file
+ ; ~a is filled with the filename
+ (error-saving "Error Saving") ;; title of error message dialog
+ (error-saving-file/name "There was an error saving ~a.")
+
  ;;; finder dialog
  (must-specify-a-filename "You must specify a file name")
  (file-does-not-exist "The file \"~a\" does not exist.")

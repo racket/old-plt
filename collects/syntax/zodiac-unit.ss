@@ -213,9 +213,11 @@
 
 		[(#%datum . val)
 		 (let ([val (syntax val)])
-		   (make-read
+		   (make-quote-form
 		    stx
-		    (syntax-e val)))]
+		    (mk-back)
+		    (make-read
+		     val)))]
 
 		[(define-values names rhs)
 		 (make-define-values-form
@@ -352,6 +354,8 @@
 
 		[(#%app func arg ...)
 		 (make-app
+		  stx
+		  (mk-back)
 		  (loop (syntax func) env trans?)
 		  (map
 		   (lambda (arg)
@@ -360,12 +364,16 @@
 		
 		[(struct (name sup) fields)
 		 (make-struct-form
-		  (syntax-e (syntax name))
+		  stx
+		  (mk-back)
+		  (syntax name)
 		  (loop (syntax sup) env trans?)
 		  (map syntax-e (syntax->list (syntax fields))))]
 		[(struct name fields)
 		 (make-struct-form
-		  (syntax-e (syntax name))
+		  stx
+		  (mk-back)
+		  (syntax name)
 		  #f
 		  (map syntax-e (syntax->list (syntax fields))))]
 		
@@ -508,6 +516,14 @@
       (define (location-file z)
 	(syntax-source (zodiac-stx z)))
 
+      (define (read-object z)
+	(syntax-e (zodiac-stx z)))
+
+      (define (structurize-syntax sexp)
+	(make-read (datum->syntax sexp #f #f)))
+
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
       (define eof? eof-object?)
 
       (define-struct zodiac (stx))
@@ -515,8 +531,9 @@
 
       (define-struct (parsed struct:zodiac) (back))
 
-      (define-struct (varref struct:zodiac) (var))
-      (define-struct (top-level-varref struct:zodiac) (slot))
+      (define-struct (varref struct:parsed) (var))
+
+      (define-struct (top-level-varref struct:varref) (slot))
       (define (create-top-level-varref z var slot)
 	(make-top-level-varref (zodiac-stx z) var slot))
 
@@ -528,7 +545,7 @@
       (define make-lexical-varref make-bound-varref)
       (define create-lexical-varref create-bound-varref)
 
-      (define-struct (binding struct:zodiac) (var orig-name))
+      (define-struct (binding struct:parsed) (var orig-name))
       (define (create-binding z var orig-name)
 	(make-binding (zodiac-stx z) var orig-name))
 
@@ -537,7 +554,7 @@
       (define create-lexical-binding create-binding)
 
 
-      (define-struct (app struct:zodiac) (fun args))
+      (define-struct (app struct:parsed) (fun args))
       (define (create-app z fun args)
 	(make-app (zodiac-stx z) fun args))
 
@@ -546,59 +563,59 @@
 	(make-struct-form (zodiac-stx z) type super fields))
 
       
-      (define-struct (if-form struct:zodiac) (test then else))
+      (define-struct (if-form struct:parsed) (test then else))
       (define (create-if-form z test then else)
 	(make-if-form (zodiac-stx z) test then else))
 
-      (define-struct (quote-form struct:zodiac) (expr))
+      (define-struct (quote-form struct:parsed) (expr))
       (define (create-quote-form z expr)
 	(make-quote-form (zodiac-stx z) expr))
 
-      (define-struct (begin-form struct:zodiac) (bodies))
+      (define-struct (begin-form struct:parsed) (bodies))
       (define (create-begin-form z bodies)
 	(make-begin-form (zodiac-stx z) bodies))
 
-      (define-struct (begin0-form struct:zodiac) (bodies))
+      (define-struct (begin0-form struct:parsed) (bodies))
       (define (create-begin0-form z bodies)
 	(make-begin0-form (zodiac-stx z) bodies))
 
-      (define-struct (let-values-form struct:zodiac) (vars vals body))
+      (define-struct (let-values-form struct:parsed) (vars vals body))
       (define (create-let-values-form z vars vals body)
 	(make-let-values-form (zodiac-stx z) vars vals body))
 
-      (define-struct (letrec-values-form struct:zodiac) (vars vals body))
+      (define-struct (letrec-values-form struct:parsed) (vars vals body))
       (define (create-letrec-values-form z vars vals body)
 	(make-letrec-values-form (zodiac-stx z) vars vals body))
 
-      (define-struct (define-values-form struct:zodiac) (vars val))
+      (define-struct (define-values-form struct:parsed) (vars val))
       (define (create-define-values-form z vars val)
 	(make-define-values-form (zodiac-stx z) vars val))
 
-      (define-struct (set!-form struct:zodiac) (var val))
+      (define-struct (set!-form struct:parsed) (var val))
       (define (create-set!-form z var val)
 	(make-set!-form (zodiac-stx z) var val))
 
-      (define-struct (case-lambda-form struct:zodiac) (args bodies))
+      (define-struct (case-lambda-form struct:parsed) (args bodies))
       (define (create-case-lambda-form z args bodies)
 	(make-case-lambda-form (zodiac-stx z) args bodies))
 
-      (define-struct (with-continuation-mark-form struct:zodiac) (key val body))
+      (define-struct (with-continuation-mark-form struct:parsed) (key val body))
       (define (create-with-continuation-mark-form z key val body)
 	(make-with-continuation-mark-form (zodiac-stx z) key val body))
 
-      (define-struct (quote-syntax-form struct:zodiac) (expr))
+      (define-struct (quote-syntax-form struct:parsed) (expr))
       (define (create-quote-syntax-form z expr)
 	(make-quote-syntax-form (zodiac-stx z) expr))
 
-      (define-struct (define-syntax-form struct:zodiac) (name expr))
+      (define-struct (define-syntax-form struct:parsed) (name expr))
       (define (create-define-syntax-form z name expr)
 	(make-define-syntax-form (zodiac-stx z) name expr))
 
-      (define-struct (module-form struct:zodiac) (name init-import body))
+      (define-struct (module-form struct:parsed) (name init-import body))
       (define (create-module-form z name init-import body)
 	(make-module-form (zodiac-stx z) name init-import body))
 
-      (define-struct (import/export-form struct:zodiac) ())
+      (define-struct (import/export-form struct:parsed) ())
       (define (create-import/export-form z)
 	(make-import/export-form (zodiac-stx z)))
 

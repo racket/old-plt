@@ -15,6 +15,7 @@
      zodiac->syntax
 
      structurize-syntax
+     read-object ; = (compose syntax-e zodiac-stx)
 
      ;; origin struct:
      origin-who  ; 'source or 'macro

@@ -380,7 +380,7 @@
 	     (if (exn? x)
 		 (setup-fprintf port "  ~a" (exn-message x))
 		 (setup-fprintf port "  ~s" x))))
-	 errors))
+	 (reverse errors)))
 
 
       (define (do-install-part part)

@@ -8,10 +8,10 @@ _MysterX_
  for component presentation and event-handling.
  MysterX requires Internet Explorer 4, 5, or 6 (IE) to
  be installed.  Distributed COM (DCOM) for your
- version of Windows is also required.  Windows NT,
- Windows 2000, and Windows XP come with DCOM, while 
- versions of DCOM for Windows 95 and 98 are made available 
- separately.  IE is available for download from Microsoft at
+ version of Windows is also required.  Recent versions 
+ of Windows come with DCOM; DCOM packages for Windows 95 and 98 
+ are made available separately.  IE is available for download 
+ from Microsoft at
 
    http://www.microsoft.com/windows/ie/downloads/default.asp
 

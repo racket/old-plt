@@ -225,9 +225,6 @@
       (set! search-responses
 	    (cons entry search-responses))))
 
-  (define search-bg
-    (get-pref/default 'search-bg search-bg-default))
-
   (define (make-results-page search-string items)
     `(HTML
       (HEAD ,hd-css
@@ -286,18 +283,25 @@
      (let ([result (extract-binding/single 'lucky bindings)])
        (not (string=? result "false")))))
     
+  ; two ways to get here
+  ;  (1) via search in HD, which gives bindings for
+  ;       search-string, search-type, match-type
+  ;  (2) via goto-manual-link, which gives a binding for
+  ;       hd-url
   (let* ([bindings (request-bindings initial-request)]
-	 [binding-vals (map (lambda (sym)
-			      (with-handlers
-			       ([void (lambda _ "")])
-			       (extract-binding/single sym bindings)))
-			    '(search-string search-type match-type))])
-    (if (= (string-length (car binding-vals)) 0)
-	empty-search-page
-	(apply search-results 
-	       (lucky-search? bindings)
-	       (map (lambda (sym)
-		      (with-handlers
-		       ([void (lambda _ "")])
-		       (extract-binding/single sym bindings)))
-		    '(search-string search-type match-type))))))
+	 [make-maybe-get (lambda (default)
+			   (lambda (sym)
+			     (with-handlers
+			      ([void (lambda _ default)])
+			      (extract-binding/single sym bindings))))]
+	 [binding-vals (map (make-maybe-get "")
+			    '(search-string search-type match-type))]
+	 [hd-url ((make-maybe-get #f) 'hd-url)])
+    (cond
+     [hd-url (redirect-to hd-url)]
+     [(= (string-length (car binding-vals)) 0)
+      empty-search-page]
+     [else
+      (apply search-results 
+	     (lucky-search? bindings)
+	     binding-vals)])))

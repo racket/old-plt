@@ -43,7 +43,7 @@
 	   [hd-url (finddoc-page-anchor manual index-key)]
            ; hd-url is /doc/<manual>/... or /servlet/...
 	   [url (format
-		 (string-append index-format-prefix
+		 (string-append (index-format-prefix)
 				"hd-url=~a")
 		 (hd-cookie->port cookie)
 		 (hexify-string hd-url))])

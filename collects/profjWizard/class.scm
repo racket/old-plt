@@ -1,9 +1,8 @@
 #cs(module class mzscheme 
-     (require (lib "etc.ss") (lib "list.ss"))
-     
-     (require (lib "contract.ss"))
-     
-     (require (file "datadefs.scm"))
+     (require (lib "etc.ss") 
+              (lib "list.ss")
+              (lib "contract.ss")
+              (file "data-defs.scm"))
      
      ;; ------------------------------------------------------------------------
      (provide/contract
@@ -11,9 +10,8 @@
       ) 
      
      #| Usage: 
-          (class (list "Moo" "" '(("int" "x") ("String" "s"))))    
-        create a Java class from the class name, the super type name, 
-        and a list of field specifications
+          (make-class a-class toString? template?) 
+        create a Java class from the class specification (a-class).
 
         The first optional boolean parameter specifies whether we want toString 
         in the class hiearchy. Default: true
@@ -27,24 +25,15 @@
       )
      
      #| Usage: 
+         (make-union a-union toString? template?)
+        create a Java implementation of a datatype specification using an 
+        abstract class and N variants.
 
-        (printf
-         (make-union
-          (list "AList" '(("MT") ("Cons" ("int" "first") ("AList" "rest"))))))
+        The first optional boolean parameter specifies whether we want toString 
+        in the class hiearchy. Default: true
 
-        create a Java implementation of a datatype specification 
-
-        (make-union Atype (list A B C ...)) means
-        Atype is one of: 
-        - A 
-        - B 
-        - C
-        - ... 
-        where A, B, C, ... are class definitions and may refer to Atype in 
-        their field definitions. 
-
-        The optional boolean parameter specifies whether we want toString in 
-        the class hiearchy. Default: true 
+        The second optional boolean parameter specifies whether we want 
+        a draft method template in comments. Default: true
      |#
      
      ;; ------------------------------------------------------------------------
@@ -61,7 +50,7 @@
             (commas
              (map (lambda (sc)
                     (make-class
-                     (list (car sc) type (cdr sc)) toString? template?))
+                     (list (car sc) type (cadr sc)) toString? template?))
                   subt)
              "\n")))))
      
@@ -129,7 +118,7 @@
              ,endMet
              ,cmnt*/)))
      
-     ;; String Fields -> (list String)
+     ;; String Fields -> (cons String (listof String))
      ;; create a toString method for class type with _fields_
      (define toString 
        (opt-lambda (type fields [toString? #t])
@@ -213,7 +202,7 @@
          "*/\n"
          "\n"))
      
-     #| Tests :
+     #| Tests : 
      (require (lib "testing.scm" "testing"))
      
      (test== (commas '()) "")
@@ -350,7 +339,7 @@
      
      (test== 
       (make-union
-       (list "AList" '(("MT") ("Cons" ("int" "first") ("AList" "rest")))))
+       (list "AList" '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest"))))))
       (apply string-append 
              `(
                "abstract class AList {\n"
@@ -399,11 +388,12 @@
                "  }\n"
                "}\n"
                )
-             ))
+             )
+      "full make union")
      
      (test== 
       (make-union
-       (list "AList" '(("MT") ("Cons" ("int" "first") ("AList" "rest")))) 
+       (list "AList" '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")))))
        #f #f)
       (apply string-append 
              `(
@@ -426,7 +416,8 @@
                "  }\n"
                "}\n"
                )
-             ))
+             )
+      "partial make union")
    
      (test== (make-class (list "foo" "" '() "hello world"))
              (apply string-append 
@@ -444,7 +435,7 @@
      
      (test== 
       (make-union
-       (list "AList" '(("MT") ("Cons" ("int" "first") ("AList" "rest"))) "hello world")
+       (list "AList" '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")))) "hello world")
        #f #f)
       (apply string-append 
              `("// hello world\n"
@@ -467,7 +458,8 @@
                "  }\n"
                "}\n"
                )
-             ))
+             )
+      "make union with purpose statement")
 
      |#
      )

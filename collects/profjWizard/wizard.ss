@@ -2,35 +2,43 @@
      (require (lib "mred.ss" "mred")
               (lib "class.ss")
               (lib "etc.ss")
-              (lib "list.ss"))
+              (lib "list.ss")
+              (lib "string.ss" "srfi" "13")
+              (lib "contract.ss"))
+     
      (require (file "assoc-list.scm")
-              (file "datadefs.scm"))
-     (require (lib "string.ss" "srfi" "13"))
-     (require (lib "contract.ss"))
+              (file "data-defs.scm"))
+     
+     (require-for-syntax (file "aux.scm"))
      
      (provide/contract
-      [get-class-info ((string? Variant) (Class) . opt-> . Class)]
-      [get-union-info (-> Union)]
+      [get-class-info
+       (() (string? Class) . opt-> . (union false? (list/p Class boolean? boolean?)))]
+      [get-union-info
+       (-> (union false? (list/p Union boolean? boolean?)))]
       )
      
+     ;; (define/abstract <identifier>) :: <definition> 
+     ;; introduce x as an abstract call back that raises an error 
+     ;; and set-x as a setter that defines the function finally 
+     ;; (mimic overriding)
      (define-syntax (define/abstract e)
        (syntax-case e ()
          [(_ x)
-          (let ([set-x 
-                 (datum->syntax-object 
-                  e (string->symbol (format "set-~a" (syntax-e (syntax x)))))])
-            #`(define-values (x #,set-x)
-                (let ([real-x (lambda y (error 'x "not initialized yet"))])
-                  (values
-                   (lambda y (apply real-x y))
-                   (lambda (v) (set! real-x v))))))]))
+          (with-syntax ([set-x (prefix-id-suffix "set-" (syntax x) "")])
+            (syntax 
+             (define-values (x set-x)
+               (let ([real-x (lambda y (error 'x "not initialized yet"))])
+                 (values
+                  (lambda y (apply real-x y))
+                  (lambda (v) (set! real-x v)))))))]))
      
-     #| -> (union #f (list Class Boolean Boolean)
+     #|
      present a dialog to create a single class; 
      if programmer aborts, return #f
      otherwise, produce a class and two booleans, requesting toString and draft 
      templates, respectively
-  |#
+     |#
      (define get-class-info
        (opt-lambda ([a-super null][a-v-class null])
          
@@ -303,7 +311,7 @@
                                          [name (car a-class)]
                                          [fields (caddr a-class)])
                                     ;; no supertype needed: remove (cadr a-class)
-                                    (send variants update bt (cons name fields))
+                                    (send variants update bt (list name fields))
                                     (send ms set-label name))))))))])
            (send variants add bt #f)
            (new button% (parent vp) (label "Delete")
@@ -379,7 +387,7 @@
        (values error-message spec-error?))
      
      
-     #| run: 
+     #| run: emulate the actual wizard
      (require (file "class.scm"))
      
      (provide x y)

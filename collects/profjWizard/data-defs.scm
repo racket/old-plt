@@ -7,7 +7,7 @@
  DataType       = (list TypeName VariantClasses [Comment])
  ;; the name of the type and its variants
  
- VariantClasses = (list VariantClass)
+ VariantClasses = (Listof VariantClass)
  VariantClass   = (list Name Fields [Comment])
 
  Name           = String 
@@ -17,20 +17,30 @@
  Field          = (list String String)
 |#
 
-#cs(module datadefs mzscheme 
+#cs(module data-defs mzscheme 
      
-     (require-for-syntax (file "aux.scm"))
+     ;; Examples
+     (define field1 '("int" "x"))
+     (define field2 '("int" "y"))
+     (define field3 '("boolean" "b"))
+     (define fields (list field1 field2 field3))
+     (define vc1    (list "Leaf" (list field1)))
+     (define vc2    (list "Node" '(("ATree" "left") ("ATree" "right"))))
+     (define datat1 (list "ATree" (list vc1 vc2) "a tree for ints"))
+     
+
+     (require (file "aux-contract.scm"))
      (require (lib "contract.ss"))
      
      (provide 
-      java-id?
-      class-purpose 
-      union-purpose
-      Class
-      Union 
-      Variant 
+      Class   ;; flat-contract
+      Union   ;; flat-contract 
+      Variant ;; flat-contract 
+      java-id? ;; Any -> Boolean
+      class-purpose ;; Class -> String
+      union-purpose ;; Union -> String 
       )
-     
+
      ;; DataType -> String
      (define (union-purpose dt) (if (null? (cddr dt)) "" (caddr dt)))
      
@@ -45,27 +55,17 @@
      (define (java-id? s)
        (and (string? s) (not (string=? "" s)) (not (regexp-match "[ |\t|\n]" s))))
      
-     (define-syntax (define-as-contract stx)
-       (syntax-case stx ()
-         [(_ message (name . args) . body)
-          (with-syntax ([is-name (prefix-id-suffix "is-" (syntax name) "?")]
-                        [ct-name (cap-id (syntax name))])
-            (syntax
-             (begin 
-               (define (is-name . args) . body)
-               (define ct-name (flat-named-contract message is-name)))))]))
-     
-     (define-as-contract "Class representation" (class c)
-                         (and (pair? c) (pair? (cdr c)) (pair? (cddr c)) 
-                              (or (null? (cdddr c))
-                                  (and (pair? (cdddr c))
-                                       (null? (cddddr c))
-                                       (string? (cadddr c))))
-                              ; (list? c) (= (length c) 3)
-                              (java-id? (car c))
-                              (let ([super (cadr c)])
-                                (or (java-id? super) (string=? super "")))
-                              (is-fields? (caddr c))))
+     (define-as-contract "<Class representation>" (class c)
+       (and (pair? c) (pair? (cdr c)) (pair? (cddr c)) 
+            (or (null? (cdddr c))
+                (and (pair? (cdddr c))
+                     (null? (cddddr c))
+                     (string? (cadddr c))))
+            ; (list? c) (= (length c) 3)
+            (java-id? (car c))
+            (let ([super (cadr c)])
+              (or (java-id? super) (string=? super "")))
+            (is-fields? (caddr c))))
      
      (define (is-fields? l)
        (and (list? l) (andmap is-field? l)))
@@ -74,20 +74,20 @@
        (and (pair? l) (pair? (cdr l)) (null? (cddr l))
             (java-id? (car l)) (java-id? (cadr l))))
      
-     (define-as-contract "Union (datatype) representation" (union l)
-                         (and (pair? l) (pair? (cdr l))
-                              (or (null? (cddr l))
-                                  (and (pair? (cddr l))
-                                       (null? (cdddr l))
-                                       (string? (caddr l))))
-                              (java-id? (car l))
-                              (andmap is-variant? (cadr l))))
+     (define-as-contract "<Union (datatype) representation>" (union l)
+       (and (pair? l) (pair? (cdr l))
+            (or (null? (cddr l))
+                (and (pair? (cddr l))
+                     (null? (cdddr l))
+                     (string? (caddr l))))
+            (java-id? (car l))
+            (andmap is-variant? (cadr l))))
      
-     (define-as-contract "Variant (in a union)" (variant c) 
-                         (and (pair? c) (pair? (cdr c)) (null? (cddr c))
-                              ; (list? c) (= (length c) 2)
-                              (java-id? (car c))
-                              (andmap is-fields? (cadr c))))
+     (define-as-contract "<Variant (in a union)>" (variant c) 
+       (and (pair? c) (pair? (cdr c)) (null? (cddr c))
+            ; (list? c) (= (length c) 2)
+            (java-id? (car c))
+            (is-fields? (cadr c))))
      
      
      #| Tests: 
@@ -116,3 +116,4 @@
      (test== (is-union? (list "A" (list (list "B" '()) (list "C" '())))) #t)
      |#
      )
+   

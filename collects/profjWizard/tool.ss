@@ -37,7 +37,7 @@
           
           (super-new)
           
-          ;; String (-> X) (X -> Void) -> Void
+          ;; String (-> X) (X -> String) -> Void
           (define (make-menu-item% insert-what get-class-info make-what)
             (new menu-item%
                  (label insert-what) (parent (get-special-menu))
@@ -48,8 +48,8 @@
                                               (apply make-what class-as-info))])
                       (send (get-edit-target-object) insert class-as-strn))))))
 
-          ; (make-menu-item% insert-java-class get-class-info make-class)
-          ; (make-menu-item% insert-java-union get-union-info make-union)
+          (make-menu-item% insert-java-class get-class-info make-class)
+          (make-menu-item% insert-java-union get-union-info make-union)
 	  ))
       
       (drscheme:get/extend:extend-unit-frame java-class-wizard-mixin)

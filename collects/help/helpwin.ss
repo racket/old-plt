@@ -99,225 +99,236 @@
 		    (loop (add1 n) (format "Help Desk ~a" n))
 		    name))))
 
-	  (define f (make-object (frame-mixin
-				  (class framework:frame:standard-menus% args
-				    (inherit get-edit-target-object)
-				    (rename [super-on-subwindow-char on-subwindow-char])
-				    (public
-				      [search-for-help
-				       (lambda (text type mode)
-					 (send (send search-text get-editor) erase)
-					 (run-search text 
-						     (case type
-						       [(keyword) 0]
-						       [(keyword+index) 1]
-						       [(all) 2]
-						       [else (raise-type-error 'search-for-help
-									       "'keyword, 'keyword-index, or 'all"
-									       type)])
-						     (case mode
-						       [(exact) 0]
-						       [(contains) 1]
-						       [(regexp) 2]
-						       [else (raise-type-error 'search-for-help
-									       "'exact, 'contains, or 'regexp"
-									       mode)])))]
+	  (define f
+	    (make-object (frame-mixin
+			  (class framework:frame:standard-menus% args
+			    (inherit get-edit-target-object)
+			    (rename [super-on-subwindow-char on-subwindow-char])
+			    (public
+			      [search-for-help
+			       (lambda (text type mode)
+				 (send (send search-text get-editor) erase)
+				 (run-search text 
+					     (case type
+					       [(keyword) 0]
+					       [(keyword+index) 1]
+					       [(all) 2]
+					       [else (raise-type-error 'search-for-help
+								       "'keyword, 'keyword-index, or 'all"
+								       type)])
+					     (case mode
+					       [(exact) 0]
+					       [(contains) 1]
+					       [(regexp) 2]
+					       [else (raise-type-error 'search-for-help
+								       "'exact, 'contains, or 'regexp"
+								       mode)])))]
 
-				      [goto-url (lambda (url) (send results goto-url url #f))])
-						  
+			      [goto-url (lambda (url) (send results goto-url url #f))])
+			    
 
-				    (private
-				      [edit-menu:do (lambda (const)
-						      (lambda (menu evt)
-							(let ([edit (get-edit-target-object)])
-							  (when (and edit (is-a? edit editor<%>))
-							    (send edit do-edit-operation const)))))])
-				    
-				    (override
-				      [file-menu:new-string (lambda () "Help Desk")]
-				      [file-menu:new (lambda (i e) (new-help-frame initial-url))]
+			    (private
+			      [edit-menu:do (lambda (const)
+					      (lambda (menu evt)
+						(let ([edit (get-edit-target-object)])
+						  (when (and edit (is-a? edit editor<%>))
+						    (send edit do-edit-operation const)))))])
+			    
+			    (override
+			      [file-menu:new-string (lambda () "Help Desk")]
+			      [file-menu:new (lambda (i e) (new-help-frame initial-url))]
 
-				      [file-menu:open-string (lambda () "URL")]
-				      [file-menu:open
-				       (lambda (i e)
-					 (open-url-from-user this goto-url))]
-				      
-				      [file-menu:print (lambda (i e) (send (send results get-editor) print))]
+			      [file-menu:open-string (lambda () "URL")]
+			      [file-menu:open
+			       (lambda (i e)
+				 (open-url-from-user this goto-url))]
+			      
+			      [file-menu:print (lambda (i e) (send (send results get-editor) print))]
 
-				      [edit-menu:undo (edit-menu:do 'undo)]
-				      [edit-menu:redo (edit-menu:do 'redo)]
-				      [edit-menu:cut (edit-menu:do 'cut)]
-				      [edit-menu:clear (edit-menu:do 'clear)]
-				      [edit-menu:copy (edit-menu:do 'copy)]
-				      [edit-menu:paste (edit-menu:do 'paste)]
-				      [edit-menu:select-all (edit-menu:do 'select-all)]
+			      [edit-menu:undo (edit-menu:do 'undo)]
+			      [edit-menu:redo (edit-menu:do 'redo)]
+			      [edit-menu:cut (edit-menu:do 'cut)]
+			      [edit-menu:clear (edit-menu:do 'clear)]
+			      [edit-menu:copy (edit-menu:do 'copy)]
+			      [edit-menu:paste (edit-menu:do 'paste)]
+			      [edit-menu:select-all (edit-menu:do 'select-all)]
 
-				      [edit-menu:find-string (lambda () "in Page...")]
-				      [edit-menu:find (lambda (i e)
-							(send results force-display-focus #t)
-							(letrec ([d (make-object dialog% "Find" f 300)]
-								 [enable-find (lambda ()
-										(send find enable 
-										      (positive? (send (send t get-editor) 
-												       last-position))))]
-								 [t (make-object text-field% "Find:" d
-										 (lambda (t e) (enable-find)))]
-								 [p (make-object horizontal-panel% d)]
-								 [find (make-object button% "Find" p
-										    (lambda (b e)
-										      (find-str (send t get-value)))
-										    '(border))]
-								 [close (make-object button% "Close" p
-										     (lambda (b e) (send d show #f)))])
-							  (send t set-value (or last-find-str ""))
-							  (enable-find)
-							  (send p set-alignment 'right 'center)
-							  (send d center)
-							  (send t focus)
-							  (send d show #t))
-							(send results force-display-focus #f))]
-				      [edit-menu:between-find-and-preferences
-				       (lambda (menu)
-					 (make-object menu-item% "Find Again" menu
-						      (lambda (i e) (find-str))
-						      (and (framework:preferences:get 'framework:menu-bindings)
-							   #\G))
-					 (make-object separator-menu-item% menu))]
+			      [edit-menu:find-string (lambda () "in Page...")]
+			      [edit-menu:find (lambda (i e)
+						(send results force-display-focus #t)
+						(letrec ([d (make-object dialog% "Find" f 300)]
+							 [enable-find (lambda ()
+									(send find enable 
+									      (positive? (send (send t get-editor) 
+											       last-position))))]
+							 [t (make-object text-field% "Find:" d
+									 (lambda (t e) (enable-find)))]
+							 [p (make-object horizontal-panel% d)]
+							 [find (make-object button% "Find" p
+									    (lambda (b e)
+									      (find-str (send t get-value)))
+									    '(border))]
+							 [close (make-object button% "Close" p
+									     (lambda (b e) (send d show #f)))])
+						  (send t set-value (or last-find-str ""))
+						  (enable-find)
+						  (send p set-alignment 'right 'center)
+						  (send d center)
+						  (send t focus)
+						  (send d show #t))
+						(send results force-display-focus #f))]
+			      [edit-menu:between-find-and-preferences
+			       (lambda (menu)
+				 (make-object menu-item% "Find Again" menu
+					      (lambda (i e) (find-str))
+					      (and (framework:preferences:get 'framework:menu-bindings)
+						   #\G))
+				 (make-object separator-menu-item% menu))]
 
-				      [help-menu:about-string (lambda () "Help Desk")]
-				      [help-menu:about (lambda (i e)
-							 (message-box "About Help Desk"
-								      (format 
-								       "Help Desk is a complete source of ~
+			      [help-menu:about-string (lambda () "Help Desk")]
+			      [help-menu:about (lambda (i e)
+						 (message-box "About Help Desk"
+							      (format 
+							       "Help Desk is a complete source of ~
                                                                        information about PLT software, including DrScheme, ~
                                                                        MzScheme, and MrEd.~n~n~
                                                                        Version ~a~n~
                                                                        Copyright (c) 1995-99 PLT"
-								       (version))))]
-				      [help-menu:after-about
-				       (lambda (menu)
-					 (make-object menu-item% "Help" menu
-						      (lambda (i e)
-							(message-box
-							 "Help on Help"
-							 (format
-							  "For help on using Help Desk, follow the `How to use Help Desk' link ~
+							       (version))))]
+			      [help-menu:after-about
+			       (lambda (menu)
+				 (make-object menu-item% "Help" menu
+					      (lambda (i e)
+						(message-box
+						 "Help on Help"
+						 (format
+						  "For help on using Help Desk, follow the `How to use Help Desk' link ~
                                                            on Help Desk's home page.~n~n~
                                                            (To get to the home page if you're not already there, click the `Home' ~
                                                            button at the top of the Help Desk window.)")))))])
-				    
-				    (override 
-				      [on-subwindow-char 
-				       (lambda (w e)
-					 (case (send e get-key-code)
-					   [(prior) (send (send results get-editor) move-position 'up #f 'page) #t]
-					   [(next) (send (send results get-editor) move-position 'down #f 'page) #t]
-					   [(left) (if (send e get-meta-down)
-						       (send html-panel rewind)
-						       (super-on-subwindow-char w e))]
-					   [(right) (if (send e get-meta-down)
-							(send html-panel forward)
-							(super-on-subwindow-char w e))]
-					   [else (super-on-subwindow-char w e)]))])
-				    (sequence (apply super-init args))))
-				 (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 60)))))
+			    
+			    (override 
+			      [on-subwindow-char 
+			       (lambda (w e)
+				 (case (send e get-key-code)
+				   [(prior) (send (send results get-editor)
+						  move-position 'up #f 'page) #t]
+				   [(next) (send (send results get-editor)
+						 move-position 'down #f 'page) #t]
+				   [(left) (if (send e get-meta-down)
+					       (send html-panel rewind)
+					       (super-on-subwindow-char w e))]
+				   [(right) (if (send e get-meta-down)
+						(send html-panel forward)
+						(super-on-subwindow-char w e))]
+				   [else (super-on-subwindow-char w e)]))])
+			    (sequence (apply super-init args))))
+	      (get-unique-title) #f 600 (max 440 (min 800 (- screen-h 40)))))
 
 	  (when icon16
 	    (send f set-icon icon16 mask16 'small))
 	  (when icon32
 	    (send f set-icon icon32 mask32 'large))
 
-	  (define html-panel (make-object (class hyper-panel% ()
-					    (inherit get-canvas)
-					    (rename [super-leaving-page leaving-page])
-					    (public
-					      [stop-search
-					       (lambda ()
-                                                 (set! cycle-key #f)
-						 (when collecting-thread
-						   (semaphore-wait break-sema)
-						   (break-thread collecting-thread)
-						   (semaphore-post break-sema)))])
-					    (override
-					      [on-url-click
-					       (lambda (k url)
-						 ;; Watch for clicks from docs to undownloaded docs
-						 ((let/ec escape
-						    ;; Try to see if this is a link to missing documentation.
-						    ;; Many things can go wrong; give up if anything does...
-						    (with-handlers ([void void])
-						      (let ([start (send (send (get-canvas) get-editor) get-url)])
-							(when (or (not start)
-								  (string=? "file" (url-scheme start)))
-							  (let ([url (if (string? url)
-									 (if start
-									     (combine-url/relative start url)
-									     (string->url url))
-									 url)])
-							    (when (string=? "file" (url-scheme url))
-							      (when (not (file-exists? (url-path url)))
-								;; Try comparing the base-of-base-of-url to
-								;;  the collection directory. Many things can go wrong,
-								;;  in which case we let the normal error happen.
-								(let-values ([(doc-dir) (normalize-path (collection-path "doc"))]
-									     [(dest-dir dest-doc dest-file)
-									      (let-values ([(base filename dir?)
-											    (split-path (simplify-path (url-path url)))]) 
-										(let-values ([(base name dir?)
-											      (split-path base)])
-										  (values (normalize-path base) name filename)))])
-								  (when (and (string=? doc-dir dest-dir)
-									     (not (string=? dest-doc "help")))
-								    ;; Looks like the user needs to download some docs,
-								    ;;  rather than a generic file-not-found error.
-								    ;; Redirect to information about missing docs:
-								    (escape
-								     (lambda ()
-								       (global-defined-value 'missing-doc-name dest-doc)
-								       (global-defined-value 'missing-html-file dest-file)
-								       (global-defined-value 'missing-html-url (url->string url))
-								       (send (get-canvas) goto-url 
-									     (string-append
-									      "file:"
-									      (build-path (collection-path "help") "notthere.htm"))
-									     #f)))))))))))
-						    (k url)
-						    void)))]
-					      [leaving-page
-					       (lambda (page new-page)
-						 (unless (is-a? (page->editor new-page) results-editor%)
-						   (stop-search))
-						 (super-leaving-page page new-page))]
-					      [filter-notes
-					       (lambda (l)
-						 (let ([lib (ormap (lambda (s)
-								     (let ([m (regexp-match "MzLib=(.*)" s)])
-								       (and m
-									    (format "Mz/Mr: load with (require-library \"~a.ss\")"
-										    (cadr m)))))
-								   l)])
-						   (if lib
-						       (string-append
-							(if (member "Core" l)
-							    ""
-							    "Beg/Int/Adv: not available   ")
-							lib)
-						       (let ([drlibs
-							      (filter values (map
-									      (lambda (s)
-										(let ([m (regexp-match "teach=(.*)" s)])
-										  (and m (cadr m))))
-									      l))])
-							 (if (pair? drlibs)
-							     (format "Teaching library: select ~a using Set Library To... in DrScheme"
-								     (let loop ([s (format "~s" (car drlibs))]
-										[l (cdr drlibs)])
-								       (if (null? l)
-									   s
-									   (loop (format "~a or ~s" s (car l)) (cdr l)))))
-							     "")))))]
-					      [on-navigate stop-search])
-					    (sequence (super-init #t (send f get-area-container))))))
+	  (define html-panel
+	    (make-object
+		(class hyper-panel% ()
+		  (inherit get-canvas)
+		  (rename [super-leaving-page leaving-page])
+		  (public
+		    [stop-search
+		     (lambda ()
+		       (set! cycle-key #f)
+		       (when collecting-thread
+			 (semaphore-wait break-sema)
+			 (break-thread collecting-thread)
+			 (semaphore-post break-sema)))])
+		  (override
+		    [on-url-click
+		     (lambda (k url)
+		       ;; Watch for clicks from docs to undownloaded docs
+		       ((let/ec escape
+			  ;; Try to see if this is a link to missing documentation.
+			  ;; Many things can go wrong; give up if anything does...
+			  (with-handlers ([void void])
+			    (let ([start (send (send (get-canvas) get-editor) get-url)])
+			      (when (or (not start)
+					(string=? "file" (url-scheme start)))
+				(let ([url (if (string? url)
+					       (if start
+						   (combine-url/relative start url)
+						   (string->url url))
+					       url)])
+				  (when (string=? "file" (url-scheme url))
+				    (when (not (file-exists? (url-path url)))
+				      ;; Try comparing the base-of-base-of-url to
+				      ;;  the collection directory. Many things can go wrong,
+				      ;;  in which case we let the normal error happen.
+				      (let-values ([(doc-dir)
+						    (normalize-path (collection-path "doc"))]
+						   [(dest-dir dest-doc dest-file)
+						    (let-values ([(base filename dir?)
+								  (split-path
+								   (simplify-path
+								    (url-path url)))]) 
+						      (let-values ([(base name dir?)
+								    (split-path base)])
+							(values (normalize-path base)
+								name
+								filename)))])
+					(when (and (string=? doc-dir dest-dir)
+						   (not (string=? dest-doc "help")))
+					  ;; Looks like the user needs to download some docs,
+					  ;;  rather than a generic file-not-found error.
+					  ;; Redirect to information about missing docs:
+					  (escape
+					   (lambda ()
+					     (global-defined-value 'missing-doc-name dest-doc)
+					     (global-defined-value 'missing-html-file dest-file)
+					     (global-defined-value 'missing-html-url
+								   (url->string url))
+					     (send (get-canvas) goto-url 
+						   (string-append
+						    "file:"
+						    (build-path (collection-path "help") "notthere.htm"))
+						   #f)))))))))))
+			  (k url)
+			  void)))]
+		    [leaving-page
+		     (lambda (page new-page)
+		       (unless (is-a? (page->editor new-page) results-editor%)
+			 (stop-search))
+		       (super-leaving-page page new-page))]
+		    [filter-notes
+		     (lambda (l)
+		       (let ([lib (ormap (lambda (s)
+					   (let ([m (regexp-match "MzLib=(.*)" s)])
+					     (and m
+						  (format "Mz/Mr: load with (require-library \"~a.ss\")"
+							  (cadr m)))))
+					 l)])
+			 (if lib
+			     (string-append
+			      (if (member "Core" l)
+				  ""
+				  "Beg/Int/Adv: not available   ")
+			      lib)
+			     (let ([drlibs
+				    (filter values (map
+						    (lambda (s)
+						      (let ([m (regexp-match "teach=(.*)" s)])
+							(and m (cadr m))))
+						    l))])
+			       (if (pair? drlibs)
+				   (format "Teaching library: select ~a using Set Library To... in DrScheme"
+					   (let loop ([s (format "~s" (car drlibs))]
+						      [l (cdr drlibs)])
+					     (if (null? l)
+						 s
+						 (loop (format "~a or ~s" s (car l)) (cdr l)))))
+				   "")))))]
+		    [on-navigate stop-search])
+		  (sequence (super-init #t (send f get-area-container))))))
           
           (send html-panel set-init-page startup-url)
           

@@ -336,11 +336,12 @@ char *wxFileSelector(char *message,
     def_path = NULL;
 
   if (default_extension) {
-    int len;
+    int len, fl;
     len = strlen(default_extension);
-    def_ext = (char *)malloc(min(50, len) + 1);
-    memcpy(def_ext, default_extension, min(50, len+1));
-    def_ext[50] = 0;
+	fl = min(50, len);
+    def_ext = (char *)malloc(fl + 1);
+    memcpy(def_ext, default_extension, fl);
+    def_ext[fl] = 0;
   } else
     def_ext = NULL;
       

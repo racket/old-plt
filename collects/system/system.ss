@@ -40,14 +40,30 @@
 
 (when mred:debug:on?
   (let ([old-handler (current-load)])
-    (current-load (lambda (x)
-		    (flush-output (current-output-port))
-		    (flush-output (current-error-port))
-		    (mred:debug:printf 'load "Loading ~a..."
-			     (if (relative-path? x)
-				 (build-path (current-directory) x)
-				 x))
-		    (old-handler x)))))
+    (current-load (lambda (f)
+		    (let ([file (if (relative-path? f)
+				    (build-path (current-directory) f)
+				    f)]
+			  [continue (lambda (y)
+				      (mred:debug:printf 'load "Loading ~a..." y)
+				      (old-handler y))])
+		      (if (and (eq? mred:debug:on? 'compile)
+			       (string=? ".ss" (substring file
+							  (- (string-length file) 3)
+							  (string-length file))))
+			(begin
+			  (let* ([zo (string-append (substring file 0 (- (string-length file) 3)) ".zo")]
+				 [compiled? (and (or (not (file-exists? zo))
+						     (<= (file-modify-seconds zo)
+							 (file-modify-seconds file)))
+						 (begin (mred:debug:printf 'load "Compiling ~a..." file)
+							(with-handlers ((void (lambda (e) #f)))
+							  (compile-file file zo)
+							  #t)))])
+			    (if compiled?
+				(continue zo)
+				(continue file))))
+			(continue file)))))))
 
 (define mred:debug:new-eval (void))
 (define mred:debug:new-console (void))  

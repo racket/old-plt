@@ -2386,7 +2386,7 @@
                      (lambda () #f))])
         (cond
           [index
-           ((class-field-ref cls) obj (cdr index))]
+           ((class-field-ref (car index)) obj (cdr index))]
           [(wrapper-object? obj)
            (loop (wrapper-object-wrapped obj))]
           [else

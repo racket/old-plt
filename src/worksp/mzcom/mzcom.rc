@@ -119,9 +119,8 @@ BEGIN
     CTEXT           "Copyright (c) 1995-2000 PLT (Matthew Flatt)",IDC_STATIC,
                     27,47,143,8
     ICON            MZICON,IDC_STATIC,14,16,20,20
-    CONTROL         "http://www.cs.rice.edu/CS/PLT/packages/mzcom/",
-                    IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,13,63,
-                    165,11
+    EDITTEXT        MZCOM_URL,7,62,176,12,ES_CENTER | ES_READONLY | NOT 
+                    WS_BORDER | WS_GROUP | NOT WS_TABSTOP
 END
 
 

@@ -10,7 +10,7 @@
       (parameterize ((current-custodian client-custodian))
         (with-handlers ((exn? (lambda (ex)
                                 (custodian-shutdown-all client-custodian)
-				(display (score))(newline)
+				;;(display (score))(newline)
                                 ;;(raise ex)
                                 (score))))
           (let-values (((input output) (tcp-connect host-name port)))
@@ -66,16 +66,15 @@
 ;;			      (package-y p)
 ;;			      (package-weight p)))
 ;;		      packages))
-      (time
-       (cond
-        ((null? packages) (fix-home!)))
-       (cond
-        (baseline? (send-command (compute-baseline-move packages robots) out))
-        (else
-         (send-command (compute-move packages robots) out)))
-       (let ((robots (read-response! update-score
-				     packages
-				     in 
-				     gui?)))))
-      (loop (read-packages in) robots)))
+      (cond
+       ((null? packages) (fix-home!)))
+      (cond
+       (baseline? (send-command (compute-baseline-move packages robots) out))
+       (else
+	(send-command (compute-move packages robots) out)))
+      (let ((robots (read-response! update-score
+				    packages
+				    in 
+				    gui?)))
+	(loop (read-packages in) robots))))
   )

@@ -56,6 +56,51 @@
 	   (semaphore-post protect)
 	   (semaphore-post sema))))]))
 
+
+  (define (merge-input a b)
+    (or (input-port? a)
+	(raise-type-error 'merge-input "input-port" a))
+    (or (input-port? b)
+	(raise-type-error 'merge-input "input-port" b))
+    (let-values ([(rd wt) (make-pipe)])
+		(let* ([copy1-sema (make-semaphore 500)]
+		       [copy2-sema (make-semaphore 500)]
+		       [ready1-sema (make-semaphore)]
+		       [ready2-sema (make-semaphore)]
+		       [check-first? #t]
+		       [close-sema (make-semaphore)]
+		       [mk-copy (lambda (from to copy-sema ready-sema)
+				  (lambda ()
+				    (let loop ()
+				      (semaphore-wait copy-sema)
+				      (let ([c (read-char from)])
+					(unless (eof-object? c)
+						(semaphore-post ready-sema)
+						(write-char c to)
+						(loop))))
+				    (semaphore-post close-sema)))])
+		  (thread (mk-copy a wt copy1-sema ready1-sema)) 
+		  (thread (mk-copy b wt copy2-sema ready2-sema))
+		  (thread (lambda () 
+			    (semaphore-wait close-sema)		 
+			    (semaphore-wait close-sema)
+			    (close-output-port wt)))
+		  (make-input-port
+		   (lambda () (let ([c (read-char rd)])
+				(unless (eof-object? c)
+					(if (and check-first? (semaphore-try-wait? ready1-sema))
+					    (semaphore-post copy1-sema)
+					    (if (not (semaphore-try-wait? ready2-sema))
+						; check-first? must be #f
+						(if (semaphore-try-wait? ready1-sema)
+						    (semaphore-post copy1-sema)
+						    (error 'join "internal error: char from nowhere!"))
+						(semaphore-post copy2-sema)))
+					(set! check-first? (not check-first?)))
+				c))
+		   (lambda () (char-ready? rd))
+		   (lambda () (close-input-port rd))))))
+
   (define with-semaphore
     (lambda (s f)
       (semaphore-wait s)

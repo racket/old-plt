@@ -13,6 +13,7 @@
 (require-library "pconverc.ss")
 (require-library "datec.ss")
 (require-library "inflatec.ss")
+(require-library "cmdlinec.ss")
 
 (constant mzlib^)
 (constant mzlib@)

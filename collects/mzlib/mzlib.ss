@@ -9,3 +9,4 @@
 (require-library "pconvert.ss")
 (require-library "date.ss")
 (require-library "inflate.ss")
+(require-library "cmdline.ss")

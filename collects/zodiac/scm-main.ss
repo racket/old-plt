@@ -389,11 +389,13 @@
 	    (lambda (p-env)
 	      (when (language<=? 'structured)
 		(static-error expr "If must have an else clause"))
-	      (expand-expr
-		(structurize-syntax
-		  (pat:pexpand '(if test then (#%void)) p-env kwd)
-		  expr '(-1))
-		env attributes vocab)))
+	      (set-macro-origin
+		(expand-expr
+		  (structurize-syntax
+		    (pat:pexpand '(if test then (#%void)) p-env kwd)
+		    expr '(-1))
+		  env attributes vocab)
+		(syntax-car expr))))
 	  ((pat:match-against m&e-2 expr env)
 	    =>
 	    (lambda (p-env)

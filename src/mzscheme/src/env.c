@@ -1168,6 +1168,17 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     return val;
   }
 
+  if (!modname && (flags & SCHEME_SETTING) && genv->module) {
+    /* Need to return a variable reference in this case, too. */
+    val = scheme_alloc_object();
+    val->type = scheme_module_variable_type;
+
+    SCHEME_PTR1_VAL(val) = genv->module->self_modidx;
+    SCHEME_PTR2_VAL(val) = SCHEME_STX_SYM(symbol);
+
+    return val;
+  }
+
   b = scheme_bucket_from_table(genv->toplevel, (char *)SCHEME_STX_SYM(symbol));
 
   if ((flags & SCHEME_ELIM_CONST) && b && b->val 

@@ -351,7 +351,6 @@ The _utils.ss_ module provides utilities helpful in implementing
 > (is-test-suitef-submission? string) - returns #t if `string' can be
   read as a test suite, #f otherwise.
 
-
 > (make-evaluator language teachpack-paths) - returns a function of
   one argument for evaluating expressions in the designated teaching
   language, one of 'beginner, 'beginner-abbr, 'intermediate,
@@ -373,7 +372,6 @@ The _utils.ss_ module provides utilities helpful in implementing
 
 > (evaluate-submission string eval) - like `load' on a non-test-suite
   submission string.
-
 
 > (check-proc eval expect-v compare-proc proc-name arg ...) - calls
   the function named `proc-name' using the evaluator `eval', giving it
@@ -401,7 +399,6 @@ The _utils.ss_ module provides utilities helpful in implementing
   then the complete sequence of tested expressions is reported to the
   handin client for any test failure. Set this parameter to true when
   testing programs that use state.
-
 
 > (current-run-status string-or-#f) - registers information about the
   current actions of the checker, in case the session is terminated

@@ -55,7 +55,7 @@ Instead of serving files from a special directory verbatim, the Web server
 executes the contained Scheme code and serves the output. By default, the
 special directory  is named "servlets" within the "default-web-root" of the
 "web-server" collection directory.  Each file in that directory must evaluate
-to a servlet.  A servlet is a unit/sig that imports the servlet^
+to a _servlet_.  A servlet is a unit/sig that imports the servlet^
 signature and exports nothing.  (Search in help-desk for more information on
 unit/sig and on signatures.)  To construct a unit/sig with the appropriate
 imports, the servlet must require the two modules providing unit/sigs and the
@@ -178,6 +178,17 @@ reloads the password file.  After updating a servlet, loading the URL
 causes the server to reload each servlet on the next invocation.
 This loses any per-servlet state (not per servlet instance state) computed
 before the unit invocation.    
+
+TeachPack
+=========
+
+Choose "Add TeachPack..." from DrScheme's "Language" menu and select the
+  plt/teachpack/servlet.ss
+teachpack.  This provides functions for writing servlets including
+send/suspend and send/finish.  All the extra servlet helper functions for
+extracting information from Web requests and building Web responses also
+become available through the teachpack.
+
 
 Semi-Internal Functions
 =======================

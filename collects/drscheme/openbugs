@@ -1,3 +1,7 @@
+- callbacks from user-created windows with type errors will
+  generate internal error messages, even though they are bone-fide 
+  user of drscheme errors.
+
 - in the language dialog box:
   - allow set! on undefined is ignored
 

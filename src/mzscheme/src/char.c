@@ -48,6 +48,8 @@ static Scheme_Object *char_upper_case (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_lower_case (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_to_integer (int argc, Scheme_Object *argv[]);
 static Scheme_Object *integer_to_char (int argc, Scheme_Object *argv[]);
+static Scheme_Object *char_to_latin1_integer (int argc, Scheme_Object *argv[]);
+static Scheme_Object *latin1_integer_to_char (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_upcase (int argc, Scheme_Object *argv[]);
 static Scheme_Object *char_downcase (int argc, Scheme_Object *argv[]);
 
@@ -158,6 +160,16 @@ void scheme_init_char (Scheme_Env *env)
   scheme_add_global_constant("integer->char",
 			     scheme_make_folding_prim(integer_to_char, 
 						      "integer->char",
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant("char->latin-1-integer", 
+			     scheme_make_folding_prim(char_to_latin1_integer, 
+						      "char->latin-1-integer", 
+						      1, 1, 1),
+			     env);
+  scheme_add_global_constant("latin-1-integer->char",
+			     scheme_make_folding_prim(latin1_integer_to_char, 
+						      "latin-1-integer->char",
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("char-upcase", 
@@ -308,6 +320,89 @@ integer_to_char (int argc, Scheme_Object *argv[])
   v = SCHEME_INT_VAL(argv[0]);
   if ((v < 0) || (v > 255))
     scheme_wrong_type("integer->char", "exact in [0, 255]", 0, argc, argv);
+
+  return _scheme_make_char(v);
+}
+
+#ifdef MACROMAN_CHAR_SET
+static unsigned char latin1_to_mac_mapping[256];
+static int l2m_mapping_inited = 0;
+static unsigned char mac_to_latin1_mapping[256];
+static int m2l_mapping_inited = 0;
+# include "mac_roman.inc"
+#endif
+
+static Scheme_Object *
+char_to_latin1_integer (int argc, Scheme_Object *argv[])
+{
+  unsigned char c;
+
+  CHAR_UN_CHECK("char->latin-1-integer");
+
+  c = SCHEME_CHAR_VAL(argv[0]);
+
+#if defined(WINLATIN_CHAR_SET)
+  if ((0x80 <= c) && (c <= 0x9F))
+    return scheme_false;
+#endif
+
+#ifdef MACROMAN_CHAR_SET
+  if (!m2l_mapping_inited) {
+    int i;
+    for (i = 0; i < 256; i++)
+      mac_to_latin1_mapping[i] = (unsigned char)i;
+    for (i = 0; deviation_table[i]; i += 2)
+      if (deviation_table[i + 1])
+	mac_to_latin1_mapping[deviation_table[i + 1]] = deviation_table[i];
+    for (i = 0; mac_extras_table[i]; i++)
+      mac_to_latin1_mapping[mac_extras_table[i]] = 0;
+      
+    m2l_mapping_inited = 1;
+  }
+  
+  if (c) {
+    c = mac_to_latin1_mapping[(int)c];
+    if (!c)
+      return scheme_false;
+  }
+#endif
+
+  return scheme_make_integer(c);
+}
+
+static Scheme_Object *
+latin1_integer_to_char (int argc, Scheme_Object *argv[])
+{
+  long v;
+
+  if (!SCHEME_INTP(argv[0]))
+    scheme_wrong_type("latin1-integer->char", "exact in [0, 255]", 0, argc, argv);
+
+  v = SCHEME_INT_VAL(argv[0]);
+  if ((v < 0) || (v > 255))
+    scheme_wrong_type("latin1-integer->char", "exact in [0, 255]", 0, argc, argv);
+
+#if defined(MACROMAN_CHAR_SET) || defined(WINLATIN_CHAR_SET)
+  if ((0x80 <= v) && (v <= 0x9F))
+    return scheme_false;
+#endif
+
+#ifdef MACROMAN_CHAR_SET
+  if (!l2m_mapping_inited) {
+    int i;
+    for (i = 0; i < 256; i++)
+      latin1_to_mac_mapping[i] = (unsigned char)i;
+    for (i = 0; deviation_table[i]; i += 2)
+      latin1_to_mac_mapping[deviation_table[i]] = deviation_table[i + 1];
+    l2m_mapping_inited = 1;
+  }
+  
+  if (v) {
+    v = latin1_to_mac_mapping[v];
+    if (!v)
+      return scheme_false;
+  }
+#endif
 
   return _scheme_make_char(v);
 }

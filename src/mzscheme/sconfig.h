@@ -702,6 +702,8 @@ int scheme_win32_semaphore_try_down(void *);
 
 # define REGISTER_POOR_MACHINE
 
+# define WINLATIN_CHAR_SET
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -763,6 +765,8 @@ int scheme_win32_semaphore_try_down(void *);
 # define USE_MAC_TCP
 
 # define SIGSET_IS_SIGNAL
+
+# define MACROMAN_CHAR_SET
 
 # define FLAGS_ALREADY_SET
 
@@ -1247,6 +1251,13 @@ int scheme_pthread_semaphore_try_down(void *);
     way for x86 machines. */
 
  /* SIXTY_FOUR_BIT_INTEGERS indicates that 'long's are 64-bits wide. */
+
+ /* MACROMAN_CHAR_SET indicates that latin1-integer->char should convert
+    Latin-1 values to MacRoman characters. */
+
+ /* WINLATIN_CHAR_SET indicates that latin1-integer->char should return
+    #f for values in #x80 to #x9F, and char->latin-1-integer should
+    return #f for characters in that range. */
 
  /* NO_INLINE_KEYWORD indicates that the C compiler doesn't recognize
     C's `inline' keyword. */

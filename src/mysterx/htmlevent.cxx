@@ -34,10 +34,7 @@ static void html_event_sem_fun(MX_Browser_Object *browser,void *fds) {
 }
 
 Scheme_Object *mx_block_until_event(int argc,Scheme_Object **argv) {
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("block-until-event","mx-browser",0,argc,argv) ;
-  }
-
+  GUARANTEE_BROWSER ("block-until-event", 0);
   scheme_block_until((int (*)(Scheme_Object *))html_event_available,
   		     (void (*)(Scheme_Object *,void *))html_event_sem_fun,
   		     argv[0],0.0F);
@@ -175,18 +172,13 @@ Scheme_Object *mx_event_type_pred(int argc,Scheme_Object **argv,WCHAR *evType) {
 
   getEventInterface(argv[0],"event-<event-type>?")->get_eventType(&actualType);
 
-  if (wcscmp(evType,eventNames[actualType]) == 0) {
-      return scheme_true;
-  }
-
-  return scheme_false;
+  return (wcscmp(evType,eventNames[actualType]) == 0)
+      ? scheme_true
+      : scheme_false;
 }
 
 Scheme_Object *mx_event_pred(int argc,Scheme_Object **argv) {
-  if (MX_EVENTP(argv[0])) {
-    return scheme_true;
-  }
-  return scheme_false;
+  return MX_EVENTP(argv[0]) ? scheme_true : scheme_false;
 }
 
 Scheme_Object *mx_event_keypress_pred(int argc,Scheme_Object **argv) {
@@ -240,11 +232,7 @@ Scheme_Object *mx_get_event(int argc,Scheme_Object **argv) {
   IEventQueue *pEventQueue;
   MX_Event *event_object;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-get-event","mx-browser",0,argc,argv) ;
-  }
-
-  pEventQueue = MX_BROWSER_EVENTQUEUE(argv[0]);
+  pEventQueue = MX_BROWSER_EVENTQUEUE (GUARANTEE_BROWSER ("mx-get-event", 0));
 
   pEvent = NULL; // DCOM requires this for some reason
 

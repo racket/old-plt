@@ -76,11 +76,7 @@ Scheme_Object *mx_make_browser(int argc,Scheme_Object **argv) {
   BROWSER_WINDOW_STYLE_OPTION *pBwso;
   DWORD cookie;
 
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("make-browser","string",1,argc,argv);
-  }
-
-  browserWindowInit.browserWindow.label = SCHEME_STR_VAL(argv[0]);
+  browserWindowInit.browserWindow.label = SCHEME_STRSYM_VAL (GUARANTEE_STRSYM ("make-browser", 0));
 
   assignIntOrDefault(&browserWindowInit.browserWindow.width,argv,argc,1);
   assignIntOrDefault(&browserWindowInit.browserWindow.height,argv,argc,2);
@@ -284,18 +280,9 @@ Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
   BSTR url;
   VARIANT vars[4];
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("navigate","mx-browser",0,argc,argv);
-  }
+  pIWebBrowser2 = MX_BROWSER_VAL (GUARANTEE_BROWSER ("navigate", 0));
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE &&
-      SCHEME_SYMBOLP(argv[1]) == FALSE) {
-    scheme_wrong_type("navigate","string",1,argc,argv);
-  }
-
-  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
-
-  url = schemeStringToBSTR (argv[1]);
+  url = schemeStringToBSTR (GUARANTEE_STRSYM ("navigate", 1));
 
   memset(vars,0,sizeof(vars));
 
@@ -309,11 +296,7 @@ Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_go_back(int argc,Scheme_Object **argv) {
   IWebBrowser2 *pIWebBrowser2;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("go-back","mx-browser",0,argc,argv);
-  }
-
-  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
+  pIWebBrowser2 = MX_BROWSER_VAL (GUARANTEE_BROWSER ("go-back", 0));
 
   return (pIWebBrowser2->GoBack() == S_OK) ? scheme_true : scheme_false;
 }
@@ -321,11 +304,7 @@ Scheme_Object *mx_go_back(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_go_forward(int argc,Scheme_Object **argv) {
   IWebBrowser2 *pIWebBrowser2;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("go-forward","mx-browser",0,argc,argv);
-  }
-
-  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
+  pIWebBrowser2 = MX_BROWSER_VAL (GUARANTEE_BROWSER ("go-forward", 0));
 
   return (pIWebBrowser2->GoForward() == S_OK) ? scheme_true : scheme_false;
 }
@@ -334,11 +313,7 @@ Scheme_Object *mx_refresh(int argc,Scheme_Object **argv) {
   HRESULT hr;
   IWebBrowser2 *pIWebBrowser2;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("refresh","mx-browser",0,argc,argv);
-  }
-
-  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
+  pIWebBrowser2 = MX_BROWSER_VAL (GUARANTEE_BROWSER ("refresh", 0));
 
   hr = pIWebBrowser2->Refresh();
 
@@ -349,11 +324,7 @@ Scheme_Object *mx_show_browser_window(int argc,Scheme_Object **argv,
 				      int cmd,char *s) {
   HWND hwnd;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type(s,"mx-browser",0,argc,argv);
-  }
-
-  hwnd = MX_BROWSER_HWND(argv[0]);
+  hwnd = MX_BROWSER_HWND (GUARANTEE_BROWSER (s, 0));
 
   if (hwnd == NULL) {
     scheme_signal_error("Browser has NULL window handle");
@@ -384,11 +355,7 @@ Scheme_Object *mx_restore(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_register_navigate_handler(int argc,Scheme_Object **argv) {
   ISink *pISink;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("register-navigate-handler","mx-browser",0,argc,argv);
-  }
-
-  pISink = MX_BROWSER_SINK(argv[0]);
+  pISink = MX_BROWSER_SINK (GUARANTEE_BROWSER ("register-navigate-handler", 0));
 
   // register handler for NavigateComplete2 event (memID = 259)
 
@@ -426,11 +393,7 @@ Scheme_Object *mx_current_document(int argc,Scheme_Object **argv) {
   IHTMLDocument2 *pIHTMLDocument2;
   MX_Document_Object *doc;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("current-document","mx-browser",0,argc,argv);
-  }
-
-  pIHTMLDocument2 = IHTMLDocument2FromBrowser(argv[0]);
+  pIHTMLDocument2 = IHTMLDocument2FromBrowser (GUARANTEE_BROWSER ("current-document", 0));
 
   doc = (MX_Document_Object *)scheme_malloc(sizeof(MX_Document_Object));
   doc->type = mx_document_type;
@@ -451,11 +414,7 @@ Scheme_Object *mx_print(int argc,Scheme_Object **argv) {
   IWebBrowser2 *pIWebBrowser2;
   VARIANT varIn, varOut;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("print","mx-browser",0,argc,argv);
-  }
-
-  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
+  pIWebBrowser2 = MX_BROWSER_VAL (GUARANTEE_BROWSER ("print", 0));
 
   VariantInit(&varIn);
   VariantInit(&varOut);
@@ -478,11 +437,7 @@ Scheme_Object *mx_current_url(int argc,Scheme_Object **argv) {
   BSTR url;
   Scheme_Object *retval;
 
-  if (MX_BROWSERP(argv[0]) == FALSE) {
-    scheme_wrong_type("current-url","mx-browser",0,argc,argv);
-  }
-
-  pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
+  pIWebBrowser2 = MX_BROWSER_VAL (GUARANTEE_BROWSER ("current-url", 0));
 
   pIHTMLDocument2 = IHTMLDocument2FromBrowser(argv[0]);
 

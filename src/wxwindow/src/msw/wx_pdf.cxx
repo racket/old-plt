@@ -27,6 +27,7 @@ typedef struct {
   BOOL done;
   BOOL usedir;
   HWND hwnd;
+  DWORD main_thread_id;
 } PrimData;
 
 #ifdef MZ_PRECISE_GC
@@ -43,6 +44,12 @@ static long DoPrim(void *data)
   _data->result = pdf(_data->data, _data->hwnd);
   
   _data->done = 1;
+
+  /* Let the original thread know that we've finished, in case it's
+     asleep. The message is arbitrary (i.e., it shouldn't mean
+     anything to MrEd). */
+  PostThreadMessage(data->main_thread_id, WM_APP + 79, 0, 0);
+);
 
   return 0;
 }
@@ -78,6 +85,7 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
   _data->data = data;
   _data->usedir = strict;
   _data->done = 0;
+  _data->main_thread_id = GetCurrentThreadId();
 
   /* Make window child of frontmost if it exists in the
      same context, and disable all others in the context. */

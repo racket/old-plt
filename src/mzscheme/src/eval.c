@@ -122,8 +122,6 @@ static Scheme_Object *expand_once(int argc, Scheme_Object **argv);
 static Scheme_Object *enable_break(int, Scheme_Object *[]);
 static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 
-static Scheme_Object *built_in_name(int argc, Scheme_Object **argv);
-
 static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv);
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv);
 
@@ -219,15 +217,15 @@ scheme_init_eval (Scheme_Env *env)
   REGISTER_SO(begin_symbol);
   REGISTER_SO(let_symbol);
   
-  define_values_symbol = scheme_intern_symbol("#%define-values");
-  letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
-  let_symbol = scheme_intern_symbol("#%let");
-  lambda_symbol = scheme_intern_symbol("#%lambda");
+  define_values_symbol = scheme_intern_symbol("define-values");
+  letrec_values_symbol = scheme_intern_symbol("letrec-values");
+  let_symbol = scheme_intern_symbol("let");
+  lambda_symbol = scheme_intern_symbol("lambda");
   unknown_symbol = scheme_intern_symbol("unknown");
   void_link_symbol = scheme_intern_symbol("-v");
-  quote_symbol = scheme_intern_symbol("#%quote");
-  letmacro_symbol = scheme_intern_symbol("#%let-one-syntax");
-  begin_symbol = scheme_intern_symbol("#%begin");
+  quote_symbol = scheme_intern_symbol("quote");
+  letmacro_symbol = scheme_intern_symbol("let-one-syntax");
+  begin_symbol = scheme_intern_symbol("begin");
   
   scheme_install_type_writer(REGISTYPE(scheme_application), write_application);
   scheme_install_type_reader(REGISTYPE(scheme_application), read_application);
@@ -283,12 +281,6 @@ scheme_init_eval (Scheme_Env *env)
 			     scheme_register_parameter(current_eval, 
 						       "current-eval",
 						       MZCONFIG_EVAL_HANDLER),
-			     env);
-
-  scheme_add_global_constant("built-in-name",
-			     scheme_make_prim_w_arity(built_in_name, 
-						      "built-in-name",
-						      1, 1),
 			     env);
 
   scheme_add_global_constant("compile-allow-cond-fallthrough", 
@@ -1288,63 +1280,6 @@ scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
   }
 }
 
-Scheme_Object *
-scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env, 
-			    int bucket_ok, int can_opt, int signal)
-{
-  Scheme_Object *sym, *orig, *gvar;
-  Scheme_Bucket *b;
-
-  gvar = var;
-
-  if (((Scheme_Bucket_With_Const_Flag *)gvar)->flags & GLOB_IS_PRIMITIVE)
-    return var;
-
-  /* Not prim. Try #% version: */
-  orig = (Scheme_Object *)(SCHEME_VAR_BUCKET(gvar))->key;
-
-  sym = scheme_hash_percent_name(scheme_symbol_val(orig),
-				 SCHEME_SYM_LEN(orig));
-
-  b = scheme_global_bucket(sym, env);
-
-  if (b && (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_PRIMITIVE)) {
-    if (can_opt)
-      if (((Scheme_Bucket_With_Const_Flag *)b)->flags & GLOB_IS_CONST)
-	return (Scheme_Object *)b->val;
-
-    return (Scheme_Object *)b;
-  }
-
-  /* #% doesn't work either. must not be a real primitive */
-  if (signal) {
-    scheme_wrong_syntax("unit", NULL,  orig,
-			"used an unbound or non-primitive global");
-  }
-
-  return NULL;
-}
-
-static Scheme_Object *
-built_in_name(int argc, Scheme_Object **argv)
-{
-  Scheme_Object *o;
-  Scheme_Env *env;
-
-  env = scheme_get_env(scheme_config);
-
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("built-in-name", "symbol", 0, argc, argv);
-
-  o = (Scheme_Object *)scheme_global_bucket(argv[0], env);
-  if (o) {
-    if ((o = scheme_get_primitive_global(o, env, 1, 0, 0)))
-      return (Scheme_Object *)((Scheme_Bucket *)o)->key;
-  }
-
-  return scheme_false;
-}
-
 static Scheme_Object *compile_expand_expr_k(void)
 {
   Scheme_Process *p = scheme_current_process;
@@ -1418,12 +1353,6 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	       || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
 	return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
 
-
-      /* Check for global use within unit: */
-      if (ENV_PRIM_GLOBALS_ONLY(env)
-	  && (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)))
-	var = scheme_get_primitive_global(var, scheme_min_env(env), 0, !!rec, 1);
-
       if (rec) {
 	scheme_compile_rec_done_local(rec, drec);
 	return var;
@@ -1469,11 +1398,6 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       }
 	
       /* Else: unknown global - must be a function: compile normally */
-
-      /* Check for global use within unit: */
-      if (ENV_PRIM_GLOBALS_ONLY(env)
-	  && (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)))
-	var = scheme_get_primitive_global(var, scheme_min_env(env), 0, !!rec, 1);
 
       /* Optimize (void) to just the value void */
       if (rec && SAME_OBJ(var, scheme_void_func) && SCHEME_NULLP(rest)) {
@@ -1653,7 +1577,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	if (!SCHEME_STX_NULLP(result) && !SCHEME_STX_PAIRP(result))
 	  scheme_wrong_syntax("define-values (internal)", NULL, forms, NULL);
 
-	/* Special case: (define-values #%define-values x) */
+	/* Special case: (define-values define-values x) */
 	if (var && SAME_OBJ(define_values_symbol, SCHEME_STX_SYM(var)))
 	  break;
 

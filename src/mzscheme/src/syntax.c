@@ -51,9 +51,6 @@ static Scheme_Object *begin_expand (Scheme_Object *form, Scheme_Comp_Env *env, i
 static Scheme_Object *begin0_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *begin0_expand (Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
-static Scheme_Object *empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *empty_cond_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
-
 static Scheme_Object *unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *unquote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
@@ -72,7 +69,6 @@ static Scheme_Object *set_execute(Scheme_Object *data);
 static Scheme_Object *defmacro_execute(Scheme_Object *expr);
 static Scheme_Object *case_lambda_execute(Scheme_Object *expr);
 static Scheme_Object *void_execute(Scheme_Object *expr);
-static Scheme_Object *empty_cond_execute(Scheme_Object *data);
 static Scheme_Object *begin0_execute(Scheme_Object *data);
 
 static Scheme_Object *bangboxvalue_execute(Scheme_Object *data);
@@ -130,8 +126,6 @@ typedef struct {
 static int num_link_names = 0, link_names_size = 0;
 static Linker_Name *linker_names;
 
-static Scheme_Object *nonempty_cond;
-
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -181,40 +175,39 @@ scheme_init_syntax (Scheme_Env *env)
 
   scheme_undefined->type = scheme_undefined_type;
   
-  define_values_symbol = scheme_intern_symbol("#%define-values");
-  lambda_symbol = scheme_intern_symbol("#%lambda");
+  define_values_symbol = scheme_intern_symbol("define-values");
+  lambda_symbol = scheme_intern_symbol("lambda");
 
-  letrec_symbol = scheme_intern_symbol("#%letrec");
-  let_star_symbol = scheme_intern_symbol("#%let*");
-  let_symbol = scheme_intern_symbol("#%let");
+  letrec_symbol = scheme_intern_symbol("letrec");
+  let_star_symbol = scheme_intern_symbol("let*");
+  let_symbol = scheme_intern_symbol("let");
   letrec_symbol_nohp = scheme_intern_symbol("letrec");
   let_star_symbol_nohp = scheme_intern_symbol("let*");
 
-  letrec_values_symbol = scheme_intern_symbol("#%letrec-values");
-  let_star_values_symbol = scheme_intern_symbol("#%let*-values");
-  let_values_symbol = scheme_intern_symbol("#%let-values");
+  letrec_values_symbol = scheme_intern_symbol("letrec-values");
+  let_star_values_symbol = scheme_intern_symbol("let*-values");
+  let_values_symbol = scheme_intern_symbol("let-values");
   letrec_values_symbol_nohp = scheme_intern_symbol("letrec-values");
   let_values_symbol_nohp = scheme_intern_symbol("let-values");
   let_star_values_symbol_nohp = scheme_intern_symbol("let*-values");
 
-  begin_symbol = scheme_intern_symbol("#%begin");
-  begin0_symbol = scheme_intern_symbol("#%begin0");
-  quote_symbol = scheme_intern_symbol("#%quote");
-  if_symbol = scheme_intern_symbol("#%if");
-  set_symbol = scheme_intern_symbol("#%set!");
-  case_lambda_symbol = scheme_intern_symbol("#%case-lambda");
-  with_continuation_mark_symbol = scheme_intern_symbol("#%with-continuation-mark");
+  begin_symbol = scheme_intern_symbol("begin");
+  begin0_symbol = scheme_intern_symbol("begin0");
+  quote_symbol = scheme_intern_symbol("quote");
+  if_symbol = scheme_intern_symbol("if");
+  set_symbol = scheme_intern_symbol("set!");
+  case_lambda_symbol = scheme_intern_symbol("case-lambda");
+  with_continuation_mark_symbol = scheme_intern_symbol("with-continuation-mark");
   
-  lexical_syntax_symbol = scheme_intern_symbol("#%quote-syntax");
-  define_macro_symbol = scheme_intern_symbol("#%define-syntax");
-  let_macro_symbol = scheme_intern_symbol("#%letrec-syntax");
+  lexical_syntax_symbol = scheme_intern_symbol("quote-syntax");
+  define_macro_symbol = scheme_intern_symbol("define-syntax");
+  let_macro_symbol = scheme_intern_symbol("letrec-syntax");
 
   scheme_register_syntax("d", define_values_execute, 1);
   scheme_register_syntax("!", set_execute, 2);
   scheme_register_syntax("dm", defmacro_execute, 1);
   scheme_register_syntax("cl", case_lambda_execute, 1);
   scheme_register_syntax("v", void_execute, 1);
-  scheme_register_syntax("e", empty_cond_execute, 1);
   scheme_register_syntax("0", begin0_execute, 1);
 
   scheme_register_syntax("be", scheme_bangboxenv_execute, 1);
@@ -325,27 +318,6 @@ scheme_init_syntax (Scheme_Env *env)
 			    scheme_make_compiled_syntax(letmacro_syntax, 
 							letmacro_expand), 
 			    env);
-}
-
-void
-scheme_init_empty_cond(Scheme_Env *env)
-{
-  /* Hack: use the usual `cond' macro, but (cond) - an empty
-     cond - is primitive syntax. Why? Because primitive exceptions
-     can only be raised by the system (in the right mode), so you
-     can't expand a (cond ...) into something that raises an error at
-     a final `else'. */
-  Scheme_Bucket *b;
-  void *cs;
-
-  b = scheme_global_bucket(scheme_intern_symbol("#%cond"), env);
-  
-  REGISTER_SO(nonempty_cond);
-
-  nonempty_cond = (Scheme_Object *)b->val;
-  cs = (void *)scheme_make_compiled_syntax(empty_cond_syntax, 
-					   empty_cond_expand);
-  b->val = cs;
 }
 
 Scheme_Object *
@@ -613,7 +585,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   Scheme_Object *var, *val, *first = scheme_null, *last = NULL, *variables;
   Scheme_Env *globals;
 
-  globals = scheme_min_env(env);
+  globals = env->genv;
   
   define_values_parse(form, &var, &val, env);
   variables = var;
@@ -2211,37 +2183,6 @@ begin0_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Objec
 }
 
 static Scheme_Object *
-empty_cond_execute (Scheme_Object *expr)
-{
-  scheme_raise_exn(MZEXN_ELSE, "cond or case: no matching clause");
-  return scheme_void;
-}
-
-static Scheme_Object *
-empty_cond_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
-{
-  if (SCHEME_FALSEP(scheme_get_param(scheme_config, MZCONFIG_COND_AUTO_ELSE)))
-    if (SCHEME_STX_NULLP(SCHEME_STX_CDR(form))) {
-      return scheme_make_syntax_link(empty_cond_execute, scheme_false);
-    }
-
-  return scheme_compile_expand_macro_app(SCHEME_STX_CAR(form), nonempty_cond,
-					 form, env, rec, drec, 1, scheme_false);
-}
-
-static Scheme_Object *
-empty_cond_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
-{
-  if (SCHEME_FALSEP(scheme_get_param(scheme_config, MZCONFIG_COND_AUTO_ELSE)))
-    if (SCHEME_STX_NULLP(SCHEME_STX_CDR(form)))
-      return form;
-
-  return scheme_compile_expand_macro_app(SCHEME_STX_CAR(form), nonempty_cond,
-					 form, env, NULL, 0, depth, boundname);
-}
-
-
-static Scheme_Object *
 unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   int len;
@@ -2301,7 +2242,7 @@ lexical_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Sche
 
 
 static Scheme_Object *
-do_def_execute(char *who, Scheme_Object *form, Scheme_Type type)
+defmacro_execute(Scheme_Object *form)
 {
   Scheme_Object *name;
   Scheme_Object *val, *macro;
@@ -2317,33 +2258,30 @@ do_def_execute(char *who, Scheme_Object *form, Scheme_Type type)
   p->current_local_env = save_env;
 
   macro = scheme_alloc_stubborn_small_object();
-  macro->type = type;
+  macro->type = scheme_macro_type;
   SCHEME_PTR_VAL(macro) = val;
   scheme_end_stubborn_change((void *)macro);
   
-  scheme_set_global_bucket(who, (Scheme_Bucket *)name, macro, 1);
+  scheme_set_global_bucket("define-syntax", (Scheme_Bucket *)name, macro, 1);
   
   return scheme_void;
 }
 
-static void do_def_parse(char *where,
-			 Scheme_Object *form, 
-			 Scheme_Object **name, Scheme_Object **code,
-			 Scheme_Comp_Env *env)
+static void defmacro_parse(Scheme_Object *form, 
+			   Scheme_Object **name, Scheme_Object **code,
+			   Scheme_Comp_Env *env)
 {
   if (scheme_stx_proper_list_length(form) != 3)
-    scheme_wrong_syntax(where, NULL, form, NULL);
+    scheme_wrong_syntax("define-syntax", NULL, form, NULL);
 
   *name = SCHEME_STX_CAR(SCHEME_STX_CDR(form));
     
-  scheme_check_identifier(where, *name, NULL, env, form);
+  scheme_check_identifier("define-syntax", *name, NULL, env, form);
     
   *code = SCHEME_STX_CAR(SCHEME_STX_CDR(SCHEME_STX_CDR(form)));
 }
 
-static Scheme_Object *do_def_link(Scheme_Syntax_Executer *exec,
-				  Scheme_Object *data,
-				  Link_Info *info)
+static Scheme_Object *defmacro_link(Scheme_Object *data, Link_Info *info)
 {
   Scheme_Object *name = SCHEME_CAR(data);
   Scheme_Object *val = SCHEME_CDR(data);
@@ -2351,73 +2289,43 @@ static Scheme_Object *do_def_link(Scheme_Syntax_Executer *exec,
   name = scheme_link_expr(name, info);
   val = scheme_link_expr(val, info);
 
-  return scheme_make_syntax_link(exec, scheme_make_pair(name, val));
+  return scheme_make_syntax_link(defmacro_execute, scheme_make_pair(name, val));
 }
 
 static Scheme_Object *
-do_def_syntax(char *where,
-	      Scheme_Object *form, Scheme_Comp_Env *env, 
-	      Scheme_Compile_Info *rec, int drec,
-	      Scheme_Syntax_Linker *link)
+defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
+		Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *name, *code;
   Scheme_Object *val;
 
   if (!scheme_is_toplevel(env))
-    scheme_wrong_syntax(where, NULL, form, "illegal use (not at top-level)");
+    scheme_wrong_syntax("define-syntax", NULL, form, "illegal use (not at top-level)");
   
   scheme_compile_rec_done_local(rec, drec);
 
-  do_def_parse(where, form, &name, &code, env);
+  defmacro_parse(form, &name, &code, env);
 
-  val = scheme_compile_expr(code, env, rec, drec);
-  name = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name),
-					       scheme_min_env(env));
+  val = scheme_compile_expr(code, env->eenv->init, rec, drec);
+  name = (Scheme_Object *)scheme_global_keyword_bucket(SCHEME_STX_SYM(name),
+						       env->genv);
 
-  return scheme_make_syntax_compile(link, scheme_make_pair(name, val));
+  return scheme_make_syntax_compile(defmacro_link, scheme_make_pair(name, val));
 }
 
 static Scheme_Object *
-do_def_expand(char *where, Scheme_Object *formname, Scheme_Object *form, 
-	      Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
+defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
   Scheme_Object *name, *code, *fpart;
 
-  do_def_parse(where, form, &name, &code, env);
+  defmacro_parse(form, &name, &code, env);
   
   fpart = scheme_expand_expr(code, env, depth, name);
   
   code = cons(fpart, scheme_null);
   code = cons(name, code);
 
-  return scheme_datum_to_syntax(cons(formname, code), form, scheme_sys_wraps);
-}
-
-
-static Scheme_Object *
-defmacro_execute (Scheme_Object *form)
-{
-  return do_def_execute("define-syntax", form, scheme_macro_type);
-}
-
-static Scheme_Object *
-defmacro_link(Scheme_Object *form, Link_Info *info)
-{
-  return do_def_link(defmacro_execute, form, info);
-}
-
-static Scheme_Object *
-defmacro_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
-		 Scheme_Compile_Info *rec, int drec)
-{
-  return do_def_syntax("define-syntax", form, env, rec, drec,
-		       defmacro_link);
-}
-
-static Scheme_Object *
-defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
-{
-  return do_def_expand("define-syntax", define_macro_symbol, form, env, depth, boundname);
+  return scheme_datum_to_syntax(cons(define_macro_symbol, code), form, scheme_sys_wraps);
 }
 
 static Scheme_Object *
@@ -2473,7 +2381,7 @@ do_letmacro(char *where, Scheme_Object *formname,
 
     a = scheme_add_env_renames(a, env, origenv);
     
-    a = scheme_eval(a, scheme_min_env(env));
+    a = scheme_eval(a, env->eenv);
 
     macro = scheme_alloc_stubborn_small_object();
     macro->type = scheme_macro_type;

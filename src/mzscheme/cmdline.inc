@@ -323,10 +323,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
       argv[0] = "-s";
     else if (!strcmp("--no-auto-else", argv[0]))
       argv[0] = "-a";
-    else if (!strcmp("--no-key", argv[0]))
-      argv[0] = "-n";
-    else if (!strcmp("--hash-percent-syntax", argv[0]))
-      argv[0] = "-y";
     else if (!strcmp("--script", argv[0]))
       argv[0] = "-r";
     else if (!strcmp("--script-cd", argv[0]))
@@ -381,12 +377,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  break;
 	case 'a':
 	  scheme_allow_cond_auto_else = 0;
-	  break;
-	case 'n':
-	  scheme_no_keywords = 1;
-	  break;
-	case 'y':
-	  scheme_hash_percent_syntax_only = 1;
 	  break;
 	case 'e':
 	  if (argc < 2) {
@@ -562,10 +552,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
       PRINTF(SDESC);
     if (!scheme_allow_cond_auto_else)
       PRINTF(ADESC);
-    if (scheme_no_keywords)
-      PRINTF(NDESC);
-    if (scheme_hash_percent_syntax_only)
-      PRINTF(YDESC);
 # ifdef DOS_FILE_SYSTEM
 #  if !defined(FILES_HAVE_FDS)
 #   if !defined(DETECT_WIN32_CONSOLE_STDIN) || defined(NO_STDIN_THREADS)
@@ -669,8 +655,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -c, --esc-cont : " EDESC
 	 "  -s, --set-undef : " SDESC
 	 "  -a, --no-auto-else : " ADESC
-	 "  -n, --no-key : " NDESC
-	 "  -y, --hash-percent-syntax : " YDESC
 	 " Miscellaneous switches:\n"
 	 "  -- : No argument following this switch is used as a switch.\n"
 # if defined(_IBMR2)

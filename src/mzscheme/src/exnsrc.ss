@@ -30,10 +30,6 @@ strings are types/comments.
 
      (*struct [] "the supertype expression in a \\scmfirst{struct} form returned a value that was not a structure type value")
 
-     (*object [] "object-, class-, or interface-specific error")
-     
-     (*unit [] "unit- or unit/sig-specific error")
-
      (syntax [expr "S-expression" "illegal expression (or \\scm{\\#f} if unknown)"]
 	     "syntax error, but not a \\scmfirst{read} error")
      

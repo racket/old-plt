@@ -552,7 +552,8 @@ namespace_val {
   Scheme_Env *e = (Scheme_Env *)p;
 
   gcMARK(e->globals);
-  gcMARK(e->loaded_libraries);
+  gcMARK(e->syntax);
+  gcMARK(e->modules);
   gcMARK(e->init);
 
  size:

@@ -22,57 +22,16 @@
 */
 
 #include "schpriv.h"
-#include "schminc.h"
-
-static void
-add_primitive_symbol(Scheme_Object *sym, Scheme_Object *obj, 
-		     Scheme_Env *env)
-{
-  scheme_do_add_global_symbol(env, sym, obj, 1, 1);
-}
-
-static void primitive_syntax_through_scheme(const char *name, 
-					    Scheme_Env *env)
-{
-  Scheme_Object *hp, *sym;
-
-  hp = scheme_hash_percent_name(name, -1);
-  scheme_set_keyword(hp, env);
-
-  sym = scheme_intern_symbol(name);
-  scheme_add_global_symbol(sym, scheme_lookup_global(hp, env), env);
-}
-
-static void primitive_function_through_scheme(const char *name, 
-					      Scheme_Env *env)
-{
-  Scheme_Object *sym, *hp;
-
-  sym = scheme_intern_symbol(name);
-
-  hp = scheme_hash_percent_name(name, -1);
-  
-  add_primitive_symbol(hp, scheme_lookup_global(sym, env), env);
-
-  scheme_set_keyword(hp, env);
-}
-
-static void primitive_cond_through_scheme(const char *name, 
-					  Scheme_Env *env)
-{
-  primitive_syntax_through_scheme(name, env);
-  scheme_init_empty_cond(env);
-}
 
 void scheme_add_embedded_builtins(Scheme_Env *env)
 {
 #define EVAL_ONE_STR(str) scheme_eval_string(str, env)
 #define EVAL_ONE_SIZED_STR(str, len) scheme_eval_compiled_sized_string(str, len, env)
-#define JUST_DEFINED(name) primitive_syntax_through_scheme(#name, env)
-#define JUST_DEFINED_FUNC(name) primitive_function_through_scheme(#name, env)
-#define JUST_DEFINED_KEY(name) primitive_syntax_through_scheme(#name, env)
-#define JUST_DEFINED_COND(name) primitive_cond_through_scheme(#name, env)
-#define JUST_DEFINED_QQ(name) JUST_DEFINED_KEY(name)
+#define JUST_DEFINED(name)
+#define JUST_DEFINED_FUNC(name)
+#define JUST_DEFINED_KEY(name)
+#define JUST_DEFINED_COND(name)
+#define JUST_DEFINED_QQ(name)
 
 #if USE_COMPILED_MACROS
 # include "cmacro.inc"

@@ -481,9 +481,9 @@ typedef struct Scheme_Env
 {
   Scheme_Type type; /* scheme_namespace_type */
   MZ_HASH_KEY_EX
-  short no_keywords; /* only low-bit used; rest is hash key for precise gc */
-  Scheme_Hash_Table *globals;
-  Scheme_Hash_Table *loaded_libraries;
+  Scheme_Hash_Table *toplevel;
+  Scheme_Hash_Table *syntax;
+  Scheme_Hash_Table *modules;
   struct Scheme_Comp_Env *init; /* initial compilation environment */
 } Scheme_Env;
 

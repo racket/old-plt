@@ -138,7 +138,7 @@ scheme_init_struct (Scheme_Env *env)
   
   scheme_register_syntax("k", struct_execute, 1);
   
-  struct_symbol = scheme_intern_symbol("#%struct");
+  struct_symbol = scheme_intern_symbol("struct");
   
   scheme_install_type_writer(scheme_struct_info_type, write_struct_info);
   scheme_install_type_reader(scheme_struct_info_type, read_struct_info);

@@ -332,7 +332,7 @@ scheme_init_fun (Scheme_Env *env)
 void scheme_init_rep(Scheme_Env *env)
 {
   REGISTER_SO(rep);
-  rep = scheme_lookup_global(scheme_intern_symbol("#%read-eval-print-loop"), env);
+  rep = scheme_lookup_global(scheme_intern_symbol("read-eval-print-loop"), env);
 }
 
 Scheme_Object *
@@ -1101,7 +1101,7 @@ scheme_apply_macro(Scheme_Object *name,
 
   if (!SCHEME_STXP(code)) {
     scheme_raise_exn(MZEXN_MISC,
-		     "macro: return value was not syntax from expander: %S",
+		     "%S: return value from expander was not syntax",
 		     SCHEME_STX_SYM(name));
   }
 

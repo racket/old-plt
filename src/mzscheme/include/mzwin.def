@@ -231,17 +231,16 @@ EXPORTS
  scheme_make_namespace
  scheme_add_namespace_option
  scheme_add_global
- scheme_add_global_constant
  scheme_add_global_keyword
+ scheme_add_global_constant
  scheme_remove_global
- scheme_remove_global_constant
  scheme_add_global_symbol
  scheme_remove_global_symbol
  scheme_add_global_constant_symbol
- scheme_set_keyword
  scheme_make_envunbox
  scheme_lookup_global
  scheme_global_bucket
+ scheme_global_keyword_bucket
  scheme_set_global_bucket
  scheme_intern_symbol
  scheme_intern_exact_symbol

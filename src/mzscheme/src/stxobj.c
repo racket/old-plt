@@ -474,6 +474,15 @@ int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
   return scheme_stx_env_bound_eq(a, b, NULL);
 }
 
+int scheme_stx_has_binder(Scheme_Object *a)
+{
+  if (SCHEME_STXP(a)) {
+    a = resolve_env(a);
+    return SCHEME_TRUEP(a);
+  } else
+    return 0;
+}
+
 int scheme_stx_list_length(Scheme_Object *list)
 {
   int len;

@@ -405,6 +405,7 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);
 int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b);
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid);
+int scheme_stx_has_binder(Scheme_Object *a);
 
 int scheme_stx_list_length(Scheme_Object *list);
 int scheme_stx_proper_list_length(Scheme_Object *list);
@@ -1108,8 +1109,9 @@ typedef struct Scheme_Comp_Env
   MZTAG_IF_REQUIRED
   short num_bindings;
   short flags; /* used for expanding/compiling */
-  Scheme_Object *uid; /* used for `lexical-syntax' */
-  Scheme_Env *genv;
+  Scheme_Object *uid; /* renaming symbol for syntax */
+  Scheme_Env *genv; /* run-time environment */
+  Scheme_Env *eenv; /* expansion-time environment */
   struct Scheme_Comp_Env *next;
   struct Scheme_Object **values;
   struct Scheme_Object **renames;
@@ -1335,8 +1337,8 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_MUST_INDRECT 32
 #define SCHEME_LINKING_REF 64
 #define SCHEME_DONT_MARK_USE 128
+#define SCHEME_OUT_OF_CONTEXT_OK 256
 
-Scheme_Env *scheme_min_env(Scheme_Comp_Env *);
 Scheme_Hash_Table *scheme_map_constants_to_globals(void);
 
 Scheme_Object *scheme_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,

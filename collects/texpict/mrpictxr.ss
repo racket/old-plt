@@ -216,9 +216,14 @@
 		[else (error 'rander "unknown command: ~a~n" x)])))
 	(loop dx dy (cdr l) color))))
 
+  (define (make-pict-drawer p)
+    (let ([cmds (pict->command-list p)])
+      (lambda (dc dx dy)
+	(render dc (pict-width p) (pict-height p)
+		cmds
+		dx dy))))
+
   (define (draw-pict p dc dx dy)
-    (render dc (pict-width p) (pict-height p)
-	    (pict->command-list p) 
-	    dx dy))
+    ((make-pict-drawer p) dc dx dy))
 
   )

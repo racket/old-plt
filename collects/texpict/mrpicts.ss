@@ -8,7 +8,8 @@
    text caps-text
    dc
 
-   draw-pict))
+   draw-pict
+   make-pict-drawer))
 
 (define-signature mrpict^
   ((open texpict-common^)

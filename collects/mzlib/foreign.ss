@@ -5,7 +5,7 @@
 (require #%foreign)
 (require-for-syntax (lib "stx.ss" "syntax"))
 
-(provide ctype-sizeof ctype-alignof malloc end-stubborn-change
+(provide ctype-sizeof ctype-alignof malloc free end-stubborn-change
          cpointer? ptr-ref ptr-set! ptr-equal?
          ctype? make-ctype make-cstruct-type register-finalizer
          make-sized-byte-string)
@@ -36,7 +36,7 @@
 (provide (rename get-ffi-lib ffi-lib))
 (define (get-ffi-lib name . version)
   (let ([version (if (pair? version) (string-append "." (car version)) "")]
-        [fullpath (lambda (x) (path->complete-path (expand-path p)))])
+        [fullpath (lambda (p) (path->complete-path (expand-path p)))])
     (let loop ([name name])
       (cond
        [(ffi-lib? name) name]
@@ -309,8 +309,18 @@
 (define* _file (make-ctype _path expand-path #f))
 
 ;; `string/eof' type: converts an output #f (NULL) to an eof-object.
-(define* _string/eof
-  (make-ctype _string #f (lambda (x) (or x eof))))
+(define string-type->string/eof-type
+  (let ([table (make-hash-table)])
+    (lambda (string-type)
+      (hash-table-get table string-type
+        (let ([new-type (make-ctype string-type #f
+                                    (lambda (x) (or x eof)))])
+          (hash-table-put! table string-type new-type)
+          new-type)))))
+(provide _string/eof)
+(define-syntax _string/eof
+  (syntax-id-rules (_string/eof)
+    [_string/eof (string-type->string/eof-type _string)]))
 
 ;; ----------------------------------------------------------------------------
 ;; Utility types

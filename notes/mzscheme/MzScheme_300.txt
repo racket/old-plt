@@ -1,0 +1,150 @@
+
+MzScheme version 300 is different from previous versions of MzScheme
+in several significant ways:
+
+ * MzScheme now directly supports Unicode. The "char" datatype
+   corresponds to a Unicode code point, so that strings correspond to
+   a sequence of code points. Meanwhile, a new "byte string" datatype
+   supports a sequence of bytes (exact integers between 0 and 255),
+   and it takes over the old role of strings with respect to low-level
+   port operations.
+
+   Regexp matching works on both char strings and byte strings, and
+   MzScheme provides various operations for encoding chars as byte
+   strings. See the "Unicode" section below for more information.
+
+ * Related to the Unicode change, MzScheme now uses a distinct "path"
+   datatype for file and directory names, instead of using
+   strings. Built-in procedures that accept a path also accept a
+   string (and implicitly convert it); procedures that produce a path
+   never produce a string.
+
+ * The "parameter" construct has been redefined. The new definition is
+   indistinguishable from the old for old programs, except that (1)
+   the body of a `parameterize' form is in tail position with respect
+   to the entire `parameterize' form, (2) a `parameterize' form tends
+   to execute much more quickly, while parameter lookup tends to be
+   slightly more expensive, (3) a `parameterize' form has the expected
+   effect if a continuation is captured in dynamic extent of the
+   `parameterize' body and invoked in a different thread.
+
+======================================================================
+ Unicode
+======================================================================
+
+The "char" datatype means "Unicode code point", which technically
+should not be confused with "Unicode character". But most things that
+a literate human would call a "character" can be represented by a
+single code point in Unicode, so the "code point" approximation of
+"character" thus works well for many purposes. See section 1.2 in the
+MzScheme manual for an overview of MzScheme's approach to Unicode and
+locales.
+
+Actually, "char" corresponds to Unicode extended to include code
+points up to (sub1 (expt 2 31)). In particular, `integer->char'
+produces a character for every exact integer from 0 to #x7FFFFFFF,
+except #xFFFF, #xFFFE, and #xD800 to #xDFFF (which are not code points
+and never will be).
+
+The `bytes->string/utf-8' and `string->bytes/utf-8' functions convert
+between the two kinds of strings via UTF-8.  The `bytes->string/utf-8'
+accepts an optional character to use in place of bad encoding
+sequences (otherwise an exception is raised).
+
+A general `bytes-convert' interface lets you convert among different
+encodings in a bytes, including UTF-8 and the current locale's
+encoding. The conversion interface can deal with input that ends
+mid-encoding, so it can be used for conversion on streams, too. (The
+converter uses iconv() where available.)
+
+Internally, strings are encoded as UCS-4, but symbols are encoded in
+UTF-8.
+
+Other details:
+
+ * The `char->latin-1-integer' and `latin-1-integer->char' procedures
+   have been removed.
+
+ * Added a `bytes-...' operation for most every `string-...' operation.
+   The `byte?' predicate returns true for exact integers in [0,255].
+
+ * `regexp' produces a char regexp, and `byte-regexp' produces a byte
+   regexp. A regexp can be matched against a byte string (or port), in
+   which case the byte string (or port) is interpreted as a UTF-8
+   encoding. Similarly, a regexp can be matched against a string, in
+   which case the string is encoded via UTF-8 before matching.
+
+ * A hash before a string makes it a byte-string literal:
+
+      (string->list "hi") = '(#\h #\i)
+      (bytes->list #"hi") = '(104 105)
+
+   Similarly, #rx"...." is a regexp, while #rx#"...." is a byte
+   regexp.
+
+ * Use #\uXXXX or #\UXXXXXXXX for arbitrary character constants, where
+   each X is a hexadecimal digit and the resulting number identifies a
+   code point. In a string (but not a byte string), use "\uXXXX" or
+   "\UXXXXXXXX".
+
+ * All of the `char-whitespace?', `char-alphabetic?', etc. functions
+   are defined in accordance with SRFI-14. New functions include
+   `char-title-case?', `char-blank?', `char-graphic?' `char-symbolic?',
+   and `char-titlecase'.
+
+ * The built-in string functions remain locale-independent (as in
+   SRFI-13), and `string-locale=?', etc. provide locale-sensitive
+   comparisons. The `string-locale-upcase' and
+   `string-locale-downcase' functions provide locale-sensitive case
+   conversion. No locale-sensitive character operations are provided
+   (the old ones have been removed).
+
+ * Case-insensitivity for symbols is consistent with SRFI-13, which
+   means using the 1-1 character mapping defined by the Unicode
+   consortium.
+
+   Number parsing recognizes only ASCII digits (and A-F/a-f) for
+   numbers, but all `char-whitespace?' characters are treated as
+   whitespace by `read'.
+
+ * MzScheme effectively assumes UTF-8 stdin and stdout. DrScheme reads
+   and writes text files using UTF-8.
+
+Ports
+-----
+
+"port" still means "byte port" in MzScheme. Various port operations,
+like `read-string-avail!', have been renamed to to `read-bytes-avail!'.
+
+Character operations on a port, such as `read-char' and `read-string',
+are defined in terms of a UTF-8 parsing/writing of the port's byte
+stream. (With a custom-port wrapper and the byte-string conversion
+functions, other decodings can be implemented.)
+
+Position and column counting for a port is sensitive to UTF-8.  For
+example, reading #o302 followed by #o251 increments the position and
+column by 1, instead of 2.
+
+======================================================================
+ Paths
+======================================================================
+
+Under Unix, paths fundamentally byte strings, not strings. Typically,
+the correct printing of a path use the current locale's encoding, but
+there's no guarantee that the path is well-formed using the current
+locale's encoding.
+
+To mediate these view of paths, MzScheme now supplies a "path"
+datatype, with operations `path->string', `string->path',
+`bytes->string', and `bytes->path'. Use `path->string' to print a path
+to the user, but use `path->bytes' to marshal a path (e.g., for saving
+a pathname in a file).
+
+All functions that consume a pathname accept a string and implicitly
+convert it (via the user's locale's default encoding) to a byte-string
+pathname.
+
+Under Windows, where a pathname is a UTF-16 string, MzScheme
+internally converts to and from byte strings via UTF-8<->UTF-16. A
+byte string that is not a UTF-8 encoding will never correspond to a
+pathname under Windows.

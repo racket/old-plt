@@ -22,16 +22,17 @@
                                    (define dynamic-error
                                      (default-error-handler 'runtime-syntax-error))))]
         [client-procs : stepper:client-procs^
-                      ((require-library-unit/sig "client-procs.ss")
+                      ((require-library-unit/sig "client-procs.ss" "stepper")
                        zodiac)]
         [marks : stepper:marks^
                ((require-library-unit/sig "marks.ss" "stepper")
                 zodiac
                 client-procs
                 (core function))]
-        [utils : cogen-utils^ ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
-                               zodiac
-                               (error : (internal-error static-error)))]        
+        [utils : stepper:cogen-utils^ 
+               ((require-library-unit/sig "cogen-utilsr.ss" "cogen")
+                zodiac
+                (error : (internal-error static-error)))]        
         [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
                                    error
@@ -49,7 +50,6 @@
                    client-procs)]
         [debug-wrapper : plt:aries^
                           ((require-library-unit/sig "debug-wrapper.ss" "stepper")
-                           drscheme
                            zodiac
                            mred
                            utils
@@ -66,11 +66,15 @@
                   drscheme
                   print-convert
                   framework
-                  shared)]
-        [stepper-setup : (invoke-stepper)
-                       ((require-library-unit/sig "stepper-setup.ss")
-                        mred
-                        framework
-                        drscheme
-                        stepper-view-controller)]       
-      (export (open debug-wrapper) (open stepper-setup)))
+                  shared
+                  utils
+                  marks
+                  annotate)]
+        [stepper-startup : ()
+                         ((require-library-unit/sig "stepper-startup.ss" "stepper")
+                          core
+                          mred
+                          framework
+                          drscheme
+                          stepper-view-controller)])       
+      (export (open debug-wrapper)))

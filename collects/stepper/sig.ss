@@ -1,5 +1,43 @@
+(define-signature plt:aries-core^
+  (annotate
+   extract-zodiac-location
+   w-c-m-key
+   make-zodiac-mark
+   break))
+
+(define-signature stepper:cogen-utils^
+  (get-binding-name
+   lookup-new-binding-name
+   set-new-binding-name!
+   
+   check-for-keyword
+   check-for-syntax-or-macro-keyword
+   
+   the-undefined-value
+   (struct undefined (id))
+   signal-undefined
+   undefined-error-format
+   
+   (struct not-boolean (val))
+   signal-not-boolean
+   not-boolean-error-format
+   
+   is-unit-bound?
+   read->raw
+   arglist->ilist
+   
+   improper-map
+   improper-foreach))
+
+(define-signature plt:aries^
+  ((open plt:aries-core^)
+   
+   signal-not-boolean
+   signal-undefined))
+
 (define-signature stepper:marks^
-  (mark-source
+  (make-mark
+   mark-source
    mark-bindings
    mark-label
    mark-binding-value
@@ -12,9 +50,7 @@
   (read-getter
    read-setter
    never-undefined-getter
-   never-undefined-setter
-   new-name-getter
-   new-name-setter))
+   never-undefined-setter))
 
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))

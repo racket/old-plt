@@ -2,13 +2,16 @@
   (import [c : mzlib:core^]
           [e : stepper:error^]
           [z : zodiac:system^]
-          [zcp : stepper:zodiac-client-procs^]
+          [cp : stepper:client-procs^]
           mzlib:pretty-print^
           mred^
           [d : drscheme:export^]
           [p : mzlib:print-convert^]
           [f : framework^]
-          stepper:shared^)
+          stepper:shared^
+          [utils : stepper:cogen-utils^]
+          [marks : stepper:marks^]
+          [annotate : stepper:annotate^])
 
   ;;;;;; copied from /plt/collects/drscheme/snip.ss :
   
@@ -254,7 +257,7 @@
   (send test-dc try-color (make-object color% 212 159 245) result-highlight-color)
   (send test-dc try-color (make-object color% 193 251 181) redex-highlight-color)
 
-  (define (stepper-go drscheme-frame settings)
+  (define (stepper-wrapper drscheme-frame settings)
     
     (local ((define view-history null)
             (define view-currently-updating #f)
@@ -356,9 +359,12 @@
                                (p : mzlib:print-convert^)
                                (d : drscheme:export^)
                                (z : zodiac:system^)
-                               (zcp : stepper:zodiac-client-procs^)
+                               (cp : stepper:client-procs^)
                                stepper:shared^
-                               mred^)))
+                               mred^
+                               (utils : stepper:cogen-utils^)
+                               (marks : stepper:marks^)
+                               (annotate : stepper:annotate^))))
       
       (send drscheme-frame stepper-frame s-frame)
       (set! view-currently-updating 0)
@@ -377,7 +383,7 @@
   
   (define beginner-level-name "Beginning Student")
       
-  (lambda (frame)
+  (define (stepper-go frame)
     (let ([settings (f:preferences:get 'drscheme:settings)])
       (if #f ; (not (string=? (d:basis:setting-name settings) beginner-level-name))
           (message-box "Stepper" 
@@ -387,4 +393,4 @@
                                beginner-level-name)
                        #f 
                        '(ok))
-          (stepper-go frame settings)))))
+          (stepper-wrapper frame settings)))))

@@ -2,7 +2,10 @@
   (import [z : zodiac:system^]
           [cp : stepper:client-procs^]
           mzlib:function^)
-          
+  
+  (define (make-mark location label bindings)
+    (lambda () (cons location (cons label bindings))))
+  
   (define (mark-source mark)
     (car (mark)))
   

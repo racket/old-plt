@@ -2,10 +2,10 @@
   (import [z : zodiac:system^]
 	  mzlib:function^
 	  [e : stepper:error^]
-          [utils : cogen-utils^]
+          [utils : stepper:cogen-utils^]
           [s : stepper:model^]
 	  stepper:shared^
-          stepper:zodiac-client-procs^)
+          stepper:client-procs^)
   
   ; ANNOTATE SOURCE CODE
   
@@ -65,10 +65,8 @@
   (define (var-set-intersect a-set b-set)
     (varref-remove* (varref-remove* a-set b-set) b-set))
       
-  (define-values (never-undefined? mark-never-undefined)
-    (values
-     (lambda (parsed) (never-undefined-getter (z:parsed-back parsed)))
-     (lambda (parsed) (never-undefined-setter (z:parsed-back parsed) #t))))
+  (define never-undefined? never-undefined-getter)
+  (define (mark-never-undefined parsed) (never-undefined-setter parsed #t))
    
   (define (interlace a b)
     (foldr (lambda (a b built)
@@ -84,6 +82,13 @@
   
   (define debug-key (gensym "debug-key-"))
 
+  ; translate-varref : returns the name the varref will get in the final output
+  
+  (define (translate-varref expr)
+    (if (or (z:top-level-varref? expr) (not (z:parsed-back expr))) ; top level or bogus varrefs
+        (z:varref-var expr)
+        (utils:get-binding-name (z:bound-varref-binding expr))))
+  
   ; make-debug-info builds the thunk which will be the mark at runtime.  It contains 
   ; a source expression (in the parsed zodiac format) and a set of z:varref/value pairs.
   ;((z:parsed (union (list-of z:varref) 'all) (list-of z:varref) (list-of z:varref) symbol) ->
@@ -95,7 +100,7 @@
                           (var-set-intersect free-vars
                                              tail-bound))]
             [var-clauses (map (lambda (x) 
-                               (let ([var (z:varref-var x)])
+                               (let ([var (translate-varref x)])
                                  `(cons (#%lambda () ,var)
                                         (cons ,x
                                               null))))
@@ -269,9 +274,7 @@
 	       ; the variable forms 
 	       
                [(z:varref? expr)
-                (let* ([v (if (z:top-level-varref? expr)
-                              (z:varref-var expr)
-                              (utils:get-binding-name (z:bound-varref-binding expr)))]
+                (let* ([v (translate-varref expr)]
                        [real-v (if (z:top-level-varref? expr)
                                    v
                                    (z:binding-orig-name
@@ -290,7 +293,7 @@
                                                   ,(format utils:undefined-error-format real-v)
                                                   (#%current-continuation-marks)
                                                   (#%quote ,v)))
-                                        ,real-v)
+                                        ,v)
                                       v)])
                   (values (wcm-break-wrap debug-info (return-value-wrap annotated)) free-vars))]
 
@@ -447,7 +450,8 @@
                                    var-sets))]
                        [val dummy-var-list (apply append dummy-var-sets)]
                        [val outer-dummy-initialization
-                            `([,dummy-var-list (#%values ,@(build-list (length dummy-var-list) '(#%quote *undefined*)))])]
+                            `([,dummy-var-list (#%values ,@(build-list (length dummy-var-list) 
+                                                                       (lambda (_) '(#%quote *undefined*))))])]
                        [val (values annotated-vals free-vars-vals)
                             (dual-map non-tail-recur vals)]
                        [val set!-clauses
@@ -541,12 +545,10 @@
 	       
 	       [(z:set!-form? expr)
                 (utils:check-for-keyword (z:set!-form-var expr))
-                (let+ ([val v (if (z:top-level-varref? expr)
-                                  (z:varref-var expr)
-                                  (utils:get-binding-name (z:bound-varref-binding expr)))]
+                (let+ ([val v (translate-varref (z:set!-form-var expr))]
                        [val (values annotated rhs-free-vars)
                             (non-tail-recur (z:set!-form-val expr))]
-                       [val free-vars (var-set-union (list z:set!-form-var) rhs-free-vars)]
+                       [val free-vars (var-set-union (list (z:set!-form-var expr)) rhs-free-vars)]
                        [val debug-info (make-debug-info-normal free-vars)])
                    (values `(#%set! ,v ,annotated) free-vars))]
                 
@@ -555,15 +557,15 @@
 			(lambda (arglist body)
 			  (let ([var-list (map create-bogus-bound-varref 
                                                (map z:binding-var
-                                                    (z:arglist-vars arglist)))])
+                                                    (z:arglist-vars arglist)))]
+                                [args (utils:arglist->ilist arglist)])
+                            (utils:improper-foreach utils:check-for-keyword args)
+                            (utils:improper-foreach mark-never-undefined args)
 			    (let-values ([(annotated free-vars)
 					  (lambda-body-recur body)])
 			      (let* ([new-free-vars (varref-remove* var-list free-vars)]
-                                     [args (utils:arglist->ilist arglist)]
                                      [new-annotated (list (utils:improper-map utils:get-binding-name args) 
-                                                          annotated)])
-                                (utils:improper-foreach utils:check-for-keyword args)
-                                (utils:improper-foreach mark-never-undefined args)
+                                                          annotated)]) 
 				(list new-annotated new-free-vars)))))]
 		       [pile-of-results (map annotate-case 
 					     (z:case-lambda-form-args expr)
@@ -619,7 +621,7 @@
       (let* ([annotated-exprs (map (lambda (expr)
                                      (annotate/top-level expr))
                                    parsed-exprs)])
-           
-           (values annotated-exprs
-                   struct-proc-names)))))
+        
+        (values annotated-exprs
+                struct-proc-names)))))
 	 

@@ -1,8 +1,7 @@
 (unit/sig plt:aries^
-  (import [drscheme : drscheme:export^]
-          [zodiac : zodiac:system^]
+  (import [zodiac : zodiac:system^]
           [mred : mred^]
-          [utils : cogen-utils^]
+          [utils : stepper:cogen-utils^]
           [marks : stepper:marks^]
           [annotate : stepper:annotate^])
   
@@ -28,10 +27,11 @@
     (let ([mark-list (continuation-mark-set->list mark-set annotate:debug-key)])
       (if (null? mark-list)
           #f
-          (begin
-            (printf "extracted location: ~a~n" (car ((car mark-list))))
-            (car ((car mark-list)))))))
+          (marks:mark-source (car mark-list)))))
   
+  (define (make-zodiac-mark location)
+    (marks:make-mark location #f null))
+    
   (define (break)
     (let ([break-info (continuation-mark-set->list (current-continuation-marks) annotate:debug-key)])
       (parameterize
@@ -53,6 +53,9 @@
   (define signal-undefined utils:signal-undefined)
   
   ; initialization --- should be called once per execute
+  ; (except that (2000-02-20) it doesn't matter anyway because
+  ; these environments are totally irrelevant to non-stepper
+  ; use of the annotater.
   (set! current-environments annotate:initial-env-package))
 
   

@@ -7,9 +7,6 @@
        (lambda (parsed) (getter (z:parsed-back parsed)))
        (lambda (parsed n) (setter (z:parsed-back parsed) n)))))
           
-  (define-values (new-name-getter new-name-setter)
-    (make-client-pair 'new-name))
-  
   (define-values (never-undefined-getter never-undefined-setter)
     (make-client-pair 'maybe-undefined))
   

@@ -1,5 +1,6 @@
 (unit/sig (invoke-stepper)
-  (import [mred : mred^]
+  (import mzlib:core^
+          [mred : mred^]
           [fw : framework^]
           [drscheme : drscheme:export^]
           (stepper-go))

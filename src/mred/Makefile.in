@@ -205,9 +205,9 @@ clean:
 	rm -f gc2/*.@LTO@ gc2/xsrc/*.c gc2/xsrc/*.cc gc2/*.d
 	cd wxme; $(MAKE) clean
 	cd wxs; $(MAKE) clean
-	if [ -d ../wxcommon/jpeg ] ; then cd ../wxcommon/jpeg; $(MAKE) clean ; fi
-	if [ -d ../wxcommon/libpng ] ; then cd ../wxcommon/libpng; $(MAKE) clean ; fi
-	if [ -d ../wxcommon/zlib ] ; then cd ../wxcommon/zlib; $(MAKE) clean ; fi
+	if [ -f ../wxcommon/jpeg/Makefile ] ; then cd ../wxcommon/jpeg; $(MAKE) clean ; fi
+	if [ -f ../wxcommon/libpng/Makefile ] ; then cd ../wxcommon/libpng; $(MAKE) clean ; fi
+	if [ -f ../wxcommon/zlib/Makefile ] ; then cd ../wxcommon/zlib; $(MAKE) clean ; fi
 	rm -f $(WXLIBS_@WXVARIANT@)
 	$(MAKE) clean_@WXVARIANT@
 

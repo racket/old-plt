@@ -32,7 +32,7 @@ Check Syntax separates four classes of identifiers:
   TODO:
        
      - write test suite for arrows and menus
-     
+     - figure out how annotate-raw-keyword can go away
 |#
 
 (module syncheck mzscheme
@@ -43,6 +43,7 @@ Check Syntax separates four classes of identifiers:
            (lib "list.ss")
            (lib "toplevel.ss" "syntax")
            (lib "kerncase.ss" "syntax")
+           (lib "boundmap.ss" "syntax")
            (prefix drscheme:arrow: "arrow.ss")
            (prefix fw: (lib "framework.ss" "framework"))
            (lib "mred.ss" "mred"))
@@ -98,10 +99,7 @@ Check Syntax separates four classes of identifiers:
       (define lexically-bound-syntax-style-str (prefix-style 'lexically-bound-syntax))
       (define imported-syntax-style-str (prefix-style 'imported-syntax))
       (define imported-variable-style-str (prefix-style 'imported-variable))
-      
-      (define bound-variable-style-str lexically-bound-variable-style-str)
-      (define keyword-style-str lexically-bound-syntax-style-str)
-      
+            
       ;; used for quicker debugging of the preference panel
       '(define test-preference-panel
          (lambda (name f)
@@ -1169,31 +1167,24 @@ Check Syntax separates four classes of identifiers:
       
                                           
                                           
-  ;;;;                 ;                  
- ;   ;                 ;                  
- ;     ;;; ;;;; ;;;   ;;;;;  ;;;;  ;;; ;;;
- ;;;    ;   ;  ;;  ;   ;         ;   ; ;  
-   ;;;  ;   ;  ;   ;   ;      ;;;;    ;   
-     ;   ; ;   ;   ;   ;     ;   ;   ; ;  
- ;   ;   ;;;   ;   ;   ;   ; ;   ;  ;   ; 
- ;;;;     ;   ;;;  ;;   ;;;   ;;; ;;;   ;;
-          ;                               
-          ;                               
-        ;;                                
 
- 
-                                                                      
-                                                         ;;;          
-;;;;;;;                                                    ;          
-;  ;  ;                                                    ;          
-;  ;  ; ; ;;;  ;;;;  ;;; ;;;  ;;;   ; ;;;   ;;;   ;;;;     ;     ;;;  
-   ;     ;         ;  ;   ;  ;   ;   ;     ;   ;      ;    ;    ;   ; 
-   ;     ;      ;;;;  ;   ;  ;;;;;   ;      ;;;    ;;;;    ;     ;;;  
-   ;     ;     ;   ;   ; ;   ;       ;         ;  ;   ;    ;        ; 
-   ;     ;     ;   ;   ;;;   ;   ;   ;     ;   ;  ;   ;    ;    ;   ; 
- ;;;;;  ;;;;    ;;; ;   ;     ;;;   ;;;;    ;;;    ;;; ; ;;;;;;  ;;;  
-                                                                      
-                                                                      
+;                                                                                                             
+;                                                                                                             
+;                                                                                                             
+;                                                                                                   ;         
+;                                                                                                   ;         
+;                         ;                       ;                                                 ;         
+;    ;;;  ;     ; ; ;;   ;;;;  ;;;   ;     ;     ;;;;  ; ;  ;;;   ;     ;  ;;;   ; ;   ;;;   ;;;    ;    ;;;  
+;   ;     ;     ; ;;  ;   ;   ;   ;   ;   ;       ;    ;;  ;   ;   ;   ;  ;   ;  ;;   ;     ;   ;   ;   ;     
+;   ;;     ;   ;  ;   ;   ;       ;    ; ;        ;    ;       ;   ;   ; ;    ;  ;    ;;        ;   ;   ;;    
+;    ;;    ;   ;  ;   ;   ;    ;;;;     ;         ;    ;    ;;;;    ; ;  ;;;;;;  ;     ;;    ;;;;   ;    ;;   
+;      ;    ; ;   ;   ;   ;   ;   ;    ; ;        ;    ;   ;   ;    ; ;  ;       ;       ;  ;   ;   ;      ;  
+;      ;    ; ;   ;   ;   ;   ;   ;   ;   ;       ;    ;   ;   ;     ;    ;      ;       ;  ;   ;   ;      ;  
+;   ;;;      ;    ;   ;    ;;  ;;;;; ;     ;       ;;  ;    ;;;;;    ;     ;;;;  ;    ;;;    ;;;;;  ;   ;;;   
+;            ;                                                                                                
+;            ;                                                                                                
+;           ;                                                                                                 
+                                                       
                                                                       
 
       ;; make-traversal : -> (values (namespace syntax (union #f syntax) -> void)
@@ -1203,52 +1194,65 @@ Check Syntax separates four classes of identifiers:
       ;; is called once for each top-level expression and the second
       ;; value is called once, after all expansion is complete.
       (define (make-traversal)
-        (let* ([tl-binders null]
-               [tl-varrefs null]
+        (let* ([tl-binders (make-id-set)]
+               [tl-varrefs (make-id-set)]
+               [tl-high-varrefs (make-id-set)]
+               [tl-tops (make-id-set)]
+               [tl-macrefs (make-id-set)]
+               [tl-high-macrefs (make-id-set)]
                [tl-requires null]
                [tl-require-for-syntaxes null]
-               [tl-tops null]
-               [tl-referenced-macros null]
                [tl-bound-in-sources null]
                [expanded-expression
                 (lambda (user-namespace user-directory sexp jump-to-id)
-                  (let-values ([(new-binders
-                                 new-varrefs
-                                 new-tops
-                                 new-requires
-                                 new-require-for-syntaxes
-                                 new-referenced-macros
-                                 new-bound-in-sources
-                                 has-module?)
-                                (annotate-basic sexp user-namespace user-directory jump-to-id)])
-                    (if has-module?
-                        (annotate-complete user-namespace
-                                           user-directory
-                                           new-binders
-                                           new-varrefs
-                                           new-tops
-                                           new-requires
-                                           new-require-for-syntaxes
-                                           new-referenced-macros
-                                           new-bound-in-sources)
-                        (begin
-                          (set! tl-binders (append new-binders tl-binders))
-                          (set! tl-varrefs (append new-varrefs tl-varrefs))
-                          (set! tl-requires (append new-requires tl-requires))
-                          (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
-                          (set! tl-referenced-macros (append new-referenced-macros tl-referenced-macros))
-                          (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))
-                          (set! tl-tops (append new-tops tl-tops))))))]
+                  (let ([is-module? (syntax-case sexp (module)
+                                      [(module . rest) #t]
+                                      [else #f])])
+                    (cond
+                      [is-module?
+                       (let ([binders (make-id-set)]
+                             [varrefs (make-id-set)]
+                             [high-varrefs (make-id-set)]
+                             [tops (make-id-set)]
+                             [macrefs (make-id-set)]
+                             [high-macrefs (make-id-set)])
+                         (let-values ([(new-requires
+                                        new-require-for-syntaxes
+                                        new-bound-in-sources)
+                                       (annotate-basic sexp user-namespace user-directory jump-to-id
+                                                       binders varrefs high-varrefs tops macrefs high-macrefs)])
+                           (annotate-complete user-namespace user-directory
+                                              binders
+                                              varrefs
+                                              high-varrefs
+                                              tops
+                                              macrefs
+                                              high-macrefs
+                                              new-requires
+                                              new-require-for-syntaxes
+                                              new-bound-in-sources)))]
+                      [else
+                       (let-values ([(new-requires
+                                      new-require-for-syntaxes
+                                      new-bound-in-sources)
+                                     (annotate-basic sexp user-namespace user-directory jump-to-id
+                                                     tl-binders tl-varrefs tl-high-varrefs tl-tops tl-macrefs tl-high-macrefs)])
+                         (begin
+                            (set! tl-requires (append new-requires tl-requires))
+                            (set! tl-require-for-syntaxes (append new-require-for-syntaxes tl-require-for-syntaxes))
+                            (set! tl-bound-in-sources (append new-bound-in-sources tl-bound-in-sources))))])))]
                [expansion-completed
                 (lambda (user-namespace user-directory)
                   (annotate-complete user-namespace
                                      user-directory
                                      tl-binders
                                      tl-varrefs
+                                     tl-high-varrefs
                                      tl-tops
+                                     tl-macrefs
+                                     tl-high-macrefs
                                      tl-requires
                                      tl-require-for-syntaxes
-                                     tl-referenced-macros
                                      tl-bound-in-sources))])
           (values expanded-expression expansion-completed)))
       
@@ -1258,11 +1262,9 @@ Check Syntax separates four classes of identifiers:
       
       ;; annotate-complete :    namespace
       ;;                        string[directory]
+      ;;                        id-set (six of them)
       ;;                        (listof syntax)
-      ;;                        (listof (cons boolean syntax))
       ;;                        (listof syntax)
-      ;;                        (listof syntax)
-      ;;                        (listof (cons boolean syntax[original]))
       ;;                        (listof (cons syntax[original] syntax[original]))
       ;;                     -> void
       ;;
@@ -1277,30 +1279,29 @@ Check Syntax separates four classes of identifiers:
                                  user-directory
                                  binders
                                  varrefs
+                                 high-varrefs
                                  tops
+                                 macrefs
+                                 high-macrefs
                                  requires
                                  require-for-syntaxes
-                                 referenced-macros
                                  bound-in-sources)
-        (let-values ([(non-require-varrefs non-require-referenced-macros)
-                      (annotate-require-vars 
-                       varrefs
-                       requires
-                       require-for-syntaxes
-                       referenced-macros
-                       user-namespace
-                       user-directory)])
-          (annotate-variables user-namespace
-                              binders
-                              non-require-varrefs
-                              non-require-referenced-macros
-                              tops))
+        (annotate-variables user-namespace
+                            binders
+                            varrefs
+                            high-varrefs
+                            tops
+                            macrefs
+                            high-macrefs
+                            requires
+                            require-for-syntaxes)
         (annotate-bound-in-sources bound-in-sources))
 
       ;; annotate-basic : syntax 
       ;;                  namespace
       ;;                  string
       ;;                  syntax[id]
+      ;;                  id-set (six of them)
       ;;                  -> (values (listof syntax)
       ;;                             (listof (cons boolean syntax))
       ;;                             (listof syntax)
@@ -1321,24 +1322,18 @@ Check Syntax separates four classes of identifiers:
       
       ;; the booleans in the lists indicate if the variables or macro references
       ;; were on the rhs of a define-syntax (boolean is #t) or not (boolean is #f)
-      (define (annotate-basic sexp user-namespace user-directory jump-to-id)
-        (let ([binders null]
-              [varrefs null]
-              [tops null]
-              [referenced-macros null]
-              [bound-in-sources null]
-              
+      (define (annotate-basic sexp user-namespace user-directory jump-to-id
+                              binders varrefs high-varrefs tops macrefs high-macrefs)
+        (let ([bound-in-sources null]
               [requires null]
               [require-for-syntaxes null]
-              [tail-ht (make-hash-table)]
-              [has-module? #f])
+              [tail-ht (make-hash-table)])
           (let level-loop ([sexp sexp]
                            [high-level? #f])
-            (annotate-original-keywords sexp)
             (set! bound-in-sources (combine-bound-in-source sexp bound-in-sources))
-            (set! referenced-macros (get-referenced-macros high-level? sexp referenced-macros))
-            (set! varrefs (flatten-bis-tree #t (syntax-property sexp 'bound-in-source) varrefs))
-            (set! binders (flatten-cons-tree 'no-cons (syntax-property sexp 'binding-in-source) binders))
+            (add-macrefs sexp (if high-level? macrefs high-macrefs))
+            (add-bis-tree (syntax-property sexp 'bound-in-source) (if high-level? high-varrefs varrefs))
+            (add-cons-tree (syntax-property sexp 'binding-in-source) (if high-level? high-varrefs varrefs))
             (let ([loop (lambda (sexp) (level-loop sexp high-level?))])
               (syntax-case* sexp (lambda case-lambda if begin begin0 let-values letrec-values set!
                                    quote quote-syntax with-continuation-mark 
@@ -1350,7 +1345,7 @@ Check Syntax separates four classes of identifiers:
                  (begin
                    (annotate-raw-keyword sexp)
                    (annotate-tail-position/last sexp (syntax->list (syntax (bodies ...))) tail-ht)
-                   (set! binders (combine/color-binders (syntax args) binders bound-variable-style-str))
+                   (add-binders (syntax args) binders)
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
                  (begin
@@ -1361,7 +1356,7 @@ Check Syntax separates four classes of identifiers:
                              (syntax->list (syntax ((bodiess ...) ...))))
                    (for-each
                     (lambda (args bodies)
-                      (set! binders (combine/color-binders args binders bound-variable-style-str))
+                      (add-binders args binders)
                       (for-each loop (syntax->list bodies)))
                     (syntax->list (syntax (argss ...)))
                     (syntax->list (syntax ((bodiess ...) ...)))))]
@@ -1402,7 +1397,7 @@ Check Syntax separates four classes of identifiers:
                  (begin
                    (annotate-raw-keyword sexp)
                    (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
-                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
+                   (for-each (lambda (x) (add-binders x binders))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
                    (for-each loop (syntax->list (syntax (bs ...)))))]
@@ -1410,14 +1405,14 @@ Check Syntax separates four classes of identifiers:
                  (begin
                    (annotate-raw-keyword sexp)
                    (annotate-tail-position/last sexp (syntax->list (syntax (bs ...))) tail-ht)
-                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
+                   (for-each (lambda (x) (add-binders x binders))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
                    (for-each loop (syntax->list (syntax (bs ...)))))]
                 [(set! var e)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (set! varrefs (cons (cons high-level? (syntax var)) varrefs))
+                   (add-id (if high-level? high-varrefs varrefs) (syntax var))
                    (loop (syntax e)))]
                 [(quote datum)
                  (begin 
@@ -1445,13 +1440,12 @@ Check Syntax separates four classes of identifiers:
                  (void)
                  ]
                 [(#%top . var)
-                 (begin
-                   (set! tops (cons (syntax var) tops)))]
+                 (add-id tops (syntax var))]
                 
                 [(define-values vars b)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (set! binders (combine/color-binders (syntax vars) binders bound-variable-style-str))
+                   (add-binders (syntax vars) binders)
                    (when jump-to-id
                      (for-each (lambda (id)
                                  (when (module-identifier=? id jump-to-id)
@@ -1461,11 +1455,10 @@ Check Syntax separates four classes of identifiers:
                 [(define-syntaxes names exp)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (set! binders (combine/color-binders (syntax names) binders keyword-style-str))
+                   (add-binders (syntax names) binders)
                    (level-loop (syntax exp) #t))]
                 [(module m-name lang (#%plain-module-begin bodies ...))
                  (begin
-                   (set! has-module? #t)
                    ((annotate-require-open user-namespace user-directory) (syntax lang))
                    (set! requires (cons (syntax lang) requires))
                    (annotate-raw-keyword sexp)
@@ -1486,16 +1479,19 @@ Check Syntax separates four classes of identifiers:
                 
                 ; module top level only:
                 [(provide provide-specs ...)
-                 (let ([provided-vars (apply 
-                                       append
-                                       (map extract-provided-vars
-                                            (syntax->list (syntax (provide-specs ...)))))])
-                   (set! varrefs (append (map (lambda (x) (cons #f x)) provided-vars) varrefs))
+                 (let ([provided-varss (map extract-provided-vars
+                                            (syntax->list (syntax (provide-specs ...))))])
+                   (for-each (lambda (provided-vars)
+                               (for-each
+                                (lambda (provided-var)
+                                  (add-id varrefs provided-var))
+                                provided-vars))
+                             provided-varss)
                    (annotate-raw-keyword sexp))]
                 
                 [id
                  (identifier? (syntax id))
-                 (set! varrefs (cons (cons high-level? sexp) varrefs))]
+                 (add-id (if high-level? varrefs high-varrefs) sexp)]
                 [_
                  (begin
                    '(printf "unknown stx: ~e (datum: ~e) (source: ~e)~n"
@@ -1506,15 +1502,11 @@ Check Syntax separates four classes of identifiers:
                                  (syntax-source sexp)))
                    (void))])))
           (add-tail-ht-links tail-ht)
-          (values binders 
-                  varrefs
-                  tops
-                  requires
+          (values requires
                   require-for-syntaxes
-                  referenced-macros
-                  bound-in-sources
-                  has-module?)))
+                  bound-in-sources)))
 
+      ;; junk
       ;; annotate-require-vars :    (listof (cons boolean syntax[identifier]))
       ;;                            (listof syntax)
       ;;                            (listof syntax)
@@ -1525,6 +1517,7 @@ Check Syntax separates four classes of identifiers:
       ;; returns the sublist of `varrefs' that did not come from module imports and
       ;;     and the sublist of `referenced-macros' that didn't come from module imports
       ;; effect: colors all require-bound ids from `varrefs' and draws arrow for them. 
+      #|
       (define (annotate-require-vars varrefs/levels requires require-for-syntaxes referenced-macros
                                       user-namespace user-directory)
         (let* ([maker (lambda (x) (make-req/tag x (syntax-object->datum x) #f))]
@@ -1582,12 +1575,13 @@ Check Syntax separates four classes of identifiers:
                           (set-req/tag-used?! req/tag #t)))
                       req/tags)
             unused?)))
+      |#
 
       ;; annotate-unused-require : syntax -> void
       (define (annotate-unused-require req/tag)
         (unless (req/tag-used? req/tag)
           (color (req/tag-req-stx req/tag) unbound-variable-style-str)))
-      
+#|      
       ;; annotate-require-var : (listof req/tags) syntax boolean -> boolean
       ;; returns #t if `varref' comes from a module import
       ;; effect: colors `varref' and adds binding structure arrows,
@@ -1619,7 +1613,7 @@ Check Syntax separates four classes of identifiers:
                                      (syntax-object->datum varref)
                                      (syntax-object->datum (req/tag-req-stx req/tag))))))
                         #t))))))
-      
+  |#    
       ;; get-module-req-path : binding -> (union #f require-sexp)
       ;; argument is the result of identifier-binding or identifier-transformer-binding
       (define (get-module-req-path binding)
@@ -1636,22 +1630,42 @@ Check Syntax separates four classes of identifiers:
       ;;         have that name. Filter the result for
       ;;         access to variables that are all module-identifier=?
       ;; similarly for binders-ht, except it maps only binding location ids.
-      (define (annotate-variables user-namespace binders varrefs referenced-macros tops)
-        (let ([vars-ht (make-hash-table)]
-              [binders-ht (make-hash-table)])
-          (for-each (add-var vars-ht) varrefs)
-          (for-each (add-var vars-ht) referenced-macros)
-          (for-each (add-var vars-ht) tops)
-          (for-each (add-var vars-ht) binders)
-          (for-each (add-var binders-ht) binders)
-
-          (for-each (annotate-binder vars-ht) binders)
-          (for-each (annotate-varref (handle-no-binders/lexical #t) vars-ht binders-ht #f)
-                    varrefs)
-          (for-each (annotate-varref (handle-no-binders/lexical #t) vars-ht binders-ht #t)
-                    referenced-macros)
-          (for-each (annotate-varref (handle-no-binders/top user-namespace) vars-ht binders-ht #f)
-                    tops)))
+      (define (annotate-variables user-namespace
+                                  binders
+                                  varrefs
+                                  high-varrefs
+                                  tops
+                                  macrefs
+                                  high-macrefs
+                                  requires
+                                  require-for-syntaxes)
+        (for-each (lambda (vars) (for-each color-variable vars))
+                  (get-idss binders))
+        (for-each (lambda (vars) (for-each color-variable vars))
+                  (get-idss high-varrefs))
+        (for-each (lambda (vars) (for-each color-variable vars))
+                  (get-idss varrefs))
+        
+        (for-each (lambda (vars) (for-each color-macro-variable vars))
+                  (get-idss macrefs))
+        (for-each (lambda (vars) (for-each color-macro-variable vars))
+                  (get-idss high-macrefs)))
+      
+      ;; color-variable : syntax -> void
+      (define (color-variable var)
+        (let ([b (identifier-binding var)])
+          (cond
+            [(eq? b 'lexical) (color var lexically-bound-variable-style-str)]
+            [(not b) (void)]
+            [else (color var imported-variable-style-str)])))
+      
+      ;; color-macro-variable : syntax -> void
+      (define (color-macro-variable var)
+        (let ([b (identifier-binding var)])
+          (cond
+            [(eq? b 'lexical) (color var lexically-bound-syntax-style-str)]
+            [(not b) (void)]
+            [else (color var imported-syntax-style-str)])))
       
       ;; add-var : hash-table -> syntax -> void
       ;; adds the variable to the hash table.
@@ -1660,7 +1674,7 @@ Check Syntax separates four classes of identifiers:
           (let* ([key (syntax-e var)]
                  [prev (hash-table-get ht key (lambda () null))])
             (hash-table-put! ht key (cons var prev)))))
-      
+#|      
       ;; annotate-binder : vars-hash-table -> syntax -> void
       ;; annotates a variable in a binding position
       (define (annotate-binder vars-ht)
@@ -1717,7 +1731,7 @@ Check Syntax separates four classes of identifiers:
                                  keyword-style-str
                                  bound-variable-style-str))]
               [else (void)]))))
-      
+|#      
       ;; connect-syntaxes : syntax[original] syntax[original] -> void
       ;; adds an arrow from `from' to `to', unless they have the same source loc. 
       (define (connect-syntaxes from to)
@@ -1814,8 +1828,8 @@ Check Syntax separates four classes of identifiers:
       (define (annotate-bound-in-sources biss)
         (for-each
          (lambda (bis)
-           (color (car bis) bound-variable-style-str)
-           (color (cdr bis) bound-variable-style-str)
+           (color (car bis) lexically-bound-variable-style-str)
+           (color (cdr bis) lexically-bound-variable-style-str)
            (connect-syntaxes (car bis) (cdr bis)))
          biss))
       
@@ -1900,60 +1914,45 @@ Check Syntax separates four classes of identifiers:
                                  test)))
                         possible-suffixes)))))
 
-      ;; get-referenced-macros : boolean sexp (listof (cons boolean syntax[original])) -> (listof (cons boolean syntax[original]))
-      (define (get-referenced-macros high-level? sexp acc)
+      ;; add-referenced-macros : sexp id-set -> void
+      (define (add-macrefs sexp id-set)
         (let ([origin (syntax-property sexp 'origin)])
-          (if origin
-              (flatten-cons-tree high-level? origin acc)
-              acc)))
+          (when origin
+            (add-cons-tree origin id-set))))
       
       ;; type cons-tree : (union (cons cons-tree cons-tree) syntax)
-      ;; flatten-cons-tree : (union 'no-cons boolean)
-      ;;                     cons-tree
-      ;;                     (union (listof syntax[original]) (listof (cons boolean syntax[original])))
-      ;;                  -> (union (listof syntax[original]) (listof (cons boolean syntax[original])))
-      ;; flattens the cons tree in one of two ways. If the first
-      ;; argument is 'no-cons, `acc' must be a list of syntax; if
-      ;; the first argument is a boolean, `acc' must be a list of pairs.
-      ;; Uses the first argument's value to match the acc, either
-      ;; constructing pairs or not as elements of the list.
-      (define (flatten-cons-tree level ct acc)
-        (let loop ([ct ct]
-                   [acc acc])
+      ;; add-cons-tree : cons-tree id-set -> void
+      ;; adds all of the original identifiers in the cons tree into the id-set
+      (define (add-cons-tree ct id-set)
+        (let loop ([ct ct])
           (cond
-            [(pair? ct) (loop (car ct) (loop (cdr ct) acc))]
-            [(syntax? ct) (if (syntax-original? ct)
-                              (if (boolean? level)
-                                  (cons (cons level ct) acc)
-                                  (cons ct acc))
-                              acc)]
-            [else acc])))
+            [(pair? ct) 
+             (loop (car ct))
+             (loop (cdr ct))]
+            [(syntax? ct) 
+             (when (syntax-original? ct)
+               (add-id id-set ct))]
+            [else (void)])))
 
-      ;; flatten-bis-tree : (union 'no-cons boolean)
-      ;;                    cons-tree
-      ;;                    (union (listof syntax[original]) (listof (cons boolean syntax[original])))
-      ;;                 -> (listof syntax[original])
-      ;; similar to flatten-cons-tree, except it
+      ;; add-bis-tree : cons-tree id-set -> void
+      ;; similar to add-cons-tree, except it
       ;; flattens the tree associated with the 'bound-in-source property
-      (define (flatten-bis-tree level ct acc)
-        (let loop ([ct ct]
-                   [acc acc])
+      (define (add-bis-tree ct id-set)
+        (let loop ([ct ct])
           (cond
             [(and (pair? ct)
                   (syntax? (car ct))
                   (syntax? (cdr ct)))
-             (if (and (identifier? (car ct))
-                      (syntax-original? (car ct))
-                      (identifier? (cdr ct))
-                      (syntax-original? (cdr ct)))
-                 (if (boolean? level)
-                     (list* (cons level (car ct))
-                            (cons level (cdr ct))
-                            acc)
-                     (list* (car ct) (cdr ct) acc))
-                 acc)]
-            [(pair? ct) (loop (car ct) (loop (cdr ct) acc))]
-            [else acc])))
+             (when (and (identifier? (car ct))
+                        (syntax-original? (car ct))
+                        (identifier? (cdr ct))
+                        (syntax-original? (cdr ct)))
+               (add-id id-set (car ct))
+               (add-id id-set (cdr ct)))]
+            [(pair? ct) 
+             (loop (car ct))
+             (loop (cdr ct))]
+            [else (void)])))
 
       ;; extract-provided-vars : syntax -> (listof syntax[identifier])
       (define (extract-provided-vars stx)
@@ -1987,13 +1986,12 @@ Check Syntax separates four classes of identifiers:
              (loop (syntax module-name))]
             [_ stx])))
       
-      
-      ;; combine/color-binders : boolean syntax (listof syntax) str -> (listof syntax)
-      ;; transforms an argument list into a bunch of symbols/symbols and puts 
-      ;; them on `incoming'
-      (define (combine/color-binders stx incoming style-str)
-        (let loop ([stx stx]
-                   [sofar incoming])
+      ;; add-binders : syntax id-set -> void
+      ;; transforms an argument list into a bunch of symbols/symbols
+      ;; and puts them into the id-set
+      ;; effect: colors the identifiers
+      (define (add-binders stx id-set)
+        (let loop ([stx stx])
           (let ([e (if (syntax? stx) (syntax-e stx) stx)])
             (cond
               [(cons? e)
@@ -2002,29 +2000,13 @@ Check Syntax separates four classes of identifiers:
                  (if (syntax? fst)
                      (begin
                        (when (syntax-original? fst)
-                         (color fst style-str))
-                       (loop rst (cons fst sofar)))
-                     (loop rst sofar)))]
-              [(null? e) sofar]
+                         (add-id id-set fst))
+                       (loop rst))
+                     (loop rst)))]
+              [(null? e) (void)]
               [else 
                (when (syntax-original? stx)
-                 (color stx style-str))
-               (cons stx sofar)]))))
-      
-      
-      ;; annotate-original-keywords : syntax -> void
-      ;; annotates the origin of the stx with style-name's style.
-      (define (annotate-original-keywords stx)
-        (let ([origin (syntax-property stx 'origin)])
-          (when origin
-            (let loop ([origin origin])
-              (cond
-                [(cons? origin)
-                 (loop (car origin))
-                 (loop (cdr origin))]
-                [(syntax? origin)
-                 (when (syntax-original? origin)
-                   (color origin keyword-style-str))])))))
+                 (add-id id-set stx))]))))
       
       ;; annotate-raw-keyword : syntax -> void
       ;; annotates keywords when they were never expanded. eg.
@@ -2036,27 +2018,8 @@ Check Syntax separates four classes of identifiers:
             (when (pair? lst)
               (let ([f-stx (car lst)])
                 (when (syntax-original? f-stx)
-                  (color f-stx keyword-style-str)))))))
-      
-      ;; annotate-variable : syntax (listof identifer) -> void
-      (define (annotate-variable sexp bound-vars)
-        (cond
-          [(ormap (lambda (x) (and (module-identifier=? sexp x) x)) bound-vars)
-           (when (syntax-original? sexp)
-             (color sexp bound-variable-style-str))]
-          [else
-           (when (syntax-original? sexp)
-             (color sexp unbound-variable-style-str))]))
-      
-      ;; annotate-arglist : syntax -> void
-      ;; annotates the (possibly improper) syntax list as bound variables
-      (define (annotate-arglist stx)
-        (for-each (lambda (stx) 
-                    (when (syntax-original? stx)
-                      (color stx bound-variable-style-str)))
-                  (syntax->list stx)))
-      
-      
+                  (printf "~s\n" `(color ,f-stx keyword-style-str))))))))
+            
       ;; color-internal-structure : syntax str -> void
       (define (color-internal-structure stx style-name)
         (let ([ht (make-hash-table)]) 
@@ -2270,6 +2233,58 @@ Check Syntax separates four classes of identifiers:
                                       (syntax-position (car rst))))
                               (loop fst (cdr rst))
                               (cons fst (loop (car rst) (cdr rst))))]))]))
+      
+      
+;                                            
+;                                            
+;                                            
+;   ;       ;                                
+;           ;                                
+;           ;                     ;          
+;   ;    ;; ;        ;;;    ;;;  ;;;;   ;;;  
+;   ;   ;  ;;       ;      ;   ;  ;    ;     
+;   ;  ;    ;       ;;    ;    ;  ;    ;;    
+;   ;  ;    ;        ;;   ;;;;;;  ;     ;;   
+;   ;  ;    ;          ;  ;       ;       ;  
+;   ;   ;  ;;          ;   ;      ;       ;  
+;   ;    ;; ;       ;;;     ;;;;   ;;  ;;;   
+;                                            
+;                                            
+;                                            
+
+      ;; make-id-set : -> id-set
+      (define (make-id-set) (make-module-identifier-mapping))
+      
+      ;; add-id : id-set set -> void
+      (define (add-id mapping id) 
+        (let ([old (module-identifier-mapping-get mapping id (lambda () '()))])
+          (module-identifier-mapping-put! mapping id (cons id old))))
+      
+      ;; get-idss : id-set -> (listof (listof identifier))
+      (define (get-idss mapping)
+        (module-identifier-mapping-map mapping (lambda (x y) y)))
+      
+      ;; for-each-ids : id-set ((listof identifier) -> void) -> void
+      (define (for-each-ids mapping f)
+        (module-identifier-mapping-for-each mapping (lambda (x y) (f y))))
+      
+;                                                 
+;                                                 
+;                                                 
+;  ;    ;    ; ;                                  
+;  ;    ;    ;                                    
+;  ;   ; ;   ;                                    
+;   ;  ; ;  ;  ;   ; ;   ;;;       ;   ;   ; ;;   
+;   ;  ; ;  ;  ;   ;;   ;   ;      ;   ;   ;;  ;  
+;   ; ;   ; ;  ;   ;   ;    ;      ;   ;   ;    ; 
+;   ; ;   ; ;  ;   ;   ;;;;;;      ;   ;   ;    ; 
+;   ; ;   ; ;  ;   ;   ;           ;   ;   ;    ; 
+;    ;     ;   ;   ;    ;          ;  ;;   ;;  ;  
+;    ;     ;   ;   ;     ;;;;       ;; ;   ; ;;   
+;                                          ;      
+;                                          ;      
+;                                          ;      
+
       
       (add-check-syntax-key-bindings (drscheme:rep:get-drs-bindings-keymap))
       

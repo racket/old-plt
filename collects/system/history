@@ -2,6 +2,17 @@ SYSTEM HISTORY
 --------------
 Version 50:
 
+- All of the icons in mred are now loaded lazily (but only once),
+  and their names are prefixed with "get-". They are now:
+
+  - mred:get-anchor-bitmap
+  - mred:get-lock-bitmap
+  - mred:get-unlock-bitmap
+  - mred:get-icon
+  - mred:get-autowrap-bitmap
+  - mred:get-paren-highlight-bitmap
+  - mred:get-reset-console-bitmap
+
 - added mred:info-frame%
 
 - split out mred:edit into several edits. The choices for pasteboards

@@ -21,6 +21,9 @@
 
 // EEXIST --- the error in errno.h returned when a file cannot be
 // created because the file already exists --- is not defined on the mac.
+// (actually, it _is_ defined in Metrowerks 6)
 
-#define EEXIST dupFNErr
+#if (__MWERKS__ < 0x2400)
+# define EEXIST dupFNErr
+#endif
 

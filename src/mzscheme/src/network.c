@@ -24,6 +24,7 @@
 /* This file implements the TCP interface. */
 
 #include "schpriv.h"
+#include <ctype.h>
 
 #ifndef NO_TCP_SUPPORT
 #ifdef USE_TCP

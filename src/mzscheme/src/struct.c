@@ -771,10 +771,12 @@ struct_execute (Scheme_Object *form)
 
   if (!info->memo_names) {
     Scheme_Object **sa;
+    int c;
     sa = scheme_make_struct_names(info->name,
 				  info->fields,
 				  0, 
-				  &info->count);
+				  &c);
+    info->count = c;
     info->memo_names = sa;
   }
   names = info->memo_names;
@@ -868,10 +870,12 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
 
     if (in_rec[drec].can_optimize_constants) {
       Scheme_Object **sa;
+      int c;
       sa = scheme_make_struct_names(info->name,
 				    info->fields,
 				    0, 
-				    &info->count);
+				    &c);
+      info->count = c;
       info->memo_names = sa;
     } else
       info->memo_names = NULL;

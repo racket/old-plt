@@ -374,11 +374,10 @@ static int check_cycles(Scheme_Object *obj, Scheme_Process *p, Scheme_Hash_Table
       }
     }
   } else if (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type)) {
-    Scheme_Object **slots = ((Scheme_Structure *)obj)->slots;
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
-      if (check_cycles(slots[i], p, ht)) {
+      if (check_cycles(((Scheme_Structure *)obj)->slots[i], p, ht)) {
 	return 1;
       }
     }
@@ -435,12 +434,11 @@ static int check_cycles_fast(Scheme_Object *obj, Scheme_Process *p)
     }
     obj->type = t;
   } else if (p->quick_print_struct && SAME_TYPE(t, scheme_structure_type)) {
-    Scheme_Object **slots = ((Scheme_Structure *)obj)->slots;
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     obj->type = -t;
     while (i--) {
-      cycle = check_cycles_fast(slots[i], p);
+      cycle = check_cycles_fast(((Scheme_Structure *)obj)->slots[i], p);
       if (cycle)
 	break;
     }
@@ -488,11 +486,10 @@ static void setup_graph_table(Scheme_Object *obj, Scheme_Hash_Table *ht,
     }
   } else if (p->quick_print_struct 
 	   && SAME_TYPE(SCHEME_TYPE(obj), scheme_structure_type)) {
-    Scheme_Object **slots = ((Scheme_Structure *)obj)->slots;
     int i = SCHEME_STRUCT_NUM_SLOTS(obj);
 
     while (i--) {
-      setup_graph_table(slots[i], ht, counter, p);
+      setup_graph_table(((Scheme_Structure *)obj)->slots[i], ht, counter, p);
     }
   }
 }
@@ -982,14 +979,13 @@ print(Scheme_Object *obj, int escaped, int compact, Scheme_Hash_Table *ht,
 	}
 
 	if (p->quick_print_struct) {
-	  Scheme_Object **slots = ((Scheme_Structure *)obj)->slots;
 	  int i, count = SCHEME_STRUCT_NUM_SLOTS(obj), no_sp_ok;
 	  
 	  if (count)
 	    print_this_string(p, " ", 1);
 	  
 	  for (i = 0; i < count; i++) {
-	    no_sp_ok = print(slots[i], escaped, compact, ht, vht, p);
+	    no_sp_ok = print(((Scheme_Structure *)obj)->slots[i], escaped, compact, ht, vht, p);
 	    if ((i < count - 1) && (!compact || !no_sp_ok))
 	      print_this_string(p, " ", 1);
 	  }

@@ -927,7 +927,7 @@ static short *MapIvars(Scheme_Class *sclass, ClassVariable *item)
 
 typedef int (*Compare_Proc)(const void *, const void *);
 
-static void InsureNamesReady(ClassVariable *ivars, int count, Scheme_Object ***names)
+static void EnsureNamesReady(ClassVariable *ivars, int count, Scheme_Object ***names)
 {
   int i;
   ClassVariable *cvar;
@@ -1789,6 +1789,7 @@ static void InitData(Class_Data *data)
   ClassVariable *item;
   int pub_index = 0, ref_index = 0, priv_index = 0;
   int input_index;
+  Scheme_Object **names;
   
   input_index = data->num_arg_vars;
   for (item = data->ivars; item; item = item->next) {
@@ -1814,9 +1815,9 @@ static void InitData(Class_Data *data)
   data->cmethod_names = NULL;
   data->cmethods = NULL;
 
-  data->ivar_names = NULL;
-  
-  InsureNamesReady(data->ivars, data->num_ivar, &data->ivar_names);
+  names = NULL;
+  EnsureNamesReady(data->ivars, data->num_ivar, &names);
+  data->ivar_names = names;
 }
 
 static Scheme_Object *Do_DefineClass(Scheme_Object *form, Scheme_Comp_Env *env,
@@ -3005,12 +3006,12 @@ static int DoFindName(int num_public, Scheme_Object **pn, Scheme_Object *symbol)
   return p;
 }
 
-static Scheme_Object *GetIvar(Internal_Object *obj, Init_Object_Rec *irec, Scheme_Object **slots, 
+static Scheme_Object *GetIvar(Internal_Object *obj, Init_Object_Rec *irec, 
 			      Scheme_Class *oclass, Scheme_Class *mclass, short vp,
 			      int boxed, int force)
 {
   if (mclass->vslot_kind[vp] == slot_TYPE_IVAR) {
-    Scheme_Object *v = slots[oclass->vslot_map[vp]];
+    Scheme_Object *v = obj->slots[oclass->vslot_map[vp]];
     if (boxed)
       return v;
     else
@@ -3023,17 +3024,16 @@ static Scheme_Object *GetIvar(Internal_Object *obj, Init_Object_Rec *irec, Schem
       if (irec) {
 	int level = mclass->cmethod_ready_level[mclass->vslot_map[vp]];
 	Scheme_Class *sclass = oclass->heritage[level];
-	Init_Frame *frame = irec->frames + level;
 	int cindex = sclass->vslot_map[vp];
 	int lpos = sclass->cmethod_source_map[cindex];
 
-	if (!frame->cmethods) {
+	if (!irec->frames[level].cmethods) {
 	  Scheme_Object **ca;
 	  ca = MALLOC_N(Scheme_Object*, sclass->contributes_cmethods);
-	  frame->cmethods = ca;
+	  irec->frames[level].cmethods = ca;
 	}
 
-	if (!frame->cmethods[lpos]) {
+	if (!irec->frames[level].cmethods[lpos]) {
 	  Scheme_Object *box;
 
 	  if (irec->init_level > level) {
@@ -3042,13 +3042,13 @@ static Scheme_Object *GetIvar(Internal_Object *obj, Init_Object_Rec *irec, Schem
 	  } else
 	    box = scheme_make_envunbox(CloseMethod(sclass->cmethods[cindex], obj));
 	  
-	  frame->cmethods[lpos] = box;
+	  irec->frames[level].cmethods[lpos] = box;
 	}
 
 	if (boxed)
-	  return frame->cmethods[lpos];
+	  return irec->frames[level].cmethods[lpos];
 	else
-	  return SCHEME_ENVBOX_VAL(frame->cmethods[lpos]);
+	  return SCHEME_ENVBOX_VAL(irec->frames[level].cmethods[lpos]);
       } else {
 	Scheme_Object *m;
 	m = CloseMethod(mclass->cmethods[mclass->vslot_map[vp]], obj);
@@ -3065,9 +3065,7 @@ static void BuildObjectFrame(Internal_Object *obj,
 			     Init_Object_Rec *irec,
 			     Scheme_Class *oclass,
 			     Scheme_Class *sclass,
-			     Init_Frame *frames,
-			     int framepos,
-			     Scheme_Object **slots)
+			     int framepos)
 {
   /* Called when object is created (before initialization) for each class,
      least-specific class first. */
@@ -3079,13 +3077,13 @@ static void BuildObjectFrame(Internal_Object *obj,
     ivars = MALLOC_N(Scheme_Object*, sclass->num_ivar);
   else
     ivars = NULL;
-  frames[framepos].ivars = ivars;
+  irec->frames[framepos].ivars = ivars;
   
   if (sclass->num_ref)
     refs = MALLOC_N(Scheme_Object*, sclass->num_ref);
   else
     refs = NULL;
-  frames[framepos].refs = refs;
+  irec->frames[framepos].refs = refs;
 
   /* Find all rename boxes, then make public boxes */
 
@@ -3096,7 +3094,7 @@ static void BuildObjectFrame(Internal_Object *obj,
       Scheme_Object *iv;
       /* If the superclass's ivar is a cmethod, the box will contain
 	 #<undefined>. */
-      iv = GetIvar(obj, irec, slots, oclass, superclass, vp, 1, 1);
+      iv = GetIvar(obj, irec, oclass, superclass, vp, 1, 1);
       refs[cvar->index] = iv;
     }
   }
@@ -3104,7 +3102,7 @@ static void BuildObjectFrame(Internal_Object *obj,
   for (cvar = sclass->ivars; cvar; cvar = cvar->next) {
     if (ispublic(cvar)) {
       box = scheme_make_envunbox(scheme_undefined);
-      slots[oclass->vslot_map[sclass->ivar_map[cvar->index]]] = box;
+      obj->slots[oclass->vslot_map[sclass->ivar_map[cvar->index]]] = box;
       ivars[cvar->index] = box;
     }
   }
@@ -3113,12 +3111,9 @@ static void BuildObjectFrame(Internal_Object *obj,
 static Init_Object_Rec *CreateObjectFrames(Internal_Object *obj, Scheme_Class *sclass)
 {
   /* Called when object is created (before initialization) */
-  Init_Frame *frames;
-  Scheme_Object **slots;
   Init_Object_Rec *irec;
   int i;
 
-  slots = obj->slots;
   irec = (Init_Object_Rec *)scheme_malloc_rt(sizeof(Init_Object_Rec)
 					     + (sclass->pos /* for +1 total */
 						* sizeof(Init_Frame)));
@@ -3126,12 +3121,11 @@ static Init_Object_Rec *CreateObjectFrames(Internal_Object *obj, Scheme_Class *s
   irec->type = scheme_rt_init_obj_rec;
   irec->count = sclass->pos + 1;
 #endif
-  frames = irec->frames;
 
   irec->init_level = sclass->pos + 1;
 
   for (i = 0; i <= sclass->pos; i++) {
-    BuildObjectFrame(obj, irec, sclass, sclass->heritage[i], frames, i, slots);
+    BuildObjectFrame(obj, irec, sclass, sclass->heritage[i], i);
   }
 
   return irec;
@@ -3140,12 +3134,11 @@ static Init_Object_Rec *CreateObjectFrames(Internal_Object *obj, Scheme_Class *s
 
 static void
 PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *sclass, 
-		   Init_Frame *frame, Scheme_Process *p,
+		   int level, Scheme_Process *p,
 		   Scheme_Object ***_priv_stack, Scheme_Object ***_obj_stack)
 {
   /* Called at start of class-specific initialization */
   Scheme_Object **priv_stack, **pub_stack, **ref_stack, **obj_stack;
-  Scheme_Object **slots;
   Scheme_Class *oclass;
   ClassVariable *cvar;
   int i, count;
@@ -3172,7 +3165,6 @@ PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *scla
     obj_stack[sclass->num_arg_vars + 1] = bx;
   }
 
-  slots = o->slots;
   cvar = sclass->ivars;
   oclass = (Scheme_Class *)o->o.sclass;
 
@@ -3180,16 +3172,16 @@ PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *scla
   for (i = 0; cvar; cvar = cvar->next) {
     if (ispublic(cvar)) {
       Scheme_Object *iv;
-      iv = GetIvar(o, irec, slots, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
+      iv = GetIvar(o, irec, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
       pub_stack[cvar->index] = iv;
     } else if (isprivref(cvar)) {
-      ref_stack[cvar->index] = frame->refs[cvar->index];
+      ref_stack[cvar->index] = irec->frames[level].refs[cvar->index];
     } else if (isref(cvar)) {
       Scheme_Object *box;
       /* If the superclass's ivar is a cmethod, the box will contain
 	 #<undefined>. */
-      box = GetIvar(o, irec, slots, oclass, oclass, sclass->ref_map[cvar->index], 1, 1);
-      frame->refs[cvar->index] = box;
+      box = GetIvar(o, irec, oclass, oclass, sclass->ref_map[cvar->index], 1, 1);
+      irec->frames[level].refs[cvar->index] = box;
       ref_stack[cvar->index] = box;
     }
   }
@@ -3200,7 +3192,7 @@ PushFrameVariables(Internal_Object *o, Init_Object_Rec *irec, Scheme_Class *scla
 
 /**************************************************************************/
 
-static void SetIVarValues(Init_Frame *frame, /* Frame */
+static void SetIVarValues(Init_Object_Rec *irec, int level, /* Frame */
 			  Scheme_Object **priv_stack,
 			  Scheme_Object **obj_stack,
 			  ClassVariable *items,  /* Items to be created */
@@ -3213,7 +3205,7 @@ static void SetIVarValues(Init_Frame *frame, /* Frame */
   while (items) {
     if (!isref(items)) {
       if (ispublic(items))
-	box = frame->ivars[items->index];
+	box = irec->frames[level].ivars[items->index];
       else
 	box = NULL;
 
@@ -3266,7 +3258,6 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
   int i, j, pthresh;
   Scheme_Object **priv_stack, **obj_stack, **orig_stack;
   Scheme_Class *sclass;
-  Init_Frame *frame;
   Scheme_Process *p = scheme_current_process;
 
   if (level == -1) {
@@ -3283,10 +3274,9 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 
   orig_stack = MZ_RUNSTACK;
 
-  frame = irec->frames + level;
   sclass = ((Scheme_Class *)o->o.sclass)->heritage[level];
 
-  if (!skip_cmethods && sclass->contributes_cmethods && frame->cmethods) {
+  if (!skip_cmethods && sclass->contributes_cmethods && irec->frames[level].cmethods) {
     /* Fill in any cached boxed */
     int i;
     for (i = sclass->num_public; i--; ) {
@@ -3294,10 +3284,10 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
 	int cindex = sclass->vslot_map[i];
 	if (sclass->cmethod_ready_level[cindex] == level) {
 	  int lpos = sclass->cmethod_source_map[cindex];
-	  if (frame->cmethods[lpos]) {
+	  if (irec->frames[level].cmethods[lpos]) {
 	    Scheme_Object *m;
 	    m = CloseMethod(sclass->cmethods[cindex], o);
-	    SCHEME_ENVBOX_VAL(frame->cmethods[lpos]) = m;
+	    SCHEME_ENVBOX_VAL(irec->frames[level].cmethods[lpos]) = m;
 	  }
 	}
       }
@@ -3333,7 +3323,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
       stack[i] = saved[i];
     }
 
-    PushFrameVariables(o, irec, sclass, frame, scheme_current_process,
+    PushFrameVariables(o, irec, sclass, level, scheme_current_process,
 		       &priv_stack, &obj_stack);
 
     /* Set init arg values in environment: */
@@ -3372,7 +3362,7 @@ static void InitObjectFrame(Internal_Object *o, Init_Object_Rec *irec, int level
     obj_stack = NULL;
   }
 
-  SetIVarValues(frame, priv_stack, obj_stack, sclass->ivars, pthresh);
+  SetIVarValues(irec, level, priv_stack, obj_stack, sclass->ivars, pthresh);
 
   MZ_RUNSTACK = orig_stack;
 
@@ -3407,7 +3397,7 @@ static Scheme_Object *find_ivar(Internal_Object *obj,
 
   vp = oclass->public_map[sp];
 
-  return GetIvar(obj, NULL, obj->slots, oclass, oclass, vp, 0, force);
+  return GetIvar(obj, NULL, oclass, oclass, vp, 0, force);
 }
 
 Scheme_Object *scheme_find_ivar(Scheme_Object *obj, 
@@ -3508,12 +3498,10 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
     Scheme_Object *superinit, **public_values, **env_values;
     ClassVariable *cvar;
     Scheme_Class *oclass;
-    Init_Frame *frame;
 
     superinit = MakeSuperInitPrim(o, irec, level - 1);
 
     oclass = (Scheme_Class *)o->o.sclass;
-    frame = irec->frames + level;
 
     c = sclass->num_ivar + sclass->num_ref;
     public_values = MALLOC_N(Scheme_Object *, c);
@@ -3521,15 +3509,15 @@ static void CallInitFrame(Internal_Object *o, Init_Object_Rec *irec, int level,
     for (cvar = sclass->ivars, i = c; i--; cvar = cvar->next) {
       if (ispublic(cvar)) {
 	Scheme_Object *iv;
-	iv = GetIvar(o, irec, o->slots, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
+	iv = GetIvar(o, irec, oclass, oclass, sclass->ivar_map[cvar->index], 1, 1);
 	env_values[i] = iv;
-	public_values[i] = frame->ivars[cvar->index];
+	public_values[i] = irec->frames[level].ivars[cvar->index];
       } else if (isprivref(cvar)) {
-	public_values[i] = frame->refs[cvar->index];
+	public_values[i] = irec->frames[level].refs[cvar->index];
 	env_values[i] = public_values[i];
       } else if (isref(cvar)) {
 	Scheme_Object *iv;
-	iv = GetIvar(o, irec, o->slots, oclass, oclass, sclass->ref_map[cvar->index], 1, 1);
+	iv = GetIvar(o, irec, oclass, oclass, sclass->ref_map[cvar->index], 1, 1);
 	public_values[i] = iv;
 	env_values[i] = public_values[i];
       }
@@ -3736,7 +3724,7 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
       vp = map[data->vp + offset];
   }
 
-  return GetIvar(obj, NULL, obj->slots, sclass, sclass, vp, 0, force);
+  return GetIvar(obj, NULL, sclass, sclass, vp, 0, force);
 }
 
 static Scheme_Object *DoGeneric(Generic_Data *data, 

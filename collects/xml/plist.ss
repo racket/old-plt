@@ -19,10 +19,8 @@
 
    ; raise-plist-exn : string mark-set xexpr symbol -> ???
    (define (raise-plist-exn tag mark-set xexpr type)
-     (raise (make-exn:application:type (string-append "badly formed '" tag "'")
-				       mark-set
-				       xexpr
-				       type)))
+     (raise (make-exn:fail:contract (string-append "badly formed '" tag "'")
+				    mark-set)))
 
    ; expand-dict : xexpr -> xexpr
    (define (expand-dict x)
@@ -98,7 +96,7 @@
 
    ; dict? tst -> boolean
    (define (dict? x)
-     (with-handlers [(exn:application:type? (lambda (exn) #f))]
+     (with-handlers [(exn:fail:contract? (lambda (exn) #f))]
        (expand-dict x)
        #t))
 

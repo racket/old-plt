@@ -101,7 +101,7 @@
 
       (define collection->cc
 	(lambda (collection-p)
-	  (let* ([info (with-handlers ([not-break-exn? 
+	  (let* ([info (with-handlers ([exn:fail?
 					(lambda (exn) 
 					  (setup-printf 
 					   "Warning: ~a"
@@ -250,7 +250,7 @@
 
       (define (delete-file/record-dependency path dependencies)
 	(when (regexp-match-positions #rx"[.]dep$" (path->bytes path))
-	  (let ([deps (with-handlers ([not-break-exn? (lambda (x) null)])
+	  (let ([deps (with-handlers ([exn:fail? (lambda (x) null)])
 			(with-input-from-file path read))])
 	    (when (and (pair? deps) (list? deps))
               (for-each (lambda (s)
@@ -346,7 +346,7 @@
 
       (define errors null)
       (define (record-error cc desc go)
-	(with-handlers ([not-break-exn?
+	(with-handlers ([exn:fail?
 			 (lambda (x)
 			   (if (exn? x)
 			       (begin
@@ -397,7 +397,7 @@
                                    (error "installer file does not exist: " p)))))])
                     (let ([installer
                            (with-handlers
-                               ([not-break-exn?
+                               ([exn:fail?
                                  (lambda (exn)
                                    (error 'setup-plt
                                           "error loading installer: ~a"

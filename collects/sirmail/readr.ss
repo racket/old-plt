@@ -1451,7 +1451,7 @@
 			       (raise x)
 			       (begin
 				 (show-error x)
-				 (when (exn:i/o? x)
+				 (when (exn:fail:network? x)
 				   (when (eq? 'yes
 					      (confirm-box
 					       "Error"
@@ -1768,8 +1768,7 @@
         (thread
          (lambda ()
            (define (get-numbers)
-             (with-handlers ([not-break-exn? (lambda (x) 
-                                               #f)])
+             (with-handlers ([exn:fail? (lambda (x) #f)])
                (let ([re:nums #rx"[^ \t]*[ \t]*[^ \t]*[ \t]*[^ \t]*[ \t]*[^ \t]*[ \t]*([0-9]*)[ \t]*([0-9]*)[ \t]*"])
                  (let ([m (regexp-match re:nums (get-lines))])
                    (and m
@@ -1961,7 +1960,7 @@
 	       frm
 	       (lambda ()
 		 (let ([res
-			(with-handlers ([not-break-exn? (lambda (x) "")])
+			(with-handlers ([exn:fail? (lambda (x) "")])
 			  (regexp-replace* re:quote 
 					   (car (extract-addresses
 						 frm
@@ -2155,40 +2154,40 @@
 
       (define (parse-and-insert-body header body text-obj insert sep-width img-mode?)
 	(if mime-mode?
-	    (let mime-loop ([msg (with-handlers ([not-break-exn? (lambda (x)
-								   (mime:make-message
-								    #f
-								    (mime:make-entity
-								     'text
-								     'plain 
-								     'charset
-								     'encoding
-								     (mime:make-disposition
-								      'error 
-								      'filename 'creation
-								      'modification 'read
-								      'size 'params)
-								     'params 'id
-								     'description 'other 'fields
-								     null 
-								     (lambda (o)
-								      (fprintf o "MIME error: ~a"
-                                                                               (if (exn? x)
-                                                                                   (exn-message x)
-                                                                                   x))))
-								    #f))])
+	    (let mime-loop ([msg (with-handlers ([exn:fail? (lambda (x)
+							      (mime:make-message
+							       #f
+							       (mime:make-entity
+								'text
+								'plain 
+								'charset
+								'encoding
+								(mime:make-disposition
+								 'error 
+								 'filename 'creation
+								 'modification 'read
+								 'size 'params)
+								'params 'id
+								'description 'other 'fields
+								null 
+								(lambda (o)
+								  (fprintf o "MIME error: ~a"
+									   (if (exn? x)
+									       (exn-message x)
+									       x))))
+							       #f))])
 				   (mime:mime-analyze (bytes-append (string->bytes/latin-1 
 								     header 
 								     (char->integer #\?))
 								    body)))])
 	      (let* ([ent (mime:message-entity msg)]
                      [slurp-stream (lambda (ent o)
-                                     (with-handlers ([not-break-exn? (lambda (x)
-                                                                       (fprintf o 
-                                                                                "~n[decode error: ~a]~n"
-                                                                                (if (exn? x)
-                                                                                    (exn-message x)
-                                                                                    x)))])
+                                     (with-handlers ([exn:fail? (lambda (x)
+								  (fprintf o 
+									   "~n[decode error: ~a]~n"
+									   (if (exn? x)
+									       (exn-message x)
+									       x)))])
                                        ((mime:entity-body ent) o)))]
 		     [slurp (lambda (ent)
                               (let ([o (open-output-bytes)])
@@ -2450,7 +2449,7 @@
 	       (if quote-in-reply?
                    (let ([date (parse-iso-8859-1 (extract-field "Date" h))]
                          [name
-                          (with-handlers ([not-break-exn? (lambda (x) #f)])
+                          (with-handlers ([exn:fail? (lambda (x) #f)])
                             (let ([from (parse-iso-8859-1 (extract-field "From" h))])
                               (car (extract-addresses from 'name))))])
                      (string-append

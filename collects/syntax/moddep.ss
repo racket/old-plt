@@ -17,10 +17,11 @@
 
   (define (raise-wrong-module-name filename expected-name name)
     (raise
-     (make-exn:module
-      (format
-       "load-handler: expected a `module' declaration for `~a' in ~s, found: ~a"
-       expected-name filename name)
+     (make-exn:fail
+      (string->immutable-string
+       (format
+	"load-handler: expected a `module' declaration for `~a' in ~s, found: ~a"
+	expected-name filename name))
       (current-continuation-marks))))
   
   (define (check-module-form exp expected-module filename)
@@ -52,10 +53,11 @@
      [else
       (and filename
             (raise
-             (make-exn:module
-              (format
-               "load-handler: expected a `module' declaration for `~a' in ~s, but found something else"
-               expected-module filename)
+             (make-exn:fail
+	      (string->immutable-string
+	       (format
+		"load-handler: expected a `module' declaration for `~a' in ~s, but found something else"
+		expected-module filename))
               (current-continuation-marks))))]))
   
   (define re:suffix #rx#"\\..*$")
@@ -68,7 +70,7 @@
   
   (define (date>=? a bm)
     (and a
-	 (let ([am (with-handlers ([not-break-exn? (lambda (x) #f)])
+	 (let ([am (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
 		     (file-or-directory-modify-seconds a))])
 	   (or (and (not bm) am) (and am bm (>= am bm))))))
 
@@ -128,7 +130,7 @@
 				  (path-replace-suffix file #".zo")))]
 	     [so (get-so file)]
 	     [_loader-so (get-so (string->path "_loader.ss"))]
-	     [path-d (with-handlers ([not-break-exn? (lambda (x) #f)])
+	     [path-d (with-handlers ([exn:fail:filesystem? (lambda (x) #f)])
 		       (file-or-directory-modify-seconds path))]
 	     [with-dir (lambda (t) 
 			 (parameterize ([current-load-relative-directory 
@@ -145,21 +147,25 @@
 							   (path-replace-suffix file #"")))))])
 		   loader)))
 	  => (lambda (loader)
-	       (raise (make-exn:get-module-code (format "get-module-code: cannot use _loader file: ~e"
-                                                        _loader-so)
-                                                (current-continuation-marks)
-						loader)))]
+	       (raise (make-exn:get-module-code 
+		       (string->immutable-string
+			(format "get-module-code: cannot use _loader file: ~e"
+				_loader-so))
+		       (current-continuation-marks)
+		       loader)))]
 	 [(date>=? so path-d)
 	  (with-dir (lambda () (raise (make-exn:get-module-code 
-                                       (format "get-module-code: cannot use extension file; ~e" so)
+				       (string->immutable-string
+					(format "get-module-code: cannot use extension file; ~e" so))
                                        (current-continuation-marks)
 				       so))))]
 	 [(date>=? zo path-d)
 	  (read-one zo #f)]
 	 [(not path-d)
-	  (raise (make-exn:get-module-code (format "get-module-code: no such file: ~e" path)
-                                           (current-continuation-marks)
-					   #f))]
+	  (raise (make-exn:get-module-code 
+		  (string->immutable-string (format "get-module-code: no such file: ~e" path))
+		  (current-continuation-marks)
+		  #f))]
 	 [else 
 	  (with-dir (lambda () (compile (read-one path #t))))]))))
 

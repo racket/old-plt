@@ -327,7 +327,7 @@
 		    (send message-editor load-file t 'guess #t)
 
 		    (with-handlers
-			([exn:i/o:filesystem?
+			([exn:fail:filesystem?
 			  (lambda (exn)
 			    (message-box "Error Deleting Temporary File"
 					 (string-append

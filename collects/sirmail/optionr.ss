@@ -58,14 +58,14 @@
       (define (BIFF-DELAY) (get-pref 'sirmail:biff-delay))
 
       (define (ALIASES) (let ([f (get-pref 'sirmail:aliases-file)])
-			  (with-handlers ([not-break-exn? (lambda (x) null)])
+			  (with-handlers ([exn:fail? (lambda (x) null)])
 			    (with-input-from-file f read))))
 
       (define (SELF-ADDRESSES) (get-pref 'sirmail:self-addresses))
 
       (define (AUTO-FILE-TABLE) (let ([f (get-pref 'sirmail:auto-file-table-file)])
 				  (and f
-				       (with-handlers ([not-break-exn? (lambda (x) null)])
+				       (with-handlers ([exn:fail? (lambda (x) null)])
 					 (with-input-from-file f read)))))
 
       (define (SORT) (get-pref 'sirmail:initial-sort))

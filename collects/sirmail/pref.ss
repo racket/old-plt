@@ -392,7 +392,7 @@
 	    #f))))
   
   (define (check-user-address who tl s)
-    (with-handlers ([not-break-exn? 
+    (with-handlers ([exn:fail? 
 		     (lambda (x)
 		       (when who
 			 (message-box

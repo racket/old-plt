@@ -326,7 +326,7 @@
       (define (setup-mailboxes-file mailbox-name)
         (define mailboxes-file (build-path (LOCAL-DIR) "mailboxes"))
         (define mailboxes
-          (with-handlers ([not-break-exn? (lambda (x) '(("Inbox" #"inbox")))])
+          (with-handlers ([exn:fail? (lambda (x) '(("Inbox" #"inbox")))])
             (with-input-from-file mailboxes-file
               read)))
         

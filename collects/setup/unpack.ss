@@ -191,14 +191,17 @@
 							 (list? version)
 							 (andmap number? version))
 					      (bad))
-					    (with-handlers ([not-break-exn?
+					    (with-handlers ([exn:fail:filesystem?
 							     (lambda (x)
 							       (if force?
 								   (print-status "warning: missing required collection ~s" coll-path)
 								   (error "cannot install; missing required collection" coll-path)))])
 					      (apply collection-path coll-path))
 					    (let ([inst-version 
-						   (with-handlers ([not-break-exn? (lambda (x) null)])
+						   (with-handlers ([void (lambda (x) 
+									   (if (exn:break? x)
+									       (raise x)
+									       null))])
 						     (let ([info (get-info coll-path)])
 						       (info 'version (lambda () null))))])
 					      (let loop ([v version][iv inst-version])
@@ -231,7 +234,7 @@
 						       (list? coll-path)
 						       (andmap string? coll-path))
 					    (bad))
-					  (when (with-handlers ([not-break-exn? (lambda (x) #f)])
+					  (when (with-handlers ([exn:fail? (lambda (x) #f)])
 						  (apply collection-path coll-path))
 					    (error "cannot install; conflict with installed collection"
 						   coll-path)))

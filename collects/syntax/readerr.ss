@@ -29,7 +29,7 @@
         (bad-type 5 cardinal))
       
       (raise
-       (make-exn:read
+       (make-exn:fail:read
         (string->immutable-string
          (format "~a~a"
                  (cond
@@ -42,4 +42,5 @@
                     (format "~a: " source-name)])
                  msg))
         (current-continuation-marks)
-        source-name line col pos span)))))
+	(list (make-srcloc
+	       source-name line col pos span)))))))

@@ -15,6 +15,9 @@
 //#include "wx_screen.h"
 #include "wxDirection.h"
 #include "wxScrollData.h"
+#if defined(OS_X)
+#include <Carbon/Carbon.h>
+#else
 #	include <Menus.h>
 #	include <QuickDraw.h>
 #	include <Fonts.h>
@@ -23,6 +26,7 @@
 #	include <TextEdit.h>
 #	include	<Scrap.h>
 #	include	<ToolUtils.h>
+#endif
 /*
  * Base class for frame, panel, canvas, panel items, dialog box.
  * and screen (for the mac)

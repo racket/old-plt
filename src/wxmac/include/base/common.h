@@ -23,7 +23,7 @@
 #endif
 #if defined(wx_xview) || defined(wx_motif)
 # define wx_x
-#elif defined(macintosh) || defined(applec) || defined(__MWERKS__)
+#elif defined(applec) || defined(__MWERKS__) || defined(OS_X)
 	// the Mac test must come before the MS-Windows test because __WINDOWS__
 	// is defined whenever the Apple <Windows.h> file is included
 #	ifndef wx_mac
@@ -481,6 +481,10 @@ const int kActiveControl = 0;
 const int kInactiveControl = 255;
 
 #define IMPLEMENT_DYNAMIC_CLASS(x, y) /* empty */
+
+#if defined(OS_X)
+#include "Quickdraw.h" // needed for def'n of GDHandle
+#endif
 
 extern GDHandle wxGetGDHandle(void);
 

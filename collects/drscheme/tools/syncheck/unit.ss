@@ -595,7 +595,8 @@
 			  '(begin (mzlib:pretty-print@:pretty-print zodiac-ast)
 				  (newline))
 			  (let* ([source-object?
-				  (eq? (zodiac:origin-who (zodiac:zodiac-origin zodiac-ast))
+				  (eq? (zodiac:origin-who
+					(zodiac:zodiac-origin zodiac-ast))
 				       'source)]
 				 [z:start (zodiac:location-offset
 					   (zodiac:zodiac-start zodiac-ast))]
@@ -604,11 +605,23 @@
 					       (zodiac:zodiac-finish zodiac-ast)))]
 				 [color-syntax
 				  (lambda ()
-				    (when source-object?
-				      (let* ([start (find-next-non-whitespace (add1 z:start))]
-					     [finish (find-next-whitespace start)])
-					(when (and finish start)
-					  (change-style syntax-style start finish)))))]
+				    (if source-object?
+					(let* ([start (find-next-non-whitespace (add1 z:start))]
+					       [finish (find-next-whitespace start)])
+					  (when (and finish start)
+					    (change-style syntax-style start finish)))
+					(let loop ([zobj zodiac-ast])
+					  (let* ([origin (zodiac:zodiac-origin zobj)]
+						 [who (zodiac:origin-who origin)])
+					  (cond
+					   [(eq? who 'macro) (loop (zodiac:origin-how origin))]
+					   [(and (eq? who 'source) (zodiac:symbol? zobj))
+					    (change-style syntax-style
+							  (zodiac:location-offset (zodiac:zodiac-start zobj))
+							  (add1 (zodiac:location-offset 
+								 (zodiac:zodiac-finish zobj))))]
+					   [else (void)])))))]
+					    
 				 [color
 				  (lambda (delta)
 				    (when source-object?
@@ -642,7 +655,7 @@
 					       1 wx:const-solid)])
 				   (add-arrow z:start z:finish 
 					      start finish
-					      delta brush pen)))
+					      delta brush pen)))			       
 			       (color bound-style)]
 			      
 			      [(zodiac:top-level-varref? zodiac-ast)
@@ -669,11 +682,10 @@
 			      
 			      [(zodiac:define-values-form? zodiac-ast)
 			       (color-syntax)
-			       (when source-object?
-				 (for-each 
-				  (lambda (var)
-				    (hash-table-put! defineds (zodiac:varref-var var) #t))
-				  (zodiac:define-values-form-vars zodiac-ast)))
+			       (for-each 
+				(lambda (var)
+				  (hash-table-put! defineds (zodiac:varref-var var) #t))
+				(zodiac:define-values-form-vars zodiac-ast))
 			       (for-each color-loop (zodiac:define-values-form-vars zodiac-ast))
 			       (color-loop (zodiac:define-values-form-val zodiac-ast))]
 			      

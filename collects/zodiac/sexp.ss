@@ -11,7 +11,7 @@
     (define identity (lambda (x) x))
 
     (define structurize-syntax
-      (opt-lambda (expr source [marks '()])
+      (opt-lambda (expr source (marks '()) (table #f))
 	(let ((origin (zodiac-origin source))
 	       (start (zodiac-start source))
 	       (finish (zodiac-finish source)))
@@ -20,6 +20,11 @@
 	       (lambda (expr)
 		 (cond
 		   ((zodiac? expr) expr)
+		   ((and table
+		      (hash-table-get table expr (lambda () #f)))
+		     =>
+		     (lambda (cached-input)
+		       cached-input))
 		   ((pair? expr)
 		     (let loop ((expr expr) (rev-seen '()) (length 0))
 		       (cond
@@ -63,25 +68,32 @@
 	    (structurize expr)))))
 
     (define sexp->raw
-      (lambda (expr)
+      (opt-lambda (expr (table #f))
 	(cond
 	  ((z:scalar? expr)
 	    (if (z:box? expr)
-	      (box (sexp->raw (z:read-object expr)))
+	      (box (sexp->raw (z:read-object expr) table))
 	      (z:read-object expr)))
 	  ((z:sequence? expr)
-	    (let ((objects (map sexp->raw (z:read-object expr))))
-	      (cond
-		((z:list? expr) objects)
-		((z:improper-list? expr)
-		  (let loop ((objects objects))
-		    (if (or (null? objects) (null? (cdr objects)))
-		      (internal-error expr "Invalid ilist in sexp->raw")
-		      (if (null? (cddr objects))
-			(cons (car objects) (cadr objects))
-			(cons (car objects) (loop (cdr objects)))))))
-		((z:vector? expr)
-		  (apply vector objects)))))
+	    (let ((output
+		    (let ((objects (map (lambda (s)
+					  (sexp->raw s table))
+				     (z:read-object expr))))
+		      (cond
+			((z:list? expr) objects)
+			((z:improper-list? expr)
+			  (let loop ((objects objects))
+			    (if (or (null? objects) (null? (cdr objects)))
+			      (internal-error expr
+				"Invalid ilist in sexp->raw")
+			      (if (null? (cddr objects))
+				(cons (car objects) (cadr objects))
+				(cons (car objects) (loop (cdr objects)))))))
+			((z:vector? expr)
+			  (apply vector objects))))))
+	      (when table
+		(hash-table-put! table output expr))
+	      output))
 	  (else
 	    expr))))
 

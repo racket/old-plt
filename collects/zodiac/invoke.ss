@@ -28,7 +28,7 @@
       zodiac)))
 
 (define zodiac:see
-  (opt-lambda ((show-raw? #t) (vocab #f))
+  (opt-lambda ((show-raw? #t))
     (zodiac:invoke-system)
     (let loop ()
       (printf "e> ")
@@ -39,9 +39,7 @@
 	  (begin
 	    (newline)
 	    (pretty-print
-	      (let ((e (car (if vocab
-			      (zodiac:scheme-expand-program (list r) vocab)
-			      (zodiac:scheme-expand-program (list r))))))
+	      (let ((e (car (zodiac:scheme-expand-program (list r)))))
 		(if show-raw? (zodiac:parsed->raw e) e)))
 	    (newline)
 	    (loop)))))))

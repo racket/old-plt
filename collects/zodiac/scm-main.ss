@@ -1358,18 +1358,21 @@
 		       (macro-handler (pat:pexpand 'macro-handler p-env kwd)))
 		  (valid-syntactic-id? macro-name)
 		  (let ((real-name (sexp->raw macro-name))
-			 (real-handler (sexp->raw macro-handler)))
+			 (real-handler (sexp->raw macro-handler))
+			 (cache-table (make-hash-table)))
 		    (add-macro-form real-name vocab
-		      (with-parameterization zodiac-parameterization
+		      (with-parameterization zodiac-user-parameterization
 			(lambda ()
 			  (eval
 			    `(lambda (m-expr m-env)
 			       (,structurize-syntax
 				 (#%apply ,real-handler
-				   (let ((in (#%cdr (,sexp->raw m-expr))))
+				   (let ((in (#%cdr (,sexp->raw m-expr
+						      ,cache-table))))
 				     in))
 				 m-expr))))))
-		    (expand-expr (structurize-syntax '(#%void) expr)
+		    (expand-expr (structurize-syntax '(#%void) expr
+				   '() cache-table)
 		      env attributes vocab)))))
 	    (else
 	      (static-error expr "Malformed define-macro"))))))

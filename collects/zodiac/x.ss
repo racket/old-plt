@@ -83,8 +83,8 @@
       (lambda (expr env attributes vocab)
 ;	(printf "Expanding~n") (pretty-print (sexp->raw expr))
 ;	(printf "Expanding~n") (pretty-print expr)
+;	(printf "Expanding~n") (display expr)
 ;	(printf "in vocabulary~n") (print-env vocab)
-;	(printf "Expanding~n") (pretty-print expr)
 ;	(printf "in~n") (print-env env) (newline)
 	(cond
 	  ((z:symbol? expr)
@@ -157,16 +157,16 @@
 	  (else
 	    (static-error expr "Invalid body")))))
 
-    (define zodiac-parameterization (current-parameterization))
+    (define zodiac-user-parameterization (current-parameterization))
 
     (define expand
       (opt-lambda (expr attr vocab (params (current-parameterization)))
-	(set! zodiac-parameterization params)
+	(set! zodiac-user-parameterization params)
 	(expand-expr expr (make-new-environment) attr vocab)))
 
     (define expand-program
       (opt-lambda (exprs attr vocab (params (current-parameterization)))
-	(set! zodiac-parameterization params)
+	(set! zodiac-user-parameterization params)
  	(put-attribute attr 'top-levels (make-hash-table))
 	(map (lambda (expr)
 	       (expand-expr expr (make-new-environment) attr vocab))

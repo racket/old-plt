@@ -20,7 +20,7 @@
 
 (define-signature zodiac:expander^
   (expand expand-program expand-expr
-    zodiac-parameterization
+    zodiac-user-parameterization
     add-micro-form add-macro-form
     add-list-micro add-ilist-micro add-lit-micro add-sym-micro
     get-list-micro get-ilist-micro get-lit-micro get-sym-micro

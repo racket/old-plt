@@ -2017,6 +2017,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   rn = env->genv->rename;
   et_rn = env->genv->et_rename;
 
+  /* rename tables communucated; NULL them out, now */
+  env->genv->rename = NULL;
+  env->genv->et_rename = NULL;
+
   tables[0] = env->genv->toplevel;
   tables[1] = required;
   tables[2] = env->genv->syntax;

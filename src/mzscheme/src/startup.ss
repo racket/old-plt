@@ -160,7 +160,16 @@
 		    (if (stx-null? x) 
 			(quote-syntax ())
 			(list (quote-syntax quote) x))
-		    x))))
+		    x)))
+	     ((apply-cons)
+	      (lambda (a d)
+		(if (stx-null? d)
+		    (list (quote-syntax list) a)
+		    (if (if (pair? d)
+			    (module-identifier=? (quote-syntax list) (car d))
+			    #f)
+			(list* (quote-syntax list) a (cdr d))
+			(list (quote-syntax cons) a d))))))
 	  (datum->syntax-object
 	   here
 	   (normal
@@ -184,8 +193,7 @@
 					      (eq? second old-second)
 					      #f)
 					  x
-					  (list
-					   (quote-syntax cons)
+					  (apply-cons
 					   (normal first old-first)
 					   (normal second old-second)))))))))))
 		      (if (stx-pair? x)
@@ -260,10 +268,8 @@
 								(eq? restx rest)
 								#f)
 							    x
-							    (list
-							     (quote-syntax cons)
-							     (list
-							      (quote-syntax cons)
+							    (apply-cons
+							     (apply-cons
 							      (quote-syntax (quote unquote-splicing))
 							      (normal restx rest))
 							     (normal l old-l))))))))

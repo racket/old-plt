@@ -864,7 +864,7 @@ static Scheme_Sequence *malloc_sequence(int count)
 
 Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
 {
-  Scheme_Object **array, *list, *v, *good;
+  Scheme_Object *list, *v, *good;
   Scheme_Sequence *o;
   int count, i, k, total, last, first, setgood, addconst;
   Scheme_Type type;
@@ -923,7 +923,6 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
 
   o->type = ((opt < 0) ? scheme_begin0_sequence_type : scheme_sequence_type);
   o->count = count + addconst;
-  array = o->array;
   
   --total;
   for (i = k = 0; i < count; k++) {
@@ -935,9 +934,9 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
       Scheme_Object **a;
 
       c = ((Scheme_Sequence *)v)->count;
-      a = ((Scheme_Sequence *)v)->array;
+      a = ((Scheme_Sequence *)v)->array; /* <-- mismaligned for precise GC */
       for (j = 0; j < c; j++) {
-	array[i++] = a[j];
+	o->array[i++] = a[j];
       }
     } else if (opt 
 	       && ((opt > 0 && (k < total))
@@ -945,11 +944,11 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
 	       && scheme_omittable_expr(v)) {
       /* Value not the result. Do nothing. */
     } else
-      array[i++] = v;
+      o->array[i++] = v;
   }
 
   if (addconst)
-    array[i] = scheme_make_integer(0);
+    o->array[i] = scheme_make_integer(0);
   
   return (Scheme_Object *)o;
 }
@@ -3900,15 +3899,14 @@ static Scheme_Object *read_application(Scheme_Object *obj)
 
 static Scheme_Object *write_sequence(Scheme_Object *obj)
 {
-  Scheme_Object *l, **a;
+  Scheme_Object *l;
   int i;
 
   i = ((Scheme_Sequence *)obj)->count;
-  a = ((Scheme_Sequence *)obj)->array;
 
   l = scheme_null;
   for (; i--; ) {
-    l = cons(scheme_protect_quote(a[i]), l);
+    l = cons(scheme_protect_quote(((Scheme_Sequence *)obj)->array[i]), l);
   }
   
   return l;

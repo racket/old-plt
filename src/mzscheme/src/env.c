@@ -542,9 +542,6 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
 
   menv2->module_registry = ns->module_registry;
 
-  menv2->rename = menv->rename;
-  menv2->et_rename = menv->et_rename;
-
   menv2->syntax = menv->syntax;
 
   menv2->phase = menv->phase;

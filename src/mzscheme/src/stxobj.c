@@ -60,6 +60,8 @@ static Scheme_Object *mark_id = scheme_make_integer(0);
 
 static Scheme_Stx_Srcloc *empty_srcloc;
 
+static Scheme_Object *empty_simplified;
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -232,6 +234,9 @@ void scheme_init_stx(Scheme_Env *env)
   empty_srcloc->src = scheme_false;
   empty_srcloc->line = -1;
   empty_srcloc->col = -1;
+
+  REGISTER_SO(empty_simplified);
+  empty_simplified = scheme_make_vector(2, scheme_false);
 }
 
 /*========================================================================*/
@@ -1429,12 +1434,22 @@ static void simplify_lex_renames(Scheme_Object *w)
 	int ok = 0;
 
 	if (prev) {
+	  Scheme_Object *other_env;
+
+	  other_env = SCHEME_VEC_ELS(v)[2+vsize+i];
+	  if (SCHEME_VOIDP(other_env)) {
+	    other_env = resolve_env(stx, 0, 0, NULL);
+	    SCHEME_VEC_ELS(v)[2+vsize+i] = other_env;
+	  }
+
 	  for (j = 0; j < psize; j++) {
 	    if (SAME_OBJ(SCHEME_VEC_ELS(prev)[2+j], name)) {
-	      ok = 1;
+	      ok = SAME_OBJ(SCHEME_VEC_ELS(prev)[2+psize+j], other_env);
 	      break;
 	    }
 	  }
+	  if (j >= psize)
+	    ok = SCHEME_FALSEP(other_env);
 	} else
 	  ok = 1;
 
@@ -1448,13 +1463,12 @@ static void simplify_lex_renames(Scheme_Object *w)
     if (prev) {
       /* Check for elements in prev not in v; copy them over: */
       for (i = 0; i < psize; i++) {
-	for (j = 0; j < vsize; j++) {
-	  if (SAME_OBJ(SCHEME_VEC_ELS(prev)[2+i],
-		       SCHEME_STX_VAL(SCHEME_VEC_ELS(v)[2+j])))
+	for (j = 0; j < pos; j++) {
+	  if (SAME_OBJ(SCHEME_VEC_ELS(prev)[2+i], SCHEME_VEC_ELS(v2)[2+j]))
 	    break;
 	}
 
-	if (j < vsize) {
+	if (j >= pos) {
 	  /* Copy: */
 	  SCHEME_VEC_ELS(v2)[2+pos] = SCHEME_VEC_ELS(prev)[2+i];
 	  SCHEME_VEC_ELS(v2)[2+size+pos] = SCHEME_VEC_ELS(prev)[2+psize+i];
@@ -1465,11 +1479,15 @@ static void simplify_lex_renames(Scheme_Object *w)
     
     if (pos != size) {
       /* Shrink simplified vector */
-      v = v2;
-      v2 = scheme_make_vector(2 + (2 * pos), NULL);
-      for (i = 0; i < pos; i++) {
-	SCHEME_VEC_ELS(v2)[2+i] = SCHEME_VEC_ELS(prev)[2+i];
-	SCHEME_VEC_ELS(v2)[2+pos+i] = SCHEME_VEC_ELS(prev)[2+size+i];
+      if (!pos)
+	v2 = empty_simplified;
+      else {
+	v = v2;
+	v2 = scheme_make_vector(2 + (2 * pos), NULL);
+	for (i = 0; i < pos; i++) {
+	  SCHEME_VEC_ELS(v2)[2+i] = SCHEME_VEC_ELS(v)[2+i];
+	  SCHEME_VEC_ELS(v2)[2+pos+i] = SCHEME_VEC_ELS(v)[2+size+i];
+	}
       }
     }
 
@@ -1479,7 +1497,7 @@ static void simplify_lex_renames(Scheme_Object *w)
     SCHEME_CAR(w) = v2;
 
     prev = v2;
-    
+
     stack = SCHEME_CDR(stack);
   }
 }
@@ -2179,6 +2197,91 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o,
     ((Scheme_Stx *)v)->props = ((Scheme_Stx *)stx_src)->props;
 
   return v;
+}
+
+/*========================================================================*/
+/*                              simplify                                  */
+/*========================================================================*/
+
+#ifdef DO_STACK_CHECK
+static void simplify_syntax_inner(Scheme_Object *o, 
+				  Scheme_Hash_Table **ht);
+
+static Scheme_Object *simplify_syntax_k(void)
+{
+  Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
+  Scheme_Hash_Table **ht = (Scheme_Hash_Table **)p->ku.k.p2;
+
+  p->ku.k.p1 = NULL;
+  p->ku.k.p2 = NULL;
+
+  simplify_syntax_inner(o, ht);
+
+  return NULL;
+}
+#endif
+
+static void simplify_syntax_inner(Scheme_Object *o, 
+				  Scheme_Hash_Table **ht)
+{
+  Scheme_Stx *stx = (Scheme_Stx *)o;
+  Scheme_Object *v;
+
+#ifdef DO_STACK_CHECK
+  {
+# include "mzstkchk.h"
+    {
+      Scheme_Thread *p = scheme_current_thread;
+      p->ku.k.p1 = (void *)o;
+      p->ku.k.p2 = (void *)ht;
+      scheme_handle_stack_overflow(simplify_syntax_k);
+      return;
+    }
+  }
+#endif
+  SCHEME_USE_FUEL(1);
+
+  if (stx->hash_code & STX_GRAPH_FLAG) {
+    /* Avoid infinite loops... */
+    if (!*ht)
+      *ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    
+    if (scheme_hash_get(*ht, (Scheme_Object *)stx))
+      return;
+    else
+      scheme_hash_set(*ht, (Scheme_Object *)stx, (Scheme_Object *)scheme_true);
+  }
+
+  simplify_lex_renames(stx->wraps);
+  stx->props = NULL;
+
+  v = stx->val;
+  
+  if (SCHEME_PAIRP(v)) {
+    while (SCHEME_PAIRP(v)) {
+      simplify_syntax_inner(SCHEME_CAR(v), ht);
+      v = SCHEME_CDR(v);
+    }
+    if (!SCHEME_NULLP(v)) {
+      simplify_syntax_inner(v, ht);
+    }
+  } else if (SCHEME_BOXP(v)) {
+    simplify_syntax_inner(SCHEME_BOX_VAL(v), ht);
+  } else if (SCHEME_VECTORP(v)) {
+    int size = SCHEME_VEC_SIZE(v), i;
+    
+    for (i = 0; i < size; i++) {
+      simplify_syntax_inner(SCHEME_VEC_ELS(v)[i], ht);
+    }
+  }
+}
+
+void scheme_simplify_stx(Scheme_Object *stx)
+{
+  Scheme_Hash_Table *ht = NULL;
+
+  simplify_syntax_inner(stx, &ht);
 }
 
 /*========================================================================*/

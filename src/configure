@@ -2731,7 +2731,7 @@ if test "$CC" = "gcc" ; then
   COMPFLAGS="$COMPFLAGS -Wall"
 
   # Use -MMD when we have gcc and gnumake:
-  is_gmake=`make -v 2>&1 | grep "GNU Make"`
+  is_gmake=`make -v no-such-target-we-hope 2>&1 | grep "GNU Make"`
   if test "$is_gmake" = "" ; then
     WX_MMD_FLAG=""
   else

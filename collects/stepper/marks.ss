@@ -59,16 +59,20 @@
                   (printf " ~a : ~a~n" (car binding-pair) (cadr binding-pair)))
                 (caddr exposed))))
   
-  (define (lookup-binding mark-list binding)
-    (if (null? mark-list)
-        (error 'lookup-binding "variable not found in environment: ~a" binding)
-	(let* ([bindings (mark-bindings (car mark-list))]
-	       [matches (filter (lambda (b)
-				  (eq? binding (mark-binding-binding b)))
-                                bindings)])
-	  (cond [(null? matches)
-		 (lookup-binding (cdr mark-list) binding)]
-		[(> (length matches) 1)
-		 (error 'lookup-binding "more than one variable binding found for binding: ~a" binding)]
-		[else ; (length matches) = 1
-		 (car matches)])))))
+  (define-values (lookup-binding lookup-dynamic-index)
+    (letrec ([helper
+              (lambda (mark-list binding final)
+                (if (null? mark-list)
+                    (error 'lookup-binding "variable not found in environment: ~a" binding)
+                    (let* ([bindings (mark-bindings (car mark-list))]
+                           [matches (filter (lambda (b)
+                                              (eq? binding (mark-binding-binding b)))
+                                            bindings)])
+                      (cond [(null? matches)
+                             (lookup-binding (cdr mark-list) binding)]
+                            [else 
+                             (final matches)]))))])
+      (values (lambda (mark-list binding)
+                (helper mark-list binding car))
+              (lambda (mark-list binding)
+                (helper mark-list binding cadr)))))

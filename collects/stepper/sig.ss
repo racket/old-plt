@@ -42,7 +42,8 @@
    mark-binding-binding
    expose-mark
    display-mark
-   lookup-binding))
+   lookup-binding
+   lookup-dynamic-index))
 
 (define-signature stepper:client-procs^
   (read-getter
@@ -78,15 +79,19 @@
    ;create-bogus-binding
    *unevaluated* 
    no-sexp
+   multiple-highlight
    if-temp
    struct-flag
    highlight-placeholder
    get-arg-binding
+   get-lifted-gensym
    expr-read
    set-expr-read!
    flatten-take
    closure-table-put!
-   closure-table-lookup))
+   closure-table-lookup
+   static-binding-indexer
+   insert-highlighted-value))
 
 (define-signature stepper:annotate^
   (initial-env-package

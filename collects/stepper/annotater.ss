@@ -90,8 +90,11 @@
            [var-clauses (map (lambda (x) 
                                (let ([var (get-binding-name x)])
                                  (list var x)))
-                             kept-bindings)])
-      (make-full-mark source label var-clauses)))
+                             kept-bindings)]
+           [let-bindings (filter (lambda (x) (not (z:lambda-binding? x))) kept-bindings)]
+           [lifter-gensyms (map get-lifter-gensym let-bindings)]
+           [let-clauses (map list let-bindings lifter-gensyms)])
+      (make-full-mark source label (append var-clauses))))
   
   ; cheap-wrap for non-debugging annotation
   
@@ -102,6 +105,15 @@
 	`(#%with-continuation-mark (#%quote ,debug-key)
 	  ,(make-cheap-mark (z:make-zodiac #f start finish))
 	  ,body))))
+  
+  ; binding-indexer: (z:parsed -> integer)
+  
+  (define binding-indexer
+    (let ([indexer-table (make-hash-table-weak)])
+      (lambda (binding)
+        (let ([old-index (hash-table-get indexer-table binding (lambda () -1))])
+          (hash-table-put indexer-table binding (+ old-index 1))
+          (+ old-index 1)))))
   
   ; wrap-struct-form 
   
@@ -180,6 +192,12 @@
          
          (define (simple-wcm-break-wrap debug-info expr)
            (simple-wcm-wrap debug-info (break-wrap expr)))
+         
+         (define (late-let-break-wrap var-names lifted-name-gensyms expr)
+           (if break
+               (let* ([interlaced (apply append (map list var-names lifted-name-gensyms))])
+                 `(#%begin (,(make-break 'late-let-break) ,@interlaced) expr))
+               expr))
          
          (define (return-value-wrap expr)
            (if break
@@ -504,7 +522,8 @@
                                   binding-sets
                                   annotated-vals)])
                         (values (expr-cheap-wrap `(#%let-values ,bindings ,annotated-body)) free-bindings))
-                      (let* ([dummy-binding-sets
+                      (let* ([lifted-gensyms (map get-lifted-gensym binding-list)]
+                             [dummy-binding-sets
                               (let ([counter 0])
                                 (map (lambda (binding-set)
                                        (map (lambda (binding) 
@@ -514,10 +533,13 @@
                                             binding-set))
                                      binding-sets))]
                              [dummy-binding-list (apply append dummy-binding-sets)]
+                             [create-index-finder (lambda (binding)
+                                                    `(,binding-indexer binding))]
                              [outer-dummy-initialization
-                              `([,(map z:binding-var dummy-binding-list)
-                                 (#%values ,@(build-list (length dummy-binding-list) 
-                                                         (lambda (_) `(#%quote ,*unevaluated*))))])]
+                              `([,(append lifted-gensyms (map z:binding-var dummy-binding-list))
+                                 (#%values ,@(append (map create-index-finder binding-list)
+                                                     (build-list (length dummy-binding-list) 
+                                                                 (lambda (_) `(#%quote ,*unevaluated*)))))])]
                              [set!-clauses
                               (map (lambda (dummy-binding-set val)
                                      `(#%set!-values ,(map z:binding-var dummy-binding-set) ,val))
@@ -528,9 +550,11 @@
                                  (values ,@(map z:binding-var dummy-binding-list))])]
                              ; time to work from the inside out again
                              [inner-let-values
-                              `(#%let-values ,inner-transference ,annotated-body)]
+                              `(#%let-values ,inner-transference ,(late-let-break-wrap binding-set-list
+                                                                                       lifted-gensyms
+                                                                                       annotated-body))]
                              [middle-begin
-                              `(#%begin ,@set!-clauses ,(double-break-wrap inner-let-values))]
+                              (double-break-wrap `(#%begin ,@set!-clauses ,inner-let-values))]
                              [wrapped-begin
                               (wcm-wrap (make-debug-info-app (binding-set-union tail-bound dummy-binding-list)
                                                              (binding-set-union free-bindings dummy-binding-list)
@@ -565,15 +589,22 @@
                                   annotated-vals)])
                         (values (expr-cheap-wrap `(#%letrec-values ,bindings ,annotated-body))
                                 free-bindings-outer))
-                      (let* ([outer-initialization
-                              `((,binding-names (#%values ,@binding-names)))]
+                      (let* ([create-index-finder (lambda (binding)
+                                                    `(,binding-indexer binding))]
+                             [lifted-name-gensyms (map get-lifted-name binding-list)]
+                             [outer-initialization
+                              `((,(append lifted-name-gensyms binding-names) 
+                                 (#%values ,@(append (map create-index-finder binding-list)
+                                                     binding-names))))]
                              [set!-clauses
                               (map (lambda (binding-set val)
                                      `(#%set!-values ,(map get-binding-name binding-set) ,val))
                                    binding-sets
                                    annotated-vals)]
                              [middle-begin
-                              `(#%begin ,@set!-clauses ,(double-break-wrap annotated-body))]
+                              (double-break-wrap `(#%begin ,@set!-clauses ,(late-let-break-wrap binding-list
+                                                                                                lifted-name-gensyms
+                                                                                                annotated-body)))]
                              [wrapped-begin
                               (wcm-wrap (make-debug-info-app (binding-set-union tail-bound binding-list)
                                                              (binding-set-union free-bindings-inner binding-list)
@@ -654,7 +685,7 @@
                      [(wrapped-annotated) (wcm-wrap (make-debug-info-normal null)
                                                     annotated-case-lambda)]
                      [(hash-wrapped) `(#%let ([,closure-temp ,wrapped-annotated])
-                                       (,closure-table-put! (,closure-key-maker ,closure-temp) 
+                                       (,closure-table-put! ,closure-temp
                                         (,make-closure-record 
                                          #f
                                          ,closure-info 
@@ -859,4 +890,3 @@
                 struct-proc-names))))
   
 )
-	 

@@ -118,21 +118,12 @@
         (string? val)
         (symbol? val)))
   
-  ; insert-highlighted-value : sexp sexp -> sexp
-  ; replaces highlight-placeholder in the first sexp with the second sexp
   
-  (define (insert-highlighted-value exp inserted)
-    (let ([recur (lambda (exp) (insert-highlighted-value exp inserted))])
-      (cond [(list? exp)
-             (map recur exp)]
-            [(vector? exp)
-             (list->vector (map recur (vector->list exp)))]
-            [(eq? exp highlight-placeholder)
-             inserted]
-            [else exp])))
+  ; constructor : ((listof sexp) (union sexp no-sexp) (union sexp no-sexp) 
+  ;                (union sexp no-sexp multiple-highlight) (union sexp no-sexp) (union string #f) ... -> )
   
   (define stepper-text%
-    (class f:text:basic% (finished-exprs exp redex post-exp reduct error-msg (line-spacing 1.0) (tabstops null))
+    (class f:text:basic% (finished-exprs exps redex post-exps reduct error-msg after-exprs (line-spacing 1.0) (tabstops null))
       (inherit find-snip insert change-style highlight-range last-position lock erase auto-wrap
                begin-edit-sequence end-edit-sequence get-start-position get-style-list set-style-list)
       (public (pretty-printed-width -1)
@@ -155,16 +146,17 @@
                    (pretty-print-columns new-columns)
                    (reformat-sexp)
                    (end-edit-sequence))))
+              
               (reformat-sexp
                (lambda ()
                  (when (not (= pretty-printed-width (pretty-print-columns)))
                    (set! pretty-printed-width (pretty-print-columns))
                    (format-whole-step))))
+              [highlight-begin #f]
+              [highlight-end #f]
               [format-sexp
-               (lambda (sexp redex highlight-color)
+               (lambda (sexp redex-beginning redex-ending)
                  (let ([real-print-hook (pretty-print-print-hook)]
-                       [redex-begin #f]
-                       [redex-end #f]
                        [placeholder-present? #f])
                    (parameterize ([pretty-print-size-hook
                                    (lambda (value display? port)
@@ -192,27 +184,36 @@
                                   [pretty-print-pre-print-hook
                                    (lambda (value p)
                                      (when (or (and (not placeholder-present?)
-                                                    (eq? value redex))
+                                                    (eq? value redex-beginning))
                                                (eq? value highlight-placeholder))
-                                       (set! redex-begin (get-start-position))))]
+                                       (set! highlight-begin (get-start-position))))]
                                   [pretty-print-post-print-hook
                                    (lambda (value p)
                                      (when (or (and (not placeholder-present?)
-                                                    (eq? value redex))
+                                                    (eq? value redex-ending))
                                                (eq? value highlight-placeholder))
                                        (set! redex-end (get-start-position))))])
-                     (pretty-print sexp)
-                     (if redex-begin
-                         (set! clear-highlight-thunks
-                               (cons (highlight-range redex-begin redex-end highlight-color #f #f)
-                                     clear-highlight-thunks))))))]
+                     (pretty-print sexp))))]
 
-              [un-hacked-format-sexp
-               (lambda (exp region color)
-                 (if (confusable-value? region)
-                     (format-sexp exp region color)
-                     (format-sexp (insert-highlighted-value exp region) region color)))]
-                 
+              [format-sexp-single-highlight
+               (lambda (exp highlighted)
+                 (if (confusable-value? highlighted)
+                     (format-sexp exp highlighted highlighted)
+                     (format-sexp (insert-highlighted-value exp highlighted) no-sexp no-sexp)))]
+              
+              [format-sexp-multiple-highlight
+               format-sexp]
+              
+              [do-highlight 
+               (lambda (color)
+                 (unless redex-begin
+                   (e:internal-error 'format-whole-step "no highlighted region in after step."))
+                 (set! clear-highlight-thunks
+                       (cons (highlight-range highlight-begin highlight-end color #f #f)
+                             clear-highlight-thunks))
+                 (set! highlight-begin #f)
+                 (set! highlight-end #f))]
+              
               [format-whole-step
                (lambda ()
                  (lock #f)
@@ -222,26 +223,49 @@
                  (erase)
                  (for-each
                   (lambda (expr)
-                    (un-hacked-format-sexp expr no-sexp #f)
+                    (format-sexp-single-highlight expr no-sexp)
                     (insert #\newline))
                   finished-exprs)
                  (insert (make-object separator-snip%))
                  (when (not (eq? redex no-sexp))
                    (insert #\newline)
                    (reset-style)
-                   (un-hacked-format-sexp exp redex redex-highlight-color)
+                   (unless (= (length exps) 1)
+                     (e:internal-error 'format-sexp "wrong-length exp list in pre-step"))
+                   (format-sexp-single-highlight (car exps) redex)
+                   (do-highlight redex-highlight-color)
                    (insert #\newline)
                    (insert (make-object separator-snip%))
                    (insert #\newline))
                  (cond [(not (eq? reduct no-sexp))
                         (reset-style)
-                        (un-hacked-format-sexp post-exp reduct result-highlight-color)]
+                        (if (eq? post-exps multiple-highlight)
+                            (let ([highlight-beginner (car reduct)]
+                                  [highlight-ender (list-ref reduct (- (length reduct) 1))])
+                              (for-each 
+                               (lambda (exp) (format-sexp-multiple-highlight exp highlight-beginner highlight-ender))
+                               reduct))
+                            (begin
+                              (unless (= (length post-exps) 1)
+                                (e:internal-error 'format-whole-step "wrong-length post-sexp list in post-step."))
+                              (format-sexp-single-highlight (car post-exps) reduct)))
+                        (do-highlight result-highlight-color)]
                        [error-msg
                         (let ([before-error-msg (last-position)])
                           (reset-style)
                           (auto-wrap #t)
                           (insert error-msg)
                           (change-style error-delta before-error-msg (last-position)))])
+                 (unless (eq? after-exprs no-sexp)
+                   (insert #\newline)
+                   (insert (make-object separator-snip%))
+                   (insert #\newline)
+                   (reset-style)
+                   (for-each
+                    (lambda (expr)
+                      (format-sexp-single-highlight expr no-sexp)
+                      (insert #\newline))
+                    after-exprs))
                  (end-edit-sequence)
                  (lock #t))])
       (sequence (super-init line-spacing tabstops)
@@ -316,7 +340,8 @@
                                          (before-after-result-redex result)
                                          (before-after-result-post-exp result)
                                          (before-after-result-reduct result)
-                                         #f)]
+                                         #f
+                                         (before-after-result-after-exprs result))]
                            [(before-error-result? result)
                             (set! final-view view-currently-updating)
                             (make-object stepper-text%
@@ -325,7 +350,8 @@
                                          (before-error-result-redex result)
                                          no-sexp
                                          no-sexp
-                                         (before-error-result-err-msg result))]
+                                         (before-error-result-err-msg result)
+                                         (before-error-result-after-exprs result))]
                            [(error-result? result)  
                             (set! final-view view-currently-updating)
                             (make-object stepper-text%
@@ -334,7 +360,8 @@
                                          no-sexp
                                          no-sexp
                                          no-sexp
-                                         (error-result-err-msg result))]
+                                         (error-result-err-msg result)
+                                         no-sexp)]
                            [(finished-result? result)
                             (set! final-view view-currently-updating)
                             (make-object stepper-text%
@@ -343,7 +370,8 @@
                                          no-sexp
                                          no-sexp
                                          no-sexp
-                                         #f)])])
+                                         #f
+                                         no-sexp)])])
                 (set! view-history (append view-history (list step-text))) 
                 (update-view view-currently-updating)))
             

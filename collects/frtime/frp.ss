@@ -3,9 +3,10 @@
 ;  tag impure and imperative signals (pure vs. stateful vs. effectful)
 ;
 ; To do:
-; deal with multiple values
-; handle structs, vectors
-; exception-handling mechanism
+; deal with multiple values (?)
+; handle structs, vectors (done?)
+; flip arguments in event-handling combinators
+; localized exception-handling mechanism
 ; generalize and improve notion of time
 ;  (e.g., combine seconds & milliseconds,
 ;  give user general "timer : number -> signal (event?)"
@@ -26,9 +27,6 @@
 ;    depths cannot be assigned
 ;  - should perhaps tag delay, integral nodes
 ; selective evaluation (?)
-; replace #%app macro with #%top macro, define macros,
-;   hash-table; make signals applicable as functions
-;   (have tried and achieved unencouraging results)
 ; consider adding placeholders again, this time as part
 ;   of the FRP system
 ;   (probably not necessary, since signals can serve
@@ -203,55 +201,20 @@
       [(_ test then else)
        (frp:if-helper test (weakly-cache (lambda () then)) (weakly-cache (lambda () else)))]))
   
-#|
-  (define-syntax frp:cond
-    (syntax-rules (else =>)
-      [(_ [else result1 result2 ...])
-       (begin result1 result2 ...)]
-      [(_ [test => result])
-       (let ([temp test])
-         (frp:if temp (result temp)))]
-      [(_ [test => result] clause1 clause2 ...)
-       (let ([temp test])
-         (frp:if temp
-                 (result temp)
-                 (frp:cond clause1 clause2 ...)))]
-      [(_ [test]) test]
-      [(_ [test] clause1 clause2 ...)
-       (let ((temp test))
-         (frp:if temp
-                 temp
-                 (frp:cond clause1 clause2 ...)))]
-      [(_ [test result1 result2 ...])
-       (frp:if test (begin result1 result2 ...))]
-      [(_ [test result1 result2 ...]
-          clause1 clause2 ...)
-       (frp:if test
-               (begin result1 result2 ...)
-               (frp:cond clause1 clause2 ...))]))
-  
-  (define-syntax frp:and
-    (syntax-rules ()
-      [(_) true]
-      [(_ exp) exp]
-      [(_ exp exps ...) (frp:if exp
-                                (frp:and exps ...)
-                                false)]))
-  
-  (define-syntax frp:or
-    (syntax-rules ()
-      [(_) false]
-      [(_ exp) exp]
-      [(_ exp exps ...) (let ([v exp])
-                          (frp:if v
-                                  v
-                                  (frp:or exps ...)))]))
-|#  
   ; get-value : signal[a] -> a
   (define (get-value val)
     (if (behavior? val)
         (signal-value val)
         val))
+  
+  (define (get-value/copy val)
+    (if (behavior? val)
+        (let ([v1 (signal-value val)])
+          (if (vector? v1)
+              (build-vector (vector-length v1) (lambda (i) (vector-ref v1 i)))
+              v1))
+        val))
+            
   
   ;   (define get-value/copy
   ;     (frp:lambda (val)
@@ -351,7 +314,7 @@
                                               (get-value arg3)))]
       [(fn . args) (lambda () (apply fn (map get-value args)))]))
 
-  (define (lift strict? fn . args)
+  (define (lift-app strict? fn . args)
     (if (ormap behavior? args)
         (apply
          proc->signal
@@ -830,7 +793,7 @@
                [head last]
                [ret (proc->signal void)]
                [thunk (lambda () (let* ([now (current-milliseconds)]
-                                        [new (get-value beh)]
+                                        [new (get-value/copy beh)]
                                         [ms (get-value ms-b)])
                                    (when (not (equal? new (caar last)))
                                      (set-rest! last (cons (cons new now)
@@ -944,7 +907,7 @@
   
   (define-syntax match-b
     (syntax-rules ()
-      [(_ expr clause ...) (lift #t (match-lambda clause ...) expr)]))
+      [(_ expr clause ...) (lift-app #t (match-lambda clause ...) expr)]))
   
   (define (geometric)
     (- (log (/ (random 2147483647) 2147483647.0))))
@@ -1034,7 +997,7 @@
           (begin
             (define-values (new-name ...)
               (values
-               (lambda args (apply lift #f old-name args)) ...))
+               (lambda args (apply lift-app #f old-name args)) ...))
             (provide (rename new-name old-name) ...))))]))
 
   (define-syntax (frp:provide stx)
@@ -1044,8 +1007,8 @@
         (lambda (c prev)
           (syntax-case prev ()
             [(begin clause ...)
-             (syntax-case c (lift lift/strict)
-               [(lift . ids)
+             (syntax-case c (lifted lifted/nonstrict)
+               [(lifted . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]
                               [(tmp-name ...)
                                (map (lambda (id)
@@ -1055,10 +1018,10 @@
                    (begin
                      clause ...
                      (define (tmp-name . args)
-                        (apply lift false fun-name args))
+                        (apply lift-app true fun-name args))
                      ...
                      (provide (rename tmp-name fun-name) ...))))]
-               [(lift/strict . ids)
+               [(lifted/nonstrict . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]
                               [(tmp-name ...)
                                (map (lambda (id)
@@ -1068,7 +1031,7 @@
                    (begin
                      clause ...
                      (define (tmp-name . args)
-                        (apply lift true fun-name args))
+                        (apply lift-app false fun-name args))
                      ...
                      (provide (rename tmp-name fun-name) ...))))]
                [provide-spec
@@ -1083,8 +1046,8 @@
         (lambda (c prev)
           (syntax-case prev ()
             [(begin clause ...)
-             (syntax-case c (lift lift/strict as-is)
-               [(lift module . ids)
+             (syntax-case c (lifted lifted/nonstrict as-is)
+               [(lifted/nonstrict module . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]
                               [(tmp-name ...)
                                (map (lambda (id)
@@ -1095,9 +1058,9 @@
                      clause ...
                      (require (rename module tmp-name fun-name) ...)
                      (define (fun-name . args)
-                        (apply lift false tmp-name args))
+                        (apply lift-app false tmp-name args))
                      ...)))]
-               [(lift/strict module . ids)
+               [(lifted module . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]
                               [(tmp-name ...)
                                (map (lambda (id)
@@ -1108,7 +1071,7 @@
                      clause ...
                      (require (rename module tmp-name fun-name) ...)
                      (define (fun-name . args)
-                        (apply lift true tmp-name args))
+                        (apply lift-app true tmp-name args))
                      ...)))]
                [(as-is module id ...)
                 (syntax (begin clause ... (require (rename module id id) ...)))]
@@ -1126,6 +1089,7 @@
            (rename frp:rec rec)
            (rename match-b match)
            (rename get-value cur-val)
+           (rename lift-app lift)
            module
            #%app
            #%top
@@ -1146,6 +1110,7 @@
            unquote
            values
            (all-defined-except undefined?
+                               lift-app
                                frp:if
                                frp:require
                                frp:provide

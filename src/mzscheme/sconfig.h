@@ -211,6 +211,8 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # define POW_HANDLES_INF_CORRECTLY
 
+# define USE_FCNTL_O_NONBLOCK
+
 # define USE_TIMEZONE_VAR_W_DLS
 
 # define FLAGS_ALREADY_SET
@@ -354,6 +356,7 @@ int scheme_solaris_semaphore_try_down(void *);
 
 # undef HAS_STANDARD_IOB
 # undef FILES_HAVE_FDS
+# undef USE_FD_PORTS
 # define USE_BEOS_PORT_THREADS
 
 # undef UNIX_PROCESSES
@@ -379,6 +382,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # ifdef __INTEL__
 #  define REGISTER_POOR_MACHINE
 # endif
+
+# define DOUBLE_CHECK_NEG_ZERO_UNDERFLOW
 
 # define FLAGS_ALREADY_SET
 

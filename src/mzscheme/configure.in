@@ -210,7 +210,9 @@ case $OS in
     EXTRALIBS="$LIBS gmzwin.exp"
     ;;
   BeOS)
-    if test "${enable_sgc_debug}" = "no" ; then
+    if test "${enable_sgc_debug}" = "yes" ; then
+      dummyvar=""
+    else
       enable_sgc=yes
     fi
     ;;

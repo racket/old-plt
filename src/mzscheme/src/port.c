@@ -490,8 +490,6 @@ void
 scheme_init_port (Scheme_Env *env)
 {
   if (scheme_starting_up) {
-    Scheme_Config *config = scheme_config;
-
 #ifdef MZ_PRECISE_GC
     register_traversers();
 #endif
@@ -622,8 +620,6 @@ scheme_init_port (Scheme_Env *env)
 #endif
 			      );
 
-    scheme_set_param(config, MZCONFIG_INPUT_PORT,
-		     scheme_orig_stdin_port);
     scheme_orig_stdout_port = (scheme_make_stdout
 			       ? scheme_make_stdout()
 #ifdef USE_FD_PORTS
@@ -632,8 +628,7 @@ scheme_init_port (Scheme_Env *env)
 			       : make_tested_file_output_port(stdout, 1)
 #endif
 			       );
-    scheme_set_param(config, MZCONFIG_OUTPUT_PORT,
-		     scheme_orig_stdout_port);
+
     scheme_orig_stderr_port = (scheme_make_stderr
 			       ? scheme_make_stderr()
 #ifdef USE_FD_PORTS
@@ -642,22 +637,9 @@ scheme_init_port (Scheme_Env *env)
 			       : make_tested_file_output_port(stderr, 1)
 #endif
 			       );
-    scheme_set_param(config, MZCONFIG_ERROR_PORT,
-		     scheme_orig_stderr_port);
 #ifdef USE_FD_PORTS
     atexit(flush_all_output_fds);
 #endif
-
-    {
-      Scheme_Object *dlh;
-      dlh = scheme_make_prim_w_arity2(default_load,
-				      "default-load-handler",
-				      1, 1,
-				      0, -1);
-      scheme_set_param(config, MZCONFIG_LOAD_HANDLER, dlh);
-    }
-
-    scheme_set_param(config, MZCONFIG_LOAD_DIRECTORY, scheme_false);
 
     scheme_write_proc = scheme_make_prim_w_arity(sch_write, 
 						 "write", 
@@ -707,8 +689,6 @@ scheme_init_port (Scheme_Env *env)
     non_elaboration_symbol = scheme_intern_symbol("non-elaboration");
     none_symbol = scheme_intern_symbol("none");
 
-    scheme_set_param(config, MZCONFIG_USE_COMPILED_KIND, all_symbol);
-
     default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
 						    "default-port-read-handler", 
 						    1, 1);
@@ -722,16 +702,10 @@ scheme_init_port (Scheme_Env *env)
 						     "default-port-print-handler", 
 						     2, 2);
 
-    {
-      Scheme_Object *gpph;
-      gpph = scheme_make_prim_w_arity(sch_default_global_port_print_handler,
-				      "default-global-port-print-handler",
-				      2, 2);
-      scheme_set_param(config, MZCONFIG_PORT_PRINT_HANDLER, gpph);
-    }
-
     REGISTER_SO(fail_err_symbol);
     fail_err_symbol = scheme_false;
+
+    scheme_init_port_config();
   }
 
   scheme_add_global_constant("eof", scheme_eof, env);
@@ -1071,6 +1045,38 @@ scheme_init_port (Scheme_Env *env)
 						      1, 1, 1), 
 			     env);
 #endif
+}
+
+void scheme_init_port_config(void)
+{
+  Scheme_Config *config = scheme_config;
+
+  scheme_set_param(config, MZCONFIG_INPUT_PORT,
+		   scheme_orig_stdin_port);
+  scheme_set_param(config, MZCONFIG_OUTPUT_PORT,
+		   scheme_orig_stdout_port);
+  scheme_set_param(config, MZCONFIG_ERROR_PORT,
+		   scheme_orig_stderr_port);
+
+  scheme_set_param(config, MZCONFIG_LOAD_DIRECTORY, scheme_false);
+  scheme_set_param(config, MZCONFIG_USE_COMPILED_KIND, all_symbol);
+
+  {
+    Scheme_Object *dlh;
+    dlh = scheme_make_prim_w_arity2(default_load,
+				    "default-load-handler",
+				    1, 1,
+				    0, -1);
+    scheme_set_param(config, MZCONFIG_LOAD_HANDLER, dlh);
+  }
+
+  {
+    Scheme_Object *gpph;
+    gpph = scheme_make_prim_w_arity(sch_default_global_port_print_handler,
+				    "default-global-port-print-handler",
+				    2, 2);
+    scheme_set_param(config, MZCONFIG_PORT_PRINT_HANDLER, gpph);
+  }
 }
 
 /*========================================================================*/
@@ -6524,7 +6530,7 @@ static long spawnv(int type, char *command, const char *  const *argv)
 
   for (i = 0; argv[i]; i++);
 
-  p->t = load_image(i, (char **)argv, NULL, environ);
+  p->t = load_image(i, (char **)argv, environ);
   
   if (p->t <= 0)
     return -1;

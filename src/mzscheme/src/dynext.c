@@ -80,7 +80,6 @@ static char *dlerror(void) {
 
 static Scheme_Object *load_extension(int argc, Scheme_Object **argv);
 static Scheme_Object *current_load_extension(int argc, Scheme_Object *argv[]);
-static Scheme_Object *default_load_extension(int argc, Scheme_Object *argv[]);
 
 #ifdef LINK_EXTENSIONS_BY_TABLE
 Scheme_Extension_Table *scheme_extension_table;
@@ -132,15 +131,6 @@ void scheme_init_dynamic_extension(Scheme_Env *env)
       (Scheme_Extension_Table *)scheme_malloc_atomic(sizeof(Scheme_Extension_Table));
 #include "schemex.inc"
 #endif
-
-    {
-      Scheme_Object *lh;
-      lh = scheme_make_prim_w_arity2(default_load_extension,
-				     "default-load-extension-handler",
-				     1, 1,
-				     0, -1);
-      scheme_set_param(scheme_config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
-    }
 
     REGISTER_SO(fail_err_symbol);
     REGISTER_SO(version_err_symbol);
@@ -499,7 +489,7 @@ static Scheme_Object *load_extension(int argc, Scheme_Object **argv)
   return scheme_load_with_clrd(argc, argv, "load-extension", MZCONFIG_LOAD_EXTENSION_HANDLER);
 }
 
-static Scheme_Object *default_load_extension(int argc, Scheme_Object **argv)
+Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv)
 {
   char *filename;
 

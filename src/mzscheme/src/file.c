@@ -218,8 +218,6 @@ void scheme_init_file(Scheme_Env *env)
 	file_symbol = scheme_intern_symbol("file");
 # endif
 #endif
-    
-    scheme_set_param(scheme_config, MZCONFIG_COLLECTION_PATHS,  scheme_null);
   }
 
   scheme_add_global_constant("file-exists?", 

@@ -404,34 +404,41 @@ void scheme_init_error(Scheme_Env *env)
 			     env);
 
   if (scheme_starting_up) {
-    Scheme_Config *config = scheme_config;
-
     newline_char = scheme_make_char('\n');
 
     REGISTER_SO(scheme_def_exit_proc);
     scheme_def_exit_proc = scheme_make_prim_w_arity(def_exit_handler_proc, 
 						    "default-exit-handler",
 						    1, 1);
-    scheme_set_param(config, MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
-
-    {
-      Scheme_Object *edh;
-      edh = scheme_make_prim_w_arity(def_error_display_proc,
-				     "default-error-display-handler",
-				     1, 1);
-      scheme_set_param(config, MZCONFIG_ERROR_DISPLAY_HANDLER, edh);
-    }
 
     REGISTER_SO(def_err_val_proc);
     def_err_val_proc = scheme_make_prim_w_arity(def_error_value_string_proc,
 						"default-error-value->string-handler",
 						2, 2);
-    scheme_set_param(config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
-		     def_err_val_proc);
 
     REGISTER_SO(prepared_buf);
     prepared_buf = init_buf(NULL, &prepared_buf_len);
+
+    scheme_init_error_config();
   }
+}
+
+void scheme_init_error_config(void)
+{
+  Scheme_Config *config = scheme_config;
+
+  scheme_set_param(config, MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
+
+  {
+    Scheme_Object *edh;
+    edh = scheme_make_prim_w_arity(def_error_display_proc,
+				   "default-error-display-handler",
+				   1, 1);
+    scheme_set_param(config, MZCONFIG_ERROR_DISPLAY_HANDLER, edh);
+  }
+
+  scheme_set_param(config, MZCONFIG_ERROR_PRINT_VALUE_HANDLER,
+		   def_err_val_proc);
 }
 
 static void
@@ -1669,16 +1676,21 @@ void scheme_init_exn(Scheme_Env *env)
 			     env);
 
   if (scheme_starting_up) {
-    Scheme_Config *config = scheme_config;
-    Scheme_Object *h;
-
-    h = scheme_make_prim_w_arity(def_exn_handler,
-				 "default-exception-handler",
-				 1, 1);
-
-    scheme_set_param(config, MZCONFIG_EXN_HANDLER, h);
-    scheme_set_param(config, MZCONFIG_INIT_EXN_HANDLER, h);
+    scheme_init_exn_config();
   }
+}
+
+void scheme_init_exn_config(void)
+{
+  Scheme_Config *config = scheme_config;
+  Scheme_Object *h;
+
+  h = scheme_make_prim_w_arity(def_exn_handler,
+			       "default-exception-handler",
+			       1, 1);
+  
+  scheme_set_param(config, MZCONFIG_EXN_HANDLER, h);
+  scheme_set_param(config, MZCONFIG_INIT_EXN_HANDLER, h);
 }
 
 #endif

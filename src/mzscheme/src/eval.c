@@ -82,8 +82,6 @@ static Scheme_Object *built_in_name(int argc, Scheme_Object **argv);
 static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv);
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv);
 
-static Scheme_Object *default_eval_handler(int, Scheme_Object *[]);
-
 static Scheme_Object *write_application(Scheme_Object *obj);
 static Scheme_Object *read_application(Scheme_Object *obj);
 static Scheme_Object *write_sequence(Scheme_Object *obj);
@@ -141,8 +139,6 @@ void
 scheme_init_eval (Scheme_Env *env)
 {
   if (scheme_starting_up) {
-    Scheme_Config *config = scheme_config;
-
 #ifdef MZ_PRECISE_GC
     register_traversers();
 #endif
@@ -200,16 +196,6 @@ scheme_init_eval (Scheme_Env *env)
 
     scheme_install_type_writer(scheme_begin0_sequence_type, write_sequence);
     scheme_install_type_reader(scheme_begin0_sequence_type, read_sequence_save_first);
-
-
-    {
-      Scheme_Object *eh;
-      eh = scheme_make_prim_w_arity2(default_eval_handler,
-				     "default-eval-handler",
-				     1, 1,
-				     0, -1);
-      scheme_set_param(config, MZCONFIG_EVAL_HANDLER, eh);
-    }
   }
     
   scheme_add_global_constant("eval", 
@@ -3099,8 +3085,8 @@ eval(int argc, Scheme_Object *argv[])
   }
 }
 
-static Scheme_Object *
-default_eval_handler(int argc, Scheme_Object **argv)
+Scheme_Object *
+scheme_default_eval_handler(int argc, Scheme_Object **argv)
 {
   Scheme_Env *env;
 

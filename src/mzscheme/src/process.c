@@ -251,8 +251,6 @@ static int check_sleep(int need_activity, int sleep_now);
 static void remove_process(Scheme_Process *r);
 static void exit_or_escape(Scheme_Process *p);
 
-static Scheme_Config *initial_config;
-
 static Scheme_Object **config_map;
 
 typedef struct {
@@ -339,16 +337,6 @@ void scheme_init_process(Scheme_Env *env)
 						      "dump-memory-stats",
 						      0, 1), 
 			     env);
-
-#if 0
-#ifdef MEMORY_COUNTING_ON
-  scheme_add_global_constant("dump-memory-count",
-			     scheme_make_prim_w_arity(scheme_dump_memory_count,
-						      "dump-memory-count",
-						      0, 1),
-			     env);
-#endif
-#endif
 
   scheme_add_global_constant("make-namespace",
 			     scheme_make_prim_w_arity(scheme_make_namespace,
@@ -608,11 +596,6 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   if (!config) {    
     config = make_initial_config();
     process->config = config;
-
-    if (scheme_starting_up) {
-      REGISTER_SO(initial_config);
-      initial_config = process->config;
-    }
   } else
     process->config = config;
 
@@ -2936,7 +2919,9 @@ static Scheme_Config *make_initial_config(void)
 
   scheme_set_param(config, MZCONFIG_ERROR_PRINT_WIDTH, scheme_make_integer(40));
 
-  REGISTER_SO(main_manager);
+  if (scheme_starting_up) {
+    REGISTER_SO(main_manager);
+  }
   main_manager = scheme_make_manager(NULL);
   scheme_set_param(config, MZCONFIG_MANAGER, (Scheme_Object *)main_manager);
 
@@ -2949,6 +2934,8 @@ static Scheme_Config *make_initial_config(void)
 
   scheme_set_param(config, MZCONFIG_REQUIRE_COLLECTION, scheme_false);
 
+  scheme_set_param(config, MZCONFIG_COLLECTION_PATHS,  scheme_null);
+
   {
     Scheme_Object *s;
     s = scheme_make_string(scheme_os_getcwd(NULL, 0, NULL, 1));
@@ -2959,6 +2946,38 @@ static Scheme_Config *make_initial_config(void)
     Scheme_Object *rs;
     rs = scheme_make_random_state(scheme_get_milliseconds());
     scheme_set_param(config, MZCONFIG_RANDOM_STATE, rs);
+  }
+
+  {
+    Scheme_Object *eh;
+    eh = scheme_make_prim_w_arity2(scheme_default_eval_handler,
+				   "default-eval-handler",
+				   1, 1,
+				   0, -1);
+    scheme_set_param(config, MZCONFIG_EVAL_HANDLER, eh);
+  }
+  
+  {
+    Scheme_Object *ph, *prh;
+
+    ph = scheme_make_prim_w_arity(scheme_default_print_handler,
+				  "default-print-handler",
+				  1, 1);
+    scheme_set_param(config, MZCONFIG_PRINT_HANDLER, ph);
+
+    prh = scheme_make_prim_w_arity(scheme_default_prompt_read_handler,
+				   "default-prompt-read-handler",
+				   0, 0);
+    scheme_set_param(config, MZCONFIG_PROMPT_READ_HANDLER, prh);
+  }
+
+  {
+    Scheme_Object *lh;
+    lh = scheme_make_prim_w_arity2(scheme_default_load_extension,
+				   "default-load-extension-handler",
+				   1, 1,
+				   0, -1);
+    scheme_set_param(config, MZCONFIG_LOAD_EXTENSION_HANDLER, lh);
   }
   
   config->extensions = NULL;

@@ -88,6 +88,8 @@ int scheme_num_types(void);
 # define MZTAG_IF_REQUIRED /* empty */
 #endif
 
+void scheme_reset_finalizations(void);
+
 /*========================================================================*/
 /*                             initialization                             */
 /*========================================================================*/
@@ -101,26 +103,28 @@ void scheme_init_hash_key_procs(void);
 #endif
 Scheme_Process *scheme_make_process(void);
 void scheme_init_true_false(void);
-void scheme_init_symbol_table (void);
-void scheme_init_symbol_type (Scheme_Env *env);
-void scheme_init_type (Scheme_Env *env);
-void scheme_init_list (Scheme_Env *env);
-void scheme_init_port (Scheme_Env *env);
-void scheme_init_file (Scheme_Env *env);
-void scheme_init_proc (Scheme_Env *env);
-void scheme_init_vector (Scheme_Env *env);
-void scheme_init_string (Scheme_Env *env);
-void scheme_init_number (Scheme_Env *env);
-void scheme_init_eval (Scheme_Env *env);
-void scheme_init_promise (Scheme_Env *env);
-void scheme_init_struct (Scheme_Env *env);
+void scheme_init_symbol_table(void);
+void scheme_init_symbol_type(Scheme_Env *env);
+void scheme_init_type(Scheme_Env *env);
+void scheme_init_list(Scheme_Env *env);
+void scheme_init_port(Scheme_Env *env);
+void scheme_init_file(Scheme_Env *env);
+void scheme_init_proc(Scheme_Env *env);
+void scheme_init_vector(Scheme_Env *env);
+void scheme_init_string(Scheme_Env *env);
+void scheme_init_number(Scheme_Env *env);
+void scheme_init_eval(Scheme_Env *env);
+void scheme_init_promise(Scheme_Env *env);
+void scheme_init_struct(Scheme_Env *env);
 void scheme_init_fun(Scheme_Env *env);
 void scheme_init_symbol(Scheme_Env *env);
 void scheme_init_char(Scheme_Env *env);
 void scheme_init_bool(Scheme_Env *env);
 void scheme_init_syntax(Scheme_Env *env);
 void scheme_init_error(Scheme_Env *env);
+#ifndef NO_SCHEME_EXNS
 void scheme_init_exn(Scheme_Env *env);
+#endif
 void scheme_init_debug(Scheme_Env *env);
 #ifndef NO_OBJECT_SYSTEM
 void scheme_init_object(Scheme_Env *env);
@@ -145,7 +149,12 @@ void scheme_init_getenv(void);
 extern Scheme_Type_Reader *scheme_type_readers;
 extern Scheme_Type_Writer *scheme_type_writers;
 
+void scheme_init_port_config(void);
 void scheme_init_error_escape_proc(Scheme_Process *p);
+void scheme_init_error_config(void);
+#ifndef NO_SCHEME_EXNS
+void scheme_init_exn_config(void);
+#endif
 
 extern int scheme_builtin_ref_counter;
 
@@ -939,6 +948,10 @@ int scheme_strncmp(const char *a, const char *b, int len);
 
 #define _scheme_make_char(ch) (scheme_char_constants[(unsigned char)(ch)])
 
+Scheme_Object *scheme_default_eval_handler(int, Scheme_Object *[]);
+Scheme_Object *scheme_default_print_handler(int, Scheme_Object *[]);
+Scheme_Object *scheme_default_prompt_read_handler(int, Scheme_Object *[]);
+
 /*========================================================================*/
 /*                          fds, TCP                                      */
 /*========================================================================*/
@@ -1306,6 +1319,8 @@ Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[], char *who,
 int scheme_mac_start_app(char *name, int find_path, Scheme_Object *s);
 int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, Scheme_Object **result, OSErr *err, char **stage);
 #endif
+
+Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv);
 
 /*========================================================================*/
 /*                         memory debugging                               */

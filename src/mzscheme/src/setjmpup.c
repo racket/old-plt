@@ -143,7 +143,9 @@ static void update_push_copied_stacks(void)
 
 void scheme_init_setjumpup(void)
 {
-  REGISTER_SO(first_copied_stack);
+  if (scheme_starting_up) {
+    REGISTER_SO(first_copied_stack);
+  }
   first_copied_stack = MALLOC_LINK();
   *first_copied_stack = NULL;
 

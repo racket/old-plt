@@ -97,9 +97,6 @@ Scheme_Object *scheme_values(int argc, Scheme_Object *argv[]);
 static Scheme_Object *current_print(int argc, Scheme_Object **argv);
 static Scheme_Object *current_prompt_read(int, Scheme_Object **);
 
-static Scheme_Object *default_print_handler(int, Scheme_Object *[]);
-static Scheme_Object *default_prompt_read_handler(int, Scheme_Object *[]);
-
 static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a);
 
 static Scheme_Object *write_compiled_closure(Scheme_Object *obj);
@@ -341,19 +338,6 @@ scheme_init_fun (Scheme_Env *env)
 
 
   if (scheme_starting_up) {
-    Scheme_Config *config = scheme_config;
-    Scheme_Object *ph, *prh;
-
-    ph = scheme_make_prim_w_arity(default_print_handler,
-				  "default-print-handler",
-				  1, 1);
-    scheme_set_param(config, MZCONFIG_PRINT_HANDLER, ph);
-
-    prh = scheme_make_prim_w_arity(default_prompt_read_handler,
-				   "default-prompt-read-handler",
-				   0, 0);
-    scheme_set_param(config, MZCONFIG_PROMPT_READ_HANDLER, prh);
-  
     scheme_install_type_writer(scheme_unclosed_procedure_type,
 			       write_compiled_closure);
     scheme_install_type_reader(scheme_unclosed_procedure_type,
@@ -2645,8 +2629,8 @@ current_prompt_read(int argc, Scheme_Object **argv)
 			     0, NULL, NULL, 0);
 }
 
-static Scheme_Object *
-default_print_handler(int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_default_print_handler(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *obj = argv[0];
 
@@ -2664,8 +2648,8 @@ default_print_handler(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-static Scheme_Object *
-default_prompt_read_handler(int argc, Scheme_Object *argv[])
+Scheme_Object *
+scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
 {
   Scheme_Config *config = scheme_config;
   Scheme_Object *port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);

@@ -360,6 +360,7 @@ typedef struct Finalization {
 
 typedef struct {
   MZTAG_IF_REQUIRED
+  short lifetime;
   Finalization *scheme_first, *scheme_last;
   void (*ext_f)(void *o, void *data);
   void *ext_data;
@@ -380,10 +381,20 @@ END_XFORM_SKIP;
 
 #endif
 
+static int current_lifetime;
+
+void scheme_reset_finalizations(void)
+{
+  current_lifetime++;
+}
+
 static void do_next_finalization(void *o, void *data)
 {
   Finalizations *fns = *(Finalizations **)data;
   Finalization *fn;
+
+  if (fns->lifetime != current_lifetime)
+    return;
 
   if (fns->scheme_first) {
     if (fns->scheme_first->next || fns->ext_f || fns->prim_first) {
@@ -476,8 +487,10 @@ static void add_finalizer(void *v, void (*f)(void*,void*), void *data,
     }
   }
 
-  if (!(*fns_ptr))
+  if (!(*fns_ptr)) {
+    prealloced->lifetime = current_lifetime;
     *fns_ptr = prealloced;
+  }
   fns = *fns_ptr;
 
   if (ext) {

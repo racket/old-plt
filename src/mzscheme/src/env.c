@@ -129,10 +129,35 @@ void *scheme_global_lock;
 int scheme_global_lock_c;
 #endif
 
-Scheme_Env *scheme_basic_env ()
+Scheme_Env *scheme_basic_env()
 {
-  Scheme_Process *process;
   Scheme_Env *env;
+
+  if (scheme_main_process) {
+    /* Reset everything: */
+    scheme_main_process = NULL;
+
+    scheme_reset_finalizations();
+    scheme_init_stack_check();
+#ifndef MZ_PRECISE_GC
+    scheme_init_setjumpup();
+#endif
+
+    scheme_make_process();
+    scheme_init_error_escape_proc(scheme_current_process);
+
+    env = scheme_make_empty_env();
+    scheme_copy_from_original_env(env);
+
+    scheme_set_param(scheme_config, MZCONFIG_ENV, (Scheme_Object *)env); 
+    scheme_init_port_config();
+    scheme_init_error_config();
+#ifndef NO_SCHEME_EXNS
+    scheme_init_exn_config();
+#endif
+
+    return env;
+  }
 
 #ifdef UNIX_LIMIT_STACK
   {
@@ -161,6 +186,8 @@ Scheme_Env *scheme_basic_env ()
   GC_INIT();
 #endif
 
+  scheme_starting_up = 1;
+
 #ifndef MZ_PRECISE_GC
   scheme_init_setjumpup();
 #endif
@@ -170,8 +197,6 @@ Scheme_Env *scheme_basic_env ()
 #endif
 
   REGISTER_SO(hash_percent_buffer);
-
-  scheme_starting_up = 1;
 
 #ifdef MZ_REAL_THREADS
   scheme_global_lock = SCHEME_MAKE_MUTEX();
@@ -220,7 +245,7 @@ Scheme_Env *scheme_basic_env ()
   printf("pre-process @ %ld\n", scheme_get_process_milliseconds());
 #endif
 
-  process = scheme_make_process();
+  scheme_make_process();
 
 #ifdef TIME_STARTUP_PROCESS
   printf("process @ %ld\n", scheme_get_process_milliseconds());
@@ -233,7 +258,7 @@ Scheme_Env *scheme_basic_env ()
   scheme_set_param(scheme_current_process->config, MZCONFIG_ENV, 
 		   (Scheme_Object *)env); 
 
-  scheme_init_error_escape_proc(process);
+  scheme_init_error_escape_proc(scheme_current_process);
 
   scheme_starting_up = 0;
 

@@ -455,6 +455,10 @@
  (search-help-desk-for "Rechercher \"~a\" dans l'Aide.")
  (exact-lucky-search-help-desk-for "Faire une recherche \"J'ai de la chance\" dans l'Aide pour le texte exact \"~a\".")
  
+ ;; collapse and expand popup menu items
+ (collapse-sexp "Rétrécir une sexpression")
+ (expand-sexp "Elargir une sexpression")
+
  ;;; fraction dialog
  (enter-fraction "Entrer une fraction")
  (whole-part "Partie entière")

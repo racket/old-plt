@@ -121,7 +121,7 @@
 
       (define-struct (undefined struct:exn) (id))
 
-      (define signal-undefined? (make-parameter))
+      (define signal-undefined? (make-parameter #t))
 
       (signal-undefined? #f)
 

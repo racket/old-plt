@@ -59,6 +59,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 @SYM "vscroll" : wxVSCROLL
 @SYM "hscroll" : wxHSCROLL
 @SYM "gl" : wxGL_CONTEXT
+@SYM "no-autoclear" : wxNO_AUTOCLEAR
 @SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 

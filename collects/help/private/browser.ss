@@ -100,46 +100,47 @@
 				       (send frame add-message s)))
 		     (send frame show #t))
 	       (letrec
-	  ([monitor-thread
-	    (thread
-	     (lambda ()
-	       (debug-msg "Starting browser-connect thread")
-	       (wait-start-semaphore)
-	       (debug-msg "Browser connected")
-	       (kill-thread timer-thread)
-	       (debug-msg "Killed timer thread")
-	       (semaphore-post nav-sem)))]
-	   [timer-thread
-	    (thread
-	     (lambda ()
-	       (debug-msg "Starting timer thread")
-	       (sleep browser-timeout)
-	       (debug-msg "Timer expired")
-	       (when (prompt-for-browser-switch hd-cookie)
-		     (set-plt-browser!)
-		     (debug-msg "Shutting down external server")
-		     ((hd-cookie->exit-proc hd-cookie))
-		     (debug-msg "Starting internal server")
-		     (internal-start-help-server hd-cookie)
-		     (debug-msg "Starting internal browser")
-		     (send-help-desk-url (hd-cookie->browser hd-cookie) url))
-	       (kill-thread monitor-thread)
-	       (semaphore-post nav-sem)))])
-	 (debug-msg "Starting Help Desk browser")
-	 (with-handlers 
-	  ([(lambda _ #t) (lambda _ 
-			    (let ([msg "Help Desk browser failed"])
-			      (debug-msg msg)
-			      (message-box
-			       "PLT Help Desk"
-			       msg
-			       #f
-			       '(ok))))])
-	  (send-help-desk-url (hd-cookie->browser hd-cookie) 
-			      (build-dispatch-url hd-cookie url)))
-	 (yield nav-sem)
-	 (set! navigate? #f)
-	 (semaphore-post nav-mutex)))))
+		   ([timer browser-timeout]
+		    [monitor-thread
+		     (thread
+		      (lambda ()
+			(debug-msg "Starting browser-connect thread")
+			(wait-start-semaphore)
+			(debug-msg "Browser connected")
+			(kill-thread timer-thread)
+			(debug-msg "Killed timer thread")
+			(semaphore-post nav-sem)))]
+		    [timer-thread
+		     (thread
+		      (lambda ()
+			(debug-msg "Starting timer thread")
+			(let loop ([n 0])
+			  (when (< n timer)
+				(sleep 1)
+				(loop (add1 n))))
+			(debug-msg "Timer expired")
+			(when (prompt-for-browser-switch hd-cookie)
+			      (set-plt-browser!)
+			      (debug-msg "Shutting down external server")
+			      ((hd-cookie->exit-proc hd-cookie))
+			      (debug-msg "Starting internal server")
+			      (internal-start-help-server hd-cookie)
+			      (debug-msg "Starting internal browser")
+			      ; should never fail, so no handler
+			      (send-help-desk-url (hd-cookie->browser hd-cookie) url))
+			(kill-thread monitor-thread)
+			(semaphore-post nav-sem)))])
+		 (debug-msg "Starting Help Desk browser")
+		 (with-handlers 
+		  ([(lambda _ #t) (lambda _ 
+				    (debug-msg 
+				     "Help Desk browser raised exception")
+				    (set! timer 0))])
+		  (send-help-desk-url (hd-cookie->browser hd-cookie) 
+				      (build-dispatch-url hd-cookie url)))
+		 (yield nav-sem)
+		 (set! navigate? #f)
+		 (semaphore-post nav-mutex)))))
   
   (define (help-desk-browser hd-cookie)
     (help-desk-navigate hd-cookie 

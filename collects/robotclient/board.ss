@@ -161,19 +161,17 @@
                  (map (lambda (com)
                         (make-response $2 (car com) (cdr com)))
                       $3)))
-      (response-list ((response) $1)
-                     ((response response-list) (append $1 $2)))
+      (response-list ((response) (list $1))
+                     ((response response-list) (cons $1 $2)))
       (com ((X NUM Y NUM) (cons 'X (cons $2 $4)))
            ((N) (cons 'N null))
            ((S) (cons 'S null))
            ((E) (cons 'E null))
            ((W) (cons 'W null))
-           ((P num-list) (cons 'P $2))
-           ((D num-list) (cons 'D $2)))
+           ((P NUM) (cons 'P $2))
+           ((D NUM) (cons 'D $2)))
       (com-list ((com) (list $1))
-                ((com com-list) (cons $1 $2)))
-      (num-list (() null)
-                ((NUM num-list) (cons $1 $2))))))
+                ((com com-list) (cons $1 $2))))))
        
   
   (define (read-num-list in)
@@ -197,16 +195,12 @@
     (let* ((responses
             (filter (lambda (x)
                       (eq? 'X (response-name x)))
-                    (read-response in)))
-           (robots
-            (let loop ((responses responses))
-              (cond
-                ((null? responses) null)
-                (else
-                 (cons (make-robot (response-id (car responses))
-                                   (car (response-arg (car responses)))
-                                   (cdr (response-arg (car responses))))
-                       (loop (cdr responses))))))))
+                    (apply append (read-response in))))
+           (robots (map (lambda (response)
+                          (make-robot (response-id response)
+                                      (car (response-arg response))
+                                      (cdr (response-arg response))))
+                        responses)))
       (for-each (lambda (robot)
                   (let ((x (robot-x robot))
                         (y (robot-y robot)))
@@ -215,7 +209,7 @@
                 robots)
       (init-gui (board-width) (board-height) (board)
                 robots)
-      (robot-indexes (map robot-id robots))))
+      (robot-indexes (remove-dups (map robot-id robots)))))
     
   (define (find-dead alive all)
     (cond
@@ -226,20 +220,49 @@
        (cons (car all)
              (find-dead alive (cdr all))))))
   
+  (define (remove-dups loi)
+    (let loop ((l (mergesort loi >))
+               (r null))
+      (cond
+        ((null? l) r)
+        ((null? r) (loop (cdr l) (list (car l))))
+        ((= (car l) (car r)) (loop (cdr l) r))
+        (else
+         (loop (cdr l) (cons (car l) r))))))
+          
+  
   (define (read-response! packages in gui-update)
     (let* ((responses (read-response in))
-           (alive-robots (map response-id responses))
+           (flat-responses (apply append responses))
+           (alive-robots (remove-dups (map (lambda (x) 
+                                             (response-id (car x)))
+                                           responses)))
            (dead-robots
-            (find-dead (mergesort alive-robots <)
-                       (mergesort (robot-indexes) <)))
+            (find-dead alive-robots (robot-indexes)))
            (package-table (make-hash-table)))
       (gui-update (map (lambda (r)
-                         (list (response-id r)
-                               0
-                               (case (response-name r)
-                                 ((n s w e) (response-name r))
-                                 ((p) (list 'pick (response-arg r)))
-                                 ((d) (list 'drop (response-arg r))))))
+                         (let ((good-responses
+                                (filter (lambda (r)
+                                          (not (eq? 'x (response-name r))))
+                                        r)))
+                           (case (response-name (car good-responses))
+                             ((n s w e) (list (response-id (car good-responses)) 
+                                              0
+                                              (response-name (car good-responses))))
+                             ((p) (list (response-id (car good-responses))
+                                        0
+                                        (cons 'pick
+                                              (map response-arg
+                                                   (filter (lambda (x)
+                                                             (eq? 'P (response-name x)))
+                                                           good-responses)))))
+                             ((p) (list (response-id (car good-responses))
+                                        0
+                                        (cons 'pick
+                                              (map response-arg
+                                                   (filter (lambda (x)
+                                                             (eq? 'P (response-name x)))
+                                                           good-responses))))))))
                        responses))
       (for-each
        (lambda (p)
@@ -269,23 +292,16 @@
                 (cond
                   ((= (response-id r) (player-id))
                    (packages-held
-                    (append
-                     (map
-                      (lambda (id)
-                        (hash-table-get package-table id))
-                      (response-arg r))
+                    (cons
+                     (hash-table-get package-table (response-arg r))
                      (packages-held))))))
                ((D)
                 (cond
                   ((= (response-id r) (player-id))
-                   (let ((drops (make-hash-table)))
-                     (for-each
-                      (lambda (d)
-                        (hash-table-put! drops d #t)))
+                   (let ((drop (response-arg r)))
                      (packages-held
                       (filter (lambda (p)
-                                (not (hash-table-get drops (package-id p)
-                                                     (lambda () #f))))
+                                (not (= drop (package-id p))))
                               (packages-held)))))))
                ((N) (set-robot-y! new-robot (add1 (robot-y new-robot))))
                ((S) (set-robot-y! new-robot (sub1 (robot-y new-robot))))
@@ -308,7 +324,7 @@
                                             (robot-y new-robot))))
              (hash-table-put! (robot-table) (robot-id new-robot) new-robot)
              old-robot))
-         responses)
+         flat-responses)
         (robot-indexes alive-robots))))
         
   (define (read-board! input init-gui)

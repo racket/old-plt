@@ -17,7 +17,6 @@
   (define (read-packages in)
     (let* ((x (read-line in))
            (in (open-input-string x)))
-      (printf "~a~n" x)
       (let loop ((id (read in)))
         (cond
           ((eof-object? id) null)
@@ -59,7 +58,7 @@
         (else
          (send-command (compute-move packages robots) out)))
       (let ((robots (read-response! packages in (cond
-                                                  ;(gui? (dynamic-require "gui-client.ss" 'update))
+                                                  (gui? (dynamic-require "gui-client.ss" 'update))
                                                   (else void)))))
         (loop (read-packages in) robots))))
   )

@@ -21,7 +21,6 @@
              robots)
             ;; Each package is (list id x y dest-x dext-y weight)
             '())
-      
       (send f show #t)))
   
   
@@ -51,7 +50,7 @@
   (define (update actions)
     (send (drawn) queue-robot-actions
           ;; Each robot action is (list id bid (one-of 'e 'w 'n 's (list 'pick id...) (list 'drop id ...)))
-          '()))
-   ; (
+          actions)
+    (send (drawn) apply-queued-actions))
   
   )

@@ -375,7 +375,7 @@
 ;	    (pretty-print (list "Parse error near " tok-ok name (syntax-e val) (syntax-source val) (syntax-line val) (syntax-column val) (syntax-position val) (syntax-span val)))))
    (error (lambda (a b stx spos epos)
 ;	    (raise-read-error (format "parse error near ~a ~a ~a " a b (syntax-e stx))
-	    (raise-read-error (format "Parse error near ~a" (syntax-e stx))
+	    (raise-read-error (format "Parse error near <~a:~a>" b (syntax-e stx))
 			      (syntax-source stx)
 			      (syntax-line stx)
 			      (syntax-column stx)

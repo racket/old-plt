@@ -296,7 +296,9 @@ TODO:
 lexer:
 
 parser:
-Error check that start production is defined
+If the error token can be shifted, but parsing is unable to resume, throw an
+error instead of infinite looping.
+
 
 both:
 debugging
@@ -306,6 +308,7 @@ Potential future additions:
 lexer:
 POSIX style regular expressions
 User definition of lex operators
+DFA minimization
 
 parser:
 Increase speed of parser generator

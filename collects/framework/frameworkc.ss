@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.14 1999/07/28 19:00:06 robby Exp $
+;; $Id: frameworkc.ss,v 1.15 1999/09/15 18:36:18 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -11,7 +11,10 @@
 			   [keys : framework:keys^]
 			   [test : framework:test^])
   (link [application : framework:application^ ((require-relative-library "app.ss"))]
-	[version : framework:version^ ((require-relative-library "version.ss") core:string core:function)]
+	[version : framework:version^ ((require-relative-library "version.ss")
+                                       core:string core:function)]
+        [color-model : framework:color-model^ ((require-relative-library "color-model.ss") 
+                                               core:function)]
 	[exn : framework:exn^ ((require-relative-library "exn.ss"))]
 	[exit : framework:exit^ ((require-relative-library "exit.ss") mred preferences gui-utils)]
 	[preferences : framework:preferences^
@@ -41,7 +44,7 @@
 	[pasteboard : framework:pasteboard^ ((require-relative-library "pasteboard.ss")
 					     mred editor)]
 	[text : framework:text^ ((require-relative-library "text.ss")
-				 mred icon editor preferences keymap gui-utils
+				 mred icon editor preferences keymap gui-utils color-model
 				 core:function)]
 
 	[gui-utils : framework:gui-utils^ ((require-relative-library "guiutils.ss") mred)]
@@ -82,6 +85,7 @@
   (export
    (unit application)
    (unit version)
+   (unit color-model)
    (unit exn)
    (unit exit)
    (unit preferences)

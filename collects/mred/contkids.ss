@@ -630,7 +630,7 @@
 		      (list* parent callback label val x y
 			     const-default-size const-default-size args))))
       
-      (define canvas-default-size 50)
+      (define canvas-default-size 20)
       ; an arbitrary default size for canvases to avoid initial size problems
       ; under xt.
       

@@ -46,7 +46,8 @@
 			 [scrolls-per-page 100]
 			 [init-buffer null])
 	  (rename [super-set-media set-media]
-		  [super-on-set-focus on-set-focus])
+		  [super-on-set-focus on-set-focus]
+		  [super-on-kill-focus on-kill-focus])
 	  (public
 	    [frame (find-my-frame parent)])
 
@@ -74,14 +75,23 @@
 	     (lambda (modified?)
 	       (void))]
 	    [set-media
-	     (opt-lambda (media [redraw? #t])
+	     (opt-lambda (new [redraw? #t])
+	       (let ([old (get-media)])
+		 (update-active-canvas new)
+		 (unless (null? old)
+		   (send old on-kill-focus)
+		   (send old remove-canvas this)))
+	       (super-set-media new redraw?)
+	       (unless (null? new)
+		 (send new add-canvas this)
+		 (when (is-focus-on?)
+		   (send new on-set-focus))))]
+	    [on-kill-focus
+	     (lambda ()
 	       (let ([m (get-media)])
-		 (update-active-canvas media)
 		 (unless (null? m)
-		   (send m remove-canvas this)))
-	       (super-set-media media redraw?)
-	       (unless (null? media)
-		 (send media add-canvas this)))]
+		   (send m on-kill-focus)))
+	       (super-on-kill-focus))]
 	    [on-set-focus
 	     (lambda ()
 	       (mred:debug:printf 'matthew "connect-canvas::on-set-focus~n")
@@ -94,6 +104,7 @@
 		 (unless (null? m)
 		   (mred:debug:printf 'matthew "connect-canvas::on-set-focus.4~n")
 		   (send m set-active-canvas this)
+		   (send m on-set-focus)
 		   (mred:debug:printf 'matthew "connect-canvas::on-set-focus.5~n")))
 	       (super-on-set-focus))])
 	  (sequence
@@ -114,7 +125,10 @@
 	  (rename [super-set-modified set-modified]
 		  [super-set-filename set-filename])
 	  (public
+	    [on-set-focus (lambda () (void))]
+	    [on-kill-focus (lambda () (void))]
 	    [canvases null]
+	    [active-canvas #f]
             [set-filename
              (opt-lambda (name [temp? #f])
                (super-set-filename name temp?)
@@ -132,9 +146,9 @@
 			(car canvases))))]
 	    [get-frame
 	     (lambda ()
-	       (and active-canvas
-		    (ivar active-canvas frame)))]
-	    [active-canvas #f]
+	       (let ([c (get-canvas)])
+		 (and c
+		      (ivar c frame))))]
 	    [set-active-canvas
 	     (lambda (new-canvas)
 	       (set! active-canvas new-canvas))]

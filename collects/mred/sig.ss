@@ -211,18 +211,24 @@
 
 (define-signature mred:edit^
   (make-std-buffer%
-   make-edit%
    make-pasteboard%
-   make-return-edit%
-   make-backup-autosave-buffer%
    make-info-edit%
+   make-file-buffer%
+   make-searching-edit%
+   make-backup-autosave-buffer%
+   make-return-edit%
 
+   media-edit%
+   info-edit%
+   searching-edit%
+   clever-file-format-edit%
+   file-edit%
+   backup-autosave-edit%
    edit%
    return-edit%
-   info-edit%
-   backup-autosave-edit%
    pasteboard%
-   backup-autosave-pasteboard%
+   file-pasteboard%
+   backup-autosave-pasteboard% 
    
    make-snip%
    snip%
@@ -289,7 +295,12 @@
    reset-console-bitmap
    lock-bitmap
    unlock-bitmap
-   anchor-bitmap))
+   anchor-bitmap
+   
+   gc-on-dc
+   gc-off-dc
+   gc-width
+   gc-height))
 
 (define-signature mred:keymap^
   (keyerr
@@ -298,8 +309,14 @@
    set-keymap-implied-shifts
    make-meta-prefix-list
    send-map-function-meta
+
    setup-global-keymap
-   global-keymap))
+   setup-global-search-keymap
+   setup-global-file-keymap
+
+   global-keymap
+   global-search-keymap
+   global-file-keymap))
 
 (define-signature mred:match-cache^
   (match-cache%))

@@ -46,22 +46,26 @@
     (define make-mode%
       (lambda (super%)
 	(class super% ()
-	       (public
-		[name "default"]
-		[make-keymap 
-		 (lambda ()
-		   (let ([keymap (make-object wx:keymap%)])
-		     (mred:keymap:set-keymap-error-handler keymap)
-		     (mred:keymap:set-keymap-implied-shifts keymap)))]
-		[deinstall 
-		 (lambda (edit) 
-		   (send (send edit get-keymap) remove-chained-keymap keymap))]
-		[install 
-		 (lambda (edit)
-		   (send (send edit get-keymap) chain-to-keymap keymap #t))])
-	       (sequence
-		 (super-init))
-	       (public
-		[keymap (make-keymap)]))))
+	  (rename [super-install install]
+		  [super-deinstall deinstall])
+	  (public
+	    [name "default"]
+	    [make-keymap 
+	     (lambda ()
+	       (let ([keymap (make-object wx:keymap%)])
+		 (mred:keymap:set-keymap-error-handler keymap)
+		 (mred:keymap:set-keymap-implied-shifts keymap)))]
+	    [deinstall 
+	     (lambda (edit) 
+	       (send (send edit get-keymap) remove-chained-keymap keymap)
+	       (super-deinstall edit))]
+	    [install 
+	     (lambda (edit)
+	       (send (send edit get-keymap) chain-to-keymap keymap #t)
+	       (super-install edit))])
+	  (sequence
+	    (super-init))
+	  (public
+	    [keymap (make-keymap)]))))
 
     (define mode% (make-mode% basic-mode%)))

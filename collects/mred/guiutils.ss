@@ -27,7 +27,8 @@
       (opt-lambda (message [caption "Input text"]
 			   [default-value ""]
 			   [parent null]
-			   [x -1] [y -1]
+			   [x -1]
+			   [y -1]
 			   [center? #t])
 	(let* ([f (make-object mred:container:dialog-box% parent caption #t x y)]
 	       [p (make-object mred:container:vertical-panel% f)])
@@ -37,7 +38,9 @@
 		(make-object mred:container:message% mp message)
 		(make-object mred:container:horizontal-panel% mp)))
 	  (let* ([c (make-object mred:canvas:one-line-canvas% p)]
-		 [e (make-object mred:edit:edit%)]
+		 [e (make-object mred:edit:return-edit%
+				 (lambda ()
+				   (send f show #f)))]
 		 [bp (make-object mred:container:horizontal-panel% p)]
 		 [_ (make-object mred:container:horizontal-panel% bp)]
 		 [hit-ok? #t]
@@ -52,15 +55,21 @@
 	    (send* e
 	      (insert default-value)
 	      (set-position 0 (string-length default-value)))
-	    (send* c (set-lines 3) (set-media e) (set-focus))
+	    (send* c 
+	      (set-lines 3) 
+	      (set-media e)
+	      (set-focus)
+	      (user-min-width 300))
 	    (send ok user-min-width (send cancel user-min-width))
 	    (send f set-size 20 20 -1 -1)
+	    (when (= -1 x y)
+	      (send f centre))
 	    (send f show #t)
 	    (and hit-ok?
 		(send e get-text))))))
 
     (define message-box
-      (let ([e% (class-asi mred:edit:edit%
+      (let ([e% (class-asi mred:edit:media-edit%
 		  (public
 		    [auto-set-wrap #t]
 		    [autowrap-bitmap null]))])
@@ -68,7 +77,7 @@
 	  (let* ([f (make-object mred:container:dialog-box% '() title #t)]
 		 [p (make-object mred:container:vertical-panel% f)]
 		 [c (make-object mred:canvas:wrapping-canvas% p)]
-		 [e (make-object mred:edit:edit%)]
+		 [e (make-object mred:edit:media-edit%)]
 		 [bottom-panel (make-object mred:container:horizontal-panel% p)]
 		 [space (make-object mred:container:horizontal-panel%
 				     bottom-panel)]

@@ -11,6 +11,7 @@
 	    [mred:hyper-dialog : mred:hyper-dialog^]
 	    [mred:html : mred:html^]
 	    [mred:url : mred:url^]
+	    [mred:gui-utils : mred:gui-utils^]
 	    [mzlib:file : mzlib:file^]
 	    [mzlib:string : mzlib:string^])
 
@@ -61,6 +62,8 @@
 		  [super-save-file save-file]
 		  [super-get-region-data get-region-data]
 		  [super-set-region-data set-region-data]
+		  [super-on-insert on-insert]
+		  [super-after-insert after-insert]
 		  [super-load-file load-file]
 		  [super-read-footer-from-file read-footer-from-file]
 		  [super-write-footers-to-file write-footers-to-file])
@@ -324,7 +327,7 @@
 		  (lambda () #f)
 		  (if follow-on-click?
 		      (goto-url url-string)
-		      (show-message (format "url: ~a" url-string))))))]
+		      (show-message (format "url: ~a" url-string) "URL")))))]
 	    
 	    [install-clickbacks 
 	     (lambda ()
@@ -344,7 +347,7 @@
 		   (uninstall-loop (cdr links-left)))))]
 	    [show-message
 	     (lambda (str title)
-	       (wx:message-box str title wx:const-ok))])
+	       (mred:gui-utils:message-box str title))])
 	  
 	  (public
 	    [keep-locked keep-locked?]
@@ -392,7 +395,9 @@
 	       (set! hypertags-list
 		     (let remove-loop ([tags-left hypertags-list])
 		       (cond 
-			 [(null? tags-left) (show-message "Tag not found.""")()]
+			 [(null? tags-left) 
+			  (show-message "Tag not found." "")
+			  null]
 			 [(string=? name (hypertag-name (car tags-left)))
 			  (cdr tags-left)]
 			 [else (cons (car tags-left) 
@@ -403,7 +408,8 @@
 		   (set-position 0)
 		   (unless (null? name)
 		     (let tags-loop ([tags-left hypertags-list])
-		       (cond [(null? tags-left)(show-message "Tag not found.""")]
+		       (cond [(null? tags-left)(show-message "Tag not found."
+							     "")]
 			     [(string=? name (hypertag-name (car tags-left)))
 			      (set-position  (hypertag-position (car tags-left)))]
 			     [else (tags-loop (cdr tags-left))])))))]
@@ -528,7 +534,7 @@
 	    [make-link 
 	     (lambda (start end)
 	       (if (= start end)
-		   (wx:message-box "Link selection must span at least one character."
+		   (mred:gui-utils:message-box "Link selection must span at least one character."
 				   "Error")
 		   (call/cc 
 		    (lambda (break)
@@ -614,7 +620,8 @@
 			(list (make-hypertag "top" 0)))))]
 	    [save-file
 	     (opt-lambda ([filename ()][format wx:const-media-ff-same])
-	       (wx:message-box "You cannot save hyper files"))]
+	       (mred:gui-utils:message-box "You cannot save hyper files" 
+					   "Error"))]
 	    [get-region-data
 	     (lambda (start end)
 	       (let ([data-obj (make-object hyper-buffer-data%)])
@@ -680,30 +687,32 @@
 		     (super-set-region-data  start end data))))]
 	    [on-insert
 	     (lambda (start size)
-	       (unless htmling?
-		       (adjust-lists  start size)
-		       (begin-edit-sequence))
-	       #t)]
+	       (and (super-on-insert start size)
+		    (or htmling?
+			(begin (adjust-lists  start size)
+			       (begin-edit-sequence)
+			       #t))))]
 	    [after-insert
 	     (lambda (start size)
+	       (super-after-insert start size)
 	       (unless htmling?
-		       (let links-loop ([links-left hyperlinks-list])
-			 (if (not (null? links-left))
-			     (let ([curr-end (hyperlink-anchor-end (car links-left))])
-			       (cond
-				[(> curr-end start)(links-loop (cdr links-left))]
-				[(< curr-end start) #t]
-				[else (let*([prev-snip(find-snip(hyperlink-anchor-start
-								 (car links-left))
-								wx:const-snip-before-or-null)]
-					    [correct-style 
-					     (if (null? prev-snip)
-						 (send (get-style-list) find-named-style
-						       "standard")
-						 (send prev-snip get-style))])
-					(change-style  correct-style start (+ start size)))]
-				))))
-		       (end-edit-sequence)))]
+		 (let links-loop ([links-left hyperlinks-list])
+		   (if (not (null? links-left))
+		       (let ([curr-end (hyperlink-anchor-end (car links-left))])
+			 (cond
+			   [(> curr-end start)(links-loop (cdr links-left))]
+			   [(< curr-end start) #t]
+			   [else (let*([prev-snip(find-snip(hyperlink-anchor-start
+							    (car links-left))
+							   wx:const-snip-before-or-null)]
+				       [correct-style 
+					(if (null? prev-snip)
+					    (send (get-style-list) find-named-style
+						  "standard")
+					    (send prev-snip get-style))])
+				   (change-style  correct-style start (+ start size)))]
+			   ))))
+		 (end-edit-sequence)))]
 	    [on-delete
 	     (lambda (start size)
 	       (unless htmling?
@@ -713,4 +722,4 @@
 	    (apply super-init args)
 	    (add-h-link-style)))))
 
-    (define hyper-edit% (make-hyper-edit% mred:edit:edit%)))
+    (define hyper-edit% (make-hyper-edit% mred:edit:media-edit%)))

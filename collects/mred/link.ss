@@ -123,7 +123,8 @@
 			constants
 			preferences application container
 			mode match-cache paren scheme-paren icon
-			handler keymap (core string@))]
+			handler keymap (core string@)
+			 (core function@))]
 	  [url : mred:url^ ((reference-unit/sig "url.ss") wx 
 			    constants (core function@) gui-utils
 			    exn (core file@))]
@@ -132,7 +133,7 @@
 			 constants hyper-edit (core file@))]
 	  [hyper-edit : mred:hyper-edit^ 
 		      ((reference-unit/sig "hypredit.ss") wx 
-		       constants edit hyper-dialog html url
+		       constants edit hyper-dialog html url gui-utils
 		       (core file@) (core string@))]
 	  [hyper-frame : mred:hyper-frame^ 
 		       ((reference-unit/sig "hyprfram.ss") wx 

@@ -302,13 +302,14 @@
 		    (set! anchor position)
 		    (set! old-highlight
 			  (send edit highlight-range position position color)))))]
-	     [replace-edit (make-object mred:edit:edit%)]
+	     [replace-edit (make-object mred:edit:media-edit%)]
 	     [find-edit
 	      (make-object
-	       (class-asi mred:edit:edit%
+	       (class-asi mred:edit:media-edit%
 		 (inherit get-text)
 		 (rename [super-after-insert after-insert]
-			 [super-after-delete after-delete])
+			 [super-after-delete after-delete]
+			 [super-on-focus on-focus])
 		 (public
 		   [searching-frame #f]
 		   [set-searching-frame
@@ -366,7 +367,8 @@
 		   [on-focus
 		    (lambda (on?)
 		      (when on?
-			(reset-anchor (get-searching-edit))))]
+			(reset-anchor (get-searching-edit)))
+		      (super-on-focus on?))]
 		   [after-insert
 		    (lambda args
 		      (apply super-after-insert args)
@@ -558,8 +560,7 @@
 	      (send replace-canvas set-media replace-edit) 
 	      (send find-edit add-canvas find-canvas)
 	      (send replace-edit add-canvas replace-canvas)
-	      (hide-search #t))
-	    ))))
+	      (hide-search #t))))))
 
     (define find-string
       (lambda (canvas in-edit x y flags)

@@ -101,6 +101,7 @@
 						  (case platform
 						    [(macintosh) (string-append "d:" key)]
 						    [(windows) (string-append "c:" key)]
+						    [(unix) (string-append "c:" key)]  ;; delete this line!
 						    [else (string-append "c:m;" key)]))]
 				 [(not key) (lambda (s) #f)]
 				 [else (error 'mred:menu% "append-item: last arg (key) must be either #f, a procedure or a string. Args were: ~a"

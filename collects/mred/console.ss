@@ -95,8 +95,8 @@
 				 "icons"
 				 "mred.gif")
 				wx:const-bitmap-type-gif)]
-	       [oe (make-object mred:edit:edit%)]
-	       [ie (make-object mred:edit:edit%)]
+	       [oe (make-object mred:edit:media-edit%)]
+	       [ie (make-object mred:edit:media-edit%)]
 	       [es (make-object mred:edit:media-snip% ie #f)]
 	       [top (make-object wx:style-delta% wx:const-change-alignment wx:const-align-top)])
 	  (send* c 
@@ -810,6 +810,10 @@
 	      (send add set 0 150 0)))
 	  (private [shutdown? #f])
 	  (public
+	    [potential-sexps-protect (make-semaphore 1)]
+	    [potential-sexps null]
+	    [wait-for-sexp (make-semaphore 0)]
+
 	    [auto-set-wrap #t]
 	    [on-local-char
 	     (lambda (key)
@@ -834,10 +838,14 @@
 	     (lambda ()
 	       (flush-console-output)
 	       (let loop ()
+		 (semaphore-wait potential-sexps-protect)
 		 (cond
-		   [shutdown? (void)]
-		   [(null? potential-sexps) 
-		    (wx:yield)
+		   [shutdown? 
+		    (semaphore-post potential-sexps-protect)
+		    (void)]
+		   [(null? potential-sexps)
+		    (semaphore-post potential-sexps-protect)
+		    (wx:yield wait-for-sexp)
 		    (loop)]
 		   [else (let* ([sexp (car potential-sexps)]
 				[start (car sexp)]
@@ -846,6 +854,7 @@
 			   (set! potential-sexps (cdr potential-sexps))
 			   (mark-consumed start end)
 			   (clear-undos)
+			   (semaphore-post potential-sexps-protect)
 			   (read (open-input-string text)))])))]
 	    [fetch-char
 	     (lambda ()
@@ -855,14 +864,20 @@
 			(mark-consumed pos (add1 pos))
 			(get-character pos))])
 		 (let loop ()
+		   (semaphore-wait potential-sexps-protect)
 		   (cond
 		     [(not (null? potential-sexps))
 		      (let ([first-sexp (car potential-sexps)])
 			(set! potential-sexps null)
+			(semaphore-post potential-sexps-protect)
 			(found-char (car first-sexp)))]
 		     [(< prompt-position (last-position))
+		      (semaphore-post potential-sexps-protect)
 		      (found-char prompt-position)]
-		     [else (wx:yield) (loop)]))))]
+		     [else 
+		      (semaphore-post potential-sexps-protect)
+		      (wx:yield wait-for-sexp)
+		      (loop)]))))]
 	    [takeover void]
 	    [get-prompt (lambda () "")]
 	    [generic-write
@@ -877,7 +892,7 @@
 		 (change-style input-delta start (+ start len))
 		 (set-resetting old-r))
 	       (super-on-insert start len))]
-	    [potential-sexps null]
+
 	    [do-eval
 	     (lambda (start end)
 	       (do-pre-eval)
@@ -891,8 +906,11 @@
 			     (cons (cons pos next-sexp)
 				   (loop next-sexp)))]
 			  [else null]))])
-	       (set! potential-sexps (append potential-sexps new-sexps))
-	       (do-post-eval)))])
+		 (semaphore-wait potential-sexps-protect)
+		 (set! potential-sexps (append potential-sexps new-sexps))
+		 (semaphore-post potential-sexps-protect)
+		 (semaphore-post wait-for-sexp)
+		 (do-post-eval)))])
 	  (sequence
 	    (apply super-init args)))))
       
@@ -1032,6 +1050,17 @@
 	      (when show?
 		(show #t)))))))
 
-    (define console-frame% (make-console-frame%
-			    (mred:find-string:make-searchable-frame%
-			     mred:frame:info-frame%))))
+    '(define console-frame% 
+      (class wx:frame% ()
+	(inherit show)
+	(sequence 
+	  (printf "not creating a console~n")
+	  (super-init '() "Not a console" -1 -1 300 300)
+	  (show #t)
+	  (thread (lambda () 
+		    (read-eval-print-loop)
+		    (mred:exit:exit))))))
+    (define console-frame%
+      (make-console-frame%
+       (mred:find-string:make-searchable-frame%
+	mred:frame:info-frame%))))

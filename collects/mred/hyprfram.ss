@@ -28,7 +28,7 @@
 
     (define make-hyper-canvas%
       (lambda (super%)
-	(class-asi super%
+	(class super% args
 	  (inherit get-media get-client-size set-focus on-paint on-size
 		   set-lazy-refresh get-lazy-refresh)
 	  (rename [super-set-media set-media])
@@ -103,7 +103,10 @@
 		    (super-set-media edit display?)
 		    (do-tag))
 		  (lambda ()
-		    (set-lazy-refresh lazy?)))))]))))
+		    (set-lazy-refresh lazy?)))))])
+	  (sequence
+	    (apply super-init args)
+	    (set-media (get-media))))))
 
     (define hyper-canvas% 
       (make-hyper-canvas% mred:canvas:frame-title-canvas%))

@@ -945,7 +945,7 @@ void wxImage::CreateXImage()
     case 24:
       {
       byte  *imagedata, *ip, *pp;
-      imagedata = (byte *) malloc(3*eWIDE*eHIGH);
+      imagedata = (byte *) malloc(4*eWIDE*eHIGH);
       if (!imagedata) FatalError("couldn't malloc imagedata");
       
       theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,

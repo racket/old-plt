@@ -217,6 +217,11 @@
             number
             obj))]
 	[get-number (lambda () number)]
+	[get-formatted-string (lambda ()
+				(if (or (string=? "" wholes)
+					(string=? "-" wholes))
+				    (format "~a~a/~a" wholes nums dens)
+				    (format "~a ~a/~a" wholes nums dens)))]
 	[get-string
 	 (lambda ()
 	   (format " ~a " number))])

@@ -171,7 +171,11 @@
 			;; mrspidey hack
 			(if (defined? 'wx:platform)
 			    (global-defined-value 'wx:platform)
-			    'unix)]
+			    (if (= 0 (modulo 43 13))
+				'unix
+				(if (= 1 (modulo 43 13))
+				    'windows
+				    'macintosh)))]
 		       [build-id
 			(lambda (name post)
 			  (let* ([name-string (symbol->string name)]
@@ -196,6 +200,7 @@
 				 [key (an-item-key item)]
 				 [file-menu? (string=? (substring name-string 0 9) "file-menu")]
 				 [edit-menu? (string=? (substring name-string 0 9) "edit-menu")]
+				 [windows-menu? (string=? (substring name-string 0 9) "windows-m")]
 				 [help-menu? (string=? (substring name-string 0 9) "help-menu")])
 			    `(begin
 			       (when ,name
@@ -203,6 +208,7 @@
 				       (send ,(cond
 						[file-menu? 'file-menu]
 						[edit-menu? 'edit-menu]
+						[windows-menu? 'windows-menu]
 						[help-menu? 'help-menu]
 						[else '(begin (printf "WARNING: defaulting item to help-menu ~s~n" name-string)
 							      help-menu)])
@@ -236,13 +242,18 @@
 			       (let ([,mb (super-make-menu-bar)])
 				 (set! file-menu (make-menu))
 				 (set! edit-menu (make-menu))
+				 (when windows-menu
+				   (set! windows-menu (make-menu)))
 				 (set! help-menu (make-menu))
-				 (send* ,mb 
-				   (append file-menu
-					   (if (eq? wx:platform 'windows)
-					       "&File" "F&ile"))
-				   (append edit-menu "&Edit")
-				   (append help-menu "&Help"))
+
+				 (send ,mb append file-menu
+				       (if (eq? wx:platform 'windows)
+					   "&File" "F&ile"))
+				 (send ,mb append edit-menu "&Edit")
+				 (when windows-menu
+				   (send ,mb append windows-menu "Windows"))
+				 (send ,mb append help-menu "&Help")
+
 				 ,@(map (lambda (x)
 					  (if (between? x)
 					      (build-between-proc-clause x)
@@ -319,6 +330,7 @@
 		       (rename [super-make-menu-bar make-menu-bar])
 		       (public [file-menu 'file-menu-uninitialized]
 			       [edit-menu 'edit-menu-uninitialized]
+			       [windows-menu 'windows-menu-uninitialized]
 			       [help-menu 'help-menu-uninitialized])
 		       ,@(map (lambda (x)
 				(if (between? x)

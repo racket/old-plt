@@ -12,8 +12,6 @@
   
   (mred:debug:printf 'invoke "mred:group@")
   
-  (define windows-menu-name "Windows")
-  
   (define frame-group%
     (let-struct frame (frame id)
       (class null ()
@@ -28,26 +26,25 @@
 	  [windows-menus null])
 	
 	(private
+	  [get-windows-menu
+	   (lambda (frame)
+	     (and (ivar-in-class? 'windows-menu (object-class frame))
+		  (ivar frame windows-menu)))]
 	  [insert-windows-menu
 	   (lambda (frame)
-	     (let ([mb (send frame get-menu-bar)])
-	       (unless (send mb get-menu-named windows-menu-name)
-		 (let ([menu (send frame make-menu)])
-		   (set! windows-menus (cons (list menu) windows-menus))
-		   (send mb append menu windows-menu-name)
-		   (send frame move-help-menu-right)))))]
+	     (let ([menu (get-windows-menu frame)])
+	       (when menu
+		 (set! windows-menus (cons (list menu) windows-menus)))))]
 	  [remove-windows-menu
 	   (lambda (frame)
-	     (let* ([mb (send frame get-menu-bar)]
-		    [menu (send mb get-menu-named windows-menu-name)])
+	     (let* ([menu (get-windows-menu frame)])
 	       (set! windows-menus
 		     (mzlib:function:remove
 		      menu
 		      windows-menus
 		      (lambda (x y)
-			(eq? x (car y)))))
-	       (send mb delete menu -1)))]
-	  
+			(eq? x (car y)))))))]
+
 	  [update-windows-menus
 	   (lambda ()
 	     (let* ([windows (length windows-menus)]
@@ -58,33 +55,32 @@
 		      (lambda (f1 f2)
 			(string-ci<=? (get-name f1)
 				      (get-name f2))))])
-	       (set! windows-menus
-		     (map
-		      (lambda (menu-list)
-			(let ([menu (car menu-list)]
-			      [old-ids (cdr menu-list)])
-			  (for-each (lambda (id) (send menu delete id))
-				    old-ids)
-			  (let ([new-ids
-				 (map
-				  (lambda (frame)
-				    (let ([frame (frame-frame frame)]
-					  [default-name "Untitled"])
-				      (send menu append-item
-					    (let ([title (send frame get-title)])
-					      (if (string=? title "")
-						  (if (ivar-in-class? 'get-entire-title (object-class frame))
-						      (let ([title (send frame get-entire-title)])
-							(if (string=? title "")
-							    default-name
-							    title))
-						      default-name)
-						  title))
-					    (lambda ()
-					      (send frame show #t)))))
-				  sorted-frames)])
-			  (cons menu new-ids))))
-		      windows-menus))))])
+	       (for-each
+		(lambda (menu-list)
+		  (let ([menu (car menu-list)]
+			[old-ids (cdr menu-list)])
+		    (for-each (lambda (id) (send menu delete id))
+			      old-ids)
+		    (let ([new-ids
+			   (map
+			    (lambda (frame)
+			      (let ([frame (frame-frame frame)]
+				    [default-name "Untitled"])
+				(send menu append-item
+				      (let ([title (send frame get-title)])
+					(if (string=? title "")
+					    (if (ivar-in-class? 'get-entire-title (object-class frame))
+						(let ([title (send frame get-entire-title)])
+						  (if (string=? title "")
+						      default-name
+						      title))
+						default-name)
+					    title))
+				      (lambda ()
+					(send frame show #t)))))
+			    sorted-frames)])
+		      (cons menu new-ids))))
+		windows-menus)))])
 	       
 	
 	(public

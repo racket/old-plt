@@ -56,16 +56,22 @@
          (string-tokenize s)))
     
   (define (get-args which-arg home)
-    (call-with-input-file (build-path home "lib" "buildinfo")
-      (lambda (i)
-        (let loop ((l (read-line i)))
-          (cond
-            ((eof-object? l) "")
-            (else
-             (let ((m (regexp-match (format "^~a=(.*)$" which-arg) l)))
-               (if m
-                   (cadr m)
-                   (loop (read-line i))))))))))
+    (let ((fp (build-path home "lib" "buildinfo")))
+      (cond
+        ((file-exists? fp)
+         (call-with-input-file fp
+           (lambda (i)
+             (let loop ((l (read-line i)))
+               (cond
+                 ((eof-object? l) "")
+                 (else
+                  (let ((m (regexp-match (format "^~a=(.*)$" which-arg) l)))
+                    (if m
+                        (cadr m)
+                        (loop (read-line i))))))))))
+        (else ""))))
+       
+        
                
   (define (compile-c-to-so file file.c file.so home variant)
     (unless (do-copy file.so)

@@ -12,12 +12,6 @@
 #ifndef wx_clipbh
 #define wx_clipbh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_setup.h"
 #include "wx_gdi.h"

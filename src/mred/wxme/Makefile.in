@@ -57,8 +57,10 @@ DCHEADER = $(DCHEADER_@WXVARIANT@)
 STDEVHEADER = $(STDEVHEADER_@WXVARIANT@)
 WINDOWHEADER = $(WINDOWHEADER_@WXVARIANT@)
 
+WXPRECOMPDIR = ../../wxmac/src
+
 ALLHEADERS = $(srcdir)/wx_ptreq.h $(srcdir)/wx_mtype.h \
-             $(OBJECTHEADER_@WXVARIANT@) \
+             $(OBJECTHEADER_@WXVARIANT@) @WXPRECOMP@ \
              $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h
 HEADERS = $(srcdir)/wx_media.h $(srcdir)/wx_medad.h $(srcdir)/wx_cgrec.h \
           $(srcdir)/wx_medio.h $(srcdir)/wx_style.h \
@@ -72,7 +74,7 @@ LOCALFLAGS_wx_xt =
 LOCALFLAGS_wx_mac = -MMD -DWX_CARBON
 LOCALFLAGS = $(LOCALFLAGS_@WXVARIANT@)
 
-MCC = $(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c
+MCC = $(CXX) @USE_WXPRECOMP@ $(CPPFLAGS) $(LOCALFLAGS) -c
 
 wx_media.o : $(srcdir)/wx_media.cxx $(HEADERS) $(srcdir)/wx_keym.h $(srcdir)/wx_snip.h \
                        $(srcdir)/wx_mpriv.h $(srcdir)/wx_mline.h

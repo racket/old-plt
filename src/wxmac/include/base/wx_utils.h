@@ -12,11 +12,6 @@
 #ifndef wxb_utilsh
 #define wxb_utilsh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
 #include "wx_setup.h"
 #include "wx_obj.h"
 #include "wx_list.h"

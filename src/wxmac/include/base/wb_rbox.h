@@ -12,12 +12,6 @@
 #ifndef wxb_rboxh
 #define wxb_rboxh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #ifdef IN_CPROTO
 typedef       void    *wxbRadioBox ;
 #else

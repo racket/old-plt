@@ -13,14 +13,6 @@
 #ifndef wxb_canvsh
 #define wxb_canvsh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-#endif
-
 #include "common.h"
 #include "wx_frame.h"
 #include "wx_gdi.h"

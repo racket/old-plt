@@ -12,12 +12,6 @@
 #ifndef wxb_menuh
 #define wxb_menuh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_item.h"
 #include "wx_mnuit.h"

@@ -355,7 +355,7 @@ class wxWindow: public wxbWindow
 
   virtual wxWindow *EnterLeaveTarget();
 
-  ControlHandle GetRootControl(void);
+  virtual ControlHandle GetRootControl(void);
 
   void FlushDisplay(void);
 	

@@ -12,12 +12,6 @@
 #ifndef wxb_mainh
 #define wxb_mainh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_obj.h"
 

@@ -16,12 +16,6 @@
 #include "wx_list.h"
 #include "wx_setup.h"
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 // Standard cursors
 typedef enum {
  wxCURSOR_ARROW =  1,

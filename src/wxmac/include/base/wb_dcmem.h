@@ -13,17 +13,6 @@
 #ifndef wxb_dcmemh
 #define wxb_dcmemh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-#endif
-
-#ifndef IN_CPROTO
-// #include <fstream.h>
-#endif
 #include "common.h"
 #include "wx_dc.h"
 #include "wx_dccan.h"

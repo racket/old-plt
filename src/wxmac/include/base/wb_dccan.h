@@ -13,14 +13,6 @@
 #ifndef wxb_dccanh
 #define wxb_dccanh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-#endif
-
 #ifndef IN_CPROTO
 // #include <fstream.h>
 #endif

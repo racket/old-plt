@@ -942,7 +942,7 @@ wxFrame* wxWindow::GetRootFrame(void) // mac platform only
 
 ControlHandle wxWindow::GetRootControl(void)
 {
-  return GetRootFrame()->cMacControl;
+  return GetParent()->GetRootControl();
 }
 
 //-----------------------------------------------------------------------------

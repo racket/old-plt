@@ -12,15 +12,8 @@
 #ifndef wx_timerh
 #define wx_timerh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wb_timer.h"
-/* #include <types.h> */
 #ifdef IN_CPROTO
 typedef       void    *wxTimer ;
 #else

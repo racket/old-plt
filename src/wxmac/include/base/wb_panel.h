@@ -12,12 +12,6 @@
 #ifndef wxb_panelh
 #define wxb_panelh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_win.h"
 #include "wx_frame.h"

@@ -11,7 +11,9 @@
 #define wxb_listh
 
 #ifdef __GNUG__
-#pragma interface
+# ifndef wx_mac
+#  pragma interface
+# endif
 #endif
 
 #ifndef wx_xt

@@ -14,7 +14,9 @@
 #define wx_dcpsh
 
 #ifdef __GNUG__
-#pragma interface
+# ifndef wx_mac
+#  pragma interface
+# endif
 #endif
 
 #ifdef wx_xt

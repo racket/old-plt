@@ -12,12 +12,6 @@
 #ifndef wxb_timerh
 #define wxb_timerh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_obj.h"
 

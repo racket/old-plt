@@ -15,12 +15,6 @@
 
 #include "common.h"
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "wx_obj.h"
 #include "wx_types.h"
 #ifndef IN_CPROTO

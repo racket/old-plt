@@ -42,6 +42,8 @@ protected:
 
     wxArea*     cPanelBorder;
 
+    ControlHandle paneControl;
+
 friend class wxWindow;	
 //=============================================================================
 // Public methods
@@ -156,6 +158,10 @@ public:
 	virtual void SetSize(int x, int y, int width, int height, int flags = wxSIZE_AUTO);
 
 	virtual void MaybeMoveControls();
+
+    virtual ControlHandle GetRootControl(void);
+
+	void OnClientAreaDSize(int dW, int dH, int dX, int dY);
 	
 //=============================================================================
 // Protected methods

@@ -869,3 +869,7 @@ wxFrame *wxFrame::GetRootFrame()
   return this;
 }
 
+ControlHandle wxFrame::GetRootControl(void)
+{
+  return cMacControl;
+}

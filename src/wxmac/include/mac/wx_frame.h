@@ -139,6 +139,7 @@ class wxFrame: public wxbFrame
 
   virtual wxFrame* GetRootFrame(void); /* mac platform only */
 
+  virtual ControlHandle GetRootControl(void);
 
   WindowPtr macWindow(void);
 

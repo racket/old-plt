@@ -12,12 +12,6 @@
 #ifndef wxb_objh
 #define wxb_objh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 
 #ifdef IN_CPROTO

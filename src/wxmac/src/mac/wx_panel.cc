@@ -499,3 +499,16 @@ void wxPanel::MaybeMoveControls()
   }
 }	
 	
+
+ControlHandle wxPanel::GetRootControl(void)
+{
+  if (paneControl)
+    return paneControl;
+  else
+    return wxbPanel::GetRootControl();
+}
+
+void wxPanel::OnClientAreaDSize(int dW, int dH, int dX, int dY)
+{
+  wxbPanel::OnClientAreaDSize(dW, dH, dX, dY);
+}

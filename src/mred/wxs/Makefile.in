@@ -52,9 +52,10 @@ WXSCFLAGS = $(CFLAGS)
 OBJECTHEADER_wx_xt = $(srcdir)/../../wxxt/src/DataStructures/Object.h
 OBJECTHEADER_wx_mac = $(srcdir)/../../wxmac/include/base/wx_obj.h
 
+WXPRECOMPDIR = ../../wxmac/src
 WXSCHEMEHEADERS = $(srcdir)/wxscheme.h $(srcdir)/../../mzscheme/src/stypes.h $(srcdir)/../../mzscheme/utils/xcglue.h \
                   $(srcdir)/../../mzscheme/include/scheme.h $(OBJECTHEADER_@WXVARIANT@) \
-                  $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h
+                  $(srcdir)/../../wxcommon/wxGC.h $(srcdir)/../../wxcommon/wx_list.h @WXPRECOMP@
 MEDIAHEADERS = $(srcdir)/../wxme/wx_media.h $(srcdir)/../wxme/wx_medad.h $(srcdir)/../wxme/wx_snip.h
 
 
@@ -212,7 +213,7 @@ $(srcdir)/wxs_tabc.cxx : $(srcdir)/wxs_tabc.xc $(srcdir)/wxs_item.xci $(XCDEPEND
 $(srcdir)/wxs_win.cxx : $(srcdir)/wxs_win.xc $(srcdir)/wxs_win.xci $(XCDEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_win.cxx ; else $(XCTOCXX) $(srcdir)/wxs_win.xc ; fi
 
-WXSCC = $(CXX) $(WXSCFLAGS) $(CXXDEPFLAGS) $(LOCALFLAGS) -c
+WXSCC = $(CXX) @USE_WXPRECOMP@ $(WXSCFLAGS) $(CXXDEPFLAGS) $(LOCALFLAGS) -c
 
 wxscheme.o : $(srcdir)/wxscheme.cxx $(WXSCHEMEHEADERS) $(MEDIAHEADERS) $(DCHEADERS) $(srcdir)/wxsmred.h
 	$(WXSCC) $(srcdir)/wxscheme.cxx -o wxscheme.o 

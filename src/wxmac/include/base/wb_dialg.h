@@ -12,12 +12,6 @@
 #ifndef wxb_dialgh
 #define wxb_dialgh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_panel.h"
 

@@ -18,12 +18,6 @@
 #ifndef wxb_winh
 #define wxb_winh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_obj.h"
 #include "wx_stdev.h"

@@ -12,12 +12,6 @@
 #ifndef wxb_frameh
 #define wxb_frameh
 
-#ifdef __GNUG__
-#ifdef __GNUG__
-#pragma interface
-#endif
-#endif
-
 #include "common.h"
 #include "wx_win.h"
 #ifdef wx_mac

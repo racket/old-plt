@@ -48,7 +48,7 @@ char *font_defaults[] = {
   "PostScriptDefault__", "${PostScriptTimes,$[weight],$[style]}",
   "PostScriptRoman__", "${PostScriptTimes,$[weight],$[style]}",
   "PostScriptDecorative__", "${PostScriptTimes,$[weight],$[style]}",
-  "PostScriptScript__", "${PostScriptTimes,$[weight],$[style]}",
+  "PostScriptScript__", "ZapfChancery-MediumItalic",
 
   "PostScriptTimesMedium", "",
   "PostScriptTimesLight", "",
@@ -81,7 +81,7 @@ char *font_defaults[] = {
   "ScreenModernBase", "*-courier",
   "ScreenTeletypeBase", "*-lucidatypewriter",
   "ScreenSwissBase", "*-lucida",
-  "ScreenScriptBase", "*-zapfchancery",
+  "ScreenScriptBase", "*-zapf chancery",
   "ScreenSymbolBase", "*-symbol",
 
   "ScreenStdSuffix", "-${Screen$[weight]}-${Screen$[style]}"
@@ -102,7 +102,7 @@ char *font_defaults[] = {
   "ScreenSwiss__",
   "+-${ScreenSwissBase}${ScreenStdSuffix}",
   "ScreenScript__",
-  "+-${ScreenScriptBase}${ScreenStdSuffix}",
+  "+-${ScreenScriptBase}-medium-i-normal-*-*-%d-*-*-*-*-*-*",
   "ScreenSymbol__",
   "+-${ScreenSymbolBase}-medium-r-normal-*-*-%d-*-*-*-*-*-*",
 #endif

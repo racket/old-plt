@@ -235,6 +235,7 @@ enum {
   wxMODERN,
   wxTELETYPE,  /* @@@@ */
   wxSYSTEM,
+  wxSYMBOL,
 
 // Proportional or Fixed width fonts (not yet used)
   wxVARIABLE   = 80,
@@ -303,7 +304,7 @@ typedef enum {
   wxOR,         // src OR dst
   wxSET,        // 1
   wxSRC_OR,     // source _bitmap_ OR destination
-  wxSRC_AND,     // source _bitmap_ AND destination
+  wxSRC_AND,     // source _bitmap_ AND destination
   wxCOLOR
 } form_ops_t;
 

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.16 1999/07/28 17:44:29 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.17 1999/09/17 00:43:10 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -89,6 +89,9 @@ char *wxbFont::GetFamilyString(void)
     case wxSYSTEM:
       fam = "wxSYSTEM";
       break;
+    case wxSYMBOL:
+      fam = "wxSYMBOL";
+      break;
     default:
       fam = "wxDEFAULT";
       break;
@@ -109,6 +112,7 @@ char *wxbFont::GetFaceString(void)
   case wxMODERN:
   case wxTELETYPE:
   case wxSYSTEM:
+  case wxSYMBOL:
     return NULL;
   default:
     return wxTheFontNameDirectory.GetFontName(fontid); 
@@ -1000,6 +1004,7 @@ char *font_defaults[] = {
   "FamilyTeletype", "Teletype",
   "FamilySwiss", "Swiss",
   "FamilyScript", "Script",
+  "FamilySymbol", "Symbol",
 
   "AfmMedium", "",
 #ifdef wx_x_afm
@@ -1041,6 +1046,7 @@ char *font_defaults[] = {
 
   "AfmSwiss__", "${AfmHelvetica}${Afm$[weight]}${Afm$[style]}",
   "AfmModern__", "${AfmCourier}${Afm$[weight]}${Afm$[style]}",
+  "AfmSymbol__", "Sym",
 
   "AfmTeletype__", "${AfmModern,$[weight],$[style]}",
 
@@ -1073,6 +1079,7 @@ char *font_defaults[] = {
 
   "PostScriptSwiss__", "Helvetica${PostScript$[weight]$[style]}",
   "PostScriptModern__", "Courier${PostScript$[weight]$[style]}",
+  "PostScriptSymbol__", "Symbol",
 
   "PostScriptTeletype__", "${PostScriptModern,$[weight],$[style]}",
 
@@ -1080,46 +1087,6 @@ char *font_defaults[] = {
   "PostScriptScript__", "Zapf-Chancery-MediumItalic",
 #endif
 
-#ifdef wx_x
-  "ScreenMedium", "medium",
-  "ScreenBold", "bold",
-  "ScreenLight", "light",
-  "ScreenStraight", "r",
-  "ScreenItalic", "i",
-  "ScreenSlant", "o",
-
-  /* MATTHEW: [4] "Family" -> "Base" */
-  "ScreenSystemBase", "misc-fixed", /* MATTHEW: [10] *-* is bad */
-  "ScreenDefaultBase", "misc-fixed", /* MATTHEW: [10] *-* is bad */
-  "ScreenRomanBase", "*-times",
-  "ScreenDecorativeBase", "*-helvetica",
-  "ScreenModernBase", "*-courier",
-  "ScreenTeletypeBase", "*-lucidatypewriter", /* MATTHEW: [4] Not courier */
-  "ScreenSwissBase", "*-lucida",
-  "ScreenScriptBase", "*-zapfchancery",
-
-  /* MATTHEW: [4] Use ${ScreenStdSuffix} */
-  "ScreenStdSuffix", "-${Screen$[weight]}-${Screen$[style]}"
-    "-normal-*-*-%d-*-*-*-*-*-*",
-
-  "ScreenSystem__",
-  "+-${ScreenSystemBase}${ScreenStdSuffix}",
-  "ScreenDefault__",
-  "+-${ScreenDefaultBase}${ScreenStdSuffix}",
-  "ScreenRoman__",
-  "+-${ScreenRomanBase}${ScreenStdSuffix}",
-  "ScreenDecorative__",
-  "+-${ScreenDecorativeBase}${ScreenStdSuffix}",
-  "ScreenModern__",
-  "+-${ScreenModernBase}${ScreenStdSuffix}",
-  "ScreenTeletype__",
-  "+-${ScreenTeletypeBase}${ScreenStdSuffix}",
-  "ScreenSwiss__",
-  "+-${ScreenSwissBase}${ScreenStdSuffix}",
-  "ScreenScript__",
-  "+-${ScreenScriptBase}${ScreenStdSuffix}",
-#else
-  /* MATTHEW: [4] don't specify family, weight && style... */
   "ScreenSystem__", "MS Sans Serif",
   "ScreenDefault__", "MS Sans Serif",
   "ScreenRoman__", "Times New Roman",
@@ -1128,7 +1095,8 @@ char *font_defaults[] = {
   "ScreenTeletype__", "${ScreenModern$[weight];$[style]}",
   "ScreenSwiss__", "Arial",
   "ScreenScript__", "Arial",
-#endif
+  "ScreenSymbol__", "Symbol",
+
   NULL
 };
 
@@ -1271,6 +1239,7 @@ void wxFontNameDirectory::Initialize()
   wxTheFontNameDirectory.Initialize(wxTELETYPE, wxTELETYPE, "Teletype");
   wxTheFontNameDirectory.Initialize(wxSWISS, wxSWISS, "Swiss");
   wxTheFontNameDirectory.Initialize(wxSCRIPT, wxSCRIPT, "Script");
+  wxTheFontNameDirectory.Initialize(wxSYMBOL, wxSYMBOL, "Symbol");
 }
 
 typedef char *a_charptr;
@@ -1501,6 +1470,8 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
       item->family = wxSWISS;
     else if (!strcmp(fam, "Script"))
       item->family = wxSCRIPT;
+    else if (!strcmp(fam, "Symbol"))
+      item->family = wxSYMBOL;
   }
 
   item->name = copystring(resname);
@@ -1536,11 +1507,22 @@ char *wxFontNameDirectory::GetScreenName(int fontid, int weight, int style)
 
   int wt = WCoordinate(weight), st = SCoordinate(style);
 
-  /* MATTHEW: [14] Check for init */
   if (!item->screen.map[wt][st])
     item->screen.Initialize(item->name, "Screen", wt, st);
 
   return item->screen.map[wt][st];
+}
+
+void wxFontNameDirectory::SetScreenName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+  
+  if (!item)
+    return;
+
+  int wt = WCoordinate(weight), st = SCoordinate(style);
+
+  item->screen.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
@@ -1552,11 +1534,22 @@ char *wxFontNameDirectory::GetPostScriptName(int fontid, int weight, int style)
 
   int wt = WCoordinate(weight), st = SCoordinate(style);
 
-  /* MATTHEW: [14] Check for init */
   if (!item->printing.map[wt][st])
     item->printing.Initialize(item->name, "PostScript", wt, st);
 
   return item->printing.map[wt][st];
+}
+
+void wxFontNameDirectory::SetPostScriptName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+
+  if (!item)
+    return;
+
+  int wt = WCoordinate(weight), st = SCoordinate(style);
+
+  item->printing.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
@@ -1568,11 +1561,22 @@ char *wxFontNameDirectory::GetAFMName(int fontid, int weight, int style)
 
   int wt = WCoordinate(weight), st = SCoordinate(style);
 
-  /* MATTHEW: [14] Check for init */
   if (!item->afm.map[wt][st])
     item->afm.Initialize(item->name, "Afm", wt, st);
 
   return item->afm.map[wt][st];
+}
+
+void wxFontNameDirectory::SetAFMName(int fontid, int weight, int style, char *s)
+{
+  wxFontNameItem *item = (wxFontNameItem *)table->Get(fontid);
+
+  if (!item)
+    return;
+
+  int wt = WCoordinate(weight), st = SCoordinate(style);
+
+  item->afm.map[wt][st] = s;
 }
 
 char *wxFontNameDirectory::GetFontName(int fontid)

@@ -140,16 +140,30 @@
 	  (private
 	    [escape-fn #f])
 	  (public
-	    [get-prompt (lambda () "|- ")]
+	    [get-prompt (lambda () "- ")]
 	    [get-escape (lambda () escape-fn)]
 	    [set-escape (lambda (x) (set! escape-fn x))]
 	    
 	    [param #f]
 	    [current-thread-desc #f]
 	    [current-thread-directory (current-directory)]
-	    [break (lambda () 
+
+	    [protect-threads-queue (make-semaphore 1)]
+	    [threads-queue null]
+
+	    [break (lambda ()
 		     (when current-thread-desc
-		       (break-thread current-thread-desc)))]
+		       (break-thread current-thread-desc))
+		     (semaphore-wait protect-threads-queue)
+		     (for-each (lambda (t)
+				 (unless (eq? t current-thread-desc)
+				   (break-thread t)))
+			       threads-queue)
+		     (set! threads-queue null)
+		     (semaphore-post protect-threads-queue)
+		     (set! current-thread-desc #f)
+		     (unless prompt-mode?
+		       (insert-prompt)))]
 	    [userspace-eval
 	     (let ([system-parameterization (current-parameterization)])
 	       (lambda (sexp)
@@ -221,92 +235,71 @@
 						   (lambda ()
 						     (display-result res)))))])
 				      (for-each f anss)))))))])
-		   (set! current-thread-desc
-			 (thread
-			  (lambda ()
-			    (let ([user-code-error? #t])
-			      (mzlib:function@:dynamic-wind/protect-break
-			       (lambda () 
-				 (semaphore-wait s)
-				 (current-directory current-thread-directory)
-				 (set! current-thread-desc (current-thread))
-				 (before))
-			       (lambda ()
-				 (set! user-code-error? (let/ec k 
-							  (mzlib:function@:dynamic-disable-break
-							   (lambda ()
-							     (set-escape (lambda () (k #t)))))
-							  (user-code)
-							  #f)))
-			       (lambda () 
-				 (set! current-thread-desc #f)
-				 (set-escape #f)
-				 (semaphore-post s)
-				 (after user-code-error?)
-				 (set! current-thread-directory (current-directory)))))))))))]
+		   (semaphore-wait protect-threads-queue)
+		   (set! threads-queue
+			 (cons
+			  (thread
+			   (lambda ()
+			     (let ([user-code-error? #t])
+			       (mzlib:function@:dynamic-wind/protect-break
+				(lambda () 
+				  (semaphore-wait s)
+				  (current-directory current-thread-directory)
+				  (set! current-thread-desc (current-thread))
+				  (before))
+				(lambda ()
+				  (set! user-code-error? (let/ec k 
+							   (mzlib:function@:dynamic-disable-break
+							    (lambda ()
+							      (set-escape (lambda () (k #t)))))
+							   (user-code)
+							   #f)))
+				(lambda () 
+				  (set! current-thread-desc #f)
+				  (set-escape #f)
+				  (semaphore-post s)
+				  (set! current-thread-directory (current-directory))
+				  (semaphore-wait protect-threads-queue)
+				  (set! threads-queue (mzlib:function@:remq (current-thread) threads-queue))
+				  (semaphore-post protect-threads-queue)
+				  (after user-code-error?))))))
+			  threads-queue))
+		   (semaphore-post protect-threads-queue))))]
+	    [do-eval
+	     (lambda (start end)
+	       (do-many-buffer-evals this start end
+				     (lambda () 
+				       (wx:begin-busy-cursor)
+				       (do-pre-eval))
+				     (lambda () 
+				       (wx:end-busy-cursor)
+				       (do-post-eval))))]
 	    [do-many-buffer-evals
 	     (lambda (edit start end pre post)
-	       (let ([pre (lambda ()
-			    (wx:begin-busy-cursor)
-			    (pre))]
-		     [post (lambda () 
-			     (wx:end-busy-cursor)
-			     (post))]
-		     [get-zodiac-code
-		      (lambda ()
-			(let* ([structurized (send edit get-zodiac-sexp)]
-			       [expanded (zodiac:scheme-expand structurized param)]
-			       [annotated (aries:annotate expanded)])
-			  annotated))])
-		 (do-many-evals get-zodiac-code pre post)))]
-	    [do-many-evals
-	     (lambda (get-sexp pre post)
-	       (mred:local-busy-cursor
-		(get-canvas)
-		(lambda ()
-		  (let/ec k
-		    (let ([new-pre
-			   (lambda ()
-			     (set-escape (lambda () (k #f)))
-			     (pre))]
-			  [new-post 
-			   (lambda (sucessful?)
-			     (set-escape #f)
-			     (post))])
-		      (send-scheme get-sexp new-pre new-post))))))])
-	  (private
-	    [make-get-sexp
-	     (lambda (file get-chars start)
-	       (lambda ()
-		 (let* ([loc (zodiac:make-location 0 0 start file)]
-			[reader (zodiac:read get-chars loc)]
-			[exprs (let loop ()
-				 (let ([expr (reader)])
-				   (if (zodiac:eof? expr)
-				       null
-				       (cons expr (loop)))))]
-			[built `(begin ,@exprs)]
-			[_ (mred:debug:printf 
-			    'zodiac
-			    "zodiac; built: ~a~n" built)]
-			[structurized (zodiac:structurize-syntax
-				       built
-				       (zodiac:make-zodiac 'rep loc loc))]
-			[_ (mred:debug:printf 
-			    'zodiac
-			    "zodiac; structurized: ~a~n" structurized)]
-			[expanded (zodiac:scheme-expand structurized param)]
-			[_ (mred:debug:printf 
-			    'zodiac
-			    "zodiac; expanded: ~a~n" expanded)]
-			[_ (mred:debug:printf 
-			    'zodiac
-			    "zodiac; unparsed: ~a~n" (zodiac:parsed->raw expanded))]
-			[annotated (aries:annotate expanded)]
-			[_ (mred:debug:printf 
-			    'zodiac
-			    "zodiac; annotated: ~a~n" annotated)])
-		   annotated)))])
+	       (let* ([loc (zodiac:make-location 0 0 start edit)]
+		      [reader (zodiac:read 
+			       (mred:read-snips/chars-from-buffer edit start end)
+			       loc)])
+		 (wx:begin-busy-cursor)
+		 (do-pre-eval)
+		 (let/ec k
+		   (set-escape (lambda ()
+				 (do-post-eval)
+				 (wx:end-busy-cursor)
+				 (k #f)))
+		   (let loop ([zodiac-read (reader)])
+		     (if (or (zodiac:eof? zodiac-read)
+			     (not zodiac-read))
+			 (begin
+			   ;(mred:message-box "hi")
+			   (do-post-eval)
+			   (wx:end-busy-cursor)
+			   (set-escape (lambda () #f)))
+			 (send-scheme (lambda ()
+					(aries:annotate (zodiac:scheme-expand zodiac-read)))
+				      void
+				      (lambda (error?)
+					(loop (and (not error?) (reader))))))))))])
 	  (public
 	    [do-load
 	     (lambda (filename)
@@ -333,16 +326,7 @@
 				    (reader))))))
 		    (lambda ()
 		      (when (input-port? re-p)
-			(close-input-port re-p)))))))]
-	    [do-eval
-	     (lambda (start end)
-	       (do-many-evals
-		(make-get-sexp 
-		 this
-		 (mred:read-snips/chars-from-buffer this start end)
-		 start)
-		(lambda () (do-pre-eval))
-		(lambda () (do-post-eval))))])
+			(close-input-port re-p)))))))])
 	  (public
 	    [reset-console
 	     (lambda ()

@@ -3,7 +3,10 @@ SrPersist
 
 Version 200
 
-Registered bufferTable[] with garbage collector
+Registered bufferTable[] with garbage collector, made
+ entries uncollectable
+Added version information procedures srp-version and 
+ compiled-odbc-version
 
 Version 103
 

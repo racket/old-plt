@@ -227,6 +227,7 @@ static Scheme_Object *break_thread(int argc, Scheme_Object *args[]);
 static void register_thread_wait();
 #endif
 
+static Scheme_Object *object_waitable_p(int argc, Scheme_Object *args[]);
 static Scheme_Object *object_wait_break(int argc, Scheme_Object *args[]);
 
 static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[]);
@@ -504,6 +505,11 @@ void scheme_init_thread(Scheme_Env *env)
 			     env);
   
 
+  scheme_add_global_constant("object-waitable?", 
+			     scheme_make_folding_prim(object_waitable_p,
+						      "object-waitable?", 
+						      1, 1, 1), 
+			     env);
   scheme_add_global_constant("object-wait-multiple", 
 			     scheme_make_prim_w_arity(scheme_object_wait_multiple,
 						      "object-wait-multiple", 
@@ -2818,6 +2824,13 @@ static void waiting_needs_wakeup(Scheme_Object *s, void *fds)
       nw(waiting->argv[i], fds);
     }
   }
+}
+
+static Scheme_Object *object_waitable_p(int argc, Scheme_Object *argv[])
+{
+  return (scheme_is_waitable(argv[0])
+	  ? scheme_true
+	  : scheme_false);
 }
 
 Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])

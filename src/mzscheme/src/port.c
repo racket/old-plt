@@ -76,7 +76,7 @@ extern int osk_not_console; /* set by cmd-line flag */
 #include <math.h> /* for fmod , used by default_sleep */
 #include "schfd.h"
 
-#define mzAssert(x) if (!(x)) abort()
+#define mzAssert(x) /* if (!(x)) abort() */
 
 /******************** Generic FILEs ********************/
 
@@ -1807,43 +1807,6 @@ force_close_output_port(Scheme_Object *port)
   scheme_force_port_closed = 1;
   scheme_close_output_port(port);
   scheme_force_port_closed = 0;
-}
-
-Scheme_Object *
-scheme_write_string_avail(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *port, *str;
-  long size, start, finish, putten;
-
-  if (!SCHEME_STRINGP(argv[0])) {
-    scheme_wrong_type("write-string-avail", "string", 0, argc, argv);
-    return NULL;
-  } else
-    str = argv[0];
-  if ((argc > 1) && !SCHEME_OUTPORTP(argv[1]))
-    scheme_wrong_type("write-string-avail", "output-port", 1, argc, argv);
-  
-  scheme_get_substring_indices("write-string-avail", str, 
-			       argc, argv,
-			       2, 3, &start, &finish);
-
-  size = finish - start;
-
-  if (argc > 1)
-    port = argv[1];
-  else
-    port = CURRENT_OUTPUT_PORT(scheme_config);
-
-  putten = scheme_put_string("write-string-avail", port, 
-			     SCHEME_STR_VAL(str), start, size + start,
-			     1);
-
-  mzAssert(putten >= 0);
-
-  if (putten < 0)
-    return scheme_false;
-  else
-    return scheme_make_integer(putten);
 }
 
 /*========================================================================*/

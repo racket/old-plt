@@ -973,6 +973,33 @@ mark_pipe {
   gcBYTES_TO_WORDS(sizeof(Scheme_Pipe));
 }
 
+mark_user_input {
+ mark:
+  User_Input_Port *uip = (User_Input_Port *)p;
+
+  gcMARK(uip->waitable);
+  gcMARK(uip->read_proc);
+  gcMARK(uip->peek_proc);
+  gcMARK(uip->close_proc);
+  gcMARK(uip->peeked);
+  gcMARK(uip->closed_sema);
+ size:
+  gcBYTES_TO_WORDS(sizeof(User_Input_Port));
+}
+
+mark_user_output {
+ mark:
+  User_Output_Port *uop = (User_Output_Port *)p;
+
+  gcMARK(uop->waitable);
+  gcMARK(uop->write_proc);
+  gcMARK(uop->flush_proc);
+  gcMARK(uop->close_proc);
+  gcMARK(uop->closed_sema);
+ size:
+  gcBYTES_TO_WORDS(sizeof(User_Output_Port));
+}
+
 END portfun;
 
 /**********************************************************************/

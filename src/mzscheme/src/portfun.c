@@ -48,7 +48,13 @@ static Scheme_Object *read_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *sch_read_string (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
+static Scheme_Object *read_string_bang_nonblock (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang_break (int, Scheme_Object *[]);
+static Scheme_Object *peek_string_bang (int, Scheme_Object *[]);
+static Scheme_Object *peek_string_bang_nonblock (int, Scheme_Object *[]);
+static Scheme_Object *peek_string_bang_break (int, Scheme_Object *[]);
+static Scheme_Object *write_string_avail(int argc, Scheme_Object *argv[]);
+static Scheme_Object *write_string_avail_nonblock(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_string_avail_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *peek_char (int, Scheme_Object *[]);
 static Scheme_Object *peek_char_spec (int, Scheme_Object *[]);
@@ -284,14 +290,14 @@ scheme_init_port_fun(Scheme_Env *env)
 						       2, 3,
 						       0, -1),
 			     env);
-  scheme_add_global_constant("make-input-port", 
+  scheme_add_global_constant("make-custom-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
-						      "make-input-port", 
+						      "make-custom-input-port", 
 						      4, 4), 
 			     env);
-  scheme_add_global_constant("make-output-port", 
+  scheme_add_global_constant("make-custom-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
-						      "make-output-port", 
+						      "make-custom-output-port", 
 						      4, 4), 
 			     env);
   
@@ -330,14 +336,39 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "read-string-avail!", 
 						      1, 4), 
 			     env);
+  scheme_add_global_constant("read-string-avail!*", 
+			     scheme_make_prim_w_arity(read_string_bang_nonblock, 
+						      "read-string-avail!*", 
+						      1, 4), 
+			     env);
   scheme_add_global_constant("read-string-avail!/enable-break", 
 			     scheme_make_prim_w_arity(read_string_bang_break, 
 						      "read-string-avail!/enable-break", 
 						      1, 4), 
 			     env);
+  scheme_add_global_constant("peek-string-avail!", 
+			     scheme_make_prim_w_arity(peek_string_bang, 
+						      "peek-string-avail!", 
+						      2, 5), 
+			     env);
+  scheme_add_global_constant("peek-string-avail!*", 
+			     scheme_make_prim_w_arity(peek_string_bang_nonblock, 
+						      "peek-string-avail!*", 
+						      2, 5), 
+			     env);
+  scheme_add_global_constant("peek-string-avail!/enable-break", 
+			     scheme_make_prim_w_arity(peek_string_bang_break, 
+						      "peek-string-avail!/enable-break", 
+						      2, 5), 
+			     env);
   scheme_add_global_constant("write-string-avail", 
-			     scheme_make_prim_w_arity(scheme_write_string_avail, 
+			     scheme_make_prim_w_arity(write_string_avail, 
 						      "write-string-avail", 
+						      1, 4),
+			     env);
+  scheme_add_global_constant("write-string-avail*", 
+			     scheme_make_prim_w_arity(write_string_avail_nonblock, 
+						      "write-string-avail*", 
 						      1, 4),
 			     env);
   scheme_add_global_constant("write-string-avail/enable-break",
@@ -698,6 +729,7 @@ scheme_get_string_output(Scheme_Object *port)
 /*========================================================================*/
 
 typedef struct User_Input_Port {
+  MZTAG_IF_REQUIRED
   Scheme_Object *waitable;
   Scheme_Object *read_proc;
   Scheme_Object *peek_proc;
@@ -832,24 +864,30 @@ user_peek_string(Scheme_Input_Port *port,
 static int
 user_char_ready(Scheme_Input_Port *port)
 {
-  int c;
+  int c, can_peek;
   char s[1];
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
-  /* We implement char-ready? by a non-blocking peeking for a single
+  /* We implement char-ready? by a non-blocking peek for a single
      character. If the port provides a precise waitable, it
      effectively determines the result, because the peek function
      checks the waitable. */
 
-  c = user_get_or_peek_string(port, s, 0, 1, 1, 1, 0);
+  can_peek = (uip->peek_proc ? 1 : 0);
+
+  c = user_get_or_peek_string(port, s, 0, 1, 1, can_peek, 0);
+
   if (c == EOF) {
-    uip->peeked = scheme_true;
+    if (!can_peek)
+      uip->peeked = scheme_true;
     return 1;
   } else if (c) {
-    if (c == SCHEME_SPECIAL)
-      uip->peeked = scheme_void;
-    else
-      uip->peeked = scheme_make_character(c);
+    if (!can_peek) {
+      if (c == SCHEME_SPECIAL)
+	uip->peeked = scheme_void;
+      else
+	uip->peeked = scheme_make_character(c);
+    }
     return 1;
   } else
     return 0;
@@ -886,6 +924,7 @@ user_close_input(Scheme_Input_Port *port)
 /*========================================================================*/
 
 typedef struct User_Output_Port {
+  MZTAG_IF_REQUIRED
   Scheme_Object *waitable;
   Scheme_Object *write_proc;
   Scheme_Object *flush_proc;
@@ -1409,15 +1448,18 @@ make_input_port(int argc, Scheme_Object *argv[])
   Scheme_Object *s;
 
   if (!SCHEME_FALSEP(argv[0]) && !scheme_is_waitable(argv[0]))
-    scheme_wrong_type("make-input-port", "waitable or #f", 0, argc, argv);
-  scheme_check_proc_arity("make-input-port", 1, 1, argc, argv);
+    scheme_wrong_type("make-custom-input-port", "waitable or #f", 0, argc, argv);
+  scheme_check_proc_arity("make-custom-input-port", 1, 1, argc, argv);
   if (SCHEME_TRUEP(argv[2])) {
     if (!scheme_check_proc_arity(NULL, 2, 2, argc, argv))
-      scheme_wrong_type("make-input-port", "procedure (arity 2) or #f", 2, argc, argv);
+      scheme_wrong_type("make-custom-input-port", "procedure (arity 2) or #f", 2, argc, argv);
   }
-  scheme_check_proc_arity("make-input-port", 0, 3, argc, argv);
+  scheme_check_proc_arity("make-custom-input-port", 0, 3, argc, argv);
   
   uip = MALLOC_ONE_RT(User_Input_Port);
+#ifdef MZTAG_REQUIRED
+  uip->type = scheme_rt_user_input;
+#endif
 
   uip->waitable = argv[0];
   uip->read_proc = argv[1];
@@ -1427,10 +1469,13 @@ make_input_port(int argc, Scheme_Object *argv[])
   uip->closed_sema = s;
   uip->block_count = 0;
 
+  if (!SCHEME_TRUEP(uip->peek_proc))
+    uip->peek_proc = NULL;
+
   ip = _scheme_make_input_port(scheme_user_input_port_type,
 			       uip,
 			       user_get_string,
-			       (SCHEME_TRUEP(uip->peek_proc)
+			       (uip->peek_proc
 				? user_peek_string
 				: NULL),
 			       user_char_ready,
@@ -1451,12 +1496,15 @@ make_output_port (int argc, Scheme_Object *argv[])
   Scheme_Object *s;
 
   if (!SCHEME_FALSEP(argv[0]) && !scheme_is_waitable(argv[0]))
-    scheme_wrong_type("make-output-port", "waitable or #f", 0, argc, argv);
-  scheme_check_proc_arity("make-output-port", 4, 1, argc, argv);
-  scheme_check_proc_arity("make-output-port", 0, 2, argc, argv);
-  scheme_check_proc_arity("make-output-port", 0, 3, argc, argv);
+    scheme_wrong_type("make-custom-output-port", "waitable or #f", 0, argc, argv);
+  scheme_check_proc_arity("make-custom-output-port", 4, 1, argc, argv);
+  scheme_check_proc_arity("make-custom-output-port", 0, 2, argc, argv);
+  scheme_check_proc_arity("make-custom-output-port", 0, 3, argc, argv);
 
   uop = MALLOC_ONE_RT(User_Output_Port);
+#ifdef MZTAG_REQUIRED
+  uop->type = scheme_rt_user_output;
+#endif
 
   uop->waitable = argv[0];
   uop->write_proc = argv[1];
@@ -2028,27 +2076,47 @@ sch_read_string(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-read_string_bang(int argc, Scheme_Object *argv[])
+do_read_string_bang(const char *who, int argc, Scheme_Object *argv[],
+		    int only_avail, int peek)
 {
   Scheme_Object *port, *str;
-  long size, start, finish, got;
+  long size, start, finish, got, peek_skip;
+  int delta;
 
   if (!SCHEME_MUTABLE_STRINGP(argv[0])) {
-    scheme_wrong_type("read-string-avail!", "mutable-string", 0, argc, argv);
+    scheme_wrong_type(who, "mutable-string", 0, argc, argv);
     return NULL;
   } else
     str = argv[0];
-  if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-string-avail!", "input-port", 1, argc, argv);
+
+  if (peek) {
+    Scheme_Object *v;
+    v = argv[1];
+    if (SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
+      peek_skip = SCHEME_INT_VAL(v);
+    else if (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))
+      peek_skip = 0x7FFFFFFF; /* we'll hit EOF or run out of memory */
+    else {
+      scheme_wrong_type(who, "non-negative exact integer", 1, argc, argv);
+      return NULL;
+    }
+    delta = 1;
+  } else {
+    peek_skip = 0;
+    delta = 0;
+  }
+
+  if ((argc > (1+delta)) && !SCHEME_INPORTP(argv[1+delta]))
+    scheme_wrong_type(who, "input-port", 1+delta, argc, argv);
   
-  scheme_get_substring_indices("read-string-avail!", str, 
+  scheme_get_substring_indices(who, str, 
 			       argc, argv,
-			       2, 3, &start, &finish);
+			       2+delta, 3+delta, &start, &finish);
 
   size = finish - start;
 
-  if (argc > 1)
-    port = argv[1];
+  if (argc > (delta+1))
+    port = argv[delta+1];
   else
     port = CURRENT_INPUT_PORT(scheme_config);
 
@@ -2058,12 +2126,87 @@ read_string_bang(int argc, Scheme_Object *argv[])
   if (!size)
     return scheme_make_integer(0);
 
-  got = scheme_get_chars(port, -size, SCHEME_STR_VAL(str), start);
+  got = scheme_get_string(who, port, 
+			  SCHEME_STR_VAL(str), start, size, 
+			  only_avail,
+			  peek, peek_skip);
 
-  if (!got)
+  if (got == EOF)
     return scheme_eof;
 
   return scheme_make_integer(got);
+}
+
+static Scheme_Object *
+read_string_bang(int argc, Scheme_Object *argv[])
+{
+  return do_read_string_bang("read-string-avail!", argc, argv, 1, 0);
+}
+
+static Scheme_Object *
+read_string_bang_nonblock(int argc, Scheme_Object *argv[])
+{
+  return do_read_string_bang("read-string-avail!*", argc, argv, 2, 0);
+}
+
+static Scheme_Object *
+peek_string_bang(int argc, Scheme_Object *argv[])
+{
+  return do_read_string_bang("peek-string-avail!", argc, argv, 1, 1);
+}
+
+static Scheme_Object *
+peek_string_bang_nonblock(int argc, Scheme_Object *argv[])
+{
+  return do_read_string_bang("peek-string-avail!*", argc, argv, 2, 1);
+}
+
+
+static Scheme_Object *
+do_write_string_avail(const char *who, int argc, Scheme_Object *argv[], int rarely_block)
+{
+  Scheme_Object *port, *str;
+  long size, start, finish, putten;
+
+  if (!SCHEME_STRINGP(argv[0])) {
+    scheme_wrong_type(who, "string", 0, argc, argv);
+    return NULL;
+  } else
+    str = argv[0];
+  if ((argc > 1) && !SCHEME_OUTPORTP(argv[1]))
+    scheme_wrong_type(who, "output-port", 1, argc, argv);
+  
+  scheme_get_substring_indices(who, str, 
+			       argc, argv,
+			       2, 3, &start, &finish);
+
+  size = finish - start;
+
+  if (argc > 1)
+    port = argv[1];
+  else
+    port = CURRENT_OUTPUT_PORT(scheme_config);
+
+  putten = scheme_put_string(who, port, 
+			     SCHEME_STR_VAL(str), start, size + start,
+			     rarely_block);
+
+  if (putten < 0)
+    return scheme_false;
+  else
+    return scheme_make_integer(putten);
+}
+
+static Scheme_Object *
+write_string_avail(int argc, Scheme_Object *argv[])
+{
+  return do_write_string_avail("write-string-avail", argc, argv, 1);
+}
+
+static Scheme_Object *
+write_string_avail_nonblock(int argc, Scheme_Object *argv[])
+{
+  return do_write_string_avail("write-string-avail*", argc, argv, 2);
 }
 
 typedef struct {
@@ -2135,9 +2278,15 @@ read_string_bang_break(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+peek_string_bang_break(int argc, Scheme_Object *argv[])
+{
+  return scheme_call_enable_break(peek_string_bang, argc, argv);
+}
+
+static Scheme_Object *
 write_string_avail_break(int argc, Scheme_Object *argv[])
 {
-  return scheme_call_enable_break(scheme_write_string_avail, argc, argv);
+  return scheme_call_enable_break(write_string_avail, argc, argv);
 }
 
 static Scheme_Object *
@@ -2968,6 +3117,8 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_load_handler_data, mark_load_handler_data);
   GC_REG_TRAV(scheme_rt_load_data, mark_load_data);
   GC_REG_TRAV(scheme_rt_pipe, mark_pipe);
+  GC_REG_TRAV(scheme_rt_user_input, mark_user_input);
+  GC_REG_TRAV(scheme_rt_user_output, mark_user_output);
 }
 
 END_XFORM_SKIP;

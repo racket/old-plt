@@ -1857,7 +1857,6 @@ Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Schem
 Scheme_Object *scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_file_buffer(int argc, Scheme_Object *argv[]);
-Scheme_Object *scheme_write_string_avail(int argc, Scheme_Object *argv[]);
 
 #ifdef USE_TCP
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);

@@ -165,6 +165,8 @@ enum {
   scheme_rt_waitable,
   scheme_rt_waiting,
   scheme_rt_comp_prefix,
+  scheme_rt_user_input,
+  scheme_rt_user_output,
 #endif
 
   _scheme_last_type_

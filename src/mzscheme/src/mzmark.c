@@ -2470,6 +2470,74 @@ int mark_pipe_FIXUP(void *p) {
 #define mark_pipe_IS_CONST_SIZE 1
 
 
+int mark_user_input_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(User_Input_Port));
+}
+
+int mark_user_input_MARK(void *p) {
+  User_Input_Port *uip = (User_Input_Port *)p;
+
+  gcMARK(uip->waitable);
+  gcMARK(uip->read_proc);
+  gcMARK(uip->peek_proc);
+  gcMARK(uip->close_proc);
+  gcMARK(uip->peeked);
+  gcMARK(uip->closed_sema);
+  return
+  gcBYTES_TO_WORDS(sizeof(User_Input_Port));
+}
+
+int mark_user_input_FIXUP(void *p) {
+  User_Input_Port *uip = (User_Input_Port *)p;
+
+  gcFIXUP(uip->waitable);
+  gcFIXUP(uip->read_proc);
+  gcFIXUP(uip->peek_proc);
+  gcFIXUP(uip->close_proc);
+  gcFIXUP(uip->peeked);
+  gcFIXUP(uip->closed_sema);
+  return
+  gcBYTES_TO_WORDS(sizeof(User_Input_Port));
+}
+
+#define mark_user_input_IS_ATOMIC 0
+#define mark_user_input_IS_CONST_SIZE 1
+
+
+int mark_user_output_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(User_Output_Port));
+}
+
+int mark_user_output_MARK(void *p) {
+  User_Output_Port *uop = (User_Output_Port *)p;
+
+  gcMARK(uop->waitable);
+  gcMARK(uop->write_proc);
+  gcMARK(uop->flush_proc);
+  gcMARK(uop->close_proc);
+  gcMARK(uop->closed_sema);
+  return
+  gcBYTES_TO_WORDS(sizeof(User_Output_Port));
+}
+
+int mark_user_output_FIXUP(void *p) {
+  User_Output_Port *uop = (User_Output_Port *)p;
+
+  gcFIXUP(uop->waitable);
+  gcFIXUP(uop->write_proc);
+  gcFIXUP(uop->flush_proc);
+  gcFIXUP(uop->close_proc);
+  gcFIXUP(uop->closed_sema);
+  return
+  gcBYTES_TO_WORDS(sizeof(User_Output_Port));
+}
+
+#define mark_user_output_IS_ATOMIC 0
+#define mark_user_output_IS_CONST_SIZE 1
+
+
 #endif  /* PORTFUN */
 
 /**********************************************************************/

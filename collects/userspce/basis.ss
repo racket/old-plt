@@ -386,19 +386,13 @@
   ;; (parameter (string mark-set exn -> void))
   (define error-display/debug-handler
     (make-parameter
-     (lambda (msg marks exn)
+     (lambda (msg debug exn)
        ((error-display-handler) 
-	(let* ([m (if (continuation-mark-set? marks)
-		      (continuation-mark-set->list marks aries:w-c-m-key)
-		      null)]
-	       [debug (if (pair? m)
-			  (car m)
-			  #f)])
-	  (if (zodiac:zodiac? debug)
-	      (string-append (format-source-loc (zodiac:zodiac-start debug)
-						(zodiac:zodiac-finish debug))
-			     msg)
-	      msg))))))
+	(if (zodiac:zodiac? debug)
+	    (string-append (format-source-loc (zodiac:zodiac-start debug)
+					      (zodiac:zodiac-finish debug))
+			   msg)
+	    msg)))))
 
   ;; bottom-escape-handler : (parameter ( -> A))
   ;; escapes
@@ -409,7 +403,14 @@
   (define (drscheme-exception-handler exn)
     (let ([dh (error-display/debug-handler)])
       (if (exn? exn)
-	  (dh (exn-message exn) (exn-continuation-marks exn) exn)
+	  (let* ([marks (exn-continuation-marks exn)]
+		 [m (if (continuation-mark-set? marks)
+		      (continuation-mark-set->list marks aries:w-c-m-key)
+		      null)]
+		 [debug (if (pair? m)
+			    (car m)
+			    #f)])
+	    (dh (exn-message exn) debug exn))
 	  (dh (format "uncaught exception: ~e" exn) #f #f)))
     ((error-escape-handler))
     ((error-display-handler) "Exception handler didn't escape")

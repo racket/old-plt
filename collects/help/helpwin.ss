@@ -18,6 +18,32 @@
 
   (on-installer-run doc-collections-changed)
 
+  (define (path->unix-path p)
+    (let ([paths
+           (let loop ([p p]
+                      [acc null])
+             (let-values ([(base name dir?) (split-path p)])
+               (if base
+                   (loop base
+                         (cons (cond
+                                 [(string? name) name]
+                                 [(eq? name 'up) ".."]
+                                 [(eq? name 'same) "."])
+                               acc))
+                   acc)))])
+      (if (null? paths)
+          ""
+          (apply append
+                 (cons
+                  (car paths)
+                  (let loop ([paths (cdr paths)])
+                    (cond
+                      [(null? paths) null]
+                      [else (list* "/"
+                                   (car paths)
+                                   (lopo (cdr paths)))])))))))
+    
+
   (define (get-icon size)
     (let* ([dir (collection-path "icons")]
 	   [icon (make-object bitmap% (build-path dir (format "help~a.xpm" size)))]
@@ -332,7 +358,7 @@
 					     (send (get-canvas) goto-url 
 						   (string-append
 						    "file:"
-						    (build-path (collection-path "help") "notthere.htm"))
+						    (path->unixpath (build-path (collection-path "help") "notthere.htm")))
 						   #f)))))))))))
 			  (k url)
 			  void)))]

@@ -1052,7 +1052,6 @@ void MrEdMacSleep(float secs, void *fds, void (*mzsleep)(float secs, void *fds))
   secs = 0;
 #endif
 
-  printf("%f\n", secs);
   if (WaitNextEvent(everyEvent, &e, secs ? (long)(secs * 60) : 0x7FFFFFFF, msergn))
     QueueTransferredEvent(&e);
 

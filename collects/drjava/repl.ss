@@ -128,10 +128,29 @@
     (let* ([q (tokenize str)])
       (if (squiglies-match? q)
 	  (cond
+            [(main? q) (eval-main repl q)]
 	    [(def? q) (eval-def repl q)]
 	    [(statement? q) (eval-statement repl q)]
 	    [else (eval-expression repl q)])
 	  (raise 'bad-squiglies))))
+  
+  ;; main? : Queue(Scanned) -> Boolean
+  (define (main? q)
+    (cond
+      [(mtq? q) #f]
+      [else
+       (let ([first (first-q q)])
+         (and (eq? (scanned-token first) jIDENTIFIER)
+              (eq? (scanned->symbol first) 'java)))]))
+  
+  ;;  eval-main: Repl Queue(Scanned) -> Void
+  (define (eval-main repl q)
+    (deq! q)
+    (cond
+      [(mtq? q) (void)]
+      [else
+       (eval-statement repl
+                       (tokenize (format "~a.main(null);" (scanned->string  (deq! q)))))]))
   
   ;;  eval-def : Repl Queue(Scanned) -> Void
   (define (eval-def repl q)
@@ -332,9 +351,13 @@
 	 (values acc defs)]
 	[else (loop (add1 acc) (cdr defs))])))
   
+  ;; scanned->string : Scanned -> String
+  (define (scanned->string id)
+    (jstring->string (name->string (scanned-name id))))
+  
   ;; scanned->symbol : Scanned -> Symbol
   (define (scanned->symbol id)
-    (string->symbol (jstring->string (name->string (scanned-name id)))))
+    (string->symbol (scanned->string id)))
   
   ;; q-append : Queue(Scanned)* -> Queue(Scanned)
   ;; Note: jEOF's and anything after that in a queue are skipped

@@ -24,6 +24,8 @@
   (define bytearrayinputstream-class (jfind-class "java/io/ByteArrayInputStream"))
   (define bais-init (jfind-method bytearrayinputstream-class "<init>" "([B)V"))
   
+  ;; Token = Nat
+  ;; Scanned = (make-scanned (Token Nat Nat jobject(Name) Nat jobject(String)))
   (define-struct scanned (token pos lastpos name radix str))
   
   (define literals (list jINTLITERAL jLONGLITERAL jFLOATLITERAL jDOUBLELITERAL jCHARLITERAL jSTRINGLITERAL))

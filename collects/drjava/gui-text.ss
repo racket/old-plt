@@ -32,7 +32,7 @@
          (lambda (c)
            (case (send c get-key-code)
              ((#\tab) (indent-selection))
-             ((#\newline #\return) (super-on-default-char c) (indent-selection))
+             ((#\newline #\return #\}) (super-on-default-char c) (indent-selection))
              (else (super-on-default-char c))))))
       (public
         (set-save-button! (lambda (button) (set! save-button button))))
@@ -328,7 +328,7 @@
                 (thunk))
               (send goobers appear))]
            [execute-button
-            (make-button "execute.bmp" "Execute"
+            (make-button "execute.bmp" "Compile"
                          (lambda _
                            (call-with-goobers
                             (lambda ()

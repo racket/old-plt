@@ -91,15 +91,15 @@ typedef short Type_Tag;
 
 /* Debugging and performance tools: */
 #define TIME 0
-#define SEARCH 0
+#define SEARCH 1
 #define CHECKS 0
 #define CHECK_STACK_PTRS 0
 #define NOISY 0
 #define MARK_STATS 0
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
-#define RECORD_MARK_SRC 0
-#define KEEP_BACKPOINTERS 0
+#define RECORD_MARK_SRC 1
+#define KEEP_BACKPOINTERS 1
 
 #if TIME
 # include <sys/time.h>
@@ -4463,6 +4463,13 @@ extern void scheme_print_tagged_value(const char *prefix,
 				      void *v, int xtagged, unsigned long diff, int max_w,
 				      const char *suffix);
 
+int GC_is_tagged(void *p)
+{
+  MPage *page;
+  page = find_page(p);
+  return page && (page->type == MTYPE_TAGGED);
+}
+
 void *print_out_pointer(const char *prefix, void *p)
 {
   MPage *page;
@@ -4656,6 +4663,16 @@ void GC_dump(void)
 	  total += used;
 	  waste += (MPAGE_WORDS - used);
 	}
+#if KEEP_BACKPOINTERS
+	if ((page->flags & MFLAG_BIGBLOCK)
+	    && (page->type == kind)
+	    && (((GC_trace_for_tag >= (BIGBLOCK_MIN_SIZE >> LOG_WORD_SIZE))
+		 && (page->u.size > GC_trace_for_tag))
+		|| (page->u.size == -GC_trace_for_tag))
+	    && (found_object_count < MAX_FOUND_OBJECTS)) {
+	  found_objects[found_object_count++] = page->block_start;
+	}
+#endif
       }
 
       if (j >= NUM_TAGGED_SETS) {

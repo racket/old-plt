@@ -323,8 +323,11 @@ static MPage *find_page(void *p);
 static void CRASH()
 {
   fprintf(stderr, "crash\n");
+  *(long *)0x0 = 1;
   abort();
 }
+
+static int just_checking, the_size;
 #endif
 
 /******************************************************************************/

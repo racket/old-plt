@@ -36,7 +36,7 @@
 		       (raise-type-error 'make* "string or string vector" argv))
 		   (letrec ([make-file
 			     (lambda (s indent)
-			       (printf "~amaking ~a~n" indent s)
+			       (printf "~achecking ~a~n" indent s)
 			       (let ([line (assoc s spec)]
 				     [date (if (directory-exists? s)
 					       +inf.0
@@ -48,6 +48,7 @@
 						 (ormap (lambda (dep) (and (file-exists? dep)
 									   (> (file-modify-seconds dep) date))) 
 							deps))
+					     (printf "~amaking ~a~n" indent s)
 					     ((caddr line))))
 				     (unless date
 					     (error 'make "don't know how to make ~a" s)))))])

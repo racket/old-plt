@@ -339,7 +339,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
 						      "make-input-port", 
-						      4, 6), 
+						      4, 7), 
 			     env);
   scheme_add_global_constant("make-output-port",
 			     scheme_make_prim_w_arity(make_output_port, 
@@ -952,6 +952,7 @@ typedef struct User_Input_Port {
   Scheme_Object *close_proc;
   Scheme_Object *progress_evt_proc;  /* NULL => no support for progress events */
   Scheme_Object *peeked_read_proc;   /* NULL => progress_evt_proc is NULL */
+  Scheme_Object *location_proc;
   Scheme_Object *reuse_str;
   Scheme_Object *peeked;
 } User_Input_Port;
@@ -1304,6 +1305,14 @@ user_close_input(Scheme_Input_Port *port)
   User_Input_Port *uip = (User_Input_Port *)port->port_data;
 
   scheme_apply_multi(uip->close_proc, 0, NULL);
+}
+
+static Scheme_Object *
+user_location(Scheme_Input_Port *port)
+{
+  User_Input_Port *uip = (User_Input_Port *)port->port_data;
+
+  return scheme_apply_multi(uip->location_proc, 0, NULL);
 }
 
 /*========================================================================*/
@@ -2125,6 +2134,8 @@ make_input_port(int argc, Scheme_Object *argv[])
     scheme_check_proc_arity2("make-input-port", 0, 4, argc, argv, 1); /* progress-evt */
   if (argc > 5)
     scheme_check_proc_arity2("make-input-port", 3, 5, argc, argv, 1); /* peeked-read */
+  if (argc > 6)
+    scheme_check_proc_arity2("make-input-port", 0, 6, argc, argv, 1); /* location */
   name = argv[0];
 
   /* It makes no sense to supply progress-evt without peek: */
@@ -2160,6 +2171,9 @@ make_input_port(int argc, Scheme_Object *argv[])
   uip->peeked_read_proc = ((argc > 5) ? argv[5] : scheme_false);
   if (SCHEME_FALSEP(uip->peeked_read_proc))
     uip->peeked_read_proc = NULL;
+  uip->location_proc = ((argc > 6) ? argv[6] : scheme_false);
+  if (SCHEME_FALSEP(uip->location_proc))
+    uip->location_proc = NULL;
 
   ip = scheme_make_input_port(scheme_user_input_port_type,
 			      uip,
@@ -2172,6 +2186,9 @@ make_input_port(int argc, Scheme_Object *argv[])
 			      user_close_input,
 			      user_needs_wakeup_input,
 			      0);
+
+  if (uip->location_proc)
+    scheme_set_input_port_location_fun(ip, user_location);
 
   if (!uip->peek_proc)
     ip->pending_eof = 1; /* means that pending EOFs should be tracked */
@@ -3714,9 +3731,7 @@ static Scheme_Object *port_next_location(int argc, Scheme_Object *argv[])
   if (!SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("port-next-location", "input port", 0, argc, argv);
 
-  line = scheme_tell_line(argv[0]);
-  col = scheme_tell_column(argv[0]);
-  pos = scheme_tell(argv[0]);
+  scheme_tell_all(argv[0], &line, &col, &pos);
 
   a[0] = ((line < 0) ? scheme_false : scheme_make_integer_value(line));
   a[1] = ((col < 0) ? scheme_false : scheme_make_integer_value(col));

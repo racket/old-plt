@@ -21,13 +21,17 @@
 
 (define-values (imap cnt recent) (test-connect))
 
-(printf "Msgs: ~a~n" cnt)
+(printf "Msgs: ~a; Validity: ~a~n" cnt (imap-uidvalidity imap))
 
 (test cnt imap-messages imap)
 (test recent imap-recent imap)
+(test #t number? (imap-uidvalidity imap))
 (test #f imap-pending-expunges? imap)
 (test #f imap-pending-updates? imap)
 (test #f imap-new? imap)
+
+(imap-disconnect imap)
+done
 
 (define (delete-all)
   (let ([cnt (imap-messages imap)])
@@ -161,3 +165,5 @@
   (imap-disconnect imap2))
 
 (imap-disconnect imap)
+
+(report-errs)

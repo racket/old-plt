@@ -462,6 +462,70 @@
     (test #"12311-" values s))
   (test 3 write-bytes-avail #"1234" out))
 
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Provide a location proc:
+
+(let ([mk
+       (lambda (adjust-locs)
+	 (let ([p (open-input-string "Hello\n\n world")])
+	   (port-count-lines! p)
+	   (let ([p2 (make-input-port 'with-loc
+				      (lambda (s) (read-bytes-avail! s p))
+				      (lambda (s skip progress-evt)
+					(peek-bytes-avail! s skip progress-evt p))
+				      void
+				      (lambda () (prot-progress-evt p))
+				      (lambda (k progress-evt done-evt)
+					(port-commit-peeked k progress-evt done-evt p))
+				      (lambda ()
+					(let-values ([(line col pos) (port-next-location p)])
+					  (adjust-locs line col pos))))])
+	     (port-count-lines! p2)
+	     p2)))])
+  (let ([plain (let ([p (open-input-string "Hello\n\n world")])
+		 (port-count-lines! p)
+		 p)]
+	[double (mk (lambda (l c p)
+		      (values (* 2 l) (* 2 c) (* 2 p))))]
+	[none (mk (lambda (l c p) (values #f #f #f)))]
+	[bad (mk (lambda (l c p) #f))])
+    (test-values '(1 0 1) (lambda () (port-next-location plain)))
+    (test-values '(2 0 2) (lambda () (port-next-location double)))
+    (test-values '(#f #f #f) (lambda () (port-next-location none)))
+    (err/rt-test (port-next-location bad) exn:fail:contract:arity?)
+    
+    (test 'Hello read plain)
+    (test 'Hello read double)
+    (test 'Hello read none)
+    (err/rt-test (read bad) exn:fail:contract:arity?)
+
+    (test-values '(1 5 6) (lambda () (port-next-location plain)))
+    (test-values '(2 10 12) (lambda () (port-next-location double)))
+    (test-values '(#f #f #f) (lambda () (port-next-location none)))
+    (err/rt-test (port-next-location bad))
+
+    (let ([stx (read-syntax #f plain)])
+      (test 3 syntax-line stx)
+      (test 1 syntax-column stx)
+      (test 9 syntax-position stx))
+    (let ([stx (read-syntax #f double)])
+      (test 6 syntax-line stx)
+      ;; The next two should be 2 and 18, but the reader
+      ;;  actually reads the character first, the subtracts
+      ;;  1 from the column and position.
+      (test 3 syntax-column stx)
+      (test 19 syntax-position stx))
+    (let ([stx (read-syntax #f none)])
+      (test #f syntax-line stx)
+      (test #f syntax-column stx)
+      (test #f syntax-position stx))
+    (err/rt-test (read-syntax #f bad) exn:fail:contract:arity?)
+    
+    (test-values '(3 6 14) (lambda () (port-next-location plain)))
+    (test-values '(6 12 28) (lambda () (port-next-location double)))
+    (test-values '(#f #f #f) (lambda () (port-next-location none)))))
+
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)

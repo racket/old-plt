@@ -72,15 +72,19 @@ static Scheme_Object *print_unreadable(int, Scheme_Object *[]);
 
 #define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
 
-#define mzSPAN(port, pos)  (scheme_tell(port) - pos + 1)
+#define mzSPAN(port, pos)  ()
 
 #define isdigit_ascii(n) ((n >= '0') && (n <= '9'))
 
-#ifdef MZ_XFORM
-static long SPAN(Scheme_Object *port, long pos) { return mzSPAN(port, pos); }
-#else
-#define SPAN(port, pos) mzSPAN(port, pos)
+static 
+#ifndef NO_INLINE_KEYWORD
+MSC_IZE(inline)
 #endif
+long SPAN(Scheme_Object *port, long pos) {
+  long cpos;
+  scheme_tell_all(port, NULL, NULL, &cpos);
+  return cpos - pos + 1;
+}
 
 #define SRCLOC_TMPL " in %q[%L%ld]"
 
@@ -539,9 +543,8 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     ch = scheme_getc_special_ok(port);
   } while (NOT_EOF_OR_SPECIAL(ch) && scheme_isspace(ch));
 
-  line = scheme_tell_line(port);
-  col = scheme_tell_column(port);
-  pos = scheme_tell(port);
+  
+  scheme_tell_all(port, &line, &col, &pos);
 
   /* Found non-whitespace. Track indentation: */
   if (col >= 0) {
@@ -841,8 +844,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 		int is_err;
 
 		/* Skip #rx[#]: */
-		col = scheme_tell_column(port);
-		pos = scheme_tell(port);
+		scheme_tell_all(port, &line, &col, &pos);
 
 		str = read_string(is_byte, port, stxsrc, line, col, pos, indentation, params);
 
@@ -1331,9 +1333,7 @@ read_list(Scheme_Object *port,
   int braces = params->curly_braces_are_parens;
   long start, startcol, startline, dotpos, dotcol, dotline;
 
-  start = scheme_tell(port);
-  startcol = scheme_tell_column(port);
-  startline = scheme_tell_line(port);
+  scheme_tell_all(port, &startline, &startcol, &start);
 
   if (stxsrc) {
     /* Push onto the indentation stack: */
@@ -1399,7 +1399,9 @@ read_list(Scheme_Object *port,
       if (!(ch == '(')
 	  && ! (ch == '[' && params->square_brackets_are_parens)
 	  && !(ch == '{' && params->curly_braces_are_parens)) {
-	scheme_read_err(port, stxsrc, scheme_tell_line(port), scheme_tell_column(port), scheme_tell(port), 1,
+	long xl, xc, xp;
+	scheme_tell_all(port, &xl, &xc, &xp);
+	scheme_read_err(port, stxsrc, xl, xc, xp, 1,
 			ch, indentation,
 			"read: expected an '('%s%s",
 			params->square_brackets_are_parens ? " or '['" : "",
@@ -1407,7 +1409,9 @@ read_list(Scheme_Object *port,
 	return NULL;
       } else {
 	/* Found paren. Use read_list directly so we can specify mz_shape_hash_elem. */
-	car = read_list(port, stxsrc, scheme_tell_line(port), scheme_tell_column(port), scheme_tell(port),
+	long xl, xc, xp;
+	scheme_tell_all(port, &xl, &xc, &xp);
+	car = read_list(port, stxsrc, xl, xc, xp,
 			((ch == '(') ? ')' : ((ch == '[') ? ']' : '}')),
 			mz_shape_hash_elem, use_stack, ht, indentation, params);
 	/* car is guaranteed to have an appropriate shape */
@@ -1481,9 +1485,7 @@ read_list(Scheme_Object *port,
 		    || ((next == '{') && braces)
 		    || ((next == ']') && brackets)
 		    || ((next == '}') && braces)))) {
-      dotpos = scheme_tell(port);
-      dotcol = scheme_tell_column(port);
-      dotline = scheme_tell_line(port);
+      scheme_tell_all(port, &dotline, &dotcol, &dotpos);
       
       if (((shape != mz_shape_cons) && (shape != mz_shape_hash_elem)) || infixed) {
 	scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0, indentation, 
@@ -1880,7 +1882,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   mzchar *buf, *oldbuf, onstack[MAX_QUICK_SYMBOL_SIZE];
   int size, oldsize;
   int i, ch, quoted, quoted_ever = 0, running_quote = 0;
-  int rq_pos = 0, rq_col = 0, rq_line = 0;
+  long rq_pos = 0, rq_col = 0, rq_line = 0;
   int case_sens = params->case_sensitive;
   int brackets = params->square_brackets_are_parens;
   int braces = params->curly_braces_are_parens;
@@ -1947,9 +1949,7 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
       running_quote = !running_quote;
       quoted = 0;
 
-      rq_pos = scheme_tell(port);
-      rq_col = scheme_tell_column(port);
-      rq_line = scheme_tell_line(port);
+      scheme_tell_all(port, &rq_line, &rq_col, &rq_pos);
 
       ch = getc_special_ok_fun(port);
       continue; /* <-- !!! */
@@ -1991,8 +1991,10 @@ read_number_or_symbol(int init_ch, Scheme_Object *port,
   buf[i] = '\0';
 
   if (!quoted_ever && (i == 1) && (buf[0] == '.')) {
-    scheme_read_err(port, stxsrc, scheme_tell_line(port), scheme_tell_column(port),
-		    scheme_tell(port), 1, 0, indentation, 
+    long xl, xc, xp;
+    scheme_tell_all(port, &xl, &xc, &xp);
+    scheme_read_err(port, stxsrc, xl, xc, xp,
+		    1, 0, indentation, 
 		    "read: illegal use of \".\"");
     return NULL;
   }
@@ -2322,9 +2324,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
     int ch2 = 0;
     long col, pos, line;
 
-    pos = scheme_tell(port);
-    col = scheme_tell_column(port);
-    line = scheme_tell_line(port);
+    scheme_tell_all(port, &line, &col, &pos);
     
     (void)scheme_getc(port); /* re-read '|' */
     do {
@@ -2350,9 +2350,7 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
     Scheme_Object *skipped;
     long col, pos, line;
 
-    pos = scheme_tell(port);
-    col = scheme_tell_column(port);
-    line = scheme_tell_line(port);
+    scheme_tell_all(port, &line, &col, &pos);
 
     (void)scheme_getc(port); /* re-read ';' */
 
@@ -3353,7 +3351,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
   rp->pos = 0;
   {
     long base; 
-    base = scheme_tell(port);
+    scheme_tell_all(port, NULL, NULL, &base);
     rp->base = base;
   }
   rp->orig_port = port;

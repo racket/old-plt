@@ -533,7 +533,7 @@
 (err/rt-test (read (make-input-port #f void void void)))
 (err/rt-test (read-char (make-input-port #f void void void)))
 (err/rt-test (peek-char (make-input-port #f void void void)))
-(arity-test make-input-port 4 6)
+(arity-test make-input-port 4 7)
 (err/rt-test (make-custom-input-port #f 8 void void))
 (err/rt-test (make-custom-input-port #f void 8 void))
 (err/rt-test (make-custom-input-port #f void void 8))

@@ -645,6 +645,7 @@ MZ_EXTERN long scheme_tell(Scheme_Object *port);
 MZ_EXTERN long scheme_output_tell(Scheme_Object *port);
 MZ_EXTERN long scheme_tell_line(Scheme_Object *port);
 MZ_EXTERN long scheme_tell_column(Scheme_Object *port);
+MZ_EXTERN void scheme_tell_all(Scheme_Object *port, long *line, long *col, long *pos);
 MZ_EXTERN void scheme_count_lines(Scheme_Object *port);
 MZ_EXTERN void scheme_close_input_port(Scheme_Object *port);
 MZ_EXTERN void scheme_close_output_port(Scheme_Object *port);
@@ -677,6 +678,9 @@ MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype, vo
 						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
+
+MZ_EXTERN void scheme_set_input_port_location_fun(Scheme_Input_Port *port,
+						  Scheme_Location_Fun location_fun);
 
 MZ_EXTERN Scheme_Object *scheme_progress_evt_via_get(Scheme_Input_Port *port);
 MZ_EXTERN int scheme_peeked_read_via_get(Scheme_Input_Port *port,

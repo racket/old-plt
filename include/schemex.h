@@ -60,6 +60,9 @@ volatile int scheme_fuel_counter;
 Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
 #endif
+void (*scheme_start_atomic)(void);
+void (*scheme_end_atomic)(void);
+void (*scheme_end_atomic_no_swap)(void);
 void (*scheme_out_of_fuel)(void);
 Scheme_Object *(*scheme_thread)(Scheme_Object *thunk);
 Scheme_Object *(*scheme_thread_w_details)(Scheme_Object *thunk, 
@@ -535,6 +538,7 @@ long (*scheme_tell)(Scheme_Object *port);
 long (*scheme_output_tell)(Scheme_Object *port);
 long (*scheme_tell_line)(Scheme_Object *port);
 long (*scheme_tell_column)(Scheme_Object *port);
+void (*scheme_tell_all)(Scheme_Object *port, long *line, long *col, long *pos);
 void (*scheme_count_lines)(Scheme_Object *port);
 void (*scheme_close_input_port)(Scheme_Object *port);
 void (*scheme_close_output_port)(Scheme_Object *port);
@@ -565,6 +569,8 @@ Scheme_Output_Port *(*scheme_make_output_port)(Scheme_Object *subtype, void *dat
 						      Scheme_Write_Special_Evt_Fun write_special_evt_fun,
 						      Scheme_Write_Special_Fun write_special_fun,
 						      int must_close);
+void (*scheme_set_input_port_location_fun)(Scheme_Input_Port *port,
+						  Scheme_Location_Fun location_fun);
 Scheme_Object *(*scheme_progress_evt_via_get)(Scheme_Input_Port *port);
 int (*scheme_peeked_read_via_get)(Scheme_Input_Port *port,
 					 long size,

@@ -1016,6 +1016,12 @@ scheme_make_input_port(Scheme_Object *subtype,
   return (ip);
 }
 
+void scheme_set_input_port_location_fun(Scheme_Input_Port *port,
+					Scheme_Location_Fun location_fun)
+{
+  port->location_fun = location_fun;
+}
+
 static int evt_input_port_p(Scheme_Object *p)
 {
   return 1;
@@ -2448,7 +2454,7 @@ Scheme_Object *scheme_get_special(Scheme_Object *port,
   ip->special = NULL;
 
   if (peek) {
-    /* undo location */
+    /* do location increment, since read didn't */
     if (line > 0)
       line++;
     if (col > 0)
@@ -2469,15 +2475,19 @@ Scheme_Object *scheme_get_ready_special(Scheme_Object *port,
 					Scheme_Object *stxsrc,
 					int peek)
 {
+  long line, col, pos;
+
   if (!stxsrc) {
     stxsrc = ((Scheme_Input_Port *)port)->name;
   }
 
-  return scheme_get_special(port, stxsrc,
-			    scheme_tell_line(port), 
-			    scheme_tell_column(port), 
-			    scheme_tell(port),
-			    peek);
+  /* Don't use scheme_tell_all(), because we always want the
+     MzScheme-computed values here. */
+  line = scheme_tell_line(port);
+  col = scheme_tell_column(port);
+  pos = scheme_tell(port);
+
+  return scheme_get_special(port, stxsrc, line, col, pos, peek);
 }
 
 void scheme_bad_time_for_special(const char *who, Scheme_Object *port)
@@ -2550,6 +2560,76 @@ scheme_tell_column (Scheme_Object *port)
   col = ip->column;
 
   return col;
+}
+
+void
+scheme_tell_all (Scheme_Object *port, long *_line, long *_col, long *_pos)
+{
+  Scheme_Input_Port *ip = (Scheme_Input_Port *)port;
+  long line = -1, col = -1, pos = -1;
+  
+  if (ip->count_lines && ip->location_fun) {
+    Scheme_Location_Fun location_fun;
+    Scheme_Object *r, *a[3];
+    long v;
+    int got, i;
+    
+    location_fun = ip->location_fun;
+    r = location_fun(ip);
+
+    got = (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES) ? scheme_multiple_count : 1);
+    if (got != 3) {
+      scheme_wrong_return_arity("user port next-location",
+				3, got, scheme_multiple_array,
+				"calling port-next-location procedure");
+      return;
+    }
+
+    a[0] = scheme_multiple_array[0];
+    a[1] = scheme_multiple_array[1];
+    a[2] = scheme_multiple_array[2];
+
+    for (i = 0; i < 3; i++) {
+      v = -1;
+      if (SCHEME_TRUEP(a[i])) {
+	if (scheme_nonneg_exact_p(a[i])) {
+	  if (SCHEME_INTP(a[i])) {
+	    v = SCHEME_INT_VAL(a[i]);
+	    if ((i != 1) && !v) {
+	      a[0] = a[i];
+	      scheme_wrong_type("user port next-location", 
+				((i == 1) ? "non-negative exact integer or #f" : "positive exact integer or #f"),
+				-1, -1, a);
+	      return;
+	    }
+	  }
+	}
+      }
+      switch(i) {
+      case 0:
+	line = v;
+	break;
+      case 1:
+	col = v;
+	break;
+      case 2:
+	pos = v;
+	break;
+      }
+    }
+
+    /* Internally, positions count from 0 instead of 1 */
+    if (pos > -1)
+      pos--;
+  } else {
+    line = scheme_tell_line(port);
+    col = scheme_tell_column(port);
+    pos = scheme_tell(port);
+  }
+
+  if (_line) *_line = line;
+  if (_col) *_col = col;
+  if (_pos) *_pos = pos;  
 }
 
 void

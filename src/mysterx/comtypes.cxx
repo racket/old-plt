@@ -193,7 +193,7 @@ Scheme_Object *mx_currency_to_scheme_number(int argc,Scheme_Object **argv) {
 
   sprintf(buff,"%I64d",cy);
 
-  len = strlen(buff);
+  len = (int)strlen(buff);
 
   // divide by 10,000 by shifting digits
 
@@ -276,13 +276,13 @@ Scheme_Object *scheme_number_to_mx_currency(int argc,Scheme_Object **argv) {
 
   // multiply by 10,000
 
-  len = strlen(buff);
+  len = (int)strlen(buff);
   p = strchr(buff,'.');
 
   if (p) {
     int numDecimals;
 
-    numDecimals = buff + (len - 1) - p;
+    numDecimals = (int)(buff - p) + (len - 1);
     neededZeroes = max(4 - numDecimals,0);
 
     memmove(p,p+1,min(numDecimals,4));

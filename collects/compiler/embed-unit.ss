@@ -396,7 +396,7 @@
 		       (lambda (mp)
 			 (let ([f (resolve-module-path mp #f)])
 			   (unless f
-				   (error 'write-module-bundle "bad module path: ~e" mp))
+			     (error 'write-module-bundle "bad module path: ~e" mp))
 			   (normalize f)))
 		       module-paths)]
 	       [collapsed-mps (map
@@ -441,7 +441,7 @@
 		       f
 		       (lambda (i)
 			 (copy-port i (current-output-port)))))
-				 literal-files)
+		    literal-files)
 	  (when literal-expression
 		(write literal-expression))))
 

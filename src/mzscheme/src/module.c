@@ -5208,7 +5208,8 @@ static Scheme_Object *write_module(Scheme_Object *obj)
     } else
       v = scheme_false;
     l = cons(v, l);
-  }
+  } else
+    l = cons(scheme_false, l);
   
   l = cons(scheme_make_integer(m->num_indirect_provides), l);
 

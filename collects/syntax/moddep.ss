@@ -211,7 +211,7 @@
     (lambda (s relto)
       (let ([get-dir (lambda () (force-relto relto #t))])
 	(cond
-	 [(path-string? s)
+	 [(string? s)
 	  ;; Parse Unix-style relative path string
 	  (let loop ([path (get-dir)][s (if (path? s)
 					    (path->bytes s)
@@ -226,9 +226,20 @@
 				       [else (bytes->path p)])))
 			(caddr prefix))
 		  (build-path path (bytes->path s)))))]
-	 [(or (not (pair? s))
-	      (not (list? s)))
+	 [(and (or (not (pair? s))
+		   (not (list? s)))
+	       (not (path? s)))
 	  #f]
+	 [(or (path? s)
+	      (eq? (car s) 'file))
+	  (let ([p (if (path? s)
+		       s
+		       (cadr s))])
+	    (path->complete-path p (let ([d (get-dir)])
+				     (if (path-string? d)
+					 d
+					 (or (current-load-relative-directory)
+					     (current-directory))))))]
 	 [(eq? (car s) 'lib)
 	  (let ([cols (let ([len (length s)])
 			(if (= len 2)
@@ -236,13 +247,6 @@
 			    (cddr s)))])
 	    (let ([p (apply collection-path cols)])
 	      (build-path p (cadr s))))]
-	 [(eq? (car s) 'file)
-	  (let ([p (cadr s)])
-	    (path->complete-path p (let ([d (get-dir)])
-				     (if (path-string? d)
-					 d
-					 (or (current-load-relative-directory)
-					     (current-directory))))))]
 	 [else #f]))))
 
   (define (resolve-module-path-index mpi relto)
@@ -311,7 +315,7 @@
 			    `(lib ,path ,(caddr relto-mp))
 			    `(file ,path)))]))])
 	(cond
-	 [(path-string? s)
+	 [(string? s)
 	  ;; Parse Unix-style relative path string
 	  (let loop ([elements null][s s])
 	    (let ([prefix (regexp-match re:dir s)])
@@ -325,9 +329,24 @@
 			(caddr prefix))
 		  (combine-relative-elements 
 		   (reverse (cons s elements))))))]
-	 [(or (not (pair? s))
-	      (not (list? s)))
+	 [(and (or (not (pair? s))
+		   (not (list? s)))
+	       (not (path? s)))
 	  #f]
+	 [(or (path? s)
+	      (eq? (car s) 'file))
+	  (let ([p (if (path? s)
+		       s
+		       (cadr s))])
+	    (if (absolute-path? p)
+		s
+		(let loop ([p p][elements null])
+		  (let-values ([(base name dir?) (split-path p)])
+		    (cond
+		     [(eq? base 'relative)
+		      (combine-relative-elements 
+		       (cons name elements))]
+		     [else (loop base (cons name elements))])))))]
 	 [(eq? (car s) 'lib)
 	  (let ([cols (let ([len (length s)])
 			(if (= len 2)
@@ -339,17 +358,6 @@
 				    (apply build-path 'same (cdr cols)))
 				(cadr s)))
 		  ,(car cols)))]
-	 [(eq? (car s) 'file)
-	  (let ([p (cadr s)])
-	    (if (absolute-path? p)
-		s
-		(let loop ([p p][elements null])
-		  (let-values ([(base name dir?) (split-path p)])
-		    (cond
-		     [(eq? base 'relative)
-		      (combine-relative-elements 
-		       (cons name elements))]
-		     [else (loop base (cons name elements))])))))]
 	 [else #f]))))
 
   (define (collapse-module-path-index mpi relto-mp)

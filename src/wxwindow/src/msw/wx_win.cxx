@@ -21,7 +21,6 @@ extern "C" void scheme_start_atomic();
 extern "C" void scheme_end_atomic_no_swap();
 
 // Global variables
-wxMenu **wxCurrentPopupMenu = NULL;
 static wxWindow *current_mouse_wnd = NULL;
 static void *current_mouse_context = NULL;
 
@@ -36,7 +35,6 @@ static void wxDoOnMouseEnter(wxWindow *wx_window, int x, int y, UINT flags);
 
 void wxWindowInit(void)
 {
-  wxREGGLOB(wxCurrentPopupMenu);
   wxREGGLOB(current_mouse_wnd);
   wxREGGLOB(current_mouse_context);
   wxREGGLOB(wxWndHook);
@@ -519,9 +517,6 @@ void wxResetCurrentCursor(void)
 {
   wxWnd *wnd = wxCurrentWindow(1);
   if (!wnd) return;
-
-  if (wxCurrentPopupMenu)
-    return;
 
   wxWindow *w = wnd->wx_window;
 
@@ -1605,13 +1600,6 @@ void wxSubWnd::OnSize(int bad_w, int bad_h, UINT WXUNUSED(flag))
 // Deal with child commands from buttons etc.
 BOOL wxSubWnd::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
 {
-  if (wxCurrentPopupMenu) {
-    wxMenu *popupMenu = *wxCurrentPopupMenu;
-    *wxCurrentPopupMenu = NULL;
-    wxCurrentPopupMenu = NULL;
-    return popupMenu->MSWCommand(cmd, id);
-  }
-
   wxWindow *item = wx_window->FindItem(id);
   if (item) {
     return item->MSWCommand(cmd, id);

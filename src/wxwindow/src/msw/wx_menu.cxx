@@ -392,16 +392,13 @@ BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD menuId)
     return FALSE;
 }
 
-extern wxMenu **wxCurrentPopupMenu;
 extern void wxResetCurrentCursor(void);
 extern HCURSOR wxMSWSetCursor(HCURSOR c);
 
 Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 {
-  if (wxCurrentPopupMenu)
-    return FALSE;
+  int r;
 
-  wxMenu **ptr;
   HWND hWnd = GetHWND();
   HMENU hMenu = (HMENU)menu->ms_handle;
   if (!hMenu) return FALSE;
@@ -410,19 +407,15 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   point.y = (int)y;
   ::ClientToScreen(hWnd, &point);
 
-  ptr = new wxMenu*[1];
-  *ptr = menu;
-  wxCurrentPopupMenu = ptr;
-
   wxMSWSetCursor(wxSTANDARD_CURSOR->ms_cursor);
-  wxwmTrackPopupMenu(hMenu, TPM_LEFTBUTTON | TPM_RIGHTBUTTON, 
-		     point.x, point.y,
-		     0, hWnd, NULL);
+  r = wxwmTrackPopupMenu(hMenu, 
+			 TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD, 
+			 point.x, point.y,
+			 0, hWnd, NULL);
   wxResetCurrentCursor();
-  // wxYield();
-  if (wxCurrentPopupMenu == ptr)
-    wxCurrentPopupMenu = NULL;
-  if (*ptr) {
+  if (r){
+    menu->MSWCommand(0, r);
+  } else {
     wxPopupEvent *event;
     event = new wxPopupEvent();
     event->menuId = 0;

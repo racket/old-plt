@@ -1,6 +1,5 @@
 
-(unless (defined? 'skip-media?)
-  (global-defined-value 'skip-media? #f))
+(require-library "core.ss")
 
 (define example-list%
   (class '() (name-in parents [filter (lambda (x) (not (void? x)))])
@@ -57,68 +56,71 @@
 		(choose-parent-example (- n num-items)))))])))
 
 (define boxed-example-list%
-  (class () (null-ok? parent)
+  (class () (parent)
     (public
      [name `(boxed ,(ivar parent name))]
      [all-examples
       (lambda ()
 	(let ([l (map box (send parent all-examples))])
-	  (if null-ok?
-	      (cons '() l)
-	      l)))]
-     [choose-example
-      (opt-lambda ([which #f])
-	(if (and null-ok? (zero? (random 2)))
-	    '()
-	    (let ([ex (send parent choose-example)])
-	      (if (void? ex)
-		  (void)
-		  (box ex)))))])))
-
-(define nn-example-list%
-  (class () (parent)
-    (public
-     [name 'nn]
-     [all-examples
-      (lambda ()
-	(filter (lambda (x) (not (negative? x))) (send parent all-examples)))]
-     [choose-example
-      (opt-lambda ([which #f])
-	(let loop ()
-	  (let ([ex (send parent choose-example)])
-	    (if (not (negative? ex))
-		ex
-		(loop)))))])))
-
-(define array-example-list%
-  (class () (parent)
-    (public
-     [name `(array ,(ivar parent name))]
-     [all-examples
-      (lambda ()
-	(let ([v1 (cons (send parent choose-example) '())]
-	      [v2 (cons (send parent choose-example) '())])
-	  (set-cdr! v1 v1) ; cycle
-	  (set-cdr! v2 (send parent choose-example)) ; improper
-	  (list v1 v2 (send parent all-examples))))]
+	  l))]
      [choose-example
       (opt-lambda ([which #f])
 	(let ([ex (send parent choose-example)])
 	  (if (void? ex)
 	      (void)
-	      (if (zero? (random 10))
-		  ; occasionally pick a mean one
-		  (let ([v (cons ex '())])
-		    (if (zero? (random 2))
-			(set-cdr! v v) ; cycle
-			(set-cdr! v (send parent choose-example))) ; improper
-		    v)
-		  (let loop ([count (random 10)])
-		    (cond
-		     [(zero? count) '()]
-		     [(= count 1) (list ex)]
-		     [else
-		      (cons (send parent choose-example) (loop (sub1 count)))]))))))])))
+	      (box ex))))])))
+
+(define optional-example-list%
+  (class () (parent)
+    (public
+     [name `(optional ,(ivar parent name))]
+     [all-examples
+      (lambda ()
+	(let ([l (map box (send parent all-examples))])
+	  (cons #f l)))]
+     [add
+      (lambda (x)
+	(and x (send parent add x)))]
+     [choose-example
+      (opt-lambda ([which #f])
+	(if (zero? (random 2))
+	    #f
+	    (send parent choose-example)))])))
+
+(define choose-example-list%
+  (class () (parents)
+    (public
+     [name `(choose ,(map (lambda (p) (ivar p name)) parents))]
+     [all-examples
+      (lambda ()
+	(apply append (map (lambda (p) (send p all-examples)) parents)))]
+     [add void]
+     [choose-example
+      (opt-lambda ([which #f])
+	(send (list-ref parents (random (add1 (length parents))))
+	      choose-example which))])))
+
+(define unknown-example-list%
+  (class () ()
+    (public
+     [name 'unknown]
+     [all-examples (lambda () null)]
+     [add void]
+     [choose-example
+      (opt-lambda ([which #f])
+	(error 'choose-example "can't choose unknown example"))])))
+
+(define discrete-example-list%
+  (class () (vals)
+    (public
+     [name `(one-of ,@vals)]
+     [all-examples (lambda () vals)]
+     [add (lambda (x) (unless (member x vals)
+			(error '|add in discrete-example-list|
+				 "no good: ~a" x)))]
+     [choose-example
+      (opt-lambda ([which #f])
+	(list-ref vals (random (add1 (length vals)))))])))
 
 (define-struct (fatal-exn struct:exn) ())
 
@@ -161,275 +163,200 @@
 						 (set! null-results (cons (list trying-class trying-method ',name)
 									  null-results))
 						 (error ',name "got null")))))
-		   (if (char=? #\! (string-ref strname (sub1 (string-length strname))))
-		       (let* ([base (substring strname 0 (sub1 (string-length strname)))]
-			      [caret (string->symbol (string-append base "^"))]
-			      [percent (string->symbol (string-append base "%"))])
-			 (list*
-			  `(define ,(el-name caret)
-			     (make-object example-list% '(nullable ,name) (list ,(el-name name))))
-			  `(define ,(el-name percent)
-			     (make-object example-list% ',name (list ,(el-name name))))
-			  `(send ,(el-name caret) add '())
-			  rest))
-		       rest))))))))
+		   rest)))))))
 
 (define-main
   void
   char
   ubyte
-  int
+  integer
+  nonnegative-integer
+  symbol
+  real
   string
-  bool
-  float
-
-  pathname
+  string-list
+  boolean
+  procedure
+  value
+  eventspace
+  0-to-255
+  0-to-10000
+  -10000-to-10000
 
   void*
   istream%
   ostream%
 
-  wxFunction
-  wxKeyErrorFunction
-  wxKeyFunction
-  wxMouseFunction
-  wxBreakSequenceFunction
-  wxGrabMouseFunction
-  wxGrabKeyFunction
-  wxClickbackFunc
-  wxWordbreakFunc
+  (area<%> window<%> subarea<%> area-container<%>)
 
-  (wxObject! wxWindow! wxItem! wxColour! wxList!)
+  (subarea<%> subwindow<%> pane%)
 
-  wxPoint!
-  wxIntPoint!
+  (window<%> subwindow<%> area-container-window<%>)
 
-  wxButton!
-  wxColour!
-  wxFont!
-  wxBrush!
-  wxPen!
+  (area-container<%> area-container-window<%> pane%)
 
-  wxFontList!
-  wxPenList!
-  wxBrushList!
-  wxColourDatabase!
-  wxFontNameDirectory!
+  (subwindow<%> control<%> canvas<%> panel%)
 
-  wxColourMap!
-  wxCursor!
-  wxIcon!
-  wxBitmap!
+  (area-container-window<%> top-level-window<%> panel%)
 
-  (wxEvent! wxCommandEvent! wxMouseEvent! wxKeyEvent!)
-  wxCommandEvent!
-  wxMouseEvent!
-  wxKeyEvent!
+  (control<%> message% button% check-box% slider% gauge% text-field% radio-box% list-control<%>)
 
-  (wxDC! wxCanvasDC! wxPanelDC! wxMemoryDC! wxPostScriptDC!)
-  wxCanvasDC!
-  wxPanelDC!
-  wxMemoryDC!
-  wxPostScriptDC!
+  (list-control<%> choice% list-box%)
 
-  basePrinterDC!
-  baseMetaFileDC!
+  (top-level-window<%> frame% dialog%)
+
+  (pane% horizontal-pane% vertical-pane%)
   
-  baseMetaFile!
+  (panel% horizontal-panel% vertical-panel%)
 
-  (wxWindow! wxFrame! wxCanvas! wxItem!)
+  (canvas<%> canvas% editor-canvas%)
 
-  wxFrame!
-  wxTextWindow!
-  (wxCanvas! wxPanel! wxMediaCanvas!)
-  (wxPanel! wxDialogBox!)
-  wxDialogBox!
-  wxMediaCanvas!
+  message%
+  button%
+  check-box%
+  slider%
+  gauge%
+  text-field%
+  radio-box%
 
-  (wxItem! wxButton! wxCheckBox! wxChoice!
-	   wxListBox! wxSlider! wxsGauge! wxText! wxMultiText! 
-	   wxRadioBox! wxMessage! wxGroupBox!)
-  wxButton!
-  wxCheckBox!
-  wxChoice!
-  wxListBox!
-  wxSlider!
-  wxsGauge!
-  wxText!
-  wxMultiText!
-  wxMessage!
-  wxRadioBox!
-  wxGroupBox!
+  choice%
+  list-box%
 
-  wxMenu!
-  wxMenuBar!
+  canvas%
+  editor-canvas%
 
-  wxNode!
-  wxList!
+  horizontal-pane%
+  vertical-pane%
 
-  wxHashTable!
-  wxPathList!
-  wxStringList!
+  horizontal-panel%
+  vertical-panel%
 
-  wxConnection!
-  (wxIPCObject! wxClient! wxServer!)
-  wxClient!
-  wxServer!
+  frame%
+  dialog%
 
-  wxTimer!
-  wxTypeTree!
+  point%
 
-  wxToolBarTool!
-  wxToolBar!
+  ps-setup%
 
-  wxLayoutConstraints!
+  color%
+  font%
+  brush%
+  pen%
 
-  wxAddColour!
-  wxMultColour!
-  wxStyleDelta!
-  wxStyle!
-  wxStyleList!
+  font-list%
+  pen-list%
+  brush-list%
+  color-database%
+  font-name-directory%
 
-  (wxMediaAdmin! wxCanvasMediaAdmin! wxMediaSnipMediaAdmin!)
-  wxCanvasMediaAdmin!
-  wxMediaSnipMediaAdmin!
-  wxSnipAdmin!
+  color-map%
+  cursor%
+  icon%
+  bitmap%
+
+  (event% control-event% scroll-event% mouse-event% key-event%)
+  control-event%
+  scroll-event%
+  mouse-event%
+  key-event%
+
+  (dc<%> canvas-dc% post-script-dc%)
+  (canvas-dc%  memory-dc%)
+  memory-dc%
+  post-script-dc%
+
+  printer-dc%
+  meta-file-dc%
   
-  (wxMediaBuffer! wxMediaEdit! wxMediaPasteboard!)
-  wxMediaEdit!
-  wxMediaPasteboard!
+  meta-file%
 
-  (wxSnip! wxTextSnip! wxImageSnip! wxMediaSnip!)
-  (wxTextSnip! wxTabSnip!)
-  wxTabSnip!
-  wxImageSnip!
-  wxMediaSnip!
 
-  wxSnipClass!
-  wxSnipClassList!
+  (item% button% checkbox% choice%
+	   listbox% slider% sgauge% text% multitext% 
+	   radiobox% message% groupbox%)
+  button%
+  checkbox%
+  choice%
+  listbox%
+  slider%
+  sgauge%
+  text%
+  multitext%
+  message%
+  radiobox%
+  groupbox%
 
-  wxBufferData!
-  wxBufferDataClass!
-  wxBufferDataClassList!
+  (menu-item-container<%> menu% menu-bar% popup-menu%)
 
-  wxKeymap!
-  wxMediaWordbreakMap!
-
-  (wxMediaStreamInBase! wxMediaStreamInStringBase!)
-  (wxMediaStreamOutBase! wxMediaStreamOutStringBase!)
-
-  wxMediaStreamInStringBase!
-  wxMediaStreamOutStringBase!
-
-  wxMediaStreamIn!
-  wxMediaStreamOut!
+  menu%
+  popup-menu%
+  menu-bar%
   
-  wxClipboard!
-  wxClipboardClient!
+  (menu-item<%> separator-menu-item%  labelled-menu-item<%>)
+  (labelled-menu-item<%> shortcut-menu-item<%> submenu-item<%>)
+  (shortcut-menu-item<%> menu-item% checkable-menu-item%)
+  submenu-item<%>
+  separator-menu-item%
+  menu-item%
+  checkable-menu-item%
 
-  Scheme_Object*)
+  timer%
 
-(send wxBitmap!-example-list set-filter (lambda (bm) (send bm ok?)))
+  add-color%
+  mult-color%
+  style-delta%
+  style%
+  style-list%
 
-(define-macro define-boxed 
-  (lambda list
-    (let ([make
-	   (lambda (s tag)
-	     (string->symbol
-	      (string-append
-	       (symbol->string s)
-	       tag
-	       "-example-list")))])
-      (let loop ([l list][rest '()])
-	(if (null? l)
-	    (cons 'begin rest)
-	    (loop (cdr l)
-		  (cons `(define ,(make (car l) "*")
-			   (make-object boxed-example-list% #f ,(make (car l) "")))
-			(cons `(define ,(make (car l) "?")
-				 (make-object boxed-example-list% #t ,(make (car l) "")))
-			      rest))))))))
+  (editor-admin%  editor-snip-editor-admin%)
+  editor-snip-editor-admin%
+  snip-admin%
+  
+  (editor<%> text% pasteboard%)
+  text%
+  pasteboard%
 
-(define-macro define-array 
-  (lambda list
-    (let ([make
-	   (lambda (s tag)
-	     (string->symbol
-	      (string-append
-	       (symbol->string s)
-	       tag
-	       "-example-list")))])
-      (let loop ([l list][rest '()])
-	(if (null? l)
-	    (cons 'begin rest)
-	    (loop (cdr l)
-		  (cons `(define ,(make (car l) "ARRAY")
-			   (make-object array-example-list% ,(make (car l) "")))
-			rest)))))))
+  (snip% text-snip% image-snip% editor-snip%)
+  (text-snip% tab-snip%)
+  tab-snip%
+  image-snip%
+  editor-snip%
 
-(define nstring-example-list (make-object example-list% '(nullable string) (list string-example-list)))
-(send nstring-example-list add '())
+  snip-class%
+  snip-class-list%
 
-(define long-example-list int-example-list)
-(define Long-example-list int-example-list)
-(define short-example-list int-example-list)
-(define Bool-example-list int-example-list)
-(define _KEY_TYPE-example-list int-example-list)
-(define uchar-example-list char-example-list)
-(define double-example-list float-example-list)
-(define Double-example-list double-example-list)
-(define cstring-example-list string-example-list)
-(define ustring-example-list string-example-list)
-(define custring-example-list string-example-list)
-(define ncstring-example-list nstring-example-list)
-(define ncustring-example-list nstring-example-list)
+  editor-data%
+  editor-data-class%
+  editor-data-class-list%
 
-(define nnfloat-example-list (make-object nn-example-list% float-example-list))
-(define nnint-example-list (make-object nn-example-list% int-example-list))
-(define nnlong-example-list nnint-example-list)
+  keymap%
+  editor-wordbreak-map%
 
-(define voidARRAY-example-list (make-object example-list% 'voidARRAY null))
-(define CAPOFunc-example-list (make-object example-list% 'CAPOFunc null))
+  (editor-stream-in-base% editor-stream-in-string-base%)
+  (editor-stream-out-base% editor-stream-out-string-base%)
+
+  editor-stream-in-string-base%
+  editor-stream-out-string-base%
+
+  editor-stream-in%
+  editor-stream-out%
+  
+  clipboard%
+  clipboard-client%)
+
+(send bitmap%-example-list set-filter (lambda (bm) (send bm ok?)))
 
 (define false-example-list (make-object example-list% 'false '()))
 (send false-example-list add #f)
 
-(define-boxed
-  int
-  string
-  bool
-  ubyte
-  float
-  Double
-  Long
-  long
-  short
-  wxSnip!)
+(define empty-list-example-list (make-object example-list% 'empty-list '()))
+(send empty-list-example-list add null)
 
-(define Double+-example-list Double*-example-list)
-(define long+-example-list long*-example-list)
-(define Long+-example-list Long*-example-list)
-
-(define wxBitmap*-example-list wxBitmap!-example-list)
-(define wxMenu*-example-list wxMenu!-example-list)
-
-(define-array
-  char
-  string
-  int
-  long
-  float
-  wxBitmap*
-  wxMenu*)
-
-(define int**-example-list 
-  (make-object array-example-list% int*-example-list))
-
-(send* bool-example-list
+(send* boolean-example-list
        (add #t)
        (add #f))
 
-(send* int-example-list
+(send* integer-example-list
        (add 0) (add 0) (add 0) (add 0)
        (add 0) (add 0) (add 0) (add 0)
        (add 0) (add 0) (add 0) (add 0)
@@ -458,7 +385,7 @@
        (add 1000)
        (add 5.0))
 
-(send* ubyte-example-list
+(send* 0-to-255-example-list
        (add 0) (add 0) (add 0)
        (add 0) (add 0) (add 0)
        (add 0) (add 0) (add 0)
@@ -490,7 +417,7 @@
        (add #\z)
        (add #\C))
 
-(send* float-example-list
+(send* real-example-list
        (add 0.)
        (add 0.)
        (add 0.)
@@ -512,16 +439,7 @@
        (add "mred.gif")
        (add "goodbye adious see you later zai jian seeya bye-bye"))
 
-(send pathname-example-list add "/tmp/x")
-(define npathname-example-list (make-object example-list% '(nullable pathname) (list string-example-list)))
-(send npathname-example-list add '())
-
-(send wxFunction-example-list add void)
-(send wxKeyErrorFunction-example-list add void)
-(send wxKeyFunction-example-list add void)
-(send wxMouseFunction-example-list add void)
-(send wxClickbackFunc-example-list add void)
-(send wxWordbreakFunc-example-list add void)
+(send procedure-example-list add void)
 
 (define classinfo (make-hash-table))
 
@@ -536,7 +454,17 @@
 	       (map (lambda (x) (bitwise-ior (car items) x)) l)
 	       l))]))))
 
-(load-relative "tests.ss")
+(define unknown-example-list (make-object unknown-example-list%))
+
+(define (optional l) (make-object optional-example-list% l))
+(define (boxed l) (make-object boxed-example-list% l))
+(define (unknown s) unknown-example-list)
+(define (choice . l) (make-object choose-example-list% l))
+(define (style-list . l) (make-object discrete-example-list% l))
+
+(load-relative "windowing-classes.ss")
+(load-relative "drawing-classes.ss")
+(load-relative "editor-classes.ss")
 
 (define (get-args l)
   (let/ec bad
@@ -563,11 +491,7 @@
 			    (map (lambda (v) (cons v other)) values))
 			  rest)))))))
 
-(define thread-output-port 
-  (let ([p mred:constants:original-output-port])
-    (lambda ()
-      p)))
-  
+(define thread-output-port current-output-port)
 
 (define (apply-args v dest name k)
   (if v
@@ -580,7 +504,7 @@
 				    ": error: ~a~n"
 				    (exn-message x)))))
 	  (send dest add (k v))
-	  (wx:flush-display)
+	  (:flush-display)
 	  (fprintf (thread-output-port) ": success~n")))
       (fprintf (thread-output-port) "~a: failure~n" name)))
 
@@ -647,8 +571,8 @@
 (define (call-all-random)
   (call-random null))
 
-(define (call-all-non-media)
-  (call-random (list wx:media-buffer% wx:media-edit% wx:media-snip% wx:media-pasteboard% 'wxMediaGlobal)))
+(define (call-all-non-editor)
+  (call-random (list :editor-buffer% :editor-edit% :editor-snip% :editor-pasteboard% 'EditorGlobal)))
 
 (define (init)
   (create-all-random)
@@ -656,3 +580,24 @@
   (create-all-random)
   (create-all-random))
 
+(printf "Random loaded~n")
+
+(printf " Checking all methods~n")
+(hash-table-for-each classinfo 
+		     (lambda (key v)
+		       (if (string? key)
+			   (for-each
+			    (lambda (func)
+			      (unless (procedure? (with-handlers ([void void])
+						    (global-defined-value (car func))))
+				(error 'random-test "No such procedure: ~a" (car func))))
+			    (cdddr v))
+			   (for-each
+			    (lambda (func)
+			      (unless (or (and (interface? key)
+					       (ivar-in-interface? (car func) key))
+					  (and (class? key)
+					       (ivar-in-class? (car func) key)))
+				(error 'random-test "No such method: ~a in ~a" (car func) key)))
+			    (cdddr v)))))
+(printf " Method-checking done~n")

@@ -274,23 +274,23 @@
 		    (cons (car f) (merge (cdr f) s))]))]
 	       [less-than?
 		(lambda (a b)
-		  (if (symbol? a)
-		      (if (symbol? b)
-			  (symbol-less-than? a b)
+		  (if (symbol? (car a))
+		      (if (symbol? (car b))
+			  (string<? (cdr a) (cdr b))
 			  #t)
-		      (if (symbol? b)
+		      (if (symbol? (car b))
 			  #f
-			  (symbol-less-than? (signature-name a)
-					     (signature-name b)))))]
-	       [symbol-less-than?
-		(lambda (a b)
-		  (string<? (symbol->string a) (symbol->string b)))])
-	(let loop ([elems elems])
-	  (cond
-	   [(null? elems) null]
-	   [(null? (cdr elems)) elems]
-	   [else (let-values ([(f s) (split elems null null)])
-		    (merge (loop f) (loop s)))])))))
+			  (string<? (cdr a) (cdr b)))))]
+	       [pair
+		(lambda (i)
+		  (cons i (symbol->string (if (symbol? i) i (signature-name i)))))])
+	(map car
+	     (let loop ([elems (map pair elems)])
+	       (cond
+		[(null? elems) null]
+		[(null? (cdr elems)) elems]
+		[else (let-values ([(f s) (split elems null null)])
+				  (merge (loop f) (loop s)))]))))))
 		   
   (define flatten-signature
     (lambda (id sig)

@@ -209,6 +209,10 @@ static int run_from_cmd_line(int argc, char *argv[],
       argv[0] = "-m";
     else if (!strcmp("--awk", argv[0]))
       argv[0] = "-w";
+# ifdef CMDLINE_STDIO_FLAG
+    else if (!strcmp("--stdio", argv[0]))
+      argv[0] = "-z";
+# endif
 #if defined(_IBMR2)
     else if (!strcmp("--persistent", argv[0]))
       argv[0] = "-p";
@@ -345,6 +349,13 @@ static int run_from_cmd_line(int argc, char *argv[],
 	case '-':
 	  no_more_switches = 1;
 	  break;
+#ifdef CMDLINE_STDIO_FLAG
+	case 'z':
+	  no_rep = 1;
+	  evals_and_loads[num_enl] = "(read-eval-print-loop)";
+	  is_load[num_enl++] = 0;
+	  break;
+#endif
 #if defined(_IBMR2)
 	case 'p':
 	  sigset(SIGDANGER, dangerdanger);
@@ -457,6 +468,9 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 "  -L <file> <coll> : Same as -e '(require-library \"<file>\" \"<coll>\")'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
 	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
+# ifdef CMDLINE_STDIO_FLAG
+	 "  -z, --stdio : Use stdio REPL. Same as -ve '(read-eval-print-loop)'.\n"
+# endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
 	 " Initialization switches:\n"
          "  -x, --no-lib-path : Does not try to set current-library-collection-paths.\n"

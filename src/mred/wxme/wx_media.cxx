@@ -187,6 +187,8 @@ wxMediaEdit::wxMediaEdit(float spacing, float *tabstops, int numtabs)
 
   prevPasteStart = -1;
 
+  stickyStyles = 1;
+
   tabcount = numtabs;
   tabs = tabstops;
   tabSpace = wxTAB_WIDTH;
@@ -278,6 +280,8 @@ void wxMediaEdit::CopySelfTo(wxMediaBuffer *b)
   m->SetOverwriteMode(GetOverwriteMode());
 
   m->SetAutowrapBitmap(autoWrapBitmap);
+
+  m->SetStickyStyles(stickyStyles);
 }
 
 /******************************************************************/
@@ -1253,8 +1257,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
       }
     }
 
-    isnip->SizeCacheInvalid();
     isnip->style = styleList->Convert(isnip->style);  
+    isnip->SizeCacheInvalid();
 
     isnip->line->CalcLineLength();
     isnip->line->MarkRecalculate();
@@ -1270,7 +1274,9 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     flowLocked = TRUE;
 
     if (!len) {
-      snip = InsertTextSnip(start, snips->style);
+      snip = InsertTextSnip(start, (stickyStyles 
+				    ? snips->style 
+				    : styleList->FindNamedStyle(STD_STYLE)));
       sPos = 0;
       caretStyle = NULL;
       lineRoot->snip = lineRoot->lastSnip = snip;
@@ -1282,19 +1288,25 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
       if (!gsnip || (caretStyle && (gsnip->style != caretStyle))
 	  || !(gsnip->flags & wxSNIP_IS_TEXT)
-	  || (gsnip->count + addlen > MAX_COUNT_FOR_SNIP)) {
+	  || (gsnip->count + addlen > MAX_COUNT_FOR_SNIP)
+	  || (!stickyStyles
+	      && (gsnip->style != styleList->FindNamedStyle(STD_STYLE)))) {
 	snip = InsertTextSnip(start, 
 			      caretStyle
 			      ? caretStyle
-			      : (gsnip
-				 ? gsnip->style
-				 : snips->style)); // No style: use forward
+			      : (stickyStyles
+				 ? (gsnip
+				    ? gsnip->style
+				    : snips->style) // No style: use forward
+				 : styleList->FindNamedStyle(STD_STYLE)));
 	caretStyle = NULL;
 	sPos = start;
       } else {
 	snip = (wxTextSnip *)gsnip;
 	if (!(snip->flags & wxSNIP_CAN_APPEND)) {
-	  snip = InsertTextSnip(start, snip->style);
+	  snip = InsertTextSnip(start, (stickyStyles
+					? snip->style
+					: styleList->FindNamedStyle(STD_STYLE)));
 	  sPos = start;
 	}
       }
@@ -1617,7 +1629,7 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
   } else
     rec = NULL;
 
-  if (setCaretStyle)
+  if (setCaretStyle && stickyStyles)
     caretStyle = startSnip ? startSnip->next->style : snips->style;
 
   for (snip = endSnip; PTRNE(snip, startSnip); snip = prev) {
@@ -2472,6 +2484,18 @@ void wxMediaEdit::SetWordbreakMap(wxMediaWordbreakMap *map)
 }
 
 /****************************************************************/
+
+void wxMediaEdit::SetLineSpacing(float s)
+{
+  if (flowLocked)
+    return;
+
+  if (s != lineSpacing) {
+    lineSpacing = s;
+    SizeCacheInvalid();
+    NeedRefresh(-1, -1);
+  }
+}
 
 float wxMediaEdit::GetMaxWidth()
 {

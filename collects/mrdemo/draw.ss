@@ -61,7 +61,9 @@
 			     (make-object graph-snip% (list v))))))))
 
   (append-editor-font-menu-items font-menu)
+  ((current-text-keymap-initializer) (send e get-keymap))
   (send c set-editor e)
-  (send f show #t))
+  (send f show #t)
+  f)
 
 (new-text-frame)

@@ -128,6 +128,9 @@
 @ "get-min-width" : nnfs[none] GetMinWidth();
 @ "get-min-height" : nnfs[none] GetMinHeight();
 
+@ "get-tight-text-fit" : bool GetTightTextFit();
+@ "set-tight-text-fit" : void SetTightTextFit(bool);
+
 @ "show-border" : void ShowBorder(bool);
 @ "border-visible?" : bool BorderVisible();
 

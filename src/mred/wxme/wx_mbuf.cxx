@@ -126,7 +126,9 @@ wxMediaBuffer::wxMediaBuffer()
   noundomode = 0;
 
   ownCaret = FALSE;
-  caretSnip = NULL;  
+  caretSnip = NULL; 
+
+  pasteTextOnly = 0;
 
   InitCutNPaste();
 
@@ -1628,7 +1630,7 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
   wxSnip *snip;
   
   owner = wxTheClipboard->GetClipboardClient();
-  if (local || PTREQ(owner, &TheMediaClipboardClient)) {
+  if (local || (!pasteTextOnly && PTREQ(owner, &TheMediaClipboardClient))) {
     copyDepth++;
     for (node = wxmb_commonCopyBuffer->First(),
 	 node2 = wxmb_commonCopyBuffer2->First(); 
@@ -1644,7 +1646,7 @@ void wxMediaBuffer::DoBufferPaste(long time, Bool local)
     char *str;
     long len;
 
-    if ((str = wxTheClipboard->GetClipboardData("WXME", &len, time))) {
+    if (!pasteTextOnly && (str = wxTheClipboard->GetClipboardData("WXME", &len, time))) {
 
       strcpy(wxme_current_read_format, MRED_FORMAT_STR);
       strcpy(wxme_current_read_version, MRED_VERSION_STR);
@@ -1920,6 +1922,17 @@ void wxMediaSetXSelectionMode(Bool on)
     wxTheClipboard->SetClipboardString("", 0L);
 #endif
 }
+
+Bool wxMediaBuffer::GetPasteTextOnly(void)
+{
+  return pasteTextOnly;
+}
+
+void wxMediaBuffer::SetPasteTextOnly(Bool pto)
+{
+  pasteTextOnly = pto;
+}
+
 
 /****************************************************************/
 

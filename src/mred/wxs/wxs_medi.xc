@@ -130,6 +130,9 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, float x, float y)
 @ "set-load-overwrites-styles" : void SetLoadOverwritesStyles(bool)
 @ "get-load-overwrites-styles" : bool GetLoadOverwritesStyles();
 
+@ "set-paste-text-only" : void SetPasteTextOnly(bool)
+@ "get-paste-text-only" : bool GetPasteTextOnly();
+
 @ "set-cursor" : void SetCursor(wxCursor^,bool=TRUE); : : /CHECKVOIDABLEOK[0]
 
 @ "lock" : void Lock(bool);

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.11 1998/12/06 05:06:17 mflatt Exp $
+ * $Id: Choice.cc,v 1.12 1999/08/15 16:52:42 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -114,6 +114,18 @@ Bool wxChoice::Create(wxPanel *panel, wxFunction function, char *label,
     for (int i = 0; i < n; ++i)
 	Append(choices[i]);
 
+    if (width < 0) {
+      float maxw = 0;
+      for (int i = 0; i < n; i++) {
+	float w, h;
+	GetTextExtent(choices[i], &w, &h, NULL, NULL, font);
+	if (w > maxw)
+	  maxw = w;
+      }
+      
+      width = maxw + 30; /* 30 = space for arrow */
+    }
+
     panel->PositionItem(this, x, y, width, height);
     AddEventHandlers();
 
@@ -153,24 +165,7 @@ wxChoice::~wxChoice (void)
 
 void  wxChoice::GetSize(int *width, int *height)
 {
-  float w, h;
-  float maxw = 0, currentw = 0;
-  int i;
-
   wxWindow::GetSize(width, height);
-
-  if (width) {
-    for (i = 0; i < num_choices; i++) {
-      char *s = GetString(i);
-      GetTextExtent(s, &w, &h, NULL, NULL, font);
-      if (w > maxw)
-	maxw = w;
-      if (i == selection)
-	currentw = w;
-    }
-
-    *width += (int)(maxw - currentw);
-  }
 }
 
 

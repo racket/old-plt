@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: FontDirectory.cc,v 1.5 1999/09/17 02:20:32 mflatt Exp $
+ * $Id: FontDirectory.cc,v 1.6 1999/10/05 10:24:16 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -41,6 +41,7 @@ char *font_defaults[] = {
   "FamilyTeletype", "Teletype",
   "FamilySwiss", "Swiss",
   "FamilyScript", "Script",
+  "FamilySymbol", "Symbol",
 
   "AfmMedium", "",
   "AfmBold", "Bo",
@@ -63,6 +64,7 @@ char *font_defaults[] = {
 
   "AfmSwiss__", "${AfmHelvetica}${Afm$[weight]}${Afm$[style]}",
   "AfmModern__", "${AfmCourier}${Afm$[weight]}${Afm$[style]}",
+  "AfmSymbol__", "Sym",
 
   "AfmTeletype__", "${AfmModern,$[weight],$[style]}",
 
@@ -95,6 +97,7 @@ char *font_defaults[] = {
 
   "PostScriptSwiss__", "Helvetica${PostScript$[weight]$[style]}",
   "PostScriptModern__", "Courier${PostScript$[weight]$[style]}",
+  "PostScriptSymbol__", "Symbol",
 
   "PostScriptTeletype__", "${PostScriptModern,$[weight],$[style]}",
 
@@ -117,6 +120,7 @@ char *font_defaults[] = {
   "ScreenTeletypeBase", "*-lucidatypewriter",
   "ScreenSwissBase", "*-lucida",
   "ScreenScriptBase", "*-zapfchancery",
+  "ScreenSymbolBase", "*-symbol",
 
   "ScreenStdSuffix", "-${Screen$[weight]}-${Screen$[style]}"
     "-normal-*-*-%d-*-*-*-*-*-*",
@@ -137,6 +141,8 @@ char *font_defaults[] = {
   "+-${ScreenSwissBase}${ScreenStdSuffix}",
   "ScreenScript__",
   "+-${ScreenScriptBase}${ScreenStdSuffix}",
+  "ScreenSymbol__",
+  "+-${ScreenSymbolBase}-medium-r-normal-*-*-%d-*-*-*-*-*-*",
   NULL
 };
 
@@ -278,6 +284,7 @@ void wxFontNameDirectory::Initialize()
   wxTheFontNameDirectory.Initialize(wxTELETYPE, wxTELETYPE, "Teletype");
   wxTheFontNameDirectory.Initialize(wxSWISS, wxSWISS, "Swiss");
   wxTheFontNameDirectory.Initialize(wxSCRIPT, wxSCRIPT, "Script");
+  wxTheFontNameDirectory.Initialize(wxSYMBOL, wxSYMBOL, "Symbol");
 }
 
 typedef char *a_charptr;
@@ -499,6 +506,8 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
       item->family = wxSWISS;
     else if (!strcmp(fam, "Script"))
       item->family = wxSCRIPT;
+    else if (!strcmp(fam, "Symbol"))
+      item->family = wxSYMBOL;
   }
 
   item->name = copystring(resname);

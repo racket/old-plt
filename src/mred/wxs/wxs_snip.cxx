@@ -6033,6 +6033,7 @@ class wxImageSnip *objscheme_unbundle_wxImageSnip(Scheme_Object *obj, const char
 
 
 
+
 class os_wxMediaSnip : public wxMediaSnip {
  public:
 
@@ -6729,6 +6730,41 @@ static Scheme_Object *os_wxMediaSnipShowBorder(Scheme_Object *obj, int n,  Schem
   
   
   return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaSnipSetTightTextFit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  Bool x0;
+
+  
+  x0 = objscheme_unbundle_bool(p[0], "set-tight-text-fit in editor-snip%");
+
+  
+  ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->SetTightTextFit(x0);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaSnipGetTightTextFit(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetTightTextFit();
+
+  
+  
+  return (r ? scheme_true : scheme_false);
 }
 
 #pragma argsused
@@ -7604,7 +7640,7 @@ void objscheme_setup_wxMediaSnip(void *env)
 if (os_wxMediaSnip_class) {
     objscheme_add_global_class(os_wxMediaSnip_class, "editor-snip%", env);
 } else {
-  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 37);
+  os_wxMediaSnip_class = objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 39);
 
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4);
@@ -7612,6 +7648,8 @@ if (os_wxMediaSnip_class) {
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-margin", os_wxMediaSnipSetMargin, 4, 4);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "border-visible?", os_wxMediaSnipBorderVisible, 0, 0);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "show-border", os_wxMediaSnipShowBorder, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "set-tight-text-fit", os_wxMediaSnipSetTightTextFit, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaSnip_class, "get-tight-text-fit", os_wxMediaSnipGetTightTextFit, 0, 0);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-min-height", os_wxMediaSnipGetMinHeight, 0, 0);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "get-min-width", os_wxMediaSnipGetMinWidth, 0, 0);
  scheme_add_method_w_arity(os_wxMediaSnip_class, "set-min-height", os_wxMediaSnipSetMinHeight, 1, 1);

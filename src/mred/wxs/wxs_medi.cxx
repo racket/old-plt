@@ -523,6 +523,7 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
 
 
 
+
  
 
 class os_wxMediaBuffer : public wxMediaBuffer {
@@ -1859,6 +1860,41 @@ static Scheme_Object *os_wxMediaBufferSetCursor(Scheme_Object *obj, int n,  Sche
 
   if (x0 && !x0->Ok()) return scheme_void;
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetCursor(x0, x1);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaBufferGetPasteTextOnly(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetPasteTextOnly();
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMediaBufferSetPasteTextOnly(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  Bool x0;
+
+  
+  x0 = objscheme_unbundle_bool(p[0], "set-paste-text-only in editor<%>");
+
+  
+  ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetPasteTextOnly(x0);
 
   
   
@@ -3990,7 +4026,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 112);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 114);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4007,6 +4043,8 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "is-locked?", os_wxMediaBufferIsLocked, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "lock", os_wxMediaBufferLock, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-cursor", os_wxMediaBufferSetCursor, 1, 2);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-paste-text-only", os_wxMediaBufferGetPasteTextOnly, 0, 0);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-paste-text-only", os_wxMediaBufferSetPasteTextOnly, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "get-load-overwrites-styles", os_wxMediaBufferGetLoadOverwritesStyles, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-load-overwrites-styles", os_wxMediaBufferSetLoadOverwritesStyles, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-style-list", os_wxMediaBufferSetStyleList, 1, 1);

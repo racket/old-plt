@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.7 1998/11/09 17:25:08 mflatt Exp $
+ * $Id: wxDefines.h,v 1.8 1999/08/14 00:38:10 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -375,6 +375,7 @@ enum {
 #define wxSWISS         5
 #define wxTELETYPE      6
 #define wxSYSTEM        13
+#define wxSYMBOL        14
 //--- styles
 #define wxNORMAL        7
 #define wxSLANT         8

@@ -167,6 +167,12 @@
 @ "set-paragraph-margins" : void SetParagraghMargins(nnlong,nnfloat,nnfloat,nnfloat);
 @ "set-paragraph-alignment" : void SetParagraghAlignment(nnlong,SYM[horizontalAlignment]);
 
+@ "get-line-spacing" : nnfloat GetLineSpacing();
+@ "set-line-spacing" : void SetLineSpacing(nnfloat);
+
+@ "get-styles-sticky" : bool GetStickyStyles();
+@ "set-styles-sticky" : void SetStickyStyles(bool);
+
 @MACRO bNegAsFalse = (({x} < 0) ? scheme_false : scheme_make_integer({x}))
 
 @ "find-string" : long/bNegAsFalse FindString(string,SYM[direction]=1,nnls[start]=-1,nnls[eof]=-1,bool=TRUE,bool=TRUE);

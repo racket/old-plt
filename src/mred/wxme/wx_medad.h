@@ -78,6 +78,7 @@ class wxMediaBuffer : public wxObject
   TF_Flag( interceptmode );
   TF_Flag( loadoverwritesstyles );
   TF_Flag( customCursorOverrides );
+  TF_Flag( pasteTextOnly );
   
   int noundomode;
 
@@ -303,6 +304,9 @@ class wxMediaBuffer : public wxObject
   void SetInactiveCaretThreshold(int);
 
   void SetCursor(wxCursor *cursor, Bool override = TRUE);
+
+  Bool GetPasteTextOnly(void);
+  void SetPasteTextOnly(Bool pto);
 
   /* State */
   void Lock(Bool);

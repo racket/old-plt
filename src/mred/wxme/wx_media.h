@@ -381,6 +381,12 @@ class wxMediaEdit : public wxMediaBuffer
   inline Bool GetOverwriteMode(void) { return overwriteMode; }
   inline void SetOverwriteMode(Bool m) { overwriteMode = !!m; }
 
+  inline float GetLineSpacing() { return lineSpacing; }
+  void SetLineSpacing(float);
+
+  inline Bool GetStickyStyles() { return stickyStyles; }
+  inline void SetStickyStyles(Bool s) { stickyStyles = s; if (s) caretStyle = NULL; }
+
 #if ALLOW_X_STYLE_SELECTION
   virtual Bool OwnXSelection(Bool on, Bool update, Bool force);
 #endif
@@ -440,6 +446,7 @@ class wxMediaEdit : public wxMediaBuffer
 
   TF_Flag( tabSpaceInUnits );
   TF_Flag( overwriteMode );
+  TF_Flag( stickyStyles );
 
 #if ALLOW_X_STYLE_SELECTION
   TF_Flag( needXCopy );

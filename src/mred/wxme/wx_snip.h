@@ -356,7 +356,11 @@ class wxMediaSnip : public wxInternalSnip
   wxMediaBuffer *me;
   class wxMediaSnipMediaAdmin *myAdmin;
 
-  Bool withBorder;
+#define TF_Flag(var) unsigned var : 1
+  TF_Flag( withBorder );
+  TF_Flag( tightFit );
+#undef TF_Flag
+
   int leftMargin, topMargin, rightMargin, bottomMargin;
   int leftInset, topInset, rightInset, bottomInset;
 
@@ -418,6 +422,9 @@ class wxMediaSnip : public wxInternalSnip
   void SetMinHeight(float);
   float GetMinWidth(void);
   float GetMinHeight(void);
+
+  Bool GetTightTextFit(void);
+  void SetTightTextFit(Bool);
 
   void ShowBorder(Bool show);
   Bool BorderVisible();

@@ -1526,7 +1526,7 @@ static MediaSnipClass TheMediaSnipClass;
 MediaSnipClass::MediaSnipClass(void)
 {
   classname = "wxmedia";
-  version = 1;
+  version = 2;
   required = TRUE;
 }
 
@@ -1534,13 +1534,16 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn &f)
 {
   wxMediaBuffer *media;
   wxMediaSnip *snip;
-  Bool border;
+  Bool border, tightFit = 0;
   int lm, tm, rm, bm, li, ti, ri, bi, type;
   float w, W, h, H;
 
   f >> type >> border >> lm >> tm >> rm >> bm >> li >> ti >> ri >> bi
     >> w >> W >> h >> H;
-
+  
+  if (wxTheSnipClassList.ReadingVersion(this) > 1)
+    f >> tightFit;
+  
   if (!type)
     media = NULL;
   else if (type == wxEDIT_BUFFER)
@@ -1550,6 +1553,8 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn &f)
 
   snip = wxsMakeMediaSnip(media, border, lm, tm, rm, bm, li, ti, ri, bi,
 			  w, W, h, H);
+  if (tightFit)
+    snip->SetTightTextFit(1);
   
   if (media) {
     media->GetStyleList()->Clear();
@@ -1701,7 +1706,7 @@ Bool wxStandardSnipClassList::Read(wxMediaStreamIn &f)
       return FALSE;
     sclass = Find(buffer);
     if (!sclass || (sclass->version < version)) {
-      /* unknown class; remember name in case it's used */
+      /* unknown class/version; remember name in case it's used */
       char *copy = copystring(buffer);
       unknowns->Append(i, (wxObject *)copy);
     } else {
@@ -1730,7 +1735,7 @@ wxSnipClass *wxStandardSnipClassList::FindByMapPosition(short n)
   if ((node = unknowns->Find(n))) {
     /* Show error and then remove it from the list so it isn't shown again. */
     char buffer2[256];
-    sprintf(buffer2, "Unknown snip class \"%.100s\".", (char *)node->Data());
+    sprintf(buffer2, "Unknown snip class or version: \"%.100s\".", (char *)node->Data());
     wxmeError(buffer2);
 
     delete[] (char *)node->Data();
@@ -1937,7 +1942,7 @@ wxBufferDataClass *wxBufferDataClassList::FindByMapPosition(short n)
 
   if ((node = unknowns->Find(n))) {
     char buffer2[256];
-    sprintf(buffer2, "Unknown snip data class \"%.100s\".", (char *)node->Data());
+    sprintf(buffer2, "Unknown snip data class or version: \"%.100s\".", (char *)node->Data());
     wxmeError(buffer2);
   }
 

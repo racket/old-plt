@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Font.h,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
+ * $Id: Font.h,v 1.2 1998/01/29 15:52:59 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -30,6 +30,8 @@
 #pragma interface
 #endif
 
+extern char *wx_font_spec[];
+
 class wxFont : public wxObject {
 DECLARE_DYNAMIC_CLASS(wxFont)
 public:
@@ -44,15 +46,15 @@ public:
 
     int   GetPointSize(void)     { return point_size; }
     int   GetFamily(void)        { return family; }
-    char  *GetFamilyString(void) { return wx_desc[family]; }
+    char  *GetFamilyString(void) { return wx_font_spec[family]; }
     /* MATTHEW: */
     int   GetFontId(void)        { return font_id; }
     /* MATTHEW: */
     char  *GetFaceString(void);
     int   GetStyle(void)         { return style; }
-    char  *GetStyleString(void)  { return wx_desc[style]; }
+    char  *GetStyleString(void)  { return wx_font_spec[style]; }
     int   GetWeight(void)	 { return weight==wxNORMAL_WEIGHT ? wxNORMAL : weight; }
-    char  *GetWeightString(void) { return wx_desc[weight]; }
+    char  *GetWeightString(void) { return wx_font_spec[weight]; }
     Bool  GetUnderlined(void)    { return underlined; }
 
     void  *GetInternalFont(float scale = 1.0); // return type XFontStruct*
@@ -62,7 +64,6 @@ private:
     short  point_size;
     short  family, style, weight;
     Bool   underlined;
-    char   **wx_desc;
     int    font_id; /* MATTHEW */
 };
 

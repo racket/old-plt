@@ -265,7 +265,14 @@ void wxMediaSnip::GetExtent(wxDC *dc,
   }
 
   if (w) {
-    if (*w) --(*w); /* It looks better to subtract 1 */
+    if (me && (me->bufferType == wxEDIT_BUFFER)) {
+      if (tightFit)
+	*w -= CURSOR_WIDTH;
+      else
+	--(*w); /* It still looks better to subtract 1 */
+      if (*w < 0)
+	*w = 0;
+    }
     if (*w < minWidth)
       *w = minWidth;
     else if (maxWidth > 0 && *w > maxWidth)
@@ -274,6 +281,13 @@ void wxMediaSnip::GetExtent(wxDC *dc,
     *w += rightMargin + leftMargin;
   }
   if (h) {
+    if (me && (me->bufferType == wxEDIT_BUFFER)) {
+      if (tightFit) {
+	*h -= ((wxMediaEdit *)me)->GetLineSpacing();
+	if (*h < 0)
+	  *h = 0;
+      }
+    }
     if (*h < minHeight)
       *h = minHeight;
     else if (maxHeight > 0 && *h > maxHeight)
@@ -308,7 +322,21 @@ void wxMediaSnip::Draw(wxDC *dc, float x, float y,
   if (me) {
     w = h = 0.0;
     me->GetExtent(&w, &h);
-    if (w) --w; /* It looks better to subtract 1 */
+    if (me && (me->bufferType == wxEDIT_BUFFER)) {
+      if (tightFit)
+	w -= CURSOR_WIDTH;
+      else
+	--w; /* It still looks better to subtract 1 */
+      if (w < 0)
+	w = 0;
+    }
+    if (me && (me->bufferType == wxEDIT_BUFFER)) {
+      if (tightFit) {
+	h -= ((wxMediaEdit *)me)->GetLineSpacing();
+	if (h < 0)
+	  h = 0;
+      }
+    }
   } else 
     w = h = 0.0;
 
@@ -388,12 +416,14 @@ wxSnip *wxMediaSnip::Copy(void)
 
 void wxMediaSnip::Write(wxMediaStreamOut &f)
 {
+  Bool wb = withBorder, tf = tightFit;
+
   f << (me ? me->bufferType : 0)
-    << withBorder
+    << wb
     << leftMargin << topMargin << rightMargin << bottomMargin
     << leftInset << topInset << rightInset << bottomInset
     << minWidth << maxWidth
-    << minHeight << maxHeight;
+    << minHeight << maxHeight << tf;
 
   if (me)
     me->WriteToFile(f);
@@ -432,6 +462,18 @@ float wxMediaSnip::GetMaxHeight(void) { return maxHeight; }
 float wxMediaSnip::GetMinWidth(void) { return minWidth; }
 float wxMediaSnip::GetMinHeight(void) { return minHeight; }
 
+Bool wxMediaSnip::GetTightTextFit(void)
+{
+  return tightFit;
+}
+
+void wxMediaSnip::SetTightTextFit(Bool t)
+{
+  tightFit = (t ? TRUE : FALSE);
+  if (*admin_ptr)
+    (*admin_ptr)->Resized(this, TRUE);
+}
+
 Bool wxMediaSnip::Resize(float w, float h)
 {
   w -= leftMargin + rightMargin;
@@ -456,8 +498,8 @@ Bool wxMediaSnip::Resize(float w, float h)
 
 void wxMediaSnip::ShowBorder(Bool show)
 {
-  if (withBorder != show) {
-    withBorder = show;
+  if ((withBorder ?  1 : 0) != (show ? 1 : 0)) {
+    withBorder = (show ? TRUE : FALSE);
     if (*admin_ptr) {
       wxDC *dc;
       float w, h;

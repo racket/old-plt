@@ -47,15 +47,14 @@
         [else
          (let ([tok (car tokens)] [rest-tokens (cdr tokens)])
            (cond
-             [(eof-object? tok) null]
              [(start-tag? tok)
-              (let-values ([(el more-tokens) (read-element tok may-contain rest-tokens)])
+              (let-values ([(el more-tokens) (read-element tok null may-contain rest-tokens)])
                 (cons el (loop more-tokens)))]
              [(end-tag? tok) (loop rest-tokens)]
              [else (let ([rest-contents (loop rest-tokens)])
                      (expand-content tok rest-contents))]))])))
   
-  ;; read-element : Start-tag Kid-lister (listof Token) -> Element (listof Token)
+  ;; read-element : Start-tag (listof Symbol) Kid-lister (listof Token) -> Element (listof Token)
   ;; Note: How elements nest depends on their content model.
   ;;   If a kind of element can't contain anything, then its start tags are implicitly ended, and
   ;;   end tags are implicitly started.
@@ -63,7 +62,10 @@
   ;;   Otherwise, only the subelements listed in the content model can go inside an element.
   ;; more here - may-contain shouldn't be used to decide if an element is known or not.
   ;;             The edgar dtd puts tags in may-contain's range that aren't in its domain.
-  (define (read-element start-tag may-contain tokens)
+  ;; more here (or not) - the (memq name context) test leaks for a worst case of O(n^2) in the
+  ;;                      tag nesting depth.  However, this only should be a problem when the tag is there,
+  ;;                      but far back.  That shouldn't happen often.  I'm guessing n will be about 3.
+  (define (read-element start-tag context may-contain tokens)
     (let* ([start-name (start-tag-name start-tag)]
            [ok-kids (may-contain start-name)])
       (let-values ([(content remaining)
@@ -78,24 +80,21 @@
                             (let ([tok (car tokens)] [next-tokens (cdr tokens)])
                               (cond
                                 [(start-tag? tok)
-                                 (if (and ok-kids
-                                          (not (memq (start-tag-name tok) ok-kids))
-                                          (may-contain (start-tag-name tok)))
-                                     (values null tokens)
-                                     (let*-values ([(element post-element) (read-element tok may-contain next-tokens)]
-                                                   [(more-contents left-overs) (read-content post-element)])
-                                       (values (cons element more-contents) left-overs)))]
+                                 (let ([name (start-tag-name tok)])
+                                   (if (and ok-kids
+                                            (not (memq name ok-kids))
+                                            (may-contain name))
+                                       (values null tokens)
+                                       (let*-values ([(element post-element) (read-element tok (cons name context) may-contain next-tokens)]
+                                                     [(more-contents left-overs) (read-content post-element)])
+                                         (values (cons element more-contents) left-overs))))]
                                 [(end-tag? tok)
-                                 (if (null? (may-contain tok))
-                                     (let-values ([(more-contents left-overs) (read-content next-tokens)])
-                                       (values (make-element (source-start tok)
-                                                             (source-stop tok)
-                                                             (end-tag-name tok)
-                                                             null null)
-                                               left-overs))
-                                     (if (eq? (end-tag-name tok) start-name)
-                                         (values null next-tokens)
-                                         (values null tokens)))]
+                                 (let ([name (end-tag-name tok)])
+                                   (if (eq? name start-name)
+                                       (values null next-tokens)
+                                       (if (memq name context)
+                                           (values null tokens)
+                                           (read-content next-tokens))))]
                                 [else ;; content
                                  (let-values ([(more-contents left-overs) (read-content next-tokens)])
                                    (values

@@ -1044,8 +1044,12 @@
  (define-struct (type-scheme type) (flow-vars type^Cs type))
  
  ; XXX
- (define *basic-types* '(top bottom number symbol string char void))
- (define *type-constructors* '(forall cons case-lambda))
+ (define *basic-types* '(top bottom
+                             void
+                             boolean char symbol string char
+                             integer rational real complex number
+                             ))
+ (define *type-constructors* '(forall cons listof case-lambda void -> *->))
  (define *all-type-keywords* (append *basic-types* *type-constructors*))
  
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; PRIMITIVE TYPE PARSER AND LOOKUP
@@ -1056,7 +1060,7 @@
  ; symbol -> (union type-scheme #f)
  (define (lookup-primitive-type-scheme name)
    (hash-table-get *primitive-types-table* name *hash-table-fail-false*))
-     
+ 
  ; -> void
  (define (initialize-primitive-type-schemes)
    (let* ([filename (build-path (collection-path "mrflow") "primitives.ss")]
@@ -1262,6 +1266,36 @@
                  'parse&check-type
                  (format "malformed void type in type scheme primitive ~a in file ~a: ~a"
                          primitive-name filename sexp)))]
+           [else
+            (let ([sexp-length (length sexp)])
+              (cond
+                [(and (>= sexp-length 2)
+                      (eq? (list-ref sexp (- sexp-length 2)) '->))
+                 (let ([exp-sexp (list-ref sexp (sub1 sexp-length))]
+                       [list-head (list-head! sexp (- sexp-length 2)
+                                              primitive-name filename)])
+                   (parse&check-type
+                    `(case-lambda [,list-head ,exp-sexp])
+                    delta covariant? primitive-name filename))]
+                [(and (>= sexp-length 3)
+                      (eq? (list-ref sexp (- sexp-length 2)) '*->))
+                 (let* ([exp-sexp (list-ref sexp (sub1 sexp-length))]
+                        [rest-sexp (list-ref sexp (- sexp-length 3))]
+                         [list-head (list-head! sexp (- sexp-length 3)
+                                               primitive-name filename)]
+                        [whole-list (set-list-tail-cdr! list-head rest-sexp)])
+                   ; whole list is either an improper list with the rest arg type at the end,
+                   ; or directly the (possible complex) rest arg type. the parser will know 
+                   ; the difference because one is improper and the other one start with a
+                   ; constructor name.
+                   (parse&check-type
+                    `(case-lambda [,whole-list ,exp-sexp])
+                    delta covariant? primitive-name filename))]
+                [else
+                 (raise-syntax-error
+                  'parse&check-type
+                  (format "malformed constructed type in type scheme primitive ~a in file ~a: ~a"
+                          primitive-name filename sexp))]))]
            ))
        (if (pair? sexp)
            ; improper list
@@ -1289,8 +1323,41 @@
              ; then considered a basic type too). We know that flow var names and basic
              ; type names are disjoint, so there's no confusion between this case and
              ; the previous one.
-             [else (make-type-cst sexp)]))))
+             [else
+              (cond
+                [(eq? sexp 'boolean)
+                 (make-type-union (list (make-type-cst #t) (make-type-cst #f)))]
+                [else (make-type-cst sexp)])]))))
    
+ ; (listof alpha) number sexp symbol string -> (listof alpha)
+ ; returns first n elements of l. We know from the way the function is called that we
+ ; must always have n >= 0 and (length l) >= n.
+ (define (list-head! l n primitive-name filename)
+   (letrec ([chop (lambda (l n)
+                    (if (= n 1)
+                        (set-cdr! l '())
+                        (chop (cdr l) (sub1 n))))])
+     (cond
+       [(zero? n) '()]
+       [(>= n 1) (chop l n) l]
+       [else (raise-syntax-error
+              'list-head!
+              (format "internal error in type scheme for primitive ~a in file ~a"
+                      primitive-name filename))])))
+ 
+ ; (listof top) top -> improper-list
+ ; glues rest-sexp as the cdr of the last element of list-head
+ (define (set-list-tail-cdr! list-head rest-sexp)
+   (letrec ([glue (lambda (l)
+                    (if (null? (cdr l))
+                        (set-cdr! l rest-sexp)
+                        (glue (cdr l))))])
+     (if (null? list-head)
+         rest-sexp
+         (begin
+           (glue list-head)
+           list-head))))
+ 
  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; POST ANALYSIS TYPE CHECKING FOR PRIMITIVES
  
  ; (make-hash-table-of label type)
@@ -1415,6 +1482,17 @@
                         (type-cst-type type))])
             (initialize-label-set-for-value-source label)
             label)]
+         [(type-union? type)
+          (let* ([elt-labels (map (lambda (elt-type)
+                                    (reconstruct-graph-from-type elt-type delta term #t))
+                                  (type-union-elements type))]
+                 [union-label (create-simple-prim-label term)]
+                 ; can return multiple values
+                 [union-edge (create-simple-edge union-label)])
+            (for-each (lambda (elt-label)
+                        (add-edge-and-propagate-set-through-edge elt-label union-edge))
+                      elt-labels)
+            union-label)]
          [else (error 'reconstruct-graph-from-type "unknown covariant type: ~a" type)]
          )
        ; contravariant cases
@@ -1470,6 +1548,21 @@
                         (type-cst-type type))])
             (associate-label-with-type label type)
             label)]
+         [(type-union? type)
+          (let* ([elt-labels (map (lambda (elt-type)
+                                    (reconstruct-graph-from-type elt-type delta term #f))
+                                  (type-union-elements type))]
+                 [union-label (create-simple-prim-label term)])
+            ; edges can't propagate multiple values
+            (for-each (lambda (elt-label)
+                        (add-edge-and-propagate-set-through-edge
+                         union-label
+                         (extend-edge-for-values (create-simple-edge elt-label))))
+                      elt-labels)
+            ; no associate-label-with-type: the types will be separately checked by the elements
+            ; XXX this is buggy, see comment for union- in paper, but since subtype doesn't
+            ; exist yet anyway...
+            union-label)]
          [else (error 'reconstruct-graph-from-type "unknown contravariant type: ~a" type)]
          )))
  

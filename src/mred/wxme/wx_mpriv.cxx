@@ -2766,7 +2766,9 @@ void wxMediaEdit::SetParagraghMargins(long i, float firstLeft, float left, float
   l = lineRoot->FindParagraph(i);
   if (l) {
 
-    p = l->paragraph;
+    p = l->paragraph->Clone();
+    l->paragraph = p;
+
     p->leftMarginFirst = firstLeft;
     p->leftMargin = left;
     p->rightMargin = right;

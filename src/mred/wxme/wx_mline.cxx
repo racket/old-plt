@@ -38,6 +38,8 @@
 
 wxMediaLine *NIL = new wxMediaLine;
 
+static wxMediaParagraph *plain_paragraph = NULL;
+
 /*****************************************************************/
 
 wxMediaLine::wxMediaLine()
@@ -635,11 +637,15 @@ void wxMediaLine::SetStartsParagraph(Bool starts)
   if (starts) {
     flags |= WXLINE_STARTS_PARA;
     if (!paragraph) {
-      paragraph = new wxMediaParagraph();
-      paragraph->leftMarginFirst = 0;
-      paragraph->leftMargin = 0;
-      paragraph->rightMargin = 0;
-      paragraph->alignment = WXPARA_LEFT;
+      if (!plain_paragraph) {
+	paragraph = new wxMediaParagraph();
+	paragraph->leftMarginFirst = 0;
+	paragraph->leftMargin = 0;
+	paragraph->rightMargin = 0;
+	paragraph->alignment = WXPARA_LEFT;
+	plain_paragraph = paragraph;
+      } else
+	paragraph = plain_paragraph;
     }
   } else {
     flags -= WXLINE_STARTS_PARA;

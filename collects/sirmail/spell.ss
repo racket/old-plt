@@ -95,16 +95,21 @@
       [has-ispell?
        (unless (and ispell-in ispell-out ispell-err)
          (let-values ([(out in pid err status) (apply values (process* ispell-prog "-a"))])
-           ;; fetch the version line
-           (read-line out)
+           (let ([version-line (read-line out)])
+             (debug "< ~s\n" version-line))
            
            (set! ispell-in in)
            (set! ispell-out out)
            (set! ispell-err err)))
-       (display word ispell-in)
-       (newline ispell-in)
-       (let ([answer-line (read-line ispell-out)]
-             [blank-line (read-line ispell-out)])
+       
+       (let ([to-send (format "~a\n" word)])
+         (debug "> ~s\n" to-send)
+         (display to-send ispell-in))
+
+       (let* ([answer-line (read-line ispell-out)]
+              [_ (debug "< ~s\n" answer-line)]
+              [blank-line (read-line ispell-out)]
+              [_ (debug "< ~s\n" blank-line)])
          (unless (equal? blank-line "")
            (fprintf (current-error-port) "expected blank line from ispell, got (word ~s):\n~a\nrestarting ispell\n\n" 
                     word
@@ -118,6 +123,10 @@
          (not (not (regexp-match #rx"^[\\+\\-\\*]" answer-line))))]
       [else #f]))
 
+  (define (debug str . args)
+    (when (getenv "PLTISPELL")
+      (apply printf str args)))
+  
   ;; fetch-dictionary : -> (union #f hash-table)
   ;; computes a dictionary, if any of the possible-file-names exist
   (define (fetch-dictionary)

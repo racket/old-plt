@@ -767,15 +767,50 @@
                       [(is-a? snip editor-snip%)
                        (loop (send snip get-editor))]
                       [else #f]))))))
+
+	  (define tracking #f)
+	  (define tracking-on? #f)
           
           (define/override (on-event evt)
             (cond
-              [(send evt button-up?)
-               (let ([sorting-key (find-sorting-key evt)])
-                 (case sorting-key
-                   [(from) (sort-by-sender)]
-                   [(subject) (sort-by-subject)]
-                   [(uid) (sort-by-order-received)]))]))
+	      [(send evt button-down?)
+	       (set! tracking (find-sorting-key evt))
+	       (if tracking
+		   (begin
+		     (set! tracking-on? #t)
+		     (reset-sorting-tracking)
+		     (set-sorting-tracking tracking))
+		   (begin
+		     (set! tracking-on? #f)
+		     (reset-sorting-tracking)))]
+              [(and tracking
+		    (send evt button-up?))
+               (let ([sorting-key (find-sorting-key evt)]
+		     [was-tracking tracking])
+		 (set! tracking #f)
+		 (set! tracking-on? #f)
+		 (and (eq? sorting-key was-tracking)
+		      (case sorting-key
+			[(from) (sort-by-sender)]
+			[(subject) (sort-by-subject)]
+			[(uid) (sort-by-order-received)])))
+	       (reset-sorting-tracking)]
+	      [(and tracking
+		    (send evt dragging?))
+	       (let ([sorting-key (find-sorting-key evt)])
+		 (if (eq? sorting-key tracking)
+		     (unless tracking-on?
+		       (set! tracking-on? #t)
+		       (reset-sorting-tracking)
+		       (set-sorting-tracking tracking))
+		     (when tracking-on?
+		       (set! tracking-on? #f)
+		       (reset-sorting-tracking))))]
+	      [tracking
+	       (set! tracking #f)
+	       (set! tracking-on? #f)
+	       (reset-sorting-tracking)]))
+
           (super-instantiate ())
 	(selectable #f)))
            
@@ -1508,6 +1543,7 @@
       (define (enable-main-frame on? refocus break-proc)
 	(let ([w (send main-frame get-focus-window)])
 	  (set! can-poll? on?)
+	  (send sorting-list enable on?)
 	  (send header-list enable on?)
 	  (send message enable on?)
 	  (send (send main-frame get-menu-bar) enable on?)
@@ -1755,12 +1791,26 @@
       (define no-sort-style-delta (make-object style-delta% 'change-normal))
       (define sort-style-delta (make-object style-delta% 'change-bold))
       (send sort-style-delta set-delta-foreground "Indigo")
+      (define tracking-style-delta (make-object style-delta%))
+      (send tracking-style-delta set-delta-background "Gray")
+      (define not-tracking-style-delta (make-object style-delta%))
+      (send not-tracking-style-delta set-delta-background "White")
       (define (reset-sorting-text-styles)
         (send sorting-text-from change-style no-sort-style-delta 0 (send sorting-text-from last-position))
         (send sorting-text-uid change-style no-sort-style-delta 0 (send sorting-text-uid last-position))
         (send sorting-text-subject change-style no-sort-style-delta 0 (send sorting-text-subject last-position)))
       (define (identify-sorted text)
         (send text change-style sort-style-delta 0 (send text last-position)))
+      (define (reset-sorting-tracking)
+        (send sorting-text-from change-style not-tracking-style-delta 0 (send sorting-text-from last-position))
+        (send sorting-text-uid change-style not-tracking-style-delta 0 (send sorting-text-uid last-position))
+        (send sorting-text-subject change-style not-tracking-style-delta 0 (send sorting-text-subject last-position)))
+      (define (set-sorting-tracking which)
+	(let ([text (case which
+		      [(from) sorting-text-from]
+		      [(subject) sorting-text-subject]
+		      [(uid) sorting-text-uid])])
+	  (send text change-style tracking-style-delta 0 (send text last-position))))
       
       (reset-sorting-text-styles)
       (identify-sorted sorting-text-uid)

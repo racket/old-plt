@@ -5,6 +5,14 @@ The installer no longer displays dialog boxes
  Instead, successful registration prints a 
  message to the current output port; a failure
  prints a message to the current error port.
+Changes contributed by Joe Marshall:
+ internal Marshall... procecedures renamed to 
+  Marshal... :-)
+ mx_make_iunknown attempts to get IDispatch pointer
+ if type information for a COM method is 
+  unavailable, the Scheme arguments are 
+  heuristically injected into a variant and passed 
+  to Invoke() without checking
 
 Version 202
 

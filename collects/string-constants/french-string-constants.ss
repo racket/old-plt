@@ -252,7 +252,6 @@
   (scheme-mode-color-parenthesis "les parenthèses")
   (scheme-mode-color-error "les erreurs")
   (scheme-mode-color-other "le reste")
-  (color-syntax-interactively "Colorier la syntaxe interactivement")
  ;; the ~a is filled in with one of the above (scheme-mode-*)
   (syntax-coloring-choose-color "Choisissez une couleur pour ~a")
   (preferences-colors "Couleurs") ;; used in the preferences dialog

@@ -152,7 +152,6 @@
  (scheme-mode-color-parenthesis "Klammer")
  (scheme-mode-color-error "Fehler")
  (scheme-mode-color-other "Sonstiges")
- (color-syntax-interactively "Programmtext interaktiv einfärben")
  (syntax-coloring-choose-color "Wählen Sie eine Farbe für ~a")
  (preferences-colors "Farben")
 

@@ -2409,7 +2409,7 @@
   ;beginner-call-error: id src -> void
   (define (beginner-call-error name src)
     (let ((n (id->ext-name name)))
-      (raise-error n (format "method ~a cannot be called in Beginner Java" n) n src)))
+      (raise-error n (format "method ~a cannot be called in ProfessorJ Beginner" n) n src)))
   
   ;;Class Alloc errors
 
@@ -2418,8 +2418,8 @@
     (let ((cl (type->ext-name type)))
       (raise-error cl
                    (case kind
-                     ((abstract) (format "Instances cannot be made of abstract classes, class ~a is abstract" cl))
-                     ((interface) (format "Instances cannot be made of interfaces, ~a is an interface" cl)))
+                     ((abstract) (format "class ~a is abstract. Abstract classes may not be instantiated." cl))
+                     ((interface) (format "~a is an interface. interfaces may not be instantiated." cl)))
                    cl src)))
 
   ;ctor-arg-error symbol (list type) (list type) type src -> void

@@ -68,6 +68,12 @@
   (define +ok (make-+ok))
   (define -err (make--err))
 
+
+  ;; connec-to-simulated-server :
+  ;; (output-port input-port -> communicator)
+  (define (connect-to-simulated-server sender receiver)
+    (make-communicator sender receiver "Simulation" #f 'authorization))
+
   ;; connect-to-server :
   ;; string [x number] -> communicator
 

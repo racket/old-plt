@@ -40,23 +40,23 @@
   ;; if the path is absolute, it just arbitrarily picks the first
   ;; filesystem root.
   (define unixpath->path
-    (letrec* ([r (regexp "([^/]*)/(.*)")]
-	       [translate-dir
-                 (lambda (s)
-                   (cond
-		     [(string=? s "") 'same] ;; handle double slashes
-		     [(string=? s "..") 'up]
-		     [(string=? s ".") 'same]
-		     [else s]))]
-	       [build-relative-path
-                 (lambda (s)
-                   (let ([m (regexp-match r s)])
-                     (cond
-		       [(string=? s "") 'same]
-		       [(not m) s]
-		       [else
-			 (build-path (translate-dir (cadr m))
-			   (build-relative-path (caddr m)))])))])
+    (letrec ([r (regexp "([^/]*)/(.*)")]
+	     [translate-dir
+	      (lambda (s)
+		(cond
+		  [(string=? s "") 'same] ;; handle double slashes
+		  [(string=? s "..") 'up]
+		  [(string=? s ".") 'same]
+		  [else s]))]
+	     [build-relative-path
+	      (lambda (s)
+		(let ([m (regexp-match r s)])
+		  (cond
+		    [(string=? s "") 'same]
+		    [(not m) s]
+		    [else
+		     (build-path (translate-dir (cadr m))
+				 (build-relative-path (caddr m)))])))])
       (lambda (s)
 	(cond
 	  [(string=? s "") ""]

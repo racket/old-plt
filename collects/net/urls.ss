@@ -1,3 +1,6 @@
+(require-library "macro.ss")
+(require-library "file.ss")
+
 (define-signature mzlib:url^
   ((struct url (scheme host port path params query fragment))
    unixpath->path

@@ -1,3 +1,5 @@
+(require-library "macro.ss")
+
 ; Time-stamp: <98/07/14 14:41:20 shriram>
 ; Time-stamp: <97/03/05 15:34:09 shriram>
 

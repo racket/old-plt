@@ -1,3 +1,5 @@
+(require-library "macro.ss")
+
 (define-signature mzlib:cgi^
   (
     ;; -- exceptions raised --

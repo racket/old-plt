@@ -215,7 +215,7 @@
 				(make-an-item 'edit-menu:select-all "" #f "a" "Select A&ll" "")
 				(make-between 'edit-menu 'between-select-all-and-find #t)
 				(make-an-item 'edit-menu:find "Search for a string in the buffer"
-					      '(lambda () (send this search) #t)
+					      '(lambda () (send this search 1) #t)
 					      "f" "Find" "")
 				(make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
 					      #f #f "Replace" "")

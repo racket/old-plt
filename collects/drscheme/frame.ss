@@ -25,7 +25,7 @@
 	  (class-asi mred:frame-group%
 	    (public
 	      [frame% unit-frame%]))))
-    (send frame-group set-empty-callback mred:exit)
+    (send frame-group set-empty-callback (lambda () (mred:exit) #t))
     
     (define interactions-canvas%
       (mred:make-console-canvas% mred:wrapping-canvas%))

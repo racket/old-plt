@@ -1100,6 +1100,7 @@ please adhere to these guidelines:
  (module-browser-name-short "Short")
  (module-browser-name-medium "Medium")
  (module-browser-name-long "Long")
+ (module-browser-open-all "Open all files shown here")
 
  (happy-birthday-matthias "Happy Birthday, Matthias!")
  (happy-birthday-matthew "Happy Birthday, Matthew!")

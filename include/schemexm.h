@@ -7,6 +7,7 @@
 #define scheme_mz_longjmp (scheme_extension_table->scheme_mz_longjmp)
 #endif
 #define scheme_clear_escape (scheme_extension_table->scheme_clear_escape)
+#define scheme_new_jmpupbuf_holder (scheme_extension_table->scheme_new_jmpupbuf_holder)
 #define scheme_make_config (scheme_extension_table->scheme_make_config)
 #define scheme_branch_config (scheme_extension_table->scheme_branch_config)
 #define scheme_new_param (scheme_extension_table->scheme_new_param)

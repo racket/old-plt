@@ -40,6 +40,8 @@ MZ_EXTERN void scheme_mz_longjmp(mz_pre_jmp_buf b, int v);
 
 MZ_EXTERN void scheme_clear_escape(void);
 
+MZ_EXTERN Scheme_Jumpup_Buf_Holder *scheme_new_jmpupbuf_holder(void);
+
 /*========================================================================*/
 /*                                parameters                              */
 /*========================================================================*/

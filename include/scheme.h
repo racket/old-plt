@@ -594,6 +594,11 @@ typedef struct Scheme_Jumpup_Buf {
 #endif
 } Scheme_Jumpup_Buf;
 
+typedef struct Scheme_Jumpup_Buf_Holder {
+  Scheme_Type type; /* for precise GC only */
+  Scheme_Jumpup_Buf buf;
+} Scheme_Jumpup_Buf_Holder;
+
 typedef struct Scheme_Continuation_Jump_State {
   struct Scheme_Escaping_Cont *jumping_to_continuation;
   union {

@@ -35,6 +35,7 @@ int (*scheme_mz_setjmp)(mz_pre_jmp_buf b);
 void (*scheme_mz_longjmp)(mz_pre_jmp_buf b, int v);
 #endif
 void (*scheme_clear_escape)(void);
+Scheme_Jumpup_Buf_Holder *(*scheme_new_jmpupbuf_holder)(void);
 /*========================================================================*/
 /*                                parameters                              */
 /*========================================================================*/

@@ -101,6 +101,10 @@ static MX_PRIM mxPrims[] = {
   { mx_com_register_object,"com-register-object",1,1 },  
   { mx_com_release_object,"com-release-object",1,1 },  
 
+  // COM termination
+
+  { mx_com_terminate,"com-terminate",0,0 },  
+
   // documents 
   
   { mx_make_document,"make-document",6,6},
@@ -3928,6 +3932,11 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
 Scheme_Object *scheme_reload(Scheme_Env *env) {
   return (Scheme_Object *)mx_unit;
+}
+
+Scheme_Object *mx_com_terminate(int argc,Scheme_Object **argv) {
+  CoUninitialize();
+  return scheme_void;
 }
 
 BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {

@@ -38,7 +38,8 @@
       (inherit get-dc get-client-size get-mred
 	       set-min-width set-min-height
 	       set-tab-focus set-focus has-focus?
-	       set-background-to-gray refresh)
+	       set-background-to-gray refresh
+	       get-top-level is-enabled-to-root?)
       
       (define selected 0)
       (define tracking-pos #f)
@@ -64,12 +65,19 @@
       
       (define/private (get-total-width)
 	(compute-sizes)
-	(apply + tab-height (* (length tabs) (+ raise-h raise-h tab-height)) tab-widths))
+	(apply + 
+	       (if mac-tab? 0 tab-height)
+	       (* (length tabs) (+ raise-h raise-h tab-height)) 
+	       tab-widths))
       
       (define/private (get-init-x)
-	(let-values ([(w h) (my-get-client-size)]
-		     [(tw) (get-total-width)])
-	  (/ (- w tw) 2)))
+	(if border?
+	    (let-values ([(w h) (my-get-client-size)]
+			 [(tw) (get-total-width)])
+	      (/ (- w tw) 2))
+	    (if mac-tab?
+		2
+		0)))
 
       (define/override (on-char e) (void))
 
@@ -107,11 +115,13 @@
 	     (set! tracking-pos #f)]))))
       
       (define/private (update-tracking)
-	(let ([dc (get-dc)])
-	  (send dc set-clipping-region (list-ref regions tracking-pos))
-	  (on-paint)
-	  (send dc set-clipping-region #f)))
-      
+	(if mac-tab?
+	    (refresh)
+	    (let ([dc (get-dc)])
+	      (send dc set-clipping-region (list-ref regions tracking-pos))
+	      (on-paint)
+	      (send dc set-clipping-region #f))))
+	
       (define tmp-rgn #f)
 
       (define/public (button-focus n)
@@ -154,7 +164,7 @@
 					  tpl)])
 			 (send r set-polygon points))
 		       r)
-		     (draw-once #f 0 #f #f 0)
+		     (draw-once #f 0 #f #f 0 #f)
 		     (if regions
 			 regions
 			 (map (lambda (x)
@@ -173,7 +183,7 @@
       
       ;; Returns a list of point lists, which define polygons for hit-testing
       ;;  and updating
-      (define/private (draw-once dc w light? dark? inset)
+      (define/private (draw-once dc w light? dark? inset active?)
 	(let ([init-x (get-init-x)])
 	  (let loop ([x init-x][l tabs][wl tab-widths][pos 0])
 	    (if (null? l)
@@ -186,8 +196,21 @@
 		       (let ([w (+ tab-height (car wl))]
 			     [h tab-height])
 			 (when dc
-			   (send dc draw-tab (car l) x 3 w 24
-				 (if (= pos selected) 3 0)))
+			   (when (eq? dark? (= pos selected))
+			     (send dc draw-tab (car l) x 3 w 24
+				   (+ (if (and (has-focus?)
+					       (= pos current-focus-tab))
+					  ;; Adding 100 means "draw focus ring"
+					  100
+					  ;; No focus
+					  0)
+				      ;; Pick the style: active and front, etc.
+				      (if (and light?
+					       (eq? pos tracking-pos))
+					  1
+					  (if active?
+					      (if dark? 3 0)
+					      (if dark? 4 2)))))))
 			 (list (list x 3) (list (+ x w) 3)
 			       (list (+ x w) 21) (list x 21)))
 		       ;; ----- X-style drawing -----
@@ -257,7 +280,9 @@
 	(entry-point
 	 (lambda ()
 	   (compute-sizes)
-	   (let ([dc (get-dc)])
+	   (let ([dc (get-dc)]
+		 [active? (and (is-enabled-to-root?)
+			       (send (get-top-level) is-act-on?))])
 	     (send dc set-background bg-color)
 	     (send dc set-font font)
 	     (unless mac-tab?
@@ -268,21 +293,21 @@
 		   (send dc set-brush dark-brush)
 		   (send dc set-pen trans-pen)
 		   (send dc draw-polygon (map (lambda (x) (make-object wx:point% (car x) (cadr x)))
-					      (list-ref (draw-once #f 0 #f #f 1) tracking-pos)))
+					      (list-ref (draw-once #f 0 #f #f 1 #f) tracking-pos)))
 		   (send dc set-brush b))))
 	     (let-values ([(w h) (my-get-client-size)])
 	       (unless mac-tab?
 		 (send dc set-pen light-pen))
+	       (draw-once dc w #t #f 0 active?)
 	       (when mac-tab?
-		 (send dc draw-tab-base 0 (- tab-height 3) w 3 1))
-	       (draw-once dc w #t #f 0)
+		 (send dc draw-tab-base 0 (- tab-height 3) w 6 (if active? 1 0)))
 	       (when border?
 		 (when (> h tab-height)
 		   (send dc draw-line 0 tab-height 0 h)
 		   (send dc draw-line 1 tab-height 1 h)))
 	       (unless mac-tab?
-		 (send dc set-pen dark-pen)
-		 (draw-once dc w #f #t 0))
+		 (send dc set-pen dark-pen))
+	       (draw-once dc w #f #t 0 active?)
 	       (when border?
 		 (when (> h tab-height)
 		   (send dc draw-line (- w 1) tab-height (- w 1) (- h raise-h))
@@ -310,12 +335,14 @@
 	    (set! selected i)
 	    (send r union old-rgn)
 	    (setup-regions)
-	    (let ([new-rgn (list-ref regions selected)])
-	      ;; Union the new and old regions and repaint:
-	      (send r union new-rgn)
-	      (send dc set-clipping-region r)
-	      (on-paint)
-	      (send dc set-clipping-region #f)))))
+	    (if mac-tab?
+		(refresh) ;; but we need an immediate refresh!
+		(let ([new-rgn (list-ref regions selected)])
+		  ;; Union the new and old regions and repaint:
+		  (send r union new-rgn)
+		  (send dc set-clipping-region r)
+		  (on-paint)
+		  (send dc set-clipping-region #f))))))
 
       (define/public (set-label i s)
 	(set-car! (list-tail tabs i) (wx:label->plain-label s))
@@ -354,13 +381,20 @@
 	#f)
 
       (super-instantiate (mred proxy parent -1 -1 -1 -1 '(transparent) #f))
+      
+      (let ([focus-ok? 
+	     ;; For Mac OS X, this method indicates that the
+	     ;;  canvas should not necessarily get the focus
+	     ;;  on a click, and the result indicates whether
+	     ;;  it should accept tab focus in general
+	     (set-background-to-gray)])
 
-      (set-background-to-gray)
-
-      (compute-sizes)
-      (set-min-width (inexact->exact (ceiling (get-total-width))))
-      (set-min-height (inexact->exact (ceiling (+ tab-height 9 raise-h))))
-      (set-tab-focus #t)))
+	(compute-sizes)
+	(set-min-width (inexact->exact (ceiling (get-total-width))))
+	(set-min-height (inexact->exact (ceiling (+ tab-height 9 raise-h))))
+	(when mac-tab?
+	  (send (get-top-level) add-activate-update this))
+	(set-tab-focus focus-ok?))))
 
   (define wx-tab-group% 
     (if (eq? 'unix (system-type))
@@ -368,7 +402,7 @@
 	(class* (make-window-glue%
 		 (make-control% wx:tab-group% 0 0 #t #t)) (wx-tab-group<%>)
 	  (inherit min-height)
-	  (define/override (tabbing-position x y w)
+	  (define/override (tabbing-position x y w h)
 	    (list this x y w (min-height)))
 	  (define/override (handles-key-code code alpha? meta?) #f)
 	  (super-instantiate ())))))

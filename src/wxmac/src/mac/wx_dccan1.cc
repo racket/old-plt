@@ -1305,8 +1305,8 @@ static void draw_tab_label(const Rect *bounds,
 
 void wxCanvasDC::DrawTab(char *str, double x, double y, double w, double h, int state)
 {
-  Rect r;
-  CFStringRef title;
+  Rect rb;
+  CFStringRef ttitle;
   Bool focus_ring = 0;
 
   if (state >= 100) {
@@ -1319,22 +1319,22 @@ void wxCanvasDC::DrawTab(char *str, double x, double y, double w, double h, int 
   x += SetOriginX;
   y += SetOriginY;
 
-  r.left = (int)x;
-  r.right = (int)(x + w);
-  r.top = (int)y;
-  r.bottom = (int)(y + h);
+  rb.left = (int)x;
+  rb.right = (int)(x + w);
+  rb.top = (int)y;
+  rb.bottom = (int)(y + h);
 
-  title = wxCFString(str);
+  ttitle = wxCFString(str);
 
-  DrawThemeTab(&r, state, kThemeTabNorth, draw_tab_label, (long)title);
+  DrawThemeTab(&rb, state, kThemeTabNorth, draw_tab_label, (long)ttitle);
 
-  CFRelease(title);
+  CFRelease(ttitle);
 
   if (focus_ring) {
     RgnHandle rgn;
     rgn = NewRgn();
     if (rgn) {
-      GetThemeTabRegion(&r, state, kThemeTabNorth, rgn);
+      GetThemeTabRegion(&rb, state, kThemeTabNorth, rgn);
       InsetRgn(rgn, 1, 1);
       DrawThemeFocusRegion(rgn, TRUE);
       DisposeRgn(rgn);

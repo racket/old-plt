@@ -239,7 +239,7 @@
   ;           |  id
   
   ;(make-class-alloc (U #f type) src name (list Expression) (U #f method-record) bool)
-  (p-define-struct (class-alloc expr) (name args ctor-record inner?))
+  (p-define-struct (class-alloc expr) (name args ctor-record class-inner? local-inner?))
   
   ;(make-inner-alloc (U #f type) src expr name (list Expression) (U #f method-record))
   (p-define-struct (inner-alloc expr) (obj name args ctor-record))

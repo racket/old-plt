@@ -1,4 +1,3 @@
-#cs
 (module full-parser mzscheme
 
   (require "general-parsing.ss"
@@ -694,15 +693,15 @@
       
       (ClassInstanceCreationExpression
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)
-	(make-class-alloc #f (build-src 5) $2 (reverse $4) #f #f)]
+	(make-class-alloc #f (build-src 5) $2 (reverse $4) #f #f #f)]
        [(new ClassOrInterfaceType O_PAREN C_PAREN) 
-	(make-class-alloc #f (build-src 4) $2 null #f #f)]
+	(make-class-alloc #f (build-src 4) $2 null #f #f #f)]
        ;; 1.1
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN ClassBody)
         (make-anon-class-alloc (build-src 5)
 			       (build-src 2 6)
 			       (build-src 2 6)
-			       $2 $4 $6)]        
+			       $2 $4 $6)]
        ;; 1.1
        [(new ClassOrInterfaceType O_PAREN C_PAREN ClassBody)
         (make-anon-class-alloc (build-src 4)
@@ -986,7 +985,7 @@
 					(file-path)
 					'full
 					null 'anon null)
-			(reverse args) #t #f)))
+			(reverse args) #t #f #t)))
   
   (define parse-full (car parsers))
   (define parse-full-interactions (cadr parsers))

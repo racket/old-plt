@@ -24,13 +24,13 @@
 
   ;env =>
   ;(make-environment (list var-type) (list string) (list type) (list string) (list inner-rec))
-  (define-struct environment (types set-vars exns labels local-inners))
+  (define-struct environment (types set-vars exns labels local-inners) (make-inspector))
   
   ;Constant empty environment
   (define empty-env (make-environment null null null null null))
 
   ;; var-type => (make-var-type string type properties)
-  (define-struct var-type (var type properties))
+  (define-struct var-type (var type properties) (make-inspector))
   
   ;;inner-rec ==> (make-inner-rec string (U symbol void) class-rec)
   (define-struct inner-rec (name unique-name record))
@@ -116,7 +116,7 @@
                   ((equal? (var-type-var (car env)) "this") 
                    (update-env (cdr env)))
                   ((regexp-match str (var-type-var (car env)))
-                   (let* ((var (car env)))
+                   (let ((var (car env)))
                      (cons (make-var-type (format "encl-this-~a" 
                                                   (add1 (string->number (regexp-replace str (var-type-var var) ""))))
                                           (var-type-type var)
@@ -202,13 +202,13 @@
                       (environment-labels env)
                       (cons (make-inner-rec name unique-name rec) (environment-local-inners env))))
   
-  ;;lookup-local-inner: string env -> (U class-rec #f)
+  ;;lookup-local-inner: string env -> (U inner-rec #f)
   (define (lookup-local-inner name env)
     (letrec ((lookup 
               (lambda (l)
                 (and (not (null? l))
                     (or (and (equal? name (inner-rec-name (car l)))
-                             (inner-rec-record (car l)))
+                             (car l))
                         (lookup (cdr l)))))))
       (lookup (environment-local-inners env))))
   
@@ -330,11 +330,13 @@
            (inner-env (update-env-for-inner env))
            (this-type (var-type-type (lookup-var-in-env "this" env)))
            (unique-name 
-            (when statement-inner? (gensym (string-append (id-string (def-name def)) "-"))))
+            (when statement-inner? (symbol->string (gensym (string-append (id-string (def-name def)) "-")))))
            (inner-rec
             (when local-inner?
               (build-inner-info def unique-name p-name level type-recs (def-file def) #t))))
       (when local-inner? (add-init-args def env))
+      (when statement-inner?
+        (set-id-string! (header-id (def-header def)) unique-name))
       (if (interface-def? def)
           (check-interface def p-name level type-recs)
           (check-class def p-name level type-recs (add-var-to-env "encl-this-1" this-type final-parm inner-env)))
@@ -342,8 +344,6 @@
       (for-each (lambda (use)
                   (add-required c-class (req-class use) (req-path use) type-recs))
                 (def-uses def))
-      (when statement-inner?
-        (set-id-string! (header-id (def-header def)) unique-name))
       (list unique-name inner-rec)))
     
   ;add-init-args: def env -> void
@@ -2115,22 +2115,24 @@
                    (else name/def)))
            (inner-lookup? (lookup-local-inner (id-string (name-id name)) env))      
            (type (if inner-lookup?
-                     (make-ref-type (symbol->string (inner-rec-unique-name inner-lookup?)) null)
-                     (name->type name/def c-class (name-src name) level type-recs)))
+                     (make-ref-type (inner-rec-unique-name inner-lookup?) null)
+                     (name->type name c-class (name-src name) level type-recs)))
            (class-record 
             (if inner-lookup?
                 (inner-rec-record inner-lookup?)
                 (get-record (send type-recs get-class-record type c-class) type-recs)))
            (methods (get-method-records (id-string (name-id name)) class-record)))
-      (unless (or (equal? (car (class-record-name class-record)) (ref-type-class/iface type))
-                  (not (def? name/def))
-                  (not inner-lookup?))
+      (unless (or (equal? (car (class-record-name class-record)) (ref-type-class/iface type)))
         (set-id-string! (name-id name) (car (class-record-name class-record)))
-        (set-class-alloc-inner?! exp #t))
+        (set-class-alloc-class-inner?! exp #t))
+      (when inner-lookup?
+        (set-id-string! (name-id name) (inner-rec-unique-name inner-lookup?))
+        (set-class-alloc-local-inner?! exp #t))
       (unless (or (equal? (ref-type-class/iface type) (car c-class))
                   (equal? (car (class-record-name class-record))
                           (format "~a.~a" (car c-class) (ref-type-class/iface type)))
-                  (class-alloc-inner? exp)
+                  (class-alloc-class-inner? exp)
+                  (class-alloc-local-inner? exp)
                   (inner-alloc? exp))
         (send type-recs add-req (make-req (ref-type-class/iface type) (ref-type-path type))))
       (when (memq 'abstract (class-record-modifiers class-record))

@@ -320,9 +320,9 @@
       
       (ClassInstanceCreationExpression
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)
-	(make-class-alloc #f (build-src 5) $2 (reverse $4) #f #f)]
+	(make-class-alloc #f (build-src 5) $2 (reverse $4) #f #f #f)]
        [(new ClassOrInterfaceType O_PAREN C_PAREN) 
-	(make-class-alloc #f (build-src 4) $2 null #f #f)])
+	(make-class-alloc #f (build-src 4) $2 null #f #f #f)])
       
       (ArgumentList
        [(Expression) (list $1)]

@@ -26,6 +26,8 @@
   
   ;Parameters for inforamtion about the types
   (define types (make-parameter null))
+  (define current-depth (make-parameter 0))
+  (define current-local-classes (make-parameter null))
     
   (define stx-for-original-property (read-syntax #f (open-input-string "original")))
   (define (stx-for-source) stx-for-original-property)
@@ -322,10 +324,10 @@
              ;find-cycle: def -> void
              (find-cycle 
               (lambda (def)
-                (printf "find-cycle for def ~a with reqs ~a~n" (id-string (def-name def))
-                        (map req-class (def-uses def)))
-                (printf "find-cycle required defs found were ~a~n" 
-                       (map id-string (map def-name (filter (lambda (x) x) (map find (def-uses def)))))) 
+                ;(printf "find-cycle for def ~a with reqs ~a~n" (id-string (def-name def))
+                ;        (map req-class (def-uses def)))
+                ;(printf "find-cycle required defs found were ~a~n" 
+                ;       (map id-string (map def-name (filter (lambda (x) x) (map find (def-uses def)))))) 
                 (for-each (lambda (reqD)
                             (cond
                               ((or (completed? reqD) (in-cycle? reqD)) (void))
@@ -337,9 +339,9 @@
              ;exists-path-to-cycle: def (list def)-> bool
              (exists-path-to-cycle? 
               (lambda (def explored-list)
-                (printf "exists-path-to-cycle? for ~a~n" (id-string (def-name def)))
+                ;(printf "exists-path-to-cycle? for ~a~n" (id-string (def-name def)))
                 (let ((reqs-in-cycle (filter (lambda (req)
-                                               (printf "reqs-in-cycle: looking at ~a~n" (id-string (def-name req)))
+                                               ;(printf "reqs-in-cycle: looking at ~a~n" (id-string (def-name req)))
                                                (and (not (completed? req))
                                                     (or (in-cycle? req)
                                                         (and (dependence-on-cycle req)
@@ -347,8 +349,8 @@
                                                         (and (not (memq req explored-list))
                                                              (exists-path-to-cycle? req (cons def explored-list))))))
                                              (filter (lambda (x) x) (map find (def-uses def))))))
-                  (printf "exists-path-to-cycle? reqs-in-cycle for ~a is ~a~n" (id-string (def-name def))
-                          (map id-string (map def-name reqs-in-cycle)))
+                  ;(printf "exists-path-to-cycle? reqs-in-cycle for ~a is ~a~n" (id-string (def-name def))
+                  ;        (map id-string (map def-name reqs-in-cycle)))
                   (and (not (null? reqs-in-cycle))
                        (hash-table-put! cycle def 'in-cycle)))))
              
@@ -381,21 +383,21 @@
       
       (for-each (lambda (def)
                   (unless (completed? def)
-                    (printf "Started on def ~a~n" (id-string (def-name def)))
+                    ;(printf "Started on def ~a~n" (id-string (def-name def)))
                     (set! cycle (make-hash-table))
                     (hash-table-put! cycle def 'in-cycle)
                     (find-cycle def)
-                    (printf "Completed looking for cycle for def ~a~n" (id-string (def-name def)))
-                    (printf "hashtable for def ~a includes ~a~n" (id-string (def-name def))
-                            (hash-table-map cycle (lambda (k v) (cons (id-string (def-name k)) v))))
+                    ;(printf "Completed looking for cycle for def ~a~n" (id-string (def-name def)))
+                    ;(printf "hashtable for def ~a includes ~a~n" (id-string (def-name def))
+                    ;        (hash-table-map cycle (lambda (k v) (cons (id-string (def-name k)) v))))
                     (let ((cyc (filter (lambda (d)
                                          (eq? (hash-table-get cycle d) 'in-cycle))
                                        (hash-table-map cycle (lambda (k v) k)))))
                       (for-each (lambda (c) (hash-table-put! completed c 'completed))
                                 cyc)
-                      (printf "cycle for ~a is ~a~n" (id-string (def-name def)) (map id-string (map def-name cyc)))
-                      (printf "completed table after ~a is ~a" (id-string (def-name def))
-                              (hash-table-map completed (lambda (k v) (list (id-string (def-name k)) v))))
+                      ;(printf "cycle for ~a is ~a~n" (id-string (def-name def)) (map id-string (map def-name cyc)))
+                      ;(printf "completed table after ~a is ~a" (id-string (def-name def))
+                      ;        (hash-table-map completed (lambda (k v) (list (id-string (def-name k)) v))))
                       (set! cycles (cons cyc cycles)))))
                 defs)
       cycles))
@@ -570,6 +572,8 @@
       (unless (> depth 0) (loc (def-file class)))
       
       (let*-values (((header) (def-header class))
+                    ((kind) (def-kind class))
+                    ((closure-args) (def-closure-args class))
                     ((parent parent-src extends-object?)
                      (if (null? (header-extends header))
                          (values "Object" #f #t)
@@ -627,7 +631,10 @@
           (let ((class-syntax
                  (create-syntax 
                   #f
-                  `(begin ,(if (not (memq 'private (map modifier-kind (header-modifiers header)))) provides)
+                  `(begin ,(unless (or (memq 'private (map modifier-kind (header-modifiers header)))
+                                       (eq? 'anonymous kind)
+                                       (eq? 'statement kind))
+                             provides)
                           ,(create-local-names (append (make-method-names (accesses-private methods) null)
                                                        restricted-methods))
                           (define ,class
@@ -652,15 +659,27 @@
                                             (accesses-private fields)))
                              ,@(create-private-setters/getters (accesses-private fields))
                              
-                             ,@(generate-inner-makers (members-inner class-members) depth type-recs)
+                             ,@(generate-inner-makers (members-inner class-members) 
+                                                      depth type-recs)
                              ,@(if (> depth 0)
-                                   `(list (field ,@(let loop ((d depth))
-                                                     (cond
-                                                       ((= d 0) null)
-                                                       (else 
-                                                        (cons `(,(string->symbol (format "encl-this-~a-f" d)) null)
-                                                              (loop (sub1 d))))))))
+                                   `(list (init-field 
+                                           ,@(let loop ((d depth))
+                                               (cond
+                                                 ((= d 0) null)
+                                                 (else 
+                                                  (cons (string->symbol (format "encl-this-~a~~f" d))
+                                                        (loop (sub1 d))))))))
                                    null)
+                             
+                             ,@(if (null? closure-args)
+                                   null
+                                   `(list (init-field 
+                                           ,@(let loop ((args 
+                                                         (map id-string closure-args)))
+                                               (cond
+                                                 ((null? args) null)
+                                                 (else (string->symbol (format "~a/~f" (car args)))
+                                                       (loop (cdr args))))))))
                              
                              ,@(map (lambda (m) (translate-method (method-type m)
                                                                   (map modifier-kind (method-modifiers m))
@@ -680,7 +699,6 @@
                              
                              (define/override (my-name) ,(class-name))
                              
-                             #;(rename (super-field-names field-names))
                              (define/override (field-names)
                                (append (super field-names)
                                        (list ,@(map (lambda (n) (id-string (field-name n)))
@@ -688,7 +706,7 @@
                                                             (accesses-package fields)
                                                             (accesses-protected fields)
                                                             (accesses-private fields))))))
-                             #;(rename (super-field-values field-values))
+
                              (define/override (field-values)
                                (append (super field-values)
                                        (list ,@(map (lambda (n) (build-identifier (build-var-name (id-string (field-name n)))))
@@ -748,9 +766,10 @@
               (if (> depth 0)
                   class-syntax
                   (list class-syntax 
-                        (make-syntax #f
-                                     `(module ,(build-identifier (class-name)) mzscheme (require ,(module-require)) ,provides)
-                                     #f)))
+                        (make-syntax 
+                         #f
+                         `(module ,(build-identifier (class-name)) mzscheme (require ,(module-require)) ,provides)
+                         #f)))
               (when (> depth 0)
                 (class-name old-class-name)
                 (parent-name old-parent-name)
@@ -817,9 +836,10 @@
             (parm-types (map (lambda (p) (type-spec-to-type (field-type p) #f 'full type-recs)) parms)))
         (make-syntax #f
                      `(define/public (,(build-identifier (mangle-method-name ctor-name parm-types)) ,@translated-parms)
-                        (let ((temp-obj (make-object ,(build-identifier class-name))))
+                        (let ((temp-obj (make-object ,(build-identifier class-name)
+                                          this ,@encls-this)))
                           (send temp-obj ,(build-identifier (build-constructor-name class-name parm-types))
-                                this ,@encls-this ,@translated-parms)
+                                ,@translated-parms)
                           temp-obj))
                      #f))))
 
@@ -954,13 +974,16 @@
   
   ;override?: symbol type-records -> bool
   (define (override? method-name type-recs)
-    (let* ((internal-error (lambda () (error 'override "Internal Error class or it's parent not in class record table")))
-           (class-record (get-record (send type-recs get-class-record 
-                                           (make-ref-type (class-name)
-                                                          (send type-recs lookup-path (class-name) (lambda () null)))
-                                           #f
-                                           internal-error) type-recs))
-           (parent-record (send type-recs get-class-record  (car (class-record-parents class-record)) #f internal-error)))
+    (let* ((internal-error 
+            (lambda () (error 'override "Internal Error class or it's parent not in class record table")))
+           (class-record 
+            (get-record (send type-recs get-class-record 
+                              (make-ref-type (class-name)
+                                             (send type-recs lookup-path (class-name) (lambda () null)))
+                              #f
+                              internal-error) type-recs))
+           (parent-record (send type-recs get-class-record  
+                                (car (class-record-parents class-record)) #f internal-error)))
       (memq method-name
             (map (lambda (m) (string->symbol (mangle-method-name (method-record-name m)
                                                                  (method-record-atypes m))))
@@ -972,9 +995,10 @@
               (let ((mname (id-string (method-name m))))
                 (and (method-record-override (method-rec m))
                      (hash-table-put! (class-override-table) 
-                                      (build-identifier ((if (constructor? mname) build-constructor-name mangle-method-name)
-                                                         mname
-                                                         (method-record-atypes (method-rec m)))) #t))))
+                                      (build-identifier 
+                                       ((if (constructor? mname) build-constructor-name mangle-method-name)
+                                        mname
+                                        (method-record-atypes (method-rec m)))) #t))))
             methods))
   
   ;create-generic-methods: (list method) -> (list syntax)
@@ -1003,7 +1027,8 @@
                                 (method-record-atypes (method-rec (car methods)))))
              (make-method-names (cdr methods) minus-methods)))))
   
-  ;translate-method: type-spec (list symbol) id (list parm) statement bool src bool int method-record type-records -> syntax
+  ;translate-method: type-spec (list symbol) id (list parm) statement bool 
+  ;                  src bool int method-record type-records -> syntax
   (define (translate-method type modifiers id parms block all-tail? src inner? depth rec type-recs)
     (let* ((final (final? modifiers))
            (ctor? (constructor? (id-string id)))
@@ -1017,19 +1042,13 @@
                          (over? 'define/override)
                          (final 'define/public-final)
                          (else 'define/public))))
-      (if over?
-          (create-syntax #f
-                         `(begin
-                            #;(rename (,(build-identifier (string-append "super." method-string)), method-name))
-                            (,definition ,method-name
-                             ,(translate-method-body method-string parms block modifiers type 
-                                                     all-tail? ctor? inner? depth type-recs)))
-                         (build-src src))
-          (create-syntax #f
-                         `(,definition ,method-name 
-                           ,(translate-method-body method-string parms block modifiers type 
-                                                   all-tail? ctor? inner? depth type-recs))
-                         (build-src src)))))
+      (unless (static? modifiers) (current-depth depth))
+      (current-local-classes null)
+      (create-syntax #f
+                     `(,definition ,method-name 
+                        ,(translate-method-body method-string parms block modifiers type 
+                                                all-tail? ctor? inner? depth type-recs))
+                     (build-src src))))
   
   ;make-static-method-names: (list method) type-recs -> (list string)
   (define (make-static-method-names methods type-recs)
@@ -1067,30 +1086,10 @@
           (void? (eq? (type-spec-name rtype) 'void))
           (native? (memq 'native modifiers))
           (static? (memq 'static modifiers)))
-      
-      (when (and ctor? inner?)
-        (set! parms
-              (reverse (append (let loop ((d depth))
-                                 (cond
-                                   ((= d 0) null)
-                                   (else (cons (string->symbol (format "encl-this-~a" d))
-                                               (loop (sub1 d))))))
-                               parms))))
-      
+            
       (static-method static?)
       (make-syntax #f
                    (cond
-                     ((and ctor? inner?)
-                      `(lambda ,parms
-                         (let/ec return-k
-                           ,@(let loop ((d depth))
-                               (cond
-                                 ((= d 0) null)
-                                 (else (cons `(set! ,(string->symbol (format "encl-this-~a-f" d))
-                                                    ,(string->symbol (format "encl-this-~a" d)))
-                                             (loop (sub1 d))))))
-                           ,(translate-statement block type-recs)
-                           (void))))
                      ((and block void?)
                       `(lambda ,parms 
                          (let/ec return-k
@@ -1286,7 +1285,9 @@
                            type-recs))
         ((block? statement)
          (translate-block (block-stmts statement) (block-src statement) type-recs))        
-        ((def? statement) (create-syntax #f '(void) #f))
+        ((def? statement)
+         (current-local-classes (cons statement (current-local-classes)))
+         (create-syntax #f '(void) #f))
         ((break? statement)
          (translate-break (break-label statement)  (break-src statement)))
         ((continue? statement)
@@ -1612,7 +1613,8 @@
                                                     (map expr-types (class-alloc-args expr))
                                                     (map translate-expression (class-alloc-args expr))
                                                     (expr-src expr)
-                                                    (class-alloc-inner? expr)
+                                                    (class-alloc-class-inner? expr)
+                                                    (class-alloc-local-inner? expr)
                                                     (class-alloc-ctor-record expr)))
         ((inner-alloc? expr) (translate-inner-alloc (translate-expression (inner-alloc-obj expr))
                                                     (inner-alloc-name expr)
@@ -1911,28 +1913,64 @@
   (define (overridden? name)
     (hash-table-get (class-override-table) name (lambda () #f)))
   
-  ;translate-class-alloc: (U name id) (list type) (list syntax) src bool method-record-> syntax
-  (define (translate-class-alloc class-type arg-types args src inner? ctor-record)
+  ;translate-class-alloc: (U name id def) (list type) (list syntax) src bool bool method-record-> syntax
+  (define (translate-class-alloc class-type arg-types args src inner? local-inner? ctor-record)
     (when (id? class-type) (set! class-type (make-name class-type null (id-src class-type))))
-    (let ((class-string (get-class-string class-type))
-          (class-id (name-id class-type)))
-      (if inner?
-          (make-syntax #f `(send this ,(translate-id (mangle-method-name (string-append "construct-" class-string)
-                                                                         (method-record-atypes ctor-record))
-                                                     (id-src class-id))
-                                 ,@args)
-                       (build-src src))
-          (make-syntax #f `(let ((new-o (make-object ,(translate-id class-string
-                                                                    (id-src class-id)))))
-                             (send new-o ,(translate-id (build-constructor-name 
-                                                         (if (null? (name-path class-type)) 
-                                                             class-string 
-                                                             (id-string (name-id class-type)))
+    (let* ((class-string 
+            (if (def? class-type)
+                (get-class-string (make-name (def-name class-type) null #f))
+                (get-class-string class-type)))
+           (class-id (if (def? class-type)
+                         (def-name class-type)
+                         (name-id class-type)))
+           (default-name (translate-id class-string (id-src class-id)))
+           (default-ctor (translate-id (build-constructor-name 
+                                        (cond
+                                          (local-inner?
+                                           (regexp-replace "-[0-9]*" (method-record-name ctor-record) ""))
+                                          ((and (name? class-type) (null? (name-path class-type)))
+                                           class-string)
+                                          (else (id-string (name-id class-type))))
+                                        (method-record-atypes ctor-record))
+                                       (id-src class-id))))
+      (make-syntax
+       #f
+       (cond
+         (local-inner?
+          `(let ((new-o (make-object ,default-name 
+                          ,@(if (static-method)
+                                null
+                                (let loop ((d (current-depth)))
+                                  (cond
+                                    ((= d 0) '(this))
+                                    (else (cons (build-identifier (format "encl-this-~a~~f" d))
+                                                (loop (sub1 d)))))))
+                          ,@(let loop ((args (def-closure-args
+                                               (if (def? class-type)
+                                                   class-type
+                                                   (find-inner class-string (current-local-classes))))))
+                              (cond
+                                ((null? args) null)
+                                (else (translate-id (id-string (car args)) #f)))))))
+             (send new-o ,default-ctor ,@args)
+             new-o))
+         (inner?
+          `(send this ,(translate-id (mangle-method-name (string-append "construct-" class-string)
                                                          (method-record-atypes ctor-record))
-                                                        (id-src class-id))
-                                   ,@args)
-                             new-o) 
-                       (build-src src)))))
+                                     (id-src class-id))
+                 ,@args))
+         (else `(let ((new-o (make-object ,default-name)))
+                  (send new-o ,default-ctor ,@args)
+                  new-o)))
+       (build-src src))))
+  
+  ;find-inner: string (list def) -> def
+  (define (find-inner name classes)
+    (cond
+      ((equal? name (id-string (def-name (car classes))))
+       (car classes))
+      (else (find-inner name (cdr classes)))))
+        
   
   ;translate-inner-alloc: syntax id (list syntax) src method-record -> syntax
   (define (translate-inner-alloc obj class args src ctor-record)

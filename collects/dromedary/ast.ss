@@ -67,18 +67,22 @@
                                      (pattern*expression-list
                                       (listof (cons/p pattern? expression?)))))
 	;(make-pstr_primitive string value_description)
-	(p-define-struct pstr_primitive (name desc))
+	(p-define-struct pstr_primitive ((name string?)
+                                         (desc value_description?)))
 	;(make-pstr_type list)
-	(p-define-struct pstr_type (string*type_declaration-list))
+	(p-define-struct pstr_type ((string*type_declaration-list
+                                     (listof (cons/p string? type_declaration?)))))
 	;(make-pstr_exception string exception_declaration(core_type list))
-	(p-define-struct pstr_exception (name decl))
+	(p-define-struct pstr_exception ((name string?)
+                                         (decl (listof (core_type?)))))
 	;(make-pstr_exn_rebind string longident)
-	(p-define-struct pstr_exn_rebind (name ident))
+	(p-define-struct pstr_exn_rebind ((name string?)
+                                          (ident longident?)))
 	;(make-pstr_module string 
   ;| pstr_module of string * module_expr
   ;| pstr_modtype of string * module_type
 	;(make-pstr_open longident)
-	(p-define-struct pstr_open (name))
+	(p-define-struct pstr_open ((name longident?)))
 	;(make-pstr_class list)
 	(p-define-struct pstr_class (class_declaration-list))
 	;(make-pstr_class_type list)
@@ -86,10 +90,22 @@
   ;| pstr_include of module_expr
 
 	;(make-value_description core_type string-list)
-	(p-define-struct value_description (pval_type pval_prim))
+	(p-define-struct value_description ((pval_type core_type?)
+                                            (pval_prim (listof string?))))
 	;(make-core_type core_type_desc src)
 	(p-define-struct core_type (desc src))
 
+        (define core_type_makdesc (or/f ptyp_any?
+                                        ptyp_var?
+                                        ptyp_arrow?
+                                        ptyp_tuple?
+                                        ptyp_constr?
+                                        ptyp_object?
+                                        ptyp_class?
+                                        ptyp_alias?
+                                        ptyp_variant?))
+                                       
+  
 	; core_type_makdesc => any
 	;                 | var
 	;                 | arrow
@@ -101,21 +117,23 @@
 	;                 | variant
 
 	;(make-ptyp_any null)
-	(p-define-struct ptyp_any (x))
+	(p-define-struct ptyp_any ((x null?)))
 	;(make-ptyp_var string)
-	(p-define-struct ptyp_var (name))
+	(p-define-struct ptyp_var ((name string?)))
 	;(make-ptyp_arrow label core_type core_type)
 	(p-define-struct ptyp_arrow (name fromtype totype))
 	;(make-ptyp_tuple list)
-	(p-define-struct ptyp_tuple (core_type-list))
+	(p-define-struct ptyp_tuple ((core_type-list (listof core_type?))))
 	;(make-ptyp_constr longident list)
-	(p-define-struct ptyp_constr (name core_type-list))
+	(p-define-struct ptyp_constr ((name longident?)
+                                      (core_type-list (listof core_type?))))
 	;(make-ptyp_object list)
-	(p-define-struct ptyp_object (core_field_type-list))
+	(p-define-struct ptyp_object ((core_field_type-list (listof core_field_type?))))
 	;(make-ptyp_class longident list list)
 	(p-define-struct ptyp_class (longident core_type-list label-list))
 	;(make-ptyp_alias core_type string)
-	(p-define-struct ptyp_alias (type name))
+	(p-define-struct ptyp_alias ((type core_type?)
+                                     (name string?)))
 	;(make-ptyp_variant list boolean list-or-null)
 	(p-define-struct ptyp_variant (row_field-list bool label-list))
 

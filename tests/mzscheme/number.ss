@@ -299,6 +299,7 @@
 (test #t zero? 0)
 (test #t zero? 0.0)
 (test #t zero? +0.0i)
+(test #t zero? -0.0i)
 (test #t zero? 0.0+0.0i)
 (test #f zero? 1.0+0.0i)
 (test #f zero? 1.0+1.0i)

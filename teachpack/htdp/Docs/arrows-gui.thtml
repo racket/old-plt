@@ -6,10 +6,10 @@
 <p>The teachpack <code>arrow-gui.ss</code> implements three functions: 
 <menu>
 <li> <code>control : -> symbol</code> 
-     <br> to read out the current state of the msg field 
+     <br> to read out the current state of the message field 
 
 <li> <code>view : (union string symbol) -> true </code>
-     <br> to display its argument in the message panel 
+     <br> to display its argument in the message field
 
 <li> <code>modelT = (button% event% -> true)</code>
      <br>
@@ -23,8 +23,8 @@
 > (define (make-model dir)
    (lambda (b e)
      (begin
-       (printf "~a ~n" (control))
-       (view dir))))
+       (view dir)
+       (printf "~a ~n" (control)))))
 
 > (connect
    (make-model "left")

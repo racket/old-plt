@@ -38,7 +38,7 @@
  (plt-homepage "PLT")
  (how-to-use-scheme "How to Use Scheme") ;; title of a book.
  (teachscheme!-homepage "TeachScheme!") ;; probably this should be a `word' in all languages
-
+ 
  ;;; bug report form
  (cancel-bug-report? "Annuler la soumission du formulaire de bogue ?")
  (are-you-sure-cancel-bug-report?
@@ -73,7 +73,7 @@
  (pls-fill-in-field "Merci de compléter le champ \"~a\".")
  (malformed-email-address "Adresse email malformée.")
  (pls-fill-in-either-description-or-reproduce "Veuillez remplir soit le champ \"Description\", soit le champ \"Etapes à suivre pour reproduire le bogue\".")
-
+ 
  ;;; check syntax
  (check-syntax "Vérifier") ; "Syntaxe" ; "Correcteur de syntaxe" est long...
  (cs-italic "Italique")
@@ -122,7 +122,7 @@
  (please-choose-either "Choisissez \"~a\" ou \"~a\".")
  (close-anyway "Fermer quand même")
  (clear-anyway "Effacer quand même")
-
+ 
  (url "URL")
  (url: "URL :")
  (open-url... "Ouvrir l'URL...")
@@ -282,7 +282,7 @@
  (pref-lock-not-gone
   "Les préférences sont verrouillées par le fichier :\n\n   ~a\n\nqui empêche les préférences d'être sauvegardées. Assurez-vous qu'aucun logiciel PLT n'est en cours d'exécution et effacer le fichier.")
  (still-locked-exit-anyway? "Les préférences n'ont pu être sauvegardées correctement. Quitter quand même ?")
-
+ 
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Indentation")
  
@@ -336,12 +336,12 @@
   "Etes-vous certain de vouloir retourner à la version de ce fichier qui est sur le disque dur ? Ce changement ne pourra pas être défait.")
  (are-you-sure-revert-title
   "Retourner ?")
-
+ 
  ;;; saving a file
  ; ~a is filled with the filename
  (error-saving "Erreur durant la sauvegarde") ;; title of error message dialog
  (error-saving-file/name "Une erreur s'est produite durant la sauvegarde de ~a.")
-
+ 
  ;;; finder dialog
  (must-specify-a-filename "Vous devez spécifier un nom de fichier.")
  (file-does-not-exist "Le fichier \"~a\" n'existe pas.")
@@ -392,7 +392,7 @@
  (open-info "Ouvrir un fichier à partir du disque dur.")
  (open-menu-item "&Ouvrir")
  (open-here-menu-item "&Ouvrir ici...")
-
+ 
  (open-recent-info "Une liste des fichiers ouverts récemment.")
  (open-recent-menu-item "Ouvrir récent")
  
@@ -476,7 +476,7 @@
  (about-info "Auteurs et détails concernant ce logiciel.")
  (about-menu-item "A propos de ...")
  (help-menu-check-for-updates "Regarder les mises à jour...")
-
+ 
  ;;; help-desk-specific menus
  (new-help-desk "&Nouvelle Aide")
  
@@ -485,7 +485,7 @@
   "Voulez-vous créer une nouvelle fenêtre ou effacer celle-ci ?")
  (clear-current "Effacer celle-ci")
  (new-window "Nouvelle fenêtre")
-
+ 
  ;;; exiting and quitting are you sure dialog
  ;;; (exit is used on windows, quit on macos. go figure)
  (exit "Quitter")
@@ -583,9 +583,18 @@
   "Insérer dans l'exécutable le programme sauvegardé ? Si oui, vous pourrez copier l'exécutable sur un autre ordinateur ~a, mais l'exécutable sera probablement gros. Si vous choisissez non, vous ne pourrez pas copier l'exécutable sur un autre ordinateur, mais il sera bien plus petit. De plus, si vous choisissez non, l'exécutable utilisera toujours la version la plus récente du programme.")
  (use-mred-binary?
   "Utiliser le binaire de mred pour cet exécutable ?\n\nSi oui, votre program peut utiliser la bibliothèque (lib \"mred.ss\" \"mred\"). Si non, DrScheme va choisir mzscheme comme binaire pour cet exécutable.\n\nASi vous n'êtes pas sûr, choisissez oui.")
-  (inline-saved-program-in-executable/windows/path
-   "ATTENTION ! L'exécutable généré a besoin de trois DLLs : libmred.dll, libmzsch.gll et libgc.dll, qui sont localisées dans\n\n~a\n\nL'exécutable trouve les DLLs soit dans le répertoire ou se trouve l'exécutable soit en utilisant la variable d'environnement PATH.\n\nQuand vous avez installé DrScheme, l'installateur a modifié le PATH de l'utilisateur pour y inclure le répertoire dans lequel les DLLs se trouvent. Méfiez-vous des changements de configuration ou des changements faits par l'utilisateur depuis l'installation.\n\nSi vous deplacez l'exécutable sur une autre machine, vous devez également copier les DLLS sur l'autre machine, soit dans le même répertoire que l'exécutable, soit dans un répertoire qui figure dans le PATH sur l'autre machine.")
-   
+ (inline-saved-program-in-executable/windows/path
+  "ATTENTION ! L'exécutable généré a besoin de trois DLLs : libmred.dll, libmzsch.gll et libgc.dll, qui sont localisées dans\n\n~a\n\nL'exécutable trouve les DLLs soit dans le répertoire ou se trouve l'exécutable soit en utilisant la variable d'environnement PATH.\n\nQuand vous avez installé DrScheme, l'installateur a modifié le PATH de l'utilisateur pour y inclure le répertoire dans lequel les DLLs se trouvent. Méfiez-vous des changements de configuration ou des changements faits par l'utilisateur depuis l'installation.\n\nSi vous déplacez l'exécutable sur une autre machine, vous devez également copier les DLLS sur l'autre machine, soit dans le même répertoire que l'exécutable, soit dans un répertoire qui figure dans le PATH sur l'autre machine.")
+ (launcher "Lanceur")
+ (stand-alone "Autonome")
+ (executable-type "Type")
+ (executable-base "Base")
+ (filename "Nom de fichier: ")
+ (create "Créer")
+ (please-choose-an-executable-filename "Veuillez sélectionner un nom de fichier pour sauvegarder l'exécutable.")
+ 
+ (create-servlet "Créer un servlet...") ;servlet = greffon, extension serveur?
+ 
  ;;; buttons
  (execute-button-label "Exécuter") 
  (save-button-label "Sauvegarder")
@@ -598,7 +607,7 @@
  ;; collapse and expand popup menu items
  (collapse-sexp "Rétrécir une sexpression")
  (expand-sexp "Elargir une sexpression")
-
+ 
  ;;; fraction dialog
  (enter-fraction "Entrer une fraction")
  (whole-part "Partie entière")
@@ -653,7 +662,8 @@
  (use-mixed-fractions "Fractions mêlées")
  (use-repeating-decimals "Décimales répétitives")
  (decimal-notation-for-rationals "Utiliser la notation décimale pour les nombres rationnels")
- 
+ (please-select-a-language "Veuillez sélectionner un language")
+
  ;;; languages
  (beginning-student "Etudiant niveau débutant")
  (beginning-one-line-summary "define, cond, structs, constantes, et primitives")
@@ -677,7 +687,7 @@
  (unknown-debug-frame "[inconnu]")
  
  (module-language-one-line-summary "Language avec module comme seule forme")
-
+ 
  ;;; debug language
  (backtrace-window-title "Trace - DrScheme")
  (files-interactions "les interactions de ~a") ;; filled with a filename
@@ -735,7 +745,7 @@
  (just-break "Simplement stopper")
  (kill "Tuer")
  (kill? "Tuer ?")
-
+ 
  ;;; version checker
  (vc-update-check "Vérification des mises à jour")
  (vc-check-prompt "Regarder sur Internet pour d'éventuelles mises à jour des logiciels PLT?")
@@ -767,7 +777,7 @@
  (insert-large-letters... "Inserer de grandes lettres...")
  (large-semicolon-letters "Grandes lettres en points-virgules")
  (text-to-insert "Texte à inserer")
-
+ 
  (module-browser-filename-format "Nom de fichier complet : ~a (~a lignes)")
  (module-browser-root-filename "Nom de fichier de la racine : ~a")
  (module-browser-font-size-gauge-label "Taille de la police")
@@ -780,7 +790,7 @@
  (module-browser-error-expanding "Erreur durant l'expansion du programme :\n\n~a")
  
  (happy-birthday-matthias "Joyeux anniversaire, Matthias !")
-
+ 
  (mrflow-using-default-language-title "Language par défaut utilisé")
  (mrflow-using-default-language "Le language actuellement utilisé n'a pas de table de types défini pour ses primitives. R5RS Scheme est utilisé à la place.")
  (mrflow-button-title "Analyzer")
@@ -802,7 +812,7 @@
  ;(mrflow-unknown-exception "Exception inconnue : ~a")
  ;(mrflow-language-primitives-error-title "Erreur pour les primitives du language")
  ;(mrflow-language-primitives-error "Mauvais nom de fichier pour la table des types des primitives du language : ~a")
-
+ 
  (xml-tool-menu "XML")
  (xml-tool-insert-xml-box "Insérer une boîte XML")
  (xml-tool-insert-scheme-box "Insérer une boîte Scheme")
@@ -821,7 +831,7 @@
  (show-recent-items-window-label "Fichiers récemment ouverts")
  (number-of-open-recent-items "Nombre de fichiers récents")
  (switch-anyway "Changer de fichier quand même")
-
+ 
  (stepper-program-has-changed "Avertissement : le programme a été modifié.")
  (stepper-program-window-closed "Avertissement : la fenêtre du programme a disparu.")
  )

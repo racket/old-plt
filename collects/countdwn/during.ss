@@ -85,7 +85,7 @@
 				(show-error string))))))
 	       (with-parameterization param
 		 (lambda ()
-		   (invoke-open-unit/sig wx@ wx)
+		   (invoke-open-unit/sig wx:wx@ wx)
 		   (global-defined-value 'remember remember)
 		   (global-defined-value 'remember-around remember-around)
 		   (invoke-open-unit/sig mzlib)

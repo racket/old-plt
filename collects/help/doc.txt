@@ -14,12 +14,23 @@ The MrEd-dependent functions provided by `help-desk.ss' are:
 
 > search-for-docs : hd-cookie search-string search-type match-type lucky? -> void
 
+The `hd-cookie' argument is returned by `start-help-server', below.
 Searches for `search-string' in the documentation, using `search-type' 
 and `match-type', and displays result in the Help Desk browser.  The 
 `search-type' is one of "keyword", "keyword-index", or "keyword-index-text".
 The `match-type' is one of "exact-match", "containing-match", or 
 "regexp-match".  The `lucky?' parameter indicates whether to do a 
 lucky search or not; it is considered true for any value other than #f.
+
+> goto-manual-link hd-cookie manual index-key -> void
+
+The `hd-cookie' argument is returned by `start-help-server', below.
+The `manual' and `index-key' entries are strings.  The `manual' 
+argument is the string name of a doc collection, or "help"; 
+the second is an index entry in that manual.  When called,
+this procedure starts a Help Desk browser with the appropriate 
+manual page shown in the lower frame, if the requested entry 
+exists.  Otherwise, an error occurs.
 
 > help-desk-browser : hd-cookie -> void
 
@@ -118,7 +129,7 @@ documentation.
 
 > (finddoc manual index-key label)
   This procedure accepts three strings. The first is the name of 
-  a doc collection, the second is an index entry in that manual and 
+  a doc collection, the second is an index entry in that manual, and 
   the final is a desriptive string. It returns a string representation 
   of an anchor (in HTML) that points to that index entry in the manual.
   If the manual is not found, or the index-key is not in the manual,

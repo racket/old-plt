@@ -1,6 +1,7 @@
 (module external-search mzscheme
   (require "browser.ss"
 	   "server.ss"
+	   "finddoc.ss"
 	   (lib "contracts.ss")
 	   (lib "util.ss" "help" "servlets" "private"))
 
@@ -14,18 +15,38 @@
 		  (member s
 		   '("exact-match" "containing-match" "regexp-match")))
 		any?
-		. -> . any?)))
+		. -> . any?))
+   (goto-manual-link
+    (hd-cookie? string? string? . -> . any?)))
+
+  (define index-format-prefix
+    "http://127.0.0.1:~a/servlets/index.ss?")
 
   ; hd-cookie string string string any -> void
   ; shows search result in default browser
   (define (search-for-docs cookie search-string search-type match-type lucky?)
     (let* ([port (hd-cookie->port cookie)]
 	   [url (format 
-		 (string-append "http://127.0.0.1:~a/servlets/index.ss?"
+		 (string-append index-format-prefix
 				"search-string=~a&"
 				"search-type=~a&"
 				"match-type=~a&"
 				"lucky=~a")
 		 port (hexify-string search-string) search-type match-type
 		 (if lucky? "true" "false"))])
+      (help-desk-navigate url)))
+
+  (define (goto-manual-link cookie manual index-key)
+    (let* ([port (hd-cookie->port cookie)]
+	   [hd-url (finddoc-page-anchor manual index-key)]
+           ; hd-url is /doc/<manual>/... or /servlet/...
+	   [url (format
+		 (string-append index-format-prefix
+				"hd-url=~a")
+		 (hd-cookie->port cookie)
+		 (hexify-string hd-url))])
       (help-desk-navigate url))))
+
+
+	   
+    

@@ -7,7 +7,8 @@
 
   ; these depend on MrEd
   (provide help-desk-browser
-           search-for-docs))
+           search-for-docs
+	   goto-manual-link))
 
 
 

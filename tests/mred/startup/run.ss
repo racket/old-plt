@@ -9,7 +9,7 @@ string=? ; exec /home/scheme/Executables/mzscheme -x -qgr $0 $@
 (define plt-collects
   (cond
    [(string=? arg "-x") ":"]
-   [(string=? arg "-robby") "/home/robby/plt:"]
+   [(string=? arg "-robby") "/home/robby/plt/collects:"]
    [else (error 'plt-home "don't recognize ~a~n" arg)]))
 
 (define (print-plt-collects)
@@ -33,15 +33,14 @@ string=? ; exec /home/scheme/Executables/mzscheme -x -qgr $0 $@
 and write into your .mredrc. It should restore things, but if tests
 fail your .mredrc may by in ~~/mredrc.
 
-If you pass an argument, that is passed on to
-/home/scheme/Executables/mred. It's used for -robby or something like that
+The PLTCOLLECTS environment variable is set based on the argument to
+this script. Currently implemented: \"-robby\" and \"-x\".
+
+When no splash screen should appear, the words \"NO SPLASH\" will
+appear. Otherwise a splash screen should appear.
 
 If you see lines prefixed by `>' they are from mred's stderr and
 mean that test has failed (even tho the script does not stop or say FAIL)
-
-If you see the splash screen (except during the splash screen test),
-the test failed. The console window popping up occasionally is okay,
-tho.
 
 You must run this script from the directory where it is located.
 
@@ -117,30 +116,33 @@ You must run this script from the directory where it is located.
 
 (define (test:-f)
   (printf"~n- testing -f flag~n")
-  (test-mred "whee" "-f" "whee.ss"))
+  (test-mred "whee" "--" "-f" "whee.ss"))
 
 (define (test:-e)
   (printf "~n- testing -e flag~n")
-  (test-mred "whee" "-e" "(printf \"whee~n\")"))
+  (test-mred "whee" "--" "-e" "(printf \"whee~n\")"))
 
-(define (test:-nu-e)
-  (printf "~n- testing -nu with -e flag~n")
+(define (test:-u-e)
+  (printf "~n- testing -u with -e flag~nNO SPLASH~n")
   (test-mred "whee" 
+	     "-b"
+	     "-u"
+	     "--"
 	     "-e"
-	     "(when (defined? 'mred:frame%)
-		(printf \"wh\"))"
-	     "-nu"
+	     "(printf \"wh\")"
 	     "-e"
 	     "(when (and (defined? 'mred:frame%)
 			 (defined? 'mred:console))
 		(printf \"ee~n\"))"))
 
-(define (test:-nu-f)
-  (printf "~n- testing -nu with -f flag~n")
+(define (test:-u-f)
+  (printf "~n- testing -u with -f flag~nNO SPLASH~n")
   (test-mred "whee" 
+	     "-b"
+	     "-u"
+	     "--"
 	     "-f"
-	     "wh-has-mred.ss"
-	     "-nu"
+	     "wh.ss"
 	     "-f"
 	     "ee-has-mred.ss"))
 
@@ -150,16 +152,16 @@ You must run this script from the directory where it is located.
   (test-mred "whee")
   (clear-mredrc))
 
-(define (test:.mredrc-nu-f)
-  (printf "~n- testing that .mredrc is run during -nu flag~n")
+(define (test:.mredrc-u-f)
+  (printf "~n- testing that .mredrc is run during -u flag~nNO SPLASH~n")
   (set-mredrc "(fprintf mred:constants:original-output-port \"ee~n\")")
-  (test-mred "whee" "-f" "wh.ss" "-nu")
+  (test-mred "whee" "-b" "-u" "--" "-f" "wh.ss")
   (clear-mredrc))
 
 (define (test:mred:startup-before)
-  (printf "~n- testing mred:startup after -nu~n")
+  (printf "~n- testing mred:startup after -u~nNO SPLASH~n")
   (set-mredrc "(printf \"ee~n\")")
-  (test-mred "whee" "-nu" "-e"
+  (test-mred "whee" "-u" "-b" "--" "-e"
 	     "(define mred:startup (lambda x (printf \"wh\")))")
   (clear-mredrc))
 
@@ -178,11 +180,12 @@ You must run this script from the directory where it is located.
   (reset-plt-collects))
 
 (define (test:-p)
-  (printf "~n- testing -p flag~n")
+  (printf "~n- testing -p flag~nSMALL SPLASH~n")
   (test-mred
    "whee" 
-   "-nu"
+   "-u"
    "-p" "/home/scheme/plt/collects/icons/anchor.gif" "splash screen test" "150" "4"
+   "--"
    "-e" "(printf \"whee~n\")"))
 
 (define (test:no-icons)
@@ -193,21 +196,21 @@ You must run this script from the directory where it is located.
 	(printf "~n  This test expects only one icons collection is available")
 	(printf "~n-- moving ~a to ~a ~n" icons-before/after icons-during)
 	(rename-file icons-before/after icons-during)
-	(test-mred "whee" "-e" "(printf \"whee~n\")")
+	(test-mred "whee" "--" "-e" "(printf \"whee~n\")")
 	(printf "~n-- moving ~a to ~a ~n" icons-during icons-before/after)
 	(rename-file icons-during icons-before/after)))))
 
-(test:no-icons)
 (test:no-flags)
 (test:-e)
 (test:-f)
-(test:-nu-e)
-(test:-nu-f)
+(test:-u-e)
+(test:-u-f)
 (test:.mredrc)
-(test:.mredrc-nu-f)
+(test:.mredrc-u-f)
 (test:mred:startup-before)
 (test:-a)
 (test:-A)
 (test:-p)
+(test:no-icons)
 
 (move-in-mredrc)

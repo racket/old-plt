@@ -57,7 +57,7 @@ to the original stdout of DrScheme.
             (drscheme:language:make-simple-settings 
              #t
              'constructor
-             'mixed-fraction
+             'repeating-decimal
              (get-sharing-printing)
              #t
              #f))

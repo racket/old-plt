@@ -173,23 +173,23 @@ HRESULT CDHTMLPage::AtAnyEvent(void) {
         pToElement->Release();
       }
 
-    }
-
-    if (eventEntry->eventType == keydown || 
-	eventEntry->eventType == keypress || 
-	eventEntry->eventType == keyup) {
+    } else if (eventEntry->eventType == keydown || 
+	       eventEntry->eventType == keypress || 
+	       eventEntry->eventType == keyup) {
       long keycode;
-      VARIANT_BOOL shiftkey,ctrlkey,altkey;
+      VARIANT_BOOL key;
 
       pIHTMLEventObj->get_keyCode(&keycode);
-      pIHTMLEventObj->get_shiftKey(&shiftkey);
-      pIHTMLEventObj->get_ctrlKey(&ctrlkey);
-      pIHTMLEventObj->get_altKey(&altkey);
-
       pEvent->put_keyCode(keycode);
-      pEvent->put_shiftPressed(shiftkey);
-      pEvent->put_ctrlPressed(ctrlkey);
-      pEvent->put_altPressed(altkey);
+
+      pIHTMLEventObj->get_shiftKey(&key);
+      pEvent->put_shiftPressed(key);
+
+      pIHTMLEventObj->get_ctrlKey(&key);
+      pEvent->put_ctrlPressed(key);
+
+      pIHTMLEventObj->get_altKey(&key);
+      pEvent->put_altPressed(key);
     }
 
     SysFreeString(idAttr);

@@ -26,10 +26,10 @@ string=? ; exec mzscheme -qr $0 "$@"
 (define go
   (let* ([testpath (lambda (x) (and (directory-exists? x) x))]
          [trashy-path
-          (or (testpath (build-path (collection-path "mzlib") 'up 'up  'up "TrashyTeXTools"))
-              (testpath (format "~a/Packages/TrashyTeXTools/"
+          (or (testpath (format "~a/Packages/TrashyTeXTools/"
                                 (or (getenv "HOMESCHEME")
-                                    "/home/scheme"))))])
+                                    "/proj/scheme/")))
+              (testpath (build-path (collection-path "mzlib") 'up 'up  'up "TrashyTeXTools")))])
     (unless trashy-path
       (error 'mkdocs "Couldn't find TrashyTeXTools"))
     

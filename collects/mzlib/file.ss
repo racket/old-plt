@@ -8,6 +8,7 @@
 	  file-name-from-path
 	  path-only
 	  delete-directory/files
+	  copy-directory/files
 	  make-directory*
 	  make-temporary-file
 	  find-library
@@ -209,6 +210,19 @@
      [else (error 'delete-directory/files
 		  "encountered ~a, neither a file nor a directory"
 		  path)]))
+
+  (define (copy-directory/files src dest)
+    (cond
+     [(file-exists? src)
+      (copy-file src dest)]
+     [(directory-exists? src)
+      (make-directory dest)
+      (for-each (lambda (e) (copy-directory/files (build-path src e)
+						  (build-path dest e)))
+		(directory-list src))]
+     [else (error 'copy-directory/files
+		  "encountered ~a, neither a file nor a directory"
+		  src)]))
 
   (define (make-directory* dir)
     (let-values ([(base name dir?) (split-path dir)])

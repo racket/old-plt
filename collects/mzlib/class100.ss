@@ -62,7 +62,7 @@
 						   (identifier? (syntax iid))
 						   (identifier? (syntax eid)))
 					      (list kind (syntax iid) (syntax eid) (syntax expr))]
-			    [else (se (format "bad ~a clause" kind) (syntax decl))]))
+			    [else (se (format "bad ~a clause" kind) decl)]))
 			(syntax->list decls)))]
 		    [body 
 		     ;; Make a list of normalized clause-like lists, e.g:

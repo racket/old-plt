@@ -7,7 +7,7 @@
   (provide get-pref/default
 	   get-bool-pref/default
 	   put-prefs
-	   cvs?
+	   cvs-or-nightly-build?
 	   search-height-default
 	   search-bg-default
 	   search-text-default
@@ -65,9 +65,11 @@
   (define (color-highlight . s)
     (apply color-with *the-highlight-color* s))
 
-  (define (cvs?)
-    (directory-exists? 
-     (build-path (collection-path "help") "CVS")))
+  (define (cvs-or-nightly-build?)
+    (or (directory-exists? (build-path (collection-path "help") "CVS"))
+        (with-handlers ([not-break-exn?
+                         (lambda (x) #f)])
+          (collection-path "cvs-time-stamp"))))
   
   (define hexifiable '(#\: #\; #\? #\& #\% #\# #\< #\> #\+))
   

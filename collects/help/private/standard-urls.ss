@@ -32,7 +32,7 @@
 
   (define (make-docs-plt-url manual-name)
     (format "http://download.plt-scheme.org/doc/~a/bundles/~a-doc.plt"
-            (if (cvs?)
+            (if (cvs-or-nightly-build?)
                 "pre-release"
                 (version))
             manual-name))

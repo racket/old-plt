@@ -237,7 +237,7 @@
 	  
 	  (list "<H1>Installed Manuals</H1>")
 	   
-	  (if (cvs?)
+	  (if (cvs-or-nightly-build?)
 	      (list "<b>CVS:</b> <a mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals))\">"
 		    (string-constant plt:hd:refresh-all-manuals)
 		    "</a>")
@@ -358,7 +358,7 @@
               manual-name
               index-file
               name
-              (if (and (cvs?)
+              (if (and (cvs-or-nightly-build?)
                        (file-exists? (build-path doc-path index-file)))
                   (string-append 
                    "<BR>&nbsp;&nbsp;"

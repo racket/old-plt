@@ -72,8 +72,8 @@ string=? ; exec mred -qvf $0
 
 (define new-signature-definition
   `(define-signature mred-interfaces^
-     (,@(append signature-names
-		interface-names))))
+     ((open mred^)
+      ,@interface-names)))
 
 (define new-unit-definition
   `(define mred-interfaces@

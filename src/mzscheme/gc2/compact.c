@@ -85,10 +85,8 @@ void **GC_variable_stack;
 /********************* Type tags *********************/
 Type_Tag weak_box_tag = 42; /* set by client */
 
-#define gc_finalization_tag 256
-#define gc_finalization_weak_link_tag 257
-#define gc_weak_array_tag 258
-#define gc_on_free_list_tag 259
+#define gc_weak_array_tag 256
+#define gc_on_free_list_tag 257
 
 #define _num_tags_ 260
 
@@ -842,45 +840,55 @@ void *GC_malloc_weak_box(void *p, void **secondary, int soffset)
 /******************************************************************************/
 
 typedef struct Fnl {
-  Type_Tag type;
   char eager_level;
   char tagged;
   void *p;
   void (*f)(void *p, void *data);
   void *data;
+#if CHECKS
+  long size;
+#endif
   struct Fnl *next;
 } Fnl;
 
 static Fnl *fnls, *run_queue, *last_in_queue;
 
-static int size_finalizer(void *p)
+static void mark_finalizer(Fnl *fnl)
 {
-  return gcBYTES_TO_WORDS(sizeof(Fnl));
-}
-
-static int mark_finalizer(void *p)
-{
-  Fnl *fnl = (Fnl *)p;
-    
   gcMARK(fnl->next);
   gcMARK(fnl->data);
   /* !eager_level => queued for run: */
   if (!fnl->eager_level) {
     gcMARK(fnl->p);
   }
-
-  return gcBYTES_TO_WORDS(sizeof(Fnl));
+#if CHECKS
+  if (!fnl->tagged && fnl->size < BIGBLOCK_MIN_SIZE) {
+    if (((long *)fnl->p)[-1] != fnl->size)
+      CRASH();
+  }
+#endif
 }
 
-static int fixup_finalizer(void *p)
+static void fixup_finalizer(Fnl *fnl)
 {
-  Fnl *fnl = (Fnl *)p;
+#if CHECKS
+  static void *old_fnl_p;
+  static MPage *old_fnl_page;
+  
+  old_fnl_p = fnl->p;
+  old_fnl_page = find_page(fnl->p);
+#endif
   
   gcFIXUP(fnl->next);
   gcFIXUP(fnl->data);
   gcFIXUP(fnl->p);
-  
-  return gcBYTES_TO_WORDS(sizeof(Fnl));
+
+#if CHECKS
+  if (!fnl->tagged && fnl->size < BIGBLOCK_MIN_SIZE) {
+    if (!(((long)fnl->p) & MPAGE_MASK))
+      CRASH();
+  }
+#endif
 }
 
 void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *data), 
@@ -934,14 +942,13 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
   park[0] = p;
   park[1] = data;
 
-  fnl = GC_malloc_one_tagged(sizeof(Fnl));
+  fnl = (Fnl *)GC_malloc_atomic(sizeof(Fnl));
 
   p = park[0];
   park[0] = NULL;
   data = park[1];
   park[1] = NULL;
 
-  fnl->type = gc_finalization_tag;
   fnl->next = fnls;
   fnl->p = p;
   fnl->f = f;
@@ -967,6 +974,10 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
 		(long)p, m->type);
 	CRASH();
       }
+      if (m->flags & MFLAG_BIGBLOCK)
+	fnl->size = m->u.size;
+      else
+	fnl->size = ((long *)p)[-1];
     }
   }
 #endif
@@ -975,7 +986,6 @@ void GC_set_finalizer(void *p, int tagged, int level, void (*f)(void *p, void *d
 }
 
 typedef struct Fnl_Weak_Link {
-  Type_Tag type;
   void *p;
   int offset;
   void *saved;
@@ -984,28 +994,15 @@ typedef struct Fnl_Weak_Link {
 
 static Fnl_Weak_Link *fnl_weaks;
 
-static int size_finalizer_weak_link(void *p)
+static void mark_finalizer_weak_link(Fnl_Weak_Link *wl)
 {
-  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
-}
-
-static int mark_finalizer_weak_link(void *p)
-{
-  Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
-  
   gcMARK(wl->next);
-
-  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
-static int fixup_finalizer_weak_link(void *p)
+static void fixup_finalizer_weak_link(Fnl_Weak_Link *wl)
 {
-  Fnl_Weak_Link *wl = (Fnl_Weak_Link *)p;
-    
   gcFIXUP(wl->next);
   gcFIXUP(wl->p);
-
-  return gcBYTES_TO_WORDS(sizeof(Fnl_Weak_Link));
 }
 
 void GC_finalization_weak_ptr(void **p, int offset)
@@ -1015,12 +1012,11 @@ void GC_finalization_weak_ptr(void **p, int offset)
   /* Allcation might trigger GC, so we use park: */
   park[0] = p;
 
-  wl = (Fnl_Weak_Link *)GC_malloc_one_tagged(sizeof(Fnl_Weak_Link));
+  wl = (Fnl_Weak_Link *)GC_malloc_atomic(sizeof(Fnl_Weak_Link));
 
   p = park[0];
   park[0] = NULL;
 
-  wl->type = gc_finalization_weak_link_tag;
   wl->p = p;
   wl->next = fnl_weaks;
   wl->offset = offset * sizeof(void*);
@@ -2081,13 +2077,29 @@ static void compact_untagged_mpage(void **p, MPage *page)
 
   top = p + MPAGE_WORDS;
 
+#if CHECKS
+  if (dest == startp) {
+    if (dest_offset < MPAGE_WORDS) {
+      /* Can't compact to self! */
+      CRASH();
+    }
+  }
+#endif
+
   while (p < top) {
     long size;
       
     size = *(long *)p + 1;
     
-    if (size == UNTAGGED_EOM)
+    if (size == UNTAGGED_EOM) {
+#if CHECKS
+      if (p < startp + page->alloc_boundary) {
+	/* Premature end */
+	CRASH();
+      }
+#endif
       break;
+    }
 
 #if CHECKS
     if (size >= BIGBLOCK_MIN_SIZE) {
@@ -2145,6 +2157,10 @@ static void compact_untagged_mpage(void **p, MPage *page)
       }
       
       OFFSET_SET_SIZE_UNMASKED(offsets, offset, dest_offset+1);
+#if CHECKS
+      if (!offsets[offset] && !offsets[offset+1])
+	CRASH();
+#endif
       offset += size;
       dest_offset += size;
  
@@ -2408,6 +2424,14 @@ void GC_fixup(void *pp)
 	}
 
 	v = OFFSET_SIZE(page->u.offsets, offset);
+#if CHECKS
+	if (page->type > MTYPE_TAGGED) {
+	  if (!v) {
+	    /* Can't point to beginning of non-tagged block! */
+	    CRASH();
+	  }
+	}
+#endif
 	if (offset < page->compact_boundary)
 	  r = (void *)(page->o.compact_to + v);
 	else
@@ -2759,7 +2783,7 @@ static void designate_modified(void *p)
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;
 
-#ifdef CHECK
+#if CHECKS
   if (during_gc)
     CRASH();
 #endif
@@ -3014,8 +3038,6 @@ static void init(void)
   if (!initialized) {
     GC_register_traversers(weak_box_tag, size_weak_box, mark_weak_box, fixup_weak_box);
     GC_register_traversers(gc_weak_array_tag, size_weak_array, mark_weak_array, fixup_weak_array);
-    GC_register_traversers(gc_finalization_tag, size_finalizer, mark_finalizer, fixup_finalizer);
-    GC_register_traversers(gc_finalization_weak_link_tag, size_finalizer_weak_link, mark_finalizer_weak_link, fixup_finalizer_weak_link);
 #if USE_FREELIST
     GC_register_traversers(gc_on_free_list_tag, size_on_free_list, size_on_free_list, size_on_free_list);
 #endif
@@ -3224,6 +3246,20 @@ static void gcollect(int full)
 
   do_roots(0);
 
+  {
+    Fnl *f;
+    for (f = fnls; f; f = f->next)
+      mark_finalizer(f);
+    for (f = run_queue; f; f = f->next)
+      mark_finalizer(f);
+  }
+
+  {
+    Fnl_Weak_Link *wl;
+    for (wl = fnl_weaks; wl; wl = wl->next)
+      mark_finalizer_weak_link(wl);
+  }
+
 #if TIME
   getrusage(RUSAGE_SELF, &post);
 #endif
@@ -3400,6 +3436,21 @@ static void gcollect(int full)
 
   }
 
+#if CHECKS
+  {
+    Fnl *f;
+    /* All finalized objects must be marked at this point. */
+    for (f = fnls; f; f = f->next) {
+      if (!is_marked(f->p))
+	CRASH();
+    }
+    for (f = run_queue; f; f = f->next) {
+      if (!is_marked(f->p))
+	CRASH();
+    }
+  }
+#endif
+
 #if TIME
   getrusage(RUSAGE_SELF, &post);
 #endif
@@ -3535,6 +3586,21 @@ static void gcollect(int full)
     scanned_pages = 0;
     
     do_roots(1);
+
+    {
+      Fnl *f;
+      for (f = fnls; f; f = f->next)
+	fixup_finalizer(f);
+      for (f = run_queue; f; f = f->next)
+	fixup_finalizer(f);
+    }
+    
+    {
+      Fnl_Weak_Link *wl;
+      for (wl = fnl_weaks; wl; wl = wl->next)
+	fixup_finalizer_weak_link(wl);
+    }
+
     fixup_all_mpages();
     
 #if TIME
@@ -3697,7 +3763,7 @@ static MPage *get_page_rec(void *p, mtype_t mtype, mflags_t flags)
       else
 	c = 'v';
 
-      if (mflags & MFLAG_BIGBLOCK)
+      if (flags & MFLAG_BIGBLOCK)
 	c = c - ('a' - 'A');
     }
     printf("%c p = %lx, g = %lx, addr = %lx\n", c, (long)p, g, addr);
@@ -4273,8 +4339,6 @@ void GC_dump(void)
 	  if (dump_info_array[i]) {
 	    char *tn, buf[256];
 	    switch(i) {
-	    case gc_finalization_tag: tn = "finalization"; break;
-	    case gc_finalization_weak_link_tag: tn = "finalization-weak-link"; break;
 	    case gc_weak_array_tag: tn = "weak-array"; break;
 	    case gc_on_free_list_tag: tn = "freelist-elem"; break;
 	    default:

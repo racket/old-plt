@@ -3596,8 +3596,10 @@ static void post_eval_in_env(void *e)
 static Scheme_Object *do_eval_in_env(void *e)
 {
   Eval_In_Env *ee = (Eval_In_Env *)e;
+  Scheme_Object *a[1];
+  a[0] = ee->e;
   return _scheme_apply_multi(scheme_get_param(ee->config, MZCONFIG_EVAL_HANDLER),
-			     1, &ee->e);
+			     1, a);
 }
 
 static Scheme_Object *

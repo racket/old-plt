@@ -6,7 +6,7 @@
             zodiac:system^
             plt:parameters^)
 
-    (define frame #f)
+    (define thread #f)
 
     (drscheme:parameters:current-frame%
      (class (drscheme:parameters:current-frame%) args
@@ -17,9 +17,10 @@
 		  mred:button%
 		  button-panel
 		  (lambda (button evt)
-		    (if frame
-			(send frame show #t)
-			(set! frame (make-object mred:console-frame%))))
+		    (if (and thread
+			     (thread-running? thread))
+			(mred:message-box "already created a rep in the xterm")
+			(set! thread (thread read-eval-print-loop))))
 		  (make-object wx:bitmap% 
 			       (if (<= (wx:display-depth) 1)
 				   (build-path mred:constants:plt-home-directory

@@ -60,8 +60,8 @@
 ;; Header:
 (printf "#define FUNCCALL(setup, x) (setup, x)~n")
 (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(SETUP(0), x)~n")
-(printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack; __gc_var_stack__[1] = (void *)GC_variable_count;~n")
-(printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, GC_variable_count = x)~n")
+(printf "#define PREPARE_VAR_STACK(size) void *__gc_var_stack__[size+2]; __gc_var_stack__[0] = GC_variable_stack;~n")
+(printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")
 (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
 (printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
 (printf "#define BLOCK_SETUP(x) ~a" (if per-block-push? "x" "/* skipped */"))

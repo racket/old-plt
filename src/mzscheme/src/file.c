@@ -1420,7 +1420,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
   int pos, i, len, no_sep;
   int alloc = PN_BUF_LEN;
   char buffer[PN_BUF_LEN], *str, *next;
-  int rel;
+  int rel, next_off;
 #ifdef MAC_FILE_SYSTEM
   int prev_no_sep;
 #endif
@@ -1439,6 +1439,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	|| (SCHEME_SYMBOLP(argv[i]) 
 	    && (SAME_OBJ(argv[i], up_symbol)
 		|| SAME_OBJ(argv[i], same_symbol)))) {
+      next_off = 0;
       if (SAME_OBJ(argv[i], up_symbol)) {
 #ifdef UNIX_FILE_SYSTEM
 	next = "..";
@@ -1558,8 +1559,8 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 
 	  if (i == 1) {
 	    /* Absolute path onto a drive: skip separator(s) */
-	    while (len && IS_A_SEP(next[0])) {
-	      next++;
+	    while (len && IS_A_SEP(next[next_off])) {
+	      next_off++;
 	      len--;
 	    }
 	  }
@@ -1572,10 +1573,10 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 #ifdef MAC_FILE_SYSTEM
       /* If we're appending a relative path, strip leading sep; otherwise,
          check for embedded colons */
-      if (next[0] == FN_SEP) {
+      if (next[next_off] == FN_SEP) {
 	rel = 1;
 	if (i) {
-	  next++;
+	  next_off++;
 	  --len;
 	}
       } else {
@@ -1583,13 +1584,24 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	int last = i ? len - 1 : len, j;
 	rel = 1;
 	for (j = 0; j < last; j++) {
-	  if (next[j] == ':') {
+	  if (next[j + next_off] == ':') {
 	    if (i) {
+	      char *nstr;
+#ifdef MZ_PRECISE_GC
+	      /* Can't pass unaligned pointer to scheme_raise_exn: */
+	      if (next_off & 0x1) {
+		nstr = MALLOC_N_ATOMIC(char, len+1);
+		memcpy(nstr, next + next_off, len);
+		nstr[len] = 0;
+	      } else
+#endif
+		nstr = next + next_off;
+
 	      scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
-			       scheme_make_string(next),
+			       scheme_make_string(nstr),
 			       "build-path: absolute path \"%.255s\" cannot be"
 			       " added to a pathname",
-			       next);
+			       nstr);
 	      return scheme_false;
 	    } else {
 	      rel = 0;
@@ -1602,7 +1614,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 
       if (!i) {
 #ifdef MAC_FILE_SYSTEM
-	no_sep = !rel || (next[0] == ':');
+	no_sep = !rel || (next[next_off] == ':');
 #else
 	no_sep = 1;
 #endif
@@ -1618,12 +1630,12 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
       if (!no_sep)
 	str[pos++] = FN_SEP;
 
-      memcpy(str + pos, next, len);
+      memcpy(str + pos, next + next_off, len);
       pos += len;
 
       /* If last path elem ends in a separator, don't add one: */
       if (len) {
-	no_sep = IS_A_SEP(next[len - 1]);
+	no_sep = IS_A_SEP(next[next_off + len - 1]);
 #ifdef MAC_FILE_SYSTEM
 	if (!len)
 	  no_sep = 0;
@@ -1802,7 +1814,7 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
   else 
     {
       file = scheme_make_sized_string(s + p + 1, 
-				      len - p -last_was_sep-1, 
+				      len - p - last_was_sep - 1, 
 				      1);
       is_dir = last_was_sep;
     }

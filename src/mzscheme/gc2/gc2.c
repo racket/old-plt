@@ -27,12 +27,15 @@ typedef short Type_Tag;
 
 #include "gc2.h"
 
+#define GROW_FACTOR 2
+
 #define TIME 0
 #define SEARCH 0
 #define SAFETY 0
 #define RECYCLE_HEAP 0
 
-#define GROW_FACTOR 2
+#define GC_EVERY_ALLOC 1
+#define ALLOC_GC_PHASE 0
 
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
@@ -40,7 +43,6 @@ void (*GC_out_of_memory)(void);
 unsigned long (*GC_get_thread_stack_base)(void);
 
 void **GC_variable_stack;
-int GC_variable_count;
 
 Type_Tag weak_box_tag;
 
@@ -68,6 +70,9 @@ static char zero_sized[4];
 static void *park[2];
 
 static int cycle_count = 0;
+#if GC_EVERY_ALLOC
+static int alloc_cycle = ALLOC_GC_PHASE;
+#endif
 
 /******************************************************************************/
 
@@ -441,7 +446,7 @@ void stop()
 static void *mark(void *p)
 {
   long diff = ((char *)p - (char *)GC_alloc_space) >> 2;
-  if (!(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
+  if (((long)p & 0x3) || !(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
     long diff1 = ((char *)p - (char *)GC_alloc_space);
       
     while (!(alloc_bitmap[diff >> 3] & (1 << (diff & 0x7)))) {
@@ -546,10 +551,8 @@ static void *mark(void *p)
 }
 
 void **o_var_stack;
-int o_var_count;
 
 void GC_mark_variable_stack(void **var_stack,
-			    int var_count,
 			    long delta,
 			    void *limit)
 {
@@ -557,16 +560,16 @@ void GC_mark_variable_stack(void **var_stack,
 
   stack_depth = 0;
   while (var_stack) {
-    int size = var_count;
+    long size;
     void ***p;
 
     var_stack = (void **)((char *)var_stack + delta);
     if (var_stack == limit)
       return;
 
+    size = *(long *)(var_stack + 1);
+
     o_var_stack = var_stack;
-    o_var_count = var_count;
-    /* printf("%lx (%lx) %d\n", (long)var_stack, (long)((char *)var_stack - delta), var_count); */
 
     p = (void ***)(var_stack + 2);
     
@@ -597,7 +600,6 @@ void GC_mark_variable_stack(void **var_stack,
     }
 #endif
 
-    var_count = ((long *)var_stack)[1]; 
     var_stack = *var_stack;
     stack_depth++;
   }
@@ -738,7 +740,6 @@ void gcollect(int needsize)
   untagged_mark = new_untagged_low = (void **)(new_space + new_size);
 
   GC_mark_variable_stack(GC_variable_stack,
-			 GC_variable_count,
 			 0,
 			 (void *)(GC_get_thread_stack_base
 				  ? GC_get_thread_stack_base()
@@ -1020,6 +1021,13 @@ static void *malloc_tagged(size_t size_in_bytes)
 {
   void **m, **naya;
 
+#if GC_EVERY_ALLOC
+  if (++alloc_cycle >= GC_EVERY_ALLOC) {
+    alloc_cycle = 0;
+    gcollect(size_in_bytes);
+  }
+#endif
+
   size_in_bytes = ((size_in_bytes + 3) & 0xFFFFFFFC);
 #if ALIGN_DOUBLES
   if (!(size_in_bytes & 0x4)) {
@@ -1055,6 +1063,13 @@ static void *malloc_tagged(size_t size_in_bytes)
 static void *malloc_untagged(size_t size_in_bytes, unsigned long nonatomic)
 {
   void **naya;
+
+#if GC_EVERY_ALLOC
+  if (++alloc_cycle >= GC_EVERY_ALLOC) {
+    alloc_cycle = 0;
+    gcollect(size_in_bytes);
+  }
+#endif
 
   if (!size_in_bytes)
     return zero_sized;

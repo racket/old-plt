@@ -32,30 +32,28 @@ extern "C" {
    other pointers and fixnums alone.
 
    At any point when the allocator/collector is invoked, MzScheme will
-   have set the GC_variable_stack and GC_variable_count variables to
-   indicate a chain of local pointer variables on the stack (i.e.,
-   both the chain of record and the pointer variables themselves are
-   on the stack). The GC_variable_stack global points to a value of
-   the form
+   have set the GC_variable_stack variable to indicate a chain of
+   local pointer variables on the stack (i.e., both the chain of
+   record and the pointer variables themselves are on the stack). The
+   GC_variable_stack global points to a value of the form
 
      struct {
         void *next_frame;
-        long next_frame_size;
+        long frame_size;
         void **pointers[...];
      }
 
-   where the size of `pointers' is indicated by GC_variable_size. Each
+   where the size of `pointers' is indicated by `frame_size'. Each
    element of `pointers' is the address of a pointer of the stack.
-   The `next_frame' and `next_frame_size' fields in the structure give
-   the address and size of the next frame on the stack, and so on. The
-   garbage collector should follow the chain of frames, adjusting
-   pointers for copying collection, until it reaches a frame that is
-   deeper than the value returned by GC_get_thread_stack_base() (which
-   is supplied by MzScheme).
+   The `next_frame' field in the structure gives the address of the
+   next frame on the stack, and so on. The garbage collector should
+   follow the chain of frames, adjusting pointers for copying
+   collection, until it reaches a frame that is deeper than the value
+   returned by GC_get_thread_stack_base() (which is supplied by
+   MzScheme).
 
    More generally, GC_mark_variable_stack() can be used to GC a stack
-   that has been copied into the heap. See below for more details.
-*/
+   that has been copied into the heap. See below for more details.  */
 
 /***************************************************************************/
 /* Administration                                                          */
@@ -230,7 +228,6 @@ void GC_register_finalizer(void *p, void (*f)(void *p, void *data),
 /***************************************************************************/
 
 extern void **GC_variable_stack;
-extern int GC_variable_count;
 /*
    See the general overview at the top of the file: */
 
@@ -283,7 +280,6 @@ void *GC_resolve(void *p);
    the class. */
 
 void GC_mark_variable_stack(void **var_stack,
-			    int var_count,
 			    long delta,
 			    void *limit);
 /*
@@ -292,15 +288,14 @@ void GC_mark_variable_stack(void **var_stack,
    should only be called when the traversal proc is called with a
    non-NULL mark procedure.
 
-   The `var_stack' and `var_count' arguments correspond to the values
-   of GC_var_stack and GC_var_count for the copied stack (see the
-   overview at the top of this file). The `var_stack' pointer refers
-   to the address of the chain in the original stack, not in the heap
-   copy. The `delta' argument specifies the difference
-   heap_copy_address - stack_address (where stack_address is the
-   numerically lower bound for the copied stack region, regardless of
-   which direction the stack grows). The `limit' argument corresponds
-   to the value that would have been returned by
+   The `var_stack' argument corresponds to the value of GC_var_stack
+   for the copied stack (see the overview at the top of this
+   file). The `var_stack' pointer refers to the address of the chain
+   in the original stack, not in the heap copy. The `delta' argument
+   specifies the difference heap_copy_address - stack_address (where
+   stack_address is the numerically lower bound for the copied stack
+   region, regardless of which direction the stack grows). The `limit'
+   argument corresponds to the value that would have been returned by
    GC_get_thread_stack_base() at the time the stack was copied. */
 
 extern void *GC_alloc_space, *GC_alloc_top;

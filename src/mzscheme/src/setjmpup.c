@@ -252,7 +252,6 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *start)
 
 #ifdef MZ_PRECISE_GC
   b->gc_var_stack = GC_variable_stack;
-  b->gc_var_count = GC_variable_count;
 #endif
   
   memcpy(get_copy(b->stack_copy),
@@ -292,7 +291,6 @@ static void uncopy_stack(int ok, Scheme_Jumpup_Buf *b, long *prev)
 
 #ifdef MZ_PRECISE_GC
   GC_variable_stack = b->gc_var_stack;
-  GC_variable_count = b->gc_var_count;
 #endif
 
 #ifdef WIN32_SETJMP_HACK

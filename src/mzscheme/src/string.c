@@ -301,17 +301,28 @@ Scheme_Object *
 scheme_make_sized_string(char *chars, long len, int copy)
 {
   Scheme_Object *str;
-  
+  int moved = 0;
+
+#ifdef MZ_PRECISE_GC
+  /* Special precise-GC behavior: allow unaligned char pointer as arg */
+  if ((long)chars & 0x1) {
+    chars++;
+    moved = 1;
+    copy = 1;
+  }
+#endif
+
   str = scheme_alloc_stubborn_object();
   str->type = scheme_string_type;
+
   if (len < 0)
-    len = strlen(chars);
+    len = strlen(chars - moved);
   if (copy) {
     char *naya;
 
     naya = (char *)scheme_malloc_fail_ok(scheme_malloc_atomic, len + 1);
     SCHEME_STR_VAL(str) = naya;
-    memcpy(naya, chars, len);
+    memcpy(naya, chars - moved, len);
     naya[len] = 0;
   } else
     SCHEME_STR_VAL(str) = chars;

@@ -1370,19 +1370,9 @@ static Scheme_Object *gen_compare(char *name, int pos,
 						scheme_make_integer(endpd)),
 			       l);
 	} else {
-	  int len = (endp[i] - startp[i]), allocit = 1;
-	  char *m;
-#ifdef MZ_PRECISE_GC
-	  /* Can't pass mis-aligned pointer */
-	  if (((long)startp[i]) & 1) {
-	    allocit = 0;
-	    m = MALLOC_N_ATOMIC(char, len + 1);
-	    memcpy(m, full_s + offset + ((unsigned long)startp[i] - srcbase), len);
-	    m[len] = 0;
-	  } else
-#endif
-	    m = full_s + offset + ((unsigned long)startp[i] - srcbase);
-	  l = scheme_make_pair(scheme_make_sized_string(m, len, allocit),
+	  l = scheme_make_pair(scheme_make_sized_string(full_s + offset + ((unsigned long)startp[i] - srcbase), 
+							(endp[i] - startp[i]),
+							1),
 			       l);
 	}
       } else

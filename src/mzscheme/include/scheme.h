@@ -371,7 +371,6 @@ typedef struct Scheme_Jumpup_Buf {
   mz_jmp_buf buf;
 #ifdef MZ_PRECISE_GC
   void *gc_var_stack;
-  int gc_var_count;
 #endif
 } Scheme_Jumpup_Buf;
 

@@ -30,8 +30,8 @@
    
    (get-pure-port (opt-> (url?) ((listof string?)) input-port?))
    (get-impure-port (opt-> (url?) ((listof string?)) input-port?))
-   (post-pure-port (opt-> (url?) ((listof string?)) input-port?))
-   (post-impure-port (opt-> (url?) ((listof string?)) input-port?))
+   (post-pure-port (opt-> (url? string?) ((listof string?)) input-port?))
+   (post-impure-port (opt-> (url? string?) ((listof string?)) input-port?))
    (display-pure-port (input-port? . -> . void?))
    (purify-port (input-port? . -> . (listof string?)))
    (netscape/string->url (string? . -> . url?))

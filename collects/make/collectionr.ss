@@ -81,7 +81,7 @@
 		 (link-extension-parts
 		  (append objs kps)
 		  dest-dir))))])
-    (make-directory* "compiled")
+    (unless (directory-exists? "compiled") (make-directory* "compiled"))
     (unless (or (equal? argv #("zo"))
 		(directory-exists? dest-dir))
        (make-directory* dest-dir))

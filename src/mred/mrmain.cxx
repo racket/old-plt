@@ -287,9 +287,15 @@ int main(int argc, char *argv[])
   }
 #endif
 
+#ifdef OS_X
   wx_original_argv_zero = argv[0];
-  
+#endif
+
   Drop_GetArgs(&argc, &argv, &wx_in_terminal);
+
+#ifndef OS_X
+  wx_original_argv_zero = argv[0];
+#endif
 
   { 
     KeyMap keys;

@@ -216,6 +216,12 @@ the ITypeInfo interface.
   `val' is a value of suitable type.  Sets the value of the specified 
   property.
 
+> (help! a-com-object topic)
+
+  Starts the Window Help system with help about the COM object.
+  `a-com-object' is a <com-object> and `topic' is an optional string,
+  typically a method or property name. 
+
   MysterX types
   -------------
 

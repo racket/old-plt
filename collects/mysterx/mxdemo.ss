@@ -77,7 +77,7 @@
 	
 (define (about-handler ev)
   (when (send ev click?)
-	(invoke cal "AboutBox")))
+	(send cal invoke "AboutBox")))
 
 (define (hide-handler ev)
   (when (send ev click?)
@@ -96,31 +96,31 @@
 
 (define (today-handler ev)
   (when (send ev click?)
-	(invoke cal "Today")))
+	(send cal invoke "Today")))
 
 (define (yesterday-handler ev)
   (when (send ev click?)
-	(invoke cal "PreviousDay")))
+	(send cal invoke "PreviousDay")))
 
 (define (tomorrow-handler ev)
   (when (send ev click?)
-	(invoke cal "NextDay")))
+	(send cal invoke "NextDay")))
 
 (define (last-month-handler ev)
   (when (send ev click?)
-	(invoke cal "PreviousMonth")))
+	(send cal invoke "PreviousMonth")))
 
 (define (next-month-handler ev)
   (when (send ev click?)
-	(invoke cal "NextMonth")))
+	(send cal invoke "NextMonth")))
 
 (define (last-year-handler ev)
   (when (send ev click?)
-	(invoke cal "PreviousYear")))
+	(send cal invoke "PreviousYear")))
 
 (define (next-year-handler ev)
   (when (send ev click?)
-	(invoke cal "NextYear")))
+	(send cal invoke "NextYear")))
 
 (define button-handlers
   `(("About" ,about-handler)

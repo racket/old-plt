@@ -56,7 +56,8 @@ static MX_PRIM mxPrims[] = {
   { mx_com_method_type,"method-type",2,2 },
   { mx_com_get_property_type,"get-property-type",2,2 },
   { mx_com_set_property_type,"set-property-type",2,2 },
-  { mx_all_com_classes,"all-com-classes",0,0 },
+  { mx_com_help,"help",1,2 },
+  { mx_all_coclasses,"all-coclasses",0,0 },
   { mx_find_element,"document-find-element",3,3 },
   { mx_document_objects,"document-objects",1,1 },
   { mx_coclass_to_html,"coclass->html",1,3 },
@@ -405,6 +406,59 @@ void scheme_add_prim_to_env(Scheme_Env *env,
   scheme_add_global(name,pobj,env);
 }
 
+Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
+  HRESULT hr;
+  IDispatch *pIDispatch;
+  ITypeInfo *pITypeInfo;
+  UINT typeInfoCount;
+  BSTR helpFileName;
+  char buff[MAX_PATH];
+
+  if (MX_COM_OBJP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-help","mx-object",0,argc,argv);
+  }
+
+  pIDispatch = MX_COM_OBJ_VAL(argv[0]);
+
+  if (argc == 2 && SCHEME_STRINGP(argv[1]) == FALSE) {
+    scheme_wrong_type("com-help","string",1,argc,argv);
+  }
+  
+  pIDispatch->GetTypeInfoCount(&typeInfoCount);
+
+  if (typeInfoCount == 0) {
+    scheme_signal_error("COM object does not expose type information");
+  }
+
+  hr = pIDispatch->GetTypeInfo(0,LOCALE_SYSTEM_DEFAULT,&pITypeInfo);
+
+  if (hr != S_OK) {
+    scheme_signal_error("Error getting COM type information");
+  }
+
+  hr = pITypeInfo->GetDocumentation(MEMBERID_NIL,NULL,NULL,NULL,
+				  &helpFileName);
+			     
+  if (hr != S_OK || wcscmp(helpFileName,L"") == 0) {
+    scheme_signal_error("Can't get help, code: %X",hr); 
+  }
+
+  WideCharToMultiByte(CP_ACP,(DWORD)0,helpFileName,SysStringLen(helpFileName) + 1,
+		      buff,sizeof(buff) - 1,
+			  NULL,NULL);
+
+  SysFreeString(helpFileName);
+
+  if (argc >= 2) {
+    WinHelp(NULL,buff,HELP_KEY,(DWORD)(SCHEME_STR_VAL(argv[1])));
+  }
+  else {
+    WinHelp(NULL,buff,HELP_FINDER,0);
+  }
+
+  return scheme_void;
+}
+
 MX_TYPEDESC *getMethodType(IDispatch *pIDispatch,char *name,INVOKEKIND invKind) {
   HRESULT hr;
   TYPEATTR *pTypeAttr;
@@ -560,7 +614,7 @@ Scheme_Object *mx_do_get_methods(int argc,Scheme_Object **argv,INVOKEKIND invKin
   int i;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("mx-methods","mx-object",0,argc,argv);
+    scheme_wrong_type("com-methods","mx-object",0,argc,argv);
   }
 
   pIDispatch = MX_COM_OBJ_VAL(argv[0]);
@@ -2036,7 +2090,7 @@ Scheme_Object *mx_all_controls(int argc,Scheme_Object **argv) {
   return mx_all_clsid(argc,argv,controlAttributes);
 }
 
-Scheme_Object *mx_all_com_classes(int argc,Scheme_Object **argv) {
+Scheme_Object *mx_all_coclasses(int argc,Scheme_Object **argv) {
   return mx_all_clsid(argc,argv,objectAttributes);
 }
 

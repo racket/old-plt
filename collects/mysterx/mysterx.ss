@@ -670,7 +670,7 @@
 	   [append-object 
 	    (lambda (object)
 	      (append-html (coclass->html object))
-	      (car (document-objects doc)))]
+	      (car (last-pair (document-objects doc))))]
 	   [insert-object 
 	    (lambda (object)
 	      (insert-html (coclass->html object))

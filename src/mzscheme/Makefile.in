@@ -193,13 +193,12 @@ headers:
 	$(MAKE) $(srcdir)/../../include/scheme.h
 	$(MAKE) $(srcdir)/../../collects/mzscheme/lib/mzdyn.c
 
-# Needed for extension compilation when MzScheme headers change
 $(srcdir)/../../include/scheme.h: \
           $(builddir)/mzconfig.h $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
           $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/include/scheme.h \
           $(srcdir)/src/schvers.h $(srcdir)/gc2/gc2.h
-	rm -rf $(srcdir)/../../include/*.* # avoid CVS
+	rm -rf $(srcdir)/../../include/*
 	cp $(builddir)/mzconfig.h $(srcdir)/sconfig.h $(srcdir)/uconfig.h $(srcdir)/include/escheme.h $(srcdir)/src/schemef.h $(srcdir)/src/schvers.h \
           $(srcdir)/src/stypes.h $(srcdir)/src/schemex.h $(srcdir)/src/schemexm.h $(srcdir)/src/schexn.h \
           $(srcdir)/include/ext.exp $(srcdir)/include/mzscheme.exp $(srcdir)/include/mzscheme3m.exp $(srcdir)/../../include 

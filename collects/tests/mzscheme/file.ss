@@ -753,7 +753,8 @@
 	      (build-path (current-load-relative-directory)
 			  "file.ss"))))
 
-(let* ([pn 40001]
+;; Too time-consuming, does bad things to the network:
+'(let* ([pn 40001]
        [l (tcp-listen pn)])
   (cust-test (lambda ()
 	       (let-values ([(r1 w1) (tcp-connect "localhost" pn)]

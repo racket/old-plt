@@ -1,5 +1,5 @@
- /*								-*- C++ -*-
- * $Id: FontDirectory.cc,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
+/*								-*- C++ -*-
+ * $Id: FontDirectory.cc,v 1.2 1999/01/28 16:26:59 mflatt Exp $
  *
  * Purpose: wxWindows font name handling
  *
@@ -181,7 +181,7 @@ class wxFontNameItem : public wxObject
   int family;
   char *name;
   wxSuffixMap screen, printing, afm;
-  Bool isroman;
+  Bool isfamily;
 };
 
 static int WCoordinate(int w)
@@ -287,7 +287,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 			     int wt, int st)
 {
   const char *weight, *style;
-  char *v = NULL;
+  char *v = NULL, *rname;
   int i;
   const char *names[3];
 
@@ -406,7 +406,8 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	     -([^-]*)-(.*) => -\1-\2-<weight>-<style>-normal-*-*-%d-*-*-*-*-*-*
 	     ([^-].*[^-]) => \1
 	     */
-	  src = (v ? v : (char *)resname);
+          rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
+	  src = (v ? v : (char *)rname);
 	  len = strlen(src);
 	  if (src[0] == '-') {
 	    int c = 0;
@@ -476,6 +477,7 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
   
   item->id = fontid;
   item->family = family;
+  item->isfamily = (resname[0] != '@');
   
   sprintf(resource, "Family%s", resname);
   fam = NULL;
@@ -501,13 +503,6 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
 
   item->name = copystring(resname);
 
-  /* MATTHEW: [6] Delay this: */
-#if 0
-  item->screen.Initialize(resname, "Screen");
-  item->printing.Initialize(resname, "PostScript");
-  item->afm.Initialize(resname, "Afm");
-#endif
-
   table->Put(fontid, item);
 }
 
@@ -519,7 +514,10 @@ int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
     return id;
 
   id = GetNewFontId();
-  Initialize(id, family, name);
+  s = new char[strlen(name) + 2];
+  strcpy(s + 1, name);
+  s[0] = '@';
+  Initialize(id, family, s);
 
   return id;
 }
@@ -579,6 +577,9 @@ char *wxFontNameDirectory::GetFontName(int fontid)
   if (!item)
     return NULL;
 
+  if (item->isfamily)
+    return NULL;
+
   return item->name;
 }
 
@@ -590,7 +591,7 @@ int wxFontNameDirectory::GetFontId(const char *name)
 
   while ((node = table->Next())) {
     wxFontNameItem *item = (wxFontNameItem *)node->Data();
-    if (!strcmp(name, item->name))
+    if (!item->isfamily && !strcmp(name, item->name+1))
       return item->id;
   }
 

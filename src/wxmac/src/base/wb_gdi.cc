@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.10 1998/10/16 15:47:32 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.11 1998/10/28 16:47:44 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1132,7 +1132,7 @@ class wxFontNameItem : public wxObject
   int family;
   char *name;
   wxSuffixMap screen, printing, afm;
-  Bool isroman;
+  Bool isfamily;
   
   ~wxFontNameItem(void);
 };
@@ -1251,7 +1251,7 @@ typedef char *a_charptr;
 void wxSuffixMap::Initialize(const char *resname, const char *devresname)
 {
   const char *weight, *style;
-  char *v;
+  char *v, *rname;
   int i, j, k;
   const char *names[3];
 
@@ -1359,9 +1359,11 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname)
 	    goto found;
 	  }
 
+      rname = (char *)((resname[0] == '@') ? resname + 1 : resname);
+
 #if defined(wx_msw) || defined(wx_mac)
       if (!v)
-		v = copystring(resname);
+		v = copystring(rname);
 #endif
       /* We have a final value: */
       map[k][j] = v;
@@ -1391,6 +1393,7 @@ void wxFontNameDirectory::Initialize(int fontid, int family, const char *resname
   
   item->id = fontid;
   item->family = family;
+  item->isfamily = (resname[0] != '@');
   
   sprintf(resource, "Family%s", resname);
   fam = NULL;
@@ -1433,7 +1436,12 @@ int wxFontNameDirectory::FindOrCreateFontId(const char *name, int family)
     return id;
 
   id = GetNewFontId();
-  Initialize(id, family, name);
+
+  char *s;
+  s = new char[strlen(name) + 2];
+  strcpy(s + 1, name);
+  s[0] = '@';
+  Initialize(id, family, s);
 
   return id;
 }
@@ -1475,6 +1483,9 @@ char *wxFontNameDirectory::GetFontName(int fontid)
   if (!item)
     return NULL;
 
+  if (item->isfamily)
+    return NULL;
+
   return item->name;
 }
 
@@ -1486,7 +1497,7 @@ int wxFontNameDirectory::GetFontId(const char *name)
 
   while (node = table->Next()) {
     wxFontNameItem *item = (wxFontNameItem *)node->Data();
-    if (!strcmp(name, item->name))
+    if (!item->isfamily && !strcmp(name, item->name+1))
       return item->id;
   }
 

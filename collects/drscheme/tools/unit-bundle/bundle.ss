@@ -68,7 +68,7 @@
 		 (let* ([bundle-contents (send contents-snip get-bundle-contents)]
 			[tree-width (send bundle-contents get-tree-width)]
 			[width (send contents-snip get-width)])
-		   (send view move-to contents-snip (/ (- tree-width width) 2) y))
+		   (send view move-to contents-snip (+ x (/ (- tree-width width) 2)) y))
 		 
 		 ;; loop over children
 		 (let ([text-space (let ([yt (box 0)]
@@ -321,7 +321,7 @@
 	 [text (make-object text%)]
 	 [update-text
 	  (lambda ()
-	    (send text begin-edit-sequence)
+	    ;(send text begin-edit-sequence)
 	    (let ([names (send leaf-bundle get-names)])
 	      (unless (null? names)
 		(send text insert (symbol->string (car names)))
@@ -329,7 +329,8 @@
 			    (send text insert #\newline)
 			    (send text insert (symbol->string name)))
 			  (cdr names))))
-	    (send text end-edit-sequence))])
+	    ;(send text end-edit-sequence)
+	    )])
        (sequence
 	 (update-text)
 	 (super-init text))))
@@ -394,7 +395,7 @@
    (define leaf1 (make-object leaf-bundle% '(aaa b)))
    (define leaf2 (make-object leaf-bundle% '(c dd)))
    (define int1 (make-object node-bundle% 'z (list leaf1 leaf2)))
-   (define int2 (make-object node-bundle% 'y (list int1 leaf2)))
+   (define int2 (make-object node-bundle% 'y (list leaf2 int1 leaf2)))
    (define int3 (make-object node-bundle% 'x (list int2 leaf2)))
    (printf "~s~n"
 	   (send int3 traverse
@@ -407,7 +408,7 @@
 			   x)]
 		     [else (error)]))
 		 null))
-   (define bundle (make-object bundle% int3))
+   (define bundle (make-object bundle% int2))
    
    (define frame (make-object frame% "Bundles" #f 400 400))
    (define button-panel (make-object horizontal-panel% frame))

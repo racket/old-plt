@@ -1,24 +1,24 @@
 (unit/sig turtle^
-  (import [wx : wx^]
+  (import [mred : mred^]
 	  mzlib:function^)
   
   (define turtles:window #f)
   (define turtles:shown? #f)
 
   (define plot-window%
-    (class wx:frame% (name width height)
-      (inherit show set-menu-bar)
+    (class mred:frame% (name width height)
+      (inherit show)
       (public 
-	[bitmap (make-object wx:bitmap% width height)])
+	[bitmap (make-object mred:bitmap% width height)])
       (private
-	[w-pen (make-object wx:pen% "white" 0 wx:const-solid)]
-	[w-brush (make-object wx:brush% "white" wx:const-solid)]
-	[b-pen (make-object wx:pen% "black" 0 wx:const-solid)]
-	[b-brush (make-object wx:brush% "black" wx:const-solid)]
-	[memory-dc (make-object wx:memory-dc%)])
+	[w-pen (send mred:the-pen-list find-or-create-pen "white" 1 'solid)]
+	[w-brush (send mred:the-brush-list find-or-create-brush "white" 'solid)]
+	[b-pen (send mred:the-pen-list find-or-create-pen "black" 1 'solid)]
+	[b-brush (send mred:the-brush-list find-or-create-brush "black" 'solid)]
+	[memory-dc (make-object mred:bitmap-dc%)])
       (public
 	[canvas% 
-	 (class wx:canvas% args
+	 (class mred:canvas% args
 	   (inherit set-background draw-rectangle set-pen 
 		    get-dc clear get-client-size)
 	   (sequence
@@ -29,7 +29,7 @@
 	   (public
 	     [on-paint
 	      (lambda ()
-		(send dc blit 0 0 width height memory-dc 0 0 wx:const-copy))]))]
+		(send dc draw-bitmap (send memory-dc get-bitmap) 0 0 'copy))]))]
 	[clear (lambda () 
 		 (send memory-dc set-pen w-pen)
 		 (send memory-dc set-brush w-brush)
@@ -39,18 +39,19 @@
       (sequence
 	(send memory-dc select-object bitmap)
 	(send memory-dc clear)
-	(super-init '() name 0 0 width height)
+	(super-init name #f width height)
 	'(set-client-size (+ width 16) (+ height 16)))
       
       (public
 	[on-menu-command (lambda (op) (turtles #f))])
       (private
-	[menu-bar (make-object wx:menu-bar%)]
-	[menu (make-object wx:menu%)])
+	[menu-bar (make-object mred:menu-bar% this)]
+	[menu (make-object mred:menu% menu-bar "File")])
       (sequence 
-	(send menu append 1 "Close")
-	(send menu-bar append menu "File")
-	(set-menu-bar menu-bar))
+	(make-object mred:menu-item%
+	  "Close"
+	  (lambda (_1 _2)
+	    (turtles #f))))
       
       (public
 	[save-turtle-bitmap
@@ -79,13 +80,11 @@
 	(clear))))
   
   (define turtle-window-size
-    (let ([w (box 0)]
-	  [h (box 0)]
-	  [user/client-offset 65.])
-      (wx:display-size w h)
+    (let-values ([(w h) (mred:get-display-size)]
+		 [(user/client-offset) 65.])
       (min 800.
-	   (- (unbox w) user/client-offset)
-	   (- (unbox h) user/client-offset))))
+	   (- w user/client-offset)
+	   (- h user/client-offset))))
   
   (define-struct turtle (x y angle))
   ; x : int

@@ -142,7 +142,7 @@
 		    ;;  started outside of quotes by assuming that the *beginning* of
 		    ;;  the current line is outside of quotes (until proven otherwise).
 		    (let ([linestart (paragraph-start-position (position-paragraph pos))])
-		      (if (ormap (lambda (s) (>= (find-string s 1 linestart pos) 0)) eol-comment-list)
+		      (if (ormap (lambda (s) (find-string s 'forward linestart pos)) eol-comment-list)
 			  (let ([forward-match-string (match-string-at-pos* add1 get-character string-ref)])
 			    (let loop ([p linestart])
 			      (if (>= p pos) 

@@ -70,9 +70,9 @@
 	     (send running-message set-label sleepy-bitmap)))])
       
       (override
-	;[file-menu:new-string "Unit"]
+       ;[file-menu:new-string (lambda () "Unit")]
 	[file-menu:new
-	 (lambda ()
+	 (lambda (item evt)
 	   (send (drscheme:unit:make-unit #f) create-frame))]
 	[file-menu:between-new-and-open
 	 (lambda (file-menu)
@@ -80,8 +80,8 @@
 		  (lambda ()
 		    (send (drscheme:compound-unit:make-compound-unit #f)
 			  create-frame))))]
-	[file-menu:open (lambda () (fw:handler:open-file) #t)]
-	[help-menu:about (lambda () (drscheme:app:about-drscheme))])
+	[file-menu:open (lambda (item evt) (fw:handler:open-file) #t)]
+	[help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))])
       
       (inherit get-menu% get-menu-bar)
       (sequence 
@@ -90,5 +90,5 @@
       
       (private
 	[running-message
-	 (make-object mred:message% (get-info-panel) sleepy-bitmap)]))))
+	 (make-object mred:message% sleepy-bitmap (get-info-panel))]))))
 

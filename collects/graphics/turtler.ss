@@ -1,7 +1,7 @@
 (compound-unit/sig
   (import [M : mzlib:function^])
-  (link [wx : wx^ (wx@)]
+  (link [mred : mred^ (mred@)]
 	[T : turtle^ ((require-library-unit/sig "turtlmr.ss" "graphics")
-		      wx M)])
+		      mred M)])
   (export (open T)))
    

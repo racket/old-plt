@@ -211,7 +211,7 @@
 	       (send file set-position start finish)
 	       (if (is-a? file edit%)
 		   (send file scroll-to-position start
-			 #f (sub1 (send file last-position)) -1)
+			 #f (sub1 (send file last-position)) 'end)
 		   (send file scroll-to-position start #f finish))
 	       (send file end-edit-sequence)
 	       (send (send file get-canvas) set-focus))))]
@@ -299,16 +299,16 @@
 			 the next execution."))))))])
       (override
        [display-result
-	  (lambda (v)
-	    (unless (void? v)
-	      (let ([v (if (basis:r4rs-style-printing? user-setting)
-			   v
-			   (print-convert:print-convert v))])
-		(parameterize ([mzlib:pretty-print:pretty-print-size-hook
-				(lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-			       [mzlib:pretty-print:pretty-print-print-hook
-				(lambda (x _ port) (this-result-write x))])
-		  (mzlib:pretty-print:pretty-print v this-result)))))])
+	(lambda (v)
+	  (unless (void? v)
+	    (let ([v (if (basis:r4rs-style-printing? user-setting)
+			 v
+			 (print-convert:print-convert v))])
+	      (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+			      (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+			     [mzlib:pretty-print:pretty-print-print-hook
+			      (lambda (x _ port) (this-result-write x))])
+		(mzlib:pretty-print:pretty-print v this-result)))))])
       (public
 	[display-results
 	 (lambda (anss)
@@ -575,7 +575,7 @@
 	     (set! running-on? #f)
 	     (set! running-events 0)
 
-	     ;; in case the last evaluation thread will killed, clean up some state.
+	     ;; in case the last evaluation thread was killed, clean up some state.
 	     (lock #f)
 	     (set! in-evaluation? #f)
 
@@ -603,7 +603,7 @@
 	     (set! user-setting (fw:preferences:get 'drscheme:settings))
 
 	     (let ([p (basis:build-parameterization
-		       (list 'wx)
+		       (list 'mred)
 		       (fw:preferences:get 'drscheme:settings)
 
 		       (lambda (in-<=-at-least-two-args
@@ -724,6 +724,7 @@
 			   (let ([rep (exception-reporting-rep)])
 			     (with-parameterization drscheme:init:system-parameterization
 			       (lambda ()
+				 (mred:message-box "Debugging Error" msg)
 				 (if rep
 				     (send rep report-unlocated-error msg)
 				     (mred:message-box "Uncaught Error" msg))))))))
@@ -836,7 +837,6 @@
 	       (begin 
 		 (insert-delta "Execute has not been clicked." WARNING-STYLE-DELTA)
 		 (lock #t))))])
-      
       (sequence
 	(apply super-init args))))
   
@@ -876,21 +876,21 @@
 		  s))]
 	[get-extent
 	 (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
-	   (for-each (lambda (box) (unless (null? box) (set-box! box 0)))
+	   (for-each (lambda (box) (when box (set-box! box 0)))
 		     (list descent-box space-box lspace-box rspace-box))
 	   (let* ([admin (get-admin)]
 		  [reporting-media (send admin get-text)]
 		  [reporting-admin (send reporting-media get-admin)]
 		  [widthb (box 0)]
 		  [space 2])
-	     (send reporting-admin get-view null null widthb null)
-	     (set! width (- (unbox widthb) 
+	     (send reporting-admin get-view #f #f widthb #f)
+	     (set! width (- (unbox widthb)
 			    space
 			    2)))
 	   (set! height 1)
-	   (unless (null? w-box)
+	   (when w-box
 	     (set-box! w-box width))
-	   (unless (null? h-box)
+	   (when h-box
 	     (set-box! h-box (+ (* 2 white-around) height))))]
 	[draw
 	 (let* ([body-pen (send mred:the-pen-list find-or-create-pen
@@ -1094,7 +1094,6 @@
 		[super-on-edit-sequence on-edit-sequence]
 		[super-after-edit-sequence after-edit-sequence]
 		
-		[super-on-focus on-focus]
 		[super-after-set-position after-set-position])
 	(private
 	  [find-which-previous-sexp
@@ -1147,7 +1146,7 @@
 			  (set! needs-to-move-original
 				(let loop ([snip (find-snip left mred:const-snip-after)])
 				  (cond
-				    [(null? snip) null]
+				    [(not snip) null]
 				    [(< (get-snip-position snip) right)
 				     '(fprintf mred:constants:original-output-port 
 					       "orig: ~s~n" (send snip get-text 0 10000))
@@ -1173,7 +1172,7 @@
 		 (set! moving-down? #t)
 		 (let loop ([snip (find-snip needs-to-move-left 'after)])
 		   (cond
-		     [(null? snip) (void)]
+		     [(not snip) (void)]
 		     [(< (get-snip-position snip) needs-to-move-right)
 		      (insert (send snip copy) (last-position) (last-position) #t)
 		      (loop (send snip next))]
@@ -1201,9 +1200,6 @@
 	  [on-change-style
 	   (lambda (start len)
 	     (on-something super-on-change-style start len #t))]
-	  [on-focus
-	   (lambda (on?)
-	     (super-on-focus on?))]
 	  [after-insert
 	   (lambda (start len)
 	     (after-something + start len)
@@ -1300,7 +1296,7 @@
 					 (send s copy)
 					 s))
 			     (let ([end (send edit last-position)])
-			       (send edit change-style null start end)
+			       ;(send edit change-style null start end) ; wx
 			       (send edit set-prompt-position end)
 			       (style-func start end))
 			     (send edit lock c-locked?)))])
@@ -1443,10 +1439,10 @@
 	       (set! saved-newline? #f) 
 	       (send transparent-edit shutdown)
 	       (set-position (last-position))
-	       (set-caret-owner null)
+	       (set-caret-owner #f)
 	       (let ([a (get-admin)])
-		 (unless (null? a)
-		   (send a grab-caret)))		 
+		 (when a
+		   (send a grab-caret)))
 	       (send transparent-edit lock #t)
 	       (set! transparent-edit #f)))]
 	  [init-transparent-io-do-work
@@ -1482,7 +1478,7 @@
 			      (get-canvases)))
 		  (when grab-focus?
 		    (let ([a (send transparent-edit get-admin)])
-		      (unless (null? a)
+		      (when a
 			(send a grab-caret))))
 		  (when starting-at-prompt-mode?
 		    (insert-prompt)))
@@ -1494,8 +1490,8 @@
 	     (if transparent-edit
 		 (when grab-focus?
 		   (let ([a (send transparent-edit get-admin)])
-		     (unless (null? a)
-			(send a grab-caret))))
+		     (when a
+		       (send a grab-caret))))
 		 (init-transparent-io-do-work grab-focus?)))]
 	  [single-threader (make-single-threader)]
 	  [this-in-read
@@ -1570,7 +1566,7 @@
 		    (let loop ([snip (find-snip start 'after-or-none)]
 			       [snips null])
 		      (cond
-			[(null? snip) snips]
+			[(not snip) snips]
 			[(<= (get-snip-position snip) end)
 			 (loop (send snip next)
 			       (cons (send snip copy) snips))]
@@ -1593,7 +1589,7 @@
 	  [reset-pretty-print-width
 	   (lambda ()
 	     (let* ([standard (send (get-style-list) find-named-style "Standard")])
-	       (unless (null? standard)
+	       (when standard
 		 (let* ([admin (get-admin)]
 			[width
 			 (let ([bw (box 0)]
@@ -1700,14 +1696,14 @@
 		      (split-snip end)
 		      (let loop ([snip (find-snip start 'after)])
 			(cond
-			  [(null? snip) (void)]
+			  [(not snip) (void)]
 			  [(< (get-snip-position snip) end)
 			   (insert (send snip copy) (last-position))
 			   (loop (send snip next))]
 			  [else (void)]))
 		      (set-position (last-position)))])
 	       (cond
-		 [(not (or (= code cr-code) (= code lf-code)))
+		 [(not (and (char? code) (or (char=? code #\return) (char=? code #\newline))))
 		  (super-on-local-char key)]
 		 [(and (< start end) (< end prompt-position)
 		       (not (eval-busy?)))
@@ -1761,7 +1757,7 @@
 	       (set! prompt-position (last-position))
 	       ;(clear-undos)
 	       (end-edit-sequence)
-	       (scroll-to-position start-selection #f (last-position) 1)))])
+	       (scroll-to-position start-selection #f (last-position) 'start)))])
 	
 	(public
 	  [reset-console-start-position 0]
@@ -1778,9 +1774,11 @@
 	       (set! reset-console-start-location
 		     (line-location (position-line reset-console-start-position) #f)))
 	     (when (and reset-console-start-location reset-console-end-location)
-	       (invalidate-bitmap-cache 0 reset-console-start-location
-					-1 (- reset-console-end-location
-					      reset-console-start-location))))])
+	       (invalidate-bitmap-cache 0
+					(max 0 reset-console-start-location)
+					'end
+					(max 0 (- reset-console-end-location
+						  reset-console-start-location)))))])
 	(public
 	  [set-last-header-position
 	   (lambda (p)
@@ -1837,7 +1835,7 @@
 			  [x dx]
 			  [y (+ dy reset-console-start-location)]
 			  [width (let ([b (box 0)])
-				   (get-extent b null)
+				   (get-extent b #f)
 				   (max 0 (unbox b)))])
 		     (send dc set-pen pen)
 		     (send dc set-brush brush)
@@ -1876,51 +1874,52 @@
 	  [this-in (make-this-in)]
 	  [set-display/write-handlers
 	   (lambda ()
-	       (for-each (lambda (port port-out-write)
-			   (let ([original-write-handler (port-write-handler port)]
-				 [original-display-handler (port-display-handler port)]
-				 [handler-maker
-				  (lambda (port-handler pretty original)
-				    (port-handler
-				     port
-				     (rec console-pp-handler
-					  (lambda (v p)
-					    (if (or (string? v) 
-						    (char? v)
-						    (number? v)
-						    (symbol? v))
-						(original v p)
-						(parameterize ([mzlib:pretty-print:pretty-print-size-hook
-								(lambda (x _ port) (and (is-a? x mred:snip%) 1))]
-							       [mzlib:pretty-print:pretty-print-print-hook
-								(lambda (x _ port) (port-out-write x))])
-						  (pretty v p 'infinity)))))))])
-			     (handler-maker port-display-handler 
-					    mzlib:pretty-print:pretty-display 
-					    original-display-handler)
-			     (handler-maker port-write-handler
-					    mzlib:pretty-print:pretty-print
-					    original-write-handler)))
-			 (list this-out this-err this-result)
-			 (list this-out-write this-err-write this-result-write)))])
+	     (for-each
+	      (lambda (port port-out-write)
+		(let ([original-write-handler (port-write-handler port)]
+		      [original-display-handler (port-display-handler port)]
+		      [handler-maker
+		       (lambda (port-handler pretty original)
+			 (port-handler
+			  port
+			  (rec console-pp-handler
+			       (lambda (v p)
+				 (if (or (string? v) 
+					 (char? v)
+					 (number? v)
+					 (symbol? v))
+				     (original v p)
+				     (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+						     (lambda (x _ port) (and (is-a? x mred:snip%) 1))]
+						    [mzlib:pretty-print:pretty-print-print-hook
+						     (lambda (x _ port) (port-out-write x))])
+				       (pretty v p 'infinity)))))))])
+		  (handler-maker port-display-handler 
+				 mzlib:pretty-print:pretty-display 
+				 original-display-handler)
+		  (handler-maker port-write-handler
+				 mzlib:pretty-print:pretty-print
+				 original-write-handler)))
+	      (list this-out this-err this-result)
+	      (list this-out-write this-err-write this-result-write)))])
 	(public
 	  [takeover
 	   (lambda ()
-	       
-	       (error-display-handler
-		(let ([old (error-display-handler)])
-		  (rec console-error-display-handler
-		       (lambda (x)
-			 (old x)
-			 (flush-console-output)))))
-	       (current-output-port this-out)
-	       (current-input-port this-in)
-	       (current-error-port this-err)
-	       (port-read-handler this-in (lambda (x) (transparent-read)))
-	       (mzlib:pretty-print:pretty-print-display-string-handler 
-		(lambda (string port)
-		  (for-each (lambda (x) (write-char x port))
-			    (string->list string)))))])
+	     (error-display-handler
+	      (let ([old (error-display-handler)])
+		(rec console-error-display-handler
+		     (lambda (x)
+		       (mred:message-box "Error" (format "~a" x))
+		       (old x)
+		       (flush-console-output)))))
+	     (current-output-port this-out)
+	     (current-input-port this-in)
+	     (current-error-port this-err)
+	     (port-read-handler this-in (lambda (x) (transparent-read)))
+	     (mzlib:pretty-print:pretty-print-display-string-handler 
+	      (lambda (string port)
+		(for-each (lambda (x) (write-char x port))
+			  (string->list string)))))])
 	(sequence
 	  (apply super-init args))
 	(sequence
@@ -2012,7 +2011,7 @@
 			 loop))]
 		     [answer answer]
 		     [else (void)])
-		   (set-cursor null)))))]
+		   (set-cursor #f)))))]
 	  [fetch-char
 	   (lambda ()
 	     (flush-console-output)

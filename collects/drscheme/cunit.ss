@@ -62,12 +62,9 @@
     (drscheme:frame:mixin
      fw:frame:pasteboard-info%))
   
-  (printf "ivar-in-class? ~a~n" (ivar-in-class? 'file-menu:get-open-item fw:frame:pasteboard-info%))
-  (printf "matches-interface ~a~n" (implementation? fw:frame:pasteboard-info% fw:frame:standard-menus<%>))	
-  
   (define frame%
     (class* super-frame% (drscheme:face:compound-unit-frameI) (unit)
-      (inherit show show-menu get-area-container)
+      (inherit show show-menu get-area-container get-editor)
       (rename [super-on-close on-close])
       (override
 	[on-close
@@ -110,8 +107,7 @@
       (override
 	[get-area-container% (lambda () mred:horizontal-panel%)]
 	[get-canvas% (lambda () mred:editor-canvas%)]
-	[get-editor% (lambda () project-pasteboard%)]
-	[get-editor (lambda () (send unit get-buffer))])
+	[get-editor% (lambda () project-pasteboard%)])
       
       (inherit get-menu-bar)
       (sequence

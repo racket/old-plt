@@ -9,13 +9,12 @@
 
   (define top-parameterization (current-parameterization))
   (define system-parameterization (make-parameterization top-parameterization))
-  '(define eval-thread-parameterization
+  (define eval-thread-parameterization
     (make-parameterization-with-sharing 
      system-parameterization
      system-parameterization
      (list current-exception-handler)
      (lambda (x) #f)))
-  (define eval-thread-parameterization (make-parameterization))
   (define system-custodian (current-custodian))
 
   (current-parameterization system-parameterization)

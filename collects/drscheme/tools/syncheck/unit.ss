@@ -306,7 +306,7 @@
 	  (class-asi super%
 	    (inherit set-cursor get-admin invalidate-bitmap-cache set-position
 		     position-location
-		     get-canvas get-frame last-position dc-location-to-buffer-location
+		     get-canvas last-position dc-location-to-editor-location
 		     find-position begin-edit-sequence end-edit-sequence)
 
 	    (rename
@@ -366,7 +366,7 @@
 			       (loop (add1 p)))))])
 		   (add-to-range start-pos-left start-pos-right)
 		   (add-to-range end-pos-left end-pos-right)))])
-	    (public
+	    (override
 	      [after-delete
 	       (lambda (start len)
 		 (super-after-delete start len)
@@ -423,8 +423,7 @@
 				    (* 2 arrow-root-radius)
 				    (* 2 arrow-root-radius))))])
 		     (let ([old-brush (send dc get-brush)]
-			   [old-pen   (send dc get-pen)]
-			   [old-logfn (send dc get-logical-function)])
+			   [old-pen   (send dc get-pen)])
 		       (send dc set-pen PEN)
 		       (send dc set-brush TACKED-BRUSH)
 		       (hash-table-for-each tacked-hash-table
@@ -434,15 +433,14 @@
 		       (send dc set-brush UNTACKED-BRUSH)
 		       (for-each draw-arrow (vector-ref arrow-vector cursor-location))
 		       (send dc set-brush old-brush)
-		       (send dc set-pen old-pen)                    
-		       (send dc set-logical-function old-logfn)))))]
+		       (send dc set-pen old-pen)))))]
 	      [on-local-event
 	       (let ([get-pos
 		      (lambda (event)
 			(let*-values ([(event-x event-y)
 				       (values (send event get-x)
 					       (send event get-y))]
-				      [(x y) (dc-location-to-buffer-location
+				      [(x y) (dc-location-to-editor-location
 					      event-x event-y)])
 			  (find-position x y)))])
 		 (lambda (event)
@@ -456,7 +454,7 @@
 			      (for-each update-poss (vector-ref arrow-vector cursor-location))
 			      (invalidate-bitmap-cache))
 			    (super-on-local-event event))]
-			 [(send event button-down? 3)
+			 [(send event button-down? 'right)
 			  (let* ([pos (get-pos event)]
 				 [arrows (vector-ref arrow-vector pos)])
 			    (if (null? arrows)
@@ -514,14 +512,14 @@
 
     (define syncheck-bitmap
       (drscheme:unit:make-bitmap
-       (build-path (collection-path "icons") "syncheck.bmp")
-       "Check Syntax"))
+       "Check Syntax"
+       (build-path (collection-path "icons") "syncheck.bmp")))
 
     (define make-new-unit-frame%
       (lambda (super%)
 	(class super% args
 	  (inherit button-panel definitions-edit interactions-edit)
-	  (sequence (apply super-init args))
+
 	  (rename [super-disable-evaluation disable-evaluation]
 		  [super-enable-evaluation enable-evaluation])
 	  (override
@@ -845,13 +843,14 @@
 			      (mred:end-busy-cursor)))))))
 		   (mred:message-box "Check Syntax"
 				     "Cannot check syntax until REPL is active. Click Execute")))])
+	  (sequence (apply super-init args))
 
 	  (public
 	    [check-syntax-button
 	     (make-object mred:button%
-	       syncheck-bitmap
-	       (lambda (button evt) (button-callback))
-	       button-panel)])
+	       (syncheck-bitmap this)
+	       button-panel
+	       (lambda (button evt) (button-callback)))])
 	  (sequence
 	    (send definitions-edit set-styles-fixed #t)
 	    (send button-panel change-children

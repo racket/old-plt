@@ -52,14 +52,14 @@
 	   [panel (make-object mred:vertical-panel% frame)]
 	   [top-panel (make-object mred:vertical-panel% panel)]
 	   [bottom-panel (make-object mred:horizontal-panel% panel)])
-      (send top-panel stretchable-in-y #f)
+      (send top-panel stretchable-height #f)
       (send (make-object mred:button%
 	      "REPL" 
 	      bottom-panel
 	      (lambda (_1 _2)
 		(send frame show #f)
 		(make-repl)))
-	    set-focus)
+	    focus)
       
       (when drscheme-test-dir
 	(send top-panel stretchable-in-y #t)
@@ -103,7 +103,7 @@
 			  test)
 			 (run-test-suite 
 			  (build-path drscheme-test-dir test))))))))
-	   set-focus))
+	   focus))
 
 	(let* ([pre-times (list 0 10 50 100 500)]
 	       [times (if (member (fw:test:run-interval) pre-times)

@@ -340,20 +340,25 @@
 	  null)))
 
   (define (fill-language-menu language-menu)
-    (send* language-menu 
-	   (append-item "Configure Language..." language-dialog)
-	   (append-separator)
-	   (append-item "Set Library To..."
-			(lambda ()
-			  (let ([lib-file (fw:finder:get-file 
-					   library-directory
-					   "Select a library" 
-					   ".*\\.ss$")])
-			    (when lib-file
-			      (fw:preferences:set
-			       'drscheme:library-file lib-file)
-			      (set! library-directory (path-only lib-file))))))
-	   (append-item "Clear Library"
-			(lambda ()
-			  (fw:preferences:set 'drscheme:library-file #f))))))
+    (make-object mred:menu-item%
+      "Configure Language..."
+      language-menu
+      (lambda (_1 _2) (language-dialog)))
+    (make-object mred:separator-menu-item% language-menu)
+    (make-object mred:menu-item%
+      "Set Library To..."
+      language-menu
+      (lambda (_1 _2)
+	(let ([lib-file (fw:finder:get-file 
+			 library-directory
+			 "Select a library" 
+			 ".*\\.ss$")])
+	  (when lib-file
+	    (fw:preferences:set
+	     'drscheme:library-file lib-file)
+	    (set! library-directory (path-only lib-file))))))
+    (make-object mred:menu-item%
+      "Clear Library"
+      language-menu
+      (lambda (_1 _2) (fw:preferences:set 'drscheme:library-file #f)))))
 

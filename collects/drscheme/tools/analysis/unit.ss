@@ -42,8 +42,8 @@
 
     (define spidey-bitmap
       (drscheme:unit:make-bitmap
-       (build-path (collection-path "icons") "mrspidey.bmp")
-       "Analyze"))
+       "Analyze"
+       (build-path (collection-path "icons") "mrspidey.bmp")))
 
     (drscheme:get/extend:extend-unit-frame%
      (lambda (super%)
@@ -63,7 +63,7 @@
 	       (super-disable-evaluation))])
 	 (public
 	   [analyze-button (make-object mred:button%
-				spidey-bitmap
+				(spidey-bitmap this)
 				button-panel
 				(lambda (button evt) (invoke-spidey this)))])
 	 (sequence

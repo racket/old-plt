@@ -938,20 +938,6 @@ wxStyleList::wxStyleList() : wxList(wxKEY_NONE, WXGC_NO_CLEANUP)
   __type = wxTYPE_STYLE_LIST;
 #endif
 
-  Clear();
-}
-
-void wxStyleList::Clear(void)
-{
-  wxNode *node;
-  wxStyle *style;
-
-  while ((node = First())) {
-    style = (wxStyle *)node->Data();
-    DELETE_OBJ style;
-    DeleteNode(node);
-  }
-
   basic = new wxStyle;
   /* Note: The file-reader relies on having a new `basic' when the
      list is cleared: */
@@ -982,12 +968,10 @@ void wxStyleList::Copy(wxStyleList *other)
 {
   wxNode *node;
 
-  Clear();
-
   for (node = other->First(); node; node = node->Next()) {
     wxStyle *s;
     s = (wxStyle *)node->Data();
-    Convert(s);
+    Convert(s, 1);
   }
 }
 
@@ -1171,14 +1155,14 @@ wxStyle *wxStyleList::ReplaceNamedStyle(char *name, wxStyle *plainStyle)
   return DoNamedStyle(name, plainStyle, TRUE);
 }
 
-wxStyle *wxStyleList::Convert(wxStyle *style)
+wxStyle *wxStyleList::Convert(wxStyle *style, Bool overwrite)
 {
   wxStyle *base, *newstyle;
 
   if (StyleToIndex(style) >= 0)
     return style;
 
-  if (style->name) {
+  if (style->name && !overwrite) {
     newstyle = FindNamedStyle(style->name);
     if (newstyle)
       return newstyle;
@@ -1197,9 +1181,12 @@ wxStyle *wxStyleList::Convert(wxStyle *style)
   } else
     newstyle = FindOrCreateStyle(base, style->nonjoin_delta);
 
-  if (style->name)
-    return NewNamedStyle(style->name, newstyle);
-  else
+  if (style->name) {
+    if (overwrite)
+      return ReplaceNamedStyle(style->name, newstyle);
+    else
+      return NewNamedStyle(style->name, newstyle);
+  } else
     return newstyle;
 }
 

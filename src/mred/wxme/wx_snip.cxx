@@ -1688,8 +1688,7 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
   if (media) {
     wxStyleList *sl;
     sl = media->GetStyleList();
-    sl->Clear();
-    media->ReadFromFile(f);
+    media->ReadFromFile(f, TRUE);
   } else
     snip->SetMedia(NULL);
 

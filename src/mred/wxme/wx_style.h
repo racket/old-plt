@@ -204,7 +204,6 @@ class wxStyleList : public wxList /* should be private */
   wxStyleList();
   ~wxStyleList();
 
-  void Clear();
   void Copy(wxStyleList *other);
 
   wxStyle *BasicStyle(void);
@@ -224,7 +223,7 @@ class wxStyleList : public wxList /* should be private */
   wxStyle *NewNamedStyle(char *name, wxStyle *plainStyle);
   wxStyle *ReplaceNamedStyle(char *name, wxStyle *plainStyle);
 
-  wxStyle *Convert(wxStyle *);
+  wxStyle *Convert(wxStyle *, Bool overwrite = FALSE);
 
   void *NotifyOnChange(wxStyleNotifyFunc f, void *data, int weak = 0);
   void ForgetNotification(void *id);

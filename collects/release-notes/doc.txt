@@ -1,0 +1,10 @@
+_Building Release Notes_
+========================
+
+This collection contains the text of the release notes for this version of
+DrScheme. Each file should be a (preformatted) text text and
+will be displayed in DrScheme each time the version changes. 
+
+To add a new set of release notes, add the filename to the contents file
+and add the release notes into the named file.
+

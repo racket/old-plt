@@ -4,6 +4,7 @@
 	  [fw : framework^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:app : drscheme:app^]
+	  [drscheme:intro : drscheme:intro^]
 	  [help : help:drscheme-interface^]
 	  [zodiac : zodiac:system^])
   
@@ -17,10 +18,28 @@
        [help-menu:before-about
 	(lambda (help-menu)
 	  (make-object mred:menu-item%
+	    "Introduction to DrScheme"
+	    help-menu
+	    (lambda (item evt)
+	      (drscheme:intro:show-intro)))
+	  (make-object mred:menu-item%
 	    "Help Desk"
 	    help-menu
 	    (lambda (item evt)
 	      (help:help-desk))))]
+
+       [help-menu:after-about
+	(lambda (help-menu)
+	  (make-object mred:menu-item%
+	    "Release Notes"
+	    help-menu
+	    (lambda (item evt)
+	      (drscheme:intro:show-release-notes))))]
+
+       [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
+       [help-menu:about-string (lambda () "DrScheme")]
+
+
        [file-menu:new-string (lambda () "")]
        [file-menu:new
 	(lambda (item evt)
@@ -33,9 +52,7 @@
                        "Open URL..."
                        file-menu
                        (lambda (item evt)
-                         (help:open-users-url this))))]
-       [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
-       [help-menu:about-string (lambda () "DrScheme")])
+                         (help:open-users-url this))))])
       
       (sequence 
 	(apply super-init args))))

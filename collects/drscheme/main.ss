@@ -3,6 +3,7 @@
 	  [fw : framework^]
 	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
+	  [drscheme:intro : drscheme:intro^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:get/extend : drscheme:get/extend^]
 	  [basis : userspace:basis^]
@@ -23,7 +24,7 @@
      s))
 
   (fw:application:current-app-name "DrScheme")
-  (fw:version:add-spec 'd 4)
+  (fw:version:add-spec 'd 5)
   
   
   ;; add preferences
@@ -71,4 +72,27 @@
   (let ([files-to-open (reverse (vector->list i:argv))])
     (if (null? files-to-open)
 	(make-basic)
-	(for-each drscheme:unit:open-drscheme-window files-to-open))))
+	(for-each drscheme:unit:open-drscheme-window files-to-open)))
+
+
+  ;;
+  ;; Show release notes when version changes, and 
+  ;; show a first-time intro
+  ;; 
+
+  (fw:preferences:set-default 'drscheme:last-version #f
+			      (lambda (x)
+				(or (string? x)
+				    (not x))))
+
+  (let ([this-version (fw:version:version)])
+    (cond
+     [(fw:preferences:get 'drscheme:last-version)
+      =>
+      (lambda (last-version)
+	(unless (equal? last-version this-version)
+	  (fw:preferences:set 'drscheme:last-version this-version)
+	  (drscheme:intro:show-release-notes)))]
+     [else
+      (fw:preferences:set 'drscheme:last-version this-version)
+      (drscheme:intro:show-intro)])))

@@ -122,11 +122,9 @@
 			[(string=? language "Beginning Student") beginner-program]
 			[(string=? language "Intermediate Student") intermediate-program]
 			[(string=? language "Advanced Student") advanced-program]
-			[(or (string=? language "MrEd")
-			     (string=? language "Graphical Full Scheme"))
+			[(regexp-match "MrEd" language)
 			 mred-program]
-			[(or (string=? language "MzScheme")
-			     (string=? language "Textual Full Scheme"))
+			[(regexp-match "MzScheme" language)
 			 mzscheme-program]
                         [else
                          (format "unknown language: ~a" language)]))

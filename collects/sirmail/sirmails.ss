@@ -58,7 +58,9 @@
      BIFF-DELAY
      SELF-ADDRESSES
      SORT
-     SHOW-URLS))
+     SHOW-URLS
+     
+     USE-EXTERNAL-COMPOSER?))
 
   (provide sirmail:read^)
   (define-signature sirmail:read^

@@ -69,6 +69,8 @@
 
       (define ROOT-MAILBOX-FOR-LIST (get-optional-pref 'root-mailbox-folder))
 
+      (define USE-EXTERNAL-COMPOSER? (get-optional-pref 'use-external-composer?))
+
       (let ([n (get-optional-pref 'imap-server-port)])
 	(when n
 	  (imap-port-number n)))

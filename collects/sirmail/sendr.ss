@@ -198,7 +198,8 @@
 	(define mb (make-object menu-bar% f))
 	(define file-menu (make-object menu% "File" mb))
 	(define edit-menu (make-object menu% "Edit" mb))
-	(define composer-menu (make-object menu% "Composer" mb))
+	(define composer-menu (and USE-EXTERNAL-COMPOSER?
+				   (make-object menu% "Composer" mb)))
 	(define button-pane (make-object horizontal-pane% f))
 	(define title-message (make-object message% "Compose message" button-pane)) 
 	(define button-pane-spacer (make-object vertical-pane%  button-pane))
@@ -208,38 +209,39 @@
 	(define cancel-button-todo void)
 
 	(define external-composer-button
-	  (make-object
-	   button%
-	   "External Composer"
-	   button-pane
-	   (lambda (button control-event)
-	     (let ([t (make-temporary-file "sirmail~a")])
+	  (and USE-EXTERNAL-COMPOSER?
+	       (make-object
+		button%
+		"External Composer"
+		button-pane
+		(lambda (button control-event)
+		  (let ([t (make-temporary-file "sirmail~a")])
 
-	       (send message-editor save-file t 'text #t)
+		    (send message-editor save-file t 'text #t)
 
-	       (system
-		(case external-composer
-		  [(xemacs)
-		   (string-append "gnuclient +5 " t)]
-		  [(emacs)
-		   (string-append "emacsclient +5 " t)]
-		  [(vi)
-		   (string-append "vi " t)]))
+		    (system
+		     (case external-composer
+		       [(xemacs)
+			(string-append "gnuclient +5 " t)]
+		       [(emacs)
+			(string-append "emacsclient +5 " t)]
+		       [(vi)
+			(string-append "vi " t)]))
 
-	       (send message-editor load-file t 'guess #t)
+		    (send message-editor load-file t 'guess #t)
 
-	       (with-handlers
-		([exn:i/o:filesystem?
-		  (lambda (exn)
-		    (message-box "Error Deleting Temporary File"
-				 (string-append
-				  "Attempted to delete the "
-				  "temporary file "
-				  "`" t "'"
-				  "but couldn't find it.")
-				 #f
-				 '(ok)))])
-		(delete-file t))))))
+		    (with-handlers
+			([exn:i/o:filesystem?
+			  (lambda (exn)
+			    (message-box "Error Deleting Temporary File"
+					 (string-append
+					  "Attempted to delete the "
+					  "temporary file "
+					  "`" t "'"
+					  "but couldn't find it.")
+					 #f
+					 '(ok)))])
+		      (delete-file t)))))))
 
 	(define c (make-object editor-canvas% f))
 	(define message-editor (make-object (editor:backup-autosave-mixin text:basic%)))
@@ -319,37 +321,38 @@
 	     (send i user-data enc)))
 	 enclosures)
 	
-	(letrec ([switch (lambda (item e)
-			   (if (send item is-checked?)
-			       (begin
-				 ;; Disable others:
-				 (send xemacs check (eq? xemacs item))
-                                 (send gnu-emacs check (eq? gnu-emacs item))
-                                 (send vi check (eq? vi item))
-                                 ;; Update flags
-				 (set! external-composer
-				       (cond
-					[(send xemacs is-checked?)
-					 'xemacs]
-					[(send gnu-emacs is-checked?)
-					 'gnu-emacs]
-					[(send vi is-checked?)
-					 'vi]))
-				 (put-preferences
-				  (list sirmail:external-composer-pref)
-				  (list external-composer))
-				 )
-			       ;; Turn it back on
-			       (send item check #t)))]
-                 [xemacs (make-object checkable-menu-item% "XEmacs" composer-menu switch)]
-                 [gnu-emacs (make-object checkable-menu-item% "GNU Emacs" composer-menu switch)]
-                 [vi (make-object checkable-menu-item% "vi" composer-menu switch)])
-	  (send
-	   (case external-composer
-	     [(xemacs) xemacs]
-	     [(gnu-emacs) gnu-emacs]
-	     [(vi) vi])
-	   check #t))
+	(when USE-EXTERNAL-COMPOSER?
+	  (letrec ([switch (lambda (item e)
+			     (if (send item is-checked?)
+				 (begin
+				   ;; Disable others:
+				   (send xemacs check (eq? xemacs item))
+				   (send gnu-emacs check (eq? gnu-emacs item))
+				   (send vi check (eq? vi item))
+				   ;; Update flags
+				   (set! external-composer
+					 (cond
+					  [(send xemacs is-checked?)
+					   'xemacs]
+					  [(send gnu-emacs is-checked?)
+					   'gnu-emacs]
+					  [(send vi is-checked?)
+					   'vi]))
+				   (put-preferences
+				    (list sirmail:external-composer-pref)
+				    (list external-composer))
+				   )
+				 ;; Turn it back on
+				 (send item check #t)))]
+		   [xemacs (make-object checkable-menu-item% "XEmacs" composer-menu switch)]
+		   [gnu-emacs (make-object checkable-menu-item% "GNU Emacs" composer-menu switch)]
+		   [vi (make-object checkable-menu-item% "vi" composer-menu switch)])
+	    (send
+	     (case external-composer
+	       [(xemacs) xemacs]
+	       [(gnu-emacs) gnu-emacs]
+	       [(vi) vi])
+	     check #t)))
 
 	(make-object menu-item% "Save" file-menu 
 		     (lambda (i ev) (send message-editor save-file #f 'text)))

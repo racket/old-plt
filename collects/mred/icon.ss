@@ -1,6 +1,6 @@
 
 (define-sigfunctor (mred:icon@ mred:icon^)
-  (import)
+  (import mred:debug^)
 
   ; Load the MrEd icon
   (define icon 
@@ -18,5 +18,4 @@
 	  (make-object wx:bitmap% (build-path dir "return.bmp") 
 		       wx:const-bitmap-type-bmp)
 	  (make-object wx:bitmap% (build-path dir "return.xbm") 
-		       wx:const-bitmap-type-xbm))))
-  )
+		       wx:const-bitmap-type-xbm)))))

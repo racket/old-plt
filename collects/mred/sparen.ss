@@ -2,7 +2,7 @@
 ; Scheme parenthesis wrappers around the general routines
 
 (define-sigfunctor (mred:scheme-paren@ mred:scheme-paren^)
-  (import mred:paren^)
+  (import mred:debug^ mred:paren^)
 
   (define scheme-paren-pairs '(("(" . ")")
 			       ("[" . "]")

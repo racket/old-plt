@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 100)
 
-'(define mred:verbose-load? #t)
+(define mred:verbose-load? #f)
 
 (unless (defined? 'mred:startup-print-status)
    (define mred:startup-print-status 
@@ -65,7 +65,7 @@
 (for-each (lambda (x)
 	    (mred:startup-print-status (string-append "Loading " x "..."))
 	    (load/cd (string-append x ".ss")))
-	  (list "sig" 
+	  (list "sig" "debug"
 		"autoload" "autosave" "canvas" "console" "edit" "exit" 
 		"fileutil" "finder" "findstr" "frame" "group" "guiutils" 
 		"handler" "icon" "keys" "mcache" "menu" "mode"
@@ -75,6 +75,8 @@
 (mred:startup-print-status "Loaded.")
 
 (load "functor-setup.ss")
+
+(mred:startup-print-status "Compounded.")
 
 (define mred:console-frame (void))
 (define mred:console-canvas (void))

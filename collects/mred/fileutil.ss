@@ -1,7 +1,7 @@
 ; File utilities
 
 (define-sigfunctor (mred:path-utils@ mred:path-utils^)
-  (import)
+  (import mred:debug^)
 
   (define generate-autosave-name 
     (lambda (name)

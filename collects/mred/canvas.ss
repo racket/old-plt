@@ -1,7 +1,7 @@
 (define-sigfunctor (mred:canvas@ mred:canvas^)
-  (import mred:edit^ mzlib:file^)
+  (import mred:debug^ mred:edit^ mzlib:file^)
 
-  '(printf "mred:canvas@~n")
+  (mred:debug^:dprintf "mred:canvas@~n")
 
   (define make-canvas%
     (lambda (super%)

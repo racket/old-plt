@@ -1,3 +1,7 @@
+(define-signature mred:debug^
+  exit?
+  dprintf)
+
 (define-signature mred:autoload^
   autoload-paths
   make-autoload)

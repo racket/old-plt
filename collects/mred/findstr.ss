@@ -1,9 +1,9 @@
 ;; [Robby]
 
 (define-sigfunctor (mred:find-string@ mred:find-string^)
-  (import mred:canvas^ mred:edit^ mred:frame^)
+  (import mred:debug^ mred:canvas^ mred:edit^ mred:frame^)
 
-  '(printf "mred:find-string@~n")
+  (mred:debug^:dprintf "mred:find-string@~n")
 
   (define make-find-frame%
     (lambda (super%) 
@@ -370,16 +370,11 @@
 	     (let ([first-pos (send edit find-string string 1 anchor)])
 	       (cond
 		 [(= -1 first-pos)
-		  (if reset-anchor?
-		      (let ([pos (send edit find-string string 1 0)])
-			(if (= -1 pos)
-			    (begin (send edit set-position anchor)
-				   (wx:bell))
-			    (begin (set! anchor 0)
-				   (send edit set-position pos 
-					 (+ pos (string-length string))))))
-		      (begin (send edit set-position anchor)
-			     (wx:bell)))]
+		  (let ([pos (send edit find-string string 1 0)])
+		    (if (= -1 pos)
+			(begin (send edit set-position anchor)
+			       (wx:bell))
+			(send edit set-position pos (+ pos (string-length string)))))]
 		 [else 
 		  (send edit set-position first-pos
 			     (+ first-pos (string-length string)))]))))]

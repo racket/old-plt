@@ -5,7 +5,7 @@
 ; BALANCER ASSUMES THAT QUOTED STRINGS DO NOT SPAN LINES
 
 (define-sigfunctor (mred:paren@ mred:paren^)
-  (import)
+  (import mred:debug^)
 
   (define newline-string (string #\newline))
 

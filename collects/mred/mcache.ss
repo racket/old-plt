@@ -2,7 +2,7 @@
 ; Cache parenthesis-matching
 ;  Implemented as a splay tree
 (define-sigfunctor (mred:match-cache@ mred:match-cache^)
-  (import)
+  (import mred:debug^)
 
   (define-struct node (left right pos jump-to))
 

@@ -1,5 +1,5 @@
 (define-sigfunctor (mred:project@ mred:project^)
-  (import mred:group^ mred:gui-utils^ mred:exit^ mred:finder^
+  (import mred:debug^ mred:group^ mred:gui-utils^ mred:exit^ mred:finder^
 	  mred:frame^ mred:handler^
 	  mzlib:file^ mzlib:function^)
   

@@ -1,7 +1,7 @@
 ; Modes
 
 (define-sigfunctor (mred:mode@ mred:mode^)
-  (import mred:keymap^)
+  (import mred:debug^ mred:keymap^)
 
   (define basic-mode%
     (class '() ()
@@ -18,7 +18,10 @@
        [on-delete (lambda (edit start len) #t)]
        [after-delete (lambda (edit start len) (void))]
        
+       [after-set-position (lambda (edit) (void))]
+
        [on-focus (lambda (edit on?) #f)]
+
 
        [file-format wx:const-media-ff-same]
        [standard-style-delta (make-object wx:style-delta% 
@@ -45,5 +48,4 @@
 	(public
 	 [keymap (make-keymap)]))))
 
-  (define mode% (make-mode% basic-mode%))
-  )
+  (define mode% (make-mode% basic-mode%)))

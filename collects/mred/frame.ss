@@ -4,12 +4,12 @@
 ;; desired-height method that returns the desired height in pixels.
 
 (define-sigfunctor (mred:frame@ mred:frame^)
-  (import mred:edit^ mred:canvas^ mred:icon^ mred:menu^ 
+  (import mred:debug^ mred:edit^ mred:canvas^ mred:icon^ mred:menu^ 
 	  mred:group^ mred:finder^ mred:handler^
 	  mred:exit^ mred:autosave^ mred:gui-utils^
 	  mzlib:function^ mzlib:file^)
 
-  '(printf "mred:frame@~n")
+  (mred:debug^:dprintf "mred:frame@~n")
 
   (define frame-name "MrEd")
 

@@ -1,8 +1,8 @@
 (define-sigfunctor (mred:group@ mred:group^)
-  (import mred:gui-utils^ mred:exit^ mred:autosave^ mred:handler^
+  (import mred:debug^ mred:gui-utils^ mred:exit^ mred:autosave^ mred:handler^
 	  mzlib:function^)
 
-  '(printf "mred:group@~n")
+  (mred:debug^:dprintf "mred:group@~n")
 
   (define buffer-group%
     (let ([untitled-number 0])

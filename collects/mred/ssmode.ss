@@ -4,11 +4,11 @@
 ; Scheme mode for MrEd.
 
 (define-sigfunctor (mred:scheme-mode@ mred:scheme-mode^)
-  (import mred:mode^ mred:match-cache^ mred:paren^ mred:scheme-paren^ 
+  (import mred:debug^ mred:mode^ mred:match-cache^ mred:paren^ mred:scheme-paren^ 
 	  mred:icon^ mred:handler^ mred:keymap^
 	  mzlib:string^)
   
-  '(printf "mred:scheme-mode@~n")
+  (mred:debug^:dprintf "mred:scheme-mode@~n")
 
   (define newline-string (string #\newline))
 
@@ -107,7 +107,7 @@
 				     (insert #\) here (add1 here)) 
 				     (end-edit-sequence))
 			      (wx:bell))))
-		      (if (not (= 34 code))(wx:bell))))))
+		      '(if (not (= 34 code))(wx:bell))))))
 	    #t)]
 	 [tabify-on-return?
 	  (lambda ()
@@ -422,6 +422,16 @@
 			    (loop next-pos)))
 		      (wx:bell)))))
 	    #t)]
+
+	 [after-set-position
+	  (lambda (edit)
+	    (let ([delete-old-range #f]
+		  [new-position (send edit get-start-position)])
+	      (when delete-old-range
+		(delete-old-range))
+	      (when (= new-position (send edit get-end-position))
+		'highlight-the-parens)))]
+
 	 [remove-parens-forward
 	  (lambda (edit start-pos)
 	    (let* ([pos (mred:paren^:skip-whitespace edit start-pos 1)]
@@ -458,12 +468,15 @@
 		 (lambda (file)
 		   (wx:begin-busy-cursor)
 		   (catch escape
-		     (let-values ([vs (mzlib:string^:eval-string file #f (lambda () (escape #f)))])
+		     (let-values ([vs (mzlib:string^:eval-string 
+				       file #f 
+				       (lambda () (escape #f)))])
 		       (for-each (lambda (v)
 				   (unless (void? v)
 				     (display v)
 				     (newline)))
-				 vs)))
+				 vs))
+		     (display 'evaluated))
 		   (wx:end-busy-cursor))])
 	    (lambda (edit start end)
 	      (console-evaluate (send edit get-text start end))

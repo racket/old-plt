@@ -1,5 +1,5 @@
 (define-sigfunctor (mred:autoload@ mred:autoload^)
-   (import mzlib:file^)
+   (import mred:debug^ mzlib:file^)
 
    (define autoload-paths '("/usr/local/lib/plt/mred/autoload/"))
 

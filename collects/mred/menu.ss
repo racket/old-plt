@@ -1,6 +1,6 @@
 
 (define-sigfunctor (mred:menu@ mred:menu^)
-  (import mzlib:function^)
+  (import mred:debug^ mzlib:function^)
 
   (define max-manual-menu-id 1000)
 

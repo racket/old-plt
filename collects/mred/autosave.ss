@@ -1,6 +1,6 @@
 
 (define-sigfunctor (mred:autosave@ mred:autosave^)
-  (import)
+  (import mred:debug^)
   
   (define autosave-delay 60)
   (define autosaving-on? #t)

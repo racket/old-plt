@@ -1,10 +1,10 @@
 (define-sigfunctor (mred:console@ mred:console^)
-  (import mred:edit^ mred:frame^ mred:exit^ mred:finder^ mred:handler^
+  (import mred:debug^ mred:edit^ mred:frame^ mred:exit^ mred:finder^ mred:handler^
 	  mred:gui-utils^ mred:scheme-mode^ mred:scheme-paren^
 	  mzlib:function^ mzlib:string^ mzlib:pretty-print^
 	  mzlib:trigger^)
 
-  '(printf "mred:console@~n")
+  (mred:debug^:dprintf "mred:console@~n")
 
   (define newline-string (string #\newline))
 
@@ -42,6 +42,7 @@
 	     (sequence
 	       (apply super-init args)
 	       (set-mode (make-object mred:scheme-mode^:scheme-mode%))))))
+
   (define scheme-mode-edit% (make-scheme-mode-edit% mred:edit^:edit%))
 
   (define console-max-save-previous-exprs 30)
@@ -566,5 +567,4 @@
 	    (send edit takeover-output)
 	    (send edit insert-prompt)
 	    (send edit clear-undos))))))
-
   (define console-frame% (make-console-frame% mred:frame^:simple-menu-frame%)))

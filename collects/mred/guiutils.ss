@@ -1,6 +1,6 @@
 
 (define-sigfunctor (mred:gui-utils@ mred:gui-utils^)
-  (import mzlib:function^ mzlib:trigger^)
+  (import mred:debug^ mzlib:function^ mzlib:trigger^)
 
   (define cursor-delay
     (mzlib:function^:make-parameter 0.25))

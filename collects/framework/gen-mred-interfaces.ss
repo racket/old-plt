@@ -16,8 +16,7 @@ string=? ; exec mred -qvf $0
     (require-library "compiler.ss" "compiler")
     (compile-c-extensions (list classhack.c) framework-dir)))
 
-(load-extension classhack.so)
-;; now we have interface->names and class->names
+(load-extension classhack.so) ;; now we have interface->names and class->names
 
 (define (class-name->interface-name f)
   (let* ([str (symbol->string f)]

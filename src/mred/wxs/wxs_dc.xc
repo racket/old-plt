@@ -615,17 +615,17 @@ static void SetBrush(wxDC *dc, char *cname, int style)
   }
 }
 
-void wxDrawTabBase(wxDC *dc, double x, double y, double w, double h)
+void wxDrawTabBase(wxDC *dc, double x, double y, double w, double h, int state)
 {
 #ifdef wx_mac
-  dc->DrawTabBase(x, y, w, h);
+  dc->DrawTabBase(x, y, w, h, state);
 #endif
 }
 
-void wxDrawTab(wxDC *dc, mzstring s, double x, double y, double w, double h)
+void wxDrawTab(wxDC *dc, mzstring s, double x, double y, double w, double h, int state)
 {
 #ifdef wx_mac
-  dc->DrawTab(s, x, y, w, h);
+  dc->DrawTab(s, x, y, w, h, state);
 #endif
 }
 
@@ -707,8 +707,8 @@ START_XFORM_SKIP;
 
 @ "glyph-exists?" : bool GlyphAvailable(mzchar,wxFont^=NULL)
 
-@ m "draw-tab-base" : void wxDrawTabBase(double, double, double, double);
-@ m "draw-tab" : void wxDrawTab(mzstring, double, double, double, double);
+@ m "draw-tab-base" : void wxDrawTabBase(double, double, double, double, int);
+@ m "draw-tab" : void wxDrawTab(mzstring, double, double, double, double, int);
 
 @END
 

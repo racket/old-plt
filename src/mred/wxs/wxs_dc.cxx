@@ -756,7 +756,7 @@ void wxDrawTabBase(wxDC *dc, double x, double y, double w, double h, int state)
 #endif
 }
 
-void wxDrawTab(wxDC *dc, mzstring s, double x, double y, double w, double h, int state)
+void wxDrawTab(wxDC *dc, char *s, double x, double y, double w, double h, int state)
 {
 #ifdef wx_mac
   dc->DrawTab(s, x, y, w, h, state);
@@ -1127,7 +1127,7 @@ static Scheme_Object *os_wxDCwxDrawTab(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxDC_class, "draw-tab in dc<%>", n, p);
-  mzstring x0 INIT_NULLED_OUT;
+  string x0 INIT_NULLED_OUT;
   double x1;
   double x2;
   double x3;
@@ -1139,7 +1139,7 @@ static Scheme_Object *os_wxDCwxDrawTab(int n,  Scheme_Object *p[])
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (mzstring)WITH_VAR_STACK(objscheme_unbundle_mzstring(p[POFFSET+0], "draw-tab in dc<%>"));
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "draw-tab in dc<%>"));
   x1 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+1], "draw-tab in dc<%>"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+2], "draw-tab in dc<%>"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_double(p[POFFSET+3], "draw-tab in dc<%>"));

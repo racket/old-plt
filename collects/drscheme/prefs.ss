@@ -3,32 +3,41 @@
 	  [framework : framework^]
 	  [basis : userspace:basis^])
 
-  (framework:preferences:set-default 'drscheme:settings
-			       (basis:get-default-setting)
-			       basis:setting?)
-
-  (framework:preferences:set-un/marshall 'drscheme:settings
-				  (lambda (x) (cdr (vector->list (struct->vector x))))
-				  (lambda (x) 
-				    (if (and (list? x)
-					     (equal? (arity basis:make-setting)
-                                                     (length x)))
-					(let ([setting (apply basis:make-setting x)])
-                                          (if (valid-setting? setting)
-                                              setting
-                                              (basis:get-default-setting)))
-					(basis:get-default-setting))))
-
-  (framework:preferences:set-default 'drscheme:execute-warning-once
-				#f
-				(lambda (x)
-				  (or (eq? x #t)
-				      (not x))))
-
   (define (valid-setting? setting)
     (ormap (lambda (x) (equal? (basis:setting-name setting)
                                (basis:setting-name x)))
            basis:settings))
+
+
+  ;; if the unmarshaller returns #f, that will fail the
+  ;; test for this preference, reverting back to the default.
+  ;; In that case, the default is specified in the pref.ss file
+  ;; of the default collection and may not be the default
+  ;; specified below.
+  (framework:preferences:set-un/marshall
+   'drscheme:settings
+   (lambda (x) (cdr (vector->list (struct->vector x))))
+   (lambda (x) 
+     (if (and (list? x)
+	      (equal? (arity basis:make-setting)
+		      (length x)))
+	 (let ([setting (apply basis:make-setting x)])
+	   (if (valid-setting? setting)
+	       setting
+	       #f))
+	 #f)))
+
+  (framework:preferences:set-default
+   'drscheme:settings
+   (basis:get-default-setting)
+   basis:setting?)
+
+  (framework:preferences:set-default
+   'drscheme:execute-warning-once
+   #f
+   (lambda (x)
+     (or (eq? x #t)
+	 (not x))))
 
   (include "various-programs.ss")
 

@@ -390,22 +390,26 @@
 	     (loop (cdr l)))))))
 
   (define (delete-files-in-directory path printout)
-    (let ([printed? #f])
-      (let loop ([path path])
-	(cond
-	 [(directory-exists? path)
-	  (for-each (lambda (e) (loop (build-path path e)))
-		    (directory-list path))]
-	 [(file-exists? path)
-	  (unless printed? 
-	    (set! printed? #t)
-	    (printout))
-	  (unless (delete-file path)
-	    (error 'delete-files-in-directory
-		   "unable to delete file: ~a" path))]
-	 [else (error 'delete-files-in-directory
-		      "encountered ~a, neither a file nor a directory"
-		      path)]))))
+    (let loop ([path path])
+      (cond
+       [(directory-exists? path)
+	(for-each (lambda (e) (loop (build-path path e)))
+		  (directory-list path))]
+       [(file-exists? path)
+	(printout)
+	(unless (delete-file path)
+	  (error 'delete-files-in-directory
+		 "unable to delete file: ~a" path))]
+       [else (error 'delete-files-in-directory
+		    "encountered ~a, neither a file nor a directory"
+		    path)])))
+
+  (define (is-subcollection? collection sub-coll)
+    (cond
+     [(null? collection) #t]
+     [(null? sub-coll) #f]
+     [else (and (string=? (car collection) (car sub-coll))
+		(is-subcollection? (cdr collection) (cdr sub-coll)))]))
 
   (define (clean-collection cc)
     (let* ([info (cc-info cc)]
@@ -425,12 +429,12 @@
       (for-each (lambda (path)
 		  (let ([full-path (build-path (cc-path cc) path)])
 		    (cond
-		     [(directory-exists? path)
+		     [(directory-exists? full-path)
 		      (delete-files-in-directory 
-		       path
+		       full-path
 		       print-message)]
-		     [(file-exists? path)
-		      (delete-file path)
+		     [(file-exists? full-path)
+		      (delete-file full-path)
 		      (print-message)]
 		     [else (void)])))
 		paths)))

@@ -14,6 +14,7 @@
      (define show-banner? #f)
      (define repl? #f)
      (define (initialize-userspace)
+       ;; need to invoke teachpacks here.
        (global-define-values/invoke-unit/sig mred^ mred@))
 
      (define setting (apply basis:make-setting (cdr (vector->list settings))))

@@ -184,17 +184,6 @@
   (define newline-string (string #\newline))
   
   (define console-max-save-previous-exprs 30)
-  (let* ([list-of? (lambda (p?)
-		     (lambda (l)
-		       (and (list? l)
-			    (andmap p? l))))]
-	 [snip/string? (lambda (s) (or (is-a? s mred:snip%) (string? s)))]
-	 [list-of-snip/strings? (list-of? snip/string?)]
-	 [list-of-lists-of-snip/strings? (list-of? list-of-snip/strings?)])
-    (fw:preferences:set-default
-     'mred:console-previous-exprs
-     null
-     list-of-lists-of-snip/strings?))
   (let ([marshall 
 	 (lambda (lls)
 	   (map (lambda (ls)
@@ -210,6 +199,17 @@
     (fw:preferences:set-un/marshall
      'mred:console-previous-exprs
      marshall unmarshall))
+  (let* ([list-of? (lambda (p?)
+		     (lambda (l)
+		       (and (list? l)
+			    (andmap p? l))))]
+	 [snip/string? (lambda (s) (or (is-a? s mred:snip%) (string? s)))]
+	 [list-of-snip/strings? (list-of? snip/string?)]
+	 [list-of-lists-of-snip/strings? (list-of? list-of-snip/strings?)])
+    (fw:preferences:set-default
+     'mred:console-previous-exprs
+     null
+     list-of-lists-of-snip/strings?))
   (define (show-interactions-history)
     (let* ([f (make-object (drscheme:frame:basics-mixin fw:frame:standard-menus%)
                 "Interactions History"

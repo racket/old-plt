@@ -1025,12 +1025,12 @@ Scheme_Object *scheme_link_expr(Scheme_Object *expr, Link_Info *info)
     {
       Scheme_Bucket_With_Home *b = (Scheme_Bucket_With_Home *)expr;
 
-      if (!info || SCHEME_FALSEP(b->home->modname))
+      if (!info || !b->home->module)
 	return (Scheme_Object *)b;
       else {
 	Scheme_Env *m;
 	
-	m = scheme_module_access(b->home->modname, info);
+	m = scheme_module_access(b->home->module->modname, info);
 
 	if (!m) {
 	  scheme_wrong_syntax("import", NULL, (Scheme_Object *)b->bucket.bucket.key, 
@@ -1808,13 +1808,13 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
   if (!SCHEME_STX_SYMBOLP(c))
     scheme_wrong_syntax("#%unbound", NULL, form, NULL);
 
-  if (SCHEME_TRUEP(env->genv->modname)) {
+  if (env->genv->module) {
     Scheme_Object *modname, *symbol = c;
     Scheme_Env *home;
 
     modname = scheme_stx_module_name(&symbol, env->genv->phase, &home);
     if (modname) {
-      if (SAME_OBJ(modname, env->genv->modname))
+      if (SAME_OBJ(modname, env->genv->module->modname))
 	modname = NULL;
     }
 

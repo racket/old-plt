@@ -1437,12 +1437,36 @@ void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo);
 /*                              modules                                   */
 /*========================================================================*/
 
+typedef struct Scheme_Module
+{
+  Scheme_Type type; /* scheme_module_type */
+  MZ_HASH_KEY_EX
+
+  Scheme_Object *modname;
+
+  Scheme_Object *et_imports; /* list of module names */
+  Scheme_Object *imports; /* list of module names */
+
+  Scheme_Object *body;
+  Scheme_Object *et_body;
+
+  Scheme_Object **exports;
+  Scheme_Object **export_srcs;
+  Scheme_Object **export_src_names;
+  int num_exports;
+  int num_var_exports; /* non-syntax listed first in exports */
+  Scheme_Object **indirect_exports;
+  int num_indirect_exports;
+
+  Scheme_Hash_Table *accessible;
+} Scheme_Module;
+
 Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env);
 
-Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Object *modname);
+Scheme_Env *scheme_new_module_env(Scheme_Env *env, Scheme_Module *m);
 int scheme_is_module_env(Scheme_Comp_Env *env);
 
-Scheme_Env *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
+Scheme_Module *scheme_module_load(Scheme_Object *modname, Scheme_Env *env);
 Scheme_Env *scheme_module_access(Scheme_Object *modname, Scheme_Env *env);
 void scheme_check_accessible_in_module(Scheme_Env *env, Scheme_Object *symbol, Scheme_Object *stx);
 Scheme_Object *scheme_module_syntax(Scheme_Object *modname, Scheme_Env *env, Scheme_Object *name);

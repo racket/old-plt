@@ -486,9 +486,9 @@ typedef struct Scheme_Env
   Scheme_Type type; /* scheme_namespace_type */
   MZ_HASH_KEY_EX
 
-  Scheme_Object *modname;
+  struct Scheme_Module *module; /* NULL => top-level */
 
-  Scheme_Hash_Table *module_registry; /* loaded modules, 
+  Scheme_Hash_Table *module_registry; /* symbol -> module ; loaded modules, 
 					 shared with moucles in same space */
 
   /* For compilation, per-declaration: */
@@ -504,28 +504,11 @@ typedef struct Scheme_Env
 
   Scheme_Hash_Table *shadowed_syntax; /* top level only */
 
-  /* Built by module-begin, per-declaration: */
-  Scheme_Object *et_imports; /* list of module names */
-  Scheme_Object *imports; /* list of module names */
-
-  Scheme_Object *body;
-  Scheme_Object *et_body;
-
-  Scheme_Object **exports;
-  Scheme_Object **export_srcs;
-  Scheme_Object **export_src_names;
-  int num_exports;
-  int num_var_exports; /* non-syntax listed first in exports */
-  Scheme_Object **indirect_exports;
-  int num_indirect_exports;
-
-  Scheme_Hash_Table *accessible;
-
   /* Per-instance: */
   long phase;
   int running;  
   Scheme_Hash_Table *toplevel;
-  Scheme_Hash_Table *modules; /* running modules, 
+  Scheme_Hash_Table *modules; /* symbol -> env ; running modules, 
 				 shared with instances in same phase */
 } Scheme_Env;
 

@@ -455,16 +455,10 @@ static Scheme_Env *make_env(Scheme_Env *base)
   env = MALLOC_ONE_TAGGED(Scheme_Env);
   env->type = scheme_namespace_type;
 
-  env->modname = scheme_false;
-  env->imports = scheme_null;
-
   env->toplevel = toplevel;
   env->syntax = syntax;
   env->modules = modules;
   env->module_registry = module_registry;
-
-  env->exports = NULL;
-  env->num_exports = 0;
 
   {
     Scheme_Comp_Env *me;
@@ -483,13 +477,13 @@ static Scheme_Env *make_env(Scheme_Env *base)
 }
 
 Scheme_Env *
-scheme_new_module_env(Scheme_Env *env, Scheme_Object *modname)
+scheme_new_module_env(Scheme_Env *env, Scheme_Module *m)
 {
   Scheme_Env *menv;
 
   menv = make_env(env);
 
-  menv->modname = modname;
+  menv->module = m;
   menv->init->flags |= SCHEME_MODULE_FRAME;
 
   return menv;
@@ -502,7 +496,7 @@ void scheme_prepare_exp_env(Scheme_Env *env)
     eenv = make_env(NULL);
     eenv->phase = env->phase + 1;
 
-    eenv->modname = env->modname;
+    eenv->module = env->module;
     eenv->module_registry = env->module_registry;
 
     env->exp_env = eenv;
@@ -1030,7 +1024,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   srcsym = symbol;
   modname = scheme_stx_module_name(&symbol, phase, &home_env);
   if (modname) {
-    if (SAME_OBJ(modname, env->genv->modname)) {
+    if (env->genv->module && SAME_OBJ(modname, env->genv->module->modname)) {
       modname = NULL;
       genv = env->genv;
     } else {
@@ -1108,7 +1102,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
 void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
 {
-  if (SCHEME_FALSEP(env->modname)) {
+  if (!env->module) {
     if (env->rename)
       scheme_remove_module_rename(env->rename, n);
 

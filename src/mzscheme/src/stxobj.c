@@ -846,7 +846,7 @@ Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist)
 
 static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs)
 {
-  Scheme_Object *stack, *a, *grenames, *erenames, *sys0, *ksym;
+  Scheme_Object *stack, *a, *grenames, *erenames, *sys0;
 
   if (subs) {
     if (SCHEME_FALSEP(w))
@@ -861,7 +861,6 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs)
   erenames = ((Scheme_Env *)scheme_get_param(scheme_current_process->config, MZCONFIG_ENV))->exp_env->rename;
   sys0 = scheme_sys_wraps(NULL);
   sys0 = SCHEME_CAR(((Scheme_Stx *)sys0)->wraps);
-  ksym = scheme_intern_symbol(".kernel");
 
   while (!SCHEME_NULLP(w)) {
     a = SCHEME_CAR(w);
@@ -913,8 +912,8 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs)
 	  b = bs[i];
 	  if (b && b->val) {
 	    v = (Scheme_Object *)b->val;
-	    if (SCHEME_PAIRP(v) && SAME_OBJ(SCHEME_CAR(v), ksym))
-	      l = scheme_make_pair((Scheme_Object *)b->key, l);
+	    if (SCHEME_PAIRP(v) && SAME_OBJ(SCHEME_CDR(v), (Scheme_Object *)b->key))
+	      l = scheme_make_pair(v, l);
 	    else
 	      l = scheme_make_pair(scheme_make_pair((Scheme_Object *)b->key, v), 
 				   l);
@@ -926,7 +925,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w, int subs)
     } else {
       /* Extract module name (needed?) for shift: */
       a = scheme_box(scheme_make_pair(SCHEME_CAR(a),
-				      ((Scheme_Env *)SCHEME_CDR(a))->modname));
+				      ((Scheme_Env *)SCHEME_CDR(a))->module->modname));
       stack = scheme_make_pair(a, stack);
     }
 

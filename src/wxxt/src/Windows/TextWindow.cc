@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: TextWindow.cc,v 1.1.1.1 1997/12/22 17:28:59 mflatt Exp $
+ * $Id: TextWindow.cc,v 1.2 1998/04/11 13:57:32 mflatt Exp $
  *
  * Purpose: text window panel item
  *
@@ -113,7 +113,7 @@ void wxTextWindow::Clear(void)
 
 char *wxTextWindow::GetContents(void)
 {
-    return NULL;
+    return "";
 }
 
 long wxTextWindow::GetInsertionPoint(void)

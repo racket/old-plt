@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.2 1996/01/10 23:46:47 markus Exp $
+ * $Id: WindowDC.cc,v 1.1.1.1 1997/12/22 17:28:48 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -819,8 +819,10 @@ void wxWindowDC::SetPen(wxPen *pen)
 		dashdef  = dashdefs[style-wxFIRST_DASH];
 	    }
 	    if ((scaleddef = new wxDash[num_dash])) {
+	        int dscale = scale;
+		if (!dscale) dscale = 1;
 		for (int i=0; i<num_dash; ++i)
-		    scaleddef[i] = scale * dashdef[i];
+		    scaleddef[i] = dscale * dashdef[i];
 		XSetDashes(DPY, PEN_GC, 0, (char*)scaleddef, num_dash);
 		delete[] scaleddef;
 	    } else { // not enough memory to scale

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.cc,v 1.2 1996/01/10 23:46:43 markus Exp $
+ * $Id: DC.cc,v 1.1.1.1 1997/12/22 17:28:48 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -272,11 +272,14 @@ static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
 {
     register float  xmid, ymid;
     float           x1, y1, x2, y2, x3, y3, x4, y4;
+    int             counter = 10000; /* At most this many points */
 
     wx_clear_stack();
     wx_spline_push(a1, b1, a2, b2, a3, b3, a4, b4);
 
     while (wx_spline_pop(&x1, &y1, &x2, &y2, &x3, &y3, &x4, &y4)) {
+        if (!counter--)
+	  break;
         xmid = half(x2, x3);
         ymid = half(y2, y3);
 	if (fabs(x1 - xmid) < THRESHOLD && fabs(y1 - ymid) < THRESHOLD &&
@@ -312,6 +315,11 @@ static void wx_clear_stack(void)
 static void wx_spline_push(float x1, float y1, float x2, float y2,
 			   float x3, float y3, float x4, float y4)
 {
+    if (wx_stack_count >= SPLINE_STACK_DEPTH) {
+      /* Just drop it. */
+      return;
+    }
+
     wx_stack_top->x1 = x1;    wx_stack_top->y1 = y1;
     wx_stack_top->x2 = x2;    wx_stack_top->y2 = y2;
     wx_stack_top->x3 = x3;    wx_stack_top->y3 = y3;

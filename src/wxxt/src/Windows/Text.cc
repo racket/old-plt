@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Text.cc,v 1.2 1998/02/05 23:00:33 mflatt Exp $
+ * $Id: Text.cc,v 1.3 1998/04/11 13:57:31 mflatt Exp $
  *
  * Purpose: text panel item
  *
@@ -209,5 +209,5 @@ void wxText::SetEditable(Bool on)
 void wxText::ChangeToGray(Bool gray)
 {
   wxWindow::ChangeToGray(gray);
-  XtSetSensitive((Widget)porthole, !gray);
+  XtSetSensitive((Widget)(porthole ? porthole : X->handle), !gray);
 }

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: wxDefines.h,v 1.2 1996/01/10 23:46:08 markus Exp $
+ * $Id: wxDefines.h,v 1.1.1.1 1997/12/22 17:28:42 mflatt Exp $
  *
  * Purpose: Declarations/definitions common to all wx source files
  *
@@ -416,8 +416,7 @@ enum {
 
 #define wxDEFAULT_FRAME		(wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxTHICK_FRAME \
 				 | wxSYSTEM_MENU | wxCAPTION )
-#define wxDEFAULT_DIALOG_STYLE	(wxCAPTION | wxSYSTEM_MENU | wxTHICK_FRAME \
-				 | wxTRANSIENT)
+#define wxDEFAULT_DIALOG_STYLE	(wxCAPTION | wxSYSTEM_MENU | wxTHICK_FRAME )
 #define wxENH_DEFAULT		(wxCAPTION | wxBOTTOM_COMMANDS | wxSTATUS_FOOTER \
 				 | wxNO_CANCEL_BUTTON)
 #define wxMAX_STATUS		4

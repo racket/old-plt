@@ -22,6 +22,7 @@
      (list 'uid (string->symbol "UID"))
      (list 'header (string->symbol "RFC822.HEADER"))
      (list 'body (string->symbol "RFC822.TEXT"))
+     (list 'size (string->symbol "RFC822.SIZE"))
      (list 'flags (string->symbol "FLAGS"))))
 
   (define flag-names

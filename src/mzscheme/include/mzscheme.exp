@@ -206,6 +206,7 @@ scheme_make_string_output_port
 scheme_get_string_output
 scheme_get_sized_string_output
 scheme_pipe
+scheme_pipe_with_limit
 scheme_file_exists
 scheme_directory_exists
 scheme_expand_filename

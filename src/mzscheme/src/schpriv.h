@@ -1396,9 +1396,10 @@ typedef struct Scheme_Indexed_String {
 typedef struct {
   MZTAG_IF_REQUIRED
   unsigned char *buf;
-  long buflen;
-  int bufstart, bufend;
+  long buflen, bufmax;
+  long bufstart, bufend;
   int eof;
+  Scheme_Object *wakeup_on_read;
 #ifdef MZ_REAL_THREADS
   int num_waiting;
   void *change_mutex;
@@ -1433,6 +1434,9 @@ Scheme_Object *scheme_do_open_input_file(char *name, int offset, int argc, Schem
 Scheme_Object *scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_file_position(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_write_string_avail(int argc, Scheme_Object *argv[]);
+
+int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int nonblock);
+void scheme_pipe_did_read(Scheme_Pipe *pipe);
 
 #ifdef USE_TCP
 int scheme_tcp_write_nb_string(char *s, long len, long offset, int rarely_block, Scheme_Output_Port *port);

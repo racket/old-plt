@@ -264,6 +264,7 @@
   scheme_extension_table->scheme_get_string_output = scheme_get_string_output;
   scheme_extension_table->scheme_get_sized_string_output = scheme_get_sized_string_output;
   scheme_extension_table->scheme_pipe = scheme_pipe;
+  scheme_extension_table->scheme_pipe_with_limit = scheme_pipe_with_limit;
   scheme_extension_table->scheme_file_exists = scheme_file_exists;
   scheme_extension_table->scheme_directory_exists = scheme_directory_exists;
   scheme_extension_table->scheme_expand_filename = scheme_expand_filename;

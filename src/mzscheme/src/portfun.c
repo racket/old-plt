@@ -409,7 +409,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-pipe", 
 			     scheme_make_prim_w_arity2(sch_pipe, 
 						       "make-pipe", 
-						       0, 0,
+						       0, 1,
 						       2, 2), 
 			     env);
 }
@@ -753,6 +753,8 @@ static int pipe_getc(Scheme_Input_Port *p)
     pipe->bufstart = (pipe->bufstart + 1) % pipe->buflen;
   }
 
+  scheme_pipe_did_read(pipe);
+
 #ifdef MZ_REAL_THREADS
   SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
 #endif
@@ -760,15 +762,28 @@ static int pipe_getc(Scheme_Input_Port *p)
   return c;
 }
 
-static void pipe_write(char *str, long d, long len, Scheme_Output_Port *p)
+void scheme_pipe_did_read(Scheme_Pipe *pipe)
+{
+  while (SCHEME_PAIRP(pipe->wakeup_on_read)) {
+    Scheme_Object *sema;
+    sema = SCHEME_CAR(pipe->wakeup_on_read);
+    pipe->wakeup_on_read = SCHEME_CDR(pipe->wakeup_on_read);
+    scheme_post_sema(sema);
+  }
+}
+
+int scheme_pipe_write(char *str, long d, long len, Scheme_Output_Port *p, int nonblock)
 {
   Scheme_Pipe *pipe;
   long avail, firstpos, firstn, secondn, endpos;
+  long wrote = 0;
 
   pipe = (Scheme_Pipe *)(p->port_data);
+
+ try_again:
   
-  if (pipe->eof)
-    return;
+  if (pipe->eof || !len)
+    return len + wrote;
 
 #ifdef MZ_REAL_THREADS
   SCHEME_LOCK_MUTEX(pipe->change_mutex);
@@ -784,12 +799,64 @@ static void pipe_write(char *str, long d, long len, Scheme_Output_Port *p)
   }
   firstpos = pipe->bufend;
 
+  if (pipe->bufmax && (avail < len)) {
+    /* Must we block? */
+    long xavail = avail + (pipe->bufmax - pipe->buflen);
+    if (xavail < len) {
+      /* We must block. */
+      Scheme_Object *my_sema;
+
+#ifdef MZ_REAL_THREADS
+      SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
+#endif
+      /* First, write as much as seems immediately possible */
+      xavail = scheme_pipe_write(str, d, xavail, p, nonblock);
+      wrote += xavail;
+      d += xavail;
+      len -= xavail;
+
+      if (nonblock && wrote)
+	return wrote;
+
+      /* Now, wait until we can write more, then start over. */
+      while (1) {
+#ifdef MZ_REAL_THREADS
+	SCHEME_LOCK_MUTEX(pipe->change_mutex);
+#endif
+	if (pipe->bufstart <= pipe->bufend) {
+	  avail = (pipe->buflen - pipe->bufend) + pipe->bufstart - 1;
+	} else {
+	  avail = pipe->bufstart - pipe->bufend - 1;
+	}
+#ifdef MZ_REAL_THREADS
+	SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
+#endif
+	if (avail)
+	  goto try_again;
+
+	my_sema = scheme_make_sema(0);
+#ifdef MZ_REAL_THREADS
+	SCHEME_LOCK_MUTEX(pipe->change_mutex);
+#endif
+	pipe->wakeup_on_read = scheme_make_pair(my_sema, pipe->wakeup_on_read);
+#ifdef MZ_REAL_THREADS
+	SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
+#endif
+	
+	scheme_wait_sema(my_sema, 0);
+      }
+      /* Doesn't get here */
+    }
+  }
+
   if (avail < len) {
     unsigned char *old;
     int newlen;
 
     old = pipe->buf;
     newlen = 2 * (pipe->buflen + len);
+    if (pipe->bufmax && (newlen > pipe->bufmax))
+      newlen = pipe->bufmax;
 
     {
       unsigned char *uca;
@@ -842,6 +909,13 @@ static void pipe_write(char *str, long d, long len, Scheme_Output_Port *p)
   }
   SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
 #endif
+
+  return len + wrote;
+}
+
+static void pipe_write(char *str, long d, long len, Scheme_Output_Port *p)
+{
+  scheme_pipe_write(str, d, len, p, 0);
 }
 
 static int pipe_char_ready(Scheme_Input_Port *p)
@@ -920,17 +994,19 @@ static void free_semas(void *p, void *ignored)
 }
 #endif
 
-void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
+void scheme_pipe_with_limit(Scheme_Object **read, Scheme_Object **write, int queuelimit)
 {
   Scheme_Pipe *pipe;
   Scheme_Input_Port *readp;
   Scheme_Output_Port *writep;
 
+  if (queuelimit) queuelimit++; /* need separator in circular buffer */
+
   pipe = MALLOC_ONE_RT(Scheme_Pipe);
 #ifdef MZTAG_REQUIRED
   pipe->type = scheme_rt_pipe;
 #endif
-  pipe->buflen = 100;
+  pipe->buflen = ((queuelimit && (queuelimit < 100)) ? queuelimit : 100);
   {
     unsigned char *uca;
     uca = (unsigned char *)scheme_malloc_atomic(pipe->buflen);
@@ -938,6 +1014,8 @@ void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
   }
   pipe->bufstart = pipe->bufend = 0;
   pipe->eof = 0;
+  pipe->bufmax = queuelimit;
+  pipe->wakeup_on_read = scheme_null;
 #ifdef MZ_REAL_THREADS
   pipe->num_waiting = 0;
   pipe->change_mutex = SCHEME_MAKE_MUTEX();
@@ -967,11 +1045,31 @@ void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
   *write = (Scheme_Object *)writep;
 }
 
+void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
+{
+  scheme_pipe_with_limit(read, write, 0);
+}
+
 static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
 {
   Scheme_Object *v[2];
+  int bufmax;
 
-  scheme_pipe(&v[0], &v[1]);
+  if (argc == 1) {
+    Scheme_Object *o = args[0];
+    if ((SCHEME_INTP(o) || SCHEME_BIGNUMP(o))
+	&& SCHEME_TRUEP(scheme_positive_p(1, args))) {
+      if (SCHEME_INTP(o))
+	bufmax = SCHEME_INT_VAL(o);
+      else
+	bufmax = 0;
+    } else {
+      scheme_wrong_type("make-pipe", "positive exact integer", 1, argc, args);
+    }
+  } else
+    bufmax = 0;
+
+  scheme_pipe_with_limit(&v[0], &v[1], bufmax);
 
   return scheme_values(2, v);
 }

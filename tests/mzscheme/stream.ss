@@ -23,7 +23,7 @@
 
 (eval cs-prog)
 
-(define test-file (find-system-path 'exec-file))
+(define test-file (find-executable-path (find-system-path 'exec-file) #f))
 (define tmp-file (build-path (find-system-path 'temp-dir) "ZstreamZ"))
 
 (define (feed-file out)
@@ -66,10 +66,15 @@
 	  (loop))))))
 
 (define (check-file/fastest in)
-  (let ([p (open-input-file test-file)]
-	[s1 (make-string 5000)]
-	[s2 (make-string 5000)])
-    (let loop ([leftover 0])
+  (let ([s1 (make-string 5000)]
+	[s2 (make-string 5000)]
+	[p (open-input-file test-file)])
+    (let loop ([leftover 0][pos 0])
+      (unless (zero? leftover)
+	(let loop ([x 0][y (- 5000 leftover)])
+	  (unless (= x leftover)
+	    (string-set! s1 x (string-ref s1 y))
+	    (loop (add1 x) (add1 y)))))
       (let* ([n1 (let ([n (read-string-avail! s1 p leftover)])
 		   (if (eof-object? n)
 		       (if (zero? leftover)
@@ -78,16 +83,18 @@
 		       (+ n leftover)))]
 	     [n2 (read-string-avail! s2 in 0 (if (eof-object? n1)
 						 1
-					   n1))])
+						 n1))])
 	(unless (if (or (eof-object? n1)
-			(eof-object? n2)
-			(= n2 n1 5000))
-		    (equal? s1 s2)
-		    (string=? (substring s1 0 n2)
-			      (substring s2 0 n2)))
-	  (error "fast check failed"))
+			(eof-object? n2))
+		    (and (eof-object? n1)
+			 (eof-object? n2))
+		    (if (= n2 n1 5000)
+			(string=? s1 s2)
+			(string=? (substring s1 0 n2)
+				  (substring s2 0 n2))))
+	  (error 'check "fastest failed at ~a (~a ~a)" pos n1 n2))
 	(unless (eof-object? n1)
-	  (loop (- n1 n2)))))))
+	  (loop (- n1 n2) (+ pos n2)))))))
 
 (define portno 40000)
 
@@ -180,6 +187,27 @@
 
 (start "Plain pipe, fastest...~n")
 (define-values (r w) (make-pipe))
+(feed-file/fast w)
+(close-output-port w)
+(check-file/fastest r)
+(end)
+
+(start "Limited pipe...~n")
+(define-values (r w) (make-pipe 253))
+(feed-file w)
+(close-output-port w)
+(check-file r)
+(end)
+
+(start "Limited pipe, faster...~n")
+(define-values (r w) (make-pipe 253))
+(feed-file/fast w)
+(close-output-port w)
+(check-file/fast r)
+(end)
+
+(start "Limited pipe, fastest...~n")
+(define-values (r w) (make-pipe 253))
 (feed-file/fast w)
 (close-output-port w)
 (check-file/fastest r)

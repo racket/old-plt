@@ -376,7 +376,60 @@
 (close-output-port in)
 (test eof read out)
 (close-input-port out)
-(arity-test make-pipe 0 0)
+
+(define-values (in out) (make-pipe 3))
+(test 3 write-string-avail "12345" out)
+(let ([s (make-string 5 #\-)])
+  (test 3 read-string-avail! s in)
+  (test "123--" values s))
+(display 1 out)
+(test 2 write-string-avail "2345" out)
+(let ([th1 (thread (lambda ()
+		     (display "a" out)))]
+      [th2 (thread (lambda ()
+		      (display "a" out)))]
+      [th3 (thread (lambda ()
+		      (display "a" out)))])
+  (test #t thread-running? th1)
+  (test #t thread-running? th2)
+  (test #t thread-running? th3)
+
+  (test #\1 read-char in)
+  
+  (sleep 0.1)
+
+  (test 2 + 
+	(if (thread-running? th1) 1 0)
+	(if (thread-running? th2) 1 0)
+	(if (thread-running? th3) 1 0))
+
+  (test #\2 read-char in)
+
+  (sleep 0.1)
+
+  (test 1 + 
+	(if (thread-running? th1) 1 0)
+	(if (thread-running? th2) 1 0)
+	(if (thread-running? th3) 1 0))
+  
+  (test #\3 read-char in)
+  
+  (sleep 0.1)
+
+  (test #f thread-running? th1)
+  (test #f thread-running? th2)
+  (test #f thread-running? th3)
+
+  (close-output-port out)
+
+  (test "aaa" read-string 10 in))
+(close-input-port in)
+
+(arity-test make-pipe 0 1)
+(error-test '(make-pipe 0))
+(error-test '(make-pipe -1))
+(error-test '(make-pipe (- (expt 2 40))))
+(error-test '(make-pipe "hello"))
 
 (test #t input-port? (make-input-port void void void))
 (error-test '(read (make-input-port void void void))

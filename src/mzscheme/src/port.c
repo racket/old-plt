@@ -1062,6 +1062,10 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
       
       pipe = (Scheme_Pipe *)ip->port_data;
 
+#ifdef MZ_REAL_THREADS
+      SCHEME_LOCK_MUTEX(pipe->change_mutex);
+#endif
+
       if (pipe->bufstart != pipe->bufend) {
 	if (pipe->bufstart > pipe->bufend) {
 	  int n;
@@ -1085,7 +1089,13 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset)
 	  size -= n;
 	  got += n;
 	}
+
+	scheme_pipe_did_read(pipe);
       }
+
+#ifdef MZ_REAL_THREADS
+      SCHEME_UNLOCK_MUTEX(pipe->change_mutex);
+#endif
 
       if (size)
 	use_getc = 1;
@@ -1581,6 +1591,8 @@ scheme_write_string_avail(int argc, Scheme_Object *argv[])
     scheme_write_offset_string(str2, 0, 1, port);
     scheme_flush_output(port);
     putten = 1;
+  } else if (SAME_OBJ(op->sub_type, scheme_pipe_write_port_type)) {
+    putten = scheme_pipe_write(SCHEME_STR_VAL(str), start, size, op, 1);
 #ifdef USE_TCP
   } else if (SAME_OBJ(op->sub_type, scheme_tcp_output_port_type)) {
     /* TCP ports */

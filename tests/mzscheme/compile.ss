@@ -45,6 +45,8 @@
 	 [my-eval
 	  (case-lambda 
 	   [(x next-eval)
+	    ; (fprintf file ": ~a~n" +)
+	    ; (write x file) (newline file)
 	    (let ([p (open-output-string)]
 		  [c (compile x)])
 	      (write c p)

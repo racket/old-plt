@@ -9,7 +9,7 @@
 (arity-test compiled-expression? 1 1)
 
 (test #f compiled-expression? 1)
-(test #f compiled-expression? (compile 1))
+(test #t compiled-expression? (compile 1))
 (test #t compiled-expression? (let ([c (compile 1)]
 				    [p (open-output-string)])
 				(display c p)

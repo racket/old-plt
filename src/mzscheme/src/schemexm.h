@@ -264,6 +264,7 @@
 #define scheme_get_string_output (scheme_extension_table->scheme_get_string_output)
 #define scheme_get_sized_string_output (scheme_extension_table->scheme_get_sized_string_output)
 #define scheme_pipe (scheme_extension_table->scheme_pipe)
+#define scheme_pipe_with_limit (scheme_extension_table->scheme_pipe_with_limit)
 #define scheme_file_exists (scheme_extension_table->scheme_file_exists)
 #define scheme_directory_exists (scheme_extension_table->scheme_directory_exists)
 #define scheme_expand_filename (scheme_extension_table->scheme_expand_filename)

@@ -4,12 +4,22 @@
 
 (SECTION 'optimization)
 
+;; For some comparison, ignore the stack-depth
+;;  part of the compilation result (since it's
+;;  an approximation, anyway).
+(define maybe-different-depths? #f)
+
 (define (comp=? c1 c2)
   (let ([s1 (open-output-string)]
 	[s2 (open-output-string)])
     (write c1 s1)
     (write c2 s2)
-    (string=? (get-output-string s1) (get-output-string s2))))
+    (let ([t1 (get-output-string s1)]
+	  [t2 (get-output-string s2)])
+      (or (string=? t1 t2)
+	  (and maybe-different-depths?
+	       (string=? (substring t1 5 (string-length t1))
+			 (substring t2 5 (string-length t2))))))))
 
 (define test-comp
   (case-lambda
@@ -56,5 +66,19 @@
 	   '(f 5))
 (test-comp '(fluid-let () (f 5))
 	   '(f 5))
+
+(set! maybe-different-depths? #t)
+
+(test-comp 3
+	   '(#%+ 1 2))
+(test-comp (expt 5 30)
+	   '(#%expt 5 (#%* 5 6)))
+(test-comp 88
+	   '(if (#%pair? #%null) 89 88))
+
+(test-comp '(let ([x 3]) x)
+	   '((lambda (x) x) 3))
+(test-comp '(let ([x 3][y 4]) (+ x y))
+	   '((lambda (x y) (+ x y)) 3 4))
 
 (report-errs)

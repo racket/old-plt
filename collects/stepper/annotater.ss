@@ -273,8 +273,12 @@
 	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f #f))]
                   [define-values-recur (lambda (expr name) (annotate/inner expr tail-bound #f #f name))]
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f #f))]
-                  [let-rhs-recur (lambda (expr binding dyn-index-sym) 
-                                   (annotate/inner expr null #f #f (list binding dyn-index-sym)))]
+                  [let-rhs-recur (lambda (expr bindings dyn-index-syms)
+                                   (let ([proc-name-info 
+                                          (if (not (null? bindings))
+                                              (list (car bindings) (car dyn-index-syms))
+                                              #f)])
+                                     (annotate/inner expr null #f #f proc-name-info)))]
                   [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f #f))]
                   ; note: no pre-break for the body of a let; it's handled by the break for the
                   ; let itself.
@@ -509,7 +513,7 @@
                      [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
                      [(lifted-gensyms) (apply append lifted-gensym-sets)]
                      [(annotated-vals free-bindings-vals)
-                      (dual-map let-rhs-recur vals (map car binding-sets) (map car lifted-gensym-sets))]
+                      (dual-map let-rhs-recur vals binding-sets lifted-gensym-sets)]
                      [(annotated-body free-bindings-body)
                       (let-body-recur (z:let-values-form-body expr) binding-list)]
                      [(free-bindings) (apply binding-set-union (remq* binding-list free-bindings-body)
@@ -576,7 +580,7 @@
                      [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
                      [(lifted-gensyms) (apply append lifted-gensym-sets)]
                      [(annotated-vals free-bindings-vals)
-                      (dual-map let-rhs-recur vals (map car binding-sets) (map car lifted-gensym-sets))]
+                      (dual-map let-rhs-recur vals binding-sets lifted-gensym-sets)]
                      [(annotated-body free-bindings-body)
                       (let-body-recur (z:letrec-values-form-body expr) 
                                       binding-list)]
@@ -630,7 +634,9 @@
                      
                      [(val) (z:define-values-form-val expr)]
                      [(annotated-val free-bindings-val)
-                      (define-values-recur val (car binding-names))])
+                      (define-values-recur val (if (not (null? binding-names))
+                                                   (car binding-names)
+                                                   #f))])
                   (cond [(z:struct-form? val)
                          (values `(#%define-values ,binding-names
                                    ,(wrap-struct-form binding-names annotated-val)) 

@@ -303,8 +303,11 @@
   
   (define stepper-sub-error-text%
     (class f:text:basic% (error-msg (line-spacing 1.0) (tabstops null))
-      (inherit get-style-list last-position set-style-list insert change-style auto-wrap)
-      (public [reset-pretty-print-width void])
+      (inherit get-style-list last-position set-style-list insert change-style auto-wrap
+               set-max-width)
+      (public [reset-pretty-print-width 
+               (lambda (inner-width canvas)
+                 (set-max-width inner-width))])
       (sequence (super-init line-spacing tabstops)
                 (set-style-list (f:scheme:get-style-list))
                 (let ([before-error-msg (last-position)])
@@ -338,6 +341,7 @@
                get-admin get-snip-location get-dc needs-update)
       (public [reset-width 
                (lambda (canvas)
+                 (begin-edit-sequence)
                  (let* ([width-box (box 0)]
                         [canvas-width (begin (send (get-admin) get-view #f #f width-box #f) (unbox width-box))]
                         [dc (send canvas get-dc)])
@@ -354,7 +358,8 @@
                        (send before-snip set-new-width l-r-box-widths canvas)
                        (send after-snip set-new-width l-r-box-widths canvas)
                        (send bottom-defs-snip set-new-width minus-cursor-margin canvas)
-                       (coordinate-snip-sizes)))))])
+                       (coordinate-snip-sizes)
+                       (end-edit-sequence)))))])
 
       (private [old-width #f]
                [top-defs-snip (make-object stepper-editor-snip%)]

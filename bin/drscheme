@@ -2,7 +2,7 @@
 # This script was created by make-mred-launcher
 
 if [ "$PLTHOME" = '' ] ; then
-  PLTHOME=/home/scheme/plt
+  PLTHOME=/usr/local/lib/plt
   export PLTHOME
 fi
 

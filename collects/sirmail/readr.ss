@@ -744,7 +744,7 @@
 	  (send e end-edit-sequence)
 	  i))
 
-            (define display-text% (html-text-mixin text%))
+      (define display-text% (html-text-mixin text:standard-style-list%))
       
       ;; Class for the panel that has columns titles and
       ;; supports clicks to change the sort order

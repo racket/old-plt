@@ -179,11 +179,11 @@
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+      ;; the actual fixed width font is already set by
+      ;; the editor:standard-style-list-mixin
       (define (make-fixed-width c e wrap? wrap-bm)
 	(let ([s (send (send e get-style-list)
 		       find-named-style "Standard")])
-	  (send s set-delta
-		(make-object style-delta% 'change-family 'modern))
 	  (send e set-tabs null 8 #f)
 	  (let ([font (send s get-font)]
 		[dc (send c get-dc)]

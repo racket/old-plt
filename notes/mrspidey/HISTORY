@@ -1,8 +1,10 @@
 Version 102:
 
+Added column numbers for checks in summary window
 Componential analysis works again
-Infinite recursions on certain kinds
-  of errors eliminated
+Infinite loops on certain kinds
+ of internal Spidey errors eliminated
+Internal calls to message-box fixed
 
 Version 101:
 

@@ -155,7 +155,7 @@ end-string
                    (syntax-rules ()
                      ((_ x ...)
                       (begin
-                        (define x (dynamic-require "make-gl-info-helper.ss" 'x))
+                        (define x (dynamic-require '(lib "make-gl-info-helper.ss" "sgl") 'x))
                         ...))))
                  (x gl-byte-size gl-ubyte-size gl-short-size gl-ushort-size
                     gl-int-size gl-uint-size gl-boolean-size gl-sizei-size

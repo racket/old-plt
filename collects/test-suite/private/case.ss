@@ -64,8 +64,6 @@
           
           ;; execute ((is-a?/c expand-program%) ((union (id-s?/c snip%) false?) . -> . void?) . -> . void?)
           ;; execute the test case
-          ;; status: set-actual should really be called from within the test as a 3D value but I couldn't
-          ;;         get it to work. will do later.
           (define/public (execute expander continue) ; =drscheme-eventspace=
             (let ([call-with-test
                    (lambda (f) ; =drscheme-eventspace=

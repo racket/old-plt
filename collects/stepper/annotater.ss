@@ -365,7 +365,94 @@
                                                                       (= (length procedure-name-info) 2))
                                                                  (z:binding-orig-name (car procedure-name-info))])])
                                                `(#%let ([,name ,annotated]) ,name))
-                                             annotated))])
+                                             annotated))]
+                  
+                  ; The let transformation is complicated.
+                  ; here's a sample transformation (not including 'break's):
+                  ;(let-values ([(a b c) e1] [(d e) e2]) e3)
+                  ;
+                  ;turns into
+                  ;
+                  ;(let-values ([(a b c d e)
+                  ;              (values *unevaluated* *unevaluated* *unevaluated* *unevaluated* *unevaluated*)])
+                  ;  (with-continuation-mark 
+                  ;   key huge-value
+                  ;   (begin
+                  ;     (set!-values (a b c) e1)
+                  ;     (set!-values (d e) e2)
+                  ;     e3)))
+                  ;
+                  ; note that this elaboration looks exactly like the one for letrec, and that's
+                  ; okay, becuase zodiac guarantees that every lexical binding has a unique name.
+                  ; that is, it's not possible that one of the RHS expressions will contain a variable
+                  ; whose name is the same as one of the LHS ones.
+                  
+                  ; another irritating point: the mark and the break that must go immediately 
+                  ; around the body.  Irritating because they will be instantly replaced by
+                  ; the mark and the break produced by the annotated body itself. However, 
+                  ; they're necessary, because the body may not contain free references to 
+                  ; all of the variables defined in the let, and thus their values are not 
+                  ; known otherwise.  
+                  ; whoops! hold the phone.  I think I can get away with a break before, and
+                  ; a mark after, so only one of each.  groovy, eh?
+                  
+                  [let-abstraction
+                   (lambda (vars-fn vals-fn body-fn output-identifier check-fn)
+                     (let*-values
+                         ([(binding-sets) (vars-fn expr)]
+                          [(binding-list) (apply append binding-sets)]
+                          [(binding-names) (map get-binding-name binding-list)]
+                          [(vals) (vals-fn expr)]
+                          [(_1) (check-fn vals binding-list)]
+                          [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
+                          [(lifted-gensyms) (apply append lifted-gensym-sets)]
+                          [(annotated-vals free-bindings-vals)
+                           (dual-map (let-rhs-recur null) vals binding-sets lifted-gensym-sets)]
+                          [(annotated-body free-bindings-body)
+                           (let-body-recur (body-fn expr) binding-list)]
+                          [(free-bindings) (remq* binding-list 
+                                                  (apply binding-set-union free-bindings-body free-bindings-vals))])
+                       (ccond [cheap-wrap?
+                               (let* ([bindings
+                                       (map (lambda (bindings val)
+                                              `(,(map get-binding-name bindings) ,val))
+                                            binding-sets
+                                            annotated-vals)]
+                                      [annotated
+                                       `(,output-identifier ,bindings ,annotated-body)])
+                                 (values (appropriate-wrap annotated free-bindings) free-bindings))]
+                              [(or ankle-wrap? foot-wrap?)
+                               (let* ([create-index-finder (lambda (binding)
+                                                             `(,binding-indexer))]
+                                      [unevaluated-list (build-list (length binding-list) 
+                                                                    (lambda (_) *unevaluated*))]
+                                      [outer-initialization
+                                       (if ankle-wrap?
+                                           `((,binding-names ,unevaluated-list))
+                                           `([,(append lifted-gensyms binding-names)
+                                              (#%values ,@(append (map create-index-finder binding-list)
+                                                                  unevaluated-list))]))]
+                                      [set!-clauses
+                                       (map (lambda (binding-set val)
+                                              `(#%set!-values ,(map get-binding-name binding-set) ,val))
+                                            binding-sets
+                                            annotated-vals)]
+                                      ; time to work from the inside out again
+                                      [middle-begin
+                                       (double-break-wrap `(#%begin ,@set!-clauses ,(late-let-break-wrap binding-list
+                                                                                                         lifted-gensyms
+                                                                                                         annotated-body)))]
+                                      [wrapped-begin
+                                       (wcm-wrap (make-debug-info expr 
+                                                                  (binding-set-union tail-bound binding-list)
+                                                                  (binding-set-union free-bindings binding-list)
+                                                                  null ; advance warning
+                                                                  'let-body
+                                                                  foot-wrap?)
+                                                 middle-begin)]
+                                      [whole-thing
+                                       `(,output-identifier ,outer-initialization ,wrapped-begin)])
+                                 (values whole-thing free-bindings))])))])
 	     
              ; find the source expression and associate it with the parsed expression
              
@@ -600,154 +687,25 @@
                                   (wcm-wrap debug-info annotated)])
                           free-bindings))]
                
-               ; The let transformation is complicated.
-               ; here's a sample transformation (not including 'break's):
-               ;(let-values ([(a b c) e1] [(d e) e2]) e3)
-               ;
-               ;turns into
-               ;
-               ;(let-values ([(a b c d e)
-               ;              (values *unevaluated* *unevaluated* *unevaluated* *unevaluated* *unevaluated*)])
-               ;  (with-continuation-mark 
-               ;   key huge-value
-               ;   (begin
-               ;     (set!-values (a b c) e1)
-               ;     (set!-values (d e) e2)
-               ;     e3)))
-               ;
-               ; note that this elaboration looks exactly like the one for letrec, and that's
-               ; okay, becuase zodiac guarantees that every lexical binding has a unique name.
-               ; that is, it's not possible that one of the RHS expressions will contain a variable
-               ; whose name is the same as one of the LHS ones.
-               
-               ; another irritating point: the mark and the break that must go immediately 
-               ; around the body.  Irritating because they will be instantly replaced by
-               ; the mark and the break produced by the annotated body itself. However, 
-               ; they're necessary, because the body may not contain free references to 
-               ; all of the variables defined in the let, and thus their values are not 
-               ; known otherwise.  
-               ; whoops! hold the phone.  I think I can get away with a break before, and
-               ; a mark after, so only one of each.  groovy, eh?
                       
                [(z:let-values-form? expr)
-                (let*-values
-                    ([(binding-sets) (z:let-values-form-vars expr)]
-                     [(binding-list) (apply append binding-sets)]
-                     [(binding-names) (map get-binding-name binding-list)]
-                     [(vals) (z:let-values-form-vals expr)]
-                     [(_1) (for-each utils:check-for-keyword binding-list)]
-                     [(_2) (for-each mark-never-undefined binding-list)]
-                     [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
-                     [(lifted-gensyms) (apply append lifted-gensym-sets)]
-                     [(annotated-vals free-bindings-vals)
-                      (dual-map (let-rhs-recur null) vals binding-sets lifted-gensym-sets)]
-                     [(annotated-body free-bindings-body)
-                      (let-body-recur (z:let-values-form-body expr) binding-list)]
-                     [(free-bindings) (remq* binding-list 
-                                             (apply binding-set-union free-bindings-body free-bindings-vals))])
-                  (ccond [cheap-wrap?
-                          (let* ([bindings
-                                  (map (lambda (bindings val)
-                                         `(,(map get-binding-name bindings) ,val))
-                                       binding-sets
-                                       annotated-vals)]
-                                 [annotated
-                                  `(#%let-values ,bindings ,annotated-body)])
-                            (values (appropriate-wrap annotated free-bindings) free-bindings))]
-                         [(or ankle-wrap? foot-wrap?)
-                          (let* ([create-index-finder (lambda (binding)
-                                                        `(,binding-indexer))]
-                                 [unevaluated-list (build-list (length binding-list) 
-                                                               (lambda (_) *unevaluated*))]
-                                 [outer-initialization
-                                  (if ankle-wrap?
-                                      `((,dummy-binding-vars ,unevaluated-list))
-                                      `([,(append lifted-gensyms dummy-binding-vars)
-                                         (#%values ,@(append (map create-index-finder binding-list)
-                                                             unevaluated-list))]))]
-                                 [set!-clauses
-                                  (map (lambda (dummy-binding-set val)
-                                         `(#%set!-values ,(map z:binding-var dummy-binding-set) ,val))
-                                       dummy-binding-sets
-                                       annotated-vals)]
-                                 [inner-transference
-                                  `([,(map get-binding-name binding-list) 
-                                     (values ,@(map z:binding-var dummy-binding-list))])]
-                                 ; time to work from the inside out again
-                                 [inner-let-values
-                                  `(#%let-values ,inner-transference ,(late-let-break-wrap binding-list
-                                                                                           lifted-gensyms
-                                                                                           annotated-body))]
-                                 [middle-begin
-                                  (double-break-wrap `(#%begin ,@set!-clauses ,inner-let-values))]
-                                 [wrapped-begin
-                                  (wcm-wrap (make-debug-info expr 
-                                                             (binding-set-union tail-bound dummy-binding-list)
-                                                             (binding-set-union free-bindings dummy-binding-list)
-                                                             binding-list ; advance warning
-                                                             'let-body
-                                                             foot-wrap?)
-                                            middle-begin)]
-                                 [whole-thing
-                                  `(#%let-values ,outer-dummy-initialization ,wrapped-begin)])
-                            (values whole-thing free-bindings))]))]
+                (let-abstraction z:let-values-form-vars
+                                 z:let-values-form-vals
+                                 z:let-values-form-body
+                                 '#%let*-values
+                                 (lambda (vals binding-list)
+                                   (for-each utils:check-for-keyword binding-list)
+                                   (for-each mark-never-undefined binding-list)))]
                
                [(z:letrec-values-form? expr)
-                (let*-values 
-                    ([(binding-sets) (z:letrec-values-form-vars expr)]
-                     [(binding-list) (apply append binding-sets)]
-                     [(binding-names) (map get-binding-name binding-list)]
-                     [(vals) (z:letrec-values-form-vals expr)]
-                     [(_1) (when (andmap z:case-lambda-form? vals)
-                             (for-each mark-never-undefined binding-list))] ; we could be more aggressive about this.
-                     [(_2) (for-each utils:check-for-keyword binding-list)]
-                     [(lifted-gensym-sets) (map (lambda (x) (map get-lifted-gensym x)) binding-sets)]
-                     [(lifted-gensyms) (apply append lifted-gensym-sets)]
-                     [(annotated-vals free-bindings-vals)
-                      (dual-map (let-rhs-recur null) vals binding-sets lifted-gensym-sets)]
-                     [(annotated-body free-bindings-body)
-                      (let-body-recur (z:letrec-values-form-body expr) binding-list)]
-                     [(free-bindings) (remq* binding-list 
-                                             (apply binding-set-union free-bindings-body free-bindings-vals))])
-                  (ccond [cheap-wrap?
-                          (let* ([bindings
-                                  (map (lambda (bindings val)
-                                         `(,(map get-binding-name bindings) ,val))
-                                       binding-sets
-                                       annotated-vals)]
-                                 [annotated `(#%letrec-values ,bindings ,annotated-body)])
-                            (values (appropriate-wrap annotated free-bindings) free-bindings))]
-                         [(or ankle-wrap? foot-wrap?)
-                          (let* ([create-index-finder (lambda (binding)
-                                                        `(,binding-indexer))]
-                                 [unevaluated-list (build-list (length binding-list) 
-                                                               (lambda (_) *unevaluated*))]
-                                 [outer-initialization
-                                  (if ankle-wrap?
-                                      `((,binding-names (#%values ,binding-names)))
-                                      `((,(append lifted-gensyms binding-names) 
-                                         (#%values ,@(append (map create-index-finder binding-list)
-                                                             binding-names)))))]
-                                 [set!-clauses
-                                  (map (lambda (binding-set val)
-                                         `(#%set!-values ,(map get-binding-name binding-set) ,val))
-                                       binding-sets
-                                       annotated-vals)]
-                                 [middle-begin
-                                  (double-break-wrap `(#%begin ,@set!-clauses ,(late-let-break-wrap binding-list
-                                                                                                    lifted-gensyms
-                                                                                                    annotated-body)))]
-                                 [wrapped-begin
-                                  (wcm-wrap (make-debug-info expr 
-                                                             (binding-set-union tail-bound binding-list)
-                                                             (binding-set-union free-bindings binding-list)
-                                                             null ; advance warning
-                                                             'let-body
-                                                             foot-wrap?)
-                                            middle-begin)]
-                                 [whole-thing
-                                  `(#%letrec-values ,outer-initialization ,wrapped-begin)])
-                            (values whole-thing free-bindings))]))]
+                (let-abstraction z:letrec-values-form-vars
+                                 z:letrec-values-form-vals
+                                 z:letrec-values-form-body
+                                 '#%letrec*-values
+                                 (lambda (vals binding-list)
+                                   (when (andmap z:case-lambda-form? vals)
+                                     (for-each mark-never-undefined binding-list))
+                                   (for-each utils:check-for-keyword binding-list)))]
                
 	       [(z:define-values-form? expr)  
 		(let*-values
@@ -841,7 +799,7 @@
                                  (wcm-wrap (make-debug-info-normal new-free-bindings)
                                            captured)]
                                 [ankle-wrap? 
-                                 (ankle-wcm-wrap captured new-free-bindings)])
+                                 captured]) ; no wcm is needed because evaluation of closures cannot cause exceptions.
                          new-free-bindings))))]
                                 
                ; the annotation for w-c-m is insufficient for

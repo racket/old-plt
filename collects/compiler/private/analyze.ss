@@ -78,7 +78,8 @@
 	    (hash-table-get t v
 			    (lambda ()
 			      ;; vm->c function also generates a symbol constant:
-			      (let ([n (vm->c:generate-modglob-name m v)])
+			      (let ([n (list* (vm->c:generate-modglob-name m v)
+					      m v)])
 				(unless gen-ok?
 				  (compiler:internal-error
 				   #f

@@ -204,6 +204,8 @@
 
       (define set-union-singleton
 	(lambda (set obj)
+	  (when (void? obj)
+	    (error 'stop))
 	  (if (memq obj (set->list set))
 	      set
 	      (list->set (cons obj (set->list set))))))

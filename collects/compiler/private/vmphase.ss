@@ -188,7 +188,7 @@
 	      (lambda (pointer code)
 		(map (lambda (field var)
 		       (if (zodiac:binding? var)
-					; Local variable
+			   ;; Local variable
 			   (let* ([var (convert
 					(zodiac:binding->lexical-varref var)
 					#f
@@ -196,7 +196,7 @@
 					#f
 					#f
 					#t)]
-					; we have to copy pointers if necessary!
+				  ;; we have to copy pointers if necessary!
 				  [var (if (vm:deref? var)
 					   (vm:deref-var var)
 					   var)])
@@ -209,11 +209,11 @@
 											  (make-vm:deref #f 
 													 pointer)))))
 					   var #f))
-					; Propogate global bucket
+			   ;; Propogate global bucket
 			   (let* ([var (if (const:per-load-statics-table? 
 					    (rep:struct-field-orig-name field))
 					   (make-vm:per-load-statics-table #f)
-					   (make-vm:bucket #f (compiler:add-global-varref! #f var #t)))])
+					   (make-vm:bucket #f var))])
 			     (make-vm:set! #f 
 					   (list (cons
 						  target-type:lexical
@@ -685,7 +685,7 @@
 					(make-vm:set! #f
 						      (map (lambda (v)
 							     (cons target-type:global
-								   (compiler:add-primitive-varref! v)))
+								   (compiler:add-global-varref! v)))
 							   vars)
 						      val (list "define-values" 1))))
 				     #f

@@ -175,7 +175,9 @@
 						 (if (const:per-load-statics-table? global)
 						     'pls
 						     #f)
-						 global
+						 (if (const:per-load-statics-table? global)
+						     global
+						     (car global))
 						 ;; field-type
 						 (if (const:per-load-statics-table? global)
 						     (make-rep:atomic 'scheme-per-load-static)

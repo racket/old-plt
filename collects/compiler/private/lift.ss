@@ -298,7 +298,7 @@
 			(add-global! const:the-per-load-statics-table)]
 		       [(varref:has-attribute? ast varref:static)
 			(void)]
-		       [else (add-global! (compiler:add-primitive-varref! ast))])
+		       [else (add-global! (compiler:add-global-varref! ast))])
 		      
 		      ast]
 		     

@@ -79,9 +79,9 @@
 	    (set-annotation! sv (varref:empty-attributes))
 	    (varref:add-attribute! sv varref:static)
 
-					; Set the procedure annoation's `liftable' field to a list
-					;  cotaining the sv, which indicates that it was just convrted;
-					;  (list sv) is changed to sv by a pass in lift.ss.
+	    ;; Set the procedure annoation's `liftable' field to a list
+	    ;;  cotaining the sv, which indicates that it was just convrted;
+	    ;;  (list sv) is changed to sv by a pass in lift.ss.
 	    (set-procedure-code-liftable! code (list sv)) 
 
 	    (if pls?

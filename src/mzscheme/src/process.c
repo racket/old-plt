@@ -1655,6 +1655,7 @@ static Scheme_Object *thread_k(void)
 Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *config, 
 				       Scheme_Manager *mgr)
 {
+  Scheme_Object *result;
 #ifndef MZ_PRECISE_GC
   long dummy;
 #endif
@@ -1675,13 +1676,18 @@ Scheme_Object *scheme_thread_w_manager(Scheme_Object *thunk, Scheme_Config *conf
 # endif
 #endif
 
-  return make_subprocess(thunk, 
+  result = make_subprocess(thunk, 
 #ifdef MZ_PRECISE_GC
-			 (void *)&__gc_var_stack__,
+			   (void *)&__gc_var_stack__,
 #else
-			 (void *)&dummy, 
+			   (void *)&dummy, 
 #endif
-			 config, mgr);
+			   config, mgr);
+
+  /* Don't get rid of `result'; it keeps the
+     Precise GC xformer from "optimizing" away
+     the __gc_var_stack__ frame. */
+  return result;
 }
 
 /**************************************************************************/

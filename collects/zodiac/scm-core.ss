@@ -146,12 +146,15 @@
 	      (expand-expr (structurize-syntax `(quote ,expr) expr)
 		env attributes vocab)
 	      (static-error expr "Empty combination is a syntax error"))
-	    (let ((bodies
-		    (map
-		      (lambda (e)
-			(expand-expr e env attributes vocab))
-		      contents)))
-	      (create-app (car bodies) (cdr bodies) expr))))))
+	    (let ((top-level? (get-top-level-status attributes)))
+	      (set-top-level-status attributes)
+	      (let ((bodies
+		      (map
+			(lambda (e)
+			  (expand-expr e env attributes vocab))
+			contents)))
+		(set-top-level-status attributes top-level?)
+		(create-app (car bodies) (cdr bodies) expr)))))))
 
     (define lexically-resolved?
       (lambda (expr env)

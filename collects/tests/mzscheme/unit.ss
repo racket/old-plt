@@ -183,7 +183,9 @@
    (import struct:a a?)
    (export x? make-x x-z both)
    
-   (define-struct (x struct:a) (y z))
+   (define-syntax a (list #'struct:a #f #'a? (list #f) (list #f)))
+
+   (define-struct (x a) (y z))
    (define both (lambda (v)
 		  (and (a? v) (x? v))))))
 
@@ -440,7 +442,7 @@
 	     (define-struct d (w)))
 	   (define x '...)
 
-	   (define-struct (e struct:d) ())
+	   (define-struct (e d) ())
 	   (set! x (cons c c))
 
 	   (define i (interface ()))

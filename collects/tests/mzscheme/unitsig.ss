@@ -250,7 +250,7 @@
 ; More:
 
 (define-signature m2-1-lite^
-  (x struct:a v y))
+  (xx struct:a v y))
 
 (define-signature m2-1^
   (a?
@@ -264,7 +264,7 @@
    m2-1^
    (import)
 
-   (define x 5)
+   (define xx 5)
    (define-struct a (b c) (make-inspector))
    (define v (make-a 5 6))
    (define (y v) (a? v))))
@@ -274,7 +274,9 @@
    m2-2^
    (import m2-1^)
 
-   (define-struct (x struct:a) (y z))
+   (define-syntax a (list #'struct:a #f #f (list #f) (list #f)))
+
+   (define-struct (x a) (y z))
    (define both (lambda (v)
 		  (and (a? v) (x? v))))))
 
@@ -309,15 +311,15 @@
 		       (import (i : m2-3^))
 		       (display (map
 				 filter
-				 (list i:one@:x i:one@:v i:one@:struct:a i:one@:y 
+				 (list i:one@:xx i:one@:v i:one@:struct:a i:one@:y 
 				       i:two@:make-x i:two@:x? i:two@:x-z i:two@:both
 				       i:a?-again))
 				p)
 		       (let ([v2 (i:two@:make-x 1 2 3 4)])
 			 (display (map
 				   filter
-				   (list i:one@:x (struct-type? i:one@:struct:a)
-					 i:one@:v (i:one@:y i:one@:v) (i:one@:y i:one@:x)
+				   (list i:one@:xx (struct-type? i:one@:struct:a)
+					 i:one@:v (i:one@:y i:one@:v) (i:one@:y i:one@:xx)
 					 v2
 					 (i:one@:y v2)
 					 (i:two@:x? v2)

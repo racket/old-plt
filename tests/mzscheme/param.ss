@@ -262,7 +262,7 @@
 		      (list "bad setting" one-arg-proc two-arg-proc))
 
 		(list current-load
-		      (list (current-load) (lambda (f) (error "This won't do it")))
+		      (list (current-load) (lambda (f e) (error "This won't do it")))
 		      '(load "tmp5")
 		      exn:user?
 		      (list "bad setting" zero-arg-proc two-arg-proc))

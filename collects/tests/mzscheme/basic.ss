@@ -211,7 +211,7 @@
 (test 1 append! 1)
 (err/rt-test (append! '(1 2 . 3) 1))
 (err/rt-test (append! '(1 2 3) 1 '(4 5 6)))
-(err/rt-test (append! (pair->immutable-pair '(1)) '(4 5 6)))
+(err/rt-test (append! (cons-immutable 1 null) '(4 5 6)))
 
 (define l '(1 2))
 (define l2 '(3 4 . 7))

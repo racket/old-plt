@@ -220,3 +220,6 @@ cygwin-install:
 	cp mzstart.exe $(srcdir)/../../collects/launcher/mzstart.exe
 	cp libgc.a $(srcdir)/../../collects/mzscheme/lib/win32/i386/libgc.a
 	cp libmzscheme.a $(srcdir)/../../collects/mzscheme/lib/win32/i386/libmzscheme.a
+
+config:
+	autoconf $(srcdir)/configure.in | mzscheme -r $(srcdir)/clean_ac.ss > $(srcdir)/../configure

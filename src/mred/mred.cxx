@@ -1584,6 +1584,7 @@ static void MrEdSchemeMessages(char *, ...);
 
 static int have_stdio = 0;
 static int stdio_kills_prog = 0;
+static Bool RecordInput(void *media, wxEvent *event, void *data);
 
 class IOFrame : public wxFrame
 {
@@ -1592,6 +1593,7 @@ public:
   wxMediaEdit *media;
   wxMenu *fileMenu;
   Bool hidden, beginEditSeq;
+  int endpos;
 
   IOFrame() : wxFrame(NULL, "Standard Output", -1, -1, 600, 400, 0, "stdout")
     {
@@ -1599,7 +1601,7 @@ public:
       
       media = new wxMediaEdit();
       display->SetMedia(media);
-      media->Lock(1);
+      endpos = 0;
       hidden = FALSE;
 
       /* Map copy keys: */
@@ -1613,6 +1615,8 @@ public:
       km->MapFunction("d:c", "copy-clipboard");
       km->MapFunction("d:x", "copy-clipboard");
 # endif
+      km->MapFunction("return", "record-input");
+      km->AddFunction("record-input", RecordInput, NULL);
 
       /* Fixed-width font: */
       wxStyle *style = media->GetStyleList()->FindNamedStyle("Standard");
@@ -1629,13 +1633,13 @@ public:
 #endif
 
       wxMenuBar *mb = new wxMenuBar();
+      SetMenuBar(mb);
       fileMenu = new wxMenu();
       fileMenu->Append(77, CLOSE_MENU_ITEM);
       wxMenu *m = new wxMenu();
       m->Append(79, "&Copy\tCmd+C");
       mb->Append(fileMenu, "File");
       mb->Append(m, "Edit");
-      SetMenuBar(mb);
       
       have_stdio = 1;
       Show(TRUE);
@@ -1673,18 +1677,26 @@ public:
     
   Bool PreOnChar(wxWindow *, wxKeyEvent *e)
     {
+       PreOnEvent(NULL, NULL);
+
 #ifdef wx_mac
-       if (e->metaDown && e->KeyCode() == 'q') {
-          OnMenuCommand(77);
-	  return TRUE;
-       }
-else
-       if (e->controlDown && e->KeyCode() == 'x') {
+       if (e->metaDown && e->KeyCode() == (stdio_kills_prog ? 'q' : 'w')) {
           OnMenuCommand(77);
 	  return TRUE;
        }
 #endif
+
        return FALSE;
+    }
+
+  Bool PreOnEvent(wxWindow *, wxMouseEvent *e)
+    {
+      if (beginEditSeq) {
+	 beginEditSeq = 0;
+	 media->EndEditSequence();
+       }
+
+      return FALSE;
     }
     
   void CloseIsQuit(void)
@@ -1696,10 +1708,32 @@ else
 #endif
       fileMenu->Delete(77);
       fileMenu->Append(77, QUIT_MENU_ITEM);
+
+      media->Insert("\n[Exited]");
+      media->Lock(1);
     }
 };
 
 static IOFrame *ioFrame = NULL;
+
+static Scheme_Object *stdin_pipe;
+
+static Bool RecordInput(void *m, wxEvent *event, void *data)
+{
+  char *s;
+  long len, start;
+  wxMediaEdit *media = ioFrame->media;
+
+  media->Insert("\n");
+  start = media->GetStartPosition();
+  len = start - ioFrame->endpos;
+  s = media->GetText(ioFrame->endpos, start);
+  ioFrame->endpos = start;
+  
+  scheme_write_string(s, len, stdin_pipe);
+
+  return TRUE;
+}
 
 #else  /* !WINDOW_STDIO */
 
@@ -1725,7 +1759,7 @@ static void MrEdSchemeMessages(char *msg, ...)
   va_list args;
 
 #if WINDOW_STDIO
-  static opening = 0;
+  static int opening = 0;
   if (opening)
 	return;
   opening = 1;
@@ -1773,9 +1807,8 @@ static void MrEdSchemeMessages(char *msg, ...)
       ioFrame->media->BeginEditSequence();
       ioFrame->beginEditSeq = 1;
     }
-    ioFrame->media->Lock(0);
-    ioFrame->media->Insert(l, s, ioFrame->media->LastPosition());
-    ioFrame->media->Lock(1);
+    ioFrame->media->Insert(l, s, ioFrame->endpos);
+    ioFrame->endpos += l;
 
     if (l != 1 || s[0] == '\n') {
       ioFrame->media->EndEditSequence();
@@ -1785,9 +1818,8 @@ static void MrEdSchemeMessages(char *msg, ...)
 # define VSP_BUFFER_SIZE 4096
     char buffer[VSP_BUFFER_SIZE];
     MSC_IZE(vsnprintf)(buffer, VSP_BUFFER_SIZE, msg, args);
-    ioFrame->media->Lock(0);
-    ioFrame->media->Insert((char *)buffer, ioFrame->media->LastPosition());
-    ioFrame->media->Lock(1);
+    ioFrame->media->Insert((char *)buffer, ioFrame->endpos);
+    ioFrame->endpos += strlen(buffer);
     if (ioFrame->beginEditSeq) {
       ioFrame->media->EndEditSequence();
       ioFrame->beginEditSeq = 0;
@@ -1825,32 +1857,13 @@ static void MrEdSchemeMessagesOutput(char *s, long l)
 
 #if REDIRECT_STDIO || WINDOW_STDIO || WCONSOLE_STDIO
 
-static int stdin_getc(Scheme_Input_Port*)
-{
-#if WINDOW_STDIO
-  static int printed_input_warning = 0;
-  if (!printed_input_warning) {
-    printed_input_warning = 1;
-    MrEdSchemeMessages("WARNING: no standard input on this platform\n");
-  }
-#endif
-  return EOF;
-}
-
-static int stdin_char_ready(Scheme_Input_Port*)
-{
-  return TRUE;
-}
-
 static Scheme_Object *MrEdMakeStdIn(void)
 {
-  Scheme_Object *intype = scheme_make_port_type("stdin");
+  Scheme_Object *readp;
 
-  return (Scheme_Object *)scheme_make_input_port(intype, NULL,
-						 stdin_getc,
-						 NULL,
-						 stdin_char_ready,
-						 NULL, NULL, 0);
+  scheme_pipe(&readp, &stdin_pipe);
+
+  return readp;
 }
 
 static void stdout_write(char *s, long l, Scheme_Output_Port*)
@@ -2508,6 +2521,8 @@ wxFrame *MrEdApp::OnInit(void)
   setup_basic_env();
   TheMrEdApp->initialized = 1;
   stdio_kills_prog = 1;
+  if (ioFrame)
+    ioFrame->CloseIsQuit();
   wxTheApp->MainLoop();
 #endif
 

@@ -6,7 +6,7 @@
 
 AC_INIT(mzscheme/src/bignum.c)
 
-AC_ARG_ENABLE(mred, ""  feature: mred           compile MrEd as well as MzScheme (default=yes), , enable_mred=yes )
+AC_ARG_ENABLE(mred, ""  feature: mred           compile MrEd as well as MzScheme (enabled by default), , enable_mred=yes )
 
 AC_ARG_ENABLE(sgc, ""  feature: sgc            use Senora GC instead of the Boehm GC)
 AC_ARG_ENABLE(sgc-debug, ""  feature: sgc-debug      use Senora GC for debugging)
@@ -16,6 +16,8 @@ AC_ARG_ENABLE(oskit, ""  feature: oskit          compile OSKit-based MzScheme ke
 AC_ARG_ENABLE(smalloskit, ""  feature: smalloskit     compile small OSKit-based MzScheme kernel)
 
 AC_ARG_ENABLE(wbuild, ""  feature: wbuild         compile and use wbuild for .w sources)
+
+AC_ARG_ENABLE(gcov, ""  feature: gcov           compile to gather gcov statistics (gcc only))
 
 ###### Some flags imply other flags #######
 
@@ -120,6 +122,10 @@ fi
 
 AC_CHECK_LIB(m, cos)
 AC_CHECK_LIB(dl, dlopen)
+
+if test "${enable_gcov}" = "yes" ; then
+  CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+fi
 
 if test "${enable_wbuild}" = "yes" ; then
   MAKE_WBUILD=wb
@@ -297,12 +303,6 @@ mk_needed_dir()
   fi
 }
 
-mk_needed_dir wxxt
-mk_needed_dir wxxt/utils
-mk_needed_dir wxxt/utils/image
-mk_needed_dir wxxt/contrib
-mk_needed_dir wxxt/contrib/xpm
-
 makefiles="Makefile
            mzscheme/Makefile
              mzscheme/src/Makefile mzscheme/dynsrc/Makefile
@@ -310,6 +310,12 @@ makefiles="Makefile
              mzscheme/gc2/Makefile mzscheme/guile/Makefile"
 
 if test "${enable_mred}" = "yes" ; then
+  mk_needed_dir wxxt
+  mk_needed_dir wxxt/utils
+  mk_needed_dir wxxt/utils/image
+  mk_needed_dir wxxt/contrib
+  mk_needed_dir wxxt/contrib/xpm
+
   makefiles="$makefiles
              mred/GNUmakefile mred/Make.env
                mred/wxs/GNUmakefile mred/wxme/GNUmakefile

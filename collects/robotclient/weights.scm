@@ -2,6 +2,7 @@
 
   (require (lib "list.ss"))
   (require "board.ss"
+	   "client-parameters.ss"
            "heuristics.ss")
   (provide calc-weight
            update-robots

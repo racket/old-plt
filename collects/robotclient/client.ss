@@ -10,7 +10,7 @@
       (parameterize ((current-custodian client-custodian))
         (with-handlers ((exn? (lambda (ex)
                                 (custodian-shutdown-all client-custodian)
-                                ;(printf "~a~n" (exn-message ex))
+                                (printf "~a~n" (exn-message ex))
                                 ;(display (score))(newline)
                                 ;(raise ex)
                                 (score))))

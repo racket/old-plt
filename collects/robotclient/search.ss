@@ -1,6 +1,7 @@
 (module search mzscheme
   
   (require "board.ss"
+	   "client-parameters.ss"
            "heuristics.ss"
            "weights.scm")
   

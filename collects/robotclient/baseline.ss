@@ -1,5 +1,6 @@
 (module baseline mzscheme
   (require "board.ss"
+	   "client-parameters.ss"
            (lib "list.ss"))
   (provide compute-baseline-move)
   
@@ -10,7 +11,7 @@
                (cond
                  ((and (= (get-player-x) (package-x p))
                        (= (get-player-y) (package-y p)))
-                  (package-id p))
+                  p)
                  (else #f)))
              (packages-held))))
                

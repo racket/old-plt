@@ -21,6 +21,6 @@
     (board #f)
     (player-id 0)
     (player-money 0)
-    (player-initial-capacity 0)
+    (player-initial-money 0)
     (packages-held null)
     ))

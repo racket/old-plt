@@ -347,8 +347,13 @@ Bool wxFrame::Show(Bool show)
     if (hiddenmax) {
       hiddenmax = 0;
       cshow = SW_SHOWMAXIMIZED;
-    } else
-      cshow = SW_RESTORE; /* Show */
+    } else {
+      if ((windowStyle & wxFLOAT_FRAME)
+	  && (windowStyle & wxNO_CAPTION))
+	cshow = SW_SHOWNOACTIVATE; /* don't activate */
+      else
+	cshow = SW_RESTORE; /* Show */
+    }
   } else {
     if (!skipShow) {
       int hm;
@@ -841,8 +846,12 @@ wxFrameWnd::wxFrameWnd(wxWnd *parent, char *WXUNUSED(wclass), wxWindow *wx_win, 
 
   if (style & wxSTAY_ON_TOP)
     extendedStyle |= WS_EX_TOPMOST;
-  if (style & wxFLOAT_FRAME)
-    extendedStyle |= WS_EX_PALETTEWINDOW;
+  if (style & wxFLOAT_FRAME) {
+    if (style & wxNO_CAPTION)
+      extendedStyle |= WS_EX_TOPMOST;
+    else
+      extendedStyle |= WS_EX_PALETTEWINDOW;
+  }
 
   icon = NULL;
   iconized = FALSE;

@@ -216,7 +216,9 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
       // create top level shell
       X->frame = XtVaCreatePopupShell
 	(name ? name : "shell", 
-	 (style & wxFLOAT_FRAME) ? overrideShellWidgetClass : topLevelShellWidgetClass, 
+	 (((style & wxFLOAT_FRAME)  && (style & wxNO_CAPTION))
+	  ? overrideShellWidgetClass 
+	  : topLevelShellWidgetClass), 
 	 parent_widget, 
 	 XtNvisual, wxAPP_VISUAL,
 	 XtNdepth, wx_visual_depth,

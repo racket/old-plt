@@ -716,7 +716,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   mz_jmp_buf save, oversave;
   Scheme_Stack_State envss;
   Scheme_Comp_Env *save_current_local_env;
-  Scheme_Object *save_mark;
+  Scheme_Object *save_mark, *save_name;
   Scheme_Process * volatile p = scheme_current_process;
   int set_overflow;
 #ifdef MZ_PRECISE_GC
@@ -759,6 +759,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 
   save_current_local_env = p->current_local_env;
   save_mark = p->current_local_mark;
+  save_name = p->current_local_name;
 
   /* We set up an overflow handler at the lowest point possible
      in the stack for each thread. When we create a thread,
@@ -867,6 +868,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 
   p->current_local_env = save_current_local_env;
   p->current_local_mark = save_mark;
+  p->current_local_name = save_name;
 
   memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 
@@ -1073,9 +1075,9 @@ _scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 Scheme_Object *
 scheme_apply_macro(Scheme_Object *name, 
 		   Scheme_Object *rator, Scheme_Object *code,
-		   Scheme_Comp_Env *env)
+		   Scheme_Comp_Env *env, Scheme_Object *boundname)
 {
-  Scheme_Object *mark, *save_mark;
+  Scheme_Object *mark, *save_mark, *save_name;
   Scheme_Comp_Env *save_env;
   Scheme_Process *p = scheme_current_process;
 
@@ -1084,15 +1086,18 @@ scheme_apply_macro(Scheme_Object *name,
 
   save_env = p->current_local_env;
   save_mark = p->current_local_mark;
+  save_name = p->current_local_name;
 
   p->current_local_env = env;
   p->current_local_mark = mark;
+  p->current_local_name = boundname;
 
   code = X_scheme_apply_to_list(rator, scheme_make_pair(code, scheme_null), 
 				1, 1, code);
 
   p->current_local_env = save_env;
   p->current_local_mark = save_mark;
+  p->current_local_name = save_name;
 
   if (!SCHEME_STXP(code)) {
     scheme_raise_exn(MZEXN_MISC,
@@ -1256,28 +1261,11 @@ static Scheme_Object *inferred_name(int argc, Scheme_Object **argv)
 {
   const char *s;
   int len;
-  Scheme_Type type;
 
   if (SCHEME_PROCP(argv[0])) {
     s = scheme_get_proc_name(argv[0], &len, 0);
   } else {
-    type = SCHEME_TYPE(argv[0]);
-    
-    switch(type) {
-#ifndef NO_OBJECT_SYSTEM
-    case scheme_class_type:
-      s = scheme_get_class_name(argv[0], &len);
-      break;
-    case scheme_interface_type:
-      s = scheme_get_interface_name(argv[0], &len);
-      break;
-#endif
-    case scheme_unit_type:
-      s = scheme_get_unit_name(argv[0], &len);
-      break;
-    default:
-      return scheme_false;
-    }
+    s = NULL;
   }
 
   if (!s)

@@ -31,8 +31,6 @@ OBJS =  salloc.o \
 	number.o \
 	numcomp.o \
 	numstr.o \
-        objclass.o \
-        object.o \
 	port.o \
 	portfun.o \
 	print.o \
@@ -49,8 +47,6 @@ OBJS =  salloc.o \
 	symbol.o \
 	syntax.o \
 	type.o \
-        unit.o \
-        unitsig.o \
 	vector.o
 
 SRCS =  $(srcdir)/salloc.c \
@@ -73,8 +69,6 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/number.c \
 	$(srcdir)/numcomp.c \
 	$(srcdir)/numstr.c \
-	$(srcdir)/objclass.c \
-	$(srcdir)/object.c \
 	$(srcdir)/port.c \
 	$(srcdir)/portfun.c \
 	$(srcdir)/print.c \
@@ -91,8 +85,6 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/symbol.c \
 	$(srcdir)/syntax.c \
 	$(srcdir)/type.c \
-        $(srcdir)/unit.c \
-	$(srcdir)/unitsig.c \
 	$(srcdir)/vector.c
 
 wrong:
@@ -181,10 +173,6 @@ numcomp.o: $(srcdir)/numcomp.c
 	$(CC) $(CFLAGS) -c $(srcdir)/numcomp.c -o numcomp.o
 numstr.o: $(srcdir)/numstr.c
 	$(CC) $(CFLAGS) -c $(srcdir)/numstr.c -o numstr.o
-objclass.o: $(srcdir)/objclass.c
-	$(CC) $(CFLAGS) -c $(srcdir)/objclass.c -o objclass.o
-object.o: $(srcdir)/object.c
-	$(CC) $(CFLAGS) -c $(srcdir)/object.c -o object.o
 port.o: $(srcdir)/port.c
 	$(CC) $(CFLAGS) -c $(srcdir)/port.c -o port.o
 portfun.o: $(srcdir)/portfun.c
@@ -217,10 +205,6 @@ syntax.o: $(srcdir)/syntax.c
 	$(CC) $(CFLAGS) -c $(srcdir)/syntax.c -o syntax.o
 type.o: $(srcdir)/type.c
 	$(CC) $(CFLAGS) -c $(srcdir)/type.c -o type.o
-unit.o: $(srcdir)/unit.c
-	$(CC) $(CFLAGS) -c $(srcdir)/unit.c -o unit.o
-unitsig.o: $(srcdir)/unitsig.c
-	$(CC) $(CFLAGS) -c $(srcdir)/unitsig.c -o unitsig.o
 vector.o: $(srcdir)/vector.c
 	$(CC) $(CFLAGS) -c $(srcdir)/vector.c -o vector.o
 
@@ -270,15 +254,6 @@ numcomp.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../includ
          $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h
 numstr.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h  $(srcdir)/random.inc
-objclass.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h \
-          $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG)
-object.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h \
-          $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) \
-          $(srcdir)/schrunst.h $(srcdir)/mzmark.c
-unit.o: $(srcdir)/../include/scheme.h  $(srcdir)/../src/stypes.h  \
-         $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/schrunst.h $(srcdir)/mzmark.c
-unitsig.o: $(srcdir)/../include/scheme.h $(SCONFIG) $(srcdir)/../src/stypes.h  \
-         $(srcdir)/schpriv.h $(srcdir)/schminc.h $(srcdir)/unitsig.inc $(srcdir)/cunitsig.inc
 port.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
         $(srcdir)/../src/stypes.h  $(srcdir)/schfd.h $(srcdir)/mzmark.c
 portfun.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \

@@ -881,8 +881,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   /* Built-in functions, exception types, eof, object%, ... */
   if (compact && (SCHEME_PROCP(obj) 
 		  || SCHEME_STRUCT_TYPEP(obj) 
-		  || SCHEME_EOFP(obj)
-		  || SCHEME_CLASSP(obj))) {
+		  || SCHEME_EOFP(obj))) {
     /* Check whether this is a global constant */
     Scheme_Object *val;
     val = scheme_lookup_in_table(global_constants_ht, (const char *)obj);
@@ -1122,60 +1121,6 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	s = scheme_get_proc_name(obj, &len, 0);
 	
 	print_named(obj, "procedure", s, len, p);
-      }
-      closed = 1;
-    }
-#ifndef NO_OBJECT_SYSTEM
-  else if (SCHEME_OBJP(obj))
-    {
-      if (compact)
-	print_escaped(p, notdisplay, obj, ht);
-      else {
-	int len;
-	const char *cl;
-	cl = scheme_get_class_name(((Scheme_Class_Object *)obj)->sclass, &len);
-	
-	print_named(obj, "object", cl, len, p);
-      }
-      closed = 1;
-    }
-  else if (SCHEME_CLASSP(obj))
-    {
-      if (compact)
-	print_escaped(p, notdisplay, obj, ht);
-      else {
-	int len;
-	const char *cl;
-	cl = scheme_get_class_name(obj, &len);
-	
-	print_named(obj, "class", cl, len, p);
-      }
-      closed = 1;
-    }
-  else if (SCHEME_INTERFACEP(obj))
-    {
-      if (compact)
-	print_escaped(p, notdisplay, obj, ht);
-      else {
-	int len;
-	const char *cl;
-	cl = scheme_get_interface_name(obj, &len);
-	
-	print_named(obj, "interface", cl, len, p);
-      }
-      closed = 1;
-    }
-#endif
-  else if (SCHEME_UNITP(obj))
-    {
-      if (compact)
-	print_escaped(p, notdisplay, obj, ht);
-      else {
-	int len;
-	const char *cl;
-	cl = scheme_get_unit_name(obj, &len);
-	
-	print_named(obj, "unit", cl, len, p);
       }
       closed = 1;
     }

@@ -606,6 +606,7 @@ typedef struct Scheme_Process {
 
   struct Scheme_Comp_Env *current_local_env;
   Scheme_Object *current_local_mark;
+  Scheme_Object *current_local_name;
 
   /* These are used to lock in values during `read': */
   char quick_can_read_compiled;
@@ -832,59 +833,6 @@ typedef struct Scheme_Output_Port
 #define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
 #define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
 #define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
-
-/*========================================================================*/
-/*                         classes and units                              */
-/*========================================================================*/
-
-typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  struct Scheme_Object *sclass;
-  /* The following fields are only here for instances of classes
-     created with scheme_make_class(): */
-  void *primdata;
-  short primflag;
-  short inited;
-} Scheme_Class_Object;
-
-#define SCHEME_OBJP(obj)     SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-#define SCHEME_CLASSP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_class_type)
-#define SCHEME_INTERFACEP(obj)   SAME_TYPE(SCHEME_TYPE(obj), scheme_interface_type)
-#define SCHEME_DIVARP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_delayed_ivar_type)
-#define SCHEME_GENDATAP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_generic_data_type)
-#define SCHEME_UNITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_unit_type)
-
-#define SCHEME_OBJ_CLASS(obj) ((Scheme_Object *)((Scheme_Class_Object *)(obj))->sclass)
-#define SCHEME_OBJ_DATA(obj)  (((Scheme_Class_Object *)(obj))->primdata)
-#define SCHEME_OBJ_FLAG(obj)  (((Scheme_Class_Object *)(obj))->primflag)
-
-/*========================================================================*/
-/*                             units                                      */
-/*========================================================================*/
-
-typedef struct Scheme_Unit {
-  Scheme_Type type;        /* scheme_unit_type */
-  MZ_HASH_KEY_EX
-  short num_imports;       /* num expected import args */
-  short num_exports;       /* num exported vars */
-  Scheme_Object **exports; /* names of exported */
-  Scheme_Object **export_debug_names; /* internal names; NULL => no debugging */
-  Scheme_Object *(*init_func)(Scheme_Object **boxes, Scheme_Object **anchors,
-			      struct Scheme_Unit *m,
-			      void *debug_request);
-  Scheme_Object *data;
-} Scheme_Unit;
-
-typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
-				       Scheme_Object **extract_boxes,
-				       Scheme_Object *super_init,
-				       int argc,
-				       Scheme_Object **argv,
-				       Scheme_Object *instance,
-				       void *data);
-
-#define SCHEME_UNITP(obj) SAME_TYPE(SCHEME_TYPE(obj), scheme_unit_type)
 
 /*========================================================================*/
 /*                              exceptions                                */

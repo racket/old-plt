@@ -48,7 +48,7 @@ Scheme_Object *scheme_arity_at_least, *scheme_date;
 
 /* locals */
 static Scheme_Object *struct_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
+static Scheme_Object *struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
@@ -804,7 +804,8 @@ struct_link(Scheme_Object *expr, Link_Info *info)
 
 static Scheme_Object *
 do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env, 
-		  Scheme_Compile_Info *in_rec, int drec, int depth)
+		  Scheme_Compile_Info *in_rec, int drec, 
+		  int depth, Scheme_Object *boundname)
 {
   Struct_Info *info;
   Scheme_Object *base_symbol, *field_symbols, *l, *form, *parent_expr;
@@ -832,7 +833,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     if (in_rec)
       parent_expr = scheme_compile_expr(SCHEME_STX_CAR(parent_expr), env, in_rec, drec);
     else
-      parent_expr = scheme_expand_expr(SCHEME_STX_CAR(parent_expr), env, depth);
+      parent_expr = scheme_expand_expr(SCHEME_STX_CAR(parent_expr), env, depth, scheme_false);
   } else {
     parent_expr = NULL;
 
@@ -887,13 +888,13 @@ static Scheme_Object *
 struct_syntax (Scheme_Object *form, Scheme_Comp_Env *env, 
 		   Scheme_Compile_Info *rec, int drec)
 {
-  return do_struct_syntax(form, env, rec, drec, 0);
+  return do_struct_syntax(form, env, rec, drec, 0, scheme_false);
 }
 
 static Scheme_Object *
-struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
+struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  return do_struct_syntax(form, env, NULL, 0, depth);
+  return do_struct_syntax(form, env, NULL, 0, depth, boundname);
 }
 
 static Scheme_Object *

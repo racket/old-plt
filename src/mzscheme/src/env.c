@@ -64,6 +64,7 @@ static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
 static Scheme_Object *global_defined_value(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_bound_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *local_exp_time_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *id_macro(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *current_loaded_library_table(int argc, Scheme_Object *argv[]);
@@ -366,9 +367,6 @@ static void make_init_env(void)
   MZTIMEIT(error, scheme_init_error(env));
   MZTIMEIT(promise, scheme_init_promise(env));
   MZTIMEIT(struct, scheme_init_struct(env));
-#ifndef NO_UNIT_SYSTEM
-  MZTIMEIT(unit, scheme_init_unit(env));
-#endif
 #ifndef NO_SCHEME_EXNS
   MZTIMEIT(exn, scheme_init_exn(env));
 #endif
@@ -428,6 +426,11 @@ static void make_init_env(void)
 						      "expansion-time-bound?",
 						      1, 1),
 			     env);  
+  scheme_add_global_constant("expansion-time-name", 
+			     scheme_make_prim_w_arity(local_exp_time_name,
+						      "expansion-time-name",
+						      0, 0),
+			     env);
 
   scheme_add_global_constant("set!-expander", 
 			     scheme_make_prim_w_arity(id_macro,
@@ -436,11 +439,6 @@ static void make_init_env(void)
 			     env);
 
   DONE_TIME(env);
-
-#ifndef NO_OBJECT_SYSTEM
-  MZTIMEIT(objclass, scheme_init_objclass(env));
-  MZTIMEIT(object, scheme_init_object(env));
-#endif
 
   scheme_install_type_writer(scheme_variable_type, write_variable);
   scheme_install_type_reader(scheme_variable_type, read_variable);
@@ -1394,6 +1392,56 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count)
   return v;
 }
 
+void scheme_begin_dup_symbol_check(DupCheckRecord *r)
+{
+  r->count = 0;
+}
+
+void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
+			     Scheme_Object *symbol, char *what, 
+			     Scheme_Object *form)
+{
+  int i;
+  Scheme_Object *l, *p;
+  char *key;
+
+  if (r->count <= 5) {
+    for (i = 0; i < r->count; i++)
+      if (scheme_stx_bound_eq(symbol, r->syms[i]))
+	scheme_wrong_syntax(where, symbol, form,
+			    "duplicate %s name", what);
+
+    if (r->count < 5) {
+      r->syms[r->count++] = symbol;
+      return;
+    } else {
+      r->ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
+      for (i = 0; i < r->count; i++) {
+	key = (char *)SCHEME_STX_VAL(r->syms[i]);
+	l = (Scheme_Object *)scheme_lookup_in_table(r->ht, key);
+	if (!l)
+	  l = scheme_null;
+	l = scheme_make_pair(r->syms[i], l);
+	scheme_add_to_table(r->ht, key, (void *)l, 0);
+      }
+    }
+  }
+
+  key = (char *)SCHEME_STX_VAL(symbol);
+  l = (Scheme_Object *)scheme_lookup_in_table(r->ht, key);
+  if (!l)
+    l = scheme_null;
+
+  for (p = l; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
+    if (scheme_stx_bound_eq(symbol, SCHEME_CAR(p)))
+      scheme_wrong_syntax(where, symbol, form,
+			  "duplicate %s name", what);
+  }
+
+  l = scheme_make_pair(symbol, l);
+  scheme_add_to_table(r->ht, key, (void *)l, 0);
+}
+
 Link_Info *scheme_link_info_create()
 {
   Link_Info *naya;
@@ -1644,7 +1692,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   env = scheme_current_process->current_local_env;
   if (!env)
     scheme_raise_exn(MZEXN_MISC, 
-		     "expansion-time-value: illegal at run-time");
+		     "expansion-time-value: not currently expansion time");
 
   sym = argv[0];
 
@@ -1681,7 +1729,7 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
   env = scheme_current_process->current_local_env;
   if (!env)
     scheme_raise_exn(MZEXN_MISC,
-		     "local-expansion-time-bound?: illegal at run-time");
+		     "local-expansion-time-bound?: not currently expansion time");
 
   sym = argv[0];
 
@@ -1704,6 +1752,19 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
     return scheme_false;
   else
     return scheme_true;
+}
+
+static Scheme_Object *
+local_exp_time_name(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *sym;
+
+  sym = scheme_current_process->current_local_name;
+  if (!sym)
+    scheme_raise_exn(MZEXN_MISC, 
+		     "expansion-time-name: not currently expansion time");
+
+  return sym;
 }
 
 static Scheme_Object *

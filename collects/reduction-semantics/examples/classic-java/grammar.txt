@@ -1,8 +1,13 @@
-This implementation of ClassicJava is not case-sensitive.
+This implementation of ClassicJava *is* case-sensitive.
+
+terminals: class null true false this new ref set send cast let if
+           + - * == and or zero? null? not int bool
+           
+Symbols and integer literals are also terminal symbols in this language.
 
 program     ::= defn* e
 
-defn        ::= (CLASS cname1 cname2 (field*) method*)
+defn        ::= (class cname1 cname2 (field*) method*)
                     ;; class cname1 extends cname2 { field* method* }
 
 field       ::= (type fname)
@@ -11,27 +16,27 @@ method      ::= (type mdname (arg*) expr)
 
 arg         ::= (type argname)
 
-expr        ::= NULL
+expr        ::= null
               | integer literal
-              | TRUE
-              | FALSE
+              | true
+              | false
               | argname                       ;; local binding reference
-              | THIS
-              | (NEW cname)                   ;; new cname()
-              | (REF expr fname)              ;; expr.fname
-              | (SET expr1 fname expr2)       ;; expr1.fname = expr2
-              | (SEND expr1 mdname expr*)     ;; expr1.mdname(expr*)
-              | (CAST cname expr)             ;; (cname) expr
-              | (LET argname expr expr)       ;; local variable declaration
+              | this
+              | (new cname)                   ;; new cname()
+              | (ref expr fname)              ;; expr.fname
+              | (set expr1 fname expr2)       ;; expr1.fname = expr2
+              | (send expr1 mdname expr*)     ;; expr1.mdname(expr*)
+              | (cast cname expr)             ;; (cname) expr
+              | (let argname expr expr)       ;; local variable declaration
               | (bprim expr expr)             ;; binary primitive operators
               | (uprim expr)                  ;; unary primitive operators
-              | (IF expr1 expr2 expr3)        ;; conditional operator:
+              | (if expr1 expr2 expr3)        ;; conditional operator:
                                               ;;    expr1 ? expr2 : expr3
 
-bprim       ::= + | - | * | == | AND | OR
-uprim       ::= ZERO? | NULL? | NOT
+bprim       ::= + | - | * | == | and | or
+uprim       ::= zero? | null? | not
 
-type        ::= INT | BOOL | cname
+type        ::= int | bool | cname
 cname       ::= id                            ;; class name
 fname       ::= id                            ;; field name
 mdname      ::= id                            ;; method name

@@ -1725,7 +1725,7 @@ public:
 #ifdef wx_msw
 	mred_clean_up_gdi_objects();
 #endif	
-	exit(exit_val);
+	scheme_immediate_exit(exit_val);
       } else {
 	break_console_reading_threads();
 	have_stdio = 0;
@@ -2662,7 +2662,7 @@ static void MrEdExit(int v)
 #ifdef wx_msw
   mred_clean_up_gdi_objects();
 #endif	
-  exit(v);
+  scheme_immediate_exit(v);
 }
 #endif
 
@@ -2676,7 +2676,7 @@ static void on_main_killed(Scheme_Thread *p)
 #ifdef wx_msw
     mred_clean_up_gdi_objects();
 #endif	
-    exit(exit_val);
+    scheme_immediate_exit(exit_val);
   }
 }
 

@@ -1186,6 +1186,8 @@ MZ_EXTERN void scheme_setup_forced_exit(void);
 MZ_EXTERN void scheme_start_atomic(void);
 MZ_EXTERN void scheme_end_atomic(void);
 
+MZ_EXTERN void scheme_immediate_exit(int status);
+
 #endif /* SCHEME_DIRECT_EMBEDDED */
 
 /*========================================================================*/

@@ -238,6 +238,8 @@ int main(int argc, char **argv)
 
 int actual_main(int argc, char *argv[])
 {
+  int exit_val;
+
 #ifdef MACINTOSH_SET_STACK
   long calcLimit;
   THz zone;
@@ -317,7 +319,9 @@ int actual_main(int argc, char *argv[])
 # endif
 #endif
 
-  return run_from_cmd_line(argc, argv, scheme_basic_env, cont_run);
+  exit_val = run_from_cmd_line(argc, argv, scheme_basic_env, cont_run);
+
+  scheme_immediate_exit(exit_val);
 }
 
 /*************************       cont_run     *****************************/

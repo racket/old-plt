@@ -1906,6 +1906,14 @@ scheme_do_exit(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
+/* scheme_immediate_exit ensures that a call to exit() goes to the C
+   library used by the MzScheme DLL, and not some other copy of the
+   library (in Windows) */
+void scheme_immediate_exit(int status)
+{
+  exit(status);
+}
+
 /***********************************************************************/
 
 void

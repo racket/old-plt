@@ -3,7 +3,7 @@
 ;; elaboration-tests.ss
 ;;
 ;; Richard Cobbe
-;; $Id: elaboration-tests.ss,v 1.18 2004/04/21 21:40:45 cobbe Exp $
+;; $Id: elaboration-tests.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -17,13 +17,11 @@
 
   (require/expose "parser.ss" (parse-expr))
   (require/expose "elaboration.ss"
-                  (methods-once fields-once methods-ok
-                                fields-ok elab-class elab-expr
-                                check-any-class check-contained-class
-                                subset? elab-method))
+                  (methods-once fields-once methods-ok elab-class elab-expr
+                                elab-method))
 
   (define-assertion (assert-elab-exn msg val expr)
-    (with-handlers ([exn:aj:elab?
+    (with-handlers ([exn:cj:elab?
                      (lambda (exn)
                        (and (string=? msg (exn-message exn))
                             (equal? val (exn:application-value exn))))]
@@ -32,22 +30,27 @@
 
   (define test-program
     (parse-program
-     '((class base object () ([int x])
-         (contain) (acquire)
-         (int get-x () (ivar this x))
+     '((class base object ([int x] [int y])
+         (int get-x () (ref this x))
          (int get-y () 0))
-       (class derived base (container) ([int z])
-         (contain) (acquire [object acq-foo])
-         (int get-x () (+ (ivar this x) 3))
-         (int get-z () (ivar this z)))
-       (class container object () ([object acq-foo])
-         (contain [derived d]) (acquire))
-       (class math object () () (contain) (acquire)
+       (class derived base ([bool y] [int z])
+         (int get-x () (+ (ref this x) 3))
+         (int get-z () (ref this z)))
+       (class derived2 derived ([bool x]))
+       (class math object ()
          (int add ([int x] [int y]) (+ x y))
          (bool is-derived? ([Object o]) false)
          (bool foo? ([base b]) (== (send b get-x) 3)))
-       (let c (new container null (new derived 3 4))
-         (send (ivar c d) get-x)))))
+       (let d (new derived)
+         (let dummy1 (set d x 3)
+           (let dummy2 (set d z false)
+             (send d get-x)))))))
+
+  (define-syntax with-class
+    (syntax-rules ()
+      [(_ c-id body)
+       (let ([c-id (find-class test-program (make-class-type (quote c-id)))])
+         body)]))
 
   (define-syntax with-program/class
     (syntax-rules ()
@@ -58,15 +61,14 @@
 
   (schemeunit-test
    (make-test-suite
-    "AJava Elaboration Tests"
+    "ClassicJava Elaboration Tests"
 
     (make-test-case "methods unique"
       (assert-void (methods-once test-program)))
 
     (make-test-case "methods-once: duplicate method"
       (with-program/class program foo
-                          ((class foo object () ()
-                             (contain) (acquire)
+                          ((class foo object ()
                              (int bar () 3)
                              (Object bar () null))
                            3)
@@ -80,10 +82,7 @@
     (make-test-case "fields-once: duplicate field name"
       (with-program/class
        program foo
-       ((class foo object ()
-          ([int x])
-          (contain)
-          (acquire [bool x]))
+       ((class foo object ([int x] [bool x]))
         3)
        (assert-elab-exn "duplicate field definition"
                         foo
@@ -95,9 +94,9 @@
     (make-test-case "methods-ok: override breaks type"
       (with-program/class
        program derived
-       ((class base object () () (contain) (acquire)
+       ((class base object ()
           (int m ([int i]) (+ i 3)))
-        (class derived base () () (contain) (acquire)
+        (class derived base ()
           (bool m ([int i]) (zero? i)))
         3)
        (assert-elab-exn "method override doesn't preserve type"
@@ -106,58 +105,30 @@
 
     (make-test-case "methods-ok: unrelated classes are independent"
       (let* ([program (parse-program
-                       '((class c1 object () () (contain) (acquire)
+                       '((class c1 object ()
                            (int m ([int i]) (+ i 3)))
-                         (class c2 object () () (contain) (acquire)
+                         (class c2 object ()
                            (Object m () null))
                          3))])
         (assert-void (methods-ok program))))
 
-    (make-test-case "fields OK"
-      (assert-void (fields-ok test-program)))
-
-    (make-test-case "fields-ok: field shadowed, same type"
-      (with-program/class
-       program derived
-       ((class base object () ([int x]) (contain) (acquire))
-        (class derived base () ([int x]) (contain)
-          (acquire))
-        3)
-       (assert-elab-exn "shadowed field" derived
-                        (fields-ok program))))
-
-    (make-test-case "fields-ok: field shadowed, different type"
-      (with-program/class
-       program derived
-       ((class base object () ([int x]) (contain) (acquire))
-        (class derived base () () (contain [Object x])
-          (acquire))
-        3)
-       (assert-elab-exn "shadowed field" derived
-                        (fields-ok program))))
-
-    (make-test-case "fields-ok: fields independent in unrelated classes"
-      (assert-void
-       (parse-program '((class c1 object () ([int x]) (contain) (acquire))
-                        (class c2 object () ([bool x]) (contain) (acquire))
-                        3))))
-
     (make-test-case "elab-class: ok"
       (let* ([table (make-hash-table)]
-             [object (make-class (make-class-type 'object)
-                                 #f null null null null null)]
-             [base (make-class (make-class-type 'base) object null
+             [object (make-class (make-class-type 'object) #f null null)]
+             [base (make-class (make-class-type 'base) object
                                (list (make-field (make-ground-type 'int)
-                                                 'x
-                                                 'normal))
-                               null
-                               null
+                                                 (make-class-type 'base)
+                                                 'x)
+                                     (make-field (make-ground-type 'int)
+                                                 (make-class-type 'base)
+                                                 'y))
                                (list (make-method (make-ground-type 'int)
                                                   'get-x
                                                   null
                                                   null
-                                                  (make-ivar
+                                                  (make-tagged-ref
                                                    (make-var-ref 'this)
+                                                   (make-class-type 'base)
                                                    'x))
                                      (make-method (make-ground-type 'int)
                                                   'get-y
@@ -166,13 +137,12 @@
                                                   (make-num-lit 0))))]
              [derived
               (make-class (make-class-type 'derived) base
-                          (list (make-class-type 'container))
-                          (list (make-field (make-ground-type 'int) 'z
-                                            'normal))
-                          null
-                          (list (make-field (make-class-type 'object)
-                                            'acq-foo
-                                            'acquired))
+                          (list (make-field (make-ground-type 'bool)
+                                            (make-class-type 'derived)
+                                            'y)
+                                (make-field (make-ground-type 'int)
+                                            (make-class-type 'derived)
+                                            'z))
                           (list
                            (make-method (make-ground-type 'int)
                                         'get-x
@@ -180,14 +150,19 @@
                                         null
                                         (make-binary-prim
                                          '+
-                                         (make-ivar (make-var-ref 'this) 'x)
+                                         (make-tagged-ref
+                                          (make-var-ref 'this)
+                                          (make-class-type 'base)
+                                          'x)
                                          (make-num-lit 3)))
                            (make-method (make-ground-type 'int)
                                         'get-z
                                         null
                                         null
-                                        (make-ivar (make-var-ref 'this)
-                                                   'z))))])
+                                        (make-tagged-ref
+                                         (make-var-ref 'this)
+                                         (make-class-type 'derived)
+                                         'z))))])
         (mv-assert equal?
                    (values
                     (elab-class test-program table
@@ -201,148 +176,16 @@
     (make-test-case "elab-class: bad field type"
       (with-program/class
        p foo
-       ((class foo Object () ([bar z])
-          (contain)
-          (acquire))
+       ((class foo Object ([bar z]))
         3)
        (assert-elab-exn "bad field type"
                         foo
                         (elab-class p (make-hash-table) foo))))
 
-    (make-test-case "elab-class: bad contained field type"
-      (with-program/class
-       p foo
-       ((class foo Object () ()
-          (contain [int x]) (acquire))
-        3)
-       (assert-elab-exn "contained field not object type"
-                        foo
-                        (elab-class p (make-hash-table) foo))))
-
-    (make-test-case "elab-class: bad contained field type: not container"
-      (with-program/class
-       p foo
-       ((class foo Object () () (contain [bar x]) (acquire))
-        (class bar Object () () (contain) (acquire))
-        3)
-       (assert-elab-exn "class not container for contained field"
-                        foo
-                        (elab-class p (make-hash-table) foo))))
-
-    (make-test-case "check-any-class: ok"
-      (with-program/class
-       p bar
-       ((class foo Object () () (contain) (acquire))
-        (class bar foo any () (contain) (acquire))
-        3)
-       (assert-true (begin (check-any-class p bar)
-                           #t))))
-
-    (make-test-case "check-any-class: bad acquired fields"
-      (with-program/class
-       p bar
-       ((class foo Object (container) ()
-          (contain) (acquire [int x]))
-        (class bar foo any () (contain) (acquire))
-        (class container Object () ([int x])
-          (contain [foo f]) (acquire))
-        3)
-       (assert-elab-exn "class with 'any container cannot acquire"
-                        bar
-                        (check-any-class p bar))))
-
-    (make-test-case "check-contained-class: good"
-      (with-program/class
-       p derived
-       ((class container Object () ([int x])
-          (contain [base b])
-          (acquire))
-        (class container2 Object () ([int x])
-          (contain [derived d])
-          (acquire))
-        (class base Object (container) ([int y])
-          (contain)
-          (acquire [int x]))
-        (class derived base (container container2)
-          ([int z])
-          (contain)
-          (acquire))
-        3)
-       (assert-true
-        (begin (check-contained-class p derived) #t))))
-
-    (make-test-case "check-contained-class: subclass of any"
-      (with-program/class
-       p b
-       ((class a Object any ([int x]) (contain) (acquire))
-        (class b a (contained) ([int y]) (contain)
-          (acquire [int x]))
-        3)
-       (assert-elab-exn "cannot specify containers for subclass of ANY"
-                         b
-                         (check-contained-class p b))))
-
-    (make-test-case "check-contained-class: not superset of superclass"
-      (with-program/class
-       p b
-       ((class a Object (c1 c2) ([int x]) (contain)
-          (acquire [int y]))
-        (class c1 Object () ([int y])
-          (contain [a an-a]) (acquire))
-        (class c2 Object () ([int y])
-          (contain [a an-a]) (acquire))
-        (class b a (c1) ([int z]) (contain) (acquire [int y]))
-        3)
-       (assert-elab-exn "class has fewer containers than superclass"
-                        b
-                        (check-contained-class p b))))
-
-    (make-test-case "check-contained-class: acquire fields w/ no containers"
-      (with-program/class
-       p foo
-       ((class foo Object () ([int x]) (contain)
-          (acquire [int y]))
-        3)
-       (assert-elab-exn "class acquires fields with no containers"
-                        foo
-                        (check-contained-class p foo))))
-
-    (make-test-case "check-contained-class: invalid container"
-      (with-program/class
-       p contained
-       ((class container Object () () (contain) (acquire))
-        (class contained Object (container)
-          ([int x]) (contain) (acquire [int y]))
-        3)
-       (assert-elab-exn "class cannot be contained in container"
-                        contained
-                        (check-contained-class p contained))))
-
-    (make-test-case "check-contained-class: invalid context"
-      (with-program/class
-       p contained
-       ((class container Object ()
-          ([int x] [int y]) (contain [contained c]) (acquire))
-        (class contained Object (container)
-          () (contain) (acquire [bool y]))
-        3)
-       (assert-elab-exn "class acquires field from invalid context"
-                        contained
-                        (check-contained-class p contained))))
-
-    (make-test-case "subset"
-      (assert-true (subset? '(x y z) '(a b c y x z))))
-
-    (make-test-case "subset: empty"
-      (assert-true (subset? null '(a b c d e f))))
-
-    (make-test-case "subset: failed"
-      (assert-false (subset? '(a b c d) '(a b c))))
-
     (make-test-case "elab-method"
       (with-program/class
        p foo
-       ((class foo Object () () (contain) (acquire)
+       ((class foo Object ()
           (int add ([int x] [int y]) (+ (+ x y) 1)))
         3)
        (let ([m (car (class-methods foo))])
@@ -362,9 +205,9 @@
     (make-test-case "elab-method: body elaborated"
       (with-program/class
        p c
-       ((class b Object () () (contain) (acquire)
+       ((class b Object ()
           (int m () 3))
-        (class c b () () (contain) (acquire)
+        (class c b ()
           (int m () (+ (super m) 3)))
         3)
        (let ([m (car (class-methods c))])
@@ -384,7 +227,7 @@
     (make-test-case "elab-method: bad return type"
       (with-program/class
        p c
-       ((class c Object () () (contain) (acquire)
+       ((class c Object ()
           (d get-d () null))
         3)
        (let ([m (car (class-methods c))])
@@ -395,7 +238,7 @@
     (make-test-case "elab-method: bad arg type"
       (with-program/class
        p c
-       ((class c Object () () (contain) (acquire)
+       ((class c Object ()
           (int foo ([d wrong]) 0))
         3)
        (let ([m (car (class-methods c))])
@@ -406,10 +249,10 @@
     (make-test-case "elab-method: bad return type"
       (with-program/class
        p c
-       ((class c Object () ([foo f] [bar b]) (contain) (acquire)
-          (foo get-foo () (ivar this b)))
-        (class foo Object () () (contain) (acquire))
-        (class bar Object () () (contain) (acquire))
+       ((class c Object ([foo f] [bar b])
+          (foo get-foo () (ref this b)))
+        (class foo Object ())
+        (class bar Object ())
         3)
        (let ([m (car (class-methods c))])
          (assert-elab-exn "method return type incompatible w/ body"
@@ -419,7 +262,7 @@
     (make-test-case "elab-method: null body handled correctly"
       (with-program/class
        p c
-       ((class c Object () () (contain) (acquire)
+       ((class c Object ()
           (c get-c () null))
         3)
        (assert-equal? ((elab-method p c) (car (class-methods c)))
@@ -430,132 +273,23 @@
                                    (make-nil)))))
 
     (make-test-case "elab-expr: good ctor"
-      (let ([e (make-new (make-class-type 'derived)
-                         (list (make-num-lit 3) (make-num-lit 4)))])
+      (let ([e (make-new (make-class-type 'derived))])
         (mv-assert equal?
-                   (elab-expr test-program (make-empty-env)
-                              (list (make-class-type 'container))
-                              e)
+                   (elab-expr test-program (make-empty-env) e)
                    e
                    (make-class-type 'derived))))
 
-    (make-test-case "elab-expr: ctor: bad arity"
-      (let ([ctor (make-new (make-class-type 'container) null)])
-        (assert-elab-exn "arity mismatch in ctor"
-                         ctor
-                         (elab-expr test-program
-                                    (make-empty-env)
-                                    null
-                                    ctor))))
-
-    (make-test-case "elab-expr: ctor: bad arg type"
-      (let ([ctor (make-new (make-class-type 'base)
-                            (list (make-nil)))])
-        (assert-elab-exn "arg type mismatch in ctor"
-                         ctor
-                         (elab-expr test-program
-                                    (make-empty-env)
-                                    null
-                                    ctor))))
-
-    (make-test-case "elab-expr: ctor: missing containment context"
-      (let ([ctor (make-new (make-class-type 'derived)
-                            (list (make-num-lit 3)
-                                  (make-bool-lit #f)
-                                  (make-num-lit 4)
-                                  (make-nil)))])
-        (assert-elab-exn "object must be constructed in context"
-                         ctor
-                         (elab-expr test-program
-                                    (make-empty-env)
-                                    null
-                                    ctor))))
-
-    (make-test-case "elab-expr: ctor: bad containment context"
-      (let ([p (parse-program
-                '((class c1 object () () (contain [d a-d]) (acquire))
-                  (class c2 object () () (contain [d a-d]) (acquire))
-                  (class d object (c1) () (contain) (acquire))
-                  3))]
-            [ctor (make-new (make-class-type 'c2)
-                            (list (make-new (make-class-type 'd) null)))])
-        (assert-elab-exn "object constructed in bad context"
-                         (car (new-args ctor))
-                         (elab-expr p
-                                    (make-empty-env)
-                                    null
-                                    ctor))))
-
-    (make-test-case "elab-expr: ctor: good containment context"
-      (let ([ctor (make-new (make-class-type 'derived)
-                            (list (make-num-lit 3)
-                                  (make-num-lit 4)))])
-      (mv-assert equal?
-                 (elab-expr test-program
-                            (make-empty-env)
-                            (list (make-class-type 'container))
-                            ctor)
-                 ctor
-                 (make-class-type 'derived))))
-
-    (make-test-case "elab-expr: nonexistent type"
-      (let ([ctor (make-new (make-class-type 'foo) null)])
+    (make-test-case "elab-expr: ctor: nonexistent type"
+      (let ([ctor (make-new (make-class-type 'foo))])
         (assert-elab-exn "constructor for nonexistent type"
                          (make-class-type 'foo)
-                         (elab-expr test-program
-                                    (make-empty-env)
-                                    null
-                                    ctor))))
-
-    (make-test-case "elab-expr: ctor: context with subtyping"
-      (let ([program
-             (parse-program
-              '((class base object () () (contain [c a-c]) (acquire))
-                (class derived base () () (contain) (acquire))
-                (class c object (base) () (contain) (acquire))
-                3))]
-            [ctor (make-new
-                   (make-class-type 'derived)
-                   (list (make-new (make-class-type 'c) null)))])
-        (mv-assert equal?
-                   (elab-expr program (make-empty-env) null ctor)
-                   ctor
-                   (make-class-type 'derived))))
-
-    (make-test-case "elab-expr: ctor: subtyping in arguments"
-      (let ([program
-             (parse-program
-              '((class root object () ()
-                  (contain [list l]) (acquire))
-                (class list object (list root) () (contain) (acquire)
-                  (int length () 0))
-                (class empty list (list root) () (contain) (acquire))
-                (class cons list (list root)
-                  ([Object car])
-                  (contain [list cdr])
-                  (acquire)
-                  (int length () (+ 1 (send cdr length))))
-                3))]
-            [ctor (make-new (make-class-type 'root)
-                            (list (make-new (make-class-type 'cons)
-                                            (list (make-nil)
-                                                  (make-new
-                                                   (make-class-type 'empty)
-                                                   null)))))])
-        (mv-assert equal?
-                   (elab-expr program
-                              (make-empty-env)
-                              null
-                              ctor)
-                   ctor
-                   (make-class-type 'root))))
+                         (elab-expr test-program (make-empty-env) ctor))))
 
     (make-test-case "elab-expr: good var ref"
       (mv-assert equal?
                  (elab-expr test-program
                             (env (x (make-ground-type 'int))
                                  (y (make-class-type 'derived)))
-                            null
                             (make-var-ref 'y))
                  (make-var-ref 'y)
                  (make-class-type 'derived)))
@@ -565,108 +299,119 @@
                        'x
                        (elab-expr test-program
                                   (make-empty-env)
-                                  null
                                   (make-var-ref 'x))))
 
     (make-test-case "elab-expr: null"
       (mv-assert equal?
-                 (elab-expr test-program
-                            (make-empty-env)
-                            null
-                            (make-nil))
+                 (elab-expr test-program (make-empty-env) (make-nil))
                  (make-nil)
                  (make-any-type)))
 
     (make-test-case "elab-expr: num lit"
       (mv-assert equal?
-                 (elab-expr test-program
-                            (make-empty-env)
-                            null
-                            (make-num-lit 3))
+                 (elab-expr test-program (make-empty-env) (make-num-lit 3))
                  (make-num-lit 3)
                  (make-ground-type 'int)))
 
     (make-test-case "elab-expr: bool lit"
       (mv-assert equal?
-                 (elab-expr test-program
-                            (make-empty-env)
-                            null
-                            (make-bool-lit #t))
+                 (elab-expr test-program (make-empty-env) (make-bool-lit #t))
                  (make-bool-lit #t)
                  (make-ground-type 'bool)))
 
-    (make-test-case "elab-ivar: good ivar direct"
-      (let ([ivar (parse-expr '(ivar b x))])
-        (mv-assert equal?
-                   (elab-expr test-program
-                              (env (b (make-class-type 'base)))
-                              null
-                              ivar)
-                   ivar
-                   (make-ground-type 'int))))
+    (make-test-case "elab-ref: good field direct"
+      (mv-assert equal?
+                 (elab-expr test-program
+                            (env (b (make-class-type 'base)))
+                            (parse-expr '(ref b x)))
+                 (make-tagged-ref (make-var-ref 'b)
+                                  (make-class-type 'base)
+                                  'x)
+                 (make-ground-type 'int)))
 
-    (make-test-case "elab-ivar: good ivar inherited"
-      (let ([ivar (parse-expr '(ivar d x))])
-        (mv-assert equal?
-                   (elab-expr test-program
-                              (env (d (make-class-type 'derived)))
-                              null
-                              ivar)
-                   ivar
-                   (make-ground-type 'int))))
+    (make-test-case "elab-ref: good field inherited"
+      (mv-assert equal?
+                 (elab-expr test-program
+                            (env (d (make-class-type 'derived)))
+                            (parse-expr '(ref d x)))
+                 (make-tagged-ref (make-var-ref 'd)
+                                  (make-class-type 'base)
+                                  'x)
+                 (make-ground-type 'int)))
 
-    (make-test-case "elab-ivar: acquired ivar"
-      (let ([ivar (parse-expr '(ivar d acq-foo))])
-        (mv-assert equal?
-                   (elab-expr test-program
-                              (env (d (make-class-type 'derived)))
-                              null
-                              ivar)
-                   ivar
-                   (make-class-type 'object))))
+    (make-test-case "elab-ref: expr of bogus type"
+      (let ([ref (parse-expr '(ref null x))])
+        (assert-elab-exn "ref: subexpr not of object type (possibly null)"
+                         ref
+                         (elab-expr test-program (make-empty-env) ref))))
 
-    (make-test-case "elab-ivar: expr of bogus type"
-      (let ([ivar (parse-expr '(ivar null x))])
-        (assert-elab-exn "ivar: subexpr not of object type (possibly null)"
-                         ivar
-                         (elab-expr test-program
-                                    (make-empty-env)
-                                    null
-                                    ivar))))
+    (make-test-case "elab-ref: expr of ground type"
+      (let ([ref (parse-expr '(ref (+ 3 4) x))])
+        (assert-elab-exn "ref: subexpr not of object type (possibly null)"
+                         ref
+                         (elab-expr test-program (make-empty-env) ref))))
 
-    (make-test-case "elab-ivar: expr of ground type"
-      (let ([ivar (parse-expr '(ivar (+ 3 4) x))])
-        (assert-elab-exn "ivar: subexpr not of object type (possibly null)"
-                         ivar
-                         (elab-expr test-program
-                                    (make-empty-env)
-                                    null
-                                    ivar))))
-
-    (make-test-case "elab-ivar: bad field name"
-      (let ([ivar (parse-expr '(ivar d a))])
-        (assert-elab-exn "ivar: field doesn't exist"
-                         ivar
+    (make-test-case "elab-ref: bad field name"
+      (let ([ref (parse-expr '(ref d a))])
+        (assert-elab-exn "ref: field doesn't exist"
+                         ref
                          (elab-expr test-program
                                     (env (d (make-class-type 'derived)))
-                                    null
-                                    ivar))))
+                                    ref))))
 
-    (make-test-case "elab-ivar: bad field name; only in subclass"
-      (let ([ivar (parse-expr '(ivar d z))])
-        (assert-elab-exn "ivar: field doesn't exist"
-                         ivar
+    (make-test-case "elab-ref: bad field name; only in subclass"
+      (let ([ref (parse-expr '(ref d z))])
+        (assert-elab-exn "ref: field doesn't exist"
+                         ref
                          (elab-expr test-program
                                     (env (d (make-class-type 'base)))
-                                    null
-                                    ivar))))
+                                    ref))))
+
+    (make-test-case "elab-ref: shadowed direct"
+      (mv-assert equal?
+                 (elab-expr test-program
+                            (env [b (make-class-type 'base)])
+                            (parse-expr '(ref b y)))
+                 (make-tagged-ref (make-var-ref 'b)
+                                  (make-class-type 'base)
+                                  'y)
+                 (make-ground-type 'int)))
+
+    (make-test-case "elab-ref: shadowed inherited"
+      (mv-assert equal?
+                 (elab-expr test-program
+                            (env [d (make-class-type 'derived)])
+                            (parse-expr '(ref d x)))
+                 (make-tagged-ref (make-var-ref 'd)
+                                  (make-class-type 'base)
+                                  'x)
+                 (make-ground-type 'int)))
+
+    (make-test-case "elab-ref: shadowing direct"
+      (mv-assert equal?
+                 (elab-expr test-program
+                            (env [d (make-class-type 'derived)])
+                            (parse-expr '(ref d y)))
+                 (make-tagged-ref (make-var-ref 'd)
+                                  (make-class-type 'derived)
+                                  'y)
+                 (make-ground-type 'bool)))
+
+    (make-test-case "elab-ref: shadowing inherited"
+      (mv-assert equal?
+                 (elab-expr test-program
+                            (env [d2 (make-class-type 'derived2)])
+                            (parse-expr '(ref d2 y)))
+                 (make-tagged-ref (make-var-ref 'd2)
+                                  (make-class-type 'derived)
+                                  'y)
+                 (make-ground-type 'bool)))
 
     (make-test-case "elab-send: good direct"
       (let ([s (parse-expr '(send b get-x))])
         (mv-assert equal?
                    (elab-expr test-program
                               (env (b (make-class-type 'base)))
-                              null
                               s)
                    s
                    (make-ground-type 'int))))
@@ -676,7 +421,6 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env (d (make-class-type 'derived)))
-                              null
                               s)
                    s
                    (make-ground-type 'int))))
@@ -686,18 +430,16 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env (d (make-class-type 'derived)))
-                              null
                               s)
                    s
                    (make-ground-type 'int))))
 
     (make-test-case "elab-send: good w/ args"
-      (let ([s (parse-expr '(send m is-derived? c))])
+      (let ([s (parse-expr '(send m is-derived? d))])
         (mv-assert equal?
                    (elab-expr test-program
                               (env (m (make-class-type 'math))
-                                   (c (make-class-type 'container)))
-                              null
+                                   (d (make-class-type 'derived2)))
                               s)
                    s
                    (make-ground-type 'bool))))
@@ -707,7 +449,6 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env (m (make-class-type 'math)))
-                              null
                               s)
                    s
                    (make-ground-type 'bool))))
@@ -716,13 +457,13 @@
       (let ([s (parse-expr '(send (+ 3 4) is-derived? null))])
         (assert-elab-exn "send: subexpr not of object type (possibly null)"
                          s
-                         (elab-expr test-program (env) null s))))
+                         (elab-expr test-program (env) s))))
 
     (make-test-case "elab-send: null literal"
       (let ([s (parse-expr '(send null is-derived? null))])
         (assert-elab-exn "send: subexpr not of object type (possibly null)"
                          s
-                         (elab-expr test-program (env) null s))))
+                         (elab-expr test-program (env) s))))
 
     (make-test-case "elab-send: bad arguments"
       (let ([s (parse-expr '(send m is-derived? 3))])
@@ -730,7 +471,6 @@
                          s
                          (elab-expr test-program
                                     (env (m (make-class-type 'math)))
-                                    null
                                     s))))
 
     (make-test-case "elab-send: bad arity"
@@ -739,7 +479,6 @@
                          s
                          (elab-expr test-program
                                     (env (m (make-class-type 'math)))
-                                    null
                                     s))))
 
     (make-test-case "elab-send: no such method"
@@ -748,7 +487,6 @@
                          s
                          (elab-expr test-program
                                     (env (d (make-class-type 'derived)))
-                                    null
                                     s))))
 
     (make-test-case "elab-super: ok"
@@ -756,7 +494,6 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env (this (make-class-type 'derived)))
-                              null
                               s)
                    (make-tagged-super (make-class-type 'base)
                                       'get-x
@@ -769,7 +506,6 @@
                          s
                          (elab-expr test-program
                                     (env (this (make-class-type 'derived)))
-                                    null
                                     s))))
 
     (make-test-case "elab-super: no such method"
@@ -778,14 +514,12 @@
                          s
                          (elab-expr test-program
                                     (env (this (make-class-type 'derived)))
-                                    null
                                     s))))
 
     (make-test-case "elab-cast: widening"
       (mv-assert equal?
                  (elab-expr test-program
                             (env (d (make-class-type 'derived)))
-                            null
                             (parse-expr '(cast base d)))
                  (make-var-ref 'd)
                  (make-class-type 'base)))
@@ -795,7 +529,6 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env (b (make-class-type 'base)))
-                              null
                               e)
                    e
                    (make-class-type 'derived))))
@@ -806,7 +539,6 @@
                          e
                          (elab-expr test-program
                                     (env (d (make-class-type 'derived)))
-                                    null
                                     e))))
 
     (make-test-case "elab-let: straightforward"
@@ -814,7 +546,6 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env (y (make-class-type 'math)))
-                              null
                               e)
                    e
                    (make-class-type 'math))))
@@ -824,7 +555,6 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env (y (make-class-type 'math)))
-                              null
                               e)
                    e
                    (make-ground-type 'int))))
@@ -832,7 +562,7 @@
     (make-test-case "elab-unary: simple"
       (let ([e (parse-expr '(zero? 3))])
         (mv-assert equal?
-                   (elab-expr test-program (env) null e)
+                   (elab-expr test-program (env) e)
                    e
                    (make-ground-type 'bool))))
 
@@ -840,7 +570,6 @@
       (let ([e (parse-expr '(null? x))])
         (mv-assert equal?
                    (elab-expr test-program (env (x (make-class-type 'derived)))
-                              null
                               e)
                    e
                    (make-ground-type 'bool))))
@@ -848,7 +577,7 @@
     (make-test-case "elab-unary: null arg"
       (let ([e (parse-expr '(null? null))])
         (mv-assert equal?
-                   (elab-expr test-program (env) null e)
+                   (elab-expr test-program (env) e)
                    e
                    (make-ground-type 'bool))))
 
@@ -856,19 +585,19 @@
       (let ([e (parse-expr '(null? 3))])
         (assert-elab-exn "unary primitive: bad arg type"
                          e
-                         (elab-expr test-program (env) null e))))
+                         (elab-expr test-program (env) e))))
 
     (make-test-case "elab-binary: simple"
       (let ([e (parse-expr '(+ 3 4))])
         (mv-assert equal?
-                   (elab-expr test-program (env) null e)
+                   (elab-expr test-program (env) e)
                    e
                    (make-ground-type 'int))))
 
     (make-test-case "elab-binary: simple 2"
       (let ([e (parse-expr '(and true (or false true)))])
         (mv-assert equal?
-                   (elab-expr test-program (env) null e)
+                   (elab-expr test-program (env) e)
                    e
                    (make-ground-type 'bool))))
 
@@ -876,12 +605,12 @@
       (let ([e (parse-expr '(and true 0))])
         (assert-elab-exn "binary primitive: bad arg type"
                          e
-                         (elab-expr test-program (env) null e))))
+                         (elab-expr test-program (env) e))))
 
     (make-test-case "elab-if: simple/ground"
       (let ([e (parse-expr '(if true 3 4))])
         (mv-assert equal?
-                   (elab-expr test-program (env) null e)
+                   (elab-expr test-program (env) e)
                    e
                    (make-ground-type 'int))))
 
@@ -889,12 +618,11 @@
       (let ([e (parse-expr '(if true b c))])
         (mv-assert equal?
                    (elab-expr test-program
-                              (env [b (make-class-type 'container)]
-                                   [c (make-class-type 'container)])
-                              null
+                              (env [b (make-class-type 'derived)]
+                                   [c (make-class-type 'derived)])
                               e)
                    e
-                   (make-class-type 'container))))
+                   (make-class-type 'derived))))
 
     (make-test-case "elab-if: lub"
       (let ([e (parse-expr '(if false d b))])
@@ -902,7 +630,6 @@
                    (elab-expr test-program
                               (env [b (make-class-type 'base)]
                                    [d (make-class-type 'derived)])
-                              null
                               e)
                    e
                    (make-class-type 'base))))
@@ -912,7 +639,6 @@
         (mv-assert equal?
                    (elab-expr test-program
                               (env [d (make-class-type 'derived)])
-                              null
                               e)
                    e
                    (make-class-type 'derived))))
@@ -921,7 +647,7 @@
       (let ([e (parse-expr '(if (- 3 3) 3 4))])
         (assert-elab-exn "if: conditional must have boolean type"
                          e
-                         (elab-expr test-program (env) null e))))
+                         (elab-expr test-program (env) e))))
 
     (make-test-case "elab-if: unrelated branches"
       (let ([e (parse-expr '(if true 3 d))])
@@ -929,6 +655,5 @@
                          e
                          (elab-expr test-program
                                     (env [d (make-class-type 'derived)])
-                                    null
                                     e))))
     )))

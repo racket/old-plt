@@ -1,5 +1,6 @@
 (require (lib "unitsig.ss")
-         (lib "servlet-sig.ss" "web-server"))
+         (lib "servlet-sig.ss" "web-server")
+	 (lib "servlet-helpers.ss" "web-server"))
 
 (require "private/util.ss")
 (require "private/hd-css.ss")
@@ -25,29 +26,30 @@
 	 [match-type (get-binding 'match-type)]
 	 [lucky? (get-binding 'lucky)])
 
- `(HTML 
-   (HEAD ,hd-css)
-   (FRAMESET ((ROWS ,(string-append search-height ",*")))
-	     (FRAME ((NAME "search")
-		     (SRC "/servlets/search.ss")))
-	     (FRAME ((NAME "main")
-		     ,(if (and search-string
-			       search-type
-			       match-type
-			       lucky?)
-			  ; pass args along to bottom frame
-			  `(SRC ,(format (string-append 
-					  "/servlets/results.ss?"
-					  "search-string=~a&"
-					  "search-type=~a&"
-					  "match-type=~a&"
-					  "lucky=~a")
-					 (hexify-string search-string)
-					 search-type
-					 match-type
-					 lucky?))
-			  ; just the main page
-			  `(SRC "/servlets/main.ss"))))))))
+  `(HTML 
+    (HEAD ,hd-css)
+    (FRAMESET ((ROWS ,(string-append search-height ",*")))
+	      (FRAME ((NAME "search")
+		      (SRC "/servlets/search.ss")))
+	      (FRAME ((NAME "main")
+		      ,(if (and search-string
+				search-type
+				match-type
+				lucky?)
+                            ; pass args along to bottom frame
+			   `(SRC ,(format (string-append 
+					   "/servlets/results.ss?"
+					   "search-string=~a&"
+					   "search-type=~a&"
+					   "match-type=~a&"
+					   "lucky=~a")
+					  (hexify-string search-string)
+					  search-type
+					  match-type
+					  lucky?))
+					; just the main page
+			   `(SRC "/servlets/main.ss"))))))))
+
 
 
 

@@ -5,8 +5,7 @@
          (lib "servlet-sig.ss" "web-server")
          (lib "servlet-helpers.ss" "web-server")
          (lib "xml.ss" "xml")
-	 (lib "search.ss" "help" "private")
-	 (lib "docpos.ss" "help" "private"))
+	 (lib "help-desk.ss" "help"))
 
 (require "private/util.ss")
 (require "private/search-util.ss")

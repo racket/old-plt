@@ -6,9 +6,10 @@
 	   (lib "configuration-structures.ss" "web-server"))
 
   (provide start-help-server
-	   hd-cookie->port)	
+	   hd-cookie->port
+	   hd-cookie?)
 
-  (define-struct hd-cookie (port exit-proc))
+  (define-struct hd-cookie (port exit-proc) (make-inspector))
   (define hd-cookie->port hd-cookie-port)
 
   (define min-port 8000)

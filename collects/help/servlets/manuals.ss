@@ -1,6 +1,6 @@
 (require (lib "unitsig.ss")
          (lib "servlet-sig.ss" "web-server")
-	 (lib "manuals.ss" "help" "private"))
+	 (lib "help-desk.ss" "help"))
 
 (unit/sig ()
   (import servlet^)

@@ -1122,9 +1122,10 @@
            (lambda (expr) (check-expr expr env level type-recs current-class ctor? static? interactions?))))
       (cond
         ((literal? exp) 
-         (when (memq (expr-types exp) `(String string))
-           (add-required current-class "String" `("java" "lang") type-recs))
-         (expr-types exp))
+         (if (memq (expr-types exp) `(String string))
+             (begin (add-required current-class "String" `("java" "lang") type-recs)
+                    (set-expr-type exp string-type))
+             (expr-types exp)))
         ((bin-op? exp)
          (set-expr-type exp 
                         (check-bin-op (bin-op-op exp)
@@ -2227,7 +2228,7 @@
 
   ;teaching-call-error: symbol id (list type) type src (list method-record) -> void
   (define (teaching-call-error kind name args exp-type src methods)
-    (let* ((method-args (map method-record-atypes methods))
+    (let* ((method-args (map method-record-atypes (remove-overridden methods)))
            (predominant-number (get-most-occuring-length method-args))
            (type-lists (get-string-of-types (filter (lambda (a) (= (length a) predominant-number)) method-args))))
       (let ((n (id->ext-name name))
@@ -2236,12 +2237,29 @@
         (raise-error n
                      (case kind
                        ((number)
-                        (format "method ~a from ~a expects ~a arguments with types ~a. Given ~a"
+                        (format "method ~a from ~a expects ~a arguments with type(s) ~a. Given ~a"
                                 n e predominant-number type-lists givens))
                        (else
-                        (format "method ~a from ~a expects arguments with types ~a. Given ~a"
+                        (format "method ~a from ~a expects arguments with type(s) ~a. Given ~a"
                                 n e type-lists givens)))
                      n src))))
+  
+  ;remove-overridden: (list method-record) -> (list method-record)
+  (define (remove-overridden methods)
+    (letrec ((remove?
+              (lambda (method methods)
+                  (and (not (null? methods))
+                       (or (andmap (lambda (x) x) (map type=? (method-record-atypes method) 
+                                                       (method-record-atypes (car methods))))
+                           (remove? method (cdr methods))))))
+             (remove
+              (lambda (methods)
+                (cond
+                  ((null? methods) methods)
+                  ((remove? (car methods) (cdr methods))
+                   (remove (cdr methods)))
+                  (else (cons (car methods) (remove (cdr methods))))))))
+      (remove methods)))
   
   ;get-most-occuring-lenght: (list (list type)) -> number
   (define (get-most-occuring-length args)

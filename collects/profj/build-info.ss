@@ -458,7 +458,7 @@
     (let ((super-ctor (find-default-ctor super-methods)))
       (cond
         ((not super-ctor)
-         (default-ctor-error 'non-accessible name (method-record-class (car super-methods)) (id-src name) level))
+         (default-ctor-error 'non-accessible name (car (method-record-class (car super-methods))) (id-src name) level))
         ((memq 'private (method-record-modifiers super-ctor))
          (default-ctor-error 'private name (method-record-class super-ctor) (id-src name) level))
         ((and (memq level '(advanced full))
@@ -1201,7 +1201,7 @@
                           (format "Class ~a cannot access the default constructor of ~a, which is private" n parent)))
                      ((non-accessible)
                       (if (memq level '(beginner intermediate))
-                          (format "Class ~a cannot extend ~a" n parent)
+                          (format "Class ~a must have a constructor due to its extension of class ~a" n parent)
                           (format "Class ~a cannot access a default constructor for ~a" n parent)))
                      ((throws)
                       (format "Class ~a cannot use the default constructor for ~a, as ~a's default contains a throws clause"

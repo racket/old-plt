@@ -35,7 +35,9 @@
 	 [customization-panel (make-object mred:horizontal-panel% main)]
 	 [customization-left-panel (make-object mred:vertical-pane% customization-panel)]
 	 [customization-right-panel (make-object mred:vertical-pane% customization-panel)]
-	 [when-message (make-object mred:message% "Language changes effective after next execution" main)]
+	 [when-message (make-object mred:message%
+			 "Language changes effective after next execution"
+			 main)]
 	 [make-sub-panel
 	  (lambda (name panel)
 	    (let* ([p (make-object mred:vertical-pane% panel)]
@@ -65,7 +67,16 @@
                               (send p stretchable-height #t)
                               p)]
          [full-scheme-radio-box #f]
-         [full-scheme-radio-box-callback void]
+         [full-scheme-radio-box-callback
+	  (lambda ()
+	    (fw:preferences:set
+	     'drscheme:settings
+	     (basis:copy-setting
+	      (basis:find-setting-named
+	       (case (send full-scheme-radio-box get-selection)
+		 [(0) "Textual Full Scheme"]
+		 [(1) "Graphical Full Scheme"]
+		 [else (send full-scheme-radio-box get-string-selection)])))))]
          [close-full-scheme-radio-box
           (lambda ()
             (when full-scheme-radio-box
@@ -74,7 +85,8 @@
           (lambda ()
             (cond
               [full-scheme-radio-box
-               (send full-scheme-panel change-children (lambda (x) (list full-scheme-radio-box)))]
+               (send full-scheme-panel change-children
+		     (lambda (x) (list full-scheme-radio-box)))]
               [else
                (set! full-scheme-radio-box
                      (make-object mred:radio-box% 
@@ -85,25 +97,26 @@
                                         "MrEd (no debugging)")
                                   full-scheme-panel
                                   (lambda x (full-scheme-radio-box-callback))))]))]
-	 [language-choice (make-object mred:choice%
-                                       "Language"
-                                       (list (first language-levels)
-                                             (second language-levels)
-                                             (third language-levels)
-                                             "Full Scheme")
-                                       language-panel
-                                       (lambda (choice evt)
-                                         (cond
-                                           [(string=? "Full Scheme" (send choice get-string-selection))
-                                            (open-full-scheme-radio-box)
-                                            (full-scheme-radio-box-callback)]
-                                           [else
-                                            (close-full-scheme-radio-box)
-                                            (fw:preferences:set
-                                             'drscheme:settings
-                                             (basis:copy-setting
-                                              (basis:number->setting
-                                               (send choice get-selection))))])))]
+	 [language-choice
+	  (make-object mred:choice%
+	    "Language"
+	    (list (first language-levels)
+		  (second language-levels)
+		  (third language-levels)
+		  "Full Scheme")
+	    language-panel
+	    (lambda (choice evt)
+	      (cond
+	       [(string=? "Full Scheme" (send choice get-string-selection))
+		(open-full-scheme-radio-box)
+		(full-scheme-radio-box-callback)]
+	       [else
+		(close-full-scheme-radio-box)
+		(fw:preferences:set
+		 'drscheme:settings
+		 (basis:copy-setting
+		  (basis:number->setting
+		   (send choice get-selection))))])))]
 	 [custom-message (make-object mred:message% "Custom" language-panel)]
 	 [right-align
 	  (opt-lambda (mo panel)

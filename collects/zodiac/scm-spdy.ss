@@ -150,7 +150,7 @@
 		  (sexp->raw val)
 		  expr))))
 	  (else
-	    (static-error expr "Malformed st:control"))))))
+	    (static-error expr "Malformed mrspidey:control"))))))
 
   (add-primitivized-micro-form 'define-type mrspidey-vocabulary
     (let* ((kwd '())
@@ -462,7 +462,7 @@
 
   (extend-parsed->raw st:control-form?
     (lambda (expr p->r)
-      `(st:control ,(st:control-form-para expr)
+      `(mrspidey:control ,(st:control-form-para expr)
 	 ,(st:control-form-val expr))))
 
   (extend-parsed->raw reference-unit-form?

@@ -1,0 +1,7 @@
+Differences from paper:
+  - (cast t null) --> null for any t
+
+Unimplemented:
+  - interfaces
+  - abstract methods
+  - subject reduction predicate

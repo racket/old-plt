@@ -4,19 +4,16 @@ _MzCOM_
 This directory contains the files for MzCOM, a COM 
 class wrapper for MzScheme.
 
-The code is in the file mzcom.dll.  During normal
+The code is in the file mzcom.exe.  During normal
 installation of MzCOM from the file mzcom.plt, the
 mzcom.dll is registered automatically.  You can 
-move the .dll to whatever location you like, but
+move the .exe to whatever location you like, but
 you'll need to re-register it.  From the command
 line, run
 
-  REGSVR32 mzcom.dll
+  mzcom.exe /RegServer
 
-Under Windows 95/98, REGSVR32 is in the Windows 
-System directory.  Under Windows NT/2000, REGSVR32
-is in the directory WINNT\System32.  If you move 
-mzcom.dll, you'll also need to set the Windows 
+If you move mzcom.exe, you'll also need to set the Windows 
 environment variables PLTHOME or PLTCOLLECTS for 
 MzCOM to find collections.
 
@@ -77,25 +74,25 @@ Events
 
 MzCOM has a single event.
 
-> Error()
+> SchemeError()
 
-The Error() event is passed a BSTR (BASIC string)
+The SchemeError() event is passed a BSTR (BASIC string)
 that explains the error.  
 
 Collections
 -----------
 
-If mzcom.dll is installed to its default location,
+If mzcom.exe is installed to its default location,
 MzCOM is able to find other PLT collections. 
 When setting up the collection paths, MzCOM adds 
 the variable
 
-> mzcom-dll
+> mzcom-exe
 
 to the global environment.  That variable is bound 
-to a string containing the full pathname for mzcom.dll.
+to a string containing the full pathname for mzcom.exe.
 
-If mzcom.dll is moved to another location, you should 
+If mzcom.exe is moved to another location, you should 
 set either the PLTHOME or PLTCOLLECTS environment 
 variables before loading MzCOM.
 
@@ -110,12 +107,6 @@ primary MzScheme thread, as in
 
 then the evaluator Win32 thread is also killed.  
 When that happens, subsequent calls to Eval() will fail.
-
-Limitations
------------
-
-You can load at most one MzCOM object per Win32 process.
-If you try to load more than one, a crash is likely.
 
 Contact us
 ----------

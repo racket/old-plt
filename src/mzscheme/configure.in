@@ -693,7 +693,7 @@ if test "${enable_gl}" = "yes" ; then
       AC_CHECK_LIB(GL, glXChooseVisual, GL_PTHREAD="yes", GL_PTHREAD="no", $X_LIBS -lX11 -lXext -pthread)
       if test "${GL_PTHREAD}" = "yes" ; then
         PREFLAGS="$PREFLAGS -D_THREAD_SAFE"
-        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread"
+        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU -pthread"
         MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576 -DDONT_ITIMER"
         GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
         MROPTIONS="$MROPTIONS -DUSE_GL"
@@ -701,12 +701,12 @@ if test "${enable_gl}" = "yes" ; then
     else
       AC_CHECK_LIB(GL, glXCreateContext, GL_NO_PTHREAD="yes", GL_NO_PTHREAD="no", $X_LIBS -lX11 -lXext)
       if test "${GL_NO_PTHREAD}" = "yes" ; then
-        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL"
+        X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU"
         MROPTIONS="$MROPTIONS -DUSE_GL"
       else
         AC_CHECK_LIB(GL, glXChooseVisual, GL_PTHREAD="yes", GL_PTHREAD="no", $X_LIBS -lX11 -lXext -pthread)
         if test "${GL_PTHREAD}" = "yes" ; then
-          X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -pthread"
+          X_EXTRA_LIBS="$X_EXTRA_LIBS -lGL -lGLU -pthread"
           MZOPTIONS="$MZOPTIONS -DASSUME_FIXED_STACK_SIZE -DFIXED_STACK_SIZE=1048576"
           GC2OPTIONS="$GC2OPTIONS -DNO_GC_SIGNALS"
           MROPTIONS="$MROPTIONS -DUSE_GL"

@@ -231,20 +231,20 @@ scheme_init_struct (Scheme_Env *env)
   
   /* Add arity structure */
   for (i = 0; i < as_count; i++) {
-    scheme_add_global_constant(SCHEME_SYM_VAL(as_names[i]), as_values[i],
+    scheme_add_global_constant(scheme_symbol_val(as_names[i]), as_values[i],
 			       env);
   }
 
 #ifdef TIME_SYNTAX
   for (i = 0; i < ts_count; i++) {
-    scheme_add_global_constant(SCHEME_SYM_VAL(ts_names[i]), ts_values[i], 
+    scheme_add_global_constant(scheme_symbol_val(ts_names[i]), ts_values[i], 
 			       env);
   }
 #endif
 
 #ifndef NO_UNIT_SYSTEM
   for (i = 0; i < us_count; i++) {
-    scheme_add_global_constant(SCHEME_SYM_VAL(us_names[i]), us_values[i], 
+    scheme_add_global_constant(scheme_symbol_val(us_names[i]), us_values[i], 
 			       env);  
   }
 #endif
@@ -642,7 +642,7 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
 	Scheme_Object *fn = SCHEME_CAR(field_symbols);
 	field_symbols = SCHEME_CDR(field_symbols);
 
-	field_name = SCHEME_SYM_VAL(fn);
+	field_name = scheme_symbol_val(fn);
 	fnlen = SCHEME_SYM_LEN(fn);
       } else {
 	field_name = field_strings[slot_num];
@@ -677,7 +677,7 @@ Scheme_Object **scheme_make_struct_names(Scheme_Object *base,
   int len;
   len = field_symbols ? scheme_list_length(field_symbols) : 0;
 
-  return _make_struct_names(SCHEME_SYM_VAL(base),
+  return _make_struct_names(scheme_symbol_val(base),
 			    SCHEME_SYM_LEN(base),
 			    len,
 			    field_symbols, NULL,
@@ -732,7 +732,7 @@ Scheme_Object *scheme_make_struct_type(Scheme_Object *base,
 				       Scheme_Object *parent,
 				       int num_fields)
 {
-  return _make_struct_type(SCHEME_SYM_VAL(base),
+  return _make_struct_type(scheme_symbol_val(base),
 			   SCHEME_SYM_LEN(base),
 			   parent, num_fields);
 }

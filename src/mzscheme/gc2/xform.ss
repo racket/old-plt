@@ -1625,51 +1625,62 @@
 						   newly-pushed (live-var-info-tag live-vars) orig-tag)))))
 			  ;; Null out local vars:
 			  (map (lambda (var)
-				 (let null-var ([full-name (car var)][vtype (cdr var)])
-				   (cond
-				    [(union-type? vtype)
-				     null]
-				    [(array-type? vtype)
-				     (let ([c (array-type-count vtype)])
-				       (if (<= c 3)
-					   (let loop ([n 0])
-					     (if (= n c)
-						 null
+				 ;; Check that the variable isn't specifically initialized:
+				 (if (let loop ([decls decls])
+					   (and (pair? decls)
+						(or (let loop ([e (car decls)])
+						      (and (pair? e)
+							   (pair? (cdr e))
+							   (or (and (eq? (car var) (tok-n (car e)))
+								    (eq? '= (tok-n (cadr e))))
+							       (loop (cdr e)))))
+						    (loop (cdr decls)))))
+				     null
+				     (let null-var ([full-name (car var)][vtype (cdr var)])
+				       (cond
+					[(union-type? vtype)
+					 null]
+					[(array-type? vtype)
+					 (let ([c (array-type-count vtype)])
+					   (if (<= c 3)
+					       (let loop ([n 0])
+						 (if (= n c)
+						     null
+						     (append
+						      (null-var (string->symbol
+								 (format "~a[~a]" full-name n))
+								#f)
+						      (loop (add1 n)))))
+					       (list (make-tok NULL_OUT_ARRAY #f #f)
+						     (make-parens "(" #f #f ")"
+								  (seq (make-tok full-name #f #f)))
+						     (make-tok semi #f #f))))]
+					[(struct-type? vtype)
+					 (let aloop ([array-index 0])
+					   ;; Push each struct in array (or only struct if not an array)
+					   (let loop ([l (cdr (assq (struct-type-struct vtype) struct-defs))])
+					     (if (null? l)
+						 (if (and (struct-array-type? vtype)
+							  (< (add1 array-index) (struct-array-type-count vtype)))
+						     ;; Next in array
+						     (aloop (add1 array-index))
+						     ;; All done
+						     null)
 						 (append
 						  (null-var (string->symbol
-							     (format "~a[~a]" full-name n))
-							    #f)
-						  (loop (add1 n)))))
-					   (list (make-tok NULL_OUT_ARRAY #f #f)
-						 (make-parens "(" #f #f ")"
-							      (seq (make-tok full-name #f #f)))
-						 (make-tok semi #f #f))))]
-				    [(struct-type? vtype)
-				     (let aloop ([array-index 0])
-				       ;; Push each struct in array (or only struct if not an array)
-				       (let loop ([l (cdr (assq (struct-type-struct vtype) struct-defs))])
-					 (if (null? l)
-					     (if (and (struct-array-type? vtype)
-						      (< (add1 array-index) (struct-array-type-count vtype)))
-						 ;; Next in array
-						 (aloop (add1 array-index))
-						 ;; All done
-						 null)
-					     (append
-					      (null-var (string->symbol
-							 (format "~a~a.~a"
-								 full-name 
-								 (if (struct-array-type? vtype)
-								     (format "[~a]" array-index)
-								     "")
-								 (caar l)))
-							(cdar l))
-					      (loop (cdr l))))))]
-				    [else
-				     (list (make-tok full-name #f #f)
-					   (make-tok '= #f #f)
-					   (make-tok NULLED_OUT #f #f)
-					   (make-tok semi #f #f))])))
+							     (format "~a~a.~a"
+								     full-name 
+								     (if (struct-array-type? vtype)
+									 (format "[~a]" array-index)
+									 "")
+								     (caar l)))
+							    (cdar l))
+						  (loop (cdr l))))))]
+					[else
+					 (list (make-tok full-name #f #f)
+					       (make-tok '= #f #f)
+					       (make-tok NULLED_OUT #f #f)
+					       (make-tok semi #f #f))]))))
 			       local-vars)
 			  body-x))
 			;; Restore original tag and union max live vars:

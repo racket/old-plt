@@ -3123,7 +3123,7 @@ const char *scheme_get_unit_name(Scheme_Object *o, int *len)
     n = ((UnitDataClosure *)u->data)->defname;
     if (n) {
       *len = SCHEME_SYM_LEN(n);
-      return SCHEME_SYM_VAL(n);
+      return scheme_symbol_val(n);
     }    
   } else if (u->init_func == do_compound_unit) {
     Scheme_Object *n;
@@ -3131,7 +3131,7 @@ const char *scheme_get_unit_name(Scheme_Object *o, int *len)
     n = ((CompoundLinkedData *)u->data)->defname;
     if (n) {
       *len = SCHEME_SYM_LEN(n);
-      return SCHEME_SYM_VAL(n);
+      return scheme_symbol_val(n);
     }
   }
    

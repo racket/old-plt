@@ -246,6 +246,7 @@ EXPORTS
  scheme_make_exact_symbol
  scheme_symbol_name
  scheme_symbol_name_and_size
+ scheme_symbol_val
  scheme_make_struct_values
  scheme_make_struct_names
  scheme_make_struct_type

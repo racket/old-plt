@@ -2205,7 +2205,7 @@ unquote_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
   if (rec)
     scheme_compile_rec_done_local(rec);
 
-  who = SCHEME_SYM_VAL(SCHEME_CAR(form));
+  who = scheme_symbol_val(SCHEME_CAR(form));
 
   len = check_form(who, form);
   if (len != 2)

@@ -76,6 +76,8 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
   hash_v_t h, h2;
   Scheme_Bucket *bucket;
 
+  /* WARNING: key may be GC-misaligned... */
+
  rehash_key:
 
   {
@@ -114,6 +116,9 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     h = (h + h2) % table->size;
   }
 
+  /* In case it's GC-misaligned: */
+  key = NULL;
+
   if (!naya)
     return NULL;
 
@@ -145,6 +150,9 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
 	symbol_bucket(table, SCHEME_SYM_VAL(old[i]), SCHEME_SYM_LEN(old[i]),
 		      (Scheme_Object *)old[i]);
     }
+
+    /* Restore GC-misaligned key: */
+    key = SCHEME_SYM_VAL(naya);
     
     goto rehash_key;
   }
@@ -330,7 +338,8 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
   int i, len = SCHEME_SYM_LEN(sym), dz;
   int total_length;
   int pipe_quote;
-  char *s = SCHEME_SYM_VAL(sym), *result;
+  char buf[100];
+  char *s, *result;
   
   if ((flags & SNF_PIPE_QUOTE) || (flags & SNF_FOR_TS))
     pipe_quote = 1;
@@ -339,6 +348,12 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
   else {
     pipe_quote = SCHEME_TRUEP(scheme_get_param(scheme_config, MZCONFIG_CAN_READ_PIPE_QUOTE));
   }
+
+  if (len < 100) {
+    s = buf;
+    memcpy(buf, SCHEME_SYM_VAL(sym), len + 1);
+  } else
+    s = scheme_symbol_val(sym);
 
 #define isSpecial(ch) ((ch == '(') || (ch == '[') || (ch == '{')       \
 		       || (ch == ')') || (ch == ']') || (ch == '}')    \
@@ -429,12 +444,23 @@ const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *length, int fla
   if (length)
     *length = total_length;
 
+  if (result == buf)
+    result = scheme_symbol_val(sym);
+
   return result;
 }
 
 const char *scheme_symbol_name(Scheme_Object *sym)
 {
   return scheme_symbol_name_and_size(sym, NULL, 0);
+}
+
+char *scheme_symbol_val(Scheme_Object *sym)
+{
+  char *s;
+  s = scheme_malloc_atomic(SCHEME_SYM_LEN(sym) + 1);
+  memcpy(s, SCHEME_SYM_VAL(sym), SCHEME_SYM_LEN(sym) + 1);
+  return s;
 }
 
 /* locals */
@@ -469,9 +495,10 @@ symbol_to_string_prim (int argc, Scheme_Object *argv[])
   if (!SCHEME_SYMBOLP(argv[0]))
     scheme_wrong_type("symbol->string", "symbol", 0, argc, argv);
   
-  return scheme_make_sized_string(SCHEME_SYM_VAL(argv[0]),
-				  SCHEME_SYM_LEN(argv[0]),
-				  1);
+  return scheme_make_sized_offset_string((char *)(argv[0]),
+					 SCHEME_SYMSTR_OFFSET(argv[0]),
+					 SCHEME_SYM_LEN(argv[0]),
+					 1);
 }
 
 static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
@@ -487,6 +514,7 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
     else
       str = SCHEME_SYM_VAL(argv[0]);      
     sprintf(buffer, "%.80s%d", str, gensym_counter++);
+    str = NULL; /* because it might be GC-misaligned */
   } else
     sprintf(buffer, "g%d", gensym_counter++);
 

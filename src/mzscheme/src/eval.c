@@ -981,7 +981,7 @@ scheme_get_primitive_global(Scheme_Object *var, Scheme_Env *env,
   /* Not prim. Try #% version: */
   orig = (Scheme_Object *)(SCHEME_VAR_BUCKET(gvar))->key;
 
-  sym = scheme_hash_percent_name(SCHEME_SYM_VAL(orig),
+  sym = scheme_hash_percent_name(scheme_symbol_val(orig),
 				 SCHEME_SYM_LEN(orig));
 
   b = scheme_global_bucket(sym, env);
@@ -3418,7 +3418,7 @@ static Scheme_Object *read_syntax(Scheme_Object *obj)
 
   f = scheme_find_linker(sym);
   if (!f)
-    scheme_signal_error("unknown compiled syntax: %s", SCHEME_SYM_VAL(sym));
+    scheme_signal_error("unknown compiled syntax: %S", sym);
 
   /* Copy obj: */
   obj = SCHEME_CDR(obj);

@@ -667,7 +667,7 @@ scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *obj,
 {
   do_add_global_symbol(env, name, obj, scheme_constant_builtins, 0);
 #ifndef NO_SEPARATE_HASH_PRECENT
-  hash_percent(SCHEME_SYM_VAL(name), obj, env, 1);
+  hash_percent(scheme_symbol_val(name), obj, env, 1);
 #endif
 }
 
@@ -798,6 +798,7 @@ void scheme_copy_from_original_env(Scheme_Env *env)
 	       || SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))) {
 	if (call_ec) {
 	  char *s = SCHEME_SYM_VAL(name);
+	  /* WARNING: s is GC-misaligned... */
 
 	  if (s[0] == '#')
 	    s += 2;

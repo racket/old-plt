@@ -39,7 +39,7 @@ typedef short Type_Tag;
 #define RECYCLE_HEAP 0
 #define KEEP_FROM_PTR 0
 
-#define GC_EVERY_ALLOC 25
+#define GC_EVERY_ALLOC 0
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 
@@ -636,6 +636,8 @@ static void *mark(void *p)
     }
       
     diff <<= 2;
+
+    fprintf(stderr, "Middle!: %lx d: %ld\n", p, diff1 - diff);
 
     return (void *)((char *)mark(diff + (char *)GC_alloc_space) + (diff1 - diff));
   } else {

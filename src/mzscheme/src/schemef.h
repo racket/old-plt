@@ -529,6 +529,7 @@ Scheme_Object *scheme_make_symbol(const char *name); /* Make uninterned */
 Scheme_Object *scheme_make_exact_symbol(const char *name, int len); /* Exact case */
 const char *scheme_symbol_name(Scheme_Object *sym);
 const char *scheme_symbol_name_and_size(Scheme_Object *sym, int *l, int flags);
+char *scheme_symbol_val(Scheme_Object *sym);
 
 /*========================================================================*/
 /*                                structs                                 */

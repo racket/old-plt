@@ -130,6 +130,12 @@ typedef struct {
 #define STACK_START(r) (r.pos = local_list_stack_pos, r.stack = local_list_stack)
 #define STACK_END(r) (local_list_stack_pos = r.pos, local_list_stack = r.stack)
 
+#ifdef MZ_PRECISE_GC
+# define USE_LISTSTACK(x) 0
+#else
+# define USE_LISTSTACK(x) x
+#endif
+
 static Scheme_Object *quote_symbol;
 static Scheme_Object *quasiquote_symbol;
 static Scheme_Object *unquote_symbol;
@@ -755,7 +761,7 @@ scheme_internal_read(Scheme_Object *port, int crc, Scheme_Config *config CURRENT
   local_curly_braces_are_parens = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_CURLY_BRACES_ARE_PARENS));
   local_read_decimal_inexact = SCHEME_TRUEP(scheme_get_param(config, MZCONFIG_READ_DECIMAL_INEXACT));
 
-  if (!p->list_stack)
+  if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);
 
   v = read_inner(port, &ht CURRENTPROCARG);
@@ -825,7 +831,7 @@ read_list(Scheme_Object *port, char closer, int vec, int use_stack,
     scheme_ungetc(ch, port);
     car = read_inner(port, ht CURRENTPROCARG);
 
-    if (use_stack) {
+    if (USE_LISTSTACK(use_stack)) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
 	Scheme_Object *sa;
@@ -1762,7 +1768,7 @@ static Scheme_Object *read_compact(CPort *port,
     if (need_car) {
       Scheme_Object *pair;
 
-      if (use_stack) {
+      if (USE_LISTSTACK(use_stack)) {
 	if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	  /* Overflow */
 	  Scheme_Object *sa;
@@ -1804,7 +1810,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
   Scheme_Object *v, *first, *last, *pair;
 
   v = read_compact(port, ht, 0 CURRENTPROCARG);
-  if (use_stack) {
+  if (USE_LISTSTACK(use_stack)) {
     if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
       /* Overflow */
       Scheme_Object *sa;
@@ -1825,7 +1831,7 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
   while (--c) {
     v = read_compact(port, ht, 0 CURRENTPROCARG);
 
-    if (use_stack) {
+    if (USE_LISTSTACK(use_stack)) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
 	Scheme_Object *sa;
@@ -1940,7 +1946,7 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 #endif
   CPort *rp;
 
-  if (!p->list_stack)
+  if (USE_LISTSTACK(!p->list_stack))
     scheme_alloc_list_stack(p);
 
   if (!cpt_branch[1]) {

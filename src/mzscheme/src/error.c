@@ -1139,7 +1139,7 @@ static Scheme_Object *error(int argc, Scheme_Object *argv[])
       const char *s;
       int l;
 
-      s = SCHEME_SYM_VAL(argv[0]);
+      s = scheme_symbol_val(argv[0]);
       l = SCHEME_SYM_LEN(argv[0]);
 
       /* Just a symbol */
@@ -1213,7 +1213,7 @@ static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-syntax-error", "string", 1, argc, argv);
 
-  scheme_wrong_syntax(SCHEME_SYM_VAL(argv[0]), 
+  scheme_wrong_syntax(scheme_symbol_val(argv[0]), 
 		      (argc > 3) ? argv[3] : NULL,
 		      (argc > 2) ? argv[2] : NULL,
 		      "%T", argv[1]);
@@ -1228,7 +1228,7 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-type-error", "string", 1, argc, argv);
 
-  scheme_wrong_type(SCHEME_SYM_VAL(argv[0]),
+  scheme_wrong_type(scheme_symbol_val(argv[0]),
 		    SCHEME_STR_VAL(argv[1]),
 		    -1, 0, &argv[2]);
 
@@ -1242,7 +1242,7 @@ static Scheme_Object *raise_mismatch_error(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-mismatch-error", "string", 1, argc, argv);
 
-  scheme_arg_mismatch(SCHEME_SYM_VAL(argv[0]),
+  scheme_arg_mismatch(scheme_symbol_val(argv[0]),
 		      SCHEME_STR_VAL(argv[1]),
 		      argv[2]);
 

@@ -693,16 +693,16 @@ static void GenCheckIvarList(Scheme_Object *clause,
     if (SCHEME_SYMBOLP(p)) {
       if (flags & check_MustPair)
 	scheme_wrong_syntax(CLASS_STAR, p, form,
-			    "%s clause must contain pairs",
-			    SCHEME_SYM_VAL(clause));
+			    "%S clause must contain pairs",
+			    clause);
     } else if (SCHEME_PAIRP(p)) {
       Scheme_Object *pr = p;
 
       if (flags & check_MustId) {
 	if (!(flags & check_CanRename)) {
 	  scheme_wrong_syntax(CLASS_STAR, p, form,
-			      "%s clause must contain only identifiers",
-			      SCHEME_SYM_VAL(clause));
+			      "%S clause must contain only identifiers",
+			      clause);
 	}
 	n = p;
 	p = scheme_null;
@@ -716,60 +716,60 @@ static void GenCheckIvarList(Scheme_Object *clause,
 	  if (!SCHEME_PAIRP(n) || !SCHEME_PAIRP(SCHEME_CDR(n))
 	      || !SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(n))))
 	    scheme_wrong_syntax(CLASS_STAR, n, form,
-				"badly formed %s clause (bad internal-external"
-				" identifier pair form)", SCHEME_SYM_VAL(clause));
+				"badly formed %S clause (bad internal-external"
+				" identifier pair form)", clause);
 	  if (!SCHEME_SYMBOLP(SCHEME_CAR(n)))
 	    scheme_wrong_syntax(CLASS_STAR, SCHEME_CAR(n), form,
-				"badly formed %s clause (internal"
-				" name not an identifier)", SCHEME_SYM_VAL(clause));	  
+				"badly formed %S clause (internal"
+				" name not an identifier)", clause);
 	  n = SCHEME_CDR(n);
 	  if (!SCHEME_SYMBOLP(SCHEME_CAR(n)))
 	    scheme_wrong_syntax(CLASS_STAR, SCHEME_CAR(n), form,
-				"badly formed %s clause (external"
-				" name not an identifier)", SCHEME_SYM_VAL(clause));	  
+				"badly formed %S clause (external"
+				" name not an identifier)", clause);
 	} else
 	  scheme_wrong_syntax(CLASS_STAR, n, form,
-			      "badly formed %s clause (name"
-			      " not an identifier)", SCHEME_SYM_VAL(clause));
+			      "badly formed %S clause (name"
+			      " not an identifier)", clause);
       }
 
       if (!SCHEME_NULLP(p)) {
 	if (!SCHEME_PAIRP(p))
 	scheme_wrong_syntax(CLASS_STAR, pr, form,
-			    "badly formed %s clause (identifier"
+			    "badly formed %S clause (identifier"
 			    " declaration is improper)", 
-			    SCHEME_SYM_VAL(clause));
+			    clause);
 	if (!SCHEME_NULLP(SCHEME_CDR(p)))
 	  scheme_wrong_syntax(CLASS_STAR, pr, form,
-			      "badly formed %s clause (identifier"
+			      "badly formed %S clause (identifier"
 			      " declaration not a pair)", 
-			      SCHEME_SYM_VAL(clause));
+			      clause);
 	if (flags & check_BindingMustId) {
 	  n = SCHEME_CAR(p);
 	  if (!SCHEME_SYMBOLP(n))
 	    scheme_wrong_syntax(CLASS_STAR, pr, form,
 				"association "
-				"in %s clause "
+				"in %S clause "
 				"must be an identifier",
-				SCHEME_SYM_VAL(clause));
+				clause);
 	}
       } else if (flags & check_MustPair)
 	scheme_wrong_syntax(CLASS_STAR, pr, form,
-			    "%s clause must contain pairs",
-			    SCHEME_SYM_VAL(clause));
+			    "%S clause must contain pairs",
+			    clause);
     } else
       scheme_wrong_syntax(CLASS_STAR, p, form,
-			  "badly formed %s clause (declaration"
+			  "badly formed %S clause (declaration"
 			  " not an identifier or pair)", 
-			  SCHEME_SYM_VAL(clause));
+			  clause);
   }
   
   if (!SCHEME_NULLP(l))
     scheme_wrong_syntax(CLASS_STAR, l, form,
-			"badly formed %s clause (" 
+			"badly formed %S clause (" 
 			IMPROPER_LIST_FORM
 			" for identifiers)", 
-			SCHEME_SYM_VAL(clause));
+			clause);
   
 }
 
@@ -2595,7 +2595,7 @@ const char *scheme_get_class_name(Scheme_Object *c, int *len)
   n = ((Scheme_Class *)c)->defname;
   if (n) {
     *len = SCHEME_SYM_LEN(n);
-    return SCHEME_SYM_VAL(n);
+    return scheme_symbol_val(n);
   } else
     return NULL;
 }
@@ -2610,7 +2610,7 @@ const char *scheme_get_interface_name(Scheme_Object *i, int *len)
   n = ((Scheme_Interface *)i)->defname;
   if (n) {
     *len = SCHEME_SYM_LEN(n);
-    return SCHEME_SYM_VAL(n);
+    return scheme_symbol_val(n);
   } else
     return NULL;
 }
@@ -3589,8 +3589,8 @@ static Scheme_Object *CreateObject(int argc, Scheme_Object *argv[])
   if ((sclass->priminit == pi_CPP)
       && !sclass->piu.initf)
     scheme_raise_exn(MZEXN_OBJECT,
-		     CLASS_STAR ": can't create objects from the class %s",
-		     SCHEME_SYM_VAL(sclass->defname));
+		     CLASS_STAR ": can't create objects from the class %S",
+		     sclass->defname);
   
   obj = (Internal_Object *)make_object(sclass, argc  - 1, argv + 1);
   

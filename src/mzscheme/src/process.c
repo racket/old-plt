@@ -517,9 +517,6 @@ void scheme_init_process(Scheme_Env *env)
     hash_percent_syntax_symbol = scheme_intern_symbol("hash-percent-syntax");
     all_syntax_symbol = scheme_intern_symbol("all-syntax");
     empty_symbol = scheme_intern_symbol("empty");
-
-    GC_collect_start_callback = get_ready_for_GC;
-    GC_collect_end_callback = done_with_GC;
   }
 }
 
@@ -577,6 +574,9 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     scheme_first_process = scheme_main_process = process;
     process->prev = NULL;
     process->next = NULL;
+
+    GC_collect_start_callback = get_ready_for_GC;
+    GC_collect_end_callback = done_with_GC;
 
 #ifndef MZ_REAL_THREADS
 #ifdef LINK_EXTENSIONS_BY_TABLE
@@ -691,7 +691,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
 #ifdef RUNSTACK_IS_GLOBAL
   if (!prefix) {
-# ifdef MZ_PRECISE_GC
+# ifndef MZ_PRECISE_GC
     /* Precise GC: we intentionally don't register MZ_RUNSTACK. See done_with_GC() */
     REGISTER_SO(MZ_RUNSTACK);
 # endif
@@ -1921,7 +1921,7 @@ static void done_with_GC()
 {
 #ifdef RUNSTACK_IS_GLOBAL
 # ifdef MZ_PRECISE_GC
-  scheme_current_process->runstack = MZ_RUNSTACK;
+  MZ_RUNSTACK = scheme_current_process->runstack;
 # endif
 #endif
 #ifdef WINDOWS_PROCESSES

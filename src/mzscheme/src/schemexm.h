@@ -302,6 +302,7 @@
 #define scheme_make_exact_symbol (scheme_extension_table->scheme_make_exact_symbol)
 #define scheme_symbol_name (scheme_extension_table->scheme_symbol_name)
 #define scheme_symbol_name_and_size (scheme_extension_table->scheme_symbol_name_and_size)
+#define scheme_symbol_val (scheme_extension_table->scheme_symbol_val)
 #define scheme_make_struct_values (scheme_extension_table->scheme_make_struct_values)
 #define scheme_make_struct_names (scheme_extension_table->scheme_make_struct_names)
 #define scheme_make_struct_type (scheme_extension_table->scheme_make_struct_type)

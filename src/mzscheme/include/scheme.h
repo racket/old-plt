@@ -285,6 +285,8 @@ typedef struct Scheme_Vector {
 #define SCHEME_SYM_VAL(obj)  (((Scheme_Symbol *)(obj))->s)
 #define SCHEME_SYM_LEN(obj)  (((Scheme_Symbol *)(obj))->len)
 
+#define SCHEME_SYMSTR_OFFSET(obj) ((unsigned long)SCHEME_SYM_VAL(obj)-(unsigned long)(obj))
+
 #define SCHEME_BOX_VAL(obj)  (((Scheme_Small_Object *)(obj))->u.ptr_val)
 
 #define SCHEME_CAR(obj)      ((obj)->u.pair_val.car)
@@ -356,6 +358,7 @@ typedef struct Scheme_Object *
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short flags; /* keep flags at same place as in closed */
   Scheme_Prim *prim_val;
   const char *name;
@@ -369,6 +372,7 @@ typedef struct {
 
 typedef struct {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   short flags; /* keep flags at same place as in unclosed */
   Scheme_Closed_Prim *prim_val;
   void *data;
@@ -434,6 +438,7 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 typedef struct Scheme_Bucket
 {
   Scheme_Type type;
+  MZ_HASH_KEY_EX
   void *val;
   char *key;
 } Scheme_Bucket;
@@ -462,6 +467,7 @@ enum {
 typedef struct Scheme_Env
 {
   Scheme_Type type; /* scheme_namespace_type */
+  MZ_HASH_KEY_EX
   short no_keywords; /* only low-bit used; rest is hash key for precise gc */
   Scheme_Hash_Table *globals;
   Scheme_Hash_Table *loaded_libraries;

@@ -1196,7 +1196,7 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
     seq = (Scheme_Case_Lambda *)p;
     if (seq->name) {
       *len = SCHEME_SYM_LEN(seq->name);
-      s = SCHEME_SYM_VAL(seq->name);
+      s = scheme_symbol_val(seq->name);
     } else
       return NULL;
   } else {
@@ -1205,7 +1205,7 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
     data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(p);
     if (data->name) {
       *len = SCHEME_SYM_LEN(data->name);
-      s = SCHEME_SYM_VAL(data->name);
+      s = scheme_symbol_val(data->name);
     } else
       return NULL;
   }

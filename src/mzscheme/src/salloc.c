@@ -759,7 +759,7 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 #ifdef USE_TAGGED_ALLOCATION
   trace_path_type = -1;
   if (c && SCHEME_SYMBOLP(p[0])) {
-    char *s = SCHEME_SYM_VAL(p[0]);
+    char *s = scheme_symbol_val(p[0]);
     int i, maxpos;
 
     maxpos = scheme_num_types();

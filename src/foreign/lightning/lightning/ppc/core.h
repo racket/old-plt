@@ -47,10 +47,10 @@ struct jit_local_state {
 #define JIT_SP			1
 #define JIT_RET			3
 #define JIT_R_NUM		3
-#define JIT_V_NUM		4
+#define JIT_V_NUM		7
 #define JIT_R(i)		(9+(i))
 #define JIT_V(i)		(31-(i))
-#define JIT_AUX			27  /* for 32-bit operands & shift counts */
+#define JIT_AUX			JIT_V(JIT_V_NUM)  /* for 32-bit operands & shift counts */
 
 #define jit_pfx_start()   (_jit.jitl.trampolines)
 #define jit_pfx_end()     (_jit.jitl.free)

@@ -7,7 +7,7 @@
 
 /***********************************************************************
  *
- * Copyright 2000, 2001, 2002 Free Software Foundation, Inc.
+ * Copyright 2000, 2001, 2002, 2004 Free Software Foundation, Inc.
  * Written by Paolo Bonzini.
  *
  * This file is part of GNU lightning.
@@ -34,6 +34,8 @@
 
 #ifndef __lightning_asm_fp_h
 #define __lightning_asm_fp_h
+
+#include <float.h>
 
 #define JIT_FPR_NUM	6
 #define JIT_FPR(i)	(30-(i)*2)
@@ -63,19 +65,19 @@
 #define jit_movi_f(rd,immf)			  \
     do {					  \
       float _v = (immf);                          \
-      _1(_jit.x.pc + 4), NOP();			  \
+      _1(_jit.x.pc + 3), LDFmr(_Ro(7), 8, (rd));  \
       memcpy(_jit.x.uc_pc, &_v, sizeof (float));  \
       _jit.x.uc_pc += sizeof (float);             \
-      LDFmr(_Ro(7), 8, (rd));			  \
     } while(0)
 
-#define jit_movi_d(rd,immd)			  \
-    do {					  \
-      double _v = (immd);                         \
-      _1(_jit.x.pc + 4), NOP();			  \
-      memcpy(_jit.x.uc_pc, &_v, sizeof (double)); \
-      _jit.x.uc_pc += sizeof (double);            \
-      LDDFmr(_Ro(7), 8, (rd));			  \
+#define jit_movi_d(rd,immd)			 	\
+    do {					 	\
+      double _v = (immd);                        	\
+      if ((long)_jit.x.pc & 4) NOP();			\
+      _1(_jit.x.pc + 4);				\
+      LDDFmr(_Ro(7), 8, (rd));				\
+      memcpy(_jit.x.uc_pc, &_v, sizeof (double));	\
+      _jit.x.uc_pc += sizeof (double);           	\
     } while(0)
 
 
@@ -88,33 +90,90 @@
 #define jit_stxr_f(d1, d2, rs)		STFrx((rs), (d1), (d2))
 #define jit_stxr_d(d1, d2, rs)		STDFrx((rs), (d1), (d2))
 
-#define jit_do_round(mode, rd, freg, macro)	(		\
-	_1(3),							\
-	SETHIir(_HI(mode << 29), JIT_BIG),			\
-	NOP(),							\
-	STFSRm(_Ro(7), 8),		/* store fsr */		\
-	LDmr(_Ro(7), 8, rd),					\
-	XORrrr(rd, JIT_BIG, JIT_BIG),	/* adjust mode */	\
-	STrm(JIT_BIG, _Ro(7), 8),				\
-	LDFSRm(_Ro(7), 8),		/* load fsr */		\
-	macro(freg, JIT_FPTMP), 	/* truncate */		\
-	STrm(rd, _Ro(7), 8),		/* load old fsr */	\
-	LDFSRm(_Ro(7), 8),					\
-	STFrm(JIT_FPTMP, _Ro(7), 8),	/* store truncated value */ \
-	LDmr(_Ro(7), 8, rd))		/* load it into rd */
+#define jit_truncr_f_i(rd, rs) (		\
+	_1(_jit.x.pc + 3),			\
+	FSTOIrr((rs), JIT_FPTMP),		\
+	NOP(),					\
+	STFrm(JIT_FPTMP, _Ro(7), 8),		\
+	LDmr(_Ro(7), 8, (rd)))
 
+#define jit_truncr_d_i(rd, rs) (		\
+	_1(_jit.x.pc + 3),			\
+	FDTOIrr((rs), JIT_FPTMP),		\
+	NOP(),					\
+	STFrm(JIT_FPTMP, _Ro(7), 8),		\
+	LDmr(_Ro(7), 8, (rd)))
 
-/*					 call		    delay slot		      data   call lands here */
-#define jit_extr_i_d(rd, rs)		(_1(_jit.x.pc + 3), NOP(), 		      NOP(), STrm((rs), _Ro(7), 8), LDFmr(_Ro(7), 8, (rd)), FITODrr((rd), (rd)))
-#define jit_extr_i_f(rd, rs)		(_1(_jit.x.pc + 3), NOP(), 		      NOP(), STrm((rs), _Ro(7), 8), LDFmr(_Ro(7), 8, (rd)), FITOSrr((rd), (rd)))
-#define jit_roundr_d_i(rd, rs)		(_1(_jit.x.pc + 3), FDTOIrr((rs), JIT_FPTMP), NOP(), STFrm(JIT_FPTMP, _Ro(7), 8), LDmr(_Ro(7), 8, (rd)))
-#define jit_roundr_f_i(rd, rs)		(_1(_jit.x.pc + 3), FSTOIrr((rs), JIT_FPTMP), NOP(), STFrm(JIT_FPTMP, _Ro(7), 8), LDmr(_Ro(7), 8, (rd)))
-#define jit_floorr_d_i(rd, rs)		jit_do_round(3, (rd), (rs), FDTOIrr)
-#define jit_ceilr_d_i(rd, rs)		jit_do_round(2, (rd), (rs), FDTOIrr)
-#define jit_truncr_d_i(rd, rs)		jit_do_round(1, (rd), (rs), FDTOIrr)
-#define jit_floorr_f_i(rd, rs)		jit_do_round(3, (rd), (rs), FSTOIrr)
-#define jit_ceilr_f_i(rd, rs)		jit_do_round(2, (rd), (rs), FSTOIrr)
-#define jit_truncr_f_i(rd, rs)		jit_do_round(1, (rd), (rs), FSTOIrr)
+#define jit_extr_i_d(rd, rs)		(_1 (_jit.x.pc + 3), NOP(), NOP(), STrm((rs), _Ro(7), 8), LDFmr(_Ro(7), 8, (rd)), FITODrr((rd), (rd)))
+#define jit_extr_i_f(rd, rs)		(_1 (_jit.x.pc + 3), NOP(), NOP(), STrm((rs), _Ro(7), 8), LDFmr(_Ro(7), 8, (rd)), FITOSrr((rd), (rd)))
+
+#define jit_do_round_f(rd, rs, fixup, mode) do {		\
+	jit_movi_f (JIT_FPTMP, fixup);				\
+        _1(_jit.x.pc + 4);                                      \
+        SETHIir(_HI(mode << 29), JIT_BIG);                      \
+        NOP();                                                  \
+        NOP();                                                  \
+        STFSRm(_Ro(7), 8);              /* store fsr */         \
+        LDmr(_Ro(7), 8, rd);                                    \
+        XORrrr(rd, JIT_BIG, JIT_BIG);   /* adjust mode */       \
+        STrm(JIT_BIG, _Ro(7), 12);                              \
+        LDFSRm(_Ro(7), 12);              /* load fsr */         \
+	FADDSrrr ((rs), JIT_FPTMP, JIT_FPTMP);			\
+        LDFSRm(_Ro(7), 8);                                      \
+        FSTOIrr(JIT_FPTMP, JIT_FPTMP);   		        \
+        STFrm(JIT_FPTMP, _Ro(7), 8);			        \
+        LDmr(_Ro(7), 8, (rd));					\
+	ADDCCrrr ((rd), (rd), 0);				\
+	SUBXrrr ((rd), 0, (rd));				\
+  } while (0);
+
+#define jit_do_round_d(rd, rs, fixup, mode) do {		\
+	jit_movi_d (JIT_FPTMP, fixup);				\
+        _1(_jit.x.pc + 4);                                      \
+        SETHIir(_HI(mode << 29), JIT_BIG);                      \
+        NOP();                                                  \
+        NOP();                                                  \
+        STFSRm(_Ro(7), 8);              /* store fsr */         \
+        LDmr(_Ro(7), 8, rd);                                    \
+        XORrrr(rd, JIT_BIG, JIT_BIG);   /* adjust mode */       \
+        STrm(JIT_BIG, _Ro(7), 12);                              \
+        LDFSRm(_Ro(7), 12);              /* load fsr */         \
+	FADDDrrr ((rs), JIT_FPTMP, JIT_FPTMP);			\
+        LDFSRm(_Ro(7), 8);                                      \
+        FDTOIrr(JIT_FPTMP, JIT_FPTMP);   		        \
+        STFrm(JIT_FPTMP, _Ro(7), 8);			        \
+        LDmr(_Ro(7), 8, (rd));					\
+	ADDCCrrr ((rd), (rd), 0);				\
+	SUBXrrr ((rd), 0, (rd));				\
+  } while (0);
+
+#define jit_roundr_f_i(rd, rs) do {			\
+	jit_movi_f (JIT_FPTMP, 0.5);			\
+	FADDSrrr ((rs), JIT_FPTMP, JIT_FPTMP);		\
+	jit_truncr_f_i ((rd), JIT_FPTMP);		\
+	ADDCCrrr ((rd), (rd), 0);			\
+	SUBXrrr ((rd), 0, (rd));			\
+  } while (0)
+
+#define jit_roundr_d_i(rd, rs) do {			\
+	jit_movi_d (JIT_FPTMP, 0.5);			\
+	FADDDrrr ((rs), JIT_FPTMP, JIT_FPTMP);		\
+	jit_truncr_d_i ((rd), JIT_FPTMP);		\
+	ADDCCrrr ((rd), (rd), 0);			\
+	SUBXrrr ((rd), 0, (rd));			\
+  } while (0)
+
+#define jit_ceilr_f_i(rd, rs) 				\
+	jit_do_round_f ((rd), (rs), 1.0f - FLT_EPSILON, 3)
+
+#define jit_ceilr_d_i(rd, rs) 				\
+	jit_do_round_d ((rd), (rs), 1.0 - DBL_EPSILON, 3)
+
+#define jit_floorr_f_i(rd, rs) 				\
+	jit_do_round_f ((rd), (rs), FLT_EPSILON, 2)
+
+#define jit_floorr_d_i(rd, rs) 				\
+	jit_do_round_d ((rd), (rs), DBL_EPSILON, 2)
 
 #define jit_ltr_d(d, s1, s2)            (FCMPDrr ((s1), (s2)), FBLi(_jit.x.pc + 3), MOVir (1, (d)), MOVir (0, (d)))
 #define jit_ltr_f(d, s1, s2)            (FCMPSrr ((s1), (s2)), FBLi(_jit.x.pc + 3), MOVir (1, (d)), MOVir (0, (d)))
@@ -145,19 +204,19 @@
 #define jit_unordr_d(d, s1, s2)         (FCMPDrr ((s1), (s2)), FBUi(_jit.x.pc + 3), MOVir (1, (d)), MOVir (0, (d)))
 #define jit_unordr_f(d, s1, s2)         (FCMPSrr ((s1), (s2)), FBUi(_jit.x.pc + 3), MOVir (1, (d)), MOVir (0, (d)))
 
-#define jit_prepare_f(num)              (_jitl.nextarg_fpput += 2 * (num))
-#define jit_prepare_d(num)              (_jitl.nextarg_fpput += 2 * (num))
+#define jit_prepare_f(num)              (_jitl.nextarg_put += (num))
+#define jit_prepare_d(num)              (_jitl.nextarg_put += 2 * (num))
 
-#define jit_arg_f()                     ((_jitl.nextarg_fpget += 2) - 1)
-#define jit_arg_d()                     ((_jitl.nextarg_fpget += 2) - 2)
+#define jit_arg_f()                     (_jitl.nextarg_get++)
+#define jit_arg_d()                     (_jitl.nextarg_get += _jitl.nextarg_get & 1, _jitl.nextarg_get += 2, _jitl.nextarg_get - 2)
 
-#define jit_pusharg_f(rs)               (_jitl.nextarg_fpput -= 2, jit_movr_f(_jitl.nextarg_fpput, (rs)))
-#define jit_pusharg_d(rs)               (_jitl.nextarg_fpput -= 2, jit_movr_d(_jitl.nextarg_fpput, (rs)))
+#define jit_getarg_f(rd, ofs)           (STrm(ofs, _Ri(6), -24), LDFmr (_Ri(6), -24, (rd)))
+#define jit_getarg_d(rd, ofs)           (STDrm(ofs, _Ri(6), -24), LDDFmr (_Ri(6), -24, (rd)))
 
-#define jit_getarg_f(rd, ofs)           jit_movr_f((rd), ofs)
-#define jit_getarg_d(rd, ofs)           jit_movr_d((rd), ofs)
+#define jit_pusharg_f(rs)               (STFrm((rs), _Ri(6), -24), --_jitl.nextarg_put, LDmr (_Ri(6), -24, _Ro(_jitl.nextarg_put)))
+#define jit_pusharg_d(rs)               (STDFrm((rs), _Ri(6), -24), _jitl.nextarg_put -= 2, LDmr (_Ri(6), -24, _Ro(_jitl.nextarg_put)))
 
-#define jit_retval_f(rs)	        jit_movr_f(1, rs)
+#define jit_retval_f(rs)	        jit_movr_f(0, rs)
 #define jit_retval_d(rs)	        jit_movr_d(0, rs)
 
 #endif /* __lightning_asm_fp_h */

@@ -354,16 +354,19 @@ typedef unsigned int jit_insn;
 
 
 /* 9 below inverts the branch condition and the branch prediction.
- * This has an incestuous knowledge of the fact that register 26
- * is used as auxiliary!!! */
+ * This has an incestuous knowledge of JIT_AUX */
 #define BC_EXT(A, C, D)  (_siP(16, _jit_UL(D)-_jit_UL(_jit.x.pc)) \
   ? BCiii((A), (C), (D)) \
-  : (BCiii((A)^9, (C), _jit.x.pc+5), LISri(26,_HI(D)), ORIrri(26,26,_LO(D)), \
-     MTLRr(26), BLR() ))
+  : (BCiii((A)^9, (C), _jit.x.pc+5), \
+     LISri(JIT_AUX,_HI(D)), \
+     ORIrri(JIT_AUX,JIT_AUX,_LO(D)), \
+     MTLRr(JIT_AUX), BLR() ))
 
 #define B_EXT(D)         (_siP(16, _jit_UL(D)-_jit_UL(_jit.x.pc)) \
   ? Bi((D)) \
-  : (LISri(26,_HI(D)), ORIrri(26,26,_LO(D)), MTLRr(26), BLR()) )
+  : (LISri(JIT_AUX,_HI(D)), \
+     ORIrri(JIT_AUX,JIT_AUX,_LO(D)), \
+     MTLRr(JIT_AUX), BLR()) )
 
 #define BTii(C,D)			BC_EXT(12, C, D)		/* [1, Table F-5] */
 #define BFii(C,D)			BC_EXT( 4, C, D)
@@ -382,7 +385,7 @@ typedef unsigned int jit_insn;
 		
 
 #define BLTLRi(CR)			BCLRii(12, ((CR)<<2)+0)	/* [1, Table F-10] */
-#define BLELRi(CR)			BCLRii( 4  ((CR)<<2)+1)
+#define BLELRi(CR)			BCLRii( 4, ((CR)<<2)+1)
 #define BEQLRi(CR)			BCLRii(12, ((CR)<<2)+2)
 #define BGELRi(CR)			BCLRii( 4, ((CR)<<2)+0)
 #define BGTLRi(CR)			BCLRii(12, ((CR)<<2)+1)
@@ -408,7 +411,7 @@ typedef unsigned int jit_insn;
 #define BNULRLi(CR)			BCLRLii( 4, ((CR)<<2)+3)
 		
 #define BLTCTRi(CR)			BCCTRii(12, ((CR)<<2)+0)	/* [1, Table F-10] */
-#define BLECTRi(CR)			BCCTRii( 4  ((CR)<<2)+1)
+#define BLECTRi(CR)			BCCTRii( 4, ((CR)<<2)+1)
 #define BEQCTRi(CR)			BCCTRii(12, ((CR)<<2)+2)
 #define BGECTRi(CR)			BCCTRii( 4, ((CR)<<2)+0)
 #define BGTCTRi(CR)			BCCTRii(12, ((CR)<<2)+1)
@@ -514,7 +517,7 @@ typedef unsigned int jit_insn;
 #define BNUi(D)				BNUii(0,D)
 
 #define BLTLii(C,D)			BCLiii(12, ((C)<<2)+0, D)	/* [1, Table F-??] */
-#define BLELii(C,D)			BCLiii( 4  ((C)<<2)+1, D)
+#define BLELii(C,D)			BCLiii( 4, ((C)<<2)+1, D)
 #define BEQLii(C,D)			BCLiii(12, ((C)<<2)+2, D)
 #define BGELii(C,D)			BCLiii( 4, ((C)<<2)+0, D)
 #define BGTLii(C,D)			BCLiii(12, ((C)<<2)+1, D)
@@ -610,6 +613,7 @@ typedef unsigned int jit_insn;
 #define STFSUrri(RS,RA,imm)     _D(53,RS,RA,imm)
 #define STFSUxrrr(RS,RA,RB)     _X(31,RS,RA,RB,695,0)
 #define STFSxrrr(RS,RA,RB)      _X(31,RS,RA,RB,663,0)
+#define STFIWXrrr(RS,RA,RB)     _X(31,RS,RA,RB,983,0)
 
 #define FADDDrrr(RD,RA,RB)       _A(63,RD,RA,RB,0,21,0)
 #define FADDSrrr(RD,RA,RB)       _A(59,RD,RA,RB,0,21,0)
@@ -631,7 +635,7 @@ typedef unsigned int jit_insn;
 #define FMOVErr(RD,RB)           _X(63,RD,0,RB,72,0)
 #define FCMPOrrr(CR,RA,RB)       _X(63,_u3((CR)<<2),RA,RB,32,0)
 #define FCMPUrrr(CR,RA,RB)       _X(63,_u3((CR)<<2),RA,RB,0,0)
-
+#define MTFSFIri(CR,IMM)          _X(63,_u5((CR)<<2),0,_u5((IMM)<<1),134,0)
 
 /*** References:
  *

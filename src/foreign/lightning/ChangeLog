@@ -1,3 +1,104 @@
+2004-11-26  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/funcs.h (_jit_epilog): Remove unused variable.
+
+2004-11-13  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/i386/funcs.h [__linux__]: Include sys/mman.h.
+
+2004-11-09  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/sparc/fp.h: Fix fp-to-integer conversions.
+	* lightning/ppc/testfp.c: Test fp-to-integer conversions
+	of integer numbers.
+	* lightning/ppc/testfp.ok: Adjust for the above.
+
+2004-11-08  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/testfp.c: Always flush code before
+	testing it.
+
+2004-11-08  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/fp.h: Do not clobber f31.
+
+2004-11-08  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning.h: New name of...
+	* lightning-inst.h: ... this file.
+	* lightning.h.in: Removed.
+
+	* opcodes/disass.c: Include config.h.
+	* tests/add.c: Include config.h.
+	* tests/bp.c: Include config.h.
+	* tests/fib.c: Include config.h.
+	* tests/fibdelay.c: Include config.h.
+	* tests/fibit.c: Include config.h.
+	* tests/funcfp.c: Include config.h.
+	* tests/incr.c: Include config.h.
+	* tests/printf.c: Include config.h.
+	* tests/printf2.c: Include config.h.
+	* tests/rpn.c: Include config.h.
+	* tests/rpnfp.c: Include config.h.
+	* tests/testfp.c: Include config.h.
+
+2004-10-12  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/i386/fp.h: Fix bugs in conditional branches.
+
+2004-10-10  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/i386/funcs.h: Fix pasto in jit_flush_code.
+
+2004-10-08  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/fp.h: Optimized conditional branches.
+
+2004-09-20  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/asm.h: Fix more typos.
+
+2004-09-20  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/asm.h: Fix typos, replace `26' with JIT_AUX.
+
+2004-09-20  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/fp.h: Added conditional branches.
+
+2004-09-18  Laurent Michel  <ldm@thorgal.homelinux.org>
+
+	* lightning/ppc/fp.h (jit_unler_d, jit_unltr_d, jit_unger_d,
+	jit_ungtr_d, jit_ltgt_d, jit_uneq_d): Implemented missing tests
+	to fully support testfp.
+	(jit_floorr_d_i, jit_ceilr_d_i, jit_roundr_d_i, jit_truncr_d_i):
+	New macros.
+	* lightning/ppc/asm.h: Added missing opcodes FCTIWZ and MTFSFI.
+	* lightning/ppc/funcs.h (_jit_prolog): Fixed minor mistake in
+	the initialization of _jitl.nextarg_geti, relying on the
+	JIT_AUX macro as well to get the register offset.
+
+2004-09-07  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/ppc/funcs.h: Fix typo.
+
+2004-09-06  Paolo Bonzini  <bonzini@gnu.org>
+
+	* tests/funcfp.c: Use %g.  Remove C99 variable declarations.
+	* tests/testfp.c: Don't use __builtin_nan.
+
+	* lightning/ppc/core.h: Add three V registers.
+	* lightning/ppc/funcs.h: Adjust.
+
+	* lightning/sparc/core.h: Some fixes related to FP argument passing.
+	Move R0 to %g2, use %o7 for JIT_BIG2.
+	* lightning/sparc/fp.h: Some fixes related to FP argument passing.
+
+2004-09-02  Paolo Bonzini  <bonzini@gnu.org>
+
+	* lightning/sparc/core.h: Add another V register,
+	move R0 to %o7.
+
 2004-07-15  Paolo Bonzini  <bonzini@gnu.org>
 
 	* lightning/i386/funcs.h: Implement jit_flush_code,

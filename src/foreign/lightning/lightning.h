@@ -1,6 +1,6 @@
 /******************************** -*- C -*- ****************************
  *
- *	lightning disassembling support
+ *	lightning main include file
  *
  ***********************************************************************/
 
@@ -29,50 +29,34 @@
  *
  ***********************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include "config.h"
-#include "dis-asm.h"
 
-void disassemble(stream, from, to)
-     FILE *stream;
-     char *from, *to;
-{
-  disassemble_info info;
-  bfd_vma pc = (bfd_vma) from;
-  bfd_vma end = (bfd_vma) to;
 
-  INIT_DISASSEMBLE_INFO(info, stream, fprintf);
-  info.buffer = NULL;
-  info.buffer_vma = 0;
-  info.buffer_length = end;
+#ifndef __lightning_h
+#define __lightning_h
 
-  while (pc < end) {
-    fprintf_vma(stream, pc);
-    putc('\t', stream);
-#ifdef LIGHTNING_I386
-    pc += print_insn_i386(pc, &info);
+#ifdef __cplusplus
+extern "C" {
 #endif
-#ifdef LIGHTNING_PPC
-    pc += print_insn_big_powerpc(pc, &info);
+
+#include <lightning/asm-common.h>
+
+#ifndef LIGHTNING_DEBUG
+#include <lightning/asm.h>
 #endif
-#ifdef LIGHTNING_SPARC
-    pc += print_insn_sparc(pc, &info);
+
+#include <lightning/core.h>
+#include <lightning/core-common.h>
+#include <lightning/funcs.h>
+#include <lightning/funcs-common.h>
+#include <lightning/fp.h>
+#include <lightning/fp-common.h>
+
+#ifndef JIT_R0
+#error GNU lightning does not support the current target
 #endif
-    putc('\n', stream);
-  }
+
+#ifdef __cplusplus
 }
+#endif
 
-/* Panic on failing malloc */
-PTR
-xmalloc(size)
-  size_t size;
-{
-  PTR ret = malloc(size ? size : 1);
-  if (!ret) {
-    fprintf(stderr, "Couldn't allocate memory\n");
-    exit(1);
-  }
-  return ret;
-}
-
+#endif /* __lightning_h */

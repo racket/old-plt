@@ -34,12 +34,12 @@
 #define __lightning_core_h
 
 #define JIT_R_NUM		3
-#define JIT_V_NUM		5
-#define JIT_R(i)		_Rl(i)
-#define JIT_V(i)		_Rl((i)+3)
+#define JIT_V_NUM		6
+#define JIT_R(i)		((i) ? _Rl((i) - 1) : _Rg(2))
+#define JIT_V(i)		_Rl((i)+2)
 
 #define JIT_BIG			_Rg(1)	/* %g1 used to make 32-bit operands */
-#define JIT_BIG2		_Rg(2)	/* %g2 used to make 32-bit compare operands */
+#define JIT_BIG2		_Ro(7)	/* %o7 used to make 32-bit compare operands */
 #define JIT_SP			_Ro(6)
 #define JIT_RZERO		_Rg(0)
 #define JIT_RET			_Ri(0)
@@ -62,8 +62,6 @@
 struct jit_local_state {
   int	nextarg_put;	/* Next %o reg. to be written */
   int	nextarg_get;	/* Next %i reg. to be read */
-  int	nextarg_fpput;	/* Next %f/%d reg. to be written */
-  int	nextarg_fpget;	/* Next %f/%d reg. to be read */
   jit_insn delay;
 };
 
@@ -242,7 +240,7 @@ struct jit_local_state {
 #define jit_patch_at(delay_pc, pv)	jit_patch_ (((delay_pc) - 1) , (pv))
 #define jit_popr_i(rs)			(LDmr(JIT_SP, 0, (rs)), ADDrir(JIT_SP, 8, JIT_SP))
 #define jit_prepare_i(num)		(_jitl.nextarg_put += (num))
-#define jit_prolog(numargs)		(SAVErir(JIT_SP, -96, JIT_SP), _jitl.nextarg_get = _Ri(0), _jitl.nextarg_fpget = 0)
+#define jit_prolog(numargs)		(SAVErir(JIT_SP, -120, JIT_SP), _jitl.nextarg_get = _Ri(0))
 #define jit_pushr_i(rs)			(STrm((rs), JIT_SP, -8), SUBrir(JIT_SP, 8, JIT_SP))
 #define jit_pusharg_i(rs)		(--_jitl.nextarg_put, MOVrr((rs), _Ro(_jitl.nextarg_put)))
 #define jit_ret()			(RET(), RESTORE())

@@ -66,7 +66,7 @@ jit_flush_code(void *dest, void *end)
   length = ((char *) end - (char *) page + page_size - 1) & ~(page_size - 1);
 
   /* Simple-minded attempt at optimizing the common case where a single
-     chunk of memory is used to compile multiple */
+     chunk of memory is used to compile multiple functions.  */
   if (page >= prev_page && page + length <= prev_page + prev_length)
     return;
 

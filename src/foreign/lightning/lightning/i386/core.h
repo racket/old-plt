@@ -268,7 +268,7 @@ struct jit_local_state {
 #define jit_prepare_f(nf)	(_jitl.argssize += (nf))
 #define jit_prepare_d(nd)	(_jitl.argssize += 2 * (nd))
 #define jit_pusharg_i(rs)	PUSHLr(rs)
-#define jit_finish(sub)		(jit_calli((sub)), ADDLir(4 * _jitl.argssize, JIT_SP), _jitl.argssize = 0, _jit.x.pc)
+#define jit_finish(sub)		(jit_calli((sub)), ADDLir(4 * _jitl.argssize, JIT_SP), _jitl.argssize = 0)
 #define jit_finishr(reg)	(jit_callr((reg)), ADDLir(4 * _jitl.argssize, JIT_SP), _jitl.argssize = 0)
 #define jit_retval_i(rd)	jit_movr_i ((rd), _EAX)
 

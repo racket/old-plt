@@ -89,9 +89,11 @@ static void
 _jit_epilog(jit_state *jit)
 {
   int n = _jitl.nbArgs;
-  int frame_size, i, ofs;
+  int frame_size, ofs;
+  int first_saved_reg = JIT_AUX - n;
+  int num_saved_regs = 32 - first_saved_reg;
 
-  frame_size = 24 + 32 + (5 + n) * 4;	/* r27..r31 + args		   */
+  frame_size = 24 + 32 + num_saved_regs * 4;	/* r24..r31 + args		   */
   frame_size += 15;			/* the stack must be quad-word     */
   frame_size &= ~15;			/* aligned			   */
 
@@ -102,8 +104,8 @@ _jit_epilog(jit_state *jit)
 #endif
   MTLRr(0);				/* mtspr LR, r0			   */
 
-  ofs = frame_size - (5 + n) * 4;
-  LMWrm(27 - n, ofs, 1);		/* lmw   rI, ofs(r1)		   */
+  ofs = frame_size - num_saved_regs * 4;
+  LMWrm(first_saved_reg, ofs, 1);	/* lmw   rI, ofs(r1)		   */
   ADDIrri(1, 1, frame_size);		/* addi  r1, r1, x		   */
   BLR();				/* blr				   */
 }
@@ -132,27 +134,29 @@ _jit_prolog(jit_state *jit, int n)
 {
   int frame_size;
   int ofs, i;
+  int first_saved_reg = JIT_AUX - n;
+  int num_saved_regs = 32 - first_saved_reg;
 
-  _jitl.nextarg_geti = 26;
+  _jitl.nextarg_geti = JIT_AUX - 1;
   _jitl.nextarg_getd = 1;
   _jitl.nbArgs = n;
 
-  frame_size = 24 + 32 + (5 + n) * 4;	/* r27..r31 + args		   */
+  frame_size = 24 + 32 + num_saved_regs * 4;	/* r27..r31 + args		   */
   frame_size += 15;			/* the stack must be quad-word     */
   frame_size &= ~15;			/* aligned			   */
 
   MFLRr(0);
   STWUrm(1, -frame_size, 1);		/* stwu  r1, -x(r1)		   */
 
-  ofs = frame_size - (5 + n) * 4;
-  STMWrm(27 - n, ofs, 1);		/* stmw  rI, ofs(r1)		   */
+  ofs = frame_size - num_saved_regs * 4;
+  STMWrm(first_saved_reg, ofs, 1);		/* stmw  rI, ofs(r1)		   */
 #ifdef _CALL_DARWIN
   STWrm(0, frame_size + 8, 1);		/* stw   r0, x+8(r1)		   */
 #else
   STWrm(0, frame_size + 4, 1);		/* stw   r0, x+4(r1)		   */
 #endif
   for (i = 0; i < n; i++)
-    MRrr(26-i, 3+i);			/* save parameters in r26..r21	   */
+    MRrr(JIT_AUX-1-i, 3+i);		/* save parameters below r24	   */
 }
 
 #undef _jit

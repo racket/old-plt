@@ -70,10 +70,12 @@
       ; --------------------- choice mode --------------------------------
       (define selection-mode-panel (make-object vertical-panel% top-panel))
       (define selectable-tests (make-object hierarchical-list% selection-mode-panel))
+      (send selectable-tests selectable #f) ; i define my own notion of selectability and don't use hierlist's
       
       (define sel-buttons-panel (make-object horizontal-panel% selection-mode-panel))
       (define okay-button (make-object button% "Okay" sel-buttons-panel okay-press))
       (define select-all-button (make-object button% "Select All" sel-buttons-panel (lambda (x y) (select-all))))
+
       ; set-selections : (listof (list str val (listof (cons (list str val) (list str val)))))
       (define set-selections
         (lambda (selection-list)
@@ -81,6 +83,7 @@
            (lambda (test-group)
              (let ((tg (send selectable-tests new-list (list-mixin (car test-group)
                                                                    (cadr test-group)))))
+               (send tg init-fonts)
                (send (send tg get-editor) insert (car test-group))
                (send (send tg get-editor) set-clickback 0 (string-length (car test-group))
                      (lambda (a b c) (send tg toggle-selectedness-of-group)))
@@ -88,6 +91,7 @@
                 (lambda (test)
                   (let* ([i (send tg new-item (item-mixin (car test) (cadr test) tg))]
                          [ed (send i get-editor)])
+                    (send i init-fonts)
                     (send ed insert (car test) 0 'same)
                     (send ed set-clickback 0 (string-length (car test))
                           (lambda (a b c) (send i toggle-selectedness)))))
@@ -227,16 +231,19 @@
     (lambda (name val)
       (lambda (superclass)
         (class superclass ()
-          (public to-selection 
+          (public init-fonts
+                  to-selection 
                   select-all
                   increment-selected-kids
                   decrement-selected-kids
                   has-any-selections?
                   toggle-selectedness-of-group)
           (init-rest args)
+         
           
-          (define selected-style (make-object style-delta% 'change-bold))
-          (define unselected-style (make-object style-delta% 'change-normal))
+          ;(define selected-style (make-object style-delta% 'change-bold))
+          ;(define unselected-style (make-object style-delta% 'change-normal))
+          
           (define selected-kids 0)
           
           ; -> str
@@ -273,32 +280,59 @@
           (define (increment-selected-kids)
             (begin
               (set! selected-kids (add1 selected-kids))
-              (if (= selected-kids 1) (select-myself))))
+              (update-selectedness)))
           
           ; -> void
           (define (decrement-selected-kids)
             (begin
               (set! selected-kids (sub1 selected-kids))
-              (if (= selected-kids 0) (unselect-myself))))
+              (update-selectedness)))
           
-          ; style-delta<%> -> void
+          (define (update-selectedness)
+            (cond 
+              [(fully-selected?)
+               (select-myself)]
+              [(has-any-selections?)
+               (partially-select-myself)]
+              [(unselected?)
+               (unselect-myself)]))
+          
+          ; style<%> -> void
           ; changes the text style of the label for this snip
           (define (set-style style)
             (let ((ed (send this get-editor)))
               (send ed change-style style 0 (string-length (send ed get-text)))))
           
           (define (has-any-selections?) (> selected-kids 0))
+          (define (fully-selected?) (>= selected-kids (length (send this get-items))))
+          (define (unselected?) (<= selected-kids 0))
+          
           (define (select-myself) (set-style selected-style))
           (define (unselect-myself) (set-style unselected-style))
+          (define (partially-select-myself) (set-style partially-selected-style))
           
-          (apply super-make-object args)))))
+          (apply super-make-object args)
+          
+          (define styles #f)
+          (define base-style #f)
+          (define selected-style #f)
+          (define unselected-style #f)
+          (define partially-selected-style #f)
+          (define (init-fonts)
+            (set! styles (send (send this get-editor) get-style-list))
+            (set! base-style (send styles basic-style))
+            (set! selected-style (send styles find-or-create-style base-style (make-object style-delta% 'change-bold)))
+            (set! unselected-style base-style)
+            (set! partially-selected-style (send styles find-or-create-style base-style 
+                                                 (make-object style-delta% 'change-style 'italic))))))))
   
   ; item-mixin : str x list-mixin -> (class -> item-mixin)
   (define item-mixin 
     (lambda (str val parent)
       (lambda (superclass)
         (class superclass ()
-          (public toggle-selectedness 
+          (public init-fonts
+                  toggle-selectedness 
                   to-selection 
                   am-i-selected?
                   select-me
@@ -306,8 +340,14 @@
           (init-rest vars)
           
           (define selected #f)
-          (define selected-style (make-object style-delta% 'change-bold))
-          (define unselected-style (make-object style-delta% 'change-normal))
+          
+          (define selected-style #f)
+          (define unselected-style #f)
+          (define (init-fonts)
+            (let* ([styles (send (send this get-editor) get-style-list)]
+                   [base (send styles basic-style)])
+              (set! selected-style (send styles find-or-create-style base (make-object style-delta% 'change-bold)))
+              (set! unselected-style (send styles find-or-create-style base (make-object style-delta% 'change-normal)))))
           
           ; -> void
           (define (toggle-selectedness)

@@ -150,10 +150,18 @@
                                                 (quote ,provide)
                                                 (quote-syntax ,((cdr introducer) provide)))))
                                           (syntax->list #'(provides ...))))
-                                    (_ (raise-syntax-error
-                                        'structure
-                                        "Export must have the form \"provide-all\" or \"(identifier ...)\""
-                                        #'provides)))))))))
+                                    (p 
+                                     (cond
+                                       ((eq? 'provide-all (syntax-e #'p))
+                                        (raise-syntax-error
+                                         'structure
+                                         "provide-all has been rebound"
+                                         #'provides))
+                                       (else
+                                        (raise-syntax-error
+                                         'structure
+                                         "Export must have the form \"provide-all\" or \"(identifier ...)\""
+                                         #'provides)))))))))))
                       (else
                        (let-values (((marked-def new-defined-ids)
                                      (mark-ids (car defs) defined-ids)))

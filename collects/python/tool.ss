@@ -44,13 +44,19 @@
                                         (drscheme:language:text/pos-start input)
                                         (drscheme:language:text/pos-end input)))
                                  text)))])
-              (lambda ()
-                (if (eof-object? (peek-char port))
-                    eof
-                    (compile-python (parse-python-port port name))))))
-;		    (compile-simplified 
-;		     (simplify (parse-a60-port port name) base-importing-stx) 
-;		     base-importing-stx)))))
+              (let ([ast-list (parse-python-port port name)])
+                (lambda ()
+                  (if (null? ast-list)
+                      eof
+                      (begin0 (compile-python-ast (car ast-list))
+                              (set! ast-list (cdr ast-list))))))))
+;              (lambda ()
+;                (if (eof-object? (peek-char port))
+;                    eof
+;                    (compile-python (parse-python-port port name))))))
+;;		    (compile-simplified 
+;;		     (simplify (parse-a60-port port name) base-importing-stx) 
+;;		     base-importing-stx)))))
           
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) (list "Python"))

@@ -9,6 +9,7 @@
            read-python
            python-to-scheme
            compile-python
+           compile-python-ast
            parse-python-port
            parse-python-file)
   
@@ -16,9 +17,13 @@
     (compile-python (read-python path)))
 
   (define (compile-python ast-list)
-    #`(begin #,@(map (lambda (ast)
+       #`(begin
+           #,@(map (lambda (ast)
                      (send ast to-scheme))
                    ast-list)))
+  
+  (define (compile-python-ast ast)
+    (send ast to-scheme))
   
   (define parse-python-port read-python-port)
   

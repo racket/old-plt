@@ -366,7 +366,7 @@
      in is lambda not or pass print raise return try while yield |{| \| \|= |}| ~ EOF))
   (define p
     (parser
-     (start start)
+     (start start); single_input)
      (end EOF)
      (error err)
      (tokens t et)

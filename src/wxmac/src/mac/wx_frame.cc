@@ -71,10 +71,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   WindowPtr theMacWindow;
 
   /* Make sure we have the right device: */
-  CGrafPtr wPort;
-  GDHandle gdh;
-  GetGWorld(&wPort,&gdh);
-  SetGWorld(wPort, wxGetGDHandle());
+  SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
   
   OSErr result;
   WindowClass windowClass;
@@ -398,13 +395,8 @@ void wxFrame::wxMacRecalcNewSize(Bool resize)
 {
   Rect theStrucRect;
   Rect theContRect;
-#ifdef WX_CARBON
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowStructureRgn,&theStrucRect);
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowContentRgn,&theContRect);
-#else        
-  theStrucRect = wxMacGetStrucRect();
-  theContRect = wxMacGetContRect();
-#endif        
   cWindowX = theStrucRect.left;
   cWindowY = theStrucRect.top - GetMBarHeight(); // WCH: kludge
   if (resize) {
@@ -627,93 +619,6 @@ Bool wxFrame::IsVisible(void)
   else
     return FALSE;
 }
-
-#ifndef WX_CARBON
-
-//-----------------------------------------------------------------------------
-void wxFrame::wxMacStartDrawing(CGrafPtr * oldPort, GDHandle * oldGD)
-{
-  ::GetGWorld(oldPort, oldGD);
-
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-  ::SetGWorld(theMacGrafPort, wxGetGDHandle());
-
-  //Rect portBounds;
-  //savePortH = GetPortBounds(theMacGrafPort,&portBounds)->left;
-  //savePortV = portBounds.top;
-  //::SetOrigin(0, 0);
-}
-
-//-----------------------------------------------------------------------------
-void wxFrame::wxMacStopDrawing(CGrafPtr oldPort, GDHandle oldGD)
-{
-  //::SetOrigin(savePortH, savePortV);
-  ::SetGWorld(oldPort, oldGD);
-}
-
-//-----------------------------------------------------------------------------
-// Mac platform only; internal use only.
-// Based on code in 2nd edition of "Macintosh Programming Secrets"
-// by Scott Knaster and Keith Rollin.
-//-----------------------------------------------------------------------------
-Rect wxFrame::wxMacGetContRect(void)
-{// express client area in screen window c.s.
-  CGrafPtr oldPort; GDHandle oldGD;
-  wxMacStartDrawing(&oldPort, &oldGD);
-  Rect theContRect;
-  GetPortBounds(cMacDC->macGrafPort(),&theContRect); // client c.s.
-  Point topLeftPt = {0, 0};
-  ::LocalToGlobal (&topLeftPt);
-  ::OffsetRect(&theContRect, topLeftPt.h, topLeftPt.v); // screen window c.s.
-  wxMacStopDrawing(oldPort, oldGD);
-
-  return theContRect; // screen window c.s.
-}
-
-//-----------------------------------------------------------------------------
-// Mac platform only; internal use only.
-// Based on code in 2nd edition of "Macintosh Programming Secrets"
-// by Scott Knaster and Keith Rollin.
-//-----------------------------------------------------------------------------
-Rect wxFrame::wxMacGetStrucRect(void)
-{// express window area in screen window c.s.
-  Rect theStrucRect;
-
-  CGrafPtr oldPort; GDHandle oldGD;
-  wxMacStartDrawing(&oldPort, &oldGD);
-
-  WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
-
-  if (IsWindowVisible(theMacWindow))
-    {
-      RgnHandle strucRgn = NewRgn();
-      GetWindowRegion(theMacWindow,kWindowStructureRgn,strucRgn);
-      GetRegionBounds(strucRgn,&theStrucRect); // screen window c.s.
-    }
-  else
-    {
-      const int kOffScreenLocation = 0x4000;
-      
-      Rect theClientRect;
-      GetPortBounds(cMacDC->macGrafPort(),&theClientRect); // client c.s.
-      Point thePosition = {theClientRect.top, theClientRect.left}; // client c.s.
-      ::LocalToGlobal(&thePosition); // screen window c.s.
-      ::MoveWindow(theMacWindow, thePosition.h, kOffScreenLocation, FALSE);
-      ::ShowHide(theMacWindow, TRUE);
-      RgnHandle strucRgn = NewRgn();
-      GetWindowRegion(theMacWindow,kWindowStructureRgn,strucRgn);
-      GetRegionBounds(strucRgn,&theStrucRect);
-      ::ShowHide(theMacWindow, FALSE);
-      ::MoveWindow(theMacWindow, thePosition.h, thePosition.v, FALSE);
-      ::OffsetRect(&theStrucRect, 0, thePosition.v - kOffScreenLocation); // screen window c.s.
-    }
-
-  wxMacStopDrawing(oldPort, oldGD);
-
-  return theStrucRect; // screen window c.s.
-}
-
-#endif // WX_CARBON
 
 //-----------------------------------------------------------------------------
 void wxFrame::MacUpdateWindow(void)

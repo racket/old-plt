@@ -275,7 +275,6 @@ static int TransferQueue(int all)
   EventRecord e;
   short mask;
   int sleep_time;
-#ifndef OS_X
   int delay_time;
   
   GetSleepTime(&sleep_time, &delay_time);
@@ -284,9 +283,6 @@ static int TransferQueue(int all)
   static unsigned long lastTime;
   if (TickCount() <= lastTime + delay_time)
     return 0;
-#else
-  sleep_time = 0;
-#endif
 
   mask = everyEvent;
   
@@ -294,9 +290,7 @@ static int TransferQueue(int all)
     QueueTransferredEvent(&e);
   }
   
-#ifndef OS_X
   lastTime = TickCount();
-#endif
   
   return 1;
 }

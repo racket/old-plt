@@ -573,10 +573,10 @@ void wxListBox::Append(char *Item)
 
 void wxListBox::Set(int n, char *choices[])
 {
-  SetCurrentDC();
   if (no_items > 0) {
     this->Clear();
   }
+  SetCurrentDC();
   Str255 temp;
   // LSetDrawingMode(FALSE, cListHandle);
   ALAddRow(n,0,cListReference); // add all the rows up front.

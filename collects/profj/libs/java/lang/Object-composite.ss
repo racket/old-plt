@@ -506,8 +506,10 @@
       (define/public (indexOf-java.lang.String str) (find-str (send str get-mzscheme-string) str 0))    
       (define/public (indexOf-java.lang.String-int str offset) (find-str (send str get-mzscheme-string) str offset))
       
-      (define/public (lastIndexOf-int ch) (find-last-char (integer->char ch) 0 -1))
-      (define/public (lastIndexOf-int-int ch offset) (find-last-char (integer->char ch) offset -1))    
+      (define/public (lastIndexOf-int ch) 
+        (find-last-char (if (number? ch) (integer->char ch) ch) 0 -1))
+      (define/public (lastIndexOf-int-int ch offset) 
+        (find-last-char (if (number? ch) (integer->char ch) ch) offset -1))
       (define/public (lastIndexOf-java.lang.String str) (find-last-string (send str get-mzscheme-string) str 0 -1))
       (define/public (lastIndexOf-java.lang.String-int str offset) (find-last-string (send str get-mzscheme-string) str offset -1))
     

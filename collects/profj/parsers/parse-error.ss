@@ -2303,7 +2303,7 @@
                        (getter)
                        (parse-expression next-tok after-c 'dot-op-or-end getter statement-ok? stmt-exp?))))
                 (else (parse-expression cur-tok (parse-expression cur-tok next-tok 'start getter #f stmt-exp?)
-                                        'method-args getter statement-ok?)))))
+                                        'method-args getter statement-ok? stmt-exp?)))))
            (else (parse-error (format "Expected method arguments in parens, found ~a" out) start end))))
         ((method-args)
          (case kind

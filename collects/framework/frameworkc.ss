@@ -1,5 +1,5 @@
 ;;
-;; $Id: frameworkc.ss,v 1.19 2000/02/07 19:35:12 robby Exp $
+;; $Id: frameworkc.ss,v 1.20 2000/02/19 16:56:01 robby Exp $
 ;;
 
 (compound-unit/sig (import [core:string : mzlib:string^]
@@ -51,7 +51,7 @@
 				 gui-utils color-model frame
 				 core:function)]
 
-	[gui-utils : framework:gui-utils^ ((require-relative-library "guiutils.ss") mred)]
+	[gui-utils : framework:gui-utils^ ((require-relative-library "guiutilsr.ss") mred)]
 
 	[finder : framework:finder^
 		((require-relative-library "finder.ss")

@@ -12,7 +12,7 @@
       (lambda (frame)
 	(mred:show-busy-cursor
 	 (lambda ()
-	   (let* ([e (wx:make-eventspace)]
+	   (let* ([e (wx:make-eventspace (make-parameterization))]
 		  [f (parameterize ([wx:current-eventspace e])
 		       (make-object mred:dialog-box% null "Spidey" #f))]
 		  [p (make-object mred:vertical-panel% f)]

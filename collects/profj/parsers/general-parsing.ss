@@ -115,6 +115,7 @@
   (define-sym-token? strictfp? 'strictfp)
   (define-sym-token? transient? 'transient)
   (define-sym-token? volatile? 'volatile)
+  (define-sym-token? final? 'final)
   (define (modifier-token? token)
     (and (symbol? token) (memq token `(abstract native private protected public static strictfp transient volatile))))
   

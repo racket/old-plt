@@ -3,9 +3,7 @@
   (require "parsers/full-parser.ss"
            "parsers/advanced-parser.ss"
            "parsers/intermediate-parser.ss"
-;           "parsers/intermediate-error.ss"
            "parsers/beginner-parser.ss"
-;           "parsers/beginner-error.ss"
            "parsers/parse-error.ss"
            "parsers/lexer.ss"
            "parameters.ss")
@@ -28,7 +26,9 @@
         ((intermediate) 
          (determine-error find-intermediate-error)
          (parse-intermediate getter))
-        ((advanced) (parse-advanced getter))
+        ((advanced) 
+         (determine-error find-advanced-error)
+         (parse-advanced getter))
         ((full) (parse-full getter)))))
   
   ;parse-interactions: port string symbol -> (U Statement Expression)
@@ -43,6 +43,8 @@
         ((intermediate) 
          (determine-error find-intermediate-error-interactions)
          (parse-intermediate-interactions getter))
-        ((advanced) (parse-advanced-interactions getter))
+        ((advanced) 
+         (determine-error find-advanced-error-interactions)
+         (parse-advanced-interactions getter))
         ((full) (parse-full-interactions getter)))))
   )

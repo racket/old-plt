@@ -2,14 +2,19 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
-Contract names are more uniform. If the name of a contract
- has a suffix, the suffix is now "/c" (earlier, they used to
- be /p, /c, or /f).
+Version 299.18
+Changed permissive UTF-8 decoding to include a "?" for every
+ ill-formed byte (instead of just those with high bits)
+Changed {read,peek}-bytes-avail!{,*,/enable-break} to produce
+ a special-reading procedure when a stream contains specials
 
 Version 299.17
 In a syntax template, when an identifier has more ellipses
  then in the pattern, inner ellipses bind more
  tightly than the outer ellipses
+Contract names in MzLib;s "contract.ss" are more uniform; if the
+ name of a contract a suffix, the suffix is now "/c" (instead of
+ one of "/p", "/c", or "/f")
 
 Version 299.16
 Inside MzScheme: added scheme_set_type_printer, scheme_print_bytes,

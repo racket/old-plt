@@ -10,25 +10,46 @@
   
   ; what does the iterator need to know about 
   
+  
+  (define (tree-iterator-maker-abstract in? out?)
+    (contract
+     (-> (-> syntax? (vectorof/n (listof syntax?) (-> (listof syntax?) syntax?))) ; tree-knower
+         (-> (-> syntax? in? (vectorof/n syntax? out?)) syntax? in?               ; f
+             (vectorof/n syntax? out?)) 
+         (-> syntax? in? (vectorof/n syntax? out?)))                              ; iterator
+     (lambda (tree-knower f)
+       (lambda (s in)
+         (let*-2vals ([(s-list reassemble) (tree-knower s)])
+           ´
+           
+         (let ([new-iterator 
+                (lambda (s in)
+         (f 
+  
+  
   ; (-> (-> 
   (define expr-syntax-object-iterator 
     (contract
-     (-> (-> syntax? syntax?)
-         syntax?
-         syntax?)
+     (-> syntax?
+         (list/n
+          (listof syntax?)
+          (syntax?))
      (lambda (fn stx)
-       (let* ([lambda-clause-abstraction
+       (let* ([rebuild
+               (lambda (new-sexp) 
+                 (rebuild-stx new-sexp stx))]
+              [lambda-clause-abstraction
                (lambda (clause)
                  (kernel:kernel-syntax-case stx #f
                    [((variable ...) . bodies)
-                    (rebuild-stx #`((variable ...) #,@(map fn (syntax->list #'bodies))) stx)]
+                    (rebuild `(#'(variable ...) ,@(map fn (syntax->list #'bodies))))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a\n" (syntax-object->datum stx))]))]
               [let-values-abstraction
                (lambda (stx)
                  (kernel:kernel-syntax-case stx #f
                    [(kwd ((variable ...) ...) . bodies)
-                    (rebuild-stx #`(kwd ((variable ...) ...) #,@(map fn (syntax->list #'bodies))))]
+                    (rebuild `(#'kwd #'((variable ...) ...) ,@(map fn (syntax->list #'bodies))))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a\n" (syntax-object->datum stx))]))]) 
          (kernel:kernel-syntax-case stx #f
@@ -36,31 +57,31 @@
             (identifier? (syntax var-stx))
             stx]
            [(lambda . clause)
-            (rebuild-stx #`(lambda #,@(lambda-clause-abstraction #'clause)))]
+            (rebuild `(#'lambda ,@(lambda-clause-abstraction #'clause)))]
            [(case-lambda . clauses)
-            (rebuild-stx #`(case-lambda #,@(map lambda-clause-abstraction (syntax->list #'clauses))))]
+            (rebuild `(case-lambda ,@(map lambda-clause-abstraction (syntax->list #'clauses))))]
            [(if test then)
-            (rebuild-stx #`(if #,(fn #'test) #,(fn #'then)))]
+            (rebuild `(#'if ,(fn #'test) ,(fn #'then)))]
            [(if test then else)
-            (rebuild-stx #`(if #,(fn #'test) #,(fn #'then) #,(fn #'else)))]
+            (rebuild `(#'if ,(fn #'test) ,(fn #'then) ,(fn #'else)))]
            [(begin . bodies)
-            (rebuild-stx #`(begin #,@(map fn (syntax->list #'bodies))))]
+            (rebuild `(#'begin ,@(map fn (syntax->list #'bodies))))]
            [(begin0 . bodies)
-            (rebuild-stx #`(begin0 #,@(map fn (syntax->list #'bodies))))]
+            (rebuild `(#'begin0 ,@(map fn (syntax->list #'bodies))))]
            [(let-values . _)
             (let-values-abstraction stx)]
            [(letrec-values . _)
             (let-values-abstraction stx)]
            [(set! var val)
-            (rebuild-stx #`(set! var #,(fn #'val)))]
+            (rebuild `(#'set! #'var ,(fn #'val)))]
            [(quote _)
             stx]
            [(quote-syntax _)
             stx]
            [(with-continuation-mark key mark body)
-            (rebuild-stx #`(with-continuation-mark #,(fn #'key) #,(fn #'mark) #,(fn #'body)))]
+            (rebuild `(#'with-continuation-mark ,(fn #'key) ,(fn #'mark) ,(fn #'body)))]
            [(#%app . exprs)
-            (rebuild-stx #`(#%app #,@(map fn (syntax->list #'exprs))))]
+            (rebuild `(#'#%app ,@(map fn (syntax->list #'exprs))))]
            [(#%datum . _)
             stx]
            [(#%top . var)
@@ -69,5 +90,6 @@
             (error 'expr-syntax-object-iterator "unknown expr: ~a\n" (syntax-object->datum stx))])))
      'expr-syntax-object-iterator
      'caller))
+  
   
   )

@@ -252,6 +252,18 @@
 ;;
 ;;;;;;;;;;;;;
 
+(parameterize ([current-namespace beginner-namespace])
+  (let* ([stx (expand (car (string->stx-list "(cond [else 3])")))]
+         [stx-source (syntax-source stx)]
+         [stx-posn (syntax-position stx)])
+    (printf "expanded: ~a\n" (syntax-object->datum stx))
+    (syntax-case stx (if begin #%datum)
+      [(if dc dc2 stx2)
+       (printf "stepper-else: ~a\n" (syntax-property stx 'stepper-else))
+       ]
+      [stx
+       (printf "outer thing has wrong shape: ~a\n" (syntax-object->datum (syntax stx)))])))
+
 (test-beginner-sequence "(cond [false 4] [false 5] [true 3])"
                `(((,highlight-placeholder) ((cond (false 4) (false 5) (true 3))))
                  ((,highlight-placeholder) ((cond (false 5) (true 3))))
@@ -263,6 +275,8 @@
 
 (test-beginner-sequence "(cond [false 4] [else 9])"
                `(((,highlight-placeholder) ((cond [false 4] [else 9])))
+                 ((,highlight-placeholder) ((cond [else 9])))
+                 ((,highlight-placeholder) ((cond [else 9])))
                  ((,highlight-placeholder) (9)))
                `(9))
 
@@ -270,6 +284,45 @@
                          `(((,highlight-placeholder) ((cond (true 3) (else (and true true)))))
                            ((,highlight-placeholder) (3)))
                          `(3))
+
+          
+; syntactic error: (test-beginner-sequence "(cond)")
+
+(test-beginner-sequence "(cond [else 3])"
+                        `(((,highlight-placeholder) ((cond (else 3))))
+                          ((,highlight-placeholder) (3)))
+                        `(3))
+
+(test-beginner-sequence "(cond [else (cond [else 3])])"
+                        `(((,highlight-placeholder) ((cond (else (cond (else 3))))))
+                          ((,highlight-placeholder) ((cond (else 3))))
+                          ((,highlight-placeholder) ((cond (else 3))))
+                          ((,highlight-placeholder) (3)))
+                        `(3))
+
+; reconstruct can't handle begin
+;(test-mz-sequence "(cond [#f 3 4] [#t (+ 3 4) (+ 4 9)])"
+;                  `(((,highlight-placeholder) ((cond (#f 3 4) (#t (+ 3 4) (+ 4 9)))))
+;                    ((,highlight-placeholder) ((cond (#t (+ 3 4) (+ 4 9)))))
+;                    ((,highlight-placeholder) ((cond (#t (+ 3 4) (+ 4 9)))))
+;                    ((,highlight-placeholder) (begin (+ 3 4) (+ 4 9)))
+;                    (((begin ,highlight-placeholder (+ 4 9))) ((+ 3 4)))
+;                    (((begin ,highlight-placeholder (+ 4 9)))  (7))
+;                    ((,highlight-placeholder) ((begin 7 (+ 4 9))))
+;                    ((,highlight-placeholder) ((+ 4 9)))
+;                    ((,highlight-placeholder) ((+ 4 9)))
+;                    ((,highlight-placeholder) (13))))
+;
+
+
+(test-beginner-sequence "(cond [false 3] [else (cond [true 4])])"
+                        `(((,highlight-placeholder) ((cond (false 3) (else (cond (true 4))))))
+                          ((,highlight-placeholder) ((cond (else (cond (true 4))))))
+                          ((,highlight-placeholder) ((cond (else (cond (true 4))))))
+                          ((,highlight-placeholder) ((cond (true 4))))
+                          ((,highlight-placeholder) ((cond (true 4))))
+                          ((,highlight-placeholder) (4)))
+                        `(4))
 
 ;;;;;;;;;;;;;
 ;;
@@ -450,6 +503,33 @@
                               ((,highlight-placeholder) ((cons 3 (list 7 5 6))))
                               ((,highlight-placeholder) ((list 3 7 5 6))))
                             `((list 3 7 5 6)))
-                               
+
+;;;;;;;;;;;;;
+;;
+;;  TEACHPACK TESTS
+;;
+;;;;;;;;;;;;;
+
+(require (lib "mred.ss" "mred"))
+
+(define tp-namespace
+  (let ([ns (current-namespace)]
+        [mred-name ((current-module-name-resolver) '(lib "mred.ss" "mred") #f #f)]
+        [new-namespace (make-namespace 'empty)])
+    (parameterize ([current-namespace new-namespace])
+      (namespace-attach-module ns 'mzscheme)
+      (namespace-attach-module ns mred-name)
+      (namespace-require '(lib "htdp-beginner.ss" "lang"))
+      (namespace-require '(lib "guess.ss" "htdp"))
+      new-namespace)))
+
+(reconstruct:set-render-settings! fake-beginner-render-settings)
+(test-sequence "(define (check-guess guess target) 'TooSmall) (guess-with-gui check-guess)"
+               `(((,highlight-placeholder) ((guess-with-gui check-guess)))
+                 ((,highlight-placeholder) (true)))
+               `((define (check-guess guess target) 'toosmall) true)
+               tp-namespace)
+  
+
 
 (report-errs)

@@ -6,7 +6,9 @@
 	  
   (define GREATEST-POSSIBLE-INTEGER 10000)
   (define LOWEST-POSSIBLE-INTEGER  -10000)
-  
+
+  (define fuel-amount 100)
+  (define capacity-amount 10000)
   (define print-every-n-generations 2)
   (define run-n-generations 10)
   (define output-port (current-output-port))
@@ -142,8 +144,10 @@
 					     (+ (vector-ref scoreboard (car ls))
 						score)))))
 				      threads)))])))
-	     (process (format "./Simulator -p 4000 -n ~a -m ~a -k ~a~n"
-			      (length players) board-file packages-file)))))
+	     (process
+	      (format "./Simulator -p 4000 -n ~a -m ~a -k ~a -f ~a -c ~a~n"
+		      (length players) board-file packages-file
+		      fuel-amount capacity-amount)))))
 
   ;; generate-results : list-of-gene-seqs -> list-of-gene-seqs
   (define (generate-results ls)

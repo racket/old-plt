@@ -58,7 +58,7 @@
 
            
            (define (step-through-expression expanded expand-next-expression)
-             (let*-values ([(annotated envs) (annotate-top-level expanded)])
+             (let* ([annotated (annotate-top-level expanded)])
                (set! current-expr expanded)
                (let ([expression-result
                       (parameterize ([current-eval basic-eval])

@@ -13,7 +13,7 @@
   
   (define (annotate-expr stx)
     (let ([result-box (box null)])
-      ((f-maker null null result-box) stx #t)))
+      ((f-maker null null result-box) stx 'tail)))
   
 
   ;; TEMPLATE FUNCTIONS:
@@ -80,14 +80,14 @@
                   [(arglist . bodies)
                    `(,#'arglist ,@(map lb-fn (syntax->list #'bodies)))]
                    [else
-                    (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a\n" (syntax-object->datum stx))]))]
+                    (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a" (syntax-object->datum stx))]))]
               [let-values-abstraction
                (lambda (stx)
                  (kernel:kernel-syntax-case stx #f
                    [(kwd ((variable ...) ...) . bodies)
                     (rebuild #`(kwd ((variable ...) ...) #,@(map tr-fn (syntax->list #'bodies))))]
                    [else
-                    (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a\n" (syntax-object->datum stx))]))]) 
+                    (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a" (syntax-object->datum stx))]))]) 
          (kernel:kernel-syntax-case stx #f
            [var-stx
             (identifier? (syntax var-stx))
@@ -123,7 +123,7 @@
            [(#%top . var)
             stx]
            [else
-            (error 'expr-syntax-object-iterator "unknown expr: ~a\n" (syntax-object->datum stx))])))
+            (error 'expr-syntax-object-iterator "unknown expr: ~a" (syntax-object->datum stx))])))
   
   
   ;; ANNOTATION
@@ -165,7 +165,7 @@
       ((lambda-body) 'all)
       ((tail) (binding-set-union (list prior newly-bound)))
       ((non-tail) null)
-      (else (error 'tail-bound "unexpected value ~s for tailness argument\n" tailness))))
+      (else (error 'tail-bound "unexpected value ~s for tailness argument" tailness))))
   
   (define (newly-bound stx)
     (kernel:kernel-syntax-case stx #f

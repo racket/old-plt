@@ -18,7 +18,18 @@
       
       (define (receive-result result)
         (set! event-list (append event-list (list result)))
-        (send-output-to-debugger-window (format "new event arrived: ~a\n" result) debugger-output))
+        (send-output-to-debugger-window (format-event result) debugger-output))
+      
+      (define (format-event debugger-event)
+        (cond [(normal-breakpoint-info? debugger-event) 
+               (format "normal breakpoint\nsource:~v\n" (car (expose-mark (car (normal-breakpoint-info-mark-list debugger-event)))))]
+              [(error-breakpoint-info? debugger-event)
+               (format "error breakpoint\nmessage: ~v\n" (error-breakpoint-info-message debugger-event))]
+              [(breakpoint-halt? debugger-event)
+               (format "breakpoint halt\n")]
+              [(expression-finished? debugger-event)
+               (format "expression finished\nresults: ~v\n" (expression-finished-returned-value-list debugger-event))]))
+      
       
       (define event-list null)
       

@@ -80,7 +80,7 @@
   (fw:preferences:add-callback
    'drscheme:teachpack-file
    (lambda (p v)
-     (drscheme:teachpack:build-teachpack-thunk v)))
+     (set! invoke-teachpack (drscheme:teachpack:build-teachpack-thunk v))))
   
   (define current-rep-text (make-parameter #f))
   

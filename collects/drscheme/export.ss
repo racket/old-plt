@@ -10,7 +10,8 @@
 			   [graph : drscheme:graph^]
 			   [aries : plt:aries^]
 			   [zodiac : zodiac:system^])
-  (link [teachpack : drscheme:teachpack^ ((require-library "teachpackr.ss" "drscheme") mred)]
+  (link ;[]
+	[teachpack : drscheme:teachpack^ ((require-library "teachpackr.ss" "drscheme") mred (mzlib function))]
         [interface : drscheme:interface^
           ((require-library "interface.ss" "userspce") aries zodiac)]
         [url : mzlib:url^ ((require-library "urlr.ss" "net") (mzlib file))]

@@ -1,10 +1,11 @@
 (unit/sig drscheme:teachpack^
-  (import [mred : mred^])
+  (import [mred : mred^]
+	  mzlib:function^)
   
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
-  ;; build-single-teachpack-thunk : string -> (union #f (-> void))
-  (define (build-single-teachpack-thunk v)
+  ;; build-single-teachpack-unit : string -> (union #f (unit () X))
+  (define (build-single-teachpack-unit v)
     (with-handlers
      ([(lambda (x) #t)
        (lambda (x)
@@ -32,37 +33,29 @@
 						prefix
 						(symbol->string s))))
 					    sub))))])))])
-	     (printf "building thunk: ~s~n" signature)
 	     (eval
-	      `(lambda ()
-		 (printf "in thunk~n")
+	      `(unit/sig ()
+		 (import plt:userspace^)
 		 (with-handlers ([(lambda (x) #t)
 				  (lambda (x)
 				    ((error-display-handler)
 				     (format
 				      "Invalid Teachpack: ~a~n~a"
 				      ,v
-				      (if (exn? x) (exn-message x) x))))])
+				      (if (exn? x)
+					  (exn-message x)
+					  x))))])
 		   (global-define-values/invoke-unit/sig
 		    ,signature
-		    (compound-unit/sig
-		      (import)
-		      (link [userspace : plt:userspace^ 
-				       ((compound-unit/sig 
-					  (import)
-					  (link [core : mzlib:core-flat^ (,core-flat@)]
-						[mred : mred^ (,mred:mred@)])
-					  (export (open core)
-						  (open mred))))]
-			    [teachpack : ,signature (,new-unit userspace)])
-		      (export (open teachpack))))))))
+		    ,new-unit
+		    #f
+		    plt:userspace^)))))
 	   (begin
 	     (mred:message-box 
 	      "Invalid Teachpack"
 	      (format "loading Teachpack file does not result in a unit/sig, got: ~e"
 		      new-unit))
 	     #f)))))
-
 
   ;; build-teachpack-thunk : (listof string) -> (union #f (list (union 'mz 'mr) (-> void)))
   ;; accepts a filename and returns a thunk that invokes the corresponding teachpack and
@@ -71,18 +64,34 @@
     (unless (and (list? v)
 		 (andmap string? v))
 	    (error 'build-teachpack-thunk "expected a list of strings, got: ~e" v))
-    (let loop ([names v]
-	       [thnk void])
-      (cond
-       [(null? names) thnk]
-       [else
-	(let ([new-thnk (build-single-teachpack-thunk (car names))])
-	  (printf "new-thnk: ~s~n" new-thnk)
-	  (new-thnk)
-	  (if new-thnk
-	      (loop (cdr names)
-		    (lambda ()
-		      (new-thnk)
-		      (thnk)))
-	      (loop (cdr names)
-		    thnk)))]))))
+    (let* ([tagn 0]
+	   [link-clauses
+	    (let loop ([units v])
+	      (cond
+	       [(null? units) null]
+	       [else
+		(let ([unit (build-single-teachpack-unit (car units))])
+		  (if unit
+		      (begin
+			(set! tagn (+ tagn 1))
+			(cons `[,(string->symbol (format "teachpack~a" tagn)) : () (,unit userspace)]
+			      (loop (cdr units))))
+		      (loop (cdr units))))]))]
+	   [cu
+	    (eval
+	     `(compound-unit/sig
+		(import)
+		(link ,@(cons
+			 `[userspace : plt:userspace^ 
+				     ((compound-unit/sig 
+					(import)
+					(link [core : mzlib:core-flat^ (,core-flat@)]
+					      [mred : mred^ (,mred:mred@)])
+					(export (open core)
+						(open mred))))]
+			 link-clauses))
+		(export)))])
+      (lambda ()
+	(invoke-unit/sig
+	 cu)))))
+      

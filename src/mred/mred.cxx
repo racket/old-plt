@@ -172,6 +172,8 @@ public:
 
 MrEdApp *TheMrEdApp;
 
+static int exit_val = 0;
+
 #ifdef LIBGPP_REGEX_HACK
 /* Fixes weirdness with libg++ and the compiler: it tries to
    destroy global regexp objects that were never created. Calling
@@ -1616,8 +1618,8 @@ public:
       hidden = TRUE;
       if (stdio_kills_prog) {
 	if (scheme_exit)
-	  scheme_exit(0);
-	exit(0);
+	  scheme_exit(exit_val);
+	exit(exit_val);
       } else
 	have_stdio = 0;
       return TRUE; 
@@ -2495,8 +2497,8 @@ static void on_main_killed(Scheme_Process *p)
 #endif
 
   if (scheme_exit)
-    scheme_exit(0);
-  exit(0);
+    scheme_exit(exit_val);
+  exit(exit_val);
 }
 
 void MrEdApp::RealInit(void)
@@ -2507,7 +2509,7 @@ void MrEdApp::RealInit(void)
 
   scheme_current_process->on_kill = on_main_killed;
   
-  finish_cmd_line_run(xfa, do_graph_repl);
+  exit_val = finish_cmd_line_run(xfa, do_graph_repl);
 
   scheme_kill_thread(scheme_current_process);
 }

@@ -14,7 +14,7 @@ WXSCHEMEHEADERS = $(srcdir)/wxscheme.h $(srcdir)/../../mzscheme/src/stypes.h \
 MEDIAHEADERS = $(srcdir)/../wxme/wx_media.h $(srcdir)/../wxme/wx_medad.h $(srcdir)/../wxme/wx_snip.h
 WINDOWHEADERS = $(srcdir)/../../wxxt/src/Windows/Window.h
 MAINDCHEADERS = $(srcdir)/../../wxxt/src/DeviceContexts/DC.h
-DCHEADERS = $(MAINDCHEADERS) $(srcdir)/../../wxxt/src/DeviceContexts/WindowDC.h $(srcdir)/../../wxxt/src/DeviceContexts/PSDC.h
+DCHEADERS = $(MAINDCHEADERS) $(srcdir)/../../wxxt/src/DeviceContexts/WindowDC.h $(srcdir)/../../wxcommon/PSDC.h
 
 OBJECTS = xcglue.o wxs_bmap.o wxs_butn.o wxs_chce.o wxs_ckbx.o wxs_cnvs.o \
           wxs_dc.o wxs_evnt.o wxs_fram.o wxs_gage.o wxs_gdi.o wxs_glob.o \

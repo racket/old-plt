@@ -111,6 +111,8 @@ class wxPostScriptDC: public wxDC
   { wxbDC::DrawPolygon(lines, xoffset, yoffset, fillStyle); }
 #endif
 
+  void DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3);
+
   void DrawRectangle(float x, float y, float width, float height);
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
   void DrawEllipse(float x, float y, float width, float height);

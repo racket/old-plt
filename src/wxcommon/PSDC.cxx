@@ -555,6 +555,46 @@ void wxPostScriptDC::DrawPoint (float x, float y)
   CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
 }
 
+void wxPostScriptDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3)
+{
+  float x21, y21, x22, y22;
+  float xm1, ym1, xm2, ym2;
+
+  pstream->Out("newpath\n");
+
+  pstream->Out(XSCALE(x1)); pstream->Out(" "); pstream->Out(YSCALE(y1)); pstream->Out(" moveto ");
+
+  x21 = (x1 + x2) / 2;
+  y21 = (y1 + y2) / 2;
+
+  pstream->Out(XSCALE(x21)); pstream->Out(" "); pstream->Out(YSCALE(y21)); pstream->Out(" lineto\n");
+
+  x22 = (x2 + x3) / 2;
+  y22 = (y2 + y3) / 2;
+  
+  xm1 = (x21 + x2) / 2;
+  ym1 = (y21 + y2) / 2;
+
+  xm2 = (x2 + x22) / 2;
+  ym2 = (y2 + y22) / 2;
+
+  pstream->Out(XSCALE(xm1)); pstream->Out(" "); pstream->Out(YSCALE(ym1)); pstream->Out(" "); 
+
+  pstream->Out(XSCALE(x2)); pstream->Out(" "); pstream->Out(YSCALE(y2)); pstream->Out(" "); 
+
+  pstream->Out(XSCALE(xm2)); pstream->Out(" "); pstream->Out(YSCALE(ym2)); pstream->Out(" "); 
+
+  pstream->Out(XSCALE(x22)); pstream->Out(" "); pstream->Out(YSCALE(y22)); pstream->Out(" curveto\n");
+
+  pstream->Out(XSCALE(x3)); pstream->Out(" "); pstream->Out(YSCALE(y3)); pstream->Out(" lineto\n");
+
+  pstream->Out("stroke\n");
+
+  CalcBoundingBox(XSCALEBND(x1), YSCALEBND(y1));
+  CalcBoundingBox(XSCALEBND(x2), YSCALEBND(y2));
+  CalcBoundingBox(XSCALEBND(x3), YSCALEBND(y3));
+}
+
 void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], float xoffset, float yoffset, int fillStyle)
 {
   if (!pstream)

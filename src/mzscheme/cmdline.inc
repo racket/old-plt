@@ -96,13 +96,13 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
     for (i = 0; i < fa->num_enl; i++) {
       if (fa->is_load[i]) {
 	if (!scheme_load(fa->evals_and_loads[i])) {
-	  exit_val = -1;
+	  exit_val = 1;
 	  break;
 	}
       } else if (!scheme_setjmp(scheme_error_buf))
 	scheme_eval_string_all(fa->evals_and_loads[i], fa->global_env, 0);
       else {
-	exit_val = -1;
+	exit_val = 1;
 	break;
       }
     }
@@ -118,7 +118,7 @@ static int finish_cmd_line_run(FinishArgs *fa, void (*repl)(void))
       f = _scheme_apply(f, 1, a);
       _scheme_apply(f, 0, NULL);
     } else {
-      exit_val = -1;
+      exit_val = 1;
     }
   }
 #endif
@@ -203,7 +203,7 @@ static int run_from_cmd_line(int argc, char *argv[],
   if (argc && (!strcmp(argv[0], "--restore")
 	       || ((argv[0][0] == '-') && (argv[0][1] == 'R')))) {
     PRINTF("Image loading (with --restore or -R<file>) is not supported.\n");
-    exit(-1);
+    exit(1);
   }
 
   evals_and_loads = (char **)malloc(sizeof(char *) * argc);
@@ -633,6 +633,6 @@ static int run_from_cmd_line(int argc, char *argv[],
   PRINTF("%s: Bad switch %s.\n", prog, real_switch);
  show_need_help:
   PRINTF("Use the --help or -h flag for help.\n");
-  return -1;
+  return 1;
 #endif
 }

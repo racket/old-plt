@@ -660,7 +660,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	   Scheme_Object *indentation, ReadParams *params,
 	   int comment_mode)
 {
-  int ch, ch2, depth;
+  int ch, ch2, depth, dispatch_ch;
   long line = 0, col = 0, pos = 0;
   Scheme_Object *special_value;
 
@@ -733,13 +733,14 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
     v = readtable_handle(params->table, &ch2, &use_default, params,
 			 port, stxsrc, line, col, pos);
     if (!use_default) {
-      ch = SCHEME_SPECIAL;
+      dispatch_ch = SCHEME_SPECIAL;
       special_value = v;
     } else
-      ch = ch2;
-  }
+      dispatch_ch = ch2;
+  } else
+    dispatch_ch = ch;
 
-  switch ( ch )
+  switch ( dispatch_ch )
     {
     case EOF: 
       return scheme_eof;

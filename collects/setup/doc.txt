@@ -59,21 +59,32 @@ Additional "info.ss" fields trigger additional setup actions:
 >  mzscheme-launcher-names - a list of executable names to be
    installed in "plt" (or "plt/bin") to run MzScheme programs
    implemented by the collection. A parallel list of library names
-   must be provided by `mzscheme-launcher-libraries'. For each name, a
-   launching executable is set up using the launcher collection's
+   must be provided by `mzscheme-launcher-libraries' or
+   `mzscheme-launcher-flags' (see below). For each name, a launching
+   executable is set up using the launcher collection's
    `make-mzscheme-launcher'. The arguments are "-mve-" and
 
       (format "~s" `(require (lib <file> <colls> ...)))
 
-   where lib is the file named by mzscheme-launcher-libraries
+   where lib is the file named by `mzscheme-launcher-libraries'
    and <colls> ... are the collections (and subcollections)
-   of the info.ss file. In addition, 
+   of the info.ss file. In addition,
 
     (build-aux-from-path
      (build-path (collection-path <colls> ...) <suffixless-file>))
 
    is provided for the optional "aux" argument (for icons, etc.),
-   where <suffixless-file> is <file> without its suffix.
+   where <suffixless-file> is <file> without its suffix (see
+   launcher/doc.txt).
+
+   If `mzscheme-launcher-flags' is provided, it is used as a list of
+   command-line argument lists to pass to mzscheme instead of the
+   above default, allowing arbitrary command-line arguments.  If
+   `mzscheme-launcher-flags' is specified together with
+   `mzscheme-launcher-libraries', then the flags will override the
+   libraries, but the libraries can still be used to specify a name
+   for `build-aux-from-path' (to find related information like icon
+   files etc).
 
    If compile-subcollections mentions a subcollection with
    this field, the executable is also set up for that subcollection.
@@ -81,15 +92,22 @@ Additional "info.ss" fields trigger additional setup actions:
    If the executable already exists, no action is taken.
 
 >  mzscheme-launcher-libraries - a list of library names in
-   parallel to `mzscheme-launcher-names'.
+   parallel to `mzscheme-launcher-names' (see above).
 
->  mred-launcher-names - a list of executable names to be
-   installed in plt (or plt/bin) to run MrEd programs
-   implemented by the collection.  This is treated in
-   parallel to `mred-launcher-libraries. 
+>  mzscheme-launcher-flags - a list of command-line flag lists, in
+   parallel to `mzscheme-launcher-names' (see above).
+
+>  mred-launcher-names - a list of executable names to be installed in
+   plt (or plt/bin) to run MrEd programs implemented by the
+   collection.  This is treated in parallel to
+   `mred-launcher-libraries' and `mred-launcher-flags' similarly to
+   `mzscheme-launcher-names' above.
 
 >  mred-launcher-libraries - a list of library names in
-   parallel to `mred-launcher-names'.
+   parallel to `mred-launcher-names' (see above).
+
+>  mred-launcher-flags - a list of command-line flag lists, in
+   parallel to `mred-launcher-names' (see above).
 
 >  install-collection - a string for a library module relative to the
    collection. The module must provide `installer' as a procedure that

@@ -1199,9 +1199,13 @@ int scheme_nonneg_exact_p(Scheme_Object *n);
 Scheme_Object *scheme_generic_integer_power(const Scheme_Object *o, const Scheme_Object *p);
 
 #ifdef TIME_TYPE_IS_UNSIGNED
-#define scheme_make_integer_value_from_time(t) scheme_make_integer_value_from_unsigned((unsigned long)t)
+# define scheme_make_integer_value_from_time(t) scheme_make_integer_value_from_unsigned((unsigned long)t)
+# define scheme_get_time_val(o, v) scheme_get_unsigned_int_val(o, v)
+# define UNBUNDLE_TIME_TYPE unsigned long
 #else
-#define scheme_make_integer_value_from_time(t) scheme_make_integer_value((long)t)
+# define scheme_make_integer_value_from_time(t) scheme_make_integer_value((long)t)
+# define scheme_get_time_val(o, v) scheme_get_int_val(o, v)
+# define UNBUNDLE_TIME_TYPE long
 #endif
 
 /***** Random number generator *****/

@@ -2800,14 +2800,6 @@ long scheme_get_seconds(void)
 #endif
 }
 
-#ifdef TIME_TYPE_IS_UNSIGNED
-# define scheme_get_time_val(o, v) scheme_get_unsigned_int_val(o, v)
-# define UNBUNDLE_TIME_TYPE unsigned long
-#else
-# define scheme_get_time_val(o, v) scheme_get_int_val(o, v)
-# define UNBUNDLE_TIME_TYPE long
-#endif
-
 #if defined(USE_MACTIME) || defined(USE_PALMTIME)
 static int month_offsets[12] = { 0, 31, 59, 90,
                                 120, 151, 181, 212,

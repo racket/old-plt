@@ -327,7 +327,7 @@ void scheme_init_file(Scheme_Env *env)
   scheme_add_global_constant("file-or-directory-modify-seconds",
 			     scheme_make_prim_w_arity(file_modify_seconds,
 						      "file-or-directory-modify-seconds",
-						      1, 1), 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("file-or-directory-permissions",
 			     scheme_make_prim_w_arity(file_or_dir_permissions,
@@ -483,7 +483,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
 			 int *dealiased, int *wasdir, int *exists,
 			 long *filedate, int *flags, 
 			 long *type, unsigned long *size,
-			 FInfo *finfo); 
+			 FInfo *finfo, int set_time); 
 #endif
 
 int scheme_os_setcwd(char *expanded, int noexn)
@@ -494,7 +494,7 @@ int scheme_os_setcwd(char *expanded, int noexn)
   int err;
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(expanded, 1, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(expanded, 1, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
     WDPBRec rec;
     
     rec.ioNamePtr = NULL;
@@ -559,7 +559,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
 			 int *dealiased, int *wasdir, int *exists,
 			 long *filedate, int *flags, 
 			 long *type, unsigned long *size,
-			 FInfo *finfo) 
+			 FInfo *finfo, int set_time) 
 /* finddir:   0 => don't care if dir is found (but set *wasdir)
               1 => must find a dir
    findfile:  0 => don't care if file is found (but unset *wasdir)
@@ -891,7 +891,7 @@ void scheme_file_create_hook(char *filename)
 {
   FSSpec spec;
     
-  if (find_mac_file(filename, 1, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(filename, 1, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
     FInfo info;
 
     FSpGetFInfo(&spec, &info);
@@ -905,7 +905,7 @@ int scheme_mac_path_to_spec(const char *filename, FSSpec *spec)
 {
   int wasdir;
   
-  if (find_mac_file(filename, 1, spec, 0, 0, NULL, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(filename, 1, spec, 0, 0, NULL, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
     if (wasdir) {
       CInfoPBRec pb;
       
@@ -1329,7 +1329,7 @@ static char *do_expand_filename(char* filename, int ilen, const char *errorin,
     FSSpec spec;
     int dealiased, wasdir;
     
-    if (find_mac_file(filename, 0, &spec, 0, 0, &dealiased, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL)) {
+    if (find_mac_file(filename, 0, &spec, 0, 0, &dealiased, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
       if (wasdir) {
       	// clean up broken FSSpec:
       	FSMakeFSSpec(spec.vRefNum,spec.parID,NULL,&spec);
@@ -1368,7 +1368,7 @@ int scheme_file_exists(char *filename)
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   
-  if (!find_mac_file(filename, 1, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(filename, 1, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0))
     return 0;
   return 1;
 
@@ -1458,9 +1458,10 @@ static int UNC_stat(char *dirname, int len, int *flags, int *isdir, Scheme_Objec
     }
     memcpy(copy + len, "*.*", 4);
     fh = FIND_FIRST(copy, &fd);
-    if (FIND_FAILED(fh))
+    if (FIND_FAILED(fh)) {
+      errno = -1;
       return 0;
-    else {
+    } else {
       if (flags)
 	*flags = MZ_UNC_READ | MZ_UNC_EXEC | ((GET_FF_ATTRIBS(fd) & _A_RDONLY) ? 0 : MZ_UNC_WRITE);
       if (date)
@@ -1509,7 +1510,7 @@ int scheme_directory_exists(char *dirname)
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   
-  if (!find_mac_file(dirname, 1, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+  if (!find_mac_file(dirname, 1, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0))
     return 0;
 
   return 1;
@@ -1627,7 +1628,7 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
   
     scheme_security_check_file("link-exists?", filename, SCHEME_GUARD_FILE_EXISTS);
 
-    if (!find_mac_file(filename, 0, &spec, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (!find_mac_file(filename, 0, &spec, 0, -1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0))
       return scheme_false;
 
     return scheme_true;
@@ -2434,7 +2435,7 @@ static Scheme_Object *delete_file(int argc, Scheme_Object **argv)
     
     scheme_security_check_file("delete-file", file, SCHEME_GUARD_FILE_DELETE);
  
-    if (find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+    if (find_mac_file(file, 0, &spec, 0, -2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
       errid = FSpDelete(&spec);
       if (!errid)
         return scheme_void;
@@ -2503,9 +2504,9 @@ static Scheme_Object *rename_file(int argc, Scheme_Object **argv)
 #endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
-  if (find_mac_file(src, 0, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL)
+  if (find_mac_file(src, 0, &srcspec, 0, -3, NULL, &swas_dir, &sexists, NULL, NULL, NULL, NULL, NULL, 0)
       && sexists) {
-    if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL)) {
+    if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &dexists, NULL, NULL, NULL, NULL, NULL, 0)) {
       /* Already exists or different volumes => failure */
       if ((exists_ok || !dexists) && (srcspec.vRefNum == destspec.vRefNum)) {
         int rename;
@@ -2741,8 +2742,8 @@ static Scheme_Object *copy_file(int argc, Scheme_Object **argv)
     int exists = 0;
     static OSErr en;
    
-    if (find_mac_file(src, 0, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo)) {
-      if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &exists, NULL, NULL, NULL, NULL, NULL)
+    if (find_mac_file(src, 0, &srcspec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &finfo, 0)) {
+      if (find_mac_file(dest, 0, &destspec, 0, 0, NULL, NULL, &exists, NULL, NULL, NULL, NULL, NULL, 0)
       	  && !exists) {
         CopyParam rec;
         
@@ -3201,7 +3202,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
   }
   scheme_security_check_file("directory-list", filename, SCHEME_GUARD_FILE_READ);
 
-  if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (!find_mac_file(filename, 0, &dir, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
     if (argc) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       argv[0],
@@ -3417,7 +3418,7 @@ static Scheme_Object *make_directory(int argc, Scheme_Object *argv[])
 
   scheme_security_check_file("make-directory", filename, SCHEME_GUARD_FILE_WRITE);
 
-  if (find_mac_file(filename, 0, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(filename, 0, &spec, 0, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
     SInt32 created;
     errno = FSpDirCreate(&spec, smSystemScript, &created);
     if (!created)
@@ -3494,7 +3495,7 @@ static Scheme_Object *delete_directory(int argc, Scheme_Object *argv[])
 
   scheme_security_check_file("delete-directory", filename, SCHEME_GUARD_FILE_DELETE);
 
-  if (find_mac_file(filename, 0, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)) {
+  if (find_mac_file(filename, 0, &spec, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0)) {
     errno = FSpDelete(&spec);
     if (!errno)
       return scheme_void;
@@ -3584,11 +3585,13 @@ static Scheme_Object *make_link(int argc, Scheme_Object *argv[])
 static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 {
   char *file;
+  int set_time = 0;
 #ifdef USE_MAC_FILE_TOOLBOX
   FSSpec spec;
   long mtime;
   int exists;
 #else
+  UNBUNDLE_TIME_TYPE mtime;
 # ifndef DOS_FILE_SYSTEM
   struct MSC_IZE(stat) buf;
 # endif
@@ -3596,6 +3599,8 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("file-or-directory-modify-seconds", "string", 0, argc, argv);
+
+  set_time = (argc > 1);
 
 #ifdef USE_MAC_FILE_TOOLBOX	  
   file = SCHEME_STR_VAL(argv[0]);
@@ -3606,41 +3611,76 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
 				SCHEME_STRTAG_VAL(argv[0]),
 				"file-or-directory-modify-seconds",
 				NULL,
-				SCHEME_GUARD_FILE_READ);
+				(set_time
+				 ? SCHEME_GUARD_FILE_READ
+				 : SCHEME_GUARD_FILE_WRITE));
 #endif
 
-#ifdef USE_MAC_FILE_TOOLBOX	  
-  scheme_security_check_file("file-or-directory-modify-seconds", file, SCHEME_GUARD_FILE_READ);
+  if (set_time) {
+    if (!SCHEME_INTP(argv[1]) && !SCHEME_BIGNUMP(argv[1])) {
+      scheme_wrong_type("file-or-directory-modify-seconds", "exact integer", 1, argc, argv);
+      return NULL;
+    }
+    if (!scheme_get_time_val(argv[1], &mtime)) {
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
+		       argv[1],
+		       "file-or-directory-modify-seconds: integer %s is out-of-range",
+		       scheme_make_provided_string(argv[1], 0, NULL));
+      return NULL;
+    }
+  } else
+    mtime = 0;
 
-  if (!find_mac_file(file, 0, &spec, 0, 0, NULL, NULL, &exists, &mtime, NULL, NULL, NULL, NULL)
+#ifdef USE_MAC_FILE_TOOLBOX	  
+  scheme_security_check_file("file-or-directory-modify-seconds", file, 
+			     (set_time
+			      ? SCHEME_GUARD_FILE_READ
+			      : SCHEME_GUARD_FILE_WRITE));
+
+  if (!find_mac_file(file, 0, &spec, 0, 0, NULL, NULL, &exists, &mtime, NULL, NULL, NULL, NULL, set_time)
       || !exists) {
     /* Failed */
-  } else
+  } else if (set_time)
+    return scheme_void;
+  else
     return scheme_make_integer_value_from_time(mtime);
 #else
 # ifdef DOS_FILE_SYSTEM
-  {
+  if (!set_time) {
     int len = strlen(file);
     Scheme_Object *secs;
 
     if (UNC_stat(file, len, NULL, NULL, &secs))
       return secs;
-  }
-# else
-  while (1) {
-    if (!MSC_IZE(stat)(file, &buf))
-      return scheme_make_integer_value_from_time(buf.st_mtime);
-    else if (errno != EINTR)
-      break;
-  }
+  } else 
 # endif
+    {
+      while (1) {
+	if (set_time) {
+	  struct timeval ts[2];
+	  ts[0].tv_sec = mtime;
+	  ts[1].tv_sec = mtime;
+	  ts[0].tv_usec = 0;
+	  ts[1].tv_usec = 0;
+	  if (!utimes(file, ts))
+	    return scheme_void;
+	} else {
+	  if (!MSC_IZE(stat)(file, &buf))
+	    return scheme_make_integer_value_from_time(buf.st_mtime);
+	}
+	if (errno != EINTR)
+	  break;
+      }
+    }
 #endif
 
   scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		   argv[0],
 		   fail_err_symbol,
-		   "file-or-directory-modify-seconds: file or directory not found: \"%q\"",
-		   filename_for_error(argv[0]));
+		   "file-or-directory-modify-seconds: error %s file/directory time: %q (%e)",
+		   set_time ? "setting" : "getting",
+		   filename_for_error(argv[0]),
+		   errno);
   return NULL;
 }
 
@@ -3717,7 +3757,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 #ifdef USE_MAC_FILE_TOOLBOX
   scheme_security_check_file("file-or-directory-permissions", filename, SCHEME_GUARD_FILE_READ);
 
-  if (!find_mac_file(filename, 0, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL)
+  if (!find_mac_file(filename, 0, &spec, 0, 0, NULL, &isdir, &exists, NULL, &flags, &type, NULL, NULL, 0)
       || !exists)
     return l = NULL;
   else {
@@ -3826,7 +3866,7 @@ static Scheme_Object *file_size(int argc, Scheme_Object *argv[])
 #ifdef USE_MAC_FILE_TOOLBOX
   scheme_security_check_file("file-size", filename, SCHEME_GUARD_FILE_READ);
 
-  if (!find_mac_file(filename, 0, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &len, NULL))
+  if (!find_mac_file(filename, 0, &spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, &len, NULL, 0))
     goto failed;
 #endif
 #if defined(UNIX_FILE_SYSTEM) || defined(DOS_FILE_SYSTEM)
@@ -4377,7 +4417,7 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
 			       NULL,
 			       0);
 
-    if (!find_mac_file(s, 0, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL))
+    if (!find_mac_file(s, 0, spec, 0, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0))
       return 0;
   }
   

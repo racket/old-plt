@@ -1777,7 +1777,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
       } else {
 	if (angle != 0.0) {
 	  double offset, mx, my;
-	  double quad, pie = 3.14159;
+	  double quadrant, pie = 3.14159;
 	  int the_x, the_y, i;
 	  XFontStruct *zfontinfo;
 	  
@@ -1785,9 +1785,9 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	  fontinfo = (XFontStruct *)current_font->GetInternalFont(scale_x, angle);
 	  XSetFont(DPY, TEXT_GC, fontinfo->fid);
 
-	  quad = fmod(angle, 2 * pie);
-	  if (quad < 0)
-	    quad += (2 * pie);
+	  quadrant = fmod(angle, 2 * pie);
+	  if (quadrant < 0)
+	    quadrant += (2 * pie);
 	  
 	  mx = (float)cos(angle);
 	  my = (float)sin(angle);

@@ -1540,8 +1540,8 @@ PROCEDURES -----------------------------------------------------------
 
 > (qp-encode string) -> string
   
-  Consumes a string and returns its quoted printable representation as
-  a new string.
+  Consumes a string and returns its quoted printable representation
+  (using "\r\n" newlines) as a new string.
 
 > (qp-decode string) -> string
 

@@ -46,7 +46,7 @@
       (define qp-encode
         (lambda (str)
           (let ((out (open-output-string)))
-            (qp-encode-stream (open-input-string str) out)
+            (qp-encode-stream (open-input-string str) out "\r\n")
             (get-output-string out))))
       
       ;; qp-decode : string -> string

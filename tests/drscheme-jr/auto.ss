@@ -275,13 +275,12 @@
   (unless quasiquote? 
     (flush-err)(flush-err)(flush-err)(flush-err))
 
-;; REMOVED, out of date
-;  (try "'(1 . 2)" (pl-diff '(error "improper lists are not allowed")
-;			   (pc-diff "(cons 1 2)"
-;				    "(1 . 2)")))
-;  (when proper-list?
-;    (flush-out)
-;    (flush-err))
+  (try "'(1 . 2)" (pl-diff '(error "improper lists are not allowed")
+		    (pc-diff "(cons 1 2)"
+		      "(1 . 2)")))
+  (when proper-list?
+    (flush-out)
+    (flush-err))
   
   (try "null" (pc-diff "empty" "()"))
   (try "(cons 1 null)" (al-diff (pc-diff "(list 1)" "(1)")

@@ -917,8 +917,7 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
   case WM_NOTIFY:
     {
       NMHDR *nm = (NMHDR *)lParam;
-      WORD cmd = nm->code;
-      if (!wnd->OnCommand(LOWORD(wParam), cmd, nm->hwndFrom))
+      if (!nm || !wnd->OnCommand(LOWORD(wParam), nm->code, nm->hwndFrom))
 	retval = wnd->DefWindowProc(message, wParam, lParam);
       else if (dialog) 
 	retval = 0;

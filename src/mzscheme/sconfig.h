@@ -670,6 +670,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 #  define USE_GET_CURRENT_DIRECTORY
 #  define USE_WINDOWS_FIND_FIRST
 #  define DIRENT_NO_NAMLEN
+#  define UNISTD_INCLUDE
 # endif
 
 # define TIME_SYNTAX

@@ -22,6 +22,7 @@
 */
 
 #include "schpriv.h"
+#include <ctype.h>
 #ifdef DOS_FILE_SYSTEM
 # include <windows.h>
 #endif

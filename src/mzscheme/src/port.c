@@ -35,6 +35,7 @@
 # include <ulimit.h>
 #endif
 #ifdef FILES_HAVE_FDS
+# include <fcntl.h>
 # include <sys/types.h>
 # include <sys/time.h>
 # ifdef BSTRING_INCLUDE

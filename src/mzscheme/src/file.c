@@ -367,7 +367,7 @@ void scheme_init_file(Scheme_Env *env)
 }
 
 #ifdef USE_GET_CURRENT_DIRECTORY
-static char *getcwd(char *s, int l)
+static char *mz_getcwd(char *s, int l)
 {
  int need_l;
   
@@ -385,6 +385,7 @@ static char *getcwd(char *s, int l)
  
  return s;
 }
+# define getcwd mz_getcwd
 #endif
 
 char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)

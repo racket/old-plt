@@ -2997,8 +2997,9 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
       Scheme_Object *s = scheme_get_param(config, SCHEME_INT_VAL(pos));
       if (arity == -3) {
 	Scheme_Object *a[1];
+	PCheck_Proc checkp = (PCheck_Proc)check;
 	a[0] = s;
-	s = ((PCheck_Proc)check)(1, a, config);
+	s = checkp(1, a, config);
       }
       return s;
     }
@@ -3008,7 +3009,10 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
     if (arity != -2) {
       if (arity < 0) {
 	if (check) {
-	  Scheme_Object *r = ((PCheck_Proc)check)(1, argv, config);
+	  PCheck_Proc checkp = (PCheck_Proc)check;
+	  Scheme_Object *r;
+
+	  r = checkp(1, argv, config);
 	  
 	  if (!isboolorfilter && SCHEME_FALSEP(r))
 	    r = NULL;

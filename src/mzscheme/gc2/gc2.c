@@ -13,7 +13,13 @@
 #include <string.h>
 
 #define USE_MMAP 1
-#define ALIGN_DOUBLES 0
+#define GROW_FACTOR 2
+
+#if defined(sparc) || defined(__sparc) || defined(__sparc__)
+# define ALIGN_DOUBLES 1
+#else
+# define ALIGN_DOUBLES 0
+#endif
 
 #if USE_MMAP
 /* For mmap: */
@@ -27,14 +33,12 @@ typedef short Type_Tag;
 
 #include "gc2.h"
 
-#define GROW_FACTOR 2
-
 #define TIME 0
 #define SEARCH 0
 #define SAFETY 0
 #define RECYCLE_HEAP 0
 
-#define GC_EVERY_ALLOC 1
+#define GC_EVERY_ALLOC 10
 #define ALLOC_GC_PHASE 0
 
 void (*GC_collect_start_callback)(void);

@@ -701,6 +701,8 @@
 	  body-e))))))
 
 (define re:funcarg (regexp "^__funcarg"))
+(define (is-generated? x)
+  (regexp-match re:funcarg (symbol->string (car x))))
 
 (define (convert-body body-e extra-vars pushable-vars live-vars setup-stack?)
   (let ([el (body->lines body-e #f)])
@@ -792,7 +794,7 @@
 					    (or (assq (car x) local-vars)
 						(assq (car x) pushable-vars)
 						(and setup-stack?
-						     (regexp-match re:funcarg (symbol->string (car x))))))
+						     (is-generated? x))))
 					  (live-var-info-pushed-vars live-vars))])
 		(values (apply
 			 append
@@ -1144,7 +1146,8 @@
 						not-declared
 						(live-var-info-vars live-vars))]
 				[new-pushed-vars (filter
-						  not-declared
+						  (lambda (x) (or (not-declared x)
+								  (is-generated? x)))
 						  (live-var-info-pushed-vars live-vars))])
 			   (make-live-var-info (live-var-info-tag live-vars)
 					       (live-var-info-maxlive live-vars)

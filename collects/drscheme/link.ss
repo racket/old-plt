@@ -59,14 +59,15 @@
     (mred:add-preference-callback 
      'drscheme:library-file
      (lambda (p v)
-       (when v
-	 (let ([new-unit (and (file-exists? v)
-			      (load/cd v))])
-	   (if ((global-defined-value 'unit/sig?) new-unit)
-	       (set! library-unit new-unit)
-	       (begin
-		 (wx:message-box (format "Invalid File: ~a" v) "ERROR")
-		 #f))))))
+       (if v
+	   (let ([new-unit (and (file-exists? v)
+				(load/cd v))])
+	     (if ((global-defined-value 'unit/sig?) new-unit)
+		 (set! library-unit new-unit)
+		 (begin
+		   (wx:message-box (format "Invalid File: ~a" v) "ERROR")
+		   #f)))
+	   (set! library-unit #f))))
 
     (define user-defined? 'user-defined?)
     (define user-macro? 'user-macro?)

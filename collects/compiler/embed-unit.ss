@@ -246,8 +246,6 @@
       (define (mod-full-name m) (list-ref m 5))
       (define (mod-mappings m) (list-ref m 6))
       
-      (define re:suffix (regexp "\\..?.?.?$"))
-
       (define (generate-prefix)
 	(format "#%embedded:~a:" (gensym)))
       
@@ -278,7 +276,7 @@
 	      (let ([code (get-module-code filename)])
 		(let-values ([(imports fs-imports) (module-compiled-imports code)])
 		  (let ([name (let-values ([(base name dir?) (split-path filename)])
-				(regexp-replace re:suffix name ""))]
+				(path->string (path-replace-suffix name #"")))]
 			[prefix (let ([a (assoc filename prefixes)])
 				  (if a
 				      (cdr a)
@@ -355,7 +353,7 @@
 			(let ([a3 (and (pair? name)
 				       (eq? (car name) 'lib)
 				       (ormap (lambda (lib-entry)
-						(with-handlers ([not-break-exn? (lambda (x) #f)])
+						(with-handlers ([exn:fail? (lambda (x) #f)])
 						  ;; To check equality of library references,
 						  ;; we have to consider relative paths in the
 						  ;; filename part of the name.

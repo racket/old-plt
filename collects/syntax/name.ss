@@ -8,10 +8,13 @@
 	  (or n
 	      (let ([s (syntax-source stx)])
 		(and s
-		     (let ([l (syntax-line stx)]
+		     (let ([s (cond
+			       [(path? s) (path->string s)]
+			       [else s])]
+			   [l (syntax-line stx)]
 			   [c (syntax-column stx)])
 		       (if l
-			     (string->symbol (format "~a:~a:~a" s l c))
+			   (string->symbol (format "~a:~a:~a" s l c))
 			   (let ([p (syntax-position stx)])
 			     (string->symbol (format "~a::~a" s p))))))))))))
 

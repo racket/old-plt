@@ -265,14 +265,19 @@
 			  (cond
 			   [(eq? e 'same) #"/."]
 			   [(eq? e 'up) #"/.."]
-			   [else (bytes-append #"/" e)]))
+			   [else (bytes-append #"/" (path->bytes e))]))
 			elements)))]
-		[else (let ([path (apply build-path
-					 (let-values ([(base n d?) (split-path (cadr relto-mp))])
-					   (if (eq? base 'relative)
-					       'same
-					       base))
-					 elements)])
+		[else (let ([path (path->string
+				   (apply build-path
+					  (let-values ([(base n d?) (split-path (cadr relto-mp))])
+					    (if (eq? base 'relative)
+						'same
+						base))
+					  (map (lambda (i)
+						 (cond
+						  [(bytes? i) (bytes->path i)]
+						  [else i]))
+					       elements)))])
 			(if (eq? (car relto-mp) 'lib)
 			    `(lib ,path ,(caddr relto-mp))
 			    `(file ,path)))]))])
@@ -299,10 +304,11 @@
 			(if (= len 2)
 			    (list "mzlib")
 			    (cddr s)))])
-	    `(lib ,(build-path (if (null? (cdr cols))
-				   'same
-				   (apply build-path 'same (cdr cols)))
-			       (cadr s))
+	    `(lib ,(path->string
+		    (build-path (if (null? (cdr cols))
+				    'same
+				    (apply build-path 'same (cdr cols)))
+				(cadr s)))
 		  ,(car cols)))]
 	 [(eq? (car s) 'file)
 	  (let ([p (cadr s)])

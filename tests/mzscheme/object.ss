@@ -273,11 +273,11 @@
 (arity-test interface-extension? 2 2)
 (arity-test ivar-in-class? 2 2)
 
-(arity-test uq-ivar 2 2)
-(arity-test uq-make-generic 2 2)
+(arity-test ivar/proc 2 2)
+(arity-test make-generic/proc 2 2)
 
 (error-test '(ivar o1 a) ivar?)
-(test 4 uq-ivar o2 'a)
+(test 4 ivar/proc o2 'a)
 
 (test 0 'send (send o1 f-1-a))
 (test 1 'send (send o2 f-1-a))
@@ -291,7 +291,7 @@
 (error-test '(send o1 f-1-top-a) ivar?)
 (test 4 'send (send o2 f-1-top-a))
 
-(test 5 uq-ivar o2 'b1)
+(test 5 ivar/proc o2 'b1)
 
 (test 2 'send (send o1 f-1-b1))
 (test 2 'send (send o1 f-1-b2))
@@ -301,15 +301,15 @@
 (test 2 'send (send o2 f-2-b2))
 (test 2 'send (send o2 f-2-also-b2))
 
-(test 3 uq-ivar o1 'c)
-(test 6 uq-ivar o2 'c)
+(test 3 ivar/proc o1 'c)
+(test 6 ivar/proc o2 'c)
 
 (test 3 'send (send o1 f-1-c))
 (test 6 'send (send o2 f-1-c))
 (test 6 'send (send o2 f-2-c))
 
-(test 7 uq-ivar o1 'd)
-(test 7 uq-ivar o2 'd)
+(test 7 ivar/proc o1 'd)
+(test 7 ivar/proc o2 'd)
 
 (test 10 'send (send o1 f-1-v))
 (test 10 'send (send o2 f-1-v))
@@ -321,7 +321,7 @@
 (test 0 'send (send o1 f-1-other-e o1))
 (test 1 'send (send o1 f-1-other-e o2))
 
-(test 2 uq-ivar o2 'y)
+(test 2 ivar/proc o2 'y)
 
 (test 3 'send (send o2 f-2-set-b2 3))
 (test 3 'send (send o2 f-2-also-b2))

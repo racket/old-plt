@@ -31,6 +31,7 @@
      ; w h d -> pict
 
      clip-descent   ; pict -> pict
+     clip-ascent    ; pict -> pict
      lift           ; pict -> pict
      drop           ; pict -> pict
      inset          ; pict i -> pict

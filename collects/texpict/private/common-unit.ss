@@ -162,6 +162,16 @@
 	   `(picture ,w ,(- h d)
 		     (put 0 ,(- d) ,(pict-draw b))))))
 
+      (define (clip-ascent b)
+	(let* ([w (pict-width b)]
+	       [h (pict-height b)]
+	       [a (pict-descent b)])
+	  (extend-pict
+	   b 0 a
+	   0 (- a) 0
+	   `(picture ,w ,(- h a)
+		     (put 0 0 ,(pict-draw b))))))
+
       (define (thickness mode b)
 	(let* ([w (pict-width b)]
 	       [h (pict-height b)])
@@ -470,10 +480,11 @@
 	      [c (lambda (m v . rest) (quotient* (- m v) 2))]
 	      [none (lambda (p a d one-line? boxes) p)]
 	      [preserve (lambda (p a d one-line? boxes)
-			  (if (and (apply = (map pict-width boxes))
-				   (apply = (map pict-height boxes))
-				   (apply = (map pict-ascent boxes))
-				   (apply = (map pict-descent boxes)))
+			  (if (or ((length boxes) . < . 2)
+				  (and (apply = (map pict-width boxes))
+				       (apply = (map pict-height boxes))
+				       (apply = (map pict-ascent boxes))
+				       (apply = (map pict-descent boxes))))
 			      (make-pict (pict-draw p)
 					 (pict-width p) (pict-height p)
 					 (pict-ascent (car boxes))

@@ -27,7 +27,7 @@ BROWSER_WINDOW_STYLE_OPTION styleOptions[6] = {
   
   { "iconize",WS_ICONIC,TRUE },
   { "maximize",WS_MAXIMIZE,TRUE },
-  { "no-caption",WS_CAPTION,FALSE },
+  //  { "no-caption",WS_CAPTION,FALSE }, 
   { "no-system-menu",WS_CAPTION | WS_SYSMENU,FALSE },
   { "no-thick-border",WS_THICKFRAME,FALSE },
   { "scrollbars",WS_HSCROLL | WS_VSCROLL,TRUE },

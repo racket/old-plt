@@ -482,7 +482,12 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 "-v/--version"
 # endif
 	 " text.\n"
-	 "  -v, --version : Suppresses the read-eval-print loop.\n"
+	 "  -v, --version : Suppresses the read-eval-print loop"
+# ifdef MZSCHEME_CMD_LINE  
+	 ".\n"
+# else
+	 ", prints version.\n"
+# endif
 	 "  -h, --help : Shows this information and exits; ignores other switches.\n"
 	 "  -R<file>, --restore <file> : restores an image; must be the only switch.\n"
 	 "Multiple single-letter switches can be collapsed, with arguments placed\n"

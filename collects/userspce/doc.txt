@@ -10,6 +10,7 @@ what is in the namespace automatically.
 - beginner.ss adds:
   - mzlib's core libraries
   - simple-draw.ss
+  - posn struture, without mutators
 
 - intermediate.ss adds exactly what beginner.ss does
 
@@ -17,6 +18,7 @@ what is in the namespace automatically.
   - mzlib's core libraries
   - the turtles, from turtle.ss in the graphics library, but only if
     the namespace already contains mred@
+  - posn struture, including mutators
 
 Each of the beginnero.ss, intermediateo.ss, and advancedo.ss and
 libraries returns a procedure that installs the corresponding bindings

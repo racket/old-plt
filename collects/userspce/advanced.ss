@@ -8,8 +8,8 @@
 	  (link [core : mzlib:core-flat^ ((require-library "coreflatr.ss"))]
 		[turtles : turtle^ ((require-library "turtler.ss" "graphics")
 				    (core : mzlib:function^))]
-		[posn : ((struct posn (x y) -setters))
-		      ((unit/sig ((struct posn (x y) -setters))
+		[posn : ((struct posn (x y)))
+		      ((unit/sig ((struct posn (x y)))
 			 (import)
 			 (define-struct posn (x y))))])
 	  (export
@@ -19,5 +19,5 @@
   (lambda ()
     (global-define-values/invoke-unit/sig ((open mzlib:core-flat^)
 					   (open turtle^)
-					   (open ((struct posn (x y) -setters))))
+					   (open ((struct posn (x y)))))
 					  u)))

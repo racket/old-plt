@@ -592,7 +592,7 @@ define_values_resolve(Scheme_Object *data, Resolve_Info *rslv)
 }
 
 void scheme_define_parse(Scheme_Object *form, 
-			 Scheme_Object **var, Scheme_Object **val,
+			 Scheme_Object **var, Scheme_Object **_stk_val,
 			 int defmacro,
 			 Scheme_Comp_Env *env)
 {
@@ -609,7 +609,7 @@ void scheme_define_parse(Scheme_Object *form,
   rest = SCHEME_STX_CDR(form);
   vars = SCHEME_STX_CAR(rest);
   rest = SCHEME_STX_CDR(rest);
-  *val = SCHEME_STX_CAR(rest);
+  *_stk_val = SCHEME_STX_CAR(rest);
 
   *var = vars;
 

@@ -1043,35 +1043,35 @@ Scheme_Object *scheme_read_bignum(const char *str, int offset, int radix)
 
 }
 
-static void bignum_double_inplace(Scheme_Object **o)
+static void bignum_double_inplace(Scheme_Object **_stk_o)
 {
   int carry, len;
   
-  len = SCHEME_BIGLEN(*o);
+  len = SCHEME_BIGLEN(*_stk_o);
 
   if (len == 0)
     return;
   
-  carry = mpn_lshift(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
+  carry = mpn_lshift(SCHEME_BIGDIG(*_stk_o), SCHEME_BIGDIG(*_stk_o), len, 1);
 
   if (carry)
-    *o = bignum_copy(*o, carry);
+    *_stk_o = bignum_copy(*_stk_o, carry);
 }
 
-static void bignum_add1_inplace(Scheme_Object **o)
+static void bignum_add1_inplace(Scheme_Object **_stk_o)
 {
   int carry, len;
   
-  len = SCHEME_BIGLEN(*o);
+  len = SCHEME_BIGLEN(*_stk_o);
 
   if (len == 0) {
-    *o = bignum_copy(*o, 1);
+    *_stk_o = bignum_copy(*_stk_o, 1);
     return;
   }
-  carry = mpn_add_1(SCHEME_BIGDIG(*o), SCHEME_BIGDIG(*o), len, 1);
+  carry = mpn_add_1(SCHEME_BIGDIG(*_stk_o), SCHEME_BIGDIG(*_stk_o), len, 1);
 
   if (carry)
-    *o = bignum_copy(*o, carry);
+    *_stk_o = bignum_copy(*_stk_o, carry);
 }
 
 #define USE_FLOAT_BITS 53
@@ -1104,17 +1104,17 @@ static void bignum_add1_inplace(Scheme_Object **o)
 
 
 void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
-			  Scheme_Object **qp, Scheme_Object **rp, int norm)
+			  Scheme_Object **_stk_qp, Scheme_Object **_stk_rp, int norm)
 {
   int cmp;
   
   cmp = bignum_abs_cmp(n, d);
 
   if (cmp == -1) {
-    if (qp)
-      *qp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
-    if (rp)
-      *rp = (norm ? scheme_bignum_normalize(bignum_copy(n, 0)) : bignum_copy(n, 0));
+    if (_stk_qp)
+      *_stk_qp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
+    if (_stk_rp)
+      *_stk_rp = (norm ? scheme_bignum_normalize(bignum_copy(n, 0)) : bignum_copy(n, 0));
     return;
   } else if (cmp == 0) {
     int n_pos, d_pos, res;
@@ -1124,10 +1124,10 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 
     res = (xor(n_pos, d_pos) ? -1 : 1);
 
-    if (qp)
-      *qp = (norm ? scheme_make_integer(res) : scheme_make_bignum(res));
-    if (rp)
-      *rp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
+    if (_stk_qp)
+      *_stk_qp = (norm ? scheme_make_integer(res) : scheme_make_bignum(res));
+    if (_stk_rp)
+      *_stk_rp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
     return;
   } else {    
     long n_size, d_size, q_alloc, r_alloc, n_pos, d_pos;
@@ -1158,18 +1158,19 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     n_pos = SCHEME_BIGPOS(n);
     d_pos = SCHEME_BIGPOS(d);
     
-    if (rp) {
+    if (_stk_rp) {
       SCHEME_BIGDIG(r) = r_digs;
       r_alloc = bigdig_length(r_digs, r_alloc);
       SCHEME_BIGLEN(r) = r_alloc;
       SCHEME_BIGPOS(r) = n_pos;
-      *rp = (norm ? scheme_bignum_normalize(r) : r);
-    } if (qp) {
+      *_stk_rp = (norm ? scheme_bignum_normalize(r) : r);
+    }
+    if (_stk_qp) {
       SCHEME_BIGDIG(q) = q_digs;
       q_alloc = bigdig_length(q_digs, q_alloc);
       SCHEME_BIGLEN(q) = q_alloc;
       SCHEME_BIGPOS(q) = !xor(n_pos, d_pos);
-      *qp = (norm ? scheme_bignum_normalize(q) : q);
+      *_stk_qp = (norm ? scheme_bignum_normalize(q) : q);
     }
   }
 }

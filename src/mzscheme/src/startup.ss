@@ -16,7 +16,7 @@
 ;; Do not use block comments (with #| and |#) in this file. The
 ;; pre-processing script to build startup.inc can't handle them.
 
-;; module.c contains a hack so that it assuems all modules defined
+;; module.c contains a hack so that it assumes all modules defined
 ;; during start-up are purely functional (and can therefore be
 ;; evaluated lazily). So turn that off if necessary.
 
@@ -903,9 +903,9 @@
   ;; The top-level environment is a list* --- i.e., a list, except that the last
   ;; element is in the cdr of the cons cell for the next-to-last element.
   ;;
-  ;; An environment does not contain any indicication of how far a
+  ;; An environment does not contain any indication of how far a
   ;; variable is nested. Uses of the variable should be checked separately
-  ;; using an environment prototype. Furthemore, the environment
+  ;; using an environment prototype. Furthermore, the environment
   ;; does not contain the pattern variables as "keys", since the positions
   ;; can also be determined by the prototype.
   ;;
@@ -1311,7 +1311,7 @@
 
   ;; creates an S-expression that conses h and t,
   ;; with optimizations. If h and t are quoted
-  ;; versions of the carand cdr of p, then return
+  ;; versions of the car and cdr of p, then return
   ;; a quoted as the "optimization" --- one that
   ;; is necessary to preserve the syntax wraps
   ;; associated with p.
@@ -1385,10 +1385,10 @@
 
   ;; Checks whether the given nesting matches a nesting in the
   ;; environment prototype, returning the prototype entry if it is
-  ;; found, and signalling an error otherwise. If the prototype 
+  ;; found, and signaling an error otherwise. If the prototype 
   ;; entry can be unwrapped by one, it is, and the resulting
   ;; prototype is paired with #f. Otherwise, the prototype is left
-  ;; alone and paird with #t.
+  ;; alone and paired with #t.
   (define ellipsis-sub-env
     (lambda (nesting proto-r src detail-src)
       (let ([v (ormap (lambda (proto)
@@ -1861,7 +1861,7 @@
   (provide with-syntax generate-temporaries))
 
 ;;----------------------------------------------------------------------
-;; #%stxcase-scheme: adds let-syntax, synatx-rules, and
+;; #%stxcase-scheme: adds let-syntax, syntax-rules, and
 ;;  check-duplicate-identifier, and assembles everything we have so far
 
 (module #%stxcase-scheme #%kernel

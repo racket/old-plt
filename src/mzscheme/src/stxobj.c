@@ -2187,8 +2187,11 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
   if (stx->hash_code & STX_GRAPH_FLAG) {
     Scheme_Object *key;
 
-    if (!*ht)
-      *ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    if (!*ht) {
+      GC_CAN_IGNORE Scheme_Hash_Table *htv;
+      htv = scheme_make_hash_table(SCHEME_hash_ptr);
+      *ht = htv;
+    }
     
     key = scheme_stx_property((Scheme_Object *)stx, share_symbol, NULL);
     if (SCHEME_FALSEP(key)) {

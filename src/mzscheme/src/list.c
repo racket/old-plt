@@ -1226,10 +1226,10 @@ static int compare_equal(void *v1, void *v2)
   return !scheme_equal((Scheme_Object *)v1, (Scheme_Object *)v2);
 }
 
-static void make_hash_indices_for_equal(void *v, long *h1, long *h2)
+static void make_hash_indices_for_equal(void *v, long *_stk_h1, long *_stk_h2)
 {
-  *h1 = scheme_equal_hash_key((Scheme_Object *)v);
-  *h2 = scheme_equal_hash_key2((Scheme_Object *)v);
+  *_stk_h1 = scheme_equal_hash_key((Scheme_Object *)v);
+  *_stk_h2 = scheme_equal_hash_key2((Scheme_Object *)v);
 }
 
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])

@@ -327,6 +327,8 @@
 
 (define __attribute__ (string->symbol "__attribute__"))
 
+(define re:_stk_ (regexp "^_stk_"))
+
 (define non-functions
   '(<= < > >= == != !
        \| \|\| & && : ? % + - * / ^ >> << ~
@@ -2445,6 +2447,8 @@
 					 (not (symbol? (tok-n (car assignee)))))
 				     (and (symbol? (tok-n (car assignee)))
 					  (not (null? (cdr assignee)))
+					  ;; ok if name starts with "_stk_"
+					  (not (regexp-match re:_stk_ (symbol->string (tok-n (car assignee)))))
 					  ;; ok if preceeding is else or label terminator
 					  (not (memq (tok-n (cadr assignee)) '(else :)))
 					  ;; assignment to field in record is ok
@@ -2595,10 +2599,12 @@
 							   (and m (cdr m))))])
 			     (and special-case-type
 				  (pointer-type? special-case-type))))))
-	    (fprintf (current-error-port)
-		     "Warning [ARITH] ~a in ~a: suspicious arithmetic, LHS ends ~s.~n"
-		     (tok-line (car e-)) (tok-file (car e-))
-		     (tok-n (cadr e-)))))
+	    ;; __u comes from memset in some variants of gcc
+	    (unless (eq? '__u (tok-n (cadr e-)))
+	      (fprintf (current-error-port)
+		       "Warning [ARITH] ~a in ~a: suspicious arithmetic, LHS ends ~s.~n"
+		       (tok-line (car e-)) (tok-file (car e-))
+		       (tok-n (cadr e-))))))
 	(loop (cdr e-) (cons (car e-) result) live-vars)]))))
 
 (define (convert-seq-interior v comma-sep? vars &-vars c++-class live-vars complain-not-in memcpy?)

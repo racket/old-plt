@@ -836,7 +836,6 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
   v = scheme_make_vector(m + 1, NULL);
   array = SCHEME_VEC_ELS(v);
   array[0] = name;
-  array++;
   while (p--) {
     stype = stype->parent_types[p];
     if (p)
@@ -846,12 +845,12 @@ Scheme_Object *scheme_struct_to_vector(Scheme_Object *_s, Scheme_Object *unknown
       
     if (!scheme_is_subinspector(stype->inspector, insp)) {
       if (!last_is_unknown)
-	array[--m] = unknown_val;
+	array[1 + (--m)] = unknown_val;
       i -= n;
       last_is_unknown = 1;
     } else {
       while (n--) {
-	array[--m] = s->slots[--i];
+	array[1 + (--m)] = s->slots[--i];
       }
       last_is_unknown = 0;
     }

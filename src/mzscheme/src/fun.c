@@ -749,7 +749,6 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   } else {
     data->name = rec[drec].value_name;
     if (!data->name) {
-      Scheme_Object *name;
       name = scheme_source_to_name(code);
       data->name= name;
     }
@@ -1498,7 +1497,7 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
   if (for_error) {
     char *r;
     
-    r = (char *)scheme_malloc_atomic(*len + 11);
+    r = (char *)scheme_malloc_atomic((*len) + 11);
     memcpy(r, "procedure ", 10);
     memcpy(r + 10, s, *len + 1);
     *len += 10;

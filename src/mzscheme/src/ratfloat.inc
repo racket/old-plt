@@ -4,6 +4,10 @@
    floatng-point optimizations in the rest of the program, so we use a
    little function to defeat the optimization: */
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static FP_TYPE DO_FLOAT_DIV(FP_TYPE n, FP_TYPE d)
 {
   return n / d;
@@ -43,6 +47,10 @@ FP_TYPE SCHEME_RATIONAL_TO_FLOAT(const Scheme_Object *o)
 
   return DO_FLOAT_DIV(n, d);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 Scheme_Object *SCHEME_RATIONAL_FROM_FLOAT(FP_TYPE d)
 {

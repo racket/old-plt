@@ -108,7 +108,7 @@
 (printf "#define SETUP(x) (GC_variable_stack = __gc_var_stack__, __gc_var_stack__[1] = (void *)x)~n")
 (printf "#define PUSH(v, x) (__gc_var_stack__[x+2] = (void *)&(v))~n")
 (printf "#define PUSHARRAY(v, l, x) (__gc_var_stack__[x+2] = (void *)0, __gc_var_stack__[x+3] = (void *)&(v), __gc_var_stack__[x+4] = (void *)l)~n")
-(printf "#define BLOCK_SETUP(x) ~a" (if per-block-push? "x" "/* skipped */"))
+(printf "#define BLOCK_SETUP(x) ~a~n" (if per-block-push? "x" "/* skipped */"))
 
 (define-struct tok (n line col file))
 (define-struct (seq struct:tok) (close in))

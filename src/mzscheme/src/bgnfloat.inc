@@ -4,6 +4,10 @@
    floatng-point optimizations in the rest of the program, so we use a
    little function to defeat the optimization: */
 
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 static int IS_FLOAT_INF(FP_TYPE d)
 {
   return MZ_IS_POS_INFINITY(d);
@@ -48,6 +52,10 @@ FP_TYPE SCHEME_BIGNUM_TO_FLOAT(const Scheme_Object *n)
 {
   return SCHEME_BIGNUM_TO_FLOAT_INFO(n, 0, NULL);
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 Scheme_Object *SCHEME_BIGNUM_FROM_FLOAT(FP_TYPE d)
 {

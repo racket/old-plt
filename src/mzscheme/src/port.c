@@ -234,12 +234,13 @@ typedef struct System_Child {
 #endif
 
 #ifdef USE_FD_PORTS
-# define MZPORT_FD_BUFFSIZE 2048
+# include <fcntl.h>
 # ifdef USE_FCNTL_O_NONBLOCK
 #  define FD_NONBLOCKING O_NONBLOCK
 # else
 #  define FD_NONBLOCKING FNDELAY
 # endif
+# define MZPORT_FD_BUFFSIZE 2048
 typedef struct Scheme_FD {
   MZTAG_IF_REQUIRED
   int fd;

@@ -1121,6 +1121,9 @@ void wxFrame::SetFocusWindow(wxWindow* window)
       TakeoverFocus();
       window->OnSetFocus();
     }
+  } else if (cFocusWindow && cActive && (current_focus_window != this)) {
+    TakeoverFocus();
+    cFocusWindow->OnSetFocus();
   }
 }
 
@@ -1153,7 +1156,8 @@ void wxFrame::Unfocus()
   ReleaseFocus();
   if (cFocusWindow && cActive) {
     cFocusWindow->OnKillFocus();
-    cFocusWindow = NULL;
+    if (cStyle & wxFLOAT_FRAME)
+      cFocusWindow = NULL;
   }
 }
 

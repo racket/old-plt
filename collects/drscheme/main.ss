@@ -8,7 +8,8 @@
 	  [drscheme:get/extend : drscheme:get/extend^]
 	  [basis : userspace:basis^]
 	  mzlib:function^)
-  
+
+  (fw:finder:default-extension "scm")
 
   ;; add the new settings
   (basis:add-setting 
@@ -66,6 +67,8 @@
 	    (send frame update-shown)
 	    (send (ivar frame interactions-canvas) focus))))
       (send frame show #t)))
+
+  ((global-defined-value 'drscheme:app:about-drscheme))
 
   (let ([files-to-open (reverse (vector->list i:argv))])
     (if (null? files-to-open)

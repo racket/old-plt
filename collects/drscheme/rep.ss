@@ -667,31 +667,35 @@
 		 (insert-warning)))
 	     (do-many-buffer-evals this start end)))])
       (public
-	[cleanup-evaluation
+	[cleanup-interaction
 	 (lambda ()
 	   (system
 	    (lambda ()
-	      (wait-for-io-to-complete)
 	      (mred:end-busy-cursor)
-	      (cleanup-transparent-io)
-	      (send (get-top-level-window) enable-evaluation)
 	      (begin-edit-sequence)
+	      (cleanup-transparent-io)
 	      (set-caret-owner #f 'display)
-
-	      (if (thread-running? user-thread)
-		  (let ([c-locked? (locked?)])
-		    (lock #f)
-		    (insert-prompt)
-		    (lock c-locked?)
-		    (end-edit-sequence))
-		  (begin (lock #t)
-			 (end-edit-sequence)
-			 (unless shutting-down?
-			   (mred:message-box
-			    "Warning"
-			    (format "The evaluation thread is no longer running, ~
+	      (cleanup-evaluation)
+	      (when (thread-running? user-thread)
+		(let ([c-locked? (locked?)])
+		  (lock #f)
+		  (insert-prompt)
+		  (lock c-locked?)))
+	      (end-edit-sequence)
+	      (send (get-top-level-window) enable-evaluation))))]
+	[cleanup-evaluation
+	 (lambda ()
+	   (begin-edit-sequence)
+	   (wait-for-io-to-complete)
+	   (unless (thread-running? user-thread)
+	     (lock #t)
+	     (unless shutting-down?
+	       (mred:message-box
+		"Warning"
+		(format "The evaluation thread is no longer running, ~
 			 so no evaluation can take place until ~
-			 the next execution."))))))))])
+			 the next execution."))))
+	   (end-edit-sequence))])
       (public
 	[do-many-buffer-evals
 	 (lambda (edit start end)
@@ -717,7 +721,7 @@
 		(with-running-flag
 		 (lambda ()
 		   (protect-user-evaluation
-		    cleanup-evaluation
+		    cleanup-interaction
 		    (lambda ()
 		      (process-edit
 		       edit
@@ -1102,7 +1106,7 @@
 				 (system
 				  (lambda ()
 				    (running-callback-stop)
-				    (wait-for-io-to-complete)
+				    (cleanup-evaluation)
 				    (set! in-evaluation? #f)
 				    (set! depth (- depth 1)))))
 			       (lambda ()

@@ -256,14 +256,18 @@ char *wxMediaSnip::GetText(long offset, long num, Bool flat, long *got)
 void wxMediaSnip::GetExtent(wxDC *dc, 
 			    float x, float y,
 			    float *w, float *h,
-			    float *descent, float *space,
+			    float *_descent, float *_space,
 			    float *lspace, float *rspace)
 {
   wxMSMA_SnipDrawState *save;
+  float descent, space, origH, dummyH;
 
   save = new wxMSMA_SnipDrawState;
   myAdmin->SaveState(save, dc, x, y);
   
+  if (!h && alignTopLine)
+    h = &dummyH;
+
   if (me)
     me->GetExtent(w, h);
   else {
@@ -272,6 +276,8 @@ void wxMediaSnip::GetExtent(wxDC *dc,
     if (h)
       *h = 0;
   }
+
+  origH = alignTopLine ? *h : 0.0;
 
   if (w) {
     if (me && (me->bufferType == wxEDIT_BUFFER)) {
@@ -305,23 +311,30 @@ void wxMediaSnip::GetExtent(wxDC *dc,
     *h += topMargin + bottomMargin;
   }
 
-  if (descent) {
-    float d;
-    d = (me ? me->GetDescent() : 0.0) + bottomMargin;
-    *descent = d;
+  {
+    descent = (me ? me->GetDescent() : 0.0) + bottomMargin;
     if (me && (me->bufferType == wxEDIT_BUFFER)) {
+      if (alignTopLine)
+	descent = origH - ((wxMediaEdit *)me)->GetTopLineBase() + bottomMargin;
       if (tightFit) {
-	*descent -= ((wxMediaEdit *)me)->GetLineSpacing();
-	if (*descent < 0)
-	  *descent = 0;
+	descent -= ((wxMediaEdit *)me)->GetLineSpacing();
+	if (descent < 0)
+	  descent = 0;
       }
     }
   }
-  if (space) {
-    float s;
-    s = (me ? me->GetSpace() : 0.0) + topMargin;
-    *space = s;
+  space = (me ? me->GetSpace() : 0.0) + topMargin;
+
+  if (maxHeight > 0 && (descent + space >= maxHeight + topMargin + bottomMargin)) {
+    /* Just give up on spaces in this case: */
+    space = topMargin;
+    descent = bottomMargin;
   }
+
+  if (_descent)
+    *_descent = descent;
+  if (_space)
+    *_space = space;
   if (lspace)
     *lspace = leftMargin;
   if (rspace)
@@ -436,6 +449,7 @@ wxSnip *wxMediaSnip::Copy(void)
   wxSnip::Copy(ms);
 
   ms->tightFit = tightFit;
+  ms->alignTopLine = alignTopLine;
 
   if (!me)
     ms->SetMedia(NULL);
@@ -445,7 +459,7 @@ wxSnip *wxMediaSnip::Copy(void)
 
 void wxMediaSnip::Write(wxMediaStreamOut *f)
 {
-  Bool wb = withBorder, tf = tightFit;
+  Bool wb = withBorder, tf = tightFit, ta = alignTopLine;
 
   f->Put((me ? me->bufferType : 0));
   f->Put(wb);
@@ -462,6 +476,7 @@ void wxMediaSnip::Write(wxMediaStreamOut *f)
   f->Put(minHeight);
   f->Put(maxHeight);
   f->Put(tf);
+  f->Put(ta);
 
   if (me)
     me->WriteToFile(f);
@@ -508,6 +523,18 @@ Bool wxMediaSnip::GetTightTextFit(void)
 void wxMediaSnip::SetTightTextFit(Bool t)
 {
   tightFit = (t ? TRUE : FALSE);
+  if (*admin_ptr)
+    (*admin_ptr)->Resized(this, TRUE);
+}
+
+Bool wxMediaSnip::GetAlignTopLine(void)
+{
+  return alignTopLine;
+}
+
+void wxMediaSnip::SetAlignTopLine(Bool t)
+{
+  alignTopLine = (t ? TRUE : FALSE);
   if (*admin_ptr)
     (*admin_ptr)->Resized(this, TRUE);
 }

@@ -274,6 +274,7 @@ class wxMediaEdit : public wxMediaBuffer
   void GetExtent(float *w, float *h);
   float GetDescent(void);
   float GetSpace(void);
+  float GetTopLineBase(void);
 
   float ScrollLineLocation(long line);
   long NumScrollLines();
@@ -490,6 +491,7 @@ class wxMediaEdit : public wxMediaBuffer
   float totalHeight, totalWidth; /* Total height/width in canvas units */
   float finalDescent; /* Descent of last line */
   float initialSpace; /* Space from first line */
+  float initialLineBase; /* Inverse descent from first line */
 
   wxStyle *caretStyle;
 

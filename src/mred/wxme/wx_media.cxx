@@ -3833,6 +3833,13 @@ float wxMediaEdit::GetSpace(void)
   return initialSpace;
 }
 
+float wxMediaEdit::GetTopLineBase(void)
+{
+  CheckRecalc(TRUE, FALSE);
+
+  return initialLineBase;
+}
+
 float wxMediaEdit::ScrollLineLocation(long scroll)
 {
   wxMediaLine *line;

@@ -8370,6 +8370,49 @@ static Scheme_Object *os_wxMediaSnipShowBorder(Scheme_Object *obj, int n,  Schem
   return scheme_void;
 }
 
+static Scheme_Object *os_wxMediaSnipSetAlignTopLine(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(obj);
+  Bool x0;
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[0], "set-align-top-line in editor-snip%"));
+
+  
+  WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->SetAlignTopLine(x0));
+
+  
+  
+  return scheme_void;
+}
+
+static Scheme_Object *os_wxMediaSnipGetAlignTopLine(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxMediaSnip *)((Scheme_Class_Object *)obj)->primdata)->GetAlignTopLine());
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxMediaSnipSetTightTextFit(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -9442,7 +9485,7 @@ void objscheme_setup_wxMediaSnip(void *env)
 
   wxREGGLOB(os_wxMediaSnip_class);
 
-  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 39));
+  os_wxMediaSnip_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-snip%", "snip%", os_wxMediaSnip_ConstructScheme, 41));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-inset", os_wxMediaSnipGetInset, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-inset", os_wxMediaSnipSetInset, 4, 4));
@@ -9450,6 +9493,8 @@ void objscheme_setup_wxMediaSnip(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-margin", os_wxMediaSnipSetMargin, 4, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "border-visible?", os_wxMediaSnipBorderVisible, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "show-border", os_wxMediaSnipShowBorder, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-align-top-line", os_wxMediaSnipSetAlignTopLine, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-align-top-line", os_wxMediaSnipGetAlignTopLine, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "set-tight-text-fit", os_wxMediaSnipSetTightTextFit, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-tight-text-fit", os_wxMediaSnipGetTightTextFit, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaSnip_class, "get-min-height", os_wxMediaSnipGetMinHeight, 0, 0));

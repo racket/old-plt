@@ -1628,7 +1628,7 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 {
   wxMediaLine *line;
   wxSnip *snip;
-  float X, Y, descent, space, old_max_width;
+  float X, Y, descent, space, lineBase, old_max_width;
   Bool _changed, resized;
 
   if (!calcGraphics)
@@ -1815,13 +1815,17 @@ void wxMediaEdit::RecalcLines(wxDC *dc, Bool calcGraphics)
 
   descent = lastLine->h - lastLine->bottombase;
   space = firstLine->topbase;
+  lineBase = firstLine->bottombase;
   
   if (totalHeight != Y || totalWidth != X 
-      || finalDescent != descent || initialSpace != space) {
+      || finalDescent != descent 
+      || initialSpace != space
+      || initialLineBase != lineBase) {
     totalHeight = Y;
     totalWidth = X;
     finalDescent = descent;
     initialSpace = space;
+    initialLineBase = lineBase;
     resized = TRUE;
   } else
     resized = FALSE;

@@ -708,6 +708,7 @@ static int unbundle_symset_Bias(Scheme_Object *v, const char *where) {
 
 
 
+
 			
 
 
@@ -5752,6 +5753,27 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
   return scheme_void;
 }
 
+static Scheme_Object *os_wxMediaEditGetTopLineBase(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  float r;
+  objscheme_check_valid(obj);
+
+  SETUP_VAR_STACK_REMEMBERED(2);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+
+  
+
+  
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->GetTopLineBase());
+
+  
+  
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
+}
+
 static Scheme_Object *os_wxMediaEditFlashOff(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -7470,7 +7492,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 138));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", os_wxMediaEdit_ConstructScheme, 139));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback", os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback", os_wxMediaEditRemoveClickback, 2, 2));
@@ -7552,6 +7574,7 @@ void objscheme_setup_wxMediaEdit(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "erase", os_wxMediaEditErase, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "delete", os_wxMediaEditDelete, 0, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "insert", os_wxMediaEditInsert, 1, 5));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-top-line-base", os_wxMediaEditGetTopLineBase, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-off", os_wxMediaEditFlashOff, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "flash-on", os_wxMediaEditFlashOn, 2, 5));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-anchor", os_wxMediaEditGetAnchor, 0, 0));

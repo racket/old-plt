@@ -132,6 +132,8 @@
 
 @ "get-tight-text-fit" : bool GetTightTextFit();
 @ "set-tight-text-fit" : void SetTightTextFit(bool);
+@ "get-align-top-line" : bool GetAlignTopLine();
+@ "set-align-top-line" : void SetAlignTopLine(bool);
 
 @ "show-border" : void ShowBorder(bool);
 @ "border-visible?" : bool BorderVisible();

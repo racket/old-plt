@@ -17,9 +17,9 @@
 enum {
   wxALIGN_TOP,
   wxALIGN_BOTTOM
-#ifndef wxALIGN_CENTER
+# ifndef wxALIGN_CENTER
   , wxALIGN_CENTER
-#endif
+# endif
 };
 #endif
 

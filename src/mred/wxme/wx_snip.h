@@ -164,6 +164,7 @@ class wxSnip : public wxObject
 			 float *descent = NULL, float *space = NULL,
 			 float *lspace = NULL, float *rspace = NULL);
   virtual float PartialOffset(wxDC *, float x, float y, long);
+
   virtual void Draw(wxDC *dc, float x, float y, 
 		    float,float,float,float, 
 		    float dx, float xy, 
@@ -359,6 +360,7 @@ class wxMediaSnip : public wxInternalSnip
 #define TF_Flag(var) unsigned var : 1
   TF_Flag( withBorder );
   TF_Flag( tightFit );
+  TF_Flag( alignTopLine );
 #undef TF_Flag
 
   int leftMargin, topMargin, rightMargin, bottomMargin;
@@ -425,6 +427,8 @@ class wxMediaSnip : public wxInternalSnip
 
   Bool GetTightTextFit(void);
   void SetTightTextFit(Bool);
+  Bool GetAlignTopLine(void);
+  void SetAlignTopLine(Bool);
 
   void ShowBorder(Bool show);
   Bool BorderVisible();

@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
+ * $Id: Font.cc,v 1.2 1998/01/29 15:52:59 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -171,7 +171,7 @@ wxFontList::~wxFontList(void)
 void wxFontList::AddFont(wxFont *Font) 
 { 
   list->Append(Font); 
-  list->Show(Font, FALSE); /* so it can be collected */
+  list->Show(Font, -1); /* so it can be collected */
 } 
 
 //-----------------------------------------------------------------------------

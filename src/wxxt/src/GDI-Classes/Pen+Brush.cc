@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
+ * $Id: Pen+Brush.cc,v 1.2 1998/01/29 15:52:59 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -204,7 +204,7 @@ wxPenList::~wxPenList(void)
 void wxPenList::AddPen(wxPen *Pen) 
 { 
   list->Append(Pen); 
-  list->Show(Pen, FALSE); /* so it can be collected */
+  list->Show(Pen, -1); /* so it can be collected */
 } 
 
 wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
@@ -258,7 +258,7 @@ wxBrushList::~wxBrushList(void)
 void wxBrushList::AddBrush(wxBrush *Brush) 
 { 
   list->Append(Brush); 
-  list->Show(Brush, FALSE); /* so it can be collected */
+  list->Show(Brush, -1); /* so it can be collected */
 } 
 
 wxBrush *wxBrushList::FindOrCreateBrush(wxColour *colour, int style)

@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.1 (see README for history)
 # 
-# $Id: xwScrollWin.w,v 1.1.1.1 1997/12/22 17:29:05 mflatt Exp $
+# $Id: xwScrollWin.w,v 1.2 1998/01/31 01:16:37 mflatt Exp $
 
 @CLASS XfwfScrolledWindow (XfwfBoard)  @file = xwScrollWin
 
@@ -292,7 +292,7 @@ board.
 	XtVaGetValues(child, XtNwidth, &gwd, XtNheight, &ght, NULL);
 	gx = gwd <= boardwd ? 0 : max($initialX, boardwd - gwd);
 	gy = ght <= boardht ? 0 : max($initialY, boardht - ght);
-	XtMoveWidget(child, gx, gy);
+	XtVaSetValues(child, XtNx, gx, XtNy, gy, NULL);
 	/* propagate key events from frame to child widget */
 	if ($traverseToChild)
 	    XtVaSetValues($frame, XtNpropagateTarget, $CW, NULL);
@@ -349,7 +349,7 @@ done through a call to the |scroll_response| method.
     if (info->flags & XFWF_VPOS) gy = info->vpos * miny;
     if (info->flags & XFWF_HPOS) gx = info->hpos * minx;
 
-    XtMoveWidget($CW, gx, gy);
+    XtVaSetValues($CW, XtNx, gx, XtNy, gy, NULL);
 
     if (info->reason != XfwfSNotify && $doScroll) {
 	new.reason = XfwfSNotify;
@@ -408,7 +408,6 @@ to configure the children.
 		      max(1, framew),
 		      max(1, frameh),
 		      0);
-    if ($CW != NULL) XtMoveWidget($CW, 0, 0);
 }
 
 @ The |copy_vScrollAmount| routine is a resource default function. It
@@ -463,7 +462,7 @@ Notify message -- then calls its own callbacks.
       }
     
       if ($doScroll)
-	XtMoveWidget($CW, gx, gy);
+        XtVaSetValues($CW, XtNx, gx, XtNy, gy, NULL);
     }
 
     if (info->reason != XfwfSNotify) {
@@ -512,7 +511,7 @@ sliders in the scrollbars.
     Widget $ = (Widget) client_data;
     int boardwd, boardht;
     Dimension gwd, ght;
-    Position boardx, boardy, gx, gy;
+    Position boardx, boardy, gx, gy, minx, miny;
     float wd, ht, x, y;
 
     if ($being_destroyed) {
@@ -533,6 +532,13 @@ sliders in the scrollbars.
       boardht = max(0, boardht);
       XtVaGetValues($CW, XtNx, &gx, XtNy, &gy, XtNwidth, &gwd,
 	  	    XtNheight, &ght, NULL);
+      minx = gwd <= boardwd ? 0 : boardwd - gwd;
+      miny = ght <= boardht ? 0 : boardht - ght;
+      if ((gx < minx) || (gy < miny)) {
+	if (gx < minx) gx = minx;
+	if (gy < miny) gy = miny;
+	XtVaSetValues($CW, XtNx, gx, XtNy, gy, NULL);
+      }
       wd = gwd <= boardwd ? 1.0 : (float) boardwd/gwd;
       ht = ght <= boardht ? 1.0 : (float) boardht/ght;
       x = gwd <= boardwd ? 0.0 : gx/(((float) boardwd) - gwd);

@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2 for FWF V4.0
 #
-# $Id: xwCommon.w,v 1.2 1997/12/27 20:24:39 mflatt Exp $
+# $Id: xwCommon.w,v 1.3 1998/01/31 01:16:34 mflatt Exp $
 
 @class XfwfCommon (Composite)  @file=xwCommon
 
@@ -939,16 +939,19 @@ highlight border.
         XtError("focusIn action may only be bound to FocusIn events");
     if (! $traversalOn)
         return;
+
     if (event->xfocus.detail == NotifyAncestor
         || event->xfocus.detail == NotifyInferior
         || event->xfocus.detail == NotifyNonlinear) {
-        if (! $traversal_focus) (void) $accept_focus($, &time);
-    } else if (event->xfocus.detail != NotifyPointer)
+        if (!$traversal_focus)
+	  $accept_focus($, &time);
+    } else if (event->xfocus.detail != NotifyPointer) {
       if ($traversal_focus) {
         $unhighlight_border($);
         $traversal_focus = False;
         $hilite_callbacks($);
       }
+   }
 }
 
 

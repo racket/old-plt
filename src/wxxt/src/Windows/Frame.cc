@@ -592,6 +592,17 @@ static void ForceFocus(Widget frame)
       XFlush(XtDisplay(frame));
       XGrabServer(XtDisplay(frame));
       
+      /* Sleep for corce_focus usecs: */
+      {
+	struct timeval time;
+	if (force_focus > 1000)
+	  force_focus = 999;
+
+	time.tv_sec = 0;
+	time.tv_usec = force_focus;
+	select(0, NULL, NULL, NULL, &time);
+      }
+
       XGetWindowAttributes(XtDisplay(frame), XtWindow(frame), &attrib);
       if (attrib.map_state == IsViewable)
 	XSetInputFocus(XtDisplay(frame), XtWindow(frame),

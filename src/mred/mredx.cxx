@@ -336,19 +336,17 @@ void MrEdDispatchEvent(XEvent *event)
 	if (widget == grabber)
 	  break;
 
-	/* Key Events: the window for the key event might be the
-	   location of the mouse, rather than the window with the
-	   focus. Only start checking the enabled state with the first
-	   top-level window, since a disabled sub-window never has the
-	   focus within that top-level window. */
+	/* Only start checking the enabled state with the first
+	   top-level window. That way, PreOnChar and PreOnEvent are
+           called appropriately. wxWindows/Xt ensures that key and mouse
+           events are not dispatched to disabled items. */
 
-	if (((type != KeyPress) && (type != KeyRelease))
-	    || XtIsSubclass(widget, transientShellWidgetClass)
+	if (XtIsSubclass(widget, transientShellWidgetClass)
 	    || XtIsSubclass(widget, topLevelShellWidgetClass)) {
 	  
 	  if (scheme_lookup_in_table(disabled_widgets, (const char *)widget)) {
 #if 0
-	    printf("disabled for %s: %lx from %lx\n", get_event_type(event), widget, ow);
+	    printf("disabled: %lx from %lx\n", widget, ow);
 #endif
 	    return;
 	  }

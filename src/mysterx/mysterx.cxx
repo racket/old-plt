@@ -341,6 +341,24 @@ DOCUMENT_WINDOW_STYLE_OPTION styleOptions[] = {
   { "no-thick-border",WS_THICKFRAME,FALSE },
 };
 
+void scheme_release_typedesc(void *p,void *) {
+  MX_TYPEDESC *pTypeDesc;
+  ITypeInfo *pITypeInfo;
+
+  pTypeDesc = (MX_TYPEDESC *)p;
+
+  pITypeInfo = pTypeDesc->pITypeInfo;
+
+  if (pTypeDesc->descKind == funcDesc) {
+    pITypeInfo->ReleaseFuncDesc(pTypeDesc->pFuncDesc);
+  }
+  else if (pTypeDesc->descKind == varDesc) {
+    pITypeInfo->ReleaseVarDesc(pTypeDesc->pVarDesc);
+  }
+
+  pITypeInfo->Release();
+}
+
 void scheme_release_com_object(void *comObject,void *pIDispatch) {
   ITypeInfo *pITypeInfo;
   ITypeInfo *pEventTypeInfo;
@@ -612,12 +630,8 @@ Scheme_Object *mx_com_get_object_type(int argc,Scheme_Object **argv) {
 
 BOOL typeInfoEq(ITypeInfo *pITypeInfo1,ITypeInfo *pITypeInfo2) {
   HRESULT hr;
-  ITypeInfo *pITypeInfo[2];
-  ITypeLib *pITypeLib[2];
-  TLIBATTR *pTLibAttr[2];
-  unsigned int index[2];
+  TYPEATTR *pTypeAttr1,*pTypeAttr2;
   BOOL retval;
-  short i;
 
   // intensional equality
 
@@ -625,48 +639,22 @@ BOOL typeInfoEq(ITypeInfo *pITypeInfo1,ITypeInfo *pITypeInfo2) {
     return TRUE;
   }
 
-  pITypeInfo[0] = pITypeInfo1;
-  pITypeInfo[1] = pITypeInfo2;
+  hr = pITypeInfo1->GetTypeAttr(&pTypeAttr1);
 
-  for (i = 0; i < 2; i++) {
-    hr = pITypeInfo[i]->GetContainingTypeLib(&pITypeLib[i],&index[i]);
-    if (hr != S_OK || pITypeLib[i] == NULL) {
-      if (i > 0) {
-	pITypeLib[0]->Release();      
-      }
-      codedComError("Error getting type library",hr);
-    }
+  if (hr != S_OK || pTypeAttr1 == NULL) {
+    codedComError("Error getting type attributes",hr);
   }
 
-  // if not intensional equality, see if index within containing
-  // TypeLib's are the same, and GUID's of the TypeLib are the same
+  hr = pITypeInfo2->GetTypeAttr(&pTypeAttr2);
 
-  if (index[0] != index[1]) {
-    for (i = 0; i < 2; i++) {
-      pITypeLib[i]->Release();      
-    }
-    return FALSE;
+  if (hr != S_OK || pTypeAttr2 == NULL) {
+    codedComError("Error getting type attributes",hr);
   }
 
-  for (i = 0; i < 2; i++) {
-    hr = pITypeLib[i]->GetLibAttr(&pTLibAttr[i]);
-    if (hr != S_OK || pTLibAttr[i] == NULL) {
-      if (i > 0) {
-	pITypeLib[0]->ReleaseTLibAttr(pTLibAttr[0]);
-      }
-      for (i = 0; i < 2; i++) {
-	pITypeLib[i]->Release();      
-      }
-      codedComError("Error getting type library attributes",hr);
-    }
-  }
+  retval = (pTypeAttr1->guid == pTypeAttr2->guid);
 
-  retval = (pTLibAttr[0]->guid == pTLibAttr[1]->guid);
-
-  for (i = 0; i < 2; i++) {
-    pITypeLib[i]->ReleaseTLibAttr(pTLibAttr[i]);
-    pITypeLib[i]->Release();      
-  }
+  pITypeInfo1->ReleaseTypeAttr(pTypeAttr1);
+  pITypeInfo2->ReleaseTypeAttr(pTypeAttr2);
 
   return retval;
 }
@@ -1073,6 +1061,10 @@ MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
   pTypeDesc = (MX_TYPEDESC *)scheme_malloc(sizeof(MX_TYPEDESC));
   
   pTypeDesc->memID = memID;
+
+  pTypeDesc->pITypeInfo = pITypeInfo;
+  pITypeInfo->AddRef();
+
   pTypeDesc->descKind = descKind;
   
   if (descKind == funcDesc) {
@@ -1081,6 +1073,8 @@ MX_TYPEDESC *typeDescFromTypeInfo(char *name,INVOKEKIND invKind,
   else {
     pTypeDesc->pVarDesc = pVarDesc;
   }
+
+  scheme_register_finalizer(pTypeDesc,scheme_release_typedesc,NULL,NULL,NULL);
 
   return pTypeDesc;
 }
@@ -1222,7 +1216,7 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
 
   foundCoclass = FALSE;
 
-  for (i = 0; i < typeInfoCount; i++) {
+  for (i = 0; foundCoclass == FALSE && i < typeInfoCount; i++) {
     
     pITypeLib->GetTypeInfoType(i,&typeKind);
 
@@ -1237,14 +1231,14 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
       hr = pCoclassTypeInfo->GetTypeAttr(&pTypeAttr);
 	
       if (hr != S_OK || pTypeAttr == NULL) {
-	codedComError("Error getting type attributes",hr);
+	codedComError("Error getting coclass type attributes",hr);
       }
   
       typeCount = pTypeAttr->cImplTypes; 
   
       pCoclassTypeInfo->ReleaseTypeAttr(pTypeAttr);
   
-      for (j = 0; j < typeCount; j++) {
+      for (j = 0; foundCoclass == FALSE && j < typeCount; j++) {
 	hr = pCoclassTypeInfo->GetRefTypeOfImplType(j,&hRefType);
 	  
 	if (hr != S_OK) {
@@ -1257,26 +1251,16 @@ ITypeInfo *coclassTypeInfoFromTypeInfo(ITypeInfo *pITypeInfo) {
 	  codedComError("Error retrieving candidate type info",hr);
 	}
 
-	pCandidateTypeInfo->Release();
-
-	if (pCandidateTypeInfo == pITypeInfo) {
-
-	  // we found the coclass with the typeinfo for our object
-	  // event interface is in the same coclass 
-
+	if (typeInfoEq(pCandidateTypeInfo,pITypeInfo)) {
 	  foundCoclass = TRUE;
-	  break;
-
 	}
+
+	pCandidateTypeInfo->Release();
       }
 
       if (foundCoclass == FALSE) {
 	pCoclassTypeInfo->Release();
       }
-    }
-
-    if (foundCoclass) {
-      break;
     }
   }
 
@@ -1412,6 +1396,29 @@ ITypeInfo *eventTypeInfoFromComObject(MX_COM_Object *obj) {
   return pEventTypeInfo;
 }
 
+ITypeInfo *eventTypeInfoFromComType(MX_COM_Type *obj) {
+  ITypeInfo *pCoclassTypeInfo,*pEventTypeInfo;
+
+  pCoclassTypeInfo = coclassTypeInfoFromTypeInfo(obj->pITypeInfo);
+
+  if (pCoclassTypeInfo == NULL) {
+    scheme_signal_error("Error getting coclass type information");
+  }
+
+  // have type info for coclass
+  // event type info is one of the "implemented" interfaces
+
+  pEventTypeInfo = eventTypeInfoFromCoclassTypeInfo(pCoclassTypeInfo);
+ 
+  pCoclassTypeInfo->Release();
+  
+  if (pEventTypeInfo == NULL) {
+    scheme_signal_error("Error retrieving event type info");
+  }
+  
+  return pEventTypeInfo;
+}
+
 Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   HRESULT hr;
   ITypeInfo *pEventTypeInfo;
@@ -1423,17 +1430,22 @@ Scheme_Object *mx_com_events(int argc,Scheme_Object **argv) {
   BSTR bstr;
   UINT i;
   
-  if (MX_COM_OBJP(argv[0]) == FALSE) {
-    scheme_wrong_type("com-methods","com-object",0,argc,argv);
+  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-methods","com-object or com-type",0,argc,argv);
   }
-  
-  if (MX_COM_OBJ_VAL(argv[0])== NULL) {
+
+  if (MX_COM_OBJP(argv[0]) && MX_COM_OBJ_VAL(argv[0])== NULL) {
     scheme_signal_error("NULL COM object");
   }
-  
+
   // query for outbound interface info
   
-  pEventTypeInfo = eventTypeInfoFromComObject((MX_COM_Object *)argv[0]);
+  if (MX_COM_OBJP(argv[0])) {
+    pEventTypeInfo = eventTypeInfoFromComObject((MX_COM_Object *)argv[0]);
+  }
+  else {
+    pEventTypeInfo = eventTypeInfoFromComType((MX_COM_Type *)argv[0]);
+  }
 
   if (pEventTypeInfo == NULL) {
     scheme_signal_error("Can't find event type information");
@@ -1743,6 +1755,7 @@ short getOptParamCount(FUNCDESC *pFuncDesc,short hi) {
 Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
 				     INVOKEKIND invKind) {
   MX_TYPEDESC *pTypeDesc;
+  ITypeInfo* pITypeInfo;
   FUNCDESC *pFuncDesc;
   VARDESC *pVarDesc;
   Scheme_Object *s,*paramTypes,*returnType;
@@ -1754,15 +1767,8 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
   BOOL lastParamIsRetval;
   int i;
 
-  if (invKind == INVOKE_EVENT) {
-    if (MX_COM_OBJP(argv[0]) == FALSE) {
-      scheme_wrong_type("com-method-type","com-object",0,argc,argv);
-    }
-  }
-  else { 
-    if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
-      scheme_wrong_type("com-method-type","com-object or com-type",0,argc,argv);
-    }
+  if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
+    scheme_wrong_type("com-method-type","com-object or com-type",0,argc,argv);
   }
 
   if (SCHEME_STRINGP(argv[1]) == FALSE) {
@@ -1779,7 +1785,13 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     pTypeDesc = getMethodType((MX_COM_Object *)argv[0],name,invKind);
   }
   else {
-    pTypeDesc = typeDescFromTypeInfo(name,invKind,MX_COM_TYPE_VAL(argv[0]));
+    if (invKind == INVOKE_EVENT) {
+      pITypeInfo = eventTypeInfoFromComType((MX_COM_Type *)argv[0]);
+    }
+    else {
+      pITypeInfo = MX_COM_TYPE_VAL(argv[0]);
+    }
+    pTypeDesc = typeDescFromTypeInfo(name,invKind,pITypeInfo);
   }
   
   if (pTypeDesc->descKind == funcDesc) {
@@ -1889,7 +1901,7 @@ Scheme_Object *mx_do_get_method_type(int argc,Scheme_Object **argv,
     
     break;
   }
-  
+
   return mx_make_function_type(paramTypes,returnType);
   
 }

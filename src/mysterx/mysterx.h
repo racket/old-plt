@@ -67,6 +67,7 @@ typedef enum _mx_desckind_ {
 
 typedef struct _method_desc_ {
   MEMBERID memID;
+  ITypeInfo *pITypeInfo;
   MX_DESCKIND descKind;
   union {
     FUNCDESC *pFuncDesc;

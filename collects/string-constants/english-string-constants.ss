@@ -447,6 +447,8 @@
  (windows-menu-label "&Windows")
  (bring-frame-to-front "Bring Frame to Front")       ;;; title of dialog
  (bring-frame-to-front... "Bring Frame to Front...") ;;; corresponding title of menu item
+ (next-window "Next Window")
+ (previous-window "Previous Window")
 
  (show-menu-label "&Show")
  (show-overview "Show Contour") 

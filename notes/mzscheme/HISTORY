@@ -2,6 +2,9 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.33
+Added module-template-identifier=? and identifier-template-binding
+
 Version 299.32
 Eliminated "identifier for a definition has a module context"
  errors

@@ -48,8 +48,7 @@ static long DoPrim(void *data)
   /* Let the original thread know that we've finished, in case it's
      asleep. The message is arbitrary (i.e., it shouldn't mean
      anything to MrEd). */
-  PostThreadMessage(data->main_thread_id, WM_APP + 79, 0, 0);
-);
+  PostThreadMessage(_data->main_thread_id, WM_APP + 79, 0, 0);
 
   return 0;
 }

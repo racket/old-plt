@@ -106,7 +106,7 @@ void (*scheme_wrong_return_arity)(const char *where,
 			       int expected, int got,
 			       Scheme_Object **argv,
 			       const char *context_detail, ...);
-void (*scheme_unbound_global)(Scheme_Object *name) ;
+void (*scheme_unbound_global)(Scheme_Bucket *b);
 Scheme_Object *(*scheme_dynamic_wind)(void (*pre)(void *),
 				   Scheme_Object *(*act)(void *),
 				   void (*post)(void *), 

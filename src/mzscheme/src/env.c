@@ -1569,7 +1569,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
       scheme_raise_exn(MZEXN_MISC,
 		       "syntax-local-value: %S is not defined "
 		       "as syntax",
-		       argv[0]);
+		       SCHEME_STX_SYM(argv[0]));
   }
   
   return SCHEME_PTR_VAL(v);

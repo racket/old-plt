@@ -1210,12 +1210,22 @@ void scheme_raise_out_of_memory(const char *where, const char *msg, ...)
 		   s, slen);
 }
 
-void scheme_unbound_global(Scheme_Object *name)
+void scheme_unbound_global(Scheme_Bucket *b)
 {
-  scheme_raise_exn(MZEXN_VARIABLE, 
-		   name,
-		   "reference to undefined identifier: %S",
-		   name);
+  Scheme_Object *name = (Scheme_Object *)b->key;
+
+  if (((Scheme_Bucket_With_Home *)b)->home->module) {
+    scheme_raise_exn(MZEXN_VARIABLE, 
+		     name,
+		     "reference to uninitialized module identifier: %S in module: %S",
+		     name,
+		     ((Scheme_Bucket_With_Home *)b)->home->module->modname);
+  } else {
+    scheme_raise_exn(MZEXN_VARIABLE, 
+		     name,
+		     "reference to undefined identifier: %S",
+		     name);
+  }
 }
 
 char *scheme_make_provided_string(Scheme_Object *o, int count, int *lenout)

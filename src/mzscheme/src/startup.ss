@@ -982,7 +982,7 @@
 
   ;; Checks whether the given nesting matches a nesting in
   ;; the environment prototype, returning the prototype entry
-  ;; unwrapped by one if it is found, and signallign an error
+  ;; unwrapped by one if it is found, and signalling an error
   ;; otherwise.
   (define ellipsis-sub-env
     (lambda (nesting proto-r src detail-src)
@@ -1008,7 +1008,7 @@
 	    (let loop ([n nesting])
 	      (if (syntax? n)
 		  n
-		  (loop (cdr n)))))))
+		  (loop (car n)))))))
 	v)))
 
   ;; Checks that a variable is not in the prototype

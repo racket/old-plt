@@ -866,7 +866,7 @@
 "(let loop((n nesting))"
 "(if(syntax? n)"
 " n"
-"(loop(cdr n)))))))"
+"(loop(car n)))))))"
 " v)))"
 "(define(check-not-pattern ssym proto-r)"
 "(for-each(lambda(p)"

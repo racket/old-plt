@@ -1676,19 +1676,24 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   if (var && (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	      || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)
 	      || SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type))) {
-    form = scheme_datum_to_syntax(scheme_make_pair(stx, form), form, form);
-    if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
-      if (rec) {
-	Scheme_Syntax *f;
-	f = (Scheme_Syntax *)SCHEME_SYNTAX(var);
-	return f(form, env, rec, drec);
-      } else {
-	Scheme_Syntax_Expander *f;
-	f = (Scheme_Syntax_Expander *)SCHEME_SYNTAX_EXP(var);
-	return f(form, env, depth, boundname);
-      }
+    if (SAME_OBJ(var, stop_expander)) {
+      /* Return original: */
+      return form;
     } else {
-      return scheme_compile_expand_macro_app(stx, var, form, env, rec, drec, depth, boundname);
+      form = scheme_datum_to_syntax(scheme_make_pair(stx, form), form, form);
+      if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+	if (rec) {
+	  Scheme_Syntax *f;
+	  f = (Scheme_Syntax *)SCHEME_SYNTAX(var);
+	  return f(form, env, rec, drec);
+	} else {
+	  Scheme_Syntax_Expander *f;
+	  f = (Scheme_Syntax_Expander *)SCHEME_SYNTAX_EXP(var);
+	  return f(form, env, depth, boundname);
+	}
+      } else {
+	return scheme_compile_expand_macro_app(stx, var, form, env, rec, drec, depth, boundname);
+      }
     }
   } else {
     /* Not allowed this context! */
@@ -2909,8 +2914,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  tmp = (Scheme_Object *)(SCHEME_VAR_BUCKET(_obj))->val;        \
 	  if (!tmp) {                                                   \
             UPDATE_THREAD_RSPTR_FOR_ERROR();                            \
-	    scheme_unbound_global((Scheme_Object *)                     \
-				  (SCHEME_VAR_BUCKET(_obj))->key);      \
+	    scheme_unbound_global(_obj);                                \
             return NULL;                                                \
 	  }                                                             \
 	  prefix tmp

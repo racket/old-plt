@@ -16,6 +16,9 @@
 
 # include "private/gc_priv.h"
 
+#undef STACKBOTTOM
+#define FREEBSD_STACKBOTTOM
+
 # if defined(LINUX) && !defined(POWERPC)
 #   include <linux/version.h>
 #   if (LINUX_VERSION_CODE <= 0x10400)
@@ -657,6 +660,26 @@ ptr_t GC_get_stack_base()
 
 #endif /* LINUX_STACKBOTTOM */
 
+#ifdef FREEBSD_STACKBOTTOM
+
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/sysctl.h>
+
+  ptr_t GC_freebsd_stack_base(void)
+  {
+    int nm[2] = { CTL_KERN, KERN_USRSTACK}, base, len, r;
+    
+    len = sizeof(int);
+    r = sysctl(nm, 2, &base, &len, NULL, 0);
+    
+    if (r) ABORT("Error getting stack base");
+
+    return (ptr_t)base;
+  }
+
+#endif /* FREEBSD_STACKBOTTOM */
+
 ptr_t GC_get_stack_base()
 {
     word dummy;
@@ -679,6 +702,9 @@ ptr_t GC_get_stack_base()
 #	endif /* HEURISTIC1 */
 #	ifdef LINUX_STACKBOTTOM
 	   result = GC_linux_stack_base();
+#	endif
+#	ifdef FREEBSD_STACKBOTTOM
+	   result = GC_freebsd_stack_base();
 #	endif
 #	ifdef HEURISTIC2
 #	    ifdef STACK_GROWS_DOWN

@@ -1,5 +1,5 @@
 ;;
-;; $Id: stprims.ss,v 1.4 1997/07/22 18:44:19 krentel Exp krentel $
+;; $Id: stprims.ss,v 1.5 1997/07/23 20:57:28 krentel Exp krentel $
 ;;
 ;; Primitives for faking user input.
 ;; Buttons, Keystrokes, Menus, Mice.
@@ -54,7 +54,7 @@
   ;;
   
   (define button-push
-    (let ([tag  'button-push])
+    (let ([tag  'mred:test:button-push])
       (lambda (button)
 	(cond
 	  [(not (is-a? button wx:button%))
@@ -133,7 +133,7 @@
   ;;
   
   (define menu-select
-    (let ([tag  'menu-select])
+    (let ([tag  'mred:test:menu-select])
       (lambda (menu item)
 	(cond
 	  [(not (string? menu))
@@ -169,7 +169,7 @@
   ;; 
   
   (define mouse-click
-    (let ([tag  'mouse-click])
+    (let ([tag  'mred:test:mouse-click])
       (lambda (x y)
 	(cond
 	  [(not (and (real? x) (real? y)))
@@ -203,8 +203,42 @@
 	  [(null? l)  (send window on-event event)]
 	  [(send (car l) pre-on-event window event)  #f]
 	  [else  (loop (cdr l))]))))
-
+  
+  
   (define mouse-click-now  (do-now  mouse-click))
   (define mouse-click-now* (do-now* mouse-click))
+  
+  
+  ;;
+  ;; Move mouse to new window.
+  ;; Implement with three events:
+  ;; leave old window, enter new window, set-focus.
+  ;;
+  
+  (define new-window
+    (let ([tag  'mred:test:new-window])
+      (lambda (new-window)
+	(cond
+	  [(not (is-a? new-window wx:window%))
+	   (arg-error tag "new-window is not a wx:window")]
+	  [else
+	   (mred:test:make-event
+	    (lambda ()
+	      (let
+		  ([old-window  (mred:test:get-focused-window)]
+		   [leave   (make-object wx:mouse-event% wx:const-event-type-leave-window)]
+		   [enter   (make-object wx:mouse-event% wx:const-event-type-enter-window)])
+		(send leave  set-x 0)   (send leave  set-y 0)
+		(send enter  set-x 0)   (send enter  set-y 0)
+		(cond
+		  [(not old-window)
+		   (run-error tag "no focused window")]
+		  [else
+		   (send-mouse-event old-window leave)
+		   (send-mouse-event new-window enter)
+		   (send new-window  set-focus)
+		   (void)]))))]))))
+  
+  (define new-window-now (do-now new-window))
   
   )

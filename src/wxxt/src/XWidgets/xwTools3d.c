@@ -47,7 +47,7 @@ Pixel Xaw3dAllocPixel(
 	     bg_color;
     Display  *dpy = Xaw3dDisplay(w);
     Screen   *scn = Xaw3dScreen(w);
-    Colormap cmap = DefaultColormapOfScreen(scn);
+    Colormap cmap = wx_default_colormap;
 
     if (bg==BlackPixelOfScreen(scn) || bg==WhitePixelOfScreen(scn)) {
 	if (contrast>=1.0) 
@@ -78,7 +78,7 @@ static char gray_bits[] = { 0x02, 0x01};
   static XColor Gray = { 0, 0, 0, 0, 0, 0 };
 #   define ALLOCGRAY { \
         if (!Gray.pixel) { XColor d;\
-          XAllocNamedColor(dpy,DefaultColormapOfScreen(scn),"gray",&Gray,&d);}}
+          XAllocNamedColor(dpy,wx_default_colormap,"gray",&Gray,&d);}}
 #   define WHITEGRAY (Gray.pixel ? Gray.pixel : WhitePixelOfScreen(scn))
 #   define BLACKGRAY (Gray.pixel ? Gray.pixel : BlackPixelOfScreen(scn))
 #   define GRAYMIX   {if (Gray.pixel) mix=GRAY;}

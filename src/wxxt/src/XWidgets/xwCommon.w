@@ -99,7 +99,7 @@ the color gray75 is returned instead.
     if (XtIsRealized($))
 	colormap = $colormap;
     else
-	colormap = DefaultColormapOfScreen(XtScreen($));
+	colormap = wx_default_colormap;
     color.pixel = base;
 
     XQueryColor(XtDisplay($), colormap, &color);

@@ -10,6 +10,7 @@
 # include <X11/Xft/Xft.h>
 #endif
 #include "xwTabString.h"
+#include "wxAllocColor.h"
 
 #ifdef WX_USE_XFT
 int wxXftTextWidth(Display *dpy, XftFont *fontinfo, char *p, int len)
@@ -102,7 +103,7 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, xfont
     Visual *visual;
     Colormap cm;
 
-    cm = DefaultColormapOfScreen(DefaultScreenOfDisplay(display));
+    cm = wx_default_colormap;
     visual = XcmsVisualOfCCC(XcmsCCCOfColormap(display, cm));
     
     draw = XftDrawCreate(display, drawable, visual, cm);

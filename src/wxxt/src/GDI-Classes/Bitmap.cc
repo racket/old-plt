@@ -41,6 +41,11 @@
 #endif
 #include <X11/cursorfont.h>
 
+extern "C" { 
+#include "XWidgets/wxAllocColor.h"
+};
+extern Colormap wx_default_colormap;
+
 extern int read_JPEG_file(char * filename, wxBitmap *bm);
 extern int write_JPEG_file(char * filename, wxBitmap *bm, int quality_val);
 
@@ -449,9 +454,9 @@ static int write_pixmap_as_bitmap(Display *display, Pixmap pm, char *fname,
       if (xcol.pixel != pixel) {
 	xcol.pixel = pixel;
 	
-	XQueryColor(display, 
-		    DefaultColormapOfScreen(DefaultScreenOfDisplay(display)), 
-		    &xcol);
+	wxQueryColor(display, 
+		     wx_default_colormap,
+		     &xcol);
       }
 
       if ((xcol.red >> 8) != 255

@@ -56,6 +56,8 @@ extern "C" {
 #include "XWidgets/wxAllocColor.h"
 extern int wx_alloc_color_is_fast;
 };
+extern Colormap wx_default_colormap;
+extern Visual *wxAPP_VISUAL;
 
 // constant to convert radian to degree
 #define RAD2DEG 57.2957795131
@@ -478,8 +480,7 @@ int wxXRenderHere(void)
     /* Check whether Xrender is present at run time */
     int event_base, error_base;
     if (XRenderQueryExtension(wxAPP_DISPLAY, &event_base, &error_base) &&
-	(XRenderFindVisualFormat (wxAPP_DISPLAY, DefaultVisual(wxAPP_DISPLAY, 
-							       DefaultScreen(wxAPP_DISPLAY))) != 0)) {
+	(XRenderFindVisualFormat(wxAPP_DISPLAY, wxAPP_VISUAL) != 0)) {
       xrender_here = 1;
     } else
       xrender_here = 0;
@@ -507,12 +508,9 @@ long wxMakeXrenderPicture(Drawable d, int color)
 {
   /* Create format records, if not done already: */
   if (!format) {
-    Visual *visual;
     XRenderPictFormat pf;
     
-    visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY,
-					       DefaultColormapOfScreen(wxAPP_SCREEN)));
-    format = XRenderFindVisualFormat(wxAPP_DISPLAY, visual);
+    format = XRenderFindVisualFormat(wxAPP_DISPLAY, wxAPP_VISUAL);
     
     pf.type = PictTypeDirect;
     pf.depth = 1;
@@ -545,14 +543,7 @@ long wxMakePicture(Drawable d, int color)
 {
 #ifdef WX_USE_XFT
   if (color) {
-    Visual *visual;
-    Colormap cm;
-
-    cm = DefaultColormapOfScreen(wxAPP_SCREEN);
-
-    visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY, cm));
-    
-    return (long)XftDrawCreate(wxAPP_DISPLAY, d, visual, cm);
+    return (long)XftDrawCreate(wxAPP_DISPLAY, d, wxAPP_VISUAL, wx_default_colormap);
   } else 
     return (long)XftDrawCreateBitmap(wxAPP_DISPLAY, d);
 #else
@@ -2485,8 +2476,7 @@ Visual *wxGetGLWindowVisual()
 
     XSetErrorHandler(old_handler);
     
-    vis = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY,
-					    DefaultColormapOfScreen(wxAPP_SCREEN)));
+    vis = wxAPP_VISUAL;
     
     tmpl.visualid = XVisualIDFromVisual(vis);
     visi = XGetVisualInfo(wxAPP_DISPLAY, VisualIDMask, &tmpl, &n);

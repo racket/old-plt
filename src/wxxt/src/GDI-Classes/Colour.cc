@@ -41,6 +41,8 @@ extern "C" {
 #include "XWidgets/wxAllocColor.h"
 };
 
+extern Colormap wx_default_colormap;
+
 //-----------------------------------------------------------------------------
 // private data of wxColour and wxColourMap
 //-----------------------------------------------------------------------------
@@ -425,7 +427,7 @@ wxColourMap::wxColourMap(Bool priv)
     __type = wxTYPE_COLOURMAP;
 
     X  = new wxColourMap_Xintern; // create new X representation
-    X->xcolormap = DefaultColormapOfScreen(wxAPP_SCREEN);
+    X->xcolormap = wx_default_colormap;
     X->priv      = priv;
     // if (X->priv) {
     //	    X = NULL; // create colourmap;

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GDI.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
+ * $Id: GDI.cc,v 1.2 1999/11/04 17:25:36 mflatt Exp $
  *
  * Purpose: common GDI routines
  *
@@ -26,9 +26,11 @@
 #define  Uses_XLib
 #include "wx.h"
 
+extern int wx_visual_depth;
+
 int wxDisplayDepth(void)
 {
-    return DefaultDepthOfScreen(wxAPP_SCREEN);
+  return wx_visual_depth;
 }
 
 Bool wxColourDisplay(void)

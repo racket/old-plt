@@ -1082,7 +1082,7 @@ Boolean  XfwfChooseColor(self,factor,base,result)Widget self;double  factor;Pixe
     if (XtIsRealized(self))
 	colormap = ((XfwfCommonWidget)self)->core.colormap;
     else
-	colormap = DefaultColormapOfScreen(XtScreen(self));
+	colormap = wx_default_colormap;
     color.pixel = base;
 
     XQueryColor(XtDisplay(self), colormap, &color);

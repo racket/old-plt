@@ -46,6 +46,10 @@
 
 extern void wxsRememberDisplay(char *str);
 
+Visual *wxAPP_VISUAL;
+int wx_visual_depth;
+Colormap wx_default_colormap;
+
 //-----------------------------------------------------------------------------
 // wxApp implementation
 //-----------------------------------------------------------------------------
@@ -176,18 +180,48 @@ int wxEntry(int argc, char *argv[])
   /* Remember -display or DISPLAY, in case someone needs it: */
   wxsRememberDisplay(x_display_str);
 
-  wxPutAppToplevel(XtAppInitialize(&wxAPP_CONTEXT, wxAPP_CLASS,
-				   NULL, 0,
-				   &xargc, argv, // command line arguments
-				   NULL,         // fallback resources
-				   NULL, 0));    // argument override for app-shell
+  XtToolkitInitialize();
+  wxAPP_CONTEXT = XtCreateApplicationContext();
+  wxAPP_DISPLAY = XtOpenDisplay(wxAPP_CONTEXT, NULL, NULL,NULL,
+				NULL, 0,
+				&xargc, argv); // command line arguments
 
   if (xargc != 1) {
     printf("%s: standard X Window System flag \"%s\" was rejected\n",
 	   argv[0], argv[1]);
-    exit(-1);
+    exit(1);
   }
   
+  wxAPP_SCREEN = DefaultScreenOfDisplay(wxAPP_DISPLAY);
+  wxAPP_VISUAL = DefaultVisualOfScreen(wxAPP_SCREEN);
+  wx_default_colormap = DefaultColormapOfScreen(wxAPP_SCREEN);
+ 
+  /* Use 24-bit TrueColor visual, if possible */
+  {
+    XVisualInfo *vi, vi_tmpl, vi2;
+    int n;
+    
+    vi_tmpl.visualid = XVisualIDFromVisual(wxAPP_VISUAL);
+    vi = XGetVisualInfo(wxAPP_DISPLAY, VisualIDMask, &vi_tmpl, &n);
+    wx_visual_depth = vi->depth;
+
+    if ((vi->c_class != TrueColor) || (vi->depth < 24)) {
+      if (XMatchVisualInfo(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY), 
+			   24, TrueColor, &vi2)) {
+	wxAPP_VISUAL = vi2.visual;
+	wx_visual_depth = 24;
+	wx_default_colormap = XCreateColormap(wxAPP_DISPLAY, 
+					      RootWindow(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY)),
+					      wxAPP_VISUAL, 
+					      AllocNone);
+      }
+    }
+
+    XFree(vi);
+  }
+
+  wxInitNewToplevel();
+
   for (int i = ate + 1; i < argc; i++) {
     argv[i - ate] = argv[i];
   }
@@ -213,8 +247,6 @@ void wxCommonInit(void)
     Bool supported;
     int fsize;
   
-    wxAPP_DISPLAY   = XtDisplay(wxAPP_TOPLEVEL);
-    wxAPP_SCREEN    = XtScreen(wxAPP_TOPLEVEL);
     wxAPP_ROOT	    = RootWindow(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));
 
 #ifdef WX_USE_XFT

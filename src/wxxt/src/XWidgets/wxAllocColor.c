@@ -19,6 +19,8 @@ static long alloc_count;
 static unsigned long *alloced;
 
 extern Screen *wxAPP_SCREEN;
+extern Display *wxAPP_DISPLAY;
+extern Visual *wxAPP_VISUAL;
 
 #define OK 1
 
@@ -98,14 +100,13 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 
   /* If we have a weird colormap, essentially give up (no
      deallocation). */
-  if (cm != DefaultColormapOfScreen(wxAPP_SCREEN))
+  if (cm != wx_default_colormap)
     return XAllocColor(d, cm, c);
 
   /* Is the default colormap TrueColor? */
 
   if (!tc_known) {
-    tc = XcmsVisualOfCCC(XcmsCCCOfColormap(DisplayOfScreen(wxAPP_SCREEN),
-					   cm));
+    tc = wxAPP_VISUAL;
     if (tc->class != TrueColor)
       tc = NULL;
     else {
@@ -263,7 +264,7 @@ Status wxAllocColor(Display *d, Colormap cm, XColor *c)
 
 int wxQueryColor(Display *display, Colormap colormap, XColor *def_in_out)
 {
-  if (tc && (colormap == DefaultColormapOfScreen(wxAPP_SCREEN))) {
+  if (tc && (colormap == wx_default_colormap)) {
     unsigned long pixel = def_in_out->pixel, red, green, blue;
 
     red = (pixel >> r_start) & ((1 << r_length) - 1);

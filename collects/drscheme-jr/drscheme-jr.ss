@@ -52,6 +52,15 @@
 (load-recent (begin-elaboration-time
 	       (build-path plt-dir "zodiac" "load")))
 
+(reference
+  (build-elaboration-time
+    (build-path plt-dir "zodiac" "load")))
+
+(define zodiac:system@
+  (reference-unit/sig
+    (begin-elaboration-time
+      (build-path plt-dir "zodiac" "link"))))
+
 (invoke-open-unit/sig plt:mzscheme-parameters@ params)
 
 (define interface@

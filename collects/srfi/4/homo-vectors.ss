@@ -107,16 +107,16 @@
        
        (case-lambda ((l) ;; make-homo-vector
                      (if (and (integer? l)
-                              (> l 0))
+                              (>= l 0))
                          (prim:make-homo-vector-uninitialized l)
-                         (raise-type-error 'make-homo-vector "positive integer" 0 l)))
+                         (raise-type-error 'make-homo-vector "non-negative integer" 0 l)))
                     ((l i) 
                      (if (and (integer? l)
-                              (> l 0))
+                              (>= l 0))
                          (if (real? i)
                              (prim:make-homo-vector l i)
                              (raise-type-error 'make-homo-vector "real" 1 l i))
-                         (raise-type-error 'make-homo-vector "positive integer" 0 l i))))
+                         (raise-type-error 'make-homo-vector "non-negative integer" 0 l i))))
        
        (lambda (l) ;; list->homo-vector
          (let* ([new-vec (prim:make-homo-vector-uninitialized (length l))])

@@ -54,7 +54,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none /nodefaultlib
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme	..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..
+PostBuild_Cmds=..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..	cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
@@ -85,7 +85,7 @@ LINK32=link.exe
 # SUBTRACT LINK32 /pdb:none
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Cmds=cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme	..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..
+PostBuild_Cmds=..\..\..\mzscheme.exe -qr ..\..\mzscheme\mkincludes.ss ..\..\.. ..	cd ..\..\mzscheme\dynsrc	mkmzdyn.bat	cd ..\..\worksp\mzscheme
 # End Special Build Tool
 
 !ENDIF 

@@ -1,7 +1,6 @@
 (module external mzscheme
 
-  (require (lib "servlet-sig.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server")
+  (require (lib "servlet.ss" "web-server")
            (lib "defmacro.ss"))
 
   (require "headelts.ss")

@@ -2,8 +2,13 @@
   (require (lib "file.ss")
 	   (lib "list.ss")
 	   (lib "xml.ss" "xml")
-           (lib "string-constant.ss" "string-constants"))
+           (lib "string-constant.ss" "string-constants")
+           (lib "contract.ss"))
 
+  (provide/contract
+   [hexify-string (string? . -> . string?)]
+   [fold-into-web-path ((listof string?) . -> . string?)])
+  
   (provide get-pref/default
 	   get-bool-pref/default
 	   put-prefs
@@ -14,9 +19,7 @@
 	   search-link-default
 	   color-highlight
 	   color-with
-	   hexify-string
 	   collection-doc-link
-	   fold-into-web-path
 	   home-page
 	   format-collection-message
 	   nl
@@ -98,7 +101,7 @@
 	  `(A ((HREF 
 		,(format 
 		  "/servlets/doc-anchor.ss?file=~a&name=~a&caption=Documentation for the ~a collection"
-		  (hexify-string coll-file)
+		  (hexify-string (path->string coll-file))
 		  coll
 		  coll)))
 	      ,txt)

@@ -1,7 +1,4 @@
 (module doc-message mzscheme
-  (require (lib "servlet-sig.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server"))
-  
   (require "private/headelts.ss"
            "private/util.ss")
   

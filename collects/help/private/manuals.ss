@@ -26,7 +26,7 @@
                     [find-doc-names (-> (listof (cons/p path? string?)))]
                     
                     [goto-manual-link (hd-cookie? string? string? . -> . any?)]
-                    [get-index-file (string? . -> . (union false? string?))])
+                    [get-index-file (path? . -> . (union false? path?))])
   
   (provide find-manuals)
 
@@ -62,8 +62,8 @@
       (if (string? m)
           m
           (format "<A href=\"file:~a\">~a</A>"
-                  (build-path (car m) (caddr m))
-                    label))))
+                  (path->string (build-path (car m) (caddr m)))
+                  label))))
 
   ;; Given a Unix-style relative path to reach the "doc"
   ;; collection, creates a link that can go to a
@@ -87,7 +87,7 @@
           (let ([path (if anchor?
                           (string-append (caddr m) "#" (cadddr m))
                           (caddr m))])
-            (if (servlet-path? path)
+            (if (servlet-path? (string->path (caddr m)))
                 path
                 (format "/doc/~a/~a" manual path))))))
   
@@ -110,7 +110,7 @@
   (define finddoc-ht (make-hash-table))
   (define (finddoc-lookup manual index-key label)
     (let ([key (string->symbol manual)]
-	  [docdir (find-doc-directory manual)])
+	  [docdir (find-doc-directory (string->path manual))])
       (let ([l (hash-table-get
 		finddoc-ht
 		key
@@ -216,7 +216,7 @@
                              (let ([ap (standard-html-doc-position a-short)]
                                    [bp (standard-html-doc-position b-short)])
                                (cond
-                                 [(= ap bp) (string<? a b)]
+                                 [(= ap bp) (string<? (path->string a) (path->string b))]
                                  [else (< ap bp)]))))]
            [docs (quicksort docs compare-docs)]
            [names (map get-doc-name docs)]
@@ -251,8 +251,9 @@
 	     (format "<LI> <A HREF=\"/servlets/doc-anchor.ss?file=~a&name=~a&caption=Documentation for the ~a collection\">~a collection</A>"
 					; escape colons and other junk
 		     (hexify-string
-		      (build-path (car collection-doc-file) 
-				  (cadr collection-doc-file)))
+                      (path->string
+                       (build-path (car collection-doc-file) 
+                                   (cadr collection-doc-file))))
 	             name
 		     name
 		     name))
@@ -354,7 +355,7 @@
            [index-file (get-index-file doc-path)])
       (format "<LI> <A HREF=\"/doc/~a/~a\">~a</A>~a"
               manual-name
-              index-file
+              (path->string index-file)
               name
               (if (and (cvs-or-nightly-build?)
                        (file-exists? (build-path doc-path index-file)))
@@ -409,7 +410,7 @@
                             (cond
                               [(eof-object? r) doc-short-dir-name]
                               [(regexp-match re:title r) => cadr]
-                              [(regexp-match "<[tT][iI][tT][lL][eE]>(.*)$" r)
+                              [(regexp-match #rx"<[tT][iI][tT][lL][eE]>(.*)$" r)
                                ;; Append lines until we find it 
                                (let aloop ([r r])
                                  (let ([a (read-line)])
@@ -437,28 +438,28 @@
             (cdr ass)
             #f))))
 
-  ;; get-uninstalled : (listof string[full-path]) -> (listof (cons string[full-path] string[docs-name]))
+  ;; get-uninstalled : (listof path) -> (listof (cons path string[docs-name]))
   (define (get-uninstalled docs)
-    (let ([ht (make-hash-table)])
+    (let ([ht (make-hash-table 'equal)])
       (for-each (lambda (known-doc)
                   (hash-table-put! ht 
-                                   (string->symbol (car known-doc))
+                                   (car known-doc)
                                    (cdr known-doc)))
                 known-docs)
       (for-each (lambda (doc)
                   (let-values ([(base name dir?) (split-path doc)])
-                    (hash-table-remove! ht (string->symbol name))))
+                    (hash-table-remove! ht name)))
                 docs)
-      (hash-table-map ht (lambda (k v) (cons (symbol->string k) v)))))
+      (hash-table-map ht cons)))
   
-  ;; get-index-file : string[directory] -> (union #f string)
+  ;; get-index-file : path -> (union #f path)
   ;; returns the name of the main file, if one can be found
   (define (get-index-file doc-dir)
     (cond
       [(file-exists? (build-path doc-dir "index.htm"))
-       "index.htm"]
+       (build-path "index.htm")]
       [(file-exists? (build-path doc-dir "index.html"))
-       "index.html"]
+       (build-path "index.html")]
       [(tex2page-detected doc-dir)
        =>
        (lambda (x) x)]

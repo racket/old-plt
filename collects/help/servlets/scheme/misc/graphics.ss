@@ -1,6 +1,4 @@
 (module graphics mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
-  
   (require "../../private/headelts.ss"
            "../../../private/manuals.ss")
   

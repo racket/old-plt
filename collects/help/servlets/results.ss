@@ -3,8 +3,7 @@
   (require (lib "file.ss")
            (lib "list.ss")
            (lib "string.ss")
-           (lib "servlet-sig.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server")
+           (lib "servlet.ss" "web-server")
            "../private/path.ss"
            "../private/docpos.ss"
            "../private/search.ss"
@@ -88,7 +87,7 @@
                       path
                       (loop (cdr path) (add1 n))))])
           ; insert internal slashes, make absolute by prepending slash
-          (string-append "/" (fold-into-web-path exp-tidy-path))))
+          (string-append "/" (fold-into-web-path (map path->string exp-tidy-path)))))
       
       (define (keyword-string? ekey)
         (and (string? ekey)
@@ -144,21 +143,15 @@
 		       " in "
 		       "\"" ,src "\"")))))
       
-      (define (doc-txt? url)
-        (let ([len (string-length url)])
-          (and (> len 8)
-               (string=? 
-                (substring url
-                           (- len 7)
-                           len)
-                "doc.txt"))))
+      ;; doc-txt? : string -> boolean
+      (define (doc-txt? str) (regexp-match "doc\\.txt$" str))
       
       (define (make-html-href page-label path)
         (let ([anchored-path (make-anchored-path page-label path)])
           (cond
-            [(servlet-path? anchored-path) 
+            [(servlet-path? path) 
              anchored-path]
-            [(doc-txt? anchored-path) ; collection doc.txt
+            [(doc-txt? (path->string path)) ; collection doc.txt
              (let ([maybe-coll (maybe-extract-coll last-header)])
                (format 
                 no-anchor-format
@@ -168,6 +161,7 @@
             [else ; manual, so have absolute path
              (tidy-manual-path anchored-path)])))
       
+      ;; make-anchored-path : string path -> string
       ; page-label is #f or a bytes that labels an HTML anchor
       ; path is either an absolute pathname (possibly not normalized) 
       ; in the format of the native OS, or, in the case of Help Desk 
@@ -181,15 +175,15 @@
                    (string? page-label)
                    (not (or (string=? page-label "NO TAG") 
                             (regexp-match "\\?|&" page-label))))
-              (string-append normal-path #"#" page-label)
-              normal-path)))
+              (string-append (path->string normal-path) "#" page-label)
+              (path->string normal-path))))
       
 
       
       ; path is absolute pathname
       (define (make-text-href page-label path)
         (let* ([maybe-coll (maybe-extract-coll last-header)]
-               [hex-path (hexify-string (normalize-path path))]
+               [hex-path (hexify-string (path->string (normalize-path path)))]
                [hex-caption (if (eq? maybe-coll last-header)
                                 hex-path
                                 (hexify-string (make-caption maybe-coll)))]

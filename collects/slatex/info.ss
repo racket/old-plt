@@ -12,7 +12,7 @@
 	  "For more information, see "
 	  `(tt () "slatxdoc.dvi")
 	  " in the "
-	  `(tt () ,(build-path (collection-path "slatex") "slatex-code"))
+	  `(tt () ,(path->string (build-path (collection-path "slatex") "slatex-code")))
 	  " directory on this machine."))
 
   (define mzscheme-launcher-names (list "SLaTeX" "PDF SLaTeX"))

@@ -1,7 +1,4 @@
 (module doc-anchor mzscheme
-  (require (lib "servlet-sig.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server"))	
-  
   (require "private/read-doc.ss")
   
   (require (lib "servlet.ss" "web-server"))

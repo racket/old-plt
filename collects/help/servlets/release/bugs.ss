@@ -1,6 +1,5 @@
 (module bugs mzscheme
-  (require (lib "servlet-helpers.ss" "web-server")
-           (lib "string.ss"))
+  (require (lib "string.ss"))
   
   (require "../private/util.ss")
   (require "../private/headelts.ss")
@@ -19,7 +18,9 @@
         (string-lowercase! dir)
         `(LI (A ((HREF ,(string-append 
                          "/servlets/doc-anchor.ss?file="
-                         (hexify-string (build-path (collection-path "mzlib") 'up 'up "notes" dir "OPENBUGS"))
+                         (hexify-string
+                          (path->string
+                           (build-path (collection-path "mzlib") 'up 'up "notes" dir "OPENBUGS")))
                          "&caption=Open " name " bugs"
                          "&name=" name)))
                 ,name " bugs"))))

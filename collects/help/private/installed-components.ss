@@ -27,19 +27,19 @@
   ;; all-collections : ->  (lisof string)
   ;; returns a list of the collections from the current-library-collections-path parameter
   (define (all-collections)
-    (let ([colls (make-hash-table)])
+    (let ([colls (make-hash-table 'equal)])
       (for-each
        (lambda (collection-path-dir)
          (when (directory-exists? collection-path-dir)
            (for-each
             (lambda (collection)
               (when (and (directory-exists? (build-path collection-path-dir collection))
-                         (not (string=? collection "CVS")))
-                (hash-table-put! colls (string->symbol collection) #t)))
+                         (not (bytes=? (path->bytes collection) #"CVS")))
+                (hash-table-put! colls collection #t)))
             (directory-list collection-path-dir))))
        (current-library-collection-paths))
-      (quicksort (hash-table-map colls (lambda (x v) (symbol->string x)))
-                 string<=?)))
+      (quicksort (hash-table-map colls (lambda (x v) x))
+                 (lambda (x y) (string<=? (path->string x) (path->string y))))))
   
   ;; get-blurb : string url -> xexpr
   ;; builds the xexpr for a collection, based on its name a blurb
@@ -79,7 +79,8 @@
                                                              (if (exn? x)
                                                                  (exn-message x)
                                                                  x))))))))])
-                        (proc 'blurb (lambda () (k #f))))])
+                        (proc 'blurb (lambda () (k #f))))]
+               [blurb-ok? (andmap xexpr? blurb)])
           (make-comp
            name
            `(li
@@ -87,14 +88,17 @@
                    (b ,name))
              (br)
              ,@(append
-                blurb
+                (if blurb-ok?
+                    blurb
+                    (list `(font ((color "red"))
+                                 "blurb was not a list of xexprs")))
 		(let ([fname (build-path (collection-path collection) "doc.txt")])
 		  (if (file-exists? fname)
 		      (list
 		       " See "
 		       `(A ((HREF ,(format 
 				    "/servlets/doc-anchor.ss?file=~a&caption=Documentation for the ~a collection&name=~a" 
-				    (hexify-string fname)
+				    (hexify-string (path->string fname))
 			            collection
 			            collection)))
                          "the documentation")

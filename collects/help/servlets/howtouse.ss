@@ -1,6 +1,4 @@
 (module howtouse mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
-  
   (require "private/util.ss")
   (require "private/headelts.ss")
   

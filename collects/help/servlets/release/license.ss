@@ -1,6 +1,4 @@
 (module license mzscheme
-  (require (lib "servlet-helpers.ss" "web-server"))
-  
   (require "../private/util.ss")
   (require "../private/headelts.ss")
   
@@ -38,9 +36,10 @@
        "under the terms of the LGPL, which in particular means that you must "
        "release the source code for the modified software. See "
        (A ((HREF ,(format "/servlets/doc-anchor.ss?name=COPYING.LIB&caption=Copying PLT software&file=~a"
-                          (hexify-string 
-                           (simplify-path 
-                            (build-path (collection-path "mzlib") 'up 'up "notes" "COPYING.LIB"))))))
+                          (hexify-string
+                           (path->string
+                            (simplify-path 
+                             (build-path (collection-path "mzlib") 'up 'up "notes" "COPYING.LIB")))))))
           "COPYING.LIB")
        " for more information."
        (P)

@@ -1,7 +1,5 @@
 (module manual-section mzscheme
-  (require (lib "servlet-sig.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server")
-           "../private/manuals.ss"
+  (require "../private/manuals.ss"
            "private/headelts.ss")
   
   (require (lib "servlet.ss" "web-server"))

@@ -1,6 +1,5 @@
 (module how mzscheme
-  (require (lib "servlet-helpers.ss" "web-server")
-           (lib "launcher.ss" "launcher")
+  (require (lib "launcher.ss" "launcher")
            "../private/util.ss"
            "../../private/manuals.ss"
            "../private/headelts.ss"
@@ -35,7 +34,7 @@
          (B  (TT  "Language")) " menu."
          (P)
          "On this machine, the DrScheme program is " 
-         (TT  ,(mred-program-launcher-path "DrScheme")) "."
+         (TT  ,(path->string (mred-program-launcher-path "DrScheme"))) "."
          (P)
          "For more information, see " 
          (A ((HREF "/servlets/howtodrscheme.ss")) "DrScheme") "."
@@ -54,9 +53,9 @@
          "executable to run the program in its deployed setting."
          (P)
          "On this machine, the MzScheme program is at " 
-         (TT  ,(mzscheme-program-launcher-path "MzScheme")) ", and "
+         (TT  ,(path->string (mzscheme-program-launcher-path "MzScheme"))) ", and "
          "MrEd is at " 
-         (TT  ,(mred-program-launcher-path "MrEd")) "."
+         (TT  ,(path->string (mred-program-launcher-path "MrEd"))) "."
          (P)
          "For more information, see " 
          ,(main-manual-page "mzscheme")
@@ -74,7 +73,7 @@
          "stand-alone executables from Scheme code." 
          (P)
          "On this machine, the mzc program is at " 
-         (TT  ,(mzscheme-program-launcher-path "mzc")) "."
+         (TT  ,(path->string (mzscheme-program-launcher-path "mzc"))) "."
          (P)
          "For more information, see " 
          ,(main-manual-page "mzc") ". "
@@ -89,7 +88,7 @@
          "You are currently reading this text in Help Desk."
          (P)
          "On this machine, the Help Desk program is at " 
-         (TT  ,(mred-program-launcher-path "Help Desk")) "."
+         (TT  ,(path->string (mred-program-launcher-path "Help Desk"))) "."
          (P)
          (A ((NAME "setup-plt"))) 
          ,(color-highlight `(H2  "Setup PLT"))
@@ -97,8 +96,9 @@
          (A ((NAME "setup2") (VALUE "setup-plt program")))
          (A ((HREF ,(format "/servlets/doc-anchor.ss?file=~a&name=~a&caption=~a"
                             (hexify-string
-                             (simplify-path
-                              (build-path (collection-path "mzlib") 'up "setup" "doc.txt")))
+                             (path->string
+                              (simplify-path
+                               (build-path (collection-path "mzlib") 'up "setup" "doc.txt"))))
                             "Setup PLT"
                             "Document for the setup collection")))
             "Setup PLT")
@@ -112,7 +112,7 @@
          (tt  ".plt") " file."
          (P)
          "On this machine, the Setup PLT program is at " 
-         (TT  ,(mzscheme-program-launcher-path "Setup PLT")) "."
+         (TT  ,(path->string (mzscheme-program-launcher-path "Setup PLT"))) "."
          (P)
          (A ((NAME "installed-components") (VALUE "Installed Components")))
          ,(color-highlight `(H2  "Additional Installed Components"))

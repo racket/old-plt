@@ -1,6 +1,5 @@
 (module notes mzscheme
-  (require (lib "list.ss")
-           (lib "servlet-helpers.ss" "web-server"))
+  (require (lib "list.ss"))
   
   (require "../private/util.ss")
   (require "../private/headelts.ss")
@@ -12,7 +11,7 @@
            [file (build-path (collection-path "mzlib") 'up 'up "notes" dir filename)])
       (if (file-exists? file)
           `(LI (A ((HREF ,(format "/servlets/doc-anchor.ss?file=~a&name=~a&caption=~a"
-                                  (hexify-string file)
+                                  (hexify-string (path->string file))
                                   filename
                                   label)))
                   ,label))

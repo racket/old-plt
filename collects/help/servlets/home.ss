@@ -1,8 +1,7 @@
 (module home mzscheme
   (require "private/util.ss"
            "../private/manuals.ss"
-	   (lib "servlet.ss" "web-server")
-           (lib "servlet-helpers.ss" "web-server"))
+	   (lib "servlet.ss" "web-server"))
   
   (provide interface-version timeout start)
   

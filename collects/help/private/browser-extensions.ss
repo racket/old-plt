@@ -5,6 +5,7 @@
            (lib "class.ss")
            (lib "contract.ss")
            (lib "etc.ss")
+           (lib "list.ss")
            (lib "string-constant.ss" "string-constants")
            (lib "url.ss" "net")
            (lib "external.ss" "browser")
@@ -124,7 +125,8 @@
                           
                           ;; .plt files are always internal, no matter where from
                           ;; they will be caught elsewhere.
-                          [(regexp-match #rx".plt$" s) #f]
+                          [(regexp-match #rx".plt$" s)
+                           #f]
                           
                           ;; files on download.plt-scheme.org in /doc are considered
                           ;; things that we should view in the browser itself.
@@ -140,24 +142,26 @@
                        url)))]
               [(extract-url-path url)
                =>
-               (lambda (s)
-                 (let ([m (regexp-match #rx"^/doc/([^/]*)/" s)])
-                   (if m
-                       (let* ([coll (cadr m)]
-                              [index? (has-index-installed? coll)]
-                              [just-visit-url?
-                               (or (not (assoc coll known-docs))
-                                   (has-index-installed? coll))])
-                         (cond
-                           [just-visit-url? url]
-                           [else
-                            (let ([doc-pr (assoc coll known-docs)]
-                                  [url-str ((hd-cookie-url->string hd-cookie) url)])
-                              (make-missing-manual-url hd-cookie coll (cdr doc-pr) url-str))]))
-                       url)))]
+               (lambda (path)
+                 (if (and (not (null? path))
+                          (not (null? (cdr path)))
+                          (equal? "doc" (car path)))
+                     (let* ([coll (cadr path)]
+                            [index? (has-index-installed? (string->path coll))]
+                            [just-visit-url?
+                             (or (not (assoc coll known-docs))
+                                 index?)])
+                       (cond
+                         [just-visit-url? url]
+                         [else
+                          (let ([doc-pr (assoc coll known-docs)]
+                                [url-str ((hd-cookie-url->string hd-cookie) url)])
+                            (make-missing-manual-url hd-cookie coll (cdr doc-pr) url-str))]))
+                     url))]
               [else url])))
         (super-instantiate ())))
 
+    ;; has-index-installed? : path -> boolean
     (define (has-index-installed? doc-coll)
       (let loop ([docs-dirs (find-doc-directories)])
         (cond
@@ -165,7 +169,7 @@
           [else
            (let ([doc-dir (car docs-dirs)])
              (let-values ([(base name dir?) (split-path doc-dir)])
-               (or (and (string=? doc-coll name)
+               (or (and (equal? doc-coll name)
                         (get-index-file doc-dir))
                    (loop (cdr docs-dirs)))))])))
 
@@ -250,8 +254,8 @@
   (define (is-download.plt-scheme.org/doc-url? s)
     (let ([url (string->url s)])
       (and (equal? "download.plt-scheme.org" (url-host url))
-           (string? (url-path url))
-           (regexp-match #rx"^/doc" (url-path url)))))
+           (not (null? (url-path url)))
+           (equal? (car (url-path url)) "^/doc"))))
   
   (define (ask-user-about-separate-browser)
     (define separate-default? (preferences:get 'drscheme:help-desk:separate-browser))
@@ -555,7 +559,7 @@
                                           d))])
             (let* ([removed-spaces (regexp-replace #rx"^[ \t]*" s "")]
                    [str (cond
-                          [(regexp-match ":" removed-spaces) removed-spaces]
+                          [(regexp-match #rx":" removed-spaces) removed-spaces]
                           [(regexp-match #rx"^[a-zA-Z][a-zA-Z.]*($|/)" removed-spaces)
                            (string-append "http://" removed-spaces)]
                           [else

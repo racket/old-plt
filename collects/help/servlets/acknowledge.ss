@@ -1,6 +1,5 @@
 (module acknowledge mzscheme
-  (require (lib "servlet-helpers.ss" "web-server")
-           (lib "acks.ss" "drscheme")
+  (require (lib "acks.ss" "drscheme")
            (lib "servlet.ss" "web-server"))
   
   (provide interface-version timeout start)

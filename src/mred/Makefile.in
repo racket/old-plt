@@ -111,8 +111,8 @@ $(MRFWRES): $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
 	ln -s Versions/$(FWVERSION)/PLT_MrEd PLT_MrEd.framework/PLT_MrEd
 	ln -s Versions/$(FWVERSION)/Resources PLT_MrEd.framework/Resources
 
-ee-app: mred mred_ee.o
-	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mred_ee.o mredx.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi
+ee-app: mred mrmain_ee.o
+	if [ "$(EEAPP)" = '' ] ; then echo "ERROR: You must specify EEAPP" ; else $(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(EEAPP) mrmain_ee.o $(EEOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB) ; fi
 
 sunos4-static: dl_stub.o
 	$(MAKE) mred MRSTATIC=-static  MRSTATIC_STUB='dl_stub.o' LDNONSTATICLIBS=''
@@ -141,11 +141,11 @@ mrmain.o :  $(srcdir)/mrmain.cxx $(srcdir)/mred.h $(srcdir)/wxs/wxsmred.h \
             $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/../mzscheme/src/schvers.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mrmain.cxx -o mrmain.o
 
-mred_ee.o : mred.o
-	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/mred.cxx -o mred_ee.o
+mrmain_ee.o : mred.o
+	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -DSTANDALONE_WITH_EMBEDDED_EXTENSION -c $(srcdir)/mrmain.cxx -o mrmain_ee.o
 
 ee-main:
-	$(MAKE) mred_ee.o
+	$(MAKE) mrmain_ee.o
 
 mredx.o : $(srcdir)/mredx.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/mred.h \
           $(WXINCDEP) \

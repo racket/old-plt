@@ -52,8 +52,8 @@
   
   ; owner ::= (make-owner string (listof package))
   (define-struct owner (name packages))
-  ; package ::= (make-package string string nat nat (listof xexpr) (string | #f) string
-  (define-struct package (owner-name name maj min blurb doc.txt primary-file))
+  ; package ::= (make-package string string nat nat (listof xexpr) (string | #f) string (symbol (-> X) -> (X | Y))
+  (define-struct package (owner-name name maj min blurb doc.txt primary-file metainfo))
   
   ; pkg->anchor : package -> string
   ; gets an anchor link for the given package
@@ -134,7 +134,8 @@
                                 latest-major-version
                                 latest-minor-version)
                         #f)
-                    file-to-require))
+                    file-to-require
+                    metainfo))
     
     
     (let* ([owners/all-versions (current-repository-contents)]
@@ -169,6 +170,13 @@
         ,@(map package->html (owner-packages owner))))
     
     (define (package->html pkg)
+      
+      (define (field-or-nothing field fmt)
+        (let ((thefield ((package-metainfo pkg) field (lambda () #f))))
+          (if thefield
+              (list 'nbsp "-" 'nbsp (fmt thefield))
+              '())))
+      
       `(div ((class "package")
              (style "background-color: #f3f4ff; padding-left: 10px; margin-left: 10px; margin-right: 30px;"))
             (a ((name ,(pkg->anchor pkg))))
@@ -179,7 +187,9 @@
                           "documentation")
                       `(span ((class "noDocs")) "[no documentation available]"))
                  nbsp "-" nbsp
-                 "latest version: " ,(format "~a.~a" (package-maj pkg) (package-min pkg)))
+                 "package version: " ,(format "(~a ~a)" (package-maj pkg) (package-min pkg))
+                 ,@(field-or-nothing 'version (lambda (x) (format "~a" x)))
+                 ,@(field-or-nothing 'url     (lambda (x) `(a ((href ,x)) "[project web page]"))))
             (br)
             (tt ,(format "(require (planet ~s (~s ~s ~s ~s)))" 
                          (package-primary-file pkg)
@@ -190,9 +200,7 @@
             (p ,@(package-blurb pkg))))
 
       (map owner->html tree))
-  
-  
-  
+ 
   ;; ============================================================
   ;; UTILITIES
   ;; ============================================================

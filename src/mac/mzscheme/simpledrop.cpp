@@ -474,7 +474,7 @@ char *ConvertCFStringRef(CFStringRef str)
   char *result;
   Boolean success;
 
-  success = CFStringGetCString(str,buf,BUFSIZE,kCFStringEncodingISOLatin1);
+  success = CFStringGetCString(str,buf,BUFSIZE,kCFStringEncodingUTF8);
   if (!success) {
     return "???";
   }

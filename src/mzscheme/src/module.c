@@ -159,7 +159,7 @@ void scheme_init_module(Scheme_Env *env)
 
   o = scheme_make_prim_w_arity(default_module_resolver,
 			       "default-module-name-resolver",
-			       2, 2);
+			       3, 3);
   scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER, o);
 
   scheme_set_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX, scheme_false);
@@ -459,7 +459,7 @@ current_module_name_resolver(int argc, Scheme_Object *argv[])
   return scheme_param_config("current-module-name-resolver",
 			     scheme_make_integer(MZCONFIG_CURRENT_MODULE_RESOLVER),
 			     argc, argv,
-			     2, NULL, NULL, 0);
+			     3, NULL, NULL, 0);
 }
 
 static Scheme_Object *prefix_p(int argc, Scheme_Object **argv)
@@ -602,7 +602,7 @@ static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[])
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 {
   Scheme_Env *env, *to_env, *menv, *menv2;
-  Scheme_Object *todo, *name;
+  Scheme_Object *todo, *name, *notifies = scheme_null, *a[3], *resolver;
   Scheme_Module *m2;
 
   if (!SCHEME_NAMESPACEP(argv[0]))
@@ -656,7 +656,7 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 
   /* Go again, this time tranferring modules: */
   todo = scheme_make_pair(argv[1], scheme_null);
-   while (!SCHEME_NULLP(todo)) {
+  while (!SCHEME_NULLP(todo)) {
     name = SCHEME_CAR(todo);
     name = scheme_module_resolve(name);
 
@@ -670,11 +670,26 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 	scheme_add_to_table(MODCHAIN_TABLE(to_env->modchain), (char *)name, menv, 0);
 	scheme_add_to_table(to_env->module_registry, (char *)name, menv->module, 0);
 
+	/* Puch name onto notify list: */
+	notifies = scheme_make_pair(name, notifies);
+
 	/* Push requires onto the check list: */
 	todo = scheme_append(menv->module->requires, todo);
 	todo = scheme_append(menv->module->et_requires, todo);
       }
     }
+  }
+
+  /* Notify module name resolver of attached modules: */
+  resolver = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER);
+  while (!SCHEME_NULLP(notifies)) {
+    a[0] = scheme_false;
+    a[1] = SCHEME_CAR(notifies);
+    a[2] = scheme_false;
+    
+    name = scheme_apply(resolver, 3, a);
+
+    notifies = SCHEME_CDR(notifies);
   }
 
   return scheme_void;
@@ -712,36 +727,42 @@ int same_modidx(Scheme_Object *a, Scheme_Object *b)
   return scheme_equal(a, b);
 }
 
-Scheme_Object *scheme_module_resolve(Scheme_Object *modidx)
+static Scheme_Object *_module_resolve(Scheme_Object *modidx, Scheme_Object *stx)
 {
   if (SCHEME_SYMBOLP(modidx))
     return modidx;
 
   if (SCHEME_FALSEP(((Scheme_Modidx *)modidx)->resolved)) {
     /* Need to resolve access path to a module name: */
-    Scheme_Object *a[2];
+    Scheme_Object *a[3];
     Scheme_Object *name, *base;
     
     base = ((Scheme_Modidx *)modidx)->base;
     if (!SCHEME_FALSEP(base)) {
       /* FIXME: this can go arbitrarily deep, in principle. */
-      base = scheme_module_resolve(base);
+      base = _module_resolve(base, NULL);
     }
 
     a[0] = ((Scheme_Modidx *)modidx)->path;
     a[1] = base;
+    a[2] = (stx ? stx : scheme_false);
     
     if (SCHEME_FALSEP(a[0])) {
       scheme_wrong_syntax("require", NULL, NULL, 
 			  "broken compiled code: unresolved module index without path");
     }
 
-    name = scheme_apply(scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER), 2, a);
+    name = scheme_apply(scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER), 3, a);
     
     ((Scheme_Modidx *)modidx)->resolved = name;
   }
 
   return ((Scheme_Modidx *)modidx)->resolved;
+}
+
+Scheme_Object *scheme_module_resolve(Scheme_Object *modidx)
+{
+  return _module_resolve(modidx, NULL);
 }
 
 Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx, 
@@ -1365,7 +1386,8 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     m->et_requires = scheme_null;
   }
 
-  iim = scheme_module_load(scheme_module_resolve(iidx), menv); /* load the module for the initial require */
+  /* load the module for the initial require */
+  iim = scheme_module_load(_module_resolve(iidx, ii), menv); 
   expstart_module(iim, menv, 0, iidx);
 
   if (scheme_lookup_in_table(menv->module_registry, (char *)m->modname)) {
@@ -2309,7 +2331,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
   Scheme_Module *m;
   int j, var_count, is_kern;
   Scheme_Object **exs, **exsns, **exss;
-  Scheme_Object *idx, *name, *i, *exns, *prefix, *iname, *ename, *aa;
+  Scheme_Object *idxstx, *idx, *name, *i, *exns, *prefix, *iname, *ename, *aa;
   Scheme_Object *imods;
 
   imods = scheme_null;
@@ -2349,7 +2371,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
       i = SCHEME_STX_CDR(i);
       prefix = SCHEME_STX_CAR(i);
       i = SCHEME_STX_CDR(i);
-      idx = SCHEME_STX_CAR(i);
+      idxstx = SCHEME_STX_CAR(i);
       exns = NULL;
     } else if (aa && SAME_OBJ(all_except_symbol, SCHEME_STX_VAL(aa))) {
       Scheme_Object *l;
@@ -2361,8 +2383,8 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
       else if (len < 2)
 	scheme_wrong_syntax("require", i, form, "bad syntax (module name missing)");
 
-      idx = SCHEME_STX_CDR(i);      
-      idx = SCHEME_STX_CAR(idx);
+      idxstx = SCHEME_STX_CDR(i);      
+      idxstx = SCHEME_STX_CAR(idxstx);
 
       prefix = NULL;
       exns = SCHEME_STX_CDR(i);
@@ -2398,7 +2420,7 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
       }
 
       rest = SCHEME_STX_CDR(i);
-      idx = SCHEME_STX_CAR(rest);
+      idxstx = SCHEME_STX_CAR(rest);
       rest = SCHEME_STX_CDR(rest);
       iname = SCHEME_STX_CAR(rest);
       rest = SCHEME_STX_CDR(rest);
@@ -2415,16 +2437,16 @@ Scheme_Object *parse_requires(Scheme_Object *form, Scheme_Object *ll,
       prefix = NULL;
       exns = NULL;
     } else {
-      idx = i;
+      idxstx = i;
       exns = NULL;
       prefix = NULL;
     }
 
-    idx = scheme_make_modidx(scheme_syntax_to_datum(idx, 0, NULL), 
+    idx = scheme_make_modidx(scheme_syntax_to_datum(idxstx, 0, NULL), 
 			     base_modidx,
 			     scheme_false);
 
-    name = scheme_module_resolve(idx);
+    name = _module_resolve(idx, idxstx);
 
     m = scheme_module_load(name, env);
     if (redef_modname)

@@ -1994,93 +1994,112 @@
   (define -loading-filename (gensym))
 
   (define standard-module-name-resolver
-    (lambda (s relto)
-      (let ([get-dir (lambda ()
-		       (or (and relto
-				(let ([rts (symbol->string relto)])
-				  (and (regexp-match -re:auto rts)
-				       (let-values ([(base n d?)
-						     (split-path 
-						      (substring rts 1 (string-length rts)))])
-					 base))))
-			   (current-load-relative-directory)
-			   (current-directory)))])
-	(let ([filename
-	       (cond
-		[(string? s)
-		 ;; Parse Unix-style relative path string
-		 (let loop ([path (get-dir)][s s])
-		   (let ([prefix (regexp-match -re:dir s)])
-		     (if prefix
-			 (loop (build-path path 
-					   (let ([p (cadr prefix)])
-					     (cond
-					      [(string=? p ".") 'same]
-					      [(string=? p "..") 'up]
-					      [else p])))
-			       (caddr prefix))
-			 (build-path path s))))]
-		[(or (not (pair? s))
-		     (not (list? s)))
-		 #f]
-		[(eq? (car s) 'lib)
-		 (let ([cols (let ([len (length s)])
-			       (if (= len 2)
-				   (list "mzlib")
-				   (if (> len 2)
-				       (cddr s)
-				       #f)))])
-		   (and cols
-			(let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
+    (lambda (s relto stx)
+      ;; If stx is not #f, raise syntax error for ill-formed paths
+      ;; If s is #f, call to resolver is a notification from namespace-attach-module
+      (if s
+	  (let ([get-dir (lambda ()
+			   (or (and relto
+				    (let ([rts (symbol->string relto)])
+				      (and (regexp-match -re:auto rts)
+					   (let-values ([(base n d?)
+							 (split-path 
+							  (substring rts 1 (string-length rts)))])
+					     base))))
+			       (current-load-relative-directory)
+			       (current-directory)))])
+	    (let ([filename
+		   (cond
+		    [(string? s)
+		     ;; Parse Unix-style relative path string
+		     (let loop ([path (get-dir)][s s])
+		       (let ([prefix (regexp-match -re:dir s)])
+			 (if prefix
+			     (loop (build-path path 
+					       (let ([p (cadr prefix)])
+						 (cond
+						  [(string=? p ".") 'same]
+						  [(string=? p "..") 'up]
+						  [else p])))
+				   (caddr prefix))
+			     (build-path path s))))]
+		    [(or (not (pair? s))
+			 (not (list? s)))
+		     #f]
+		    [(eq? (car s) 'lib)
+		     (let ([cols (let ([len (length s)])
+				   (if (= len 2)
+				       (list "mzlib")
+				       (if (> len 2)
+					   (cddr s)
+					   #f)))])
+		       (and cols
+			    (let ([p (-find-col 'standard-module-name-resolver (car cols) (cdr cols))])
 			  (build-path p (cadr s)))))]
-		[(eq? (car s) 'file)
-		 (and (= (length s) 2)
-		      (let ([p (cadr s)])
-			(path->complete-path p (get-dir))))]
-		[else #f])])
-	  (unless filename
-	    (raise-type-error 
-	     'standard-module-name-resolver
-	     "module selection"
-	     s))
-	  ;; At this point, filename is a complete path
-	  (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
-	    (let-values ([(base name dir?) (split-path filename)])
-	      (let ([no-sfx (regexp-replace -re:suffix name "")]
-		    [abase (format ",~a" base)])
-		(let ([modname (string->symbol (string-append abase no-sfx))]
-		      [ht (hash-table-get
-			   -module-hash-table-table
-			   (current-namespace)
-			   (lambda ()
-			     (let ([ht (make-hash-table)])
-			       (hash-table-put! -module-hash-table-table
-						(current-namespace)
-						ht)
-			       ht)))])
-		  ;; unless it has been loaded already...
-		  (unless (hash-table-get ht modname (lambda () #f))
-		    ;; Currently loading?
-		    (let ([l (continuation-mark-set->list
-			      (current-continuation-marks)
-			      -loading-filename)])
-		      (for-each
-		       (lambda (s)
-			 (when (string=? s filename)
-			   (error
-			    'standard-module-name-resolver
-			    "cycle in loading at ~e: ~e"
-			    filename
-			    l)))
-		       l))
-		    (hash-table-put! ht modname #t)
-		    (let ([prefix (string->symbol abase)])
-		      (with-continuation-mark -loading-filename filename
-			(parameterize ([current-module-name-prefix prefix])
-			  (load/use-compiled filename)))))
-		  ;; Result is the module name:
-		  modname))))))))
-
+		    [(eq? (car s) 'file)
+		     (and (= (length s) 2)
+			  (let ([p (cadr s)])
+			    (path->complete-path p (get-dir))))]
+		    [else #f])])
+	      (unless filename
+		(if stx
+		    (raise-syntax-error
+		     'standard-module-name-resolver
+		     "bad module path"
+		     stx)
+		    (raise-type-error 
+		     'standard-module-name-resolver
+		     "module path"
+		     s)))
+	      ;; At this point, filename is a complete path
+	      (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
+		(let-values ([(base name dir?) (split-path filename)])
+		  (let ([no-sfx (regexp-replace -re:suffix name "")]
+			[abase (format ",~a" base)])
+		    (let ([modname (string->symbol (string-append abase no-sfx))]
+			  [ht (hash-table-get
+			       -module-hash-table-table
+			       (current-namespace)
+			       (lambda ()
+				 (let ([ht (make-hash-table)])
+				   (hash-table-put! -module-hash-table-table
+						    (current-namespace)
+						    ht)
+				   ht)))])
+		      ;; unless it has been loaded already...
+		      (unless (hash-table-get ht modname (lambda () #f))
+			;; Currently loading?
+			(let ([l (continuation-mark-set->list
+				  (current-continuation-marks)
+				  -loading-filename)])
+			  (for-each
+			   (lambda (s)
+			     (when (string=? s filename)
+			       (error
+				'standard-module-name-resolver
+				"cycle in loading at ~e: ~e"
+				filename
+				l)))
+			   l))
+			(hash-table-put! ht modname #t)
+			(let ([prefix (string->symbol abase)])
+			  (with-continuation-mark -loading-filename filename
+			    (parameterize ([current-module-name-prefix prefix])
+			      (load/use-compiled filename)))))
+		      ;; Result is the module name:
+		      modname))))))
+	  ;; Just register relto as loaded
+	  (let ([ht (hash-table-get
+		     -module-hash-table-table
+		     (current-namespace)
+		     (lambda ()
+		       (let ([ht (make-hash-table)])
+			 (hash-table-put! -module-hash-table-table
+					  (current-namespace)
+					  ht)
+			 ht)))])
+	    (hash-table-put! ht relto #t)))))
+    
   (define (find-library-collection-paths)
     (path-list-string->path-list
      (or (getenv "PLTCOLLECTS") "")

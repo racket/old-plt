@@ -319,9 +319,6 @@ scheme_make_compiled_syntax(Scheme_Syntax *proc,
   SCHEME_SYNTAX(syntax) = (Scheme_Object *)proc;
   SCHEME_SYNTAX_EXP(syntax) = (Scheme_Object *)eproc;
 
-  if (!scheme_starting_up)
-    scheme_end_stubborn_change((void *)syntax);
-
   return syntax;
 }
 

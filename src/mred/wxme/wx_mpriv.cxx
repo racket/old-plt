@@ -46,7 +46,7 @@
 #include "wx_gcrct.h"
 
 /* Debugging: */
-#define CHECK_CONSISTENCY 0
+#define CHECK_CONSISTENCY 1
 #define LOOK_FOR_ZEROED 0
 #define PLOT_SNIP_DOT 0
 
@@ -1185,7 +1185,8 @@ void wxMediaEdit::CheckMergeSnips(long start)
       if (!(snip1->flags & wxSNIP_NEWLINE)
 	  && (snip1->flags & wxSNIP_CAN_APPEND) 
 	  && (snip2->flags & wxSNIP_CAN_APPEND)
-	  && (snip1->count + snip2->count < MAX_COUNT_FOR_SNIP)) {
+	  && (snip1->count + snip2->count < MAX_COUNT_FOR_SNIP)
+	  && PTREQ(snip1->line, snip2->line)) {
 	if (!snip1->count) {
 	  if (PTREQ(snip1->line->snip, snip1))
 	    snip1->line->snip = snip2;

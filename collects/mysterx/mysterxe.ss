@@ -1,10 +1,13 @@
 ;; mysterxe.ss
 
+(require-library "xml.ss" "xml")
+
 (unit/sig mysterx:mysterx^
   (import 
    mzlib:function^
    mzlib:string^
-   [mxprims : mysterx:prims^])	
+   [mxprims : mysterx:prims^]
+   [xml : xml^])	
 
   (define com-invoke mxprims:com-invoke)
   (define com-set-property! mxprims:com-set-property!)
@@ -33,6 +36,14 @@
   (define html-sem (make-semaphore 1))   ; protects HTML insertions
   (define html-wait (lambda () (semaphore-wait html-sem)))
   (define html-post (lambda () (semaphore-post html-sem)))
+
+  (define (xexp->string xexp)
+	  (lambda (xexp)
+	    (parameterize ([xml:empty-tag-shorthand #f])
+	      (let* ([port (open-output-string)]
+        	     [xml (xml:xexpr->xml xexp)])
+	        (xml:write-xml/content xml port)
+        	(get-output-string port)))))
 
   (define mx-element%
     (class object% (document dhtml-element)

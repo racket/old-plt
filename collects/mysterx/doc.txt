@@ -51,6 +51,17 @@ _MysterX_
  The xml collection provides procedures that convert Scheme
  syntax into XML strings.  You may find using these procedures 
  useful in creating HTML strings for use by MysterX. 
+
+ MysterX provides direct access to some of the XML collection
+ with the procedure xexp->string:
+
+> (xexp->string xexp)
+
+ Translates the X-expression `xexpr' to a string.  See the
+ XML collection for details of X-expressions.  This procedure
+ is useful with the methods insert-html, append-html, and 
+ replace-html of mx-document%, and the same-named methods 
+ of mx-element%.
  
  Documents
  ---------

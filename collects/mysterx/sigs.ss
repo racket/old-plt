@@ -2,6 +2,7 @@
 
 (define-signature mysterx:mysterx^
   (mx-document%
+   xexp->string
    com-invoke
    com-set-property!
    com-get-property

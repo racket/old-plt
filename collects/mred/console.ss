@@ -21,7 +21,7 @@
 	    [mzlib:function : mzlib:function^]
 	    [mzlib:string : mzlib:string^]
 	    [mzlib:pretty-print : mzlib:pretty-print^])
-	    
+
     (mred:debug:printf 'invoke "mred:console@")
 
     (define-struct sexp (left right prompt))
@@ -127,6 +127,132 @@
 	  (send oe change-style top 0 2)
 	  (send f show #t))))
 
+    (define separator-snipclass
+      (make-object
+       (class-asi wx:snip-class%
+	 (public
+	   [read (lambda (s) 
+		   (let ([size-box (box 0)])
+		     (send s get size-box)
+		     (make-object separator-snip%)))]))))
+    (send* separator-snipclass
+      (set-version 1)
+      (set-classname "mred:sepatator-snip%"))
+    (send (wx:get-the-snip-class-list) add separator-snipclass)
+
+
+    ;; the two numbers 1 and 2 which appear here are to line up this snip
+    ;; with the embedded snips around it in the drscheme rep.
+    ;; I have no idea where the extra pixels are going.
+    (define separator-snip%
+      (class wx:snip% ()
+	(inherit get-style set-snipclass set-flags get-flags get-admin)
+	(private [width 500]
+		 [height 1]
+		 [white-around 2])
+	(public
+	  [write (lambda (s) 
+		   (send s put (char->integer #\r)))]
+	  [copy (lambda () 
+		  (let ([s (make-object (object-class this))])
+		    (send s set-style (get-style))
+		    s))]
+	  [get-extent
+	   (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
+	     (for-each (lambda (box) (unless (null? box) (set-box! box 0)))
+		       (list descent-box space-box lspace-box rspace-box))
+	     (let* ([admin (get-admin)]
+		    [reporting-media (send admin get-media)]
+		    [reporting-admin (send reporting-media get-admin)]
+		    [widthb (box 0)]
+		    [space 2])
+	       (send reporting-admin get-view null null widthb null)
+	       (set! width (- (unbox widthb) 
+			      space
+			      2)))
+	     (set! height 1)
+	     (unless (null? w-box)
+	       (set-box! w-box width))
+	     (unless (null? h-box)
+	       (set-box! h-box (+ (* 2 white-around) height))))]
+	  [draw
+	   (let* ([body-pen (send wx:the-pen-list find-or-create-pen
+				  "BLUE" 0 wx:const-solid)]
+		  [body-brush (send wx:the-brush-list find-or-create-brush
+				    "BLUE" wx:const-solid)])
+	     (lambda (dc x y left top right bottom dx dy drawCaret)
+	       (let ([orig-pen (send dc get-pen)]
+		     [orig-brush (send dc get-brush)])
+		 (send dc set-pen body-pen)
+		 (send dc set-brush body-brush)
+		 
+		 (send dc draw-rectangle (+ x 1)
+		       (+ white-around y) width height)
+		 
+		 (send dc set-pen orig-pen)
+		 (send dc set-brush orig-brush))))]
+	  [get-text
+	   (opt-lambda (offset num [flattened? #f])
+	     "1")])
+	  (sequence
+	    (super-init)
+	    (set-flags (bitwise-ior (get-flags) wx:const-snip-hard-newline))
+	    (set-snipclass separator-snipclass))))
+
+    (define show-interactions-history
+      (let* ([cached-frame #f]
+	     [% (class mred:frame:simple-menu-frame% args
+		  (rename [super-do-close do-close])
+		  (public
+		    [do-close
+		     (lambda ()
+		       (set! cached-frame #f)
+		       (super-do-close))])
+		  (sequence
+		    (apply super-init args)
+		    (set! cached-frame this)))]
+	     [fixed-style (make-object wx:style-delta% wx:const-change-family wx:const-modern)]
+	     [update-edit
+	      (lambda (edit exprs)
+		(send* edit
+		  (begin-edit-sequence)
+		  (lock #f)
+		  (erase))
+		(wx:message-box (format "~a" (send edit last-position))
+				"last-position")
+		(for-each
+		 (lambda (lines)
+		   (let ([pos (send edit get-start-position)])
+		     (for-each
+		      (lambda (line/snip)
+			(send edit insert
+			      (if (string? line/snip)
+				  line/snip
+				  (send line/snip copy))
+			      pos
+			      pos))
+		      lines))
+		   (send edit insert #\newline)
+		   (send edit insert (make-object separator-snip%)))
+		 exprs)
+		(send* edit
+		  (change-style fixed-style 0 (send edit last-position))
+		  (lock #t)
+		  (end-edit-sequence)))]
+	     [callback
+	      (lambda (p v)
+		(when cached-frame
+		  (update-edit (send cached-frame get-edit) v)))])
+	(mred:preferences:add-preference-callback 'mred:console-previous-exprs
+						  callback)
+	(lambda ()
+	  (if cached-frame
+	      (send cached-frame show #t)
+	      (let* ([f (make-object % "Console History")]
+		     [e (send f get-edit)])
+		(update-edit e (mred:preferences:get-preference 'mred:console-previous-exprs))
+		(send f show #t))))))
+
     (define make-scheme-mode-edit%
       (lambda (super%)
 	(class super% args
@@ -213,8 +339,6 @@
 	    [orig-stdout (current-output-port)]
 	    [orig-stderr (current-error-port)])
 	  (public
-	    [CACHE-TIME 3]
-	    [CACHE-WRITE-COUNT 300]
 	    
 	    [normal-font wx:const-modern]
 	    [normal-delta null]
@@ -464,9 +588,13 @@
 			    (car l)
 			    (last-str (cdr l))))]
 	    [timer-on #f]
-	    [timer-sema (make-semaphore 1)]
-	    [timer-writes 0])
+	    [timer-sema (make-semaphore 1)])
 	  (public
+	    [MAX-CACHE-TIME 4000]
+	    [MIN-CACHE-TIME 100]
+	    [CACHE-TIME MIN-CACHE-TIME]
+	    [TIME-FACTOR 10]
+
 	    [generic-write
 	     (let ([first-time? #t])
 	       (lambda (s style-func)
@@ -476,7 +604,6 @@
 			   (lambda ()
 			     (let ([start (last-position)]
 				   [c-locked? locked?])
-			       (begin-edit-sequence)
 			       (lock #f)
 			       (insert (if (is-a? s wx:snip%)
 					   (send s copy)
@@ -484,45 +611,50 @@
 			       (let ((end (last-position)))
 				 (change-style () start end)
 				 (style-func start end)
-				 (lock c-locked?)
-				 (end-edit-sequence))))])
+				 (lock c-locked?))))])
 		      (if first-time?
 			  (begin
 			    (set! first-time? #f)
-			    (handle-insertion))
+			    (semaphore-wait timer-sema)
+			    (begin-edit-sequence #f)
+			    (handle-insertion)
+			    (end-edit-sequence)
+			    (semaphore-post timer-sema))
 			  (begin
 			    (semaphore-wait timer-sema)
 			    (if timer-on
-				(begin
-				  (set! timer-writes (add1 timer-writes))
-				  (when (> timer-writes CACHE-WRITE-COUNT)
-				    (end-edit-sequence)
-				    (begin-edit-sequence #f)
-				    (set! timer-writes 0)))
-				(begin
-				  (set! timer-writes 0)
-				  (let ([on-box (box #t)])
-				    (begin-edit-sequence #f)
-				    (set! timer-on on-box)
-				    (thread 
-				     (lambda ()
-				       (dynamic-wind
-					void
-					(lambda ()
-					  (sleep CACHE-TIME))
-					(lambda ()
-					  (semaphore-wait timer-sema)
-					  (when (unbox on-box)
-					    (end-edit-sequence)
-					    (set! timer-on #f))
-					  (semaphore-post timer-sema))))))))
-			    (semaphore-post timer-sema)
+				(void)
+				(let ([on-box (box #t)])
+				  (begin-edit-sequence #f)
+				  (set! timer-on on-box)
+				  (thread 
+				   (lambda ()
+				     (dynamic-wind
+				      void
+				      (lambda ()
+					(sleep (/ CACHE-TIME 1000.)))
+				      (lambda ()
+					(semaphore-wait timer-sema)
+					(when (unbox on-box)
+					  (let* ([start (current-milliseconds)]
+						 [_ (end-edit-sequence)]
+						 [end (current-milliseconds)]
+						 [new-cache-time
+						  (* TIME-FACTOR (- end start))]
+						 [between
+						  (min (max MIN-CACHE-TIME
+							    new-cache-time)
+						       MAX-CACHE-TIME)])
+					    (set! CACHE-TIME between)
+					    (set! timer-on #f)))
+					(semaphore-post timer-sema)))))))
 			    (begin-edit-sequence #f)
 			    (set-position (last-position))
 			    (when (and prompt-mode? autoprompting?)
 			      (insert #\newline))
 			    (handle-insertion)
 			    (end-edit-sequence)
+			    (semaphore-post timer-sema)
 			    (set-prompt-mode #f))))))))]
 	    [generic-close (lambda () '())]
 	    [flush-console-output
@@ -532,6 +664,7 @@
 		 (end-edit-sequence)
 		 (set-box! timer-on #f)
 		 (set! timer-on #f))
+	       (set! CACHE-TIME MIN-CACHE-TIME)
 	       (semaphore-post timer-sema))])
 	  
 	  (public
@@ -556,7 +689,7 @@
 		(lambda ()
 		  (parameterize ([current-output-port orig-stdout]
 				 [current-error-port orig-stderr])
-	            (init-transparent-io #f)
+		    (init-transparent-io #f)
 		    (send transparent-edit 
 			  generic-write s 
 			  (lambda (start end)
@@ -987,22 +1120,34 @@
 					   (current-output-port this-out)
 					   (current-input-port this-in)
 					   (current-error-port this-err)
-					   (mzlib:pretty-print:pretty-print-display-string-handler 
-					    (lambda (string port)
-					      (for-each (lambda (x) (write-char x port))
-							(string->list string))))
+					   '(mzlib:pretty-print:pretty-print-display-string-handler 
+                                            (lambda (string port)
+                                              (for-each (lambda (x) (write-char x port))
+                                                        (string->list string))))
 					   (for-each (lambda (port port-out-write)
-						       (let ([handler-maker
-							      (lambda (pretty)
+						       (let ([original-write-handler (port-write-handler port)]
+							     [original-display-handler (port-display-handler port)]
+							     [handler-maker
+							      (lambda (pretty original)
 								(lambda (v p)
-								  (parameterize 
-								      ([mzlib:pretty-print:pretty-print-size-hook
-									(lambda (x _ port) (and (is-a? x wx:snip%) 1))]
-								       [mzlib:pretty-print:pretty-print-print-hook
-									(lambda (x _ port) (port-out-write x))])
-								    (pretty v p 'infinity))))])
-							 (port-write-handler port (handler-maker mzlib:pretty-print:pretty-print))
-							 (port-display-handler port (handler-maker mzlib:pretty-print:pretty-display))))
+								  (if (or (string? v) 
+									  (char? v)
+									  (number? v)
+									  (symbol? v))
+								      (original v p)
+								      (parameterize ([mzlib:pretty-print:pretty-print-size-hook
+										      (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
+										     [mzlib:pretty-print:pretty-print-print-hook
+										      (lambda (x _ port) (port-out-write x))])
+									(pretty v p 'infinity)))))])
+							 (port-display-handler 
+							  port
+							  (handler-maker mzlib:pretty-print:pretty-display 
+									 original-display-handler))
+							 (port-write-handler 
+							  port  
+							  (handler-maker mzlib:pretty-print:pretty-print
+									 original-write-handler))))
 						     (list this-out this-err this-result)
 						     (list this-out-write this-err-write this-result-write)))])
 				    (doit)
@@ -1158,7 +1303,8 @@
 		       [insert-welcome? #t]
 		       [show? #t])
 	  (inherit active-edit get-edit get-canvas show make-menu)
-	  (rename [super-on-close on-close])
+	  (rename [super-can-close? can-close?]
+		  [super-file-menu:close file-menu:close])
 	  (private 
 	    edit-offset 
 	    other-offset)
@@ -1166,9 +1312,9 @@
 	    [get-canvas% (lambda () mred:canvas:wide-snip-canvas%)]
 	    [get-edit% (lambda () console-edit%)])
 	  (public 
-	    [on-close 
+	    [can-close?
 	     (lambda ()
-	       (and (super-on-close)
+	       (and (super-can-close?)
 		    (mred:exit:exit)))]
 	    [next-menu-id (lambda () other-offset)]
 	    [load-file
@@ -1178,8 +1324,8 @@
 
 	    [file-menu:revert #f]
 	    [file-menu:close (and close-item?
-				  (lambda () (when (on-close)
-					       (show #f))))]
+				  (lambda () 
+				    (super-file-menu:close)))]
 	    [file-menu:between-open-and-save
 	     (lambda (file-menu)
 	       (send file-menu append-item "&Load Scheme File..."
@@ -1187,6 +1333,7 @@
 		       (let ((file (mred:finder:get-file)))
 			 (if file
 			     (load-file file)))))
+	       (send file-menu append-item "Show Console History..." show-interactions-history)
 	       (send file-menu append-separator))])
 	  
 	  (sequence

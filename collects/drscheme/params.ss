@@ -1,64 +1,57 @@
-(unit/sig drscheme:parameters^
+(unit/sig drscheme:get/extend^
   (import [mred : mred^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:frame : drscheme:frame^]
-	  [drscheme:rep : drscheme:rep^])
+	  [drscheme:rep : drscheme:rep^]
+	  [mzlib : mzlib:core^])
 
-  (define make-parameter
-    (lambda (x g)
-      (case-lambda
-       [() x]
-       [(n) (if (g n)
-		(set! x n)
-		(error 'parameter "value: ~a failed guard" n))])))
 
-  (define current-interactions-canvas%
-    (make-parameter drscheme:unit:interactions-canvas%
-		    (lambda (x)
-		      (if (subclass? x wx:media-canvas%)
-			  x
-			  (error 'current-interactions-canvas%
-				 "expected a subclass of wx:media-canvas%, got: ~a"
-				 x)))))
-
-  (define current-definitions-canvas%
-    (make-parameter drscheme:unit:definitions-canvas%
-		    (lambda (x)
-		      (if (subclass? x wx:media-canvas%)
-			  x
-			  (error 'current-definitions-canvas%
-				 "expected a subclass of wx:media-canvas%, got: ~a"
-				 x)))))  
-
-  (define current-frame%
-    (make-parameter 
-     drscheme:unit:frame%
-     (lambda (x)
-       (if (subclass? x wx:frame%)
-	   x
-	   (error 'current-frame%
-		  "expected a subclass of wx:frame%, got: ~a"
-		  x)))))
-
-  (define current-interactions-edit%
-    (begin (make-parameter 
-	    drscheme:rep:edit%
-	    (lambda (x)
-	      (if (subclass? x wx:media-edit%)
-		  x
-		  (error 'current-interactions-edit% 
-			 "expected a subclass of wx:edit%, got: ~a"
-			 x))))
-	   (opt-lambda ([x #f])
-	     drscheme:rep:edit%)))
-	     
-
-  (define current-definitions-edit%
-    (make-parameter 
-     drscheme:unit:definitions-edit%
      (lambda (x)
        (if (subclass? x wx:media-edit%)
 	   x
 	   (error 'current-definitions-edit% 
 		  "expected a subclass of wx:edit%, got: ~a"
-		  x))))))
+		  x)))
+
+  (define make-extender
+    (lambda (base%)
+      (let ([extensions (lambda (x) x)]
+	    [built-yet? #f]
+	    [built #f]
+	    [verify
+	     (lambda (f)
+	       (lambda (%)
+		 (let ([new% (f %)])
+		   (if (and (class? new%)
+			    (subclass? new% %))
+		       new%
+		       (error 'extend-% "expected output of extension to create a subclass of its input, got: ~a"
+			      new%)))))])
+	(values
+	 (lambda (extension)
+	   (when built-yet?
+	     (error 'extender "cannot build a new extension of ~a after initialization"
+		    base%))
+	   (set! extensions (mzlib:function@:compose 
+			     (verify extension)
+			     extensions)))
+	 (lambda ()
+	   (unless built-yet?
+	     (set! built-yet? #t)
+	     (set! built (extensions base%)))
+	   built)))))
+
+  (define-values (extend-interactions-canvas% get-interactions-canvas%)
+    (make-extender drscheme:unit:interactions-canvas%))
+
+  (define-values (extend-definitions-canvas% get-definitions-canvas%)
+    (make-extender drscheme:unit:definitions-canvas%))  
+
+  (define-values (extend-unit-frame% get-unit-frame%)
+    (make-extender drscheme:unit:frame%))
+
+  (define-values (extend-interactions-edit% get-interactions-edit%)
+    (make-extender drscheme:rep:edit%))
+	     
+  (define-values (extend-definitions-edit% get-definitions-edit%)
+    (make-extender drscheme:unit:definitions-edit%)))

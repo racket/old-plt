@@ -1,14 +1,15 @@
-  (unit/sig ()
-    (import [mred : mred^]
-            mzlib:core^
-            mzlib:print-convert^
-            (drscheme : drscheme:export^)
-            drscheme:zodiac^)
-
-    (define rep-thread #f)
-
-    (drscheme:parameters:current-frame%
-     (class (drscheme:parameters:current-frame%) args
+(unit/sig ()
+  (import [mred : mred^]
+	  mzlib:core^
+	  mzlib:print-convert^
+	  (drscheme : drscheme:export^)
+	  drscheme:zodiac^)
+  
+  (define rep-thread #f)
+  
+  (drscheme:get/extend:extend-unit-frame%
+   (lambda (super%)
+     (class super% args
        (inherit button-panel)
        (sequence (apply super-init args))
        (private
@@ -36,4 +37,4 @@
        (sequence
 	 (send button-panel change-children
 	       (lambda (l)
-		 (cons button (function@:remq button l))))))))
+		 (cons button (function@:remq button l)))))))))

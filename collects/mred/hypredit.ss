@@ -559,21 +559,21 @@
 	     (lambda (pos)
 	       (call/cc
 		(lambda (break)
-		  (add-tag  (let ([name (wx:get-text-from-user
-					 "Enter a name for this tag." "Tag Name")])
-			      (if (null? name)
-				  (break #f)
-				  name))
+		  (add-tag  (let ([name (mred:gui-utils:get-text-from-user
+					 "Enter a name for this tag." 
+					 "Tag Name")])
+			      (or name
+				  (break #f)))
 			    pos))))]
 	    [do-edit
 	     (lambda (op)
 	       (if (= op wx:const-edit-insert-image)
 		   (let ([filename
-			  (wx:get-text-from-user
+			  (mred:gui-utils:get-text-from-user
 			   "Enter the relative path name for the image file"
 			   "File Name")])
-		     (if (string? filename)
-			 (insert-image filename -1 #t)))
+		     (when (string? filename)
+		       (insert-image filename -1 #t)))
 		   (super-do-edit op)))]
 	    [load-file 
 	     (opt-lambda ([filename ()]

@@ -1,26 +1,34 @@
-(unit/sig drscheme:interfaces^
-  (import)
+(unit/sig drscheme:face^
+  (import [mred : mred^])
+  
+  (mred:debug:printf 'invoke "drscheme:face@")
   
   (define unitI (interface ()
-		  get-snips
-		  create-snip
-		  get-frame
-		  create-frame
-		  
 		  get-filename
+		  get-collections
 
-		  add-child
-		  add-parent
-		  remove-child
-		  remove-parent
-		  get-children
-		  get-parents
-		  
 		  get-name
-		  set-name))
+		  set-name
+
+		  get-snips
+		  get-frame
+		  create-snip
+		  create-frame
+		  frame-closed
+		  remove-snip
+		  
+		  get-imports
+		  get-exports
+		  add-import
+		  add-export
+		  remove-import
+		  remove-export))
+
   
-  (define compound-unitI (interface (unitI)
-			   get-sub-units))
+  (define snipInfoI (interface ()
+		      get-name))
+
+  (define compound-unitI (interface (unitI)))
   
   (define unit-displayI (interface ()
 			  after-change-name
@@ -31,7 +39,7 @@
 			  get-unit))
 
   (define unit-frameI (interface (unit-displayI)))
-  (define unit-snipI (interface (unit-snipI)))
-  (define compound-unit-frameI (interface (unit-displayI)))
+  (define unit-snipI (interface (unit-displayI)))
+  (define compound-unit-frameI (interface (unit-frameI)))
   (define compound-unit-snipI (interface (unit-snipI))))
 				

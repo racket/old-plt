@@ -4,6 +4,7 @@
     (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:hyper-edit : mred:hyper-edit^]
+	    [mred:gui-utils : mred:gui-utils^]
 	    [mzlib:file : mzlib:file^])
 	    
     (mred:debug:printf 'invoke "mred:hyper-dialog@")
@@ -34,9 +35,12 @@
 		 (show #f))]
 	      [do-other
 	       (lambda (button event)
-		 (let ([tag-str (wx:get-text-from-user "Enter the tag name:" "Tag Name"
-						       "" this)])
-		   (unless (null? tag-str)
+		 (let ([tag-str (mred:gui-utils:get-text-from-user
+				 "Enter the tag name:" 
+				 "Tag Name"
+				 ""
+				 this)])
+		   (when tag-str
 		     (set! result tag-str)
 		     (show #f))))])
 	     (sequence

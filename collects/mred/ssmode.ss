@@ -7,6 +7,7 @@
     (import mred:wx^
 	    [mred:constants : mred:constants^]
 	    [mred:preferences : mred:preferences^]
+	    [mred:gui-utils : mred:gui-utils^]
 	    [mred:application : mred:application^]
 	    [mred : mred:container^]
 	    [mred:mode : mred:mode^]
@@ -51,12 +52,14 @@
 			   define-values
 			   define-signature define-syntax define-schema))
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'begin))
-			'(cond begin begin0 delay
-			       public private
-			       inherit inherit-from
-			       rename rename-from
-			       share share-from
-			       sequence))
+			'(cond 
+			   begin begin0 delay
+			   unit compound-unit compound-unit/sig
+			   public private
+			   inherit inherit-from
+			   rename rename-from
+			   share share-from
+			   sequence))
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'lambda))
 			'(lambda let let* letrec letrec* recur
 			   let/cc let/ec letcc catch
@@ -68,8 +71,9 @@
 			   class class* class-asi class-asi*
 			   define-some do opt-lambda send*
 			   local catch shared
-			   unit unit/sig compound-unit compound-unit/sig
+			   unit/sig
 			   with-handlers with-parameterization
+			   interface
 			   parameterize
 			   call-with-input-file with-input-from-file
 			   with-input-from-port call-with-output-file
@@ -102,10 +106,10 @@
 	(let* ([add-callback
 		   (lambda (keyword-type keyword-symbol list-box)
 		     (lambda (button command)
-		       (let ([new-one (wx:get-text-from-user 
+		       (let ([new-one (mred:gui-utils:get-text-from-user 
 				       (string-append "Enter new " keyword-type "-like keyword:")
 				       (string-append keyword-type " Keyword"))])
-			 (unless (null? new-one)
+			 (when new-one
 			   (let ([parsed (with-handlers ((exn:read? (lambda (x) #f)))
 					   (read (open-input-string new-one)))])
 			     (cond
@@ -234,8 +238,8 @@
 	       (send backward-cache invalidate start)
 	       (send forward-cache forward-invalidate start size)
 	       (send edit end-edit-sequence)
-	       (mred:debug:printf 'highlight-range "highlighting from after-insert")
 	       (highlight-parens edit)
+	       (mred:debug:printf 'highlight-range "highlighting from after-insert")
 	       #t)]
 	    [on-delete
 	     (lambda (edit start size)
@@ -273,7 +277,12 @@
 	  (public
 	    [highlight-parens
 	     (let* ([clear-old-location void]
-		    [color (make-object wx:colour% 192 192 192)])
+		    [old-gray-level 192]
+		    [gray-level (- (* 7/8 256) 1)]
+		    [color (make-object wx:colour% 
+					gray-level 
+					gray-level
+					gray-level)])
 	       (opt-lambda (edit [just-clear? #f])
 		 (mred:debug:printf 'highlight-range "highlight-parens; suspend-highlight?: ~a highlight-parens?: ~a just-once: ~a"
 				    suspend-highlight? highlight-parens? just-once)

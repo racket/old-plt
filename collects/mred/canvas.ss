@@ -4,9 +4,13 @@
 	    [mred:container : mred:container^]
 	    [mred:edit : mred:edit^]
 	    [mred:preferences : mred:preferences^]
-	    [mzlib:file : mzlib:file^])
+	    [mzlib:file : mzlib:file^]
+	    [mzlib:function : mzlib:function^])
 	    
     (mred:debug:printf 'invoke "mred:canvas@")
+
+    (define-struct range (start end b/w-bitmap color))
+    (define-struct rectangle (left top width height b/w-bitmap color))
 
     (define make-wrapping-canvas%
       (lambda (super%)
@@ -64,8 +68,6 @@
 			    (make-initial-edit)
 			    m))))))
 
-    (define wrapping-canvas% (make-wrapping-canvas% mred:container:media-canvas%))
-
     (define make-frame-title-canvas%
       (lambda (super%)
 	(class super% args
@@ -113,8 +115,6 @@
 	  (sequence
 	    (apply super-init args)))))
 
-    (define frame-title-canvas% (make-frame-title-canvas% wrapping-canvas%))
-    
     (define make-one-line-canvas%
       (lambda (super%)
 	(class super% (parent [x -1] [y -1] [w -1] [h -1] 
@@ -158,39 +158,6 @@
 	  (sequence
 	    (super-init parent x y w h name style spp m)
 	    (update-size (get-media))))))
-    
-    (define one-line-canvas% (make-one-line-canvas% wrapping-canvas%))
-    
-    (define number-control%
-      (class one-line-canvas% args
-	(private
-	  [number 0]
-	  [edit%
-	   (class-asi mred:edit:edit%
-	     (inherit get-text delete)
-	     (rename [super-after-insert after-insert])
-	     (public
-	       [after-insert
-		(lambda (start len)
-		  (super-after-insert start len)
-		  (let ([s (string->number (get-text))])
-		    (if s 
-			(set! number s)
-			(delete start (+ start len)))))]))])
-	(public
-	  [get-number (lambda () number)]
-	  [set-number (lambda (n) 
-			(when (number? n)
-			  (set! number n)
-			  (send edit clear)
-			  (send edit insert (number->string n))))])
-	(sequence
-	  (apply super-init args))
-	(private
-	  [edit (make-object edit%)])
-	(inherit set-media)
-	(sequence (send edit insert (number->string number))
-		  (set-media edit))))
 
     (define make-wide-snip-canvas%
       (lambda (super%)
@@ -243,5 +210,39 @@
 	     (lambda (width height)
 	       (super-on-size width height)
 	       (for-each update-snip-size snips))]))))
-			   
-    (define wide-snip-canvas% (make-wide-snip-canvas% wrapping-canvas%)))
+
+    (define wrapping-canvas% (make-wrapping-canvas% mred:container:media-canvas%))
+    (define frame-title-canvas% (make-frame-title-canvas% wrapping-canvas%))
+    (define one-line-canvas% (make-one-line-canvas% wrapping-canvas%))
+    (define wide-snip-canvas% (make-wide-snip-canvas% wrapping-canvas%))
+    
+    (define number-control%
+      (class one-line-canvas% args
+	(private
+	  [number 0]
+	  [edit%
+	   (class-asi mred:edit:edit%
+	     (inherit get-text delete)
+	     (rename [super-after-insert after-insert])
+	     (public
+	       [after-insert
+		(lambda (start len)
+		  (super-after-insert start len)
+		  (let ([s (string->number (get-text))])
+		    (if s 
+			(set! number s)
+			(delete start (+ start len)))))]))])
+	(public
+	  [get-number (lambda () number)]
+	  [set-number (lambda (n) 
+			(when (number? n)
+			  (set! number n)
+			  (send edit clear)
+			  (send edit insert (number->string n))))])
+	(sequence
+	  (apply super-init args))
+	(private
+	  [edit (make-object edit%)])
+	(inherit set-media)
+	(sequence (send edit insert (number->string number))
+		  (set-media edit)))))

@@ -29,19 +29,17 @@
        (build-path (collection-path "icons") "mrspidey.bmp")
        "Analyze"))
 
-    (define spidey-frame%
-      (letrec ()
-	(class (drscheme:parameters:current-frame%) args
-	  (inherit button-panel)
-	  (sequence (apply super-init args))
-	  (private
-	    [button (make-object mred:button%
-				 button-panel
-				 (lambda (button evt) (invoke-spidey this))
-				 spidey-bitmap)])
-	  (sequence
-	    (send button-panel change-children
-		  (lambda (l)
-		    (cons button (function@:remq button l))))))))
-
-    (drscheme:parameters:current-frame% spidey-frame%))
+    (drscheme:get/extend:extend-unit-frame%
+     (lambda (super%)
+       (class super% args
+	 (inherit button-panel)
+	 (sequence (apply super-init args))
+	 (private
+	   [button (make-object mred:button%
+				button-panel
+				(lambda (button evt) (invoke-spidey this))
+				spidey-bitmap)])
+	 (sequence
+	   (send button-panel change-children
+		 (lambda (l)
+		   (cons button (function@:remq button l)))))))))

@@ -21,11 +21,15 @@
 	    [active-frame #f]
 	    [frame-counter 0]
 	    [frames null]
-	    [todo-to-new-frames void])
+	    [todo-to-new-frames void]
+	    [empty-close-down (lambda () (void))]
+	    [empty-test (lambda () #t)])
 	  
 	  (public
-	    [empty-callback (lambda () #f)]
-	    [set-empty-callback (lambda (x) (set! empty-callback x))]
+	    [set-empty-callbacks 
+	     (lambda (test close-down) 
+	       (set! empty-test test)
+	       (set! empty-close-down close-down))]
 	    [get-frames (lambda () (map frame-frame frames))]
 	    [frame% mred:editor-frame:editor-frame%]
 	    [get-frame% (lambda () frame%)]
@@ -53,27 +57,31 @@
 		 (set! frames new-frames))
 	       (todo-to-new-frames f))]
 
+	    [can-remove-frame?
+	     (opt-lambda (f)
+	       (let ([new-frames 
+		      (mzlib:function:remove
+		       f frames
+		       (lambda (f fr) (eq? f (frame-frame fr))))])
+		 (if (null? new-frames)
+		     (empty-test)
+		     #t)))]
 	    [remove-frame
-	     (opt-lambda (f [reason "Close"])
+	     (opt-lambda (f)
 	       (when (eq? f active-frame)
 		 (set! active-frame #f))
 	       (let ([new-frames
 		      (mzlib:function:remove
 		       f frames
 		       (lambda (f fr) (eq? f (frame-frame fr))))])
-		 (let ([allow-changes
-			(lambda ()
-			  (set! frames new-frames)
-			  #t)])
-		   (if (null? new-frames)
-		       (if (empty-callback)
-			   (allow-changes)
-			   #f)
-		       (allow-changes)))))]
+		 (set! frames new-frames)
+		 (when (null? frames)
+		   (empty-close-down))))]
 	    [clear
 	     (lambda ()
-	       (and (empty-callback)
+	       (and (empty-test)
 		    (begin (set! frames null)
+			   (empty-close-down)
 			   #t)))]
 	    [close-all
               (lambda ()
@@ -123,7 +131,6 @@
 
     (define the-frame-group (make-object frame-group%))
     
-
     (define at-most-one-maker
       (lambda ()
 	(let ([s (make-semaphore 1)]
@@ -143,13 +150,14 @@
 
     (define at-most-one (at-most-one-maker))
 
-    (send the-frame-group set-empty-callback
-	  (lambda ()
-	    (at-most-one
-	     #t
-	     (lambda ()
-	       (mred:exit:exit)
-	       #f))))
+    (send the-frame-group set-empty-callbacks
+	  (lambda () 
+	    (at-most-one #t
+			 (lambda ()
+			   (mred:exit:run-exit-callbacks))))
+	  (lambda () 
+	    (at-most-one (void) 
+			 (lambda () (mred:exit:exit #t)))))
 
     (mred:exit:insert-exit-callback
      (lambda ()

@@ -15,7 +15,7 @@
 
     (define get-image-from-url
       (lambda (url)
-	(let ([tmp-filename (wx:get-temp-file-name "img")])
+	(let ([tmp-filename (wx:get-temp-file-name "mredimg")])
 	  (call-with-output-file tmp-filename
 	    (lambda (op)
 	      (mred:url:call/input-url 
@@ -34,7 +34,7 @@
 			   wx:const-bitmap-type-xbm
 			   wx:const-bitmap-type-gif)])
 	    (begin0 (make-object wx:image-snip% tmp-filename kind)
-		    '(delete-file tmp-filename))))))
+		    (delete-file tmp-filename))))))
 			    
     (define cache-image
       (lambda (url)

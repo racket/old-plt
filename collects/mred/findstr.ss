@@ -24,6 +24,7 @@
 		      in-edit)]
 	    [allow-carriage-returns #f])
 
+	  (rename [super-on-close on-close])
 	  (public
 	    [finder-keymap
 	     (lambda (edit)
@@ -69,8 +70,8 @@
 	    
 	    [on-close
 	     (lambda ()
-	       (send canvas force-display-focus #f)
-	       #t)]
+	       (begin (send canvas force-display-focus #f)
+		      #t))]
 	    
 	    [show-replace-panel
 	     (lambda (on?)

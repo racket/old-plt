@@ -2,10 +2,18 @@
   (import [I : mred:application-imports^]
 	  [mred : mred^]
 	  [print-convert : mzlib:print-convert^]
+	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
-	  [drscheme:parameters : drscheme:parameters^])
+	  [drscheme:get/extend : drscheme:get/extend^])
   
   (mred:add-version-spec 'd 1)
+  
+  ;; no more extension after this point
+  (drscheme:get/extend:get-interactions-canvas%)
+  (drscheme:get/extend:get-definitions-canvas%)
+  (drscheme:get/extend:get-unit-frame%)
+  (drscheme:get/extend:get-interactions-edit%)
+  (drscheme:get/extend:get-definitions-edit%)
   
   (print-convert:current-print-convert-hook
    (lambda (expr basic-convert sub-convert)
@@ -14,10 +22,13 @@
 	 (basic-convert expr))))
 
   '(define (make-basic)
-    (make-object drscheme:compound-unit:frame% #f #f))
+    (send (drscheme:compound-unit:make-compound-unit #f)
+	  create-frame))
 
   (define (make-basic)
-    (let ([frame (make-object (drscheme:parameters:current-frame%) #f #f)])
+    (let* ([unit (drscheme:unit:make-unit #f)]
+	   [_ (send unit create-frame #f)]
+	   [frame (send unit get-frame)])
       (unless (mred:get-preference 'drscheme:repl-always-active)
 	(let* ([interactions-edit (ivar frame interactions-edit)]
 	       [definitions-edit (ivar frame interactions-edit)]

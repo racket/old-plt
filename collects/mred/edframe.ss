@@ -25,7 +25,7 @@
 	  (inherit make-menu show save-as
 		   make-edit active-edit
 		   get-edit get-canvas)
-	  (rename [super-on-close on-close]
+	  (rename [super-can-close? can-close?]
 		  [super-make-menu-bar make-menu-bar]
 		  [super-on-menu-command on-menu-command]
 		  [super-next-menu-id next-menu-id])
@@ -52,8 +52,9 @@
 			     (send (active-edit) set-mode mode))))))
 	       (send file-menu append-separator))]
 	    [check-saved
-	     (opt-lambda (edit [reason "Close"])
-	       (let* ([name (send edit get-filename)]
+	     (opt-lambda ([reason "Close"])
+	       (let* ([edit (get-edit)]
+		      [name (send edit get-filename)]
 		      [name (if (string? name)
 				name
 				"Untitled")])
@@ -84,7 +85,7 @@
 	       ; filename = #f => no file, make untitled
 	       ; filename = <buffer> => use buffer
 	       ; otherwise, filename = name string
-	       (if (check-saved (send canvas get-media))
+	       (if (check-saved)
 		   (let* ([filename
 			   (if (null? orig-filename)
 			       (mred:finder:get-file)
@@ -134,17 +135,10 @@
 					    #t)]
 		 [else (super-on-menu-command op)]))]
 	    
-	    [check-all-saved-for-quit
-	     (lambda () 
-	       (check-all-saved "Quit"))]
-	    [check-all-saved
-	     (opt-lambda ([reason "Close"])
-	       (check-saved (get-edit) reason))]
-	    
-	    [on-close
+	    [can-close?
 	     (lambda ()
-	       (and (check-all-saved)
-		    (super-on-close)))])
+	       (and (check-saved)
+		    (super-can-close?)))])
 	  (public
 	    [get-edit% (lambda () mred:edit:backup-autosave-edit%)])
 

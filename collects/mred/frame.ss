@@ -53,10 +53,19 @@
 	       (unless (member this (send mred:group:the-frame-group get-frames))
 		 (send mred:group:the-frame-group insert-frame this)))
 	     (super-show on?))]
+	  [can-close? (lambda () (send mred:group:the-frame-group
+				       can-remove-frame?
+				       this))]
+	  [do-close (lambda () (send mred:group:the-frame-group
+				     remove-frame
+				     this))]
 	  [on-close
 	   (lambda ()
-	     (and (send mred:group:the-frame-group remove-frame this)
-		  (super-on-close)))])
+	     (if (and (super-on-close)
+		      (can-close?))
+		 (begin (do-close)
+			#t)
+		 #f))])
 	(sequence 
 	  (mred:debug:printf 'super-init "before empty-frame%")
 	  (apply super-init args)
@@ -329,7 +338,7 @@
 	(class super% ([name mred:application:app-name])
 	  (inherit panel get-client-size set-icon get-menu-bar
 		   make-menu show active-edit active-canvas)
-	  (rename [super-on-close on-close]
+	  (rename [super-can-close? can-close?]
 		  [super-make-menu-bar make-menu-bar]
 		  [super-set-title set-title])
 	  (public
@@ -337,10 +346,10 @@
 	    [HEIGHT frame-height])
 	  
 	  (public
-	    [on-close
+	    [can-close?
 	     (lambda ()
-	       (and (send (get-edit) on-close)
-		    (super-on-close)))])
+	       (and (send (get-edit) do-close)
+		    (super-can-close?)))])
 
 	  (public
 	    [get-panel%  (lambda () mred:panel:vertical-edit-panel%)]
@@ -391,14 +400,15 @@
 	     (lambda () 
 	       (let* ([b (box #f)]
 		      [edit (get-edit)]
-		      [filename (send edit get-filename b)]
-		      [start (send edit get-start-position)]
-		      [end (send edit get-end-position)])
+		      [filename (send edit get-filename b)])
 		 (if (or (null? filename) (unbox b))
 		     (wx:bell)
 		     (begin (send edit begin-edit-sequence)
 			    (send edit load-file filename)
-			    (send edit set-position start end)
+			    (when (is-a? edit wx:media-edit%)
+			      (let ([start (send edit get-start-position)]
+				    [end (send edit get-end-position)])
+				(send edit set-position start end)))
 			    (send edit end-edit-sequence)))
 		 #t))]
 	    [file-menu:save (lambda ()
@@ -520,11 +530,18 @@
 	    (mred:debug:printf 'super-init "after simple-frame%"))
 	  
 	  (public
-	    [get-canvas (let ([c (make-object (get-canvas%) panel)])
-			  (lambda () c))]
-	    [get-edit (let ([e (make-edit)]) 
-			(send (get-canvas) set-media e)
-			(lambda () e))])
+	    [get-canvas (let ([c #f])
+			  (lambda () 
+			    (unless c
+			      (set! c (make-object (get-canvas%) panel))
+			      (send c set-media (get-edit)))
+			    c))]
+	    [get-edit (let ([e #f])
+			(lambda () 
+			  (unless e 
+			    (set! e (make-edit))
+			    (send (get-canvas) set-media e))
+			  e))])
 	  (sequence
 	    (let ([icon (mred:icon:get-icon)])
 	      (when (send icon ok?)
@@ -667,7 +684,7 @@
 	    (inherit active-edit active-canvas get-edit)
 	    (rename [super-make-root-panel make-root-panel]
 		    [super-on-activate on-activate]
-		    [super-on-close on-close])
+		    [super-do-close do-close])
 	    (private
 	      [super-root 'unitiaialized-super-root])
 	    (public
@@ -702,21 +719,19 @@
 	       (lambda ()
 		 (set! hidden? #f)
 		 (send super-root add-child search-panel)
-		 (reset-anchor (get-edit-to-search))
-		 (send search-panel set-focus))])
+		 (reset-anchor (get-edit-to-search)))])
 	    (public
-	      [on-close
+	      [do-close
 	       (lambda ()
-		 (and (super-on-close)
-		      (begin (let ([close-canvas
-				    (lambda (canvas edit)
-				      (send edit remove-canvas canvas)
-				      (send canvas set-media ()))])
-			       (close-canvas find-canvas find-edit)
-			       (close-canvas replace-canvas replace-edit))
-			     (if (eq? this (ivar find-edit searching-frame))
-				 (send find-edit set-searching-frame #f))
-			     #t)))]
+		 (super-do-close)
+		 (let ([close-canvas
+			(lambda (canvas edit)
+			  (send edit remove-canvas canvas)
+			  (send canvas set-media ()))])
+		   (close-canvas find-canvas find-edit)
+		   (close-canvas replace-canvas replace-edit))
+		 (when (eq? this (ivar find-edit searching-frame))
+		   (send find-edit set-searching-frame #f)))]
 	      [set-search-direction 
 	       (lambda (x) 
 		 (set! searching-direction x)
@@ -762,14 +777,21 @@
 		       (begin (send replacee-edit insert (send replace-edit get-text))
 			      #t)
 		       #f)))]
+	      [toggle-search-focus
+	       (lambda ()
+		 (when hidden?
+		   (unhide-search))
+                 (if (or (send find-canvas is-focus-on?)
+                         (send replace-canvas is-focus-on?))
+                     (send (send (get-edit-to-search) get-canvas) set-focus)
+		     (send search-panel set-focus)))]
 	      [search
 	       (opt-lambda ([direction searching-direction] [beep? #t])
 		 (send find-edit set-searching-frame this)
-		 (if hidden?
-		     (unhide-search)
-		     (begin
-		       (set-search-direction direction)
-		       (send find-edit search #t beep?))))])
+		 (when hidden?
+		   (unhide-search))
+		 (set-search-direction direction)
+		 (send find-edit search #t beep?))])
 	    (sequence
 	      (mred:debug:printf 'super-init "before searchable-frame%")
 	      (apply super-init args)
@@ -920,7 +942,7 @@
 		   (set! rest-panel r-root)
 		   r-root))])
 	    
-	    (rename [super-on-close on-close])
+	    (rename [super-do-close do-close])
 	    (private
 	      [close-panel-callback
 	       (mred:preferences:add-preference-callback
@@ -941,14 +963,13 @@
 		  (edit-position-changed-offset v)
 		  #t))])
 	    (public
-	      [on-close
+	      [do-close
 	       (lambda ()
-		 (and (super-on-close)
-		      (begin (send time-canvas set-media null)
-			     (wx:unregister-collecting-blit gc-canvas)
-			     (remove-pref-callback)
-			     (close-panel-callback)
-			     #t)))])
+		 (super-do-close)
+		 (send time-canvas set-media null)
+		 (wx:unregister-collecting-blit gc-canvas)
+		 (remove-pref-callback)
+		 (close-panel-callback))])
 
 	    (inherit get-edit)
 	    (public

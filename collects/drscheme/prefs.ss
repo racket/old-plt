@@ -40,7 +40,7 @@
        (make-check-box 'drscheme:open-all-files-in-scheme-mode
 		       "Open all files as Scheme programs")
        (make-check-box 'drscheme:repl-always-active
-		       "Read-eval-print loop always active")
+		       "Interactions window always active")
        (make-object mred:vertical-panel% main)
        main))))
        

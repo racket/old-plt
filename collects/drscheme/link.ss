@@ -7,6 +7,7 @@
 		       ((reference-library-unit/sig "pconverr.ss")
 			(mzlib string@)
 			(mzlib function@))]
+	[face : drscheme:face^ ((reference-unit/sig "face.ss") mred)]
 	[prefs : drscheme:prefs^ ((reference-unit/sig "prefs.ss") mred)]
 	[basis : drscheme:basis^
 	       ((reference-unit/sig "basis.ss")
@@ -35,7 +36,7 @@
 	[export : drscheme:export^ ((reference-unit/sig "export.ss")
 				    mred mzlib print-convert app
 				    basis edit language setup snip
-				    init interface
+				    init interface face
 				    aries drzodiac)]
 	[tool : () 
 	      ((reference-unit/sig "tool.ss")
@@ -49,8 +50,9 @@
 				I
 				mred
 				print-convert
+				(export unit)
 				(export compound-unit)
-				(export parameters))])
+				(export get/extend))])
   (export (unit init)
 	  (unit mzlib)
 	  (unit mred)
@@ -67,4 +69,5 @@
 	  (unit export drscheme:export)
 	  (unit tool drscheme:tool)
 	  (unit app drscheme:app)
-	  (unit main drscheme:main)))
+	  (unit main drscheme:main)
+	  (unit face drscheme:face)))

@@ -116,10 +116,10 @@
       (lambda (super%)
 	(class super% ([file-name #f] [group #f] [keep-locked? #t]
 		       [tag "top"] [relative? #f])
-	  (inherit get-canvas panel make-menu menu-bar% show on-size)
+	  (inherit get-edit get-canvas panel make-menu menu-bar% show on-size)
 	  (public
 	    [title-prefix "Web"]
-	    [get-edit (lambda () (send (get-canvas) get-media))]
+	    ;[get-edit (lambda () (send (get-canvas) get-media))]
 	    [get-edit% (lambda () mred:hyper-edit:hyper-edit%)]
 	    [get-canvas% (lambda () hyper-canvas%)]
 	    [file-menu:between-print-and-close
@@ -210,6 +210,7 @@
 	  (sequence
 	    (mred:debug:printf 'super-init "hyper-basic-frame; file-name: ~a" file-name)
 	    (super-init file-name)
+	    (printf "load-file.1 ~a~n" (get-edit))
 	    (send (get-edit) load-file file-name))
 	  
 	  (private

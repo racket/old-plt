@@ -1,6 +1,13 @@
 SYSTEM HISTORY
 --------------
 Version 51:
+ - CACHE-WRITE-COUNT is no longer used.
+
+ - do not use the frame method on-close anymore. Use can-close? and
+   do-close.
+
+ - renamed the edit-method on-close to do-close
+
  - the startup procedure has changed again. Now, applications are
    expected to be in a collection. The -a flag has an extra first
    argument, specifing the collection to load the files from, and 

@@ -28,7 +28,8 @@
 		   panel)
 	  (rename [super-get-panel% get-panel%]
 		  [super-on-size on-size]
-		  [super-on-close on-close])
+		  [super-do-close do-close]
+		  [super-can-close? can-close?])
 	  (public
 	    [WIDTH 200]
 	    [HEIGHT 300]
@@ -72,15 +73,15 @@
 	     (opt-lambda ([reason "Close Project"])
 	       (and (check-project-saved reason)
 		    (send (ivar group buffers) check-buffers reason)))]
-	    [on-close
+	    [can-close?
 	     (lambda ()
-	       (if (and (check-project-all-saved)
-			(super-on-close)
-			(send group close-all))
-		   (begin
-		     (mred:exit:remove-exit-callback exit-callback-tag)
-		     #t)
-		   #f))]
+	       (and (check-project-all-saved)
+		    (super-can-close?)
+		    (send group close-all)))]
+	    [do-close
+	     (lambda ()
+	       (super-do-close)
+	       (mred:exit:remove-exit-callback exit-callback-tag))]
 	    [set-modified
 	     (lambda (mod?)
 	       (set! project-modified? mod?)
@@ -247,10 +248,6 @@
 	    [file-menu:save (lambda () (save-project #t))]
 	    [file-menu:save-as (lambda () (save-project #t))]
 	    [file-menu:close-string "Project"]
-	    [file-menu:close 
-	     (lambda ()
-	       (if (on-close)
-		   (show #f)))]
 	    [file-menu:print #f]
 	    [file-menu:remove-selected-id #f]
 	    [file-menu:between-save-and-print

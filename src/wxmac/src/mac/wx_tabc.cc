@@ -150,7 +150,6 @@ wxTabChoice::~wxTabChoice(void)
 void wxTabChoice::SetSelection(Bool value)
 {
   if (cMacControl) {
-    SetCurrentDC();
     ::SetControlValue(cMacControl, value - 1);
   }
 }
@@ -276,6 +275,7 @@ void wxTabChoice::Append(char *s)
   int i;  
   Rect r;
   ControlHandle naya;
+  int ox, oy;
 
   if (s) {
     new_choices = new char*[tab_count + 1];
@@ -287,11 +287,11 @@ void wxTabChoice::Append(char *s)
     tab_count++;
   }
 
-  SetCurrentMacDC();
+  GetWinOrigin(&ox, &oy);
   
-  r.top = padTop + SetOriginY;
+  r.top = padTop + ox;
   r.bottom = r.top + TAB_CONTROL_HEIGHT;
-  r.left = SetOriginX;
+  r.left = oy;
   r.right = r.left + cWindowWidth;
 
   naya = MakeTabs(cMacDC->macGrafPort(), tab_count, tab_labels, &r);

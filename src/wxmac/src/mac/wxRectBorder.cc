@@ -65,7 +65,7 @@ void wxRectBorder::Paint(void)
 {
   if (cHidden) return;
 
-  if (SetCurrentDC()) {
+  {
     int clientWidth, clientHeight;
     Rect clientRect;
     int margin, disabled;

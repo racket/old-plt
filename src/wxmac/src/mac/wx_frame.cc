@@ -70,7 +70,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   WindowPtr theMacWindow;
   wxArea *carea, *parea;
   wxMargin pam;
-  int metal = 1;
+  int metal = 0;
   
   InitDefaults();
 

@@ -468,9 +468,20 @@ static OSStatus paintControlHandler(EventHandlerCallRef inCallRef,
 	  wx_window = (wxWindow *)GET_SAFEREF(rc);
 	  
 	  if (wx_window) {
+	    RgnHandle clipRgn;
+	    wxMacDC *mdc;
+
 	    GetGWorld(&savep, &savegd);
 	    GetThemeDrawingState(&s);
-	    
+
+	    clipRgn = NewRgn();
+	    if (clipRgn)
+	      GetClip(clipRgn);
+
+	    /* In case the grafport properties have changed: */
+	    mdc = wx_window->MacDC();
+	    mdc->setCurrentUser(NULL);
+
 	    wx_window->SetCurrentDC();
 #if 0
 	    {
@@ -490,6 +501,10 @@ static OSStatus paintControlHandler(EventHandlerCallRef inCallRef,
 
 	    SetGWorld(savep, savegd);
 	    SetThemeDrawingState(s, TRUE);
+	    if (clipRgn) {
+	      SetClip(clipRgn);
+	      DisposeRgn(clipRgn);
+	    }
 	  }
 	}
 	break;
@@ -536,9 +551,9 @@ void wxWindow::CreatePaintControl()
 {
   ControlHandle pane;
   Rect boundsRect;
-  CGrafPtr theMacGrafPort;
   EventRef constructData;
   OSStatus err;
+  int ox, oy;
   
   if (!paintControlClass) {
     EventTypeSpec       eventList[] = {
@@ -564,9 +579,8 @@ void wxWindow::CreatePaintControl()
   boundsRect.right = cWindowWidth;
   boundsRect.bottom = cWindowHeight;
   
-  SetCurrentMacDC();
-  theMacGrafPort = cMacDC->macGrafPort();
-  OffsetRect(&boundsRect, SetOriginX, SetOriginY);    
+  GetWinOrigin(&ox, &oy);
+  OffsetRect(&boundsRect, ox, oy);    
 
   CreateEvent(NULL, kEventClassHIObject, kEventHIObjectInitialize,
 	      GetCurrentEventTime(), 0, &constructData);
@@ -909,19 +923,8 @@ wxMacDC* wxWindow::MacDC(void) { return cMacDC; } // mac platform only
 //-----------------------------------------------------------------------------
 int wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 {
-  int vis;
-  CGrafPtr theMacGrafPort;
-
-  theMacGrafPort = cMacDC->macGrafPort();
-  
-  vis = wxIsWindowVisible(GetWindowFromPort(theMacGrafPort));
-  
-  ::SetPort(theMacGrafPort);
-
-  cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
-  GetWinOrigin(&SetOriginX, &SetOriginY);
-  
-  return vis;
+  /* Not used anymore */
+  return 0;
 }
 
 void wxWindow::GetWinOrigin(int *x, int *y)
@@ -939,21 +942,14 @@ void wxWindow::GetWinOrigin(int *x, int *y)
 int wxWindow::SetCurrentMacDC(void) // mac platform only
 {
   CGrafPtr theMacGrafPort;
-  int vis;
 
   theMacGrafPort = cMacDC->macGrafPort();
-
-  vis = wxIsWindowVisible(GetWindowFromPort(theMacGrafPort));
 
   ::SetPort(theMacGrafPort);
 
   cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 
-  if (cMacDC->currentUser() != this) { // must setup platform
-    cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
-  }
-
-  return vis;
+  return 1;
 }
 
 //-----------------------------------------------------------------------------

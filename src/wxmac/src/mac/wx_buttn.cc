@@ -225,7 +225,6 @@ void wxButton::SetLabel(char* label)
     return;
   if (label) {
     if (cMacControl) {
-      SetCurrentDC();
       {
 	CFStringRef llabel;
 	llabel = CFStringCreateWithCString(NULL, wxItemStripLabel(label), kCFStringEncodingISOLatin1);
@@ -276,7 +275,6 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 {
   if (!buttonBitmap && cMacControl) {
     char byteFlag = (char)flag;
-    SetCurrentDC();
     SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
   } else {
     if (buttonBitmap)
@@ -399,7 +397,6 @@ void wxButton::DoShow(Bool show)
   if (!CanShow(show)) return;
 
   if (!buttonBitmap && cMacControl) {
-    SetCurrentDC();
     if (show) {
       ::ShowControl(cMacControl);
     } else {
@@ -421,7 +418,6 @@ void wxButton::Highlight(Bool flag) // mac platform only
       PaintBitmapButton(&bounds, buttonBitmap, flag, FALSE, cColour);
     }
   } else if (cMacControl) {
-    SetCurrentDC();
     if (cEnable) {
       ::HiliteControl(cMacControl, flag ? kControlButtonPart : 0);
     }

@@ -515,7 +515,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
 	if (buttonBitmap || !cMacControl)
 		return;
 
-	Bool isVisible = (**cMacControl).contrlVis == 255;
+	Bool isVisible = cMacControl && IsShown();
 	Bool hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
 	if (hideToPreventFlicker) ::HideControl(cMacControl);
 

@@ -34,7 +34,7 @@ wxPanel::wxPanel // Constructor (given parentArea)
 	) :
 		wxbPanel (windowName, parentArea, x, y, width, height, style)
 {
-	CreateWxPanel();
+	CreateWxPanel(x, y, width, height);
 }
 
 //-----------------------------------------------------------------------------
@@ -51,7 +51,7 @@ wxPanel::wxPanel // Constructor (given parentFrame)
 	) :
 		wxbPanel (windowName, parentFrame, x, y, width, height, style)
 {
-	CreateWxPanel();
+	CreateWxPanel(x, y, width, height);
 }
 
 //-----------------------------------------------------------------------------
@@ -68,7 +68,7 @@ wxPanel::wxPanel // Constructor (given parentPanel)
 	) :
 		wxbPanel (windowName, parentPanel, x, y, width, height, style)
 {
-	CreateWxPanel();
+	CreateWxPanel(x, y, width, height);
 }
 
 //=============================================================================
@@ -85,7 +85,7 @@ wxPanel::~wxPanel(void)
 //=============================================================================
 
 //-----------------------------------------------------------------------------
-void wxPanel::CreateWxPanel(void) // common constructor initialization
+void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor initialization
 {
 	InitDefaults();
 
@@ -93,9 +93,21 @@ void wxPanel::CreateWxPanel(void) // common constructor initialization
 
 	if (cStyle & wxBORDER) 
 	  cPanelBorder = new wxBorderArea(this, 1, Direction::wxAll, 1);
-	
-	if (GetParent()->IsHidden())
-		DoShow(FALSE);
+
+	wxWindow *parent = GetParent();
+	if (wxSubType(parent->__type, wxTYPE_PANEL)) {
+	    if (parent->IsHidden())
+		  DoShow(FALSE);
+    } else {
+       if (x == -1 && y == -1 && w == -1 && h == -1) {
+         if (parent->GetChildren()->Number() == 1) {
+         	/* Fill the frame/dialog */
+         	int w, h;
+         	parent->GetClientSize(&w, &h);
+         	SetSize(0, 0, w, h);
+         }
+       }
+    }
 }
 
 //-----------------------------------------------------------------------------

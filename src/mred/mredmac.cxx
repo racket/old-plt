@@ -178,8 +178,10 @@ static int QueueTransferredEvent(EventRecord *e)
 
 static int GetSleepTime(void)
 {
+#if FG_SLEEP_TIME
   if (last_was_front && Button())
     return 0;
+#endif
     
   return last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
 }
@@ -197,7 +199,7 @@ static void TransferQueue(int all)
     delay_time = sleep_time;
   
   /* Don't call WaitNextEvent too often. */
-  static long lastTime;
+  static unsigned long lastTime;
   if (TickCount() <= lastTime + delay_time)
     return;
 

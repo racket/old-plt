@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_panel.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_panel.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -34,46 +34,6 @@ class wxFrame;
 class wxPanel;
 
 // Constructors
-
-#ifndef wx_mac
-wxbPanel::wxbPanel(void)
-{
-  __type = wxTYPE_PANEL;
-  defaultItem = NULL;
-  new_line = FALSE;
-  label_position = wxHORIZONTAL;
-  window_parent = NULL;
-}
-
-wxbPanel::wxbPanel(wxWindow *parent, int x, int y, int width, int height, long style,
-                  char *name)
-{
-  __type = wxTYPE_PANEL;
-  windowStyle = style;
-  defaultItem = NULL;
-  new_line = FALSE;
-  label_position = wxHORIZONTAL;
-
-  window_parent = parent;
-}
-
-/*
-wxbPanel::wxbPanel(wxPanel *frame, int x, int y, int width, int height, long style,
-                   char *name)
-{
-  __type = wxTYPE_PANEL;
-  windowStyle = style;
-  defaultItem = NULL;
-  new_line = FALSE;
-  label_position = wxHORIZONTAL;
-
-  if (!frame)
-    return;
-
-  window_parent = frame;
-}
-*/
-#endif // wx_mac
 
 wxbPanel::~wxbPanel(void)
 {
@@ -405,7 +365,6 @@ Bool wxbPanel::LoadFromResource(wxWindow *parent, char *resourceName)
 }
 #endif
 
-#ifdef wx_mac
 //=============================================================================
 // Protected constructors
 //=============================================================================
@@ -491,5 +450,3 @@ void wxbPanel::InitMoreDefaults(void) // Poor name for this method
 		label_position = wxHORIZONTAL;
 	}
 }
-
-#endif // wx_mac

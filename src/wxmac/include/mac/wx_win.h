@@ -266,6 +266,7 @@ public:
 	virtual void SetForeground(void); // mac platform only
 	virtual void SetTextInfo(void); // mac platform only
 	virtual void GetClipRect(wxArea* area, Rect* clipRect); // mac platform only
+	virtual RgnHandle GetCoveredRegion(int x, int y, int w, int h);
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Tree (windows and areas) methods

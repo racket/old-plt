@@ -687,6 +687,7 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 		cClientArea->FrameContentAreaOffset(&theRootX, &theRootY);
 		::SetOrigin(-theRootX, -theRootY);
 		Rect theClipRect;
+		RgnHandle rgn = NULL;
 		if (cHidden) {
 			theClipRect.top = theClipRect.bottom = 0;
 			theClipRect.left = theClipRect.right = 0;
@@ -694,11 +695,46 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 			GetClipRect(cClientArea, &theClipRect);
 			MacSetBackground();
 			SetForeground();
+			
+			wxWindow *parent = GetParent();
+			int dx, dy;
+			GetPosition(&dx, &dy);
+			rgn = parent ? parent->GetCoveredRegion(dx + theClipRect.left, dy + theClipRect.top,
+			                                        theClipRect.right - theClipRect.left,
+			                                        theClipRect.bottom - theClipRect.top) 
+			              : NULL;
 		}
-		::ClipRect(&theClipRect);
+		
+		if (rgn) {
+		  RgnHandle clip = NewRgn();
+		  RectRgn(clip, &theClipRect);
+		  DiffRgn(clip, rgn, clip);
+		  DisposeRgn(rgn);
+		  SetClip(clip);
+		  DisposeRgn(clip);
+		} else 
+		  ::ClipRect(&theClipRect);
+		
 		PenMode(patCopy);
 		SetTextInfo();
 	}
+}
+
+RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
+{
+   wxWindow *parent = GetParent();
+   if (!parent) return NULL;
+
+   int dx, dy, dw, dh;
+   GetPosition(&dx, &dy);
+   GetSize(&dw, &dh);
+
+   x += dx;
+   y += dy;
+   w = dw;
+   h = dh;
+
+   return parent->GetCoveredRegion(x, y, w, h);
 }
 
 //-----------------------------------------------------------------------------

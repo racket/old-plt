@@ -296,14 +296,6 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
  		
  		// Call OnSize handler
  		OnSize(width, height);
-#if 0
- 		// Don't wait for update event to redraw grow box
- 		if (cStyle & wxRESIZE_BORDER)
- 			MacDrawGrowIcon();
-        Paint();
-       if (cStyle & wxRESIZE_BORDER) //tom 
-  			MacDrawGrowIcon();
-#endif
 	}
 }
 
@@ -866,6 +858,26 @@ void wxFrame::Paint(void)
     }
  	// SetCurrentDC();
  	// If the right type of Window: MacDrawGrowIcon();
+}
+
+RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)
+{
+   if (cStyle & wxRESIZE_BORDER) {
+     int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
+	 int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
+     if (((theMacWidth-15 >= x && theMacWidth-15 <= x + w)
+       	    || (theMacWidth >= x && theMacWidth <= x + w))
+           && (theMacHeight-15 >= y && theMacHeight-15 <= y + h)
+       	       || (theMacHeight >= y && theMacHeight <= y + h)) {
+       Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
+       RgnHandle rgn = NewRgn();
+       RectRgn(rgn, &growRect);
+       OffsetRgn(rgn, -x, -y);
+       return rgn;
+     } else
+       return NULL;
+   } else
+     return NULL;
 }
 
 //-----------------------------------------------------------------------------

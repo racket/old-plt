@@ -132,6 +132,9 @@ public:
 	virtual void Paint(void);
 	virtual void OnChar(wxKeyEvent& event); // mac platform only
 	virtual void OnCommandEvent(wxCommandEvent& event) {}; // mac platform only
+	
+        virtual RgnHandle GetCoveredRegion(int x, int y, int w, int h);
+
 
     WindowPtr macWindow(void);
 

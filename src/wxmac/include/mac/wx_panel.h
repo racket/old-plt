@@ -149,7 +149,7 @@ protected:
 //=============================================================================
 private:
 
-	void CreateWxPanel(void); // common constructor initialization
+	void CreateWxPanel(int x, int y, int w, int h); // common constructor initialization
 	void InitDefaults(void); // used by constructors
 };
 

@@ -58,25 +58,13 @@ class wxbPanel: public wxWindow
   wxColour *labelColour;
   wxColour *buttonColour;
 
-#ifndef wx_mac
-  wxbPanel(void);
-  wxbPanel(wxWindow *window,
-          int x=-1, int y=-1, int width=-1, int height=-1, long style=0,
-          char *name = "panel");
-/*
-  wxbPanel(wxPanel *panel,
-          int x=-1, int y=-1, int width=-1, int height=-1, long style=0,
-          char *name = "panel");
-*/
-#endif // wx_mac
-#ifdef wx_mac
   // Constructor (given parentArea)
   wxbPanel(char* windowName, wxArea* parentArea, int x, int y, int width, int height,
 		long style);
   // Constructor (given parentWindow)
   wxbPanel(char* windowName, wxWindow* parentWindow, int x, int y, int width, int height,
 		long style);
-#endif // wx_mac
+
   ~wxbPanel(void);
 
   // Set current label position, i.e. will label be on top or to the left

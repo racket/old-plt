@@ -87,8 +87,8 @@
   
   ; : (str -> response) -> request
   (define the-send/suspend
-    (let ((s/s (gen-send/suspend uri invoke-id instances output-page resume-next-request)))
-      (lambda (k->page)
+    (lambda (k->page)
+      (let ((s/s (gen-send/suspend uri invoke-id instances output-page resume-next-request)))
         (s/s (lambda (k-url)
                (let ([page (k->page k-url)])
                  (unless (response? page)
@@ -108,9 +108,13 @@
     ; (make-hash-table))
     ; FIX - this is wrong.  The hash table must be cleared or the reference in the server must be reset, not our reference.
     ; try (set-config-instances! the-config (make-hash-table))
-    (set! instances (make-hash-table))
-    (add-new-instance invoke-id instances)
+;    (set! instances (make-hash-table))
+;    (add-new-instance invoke-id instances)
+;    (the-send/suspend page-maker))
+    (purge-table 'post uri instances invoke-id 
+                 (lambda (inst) (set-servlet-instance-cont-table! inst (make-hash-table))))
     (the-send/suspend page-maker))
+    
   
   (define the-initial-request
     (make-request 'post uri null null "127.0.0.1" "127.0.0.1"))

@@ -67,6 +67,10 @@ wxFrame::wxFrame // Constructor (for frame window)
 
   cUserHidden = TRUE;
 
+  if (parentFrame)
+    if (wxSubType(parentFrame->__type, wxTYPE_DIALOG_BOX))
+      parentFrame = (wxFrame *)parentFrame->GetParent();
+
   WindowPtr theMacWindow;
 
   /* Make sure we have the right device: */
@@ -790,8 +794,6 @@ void wxFrame::Paint(void)
     }
     wxWindow::Paint();
     if (cStatusPanel) {
-      /* int statusLineHeight = cStatusPanel->Height(); */
-
       int w, h;
       cStatusPanel->GetSize(&w, &h);
 

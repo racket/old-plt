@@ -127,18 +127,6 @@ void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor in
 
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
-#if 0
-  // EMBEDDING
-  // create an embedding control so that embedded controls get moved.
-  SetCurrentMacDCNoMargin();
-  Rect cRect;
-  Str255 embeddingTitle = "\pebmedding title";
-  SetRect(&cRect,0,0,w,h);
-  OffsetRect(&cRect,SetOriginX,SetOriginY);
-  cEmbeddingControl = ::NewControl(GetWindowFromPort(cMacDC->macGrafPort()),&cRect,embeddingTitle,TRUE,
-				   kControlSupportsEmbedding,0,0,kControlUserPaneProc,NULL);
-#endif
-                                            
   if (cStyle & wxBORDER) 
     cPanelBorder = new wxBorderArea(this, 1, Direction::wxAll, 1);
 

@@ -198,11 +198,12 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
     }
   else
     cTitle = NULL;
+         
+  ::EmbedControl(cMacControl, GetRootControl());
 
   if (GetParent()->IsHidden())
     DoShow(FALSE);
-         
-  ::EmbedControl(cMacControl, GetRootControl());
+  InitInternalGray();
 	
   return TRUE;
 }
@@ -210,7 +211,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 // ------------ Destructor ----------------------------------------
 wxSlider::~wxSlider(void)
 {
-  delete cTitle;	// Special care needed to delete Areas
+  if (cTitle)
+    delete cTitle;	// Special care needed to delete Areas
   ::DisposeControl(cMacControl);
 }
 
@@ -251,12 +253,12 @@ void wxSlider::DoShow(Bool show)
   else
     ::HideControl(cMacControl);
 		
-  if (!show)
+  if (!show && cTitle)
     cTitle->DoShow(show);
 		
   wxWindow::DoShow(show);
 
-  if (show)
+  if (show && cTitle)
     cTitle->DoShow(show);
 }
 

@@ -35,6 +35,7 @@ int SetOriginY = 0;
 
 wxWindow* wxWindow::gMouseWindow = NULL; 
 
+static void RestoreNormalBackground(wxBrush *erase);
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Geometry methods
@@ -508,8 +509,8 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
       OffsetRect(&oldWindowRect,SetOriginX,SetOriginY);
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect);
       ::EraseRect(&oldWindowRect);
+      RestoreNormalBackground(cEraser);
     }
-    ReleaseCurrentDC();
   }
 
   if (xIsChanged) cWindowX = x;
@@ -521,13 +522,12 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
     Rect newWindowRect = { -1, -1, cWindowHeight, cWindowWidth };
     cMacDC->setCurrentUser(NULL); // macDC no longer valid
     if (SetCurrentMacDCNoMargin()) { // put newClientRect at (SetOriginX,SetOriginY)
-      MacSetBackground();
       OffsetRect(&newWindowRect,SetOriginX,SetOriginY);
       
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
       ::EraseRect(&newWindowRect);
+      RestoreNormalBackground(cEraser);
     }
-    ReleaseCurrentDC();
   }
 }
 
@@ -543,7 +543,6 @@ void wxWindow::Refresh(void)
     OffsetRect(&theClipRect,SetOriginX,SetOriginY);
     ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&theClipRect); // force redraw of window
   }
-  ReleaseCurrentDC();
 }
 
 //-----------------------------------------------------------------------------
@@ -750,6 +749,22 @@ int wxWindow::SetCurrentDC(void) // mac platform only
 
 void wxWindow::ReleaseCurrentDC(int really)
 {
+#if 1
+  {
+    if (cMacDC->currentUser() == this) {
+      GDHandle dh;
+      CGrafPtr g;
+      CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+      ::GetGWorld(&g, &dh);
+      if (g != theMacGrafPort)
+	printf("ReleaseDC: not grafport!\n");	
+      if (dh != wxGetGDHandle())
+	printf("ReleaseDC: not device!\n");	
+    } else
+      printf("ReleaseDC: not current!\n");
+  }
+#endif
+
   /* This method is here for windows that use a white background, so
      that the background color can be reset.  Currently, that means
      wxListBox only. */
@@ -759,10 +774,17 @@ void wxWindow::ReleaseCurrentDC(int really)
       ::SetGWorld(theMacGrafPort, wxGetGDHandle());
       cMacDC->setCurrentUser(NULL);
 
-      int depth;
-      depth = wxDisplayDepth();
-      SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);
+      RestoreNormalBackground(wxWHITE_BRUSH);
     }
+  }
+}
+
+static void RestoreNormalBackground(wxBrush *eraser)
+{
+  if (eraser == wxWHITE_BRUSH) {
+    int depth;
+    depth = wxDisplayDepth();
+    SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);
   }
 }
 
@@ -1565,11 +1587,11 @@ void wxWindow::DoShow(Bool v)
     if (v) {
       MacSetBackground();
       ::EraseRect(&r);
+      RestoreNormalBackground(cEraser);
     }
     
     ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
   }
-  ReleaseCurrentDC();
 
   cHidden = v;
 

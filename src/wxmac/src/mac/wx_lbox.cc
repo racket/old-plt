@@ -137,7 +137,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
     Title = wxItemStripLabel(Title);
   
   Callback(func);
-  SetCurrentMacDC();
+  SetCurrentDC();
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
   float lblWidth, lblHeight;
@@ -190,6 +190,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   
   ALSetInfo(alClickCellHook,&MyClickInCellUPP,cListReference);
 
+  ReleaseCurrentDC();
+
   if (Title) {
     cListTitle = new wxLabelArea(this, Title, labelFont,
 				 labelPosition == wxVERTICAL ? Direction::wxTop : Direction::wxLeft);
@@ -201,8 +203,6 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   
   if (GetParent()->IsHidden())
     DoShow(FALSE);
-
-  ReleaseCurrentDC();
 
   OnClientAreaDSize(1, 1, 1, 1);
 

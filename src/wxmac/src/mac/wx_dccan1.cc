@@ -58,7 +58,6 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
   if (canvas) {
     WXGC_IGNORE(this, canvas);
     cMacDC = canvas->MacDC();
-    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
   }
 
   cMacDoingDrawing = FALSE;
@@ -160,6 +159,10 @@ extern "C" {
   }
 }
 
+#if 1
+GDHandle last_device;
+#endif
+
 //-----------------------------------------------------------------------------
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
   //-----------------------------------------------------------------------------
@@ -175,6 +178,14 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
     ::SetGWorld(theMacGrafPort, wxGetGDHandle());
   }
   
+#if 1
+  { 
+    GDHandle dh;
+    CGrafPtr g;
+    ::GetGWorld(&g, &last_device);
+  }
+#endif
+
   SetOriginX = SetOriginY = 0;
   if (canvas)
     canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
@@ -189,6 +200,20 @@ void wxCanvasDC::SetCurrentDC(void) // mac platform only
 
 void wxCanvasDC::ReleaseCurrentDC(void)
 {
+#if 1
+  if (cMacDC->currentUser() == this) { 
+    GDHandle dh;
+    CGrafPtr g;
+    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    ::GetGWorld(&g, &dh);
+    if (g != theMacGrafPort)
+      printf("DC ReleaseDC: not grafport!\n");	
+    if (dh != last_device)
+      printf("DC ReleaseDC: not device! %lx %lx\n", dh, last_device);	
+   } else
+    printf("DC ReleaseDC - not current!\n");
+#endif
+
   if (!--dc_set_depth) {
     if (canvas && (cMacCurrentTool != kNoTool)) {
       /* We have to go back to the canvas's drawings settings --- at
@@ -227,11 +252,25 @@ void wxCanvasDC::SetCanvasClipping(void)
     CGrafPtr savep;
     GDHandle savegd;
     CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    long oox, ooy;
     
     ::GetGWorld(&savep, &savegd);  
-    ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+    if (IsPortOffscreen(theMacGrafPort)) {
+      ::SetGWorld(theMacGrafPort, NULL);
+    } else {
+      ::SetGWorld(theMacGrafPort, wxGetGDHandle());
+    }
     
+    oox = SetOriginX;
+    ooy = SetOriginY;
+    SetOriginX = SetOriginY = 0;
+    if (canvas)
+      canvas->ClientArea()->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+
     wxMacSetClip();
+
+    SetOriginX = oox;
+    SetOriginY = ooy;
     
     ::SetGWorld(savep, savegd);
   }

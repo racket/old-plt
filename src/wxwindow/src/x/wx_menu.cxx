@@ -154,12 +154,15 @@ Bool wxMenu::DeleteItem(long Id, int  Pos)
   wxNode *node;
   int pos;
 
-  for (pos = 0, node = menuItems.First(); node && Pos--; node = node->Next(), pos++) {
+  for (pos = 0, node = menuItems.First(); node; node = node->Next(), pos++) {
     item = (wxMenuItem *)node->Data();
-    if ((Pos < 0) && (item->itemId == Id))
+    if (!Pos)
+      break;
+    else if (Pos > 0)
+      --Pos;
+    else if ((Pos < 0) && (item->itemId == Id))
       break;
   }
-
   if (!node)
     return FALSE;
 

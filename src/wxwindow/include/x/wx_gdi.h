@@ -160,8 +160,10 @@ class wxBrush: public wxbBrush
 
 };
 
-// Bitmap
 class wxItem;
+class wxMemoryDC;
+
+// Bitmap
 class wxBitmap: public wxObject
 {
   DECLARE_DYNAMIC_CLASS(wxBitmap)
@@ -182,19 +184,14 @@ class wxBitmap: public wxObject
   long free_colors_num;
 
   int selectedIntoDC;
+  wxMemoryDC *selectedTo;
 
-#ifdef wx_motif
   // This 5 variables are for wxItem
-  Pixmap insensPixmap ;
-  Pixmap labelPixmap ;
-  Pixmap armPixmap ;
-  XImage *image ;
-  XImage *insensImage ;
-#endif
-
-#ifdef wx_xview
-  Server_image x_image;
-#endif
+  Pixmap insensPixmap;
+  Pixmap labelPixmap;
+  Pixmap armPixmap;
+  XImage *image;
+  XImage *insensImage;
 
   wxBitmap(void) ;
   wxBitmap(char bits[], int width, int height);
@@ -219,16 +216,11 @@ class wxBitmap: public wxObject
   void SetupBitmapImage(void);
   void FreeBitmapImage(void);
 
-#ifdef wx_xview
-  virtual void CreateServerImage(Bool savePixmap = TRUE);
-#endif
-
-#ifdef wx_motif
   // For wxItem
   virtual Pixmap GetLabelPixmap(Widget w) ;
   virtual Pixmap GetArmPixmap(Widget w) ;
   virtual Pixmap GetInsensPixmap(Widget w) ;
-#endif
+
   inline Bool Ok(void) { return ok; }
   inline int GetWidth(void) { return width; }
   inline int GetHeight(void) { return height; }

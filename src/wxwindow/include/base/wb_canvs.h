@@ -62,7 +62,7 @@ class wxbCanvas: public wxWindow
 
   // Scroll the canvas
   virtual void Scroll(int x_pos, int y_pos) = 0;
-  virtual void ViewStart(int *x, int *y) = 0;
+  virtual void ViewStart(int *x, int *y, Bool sb_val = FALSE) = 0;
   virtual void GetScrollUnitsPerPage(int *x_page, int *y_page) = 0;
 
   virtual void Clear(void);

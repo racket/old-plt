@@ -621,36 +621,37 @@ void wxListBox::Clear (void)
   no_items = 0;
 }
 
-void wxListBox::SetSelection (int N, Bool select)
+void wxListBox::SetSelection (int N, Bool select, Bool one_only)
 {
-  if (select)
-    {
-/*
-      if (multiple)
-	{
-	  int *selections = NULL;
-	  int n = GetSelections (&selections);
-
-	  // This hack is supposed to work, to make it possible to select more
-	  // than one item, but it DOESN'T under Motif 1.1.
-
-	  XtVaSetValues ((Widget) handle, XmNselectionPolicy, XmMULTIPLE_SELECT, NULL);
-
-	  int i;
-	  for (i = 0; i < n; i++)
-	    XmListSelectPos ((Widget) handle, selections[i] + 1, FALSE);
-
-	  XmListSelectPos ((Widget) handle, N + 1, FALSE);
-
-	  XtVaSetValues ((Widget) handle, XmNselectionPolicy, XmEXTENDED_SELECT, NULL);
-	}
-      else
-*/
-	XmListSelectPos ((Widget) handle, N + 1, FALSE);
-
+  if (select) {
+    if (one_only && ((multiple == wxMULTIPLE) || (multiple == wxEXTENDED))) {
+      int i;
+      for (i = 0; i < Number(); i++)
+	if (i != N)
+	  XmListDeselectPos((Widget)handle, i + 1);
     }
-  else
-    XmListDeselectPos ((Widget) handle, N + 1);
+    if ((multiple == wxMULTIPLE) || (multiple == wxEXTENDED)) {
+      if (Selected(N))
+	return;
+    }
+    
+    int reset = 0;
+    if (!one_only && (multiple == wxMULTIPLE)) {
+      XtVaSetValues((Widget)handle, XmNselectionPolicy, XmMULTIPLE_SELECT, NULL);
+      reset = 1;
+    }
+
+    XmListSelectPos((Widget)handle, N + 1, FALSE);
+
+    if (reset)
+      XtVaSetValues((Widget)handle, XmNselectionPolicy, XmEXTENDED_SELECT, NULL);
+  } else
+    XmListDeselectPos((Widget)handle, N + 1);
+}
+
+void wxListBox::SetOneSelection(int N)
+{
+  SetSelection(N, TRUE, TRUE);
 }
 
 Bool wxListBox::Selected (int N)

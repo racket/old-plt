@@ -372,4 +372,3 @@ int wxbMessageBox(char *message, char *caption, long type,
 
   return dialog->buttonPressed;
 }
-

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cxx,v 1.4 1998/08/10 18:02:53 mflatt Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.5 1998/09/18 23:09:52 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1254,6 +1254,8 @@ wxBitmap::wxBitmap (char bits[], int the_width, int the_height)
 #if !WXGARBAGE_COLLECTION_ON
   wxTheBitmapList->Append (this);
 #endif
+
+  WXGC_IGNORE(selectedTo);
 }
 
 wxBitmap::wxBitmap (char *bitmap_file, long flags)
@@ -1282,6 +1284,8 @@ wxBitmap::wxBitmap (char *bitmap_file, long flags)
 #if !WXGARBAGE_COLLECTION_ON
   wxTheBitmapList->Append (this);
 #endif
+
+  WXGC_IGNORE(selectedTo);
 }
 
 #if USE_XPM_IN_X
@@ -1354,6 +1358,8 @@ wxBitmap::wxBitmap(char **data, wxItem *anItem)
 //		XpmDebugError(ErrorStatus, NULL);
 		ok = False;
   }
+
+  WXGC_IGNORE(selectedTo);
 }
 #endif
 
@@ -1371,6 +1377,8 @@ wxBitmap::wxBitmap (int w, int h, Bool b_and_w)
   free_colors_num = 0;
   bitmapColourMap = NULL;
   (void)Create(w, h, b_and_w ? 1 : -1);
+
+  WXGC_IGNORE(selectedTo);
 }
 
 wxBitmap::~wxBitmap (void)

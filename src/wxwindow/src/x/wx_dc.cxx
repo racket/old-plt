@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.4 1998/09/23 01:11:14 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.5 1998/10/16 18:19:40 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -332,15 +332,9 @@ wxCanvasDC::~wxCanvasDC (void)
   gc = NULL;
 }
 
-/* MATTHEW: [7] Implement GetPixel */
 void wxCanvasDC::DoFreeGetPixelCache(void)
 {
-  if (get_pixel_image_cache) {
-    XDestroyImage(get_pixel_image_cache);
-    get_pixel_image_cache = NULL;
-    delete[] get_pixel_color_cache;
-    get_pixel_color_cache = NULL;
-  }
+  EndSetPixel();
 }
 
 void wxCanvasDC::SetCanvasClipping(void)
@@ -477,13 +471,8 @@ Bool wxCanvasDC:: GetPixel (float x, float y, wxColour * col)
   if (!get_pixel_image_cache) {
     if (canvas) /* Disallow for now */
       return FALSE;
-
-    get_pixel_image_cache = 
-      XGetImage(display, pixmap, 0, 0, w, h, AllPlanes, ZPixmap);
-
-    get_pixel_cache_pos = 0;
-    get_pixel_cache_full = FALSE;
-    get_pixel_color_cache = new XColor[NUM_GETPIX_CACHE_COLORS];
+    
+    BeginSetPixel();
 
     if (selected_pixmap && (selected_pixmap->GetDepth() == 1)) {
       get_pixel_color_cache[0].pixel = 1;
@@ -555,14 +544,8 @@ void wxCanvasDC::BeginSetPixel()
     return;
 
   int w, h;
-  if (canvas) {
-    float fw, fh;
-    GetSize(&fw, &fh);
-    w = (int)fw; h = (int)fh;
-  } else {
-    w = pixmapWidth;
-    h = pixmapHeight;
-  }
+  w = pixmapWidth;
+  h = pixmapHeight;
 
   get_pixel_image_cache = 
     XGetImage(display, pixmap, 0, 0, w, h, AllPlanes, ZPixmap);
@@ -570,6 +553,7 @@ void wxCanvasDC::BeginSetPixel()
   get_pixel_cache_pos = 0;
   get_pixel_cache_full = FALSE;
   get_pixel_color_cache = new XColor[NUM_GETPIX_CACHE_COLORS];
+  set_a_pixel = 0;
 }
 
 void wxCanvasDC::EndSetPixel()
@@ -577,18 +561,27 @@ void wxCanvasDC::EndSetPixel()
   if (!get_pixel_image_cache)
     return;
 
-  int w, h;
-  w = get_pixel_image_cache->width;
-  h = get_pixel_image_cache->height;
+  if (set_a_pixel) {
+    int w, h;
+    w = get_pixel_image_cache->width;
+    h = get_pixel_image_cache->height;
+    
+    XPutImage(display, pixmap, gc, get_pixel_image_cache, 0, 0, 0, 0, w, h);
+  }
 
-  XPutImage(display, pixmap, gc, get_pixel_image_cache, 0, 0, 0, 0, w, h);
-
-  FreeGetPixelCache();
+  if (get_pixel_image_cache) {
+    XDestroyImage(get_pixel_image_cache);
+    get_pixel_image_cache = NULL;
+    delete[] get_pixel_color_cache;
+    get_pixel_color_cache = NULL;
+  }
 }
 
 void wxCanvasDC::SetPixel(float x, float y, wxColour * col)
 {
   int i, j;
+
+  BeginSetPixel();
 
   if (!get_pixel_image_cache)
     return;
@@ -612,39 +605,48 @@ void wxCanvasDC::SetPixel(float x, float y, wxColour * col)
   green = col->Green();
   blue = col->Blue();
 
-  for (k = get_pixel_cache_pos; k--; )
-    if ((get_pixel_color_cache[k].red == red)
-	&& (get_pixel_color_cache[k].green == green)
-	&& (get_pixel_color_cache[k].blue == blue)) {
-      pixel = get_pixel_color_cache[k].pixel;
-      goto put;
-    }
+  set_a_pixel = 1;
 
-  if (get_pixel_cache_full)
-    for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; )
+  if (selected_pixmap && (selected_pixmap->GetDepth() == 1)) {
+    if ((red == 255) && (green == 255) && (blue == 255))
+      pixel = 0;
+    else
+      pixel = 1;
+  } else {
+    for (k = get_pixel_cache_pos; k--; )
       if ((get_pixel_color_cache[k].red == red)
 	  && (get_pixel_color_cache[k].green == green)
 	  && (get_pixel_color_cache[k].blue == blue)) {
 	pixel = get_pixel_color_cache[k].pixel;
 	goto put;
       }
-
-  xcol.red = red << SHIFT;
-  xcol.green = green << SHIFT;
-  xcol.blue = blue << SHIFT;
-  
-  AllocDCColor(display, wxGetMainColormap(display), &xcol, 1, color);
-
-  pixel = xcol.pixel;
-
-  get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
-  get_pixel_color_cache[get_pixel_cache_pos].red = red;
-  get_pixel_color_cache[get_pixel_cache_pos].green = green;
-  get_pixel_color_cache[get_pixel_cache_pos].blue = blue;
-
-  if (++get_pixel_cache_pos >= NUM_GETPIX_CACHE_COLORS) {
-    get_pixel_cache_pos = 0;
-    get_pixel_cache_full = TRUE;
+    
+    if (get_pixel_cache_full)
+      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; )
+	if ((get_pixel_color_cache[k].red == red)
+	    && (get_pixel_color_cache[k].green == green)
+	    && (get_pixel_color_cache[k].blue == blue)) {
+	  pixel = get_pixel_color_cache[k].pixel;
+	  goto put;
+	}
+    
+    xcol.red = red << SHIFT;
+    xcol.green = green << SHIFT;
+    xcol.blue = blue << SHIFT;
+    
+    AllocDCColor(display, wxGetMainColormap(display), &xcol, 1, color);
+    
+    pixel = xcol.pixel;
+    
+    get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
+    get_pixel_color_cache[get_pixel_cache_pos].red = red;
+    get_pixel_color_cache[get_pixel_cache_pos].green = green;
+    get_pixel_color_cache[get_pixel_cache_pos].blue = blue;
+    
+    if (++get_pixel_cache_pos >= NUM_GETPIX_CACHE_COLORS) {
+      get_pixel_cache_pos = 0;
+      get_pixel_cache_full = TRUE;
+    }
   }
 
  put:
@@ -1192,9 +1194,11 @@ void wxCanvasDC::SetPen(wxPen * pen)
 
       if (current_stipple && ((current_stipple != old_stipple) || !dcOptimize)) {
 	if (is_bitmap) {
+	  if (current_stipple->selectedTo) current_stipple->selectedTo->EndSetPixel();
 	  XSetStipple(display, gc, current_stipple->x_pixmap);
 	  XSetFillStyle(display, gc, (style == wxSOLID) ? FillStippled : FillOpaqueStippled);
 	} else { 
+	  if (current_stipple->selectedTo) current_stipple->selectedTo->EndSetPixel();
 	  XSetTile(display, gc, current_stipple->x_pixmap);
 	  XSetFillStyle(display, gc, FillTiled);
 	}
@@ -1294,9 +1298,11 @@ void wxCanvasDC::SetBrush(wxBrush * brush)
   if ((old_fill != current_fill) || (current_stipple != old_stipple) || !dcOptimize) {
     if (current_stipple) {
       if (is_bitmap) {
+	if (current_stipple->selectedTo) current_stipple->selectedTo->EndSetPixel();
 	XSetStipple(display, gc, current_stipple->x_pixmap);
 	XSetFillStyle(display, gc, (current_fill == wxSOLID) ? FillStippled : FillOpaqueStippled);
       } else { 
+	if (current_stipple->selectedTo) current_stipple->selectedTo->EndSetPixel();
 	XSetTile(display, gc, current_stipple->x_pixmap);
 	XSetFillStyle(display, gc, FillTiled);
       }
@@ -1582,6 +1588,9 @@ void wxCanvasDC:: DrawText (const char *text, float x, float y, Bool use16Bit)
 	current_text_foreground.pixel = old_pen_colour.pixel;
     }
 
+  current_fill = wxCOPY;
+  XSetFunction(display, gc, GXcopy);
+
   // We need to add the ascent, not the whole height, since X draws
   // at the point above the descender.
   /* MATTHEW: [2] handle 16-bit mode */
@@ -1852,6 +1861,9 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   bg = current_background_color;
   if (!c) c = wxBLACK;
 
+  if (source->selectedTo) 
+    source->selectedTo->EndSetPixel();
+
   if (source->GetDepth() > 1)
     c = wxBLACK;
 
@@ -1989,8 +2001,10 @@ wxMemoryDC::wxMemoryDC (Bool ro)
 wxMemoryDC::~wxMemoryDC (void)
 {
   if (selected_pixmap) {
-    if (!read_only)
+    if (!read_only) {
       selected_pixmap->selectedIntoDC = 0;
+      selected_pixmap->selectedTo = NULL;
+    }
     selected_pixmap = NULL;
   }
 }
@@ -2010,8 +2024,10 @@ void wxMemoryDC:: SelectObject (wxBitmap * bitmap)
     bitmap = NULL;
 
   if (!read_only) {
-    if (selected_pixmap)
+    if (selected_pixmap) {
       selected_pixmap->selectedIntoDC = 0;
+      selected_pixmap->selectedTo = NULL;
+    }
   }
 
   if (!bitmap)
@@ -2028,8 +2044,10 @@ void wxMemoryDC:: SelectObject (wxBitmap * bitmap)
   pixmap = bitmap->x_pixmap;
   pixmapWidth = bitmap->GetWidth ();
   pixmapHeight = bitmap->GetHeight ();
-  if (!read_only)
+  if (!read_only) {
     bitmap->selectedIntoDC = -1;
+    bitmap->selectedTo = this;
+  }
   color = Colour = (bitmap->GetDepth() != 1);
 
   XGCValues gcvalues;

@@ -33,6 +33,9 @@
 
 @INCLUDE wxs_drws.xci
 
+@MACRO CastToSO = (Scheme_Object*){x}
+@MACRO spAnything = _
+
 static wxColour* dcGetTextBackground(wxDC *dc)
 {
   wxColour *c = new wxColour();
@@ -63,6 +66,34 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return FALSE;
 }
 
+static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, bool big)
+{
+  float w, h, d, asc;
+  Scheme_Object *a[4];
+
+  dc->GetTextExtent(s, &w, &h, &d, &asc, f, big);
+
+  a[0] = scheme_make_double(w);
+  a[1] = scheme_make_double(h);
+  a[2] = scheme_make_double(d);
+  a[3] = scheme_make_double(asc);
+
+  return scheme_values(4, a);
+}
+
+static void* MyGetSize(wxDC *dc)
+{
+  float w, h;
+  Scheme_Object *a[2];
+
+  dc->GetSize(&w, &h);
+
+  a[0] = scheme_make_double(w);
+  a[1] = scheme_make_double(h);
+
+  return scheme_values(2, a);
+}
+
 @CLASSBASE wxDC "dc":"object"
 @INTERFACE "dc"
 
@@ -72,7 +103,7 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 @INCLUDE wxs_draw.xci
 
 // Also in wxWindow:
-@ Q "get-text-extent" : void GetTextExtent(string,nnfloat*,nnfloat*,nnfloat?=NULL,nnfloat?=NULL,wxFont^=NULL,bool=FALSE); : : /CheckOk
+@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE); : : /CheckOk
 @ Q "get-char-height" : float GetCharHeight();
 @ Q "get-char-width" : float GetCharWidth();
 
@@ -111,7 +142,7 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 @ m "get-text-background" : wxColour! dcGetTextBackground();
 @ m "get-text-foreground" : wxColour! dcGetTextForeground();
 
-@ q "get-size" : void GetSize(nnfloat*,nnfloat*);
+@ m "get-size" : void[]/CastToSO//spAnything MyGetSize();
 
 @ q "ok?" : bool Ok();
 

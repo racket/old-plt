@@ -51,7 +51,8 @@ class wxListBox: public wxbListBox
   void Set(int N, char *Choices[]);
   int FindString(char *s);
   void Clear(void);
-  void SetSelection(int N, Bool select = TRUE);
+  void SetSelection(int N, Bool select = TRUE, Bool one_only = FALSE);
+  void SetOneSelection(int N);
   void SetString(int N, char *s);
   // Get client data
   char *GetClientData(int N);

@@ -133,7 +133,7 @@ class wxCanvas: public wxbCanvas
   Display *display;
   Window xwindow;
 
-  void ViewStart(int *x, int *y);
+  void ViewStart(int *x, int *y, Bool sb_val = FALSE);
 
   // Actual size in pixels when scrolling is taken into account
   void GetVirtualSize(int *x, int *y);

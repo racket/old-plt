@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_canvs.cxx,v 1.7 1998/08/21 00:31:39 mflatt Exp $
+ * RCS_ID:      $Id: wx_canvs.cxx,v 1.8 1998/09/23 01:11:13 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -659,11 +659,8 @@ void wxCanvas:: DoRefresh (Bool paint)
 		     NULL);
     }
   }
-  if (paint) {
-    int x, y;
-    ViewStart (&x, &y);
-    GetEventHandler()->OnPaint ();
-  }
+  if (paint)
+    GetEventHandler()->OnPaint();
 }
 
 void 
@@ -760,6 +757,24 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
   if (vScrollBar)
     XtVaGetValues (vScrollBar, XmNvalue, &yp, NULL);
 
+  int canvasClientWidth;
+  int canvasClientHeight;
+  GetClientSize (&canvasClientWidth, &canvasClientHeight);
+
+  long orig_h_size = horizontal * x_length;
+  long orig_v_size = vertical * y_length;
+
+  if (setVirtualSize) {
+    while (horizontal > canvasClientWidth) {
+      horizontal = ceil(horizontal / 2.0);
+      x_length *= 2;
+    }
+    while (vertical > canvasClientHeight) {
+      vertical = ceil(vertical / 2.0);
+      y_length *= 2;
+    }
+  }
+
   Bool needRepaint = TRUE;
   if (horizontal == horiz_units &&
       vertical == vert_units &&
@@ -782,19 +797,16 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
   x_pos = min(max(x_pos, 0), x_length);
   y_pos = min(max(y_pos, 0), y_length);
 
+  scrolls_set_size = setVirtualSize;
+
   int w, h, x, y;
   GetSize (&w, &h);
   GetPosition (&x, &y);
 
-  int canvasWidth1;
-  int canvasHeight1;
-  GetClientSize (&canvasWidth1, &canvasHeight1);
-  scrolls_set_size = setVirtualSize;
-
   Widget drawingArea = (Widget) handle;
   if (horizontal > 0) {
     if (setVirtualSize)
-      hExtent = horizontal * x_length;
+      hExtent = orig_h_size;
     else 
       hExtent = 0;
     
@@ -821,14 +833,12 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 		     (XtCallbackProc) wxScrollCallback, (XtPointer) XmHORIZONTAL);
     }
     
-    int sliderSize, extra;
+    int extra;
     if (setVirtualSize) {
-      sliderSize = max(min(canvasWidth1/horizontal, x_length), 1);
-      x_page = min(max(x_page, 1), sliderSize);
-      x_pos = min(x_pos, x_length - sliderSize);
+      x_page = max(1, canvasClientWidth / horizontal);
+      x_pos = min(x_pos, x_length - x_page);
       extra = 0;
     } else {
-      sliderSize = x_page;
       extra = x_page;
     }
 
@@ -837,7 +847,7 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 		   XmNpageIncrement, x_page,
 		   XmNmaximum, x_length + extra,
 		   XmNvalue, x_pos,
-		   XmNsliderSize, sliderSize,
+		   XmNsliderSize, x_page,
 		   NULL);
 
     if (setVirtualSize) {
@@ -880,7 +890,7 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 
   if (vertical > 0) {
     if (setVirtualSize)
-      vExtent = vertical * y_length;
+      vExtent = orig_v_size;
     else
       vExtent = 0;
     
@@ -907,14 +917,12 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 		     (XtCallbackProc) wxScrollCallback, (XtPointer) XmVERTICAL);
     }
 
-    int sliderSize, extra;
+    int extra;
     if (setVirtualSize) {
-      sliderSize = max(min(canvasHeight1/vertical, y_length), 1);
-      y_page = min(max(y_page, 0), sliderSize);
-      y_pos = min(y_pos, y_length - sliderSize);
+      y_page = max(1, canvasClientHeight / vertical);
+      y_pos = min(y_pos, y_length - y_page);
       extra = 0;
     } else {
-      sliderSize = y_page;
       extra = y_page;
     }
 
@@ -923,7 +931,7 @@ void wxCanvas::SetScrollbars (int horizontal, int vertical,
 		   XmNpageIncrement, y_page,
 		   XmNmaximum, y_length + extra,
 		   XmNvalue, y_pos,
-		   XmNsliderSize, sliderSize,
+		   XmNsliderSize, y_page,
 		   NULL);
 
     if (setVirtualSize) {
@@ -1041,12 +1049,12 @@ void wxCanvas:: GetScrollUnitsPerPage (int *x_page, int *y_page)
 void wxCanvas:: Scroll (int x_pos, int y_pos)
 {
   int old_x, old_y;
-  ViewStart (&old_x, &old_y);
+  ViewStart(&old_x, &old_y, TRUE);
   if (((x_pos == -1) || (x_pos == old_x)) && ((y_pos == -1) || (y_pos == old_y)))
     return;
 
   Bool clearCanvas = FALSE;
-  if (hScroll)
+  if (hScroll && (x_pos >= 0))
     {
       XtVaSetValues (hScrollBar, XmNvalue, x_pos, NULL);
       hStart = x_pos;
@@ -1056,7 +1064,7 @@ void wxCanvas:: Scroll (int x_pos, int y_pos)
       if (GetDC ())
 	GetDC ()->device_origin_x = -(x_pos * horiz_units);
     }
-  if (vScroll)
+  if (vScroll && (y_pos >= 0))
     {
       XtVaSetValues (vScrollBar, XmNvalue, y_pos, NULL);
       vStart = y_pos;
@@ -1069,13 +1077,13 @@ void wxCanvas:: Scroll (int x_pos, int y_pos)
     }
 
 	if (clearCanvas) {
-		int new_x, new_y;
-		int width, height;
-		ViewStart(&new_x, &new_y);
-		GetClientSize(&width, &height);
-		PhysicalScroll(0, 0, width, height,
-				(old_x - new_x) * horiz_units,
-				(old_y - new_y) * vert_units);
+	  int new_x, new_y;
+	  int width, height;
+	  ViewStart(&new_x, &new_y, TRUE);
+	  GetClientSize(&width, &height);
+	  PhysicalScroll(0, 0, width, height,
+			 (old_x - new_x) * horiz_units,
+			 (old_y - new_y) * vert_units);
 	} else
 	  DoRefresh (FALSE);
 }
@@ -1737,8 +1745,13 @@ wxCanvasInputEvent (Widget drawingArea, XtPointer data, XmDrawingAreaCallbackStr
 }
 
 // Where the current view starts from
-void wxCanvas:: ViewStart (int *x, int *y)
+void wxCanvas:: ViewStart(int *x, int *y, Bool sb_vals)
 {
+  if (!scrolls_set_size && !sb_vals) {
+    *x = *y = 0;
+    return;
+  }
+
   int xx, yy;
   if (hScroll)
     XtVaGetValues (hScrollBar, XmNvalue, &xx, NULL);
@@ -1748,8 +1761,13 @@ void wxCanvas:: ViewStart (int *x, int *y)
     XtVaGetValues (vScrollBar, XmNvalue, &yy, NULL);
   else
     yy = 0;
-  *x = xx;
-  *y = yy;
+  if (sb_vals) {
+    *x = xx;
+    *y = yy;
+  } else {
+    *x = xx * horiz_units;
+    *y = yy * vert_units;
+  }
 }
 
 

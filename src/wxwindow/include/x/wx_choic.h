@@ -60,6 +60,9 @@ class wxChoice: public wxbChoice
   virtual int FindString(char *s);
   virtual char *GetString(int n);
 
+  virtual void SetFocus();
+  virtual void OnChar(wxKeyEvent&);
+
   void ChangeColour(void) ;
 
   void SetColumns(int n = 1 );

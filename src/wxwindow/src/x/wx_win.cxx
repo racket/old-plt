@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_win.cxx,v 1.7 1998/08/10 18:02:55 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.8 1998/08/21 00:31:42 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -97,12 +97,6 @@ void wxWindow::SetFocus(void)
 {
   XmProcessTraversal((Widget)handle, XmTRAVERSE_CURRENT);
   XmProcessTraversal((Widget)handle, XmTRAVERSE_CURRENT);
-  
-  wxWindow *w = GetParent();
-  while (w 
-	 && !wxSubType(w->__type, wxTYPE_FRAME) 
-	 && !wxSubType(w->__type, wxTYPE_DIALOG_BOX))
-    w = w->GetParent();
 }
 
 void wxWindow::CaptureMouse(void)
@@ -189,10 +183,22 @@ Display *wxWindow::GetXDisplay(void)
   return XtDisplay(w);
 }
 
+Screen *wxWindow::GetXScreen(void)
+{
+  Widget w = (Widget)handle;
+
+  while (w && XmIsGadget(w))
+    w = XtParent(w);
+
+  if (!w) return NULL;
+
+  return XtScreen(w);
+}
+
 void wxWindow::Refresh(void)
 {
-  Display *display = XtDisplay((Widget)handle);
-  Window thisWindow = XtWindow((Widget)handle);
+  Display *display = GetXDisplay();
+  Window thisWindow = GetXWindow();
 
   XExposeEvent dummyEvent;
   int width, height;
@@ -234,16 +240,14 @@ void wxWindow::GetPosition(int *x, int *y)
 
 void wxWindow::ClientToScreen(int *x, int *y)
 {
-  Display *display = XtDisplay((Widget)handle);
-  Window rootWindow = RootWindowOfScreen(XtScreen((Widget)handle));
+  Display *display = GetXDisplay();
+  Window rootWindow = RootWindowOfScreen(GetXScreen());
   Window thisWindow;
-  if (wxSubType(__type, wxTYPE_FRAME))
-  {
+  if (wxSubType(__type, wxTYPE_FRAME)) {
     wxFrame *fr = (wxFrame *)this;
     thisWindow = XtWindow(fr->clientArea);
-  }
-  else
-    thisWindow = XtWindow((Widget)handle);
+  } else
+    thisWindow = GetXWindow();
 
   Window childWindow;
   int xx = *x;
@@ -253,16 +257,14 @@ void wxWindow::ClientToScreen(int *x, int *y)
 
 void wxWindow::ScreenToClient(int *x, int *y)
 {
-  Display *display = XtDisplay((Widget)handle);
-  Window rootWindow = RootWindowOfScreen(XtScreen((Widget)handle));
+  Display *display = GetXDisplay();
+  Window rootWindow = RootWindowOfScreen(GetXScreen());
   Window thisWindow;
-  if (wxSubType(__type, wxTYPE_FRAME))
-  {
+  if (wxSubType(__type, wxTYPE_FRAME)) {
     wxFrame *fr = (wxFrame *)this;
     thisWindow = XtWindow(fr->clientArea);
-  }
-  else
-    thisWindow = XtWindow((Widget)handle);
+  } else
+    thisWindow = GetXWindow();
 
   Window childWindow;
   int xx = *x;
@@ -499,12 +501,12 @@ Bool wxWindow:: PopupMenu (wxMenu * menu, float x, float y)
       deviceY = canvas->GetDC ()->LogicalToDeviceY (y);
     }
 
-  Display *display = XtDisplay ((Widget)handle);
-  Window rootWindow = RootWindowOfScreen (XtScreen((Widget)handle));
-  Window thisWindow = XtWindow ((Widget)handle);
+  Display *display = GetXDisplay();
+  Window rootWindow = RootWindowOfScreen(GetXScreen());
+  Window thisWindow = GetXWindow();
   Window childWindow;
-  XTranslateCoordinates (display, thisWindow, rootWindow, (int) deviceX, (int) deviceY,
-			 &rootX, &rootY, &childWindow);
+  XTranslateCoordinates(display, thisWindow, rootWindow, (int) deviceX, (int) deviceY,
+			&rootX, &rootY, &childWindow);
 
   unsigned int state;
   {
@@ -546,6 +548,10 @@ Bool wxWindow::FakePopupMenu(wxMenu *, float, float)
   return FALSE;
 }
 
+#ifndef XK_ISO_Left_Tab
+# define     XK_ISO_Left_Tab                                 0xFE20
+#endif
+
 int CharCodeXToWX(KeySym keySym)
 {
   int id;
@@ -563,6 +569,7 @@ int CharCodeXToWX(KeySym keySym)
     case XK_Clear:
       id = WXK_CLEAR; break;
     case XK_Tab:
+    case XK_ISO_Left_Tab:
       id = WXK_TAB; break;
     case XK_numbersign:
       id = '#'; break;
@@ -807,7 +814,7 @@ void wxWindow::SetFont(wxFont *f)
     XtVaSetValues ((Widget)handle,
 		   XmNfontList, 
 		   /* MATTHEW: [4] Provide display */
-		   f->GetInternalFont(XtDisplay((Widget)handle)),
+		   f->GetInternalFont(GetXDisplay()),
 		   NULL);
 }
 

@@ -81,7 +81,7 @@ class wxCanvasDC: public wxbCanvasDC
   XImage *get_pixel_image_cache;
   int get_pixel_cache_pos;
   XColor *get_pixel_color_cache;
-  Bool get_pixel_cache_full;
+  short get_pixel_cache_full, set_a_pixel;
 
   wxCanvasDC(void);
 

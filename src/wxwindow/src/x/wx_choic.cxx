@@ -36,6 +36,48 @@ wxChoiceCallback (Widget w, XtPointer clientData,
   }
 }
 
+static void UpDownHandler(Widget WXUNUSED(w),
+			  Widget hash_w,
+			  XEvent *xev,
+			  Boolean *continue_to_dispatch_return)
+{
+  wxChoice *win = (wxChoice *)wxWidgetHashTable->Get((long)hash_w);
+
+  if (!win)
+    return;
+
+  switch (xev->xany.type) {
+  case KeyPress:
+    {
+      KeySym keySym;
+      XComposeStatus compose;
+      XLookupString((XKeyEvent *)xev, wxBuffer, 20, &keySym, &compose);
+      int id = CharCodeXToWX(keySym);
+      int delta = 0;
+      
+      switch (id) {
+      case WXK_UP:
+	delta = -1;
+	break;
+      case WXK_DOWN:
+	delta = 1;
+	break;
+      }
+      
+      if (delta) {
+	int s = win->GetSelection();
+	win->SetSelection(s + delta);
+	if (s != win->GetSelection()) {
+	  wxCommandEvent *event = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	  win->ProcessCommand(*event);
+	}
+      }
+    }
+  }
+
+  *continue_to_dispatch_return = 1;
+}
+
 IMPLEMENT_DYNAMIC_CLASS(wxChoice, wxItem)
 
 wxChoice::wxChoice (void)
@@ -200,6 +242,11 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 
   wxWidgetHashTable->Put((long)buttonWidget, this);
   AddPreHandlers(buttonWidget);
+  XtInsertEventHandler(buttonWidget, KeyPressMask,
+		       FALSE,
+		       (XtEventHandler)UpDownHandler,
+		       (XtPointer)buttonWidget,
+		       XtListTail);
 
   return TRUE;
 }
@@ -601,4 +648,14 @@ int  wxChoice::GetColumns(void)
 
   XtVaGetValues(menuWidget,XmNnumColumns,&numColumns,NULL) ;
   return numColumns ;
+}
+
+void wxChoice::SetFocus()
+{
+  XmProcessTraversal(formWidget, XmTRAVERSE_CURRENT);
+  XmProcessTraversal(formWidget, XmTRAVERSE_CURRENT);
+}
+
+void wxChoice::OnChar(wxKeyEvent &e)
+{
 }

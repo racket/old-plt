@@ -144,6 +144,7 @@ static Scheme_Object *bundle_symset_fillKind(int v) {
 
 
 
+
 static wxColour* dcGetTextBackground(wxDC *dc)
 {
   wxColour *c = new wxColour();
@@ -172,6 +173,34 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
     return dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c);
   } else
     return FALSE;
+}
+
+static void* MyTextExtent(wxDC *dc, char *s, wxFont *f, bool big)
+{
+  float w, h, d, asc;
+  Scheme_Object *a[4];
+
+  dc->GetTextExtent(s, &w, &h, &d, &asc, f, big);
+
+  a[0] = scheme_make_double(w);
+  a[1] = scheme_make_double(h);
+  a[2] = scheme_make_double(d);
+  a[3] = scheme_make_double(asc);
+
+  return scheme_values(4, a);
+}
+
+static void* MyGetSize(wxDC *dc)
+{
+  float w, h;
+  Scheme_Object *a[2];
+
+  dc->GetSize(&w, &h);
+
+  a[0] = scheme_make_double(w);
+  a[1] = scheme_make_double(h);
+
+  return scheme_values(2, a);
 }
 
 
@@ -408,29 +437,20 @@ static Scheme_Object *os_wxDCOk(Scheme_Object *obj, int n,  Scheme_Object *p[])
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCGetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDCMyGetSize(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  void* r;
   objscheme_check_valid(obj);
-  nnfloat _x0;
-  nnfloat* x0 = &_x0;
-  nnfloat _x1;
-  nnfloat* x1 = &_x1;
 
   
-      *x0 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[0], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
-      *x1 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[1], "get-size in dc<%>"), "get-size in dc<%>"", extracting boxed argument");
 
   
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetSize(x0, x1);
+  r = MyGetSize(((wxDC *)((Scheme_Class_Object *)obj)->primdata));
 
   
-  if (n > 0)
-    objscheme_set_box(p[0], scheme_make_double(_x0));
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_double(_x1));
   
-  return scheme_void;
+  return (Scheme_Object*)r;
 }
 
 #pragma argsused
@@ -739,63 +759,32 @@ static Scheme_Object *os_wxDCGetCharHeight(Scheme_Object *obj, int n,  Scheme_Ob
 }
 
 #pragma argsused
-static Scheme_Object *os_wxDCGetTextExtent(Scheme_Object *obj, int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxDCMyTextExtent(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  void* r;
   objscheme_check_valid(obj);
   string x0;
-  nnfloat _x1;
-  nnfloat* x1 = &_x1;
-  nnfloat _x2;
-  nnfloat* x2 = &_x2;
-  nnfloat _x3;
-  nnfloat* x3 = &_x3;
-  nnfloat _x4;
-  nnfloat* x4 = &_x4;
-  class wxFont* x5;
-  Bool x6;
+  class wxFont* x1;
+  Bool x2;
 
   
   x0 = (string)objscheme_unbundle_string(p[0], "get-text-extent in dc<%>");
-      *x1 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[1], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
-      *x2 = objscheme_unbundle_nonnegative_float(objscheme_unbox(p[2], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
-  if (n > 3) {
-    if (XC_SCHEME_NULLP(p[3]))
-    x3 = NULL;
-  else
-    *x3 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[3], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
+  if (n > 1) {
+    x1 = objscheme_unbundle_wxFont(p[1], "get-text-extent in dc<%>", 1);
   } else
-    x3 = NULL;
-  if (n > 4) {
-    if (XC_SCHEME_NULLP(p[4]))
-    x4 = NULL;
-  else
-    *x4 = objscheme_unbundle_nonnegative_float(objscheme_nullable_unbox(p[4], "get-text-extent in dc<%>"), "get-text-extent in dc<%>"", extracting boxed argument");
+    x1 = NULL;
+  if (n > 2) {
+    x2 = objscheme_unbundle_bool(p[2], "get-text-extent in dc<%>");
   } else
-    x4 = NULL;
-  if (n > 5) {
-    x5 = objscheme_unbundle_wxFont(p[5], "get-text-extent in dc<%>", 1);
-  } else
-    x5 = NULL;
-  if (n > 6) {
-    x6 = objscheme_unbundle_bool(p[6], "get-text-extent in dc<%>");
-  } else
-    x6 = FALSE;
+    x2 = FALSE;
 
   DO_OK_CHECK(scheme_void)
-  ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetTextExtent(x0, x1, x2, x3, x4, x5, x6);
+  r = MyTextExtent(((wxDC *)((Scheme_Class_Object *)obj)->primdata), x0, x1, x2);
 
   
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_double(_x1));
-  if (n > 2)
-    objscheme_set_box(p[2], scheme_make_double(_x2));
-  if (n > 3 && !XC_SCHEME_NULLP(p[3]))
-    objscheme_set_box(p[3], scheme_make_double(_x3));
-  if (n > 4 && !XC_SCHEME_NULLP(p[4]))
-    objscheme_set_box(p[4], scheme_make_double(_x4));
   
-  return scheme_void;
+  return (Scheme_Object*)r;
 }
 
 #pragma argsused
@@ -1261,7 +1250,7 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "start-page", os_wxDCStartPage, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "start-doc", os_wxDCStartDoc, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "ok?", os_wxDCOk, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "get-size", os_wxDCGetSize, 2, 2);
+ scheme_add_method_w_arity(os_wxDC_class, "get-size", os_wxDCMyGetSize, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-foreground", os_wxDCdcGetTextForeground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-text-background", os_wxDCdcGetTextBackground, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-pen", os_wxDCGetPen, 0, 0);
@@ -1277,7 +1266,7 @@ if (os_wxDC_class) {
  scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-section", os_wxDCDrawBitmapRegion, 7, 9);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-width", os_wxDCGetCharWidth, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "get-char-height", os_wxDCGetCharHeight, 0, 0);
- scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCGetTextExtent, 3, 7);
+ scheme_add_method_w_arity(os_wxDC_class, "get-text-extent", os_wxDCMyTextExtent, 1, 3);
  scheme_add_method_w_arity(os_wxDC_class, "set-text-foreground", os_wxDCSetTextForeground, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-text-background", os_wxDCSetTextBackground, 1, 1);
  scheme_add_method_w_arity(os_wxDC_class, "set-pen", os_wxDCSetPen, 1, 1);

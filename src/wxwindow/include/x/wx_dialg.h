@@ -60,6 +60,8 @@ class wxDialogBox: public wxbDialogBox
   void SetTitle(char *title);
   char *GetTitle(void);
 
+  Window GetXWindow(void);
+
   virtual void OnSize(int w, int h);
 
   void PostDestroyChildren(void);

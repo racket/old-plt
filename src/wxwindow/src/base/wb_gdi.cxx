@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cxx,v 1.12 1998/10/16 18:19:39 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cxx,v 1.13 1998/11/05 22:18:31 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -502,7 +502,7 @@ wxInitializeStockObjects (void)
   wxFontPool = new XFontPool;
 #endif
 
-  wxNORMAL_FONT = new wxFont (12, wxMODERN, wxNORMAL, wxNORMAL);
+  wxNORMAL_FONT = new wxFont (12, wxSYSTEM, wxNORMAL, wxNORMAL);
   wxSMALL_FONT = new wxFont (10, wxSWISS, wxNORMAL, wxNORMAL);
   wxITALIC_FONT = new wxFont (12, wxROMAN, wxITALIC, wxNORMAL);
   wxSWISS_FONT = new wxFont (12, wxSWISS, wxNORMAL, wxNORMAL);
@@ -1102,6 +1102,8 @@ char *font_defaults[] = {
   "ScreenStdSuffix", "-${Screen$[weight]}-${Screen$[style]}"
     "-normal-*-*-%d-*-*-*-*-*-*",
 
+  "ScreenSystem__",
+  "+-${ScreenSystemBase}${ScreenStdSuffix}",
   "ScreenDefault__",
   "+-${ScreenDefaultBase}${ScreenStdSuffix}",
   "ScreenRoman__",

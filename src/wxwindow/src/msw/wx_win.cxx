@@ -2072,8 +2072,39 @@ wxKeyEvent *wxMakeCharEvent(WORD wParam, LPARAM lParam, Bool isASCII, Bool isRel
     if ((id >= 0) && (id <= 255))
       generic_ascii_code[id] = sc;
   } else {
-    if ((id = wxCharCodeMSWToWX(wParam)) == 0)
-      id = -1;
+    if ((id = wxCharCodeMSWToWX(wParam)) == 0) {
+      if (tempControlDown) {
+	switch(wParam) {
+	case VK_OEM_1:
+	  id = ';';
+	  break;
+	case VK_OEM_2:
+	  id = '/';
+	  break;
+	case VK_OEM_3:
+	  id = '`';
+	  break;
+	case VK_OEM_7:
+	  id = '\'';
+	  break;
+	case VK_OEM_PLUS:
+	  id = '+';
+	  break;
+	case VK_OEM_MINUS:
+	  id = '-';
+	  break;
+	case VK_OEM_PERIOD:
+	  id = '.';
+	  break;
+	case VK_OEM_COMMA:
+	  id = ',';
+	  break;
+	default:
+	  id = -1;
+	}
+      } else
+	id = -1;
+    }
     if ((id >= WXK_NUMPAD0) && (id <= WXK_NUMPAD9)) {
       /* remember scan code so we can ignore the WM_CHAR part */
       numpad_scan_codes[id - WXK_NUMPAD0] = THE_SCAN_CODE(lParam);

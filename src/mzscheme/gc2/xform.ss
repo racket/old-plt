@@ -546,16 +546,21 @@
    [(typedef? e)
     (when show-info?
       (printf "/* TYPEDEF */~n"))
-    (when pgc?
-      (check-pointer-type e))
-    e]
+    (if (simple-unused-def? e)
+	null
+	(begin
+	  (when pgc?
+	    (check-pointer-type e))
+	  e))]
    [(prototype? e)
     (let ([name (register-proto-information e)])
       (when show-info?
 	(printf "/* PROTO ~a */~n" name))
-      (if palm?
-	  (add-segment-label name e)
-	  e))]
+      (if (> (hash-table-get used-symbols name) 1)
+	  (if palm?
+	      (add-segment-label name e)
+	      e)
+	  null))]
    [(struct-decl? e)
     (if (braces? (caddr e))
 	(begin
@@ -572,7 +577,11 @@
 	  (register-class e))
 	(begin
 	  (when show-info? (printf "/* CLASS DECL */~n"))
-	  e))]
+	  (let ([name (tok-n (cadr e))])
+	    (if (assoc name c++-classes)
+		;; we already know this class
+		null
+		e))))]
    [(function? e)
     (let ([name (register-proto-information e)])
       (when show-info? (printf "/* FUNCTION ~a */~n" name))
@@ -609,11 +618,14 @@
 	  (convert-function e)))]
    [(var-decl? e)
     (when show-info? (printf "/* VAR */~n"))
-    (when pgc?
-      (unless (eq? (tok-n (car e)) 'static)
-	(let-values ([(pointers non-pointers) (get-vars e "TOPVAR" #f)])
-	  (top-vars (append pointers non-pointers (top-vars))))))
-    e]
+    (if (simple-unused-def? e)
+	null
+	(begin
+	  (when pgc?
+	    (unless (eq? (tok-n (car e)) 'static)
+	      (let-values ([(pointers non-pointers) (get-vars e "TOPVAR" #f)])
+		(top-vars (append pointers non-pointers (top-vars))))))
+	  e))]
 
    [else (print-struct #t)
 	 (error 'xform "unknown form: ~s" e)]))
@@ -664,6 +676,16 @@
 (define (typedef? e)
   (eq? 'typedef (tok-n (car e))))
 
+(define (simple-unused-def? e)
+  (and (andmap (lambda (x) (and (symbol? (tok-n x))
+				(not (eq? '|,| (tok-n x)))))
+	       e)
+       (= 1 (hash-table-get used-symbols
+			    (let loop ([e e])
+			      (if (null? (cddr e))
+				  (tok-n (car e))
+				  (loop (cdr e))))))))
+  
 (define (struct-decl? e)
   (memq (tok-n (car e)) '(struct enum)))
 
@@ -1010,7 +1032,7 @@
 		      (list->seq
 		       (append
 
-			;; Replace constructors names with gcInit_ names:
+			;; Replace constructors names with gcInit_ names
 			(let loop ([e body-e][did-one? #f])
 			  (cond
 			   [(null? e) (if did-one?
@@ -1031,9 +1053,11 @@
 							     (make-tok semi #f #f))
 							    (seq)))))]
 			   [(eq? (tok-n (car e)) '~)
+			    ;; destructor
 			    (cons (car e) (cons (cadr e) (loop (cddr e) did-one?)))]
 			   [(and (eq? (tok-n (car e)) name)
 				 (parens? (cadr e)))
+			    ;; constructor
 			    (cons (make-tok 'void #f #f)
 				  (cons (make-gc-init-tok (tok-n (car e)))
 					(loop (cdr e) #t)))]
@@ -2497,6 +2521,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; A cheap way of getting rid of unneeded prototypes:
+(define used-symbols (make-hash-table))
+(hash-table-put! used-symbols (string->symbol "GC_variable_stack") 1)
+
 (let* ([e-r e-raw]
        [_ (set! e-raw #f)] ;; to allow GC
        [e (let ([source #f])
@@ -2504,6 +2532,12 @@
 		      (lambda (v)
 			(when (cadr v)
 			  (set! source (cadr v)))
+			(when (symbol? (car v))
+			  (hash-table-put! used-symbols (car v) 
+					   (add1 (hash-table-get
+						  used-symbols
+						  (car v)
+						  (lambda () 0)))))
 			(if (pair? (car v))
 			    (let ([body (map translate (cddddr v))])
 			      ((cond

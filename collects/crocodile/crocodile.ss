@@ -738,6 +738,8 @@
 	   (rename set! =)
 	   (rename croc-return return)
 	   + - * / (rename modulo %)
+	   (rename string->number stringToNumber)
+	   (rename number->string numberToString)
 	   #%datum
 	   #%top
 	   #%parens

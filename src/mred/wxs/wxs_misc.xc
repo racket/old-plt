@@ -149,30 +149,28 @@ void check_ps_mode(int v, Scheme_Object *p)
 @CREATOR ()
 @ARGNAMES
 
-@ "get-command" : bstring GetPrinterCommand();
+@ "get-command" : string GetPrinterCommand();
 @ "get-file" : npathname GetPrinterFile();
-@ "get-preview-command" : bstring GetPrintPreviewCommand();
+@ "get-preview-command" : string GetPrintPreviewCommand();
 @ "get-mode" : SYM[psMode] GetPrinterMode();
 @ "get-orientation" : SYM[psOrientation] GetPrinterOrientation();
-// @ "get-options" : bstring GetPrinterOptions();
+// @ "get-options" : string GetPrinterOptions();
 @ "get-scaling" : void GetPrinterScaling(nnfloat*,nnfloat*);
 @ "get-translation" : void GetPrinterTranslation(float*,float*);
 @ "get-paper-name" : nstring GetPaperName();
-@ "get-afm-path" : nbstring GetAFMPath();
 @ "get-level-2" : bool GetLevel2();
 @ "get-editor-margin" : void GetEditorMargin(nnlong*,nnlong*);
 @ "get-margin" : void GetMargin(nnfloat*,nnfloat*);
 
-@ "set-command" : void SetPrinterCommand(bstring);
+@ "set-command" : void SetPrinterCommand(string);
 @ "set-file" : void SetPrinterFile(npathname);
-@ "set-preview-command" : void SetPrintPreviewCommand(bstring); 
+@ "set-preview-command" : void SetPrintPreviewCommand(string); 
 @ "set-mode" : void SetPrinterMode(SYM[psMode]); : : /checkPSMode[0]
 @ "set-orientation" : void SetPrinterOrientation(SYM[psOrientation]);
 // @ "set-options" : void SetPrinterOptions(pstring);
 @ "set-scaling" : void SetPrinterScaling(nnfloat,nnfloat);
 @ "set-translation" : void SetPrinterTranslation(float,float);
 @ "set-paper-name" : void SetPaperName(nstring);
-@ "set-afm-path" : void SetAFMPath(npstring);
 @ "set-level-2" : void SetLevel2(bool);
 @ "set-editor-margin" : void SetEditorMargin(nnlong,nnlong);
 @ "set-margin" : void SetMargin(nnfloat,nnfloat);

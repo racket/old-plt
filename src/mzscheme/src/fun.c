@@ -2186,7 +2186,7 @@ call_cc (int argc, Scheme_Object *argv[])
   for (csaved = p->runstack_saved; csaved; csaved = csaved->prev) {
     {
       Scheme_Saved_Stack *ss;
-      ss = MALLOC_ONE(Scheme_Saved_Stack);
+      ss = MALLOC_ONE_RT(Scheme_Saved_Stack);
       isaved->prev = ss;
     }
 #ifdef MZTAG_REQUIRED

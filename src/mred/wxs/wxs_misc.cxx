@@ -1083,7 +1083,7 @@ void check_ps_mode(int v, Scheme_Object *p)
 
 
 
-// @ "get-options" : bstring GetPrinterOptions();
+// @ "get-options" : string GetPrinterOptions();
 
 // @ "set-options" : void SetPrinterOptions(pstring);
 
@@ -1213,29 +1213,6 @@ static Scheme_Object *os_wxPrintSetupDataSetLevel2(int n,  Scheme_Object *p[])
   return scheme_void;
 }
 
-static Scheme_Object *os_wxPrintSetupDataSetAFMPath(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(os_wxPrintSetupData_class, "set-afm-path in ps-setup%", n, p);
-  npstring x0 INIT_NULLED_OUT;
-
-  SETUP_VAR_STACK_REMEMBERED(2);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, x0);
-
-  
-  x0 = (npstring)WITH_VAR_STACK(objscheme_unbundle_nullable_pstring(p[POFFSET+0], "set-afm-path in ps-setup%"));
-
-  
-  WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetAFMPath(x0));
-
-  
-  
-  READY_TO_RETURN;
-  return scheme_void;
-}
-
 static Scheme_Object *os_wxPrintSetupDataSetPaperName(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1356,14 +1333,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-preview-command in ps-setup%", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "set-preview-command in ps-setup%"));
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-preview-command in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrintPreviewCommand(x0));
@@ -1402,14 +1379,14 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(os_wxPrintSetupData_class, "set-command in ps-setup%", n, p);
-  bstring x0 INIT_NULLED_OUT;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
 
   
-  x0 = (bstring)WITH_VAR_STACK(objscheme_unbundle_bstring(p[POFFSET+0], "set-command in ps-setup%"));
+  x0 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+0], "set-command in ps-setup%"));
 
   
   WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->SetPrinterCommand(x0));
@@ -1501,27 +1478,6 @@ static Scheme_Object *os_wxPrintSetupDataGetLevel2(int n,  Scheme_Object *p[])
   
   READY_TO_RETURN;
   return (r ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *os_wxPrintSetupDataGetAFMPath(int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  nbstring r;
-  objscheme_check_valid(os_wxPrintSetupData_class, "get-afm-path in ps-setup%", n, p);
-
-  SETUP_VAR_STACK_REMEMBERED(1);
-  VAR_STACK_PUSH(0, p);
-
-  
-
-  
-  r = WITH_VAR_STACK(((wxPrintSetupData *)((Scheme_Class_Object *)p[0])->primdata)->GetAFMPath());
-
-  
-  
-  READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupDataGetPaperName(int n,  Scheme_Object *p[])
@@ -1653,7 +1609,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(int n,  Scheme_O
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  bstring r;
+  string r;
   objscheme_check_valid(os_wxPrintSetupData_class, "get-preview-command in ps-setup%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1667,7 +1623,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrintPreviewCommand(int n,  Scheme_O
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupDataGetPrinterFile(int n,  Scheme_Object *p[])
@@ -1695,7 +1651,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(int n,  Scheme_Object
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  bstring r;
+  string r;
   objscheme_check_valid(os_wxPrintSetupData_class, "get-command in ps-setup%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -1709,7 +1665,7 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterCommand(int n,  Scheme_Object
   
   
   READY_TO_RETURN;
-  return WITH_REMEMBERED_STACK(objscheme_bundle_bstring((char *)r));
+  return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
 static Scheme_Object *os_wxPrintSetupData_ConstructScheme(int n,  Scheme_Object *p[])
@@ -1749,13 +1705,12 @@ void objscheme_setup_wxPrintSetupData(Scheme_Env *env)
 
   wxREGGLOB(os_wxPrintSetupData_class);
 
-  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", (Scheme_Method_Prim *)os_wxPrintSetupData_ConstructScheme, 25));
+  os_wxPrintSetupData_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "ps-setup%", "object%", (Scheme_Method_Prim *)os_wxPrintSetupData_ConstructScheme, 23));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from" " method", (Scheme_Method_Prim *)os_wxPrintSetupDatacopy, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-margin" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetMargin, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-editor-margin" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetEditorMargin, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-level-2" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetLevel2, 1, 1));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-afm-path" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetAFMPath, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-paper-name" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetPaperName, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-translation" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetPrinterTranslation, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-scaling" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataSetPrinterScaling, 2, 2));
@@ -1767,7 +1722,6 @@ void objscheme_setup_wxPrintSetupData(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-margin" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataGetMargin, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-editor-margin" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataGetEditorMargin, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-level-2" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataGetLevel2, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-afm-path" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataGetAFMPath, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-paper-name" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataGetPaperName, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-translation" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataGetPrinterTranslation, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxPrintSetupData_class, "get-scaling" " method", (Scheme_Method_Prim *)os_wxPrintSetupDataGetPrinterScaling, 2, 2));

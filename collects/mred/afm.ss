@@ -5,7 +5,7 @@
 	   afm-get-text-extent)
 
   (define (report-exn exn)
-    (fprintf (current-error-port) "AFM error: ~a~n"
+    (fprintf (current-error-port) "PostScript/AFM error: ~a~n"
 	     (if (exn? exn)
 		 (exn-message exn)
 		 exn)))
@@ -13,9 +13,8 @@
   (define adobe-name-to-code-point #f)
 
   (define (read-names!)
-    (parameterize ([break-enabled #f])
-      (set! adobe-name-to-code-point (make-hash-table 'equal))
-      (with-handlers ([void report-exn])
+    (let ([ht (make-hash-table 'equal)])
+      (with-handlers ([not-break-exn? report-exn])
 	(call-with-input-file* 
 	 (build-path (collection-path "afm") "glyphlist.txt")
 	 (lambda (i)
@@ -25,10 +24,11 @@
 		 (let ([m (regexp-match #rx"^([a-zA-Z]+);([0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F])$"
 					l)])
 		   (when m
-		     (hash-table-put! adobe-name-to-code-point 
+		     (hash-table-put! ht
 				      (cadr m)
 				      (string->number (caddr m) 16))))
-		 (loop)))))))))
+		 (loop)))))))
+      (set! adobe-name-to-code-point ht)))
   
   (define (find-unicode name)
     (unless adobe-name-to-code-point
@@ -135,33 +135,27 @@
       (let ([l (string->list string)]
 	    [font (or (get-font font-name)
 		      (make-font 0 0 #hash()))]
-	    [show-simples (lambda (simples simple-w)
+	    [show-simples (lambda (simples)
 			    (unless (null? simples)
 			      (fprintf out "(~a) show\n"
-				       (list->bytes (reverse simples)))
-			      (when simple-w
-				(fprintf out "~a 0 rmoveto\n" (* size (/ simple-w 1000.0))))))])
-	(let loop ([l l][simples null][simple-width 0])
+				       (list->bytes (reverse simples)))))])
+	(let loop ([l l][simples null])
 	  (cond
 	   [(null? l)
-	    (show-simples simples #f)]
+	    (show-simples simples)]
 	   [(hash-table-get (font-achars font) (char->integer (car l))
 			    (lambda () #f))
 	    => (lambda (achar)
 		 (if (<= 1 (achar-enc achar) 255)
 		     (loop (cdr l) 
-			   (cons (achar-enc achar) simples)
-			   (+ simple-width (achar-width achar)))
+			   (cons (achar-enc achar) simples))
 		     ;; Not simple... use glyphshow
 		     (begin
-		       (show-simples simples simple-width)
-		       (fprintf out "/~a showglyph ~a 0 rmoveto\n" 
-				(achar-name achar)
-				(* size (/ (achar-width achar) 1000.0)))
-		       (loop (cdr l) null 0))))]
+		       (show-simples simples)
+		       (fprintf out "/~a glyphshow\n" (achar-name achar))
+		       (loop (cdr l) null))))]
 	   [else
 	    ;; No mapping for the character.
-	    (show-simples simples simple-width)
+	    (show-simples simples)
 	    ;; Draw a box, eventually...
-	    (fprintf out "~a 0 rmoveto\n" (* 0.5 size))
-	    (loop (cdr l) null 0)]))))))
+	    (loop (cdr l) null)]))))))

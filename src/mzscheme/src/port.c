@@ -4230,7 +4230,7 @@ osk_byte_ready (Scheme_Input_Port *port)
     if (osk->next)
       osk = osk->next;
     else {
-      osk->next = MALLOC_ONE(osk_console_input);
+      osk->next = MALLOC_ONE_RT(osk_console_input);
 #ifdef MZTAG_REQUIRED
       osk->type = scheme_rt_oskit_console_input;
 #endif

@@ -1200,7 +1200,7 @@ void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
     if (use16)
       v = scheme_make_sized_offset_char_string((mzchar *)text, dt, -1, 1);
     else 
-      v = scheme_make_sized_offset_byte_string((char *)text, dt, -1, 1);
+      v = scheme_make_sized_offset_utf8_string((char *)text, dt, -1);
     a[2] = v;
     a[3] = f;
 
@@ -1222,17 +1222,17 @@ extern void wxPostScriptGetTextExtent(const char *fontname,
     if (use16)
       v = scheme_make_sized_offset_char_string((mzchar *)text, dt, -1, 1);
     else 
-      v = scheme_make_sized_offset_byte_string((char *)text, dt, -1, 1);
+      v = scheme_make_sized_offset_utf8_string((char *)text, dt, -1);
     a[2] = v;
 
-    v = scheme_apply(ps_get_text_extent, 3, a);
+    v = scheme_apply_multi(ps_get_text_extent, 3, a);
     
     if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)
 	&& (scheme_multiple_count == 4)) {
       if (SCHEME_FLTP(scheme_multiple_array[0]))
 	*x = SCHEME_FLT_VAL(scheme_multiple_array[0]);
       if (SCHEME_FLTP(scheme_multiple_array[1]))
-	*x = SCHEME_FLT_VAL(scheme_multiple_array[1]);
+	*y = SCHEME_FLT_VAL(scheme_multiple_array[1]);
       if (descent)
 	if (SCHEME_FLTP(scheme_multiple_array[2]))
 	  *descent = SCHEME_FLT_VAL(scheme_multiple_array[2]);
@@ -1726,7 +1726,7 @@ void wxsExecute(char **argv)
   a = (Scheme_Object **)scheme_malloc(sizeof(Scheme_Object *) * c);
 
   for (i = 0; i < c; i++) {
-    aa = scheme_make_byte_string(argv[i]);
+    aa = scheme_make_utf8_string(argv[i]);
     a[i] = aa;
   }
 

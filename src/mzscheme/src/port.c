@@ -3283,6 +3283,9 @@ fd_close_output(Scheme_Output_Port *port)
 {
   Scheme_FD *fop = (Scheme_FD *)port->port_data;
 
+  if (fop->bufcount)
+    flush_fd(port, NULL, 0);
+
   if (fop->flushing)
     wait_until_fd_flushed(port);
 

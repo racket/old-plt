@@ -26,7 +26,7 @@
 
 	[export* : drscheme:export^ ((require-relative-library "export.ss")
 				     mred mzlib mzlib:date framework
-				     plt-installer get-info
+				     plt-installer
 				     print-convert app
 				     text snip
 				     init graph

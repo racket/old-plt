@@ -35,12 +35,12 @@ typedef short Type_Tag;
 
 #define TIME 0
 #define SEARCH 0
-#define SAFETY 0
+#define SAFETY 1
 #define RECYCLE_HEAP 0
 #define NOISY 0
 #define MARK_STATS 0
 
-#define GENERATIONS 1
+#define GENERATIONS 0
 
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0

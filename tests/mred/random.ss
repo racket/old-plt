@@ -743,7 +743,20 @@
 		(try argtypes resulttype (list name iv use)
 		     (lambda (args)
 		       (if use
-			   (apply (ivar/proc use iv) args)
+			   (begin
+
+			     ;; Avoid showing a disabled dialog
+			     (when (and (is-a? use dialog%)
+					(eq? iv 'show)
+					(equal? args '(#t)))
+				 (send use enable #t))
+
+			     ;; Avoid excessive scaling
+			     (when (eq? iv 'set-scale)
+			       (set! args (map (lambda (x) (min x 10)) args)))
+
+			     (apply (ivar/proc use iv) args))
+
 			   (apply (global-defined-value iv) args))))))
 	    (loop (cdr l)))))))
 
@@ -1006,7 +1019,7 @@
 		    [else (cons (car l) (loop (cdr l)))]))))))
 	  '(("Eventspaces" sleep/yield)))
 
-(random-seed 170)
+(random-seed 179)
 
 (create-all-bad)
 (call-all-bad)

@@ -10,6 +10,8 @@
     (append (cons (build-path 'same)
                   (get-preference 'projf:classpath (lambda () null)))
             (map (lambda (p) (build-path p "profj" "libs"))
+                 (current-library-collection-paths))
+            (map (lambda (p) (build-path p "htdch"))
                  (current-library-collection-paths))))
   
   ;reset-classpath: -> void

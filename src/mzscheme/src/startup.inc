@@ -1888,7 +1888,7 @@
 "(and(stx-pair? a)"
 "(let((a(stx-car a)))"
 "(and(identifier? a)"
-"(module-identifier=? a(quote-syntax unsyntax)))))))"
+"(module-identifier=? a(quote-syntax unsyntax-splicing)))))))"
 "(loop(datum->syntax-object #f l #f) depth"
 " same-k "
 " convert-k)"

@@ -2204,7 +2204,7 @@
 				    (and (stx-pair? a)
 					 (let ([a (stx-car a)])
 					   (and (identifier? a)
-						(module-identifier=? a (quote-syntax unsyntax)))))))
+						(module-identifier=? a (quote-syntax unsyntax-splicing)))))))
 			      ;; Found something important, like `unsyntax'; stop the special
 			      ;; handling for pairs
 			      (loop (datum->syntax-object #f l #f) depth

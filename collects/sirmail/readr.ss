@@ -2347,16 +2347,21 @@
 						  (values bytes->string/utf-8 void)]
 						 [(and mime-mode?
 						       (string? (mime:entity-charset ent))
-						       (bytes-open-converter (latin-1->windows-1252
+						       (bytes-open-converter (generalize-encoding
 									      (mime:entity-charset ent))
 									     "UTF-8"))
 						  => (lambda (c)
 						       (values
 							(lambda (s alt)
-							  (let-values ([(r got status) (bytes-convert c s)])
-							    (if (eq? status 'complete)
-								(bytes->string/utf-8 r alt)
-								(bytes->string/latin-1 s))))
+							  (let loop ([l null][start 0])
+							    (let-values ([(r got status) (bytes-convert c s start)])
+							      (case status
+								[(complete)
+								 (bytes->string/utf-8 (apply bytes-append (reverse (cons r l))) alt)]
+								[(aborts)
+								 (loop (list* #"?" r l) (+ start got))]
+								[(error)
+								 (loop (list* #"?" r l) (+ start got 1))]))))
 							(lambda ()
 							  (bytes-close-converter c))))]
 						 [else (values bytes->string/latin-1 void)])])

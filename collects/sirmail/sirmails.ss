@@ -35,7 +35,7 @@
 
      confirm-box
 
-     latin-1->windows-1252
+     generalize-encoding
      parse-encoded
      encode-for-header))
 

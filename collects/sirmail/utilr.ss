@@ -228,6 +228,6 @@
       ;;  Decoding `from' names                                  ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define latin-1->windows-1252 unihead:latin-1->windows-1252)
+      (define generalize-encoding unihead:generalize-encoding)
       (define parse-encoded unihead:decode-for-header)
       (define encode-for-header unihead:encode-for-header))))

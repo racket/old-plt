@@ -32,7 +32,7 @@
 #include <ctype.h>
 #include "schgc.h"
 
-# define HASH_TABLE_SIZE 256
+# define HASH_TABLE_SIZE_STEP 4
 #ifdef SMALL_HASH_TABLES
 # define FILL_FACTOR 1.30
 #else
@@ -46,8 +46,8 @@ extern MZ_DLLIMPORT void (*GC_custom_finalize)(void);
 extern int GC_is_marked(void *);
 #endif
 
-Scheme_Bucket_Table *scheme_symbol_table = NULL;
-Scheme_Bucket_Table *scheme_parallel_symbol_table = NULL;
+Scheme_Hash_Table *scheme_symbol_table = NULL;
+Scheme_Hash_Table *scheme_parallel_symbol_table = NULL;
 
 unsigned long scheme_max_found_symbol_name;
 
@@ -79,12 +79,12 @@ extern long scheme_hash_primes[];
 #endif
 
 /* Special hashing for symbols: */
-static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
+static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
 				    GC_CAN_IGNORE const char *key, unsigned int length,
 				    Scheme_Object *naya)
 {
   hash_v_t h, h2;
-  Scheme_Bucket *bucket;
+  Scheme_Object *bucket;
 
   /* WARNING: key may be GC-misaligned... */
 
@@ -113,8 +113,8 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
   else if (h2 & 0x1)
     h2++; /* note: table size is never even, so no % needed */
 
-  while ((bucket = table->buckets[WEAK_ARRAY_HEADSIZE + h])) {
-    if (SAME_OBJ((Scheme_Object *)bucket, SYMTAB_LOST_CELL)) {
+  while ((bucket = table->keys[WEAK_ARRAY_HEADSIZE + h])) {
+    if (SAME_OBJ(bucket, SYMTAB_LOST_CELL)) {
       if (naya) {
 	/* We're re-using, so decrement count and it will be
 	   re-incremented. */
@@ -123,7 +123,7 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
       }
     } else if (((int)length == SCHEME_SYM_LEN(bucket))
 	       && !memcmp(key, SCHEME_SYM_VAL(bucket), length))
-      return (Scheme_Object *)bucket;
+      return bucket;
     h = (h + h2) % table->size;
   }
 
@@ -135,33 +135,44 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
 
   if (table->count * FILL_FACTOR >= table->size) {
     /* Rehash */
-    int i, oldsize = table->size, newsize;
+    int i, oldsize = table->size, newsize, lostc;
     size_t asize;
-    Scheme_Bucket **old = table->buckets;
+    Scheme_Object *cb;
+    Scheme_Object **old = table->keys;
 
-    newsize = scheme_hash_primes[++table->step];
+    /* Don't grow table if it's mostly lost cells (due to lots of
+       temporary symbols). */
+    lostc = 0;
+    for (i = 0; i < oldsize; i++) {
+      cb = old[WEAK_ARRAY_HEADSIZE + i];
+      if (cb == SYMTAB_LOST_CELL)
+	lostc++;
+    }
+    if ((lostc * 2) < table->count)
+      table->step++;
 
-    asize = (size_t)newsize * sizeof(Scheme_Bucket *);
+    newsize = scheme_hash_primes[table->step];
+
+    asize = (size_t)newsize * sizeof(Scheme_Object *);
     {
-      Scheme_Bucket **ba;
+      Scheme_Object **ba;
 #ifdef MZ_PRECISE_GC
-      ba = (Scheme_Bucket **)GC_malloc_weak_array(sizeof(Scheme_Bucket *) * newsize,
+      ba = (Scheme_Bucket **)GC_malloc_weak_array(sizeof(Scheme_Object *) * newsize,
 						  SYMTAB_LOST_CELL);
 #else
-      ba = MALLOC_N_ATOMIC(Scheme_Bucket *, newsize);
+      ba = MALLOC_N_ATOMIC(Scheme_Object *, newsize);
       memset((char *)ba, 0, asize);
 #endif
-      table->buckets = ba;
+      table->keys = ba;
     }
     table->size = newsize;
 
     table->count = 0;
 
     for (i = 0; i < oldsize; i++) {
-      Scheme_Bucket *cb;
       cb = old[WEAK_ARRAY_HEADSIZE + i] ;
-      if (cb && (((Scheme_Object *)cb) != SYMTAB_LOST_CELL))
-	symbol_bucket(table, SCHEME_SYM_VAL(cb), SCHEME_SYM_LEN(cb), (Scheme_Object *)cb);
+      if (cb && (cb != SYMTAB_LOST_CELL))
+	symbol_bucket(table, SCHEME_SYM_VAL(cb), SCHEME_SYM_LEN(cb), cb);
     }
 
     /* Restore GC-misaligned key: */
@@ -170,7 +181,7 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
     goto rehash_key;
   }
 
-  table->buckets[WEAK_ARRAY_HEADSIZE + h] = (Scheme_Bucket *)naya;
+  table->keys[WEAK_ARRAY_HEADSIZE + h] = naya;
 
   table->count++;
 
@@ -178,14 +189,14 @@ static Scheme_Object *symbol_bucket(Scheme_Bucket_Table *table,
 }
 
 #ifndef MZ_PRECISE_GC
-static void clean_one_symbol_table(Scheme_Bucket_Table *symbol_table)
+static void clean_one_symbol_table(Scheme_Hash_Table *symbol_table)
 {
   /* Clean the symbol table by removing pointers to collected
      symbols. The correct way to do this is to install a GC
      finalizer on symbol pointers, but that would be expensive. */
 
   if (symbol_table) {
-    Scheme_Object **buckets = (Scheme_Object **)symbol_table->buckets;
+    Scheme_Object **buckets = (Scheme_Object **)symbol_table->keys;
     int i = symbol_table->size;
     void *b;
 
@@ -195,8 +206,9 @@ static void clean_one_symbol_table(Scheme_Bucket_Table *symbol_table)
 #ifndef USE_SENORA_GC
 	      || !GC_is_marked(b)
 #endif
-	      ))
+	      )) {
 	buckets[WEAK_ARRAY_HEADSIZE + i] = SYMTAB_LOST_CELL;
+      }
     }
   }
 }
@@ -210,22 +222,25 @@ static void clean_symbol_table(void)
 
 /**************************************************************************/
 
-static Scheme_Bucket_Table *init_one_symbol_table()
+static Scheme_Hash_Table *init_one_symbol_table()
 {
-  Scheme_Bucket_Table *symbol_table;
+  Scheme_Hash_Table *symbol_table;
   int size;
-  Scheme_Bucket **ba;
+  Scheme_Object **ba;
 
-  symbol_table = scheme_make_bucket_table(HASH_TABLE_SIZE, SCHEME_hash_ptr);
+  symbol_table = scheme_make_hash_table(SCHEME_hash_ptr);
 
-  size = symbol_table->size * sizeof(Scheme_Bucket *);
+  symbol_table->step = HASH_TABLE_SIZE_STEP;
+  symbol_table->size = scheme_hash_primes[symbol_table->step];
+  
+  size = symbol_table->size * sizeof(Scheme_Object *);
 #ifdef MZ_PRECISE_GC
   ba = (Scheme_Bucket **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
 #else
-  ba = MALLOC_N_ATOMIC(Scheme_Bucket *, size);
+  ba = MALLOC_N_ATOMIC(Scheme_Object *, size);
   memset((char *)ba, 0, size);
 #endif
-  symbol_table->buckets = ba;
+  symbol_table->keys = ba;
 
   return symbol_table;
 }
@@ -322,7 +337,7 @@ scheme_make_exact_char_symbol(const mzchar *name, unsigned int len)
 }
 
 Scheme_Object *
-scheme_intern_exact_symbol_in_table(Scheme_Bucket_Table *symbol_table, int kind, const char *name, unsigned int len)
+scheme_intern_exact_symbol_in_table(Scheme_Hash_Table *symbol_table, int kind, const char *name, unsigned int len)
 {
   Scheme_Object *sym;
 

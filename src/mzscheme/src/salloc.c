@@ -921,7 +921,7 @@ static void count_managed(Scheme_Custodian *m, int *c, int *a, int *u, int *t,
 
 #if defined(MZ_PRECISE_GC)
 /* Change to 1 to get tracing: */
-# define MZ_PRECISE_GC_TRACE 1
+# define MZ_PRECISE_GC_TRACE 0
 #else
 # define MZ_PRECISE_GC_TRACE 0
 #endif

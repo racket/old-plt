@@ -152,10 +152,14 @@
 	[get-editor (lambda () (send snip get-item-buffer))]
 	[is-selected? (lambda () (send snip is-selected?))]
 	[select (lambda (on?) (send snip select on?))]
-	[scroll-to (lambda () (send (send snip get-admin)
-				    scroll-to
-				    snip
-				    0 0 0 10 #t))]
+	[scroll-to (lambda () (let* ([admin (send snip get-admin)]
+				     [dc (send admin get-dc)]
+				     [h-box (box 0.0)])
+				(send snip get-extent dc 0 0 #f h-box #f #f #f #f)
+				(send admin
+				      scroll-to
+				      snip
+				      0 0 0 (unbox h-box) #t)))]
 	[user-data (case-lambda [() data][(x) (set! data x)])])
       (sequence (super-init))))
 
@@ -530,14 +534,15 @@
 	    [else
 	     (void)]))]
 	[select-out (lambda () 
-		      (let* ([parent-snip (send (send selected get-parent) get-parent-snip)])
-			(cond
-			 [parent-snip
-			  (let ([parent (send parent-snip get-item)])
-			    (send parent select #t)
-			    (send parent scroll-to))]
-			 [else
-			  (void)])))]
+		      (when selected
+			(let* ([parent-snip (send (send selected get-parent) get-parent-snip)])
+			  (cond
+			   [parent-snip
+			    (let ([parent (send parent-snip get-item)])
+			      (send parent select #t)
+			      (send parent scroll-to))]
+			   [else
+			    (void)]))))]
 	[select-in (lambda () 
 		     (cond
 		      [(and selected (is-a? selected hierarchical-list-snip%)) 
@@ -593,31 +598,27 @@
 			(if (eq? (car l) i)
 			    pos
 			    (loop (cdr l) (add1 pos))))))
-		(let* ([l (if selected 
-			      (send (send selected get-parent) get-items)
-			      (get-items))]
-		       [pos (if selected-item
-				(+ dir (find selected-item l))
-				(if (negative? dir)
-				    (sub1 (length l))
-				    0))])
-		  (when (< -1 pos (length l))
-		    (let ([i (list-ref l pos)])
-		      (send i select #t)
-		      (send i scroll-to)))))]
+		(if selected
+		    (let* ([l (send (send selected get-parent) get-items)]
+			   [pos (+ dir (find selected-item l))])
+		      (when (< -1 pos (length l))
+			(let ([i (list-ref l pos)])
+			  (send i select #t)
+			  (send i scroll-to))))
+		    (let ([y-box (box 0.0)]
+			  [x-box (box 0.0)]
+			  [w-box (box 0.0)]
+			  [h-box (box 0.0)])
+		      (send (send top-buffer get-admin) get-view x-box y-box w-box h-box)
+		      (let* ([y (add1 (unbox y-box))]
+			     [line (send top-buffer find-scroll-line y)]
+			     [top (send top-buffer scroll-line-location (+ line dir))])
+			(printf "y: ~a line: ~a top: ~a~n" y line top)
+			(send (send top-buffer get-admin) scroll-to
+			      (unbox x-box) top (unbox w-box) (- (unbox h-box) 10)
+			      'start)))))]
 	[page (lambda (dir)
-		(let ([items (get-items)])
-		  (unless (null? items)
-		    (let ([sbox (box 0)]
-			  [ebox (box 0)])
-		      (send top-buffer get-visible-line-range sbox ebox)
-		      (let* ([len (max 1 (sub1 (- (unbox ebox) (unbox sbox))))]
-			     [l (if (eq? dir 'up)
-				    (max 0 (- (unbox sbox) len))
-				    (min (sub1 (length items)) (+ (unbox ebox) len)))]
-			     [i (list-ref items l)])
-			(send i select #t)
-			(send i scroll-to))))))]
+		(send top-buffer move-position dir #f 'page))]
 	[selectable? #t]
 	[show-focus? #f]
 	[do-select (lambda (item s)

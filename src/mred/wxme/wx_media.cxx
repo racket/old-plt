@@ -860,7 +860,7 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 {
   long i, start, end, extendstart, extendend;
   Bool ateol, vcursor, anchor, extend, kas;
-  float h, w, y;
+  float y;
   int leftshrink, rightshrink;
 
   if (flowLocked)
@@ -980,8 +980,9 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
   } else if ((code == WXK_UP) || (code == WXK_DOWN)) {
     int cline, bias;
     /* Used when paging: */
-    int scrollFar = 0;
     Bool specialScroll = (kind == wxMOVE_PAGE);
+    float scrollLeft = 0.0, scrollWidth = 0.0;
+    float scrollTop = 0.0, scrollHeight = 0.0;
 
     if (code == WXK_UP) {
       if (leftshrink)
@@ -994,18 +995,32 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 
       cline = PositionLine(start, posateol);
       if (kind == wxMOVE_PAGE) {
-	long top, bottom, diff;
-	GetVisibleLineRange(&top, &bottom);
-	diff = bottom - top;
-	if (!diff) diff = 1;
-	else if (diff > 4) diff = 2;
-	else diff = 1;
-	admin->GetView(NULL, NULL, &w, &h);
-	if (extend && cline < top)
-	  top = cline;
-	y = LineLocation(top + diff, FALSE);
-	scrollFar = LineStartPosition(FindLine(y - h));
-	i = top;
+	/* The current top line should become the bottom line.  The caret
+	   should go to line above current top line, but watch out for:
+	      - especially tall lines
+	      - already at top */
+	float vy;
+	long newtop;
+
+	admin->GetMaxView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
+
+	/* Scroll to (vy - scrollheight) to vy. */
+	/* To get to a scroll position, we may have to
+	   go a little less: */
+	newtop = FindScrollLine(vy - scrollHeight);
+	y = ScrollLineLocation(newtop);
+	if (y < vy - scrollHeight) {
+	  float ny;
+	  ny = ScrollLineLocation(newtop + 1);
+	  if (ny < vy) {
+	    newtop++;
+	    y = ny;
+	  }
+	}
+	/* y is the new top location */
+
+	i = FindLine(y);
+	scrollTop = y;
       } else
 	i = cline - 1;
       if (i >= 0)
@@ -1049,18 +1064,23 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 
       cline = PositionLine(end, posateol);
       if (kind == wxMOVE_PAGE) {
-	long top, bottom, diff;
-	GetVisibleLineRange(&top, &bottom);
-	diff = bottom - top;
-	if (!diff) diff = 1;
-	else if (diff > 4) diff = 2;
-	else diff = 1;
-	admin->GetView(NULL, NULL, &w, &h);
-	if (extend && cline > bottom)
-	  bottom = cline;
-	y = LineLocation(bottom - diff, TRUE);
-	scrollFar = LineStartPosition(FindLine(y + h));
-	i = bottom;
+	float vy;
+	long newtop;
+
+	admin->GetMaxView(&scrollLeft, &vy, &scrollWidth, &scrollHeight);
+
+	/* Scroll to vy to (vy + scrollHeight). */
+	newtop = FindScrollLine(vy + scrollHeight);
+	y = ScrollLineLocation(newtop);
+	if (y <= vy) {
+	  y = ScrollLineLocation(newtop + 1);
+	}
+	/* y is the new top location */
+
+	i = FindLine(y);
+	if (LineLocation(i, TRUE) < y)
+	  i++;
+	scrollTop = y - 1;
       } else
 	i = cline + 1;
       if (i <= numValidLines - 1)
@@ -1101,10 +1121,9 @@ void wxMediaEdit::MovePosition(long code, Bool extendSelection,
 			  !specialScroll);
     if (specialScroll)
       /* Special scrolling intructions: */
-      ScrollToPosition((bias < 0) ? scrollFar : start,
-		       FALSE, 
-		       (bias < 0) ? end : scrollFar,
-		       (bias < 0) ? -1 : 1);
+      ScrollTo(NULL, scrollLeft, scrollTop,
+	       scrollWidth, scrollHeight,
+	       FALSE, 0);
     
     if (specialScroll)
       EndEditSequence();
@@ -4003,8 +4022,11 @@ Bool wxMediaEdit::ScrollTo(wxSnip *snip, float localx, float localy,
     delayedscrollbias = bias;
     return FALSE;
   } else {
-    if (!GetSnipPositionAndLocation(snip, NULL, &x, &y))
-      return FALSE;
+    if (snip) {
+      if (!GetSnipPositionAndLocation(snip, NULL, &x, &y))
+	return FALSE;
+    } else
+      x = y = 0;
     if (admin->ScrollTo(x + localx, y + localy, w, h, refresh, bias)) {
       if (!refresh)
 	refreshAll = TRUE;

@@ -136,8 +136,11 @@
 	    
 	    [on-replace
 	     (lambda args
-	       (let ([text (send replace-edit get-text)])
-		 (send edit insert text)))]
+	       (when (string=? (send edit get-text
+				     (send edit get-start-position)
+				     (send edit get-end-position))
+			       (send find-edit get-text))
+		 (send edit insert (send replace-edit get-text))))]
 	    [done-find #f]
 	    [on-replace-and-find
 	     (lambda args

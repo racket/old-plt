@@ -88,20 +88,19 @@
 		    (let* ([vert (make-object mred:vertical-panel% main-panel)]
 			   [_ (make-object mred:message% vert (string-append string "-like Keywords"))]
 			   [box (make-object mred:list-box% vert null "" wx:const-multiple -1 -1 -1 -1 keywords)]
-			   [make-button (lambda (callback string)
-					  (let* ([p (make-object mred:horizontal-panel% vert)]
-						 [s (make-object mred:vertical-panel% p)]
-						 [b (make-object mred:button% p callback string)])
-					    (send* p (spacing 1) (border 1) (stretchable-in-y #f))
-					    (send* s (spacing 1) (border 1) (stretchable-in-y #f))
-					    b))]
-			   [add-button (make-button (add-callback string symbol box) "Add")]
-			   [delete-button (make-button (delete-callback box) "Remove")])
+			   [button-panel (make-object mred:horizontal-panel% vert)]
+			   [_ (send* (make-object mred:vertical-panel% button-panel)
+				     (spacing 0) (border 0))]
+			   [add-button (make-object mred:button% button-panel (add-callback string symbol box) "Add")]
+			   [delete-button (make-object mred:button% button-panel (delete-callback box) "Remove")]
+			   [_ (send* (make-object mred:vertical-panel% button-panel)
+				     (spacing 0) (border 0))])
+		      (send button-panel border 0)
 		      (send add-button user-min-width (send delete-button get-width))
 		      (send vert spacing 1)))])
 	 (make-column "Begin" 'begin begin-keywords)
-	 (make-column "Define" 'define begin-keywords)
-	 (make-column "Lambda" 'lambda begin-keywords)
+	 (make-column "Define" 'define define-keywords)
+	 (make-column "Lambda" 'lambda lambda-keywords)
 	 main-panel)))
 
     (let ([hash-table (make-hash-table)])
@@ -653,7 +652,6 @@
 	     (let ([delta (make-object wx:style-delta% wx:const-change-normal)])
 	       (send delta set-delta wx:const-change-family wx:const-modern)
 	       (when (eq? wx:platform 'macintosh)
-		     (wx:bell)
 		     (send delta set-delta wx:const-change-size 9))
 	       delta)]
 	    [file-format wx:const-media-ff-text]

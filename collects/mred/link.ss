@@ -76,7 +76,9 @@
 					(core string@))]
 	    [hyper-frame : mred:hyper-frame^ 
 			 (mred:hyper-frame@ debug hyper-edit hyper-dialog container
-					  editor-frame canvas group handler)])
+					  editor-frame canvas group handler)]
+	    [html : mred:html-mode^ 
+		  (mred:html-mode@ handler hyper-frame hyper-edit)])
       (export (unit debug)
 	      (open constants)
 	      (open (exn : mred:exn-external^))

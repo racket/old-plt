@@ -377,7 +377,7 @@
 			       #f "f")))
 		 (when edit-menu:replace
 		   (set! edit-menu:replace-id
-			 (send edit-menu append-item "Replace" 
+			 (send edit-menu append-item "Replace..." 
 			       edit-menu:replace
 			       edit-menu:replace-help-string)))
 		 (edit-menu:between-replace-and-preferences edit-menu)

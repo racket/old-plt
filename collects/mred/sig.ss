@@ -35,6 +35,9 @@
   (console
    eval-string))
 
+(define-signature mred:html-mode^
+  ())
+
 ; mred^ is the concatenation of the following signatures in order.
 
 (define-signature mred:debug^ (printf exit? on?))

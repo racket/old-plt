@@ -75,6 +75,14 @@ not have type definitions for CHAR, WCHAR, and LPWSTR; add a definition
 for NO_SQLUCODE if your driver manager does not have the include file 
 SQLUCODE.H. 
 
+If you're using gcc 3.2 (and, probably, newer versions), you'll 
+need to 
+ - set the variable STDCPP_LIBDIR to the variable containing 
+    the library libstdc++.a, and 
+ - uncomment the specified line for the srpmain.so target
+Otherwise, if you do not make these changes, when you load SrPersist, 
+you'll get a message about a missing reference to `gxx_personality_v0'.
+
 Once you've made these changes, you can compile everything by
 running 
 

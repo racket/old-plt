@@ -176,7 +176,7 @@
 		     [c (make-object mred:one-line-canvas% h 30 20 -1 -1 ""
 				     (+ wx:const-mcanvas-hide-h-scroll
 					wx:const-mcanvas-hide-v-scroll))]
-		     [e (make-object (class-asi mred:scheme-mode-edit%
+		     [e (make-object (class-asi mred:edit%
 				       (inherit change-style get-style-list)
 				       (rename [super-after-insert after-insert])
 				       (public
@@ -185,6 +185,8 @@
 					   (super-after-insert pos offset)
 					   (let ([style (send (get-style-list) find-named-style style-name)])
 					     (change-style style pos (+ pos offset))))])))]
+		     [_ (send e set-mode
+			      (make-object mred:scheme-mode%))]
 		     [_ (mred:add-preference-callback sym
 						      (lambda (sym v)
 							(set-slatex-style sym v)

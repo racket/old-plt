@@ -1340,8 +1340,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	if (pos) {
 	  long startp, endp;
 
-	  startp = r->startp[i] - s;
-	  endp = r->endp[i] - s;
+	  startp = (r->startp[i] - s) + offset;
+	  endp = (r->endp[i] - s) + offset;
 	
 	  l = scheme_make_pair(scheme_make_pair(scheme_make_integer(startp),
 						scheme_make_integer(endp)),

@@ -20,10 +20,11 @@
                   (procedure?)
                   any)]
    [traces/pred (opt-> (compiled-lang?
-                            (listof red?)
-                            (listof any/c))
-                           (procedure?)
-                           any)]
+                        (listof red?)
+                        (listof any/c)
+                        (any/c . -> . boolean?))
+                       (procedure?)
+                       any)]
    [traces/multiple (opt-> (compiled-lang?
                             (listof red?)
                             (listof any/c)

@@ -52,7 +52,8 @@
       
       (inherit get-prompt-position
                change-style begin-edit-sequence end-edit-sequence
-               get-surrogate set-surrogate get-style-list)
+               get-surrogate set-surrogate get-style-list
+	       in-edit-sequence?)
             
       (define (reset)
         (set! tokens #f)
@@ -201,16 +202,18 @@
         (set! get-token #f))
       
       (define (colorer-callback)
-        (thread-resume background-thread)
-        (sleep .01)    ;; This is when the background thread is working.
-        (semaphore-wait lock)
-        (thread-suspend background-thread)
-        (semaphore-post lock)
-        (begin-edit-sequence #f)
-        (color)
-        (end-edit-sequence)
-        (unless up-to-date?
-          (queue-callback colorer-callback #f)))
+	(unless (in-edit-sequence?)
+	  (unless up-to-date?
+	    (thread-resume background-thread)
+	    (sleep .01)    ;; This is when the background thread is working.
+	    (semaphore-wait lock)
+	    (thread-suspend background-thread)
+	    (semaphore-post lock))
+	  (begin-edit-sequence #f)
+	  (color)
+	  (end-edit-sequence))
+	(unless up-to-date?
+	  (queue-callback colorer-callback #f)))
       
       
       ;; Breaks should be disabled on entry

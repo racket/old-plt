@@ -51,7 +51,7 @@
                          (send type-recs get-package-contents lang-pack 
                                (lambda () (error 'type-recs "Internal error: Type record not set with lang")))))
            (current-loc (unless (null? (package-defs prog)) (def-file (car (package-defs prog))))))
-
+      
       ;Add lang to local environment
       (for-each (lambda (class) (send type-recs add-to-env class lang-pack current-loc)) lang)
       (for-each (lambda (class) (send type-recs add-class-req (cons class lang-pack) #f current-loc)) lang)

@@ -27,10 +27,12 @@
                                #f
                                (lambda (text prompt-position) #t)
                                (lambda (x) (and x
-                                                (or (regexp-match #rx"\\.java$" x)
-                                                    (regexp-match #rx"\\.bjava$" x)
-                                                    (regexp-match #rx"\\.ijava$" x)
-                                                    (regexp-match #rx"\\.ajava$" x)))))
+                                                (not 
+                                                 (boolean?
+                                                  (or (regexp-match #rx"\\.java$" x)
+                                                      (regexp-match #rx"\\.bjava$" x)
+                                                      (regexp-match #rx"\\.ijava$" x)
+                                                      (regexp-match #rx"\\.ajava$" x)))))))
       
       (define (phase1) (void))
       (define (phase2) 

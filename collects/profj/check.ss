@@ -1190,7 +1190,8 @@
                (set! record (field-lookup fname (check-sub-expr obj) obj src level type-recs))
                (set! record 
                      (let* ((name (var-access-class (field-access-access acc)))
-                            (class-rec (get-record (send type-recs get-class-record name 
+                            (class-rec (get-record (send type-recs get-class-record 
+                                                         (if (pair? name) name (list name))
                                                          ((get-importer type-recs) name type-recs level src))
                                                    type-recs)))
                        (get-field-record fname class-rec
@@ -1200,15 +1201,22 @@
                                              (field-lookup-error (if class? 'class-name 
                                                                      (if method? 'method-name 'not-found))
                                                                  (string->symbol fname)
-                                                                 (make-ref-type (car name) null)
+                                                                 (make-ref-type (if (pair? name)
+                                                                                    (car name)
+                                                                                    name) null)
                                                                  src)))))))
            (set-field-access-access! acc (make-var-access 
                                           (memq 'static (field-record-modifiers record))
                                           (memq 'final (field-record-modifiers record))
                                           (field-record-init? record)
                                           (car (field-record-class record))))
-           (add-required c-class (car (field-record-class record)) 
-                         (cdr (field-record-class record)) type-recs)
+           (add-required c-class 
+                         (car (field-record-class record)) 
+                         (if (null? (cdr (field-record-class record)))
+                             (send type-recs lookup-path (car (field-record-class record))
+                                   (lambda () null))
+                             (cdr (field-record-class record)))
+                         type-recs)
            (unless (eq? level 'full)
              (when (is-field-restricted? fname (field-record-class record))
                (restricted-field-access (field-access-field acc) 
@@ -1384,7 +1392,11 @@
                     (set-call-expr! call #f)
                     (unless (equal? (class-record-name record) c-class)
                       (send type-recs add-req (make-req (car (class-record-name record))
-                                                        (cdr (class-record-name record)))))
+                                                        (if (null? (cdr (class-record-name record)))
+                                                            (send type-recs lookup-path 
+                                                                  (car (class-record-name record))
+                                                                  (lambda () null))
+                                                            (cdr (class-record-name record))))))                                                                  
                     (get-method-records (id-string name) record))
                   (if (and (= (length (access-name expr)) 1)
                            (with-handlers ((exn:syntax? (lambda (exn) #f)))
@@ -1396,7 +1408,10 @@
                       (let ((record (send type-recs get-class-record (list (id-string (car (access-name expr)))))))
                         (set-call-expr! call #f)
                         (unless (equal? (class-record-name record) c-class)
-                          (send type-recs add-req (make-req (car (class-record-name record)) null)))
+                          (send type-recs add-req (make-req (car (class-record-name record))
+                                                            (send type-recs lookup-path 
+                                                                  (car (class-record-name record))
+                                                                  (lambda () null)))))
                         (get-method-records (id-string name) record))
                       (raise exn)))))
            (methods 

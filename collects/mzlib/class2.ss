@@ -341,8 +341,8 @@
 					     (syntax-case e (define-values field)
 					       [(define-values (id ...) expr)
 						(syntax/loc e (set!-values (id ...) expr))]
-					       [(init idp ...)
-						(ormap (lambda (it) (module-identifier=? it (syntax init)))
+					       [(-init idp ...)
+						(ormap (lambda (it) (module-identifier=? it (syntax -init)))
 						       (list (quote-syntax init) (quote-syntax init-field)))
 						(with-syntax ([(id ...)
 							       (map 

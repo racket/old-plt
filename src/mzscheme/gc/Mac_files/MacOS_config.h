@@ -12,13 +12,14 @@
 /* Boehm, November 17, 1995 12:10 pm PST */
 
 #ifdef __MWERKS__
-#if defined(__powerc)
-#include <MacHeadersPPC>
+# if defined(__powerc)
+#  include <MacHeadersPPC>
 /* MATTHEW: use 4-byte alignment */
-# define USE_POWERPC_FOUR_BYTE_ALIGN
-#else
-#include <MacHeaders68K>
-#endif
+#  define USE_POWERPC_FOUR_BYTE_ALIGN
+# else
+#  include <MacHeaders68K>
+#  define USE_M68K_FOUR_BYTE_ALIGN
+# endif
 #endif
 
 // these are defined again in gc_priv.h.

@@ -81,7 +81,8 @@ public:
 	virtual void Enable(Bool enable);
 	virtual void Show(Bool show);
 
-    MenuHandle CreateCopy(char *title, Bool doabouthack);
+    MenuHandle CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle = NULL);
+    void CheckHelpHack(void);
 
 //=============================================================================
 // Protected methods

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_item.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_item.cc,v 1.1.1.1 1998/01/13 17:54:58 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -476,33 +476,7 @@ wxbMenuBar::~wxbMenuBar (void)
 
 void wxbMenuBar::Append (wxMenu * menu, char *title)
 {
-  if (!OnAppend(menu, title))  // mflatt
-         return;
-
-  n++;
-  wxMenu **new_menus = new wxMenu *[n];
-  char **new_titles = new char *[n];
-
-  int i;
-  for (i = 0; i < n - 1; i++)
-    {
-      new_menus[i] = menus[i];
-      menus[i] = NULL;
-      new_titles[i] = titles[i];
-      titles[i] = NULL;
-    }
-  if (menus)
-    {
-      delete[]menus;
-      delete[]titles;
-    }
-  menus = new_menus;
-  titles = new_titles;
-
-  menus[n - 1] = menu;
-  titles[n - 1] = copystring (title);
-
-  menu->menu_bar = (wxMenuBar *) this;
+  OnAppend(menu, title);
 }
 
 void wxbMenuBar::Delete(wxMenu * menu, int i)
@@ -524,12 +498,6 @@ void wxbMenuBar::Delete(wxMenu * menu, int i)
 
   if (!OnDelete(menu, i))
          return;
-
-  --n;
-  for (j = i; j < n; j++) {
-         menus[j] = menus[j + 1];
-         titles[j] = titles[j + 1];
-  }
 }
 
 // Find the menu menuString, item itemString, and return the item id.

@@ -429,6 +429,7 @@
 
 # ifdef POWERPC
 #   define MACH_TYPE "POWERPC"
+          /* MATTHEW: 4-byte alignment */
 #   ifdef USE_POWERPC_FOUR_BYTE_ALIGN
 #      define ALIGNMENT 4
 #   else

@@ -19,6 +19,9 @@ static const char sccsid[] = "%W% %G%";
 #include "wx_main.h"
 #include <Strings.h>	
 
+int wxNumHelpItems;
+MenuHandle wxHelpMenu;
+
 void wxSetUpAppleMenu(wxMenuBar *mbar);
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -237,42 +240,46 @@ static void StripMacMenuString(StringPtr theMacItemString1, char *s)
 	theMacItemString1[0] = (d - (char *)theMacItemString1)-1;
 }
 
-// Here's a joy! See wx_app::doMacInMenuBar() where the event is processed
-// each frame can contain a Help/About menu item which is "mirrored" underneath
-// the Apple menu.
-static void DoTheAboutHack(wxMenu *menu, wxMenuItem* menuItem)
-{
-	wxMenuBar*	mbar = menu->menu_bar;
-	mbar->wxHelpHackMenu = menu;
-	mbar->iHelpMenuHackNum = menuItem->GetMacItemNumber();
-}
-
-
-MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack)
+MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle)
 {
 	char t[256], tmp[256];
-	int i;
-	
-	// Remove accel - not used in Mac Top Level Menus
-	char *s = t;
-	for (i = 0; title[i]; i++) {
-		if (title[i] == '&') {
-			if (title[i + 1])
-				i++;
-			else
-				break;
-		}
-		*(s++) = title[i];
-	}
-	*s = 0;
-	s = t;
+	int i, offset;
+	MenuHandle nmh;
 	int helpflg;
-	helpflg = strncmp("Help", s, 4) ? 0 : 1;
-	C2PStr(s);
+	
+	if (!toHandle)  {
+		// Remove accel - not used in Mac Top Level Menus
+		char *s = t;
+		for (i = 0; title[i]; i++) {
+			if (title[i] == '&') {
+				if (title[i + 1])
+					i++;
+				else
+					break;
+			}
+			*(s++) = title[i];
+		}
+		*s = 0;
+		s = t;
+		helpflg = strncmp("Help", s, 4) ? 0 : 1;
+		C2PStr(s);
+		nmh = ::NewMenu(cMacMenuId ,(ConstStr255Param)s);
+		CheckMemOK(nmh);
+		offset = 1;
+		if (helpflg && menu_bar && menu_bar->n) {
+		  if (menu_bar->menus[menu_bar->n - 1] == this) {
+		    menu_bar->wxHelpHackMenu = this;
+		    menu_bar->iHelpMenuHackNum = 0;
+		  } else
+		     helpflg = 0;
+		}
+	} else {
+		nmh = toHandle;
+		offset = CountMItems(nmh) + 1;
+		helpflg = 0;
+	}
 	int cnt = menuItems.Number();
 	// Create a new Mac Menu 
-	MenuHandle nmh = ::NewMenu(cMacMenuId ,(ConstStr255Param)s);
-	CheckMemOK(nmh);
 	wxNode* node = menuItems.First();
 	for (i = 0; i < cnt; i++) {
 		// Try to recreate from the wxMenuItem
@@ -294,17 +301,19 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack)
 		}
 		else {
 			BuildMacMenuString((StringPtr)tmp, (StringPtr)t, menuItem->itemName, FALSE);
-			if (doabouthack && helpflg && (!strncmp("About", &t[1], 5))) {
-				// This is an very sad hack !
-				DoTheAboutHack(this, menuItem);
+			if (!i && doabouthack && helpflg && (!strncmp("About", &t[1], 5))) {
+			    if (menu_bar) {
+				  // This is an very sad hack !
+				  menu_bar->iHelpMenuHackNum = 1;
+				}
 			}
 		}
 		::AppendMenu(nmh, (ConstStr255Param)tmp);
-		::SetMenuItemText(nmh, i+1, (ConstStr255Param)t);
+		::SetMenuItemText(nmh, i + offset, (ConstStr255Param)t);
 		if (menuItem->IsChecked())
-		  ::CheckItem(nmh, i+1, TRUE);
-		if (!menuItem->IsEnabled())
-		  ::DisableItem(nmh, i+1);
+		  ::CheckItem(nmh, i + offset, TRUE);
+		if (!menuItem->IsEnabled() || (toHandle && !cEnable))
+		  ::DisableItem(nmh, i + offset);
 		node = node->Next();						// watch for null?	
 	}
 	
@@ -320,7 +329,6 @@ void wxMenu::MacChangeMenuText(wxMenu *menu, char *new_title)
 	// Get Handle to the Menu
 	MenuHandle omh = menu->cMacMenu;
 	
-	if (title) delete title;
 	title = macCopyString1(new_title);
 
     // Create a new Mac Menu 
@@ -498,14 +506,48 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
 	retval = FALSE;
   } else
 	return FALSE;
+	
+  if (retval) {
+	  n++;
+	  wxMenu **new_menus = new wxMenu *[n];
+	  char **new_titles = new char *[n];
+
+	  int i;
+	  for (i = 0; i < n - 1; i++)
+	    {
+	      new_menus[i] = menus[i];
+	      menus[i] = NULL;
+	      new_titles[i] = titles[i];
+	      titles[i] = NULL;
+	    }
+	  if (menus)
+	    {
+	      delete[]menus;
+	      delete[]titles;
+	    }
+	  menus = new_menus;
+	  titles = new_titles;
+
+	  menus[n - 1] = menu;
+	  titles[n - 1] = copystring (title);
+
+	  menu->menu_bar = (wxMenuBar *) this;
+  }  
+
+  wxMenu *wasHack = wxHelpHackMenu;
+  wxHelpHackMenu = NULL;
 
   if (title)
 	menu->MacChangeMenuText(menu, title);
 
   if (new_menu && this == last_installed_bar) {
-	::InsertMenu(menu->cMacMenu, 0);
 	menu->wxMacInsertSubmenu();
-	::InvalMenuBar();
+    if (wasHack || (menu == wxHelpHackMenu)) {
+	  Install();
+	} else {
+	  ::InsertMenu(menu->cMacMenu, 0);
+	  ::InvalMenuBar();
+	}
   }
 
   return retval;
@@ -513,12 +555,38 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
 
 Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
 {
+  int j, was_last = (pos == n - 1);
+
+  --n;
+  for (j = pos; j < n; j++) {
+    menus[j] = menus[j + 1];
+    titles[j] = titles[j + 1];
+  }
+  
   menu->window_parent = NULL;
   menu->menu_bar = NULL;
-
+  
+  int was_hack = (menu == wxHelpHackMenu);
+  if (was_hack) {
+  	  wxHelpHackMenu = NULL;
+  	  iHelpMenuHackNum = 0;
+  }
+  int new_hack = FALSE;
+  if (was_last && n) {
+    /* Check for new Help menu: */
+    wxMenu *m = menus[n - 1];
+    DisposeMenu(m->CreateCopy(titles[n - 1], TRUE, NULL));
+    if (wxHelpHackMenu)
+      new_hack = TRUE;
+  }
+  
   if (menu_bar_frame && menu_bar_frame->IsFrontWindow()) {
-  	::DeleteMenu(menu->cMacMenuId);
-	::InvalMenuBar();
+  	if (was_hack || new_hack) {
+  	  Install();
+  	} else {
+  	  ::DeleteMenu(menu->cMacMenuId);
+	  ::InvalMenuBar();
+	}
   }
 
   return TRUE;
@@ -554,6 +622,21 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
 		::InsertMenuItem(appleMenuHandle, C2PStr(buffer), 0);
     }
 	::InsertMenu(appleMenuHandle, 0);
+	
+	HMGetHelpMenuHandle(&wxHelpMenu);
+	if (!wxNumHelpItems) {
+	  /* Each ClearMenuBar() seems to create a new HelpMenu.
+	     But just in case Apple changes its mind... */
+	  wxNumHelpItems = CountMItems(wxHelpMenu);
+	}
+	if (wxHelpMenu) {
+	  int i = CountMItems(wxHelpMenu);
+	  while (i > wxNumHelpItems)
+	    DeleteMenuItem(wxHelpMenu, i--);
+	    
+	  if (mbar && mbar->wxHelpHackMenu)
+	    mbar->wxHelpHackMenu->CreateCopy(NULL, FALSE, wxHelpMenu);
+	}
 }
 
 void wxMenuBar::Install(void)
@@ -563,12 +646,14 @@ void wxMenuBar::Install(void)
 	for (int i = 0; i < n; i ++)
 	{
 		wxMenu* menu = menus[i];
-	    ::InsertMenu(menu->MacMenu(), 0);
-	    menu->wxMacInsertSubmenu();
-	    if (!menu->IsEnable() || (menu_bar_frame && !menu_bar_frame->CanAcceptEvent()))
-	    	::DisableItem(menu->MacMenu(), 0);
-	    else
-			::EnableItem(menu->MacMenu(), 0);
+		if (menu != wxHelpHackMenu) {
+		    ::InsertMenu(menu->MacMenu(), 0);
+		    menu->wxMacInsertSubmenu();
+		    if (!menu->IsEnable() || (menu_bar_frame && !menu_bar_frame->CanAcceptEvent()))
+		    	::DisableItem(menu->MacMenu(), 0);
+		    else
+				::EnableItem(menu->MacMenu(), 0);
+		}
 	}
 	::InvalMenuBar();
 	last_installed_bar = this;
@@ -587,6 +672,12 @@ short wxMenu::gMenuIdCounter = 129; // mac platform (to give unique menuID's to 
 //-----------------------------------------------------------------------------
 void wxMenu::Break(void) { } // Macintosh has just one line for the menu bar
 
+void wxMenu::CheckHelpHack(void)
+{
+   if (menu_bar && this == menu_bar->wxHelpHackMenu)
+	  MacChangeMenuText(this, title);
+}
+
 //-----------------------------------------------------------------------------
 void wxMenu::AppendSeparator(void)
 {
@@ -599,6 +690,8 @@ void wxMenu::AppendSeparator(void)
 
 	wxMacString1 theMacItemString1 = item->itemName; // menu item string can't be empty
 	AppendMenu(cMacMenu, theMacItemString1());
+	
+	CheckHelpHack();
 }
 
 //-----------------------------------------------------------------------------
@@ -621,6 +714,8 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
 	BuildMacMenuString(menusetup, menustr, item->itemName, FALSE);
 	::AppendMenu(cMacMenu, (ConstStr255Param)menusetup);
 	::SetMenuItemText(cMacMenu, no_items, (ConstStr255Param)menustr);
+
+	CheckHelpHack();
 }
 
 //-----------------------------------------------------------------------------
@@ -672,6 +767,8 @@ void wxMenu::Append(int Id, char* Label, wxMenu* SubMenu, char* helpString)
 		}
 		ancestor = (wxMenu *)ancestor->window_parent;
     }
+
+	CheckHelpHack();
 }
 
 // mflatt
@@ -695,9 +792,11 @@ void wxMenu::Delete(wxMenu *menu, int Id, int delpos)
 		  menuItems.DeleteNode(node);
 		  delete item;
 		  --no_items;
+	      CheckHelpHack();
 		  return;
 		}
 	}
+
 }
 
 void wxMenu::DeleteByPosition(int pos)
@@ -717,6 +816,8 @@ void wxMenu::Enable(int Id, Bool Flag)
 	wxMenuItem* theMenuItem = FindItemForId(Id);
 	if (theMenuItem)
 		theMenuItem->Enable(Flag);
+
+	CheckHelpHack();
 }
 
 //-----------------------------------------------------------------------------
@@ -725,6 +826,8 @@ void wxMenu::Check(int Id, Bool Flag)
 	wxMenuItem* theMenuItem = FindItemForId(Id);
 	if (theMenuItem)
 		theMenuItem->Check(Flag);
+
+	CheckHelpHack();
 }
 
 //-----------------------------------------------------------------------------
@@ -768,6 +871,8 @@ void wxMenu::SetLabel(int Id , char* label)
 	wxMenuItem* theMenuItem = FindItemForId(Id);
 	if (theMenuItem)
 		theMenuItem->SetLabel(label);
+
+	CheckHelpHack();
 }
 
 //-----------------------------------------------------------------------------
@@ -794,6 +899,7 @@ void wxMenu::Enable(Bool Flag)
 					else
 						DisableItem(cMacMenu, 0);
 					::InvalMenuBar();
+					CheckHelpHack();
 				}
 			}
 		}

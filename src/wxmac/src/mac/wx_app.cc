@@ -38,6 +38,8 @@ extern int wxEventReady();
 
 extern CGrafPtr gMacFontGrafPort;
 
+extern int wxNumHelpItems;
+
 wxScreen *theScreen;
 #if 0
 extern wxList gTimerList;
@@ -696,16 +698,22 @@ void wxApp::doMacInMenuBar(long menuResult)
 	}
 
 	wxMenu* theWxMenu;
-	if (macMenuId == 128 && macMenuItemNum == 1) {
+	if (macMenuId == kHMHelpMenuID) {
+		if (theWxMenuBar->wxHelpHackMenu) {
+		   theWxMenu = theWxMenuBar->wxHelpHackMenu;
+		   macMenuItemNum -= wxNumHelpItems;
+		} else
+		  return;
+	} else if (macMenuId == 128 && macMenuItemNum == 1) {
 		// This will Help/About selection
-		if (theWxMenu = theWxMenuBar->wxHelpHackMenu) {
+		if ((theWxMenu = theWxMenuBar->wxHelpHackMenu)
+			  && theWxMenuBar->iHelpMenuHackNum) {
 			macMenuItemNum = theWxMenuBar->iHelpMenuHackNum;
 		} else {
 			DoDefaultAboutItem();
 			return;
 		}
-	}
-	else {
+	} else {
 		theWxMenu = theWxMenuBar->wxMacFindMenu(macMenuId);
 	}
 	if (!theWxMenu) wxFatalError("No wxMenu for wxMenuBar.");

@@ -172,16 +172,17 @@ void wxCanvasDC::DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)
     }
     
     /* Convert to QD angles for clockwise arc: */
-    int alpha1 = -degrees2 + 90;
-    int alpha2 = -degrees1 + 90;
+    int alpha1 = (int)(-degrees2 + 90) % 360;
     if (alpha1 < 0)
       alpha1 += 360;
-    while (alpha2 < alpha1)
+	int alpha2 = (int)(-degrees1 + 90) % 360;
+    if (alpha2 < 0)
       alpha2 += 360;
-    if (alpha2 >= 360) {
-      alpha1 -= 360;
-      alpha2 -= 360;
-    }
+    
+    /* Alpha2 should be positive difference: */  
+    alpha2 -= alpha1;
+    if (alpha2 < 0)
+      alpha2 += 360;
 
     int width = r;
     int height = r;

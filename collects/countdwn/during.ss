@@ -46,7 +46,7 @@
 		 editor-canvas%
 		 (make-object
 		  horizontal-panel% error-frame))
-		set-edit
+		set-editor
 		error-edit) 
 	  (send error-frame show #t))
 	(let ([last (send error-edit last-position)])

@@ -50,4 +50,4 @@
   (send frame min-width 200)
   (send frame min-height 200)
 
-  (send canvas set-edit edit))
+  (send canvas set-editor edit))

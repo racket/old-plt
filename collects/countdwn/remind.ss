@@ -44,7 +44,7 @@
 	   (for-each (lambda (box) (when box (set-box! box 0)))
 		     (list descent-box space-box lspace-box rspace-box))
 	   (let* ([admin (get-admin)]
-		  [reporting-media (send admin get-edit)]
+		  [reporting-media (send admin get-editor)]
 		  [reporting-admin (send reporting-media get-admin)]
 		  [widthb (box 0)]
 		  [space 2])
@@ -150,7 +150,7 @@
 							""
 							"s"))
 				(send edit get-start-position)
-				-1
+				'same
 				#f)))])
 	     (send edit lock #f)
 	     (send edit delete 0 (send edit last-position) #f)
@@ -164,7 +164,7 @@
 		 (let ([last (send edit last-position)])
 		   (send edit insert (if (< delta 0) "until" "ago")
 			 last last #f))
-		 (send edit insert "NOW" (send edit get-start-position) -1 #f))
+		 (send edit insert "NOW" (send edit get-start-position) 'same #f))
 	     (send edit lock #t)))]
 	[update-date-edit
 	 (lambda ()
@@ -172,7 +172,7 @@
 	     (lock #f)
 	     (delete 0 (send date-edit last-position) #f)
 	     (insert (date->string (seconds->date seconds) #t)
-		     (send date-edit get-start-position) -1 #f)
+		     (send date-edit get-start-position) 'same #f)
 	     (change-style date-delta 0 (send date-edit last-position))
 	     (lock #t)))]
 	[init-seconds
@@ -286,7 +286,7 @@
 
   (define main-canvas%
     (class-asi editor-canvas%
-      (inherit get-edit)
+      (inherit get-editor)
       (public
 	[update-snip-size
 	 (let ([width (box 0)]
@@ -299,8 +299,8 @@
 	       [top-edge-box (box 0)])
 	   (lambda (s)
 	     (when (is-a? s editor-snip%)
-	       (let* ([edit (get-edit)]
-		      [snip-media (send s get-edit)]
+	       (let* ([edit (get-editor)]
+		      [snip-media (send s get-editor)]
 		      [admin (send edit get-admin)])
 		 (send admin get-view #f #f width height)
 		 (send s get-margin leftm topm rightm bottomm)
@@ -340,7 +340,7 @@
       (override
        [on-size
 	(lambda (_1 _2)
-	  (let ([edit (get-edit)])
+	  (let ([edit (get-editor)])
 	    (when edit
 	      (let loop ([s (send edit find-snip 0 'before)])
 		(when s
@@ -393,7 +393,7 @@
 	 (lambda ()
 	   (let ([get-seconds
 		  (lambda (line)
-		    (let* ([media (send line get-edit)]
+		    (let* ([media (send line get-editor)]
 			   [last (send media last-position)]
 			   [first (send media find-snip last 'before)]
 			   [seconds (send first get-seconds)])
@@ -429,13 +429,13 @@
 					   next-inset
 					   this-inset)])
 			   (when insert-separator?
-			     (insert (string #\newline) (get-start-position) -1 #f)
-			     (insert (make-object separator-snip%) (get-start-position) -1 #f))
+			     (insert (string #\newline) (get-start-position) 'same #f)
+			     (insert (make-object separator-snip%) (get-start-position) 'same #f))
 			   (when (and (not first?) 
 				      (not insert-separator?))
-			     (insert (string #\newline) (get-start-position) -1 #f))
-			   (insert inset (get-start-position) -1 #f)
-			   (insert outer (get-start-position) -1 #f)
+			     (insert (string #\newline) (get-start-position) 'same #f))
+			   (insert inset (get-start-position) 'same #f)
+			   (insert outer (get-start-position) 'same #f)
 			   (loop (cdr lines)
 				 #f
 				 (or crossed-line? insert-separator?)
@@ -460,8 +460,8 @@
 	       (set! lines (cons outer lines))
 	       (if first-time?
 		   (set! first-time? #f)
-		   (insert (string #\newline) (get-start-position) -1 #f))
-	       (insert outer (get-start-position) -1 #f)
+		   (insert (string #\newline) (get-start-position) 'same #f))
+	       (insert outer (get-start-position) 'same #f)
 	       (cond
 		[(string? name)
 		 (send label-edit insert name 0 0 #f)
@@ -470,11 +470,11 @@
 		 (name label-edit)]
 		[else (error 'remember "expected procedure or string as first argument, got: ~a~n")])
 	       (send* main
-		 (insert label (send main get-start-position) -1 #f)
-		 (insert (string #\newline) (send main get-start-position) -1 #f)
-		 (insert date-snip (send main get-start-position) -1 #f)
-		 (insert (string #\newline) (send main get-start-position) -1 #f)
-		 (insert display (send main get-start-position) -1 #f))
+		 (insert label (send main get-start-position) 'same #f)
+		 (insert (string #\newline) (send main get-start-position) 'same #f)
+		 (insert date-snip (send main get-start-position) 'same #f)
+		 (insert (string #\newline) (send main get-start-position) 'same #f)
+		 (insert display (send main get-start-position) 'same #f))
 	       (for-each (lambda (e) (send e lock #t))
 			 (list date-edit label-edit main))
 	       (send (get-canvas) update-snip-size outer)

@@ -1955,7 +1955,7 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 	WRAP_POS_INC(l);
       }
       /* If l is the end, don't need the phase shift */
-      if (WRAP_POS_END_P(l)) {
+      if (!WRAP_POS_END_P(l)) {
 	stack = scheme_make_pair(a, stack);
 	stack_size++;
       }

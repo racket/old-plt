@@ -1712,6 +1712,8 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, Scheme_Obj
 
 Scheme_Object *scheme_default_load_extension(int argc, Scheme_Object **argv);
 
+Scheme_Object *scheme_remove_current_directory_prefix(Scheme_Object *fn);
+
 /*========================================================================*/
 /*                               ports                                    */
 /*========================================================================*/

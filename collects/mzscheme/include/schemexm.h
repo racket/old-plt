@@ -247,6 +247,8 @@
 #define scheme_printf (scheme_extension_table->scheme_printf)
 #define scheme_getc (scheme_extension_table->scheme_getc)
 #define scheme_peekc (scheme_extension_table->scheme_peekc)
+#define scheme_getc_special_ok (scheme_extension_table->scheme_getc_special_ok)
+#define scheme_peekc_special_ok (scheme_extension_table->scheme_peekc_special_ok)
 #define scheme_ungetc (scheme_extension_table->scheme_ungetc)
 #define scheme_char_ready (scheme_extension_table->scheme_char_ready)
 #define scheme_peekc_is_ungetc (scheme_extension_table->scheme_peekc_is_ungetc)
@@ -341,6 +343,8 @@
 #ifdef MZ_PRECISE_GC
 #define scheme_hash_key (scheme_extension_table->scheme_hash_key)
 #endif
+#define scheme_equal_hash_key (scheme_extension_table->scheme_equal_hash_key)
+#define scheme_equal_hash_key2 (scheme_extension_table->scheme_equal_hash_key2)
 #define scheme_build_list (scheme_extension_table->scheme_build_list)
 #define scheme_list_length (scheme_extension_table->scheme_list_length)
 #define scheme_proper_list_length (scheme_extension_table->scheme_proper_list_length)

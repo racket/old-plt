@@ -439,6 +439,8 @@ void scheme_printf(char *format, int flen, int argc, Scheme_Object **argv);
 
 int scheme_getc(Scheme_Object *port);
 int scheme_peekc(Scheme_Object *port);
+int scheme_getc_special_ok(Scheme_Object *port);
+int scheme_peekc_special_ok(Scheme_Object *port);
 void scheme_ungetc(int ch, Scheme_Object *port);
 int scheme_char_ready(Scheme_Object *port);
 int scheme_peekc_is_ungetc(Scheme_Object *port);
@@ -460,7 +462,6 @@ Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void *data,
 					  int (*char_ready_fun)(Scheme_Input_Port*),
 					  void (*close_fun)(Scheme_Input_Port*),
 					  void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
-					  Scheme_Object *(*get_special_fun)(Scheme_Input_Port*),
 					  int must_close);
 Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype,
 					    void *data,
@@ -606,6 +607,8 @@ int scheme_equal(Scheme_Object *obj1, Scheme_Object *obj2);
 #ifdef MZ_PRECISE_GC
 long scheme_hash_key(Scheme_Object *o);
 #endif
+long scheme_equal_hash_key(Scheme_Object *o);
+long scheme_equal_hash_key2(Scheme_Object *o);
 
 Scheme_Object *scheme_build_list(int argc, Scheme_Object **argv);
 

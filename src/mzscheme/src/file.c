@@ -526,8 +526,9 @@ Scheme_Object *scheme_remove_current_directory_prefix(Scheme_Object *fn)
   if ((len < SCHEME_STRLEN_VAL(fn))
       && !scheme_strncmp(SCHEME_STR_VAL(cwd), SCHEME_STR_VAL(fn), len)) {
     /* Skip over path separators: */
-    while (IS_A_SEP(SCHEME_STR_VAL(fn)[len]))
+    while (IS_A_SEP(SCHEME_STR_VAL(fn)[len])) {
       len++;
+    }
 
     return scheme_make_sized_offset_string(SCHEME_STR_VAL(fn), len, SCHEME_STRLEN_VAL(fn) - len, 1);
   }

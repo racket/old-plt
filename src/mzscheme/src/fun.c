@@ -626,7 +626,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 Scheme_Object *scheme_source_to_name(Scheme_Object *code)
 {
   Scheme_Stx *cstx = (Scheme_Stx *)code;
-  if (cstx->srcloc->col >= 0) {
+  if ((cstx->srcloc->col >= 0) || (cstx->srcloc->pos >= 0)) {
     char buf[50], src[20];
     Scheme_Object *name;
 
@@ -643,14 +643,14 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code)
     }
 
     if (cstx->srcloc->line >= 0) {
-      sprintf(buf, "%s%s%ld.%ld", 
+      sprintf(buf, "%s%s%ld:%ld", 
 	      src, (src[0] ? ":" : ""), cstx->srcloc->line, cstx->srcloc->col);
     } else {
       sprintf(buf, "%s%s%ld", 
-	      src, (src[0] ? ":" : ""), cstx->srcloc->col);
+	      src, (src[0] ? "::" : ""), cstx->srcloc->pos);
     }
 
-    name = scheme_intern_symbol(buf);
+    name = scheme_intern_exact_symbol(buf, strlen(buf));
     return name;
   }
 

@@ -476,9 +476,7 @@ typedef struct Scheme_Hash_Table
   Scheme_Object **vals;
   void (*make_hash_indices)(void *v, long *h1, long *h2);
   int (*compare)(void *v1, void *v2);
-#ifdef MZ_REAL_THREADS
-  void *mutex;
-#endif
+  Scheme_Object *mutex;
 } Scheme_Hash_Table;
 
 
@@ -497,9 +495,9 @@ typedef struct Scheme_Bucket_Table
   int size, count, step;
   Scheme_Bucket **buckets;
   char weak, with_home;
-#ifdef MZ_REAL_THREADS
-  void *mutex;
-#endif
+  void (*make_hash_indices)(void *v, long *h1, long *h2);
+  int (*compare)(void *v1, void *v2);
+  Scheme_Object *mutex;
 } Scheme_Bucket_Table;
 
 /* Hash tablekey types, used with scheme_hash_table */
@@ -835,11 +833,11 @@ typedef struct Scheme_Input_Port
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);
   void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);
-  Scheme_Object *(*get_special_fun)(struct Scheme_Input_Port *);
   Scheme_Object *read_handler;
   char *name;
   unsigned char *ungotten;
   int ungotten_count, ungotten_allocated;
+  Scheme_Object *special, *ungotten_special;
   long position, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
   int count_lines, was_cr;
@@ -870,6 +868,8 @@ typedef struct Scheme_Output_Port
 #define SCHEME_INPORT_VAL(obj) (((Scheme_Input_Port *)(obj))->port_data)
 #define SCHEME_OUTPORT_VAL(obj) (((Scheme_Output_Port *)(obj))->port_data)
 #define SCHEME_IPORT_NAME(obj) (((Scheme_Input_Port *)obj)->name)
+
+#define SCHEME_SPECIAL (-2)
 
 /*========================================================================*/
 /*                              exceptions                                */

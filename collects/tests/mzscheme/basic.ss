@@ -1484,6 +1484,30 @@
 
 (test-cont)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; hash tables
+
+(arity-test make-hash-table 0 2)
+(err/rt-test (make-hash-table 'a))
+(err/rt-test (make-hash-table 'weak 'weak) exn:application:mismatch?)
+(err/rt-test (make-hash-table 'equal 'equal) exn:application:mismatch?)
+
+(let ([check-hash-tables
+       (lambda (maybe-weak)
+	 (let ([h1 (apply make-hash-table maybe-weak)]
+	       [l (list 1 2 3)])
+	   (hash-table-put! h1 l 'ok)
+	   (test 'ok hash-table-get h1 l)
+	   (test 'nope hash-table-get h1 (list 1 2 3) (lambda () 'nope)))
+
+	 (let ([h1 (apply make-hash-table 'equal maybe-weak)]
+	       [l (list 1 2 3)])
+	   (hash-table-put! h1 l 'ok)
+	   (test 'ok hash-table-get h1 l)
+	   (test 'ok hash-table-get h1 (list 1 2 3))))])
+  (check-hash-tables null)
+  (check-hash-tables (list 'weak)))
+
 (report-errs)
 
 "last item in file"

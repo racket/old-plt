@@ -145,24 +145,18 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Stacktrace instrumenter
 
+  (define-struct loc (stx))
+
   ;; with-mark : stx stx -> stx
   (define (with-mark mark expr)
     (with-syntax ([expr expr]
-		  [source (cond
-			    [(string? (syntax-source mark))
-			     (string->symbol (syntax-source mark))]
-			    [(not (syntax-source mark))
-			     #f]
-			    [else
-			     (string->symbol (format "~a" (syntax-source mark)))])]
-		  [line (syntax-line mark)]
-		  [col (syntax-column mark)]
+		  [loc (make-loc mark)]
 		  [key key])
       (syntax
        (with-continuation-mark
-	'key
-        '(source line . col)
-	expr))))
+	   'key
+	   loc
+	 expr))))
   
   (define key (gensym 'key))
   
@@ -178,12 +172,13 @@
    (let* ([orig (current-eval)]
           [errortrace-eval-handler
            (lambda (e)
-	     (let ([a (if (or (compiled-expression? (if (syntax? e) 
-                                                        (syntax-e e) 
-                                                        e))
-                              (not (instrumenting-enabled)))
-                          e
-                          (annotate-top (expand e) null #f))])
+	     (let* ([ex (expand e)]
+		    [a (if (or (compiled-expression? (if (syntax? e) 
+							 (syntax-e e) 
+							 e))
+			       (not (instrumenting-enabled)))
+			   e
+			   (annotate-top ex null #f))])
 	       (orig a)))])
      errortrace-eval-handler))
   
@@ -200,35 +195,30 @@
   ;; effect: prints out the context surrounding the exception
   (define (print-error-trace p x)
     (let loop ([n (error-context-display-depth)]
-	       [unknown #f]
                [l (continuation-mark-set->list (exn-continuation-marks x) key)])
 
-      (define (print-unknown-count)
-	(when unknown
-	  (fprintf p "UNKNOWN (~a frame~a)~n"
-		   unknown
-		   (if (= 1 unknown) "" "s"))))
-
       (cond
-        [(or (zero? n) (null? l))
-	 (print-unknown-count)]
+        [(or (zero? n) (null? l)) (void)]
         [(pair? l)
-	 (let* ([m (car l)]
-		[file (car m)]
-		[line (cadr m)]
-		[col (cddr m)])
-	   (if (or file line col)
-	       (begin
-		 (print-unknown-count)
-		 (fprintf p "~a, line ~a, char ~a.~n" 
-			  (or file "UNKNOWN")
-			  (or line "???")
-			  (or col "???"))
-		 (loop (- n 1) #f (cdr l)))
-	       (loop (- n 1)
-		     (if unknown (+ unknown 1) 1)
-		     (cdr l))))]
-        [else (print-unknown-count)])))
+	 (let* ([stx (loc-stx (car l))]
+		[file (cond
+		       [(string? (syntax-source stx))
+			(string->symbol (syntax-source stx))]
+		       [(not (syntax-source stx))
+			#f]
+		       [else
+			(string->symbol (format "~a" (syntax-source stx)))])]
+		[line (syntax-line stx)]
+		[col (syntax-column stx)]
+		[pos (syntax-position stx)])
+	   (fprintf p "~a~a: ~e~n" 
+		    (or file "[unknown source]")
+		    (cond
+		     [line (format ":~a:~a" line col)]
+		     [pos (format "::~a" pos)]
+		     [else ""])
+		    (cleanup (syntax-object->datum stx)))
+	   (loop (- n 1) (cdr l)))])))
   
   (let* ([orig (error-display-handler)]
          [errortrace-error-display-handler

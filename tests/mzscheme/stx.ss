@@ -1,5 +1,5 @@
 
-(load-relative "testing.ss")
+(load-relative "loadtest.ss")
 
 (SECTION 'stx)
 
@@ -9,18 +9,22 @@
 (test #f syntax-column (datum->syntax-object #f 10 '(aha 19)))
 (test 19 syntax-position (datum->syntax-object #f 10 '(aha 19)))
 (test 'aha syntax-source (datum->syntax-object #f 10 '(aha 19)))
+(test #f syntax-span (datum->syntax-object #f 10 '(aha 19)))
+(test 88 syntax-span (datum->syntax-object #f 10 '(aha 19 88)))
 
 (test 7 syntax-line (datum->syntax-object #f 10 '(aha 7 88 999)))
 (test 88 syntax-column (datum->syntax-object #f 10 '(aha 7 88 999)))
 (test 999 syntax-position (datum->syntax-object #f 10 '(aha 7 88 999)))
 (test 'aha syntax-source (datum->syntax-object #f 10 '(aha 7 88 999)))
+(test #f syntax-span (datum->syntax-object #f 10 '(aha 7 88 999)))
+(test 22 syntax-span (datum->syntax-object #f 10 '(aha 7 88 999 22)))
 
 (err/rt-test (datum->syntax-object #f 10 10))
 (err/rt-test (datum->syntax-object #f 10 '(10)))
 (err/rt-test (datum->syntax-object #f 10 '(a -10)))
 (err/rt-test (datum->syntax-object #f 10 '(a 10.0)))
-(err/rt-test (datum->syntax-object #f 10 '(a 10 11)))
-(err/rt-test (datum->syntax-object #f 10 '(a 10 11 12 13)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 -11)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 11 12 -13)))
 (err/rt-test (datum->syntax-object #f 10 '(a 10 11.0 12)))
 (err/rt-test (datum->syntax-object #f 10 '(a 10 -11 12)))
 

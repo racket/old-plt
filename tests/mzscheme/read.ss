@@ -166,7 +166,7 @@
     (loop (cdr l))]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Test #$
+;; Test non-character results for getc
 
 (define-struct special (size))
 
@@ -179,14 +179,11 @@
   ;;  and the non-strings are returns as "special" literals.
   ;; The `special-size' arg meansures the size (in char
   ;;  positions) of a non-string special literal.
-  (let* ([special-ready #f]
-	 [pos 0]
+  (let* ([pos 0]
 	 [incpos! (lambda () (set! pos (add1 pos)))])
     (make-input-port
      ;; Read char:
      (lambda ()
-       (when special-ready
-	 (error "#$ result followed not by a request for special"))
        (let loop ([s stream][p pos])
 	 (if (null? s)
 	     eof
@@ -199,23 +196,17 @@
 		       (loop (cdr s) (- p (string-length i))))
 		   ;; a special:
 		   (cond
-		    [(zero? p) (incpos!) #\#]
-		    [(= p 1) (incpos!) (set! special-ready i) #\$]
-		    [else (loop (cdr s) (- p 2))]))))))
+		    [(zero? p) (incpos!)
+		     (lambda (where line col pos)
+		       (check-pos where line col pos)
+		       (values (car s) (special-size (car s))))]
+		    [else (loop (cdr s) (sub1 p))]))))))
      ;; Char ready?
      (lambda () #t)
      ;; Close proc
      (lambda () #t)
      ;; Peek proc
-     #f
-     ;; Get special
-     (lambda (where line col pos)
-       (unless special-ready
-	 (error "special request when no special is ready"))
-       (check-pos where line col pos)
-       (begin0
-	(values special-ready (special-size special-ready))
-	(set! special-ready #f))))))
+     #f)))
 
 ;; Simple read:
 (let* ([p (make-p `("(list "
@@ -312,6 +303,34 @@
   (test a-special syntax-e (car (syntax-e (cadr l))))
   (test b-special syntax-e (cadr (syntax-e (cadr l))))
   (test 108 syntax-position (caddr l)))
+
+;; Test delimitting and unsupported positions:
+(test (list 1 a-special) read (make-p (list "(1" a-special ")") (lambda (x) 1) void))
+(test (list 'a a-special 'b) read (make-p (list "(a" a-special "b)") (lambda (x) 1) void))
+(test (list #\a a-special) read (make-p (list "(#\\a" a-special ")") (lambda (x) 1) void))
+(test (list #\newline a-special) read (make-p (list "(#\\newline" a-special ")") (lambda (x) 1) void))
+(test (list 5) read (make-p (list "(; \"" a-special "\n5)") (lambda (x) 1) void))
+(test (list 5) read (make-p (list "(#| \"" a-special " |# 5)") (lambda (x) 1) void))
+
+(err/rt-test (read (make-p (list "\"a" a-special "\"") (lambda (x) 1) void)) exn:read:non-char?)
+(err/rt-test (read (make-p (list "\"" a-special "\"") (lambda (x) 1) void)) exn:read:non-char?)
+(err/rt-test (read (make-p (list "#\\" a-special "") (lambda (x) 1) void)) exn:read:non-char?)
+(err/rt-test (read (make-p (list "#" a-special "") (lambda (x) 1) void)) exn:read:non-char?)
+
+;; Test read-char-or-special:
+(let ([p (make-p (list "x" a-special "y") (lambda (x) 5) void)])
+  (test #\x peek-char-or-special p)
+  (test 0 file-position p)
+  (test #\x read-char-or-special p)
+  (test 1 file-position p)
+  (test 'special peek-char-or-special p)
+  (test 1 file-position p)
+  (test a-special read-char-or-special p)
+  (test 6 file-position p)
+  (test #\y peek-char-or-special p)
+  (test 6 file-position p)
+  (test #\y read-char-or-special p)
+  (test 7 file-position p))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test read-syntax offsets:

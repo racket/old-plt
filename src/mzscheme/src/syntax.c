@@ -394,10 +394,10 @@ static void lambda_check_args(char *who, Scheme_Object *args, Scheme_Object *for
       Scheme_Object *name;
 
       name = SCHEME_STX_CAR(v);
-      scheme_dup_symbol_check(&r, who, name, "lambda", form);
+      scheme_dup_symbol_check(&r, who, name, "argument", form);
     }
     if (!SCHEME_STX_NULLP(v)) {
-      scheme_dup_symbol_check(&r, who, v, "lambda", form);
+      scheme_dup_symbol_check(&r, who, v, "argument", form);
     }
   }
 }

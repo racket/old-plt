@@ -187,6 +187,8 @@ scheme_format
 scheme_printf
 scheme_getc
 scheme_peekc
+scheme_getc_special_ok
+scheme_peekc_special_ok
 scheme_ungetc
 scheme_char_ready
 scheme_peekc_is_ungetc
@@ -272,6 +274,8 @@ scheme_struct_type_property_ref
 scheme_eq
 scheme_eqv
 scheme_equal
+scheme_equal_hash_key
+scheme_equal_hash_key2
 scheme_build_list
 scheme_list_length
 scheme_proper_list_length

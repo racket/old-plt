@@ -2058,8 +2058,8 @@ wxPrintSetupData::wxPrintSetupData(void)
     preview_command = PS_PREVIEW_COMMAND;
     printer_flags = PS_PRINTER_OPTIONS;
     printer_orient = PS_PORTRAIT;
-    printer_scale_x = 1.0;
-    printer_scale_y = 1.0;
+    printer_scale_x = 0.8;
+    printer_scale_y = 0.8;
     printer_translate_x = 0.0;
     printer_translate_y = 0.0;
 #ifdef wx_x

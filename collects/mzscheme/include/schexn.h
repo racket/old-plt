@@ -15,6 +15,7 @@ enum {
   MZEXN_SYNTAX,
   MZEXN_READ,
   MZEXN_READ_EOF,
+  MZEXN_READ_NON_CHAR,
   MZEXN_I_O,
   MZEXN_I_O_PORT,
   MZEXN_I_O_PORT_READ,
@@ -34,7 +35,7 @@ enum {
 
 #ifdef _MZEXN_TABLE
 
-#define MZEXN_MAXARGS 7
+#define MZEXN_MAXARGS 8
 
 #ifdef GLOBAL_EXN_ARRAY
 static exn_rec exn_table[] = {
@@ -48,8 +49,9 @@ static exn_rec exn_table[] = {
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 5, NULL, NULL, 0 },
-  { 7, NULL, NULL, 0 },
-  { 7, NULL, NULL, 0 },
+  { 8, NULL, NULL, 0 },
+  { 8, NULL, NULL, 0 },
+  { 8, NULL, NULL, 0 },
   { 2, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
   { 3, NULL, NULL, 0 },
@@ -83,8 +85,9 @@ static exn_rec *exn_table;
   exn_table[MZEXN_APPLICATION_DIVIDE_BY_ZERO].args = 3;
   exn_table[MZEXN_APPLICATION_CONTINUATION].args = 3;
   exn_table[MZEXN_SYNTAX].args = 5;
-  exn_table[MZEXN_READ].args = 7;
-  exn_table[MZEXN_READ_EOF].args = 7;
+  exn_table[MZEXN_READ].args = 8;
+  exn_table[MZEXN_READ_EOF].args = 8;
+  exn_table[MZEXN_READ_NON_CHAR].args = 8;
   exn_table[MZEXN_I_O].args = 2;
   exn_table[MZEXN_I_O_PORT].args = 3;
   exn_table[MZEXN_I_O_PORT_READ].args = 3;
@@ -109,7 +112,7 @@ static const char *MZEXN_APPLICATION_FIELDS[1] = { "value" };
 static const char *MZEXN_APPLICATION_ARITY_FIELDS[1] = { "expected" };
 static const char *MZEXN_APPLICATION_TYPE_FIELDS[1] = { "expected" };
 static const char *MZEXN_SYNTAX_FIELDS[3] = { "expr", "form", "module" };
-static const char *MZEXN_READ_FIELDS[5] = { "port", "source", "line", "column", "position" };
+static const char *MZEXN_READ_FIELDS[6] = { "port", "source", "line", "column", "position", "span" };
 static const char *MZEXN_I_O_PORT_FIELDS[1] = { "port" };
 static const char *MZEXN_I_O_FILESYSTEM_FIELDS[2] = { "pathname", "detail" };
 static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
@@ -128,8 +131,9 @@ static const char *MZEXN_BREAK_FIELDS[1] = { "continuation" };
   SETUP_STRUCT(MZEXN_APPLICATION_DIVIDE_BY_ZERO, EXN_PARENT(MZEXN_APPLICATION), "exn:application:divide-by-zero", 0, NULL)
   SETUP_STRUCT(MZEXN_APPLICATION_CONTINUATION, EXN_PARENT(MZEXN_APPLICATION), "exn:application:continuation", 0, NULL)
   SETUP_STRUCT(MZEXN_SYNTAX, EXN_PARENT(MZEXN), "exn:syntax", 3, MZEXN_SYNTAX_FIELDS)
-  SETUP_STRUCT(MZEXN_READ, EXN_PARENT(MZEXN), "exn:read", 5, MZEXN_READ_FIELDS)
+  SETUP_STRUCT(MZEXN_READ, EXN_PARENT(MZEXN), "exn:read", 6, MZEXN_READ_FIELDS)
   SETUP_STRUCT(MZEXN_READ_EOF, EXN_PARENT(MZEXN_READ), "exn:read:eof", 0, NULL)
+  SETUP_STRUCT(MZEXN_READ_NON_CHAR, EXN_PARENT(MZEXN_READ), "exn:read:non-char", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O, EXN_PARENT(MZEXN), "exn:i/o", 0, NULL)
   SETUP_STRUCT(MZEXN_I_O_PORT, EXN_PARENT(MZEXN_I_O), "exn:i/o:port", 1, MZEXN_I_O_PORT_FIELDS)
   SETUP_STRUCT(MZEXN_I_O_PORT_READ, EXN_PARENT(MZEXN_I_O_PORT), "exn:i/o:port:read", 0, NULL)

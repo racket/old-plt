@@ -838,7 +838,7 @@
 		    defn-or-expr
 		    ...)))])))
 
-  (define-syntaxes (define-private define-public define-override)
+  (define-syntaxes (private* public* override*)
     (let ([mk
 	   (lambda (who decl-form)
 	     (lambda (stx)
@@ -855,7 +855,7 @@
 				     (identifier? (syntax name))
 				     (raise-syntax-error
 				      who
-				      "expected an identifer and expression"
+				      "expected an identifier and expression"
 				      stx
 				      binding)]))
 				bindings)])
@@ -868,9 +868,59 @@
 			   (define name expr)
 			   ...)))))])))])
       (values
-       (mk 'define-private (syntax private))
-       (mk 'define-public (syntax public))
-       (mk 'define-overrde (syntax override)))))
+       (mk 'private* (syntax private))
+       (mk 'public* (syntax public))
+       (mk 'override* (syntax override)))))
+
+  (define-syntaxes (define/private define/public define/override)
+    (let ([mk
+	   (lambda (who decl-form)
+	     (lambda (stx)
+	       (syntax-case stx ()
+		 [(_ name expr)
+		  (identifier? (syntax name))
+		  (with-syntax ([decl-form decl-form])
+		    (syntax
+		     (begin
+		       (decl-form name)
+		       (define name expr))))]
+		 [(_ (name . ids) expr0 expr ...)
+		  (and (identifier? (syntax name))
+		       (let loop ([ids (syntax ids)])
+			 (cond
+			  [(identifier? ids) #t]
+			  [(stx-null? ids) #t]
+			  [(stx-pair? ids)
+			   (and (identifier? (stx-car ids))
+				(loop (stx-cdr ids)))]
+			  [else (raise-syntax-error
+				 who
+				 "bad identifier"
+				 stx
+				 ids)])))
+		  (with-syntax ([decl-form decl-form])
+		    (syntax
+		     (begin
+		       (decl-form name)
+		       (define (name . ids) expr0 expr ...))))]
+		 [(_ d . __)
+		  (or (identifier? (syntax d))
+		      (and (stx-pair? (syntax d))
+			   (identifier? (stx-car (syntax d)))))
+		  (raise-syntax-error
+		   who
+		   "bad syntax (wrong number of parts)"
+		   stx)]
+		 [(_ d . __)
+		  (raise-syntax-error
+		   who
+		   "bad syntax (no identifier for definition)"
+		   stx
+		   (syntax d))])))])
+      (values
+       (mk 'define/private (syntax private))
+       (mk 'define/public (syntax public))
+       (mk 'define/override (syntax override)))))
 
   ;;--------------------------------------------------------------------
   ;;  class implementation
@@ -1907,7 +1957,8 @@
 	   object% object?
 	   make-object instantiate
 	   send send* make-class-field-accessor make-class-field-mutator with-method
-	   define-private define-public define-override
+	   private* public* override*
+	   define/private define/public define/override
 	   (rename make-generic/proc make-generic) send-generic
 	   is-a? subclass? implementation? interface-extension?
 	   object-interface

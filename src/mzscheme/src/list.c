@@ -1251,7 +1251,9 @@ static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
     t = scheme_make_bucket_table(20, SCHEME_hash_weak_ptr);
 
     if (flags[1]) {
-      t->mutex = scheme_make_sema(1);
+      Scheme_Object *sema;
+      sema = scheme_make_sema(1);
+      t->mutex = sema;
       t->compare = compare_equal;
       t->make_hash_indices = make_hash_indices_for_equal;
     }
@@ -1264,7 +1266,9 @@ static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
     t = scheme_make_hash_table(SCHEME_hash_ptr);
 
     if (flags[1]) {
-      t->mutex = scheme_make_sema(1);
+      Scheme_Object *sema;
+      sema = scheme_make_sema(1);
+      t->mutex = sema;
       t->compare = compare_equal;
       t->make_hash_indices = make_hash_indices_for_equal;
     }

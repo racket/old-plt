@@ -126,6 +126,26 @@
 				(hash-table-put! t varname n)
 				n))))]))
 
+      (define (ensure-top-level varref)
+	(if (zodiac:top-level-varref-module varref)
+	    (begin
+	      (compiler:warning
+	       varref
+	       (format "definition of name `~a' mapped by --prim or `require'; compiled uses of the name will ignore this definition"
+		       (zodiac:varref-var varref)))
+	      (let ([new (zodiac:make-top-level-varref
+			  (datum->syntax-object
+			   #f ; no context
+			   (syntax-e (zodiac:zodiac-stx varref))
+			   (zodiac:zodiac-stx varref))
+			  (make-empty-box)
+			  (zodiac:varref-var varref)
+			  #f
+			  (box #f))]) ; slot - fresh because the variable can't be referenced from anywhere
+		(set-annotation! new (varref:empty-attributes))
+		new))
+	    varref))
+
       (define (compiler:get-module-path-constant modname)
 	(modref-info-modidx-const (hash-table-get compiler:global-symbols modname void)))
 
@@ -1193,7 +1213,8 @@
 			  ;;   rewrite as let+set!
 			  ;;
 			  (begin
-			    (compiler:warning ast "letrec will be rewritten with set!")
+			    (when (compiler:option:verbose)
+			      (compiler:warning ast "letrec will be rewritten with set!"))
 			    (debug "rewriting letrec~n")
 			    (let ([new-ast (letrec->let+set! ast)])
 			      (debug "reanalyzing...~n")
@@ -1270,7 +1291,12 @@
 
 		      (zodiac:set-define-values-form-vars!
 		       ast
-		       (map (lambda (v) (analyze-varref! v env #f #t)) 
+		       (map (lambda (v) 
+			      (let ([v (if (varref:current-invoke-module)
+					   v
+					   ;; Make sure v is not mapped to an import:
+					   (ensure-top-level v))])
+				(analyze-varref! v env #f #t)))
 			    (zodiac:define-values-form-vars ast)))
 
 		      (move-over-local-lists)

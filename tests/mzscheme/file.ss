@@ -460,7 +460,7 @@
 
 (test #t input-port? (make-input-port void void void))
 (err/rt-test (read (make-input-port void void void)))
-(arity-test make-input-port 3 5)
+(arity-test make-input-port 3 4)
 (err/rt-test (make-input-port 8 void void))
 (err/rt-test (make-input-port void 8 void))
 (err/rt-test (make-input-port void void 8))

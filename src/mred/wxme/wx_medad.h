@@ -373,7 +373,7 @@ class wxMediaCanvas : public wxCanvas
 
   int lastwidth, lastheight;
 
-  float last_x, last_y;
+  int last_x, last_y;
 
   Bool allowXScroll, allowYScroll;
   Bool fakeXScroll, fakeYScroll;

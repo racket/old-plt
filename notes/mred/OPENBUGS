@@ -1,40 +1,36 @@
 
-MrEd Engine:
+Bugs
+----
 
 * Motif: pre-on-char doesn't work for sliders (therefore, frame/dialog
   navagation doesn't work when a slider has the focus)
 
 * MacOS: bitmaps don't print with platform-specific printing
 
-* Need to penalize the current thread more for certain primitive
-   operations that can take a long time (e.g., loading a bitmap
-   or saving a file)
-
-* Need directory-selection dialog
-
-* Keys like KP_end, etc. are not currently accessible
-
 * Windows and MacOS: "primitive" dialogs don't get closed by
    custodian-shutdown-all
 
 * MacOS: std file dialog and print dialogs block MzScheme threads
 
-* editor: the full width for non-wrapped lines need not include the autowrap bitmap
+* Need to penalize the current thread more for certain primitive
+   operations that can take a long time (e.g., loading a bitmap
+   or saving a file)
 
-* editor: should use a guaranteed offset for stippling in buffer redraws
+Needed Features
+---------------
 
-* Xt: out-of-colours - widgets use too much black
+* Need directory-selection dialog
 
-* hidden files in Windows cause problems? Add a MzScheme predicate?
+* Keys like KP_end, etc. are not currently accessible
 
-* optimization: dragging selection shouldn't keep changing the auto-X-selection
+* Editor: the full width for non-wrapped lines need not include the autowrap bitmap
 
-* add background color for buffers?
+* Editor: should use a guaranteed offset for stippling in buffer redraws
 
-* updating bug?: long flash, not on same line, update on focus-in
+* Optimization: dragging selection shouldn't keep changing the auto-X-selection
 
-* add paragraph styles?
+* Add background color for buffers
 
-* need better de-fragmentation of text snips
+* Updating bug?: long flash, not on same line, update on focus-in
 
-* need to show a mystery snip icon when unknown data is loaded from a file
+* Add paragraph styles

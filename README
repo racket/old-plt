@@ -1,20 +1,22 @@
 
-This is the PLT software package directory. 
+This is the PLT software package directory for Unix.
 
-After unpacking this distribution, set the current directory to plt
-(the one containing this README file) and run ./install.
+IMPORTANT:
+ After unpacking this distribution, set the current directory to plt
+ (the one containing this README file) and run ./install.
 
 Executables
 -----------
 
 The following are the executables:
 
-  plt/bin/help-desk --- for Help
-  plt/bin/drscheme -- PLT's main Scheme development environment
-  plt/bin/drscheme-jr -- A simple text-based DrScheme
-  plt/bin/mred -- a Scheme GUI engine
-  plt/bin/mzscheme -- a text-based Scheme interpreter
-  plt/bin/mzc -- the MzScheme compiler
+  plt/bin/drscheme -- the Scheme development environment
+
+  plt/bin/drscheme-jr -- a text-only version of DrScheme
+  plt/bin/mzscheme -- a text-only Scheme interpreter
+  plt/bin/mred -- a graphica Scheme interpreter
+  plt/bin/mzc -- a Scheme compiler
+  plt/bin/help-desk --- for Help (also built into DrScheme)
 
 DrScheme relies on MrEd (i.e., the DrScheme executable launches
 MrEd with special startup instructions), and DrScheme Jr and mzc rely
@@ -47,4 +49,5 @@ run.
 More Information
 ----------------
 
-Run plt/bin/help-desk for further information.
+For further information, select `Help Desk' from DrScheme's `Help'
+menu, or run plt/bin/help-desk.

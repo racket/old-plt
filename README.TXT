@@ -1,17 +1,18 @@
 
-This is the PLT software package directory. 
+This is the PLT software package directory for Windows.
 
 Executables
 -----------
 
 The following are the executables:
 
-  plt\Help Desk.exe --- for Help
-  plt\DrScheme.exe -- PLT's main Scheme development environment
-  plt\DrScheme Jr.exe -- A simple text-based DrScheme
-  plt\MrEd.exe -- a Scheme GUI engine
-  plt\MzScheme.exe -- a text-based Scheme interpreter
-  plt\mzc.exe -- the MzScheme compiler
+  DrScheme.exe -- the Scheme development environment
+
+  DrScheme Jr.exe -- a text-only version of DrScheme
+  MzScheme.exe -- a text-only Scheme interpreter
+  MrEd.exe -- a graphica Scheme interpreter
+  mzc.exe -- a Scheme compiler
+  Help Desk.exe --- for Help (also built into DrScheme)
 
 DrScheme relies on MrEd (i.e., the DrScheme executable launches
 MrEd with special startup instructions), and DrScheme Jr and mzc rely
@@ -34,4 +35,5 @@ run.
 More Information
 ----------------
 
-Run plt\Help Desk.exe for further information.
+For further information, select `Help Desk' from DrScheme's `Help'
+menu, or run Help Desk.exe.

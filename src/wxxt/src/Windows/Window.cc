@@ -446,16 +446,23 @@ void wxWindow::ScreenToClient(int *x, int *y)
   }
 }
 
-void wxWindow::SetSize(int x, int y, int width, int height, int WXUNUSED(flags))
+void wxWindow::SetSize(int x, int y, int width, int height, int flags)
 {
-    if (x > -1)		wxLC_MEM(constraints->left, Absolute(x));
-    if (y > -1)		wxLC_MEM(constraints->top, Absolute(y));
-    if (width > -1)	wxLC_MEM(constraints->width, Absolute(width));
-    else		wxLC_MEM(constraints->width, AsIs());
-    if (height > -1)	wxLC_MEM(constraints->height, Absolute(height));
-    else		wxLC_MEM(constraints->height, AsIs());
+  if ((x > -1) || ((flags & wxPOS_USE_MINUS_ONE) && (x > wxDEFAULT_POSITION)))
+    wxLC_MEM(constraints->left, Absolute(x));
+  if ((y > -1) || ((flags & wxPOS_USE_MINUS_ONE) && (y > wxDEFAULT_POSITION)))
+    wxLC_MEM(constraints->top, Absolute(y));
 
-    Configure(x, y, width, height);
+  if (width > -1)
+    wxLC_MEM(constraints->width, Absolute(width));
+  else
+    wxLC_MEM(constraints->width, AsIs());
+  if (height > -1)
+    wxLC_MEM(constraints->height, Absolute(height));
+  else
+    wxLC_MEM(constraints->height, AsIs());
+
+  Configure(x, y, width, height);
 }
 
 //-----------------------------------------------------------------------------

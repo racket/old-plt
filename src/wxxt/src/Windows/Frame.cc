@@ -221,7 +221,7 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
 	 NULL);
     }
     // set common data
-    SetSize(x, y, width, height, wxSIZE_AUTO);
+    SetSize(x, y, width, height, wxSIZE_AUTO | wxPOS_USE_MINUS_ONE);
     SetTitle(title);
     // create board widget
     wgt = XtVaCreateManagedWidget(

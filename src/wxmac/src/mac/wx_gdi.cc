@@ -825,6 +825,14 @@ void wxDisplaySize(int *width, int *height, int flags)
   *height = screenBits.bounds.bottom - screenBits.bounds.top - mbh;
 }
 
+void wxDisplayOrigin(int *x, int *y)
+{
+  int mbh;
+  *x = 0;
+  mbh = GetMBarHeight();
+  *y = mbh;
+}
+
 static void FreeGWorld(GWorldPtr x_pixmap)
 {
   DisposeGWorld(x_pixmap);

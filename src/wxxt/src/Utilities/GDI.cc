@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GDI.cc,v 1.3 2003/08/18 23:42:19 mflatt Exp $
+ * $Id: GDI.cc,v 1.4 2003/09/04 03:21:41 mflatt Exp $
  *
  * Purpose: common GDI routines
  *
@@ -47,4 +47,9 @@ void wxDisplaySize(int *width, int *height, int flags)
       *width = 1024; // a good bet
       *height = 768;
   }
+}
+
+void wxDisplayOrigin(int *x, int *y)
+{
+  *x = *y = 0;
 }

@@ -236,6 +236,9 @@ typedef enum {
 
 #define wxPOS_USE_MINUS_ONE 4
 
+#define wxDEFAULT_POSITION -11111
+#define wxNEG_POS_IS_DEFAULT(x) ((x < 0) ? wxDEFAULT_POSITION : x)
+
 // Clipboard formats
 #define wxCF_TEXT               CF_TEXT
 #define wxCF_BITMAP             CF_BITMAP

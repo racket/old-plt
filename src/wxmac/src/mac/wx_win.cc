@@ -92,8 +92,8 @@ wxWindow::wxWindow // Constructor (for screen window)
   cStyle = style;
   children = new wxChildList();
   cScroll = NULL;
-  cWindowX = (x != -1 ? x : 0);
-  cWindowY = (y != -1 ? y : 0);
+  cWindowX = (x != wxDEFAULT_POSITION ? x : 0);
+  cWindowY = (y != wxDEFAULT_POSITION ? y : 0);
   cWindowHeight = (height >= 0 ? height : 0);
   cWindowWidth = (width >= 0 ? width : 0);
 
@@ -132,8 +132,8 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
   cStyle = style;
   children = new wxChildList();
   cScroll = NULL;
-  cWindowX = (x != -1 ? x : 0);
-  cWindowY = (y != -1 ? y : 0);
+  cWindowX = (x != wxDEFAULT_POSITION ? x : 0);
+  cWindowY = (y != wxDEFAULT_POSITION ? y : 0);
   cWindowHeight = (height >= 0 ? height : 0);
   cWindowWidth = (width >= 0 ? width : 0);
   cAreas = new wxList(wxList::kDestroyData);
@@ -381,13 +381,13 @@ void wxWindow::InitWindowPostion(int x, int y)
       int cursorX, cursorY;
       parentPanel = (wxPanel*) window_parent;
       parentPanel->GetCursor(&cursorX, &cursorY);
-      cWindowX = (x != -1 ? x : cursorX);
-      cWindowY = (y != -1 ? y : cursorY);
+      cWindowX = (x != wxDEFAULT_POSITION ? x : cursorX);
+      cWindowY = (y != wxDEFAULT_POSITION ? y : cursorY);
     }
   else
     {
-      cWindowX = (x != -1 ? x : 0);
-      cWindowY = (y != -1 ? y : 0);
+      cWindowX = (x != wxDEFAULT_POSITION ? x : 0);
+      cWindowY = (y != wxDEFAULT_POSITION ? y : 0);
     }
 }
 

@@ -74,6 +74,7 @@ class wxCursor;
 Bool wxColourDisplay(void);
 int  wxDisplayDepth(void);
 void wxDisplaySize(int *width, int *height, int flags = 0);
+void wxDisplayOrigin(int *x, int *y);
 
 // busy cursor
 class wxCursor;

@@ -117,7 +117,7 @@ wxbItem::wxbItem // Constructor (given parentArea)
 		int			height,
 		long		style
 	) :
-		wxWindow ( windowName, parentArea, x, y, width, height, style)
+		wxWindow ( windowName, parentArea, wxNEGPOS_IS_DEFAULT(x), wxNEGPOS_IS_DEFAULT(y), width, height, style)
 {
     if (wxSubType(window_parent->__type, wxTYPE_PANEL) &&
     	cParentArea == window_parent->ClientArea()) {
@@ -157,7 +157,7 @@ wxbItem::wxbItem // Constructor (given parentWindow)
 		int			height,
 		long		style
 	) :
-		wxWindow ( windowName, parentWindow, x, y, width, height, style)
+		wxWindow ( windowName, parentWindow, wxNEGPOS_IS_DEFAULT(x), wxNEGPOS_IS_DEFAULT(y), width, height, style)
 {
     if (wxSubType(window_parent->__type, wxTYPE_PANEL) &&
     	cParentArea == window_parent->ClientArea()) {

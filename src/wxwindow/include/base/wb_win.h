@@ -107,7 +107,7 @@ class wxbWindow: public wxEvtHandler
   virtual void GetClientSize(int *width, int *height) = 0; // Size client can use
   virtual void SetSize(int x, int y, int width, int height, int sizeFlags = wxSIZE_AUTO) = 0;
   inline virtual void SetSize(int width, int height) { SetSize(-1, -1, width, height, wxSIZE_USE_EXISTING); }
-  inline virtual void Move(int x, int y) { SetSize(x, y, -1, -1, wxSIZE_USE_EXISTING); }
+  inline virtual void Move(int x, int y) { SetSize(x, y, -1, -1, wxSIZE_USE_EXISTING | wxPOS_USE_MINUS_ONE); }
   virtual void SetClientSize(int width, int size) = 0;
   virtual void ClientToScreen(int *x, int *y) = 0;
   virtual void ScreenToClient(int *x, int *y) = 0;

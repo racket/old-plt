@@ -92,7 +92,7 @@ public:
     virtual void  GetSize(int *width, int *height);
     virtual void  GetRefreshSize(int *w, int *h);
     virtual void  Move(int x, int y)
-	{ SetSize(x, y, -1, -1, wxSIZE_USE_EXISTING); }
+	{ SetSize(x, y, -1, -1, wxSIZE_USE_EXISTING | wxPOS_USE_MINUS_ONE); }
     virtual void  ScreenToClient(int *x, int *y);
     virtual void  SetClientSize(int width, int height)
 	{ SetSize(width, height); }

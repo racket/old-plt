@@ -181,7 +181,7 @@ protected:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	wxMenu* wxMacFindMenu(int macMenuId);
 
-	void Install(void);
+	void Install(wxWindow *for_frame);
 
 //=============================================================================
 // Friend classes

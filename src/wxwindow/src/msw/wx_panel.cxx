@@ -134,7 +134,9 @@ Bool wxPanel::Create(wxWindow *parent, int x, int y, int width, int height, long
     exflags |= WS_EX_STATICEDGE;
   msflags |= WS_CHILD | WS_CLIPSIBLINGS | ((style & wxINVISIBLE) ? 0 : WS_VISIBLE);
 
-  wnd = new wxPanelWnd(cparent, wxPanelClassName, this, x, y, width, height, 
+  wnd = new wxPanelWnd(cparent, wxPanelClassName, this, 
+		       wxNEG_POS_IS_DEFAULT(x), wxNEG_POS_IS_DEFAULT(y),
+		       width, height, 
 		       msflags, exflags);
 
   handle = (char *)wnd;

@@ -60,8 +60,8 @@ class wxFrame: public wxbFrame
     (
      wxFrame*	parentFrame,	/* this is ignored */
      char*		windowTitle,
-     int 		x = -1,
-     int			y = -1,
+     int 		x = wxDEFAULT_POSITION,
+     int			y = wxDEFAULT_POSITION,
      int			width = -1,
      int			height = -1,
      long		style = wxSDI,

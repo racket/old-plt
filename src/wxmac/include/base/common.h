@@ -77,6 +77,7 @@ typedef short int WXTYPE;
 #define wxTINY_CAPTION_VERT 0x00004000
 #define wxRESIZE_BOX       wxMAXIMIZE_BOX
 #define wxNO_RESIZE_BORDER	    0x00800000
+#define wxHIDE_MENUBAR	    0x01000000
 
 #define wxDEFAULT_FRAME    (wxRESIZE_BORDER | wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxTHICK_FRAME | wxSYSTEM_MENU | wxCAPTION)
 
@@ -217,6 +218,9 @@ typedef enum {
 
 // -1 as x/y position really means -1; don't use default
 #define wxPOS_USE_MINUS_ONE 4
+
+#define wxDEFAULT_POSITION -11111
+#define wxNEGPOS_IS_DEFAULT(x) ((x < 0) ? wxDEFAULT_POSITION : x)
 
 // Ignore missing (-1) dimensions (use existing).
 // For readability only: test for wxSIZE_AUTO_WIDTH/HEIGHT in code.

@@ -596,6 +596,9 @@ enum wxRelationship {
 #define wxSIZE_AUTO_WIDTH	0x0001
 #define wxSIZE_AUTO_HEIGHT	0x0002
 #define wxSIZE_AUTO		wxSIZE_AUTO_WIDTH | wxSIZE_AUTO_HEIGHT
+#define wxPOS_USE_MINUS_ONE	0x0004
+
+#define wxDEFAULT_POSITION -11111
 
 // defines to translate british/american english
 #define Center			Centre

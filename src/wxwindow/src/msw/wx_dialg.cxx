@@ -103,8 +103,8 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   if (Parent) Parent->AddChild(this);
   window_parent = Parent;
 
-  if (x < 0) x = wxDIALOG_DEFAULT_X;
-  if (y < 0) y = wxDIALOG_DEFAULT_Y;
+  if (x == wxDEFAULT_POSITION) x = wxDIALOG_DEFAULT_X;
+  if (y == wxDEFAULT_POSITION) y = wxDIALOG_DEFAULT_Y;
 
   wxWinType = wxTYPE_XWND;
   windowStyle = style;

@@ -25,6 +25,8 @@ void wxSetUpAppleMenu(wxMenuBar *mbar);
 
 extern int wxCan_Do_Pref();
 
+static int mb_hidden;
+
 #define USE_HELP_MENU_HACK 0
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -385,7 +387,7 @@ void wxMenu::MacChangeMenuText(wxMenu *menu, char *new_title)
 
   // Remove from system Menu List if it might be there and redraw with new menu:
   if (menu->menu_bar && menu->menu_bar == last_installed_bar)
-    menu->menu_bar->Install();
+    menu->menu_bar->Install(menu->menu_bar->menu_bar_frame);
 
   // Dispose the old menu
   ::DisposeMenu(omh);
@@ -620,7 +622,7 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
   if (new_menu && this == last_installed_bar) {
     menu->wxMacInsertSubmenu();
     if (wasHack || (menu == wxHelpHackMenu)) {
-      Install();
+      Install(menu_bar_frame);
     } else {
       ::InsertMenu(menu->cMacMenu, 0);
       wxInvalMenuBar();
@@ -663,7 +665,7 @@ Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
   
   if (menu_bar_frame && menu_bar_frame->IsFrontWindow()) {
     if (was_hack || new_hack) {
-      Install();
+      Install(menu_bar_frame);
     } else {
       ::DeleteMenu(menu->cMacMenuId);
       wxInvalMenuBar();
@@ -751,7 +753,7 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
  }
 }
 
-void wxMenuBar::Install(void)
+void wxMenuBar::Install(wxWindow *for_frame)
 {
   int i;
   wxMenu* menu;
@@ -781,6 +783,15 @@ void wxMenuBar::Install(void)
 	}
       }
     }
+  }
+
+  if (for_frame
+      && (for_frame->GetWindowStyleFlag() & wxHIDE_MENUBAR)) {
+    HideMenuBar();
+    mb_hidden = 1;
+  } else if (mb_hidden) {
+    mb_hidden = 0;
+    ShowMenuBar();
   }
 
   wxInvalMenuBar();

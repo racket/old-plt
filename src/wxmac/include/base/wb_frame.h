@@ -43,24 +43,11 @@ class wxbFrame: public wxWindow
   
   void *context;
 
-#ifndef wx_mac
-  wxbFrame(void);
-  wxbFrame(wxFrame *parent, char *title,
-          int x=-1, int y=-1, int width=-1, int height=-1,
-          long type = wxSDI | wxDEFAULT_FRAME, char *name = "frame");
-#endif 
-#ifdef wx_mac
 // Constructor (given parentScreen)
   wxbFrame (char* windowName, wxScreen* parentScreen,
-		int x, int y, int width, int height, long style);
-#endif // wx_mac
+	    int x, int y, int width, int height, long style);
   ~wxbFrame(void);
 
-#ifndef wx_mac
-  Bool Create(wxFrame *parent, char *title,
-          int x=-1, int y=-1, int width=-1, int height=-1,
-          long type = wxSDI | wxDEFAULT_FRAME, char *name = "frame");
-#endif // wx_mac
 
   // Override, e.g. to resize subwindows
   void OnSize(int x, int y);

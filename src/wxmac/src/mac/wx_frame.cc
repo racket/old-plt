@@ -174,6 +174,8 @@ wxFrame::wxFrame // Constructor (for frame window)
   theMacHeight = cWindowHeight - pam.Offset(wxVertical);
   SizeWindow(theMacWindow, theMacWidth, theMacHeight, FALSE);
   
+  windowStyle |= (style & wxHIDE_MENUBAR);
+
   wx_cursor = wxSTANDARD_CURSOR;
   
   if (wxIsBusy())
@@ -366,10 +368,6 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
   WindowPtr theMacWindow;
   int dw, dh;
 
-  if (x==-1) 
-    x= cWindowX;
-  if (y==-1) 
-    y = cWindowY;
   if (width==-1) 
     width = cWindowWidth;
   if (height==-1) 
@@ -728,7 +726,7 @@ void wxFrame::NowFront(Bool flag) // mac platform only
       wxWindow::gMouseWindow = NULL; // If the frame changes, force capture off
       
       if (wx_menu_bar)
-	wx_menu_bar->Install();
+	wx_menu_bar->Install(this);
       else {
 	if (!close_menu_bar) {
 	  wxREGGLOB(close_menu_bar);
@@ -741,7 +739,7 @@ void wxFrame::NowFront(Bool flag) // mac platform only
 	  close_menu_bar->Append(file, "File");
 #endif
 	}
-	close_menu_bar->Install();
+	close_menu_bar->Install(this);
       }
     }
 }
@@ -1134,7 +1132,7 @@ void wxFrame::Enable(Bool enable)
   wxWindow::Enable(enable);
   // Enable/disbale menubar
   if (wx_menu_bar)
-    wx_menu_bar->Install();	
+    wx_menu_bar->Install(this);	
 }
 
 

@@ -63,7 +63,9 @@ Create (wxWindow * parent, int x, int y, int width, int height, long style,
     msflags |= WS_VSCROLL;
   msflags |= WS_CLIPSIBLINGS;
 
-  wnd = new wxCanvasWnd (cparent, this, x, y, width, height, msflags, exflags);
+  wnd = new wxCanvasWnd (cparent, this, 
+			 wxNEG_POS_IS_DEFAULT(x), wxNEG_POS_IS_DEFAULT(y), 
+			 width, height, msflags, exflags);
   handle = (char *) wnd;
 
   if (parent)

@@ -35,8 +35,8 @@ public:
 		wxWindow*	parentFrame,		// this is ignored, used to be wxFrame*
 		char*		windowTitle,
 		Bool		modal = FALSE,
-		int 		x = -1,
-		int			y = -1,
+		int 		x = wxDEFAULT_POSITION,
+		int			y = wxDEFAULT_POSITION,
 		int			width = -1,
 		int			height = -1,
 		long		style = 0,

@@ -21,7 +21,7 @@ class wxFrame;
 // Constructor (given parentArea)
 wxbCanvas::wxbCanvas (char* windowName, wxArea* parentArea, int x, int y,
 		int width, int height, long style)
-  : wxWindow ( windowName, parentArea, x, y, width, height, style),
+  : wxWindow ( windowName, parentArea, wxNEGPOS_IS_DEFAULT(x), wxNEGPOS_IS_DEFAULT(y), width, height, style),
 		is_retained (FALSE), // Can only be retained after scrollbars have been set
 		horiz_units (0),
 		vert_units (0)
@@ -33,7 +33,7 @@ wxbCanvas::wxbCanvas (char* windowName, wxArea* parentArea, int x, int y,
 // Constructor (given parentWindow)
 wxbCanvas::wxbCanvas(char* windowName, wxWindow* parentWindow, int x, int y,
 		int width, int height, long style) 
-  : wxWindow ( windowName, parentWindow, x, y, width, height, style),
+  : wxWindow ( windowName, parentWindow, wxNEGPOS_IS_DEFAULT(x), wxNEGPOS_IS_DEFAULT(y), width, height, style),
 		is_retained (FALSE), // Can only be retained after scrollbars have been set
 		horiz_units (0),
 		vert_units (0)

@@ -88,18 +88,18 @@
 		 (stretchable-height #f)))
 
   (define (help-desk-navigate hd-cookie url)
-    (semaphore-wait nav-mutex)
-    (set! navigate? #t)
-    (let* ([nav-sem (make-semaphore 0)]
-	   [debug? (get-preference 'plt:help-debug (lambda () '#f))]
-	   [frame #f]
-	   [debug-msg void])
-      (when debug?
-	    (set! frame (get-debug-frame))
-	    (set! debug-msg (lambda (s) 
-			      (send frame add-message s)))
-	    (send frame show #t))
-      (letrec
+    (when (semaphore-try-wait? nav-mutex)
+	  (set! navigate? #t)
+	  (let* ([nav-sem (make-semaphore 0)]
+		 [debug? (get-preference 'plt:help-debug (lambda () '#f))]
+		    [frame #f]
+		    [debug-msg void])
+	       (when debug?
+		     (set! frame (get-debug-frame))
+		     (set! debug-msg (lambda (s) 
+				       (send frame add-message s)))
+		     (send frame show #t))
+	       (letrec
 	  ([monitor-thread
 	    (thread
 	     (lambda ()
@@ -125,12 +125,18 @@
 		     (send-help-desk-url (hd-cookie->browser hd-cookie) url))
 	       (kill-thread monitor-thread)
 	       (semaphore-post nav-sem)))])
-	(with-handlers 
-	 ([(lambda _ #t) (lambda _ (debug-msg
-				    "Help Desk browser failed.~n"))])
 	 (debug-msg "Starting Help Desk browser")
-	 (send-help-desk-url (hd-cookie->browser hd-cookie) 
-			     (build-dispatch-url hd-cookie url))
+	 (with-handlers 
+	  ([(lambda _ #t) (lambda _ 
+			    (let ([msg "Help Desk browser failed"])
+			      (debug-msg msg)
+			      (message-box
+			       "PLT Help Desk"
+			       msg
+			       #f
+			       '(ok))))])
+	  (send-help-desk-url (hd-cookie->browser hd-cookie) 
+			      (build-dispatch-url hd-cookie url)))
 	 (yield nav-sem)
 	 (set! navigate? #f)
 	 (semaphore-post nav-mutex)))))

@@ -27,7 +27,8 @@
                  ((EOF) #t)
                  ((if return) (parse-statement null first-tok 'start getter))
                  (else (parse-expression null first-tok 'start getter)))))
-          (if (boolean? returned-tok)
+          (printf "~a~n ~a" returned-tok (eof? returned-tok))
+          (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
               (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a" 
                                    (output-format (get-tok returned-tok)))
@@ -40,8 +41,8 @@
                       (position-line start)
                       (position-col start)
                       (+ (position-offset start) (interactions-offset))
-                      (- (position-offset start)
-                         (position-offset stop))))
+                      (- (position-offset stop)
+                         (position-offset start))))
 
   ;token = (list lex-token position position)
   (define (get-tok token) (car token))
@@ -63,15 +64,18 @@
          ((PERIOD) ".")))
       ((keyword? tok) (format "keyword ~a" (get-token-name tok)))
       ((id-token? tok) (format "identifier ~a" (token-value tok)))
-      ((literal-token? tok) (format "value ~a" (token-value tok)))))
+      ((literal-token? tok) (format "value ~a" (token-value tok)))
+      (else (get-token-name tok))))
   
   ;parse-definition: token token symbol (-> token) -> void
   (define (parse-definition pre cur-tok state getter)
     (let* ((tok (get-tok cur-tok))
            (tok-kind (get-token-name tok))
            (start (get-start cur-tok))
-           (stop (get-end cur-tok)))
-      
+           (stop (get-end cur-tok))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
+               
       (case state
         ((start) 
          (case tok-kind
@@ -117,7 +121,7 @@
                             start stop))))))
         ((class-id)
          (case tok-kind
-           ((EOF) (parse-error "'class' should be followed by a class name and body" (get-start pre) (get-end pre)))
+           ((EOF) (parse-error "'class' should be followed by a class name and body" ps pe))
            ((IDENTIFIER) 
             (let* ((next (getter))
                    (next-tok (get-tok next)))
@@ -148,7 +152,7 @@
          (let* ((next (getter))
                 (next-tok (get-tok next)))
            (cond
-             ((eof? next-tok) (parse-error "Expected parent class after extends" (get-start pre) (get-end pre)))
+             ((eof? next-tok) (parse-error "Expected parent class after extends" ps pe))
              ((id-token? next-tok) (parse-definition next (getter) 'body getter))
              ((o-brace? next-tok) (parse-error "Expected a parent name after extends and before the class body starts"
                                                start (get-end next)))
@@ -159,8 +163,7 @@
                                 start (get-end next))))))
         ((body)
          (case tok-kind
-           ((EOF) (parse-error (format "Expected class body to begin after ~a" (output-format (get-tok pre)))
-                               (get-start pre) (get-end pre)))
+           ((EOF) (parse-error (format "Expected class body to begin after ~a" (output-format (get-tok pre))) ps pe))
            ((O_BRACE) (parse-definition cur-tok (parse-members null (getter) 'start getter) 'body-end getter))
            (else 
             (cond
@@ -175,14 +178,13 @@
                                     (output-format tok)) start stop))))))
         ((body-end)
          (case tok-kind
-           ((EOF) (parse-error "Expected a } to close this body" (get-start pre) (get-end pre)))
+           ((EOF) (parse-error "Expected a } to close this body" ps pe))
            ((C_BRACE) 
             (let ((next (getter)))
               (if (c-brace? (get-tok next))
                   (parse-error "Unnecessary }, class body already closed" start (get-end next))
                   (parse-definition cur-tok next 'start getter))))
-           (else (parse-error (format "Expected a } to close class body, found ~a" (output-format tok))
-                              (get-start pre) stop)))))))
+           (else (parse-error (format "Expected a } to close class body, found ~a" (output-format tok)) ps stop)))))))
               
   ;parse-members: token token symbol (->token) -> token
   (define (parse-members pre cur state getter) 
@@ -191,8 +193,8 @@
            (out (output-format tok))
            (srt (get-start cur))
            (end (get-end cur))
-           (ps (get-start pre))
-           (pe (get-end pre)))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
 
       (case state
         ((start)
@@ -487,8 +489,8 @@
            (out (output-format tok))
            (start (get-start cur-tok))
            (end (get-end cur-tok))
-           (ps (get-start pre))
-           (pe (get-end pre)))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
       (case state
         ((start)
          (case kind
@@ -544,8 +546,8 @@
            (out (output-format tok))
            (start (get-start cur-tok))
            (end (get-end cur-tok))
-           (ps (get-start pre))
-           (pe (get-end pre)))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
       (case state
         ((start)
          (case kind
@@ -609,8 +611,8 @@
            (out (output-format tok))
            (start (get-start cur-tok))
            (end (get-end cur-tok))
-           (ps (get-start pre))
-           (pe (get-end pre)))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
                
       (case state
         ((start)

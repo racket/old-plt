@@ -317,9 +317,10 @@
             (let-values ([(port name)
                           (let ([text (drscheme:language:text/pos-text input)])
                             (parse-error-port (lambda ()
-                                                (send text get-text 
-                                                      (drscheme:language:text/pos-start input)
-                                                      (drscheme:language:text/pos-end input))))
+                                                (open-input-string
+                                                 (send text get-text 
+                                                       (drscheme:language:text/pos-start input)
+                                                       (drscheme:language:text/pos-end input)))))
                             (values
                              (open-input-string
                               (send text

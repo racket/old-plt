@@ -296,6 +296,7 @@
       
       (UnaryExpression
        [(PostfixExpression) $1]
+       [(- UnaryExpression) (make-unary #f (build-src 2) '- $2 (build-src 1))]
        [(~ UnaryExpression) (make-unary #f (build-src 2) '~ $2 (build-src 1))]
        [(! UnaryExpression) (make-unary #f (build-src 2) '! $2 (build-src 1))])
       

@@ -316,6 +316,7 @@
   scheme_extension_table->scheme_make_struct_names = scheme_make_struct_names;
   scheme_extension_table->scheme_make_struct_type = scheme_make_struct_type;
   scheme_extension_table->scheme_make_struct_instance = scheme_make_struct_instance;
+  scheme_extension_table->scheme_make_struct_exptime = scheme_make_struct_exptime;
   scheme_extension_table->scheme_is_struct_instance = scheme_is_struct_instance;
   scheme_extension_table->scheme_struct_ref = scheme_struct_ref;
   scheme_extension_table->scheme_struct_set = scheme_struct_set;
@@ -330,6 +331,7 @@
   scheme_extension_table->scheme_equal_hash_key = scheme_equal_hash_key;
   scheme_extension_table->scheme_equal_hash_key2 = scheme_equal_hash_key2;
   scheme_extension_table->scheme_build_list = scheme_build_list;
+  scheme_extension_table->scheme_make_list_immutable = scheme_make_list_immutable;
   scheme_extension_table->scheme_list_length = scheme_list_length;
   scheme_extension_table->scheme_proper_list_length = scheme_proper_list_length;
   scheme_extension_table->scheme_alloc_list = scheme_alloc_list;

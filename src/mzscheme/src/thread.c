@@ -122,7 +122,7 @@ extern HANDLE scheme_break_semaphore;
 
 #include "schfd.h"
 
-#define INIT_SCHEME_STACK_SIZE SCHEME_STACK_SIZE
+#define INIT_SCHEME_STACK_SIZE 1000
 
 #ifdef SGC_STD_DEBUGGING
 # define SENORA_GC_NO_FREE
@@ -2954,6 +2954,7 @@ static Scheme_Config *make_initial_config(void)
     scheme_set_param(config, MZCONFIG_CMDLINE_ARGS, zlv);
   }
 
+  config->use_count = NULL;
   config->extensions = NULL;
 
   return config;
@@ -2971,27 +2972,19 @@ Scheme_Object *scheme_make_config(Scheme_Config *base)
 						 (max_configs - 1) * sizeof(Scheme_Object*));
 
   config->type = scheme_config_type;
-  config->extensions = NULL;
   
   for (i = 0; i < max_configs; i++) {
     config->configs[i] = base->configs[i];
   }
 
-  if (base->extensions) {
-    Scheme_Bucket **bs = base->extensions->buckets;
-    int i = base->extensions->size;
-    Scheme_Bucket_Table *ht;
-    
-    ht = scheme_make_bucket_table(2, SCHEME_hash_weak_ptr);
 
-    config->extensions = ht;
-    
-    while (i--) {
-      Scheme_Bucket *b;
-      b = bs[i];
-      if (b && b->val && b->key && HT_EXTRACT_WEAK(b->key))
-	scheme_add_to_table(config->extensions, (const char *)HT_EXTRACT_WEAK(b->key), b->val, 0);
-    }
+  if (base->extensions) {
+    config->extensions = base->extensions;
+    config->use_count = base->use_count;
+    *(base->use_count) += 1;
+  } else {
+    config->extensions = NULL;
+    config->use_count = NULL;
   }
 
   return (Scheme_Object *)config;
@@ -3095,8 +3088,34 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
 
       if (!config->extensions) {
 	Scheme_Bucket_Table *ht;
+	int *use_count;
 	ht = scheme_make_bucket_table(2, SCHEME_hash_weak_ptr);
 	config->extensions = ht;
+	use_count = MALLOC_ONE_ATOMIC(int);
+	*use_count = 0;
+	config->use_count = use_count;
+      }
+
+      if (*(config->use_count)) {
+	/* Copy-on-write! */
+	int *use_count;
+	Scheme_Bucket **bs = config->extensions->buckets;
+	int i = config->extensions->size;
+	Scheme_Bucket_Table *ht;
+	
+	ht = scheme_make_bucket_table(2, SCHEME_hash_weak_ptr);
+	
+	config->extensions = ht;
+	
+	while (i--) {
+	  b = bs[i];
+	  if (b && b->val && b->key && HT_EXTRACT_WEAK(b->key))
+	    scheme_add_to_table(config->extensions, (const char *)HT_EXTRACT_WEAK(b->key), b->val, 0);
+	}
+      
+	use_count = MALLOC_ONE_ATOMIC(int);
+	*use_count = 0;
+	config->use_count = use_count;
       }
 
       b = scheme_bucket_from_table(config->extensions, key);

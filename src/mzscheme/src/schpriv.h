@@ -1252,8 +1252,8 @@ Scheme_Comp_Env *scheme_add_compilation_frame(Scheme_Object *vals,
 					 Scheme_Comp_Env *env, int flags);
 Scheme_Comp_Env *scheme_require_renames(Scheme_Comp_Env *env);
 
-Scheme_Object *scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env,
-				      int flags);
+Scheme_Object *scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env,
+				     int flags);
 
 Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env, 
 				      Scheme_Comp_Env *upto);
@@ -1530,6 +1530,7 @@ typedef struct Scheme_Modix {
 } Scheme_Modidx;
 
 void scheme_add_global_keyword(const char *name, Scheme_Object *v, Scheme_Env *env);
+void scheme_add_global_keyword_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
 void scheme_add_global_constant(const char *name, Scheme_Object *v, Scheme_Env *env);
 void scheme_add_global_constant_symbol(Scheme_Object *name, Scheme_Object *v, Scheme_Env *env);
 

@@ -492,8 +492,8 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 	      p = scheme_make_pair(SCHEME_CAR(oe), scheme_null);
 	    } else {
 	      p = scheme_make_pair(scheme_make_pair(a, 
-						    scheme_make_pair(SCHEME_CDR(SCHEME_CAR(oe)),
-								     origin)),
+						    scheme_make_pair(origin,
+								     SCHEME_CDR(SCHEME_CAR(oe)))),
 				   scheme_null);
 	      add = 0;
 	    }
@@ -509,7 +509,8 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 	oe = first;
       } 
       if (add) {
-	oe = scheme_make_pair(scheme_make_pair(origin_symbol, origin),
+	oe = scheme_make_pair(scheme_make_pair(origin_symbol, 
+					       scheme_make_pair(origin, scheme_null)),
 			      oe);
       }
     }
@@ -519,7 +520,8 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
   }
 
   if (!oe)
-    oe = scheme_make_pair(scheme_make_pair(origin_symbol, origin),
+    oe = scheme_make_pair(scheme_make_pair(origin_symbol, 
+					   scheme_make_pair(origin, scheme_null)),
 			  scheme_null);
 
   /* Merge ne and oe (ne takes precedence). */

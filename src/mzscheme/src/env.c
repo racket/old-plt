@@ -77,6 +77,8 @@ static void skip_certain_things(Scheme_Object *o, Scheme_Close_Custodian_Client 
 static void register_traversers(void);
 #endif
 
+typedef Scheme_Object *(*Lazy_Macro_Fun)(Scheme_Object *, int);
+
 static int set_reference_ids = 0;
 static int builtin_ref_counter = 0;
 
@@ -743,6 +745,13 @@ scheme_add_global_keyword(const char *name, Scheme_Object *obj,
   scheme_do_add_global_symbol(env, scheme_intern_symbol(name), obj, 0, 0);
 }
 
+void
+scheme_add_global_keyword_symbol(Scheme_Object *name, Scheme_Object *obj, 
+				 Scheme_Env *env)
+{
+  scheme_do_add_global_symbol(env, name, obj, 0, 0);
+}
+
 void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo)
 {
   if (!env->module) {
@@ -1009,6 +1018,13 @@ Scheme_Object *scheme_make_local(Scheme_Type type, int pos)
   return alloc_local(type, pos);
 }
 
+static Scheme_Object *force_lazy_macro(Scheme_Object *val, long phase)
+{
+  Lazy_Macro_Fun f = (Lazy_Macro_Fun)SCHEME_PTR1_VAL(val);
+  Scheme_Object *data = SCHEME_PTR2_VAL(val);
+  return f(data, phase);
+}
+
 static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame,
 				   int i, int j, int p, int flags)
 {
@@ -1155,8 +1171,28 @@ Scheme_Object *scheme_add_env_renames(Scheme_Object *stx, Scheme_Comp_Env *env,
   return stx;
 }
 
+/*********************************************************************/
+/* 
+
+   scheme_lookup_binding() is the main resolver of lexical, module,
+   and top-level bindings. Depending on the value of `flags', it can
+   return a value whose type tag is:
+
+     scheme_macro_type (id was bound to syntax),
+
+     scheme_macro_id_type (id was bound to a set!-transformer),
+
+     scheme_local_type (id was lexical),
+
+     scheme_variable_type (id is a global or module-bound variable),
+     or
+
+     scheme_module_variable_type (id is a module-boundvariable).
+
+*/
+
 Scheme_Object *
-scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
+scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 {
   Scheme_Comp_Env *frame;
   int j = 0, p = 0;
@@ -1165,8 +1201,10 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   Scheme_Env *genv;
   long phase;
 
+  /* Need to know the phase being compiled */
   phase = env->genv->phase;
   
+  /* Walk through the compilation frames */
   frame = env;
   for (frame = env; frame->next != NULL; frame = frame->next) {
     int i;
@@ -1209,6 +1247,8 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
 	  if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))
 	    return val;
+	  else if (SAME_TYPE(SCHEME_TYPE(val), scheme_lazy_macro_type))
+	    return force_lazy_macro(val, phase);
 	  else
 	    scheme_wrong_syntax("set!", NULL, symbol,
 				"local syntax identifier cannot be mutated");
@@ -1289,8 +1329,11 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
       val = scheme_lookup_in_table(genv->syntax, (const char *)SCHEME_STX_SYM(symbol));
   }
   
-  if (val)
+  if (val) {
+    if (SAME_TYPE(SCHEME_TYPE(val), scheme_lazy_macro_type))
+      return force_lazy_macro(val, phase);
     return val;
+  }
 
   if (modname)
     scheme_check_accessible_in_module(genv, symbol, srcsym);
@@ -1312,7 +1355,7 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     return NULL;
 
   /* Used to have `&& !SAME_OBJ(modidx, modname)' below, but that was a bad
-     idea, because it causesmodule instances to be preserved. */
+     idea, because it causes module instances to be preserved. */
   if (modname && !(flags & SCHEME_RESOLVE_MODIDS) && !SAME_OBJ(modidx, kernel_symbol)) {
     /* Create a module variable reference, so that idx is preserved: */
     return scheme_hash_module_variable(env->genv, modidx, symbol);
@@ -1663,12 +1706,12 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
   if (scheme_current_thread->current_local_mark)
     sym = scheme_add_remove_mark(sym, scheme_current_thread->current_local_mark);
 
-  v = scheme_static_distance(sym, env,
-			     (SCHEME_NULL_FOR_UNBOUND
-			      + SCHEME_RESOLVE_MODIDS
-			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			      + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
-
+  v = scheme_lookup_binding(sym, env,
+			    (SCHEME_NULL_FOR_UNBOUND
+			     + SCHEME_RESOLVE_MODIDS
+			     + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			     + SCHEME_OUT_OF_CONTEXT_OK + SCHEME_ELIM_CONST));
+  
   /* Deref globals */
   if (v && SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;

@@ -33,11 +33,13 @@ static Scheme_Object *car_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *cdr_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_car_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_cdr_prim (int argc, Scheme_Object *argv[]);
-static Scheme_Object *pair_to_immutable (int argc, Scheme_Object *argv[]);
+static Scheme_Object *cons_immutable (int argc, Scheme_Object *argv[]);
 static Scheme_Object *null_p_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_p_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *list_immutable_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *list_star_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *list_star_immutable_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *length_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *append_prim (int argc, Scheme_Object *argv[]);
 static Scheme_Object *append_bang_prim (int argc, Scheme_Object *argv[]);
@@ -144,10 +146,10 @@ scheme_init_list (Scheme_Env *env)
 						       "set-cdr!", 
 						       2, 2), 
 			      env);
-  scheme_add_global_constant ("pair->immutable-pair", 
-			      scheme_make_prim_w_arity(pair_to_immutable, 
-						       "pair->immutable-pair", 
-						       1, 1), 
+  scheme_add_global_constant ("cons-immutable", 
+			      scheme_make_prim_w_arity(cons_immutable, 
+						       "cons-immutable", 
+						       2, 2), 
 			      env);
   scheme_add_global_constant ("null?", 
 			      scheme_make_folding_prim(null_p_prim, 
@@ -164,9 +166,19 @@ scheme_init_list (Scheme_Env *env)
 						       "list", 
 						       0, -1), 
 			      env);
+  scheme_add_global_constant ("list-immutable", 
+			      scheme_make_prim_w_arity(list_immutable_prim, 
+						       "list-immultable", 
+						       0, -1), 
+			      env);
   scheme_add_global_constant ("list*", 
 			      scheme_make_prim_w_arity(list_star_prim, 
 						       "list*", 
+						       1, -1), 
+			      env);
+  scheme_add_global_constant ("list*-immutable", 
+			      scheme_make_prim_w_arity(list_star_immutable_prim, 
+						       "list*-immutable", 
 						       1, -1), 
 			      env);
   scheme_add_global_constant ("length", 
@@ -524,6 +536,14 @@ Scheme_Object *scheme_alloc_list(int size)
   return first;
 }
 
+void scheme_make_list_immutable(Scheme_Object *l)
+{
+  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    if (SCHEME_MUTABLEP(l))
+      SCHEME_SET_IMMUTABLE(l);
+  }
+}
+
 int
 scheme_list_length (Scheme_Object *list)
 {
@@ -637,7 +657,16 @@ cons_prim (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *cons;
 
-  cons = scheme_make_pair (argv[0], argv[1]);
+  cons = scheme_make_pair(argv[0], argv[1]);
+  return (cons);
+}
+
+static Scheme_Object *
+cons_immutable (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *cons;
+
+  cons = scheme_make_immutable_pair(argv[0], argv[1]);
   return (cons);
 }
 
@@ -676,25 +705,6 @@ set_cdr_prim (int argc, Scheme_Object *argv[])
 
   SCHEME_CDR (argv[0]) = argv[1];
   return scheme_void;
-}
-
-static Scheme_Object *
-pair_to_immutable (int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *p;
-
-  p = argv[0];
-
-  if (!SCHEME_PAIRP(p))
-    scheme_wrong_type("pair->immutable-pair", "pair", 0, argc, argv);
-
-  if (SCHEME_MUTABLE_PAIRP(p)) {
-    Scheme_Object *p2;
-    p2 = scheme_make_pair(SCHEME_CAR(p), SCHEME_CDR(p));
-    SCHEME_SET_PAIR_IMMUTABLE(p2);
-    return p2;
-  } else 
-    return argv[0];
 }
 
 static Scheme_Object *
@@ -756,9 +766,27 @@ list_prim (int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+list_immutable_prim (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *l;
+  l = list_exec(argc, argv, 0);
+  scheme_make_list_immutable(l);
+  return l;
+}
+
+static Scheme_Object *
 list_star_prim (int argc, Scheme_Object *argv[])
 {
   return list_exec(argc, argv, 1);
+}
+
+static Scheme_Object *
+list_star_immutable_prim (int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *l;
+  l = list_exec(argc, argv, 1);
+  scheme_make_list_immutable(l);
+  return l;
 }
 
 static Scheme_Object *

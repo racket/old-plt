@@ -122,6 +122,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_symbol_type, "<symbol>");
   set_name(scheme_syntax_compiler_type, "<syntax-compiler>");
   set_name(scheme_macro_type, "<macro>");
+  set_name(scheme_lazy_macro_type, "<lazy-macro>");
   set_name(scheme_vector_type, "<vector>");
   set_name(scheme_bignum_type, "<bignum-integer>");
   set_name(scheme_escaping_cont_type, "<escape-continuation>");
@@ -166,6 +167,12 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_c_pointer_type, "<c-pointer>");
 
   set_name(scheme_wrap_chunk_type, "<wrap-chunk>");
+
+  set_name(scheme_reserved_1_type, "<reserved-1>");
+  set_name(scheme_reserved_2_type, "<reserved-2>");
+  set_name(scheme_reserved_3_type, "<reserved-3>");
+  set_name(scheme_reserved_4_type, "<reserved-4>");
+  set_name(scheme_reserved_5_type, "<reserved-5>");
 
   set_name(_scheme_values_types_, "<resurrected>");
   set_name(_scheme_compiled_values_types_, "<internal>");
@@ -388,6 +395,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_void_type, char_obj);  /* small */
   GC_REG_TRAV(scheme_syntax_compiler_type, syntax_compiler);
   GC_REG_TRAV(scheme_macro_type, small_object);
+  GC_REG_TRAV(scheme_lazy_macro_type, second_of_cons);
   GC_REG_TRAV(scheme_box_type, small_object);
   GC_REG_TRAV(scheme_thread_type, thread_val);
   GC_REG_TRAV(scheme_cont_mark_set_type, cont_mark_set_val);

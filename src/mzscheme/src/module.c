@@ -137,13 +137,6 @@ static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
 
 #define MODCHAIN_TABLE(p) ((Scheme_Hash_Table *)(SCHEME_VEC_ELS(p)[0]))
 
-static void make_list_immutable(Scheme_Object *l) {
-  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-    if (SCHEME_MUTABLEP(l))
-      SCHEME_SET_IMMUTABLE(l);
-  }
-}
-
 /**********************************************************************/
 /*                           initialization                           */
 /**********************************************************************/
@@ -415,6 +408,8 @@ Scheme_Object *scheme_sys_wraps(Scheme_Comp_Env *env)
 
   if (!env)
     phase = 0;
+  else if (SCHEME_INTP((Scheme_Object *)env))
+    phase = SCHEME_INT_VAL((Scheme_Object *)env);
   else
     phase = env->genv->phase;
 
@@ -941,8 +936,8 @@ static Scheme_Object *module_compiled_imports(int argc, Scheme_Object *argv[])
       Scheme_Object *a[2];
       
       /* Ensure that the lists are immutable: */
-      make_list_immutable(m->requires);
-      make_list_immutable(m->et_requires);
+      scheme_make_list_immutable(m->requires);
+      scheme_make_list_immutable(m->et_requires);
       
       a[0] = m->requires;
       a[1] = m->et_requires;
@@ -1808,15 +1803,15 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     hints = m->hints;
     m->hints = NULL;
 
-    fm = cons(module_symbol,
+    fm = cons(SCHEME_STX_CAR(form),
 	      cons(nm,
 		   cons(ii, cons(fm, scheme_null))));
 
     fm = scheme_datum_to_syntax(fm, form, form, 0, 1);
     
     if (hints) {
-      make_list_immutable(m->requires);
-      make_list_immutable(m->et_requires);
+      scheme_make_list_immutable(m->requires);
+      scheme_make_list_immutable(m->et_requires);
 
       fm = scheme_stx_property(fm, 
 			       scheme_intern_symbol("module-direct-requires"),

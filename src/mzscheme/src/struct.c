@@ -79,16 +79,7 @@ static void register_traversers(void);
 #define icons scheme_make_immutable_pair
 #define _intern scheme_intern_symbol
 
-#define BUILTIN_STRUCT_FLAGS 0
-
-static Scheme_Object **as_names;
-static Scheme_Object **as_values;
-static int as_count;
-#ifdef TIME_SYNTAX
-static Scheme_Object **ts_names;
-static Scheme_Object **ts_values;
-static int ts_count;
-#endif
+#define BUILTIN_STRUCT_FLAGS SCHEME_STRUCT_EXPTIME
 
 Scheme_Object *ellipses_symbol;
 
@@ -99,12 +90,22 @@ Scheme_Object *ellipses_symbol;
 #define SET_NAME(base, blen, field, flen, sym) make_name("set-", base, blen, "-", field, flen, "!", sym)
 #define GENGET_NAME(base, blen, sym) make_name("", base, blen, "-ref", NULL, 0, "", sym)
 #define GENSET_NAME(base, blen, sym) make_name("", base, blen, "-set!", NULL, 0, "", sym)
+#define EXPTIME_NAME(base, blen, sym) make_name("", base, blen, "%#", NULL, 0, "", sym)
 
 #define TYPE_NAME_STR(sym) (char *)make_name("struct:", (char *)sym, -1, "", NULL, 0, "", 0)
 
 void
 scheme_init_struct (Scheme_Env *env)
 {
+  Scheme_Object **as_names;
+  Scheme_Object **as_values, *as_et;
+  int as_count;
+#ifdef TIME_SYNTAX
+  Scheme_Object **ts_names;
+  Scheme_Object **ts_values, *ts_et;
+  int ts_count;
+#endif
+
   int i;
 
   static const char *arity_fields[1] = { "value" };
@@ -120,8 +121,6 @@ scheme_init_struct (Scheme_Env *env)
 
   /* Add arity structure */
   REGISTER_SO(scheme_arity_at_least);
-  REGISTER_SO(as_names);
-  REGISTER_SO(as_values);
   scheme_arity_at_least = scheme_make_struct_type_from_string("arity-at-least", NULL, 1);  
   as_names = scheme_make_struct_names_from_array("arity-at-least",
 						 1, arity_fields,
@@ -129,16 +128,17 @@ scheme_init_struct (Scheme_Env *env)
 						 &as_count);
   as_values = scheme_make_struct_values(scheme_arity_at_least, as_names, as_count, 
 					BUILTIN_STRUCT_FLAGS);
-  for (i = 0; i < as_count; i++) {
+  for (i = 0; i < as_count - 1; i++) {
     scheme_add_global_constant(scheme_symbol_val(as_names[i]), as_values[i],
 			       env);
   }
 
+  as_et = scheme_make_struct_exptime(as_names, as_count, NULL, BUILTIN_STRUCT_FLAGS);
+  scheme_add_global_keyword_symbol(as_names[as_count - 1], as_et, env);
+
 #ifdef TIME_SYNTAX
   /* Add date structure: */
   REGISTER_SO(scheme_date);
-  REGISTER_SO(ts_names);
-  REGISTER_SO(ts_values);
   scheme_date = scheme_make_struct_type_from_string("date", NULL, 10);
   
   ts_names = scheme_make_struct_names_from_array("date",
@@ -147,10 +147,13 @@ scheme_init_struct (Scheme_Env *env)
 
   ts_values = scheme_make_struct_values(scheme_date, ts_names, ts_count, 
 					BUILTIN_STRUCT_FLAGS);
-  for (i = 0; i < ts_count; i++) {
+  for (i = 0; i < ts_count - 1; i++) {
     scheme_add_global_constant(scheme_symbol_val(ts_names[i]), ts_values[i], 
 			       env);
   }
+
+  ts_et = scheme_make_struct_exptime(ts_names, ts_count, NULL, BUILTIN_STRUCT_FLAGS);
+  scheme_add_global_keyword_symbol(ts_names[ts_count - 1], ts_et, env);
 #endif
 
   /*** basic interface ****/
@@ -1027,6 +1030,9 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
 
   struct_type = (Scheme_Struct_Type *)type;
 
+  if (flags & SCHEME_STRUCT_EXPTIME)
+    --count;
+
   values = MALLOC_N(Scheme_Object *, count);
  
 #ifdef MEMORY_COUNTING_ON
@@ -1139,6 +1145,8 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
     count++;
   if (flags & SCHEME_STRUCT_GEN_SET)
     count++;
+  if (flags & SCHEME_STRUCT_EXPTIME)
+    count++;
 
   if (count_out) {
     *count_out = count;
@@ -1206,6 +1214,12 @@ static Scheme_Object **_make_struct_names(const char *base, int blen,
   if (flags & SCHEME_STRUCT_GEN_SET) {
     Scheme_Object *nm;
     nm = GENSET_NAME(base, blen, 1);
+    names[pos++] = nm;
+  }
+
+  if (flags & SCHEME_STRUCT_EXPTIME) {
+    Scheme_Object *nm;
+    nm = EXPTIME_NAME(base, blen, 1);
     names[pos++] = nm;
   }
 
@@ -1347,6 +1361,112 @@ static Scheme_Object *make_name(const char *pre, const char *tn, int ltn,
     return scheme_intern_exact_symbol(name, total);
   else
     return (Scheme_Object *)name;
+}
+
+static Scheme_Object *get_phase_ids(Scheme_Object *_v, int phase)
+{
+  Scheme_Object **v = (Scheme_Object **)_v;
+  Scheme_Object *l, **names, *tp, *cns, *prd, *super_exptime, *w, *macro;
+  Scheme_Hash_Table *ht;
+  int count, i;
+
+  ht = (Scheme_Hash_Table *)v[3];
+
+  if (!ht) {
+    ht = scheme_make_hash_table(SCHEME_hash_ptr);
+    v[3] = (Scheme_Object *)ht;
+  }
+
+  l = scheme_hash_get(ht, scheme_make_integer(phase));
+  if (l)
+    return l;
+
+  names = (Scheme_Object **)v[0];
+  count = SCHEME_INT_VAL(v[1]);
+  super_exptime = v[2];
+
+  w = scheme_sys_wraps((Scheme_Comp_Env *)(scheme_make_integer(phase)));
+
+  tp = names[0];
+  cns = names[1];
+  prd = names[2];
+
+  tp = scheme_datum_to_syntax(tp, scheme_false, w, 0, 0);
+  cns = scheme_datum_to_syntax(cns, scheme_false, w, 0, 0);
+  prd = scheme_datum_to_syntax(prd, scheme_false, w, 0, 0);
+
+  if (super_exptime) {
+    super_exptime = get_phase_ids(SCHEME_PTR2_VAL(super_exptime), phase);
+    super_exptime = SCHEME_PTR_VAL(super_exptime);
+    super_exptime = SCHEME_CDR(SCHEME_CDR(SCHEME_CDR(super_exptime)));
+  }
+
+  if (count > 3) {
+    Scheme_Object *n, *gets, *sets;
+
+    if (super_exptime) {
+      gets = SCHEME_CAR(super_exptime);
+      sets = SCHEME_CAR(super_exptime);
+    } else {
+      gets = scheme_null;
+      sets = scheme_null;
+    }
+    
+    for (i = count - 1; i > 3; ) {
+      n = names[--i];
+      n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
+      sets = scheme_make_immutable_pair(n, sets);
+      
+      n = names[--i];
+      n = scheme_datum_to_syntax(n, scheme_false, w, 0, 0);
+      gets = scheme_make_immutable_pair(n, gets);
+    }
+
+    l = scheme_make_pair(gets, scheme_make_immutable_pair(sets, scheme_null));
+  } else {
+    if (super_exptime)
+      l = super_exptime;
+    else
+      l = scheme_make_immutable_pair(scheme_null, scheme_make_immutable_pair(scheme_null, scheme_null));
+  }
+
+  l = scheme_make_immutable_pair(prd, l);
+  l = scheme_make_immutable_pair(cns, l);
+  l = scheme_make_immutable_pair(tp, l);
+
+  macro = scheme_alloc_small_object();
+  macro->type = scheme_macro_type;
+  SCHEME_PTR_VAL(macro) = l;
+
+  scheme_hash_set(ht, scheme_make_integer(phase), macro);
+
+  return macro;
+}
+
+Scheme_Object *scheme_make_struct_exptime(Scheme_Object **names, int count,
+					  Scheme_Object *super_exptime,
+					  int flags)
+{
+  Scheme_Object *macro;
+  Scheme_Object **v;
+
+  if (flags != SCHEME_STRUCT_EXPTIME) {
+    scheme_signal_error("struct exptime needs SCHEME_STRUCT_EXPTIME");
+    return NULL;
+  }
+
+  v = MALLOC_N(Scheme_Object*, 4);
+  v[0] = (Scheme_Object *)names;
+  v[1] = scheme_make_integer(count);
+  v[2] = super_exptime;
+  v[3] = NULL; /* hash table, filled in by get_phase_ids */
+
+  macro = scheme_alloc_object();
+  macro->type = scheme_lazy_macro_type;
+  SCHEME_PTR1_VAL(macro) = (Scheme_Object *)get_phase_ids;
+  SCHEME_PTR2_VAL(macro) = (Scheme_Object *)v;
+
+  return macro;
 }
 
 /*========================================================================*/

@@ -1472,15 +1472,15 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
   if (!SCHEME_STX_SYMBOLP(name))
     return first;
 
-  val = scheme_static_distance(name, env, 
-			       SCHEME_NULL_FOR_UNBOUND
-			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			       + ((rec && rec[drec].dont_mark_local_use) 
-				  ? SCHEME_DONT_MARK_USE 
-				  : 0)
-			       + ((rec && rec[drec].resolve_module_ids)
-				  ? SCHEME_RESOLVE_MODIDS
-				  : 0));
+  val = scheme_lookup_binding(name, env, 
+			      SCHEME_NULL_FOR_UNBOUND
+			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			      + ((rec && rec[drec].dont_mark_local_use) 
+				 ? SCHEME_DONT_MARK_USE 
+				 : 0)
+			      + ((rec && rec[drec].resolve_module_ids)
+				 ? SCHEME_RESOLVE_MODIDS
+				 : 0));
 
   if (SCHEME_STX_PAIRP(first))
     *current_val = val;
@@ -1600,21 +1600,21 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     normal = app_expander;
   } else if (!SCHEME_STX_PAIRP(form)) {
     if (SCHEME_STX_SYMBOLP(form)) {
-      var = scheme_static_distance(form, env, 
-				   SCHEME_NULL_FOR_UNBOUND
-				   + SCHEME_ENV_CONSTANTS_OK
-				   + (rec
-				      ? SCHEME_ELIM_CONST 
-				      : 0)
-				   + (app_position 
-				      ? SCHEME_APP_POS 
-				      : 0)
-				   + ((rec && drec[rec].dont_mark_local_use) ? 
-				      SCHEME_DONT_MARK_USE 
-				      : 0)
-				   + ((rec && rec[drec].resolve_module_ids)
-				      ? SCHEME_RESOLVE_MODIDS
-				      : 0));
+      var = scheme_lookup_binding(form, env, 
+				  SCHEME_NULL_FOR_UNBOUND
+				  + SCHEME_ENV_CONSTANTS_OK
+				  + (rec
+				     ? SCHEME_ELIM_CONST 
+				     : 0)
+				  + (app_position 
+				     ? SCHEME_APP_POS 
+				     : 0)
+				  + ((rec && drec[rec].dont_mark_local_use) ? 
+				     SCHEME_DONT_MARK_USE 
+				     : 0)
+				  + ((rec && rec[drec].resolve_module_ids)
+				     ? SCHEME_RESOLVE_MODIDS
+				     : 0));
       
       if (!var) {
 	/* Top variable */
@@ -1650,19 +1650,19 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     rest = SCHEME_STX_CDR(form);
     if (SCHEME_STX_SYMBOLP(name)) {
       /* Check for macros: */
-      var = scheme_static_distance(name, env, 
-				   SCHEME_APP_POS
-				   + SCHEME_NULL_FOR_UNBOUND
-				   + SCHEME_ENV_CONSTANTS_OK
-				   + (rec
-				      ? SCHEME_ELIM_CONST
-				      : 0)
-				   + ((rec && rec[drec].dont_mark_local_use)
-				      ? SCHEME_DONT_MARK_USE 
-				      : 0)
-				   + ((rec && rec[drec].resolve_module_ids)
-				      ? SCHEME_RESOLVE_MODIDS
-				      : 0));
+      var = scheme_lookup_binding(name, env, 
+				  SCHEME_APP_POS
+				  + SCHEME_NULL_FOR_UNBOUND
+				  + SCHEME_ENV_CONSTANTS_OK
+				  + (rec
+				     ? SCHEME_ELIM_CONST
+				     : 0)
+				  + ((rec && rec[drec].dont_mark_local_use)
+				     ? SCHEME_DONT_MARK_USE 
+				     : 0)
+				  + ((rec && rec[drec].resolve_module_ids)
+				     ? SCHEME_RESOLVE_MODIDS
+				     : 0));
       if (!var) {
 	/* apply to global variable: compile it normally */
       } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_local_type)
@@ -1701,10 +1701,10 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   } else
     stx = scheme_datum_to_syntax(stx, scheme_false, form, 0, 0);
 
-  var = scheme_static_distance(stx, env,
-			       SCHEME_NULL_FOR_UNBOUND
-			       + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
-			       + SCHEME_DONT_MARK_USE);
+  var = scheme_lookup_binding(stx, env,
+			      SCHEME_NULL_FOR_UNBOUND
+			      + SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
+			      + SCHEME_DONT_MARK_USE);
 
   if (SAME_OBJ(stx, quick_stx)) {
     quick_stx_in_use = 0;

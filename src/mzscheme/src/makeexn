@@ -175,15 +175,21 @@ string=? ; exec ${PLTHOME}/bin/mzscheme -gqr $0 "$@"
       (printf "#ifdef GLOBAL_EXN_ARRAY~n")
 
       (printf "static exn_rec exn_table[] = {~n")
-      (let loop ([l l])
-	(let ([e (car l)])
+      (let loop ([ll l])
+	(let ([e (car ll)])
 	  
-	  (printf "  { ~a, NULL, NULL, 0 }" 
-		  (ex-numtotal e))
+	  (printf "  { ~a, NULL, NULL, 0, NULL, ~a }" 
+		  (ex-numtotal e)
+		  (if (ex-parent e)
+		      (let loop ([pos 0][ll l])
+			(if (eq? (car ll) (ex-parent e))
+			    pos
+			    (loop (add1 pos) (cdr ll))))
+		      -1))
 	  
-	  (unless (null? (cdr l))
+	  (unless (null? (cdr ll))
 		  (printf ",~n")
-		  (loop (cdr l)))))
+		  (loop (cdr ll)))))
       (printf "~n};~n")
 
       (printf "#else~n")

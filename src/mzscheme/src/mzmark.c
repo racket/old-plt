@@ -2497,6 +2497,7 @@ int mark_config_val_MARK(void *p) {
   for (i = max_configs; i--; ) {
     gcMARK(c->configs[i]);
   }
+  gcMARK(c->use_count);
   gcMARK(c->extensions);
 
   return
@@ -2511,6 +2512,7 @@ int mark_config_val_FIXUP(void *p) {
   for (i = max_configs; i--; ) {
     gcFIXUP(c->configs[i]);
   }
+  gcFIXUP(c->use_count);
   gcFIXUP(c->extensions);
 
   return

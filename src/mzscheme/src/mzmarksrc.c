@@ -1099,6 +1099,7 @@ mark_config_val {
   for (i = max_configs; i--; ) {
     gcMARK(c->configs[i]);
   }
+  gcMARK(c->use_count);
   gcMARK(c->extensions);
 
  size:

@@ -1035,15 +1035,15 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
   
   scheme_check_identifier("set!", name, NULL, env, form);
 
-  var = scheme_static_distance(name, env, 
-			       SCHEME_SETTING 
-			       + SCHEME_GLOB_ALWAYS_REFERENCE
-			       + (rec[drec].dont_mark_local_use 
-				  ? SCHEME_DONT_MARK_USE 
-				  : 0)
-			       + (rec[drec].resolve_module_ids
-				  ? SCHEME_RESOLVE_MODIDS
-				  : 0));
+  var = scheme_lookup_binding(name, env, 
+			      SCHEME_SETTING 
+			      + SCHEME_GLOB_ALWAYS_REFERENCE
+			      + (rec[drec].dont_mark_local_use 
+				 ? SCHEME_DONT_MARK_USE 
+				 : 0)
+			      + (rec[drec].resolve_module_ids
+				 ? SCHEME_RESOLVE_MODIDS
+				 : 0));
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
     /* Redirect to a macro? */
@@ -1103,7 +1103,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
   scheme_check_identifier("set!", name, NULL, env, form);
 
   /* Make sure it's mutable, and check for redirects: */
-  var = scheme_static_distance(name, env, SCHEME_SETTING);
+  var = scheme_lookup_binding(name, env, SCHEME_SETTING);
 
   if ((depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
     /* Redirect to a macro? */
@@ -2121,8 +2121,11 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
 
     body = scheme_datum_to_syntax(body, form, form, 0, 0);
 
+    body = scheme_stx_track(body, form, SCHEME_STX_CAR(form));
+
     if (depth > 0)
       --depth;
+
     if (!depth)
       return body;
     else {
@@ -2131,9 +2134,9 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     }
   }
 
-  if (!letstar) {
-    scheme_begin_dup_symbol_check(&r, origenv);
-  }
+  /* Note: no more letstar handling needed after this point */
+
+  scheme_begin_dup_symbol_check(&r, origenv);
 
   vlist = scheme_null;
   vs = vars;
@@ -2160,8 +2163,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
 	vlist = cons(name, vlist);
 
 	scheme_dup_symbol_check(&r2, formname, name, "clause binding", form);
-	if (!letstar)
-	  scheme_dup_symbol_check(&r, formname, name, "binding", form);
+	scheme_dup_symbol_check(&r, formname, name, "binding", form);
 	
 	names = SCHEME_STX_CDR(names);
       }
@@ -2170,8 +2172,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     } else {
       scheme_check_identifier(formname, name, NULL, origenv, form);
       vlist = cons(name, vlist);
-      if (!letstar)
-	scheme_dup_symbol_check(&r, formname, name, "binding", form);
+      scheme_dup_symbol_check(&r, formname, name, "binding", form);
     }
 
     vs = SCHEME_STX_CDR(vs);
@@ -2238,7 +2239,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   body = scheme_add_env_renames(body, env, origenv);
   body = scheme_expand_block(body, env, depth, boundname);
 
-  if (multi && !letstar)
+  if (multi)
     v = SCHEME_STX_CAR(form);
   else
     v = scheme_datum_to_syntax((letrec 
@@ -2249,7 +2250,11 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
 
   v = icons(v, icons(first, body));
 
-  return scheme_datum_to_syntax(v, form, form, 0, 1);
+  v = scheme_datum_to_syntax(v, form, form, 0, multi);
+  if (!multi)
+    v = scheme_stx_track(v, form, SCHEME_STX_CAR(form));
+
+  return v;
 }
 
 static Scheme_Object *
@@ -2413,11 +2418,13 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 			     scheme_null)));
   app = icons(letrec, vals);
 
-  app = scheme_datum_to_syntax(app, form, scheme_sys_wraps(env), 0, 1);
+  app = scheme_datum_to_syntax(app, form, scheme_sys_wraps(env), 0, !rec);
 
   if (rec)
     return scheme_compile_expr(app, env, rec, drec);
   else {
+    app = scheme_stx_track(app, form, SCHEME_STX_CAR(form));
+
     if (depth > 0)
       --depth;
     if (!depth)

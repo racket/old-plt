@@ -73,6 +73,8 @@ typedef struct {
   Scheme_Object *type;
   Scheme_Object **names;
   int count;
+  Scheme_Object *exptime;
+  int super_pos;
 } exn_rec;
 
 #define _MZEXN_TABLE
@@ -2077,7 +2079,7 @@ void scheme_init_exn(Scheme_Env *env)
 
 #define EXN_PARENT(id) exn_table[id].type
 
-#define EXN_FLAGS SCHEME_STRUCT_NO_SET
+#define EXN_FLAGS SCHEME_STRUCT_EXPTIME
 
 #define SETUP_STRUCT(id, parent, name, argc, args) \
     { tmpo = scheme_make_struct_type_from_string(name, parent, argc); \
@@ -2091,16 +2093,25 @@ void scheme_init_exn(Scheme_Env *env)
 
   for (i = 0; i < MZEXN_OTHER; i++) {
     if (exn_table[i].count) {
-      Scheme_Object **values;
+      Scheme_Object **values, *et;
+      int sp;
+
       values = scheme_make_struct_values(exn_table[i].type,
 					 exn_table[i].names,
 					 exn_table[i].count,
 					 EXN_FLAGS);
-      for (j = exn_table[i].count; j--; ) {
+      for (j = exn_table[i].count - 1; j--; ) {
 	scheme_add_global_constant_symbol(exn_table[i].names[j],
 					  values[j],
 					  env);
       }
+
+      sp = exn_table[i].super_pos;
+      et = scheme_make_struct_exptime(exn_table[i].names, exn_table[i].count,
+				      (sp >= 0) ? exn_table[sp].exptime : NULL,
+				      EXN_FLAGS);
+      exn_table[i].exptime = et;
+      scheme_add_global_keyword_symbol(exn_table[i].names[exn_table[i].count - 1], et, env);
     }
   }
 

@@ -87,7 +87,7 @@
 	  " document.getElementById(\"search_height\").value="
 	  search-height-default)
          "}")
-	(TITLE ,(string-constant hd-configuration))
+	(TITLE "PLT Help Desk configuration")
 	,hd-css)
       (BODY 
        (H1  "PLT Help Desk configuration")

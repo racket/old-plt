@@ -16,7 +16,7 @@
      (show "<HTML>")
      (show (xexpr->string
 	    `(HEAD ,hd-css 
-		   (TITLE ,(string-constant refresh-progress)))))
+		   (TITLE  "PLT manual download progress"))))
      (show "<BODY>")
      (show (xexpr->string 
 	    `(H3 ,(color-with 

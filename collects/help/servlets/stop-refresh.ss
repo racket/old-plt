@@ -14,7 +14,7 @@
 
     `(HTML 
       (HEAD ,hd-css
-	    (TITLE ,(string-constant refresh-stopped)))
+	    (TITLE "PLT manuals refresh stopped"))
       (BODY
 	(H2 (B ,(color-with "red" (string-constant refresh-stopped))))
 	(P)

@@ -161,10 +161,7 @@
 
 (define aries@ (reference-library-unit/sig "ariesr.ss" "cogen"))
 
-;; this unit needs to be invoked twice
-;; once to build zodiac (syntax for the user)
-;; and once to build the userspace unit (primitives for the user)
-;; this unit should be obsoleted soon...
+(define params@ [require-library "paramr.ss" "userspce"])
 (define parameters@
   (let ([syntax-level syntax-level])
     (unit/sig plt:parameters^
@@ -398,19 +395,20 @@
 	     (compound-unit/sig
 		 (import)
 	       (link
-		[params : plt:parameters^ (parameters@)]
+		[params : plt:userspace:params^ (params@)]
 		[userspace : plt:userspace^
 			   ((reference-library-unit/sig
-			     "userspcr.ss" "userspce"))])
-	       (export (open userspace))))])
+			     "userspcr.ss" "userspce")
+			    params)])
+	       (export [open params]
+		       (open userspace))))])
     (lambda ()
       (current-namespace namespace)
       (eval `(#%define argv ,user-argv))
       (eval `(#%define read/zodiac ,read/zodiac))
       (invoke-open-unit u@)
       (eval `(allow-improper-lists ,(eq? syntax-level 'advanced)))
-      (eval `(eq?-only-compares-symbols? ,(and (member syntax-level '(core structured)) #t)))
-      (read-case-sensitive params:case-sensitive?)
+      (eval `(eq?-only-compares-symbols ,(and (member syntax-level '(core structured)) #t)))
       (current-prompt-read prompt-read)
       (debug-info-handler debug-info)
       (current-print mzrice-print)
@@ -435,12 +433,11 @@
 	      (lambda ()
                (eval `(#%define argv ,argv)))))))))
   
-  (printf "Welcome to MzRice version ~a, Copyright (c) 1995-97 PLT~n"
+  (printf "Welcome to MzRice version ~a, Copyright (c) 1995-98 PLT~n"
 	  (version))
-  (printf "Language: ~a~nImproper lists: ~a~n"
+  (printf "Vocabulary: ~a~n"
 	  (cadr (assoc params:check-syntax-level
-		       (map (lambda (p) (list (cadr p) (car p))) language-levels)))
-	  params:allow-improper-lists?)
+		       (map (lambda (p) (list (cadr p) (car p))) language-levels))))
   
   (current-parameterization parameterization)
   (require-library-use-compiled #f))

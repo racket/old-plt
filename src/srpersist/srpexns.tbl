@@ -8,6 +8,7 @@ Scheme_Object **invalidHandleFuns;
 Scheme_Object **errorFuns;
 Scheme_Object **needDataFuns;
 Scheme_Object **stillExecutingFuns;
+Scheme_Object **notImplementedFuns;
 
 char *withInfoFields[] = { 
   "val",
@@ -27,6 +28,7 @@ char *needDataFields[] = {
 #define INVALID_HANDLE_EXN_TYPE  SRP_EXN_TYPE(3)
 #define ERROR_EXN_TYPE           SRP_EXN_TYPE(4)
 #define STILL_EXECUTING_EXN_TYPE SRP_EXN_TYPE(5)
+#define NOT_IMPLEMENTED_EXN_TYPE SRP_EXN_TYPE(6)
 
 SRPSTRUCT srp_exns[] = {
   { "exn-with-info",&withInfoFuns,withInfoFields,sizeray(withInfoFields) },
@@ -35,5 +37,6 @@ SRPSTRUCT srp_exns[] = {
   { "exn-invalid-handle",&invalidHandleFuns,NULL,0 },
   { "exn-error",&errorFuns,NULL,0 },
   { "exn-still-executing",&stillExecutingFuns,NULL,0 },
+  { "exn-not-implemented",&notImplementedFuns,NULL,0 },
 };
 

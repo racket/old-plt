@@ -2342,7 +2342,13 @@
 
  Creates an sql-indicator.  
 
-> (read-indicator an-sql-indicator)
+> (free-indicator sql-indicator)
+
+ Allows the Scheme garbage collector to reclaim the memory used by 
+ the indicator `sql-indicator'.  If the indicator is subsequently 
+ accessed by the ODBC driver, unpredictable effects may occur.
+
+> (read-indicator sql-indicator)
 
  Given an sql-indicator, returns its stored value, which is
  one of 'sql-no-total, 'sql-null-data, 'sql-nts, 'sql-column-ignore,
@@ -2355,6 +2361,12 @@
 > (make-length [n])
 
  Creates an sql-length.  `n' is an exact integer, which defaults to 0.
+
+> (free-length sql-length)
+
+ Allows the Scheme garbage collector to reclaim the memory used by 
+ the length `sql-length'.  If the length is subsequently accessed by s
+ the ODBC driver, unpredictable effects may occur.
 
 > (read-length an-sql-length)
 
@@ -2372,6 +2384,12 @@
  buffers bound to columns have the correct type and adequate 
  size for the column.  If a column has the incorrect type or 
  is too small, unpredictable effects may occur.
+
+> (free-buffer sql-buffer)
+
+ Allows the Scheme garbage collector to reclaim the memory used by 
+ the buffer `sql-buffer'.  If the buffer is subsequently accessed by 
+ the ODBC driver, unpredictable effects may occur.
 
 > (read-buffer sql-buffer) 
 
@@ -2396,11 +2414,17 @@
  longer than the number of elements in `sql-buffer', an error 
  occurs. 
 
-> (read-row-status an-sql-row-status)
+> (read-row-status sql-row-status)
 
- Given an sql-row-status value, returns a list, each element of which 
+ Given a row status value, returns a list, each element of which 
  is one of 'sql-row-deleted, 'sql-row-error, 'sql-row-success, or 
  'sql-row-updated.
+
+> (free-row-status sql-row-status)
+
+ Allows the Scheme garbage collector to reclaim the memory used by 
+ the row status `sql-row-status'.  If the row status is subsequently 
+ accessed by the ODBC driver, unpredictable effects may occur.
 
 > (read-op-parms an-sql-op-parms)
 

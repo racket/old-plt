@@ -13,19 +13,23 @@ static SRP_PRIM srpPrims[] = {
   { srp_read_op_parms,"read-op-parms",1,1 },    
 #endif
   { srp_make_length,"make-length",0,1 },  
+  { srp_free_length,"free-length",1,1 },  
   { srp_read_length,"read-length",1,1 },  
   { srp_make_indicator,"make-indicator",0,0 },  
+  { srp_free_indicator,"free-indicator",1,1 },  
   { srp_read_indicator,"read-indicator",1,1 },  
   { srp_set_indicator,"set-indicator",2,3 },    
   { srp_read_row_status,"read-row-status",1,1 },
+  { srp_free_row_status,"free-row-status",1,1 },
   { srp_make_buffer,"make-buffer",2,2 },        
+  { srp_free_buffer,"free-buffer",1,1 },        
   { srp_read_buffer,"read-buffer",1,1 },        
   { srp_write_buffer,"write-buffer",2,2 },      
   { srp_read_boxed_uint,"read-boxed-uint",1,1 },      
 	
   // from SQL.H
 
-#if ODBCVER >= 0x0300
+// ODBC 3.0 and above
   { srp_SQLAllocHandle,"alloc-handle",1,2 },    
   { srp_SQLBindParam,"bind-param",7,7 },        
   { srp_SQLCloseCursor,"close-cursor",1,1 },    
@@ -46,7 +50,7 @@ static SRP_PRIM srpPrims[] = {
   { srp_SQLSetDescRec,"set-desc-rec",8,9 },        
   { srp_SQLSetEnvAttr,"set-env-attr",3,3 },        
   { srp_SQLSetStmtAttr,"set-stmt-attr",3,3 },      
-#endif
+// end ODBC 3.0 and above
 
   { srp_SQLAllocConnect,"alloc-connect",1,1 },  
   { srp_SQLAllocEnv,"alloc-env",0,0 },          
@@ -89,14 +93,14 @@ static SRP_PRIM srpPrims[] = {
   // from SQLEXT.H
 
 
-#if ODBCVER >= 0x0200
+// ODBC 2.0 and above
   { srp_SQLBindParameter,"bind-parameter",7,8 },        
   { srp_SQLDrivers,"drivers",2,2 },                     
-#endif
+// end ODBC 2.0 and above
 
-#if ODBCVER >= 0x0300
+// ODBC 3.0 and above
   { srp_SQLBulkOperations,"bulk-operations",2,2},   
-#endif
+// end ODBC 3.0 and above
 
   { srp_SQLDriverConnect,"driver-connect",3,3},   
   { srp_SQLBrowseConnect,"browse-connect",2,2 },  

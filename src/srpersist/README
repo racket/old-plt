@@ -19,7 +19,7 @@ copyrighted, PLT cannot distribute them.
 If you are using Microsoft Visual C++ to compile SrPersist, the necessary 
 files are downloadable from the Web.  You'll need to download the Microsoft 
 Data Access Components (MDAC), available at http://www.microsoft.com/data/.  
-We used version 2.0; we expect later versions will work.  After downloading 
+We used version 2.6; we expect later versions will work.  After downloading 
 MDAC, copy the files sql.h, sqlext.h, sqltypes.h, and sqlucode.h to this 
 directory, plt/src/srpersist/.
 
@@ -66,8 +66,10 @@ instance, you'd have
 
 	ODBCVER=0x0200
 
-in the Makefile.  Finally, you may want to change the of the SrPersist 
-dynamic library.  The variable LIBDIR indicates that location.
+in the Makefile.  In CPP_FLAGS, you may need to add the location of
+the directory containing the driver manager's include files. Finally, 
+you may want to change the of the SrPersist dynamic library.  The 
+variable LIBDIR indicates that location.
 
 Once you've made these changes, you can compile everything by
 running 

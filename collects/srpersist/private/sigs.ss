@@ -16,12 +16,16 @@
    ; utility
 
      make-length
+     free-length
      read-length
      make-indicator
+     free-indicator
      read-indicator
      set-indicator
      read-row-status
+     free-row-status
      make-buffer
+     free-buffer
      read-buffer
      write-buffer
 

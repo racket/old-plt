@@ -16,7 +16,7 @@ clean :
 	-@erase srpersist.obj
 	-@erase srptypes.obj
 	-@erase srpbuffer.obj
-	-@erase srpersist.dll
+	-@erase srpmain.dll
 
 CPP=cl.exe
 CPP_FLAGS=/I"../../include" /MT /W3 /GX /O2 /D ODBCVER=$(ODBCVER) /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /c

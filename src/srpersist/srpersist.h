@@ -139,6 +139,7 @@ typedef struct named_bits_dict_ {
 /* misc */
 
 char *intToHexString(int);
+char *odbc_version(void);
 
 /* type-and-value predicates */
 
@@ -233,15 +234,19 @@ SRP_PRIM_DECL(srp_odbc_version);
 
 SRP_PRIM_DECL(srp_make_length);
 SRP_PRIM_DECL(srp_read_length);
+SRP_PRIM_DECL(srp_free_length);
 SRP_PRIM_DECL(srp_make_indicator);
 SRP_PRIM_DECL(srp_read_indicator);
 SRP_PRIM_DECL(srp_set_indicator);
+SRP_PRIM_DECL(srp_free_indicator);
 SRP_PRIM_DECL(srp_read_row_status);
+SRP_PRIM_DECL(srp_free_row_status);
 SRP_PRIM_DECL(srp_read_boxed_uint);
 SRP_PRIM_DECL(srp_read_op_parms);
 SRP_PRIM_DECL(srp_make_buffer);
 SRP_PRIM_DECL(srp_read_buffer);
 SRP_PRIM_DECL(srp_write_buffer);
+SRP_PRIM_DECL(srp_free_buffer);
 
 /* from SQL.H */
 

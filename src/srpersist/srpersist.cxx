@@ -244,8 +244,10 @@ int sizeofCDataType(SQLSMALLINT type) {
   switch (type) {
   case SQL_C_CHAR :
     return sizeof(unsigned char);
+#if (ODBCVER >= 0x0300)
   case SQL_C_WCHAR :
 	   return sizeof(wchar_t);
+#endif
   case SQL_C_SHORT :
   case SQL_C_SSHORT :
     return sizeof(short int);
@@ -328,7 +330,8 @@ void addToBufferTable(void *address,SRP_SQL_BUFFER *buffer) {
   unsigned short hashVal;
   SRP_BUFFER_TBL_ENTRY *pEntry,*p;
 
-  pEntry = (SRP_BUFFER_TBL_ENTRY *)scheme_malloc_uncollectable(sizeof(SRP_BUFFER_TBL_ENTRY));
+  pEntry = (SRP_BUFFER_TBL_ENTRY *)scheme_malloc(sizeof(SRP_BUFFER_TBL_ENTRY));
+  scheme_dont_gc_ptr(pEntry);
   pEntry->address = address;
   pEntry->buffer = buffer;
   
@@ -344,6 +347,41 @@ void addToBufferTable(void *address,SRP_SQL_BUFFER *buffer) {
       p = p->next;
     }
     p->next = pEntry; 
+  }
+}
+
+void removeFromBufferTable(SRP_SQL_BUFFER *buffer) {
+  unsigned short hashVal;
+  SRP_BUFFER_TBL_ENTRY *p,*q;
+  
+  hashVal = getHashValue(buffer->storage);
+  
+  p = bufferTable[hashVal];
+
+  puts("1");
+
+  if (p == NULL) {
+    return;
+  }
+
+  puts("2");
+  if (p->buffer == buffer) {
+    bufferTable[hashVal] = p->next;
+    scheme_gc_ptr_ok(p); 
+  }
+
+  q = p;
+  p = p->next;
+
+  puts("3");
+  while (p) {
+    if (p->buffer == buffer) {
+      q->next = p->next;
+      scheme_gc_ptr_ok(p);
+      return;
+    }  
+    q = p;
+    p = p->next; 
   }
 }
 
@@ -402,7 +440,8 @@ Scheme_Object *srp_make_length(int argc,Scheme_Object **argv) {
     len = 0;
   }
 
-  retval = (SRP_SQL_LENGTH *)scheme_malloc_uncollectable(sizeof(SRP_SQL_LENGTH));
+  retval = (SRP_SQL_LENGTH *)scheme_malloc(sizeof(SRP_SQL_LENGTH));
+  scheme_dont_gc_ptr(retval);
 
   retval->type = sql_length_type; 
   retval->value = len;
@@ -410,15 +449,37 @@ Scheme_Object *srp_make_length(int argc,Scheme_Object **argv) {
   return (Scheme_Object *)retval;
 }
 
+Scheme_Object *srp_free_length(int argc,Scheme_Object **argv) {
+  if (SQL_LENGTHP(argv[0]) == FALSE) {
+    scheme_wrong_type("free-length","<sql-length>",0,argc,argv);
+  } 
+
+  scheme_gc_ptr_ok(argv[0]);
+
+  return scheme_void;
+}
+
+
 Scheme_Object *srp_make_indicator(int argc,Scheme_Object **argv) {
   SRP_SQL_INDICATOR *retval;
 
-  retval = (SRP_SQL_INDICATOR *)scheme_malloc_uncollectable(sizeof(SRP_SQL_INDICATOR));
+  retval = (SRP_SQL_INDICATOR *)scheme_malloc(sizeof(SRP_SQL_INDICATOR));
+  scheme_dont_gc_ptr(retval);
 
   retval->type = sql_indicator_type; 
   retval->value = 0;
 
   return (Scheme_Object *)retval;
+}
+
+Scheme_Object *srp_free_indicator(int argc,Scheme_Object **argv) {
+  if (SQL_INDICATORP(argv[0]) == FALSE) {
+    scheme_wrong_type("free-indicator","<sql-indicator>",0,argc,argv);
+  } 
+
+  scheme_gc_ptr_ok(argv[0]);
+
+  return scheme_void;
 }
 
 #if (ODBCVER >= 0x0300)
@@ -584,7 +645,7 @@ Scheme_Object *srp_read_row_status(int argc,Scheme_Object **argv) {
   long i;
 
   if (SQL_ROW_STATUSP(argv[0]) == FALSE) {
-    scheme_wrong_type("sql-read-row-status","sql-row-status",0,argc,argv);
+    scheme_wrong_type("read-row-status","sql-row-status",0,argc,argv);
   }
 
   values = SQL_ROW_STATUS_VAL(argv[0]);
@@ -599,6 +660,23 @@ Scheme_Object *srp_read_row_status(int argc,Scheme_Object **argv) {
 
   return retval;
 
+}
+
+Scheme_Object *srp_free_row_status(int argc,Scheme_Object **argv) {
+  SRP_SQL_ROW_STATUS *p;
+
+  if (SQL_ROW_STATUSP(argv[0]) == FALSE) {
+    scheme_wrong_type("free-row-status","sql-row-status",0,argc,argv);
+  }
+
+  p = (SRP_SQL_ROW_STATUS *)(argv[0]);
+
+  if (p->usesSchemeStorage) {
+    scheme_gc_ptr_ok(SQL_ROW_STATUS_VAL(p));
+  }
+  scheme_gc_ptr_ok(argv[0]);
+
+  return scheme_void;
 }
 
 #if (ODBCVER >= 0x0300)
@@ -809,7 +887,9 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
     scheme_signal_error("sql-make-buffer: too many elements requested");
   }
 
-  retval = (SRP_SQL_BUFFER *)scheme_malloc_uncollectable(sizeof(SRP_SQL_BUFFER));
+  retval = (SRP_SQL_BUFFER *)scheme_malloc(sizeof(SRP_SQL_BUFFER));
+  scheme_dont_gc_ptr(retval);  
+
   retval->type = sql_buffer_type;
 
   retval->numElts = numElts;
@@ -820,9 +900,10 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
 
   /* buffers might be relinquished by Scheme, 
      but still bound to OBDC columns
-     so make actual storage uncollectable */
+     so make actual storage uncollectable for now */
 
-  retval->storage = scheme_malloc_uncollectable(retval->numElts * sizeof(retval->eltSize));
+  retval->storage = scheme_malloc(retval->numElts * sizeof(retval->eltSize));
+  scheme_dont_gc_ptr(retval->storage);  
 
   /* need to be able to recover <sql-buffer> from storage address
      for use by SQLParamData() */
@@ -830,6 +911,23 @@ Scheme_Object *srp_make_buffer(int argc,Scheme_Object **argv) {
   addToBufferTable(retval->storage,retval);
 
   return (Scheme_Object *)retval;
+}
+
+Scheme_Object *srp_free_buffer(int argc,Scheme_Object **argv) {
+  SRP_SQL_BUFFER *buff;
+
+  if (SQL_BUFFERP(argv[0]) == FALSE) {
+    scheme_wrong_type("free-buffer","<sql-buffer>",0,argc,argv);
+  } 
+
+  buff = (SRP_SQL_BUFFER *)(argv[0]);
+
+  removeFromBufferTable(buff);
+
+  scheme_gc_ptr_ok(buff->storage);
+  scheme_gc_ptr_ok(buff);
+
+  return scheme_void;
 }
 
 Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
@@ -1627,6 +1725,25 @@ Scheme_Object *raise_need_data_exn(Scheme_Object *val,char *f) {
   return raise_valued_exn(val,f,NEED_DATA_EXN_TYPE,"SQL_NEED_DATA"); 
 }
 
+Scheme_Object *raise_not_implemented(char *proc) {
+  Scheme_Object *exn_object;
+  Scheme_Object *argv[2];
+  char buff[256];
+
+  sprintf(buff,
+	  "Procedure %s is not implemented in ODBC version %s",
+	  proc,odbc_version());
+
+  argv[0] = scheme_make_string(buff);
+  argv[1] = scheme_current_continuation_marks();
+  
+  exn_object = scheme_make_struct_instance(NOT_IMPLEMENTED_EXN_TYPE,2,argv);
+
+  scheme_raise(exn_object);
+
+  return scheme_void;
+}
+
 RETURN_CODE checkSQLReturn(SQLRETURN sr,char *f) {
   char buff[128];
   Scheme_Object *exn_object;
@@ -1770,13 +1887,24 @@ Scheme_Object *srp_version(int argc,Scheme_Object **argv) {
   return scheme_make_string(SRP_VERSION);
 }
 
+char *odbc_version(void) {
+  static char buff[15];
+  static BOOL init;
+
+  if (!init) {
+    int version;
+
+    sprintf(buff,"%X",ODBCVER);
+    version = atoi(buff);
+    sprintf(buff,"%.2f",version/100.0);
+    init = TRUE;
+  }
+
+  return buff;
+}
+
 Scheme_Object *srp_odbc_version(int argc,Scheme_Object **argv) {
-  char buff[15];
-  int version;
-  sprintf(buff,"%X",ODBCVER);
-  version = atoi(buff);
-  sprintf(buff,"%.2f",version/100.0);
-  return scheme_make_string(buff);
+  return scheme_make_string(odbc_version());
 }
 
 /* Functions in SQL.H */
@@ -1822,8 +1950,10 @@ Scheme_Object *srp_SQLAllocEnv(int argc,Scheme_Object **argv) {
   sql_return((Scheme_Object *)retval,retcode,"alloc-env");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("alloc-handle");
+#else
   SQLRETURN sr;
   char *handleTypeString;
   RETURN_CODE retcode;
@@ -1925,8 +2055,8 @@ Scheme_Object *srp_SQLAllocHandle(int argc,Scheme_Object **argv) {
 		      "'sql-handle-desc");
 
   return scheme_void; /* unreachable */
-}
 #endif
+}
 
 Scheme_Object *srp_SQLAllocStmt(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -1995,8 +2125,10 @@ Scheme_Object *srp_SQLBindCol(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"bind-col");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("bind-param"); 
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SRP_NAMED_SMALL_CONSTANT *p;
@@ -2095,8 +2227,9 @@ Scheme_Object *srp_SQLBindParam(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"bind-param");
 
   sql_return(argv[0],retcode,"bind-param");
-}
+
 #endif
+}
 
 Scheme_Object *srp_SQLCancel(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2116,8 +2249,10 @@ Scheme_Object *srp_SQLCancel(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"cancel");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLCloseCursor(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("close-cursor"); 
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   RETURN_CODE retcode;
@@ -2133,11 +2268,15 @@ Scheme_Object *srp_SQLCloseCursor(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"close-cancel");
   
   sql_return(argv[0],retcode,"close-cancel");
-}
-#endif
 
-#if (ODBCVER >= 0x0300)
+#endif
+}
+
+
 Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("col-attribute");
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLUSMALLINT colNumber;
@@ -2221,8 +2360,9 @@ Scheme_Object *srp_SQLColAttribute(int argc,Scheme_Object **argv) {
   }
 
   return scheme_void; /* unreachable */
-}
+
 #endif
+}
 
 Scheme_Object *srp_SQLColumns(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2309,8 +2449,11 @@ Scheme_Object *srp_SQLConnect(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"connect");
 }
 
-#if (ODBCVER >= 0x0300)
+
 Scheme_Object *srp_SQLCopyDesc(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("copy-desc"); 
+#else
   SQLRETURN sr;
   SQLHDESC srcDescHandle,targetDescHandle;
   RETURN_CODE retcode;
@@ -2330,8 +2473,10 @@ Scheme_Object *srp_SQLCopyDesc(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"copy-desc");		       
 
   sql_return(argv[0],retcode,"copy-desc");
-}
+
 #endif
+}
+
 
 Scheme_Object *srp_SQLDataSources(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2456,8 +2601,10 @@ Scheme_Object *srp_SQLDisconnect(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"disconnect");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLEndTran(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("end-tran");
+#else
   SQLRETURN sr;
   SQLSMALLINT actionType;
   RETURN_CODE retcode;
@@ -2494,8 +2641,10 @@ Scheme_Object *srp_SQLEndTran(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"end-tran");
   
   sql_return(argv[0],retcode,"end-tran");
-}
+
 #endif
+}
+
 
 Scheme_Object *srp_SQLError(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2622,8 +2771,10 @@ Scheme_Object *srp_SQLFetch(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"fetch");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("fetch-scroll");
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLINTEGER offset;
@@ -2674,8 +2825,9 @@ Scheme_Object *srp_SQLFetchScroll(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"fetch-scroll");  
 
   sql_return(argv[0],retcode,"fetch-scroll");
-}
+
 #endif
+}
 
 Scheme_Object *srp_SQLFreeConnect(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2713,8 +2865,10 @@ Scheme_Object *srp_SQLFreeEnv(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"free-env");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLFreeHandle(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("free-handle");
+#else
   SQLRETURN sr;
   RETURN_CODE retcode;
 
@@ -2739,8 +2893,8 @@ Scheme_Object *srp_SQLFreeHandle(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"free-handle");  
 
   sql_return(argv[0],retcode,"free-handle");
-}
 #endif
+}
 
 Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -2777,8 +2931,10 @@ Scheme_Object *srp_SQLFreeStmt(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"free-stmt");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("get-connect-attr"); 
+#else
   SQLRETURN sr;
   SQLHDBC connectionHandle;
   SQLINTEGER attribute;
@@ -2860,8 +3016,8 @@ Scheme_Object *srp_SQLGetConnectAttr(int argc,Scheme_Object **argv) {
   }
   
   return scheme_void; /* for compiler */
-}
 #endif
+}
 
 Scheme_Object *srp_SQLGetConnectOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -3001,8 +3157,10 @@ Scheme_Object *srp_SQLGetData(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"get-data");
 }
 
-#if (ODBCVER >= 0x300)
 Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x300)
+  return raise_not_implemented("get-desc-field");
+#else
   SQLRETURN sr;
   SQLHDESC descHandle;
   SQLSMALLINT recNumber;
@@ -3146,7 +3304,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pIndicator = (SRP_SQL_INDICATOR *)scheme_malloc_uncollectable(sizeof(SRP_SQL_INDICATOR));
+    pIndicator = (SRP_SQL_INDICATOR *)scheme_malloc(sizeof(SRP_SQL_INDICATOR));
+    scheme_dont_gc_ptr(pIndicator);
     pIndicator->type = sql_indicator_type;
     pIndicator->value = *pIntVal;
 
@@ -3161,7 +3320,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pArrayStatus = (SRP_SQL_ARRAY_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ARRAY_STATUS));
+    pArrayStatus = (SRP_SQL_ARRAY_STATUS *)scheme_malloc(sizeof(SRP_SQL_ARRAY_STATUS));
+    scheme_dont_gc_ptr(pArrayStatus);
     pArrayStatus->type = sql_array_status_type;
     pArrayStatus->hdesc = descHandle;
     pArrayStatus->descType = SQL_HDESC_DESCTYPE(argv[0]);
@@ -3178,7 +3338,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pBindingOffset = (SRP_SQL_BINDING_OFFSET *)scheme_malloc_uncollectable(sizeof(SRP_SQL_BINDING_OFFSET));
+    pBindingOffset = (SRP_SQL_BINDING_OFFSET *)scheme_malloc(sizeof(SRP_SQL_BINDING_OFFSET));
+    scheme_dont_gc_ptr(pBindingOffset);
     pBindingOffset->type = sql_binding_offset_type;
     pBindingOffset->val = pIntVal;
 
@@ -3193,7 +3354,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pRowsProcessed = (SRP_SQL_ROWS_PROCESSED *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROWS_PROCESSED));
+    pRowsProcessed = (SRP_SQL_ROWS_PROCESSED *)scheme_malloc(sizeof(SRP_SQL_ROWS_PROCESSED));
+    scheme_dont_gc_ptr(pRowsProcessed);
     pRowsProcessed->type = sql_rows_processed_type;
     pRowsProcessed->val = pUintVal;
 
@@ -3208,7 +3370,8 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
 
     retcode = checkSQLReturn(sr,"get-desc-field");
 
-    pOctetLength = (SRP_SQL_OCTET_LENGTH *)scheme_malloc_uncollectable(sizeof(SRP_SQL_OCTET_LENGTH));
+    pOctetLength = (SRP_SQL_OCTET_LENGTH *)scheme_malloc(sizeof(SRP_SQL_OCTET_LENGTH));
+    scheme_dont_gc_ptr(pOctetLength);
     pOctetLength->type = sql_octet_length_type;
     pOctetLength->val = pIntVal;
 
@@ -3219,11 +3382,15 @@ Scheme_Object *srp_SQLGetDescField(int argc,Scheme_Object **argv) {
   }
 
   return scheme_void;
-} 
-#endif
 
-#if (ODBCVER >= 0x0300)
+#endif
+} 
+
+
 Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("get-desc-rec");
+#else
   SQLRETURN sr;
   SQLHDESC descHandle;
   SQLSMALLINT recNumber;
@@ -3291,11 +3458,14 @@ Scheme_Object *srp_SQLGetDescRec(int argc,Scheme_Object **argv) {
 						     actualLen,TRUE),retval);
   
   sql_return(retval,retcode,"get-desc-rec");
-}
-#endif
 
-#if (ODBCVER >= 0x0300)
+#endif
+}
+
 Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("get-diag-field");
+#else
   SQLRETURN sr;
   SQLSMALLINT handleType;
   SQLHANDLE handle;
@@ -3403,11 +3573,13 @@ Scheme_Object *srp_SQLGetDiagField(int argc,Scheme_Object **argv) {
 
   return scheme_void;
 
-}
 #endif
+}
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetDiagRec(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("get-diag-rec");
+#else
   SQLRETURN sr;
   SQLSMALLINT handleType;
   SQLHANDLE handle;
@@ -3453,11 +3625,15 @@ Scheme_Object *srp_SQLGetDiagRec(int argc,Scheme_Object **argv) {
   retval = scheme_make_pair(scheme_make_string((const char *)sqlState),retval);
 
   sql_return(retval,retcode,"get-diag-rec");
-}
-#endif
 
-#if (ODBCVER >= 0x0300)
+#endif
+}
+
+
 Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("get-env-attr");
+#else
   SQLRETURN sr;
   SQLHENV envHandle;
   SQLINTEGER attribute;
@@ -3524,8 +3700,8 @@ Scheme_Object *srp_SQLGetEnvAttr(int argc,Scheme_Object **argv) {
 
   return scheme_void; /* unreachable */
 
-}
 #endif
+}
 
 Scheme_Object *srp_SQLGetFunctions(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -3842,8 +4018,10 @@ Scheme_Object *srp_SQLGetInfo(int argc,Scheme_Object **argv) {
   return scheme_void;  /* unreachable */
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("get-stmt-attr");
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLINTEGER actualLen;
@@ -3935,12 +4113,14 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
     retcode = checkSQLReturn(sr,"get-stmt-attr");
 
     /* need to keep rowStatus around until cursor closed
-       conservatively, make it uncollectable */
+       conservatively, make it uncollectable for now */
 
-    rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROW_STATUS));
+    rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc(sizeof(SRP_SQL_ROW_STATUS));
+    scheme_dont_gc_ptr(rowStatus);
     rowStatus->type = sql_row_status_type;
     rowStatus->numRows = 0;
     rowStatus->values = smallnumpointer;
+    rowStatus->usesSchemeStorage = FALSE;
 
     sql_return((Scheme_Object *)rowStatus,retcode,"get-stmt-attr");
 
@@ -4018,8 +4198,10 @@ Scheme_Object *srp_SQLGetStmtAttr(int argc,Scheme_Object **argv) {
   }
 
   return scheme_void; /* unreachable */
-}
+
 #endif
+}
+
 
 Scheme_Object *srp_SQLGetStmtOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -4264,8 +4446,10 @@ Scheme_Object *srp_SQLRowCount(int argc,Scheme_Object **argv) {
 	     retcode,"row-count");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("set-connect-attr");
+#else
   SQLRETURN sr;
   SQLHDBC connectionHandle;
   SQLINTEGER attribute;
@@ -4372,8 +4556,9 @@ Scheme_Object *srp_SQLSetConnectAttr(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"set-connect-attr");
   sql_return(argv[0],retcode,"set-connect-attr");
 
-}
 #endif
+}
+
 
 Scheme_Object *srp_SQLSetConnectOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -4501,8 +4686,10 @@ Scheme_Object *srp_SQLSetCursorName(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"set-cursor-name");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("set-desc-field");
+#else
   SQLRETURN sr;
   SQLHDESC descHandle;
   SQLSMALLINT recNumber;
@@ -4695,11 +4882,14 @@ Scheme_Object *srp_SQLSetDescField(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"set-desc-field");
 
   sql_return(argv[0],retcode,"set-desc-field");
-}
-#endif
 
-#if (ODBCVER >= 0x0300)
+#endif
+}
+
 Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("set-desc-rec");
+#else
   SQLRETURN sr;
   SQLHDESC descHandle;
   SQLSMALLINT recNumber;
@@ -4797,11 +4987,15 @@ Scheme_Object *srp_SQLSetDescRec(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"set-desc-rec");
 
   sql_return(argv[0],retcode,"set-desc-rec");
-}
-#endif
 
-#if (ODBCVER >= 0x0300)
+#endif
+}
+
+
 Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("set-env-attr");
+#else
   SQLRETURN sr;
   SQLHENV envHandle;
   SQLINTEGER attribute;
@@ -4878,8 +5072,8 @@ Scheme_Object *srp_SQLSetEnvAttr(int argc,Scheme_Object **argv) {
 
   retcode = checkSQLReturn(sr,"set-env-attr");
   sql_return(argv[0],retcode,"set-env-attr");
-}
 #endif
+}
 
 Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -4977,8 +5171,11 @@ Scheme_Object *srp_SQLSetParam(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"set-param");
 }
 
-#if (ODBCVER >= 0x0300)
+
 Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("set-stmt-attr");
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLINTEGER attribute;
@@ -5146,8 +5343,10 @@ Scheme_Object *srp_SQLSetStmtAttr(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"set-stmt-attr");
 
   sql_return(argv[0],retcode,"set-stmt-attr");
-}
+
 #endif
+}
+
 
 Scheme_Object *srp_SQLSetStmtOption(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -5716,8 +5915,10 @@ Scheme_Object *srp_SQLBrowseConnect(int argc,Scheme_Object **argv) {
   sql_return(retval,retcode,"browse-connect");
 }
 
-#if (ODBCVER >= 0x0300)
 Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0300)
+  return raise_not_implemented("bulk-operations");
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLSMALLINT operation;
@@ -5758,8 +5959,9 @@ Scheme_Object *srp_SQLBulkOperations(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"bulk-operations");
 
   sql_return(argv[0],retcode,"bulk-operations");
-}
+
 #endif
+}
 
 Scheme_Object *srp_SQLColAttributes(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -6012,10 +6214,13 @@ Scheme_Object *srp_SQLExtendedFetch(int argc,Scheme_Object **argv) {
   /* need to keep rowStatus around until cursor closed
      conservatively, make it uncollectable */
 
-  rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc_uncollectable(sizeof(SRP_SQL_ROW_STATUS));
+  rowStatus = (SRP_SQL_ROW_STATUS *)scheme_malloc(sizeof(SRP_SQL_ROW_STATUS));
+  scheme_dont_gc_ptr(rowStatus);
   rowStatus->type = sql_row_status_type;
   rowStatus->numRows = 0;
-  rowStatus->values = (SQLUSMALLINT *)scheme_malloc_uncollectable(maxRows * sizeof(SQLUSMALLINT));
+  rowStatus->values = (SQLUSMALLINT *)scheme_malloc(maxRows * sizeof(SQLUSMALLINT));
+  rowStatus->usesSchemeStorage = TRUE;
+  scheme_dont_gc_ptr(rowStatus->values);
 
   sr = SQLExtendedFetch(stmtHandle,fetchType,rowNumber,
 			&rowStatus->numRows,rowStatus->values);
@@ -6420,8 +6625,10 @@ Scheme_Object *srp_SQLTablePrivileges(int argc,Scheme_Object **argv) {
   sql_return(argv[0],retcode,"table-privileges");    
 }
 
-#if (ODBCVER >= 0x0200)
 Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0200)
+  return raise_not_implemented("drivers");
+#else
   SQLRETURN sr;
   SQLHENV envHandle;
   SQLUSMALLINT selection;
@@ -6470,11 +6677,13 @@ Scheme_Object *srp_SQLDrivers(int argc,Scheme_Object **argv) {
 			    retval);
 					       
   sql_return(retval,retcode,"drivers");    
-}
 #endif
+}
 
-#if (ODBCVER >= 0x0200)
 Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
+#if (ODBCVER < 0x0200)
+  return raise_not_implemented("bind-parameter");
+#else
   SQLRETURN sr;
   SQLHSTMT stmtHandle;
   SQLUSMALLINT paramNumber;
@@ -6596,8 +6805,10 @@ Scheme_Object *srp_SQLBindParameter(int argc,Scheme_Object **argv) {
   retcode = checkSQLReturn(sr,"bind-parameter");    
 
   sql_return(argv[0],retcode,"bind-parameter");
-}
+
 #endif
+}
+
 
 Scheme_Object *srp_SQLSetScrollOptions(int argc,Scheme_Object **argv) {
   SQLRETURN sr;
@@ -6898,6 +7109,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   if (srp_name == NULL) {
     srp_name = scheme_intern_symbol(srp_name_string);
   }
+
   env = scheme_primitive_module(srp_name,env);
 
   for (i = 0; i < sizeray(srpPrims); i++) {

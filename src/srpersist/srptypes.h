@@ -79,6 +79,7 @@ typedef struct _sql_indicator_ {
 
 typedef struct _sql_row_status_ {
   Scheme_Type type;
+  BOOL usesSchemeStorage;
   SQLUINTEGER numRows;
   SQLUSMALLINT *values;
 } SRP_SQL_ROW_STATUS;

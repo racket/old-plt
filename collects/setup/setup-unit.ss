@@ -278,7 +278,8 @@
 
       (define (delete-file/record-dependency path dependencies)
 	(when (regexp-match-positions re:dep path)
-	  (let ([deps (with-input-from-file path read)])
+	  (let ([deps (with-handlers ([not-break-exn? (lambda (x) null)])
+			(with-input-from-file path read))])
 	    (for-each (lambda (s) (hash-table-put! dependencies s #t))
 		      (cdr deps))))
 	(delete-file path))

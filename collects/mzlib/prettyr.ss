@@ -9,21 +9,6 @@
 ;
 ;  (pretty-print v) - pretty-prints v (like `write')
 ;  (pretty-print v port) - pretty-prints v to port
-;  (pretty-print v port c) - pretty-prints v to port using c columns; if
-;                            c is #f, (pretty-print-columns) is used
-;  (pretty-print v port c graph?) - pretty-prints v to port using graph?
-;                                   instead of (print-graph)
-;  (pretty-print v port c graph? struct?) - pretty-prints v to port using 
-;                                   struct? instead of (print-struct)
-;  (pretty-print v port c graph? struct? depth) - pretty-prints v to port
-;                                   using depth instead of 
-;                                   (pretty-print-depth)
-;  (pretty-print v port c graph? struct? depth size-hook) - pretty-prints 
-;                                   using size-hook instead of
-;                                   (pretty-print-size-hook)
-;  (pretty-print v port c graph? struct? depth size-hook print-hook) - 
-;                                   pretty-prints using print-hook instead
-;                                   of (pretty-print-print-hook)
 ;
 ;  (pretty-display ...) - like pretty-print, but prints like `display'
 ;                         instead of like `write'
@@ -151,8 +136,10 @@
      (lambda (display?)
        (letrec ([pretty-print
 		 (case-lambda 
-		  ([obj port width print-graph? print-struct? depth size-hook print-hook]
-		   (let ([width (if width width (pretty-print-columns))])
+		  [(obj port)
+		   (let ([width (pretty-print-columns)]
+			 [size-hook (pretty-print-size-hook)]
+			 [print-hook (pretty-print-print-hook)])
 		     (generic-write obj display?
 				    width
 				    (let ([display (pretty-print-display-string-handler)])
@@ -162,35 +149,23 @@
 				    (lambda (s l) 
 				      (print-hook s display? port)
 				      #t)
-				    print-graph? print-struct? depth
+				    (print-graph) (print-struct)
+				    (and (not display?) (print-vector-length))
+				    (pretty-print-depth)
 				    (lambda (o display?)
 				      (size-hook o display? port))
 				    (let ([print-line (pretty-print-print-line)])
 				      (lambda (line offset)
 					(print-line line port offset width))))
-		     (void)))
-		  ([obj port width print-graph? print-struct? depth size-hook] 
-		   (pretty-print obj port width print-graph? print-struct? depth 
-				 size-hook (pretty-print-print-hook)))
-		  ([obj port width print-graph? print-struct? depth] 
-		   (pretty-print obj port width print-graph? print-struct? depth 
-				 (pretty-print-size-hook)))
-		  ([obj port width print-graph? print-struct?] 
-		   (pretty-print obj port width print-graph? print-struct? 
-				 (pretty-print-depth)))
-		  ([obj port width print-graph?] 
-		   (pretty-print obj port width print-graph? (print-struct)))
-		  ([obj port width] 
-		   (pretty-print obj port width (print-graph) (print-struct)))
-		  ([obj port] (pretty-print obj port (pretty-print-columns)))
-		  ([obj] (pretty-print obj (current-output-port) (pretty-print-columns))))])
+		     (void))]
+		  [(obj) (pretty-print obj (current-output-port))])])
 	 pretty-print)))
 
    (define pretty-print (make-pretty-print #f))
    (define pretty-display (make-pretty-print #t))
 
    (define (generic-write obj display? width output output-hooked 
-			  print-graph? print-struct? 
+			  print-graph? print-struct? print-vec-length?
 			  depth size-hook print-line)
 
      (define line-number 0)
@@ -289,6 +264,18 @@
 	     ((unquote)          ",")
 	     ((unquote-splicing) ",@"))))
 
+       (define (drop-repeated l)
+	 (if (null? l)
+	     null
+	     (let ([rest (drop-repeated (cdr l))])
+	       (cond
+		[(and (pair? rest)
+		      (null? (cdr rest))
+		      (eq? (car l) (car rest)))
+		 rest]
+		[(eq? rest (cdr l)) l]
+		[else (cons (car l) rest)]))))
+
        (define (out str col)
 	 (and col (output str) (+ col (string-length str))))
 
@@ -372,8 +359,15 @@
 					obj #t col
 					#f #f
 					(lambda (col)
-					  (wr-lst (vector->list obj) 
-						  (out "#" col) #f depth))))
+					  (wr-lst (let ([l (vector->list obj)])
+						    (if print-vec-length?
+							(drop-repeated l)
+							l))
+						  (let ([col (out "#" col)])
+						    (if print-vec-length?
+							(out (number->string (vector-length obj)) col)
+							col))
+						  #f depth))))
 		   ((box? obj)         (check-expr-found
 					obj #t col
 					#f #f
@@ -515,8 +509,15 @@
 			   (cond
 			    [(pair? obj) (pp-pair obj col extra depth)]
 			    [(vector? obj)
-			     (pp-list (vector->list obj) 
-				      (out "#" col) extra pp-expr #f depth)]
+			     (pp-list (let ([l (vector->list obj)])
+					(if print-vec-length?
+					    (drop-repeated l)
+					    l))
+				      (let ([col (out "#" col)])
+					(if print-vec-length?
+					    (out (number->string (vector-length obj)) col)
+					    col))
+				      extra pp-expr #f depth)]
 			    [(struct? obj)
 			     (pp-list (vector->list (struct->vector obj))
 				      (out "#" col) extra pp-expr #f depth)]

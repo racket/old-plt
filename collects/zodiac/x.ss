@@ -92,7 +92,7 @@
 		(sym-expander
 		  (internal-error expr "Invalid sym expander ~s" sym-expander))
 		(else
-		  (static-error expr "Invalid syntax")))))
+		  (static-error expr "Invalid symbol syntax")))))
 	  ((or (z:scalar? expr)		; "literals" = scalars - symbols
 	     (z:vector? expr))
 	    (let ((lit-expander (get-lit-micro vocab)))
@@ -104,7 +104,7 @@
 		  (internal-error expr
 		    "Invalid lit expander ~s" lit-expander))
 		(else
-		  (static-error expr "Invalid syntax")))))
+		  (static-error expr "Invalid scalar/vector syntax")))))
 	  ((z:list? expr)
 	    (let ((invoke-list-expander
 		    (lambda ()
@@ -117,7 +117,7 @@
 			    (internal-error expr
 			      "Invalid list expander ~s" list-expander))
 			  (else
-			    (static-error expr "Invalid syntax"))))))
+			    (static-error expr "Invalid list syntax"))))))
 		   (contents (expose-list expr)))
 	      (if (null? contents)
 		(invoke-list-expander)
@@ -149,7 +149,7 @@
 		  (internal-error expr
 		    "Invalid ilist expander ~s" ilist-expander))
 		(else
-		  (static-error expr "Invalid syntax")))))
+		  (static-error expr "Invalid improper-list syntax")))))
 	  (else
 	    (static-error expr "Invalid body")))))
 

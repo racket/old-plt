@@ -15,15 +15,21 @@
 			      (when ans
 				(printf "~afilname; skip: ~a~n" indent-string x))
 			      ans))]
+			 [explode-path
+			  (lambda (filename)
+			    (let loop ([filename filename])
+			      (let-values ([(base ele _) (split-path filename)])
+				(if (string? base)
+				    (cons ele (loop base))
+				    (list ele)))))]
 			 [mzlib?
 			  (lambda (x)
-			    (let*-values ([(base _1 _2) (split-path x)]
-					  [(ans) (and base
-						      (let-values ([(_1 name _2) (split-path base)])
-							(equal? name "mzlib")))])
-					 (when ans
-					   (printf "~amzlib; skip: ~a~n" indent-string x))
-					 ans))])
+			    (let ([explode (explode-path x)])
+			      (and (>= (length explode) 4)
+				   (string=? (cadr explode) "standard")
+				   (string=? (caddr explode) "collects")
+				   (string=? (cadddr explode) "mzscheme")
+				   (printf "~amzlib; skip: ~a~n" indent-string x))))])
 		    (printf "~aLoading ~a...~n" indent-string file)
 		    (let* ([indent
 			    (lambda ()

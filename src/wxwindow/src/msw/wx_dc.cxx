@@ -438,7 +438,7 @@ Bool wxDC::GlyphAvailable(int c, wxFont *f)
   dc = ThisDC();
   if (!dc) return 0;
 
-  r = f->GlyphAvailable(c, dc);
+  r = f->GlyphAvailable(c, dc, screen_font);
 
   DoneDC(dc);
 

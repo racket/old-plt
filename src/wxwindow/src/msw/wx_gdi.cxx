@@ -130,6 +130,20 @@ typedef DWORD (WINAPI *wxGET_FONT_UNICODE_RANGES_PROC)(HDC, wxGLYPHSET*);
 static wxGET_FONT_UNICODE_RANGES_PROC wxGetFontUnicodeRanges;
 static int gfur_tried = 0;
 
+static int CALLBACK glyph_exists(ENUMLOGFONTXW FAR* lpelf, 
+				 NEWTEXTMETRICW FAR* lpntm, 
+				 DWORD type, 
+				 LPARAM _data)
+{
+  wchar_t c = (wchar_t)_data;
+
+  if (((lpntm->tmFirstChar <= c)
+       && (lpntm->tmLastChar >= c))) {
+    return 0;
+  }
+  return 1;
+}
+
 static int glyph_exists_in_selected_font(HDC hdc, int c)
 {
   if (!gfur_tried) {
@@ -160,54 +174,31 @@ static int glyph_exists_in_selected_font(HDC hdc, int c)
     }
     return 0;
   } else {
-    /* GetFontUnicodeRanges isn't available. Give up,
-       and assume that the character is here. */
-    return 1;
+    /* Check the character range... */
+    LOGFONTW lf;
+
+    GetTextFaceW(hdc, LF_FACESIZE, lf.lfFaceName);
+
+    lf.lfCharSet = DEFAULT_CHARSET;
+    lf.lfPitchAndFamily = 0;
+
+    return !EnumFontFamiliesW(hdc, NULL, (FONTENUMPROCW)glyph_exists, (LPARAM)c);
   }
 }
 
-typedef struct {
-  HDC hdc;
-  int c;
-} GlyphFindData;
-
-static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf, 
-				 NEWTEXTMETRICW FAR* lpntm, 
-				 DWORD type, 
-				 LPARAM _data)
+Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font)
 {
-  GlyphFindData *gfd = (GlyphFindData *)_data;
+  HFONT font, old;
+  int ok;
 
-  if (((lpntm->tmFirstChar <= gfd->c)
-       && (lpntm->tmLastChar >= gfd->c))) {
-    /* This font might work. Let's try it... */
-    HFONT old, cfont;
-    int ok;
+  font = BuildInternalFont(hdc, screen_font, 0);
+  old = (HFONT)::SelectObject(hdc, cfont);
 
-    cfont = CreateFontIndirectW(&lpelf->elfLogFont);
+  ok = glyph_exists_in_selected_font(hdc, c);
 
-    old = (HFONT)::SelectObject(gfd->hdc, cfont);
+  ::SelectObject(hdc, old);
 
-    ok = glyph_exists_in_selected_font(gfd->hdc, gfd->c);
-
-    ::SelectObject(gfd->hdc, old);
-
-    DeleteObject(cfont);
-
-    if (ok)
-      return 0;
-  }
-  return 1;
-}
-
-Bool wxFont::GlyphAvailable(int c, HDC hdc)
-{
-  GlyphFindData gfd;
-
-  gfd.hdc = hdc;
-  gfd.c = c;
-
-  return !EnumFontFamiliesW(hdc, NULL, (FONTENUMPROCW)glyph_exists, (LPARAM)&gfd);
+  return ok;
 }
 
 Bool wxFont::ScreenGlyphAvailable(int c)
@@ -217,7 +208,7 @@ Bool wxFont::ScreenGlyphAvailable(int c)
 
   hdc = ::GetDC(NULL);
 
-  r = GlyphAvailable(c, hdc);
+  r = GlyphAvailable(c, hdc, 0);
 
   ReleaseDC(NULL, hdc);
 

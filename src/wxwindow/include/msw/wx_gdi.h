@@ -35,7 +35,7 @@ class wxFont: public wxbFont
   inline HFONT GetInternalFont(HDC dc, double angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
 
   Bool ScreenGlyphAvailable(int c);
-  Bool GlyphAvailable(int c, HDC hdc);
+  Bool GlyphAvailable(int c, HDC hdc, int screen_font);
 };
 
 class wxColourMap: public wxObject

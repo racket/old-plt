@@ -248,13 +248,14 @@ void wxCanvasDC::SetCanvasClipping(void)
 		CheckMemOK(current_reg);
 	} else
 		current_reg = NULL;
-
+		
 	if (onpaint_reg && clipping)
-		::SectRgn(onpaint_reg, clipping->rgn, current_reg) ;
+		::SectRgn(current_reg, onpaint_reg, current_reg) ;
 	else if (clipping)
 		::CopyRgn(clipping->rgn, current_reg) ;
 	else if (onpaint_reg)
-		::CopyRgn(onpaint_reg, current_reg) ;
+		::CopyRgn(onpaint_reg, current_reg);
+
 
 	wxObject* theCurrentUser = cMacDC->currentUser();
 	if (theCurrentUser == this)
@@ -298,16 +299,7 @@ void wxCanvasDC::SetPaintRegion(Rect* paintRect)
 	if (onpaint_reg) ::DisposeRgn(onpaint_reg);
 	onpaint_reg = ::NewRgn();
 	CheckMemOK(onpaint_reg);
-	float cx, cy, cw, ch;
-	cx = paintRect->left;
-	cy = paintRect->top;
-	cw =  paintRect->right;
-	ch =  paintRect->bottom;
-	int left = XLOG2DEV(cx);
-	int top = YLOG2DEV(cy);
-	int right = XLOG2DEVREL(cx + cw);
-	int bottom = YLOG2DEVREL(cy + ch);
-	::SetRectRgn(onpaint_reg, left, top, right, bottom);
+	::RectRgn(onpaint_reg, paintRect);
 	SetCanvasClipping();
 }
 

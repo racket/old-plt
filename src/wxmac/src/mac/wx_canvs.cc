@@ -355,6 +355,7 @@ void wxCanvas::SetScrollData
  	  if (theDC) {
  	    theDC->device_origin_x = 0;
 	    theDC->device_origin_y = 0;
+	    // ((wxCanvasDC *)theDC)->SetCanvasClipping();
 	  }
  	  if (evnt) {
  	    OnScroll(*evnt);
@@ -389,6 +390,7 @@ void wxCanvas::SetScrollData
 			::InvalRgn(theUpdateRgn);
 			theDC->device_origin_x += -dH;
 			theDC->device_origin_y += -dV;
+			// ((wxCanvasDC *)theDC)->SetCanvasClipping();
 			theDC->EndDrawing();
 			::DisposeRgn(theUpdateRgn);
 		}

@@ -1608,6 +1608,20 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 {
   MenuHandle m = menu->CreateCopy("popup", FALSE);
 
+  int di;
+  if (menu->title) {
+    int l = strlen(menu->title);
+    char *s = new WXGC_ATOMIC char[l + 3];
+    s[0] = s[1] = ' ';
+    memcpy(s + 2, menu->title, l + 1);
+    wxMacString1 theMacString1 = wxItemStripLabel(s);
+    InsertMenuItem(m, theMacString1(), 0);
+    DisableItem(m, 1);
+    InsertMenuItem(m, "\p-", 1);
+    di = -2;
+  } else
+    di = 0;
+
   SetCurrentDC();
 
   ::InsertMenu(m, -1);
@@ -1618,9 +1632,12 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 
   if (!sel)
     return TRUE;
-
+    
   int macMenuId = HiWord(sel);
-  int macMenuItemNum = LoWord(sel);
+  int macMenuItemNum = LoWord(sel) + di;
+
+  if (macMenuItemNum <= 0)
+    return TRUE;
 
   wxMenu *theWxMenu;
 

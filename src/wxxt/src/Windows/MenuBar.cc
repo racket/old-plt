@@ -178,11 +178,16 @@ void wxMenuBar::Append(wxMenu *menu, char *title)
 #ifdef MZ_PRECISE_GC
     children->Append(menu);
 #endif
+#if 0
+    /* This "Help"-detection code has been disabled: */
     {
       _e_menu_item_type t;
       t = (!strcmp(item->label, "Help")) ? MENU_HELP : MENU_CASCADE;
       item->type    = t;
     }
+#else
+    item->type    = MENU_CASCADE;
+#endif
     // chain or initialize menu_item list
     if (last) {
       menu_item *prev = (menu_item*)last;

@@ -1543,7 +1543,7 @@ Bool wxMediaEdit::CheckFlow(float maxw, wxDC *dc, float Y,
       hadNewline = FALSE;
     }
 
-    SCHEME_USE_FUEL(1);
+	if (scheme_current_thread) SCHEME_USE_FUEL(1);
 
     w = 0.0;
     snip->GetExtent(dc, _totalWidth, Y, &w);

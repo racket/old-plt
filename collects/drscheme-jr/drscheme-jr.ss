@@ -3,7 +3,19 @@
 (reference-library "pretty.ss")
 
 (begin-elaboration-time
-  (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt")))
+  (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt"))
+  (define zodiac-dir (build-path plt-dir "zodiac")))
+
+(reference (begin-elaboration-time (build-path zodiac-dir "zsigs.ss")))
+(reference (begin-elaboration-time (build-path zodiac-dir "sigs.ss")))
+
+(current-library-collection-paths
+  (cons (begin-elaboration-time (build-path plt-dir "mred" "collects"))
+    (current-library-collection-paths)))
+
+(reference-library "sparams.ss" "backward")
+(reference-library "ariess.ss" "cogen")
+(reference-library "userspcs.ss" "userspce")
 
 (define annotate? (not (equal? (getenv "MZRICESKIPARIES") "yes")))
 
@@ -43,16 +55,6 @@
 
 (when use-print-convert?
   (reference-library "pconver.ss"))
-
-(begin-elaboration-time
- (define lib-dir (build-path plt-dir "lib"))
- (define zodiac-dir (build-path plt-dir "zodiac")))
-
-(reference (begin-elaboration-time (build-path zodiac-dir "zsigs.ss")))
-(reference (begin-elaboration-time (build-path zodiac-dir "sigs.ss")))
-(reference (begin-elaboration-time (build-path lib-dir "sparams.ss")))
-(reference (begin-elaboration-time (build-path lib-dir "ariess.ss")))
-(reference (begin-elaboration-time (build-path lib-dir "userspcs.ss")))
 
 ;; this unit needs to be invoked twice
 ;; once to build zodiac (syntax for the user)

@@ -191,7 +191,7 @@
 
 ;; _Quantum is something that the library tells us how big it is
 (define _Quantum
-  (let* ([q ((get-ffi-obj #"MagickGetQuantumDepth" libwand
+  (let* ([q ((get-ffi-obj "MagickGetQuantumDepth" libwand
                           (_fun _pointer -> _string))
              #f)]
          [err (lambda ()

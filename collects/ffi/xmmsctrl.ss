@@ -32,8 +32,8 @@ exec mzscheme -r "$0" "$@"
     [(_ name : x ...)
      (define* name
        (get-ffi-obj
-        (bytes-regexp-replaces
-         'name '((#rx#"-" #"_") (#rx#"[?]$" #"") (#rx#"^" #"xmms_remote_")))
+        (regexp-replaces
+         'name '((#rx"-" "_") (#rx"[?]$" "") (#rx"^" "xmms_remote_")))
         libxmms (_fun x ...)))]))
 
 (defxmms* playlist : (files enqueue?) ::

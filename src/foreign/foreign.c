@@ -183,7 +183,7 @@ static Scheme_Object *foreign_ffi_obj(int argc, Scheme_Object *argv[])
   else
     scheme_wrong_type(MYNAME, "ffi-lib", 1, argc, argv);
   if (!SCHEME_BYTE_STRINGP(argv[0]))
-    scheme_wrong_type(MYNAME, "string", 0, argc, argv);
+    scheme_wrong_type(MYNAME, "bytes", 0, argc, argv);
   dlname = SCHEME_BYTE_STR_VAL(argv[0]);
   obj = (ffi_obj_struct*)scheme_hash_get(lib->objects, (Scheme_Object*)dlname);
   if (!obj) {
@@ -1675,7 +1675,7 @@ Scheme_Object *ffi_do_call(void *data, int argc, Scheme_Object *argv[])
   ffi_call(cif, c_func, p, avalues);
   if (ivals != stack_ivals) free(ivals);
   ivals = NULL; /* no need now to hold on to this */
-  for (i=0; i<nargs; i++) avalues[i] = NULL; /* no need for these references */
+  for (i=0; i<nargs; i++) { avalues[i] = NULL; } /* no need for these refs */
   avalues = NULL;
   switch (CTYPE_PRIMLABEL(base)) {
   case FOREIGN_fmark: /* need to allocate a pointer */
@@ -1767,7 +1767,12 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
   int argc = cif->nargs, i;
   Scheme_Object **argv, *p, *v;
 #ifdef MZ_PRECISE_GC
-  data = GC_weak_box_val(((struct immobile_box*)userdata)->p);
+  {
+    void *tmp;
+    tmp  = *((void**)userdata);
+    data = (ffi_callback_struct*)(SCHEME_WEAK_BOX_VAL(tmp));
+    if (data == NULL) scheme_signal_error("callback lost");
+  }
 #else
   data = (ffi_callback_struct*)userdata;
 #endif
@@ -1787,13 +1792,17 @@ void ffi_do_callback(ffi_cif* cif, void* resultp, void** args, void *userdata)
 typedef struct closure_and_cif_struct {
   ffi_closure          closure;
   ffi_cif              cif;
-  struct immobile_box *im;
+#ifdef MZ_PRECISE_GC
+  struct immobile_box *data;
+#else
+  void                *data;
+#endif
 } closure_and_cif;
 /* free the above */
 void free_cl_cif_args(void *ignored, void *p)
 {
 #ifdef MZ_PRECISE_GC
-  GC_free_immobile_box(((closure_and_cif*)p)->im);
+  GC_free_immobile_box((void**)(((closure_and_cif*)p)->data));
 #endif
   free(p);
 }
@@ -1872,12 +1881,16 @@ static Scheme_Object *foreign_ffi_callback(int argc, Scheme_Object *argv[])
   data->itypes = (argv[1]);
   data->otype = (argv[2]);
 #ifdef MZ_PRECISE_GC
-  /* put data in immobile, weak box */
-  cl_cif_args->im = GC_malloc_immobile_box(GC_malloc_weak_box(data, NULL, 0));
+  {
+    /* put data in immobile, weak box */
+    void **tmp;
+    tmp = GC_malloc_immobile_box(GC_malloc_weak_box(data, NULL, 0));
+    cl_cif_args->data = (struct immobile_box*)tmp;
+  }
 #else
-  cl_cif_args->im = (void*)data;
+  cl_cif_args->data = (void*)data;
 #endif
-  if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)(cl_cif_args->im))
+  if (ffi_prep_closure(cl, cif, &ffi_do_callback, (void*)(cl_cif_args->data))
       != FFI_OK)
     scheme_signal_error
       ("internal error: ffi_prep_closure did not return FFI_OK");

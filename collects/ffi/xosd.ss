@@ -16,8 +16,7 @@
   (syntax-rules (:)
     [(_ name : type ...)
      (define name
-       (get-ffi-obj (bytes-regexp-replaces
-                     'name '((#rx#"-"  #"_") (#rx#"[*?]$" #"")))
+       (get-ffi-obj (regexp-replaces 'name '((#rx"-" "_") (#rx"[*?]$" "")))
                     libxosd (_fun type ...)))]))
 
 (define-syntax defxosd*
@@ -81,10 +80,10 @@
 (define _xosd-command (_enum '(percentage string printf slider)))
 
 (define disp-int*
-  (get-ffi-obj #"xosd_display" libxosd
+  (get-ffi-obj "xosd_display" libxosd
                (_fun _xosd _int _xosd-command _int -> _status)))
 (define disp-string*
-  (get-ffi-obj #"xosd_display" libxosd
+  (get-ffi-obj "xosd_display" libxosd
                (_fun _xosd _int _xosd-command _string -> _status)))
 
 ;; xosd-obj percent [line-num] -> int

@@ -416,10 +416,17 @@
 ;; Utilities
 
 ;; Easy wrappers for retrieving and setting library values
+(define (get-ffi-obj-name name objname . args)
+  (cond [(bytes? objname) objname]
+        [(symbol? objname) (get-ffi-obj-name name (symbol->string objname))]
+        [(string? objname) (string->bytes/utf-8 objname)]
+        [else (apply raise-type-error name "object-name" 0 objname args)]))
 (define* (get-ffi-obj name lib type)
-  (ptr-ref (ffi-obj name lib) type))
+  (ptr-ref (ffi-obj (get-ffi-obj-name 'get-ffi-obj name lib type) lib)
+           type))
 (define* (set-ffi-obj! name lib type new)
-  (ptr-set! (ffi-obj name lib) type new))
+  (ptr-set! (ffi-obj (get-ffi-obj-name 'get-ffi-obj name lib type new) lib)
+            type new))
 
 ;; Converting Scheme lists to/from C vectors (going back requires a length)
 (define* (list->cblock l type)
@@ -465,16 +472,15 @@
                      "expecting a non-void pointer, got ~s" cblock)]))
 
 ;; Useful for automatic definitions
-;; Outputs a bytes in any case
 ;; If a provided regexp begins with a "^" or ends with a "$", then
 ;; `regexp-replace' is used, otherwise use `regexp-replace*'.
-(define* (bytes-regexp-replaces x rs)
-  (let loop ([str (if (bytes? x) x (string->bytes/utf-8 (format "~a" x)))]
+(define* (regexp-replaces x rs)
+  (let loop ([str (if (bytes? x) (bytes->string/utf-8 x) (format "~a" x))]
              [rs rs])
     (if (null? rs)
       str
-      (loop ((if (regexp-match #rx#"^\\^|\\$$"
-                               (if (byte-regexp? (caar rs))
+      (loop ((if (regexp-match #rx"^\\^|\\$$"
+                               (if (regexp? (caar rs))
                                  (object-name (caar rs)) (caar rs)))
                regexp-replace regexp-replace*)
              (caar rs) str (cadar rs)) (cdr rs)))))

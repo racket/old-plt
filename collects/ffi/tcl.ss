@@ -21,15 +21,15 @@
       interp)))
 
 (define* create-interp
-  (get-ffi-obj #"Tcl_CreateInterp" libtcl (_fun -> _interp)))
+  (get-ffi-obj "Tcl_CreateInterp" libtcl (_fun -> _interp)))
 (define delete-interp
-  (let ([f (get-ffi-obj #"Tcl_DeleteInterp" libtcl (_fun _interp -> _void))])
+  (let ([f (get-ffi-obj "Tcl_DeleteInterp" libtcl (_fun _interp -> _void))])
     (lambda (i) (f i))))
 
 (current-interp (create-interp))
 
 (define get-string-result
-  (get-ffi-obj #"Tcl_GetStringResult" libtcl (_fun _interp -> _string)))
+  (get-ffi-obj "Tcl_GetStringResult" libtcl (_fun _interp -> _string)))
 
 (define _tclret
   (make-ctype (_enum '(ok error return break continue))
@@ -39,7 +39,7 @@
       x)))
 
 (define* eval-tcl
-  (get-ffi-obj #"Tcl_Eval" libtcl
+  (get-ffi-obj "Tcl_Eval" libtcl
     (_fun (interp : _interp = (current-interp)) (expr : _string) -> _tclret)))
 
 )

@@ -5,12 +5,12 @@
 (define libcrypt (ffi-lib "libcrypt.so"))
 
 (define* crypt
-  (get-ffi-obj #"crypt" libcrypt (_fun _string _string -> _bytes)))
+  (get-ffi-obj "crypt" libcrypt (_fun _string _string -> _bytes)))
 
 (define set-key*
-  (get-ffi-obj #"setkey" libcrypt (_fun _bytes -> _void)))
+  (get-ffi-obj "setkey" libcrypt (_fun _bytes -> _void)))
 (define encrypt*
-  (get-ffi-obj #"encrypt" libcrypt (_fun _bytes _bool -> _void)))
+  (get-ffi-obj "encrypt" libcrypt (_fun _bytes _bool -> _void)))
 
 ;; see the encrypt(3) man page for the following
 

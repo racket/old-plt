@@ -6,8 +6,8 @@ exec mzscheme -r "$0" "$@"
 (require (lib "xosd.ss" "ffi"))
 
 (define x (xosd-create))
-;; (xost-set-bar-length x 12)
 
+;; (xost-set-bar-length x 12)
 (xosd-set-pos            x 'middle)
 (xosd-set-align          x 'center)
 (xosd-set-shadow-offset  x 7)

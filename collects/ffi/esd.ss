@@ -32,7 +32,7 @@
 (define _sample* (make-ctype _int sample-num make-sample))
 
 (define* esd-open-sound ; -> esd
-  (let ([f (get-ffi-obj #"esd_open_sound" libesd (_fun _string -> _esd))])
+  (let ([f (get-ffi-obj "esd_open_sound" libesd (_fun _string -> _esd))])
     (lambda host? (f (and (pair? host?) (car host?))))))
 
 (define (with-default ffi)
@@ -42,7 +42,7 @@
       (apply ffi (default-esd) args))))
 
 (define (c-name x)
-  (bytes-regexp-replaces x '((#rx#"-" #"_") (#rx#"[*?]$" #""))))
+  (regexp-replaces x '((#rx"-" "_") (#rx"[*?]$" ""))))
 
 (define-syntax defesd
   (syntax-rules (: _esd)

@@ -24,10 +24,10 @@
     
     (define (make-empty-lambda-case spec)
       (syntax-case spec ()
-        [(id ...) (syntax [(ths id ...) (void)])]
+        [(id ...) (syntax [(ths super-call id ...) (super-call id ...)])]
         [id
          (identifier? (syntax id))
-         (syntax [(ths . name) (void)])]))
+         (syntax [(ths super-call . name) (apply super-call name)])]))
     
     (define (make-overriding-method method-spec)
       (syntax-case method-spec ()
@@ -61,16 +61,22 @@
                     [name name])
         (lambda (spec)
           (syntax-case spec ()
-            [(id ...) (syntax [(id ...) 
-                               (when surrogate
-                                 (send surrogate name this id ...))
-                               (super-name id ...)])]
+            [(id ...) (syntax [(id ...)
+                               (let ([super-call
+                                      (lambda (id ...) 
+                                        (super-name id ...))])
+                                 (if surrogate
+                                     (send surrogate name this super-call id ...)
+                                     (super-call id ...)))])]
             [id
              (identifier? (syntax id))
              (syntax [name 
-                      (when surrogate
-                        (send surrogate name this . id))
-                      (super-name . id)])]))))
+                      (let ([super-call
+                             (lambda id
+                               (super-name . id))])
+                        (if surrogate
+                            (send surrogate name this super-call . id)
+                            (apply super-call id)))])]))))
     
     (syntax-case stx ()
       [(_ method-spec ...)

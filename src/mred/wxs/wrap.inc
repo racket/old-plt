@@ -7675,7 +7675,7 @@
 "(set! disabled"
 "(remq i"
 " disabled))"
-"(send keymap add-chained-keymap"
+"(send keymap chain-to-keymap"
 "(send"
 "(mred->wx"
 " i)"

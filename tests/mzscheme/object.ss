@@ -123,6 +123,10 @@
 (syntax-test  `(interface () x x))
 (error-test `(interface (8) x) exn:object?)
 
+(error-test `(interface ((class->interface (class object% ()))
+			 (class->interface (class object% ()))))
+	    exn:object?)
+
 (error-test `(interface ((interface () x)) x) exn:object?)
 (error-test `(interface ((interface ((interface () x)) y)) x) exn:object?)
 (test #t interface? (let ([i (interface () x)]
@@ -185,8 +189,16 @@
   
 (test #t implementation? c1 i0.1)
 (test #t implementation? c1 i0.2)
+(test #t implementation? c1 (class->interface c1))
 (test #t implementation? c1 i1)
 (test #f implementation? c1 ix)
+
+(test #t implementation? object% (class->interface object%))
+(test #t implementation? c1 (class->interface c1))
+(test #t implementation? (class c1 ()) (class->interface c1))
+(let ([i (interface ((class->interface c1)))])
+  (test #f implementation? c1 i)
+  (test #t implementation? (class* c1 (i) ()) i))
 
 (define o1 (make-object c1 0 'apple "first" "last"))
 
@@ -214,6 +226,16 @@
 (test #t implementation? c2 i0.2)
 (test #t implementation? c2 i1)
 (test #f implementation? c2 ix)
+(test #t implementation? c2 (class->interface c2))
+(test #t implementation? c2 (class->interface c1))
+(test #f implementation? c1 (class->interface c2))
+
+(test #t interface-extension? (class->interface c2) (class->interface object%))
+(test #t interface-extension? (class->interface c2) (class->interface c1))
+(test #t interface-extension? (class->interface c2) (class->interface c2))
+(test #f interface-extension? (class->interface c1) (class->interface c2))
+(test #t interface-extension? (class->interface c2) i0.1)
+(test #f interface-extension? i0.1 (class->interface c2))
 
 (define o2 (make-object c2))
 
@@ -223,6 +245,9 @@
 	    (c2-init))))
 
 (define o2.1 (make-object c2.1))
+
+(test #t interface? (interface ((class->interface c2)
+				(class->interface c2.1))))
 
 (define c3
   (class* object% () ()
@@ -263,9 +288,12 @@
 
 (test #t is-a? o1 c1)
 (test #t is-a? o1 i1)
+(test #t is-a? o1 (class->interface c1))
+(test #f is-a? o1 (interface ((class->interface c1))))
 (test #t is-a? o2 c1)
 (test #t is-a? o2 i1)
 (test #f is-a? o1 c2)
+(test #f is-a? o1 (class->interface c2))
 (test #t is-a? o2 c2)
 (test #t is-a? o2.1 c1)
 (test #f is-a? o1 c3)
@@ -290,6 +318,9 @@
 (test #t ivar-in-interface? 'c i0.2)
 (test #t ivar-in-interface? 'c i1)
 (test #f ivar-in-interface? 'zzz i1)
+(test #t ivar-in-interface? 'f-1-a (class->interface c2))
+(test #t ivar-in-interface? 'f-1-a (interface ((class->interface c2)) one-more-method))
+(test #f ivar-in-interface? 'f-2-a (class->interface c1))
 
 (error-test '(is-a? o1 o1))
 (error-test '(subclass? o1 o1))

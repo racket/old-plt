@@ -264,9 +264,13 @@ void wxListBox::Set(int n, char *choices[])
 
   Clear();
 
+  user_data = new char*[n];
+
   ShowWindow((HWND)ms_handle, SW_HIDE);
-  for (i = 0; i < n; i++)
+  for (i = 0; i < n; i++) {
     SendMessage((HWND)ms_handle, LB_ADDSTRING, 0, (LONG)choices[i]);
+    user_data[i] = NULL;
+  }
   no_items = n;
   SetHorizontalExtent(NULL);
   ShowWindow((HWND)ms_handle, SW_SHOW);

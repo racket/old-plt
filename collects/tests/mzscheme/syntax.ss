@@ -384,6 +384,7 @@
 (test 3 'let*-values (let*-values (((x y) (values 7 'apple)) ((z) (set! x 3))) x))
 (test 3 'let*-values (let*-values (((x y) (values 7 'apple)) ((z) (if (not #f) (set! x 3) #f))) x))
 (test 3 'let*-values (let*-values (((x y) (values 7 'apple)) ((z) (if (not #t) #t (set! x 3)))) x))
+(test 1 'named-let-scope (let ([f add1]) (let f ([n (f 0)]) n)))
 
 (test-values '(3 4) (lambda () (let ([x 3][y 4]) (values x y))))
 (test-values '(3 -4) (lambda () (let loop ([x 3][y -4]) (values x y))))

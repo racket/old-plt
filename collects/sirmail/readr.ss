@@ -193,14 +193,18 @@
       ;;  Decoding `from' names                                  ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-      (define re:iso (regexp "=[?]iso-8859-1[?][qQ][?](.*)[?]="))
+      (define re:iso (regexp "^(.*)=[?]iso-8859-1[?][qQ][?](.*?)[?]=(.*)$"))
       (define (parse-iso-8859-1 s)
 	(and s
 	     (let ([m (regexp-match re:iso s)])
 	       (if m
-		   (let ([s (qp-decode (cadr m))])
+		   (let ([s (qp-decode (caddr m))])
 		     ;; strip newline:
-		     (substring s 0 (sub1 (string-length s))))
+		     (parse-iso-8859-1
+		      (string-append
+		       (cadr m)
+		       (substring s 0 (sub1 (string-length s)))
+		       (cadddr m))))
 		   s))))
 
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -972,7 +976,8 @@
 		(one-line (or (parse-iso-8859-1 (message-from m))
 			      "<unknown>")))
 	  (send (send subject get-editor) insert 
-		(one-line (or (message-subject m) no-subject-string)))
+		(one-line (or (parse-iso-8859-1 (message-subject m))
+			      no-subject-string)))
 	  (unless (message-downloaded? m)
 	    (apply-style i unread-delta))
 	  (when (memq 'marked (message-flags m))
@@ -1345,10 +1350,12 @@
                                             aid bid
                                             (if first?
                                                 (cdr ah+f)
-                                                (extract-field (caar fields) (car ah+f)))
+                                                (parse-iso-8859-1
+						 (extract-field (caar fields) (car ah+f))))
                                             (if first?
                                                 (cdr bh+f)
-                                                (extract-field (caar fields) (car bh+f))))])
+						(parse-iso-8859-1
+						 (extract-field (caar fields) (car bh+f)))))])
                                     (if (eq? c 'same)
                                         (loop (cdr fields) #f)
                                         c)))))]))))
@@ -1650,19 +1657,20 @@
 
       (define get-viewable-headers
 	(lambda (h)
-	  (if show-full-headers?
-	      h
-	      (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
-			 [small-h empty-header])
-		(if (null? l)
-		    small-h
-		    (let ([v (extract-field (car l) h)])
-		      (if v
-			  (loop (cdr l) (insert-field
-					 (car l)
-					 v
-					 small-h))
-			  (loop (cdr l) small-h))))))))
+	  (parse-iso-8859-1 
+	   (if show-full-headers?
+	       h
+	       (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
+			  [small-h empty-header])
+		 (if (null? l)
+		     small-h
+		     (let ([v (extract-field (car l) h)])
+		       (if v
+			   (loop (cdr l) (insert-field
+					  (car l)
+					  v
+					  small-h))
+			   (loop (cdr l) small-h)))))))))
 
       (define (parse-and-insert-body header body text-obj insert sep-width img-mode?)
 	(if mime-mode?
@@ -1709,7 +1717,8 @@
 					      (let ([l (mime:entity-params ent)])
 						(let ([a (assoc "name" l)])
 						  (and a (cdr a)))))]
-				      [sz (mime:disposition-size (mime:entity-disposition ent))])
+				      [sz (mime:disposition-size (mime:entity-disposition ent))]
+				      [s #f])
 				  (insert (format "[~a/~a~a~a]\r\n" 
 						  (mime:entity-type ent)
 						  (mime:entity-subtype ent)
@@ -1735,7 +1744,10 @@
 							      (display s))
 							    'truncate/replace)))))
 						  #f #f)
-					    (send t change-style url-delta s (sub1 e))))))])
+					    (send t change-style url-delta s (sub1 e))))
+				  (lambda ()
+				    (unless s
+				      (set! s (slurp ent))))))])
 		(case (mime:entity-type ent)
 		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
                             (cond
@@ -1771,16 +1783,16 @@
                               [else
                                (generic ent)]))]
                   [(image) 
-                   (generic ent)
-                   (let ([tmp-file (make-temporary-file "sirmail-mime-image-~a")])
-                     (call-with-output-file tmp-file
-                       (lambda (port)
-                         (display (slurp ent) port))
-                       'truncate)
-                     (let ([bitmap (make-object bitmap% tmp-file)])
-                       (when (send bitmap ok?)
-                         (insert (make-object image-snip% bitmap) void))
-                       (delete-file tmp-file)))]
+                   (let ([get (generic ent)])
+		     (let ([tmp-file (make-temporary-file "sirmail-mime-image-~a")])
+		       (call-with-output-file tmp-file
+			 (lambda (port)
+			   (display (get) port))
+			 'truncate)
+		       (let ([bitmap (make-object bitmap% tmp-file)])
+			 (when (send bitmap ok?)
+			   (insert (make-object image-snip% bitmap) void))
+			 (delete-file tmp-file))))]
 		  [(multipart message)
 		   (map (lambda (msg)
 			  (unless (eq? (mime:entity-type ent) 'message)

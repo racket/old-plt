@@ -1,8 +1,8 @@
-Time-stamp: <98/03/16 23:13:05 shriram>
+Time-stamp: <98/03/17 12:57:57 shriram>
 
 Package: url
 Collection: net
-Files: nntp.ss, nntpr.ss, nntps.ss, nntpu.ss
+Files: url.ss, urlr.ss, urls.ss, urlu.ss
 
 ABSTRACT -------------------------------------------------------------
 

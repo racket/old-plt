@@ -1,8 +1,8 @@
-Time-stamp: <98/03/16 23:12:55 shriram>
+Time-stamp: <98/03/17 12:58:03 shriram>
 
 Package: pop3
 Collection: net
-Files: cgi.ss, cgic.ss, cgir.ss, cgis.ss, cgiu.ss
+Files: pop3.ss, pop3r.ss, pop3s.ss, pop3u.ss
 
 ABSTRACT -------------------------------------------------------------
 

@@ -2410,6 +2410,8 @@ static int do_kill_thread(Scheme_Process *p)
 
   scheme_weak_resume_thread(p);
 
+  if (p->private_on_kill)
+    p->private_on_kill(p);
   if (p->on_kill)
     p->on_kill(p);
 

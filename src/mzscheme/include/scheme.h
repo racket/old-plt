@@ -599,8 +599,13 @@ typedef struct Scheme_Process {
   int tail_buffer_set;
 #endif
 
+  /* MzScheme client can use: */
   void (*on_kill)(struct Scheme_Process *p);
   void *kill_data;
+
+  /* MzScheme use only: */
+  void (*private_on_kill)(struct Scheme_Process *p);
+  void *private_kill_data;
 
   void **user_tls;
   int user_tls_size;

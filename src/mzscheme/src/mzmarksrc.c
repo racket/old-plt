@@ -500,6 +500,7 @@ process_val {
   gcMARK(pr->vector_memory);
   
   gcMARK(pr->kill_data);
+  gcMARK(pr->private_kill_data);
   
   gcMARK(pr->user_tls);
   

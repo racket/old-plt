@@ -518,8 +518,8 @@ scheme_init_port (Scheme_Env *env)
     string_output_port_type = scheme_make_port_type("<string-output-port>");
 
 #ifdef USE_FD_PORTS
-    fd_input_port_type = scheme_make_port_type("<file-desc-input-port>");
-    fd_output_port_type = scheme_make_port_type("<file-desc-output-port>");
+    fd_input_port_type = scheme_make_port_type("<stream-input-port>");
+    fd_output_port_type = scheme_make_port_type("<stream-output-port>");
 #endif
 #ifdef USE_OSKIT_CONSOLE
     oskit_console_input_port_type = scheme_make_port_type("<console-input-port>");
@@ -1845,10 +1845,19 @@ fd_write_need_wakeup(Scheme_Object *port, void *fds)
   MZ_FD_SET(n, (fd_set *)fds2);
 }
 
-static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
+static void release_flushing_lock(Scheme_Process *p)
+{
+  Scheme_FD *fop;
+
+  fop = (Scheme_FD *)p->private_kill_data;
+
+  fop->flushing = 0;
+}
+
+static void flush_fd(Scheme_Output_Port *op, char * volatile bufstr, volatile int buflen)
 {
   Scheme_FD *fop = (Scheme_FD *)op->port_data;
-  int offset = 0;
+  volatile int offset = 0;
 
   if (fop->flushing)
     wait_until_fd_flushed(op);
@@ -1860,6 +1869,9 @@ static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
 
   if (buflen) {
     fop->flushing = 1;
+    fop->bufcount = 0;
+    /* If write is interrupted, we drop chars on the floor.
+       Not ideal, but we'll go with it for now. */
 
     while (1) {
       long len;
@@ -1873,11 +1885,30 @@ static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
 
       if (len < 0) {
 	if (errsaved == EAGAIN) {
-	  scheme_block_until(fd_write_ready, fd_write_need_wakeup, (Scheme_Object *)op, 0.0);
+	  /* Need to block; messy because we're holding a lock. */
+	  mz_jmp_buf savebuf;
+	  
+	  scheme_current_process->private_on_kill = release_flushing_lock;
+	  scheme_current_process->private_kill_data = fop;
+	  memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+	  if (scheme_setjmp(scheme_error_buf)) {
+	    /* Exception; release the lock: */
+	    fop->flushing = 0;
+	    scheme_current_process->private_on_kill = NULL;
+	    scheme_longjmp(savebuf, 1);
+	  } else {
+	    /* BLOCK */
+	    scheme_block_until(fd_write_ready, 
+			       fd_write_need_wakeup, 
+			       (Scheme_Object *)op, 0.0);
+	  }
+	  memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+	  scheme_current_process->private_on_kill = NULL;
+	  scheme_current_process->private_kill_data = NULL;
 	} else {
 	  scheme_raise_exn(MZEXN_I_O_PORT_WRITE,
 			   op,
-			   "error writing to file port (%d)",
+			   "error writing to stream port (%d)",
 			   errno);
 	  return;
 	}
@@ -1888,7 +1919,6 @@ static void flush_fd(Scheme_Output_Port *op, char *bufstr, int buflen)
     }
 
     fop->flushing = 0;
-    fop->bufcount = 0;
   }
 }
 #endif
@@ -2234,7 +2264,7 @@ static int fd_getc(Scheme_Input_Port *port)
       fip->bufcount = 0;
       scheme_raise_exn(MZEXN_I_O_PORT_READ,
 		       port,
-		       "error reading from file port (%d)",
+		       "error reading from stream port (%d)",
 		       errno);
     }
 
@@ -4798,9 +4828,9 @@ file_position(int argc, Scheme_Object *argv[])
 
   if (argc > 1) {
     long n = SCHEME_INT_VAL(argv[1]);
-    if (f)
+    if (f) {
       fseek(f, n, 0);
-    else {
+    } else {
       if (wis) {
 	if (is->index > is->u.hot)
 	  is->u.hot = is->index;
@@ -4829,6 +4859,14 @@ file_position(int argc, Scheme_Object *argv[])
       }
       is->index = n;
     }
+
+    /* Remove any chars saved from peeks: */
+    if (SCHEME_INPORTP(argv[0])) {
+      Scheme_Input_Port *ip;
+      ip = (Scheme_Input_Port *)argv[0];
+      ip->ungotten_count = 0;
+    }
+
     return scheme_void;
   } else {
     long p;
@@ -4843,6 +4881,14 @@ file_position(int argc, Scheme_Object *argv[])
       else
 	p = is->index;
     }
+
+    /* Back up for un-gotten chars: */
+    if (SCHEME_INPORTP(argv[0])) {
+      Scheme_Input_Port *ip;
+      ip = (Scheme_Input_Port *)argv[0];
+      p -= ip->ungotten_count;
+    }
+
     return scheme_make_integer(p);
   }
 }

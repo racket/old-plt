@@ -1278,6 +1278,8 @@
 		 (semaphore-post time-semaphore)
 		 (update-time)))))))
   
+  (mred:preferences:set-preference-default 'mred:display-line-numbers #t boolean?)
+
   (define make-edit-info-frame%
     (lambda (super-info%)
       (rec mred:edit-info-frame%
@@ -1331,13 +1333,18 @@
 			      (let* ([line (send edit position-line pos)]
 				     [line-start (send edit line-start-position line)]
 				     [char (- pos line-start)])
-				(format "~a:~a"
-					(if offset?
-					    (add1 line)
-					    line)
-					(if offset?
-					    (add1 char)
-					    char))))])
+				(if (mred:preferences:get-preference 'mred:display-line-numbers)
+				    (format "~a:~a"
+					    (if offset?
+						(add1 line)
+						line)
+					    (if offset?
+						(add1 char)
+						char))
+				    (format "~a"
+					    (if offset?
+						(+ pos 1)
+						pos)))))])
 		      (when edit
 			(let ([start (send edit get-start-position)]
 			      [end (send edit get-end-position)])

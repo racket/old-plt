@@ -1021,7 +1021,8 @@ please adhere to these guidelines:
  ;; Note that vc-wizard-check-prompt can (should) have newlines so
  ;; it will not make the dialog too wide.
  (vc-wizard-check-prompt "Do you want to check online for~na newer version of DrScheme?")
- (vc-wizard-check-button "Check now!")
+ (vc-wizard-check-button "Check now")
+ (vc-wizard-no-check-button "Skip check")
  (vc-update-check "Update check")
  (vc-please-wait "Please wait")
  (vc-connecting-version-server "Connecting to PLT version server")

@@ -304,11 +304,11 @@
                   #f)))
         
         (rename [super-save-file save-file])
-        (define/override (save-file filename format show-errors?)
+        (define/override (save-file . args)
           (if (symbol? gui-state)
-              (super-save-file filename format show-errors?)
+              (super-save-file . args)
               (saav:run-thunk-without-snips gui-view-state
-               (lambda () (super-save-file filename format show-errors?)))))
+               (lambda () (super-save-file . args)))))
                   
         ; -> void
         ; colors all registered labels

@@ -183,7 +183,7 @@
 
 (provide paren-pairs)
 (define paren-pairs
-  (make-parameter #f (lambda (pairs) (arg-dispatcher pairs) pairs)))
+  (make-parameter '(("(" ")") ("[" "]") ("{" "}") ("<" ">"))))
 
 (provide get-arg-reads-word?)
 (define get-arg-reads-word? (make-parameter #f))
@@ -191,11 +191,16 @@
 ;; A list of an open regexp for any openning, and then a list of thunks, each
 ;; one for retreiving a piece of text by some paren pair.
 (define arg-dispatcher
-  (make-parameter
-   #f (lambda (pairs)
-        (make-dispatcher
-         "^[ \t\r\n\f]*"
-         (map (lambda (p) (list (car p) (apply make-arg-getter p))) pairs)))))
+  (let ([dispatcher #f] [pairs #f])
+    (lambda ()
+      (unless (eq? pairs (paren-pairs))
+        (set! pairs (paren-pairs))
+        (set! dispatcher
+              (make-dispatcher
+               "^[ \t\r\n\f]*"
+               (map (lambda (p) (list (car p) (apply make-arg-getter p)))
+                    pairs))))
+      dispatcher)))
 
 (define (make-arg-getter open close)
   (let ([re (regexp (if (equal? open close)
@@ -296,8 +301,6 @@
 (define (initialize)
   (read-case-sensitive #t)
   (unless (command-marker) (command-marker "@"))
-  (unless (paren-pairs)
-    (paren-pairs '(("(" ")") ("[" "]") ("{" "}") ("<" ">"))))
   (namespace-require '(lib "mztext.ss" "preprocessor"))
   (do-evals))
 

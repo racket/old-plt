@@ -327,19 +327,29 @@ the ITypeInfo interface.
   Returns a list of strings for all COM classes registered on a system
   that have the "Control" subkey. 
 
-> (cocreate-instance-from-coclass a-coclass)
+> (cocreate-instance-from-coclass a-coclass [where])
 
   `a-coclass` is the name of a COM class.  Returns an instance
   of the class, of type <com-object>.  Useful for COM classes 
   without a visual representation, or when a visual representation 
-  is not needed.    
+  is not needed.  
 
-> (cocreate-instance-from-progid a-progid)
+  The optional argument `where' indicates a for running the instance, 
+  and may be 'local (the default), 'remote, or a string indicating 
+  a machine name.  See "Running remote COM servers", below, for
+  more information.
+
+> (cocreate-instance-from-progid a-progid [where])
 
   `a-progid` is the ProgID for a COM class.  Returns an instance
   of the class, of type <com-object>.  Useful for COM classes 
   without a visual representation, or when a visual representation 
   is not needed.    
+
+  The optional argument `where' indicates a for running the instance, 
+  and may be 'local (the default), 'remote, or a string indicating 
+  a machine name.  See "Running remote COM servers", below, for
+  more information.
 
 > (coclass a-com-object)
 
@@ -440,6 +450,46 @@ the ITypeInfo interface.
 > (com-object? a-com-object)
 
   Returns #t if the argument is a COM object, #f otherwise.
+
+_DCOM_
+======
+_Remote COM servers_
+====================
+
+  Running remote COM servers
+  --------------------------
+
+  For the MysterX procedures cocreate-instance-from-coclass and 
+  cocreate-instance-from-progid, the optional `where' argument 
+  may be 'remote.  In that case, the server instance is run at 
+  the location given by the Registry key 
+
+    HKEY_CLASSES_ROOT\AppID\<CLSID>\RemoteServerName
+
+  where <CLSID> is the CLSID of the application.  This key may
+  be set using the DCOMCNFG utility.  From DCOMCNFG, pick the
+  application to be run on the Applications tab, then click on
+  the Properties button.  On the Location tab, choose
+  "Run application on the following computer", and enter 
+  the machine name.
+
+  In order to run a COM remote server, the Registry on the 
+  client machine must contain an entry at 
+
+    HKEY_CLASSES_ROOT\CLSID\<CLSID>
+
+  where <CLSID> is the CLSID for the server.  The server 
+  application itself need not be installed on the client
+  machine.
+
+  There are a number of configuration issues relating to 
+  DCOM, which MysterX uses to invoke remote COM servers.
+  The Web page 
+
+    http://www.distribucon.com/dcom95.html 
+
+  discusses how to setup client and server machines for 
+  DCOM.
 
   COM events
   -----------

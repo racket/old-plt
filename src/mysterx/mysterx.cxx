@@ -9,6 +9,8 @@
 #include <limits.h>
 #include <io.h>
 
+#define _WIN32_DCOM
+
 #include <objbase.h>
 #include <mshtml.h>
 #include <initguid.h>
@@ -97,8 +99,8 @@ static MX_PRIM mxPrims[] = {
   
   // COM objects
   
-  { mx_cocreate_instance_from_coclass,"cocreate-instance-from-coclass",1,1 },
-  { mx_cocreate_instance_from_progid,"cocreate-instance-from-progid",1,1 },
+  { mx_cocreate_instance_from_coclass,"cocreate-instance-from-coclass",1,2 },
+  { mx_cocreate_instance_from_progid,"cocreate-instance-from-progid",1,2 },
   { mx_coclass,"coclass",1,1 },
   { mx_coclass_as_progid,"coclass-as-progid",1,1 },
   { mx_set_coclass,"set-coclass!",2,2 },
@@ -666,17 +668,73 @@ void codedComError(char *s,HRESULT hr) {
   scheme_signal_error(finalBuff);
 }
 
-Scheme_Object *do_cocreate_instance(CLSID clsId,char *name) {
+Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
+				    char *machine) {
   HRESULT hr;
   IDispatch *pIDispatch;
   MX_COM_Object *com_object;
   
-  hr = CoCreateInstance(clsId,NULL,CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
-			IID_IDispatch,(void **)&pIDispatch);
+  if (stricmp(location,"local") == 0) {
+    hr = CoCreateInstance(clsId,NULL,
+			  CLSCTX_LOCAL_SERVER | CLSCTX_INPROC_SERVER,
+			  IID_IDispatch,(void **)&pIDispatch);
+  }
+  else if (stricmp(location,"remote") == 0) {
+    COSERVERINFO csi;
+    MULTI_QI mqi;
+    OLECHAR machineBuff[1024];
+
+    if (machine) {
+      int len;
+      int count;
+
+      csi.dwReserved1 = 0;
+      csi.dwReserved2 = 0;
+      csi.pAuthInfo = NULL;
+
+      len = strlen(machine);
+      count = MultiByteToWideChar(CP_ACP,(DWORD)0,
+				  machine,len,
+				  machineBuff,
+				  sizeray(machineBuff) - 1);
+      machineBuff[len] = '\0';  
+
+      if (count < len) {
+	scheme_signal_error("cocreate-instance-from-*: "
+			    "Unable to translate machine name to Unicode");
+      }
+
+      csi.pwszName = machineBuff;
+      
+    }
+
+    mqi.pIID = &IID_IDispatch;
+    mqi.pItf = NULL;
+    mqi.hr = 0; 
+
+    hr = CoCreateInstanceEx(clsId,NULL,
+			    CLSCTX_REMOTE_SERVER,
+			    machine ? &csi : NULL,
+			    1,&mqi);
+			    
+    pIDispatch = (IDispatch *)(mqi.pItf);
   
+    if (mqi.hr != S_OK || pIDispatch == NULL) {
+      codedComError("cocreate-instance-from-*: "
+		    "Unable to obtain IDispatch interface for remote server",
+		    hr);
+    }
+
+  }
+  else {
+    scheme_signal_error("cocreate-instance-from-*: "
+			"Expected 'local, 'remote, or machine name for 2nd argument, "
+			"got '%s",location); 
+  }
+
   if (hr != ERROR_SUCCESS) {
     char errBuff[2048];
-    sprintf(errBuff,"cocreate-instance: Unable to create instance of %s",
+    sprintf(errBuff,"cocreate-instance-from-*: Unable to create instance of %s",
 	    name);
     codedComError(errBuff,hr);
   }
@@ -698,18 +756,45 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name) {
   return (Scheme_Object *)com_object;
 }
 
+void bindCocreateLocation(int argc,Scheme_Object **argv,
+			  char **pLocation,char **pMachine,
+			  char *f) {
+  if (argc == 2) {
+    if (SCHEME_SYMBOLP(argv[1])) {
+      *pLocation = SCHEME_SYM_VAL(argv[1]);
+      *pMachine = NULL;
+    }
+    else if (SCHEME_STRINGP(argv[1])) {
+      *pLocation = "remote";
+      *pMachine = SCHEME_STR_VAL(argv[1]);
+    }
+    else {
+      scheme_wrong_type(f,"symbol or string",0,argc,argv);
+    }
+  }
+  else {
+    *pLocation = "local";
+    *pMachine = NULL;
+  }
+}
+
 Scheme_Object *mx_cocreate_instance_from_coclass(int argc,Scheme_Object **argv) {
   char *coclass;
   CLSID clsId;
-  
+  char *location;
+  char *machine;
+
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
     scheme_wrong_type("cocreate-instance-from-coclass","string",0,argc,argv);
   }
-  
+
+  bindCocreateLocation(argc,argv,&location,&machine,
+		       "cocreate-instance-from-coclass");
+
   coclass = SCHEME_STR_VAL(argv[0]);
   clsId = getCLSIDFromCoClass(coclass);
 
-  return do_cocreate_instance(clsId,coclass);
+  return do_cocreate_instance(clsId,coclass,location,machine);
 }  
 
 CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
@@ -737,16 +822,21 @@ CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
 Scheme_Object *mx_cocreate_instance_from_progid(int argc,
 						Scheme_Object **argv) {
   CLSID clsId;
+  char *location;
+  char *machine;
 
   if (SCHEME_STRINGP(argv[0]) == FALSE) {
     scheme_wrong_type("cocreate-instance-from-progid","string",0,argc,argv);
   }
 
+  bindCocreateLocation(argc,argv,&location,&machine,
+		       "cocreate-instance-from-progid");
+
   clsId = schemeProgIdToCLSID(argv[0],"cocreate-instance-from-progid");
 
-  return do_cocreate_instance(clsId,SCHEME_STR_VAL(argv[0]));
+  return do_cocreate_instance(clsId,SCHEME_STR_VAL(argv[0]),
+			      location,machine);
 }  
-
 
 Scheme_Object *mx_set_coclass(int argc,Scheme_Object **argv) {
   CLSID clsId;

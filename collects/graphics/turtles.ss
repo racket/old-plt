@@ -16,6 +16,6 @@
    save-turtle-bitmap
 
    splitfn split*fn 
-   turtle-window-size pi))
+   turtle-window-size))
 
 

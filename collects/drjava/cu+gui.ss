@@ -1,0 +1,21 @@
+(load-relative "sig.ss")
+
+(compound-unit/sig
+  (import)
+  (link
+   (F : mzlib:function^ (mzlib:function@))
+   (STRING : mzlib:string^ (mzlib:string@))
+   (FILE : mzlib:file^ (mzlib:file@ STRING F))
+   (MRED : mred^ (mred@))
+   (JVM : jvm^ (jvm@))
+   (Q : queue^ ((load-relative "queue.ss")))
+   (GJC : gjc^ ((load-relative "gjc.ss") JVM (GT : error^)))
+   (SCAN : scanner^ ((load-relative "scanner.ss") JVM GJC Q))
+   (SPLIT : split^ ((load-relative "split.ss") JVM Q GJC SCAN F FILE))
+   (REPL : repl^ ((load-relative "repl.ss") JVM SCAN Q GJC SPLIT F))
+   (GOOBER : goober^ ((load-relative "goober.ss") MRED))
+   (GT : gui-text^ ((load-relative "gui-text.ss") MRED REPL JVM SCAN SPLIT GJC GOOBER))
+   (GUI : gui^ ((load-relative "gui.ss") GT GJC MRED))
+   (IN : () ((load-relative "input-gui.ss") JVM MRED (MRED : input-base^)))
+   (AWT : () ((load-relative "awt.ss") JVM MRED)))
+  (export (open GUI)))

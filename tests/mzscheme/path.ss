@@ -330,8 +330,10 @@
 (for-each
  (lambda (root)
    (let-values ([(base name dir?) (split-path root)])
-      (test #f 'split-path base)
-      (test #t 'split-path dir?)))
+     (when (eq? (system-type) 'macos)
+       (test base 'split-path root))
+     (test #f 'split-path base)
+     (test #t 'split-path dir?)))
  roots)
 
 (let ([check-a/b

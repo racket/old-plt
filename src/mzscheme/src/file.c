@@ -1962,8 +1962,15 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
   else
 #endif
     {
-      file = scheme_make_sized_string(s, len - last_was_sep, 1);
+      int delta;
       is_dir = last_was_sep;
+#ifdef MAC_FILE_SYSTEM
+      /* We need to keep the trailing separator for a root: */
+      delta = last_was_sep;
+#else
+      delta = 0;
+#endif
+      file = scheme_make_sized_string(s, len - last_was_sep + delta, 1);
     }
 
     return MAKE_SPLIT(dir, file, is_dir);

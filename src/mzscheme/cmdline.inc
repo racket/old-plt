@@ -225,7 +225,7 @@ static int run_from_cmd_line(int argc, char *argv[],
   int no_init_file = 0;
 #endif
 #ifdef VERSION_YIELD_FLAG
-  int add_yield = 0;
+  int add_yield = 1;
 #endif
   int no_lib_path = 0;
   FinishArgs *fa;
@@ -494,7 +494,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 #ifdef VERSION_YIELD_FLAG
 	case 'V':
 	  no_rep = 1;
-	  add_yield = 1;
+	  add_yield = 0;
 	  break;
 #endif
 	case 'm':
@@ -678,7 +678,7 @@ static int run_from_cmd_line(int argc, char *argv[],
 	 ", prints version.\n"
 # endif
 # ifdef VERSION_YIELD_FLAG
-	 "  -V, --yield : Like -v, adds yield after evaling/loading all exprs/files.\n"
+	 "  -V, --no-yield : Like -v, also supresses (yield 'wait).\n"
 # endif
 	 "  -b, --binary : Read stdin and write stdout/stderr in binary mode.\n"
 	 "  -h, --help : Shows this information and exits, ignoring other switches.\n"

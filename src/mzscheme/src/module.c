@@ -3191,7 +3191,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	scheme_wrong_syntax("module", 
 			    SCHEME_SYMBOLP(midx) ? midx : ((Scheme_Modidx *)midx)->path, 
 			    name,
-			    "no `require' matching the module name");
+			    "cannot provide from a module without a matching `require'");
       }
 
       exns = SCHEME_CDR(SCHEME_CDR(SCHEME_CAR(rx)));

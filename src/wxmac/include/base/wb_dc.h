@@ -212,6 +212,13 @@ class wxbDC: public wxObject
             wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL) = 0;
             
     virtual void TryColour(wxColour *src, wxColour *dest);
+    
+  void GetUserScale(float *xs, float *ys)
+      { *xs = user_scale_x; *ys = user_scale_y; }
+  void GetDeviceOrigin(float *x, float *y) 
+      { *x = device_origin_x; *y = device_origin_y; }
+ 
+
 };
 
 extern char wx_printer_file[];

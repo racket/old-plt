@@ -17,7 +17,7 @@
 #warning "If you haven't already, rerun configure with '--disable-gl'"
 
 /* To do accounting, turn this on: */
-#define NEWGC_ACCNT
+/* #define NEWGC_ACCNT */
 
 /* To actually use the space we put in the object header, turn on this.
    You *must* have defined NEWGC_ACCNT for this to work. */
@@ -596,75 +596,6 @@ static void roots_fixup(void) {
 }
 
 /*****************************************************************************
- * Thread list routines
- *****************************************************************************/
-#ifdef NEWGC_ACCNT
-struct thread_list {
-  void *thread;
-  void *next;
-};
-
-static struct thread_list *thread_list = NULL;
-
-void GC_register_thread(void *t) {
-  struct thread_list *tlist = malloc(sizeof(struct thread_list));
-  tlist->thread = t;
-  tlist->next = thread_list;
-  thread_list = tlist;
-}
-
-/* return a list of the owners referenced from the roots set */
-static struct owner_list *threads_get_owners(struct owner_list *ol) {
-  struct thread_list *tlist;
-  for(tlist = thread_list; tlist; tlist = tlist->next) {
-    Scheme_Thread *t = (Scheme_Thread*)tlist->thread;
-    short owner;
-    if(t->config && t->config->configs) 
-      owner = 
-	ot_convert((Scheme_Custodian*)t->config->configs[MZCONFIG_CUSTODIAN]);
-    else owner = 0;
-    if(!ol_member_p(ol, owner))
-      ol = ol_add(ol, owner);
-  }
-  return ol;
-}
-    
-static void threads_mark(unsigned short owner) {
-  struct thread_list *tlist;
-  for(tlist = thread_list; tlist; tlist = tlist->next) {
-    Scheme_Thread *t = (Scheme_Thread*)tlist->thread;
-    short curown;
-    if(t->config && t->config->configs) 
-      curown = 
-	ot_convert((Scheme_Custodian*)t->config->configs[MZCONFIG_CUSTODIAN]);
-    else curown = 0;
-    if(owner == curown) {
-      thread_val_mark(tlist->thread);
-    }
-  }
-}
-
-static void threads_fixup() {
-  struct thread_list *tlist = thread_list, *next;
-
-  thread_list = NULL;
-  while(tlist) {
-    next = tlist->next;
-    if(!mark_p(tlist->thread)) {
-      free(tlist);
-    } else {
-      gcFIXUP(tlist->thread);
-      tlist->next = thread_list;
-      thread_list = tlist;
-    }
-    tlist = next;
-  }
-}
-#else
-void GC_register_thread(void *t) {}
-#endif
-
-/*****************************************************************************
  * Memory allocation (midlevel)
  *****************************************************************************/
 
@@ -680,35 +611,16 @@ unsigned long max_heap_size = (1024 * 1024 * 1024);
 
 #define MPAGE_SIZE		(1 << LOG_MPAGE_SIZE)
 
+/* the number of pages in the heap */
 unsigned long pages_in_heap;
+/* the maximum number of pages we should use */
 unsigned long max_used_pages;
-
-/* the structure of a list of freed pages */
-struct mpage_list {
-  void *mpage;
-  struct mpage_list *next;
-};
-
 /* the number of pages currently in active use */
 static unsigned long mla_usedpages = 0;
-/* a list of freed pages we're caching for reuse */
-static struct mpage_list *mla_freedpages = NULL;
 
 /* allocate a memory page of the given size */
-static void *mla_malloc(size_t size) {
+inline void *mla_malloc(size_t size) {
   unsigned long numpages = (size/MPAGE_SIZE)+(((size%MPAGE_SIZE)==0) ? 0 : 1);
-
-  if((numpages == 1) && mla_freedpages) {
-    struct mpage_list *temp = mla_freedpages;
-    void *retval = temp->mpage;
-    void **start = (void**)retval; 
-    void **end = (void**)((unsigned long)retval + size); 
-    mla_freedpages = temp->next;
-    free(temp);
-    /* this is very slightly faster than bzero */
-    while(start < end) *(start++) = NULL; 
-    return retval;
-  }
 
   mla_usedpages += numpages;
   if(mla_usedpages > max_used_pages) {
@@ -722,28 +634,20 @@ static void *mla_malloc(size_t size) {
       }
     }
   }
-
   return malloc_pages(size, MPAGE_SIZE);
 }
 
 /* free a previously allocated page. this may cause and actual deallocation,
    or it may simply cache the page for later reuse */
-static void mla_free(void *page, size_t size, int bigpage) {
-  if(bigpage) {
-    unsigned long numpages = (size/MPAGE_SIZE)+(((size%MPAGE_SIZE)==0)?0:1);
-    mla_usedpages -= numpages;
-    free_pages(page, size);
-  } else {
-    struct mpage_list *temp = malloc(sizeof(struct mpage_list));
-    temp->mpage = page;
-    temp->next = mla_freedpages;
-    mla_freedpages = temp;
-  }
+inline void mla_free(void *page, size_t size, int bigpage) {
+  unsigned long numpages = (size/MPAGE_SIZE)+(((size%MPAGE_SIZE)==0)?0:1);
+  mla_usedpages -= numpages;
+  free_pages(page, size);
 }
 
 #ifdef NEWGC_ACCNT
 /* return the amount of memory that is not currently in use */
-static unsigned long mla_memfree(void) {
+inline unsigned long mla_memfree(void) {
   return (max_used_pages - mla_usedpages) * MPAGE_SIZE;
 }
 #endif
@@ -1689,119 +1593,22 @@ static void rq_run() {
 static Size_Proc size_table[_num_tags];
 static Mark_Proc mark_table[_num_tags];
 static Fixup_Proc fixup_table[_num_tags];
+static Mark_Proc thread_marker = NULL;
 static bool atomic_table[_num_tags];
 
-#ifdef NEWGC_ACCNT
-static void MARK_cjs(Scheme_Continuation_Jump_State *cjs)
-{
-  gcMARK(cjs->jumping_to_continuation);
-  gcMARK(cjs->u.vals);
-}
-
-static void MARK_jmpup(Scheme_Jumpup_Buf *buf)
-{
-  gcMARK(buf->stack_copy);
-  gcMARK(buf->cont);
-  gcMARK(buf->external_stack);
-
-  /* IMPORTANT: the buf->stack_copy pointer must be the only instance
-     of this stack to be traversed. If you copy a jmpup buffer (as in
-     fun.c), don't let a GC happen until the old copy is zeroed
-     out. */
-  if (buf->stack_copy)
-    GC_mark_variable_stack(buf->gc_var_stack,
-			   (long)buf->stack_copy - (long)buf->stack_from,
-			   /* FIXME: stack direction */
-			   (char *)buf->stack_copy + buf->stack_size);
-}
-
-/* this is a hack. we need to use this version of thread_val_mark */
-int thread_val_mark(void *p) {
-  Scheme_Thread *pr = (Scheme_Thread *)p;
-  unsigned short old_gc_owner = gc_owner;
-  
-  if(pr->config)
-    gc_owner = 
-      ot_convert((Scheme_Custodian*)pr->config->configs[MZCONFIG_CUSTODIAN]);
-
-  gcMARK(pr->next);
-  gcMARK(pr->prev);
-  
-  MARK_cjs(&pr->cjs);
-
-  gcMARK(pr->config);
-
-  {
-    Scheme_Object **rs = pr->runstack_start;
-    gcMARK( pr->runstack_start);
-    pr->runstack = pr->runstack_start + (pr->runstack - rs);
-  }
-  gcMARK(pr->runstack_saved);
-  
-  gcMARK(pr->cont_mark_stack_segments);
-  
-  MARK_jmpup(&pr->jmpup_buf);
-  
-  gcMARK(pr->cc_ok);
-  gcMARK(pr->ec_ok);
-  gcMARK(pr->dw);
-  
-  gcMARK(pr->nester);
-  gcMARK(pr->nestee);
-  
-  gcMARK(pr->blocker);
-  gcMARK(pr->overflow);
-  
-  gcMARK(pr->current_local_env);
-  gcMARK(pr->current_local_mark);
-  gcMARK(pr->current_local_name);
-  
-  gcMARK(pr->print_buffer);
-  gcMARK(pr->print_port);
-  
-  gcMARK(pr->overflow_reply);
-
-  gcMARK(pr->values_buffer);
-
-  gcMARK(pr->tail_buffer);
-  
-  gcMARK(pr->ku.k.p1);
-  gcMARK(pr->ku.k.p2);
-  gcMARK(pr->ku.k.p3);
-  gcMARK(pr->ku.k.p4);
-  
-  gcMARK(pr->list_stack);
-  
-  gcMARK(pr->rn_memory);
-  
-  gcMARK(pr->kill_data);
-  gcMARK(pr->private_kill_data);
-  gcMARK(pr->private_kill_next);
-  
-  gcMARK(pr->user_tls);
-  
-  gcMARK(pr->mr_hop);
-  gcMARK(pr->mref);
-
-  gc_owner = old_gc_owner;
-  return
-  gcBYTES_TO_WORDS(sizeof(Scheme_Thread));
-}
-#endif
 
 void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, 
 			    Fixup_Proc fixup, int is_constant_size, 
 			    int is_atomic) {
   size_table[tag] = size;
-#ifdef NEWGC_ACCNT
-  if(tag != scheme_thread_type)
-#endif
-    mark_table[tag] = mark;
-#ifdef NEWGC_ACCNT
-  else mark_table[tag] = thread_val_mark;
-#endif
+  mark_table[tag] = mark;
   fixup_table[tag] = fixup;
   atomic_table[tag] = is_atomic;
+#ifdef NEWGC_ACCNT
+  thread_marker = mark;
+  mark_table[tag] = (Mark_Proc)size;
+  atomic_table[tag] = 1;
+#endif
 }
 
 void GC_init_type_tags(int count, int weakbox) {
@@ -1827,6 +1634,63 @@ void GC_init_type_tags(int count, int weakbox) {
   }
   weak_box_tag = weakbox;
 }
+
+/*****************************************************************************
+ * Thread list routines
+ *****************************************************************************/
+#ifdef NEWGC_ACCNT
+struct thread_list {
+  void *thread;
+  short owner;
+  void *next;
+};
+
+static struct thread_list *thread_list = NULL;
+
+void GC_register_thread(void *t) {
+  struct thread_list *tlist = malloc(sizeof(struct thread_list));
+  tlist->thread = t;
+  tlist->owner = ot_current();
+  tlist->next = thread_list;
+  thread_list = tlist;
+}
+
+/* return a list of the owners referenced from the roots set */
+static struct owner_list *threads_get_owners(struct owner_list *ol) {
+  struct thread_list *tlist;
+  for(tlist = thread_list; tlist; tlist = tlist->next) 
+    if(!ol_member_p(ol, tlist->owner))
+      ol = ol_add(ol, tlist->owner);
+  return ol;
+}
+    
+static void threads_mark(unsigned short owner) {
+  struct thread_list *tlist;
+  for(tlist = thread_list; tlist; tlist = tlist->next) 
+    if(tlist->owner == owner) 
+      thread_marker(tlist->thread);
+}
+
+static void threads_fixup() {
+  struct thread_list *tlist = thread_list, *next;
+
+  thread_list = NULL;
+  while(tlist) {
+    next = tlist->next;
+    if(!mark_p(tlist->thread)) {
+      free(tlist);
+    } else {
+      gcFIXUP(tlist->thread);
+      fixup_table[scheme_thread_type](tlist->thread);
+      tlist->next = thread_list;
+      thread_list = tlist;
+    }
+    tlist = next;
+  }
+}
+#else
+void GC_register_thread(void *t) {}
+#endif
 
 /*****************************************************************************
  * Marking routines
@@ -2633,22 +2497,68 @@ void GC_gcollect() {
 /*****************************************************************************
  * Memory allocation (system level)
  *****************************************************************************/
+/* Windows */
+
 #if _WIN32
-inline void *malloc_pages(size_t len, size_t align) {
-  return VirtualAlloc(NULL, len, MEM_COMMIT|MEM_RESERVE, PAGE_READWRITE);
+
+void *malloc_pages(size_t len, size_t alignment)
+{
+  return (void *)VirtualAlloc(NULL, len, 
+			      MEM_COMMIT | MEM_RESERVE, 
+			      PAGE_READWRITE);
 }
 
-static void *free_pages(void *p, size_t len) {
+void free_pages(void *p, size_t len)
+{
   VirtualFree(p, 0, MEM_RELEASE);
 }
 
-static void flush_freed_pages(void) {}
-
-static void protect_pages(void *p, size_t len, int rw) {
-  DWORD old;
-  VirtualProtect(p, len, rw ? PAGE_READWRITE : PAGE_READONLY, &old);
+void flush_freed_pages(void)
+{
 }
-#else
+
+void protect_pages(void *p, size_t len, int writeable)
+{
+  DWORD old;
+  VirtualProtect(p, len, (writeable ? PAGE_READWRITE : PAGE_READONLY), &old);
+}
+
+# define MALLOCATOR_DEFINED
+#endif
+
+/******************************************************************************/
+
+/* OSKit */
+
+#if OSKIT
+# include <oskit/c/malloc.h>
+
+void *malloc_pages(size_t len, size_t alignment)
+{
+  void *p;
+  p = smemalign(alignment, len);
+  memset(p, 0, len);
+  return p;
+}
+
+void free_pages(void *p, size_t len)
+{
+  sfree(p, len);
+}
+
+void flush_freed_pages(void)
+{
+}
+
+# define MALLOCATOR_DEFINED
+#endif
+
+/******************************************************************************/
+
+/* Default: mmap */
+
+#ifndef MALLOCATOR_DEFINED
+
 # include <unistd.h>
 # include <fcntl.h>
 # include <sys/types.h>
@@ -2659,9 +2569,53 @@ static void protect_pages(void *p, size_t len, int rw) {
 int fd, fd_created;
 #endif
 
-int page_size; /* OS page size */
+/* Instead of immediaately freeing pages with munmap---only to mmap
+   them again---we cache BLOCKFREE_CACHE_SIZE freed pages. A page is
+   cached unused for at most BLOCKFREE_UNMAP_AGE cycles of the
+   collector. (A max age of 1 seems useful, anything more seems
+   dangerous.) 
 
-inline void *malloc_pages(size_t len, size_t alignment)
+   The cache is small enough that we don't need an elaborate search
+   mechanism, but we do a bit of work to collapse adjacent pages in
+   the cache. */
+
+typedef struct {
+  void *start;
+  long len;
+  int age;
+} Free_Block;
+
+#define BLOCKFREE_UNMAP_AGE 1
+#define BLOCKFREE_CACHE_SIZE 96
+static Free_Block blockfree[BLOCKFREE_CACHE_SIZE];
+
+static int compare_free_block(const void *a, const void *b)
+{
+  if ((unsigned long)((Free_Block *)a)->start < (unsigned long)((Free_Block *)b)->start)
+    return -1;
+  else
+    return 1;
+}
+
+void collapse_adjacent_pages(void)
+{
+  int i, j;
+
+  /* collapse adjacent: */
+  my_qsort(blockfree, BLOCKFREE_CACHE_SIZE, sizeof(Free_Block), compare_free_block);
+  j = 0;
+  for (i = 1; i < BLOCKFREE_CACHE_SIZE; i++) {
+    if ((blockfree[j].start + blockfree[j].len) ==blockfree[i].start) {
+      blockfree[j].len += blockfree[i].len;
+      blockfree[i].start = NULL;
+      blockfree[i].len = 0;
+    } else
+      j = i;
+  }
+}
+
+
+void *malloc_pages(size_t len, size_t alignment)
 {
   void *r;
   size_t extra = 0;
@@ -2680,8 +2634,52 @@ inline void *malloc_pages(size_t len, size_t alignment)
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
-  /* May need to try twice to get a desired alignment: */
- try_again:
+  /* Something from the cache, perhaps? */
+  {
+    int i;
+
+    /* Try an exact fit: */
+    for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
+      if (blockfree[i].len == len) {
+	r = blockfree[i].start;
+	if (!alignment || !((unsigned long)r & (alignment - 1))) {
+	  blockfree[i].start = NULL;
+	  blockfree[i].len = 0;
+	  memset(r, 0, len);
+	  return r;
+	}
+      }
+    }
+
+    /* Try a first fit: */
+    for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
+      if (blockfree[i].len > len) {
+	/* Align at start? */
+	r = blockfree[i].start;
+	if (!alignment || !((unsigned long)r & (alignment - 1))) {
+	  blockfree[i].start += len;
+	  blockfree[i].len -= len;
+	  memset(r, 0, len);
+	  return r;
+	}
+
+	/* Align at end? */
+	r = blockfree[i].start + (blockfree[i].len - len);
+	if (!((unsigned long)r & (alignment - 1))) {
+	  blockfree[i].len -= len;
+	  memset(r, 0, len);
+	  return r;
+	}
+
+	/* We don't try a middle alignment, because that would
+	   split the block into three. */
+      }
+    }
+
+    /* Nothing useable in the cache... */
+  }
+
+  extra = alignment;
 
 #ifdef MAP_ANON
   r = mmap(NULL, len + extra, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
@@ -2697,62 +2695,58 @@ inline void *malloc_pages(size_t len, size_t alignment)
     void *real_r;
     long pre_extra;
 
-    real_r = (void *)(((unsigned long)r+(alignment-1))&(~(alignment-1)));
+    real_r = (void *)(((unsigned long)r + (alignment - 1)) & (~(alignment - 1)));
     
     pre_extra = real_r - r;
     if (pre_extra)
       if (munmap(r, pre_extra))
-	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", 
-		(long)r, pre_extra, errno);
+	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
     if (pre_extra < extra)
       if (munmap(real_r + len, extra - pre_extra))
-	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", 
-		(long)r, pre_extra, errno);
+	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)r, pre_extra, errno);
     r = real_r;
   }
 
-  if (alignment && ((unsigned long)r & (alignment - 1))) {
-    /* Need better alignment. Try harder. */
-    munmap(r, len);
-    extra = alignment;
-    goto try_again;
-  }
+  page_allocations += len;
 
   return r;
 }
 
-#define BLOCKFREE_CACHE_SIZE 10
-void *blockfree_ptrs[BLOCKFREE_CACHE_SIZE];
-long blockfree_sizes[BLOCKFREE_CACHE_SIZE];
-
 void free_pages(void *p, size_t len)
 {
   int i;
-  
+
   /* Round up to nearest page: */
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
+  page_allocations -= len;
+
   /* Try to free pages in larger blocks, since the OS may be slow. */
+
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (p == blockfree_ptrs[i] + blockfree_sizes[i]) {
-      blockfree_sizes[i] += len;
+    if (p == blockfree[i].start + blockfree[i].len) {
+      blockfree[i].len += len;
       return;
     }
-    if (p + len == blockfree_ptrs[i]) {
-      blockfree_ptrs[i] = p;
-      blockfree_sizes[i] += len;
+    if (p + len == blockfree[i].start) {
+      blockfree[i].start = p;
+      blockfree[i].len += len;
       return;
     }
   }
 
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (!blockfree_ptrs[i]) {
-      blockfree_ptrs[i] = p;
-      blockfree_sizes[i] = len;
+    if (!blockfree[i].start) {
+      blockfree[i].start = p;
+      blockfree[i].len = len;
+      blockfree[i].age = 0;
       return;
     }
   }
+
+  /* Might help next time around: */
+  collapse_adjacent_pages();
 
   if (munmap(p, len)) {
     fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", (long)p, (long)len, errno);
@@ -2763,15 +2757,20 @@ void flush_freed_pages(void)
 {
   int i;
 
+  collapse_adjacent_pages();
+
   for (i = 0; i < BLOCKFREE_CACHE_SIZE; i++) {
-    if (blockfree_ptrs[i]) {
-      if (munmap(blockfree_ptrs[i], blockfree_sizes[i])) {
-	fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", 
-		(long)blockfree_ptrs[i], blockfree_sizes[i],
-		errno);
-      }
-      blockfree_ptrs[i] = NULL;
-      blockfree_sizes[i] = 0;
+    if (blockfree[i].start) {
+      if (blockfree[i].age == BLOCKFREE_UNMAP_AGE) {
+	if (munmap(blockfree[i].start, blockfree[i].len)) {
+	  fprintf(stderr, "Unmap warning: %lx, %ld, %d\n", 
+		  (long)blockfree[i].start, blockfree[i].len,
+		  errno);
+	}
+	blockfree[i].start = NULL;
+	blockfree[i].len = 0;
+      } else
+	blockfree[i].age++;
     }
   }
 }
@@ -2781,10 +2780,11 @@ void protect_pages(void *p, size_t len, int writeable)
   if (len & (page_size - 1)) {
     len += page_size - (len & (page_size - 1));
   }
+
   mprotect(p, len, (writeable ? (PROT_READ | PROT_WRITE) : PROT_READ));
 }
-#endif
 
+#endif
 /*****************************************************************************
  * Miscellaneous routines
  *****************************************************************************/
@@ -2802,6 +2802,11 @@ void GC_dump() {
 #ifdef NEWGC_ACCNT
   unsigned long own_memuse = 0;
   unsigned short num_owners = 0;
+  struct root *root;
+  struct thread_list *thread;
+  struct accnthook *hook;
+  struct immobile *box;
+  struct fnl *fnl;
 #endif
   struct mpage *page;
 
@@ -2845,7 +2850,17 @@ void GC_dump() {
       for(ul = ot_table[i]->unions; ul; ul = ul->next)
 	own_memuse += sizeof(struct union_list);
     }
-  own_memuse = ot_top * sizeof(struct otentry *);
+  for(root = roots; root; root = root->next)
+    own_memuse += sizeof(short);
+  for(thread = thread_list; thread; thread = thread->next)
+    own_memuse += sizeof(struct thread_list);
+  for(hook = accnthooks; hook; hook = hook->next)
+    own_memuse += sizeof(struct accnthook);
+  for(box = immobiles; box; box = box->next)
+    own_memuse += sizeof(short);
+  for(fnl = fnls; fnl; fnl = fnl->next)
+    own_memuse += sizeof(short);
+  own_memuse += ot_top * sizeof(struct otentry *);
   fprintf(stderr, "Tracking %i owners\n", num_owners);
   fprintf(stderr, "   ... owner table top = %i\n", ot_top);
   fprintf(stderr, "   ... using %li bytes in owner system\n", own_memuse);

@@ -12,12 +12,9 @@
 ; 	        "mzrice/mzrice"))
 
 ; These are routines that provide a rudimentary Emacs interface to
-; MzRice.  Note that they don't work in the REP, due to the way MzRice
-; assigns source locations therein (each expression is assumed to
-; start at <1,1,0>, so how to tell which expression the error came
-; from? -- comint is also downright stupid at finding prompts).
+; MzRice.  
 ; 
-; Similarly, the `send-' procedures of CMU Scheme mode and of comint
+; Note that the `send-' procedures of CMU Scheme mode and of comint
 ; will not be of much use.  The best way of using this code is to
 ; `load' the file(s) in question into the REP, then use
 ; `mzrice-next-error' to be taken to the error location.

@@ -1,8 +1,16 @@
-(unit/sig drscheme:load-handler^
-  (import [mred : mred^]
-          [zodiac : zodiac:system^]
-          [basis : plt:basis^]
-          [gui-utils : framework:gui-utils^])
+(module load-handlers mzscheme
+  (provide
+   process-text/zodiac
+   process-text/no-zodiac
+   process-text
+   drscheme-load-handler)
+  
+  (require "mred-wrap.ss"
+           "framework-wrap.ss"
+           (lib "zodiac.ss" "syntax")
+           (lib "basis.ss" "userspce"))
+
+
   
   (define (process-text/zodiac text f start end annotate? text-is-file?)
     (let ([setting (basis:current-setting)]

@@ -1,14 +1,20 @@
-(unit/sig drscheme:frame^
-  (import [mred : mred^]
-	  [mzlib : mzlib:core^]
-	  [mzlib:date : mzlib:date^]
-	  [fw : framework^]
-	  [drscheme:unit : drscheme:unit^]
-	  [drscheme:app : drscheme:app^]
-	  [help : help:drscheme-interface^]
-	  [zodiac : zodiac:system^])
+(module frame mzscheme
+  (require "mred-wrap.ss"
+           "framework-wrap.ss"
+           (prefix mzlib:file: (lib "file.ss"))
+           (prefix mzlib:list: (lib "list.ss"))
+           (prefix drscheme:unit: "unit.ss")
+           (prefix drscheme:app: "app.ss")
+           (prefix help: "help.ss")
+           (prefix zodiac: (lib "zodiac.ss" "syntax")))
   
-  (rename [-mixin mixin])  
+  (provide name-message%
+           draw-button-label
+           calc-button-min-sizes
+           <%>
+           (rename -mixin mixin)
+           basics-mixin
+           basics<%>)
 
   (define button-label-font
     (send mred:the-font-list find-or-create-font
@@ -112,7 +118,7 @@
                         (mzlib:file:explode-path (mzlib:file:normalize-path path-name))
                         #f))
 	(let ([new-label (if (and paths (not (null? paths)))
-			     (car (mzlib:function:last-pair paths))
+			     (car (mzlib:list:last-pair paths))
 			     path-name)])
 	  (unless (equal? label new-label)
 	    (set! label new-label)
@@ -141,12 +147,12 @@
                       [else 
                        (make-object mred:menu-item% (car paths) menu
                          (lambda (evt item)
-                           (parameterize ([fw:finder:dialog-parent-parameter
+                           (parameterize ([finder:dialog-parent-parameter
                                            (get-top-level-window)])
-                             (let ([file (fw:finder:get-file
+                             (let ([file (finder:get-file
                                           (apply build-path (reverse paths)))])
                                (when file
-                                 (fw:handler:edit-file file))))))
+                                 (handler:edit-file file))))))
                        (loop (cdr paths))]))
                   (popup-menu menu
                               0
@@ -196,7 +202,7 @@
       (stretchable-width #f)
       (stretchable-height #f)))
   
-  (define basics<%> (interface (fw:frame:standard-menus<%>)))
+  (define basics<%> (interface (frame:standard-menus<%>)))
 
   (define keybindings-dialog%
     (class mred:dialog% args
@@ -204,14 +210,14 @@
       (override
         [on-size
          (lambda (w h)
-           (fw:preferences:set 'drscheme:keybindings-window-size (cons w h))
+           (preferences:set 'drscheme:keybindings-window-size (cons w h))
            (super-on-size w h))])
       (sequence (apply super-init args))))
 
   (define (show-keybindings-to-user bindings frame)
     (letrec ([f (make-object keybindings-dialog% "Keybindings" frame 
-                  (car (fw:preferences:get 'drscheme:keybindings-window-size))
-                  (cdr (fw:preferences:get 'drscheme:keybindings-window-size))
+                  (car (preferences:get 'drscheme:keybindings-window-size))
+                  (cdr (preferences:get 'drscheme:keybindings-window-size))
                   #f #f '(resize-border))]
 	     [bp (make-object mred:horizontal-panel% f)]
 	     [b-name (make-object mred:button% "Sort by Name" bp (lambda x (update-bindings #f)))]
@@ -234,8 +240,8 @@
 		       (lambda (a b) (string-ci<=? (cadr a) (cadr b)))])
 		  (send lb set
 			(if by-key?
-			    (map format-binding/key (mzlib:function:quicksort bindings predicate/key))
-			    (map format-binding/name (mzlib:function:quicksort bindings predicate/name))))))])
+			    (map format-binding/key (mzlib:list:quicksort bindings predicate/key))
+			    (map format-binding/name (mzlib:list:quicksort bindings predicate/name))))))])
       (send bp stretchable-height #f)
       (send bp set-alignment 'center 'center)
       (send bp2 stretchable-height #f)
@@ -244,7 +250,7 @@
       (send f show #t)))
 
   (define basics-mixin
-    (mixin (fw:frame:standard-menus<%>) (basics<%>) args
+    (mixin (frame:standard-menus<%>) (basics<%>) args
       (inherit get-edit-target-window get-edit-target-object get-menu-bar)
       (private
 	[get-menu-bindings
@@ -258,7 +264,7 @@
 		    (let ([short-cut (send item get-shortcut)])
 		      (when short-cut
 			(let ([keyname
-			       (fw:keymap:canonicalize-keybinding-string
+			       (keymap:canonicalize-keybinding-string
 				(string-append
 				 (case (system-type)
 				   [(windows) "c:"]
@@ -295,7 +301,7 @@
 	     (and edit-object
 		  (is-a? edit-object mred:editor<%>)
 		  (let ([keymap (send edit-object get-keymap)])
-		    (is-a? keymap fw:keymap:aug-keymap<%>)))))]
+		    (is-a? keymap keymap:aug-keymap<%>)))))]
 
         [show-keybindings
          (lambda ()
@@ -306,7 +312,7 @@
 		       (let* ([table (send keymap get-map-function-table/ht
 					   (copy-hash-table menu-names))]
 			      [structured-list
-			       (mzlib:function:quicksort
+			       (mzlib:list:quicksort
 				(hash-table-map table list)
 				(lambda (x y) (string-ci<=? (cadr x) (cadr y))))])
 			 (show-keybindings-to-user structured-list this)))))
@@ -334,7 +340,7 @@
        [file-menu:new
 	(lambda (item evt)
 	  (drscheme:unit:open-drscheme-window))]
-       [file-menu:open (lambda (item evt) (fw:handler:open-file) #t)]
+       [file-menu:open (lambda (item evt) (handler:open-file) #t)]
        [file-menu:open-string (lambda () "")]
        [file-menu:between-open-and-revert
         (lambda (file-menu) 
@@ -366,10 +372,10 @@
       (sequence 
 	(apply super-init args))))
 
-  (define <%> (interface (fw:frame:editor<%> basics<%> fw:frame:text-info<%>)))
+  (define <%> (interface (frame:editor<%> basics<%> frame:text-info<%>)))
 
   (define -mixin
-    (mixin (fw:frame:editor<%> fw:frame:text-info<%> basics<%>) (<%>) (name . args)
+    (mixin (frame:editor<%> frame:text-info<%> basics<%>) (<%>) (name . args)
 
 
       (inherit get-editor)
@@ -429,4 +435,3 @@
       (private
 	[running-message
 	 (make-object mred:message% sleepy-bitmap (get-info-panel))]))))
-

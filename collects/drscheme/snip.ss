@@ -1,7 +1,13 @@
-(unit/sig drscheme:snip^
-  (import [mred : mred^]
-          framework^
-	  [zodiac : zodiac:system^])
+(module snip mzscheme
+  (require "mred-wrap.ss"
+           "framework-wrap.ss"
+           (lib "zodiac.ss" "syntax"))
+  
+  (provide
+   prompt-snip%
+   equal-snip% 
+   separator-snip%
+   whole/part-number-snip%)
   
   (define (set-box/f! b v) (when (box? b) (set-box! b v)))
   

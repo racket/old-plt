@@ -6,23 +6,29 @@
 ;  be combined with either =Kernel= or =User=
 
 
-(unit/sig drscheme:rep^
-  (import [mred : mred^]
-	  [mzlib : mzlib:core^]
-	  [fw : framework^]
-	  [print-convert : mzlib:print-convert^]
-	  [zodiac : zodiac:system^]
-	  [zodiac:interface : drscheme:interface^]
-	  [drscheme:init : drscheme:init^]
-	  [drscheme:snip : drscheme:snip^]
-	  [drscheme:language : drscheme:language^]
-	  [drscheme:app : drscheme:app^]
-	  [drscheme:frame : drscheme:frame^]
-	  [drscheme:unit : drscheme:unit^]
-	  [basis : plt:basis^]
-	  [drscheme:text : drscheme:text^]
-	  [drscheme:load-handler : drscheme:load-handler^]
-          [help : help:drscheme-interface^])
+(module rep mzscheme
+  
+  (require (lib "mred-wrap.ss")
+           (lib "framework-wrap.ss")
+           (prefix mzlib:pretty-print: (lib "pretty.ss"))
+           (prefix print-convert: (lib "pconvert.ss"))
+           (prefix zodiac (lib "zodiac.ss" "syntax"))
+           (drscheme:init: "init.ss")
+           (drscheme:snip: "snip.ss")
+           (drscheme:langauge: "language.ss")
+           (drscheme:app: "app.ss")
+           (drscheme:frame: "frame.ss")
+           (drscheme:unit: "unit.ss")
+           (drscheme:text: "text.ss")
+           (drscheme:load-handler: "load-handler.ss")
+           (basis: (lib "basis.ss" "userspce"))
+           (help: "help.ss"))
+
+  (provide
+   drs-bindings-keymap-mixin
+   text%
+   context<%>
+   show-interactions-history)
   
   (define (use-number-snip? x)
     (and (number? x)

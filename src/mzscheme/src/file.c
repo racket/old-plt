@@ -3180,7 +3180,11 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
 		       expanded);
     }
 
+# ifndef NO_FILE_SYSTEM_UTILS
     return do_simplify_path(ed, scheme_null);
+# else
+    return ed;
+# endif
   }
 }
 

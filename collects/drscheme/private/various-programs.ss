@@ -1,3 +1,4 @@
+(let ()
   (define beginner-program
     (format "~
 ;; f2c : number -> number~
@@ -57,3 +58,27 @@
 ~n            (lambda x (send frame show #f))))~
 ~n(send f show #t)"))
 
+(list (cons (list (string-constant how-to-design-programs)
+                  (string-constant beginner-language))
+            beginning-program)
+      (cons (list (string-constant how-to-design-programs)
+                  (string-constant beginner-language/abbrev))
+            beginning-program)
+      (cons (list (string-constant how-to-design-programs)
+                  (string-constant intermediate-language))
+            intermediate-program)
+      (cons (list (string-constant how-to-design-programs)
+                  (string-constant advanced-language))
+            advanced-language)
+      (cons (list (string-constant full-languages)
+                  (string-constant mzscheme-language))
+            mzscheme-program)
+      (cons (list (string-constant full-languages)
+                  (string-constant mzscheme-language/debug))
+            mzscheme-program)
+      (cons (list (string-constant full-languages)
+                  (string-constant mred-language/debug))
+            mred-program)
+      (cons (list (string-constant full-languages)
+                  (string-constant mred-language/debug))
+            mred-program)))

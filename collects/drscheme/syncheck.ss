@@ -12,7 +12,8 @@
 |#
 
 (module syncheck mzscheme
-  (require (lib "unitsig.ss")
+  (require (lib "string-constant.ss" "string-constants")
+           (lib "unitsig.ss")
            "tool.ss"
            "default-code-style.ss"
            (lib "class.ss")
@@ -167,7 +168,7 @@
       (define simple-scheme-text% (fw:scheme:text-mixin (fw:editor:keymap-mixin fw:text:basic%)))
       
       (fw:preferences:add-panel
-       "Check Syntax"
+       (string-constant check-syntax)
        (let ([delta-panel
               (lambda (sym parent)
                 (let* ([delta (fw:preferences:get sym)]
@@ -212,7 +213,7 @@
                             (insert short-style-name)
                             (set-position 0))]
                        [slant-check
-                        (make-check "Slant"
+                        (make-check (string-constant cs-italic)
                                     (lambda ()
                                       (send delta set-style-on 'slant)
                                       (send delta set-style-off 'base))
@@ -220,7 +221,7 @@
                                       (send delta set-style-on 'base)
                                       (send delta set-style-off 'slant)))]
                        [bold-check
-                        (make-check "Bold"
+                        (make-check (string-constant cs-bold)
                                     (lambda ()
                                       (send delta set-weight-on 'bold)
                                       (send delta set-weight-off 'base))
@@ -228,7 +229,7 @@
                                       (send delta set-weight-on 'base)
                                       (send delta set-weight-off 'bold)))]
                        [underline-check
-                        (make-check "Underline"
+                        (make-check (string-constant cs-underline)
                                     (lambda ()
                                       (send delta set-underlined-on #t)
                                       (send delta set-underlined-off #f))
@@ -238,7 +239,7 @@
                        [color-button
                         (and (>= (get-display-depth) 8)
                              (make-object button%
-                               "Change Color"
+                               (string-constant cs-change-color)
                                h
                                (lambda (color-button evt)
                                  (let* ([add (send delta get-foreground-add)]
@@ -461,11 +462,11 @@
                                         [add-menus (map cdr (filter cons? vec-ents))])
                                     (unless (null? arrows)
                                       (make-object menu-item%
-                                        "Tack/Untack Arrow"
+                                        (string-constant cs-tack/untack-arrow)
                                         menu
                                         (lambda (item evt) (tack/untack-callback arrows)))
                                       (make-object menu-item%
-                                        "Jump"
+                                        (string-constant cs-jump)
                                         menu
                                         (lambda (item evt) (jump-callback pos arrows))))
                                     (for-each (lambda (f) (f menu)) add-menus)
@@ -507,7 +508,7 @@
       
       (define syncheck-bitmap
         (drscheme:unit:make-bitmap
-         "Check Syntax"
+         (string-constant check-syntax)
          (build-path (collection-path "icons") "syncheck.bmp")))
       
       (define (make-new-unit-frame% super%)
@@ -570,8 +571,8 @@
                                    (parent report-error-panel)
                                    (stretchable-width #f)
                                    (alignment '(left center)))])
-              (make-object message% "Check Syntax" message-panel)
-              (make-object message% "Error Message" message-panel))
+              (make-object message% (string-constant check-syntax) message-panel)
+              (make-object message% (string-constant cs-error-message) message-panel))
             (let ([editor-canvas (make-object editor-canvas% 
                                    report-error-panel
                                    report-error-text
@@ -937,7 +938,7 @@
             (set! referenced-macros (append (get-referenced-macros sexp) referenced-macros))
             (syntax-case sexp (lambda case-lambda if begin begin0 let-value letrec-values set!
                                 quote quote-syntax with-continuation-mark 
-                                #%app #%datum #%top #%module-begin
+                                #%app #%datum #%top #%plain-module-begin
                                 define-values define-syntaxes module
                                 require require-for-syntax provide)
               [(lambda args bodies ...)
@@ -1034,9 +1035,7 @@
                  (annotate-raw-keyword sexp)
                  (set! binders (combine-binders (syntax names) binders))
                  (loop (syntax exp)))]
-              [;(module m-name lang (#%module-begin bodies ...))
-               ; use xxx here until Matthew explains why above pattern doesn't match...
-               (module m-name lang (xxx bodies ...))
+              [(module m-name lang (#%plain-module-begin bodies ...))
                (begin
                  (set! has-module? #t)
                  (annotate-raw-keyword sexp)
@@ -1102,7 +1101,7 @@
         (lambda (menu)
           (let-values ([(base name dir?) (split-path file)])
             (instantiate menu-item% ()
-              (label (format "Open ~a" name))
+              (label (format (string-constant cs-open-file) name))
               (parent menu)
               (callback (lambda (x y) (fw:handler:edit-file file))))
             (void))))
@@ -1235,7 +1234,7 @@
                     (lambda (menu)
                       (instantiate menu-item% ()
                         (parent menu)
-                        (label (format "Rename ~a" name-to-offer))
+                        (label (format (string-constant cs-rename-var) name-to-offer))
                         (callback
                          (lambda (x y)
                            (let ([same-names (filter (lambda (x) (module-identifier=? x stx))
@@ -1249,8 +1248,8 @@
                (fw:keymap:call/text-keymap-initializer
                 (lambda ()
                   (get-text-from-user
-                   "Rename Identifier"
-                   (format "Rename ~a to:" name-to-offer)
+                   (string-constant cs-rename-id)
+                   (format (string-constant cs-rename-var-to) name-to-offer)
                    #f
                    name-to-offer)))])
           (when new-id

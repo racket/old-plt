@@ -173,7 +173,9 @@
                  get-teachpack-names
                  allow-sharing?)
          (define (get-module) '(lib "advanced.ss" "lang"))
-         (define (get-language-position) '("How to Design Programs" "Advanced Student"))
+         (define (get-language-position)
+           (list (string-constant how-to-design-programs)
+                 (string-constant advanced-student)))
          (define (sharing-printing) #t)
          (define (abbreviate-cons-as-list) #t)
          (define (get-teachpack-names) '(make-posn posn-x posn-y posn? set-posn-x! set-posn-y!))
@@ -189,7 +191,9 @@
                  get-teachpack-names
                  allow-sharing?)
          (define (get-module) '(lib "intermediate.ss" "lang"))
-         (define (get-language-position) '("How to Design Programs" "Intermediate Student"))
+         (define (get-language-position)
+           (list (string-constant how-to-design-programs)
+                 (string-constant intermediate-student)))
          (define (sharing-printing) #f)
          (define (abbreviate-cons-as-list) #t)
          (define (get-teachpack-names) '(make-posn posn-x posn-y posn?))
@@ -205,8 +209,9 @@
                  get-teachpack-names
                  allow-sharing?)
          (define (get-module) '(lib "beginner-abbr.ss" "lang"))
-         (define (get-language-position) 
-           '("How to Design Programs" "Beginning Student with List Abbreviations"))
+         (define (get-language-position)
+           (list (string-constant how-to-design-programs)
+                 (string-constant beginning-student/abbrev)))
          (define (sharing-printing) #f)
          (define (abbreviate-cons-as-list) #t)
          (define (get-teachpack-names) '(make-posn posn-x posn-y posn?))
@@ -222,7 +227,8 @@
                  get-teachpack-names
                  allow-sharing?)
          (define (get-module) '(lib "beginner.ss" "lang"))
-         (define (get-language-position) '("How to Design Programs" "Beginning Student"))
+         (define (get-language-position) (list (string-constant how-to-design-programs)
+                                               (string-constant beginning-student)))
          (define (sharing-printing) #f)
          (define (abbreviate-cons-as-list) #f)
          (define (get-teachpack-names) '(make-posn posn-x posn-y posn?))

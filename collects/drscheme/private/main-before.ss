@@ -1,6 +1,7 @@
 
 (module main-before mzscheme
-  (require (lib "unitsig.ss")
+  (require (lib "string-constant.ss" "string-constants")
+           (lib "unitsig.ss")
            "drsig.ss"
 	   (lib "mred.ss" "mred")
            (lib "framework.ss" "framework")
@@ -25,7 +26,7 @@
               (drscheme:teachpack : drscheme:teachpack^))
       
       (finder:default-extension "scm")
-      (application:current-app-name "DrScheme")
+      (application:current-app-name (string-constant drscheme))
       (version:add-spec 'd 2)
       
       (preferences:set-default 'drscheme:unit-window-size-percentage 1/2 
@@ -52,11 +53,6 @@
                         (number? (cdr x)))))
       
       (preferences:set-default
-       'drscheme:enable-backtrace-in-teaching-levels
-       #f
-       boolean?)
-      
-      (preferences:set-default
        'drscheme:execute-warning-once
        #f
        (lambda (x)
@@ -71,10 +67,6 @@
        'drscheme:teachpacks
        drscheme:teachpack:marshall-teachpack-cache
        drscheme:teachpack:unmarshall-teachpack-cache)
-      
-      
-      
-      (include "various-programs.ss")
       
       (define get-fixed-faces
         (cond
@@ -152,11 +144,11 @@
         (preferences:set 'drscheme:font-name default-font-name))
       
       (preferences:add-panel
-       "Font"
+       (string-constant font-prefs-panel-title)
        (lambda (panel)
          (let* ([main (make-object vertical-panel% panel)]
                 [options-panel (make-object horizontal-panel% main)]
-                [size (make-object slider% "Font Size" 1 72 options-panel
+                [size (make-object slider% (string-constant font-size) 1 72 options-panel
                         (lambda (size evt)
                           (preferences:set 'drscheme:font-size (send size get-value)))
                         (preferences:get 'drscheme:font-size))]
@@ -165,7 +157,7 @@
                  (case (system-type)
                    [(windows macos)
                     (let ([choice
-                           (make-object choice% "Font Name"
+                           (make-object choice% (string-constant font-name)
                              (get-fixed-faces)
                              options-panel
                              (lambda (font-name evt)
@@ -176,12 +168,12 @@
                       choice)]
                    [else
                     (make-object button%
-                      "Set Font..."
+                      (string-constant set-font)
                       options-panel
                       (lambda xxx
                         (let ([choice (get-choices-from-user
-                                       "Select Font Name"
-                                       "Select Font Name"
+                                       (string-constant select-font-name)
+                                       (string-constant select-font-name)
                                        (get-fixed-faces))])
                           (when choice
                             (preferences:set 
@@ -190,7 +182,7 @@
                 
                 [text (make-object text%)]
                 [ex-panel (make-object horizontal-panel% main)]
-                [msg (make-object message% "Example Text:" ex-panel)]
+                [msg (make-object message% (string-constant example-text) ex-panel)]
                 [canvas (make-object editor-canvas% main text)]
                 [update-text
                  (lambda (setting)
@@ -220,7 +212,7 @@
       (preferences:add-general-panel)
       
       (preferences:add-panel
-       "General II"
+       (string-constant general-ii)
        (lambda (panel)
          (let* ([main (make-object vertical-panel% panel)]
                 [right-align-in-main
@@ -241,10 +233,7 @@
                                     pref-sym 
                                     (send checkbox get-value))))])
                         (send q set-value (preferences:get pref-sym))))))])
-           (make-check-box 'drscheme:execute-warning-once
-                           "Only warn once when executions and interactions are not synchronized")
-           (make-check-box 'drscheme:enable-backtrace-in-teaching-levels
-                           "Enable backtrace bug icon in teaching languages")
+           (make-check-box 'drscheme:execute-warning-once (string-constant only-warn-once))
            (make-object vertical-panel% main)
            main)))
       
@@ -258,16 +247,22 @@
                  (language-position position)
                  (teachpack-names null)))])
 	(drscheme:language-configuration:add-language
-	 (make-simple '(lib "full-mred.ss" "lang") '("Full" "Graphical without debugging (MrEd)")))
+	 (make-simple '(lib "full-mred.ss" "lang")
+                      (list (string-constant full-languages)
+                            (string-constant mred-lang-name))))
 	(drscheme:language-configuration:add-language
-	 (make-simple '(lib "full-mzscheme.ss" "lang") '("Full" "Textual without debugging (MzScheme)"))))
+	 (make-simple '(lib "full-mzscheme.ss" "lang") 
+                      (list (string-constant full-languages)
+                            (string-constant mzscheme-lang-name)))))
       
   ;; add a handler to open .plt files.
       (handler:insert-format-handler 
-       "Projects"
+       "PLT Files"
        (lambda (filename)
          (and (equal? "plt" (filename-extension filename))
-              (gui-utils:get-choice (format "Install ~a or open for editing?" filename)
-                                    "Install" "Edit")))
+              (gui-utils:get-choice 
+               (format (string-constant install-plt-file) filename)
+               (string-constant install-plt-file/yes)
+               (string-constant install-plt-file/no))))
        (lambda (filename)
          (run-installer filename))))))

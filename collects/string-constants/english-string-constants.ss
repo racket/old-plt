@@ -1,17 +1,70 @@
 (
 
  ;;; when translating this constant, substitue name of actual langauge for `English'
- (is-this-your-native-language
-  "Is English Your Native Language?")
+ (is-this-your-native-language "Is English Your Native Language?")
 
- ;;; general purpose
+ ;;; this is used in the Help Desk bug report form
+ ;;; put the name of this language in there
+ (human-language "English")
+
+
+ ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
  (drscheme "DrScheme")
+ (help-desk "Help Desk")
  (ok "OK")
  (cancel "Cancel")
  (untitled "Untitled")
+ (untitled-n "Untitled ~a")
  (warning "Warning")
  (error "Error")
  (close "Close") ;; as in, close an open window
+
+ ;;; bug report form
+ (cancel-bug-report? "Cancel Bug Report?")
+ (are-you-sure-cancel-bug-report
+  "Are you sure that you want to cancel sending this bug report?")
+ (bug-report-form "Bug Report Form")
+ (bug-report-field-name "Name")
+ (bug-report-field-email "Email")
+ (bug-report-field-summary "Summary")
+ (bug-report-field-severity "Severity")
+ (bug-report-field-class "Class")
+ (bug-report-field-priority "Priority")
+ (bug-report-field-description "Description")
+ (bug-report-field-reproduce1 "Steps to")
+ (bug-report-field-reproduce2 "Reproduce")
+ (bug-report-field-environment "Environment")
+ (bug-report-field-tools "Tools")
+ (bug-report-field-docs-installed "Docs Installed")
+ (bug-report-field-language "Language")
+ (bug-report-field-teachpacks "Teachpacks")
+ (bug-report-field-collections "Collections")
+ (bug-report-field-human-language "Human Language")
+ (bug-report-show-synthesized-info "Show Synthesized Info")
+ (bug-report-hide-synthesized-info "Hide Synthesized Info")
+ (bug-report-submit "Submit")
+ (sending-bug-report "Sending Bug Report")
+ (error-sending-bug-report "Error Sending Bug Report")
+ (error-sending-bug-report-expln "An error occurred when sending this bug report. If your internet connection is otherwise working fine, please visit:\n\n    http://www.cs.rice.edu/CS/PLT/Bugs/\n\nand submit the bug via our online web-form. Sorry for the difficulties.\n\nThe error message is:\n~a")
+ (bug-report-sent "Bug Report Sent")
+ (bug-report-sent-detail "Thanks for the report. You should receive a confirmation email in the next 30 minutes. If you do not, send email to scheme@cs.rice.edu.")
+ (illegal-bug-report "Illegal Bug Report")
+ (pls-fill-in-field "Please fill in the \"~a\" field")
+ (malformed-email-address "Malformed email address")
+
+ ;;; check syntax
+ (check-syntax "Check Syntax")
+ (cs-italic "Italic")
+ (cs-bold "Bold")
+ (cs-underline "Underline")
+ (cs-change-color "Change Color")
+ (cs-tack/untack-arrow "Tack/Untack Arrow")
+ (cs-jump "Jump")
+ (cs-error-message "Error Message")
+ (cs-open-file "Open ~a")
+ (cs-rename-var "Rename ~a")
+ (cs-rename-id "Rename Identifier")
+ (cs-rename-var-to "Rename ~a to:")
  
  ;;; info bar at botttom of drscheme frame
  (collect-button-label "Collect")
@@ -24,6 +77,7 @@
  
  ;;; misc
  (welcome-to-something "Welcome to ~a")
+ (welcome-to-drs-version "Welcome to DrScheme, version ~a")
  (goto-line "Goto line")
  (goto-line-invalid-number
   "~a is not a valid line number. It must be an integer between 1 and ~a")
@@ -31,7 +85,25 @@
  (no-full-name-since-not-saved
   "The file does not have a full name because it has not yet been saved.")
  (open-url "Open URL...")
-
+ (cannot-open-because-dne "Cannot open ~a becuase it does not exist")
+ (interactions-out-of-sync
+  "WARNING: Interactions window is out of sync with the definitions window. Click Execute.")
+ (file-is-not-saved "The file \"~a\" is not saved.")
+ (save "Save")
+ (please-choose-either "Please choose either \"~a\" or \"~a\"")
+ (close-anyway "Close Anyway")
+ 
+ ;; install plt file when opened in drscheme strings
+ (install-plt-file "Install ~a or open for editing?")
+ (install-plt-file/yes "Install")
+ (install-plt-file/no "Edit")
+ 
+ ;;; about box
+ (about-drscheme-frame-title "About DrScheme")
+ (take-a-tour "Take a Tour!")
+ (release-notes "Release Notes")
+ (parenthetical-last-version "(previous version ~a)")
+ 
  ;;; save file in particular format prompting.
  (save-as-plain-text "Save this file as plain text?")
  (save-in-drs-format "Save this file in drscheme-specific non-text format?")
@@ -77,6 +149,15 @@
  (font-size-slider-label "Size")
  (restart-to-see-font-changes "Restart to see font changes")
 
+ (font-prefs-panel-title "Font")
+ (font-name "Font Name")
+ (font-size "Font Size")
+ (set-font "Set Font...")
+ (select-font-name "Select Font Name")
+ (example-text "Example Text:")
+ (general-ii "General II")
+ (only-warn-once "Only warn once when executions and interactions are not synchronized")
+ 
  ;;; indenting preferences panel
  (indenting-prefs-panel-label "Indenting")
 
@@ -348,6 +429,8 @@
  (add-teachpack-menu-item-label "Add Teachpack...")
  (clear-all-teachpacks-menu-item-label "Clear All Teachpacks")
  (teachpack-not-only-one-import "The TeachPack unit/sig in ~a must have exactly one import.")
+ (drscheme-teachpack-message-title "DrScheme Teachpack")
+ (already-added-teachpack "Already added ~a Teachpack")
  
  ;;; Language dialog
  (language-dialog-title "Configure Language")
@@ -366,6 +449,25 @@
  (hide-details-button-label "Hide Details")
  (choose-language-menu-item-label "Choose Language...")
  (revert-to-language-defaults "Revert to Language Defaults")
+
+ ;;; languages
+ (beginning-student "Beginning Student")
+ (beginning-student/abbrev "Beginning Student with List Abbreviations")
+ (intermediate-student "Intermediate Student")
+ (advanced-student "Advanced Student")
+ (how-to-design-programs "How to Design Programs") ;; should agree with MIT on this one...
+ (full-languages "Full")
+ (mred-lang-name "MrEd without Debugging")
+ (mzscheme-lang-name "MzScheme without Debugging")
+ (unknown-debug-frame "<<unknown>>")
+ 
+ ;;; debug language
+ (backtrace-window-title "Backtrace - DrScheme")
+ (files-interactions "~a's interactions") ;; filled with a filename
+ (stack-frame-in-current-interactions "interactions")
+ (stack-frame-in-current-definitions "definitions")
+ (mzscheme-w/debug "Textual (MzScheme)")
+ (mred-w/debug "Graphical (MrEd)")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")

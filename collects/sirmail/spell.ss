@@ -36,6 +36,8 @@
             (|[| |]|)
             (|{| |}|))))
 
+  (define extra-words '("sirmail" "mred" "drscheme" "mzscheme" "plt"))
+  
   ;; get-dictionary : -> (union #f hash-table)
   ;; fetches the dictionary the first time it is called.
   (define get-dictionary
@@ -45,6 +47,7 @@
                (good-file-names (filter file-exists? possible-file-names)))
           (unless (null? good-file-names)
             (let ([d (make-hash-table 'equal)])
+              (for-each (lambda (word) (hash-table-put! d word #t)) extra-words)
               (for-each 
                (lambda (good-file-name)
                  (call-with-input-file good-file-name

@@ -1,4 +1,4 @@
-Version 100alpha2, April 28, 1999
+Version 100alpha3, ??, 1999
 Changed class syntax, splitting public clause use into:
  public : defines ivars not in superclass
  override : defines ivars already in superclass
@@ -39,11 +39,16 @@ Removed user-break-poll-handler; spawn a thread that sleeps and
  calls break-thread, instead
 Removed dynamic-enable-break (no long needed since dynamic-wind
  post thunks can't be broken), but moved it to MzLib's thread.ss
+Removed execption-break-enabled (now always disabled)
+Added call-in-nested-thread
+Removed thread-weight
 Renamed the call-with-escaping-continution procedure to
  call-with-escape-continution (call/ec is unchanged)
 Finished with-continuation-mark and current-continuation-marks
  and documented them; the errortrace poor man's debugger relies
  on continuation marks; see plt/collects/errortrace/doc.txt
+Removed debug-info-handler and replaced the debug-info field
+ with a continuation-marks field
 Added raise-mismatch-error
 MacOS: getenv and putenv work within MzScheme; if a file named
  "Environment" resides in MzScheme's folder, it provides the
@@ -68,6 +73,9 @@ Vectors are written (but not displayed) using the Chez-style
  #n(...) shorthand by default; added print-vector-length
  parameter
 Replaced require-library-use-compiled with use-compiled-file-kinds
+Changed interface for wills: no current executor, register-will
+ -> will-register, will-executor-try -> will-try-execute, added
+ will-execute
 MzLib cleanup:
  Removed `@' suffix for embedded units in mzlib:core@ and mzlib@
  Removed all c.ss libraries, plus constan[t].ss

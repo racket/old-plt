@@ -2319,7 +2319,7 @@ static Scheme_Object *nl_car(Scheme_Object *l, Scheme_Object *form)
   
   if (!SCHEME_STX_PAIRP(l))
     scheme_wrong_syntax("named let", l, form, 
-			"bad syntax (non-symbol-value-pair)");
+			"bad syntax (not an identifier-value pair)");
   s = SCHEME_STX_CAR(l);
   if (!SCHEME_STX_SYMBOLP(s))
     scheme_wrong_syntax("named let", s, form, 
@@ -2334,12 +2334,12 @@ static Scheme_Object *nl_cadr(Scheme_Object *l, Scheme_Object *form)
   
   if (!SCHEME_STX_PAIRP(l) || !SCHEME_STX_PAIRP(SCHEME_STX_CDR(l)))
     scheme_wrong_syntax("named let", l, form, 
-			"bad syntax (non-identifier-value-pair)");
+			"bad syntax (not an identifier-value pair)");
   
   rest = SCHEME_STX_CDR(l);
   if (!SCHEME_STX_NULLP(SCHEME_STX_CDR(rest)))
     scheme_wrong_syntax("named let", l, form, 
-			"bad syntax (extra data in indentifier-value pair)");
+			"bad syntax (extra form in indentifier-value pair)");
   
   return SCHEME_STX_CAR(rest);
 }
@@ -2867,7 +2867,7 @@ do_letrec_syntaxes(const char *where, int normal,
 {
   Scheme_Object *form, *bindings, *body, *v;
   Scheme_Object *macro;
-  Scheme_Comp_Env *env;
+  Scheme_Comp_Env *env, *rhs_env;
   Scheme_Compile_Info mrec;
   int cnt, i;
   DupCheckRecord r;
@@ -2882,6 +2882,11 @@ do_letrec_syntaxes(const char *where, int normal,
   body = scheme_datum_to_syntax(form, forms, forms, 0, 0);
 
   env = scheme_new_compilation_frame(0, (normal ? 0 : SCHEME_CAPTURE_WITHOUT_RENAME), origenv);
+
+  if (normal)
+    rhs_env = env;
+  else
+    rhs_env = origenv;
 
   check_form(where, bindings);
 
@@ -2988,7 +2993,7 @@ do_letrec_syntaxes(const char *where, int normal,
       /* short cut */
       a = _scheme_eval_linked_expr_multi(a);
     } else {
-      scheme_on_next_top(env, NULL, scheme_false);
+      scheme_on_next_top(rhs_env, NULL, scheme_false);
       a = scheme_eval_linked_expr_multi(a, mrec.max_let_depth);
     }
 

@@ -2879,20 +2879,28 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 			  NULL,NULL);
     }
     
-    sprintf(errBuff,
-	    "COM object exception, %s 0x%X%s%s",
-	    hasErrorCode ? "error code" : "SCODE",
-	    hasErrorCode ? exnInfo.wCode : exnInfo.scode,
-	    hasDescription ? "\nDescription: " : "" ,
-	    hasDescription ? description : "");
-    
-    scheme_signal_error(errBuff);
+    if (hasErrorCode) {
+      sprintf(errBuff,
+	      "COM object exception, error code 0x%X%s%s",
+	      exnInfo.wCode,
+	      hasDescription ? "\nDescription: " : "" ,
+	      hasDescription ? description : "");
+      scheme_signal_error(errBuff);
+    }
+    else {
+      sprintf(errBuff,
+	      "COM object exception, %s%s",
+	      hasDescription ? "\nDescription: " : "" ,
+	      hasDescription ? description : "");
+      codedComError(errBuff,exnInfo.scode);
+    }
   }
   
   if (hr != S_OK) {
-    scheme_signal_error("\"%s\" (%s) failed with code 0x%lX",
-			SCHEME_STR_VAL(argv[1]),inv_kind_string(invKind),
-			hr);
+    char buff[2048];
+    sprintf(buff,"\"%s\" (%s) failed",
+	    SCHEME_STR_VAL(argv[1]),inv_kind_string(invKind));
+    codedComError(buff,hr);
   }
   
   // unmarshall data passed by reference, cleanup

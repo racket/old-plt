@@ -22,7 +22,7 @@ this is the default), 'sslv2 (SSL protocol version 2), 'sslv3 (SSL
 protocol version 3), or 'tls (the TLS protocol version 1). The return
 values are as tcp-connect; an input port and an output port.
 
-> (ssl-connect/enable-break hostname port-k [flag])
+> (ssl-connect/enable-break hostname port-k [protocol-symbol])
 
 Like ssl-connect, but breaking is enabled while trying to connect. 
 
@@ -57,3 +57,7 @@ RSA key is read (i.e., non-RSA keys are skipped). If `asn1?' is #t
 > (ssl-accept ssl-listener)
 
 Analogous to `tcp-accept'.
+
+> (ssl-accept/enable-break ssl-listener)
+
+Analogous to `tcp-accept/enable-break'.

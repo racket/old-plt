@@ -1333,6 +1333,10 @@ ssl_accept(int argc, Scheme_Object *argv[])
   return NULL;
 }
 
+static Scheme_Object *ssl_accept_break(int argc, Scheme_Object *argv[]) {
+  return scheme_call_enable_break(ssl_accept, argc, argv);
+}
+
 /*****************************************************************************
  * REGISTRATION FUNCTIONS: The functions that register the above externals so*
  * everybody else can use them.                                              *
@@ -1399,6 +1403,9 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
 
   v = scheme_make_prim_w_arity(ssl_accept,"ssl-accept",1,1);
   scheme_add_global("ssl-accept", v, env);
+
+  v = scheme_make_prim_w_arity(ssl_accept_break,"ssl-accept/enable-break",1,1);
+  scheme_add_global("ssl-accept/enable-break", v, env);
 
   scheme_add_global("ssl-available?", scheme_true, env);
   scheme_finish_primitive_module(env);

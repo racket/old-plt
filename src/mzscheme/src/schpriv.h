@@ -1060,6 +1060,9 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
 #endif
 
 long scheme_extract_index(const char *name, int pos, int argc, Scheme_Object **argv, long top);
+void scheme_out_of_string_range(const char *name, const char *which, 
+				Scheme_Object *i, Scheme_Object *s, 
+				long start, long len);
 
 Scheme_Object *scheme_get_file_directory(const char *filename);
 

@@ -358,7 +358,7 @@ scheme_alloc_string(int size, char fill)
   return str;
 }
 
-static void out_of_string_range(const char *name, const char *which, 
+void scheme_out_of_string_range(const char *name, const char *which, 
 				Scheme_Object *i, Scheme_Object *s, 
 				long start, long len)
 {
@@ -475,7 +475,7 @@ string_ref (int argc, Scheme_Object *argv[])
   i = scheme_extract_index("string-ref", 1, argc, argv, len);
 
   if (i >= len) {
-    out_of_string_range("string-ref", "", argv[1], argv[0], 0, len - 1);
+    scheme_out_of_string_range("string-ref", "", argv[1], argv[0], 0, len - 1);
     return NULL;
   }
 
@@ -500,7 +500,7 @@ string_set (int argc, Scheme_Object *argv[])
     scheme_wrong_type("string-set!", "character", 2, argc, argv);
 
   if (i >= len) {
-    out_of_string_range("string-set!", "", argv[1], argv[0], 0, len - 1);
+    scheme_out_of_string_range("string-set!", "", argv[1], argv[0], 0, len - 1);
     return NULL;
   }
 
@@ -548,7 +548,7 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
   long start, finish;
 
   if (argc > spos)
-    start = scheme_extract_index(name, spos, argc, argv, len);
+    start = scheme_extract_index(name, spos, argc, argv, len + 1);
   else
     start = 0;
   if (argc > fpos)
@@ -557,10 +557,10 @@ void scheme_get_substring_indices(const char *name, Scheme_Object *str,
     finish = len;
 
   if (!(start <= len)) {
-    out_of_string_range(name, "first ", argv[spos], str, 0, len);
+    scheme_out_of_string_range(name, "first ", argv[spos], str, 0, len);
   }
   if (!(finish >= start && finish <= len)) {
-    out_of_string_range(name, "second ", argv[fpos], str, start, len);
+    scheme_out_of_string_range(name, "second ", argv[fpos], str, start, len);
   }
 
   *_start = start;

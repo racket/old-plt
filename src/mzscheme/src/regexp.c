@@ -22,6 +22,10 @@
  * Beware that some of this code is subtly aware of the way operator
  * precedence is structured in regular expressions.  Serious changes in
  * regular-expression syntax might require a total rethink.
+ *
+ * from Vladimir Tsyshevs:
+ *  additional optional parameter `offset' in `regexp-match'
+ *  and `regexp-match-positions'
  */
 
 #include "schpriv.h"
@@ -1289,7 +1293,8 @@ static Scheme_Object *gen_compare(char *name, int pos,
 				  int argc, Scheme_Object *argv[])
 {
   regexp *r;
-  char *s;
+  char *s, *full_s, save;
+  int offset = 0, endset;
   
   if (SCHEME_TYPE(argv[0]) != regexp_type
       && !SCHEME_STRINGP(argv[0]))
@@ -1297,12 +1302,32 @@ static Scheme_Object *gen_compare(char *name, int pos,
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type(name, "string", 1, argc, argv);
 
+  endset = SCHEME_STRLEN_VAL(argv[1]);
+  if (argc > 2) {
+    int len = endset;
+
+    offset = scheme_extract_index(name, 2, argc, argv, len + 1);
+
+    if (offset > len)
+      scheme_out_of_string_range(name, "offset ", argv[2], argv[1], 0, len);
+
+    if (argc > 3) {
+      endset = scheme_extract_index(name, 3, argc, argv, len + 1);
+
+      if (endset < offset || endset > len)
+	scheme_out_of_string_range(name, "ending ", argv[3], argv[1], offset, len);
+    }
+  }
+
   if (SCHEME_STRINGP(argv[0]))
     r = regcomp(SCHEME_STR_VAL(argv[0]));
   else
     r = (regexp *)argv[0];
 
-  s = SCHEME_STR_VAL(argv[1]);
+  full_s = SCHEME_STR_VAL(argv[1]);
+  save = full_s[endset];
+  full_s[endset] = 0;
+  s = full_s + offset;
 
   if (regexec(r, s)) {
     int i;
@@ -1317,24 +1342,25 @@ static Scheme_Object *gen_compare(char *name, int pos,
 	  startp = r->startp[i] - s;
 	  endp = r->endp[i] - s;
 	
-	  l = 
-	  scheme_make_pair(scheme_make_pair(scheme_make_integer(startp),
-					    scheme_make_integer(endp)),
-			   l);
+	  l = scheme_make_pair(scheme_make_pair(scheme_make_integer(startp),
+						scheme_make_integer(endp)),
+			       l);
 	} else
-	  l = 
-	    scheme_make_pair(scheme_make_sized_string(r->startp[i],
-						      r->endp[i] 
-						      - r->startp[i],
-						      1),
-			     l);
+	  l = scheme_make_pair(scheme_make_sized_string(r->startp[i],
+							(r->endp[i] 
+							 - r->startp[i]),
+							1),
+			       l);
       } else
 	l = scheme_make_pair(scheme_false, l);
     }
 
+    full_s[endset] = save;
     return l;
-  } else
+  } else {
+    full_s[endset] = save;
     return scheme_false;
+  }
 }
 
 static Scheme_Object *compare(int argc, Scheme_Object *argv[])
@@ -1460,12 +1486,12 @@ void scheme_regexp_initialize(Scheme_Env *env)
   scheme_add_global_constant("regexp-match",
 			     scheme_make_prim_w_arity(compare,
 						      "regexp-match",
-						      2, 2), 
+						      2, 4),
 			     env);
   scheme_add_global_constant("regexp-match-positions", 
 			     scheme_make_prim_w_arity(positions, 
 						      "regexp-match-positions", 
-						      2, 2), 
+						      2, 4),
 			     env);
   scheme_add_global_constant("regexp-replace", 
 			     scheme_make_prim_w_arity(replace, 

@@ -40,7 +40,7 @@
     continue    goto       package       synchronized))
 
   (define-tokens java-vals
-    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT IDENTIFIER STRING_ERROR))
+    (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT IDENTIFIER STRING_ERROR NUMBER_ERROR))
   
   (define-tokens special-toks
     (INTERACTIONS_BOX TEST_SUITE OTHER_SPECIAL))
@@ -290,7 +290,11 @@
      ((+ WhiteSpace) (return-without-pos (get-token input-port)))
 
      ;; 3.5
-     ((: (eof) #\032) 'EOF)))
+     ((: (eof) #\032) 'EOF)
+     
+     ((+ (: (- #\0 #\9)(- #\a #\z)(- #\A #\Z))) (token-NUMBER_ERROR lexeme))
+     
+     ))
   
   (define (syn-val lex a b c d)
     (values lex a b (position-offset c) (position-offset d)))
@@ -366,7 +370,10 @@
      ((special) (syn-val "" 'error #f start-pos end-pos))
      ((special-error) (syn-val "" 'error #f start-pos end-pos))     
      ((special-comment) (syn-val "" 'comment #f start-pos end-pos))
+
+     ((+ (: (- #\0 #\9)(- #\a #\z)(- #\A #\Z))) (syn-val lexeme 'error #f start-pos end-pos))
      
      ((- #\000 #\377) (syn-val lexeme 'error #f start-pos end-pos))
+     
      ))
   )

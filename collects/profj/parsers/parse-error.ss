@@ -178,6 +178,8 @@
         ((literal-token? tok) (if full? (format "value ~a" (token-value tok)) (token-value tok)))
         ((eq? (get-token-name tok) 'STRING_ERROR)
          (format "malformed string ~a" (car (token-value tok))))
+        ((eq? (get-token-name tok) 'NUMBER_ERROR)
+         (format "malformed number ~a" (token-value tok)))
         ((eq? (get-token-name tok) 'OTHER_SPECIAL)
          (parse-error "Found special which is not a legal character in ProfessorJ" 
                       (cadr (token-value tok)) (caddr (token-value tok))))

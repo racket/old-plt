@@ -29,60 +29,64 @@
 	  (begin
 	    (set! current-type (cdr current-type))
 	    (if (<voidstruct>? value)
-		(format "~e~n" (ml-tstyle firsttype))
-		(format "~e = ~e~n" (ml-tstyle firsttype) (ml-style value))))))
+		(format "~a~n" (ml-tstyle firsttype))
+		(format "~a = ~a~n" (ml-tstyle firsttype) (ml-style value))))))
 
 
       (define (ml-tstyle type)
 	(cond
 	 [(mlexn? type)
-	  (format "exception ~e" (mlexn-name type))]
+	  (format "exception ~a" (mlexn-name type))]
 	 [(value-set? type)
-	  (format "val ~e : ~e" (value-set-name type) (ml-tstyle (value-set-type type)))]
+	  (format "val ~a : ~a" (value-set-name type) (ml-tstyle (value-set-type type)))]
 	 [(option? type)
-	  (format "~e option" (ml-tstyle (option-type type)))]
+	  (format "~a option" (ml-tstyle (option-type type)))]
 	 [(ref? type)
-	  (format "~e ref" (ml-tstyle (ref-type type)))]
+	  (format "~a ref" (ml-tstyle (ref-type type)))]
 	 [(tvariant? type)
-	  (format "type ~e = ~e" (tvariant-name type)
+	  (format "type ~a = ~a" (tvariant-name type)
 		  (letrec ([vtypes (lambda (varlist)
 				     (if (null? varlist)
 					 ""
 					 (if (null? (cdr varlist))
 					     (ml-tstyle (car varlist))
-					     (format "~e * ~e" (ml-tstyle (car varlist)) (vtypes (cdr varlist))))))]
+					     (format "~a * ~a" (ml-tstyle (car varlist)) (vtypes (cdr varlist))))))]
 			   [vars (lambda (names variants)
 				   (if (null? names)
 				       ""
 				       (if (null? (cdr names))
-					   (format "~e~e" (car names) (if (string? (car variants))
-										   ""
-										   (format " of ~e" (if (<tuple>? (tconstructor-argtype (car variants)))
-													(vtypes (<tuple>-list (tconstructor-argtype (car variants))))
-													(ml-tstyle (tconstructor-argtype (car variants)))))))
-					   (format "~e~e | ~e" (car names) (if (string? (car variants))
+					   (format "~a~a" 
+						   (car names) 
+						   (if (or (string? (car variants)) (usertype? (car variants)))
+						       ""
+						       (format " of ~a" (if (<tuple>? (tconstructor-argtype (car variants)))
+									    (vtypes (<tuple>-list (tconstructor-argtype (car variants))))
+									    (ml-tstyle (tconstructor-argtype (car variants))))
+						       
+)))
+					   (format "~a~a | ~a" (car names) (if (or (string? (car variants)) (usertype? (car variants)))
 									       ""
-									       (format " of ~e" (if (<tuple>? (tconstructor-argtype (car variants)))
+									       (format " of ~a" (if (<tuple>? (tconstructor-argtype (car variants)))
 												    (vtypes (<tuple>-list (tconstructor-argtype (car variants))))
 												    (ml-tstyle (tconstructor-argtype (car variants)))))) 
 						   (vars (cdr names) (cdr variants))))))])
 		    (vars (tvariant-varnames type) (tvariant-variantlist type))))]
 	 [(tlist? type)
-	  (format "~e list" (ml-tstyle (tlist-type type)))]
+	  (format "~a list" (ml-tstyle (tlist-type type)))]
 	 [(arrow? type)
 	  (if (> (length (arrow-arglist type)) 1)
 	      "Bad function!"
 	      (if (arrow? (car (arrow-arglist type)))
-		  (format "(~e) -> ~e" (ml-tstyle (car (arrow-arglist type))) (ml-tstyle (arrow-result type)))
-		  (format "~e -> ~e" (ml-tstyle (car (arrow-arglist type))) (ml-tstyle (arrow-result type)))))]
+		  (format "(~a) -> ~a" (ml-tstyle (car (arrow-arglist type))) (ml-tstyle (arrow-result type)))
+		  (format "~a -> ~a" (ml-tstyle (car (arrow-arglist type))) (ml-tstyle (arrow-result type)))))]
 	 [(<tuple>? type)
 	  (letrec ([<tuple>format (lambda (tlist)
 				  (let ([fstring (if (<tuple>? (car tlist))
-						     (format "(~e)" (ml-tstyle (car tlist)))
-						     (format "~e" (ml-tstyle (car tlist))))])
+						     (format "(~a)" (ml-tstyle (car tlist)))
+						     (format "~a" (ml-tstyle (car tlist))))])
 				    (if (null? (cdr tlist))
 					fstring
-					(format "~e, ~e" fstring (<tuple>format (cdr tlist))))))])
+					(format "~a, ~a" fstring (<tuple>format (cdr tlist))))))])
 	    (<tuple>format (<tuple>-list type)))]
 	 [(tvar? type)
 	  (tvar-tbox type)]
@@ -96,27 +100,27 @@
 	  (let*-values ([(sinfo skipped) (struct-info value)]
 			[(name-sym fnum acc-proc mut-proc sst skipped) (struct-type-info sinfo)]
 			[(ftype) (acc-proc value 0)])
-		       (string-append (format "~e" name-sym)
+		       (string-append (format "~a" name-sym)
 				      (cond
 ;				       [(<tuple>? ftype) (ml-style ftype)]
 				       [(not ftype) ""]
-				       [else (format " (~e)" (ml-style ftype))])))]
+				       [else (format " (~a)" (ml-style ftype))])))]
 			
 	 [(option? value)
 	  (if (<voidstruct>? (option-type value))
 	      "None"
-	      (format "Some ~e" (ml-style (option-type value))))]
-	 [(box? value) (format "{contents = ~e}" (ml-style (unbox value)))]
+	      (format "Some ~a" (ml-style (option-type value))))]
+	 [(box? value) (format "{contents = ~a}" (ml-style (unbox value)))]
 	 [(<unit>? value) "()"]
 	 [(list? value)
 	  (letrec ([listformat (lambda (clist)
 				 (if (null? clist)
 				     "]"
 				     (if (null? (cdr clist))
-					 (format "~e~e" (ml-style (car clist)) (listformat (cdr clist)))
-					 (format "~e; ~e" (ml-style (car clist)) (listformat (cdr clist))))))])
+					 (format "~a~a" (ml-style (car clist)) (listformat (cdr clist)))
+					 (format "~a; ~a" (ml-style (car clist)) (listformat (cdr clist))))))])
 	    (string-append "[" (listformat value)))]
-	 [(procedure? value) ;(begin (pretty-print (format "procedure ~e" value))
+	 [(procedure? value) ;(begin (pretty-print (format "procedure ~a" value))
 				    "<fun>"
 				;    )
 				    ]
@@ -124,18 +128,18 @@
 	  (letrec ([<tuple>format (lambda (tlist)
 				  (if (null? (cdr tlist))
 				      (if (<tuple>? (car tlist))
-					  (format "(~e)" (ml-style (car tlist)))
-					  (format "~e" (ml-style (car tlist))))
+					  (format "(~a)" (ml-style (car tlist)))
+					  (format "~a" (ml-style (car tlist))))
 				      (if (<tuple>? (car tlist))
-					  (format "(~e), ~e" (ml-style (car tlist)) (<tuple>format (cdr tlist)))
-					  (format "~e, ~e" (ml-style (car tlist)) (<tuple>format (cdr tlist))))))])
+					  (format "(~a), ~a" (ml-style (car tlist)) (<tuple>format (cdr tlist)))
+					  (format "~a, ~a" (ml-style (car tlist)) (<tuple>format (cdr tlist))))))])
 	    (<tuple>format (<tuple>-list value)))]
 	 [(boolean? value)
 	  (if value
 	      "true"
 	      "false")]
 	 [(string? value)
-	  (format "~e" value)]
+	  (format "\"~a\"" value)]
 	 [else value]))
 
       (define lang%

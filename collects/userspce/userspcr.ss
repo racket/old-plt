@@ -1,6 +1,4 @@
-(require-library "functiou.ss")
-(require-library "compatu.ss")
-(require-library "stringu.ss")
+(require-library "core.ss")
 (plt:require-library "userspcs.ss")
 (plt:require-library "ricedefu.ss")
 (plt:require-library "graphicu.ss")
@@ -10,16 +8,10 @@
 (define plt:userspace@
   (compound-unit/sig
     (import [params : plt:parameters^])
-    (link [function : mzlib:function^ (mzlib:function@)]
-	  [compat : mzlib:compat^ (mzlib:compat@ function)]
-	  [string : mzlib:string^ (mzlib:string@)]
-	  [rice : ricedefs^ (ricedefs@ params)]
-	  [graphics : graphics^ (graphics@)]
-	  [turtle : turtle^ (turtle@ function)])
-    (export (open function)
-	    (open compat)
-	    (open string)
-	    (open rice)
-	    (open graphics)
-	    (open turtle))))
+    (link [core : mzlib:core^ (mzlib:core@)]
+	  [rice : ricedefs^ (ricedefs@ params)])
+    (export (open core)
+	    (open rice))))
+
+
 

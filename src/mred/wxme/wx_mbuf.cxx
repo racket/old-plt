@@ -46,6 +46,7 @@
 #include "wx_ptreq.h"
 #include <ctype.h>
 #include <string.h>
+#include "scheme.h"
 
 #define NUM_MAX_UNDOS 256
 
@@ -2257,6 +2258,50 @@ void wxMediaBuffer::AfterEditSequence(void)
 void wxMediaBuffer::OnDisplaySize(void)
 {
   /* Do nothing */
+}
+
+void wxMediaBuffer::OnDisplaySizeWhenReady(void)
+{
+  if (InEditSequence())
+    needOnDisplaySize = 1;
+  else {
+    if (!seq_lock || scheme_wait_sema((Scheme_Object *)seq_lock, 1)) {
+      scheme_post_sema((Scheme_Object *)seq_lock);
+      OnDisplaySize();
+    } else
+      needOnDisplaySize = 1;
+  }
+}
+
+void wxMediaBuffer::BeginSequenceLock()
+{
+  Scheme_Object *sema;
+
+  if (!seq_lock) {
+    sema = scheme_make_sema(1);
+    seq_lock = sema;
+  } else
+    sema = (Scheme_Object *)seq_lock;
+  
+  /* "Try" really should succeed, because multiple refreshes are
+     prevent through other flags. Still, we don't want to block if
+     someone previously escaped from a repaint. */
+  scheme_wait_sema(sema, 1);
+}
+
+void wxMediaBuffer::EndSequenceLock()
+{
+  scheme_post_sema((Scheme_Object *)seq_lock);
+}
+
+void wxMediaBuffer::WaitSequenceLock()
+{
+  if (seq_lock) {
+    Scheme_Object *sema;
+    sema = (Scheme_Object *)seq_lock;
+    scheme_wait_sema(sema, 0);
+    scheme_post_sema(sema);
+  }
 }
 
 #ifdef wx_msw

@@ -588,6 +588,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
   Bool ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6 = 0);
+  void OnDisplaySizeWhenReady();
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
@@ -1671,6 +1672,38 @@ Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3
      READY_TO_RETURN;
      return resval;
   }
+  }
+}
+
+void os_wxMediaBuffer::OnDisplaySizeWhenReady()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaBuffer *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaBuffer_class, "on-display-size-when-ready", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaBuffer::OnDisplaySizeWhenReady();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+     READY_TO_RETURN;
   }
 }
 
@@ -4778,6 +4811,29 @@ static Scheme_Object *os_wxMediaBufferScrollTo(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxMediaBufferOnDisplaySizeWhenReady(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaBuffer_class, "on-display-size-when-ready in editor<%>", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaBuffer::OnDisplaySizeWhenReady());
+  else
+    WITH_VAR_STACK(((wxMediaBuffer *)((Scheme_Class_Object *)p[0])->primdata)->OnDisplaySizeWhenReady());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaBufferOnDisplaySize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -5348,7 +5404,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   wxREGGLOB(os_wxMediaBuffer_class);
   wxREGGLOB(os_wxMediaBuffer_interface);
 
-  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 121));
+  os_wxMediaBuffer_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor%", "object%", NULL, 122));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-editor-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbDCToBuffer, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "editor-location-to-dc-location" " method", (Scheme_Method_Prim *)os_wxMediaBufferwxbBufferToDC, 2, 2));
@@ -5449,6 +5505,7 @@ void objscheme_setup_wxMediaBuffer(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "resized" " method", (Scheme_Method_Prim *)os_wxMediaBufferResized, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-caret-owner" " method", (Scheme_Method_Prim *)os_wxMediaBufferSetCaretOwner, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "scroll-to" " method", (Scheme_Method_Prim *)os_wxMediaBufferScrollTo, 6, 7));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-display-size-when-ready" " method", (Scheme_Method_Prim *)os_wxMediaBufferOnDisplaySizeWhenReady, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-display-size" " method", (Scheme_Method_Prim *)os_wxMediaBufferOnDisplaySize, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-change" " method", (Scheme_Method_Prim *)os_wxMediaBufferOnChange, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-focus" " method", (Scheme_Method_Prim *)os_wxMediaBufferOnFocus, 1, 1));

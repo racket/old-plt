@@ -247,6 +247,7 @@ static Scheme_Object *bundle_symset_caret(int v) {
 
 #define wxBITMAP_TYPE_UNKNOWN 0
 #define wxBITMAP_TYPE_GIF_MASK (wxBITMAP_TYPE_GIF | wxBITMAP_TYPE_MASK)
+#define wxBITMAP_TYPE_PNG_MASK (wxBITMAP_TYPE_PNG | wxBITMAP_TYPE_MASK)
 
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_BMP_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_GIF_sym = NULL;
@@ -255,6 +256,8 @@ static Scheme_Object *bitmapType_wxBITMAP_TYPE_XBM_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_XPM_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_PICT_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_JPEG_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PNG_sym = NULL;
+static Scheme_Object *bitmapType_wxBITMAP_TYPE_PNG_MASK_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = NULL;
 static Scheme_Object *bitmapType_wxBITMAP_TYPE_MASK_sym = NULL;
 
@@ -274,6 +277,10 @@ static void init_symset_bitmapType(void) {
   bitmapType_wxBITMAP_TYPE_PICT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("pict"));
   wxREGGLOB(bitmapType_wxBITMAP_TYPE_JPEG_sym);
   bitmapType_wxBITMAP_TYPE_JPEG_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("jpeg"));
+  wxREGGLOB(bitmapType_wxBITMAP_TYPE_PNG_sym);
+  bitmapType_wxBITMAP_TYPE_PNG_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("png"));
+  wxREGGLOB(bitmapType_wxBITMAP_TYPE_PNG_MASK_sym);
+  bitmapType_wxBITMAP_TYPE_PNG_MASK_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("png/mask"));
   wxREGGLOB(bitmapType_wxBITMAP_TYPE_UNKNOWN_sym);
   bitmapType_wxBITMAP_TYPE_UNKNOWN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("unknown"));
   wxREGGLOB(bitmapType_wxBITMAP_TYPE_MASK_sym);
@@ -292,6 +299,8 @@ static int unbundle_symset_bitmapType(Scheme_Object *v, const char *where) {
   else if (v == bitmapType_wxBITMAP_TYPE_XPM_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_XPM; }
   else if (v == bitmapType_wxBITMAP_TYPE_PICT_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PICT; }
   else if (v == bitmapType_wxBITMAP_TYPE_JPEG_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_JPEG; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PNG_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PNG; }
+  else if (v == bitmapType_wxBITMAP_TYPE_PNG_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_PNG_MASK; }
   else if (v == bitmapType_wxBITMAP_TYPE_UNKNOWN_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_UNKNOWN; }
   else if (v == bitmapType_wxBITMAP_TYPE_MASK_sym) { READY_TO_RETURN; return wxBITMAP_TYPE_MASK; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "bitmapType symbol", -1, 0, &v));
@@ -309,12 +318,13 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
   case wxBITMAP_TYPE_XPM: return bitmapType_wxBITMAP_TYPE_XPM_sym;
   case wxBITMAP_TYPE_PICT: return bitmapType_wxBITMAP_TYPE_PICT_sym;
   case wxBITMAP_TYPE_JPEG: return bitmapType_wxBITMAP_TYPE_JPEG_sym;
+  case wxBITMAP_TYPE_PNG: return bitmapType_wxBITMAP_TYPE_PNG_sym;
+  case wxBITMAP_TYPE_PNG_MASK: return bitmapType_wxBITMAP_TYPE_PNG_MASK_sym;
   case wxBITMAP_TYPE_UNKNOWN: return bitmapType_wxBITMAP_TYPE_UNKNOWN_sym;
   case wxBITMAP_TYPE_MASK: return bitmapType_wxBITMAP_TYPE_MASK_sym;
   default: return NULL;
   }
 }
-
 
 
 
@@ -435,6 +445,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
   Bool ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6 = 0);
+  void OnDisplaySizeWhenReady();
   void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
@@ -2642,6 +2653,38 @@ Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloa
      READY_TO_RETURN;
      return resval;
   }
+  }
+}
+
+void os_wxMediaPasteboard::OnDisplaySizeWhenReady()
+{
+  Scheme_Object *p[POFFSET+0] INIT_NULLED_ARRAY({ NULLED_OUT });
+  Scheme_Object *v;
+  Scheme_Object *method INIT_NULLED_OUT;
+#ifdef MZ_PRECISE_GC
+  os_wxMediaPasteboard *sElF = this;
+#endif
+  static void *mcache = 0;
+
+  SETUP_VAR_STACK(5);
+  VAR_STACK_PUSH(0, method);
+  VAR_STACK_PUSH(1, sElF);
+  VAR_STACK_PUSH_ARRAY(2, p, POFFSET+0);
+  SET_VAR_STACK();
+
+  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, os_wxMediaPasteboard_class, "on-display-size-when-ready", &mcache);
+  if (!method || OBJSCHEME_PRIM_METHOD(method)) {
+    SET_VAR_STACK();
+    READY_TO_RETURN; ASSELF wxMediaPasteboard::OnDisplaySizeWhenReady();
+  } else {
+  
+  
+  p[0] = (Scheme_Object *) ASSELF __gc_external;
+
+  v = WITH_VAR_STACK(scheme_apply(method, POFFSET+0, p));
+  
+  
+     READY_TO_RETURN;
   }
 }
 
@@ -5781,6 +5824,29 @@ static Scheme_Object *os_wxMediaPasteboardScrollTo(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
+static Scheme_Object *os_wxMediaPasteboardOnDisplaySizeWhenReady(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(os_wxMediaPasteboard_class, "on-display-size-when-ready in pasteboard%", n, p);
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+
+  
+  if (((Scheme_Class_Object *)p[0])->primflag)
+    WITH_VAR_STACK(((os_wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->wxMediaPasteboard::OnDisplaySizeWhenReady());
+  else
+    WITH_VAR_STACK(((wxMediaPasteboard *)((Scheme_Class_Object *)p[0])->primdata)->OnDisplaySizeWhenReady());
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *os_wxMediaPasteboardOnDisplaySize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6333,7 +6399,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaPasteboard_class);
 
-  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 107));
+  os_wxMediaPasteboard_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "pasteboard%", "editor%", (Scheme_Method_Prim *)os_wxMediaPasteboard_ConstructScheme, 108));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardSetScrollStep, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "get-scroll-step" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardGetScrollStep, 0, 0));
@@ -6422,6 +6488,7 @@ void objscheme_setup_wxMediaPasteboard(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "resized" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardResized, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-caret-owner" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardSetCaretOwner, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "scroll-to" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardScrollTo, 6, 7));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-display-size-when-ready" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnDisplaySizeWhenReady, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-display-size" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnDisplaySize, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-change" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnChange, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-focus" " method", (Scheme_Method_Prim *)os_wxMediaPasteboardOnFocus, 1, 1));

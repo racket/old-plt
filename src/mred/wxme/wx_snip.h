@@ -174,7 +174,7 @@ class wxSnip : public wxObject
 		    int show_caret);
   virtual void Split(long position, wxSnip **first, wxSnip **second);
   virtual wxSnip *MergeWith(wxSnip *pred);
-  virtual void GetText(char *s, long offset, long num);
+  virtual void GetTextBang(char *s, long offset, long num, long dt);
   virtual char *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
   virtual wxSnip *Copy();
   virtual void Write(wxMediaStreamOut *f);
@@ -236,7 +236,7 @@ class wxTextSnip : public wxInternalSnip
 
   virtual void Insert(char *str, long len, long pos = 0);
   virtual void Read(long len, wxMediaStreamIn *f);
-  virtual void GetText(char *s, long offset, long num);
+  virtual void GetTextBang(char *s, long offset, long num, long dt);
   virtual char *GetText(long offset, long num, Bool flattened = FALSE, long *got=NULL);
   virtual wxSnip *Copy(void);
   virtual void Write(wxMediaStreamOut *f);

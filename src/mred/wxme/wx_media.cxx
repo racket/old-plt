@@ -754,6 +754,8 @@ void wxMediaEdit::AfterSetSizeConstraint(void)
 
 void wxMediaEdit::BeginEditSequence(Bool undoable)
 {
+  WaitSequenceLock();
+
   EndStreaks(wxSTREAK_EXCEPT_DELAYED);
 
   if (noundomode || !undoable)
@@ -790,6 +792,11 @@ void wxMediaEdit::EndEditSequence(void)
 
   if (noundomode)
     --noundomode;
+
+  if (!delayRefresh && needOnDisplaySize) {
+    needOnDisplaySize = 0;
+    OnDisplaySize();
+  }
 }
 
 Bool wxMediaEdit::RefreshDelayed(void)
@@ -2378,7 +2385,7 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
   offset = start - sPos;
   num = ((snip->count - offset <= count) ? snip->count - offset : count);
   if (!flatt) {
-    snip->GetText(s, offset, num);
+    snip->GetTextBang(s, offset, num, 0);
     p = num;
   } else {
     int add_newline;
@@ -2408,12 +2415,12 @@ char *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, long 
 	 want to chage the interface to take a string offset.) */
       if (num < 256) {
 	char buffer[256];
-	snip->GetText(buffer, 0, num);
+	snip->GetTextBang(buffer, 0, num, 0);
 	memcpy(s + p, buffer, num);
       } else {
 	char *ss;
 	ss = new char[num];
-	snip->GetText(ss, 0, num);
+	snip->GetTextBang(ss, 0, num, 0);
 	memcpy(s + p, ss, num);
       }
       p += num;
@@ -2473,7 +2480,7 @@ unsigned char wxMediaEdit::GetCharacter(long start)
     return 0;
 
   snip = FindSnip(start, +1, &sPos);
-  snip->GetText((char *)buffer, start - sPos, 1);
+  snip->GetTextBang((char *)buffer, start - sPos, 1, 0);
 
   return buffer[0];
 }

@@ -694,7 +694,7 @@ long wxMediaEdit::_FindStringAll(char *str, int direction,
       writeLocked = TRUE;
       flowLocked = TRUE;
       
-      snip->GetText((char *)text, thisoffset, thistime);
+      snip->GetTextBang((char *)text, thisoffset, thistime, 0);
 
       writeLocked = wl;
       flowLocked = fl;
@@ -2481,6 +2481,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
   if (!dc)
     return;
 
+  BeginSequenceLock();
+
   if (caretBlinked && show_caret && !caretSnip) {
     /* Maintain caretBlinked invariant */
     show_caret = 0;
@@ -2598,6 +2600,8 @@ void wxMediaEdit::Refresh(float left, float top, float width, float height,
     if (ps)
       skipBox = savesb;
   }
+
+  EndSequenceLock();
 }
 
 /* This one is used internally to delay refreshes: */

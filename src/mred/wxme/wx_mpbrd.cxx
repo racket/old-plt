@@ -1523,7 +1523,7 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
     return;
 
   writeLocked++;
-  writeLocked = -writeLocked;
+  flowLocked = TRUE;
 
   dcx = cx + dx;
   dcy = cy + dy;
@@ -1641,7 +1641,7 @@ void wxMediaPasteboard::Draw(wxDC *dc, float dx, float dy,
 	  ? show_caret
 	  : (int)wxSNIP_DRAW_NO_CARET);
 
-  writeLocked = -writeLocked;
+  flowLocked = FALSE;
   --writeLocked;
 }
 
@@ -1651,11 +1651,19 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
   float dx, dy, ddx, ddy;
   wxDC *dc;
 
-  if (!admin || (writeLocked < 0))
+  if (!admin)
     return;
 
   if ((h <= 0) || (w <= 0))
     return;
+
+  if (flowLocked || sequence) {
+    /* We're busy. Invalidate so that everything is refreshed later. */
+    Update(localx, localy, w, h);
+    return;
+  }
+
+  BeginSequenceLock();
 
   ReadyOffscreen(w, h);
 
@@ -1727,6 +1735,8 @@ void wxMediaPasteboard::Refresh(float localx, float localy, float w, float h,
     dc->SetTextForeground(fg);
     dc->SetTextBackground(bg);
   }
+
+  EndSequenceLock();
 }
 
 void wxMediaPasteboard::CheckRecalc()
@@ -1792,7 +1802,7 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
 {
   float r, b;
 
-  if (delayedscrollsnip && !sequence) {
+  if (delayedscrollsnip && !sequence && !flowLocked) {
     wxSnip *s = delayedscrollsnip;
     delayedscrollsnip = NULL;
     if (ScrollTo(s, 
@@ -1856,7 +1866,7 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
       updateRight = r;
   }
 
-  if (sequence || !admin)
+  if (sequence || !admin || flowLocked)
     return;
 
   CheckRecalc();
@@ -2719,6 +2729,8 @@ void wxMediaPasteboard::StyleHasChanged(wxStyle *style)
 
 void wxMediaPasteboard::BeginEditSequence(Bool undoable)
 {
+  WaitSequenceLock();
+
   if (noundomode || !undoable)
     noundomode++;
 
@@ -2739,6 +2751,11 @@ void wxMediaPasteboard::EndEditSequence(void)
 
   if (noundomode)
     --noundomode;
+
+  if (!sequence && needOnDisplaySize) {
+    needOnDisplaySize = 0;
+    OnDisplaySize();
+  }
 }
 
 Bool wxMediaPasteboard::RefreshDelayed(void)

@@ -339,13 +339,13 @@ wxSnip *wxSnip::MergeWith(wxSnip *)
   return NULL;
 }
 
-void wxSnip::GetText(char *s, long offset, long num)
+void wxSnip::GetTextBang(char *s, long offset, long num, long dt)
 {
   char *str;
 
   if (num <= 0)
     return;
-  str = GetText(offset, num, FALSE);
+  str = GetText(offset + dt, num, FALSE);
   if (!str)
     memset(s, '.', num);
   else
@@ -842,12 +842,12 @@ void wxTextSnip::Insert(char *str, long len, long pos)
 #endif
 }
 
-void wxTextSnip::GetText(char *s, long offset, long num)
+void wxTextSnip::GetTextBang(char *s, long offset, long num, long dt)
 {
   if (num <= 0)
     return;
 
-  memcpy(s, buffer + dtext + offset, num);
+  memcpy(s + dt, buffer + dtext + offset, num);
 }
 
 char *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)

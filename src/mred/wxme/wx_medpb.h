@@ -184,6 +184,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   float GetScrollStep(void);
 
   Bool IsLockedForWrite() { return writeLocked; }
+  Bool IsLockedForFlow() { return flowLocked; }
 
  private:
   Bool dragable, selectionVisible;
@@ -217,6 +218,7 @@ class wxMediaPasteboard : public wxMediaBuffer
 
   Bool sizeCacheInvalid;
   int writeLocked;
+  Bool flowLocked;
 
   int sequence;
 

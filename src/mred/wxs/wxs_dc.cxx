@@ -1942,7 +1942,7 @@ static Scheme_Object *os_wxMemoryDCdcSetARGBPixels(int n,  Scheme_Object *p[])
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "set-argb-pixels in bitmap-dc%"));
   x4 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+4], "set-argb-pixels in bitmap-dc%"));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","set-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","set-argb-pixels"), "string too short: ", p[4+POFFSET]));
+  DO_OK_CHECK(METHODNAME("memory-dc%","set-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","set-argb-pixels"), "string too short: ", p[4+POFFSET]));
   WITH_VAR_STACK(dcSetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   
@@ -1960,7 +1960,7 @@ static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
   float x1;
   int x2;
   int x3;
-  string x4 INIT_NULLED_OUT;
+  wstring x4 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -1971,9 +1971,9 @@ static Scheme_Object *os_wxMemoryDCdcGetARGBPixels(int n,  Scheme_Object *p[])
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "get-argb-pixels in bitmap-dc%"));
   x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+2], 0, 10000, "get-argb-pixels in bitmap-dc%"));
   x3 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[POFFSET+3], 0, 10000, "get-argb-pixels in bitmap-dc%"));
-  x4 = (string)WITH_VAR_STACK(objscheme_unbundle_string(p[POFFSET+4], "get-argb-pixels in bitmap-dc%"));
+  x4 = (wstring)WITH_VAR_STACK(objscheme_unbundle_mutable_string(p[POFFSET+4], "get-argb-pixels in bitmap-dc%"));
 
-  DO_OK_CHECK(METHODNAME("memory-dc%","get-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("bitmap%","get-argb-pixels"), "string too short: ", p[4+POFFSET]));
+  DO_OK_CHECK(METHODNAME("memory-dc%","get-argb-pixels"))if (SCHEME_STRTAG_VAL(p[4+POFFSET]) < (x2 * x3 * 4)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("memory-dc%","get-argb-pixels"), "string too short: ", p[4+POFFSET]));
   WITH_VAR_STACK(dcGetARGBPixels(((wxMemoryDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
 
   

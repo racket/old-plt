@@ -79,6 +79,7 @@ class wxMediaBuffer : public wxObject
   TF_Flag( loadoverwritesstyles );
   TF_Flag( customCursorOverrides );
   TF_Flag( pasteTextOnly );
+  TF_Flag( needOnDisplaySize );
   
   int num_parts_modified;
 
@@ -299,6 +300,7 @@ class wxMediaBuffer : public wxObject
   virtual void AfterEditSequence(void);
 
   virtual void OnDisplaySize(void);
+  virtual void OnDisplaySizeWhenReady(void);
 
   virtual wxImageSnip *OnNewImageSnip(char *filename, long type, 
 				      Bool relative, Bool inlineImg);
@@ -332,12 +334,17 @@ class wxMediaBuffer : public wxObject
   virtual Bool IsLockedForFlow() { return 0; }
   virtual Bool IsLockedForWrite() { return 0; }
 
+  void BeginSequenceLock();
+  void EndSequenceLock();
+  void WaitSequenceLock();
+
 #ifdef MEMORY_USE_METHOD
   virtual long MemoryUse(void);
 #endif
 
  private:
   int numExtraHeaders;
+  void *seq_lock;
 };
 
 Bool wxReadMediaGlobalHeader(wxMediaStreamIn *f);

@@ -39,6 +39,7 @@
 @ Y "on-change" : void OnChange();
 
 @ Z "on-display-size" : void OnDisplaySize();
+@ Z "on-display-size-when-ready" : void OnDisplaySizeWhenReady();
 
 @ Y "scroll-to" : bool ScrollTo(wxSnip!,float,float,nnfloat,nnfloat,bool,SYM[bias]=0); : : : : XrZERO
 @ Y "set-caret-owner" : void SetCaretOwner(wxSnip^,SYM[focus]=wxFOCUS_IMMEDIATE);

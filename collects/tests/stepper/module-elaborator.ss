@@ -13,7 +13,14 @@
                                    ;(require require-specs ...)
                                    #,@exps))])
               (rewrite-module mod))
-            #`(require #,new-module-id))))
+            #`(let ([done-already? #f])
+                (dynamic-wind
+                 void
+                 (lambda () (dynamic-require '#,new-module-id #f))
+                 (lambda () 
+                   (unless done-already?
+                     (set! done-already? #t)
+                     (current-namespace (module->namespace '#,new-module-id)))))))))
   
   ;; rewrite-module : syntax -> syntax
   ;; rewrites te module to provide all definitions and 

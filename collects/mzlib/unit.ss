@@ -643,7 +643,7 @@
 					(string->symbol
 					 (string-append
 					  prefix
-					  (symbol->string s)))
+					  (symbol->string (syntax-e s))))
 					s s))
 				     (syntax->list (syntax exports))))
 			      (syntax exports))]

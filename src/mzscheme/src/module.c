@@ -755,8 +755,8 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 
     if (!SAME_OBJ(base, sbase)) {
       /* There was a shift in the relative part. */
-      /* Shift cached? */
-      Scheme_Modidx *sbm = (Scheme_Modidx *)sbase;
+      /* Shift cached? [If base is a symbol, sbase for the cache.] */
+      Scheme_Modidx *sbm = (Scheme_Modidx *)(SCHEME_SYMBOLP(sbase) ? base : sbase);
       int i, c = (sbm->shift_cache ? SCHEME_VEC_SIZE(sbm->shift_cache) : 0);
       Scheme_Object *smodidx;
 
@@ -1943,7 +1943,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       }
       if (SCHEME_NULLP(l)) {
 	/* Didn't require the named module */
-	scheme_wrong_syntax("provide", midx, SCHEME_CADR(SCHEME_CAR(rx)),
+	scheme_wrong_syntax("provide", midx, ((Scheme_Modidx *)midx)->path,
 			    "no `require' matching the module name");
       }
 

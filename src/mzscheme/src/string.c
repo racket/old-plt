@@ -319,6 +319,8 @@ scheme_make_sized_offset_string(char *chars, long d, long len, int copy)
 {
   Scheme_Object *str;
 
+  if (!chars) chars = "";
+
   str = scheme_alloc_stubborn_object();
   str->type = scheme_string_type;
 

@@ -875,7 +875,7 @@ sub DoPrintClass
 
 	# destruction
 	print "${newclass}::~${newclass}()\n{\n  ";
-	print "  objscheme_destroy(this, (Scheme_Object *)__gc_external);\n}\n\n";
+	print "  objscheme_destroy(this, (Scheme_Object *) __gc_external);\n}\n\n";
     }
 
     #Do regular methods
@@ -1449,7 +1449,7 @@ sub PrintMethod
     print "  SET_VAR_STACK();\n";
     print "\n";
 
-    print "  method = objscheme_find_method((Scheme_Object *)__gc_external, ";
+    print "  method = objscheme_find_method((Scheme_Object *) ASSELF __gc_external, ";
     print "${newclass}_class, ";
     print $fname;
     print ", &mcache);\n";
@@ -1496,7 +1496,7 @@ sub PrintMethod
 
     print "  " . &ApplyMacros($methprecall) . "\n";
 
-    print "  p[0] = (Scheme_Object *)__gc_external;\n";
+    print "  p[0] = (Scheme_Object *) ASSELF __gc_external;\n";
     
     print "\n  v = WITH_VAR_STACK(scheme_apply(";
     print "method, ";

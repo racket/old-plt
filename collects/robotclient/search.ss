@@ -77,7 +77,7 @@
 			  [path/coords (cons (make-cord x y) path/coords)]
 			  [weight (+ weight cur-weight)])
 		      (when (= depth 1)
-			(printf "Move to the ~a has weight ~a~n" (command-command cmd) cur-weight))
+;			(printf "Move to the ~a has weight ~a~n" (command-command cmd) cur-weight))
 		      (let ([northopt (make-qelt weight 'N x (add1 y) cmd path/coords)]
 			    [southopt (make-qelt weight 'S x (sub1 y) cmd path/coords)]
 			    [eastopt (make-qelt weight 'E (add1 x) y cmd path/coords)]
@@ -118,8 +118,8 @@
 
 	  (let ([drop-weight (if (null? packs-to-drop) -inf.0 drop-weight)]
 		[pick-weight (if (null? packs-to-pick) -inf.0 pick-weight)])
-	      (printf "(best-weight): ~a~ndrop-weight: ~a~npick-weight: ~a~n"
-		(best-weight) drop-weight pick-weight)
+;	      (printf "(best-weight): ~a~ndrop-weight: ~a~npick-weight: ~a~n"
+;		(best-weight) drop-weight pick-weight)
 	      (cond
 		[(and (>= drop-weight (best-weight)) (>= drop-weight pick-weight))
 		 (make-command d-bid 'D packs-to-drop)]

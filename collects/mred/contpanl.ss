@@ -28,6 +28,7 @@
 	  user-min-width
 	  user-min-height
 	  get-client-size
+	  set-cursor
 	  get-parent)
 	
 	(private
@@ -78,7 +79,8 @@
 		   new-child this))
 	       (change-children
 		 (lambda (l)
-		   (append l (list new-child))))))]
+		   (append l (list new-child))))
+	       (set-cursor 0 0)))]
 	  
 	  ; change-children: changes the list of children.
 	  ; input: f is a function which takes the current list of children
@@ -471,8 +473,8 @@
 	(inherit
 	  set-cursor
 	  force-redraw)
-	(rename
-	  [super-add add-child])
+;	(rename
+;	  [super-add add-child])
 	(public
 	  [default-spacing-width const-default-spacing]
 	  [default-border-width const-default-spacing]
@@ -481,10 +483,10 @@
 
 	  [border (make-border this)]
 	  
-	  [add-child
-	   (lambda (new-child)
-	     (super-add new-child)
-	     (set-cursor 0 0))]
+;	  [add-child
+;	   (lambda (new-child)
+;	     (super-add new-child)
+;	     (set-cursor 0 0))]
 	  
 	  [get-min-size
 	    (make-get-size this

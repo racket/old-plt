@@ -1591,6 +1591,44 @@ read_string(Scheme_Object *port,
 	  return NULL;
 	}
 	break;
+      case 'u':
+	ch = scheme_getc_special_ok(port);
+	if (isxdigit(ch)) {
+	  int count = 1;
+	  char ubuf[6];
+	  n = ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10);
+	  while (count < 6) {
+	    ch = scheme_peekc_special_ok(port);
+	    if (NOT_EOF_OR_SPECIAL(ch) && isxdigit(ch)) {
+	      n = n*16 + (ch<='9' ? ch-'0' : (mz_portable_toupper(ch)-'A'+10));
+	      scheme_getc(port); /* must be ch */
+	      count++;
+	    } else
+	      break;
+	  }
+	  count = scheme_utf8_encode(&n, 0, 1, ubuf, 0, 0);
+	  if (i + count > size) { 
+	    oldsize = size;
+	    oldbuf = buf;
+	    
+	    size *= 2;
+	    buf = (char *)scheme_malloc_atomic(size + 1);
+	    memcpy(buf, oldbuf, oldsize);
+	  }
+	  memcpy(buf + i, ubuf, count - 1);
+	  i += (count - 1);
+	  ch = ubuf[count - 1];
+	} else {
+	  if (ch == SCHEME_SPECIAL)
+	    scheme_get_special(port, stxsrc,
+			       scheme_tell_line(port), 
+			       scheme_tell_column(port), 
+			       scheme_tell(port), NULL);
+	  scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation, 
+			  "read: no hex digit following \\u in string");
+	  return NULL;
+	}
+	break;
       default:
 	if ((ch >= '0') && (ch <= '7')) {
 	  for (n = j = 0; j < 3; j++) {

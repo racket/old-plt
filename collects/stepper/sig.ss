@@ -61,7 +61,6 @@
 (define-signature stepper:model^
   (check-pre-defined-var
    check-global-defined
-   user-namespace ; useful for debugger
    global-lookup
    true-false-printed?
    constructor-style-printing?

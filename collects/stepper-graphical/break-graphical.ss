@@ -53,10 +53,10 @@
   (define (display-bindings frame-info)
     (send binding-listbox clear)
     (if (frame-info-full? frame-info)
-        (let ([binding-names (map (compose
+        (let ([binding-names (map (function:compose
                                    (lambda (binding)
                                      (ccond [(zodiac:binding? binding)
-                                             (utils:binding-orig-name binding)]
+                                             (zodiac:binding-orig-name binding)]
                                             [(box? binding)
                                              (if (null? (unbox binding))
                                                  (e:internal-error #f "empty slot in binding list")
@@ -65,19 +65,19 @@
                                   (frame-info-bindings frame-info))])
           (send binding-listbox enable #t)
           (for-each (lambda (name data)
-                      (send binding-listbox append name data))
+                      (send binding-listbox append (symbol->string name) data))
                     binding-names
                     (map marks:mark-binding-value (frame-info-bindings frame-info))))
         (send binding-listbox enable #f)))
   
   (define debugger-frame (make-object mred:frame% "debugger" #f 300 300))
-  (define button-panel (make-object mred:horizontal-panel% f))
+  (define button-panel (make-object mred:horizontal-panel% debugger-frame))
   (send button-panel stretchable-height #f)
-  (make-object mred:button% "continue" bp (lambda (a b) (continue (void))))
-  (define listbox-panel (make-object mred:horizontal-panel% f))
-  (define level-listbox (make-object mred:list-box% "level" () lp level-listbox-callback '(single)))
-  (define binding-listbox (make-object mred:list-box% "bindings" () lp (lambda (a b) (void)) '(single)))
-  (define interaction-canvas (make-object mred:canvas% f))
+  (make-object mred:button% "continue" button-panel (lambda (a b) (continue (void))))
+  (define listbox-panel (make-object mred:horizontal-panel% debugger-frame))
+  (define level-listbox (make-object mred:list-box% "level" () listbox-panel level-listbox-callback '(single)))
+  (define binding-listbox (make-object mred:list-box% "bindings" () listbox-panel (lambda (a b) (void)) '(single)))
+  (define interaction-canvas (make-object mred:canvas% debugger-frame))
   
   (define (break)
     (let ([break-info-list (continuation-mark-set->list (current-continuation-marks) 
@@ -86,9 +86,7 @@
           ([mred:current-eventspace drscheme-eventspace])
         (mred:queue-callback 
          (lambda ()
-           (when (not debugger-frame)
-             (create-debugger-frame)
-             (send debugger-frame show #t))
+           (send debugger-frame show #t)
            (enable-debugger)
            (let* ([frame-info-list (map parse-break-info break-info-list)]
                   [location-list (map (function:compose

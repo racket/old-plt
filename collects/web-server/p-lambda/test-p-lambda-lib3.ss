@@ -58,6 +58,8 @@
                        (eval body))))))]))))))
 
 ;; ****************************************
+;; adapted some material from Teach Yourself Scheme in Fixnum Days
+;; for these examples.
 
 (define-values (getit setit!)
   (let ([x 0])
@@ -97,8 +99,9 @@
                              (setit! k)
                              (+ 2 (k 3))))))))
 
-(let ([k (getit)])
-  (k 3))
+;; not top level abort for this one:
+;(let ([k (getit)])
+;  (k 3))
 
 (define list-product
   (p-eval (syntax (lambda (s)
@@ -114,8 +117,123 @@
                                 (* (car s)
                                    (recur (cdr s))))]))))))))
 
-(= 6 (list-product '(1 2 3)))
-(zero? (list-product '(0 1 2 3)))
-(zero? (getit))
-(zero? (list-product '(1 2 3 0 4 5 6)))
-(zero? (getit))
+(= 6 (p-eval (syntax (list-product '(1 2 3)))))
+(zero? (p-eval (syntax (list-product '(0 1 2 3)))))
+(zero? (p-eval (syntax (getit))))
+(zero? (p-eval (syntax (list-product '(1 2 3 0 4 5 6)))))
+(zero? (p-eval (syntax (getit))))
+
+;; tree->generator: tree -> (-> number)
+;; the resulting generator produces the leaves in order each time
+;; it is called.
+(define tree->generator
+  (p-eval (syntax (lambda (tree)
+                    (let ([caller (box '*)]
+                          [generate-leaves (box #f)])
+                      (set-box!
+                       generate-leaves
+                       (lambda ()
+                         (let loop ([tree tree])
+                           (cond
+                             [(null? tree) 'skip]
+                             [(pair? tree)
+                              (loop (car tree))
+                              (loop (cdr tree))]
+                             [else
+                              (call/cc
+                               (lambda (rest-of-tree)
+                                 (set-box! generate-leaves
+                                           (lambda ()
+                                             (rest-of-tree 'resume)))
+                                 ((unbox caller) tree)))]))
+                         ((unbox caller) '())))
+                      (lambda ()
+                        (call/cc
+                         (lambda (k)
+                           (set-box! caller k)
+                           ((unbox generate-leaves))))))))))
+
+;; same-fringe?: tree tree -> boolean
+;; determine if the trees have the same leaves in the same order
+(define same-fringe?
+  (p-eval (syntax (lambda (tree1 tree2)
+                    (let ([gen1 (tree->generator tree1)]
+                          [gen2 (tree->generator tree2)])
+                      (let loop ()
+                        (let ([leaf1 (gen1)]
+                              [leaf2 (gen2)])
+                          (and (eqv? leaf1 leaf2)
+                               (or (null? leaf1)
+                                   (loop))))))))))
+
+(p-eval (syntax (same-fringe? '() '())))
+(p-eval (syntax (same-fringe? '(1 . 2) '(1 . 2))))
+(p-eval (syntax (same-fringe? '(1 . (1 . 2)) '(1 . (1 . 2)))))
+(p-eval (syntax (same-fringe? '((1 . 2) . 3) '(1 . (2 . 3)))))
+(p-eval (syntax (not (same-fringe? '((3 . 2) . 1) '(1 . (2 . 3))))))
+(p-eval (syntax (not (same-fringe? '((1 . 2) . 3) '(1 . (2 . 4))))))
+
+(define-syntax (coroutine stx)
+  (syntax-case stx ()
+    [(_ x . body)
+     (with-syntax ([resume (datum->syntax-object stx 'resume)])
+       #`(let ([resume (box #f)])
+           (let ([local-control-state
+                  (box (lambda (x) . body))])
+             (set-box! resume
+                       (lambda (c v)
+                         (call/cc
+                          (lambda (k)
+                            (set-box! local-control-state k)
+                            (c v)))))
+             (lambda (v)
+               ((unbox local-control-state) v)))))]))
+
+(define make-matcher-coroutine
+  (p-eval (syntax
+           (lambda (tree-cor-1 tree-cor-2)
+             (coroutine dont-need-an-init-arg
+                        (let loop ()
+                          (let ([leaf1 ((unbox resume) tree-cor-1 'get-a-leaf)]
+                                [leaf2 ((unbox resume) tree-cor-2 'get-a-leaf)])
+                            (and (eqv? leaf1 leaf2)
+                                 (or (null? leaf1) (loop))))))))))
+
+(define make-leaf-gen-coroutine
+  (p-eval (syntax (lambda (tree matcher-cor)
+                    (coroutine dont-need-an-init-arg
+                               (let loop ([tree tree])
+                                 (cond
+                                   [(null? tree) 'skip]
+                                   [(pair? tree)
+                                    (loop (car tree))
+                                    (loop (cdr tree))]
+                                   [else
+                                    ((unbox resume) matcher-cor tree)]))
+                               ((unbox resume) matcher-cor '()))))))
+
+(define same-fringe2?
+  (p-eval (syntax (lambda (tree1 tree2)
+                    (let ([tree-cor-1 (box #f)]
+                          [tree-cor-2 (box #f)]
+                          [matcher-cor (box #f)])
+                      (set-box! tree-cor-1
+                                (make-leaf-gen-coroutine
+                                 tree1
+                                 (lambda (v) ((unbox matcher-cor) v))))
+                      (set-box! tree-cor-2
+                                (make-leaf-gen-coroutine
+                                 tree2
+                                 (lambda (v) ((unbox matcher-cor) v))))
+                      (set-box! matcher-cor
+                                (make-matcher-coroutine
+                                 (lambda (v) ((unbox tree-cor-1) v))
+                                 (lambda (v) ((unbox tree-cor-2) v))))
+                      ((unbox matcher-cor) 'start-ball-rolling))))))
+
+(p-eval (syntax (same-fringe2? '() '())))
+(p-eval (syntax (same-fringe2? '(1 . 2) '(1 . 2))))
+(p-eval (syntax (same-fringe2? '(1 . (1 . 2)) '(1 . (1 . 2)))))
+(p-eval (syntax (same-fringe2? '((1 . 2) . 3) '(1 . (2 . 3)))))
+(p-eval (syntax (not (same-fringe2? '((3 . 2) . 1) '(1 . (2 . 3))))))
+(p-eval (syntax (not (same-fringe2? '((1 . 2) . 3) '(1 . (2 . 4))))))

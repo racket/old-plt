@@ -417,7 +417,7 @@
   (define (normalize f-expr k)
     (myprint "normalize: f-expr = ~s~n" f-expr)
     (syntax-case f-expr (p-lambda if begin begin0 let-values letrec-values
-                                  quote #%app #%datum #%top call/cc lambda list)
+                                  quote #%app #%datum #%top lambda list)
       [(#%app p-lambda proc-id (lambda () (#%app list f-exprs ...)))
        (normalize-name* (syntax->list #'(f-exprs ...))
                         (lambda (vals)
@@ -455,32 +455,16 @@
        (normalize-let f-expr k)]
       [(letrec-values ([(varss ...) rhs-f-exprs] ...) body-f-exprs ...)
        (normalize-letrec f-expr k)]
-      [(#%app call/cc proc)
+      [(#%app maybe-call/cc proc)
+       (call/cc? #'maybe-call/cc)
        (normalize-name
         #'proc
         (lambda (new-proc)
-          (let ([f (namespace-syntax-introduce
-                    (datum->syntax-object #f (genproc 'f)))]
-                [k-var (namespace-syntax-introduce
-                    (datum->syntax-object #f (gensym 'k)))])
-            (let-values ([(body body-defines)
-                          (k #`(#%app #,new-proc #,k-var))])
-              (let ([fvars (set-diff (free-vars body)
-                                     (union (list k-var)
-                                            (defined-ids body-defines)))])
-                (values
-                 #`(#%app #,f #,@fvars
-                          (let-values ([(marks)
-                                        (#%app continuation-mark-set->list
-                                               (#%app current-continuation-marks)
-                                               the-cont-key)])
-                            (#%app p-lambda
-                                   resume
-                                   (lambda ()
-                                     (#%app list marks)))))
-                 (cons
-                  #`(define (#,f #,@fvars #,k-var) #,body)
-                  body-defines)))))))]
+          (k #`(#%app #,new-proc (#%app p-lambda resume
+                                        (let ([marks (continuation-mark-set->list
+                                                      (current-continuation-marks)
+                                                      the-cont-key)])
+                                          (lambda () (list marks))))))))]
       [(#%app fn f-exprs ...)
        (if (primop? #'fn)
            (normalize-name*
@@ -498,6 +482,45 @@
       [(#%datum . datum) (k f-expr)]
       [(#%top . var) (k f-expr)]
       [s (identifier? #'s) (k f-expr)]))
+    
+  ;; call/cc?: syntax -> boolean
+  ;; see if this piece of syntax is call/cc
+  ;; need to code walk this with Ryan.
+  (define (call/cc? stx)
+    (syntax-case stx (call/cc #%top)
+      [call/cc (begin (printf "first case~n") #t)]
+      [(#%top . call/cc)
+       (begin (printf "second case~n") #t)]
+      [(#%top . id)
+       (eqv? 'call/cc (syntax-object->datum #'id))
+       (begin (printf "third case~n") #t)]
+      [_else #f]))
+     
+  
+;  [(#%app maybe-call/cc proc)
+;   (call/cc? #'maybe-call/cc)
+;   (let ([f (namespace-syntax-introduce
+;             (datum->syntax-object #f (genproc 'f)))]
+;         [k-var (namespace-syntax-introduce
+;                 (datum->syntax-object #f (gensym 'k)))])
+;     (let-values ([(body body-defines)
+;                   (k #`(#%app proc #,k-var))])
+;       (let ([fvars (set-diff (free-vars body)
+;                              (union (list k-var)
+;                                     (defined-ids body-defines)))])
+;         (values
+;          #`(#%app #,f #,@fvars
+;                   (let-values ([(marks)
+;                                 (#%app continuation-mark-set->list
+;                                        (#%app current-continuation-marks)
+;                                        the-cont-key)])
+;                     (#%app p-lambda
+;                            resume
+;                            (lambda ()
+;                              (#%app list marks)))))
+;          (cons
+;           #`(define (#,f #,@fvars #,k-var) #,body)
+;           body-defines)))))]
   
   ;; normalize-name: flat-expr (value (listof identifier) -> P-expr (listof definition))
   ;;                 -> P-expr (listof definition)
@@ -628,7 +651,6 @@
           (and (namespace-defined? (syntax-object->datum #'id))
                (primitive? (namespace-variable-value (syntax-object->datum #'id))))]
       [_else #f]))
-  
   
   ;; defined-ids: (listof definition) -> (listof identifier)
   ;; pull out the function identifer from a list of function definitions

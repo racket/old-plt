@@ -391,7 +391,6 @@ static void *allocate_big(size_t sizeb, int type)
   return (void*)(NUM(bpage) + HEADER_SIZEB + WORD_SIZE);
 }
 
-#define ALIGN_DOUBLES
 #ifdef ALIGN_DOUBLES
 # define ALIGN_SIZE(sizew) ((sizew & 0x1) ? (sizew + 1) : sizew)
 #else
@@ -420,7 +419,6 @@ inline static void *allocate(size_t sizeb, int type)
       info->type = type;
       info->size = sizew;
       SET_MTRACE_INFO(info, gcWORDS_TO_BYTES(sizew));
-      printf("Return value is %p\n", PTR(NUM(retval) + WORD_SIZE));
       return PTR(NUM(retval) + WORD_SIZE);
     } else return allocate_big(sizeb, type);
   } else return zero_sized;

@@ -70,7 +70,7 @@
 	   [(symbol? elem) elem]
 	   [(and (pair? elem) (symbol? (car elem)))
 	    (intern-signature (car elem) (cdr elem))]
-	   [else (error)]))
+	   [else (error "intern failed")]))
 	(vector->list (car desc)))
        (map
 	(lambda (elem)

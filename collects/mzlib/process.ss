@@ -28,6 +28,7 @@
 			 'exact
 			 (format "~a /c ~a" cmd argstr))))
       (else (raise-mismatch-error 
+	     who
 	     (format "~a: don't know what shell to use for platform: " who)
 	     (system-type)))))
 

@@ -135,7 +135,8 @@
 	(cond
 	 [(and (date>=? _loader-so path-d)
 	       (let ([getter (load-extension _loader-so)])
-		 (getter (string->symbol (regexp-replace re:suffix file "")))))
+		 (let-values ([(loader modname) (getter (string->symbol (regexp-replace re:suffix file "")))])
+		   loader)))
 	  => (lambda (loader)
 	       (raise (make-exn:get-module-code (format "get-module-code: cannot use _loader file: ~e"
                                                         _loader-so)

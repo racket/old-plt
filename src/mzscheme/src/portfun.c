@@ -932,7 +932,8 @@ user_char_ready(Scheme_Input_Port *port)
 
   can_peek = (uip->peek_proc ? 1 : 0);
 
-  c = user_get_or_peek_string(port, s, 0, 1, 1, can_peek, 0);
+  c = user_get_or_peek_string(port, s, 0, 1, 1, 
+			      can_peek, scheme_make_integer(0));
 
   if (c == EOF) {
     if (!can_peek)
@@ -1029,7 +1030,7 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
     SCHEME_SET_IMMUTABLE(p[0]);
     p[1] = scheme_make_integer(0);
     p[2] = scheme_make_integer(len);
-    p[3] = (rarely_block ? scheme_false : scheme_true);
+    p[3] = (rarely_block ? scheme_true : scheme_false);
     
     val = scheme_apply(uop->write_proc, 4, p);
   }

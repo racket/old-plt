@@ -360,9 +360,9 @@ static void kill_eventspace(Scheme_Object *ec, void *)
       wxWindow *w = (wxWindow *)node->Data();
       next = node->Next();
       if (w) {
+	w->ForEach(destroy_wxObject, NULL);
 	if (node->IsShown())
 	  w->Show(FALSE);
-	w->ForEach(destroy_wxObject, NULL);
       }
     }
   }

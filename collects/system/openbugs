@@ -1,0 +1,19 @@
+- .htx files are no longer supported. If you need .htx files to be
+  supported, please send mail to plt-bugs@cs requesting that for the
+  next version. If we don't hear anything, they will go the way of the
+  dodo.
+
+- backup files don't preserve permissions
+
+- replace all may replace things twice, if the replace string is a
+  substring of the findstring.
+
+- the directory line in the common-file-dialogs is confusing
+
+- embedded snips should be reset on the styles-fixed? ivar
+
+- "scale" in open-viewport does effect the size
+  of the viewport, but is ignored by at least
+  draw-line into that viewport.
+	
+- you cannot break (read)

@@ -11,7 +11,6 @@
  editor-data%
  editor-data-class%
  editor-data-class-list%
- pixel-dc<%>
  check-for-break
  clipboard<%>
  clipboard-client%

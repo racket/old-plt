@@ -124,25 +124,14 @@ static bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx,
 
 @END
 
-@CLASSBASE wxCanvasDC "pixel-dc":"dc"
-@INTERFACE "pixel-dc"
-
-@CLASSID wxTYPE_DC_CANVAS
-
-@ "get-pixel" : bool GetPixel(float,float,wxColour^)
-
-@ "begin-set-pixel" : void BeginSetPixel()
-@ "end-set-pixel" : void EndSetPixel()
-@ "set-pixel" : void SetPixel(float,float,wxColour^)
-
-@END
-
-
-@CLASSBASE wxMemoryDC "bitmap-dc":"pixel-dc"
+@CLASSBASE wxMemoryDC "bitmap-dc":"dc"
 
 @CLASSID wxTYPE_DC_MEMORY
 
 @CREATOR ()
+
+@ "get-pixel" : bool GetPixel(float,float,wxColour^)
+@ "set-pixel" : void SetPixel(float,float,wxColour^)
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);
 @ "get-bitmap" : wxBitmap^ GetObject();

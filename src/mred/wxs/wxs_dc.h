@@ -26,16 +26,10 @@ void objscheme_setup_wxDC(void *env);
 int objscheme_istype_wxDC(Scheme_Object *obj, const char *stop, int nullOK);
 Scheme_Object *objscheme_bundle_wxDC(class wxDC *realobj);
 class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int nullOK);
-extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
-#endif
-void objscheme_setup_wxCanvasDC(void *env);
-#ifndef WXS_SETUP_ONLY
-int objscheme_istype_wxCanvasDC(Scheme_Object *obj, const char *stop, int nullOK);
-Scheme_Object *objscheme_bundle_wxCanvasDC(class wxCanvasDC *realobj);
-class wxCanvasDC *objscheme_unbundle_wxCanvasDC(Scheme_Object *obj, const char *where, int nullOK);
 extern Scheme_Object *objscheme_bundle_wxBitmap(class wxBitmap *);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
+extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxMemoryDC(void *env);
 #ifndef WXS_SETUP_ONLY

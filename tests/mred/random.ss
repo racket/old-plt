@@ -605,13 +605,23 @@
 		(apply-args v dest name k))
 	      vs)))
 
-(define (apply-bad-args v dest name k)
+(define (apply-bad-args v dest name k bad)
   (fprintf (thread-output-port) "~a: ~s" name v)
   (flush-output (thread-output-port))
   (with-handlers ([exn:application:type?
 		   (lambda (x)
 		     (fprintf (thread-output-port) ": exn: ~a~n"
 			      (exn-message x))
+		     ;; Check for expected bad value in exn record
+		     (unless (eqv? bad (exn:application-value x))
+		       (if (or (and (box? bad) (eqv? (unbox bad) (exn:application-value x)))
+			       (and (pair? bad) (null? (cdr bad)) 
+				    (eqv? (car bad) (exn:application-value x))))
+			   (fprintf (thread-output-port) 
+				    "  BOX/PAIR CONTEXT MISMATCH: ~a~n" bad)
+			   (fprintf (thread-output-port) 
+				    "  EXN CONTENT MISMATCH: ~a != ~a~n"
+				    (exn:application-value x) bad)))
 		     ;; Check that exn is from the right place:
 		     (let ([class (if (list? name) 
 				      (let ([n (car name)])
@@ -652,7 +662,7 @@
 			      (map posargs-good pres)
 			      (list bad)
 			      (map posargs-good (cdr posts)))
-			     dest name k))
+			     dest name k bad))
 	   (posargs-bads (car posts)))
 	  (loop (append pres (list (car posts))) (cdr posts))))])))
 

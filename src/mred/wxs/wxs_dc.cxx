@@ -1398,176 +1398,6 @@ class wxDC *objscheme_unbundle_wxDC(Scheme_Object *obj, const char *where, int n
 
 
 
-class os_wxCanvasDC : public wxCanvasDC {
- public:
-
-  ~os_wxCanvasDC();
-};
-
-Scheme_Object *os_wxCanvasDC_class;
-
-Scheme_Object *os_wxCanvasDC_interface;
-
-os_wxCanvasDC::~os_wxCanvasDC()
-{
-    objscheme_destroy(this, (Scheme_Object *)__gc_external);
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDCSetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  class wxColour* x2;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "set-pixel in pixel-dc<%>");
-  x1 = objscheme_unbundle_float(p[1], "set-pixel in pixel-dc<%>");
-  x2 = objscheme_unbundle_wxColour(p[2], "set-pixel in pixel-dc<%>", 1);
-
-  
-  ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->SetPixel(x0, x1, x2);
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDCEndSetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  
-  ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->EndSetPixel();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDCBeginSetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-
-  
-
-  
-  ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->BeginSetPixel();
-
-  
-  
-  return scheme_void;
-}
-
-#pragma argsused
-static Scheme_Object *os_wxCanvasDCGetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  Bool r;
-  objscheme_check_valid(obj);
-  float x0;
-  float x1;
-  class wxColour* x2;
-
-  
-  x0 = objscheme_unbundle_float(p[0], "get-pixel in pixel-dc<%>");
-  x1 = objscheme_unbundle_float(p[1], "get-pixel in pixel-dc<%>");
-  x2 = objscheme_unbundle_wxColour(p[2], "get-pixel in pixel-dc<%>", 1);
-
-  
-  r = ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->GetPixel(x0, x1, x2);
-
-  
-  
-  return (r ? scheme_true : scheme_false);
-}
-
-void objscheme_setup_wxCanvasDC(void *env)
-{
-if (os_wxCanvasDC_class) {
-    objscheme_add_global_class(os_wxCanvasDC_class, "pixel-dc%", env);
-    objscheme_add_global_interface(os_wxCanvasDC_interface, "pixel-dc" "<%>", env);
-} else {
-  os_wxCanvasDC_class = objscheme_def_prim_class(env, "pixel-dc%", "dc%", NULL, 4);
-
- scheme_add_method_w_arity(os_wxCanvasDC_class, "set-pixel", os_wxCanvasDCSetPixel, 3, 3);
- scheme_add_method_w_arity(os_wxCanvasDC_class, "end-set-pixel", os_wxCanvasDCEndSetPixel, 0, 0);
- scheme_add_method_w_arity(os_wxCanvasDC_class, "begin-set-pixel", os_wxCanvasDCBeginSetPixel, 0, 0);
- scheme_add_method_w_arity(os_wxCanvasDC_class, "get-pixel", os_wxCanvasDCGetPixel, 3, 3);
-
-
-  scheme_made_class(os_wxCanvasDC_class);
-
-  os_wxCanvasDC_interface = scheme_class_to_interface(os_wxCanvasDC_class, "pixel-dc" "<%>");
-
-  objscheme_add_global_interface(os_wxCanvasDC_interface, "pixel-dc" "<%>", env);
-  objscheme_install_bundler((Objscheme_Bundler)objscheme_bundle_wxCanvasDC, wxTYPE_DC_CANVAS);
-
-}
-}
-
-int objscheme_istype_wxCanvasDC(Scheme_Object *obj, const char *stop, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
-  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
-      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxCanvasDC_class))
-    return 1;
-  else {
-    if (!stop)
-       return 0;
-    scheme_wrong_type(stop, nullOK ? "pixel-dc% object or " XC_NULL_STR: "pixel-dc% object", -1, 0, &obj);
-    return 0;
-  }
-}
-
-Scheme_Object *objscheme_bundle_wxCanvasDC(class wxCanvasDC *realobj)
-{
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
-
-  if (!realobj) return XC_SCHEME_NULL;
-
-  if (realobj->__gc_external)
-    return (Scheme_Object *)realobj->__gc_external;
-  if ((realobj->__type != wxTYPE_DC_CANVAS) && (sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
-    return sobj;
-  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxCanvasDC_class);
-
-  obj->primdata = realobj;
-  objscheme_register_primpointer(&obj->primdata);
-  obj->primflag = 0;
-
-  realobj->__gc_external = (void *)obj;
-  objscheme_backpointer(&realobj->__gc_external);
-  return (Scheme_Object *)obj;
-}
-
-class wxCanvasDC *objscheme_unbundle_wxCanvasDC(Scheme_Object *obj, const char *where, int nullOK)
-{
-  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
-
-  (void)objscheme_istype_wxCanvasDC(obj, where, nullOK);
-  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
-  objscheme_check_valid(obj);
-  if (o->primflag)
-    return (os_wxCanvasDC *)o->primdata;
-  else
-    return (wxCanvasDC *)o->primdata;
-}
-
-
-
-
-
-
 
 class os_wxMemoryDC : public wxMemoryDC {
  public:
@@ -1627,6 +1457,51 @@ static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMemoryDCSetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  float x0;
+  float x1;
+  class wxColour* x2;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "set-pixel in bitmap-dc%");
+  x1 = objscheme_unbundle_float(p[1], "set-pixel in bitmap-dc%");
+  x2 = objscheme_unbundle_wxColour(p[2], "set-pixel in bitmap-dc%", 1);
+
+  
+  ((wxMemoryDC *)((Scheme_Class_Object *)obj)->primdata)->SetPixel(x0, x1, x2);
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMemoryDCGetPixel(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  Bool r;
+  objscheme_check_valid(obj);
+  float x0;
+  float x1;
+  class wxColour* x2;
+
+  
+  x0 = objscheme_unbundle_float(p[0], "get-pixel in bitmap-dc%");
+  x1 = objscheme_unbundle_float(p[1], "get-pixel in bitmap-dc%");
+  x2 = objscheme_unbundle_wxColour(p[2], "get-pixel in bitmap-dc%", 1);
+
+  
+  r = ((wxMemoryDC *)((Scheme_Class_Object *)obj)->primdata)->GetPixel(x0, x1, x2);
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxMemoryDC *realobj;
@@ -1650,10 +1525,12 @@ void objscheme_setup_wxMemoryDC(void *env)
 if (os_wxMemoryDC_class) {
     objscheme_add_global_class(os_wxMemoryDC_class, "bitmap-dc%", env);
 } else {
-  os_wxMemoryDC_class = objscheme_def_prim_class(env, "bitmap-dc%", "pixel-dc%", os_wxMemoryDC_ConstructScheme, 2);
+  os_wxMemoryDC_class = objscheme_def_prim_class(env, "bitmap-dc%", "dc%", os_wxMemoryDC_ConstructScheme, 4);
 
  scheme_add_method_w_arity(os_wxMemoryDC_class, "get-bitmap", os_wxMemoryDCGetObject, 0, 0);
  scheme_add_method_w_arity(os_wxMemoryDC_class, "set-bitmap", os_wxMemoryDCSelectObject, 1, 1);
+ scheme_add_method_w_arity(os_wxMemoryDC_class, "set-pixel", os_wxMemoryDCSetPixel, 3, 3);
+ scheme_add_method_w_arity(os_wxMemoryDC_class, "get-pixel", os_wxMemoryDCGetPixel, 3, 3);
 
 
   scheme_made_class(os_wxMemoryDC_class);

@@ -43,7 +43,7 @@ static void FillZero(int *a, int *b) {
 
 @ "popup-menu" : void PopupMenu(wxMenu!, rint[0|10000], rint[0|10000]);
 
-@ "get-dc" : wxCanvasDC! GetDC();
+@ "get-dc" : wxDC! GetDC();
 
 // @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 @ "get-virtual-size" : void GetVirtualSize(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]

@@ -1499,7 +1499,6 @@ static void wxScheme_Install(Scheme_Env *WXUNUSED(env), void *global_env)
   objscheme_setup_wxKeyEvent(global_env);
   objscheme_setup_wxMouseEvent(global_env);
   objscheme_setup_wxDC(global_env);
-  objscheme_setup_wxCanvasDC(global_env);
   objscheme_setup_wxMemoryDC(global_env);
   objscheme_setup_wxPostScriptDC(global_env);
   objscheme_setup_basePrinterDC(global_env);

@@ -182,7 +182,10 @@
 @SYM "long-dash" : wxLONG_DASH
 @SYM "short-dash" : wxSHORT_DASH
 @SYM "dot-dash" : wxDOT_DASH
-@SYM "stipple" : wxSTIPPLE
+@SYM "xor-dot" : wxXOR_DOT
+@SYM "xor-long-dash" : wxXOR_LONG_DASH
+@SYM "xor-short-dash" : wxXOR_SHORT_DASH
+@SYM "xor-dot-dash" : wxXOR_DOT_DASH
 @ENDSYMBOLS
 
 @BEGINSYMBOLS join > ONE

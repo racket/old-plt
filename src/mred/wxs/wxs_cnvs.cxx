@@ -918,7 +918,7 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Sche
 static Scheme_Object *os_wxCanvasGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  class wxCanvasDC* r;
+  class wxDC* r;
   objscheme_check_valid(obj);
 
   
@@ -928,7 +928,7 @@ static Scheme_Object *os_wxCanvasGetDC(Scheme_Object *obj, int n,  Scheme_Object
 
   
   
-  return objscheme_bundle_wxCanvasDC(r);
+  return objscheme_bundle_wxDC(r);
 }
 
 #pragma argsused

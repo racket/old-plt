@@ -1869,7 +1869,10 @@ static Scheme_Object *penStyle_wxDOT_sym = NULL;
 static Scheme_Object *penStyle_wxLONG_DASH_sym = NULL;
 static Scheme_Object *penStyle_wxSHORT_DASH_sym = NULL;
 static Scheme_Object *penStyle_wxDOT_DASH_sym = NULL;
-static Scheme_Object *penStyle_wxSTIPPLE_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_DOT_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_LONG_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_SHORT_DASH_sym = NULL;
+static Scheme_Object *penStyle_wxXOR_DOT_DASH_sym = NULL;
 
 static void init_symset_penStyle(void) {
   penStyle_wxTRANSPARENT_sym = scheme_intern_symbol("transparent");
@@ -1879,11 +1882,14 @@ static void init_symset_penStyle(void) {
   penStyle_wxLONG_DASH_sym = scheme_intern_symbol("long-dash");
   penStyle_wxSHORT_DASH_sym = scheme_intern_symbol("short-dash");
   penStyle_wxDOT_DASH_sym = scheme_intern_symbol("dot-dash");
-  penStyle_wxSTIPPLE_sym = scheme_intern_symbol("stipple");
+  penStyle_wxXOR_DOT_sym = scheme_intern_symbol("xor-dot");
+  penStyle_wxXOR_LONG_DASH_sym = scheme_intern_symbol("xor-long-dash");
+  penStyle_wxXOR_SHORT_DASH_sym = scheme_intern_symbol("xor-short-dash");
+  penStyle_wxXOR_DOT_DASH_sym = scheme_intern_symbol("xor-dot-dash");
 }
 
 static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
-  if (!penStyle_wxSTIPPLE_sym) init_symset_penStyle();
+  if (!penStyle_wxXOR_DOT_DASH_sym) init_symset_penStyle();
   if (0) { }
   else if (v == penStyle_wxTRANSPARENT_sym) { return wxTRANSPARENT; }
   else if (v == penStyle_wxSOLID_sym) { return wxSOLID; }
@@ -1892,13 +1898,16 @@ static int unbundle_symset_penStyle(Scheme_Object *v, const char *where) {
   else if (v == penStyle_wxLONG_DASH_sym) { return wxLONG_DASH; }
   else if (v == penStyle_wxSHORT_DASH_sym) { return wxSHORT_DASH; }
   else if (v == penStyle_wxDOT_DASH_sym) { return wxDOT_DASH; }
-  else if (v == penStyle_wxSTIPPLE_sym) { return wxSTIPPLE; }
+  else if (v == penStyle_wxXOR_DOT_sym) { return wxXOR_DOT; }
+  else if (v == penStyle_wxXOR_LONG_DASH_sym) { return wxXOR_LONG_DASH; }
+  else if (v == penStyle_wxXOR_SHORT_DASH_sym) { return wxXOR_SHORT_DASH; }
+  else if (v == penStyle_wxXOR_DOT_DASH_sym) { return wxXOR_DOT_DASH; }
   if (where) scheme_wrong_type(where, "penStyle symbol", -1, 0, &v);
   return 0;
 }
 
 static int istype_symset_penStyle(Scheme_Object *v, const char *where) {
-  if (!penStyle_wxSTIPPLE_sym) init_symset_penStyle();
+  if (!penStyle_wxXOR_DOT_DASH_sym) init_symset_penStyle();
   if (0) { }
   else if (v == penStyle_wxTRANSPARENT_sym) { return 1; }
   else if (v == penStyle_wxSOLID_sym) { return 1; }
@@ -1907,13 +1916,16 @@ static int istype_symset_penStyle(Scheme_Object *v, const char *where) {
   else if (v == penStyle_wxLONG_DASH_sym) { return 1; }
   else if (v == penStyle_wxSHORT_DASH_sym) { return 1; }
   else if (v == penStyle_wxDOT_DASH_sym) { return 1; }
-  else if (v == penStyle_wxSTIPPLE_sym) { return 1; }
+  else if (v == penStyle_wxXOR_DOT_sym) { return 1; }
+  else if (v == penStyle_wxXOR_LONG_DASH_sym) { return 1; }
+  else if (v == penStyle_wxXOR_SHORT_DASH_sym) { return 1; }
+  else if (v == penStyle_wxXOR_DOT_DASH_sym) { return 1; }
   if (where) scheme_wrong_type(where, "penStyle symbol", -1, 0, &v);
   return 0;
 }
 
 static Scheme_Object *bundle_symset_penStyle(int v) {
-  if (!penStyle_wxSTIPPLE_sym) init_symset_penStyle();
+  if (!penStyle_wxXOR_DOT_DASH_sym) init_symset_penStyle();
   switch (v) {
   case wxTRANSPARENT: return penStyle_wxTRANSPARENT_sym;
   case wxSOLID: return penStyle_wxSOLID_sym;
@@ -1922,7 +1934,10 @@ static Scheme_Object *bundle_symset_penStyle(int v) {
   case wxLONG_DASH: return penStyle_wxLONG_DASH_sym;
   case wxSHORT_DASH: return penStyle_wxSHORT_DASH_sym;
   case wxDOT_DASH: return penStyle_wxDOT_DASH_sym;
-  case wxSTIPPLE: return penStyle_wxSTIPPLE_sym;
+  case wxXOR_DOT: return penStyle_wxXOR_DOT_sym;
+  case wxXOR_LONG_DASH: return penStyle_wxXOR_LONG_DASH_sym;
+  case wxXOR_SHORT_DASH: return penStyle_wxXOR_SHORT_DASH_sym;
+  case wxXOR_DOT_DASH: return penStyle_wxXOR_DOT_DASH_sym;
   default: return NULL;
   }
 }

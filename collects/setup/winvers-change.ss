@@ -29,7 +29,7 @@
            "__~a_lib_iname\0")))
 
   (define version-string
-    (cond [(regexp-match "^([0-9]+)(?:[.]([0-9]+))?$" (version)) =>
+    (cond [(regexp-match "^([0-9]+(?:p[0-9])?)(?:[.]([0-9]+))?$" (version)) =>
            (lambda (m)
              (let ([major (cadr m)] [minor (or (caddr m) "")])
                (string-append (cadr m) "_"

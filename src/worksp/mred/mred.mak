@@ -110,11 +110,12 @@ CLEAN :
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(OUTDIR)\MrEd.pdb"
 	-@erase "..\..\..\MrEd.exe"
+	-@erase "..\..\..\MrEd.ilk"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "GC_DLL" /Fp"$(INTDIR)\mred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 MTL_PROJ=/nologo /D "NDEBUG" /mktyplib203 /win32 
 RSC_PROJ=/l 0x409 /fo"$(INTDIR)\Mred.res" /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "NDEBUG" 
 BSC32=bscmake.exe
@@ -122,7 +123,7 @@ BSC32_FLAGS=/nologo /o"$(OUTDIR)\mred.bsc"
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmred\Release\libmred.lib ..\libmzsch\Release\libmzsch.lib ..\libmzgc\Release\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:no /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe" 
+LINK32_FLAGS=..\libmred\Debug\libmred.lib ..\libmzsch\Debug\libmzsch.lib ..\libmzgc\Debug\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:yes /pdb:"$(OUTDIR)\MrEd.pdb" /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\mrmain.obj" \
 	"$(INTDIR)\Mred.res" \

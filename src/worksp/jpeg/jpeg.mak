@@ -228,7 +228,7 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /GX /Od /I "../jpeg" /D "WIN32" /D "DEBUG" /D "_MBCS" /D "_LIB" /Fp"$(INTDIR)\jpeg.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MTd /W3 /GX /Od /I "../jpeg" /D "WIN32" /D "DEBUG" /D "_MBCS" /D "_LIB" /D "GC_DLL" /Fp"$(INTDIR)\jpeg.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\jpeg.bsc" 
 BSC32_SBRS= \

@@ -112,17 +112,18 @@ CLEAN :
 	-@erase "$(OUTDIR)\libmred.lib"
 	-@erase "$(OUTDIR)\libmred.pdb"
 	-@erase "..\..\..\libmred.dll"
+	-@erase "..\..\..\libmred.ilk"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /GX /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBMRED_EXPORTS" /Fp"$(INTDIR)\libmred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIBMRED_EXPORTS" /D "GC_DLL" /Fp"$(INTDIR)\libmred.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmred.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzsch/release/libmzsch.lib ../libmzgc/release/libmzgc.lib ../wxs/release/wxs.lib ../wxme/release/wxme.lib ../wxutils/release/wxutils.lib ../jpeg/release/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmred.pdb" /debug /machine:I386 /out:"../../../libmred.dll" /implib:"$(OUTDIR)\libmred.lib" 
+LINK32_FLAGS=../libmzsch/debug/libmzsch.lib ../libmzgc/debug/libmzgc.lib ../wxs/debug/wxs.lib ../wxme/debug/wxme.lib ../wxutils/debug/wxutils.lib ../jpeg/debug/jpeg.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib glu32.lib opengl32.lib winmm.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmred.pdb" /debug /machine:I386 /out:"../../../libmred.dll" /implib:"$(OUTDIR)\libmred.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\MRED.obj" \
 	"$(INTDIR)\MREDMSW.obj" \

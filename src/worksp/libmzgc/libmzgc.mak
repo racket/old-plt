@@ -131,17 +131,18 @@ CLEAN :
 	-@erase "$(OUTDIR)\libmzgc.lib"
 	-@erase "$(OUTDIR)\libmzgc.pdb"
 	-@erase "..\..\..\libmzgc.dll"
+	-@erase "..\..\..\libmzgc.ilk"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /GX /Zi /Od /I "../../mzscheme/gc/include" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_BUILD" /D "USE_MSVC_MD_LIBRARY" /D "MD_LIB_MAIN" /D "SILENT" /D "OLD_BLOCK_ALLOC" /D "LARGE_CONFIG" /D "ATOMIC_UNCOLLECTABLE" /D INITIAL_MARK_STACK_SIZE=8192 /Fp"$(INTDIR)\libmzgc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "../../mzscheme/gc/include" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_BUILD" /D "MD_LIB_MAIN" /D "SILENT" /D "OLD_BLOCK_ALLOC" /D "LARGE_CONFIG" /D "ATOMIC_UNCOLLECTABLE" /D INITIAL_MARK_STACK_SIZE=8192 /D "GC_DLL" /Fp"$(INTDIR)\libmzgc.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzgc.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzgc.pdb" /debug /machine:I386 /out:"../../../libmzgc.dll" /implib:"$(OUTDIR)\libmzgc.lib" 
+LINK32_FLAGS=kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzgc.pdb" /debug /machine:I386 /out:"../../../libmzgc.dll" /implib:"$(OUTDIR)\libmzgc.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Allchblk.obj" \
 	"$(INTDIR)\Alloc.obj" \

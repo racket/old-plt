@@ -70,7 +70,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -80,7 +80,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 ../libmzgc/Release/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmzsch.dll"
-# ADD LINK32 ../libmzgc/Release/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmzsch.dll"
+# ADD LINK32 ../libmzgc/Debug/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /debug /machine:I386 /out:"../../../libmzsch.dll"
 
 !ENDIF 
 

@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /Zi /O2 /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "NDEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\gc" /I "..\..\wxwindow\include\base" /I "..\..\wxwindow\include\msw" /I "..\..\mzscheme\include" /I "..\..\mred\wxme" /I "..\..\mzscheme\utils" /I "..\..\wxwindow\contrib\fafa" /D "DEBUG" /D "__STDC__" /D "WIN32" /D "_WINDOWS" /D "__WINDOWS__" /D "GC_DLL" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /i "..\..\wxwindow\include\msw" /i "..\..\wxwindow\contrib\fafa" /d "NDEBUG"
@@ -82,8 +82,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 ..\libmred\Release\libmred.lib ..\libmzsch\Release\libmzsch.lib ..\libmzgc\Release\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
 # SUBTRACT BASE LINK32 /incremental:yes
-# ADD LINK32 ..\libmred\Release\libmred.lib ..\libmzsch\Release\libmzsch.lib ..\libmzgc\Release\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
-# SUBTRACT LINK32 /incremental:yes
+# ADD LINK32 ..\libmred\Debug\libmred.lib ..\libmzsch\Debug\libmzsch.lib ..\libmzgc\Debug\libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib winmm.lib glu32.lib opengl32.lib /nologo /subsystem:windows /incremental:yes /debug /machine:I386 /nodefaultlib:"libcd.lib" /out:"..\..\..\MrEd.exe"
 
 !ENDIF 
 
@@ -97,6 +96,13 @@ LINK32=link.exe
 # Begin Source File
 
 SOURCE=.\Mred.rc
+
+!IF  "$(CFG)" == "mred - Win32 Release"
+
+!ELSEIF  "$(CFG)" == "mred - Win32 Debug"
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 

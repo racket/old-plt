@@ -217,17 +217,18 @@ CLEAN :
 	-@erase "$(OUTDIR)\libmzsch.lib"
 	-@erase "$(OUTDIR)\libmzsch.pdb"
 	-@erase "..\..\..\libmzsch.dll"
+	-@erase "..\..\..\libmzsch.ilk"
 
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MD /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MTd /W3 /Zi /Od /I "..\..\mzscheme\include" /I "..\..\mzscheme\gc" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "__STDC__" /D "_USRDLL" /D "GC_DLL" /Fp"$(INTDIR)\libmzsch.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\libmzsch.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=../libmzgc/Release/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:no /pdb:"$(OUTDIR)\libmzsch.pdb" /debug /machine:I386 /out:"../../../libmzsch.dll" /implib:"$(OUTDIR)\libmzsch.lib" 
+LINK32_FLAGS=../libmzgc/Debug/libmzgc.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /dll /incremental:yes /pdb:"$(OUTDIR)\libmzsch.pdb" /debug /machine:I386 /out:"../../../libmzsch.dll" /implib:"$(OUTDIR)\libmzsch.lib" 
 LINK32_OBJS= \
 	"$(INTDIR)\Bignum.obj" \
 	"$(INTDIR)\Bool.obj" \

@@ -71,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MD /W3 /GX /Zi /O2 /I "../../mzscheme/gc/include" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_BUILD" /D "USE_MSVC_MD_LIBRARY" /D "MD_LIB_MAIN" /D "SILENT" /D "OLD_BLOCK_ALLOC" /D "LARGE_CONFIG" /D "ATOMIC_UNCOLLECTABLE" /D INITIAL_MARK_STACK_SIZE=8192 /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /Zi /Od /I "../../mzscheme/gc/include" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_BUILD" /D "USE_MSVC_MD_LIBRARY" /D "MD_LIB_MAIN" /D "SILENT" /D "OLD_BLOCK_ALLOC" /D "LARGE_CONFIG" /D "ATOMIC_UNCOLLECTABLE" /D INITIAL_MARK_STACK_SIZE=8192 /YX /FD /c
+# ADD CPP /nologo /MTd /W3 /GX /Zi /Od /I "../../mzscheme/gc/include" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "GC_BUILD" /D "MD_LIB_MAIN" /D "SILENT" /D "OLD_BLOCK_ALLOC" /D "LARGE_CONFIG" /D "ATOMIC_UNCOLLECTABLE" /D INITIAL_MARK_STACK_SIZE=8192 /D "GC_DLL" /YX /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x409 /d "NDEBUG"
@@ -82,7 +82,7 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmzgc.dll"
 # SUBTRACT BASE LINK32 /pdb:none /force
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /out:"../../../libmzgc.dll"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /incremental:yes /debug /machine:I386 /out:"../../../libmzgc.dll"
 # SUBTRACT LINK32 /pdb:none /force
 
 !ENDIF 

@@ -127,13 +127,13 @@ CLEAN :
 "$(OUTDIR)" :
     if not exist "$(OUTDIR)/$(NULL)" mkdir "$(OUTDIR)"
 
-CPP_PROJ=/nologo /MT /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "DEBUG" /D "_CONSOLE" /D "USE_MSVC_MD_LIBRARY" /Fp"$(INTDIR)\mzscheme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
+CPP_PROJ=/nologo /MTd /W3 /GX /Zi /Od /I "..\..\mzscheme\include" /D "WIN32" /D "DEBUG" /D "_CONSOLE" /D "GC_DLL" /Fp"$(INTDIR)\mzscheme.pch" /YX /Fo"$(INTDIR)\\" /Fd"$(INTDIR)\\" /FD /c 
 BSC32=bscmake.exe
 BSC32_FLAGS=/nologo /o"$(OUTDIR)\mzscheme.bsc" 
 BSC32_SBRS= \
 	
 LINK32=link.exe
-LINK32_FLAGS=..\libmzgc\Release\libmzgc.lib ..\libmzsch\Release\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"..\..\..\MzScheme.exe" 
+LINK32_FLAGS=..\libmzgc\Debug\libmzgc.lib ..\libmzsch\Debug\libmzsch.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib wsock32.lib /nologo /subsystem:console /incremental:no /pdb:"$(OUTDIR)\MzScheme.pdb" /debug /machine:I386 /out:"..\..\..\MzScheme.exe" 
 LINK32_OBJS= \
 	"$(INTDIR)\Main.obj" \
 	"$(INTDIR)\mzscheme.res" \

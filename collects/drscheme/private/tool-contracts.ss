@@ -1512,13 +1512,13 @@
      (render-value (any? 
                     any?
                     output-port?
-                    ((union false? (is-a?/c snip%)) . -> . void?) 
+                    (union false? ((union false? (is-a?/c snip%)) . -> . void?))
                     . -> .
                     void?))
      (render-value/format (any? 
                            any?
                            output-port?
-                           ((union false? (is-a?/c snip%)) . -> . void?)
+                           (union false? ((union false? (is-a?/c snip%)) . -> . void?))
                            number?
                            . -> .
                            any))

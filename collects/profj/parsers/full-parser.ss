@@ -705,11 +705,11 @@
 	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN)
-        (make-inner-alloc #f (build-src 7) $1 $4 (reverse $6) #f)]
+        (make-inner-alloc #f (build-src 7) $1 (make-id $4 (build-src 4 4)) (reverse $6) #f)]
 ;	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Primary PERIOD new IDENTIFIER O_PAREN C_PAREN)
-        (make-inner-alloc #f (build-src 6) $1 $4 null #f)]
+        (make-inner-alloc #f (build-src 6) $1 (make-id $4 (build-src 4 4)) null #f)]
 ;	(unimplemented-1.1 (build-src 1))]
        ;; 1.1
        [(Name PERIOD new IDENTIFIER O_PAREN ArgumentList C_PAREN ClassBody)
@@ -755,7 +755,7 @@
       (FieldAccess
        [(Primary PERIOD IDENTIFIER) 
         (make-access #f (build-src 3) (make-field-access $1 
-                                                                 (make-id $3 (build-src 3 3)) #f))]
+                                                         (make-id $3 (build-src 3 3)) #f))]
        [(super PERIOD IDENTIFIER) 
         (make-access #f (build-src 3)
                          (make-field-access (make-special-name #f (build-src 1)

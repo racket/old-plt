@@ -492,7 +492,7 @@
   (define (get-assigns-exp exp)
     (cond
       ((or (not exp) (literal? exp) (special-name? exp)
-           (class-alloc? exp)) null)
+           (class-alloc? exp) (inner-alloc? exp)) null)
       ((bin-op? exp) (append (get-assigns-exp (bin-op-left exp))
                              (get-assigns-exp (bin-op-right exp))))
       ((access? exp) (if (field-access? (access-name exp))
@@ -1153,6 +1153,18 @@
                                            env
                                            level
                                            static?)))
+        ((inner-alloc? exp)
+         (set-expr-type exp
+                        (check-inner-alloc exp 
+                                           (check-sub-expr (inner-alloc-obj exp))
+                                           (inner-alloc-name exp)
+                                           (map check-sub-expr (inner-alloc-args exp))
+                                           (expr-src exp)
+                                           type-recs
+                                           current-class
+                                           env
+                                           level
+                                           static?)))
         ((array-alloc? exp)
          (set-expr-type exp
                         (check-array-alloc (array-alloc-name exp)
@@ -1746,8 +1758,29 @@
           (class-access-error 'pri type src))
         (when (and (memq 'protected mods) (not (is-eq-subclass? this type)))
           (class-access-error 'pro type src))
-        (set-class-alloc-ctor-record! exp const)
+        ((if (class-alloc? exp) set-class-alloc-ctor-record! set-inner-alloc-ctor-record!)exp const)
         type)))
+  
+  ;check-inner-alloc exp type id (list type) src type-records (list string) env symbol bool -> type
+  (define (check-inner-alloc exp obj-type name args src type-recs c-class env level static?)
+    (let ((class-rec (send type-recs get-class-record obj-type)))
+      (unless (ref-type? obj-type) (inner-on-non-obj obj-type src))
+      (unless (member (id-string name) (map inner-record-name (class-record-inners class-rec)))
+        (check-inner-error obj-type name src))
+      (set-id-string! name (string-append (ref-type-class/iface obj-type) "." (id-string name)))
+      (check-class-alloc exp (make-name name null (id-src name)) args src type-recs c-class env level static?)))
+  
+  (define (inner-on-non-obj type src)
+    (let ((t (type->ext-name type)))
+      (raise-error t
+                   (format "class invocation cannot be preceeded by non-object value ~a" t)
+                   t src)))
+  (define (check-inner-error type name src)
+    (let ((t (type->ext-name type))
+          (n (id->ext-name name)))
+      (raise-error n
+                   (format "class ~a does not contain an inner class ~a" t n)
+                   t src)))
 
   ;check-ctor-args: (list type) (list type) type src symbol type-records -> void
   (define (check-ctor-args args atypes name src level type-recs)

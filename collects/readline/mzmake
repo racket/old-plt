@@ -6,9 +6,9 @@ string=? ; fi
 string=? ; exec ${PLTHOME}/bin/mzscheme -qr $0 "$@"
 
 (require-library "make.ss" "make")
-(require-library "link.ss" "mzscheme" "dynext")
-(require-library "compile.ss" "mzscheme" "dynext")
-(require-library "file.ss" "mzscheme" "dynext")
+(require-library "link.ss" "dynext")
+(require-library "compile.ss" "dynext")
+(require-library "file.ss" "dynext")
 
 (require-library "functio.ss")
 

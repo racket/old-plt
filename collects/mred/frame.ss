@@ -66,7 +66,7 @@
 
     (define time-edit (make-object mred:edit:edit%))
     (send time-edit lock #t)
-    '(letrec ([loop
+    (letrec ([loop
 	      (lambda ()
 		(let* ([date (seconds->date (current-seconds))]
 		       [minute (date-minute date)])
@@ -117,8 +117,8 @@
 		   (t)
 		   (super-on-close))))])
 	  (sequence
-	    (send* status-line-panel (border 2) (spacing 2))
-	    (send* horiz-panel (border 0) (spacing 0))
+	    (send* status-line-panel (border 2) (spacing 2) (stretchable-in-y #f))
+	    (send* horiz-panel (border 0) (spacing 0) (stretchable-in-y #f))
 	    (send* super-panel (border 0) (spacing 0))
 	    (send* canvas (set-media time-edit) (user-min-height 35) (user-min-width 65)
 		          (stretchable-in-x #f))
@@ -157,7 +157,7 @@
 	      (set-menu-bar menu-bar)
 	      (send menu-bar set-frame this))))))
 
-    (define menu-frame% (make-menu-frame% empty-frame%))
+    (define menu-frame% (make-menu-frame% status-line-frame%))
 
     (define tab (string #\tab))
     (define make-standard-menus-frame%

@@ -754,70 +754,69 @@ do not occur (fallbacks that are never fallen back to):
 
      beginner:      |#(
 
-  term:internal-def-not-foll-by-expr
-  term:duplicate-interal-def
+  term:internal-def-not-foll-by-expr   ;; *
+  term:duplicate-interal-def           ;; *
   term:case/lambda-only-in-def
-  term:define-internal-invalid-posn
+  term:define-internal-invalid-posn    ;; *
   term:define-illegal-implicit-begin
   term:if-must-have-else
   term:quote-not-on-symbol
   term:cond-else-only-in-last
   term:cond-clause-not-in-q/a-fmt
   term:cond-=>-not-foll-by-1-rcvr
-  term:keyword-out-of-context
-  term:empty-combination
+  term:keyword-out-of-context          ;; *
+  term:empty-combination               ;; *
   term:app-first-term-not-var
   term:app-first-term-lambda-bound
-  term:expected-an-identifier
-  term:repeated-identifier
+  term:expected-an-identifier          ;; *
+  term:repeated-identifier             ;; *
   term:invalid-identifier
   term:proc-arity->=-1
-  term:set!-no-mutate-lambda-bound
+  term:set!-no-mutate-lambda-bound     ;; *
   term:def-not-at-top-level
-  term:cannot-bind-kwd
+  term:cannot-bind-kwd                 ;; *
   term:macro-error
-
 
 )#|  intermediate:  |#(
 
-  term:internal-def-not-foll-by-expr
-  term:duplicate-interal-def
-  term:define-internal-invalid-posn
+  term:internal-def-not-foll-by-expr  ;; *
+  term:duplicate-interal-def          ;; *
+  term:define-internal-invalid-posn   ;; *
   term:define-illegal-implicit-begin
   term:if-must-have-else
   term:cond-else-only-in-last
   term:cond-clause-not-in-q/a-fmt
   term:cond-=>-not-foll-by-1-rcvr
-  term:keyword-out-of-context
-  term:empty-combination
+  term:keyword-out-of-context         ;; *
+  term:empty-combination              ;; *
   term:app-first-term-not-var
   term:app-first-term-lambda-bound
-  term:expected-an-identifier
-  term:repeated-identifier
-  term:invalid-identifier
+  term:expected-an-identifier         ;; *
+  term:repeated-identifier            ;; *
+  term:invalid-identifier             ;; *
   term:proc-arity->=-1
-  term:set!-no-mutate-lambda-bound
+  term:set!-no-mutate-lambda-bound    ;; *
   term:def-not-at-top-level
-  term:cannot-bind-kwd
+  term:cannot-bind-kwd                ;; *
   term:macro-error
 
 
 )#|  advanced:      |#(
 
-  term:internal-def-not-foll-by-expr
-  term:duplicate-interal-def
-  term:define-internal-invalid-posn
+  term:internal-def-not-foll-by-expr   ;; *
+  term:duplicate-interal-def           ;; *
+  term:define-internal-invalid-posn    ;; *
   term:struct-not-id
   term:super-struct-invalid
   term:super-struct-not-id
   term:cond-else-only-in-last
   term:cond-clause-not-in-q/a-fmt
   term:cond-=>-not-foll-by-1-rcvr
-  term:keyword-out-of-context
-  term:empty-combination
-  term:expected-an-identifier
-  term:repeated-identifier
-  term:invalid-identifier
+  term:keyword-out-of-context          ;; *
+  term:empty-combination               ;; *
+  term:expected-an-identifier          ;; *
+  term:repeated-identifier             ;; *
+  term:invalid-identifier              ;; *
   term:def-not-at-top-level
   term:cannot-bind-kwd
   term:macro-error

@@ -332,7 +332,7 @@
 	  lib-dir
 	  #f)))
 
-  (define (fill-language-menu language-menu)
+  (define (fill-language-menu frame language-menu)
     (make-object mred:menu-item%
       "Choose Language..."
       language-menu
@@ -350,10 +350,12 @@
       "Add Teachpack..."
       language-menu
       (lambda (_1 _2)
-	(let ([lib-file (fw:finder:get-file 
-			 teachpack-directory
-			 "Select a Teachpack"
-			 ".*\\.(ss|scm)$")])
+	(let ([lib-file
+	       (parameterize ([fw:finder:dialog-parent-parameter frame])
+		 (fw:finder:get-file 
+		  teachpack-directory
+		  "Select a Teachpack"
+		  ".*\\.(ss|scm)$"))])
 	  (when lib-file
 	    (let ([old-pref (fw:preferences:get
 			     'drscheme:teachpack-file)])
@@ -361,7 +363,8 @@
 		(if (member new-item old-pref)
 		    (mred:message-box "DrScheme Teachpacks"
 				      (format "Already added ~a Teachpack"
-					      new-item))
+					      new-item)
+				      frame)
 		    (when (basis:teachpack-ok? lib-file)
 		      (fw:preferences:set
 		       'drscheme:teachpack-file

@@ -12,8 +12,8 @@
 
   (define basics<%> (interface (fw:frame:standard-menus<%>)))
 
-  (define (show-keybindings-to-user bindings)
-    (letrec ([f (make-object mred:dialog% "Keybindings" #f #f #f #f #f '(resize-border))]
+  (define (show-keybindings-to-user bindings frame)
+    (letrec ([f (make-object mred:dialog% "Keybindings" frame #f #f #f #f '(resize-border))]
 	     [bp (make-object mred:horizontal-panel% f)]
 	     [b-name (make-object mred:button% "Sort by Name" bp (lambda x (update-bindings #f)))]
 	     [b-key (make-object mred:button% "Sort by Key" bp (lambda x (update-bindings #t)))]
@@ -110,7 +110,7 @@
 			       (mzlib:function:quicksort
 				(hash-table-map table list)
 				(lambda (x y) (string-ci<=? (cadr x) (cadr y))))])
-			 (show-keybindings-to-user structured-list)))))
+			 (show-keybindings-to-user structured-list this)))))
                  (mred:bell)))])
       
       (override

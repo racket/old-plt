@@ -582,7 +582,9 @@
 			     (send results focus)
 			     (k (void)))))
 	      (unless found-something?
-		(message-box "Help Desk" (format "Nothing found for \"~a\"." given-find)))))
+		(message-box "Help Desk"
+			     (format "Nothing found for \"~a\"." given-find)
+			     f))))
 
 	  (define (start-search given-find search-level exactness)
 	    (let* ([editor (let ([e (send results get-editor)])

@@ -139,6 +139,8 @@
      [(message true-choice false-choice title)
       (get-choice message true-choice false-choice title 'disallow-close)]
      [(message true-choice false-choice title default-result)
+      (get-choice message true-choice false-choice title default-result #f)]
+     [(message true-choice false-choice title default-result parent)
       (letrec ([result default-result]
 	       [dialog (make-object 
                         (class dialog% ()
@@ -161,7 +163,7 @@
                                (set! result default-result)
                                (super-on-close))])
                           (sequence
-                            (super-init title))))]
+                            (super-init title parent))))]
 	       [on-true
 		(lambda args
 		  (set! result #t)

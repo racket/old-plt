@@ -165,12 +165,13 @@
 			  (make-object mred:image-snip% bitmap)
 			  (make-object mred:string-snip% "[open file]"))))
   
-  (define (no-user-evaluation-message)
+  (define (no-user-evaluation-message frame)
     (mred:message-box
      "Warning"
      (format "The evaluation thread is no longer running, ~
               so no evaluation can take place until ~
-              the next execution.")))
+              the next execution.")
+     frame))
 
   (define busy-cursor (make-object mred:cursor% 'watch))
   (unless (send busy-cursor ok?)
@@ -192,6 +193,7 @@
     (rec rep-text%
       (class/d super% (context)
         ((inherit insert change-style get-canvas
+		  get-active-canvas
                   set-styles-sticky
                   clear-undos set-caret-owner
                   clear-previous-expr-positions
@@ -962,7 +964,10 @@
             (unless (and user-thread (thread-running? user-thread))
               (lock #t)
               (unless shutting-down?
-		(no-user-evaluation-message)))))
+		(no-user-evaluation-message
+		 (let ([canvas (get-active-canvas)])
+		   (and canvas
+			(send canvas get-top-level-window))))))))
         (define need-interaction-cleanup? #f)
 
         (define saved-cursor #f)
@@ -1081,10 +1086,14 @@
                (mred:bell)]
               [ask-about-kill? 
                (if (fw:gui-utils:get-choice
-                    "Do you want to kill the evaluation?"
-                    "Just Break"
-                    "Kill"
-                    "Kill?")
+		    "Do you want to kill the evaluation?"
+		    "Just Break"
+		    "Kill"
+		    "Kill?"
+		    'diallow-close
+		    (let ([canvas (get-active-canvas)])
+		      (and canvas
+			   (send canvas get-top-level-window))))
                    (break-thread user-thread)
                    (custodian-shutdown-all user-custodian))]
               [else
@@ -1096,7 +1105,10 @@
 	    (shutdown)
 	    (send context enable-evaluation)
 	    (lock #t)
-	    (no-user-evaluation-message)))
+	    (no-user-evaluation-message
+	     (let ([canvas (get-active-canvas)])
+	       (and canvas
+		    (send canvas get-top-level-window))))))
 
         (define error-escape-k void)
         (define user-break-enabled #t)
@@ -1316,7 +1328,12 @@
 		    (let ([rep (current-rep-text)])
 		      (if rep
 			  (send rep report-unlocated-error msg #f)
-			  (mred:message-box "Uncaught Error" msg))))))
+			  (mred:message-box
+			   "Uncaught Error"
+			   msg
+			   (let ([canvas (send rep get-active-canvas)])
+			     (and canvas
+				  (send canvas get-top-level-window)))))))))
 	    
 	    (current-directory (or (send context get-directory) 
 				   drscheme:init:first-dir))

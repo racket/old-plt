@@ -4,7 +4,6 @@
         (lib "infotab.ss" "setup")
         
         ; for mzc
-        ;(define compile-prefix "mrflow")
         (define compile-omit-files '("test.ss" "tests.ss" "primitives.ss"))
         
         ; for DrScheme

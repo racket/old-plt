@@ -75,8 +75,8 @@
   
   (define (num-arg-err s expect given)
     (raise-syntax-error
-     #f
-     (format "expects ~a arguments, given ~a" expect given)
+     'regular-expression
+     (format "operator expects ~a arguments, given ~a" expect given)
      s))
   
   ;; parse : syntax-object -> re-ast
@@ -102,16 +102,14 @@
            (else (parse-assoc make-concat 
                               (map (lambda (x) (make-syms (list x) -1)) l))))))
       (()
-       (printf "here~n")
        (raise-syntax-error
         'regular-expression
-        "() is not valid"
+        "invalid regular expression"
         s))
       ((oper args ...)
        (let* ((op (syntax-object->datum (syntax oper)))
               (ar (syntax->list (syntax (args ...))))
-              (num-args (length ar))
-              (expand (syntax-local-value (syntax oper) (lambda () #f))))
+              (num-args (length ar)))
          (cond
            ((and (eq? op 'eof) (= num-args 0))
             (make-syms eof -1))
@@ -140,9 +138,9 @@
             (parse (car ar)))
            ((eq? op ':)
             (num-arg-err s "at least 1" num-args))
-           ((and (eq? op '@) (+ 0 num-args))
+           ((and (eq? op '@) (= num-args 0))
             (make-epsilon))
-           ((and (eq? op '@) (= 1 num-args))
+           ((and (eq? op '@) (= num-args 1))
             (parse (car ar)))
            ((and (eq? op '@))
             (parse-assoc make-concat (map parse ar)))
@@ -158,15 +156,17 @@
                     (if (<= i1 i2)
                         (make-syms (make-range i1 i2) -1)
                         (raise-syntax-error
-                         #f
-                         s
-                         (format "first argument ~a does not preceed second argument ~a" c1 c2))))
-                  ((eq? op '-)
-                   (raise-syntax-error
-                    #f
-                    (format "operation expects single character arguments, given ~a and ~a"
-                            (car ar) (cadr ar))
-                    s)))))
+                         'regular-expression
+                         (format "first argument ~a does not preceed second argument ~a" 
+                                 (integer->char i1) 
+                                 (integer->char i2))
+                         s)))
+                  (raise-syntax-error
+                   'regular-expression
+                   (format "expects single character arguments, given ~a and ~a"
+                           (syntax-object->datum (car ar))
+                           (syntax-object->datum (cadr ar)))
+                   s))))
            ((eq? op '-)
             (num-arg-err s 2 num-args))
            ((and (eq? op '^) (> num-args 0))
@@ -177,11 +177,11 @@
                                       (list? (syms-chars x))))
                                res))
                   (raise-syntax-error
-                   #f
+                   'regular-expression
                    (format 
-                    "expression expects single character or character range arguments, given ~a"
-                    (syntax-object->datum ar)
-                    s)))
+                    "expects single character or character range arguments, given ~a"
+                    (map syntax-object->datum ar))
+                    s))
               (for-each (lambda (sym)
                           (for-each (lambda (char)
                                       (vector-set! v (char->integer char) #f))
@@ -198,20 +198,26 @@
                -1)))
            ((eq? op '^)
             (num-arg-err s "at least 1" num-args))
-           ((and (lex-abbrev? expand))
-            (if (= 0 num-args)
-                (parse (lex-abbrev-abbrev expand))
-                (num-arg-err s 0 num-args)))
+           ((identifier? (syntax oper))
+            (let ((expand (syntax-local-value (syntax oper) (lambda () #f))))
+              (if (lex-abbrev? expand)
+                  (if (= 0 num-args)
+                      (parse (lex-abbrev-abbrev expand))
+                      (num-arg-err s 0 num-args))
+                  (raise-syntax-error
+                   'regular-expresssion
+                   "invalid operator or abbreviation"
+                   s))))
            (else
             (raise-syntax-error
-             #f
+             'regular-expression
              "invalid operator or abbreviation"
              s)))))
       (_
        (raise-syntax-error
-        #f
-        s
-        "invalid regular expression"))))
+        'regular-expression
+        "invalid regular expression"
+        s))))
   )
         
 

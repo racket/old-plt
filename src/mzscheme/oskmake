@@ -1,0 +1,25 @@
+#!/bin/sh
+# This script builds the OSKit-based MzScheme kernel.
+# It assumes Linux and (probably) gcc.
+# If a `-t' command-line flag is provided, a
+#   Linux binary is built for testing using as much
+#   of the OSKit configuration for MzScheme as possible.
+
+if [ "$1" = '-t' ] ; then
+ echo "Build test app similar to OSKit app"
+ INCLUDES="-DOSKIT_TEST"
+ TARGET=""
+ BUILDDIR=_oskit_x86_t
+elif [ "$*" = '' ] ; then
+ echo "Build MzScheme kernel"
+ INCLUDES="-nostdinc -I/usr/local/include/oskit -I/usr/local/include/oskit/freebsd -I/usr/local/include/oskit/c -I/usr/local/include -I/usr/include"
+ TARGET=oskit
+ BUILDDIR=_oskit_x86
+else
+ echo oskmake: unknown command-line: $*
+ exit -1
+fi
+
+LANG="-DNO_TCP_SUPPORT"
+
+MZPLATFORMSUFFIX=$BUILDDIR make GCDIR=sgc OPTIONS="-DOSKIT -DUSE_SENORA_GC -DSGC_AUTO_ROOTS=0 $INCLUDES $LANG" $TARGET

@@ -656,7 +656,7 @@ static
 #ifndef NO_INLINE_KEYWORD
 MSC_IZE(inline)
 #endif
-minus_zero_p(double d)
+int minus_zero_p(double d)
 {
   double a[2];
   long *f, *s;

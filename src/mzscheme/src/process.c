@@ -542,11 +542,15 @@ static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
   return scheme_make_integer(GC_get_memory_use());
 }
 
+#define ATSTEP(x) /* printf(x "\n") */
+
 static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config, 
 				    Scheme_Manager *mgr)
 {
   Scheme_Process *process;
   int prefix = 0;
+
+  ATSTEP("making process");
 
   process = MALLOC_ONE_TAGGED(Scheme_Process);
 
@@ -587,6 +591,8 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   
   process->engine_weight = 10000;
 
+  ATSTEP("making config");
+
   if (!config) {
     config = process->config = make_initial_config();
 
@@ -596,6 +602,8 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     }
   } else
     process->config = config;
+
+  ATSTEP("initing jmpbuf");
 
   scheme_init_jmpup_buf(&process->jmpup_buf);
 
@@ -639,6 +647,8 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     }
   }
 
+  ATSTEP("initing tailbuf");
+
   process->tail_buffer = (Scheme_Object **)scheme_malloc(buffer_init_size 
 							 * sizeof(Scheme_Object *));
   process->tail_buffer_size = buffer_init_size;
@@ -678,8 +688,10 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   process->user_tls = NULL;
   process->user_tls_size = 0;
 
+  ATSTEP("initing manager");
+
   /* A thread points to a lot of stuff, so it's bad to put a finalization
-     on it, which is what registering with a manager does. So, instead, we
+     on it, which is what registering with a manager does. Instead, we
      register a weak indirection with the manager. That way, the thread
      (and anything it poitns to) can be collected a GC cycle earlier. */
   process->mr_hop = MALLOC_ONE_ATOMIC(Scheme_Process_Manager_Hop);

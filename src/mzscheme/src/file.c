@@ -120,9 +120,7 @@ static Scheme_Object *split_pathname(int argc, Scheme_Object **argv);
 static Scheme_Object *relative_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *absolute_pathname_p(int argc, Scheme_Object **argv);
 static Scheme_Object *complete_pathname_p(int argc, Scheme_Object **argv);
-#endif
 static Scheme_Object *path_to_complete_path(int argc, Scheme_Object **argv);
-#ifndef NO_FILE_SYSTEM_UTILS
 static Scheme_Object *resolve_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[]);
 static Scheme_Object *expand_path(int argc, Scheme_Object *argv[]);
@@ -1811,6 +1809,7 @@ Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **
 #endif  
 }
 
+#ifndef NO_FILE_SYSTEM_UTILS
 static Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
 {
   char *s;
@@ -1839,6 +1838,7 @@ static Scheme_Object *split_pathname(int argc, Scheme_Object **argv)
 
   return scheme_values(3, three);
 }
+#endif
 
 int scheme_is_relative_path(const char *s, long len)
 {
@@ -2960,7 +2960,7 @@ static Scheme_Object *file_modify_seconds(int argc, Scheme_Object **argv)
   return NULL;
 }
 
-#ifdef UNIX_FILE_SYSTEM
+#if defined(UNIX_FILE_SYSTEM) && !defined(NO_UNIX_USERS)
 # define GROUP_CACHE_SIZE 10
 struct {
   gid_t gid;
@@ -3050,6 +3050,7 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
     if (stat(filename, &buf))
       l = NULL;
     else {
+#ifndef NO_UNIX_USERS
       if (buf.st_uid == getuid()) {
 	read = !!(buf.st_mode & S_IRUSR);
 	write = !!(buf.st_mode & S_IWUSR);
@@ -3063,6 +3064,11 @@ static Scheme_Object *file_or_dir_permissions(int argc, Scheme_Object *argv[])
 	write = !!(buf.st_mode & S_IWOTH);
 	execute = !!(buf.st_mode & S_IXOTH);
       }
+#else
+      read = !!(buf.st_mode & (S_IRUSR | S_IRGRP | S_IROTH));
+      write = !!(buf.st_mode & (S_IWUSR | S_IWGRP | S_IWOTH));
+      execute = !!(buf.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH));
+#endif
       
       if (read)
 	l = scheme_make_pair(read_symbol, l);
@@ -3218,6 +3224,8 @@ static Scheme_Object *current_library_collection_paths(int argc, Scheme_Object *
 
 
 /********************************************************************************/
+
+#ifndef NO_FILE_SYSTEM_UTILS
 
 enum {
   id_temp_dir,
@@ -3403,6 +3411,8 @@ find_system_path(int argc, Scheme_Object **argv)
 
   return scheme_void;
 }
+
+#endif
 
 /********************************************************************************/
 

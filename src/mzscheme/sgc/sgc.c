@@ -56,6 +56,10 @@
 # define SGC_STD_DEBUGGING_WINDOWS 0
 #endif
 
+#ifndef SGC_AUTO_ROOTS
+# define SGC_AUTO_ROOTS 1
+#endif
+
 /****************************************************************************/
 /* Options and debugging flags                                              */
 /****************************************************************************/
@@ -206,7 +210,7 @@
 /* Implements GC_prim_stringout using Windows console
    functions. */
 
-#define AUTO_STATIC_ROOTS_IF_POSSIBLE 1
+#define AUTO_STATIC_ROOTS_IF_POSSIBLE SGC_AUTO_ROOTS
 /* Automatically registers static C variables as roots if
    platform-specific code is porvided */
 

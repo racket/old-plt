@@ -1595,12 +1595,16 @@ file_char_ready (Scheme_Input_Port *port)
   if (fp->buffer_pos)
     return 1;
 #endif
+#ifdef HAS_OSKIT_IOB  
+  if (fp->_r)
+    return 1;
+#endif
 
   if (feof(fp) || ferror(fp))
     return 1;
 
   {
-    int fd;
+    int fd, r;
     DECL_FDSET(readfds, 1);
     struct timeval time = {0, 0};
 
@@ -1612,8 +1616,10 @@ file_char_ready (Scheme_Input_Port *port)
     
     MZ_FD_ZERO(readfds);
     MZ_FD_SET(fd, readfds);
-    
-    return select(fd + 1, readfds, NULL, NULL, &time);
+
+    r = select(fd + 1, readfds, NULL, NULL, &time);
+
+    return r;
   }
 #endif
 }
@@ -1785,6 +1791,15 @@ static int fd_getc(Scheme_Input_Port *port)
     }
 
     fip->bufcount = read(fip->fd, fip->buffer, MZPORT_FD_BUFFSIZE);
+
+    if (fip->bufcount < 0) {
+      fip->bufcount = 0;
+      scheme_raise_exn(MZEXN_I_O_PORT_READ,
+		       port,
+		       "error reading from fd port (%d)",
+		       errno);
+    }
+
     if (!fip->bufcount) {
       fip->buffpos = 0;
       return EOF;
@@ -6741,11 +6756,15 @@ static void default_sleep(float v, void *fds)
 # ifdef USE_WINSOCK_TCP
     limit = 0;
 # else
-# ifdef USE_ULIMIT
+#  ifdef USE_ULIMIT
     limit = ulimit(4, 0);
-# else
-    limit = getdtablesize();
-# endif    
+#  else
+#   ifdef FIXED_FD_LIMIT
+      limit = FIXED_FD_LIMIT;
+#   else
+      limit = getdtablesize();
+#   endif
+#  endif    
 #endif
 
     rd = (fd_set *)fds;

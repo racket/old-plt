@@ -59,6 +59,50 @@
 
 
 /******** (BEGIN KNOWN ARCHITECTURE/SYSTEM CONFIGURATIONS) ********/
+  
+  /*************** OSKit with Linux/gcc *****************/
+
+#if defined(OSKIT)
+
+# define SYSTEM_TYPE_NAME "oskit"
+
+# define STACK_GROWS_DOWN
+
+# define UNIX_FILE_SYSTEM
+# define NO_UNIX_USERS
+
+# define TIME_SYNTAX
+# define DIR_FUNCTION
+# define DIRENT_NO_NAMLEN
+# define GETENV_FUNCTION
+
+# ifndef OSKIT_TEST
+#  define HAS_FREEBSD_IOB
+# else
+#  define HAS_LINUX_IOB
+# endif
+# define FILES_HAVE_FDS
+# define FIXED_FD_LIMIT 256
+# define USE_UNIX_SOCKETS_TCP
+# define USE_FCNTL_O_NONBLOCK
+# define htons(x) x
+# define PF_INET AF_INET
+
+# define NO_USLEEP
+# define NO_SLEEP
+# define USER_TIME_IS_CLOCK
+
+     /* # define DO_STACK_CHECK */
+     /* # define UNIX_FIND_STACK_BOUNDS */
+# define STACK_SAFETY_MARGIN 50000
+
+# define SIGSET_IS_SIGNAL
+
+# define UNISTD_INCLUDE
+
+# define FLAGS_ALREADY_SET
+
+#else  /* >>>>>>> close after all platforms <<<<<<<<<< */
 
   /************** SunOS/Solaris with gcc ****************/
 
@@ -720,6 +764,11 @@ int scheme_win32_semaphore_try_down(void *);
 
 #endif
 
+
+  ***************************************************/
+
+#endif /* end not OSKit */
+
 /************** (END KNOWN ARCHITECTURE/SYSTEMS) ****************/
 
 
@@ -812,6 +861,8 @@ int scheme_pthread_semaphore_try_down(void *);
  /* USE_MACTIME uses the Mac toolbox to implement time functions. */
 
  /* CLOCK_IS_USER_TIME uses the system time for user milliseconds. */
+
+ /* USER_TIME_IS_CLOCK uses the user time for system milliseconds. */
 
  /* TIME_TYPE_IS_UNSIGNED converts time_t values as unsigned. */
 

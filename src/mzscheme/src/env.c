@@ -321,7 +321,7 @@ Scheme_Env *scheme_top_level_env(void)
    printf("init @ %ld\n", scheme_get_process_milliseconds());
 # define MZTIMEIT(n, f) (MARK_START_TIME(), f, DONE_TIME(n))
 # define MARK_START_TIME() startt = scheme_get_process_milliseconds()
-# define DONE_TIME(n) printf(#n ": %ld\n", (long)(scheme_get_process_milliseconds() - startt))
+# define DONE_TIME(n) (printf(#n ": %ld\n", (long)(scheme_get_process_milliseconds() - startt)))
 #else
 # define MZTIMEIT(n, f) f
 # define MARK_START_TIME() /**/

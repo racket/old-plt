@@ -242,9 +242,13 @@ static char *get_init_filename(Scheme_Env *env)
   Scheme_Object *type = scheme_intern_symbol("init-file");
   Scheme_Object *path;
   
-  path = _scheme_apply(f, 1, &type);
+  if (f) {
+    path = _scheme_apply(f, 1, &type);
 
-  return SCHEME_STR_VAL(path);
+    return SCHEME_STR_VAL(path);
+  } else {
+    return "no such file";
+  }
 }
 #endif
 
@@ -379,6 +383,24 @@ int actual_main(int argc, char *argv[])
   return run_from_cmd_line(argc, argv, scheme_basic_env, cont_run);
 }
 
+#if defined(OSKIT) && !defined(OSKIT_TEST)
+# include <oskit/dev/clock.h> 
+# include <oskit/c/sys/time.h> 
+void start_clock()
+{
+# define LOCAL_TO_GMT(t) /* (t)->tv_sec += secondswest */
+  oskit_timespec_t time;
+  /* use fdev's default clock device */
+  oskit_clock_t *clock = oskit_clock_init();
+  
+  oskit_rtc_get(&time);   /* read rtc */
+  LOCAL_TO_GMT(&time);            /* adjust for local time */
+  oskit_clock_settime(clock, &time); /* set time */
+  
+  set_system_clock(clock);
+}
+#endif
+
 int main(int argc, char **argv)
 {
 #ifdef USE_SENORA_GC
@@ -396,6 +418,15 @@ int main(int argc, char **argv)
 
 #ifdef GC_THINKS_ITS_A_DLL_BUT_ISNT
   DllMain(NULL, DLL_PROCESS_ATTACH, NULL);
+#endif
+
+#ifdef OSKIT
+# ifndef OSKIT_TEST
+  oskit_init_libc();
+  fd_set_console();
+  fs_init(oskit_bmod_init());
+  start_clock();
+# endif
 #endif
 
   scheme_actual_main = actual_main;

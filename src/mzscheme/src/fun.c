@@ -26,6 +26,10 @@
 # ifdef USE_MACTIME
 #  include <OSUtils.h>
 # else
+#  if defined(OSKIT) && !defined(OSKIT_TEST)
+    /* Get FreeBSD version, not oskit/time.h version */
+#   include <freebsd/time.h>
+#  endif
 #  include <time.h>
 #  ifdef USE_FTIME
 #   include <sys/timeb.h>
@@ -2060,7 +2064,10 @@ long scheme_get_milliseconds(void)
 
 long scheme_get_process_milliseconds(void)
 {
-#ifdef USE_GETRUSAGE
+#ifdef USER_TIME_IS_CLOCK
+  return scheme_get_milliseconds();
+#else
+# ifdef USE_GETRUSAGE
   struct rusage use;
   long s, u;
 
@@ -2070,11 +2077,12 @@ long scheme_get_process_milliseconds(void)
   u = use.ru_utime.tv_usec + use.ru_stime.tv_usec;
 
   return s * 1000 + u / 1000;
-#else
-# ifdef USE_MACTIME
-  return TickCount() * 1000/60;
 # else
+#  ifdef USE_MACTIME
+  return TickCount() * 1000/60;
+#  else
   return clock()  * 1000 / CLOCKS_PER_SEC;
+#  endif
 # endif
 #endif
 }
@@ -2144,8 +2152,8 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
     int success;
 
 #ifdef USE_MACTIME
-	SecondsToDate(lnow, &localTime);
-	success = 1;
+    SecondsToDate(lnow, &localTime);
+    success = 1;
 #else
     localTime = localtime(&now);
     success = !!localTime;

@@ -94,6 +94,12 @@ xbin:
 	$(XMAKE) mzlibrary
 	$(XMAKE) $(MZSCHEME) 
 
+oskit: 
+	$(XMAKE) g-c
+	$(XMAKE) dynlib
+	$(XMAKE) mzlibrary
+	$(XMAKE) zImage
+
 mzschemelib: 
 	./ifaix $(XMAKE) aixdl
 	$(XMAKE) g-c 
@@ -188,6 +194,17 @@ $(GCDIR)/$(OBJDIR)/gc_cpp.o:
 
 $(MZSCHEME): objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDIR)/main.o $(SPECIALIZINGOBJECTS)
 	$(CC) $(MAIN_CFLAGS_NODBG) -o $(MZSCHEME) $(OBJDIR)/main.o $(SPECIALIZINGOBJECTS) -L$(LIBDIR)/ -lmzscheme -lgc $(LIBS)
+
+# OSKit-baed MzScheme
+zImage : objects $(OBJDIR) $(LIBDIR)/libmzscheme.a $(LIBDIR)/libgc.a $(OBJDIR)/main.o
+	$(LD) -Ttext 100000 $(LDFLAGS) $(OSKIT_LDFLAGS) /usr/local/lib/oskit/multiboot.o \
+		-o mzscheme.osk $(OBJDIR)/main.o -L$(LIBDIR)/ -lmzscheme -lgc \
+		-loskit_kern -loskit_freebsd_c -loskit_c -loskit_lmm \
+                -loskit_freebsd_m -loskit_fs \
+                -loskit_dev -loskit_com \
+                -loskit_kern -loskit_freebsd_c -loskit_c \
+		/usr/local/lib/oskit/crtn.o
+	mklinuximage mzscheme.osk
 
 $(OBJDIR)/main.o: main.c include/scheme.h sconfig.h cmdline.inc
 	$(CC) $(MAIN_CFLAGS) -c main.c -o $(OBJDIR)/main.o

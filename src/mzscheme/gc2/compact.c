@@ -1894,9 +1894,9 @@ void GC_fixup(void *pp)
 	
 	v = page->u.offsets[offset] & OFFSET_MASK;
 	if (offset < page->compact_boundary)
-	  r = page->o.compact_to + v;
+	  r = (void *)(page->o.compact_to + v) + ((long)p & 0x3);
 	else
-	  r = (void *)(((long)p & MPAGE_START) + ((long)v << 2));
+	  r = (void *)(((long)p & MPAGE_START) + ((long)v << 2)) + ((long)p & 0x3);
 
 #if SEARCH
 	if (r == search_for)

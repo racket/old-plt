@@ -1,4 +1,4 @@
-; $Id: scm-core.ss,v 1.62 2000/06/08 19:52:28 mflatt Exp $
+; $Id: scm-core.ss,v 1.63 2000/06/08 22:35:31 mflatt Exp $
 
 (unit/sig zodiac:scheme-core^
   (import zodiac:structures^ zodiac:misc^ zodiac:sexp^
@@ -377,13 +377,16 @@
     (unless mred-signature
       (let ([v (create-vocabulary 'mred-vocabulary
 				  scheme-vocabulary)]
+	    [n (make-namespace)]
 	    [e (with-input-from-file
 		   (build-path (collection-path "mred") "sig.ss")
 		 read)]
 	    [loc (make-location 0 0 0 "inlined")])
-	(scheme-expand (structurize-syntax e (make-zodiac #f loc loc))
-		       attributes
-		       v)
+	(parameterize ([current-namespace n])
+	  (prepare-current-namespace-for-vocabulary v)
+	  (scheme-expand (structurize-syntax e (make-zodiac #f loc loc))
+			 attributes
+			 v))
 	(let ([sig-space (get-attribute attributes 'sig-space void)])
 	  (set! mred-signature (hash-table-get sig-space 'mred^ void)))))
     mred-signature)

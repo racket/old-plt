@@ -315,11 +315,12 @@
 		     (insert-prompt)
 		     (lock c-locked?)))
 		 (begin (lock #t)
-			(mred:message-box
-			 (format "The evaluation thread is no longer running, ~
-                                  so no evaluation can take place until ~
-                                  the next execution.")
-			 "Warning"))))]
+			(unless shutting-down?
+			  (mred:message-box
+			   (format "The evaluation thread is no longer running, ~
+                                    so no evaluation can take place until ~
+                                    the next execution.")
+			   "Warning")))))]
 	  [do-many-buffer-evals
 	   (lambda (edit start end)
 	     (mred:debug:printf 'console-threading "do-many-buffer-evals: waiting in-evaluation")
@@ -516,6 +517,12 @@
 		      (user-load-relative-directory old-load-relative-directory)))))))])
 	(public
 	  [takeover void]
+	  [shutting-down? #f]
+	  [shutdown 
+	   (lambda ()
+	     (set! shutting-down? #t)
+	     (custodian-shutdown-all user-custodian)
+	     (kill-thread evaluation-thread))]
 	  [reset-console
 	   (let ([first-dir (current-directory)])
 	     (lambda ()

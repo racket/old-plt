@@ -15,6 +15,7 @@
    (lib "string-constant.ss" "string-constants")
    (lib "embedded-gui.ss" "embedded-gui")
    (lib "string-constant.ss" "string-constants")
+   "make-snipclass.ss"
    "text-syntax-object.ss"
    "print-to-text.ss"
    "test-case.ss")
@@ -153,7 +154,7 @@
                    (to-test new-to-test)
                    (expected new-expected))))
           
-          #;((is-a?/c editor-stream-out%) . -> . void)
+          #;((is-a?/c editor-stream-out%) . -> . void?)
           ;; Writes this test case box to the given file.
           (define/override (write f)
             (send to-test write-to-file f)
@@ -162,6 +163,23 @@
             (send f put (if collapsed? 1 0))
             ;; Don't make actual persistant
             #;(send f put (if actual-show? 1 0)))
+          
+          
+          #;((is-a?/c editor-stream-in%) . -> . void?)
+          ;; Reads the state of the box in from the given stream
+          (define/override (read-from-file f)
+            (let ([enabled?-box (box 0)]
+                  [collapsed?-box (box 0)]
+                  ;; Don't make actual persistant
+                  #;[actual-show?-box (box 0)])
+              (send to-test read-from-file f)
+              (send expected read-from-file f)
+              (send f get enabled?-box)
+              (send f get collapsed?-box)
+              #;(send f get actual-show?)
+              (set! enabled? (unbox enabled?-box))
+              (set! collapsed?-box (unbox collapsed?-box))
+              #;(set! actual-show?-box (unbox actual-show?-box))))
           
           ;;;;;;;;;;
           ;; Layout
@@ -276,9 +294,6 @@
           (new snip-wrapper%
                (snip result)
                (parent button-pane))
-          ;; NOTE: When you add the collapse feature, be sure that
-          ;; error-reporting on collapsed test-cases highlight the
-          ;; test-case. (PR6955)
           (new snip-wrapper%
                (snip collapse-button)
                (parent button-pane))
@@ -298,32 +313,7 @@
       ;; Snip class
       
       ;; A snip-class for the test case box
-      (define test-case-box-snipclass%
-        (class snip-class%
-          (define/override (read f)
-            (let ([to-test (new test-case:program-editor%)]
-                  [expected (new test-case:program-editor%)]
-                  [enabled? (box 0)]
-                  [collapsed? (box 0)]
-                  #;[actual-show? (box 0)])
-              (send to-test read-from-file f)
-              (send expected read-from-file f)
-              (send f get enabled?)
-              (send f get collapsed?)
-              ;; Don't make actual persistant
-              #;(send f get actual-show?)
-              (new test-case-box%
-                   (enabled? (if (zero? (unbox enabled?)) false true))
-                   (collapsed? (if (zero? (unbox collapsed?)) false true))
-                   #;(actual-show? (if (zero? (unbox actual-show?)) false true))
-                   (to-test to-test)
-                   (expected expected))))
-          (super-new)))
-      
-      (define tcb-sc (new test-case-box-snipclass%))
-      (send tcb-sc set-classname "test-case-box%")
-      (send tcb-sc set-version 1)
-      (send (get-the-snip-class-list) add tcb-sc)
+      (define tcb-sc (make-snipclass test-case-box% "test-case-box%"))
       ))
   
   #;((-> void?) (-> void?) (symbols 'up 'down) . -> . snip%)

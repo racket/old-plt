@@ -133,6 +133,7 @@
  (plt:hd:search "Search")
  (plt:hd:search-for "Search for")
  (plt:hd:lucky "Lucky!")
+ (plt:hd:stop "Stop")   
  (plt:hd:options "Options") 
  (plt:hd:configure "Configure")
  (plt:hd:home "Help Desk home") 

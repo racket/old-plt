@@ -182,7 +182,7 @@
                                               ((exn:syntax? exception-handler))
                                             (z:scheme-expand new-expr 'previous user-vocabulary))))])
                    (let*-values ([(annotated-list envs) (a:annotate (list new-expr) (list new-parsed) packaged-envs break 
-                                                                    'foot)]
+                                                                    'foot-wrap)]
                                  [(annotated) (car annotated-list)])
                      (set! packaged-envs envs)
                      (set! current-expr new-parsed)
@@ -247,7 +247,7 @@
 ;(redivide `(,highlight-placeholder 5 6))
 ;(values `() `(,highlight-placeholder) `(5 6))
 ;
-;(redivide `(4 5 ,highlight-placeholder ,highlight-placeholder))
+  ;(redivide `(4 5 ,highlight-placeholder ,highlight-placeholder))
 ;(values `(4 5) `(,highlight-placeholder ,highlight-placeholder) `())
 ;
 ;(printf "will be errors:~n")

@@ -54,6 +54,9 @@
   ;; Used with `fluid-let-syntax' to communicate to `open'
   ;; when an expression is within the body of a `package' declaration.
   ;; This matters for choosing the right shadower of an id.
+  ;; The value of current-pack is a list of (cons id num),
+  ;;  where num is the size of the applicable tail of the rename list
+  ;;  for the package named id.
   (define-syntax current-package null)
 
   ;; The *ed define forms are the same as the usual
@@ -197,14 +200,16 @@
         (_ null)))
     
     ;; Combines parts of a transformed definition in a package:
-    (define (rebuild-def orig package-name kw ids body compile-time?)
+    (define (rebuild-def orig package-name rename-length kw ids body compile-time?)
       (datum->syntax-object
        orig
        `(,kw ,ids ,(if compile-time?
 		       body
 		       #`(fluid-let-syntax ([#,(syntax-local-introduce #'current-package)
 					     (cons
-					      (quote-syntax #,package-name)
+					      (cons
+					       (quote-syntax #,package-name)
+					       #,rename-length)
 					      (syntax-local-value
 					       (quote-syntax #,(syntax-local-introduce #'current-package))))])
 			   #,body)))
@@ -220,34 +225,35 @@
     ;; accumulate new hidden names from starred bindings.
     (define (mark-ids def introducers package-name expand-ctx)
       ;; Note: new-ids is null if this is a non-* definition
-      (let ((new-ids (map (lambda (id) (cons id (make-syntax-introducer)))
-                          (get/let*-ids def))))
+      (let ([new-ids (map (lambda (id) (cons id (make-syntax-introducer)))
+                          (get/let*-ids def))]
+	    [rename-length (length introducers)])
         (values
          (syntax-case def ()
            ((ds vars body) 
 	    (module-identifier=? (quote-syntax define-syntaxes) #'ds)
-            (rebuild-def def package-name
+	    (rebuild-def def package-name rename-length
 			 #'ds 
 			 (mark-to-localize #'vars (append new-ids introducers) #'protect) 
 			 (mark-to-localize #'body (append new-ids introducers) #'protect)
 			 #t))
            ((dv vars body)
 	    (module-identifier=? (quote-syntax define-values) #'dv)
-            (rebuild-def def package-name
+            (rebuild-def def package-name rename-length
 			 #'dv 
 			 (mark-to-localize #'vars (append new-ids introducers) #'protect) 
 			 (mark-to-localize #'body (append new-ids introducers) #'protect)
 			 #f))
            ((d vars body) 
 	    (module-identifier=? (quote-syntax define*-values) #'d)
-            (rebuild-def def package-name
+            (rebuild-def def package-name rename-length
 			 #'define-values
 			 (mark-to-localize #'vars (append new-ids introducers) #'protect)
 			 (mark-to-localize #'body introducers #'protect)
 			 #t))
            ((d vars body) 
 	    (module-identifier=? (quote-syntax define*-syntaxes) #'d)
-	    (rebuild-def def package-name
+	    (rebuild-def def package-name rename-length
 			 #'define-syntaxes
 			 (mark-to-localize #'vars (append new-ids introducers) #'protect)
 			 (mark-to-localize #'body introducers #'protect)
@@ -444,39 +450,44 @@
 	     ;;   env is an (id-stx . id-stx) mapping - names exported by the package
 	     ;;   rns is an (id-stx . id-stx) mapping - names defined in the package
 	     ;;   subs is a table mapping defined id-stx to sub-package mappings
-	     [cp-env+rns+subs+ispre/s (let ([cps (syntax-local-value #'current-package (lambda () #f))])
-				  (map (lambda (cp) (open cp cp stx))
-				       cps))]
+	     [cps (syntax-local-value #'current-package (lambda () #f))]
+	     [cp-env+rns+subs+ispre/s (map (lambda (cp) (open (car cp) (car cp) stx))
+					   cps)]
 	     ;; Reverse-map renaming due to being in a package body. In other words,
 	     ;;  we find id "x", but it's been renamed because we're in an enclosing
 	     ;;  package, and we're about to look in a table that maps original
 	     ;;  names to something, so we need to reverse-map the name.
 	     [cp-orig-name (lambda (id)
-			     (let loop ([id id][cp-env+rns+subs+ispre/s cp-env+rns+subs+ispre/s])
+			     (let loop ([id id][cp-env+rns+subs+ispre/s cp-env+rns+subs+ispre/s][cps cps])
 			       (if (null? cp-env+rns+subs+ispre/s)
 				   id
 				   (let ([in-pack-bind
 					  (ormap (lambda (p)
 						   (and (bound-identifier=? (cdr p) id)
 							p))
-						 (cadr (car cp-env+rns+subs+ispre/s)))])
+						 (let ([l (cadr (car cp-env+rns+subs+ispre/s))])
+						   (list-tail l (- (length l) (cdar cps)))))])
 				     (loop (if in-pack-bind
 					       (car in-pack-bind)
 					       id)
-					   (cdr cp-env+rns+subs+ispre/s))))))]
+					   (cdr cp-env+rns+subs+ispre/s)
+					   (cdr cps))))))]
 	     ;; Reverse-map renaming due to being in a package
 	     ;;  body. For example, we have an "x" that we want to
 	     ;;  shadow, but the correct shadower must use the new name
 	     ;;  in the enclosing package.
 	     [cp-current-name (lambda (id)
-				(let loop ([id id][cp-env+rns+subs+ispre/s cp-env+rns+subs+ispre/s])
+				(let loop ([id id][cp-env+rns+subs+ispre/s cp-env+rns+subs+ispre/s][cps cps])
 				  (if (null? cp-env+rns+subs+ispre/s)
 				      id
-				      (let ([in-pack-bind (stx-assoc id (cadr (car cp-env+rns+subs+ispre/s)))])
-					(loop (if in-pack-bind
-						  (cdr in-pack-bind)
-						  id)
-					      (cdr cp-env+rns+subs+ispre/s))))))])
+				      (let* ([l (cadr (car cp-env+rns+subs+ispre/s))]
+					     [l (list-tail l (- (length l) (cdar cps)))])
+					(let ([in-pack-bind (stx-assoc id l)])
+					  (loop (if in-pack-bind
+						    (cdr in-pack-bind)
+						    id)
+						(cdr cp-env+rns+subs+ispre/s)
+						(cdr cps)))))))])
 	;; Find the package. See above for a remainder of env+rns+subs+ispre.
 	;; The `rename-chain' variable binds an (stx . -> stx).
 	(let*-values ([(env+rns+subs+ispre rename-chain)

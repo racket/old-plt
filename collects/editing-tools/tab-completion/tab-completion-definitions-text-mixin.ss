@@ -11,27 +11,36 @@
            
            "../common/drscheme-tool-support.ss"
            "../common/expansion-tool-definitions-text-mixin.ss"
-
-           
-           ;; parse-compiled is C code.  Sorry.
-           (lib "parse-compiled.ss" "parse-compiled")
            )
+
+ #| parse-compiled is not necessary as of v299.30
+    Thanks, Matthew!
+  (require (lib "parse-compiled.ss" "parse-compiled"))
+  (define (module-compiled-exports/all compiled-module)
+    (match (parse-compiled compiled-module)
+      [(list 'compilation-top max-let-depth resolve-prefix sxp)
+       (match sxp
+         [(list 'syntax index data)
+          (match data
+            [(list 'module-code requires requires-for-stx provides)
+	     (match provides
+               [(list 'provides (list ids ...))
+                ids])])])]))
+  |#
+
+  (define (module-compiled-exports/all compiled-module)
+    (let-values ([(own-provides var-provides)
+		  (module-compiled-exports compiled-module)])
+      (append own-provides var-provides)))
+  
   
   (define (require-spec->provides spec)
     (define (zo-path->provides zo-path)
       (and zo-path
            (file-exists? zo-path)
            ;; TODO: It would be nice to not need the 'parse-compiled' C code.
-           (match (parse-compiled (parameterize ([read-accept-compiled #t])
-                              (with-input-from-file zo-path read)))
-             [(list 'compilation-top max-let-depth resolve-prefix sxp)
-              (match sxp
-                [(list 'syntax index data)
-                 (match data
-                   [(list 'module-code requires requires-for-stx provides)
-                    (match provides
-                      [(list 'provides (list ids ...))
-                       ids])])])])))
+           (module-compiled-exports/all (parameterize ([read-accept-compiled #t])
+                              (with-input-from-file zo-path read)))))
     (define (file-path->zo-path path)
       (define-values (base f dir?) (split-path path))
       (define zo-path (build-path base "compiled"

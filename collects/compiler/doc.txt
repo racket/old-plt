@@ -87,7 +87,7 @@ are documented in the next section.
       file to obtain information about compiling the collection.
       The following fields are used:
 
-       `name' - the name of the collection. as a string.
+       `name' - the name of the collection as a string.
 
        `compile-prefix' - an S-expression to use as the elaboration-time
          prefix expression for compiling all files in the collection.

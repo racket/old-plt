@@ -210,6 +210,8 @@ wxPrinter::wxPrinter()
   currentPrintout = NULL;
   abortIt = FALSE;
   lpAbortProc = MakeProcInstance((FARPROC) wxAbortProc, wxhInstance);
+
+  printData = new wxPrintData();
 }
 
 wxWindow *wxPrinter::abortWindow = NULL;
@@ -240,31 +242,31 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (maxPage == 0)
     return FALSE;
 
-  printData.SetMinPage(minPage);
-  printData.SetMaxPage(maxPage);
+  printData->SetMinPage(minPage);
+  printData->SetMaxPage(maxPage);
   if (fromPage != 0)
-    printData.SetFromPage(fromPage);
+    printData->SetFromPage(fromPage);
   if (toPage != 0)
-    printData.SetToPage(toPage);
+    printData->SetToPage(toPage);
 
   if (minPage != 0) {
-    printData.EnablePageNumbers(TRUE);
-    if (printData.GetFromPage() < printData.GetMinPage())
-      printData.SetFromPage(printData.GetMinPage());
-    else if (printData.GetFromPage() > printData.GetMaxPage())
-      printData.SetFromPage(printData.GetMaxPage());
-    if (printData.GetToPage() > printData.GetMaxPage())
-      printData.SetToPage(printData.GetMaxPage());
-    else if (printData.GetToPage() < printData.GetMinPage())
-      printData.SetToPage(printData.GetMinPage());
+    printData->EnablePageNumbers(TRUE);
+    if (printData->GetFromPage() < printData->GetMinPage())
+      printData->SetFromPage(printData->GetMinPage());
+    else if (printData->GetFromPage() > printData->GetMaxPage())
+      printData->SetFromPage(printData->GetMaxPage());
+    if (printData->GetToPage() > printData->GetMaxPage())
+      printData->SetToPage(printData->GetMaxPage());
+    else if (printData->GetToPage() < printData->GetMinPage())
+      printData->SetToPage(printData->GetMinPage());
   } else
-    printData.EnablePageNumbers(FALSE);
+    printData->EnablePageNumbers(FALSE);
   
   // Create a suitable device context  
   wxDC *dc = NULL;
   if (prompt) {
     wxPrintDialog  *dialog;
-    dialog = new wxPrintDialog(parent, &printData);
+    dialog = new wxPrintDialog(parent, printData);
     if (dialog->Run())
       dc = dialog->GetPrintDC();
   } else {
@@ -305,8 +307,8 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   Bool keepGoing = TRUE;
 
   int copyCount;
-  for (copyCount = 1; copyCount <= printData.GetNoCopies(); copyCount ++) {
-    if (!printout->OnBeginDocument(printData.GetFromPage(), printData.GetToPage())) {
+  for (copyCount = 1; copyCount <= printData->GetNoCopies(); copyCount ++) {
+    if (!printout->OnBeginDocument(printData->GetFromPage(), printData->GetToPage())) {
       wxEndBusyCursor();
       wxMessageBox("Could not start printing.", "Print Error", wxOK, parent);
       break;
@@ -316,9 +318,9 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
       break;
 
     int pn;
-    int is_down = (printData.GetFromPage() > printData.GetToPage());
-    int endpage = printData.GetToPage() + (is_down ? -1 : 1);
-    for (pn = printData.GetFromPage(); keepGoing && (pn != endpage);
+    int is_down = (printData->GetFromPage() > printData->GetToPage());
+    int endpage = printData->GetToPage() + (is_down ? -1 : 1);
+    for (pn = printData->GetFromPage(); keepGoing && (pn != endpage);
 	 pn = (is_down ? pn - 1 : pn + 1)) {
       if (!printout->HasPage(pn)) {
 	if (!is_down)

@@ -85,7 +85,7 @@ class wxPrintDialog
 class wxPrinter: public wxObject
 {
  private:
-  wxPrintData printData;
+  wxPrintData *printData;
   wxPrintout *currentPrintout;
   FARPROC lpAbortProc;
  public:

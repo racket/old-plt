@@ -10,9 +10,18 @@ string=? ; exec mzscheme -qr $0
 (require-library "errortrace.ss" "errortrace")
 (require-library "string.ss")
 
-(define raw-kajitani (call-with-input-file (build-path (collection-path "games" "paint-by-numbers")
-                                                       "full-kajitani")
-		       read))
+(define (make-strings-mutable sexp)
+  (cond
+   [(string? sexp) (string-copy sexp)]
+   [(cons? sexp) (cons (make-strings-mutable (car sexp))
+		       (make-strings-mutable (cdr sexp)))]
+   [else sexp]))
+
+(define raw-kajitani
+  (make-strings-mutable
+   (call-with-input-file (build-path (collection-path "games" "paint-by-numbers")
+				     "full-kajitani")
+     read)))
 
 (define allowed-emails
   (map (lambda (x) (if (list? x) (car x) x))

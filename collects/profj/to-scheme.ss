@@ -839,10 +839,17 @@
                          (over? 'define/override)
                          (final 'define/public-final)
                          (else 'define/public))))
-      (create-syntax #f
-                     `(,definition ,method-name 
-                       ,(translate-method-body method-string parms block modifiers type ctor? inner? depth type-recs))
-                     (build-src src))))
+      (if over?
+          (create-syntax #f
+                         `(begin
+                            (rename (,(build-identifier (string-append "super." method-string)), method-name))
+                            (,definition ,method-name
+                             ,(translate-method-body method-string parms block modifiers type ctor? inner? depth type-recs)))
+                         (build-src src))
+          (create-syntax #f
+                         `(,definition ,method-name 
+                           ,(translate-method-body method-string parms block modifiers type ctor? inner? depth type-recs))
+                         (build-src src)))))
   
   ;make-static-method-names: (list method) type-recs -> (list string)
   (define (make-static-method-names methods type-recs)
@@ -1595,13 +1602,12 @@
                             temp)))
            (cond 
              ((special-name? expr)
-              (let ((name (translate-id (if (and (equal? (special-name-name expr) "super") 
-                                                 (overridden? m-name))
-                                            (format "super.~a" m-name)
-                                            m-name)
-                                        (id-src method-name))))
-                (printf "~a~n~a~n~a~n" expr m-name (overridden? m-name))
-                (if static?
+              (let* ((over? (overridden? (string->symbol m-name)))
+                     (name (translate-id (if (and (equal? (special-name-name expr) "super") over?)
+                                             (format "super.~a" m-name)
+                                             m-name)
+                                         (id-src method-name))))
+                (if (or static? over?)
                     (create-syntax #f `(,name ,@args) (build-src src))
                     (create-syntax #f `(send this ,name ,@args) (build-src src)))))
              ((not expr)

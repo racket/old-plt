@@ -617,7 +617,7 @@
   (union false? (is-a?/c drscheme:rep:text<%>))
   string?
   exn?
-  (union false? (and/f string? directory-exists?))
+  (union false? (and/c string? directory-exists?))
   . -> .
   void?)
  (text rep-text msg exn dir)
@@ -648,7 +648,7 @@
   ((listof (list/p (is-a?/c text%) number? number?)) . -> . void?)
   string?
   exn?
-  (union false? (and/f string? directory-exists?))
+  (union false? (and/c string? directory-exists?))
   . -> . 
   void?)
  (text highlight-errors msg exn dir)

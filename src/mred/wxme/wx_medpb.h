@@ -212,7 +212,7 @@ class wxMediaPasteboard : public wxMediaBuffer
   float totalWidth, totalHeight, realWidth, realHeight;
 
   float updateLeft, updateRight, updateTop, updateBottom;
-  Bool updateNonemtpy;
+  Bool updateNonempty, noImplicitUpdate;
 
   Bool sizeCacheInvalid;
   int writeLocked;

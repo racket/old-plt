@@ -95,7 +95,8 @@ wxMediaPasteboard::wxMediaPasteboard()
   wxList *sll;
 
   sizeCacheInvalid = TRUE;
-  updateNonemtpy = FALSE;
+  updateNonempty = FALSE;
+  noImplicitUpdate = FALSE;
   writeLocked = 0;
 
   snips = lastSnip = NULL;
@@ -1813,7 +1814,9 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
   if (b < 0)
     b = 0;
 
-  if (!updateNonemtpy) {
+  noImplicitUpdate = FALSE;
+
+  if (!updateNonempty) {
     updateTop = y;
     updateLeft = x;
     if (h < 0)
@@ -1824,7 +1827,7 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
       updateRight = w;
     else
       updateRight = r;
-    updateNonemtpy = TRUE;
+    updateNonempty = TRUE;
   } else {
     if (y < updateTop)
       updateTop = y;
@@ -1869,7 +1872,7 @@ void wxMediaPasteboard::Update(float x, float y, float w, float h)
       updateRight = realWidth;
   }
 
-  updateNonemtpy = FALSE;
+  updateNonempty = FALSE;
 
   if (changed) {
     changed = FALSE;
@@ -1938,7 +1941,7 @@ void wxMediaPasteboard::UpdateAll()
 
 void wxMediaPasteboard::UpdateNeeded()
 {
-  if (updateNonemtpy || delayedscrollsnip)
+  if ((updateNonempty && !noImplicitUpdate) || delayedscrollsnip)
     Update(updateLeft, updateTop, 0, 0);
 }
 
@@ -2010,7 +2013,7 @@ Bool wxMediaPasteboard::ScrollTo(wxSnip *snip,
 	updateLeft = 0;
 	updateBottom = -1;
 	updateRight = -1;
-	updateNonemtpy = TRUE;
+	updateNonempty = TRUE;
       }
       return TRUE;
     } else
@@ -2032,6 +2035,7 @@ void wxMediaPasteboard::Resized(wxSnip *snip, Bool redraw_now)
 {
   wxNode *node;
   wxSnipLocation *loc;
+  Bool no_implicit_update;
 
   if (!(node = snipLocationList->FindPtr(snip)))
     return;
@@ -2041,6 +2045,8 @@ void wxMediaPasteboard::Resized(wxSnip *snip, Bool redraw_now)
     return;
 
   changed = TRUE;
+
+  no_implicit_update = (!updateNonempty || noImplicitUpdate);
 
   if (!redraw_now)
     sequence++;
@@ -2054,8 +2060,11 @@ void wxMediaPasteboard::Resized(wxSnip *snip, Bool redraw_now)
   UpdateLocation(loc);
 
   EndEditSequence();
-  if (!redraw_now)
+  if (!redraw_now) {
     --sequence;
+    if (no_implicit_update)
+      noImplicitUpdate = TRUE;
+  }
 }
 
 Bool wxMediaPasteboard::Recounted(wxSnip *snip, Bool redraw_now)

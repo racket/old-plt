@@ -189,7 +189,11 @@ void GC_register_traversers(short tag, Size_Proc size, Mark_Proc mark, Fixup_Pro
 /*
    Registers a traversal procedure for a tag. Obviously, a traversal
    procedure must be installed for each tag before a collection
-   happens where an instance of the tag as been allocated. */
+   happens where an instance of the tag as been allocated.  If objects
+   using the tag are always of the same size, is_constant_size can be
+   non-zero, and `size' must return the right size given a null
+   pointer. If objects using the tag are atomic, is_atomic can be
+   non-zero. */
 
 /* #define gcMARK(x) ... see below ... */
 /* #define gcMARK_TYPED(t, x) ... see below ... */

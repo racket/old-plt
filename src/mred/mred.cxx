@@ -2580,11 +2580,13 @@ wxFrame *MrEdApp::OnInit(void)
   GC_register_traversers(mred_eventspace_type, 
 			 size_eventspace_val, 
 			 mark_eventspace_val, 
-			 fixup_eventspace_val);
+			 fixup_eventspace_val,
+			 1, 0);
   GC_register_traversers(mred_eventspace_hop_type, 
 			 size_eventspace_hop_val,
 			 mark_eventspace_hop_val,
-			 fixup_eventspace_hop_val);
+			 fixup_eventspace_hop_val,
+			 1, 0);
 #endif
 
 #ifdef MZ_PRECISE_GC

@@ -11,22 +11,25 @@
 
 
 
-
 #include "wxscheme.h"
 #include "wxs_slid.h"
 #include "wxscomon.h"
 
 
+#define wxPLAIN_SLIDER (wxHORIZONTAL << 2)
+
 static Scheme_Object *sliderStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *sliderStyle_wxHORIZONTAL_sym = NULL;
+static Scheme_Object *sliderStyle_wxPLAIN_SLIDER_sym = NULL;
 
 static void init_symset_sliderStyle(void) {
   sliderStyle_wxVERTICAL_sym = scheme_intern_symbol("vertical");
   sliderStyle_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+  sliderStyle_wxPLAIN_SLIDER_sym = scheme_intern_symbol("plain");
 }
 
 static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
-  if (!sliderStyle_wxHORIZONTAL_sym) init_symset_sliderStyle();
+  if (!sliderStyle_wxPLAIN_SLIDER_sym) init_symset_sliderStyle();
   Scheme_Object *i, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -34,6 +37,7 @@ static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (i == sliderStyle_wxVERTICAL_sym) { result = result | wxVERTICAL; }
   else if (i == sliderStyle_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
+  else if (i == sliderStyle_wxPLAIN_SLIDER_sym) { result = result | wxPLAIN_SLIDER; }
   else { break; } 
   l = SCHEME_CDR(l);
   }
@@ -43,7 +47,7 @@ static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
 }
 
 static int istype_symset_sliderStyle(Scheme_Object *v, const char *where) {
-  if (!sliderStyle_wxHORIZONTAL_sym) init_symset_sliderStyle();
+  if (!sliderStyle_wxPLAIN_SLIDER_sym) init_symset_sliderStyle();
   Scheme_Object *i, *l = v;
   long result = 1;
   while (SCHEME_PAIRP(l)) {
@@ -51,6 +55,7 @@ static int istype_symset_sliderStyle(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (i == sliderStyle_wxVERTICAL_sym) { ; }
   else if (i == sliderStyle_wxHORIZONTAL_sym) { ; }
+  else if (i == sliderStyle_wxPLAIN_SLIDER_sym) { ; }
   else { break; } 
   l = SCHEME_CDR(l);
   }
@@ -60,10 +65,11 @@ static int istype_symset_sliderStyle(Scheme_Object *v, const char *where) {
 }
 
 static Scheme_Object *bundle_symset_sliderStyle(int v) {
-  if (!sliderStyle_wxHORIZONTAL_sym) init_symset_sliderStyle();
+  if (!sliderStyle_wxPLAIN_SLIDER_sym) init_symset_sliderStyle();
   Scheme_Object *l = scheme_null;
   if (v & wxVERTICAL) l = scheme_make_pair(sliderStyle_wxVERTICAL_sym, l);
   if (v & wxHORIZONTAL) l = scheme_make_pair(sliderStyle_wxHORIZONTAL_sym, l);
+  if (v & wxPLAIN_SLIDER) l = scheme_make_pair(sliderStyle_wxPLAIN_SLIDER_sym, l);
   return l;
 }
 
@@ -547,7 +553,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x10 = "slider";
 
-  if (x3 < x4 || x5 < x3) scheme_signal_error("%s", METHODNAME("slider%","initialization")": minimum, value, and maximum must be increasing");if (x6 <= 0) x6 = 1;
+  if (x3 < x4 || x5 < x3) scheme_arg_mismatch(METHODNAME("slider%","initialization"), "minimum, value, and maximum must be increasing; maximum: ", p[4]);if (x6 <= 0) x6 = 1;
   realobj = new os_wxSlider(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10);
   
   realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -628,7 +634,6 @@ class wxSlider *objscheme_unbundle_wxSlider(Scheme_Object *obj, const char *wher
   else
     return (wxSlider *)o->primdata;
 }
-
 
 
 

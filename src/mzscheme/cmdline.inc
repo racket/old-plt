@@ -403,7 +403,6 @@ static int run_from_cmd_line(int argc, char *argv[],
 #ifndef NO_FILE_SYSTEM_UTILS
   /* Setup path for "collects" collection directory: */
   if (!no_lib_path) {
-    SETUP_GETENV_HACK
     scheme_eval_string("(#%current-library-collection-paths "
 		        "(#%path-list-string->path-list "
 		         "(#%or (#%getenv \"PLTCOLLECTS\") \"\")"
@@ -426,7 +425,6 @@ static int run_from_cmd_line(int argc, char *argv[],
 #endif
 		          ")) #%null)))",
 		       global_env);
-    TAKEDOWN_GETENV_HACK
   }
 #endif /* NO_FILE_SYSTEM_UTILS */
 

@@ -55,7 +55,7 @@
 @SET POINTERS = 1
 @INCLUDE list.xci
 
-@MACRO CHECKSAMELENGTH = if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("%s", METHODNAME("menu-bar%","initialization")": list size mismatch");
+@MACRO CHECKSAMELENGTH = if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_arg_mismatch(METHODNAME("menu-bar%","initialization"), "list size mismatch: ", p[0]);
 
 @MACRO spMenuList = (listof wxMenu-object)
 

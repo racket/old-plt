@@ -16,7 +16,6 @@
 
 
 
-
 // @CLASSBASE wxMenuItem "menu-item" : "object"
 // @END
 
@@ -432,7 +431,6 @@ class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *obj, const char *where, i
 
 
 
-
 static void CB_TOSCHEME(CB_REALCLASS *realobj, wxCommandEvent &event)
 {
   Scheme_Object *p[2];
@@ -511,6 +509,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -525,7 +524,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
@@ -594,6 +593,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -608,7 +608,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
@@ -773,7 +773,7 @@ static Scheme_Object *os_wxMenuBar_ConstructScheme(Scheme_Object *obj, int n,  S
     wxMenu** x1;
     string* x2;
 
-    if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("%s", METHODNAME("menu-bar%","initialization")": list size mismatch");
+    if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_arg_mismatch(METHODNAME("menu-bar%","initialization"), "list size mismatch: ", p[0]);
     if (n != 2) 
       scheme_wrong_count("initialization in menu-bar% (menu% list case)", 2, 2, n, p);
     x1 = NULL;

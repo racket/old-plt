@@ -201,7 +201,7 @@ typedef struct {
 
 /* ininitializarion */
 void scheme_init_stack_check(void);
-Scheme_Process *scheme_make_process();
+Scheme_Process *scheme_make_process(void);
 Scheme_Env *scheme_top_level_env(void);
 void scheme_init_true_false(void);
 void scheme_init_symbol_table (void);
@@ -243,6 +243,7 @@ extern void scheme_regexp_initialize(Scheme_Env *env);
 void scheme_init_empty_cond(Scheme_Env *env);
 void scheme_init_format_procedure(Scheme_Env *env);
 void scheme_init_rep(Scheme_Env *env);
+void scheme_init_getenv(void);
 
 extern Scheme_Type_Reader *scheme_type_readers;
 extern Scheme_Type_Writer *scheme_type_writers;

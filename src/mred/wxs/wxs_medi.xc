@@ -94,14 +94,14 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ X "get-descent" : float GetDescent(); : : : : XrZERO
 @ X "get-space" : float GetSpace(); : : : : XrZERO
 
-@ X "get-max-width" : float GetMaxWidth(); : : : : XrZERO
-@ X "get-min-width" : float GetMinWidth(); : : : : XrZERO
-@ X "set-max-width" : void SetMaxWidth(float);
-@ X "set-min-width" : void SetMinWidth(float);
-@ X "get-max-height" : float GetMaxHeight(); : : : : XrZERO
-@ X "get-min-height" : float GetMinHeight(); : : : : XrZERO
-@ X "set-max-height" : void SetMaxHeight(float);
-@ X "set-min-height" : void SetMinHeight(float);
+@ X "get-max-width" : nnfs[none] GetMaxWidth(); : : : : XrZERO
+@ X "get-min-width" : nnfs[none] GetMinWidth(); : : : : XrZERO
+@ X "set-max-width" : void SetMaxWidth(nnfs[none]);
+@ X "set-min-width" : void SetMinWidth(nnfs[none]);
+@ X "get-max-height" : nnfs[none] GetMaxHeight(); : : : : XrZERO
+@ X "get-min-height" : nnfs[none] GetMinHeight(); : : : : XrZERO
+@ X "set-max-height" : void SetMaxHeight(nnfs[none]);
+@ X "set-min-height" : void SetMinHeight(nnfs[none]);
 
 @ X "read-from-file" : bool ReadFromFile(wxMediaStreamIn%); : : : : XrZERO
 @ X "write-to-file" : bool WriteToFile(wxMediaStreamOut%); : : : : XrZERO

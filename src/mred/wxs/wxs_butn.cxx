@@ -11,7 +11,6 @@
 
 
 
-
 #include "wxscheme.h"
 #include "wxs_butn.h"
 #include "wxscomon.h"
@@ -357,7 +356,7 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
       scheme_wrong_count("set-label in button% (bitmap label case)", 1, 1, n, p);
     x0 = objscheme_unbundle_wxBitmap(p[0], "set-label in button% (bitmap label case)", 0);
 
-    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("button%","set-label"));
+    if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("button%","set-label"), "bad bitmap: ", p[0]);
     ((wxButton *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
 
     
@@ -556,7 +555,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x8 = "button";
 
-    if (x2 && !x2->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("button%","initialization"));if (!x5) x5 = -1;if (!x6) x6 = -1;
+    if (x2 && !x2->Ok()) scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[2]);if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = new os_wxButton(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
     
     realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -685,7 +684,6 @@ class wxButton *objscheme_unbundle_wxButton(Scheme_Object *obj, const char *wher
   else
     return (wxButton *)o->primdata;
 }
-
 
 
 

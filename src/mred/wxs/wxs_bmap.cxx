@@ -11,7 +11,6 @@
 
 
 
-
 #include "wxscheme.h"
 #include "wxs_bmap.h"
 #include "wxscomon.h"
@@ -178,6 +177,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -192,7 +192,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
@@ -405,7 +405,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x2 = -1;
 
-    if ((x0 < 1) || (x0 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "width" ": ", x0);if ((x1 < 1) || (x1 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "height" ": ", x1);
+    if ((x0 < 1) || (x0 > 100000)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "bad " "width" ": ", p[0]);if ((x1 < 1) || (x1 > 100000)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "bad " "height" ": ", p[1]);
     realobj = new os_wxBitmap(obj, x0, x1, x2);
     
     
@@ -426,7 +426,7 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x3 = 1;
 
-    if ((x1 < 1) || (x1 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "width" ": ", x1);if ((x2 < 1) || (x2 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "height" ": ", x2);if (x3 != 1) scheme_signal_error("%s: depth %d is illegal (only depth 1 is supported)", METHODNAME("bitmap%","initialization"), x3);if (scheme_proper_list_length(p[0]) < (((x1 * x2) >> 3) * x3)) scheme_signal_error("%s", METHODNAME("bitmap%","initialization")": byte list too short");x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, METHODNAME("bitmap%","initialization"));
+    if ((x1 < 1) || (x1 > 100000)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "bad " "width" ": ", p[1]);if ((x2 < 1) || (x2 > 100000)) scheme_arg_mismatch(METHODNAME("bitmap%","initialization"), "bad " "height" ": ", p[2]);if (x3 != 1) scheme_signal_error("%s: depth %d is illegal (only depth 1 is supported)", METHODNAME("bitmap%","initialization"), x3);if (scheme_proper_list_length(p[0]) < (((x1 * x2) >> 3) * x3)) scheme_signal_error("%s", METHODNAME("bitmap%","initialization")": byte list too short");x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, METHODNAME("bitmap%","initialization"));
     realobj = new os_wxBitmap(obj, x0, x1, x2, x3);
     
     

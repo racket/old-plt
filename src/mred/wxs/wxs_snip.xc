@@ -107,7 +107,7 @@
 
 @CLASSBASE wxMediaSnip "editor-snip" : "snip"
 
-@CREATOR (wxMediaBuffer^=NULL,bool=TRUE,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,int=-1,int=-1,int=-1,int=-1);
+@CREATOR (wxMediaBuffer^=NULL,bool=TRUE,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XMARGIN,int=wxMSNIPBOX_YMARGIN,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,int=wxMSNIPBOX_XINSET,int=wxMSNIPBOX_YINSET,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1,nnfs[none]=-1);
 
 @CLASSID wxTYPE_MEDIA_SNIP
 
@@ -117,14 +117,14 @@
 @SETMARK s = d
 @INCLUDE wxs_snip.xci
 
-@ "set-max-width" : void SetMaxWidth(float);
-@ "set-max-height" : void SetMaxHeight(float);
-@ "get-max-width" : float GetMaxWidth();
-@ "get-max-height" : float GetMaxHeight();
-@ "set-min-width" : void SetMinWidth(float);
-@ "set-min-height" : void SetMinHeight(float);
-@ "get-min-width" : float GetMinWidth();
-@ "get-min-height" : float GetMinHeight();
+@ "set-max-width" : void SetMaxWidth(nnfs[none]);
+@ "set-max-height" : void SetMaxHeight(nnfs[none]);
+@ "get-max-width" : nnfs[none] GetMaxWidth();
+@ "get-max-height" : nnfs[none] GetMaxHeight();
+@ "set-min-width" : void SetMinWidth(nnfs[none]);
+@ "set-min-height" : void SetMinHeight(nnfs[none]);
+@ "get-min-width" : nnfs[none] GetMinWidth();
+@ "get-min-height" : nnfs[none] GetMinHeight();
 
 @ "show-border" : void ShowBorder(bool);
 @ "border-visible?" : bool BorderVisible();

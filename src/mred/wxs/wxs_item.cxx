@@ -13,7 +13,6 @@
 
 
 
-
 #include "wxscheme.h"
 #include "wxs_item.h"
 #include "wxscomon.h"
@@ -439,7 +438,7 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
       scheme_wrong_count("set-label in message% (bitmap label case)", 1, 1, n, p);
     x0 = objscheme_unbundle_wxBitmap(p[0], "set-label in message% (bitmap label case)", 0);
 
-    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("message%","set-label"));
+    if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("message%","set-label"), "bad bitmap: ", p[0]);
     ((wxMessage *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
 
     
@@ -626,7 +625,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     } else
       x5 = "message";
 
-    if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("message%","initialization"));
+    if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[1]);
     realobj = new os_wxMessage(obj, x0, x1, x2, x3, x4, x5);
     
     

@@ -254,6 +254,45 @@ scheme_init_string (Scheme_Env *env)
 			     env);
 }
 
+void
+scheme_init_getenv(void)
+{
+#ifndef GETENV_FUNCTION
+  FILE *f = fopen("Environment", "r");
+  if (f) {
+    Scheme_Object *p = scheme_make_file_input_port(f);
+    mz_jmp_buf savebuf;
+    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+    if (!scheme_setjmp(scheme_error_buf)) {
+      while (1) {
+	Scheme_Object *v = scheme_read(p);
+	if (SCHEME_EOFP(v))
+	  break;
+
+	if (SCHEME_PAIRP(v) && SCHEME_PAIRP(SCHEME_CDR(v))
+	    && SCHEME_NULLP(SCHEME_CDR(SCHEME_CDR(v)))) {
+	  Scheme_Object *key = SCHEME_CAR(v);
+	  Scheme_Object *val = SCHEME_CADR(v);
+	  if (SCHEME_STRINGP(key) && SCHEME_STRINGP(val)) {
+	    Scheme_Object *a[2];
+	    a[0] = key;
+	    a[1] = val;
+	    sch_putenv(2, a);
+	    v = NULL;
+	  }
+	}
+
+	if (v)
+	  scheme_signal_error("bad environment specification: %s",
+			      scheme_make_provided_string(v, 1, NULL));
+      }
+    }
+    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
+    scheme_close_input_port(p);
+  }
+#endif
+}
+
 Scheme_Object *
 scheme_make_sized_string(char *chars, long len, int copy)
 {
@@ -1091,44 +1130,41 @@ int scheme_string_has_null(Scheme_Object *o)
   return 0;
 }
 
-char *scheme_getenv_hack;
-char *scheme_getenv_hack_value;
-
 static Scheme_Object *sch_getenv(int argc, Scheme_Object *argv[])
 {
-#ifdef GETENV_FUNCTION
   char *s;
-#endif
 
   if (!SCHEME_STRINGP(argv[0]) || scheme_string_has_null(argv[0]))
     scheme_wrong_type("getenv", STRING_W_NO_NULLS, 0, argc, argv);
 
 #ifdef GETENV_FUNCTION
   s = getenv(SCHEME_STR_VAL(argv[0]));
+#else
+  if (putenv_str_table) {
+    s = (char *)scheme_lookup_in_table(putenv_str_table, SCHEME_STR_VAL(argv[0]));
+    /* If found, skip over the `=' in the table: */
+    if (s)
+      s += SCHEME_STRTAG_VAL(argv[0]) + 1;
+  } else
+    s = NULL;
+#endif
 
   if (s)
     return scheme_make_string(s);
-#endif
-
-  if (scheme_getenv_hack && !strcmp(SCHEME_STR_VAL(argv[0]), scheme_getenv_hack))
-    return scheme_make_string(scheme_getenv_hack_value);
 
   return scheme_false;
 }
 
 static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
 {
-#ifdef GETENV_FUNCTION
   char *s, *var, *val;
   long varlen, vallen;
-#endif
 
   if (!SCHEME_STRINGP(argv[0]) || scheme_string_has_null(argv[0]))
     scheme_wrong_type("putenv", STRING_W_NO_NULLS, 0, argc, argv);
   if (!SCHEME_STRINGP(argv[1]) || scheme_string_has_null(argv[1]))
     scheme_wrong_type("putenv", STRING_W_NO_NULLS, 1, argc, argv);
 
-#ifdef GETENV_FUNCTION
   var = SCHEME_STR_VAL(argv[0]);
   val = SCHEME_STR_VAL(argv[1]);
 
@@ -1149,9 +1185,10 @@ static Scheme_Object *sch_putenv(int argc, Scheme_Object *argv[])
 
   SCHEME_RELEASE_LOCK();
 
+#ifdef GETENV_FUNCTION
   return putenv(s) ? scheme_false : scheme_true;
 #else
-  return scheme_false;
+  return scheme_true;
 #endif
 }
 

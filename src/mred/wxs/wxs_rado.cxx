@@ -11,7 +11,6 @@
 
 
 
-
 #include "wxscheme.h"
 #include "wxs_rado.h"
 #include "wxscomon.h"
@@ -152,6 +151,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -166,7 +166,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
@@ -209,7 +209,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #define l_EXTRA 0
 #define l_TERMINATE 
 #define l_COPY l_COPYDEST=l_COPYSRC;
-#define l_OKTEST if (!((l_COPYDEST)->Ok())) scheme_signal_error("%s: bad bitmap", OKTESTWHERE);
+#define l_OKTEST if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap", SCHEME_CAR(l));
 #define l_INTTYPE int
 
 #define l_TYPE wxBitmap
@@ -236,6 +236,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -250,7 +251,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
@@ -1005,7 +1006,6 @@ class wxRadioBox *objscheme_unbundle_wxRadioBox(Scheme_Object *obj, const char *
   else
     return (wxRadioBox *)o->primdata;
 }
-
 
 
 

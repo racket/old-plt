@@ -102,7 +102,7 @@
 @ "flash-off" : void FlashOff();
 
 @MACRO setStringLen[i.s] = x<i> = SCHEME_STRTAG_VAL(p[<s>]);
-@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[<s>]))) scheme_signal_error("%s",METHODNAME("text%","insert")": bad string length");
+@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[<s>]))) scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[<i>]);
 
 @ "insert" : void Insert(-long,string,nnlong,nnls[same]=-1,bool=TRUE);  : : /setStringLen[0.0] <> string and position
 @ "insert" : void Insert(-long,string);  : : /setStringLen[0.0] <> string without position

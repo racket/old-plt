@@ -233,6 +233,33 @@ int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *
 
   if (where) {
     char *b = (char *)scheme_malloc_atomic(50);
+    strcpy(b, "non-negative integer or '");
+    strcat(b, sym);
+    scheme_wrong_type(where, b, -1, 0, &obj);
+  }
+
+  return 0;
+}
+
+int objscheme_istype_nonnegative_symbol_float(Scheme_Object *obj, const char *sym, const char *where)
+{
+  if (SCHEME_SYMBOLP(obj)) {
+    int l = strlen(sym);
+    if (SCHEME_SYM_LEN(obj) == l) {
+      if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
+	return 1;
+      }
+    }
+  }
+
+  if (objscheme_istype_number(obj, NULL)) {
+    double v = objscheme_unbundle_float(obj, where);
+    if (v >= 0)
+      return 1;
+  }
+
+  if (where) {
+    char *b = (char *)scheme_malloc_atomic(50);
     strcpy(b, "non-negative number or '");
     strcat(b, sym);
     scheme_wrong_type(where, b, -1, 0, &obj);
@@ -272,6 +299,14 @@ Scheme_Object *objscheme_bundle_pathname(char *s)
   return objscheme_bundle_string(s);
 }
 
+Scheme_Object *objscheme_bundle_nonnegative_symbol_float(double d, const char *symname)
+{
+  if (d < 0)
+    return scheme_intern_symbol(symname);
+  else
+    return scheme_make_double(d);
+}
+
 /************************************************************************/
 
 void *objscheme_unbundle_generic(Scheme_Object *obj, const char *where)
@@ -300,7 +335,7 @@ long objscheme_unbundle_nonnegative_integer(Scheme_Object *obj, const char *wher
 {
   long v = objscheme_unbundle_integer(obj, where);
   if ((v < 0) && where)
-    scheme_wrong_type(where, "non-negative number", -1, 0, &obj);
+    scheme_wrong_type(where, "non-negative integer", -1, 0, &obj);
   return v;
 }
 
@@ -347,6 +382,27 @@ double objscheme_unbundle_float(Scheme_Object *obj, const char *where)
     return scheme_bignum_to_float(obj);
   else
     return (double)SCHEME_INT_VAL(obj);
+}
+
+double objscheme_unbundle_nonnegative_symbol_float(Scheme_Object *obj, const char *sym, const char *where)
+{
+  if (SCHEME_SYMBOLP(obj)) {
+    int l = strlen(sym);
+    if (SCHEME_SYM_LEN(obj) == l) {
+      if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
+	return -1;
+      }
+    }
+  }
+
+  if (objscheme_istype_number(obj, NULL)) {
+    double v = objscheme_unbundle_float(obj, where);
+    if (v >= 0)
+      return v;
+  }
+
+  (void)objscheme_istype_nonnegative_symbol_float(obj, sym, where);
+  return -1;
 }
 
 double objscheme_unbundle_nonnegative_float(Scheme_Object *obj, const char *where)

@@ -21,7 +21,7 @@
 @IFDEFINE l_EXTRA = NULLTERM : 1 : 0
 @IFDEFINE l_TERMINATE = NULLTERM : f[i] = 0; :
 @IFDEFINE l_COPY = POINTWISE : l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y; : l_COPYDEST=l_COPYSRC;
-@IFDEFINE l_OKTEST = DOOKTEST : if (!((l_COPYDEST)->Ok())) scheme_signal_error("%s: bad bitmap", OKTESTWHERE);
+@IFDEFINE l_OKTEST = DOOKTEST : if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap", SCHEME_CAR(l));
 @IFDEFINE l_INTTYPE = SIZEISLONG : long : int
 
 @DEFINE l_TYPE = <TYPE>
@@ -56,6 +56,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -70,7 +71,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))

@@ -155,7 +155,9 @@ class basePrinterDC : public wxObject
 public:
   basePrinterDC()
   {
-    scheme_signal_error("%s", METHODNAME("printer-dc%","initialization")": not supported for X Windows");
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "%s", 
+		     METHODNAME("printer-dc%","initialization")": not supported for X Windows");
   }
 };
 
@@ -201,7 +203,9 @@ class baseMetaFileDC : public wxObject
 {
 public:
   baseMetaFileDC(char * = NULL) {
-    scheme_signal_error("%s", METHODNAME("meta-file-dc%","initialization")": only supported for Windows");
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "%s", 
+		     METHODNAME("meta-file-dc%","initialization")": only supported for Windows");
   }
 
   baseMetaFile* baseClose() { return NULL; }

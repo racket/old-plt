@@ -2499,7 +2499,7 @@ static char *double_to_string (double d)
   sprintf (buffer, "%." INEXACT_PRINT_DIGITS "g", d);
   l = strlen(buffer);
   for (i = 0; i < l; i++)
-    if (buffer[i] == '.' || isalpha(buffer[i]))
+    if (buffer[i] == '.' || isalpha((unsigned char)buffer[i]))
       break;
   if (i == l) {
     buffer[i] = '.';
@@ -2713,9 +2713,9 @@ double STRTOD(const char *orig_c, char **f)
     c++;
   }
 
-  if (!isdigit(*c)) {
+  if (!isdigit((unsigned char)*c)) {
     if (*c == '.') {
-      if (!isdigit(c[1]))
+      if (!isdigit((unsigned char)c[1]))
 	return 0; /* no digits - bad! */
     } else
       return 0; /* no digits - bad! */
@@ -2735,7 +2735,7 @@ double STRTOD(const char *orig_c, char **f)
       } else if (*c == '+') {
 	c++;
       }
-      if (!isdigit(*c))
+      if (!isdigit((unsigned char)*c))
 	return 0; /* no digits - bad! */
 
       for (; *c; c++) {
@@ -2886,13 +2886,13 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     return scheme_false;
   }
 
-  if (len == 6 && (str[0] == '-' || str[0] == '+') && isalpha(str[1])) {
+  if (len == 6 && (str[0] == '-' || str[0] == '+') && isalpha((unsigned char)str[1])) {
     char s[7];
     int i;
 
     for (i = 0; i < 6; i++) {
       if (str[i] > 0)
-	s[i] = tolower(str[i]);
+	s[i] = tolower((unsigned char)str[i]);
       else
 	s[i] = str[i];
     }
@@ -3341,7 +3341,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '+' || str[i] == '-')
 	digits[dcp++] = str[i++];
 
-      for (; isdigit(str[i]); i++)
+      for (; isdigit((unsigned char)str[i]); i++)
 	digits[dcp++] = str[i];
 
       if (str[i] == '#') {
@@ -3354,7 +3354,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       if (str[i] == '.') {
 	i++;
 	if (num_ok)
-	  for (; isdigit(str[i]); i++) {
+	  for (; isdigit((unsigned char)str[i]); i++) {
 	    digits[dcp++] = str[i];
 	    extra_power++;
 	  }
@@ -3366,7 +3366,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
 
       if ((str[i] && (!has_expt || i != has_expt))
-	  || !dcp || (dcp == 1 && !isdigit(digits[0]))) {
+	  || !dcp || (dcp == 1 && !isdigit((unsigned char)digits[0]))) {
 	if (report)
 	  scheme_raise_exn(MZEXN_READ, complain, 
 			   "read-number: bad decimal number %s", str);

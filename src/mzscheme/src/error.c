@@ -35,6 +35,7 @@ long scheme_misc_count;
 static Scheme_Object *error(int argc, Scheme_Object *argv[]);
 static Scheme_Object *raise_syntax_error(int argc, Scheme_Object *argv[]);
 static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[]);
+static Scheme_Object *raise_mismatch_error(int argc, Scheme_Object *argv[]);
 static Scheme_Object *error_escape_handler(int, Scheme_Object *[]);
 static Scheme_Object *error_display_handler(int, Scheme_Object *[]);
 static Scheme_Object *error_value_string_handler(int, Scheme_Object *[]);
@@ -108,6 +109,11 @@ void scheme_init_error(Scheme_Env *env)
   scheme_add_global_constant("raise-type-error", 
 			     scheme_make_prim_w_arity(raise_type_error, 
 						      "raise-type-error",
+						      3, 3), 
+			     env);
+  scheme_add_global_constant("raise-mismatch-error", 
+			     scheme_make_prim_w_arity(raise_mismatch_error, 
+						      "raise-mismatch-error",
 						      3, 3), 
 			     env);
   scheme_add_global_constant("error-display-handler", 
@@ -550,6 +556,17 @@ void scheme_wrong_type(const char *name, const char *expected,
   }
 }
 
+void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
+{
+  char *s;
+
+  s = scheme_make_provided_string(o, 1, NULL);
+
+  scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, o,
+		   "%s: %s %s",
+		   name, msg, s);
+}
+
 void scheme_wrong_syntax(const char *where, 
 			 Scheme_Object *detail_form, 
 			 Scheme_Object *form, 
@@ -873,6 +890,20 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
   scheme_wrong_type(SCHEME_SYM_VAL(argv[0]),
 		    SCHEME_STR_VAL(argv[1]),
 		    -1, 0, &argv[2]);
+
+  return NULL;
+}
+
+static Scheme_Object *raise_mismatch_error(int argc, Scheme_Object *argv[])
+{
+  if (!SCHEME_SYMBOLP(argv[0]))
+    scheme_wrong_type("raise-mismatch-error", "symbol", 0, argc, argv);
+  if (!SCHEME_STRINGP(argv[1]))
+    scheme_wrong_type("raise-mismatch-error", "string", 1, argc, argv);
+
+  scheme_arg_mismatch(SCHEME_SYM_VAL(argv[0]),
+		      SCHEME_STR_VAL(argv[1]),
+		      argv[2]);
 
   return NULL;
 }

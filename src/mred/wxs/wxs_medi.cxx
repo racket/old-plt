@@ -11,7 +11,6 @@
 
 
 
-
 #include "wxscheme.h"
 #include "wxs_medi.h"
 #include "wxscomon.h"
@@ -1083,8 +1082,8 @@ return;
   
   p[0] = scheme_make_double(x0);
   p[1] = scheme_make_double(x1);
-  p[2] = scheme_make_double(x2);
-  p[3] = scheme_make_double(x3);
+  p[2] = objscheme_bundle_nonnegative_symbol_float(x2, "end");
+  p[3] = objscheme_bundle_nonnegative_symbol_float(x3, "end");
   
 
   v = scheme_apply(method, 4, p);
@@ -2864,7 +2863,7 @@ static Scheme_Object *os_wxMediaBufferPrintToDC(Scheme_Object *obj, int n,  Sche
   
   x0 = objscheme_unbundle_wxDC(p[0], "print-to-dc in editor<%>", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("editor<%>","print-to-dc"));
+  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","print-to-dc"), "bad bitmap: ", p[0]);
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->PrintToDC(x0);
 
   
@@ -3096,7 +3095,7 @@ static Scheme_Object *os_wxMediaBufferSetMinHeight(Scheme_Object *obj, int n,  S
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-min-height in editor<%>");
+  x0 = objscheme_unbundle_nonnegative_symbol_float(p[0], "none", "set-min-height in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMinHeight(x0);
@@ -3114,7 +3113,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxHeight(Scheme_Object *obj, int n,  S
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-max-height in editor<%>");
+  x0 = objscheme_unbundle_nonnegative_symbol_float(p[0], "none", "set-max-height in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMaxHeight(x0);
@@ -3138,7 +3137,7 @@ static Scheme_Object *os_wxMediaBufferGetMinHeight(Scheme_Object *obj, int n,  S
 
   
   
-  return scheme_make_double(r);
+  return objscheme_bundle_nonnegative_symbol_float(r, "none");
 }
 
 #pragma argsused
@@ -3155,7 +3154,7 @@ static Scheme_Object *os_wxMediaBufferGetMaxHeight(Scheme_Object *obj, int n,  S
 
   
   
-  return scheme_make_double(r);
+  return objscheme_bundle_nonnegative_symbol_float(r, "none");
 }
 
 #pragma argsused
@@ -3166,7 +3165,7 @@ static Scheme_Object *os_wxMediaBufferSetMinWidth(Scheme_Object *obj, int n,  Sc
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-min-width in editor<%>");
+  x0 = objscheme_unbundle_nonnegative_symbol_float(p[0], "none", "set-min-width in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMinWidth(x0);
@@ -3184,7 +3183,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxWidth(Scheme_Object *obj, int n,  Sc
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "set-max-width in editor<%>");
+  x0 = objscheme_unbundle_nonnegative_symbol_float(p[0], "none", "set-max-width in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMaxWidth(x0);
@@ -3208,7 +3207,7 @@ static Scheme_Object *os_wxMediaBufferGetMinWidth(Scheme_Object *obj, int n,  Sc
 
   
   
-  return scheme_make_double(r);
+  return objscheme_bundle_nonnegative_symbol_float(r, "none");
 }
 
 #pragma argsused
@@ -3225,7 +3224,7 @@ static Scheme_Object *os_wxMediaBufferGetMaxWidth(Scheme_Object *obj, int n,  Sc
 
   
   
-  return scheme_make_double(r);
+  return objscheme_bundle_nonnegative_symbol_float(r, "none");
 }
 
 #pragma argsused
@@ -3696,11 +3695,11 @@ static Scheme_Object *os_wxMediaBufferInvalidateBitmapCache(Scheme_Object *obj, 
   } else
     x1 = 0.0;
   if (n > 2) {
-    x2 = objscheme_unbundle_float(p[2], "invalidate-bitmap-cache in editor<%>");
+    x2 = objscheme_unbundle_nonnegative_symbol_float(p[2], "end", "invalidate-bitmap-cache in editor<%>");
   } else
     x2 = -1.0;
   if (n > 3) {
-    x3 = objscheme_unbundle_float(p[3], "invalidate-bitmap-cache in editor<%>");
+    x3 = objscheme_unbundle_nonnegative_symbol_float(p[3], "end", "invalidate-bitmap-cache in editor<%>");
   } else
     x3 = -1.0;
 
@@ -3741,7 +3740,7 @@ static Scheme_Object *os_wxMediaBufferOnPaint(Scheme_Object *obj, int n,  Scheme
   x7 = objscheme_unbundle_float(p[7], "on-paint in editor<%>");
   x8 = unbundle_symset_caret(p[8], "on-paint in editor<%>");
 
-  if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("editor<%>","on-paint"));
+  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad bitmap: ", p[1]);
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else

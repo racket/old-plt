@@ -11,7 +11,6 @@
 
 
 
-
 #include "wxscheme.h"
 #include "wxs_mede.h"
 #include "wxscomon.h"
@@ -67,6 +66,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -81,7 +81,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
@@ -815,6 +815,7 @@ static Scheme_Object *l_MAKE_LIST(l_TYPE l_POINT *f, l_INTTYPE c)
 
 static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 {
+  Scheme_Object *orig_l = l;
   int i = 0;
   long len;
 
@@ -829,7 +830,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 
   while (!SCHEME_NULLP(l)) {
     if (!SCHEME_LISTP(l))
-     scheme_signal_error("%s: expected a proper list", who);
+     scheme_arg_mismatch(who, "expected a proper list: ", orig_l);
 
 #define l_COPYDEST f[i]
 #define l_COPYSRC (l_DEREF l_LIST_ITEM_UNBUNDLE(SCHEME_CAR(l), who l_TEST))
@@ -2118,8 +2119,8 @@ wxMediaEdit::InvalidateBitmapCache(x0, x1, x2, x3);
   
   p[0] = scheme_make_double(x0);
   p[1] = scheme_make_double(x1);
-  p[2] = scheme_make_double(x2);
-  p[3] = scheme_make_double(x3);
+  p[2] = objscheme_bundle_nonnegative_symbol_float(x2, "width");
+  p[3] = objscheme_bundle_nonnegative_symbol_float(x3, "height");
   
 
   v = scheme_apply(method, 4, p);
@@ -5210,7 +5211,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     } else
       x4 = TRUE;
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) scheme_signal_error("%s",METHODNAME("text%","insert")": bad string length");
+    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[0]);
     ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0, x1, x2, x3, x4);
 
     
@@ -5225,7 +5226,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     x0 = objscheme_unbundle_nonnegative_integer(p[0], "insert in text% (length, string, and position case)");
     x1 = (string)objscheme_unbundle_string(p[1], "insert in text% (length, string, and position case)");
 
-    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) scheme_signal_error("%s",METHODNAME("text%","insert")": bad string length");
+    if ((x0 < 0) || (x0 > SCHEME_STRTAG_VAL(p[1]))) scheme_arg_mismatch(METHODNAME("text%","insert"), "bad string length: ", p[0]);
     ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0, x1);
 
     
@@ -5977,11 +5978,11 @@ static Scheme_Object *os_wxMediaEditInvalidateBitmapCache(Scheme_Object *obj, in
   } else
     x1 = 0.0;
   if (n > 2) {
-    x2 = objscheme_unbundle_float(p[2], "invalidate-bitmap-cache in text%");
+    x2 = objscheme_unbundle_nonnegative_symbol_float(p[2], "width", "invalidate-bitmap-cache in text%");
   } else
     x2 = -1.0;
   if (n > 3) {
-    x3 = objscheme_unbundle_float(p[3], "invalidate-bitmap-cache in text%");
+    x3 = objscheme_unbundle_nonnegative_symbol_float(p[3], "height", "invalidate-bitmap-cache in text%");
   } else
     x3 = -1.0;
 
@@ -6022,7 +6023,7 @@ static Scheme_Object *os_wxMediaEditOnPaint(Scheme_Object *obj, int n,  Scheme_O
   x7 = objscheme_unbundle_float(p[7], "on-paint in text%");
   x8 = unbundle_symset_caret(p[8], "on-paint in text%");
 
-  if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("editor<%>","on-paint"));
+  if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("editor<%>","on-paint"), "bad bitmap: ", p[1]);
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->wxMediaEdit::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else

@@ -219,6 +219,8 @@ Scheme_Env *scheme_basic_env ()
 
   scheme_starting_up = 0;
 
+  scheme_init_getenv();
+
 #ifdef TIME_STARTUP_PROCESS
   printf("done @ %ld\n#endif\n", scheme_get_process_milliseconds());
 #endif

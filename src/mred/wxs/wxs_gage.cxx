@@ -11,7 +11,6 @@
 
 
 
-
 class wxsGauge : public wxGauge
 {
  public:

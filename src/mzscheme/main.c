@@ -232,8 +232,6 @@ static char *get_init_filename(Scheme_Env *env)
 #define PROGRAM "MzScheme"
 #define PROGRAM_LC "mzscheme"
 #define BANNER scheme_banner()
-#define SETUP_GETENV_HACK /* empty */
-#define TAKEDOWN_GETENV_HACK /* empty */
 #define MZSCHEME_CMD_LINE
 
 #include "cmdline.inc"

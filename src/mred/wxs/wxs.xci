@@ -4,7 +4,6 @@
 @IDFIELD __type
 
 @MACRO NOZERO[p] = if (!x<p>) x<p> = -1;
-@MACRO CHECKOK[p.who] = if (x<p> && !x<p>->Ok()) scheme_signal_error("%s: bad bitmap", <who>);
-@MACRO CHECKDCOK[p.who] = if (x<p> && !x<p>->Ok()) scheme_signal_error("%s: bad device context", <who>);
+@MACRO CHECKOK[p.who] = if (x<p> && !x<p>->Ok()) scheme_arg_mismatch(<who>, "bad bitmap: ", p[<p>]);
+@MACRO CHECKDCOK[p.who] = if (x<p> && !x<p>->Ok()) scheme_arg_mismatch(<who>, "bad device context: ", p[<p>]);
 @MACRO CHECKVOIDABLEOK[p] = if (x<p> && !x<p>->Ok()) return scheme_void;
-

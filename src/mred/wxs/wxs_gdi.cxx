@@ -3761,7 +3761,7 @@ static void init_symset_smoothingMode(void) {
   wxREGGLOB(smoothingMode_1_sym);
   smoothingMode_1_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("smoothed"));
   wxREGGLOB(smoothingMode_2_sym);
-  smoothingMode_2_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("compatible"));
+  smoothingMode_2_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("aligned"));
 }
 
 static int unbundle_symset_smoothingMode(Scheme_Object *v, const char *where) {

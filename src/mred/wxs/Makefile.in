@@ -175,7 +175,7 @@ $(srcdir)/wxs_fram.cxx : $(srcdir)/wxs_fram.xc $(srcdir)/wxs_win.xci $(srcdir)/w
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_fram.cxx ; else $(XCTOCXX) $(srcdir)/wxs_fram.xc ; fi
 $(srcdir)/wxs_gage.cxx : $(srcdir)/wxs_gage.xc  $(XCDEPEND) $(CB_DEPEND) $(ITEM_DEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_gage.cxx ; else $(XCTOCXX) $(srcdir)/wxs_gage.xc ; fi
-$(srcdir)/wxs_gdi.cxx : $(srcdir)/wxs_gdi.xc  $(XCDEPEND) $(LIST_DEPEND) $(GDISTYLE_DEPEND)
+$(srcdir)/wxs_gdi.cxx : $(srcdir)/wxs_gdi.xc  $(XCDEPEND) $(LIST_DEPEND) $(GDISTYLE_DEPEND) $(srcdir)/wxs_drws.xci
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_gdi.cxx ; else $(XCTOCXX) $(srcdir)/wxs_gdi.xc ; fi
 $(srcdir)/wxs_glob.cxx : $(srcdir)/wxs_glob.xc  $(XCDEPEND) $(LIST_DEPEND)
 	if [ "$(PERL)" = '' ] ; then touch $(srcdir)/wxs_glob.cxx ; else $(XCTOCXX) $(srcdir)/wxs_glob.xc ; fi

@@ -3165,9 +3165,7 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
 {
   Bool no_set_filename, fileerr;
   Scheme_Object *f;
-#ifdef wx_mac
   int is_binary;
-#endif
 
   if (readLocked)
     return FALSE;
@@ -3206,14 +3204,10 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
       || (format == wxMEDIA_FF_COPY))
     format = fileFormat;
 
-#ifdef wx_mac
   is_binary = !((format == wxMEDIA_FF_TEXT) 
 		|| (format == wxMEDIA_FF_TEXT_FORCE_CR));
-#endif
 
-  /* Always open in binary mode, because flattened text
-     gets cr/lf as appropriate */
-  f = scheme_open_output_file(file, "save-file in text%");
+  f = scheme_open_output_file_with_mode(file, "save-file in text%", !is_binary);
   
   if (!f) {
     if (showErrors)

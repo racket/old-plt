@@ -2051,7 +2051,7 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
 	if (length + l + 1 >= sz) {
 	  sz = (2 * sz) + length + l + 1;
 	  old = total;
-	  total = new char[sz];
+	  total = new WXGC_ATOMIC char[sz];
 	  memcpy(total, old, length);
 	}
 	memcpy(total + length, str, l);
@@ -2073,6 +2073,33 @@ char *wxMediaClipboardClient::GetData(char *format, long *size)
       for (i = 0; i < length; i++) {
 	if (total[i] == '\n')
 	  total[i] = '\r';
+      }
+    }
+#endif
+#ifdef wx_msw
+    /* Change newline to return-newline: */
+    {
+      int i, extra = 0;
+
+      for (i = 0; i < length; i++) {
+	if (total[i] == '\n')
+	  extra++;
+      }
+
+      if (extra) {
+	str = new WXGC_ATOMIC char[length + extra + 1];
+	extra = 0;
+	for (i = 0; i < length; i++) {
+	  if (total[i] == '\n') {
+	    str[i + extra] = '\r';
+	    extra++;
+	    str[i + extra] = '\n';
+	  } else
+	    str[i + extra] = total[i];
+	}
+	length += extra;
+	str[length] = 0;
+	total = str;
       }
     }
 #endif

@@ -374,6 +374,7 @@
   scheme_extension_table->scheme_write_special_evt_via_write_special = scheme_write_special_evt_via_write_special;
   scheme_extension_table->scheme_open_input_file = scheme_open_input_file;
   scheme_extension_table->scheme_open_output_file = scheme_open_output_file;
+  scheme_extension_table->scheme_open_output_file_with_mode = scheme_open_output_file_with_mode;
   scheme_extension_table->scheme_make_file_input_port = scheme_make_file_input_port;
   scheme_extension_table->scheme_make_named_file_input_port = scheme_make_named_file_input_port;
   scheme_extension_table->scheme_make_file_output_port = scheme_make_file_output_port;

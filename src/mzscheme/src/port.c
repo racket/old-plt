@@ -3461,6 +3461,16 @@ Scheme_Object *scheme_open_output_file(const char *name, const char *who)
   return scheme_do_open_output_file((char *)who, 0, 2, a, 0);
 }
 
+Scheme_Object *scheme_open_output_file_with_mode(const char *name, const char *who, int text)
+{
+  Scheme_Object *a[3];
+
+  a[0]= scheme_make_path(name);
+  a[1] = truncate_replace_symbol;
+  a[2] = (text ? text_symbol : binary_symbol);
+  return scheme_do_open_output_file((char *)who, 0, 3, a, 0);
+}
+
 Scheme_Object *
 scheme_file_position(int argc, Scheme_Object *argv[])
 {

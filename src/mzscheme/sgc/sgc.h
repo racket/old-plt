@@ -12,6 +12,7 @@ void GC_add_roots(void *start, void *end);
 extern void (*GC_start_collect_callback)(void);
 extern void (*GC_end_collect_callback)(void);
 extern void (*GC_custom_finalize)(void);
+extern void (*GC_out_of_memory)(void);
 
 extern void *GC_initial_trace_root;
 extern int (*GC_inital_root_skip)(void *, size_t);

@@ -907,37 +907,7 @@ wxchar *wxTextSnip::GetText(long offset, long num, Bool flat, long *got)
   if (num + offset > count)
     num = count - offset;
 
-  if (flat && (flags & wxSNIP_HARD_NEWLINE)) {
-    wxchar *s;
-
-#ifdef wx_msw
-#define NWL_RC 2
-#else
-#define NWL_RC 1
-#endif
-
-    if (got)
-      *got = NWL_RC;
-    
-    s = new WXGC_ATOMIC wxchar[NWL_RC + 1];
-#ifdef wx_x
-    s[0] = '\n';
-#else
-#ifdef wx_msw
-    s[0] = '\r';
-    s[1] = '\n';
-#else
-# ifdef OS_X
-    s[0] = '\n';
-# else
-    // Macintosh Classic
-    s[0] = '\r';
-# endif    
-#endif
-#endif
-    s[NWL_RC] = 0;
-    return s;
-  } else {
+  {
     wxchar *s;
     s = new WXGC_ATOMIC wxchar[num + 1];
     memcpy(s, buffer + dtext + offset, num * sizeof(wxchar));

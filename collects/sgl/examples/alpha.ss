@@ -1,7 +1,8 @@
 ;; By Brendan Burns
-
+(module alpha mzscheme
 ;; Standard requires
 (require 
+ (lib "mred.ss" "mred")
  (lib "gl.ss" "sgl")
  (lib "gl-vectors.ss" "sgl")
  "gl-frame.ss")
@@ -147,3 +148,4 @@
 (set-gl-init-fn my-gl-init)
 ;; Set the draw function
 (set-gl-draw-fn my-gl-draw)
+(gl-run))

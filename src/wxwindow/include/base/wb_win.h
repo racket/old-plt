@@ -87,8 +87,7 @@ class wxEvtHandler: public wxObject
   inline virtual void OnActivate(Bool WXUNUSED(active)) {};       // Called on window activation (MSW)
   inline virtual void OnSetFocus(void) {};              // Called on setting focus
   inline virtual void OnKillFocus(void) {};             // Called on killing focus
-  inline virtual void OnDropFiles(int WXUNUSED(n), char *WXUNUSED(files)[], int WXUNUSED(x), int WXUNUSED(y)) {};
-                                                 // Called when files dropped
+  inline virtual void OnDropFile(char *WXUNUSED(file)) {};
 
   // Members for editing dialogs/panels
   inline virtual void OnItemMove(wxItem *WXUNUSED(item), int WXUNUSED(x), int WXUNUSED(y)) {};

@@ -32,7 +32,7 @@
 #define wxTYPE_FRAME           7
 
 #define wxTYPE_BUTTON          8
-#define wxTYPE_TEXT            9
+#define wxTYPE_POPUP_EVENT     9
 #define wxTYPE_MESSAGE         10
 #define wxTYPE_CHOICE          11
 #define wxTYPE_LIST_BOX        12

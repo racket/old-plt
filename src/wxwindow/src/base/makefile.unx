@@ -63,7 +63,7 @@ $(OBJDIR)/wb_frame.$(OBJSUFF):	wb_frame.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx
 	$(CC) -c $(CPPFLAGS) -o $@ wb_frame.$(SRCSUFF)
 
 $(OBJDIR)/wb_panel.$(OBJSUFF):	wb_panel.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h \
-                $(WXINC)/wx_panel.h $(WXBASEINC)/wx_stdev.h $(WXBASEINC)/wx_list.h
+                $(WXINC)/wx_panel.h $(WXBASEINC)/wx_stdev.h $(WXBASEINC)/wx_list.h $(WXINC)/wx_dialg.h 
 	$(CC) -c $(CPPFLAGS) -o $@ wb_panel.$(SRCSUFF)
 
 $(OBJDIR)/wb_canvs.$(OBJSUFF):	wb_canvs.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
@@ -76,7 +76,7 @@ $(OBJDIR)/wb_dc.$(OBJSUFF):        wb_dc.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/w
                 $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h
 	$(CC) -c $(CPPFLAGS) -o $@ wb_dc.$(SRCSUFF)
 
-$(OBJDIR)/wb_ps.$(OBJSUFF):        wb_ps.$(SRCSUFF) $(WXINC)/wx_win.h $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h
+$(OBJDIR)/wb_ps.$(OBJSUFF):        wb_ps.$(SRCSUFF) $(WXINC)/wx_win.h $(WXBASEINC)/wx_list.h $(WXINC)/wx_dc.h $(WXINC)/wx_dialg.h 
 	$(CC) -c $(CPPFLAGS) -o $@ wb_ps.$(SRCSUFF)
 
 $(OBJDIR)/wb_mf.$(OBJSUFF):        wb_mf.$(SRCSUFF) $(WXINC)/wx_win.h $(WXINC)/wx_frame.h\
@@ -161,7 +161,7 @@ $(OBJDIR)/wb_stat.$(OBJSUFF):     wb_stat.$(SRCSUFF) $(WXBASEINC)/wb_stat.h
 $(OBJDIR)/wx_lay.$(OBJSUFF):     wx_lay.$(SRCSUFF) $(WXBASEINC)/wx_lay.h
 	$(CC) -c $(CPPFLAGS) -o $@ wx_lay.$(SRCSUFF)
 
-$(OBJDIR)/wb_print.$(OBJSUFF):     wb_print.$(SRCSUFF) $(WXBASEINC)/wx_print.h $(WXBASEINC)/wb_dialg.h
+$(OBJDIR)/wb_print.$(OBJSUFF):     wb_print.$(SRCSUFF) $(WXBASEINC)/wx_print.h $(WXBASEINC)/wb_dialg.h $(WXINC)/wx_dialg.h 
 	$(CC) -c $(CPPFLAGS) -o $@ wb_print.$(SRCSUFF)
 
 $(OBJDIR)/wx_doc.$(OBJSUFF):     wx_doc.$(SRCSUFF) $(WXBASEINC)/wx_doc.h
@@ -176,7 +176,7 @@ $(OBJDIR)/wx_bbar.$(OBJSUFF):     wx_bbar.$(SRCSUFF) $(WXBASEINC)/wx_bbar.h
 $(OBJDIR)/wx_mem.$(OBJSUFF):     wx_mem.$(SRCSUFF) $(WXBASEINC)/wx_mem.h
 	$(CC) -c $(CPPFLAGS) -o $@ wx_mem.$(SRCSUFF)
 
-$(OBJDIR)/wb_cmdlg.$(OBJSUFF):     wb_cmdlg.$(SRCSUFF) $(WXBASEINC)/wb_cmdlg.h $(WXBASEINC)/wb_dialg.h
+$(OBJDIR)/wb_cmdlg.$(OBJSUFF):     wb_cmdlg.$(SRCSUFF) $(WXBASEINC)/wb_cmdlg.h $(WXBASEINC)/wb_dialg.h $(WXINC)/wx_dialg.h
 	$(CC) -c $(CPPFLAGS) -o $@ wb_cmdlg.$(SRCSUFF)
 
 $(OBJDIR)/wx_date.$(OBJSUFF):     wx_date.$(SRCSUFF) $(WXBASEINC)/wx_date.h

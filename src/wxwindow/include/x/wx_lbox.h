@@ -72,10 +72,14 @@ class wxListBox: public wxbListBox
 
   void InsertItems(int nItems, char **Items, int pos);
 
+  int NumberOfVisibleItems(void);
+
   // Set the specified item at the first visible item
   // or scroll to max range.
   void SetFirstItem(int N) ;
   void SetFirstItem(char *s) ;
+
+  int GetFirstItem();
 
   void ChangeColour(void) ;
 };

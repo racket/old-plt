@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.1.1.1 1997/12/22 16:12:04 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.2 1998/01/27 17:03:40 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -56,8 +56,8 @@ extern void wxRegisterFrameWidget(Widget);
 extern void wxUnregisterFrameWidget(Widget);
 
 static Bool wxTopLevelUsed = FALSE;
-static void wxFrameFocusProc(Widget workArea, XtPointer clientData, 
-                      XmAnyCallbackStruct *cbs)
+static void wxFrameFocusProc(Widget workArea, XtPointer, 
+			     XmAnyCallbackStruct *)
 {
   wxFrame *frame = (wxFrame *)wxWidgetHashTable->Get((long)workArea);
 
@@ -66,14 +66,11 @@ static void wxFrameFocusProc(Widget workArea, XtPointer clientData,
 }
 
 /* MATTEW: Used to insure that hide-&-show within an event cycle works */
-static void wxFrameMapProc(Widget frameShell, XtPointer clientData, 
-			   XCrossingEvent * event)
+static void wxFrameMapProc(Widget, XtPointer clientData, XEvent *e)
 {
   wxFrame *frame = (wxFrame *)wxWidgetHashTable->Get((long)clientData);
 
   if (frame) {
-    XEvent *e = (XEvent *)event;
-
     if (e->xany.type == MapNotify) {
       if (!frame->visibleStatus) {
 	/* We really wanted this to be hidden! */
@@ -84,23 +81,59 @@ static void wxFrameMapProc(Widget frameShell, XtPointer clientData,
 }
 
 /* MATTEW: Call OnActivate */
-static void wxWindowFocusProc(Widget, XtPointer clientData, XCrossingEvent *event)
+static void wxWindowFocusProc(Widget, XtPointer clientData, XEvent *xev)
 {
-# define ACTIVATED 0x1
-  wxWindow *window = (wxWindow *)wxWidgetHashTable->Get((long)clientData);
+# define ACTIVE_VIA_POINTER_FLAG 0x1
+  wxWindow *win = (wxWindow *)wxWidgetHashTable->Get((long)clientData);
 
-  if (window) {
-    XEvent *e = (XEvent *)event;
+  if (win) {
+    int Enter = FALSE;
 
-    if (e->xany.type == FocusIn) {
-      if (!(window->filler & ACTIVATED)) {
-	window->filler |= ACTIVATED;
-	window->OnActivate(TRUE);
+    switch (xev->xany.type) {
+    case EnterNotify:
+      Enter = TRUE;
+    case LeaveNotify: 
+      /* If Focus == PointerRoot, manage activation */
+      if (xev->xcrossing.detail != NotifyInferior) {
+	Window current;
+	int old_revert;
+	XGetInputFocus(XtDisplay((Widget)win->handle), &current, &old_revert);
+	if (current == PointerRoot) {
+	  if (Enter)
+	    win->filler |= ACTIVE_VIA_POINTER_FLAG;
+	  else
+	    win->filler -= (win->filler & ACTIVE_VIA_POINTER_FLAG);
+	  win->GetEventHandler()->OnActivate(Enter);
+	}
       }
-    } else {
-      if ((window->filler & ACTIVATED)) {
-	window->filler -= ACTIVATED;
-	window->OnActivate(FALSE);
+      break;
+
+    case FocusIn:
+      Enter = TRUE;
+    case FocusOut:
+      if (xev->xfocus.detail != NotifyInferior) {
+	Window current;
+	if (xev->xfocus.detail == NotifyPointer) {
+	  /* NotifyPointer is meaningful if the focus is PointerRoot
+	     or we're active via the pointer */
+	  if (!Enter && (win->filler & ACTIVE_VIA_POINTER_FLAG)) {
+	    current = PointerRoot;
+	  } else {
+	    int old_revert;
+	    XGetInputFocus(XtDisplay((Widget)win->handle), &current, &old_revert);
+	  }
+	} else
+	  current = PointerRoot;
+	
+	if (current == PointerRoot) {
+	  if (xev->xfocus.detail == NotifyPointer) {
+	    if (Enter)
+	      win->filler |= ACTIVE_VIA_POINTER_FLAG;
+	    else
+	      win->filler -= (win->filler & ACTIVE_VIA_POINTER_FLAG);
+	  }
+	  win->GetEventHandler()->OnActivate(Enter);
+	}
       }
     }
   }
@@ -109,7 +142,8 @@ static void wxWindowFocusProc(Widget, XtPointer clientData, XCrossingEvent *even
 void wxInstallOnActivate(Widget frameShell, Widget workArea)
 {
   /* MATTHEW: activate */
-  XtAddEventHandler(frameShell, FocusChangeMask,
+  XtAddEventHandler(frameShell, 
+		    FocusChangeMask | EnterWindowMask | LeaveWindowMask,
 		    False, (XtEventHandler)wxWindowFocusProc,
 		    (XtPointer)workArea);
 }
@@ -176,12 +210,8 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
     statusTextWidget[i] = 0;
 
   if (wxTopLevelUsed)
-  // frameShell = XtAppCreateShell(NULL, windowName, topLevelShellWidgetClass, XtDisplay(wxTheApp->topLevel), NULL, 0);
-    // Change suggested by Matthew Flatt
-    /* MATTHEW: [4] Use wxGetDisplay() */
     frameShell = XtAppCreateShell(windowName, wxTheApp->wx_class, topLevelShellWidgetClass, wxGetDisplay(), NULL, 0);
-  else
-  {
+  else {
     frameShell = wxTheApp->topLevel;
     wxTopLevelUsed = TRUE;
   }
@@ -234,8 +264,7 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 //  XtManageChild(statusLineWidget);
   XtManageChild(workArea);
 
-  if (wxWidgetHashTable->Get((long)workArea))
-  {
+  if (wxWidgetHashTable->Get((long)workArea)) {
     wxError("Widget table clash in wx_frame.cc");
   }
   wxWidgetHashTable->Put((long)workArea, this);
@@ -269,8 +298,7 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
   handle = (char *)frameWidget;
 
   // This patch comes from Torsten Liermann lier@lier1.muc.de
-  if (XmIsMotifWMRunning(wxTheApp->topLevel))
-  {
+  if (XmIsMotifWMRunning(wxTheApp->topLevel)) {
     int decor = 0 ;
     if (style & wxRESIZE_BORDER)
       decor |= MWM_DECOR_RESIZEH ;
@@ -316,8 +344,9 @@ Bool wxFrame::Create(wxFrame *Parent, char *title, int x, int y,
 
 Bool wxFrame::PreResize(void)
 {
-  return FALSE;
+  return TRUE;
 
+#if 0
   // Set status line, if any
   if (status_line_exists)
   {
@@ -344,9 +373,8 @@ Bool wxFrame::PreResize(void)
   if (width == lastWidth && height == lastHeight)
     return FALSE;
   else
-  {
     return TRUE;
-  }
+#endif
 }
 
 // Get size *available for subwindows* i.e. excluding menu bar etc.
@@ -544,7 +572,7 @@ void wxFrame::SetSize(int x, int y, int width, int height, int sizeFlags)
   GetSize(&lastWidth, &lastHeight);
 }
 
-static void ForceFocus(Widget frame)
+void FrameForceFocus(Widget frame)
 {
   static int force_focus = 0;
 
@@ -593,7 +621,7 @@ Bool wxFrame::Show(Bool show)
   if (show) {
     XtMapWidget(frameShell);
     XRaiseWindow(XtDisplay(frameShell), XtWindow(frameShell));
-    ForceFocus(frameShell);
+    FrameForceFocus(frameShell);
   } else {
     XtUnmapWidget(frameShell);
 //    XmUpdateDisplay(wxTheApp->topLevel); // Experimental: may be responsible for crashes
@@ -602,7 +630,7 @@ Bool wxFrame::Show(Bool show)
   return TRUE;
 }
 
-void wxCloseFrameCallback(Widget widget, XtPointer client_data, XmAnyCallbackStruct *cbs)
+void wxCloseFrameCallback(Widget, XtPointer client_data, XmAnyCallbackStruct *)
 {
   wxFrame *frame = (wxFrame *)client_data;
   wxWindow *modal;
@@ -854,7 +882,7 @@ void wxFrame::SetStatusText(char *text, int number)
   PreResize();  // Stretch it back to full width!
 }
 
-void wxFrame::LoadAccelerators(char *table)
+void wxFrame::LoadAccelerators(char *)
 {
 }
 
@@ -955,10 +983,10 @@ wxFrame::~wxFrame (void)
 
   wxWidgetHashTable->Delete ((long) workArea);
 
-  XtDestroyWidget (workArea);
-  XtDestroyWidget (frameWidget);
+  XtDestroyWidget(workArea);
+  XtDestroyWidget(frameWidget);
   wxWidgetHashTable->Delete((long)frameWidget);
-  XtDestroyWidget (frameShell);
+  XtDestroyWidget(frameShell);
 
   wxUnregisterFrameWidget(frameShell);
 

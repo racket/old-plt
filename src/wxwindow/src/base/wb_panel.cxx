@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_panel.cc,v 1.3 1994/08/14 21:34:01 edz Exp $
+ * RCS_ID:      $Id: wb_panel.cxx,v 1.1.1.1 1997/12/22 16:11:54 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -173,7 +173,7 @@ void wxbPanel::SetButtonColour(wxColour *col)
  */
 
 // An event outside any items: may be a drag event.
-void wxbPanel::OnEvent(wxMouseEvent& event)
+void wxbPanel::OnEvent(wxMouseEvent& /* event */)
 {
 }
 
@@ -189,7 +189,7 @@ void wxbPanel::OnItemEvent(wxItem *item, wxMouseEvent& event)
   ProcessItemEvent(item, event, dragType);
 }
 
-void wxbPanel::ProcessItemEvent(wxItem *item, wxMouseEvent& event, int selectionHandle)
+void wxbPanel::ProcessItemEvent(wxItem * /* item */, wxMouseEvent& /* event */, int /* selectionHandle */)
 {
 }
 

@@ -1063,7 +1063,7 @@ IMPLEMENT_ABSTRACT_CLASS(wxPrintout, wxObject)
 
 wxPrintout::wxPrintout(char *title)
 {
-  printoutTitle = title ? copystring(title) : NULL;
+  printoutTitle = title ? copystring(title) : (char *)NULL;
   printoutDC = NULL;
   pageWidthMM = 0;
   pageHeightMM = 0;

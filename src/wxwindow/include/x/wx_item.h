@@ -81,7 +81,7 @@ class wxItem: public wxbItem
 
 #ifdef wx_motif
    void RemoveTranslations(Bool remove = TRUE); // FALSE restores again
-   inline void SetCanAddEventHandler(Bool can) { canAddEventHandler = TRUE; }
+   inline void SetCanAddEventHandler(Bool /* can */ ) { canAddEventHandler = TRUE; }
    inline Bool CanAddEventHandler(void) { return canAddEventHandler; }
 #endif
 };

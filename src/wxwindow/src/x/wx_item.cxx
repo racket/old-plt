@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	April 1995
- * RCS_ID:      $Id: wx_item.cc,v 1.3 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_item.cxx,v 1.1.1.1 1997/12/22 16:12:05 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -263,15 +263,16 @@ char *wxItem::GetLabel (void)
     }
 }
 
-void wxItem::SetFocus (void)
+void wxItem::SetFocus(void)
 {
   wxWindow::SetFocus ();
 }
 
-Bool wxItem::Show (Bool show)
+Bool wxItem::Show(Bool show)
 {
   if (show == IsShown())
-    return;
+    return TRUE;
+
   SetShown(show);
 
   window_parent->GetChildren()->Show(this, show);

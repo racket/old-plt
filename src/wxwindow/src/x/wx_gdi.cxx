@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_gdi.cc,v 1.3 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_gdi.cxx,v 1.1.1.1 1997/12/22 16:12:03 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -136,7 +136,9 @@ wxFont::~wxFont ()
   /* MATTHEW: [4] moved work to display-specific */
   xfonts.DeleteContents(TRUE);
 #endif
+#if !WXGARBAGE_COLLECTION_ON
   wxTheFontList->DeleteObject (this);
+#endif
 }
 
 /* MATTHEW: [4] Display argument, new implementation */

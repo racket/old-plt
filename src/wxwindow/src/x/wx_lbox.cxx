@@ -20,22 +20,13 @@
 #include "wx_privt.h"
 #include "wx_lbox.h"
 
-#ifdef wx_motif
 #include <Xm/Label.h>
 #include <Xm/LabelG.h>
 #include <Xm/List.h>
 #include <Xm/Form.h>
-#endif
 
-#ifdef wx_xview
-int wxListProc (Panel_item item, char *string, Xv_opaque client_data,
-		Panel_list_op op, Event * event, int row);
-#endif
-
-#ifdef wx_motif
 void 
-wxListBoxCallback (Widget w, XtPointer clientData,
-		   XmListCallbackStruct * cbs)
+wxListBoxCallback (Widget, XtPointer clientData, XmListCallbackStruct *cbs)
 {
 /*
    if (cbs->reason == XmCR_EXTENDED_SELECT)
@@ -103,7 +94,7 @@ wxListBoxCallback (Widget w, XtPointer clientData,
  * as if the user had selected it.
  */
 void 
-wxListBoxDefaultActionProc (Widget list_w, XtPointer client_data, XmListCallbackStruct * cbs)
+wxListBoxDefaultActionProc (Widget, XtPointer client_data, XmListCallbackStruct *)
 {
   wxListBox *lbox = (wxListBox *) client_data;
   wxPanel *panel = (wxPanel *) lbox->GetParent ();
@@ -111,36 +102,24 @@ wxListBoxDefaultActionProc (Widget list_w, XtPointer client_data, XmListCallback
     panel->GetEventHandler()->OnDefaultAction (lbox);
 }
 
-#endif
-
 // Listbox item
 IMPLEMENT_DYNAMIC_CLASS(wxListBox, wxItem)
 
-wxListBox::wxListBox (void)
-#ifdef wx_motif
-: clientDataList (wxKEY_INTEGER)
-#endif
+wxListBox::wxListBox(void) : clientDataList (wxKEY_INTEGER)
 {
   selected = -1;
   selections = 0;
   multiple = wxSINGLE;
   no_items = 0;
-#ifdef wx_motif
   labelWidget = NULL;
-#endif
-#ifdef wx_xview
-#endif
 }
 
 wxListBox::wxListBox (wxPanel * panel, wxFunction func,
 	   char *Title, Bool Multiple,
 	   int x, int y, int width, int height,
 	   int N, char **Choices, long style, char *name):
-wxbListBox (panel, func, Title, Multiple, x, y, width, height, N, Choices,
-	    style, name)
-#ifdef wx_motif
-,clientDataList (wxKEY_INTEGER)
-#endif
+	   wxbListBox (panel, func, Title, Multiple, x, y, width, height, N, Choices,
+		       style, name) ,clientDataList (wxKEY_INTEGER)
 {
   Create (panel, func, Title, Multiple, x, y, width, height, N, Choices,
 	  style, name);
@@ -166,7 +145,6 @@ Create (wxPanel * panel, wxFunction func,
   no_items = 0;
   labelPosition = panel->label_position;
   windowStyle = style;
-#ifdef wx_motif
   canAddEventHandler = TRUE;
   windowName = copystring (name);
 
@@ -327,72 +305,6 @@ Create (wxPanel * panel, wxFunction func,
 	}
     }
     XtVaSetValues(formWidget, XmNresizePolicy, XmRESIZE_NONE, NULL);
-#endif
-#ifdef wx_xview
-  // char *title = NULL;
-
-  int choose_one = ((Multiple & wxMULTIPLE_MASK) == wxSINGLE);
-  Panel x_panel = (Panel) panel->GetHandle ();
-  Panel_item x_list;
-
-  int label_position;
-  if (panel->label_position == wxVERTICAL)
-    label_position = PANEL_VERTICAL;
-  else
-    label_position = PANEL_HORIZONTAL;
-
-  if (panel->new_line)
-    {
-      x_list = (Panel_item) xv_create (x_panel, PANEL_LIST, PANEL_LAYOUT, label_position, PANEL_NEXT_ROW, -1, NULL);
-      panel->new_line = FALSE;
-    }
-  else
-    x_list = (Panel_item) xv_create (x_panel, PANEL_LIST, PANEL_LAYOUT, label_position, NULL);
-
-  if (Title)
-    {
-      actualLabel = wxStripMenuCodes(Title);
-
-      if (style & wxFIXED_LENGTH)
-	{
-	  char *the_label = fillCopy (actualLabel);
-	  xv_set (x_list, PANEL_LABEL_STRING, the_label, NULL);
-
-	  int label_x = (int) xv_get (x_list, PANEL_LABEL_X);
-	  int item_x = (int) xv_get (x_list, PANEL_ITEM_X);
-	  xv_set (x_list, PANEL_LABEL_STRING, actualLabel,
-		  PANEL_LABEL_X, label_x,
-		  PANEL_ITEM_X, item_x,
-		  NULL);
-          delete[] the_label;
-	}
-      else
-	xv_set (x_list, PANEL_LABEL_STRING, actualLabel, NULL);
-    }
-
-  xv_set (x_list,
-	  PANEL_CHOOSE_ONE, choose_one,
-	  PANEL_NOTIFY_PROC, wxListProc,
-	  PANEL_CLIENT_DATA, (char *) this,
-	  PANEL_ITEM_MENU, NULL,
-	  NULL);
-  if (x > -1 && y > -1)
-    (void) xv_set (x_list, XV_X, x, XV_Y, y, NULL);
-
-  handle = (char *) x_list;
-
-  SetSize (x, y, width, height);
-
-/*
-   if (buttonFont)
-   xv_set(x_list, XV_FONT, buttonFont->GetInternalFont(), NULL) ;
- */
-
-
-  if (N > 0)
-    Set (N, Choices);
-
-#endif
 
   Callback (func);
   return TRUE;
@@ -406,7 +318,6 @@ wxListBox::~wxListBox (void)
 
 void wxListBox::ChangeColour (void)
 {
-#ifdef wx_motif
   int change;
 
   wxPanel *panel = (wxPanel *) window_parent;
@@ -510,13 +421,11 @@ void wxListBox::ChangeColour (void)
 		       XmNforeground, itemColors[wxFORE_INDEX].pixel,
 		       NULL);
     }
-#endif
 }
 
 
 void wxListBox::SetFirstItem (int N)
 {
-#ifdef wx_motif
   int count, length;
 
   if (N < 0)
@@ -528,9 +437,6 @@ void wxListBox::SetFirstItem (int N)
   if ((N + count) >= length)
     N = length - count;
   XmListSetPos ((Widget) handle, N + 1);
-#endif
-#ifdef wx_xview
-#endif
 }
 
 void wxListBox::SetFirstItem (char *s)
@@ -541,9 +447,37 @@ void wxListBox::SetFirstItem (char *s)
     SetFirstItem (N);
 }
 
+int wxListBox::GetFirstItem(void)
+{
+  int count = 1;
+
+  XtVaGetValues((Widget)handle,
+		XmNtopItemPosition, &count,
+		NULL);
+  
+  if (count <= 0)
+    return 0;
+  
+  return count - 1;
+}
+
+
+int wxListBox::NumberOfVisibleItems(void)
+{
+  int count = 1;
+
+  XtVaGetValues((Widget)handle,
+		XmNvisibleItemCount, &count,
+		NULL);
+
+  if (count <= 0)
+    count = 1;
+
+  return count;
+}
+
 void wxListBox::Delete (int N)
 {
-#ifdef wx_motif
   int width1, height1;
   int width2, height2;
   Widget listBox = (Widget) handle;
@@ -570,18 +504,11 @@ void wxListBox::Delete (int N)
      node = node->Next();
    }
 
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item) handle;
-
-  xv_set (list_item, PANEL_LIST_DELETE, N, NULL);
-#endif
   no_items--;
 }
 
 void wxListBox::Append (char *Item)
 {
-#ifdef wx_motif
   int width1, height1;
   int width2, height2;
 
@@ -615,25 +542,11 @@ void wxListBox::Append (char *Item)
   if (width1 != width2 || height1 != height2)
     SetSize (-1, -1, width1, height1);
 
-#endif
-#ifdef wx_xview
-  char *label = Item;
-  Panel_item list_item = (Panel_item) handle;
-
-  int n = (int) xv_get (list_item, PANEL_LIST_NROWS);
-
-  xv_set (list_item, PANEL_LIST_INSERT, n,
-	  PANEL_LIST_STRING, n, label,
-	  PANEL_LIST_CLIENT_DATA, n, n,
-	  NULL);
-
-#endif
   no_items++;
 }
 
 void wxListBox::Append (char *Item, char *Client_data)
 {
-#ifdef wx_motif
   int width1, height1;
   int width2, height2;
 
@@ -670,25 +583,11 @@ void wxListBox::Append (char *Item, char *Client_data)
   if (width1 != width2 || height1 != height2)
     SetSize (-1, -1, width1, height1);
 
-#endif
-#ifdef wx_xview
-  char *label = Item;
-  Panel_item list_item = (Panel_item) handle;
-
-  int n = (int) xv_get (list_item, PANEL_LIST_NROWS);
-
-  xv_set (list_item, PANEL_LIST_INSERT, n,
-	  PANEL_LIST_STRING, n, label,
-	  PANEL_LIST_CLIENT_DATA, n, Client_data,
-	  NULL);
-
-#endif
   no_items++;
 }
 
 void wxListBox::Set (int n, char *choices[])
 {
-#ifdef wx_motif
   //for (int i = 0; i < n; i++)
   //  Append(choices[i]);
   //
@@ -739,34 +638,11 @@ void wxListBox::Set (int n, char *choices[])
   if (width1 != width2 || height1 != height2)
     SetSize (-1, -1, width1, height1);
 
-#endif
-#ifdef wx_xview
-  Panel_item list = (Panel_item) handle;
-  if (selections)
-    {
-      delete[]selections;
-      selections = NULL;
-    }
-
-  int max1 = (int) xv_get (list, PANEL_LIST_NROWS);
-  xv_set (list, PANEL_LIST_DELETE_ROWS, 0, max1, NULL);
-
-  int i;
-  for (i = 0; i < n; i++)
-    {
-      char *label = choices[i];
-      xv_set (list, PANEL_LIST_INSERT, i,
-	      PANEL_LIST_STRING, i, label,
-	      PANEL_LIST_CLIENT_DATA, i, i,
-	      NULL);
-    }
-#endif
   no_items = n;
 }
 
 int wxListBox::FindString (char *s)
 {
-#ifdef wx_motif
   XmString str = XmStringCreateSimple (s);
   int *positions = NULL;
   int no_positions = 0;
@@ -781,31 +657,13 @@ int wxListBox::FindString (char *s)
     }
   else
     return -1;
-#endif
-#ifdef wx_xview
-  Panel_item list = (Panel_item) handle;
-
-  int max1 = (int) xv_get (list, PANEL_LIST_NROWS);
-
-  int i = 0;
-  int found = -1;
-  while (found == -1 && i < max1)
-    {
-      char *label = (char *) xv_get (list, PANEL_LIST_STRING, i);
-      if (label && strcmp (label, s) == 0)
-	found = i;
-      else
-	i++;
-    }
-  return found;
-#endif
 }
 
 void wxListBox::Clear (void)
 {
   if (no_items <= 0)
     return;
-#ifdef wx_motif
+
   int width1, height1;
   int width2, height2;
 
@@ -819,17 +677,12 @@ void wxListBox::Clear (void)
   // Correct for randomly resized listbox - bad boy, Motif!
   if (width1 != width2 || height1 != height2)
     SetSize (-1, -1, width1, height1);
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item) handle;
-  xv_set (list_item, PANEL_LIST_DELETE_ROWS, 0, no_items, NULL);
-#endif
+
   no_items = 0;
 }
 
 void wxListBox::SetSelection (int N, Bool select)
 {
-#ifdef wx_motif
   if (select)
     {
 /*
@@ -858,16 +711,10 @@ void wxListBox::SetSelection (int N, Bool select)
     }
   else
     XmListDeselectPos ((Widget) handle, N + 1);
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item) handle;
-  xv_set (list_item, PANEL_LIST_SELECT, N, select, NULL);
-#endif
 }
 
 Bool wxListBox::Selected (int N)
 {
-#ifdef wx_motif
   // In Motif, no simple way to determine if the item is selected.
   int *theSelections;
   int count = GetSelections (&theSelections);
@@ -881,56 +728,29 @@ Bool wxListBox::Selected (int N)
 	return TRUE;
   }
   return FALSE;
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item) handle;
-  return (Bool) xv_get (list_item, PANEL_LIST_SELECTED, N);
-#endif
 }
 
 void wxListBox::Deselect (int N)
 {
-#ifdef wx_motif
   XmListDeselectPos ((Widget) handle, N + 1);
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item) handle;
-  xv_set (list_item, PANEL_LIST_SELECT, N, FALSE, NULL);
-#endif
 }
 
 char *wxListBox::GetClientData (int N)
 {
-#ifdef wx_motif
   wxNode *node = clientDataList.Find ((long) N);
   if (node)
     return (char *) node->Data ();
   else
     return NULL;
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item) handle;
-  char *data = (char *) xv_get (list_item, PANEL_LIST_CLIENT_DATA, N);
-  return data;
-#endif
 }
 
 void wxListBox::SetClientData(int N, char *Client_data)
 {
-#ifdef wx_motif
   wxNode *node = clientDataList.Find ((long) N);
   if (node)
     node->SetData ((wxObject *)Client_data);
   else
     clientDataList.Append((long) N, (wxObject *) Client_data);
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item)handle;
-
-  xv_set(list_item, PANEL_LIST_CLIENT_DATA, N, Client_data, 
-                    NULL);
-
-#endif
 }
 
 // Return number of selections and an array of selected integers
@@ -938,7 +758,6 @@ void wxListBox::SetClientData(int N, char *Client_data)
 // by destructor if necessary.
 int wxListBox::GetSelections (int **list_selections)
 {
-#ifdef wx_motif
   Widget listBox = (Widget) handle;
   int *posList = NULL;
   int posCnt = 0;
@@ -963,45 +782,11 @@ int wxListBox::GetSelections (int **list_selections)
     }
   else
     return FALSE;
-#endif
-#ifdef wx_xview
-  Panel_item x_list = (Panel_item) handle;
-
-  int i = 0;
-  int j = 0;
-
-  if (selections)
-    {
-      delete[]selections;
-      selections = NULL;
-    }
-
-  for (j = 0; j < no_items; j++)
-    if (xv_get (x_list, PANEL_LIST_SELECTED, j))
-      {
-	i++;
-      }
-  if (i > 0)
-    {
-      selections = new int[i];
-      int k = 0;
-      for (j = 0; j < no_items; j++)
-	if (xv_get (x_list, PANEL_LIST_SELECTED, j))
-	  {
-	    selections[k] = j;
-	    k++;
-	  }
-    }
-
-  *list_selections = selections;
-  return i;
-#endif
 }
 
 // Get single selection, for single choice list items
 int wxListBox::GetSelection (void)
 {
-#ifdef wx_motif
   Widget listBox = (Widget) handle;
   int *posList = NULL;
   int posCnt = 0;
@@ -1016,34 +801,11 @@ int wxListBox::GetSelection (void)
     }
   else
     return -1;
-#endif
-#ifdef wx_xview
-  Panel_item x_list = (Panel_item) handle;
-
-  int i = 0;
-  if (selections)
-    {
-      delete[]selections;
-      selections = NULL;
-    }
-
-  int found = -1;
-  while (found == -1 && i < no_items)
-    {
-      if (xv_get (x_list, PANEL_LIST_SELECTED, i))
-	found = i;
-      else
-	i++;
-    }
-
-  return found;
-#endif
 }
 
 // Find string for position
 char *wxListBox::GetString (int N)
 {
-#ifdef wx_motif
   Widget listBox = (Widget) handle;
   XmString *strlist;
   int n;
@@ -1061,21 +823,10 @@ char *wxListBox::GetString (int N)
     }
   else
     return NULL;
-
-#endif
-#ifdef wx_xview
-  /* MATTHEW: [6] Safety */
-  if (N >= 0 && N < no_items) {
-    Panel_item x_list = (Panel_item) handle;
-    return (char *) xv_get (x_list, PANEL_LIST_STRING, N);
-  } else
-    return NULL;
-#endif
 }
 
-void wxListBox::SetSize (int x, int y, int width, int height, int sizeFlags)
+void wxListBox::SetSize (int x, int y, int width, int height, int /* sizeFlags */)
 {
-#ifdef wx_motif
   int pw, ph;
   
   GetParent()->GetSize(&pw, &ph);
@@ -1134,171 +885,11 @@ void wxListBox::SetSize (int x, int y, int width, int height, int sizeFlags)
   sr_width = width;
   sr_height = height;
   GetEventHandler()->OnSize (width, height);
-#endif
-#ifdef wx_xview
-  // Unfortunately, XView doesn't allow us to
-  // set the height in pixels explicitly. Bummer!
-//  wxItem::SetSize(x, y, width, height);
-//  return;
-
-  // Fudge factor for slider width
-  int listBoxSliderWidth = 15;
-
-  Xv_opaque x_win = (Xv_opaque) handle;
-  int labelWidth = 0;
-  int panelLayout = (int)xv_get(x_win, PANEL_LAYOUT);
-  if (panelLayout == PANEL_HORIZONTAL)
-    labelWidth = (int)xv_get(x_win, PANEL_LABEL_WIDTH);
-
-  Panel_item list_item = (Panel_item) handle;
-
-  int row_height = (int) xv_get (list_item, PANEL_LIST_ROW_HEIGHT);
-
-  if (x > -1)
-    xv_set (list_item, XV_X, x, NULL);
-
-  if (y > -1)
-    xv_set (list_item, XV_Y, y, NULL);
-
-  // If we're prepared to use the existing size, then...
-  if (width == -1 && height == -1 && ((sizeFlags & wxSIZE_AUTO) != wxSIZE_AUTO))
-    return;
-
-  int ww, hh;
-  GetSize (&ww, &hh);
-
-  int actualWidth = width;
-  int actualHeight = height;
-
-  if (width == -1)
-    actualWidth = ww;
-  if (height == -1)
-    actualHeight = hh;
-
-  // Not quite sure whether this is needed: is PANEL_LIST_WIDTH
-  // the whole thing incl. label or just the list?
-  if (panelLayout == PANEL_HORIZONTAL)
-    actualWidth = width - labelWidth;
-
-  if (width > -1)
-    xv_set (list_item,
-	    PANEL_LIST_WIDTH, max ((actualWidth - listBoxSliderWidth), 60), NULL);
-  else
-    xv_set (list_item,
-	    PANEL_LIST_WIDTH, 0, NULL);
-
-  Xv_Font theLabelFont = (Xv_Font) xv_get (list_item, PANEL_LABEL_FONT);
-  int labelHeight =  (int) xv_get (theLabelFont, FONT_DEFAULT_CHAR_HEIGHT);
-
-  // Subtract the label height if we're in vertical label mode.
-  if (panelLayout == PANEL_VERTICAL)
-    actualHeight -= labelHeight;
-
-  if (height > -1)
-  {
-    int noRows = max ((int) (actualHeight / row_height), 4);
-//    wxDebugMsg("actualHeight = %d, row_height = %d, labelHeight = %d, height = %d, noRows = %d\n",
-//      actual_height, row_height, labelHeight, height, noRows);
-    xv_set (list_item,
-	PANEL_LIST_DISPLAY_ROWS, noRows,
-	    NULL);
-  }
-  else
-    xv_set (list_item,
-	    PANEL_LIST_DISPLAY_ROWS, 4,
-	    NULL);
-  GetEventHandler()->OnSize (width, height);
-
-  // Debugging
-/*
-  Rect *rect = (Rect *) xv_get (list_item, XV_RECT);
-
-  int hh = rect->r_height;
-  int ww = rect->r_width;
-  wxDebugMsg("Size after setting = %d, %d\n", ww, hh);
-*/
-#endif
 }
-
-#ifdef wx_xview
-#define DOUBLECLICK_DELAY 700
-
-int 
-wxListProc (Panel_item item, char *string, Xv_opaque client_data,
-	    Panel_list_op op, Event * x_event, int row)
-{
-  static wxListBox *doubleClickLB = NULL;
-  static int doubleClickFlag = 0;
-  static long doubleClickTime = 0;
-  static int doubleClickPos = -1;
-
-  if (op == PANEL_LIST_OP_SELECT || op == PANEL_LIST_OP_DESELECT)
-//  if (op == PANEL_LIST_OP_SELECT)
-    {
-      wxListBox *list = (wxListBox *) xv_get (item, PANEL_CLIENT_DATA);
-      if ((op == PANEL_LIST_OP_SELECT) || (list->multiple != wxSINGLE))
-	{
-          doubleClickFlag ++;
-
-          // Check if it's a double click.
-          if (doubleClickFlag == 1)
-          {
-            doubleClickTime = wxGetElapsedTime(FALSE);
-            doubleClickLB = list;
-            doubleClickPos = row;
-            // Now carry on as if nothing had happened: gets a single click.
-          }
-          else if (doubleClickFlag == 2 && doubleClickLB == list && doubleClickPos == row)
-          {
-            if ((wxGetElapsedTime(FALSE) - doubleClickTime) <= DOUBLECLICK_DELAY)
-            {
-              doubleClickFlag = 0;
-              doubleClickLB = NULL;
-              doubleClickTime = 0;
-              doubleClickPos = -1;
-
-              // Got a double click.
-              wxPanel *parent = (wxPanel *)list->GetParent();
-              parent->GetEventHandler()->OnDefaultAction(list);
-              return XV_OK;
-            }
-            else
-            {
-              // Timed out. Normal single click.
-              doubleClickFlag = 0;
-              doubleClickLB = NULL;
-              doubleClickTime = 0;
-              doubleClickPos = -1;
-            }
-          }
-          else
-          {
-            doubleClickFlag = 0;
-            doubleClickLB = NULL;
-            doubleClickTime = 0;
-            doubleClickPos = -1;
-          }
-
-	  wxCommandEvent *_event  = new wxCommandEvent(wxEVENT_TYPE_LISTBOX_COMMAND);
-	  wxCommandEvent &event = *_event;
-
-	  event.commandString = string;
-	  event.commandInt = row;
-	  event.extraLong = (op == PANEL_LIST_OP_SELECT);
-	  event.clientData = (char *) client_data;
-	  event.eventHandle = (char *) x_event;
-	  event.eventObject = list;
-	  list->ProcessCommand (event);
-	}
-    }
-  return XV_OK;
-}
-#endif
 
 void
-wxListBox::InsertItems(int nItems, char **Items, int pos)
+wxListBox::InsertItems(int nItems, char **Items, int /* pos */)
 {
-#ifdef wx_motif
   int width1, height1;
   int width2, height2;
 
@@ -1346,28 +937,12 @@ wxListBox::InsertItems(int nItems, char **Items, int pos)
   if (width1 != width2 /*|| height1 != height2*/)
     SetSize(-1, -1, width1, height1);
 
-#endif
-#ifdef wx_xview
-  char *label;
-  Panel_item list_item = (Panel_item)handle;
-
-  int i;
-  for (i = 0; i < nItems; i++) {
-	label = Items[i];
-  	xv_set(list_item, PANEL_LIST_INSERT, pos + i,
-                    PANEL_LIST_STRING, pos + i, label,
-                    PANEL_LIST_CLIENT_DATA, pos + i, pos + i,
-                    NULL);
-  }
-
-#endif
   no_items += nItems;
 }
 
 // Under construction
 void wxListBox::SetString(int N, char *s)
 {
-#ifdef wx_motif
   int width1, height1;
   int width2, height2;
 
@@ -1405,13 +980,4 @@ void wxListBox::SetString(int N, char *s)
   // Correct for randomly resized listbox - bad boy, Motif!
   if (width1 != width2 || height1 != height2)
     SetSize (-1, -1, width1, height1);
-#endif
-#ifdef wx_xview
-  Panel_item list_item = (Panel_item)handle;
-
-  // Is this right?
-  xv_set (list_item,
-	      PANEL_LIST_STRING, N, s,
-	      NULL);
-#endif
 }

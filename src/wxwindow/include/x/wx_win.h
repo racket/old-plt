@@ -77,8 +77,8 @@ class wxWindow: public wxbWindow
   void InternalEnable(Bool enable);
   void DragAcceptFiles(Bool accept);
   void Fit(void) {};
-  void Centre(int direction) {};
-  void SetTitle(char *title) {};
+  void Centre(int /* direction */) {};
+  void SetTitle(char * /* title */) {};
   void SetFont(wxFont *f);
   Bool PopupMenu(wxMenu *menu, float x, float y);
 
@@ -106,11 +106,11 @@ class wxWindow: public wxbWindow
   virtual Window GetXWindow(void);
   virtual Display *GetXDisplay(void);
 
-  inline void OnScroll(wxCommandEvent& event) {}
-  inline void SetScrollPosX(int pos) {}
-  inline void SetScrollPosY(int pos) {}
-  inline int GetScrollPos(int orient) { return 0; };
-  inline int GetScrollRange(int orient) { return 0; };
+  inline void OnScroll(wxCommandEvent& /*  event */) {}
+  inline void SetScrollPosX(int /* pos */) {}
+  inline void SetScrollPosY(int /* pos */) {}
+  inline int GetScrollPos(int /* orient */) { return 0; };
+  inline int GetScrollRange(int /* orient */) { return 0; };
 
   virtual Bool PreOnChar(wxWindow *win, wxKeyEvent *event);
   Bool CallPreOnChar(wxWindow *win, wxKeyEvent *event);

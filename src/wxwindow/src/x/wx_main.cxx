@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_main.cc,v 1.2 1994/08/14 21:28:43 edz Exp $
+ * RCS_ID:      $Id: wx_main.cxx,v 1.1.1.1 1997/12/22 16:12:04 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -91,6 +91,58 @@ extern "C"
  int wxEntry(int argc, char *argv[]);
 #endif
 
+typedef struct {
+  char *flag;
+  int arg_count;
+} X_flag_entry;
+
+X_flag_entry X_flags[] = {
+  { "-display", 1 },
+  { "-geometry", 1 },
+  { "-bg", 1 },
+  { "-background", 1 },
+  { "-fg", 1 },
+  { "-foreground", 1 },
+  { "-fn", 1 },
+  { "-font", 1 },
+  { "-iconic", 0 },
+  { "-name", 1 },
+  { "-rv", 0 },
+  { "-reverse", 0 },
+  { "+rv", 0 },
+  { "-selectionTimeout", 1 },
+  { "-synchronous", 0 },
+  { "-title", 1 },
+  { "-xnllanguage", 1 },
+  { "-xrm", 1 },
+  { NULL, 0 }
+};
+
+int filter_x_readable(char **argv, int argc)
+{
+  int pos = 1, i;
+
+  while (pos < argc) {
+    for (i = 0; X_flags[i].flag; i++)
+      if (!strcmp(X_flags[i].flag, argv[pos]))
+	break;
+
+    if (!X_flags[i].flag)
+      return pos;
+    else {
+      int newpos = pos + X_flags[i].arg_count + 1;
+      if (newpos > argc) {
+	printf("%s: X Window System flag \"%s\" expects %d arguments, %d provided\n",
+	       argv[0], argv[pos], X_flags[i].arg_count, argc - pos - 1);
+	exit(-1);
+      }
+      pos = newpos;
+    }
+  }
+
+  return pos;
+}
+
 // If you get a link error for wxEntry, change this 'wxEntry' to 'main'.
 // Some compilers don't like to link from main.c to wx_main.cc :-(
 // See also above method which is probably better.
@@ -105,6 +157,9 @@ int wxEntry(int argc, char *argv[])
   char *progname = wxFileNameFromPath(argv[0]);
   wxTheApp->SetClassName(progname);
   wxTheApp->SetAppName(progname);
+
+  int xargc = filter_x_readable(argv, argc), ate;
+  ate = xargc - 1;
 
   /* 
      Hardwires schemes use.
@@ -125,7 +180,7 @@ int wxEntry(int argc, char *argv[])
   wxTheApp->topLevel = XtOpenApplication(&(wxTheApp->appContext), 
 					 wxTheApp->GetClassName(), 
 					 NULL, 0, /* options */
-					 &argc, argv, 
+					 &xargc, argv, 
 					 NULL, /* fallback resources */
 					 applicationShellWidgetClass,
 					 NULL, 0 /* shell resources */
@@ -139,21 +194,32 @@ int wxEntry(int argc, char *argv[])
   XtToolkitInitialize() ;
   wxTheApp->appContext = XtCreateApplicationContext() ;
   Display *dpy = XtOpenDisplay(wxTheApp->appContext,(String)NULL,NULL,
-                            wxTheApp->GetClassName(),NULL,
+			       wxTheApp->GetClassName(),NULL,
 #  if XtSpecificationRelease < 5
-                            0,(Cardinal*) &argc,argv) ;
+			       0,(Cardinal*) &argc, argv
 #  else
-                            0,&argc,argv) ;
+			       0,&argc,argv
 #  endif
+			       );
   if (!dpy) {
     cerr << "wxWindows could not open display for " 
 	 << wxTheApp->GetClassName() << ": exiting.\n";
     exit(-1);
   }
   wxTheApp->topLevel = XtAppCreateShell((String)NULL,wxTheApp->GetClassName(),
-                                     applicationShellWidgetClass,dpy,
-                                     NULL,0) ;
+					applicationShellWidgetClass,dpy,
+					NULL,0) ;
 # endif /* defined(sgi) || defined(__sgi) */
+  
+  if (xargc != 1) {
+    printf("%s: standard X Window System flag \"%s\" was rejected\n",
+	   argv[0], argv[1]);
+    exit(-1);
+  }
+
+  for (int i = ate + 1; i < argc; i++)
+    argv[i - ate] = argv[i];
+  argc -= ate;
 
   // Add general resize proc
   XtActionsRec rec;

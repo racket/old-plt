@@ -20,12 +20,8 @@
 #include "wx_item.h"
 #include "wb_dialg.h"
 
-#ifdef wx_xview
-#include <xview/frame.h>
-#endif
-
 #ifdef IN_CPROTO
-typedef void    *wxDialogBox ;
+typedef void    *wxDialogBox;
 #else
 
 // Dialog boxes
@@ -35,16 +31,11 @@ class wxDialogBox: public wxbDialogBox
 
  private:
   char *dialogTitle;
-#ifdef wx_xview
-  Frame xFrame;
-#endif
  public:
   Bool modal_showing;
-#ifdef wx_motif
-  Bool invisibleResize ;
+  Bool invisibleResize;
   Widget dialogShell;
-  void PostDestroyChildren(void);
-#endif
+  Widget localParentShell;
   wxDialogBox(void);
   wxDialogBox(wxWindow *parent, char *title, Bool modal = FALSE,
               int x = -1, int y = -1,
@@ -70,10 +61,7 @@ class wxDialogBox: public wxbDialogBox
 
   virtual void OnSize(int w, int h);
 
-#ifdef wx_xview
-  inline Frame GetXFrame(void) { return xFrame; }
-  inline void SetXFrame(Frame f) { xFrame = f; }
-#endif
+  void PostDestroyChildren(void);
 };
 
 #endif // IN_CPROTO

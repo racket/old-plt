@@ -431,12 +431,15 @@
 	   (nack-guard-evt
 	    (lambda (nack)
 	      (define ch (make-channel))
+	      (define ready (make-semaphore))
 	      (let ([t (thread (lambda () 
 				 (parameterize-break #t
 				   (with-handlers ([exn:break? void])
+				     (semaphore-post ready)
 				     (go nack ch #f)))))])
 		(thread (lambda ()
 			  (sync nack) 
+			  (semaphore-wait ready)
 			  (break-thread t))))
 	      ch))))))
 

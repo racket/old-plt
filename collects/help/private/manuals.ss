@@ -254,9 +254,7 @@
             ,@hd-links
             (TITLE "PLT Manuals")))
          "<body>"
-         (if (cvs-or-nightly-build?)
-             
-             "")
+         
          (append 
           
           (list "<H1>Installed Manuals</H1>")

@@ -581,7 +581,14 @@ Input and "output":
 > paren-pairs
 
   This is a parameter holding a list of lists, each one holding two
-  strings which are matching open/close tokens for `get-arg'
+  strings which are matching open/close tokens for `get-arg'.
+
+> get-arg-reads-word?
+
+  A parameter that holds a boolean value defaulting to `#f'.  If true,
+  then `get-arg' will read a whole word (non-whitespace string delimited
+  by whitespaces) for arguments that are not parenthesized with a pair
+  in `paren-pairs'.
 
 > (get-arg)
 
@@ -594,10 +601,12 @@ Input and "output":
   to be the same, which will have no nesting possible.  If no
   open-pattern is found, the first non-whitespace character is used, and
   if that is also not found before the end of the input, an `eof' value
-  is returned.  For example:
+  is returned.  For example (using `defcommand' which uses `get-arg'):
 
     |@(paren-pairs (cons (list "|" "|") (paren-pairs)))
     |@defcommand{verb}{X}{<tt>X</tt>}
+    |@verb abc
+    |@(get-arg-reads-word? #t)
     |@verb abc
     |@verb |FOO|
     |@verb
@@ -605,6 +614,7 @@ Input and "output":
   ==>
 
     |<tt>a</tt>bc
+    |<tt>abc</tt>
     |<tt>FOO</tt>
     |verb: expecting an argument for `X'
 

@@ -185,6 +185,9 @@
 (define paren-pairs
   (make-parameter #f (lambda (pairs) (arg-dispatcher pairs) pairs)))
 
+(provide get-arg-reads-word?)
+(define get-arg-reads-word? (make-parameter #f))
+
 ;; A list of an open regexp for any openning, and then a list of thunks, each
 ;; one for retreiving a piece of text by some paren pair.
 (define arg-dispatcher
@@ -217,7 +220,10 @@
    (arg-dispatcher)
    #f
    (lambda ()
-     (cond [(regexp-match/fail-without-reading #rx"[^ \t\r\n]" (stdin)) => car]
+     (cond [(regexp-match/fail-without-reading
+             (if (get-arg-reads-word?) #rx"[^ \t\r\n]+" #rx"[^ \t\r\n]")
+             (stdin))
+            => car]
            [else eof]))))
 
 (provide get-arg*)

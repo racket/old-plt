@@ -27,12 +27,14 @@
 		       (let loop ()
 			 (let ([t (read-line in 'any)])
 			   (unless (eof-object? t)
-				   (unless quiet? (fprintf (dest) "~a~n" t))
-				   (set-box! box (string-append (unbox box) 
-								(string #\newline) t))
-				   (loop)))))))]
+			     (unless quiet? (fprintf (dest) "~a~n" t))
+			     (set-box! box (string-append (unbox box) 
+							  (string #\newline) t))
+			     (loop)))))))]
 	  [in-thread (make-collector in current-output-port collect-output)]
 	  [in-error-thread (make-collector in-error current-error-port collect-output)])
+
+     (close-output-port out)
 
      (control 'wait)
 
@@ -41,7 +43,6 @@
 
      (close-input-port in)
      (close-input-port in-error)
-     (close-output-port out)
 
      (unless (eq? (control 'status) 'done-ok)
        (error (if quiet?

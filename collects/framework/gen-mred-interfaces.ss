@@ -1,6 +1,6 @@
 #!/bin/sh
 
-string=? ; exec mred -magqvf $0
+string=? ; exec mred -magqvf $0 "$@"
 
 (require-library "function.ss")
 (require-library "pretty.ss")

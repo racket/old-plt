@@ -89,7 +89,7 @@
     (define internal-error (report-error "internal error"))))
 
 (define parameters@
-  (let ([argv (vector->list argv)])
+  (let ([args (vector->list argv)])
     (unit/sig plt:parameters^
       (import)
       (define case-sensitive? (not (eq? 'a 'A)))
@@ -101,9 +101,9 @@
 	(with-handlers ((void (lambda (e) #f)))
 		       (eval `(set! ,(gensym) 5))
 		       #t))
-      (define check-syntax-level (if (null? argv)
+      (define check-syntax-level (if (null? args)
 				     'advanced
-				     (car argv)))
+				     (string->symbol (car args))))
       (define allow-improper-lists? (eq? 'advanced check-syntax-level))
       (printf "Language: ~a~nImproper lists: ~a~n"
 	      check-syntax-level allow-improper-lists?))))

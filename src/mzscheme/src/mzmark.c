@@ -129,23 +129,23 @@ int toplevel_obj_FIXUP(void *p) {
 #define toplevel_obj_IS_CONST_SIZE 1
 
 
-int c_pointer_obj_SIZE(void *p) {
+int cpointer_obj_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
-int c_pointer_obj_MARK(void *p) {
+int cpointer_obj_MARK(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
-int c_pointer_obj_FIXUP(void *p) {
+int cpointer_obj_FIXUP(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Simple_Object));
 }
 
-#define c_pointer_obj_IS_ATOMIC 1
-#define c_pointer_obj_IS_CONST_SIZE 1
+#define cpointer_obj_IS_ATOMIC 1
+#define cpointer_obj_IS_CONST_SIZE 1
 
 
 int second_of_cons_SIZE(void *p) {

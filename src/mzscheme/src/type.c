@@ -445,7 +445,7 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_null_type, char_obj); /* small */
   GC_REG_TRAV(scheme_pair_type, cons_cell);
   GC_REG_TRAV(scheme_vector_type, vector_obj);
-  GC_REG_TRAV(scheme_cpointer_type, c_pointer_obj);
+  GC_REG_TRAV(scheme_cpointer_type, cpointer_obj);
 
   GC_REG_TRAV(scheme_bucket_type, bucket_obj);
 

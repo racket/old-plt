@@ -3419,7 +3419,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
   if (dend < 0)
     dend = 0x7FFFFFFF;
 
-  if (!us && permissive && !might_continue && !ipos) {
+  if (!us && permissive && !might_continue && !ipos && !utf16) {
     /* Fast path */
     for (i = start, j = dstart; ((i < end) && (j < dend)); i++) {
       if (!((s[i] & 0xC0) == 0x80))
@@ -3607,13 +3607,8 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	  if (v > 0xFFFF) {
 	    if (us) {
 	      v -= 0x10000;
-#ifdef SCHEME_BIG_ENDIAN
-	      ((unsigned short *)us)[j] = 0xD8000000 | ((v >> 10) & 0x3FF);
-	      ((unsigned short *)us)[j+1] = 0xDC000000 | (v & 0x3FF);
-#else
-	      ((unsigned short *)us)[j+1] = 0xD8000000 | ((v >> 10) & 0x3FF);
-	      ((unsigned short *)us)[j] = 0xDC000000 | (v & 0x3FF);
-#endif
+	      ((unsigned short *)us)[j] = 0xD800 | ((v >> 10) & 0x3FF);
+	      ((unsigned short *)us)[j+1] = 0xDC00 | (v & 0x3FF);
 	    }
 	    j++;
 	  } else if (us) {
@@ -3722,11 +3717,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	  /* Unparse surrogates. We assume that the surrogates are
 	     well formed. */
 	  i++;
-#ifdef SCHEME_BIG_ENDIAN
 	  wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
-#else
-	  wc = (wc & 0x3FF) + (((((unsigned short *)us)[i]) & 0x3FF) << 10);
-#endif
 	  wc += 0x100000;
 	}
       } else {
@@ -3757,11 +3748,7 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	  /* Unparse surrogates. We assume that the surrogates are
 	     well formed. */
 	  i++;
-#ifdef SCHEME_BIG_ENDIAN
 	  wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
-#else
-	  wc = (wc & 0x3FF) + (((((unsigned short *)us)[i]) & 0x3FF) << 10);
-#endif
 	  wc += 0x100000;
 	}
       } else {

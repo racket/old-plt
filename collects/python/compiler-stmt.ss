@@ -116,6 +116,19 @@
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (e) (send e set-bindings! enclosing-scope)) expressions))
       
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so (if to-file?
+                       `(print-to-file blah)
+                       (let ([x (gensym)])
+                         `(begin (for-each (lambda (,x)
+                                             (display ,x) (display #\space))
+                                           (list ,@(map (lambda (e)
+                                                          (send e to-scheme))
+                                                        expressions)))
+                                 (newline))))))
+      
       (super-instantiate ())))
   
   ;; 6.7
@@ -127,6 +140,11 @@
       (define/override (set-bindings! enclosing-scope)
         (when expression
           (send expression set-bindings! enclosing-scope)))
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(return ,(send expression to-scheme))))
       
       (super-instantiate ())))
 
@@ -247,6 +265,12 @@
 
       (define/override (collect-globals)
         (apply append (sub-stmt-map (lambda (s) (send s collect-globals)))))
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(begin ,@(sub-stmt-map (lambda (s)
+                                             (send s to-scheme))))))
       
       (super-instantiate ())))
   
@@ -460,6 +484,13 @@
        
        (define/override (check-break/cont enclosing-loop)
          (send body check-break/cont #f))
+       
+       ;;daniel
+       (inherit ->orig-so)
+       (define/override (to-scheme)
+         (->orig-so `(define ,(send name to-scheme)
+                       (lambda ,(send parms to-scheme)
+                         ,(send body to-scheme)))))
        
        (super-instantiate ()))))
     

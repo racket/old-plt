@@ -70,6 +70,14 @@
       (define/override (set-bindings! enclosing-scope)
         (for-each (lambda (e) (send (cdr e) set-bindings! enclosing-scope)) key))
       
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so (map (lambda (p)
+                          (send p to-scheme))
+                        pos)))
+      
       (super-instantiate ())))
   
   (define expression%
@@ -202,9 +210,9 @@
               (let ([tuple-name (gensym)])
                 `(map (lambda (,tuple-name) 
                         ;; the cdr eats the "list" part of "`(list x y)"
-                        (apply (lambda (,(cdr (syntax-e scheme-targ))
-                                        ,scheme-expr))
-                               ,tuple-name))
+                        (apply (lambda ,(cdr (syntax-e scheme-targ))
+                                        ,scheme-expr)
+                               (tuple-list ,tuple-name)))
                       ,scheme-vals))]
              [else (raise "not implemented yet")]))))
       

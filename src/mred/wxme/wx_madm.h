@@ -120,6 +120,7 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
 
   /* Only to make wxs_madm.xc happy */
   inline wxMediaSnipMediaAdmin();
+  ~wxMediaSnipMediaAdmin();
 
   wxDC *GetDC(float *x = NULL, float *y = NULL);
   void GetView(float *x, float *y, float *h, float *w, Bool full = FALSE);

@@ -1330,6 +1330,7 @@ wxWnd::~wxWnd(void)
     p = wx_window->GetTopLevel();
     if (p->focusWindow == wx_window)
       p->focusWindow = NULL;
+    wx_window = NULL;
   }
 }
 

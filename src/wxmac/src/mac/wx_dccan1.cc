@@ -129,6 +129,7 @@ wxCanvasDC::~wxCanvasDC(void)
     ::DisposeRgn(onpaint_reg);
     onpaint_reg = NULL;
   }
+  canvas = NULL;
 }
 
 void wxCanvasDC::BeginDrawing(void)

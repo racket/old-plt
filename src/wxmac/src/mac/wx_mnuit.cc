@@ -54,6 +54,7 @@ wxMenuItem::~wxMenuItem(void)
     {
       // Must detach this from parent menu
     }
+  parentMenu = NULL;
 
   if (subMenu)
     {

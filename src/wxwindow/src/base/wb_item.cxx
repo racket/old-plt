@@ -127,6 +127,8 @@ wbMenuItem::wbMenuItem(void) {
 }
 
 wbMenuItem::~wbMenuItem(void) {
+  menuBar = NULL;
+  topmenu = NULL;
 }
 
 /*

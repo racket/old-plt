@@ -947,8 +947,10 @@ wxBitmap::wxBitmap(int w, int h, Bool bandw)
 //-----------------------------------------------------------------------------
 wxBitmap::~wxBitmap(void)
 {
-  if (selectedInto)
+  if (selectedInto) {
     selectedInto->SelectObject(NULL);
+    selectedInto = NULL;
+  }
 
   if (x_pixmap) {
     FreeGWorld(x_pixmap);

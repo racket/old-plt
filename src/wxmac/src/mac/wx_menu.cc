@@ -106,8 +106,10 @@ wxMenuBar::~wxMenuBar(void)
     last_installed_bar = NULL;
   }
 
-  if (menu_bar_frame) 
+  if (menu_bar_frame)  {
     menu_bar_frame->wx_menu_bar = 0;
+    menu_bar_frame = NULL;
+  }
   for (int i = 0; i < n; i++) {
     menu = menus[i];
     menu->menu_bar = NULL;  // So menu doesn't try to remove itself

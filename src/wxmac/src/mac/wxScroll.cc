@@ -72,6 +72,8 @@ wxScroll::~wxScroll(void)	// destructor
     }
 
   if (cParentScroll) cParentScroll->OnDeleteChildScroll(this);
+
+  cScrollWindow = NULL;
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

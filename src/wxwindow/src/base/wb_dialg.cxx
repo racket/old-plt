@@ -35,7 +35,6 @@ Bool wxbDialogBox::Create(wxWindow *Parent, char *WXUNUSED(Title), Bool Modal,
   modal = Modal;
 
   context = wxGetContextForFrame();
-  WXGC_IGNORE(this, context);
 
   tlw = wxTopLevelWindows(this);
   tlw->Append(this);
@@ -51,6 +50,7 @@ wxbDialogBox::~wxbDialogBox()
   wxChildList *tlw;
   tlw = wxTopLevelWindows(this);
   tlw->DeleteObject(this);
+  context = NULL;
 }
 
 void wxbDialogBox::Centre(int direction)

@@ -53,8 +53,10 @@ wxArea::~wxArea(void)
     if (win)
       DELETE_OBJ win;
   }
-  if (cParentWindow)
+  if (cParentWindow) {
     cParentWindow->OnDeleteChildArea(this);
+    cParentWindow = NULL;
+  }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

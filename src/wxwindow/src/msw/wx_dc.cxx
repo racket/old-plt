@@ -1829,8 +1829,10 @@ wxCanvasDC::~wxCanvasDC(void)
     wx_gl = NULL;
   }
 
-  if (canvas)
+  if (canvas) {
     ((wxWnd *)canvas->handle)->ReleaseHDC();
+    canvas = NULL;
+  }
 }
 
 void wxCanvasDC::GetSize(float *width, float *height)

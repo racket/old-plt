@@ -1466,6 +1466,7 @@ wxBitmap::~wxBitmap(void)
 
   if (selectedInto) {
     ((wxMemoryDC *)selectedInto)->SelectObject(NULL);
+    selectedInto = NULL;
   }
   if (ms_bitmap) {
     DeleteRegisteredGDIObject(ms_bitmap);

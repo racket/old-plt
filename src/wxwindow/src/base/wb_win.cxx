@@ -31,6 +31,7 @@ wxbWindow::wxbWindow(void)
 // Destructor
 wxbWindow::~wxbWindow(void)
 {
+  window_parent = NULL;
 }
 
 char *wxbWindow::GetHandle(void)

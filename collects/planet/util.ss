@@ -1,15 +1,12 @@
 (module util mzscheme
   
   (require "config.ss"
-           (prefix server: "server-config.ss")
            "private/planet-shared.ss"
-           (lib "file.ss")
            (lib "pack.ss" "setup"))
 
   #| The util collection provides a number of useful functions for interacting with the PLaneT system. |#
   
   (provide current-cache-contents
-           current-repository-contents
            current-linkage
            make-planet-archive)
     
@@ -23,17 +20,7 @@
        (directory->tree (cache-dir) (lambda (x) (not (regexp-match ".*/CVS$" x))))
        (list id id id string->number string->number)))))
   
-  (define (current-repository-contents)
-    (define id (lambda (x) x))
-    (apply list
-           (cdr
-            (tree->list
-             (filter-tree-by-pattern
-              (directory->tree (server:planet-server-repository) 
-                               (lambda (x) 
-                                 (let ((filename (file-name-from-path x)))
-                                   (not (memv filename (list "CVS" (server:metainfo-file)))))))
-              (list id id id id string->number string->number))))))
+  
 
   ;; current-linkage : -> ((symbol (package-name nat nat) ...) ...)
   ;; gives the current "linkage table"; a table that links modules to particular versions

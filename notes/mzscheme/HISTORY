@@ -2,6 +2,12 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.29
+Added binding of greek-lambda character (code point #x03BB) to
+ expand to lambda
+Changed Mac OS preferences file name to "org.plt-scheme.prefs.ss"
+Change default buffering of file-stream output ports
+
 Version 299.28
 Added H-expression mode to reader, triggered by #hx or #honu,
  and escaped by #sx

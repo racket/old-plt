@@ -761,7 +761,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
   }
   
   if (SCHEME_PROCP(argv[2]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","procedure",1,argc,argv);
+    scheme_wrong_type("com-register-event-handler","procedure",2,argc,argv);
   }
   
   eventName = SCHEME_STR_VAL(argv[1]);

@@ -131,13 +131,16 @@
       
       (set! user-namespace (make-namespace))
       (let ([mred-name ((current-module-name-resolver) '(lib "mred.ss" "mred") #f #f)]
+            [class-name ((current-module-name-resolver) '(lib "class.ss") #f #f)]
             [orig-namespace (current-namespace)]
             [program (namespace-variable-binding 'program)])
         (parameterize ([current-namespace user-namespace])
           (namespace-variable-binding 'argv #())
           (namespace-variable-binding 'program program)
           (namespace-attach-module orig-namespace mred-name)
-          (namespace-require '(lib "mred.ss" "mred"))))
+          (namespace-require '(lib "mred.ss" "mred"))
+          (namespace-attach-module orig-namespace class-name)
+          (namespace-require '(lib "class.ss"))))
       
       (let ([initial-directory (or dir (current-directory))])
         (parameterize ((current-eventspace user-eventspace))

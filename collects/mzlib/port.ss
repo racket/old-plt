@@ -724,7 +724,7 @@
 		 (cond
 		  [(eq? n 0) 
 		   ;; Not ready, yet.
-		   (car ports)]
+		   (wrap-evt (car ports) (lambda (x) 0))]
 		  [(eof-object? n)
 		   ;; Port is exhausted, or we skipped past its input.
 		   ;; If skip is not zero, we need to figure out

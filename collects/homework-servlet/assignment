@@ -1,0 +1,20 @@
+;; here's an assignment entry:
+(assignment (title "Test Assignment"
+                   "http://www.ccs.neu.edu/home/matthias/211-f03/assignments.html")	
+            (due-date (year 2010)
+                      (month 1)
+                      (day 1)))
+
+;; additional date fields such as seconds, minutes are also supported.
+;; if not specified, reasonable defaults are used.
+
+;; When the assignment is not yet overdue, an upload link appears to the right
+;; of the assignment on the selection page.
+
+;; The URL part of the title can be omitted. When it is omitted, the title simply
+;; appears as text. When it is not omitted the title will link to the page specified by
+;; the URL.
+
+;; There should be exactly one assignment entry in the assignment file
+
+

@@ -1,0 +1,70 @@
+;; ******************** SAMPLE STUDENT ACCOUNTS ********************
+
+;; The student accounts file should contain a (listof account)
+
+
+;; There are three kinds of accounts
+;;;; student-account
+;;;; full-student-account
+;;;; staff-account
+
+;; ******************** STUDENTS ********************
+
+;; The student-account is an account that has not yet been set up by the student
+;; This should be the only kind of student account you will need to add/edit
+;; directly in this file. Both student-accounts and full-student-accounts can be
+;; managed using the staff pages.
+
+;; To add a single new student to the system, use the staff pages by logging in
+;; using a staff-account
+
+;; To add a large number of students to the system, it may be easier to edit this file
+;; directly. A student account will have the form:
+;; (string string)
+;; The first string is a name for the student, the second string is an ID, (usually a number).
+;; E.g.: ("John Doe" "123456789")
+
+;; When a student enters the system for the first time, she will need to set up her account
+;; before she can login
+
+;; STEPS
+;; 1. From the login page select create account
+;; 2. On the next page the student will be asked for a 9-digit id number
+;;    The student should enter the ID for the account. E.g. John Doe
+;;    would need to enter 123456789. Note this field is a password field
+;;    so as to protect the student's privacy.
+;; 3. On the next page the student will provide a new name and password for their
+;;    account. Note, the password will be hashed before saved to disk.
+;; 4. In subsequent steps the student may select a grader and a partner(s).
+
+
+;; ******************** STAFF ********************
+
+;; staff-accounts allow special priveledged users edit the accounts database
+;; using a special set of web pages called "staff pages"
+;; staff-accounts cannot be created using the staff pages and must be added to
+;; this file by hand.
+
+;; A staff account has the form ('staff string string)
+;; The first string is the login name for the staff person, the second string
+;; is an md5 hashed password string. Use md5.ss to hash the password.
+;; Once the account is created, the staff person can change their password through
+;; the staff pages.
+;; Staff people login the same as students, but will be presented with a different
+;; set of pages.
+
+;; E.g.: (staff "Socrates" "b25146a292d56e7f39f8d5ed35572e01")
+
+;; ******************** SAMPLE ********************
+;; Here's a sample accounts list:
+
+(("Jane Smith"
+  "000000888"
+  "janes-user-name"
+  "279b5b23e74d08c0bff4afd523da86ed"
+  "A-TA"
+  janes-group)
+ ("John Doe" "000000777")
+ (staff "Socrates" "b25146a292d56e7f39f8d5ed35572e01"))
+
+

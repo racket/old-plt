@@ -1,0 +1,11 @@
+;; This is a sample graders file
+;; The graders file should contain a list of strings.
+;; Each string is the name of a grader or TA.
+;; When students set up their accounts, they will be allowed
+;; to choose a grader from the list.
+;; When homework is submitted, the files will be placed
+;; into subdirectories according to their chosen grader.
+("Fred Flintstone"
+ "Wilma Flinstone"
+ "Barney Rubble")
+ 

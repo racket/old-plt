@@ -232,7 +232,7 @@ The _sendurl.ss_ module defines one procedure:
   Under Mac OS, `send-url' uses the URL apple event library.
 
   Under Unix, `send-url' looks for an _'external-browser preference_,
-  which can be either 'opera, 'galeon, 'mozilla, 'netscape, 'dillo or #f.
+  which can be either 'opera, 'galeon, 'netscape, 'mozilla, 'dillo or #f.
   If #f, `send-url' uses the first of these browsers found in the path.
   If the preferred or default browser can't be launched,
   `send-url' fails. See the file.ss library for details on

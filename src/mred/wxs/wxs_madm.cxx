@@ -33,6 +33,7 @@ START_XFORM_SKIP;
 #endif
 
 #include "wxs_obj.h"
+#include "wxs_evnt.h"
 
 
 
@@ -4444,7 +4445,6 @@ class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *obj, const char *wher
 static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent *event, 
 			       KeymapCallbackToSchemeRec *data)
 {
-  extern Scheme_Object *objscheme_bundle_wxEvent(wxEvent *);
   Scheme_Object *p[2], *obj;
   SETUP_VAR_STACK(5);
   VAR_STACK_PUSH(0, p[0]);
@@ -4464,7 +4464,6 @@ static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km,
 				    UNKNOWN_OBJ media, wxKeyEvent *event, 
 				    KeymapCallbackToSchemeRec *data)
 {
-  extern Scheme_Object *objscheme_bundle_wxKeyEvent(wxKeyEvent *);
   Scheme_Object *p[4], *obj;
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH_ARRAY(0, p, 4);
@@ -4487,7 +4486,6 @@ static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km,
 				      UNKNOWN_OBJ media, wxMouseEvent *event, 
 				      KeymapCallbackToSchemeRec *data)
 {
-  extern Scheme_Object *objscheme_bundle_wxMouseEvent(wxMouseEvent *);
   Scheme_Object *p[3], *obj;
   SETUP_VAR_STACK(6);
   VAR_STACK_PUSH_ARRAY(0, p, 3);

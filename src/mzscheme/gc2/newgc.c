@@ -1640,26 +1640,6 @@ void GC_init_type_tags(int count, int weakbox)
   }
 }
 
-static char *type_name[PAGE_TYPES] = { "tagged", "atomic", "array",
-				       "tagged array", "xtagged", "big" };
-void GC_dump(void)
-{
-  struct mpage *page;
-  int i;
-
-  GCWARN((GCOUTF, "Generation 0: %li of %li bytes used\n",
-	  gen0_current_size, gen0_max_size));
-  
-  for(i = 0; i < PAGE_TYPES; i++) {
-    unsigned long total_use = 0;
-    
-    for(page = pages[i]; page; page = page->next)
-      total_use += page->size;
-    GCWARN((GCOUTF, "Generation 1 [%s]: %li bytes used\n", 
-	    type_name[i], total_use));
-  }
-}
-
 void GC_gcollect(void)
 {
   garbage_collect(1);
@@ -1955,7 +1935,43 @@ inline static void mark_xtagged_page(struct mpage *page)
 /* garbage collection                                                        */
 /*****************************************************************************/
 
+/* When we have incompletely filled pages in generation 1 during minor 
+   collections, we copy some of the reachable gen0 objects onto them, 
+   in an attempt to minimize fragmentation. This constant declares the
+   cutoff for these pages. Pages that use more than this amount will not
+   be considered for this, and won't have objects copied onto them. */
 #define DEFRAG_CUTOFF (PAGE_SIZE >> 1)
+
+/* These collect information about memory usage, for use in GC_dump. */
+static unsigned long peak_memory_use = 0;
+static unsigned long num_minor_collects = 0;
+static unsigned long num_major_collects = 0;
+
+static char *type_name[PAGE_TYPES] = { "tagged", "atomic", "array",
+				       "tagged array", "xtagged", "big" };
+void GC_dump(void)
+{
+  struct mpage *page;
+  int i;
+
+  GCWARN((GCOUTF, "Generation 0: %li of %li bytes used\n",
+	  gen0_current_size, gen0_max_size));
+  
+  for(i = 0; i < PAGE_TYPES; i++) {
+    unsigned long total_use = 0;
+    
+    for(page = pages[i]; page; page = page->next)
+      total_use += page->size;
+    GCWARN((GCOUTF, "Generation 1 [%s]: %li bytes used\n", 
+	    type_name[i], total_use));
+  }
+
+  GCWARN((GCOUTF, "\n"));
+  GCWARN((GCOUTF, "Current memory use: %li\n", GC_get_memory_use(NULL)));
+  GCWARN((GCOUTF, "Peak memory use after a collection: %li\n", peak_memory_use));
+  GCWARN((GCOUTF, "# of major collections: %li\n", num_major_collects));
+  GCWARN((GCOUTF, "# of minor collections: %li\n", num_minor_collects));
+}
 
 static void prepare_pages_for_collection(void)
 {
@@ -2198,6 +2214,10 @@ static void garbage_collect(int force_full)
 
   /* new we do want the allocator freaking if we go over half */
   in_unsafe_allocation_mode = 0;
+
+  /* update some statistics */
+  if(gc_full) num_major_collects++; else num_minor_collects++;
+  if(peak_memory_use < memory_in_use) peak_memory_use = memory_in_use;
 
   /* inform the system (if it wants us to) that we're done with collection */
   if(GC_collect_start_callback)

@@ -2,7 +2,7 @@
 ;;
 ;; program-tests.ss
 ;; Richard Cobbe
-;; $Id: program-tests.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: program-tests.ss,v 1.2 2004/08/10 15:57:02 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -30,7 +30,7 @@
 
   (schemeunit-test
    (make-test-suite
-       "AJava Program module"
+       "ClassicJava Program module"
 
      (make-test-case "find a direct method"
        (assert-equal? (find-method (find-class test-program
@@ -71,32 +71,14 @@
      (make-test-case "find direct field"
        (assert-equal? (find-field (find-class test-program
                                               (make-class-type 'a)) 'i)
-                      (make-field (make-ground-type 'int) 'i)))
+                      (make-field (make-ground-type 'int)
+                                  (make-class-type 'a) 'i)))
 
-     (make-test-case "find direct contained field"
-       (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'a)) 'a-b)
-                      (make-field (make-class-type 'b) 'a-b)))
-
-     (make-test-case "find inherited normal field"
+     (make-test-case "find inherited field"
        (assert-equal? (find-field (find-class test-program
                                               (make-class-type 'c)) 'b)
-                      (make-field (make-ground-type 'bool) 'b)))
-
-     (make-test-case "find inherited contained field"
-       (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'c)) 'a-b)
-                      (make-field (make-class-type 'B) 'a-b)))
-
-     (make-test-case "find direct acquired field"
-       (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'b)) 'i)
-                      (make-field (make-ground-type 'int) 'i)))
-
-     (make-test-case "find inherited acquired field"
-       (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'd)) 'o)
-                      (make-field (make-class-type 'Object) 'o)))
+                      (make-field (make-ground-type 'bool)
+                                  (make-class-type 'a) 'b)))
 
      (make-test-case "find-field: no such field"
        (assert-false (find-field (find-class test-program (make-class-type 'd))
@@ -105,9 +87,13 @@
      (make-test-case "find-class: straightforward"
        (let* ([object (make-class (make-class-type 'object) #f null null)]
               [b (make-class (make-class-type 'b) object
-                             (list (make-field (make-ground-type 'int) 'x)
-                                   (make-field (make-ground-type 'int) 'i)
-                                   (make-field (make-class-type 'Object) 'o))
+                             (list (make-field (make-ground-type 'int)
+                                               (make-class-type 'b)
+                                               'x)
+                                   (make-field (make-ground-type 'int)
+                                               (make-class-type 'b) 'i)
+                                   (make-field (make-class-type 'Object)
+                                               (make-class-type 'b) 'o))
                              null)])
          (assert-equal? (find-class test-program
                                     (make-class-type 'b)) b)))

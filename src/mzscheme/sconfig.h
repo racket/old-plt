@@ -532,7 +532,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
   /************** ALPHA/OSF1 with gcc ****************/
 
-#if defined(__digital__) && defined(__unix__)
+# if (defined(__alpha) || defined(__alpha__)) && !defined(LINUX)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-osf1"
 

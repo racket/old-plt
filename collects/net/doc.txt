@@ -129,7 +129,10 @@ PROCEDURES -----------------------------------------------------------
 
   Generates a string corresponding to the contents of the url struct.
   In the case of a URL with the "file:" scheme, the result does not
-  include the params, query, or fragment portion of the URL.
+  include the params, query, or fragment portion of the URL (because
+  they might be intended as part of a file path). For a scheme other
+  than "file:", if no slash appears after host, then "/" is reported
+  as the path.
 
 > (get-pure-port url [list-of-strings]) -> input-port
 

@@ -359,7 +359,7 @@ static Scheme_Hash_Table *opened_libs;
 }
 
 /*****************************************************************************/
-/* Types */
+/* Type helpers */
 
 /* These are not defined in MzScheme because:
  * - SCHEME_UINT_VAL is not really a simple accessor like other SCHEME_X_VALs
@@ -384,7 +384,8 @@ static Scheme_Hash_Table *opened_libs;
 #else /* SIXTY_FOUR_BIT_INTEGERS defined */
 
 /* Modified versions of stuff from number.c  */
-/* These will make sense in MzScheme when longs are not the same as ints */
+/* These will make sense in MzScheme when longs are not the same as ints
+ * which is needed for libffi's int32 types. */
 int scheme_get_realint_val(Scheme_Object *o, int *v)
 {
   if (SCHEME_INTP(o)) {
@@ -438,12 +439,21 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
 
 #endif /* SIXTY_FOUR_BIT_INTEGERS */
 
+/* This is related to the section of scheme.h that defines mzlonglong. */
+#ifndef INT64_AS_LONG_LONG
+#ifdef  NO_LONG_LONG_TYPE
+#ifndef SIXTY_FOUR_BIT_INTEGERS
+#error foreign requires a 64-bit integer type type.
+#endif
+#endif
+#endif
+
 unsigned short *ucs4_string_to_utf16_pointer(Scheme_Object *ucs)
 {
   long ulen;
   unsigned short *res;
   res = scheme_ucs4_to_utf16
-          (SCHEME_CHAR_STR_VAL(ucs), 0, SCHEME_CHAR_STRLEN_VAL(ucs),
+          (SCHEME_CHAR_STR_VAL(ucs), 0, 1+SCHEME_CHAR_STRLEN_VAL(ucs),
            NULL, -1, &ulen, 0);
   return res;
 }
@@ -452,9 +462,14 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 {
   long ulen;
   mzchar *res;
-  res = scheme_utf16_to_ucs4(utf, 0, strlen(utf), NULL, -1, &ulen, 0);
+  int end;
+  for (end=0; utf[end] != 0; end++) /**/ ;
+  res = scheme_utf16_to_ucs4(utf, 0, end, NULL, -1, &ulen, 0);
   return scheme_make_sized_char_string(res, ulen, 0);
 }
+
+/*****************************************************************************/
+/* Types */
 
 {:
 ;; Types are defined with the `defctype' function.  This looks like:
@@ -624,6 +639,14 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
   (lambda (x aux) (concat "scheme_get_unsigned_realint_val("x",&"aux")")) #f
   "realinteger_value_from_unsigned")
 
+;; mzlonglong is always assumed to be 64 bits, or the above will throw an error
+(defctype* 'int64  "int64_t"
+  (lambda (x aux) (concat "scheme_get_long_long_val("x",&"aux")")) #f
+  "integer_value_from_long_long")
+(defctype* 'uint64 "uint64_t"
+  (lambda (x aux) (concat "scheme_get_unsigned_long_long_val("x",&"aux")")) #f
+  "integer_value_from_unsigned_long_long")
+
 (~ "/* `int' and `uint' are always synonyms for int32/uint32 (see above) */")
 (defaliastype 'int  'int32)
 (defaliastype 'uint 'uint32)
@@ -658,9 +681,6 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 (defctype* '(ufixnum "umzlong")
   "unsigned long" "INT" "UINT" "integer_from_unsigned")
 
-;; Will be implemented in v299
-;; (defctype* 'int64  "int64_t"      ...???...)
-;; (defctype* 'uint64 "uint64_t"     ...???...)
 (defctype* 'float  "float"        "FLT"  "FLT"        "float")
 (defctype* 'double "double"       "DBL"  "DBL"        "double")
 ;; Not useful?  not implemented in any case.

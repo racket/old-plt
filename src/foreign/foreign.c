@@ -241,7 +241,7 @@ static Scheme_Object *FP_ffi_obj_name(int argc, Scheme_Object *argv[])
 }
 
 /*****************************************************************************/
-/* Types */
+/* Type helpers */
 
 /* These are not defined in MzScheme because:
  * - SCHEME_UINT_VAL is not really a simple accessor like other SCHEME_X_VALs
@@ -266,7 +266,8 @@ static Scheme_Object *FP_ffi_obj_name(int argc, Scheme_Object *argv[])
 #else /* SIXTY_FOUR_BIT_INTEGERS defined */
 
 /* Modified versions of stuff from number.c  */
-/* These will make sense in MzScheme when longs are not the same as ints */
+/* These will make sense in MzScheme when longs are not the same as ints
+ * which is needed for libffi's int32 types. */
 int scheme_get_realint_val(Scheme_Object *o, int *v)
 {
   if (SCHEME_INTP(o)) {
@@ -320,12 +321,21 @@ scheme_make_realinteger_value_from_unsigned(unsigned int ri)
 
 #endif /* SIXTY_FOUR_BIT_INTEGERS */
 
+/* This is related to the section of scheme.h that defines mzlonglong. */
+#ifndef INT64_AS_LONG_LONG
+#ifdef  NO_LONG_LONG_TYPE
+#ifndef SIXTY_FOUR_BIT_INTEGERS
+#error foreign requires a 64-bit integer type type.
+#endif
+#endif
+#endif
+
 unsigned short *ucs4_string_to_utf16_pointer(Scheme_Object *ucs)
 {
   long ulen;
   unsigned short *res;
   res = scheme_ucs4_to_utf16
-          (SCHEME_CHAR_STR_VAL(ucs), 0, SCHEME_CHAR_STRLEN_VAL(ucs),
+          (SCHEME_CHAR_STR_VAL(ucs), 0, 1+SCHEME_CHAR_STRLEN_VAL(ucs),
            NULL, -1, &ulen, 0);
   return res;
 }
@@ -334,9 +344,14 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 {
   long ulen;
   mzchar *res;
-  res = scheme_utf16_to_ucs4(utf, 0, strlen(utf), NULL, -1, &ulen, 0);
+  int end;
+  for (end=0; utf[end] != 0; end++) /**/ ;
+  res = scheme_utf16_to_ucs4(utf, 0, end, NULL, -1, &ulen, 0);
   return scheme_make_sized_char_string(res, ulen, 0);
 }
+
+/*****************************************************************************/
+/* Types */
 
 /***********************************************************************
  * The following are the only primitive types.
@@ -424,6 +439,24 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   scheme_make_realinteger_value_from_unsigned(<C>)
  */
 
+#define FFI_int64 (8)
+/* Type Name:   int64
+ * LibFfi type: ffi_type_sint64
+ * C type:      int64_t
+ * Predicate:   scheme_get_long_long_val(<Scheme>,&aux)
+ * Scheme->C:   -none- (set by the predicate)
+ * C->Scheme:   scheme_make_integer_value_from_long_long(<C>)
+ */
+
+#define FFI_uint64 (9)
+/* Type Name:   uint64
+ * LibFfi type: ffi_type_uint64
+ * C type:      uint64_t
+ * Predicate:   scheme_get_unsigned_long_long_val(<Scheme>,&aux)
+ * Scheme->C:   -none- (set by the predicate)
+ * C->Scheme:   scheme_make_integer_value_from_unsigned_long_long(<C>)
+ */
+
 /* `int' and `uint' are always synonyms for int32/uint32 (see above) */
 /* Alias type: `int'
  * Aliased to: `int32'
@@ -434,7 +467,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  */
 
 /* This is like int32, but always assumes fixnum: */
-#define FFI_fixint (8)
+#define FFI_fixint (10)
 /* Type Name:   fixint
  * LibFfi type: ffi_type_sint32
  * C type:      int32_t
@@ -444,7 +477,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  */
 
 /* This is like uint32, but always assumes fixnum: */
-#define FFI_ufixint (9)
+#define FFI_ufixint (11)
 /* Type Name:   ufixint
  * LibFfi type: ffi_type_uint32
  * C type:      uint32_t
@@ -463,7 +496,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 #endif
 
 /* This is what mzscheme defines as long: */
-#define FFI_long (10)
+#define FFI_long (12)
 /* Type Name:   long
  * LibFfi type: ffi_type_smzlong
  * C type:      long
@@ -473,7 +506,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  */
 
 /* This is what mzscheme defines as ulong: */
-#define FFI_ulong (11)
+#define FFI_ulong (13)
 /* Type Name:   ulong
  * LibFfi type: ffi_type_umzlong
  * C type:      unsigned long
@@ -483,7 +516,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  */
 
 /* This is what mzscheme defines as long, assuming fixnums: */
-#define FFI_fixnum (12)
+#define FFI_fixnum (14)
 /* Type Name:   fixnum
  * LibFfi type: ffi_type_smzlong
  * C type:      long
@@ -493,7 +526,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  */
 
 /* This is what mzscheme defines as ulong, assuming fixnums: */
-#define FFI_ufixnum (13)
+#define FFI_ufixnum (15)
 /* Type Name:   ufixnum
  * LibFfi type: ffi_type_umzlong
  * C type:      unsigned long
@@ -502,7 +535,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   scheme_make_integer_from_unsigned(<C>)
  */
 
-#define FFI_float (14)
+#define FFI_float (16)
 /* Type Name:   float
  * LibFfi type: ffi_type_float
  * C type:      float
@@ -511,7 +544,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   scheme_make_float(<C>)
  */
 
-#define FFI_double (15)
+#define FFI_double (17)
 /* Type Name:   double
  * LibFfi type: ffi_type_double
  * C type:      double
@@ -521,7 +554,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  */
 
 /* Booleans -- implemented as an int which is 1 or 0: */
-#define FFI_bool (16)
+#define FFI_bool (18)
 /* Type Name:   bool
  * LibFfi type: ffi_type_sint
  * C type:      int
@@ -534,7 +567,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * #f is not NULL since these are used only for strings, use byte
  * strings if this is what you need. */
 
-#define FFI_string_ucs_4 (17)
+#define FFI_string_ucs_4 (19)
 /* Type Name:   string/ucs-4 (string_ucs_4)
  * LibFfi type: ffi_type_pointer
  * C type:      mzchar*
@@ -543,7 +576,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   scheme_make_char_string_without_copying(<C>)
  */
 
-#define FFI_string_utf_16 (18)
+#define FFI_string_utf_16 (20)
 /* Type Name:   string/utf-16 (string_utf_16)
  * LibFfi type: ffi_type_pointer
  * C type:      unsigned short*
@@ -555,7 +588,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 /* Byte strings -- not copying C strings, #f is NULL.
  * (note: these are not like char* which is just a pointer) */
 
-#define FFI_bytes (19)
+#define FFI_bytes (21)
 /* Type Name:   bytes
  * LibFfi type: ffi_type_pointer
  * C type:      char*
@@ -564,7 +597,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   (<C>==NULL)?scheme_false:scheme_make_byte_string_without_copying(<C>)
  */
 
-#define FFI_path (20)
+#define FFI_path (22)
 /* Type Name:   path
  * LibFfi type: ffi_type_pointer
  * C type:      char*
@@ -573,7 +606,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
  * C->Scheme:   (<C>==NULL)?scheme_false:scheme_make_path_without_copying(<C>)
  */
 
-#define FFI_symbol (21)
+#define FFI_symbol (23)
 /* Type Name:   symbol
  * LibFfi type: ffi_type_pointer
  * C type:      char*
@@ -585,7 +618,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 /* This is for any C pointer: #f is NULL, cpointer values as well as
  * ffi-obj and string values pass their pointer.  When used as a return
  * value, either a cpointer object or #f is returned. */
-#define FFI_pointer (22)
+#define FFI_pointer (24)
 /* Type Name:   pointer
  * LibFfi type: ffi_type_pointer
  * C type:      void*
@@ -596,7 +629,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 
 /* This is used for passing and Scheme_Object* value as is.  Useful for
  * functions that know about Scheme_Object*s, like MzScheme's. */
-#define FFI_scheme (23)
+#define FFI_scheme (25)
 /* Type Name:   scheme
  * LibFfi type: ffi_type_pointer
  * C type:      Scheme_Object*
@@ -608,7 +641,7 @@ Scheme_Object *utf16_pointer_to_ucs4_string(unsigned short *utf)
 /* Special type, not actually used for anything except to mark points
  * that are treated like pointers but not referenced.  Used for
  * creating function types. */
-#define FFI_fmark (24)
+#define FFI_fmark (26)
 /* Type Name:   fmark
  * LibFfi type: ffi_type_pointer
  * C type:      -none-
@@ -624,6 +657,8 @@ typedef union FFIAny {
   uint16_t x_uint16;
   int32_t x_int32;
   unsigned int x_uint32;
+  int64_t x_int64;
+  uint64_t x_uint64;
   int32_t x_fixint;
   uint32_t x_ufixint;
   long x_long;
@@ -643,7 +678,7 @@ typedef union FFIAny {
 } FFIAny;
 
 /* This is a tag that is used to identify user-made struct types. */
-#define FFI_struct (25)
+#define FFI_struct (27)
 
 /*****************************************************************************/
 /* Type objects */
@@ -749,6 +784,8 @@ static int ffi_sizeof(Scheme_Object *type)
   case FFI_uint16: return sizeof(uint16_t);
   case FFI_int32: return sizeof(int32_t);
   case FFI_uint32: return sizeof(unsigned int);
+  case FFI_int64: return sizeof(int64_t);
+  case FFI_uint64: return sizeof(uint64_t);
   case FFI_fixint: return sizeof(int32_t);
   case FFI_ufixint: return sizeof(uint32_t);
   case FFI_long: return sizeof(long);
@@ -938,6 +975,8 @@ static Scheme_Object *ffi_c_to_scheme(Scheme_Object *type, void *src)
     case FFI_uint16: return scheme_make_integer_from_unsigned(((uint16_t*)src)[0]);
     case FFI_int32: return scheme_make_realinteger_value(((int32_t*)src)[0]);
     case FFI_uint32: return scheme_make_realinteger_value_from_unsigned(((unsigned int*)src)[0]);
+    case FFI_int64: return scheme_make_integer_value_from_long_long(((int64_t*)src)[0]);
+    case FFI_uint64: return scheme_make_integer_value_from_unsigned_long_long(((uint64_t*)src)[0]);
     case FFI_fixint: return scheme_make_integer(((int32_t*)src)[0]);
     case FFI_ufixint: return scheme_make_integer_from_unsigned(((uint32_t*)src)[0]);
     case FFI_long: return scheme_make_integer_value(((long*)src)[0]);
@@ -1007,6 +1046,12 @@ static void* ffi_scheme_to_c(Scheme_Object *type, void *dst,
       return NULL;
     case FFI_uint32:
       if (!(scheme_get_unsigned_realint_val(val,&(((unsigned int*)dst)[0])))) scheme_wrong_type("Scheme->C", "uint32", 0, 1, &(val));
+      return NULL;
+    case FFI_int64:
+      if (!(scheme_get_long_long_val(val,&(((int64_t*)dst)[0])))) scheme_wrong_type("Scheme->C", "int64", 0, 1, &(val));
+      return NULL;
+    case FFI_uint64:
+      if (!(scheme_get_unsigned_long_long_val(val,&(((uint64_t*)dst)[0])))) scheme_wrong_type("Scheme->C", "uint64", 0, 1, &(val));
       return NULL;
     case FFI_fixint:
       if (SCHEME_INTP(val)) (((int32_t*)dst)[0]) = (int32_t)(SCHEME_INT_VAL(val));
@@ -1674,6 +1719,20 @@ void scheme_init_foreign(Scheme_Env *env)
   t->c_to_scheme = ((Scheme_Object*)FFI_uint32);
   scheme_end_stubborn_change(t);
   scheme_add_global("_uint32", (Scheme_Object*)t, menv);
+  t = (ffi_type_struct*)scheme_malloc_stubborn(sizeof(ffi_type_struct));
+  t->so.type = ffi_type_tag;
+  t->basetype = (NULL);
+  t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_sint64));
+  t->c_to_scheme = ((Scheme_Object*)FFI_int64);
+  scheme_end_stubborn_change(t);
+  scheme_add_global("_int64", (Scheme_Object*)t, menv);
+  t = (ffi_type_struct*)scheme_malloc_stubborn(sizeof(ffi_type_struct));
+  t->so.type = ffi_type_tag;
+  t->basetype = (NULL);
+  t->scheme_to_c = ((Scheme_Object*)(void*)(&ffi_type_uint64));
+  t->c_to_scheme = ((Scheme_Object*)FFI_uint64);
+  scheme_end_stubborn_change(t);
+  scheme_add_global("_uint64", (Scheme_Object*)t, menv);
   scheme_add_global("_int", scheme_lookup_global(scheme_intern_symbol("_int32"),menv), menv);
   scheme_add_global("_uint", scheme_lookup_global(scheme_intern_symbol("_uint32"),menv), menv);
   t = (ffi_type_struct*)scheme_malloc_stubborn(sizeof(ffi_type_struct));

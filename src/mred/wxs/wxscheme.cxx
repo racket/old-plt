@@ -1197,10 +1197,10 @@ static Scheme_Object *SetPSProcs(int, Scheme_Object *a[])
 
 void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
 			  const char *text, int dt, Bool combine, int use16, 
-			  double font_size)
+			  double font_size, int sym_map)
 {
   if (ps_draw_text) {
-    Scheme_Object *a[5], *v;
+    Scheme_Object *a[6], *v;
 
     v = scheme_make_utf8_string(fontname);
     a[0] = v;
@@ -1212,18 +1212,20 @@ void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
     a[2] = v;
     a[3] = f;
     a[4] = (combine ? scheme_true : scheme_false);
+    a[5] = (sym_map ? scheme_true : scheme_false);
 
-    scheme_apply(ps_draw_text, 5, a);
+    scheme_apply(ps_draw_text, 6, a);
   }
 }
 
 extern void wxPostScriptGetTextExtent(const char *fontname, 
 				      const char *text, int dt, Bool combine, int use16, 
 				      double font_size,
-				      float *x, float *y, float *descent, float *topSpace)
+				      float *x, float *y, float *descent, float *topSpace,
+				      int sym_map)
 {
   if (ps_get_text_extent) {
-    Scheme_Object *a[4], *v;
+    Scheme_Object *a[5], *v;
 
     v = scheme_make_utf8_string(fontname);
     a[0] = v;
@@ -1234,8 +1236,9 @@ extern void wxPostScriptGetTextExtent(const char *fontname,
       v = scheme_make_sized_offset_utf8_string((char *)text, dt, -1);
     a[2] = v;
     a[3] = (combine ? scheme_true : scheme_false);
+    a[4] = (sym_map ? scheme_true : scheme_false);
 
-    v = scheme_apply_multi(ps_get_text_extent, 4, a);
+    v = scheme_apply_multi(ps_get_text_extent, 5, a);
     
     if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)
 	&& (scheme_multiple_count == 4)) {
@@ -1273,14 +1276,15 @@ char *wxPostScriptFixupFontName(const char *fontname)
   return (char *)fontname;
 }
 
-Bool wxPostScriptGlyphExists(const char *fontname, int c)
+Bool wxPostScriptGlyphExists(const char *fontname, int c, int sym_map)
 {
   if (ps_glyph_exists) {
-    Scheme_Object *a[2], *v;
+    Scheme_Object *a[3], *v;
     v = scheme_make_sized_offset_utf8_string((char *)fontname, 0, -1);
     a[0] = v;
     a[1] = scheme_make_integer_value(c);
-    v = scheme_apply(ps_glyph_exists, 2, a);
+    a[2] = (sym_map ? scheme_true : scheme_false);
+    v = scheme_apply(ps_glyph_exists, 3, a);
     return SCHEME_TRUEP(v);
   }
   return TRUE;

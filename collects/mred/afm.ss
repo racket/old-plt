@@ -248,7 +248,7 @@
 				     [t (read i)]
 				     [r (read i)]
 				     [b (read i)])
-				 (set! bbox-down b))]
+				 (set! bbox-down t))]
 		   [(capheight) (set! cap-height (read i))]
 		   [(characterset) (let ([m (regexp-match #rx#"[a-zA-Z_0-9-]+" (read-bytes-line i))])
 				     (when m
@@ -366,15 +366,61 @@
 	  font-list)))
 
   ;; ----------------------------------------
+
+  (define symbol-map
+    #(0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 8704 0 8707 0 0 8717
+	0 0 8727 0 0 8722 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	8773 913 914 935 916 917 934 915
+	919 921 977 922 923 924 925 927
+	928 920 929 931 932 933 962 937
+	926 936 918 0 8756 0 8869 0
+	0 945 946 967 948 949 966 947
+	951 953 981 954 955 956 957 959
+	960 952 961 963 964 965 982 969
+	958 968 950 0 0 0 8764 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 0 0 0 0 0 0 0
+	0 978 8242 8804 8260 8734 402 9827
+	9830 9829 9824 8596 8592 8593 8594 8595
+	0 177 8243 8805 215 8733 8706 8729
+	247 8800 8801 8776 8230 9168 8212 8629
+	8501 8465 8476 8472 8855 8853 8709 8745
+	8746 8835 8839 8836 8834 8838 8712 8713
+	8736 8711 174 169 8482 8719 8730 8901
+	172 8743 8744 8660 8656 8657 8658 8659
+	9674 9001 174 169 8482 8721 9115 9116
+	9117 9121 9122 9123 9127 9128 9129 9130
+	8364 9002 8747 8992 9134 8993 9118 9119
+	9120 9124 9125 9126 9131 9132 9133 0))
+
+  (define (map-symbols sym-map? l)
+    (if sym-map?
+	(map (lambda (c)
+	       (let ([v (char->integer c)])
+		 (if (<= 0 v 255)
+		     (integer->char (vector-ref symbol-map v))
+		     c)))
+	     l)
+	l))
+
+  ;; ----------------------------------------
   ;; Draw/measure text
 
-  (define (afm-get-text-extent font-name size string kern?)
+  (define (afm-get-text-extent font-name size string kern? sym-map?)
     (let* ([font (or (get-font font-name)
 		     (make-font 0 1000 #hash() #f #f))]
 	   [scale (/ size 1000.0)]
 	   [descent (* scale (font-descent font))])
       (values (* scale
-		 (let loop ([cl (string->list string)][width 0])
+		 (let loop ([cl (map-symbols sym-map? (string->list string))][width 0])
 		   (cond
 		    [(empty? cl) width]
 		    [else (let ([achar (hash-table-get 
@@ -411,8 +457,8 @@
 	      descent
 	      (* scale (- 1000 (font-ascent font))))))
 
-  (define (afm-draw-text font-name size string out kern?)
-    (let* ([l (string->list string)]
+  (define (afm-draw-text font-name size string out kern? sym-map?)
+    (let* ([l (map-symbols sym-map? (string->list string))]
 	   [font (or (get-font font-name)
 		     (make-font 0 0 #hash() #f #f))]
 	   [show-simples (lambda (simples special-font-name special-font)
@@ -553,7 +599,7 @@
   ;; Font substitution
 
   (define (find-substitute char find-k none-k)
-    (let ([v (afm-glyph-exists? #f (char->integer char))])
+    (let ([v (afm-glyph-exists? #f (char->integer char) #f)])
       (if v
 	  (apply find-k v)
 	  (none-k))))
@@ -561,14 +607,22 @@
   (define (afm-glyph-exists?* font-name char-val)
     (let ([f (get-font font-name)])
       (and f 
-	   (let ([achar (hash-table-get (font-achars f) char-val (lambda () #f))])
+	   (let ([achar (hash-table-get (font-achars f) 
+					char-val
+					(lambda () #f))])
 	     (and achar
 		  (list font-name f achar))))))
   
-  (define (afm-glyph-exists? font-name char-val)
-    (or (and font-name
-	     (afm-glyph-exists?* font-name char-val))
-	(ormap (lambda (fn)
-		 (afm-glyph-exists?* fn char-val))
-	       (get-all-fonts)))))
+  (define (afm-glyph-exists? font-name char-val sym-map?)
+    (let ([char-val (if (and sym-map?
+			     (<= 0 char-val 255))
+			(vector-ref symbol-map char-val)
+			char-val)])
+      (or (and font-name
+	       (afm-glyph-exists?* font-name char-val))
+	  (ormap (lambda (fn)
+		   (afm-glyph-exists?* fn char-val))
+		 (get-all-fonts))))))
+
+
 

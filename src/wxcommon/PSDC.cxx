@@ -65,13 +65,14 @@
 
 extern void wxPostScriptDrawText(Scheme_Object *f, const char *fontname, 
 				 const char *text, int dt, Bool combine, int use16, 
-				 double font_size);
+				 double font_size, int symbol_map);
 extern void wxPostScriptGetTextExtent(const char *fontname, 
 				      const char *text, int dt, Bool combine, int use16, 
 				      double font_size,
-				      float *x, float *y, float *descent, float *topSpace);
+				      float *x, float *y, float *descent, float *topSpace,
+				      int symbol_map);
 extern char *wxPostScriptFixupFontName(const char *fontname);
-extern Bool wxPostScriptGlyphExists(const char *fontname, int c);
+extern Bool wxPostScriptGlyphExists(const char *fontname, int c, int symbol_map);
 
 # define YSCALE(y) ((paper_h) - ((y) * user_scale_y + device_origin_y))
 # define XSCALE(x) ((x) * user_scale_x + device_origin_x)
@@ -1223,7 +1224,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
 {
   float tw, th;
   const char *name;
-  int size;
+  int size, sym_map;
 
   if (!pstream)
     return;
@@ -1335,7 +1336,9 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
     pstream->Out(" moveto\n");
   }
 
-  wxPostScriptDrawText(pstream->f, name, text, dt, combine, use16, current_font_size);
+  sym_map = current_font->GetFamily() == wxSYMBOL;
+  wxPostScriptDrawText(pstream->f, name, text, dt, combine, use16, current_font_size,
+		       sym_map);
 
   if (angle != 0.0) {
     pstream->Out("grestore\n"); 
@@ -1355,7 +1358,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
 Bool wxPostScriptDC::GlyphAvailable(int c, wxFont *f)
 {
   const char *name;
-  int family, style, weight;
+  int family, style, weight, sym_map;
 
   if (!f)
     f = current_font;
@@ -1368,7 +1371,9 @@ Bool wxPostScriptDC::GlyphAvailable(int c, wxFont *f)
   if (!name)
     name = "Times-Roman";
 
-  return wxPostScriptGlyphExists(name, c);
+  sym_map = current_font->GetFamily() == wxSYMBOL;
+
+  return wxPostScriptGlyphExists(name, c, sym_map);
 }
 
 void wxPostScriptDC::SetBackground (wxColour * c)
@@ -1915,6 +1920,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   int size;
   int style;
   int weight;
+  int sym_map;
   const char *name;
 
   if (!fontToUse)
@@ -1929,8 +1935,10 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   if (!name)
     name = "Times-Roman";
 
+  sym_map = fontToUse->GetFamily() == wxSYMBOL;
+
   wxPostScriptGetTextExtent(name, string, dt, combine, use16, size,
-			    x, y, descent, topSpace);
+			    x, y, descent, topSpace, sym_map);
 }
 
 void wxPostScriptDC::SetMapMode (int WXXTUNUSED(mode))

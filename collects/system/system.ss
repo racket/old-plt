@@ -65,7 +65,14 @@
 		      (let* ([len (string-length file)]
 			     [basename (substring file 0 (- len 3))]
 			     [suffix (substring file (- len 3) len)]
-			     [zo (string-append basename ".zo")])
+			     [zo (string-append basename ".zo")]
+			     [error-handler
+			      (lambda (e) 
+				(delete-file zo)
+				((error-display-handler)
+				 (string-append indent-string
+						(exn-message e)))
+				#f)])
 			(when (and (or (eq? mred:debug:on? 'compile)
 				       (eq? mred:debug:on? 'compile-and-exit))
 				   (not (link? basename))
@@ -74,15 +81,9 @@
 				       (<= (file-modify-seconds zo)
 					   (file-modify-seconds file))))
 			  (mred:debug:printf 'load "~aCompiling ~a..." indent-string file)
-			  (with-handlers ((void 
-					   (lambda (e) 
-					     (delete-file zo)
-					     ((error-display-handler)
-					      (string-append indent-string
-							     (exn-message e)))
-					     #f)))
-					 (compile-file file zo)
-					 #t))))))))
+			  (with-handlers ((void error-handler))
+			    (compile-file file zo)
+			    #t))))))))
 
 (define mred:debug:new-eval #f)
 (define mred:debug:new-console (void))  

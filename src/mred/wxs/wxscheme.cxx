@@ -955,10 +955,12 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
   int last_pos = -1, last_len = 0;
 #endif
 #ifdef wx_mac
-  FMFontFamilyIterator iterator;
-  FMFontFamily fam;
-  Str255 fname;
-  char temp[256];
+  ATSFontFamilyIterator iterator;
+  ATSFontFamilyRef fam;
+  CFStringRef fname;
+  long ulen;
+  UniChar us_buf[128], *us;
+  char s_buf[256];
 #endif
 #ifdef wx_msw
   gfData data;
@@ -999,7 +1001,10 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
 #  define kFMDefaultIterationScope 0
 # endif
 
-  FMCreateFontFamilyIterator(NULL, NULL, kFMDefaultIterationScope, &iterator);
+  ATSFontFamilyIteratorCreate(kATSFontContextLocal,
+			      NULL, NULL,
+			      kATSOptionFlagsDefaultScope,
+			      &iterator);
 #endif
 #ifdef wx_msw
   data.mono_only = mono_only;
@@ -1053,12 +1058,25 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
     s = names[i++];
 #endif
 #ifdef wx_mac
-    if (FMGetNextFontFamily(&iterator, &fam) != noErr)
+    if (ATSFontFamilyIteratorNext(iterator, &fam) != noErr)
       break;
-    FMGetFontFamilyName(fam, fname);
-    CopyPascalStringToC(fname,temp);
-    l = strlen(temp);
-    s = temp;
+    ATSFontFamilyGetName(fam, kATSOptionFlagsDefault, &fname);
+    ulen = CFStringGetLength(fname);
+    if (ulen < 128)
+      us = us_buf;
+    else
+      us = new WXGC_ATOMIC UniChar[ulen];
+    CFStringGetCharacters(fname, CFRangeMake(0, ulen), us);
+    CFRelease(fname);
+    
+    l = scheme_utf8_encode((unsigned int *)us, 0, ulen,
+			   NULL, 0, 1 /* UTF-16 */);
+    if (l < 256)
+      s = s_buf;
+    else
+      s = new WXGC_ATOMIC char[l];
+    l = scheme_utf8_encode((unsigned int *)us, 0, ulen,
+			   (unsigned char *)s, 0, 1 /* UTF-16 */);
 #endif
 #ifdef wx_msw
     if (i >= data.count)
@@ -1082,7 +1100,7 @@ static Scheme_Object *wxSchemeGetFontList(int argc, Scheme_Object **argv)
    ReleaseDC(NULL, dc);
 #endif
 #ifdef wx_mac
-  FMDisposeFontFamilyIterator(&iterator);
+   ATSFontFamilyIteratorRelease(&iterator);
 #endif
 
   /* But wait --- there's more! At least under X when Xft is enabled.

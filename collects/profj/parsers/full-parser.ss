@@ -268,6 +268,7 @@
                                                (method-throws $1)
                                                $2
                                                #f
+                                               #f
                                                (build-src 2))])
 
       (MethodHeader
@@ -325,10 +326,10 @@
       (ConstructorDeclaration
        [(Modifiers ConstructorDeclarator Throws ConstructorBody)
 	(make-method $1 (make-type-spec 'ctor 0 (build-src 4)) null (car $2) 
-                         (cadr $2) $3 $4 #f (build-src 4))]
+                         (cadr $2) $3 $4 #f #f (build-src 4))]
        [(ConstructorDeclarator Throws ConstructorBody)
 	(make-method null (make-type-spec 'ctor 0 (build-src 3)) null (car $1)
-                         (cadr $1) $2 $3 #f (build-src 3))])
+                         (cadr $1) $2 $3 #f #f (build-src 3))])
       
       (ConstructorDeclarator
        [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3))]

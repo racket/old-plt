@@ -210,6 +210,7 @@
                                           (method-throws $1)
                                           $2
                                           #t
+                                          #f
                                           (build-src 2))]
        [(MethodHeader SEMI_COLON) (make-method (method-modifiers $1)
                                                (method-type $1)
@@ -218,6 +219,7 @@
                                                (method-parms $1)
                                                (method-throws $1)
                                                #f
+                                               #t
                                                #f
                                                (build-src 2))])
       
@@ -241,7 +243,7 @@
       (ConstructorDeclaration
        [(ConstructorDeclarator ConstructorBody)
 	(make-method (list (make-modifier 'public #f)) (make-type-spec 'ctor 0 (build-src 2)) null (car $1)
-                     (cadr $1) null $2 #t (build-src 2))])
+                     (cadr $1) null $2 #t #f (build-src 2))])
       
       (ConstructorDeclarator
        [(IDENTIFIER O_PAREN FormalParameterList C_PAREN) (list (make-id $1 (build-src 1)) (reverse $3))]

@@ -87,8 +87,8 @@
   ;;(make-array-init (list (U expression array-init)) src)
   (p-define-struct array-init (vals src))
   
-  ;;(make-method (list modifier) type-spec (list gj-info) id (list var-decl) (list name) Statement bool src)
-  (p-define-struct method (modifiers type type-parms name parms throws body all-tail? src))
+  ;;(make-method (list modifier) type-spec null id (list var-decl) (list name) Statement bool method-record src)
+  (p-define-struct method (modifiers type type-parms name parms throws body all-tail? rec src))
   
   ;;(make-initialize bool block src)
   (p-define-struct initialize (static block src))

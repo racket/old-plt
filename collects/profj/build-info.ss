@@ -543,17 +543,18 @@
               (not (null? (method-record-throws super-ctor))))
          (default-ctor-error 'throws name (method-record-class super-ctor) (id-src name) level))
         (else
-         (let ((method (make-method (list (make-modifier 'public #f))
-                                    (make-type-spec 'ctor 0 #f)
-                                    null
-                                    (make-id (id-string name) #f)
-                                    null
-                                    null
-                                    (make-block 
+         (let* ((rec (make-method-record (id-string name) `(public) 'ctor null null #f (list (id-string name))))
+                (method (make-method (list (make-modifier 'public #f))
+                                     (make-type-spec 'ctor 0 #f)
+                                     null
+                                     (make-id (id-string name) #f)
+                                     null
+                                     null
+                                     (make-block 
                                      (list (make-call #f #f #f (make-special-name #f #f "super") null #f)) #f)
                                     #f
-                                    #f))
-               (rec (make-method-record (id-string name) `(public) 'ctor null null #f (list (id-string name)))))
+                                    rec
+                                    #f)))
            (set-def-members! class (cons method (def-members class)))
            (add-rec rec))))))
 
@@ -958,13 +959,15 @@
         (when (eq? level 'full)
           (check-throws-match throws method cname over? type-recs)))
       
-      (make-method-record name
-                          (check-method-modifiers level mods (eq? 'ctor ret))
-                          ret
-                          parms
-                          throws
-                          over?
-                          cname)))
+      (let ((record (make-method-record name
+                                        (check-method-modifiers level mods (eq? 'ctor ret))
+                                        ret
+                                        parms
+                                        throws
+                                        over?
+                                        cname)))
+        (set-method-rec! method record)
+        record)))
   
   ;process-inner def (list name) type-records symbol -> inner-record
   (define (process-inner def cname type-recs level)

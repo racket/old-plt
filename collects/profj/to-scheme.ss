@@ -123,8 +123,11 @@
   ;build-var-name: string -> string
   (define (build-var-name id) (format "~a~~f" id))
   
+  ;build-generic-name: string string -> string
+  (define (build-generic-name class name) (format "~a-~a~~generic" class name))
+  
   ;build-method-name: string (list type) -> string
-  (define (build-method-name id types)
+  (define (mangle-method-name id types)
     (letrec ((parm-name
               (lambda (t)
                 (format "-~a"
@@ -138,7 +141,7 @@
                            (string-append (let ((s (parm-name (array-type-type t))))
                                             (substring s 1 (string-length s)))
                                           (format "~a" (array-type-dim t))))
-                          (else (error 'build-method-name (format "Internal Error: given unexptected type ~a" t))))))))
+                          (else (error 'mangle-method-name (format "Internal Error: given unexptected type ~a" t))))))))
       (format "~a~a" id (apply string-append (map parm-name types)))))
   
   ;constructor? string -> bool
@@ -147,7 +150,7 @@
   
   ;build-constructor-name: string (list type) -> string
   (define (build-constructor-name class-name args)
-    (build-method-name (format "~a-constructor" class-name) args))
+    (mangle-method-name (format "~a-constructor" class-name) args))
   
   
   ;-------------------------------------------------------------------------------------------------------------------------
@@ -494,12 +497,22 @@
         (let* ((class (translate-id (class-name) (id-src (header-id header))))
                (overridden-methods (get-overridden-methods (append (accesses-public methods) 
                                                                    (accesses-package methods) 
-                                                                   (accesses-protected methods))
-                                                           type-recs))
+                                                                   (accesses-protected methods))))
                (restricted-methods (make-method-names ;(append (accesses-package methods)
                                     (accesses-protected methods);)
-                                    overridden-methods
-                                    type-recs))
+                                    overridden-methods))
+               (make-gen-name 
+                (lambda (m)
+                  (build-generic-name (class-name)
+                                      ((if (constructor? (id-string (method-name m))) build-constructor-name mangle-method-name)
+                                       (id-string (method-name m))
+                                       (method-record-atypes (method-rec m))))))
+               (provideable-generics 
+                (map make-gen-name 
+                     (append (accesses-public methods)
+                             (accesses-package methods)
+                             (accesses-protected methods))))
+               (private-generics (map make-gen-name (accesses-private methods)))
                (static-method-names (make-static-method-names (accesses-static methods) type-recs))
                (static-field-names (make-static-field-names (accesses-static fields)))
                (static-field-setters (make-static-field-setters-names 
@@ -514,13 +527,14 @@
                                    ,@(map build-identifier static-method-names)
                                    ,@(map build-identifier static-field-names)
                                    ,@static-field-setters
+                                   ,@(map build-identifier provideable-generics)
                                    ,@field-getters/setters)))
-        
+
           (let ((class-syntax
                  (create-syntax 
                   #f
                   `(begin ,(if (not (memq 'private (map modifier-kind (header-modifiers header)))) provides)
-                          ,(create-local-names (append (make-method-names (accesses-private methods) null type-recs)
+                          ,(create-local-names (append (make-method-names (accesses-private methods) null)
                                                        restricted-methods))
                           (define ,class
                             (,class* ,(if extends-object?
@@ -543,13 +557,14 @@
                              ,@(create-private-setters/getters (accesses-private fields))
                              
                              ,@(generate-inner-makers (members-inner class-members) depth type-recs)
-                             ,(when (> depth 0)
-                                `(field ,@(let loop ((d depth))
-                                            (cond
-                                              ((= d 0) null)
-                                              (else 
-                                               (cons `(,(string->symbol (format "encl-this-~a-f" d)) null)
-                                                     (loop (sub1 d))))))))
+                             ,@(if (> depth 0)
+                                   `(list (field ,@(let loop ((d depth))
+                                                     (cond
+                                                       ((= d 0) null)
+                                                       (else 
+                                                        (cons `(,(string->symbol (format "encl-this-~a-f" d)) null)
+                                                              (loop (sub1 d))))))))
+                                   null)
                              
                              ,@(map (lambda (m) (translate-method (method-type m)
                                                                   (map modifier-kind (method-modifiers m))
@@ -560,6 +575,7 @@
                                                                   (method-src m)
                                                                   (> depth 0)
                                                                   depth
+                                                                  (method-rec m)
                                                                   type-recs))
                                     (append (accesses-public methods)
                                             (accesses-package methods)
@@ -592,6 +608,11 @@
                                     (members-init class-members))
                              
                              (super-instantiate ())))
+                          
+                          ,@(create-generic-methods (append (accesses-public methods)
+                                                            (accesses-package methods)
+                                                            (accesses-protected methods)
+                                                            (accesses-private methods)))
                           
                           ,@(create-field-accessors field-getters/setters
                                                     (append (accesses-public fields)
@@ -659,7 +680,7 @@
                                                  (loop (sub1 d))))))))
             (parm-types (map (lambda (p) (type-spec-to-type (field-type p) #f 'full type-recs)) parms)))
         (make-syntax #f
-                     `(define/public (,(build-identifier (build-method-name ctor-name parm-types)) ,@translated-parms)
+                     `(define/public (,(build-identifier (mangle-method-name ctor-name parm-types)) ,@translated-parms)
                         (let ((temp-obj (make-object ,(build-identifier class-name))))
                           (send temp-obj ,(build-identifier (build-constructor-name class-name parm-types))
                                 this ,@encls-this ,@translated-parms)
@@ -782,7 +803,7 @@
         
         (list `(begin ,provides
                       (define ,syntax-name (,interface ,(translate-parents (header-extends header))
-                                            ,@(make-method-names (members-method members) null type-recs)))
+                                            ,@(make-method-names (members-method members) null)))
                       ,@(create-static-fields static-field-names (members-field members)))
               (make-syntax #f `(module ,name mzscheme (requires ,(module-name)) ,provides) #f)))))
 
@@ -805,56 +826,56 @@
                                            internal-error) type-recs))
            (parent-record (send type-recs get-class-record  (car (class-record-parents class-record)) #f internal-error)))
       (memq method-name
-            (map (lambda (m) (string->symbol (build-method-name (method-record-name m)
-                                                                (method-record-atypes m))))
+            (map (lambda (m) (string->symbol (mangle-method-name (method-record-name m)
+                                                                 (method-record-atypes m))))
                  (class-record-methods parent-record)))))
   
-  ;returns whether or not given method overrides an existing method
-  ;overrider? symbol type-records -> bool
-  (define (overrider? method-name type-recs)
-    (hash-table-get (class-override-table) 
-                    method-name 
-                    (lambda () 
-                      (let ((o? (override? method-name type-recs)))
-                        (hash-table-put! (class-override-table) method-name o?)
-                        o?))))
-  
-  ;get-overridden-names: (list method) type-records -> (list method)
-  (define (get-overridden-methods methods type-recs) 
+  ;get-overridden-names: (list method) -> (list method)
+  (define (get-overridden-methods methods) 
     (filter (lambda (m) 
               (let ((mname (id-string (method-name m))))
-                (overrider? (build-identifier ((if (constructor? mname) build-constructor-name build-method-name)
-                                               mname
-                                               (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
-                                                    (map field-type (method-parms m)))))
-                            type-recs)))
+                (and (method-record-override (method-rec m))
+                     (hash-table-put! (class-override-table) 
+                                      (build-identifier ((if (constructor? mname) build-constructor-name mangle-method-name)
+                                                         mname
+                                                         (method-record-atypes (method-rec m)))) #t))))
             methods))
   
-  ;make-method-names: (list methods) (list methods) type-records -> (list symbol)
-  (define (make-method-names methods minus-methods type-recs)
+  ;create-generic-methods: (list method) -> (list syntax)
+  (define (create-generic-methods methods)
+    (map (lambda (method)
+           (let* ((m-name (id-string (method-name method)))
+                  (name ((if (constructor? m-name) build-constructor-name mangle-method-name)
+                         m-name
+                         (method-record-atypes (method-rec method)))))
+             (make-syntax #f `(define ,(build-identifier (build-generic-name (class-name) name))
+                                (generic ,(build-identifier (class-name)) ,(build-identifier name)))
+                          (build-src (method-src method)))))
+         methods))
+  
+  ;make-method-names: (list methods) (list methods) -> (list symbol)
+  (define (make-method-names methods minus-methods)
     (if (null? methods)
         null
         (if (memq (car methods) minus-methods)
-            (make-method-names (cdr methods) minus-methods type-recs)
+            (make-method-names (cdr methods) minus-methods)
             (cons 
              (build-identifier ((if (constructor? (id-string (method-name (car methods))))
                                     build-constructor-name
-                                    build-method-name)
+                                    mangle-method-name)
                                 (id-string (method-name (car methods)))
-                                (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
-                                     (map field-type (method-parms (car methods))))))
-             (make-method-names (cdr methods) minus-methods type-recs)))))
+                                (method-record-atypes (method-rec (car methods)))))
+             (make-method-names (cdr methods) minus-methods)))))
   
-  ;translate-method: type-spec (list symbol) id (list parm) statement bool src bool int type-records -> syntax
-  (define (translate-method type modifiers id parms block all-tail? src inner? depth type-recs)
+  ;translate-method: type-spec (list symbol) id (list parm) statement bool src bool int method-record type-records -> syntax
+  (define (translate-method type modifiers id parms block all-tail? src inner? depth rec type-recs)
     (let* ((final (final? modifiers))
            (ctor? (constructor? (id-string id)))
-           (method-string ((if ctor? build-constructor-name build-method-name)
+           (method-string ((if ctor? build-constructor-name mangle-method-name)
                            (id-string id)
-                           (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
-                                (map field-type parms))))
+                           (method-record-atypes rec)))
            (method-name (translate-id method-string (id-src id)))
-           (over? (overrider? (build-identifier method-string) type-recs))
+           (over? (method-record-override rec))
            (definition (cond
                          ((and over? final) 'define/override-final)
                          (over? 'define/override)
@@ -877,9 +898,8 @@
   ;make-static-method-names: (list method) type-recs -> (list string)
   (define (make-static-method-names methods type-recs)
     (map (lambda (m)
-           (build-static-name (build-method-name (id-string (method-name m))
-                                                 (map (lambda (t) (type-spec-to-type t #f 'full type-recs))
-                                                      (map field-type (method-parms m))))))
+           (build-static-name (mangle-method-name (id-string (method-name m))
+                                                  (method-record-atypes (method-rec m)))))
          methods))
   
   ;create-static-methods: (list string) (list method) type-records -> (list syntax)
@@ -1620,8 +1640,8 @@
         ;Normal case
         ((id? method-name)
          (let* ((static? (memq 'static (method-record-modifiers method-record)))
-                (temp (build-method-name (method-record-name method-record)
-                                         (method-record-atypes method-record)))
+                (temp (mangle-method-name (method-record-name method-record)
+                                          (method-record-atypes method-record)))
                 (m-name (if static?
                             (build-static-name temp (car (method-record-class method-record)))
                             temp)))
@@ -1676,8 +1696,8 @@
     (let ((class-string (get-class-string class-type))
           (class-id (name-id class-type)))
       (if inner?
-          (make-syntax #f `(send this ,(translate-id (build-method-name (string-append "construct-" class-string)
-                                                                        (method-record-atypes ctor-record))
+          (make-syntax #f `(send this ,(translate-id (mangle-method-name (string-append "construct-" class-string)
+                                                                         (method-record-atypes ctor-record))
                                                      (id-src class-id))
                                  ,@args)
                        (build-src src))
@@ -1695,9 +1715,9 @@
   
   ;translate-inner-alloc: syntax id (list syntax) src method-record -> syntax
   (define (translate-inner-alloc obj class args src ctor-record)
-    (make-syntax #f `(send ,obj ,(translate-id (build-method-name (string-append "construct-"
-                                                                                 (get-class-string (make-name class null #f)))
-                                                                  (method-record-atypes ctor-record))
+    (make-syntax #f `(send ,obj ,(translate-id (mangle-method-name (string-append "construct-"
+                                                                                  (get-class-string (make-name class null #f)))
+                                                                   (method-record-atypes ctor-record))
                                                (id-src class))
                            ,@args)
                  (build-src src)))

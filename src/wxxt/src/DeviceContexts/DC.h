@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: DC.h,v 1.12 1999/11/30 22:20:07 mflatt Exp $
+ * $Id: DC.h,v 1.13 2000/04/15 01:38:39 mflatt Exp $
  *
  * Purpose: basic device context
  *
@@ -115,16 +115,16 @@ public:
     virtual void  DrawRectangle(float x, float y, float w, float h) = 0;
     virtual void  DrawRoundedRectangle(float x, float y, float w, float h,
 				       float radius=20) = 0;
-    /* MATTHEW: */
+
     virtual void  DrawText(char *text, float x, float y,
-			   Bool use16 = FALSE) = 0;
+			   Bool use16 = FALSE, int dt = 0) = 0;
     virtual void  FloodFill(float x, float y, wxColour *col,
 			    int style=wxFLOOD_SURFACE) = 0;
     virtual float GetCharHeight(void) = 0;
     virtual float GetCharWidth(void) = 0;
     virtual void  GetTextExtent(const char *s, float *w, float *h,
 				float *descent = 0, float *ext_leading = 0,
-				wxFont *font=NULL, Bool use16bit=FALSE) = 0;
+				wxFont *font=NULL, Bool use16bit=FALSE, int dt=0) = 0;
     virtual void  IntDrawLine(int x1, int y1, int x2, int y2) = 0;
     virtual void  IntDrawLines(int n, wxIntPoint pts[],
 			       int xoff=0, int yoff=0) = 0;

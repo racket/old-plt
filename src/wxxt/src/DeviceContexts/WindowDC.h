@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.9 1999/11/04 17:25:33 mflatt Exp $
+ * $Id: WindowDC.h,v 1.10 1999/11/18 16:35:06 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -121,14 +121,13 @@ public:
     void  DrawRoundedRectangle(float x, float y, float w, float h,
 				       float radius=20);
 
-    /* MATTHEW: */
-    void  DrawText(char *text, float x, float y, Bool use16 = FALSE);
+    void  DrawText(char *text, float x, float y, Bool use16 = FALSE, int dt = 0);
     void  FloodFill(float x, float y, wxColour *col,int style=wxFLOOD_SURFACE);
     float GetCharHeight(void);
     float GetCharWidth(void);
     void  GetTextExtent(const char *s, float *w, float *h, float *descent = 0,
 			float *ext_leading = 0,	wxFont *font=NULL,
-			Bool use16bit=FALSE);
+			Bool use16bit=FALSE, int dt=0);
     void  IntDrawLine(int x1, int y1, int x2, int y2);
     void  IntDrawLines(int n, wxIntPoint pts[], int xoff=0, int yoff=0);
     void  SetBackground(wxColour *c);

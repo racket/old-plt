@@ -41,7 +41,7 @@
 # define COPYSTRING_TO_ALIGNED(s) copystring_to_aligned(s)
 # define DELETE_OBJ delete_wxobject
 # define DELETE_VAL delete
-# define MALLOC_SAFEREF() GC_malloc_immobile_box(GC_malloc_weak_box(NULL, NULL))
+# define MALLOC_SAFEREF() GC_malloc_immobile_box(GC_malloc_weak_box(NULL, NULL, 0))
 # define FREE_SAFEREF(x) GC_free_immobile_box(x)
 typedef struct {
   short tag;

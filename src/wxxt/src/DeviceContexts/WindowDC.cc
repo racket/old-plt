@@ -1023,7 +1023,7 @@ static int str16len(const char *s)
   return count;
 }
 
-void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit)
+void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
 {
     XFontStruct *fontinfo;
     int         direction;
@@ -1042,27 +1042,27 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit)
     fontinfo = (XFontStruct*)current_font->GetInternalFont(scale_x);
     dev_x = XLOG2DEV(x);
     dev_y = YLOG2DEV(y);
-    textlen = use16bit ? str16len(text) : strlen(text);
+    textlen = use16bit ? str16len((char *)((XChar2b *)text + dt)) : strlen(text + dt);
 
     if (use16bit)
-      (void)XTextExtents16(fontinfo, (XChar2b *)text, textlen, &direction, 
+      (void)XTextExtents16(fontinfo, (XChar2b *)text + dt, textlen, &direction, 
 			   &ascent, &descent, &overall);
     else
-      (void)XTextExtents(fontinfo, text, textlen, &direction, &ascent, &descent,
+      (void)XTextExtents(fontinfo, text + dt, textlen, &direction, &ascent, &descent,
 			 &overall);
 
     cx = overall.width;
     cy = ascent + descent;
     if (current_text_bgmode == wxSOLID) {
       if (use16bit)
-	XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text, textlen);
+	XDrawImageString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
       else
-	XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text, textlen);
+	XDrawImageString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
     } else {
       if (use16bit)
-	XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text, textlen);
+	XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
       else
-	XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text, textlen);
+	XDrawString(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, text + dt, textlen);
     }
     CalcBoundingBox(x, y);
     CalcBoundingBox(x+XDEV2LOG(cx), y+YDEV2LOG(cy));
@@ -1106,7 +1106,7 @@ float wxWindowDC::GetCharWidth(void)
 
 void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_descent,
 			       float *_topspace, wxFont *_font,
-			       Bool use16bit)
+			       Bool use16bit, int dt)
 {
   wxFont *font_to_use;
   int         direction, ascent, descent;
@@ -1127,10 +1127,10 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
     fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x);
 
     if (use16bit)
-      XTextExtents16(fontinfo, (XChar2b *)s, str16len(s),
+      XTextExtents16(fontinfo, (XChar2b *)s + dt, str16len(s + dt),
 		     &direction, &ascent, &descent, &overall);
     else
-      XTextExtents(fontinfo, s, strlen(s),
+      XTextExtents(fontinfo, s + dt, strlen(s + dt),
 		   &direction, &ascent, &descent, &overall);
 
     w = XDEV2LOGREL(overall.width);

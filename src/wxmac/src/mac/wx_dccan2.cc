@@ -577,10 +577,10 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		if (iysrc > source->GetHeight())
 		  return TRUE;
 
-		if (ixsrc + height > source->GetHeight())
-		  height = source->GetHeight() - ixsrc;
-		if (iysrc + width > source->GetWidth())
-		  width = source->GetWidth() - iysrc;
+		if (iysrc + height > source->GetHeight())
+		  height = source->GetHeight() - iysrc;
+		if (ixsrc + width > source->GetWidth())
+		  width = source->GetWidth() - ixsrc;
 
 		int h = YLOG2DEVREL(height);
 		int w = XLOG2DEVREL(width);

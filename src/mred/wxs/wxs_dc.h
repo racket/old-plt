@@ -10,7 +10,9 @@ extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
+extern class wxBitmap *objscheme_unbundle_wxBitmap(Scheme_Object *, const char *, int);
 extern class wxFont *objscheme_unbundle_wxFont(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);
 extern class wxColour *objscheme_unbundle_wxColour(Scheme_Object *, const char *, int);

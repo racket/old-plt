@@ -93,7 +93,7 @@ public:
 
     // pure virtual methods, must be implemented for all DCs
     virtual Bool  Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
-		       float xsrc, float ysrc, int rop=wxSOLID, wxColour *c=NULL) = 0;
+		       float xsrc, float ysrc, int rop=wxSOLID, wxColour *c=NULL, wxBitmap *mask=NULL) = 0;
     virtual Bool  CanGetTextExtent(void) = 0;
     virtual Bool  CanDrawBitmap(void) = 0;
     virtual void  Clear(void) = 0;

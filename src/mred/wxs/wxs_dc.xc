@@ -65,20 +65,20 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
+static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c));
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c, mask));
   } else
     return FALSE;
 }
 
-static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
+static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return WITH_REMEMBERED_STACK(dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c));
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c, mask));
   } else
     return FALSE;
 }
@@ -190,8 +190,12 @@ static void* MyGetOrigin(wxDC *dc)
 #define CHECKTHISONE(x) 1
 #endif
 
-@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,nnfloat,nnfloat,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckFalse[0]|CheckOk[METHODNAME("dc<%>","draw-bitmap-section")] : : rFALSE <> with size
-@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckOk[METHODNAME("dc<%>","draw-bitmap")]
+@MACRO CheckBMOk[p.who] = if (x<p> && !(x<p>->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "mask bitmap is not ok: ", p[POFFSET+<p>]));
+@MACRO CheckBW[p.who] = if (x<p> && (x<p>->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "mask bitmap is not monochrome: ", p[POFFSET+<p>]));
+@MACRO CheckSizes[p.m.who] = if (x<m> && ((x<p>->GetWidth() != x<m>->GetWidth()) || (x<p>->GetHeight() != x<m>->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(<who>, "mask bitmap size does not match bitmap to draw: ", p[POFFSET+<p>]));
+
+@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,nnfloat,nnfloat,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL,wxBitmap!=NULL); : : /CheckBMOk[9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckBW[9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckSizes[0.9.METHODNAME("dc<%>","draw-bitmap-section")]|CheckOk[METHODNAME("dc<%>","draw-bitmap-section")] : : rFALSE <> with size
+@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL,wxBitmap!=NULL); : : /CheckBMOk[5]|CheckBW[5.METHODNAME("dc<%>","draw-bitmap")]|CheckSizes[0.5.METHODNAME("dc<%>","draw-bitmap")]|CheckOk[METHODNAME("dc<%>","draw-bitmap")]
 
 @ Q "try-color" : void TryColour(wxColour!,wxColour!); : : /CheckOk[METHODNAME("dc<%>","try-color")]
 

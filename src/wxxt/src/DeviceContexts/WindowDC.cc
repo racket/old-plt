@@ -141,7 +141,7 @@ wxWindowDC::~wxWindowDC(void)
 //-----------------------------------------------------------------------------
 
 Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
-		      float xsrc, float ysrc, int rop, wxColor *dcolor)
+		      float xsrc, float ysrc, int rop, wxColor *dcolor, wxBitmap *mask)
 {
     Bool retval = FALSE;
     wxPen *savePen, *apen;
@@ -160,6 +160,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     if ((scale_x != 1) || (scale_y != 1)) {
       int sw, sh, tw, th, i, j, ti, tj, xs, ys, mono;
       unsigned long pixel;
+
+      if (mask)
+	return FALSE; /* no scale+mask, for now */
 
       xs = (int)xsrc;
       ys = (int)ysrc;
@@ -259,9 +262,14 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       }
     }
 
+    if (src->selectedTo)
+      src->selectedTo->EndSetPixel();
+    if (mask && mask->selectedTo)
+      mask->selectedTo->EndSetPixel();
+    
     if (src->GetDepth() > 1) {
       /* Neither rop nor dcolor matter. Use GCBlit. */
-      retval = GCBlit(xdest, ydest, w, h, src, xsrc, ysrc);
+      retval = GCBlit(xdest, ydest, w, h, src, xsrc, ysrc, mask);
 
       if (tmp)
 	DELETE_OBJ tmp;
@@ -273,9 +281,6 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 
     FreeGetPixelCache();
 
-    if (src->selectedTo)
-      src->selectedTo->EndSetPixel();
-    
     xsrc = floor(xsrc);
     ysrc = floor(ysrc);
 
@@ -305,10 +310,16 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       } else {
 	Pixmap pm;
 	pm = GETPIXMAP(src);
+	if (mask) {
+	  XSetClipMask(DPY, PEN_GC, GETPIXMAP(mask));
+	}
 	XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
 		   (long)xsrc, (long)ysrc,
 		   scaled_width, scaled_height,
 		   XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
+	if (mask) {
+	  XSetClipMask(DPY, PEN_GC, None);
+	}
       }
       CalcBoundingBox(xdest, ydest);
       CalcBoundingBox(xdest + w, ydest + h);
@@ -325,9 +336,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 }
 
 Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *src,
-			float xsrc, float ysrc)
+			float xsrc, float ysrc, wxBitmap *bmask)
 {
-    /* A non-allocating (of collectable memory) blit */
+  /* A non-allocating (of collectable memory) blit, but may allocate when bmask is non-NULL */
   Bool retval = FALSE;
   int scaled_width;
   int scaled_height;
@@ -354,6 +365,10 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
       XGCValues values;
       int mask = 0;
       Region free_rgn = (Region)NULL;
+      long tx, ty;
+
+      tx = XLOG2DEV(xdest);
+      ty = YLOG2DEV(ydest);
 
       if ((DEPTH == 1) && (src->GetDepth() > 1)) {
 	/* May need to flip 1 & 0... */
@@ -375,9 +390,97 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 	else
 	  rgn = EXPOSE_REG;
 
-	XSetRegion(DPY, agc, rgn);
+	if (bmask) {
+	  int overlap = XRectInRegion(rgn, tx, ty, scaled_width, scaled_height);
+
+	  if (overlap == RectangleIn) {
+	    /* Overwriting the region later will be fine. */
+	    rgn = NULL;
+	  } else if (overlap == RectangleOut) {
+	    /* Mask will have no effect - all drawing is masked anyway */
+	    bmask = NULL;
+	  } else {
+	    /* This is the difficult case: mask bitmap and region combine. */
+	    XRectangle encl;
+	    long tx2, ty2, sw2, sh2;
+
+	    /* Common case: rgn is a sub-rectangle of the target: */
+	    XClipBox(rgn, &encl);
+	    tx2 = max(encl.x, tx);
+	    ty2 = max(encl.y, ty);
+	    sw2 = min(encl.x + encl.width, tx + scaled_width) - tx2;
+	    sh2 = min(encl.y + encl.height, ty + scaled_height) - ty2;
+	    
+	    if (XRectInRegion(rgn, tx2, ty2, sw2, sh2) == RectangleIn) {
+	      xsrc += (tx2 - tx);
+	      ysrc += (ty2 - ty);
+	      tx = tx2;
+	      ty = ty2;
+	      scaled_width = sw2;
+	      scaled_height = sh2;
+	      /* clipping is essentially manual, now: */
+	      rgn = NULL;
+	    } else {
+	      /* This is as complex as it gets. */
+	      /* We create a new region with the pixels of the bitmap. */
+	      XImage *simg;
+	      Region bmrgn;
+	      int mi, mj;
+
+	      simg = XGetImage(DPY, GETPIXMAP(bmask), (long)xsrc, (long)ysrc, scaled_width, scaled_height, AllPlanes, ZPixmap);
+	      
+	      bmrgn = XCreateRegion();
+	      
+	      for (mj = 0; mj < scaled_height; mj++) {
+		encl.y = mj + ty;
+		encl.height = 1;
+		encl.width = 0;
+		for (mi = 0; mi < scaled_width; mi++) {
+		  if (!XGetPixel(simg, mi + (long)xsrc, mj + (long)ysrc)) {
+		    if (encl.width) {
+		      XUnionRectWithRegion(&encl, bmrgn, bmrgn);
+		      encl.width = 0;
+		    }
+		  } else {
+		    if (!encl.width)
+		      encl.x = mi + tx;
+		    encl.width++;
+		  }
+		}
+
+		if (encl.width)
+		  XUnionRectWithRegion(&encl, bmrgn, bmrgn);
+	      }
+	      
+	      if (!free_rgn) {
+		free_rgn = XCreateRegion();
+		XUnionRegion(free_rgn, rgn, free_rgn);
+		rgn = free_rgn;
+	      }
+
+	      
+
+	      /* Insert the bitmap-based region with the old one: */
+	      XIntersectRegion(bmrgn, rgn, rgn);
+	      XDestroyRegion(bmrgn);
+
+	      /* Resultof XGetImage isn't supposed to be destroyed? */
+	      /* XDestroyImage(simg); */
+
+	      bmask = NULL; /* done via rgn */
+	    }
+	  }
+	}
+
+	if (rgn)
+	  XSetRegion(DPY, agc, rgn);
       }
 
+      if (bmask) {
+	XSetClipMask(DPY, agc, GETPIXMAP(bmask));
+	XSetClipOrigin(DPY, agc, tx - (long)xsrc, ty - (long)ysrc);
+      }
+	  
       retval = TRUE;
       if ((src->GetDepth() == 1) || (DEPTH == 1)) {
 	/* mono to color/mono  or  color/mono to mono */
@@ -386,7 +489,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 	XCopyPlane(DPY, pm, DRAWABLE, agc,
 		   (long)xsrc, (long)ysrc,
 		   scaled_width, scaled_height,
-		   XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
+		   tx, ty, 1);
       } else if (src->GetDepth() == (int)DEPTH) {
 	/* color to color */
 	Pixmap pm;
@@ -394,7 +497,7 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 	XCopyArea(DPY, pm, DRAWABLE, agc,
 		  (long)xsrc, (long)ysrc,
 		  scaled_width, scaled_height,
-		  XLOG2DEV(xdest), YLOG2DEV(ydest));
+		  tx, ty);
       } else
 	retval = FALSE;
 

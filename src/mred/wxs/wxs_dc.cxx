@@ -157,20 +157,20 @@ static wxColour* dcGetTextForeground(wxDC *dc)
   return c;
 }
 
-static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c)
+static Bool DrawBitmap(wxDC *dc, wxBitmap *bm, float x, float y, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c));
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, bm->GetWidth(), bm->GetHeight(), bm, 0, 0, mode, c, mask));
   } else
     return FALSE;
 }
 
-static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c)
+static Bool DrawBitmapRegion(wxDC *dc, wxBitmap *bm, float x, float y, float dx, float dy, float dw, float dh, int mode, wxColour *c, wxBitmap* mask)
 {
   REMEMBER_VAR_STACK();
   if (bm->Ok()) {
-    return WITH_REMEMBERED_STACK(dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c));
+    return WITH_REMEMBERED_STACK(dc->Blit(x, y, dw, dh, bm, dx, dy, mode, c, mask));
   } else
     return FALSE;
 }
@@ -385,6 +385,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 #else
 #define CHECKTHISONE(x) 1
 #endif
+
 
 
 
@@ -824,11 +825,13 @@ static Scheme_Object *os_wxDCDrawBitmap(int n,  Scheme_Object *p[])
   float x2;
   int x3;
   class wxColour* x4 INIT_NULLED_OUT;
+  class wxBitmap* x5 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
   VAR_STACK_PUSH(2, x4);
+  VAR_STACK_PUSH(3, x5);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "draw-bitmap in dc<%>", 0));
@@ -842,9 +845,13 @@ static Scheme_Object *os_wxDCDrawBitmap(int n,  Scheme_Object *p[])
     x4 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+4], "draw-bitmap in dc<%>", 0));
   } else
     x4 = NULL;
+  if (n > (POFFSET+5)) {
+    x5 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+5], "draw-bitmap in dc<%>", 0));
+  } else
+    x5 = NULL;
 
-  DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap"))
-  r = WITH_VAR_STACK(DrawBitmap(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4));
+  if (x5 && (x5->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap"), "mask bitmap is not monochrome: ", p[POFFSET+5]));if (x5 && ((x0->GetWidth() != x5->GetWidth()) || (x0->GetHeight() != x5->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap"))
+  r = WITH_VAR_STACK(DrawBitmap(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5));
 
   
   
@@ -866,11 +873,13 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(int n,  Scheme_Object *p[])
   nnfloat x6;
   int x7;
   class wxColour* x8 INIT_NULLED_OUT;
+  class wxBitmap* x9 INIT_NULLED_OUT;
 
-  SETUP_VAR_STACK_REMEMBERED(3);
+  SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, x0);
   VAR_STACK_PUSH(2, x8);
+  VAR_STACK_PUSH(3, x9);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+0], "draw-bitmap-section in dc<%>", 0));
@@ -888,9 +897,13 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(int n,  Scheme_Object *p[])
     x8 = WITH_VAR_STACK(objscheme_unbundle_wxColour(p[POFFSET+8], "draw-bitmap-section in dc<%>", 0));
   } else
     x8 = NULL;
+  if (n > (POFFSET+9)) {
+    x9 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+9], "draw-bitmap-section in dc<%>", 0));
+  } else
+    x9 = NULL;
 
-  if (!x0->Ok()) return scheme_false;DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap-section"))
-  r = WITH_VAR_STACK(DrawBitmapRegion(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5, x6, x7, x8));
+  if (x9 && !(x9->Ok())) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap is not ok: ", p[POFFSET+9]));if (x9 && (x9->GetDepth() != 1)) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap is not monochrome: ", p[POFFSET+9]));if (x9 && ((x0->GetWidth() != x9->GetWidth()) || (x0->GetHeight() != x9->GetHeight()))) WITH_VAR_STACK(scheme_arg_mismatch(METHODNAME("dc<%>","draw-bitmap-section"), "mask bitmap size does not match bitmap to draw: ", p[POFFSET+0]));DO_OK_CHECK(METHODNAME("dc<%>","draw-bitmap-section"))
+  r = WITH_VAR_STACK(DrawBitmapRegion(((wxDC *)((Scheme_Class_Object *)p[0])->primdata), x0, x1, x2, x3, x4, x5, x6, x7, x8, x9));
 
   
   
@@ -1530,8 +1543,8 @@ void objscheme_setup_wxDC(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-scale" " method", os_wxDCSetUserScale, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "set-text-mode" " method", os_wxDCSetBackgroundMode, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "try-color" " method", os_wxDCTryColour, 2, 2));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap" " method", os_wxDCDrawBitmap, 3, 5));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-section" " method", os_wxDCDrawBitmapRegion, 7, 9));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap" " method", os_wxDCDrawBitmap, 3, 6));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "draw-bitmap-section" " method", os_wxDCDrawBitmapRegion, 7, 10));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-width" " method", os_wxDCGetCharWidth, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-char-height" " method", os_wxDCGetCharHeight, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxDC_class, "get-text-extent" " method", os_wxDCMyTextExtent, 1, 4));

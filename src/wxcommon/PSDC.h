@@ -155,9 +155,9 @@ class wxPostScriptDC: public wxDC
   float FLogicalToDeviceXRel(float x);
   float FLogicalToDeviceYRel(float y);
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL, wxBitmap *mask=NULL);
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL);
+            wxMemoryDC *source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL, wxBitmap *mask=NULL);
   inline Bool CanGetTextExtent(void) { return USE_AFM_FOR_POSTSCRIPT; }
   inline Bool CanDrawBitmap(void) { return TRUE; }
 

@@ -1562,7 +1562,8 @@ static void printhex(PSStream *pstream, int v)
 
 Bool wxPostScriptDC::
 Blit (float xdest, float ydest, float fwidth, float fheight,
-      wxMemoryDC *src, float xsrc, float ysrc, int rop, wxColour *dcolor)
+      wxMemoryDC *src, float xsrc, float ysrc, int rop, wxColour *dcolor,
+      wxBitmap *mask)
 {
   int mono;
   long j, i;
@@ -1703,7 +1704,7 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 static wxMemoryDC *temp_mdc;
 
 Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight,
-      wxBitmap *bm, float xsrc, float ysrc, int rop, wxColour *c)
+      wxBitmap *bm, float xsrc, float ysrc, int rop, wxColour *c, wxBitmap *mask)
 {
   Bool v;
 

@@ -105,7 +105,7 @@ Note: Xexpr is the only important one to understand.  Even then,
          |  (list* Symbol (listof (list Symbol String)) (list Xexpr))
          |  (cons Symbol (listof Xexpr)) ;; an element with no attributes
          |  Symbol ;; symbolic entities such as &nbsp;
-         |  Number ;; numeric entities like &20;
+         |  Number ;; numeric entities like &#20;
          |  Misc
 
 > Document ::= (make-document Prolog Element (listof Processing-instruction))

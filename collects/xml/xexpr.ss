@@ -1,5 +1,5 @@
 (unit/sig extra-xexpr^
-  (import xml-structs^ mzlib:function^)
+  (import xml-structs^ writer^ mzlib:function^)
   ;; Xexpr ::= String
   ;;        |  (list* Symbol (listof Attribute-srep) (listof Xexpr))
   ;;        |  (cons Symbol (listof Xexpr))
@@ -52,6 +52,12 @@
       [(string? x) (make-pcdata 'scheme 'scheme x)]
       [(or (symbol? x) (integer? x)) (make-entity x)]
       [else x]))
+  
+  ;; xexpr->string : Xexpression -> String
+  (define (xexpr->string xexpr)
+    (let ([port (open-output-string)])
+      (write-xml/content (xexpr->xml xexpr) port)
+      (get-output-string port)))
   
   ;; bcompose : (a a -> c) (b -> a) -> (b b -> c)
   (define (bcompose f g)

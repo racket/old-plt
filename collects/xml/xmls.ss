@@ -15,7 +15,7 @@
 (define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand))
 (define-signature reader^ (read-xml read-comments trim-whitespace))
 
-(define-signature xexpr^ (xml->xexpr xexpr->xml))
+(define-signature xexpr^ (xml->xexpr xexpr->xml xexpr->string))
 (define-signature extra-xexpr^ ((open xexpr^) assoc-sort bcompose attribute->srep))
 (define-signature xml^ ((open xml-structs^) (open reader^) (open writer^) (open xexpr^)))
 

@@ -17,7 +17,7 @@
               (compose addl-browser-frame-mixin
                        (make-help-desk-frame-mixin hd-cookie))])
         (let-values ([(shutdown-server url-on-server-test extract-url-path url->string find-browser new-browser)
-                      (serve configuration min-port #f combined-browser-mixin)])
+                      (internal-serve configuration min-port #f combined-browser-mixin)])
           (set-hd-cookie-shutdown-server! hd-cookie shutdown-server)
           (set-hd-cookie-url-on-server-test! hd-cookie url-on-server-test)
           (set-hd-cookie-extract-url-path! hd-cookie extract-url-path)

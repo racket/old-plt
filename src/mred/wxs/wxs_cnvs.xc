@@ -47,7 +47,7 @@ static void FillZero(int *a, int *b) {
 
 @ "get-dc" : wxCanvasDC! GetDC();
 
-@ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
+// @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 @ "get-virtual-size" : void GetVirtualSize(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]
 @ "set-scrollbars" : void SetScrollbars(int,int,int,int,int,int,int=0,int=0,bool=TRUE);  : : / PANELREDIRECT[return scheme_void]
 @ "view-start" : void ViewStart(int*,int*); : : / PANELREDIRECT[FillZero(x0,x1); return scheme_void]

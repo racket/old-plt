@@ -164,6 +164,7 @@ static Scheme_Object *bundle_symset_fillKind(int v) {
 
 
 
+// @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 
 
 
@@ -1565,38 +1566,6 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Sche
 }
 
 #pragma argsused
-static Scheme_Object *os_wxCanvasGetScrollUnitsPerPage(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  objscheme_check_valid(obj);
-  int _x0;
-  int* x0 = &_x0;
-  int _x1;
-  int* x1 = &_x1;
-
-  
-  if (SCHEME_NULLP(p[0]))
-    scheme_wrong_type("wx:canvas%::get-scroll-units", "non-null", (0 - 0), n, p);
-  else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "wx:canvas%::get-scroll-units"), "wx:canvas%::get-scroll-units");
-  if (SCHEME_NULLP(p[1]))
-    scheme_wrong_type("wx:canvas%::get-scroll-units", "non-null", (1 - 0), n, p);
-  else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "wx:canvas%::get-scroll-units"), "wx:canvas%::get-scroll-units");
-
-  if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { FillZero(x0,x1); return scheme_void; }
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetScrollUnitsPerPage(x0, x1);
-
-  
-  if (n > 0)
-    objscheme_set_box(p[0], scheme_make_integer(_x0));
-  if (n > 1)
-    objscheme_set_box(p[1], scheme_make_integer(_x1));
-  
-  return scheme_void;
-}
-
-#pragma argsused
 static Scheme_Object *os_wxCanvasGetDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1864,7 +1833,7 @@ void objscheme_setup_wxCanvas(void *env)
 if (os_wxCanvas_class) {
     objscheme_add_global_class(os_wxCanvas_class,  "wx:canvas%", env);
 } else {
-  os_wxCanvas_class = objscheme_def_prim_class(env, "wx:canvas%", "wx:window%", os_wxCanvas_ConstructScheme, 45);
+  os_wxCanvas_class = objscheme_def_prim_class(env, "wx:canvas%", "wx:window%", os_wxCanvas_ConstructScheme, 44);
 
   scheme_add_method_w_arity(os_wxCanvas_class,"get-class-name",objscheme_classname_os_wxCanvas, 0, 0);
 
@@ -1905,7 +1874,6 @@ if (os_wxCanvas_class) {
  scheme_add_method_w_arity(os_wxCanvas_class, "view-start", os_wxCanvasViewStart, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "set-scrollbars", os_wxCanvasSetScrollbars, 6, 9);
  scheme_add_method_w_arity(os_wxCanvas_class, "get-virtual-size", os_wxCanvasGetVirtualSize, 2, 2);
- scheme_add_method_w_arity(os_wxCanvas_class, "get-scroll-units", os_wxCanvasGetScrollUnitsPerPage, 2, 2);
  scheme_add_method_w_arity(os_wxCanvas_class, "get-dc", os_wxCanvasGetDC, 0, 0);
  scheme_add_method_w_arity(os_wxCanvas_class, "popup-menu", os_wxCanvasPopupMenu, 3, 3);
  scheme_add_method_w_arity(os_wxCanvas_class, "on-char", os_wxCanvasOnChar, 1, 1);

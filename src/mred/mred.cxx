@@ -25,6 +25,7 @@
 #include "wx_media.h"
 #include "wx_dialg.h"
 #include "wx_cmdlg.h"
+#include "wx_menu.h"
 #ifdef USE_SENORA_GC
 # include "wx_types.h"
 #endif
@@ -1138,6 +1139,12 @@ public:
 #ifdef wx_mac
       OnSize(600, 400);
 #endif
+
+      wxMenuBar *mb = new wxMenuBar();
+      wxMenu *m = new wxMenu();
+      m->Append(79, "Copy");
+      mb->Append(m, "Edit");
+      SetMenuBar(mb);
       
       Show(TRUE);
 
@@ -1155,6 +1162,12 @@ public:
     { 
       hidden = TRUE;
       return TRUE; 
+    }
+
+  void OnMenuCommand(int id) 
+    {
+      if (id == 79)
+	media->Copy();
     }
 };
 

@@ -168,7 +168,7 @@ extern class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *obj, const char 
 extern int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullOK);
 extern class wxDialogBox *objscheme_unbundle_wxDialogBox(Scheme_Object *obj, const char *where, int nullOK);
 
-@MACRO ubFrameDialog[who] = (SCHEME_NULLP({x}) ? (wxWindow *)NULL : (objscheme_istype_wxFrame({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame({x}, NULL, 0) : (objscheme_istype_wxDialogBox({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox({x}, NULL, 0) : (scheme_wrong_type(<who>, "wx:frame% or wx:dialog-box%", -1, 0, &{x}), (wxWindow *)NULL))))
+@MACRO ubFrameDialog[who] = (((n <= {s}) || SCHEME_NULLP({x})) ? (wxWindow *)NULL : (objscheme_istype_wxFrame({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame({x}, NULL, 0) : (objscheme_istype_wxDialogBox({x}, NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox({x}, NULL, 0) : (scheme_wrong_type(<who>, "wx:frame% or wx:dialog-box%", -1, 0, &{x}), (wxWindow *)NULL))))
 @MACRO cFrameDialog = (objscheme_istype_wxFrame({x}, NULL, 1) || objscheme_istype_wxDialogBox({x}, NULL, 1))
 
 @ "wx:file-selector" : nstring wxFileSelector(string,nstring=NULL,nstring=NULL,nstring=NULL,string=FILE_SEL_DEF_PATTERN,SYM[fileSelMode]=wxOPEN,wxWindow^//ubFrameDialog["wx:file-selector"]/cFrameDialog=NULL,int=-1,int=-1);

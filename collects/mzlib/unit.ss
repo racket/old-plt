@@ -119,7 +119,9 @@
 				       #f
 				       "bad syntax (illegal use of `.')"
 				       defn-or-expr))
-				    (expand-all l))]
+				    (expand-all (map (lambda (s)
+						       (syntax-track-origin s defn-or-expr #'begin))
+						     l)))]
 				 [else (list defn-or-expr)]))
 			     expanded))))])
 	       (let ([all-expanded (expand-all (syntax->list (syntax (defn&expr ...))))])

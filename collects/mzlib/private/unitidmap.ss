@@ -3,6 +3,9 @@
 
   ;; Help Desk binding info:
   (define (binding binder bound stx)
+    stx
+    ;; This 'bound-in-source is no longer needed
+    #;
     (syntax-property
      stx
      'bound-in-source

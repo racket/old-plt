@@ -25,6 +25,9 @@
 
   ;; Check Syntax binding info:
   (define (binding from to stx)
+    stx
+    ;; This 'bound-in-source is no longer needed
+    #;
     (syntax-property
      stx
      'bound-in-source

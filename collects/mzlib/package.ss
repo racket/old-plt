@@ -131,16 +131,18 @@
 	     (apply append
 		    (map (letrec ([ex
 				   (lambda (d)
-				     (let ([e (local-expand 
-					       d
-					       expand-context
-					       stop-list)])
-				       (syntax-case e (begin)
+				     (let ([_e (local-expand 
+						d
+						expand-context
+						stop-list)])
+				       (syntax-case _e (begin)
 					 [(begin e ...)
 					  (apply
 					   append
-					   (map ex (syntax->list #'(e ...))))]
-					 [else (list e)])))])
+					   (map (lambda (s)
+						  (ex (syntax-track-origin s _e #'begin)))
+						(syntax->list #'(e ...))))]
+					 [else (list _e)])))])
 			   ex)
 			 defs)))))
     

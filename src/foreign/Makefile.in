@@ -15,7 +15,7 @@ all:
 	$(MAKE) $(LIBFFI_A)
 	$(MAKE) unpacked
 
-unpacked: $(LIBFFI_A)
+unpacked: $(LIBFFI_A) unpack
 	cd unpack; $(AR) x ../$(LIBFFI_A)
 	touch unpacked
 

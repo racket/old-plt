@@ -10,16 +10,13 @@
                                                . -> .
                                                (listof syntax?))]) ; result
   
-  ; build-stx-with-highlight has to do some crude macro unwinding to accurately simulate the 
-  ; inputs that the various functions expect.
-
   (define (build-stx-with-highlight input)
     (let ([temp-file (make-temporary-file)])
       (call-with-output-file temp-file
         (lambda (port)
           (if (string? input)
               (display input port)
-              (map (lambda (sexp) (write sexp port)) input)))
+              (map (lambda (sexp) (write sexp port) (display #\space port)) input)))
         'truncate)
       (begin0
         (let ([file-port (open-input-file temp-file)])
@@ -35,6 +32,11 @@
                      [else stx]))
                  (read-loop (read-syntax temp-file file-port))))))
         (delete-file temp-file))))
+  
+; (test `((define a 13) 14 15 #f 1)
+;       map
+;       syntax-object->datum
+;       (build-stx-with-highlight `((define a 13)  14 15 #f 1)))
   
 ;      (let ([test-run (build-stx-with-highlight `((+ (hilite x) (hilite (+ (hilite 13) (a b))))))])
 ;        (test #t (lambda () (and (pair? test-run) (null? (cdr test-run)))))

@@ -96,86 +96,66 @@
       
       (define annotated
         (kernel:kernel-syntax-case expr #f
-        [var-stx (identifier? (syntax var-stx)) expr]
+          [var-stx (identifier? (syntax var-stx)) expr]
         
-        [(lambda . clause)
-         (quasisyntax/loc expr 
-                          (lambda #,@(lambda-clause-annotator #`clause)))]
+	  [(lambda . clause)
+	   (quasisyntax/loc expr 
+			    (lambda #,@(lambda-clause-annotator #`clause)))]
+	  
+	  [(case-lambda . clauses)
+	   (quasisyntax/loc expr
+			    (case-lambda #,@(map lambda-clause-annotator (syntax->list #`clauses))))]
+	  
+	  [(if test then)
+	   (quasisyntax/loc expr (if #,(annotate #`test bound-vars #f)
+				     #,(annotate #`then bound-vars is-tail?)))]
+	  
+	  [(if test then else)
+	   (quasisyntax/loc expr (if #,(annotate #`test bound-vars #f)
+				     #,(annotate #`then bound-vars is-tail?)
+				     #,(annotate #`else bound-vars is-tail?)))]
         
-        [(case-lambda . clauses)
-         (quasisyntax/loc expr
-                          (case-lambda #,@(map lambda-clause-annotator (syntax->list #`clauses))))]
-        
-        [(if test then)
-         (quasisyntax/loc expr (if #,(annotate #`test bound-vars #f)
-                                   #,(annotate #`then bound-vars is-tail?)))]
-        
-        [(if test then else)
-         (quasisyntax/loc expr (if #,(annotate #`test bound-vars #f)
-                                   #,(annotate #`then bound-vars is-tail?)
-                                   #,(annotate #`else bound-vars is-tail?)))]
-        
-        [(begin . bodies)
-         (letrec ([traverse
-                   (lambda (lst)
-                     (if (and (pair? lst) (equal? '() (cdr lst)))
-                         `(,(annotate (car lst) bound-vars is-tail?))
-                         (cons (annotate (car lst) bound-vars #f)
-                               (traverse (cdr lst)))))])
-           (quasisyntax/loc expr (begin #,@(traverse (syntax->list #`bodies)))))]
-        
-        [(begin0 . bodies)
-         (quasisyntax/loc expr (begin0 #,@(map (lambda (expr)
-                                                 (annotate expr bound-vars #f))
-                                               (syntax->list #`bodies))))]
-        
-        [(let-values . clause)
-         (let/rec-values-annotator #f)]
-        
-        [(letrec-values . clause) 
-         (let/rec-values-annotator #t)]
-        
-        [(set! var val) 
-         (quasisyntax/loc expr (set! var #,(annotate #`val bound-vars #f)))]
-        
-        [(quote _) expr]
-        
-        [(quote-syntax _) expr]
-        
-        ;; FIXME: we have to think harder about this
-        [(with-continuation-mark key mark body)
-         (quasisyntax/loc expr (with-continuation-mark key
-                                                       #,(annotate #`mark bound-vars #f)
-                                                       #,(annotate #`body bound-vars is-tail?)))]
-        
-        [(#%app . exprs)
-<<<<<<< debugger-annotate.ss
-         (kernel:kernel-syntax-case #`exprs #f
-           [((#%top . brk) arg)
-            (eq? (syntax-e #`brk) 'break)
-            (break-wrap (make-debug-info expr bound-vars bound-vars 'at-break #f)
-                        (annotate #`arg bound-vars is-tail?))]
-           [(brk arg)
-            (eq? (syntax-e #`brk) 'break)
-            (break-wrap (make-debug-info expr bound-vars bound-vars 'at-break #f)
-                        (annotate #`arg bound-vars is-tail?))]
-           [else 
-            (let ([subexprs (map (lambda (expr) 
-                                   (annotate expr bound-vars #f))
-                                 (syntax->list #`exprs))])
-              (if is-tail?
-                  (quasisyntax/loc expr #,subexprs)
-                  (wcm-wrap (make-debug-info expr bound-vars bound-vars 'normal #f)
-                            (quasisyntax/loc expr #,subexprs))))])]
-=======
-         (let ([subexprs (map (lambda (expr) 
-                                (annotate expr bound-vars #f))
-                              (syntax->list #`exprs))])
-           (if is-tail?
-               (quasisyntax/loc expr #,subexprs)
-               (wcm-wrap (make-debug-info expr bound-vars bound-vars 'normal #f)
-                         (quasisyntax/loc expr #,subexprs))))]
->>>>>>> 1.21
+	  [(begin . bodies)
+	   (letrec ([traverse
+		     (lambda (lst)
+		       (if (and (pair? lst) (equal? '() (cdr lst)))
+			   `(,(annotate (car lst) bound-vars is-tail?))
+			   (cons (annotate (car lst) bound-vars #f)
+				 (traverse (cdr lst)))))])
+	     (quasisyntax/loc expr (begin #,@(traverse (syntax->list #`bodies)))))]
+	  
+	  [(begin0 . bodies)
+	   (quasisyntax/loc expr (begin0 #,@(map (lambda (expr)
+						   (annotate expr bound-vars #f))
+						 (syntax->list #`bodies))))]
+	  
+	  [(let-values . clause)
+	   (let/rec-values-annotator #f)]
+	  
+	  [(letrec-values . clause) 
+	   (let/rec-values-annotator #t)]
+	  
+	  [(set! var val) 
+	   (quasisyntax/loc expr (set! var #,(annotate #`val bound-vars #f)))]
+	  
+	  [(quote _) expr]
+	  
+	  [(quote-syntax _) expr]
+	  
+	  ;; FIXME: we have to think harder about this
+	  [(with-continuation-mark key mark body)
+	   (quasisyntax/loc expr (with-continuation-mark key
+							 #,(annotate #`mark bound-vars #f)
+							 #,(annotate #`body bound-vars is-tail?)))]
+	  
+	  [(#%app . exprs)
+	   (let ([subexprs (map (lambda (expr) 
+				  (annotate expr bound-vars #f))
+				(syntax->list #`exprs))])
+	     (if is-tail?
+		 (quasisyntax/loc expr #,subexprs)
+		 (wcm-wrap (make-debug-info expr bound-vars bound-vars 'normal #f)
+			   (quasisyntax/loc expr #,subexprs))))]
         
         [(#%datum . _) expr]
         

@@ -210,8 +210,8 @@
 	      (match binding
 		[`(val ,B ,E) (single-binding 'let-values B E body)]
 		[`(vals (,B ,E) ...) (multiple-bindings 'let-values B E body)]
-		[`(rec ,B ,E) (single-binding 'letrec*-values B E body)]
-		[`(recs (,B ,E) ...) (multiple-bindings 'letrec*-values B E body)]
+		[`(rec ,B ,E) (single-binding 'letrec-values B E body)]
+		[`(recs (,B ,E) ...) (multiple-bindings 'letrec-values B E body)]
 		[`(_ ,E ...) `(begin ,@E ,body)]
 		[x (syn-error "invalid binding" x)]))])
       (unless (and (list? bindings)

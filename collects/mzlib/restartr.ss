@@ -10,7 +10,6 @@
 	[no-init-file? #f]
 	[case-sensitive? #f]
 	[esc-cont-only? #f]
-	[built-in-constants? #f]
 	[allow-set!-undefined? #t]
 	[no-auto-else? #f]
 	[no-enforce-keywords? #f]
@@ -76,9 +75,6 @@
 	    [("-c" "--esc-cont")
 	     ,(lambda (f) (set! esc-cont-only? #t))
 	     ("Call/cc is replaced with call/ec")]
-	    [("-k" "--const-globs")
-	     ,(lambda (f) (set! built-in-constants? #t))
-	     ("Built-in globals are constant")]
 	    [("-s" "--set-undef")
 	     ,(lambda (f) (set! allow-set!-undefined? #t))
 	     ("Set! works on undefined identifiers")]
@@ -114,7 +110,6 @@
      (lambda (exprs . rest)
        (when args (set! rest args))
        (let ([n (make-namespace
-		 (if built-in-constants? 'constants 'no-constants)
 		 (if no-enforce-keywords? 'no-keywords 'keywords)
 		 (if esc-cont-only? 'call/cc=call/ec 'call/cc!=call/ec)
 		 (if hp-only? 'hash-percent-syntax 'all-syntax))]

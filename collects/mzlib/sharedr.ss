@@ -128,7 +128,7 @@
 		   [(trans? binding) binding]
 		   [else (bad "internal error:" binding)]))]
 	       [transformed-defns (map transform (build-defns defns))])
-	(list 'letrec*
+	(list 'letrec
 	      (map trans-rhs transformed-defns)
 	      (list 'let (apply append (map trans-lets transformed-defns))
 		    (cons 'begin

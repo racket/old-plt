@@ -22,7 +22,6 @@
    (define pi (* 4.0 (atan 1.0))) 
    (define make-complex make-rectangular) 
    (define zabs magnitude) 
-   (define zsqrt sqrt) 
    
    ;; sgn function 
    (define sgn
@@ -39,114 +38,6 @@
 	(real-part z)
 	(- (imag-part z)))))
    
-   ;; basic circular functions
-   (define zsin
-     (lambda (x)
-       (if (= (imag-part x) 0.0)
-	   (sin (real-part x))
-	   (begin
-	     (define z (zchsh (imag-part x)))
-	     (make-complex
-	      (* (sin (real-part x)) (real-part z))
-	      (* (cos (real-part x)) (imag-part z)))))))
-   
-   (define zcos
-     (lambda (x)
-       (if (= (imag-part x) 0.0)
-	   (cos (real-part x))
-	   (begin
-	     (define z (zchsh (imag-part x)))
-	     (make-complex
-	      (* (cos (real-part x)) (real-part z))
-	      (* (- (sin (real-part x))) (imag-part z)))))))
-   
-   (define ztan
-     (lambda (z)
-       (if (= (imag-part z) 0.0)
-	   (tan (real-part z))
-	   (begin
-	     (define d (+ (cos  (* 2.0 (real-part z)))
-			  (cosh (* 2.0 (imag-part z)))))
-	     (let ([d (if (< (abs d) 0.25)
-			  (ztans z)
-			  d)])
-	       (make-complex
-		(/ (sin  (* 2.0 (real-part z))) d)
-		(/ (sinh (* 2.0 (imag-part z))) d)))))))
-   
-   ;; inverse circular functions
-   ;; asin(z) = -i * log(i*z + sqrt(1 - z^2))
-   (define zasin
-     (lambda (z)
-       (define x (real-part z))
-       (define y (imag-part z))
-       (if (= y 0.0)
-	   (asin x)
-	   (begin
-	     (define ca z)
-	     (define ct (make-complex (- y) x))
-	     ;; zz = sqrt(1 - z^2)
-	     (define zz 
-	       (zsqrt
-		(make-complex 
-		 (- 1.0 (* (- x y) (+ x y)))
-		 (* -2.0 x y))))
-	     (let ([zz (zlog (+ zz ct))])
-	       (make-complex
-		(imag-part zz)
-		(- (real-part zz))))))))
-   
-   ;; acos(z) = pi/2 - asin(z)
-   (define zacos
-     (lambda (z)
-       (if (= (imag-part z) 0.0)
-	   (acos (real-part z))
-	   (begin
-	     (define z2 (zasin z))
-	     (make-complex
-	      (- (/ pi 2.0) (real-part z2))
-	      (- (imag-part z2)))))))
-   
-   ;; w = atan(z) = atan(x + iy)
-   ;; Re w = 1/2 atan((2 * x) / (1 - x^2 - y^2)) + k * PI
-   ;; Im w = 1/4 log((x^2 + (y + 1)^2) / (x^2 + (y - 1)^2))
-   ;; where k is an arbitrary integer
-   (define zatan
-     (lambda (z)
-       (define x (real-part z))
-       (define y (imag-part z))
-       (if (= y 0.0)
-	   (atan x)
-	   (begin
-	     (define x2 (* x x))
-	     (define a (- 1.0 x2 (* y y)))
-	     (define t (/ (atan (* 2.0 x) a) 2.0))
-	     (define x1 (redupi t))
-	     (let* ([t (- y 1.0)]
-		    [a (+ x2 (* t t))]
-		    [t (+ y 1.0)]
-		    [a (/ (+ x2 (* t t)) a)])
-	       (make-complex x1 (/ (log a) 4.0)))))))
-   
-   ;; natural log and exp
-   (define zlog
-     (lambda (z)
-       (if (and 
-	    (= (imag-part z) 0.0)
-	    (> (real-part z) 0.0))
-	   (log (real-part z))
-	   (begin
-	     (define r (magnitude z))
-	     (make-complex
-	      (log r)
-	      (atan (imag-part z) (real-part z)))))))
-   
-   (define zexp
-     (lambda (z)
-       (if (= (imag-part z) 0.0)
-	   (exp (real-part z))
-	   (expt e z))))
-
    ;; real hyperbolic functions
    (define sinh 
      (lambda (x)

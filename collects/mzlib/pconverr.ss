@@ -53,7 +53,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define build-share
       (lambda (expr)
-	(letrec*
+	(letrec
 	    ([share-cnt 0]
 	     [share-hash (make-hash-table)]
 	     [csi (make-convert-share-info share-hash #f)]
@@ -124,7 +124,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (define print-convert-expr
       (lambda (csi expr unroll-once?)
-	(letrec*
+	(letrec
 	    ([share-hash (convert-share-info-share-hash csi)]
 	     [find-hash
 	      (lambda (expr)
@@ -188,7 +188,7 @@
 	     [print
 	      (lambda (in-quasiquote? first-time)
 		(lambda (expr)
-		  (letrec*
+		  (letrec
 		      ([lookup (find-hash expr)]
 		       [recur (print in-quasiquote? #f)]
 		       [self-quoting?

@@ -34,7 +34,7 @@
 
    (define make-compile-namespace
      (lambda (flags preserve-elab? do-elab? preserve-constr? do-constr?)
-       (let ([n (apply make-namespace (list* 'no-constants flags))]
+       (let ([n (apply make-namespace flags)]
 	     [gvs (make-global-value-list)])
 	 (parameterize ([current-namespace n])
 	   (for-each

@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.183 1999/05/04 18:12:02 mflatt Exp $
+; $Id: scm-main.ss,v 1.184 1999/05/13 02:20:10 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -472,7 +472,9 @@
 		  (expand-expr
 		   (structurize-syntax
 		    (pat:pexpand '(if test then (#%void)) p-env kwd)
-		    expr '(-1))
+		    expr '(-1)
+		    #f
+		    (make-origin 'micro expr))
 		   env attributes vocab)
 		  (syntax-car expr))))))
 	  ((pat:match-against m&e-2 expr env)
@@ -605,7 +607,9 @@
 				    `(set! ,var ,new-name))
 			       vars new-names)
 			   (#%void))
-			expr '(-1))
+			expr '(-1)
+			#f
+			(make-origin 'micro expr))
 		      env attributes vocab)))))
 	    (else
 	      (static-error expr "Malformed set!-values"))))))
@@ -655,7 +659,9 @@
 				     `(,(car vars+expr) ,(cdr vars+expr)))
 				vars+exprs)
 			     ,@(pat:pexpand (get-expr-pattern begin?) p-env kwd))
-			  expr '(-1))
+			  expr '(-1)
+			  #f
+			  (make-origin 'micro expr))
 			env attributes vocab)
 		      (syntax-car expr))
 		    (set-top-level-status attributes top-level?)
@@ -864,7 +870,9 @@
 		  (expand-expr
 		   (structurize-syntax
 		    `(define-values ,names ,struct-expr)
-		    expr '(-1))
+		    expr '(-1)
+		    #f
+		    (make-origin 'micro expr))
 		   env attributes vocab)))])
 	  (add-primitivized-micro-form 'define-struct beginner-vocabulary ds-micro)
 	  (add-primitivized-micro-form 'define-struct scheme-vocabulary ds-micro))
@@ -916,7 +924,9 @@
 			((,(generate-struct-names type fields expr)
 			  (struct ,type-spec ,fields)))
 		      ,@body)
-		   expr '(-1))
+		   expr '(-1)
+		   #f
+		   (make-origin 'micro expr))
 		  env attributes vocab))))))))
 
     (add-primitivized-micro-form 'let-struct intermediate-vocabulary (make-let-struct-micro #f))
@@ -1414,7 +1424,9 @@
 				  `(if ,(cond-clause-question first)
 				     ,(cond-clause-answer first)
 				     ,(loop rest)))))))
-			expr '(-1))
+			expr '(-1)
+			#f
+			(make-origin 'micro expr))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed cond"))))))
@@ -1598,7 +1610,9 @@
 					(begin ,@body
 					  (loop ,@steps))))))
 			   (loop ,@inits))
-			expr '(-1)))))))
+			expr '(-1)
+			#f
+			(make-origin 'macro expr)))))))
 	    (else
 	      (static-error expr "Malformed do"))))))
 
@@ -1635,7 +1649,9 @@
 				 ,@(map (lambda (var tmp)
 					  `(set! ,(dup-symbol var) ,tmp))
 				     vars new-vars)))))
-			expr '(-1))
+			expr '(-1)
+			#f
+			(make-origin 'macro expr))
 		      env attributes vocab)))))
 	    (else
 	      (static-error expr "Malformed fluid-let"))))))
@@ -1675,7 +1691,9 @@
 			    ,swap
 			    (#%lambda () ,@body)
 			    ,swap))))
-		  expr '(-1))
+		  expr '(-1)
+		  #f
+		  (make-origin 'micro expr))
 		 env attributes vocab))
 	      (static-error expr "Malformed parameterize"))))))
 
@@ -1771,8 +1789,10 @@
 			     (structurize-syntax
 			      (apply m3-macro-body-evaluator real-handler
 				     (cdr (sexp->raw m-expr cache-table)))
-			      m-expr '() cache-table))))))
-		  (expand-expr (structurize-syntax '(#%void) expr)
+			      m-expr '() cache-table
+			      (make-origin 'macro expr)))))))
+		  (expand-expr (structurize-syntax '(#%void) expr
+						   '() #f (make-origin 'micro expr))
 		    env attributes vocab)))))
 	  (else
 	    (static-error expr "Malformed define-macro"))))))
@@ -1811,9 +1831,12 @@
 			(structurize-syntax
 			  (apply m3-macro-body-evaluator real-handler
 			    (cdr (sexp->raw m-expr cache-table)))
-			  m-expr '() cache-table)))
+			  m-expr '() cache-table
+			  (make-origin 'macro expr))))
 		    (expand-expr
-		      (structurize-syntax body expr)
+		      (structurize-syntax body expr
+					  '() 
+					  #f (make-origin 'micro expr))
 		      env attributes extended-vocab))))))
 	  (else
 	    (static-error expr "Malformed let-macro"))))))
@@ -1856,7 +1879,8 @@
 					     (set-internal-define-status attributes internal?))))
 					parsed->raw
 					kwd-symbol))
-				     expr)
+				     expr
+				     '() #f (make-origin 'micro expr))
 				    env attributes vocab))))
 			      (else
 			       (static-error expr
@@ -1900,7 +1924,9 @@
 		    (expand-expr
 		      (structurize-syntax
 			`(#%load/use-compiled ,(quote-form-expr f))
-			expr '(-1))
+			expr '(-1)
+			#f
+			(make-origin 'macro expr))
 		      env attributes vocab)
 		    (static-error filename "Does not yield a filename"))))))
 	  (else
@@ -1948,7 +1974,9 @@
 		      (structurize-syntax
 		       `(#%require-library/proc ,(quote-form-expr f)
 			     ,@(map quote-form-expr cs))
-		       expr '(-1))
+		       expr '(-1)
+		       #f
+		       (make-origin 'micro expr))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed require-library"))))))
@@ -1995,7 +2023,9 @@
 		      (structurize-syntax
 		       `(#%require-relative-library/proc ,(quote-form-expr f)
 			     ,@(map quote-form-expr cs))
-		       expr '(-1))
+		       expr '(-1)
+		       #f
+		       (make-origin 'micro expr))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed require-relative-library"))))))

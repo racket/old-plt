@@ -88,9 +88,7 @@
 	   (is-a? x mred:style-delta%))])
     (fw:preferences:set-default 'mzprizm:syntax
 				(let ([s (make-object mred:style-delta%)])
-				  (when (< (mred:get-display-depth) 8)
-				    (send s set-delta 'change-bold))
-				  (send s set-delta-foreground "BLACK")
+				  (send s set-delta 'change-bold)
 				  s)
 				style-delta?)
     (fw:preferences:set-default 'mzprizm:primitive
@@ -597,44 +595,33 @@
 						 (zodiac:location-offset
 						  (zodiac:zodiac-finish zodiac-ast)))]
 				    [search-for-orig-syntax
-				     (lambda ()
-				       ;; skip this step until someone specifies an interface.
-				       '(let loop ([zobj zodiac-ast])
-					 (let* ([origin (zodiac:zodiac-origin zobj)]
-						[who (zodiac:origin-who origin)])
-					   (cond
-					    [(eq? who 'macro) (loop (zodiac:origin-how origin))]
-					    [(and (eq? who 'source) (zodiac:symbol? zobj))
-					     (change-style syntax-style
-							   (zodiac:location-offset (zodiac:zodiac-start zobj))
-							   (add1 (zodiac:location-offset 
-								  (zodiac:zodiac-finish zobj))))]
-					    [else (void)]))))]
+				     (lambda (zobj)
+				       (let loop ([zobj zobj])
+					 (or (source-object? zobj)
+					     (let* ([origin (zodiac:zodiac-origin zobj)]
+						    [who (zodiac:origin-who origin)])
+					       (cond
+						[(or (eq? who 'macro) 
+						     (eq? who 'micro))
+						 (loop (zodiac:origin-how origin))]
+						[else #f])))))]
 				    [color-syntax
 				     (lambda ()
-				       (if (or (source-object? zodiac-ast)
-					       ; If it's a macro/micro expansion, first
-					       ;  item must be a syntax keyword
-					       (source-object? zodiac-ast))
-					   (let* ([start (find-next-non-whitespace (add1 z:start))]
-						  [finish (find-next-whitespace start)])
-					     (when (and finish start)
-					       (change-style syntax-style start finish)))
-					   (search-for-orig-syntax)))]
+				       (when (search-for-orig-syntax zodiac-ast)
+					 (let* ([start (find-next-non-whitespace (add1 z:start))]
+						[finish (find-next-whitespace start)])
+					   (when (and finish start)
+					     (change-style syntax-style start finish)))))]
 				    
 				    [color
 				     (lambda (delta)
 				       (when (and (source-object? zodiac-ast) z:finish z:start)
-					 (change-style delta z:start z:finish)))]
-				    
-				    [color-argss
-				     (lambda (argss)
-				       (for-each (lambda (x) (for-each color-syntax x))
-						 argss))])
+					 (change-style delta z:start z:finish)))])
+			       (unless (source-object? zodiac-ast)
+				 (color-syntax))
 			       (cond
 				[(zodiac:quote-form? zodiac-ast)
-				 (search-for-orig-syntax)
-				 (color const-style)]			      
+				 (color const-style)]
 				[(zodiac:binding? zodiac-ast) (color bound-style)]
 				[(zodiac:bound-varref? zodiac-ast)
 				 (when (source-object? zodiac-ast)
@@ -730,7 +717,6 @@
 				 (color-loop (zodiac:let-values-form-body zodiac-ast))]
 				
 				[(zodiac:app? zodiac-ast)
-				 (search-for-orig-syntax)
 				 (color-loop (zodiac:app-fun zodiac-ast))
 				 (for-each color-loop
 					   (zodiac:app-args zodiac-ast))]

@@ -1,4 +1,4 @@
-; $Id: scm-hanc.ss,v 1.61 1999/04/07 23:36:17 mflatt Exp $
+; $Id: scm-hanc.ss,v 1.62 1999/05/19 21:57:28 mflatt Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -623,7 +623,8 @@
 			  (expand-expr sig env attributes sig-vocab))))
 		  (add-signature name attributes elements))
 		(expand-expr
-		  (structurize-syntax '(#%void) expr '(-1))
+		  (structurize-syntax '(#%void) expr '(-1)
+				      #f (z:make-origin 'micro expr))
 		  env attributes vocab))))
 	  (else
 	    (static-error expr "Malformed define-signature"))))))
@@ -740,7 +741,9 @@
 						 (loop))))))])
 			    (expand-expr (structurize-syntax 
 					  (cons 'begin exprs) 
-					  expr '(-1))
+					  expr '(-1)
+					  #f
+					  (z:make-origin 'micro expr))
 					 env attributes
 					 vocab)))
 			(lambda ()
@@ -807,7 +810,9 @@
 			   ,@prim-unit:clauses)
 			 (quote ,(map named-sig-list->named-sig-vector sign-unit:imports))
 			 (quote ,(sig-list->sig-vector sign-unit:exports)))
-		      expr)
+		      expr '()
+		      #f
+		      (z:make-origin 'micro expr))
 		    env attributes (append-vocabulary vocab
 						      u/s-expand-includes-vocab
 						      'include-within-unit))))))
@@ -817,7 +822,10 @@
 	      (expand-expr
 		(structurize-syntax
 		  (pat:pexpand out-pattern-2 p-env kwd-2)
-		  expr)
+		  expr
+		  '()
+		  #f
+		  (z:make-origin 'micro expr))
 		env attributes vocab)))
 	  (else
 	    (static-error expr "Malformed unit/sig"))))))
@@ -1849,7 +1857,9 @@
 		    (expand-expr
 		      (structurize-syntax
 			output
-			expr '(-1))
+			expr '(-1)
+			#f
+			(z:make-origin 'micro expr))
 		      env attributes vocab))))))
 	  (else
 	    (static-error expr "Malformed compound-unit/sig"))))))
@@ -1958,7 +1968,9 @@
 	    ;; Structurize proc:imports without marks to allow capture
 	    ,@(map (lambda (x) (structurize-syntax x expr '()))
 		   proc:imports)))
-	expr '(-1))
+	expr '(-1)
+	#f
+	(z:make-origin 'micro expr))
        env attributes vocab))))
 
 (define invoke-unit/sig-micro
@@ -2010,7 +2022,9 @@
 			  (let ((proc:s
 				 (expand-expr out-sig env attributes sig-vocab)))
 			   (signature-exploded proc:s))))
-		    expr '(-1))
+		    expr '(-1)
+		    #f
+		    (z:make-origin 'micro expr))
 		  env attributes vocab))))
 	  (else
 	    (static-error expr "Malformed unit->unit/sig"))))))
@@ -2051,7 +2065,9 @@
 	   ;; Structurize proc:imports without marks to allow capture
 	   ,@(map (lambda (x) (structurize-syntax x expr '()))
 		  proc:imports))
-	expr '(-1))
+	expr '(-1)
+	#f
+	(z:make-origin 'micro expr))
        env attributes vocab))))
 
 (define (make-define-values/invoke-unit/sig-micro global?)

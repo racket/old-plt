@@ -1,4 +1,4 @@
-; $Id: scm-obj.ss,v 1.42 1999/04/07 22:38:04 mflatt Exp $
+; $Id: scm-obj.ss,v 1.43 1999/05/20 22:36:52 mflatt Exp $
 
 (unit/sig zodiac:scheme-objects^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -472,7 +472,9 @@
 		  (expand-expr
 		    (structurize-syntax
 		      (pat:pexpand out-pattern new-p-env kwd)
-		      expr '(-1))
+		      expr '(-1)
+		      #f
+		      (z:make-origin 'micro expr))
 		    env attributes vocab))))
 	    (else
 	      (static-error expr "Malformed class"))))))
@@ -505,7 +507,9 @@
 		  (expand-expr
 		    (structurize-syntax
 		      (pat:pexpand out-pattern new-p-env kwd)
-		      expr '(-1))
+		      expr '(-1)
+		      #f
+		      (z:make-origin 'micro expr))
 		    env attributes vocab))))
 	    (else
 	      (static-error expr "Malformed class*"))))))
@@ -691,7 +695,9 @@
 		     (expand-expr
 		      (structurize-syntax
 		       `(#%ivar/proc ,object (quote ,name))
-		       expr '(-1))
+		       expr '(-1)
+		       #f
+		       (z:make-origin 'micro expr))
 		      env attributes vocab))))))
 	    (else
 	      (static-error expr "Malformed ivar"))))))

@@ -19,10 +19,18 @@
           read-special))
       
       (define (set-box/f! b v) (when (box? b) (set-box! b v)))
+      (define bw? (< (get-display-depth) 3))
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                                                                  ;;
+      ;;                          prompt snips                            ;;
+      ;;                            (unused)                              ;;
+      ;;                                                                  ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+     
       
       (define body-pen (send the-pen-list find-or-create-pen "BLACK" 0 'solid))
       (define body-brush (send the-brush-list find-or-create-brush "BLACK" 'solid))
-      (define bw? (< (get-display-depth) 3))
       (define-values (shadow-pen shadow-brush)
 	(if bw?
 	    (let* ([pen (make-object pen% "BLACK" 0 'solid)]
@@ -201,6 +209,12 @@
                    top-pos
                    size
                    line-width)))))
+      
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;                                                                  ;;
+      ;;                         fraction snip                            ;;
+      ;;                                                                  ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
       (define whole/part-number-snipclass
         (make-object 

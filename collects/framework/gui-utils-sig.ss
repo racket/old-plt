@@ -10,8 +10,8 @@
      delay-action
      local-busy-cursor
      unsaved-warning
-     ;text-snip<%>
-     ;read-snips/chars-from-text
+     text-snip<%>
+     read-snips/chars-from-text
      get-choice
      open-input-buffer
      get-clicked-clickback-delta

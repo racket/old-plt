@@ -2492,14 +2492,11 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
 {
   long pstart, start, lstart, tstart, end, lend, tend;
   unsigned char *text;
-  char *map;
   wxMediaWordbreakMap *wordBreakMap;
 
   wordBreakMap = win->GetWordbreakMap();
 
-  map = wordBreakMap ? wordBreakMap->map : wxTheMediaWordbreakMap->map;
-
-#define nonbreak(x) (map[x] & reason)
+#define nonbreak(x) ((wordBreakMap ? wordBreakMap->map : wxTheMediaWordbreakMap->map)[x] & reason)
   /* Try looking at only MAX_DIST_TRY chars. If that fails, then
      look until a newline. */
 #define MAX_DIST_TRY 30

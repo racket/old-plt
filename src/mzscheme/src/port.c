@@ -139,6 +139,9 @@ typedef struct {
 #if defined(WIN32_FD_HANDLES) || defined(WINDOWS_PROCESSES)
 # include <windows.h>
 #endif
+#ifdef WINDOWS_PROCESSES
+# include <ctype.h>
+#endif
 
 #ifdef USE_WINSOCK_TCP
 # include <winsock.h>
@@ -1625,6 +1628,10 @@ file_char_ready (Scheme_Input_Port *port)
 #endif
 #ifdef HAS_GNU_IOB
   if (fp->_egptr - fp->_gptr)
+    return 1;
+#endif
+#ifdef HAS_CYGWIN_IOB
+  if (fp->_r)
     return 1;
 #endif
 #ifdef HAS_LINUX_IOB
@@ -6989,6 +6996,14 @@ static void default_sleep(float v, void *fds)
     int limit;
     fd_set *rd, *wr, *ex;
     struct timeval time;
+
+#ifdef SIGCHILD_DOESNT_INTERRUPT_SELECT
+    if (scheme_system_children) {
+      /* Better poll every second or so... */
+      if (!v || (v > 1))
+	v = 1;
+    }
+#endif
 
     time.tv_sec = (long)v;
     time.tv_usec = (long)(fmod(v, 1.0) * 1000000);

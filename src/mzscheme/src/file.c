@@ -2784,41 +2784,31 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
 #endif
 #ifdef DOS_FILE_SYSTEM
   {
-    unsigned count, i;
-    char buffer[4];
-#ifdef USE_GETDRIVE
-    int orig_drive = _getdrive();
-    count = 26;
-#else
-#ifdef USE_GETDISK
-    count = setdisk(getdisk());
-#else
-    /* Just guess: */
-    count = 3;
-#endif
-#endif
+#   define DRIVE_BUF_SIZE 1024
+    char drives[DRIVE_BUF_SIZE], *s;
+    long len;
 
-    buffer[1] = ':';
-    buffer[2] = '\\';
-    buffer[3] = 0;
-
-    for (i = 0; i < count; i++) {
-#ifdef USE_GETDRIVE
-      if (!_chdrive(i + 1))
-#endif
-	{
-	  buffer[0] = i + 'a';
-	  v = scheme_make_pair(scheme_make_string(buffer), scheme_null);
-	  if (last)
-	    SCHEME_CDR(last) = v;
-	  else
-	    first = v;
-	  last = v;
-	}
+    len = GetLogicalDriveStrings(DRIVE_BUF_SIZE, drives);
+    if (len <= DRIVE_BUF_SIZE)
+      s = drives;
+    else {
+      s = scheme_malloc_atomic(len + 1);
+      GetLogicalDriveStrings(len + 1, s);
     }
-#ifdef USE_GETDRIVE
-    _chdrive(orig_drive);
-#endif
+
+    while (*s) {
+      DWORD a, b, c, d;
+      /* GetDiskFreeSpace effectively checks whether we can read the disk: */
+      if (GetDiskFreeSpace(s, &a, &b, &c, &d)) {
+	v = scheme_make_pair(scheme_make_string(s), scheme_null);
+	if (last)
+	  SCHEME_CDR(last) = v;
+	else
+	  first = v;
+	last = v;
+      }
+      s += strlen(s) + 1;
+    }
   }
 #endif
 #ifdef USE_MAC_FILE_TOOLBOX
@@ -3332,7 +3322,7 @@ find_system_path(int argc, Scheme_Object **argv)
       home = NULL;
     
     if (!home) {
-      char *name[1024];
+      char name[1024];
       
       if (!GetModuleFileName(NULL, name, 1024)) {
 	/* Disaster. Use CWD. */

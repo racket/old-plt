@@ -83,7 +83,7 @@ case $OS in
     ;;
   CYGWIN*)
     make --unix cygwin-dll-setup
-    make --unix $GCOPTS PERL='' LIBS='gmzwin.exp' "$@"
+    make --unix $GCOPTS PERL='' LIBS='gmzwin.exp' INSTALLTARGET=cygwin-install "$@"
     ;;
   BeOS)
     GCOPTS="GCDIR='sgc' OPTIONS='-DUSE_SENORA_GC'"

@@ -70,6 +70,9 @@ GCLIBMAKEEXTRA = no-extra-lib
 # system name for installation
 INSTALLSYS = `../../bin/archsys`
 
+# dependency for performing an install
+INSTALLTARGET = normal-install
+
 # output file for the OSKit-based MzScheme
 MZOSKDEST = mzscheme.multiboot
 
@@ -288,6 +291,9 @@ clean:
 	cd guile; $(XMAKE) clean
 
 install:
+	$(XMAKE) $(INSTALLTARGET)
+
+normal-install:
 	if [ ! -d ../../.bin ] ; then mkdir ../../.bin ; fi
 	if [ ! -d ../../.bin/$(INSTALLSYS) ] ; then mkdir ../../.bin/$(INSTALLSYS) ; fi
 	rm -f ../../.bin/$(INSTALLSYS)/mzscheme
@@ -296,3 +302,8 @@ install:
 	cp $(LIBDIR)/mzdyn.o ../../collects/mzscheme/lib/$(INSTALLSYS)/mzdyn.o
 	cp $(LIBDIR)/libgc.a ../../collects/mzscheme/lib/$(INSTALLSYS)/libgc.a
 	cp $(LIBDIR)/libmzscheme.a ../../collects/mzscheme/lib/$(INSTALLSYS)/libmzscheme.a
+
+cygwin-install:
+	rm -f ../../mzscheme.exe
+	cp $(MZSCHEME).exe ../../mzscheme.exe
+	cd dynsrc; ./gmkmzdyn.bat

@@ -577,14 +577,12 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define SYSTEM_TYPE_NAME "windows"
 # define DOS_FILE_SYSTEM
 # if defined(_MSC_VER)
-#  define USE_GETDRIVE
 #  define NO_READDIR
 #  define USE_FINDFIRST
 #  define NO_READLINK
 #  define MKDIR_NO_MODE_FLAG
 # endif
 # if defined(__BORLANDC__)
-#  define USE_GETDISK
 #  define DIRENT_NO_NAMLEN
 #  define NO_READLINK
 #  define MKDIR_NO_MODE_FLAG
@@ -620,12 +618,19 @@ int   scheme_sproc_semaphore_try_down(void *);
 #endif
 
 # define IO_INCLUDE
-# define NO_SLEEP
 # define DONT_IGNORE_PIPE_SIGNAL
 
 # define PROCESS_FUNCTION
+#ifdef __CYGWIN__
+# define UNIX_PROCESSES
+# define FILES_HAVE_FDS
+# define HAS_CYGWIN_IOB
+# define SIGCHILD_DOESNT_INTERRUPT_SELECT
+#else
+# define NO_SLEEP
 # define WINDOWS_PROCESSES
 # define DETECT_WIN32_CONSOLE_STDIN
+#endif
 
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
@@ -969,10 +974,10 @@ int scheme_pthread_semaphore_try_down(void *);
 #define FILES_HAVE_FDS
 #define USE_UNIX_SOCKETS_TCP
 
- /* HAS_STANDARD_IOB, HAS_GNU_IOB, HAS_LINUX_IOB, HAS_BSD_IOB, and 
-    HAS_SCO_IOB are mutually exclusive; they describe how to read the
-    FILE* structure to determine if there are available cached 
-    characters. */
+ /* HAS_STANDARD_IOB, HAS_GNU_IOB, HAS_CYGWIN_IOB, HAS_LINUX_IOB,
+    HAS_BSD_IOB, and HAS_SCO_IOB are mutually exclusive; they describe
+    how to read the FILE* structure to determine if there are
+    available cached characters. */
 
  /* FILES_HAVE_FDS means that a FILE* is always associated with a
     file desciptor, which can be select-ed to see if there are
@@ -1044,6 +1049,10 @@ int scheme_pthread_semaphore_try_down(void *);
     signals. */
 
  /* USE_CREATE_PIPE uses CreatePipe() instead of _pipe() for Windows. */
+
+ /* SIGCHILD_DOESNT_INTERRUPT_SELECT indicates that the SIGCHILD
+    signal, sent when a child OS process dies, does not interrupt
+    select(). This flag is needed for Cygwin B20. */
 
   /**********************/
  /* Inexact Arithmetic */

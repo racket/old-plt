@@ -216,7 +216,7 @@
 #   define mach_type_known
 # endif
 # if (defined(_MSDOS) || defined(_MSC_VER)) && (_M_IX86 >= 300) \
-     || defined(_WIN32)
+     || defined(_WIN32) && !defined(__CYGWIN32__)
 #   define I386
 #   define MSWIN32	/* or Win32s */
 #   define mach_type_known

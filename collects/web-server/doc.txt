@@ -41,14 +41,25 @@ This provides one main function:
   The result of invoking serve is a function of no arguments that shuts down
   the server.
 
-A later section describes the remaining semi-internal functions.
+  A later section describes the remaining semi-internal functions in the
+  web-sever.ss library.
+
+Constructing configurations requires another library.
+  (require (lib "configuration.ss" "web-server"))
+
+> load-configuration : str -> configuration
+  
+  This function accepts a path to a configuration file and returns a
+  configuration that serve accepts.  The configuration servlet creates
+  configuration files.
+
 
 Serving Content
 ===============
 
 By default, the Web server serves files out of the directory
 (build-path (collection-path "web-server") "default-web-root" "htdocs"),
-uless the function serve was called with a virtual-hosts argument or
+unless the function serve was called with a virtual-hosts argument or
 the configuration tool modified the location.
 
 Instead of serving files from a special directory verbatim, the Web server

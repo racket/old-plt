@@ -1193,7 +1193,7 @@ char *scheme_banner(void)
       "2k"
 #endif      
       " version " VERSION VERSION_SUFFIX
-      ", Copyright (c) 1995-99 PLT (Matthew Flatt)\n";
+      ", Copyright (c) 1995-2000 PLT (Matthew Flatt)\n";
 }
 
 void scheme_set_banner(char *s)

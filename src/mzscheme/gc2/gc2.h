@@ -308,8 +308,9 @@ void *GC_resolve(void *p);
    class instance usually depends on a field count that is stored in
    the class. */
 
+/* INTERNAL: */
 void GC_mark(void *p);
-void *GC_fixup(void *p);
+void GC_fixup(void *p);
 /*
    Used in the expansion of gcMARK and gcFIXUP. */
 
@@ -346,15 +347,9 @@ extern void *GC_alloc_space, *GC_alloc_top;
 #endif
 
 /* Macros: */
-#define gcMARK(x) if (!((long)(x) & 0x1) \
-                      && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
-                      && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
-                    GC_mark(x)
+#define gcMARK(x) GC_mark(x)
 #define gcMARK_TYPED(t, x) gcMARK(x)
-#define gcFIXUP_TYPED(t, x) if (!((long)(x) & 0x1) \
-                               && ((unsigned long)(x) >= (unsigned long)GC_alloc_space) \
-                               && ((unsigned long)(x) <= (unsigned long)GC_alloc_top)) \
-                             x = (t)GC_fixup(x)
+#define gcFIXUP_TYPED(t, x) GC_fixup(&(x))
 #define gcFIXUP(x) gcFIXUP_TYPED(void*, x)
 #define gcBYTES_TO_WORDS(x) ((x + 3) >> 2)
 #define gcWORDS_TO_BYTES(x) (x << 2)

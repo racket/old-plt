@@ -43,14 +43,18 @@ typedef short Type_Tag;
 #define ALLOC_GC_PHASE 0
 #define SKIP_FORCED_GC 0
 
+#if TIME
+# include <sys/time.h>
+# include <sys/resource.h>
+# include <unistd.h>
+#endif
+
 void (*GC_collect_start_callback)(void);
 void (*GC_collect_end_callback)(void);
 void (*GC_out_of_memory)(void);
 unsigned long (*GC_get_thread_stack_base)(void);
 
 void **GC_variable_stack;
-
-void *GC_alloc_space, *GC_alloc_top;
 
 static long memory_in_use, gc_threshold = 32000;
 
@@ -161,6 +165,8 @@ static int skipped_pages, scanned_pages, young_pages, inited_pages;
 static long iterations, tail_iterations;
 
 static int during_gc;
+
+static MPage *find_page(void *p);
 
 #if SAFETY
 static void CRASH()
@@ -581,11 +587,15 @@ void GC_register_eager_finalizer(void *p, int level, void (*f)(void *p, void *da
 {
   Fnl *fnl, *prev;
 
-  if (((long)p & 0x1) || (p < GC_alloc_space) || (p > GC_alloc_top)) {
-    /* Never collected. Don't finalize it. */
-    if (oldf) *oldf = NULL;
-    if (olddata) *olddata = NULL;
-    return;
+  {
+    MPage *page;
+    page = find_page(p);
+    if (!page || !page->type) {
+      /* Never collected. Don't finalize it. */
+      if (oldf) *oldf = NULL;
+      if (olddata) *olddata = NULL;
+      return;
+    }
   }
 
   fnl = fnls;
@@ -834,7 +844,7 @@ void stop()
 
 /* Works anytime: */
 
-MPage *find_page(void *p)
+static MPage *find_page(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;
@@ -853,7 +863,7 @@ MPage *find_page(void *p)
 
 /* Works only during GC: */
 
-int is_marked(void *p)
+static int is_marked(void *p)
 {
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;
@@ -997,9 +1007,6 @@ static void init_all_mpages(int young)
 {
   MPage *page;
 
-  GC_alloc_space = (void *)0xFFFFFFFF;
-  GC_alloc_top = NULL;
-
   for (page = first; page; page = page->next) {
     int is_old = (page->age > young);
     void *p = page->block_start;
@@ -1019,18 +1026,6 @@ static void init_all_mpages(int young)
       young_pages++;
     }
       
-    if (!is_old) {
-      if ((void *)p < GC_alloc_space)
-	GC_alloc_space = (void *)p;
-      if (page->type & MTYPE_BIGBLOCK) {
-	if (GC_alloc_top < (void *)(p + page->u.size))
-	  GC_alloc_top = (void *)(p + page->u.size);
-      } else {
-	if (GC_alloc_top < (void *)(p + MPAGE_SIZE))
-	  GC_alloc_top = (void *)(p + MPAGE_SIZE);
-      }
-    }
-
     if (!(page->type & MTYPE_INITED)) {
       void *p = page->block_start;
 
@@ -1875,8 +1870,9 @@ static void compact_all_mpages()
 
 static int min_referenced_page_age;
 
-void *GC_fixup(void *p)
+void GC_fixup(void *pp)
 {
+  void *p = *(void **)pp;
   unsigned long g = ((unsigned long)p >> MAPS_SHIFT);
   MPage *map;
 
@@ -1912,12 +1908,11 @@ void *GC_fixup(void *p)
 	}
 #endif
 
-	return r;
+	if (r != p)
+	  *(void **)pp = r;
       }
     }
   }
-  
-  return p;
 }
 
 /**********************************************************************/
@@ -2133,7 +2128,11 @@ static void free_unused_mpages()
 	free_pages(page->u.offsets, OPAGE_SIZE);
       }
       
+      if (page->type & MTYPE_INITED)
+	scanned_pages++;
+      
       page->type = 0;
+      skipped_pages++;
     } else {
       if (page->type & MTYPE_BIGBLOCK) {
 	if (!(page->type & MTYPE_CONTINUED))
@@ -2447,6 +2446,9 @@ static void gcollect(int full)
   int did_fnls;
   GC_Weak_Box *wb;
   GC_Weak_Array *wa;
+#if TIME
+  struct rusage pre, post;
+#endif
 
   INITTIME();
   PRINTTIME((STDERR, "gc: start with %ld [%d]: %ld\n", 
@@ -2501,6 +2503,10 @@ static void gcollect(int full)
   if (GC_collect_start_callback)
     GC_collect_start_callback();
 
+#if TIME
+  getrusage(RUSAGE_SELF, &pre);
+#endif
+
   sort_and_merge_roots();
 
   during_gc = 1;
@@ -2541,8 +2547,13 @@ static void gcollect(int full)
 
   do_roots(0);
 
-  PRINTTIME((STDERR, "gc: roots (%d): %ld\n", 
-	     inited_pages, GETTIMEREL()));
+#if TIME
+  getrusage(RUSAGE_SELF, &post);
+#endif
+
+  PRINTTIME((STDERR, "gc: roots (%d) [%ld faults]: %ld\n", 
+	     inited_pages,  post.ru_minflt - pre.ru_minflt,
+	     GETTIMEREL()));
 
   iterations = 0;
   tail_iterations = 0;
@@ -2704,11 +2715,16 @@ static void gcollect(int full)
 # define STATS_ARGS
 #endif
 
+#if TIME
+  getrusage(RUSAGE_SELF, &post);
+#endif
+
   PRINTTIME((STDERR, "gc: mark (i:%d c:%ld t:%ld)"
 	     STATS_FORMAT
-	     ": %ld\n", 
+	     " [%ld faults]: %ld\n", 
 	     inited_pages, iterations, tail_iterations, 
 	     STATS_ARGS
+	     post.ru_minflt - pre.ru_minflt,
 	     GETTIMEREL()));
 
   /******************************************************/
@@ -2767,7 +2783,13 @@ static void gcollect(int full)
 
   compact_all_mpages();
 
-  PRINTTIME((STDERR, "gc: compact: %ld\n", GETTIMEREL()));
+#if TIME
+  getrusage(RUSAGE_SELF, &post);
+#endif
+
+  PRINTTIME((STDERR, "gc: compact [%ld faults]: %ld\n", 
+	     post.ru_minflt - pre.ru_minflt,
+	     GETTIMEREL()));
 
   /******************************************************/
 
@@ -2809,9 +2831,17 @@ static void gcollect(int full)
   do_roots(1);
   fixup_all_mpages();
 
-  PRINTTIME((STDERR, "gc: fixup (%d): %ld\n", scanned_pages, GETTIMEREL()));
+#if TIME
+  getrusage(RUSAGE_SELF, &post);
+#endif
+
+  PRINTTIME((STDERR, "gc: fixup (%d) [%ld faults]: %ld\n", 
+	     scanned_pages,  post.ru_minflt - pre.ru_minflt,
+	     GETTIMEREL()));
 
   /******************************************************/
+
+  skipped_pages = scanned_pages = 0;
 
   free_unused_mpages();
 
@@ -2826,8 +2856,13 @@ static void gcollect(int full)
   if (tagged_array_compact_to_offset < MPAGE_WORDS)
     memset(tagged_array_low, 0, (tagged_array_high - tagged_array_low) << 2);
 
-  PRINTTIME((STDERR, "gc: done with %ld: %ld\n",
-	     memory_in_use, GETTIMEREL()));
+#if TIME
+  getrusage(RUSAGE_SELF, &post);
+#endif
+
+  PRINTTIME((STDERR, "gc: done with %ld (%d/%d) [%ld faults]: %ld\n",
+	     memory_in_use, scanned_pages, skipped_pages, post.ru_minflt - pre.ru_minflt,
+	     GETTIMEREL()));
 
   during_gc = 0;
 
@@ -2916,6 +2951,7 @@ static void new_page(mtype_t mtype, void ***low, void ***high)
 {
   void *p;
   MPage *map;
+  OffsetTy *offsets;
 
   if (memory_in_use > gc_threshold) {
     gcollect(0);
@@ -2923,13 +2959,14 @@ static void new_page(mtype_t mtype, void ***low, void ***high)
   }
   
   p = (void *)malloc_pages(MPAGE_SIZE, MPAGE_SIZE);
+  offsets = (OffsetTy *)malloc_pages(OPAGE_SIZE, 0);
 
   memory_in_use += MPAGE_SIZE;
 
   map = get_page_rec(p, mtype);
 
   map->type = (mtype | MTYPE_MODIFIED);
-  map->u.offsets = (OffsetTy *)malloc_pages(OPAGE_SIZE, 0);
+  map->u.offsets = offsets;
   map->block_start = p;
   map->age = 0;
   map->refs_age = 0;

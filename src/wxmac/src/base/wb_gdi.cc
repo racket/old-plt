@@ -253,25 +253,26 @@ wxColor *tmpc;
 
 wxColour *wxColourDatabase::FindColour(const char *colour)
 {
-  const char *p;
   wxNode *node;
+  int q;
 
   // Insure upcased:
-  for (p = colour; *p && !islower(*p); p++);
-  if (*p) {
-    char *naya, *q;
+  for (q = 0; colour[q] && !islower(colour[q]); q++) {
+  }
+
+  if (colour[q]) {
+    char *naya;
     naya = new char[strlen(colour) + 1];
-    for (p = colour, q = naya; *p; p++, q++) {
-      *q = toupper(*p);
+    for (q = 0; colour[q]; q++) {
+      naya[q] = toupper(colour[q]);
     }
-    *q = 0;
+    naya[q] = 0;
     colour = naya;
   }
 
   node = Find(colour);
-  if (node) {
+  if (node)
     return (wxColour *)(node->Data());
-  }  
   else 
     return NULL;
 }
@@ -764,8 +765,10 @@ FindOrCreateFont (int PointSize, int FamilyOrFontId, int Style, int Weight, Bool
 wxFont *wxFontList::
 FindOrCreateFont (int PointSize, const char *Face, int Family, int Style, int Weight, Bool underline)
 {
+  int id;
+  id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
   return FindOrCreateFont(PointSize,
-			  wxTheFontNameDirectory->FindOrCreateFontId(Face, Family),
+			  id,
 			  Style,
 			  Weight,
 			  underline);

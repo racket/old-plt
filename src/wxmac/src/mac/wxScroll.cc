@@ -128,7 +128,9 @@ void wxScroll::SetScrollData
 wxScroll* wxScroll::RootScroll(void)
 {
   wxScroll* result = this;
-  while (result->cParentScroll) result = result->cParentScroll;
+  while (result->cParentScroll) {
+    result = result->cParentScroll;
+  }
   return result;
 }
 

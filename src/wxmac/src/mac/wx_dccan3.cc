@@ -93,9 +93,9 @@ void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* de
 {
   float x2, y2, descent2, externalLeading2;
   if (the_font)
-    the_font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
+    the_font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
   else if (font)
-    font->GetTextExtent((char *)string+d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
+    font->GetTextExtent((char *)string, d, &x2, &y2, &descent2, &externalLeading2, use16, user_scale_y);
   else {
     *x = -1;
     *y = -1;

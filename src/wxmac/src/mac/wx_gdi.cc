@@ -172,16 +172,22 @@ wxFont::wxFont(void)
 //-----------------------------------------------------------------------------
 wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool Underlined)
 {
+  int fam;
+
+  fam = wxTheFontNameDirectory->GetFamily(FontOrFamilyId);
+
   Create(PointSize, FontOrFamilyId, 
-	 wxTheFontNameDirectory->GetFamily(FontOrFamilyId), 
+	 fam, 
 	 Style, Weight, Underlined);
 }
 
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	       Bool underlined)
 {
-  int id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
-  int fam = wxTheFontNameDirectory->GetFamily(id);
+  int id, fam;
+
+  id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
+  fam = wxTheFontNameDirectory->GetFamily(id);
   
   Create(PointSize, id, fam, Style, Weight, underlined);
 }
@@ -189,6 +195,8 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight, 
 		    Bool Underlined)
 {
+  int tried_once = 0;
+
   fontid = Font;
   family = Family;
   style = Style;
@@ -196,12 +204,12 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
   point_size = PointSize;
   underlined = Underlined;
 
-  int tried_once = 0;
-
   while (1) {
-    char *name = wxTheFontNameDirectory->GetScreenName(Font, Weight, Style);
+    char *name;
     Str255 buffer;
     
+    name = wxTheFontNameDirectory->GetScreenName(Font, Weight, Style);
+
     if (!strcmp(name, "systemfont")) {
       macFontId = GetSysFont();
       break;
@@ -291,11 +299,11 @@ float wxFont::GetCharWidth(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxFont::GetTextExtent(char* string, float* x, float* y,
+void wxFont::GetTextExtent(char* string, int delta, float* x, float* y,
 			   float* descent, float* externalLeading, Bool use16,
 			   float scale)
 {
-  GetLatin1TextWidth(string, 0, -1,
+  GetLatin1TextWidth(string, delta, -1,
 		     GetMacFontNum(), point_size, GetMacFontStyle(),
 		     use16, scale,
 		     x, y, descent, externalLeading,
@@ -779,9 +787,12 @@ int wxDisplayDepth(void)
 void wxDisplaySize(int *width, int *height)
 {
   BitMap screenBits;
+  int mbh;
+
   GetQDGlobalsScreenBits(&screenBits);
   *width = screenBits.bounds.right - screenBits.bounds.left;
-  *height = screenBits.bounds.bottom - screenBits.bounds.top - GetMBarHeight();
+  mbh = GetMBarHeight();
+  *height = screenBits.bounds.bottom - screenBits.bounds.top - mbh;
 }
 
 /* NOTE: we rely on no garbage collection between GetGWorld()... SetGWorld()
@@ -820,31 +831,30 @@ wxBitmap::wxBitmap(void)
 //-----------------------------------------------------------------------------
 wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 {
+  GDHandle savegd;
+  CGrafPtr saveport;
   __type = wxTYPE_BITMAP;
   depth = 1;
   width = the_width;
   height = the_height;
-  //Rect bounds = {0, 0, the_height, the_width};
-  GDHandle savegd;
-  CGrafPtr saveport;
   Create(the_width, the_height, 1);
   if (ok) {
+    int i, j, p = 0;
+    char rbyte;
+    RGBColor	cpix;
+    
     GetGWorld(&saveport, &savegd);
     SetGWorld(x_pixmap, 0);
-    int i, j, p = 0;
-    char byte;
-    RGBColor	cpix;
-    // look in contrib/wxwxpm/simx.c for a clue on finishing this 
     
     GetForeColor(&cpix);
     for (i = 0; i < the_height; i++) {
       for (j = 0; j < the_width; j += 8, p++) {
-	byte = bits[p];
+	rbyte = bits[p];
 	for (int k = 0; k < 8; k++) {
-	  if (byte & 1) {			
+	  if (rbyte & 1) {			
 	    ::SetCPixel(j + k, i, &cpix);
 	  }
-	  byte = byte >> 1;
+	  rbyte = rbyte >> 1;
 	}
       }
     }
@@ -868,12 +878,14 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
     CopyCStringToPascal(bitmap_file,resname);
     h = (PicHandle)::GetNamedResource('PICT', resname);
     if (h) {
+      GDHandle savegd;
+      CGrafPtr saveport;
+      Rect bounds;
+      
       depth =  wxDisplayDepth();
       width = (*h)->picFrame.right;
       height = (*h)->picFrame.bottom;
-      GDHandle savegd;
-      CGrafPtr saveport;
-      Rect bounds = {0, 0, height, width};
+      ::SetRect(&bounds, 0, 0, width, height);
       Create(width, height, depth);
       GetGWorld(&saveport, &savegd);
       SetGWorld(x_pixmap, 0);
@@ -921,6 +933,7 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   CGrafPtr saveport;
   QDErr err;
   GWorldPtr	newGWorld = NULL;
+  Rect bounds;
 
   if (!__type) {
     __type = wxTYPE_BITMAP;
@@ -930,15 +943,20 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
   width = wid;
   height = hgt;
   depth = deep;
-  Rect bounds = {0, 0, height, width};
+  ::SetRect(&bounds, 0, 0, width, height);
   // Build a offscreen GWorld to draw the Picture in
   err = NewGWorld(&newGWorld, (deep == -1) ? 32 : deep, &bounds, NULL, NULL, 0);
   if (err == noErr) {
     GetGWorld(&saveport, &savegw);
-    ::LockPixels(::GetGWorldPixMap(newGWorld));
+    {
+      PixMapHandle pm;
+      pm =::GetGWorldPixMap(newGWorld);
+      ::LockPixels(pm);
+    }
     SetGWorld(newGWorld, 0);
-    if (depth < 1)
+    if (depth < 1) {
       depth = wxDisplayDepth();
+    }
     ::EraseRect(&bounds);
     ok = TRUE;
     x_pixmap = newGWorld;
@@ -955,14 +973,15 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
 // Load a bitmap with xpm data (compiled in)
 wxBitmap::wxBitmap(char **data, wxItem *anItem)
 {
+  XImage	*ximage;
+  XpmAttributes xpmAttr;
+  int  ErrorStatus;
+
   __type = wxTYPE_BITMAP;
   width = 0;
   height = 0;
   depth = 0;
   freePixmap = FALSE;
-  XImage	*ximage;
-  XpmAttributes xpmAttr;
-  int  ErrorStatus;
 
   ok = FALSE;
 
@@ -1020,13 +1039,14 @@ Bool wxBitmap::LoadFile(char *name, long flags)
   if (flags & wxBITMAP_TYPE_XPM) {
     XImage	*ximage;
     XpmAttributes xpmAttr;
-    
+    int ErrorStatus;
+
     xpmAttr.valuemask = XpmReturnInfos;	/* nothing yet, but get infos back */
-    int ErrorStatus = XpmReadFileToImage(NULL,	// don't have a Display dpy
-					 name,
-					 &ximage,							// we get this back
-					 NULL,							// don't want a shapemask
-					 &xpmAttr);						// where to put the attributes
+    ErrorStatus = XpmReadFileToImage(NULL,	// don't have a Display dpy
+				     name,
+				     &ximage,							// we get this back
+				     NULL,							// don't want a shapemask
+				     &xpmAttr);						// where to put the attributes
 
     if (ErrorStatus == XpmSuccess) {
       // Set attributes
@@ -1070,14 +1090,15 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 
 Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
 {
-  Bool ok = FALSE;
+  Bool isok = FALSE;
 
   if (type & wxBITMAP_TYPE_XBM) {
-    ok = wxSaveXBMFromBitmap(name, this, NULL);
+    isok = wxSaveXBMFromBitmap(name, this, NULL);
   } else if (type & wxBITMAP_TYPE_XPM) {
     XImage ximage;    
     GDHandle savegw;
     CGrafPtr saveport;
+    int errorStatus;
 
     if (!Ok()) return FALSE;
     
@@ -1091,17 +1112,17 @@ Bool wxBitmap::SaveFile(char *name, int type, wxColourMap *cmap)
     ximage.depth = GetDepth(); 
     ximage.bitmap = NULL;
     
-    int errorStatus = XpmWriteFileFromImage(NULL, name,
-					    &ximage, (XImage *)NULL, 
-					    (XpmAttributes *)NULL);
+    errorStatus = XpmWriteFileFromImage(NULL, name,
+					&ximage, (XImage *)NULL, 
+					(XpmAttributes *)NULL);
 
     // UnlockPixels(GetGWorldPixMap(x_pixmap));
     SetGWorld(saveport, savegw);
 
-    ok = (errorStatus == XpmSuccess);
+    isok = (errorStatus == XpmSuccess);
   }
   
-  return ok;
+  return isok;
 }
 
 void wxBitmap::SetColourMap(wxColourMap *cmap)
@@ -1124,12 +1145,12 @@ void wxBitmap::DrawMac(void)
 void wxBitmap::DrawMac(int x, int y, int mode)
 {
   if (x_pixmap) {
-    Rect sbounds = {0, 0, height, width};
-    Rect dbounds = {y, x, height+y, width+x};
     CGrafPtr portNow;
     GDHandle deviceNow;
     const BitMap *srcbm;
     const BitMap *dstbm;
+    Rect sbounds = {0, 0, height, width};
+    Rect dbounds = {y, x, height+y, width+x};
 
     OffsetRect(&dbounds,SetOriginX,SetOriginY);
     ::GetGWorld(&portNow,&deviceNow);

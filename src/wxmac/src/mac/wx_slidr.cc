@@ -40,9 +40,6 @@
 #endif
 #define VSP			3	// space between scrollbar and value
 #define HSP			3	
-// Because I never get this right and t,l,b,r makes sense to me - CJC
-//
-#define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 
 static pascal void SCTrackActionProc(ControlHandle theControl, short thePart);
 static ControlActionUPP SCTrackActionProcUPP = NewControlActionUPP(SCTrackActionProc);
@@ -77,7 +74,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   int vwid, vhgt, hsp, vsp;
   int adjust = 0;
   Rect r;
-
+  CGrafPtr theMacGrafPort;
+  
   windowStyle = style;
   window_parent = panel;
   labelPosition = panel->label_position;
@@ -91,7 +89,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 
   Callback(func);
   SetCurrentDC();
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  theMacGrafPort = cMacDC->macGrafPort();
 	
   s_min = min_value;
   s_max = max_value;
@@ -181,7 +179,12 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
       
   CheckMemOK(cMacControl);
 
-  SetControlReference(cMacControl, (long)this);
+  {
+    void *rc;
+    rc = WRAP_SAFEREF(this);
+    refcon = rc;
+    SetControlReference(cMacControl, (long)refcon);
+  }
 
   if (label) {
     if (labelPosition == wxVERTICAL) {
@@ -234,7 +237,11 @@ void wxSlider::Paint(void)
 
     OffsetRect(&r,SetOriginX,SetOriginY);
     ::EraseRect(&r);
-    sprintf(t,"%d",::GetControlValue(cMacControl));
+    {
+      int val;
+      val = ::GetControlValue(cMacControl);
+      sprintf(t,"%d",val);
+    }
 
     str = CFStringCreateWithCString(NULL, t, kCFStringEncodingISOLatin1);
     DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
@@ -380,7 +387,9 @@ void wxSlider::TrackPart(int part)
 pascal void SCTrackActionProc(ControlHandle theControl, short thePart)
 {
   wxSlider*	slider;
-  slider = (wxSlider*)GetControlReference(theControl);
+  void *rc;
+  rc = (void *)GetControlReference(theControl);
+  slider = (wxSlider*)GET_SAFEREF(rc);
   if (slider) 
     slider->TrackPart(thePart);
 }

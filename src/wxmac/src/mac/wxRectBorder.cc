@@ -61,10 +61,12 @@ void wxRectBorder::Paint(void)
 
   if (SetCurrentDC()) {
     int clientWidth, clientHeight;
-    GetClientSize(&clientWidth, &clientHeight);
-    Rect clientRect = {0, 0, clientHeight, clientWidth};
-    OffsetRect(&clientRect,SetOriginX,SetOriginY);
+    Rect clientRect;
     int margin;
+    
+    GetClientSize(&clientWidth, &clientHeight);
+    ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
+    OffsetRect(&clientRect,SetOriginX,SetOriginY);
 
     margin = ParentArea()->Margin().Offset(wxTop) - cWhitespace;
     if (margin > 0) {
@@ -103,10 +105,11 @@ void wxRectBorder::ChangeToGray(Bool gray)
   if (SetCurrentMacDC()) {
     RgnHandle rgn, rgn2;
     int margin;
+    Rect clientRect;
 
     int clientWidth, clientHeight;
     GetClientSize(&clientWidth, &clientHeight);
-    Rect clientRect = {0, 0, clientHeight, clientWidth};
+    ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
 
     /* We should really get all 4 margins... */

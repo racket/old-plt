@@ -84,7 +84,11 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
   /* allocate pic immediately, so that if we can't allocate it, we don't
      waste time running this algorithm */
 
-  pic = (byte *) malloc(WIDE * HIGH);
+  {
+    void *v;
+    v = malloc(WIDE * HIGH);
+    pic = (byte *) v;
+  }
   if (pic == NULL) {
     fprintf(stderr,"Conv24to8() - failed to allocate picture\n");
     return(1);
@@ -97,12 +101,15 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
      comparision, and it has the same effect. */
 
   if (mono || nc==0) {
-    byte *pp, *p24;
+    long pp, p24;
 
-    for (i=0; i<256; i++) r[i]=g[i]=b[i]=i;   /* greyscale colormap */ // CJC 
-    pp = pic;  p24 = pic24;
-    for (i=WIDE*HIGH; i>0; i--, pp++, p24+=3) 
-      *pp = (p24[0]*11 + p24[1]*16 + p24[2]*5) >> 5;  /* pp=.33R+.5G+.17B */
+    for (i=0; i<256; i++) {
+      r[i]=g[i]=b[i]=i;   /* greyscale colormap */ // CJC 
+    }
+    pp = 0;  p24 = 0;
+    for (i=WIDE*HIGH; i>0; i--, pp++, p24+=3)  {
+      pic[pp] = (pic24[p24]*11 + pic24[p24+1]*16 + pic24[p24+2]*5) >> 5;  /* pp=.33R+.5G+.17B */
+    }
 
     return(0);
   }
@@ -118,7 +125,11 @@ int wxImage::Conv24to8(byte *p, int w, int h, int nc)
   /**** STEP 1:  create empty boxes ****/
 
   usedboxes = NULL;
-  box_list = freeboxes = (CBOX *) malloc(num_colors * sizeof(CBOX));
+  {
+    void *v;
+    v = malloc(num_colors * sizeof(CBOX));
+    box_list = freeboxes = (CBOX *) v;
+  }
 
   if (box_list == NULL) {
     return(1);
@@ -194,7 +205,7 @@ void wxImage::get_histogram(CBOX *box)
 /****************************/
 {
   int   i,j,r,g,b,*ptr;
-  byte *p;
+  long p;
 
   box->rmin = box->gmin = box->bmin = 999;
   box->rmax = box->gmax = box->bmax = -1;
@@ -202,15 +213,17 @@ void wxImage::get_histogram(CBOX *box)
 
   /* zero out histogram */
   ptr = &histogram[0][0][0];
-  for (i=B_LEN*B_LEN*B_LEN; i>0; i-- )  *ptr++ = 0;
+  for (i=B_LEN*B_LEN*B_LEN; i--) {
+    ptr[i] = 0;
+  }
 
   /* calculate histogram */
-  p = pic24;
-  for (i=0; i<HIGH; i++)
+  p = 0;
+  for (i=0; i<HIGH; i++) {
     for (j=0; j<WIDE; j++) {
-      r = (*p++) >> (COLOR_DEPTH-B_DEPTH);
-      g = (*p++) >> (COLOR_DEPTH-B_DEPTH);
-      b = (*p++) >> (COLOR_DEPTH-B_DEPTH);
+      r = pic24[p++] >> (COLOR_DEPTH-B_DEPTH);
+      g = pic24[p++] >> (COLOR_DEPTH-B_DEPTH);
+      b = pic24[p++] >> (COLOR_DEPTH-B_DEPTH);
 
       if (r < box->rmin) box->rmin = r;
       if (r > box->rmax) box->rmax = r;
@@ -222,6 +235,7 @@ void wxImage::get_histogram(CBOX *box)
       if (b > box->bmax) box->bmax = b;
       histogram[r][g][b]++;
     }
+  }
 }
 
 
@@ -256,7 +270,8 @@ void wxImage::splitbox(CBOX *ptr)
 {
   int   hist2[B_LEN], first, last, i, rdel, gdel, bdel;
   CBOX *new_cbox;
-  int  *iptr, *histp, ir, ig, ib;
+  GC_CAN_IGNORE int *iptr, *histp;
+  int  ir, ig, ib;
   int  rmin,rmax,gmin,gmax,bmin,bmax;
   enum {RED,GREEN,BLUE} which;
 
@@ -343,7 +358,8 @@ void wxImage::splitbox(CBOX *ptr)
     histp = &hist2[first];
     sum = 0;
         
-    for (i=first; i<=last && (sum += *histp++)<sum2; i++);
+    for (i=first; i<=last && (sum += *histp++)<sum2; i++) {
+    }
     if (i==first) i++;
   }
 
@@ -363,9 +379,9 @@ void wxImage::splitbox(CBOX *ptr)
     
     histp = &hist2[first];
     sum1 = 0;
-    for (j = first; j < i; ++j) sum1 += *histp++;
+    for (j = first; j < i; ++j) { sum1 += *histp++; }
     sum2 = 0;
-    for (j = i; j <= last; ++j) sum2 += *histp++;
+    for (j = i; j <= last; ++j) { sum2 += *histp++; }
     new_cbox->total = sum1;
     ptr->total = sum2;
   }
@@ -390,7 +406,8 @@ void wxImage::splitbox(CBOX *ptr)
 void wxImage::shrinkbox(CBOX *box)
 /****************************/
 {
-  int *histp,ir,ig,ib;
+  GC_CAN_IGNORE int *histp;
+  int  ir,ig,ib;
   int  rmin,rmax,gmin,gmax,bmin,bmax;
 
   rmin = box->rmin;  rmax = box->rmax;
@@ -398,60 +415,68 @@ void wxImage::shrinkbox(CBOX *box)
   bmin = box->bmin;  bmax = box->bmax;
 
   if (rmax>rmin) {
-    for (ir=rmin; ir<=rmax; ir++)
+    for (ir=rmin; ir<=rmax; ir++) {
       for (ig=gmin; ig<=gmax; ig++) {
 	histp = &histogram[ir][ig][bmin];
-	for (ib=bmin; ib<=bmax; ib++)
+	for (ib=bmin; ib<=bmax; ib++) {
 	  if (*histp++ != 0) {
 	    box->rmin = rmin = ir;
 	    goto have_rmin;
 	  }
+	}
       }
+    }
 
   have_rmin:
     if (rmax>rmin)
-      for (ir=rmax; ir>=rmin; --ir)
+      for (ir=rmax; ir>=rmin; --ir) {
 	for (ig=gmin; ig<=gmax; ig++) {
 	  histp = &histogram[ir][ig][bmin];
-	  for (ib=bmin; ib<=bmax; ib++)
+	  for (ib=bmin; ib<=bmax; ib++) {
 	    if (*histp++ != 0) {
 	      box->rmax = rmax = ir;
 	      goto have_rmax;
 	    }
+	  }
 	}
+      }
   }
 
 
  have_rmax:
 
   if (gmax>gmin) {
-    for (ig=gmin; ig<=gmax; ig++)
+    for (ig=gmin; ig<=gmax; ig++) {
       for (ir=rmin; ir<=rmax; ir++) {
 	histp = &histogram[ir][ig][bmin];
-	for (ib=bmin; ib<=bmax; ib++)
+	for (ib=bmin; ib<=bmax; ib++) {
 	  if (*histp++ != 0) {
 	    box->gmin = gmin = ig;
 	    goto have_gmin;
 	  }
+	}
       }
+    }
   have_gmin:
     if (gmax>gmin)
-      for (ig=gmax; ig>=gmin; --ig)
+      for (ig=gmax; ig>=gmin; --ig) {
 	for (ir=rmin; ir<=rmax; ir++) {
 	  histp = &histogram[ir][ig][bmin];
-	  for (ib=bmin; ib<=bmax; ib++)
+	  for (ib=bmin; ib<=bmax; ib++) {
 	    if (*histp++ != 0) {
 	      box->gmax = gmax = ig;
 	      goto have_gmax;
 	    }
+	  }
 	}
+      }
   }
 
 
  have_gmax:
 
   if (bmax>bmin) {
-    for (ib=bmin; ib<=bmax; ib++)
+    for (ib=bmin; ib<=bmax; ib++) {
       for (ir=rmin; ir<=rmax; ir++) {
 	histp = &histogram[ir][gmin][ib];
 	for (ig=gmin; ig<=gmax; ig++) {
@@ -462,9 +487,10 @@ void wxImage::shrinkbox(CBOX *box)
 	  histp += B_LEN;
 	}
       }
+    }
   have_bmin:
     if (bmax>bmin)
-      for (ib=bmax; ib>=bmin; --ib)
+      for (ib=bmax; ib>=bmin; --ib) {
 	for (ir=rmin; ir<=rmax; ir++) {
 	  histp = &histogram[ir][gmin][ib];
 	  for (ig=gmin; ig<=gmax; ig++) {
@@ -475,6 +501,7 @@ void wxImage::shrinkbox(CBOX *box)
 	    histp += B_LEN;
 	  }
 	}
+      }
   }
 
  have_bmax: return;
@@ -499,7 +526,7 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 {
   register int    i,tmp, dist;
   register CCELL *ptr;
-  register byte  *rp,*gp,*bp;
+  long  rp,gp,bp;
   int             ir,ig,ib, mindist;
 
   ir = r1 >> (COLOR_DEPTH-C_DEPTH);
@@ -520,49 +547,50 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 
   mindist = 99999999;
 
-  rp=r;  gp=g;  bp=b;
-  for (i=0; i<num_colors; i++,rp++,gp++,bp++)
-    if( *rp>>(COLOR_DEPTH-C_DEPTH) == ir  &&
-        *gp>>(COLOR_DEPTH-C_DEPTH) == ig  &&
-        *bp>>(COLOR_DEPTH-C_DEPTH) == ib) {
+  rp=0;  gp=0;  bp=0;
+  for (i=0; i<num_colors; i++,rp++,gp++,bp++) {
+    if( r[rp]>>(COLOR_DEPTH-C_DEPTH) == ir  &&
+        g[gp]>>(COLOR_DEPTH-C_DEPTH) == ig  &&
+        b[bp]>>(COLOR_DEPTH-C_DEPTH) == ib) {
 
       ptr->entries[ptr->num_ents][0] = i;
       ptr->entries[ptr->num_ents][1] = 0;
       ++ptr->num_ents;
 
-      tmp = *rp - r1;
+      tmp = r[rp] - r1;
       if (tmp < (MAX_COLOR/C_LEN/2)) tmp = MAX_COLOR/C_LEN-1 - tmp;
       dist = tmp*tmp;
 
-      tmp = *gp - g1;
+      tmp = g[gp] - g1;
       if (tmp < (MAX_COLOR/C_LEN/2)) tmp = MAX_COLOR/C_LEN-1 - tmp;
       dist += tmp*tmp;
 
-      tmp = *bp - b1;
+      tmp = b[bp] - b1;
       if (tmp < (MAX_COLOR/C_LEN/2)) tmp = MAX_COLOR/C_LEN-1 - tmp;
       dist += tmp*tmp;
 
       if (dist < mindist) mindist = dist;
     }
+  }
 
 
   /* step 3: find all points within that distance to box */
 
-  rp=r;  gp=g;  bp=b;
-  for (i=0; i<num_colors; i++,rp++,gp++,bp++)
+  rp=0;  gp=0;  bp=0;
+  for (i=0; i<num_colors; i++,rp++,gp++,bp++) {
     if (*rp >> (COLOR_DEPTH-C_DEPTH) != ir  ||
 	*gp >> (COLOR_DEPTH-C_DEPTH) != ig  ||
 	*bp >> (COLOR_DEPTH-C_DEPTH) != ib) {
 
       dist = 0;
 
-      if ((tmp = r1 - *rp)>0 || (tmp = *rp - (r1 + MAX_COLOR/C_LEN-1)) > 0 )
+      if ((tmp = r1 - r[rp])>0 || (tmp = *rp - (r1 + MAX_COLOR/C_LEN-1)) > 0 )
 	dist += tmp*tmp;
 
-      if( (tmp = g1 - *gp)>0 || (tmp = *gp - (g1 + MAX_COLOR/C_LEN-1)) > 0 )
+      if( (tmp = g1 - g[gp])>0 || (tmp = *gp - (g1 + MAX_COLOR/C_LEN-1)) > 0 )
 	dist += tmp*tmp;
 
-      if( (tmp = b1 - *bp)>0 || (tmp = *bp - (b1 + MAX_COLOR/C_LEN-1)) > 0 )
+      if( (tmp = b1 - b[bp])>0 || (tmp = *bp - (b1 + MAX_COLOR/C_LEN-1)) > 0 )
 	dist += tmp*tmp;
 
       if( dist < mindist ) {
@@ -571,6 +599,7 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 	++ptr->num_ents;
       }
     }
+  }
 
 
   /* sort color cells by distance, use cheap exchange sort */
@@ -604,12 +633,13 @@ CCELL *create_colorcell(int r1, int g1, int b1)
 static void map_colortable()
 /***************************/
 {
-  int    ir,ig,ib, *histp;
+  int    ir,ig,ib;
+  GC_CAN_IGNORE int *histp;
   CCELL *cell;
 
   histp  = &histogram[0][0][0];
-  for (ir=0; ir<B_LEN; ir++)
-    for (ig=0; ig<B_LEN; ig++)
+  for (ir=0; ir<B_LEN; ir++) {
+    for (ig=0; ig<B_LEN; ig++) {
       for (ib=0; ib<B_LEN; ib++) {
 	if (*histp==0) *histp = -1;
 	else {
@@ -639,6 +669,8 @@ static void map_colortable()
 	}
 	histp++;
       }
+    }
+  }
 }
 
 
@@ -647,11 +679,14 @@ static void map_colortable()
 int wxImage::quant_fsdither()
 /*****************************/
 {
-  register int  *thisptr, *nextptr;
-  int           *thisline, *nextline, *tmpptr;
+  long           thisptr, nextptr;
+  int           *thisline, *nextline, *tmpline;
+  long           tmpptr;
   int            r1, g1, b1, r2, g2, b2;
   int            i, j, imax, jmax, oval;
-  byte          *inptr, *outptr, *tmpbptr;
+  byte          *inptr;
+  long           outptr;
+  long           tmpbptr;
   int            lastline, lastpixel;
 
   imax = HIGH - 1;
@@ -667,28 +702,30 @@ int wxImage::quant_fsdither()
 
 
   inptr  = (byte *) pic24;
-  outptr = (byte *) pic;
+  outptr = 0;
 
   /* get first line of picture */
-  for (j=WIDE * 3, tmpptr=nextline, tmpbptr=inptr; j; j--) 
-    *tmpptr++ = (int) *tmpbptr++;
+  for (j=WIDE * 3, tmpptr=0, tmpbptr=0; j; j--)  {
+    nextline[tmpptr++] = (int) inptr[tmpbptr++];
+  }
 
   for (i=0; i<HIGH; i++) {
     /* swap thisline and nextline */
-    tmpptr = thisline;  thisline = nextline;  nextline = tmpptr;
+    tmpline = thisline;  thisline = nextline;  nextline = tmpline;
     lastline = (i==imax);
 
     /* read in next line */
-    for (j=WIDE * 3, tmpptr=nextline; j; j--) 
-      *tmpptr++ = (int) *inptr++;
+    for (j=WIDE * 3, tmpptr=0, tmpbptr = 0; j; j--)  {
+      nextline[tmpptr++] = (int) inptr[tmpbptr++];
+    }
 
     /* dither this line and put it into the output picture */
-    thisptr = thisline;  nextptr = nextline;
+    thisptr = 0;  nextptr = 0;
 
     for (j=0; j<WIDE; j++) {
       lastpixel = (j==jmax);
 
-      r2 = *thisptr++;  g2 = *thisptr++;  b2 = *thisptr++;
+      r2 = thisline[thisptr++];  g2 = thisline[thisptr++];  b2 = thisline[thisptr++];
 
       if (r2<0) r2=0;  else if (r2>=MAX_COLOR) r2=MAX_COLOR-1;
       if (g2<0) g2=0;  else if (g2>=MAX_COLOR) g2=MAX_COLOR-1;
@@ -725,32 +762,32 @@ int wxImage::quant_fsdither()
 	histogram[r2][g2][b2] = oval;
       }
 
-      *outptr++ = oval;
+      pic[outptr++] = oval;
 
       r1 -= r[oval];  g1 -= g[oval];  b1 -= b[oval];
       /* can't use tables because r1,g1,b1 go negative */
 
       if (!lastpixel) {
-	thisptr[0] += (r1*7)/16;
-	thisptr[1] += (g1*7)/16;
-	thisptr[2] += (b1*7)/16;
+	thisline[thisptr+0] += (r1*7)/16;
+	thisline[thisptr+1] += (g1*7)/16;
+	thisline[thisptr+2] += (b1*7)/16;
       }
 
       if (!lastline) {
 	if (j) {
-	  nextptr[-3] += (r1*3)/16;
-	  nextptr[-2] += (g1*3)/16;
-	  nextptr[-1] += (b1*3)/16;
+	  nextline[nextptr-3] += (r1*3)/16;
+	  nextlein[nextptr-2] += (g1*3)/16;
+	  nextlein[nextptr-1] += (b1*3)/16;
 	}
 
-	nextptr[0] += (r1*5)/16;
-	nextptr[1] += (g1*5)/16;
-	nextptr[2] += (b1*5)/16;
+	nextline[nextptr+0] += (r1*5)/16;
+	nextline[nextptr+1] += (g1*5)/16;
+	nextline[nextptr+2] += (b1*5)/16;
 
 	if (!lastpixel) {
-	  nextptr[3] += r1/16;
-	  nextptr[4] += g1/16;
-	  nextptr[5] += b1/16;
+	  nextline[nextptr+3] += r1/16;
+	  nextline[nextptr+4] += g1/16;
+	  nextline[nextptr+5] += b1/16;
 	}
 	nextptr += 3;
       }
@@ -765,7 +802,7 @@ int wxImage::quant_fsdither()
 
 
 /************************************/
-int wxImage::Quick24to8(byte *p24, int w, int h)
+int wxImage::Quick24to8(byte *pb24, int w, int h)
 {
 
   /* floyd-steinberg dithering.
@@ -778,13 +815,15 @@ int wxImage::Quick24to8(byte *p24, int w, int h)
   /* called after 'pic' has been alloced, pWIDE,pHIGH set up, mono/1-bit
      checked already */
 
-  byte *pp;
+  long pp, p24 = 0;
   int  r1, g1, b1;
-  int  *thisline, *nextline, *thisptr, *nextptr, *tmpptr;
+  int  *thisline, *nextline, *tmpline;
+  long thisptr, nextptr;
+  long tmpptr;
   int  i, j, rerr, gerr, berr, pwide3;
   int  imax, jmax;
 
-  pp = pic;  pwide3 = w * 3;  imax = h-1;  jmax = w-1;
+  pp = 0;  pwide3 = w * 3;  imax = h-1;  jmax = w-1;
 
   /* load up colormap, 3 bits R, 3 bits G, 2 bits B  (RRRGGGBB) */
   for (i=0; i<256; i++) {
@@ -801,43 +840,46 @@ int wxImage::Quick24to8(byte *p24, int w, int h)
     }
 
   /* get first line of picture */
-  for (j=pwide3, tmpptr=nextline; j; j--) *tmpptr++ = (int) *p24++;
+  for (j=pwide3, tmpptr=0; j; j--) {
+    nextline[tmpptr++] = (int) pb24[p24++];
+  }
 
   for (i=0; i<h; i++) {
-    tmpptr = thisline;  thisline = nextline;  nextline = tmpptr;   /* swap */
+    tmpline = thisline;  thisline = nextline;  nextline = tmpline;   /* swap */
 
     if (i!=imax)   /* get next line */
-      for (j=pwide3, tmpptr=nextline; j; j--)
-	*tmpptr++ = (int) *p24++;
+      for (j=pwide3, tmpptr=0; j; j--) {
+	nextline[tmpptr++] = (int) pb24[p24++];
+      }
 
-    for (j=0, thisptr=thisline, nextptr=nextline; j<w; j++,pp++) {
-      r1 = *thisptr++;  g1 = *thisptr++;  b1 = *thisptr++;
+    for (j=0, thisptr=0, nextptr=0; j<w; j++,pp++) {
+      r1 = thisline[thisptr++];  g1 = thisline[thisptr++];  b1 = thisline[thisptr++];
       RANGE(r1,0,255);  RANGE(g1,0,255);  RANGE(b1,0,255);  
 
       rerr = r1 & 0x1f;  gerr = g1 & 0x1f;  berr = b1 & 0x3f;
       *pp = (r1&0xe0) | ((g1>>3)&0x1c) | (b1>>6); 
 
       if (j!=jmax) {  /* adjust RIGHT pixel */
-	thisptr[0] += tbl7[rerr];
-	thisptr[1] += tbl7[gerr];
-	thisptr[2] += tbl7[berr];
+	thisline[thisptr+0] += tbl7[rerr];
+	thisline[thisptr+1] += tbl7[gerr];
+	thisline[thisptr+2] += tbl7[berr];
       }
       
       if (i!=imax) {	/* do BOTTOM pixel */
-	nextptr[0] += tbl5[rerr];
-	nextptr[1] += tbl5[gerr];
-	nextptr[2] += tbl5[berr];
+	nextline[nextptr+0] += tbl5[rerr];
+	nextlein[nextptr+1] += tbl5[gerr];
+	nextline[nextptr+2] += tbl5[berr];
 
 	if (j>0) {  /* do BOTTOM LEFT pixel */
-	  nextptr[-3] += tbl3[rerr];
-	  nextptr[-2] += tbl3[gerr];
-	  nextptr[-1] += tbl3[berr];
+	  nextline[nextptr-3] += tbl3[rerr];
+	  nextline[nextptr-2] += tbl3[gerr];
+	  nextlein[nextptr-1] += tbl3[berr];
 	}
 
 	if (j!=jmax) {  /* do BOTTOM RIGHT pixel */
-	  nextptr[3] += tbl1[rerr];
-	  nextptr[4] += tbl1[gerr];
-	  nextptr[5] += tbl1[berr];
+	  nextline[nextptr+3] += tbl1[rerr];
+	  nextline[nextptr+4] += tbl1[gerr];
+	  nextline[nextptr+5] += tbl1[berr];
 	}
 	nextptr += 3;
       }
@@ -873,17 +915,17 @@ int wxImage::QuickCheck(byte *pic24, int w, int h, int maxcol)
 
   unsigned long colors[256],col;
   int           i, nc, low, high, mid;
-  byte         *p, *pix;
+  long          p, pix;
 
   if (maxcol>256) maxcol = 256;
 
   /* put the first color in the table by hand */
   nc = 0;  mid = 0;  
 
-  for (i=w*h,p=pic24; i; i--) {
-    col  = (*p++ << 16);  
-    col += (*p++ << 8);
-    col +=  *p++;
+  for (i=w*h,p=0; i; i--) {
+    col  = (pic24[p++] << 16);  
+    col += (pic24[p++] << 8);
+    col +=  pic24[p++];
 
     /* binary search the 'colors' array to see if it's in there */
     low = 0;  high = nc-1;
@@ -912,10 +954,10 @@ int wxImage::QuickCheck(byte *pic24, int w, int h, int maxcol)
   /* run through the data a second time, this time mapping pixel values in
      pic24 into colormap offsets into 'colors' */
 
-  for (i=w*h,p=pic24, pix=pic; i; i--,pix++) {
-    col  = (*p++ << 16);  
-    col += (*p++ << 8);
-    col +=  *p++;
+  for (i=w*h,p=0, pix=p0; i; i--,pix++) {
+    col  = (pic24[p++] << 16);  
+    col += (pic24[p++] << 8);
+    col +=  pic24[p++];
 
     /* binary search the 'colors' array.  It *IS* in there */
     low = 0;  high = nc-1;
@@ -930,7 +972,7 @@ int wxImage::QuickCheck(byte *pic24, int w, int h, int maxcol)
       fprintf(stderr,"QuickCheck:  impossible!\n");
       exit(1);
     }
-    *pix = mid;
+    pic[pix] = mid;
   }
 
   /* and load up the 'desired colormap' */

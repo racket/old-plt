@@ -41,7 +41,7 @@ wxLabelArea::wxLabelArea
       float fLabelWidth, fLabelHeight, fDescent, fExternalLeading;
 
       labelText = cLabelText->GetLabel();
-      labelFont->GetTextExtent(labelText, &fLabelWidth, &fLabelHeight,
+      labelFont->GetTextExtent(labelText, 0, &fLabelWidth, &fLabelHeight,
 			       &fDescent, &fExternalLeading);
       labelWidth = (int)fLabelWidth;
       labelHeight = (int)fLabelHeight;

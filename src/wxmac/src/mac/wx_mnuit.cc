@@ -80,12 +80,13 @@ void wxMenuItem::Check(Bool flag)
     {
       if (cIsChecked != flag)
 	{
+	  short macMenuItem;
+
 	  cIsChecked = flag;
-	  short macMenuItem = GetMacItemNumber();
-	  if (macMenuItem > 0)
-	    {
-	      CheckMenuItem(parentMenu->MacMenu(), macMenuItem, cIsChecked);
-	    }
+	  macMenuItem = GetMacItemNumber();
+	  if (macMenuItem > 0) {
+	    CheckMenuItem(parentMenu->MacMenu(), macMenuItem, cIsChecked);
+	  }
 	}
     }
 }
@@ -101,8 +102,10 @@ void wxMenuItem::Enable(Bool flag)
 {
   if (cIsEnabled != flag)
     {
+      short macMenuItem;
+
       cIsEnabled = flag;
-      short macMenuItem = GetMacItemNumber();
+      macMenuItem = GetMacItemNumber();
       if (macMenuItem > 0)
 	{
 	  if (cIsEnabled)
@@ -133,7 +136,12 @@ void wxMenuItem::SetLabel(char* label)
 
   macMenuItem = GetMacItemNumber();
   if (macMenuItem > 0) {
-    SetMenuItemText(parentMenu->MacMenu(), macMenuItem, label[0] ? wxC2P(label) : "\p ");
+    unsigned char *s;
+    if (label[0])
+      s = wxC2P(label);
+    else
+      s = "\p ";
+    SetMenuItemText(parentMenu->MacMenu(), macMenuItem, s);
   }
 }
 

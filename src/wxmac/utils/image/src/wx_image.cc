@@ -50,15 +50,25 @@ Bool wxLoadPICTIntoBitmap(char *, wxBitmap *, wxColourMap **);
 
 Bool wxLoadPICTIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-  FILE *fp = fopen(fileName,"rb");
+  FILE *fp;
+  fp = fopen(fileName,"rb");
   if (fp) {
     // I don't know why we skip 512 bytes. I would have
     // thought fopen only processes the data fork. I suppose
     // it could be the "Mac Draw" header block (IM-V, pg 88)
+    int fsize;
+    GDHandle savegd;
+    CGrafPtr saveport;
+    QDErr err;
+    Rect	bounds;
+    PicHandle ph;
+
+    GetGWorld(&saveport, &savegd);
+    
     fseek(fp, 0, SEEK_END);
-    int fsize = ftell(fp) - 512;
+    fsize = ftell(fp) - 512;
     fseek(fp, 512, SEEK_SET);	// 0 didn't work
-    PicHandle ph = (PicHandle)NewHandle(fsize);
+    ph = (PicHandle)NewHandle(fsize);
     CheckMemOK(ph);
     fread((char *)*ph, 1, fsize, fp);
     fclose(fp);
@@ -68,11 +78,7 @@ Bool wxLoadPICTIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
     bm->SetHeight((*ph)->picFrame.bottom);
     // bm->depth = wxDisplayDepth();
     bm->SetDepth(wxDisplayDepth());
-    GDHandle savegd;
-    CGrafPtr saveport;
-    GetGWorld(&saveport, &savegd);
-    QDErr err;
-    Rect	bounds = {0, 0, bm->GetHeight(), bm->GetWidth()};
+    ::SetRect(&bounds, 0, 0, bm->GetHeight(), bm->GetWidth());
     err = NewGWorld(&bm->x_pixmap, 32, &bounds, NULL, NULL, 0);
     if (!err) {
       LockPixels(GetGWorldPixMap(bm->x_pixmap));
@@ -94,33 +100,6 @@ Bool wxLoadXPMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
   return bm->LoadFile(fileName,wxBITMAP_TYPE_XPM);
 } 
-
-void Mac_FixupFileName(char * dest, char * src);
-
-void Mac_FixupFileName(char * dest, char * src) {
-  char *slpos = strchr(src, '/');
-  char *colpos = strchr(src, ':');
-  if (colpos) {
-    // Assume that any colon indicates a mac path
-    strcpy(dest, src);
-  } else if (slpos) {
-    if (slpos == src) {
-      // its an abs path - can't cope that
-      *dest = '\0';
-      return;
-    }
-    // create a relative path;
-    *dest++ = ':';
-    int len = colpos - src;
-    strncpy(dest, src, len);
-    dest += len;
-    *dest++ = ':';
-    strcpy(dest, slpos+1);	// CJC - FIXME - really should iterate over the rest 
-  } else {
-    // probably just a file name
-    strcpy(dest, src);
-  }
-}
 
 wxImage::wxImage(void)
 {

@@ -21,8 +21,6 @@ extern "C" long atol(char *);
 extern "C" int atoi(char *);
 #endif
 
-// static int wxFindFileFlags = 0;
-
 #ifndef OS_X
 extern "C" {
 #endif
@@ -30,8 +28,6 @@ extern "C" {
 #ifndef OS_X
 }
 #endif
-
-static int wxFindFileFlags = 0;
 
 #ifndef OS_X
 extern "C" {
@@ -71,11 +67,12 @@ char *wxGetTempFileName (const char *prefix, char *dest)
     prefix = "";
   else {
     int i;
-    for (i = 0; prefix[i]; i++)
+    for (i = 0; prefix[i]; i++) {
       if (prefix[i] == ':') {
         prefix = "";
         break;
       }
+    }
     if (i > 15)
       prefix = "";
   }
@@ -141,8 +138,6 @@ wxSleep (int nSecs)
 
 
 // Old cursor
-static int wxBusyCursorCount = FALSE;
-
 extern int wxGetBusyState();
 extern void wxSetBusyState(int);
 
@@ -155,9 +150,12 @@ wxBeginBusyCursor (wxCursor * cursor)
   wxSetBusyState(s + 1);
 
   if (!s) {
+    wxChildList *tlw;
     wxChildNode *node;
     wxFrame *f;
-    for (node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
+
+    tlw = wxTopLevelWindows(NULL);
+    for (node = tlw->First(); node; node = node->Next()) {
       f = (wxFrame *)node->Data();
       f->cBusyCursor = 1;
     }
@@ -176,9 +174,12 @@ wxEndBusyCursor (void)
   wxSetBusyState(s - 1);
 
   if (s == 1) {
+    wxChildList *tlw;
     wxChildNode *node;
     wxFrame *f;
-    for (node = wxTopLevelWindows(NULL)->First(); node; node = node->Next()) {
+
+    tlw = wxTopLevelWindows(NULL);
+    for (node = tlw->First(); node; node = node->Next()) {
       f = (wxFrame *)node->Data();
       f->cBusyCursor = 0;
     }

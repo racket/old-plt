@@ -123,7 +123,8 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
       
   CheckMemOK(cMacControl);
 
-  SetControlReference(cMacControl, (long)this); /* for TrackControl */
+  refcon = WRAP_SAFEREF(this);
+  SetControlReference(cMacControl, (long)refcon); /* for TrackControl */
   
   ::EmbedControl(cMacControl, GetRootControl());
 
@@ -266,7 +267,11 @@ void wxScrollBar::ShowAsActive(Bool flag)
 pascal void TrackActionProc(ControlHandle theControl, short thePart);
 pascal void TrackActionProc(ControlHandle theControl, short thePart)
 {
-  wxScrollBar* scrollBar = (wxScrollBar*) GetControlReference(theControl);
+  wxScrollBar* scrollBar;
+  void *rc;
+
+  rc = GetControlReference(theControl);
+  scrollBar = (wxScrollBar*)GET_SAFEREF(rc);
   if (scrollBar) scrollBar->TrackAction(thePart);
 }
 
@@ -303,7 +308,9 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
 	  cScroll->SetScrollData(newPosition, positionScrollData, e);
 	}
       } else {
-	if (StillDown())
+	int down;
+	down = StillDown();
+	if (down)
 	  ::TrackControl(cMacControl, startPt, TrackActionProcUPP);
       }
     }

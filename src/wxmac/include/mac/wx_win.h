@@ -63,6 +63,8 @@ class wxWindow: public wxbWindow
 
   static wxWindow* gMouseWindow; /* mac platform only (window that has captured mouse) */
 
+  void *refcon;
+
   /*============================================================================= */
   /* Protected variables */
   /*============================================================================= */

@@ -54,7 +54,9 @@ wxFrame::wxFrame // Constructor (for frame window)
   Rect theStrucRect;
   Rect theContRect;
   ControlRef rootControl;
-    
+  wxMargin contentAreaMargin;
+  WindowPtr theMacWindow;
+  
   InitDefaults();
 
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
@@ -69,9 +71,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   if (parentFrame)
     if (wxSubType(parentFrame->__type, wxTYPE_DIALOG_BOX))
       parentFrame = (wxFrame *)parentFrame->GetParent();
-
-  WindowPtr theMacWindow;
-
+  
   /* Make sure we have the right device: */
   SetGWorld(wxGetGrafPtr(), wxGetGDHandle());
   
@@ -127,7 +127,12 @@ wxFrame::wxFrame // Constructor (for frame window)
     CFRelease(wtitle);
   }
   
-  SetWRefCon(theMacWindow, (long)this);
+  {
+    void *rc;
+    rc = WRAP_SAFEREF(this);
+    refcon = rc;
+    SetWRefCon(theMacWindow, (long)refcon);
+  }
   
   CheckMemOK(theMacWindow);
   
@@ -145,7 +150,7 @@ wxFrame::wxFrame // Constructor (for frame window)
 
   // The client has the requested window position, not the window: must move
   SetCurrentDC();
-  wxMargin contentAreaMargin = ContentArea()->Margin(wxScreen::gScreenWindow);
+  contentAreaMargin = ContentArea()->Margin(wxScreen::gScreenWindow);
   theMacX = contentAreaMargin.Offset(wxLeft);
   theMacY = contentAreaMargin.Offset(wxTop);
   MoveWindow(theMacWindow, theMacX, theMacY, FALSE);
@@ -266,9 +271,11 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       {
 	// Invalidate grow box:
 	int oldMacWidth, oldMacHeight;
+	Rect oldGrowRect;
+
 	oldMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(wxHorizontal);
 	oldMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(wxVertical);
-	Rect oldGrowRect = {oldMacHeight - 15, oldMacWidth - 15, oldMacHeight, oldMacWidth};
+	::SetRect(&oldGrowRect, oldMacWidth - 15, oldMacHeight - 15, oldMacWidth, oldMacHeight);
 	if (SetCurrentMacDC()) {
 	  InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldGrowRect);
 	  ::EraseRect(&oldGrowRect);
@@ -290,9 +297,10 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
   if (xIsChanged || yIsChanged)
     {
       wxMargin contentAreaMargin;
+      int theMacX, theMacY;
       contentAreaMargin = ContentArea()->Margin(wxScreen::gScreenWindow);
-      int theMacX = contentAreaMargin.Offset(wxLeft);
-      int theMacY = contentAreaMargin.Offset(wxTop);
+      theMacX = contentAreaMargin.Offset(wxLeft);
+      theMacY = contentAreaMargin.Offset(wxTop);
       ::MoveWindow(theMacWindow, theMacX, theMacY, FALSE);
     }
 
@@ -422,10 +430,13 @@ void wxFrame::wxMacRecalcNewSize(Bool resize)
 {
   Rect theStrucRect;
   Rect theContRect;
+  int mbh;
+
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowStructureRgn,&theStrucRect);
   GetWindowBounds(GetWindowFromPort(cMacDC->macGrafPort()),kWindowContentRgn,&theContRect);
   cWindowX = theStrucRect.left;
-  cWindowY = theStrucRect.top - GetMBarHeight(); // WCH: kludge
+  mbh = GetMBarHeight();
+  cWindowY = theStrucRect.top - mbh;
   if (resize) {
     cWindowWidth = theStrucRect.right - theStrucRect.left;
     cWindowHeight = theStrucRect.bottom - theStrucRect.top;
@@ -452,6 +463,10 @@ void wxFrame::wxMacRecalcNewSize(Bool resize)
 //-----------------------------------------------------------------------------
 void wxFrame::CreateStatusLine(int number, char* name)
 {
+  wxMargin clientAreaMargin;
+  int statusLineHeight;
+  int clientWidth, clientHeight;
+
   if (status_line_exists) return;
 
   nb_status = number;
@@ -461,8 +476,7 @@ void wxFrame::CreateStatusLine(int number, char* name)
   cStatusPanel->SetEraser(cEraser);
   cStatusText->SetEraser(cEraser);
   cStatusText->SetFont(wxNORMAL_FONT);
-  int statusLineHeight = (int)(cStatusText->GetCharHeight() * nb_status);
-  int clientWidth, clientHeight;
+  statusLineHeight = (int)(cStatusText->GetCharHeight() * nb_status);
   GetClientSize(&clientWidth, &clientHeight);
   cStatusText->SetWidthHeight(clientWidth, statusLineHeight);
   cStatusPanel->Fit();
@@ -478,10 +492,12 @@ void wxFrame::CreateStatusLine(int number, char* name)
 #endif
   // cStatusPanel->SetJustify(wxLeft);
 
-  wxMargin clientAreaMargin = ClientArea()->Margin(wxScreen::gScreenWindow);
-  clientAreaMargin.SetMargin(clientAreaMargin.Offset(wxBottom) 
-			     + statusLineHeight - 1, 
-			     wxBottom);
+  clientAreaMargin = ClientArea()->Margin(wxScreen::gScreenWindow);
+  {
+    int o;
+    o = clientAreaMargin.Offset(wxBottom);
+    clientAreaMargin.SetMargin(o + statusLineHeight - 1, wxBottom);
+  }
   ClientArea()->SetMargin(clientAreaMargin);
   OnSize(cWindowWidth, cWindowHeight);
 }
@@ -723,6 +739,9 @@ void wxFrame::SetTitle(char* title)
 //-----------------------------------------------------------------------------
 void wxFrame::Show(Bool show)
 {
+  WindowPtr theMacWindow;
+  wxChildList *tlw;
+
   if (show == IsVisible()) {
     if (show)
       ::SelectWindow(GetWindowFromPort(cMacDC->macGrafPort()));
@@ -735,17 +754,22 @@ void wxFrame::Show(Bool show)
     window_parent->GetChildren()->Show(this, show);
   if (cParentArea)
     cParentArea->Windows()->Show(this, show);
-  wxTopLevelWindows(ContextWindow())->Show(this, show);
+  tlw = wxTopLevelWindows(ContextWindow());
+  tlw->Show(this, show);
 
-  WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
+  theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
 #ifdef OS_X
     if (cSheetParent) {
       WindowPtr pwin;
-      pwin = GetWindowFromPort(cSheetParent->cMacDC->macGrafPort());
+      CGrafPtr graf;
+
+      graf = cSheetParent->cMacDC->macGrafPort();
+      pwin = GetWindowFromPort(graf);
       ::ShowSheetWindow(theMacWindow, pwin);
-      if (!cSheetParent->sheets)
+      if (!cSheetParent->sheets) {
 	cSheetParent->sheets = new wxChildList();
+      }
       if (!cSheetParent->sheets->Number())
 	ChangeWindowAttributes(pwin, 0, kWindowCloseBoxAttribute);
       cSheetParent->sheets->Append(this);
@@ -766,11 +790,16 @@ void wxFrame::Show(Bool show)
     }
 #ifdef OS_X
     if (cSheetParent) {
+      int cnt;
       ::HideSheetWindow(theMacWindow);
       cSheetParent->sheets->DeleteObject(this);
-      if (!cSheetParent->sheets->Number()) {
+      cnt = cSheetParent->sheets->Number();
+      if (!cnt) {
 	WindowPtr pwin;
-	pwin = GetWindowFromPort(cSheetParent->cMacDC->macGrafPort());
+	CGrafPtr graf;
+
+	graf = cSheetParent->cMacDC->macGrafPort();
+	pwin = GetWindowFromPort(graf);
 	ChangeWindowAttributes(pwin, kWindowCloseBoxAttribute, 0);
       }
     } else
@@ -825,11 +854,12 @@ void wxFrame::Paint(void)
     if (rgn) {
       subrgn = NewRgn();
       if (subrgn) {
+	RGBColor save;
+
 	SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
 	AddWhiteRgn(subrgn);
 	DiffRgn(rgn, subrgn, rgn);
 	EraseRgn(rgn);
-	RGBColor save;
 	GetForeColor(&save);
 	ForeColor(whiteColor);
 	PaintRgn(subrgn);

@@ -215,7 +215,8 @@ int  wxRegisterClipboardFormat(char *formatName)
 
   cf = new ClipboardFormat;
 
-  cf->format = ClipboardFormats->Number() + CUSTOM_ID_START;
+  cf->format = ClipboardFormats->Number();
+  cf->format += CUSTOM_ID_START;
   cf->name = new char[strlen(formatName) + 1];
   strcpy(cf->name, formatName);
 
@@ -403,8 +404,9 @@ char *wxClipboard::GetClipboardData(char *format, long *length, long time)
   } else {
 
     if (wxOpenClipboard()) {
-      receivedString = (char *)wxGetClipboardData(FormatStringToID(format), 
-						  length);
+      wxObject *o;
+      o = wxGetClipboardData(FormatStringToID(format), length);
+      receivedString = (char *)o;
       wxCloseClipboard();
     } else
       receivedString = NULL;

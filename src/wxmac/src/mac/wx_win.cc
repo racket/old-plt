@@ -33,7 +33,17 @@
 int SetOriginX = 0;
 int SetOriginY = 0;
 
+/* The gMouseWindow declaration confises xform.ss. */
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 wxWindow* wxWindow::gMouseWindow = NULL; 
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
+
 
 static void RestoreNormalBackground(wxBrush *erase);
 
@@ -313,11 +323,16 @@ wxWindow::~wxWindow(void) // Destructor
 
   DestroyChildren();
 
-  delete children;
-  if (cScroll)
-    delete cScroll;
+  if (refcon) {
+    FREE_SAFEREF(refcon);
+    refcon = NULL;
+  }
 
-  delete cAreas;
+  DELETE_OBJ children;
+  if (cScroll)
+    DELETE_OBJ cScroll;
+
+  DELETE_OBJ cAreas;
   
   // don't send leaveEvt messages to this window anymore.
   if (entered == this) entered = NULL; 
@@ -377,20 +392,19 @@ wxMargin wxWindow::Margin(wxArea* outerArea) // mac platform only
   wxMargin result;
   wxArea* parentArea;
   parentArea = ParentArea();
-  if (parentArea)
-    {
-      result.SetMargin(cWindowX, wxLeft);
-      result.SetMargin(cWindowY, wxTop);
-      result.SetMargin(parentArea->Width() - cWindowX - cWindowWidth,
-		       wxRight);
-      result.SetMargin(parentArea->Height() - cWindowY - cWindowHeight,
-		       wxBottom);
-
-      if (parentArea != outerArea)
-	{
-	  result += parentArea->Margin(outerArea);
-	}
+  if (parentArea)     {
+    int w, h;
+    result.SetMargin(cWindowX, wxLeft);
+    result.SetMargin(cWindowY, wxTop);
+    w = parentArea->Width();
+    result.SetMargin(w - cWindowX - cWindowWidth, wxRight);
+    h = parentArea->Height();
+    result.SetMargin(h - cWindowY - cWindowHeight, wxBottom);
+    
+    if (parentArea != outerArea) {
+      result += parentArea->Margin(outerArea);
     }
+  }
 
   return result;
 }
@@ -698,8 +712,9 @@ wxMacDC* wxWindow::MacDC(void) { return cMacDC; } // mac platform only
 int wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 {
   int vis;
+  CGrafPtr theMacGrafPort;
 
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  theMacGrafPort = cMacDC->macGrafPort();
   
   vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
   
@@ -753,8 +768,8 @@ int wxWindow::SetCurrentDC(void) // mac platform only
   cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
   
   if (cMacDC->currentUser() != this) { // must setup platform
-    cMacDC->setCurrentUser(this);
     Rect theClipRect;
+    cMacDC->setCurrentUser(this);
     if (cHidden) {
       theClipRect.top = theClipRect.bottom = 0;
       theClipRect.left = theClipRect.right = 0;
@@ -781,7 +796,8 @@ void wxWindow::ReleaseCurrentDC(int really)
     if (cMacDC->currentUser() == this) {
       GDHandle dh;
       CGrafPtr g;
-      CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+      CGrafPtr theMacGrafPort;
+      theMacGrafPort = cMacDC->macGrafPort();
       ::GetGWorld(&g, &dh);
       if (g != theMacGrafPort)
 	printf("ReleaseDC: not grafport!\n");	
@@ -885,10 +901,12 @@ void wxWindow::SetForeground(void) // mac platform only
     RGBForeColor(&pixel);
   else {
     unsigned char red, blue, green;
+    Bool isWhiteColour;
+
     red = cBrush->GetColour()->Red();
     blue = cBrush->GetColour()->Blue();
     green = cBrush->GetColour()->Green();
-    Bool isWhiteColour =
+    isWhiteColour =
       (red == (unsigned char )255 &&
        blue == (unsigned char)255 &&
        green == (unsigned char)255);
@@ -923,11 +941,13 @@ void wxWindow::GetClipRect(wxArea* area, Rect* clipRect)
   if (ParentArea()) {
     wxWindow* windowParent;
     Rect parentClipRect;
+    int parentAreaX, parentAreaY;
+
     windowParent = ParentArea()->ParentWindow();
     windowParent->GetClipRect(cParentArea, &parentClipRect);
     wxMargin parentAreaMargin = area->Margin(cParentArea);
-    int parentAreaX = parentAreaMargin.Offset(wxLeft);
-    int parentAreaY = parentAreaMargin.Offset(wxTop);
+    parentAreaX = parentAreaMargin.Offset(wxLeft);
+    parentAreaY = parentAreaMargin.Offset(wxTop);
     ::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
     ::SectRect(&parentClipRect, clipRect, clipRect);
     if (clipRect->top < 0) clipRect->top = 0;
@@ -1137,8 +1157,9 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *_win, wxMouseEvent *evt)
 	while (p) {
 	  wxWindow *winp = win;
 	  // is p an ancestor of win? If so, break.
-	  while (winp && (winp != p))
+	  while (winp && (winp != p)) {
 	    winp = winp->GetParent();
+	  }
 	  if (winp == p)
 	    break;
 	  
@@ -1155,8 +1176,9 @@ Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *_win, wxMouseEvent *evt)
       
       while (1) {
 	wxWindow *winp = win;
-	while (winp && (winp->GetParent() != p))
+	while (winp && (winp->GetParent() != p)) {
 	  winp = winp->GetParent();
+	}
 	if (!winp)
 	  break;
 	SendEnterLeaveEvent(winp, wxEVENT_TYPE_ENTER_WINDOW, win, evt);
@@ -1224,11 +1246,13 @@ Bool wxWindow::SeekMouseEventArea(wxMouseEvent *mouseEvent)
     
     if (hitArea || capThis) {
       wxMouseEvent *areaMouseEvent;
+      int hitAreaX, hitAreaY;
+
       areaMouseEvent = new wxMouseEvent(0);
       *areaMouseEvent = *mouseEvent;
-      int hitAreaX, hitAreaY;
       if (hitArea) {
-	wxMargin hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
+	wxMargin hitAreaMargin;
+	hitAreaMargin = hitArea->Margin(this /* hitArea->ParentWindow() */);
 	hitAreaX = hitAreaMargin.Offset(wxLeft);
 	hitAreaY = hitAreaMargin.Offset(wxTop);
       } else
@@ -1366,9 +1390,9 @@ void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* desc
 			     float* externalLeading, wxFont* the_font, Bool use16)
 {
   if (the_font)
-    the_font->GetTextExtent((char *)string, x, y, descent, externalLeading, use16);
+    the_font->GetTextExtent((char *)string, 0, x, y, descent, externalLeading, use16);
   else if (font)
-    font->GetTextExtent((char *)string, x, y, descent, externalLeading, use16);
+    font->GetTextExtent((char *)string, 0, x, y, descent, externalLeading, use16);
   else {
     *x = -1;
     *y = -1;
@@ -1674,7 +1698,8 @@ void wxWindow::DoShow(Bool v)
     wxFrame* frame;
     frame = GetRootFrame();
     if (frame) {
-      wxWindow *f = frame->GetFocusWindow();
+      wxWindow *f;
+      f = frame->GetFocusWindow();
       if (f == this)
 	frame->SetFocusWindow(NULL);
     }
@@ -1728,12 +1753,14 @@ void wxWindow::SetColourMap(wxColourMap* cmap) { }
 //-----------------------------------------------------------------------------
 Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 {
-  MenuHandle m = menu->CreateCopy("popup", FALSE);
+  MenuHandle m;
   Point pos;
   long sel;
   int di;
   int itemId;
   wxPopupEvent *event;
+
+  m = menu->CreateCopy("popup", FALSE);
 
   if (menu->title) {
     int l;
@@ -1854,8 +1881,8 @@ Bool wxWindow::AdjustCursor(int mouseX, int mouseY)
     
     if (!result) {
       if (hitArea == ClientArea()) {
-	result = TRUE;
 	wxCursor *c;
+	result = TRUE;
 	c = GetEffectiveCursor();
 	wxSetCursor(c);
       }
@@ -1917,8 +1944,9 @@ wxCursor *wxWindow::GetEffectiveCursor(void)
     if (p)
       p = p->GetParent();
   }
-  while (p && !p->wx_cursor)
+  while (p && !p->wx_cursor) {
     p = p->GetParent();
+  }
   if (p)
     return p->wx_cursor;
   else

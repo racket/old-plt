@@ -57,12 +57,14 @@ void wxButtonBorder::Paint(void)
   if (margin)
     {	
       int clientWidth, clientHeight;
+      Rect clientRect;
+      PenState oldPenState;
+
       clientWidth = ClientArea()->Width();
       clientHeight = ClientArea()->Height();
       SetCurrentDC();
-      Rect clientRect = {0, 0, clientHeight, clientWidth};
+      ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
       OffsetRect(&clientRect,SetOriginX,SetOriginY);
-      PenState oldPenState;
       ::GetPenState(&oldPenState);
       ::PenNormal();
       ::PenSize(margin -1 , margin - 1);

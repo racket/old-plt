@@ -71,6 +71,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   Rect boundsRect = {0,0,0,0};
   SInt16 baselineOffset; // ignored
   CFStringRef title;
+  CGrafPtr theMacGrafPort;
 
   buttonBitmap = NULL;
   cColorTable = NULL;
@@ -85,7 +86,7 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   label = wxItemStripLabel(label);
 
   SetCurrentMacDC();
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  theMacGrafPort = cMacDC->macGrafPort();
 
   // First, create the control with a bogus rectangle;
   ::OffsetRect(&boundsRect,SetOriginX,SetOriginY);
@@ -157,7 +158,7 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
   cMacControl = NULL;
 
 
-  ::SetRect(&bounds, 0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth());
+  ::SetRect(&bounds, 0, 0, buttonBitmap->GetWidth(), buttonBitmap->GetHeight());
   bounds.bottom += 2 * IB_MARGIN_Y;
   bounds.right += 2 * IB_MARGIN_X;
   cWindowHeight = bounds.bottom;
@@ -266,12 +267,16 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
     if (buttonBitmap)
       return;
     if (flag) {
+      START_XFORM_SKIP;
       wxMargin margin(4);
+      END_XFORM_SKIP;
       cBorderArea->SetMargin(margin, wxAll,
 			     cWindowWidth + 8, cWindowHeight + 8,
 			     cWindowX - 4, cWindowY - 4);
     } else {
+      START_XFORM_SKIP;
       wxMargin margin(0);
+      END_XFORM_SKIP;
       cBorderArea->SetMargin(margin, wxAll,
 			     cWindowWidth - 8, cWindowHeight - 8,
 			     cWindowX + 4, cWindowY + 4);
@@ -290,6 +295,7 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 
   if (!dark) {
     wxColour *norm;
+    int nr, ng, nb;
     norm = wxCONTROL_BACKGROUND_BRUSH->GetColour();
     
 #   define DARK_SCALE(x) (x - (x >> 2))
@@ -300,17 +306,13 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
     wxREGGLOB(darker);
     wxREGGLOB(lite);
 
-    dark = new wxColour(DARK_SCALE(norm->Red()), 
-			DARK_SCALE(norm->Green()), 
-			DARK_SCALE(norm->Blue()));
-    
-    darker = new wxColour(DARKER_SCALE(norm->Red()), 
-			  DARKER_SCALE(norm->Green()), 
-			  DARKER_SCALE(norm->Blue()));
-    
-    lite = new wxColour(LITE_SCALE(norm->Red()), 
-			LITE_SCALE(norm->Green()), 
-			LITE_SCALE(norm->Blue()));
+    nr = norm->Red();
+    ng norm->Green();
+    nb = norm->Blue();
+
+    dark = new wxColour(DARK_SCALE(nr), DARK_SCALE(ng), DARK_SCALE(nb));
+    darker = new wxColour(DARKER_SCALE(nr), DARKER_SCALE(ng), DARKER_SCALE(nb));
+    lite = new wxColour(LITE_SCALE(nr), LITE_SCALE(ng), LITE_SCALE(nb));
   }
 
   if (pressed) {
@@ -491,7 +493,7 @@ void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform
       int clientWidth, clientHeight;
       Rect clientRect;
       GetClientSize(&clientWidth, &clientHeight);
-      ::SetRect(&clientRect, 0, 0, clientHeight, clientWidth);
+      ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
       OffsetRect(&clientRect,SetOriginX,SetOriginY);
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
     }

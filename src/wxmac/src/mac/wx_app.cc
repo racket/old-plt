@@ -91,7 +91,11 @@ wxApp::wxApp():wxbApp()
   gMacFontGrafPort = CreateNewPort();
 
   wxREGGLOB(wxScreen::gScreenWindow);
-  wxScreen::gScreenWindow = new wxScreen;
+  {
+    wxScreen *sc;
+    sc = new wxScreen;
+    wxScreen::gScreenWindow = sc;
+  }
   menuArea = (wxScreen::gScreenWindow)->MenuArea();
   menuBarHeight = GetMBarHeight();
   menuArea->SetMargin(menuBarHeight, wxTop);
@@ -171,7 +175,9 @@ static MenuHandle m129 = NULL;
 void wxApp::doMacPreEvent()
 {
   static Bool noWinMode = FALSE;
-  WindowPtr w = ::FrontWindow();
+  WindowPtr w;
+
+  w = FrontWindow();
 
   wxCheckFinishedSounds();
 
@@ -263,7 +269,8 @@ void wxApp::doMacDispatch(EventRecord *e)
 void wxApp::doMacMouseDown(void)
 {
   WindowPtr window;
-  short windowPart = FindWindow(cCurrentEvent.where, &window);
+  short windowPart;
+  windowPart = FindWindow(cCurrentEvent.where, &window);
   switch (windowPart)
     {
     case inMenuBar:
@@ -271,7 +278,7 @@ void wxApp::doMacMouseDown(void)
 	long menuResult;
 	WindowPtr theMacWindow;
 
-	theMacWindow = ::FrontWindow();
+	theMacWindow = FrontWindow();
 
 	/* Give the menu bar a chance to build on-demand items: */
 	if (theMacWindow) {
@@ -347,20 +354,22 @@ void wxApp::doMacMouseUp(void)
   else
     {
       wxFrame* macWxFrame;
-      macWxFrame = findMacWxFrame(::FrontWindow());
+      macWxFrame = findMacWxFrame(FrontWindow());
       if (macWxFrame)
 	{
 	  int hitX = cCurrentEvent.where.h; // screen window c.s.
 	  int hitY = cCurrentEvent.where.v; // screen window c.s.
 	  wxArea* frameParentArea;
 	  wxMouseEvent *theMouseEvent;
+	  Bool rightButton;
+	  int type;
 
 	  frameParentArea = macWxFrame->ParentArea();
 	  frameParentArea->ScreenToArea(&hitX, &hitY);
 
 	  // RightButton is cmdKey click  on the mac platform for one-button mouse
-	  Bool rightButton = cCurrentEvent.modifiers & controlKey;
-	  int type = rightButton ? wxEVENT_TYPE_RIGHT_UP : wxEVENT_TYPE_LEFT_UP;
+	  rightButton = cCurrentEvent.modifiers & controlKey;
+	  type = rightButton ? wxEVENT_TYPE_RIGHT_UP : wxEVENT_TYPE_LEFT_UP;
 	  
 	  theMouseEvent = new wxMouseEvent(type);
 	  
@@ -426,7 +435,7 @@ void wxApp::doMacMouseMotion(void)
   else
     {
       wxFrame* macWxFrame;
-      macWxFrame = findMacWxFrame(::FrontWindow());
+      macWxFrame = findMacWxFrame(FrontWindow());
       if (macWxFrame)
 	{
 	  int hitX = cCurrentEvent.where.h; // screen window c.s.
@@ -485,7 +494,8 @@ void wxApp::doMacMouseLeave(void)
 
 static Bool doPreOnChar(wxWindow *in_win, wxWindow *win, wxKeyEvent *evt)
 {
-  wxWindow *p = win->GetParent();
+  wxWindow *p;
+  p = win->GetParent();
   return ((p && doPreOnChar(in_win, p, evt)) || win->PreOnChar(in_win, evt));
 }
 
@@ -502,14 +512,16 @@ void wxApp::doMacKeyUpDown(Bool down)
 {
   wxFrame* theMacWxFrame;
   wxKeyEvent *theKeyEvent;
+  int key;
 
-  theMacWxFrame = findMacWxFrame(::FrontWindow());
+  theMacWxFrame = findMacWxFrame(FrontWindow());
   
   if (down) {
     if (!theMacWxFrame || theMacWxFrame->CanAcceptEvent())
       if (cCurrentEvent.modifiers & cmdKey) { // is menu command key equivalent ?
 	if (cCurrentEvent.what == keyDown) { // ignore autoKey
-	  long menuResult = MenuEvent(&cCurrentEvent);
+	  long menuResult;
+	  menuResult = MenuEvent(&cCurrentEvent);
 	  if (menuResult) {
 	    if (doMacInMenuBar(menuResult, TRUE))
 	      return;
@@ -543,8 +555,6 @@ void wxApp::doMacKeyUpDown(Bool down)
   theKeyEvent->altDown = Bool(cCurrentEvent.modifiers & optionKey);
   theKeyEvent->metaDown = Bool(cCurrentEvent.modifiers & cmdKey);
   theKeyEvent->timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when);
-
-  int key;
 
   if (cCurrentEvent.what == wheelEvt) {
     if (cCurrentEvent.message)
@@ -657,11 +667,15 @@ void wxApp::doMacKeyUpDown(Bool down)
     theKeyEvent->keyCode = key;
   }  
 
-  wxWindow *in_win = theMacWxFrame->GetFocusWindow();
-
-  if (!in_win || !doPreOnChar(in_win, in_win, theKeyEvent))
-    if (!theMacWxFrame->IsGray())
-      theMacWxFrame->OnChar(theKeyEvent);
+  {
+    wxWindow *in_win;
+    
+    in_win = theMacWxFrame->GetFocusWindow();
+    
+    if (!in_win || !doPreOnChar(in_win, in_win, theKeyEvent))
+      if (!theMacWxFrame->IsGray())
+	theMacWxFrame->OnChar(theKeyEvent);
+  }
 }
 
 void wxApp::doMacKeyDown(void)
@@ -743,7 +757,7 @@ void wxApp::doMacHighLevelEvent(void)
 void wxApp::doMacResumeEvent(void)
 {
   wxFrame* theMacWxFrame;
-  theMacWxFrame = findMacWxFrame(::FrontWindow());
+  theMacWxFrame = findMacWxFrame(FrontWindow());
   if (theMacWxFrame)
     {
 #ifndef WX_CARBON
@@ -759,16 +773,16 @@ void wxApp::doMacResumeEvent(void)
 void wxApp::doMacSuspendEvent(void)
 {
   wxFrame* theMacWxFrame;
-  theMacWxFrame = findMacWxFrame(::FrontWindow());
+  theMacWxFrame = findMacWxFrame(FrontWindow());
   if (theMacWxFrame)
     {
+      Bool becomingActive = TRUE;
 #ifdef WX_CARBON
       ClearCurrentScrap();
 #else                
       ::ZeroScrap();
 #endif                
       ::TEToScrap();
-      Bool becomingActive = TRUE;
       theMacWxFrame->Activate(!becomingActive);
     }
 }
@@ -831,7 +845,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
     }
   }
 
-  theMacWindow = ::FrontWindow();
+  theMacWindow = FrontWindow();
   if (!theMacWindow) {
     // Must be quit
     exit(0);
@@ -917,10 +931,10 @@ void wxApp::doMacInContent(WindowPtr window)
   theMacWxFrame = findMacWxFrame(window);
   if (theMacWxFrame)
     {
-      if (window != ::FrontWindow())
+      if (window != FrontWindow())
 	{		
 	  wxFrame* frontFrame;
-	  frontFrame = findMacWxFrame(::FrontWindow());
+	  frontFrame = findMacWxFrame(FrontWindow());
 	  if (!frontFrame) wxFatalError("No wxFrame for frontWindow.");
 	  if (0 && !frontFrame->IsModal())
 	    {
@@ -945,6 +959,7 @@ void wxApp::doMacContentClick(wxFrame* frame)
   wxMouseEvent *theMouseEvent;
   wxArea* frameParentArea;
   WXTYPE mouseEventType = rightButton ? wxEVENT_TYPE_RIGHT_DOWN : wxEVENT_TYPE_LEFT_DOWN;
+  int hitX, hitY;
 
   theMouseEvent = new wxMouseEvent(mouseEventType);
   theMouseEvent->leftDown = !rightButton;
@@ -956,8 +971,8 @@ void wxApp::doMacContentClick(wxFrame* frame)
   theMouseEvent->metaDown = cCurrentEvent.modifiers & cmdKey;
   theMouseEvent->timeStamp = SCALE_TIMESTAMP(cCurrentEvent.when); // mflatt
 
-  int hitX = cCurrentEvent.where.h; // screen window c.s.
-  int hitY = cCurrentEvent.where.v; // screen window c.s.
+  hitX = cCurrentEvent.where.h; // screen window c.s.
+  hitY = cCurrentEvent.where.v; // screen window c.s.
   frameParentArea = frame->ParentArea();
   frameParentArea->ScreenToArea(&hitX, &hitY);
   theMouseEvent->x = hitX; // frame parent area c.s.
@@ -1086,7 +1101,7 @@ wxFrame* wxApp::findMacWxFrame(WindowPtr theMacWindow)
 void wxApp::AdjustCursor(void)
 {
   wxFrame* theMacWxFrame;
-  theMacWxFrame = findMacWxFrame(::FrontWindow());
+  theMacWxFrame = findMacWxFrame(FrontWindow());
   if (theMacWxFrame) {
     if (theMacWxFrame->cBusyCursor)
       wxSetCursor(wxHOURGLASS_CURSOR);
@@ -1100,10 +1115,12 @@ void wxApp::AdjustCursor(void)
 	 */
       Point p;
       wxArea* frameParentArea;
+      int hitX, hitY;
+
       GetMouse(&p);
       LocalToGlobal(&p);
-      int hitX = p.h; // screen window c.s.
-      int hitY = p.v; // screen window c.s.
+      hitX = p.h; // screen window c.s.
+      hitY = p.v; // screen window c.s.
       frameParentArea = theMacWxFrame->ParentArea();
       frameParentArea->ScreenToArea(&hitX, &hitY);
       if (!theMacWxFrame->AdjustCursor(hitX, hitY))

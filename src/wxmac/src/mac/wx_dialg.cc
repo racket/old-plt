@@ -114,8 +114,9 @@ void wxDialogBox::ShowModal(void)
 {
   Show(TRUE);
   if (!cFrame->IsModal()) {
-    while (IsShown())
+    while (IsShown()) {
       wxTheApp->MainLoop();
+    }
   }
 }
 
@@ -163,6 +164,18 @@ Bool wxDialogBox::OnClose(void)
 
 # define DIALOG_BORDER_STYLE wxMAXIMIZE
 
+static wxFrame *make_dlog_frame(wxWindow *parentFrame, char *windowTitle, int x, int y, int width, int height, int style, char *windowName, WXTYPE objectType)
+{
+  return new wxFrame((wxFrame *)parentFrame, windowTitle, 
+		     x, y,
+		     width, height, 
+		     (style | wxMDI_CHILD 
+		      | ((style & DIALOG_BORDER_STYLE) 
+			 ? 0
+			 : wxNO_RESIZE_BORDER)), 
+		     windowName, objectType);
+}
+
 //-----------------------------------------------------------------------------
 wxDialogBox::wxDialogBox // Constructor (for dialog window)
 (
@@ -177,25 +190,23 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
  char*		windowName,
  WXTYPE		objectType
  ) :
- wxPanel (new wxFrame((wxFrame *)parentFrame, windowTitle, 
-		      x, y,
-		      width, height, 
-		      (style | wxMDI_CHILD 
-		       | ((style & DIALOG_BORDER_STYLE) 
-			  ? 0
-			  : wxNO_RESIZE_BORDER)), 
-		      windowName, objectType),
-	  0, 0, width, height),
-	  cButtonPressed (0)
+ wxPanel (make_dlog_frame(parentFrame, windowTitle, x, y, width, height, style, windowName, objectType),
+	  0, 0, width, height)
 {
   int w, h;
 
+  cButtonPressed = 0;
+
   WXGC_IGNORE(this, cFrame);
-  
-  cFrame = (wxFrame *)GetParent();
+
+  {
+    wxWindow *parent;
+    parent = GetParent();
+    cFrame = (wxFrame *)parent;
+  }
   cFrame->cDialogPanel = this;
   cFrame->MakeModal(modal);
-  
+
   /* Set dialog panel to frame's client size: */
   cFrame->GetClientSize(&w, &h);
   SetSize(-1, -1, w, h, 0x70);
@@ -213,7 +224,9 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 wxDialogBox::~wxDialogBox()
 {
   if (cFrame) {
-    wxTopLevelWindows(ContextWindow())->DeleteObject(cFrame);
+    wxChildList *tlw;
+    tlw = wxTopLevelWindows(ContextWindow());
+    tlw->DeleteObject(cFrame);
     cFrame = NULL;
   }
 }
@@ -437,10 +450,12 @@ char *wxFileSelector(char *message, char *default_path,
     cbi->force_extension = NULL;
 
     NavGetDefaultDialogCreationOptions(&dialogOptions);
-    if (default_filename) 
+    if (default_filename)  {
       dialogOptions.saveFileName = CFStringCreateWithCString(NULL,default_filename,CFStringGetSystemEncoding());
-    if (message)
+    }
+    if (message) {
       dialogOptions.message = CFStringCreateWithCString(NULL,message,CFStringGetSystemEncoding());
+    }
     dialogOptions.modality = kWindowModalityAppModal;
 
     if (flags & wxBUNDLES_ENTER)
@@ -464,7 +479,9 @@ char *wxFileSelector(char *message, char *default_path,
 	f = NULL;
 
       if (f) {
-	dialogOptions.parentWindow = GetWindowFromPort(f->MacDC()->macGrafPort());
+	CGrafPtr graf;
+	graf = f->MacDC()->macGrafPort();
+	dialogOptions.parentWindow = GetWindowFromPort(graf);
 	dialogOptions.modality = kWindowModalityWindowModal;
       }
     }
@@ -526,7 +543,11 @@ char *wxFileSelector(char *message, char *default_path,
     }
     
     // get the user's reply:
+#ifdef MZ_PRECISE_GC
+    reply = (NavReplyRecord *)scheme-malloc_atomic(sizeof(NavReplyRecord));
+#else
     reply = new NavReplyRecord;
+#endif
     if (NavDialogGetReply(outDialog,reply) != noErr) {
       NavDialogDispose(outDialog);
       return NULL;
@@ -551,9 +572,11 @@ char *wxFileSelector(char *message, char *default_path,
       for (index=1; index<=count; index++) {
 	temp = GetNthPath(reply, index);
         if (temp != NULL) {
-          newpath = new WXGC_ATOMIC char[strlen(aggregate) + 
-                                         strlen(temp) +
-                                         log_base_10(strlen(temp)) + 3];
+	  long size;
+	  size = (strlen(aggregate) 
+		  + strlen(temp)
+		  + log_base_10(strlen(temp)) + 3);
+          newpath = new WXGC_ATOMIC char[size];
           sprintf(newpath,"%s %ld %s",aggregate,strlen(temp),temp);
           aggregate = newpath;
         }

@@ -104,12 +104,12 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
   unsigned int biBitCount, biCompression, biSizeImage, biXPelsPerMeter;
   unsigned int biYPelsPerMeter, biClrUsed, biClrImportant;
   char         *cmpstr;
-  byte         *pic24, *pic8;
+  byte         *lpic24, *pic8;
   char          buf[512];
 
   /* returns '1' on success */
 
-  pic8 = pic24 = (byte *) NULL;
+  pic8 = lpic24 = (byte *) NULL;
 
 #ifdef wx_mac
   fp=fopen(fname,"rb");
@@ -184,21 +184,26 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
   
   /* skip ahead to colormap, using biSize */
   c = biSize - 40;    /* 40 bytes read from biSize to biClrImportant */
-  for (i=0; i<c; i++) getc(fp);
+  for (i=0; i<c; i++) {
+    getc(fp);
+  }
 
 
   /* load up colormap, if any */
   if (biBitCount!=24) {
-    int i, cmaplen;
-
-	if ((biBitCount < 16) && biClrUsed)
-	  cmaplen = biClrUsed;
-	else
+    int i, cmaplen, c;
+    
+    if ((biBitCount < 16) && biClrUsed)
+      cmaplen = biClrUsed;
+    else
       cmaplen = 1 << biBitCount;
     for (i=0; i<cmaplen; i++) {
-      pinfo->b[i] = getc(fp);
-      pinfo->g[i] = getc(fp);
-      pinfo->r[i] = getc(fp);
+      c = getc(fp);
+      pinfo->b[i] = c;
+      c = getc(fp);
+      pinfo->g[i] = c;
+      c = getc(fp);
+      pinfo->r[i] = c;
       // JACS code to fit in with old xv
       r[i] = rorg[i] = pinfo->r[i];
       b[i] = borg[i] = pinfo->b[i];
@@ -222,8 +227,10 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
   /* create pic8 or pic24 */
 
   if (biBitCount==24) {
-    pic24 = (byte *) calloc(biWidth * biHeight * 3, 1);
-    if (!pic24) {
+    void *v;
+    v = calloc(biWidth * biHeight * 3, 1);
+    lpic24 = (byte *) v;
+    if (!lpic24) {
       fclose(fp);
       return (bmpError(fname, "couldn't malloc 'pic24'"));
     }
@@ -242,7 +249,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
 					  biCompression);
   else if (biBitCount == 8) rv = loadBMP8(fp,pic8,biWidth,biHeight,
 					  biCompression);
-  else                      rv = loadBMP24(fp,pic24,biWidth,biHeight);
+  else                      rv = loadBMP24(fp,lpic24,biWidth,biHeight);
 
   if (rv) bmpError(fname, "File appears truncated.  Winging it.\n");
 
@@ -250,7 +257,7 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
 
 
   if (biBitCount == 24) {
-    pinfo->pic  = pic24;
+    pinfo->pic  = lpic24;
     pinfo->type = PIC24;
   }
   else {
@@ -286,13 +293,13 @@ int wxImage::LoadBMP(char *fname, PICINFO *pinfo)
 static int loadBMP1(FILE *fp, byte *pic8, int w, int h)
 {
   int   i,j,c,bitnum,padw;
-  byte *pp;
+  long pp;
 
   c = 0;
   padw = ((w + 31)/32) * 32;  /* 'w', padded to be a multiple of 32 */
 
   for (i=h-1; i>=0; i--) {
-    pp = pic8 + (i * w);
+    pp = (i * w);
     for (j=bitnum=0; j<padw; j++,bitnum++) {
       if ((bitnum&7) == 0) { /* read the next byte */
 	c = getc(fp);
@@ -300,7 +307,7 @@ static int loadBMP1(FILE *fp, byte *pic8, int w, int h)
       }
       
       if (j<w) {
-	*pp++ = (c & 0x80) ? 1 : 0;
+	pic8[pp++] = (c & 0x80) ? 1 : 0;
 	c <<= 1;
       }
     }
@@ -316,7 +323,7 @@ static int loadBMP1(FILE *fp, byte *pic8, int w, int h)
 static int loadBMP4(FILE *fp, byte *pic8, int w, int h, int comp)
 {
   int   i,j,c,c1,x,y,nybnum,padw,rv;
-  byte *pp;
+  long pp;
 
 
   rv = 0;
@@ -326,7 +333,7 @@ static int loadBMP4(FILE *fp, byte *pic8, int w, int h, int comp)
     padw = ((w + 7)/8) * 8; /* 'w' padded to a multiple of 8pix (32 bits) */
 
     for (i=h-1; i>=0; i--) {
-      pp = pic8 + (i * w);
+      pp = (i * w);
       for (j=nybnum=0; j<padw; j++,nybnum++) {
 		if ((nybnum & 1) == 0) { /* read next byte */
 		  c = getc(fp);
@@ -334,7 +341,7 @@ static int loadBMP4(FILE *fp, byte *pic8, int w, int h, int comp)
 		}
 
 		if (j<w) {
-		  *pp++ = (c & 0xf0) >> 4;
+		  pic8[pp++] = (c & 0xf0) >> 4;
 		  c <<= 4;
 		}
       }
@@ -344,22 +351,23 @@ static int loadBMP4(FILE *fp, byte *pic8, int w, int h, int comp)
 
   else if (comp == BI_RLE4) {  /* read RLE4 compressed data */
     x = y = 0;  
-    pp = pic8 + x + (h-y-1)*w;
+    pp = x + (h-y-1)*w;
 
     while (y<h) {
       c = getc(fp);  if (c == EOF) { rv = 1;  break; }
 
       if (c) {                                   /* encoded mode */
 	c1 = getc(fp);
-	for (i=0; i<c; i++,x++,pp++) 
-	  *pp = (i&1) ? (c1 & 0x0f) : ((c1>>4)&0x0f);
+	for (i=0; i<c; i++,x++,pp++)  {
+	  pic8[pp] = (i&1) ? (c1 & 0x0f) : ((c1>>4)&0x0f);
+	}
       }
 
       else {    /* c==0x00  :  escape codes */
 	c = getc(fp);  if (c == EOF) { rv = 1;  break; }
 
 	if      (c == 0x00) {                    /* end of line */
-	  x=0;  y++;  pp = pic8 + x + (h-y-1)*w;
+	  x=0;  y++;  pp = x + (h-y-1)*w;
 	} 
 
 	else if (c == 0x01) break;               /* end of pic8 */
@@ -367,13 +375,13 @@ static int loadBMP4(FILE *fp, byte *pic8, int w, int h, int comp)
 	else if (c == 0x02) {                    /* delta */
 	  c = getc(fp);  x += c;
 	  c = getc(fp);  y += c;
-	  pp = pic8 + x + (h-y-1)*w;
+	  pp = x + (h-y-1)*w;
 	}
 
 	else {                                   /* absolute mode */
 	  for (i=0; i<c; i++, x++, pp++) {
 	    if ((i&1) == 0) c1 = getc(fp);
-	    *pp = (i&1) ? (c1 & 0x0f) : ((c1>>4)&0x0f);
+	    pic8[pp] = (i&1) ? (c1 & 0x0f) : ((c1>>4)&0x0f);
 	  }
 	  
 	  if (((c&3)==1) || ((c&3)==2)) getc(fp);  /* read pad byte */
@@ -397,7 +405,7 @@ static int loadBMP4(FILE *fp, byte *pic8, int w, int h, int comp)
 static int loadBMP8(FILE *fp, byte *pic8, int w, int h, int comp)
 {
   int   i,j,c,c1,padw,x,y,rv;
-  byte *pp;
+  long pp;
 
   rv = 0;
 
@@ -405,14 +413,14 @@ static int loadBMP8(FILE *fp, byte *pic8, int w, int h, int comp)
     padw = ((w + 3)/4) * 4; /* 'w' padded to a multiple of 4pix (32 bits) */
 
     for (i=h-1; i>=0; i--) {
-      pp = pic8 + (i * w);
+      pp = (i * w);
 
       for (j=0; j<padw; j++) {
 		c = getc(fp);  
 		if (c==EOF) 
 			rv = 1;
 		if (j<w) 
-			*pp++ = c;
+			pic8[pp++] = c;
       }
       if (ferror(fp)) break;
     }
@@ -420,21 +428,23 @@ static int loadBMP8(FILE *fp, byte *pic8, int w, int h, int comp)
 
   else if (comp == BI_RLE8) {  /* read RLE8 compressed data */
     x = y = 0;  
-    pp = pic8 + x + (h-y-1)*w;
+    pp = x + (h-y-1)*w;
 
     while (y<h) {
       c = getc(fp);  if (c == EOF) { rv = 1;  break; }
 
       if (c) {                                   /* encoded mode */
 	c1 = getc(fp);
-	for (i=0; i<c; i++,x++,pp++) *pp = c1;
+	for (i=0; i<c; i++,x++,pp++) {
+	  pic8[pp] = c1;
+	}
       }
 
       else {    /* c==0x00  :  escape codes */
 	c = getc(fp);  if (c == EOF) { rv = 1;  break; }
 
 	if      (c == 0x00) {                    /* end of line */
-	  x=0;  y++;  pp = pic8 + x + (h-y-1)*w;
+	  x=0;  y++;  pp = x + (h-y-1)*w;
 	} 
 
 	else if (c == 0x01) break;               /* end of pic8 */
@@ -442,13 +452,13 @@ static int loadBMP8(FILE *fp, byte *pic8, int w, int h, int comp)
 	else if (c == 0x02) {                    /* delta */
 	  c = getc(fp);  x += c;
 	  c = getc(fp);  y += c;
-	  pp = pic8 + x + (h-y-1)*w;
+	  pp = x + (h-y-1)*w;
 	}
 
 	else {                                   /* absolute mode */
 	  for (i=0; i<c; i++, x++, pp++) {
 	    c1 = getc(fp);
-	    *pp = c1;
+	    pic8[pp] = c1;
 	  }
 	  
 	  if (c & 1) getc(fp);  /* odd length run: read an extra pad byte */
@@ -472,21 +482,26 @@ static int loadBMP8(FILE *fp, byte *pic8, int w, int h, int comp)
 static int loadBMP24(FILE *fp, byte *pic24, int w, int h)
 {
   int   i,j,padb;
-  byte *pp;
-
+  long pp;
+  int c;
 
   padb = (4 - ((w*3) % 4)) & 0x03;  /* # of pad bytes to read at EOscanline */
 
   for (i=h-1; i>=0; i--) {
-    pp = pic24 + (i * w * 3);
+    pp = (i * w * 3);
     
     for (j=0; j<w; j++) {
-      *pp++ = getc(fp);   /* red   */
-      *pp++ = getc(fp);   /* green */
-      *pp++ = getc(fp);   /* blue  */
+      c = getc(fp);   /* red   */
+      pic24[pp++] = c;
+      c = getc(fp);   /* green */
+      pic24[pp++] = c;
+      c = getc(fp);   /* blue  */
+      pic24[pp++] = c;
     }
 
-    for (j=0; j<padb; j++) getc(fp);
+    for (j=0; j<padb; j++) {
+      getc(fp);
+    }
 
     if (ferror(fp)) break;
   }
@@ -564,7 +579,8 @@ int wxImage::WriteBMP(FILE *fp, byte *pic824, int ptype, int w, int h, byte *rma
    */
 
   int i,j, nc, nbits, bperlin, cmaplen;
-  byte *graypic, *sp, *dp, graymap[256];
+  byte *graypic, graymap[256];
+  long sp, dp;
 
   nc = nbits = cmaplen = 0;
   graypic = NULL;
@@ -576,11 +592,13 @@ int wxImage::WriteBMP(FILE *fp, byte *pic824, int ptype, int w, int h, byte *rma
     graypic = (byte *) XpmMallocA(w*h);
     if (!graypic) wxFatalError("unable to malloc in WriteBMP()");
 
-    for (i=0,sp=pic824,dp=graypic; i<w*h; i++,sp+=3, dp++) {
-      *dp = MONO(sp[0],sp[1],sp[2]);
+    for (i=0,sp=0,dp=0; i<w*h; i++,sp+=3, dp++) {
+      graypic[dp] = MONO(pic824[sp],pic824[sp+1],pic824[sp+2]);
     }
 
-    for (i=0; i<256; i++) graymap[i] = i;
+    for (i=0; i<256; i++) {
+      graymap[i] = i;
+    }
     rmap = gmap = bmap = graymap;
     numcols = 256;
     ptype = PIC8;
@@ -693,12 +711,12 @@ int wxImage::WriteBMP(FILE *fp, byte *pic824, int ptype, int w, int h, byte *rma
 static void writeBMP1(FILE *fp, byte *pic8, int w, int h)
 {
   int   i,j,c,bitnum,padw;
-  byte *pp;
+  long pp;
 
   padw = ((w + 31)/32) * 32;  /* 'w', padded to be a multiple of 32 */
 
   for (i=h-1; i>=0; i--) {
-    pp = pic8 + (i * w);  
+    pp = (i * w);  
 
     for (j=bitnum=c=0; j<=padw; j++,bitnum++) {
       if (bitnum == 8) { /* write the next byte */
@@ -709,7 +727,7 @@ static void writeBMP1(FILE *fp, byte *pic8, int w, int h)
       c <<= 1;
 
       if (j<w) {
-	c |= (pc2nc[*pp++] & 0x01);
+	c |= (pc2nc[pic8[pp++]] & 0x01);
       }
     }
   }
@@ -721,13 +739,13 @@ static void writeBMP1(FILE *fp, byte *pic8, int w, int h)
 static void writeBMP4(FILE *fp, byte *pic8, int w, int h)
 {
   int   i,j,c,nybnum,padw;
-  byte *pp;
+  long pp;
 
 
   padw = ((w + 7)/8) * 8; /* 'w' padded to a multiple of 8pix (32 bits) */
 
   for (i=h-1; i>=0; i--) {
-    pp = pic8 + (i * w);
+    pp = (i * w);
 
     for (j=nybnum=c=0; j<=padw; j++,nybnum++) {
       if (nybnum == 2) { /* write next byte */
@@ -738,7 +756,7 @@ static void writeBMP4(FILE *fp, byte *pic8, int w, int h)
       c <<= 4;
 
       if (j<w) {
-	c |= (pc2nc[*pp] & 0x0f);
+	c |= (pc2nc[pic8[pp]] & 0x0f);
 	pp++;
       }
     }
@@ -751,15 +769,19 @@ static void writeBMP4(FILE *fp, byte *pic8, int w, int h)
 static void writeBMP8(FILE *fp, byte *pic8, int w, int h)
 {
   int   i,j,padw;
-  byte *pp;
+  long pp;
 
   padw = ((w + 3)/4) * 4; /* 'w' padded to a multiple of 4pix (32 bits) */
 
   for (i=h-1; i>=0; i--) {
-    pp = pic8 + (i * w);
+    pp = (i * w);
 
-    for (j=0; j<w; j++) putc(pc2nc[*pp++], fp);
-    for ( ; j<padw; j++) putc(0, fp);
+    for (j=0; j<w; j++) {
+      putc(pc2nc[pic8[pp++]], fp);
+    }
+    for ( ; j<padw; j++) {
+      putc(0, fp);
+    }
   }
 }  
 
@@ -768,20 +790,22 @@ static void writeBMP8(FILE *fp, byte *pic8, int w, int h)
 static void writeBMP24(FILE *fp, byte *pic24, int w, int h)
 {
   int   i,j,padb;
-  byte *pp;
+  long pp;
 
   padb = (4 - ((w*3) % 4)) & 0x03;  /* # of pad bytes to write at EOscanline */
 
   for (i=h-1; i>=0; i--) {
-    pp = pic24 + (i * w * 3);
+    pp = (i * w * 3);
 
     for (j=0; j<w; j++) {
-      putc(*pp++, fp);
-      putc(*pp++, fp);
-      putc(*pp++, fp);
+      putc(pic24[pp++], fp);
+      putc(pic24[pp++], fp);
+      putc(pic24[pp++], fp);
     }
 
-    for (j=0; j<padb; j++) putc(0, fp);
+    for (j=0; j<padb; j++) {
+      putc(0, fp);
+    }
   }
 }  
 
@@ -810,15 +834,22 @@ unsigned short Mac_xform24(unsigned char c)
 Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
 	PICINFO		picinfo;		// defined in wx_imgx.h
-	wxImage *xbmImage  = new wxImage();
+	wxImage *xbmImage;
+	xbmImage = new wxImage();
 	if (xbmImage->LoadBMP(fileName, &picinfo) == 1) {
 		// CreateOffScreenPixMap(&colorPort, gifImage);
 		Rect bounds = {0, 0, picinfo.h, picinfo.w};
 		GDHandle savegw;
 		CGrafPtr saveport;
-		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;
+		RGBColor	cpix;
+		int y, x;
+		unsigned int abyte;
+		long buf;
+
+		GetGWorld(&saveport, &savegw);
+
 		err = NewGWorld(&newGWorld, 32, &bounds, NULL, NULL, 0);
 		if (err) {
 			bm->SetOk(FALSE);
@@ -828,29 +859,26 @@ Bool wxLoadBMPIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		SetGWorld(newGWorld, 0);
 		bm->x_pixmap = newGWorld;
 
-		RGBColor	cpix;
-		int y, x;
-		unsigned int byte;
-		unsigned char *buf = picinfo.pic;
+		buf = 0;
  		GetForeColor(&cpix);	// probably 0,0,0
  		::EraseRect(&bounds);
  		if (picinfo.type == PIC8) {
  			for (y = 0; y < picinfo.h; y++) {
- 				for (x = 0; x < picinfo.w; x++) {
- 					byte = *buf++;
-					cpix.red = Mac_xform24(picinfo.r[byte]);
-  					cpix.green = Mac_xform24(picinfo.g[byte]);
- 					cpix.blue = Mac_xform24(picinfo.b[byte]);
- 					::SetCPixel(x, y, &cpix);
- 				}
+			  for (x = 0; x < picinfo.w; x++) {
+			    abyte = picinfo.pic[buf++];
+			    cpix.red = Mac_xform24(picinfo.r[abyte]);
+			    cpix.green = Mac_xform24(picinfo.g[abyte]);
+			    cpix.blue = Mac_xform24(picinfo.b[abyte]);
+			    ::SetCPixel(x, y, &cpix);
+			  }
  			}
  		}
  		else { // must be 24 bit?
  			for (y = 0; y < picinfo.h; y++) {
  				for (x = 0; x < picinfo.w; x++) {
- 					cpix.blue = Mac_xform24(*buf++);
- 					cpix.green = Mac_xform24(*buf++);
- 					cpix.red = Mac_xform24(*buf++);
+ 					cpix.blue = Mac_xform24(picinfo.pic[buf++]);
+ 					cpix.green = Mac_xform24(picinfo.pic[buf++]);
+ 					cpix.red = Mac_xform24(picinfo.pic[buf++]);
  					::SetCPixel(x, y, &cpix);
  				}
  			}

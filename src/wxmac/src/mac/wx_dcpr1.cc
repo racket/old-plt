@@ -25,6 +25,8 @@
 //-----------------------------------------------------------------------------
 wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
 {
+  PMRect pageRect;
+  
   ok = true;
 
   __type = wxTYPE_DC_PRINTER;
@@ -55,8 +57,6 @@ wxPrinterDC::wxPrinterDC(wxPrintData *printData) : wxCanvasDC()
   min_x = 0; min_y = 0;
   max_x = 0; max_y = 0;
 
-  PMRect pageRect;
-  
   PMGetAdjustedPageRect(cPrintData->cPageFormat,&pageRect);
   pixmapWidth = (int)(pageRect.right - pageRect.left);
   pixmapHeight = (int)(pageRect.bottom - pageRect.top);

@@ -124,18 +124,22 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
   Callback(function);
   cMacControl = NULL;
   
-  ::SetRect(&bounds, 0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth());
+  ::SetRect(&bounds, 0, 0, buttonBitmap->GetWidth(), buttonBitmap->GetHeight());
   cWindowHeight = bounds.bottom;
   cWindowWidth = bounds.right + IR_CIRCLE_SIZE + IR_X_SPACE;
   if (cWindowHeight < IR_MIN_HEIGHT)
     cWindowHeight = IR_MIN_HEIGHT;
   OffsetRect(&bounds,SetOriginX,SetOriginY);
   
-  if (SetCurrentMacDC())
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
-
   if (GetParent()->IsHidden())
     DoShow(FALSE);
+  else {
+    int vis;
+    vis = SetCurrentMacDC();
+    if (vis)
+    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
+  }
+
   InitInternalGray();
 }
 
@@ -234,6 +238,7 @@ void wxRadioButton::Paint(void)
   SetCurrentDC();
   { 
     Rect r = { 0, 0, cWindowHeight, cWindowWidth};
+
     OffsetRect(&r,SetOriginX,SetOriginY);
     ::EraseRect(&r);
     if (cMacControl) {
@@ -312,6 +317,7 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
     if (event->LeftDown()) {
       int startH, startV;
       Point startPt;
+      int trackResult;
 
       SetCurrentDC();
       
@@ -319,7 +325,6 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
       
       startPt.v = startV + SetOriginY; // port c.s.
       startPt.h = startH + SetOriginX;
-      int trackResult;
       if (::StillDown()) {
 	if (cMacControl)
 	  trackResult = ::TrackControl(cMacControl, startPt, NULL);

@@ -44,7 +44,6 @@ wxDefaultFileSelector(Bool load, const char *what, char *extension, char *defaul
 
   sprintf(prompt, load ? "Get File" : "Save File", what);
 
-  if (*extension == '.') extension++;
   sprintf(wild, "*.%s", extension);
   return wxFileSelector (prompt, NULL, default_name, (char *)extension, wild, load ? wxOPEN : wxSAVE);
 }
@@ -79,7 +78,9 @@ Bool wxbDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 
 wxbDialogBox::~wxbDialogBox()
 {
-  wxTopLevelWindows(ContextWindow())->DeleteObject(this);
+  wxChildList *tlw;
+  tlw = wxTopLevelWindows(ContextWindow());
+  tlw->DeleteObject(this);
 }
 
 void wxbDialogBox::Centre(int direction)

@@ -92,8 +92,9 @@ void wxCleanUp(void)
 Bool wxYield(void)
 { // Yield to incoming messages
 
-  while (wxTheApp->Pending())
+  while (wxTheApp->Pending()) {
     wxTheApp->Dispatch();
+  }
   
   return TRUE;
 }

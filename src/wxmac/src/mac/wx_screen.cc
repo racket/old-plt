@@ -14,7 +14,16 @@
 # include <QuickDraw.h>
 #endif
 
+/* The gScreenWindow declaration confises xform.ss. */
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 wxScreen* wxScreen::gScreenWindow = NULL; // mac platform only
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 //=============================================================================
 // Construction methods

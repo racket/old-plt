@@ -29,7 +29,8 @@ void wxCanvasDC::Clear(void)
      //-----------------------------------------------------------------------------
 {
   int w, h;
-
+  Rect theClearRect;
+  
   if (!Ok() || !cMacDC) return;
   
   SetCurrentDC();
@@ -42,7 +43,7 @@ void wxCanvasDC::Clear(void)
     h = pixmapHeight;
   }
 
-  Rect theClearRect = {0, 0, h, w};
+  ::SetRect(&theClearRect, 0, 0, w, h);
   OffsetRect(&theClearRect,SetOriginX,SetOriginY);
   ::EraseRect(&theClearRect);
 
@@ -190,13 +191,15 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
 
   dc->SetClippingRegion(r);
 
-  for (i = xstart; i < xend; i++)
-    for (j = ystart; j < yend; j++)
+  for (i = xstart; i < xend; i++) {
+    for (j = ystart; j < yend; j++) {
       dc->Blit(dc->DeviceToLogicalX(i * bw), 
                dc->DeviceToLogicalY(j * bh), 
                dc->DeviceToLogicalXRel(bw), 
                dc->DeviceToLogicalYRel(bh),
                bm, 0, 0, style, c);
+    }
+  }
 
   dc->SetClippingRegion(old);
 }
@@ -690,15 +693,17 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
      the normal one will work, but we need to be careful about shifting the
      current drawing port. So we do the setup manually here and restore it
      completely. */
-  Bool ok;
+  Bool isok;
   CGrafPtr savep;
   GDHandle savegd;
   ThemeDrawingState state;
   long ox, oy;
-  
+  Rect largestClipRect = {-32767, -32767, 32767, 32767};
+  CGrafPtr theMacGrafPort;
+
   ::GetGWorld(&savep, &savegd);  
 
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  theMacGrafPort = cMacDC->macGrafPort();
   if (IsPortOffscreen(theMacGrafPort)) {
     ::SetGWorld(theMacGrafPort, NULL);
   } else {
@@ -720,10 +725,9 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   BackPat(GetWhitePattern());
   PenMode(patCopy);
 
-  Rect largestClipRect = {-32767, -32767, 32767, 32767};
   ::ClipRect(&largestClipRect);
 
-  ok = Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
+  isok = Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
 
   noDCSet = 0;
 
@@ -736,7 +740,7 @@ Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
   if (canvas)
     canvas->FlushDisplay();
 
-  return ok;
+  return isok;
 }
 
 void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)

@@ -85,14 +85,17 @@ wxPanel::~wxPanel(void)
 //-----------------------------------------------------------------------------
 void wxPanel::CreateWxPanel(int x, int y, int w, int h) // common constructor initialization
 {
+  wxWindow *parent;
+
   InitDefaults();
 
   SetEraser(wxCONTROL_BACKGROUND_BRUSH);
 
-  if (cStyle & wxBORDER) 
+  if (cStyle & wxBORDER)  {
     cPanelBorder = new wxBorderArea(this, 1, wxAll, 1);
+  }
 
-  wxWindow *parent = GetParent();
+  parent = GetParent();
   if (wxSubType(parent->__type, wxTYPE_PANEL)) {
     if (parent->IsHidden())
       DoShow(FALSE);

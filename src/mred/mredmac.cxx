@@ -43,10 +43,12 @@ extern "C" {
   typedef void (*HANDLE_AE)(EventRecord *e);
 }
 
-static void QueueTransferredEvent(EventRecord *e);
-typedef struct MrQueueElem *MrQueueRef;
+class MrQueueElem; /* defined below */
 
-typedef struct {
+static void QueueTransferredEvent(EventRecord *e);
+typedef MrQueueElem *MrQueueRef;
+
+class EventFinderClosure {
   int check_only;
   MrEdContext *c;
   MrEdContext *keyOk;
@@ -55,7 +57,7 @@ typedef struct {
   int (*checker)(EventRecord *evt, MrQueueRef q, int check_only, 
                  MrEdContext *c, MrEdContext *keyOk, 
 	         EventRecord *event, MrEdContext **which);
-} EventFinderClosure;
+};
 
 static int queue_size, max_queue_size;
 
@@ -81,7 +83,8 @@ static wxFrame *_wxWindowPtrToFrame(WindowPtr w, wxChildList *l)
   wxChildNode *n;
 
   for (n = l->First(); n; n = n->Next()) {
-    wxFrame *f = (wxFrame *)n->Data();
+    wxFrame *f;
+    f = (wxFrame *)n->Data();
     if (f->macWindow() == w)
       return f;
   }
@@ -124,11 +127,11 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
 */
 
 
-typedef struct MrQueueElem {
+class MrQueueElem {
   EventRecord event;
   RgnHandle rgn;
-  struct MrQueueElem *next, *prev;
-} MrQueueElem;
+  MrQueueElem *next, *prev;
+};
 
 static MrQueueElem *first, *last;
 
@@ -513,9 +516,11 @@ static int CheckForLeave(EventRecord *evt, MrQueueRef q, int check_only,
   switch (evt->what) {
   case leaveEvt:
     {
-      wxWindow *win = (wxWindow *)evt->message;
+      wxWindow *win;
       wxFrame *fr;
       MrEdContext *fc;
+
+      win = (wxWindow *)evt->message;
 
       if ((win->__type != -1) && win->IsShown()) {
 	fr = (wxFrame *)win->GetRootFrame();

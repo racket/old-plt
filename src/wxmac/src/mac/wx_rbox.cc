@@ -16,11 +16,8 @@
 #include "wx_area.h"
 #include "wxBorderArea.h"
 
-#define MEANING_CHARACTER	'0'
-
 //-----------------------------------------------------------------------------
-void wxRadioButtonProc(wxRadioButton& radioButton, wxCommandEvent& event);
-void wxRadioButtonProc(wxRadioButton& radioButton, wxCommandEvent& event)
+static void wxRadioButtonProc(wxRadioButton *radioButton, wxCommandEvent *event)
 {
   wxPanel* radioPanel;
   wxWindow *rb;
@@ -28,13 +25,13 @@ void wxRadioButtonProc(wxRadioButton& radioButton, wxCommandEvent& event)
   wxCommandEvent *commandEvent;
   int radioButtonIndex;
 
-  radioPanel = (wxPanel*)radioButton.GetParent();
+  radioPanel = (wxPanel*)radioButton->GetParent();
   rb = radioPanel;
   while (wxSubType(rb->__type, wxTYPE_PANEL)) {
     rb = rb->GetParent();
   }
   radioBox = (wxRadioBox *)rb;
-  radioButtonIndex = radioBox->cRadioButtons->MemberIndex(&radioButton);
+  radioButtonIndex = radioBox->cRadioButtons->MemberIndex(radioButton);
   radioBox->SetSelection(radioButtonIndex);
 
   commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
@@ -95,7 +92,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, label choices)
     choice = wxItemStripLabel(Choices[i]);
     if (i && ((style & wxVERTICAL) == wxVERTICAL))
       buttonHolder->NewLine();
-    radioButton = new wxRadioButton(buttonHolder, (wxFunction)&wxRadioButtonProc, choice);
+    radioButton = new wxRadioButton(buttonHolder, (wxFunction)wxRadioButtonProc, choice);
     cRadioButtons->Append(radioButton);
   }
   SetSelection(0);
@@ -161,7 +158,7 @@ wxRadioBox::wxRadioBox // Constructor (given parentPanel, bitmap choices)
     wxRadioButton* radioButton;
     if (i && ((style & wxVERTICAL) == wxVERTICAL))
       buttonHolder->NewLine();
-    radioButton = new wxRadioButton(buttonHolder, (wxFunction)&wxRadioButtonProc, Choices[i]);
+    radioButton = new wxRadioButton(buttonHolder, (wxFunction)wxRadioButtonProc, Choices[i]);
     cRadioButtons->Append(radioButton);
   }
   SetSelection(0);

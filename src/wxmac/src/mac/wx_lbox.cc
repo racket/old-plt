@@ -186,7 +186,7 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   cellwid = boxWidth - (vscrollwanted ? KSBWidth : 0);
   cellsize.v = (int)tHeight;
   cellsize.h = cellwid;
-  ::SetRect(&viewRect, VIEW_RECT_OFFSET, VIEW_RECT_OFFSET, boxHeight - VIEW_RECT_OFFSET, cellwid - VIEW_RECT_OFFSET);
+  ::SetRect(&viewRect, VIEW_RECT_OFFSET, VIEW_RECT_OFFSET, cellwid - VIEW_RECT_OFFSET, boxHeight - VIEW_RECT_OFFSET);
   cHaveVScroll = vscrollwanted;			// needed by OnClientAreaDSize or Paint
 
   flags = (alDoVertScroll
@@ -241,10 +241,12 @@ wxListBox::~wxListBox(void)
 //------------ Event Handling --------------------------------------
 void wxListBox::Paint(void)
 {
+  RgnHandle visibleRgn;
+
   if (cHidden) return;
 
   SetCurrentDC();
-  RgnHandle visibleRgn = NewRgn();
+  visibleRgn = NewRgn();
   if (visibleRgn) {
     GetPortVisibleRegion(cMacDC->macGrafPort(),visibleRgn);
     ::ALUpdate(visibleRgn, cListReference);
@@ -286,8 +288,11 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     // Changing the size
     Rect cellRect;
     LongPt cell = {0,0};
+    Point size;
+
     ALGetCellRect(&cellRect,&cell,cListReference);
-    Point size = {cellRect.bottom - cellRect.top, clientWidth };
+    size.v = cellRect.bottom - cellRect.top;
+    size.h = clientWidth;
     ALSetCellSize(size, cListReference);
   }
 
@@ -305,12 +310,15 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
   if (event->leftDown || event->rightDown) {
     int startH;
     int startV;
+    Point startPt;
+    int modifiers = 0;
+
     event->Position(&startH,&startV); // client c.s.
 
     SetCurrentDC();
     
-    Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
-    int modifiers = 0;
+    startPt.v = startV + SetOriginY; // port c.s.
+    startPt.h = startH + SetOriginX;
     if (event->shiftDown)
       modifiers += shiftKey;
     if (event->altDown)
@@ -386,7 +394,8 @@ void wxListBox::OnChar(wxKeyEvent *event)
     break;
   case WXK_RETURN:
   case /* WXK_ENTER */ 3:
-    wxPanel *panel = (wxPanel *)GetParent();
+    wxPanel *panel;
+    panel = (wxPanel *)GetParent();
     panel->OnDefaultAction(this);
     break;
   }
@@ -430,11 +439,12 @@ void wxListBox::OnChar(wxKeyEvent *event)
       int i;
       LongPt next;
       next.h = now.h;
-      for (i = 0; i < no_items; i++)
+      for (i = 0; i < no_items; i++) {
 	if (i != save.v) {
 	  next.v = i;
 	  ALSetSelect(FALSE, &next, cListReference);
 	}
+      }
     }
 
     ALSetSelect(TRUE, &next, cListReference);
@@ -558,8 +568,12 @@ ALSearchUPP strcmpUPP = NewALSearchProc(MyStringCompare);
 int wxListBox::FindString(char *s)
 {
   LongPt cell = {0, 0};
-  StringPtr pstr = (StringPtr)NewPtr(strlen(s) + 1);
+  StringPtr pstr;
+  char *ss;
   int result;
+
+  ss = new char[strlen(s) + 1];
+  pstr = (StringPtr)ss;
   
   CopyCStringToPascal(s,pstr);
   
@@ -608,11 +622,12 @@ void wxListBox::SetString(int N, char *s)
   LongPt cell = {N, 0};
   StringHandle oldHandle; 
   Str255 temp;
+  StringHandle newHandle;
 
   SetCurrentDC();
   ALGetCell((void **)&oldHandle,&cell,cListReference);
   CopyCStringToPascal(s,temp);
-  StringHandle newHandle = NewString(temp);
+  newHandle = NewString(temp);
   ALSetCell(newHandle, &cell, cListReference);
   DisposeHandle((Handle)oldHandle);
   ReleaseCurrentDC();
@@ -692,7 +707,9 @@ void wxListBox::SetFirstItem(int N)
 
 void wxListBox::SetFirstItem(char *s) 
 {
-  int N = FindString(s) ;
+  int N;
+
+  N = FindString(s) ;
 
   if (N>=0)
     SetFirstItem(N) ;
@@ -789,7 +806,9 @@ void wxListBox::Deselect(int N)
 int wxListBox::GetSelections(int **list_selections)
 {
   LongPt cell = {0, 0};
-  long n = ALGetNumberSelected(cListReference);
+  long n;
+
+  n = ALGetNumberSelected(cListReference);
   
   if (n <= 0)
     return 0;
@@ -871,8 +890,10 @@ void wxListBox::DoShow(Bool on)
 
   if (on) {
     /* May need to do some things we skipped while hidden: */
+    int v;
     OnClientAreaDSize(1, 1, 1, 1);
-    ALActivate(cActive && OS_Active(), cListReference);
+    v = OS_Active();
+    ALActivate(cActive && v, cListReference);
   }
 }
 
@@ -897,8 +918,10 @@ void wxListBox::ChangeToGray(Bool gray)
 void wxListBox::Activate(Bool on)
 {
   if (!cHidden) {
+    int v;
     SetCurrentDC();
-    ALActivate(on && OS_Active(), cListReference);
+    v = OS_Active();
+    ALActivate(on && v, cListReference);
     ReleaseCurrentDC();
   }
 

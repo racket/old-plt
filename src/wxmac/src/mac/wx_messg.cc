@@ -215,7 +215,7 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
   if (!font) 
     font = wxNORMAL_FONT; // WCH: kludge
   if (font) {
-    font->GetTextExtent(cMessage, &clientWidth, &clientHeight, NULL, NULL);
+    font->GetTextExtent(cMessage, 0, &clientWidth, &clientHeight, NULL, NULL);
     if (font->GetStyle() != wxNORMAL)
       clientWidth += 5; //cjc - try hello.cc italic labels are truncated
   }
@@ -266,7 +266,11 @@ void wxMessage::SetLabel(wxBitmap *bitmap)
 void wxMessage::SetLabel(char* label)
 {
   if (sBitmap || icon_id) return;
-  cMessage = macCopyString0(wxItemStripLabel(label));
+  {
+    char *s;
+    s = macCopyString0(wxItemStripLabel(label));
+    cMessage = s;
+  }
   if (!cHidden) {
     Paint();
     FlushDisplay();
@@ -283,8 +287,10 @@ void wxMessage::Paint(void)
 
   if (SetCurrentDC()) {
     int clientWidth, clientHeight;
+    Rect clientRect;
+
     GetClientSize(&clientWidth, &clientHeight);
-    Rect clientRect = {0, 0, clientHeight, clientWidth};
+    ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
     ::EraseRect(&clientRect);
 	  

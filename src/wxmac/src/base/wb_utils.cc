@@ -119,6 +119,9 @@ wxPathOnly (char *path)
 {
   if (path && *path)
     {
+      int i, l;
+      Bool done;
+
       if (!po_buf) {
 	wxREGGLOB(po_buf);
 	po_buf = new char[_MAXPATHLEN];
@@ -127,10 +130,10 @@ wxPathOnly (char *path)
       // Local copy
       strcpy (po_buf, path);
 
-      int l = strlen(path);
-      Bool done = FALSE;
+      l = strlen(path);
+      done = FALSE;
 
-      int i = l - 1;
+      i = l - 1;
 
       // Search backward for a backward or forward slash
       while (!done && i > -1)

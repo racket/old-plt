@@ -31,18 +31,16 @@
 #include <stdlib.h>
 #include "wx_dcps.h"
 
-pascal void printIdle(void)
-{
-  EventRecord theEvent;
-  while (GetNextEvent(24,&theEvent)) {
-    if ((theEvent.modifiers & cmdKey) &&
-	(theEvent.message & 0xff) =='.') 
-      wxPrinter::abortIt = TRUE;
-  }
-}
+/* The abortIt declaration confises xform.ss. */
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
 
-PMIdleUPP printIdleUPP = NewPMIdleUPP(printIdle);
+wxPrinter::abortIt = 0;
 
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif
 
 wxPrintDialog::wxPrintDialog(wxWindow *p, wxPrintData *data):
   wxDialogBox((wxFrame *)p, "Printer Dialog")
@@ -241,14 +239,10 @@ wxPrinter::wxPrinter()
   //lpAbortProc = MakeProcInstance((FARPROC) wxAbortProc, wxhInstance);
 }
 
-wxWindow *wxPrinter::abortWindow = NULL;
-Bool wxPrinter::abortIt = FALSE;
-
 void wxRegisterAbortWindow();
 
 void wxRegisterAbortWindow()
 {
-  wxREGGLOB(wxPrinter::abortWindow);
 }
 
 wxPrinter::~wxPrinter(void)
@@ -265,9 +259,8 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   PMResolution res;
   Bool keepGoing = TRUE;
   int copyCount;
-  
-  abortIt = FALSE;
-  abortWindow = NULL;
+  float w, h;
+  wxDC* dc;
 
   if (!printout)
     return FALSE;
@@ -307,8 +300,9 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   
   if (prompt) {
     Bool goAhead;
-    
-    wxPrintDialog *dialog = new wxPrintDialog(parent, printData);
+    wxPrintDialog *dialog;
+
+    dialog = new wxPrintDialog(parent, printData);
     dialog->ShowSetupDialog(TRUE);
     goAhead = dialog->UseIt();
     if (goAhead == FALSE) 
@@ -323,7 +317,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   }
   
   // Create a suitable device context  
-  wxDC *dc = new wxPrinterDC(printData); 
+  dc = new wxPrinterDC(printData); 
 
   if (!dc->Ok()) {
     if (dc) delete dc; // PrSetError
@@ -343,15 +337,12 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   printout->SetDC(dc);
 
   ///// TODO figure the equivalent
-    float w, h;
   dc->GetSize(&w, &h);
   printout->SetPageSizePixels((int)w, (int)h);
   //dc->GetSizeMM(&w, &h);
   dc->GetSize(&w, &h);
   printout->SetPageSizeMM((int)w, (int)h);
 
-  // PMSessionSetIdleProc(printData->cPrintSession, printIdleUPP);
-  
   printout->OnBeginPrinting();
   
   for (copyCount = 1; copyCount <= printData->GetNoCopies(); copyCount ++) {
@@ -361,25 +352,13 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
       wxMessageBox("Could not start printing.", "Print Error");
       break;
     }
-    if (abortIt) {
-      printData->SetAbortFlag();
-      new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
-      break;
-    }
     for (pn = printData->GetFromPage(); 
 	 keepGoing && 
 	 (pn <= printData->GetToPage()) && printout->HasPage(pn);
 	 pn++) {
-      if (abortIt) {
-	printData->SetAbortFlag();
-	new wxDialogBox(parent, "Print Aborted", 0, 0, 400, 400);
-	keepGoing = FALSE;
-	break;
-      } else {      
-	dc->StartPage();
-	printout->OnPrintPage(pn);
-	dc->EndPage();
-      }
+      dc->StartPage();
+      printout->OnPrintPage(pn);
+      dc->EndPage();
     }
     printout->OnEndDocument();
   }
@@ -400,7 +379,8 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
 
 Bool wxPrinter::PrintDialog(wxWindow *parent)
 {
-  wxPrintDialog *dialog = new wxPrintDialog(parent, printData);
+  wxPrintDialog *dialog;
+  dialog = new wxPrintDialog(parent, printData);
   dialog->Show(TRUE);
   delete dialog;
   return 0;
@@ -432,7 +412,9 @@ wxPrintData *wxPrinter::GetPrintData(void)
  
 wxPrintout::wxPrintout(char *title)
 {
-  printoutTitle = title ? copystring(title) : NULL;
+  if (title) {
+    printoutTitle = copystring(title);
+  }
   printoutDC = NULL;
   pageWidthMM = 0;
   pageHeightMM = 0;

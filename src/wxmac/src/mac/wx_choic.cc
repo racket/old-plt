@@ -102,10 +102,12 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   labelbase = 9;
   if (Title) {
     int n;
+    char *naya_s;
     GetTextExtent(Title, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
     if (fHeight < 12) fHeight = 12; 
     n = strlen(Title);
-    sTitle = (StringPtr)new char[n+1];
+    naya_s = new char[n+1];
+    sTitle = (StringPtr)naya_s;
     sTitle[0] = n;
     memcpy(&sTitle[1], Title, n);
     labelbase = (int)(fDescent + fLeading);
@@ -178,11 +180,12 @@ Create (wxPanel * panel, wxFunction func, char *Title,
     valuebase += MSPACEY;
     SetBounds(&CtlRect, 0, 0, ValueRect.bottom+2, w+1);
   } else {
+    int bot;
     h = max(lblh, maxdflth);
     SetBounds(&ValueRect, 1, lblw+1, h-1, maxdfltw+lblw+1);
     valuebase += MSPACEY;
     SetBounds(&CtlRect, 0, 0, h+1, lblw+maxdfltw+2);
-    int bot = (h - valuebase) + labelbase;
+    bot = (h - valuebase) + labelbase;
     SetBounds(&TitleRect, bot-lblh, 1, bot, lblw);
   }
 
@@ -266,8 +269,9 @@ void wxChoice::Paint(void)
 // Resize and/or Move the Control
 void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
-  SetCurrentDC();
   int clientWidth, clientHeight;
+
+  SetCurrentDC();
 
   if (1) {
     GetClientSize(&clientWidth, &clientHeight);
@@ -325,19 +329,22 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
   if (event->LeftDown() && (no_strings > 0))
     {
       int startH, startV;
+      Point startPt;
 
       SetCurrentDC();
       
       event->Position(&startH, &startV); // client c.s.
 
-      Point startPt = {startV + SetOriginY, startH + SetOriginX}; // port c.s.
+      startPt.v = startV + SetOriginY; // port c.s.
+      startPt.h = startH + SetOriginX;
 
       if (::StillDown()) {
 	int trackResult;
 	trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
 	if (trackResult) {
+	  wxCommandEvent *commandEvent;
 	  selection = ::GetControlValue(cMacControl) - 1;
-	  wxCommandEvent *commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	  commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
 	  ProcessCommand(commandEvent);
 	}
       }
@@ -442,8 +449,13 @@ char* wxChoice::GetLabel(void)
 
 void wxChoice::SetLabel(char *label)
 {
+  char *s;
+  long len;
+
   label = wxItemStripLabel(label);
-  sTitle = (StringPtr)new char[strlen(label) + 1];
+  len = strlen(label);
+  s = new char[len + 1];
+  sTitle = (StringPtr)s;
   CopyCStringToPascal(label, sTitle);
   
   if (SetCurrentDC()) {

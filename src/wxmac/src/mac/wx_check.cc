@@ -128,7 +128,8 @@ wxCheckBox::wxCheckBox // Constructor (given parentPanel, bitmap)
   
   SetCurrentMacDC();
   {
-    Rect bounds = {0, 0, buttonBitmap->GetHeight(), buttonBitmap->GetWidth()};
+    Rect bounds;
+    ::SetRect(&bounds, 0, 0, buttonBitmap->GetWidth(), buttonBitmap->GetHeight());
     cWindowHeight = bounds.bottom;
     cWindowWidth = bounds.right + IC_BOX_SIZE + IC_X_SPACE;
     if (cWindowHeight < IC_MIN_HEIGHT)
@@ -178,7 +179,10 @@ void wxCheckBox::SetLabel(char* label)
   if (buttonBitmap)
     return;
   
-  labelString = label ? copystring(wxItemStripLabel(label)) : NULL;
+  if (label) {
+    labelString = copystring(wxItemStripLabel(label));
+  } else
+    labelString = NULL;
 
   if (label && cMacControl) {
     CFStringRef llabel;
@@ -294,7 +298,9 @@ void wxCheckBox::Paint(void)
 
       ::EraseRect(&r);
       if (buttonBitmap) {
-	int btop = (cWindowHeight - buttonBitmap->GetHeight()) / 2;
+	int btop, h;
+	h = buttonBitmap->GetHeight();
+	btop = (cWindowHeight - h) / 2;
 	buttonBitmap->DrawMac(IC_BOX_SIZE + IC_X_SPACE, btop);
       } else if (labelString) {
 	float fWidth = 50.0;
@@ -308,7 +314,7 @@ void wxCheckBox::Paint(void)
 	DrawLatin1Text(labelString, 0);
       }
       top = (cWindowHeight - IC_BOX_SIZE) / 2;
-      ::SetRect(&r, top, 0, top + IC_BOX_SIZE, IC_BOX_SIZE);
+      ::SetRect(&r, 0, top, IC_BOX_SIZE, top + IC_BOX_SIZE);
       OffsetRect(&r,SetOriginX,SetOriginY);
       ForeColor(blackColor);
       PenSize(1, 1);

@@ -151,7 +151,10 @@ wxMenu::wxMenu // Constructor (given objectType)
   Callback(function);
 
   cMacMenuId = gMenuIdCounter++; // get next unique menuID
-  cMacMenu = ::NewMenu(cMacMenuId, (title && title[0]) ? wxC2P(title) : "\p ");
+  if (title && title[0])
+    cMacMenu = ::NewMenu(cMacMenuId, wxC2P(title));
+  else
+    cMacMenu = ::NewMenu(cMacMenuId, "\p ");
   CheckMemOK(cMacMenu);
   WXGC_IGNORE(this, menu_bar);
 }
@@ -214,32 +217,31 @@ wxMenu::~wxMenu(void)
 static void BuildMacMenuString(StringPtr setupstr, StringPtr showstr, char *itemName,
 			       Bool stripCmds)
 {
-  char *s, *d;
+  int s, d;
   char spc = '\0';
 
-  d = (char *)&showstr[1];
+  d = 1;
   if (itemName[0] == '-') // Fix problem with leading hyphen
-    *d++ = ' ';
-  for (s = itemName; *s != '\0'; ) {
-    if (*s == '&') {
-      if (*(s+1) == '&') {
-	*d++ = *s++;
+    showstr[d++] = ' ';
+  for (s = 0; itemName[s] != '\0'; ) {
+    if (itemName[s] == '&') {
+      if (itemName[s+1] == '&') {
+	showstr[d++] = itemName[s++];
       } else {
-				// spc = *s;
+	// spc = itemName[s];
       }
-    }
-    else if (*s == '\t') {
+    } else if (itemName[s] == '\t') {
       s++;
-      if (strncmp("Cmd+", s, 4) == 0)
-	spc = s[4];
+      if (strncmp("Cmd+", itemName + s, 4) == 0)
+	spc = itemName[s+4];
       break;
     } 
     else {
-      *d++ = *s;
+      showstr[d++] = itemName[s];
     }
     s++;
   }
-  showstr[0] = (char)(d - (char *)showstr)-1;
+  showstr[0] = (char)(d-1);
   setupstr[1] = 'X'; // temporary menu item name
   if (spc && !stripCmds) {
     setupstr[2] = '/';
@@ -263,7 +265,7 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
 	
   if (!toHandle)  {
     // Remove accel - not used in Mac Top Level Menus
-    char *s = t;
+    int s = 0;
     for (i = 0; title[i]; i++) {
       if (title[i] == '&') {
 	if (title[i + 1])
@@ -271,23 +273,22 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
 	else
 	  break;
       }
-      *(s++) = title[i];
+      t[s++] = title[i];
     }
-    *s = 0;
-    s = t;
+    t[s] = 0;
 #if USE_HELP_MENU_HACK
-    helpflg = strncmp("Help", s, 4) ? 0 : 1;
+    helpflg = strncmp("Help", t, 4) ? 0 : 1;
 #else
     helpflg = 0;
 #endif
-    CopyCStringToPascal(s,tempString);
+    CopyCStringToPascal(t, tempString);
     nmh = ::NewMenu(cMacMenuId ,tempString);
     CheckMemOK(nmh);
-    if (s) {
-      CFStringRef t;
-      t = CFStringCreateWithCString(NULL, s, kCFStringEncodingISOLatin1);
-      SetMenuTitleWithCFString(nmh, t);
-      CFRelease(t);
+    {
+      CFStringRef ct;
+      ct = CFStringCreateWithCString(NULL, t, kCFStringEncodingISOLatin1);
+      SetMenuTitleWithCFString(nmh, ct);
+      CFRelease(ct);
     }
     offset = 1;
     if (helpflg && menu_bar && menu_bar->n) {
@@ -331,10 +332,15 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     ::AppendMenu(nmh, (ConstStr255Param)tmp);
     ::SetMenuItemText(nmh, i + offset, (ConstStr255Param)t);
     ::SetMenuItemTextEncoding(nmh, i + offset, kCFStringEncodingISOLatin1);
-    if (menuItem->IsChecked())
-      ::CheckMenuItem(nmh, i + offset, TRUE);
-    if (!menuItem->IsEnabled() || (toHandle && !cEnable))
-      ::DisableMenuItem(nmh, i + offset);
+    {
+      Bool v;
+      v = menuItem->IsChecked();
+      if (v)
+	::CheckMenuItem(nmh, i + offset, TRUE);
+      v = menuItem->IsEnabled();
+      if (!v || (toHandle && !cEnable))
+	::DisableMenuItem(nmh, i + offset);
+    }
     if (hId)
       ::SetMenuItemHierarchicalID(nmh, i + offset, hId);
     node = node->Next();						// watch for null?	
@@ -448,9 +454,12 @@ char* wxMenuBar::GetLabel(int Id)
 //-----------------------------------------------------------------------------
 void wxMenuBar::SetLabelTop(int pos, char* label)
 {
+  char *s;
+
   if ((pos >= 0) && (pos < n)) {
     menus[pos]->SetTitle(label);
-    titles[pos] = copystring(label);
+    s = copystring(label);
+    titles[pos] = s;
   }
 }
 
@@ -539,12 +548,12 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
   if (retval) {
     wxMenu **new_menus;
     char **new_titles;
+    int i;
 
     n++;
     new_menus = new wxMenu *[n];
     new_titles = new char *[n];
     
-    int i;
     for (i = 0; i < n - 1; i++) {
       new_menus[i] = menus[i];
       menus[i] = NULL;
@@ -555,7 +564,11 @@ Bool wxMenuBar::OnAppend (wxMenu * menu, char *title)
     titles = new_titles;
 
     menus[n - 1] = menu;
-    titles[n - 1] = copystring (title);
+    {
+      char *tmps;
+      tmps = copystring (title);
+      titles[n - 1] = tmps;
+    }
 
     menu->menu_bar = (wxMenuBar *) this;
   }  
@@ -603,7 +616,9 @@ Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
   if (was_last && n) {
     /* Check for new Help menu: */
     wxMenu *m = menus[n - 1];
-    DisposeMenu(m->CreateCopy(titles[n - 1], TRUE, NULL));
+    MenuHandle mnu;
+    mnu = m->CreateCopy(titles[n - 1], TRUE, NULL);
+    DisposeMenu(mnu);
     if (wxHelpHackMenu)
       new_hack = TRUE;
   }
@@ -623,7 +638,9 @@ Bool wxMenuBar::OnDelete(wxMenu *menu, int pos)
 // Helper function - Add the Apple Menu 
 void wxSetUpAppleMenu(wxMenuBar *mbar)
 {
-  MenuHandle appleMenuHandle = GetMenuHandle(128);
+  MenuHandle appleMenuHandle;
+
+  appleMenuHandle = GetMenuHandle(128);
 
   if (appleMenuHandle == NULL) {
     char t[2] = {1, appleMark};
@@ -650,7 +667,9 @@ void wxSetUpAppleMenu(wxMenuBar *mbar)
     ::InsertMenuItem(appleMenuHandle, t, 0);
   } else {
     Str255 buffer;
-    CopyCStringToPascal(wxTheApp->GetDefaultAboutItemName(),buffer);
+    char *s;
+    s = wxTheApp->GetDefaultAboutItemName();
+    CopyCStringToPascal(s, buffer);
     ::InsertMenuItem(appleMenuHandle, buffer, 0);
   }
   ::InsertMenu(appleMenuHandle, 0);
@@ -701,12 +720,24 @@ void wxMenuBar::Install(void)
   for (i = 0; i < n; i ++) {
     menu = menus[i];
     if (menu != wxHelpHackMenu) {
-      ::InsertMenu(menu->MacMenu(), 0);
+      MenuHandle mh;
+      Bool v;
+      mh = menu->MacMenu();
+      ::InsertMenu(mh, 0);
       menu->wxMacInsertSubmenu();
-      if (!menu->IsEnable() || (menu_bar_frame && !menu_bar_frame->CanAcceptEvent()))
-	::DisableMenuItem(menu->MacMenu(), 0);
-      else
-	::EnableMenuItem(menu->MacMenu(), 0);
+      v = menu->IsEnable();
+      if (!v)
+	::DisableMenuItem(mh, 0);
+      else {
+	if (menu_bar_frame)
+	  v = menu_bar_frame->CanAcceptEvent();
+	else
+	  v = 1;
+	if (!v)
+	  ::DisableMenuItem(mh, 0);
+	else
+	  ::EnableMenuItem(mh, 0);
+      }
     }
   }
 
@@ -746,7 +777,10 @@ void wxMenu::AppendSeparator(void)
   no_items ++;
 
   // menu item string can't be empty
-  AppendMenu(cMacMenu, item->itemName[0] ? wxC2P(item->itemName) : "\p ");
+  if (item->itemName[0])
+    AppendMenu(cMacMenu, wxC2P(item->itemName));
+  else
+    AppendMenu(cMacMenu, "\p ");
 	
   CheckHelpHack();
 }
@@ -923,7 +957,8 @@ char* wxMenu::GetTitle(void) { return title; }
 //-----------------------------------------------------------------------------
 char* wxMenu::GetLabel(int Id)
 {
-  wxMenuItem* theMenuItem = FindItemForId(Id);
+  wxMenuItem* theMenuItem;
+  theMenuItem = FindItemForId(Id);
   if (theMenuItem)
     return theMenuItem->GetLabel();
   else return NULL;

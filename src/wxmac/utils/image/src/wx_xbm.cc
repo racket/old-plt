@@ -70,7 +70,7 @@ int wxImage::LoadXBM(char *fname, int nc)
   FILE  *fp;
   int    c, c1;
   int    i, j, k, bit, w, h;
-  byte  *pix;
+  long   pix;
   long   filesize;
   char   line[256];
   byte   hex[256];
@@ -140,7 +140,11 @@ int wxImage::LoadXBM(char *fname, int nc)
 
 //  SetISTR(ISTR_FORMAT,"X11 Bitmap  (%ld bytes)", filesize);
 
-  pic = (byte *) calloc(w*h,1);
+  {
+    void *v;
+    v =  calloc(w*h,1);
+    pic = (byte *)v;
+  }
   if (!pic) wxFatalError("couldn't malloc 'pic'");
 
   pWIDE = w;  pHIGH = h;
@@ -152,35 +156,36 @@ int wxImage::LoadXBM(char *fname, int nc)
 
   /* initialize the 'hex' array for zippy ASCII-hex -> int conversion */
 
-  for (i=0; i<256; i++) hex[i]=0;
-  for (i='0'; i<='9'; i++) hex[i] = i - '0';
-  for (i='a'; i<='f'; i++) hex[i] = i + 10 - 'a';
-  for (i='A'; i<='F'; i++) hex[i] = i + 10 - 'A';
+  for (i=0; i<256; i++) { hex[i]=0; }
+  for (i='0'; i<='9'; i++) { hex[i] = i - '0'; }
+  for (i='a'; i<='f'; i++) { hex[i] = i + 10 - 'a'; }
+  for (i='A'; i<='F'; i++) { hex[i] = i + 10 - 'A'; }
 
   /* read/convert the image data */
 
-  for (i=0, pix=pic; i<h; i++)
-	for (j=0,bit=0; j<w; j++, pix++, bit = ++bit&7) {
+  for (i=0, pix=0; i<h; i++) {
+    for (j=0,bit=0; j<w; j++, pix++, bit = ++bit&7) {
 
-		if (!bit) {
-			/* get next byte from file.  we're already positioned at it */
-			c = getc(fp);  c1 = getc(fp);
-			if (c<0 || c1<0) { 
-	  		/* EOF: break out of loop */	  
-	  		c=c1='0'; i=h; j=w;
-			//	  XBMError("The file would appear to be truncated.");
-			}
-
-		k = (hex[c] << 4) + hex[c1];
-
-		/* advance to next '0x' */
-		c = getc(fp);  c1 = getc(fp);
-		while (c1!=EOF && !(c=='0' && c1=='x') ) 
-			{ c = c1;  c1 = getc(fp); }
+      if (!bit) {
+	/* get next byte from file.  we're already positioned at it */
+	c = getc(fp);  c1 = getc(fp);
+	if (c<0 || c1<0) { 
+	  /* EOF: break out of loop */	  
+	  c=c1='0'; i=h; j=w;
+	  //	  XBMError("The file would appear to be truncated.");
 	}
 
-	*pix = (k&1) ? 1 : 0;
-	k = k >> 1;
+	k = (hex[c] << 4) + hex[c1];
+
+	/* advance to next '0x' */
+	c = getc(fp);  c1 = getc(fp);
+	while (c1!=EOF && !(c=='0' && c1=='x') ) 
+	  { c = c1;  c1 = getc(fp); }
+      }
+
+      pic[pix] = (k&1) ? 1 : 0;
+      k = k >> 1;
+    }
   }
 
   fclose(fp);
@@ -199,7 +204,7 @@ static int WriteXBM(FILE *fp, byte *pic, int w, int h, char *fname)
      useful */
 
   int   i,j,k,bit,len,nbytes;
-  byte *pix;
+  long pix;
   char *name;
 
   /* figure out a reasonable basename */
@@ -213,10 +218,10 @@ static int WriteXBM(FILE *fp, byte *pic, int w, int h, char *fname)
 
   nbytes = h * ((w+7)/8);   /* # of bytes to write */
 
-  for (i=0, len=1, pix=pic; i<h; i++) {
+  for (i=0, len=1, pix=0; i<h; i++) {
     for (j=bit=k=0; j<w; j++,pix++) {
       k = (k>>1);
-      if (*pix) k |= 0x80;
+      if (pic[pix]) k |= 0x80;
       bit++;
       if (bit==8) {
 	fprintf(fp,"0x%02x",(byte) ~k);
@@ -247,15 +252,22 @@ static int WriteXBM(FILE *fp, byte *pic, int w, int h, char *fname)
 // bitmap, delete the image
 Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
-	wxImage *xbmImage  = new wxImage();
+	wxImage *xbmImage;
+	xbmImage = new wxImage();
 	if (xbmImage->LoadXBM(fileName, 1) == 0) {
 		// CreateOffScreenPixMap(&colorPort, gifImage);
 		Rect bounds = {0, 0, xbmImage->pHIGH, xbmImage->pWIDE};
 		GDHandle savegw;
 		CGrafPtr saveport;
-		GetGWorld(&saveport, &savegw);
 		QDErr err;
 		GWorldPtr	newGWorld;
+		RGBColor	cpix;
+		int i, j;
+		unsigned char *buf;
+		long bufp;
+
+		GetGWorld(&saveport, &savegw);
+		
 		err = NewGWorld(&newGWorld, 1, &bounds, NULL, NULL, 0);
 		if (err) {
 			bm->SetOk(FALSE);
@@ -265,17 +277,16 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		SetGWorld(newGWorld, 0);
 		bm->x_pixmap = newGWorld;
 
-		RGBColor	cpix;
-		int i, j;
-		unsigned char *buf = xbmImage->pic;
+		buf = xbmImage->pic;
+		bufp = 0;
  		GetForeColor(&cpix);	// probably 0,0,0
  		::EraseRect(&bounds);
 		for (i = 0; i < xbmImage->pHIGH; i++) {
-			for (j = 0; j < xbmImage->pWIDE; j++) {
-				if (*buf++) {
-					::SetCPixel(j, i, &cpix);
-				}
-			}
+		  for (j = 0; j < xbmImage->pWIDE; j++) {
+		    if (buf[bufp++]) {
+		      ::SetCPixel(j, i, &cpix);
+		    }
+		  }
 		}
 		// UnlockPixels(GetGWorldPixMap(newGWorld));
 		SetGWorld(saveport, savegw);
@@ -286,7 +297,7 @@ Bool wxLoadXBMIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 		bm->SetDepth(1);
 		bm->SetOk(TRUE);
   		XpmFree (xbmImage->pic);
-		delete xbmImage;
+		DELETE_OBJ xbmImage;
 		return TRUE;
 	}
 	else {
@@ -301,8 +312,12 @@ Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 {
 	FILE *f;
 	int w, h, i, j;
-	byte *pic, *p;
-	
+	byte *pic;
+	long p;
+	GDHandle savegw;
+	CGrafPtr saveport;
+	int errcode;
+
 	if (!bm->Ok())
 	  return 0;
 	
@@ -314,25 +329,25 @@ Bool wxSaveXBMFromBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal)
 	if (!pic)
 	  return 0;
 	
-	GDHandle savegw;
-	CGrafPtr saveport;
 	GetGWorld(&saveport, &savegw);
 	
 	SetGWorld(bm->x_pixmap, 0);
 			
-	for (i = 0, p = pic; i < h; i++)
+	for (i = 0, p = 0; i < h; i++) {
 	  for (j = 0; j < w; j++, p++) {
 	    RGBColor cpix;
 	    ::GetCPixel(j, i, &cpix);
-	    *p = (cpix.red || cpix.blue || cpix.green);
+	    pic[p] = (cpix.red || cpix.blue || cpix.green);
 	  }
+	}
 	
 	SetGWorld(saveport, savegw);
 	
-	if (!(f = fopen(fileName, "w")))
+	f = fopen(fileName, "w");
+	if (!f)
 	  return FALSE;
 	
-	int errcode = WriteXBM(f, pic, w, h, fileName);
+	errcode = WriteXBM(f, pic, w, h, fileName);
 	
 	fclose(f);
 	

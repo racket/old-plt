@@ -2325,9 +2325,9 @@ Scheme_Object *OBJDump(int, Scheme_Object *[])
 
 #ifdef SGC_STD_DEBUGGING
 extern "C" {
-  void (*scheme_external_dump_info)(void);
-  void (*scheme_external_dump_arg)(Scheme_Object *);
-  char *(*scheme_external_dump_type)(void *);
+  extern void (*scheme_external_dump_info)(void);
+  extern void (*scheme_external_dump_arg)(Scheme_Object *);
+  extern char *(*scheme_external_dump_type)(void *);
 };
 extern void GC_cpp_for_each(void (*f)(void *, int, void *), void *data);
 extern int GC_is_wx_object(void *v);
@@ -2979,7 +2979,7 @@ int wxGetOriginalAppFSSpec(FSSpec *spec)
 
     if (i) {
       char *s2;
-      s2 = new WXGC_ATOMIC char[i];
+      s2 = new WXGC_ATOMIC char[i + 1];
       memcpy(s2, s, i);
       s2[i] = 0;
       s = s2;

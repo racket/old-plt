@@ -28,7 +28,7 @@ void wxbDC::DrawSpline(int n, wxPoint pts[])
 
 // defines and static declarations for DrawSpline
 
-#define half(z1,z2)	float((z1+z2)/2.0)
+#define half(z1,z2)	(float)((z1+z2)/2.0)
 
 static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
 				float a3, float b3, float a4, float b4);

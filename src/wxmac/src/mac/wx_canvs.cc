@@ -121,7 +121,8 @@ void wxCanvas::InitDefaults(void)
 
   if (cStyle & wxVSCROLL || cStyle & wxHSCROLL)
     {
-      wxScrollData* scrollData = new wxScrollData;
+      wxScrollData* scrollData;
+      scrollData = new wxScrollData;
       cScroll = new wxScroll(this, scrollData);
       new wxScrollArea(this, this, (cStyle & wxVSCROLL) | (cStyle & wxHSCROLL));
     }
@@ -177,12 +178,15 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   }
   
   if (cScroll && scrollAutomanaged
-      && (requested_x_step_size > 0 || requested_y_step_size > 0))
+      && (requested_x_step_size > 0 || requested_y_step_size > 0)) {
+    wxScrollData *sd;
+    sd = cScroll->GetScrollData();
     SetScrollbars(requested_x_step_size, requested_y_step_size,
 		  hExtent / max(1, requested_x_step_size), vExtent / max(1, requested_y_step_size),
 		  1, 1,
-		  cScroll->GetScrollData()->GetValue(wxWhatScrollData::wxPositionH),
-		  cScroll->GetScrollData()->GetValue(wxWhatScrollData::wxPositionV));
+		  sd->GetValue(wxWhatScrollData::wxPositionH),
+		  sd->GetValue(wxWhatScrollData::wxPositionV));
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -198,7 +202,7 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
 {
   wxWhatScrollData whatScrollData; // track what scrolldata changes
   wxScrollData* oldScrollData;
-  wxScrollData scrollData;
+  wxScrollData* scrollData;
   int sizeH, unitH, sizeW, unitW;
 
   if (!cScroll) 
@@ -261,61 +265,64 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
 
   oldScrollData = cScroll->GetScrollData();
 
-  if (oldScrollData) scrollData = *oldScrollData;
+  scrollData = new wxScrollData;
+
+  if (oldScrollData)
+    *scrollData = *oldScrollData;
 
   sizeH = (vertical > 0 ? max(y_length, 1) : 0);
-  if (sizeH != scrollData.GetValue(wxWhatScrollData::wxSizeH))
+  if (sizeH != scrollData->GetValue(wxWhatScrollData::wxSizeH))
     {
-      scrollData.SetValue(sizeH, wxWhatScrollData::wxSizeH);
+      scrollData->SetValue(sizeH, wxWhatScrollData::wxSizeH);
       whatScrollData |= wxWhatScrollData::wxSizeH;
     }
   
   unitH = (vertical > 0 ? vertical : 0);
-  if (unitH != scrollData.GetValue(wxWhatScrollData::wxUnitH))
+  if (unitH != scrollData->GetValue(wxWhatScrollData::wxUnitH))
     {
-      scrollData.SetValue(unitH, wxWhatScrollData::wxUnitH);
+      scrollData->SetValue(unitH, wxWhatScrollData::wxUnitH);
       whatScrollData |= wxWhatScrollData::wxUnitH;
     }
 
   if (vertical < 0) y_page = 1;
-  if (y_page != scrollData.GetValue(wxWhatScrollData::wxPageH))
+  if (y_page != scrollData->GetValue(wxWhatScrollData::wxPageH))
     {
-      scrollData.SetValue(y_page, wxWhatScrollData::wxPageH);
+      scrollData->SetValue(y_page, wxWhatScrollData::wxPageH);
       whatScrollData |= wxWhatScrollData::wxPageH;
     }
 
   if (vertical < 0) y_pos = 0;
-  if (y_pos != scrollData.GetValue(wxWhatScrollData::wxPositionV))
+  if (y_pos != scrollData->GetValue(wxWhatScrollData::wxPositionV))
     {
-      scrollData.SetValue(y_pos, wxWhatScrollData::wxPositionV);
+      scrollData->SetValue(y_pos, wxWhatScrollData::wxPositionV);
       whatScrollData |= wxWhatScrollData::wxPositionV;
     }
 
   sizeW = (horizontal > 0 ? max(x_length, 1) : 0);
-  if (sizeW != scrollData.GetValue(wxWhatScrollData::wxSizeW))
+  if (sizeW != scrollData->GetValue(wxWhatScrollData::wxSizeW))
     {
-      scrollData.SetValue(sizeW, wxWhatScrollData::wxSizeW);
+      scrollData->SetValue(sizeW, wxWhatScrollData::wxSizeW);
       whatScrollData |= wxWhatScrollData::wxSizeW;
     }
 
   unitW = (horizontal > 0 ? horizontal : 0);
-  if (unitW != scrollData.GetValue(wxWhatScrollData::wxUnitW))
+  if (unitW != scrollData->GetValue(wxWhatScrollData::wxUnitW))
     {
-      scrollData.SetValue(unitW, wxWhatScrollData::wxUnitW);
+      scrollData->SetValue(unitW, wxWhatScrollData::wxUnitW);
       whatScrollData |= wxWhatScrollData::wxUnitW;
     }
 
   if (horizontal < 0) x_page = 1;
-  if (x_page != scrollData.GetValue(wxWhatScrollData::wxPageW))
+  if (x_page != scrollData->GetValue(wxWhatScrollData::wxPageW))
     {
-      scrollData.SetValue(x_page, wxWhatScrollData::wxPageW);
+      scrollData->SetValue(x_page, wxWhatScrollData::wxPageW);
       whatScrollData |= wxWhatScrollData::wxPageW;
     }
 
   if (horizontal < 0) x_pos = 0;
-  if (x_pos != scrollData.GetValue(wxWhatScrollData::wxPositionH))
+  if (x_pos != scrollData->GetValue(wxWhatScrollData::wxPositionH))
     {
-      scrollData.SetValue(x_pos, wxWhatScrollData::wxPositionH);
+      scrollData->SetValue(x_pos, wxWhatScrollData::wxPositionH);
       whatScrollData |= wxWhatScrollData::wxPositionH;
     }
 
@@ -335,23 +342,29 @@ void wxCanvas::SetScrollData
 
   // if (iniatorWindow == this) return;
 
-  if ((long)whatScrollData & wxWhatScrollData::wxSizeW)
+  if ((long)whatScrollData & wxWhatScrollData::wxSizeW) {
     units_x = scrollData->GetValue(wxWhatScrollData::wxSizeW);
+  }
 
-  if ((long)whatScrollData & wxWhatScrollData::wxSizeH)
+  if ((long)whatScrollData & wxWhatScrollData::wxSizeH) {
     units_y = scrollData->GetValue(wxWhatScrollData::wxSizeH);
+  }
 
-  if ((long)whatScrollData & wxWhatScrollData::wxUnitW)
+  if ((long)whatScrollData & wxWhatScrollData::wxUnitW) {
     horiz_units = scrollData->GetValue(wxWhatScrollData::wxUnitW);
+  }
 
-  if ((long)whatScrollData & wxWhatScrollData::wxUnitH)
+  if ((long)whatScrollData & wxWhatScrollData::wxUnitH) {
     vert_units = scrollData->GetValue(wxWhatScrollData::wxUnitH);
+  }
 
-  if ((long)whatScrollData & wxWhatScrollData::wxPageW)
+  if ((long)whatScrollData & wxWhatScrollData::wxPageW) {
     units_per_page_x = scrollData->GetValue(wxWhatScrollData::wxPageW);
+  }
 
-  if ((long)whatScrollData & wxWhatScrollData::wxPageH)
+  if ((long)whatScrollData & wxWhatScrollData::wxPageH) {
     units_per_page_y = scrollData->GetValue(wxWhatScrollData::wxPageH);
+  }
 
   theDC = GetDC();
 
@@ -372,14 +385,16 @@ void wxCanvas::SetScrollData
     int dV = 0;
 
     {
-      int newH = scrollData->GetValue(wxWhatScrollData::wxPositionH) *
-	scrollData->GetValue(wxWhatScrollData::wxUnitW);
+      int newH;
+      newH = (scrollData->GetValue(wxWhatScrollData::wxPositionH)
+	      * scrollData->GetValue(wxWhatScrollData::wxUnitW));
       dH = (int)(newH - (-theDC->device_origin_x));
     }
     
     {
-      int newV = scrollData->GetValue(wxWhatScrollData::wxPositionV) *
-	scrollData->GetValue(wxWhatScrollData::wxUnitH);
+      int newV;
+      newV = (scrollData->GetValue(wxWhatScrollData::wxPositionV)
+	      * scrollData->GetValue(wxWhatScrollData::wxUnitH));
       dV = (int)(newV - (-theDC->device_origin_y));
     }
     
@@ -423,29 +438,32 @@ void wxCanvas::GetScrollUnitsPerPage(int* x_page, int* y_page)
 //-----------------------------------------------------------------------------
 void wxCanvas::Scroll(int xPos, int yPos)
 {
-  if (!cScroll) return;
-
   wxWhatScrollData whatScrollData; // track what scrolldata changes
   wxScrollData* oldScrollData;
-  wxScrollData scrollData;
+  wxScrollData *scrollData;
+
+  if (!cScroll) return;
+
+  scrollData = new wxScrollData;
 
   oldScrollData = cScroll->GetScrollData();
-  if (oldScrollData) scrollData = *oldScrollData;
+  if (oldScrollData) 
+    *scrollData = *oldScrollData;
 
   if (xPos != -1)
     {
-      if (xPos != scrollData.GetValue(wxWhatScrollData::wxPositionH))
+      if (xPos != scrollData->GetValue(wxWhatScrollData::wxPositionH))
 	{
-	  scrollData.SetValue(xPos, wxWhatScrollData::wxPositionH);
+	  scrollData->SetValue(xPos, wxWhatScrollData::wxPositionH);
 	  whatScrollData |= wxWhatScrollData::wxPositionH;
 	}
     }
 
   if (yPos != -1)
     {
-      if (yPos != scrollData.GetValue(wxWhatScrollData::wxPositionV))
+      if (yPos != scrollData->GetValue(wxWhatScrollData::wxPositionV))
 	{
-	  scrollData.SetValue(yPos, wxWhatScrollData::wxPositionV);
+	  scrollData->SetValue(yPos, wxWhatScrollData::wxPositionV);
 	  whatScrollData |= wxWhatScrollData::wxPositionV;
 	}
     }
@@ -613,13 +631,25 @@ void wxCanvas::SetScrollRange(int dir, int val)
 
 void wxCanvas::SetScrollPos(int dir, int val)
 {
+  int hv, vv;
+
   if (scrollAutomanaged) return;
+
+  if (dir == wxHORIZONTAL)
+    hv = val;
+  else
+    hv = GetScrollPos(wxHORIZONTAL);
+      
+  if (dir == wxVERTICAL)
+    vv = val;
+  else
+    vv = GetScrollPos(wxVERTICAL)
 
   wxCanvas::SetScrollbars(horiz_units, vert_units, 
 			  units_x, units_y,
 			  units_per_page_x, units_per_page_y,
-			  (dir == wxHORIZONTAL) ? val : GetScrollPos(wxHORIZONTAL),
-			  (dir == wxVERTICAL) ? val : GetScrollPos(wxVERTICAL),
+			  hv,
+			  vv,
 			  scrollAutomanaged);
 }
 

@@ -10,6 +10,20 @@
 #include "wxMargin.h"
 #include "wxDirection.h"
 
+/**********************************************************************
+  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING
+  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING
+  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING  WARNING
+  
+  Do not write allocating expressions in this file, because it is
+  skipped for precise GC. (It's skipped because we don't want to
+  deal with by-reference and overloaded operators.)
+ **********************************************************************/
+
+#ifdef MZ_PRECISE_GC
+START_XFORM_SKIP;
+#endif
+
 //=============================================================================
 // Construction methods
 //=============================================================================
@@ -92,3 +106,7 @@ int wxMargin::Offset(Direction direction)
 
   return result;
 }
+
+#ifdef MZ_PRECISE_GC
+END_XFORM_SKIP;
+#endif

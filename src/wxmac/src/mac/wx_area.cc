@@ -157,9 +157,11 @@ void wxArea::ScreenToArea(int* h, int* v)
 Bool wxArea::WindowPointInArea(int windowH, int windowV)
 {
   wxMargin margin;
+  int areaH, areaV;
+
   margin = Margin(ParentWindow());
-  int areaH = windowH - margin.Offset(wxLeft); // area c.s.
-  int areaV = windowV - margin.Offset(wxTop); // area c.s.
+  areaH = windowH - margin.Offset(wxLeft); // area c.s.
+  areaV = windowV - margin.Offset(wxTop); // area c.s.
   return (0 <= areaH && areaH <= Width() && 0 <= areaV && areaV <= Height());
 }
 
@@ -196,7 +198,9 @@ void wxArea::SetSize(int width, int height)
 //-----------------------------------------------------------------------------
 void wxArea::SetMargin(int margin, Direction direction)
 {
+  START_XFORM_SKIP;
   wxMargin newMargin(margin, direction);
+  END_XFORM_SKIP;
   SetMargin(newMargin, direction);
 }
 

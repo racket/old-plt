@@ -112,8 +112,6 @@ class wxColour: public wxObject
   ~wxColour(void) ;
   wxColour *CopyFrom(wxColour *src);
   wxColour *CopyFrom(const char *col);
-  wxColour& operator =(wxColour& src) ;
-  wxColour& operator =(const char *src) ;
   inline int Ok(void) { return (isInit) ; }
 
   void Set(unsigned char r, unsigned char b, unsigned char g);

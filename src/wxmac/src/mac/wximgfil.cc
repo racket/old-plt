@@ -30,29 +30,35 @@ void CreateOffScreenPixMap (CGrafPtr *,CGrafPtr*,wxGIF *gif);
 CTabHandle XlateColorMap(wxGIF *);
 
 // #pragma pack(1) Yes
-static struct {           
+struct s_dscgif {           
   char header[6];       
   ushort scrwidth;
   ushort scrheight;
   char pflds;
   char bcindx;
   char pxasrat;
-} dscgif;
+};
 
-static struct {
+static struct s_dscgif dscgif;
+
+struct s_image {
   byte sep;
   ushort l;
   ushort t;
   ushort w;
   ushort h;
   byte  pf;
-} image;
+};
 
-static struct { 
+static struct s_image image;
+
+struct s_TabCol { 
   ushort colres;
   ushort sogct;
   rgb paleta[256];
-} TabCol;
+};
+
+static struct s_TabCol TabCol;
 
 static long Code_Mask[] = {
   0,
@@ -76,9 +82,13 @@ wxGIF::~wxGIF()
 
 wxGIF::wxGIF( char * path)
 {
+  ushort i;
+
   navail_bytes = nbits_left = 0;
   lpbi = NULL;
-  for (ushort i=0; i<13; i++) code_mask[i] = Code_Mask[i];
+  for (i=0; i<13; i++) {
+    code_mask[i] = Code_Mask[i];
+  }
   if (path) {
     fp = fopen(path,"rb");
     if (!fp)
@@ -110,8 +120,9 @@ void wxGIF::Create(ushort width, ushort height, ushort deep)
 wxColourMap *wxGIF::getColorMap()
 {
   byte r[256], g[256], b[256];
+  ushort i;
 
-  for (ushort i=0; i<TabCol.sogct ; i++) {
+  for (i=0; i<TabCol.sogct ; i++) {
     r[i] =  TabCol.paleta[i].r;
     g[i] =  TabCol.paleta[i].g;
     b[i] =  TabCol.paleta[i].b;
@@ -125,12 +136,13 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   unsigned char tstA[256];
   unsigned char *rgbTable, single, eid;
   ushort widlow, widhigh, hgtlow, hgthi, i;
+  ushort index = 0;
   
   fread((char*)&tstA[0],13,1,fp);
   
-  ushort index = 0;
-  for (i = 0; i < 6; i++)
+  for (i = 0; i < 6; i++) {
     dscgif.header[i] = tstA[index++];
+  }
   widlow = (ushort) tstA[index++];
   widhigh = ((ushort) tstA[index++]) * 256;
   hgtlow = (ushort)  tstA[index++];
@@ -148,15 +160,14 @@ BOOL wxGIF::ReadHeader(FILE *fp)
   TabCol.colres = (dscgif.pflds >> 6) & 7 + 1;
 
   if (dscgif.pflds & 0x80) {
+    long tp = 0;
     rgbTable = new unsigned char[3*TabCol.sogct];
     fread((char *)rgbTable,1, 3*TabCol.sogct,fp);
-    unsigned char *tp = rgbTable;
     for (i = 0; i < TabCol.sogct; i++) {
-      TabCol.paleta[i].r = *tp++;
-      TabCol.paleta[i].g = *tp++;
-      TabCol.paleta[i].b = *tp++;
+      TabCol.paleta[i].r = rgbTable[tp++];
+      TabCol.paleta[i].g = rgbTable[*tp++];
+      TabCol.paleta[i].b = rgbTable[*tp++];
     }
-    delete [] rgbTable;
   }
 
   single = 0;
@@ -218,7 +229,7 @@ BOOL wxGIF::Extrae_imagen()
 {
   (void)getColorMap();
   ibf=GIFBUFTAM+1;
-  IterImage = RawImage; 
+  IterImage = 0;
   ItCount = 0; 
   decoder(GetWidth());
   //  MacFixupPixelData( (unsigned char *) IterImage, Width*Height);
@@ -267,7 +278,7 @@ ushort wxGIF::get_next_code()
 
 	  /* Out of bytes in current block, so read next block
 	   */
-	  pbytes = byte_buff;
+	  pbytes = 0;
 	  navail_bytes = get_byte();
 	  if (navail_bytes)
 	    {
@@ -278,7 +289,7 @@ ushort wxGIF::get_next_code()
 		}
             }
 	}
-      b1 = *pbytes++;
+      b1 = bytes_buf[pbytes++];
       nbits_left = 8;
       --navail_bytes;
     }
@@ -291,7 +302,7 @@ ushort wxGIF::get_next_code()
 
 	  /* Out of bytes in current block, so read next block
 	   */
-	  pbytes = byte_buff;
+	  pbytes = 0;
 	  navail_bytes = get_byte();
 	  if (navail_bytes)
             {
@@ -302,7 +313,7 @@ ushort wxGIF::get_next_code()
 		}
             }
 	}
-      b1 = *pbytes++;
+      b1 = bytes_buf[pbytes++];
       ret |= b1 << nbits_left;
       nbits_left += 8;
       --navail_bytes;
@@ -320,20 +331,20 @@ void wxGIF::InitInterlaceRow(int linewidth)
   
   count = ((Height - 1) / 8);
   if (lpos <= count) {
-    IterImage = RawImage + (linewidth * (lpos * 8));
+    IterImage = (linewidth * (lpos * 8));
   } else {
     lpos -= (count + 1);
     count = ((Height - 5) / 8);
     if (lpos <= count) {
-      IterImage = RawImage + (linewidth * (lpos * 8 + 4));
+      IterImage = (linewidth * (lpos * 8 + 4));
     } else {
       lpos -= (count + 1);
       count = ((Height - 3) / 4);
       if (lpos <= count) {
-        IterImage = RawImage + (linewidth * (lpos * 4 + 2));
+        IterImage = (linewidth * (lpos * 4 + 2));
       } else {
 	lpos -= (count + 1);
-        IterImage = RawImage + (linewidth * (lpos * 2 + 1));
+        IterImage = (linewidth * (lpos * 2 + 1));
       }
     }
   }
@@ -346,10 +357,12 @@ void wxGIF::InitInterlaceRow(int linewidth)
 
 ushort  wxGIF::decoder(ushort linewidth)
 {
-  register uchar *sp, *bufptr;
-  uchar *buf;
+  long sp;
+  int bufptr;
+  uchar *lbuf;
   register ushort code, fc, oc, bufcnt;
   ushort c, size, ret;
+  int interlace;
 
   /* Initialize for decoding a new image...
    */
@@ -360,14 +373,16 @@ ushort  wxGIF::decoder(ushort linewidth)
   oc = fc = 0;
   ret = 0;
 
-  if ((buf = new uchar[linewidth + 1]/*(uchar *)malloc(linewidth + 1)*/) == NULL)
-    return(OUT_OF_MEMORY);
+  lbuf = new uchar[linewidth + 1];
+
+  if (lbuf == NULL)
+    return (OUT_OF_MEMORY);
 
   sp = stack;
-  bufptr = buf;
+  bufptr = 0;
   bufcnt = linewidth;
 
-  int interlace = image.pf & INTERLACEMASK;
+  interlace = image.pf & INTERLACEMASK;
 
   /* This is the main loop.  For each code we get we pass through the
    * linked list of prefix codes, pushing the corresponding "character" for
@@ -414,21 +429,23 @@ ushort  wxGIF::decoder(ushort linewidth)
 	   * of the line, we have to send the buffer to the out_line()
 	   * routine...
 	   */
-	  *bufptr++ = c;
+	  lbuf[bufptr++] = c;
 	  if (--bufcnt == 0)
 	    {
 	      if (ItCount < Height)
 		{
+		  ushort i;
 		  if (interlace) InitInterlaceRow(linewidth);
-		  for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
+		  for (i=0; i<linewidth; i++) {
+		    RawImage[IterImage++] = lbuf[i];
+		  }
 		  ItCount++;
 		}
 	      else
 		{
-		  delete buf;
 		  return(ret);
 		}
-	      bufptr = buf;
+	      bufptr = 0;
 	      bufcnt = linewidth;
 	    }
 	}
@@ -452,7 +469,7 @@ ushort  wxGIF::decoder(ushort linewidth)
 	      if (code > slot)
 		++bad_code_count;
 	      code = oc;
-	      *sp++ = fc;
+	      stack[sp++] = fc;
 	    }
 
 	  /* Here we scan back along the linked list of prefixes, pushing
@@ -460,7 +477,7 @@ ushort  wxGIF::decoder(ushort linewidth)
 	   */
 	  while (code >= newcodes)
 	    {
-	      *sp++ = suffix[code];
+	      stack[sp++] = suffix[code];
 	      code = prefix[code];
 	    }
 
@@ -471,7 +488,7 @@ ushort  wxGIF::decoder(ushort linewidth)
 	   * suffix and prefix...  I'm not certain if this is correct...
 	   * it might be more proper to overwrite the last code...
 	   */
-	  *sp++ = code;
+	  stack[sp++] = code;
 	  if (slot < top_slot)
 	    {
 	      suffix[slot] = fc = code;
@@ -490,23 +507,25 @@ ushort  wxGIF::decoder(ushort linewidth)
 	   * buffer...  And when the decode buffer is full, write another
 	   * line...
 	   */
-	  while (sp > stack)
+	  while (sp)
 	    {
-	      *bufptr++ = *(--sp);
+	      lbuf[bufptr++] = stack[--sp];
 	      if (--bufcnt == 0)
 		{
 		  if (ItCount < Height)
 		    {
+		      ushort i;
 		      if (interlace) InitInterlaceRow(linewidth);
-		      for (ushort i=0; i<linewidth; i++) *IterImage++ = buf[i];
+		      for (i=0; i<linewidth; i++) {
+			RawImage[IterImage++] = lbuf[i];
+		      }
 		      ItCount++;
 		    }
 		  else
 		    {
-		      delete buf;
 		      return(ret);
 		    }
-		  bufptr = buf;
+		  bufptr = 0;
 		  bufcnt = linewidth;
 		}
 	    }
@@ -516,18 +535,20 @@ ushort  wxGIF::decoder(ushort linewidth)
   if (bufcnt != linewidth)
     if (ItCount < Height)
       {
+	ushort i;
         if (interlace) InitInterlaceRow(linewidth);
-        for (ushort i=0; i<(linewidth - bufcnt); i++) *IterImage++ = buf[i];
+        for (i=0; i<(linewidth - bufcnt); i++) {
+	  RawImage[IterImage++] = lbuf[i];
+	}
         ItCount++;
       }
     else
       {
-        delete buf;
         return(ret);
       }
-  bufptr = buf;
+  bufptr = 0;
   bufcnt = linewidth;
-  delete buf;
+
   return(ret);
 }
 
@@ -536,7 +557,7 @@ ushort  wxGIF::decoder(ushort linewidth)
 //inline 
 void wxGIF::reset() 
 {
-  IterImage = RawImage; 
+  IterImage = 0;
   ItCount = 0; 
 }
 
@@ -544,7 +565,7 @@ void wxGIF::reset()
 void wxGIF::upset()
 {
   ItCount = Height-1;
-  IterImage = RawImage + EfeWidth*(Height-1);
+  IterImage = EfeWidth*(Height-1);
 }
 
 //inline 
@@ -566,13 +587,19 @@ Bool wxGIF::ItPrev()
 //inline 
 void wxGIF::SetRow(ushort n, byte *buf)
 {
-  for (ushort i=0; i<n; i++) IterImage[i] = buf[i];
+  ushort i;
+  for (i=0; i<n; i++) {
+    rawImage[IterImage + i] = buf[i];
+  }
 }
 
 //inline 
 void wxGIF::GetRow(ushort n, byte *buf)
 {
-  for (ushort i=0; i<n; i++) buf[i] = IterImage[i];
+  ushort i;
+  for (i=0; i<n; i++) {
+    buf[i] = RawImage[IterImage + i];
+  }
 }
 
 ///// end inliners
@@ -644,8 +671,9 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int wi
 {
   
   CGrafPtr  colorPort, maskPort;
+  wxGIF *gifImage;
 
-  wxGIF *gifImage  = new wxGIF(fileName);
+  gifImage = new wxGIF(fileName);
   if (gifImage && gifImage->GetRawImage() != 0) {
     if (!withMask)
       gifImage->transparent_index = -1;
@@ -683,7 +711,7 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int wi
 
 void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
 {
-  int width = gif->GetWidth(), height = gif->GetHeight();
+  int width, height;
   Rect bounds = { 0, 0, height, width };
   GDHandle savegw;
   CGrafPtr saveport;
@@ -691,8 +719,11 @@ void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
   GWorldPtr	newGWorld;
   RGBColor	cpix;
   int i, j;
-  unsigned char *buf;
+  long buf;
+  unsigned char *ri;
 
+  width = gif->GetWidth();
+  height = gif->GetHeight();
 
   GetGWorld(&saveport, &savegw);
   err = NewGWorld(&newGWorld, 32, &bounds, NULL, NULL, 0);
@@ -702,10 +733,11 @@ void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
     LockPixels(GetGWorldPixMap(newGWorld));
     SetGWorld(newGWorld, 0);
 
-    buf = (unsigned char *)gif->GetRawImage();
+    ri = (unsigned char *)gif->GetRawImage();
+    buf = 0;
     for (i = 0; i < height; i++) {
       for (j = 0; j < width; j++, buf++) {
-	int v = *buf;
+	int v = ri[buf];
 	cpix.red = 256 *gif->red[v];
 	cpix.green = 256 *gif->green[v];
 	cpix.blue = 256 *gif->blue[v];
@@ -724,11 +756,13 @@ void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
     } else {
       LockPixels(GetGWorldPixMap(newGWorld));
       SetGWorld(newGWorld, 0);
-      
-      buf = (unsigned char *)gif->GetRawImage();
+    
+      ri = (unsigned char *)gif->GetRawImage();
+      buf = 0;
+
       for (i = 0; i < height; i++) {
 	for (j = 0; j < width; j++, buf++) {
-	  int v = *buf;
+	  int v = ri[buf];
 	  if (v == transparent_index)
 	    cpix.red = cpix.blue = cpix.green = 255 << 8;
 	  else

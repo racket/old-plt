@@ -18,12 +18,31 @@ typedef       void    *wxObject ;
 
 #include "wxGC.h"
 
-#define WXGC_IGNORE(base, ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
-#define WXGC_ATOMIC (AtomicGC)
+#ifdef MZ_PRECISE_GC
+# define WXGC_IGNORE(base, ptr) GC_finalization_weak_ptr((void **)base, (void **)&(ptr) - (void **)base)
+# define WXGC_ATOMIC /* empty */
+# define COPYSTRING_TO_ALIGNED(s, d) copystring_to_aligned(s, d)
+# define DELETE_OBJ delete_wxobject
+# define DELETE_VAL delete
+# define WRAP_SAFEREF(x) (void *)GC_malloc_immobile_box(GC_malloc_weak_box(gcOBJ_TO_PTR(x), NULL, 0))
+# define FREE_SAFEREF(x) GC_free_immobile_box((void **)x)
+typedef struct {
+  short tag;
+  short filler_used_for_hashing;
+  void *val;
+} wxWeak_Box;
+# define GET_SAFEREF(x) ((*(void **)x) ? gcPTR_TO_OBJ((*(wxWeak_Box **)x)->val) : NULL)
+#else
+# define WXGC_IGNORE(base, ptr) GC_general_register_disappearing_link((void **)&(ptr), NULL)
+# define WXGC_ATOMIC (AtomicGC)
+# define COPYSTRING_TO_ALIGNED(s, d) (s + d)
+# define DELETE_OBJ delete
+# define DELETE_VAL delete
+# define WRAP_SAFEREF(x) x
+# define FREE_SAFEREF(x) 0
+# define GET_SAFEREF(x) x
+#endif
 #define WXGC_NO_CLEANUP FALSE
-#define DELETE_OBJ delete
-#define DELETE_VAL delete
-#define COPYSTRING_TO_ALIGNED(x, d) (x + d)
 
 class wxObject : public gc_cleanup
 {

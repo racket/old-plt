@@ -26,10 +26,16 @@ static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Re
   ControlHandle cMacControl;
   int i;
 
+#ifdef MZ_PRECISE_GC
+  array = (ControlTabEntry *)scheme_malloc_atomic(sizeof(ControlTabEntry) * N);
+#else
   array = new ControlTabEntry[N];
+#endif
   for (i = 0; i < N; i++) {
+    CFString cfstr;
     array[i].icon = NULL;
-    array[i].name = CFStringCreateWithCString(NULL, wxItemStripLabel(Choices[i]), kCFStringEncodingISOLatin1);
+    cfstr = CFStringCreateWithCString(NULL, wxItemStripLabel(Choices[i]), kCFStringEncodingISOLatin1);
+    array[i].name = cfstr;
     array[i].enabled = TRUE;
   }
 
@@ -87,7 +93,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   cWindowWidth = TAB_TITLE_SPACE;
   for (i = 0; i < N; i++) {
     float x, y;
-    font->GetTextExtent(wxItemStripLabel(Choices[i]), &x, &y, NULL, NULL, 0, 1.0);
+    font->GetTextExtent(wxItemStripLabel(Choices[i]), 0, &x, &y, NULL, NULL, 0, 1.0);
     cWindowWidth += TAB_TITLE_SPACE + (int)x;
   }
   padTop = TAB_TOP_SPACE;
@@ -167,8 +173,9 @@ void wxTabChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 
   if (!cHidden && (dW || dH || dX || dY)) {
     int clientWidth, clientHeight;
+    Rect clientRect;
     GetClientSize(&clientWidth, &clientHeight);
-    Rect clientRect = {0, 0, clientHeight, clientWidth};
+    ::SetRect(&clientRect, 0, 0, clientHeight, clientWidth);
     OffsetRect(&clientRect,SetOriginX,SetOriginY);
     ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
   }
@@ -252,8 +259,9 @@ void wxTabChoice::Append(char *s)
 
   if (s) {
     new_choices = new char*[tab_count + 1];
-    for (i = 0; i < tab_count; i++)
+    for (i = 0; i < tab_count; i++) {
       new_choices[i] = tab_labels[i];
+    }
     new_choices[i] = s;
     tab_labels = new_choices;
     tab_count++;

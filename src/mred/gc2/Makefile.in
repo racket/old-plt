@@ -23,17 +23,24 @@ XLIB = @X_LIBS@
 LDLIBS = @X_PRE_LIBS@ -lXaw -lXmu -lXt -lX11 -lXext @X_EXTRA_LIBS@ @LIBS@
 GCDIRECTORY = @GCDIR@
 WBUILD = @WBUILD@
+WXVARIANT =  @WXVARIANT@
 
-WXINC = $(PLTSRCDIR)/wxxt/src/AIAI-include -I$(PLTSRCDIR)/wxxt/src
-NOGCINC = -I$(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
+WXINC_wx_xt = -I$(PLTSRCDIR)/wxxt/src/AIAI-include -I$(PLTSRCDIR)/wxxt/src
+WXINC_wx_mac = -I$(PLTSRCDIR)/wxmac/include/base -I$(PLTSRCDIR)/wxmac/include/mac -I$(PLTSRCDIR)/wxcommon -I$(PLTSRCDIR)/a-list/c-headers/
+
+WXINC = $(WXINC_@WXVARIANT@)
+NOGCINC = $(WXINC) -I$(PLTSRCDIR)/mred/wxme/ -I$(PLTSRCDIR)/mzscheme/include/
 INC = -I$(PLTSRCDIR)/mzscheme/$(GCDIRECTORY) $(NOGCINC)
-CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+CXXFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
 CPPFLAGS = $(CXXFLAGS)
-CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
+CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -D$(WXVARIANT) $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
-XFORM = ../../mzscheme/mzscheme3m -rq $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss "$(CC) -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src -I$(srcdir)/../../wxcommon/jpeg -I../../wxcommon/jpeg"
+XFORM_INC_wx_xt = -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src
+XFORM_INC_wx_mac = -Dwx_mac -DOS_X -DWX_CARBON -I$(WXMACDIR)/../utils/image/src -I$(WXMACDIR)/../contrib/wxxpm/libxpm.34b/lib
+
+XFORM = ../../mzscheme/mzscheme3m -rq $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss "$(CC) -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) $(XFORM_INC_@WXVARIANT@) -I$(srcdir)/../../wxcommon/jpeg -I../../wxcommon/jpeg"
 XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss $(srcdir)/../../mzscheme/gc2/gc2.h
 
 WXBDIR=../../wxxt
@@ -181,10 +188,10 @@ macxsrc/wb_timer.cc: $(WXMACDIR)/base/wb_timer.cc $(WXMACBDIR)/wb_timer.o $(XFOR
 	$(XFORM) $(WXMACDIR)/base/wb_timer.cc macxsrc/wb_timer.cc
 macxsrc/wb_frame.cc: $(WXMACDIR)/base/wb_frame.cc $(WXMACBDIR)/wb_frame.o $(XFORMDEP)
 	$(XFORM) $(WXMACDIR)/base/wb_frame.cc macxsrc/wb_frame.cc
-macxsrc/wb_list.cc: $(WXMACDIR)/base/wb_list.cc $(WXMACBDIR)/wb_list.o $(XFORMDEP)
-	$(XFORM) $(WXMACDIR)/base/wb_list.cc macxsrc/wb_list.cc
-macxsrc/PSDC.cc: $(WXMACDIR)/base/PSDC.cc $(WXMACBDIR)/PSDC.o $(XFORMDEP)
-	$(XFORM) $(WXMACDIR)/base/PSDC.cc macxsrc/PSDC.cc
+macxsrc/wb_list.cc: $(srcdir)/../../wxcommon/wb_list.cxx $(WXMACBDIR)/wb_list.o $(XFORMDEP)
+	$(XFORM) $(WXMACDIR)/../../wxcommon/wb_list.cxx macxsrc/wb_list.cc
+macxsrc/PSDC.cc: $(srcdir)/../../wxcommon/PSDC.cxx $(WXMACBDIR)/PSDC.o $(XFORMDEP)
+	$(XFORM) $(WXMACDIR)/../../wxcommon/PSDC.cxx macxsrc/PSDC.cc
 macxsrc/wb_types.cc: $(WXMACDIR)/base/wb_types.cc $(WXMACBDIR)/wb_types.o $(XFORMDEP)
 	$(XFORM) $(WXMACDIR)/base/wb_types.cc macxsrc/wb_types.cc
 macxsrc/wb_canvs.cc: $(WXMACDIR)/base/wb_canvs.cc $(WXMACBDIR)/wb_canvs.o $(XFORMDEP)
@@ -197,8 +204,8 @@ macxsrc/wb_utils.cc: $(WXMACDIR)/base/wb_utils.cc $(WXMACBDIR)/wb_utils.o $(XFOR
 	$(XFORM) $(WXMACDIR)/base/wb_utils.cc macxsrc/wb_utils.cc
 macxsrc/wb_data.cc: $(WXMACDIR)/base/wb_data.cc $(WXMACBDIR)/wb_data.o $(XFORMDEP)
 	$(XFORM) $(WXMACDIR)/base/wb_data.cc macxsrc/wb_data.cc
-macxsrc/wb_hash.cc: $(WXMACDIR)/base/wb_hash.cc $(WXMACBDIR)/wb_hash.o $(XFORMDEP)
-	$(XFORM) $(WXMACDIR)/base/wb_hash.cc macxsrc/wb_hash.cc
+macxsrc/wb_hash.cc: $(srcdir)/../../wxcommon/wb_hash.cxx $(WXMACBDIR)/wb_hash.o $(XFORMDEP)
+	$(XFORM) $(WXMACDIR)/../../wxcommon/wb_hash.cxx macxsrc/wb_hash.cc
 macxsrc/wb_stdev.cc: $(WXMACDIR)/base/wb_stdev.cc $(WXMACBDIR)/wb_stdev.o $(XFORMDEP)
 	$(XFORM) $(WXMACDIR)/base/wb_stdev.cc macxsrc/wb_stdev.cc
 macxsrc/wb_win.cc: $(WXMACDIR)/base/wb_win.cc $(WXMACBDIR)/wb_win.o $(XFORMDEP)
@@ -366,6 +373,8 @@ xsrc/mrmain.cc: $(srcdir)/../mrmain.cxx ../mrmain.o $(XFORMDEP)
 
 xsrc/mredx.cc: $(srcdir)/../mredx.cxx ../mredx.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../mredx.cxx xsrc/mredx.cc
+xsrc/mredmac.cc: $(srcdir)/../mredmac.cxx ../mredmac.o $(XFORMDEP)
+	$(XFORM) $(srcdir)/../mredmac.cxx xsrc/mredmac.cc
 
 xsrc/wxs_bmap.cc: $(srcdir)/../wxs/wxs_bmap.cxx ../wxs/wxs_bmap.o $(XFORMDEP)
 	$(XFORM) $(srcdir)/../wxs/wxs_bmap.cxx xsrc/wxs_bmap.cc
@@ -794,6 +803,9 @@ wx_mac_XSRCS = \
   macxsrc/wx_image.cc \
   macxsrc/wx_xbm.cc
 
+MRED_wx_xt = mredx
+MRED_wx_mac = mredmac
+
 MRED_XSRCS = \
   xsrc/wx_media.cc \
   xsrc/wx_mpriv.cc \
@@ -843,11 +855,11 @@ MRED_XSRCS = \
 \
   xsrc/mred.cc \
   xsrc/mrmain.cc \
-  xsrc/mredx.cc
+  xsrc/$(MRED_@WXVARIANT@).cc
 
-XSRCS = @WXVARIANT@_XSRCS MRED_XSRCS
+XSRCS = $(@WXVARIANT@_XSRCS) $(MRED_XSRCS)
 
-XOBJS = Window.o \
+wx_xt_XOBJS = Window.o \
   Button.o \
   Frame.o \
   Layout.o \
@@ -916,8 +928,81 @@ XOBJS = Window.o \
   wx_gam.o \
   wx_gif.o \
   wx_gifwr.o \
-  wx_xbm.o \
+  wx_xbm.o
+
+wx_mac_XOBJS = \
+  wb_item.o \
+  wb_panel.o \
+  wb_timer.o \
+  wb_frame.o \
+  wb_list.o \
+  PSDC.o \
+  wb_types.o \
+  wb_canvs.o \
+  wb_gdi.o \
+  wb_main.o \
+  wb_utils.o \
+  wb_data.o \
+  wb_hash.o \
+  wb_stdev.o \
+  wb_win.o \
+  wb_dc.o \
+  wb_sysev.o \
+  wb_dialg.o \
+  wb_obj.o \
+  xfspline.o \
+  wx_choic.o \
+  wx_main.o \
+  wx_clipb.o \
+  wx_menu.o \
+  wx_messg.o \
+  wxBorder.o \
+  wx_dc.o \
+  wxBorderArea.o \
+  wx_dccan1.o \
+  wx_mnuit.o \
+  wxButtonBorder.o \
+  wx_dccan2.o \
+  wx_dccan3.o \
+  wx_panel.o \
+  wxLabelArea.o \
+  wx_dcmem.o \
+  wx_print.o \
+  wxMacDC.o \
+  wx_dcpr1.o \
+  wx_rbox.o \
+  wx_rbut.o \
+  wx_sbar.o \
+  wxMargin.o \
+  wx_dialg.o \
+  wx_screen.o \
+  wxRectBorder.o \
+  wx_slidr.o \
+  wxScroll.o \
+  wx_frame.o \
+  wxScrollArea.o \
+  wx_gauge.o \
+  wxScrollData.o \
+  wx_gdi.o \
+  wx_app.o \
+  wx_util.o \
+  wx_area.o \
+  wx_win.o \
+  wx_buttn.o \
+  wx_item.o \
+  wximgfil.o \
+  wx_canvs.o \
+  wx_lbox.o \
+  wx_check.o \
+  wx_tabc.o \
+  wx_mac_utils.o \
 \
+  wx_bmp.o \
+  wx_24to8.o \
+  wx_image.o \
+  wx_xbm.o
+
+MRED_XOBJS = \
   wx_media.o \
   wx_mpriv.o \
   wx_snip.o \
@@ -966,11 +1051,12 @@ XOBJS = Window.o \
 \
   mred.o \
   mrmain.o \
-  mredx.o \
+  $(MRED_@WXVARIANT@).o \
 \
   xcglue.o \
   wxGC.o
 
+XOBJS = $(@WXVARIANT@_XOBJS) $(MRED_XOBJS)
 
 MZOBJS = ../../mzscheme/gc2/salloc.o \
 	../../mzscheme/gc2/bignum.o \
@@ -1011,7 +1097,8 @@ MZOBJS = ../../mzscheme/gc2/salloc.o \
 	../../mzscheme/gc2/vector.o \
 	../../mzscheme/gc2/gc2.o
 
-XWOBJS = ../../wxxt/src/XWidgets/xwArrow.o \
+wx_xt_PLAIN_OBJS = \
+    ../../wxxt/src/XWidgets/xwArrow.o \
     ../../wxxt/src/XWidgets/xwCommon.o \
     ../../wxxt/src/XWidgets/xwHScrollb.o \
     ../../wxxt/src/XWidgets/xwRowCol.o \
@@ -1034,10 +1121,44 @@ XWOBJS = ../../wxxt/src/XWidgets/xwArrow.o \
     ../../wxxt/src/XWidgets/xwScrollbar.o \
     ../../wxxt/src/XWidgets/xwTools3d.o
 
+wx_mac_PLAIN_OBJS = \
+   ../../wxmac/src/crbuffri.o \
+   ../../wxmac/src/crdatfri.o \
+   ../../wxmac/src/create.o \
+   ../../wxmac/src/crifrbuf.o \
+   ../../wxmac/src/crifrdat.o \
+   ../../wxmac/src/data.o \
+   ../../wxmac/src/hashtab.o \
+   ../../wxmac/src/miscellaneous.o \
+   ../../wxmac/src/parse.o \
+   ../../wxmac/src/rdftodat.o \
+   ../../wxmac/src/rdftoi.o \
+   ../../wxmac/src/rgb.o \
+   ../../wxmac/src/scan.o \
+   ../../wxmac/src/simx.o \
+   ../../wxmac/src/wrffrdat.o \
+   ../../wxmac/src/wrffri.o \
+\
+   ../../wxmac/src/ALBirthDeath.o \
+   ../../wxmac/src/ALKeyboard.o \
+   ../../wxmac/src/ALUserPane.o \
+   ../../wxmac/src/LongControls.o \
+   ../../wxmac/src/ALCellData.o \
+   ../../wxmac/src/ALMouse.o \
+   ../../wxmac/src/ALUtilities.o \
+   ../../wxmac/src/ALDrawing.o \
+   ../../wxmac/src/ALScrolling.o \
+   ../../wxmac/src/LongCoords.o \
+   ../../wxmac/src/ALEditing.o \
+   ../../wxmac/src/ALSelecting.o \
+   ../../wxmac/src/QDDrawingState.o \
+   ../../wxmac/src/ALHeirarchical.o \
+   ../../wxmac/src/ALSelectors.o
+
 xform: $(XSRCS) xcglue.c
 
 ../mred3m: $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o
-	$(LINKER) $(MREDLDFLAGS) -o ../mred3m $(XOBJS) $(MZOBJS) $(XWOBJS) ../../mzscheme/src/gmp.o -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
+	$(LINKER) $(MREDLDFLAGS) -o ../mred3m $(XOBJS) $(MZOBJS) $(@WXVERIANT@_PLAIN_OBJS) ../../mzscheme/src/gmp.o -lXpm -L../../wxcommon/jpeg -ljpeg $(LDLIBS)
 
 xsrc:
 	mkdir xsrc
@@ -1047,5 +1168,5 @@ macxsrc:
 XSRC_EXTRA_DIR_wx_xt =
 XSRC_EXTRA_DIR_wx_mac = macxsrc
 
-3m: xsrc XSRC_EXTRA_DIR_@WXVARIANT@
+3m: xsrc $(XSRC_EXTRA_DIR_@WXVARIANT@)
 	$(MAKE) ../mred3m

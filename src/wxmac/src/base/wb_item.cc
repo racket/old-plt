@@ -255,6 +255,7 @@ void wxbItem::ProcessCommand (wxCommandEvent * event)
 
 wxbButton::wxbButton (wxPanel * panel, wxFunction Function,
 	   int x, int y, int width, int height, long style, char *name)
+	: wxItem (panel, x, y, width, height, style, name)
 {
   __type = wxTYPE_BUTTON;
   windowStyle = style;
@@ -279,9 +280,9 @@ wxbMenu::wxbMenu (char *Title, wxFunction func)
   __type = wxTYPE_MENU;
   no_items = 0;
   menu_bar = NULL;
-  if (Title)
+  if (Title) {
     title = copystring (Title);
-  else
+  } else
     title = NULL;
 }
 
@@ -291,9 +292,9 @@ wxbMenu::wxbMenu (char* Title, char* windowName)
   __type = wxTYPE_MENU;
   no_items = 0;
   menu_bar = NULL;
-  if (Title)
+  if (Title) {
     title = copystring (Title);
-  else
+  } else
     title = NULL;
 }
 
@@ -317,7 +318,8 @@ int wxbMenu::FindItem (char *itemString)
   for (node = menuItems->First (); node; node = node->Next ()) {
     item = (wxMenuItem *) node->Data ();
     if (item->subMenu) {
-      int ans = item->subMenu->FindItem (itemString);
+      int ans;
+      ans = item->subMenu->FindItem (itemString);
       if (ans > -1)
 	return ans;
     }
@@ -349,7 +351,8 @@ wxMenuItem *wxbMenu::FindItemForId (int itemId, wxMenu ** itemMenu)
     }
 
     if (item->subMenu) {
-      wxMenuItem *ans = item->subMenu->FindItemForId (itemId, itemMenu);
+      wxMenuItem *ans;
+      ans = item->subMenu->FindItemForId (itemId, itemMenu);
       if (ans)
 	return ans;
     }
@@ -365,7 +368,11 @@ void wxbMenu::SetHelpString (int itemId, char *helpString)
   wxMenuItem *item;
   item = FindItemForId (itemId);
   if (item) {
-    item->helpString = helpString ? copystring (helpString) : NULL;
+    if (helpString) {
+      item->helpString = helpString;
+    } else {
+      item->helpString = copystring (helpString);
+    }
   }
 }
 
@@ -520,6 +527,7 @@ char *wxbMenuBar::GetHelpString (int Id)
 
 wxbCheckBox::wxbCheckBox (wxPanel * panel, wxFunction func,
 	     int x, int y, int width, int height, long style, char *name)
+	: wxItem (panel, x, y, width, height, style, name)
 {
   __type = wxTYPE_CHECK_BOX;
   windowStyle = style;
@@ -588,6 +596,7 @@ wxbListBox::wxbListBox (wxPanel * panel, wxFunction func,
 	    char *Title, Bool Multiple,
 	    int x, int y, int width, int height,
 	    int N, char **Choices, long style, char *name)
+	: wxItem (panel, x, y, width, height, style, name)
 {
   __type = wxTYPE_LIST_BOX;
   windowStyle = style;
@@ -643,6 +652,7 @@ wxbRadioBox::wxbRadioBox (wxPanel * panel, wxFunction func,
 			  int x, int y, int width, int height,
 			  int N,
 			  int majorDim, long style, char *name)
+	: wxItem (panel, x, y, width, height, style, name)
 {
   __type = wxTYPE_RADIO_BOX;
   windowStyle = style;
@@ -702,6 +712,7 @@ wxbMessage::wxbMessage (void)
 }
 
 wxbMessage::wxbMessage (wxPanel * panel, char *label, int x, int y, long style, char *name)
+	: wxItem (panel, x, y, -1, -1, style, name)
 {
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
@@ -715,6 +726,7 @@ wxbMessage::wxbMessage (wxPanel * panel, char *label, int x, int y, long style, 
 }
 
 wxbMessage::wxbMessage (wxPanel * panel, wxBitmap *image, int x, int y, long style, char *name)
+	: wxItem (panel, x, y, -1, -1, style, name)
 {
   __type = wxTYPE_MESSAGE;
   windowStyle = style;
@@ -766,6 +778,7 @@ wxbMessage::~wxbMessage (void)
 
 wxbSlider::wxbSlider (wxPanel * panel, wxFunction func, char *label, int value,
 	   int min_value, int max_value, int width, int x, int y, long style, char *name)
+	: wxItem (panel, x, y, width, -1, style, name)
 {
   __type = wxTYPE_SLIDER;
   windowStyle = style;

@@ -42,13 +42,19 @@ wxbFrame::wxbFrame (char* windowName, wxScreen* parentScreen,
   
   context = wxGetContextForFrame();
   
-  wxTopLevelWindows(ContextWindow())->Append(this);
-  wxTopLevelWindows(ContextWindow())->Show(this, FALSE);
+  {
+    wxChildList *tlw;
+    tlw = wxTopLevelWindows(ContextWindow());
+    tlw->Append(this);
+    tlw->Show(this, FALSE);
+  }
 }
 
 wxbFrame::~wxbFrame(void)
 {
-  wxTopLevelWindows(ContextWindow())->DeleteObject(this);
+  wxChildList *tlw;
+  tlw = wxTopLevelWindows(ContextWindow());
+  tlw->DeleteObject(this);
 }
 
 // Default resizing behaviour - if only ONE subwindow,
@@ -158,7 +164,9 @@ void wxbFrame::ProcessCommand(int id)
 
   item = bar->FindItemForId(id);
   if (item && item->IsCheckable()) {
-    bar->Check(id,!bar->Checked(id));
+    int c;
+    c = bar->Checked(id);
+    bar->Check(id, !c);
   }
 
   OnMenuCommand(id);

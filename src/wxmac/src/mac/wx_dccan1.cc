@@ -105,8 +105,9 @@ void wxCanvasDC::Init(wxCanvas* the_canvas)
 
   if (the_canvas) {
     int clientWidth, clientHeight;
+    Rect paintRect;
     the_canvas->GetClientSize(&clientWidth, &clientHeight);
-    Rect paintRect = {0, 0, clientHeight, clientWidth};
+    ::SetRect(&paintRect, 0, 0, clientWidth, clientHeight);
     SetPaintRegion(&paintRect);
   }
 }
@@ -159,11 +160,13 @@ extern "C" {
 void wxCanvasDC::SetCurrentDC(void) // mac platform only
   //-----------------------------------------------------------------------------
 {
+  CGrafPtr theMacGrafPort;
+
   if (!Ok() || !cMacDC) return;
   
   dc_set_depth++;
 
-  CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+  theMacGrafPort = cMacDC->macGrafPort();
   if (IsPortOffscreen(theMacGrafPort)) {
     ::SetGWorld(theMacGrafPort, NULL);
   } else {
@@ -199,6 +202,8 @@ void wxCanvasDC::ReleaseCurrentDC(void)
 void wxCanvasDC::SetCanvasClipping(void)
   //-----------------------------------------------------------------------------
 {
+  wxObject* theCurrentUser;
+
   if (!Ok() || !cMacDC)
     return;
 
@@ -216,13 +221,15 @@ void wxCanvasDC::SetCanvasClipping(void)
   else if (onpaint_reg)
     ::CopyRgn(onpaint_reg, current_reg);
 
-  wxObject* theCurrentUser = cMacDC->currentUser();
+  theCurrentUser = cMacDC->currentUser();
   if (theCurrentUser == this) { 
     // must update
     CGrafPtr savep;
     GDHandle savegd;
-    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
+    CGrafPtr theMacGrafPort;
     long oox, ooy;
+
+    theMacGrafPort = cMacDC->macGrafPort();
     
     ::GetGWorld(&savep, &savegd);  
     if (IsPortOffscreen(theMacGrafPort)) {
@@ -251,17 +258,21 @@ void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
   //-----------------------------------------------------------------------------
 {
   if (current_reg && cMacDC) {
-    CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
-    RgnHandle clipRgn = NewRgn();
+    CGrafPtr theMacGrafPort;
+    RgnHandle clipRgn;
     Rect theClipRect;
+    int theX, theY, theWidth, theHeight;
+
+    theMacGrafPort = cMacDC->macGrafPort();
+    clipRgn = NewRgn();
       
     GetPortClipRegion(theMacGrafPort,clipRgn);
     GetRegionBounds(clipRgn,&theClipRect);
-
-    int theX = theClipRect.left;
-    int theY = theClipRect.top;
-    int theWidth = theClipRect.right - theClipRect.left;
-    int theHeight = theClipRect.bottom - theClipRect.top;
+    
+    theX = theClipRect.left;
+    theY = theClipRect.top;
+    theWidth = theClipRect.right - theClipRect.left;
+    theHeight = theClipRect.bottom - theClipRect.top;
     *x = XDEV2LOG(theX) ;
     *y = YDEV2LOG(theY) ;
     *w = XDEV2LOGREL(theWidth) ;
@@ -343,9 +354,10 @@ void wxCanvasDC::InstallColor(wxColour *c, int fg)
     else
       RGBBackColor(&pixel);
   } else {
-    unsigned char red = c->Red();
-    unsigned char blue = c->Blue();
-    unsigned char green = c->Green();
+    unsigned char red, blue, green;
+    red = c->Red();
+    blue = c->Blue();
+    green = c->Green();
     if (fg) {
       Bool isWhiteColour =
 	(red == (unsigned char )255 &&
@@ -628,7 +640,11 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       BackColor(whiteColor);
     BackPat(GetWhitePattern());
     ::TextFont(font->GetMacFontNum());
-    ::TextSize(floor(font->GetPointSize() * user_scale_y));
+    {
+      float ps;
+      ps = font->GetPointSize();
+      ::TextSize(floor(ps * user_scale_y));
+    }
     ::TextFace(font->GetMacFontStyle());
     ::TextMode((current_bk_mode == wxTRANSPARENT) ? srcOr : srcCopy);
     InstallLogicalFunction(wxCOPY);

@@ -92,10 +92,12 @@ void wxbWindow::MakeModal(Bool modal)
   // Disable all other windows
   if (wxSubType(__type, wxTYPE_DIALOG_BOX) || wxSubType(__type, wxTYPE_FRAME))
     {
+      wxChildList *tlw;
       wxChildNode *node;
       wxWindow *win;
 
-      node = wxTopLevelWindows(ContextWindow())->First();
+      tlw = wxTopLevelWindows(ContextWindow());
+      node = tlw->First();
       while (node) {
 	win = (wxWindow *)(node->Data());
 	if (win != this)
@@ -108,9 +110,9 @@ void wxbWindow::MakeModal(Bool modal)
 
 void wxbWindow::SetName(char *name)
 {
-  if (name)
+  if (name) {
     windowName = copystring(name);
-  else
+  } else
     windowName = NULL;
 }
 

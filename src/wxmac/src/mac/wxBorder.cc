@@ -35,8 +35,12 @@ wxBorder::wxBorder // Constructor (given parentArea)
  wxWindow (windowName, parentArea, x, y, width, height, style)
 {
   __type = wxTYPE_BORDER;
-  if (width < 0) cWindowWidth = parentArea->Width();
-  if (height < 0) cWindowHeight = parentArea->Height();
+  if (width < 0) {
+    cWindowWidth = parentArea->Width();
+  }
+  if (height < 0) {
+    cWindowHeight = parentArea->Height();
+  }
   SetJustify(wxAll);
   SetGravitate(wxTop | wxLeft);
   

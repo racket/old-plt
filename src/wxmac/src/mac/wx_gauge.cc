@@ -30,23 +30,20 @@
 #define KGAUGEH    12	
 #define VSP			3	// space between scrollbar and value
 #define HSP			3	
-// Because I never get this right and t,l,b,r makes sense to me - CJC
-//
-#define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
 
 wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 		 int width, int height, long style, char *name) :
 		 wxbGauge(panel, label, _range, x, y, width, height, style, name)
 {
-  SetCurrentDC();
-
   float fWidth;
   float fHeight;
   float fDescent;
   float fLeading;
-  int	lblh=0;
-  int lblw=0;
+  int lblh = 0;
+  int lblw = 0;
   
+  SetCurrentDC();
+
   range = _range;
   value = 0;
   if (range < 1)
@@ -82,14 +79,16 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
     valueRect.right = cWindowWidth - ((labelPosition == wxHORIZONTAL) ? lblw + HSP : 0);
     valueRect.bottom = KGAUGEH;
 #ifdef WX_CARBON // for horizontal gauges, use the native control
-    OSErr err;
-    Rect bounds = valueRect;
-    
-    OffsetRect(&bounds,SetOriginX,SetOriginY);
-    err = CreateProgressBarControl(GetWindowFromPort(cMacDC->macGrafPort()),&bounds,
-				   0,0,range,FALSE,&cMacControl);
-
-    ::EmbedControl(cMacControl, GetRootControl());
+    {
+      OSErr err;
+      Rect bounds = valueRect;
+      
+      OffsetRect(&bounds,SetOriginX,SetOriginY);
+      err = CreateProgressBarControl(GetWindowFromPort(cMacDC->macGrafPort()),&bounds,
+				     0,0,range,FALSE,&cMacControl);
+      
+      ::EmbedControl(cMacControl, GetRootControl());
+    }
 #endif
   }
   

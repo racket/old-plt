@@ -324,27 +324,68 @@
 	(begin-handler '#%begin)))
 
     (when (language>=? 'side-effecting)
-      (let ((begin0-handler
-	      (lambda (b0-kwd)
-		(add-micro-form b0-kwd scheme-vocabulary
-		  (let* ((kwd (list b0-kwd))
-			  (in-pattern `(,b0-kwd b ...))
-			  (m&e (pat:make-match&env in-pattern kwd)))
-		    (lambda (expr env attributes vocab)
-		      (cond
-			((pat:match-against m&e expr env)
-			  =>
-			  (lambda (p-env)
-			    (let ((bodies (pat:pexpand '(b ...) p-env kwd)))
-			      (if (null? bodies)
-				(static-error expr "Malformed begin0")
-				(let ((peabodies
-					(map (lambda (e)
-					       (expand-expr e env attributes vocab))
-					  bodies)))
-				  (create-begin0-form peabodies expr))))))
-			(else
-			  (static-error expr "Malformed begin0")))))))))
+      (let
+	((begin0-handler
+	   (lambda (b-kwd)
+	     (add-micro-form b-kwd scheme-vocabulary
+	       (let* ((kwd (list b-kwd))
+		       (in-pattern `(,b-kwd b ...))
+		       (m&e (pat:make-match&env in-pattern kwd)))
+		 (lambda (expr env attributes vocab)
+		   (cond
+		     ((pat:match-against m&e expr env)
+		       =>
+		       (lambda (p-env)
+			 (let ((bodies (pat:pexpand '(b ...) p-env kwd))
+				(top-level? (get-top-level-status attributes)))
+			   (when (null? bodies)
+			     (static-error expr "Malformed begin0"))
+			   (set-top-level-status attributes)
+			   (let-values
+			     (((first-body) (car bodies))
+			       ((definitions terms)
+				 (let loop ((seen '()) (rest (cdr bodies)))
+				   (if (null? rest)
+				     (static-error expr
+				       "Internal definitions not followed by expression")
+				     (let ((first (car rest)))
+				       (let ((e-first
+					       (expand-expr first env
+						 attributes
+						 internal-define-vocab)))
+					 (if (internal-definition? e-first)
+					   (loop (cons e-first seen)
+					     (cdr rest))
+					   (values (reverse seen)
+					     rest))))))))
+			     (begin0
+			       (if (null? definitions)
+				 (create-begin0-form
+				   (map (lambda (e)
+					  (expand-expr e env attributes
+					    vocab))
+				     bodies)
+				   expr)
+				 (expand-expr
+				   (structurize-syntax
+				     `(begin0
+					,first-body
+					(letrec*-values
+					  ,(map
+					     (lambda (def)
+					       (list
+						 (internal-definition-vars
+						   def)
+						 (internal-definition-val
+						   def)))
+					     definitions)
+					  ,@terms))
+				     expr)
+				   env attributes vocab))
+			       (set-top-level-status attributes
+				 top-level?))))))
+		     (else
+		       (static-error expr "Malformed begin0")))))))))
 	(begin0-handler 'begin0)
 	(begin0-handler '#%begin0)))
 

@@ -1,4 +1,4 @@
-// EventQueue.cpp : Implementation of CEventQueue
+// eventqueue.cxx : Implementation of CEventQueue
 
 #include "stdafx.h"
 #include <stdio.h>
@@ -8,7 +8,7 @@
 
 #include "escheme.h"
 #include "myspage.h"
-#include "DHTMLpage.h"
+#include "dhtmlpage.h"
 
 #include "eventqueue.h"
 
@@ -103,6 +103,16 @@ STDMETHODIMP CEventQueue::GetReaderSemaphore(int *pReadSem) {
 STDMETHODIMP CEventQueue::set_extension_table(int p) {
   scheme_extension_table = (Scheme_Extension_Table *)p;
   scheme_register_extension_global(&_Module,sizeof(_Module));
+  scheme_register_extension_global(&eventMap,sizeof(eventMap));
+  scheme_register_extension_global((void *)&IID_IDHTMLPage,sizeof(IID_IDHTMLPage));
+  scheme_register_extension_global((void *)&IID_IDHTMLPageUI,sizeof(IID_IDHTMLPageUI));
+  scheme_register_extension_global((void *)&IID_IEvent,sizeof(IID_IEvent));
+  scheme_register_extension_global((void *)&IID_IEventQueue,sizeof(IID_IEventQueue));
+  scheme_register_extension_global((void *)&LIBID_MYSPAGELib,sizeof(LIBID_MYSPAGELib));
+  scheme_register_extension_global((void *)&CLSID_DHTMLPage,sizeof(CLSID_DHTMLPage));
+  scheme_register_extension_global((void *)&CLSID_Event,sizeof(CLSID_Event));
+  scheme_register_extension_global((void *)&CLSID_EventQueue,sizeof(CLSID_EventQueue));
+
   return S_OK;
 }
 

@@ -1,4 +1,4 @@
-// Event.cpp : Implementation of CEvent
+// Event.cxx : Implementation of CEvent
 #include "stdafx.h"
 #include "myspage.h"
 #include "Event.h"

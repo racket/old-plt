@@ -18,6 +18,8 @@ typedef struct _event_map_ {
   EVENT_TYPE eventType;
 } EVENT_MAP;
 
+extern EVENT_MAP eventMap[11];
+
 /////////////////////////////////////////////////////////////////////////////
 // CDHTMLPage
 class ATL_NO_VTABLE CDHTMLPage : 

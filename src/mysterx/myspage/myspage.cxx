@@ -1,4 +1,4 @@
-// myspage.cpp : Implementation of DLL Exports.
+// myspage.cxx : Implementation of DLL Exports.
 
 
 // Note: Proxy/Stub Information

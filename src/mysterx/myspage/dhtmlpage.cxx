@@ -1,11 +1,11 @@
-// DHTMLPage.cpp : Implementation of CDHTMLPage
+// dhtmlpage.cxx : Implementation of CDHTMLPage
 
 #include "stdafx.h"
 #include "myspage.h"
 #include "wrapper.h"
-#include "DHTMLPage.h"
+#include "dhtmlpage.h"
 
-static EVENT_MAP eventMap[] = {
+EVENT_MAP eventMap[11] = {
   L"click",click,
   L"dblclick",dblclick,
   L"error",error,
@@ -18,6 +18,7 @@ static EVENT_MAP eventMap[] = {
   L"mouseover",mouseover,
   L"mouseup",mouseup,
 };
+
 
 /////////////////////////////////////////////////////////////////////////////
 // CDHTMLPage

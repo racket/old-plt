@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.54 1998/03/04 22:10:04 shriram Exp $
+; $Id: scm-unit.ss,v 1.55 1998/03/13 21:20:45 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -104,6 +104,8 @@
       (put-attribute attributes 'unit-vars
 	(cdr (get-attribute attributes 'unit-vars)))))
 
+  (define-struct unresolved (id varref))
+
   (define make-unresolved-attribute
     (lambda (attributes)
       (put-attribute attributes 'unresolved-unit-vars
@@ -116,8 +118,9 @@
       (car (get-attribute attributes 'unresolved-unit-vars))))
 
   (define update-unresolved-attribute
-    (lambda (attributes new-value)
-      (let ((current (get-attribute attributes 'unresolved-unit-vars
+    (lambda (attributes id varref)
+      (let ((new-value (make-unresolved id varref))
+	    (current (get-attribute attributes 'unresolved-unit-vars
 		       (lambda () '(()))))) ; List of lists to accomodate
 					; nested units
 	(unless (null? current)
@@ -136,7 +139,7 @@
 	    (unless (null? unresolveds)
 	      (static-error (car unresolveds)
 		"Unbound unit identifier ~a"
-		(z:read-object (car unresolveds)))))
+		(z:read-object (unresolved-id (car unresolveds))))))
 	  (put-attribute attributes 'unresolved-unit-vars
 	    (cons (append unresolveds (car left-unresolveds))
 	      (cdr left-unresolveds)))))))
@@ -293,18 +296,33 @@
   (define get-unresolved-vars
     (lambda (attributes)
       (let ((id-table (get-vars-attribute attributes))
-	     (unresolveds (get-unresolved-attribute attributes)))
+	    (top-level-space (get-attribute attributes 'top-levels))
+	    (unresolveds (get-unresolved-attribute attributes)))
 	(let loop ((remaining unresolveds)
 		    (unr null))
 	  (if (null? remaining) unr
-	    (let ((uid (car remaining)))
+	    (let* ((u (car remaining))
+		   (uid (unresolved-id u)))
 	      (let ((entry (hash-table-get id-table
 			     (z:read-object uid) (lambda () #f))))
 		(cond
 		  ((or (internal-id? entry) (export-id? entry))
+		    ; Need to set the box here
+		    (let* ([id  (if (internal-id? entry)
+				    (internal-id-id entry)
+				    (export-id-id entry))]
+			   [box (hash-table-get top-level-space
+						(z:read-object uid)
+						(lambda ()
+						  (internal-error
+						   entry
+						   "Can't find box in check-unresolved-vars")))])
+		      (set-top-level-varref/bind-slot!
+		       (unresolved-varref u)
+		       box))
 		    (loop (cdr remaining) unr))
 		  ((not entry)
-		    (loop (cdr remaining) (cons uid unr)))
+		    (loop (cdr remaining) (cons u unr)))
 		  (else
 		    (internal-error entry
 		      "Invalid in check-unresolved-vars"))))))))))
@@ -956,8 +974,6 @@
 	      (create-lexical-varref r expr))
 	    ((top-level-resolution? r)
 	      (let ((id (z:read-object expr)))
-		(unless (built-in-name id)
-		  (update-unresolved-attribute attributes expr))
 		(let ((top-level-space (get-attribute attributes 'top-levels)))
 		  (if top-level-space
 		    (begin
@@ -972,6 +988,8 @@
 				expr)))
 			(let ((b (top-level-varref/bind-slot ref)))
 			  (set-box! b (cons ref (unbox b))))
+			(unless (built-in-name id)
+			  (update-unresolved-attribute attributes expr ref))
 			ref))
 		    (create-top-level-varref id expr)))))
 	    (else

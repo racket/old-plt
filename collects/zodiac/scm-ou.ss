@@ -1,4 +1,4 @@
-; $Id: scm-ou.ss,v 1.10 1997/07/21 15:51:43 shriram Exp $
+; $Id: scm-ou.ss,v 1.11 1998/03/04 22:07:52 shriram Exp $
 
 (unit/sig zodiac:scheme-objects+units^
   (import zodiac:misc^ (z : zodiac:structures^) (z : zodiac:reader-structs^)
@@ -16,8 +16,6 @@
 		    (create-lexical-varref r expr))
 		  ((top-level-resolution? r)
 		    (let ((id (z:read-object expr)))
-		      (unless (built-in-name id)
-			(update-unresolved-attribute attributes expr))
 		      (let ((top-level-space (get-attribute attributes
 					       'top-levels)))
 			(if top-level-space
@@ -33,6 +31,8 @@
 				      expr)))
 			      (let ((b (top-level-varref/bind-slot ref)))
 				(set-box! b (cons ref (unbox b))))
+			      (unless (built-in-name id)
+				(update-unresolved-attribute attributes expr ref))
 			      ref))
 			  (create-top-level-varref id expr)))))
 		  ((public-binding? r)

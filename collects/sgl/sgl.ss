@@ -1020,8 +1020,14 @@
                           (else null)))))
                    (loop (add1 hit)))))))))
   
-  (provide get-version-number)
-  (define (get-version-number)
+  (provide get-gl-version-number get-glu-version-number)
+  (define (get-gl-version-number)
     (let ((x (regexp-match "^([0-9]*)\\.([0-9*])" (get-string 'version))))
       (string->number (string-append (cadr x) (caddr x)))))
+  (define (get-glu-version-number)
+    (let ((x (regexp-match "^([0-9]*)\\.([0-9*])" (u-get-string 'version))))
+      (string->number (string-append (cadr x) (caddr x)))))
+
+  
+  
   )

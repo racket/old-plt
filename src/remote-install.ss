@@ -135,6 +135,11 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
   
   (define (do-copy src-rel dest-rel)
     (lambda (pr)
+      (unless to-remote-host
+        (let ([path (build-path dest-rel (pr-to pr))])
+          (unless (directory-exists? path)
+            (printf "(make-directory ~s)\n" path)
+            (make-directory path))))
       (let ([cmd
              (format "scp -C -r ~a~a ~a~a"
                      (if from-remote-host

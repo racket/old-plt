@@ -1,4 +1,4 @@
-Time-stamp: <00/06/19 15:36:15 shriram>
+Time-stamp: <00/08/21 15:42:02 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -24,6 +24,7 @@ _URL_ posting, _web clients_, _WWW_
 
 Collection: net
 Files: _url.ss_, _urlr.ss_, _urls.ss_, _urlu.ss_
+To Load: (require-library "url.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -200,7 +201,8 @@ _CGI_ backends, _WWW_
 ==========================================================================
 
 Collection: net
-Libraries: _cgi.ss_, _cgic.ss_, _cgir.ss_, _cgis.ss_, _cgiu.ss_
+Files: _cgi.ss_, _cgic.ss_, _cgir.ss_, _cgis.ss_, _cgiu.ss_
+To Load: (require-library "cgi.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -322,6 +324,7 @@ _sending mail_, _sendmail_
 
 Collection: net
 Files: _mail.ss_, _mailr.ss_, _mails.ss_, _mailu.ss_
+To Load: (require-library "mail.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -375,6 +378,7 @@ _sending mail_, _SMTP_
 
 Collection: net
 Files: _smtp.ss_, _smtpr.ss_, _smtps.ss_
+To Load: (require-library "smtp.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -430,6 +434,7 @@ _NNTP_, _newsgroups_
 
 Collection: net
 Files: _nntp.ss_, _nntpr.ss_, _nntps.ss_, _nntpu.ss_
+To Load: (require-library "nntp.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -550,6 +555,7 @@ _POP-3_, _reading mail_
 
 Collection: net
 Files: _pop3.ss_, _pop3r.ss_, _pop3s.ss_, _pop3u.ss_
+To Load: (require-library "pop3.ss" "net")
 
 Note: The pop3.ss invoke-opens the pop3r.ss unit with a "pop3:" prefix.
 
@@ -729,6 +735,7 @@ _IMAP_, _reading mail_
 
 Collection: net
 Files: _imap.ss_, _imapr.ss_, _imaps.ss_
+To Load: (require-library "imap.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -920,6 +927,7 @@ _mail headers_
 
 Collection: net
 Files: _head.ss_, _headr.ss_, _heads.ss_
+To Load: (require-library "head.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -1035,6 +1043,7 @@ _DNS_, _domain name service_
 
 Collection: net
 Files: _dns.ss_, _dnsr.ss_, _dnss.ss_
+To Load: (require-library "dns.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 
@@ -1070,6 +1079,7 @@ _Base 64 Encoding_, _base64_
 
 Collection: net
 Files: _base64.ss_, _base64r.ss_, _base64s.ss_
+To Load: (require-library "base64.ss" "net")
 
 ABSTRACT -------------------------------------------------------------
 

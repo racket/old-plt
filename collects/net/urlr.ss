@@ -488,7 +488,6 @@
                ;;    and the intended path is "/", but the URL is missing
                ;;    a "/" at the end.  has-host? must be true.
                (let ((host/path (substring path begin-point end-point)))
-		 (printf "here too~n")
                  (if has-host?
                      (values host/path #f "/")
                      (values #f #f host/path))))

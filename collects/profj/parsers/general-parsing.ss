@@ -3,6 +3,7 @@
   
   (require (lib "lex.ss" "parser-tools")
            (lib "string.ss")
+           (prefix class: (lib "class.ss"))
            (lib "list.ss"))
   (require "../ast.ss" "../parameters.ss" "lexer.ss")
   
@@ -83,6 +84,14 @@
         (var-init-init decl)
         (var-init-src decl)))))
 
+  (define (parse-class-box box)
+    (let*-values (((old-input-port) (input-port))
+                  ((func _ __) (class:send (class-case-box box) read-one-special 0 #f #f #f #f))
+                  ((parse-port-list) (func 'beginner)))
+      (input-port (car parse-port-list))
+      (begin0
+        (car (package-defs ((cadr parse-port-list))))
+        (input-port old-input-port))))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;Token Accessors and Queries for error-messaging parsers

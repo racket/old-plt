@@ -8,6 +8,7 @@
            (lib "Object.ss" "profj" "libs" "java" "lang") (lib "array.ss" "profj" "libs" "java" "lang")
            (lib "String.ss" "profj" "libs" "java" "lang")                 
            "compile.ss" "parameters.ss" "parsers/lexer.ss")
+  (require "parser.ss")
 
   (provide tool@)
 
@@ -769,8 +770,57 @@
       
       (drscheme:get/extend:extend-unit-frame java-interactions-box-mixin)
       
-      ))
+;      ))
 
+;  ;TEMP
+;      
+;  ;;The following code has been taken with small modifications from framework/private/comment-box.ss
+;      (define snipclass-java-class%
+;        (class decorated-editor-snipclass%
+;          (define/override (make-snip stream-in) (instantiate java-class-box% ()))
+;          (super-instantiate ())))
+;      
+;      (define snipclass-class (make-object snipclass-java-class%))
+;      (send snipclass-class set-version 1)
+;      (send snipclass-class set-classname "java-class-box%")
+;      (send (get-the-snip-class-list) add snipclass-class)
+;      
+;      (define java-class-box%
+;        (class* java-box% (readable-snip<%>)
+;          (define/override (make-editor) (new text:keymap%))
+;          (define/override (make-snip) (make-object java-class-box%))
+;          (define/override (get-corner-bitmap) comment-gif)
+;
+;           (define/public (read-one-special index source line column position)
+;             (values (lambda (level)
+;                       (list (lambda () (open-input-string "class X { X(){}}"))
+;                             (lambda ()
+;                               (parse (open-input-string "class X { X(){} }")
+;                                      "a"
+;                                      level))))
+;                           1 #t))
+;             
+;          (super-instantiate ())
+;          (inherit set-snipclass get-editor)
+;          (set-snipclass snipclass-class)))
+;          
+;      (define (java-class-box-mixin %)
+;        (class %
+;          (inherit get-special-menu get-edit-target-object)
+;          
+;          (super-new)
+;          (new menu-item%
+;            (label "Insert Java Class Box")
+;            (parent (get-special-menu))
+;            (callback
+;             (lambda (menu event)
+;               (let ([c-box (new java-class-box%)]
+;                     [text (get-edit-target-object)])
+;                 (send text insert c-box)
+;                 (send text set-caret-owner c-box 'global)))))))
+;      
+;      (drscheme:get/extend:extend-unit-frame java-class-box-mixin)
+  ))
   (define (editor-filter delay?)
     (lambda (s)
       (let ((name (send (send s get-snipclass) get-classname)))

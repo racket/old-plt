@@ -16,4 +16,6 @@
 			       #f
 			       #f)))])
 	(javac "Math.java")
-        (javac "System.java")))))
+        (javac "System.java")
+	(javac "Number.java")
+        (javac "Double.java")))))

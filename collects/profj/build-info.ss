@@ -513,7 +513,7 @@
         (and (method-conflicts? (car methods)
                                 (class-record-methods record)
                                 level)
-             (raise-error (list (find-member (car methods) members type-recs) record) 'conflicting-method))
+             (raise-error (list record (find-member (car methods) members type-recs)) 'conflicting-method))
         (check-for-conflicts (cdr methods) record members level type-recs)))
   
   (define (class-fully-implemented? super super-name ifaces ifaces-name methods level) 
@@ -749,6 +749,9 @@
            (lambda (a meth)
              (format "Inherited method ~a from ~a has a conflict with another method of the same name" 
                      meth a)))
+          (conflict-method
+           (lambda (meth a)
+             (format "Method ~a has a conflict with a method inherited from ~a" meth a)))
           (extend-final
            (lambda (a)
              (format "Final class ~a may not be extended" a)))
@@ -830,6 +833,20 @@
                                  (datum->syntax-object #f 
                                                        (string->symbol m-name)
                                                        (build-src-list (method-src wrong-code))))))
+          ((conflicting-method)
+           ;wrong-code : (list class-record method)
+           (let ((m-name (id-string (method-name (cadr wrong-code))))
+                 (parms (apply string-append
+                               (map (lambda (p) (string-append (id-string (field-name p)) " "))
+                                    (method-parms (cadr wrong-code))))))
+             (raise-syntax-error (string->symbol m-name)
+                                 ((get-error-message type) (format "~a(~a)" m-name 
+                                                                   (substring parms 0 (sub1 (string-length parms))))
+                                                           (car (class-record-name (car wrong-code))))
+                                 (datum->syntax-object #f 
+                                                       (string->symbol m-name)
+                                                       (build-src-list (method-src (cadr wrong-code)))))))
+
           ((inherited-method-conflict method-not-implemented)
            ;wrong-code : (list name method-record)
            (let ((name (car wrong-code))

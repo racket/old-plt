@@ -33,7 +33,7 @@
           (printf "expected lines: ~n  ~a~n  ~a~ngot lines:~n  ~a~n  ~a~n" 
                   line0-expect line1-expect
                   line0-got line1-got)
-          (error 'language-test.ss "failed get top of repl test")))))
+          (error 'race-condition.ss "failed get top of repl test")))))
   
   ;; set-language : boolean -> void
   (define (set-language close-dialog?)

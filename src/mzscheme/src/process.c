@@ -119,10 +119,6 @@ static Scheme_Manager *main_manager;
 long scheme_total_gc_time;
 static long start_this_gc_time;
 
-#ifdef MANUAL_STACK_PUSH
-static Scheme_Process *leaving_process;
-#endif
-
 void (*scheme_sleep)(float seconds, void *fds);
 void (*scheme_notify_multithread)(int on);
 void (*scheme_wakeup_on_input)(void *fds);
@@ -542,9 +538,6 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
 #endif
     REGISTER_SO(scheme_main_process);
     REGISTER_SO(scheme_first_process);
-#ifdef MANUAL_STACK_PUSH
-    REGISTER_SO(leaving_process);
-#endif
 
 #ifdef MZ_REAL_THREADS
     process->thread = SCHEME_INIT_THREADS();
@@ -599,10 +592,6 @@ static Scheme_Process *make_process(Scheme_Config *config, Scheme_Manager *mgr)
 
   process->checking_break = 0;
   process->external_break = 0;
-
-#ifdef MANUAL_STACK_PUSH
-  process->stack_current = 0L;
-#endif
 
 #ifdef USE_MAC_FILE_TOOLBOX
   process->wd_inited = 0;
@@ -1017,12 +1006,6 @@ Scheme_Process *scheme_get_current_process()
 
 void scheme_swap_process(Scheme_Process *new_process)
 {
-#ifdef MANUAL_STACK_PUSH
-  int dummy;
-
-  scheme_current_process->stack_current = (void *)&dummy;
-#endif
-
 #ifdef DIR_FUNCTION
   scheme_set_process_directory(new_process, scheme_current_process);
 #endif
@@ -1032,11 +1015,6 @@ void scheme_swap_process(Scheme_Process *new_process)
   if (SETJMP(scheme_current_process)) {
     CLEARJMP(scheme_current_process);
     /* We're back! */
-#ifdef MANUAL_STACK_PUSH
-    if (leaving_process) {
-      leaving_process = NULL;
-    }
-#endif
   } else {
     /* We're leaving... */
     scheme_current_process = new_process;
@@ -1094,10 +1072,6 @@ static void start_child(Scheme_Process *child,
     
     SCHEME_GET_LOCK();
     
-#ifdef MANUAL_STACK_PUSH
-    leaving_process = scheme_current_process;
-#endif
-
     remove_process(scheme_current_process);
     SCHEME_RELEASE_LOCK();
     
@@ -3660,63 +3634,7 @@ int scheme_sproc_mutex_try_down(void *s)
 
 #endif /* MZ_USE_IRIX_SPROCS */
 
-/****************************************************************/
-
-/* Special stack handling for GC when multiple stacks are used. */
-/* Must define NO_AUTO_STACK_PUSH for compiling GC */
-
-#ifdef MANUAL_STACK_PUSH
-
-extern void GC_push_all_stack(unsigned long b, unsigned long t);
-extern unsigned long GC_stackbottom;
-
-static void push_process_stack(Scheme_Process *p, unsigned long dummy)
-{
-  unsigned long b, t;
-  
-  if (p == scheme_current_process)
-    t = dummy;
-  else
-    t = (unsigned long)p->stack_current;
-  
-  if (p->next) {
-	 b = (unsigned long)p->stack_start;
-	 if (!b) return; /* process still being initialized */
-  } else
-	 b = GC_stackbottom;
-
-  if (b < t)
-    GC_push_all_stack(b, t);
-  else
-    GC_push_all_stack(t, b);
-}
-
-void GC_push_all_stacks()
-{
-  unsigned long dummy;
-  Scheme_Process *p = NULL;
-
-  dummy = (unsigned long)&dummy;
-
-  if (!leaving_process &&
-		(!scheme_current_process || !scheme_first_process->next)) {
-	 /* Not yet running MzScheme or just one thread: */
-	 if (dummy < GC_stackbottom)
-		GC_push_all_stack(dummy, GC_stackbottom);
-	 else
-		GC_push_all_stack(GC_stackbottom, dummy);
-
-	 return;
-  }
-
-  for (p = scheme_first_process; p; p = p->next)
-	 push_process_stack(p, dummy);
-
-  if (leaving_process)
-	 push_process_stack(leaving_process, dummy);
-}
-
-#endif
+/**********************************************************************/
 
 #ifndef MZ_REAL_THREADS
 extern GC_push_all_stack(void *, void *);

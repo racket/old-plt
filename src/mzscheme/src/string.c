@@ -524,15 +524,25 @@ substring (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 string_append (int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *naya;
+  Scheme_Object *naya, *s;
   int i;
 
-  if (argc == 2)
-    return scheme_append_string(argv[0], argv[1]);
+  if (argc == 2) {
+    Scheme_Object *s1 = argv[0], *s2 = argv[1];
+    if (!SCHEME_STRINGP(s1))
+      scheme_wrong_type("string-append", "string", 0, argc, argv);
+    if (!SCHEME_STRINGP(s2))
+      scheme_wrong_type("string-append", "string", 1, argc, argv);
+    return scheme_append_string(s1, s2);
+  }
 
   naya = zero_length_string;
-  for (i = 0; i < argc; i++)
-    naya = scheme_append_string(naya, argv[i]);
+  for (i = 0; i < argc; i++) {
+    s = argv[i];
+    if (!SCHEME_STRINGP(s))
+      scheme_wrong_type("string-append", "string", i, argc, argv);
+    naya = scheme_append_string(naya, s);
+  }
 
   return naya;
 }

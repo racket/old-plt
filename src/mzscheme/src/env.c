@@ -121,13 +121,6 @@ static void init_compile_data(Scheme_Comp_Env *env);
 void *scheme_global_lock;
 #endif
 
-#if defined(_IBMR2)
-/* Under AIX, we need a hack to set stackbottom. HEURISTIC2
-   doesn't really work, and 3.x is different from 4.x. */
-extern long GC_stackbottom;
-long scheme_stackbottom = 0;
-#endif
-
 Scheme_Env *scheme_basic_env ()
 {
   Scheme_Process *process;
@@ -154,11 +147,6 @@ Scheme_Env *scheme_basic_env ()
       setrlimit(RLIMIT_NOFILE, &rl);
     }
   }
-#endif
-
-#if defined(_IBMR2)
-  if (scheme_stackbottom)
-    GC_stackbottom = scheme_stackbottom;
 #endif
 
 #ifdef MZ_USE_IRIX_SPROCS

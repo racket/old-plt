@@ -747,16 +747,6 @@ int main(int argc, char **argv)
   GC_set_stack_base(mzscheme_stack_start);
 #endif
 
-#if defined(_IBMR2) && !defined(USE_SENORA_GC)
-  {
-    int dummy;
-    if ((unsigned long)&dummy > (unsigned long)0x2ff23000)
-      scheme_stackbottom = 0x2ff80000;
-    else
-      scheme_stackbottom = 0x2ff23000;
-  }
-#endif
-
   scheme_actual_main = actual_main;
 
   return scheme_image_main(argc, argv);

@@ -133,7 +133,7 @@ oe:
 	cd dynsrc; $(XMAKE) -e oe
 
 aixdl:
-	cd aixdlfcn; $(MAKE) CC=cc
+	cd aixdlfcn; $(MAKE) CC='$(CC)'
 	$(XMAKE) $(LIBDIR)/libdl.a
 
 g-c: $(GCDIR)/objects $(GCDIR)/$(OBJDIR)

@@ -244,6 +244,8 @@ static long mark_stackoflw;
 
 static int fnl_weak_link_count;
 
+static int ran_final = 1;
+
 static int during_gc;
 
 static MPage *find_page(void *p);
@@ -3514,9 +3516,13 @@ static void gcollect(int full)
 
   /* Run Finalizations. Collections may happen */
 
+  ran_final = 0;
+
   while (run_queue) {
     Fnl *f;
     void **gcs;
+
+    ran_final = 1;
 
     f = run_queue;
     run_queue = run_queue->next;
@@ -3543,7 +3549,10 @@ void *malloc_pages_try_hard(size_t len, size_t alignment)
     m = malloc_pages(len, alignment);
     if (m)
       return m;
-    gcollect(1);
+    if (!ran_final)
+      break;
+    else
+      gcollect(1);
   }
 
   if (GC_out_of_memory)

@@ -1399,10 +1399,6 @@ void wxWindow::Activate(Bool flag) // mac platform only
 		areaNode = areaNode->Next();
 	}
 	OnActivate(flag);
-	
-	if (current != OS_Active()) {
-		ChangeToGray(!OS_Active());
-	}
 }
 
 //-----------------------------------------------------------------------------

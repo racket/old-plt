@@ -6,7 +6,7 @@
    (lib "etc.ss")
    (lib "tool.ss" "drscheme")
    (lib "aligned-pasteboard.ss" "mrlib")
-   (lib "private/aligned-pasteboard/snip-lib.ss" "mrlib")
+   (lib "snip-lib.ss" "mrlib" "private" "aligned-pasteboard")
    (lib "mred.ss" "mred")
    (lib "framework.ss" "framework")
    (lib "list.ss")

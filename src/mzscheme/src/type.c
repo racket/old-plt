@@ -179,8 +179,9 @@ scheme_init_type (Scheme_Env *env)
 
   set_name(scheme_indent_type, "<internal-indentation>");
 
-  set_name(scheme_reserved_3_type, "<reserved-3>");
-  set_name(scheme_reserved_4_type, "<reserved-4>");
+  set_name(scheme_udp_type, "<udp-socket>");
+  set_name(scheme_udp_waitable_type, "<udp-socket-waitable>");
+
   set_name(scheme_reserved_5_type, "<reserved-5>");
 
   set_name(_scheme_values_types_, "<resurrected>");

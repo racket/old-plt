@@ -1,7 +1,6 @@
 ;;; dhtmltests.ss -- DHTML tests for MysterX
 
-(require (lib "class.ss"))
-(require (lib "mysterx.ss" "mysterx"))
+(require-library "mysterx.ss" "mysterx")
 
 (define wb (make-object mx-browser% "DHTML tests" 300 300 
 			'default 'default '(maximize)))

@@ -1,4 +1,12 @@
-Version 200
+Version 103-p3
+
+Browser windows get reclaimed when browsers are 
+ shutdown by a custodian in DrScheme (was fixed 
+ in 103-p1, broken again in 103-p2)
+The first HTML event is received properly after 
+ a custodian shutdown in DrScheme (PR 1893)
+
+Version 103-p2
 
 Added support for paths of property names in
  com-get-property and com-set-property!
@@ -12,6 +20,7 @@ Fixed and documented keycode, alt-key, ctrl-key,
  and shift-key attributes of key-{down,up,pressed}
  HTML events
 Increased size of HTML event queue to 8192 from 50
+Changed browser Windows event loop to use blocking 
 
 Version 103-p1:
 

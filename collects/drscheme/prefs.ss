@@ -13,7 +13,7 @@
 				       (not x))))
 
   (mred:add-preference-panel
-   "Interactions"
+   "General II"
    (lambda (panel)
      (let* ([main (make-object mred:vertical-panel% panel)]
 	    [right-align-in-main
@@ -37,6 +37,8 @@
 		       "Keep execution history in interactions window")
        (make-check-box 'drscheme:execute-warning-once
 		       "Only warn once when executions and interactions are not synchronized")
+       (make-check-box 'drscheme:open-all-files-in-scheme-mode
+		       "Open all files as Scheme programs")
        (make-object mred:vertical-panel% main)
        main))))
        

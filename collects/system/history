@@ -2,6 +2,9 @@ SYSTEM HISTORY
 --------------
 Version 50:
 
+- fixed a bug in file handlers; if a predicate is supplied, that
+  predicate is only called with one argument, the filename.
+
 - added mred:get-single-choice, which takes the same arguments as
   wx:get-single-choice. It works the same, unless the dialog is
   resized, in which case the mred: version resizes gracefully.

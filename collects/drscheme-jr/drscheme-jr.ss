@@ -31,7 +31,8 @@
 
 (define image-dir (vector-ref argv 0))
 (define sys-dir (vector-ref argv 1))
-(define argv-in (list->vector (cddr (vector->list argv))))
+(define dump-image? (string=? (vector-ref argv 2) "y"))
+(define argv-in (list->vector (cdddr (vector->list argv))))
 
 (define syntax-level 'advanced)
 (define use-print-convert? (and (defined? 'mzrice:print-convert)
@@ -427,7 +428,7 @@
       (current-eval mzrice-eval))))
 
 (define (go)
-  (when no-arguments-given?
+  (when (and no-arguments-given? dump-image?)
     (with-handlers ([void void]) ; If it fails, no matter
       (unless (directory-exists? image-dir)
         (make-directory image-dir))

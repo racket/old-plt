@@ -4126,6 +4126,7 @@ void wxMediaEdit::Resized(wxSnip *snip, Bool redraw_now)
   snip->line->MarkRecalculate();
   if (maxWidth >= 0) {
     snip->line->MarkCheckFlow();
+    /* Maybe something can now move to the previous line. */
     if (snip->line->prev
 	&& !(snip->line->prev->lastSnip->flags & wxSNIP_HARD_NEWLINE))
       snip->line->prev->MarkCheckFlow();

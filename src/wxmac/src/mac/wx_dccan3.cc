@@ -449,7 +449,6 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
   if (!theATSUstyle) {
     ATSUCreateStyle(&theATSUstyle);
-    
   }
 
   if (ucs4) {
@@ -562,10 +561,19 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			      (use_cgctx || just_meas) ? 1.0 : scale_y);
   }
 
+  {
+    ATSUFontFeatureType types[1];
+    ATSUFontFeatureSelector sels[1];
+
+    types[0] = kAllTypographicFeaturesType;
+    sels[0] = (qd_spacing ? 1 : 0); /* kAllTypographicFeatures{Off,On}Selector */
+    
+    ATSUSetFontFeatures(theATSUstyle, 1, types, sels);
+  }
+
   /********************* BEGIN NO-GC RANGE **********************/
   /* Don't GC until the text layout is destroyed, otherwise the */
   /* unicode string could move.                                 */
-
 
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
 				  kATSUFromTextBeginning,

@@ -1213,29 +1213,29 @@ string_copy_bang(int argc, Scheme_Object *argv[])
   long istart, ifinish;
   long ostart, ofinish;
 
-  if (!SCHEME_STRINGP(argv[0]))
-    scheme_wrong_type("string-copy!", "string", 0, argc, argv);
+  if (!SCHEME_MUTABLE_STRINGP(argv[0]))
+    scheme_wrong_type("string-copy!", "mutable-string", 0, argc, argv);
 
   scheme_get_substring_indices("string-copy!", argv[0], 
-			       argc, argv, 1, 4, 
-			       &istart, &ifinish);
+			       argc, argv, 1, 5, 
+			       &ostart, &ofinish);
 
-  if (!SCHEME_MUTABLE_STRINGP(argv[2]))
-    scheme_wrong_type("string-copy!", "mutable-string", 2, argc, argv);
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("string-copy!", "string", 2, argc, argv);
 
   scheme_get_substring_indices("string-copy!", argv[2], 
-			       argc, argv, 3, 5, 
-			       &ostart, &ofinish);
+			       argc, argv, 3, 4, 
+			       &istart, &ifinish);
 
   if ((ofinish - ostart) < (ifinish - istart)) {
     scheme_arg_mismatch("string-copy!",
-			"not enough room in output string: ",
+			"not enough room in target string: ",
 			argv[2]);
     return NULL;
   }
 
-  memmove(SCHEME_STR_VAL(argv[2]) + ostart,
-	  SCHEME_STR_VAL(argv[0]) + istart,
+  memmove(SCHEME_STR_VAL(argv[0]) + ostart,
+	  SCHEME_STR_VAL(argv[2]) + istart,
 	  ifinish - istart);
   
   return scheme_void;

@@ -37,7 +37,7 @@
           
           (init-field
            [enabled? true]
-           [actual-show? true]
+           [actual-show? false]
            [collapsed? false]
            [to-test (new test-case:program-editor%)]
            [expected (new test-case:program-editor%)])

@@ -20,8 +20,59 @@
 				    [(gz-out gz-in) (make-pipe 4096)])
 			 (thread
 			  (lambda ()
-			    (gzip-through-ports gz-out b64-in #f 0)
-			    (close-output-port b64-in)))
+			    (let ([normal (lambda ()
+					    (gzip-through-ports gz-out b64-in #f 0)
+					    (close-output-port b64-in))]
+				  [gzip (find-executable-path "gzip" #f)])
+			      (if gzip
+				  (let ([p (process* gzip "-c")])
+				    (if (eq? 'running ((list-ref p 4) 'status))
+					(begin
+					  ;; Use gzip process.
+					  ;; Errors to error port:
+					  (thread 
+					   (lambda ()
+					     (dynamic-wind
+					      void
+					      (lambda ()
+						(let loop ()
+						  (let ([r (read-line (cadddr p))])
+						    (unless (eof-object? r)
+						      (fprintf (current-error-port)
+							       "~a~n" r)
+						      (loop)))))
+					      (lambda ()
+						(close-input-port (cadddr p))))))
+					  ;; Copy input to gzip:
+					  (thread
+					   (lambda ()
+					     (let ([s (make-string 4096)])
+					       (dynamic-wind
+						void
+						(lambda ()
+						  (let loop ()
+						    (let ([n (read-string-avail! s gz-out)])
+						      (unless (eof-object? n)
+							(display (substring s 0 n) (cadr p))
+							(loop)))))
+						(lambda ()
+						  (close-input-port gz-out)
+						  (close-output-port (cadr p)))))))
+					  ;; Copy input to b64:
+					  (dynamic-wind
+					   void
+					   (lambda ()
+					     (let ([s (make-string 4096)])
+					       (let loop ()
+						 (let ([n (read-string-avail! s (car p))])
+						   (unless (eof-object? n)
+						     (display (substring s 0 n) b64-in)
+						     (loop))))))
+					   (lambda ()
+					     (close-input-port (car p))
+					     (close-output-port b64-in))))
+					(normal)))
+				  (normal)))))
 			 (values
 			  gz-in
 			  (thread

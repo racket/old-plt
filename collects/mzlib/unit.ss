@@ -228,31 +228,25 @@
 						   [else defn-or-expr]))
 					       all-expanded))])
 			   ;; Build up set! redirection chain:
-			   (with-syntax ([redirected
-					  (let loop ([l (syntax->list (syntax ((ivar iloc) ... 
-									       (expname eloc) ...)))])
-					    (if (null? l)
-						(let ([body (syntax (defn&expr ...))])
-						  (if (null? (syntax-e body))
-						      (syntax ((void)))
-						      body))
-						(with-syntax ([rest (loop (cdr l))]
-							      [(var loc) (car l)])
-						  (syntax
-						   ((letrec-syntax 
-						     ([var 
-						       (set!-expander
-							(lambda (sstx)
-							  (syntax-case sstx (set!)
-							    [vr (identifier? (syntax vr))
-								(syntax (unbox loc))]
-							    [(set! vr val)
-							     (raise-syntax-error
-							      'unit
-							      "cannot set! imported or exported variables"
-							      sstx)]
-							    [(vr . args) (syntax ((unbox loc) . args))])))])
-						     .  rest))))))]
+			   (with-syntax ([redirections
+					  (map
+					   (lambda (varloc)
+					     (with-syntax ([(var loc) varloc])
+					       (syntax
+						[var 
+						 (set!-expander
+						  (lambda (sstx)
+						    (syntax-case sstx (set!)
+						      [vr (identifier? (syntax vr))
+							  (syntax (unbox loc))]
+						      [(set! vr val)
+						       (raise-syntax-error
+							'unit
+							"cannot set! imported or exported variables"
+							sstx)]
+						      [(vr . args) (syntax ((unbox loc) . args))])))])))
+					   (syntax->list (syntax ((ivar iloc) ... 
+									      (expname eloc) ...))))]
 					 [num-imports (datum->syntax 
 						       (length (syntax->list (syntax (iloc ...))))
 						       #f (quote-syntax here))])
@@ -266,8 +260,10 @@
 				   (list (vector eloc ...)
 					 (lambda (iloc ...)
 					   (let ([intname undefined] ...)
-					     . redirected)))))))))))))))))])))
-
+					     (letrec-syntax redirections
+						 (void) ; in case the body would be empty
+					       defn&expr ...))))))))))))))))))])))
+  
   (define (check-expected-interface tag unit num-imports exports)
     (unless (unit? unit)
       (raise

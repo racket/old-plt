@@ -1,92 +1,83 @@
-(parameterize ([use-compiled-file-kinds 'none])
-  (require-library "compile.ss" "compiler"))
 
-(parameterize ([use-compiled-file-kinds 'none])
-  (require-library "cmdline.ss")
-  (require-relative-library "setupsig.ss")
-  (require-library "invoke.ss"))
+(module setup mzscheme
+  (import (lib "cmdline.ss"))
+  (import (lib "unitsig.ss"))
 
-(define-values/invoke-unit/sig setup-option^
-  (parameterize ([use-compiled-file-kinds 'none])
-    (require-relative-library "setup-optionr.ss")))
+  (import "sig.ss")
+  (import "setup-unit.ss")
+  (import "option-unit.ss")
 
-(define-values (x-specific-collections x-archives)
-  (command-line
-   "setup-plt"
-   argv
-   (once-each
-    [("-c" "--clean") "Delete existing compiled files"
-		      (clean #t)]
-    [("-n" "--no-zo") "Do not produce .zo files"
-		      (make-zo #f)]
-    [("-x" "--no-launcher") "Do not produce launcher programs"
-			    (make-launchers #f)]
-    [("-i" "--no-install") "Do not call collection-specific installers"
-			   (call-install #f)]
-    [("-e" "--extension") "Produce native code extensions"
-			  (make-so #t)]
-    [("-v" "--verbose") "See names of compiled files and info printfs"
-			(verbose #t)]
-    [("-m" "--make-verbose") "See make and compiler usual messages"
-			     (make-verbose #t)]
-    [("-r" "--compile-verbose") "See make and compiler verbose messages"
-				(make-verbose #t)
-				(compiler-verbose #t)]
-    [("-p" "--pause") "Pause at the end if there are any errors"
-		      (pause-on-errors #t)]
-    [("-l") =>
-	    (lambda (flag . collections)
-	      (map list collections))
-	    '("Setup specific <collection>s only" "collection")])
-   (=>
-    (lambda (collections . archives)
-      (values (if (null? collections)
-		  null
-		  (car collections))
-	      archives))
-    '("archive")
-    (lambda (s)
-      (display s)
-      (printf "If no <archive> or -l <collection> is specified, all collections are setup~n")
-      (exit 0)))))
+  (define-values/invoke-unit/sig setup-option^
+    setup:option:unit)
 
-(specific-collections x-specific-collections)
-(archives x-archives)
+  (define-values (x-specific-collections x-archives)
+    (command-line
+     "setup-plt"
+     (global-defined-value 'argv)
+     (once-each
+      [("-c" "--clean") "Delete existing compiled files"
+			(clean #t)]
+      [("-n" "--no-zo") "Do not produce .zo files"
+			(make-zo #f)]
+      [("-x" "--no-launcher") "Do not produce launcher programs"
+			      (make-launchers #f)]
+      [("-i" "--no-install") "Do not call collection-specific installers"
+			     (call-install #f)]
+      [("-e" "--extension") "Produce native code extensions"
+			    (make-so #t)]
+      [("-v" "--verbose") "See names of compiled files and info printfs"
+			  (verbose #t)]
+      [("-m" "--make-verbose") "See make and compiler usual messages"
+			       (make-verbose #t)]
+      [("-r" "--compile-verbose") "See make and compiler verbose messages"
+				  (make-verbose #t)
+				  (compiler-verbose #t)]
+      [("-p" "--pause") "Pause at the end if there are any errors"
+			(pause-on-errors #t)]
+      [("-l") =>
+	      (lambda (flag . collections)
+		(map list collections))
+	      '("Setup specific <collection>s only" "collection")])
+     (=>
+      (lambda (collections . archives)
+	(values (if (null? collections)
+		    null
+		    (car collections))
+		archives))
+      '("archive")
+      (lambda (s)
+	(display s)
+	(printf "If no <archive> or -l <collection> is specified, all collections are setup~n")
+	(exit 0)))))
 
-(parameterize ([use-compiled-file-kinds (if (clean) 'none (use-compiled-file-kinds))])
-  (require-library "sig.ss" "compiler"))
+  (specific-collections x-specific-collections)
+  (archives x-archives)
 
-(parameterize ([use-compiled-file-kinds (if (clean) 'none (use-compiled-file-kinds))])
+  (import (lib "launcher-sig.ss" "launcher"))
+  (import (lib "launcher-unit.ss" "launcher"))
+
+  (import (lib "dynext-sig.ss" "dynext"))
+  (import (lib "dynext-unit.ss" "dynext"))
+
+  (import (lib "sig.ss" "compiler"))
+  (import (lib "option-unit.ss" "compiler"))
+  (import (lib "compiler-unit.ss" "compiler"))
+
   (invoke-unit/sig
    (compound-unit/sig
     (import (SOPTION : setup-option^))
-    (link [string : mzlib:string^ ((require-library "stringr.ss"))]
-	  [file : mzlib:file^ ((require-library "filer.ss") string function)]
-	  [function : mzlib:function^ ((require-library "functior.ss"))]
-	  [compile : mzlib:compile^ ((require-library "compiler.ss"))]
-	  [pretty-print : mzlib:pretty-print^ ((require-library "prettyr.ss"))]
-	  [launcher : launcher-maker^ ((require-library "launcherr.ss" "launcher") 
-                                       file dcompile dlink)]
-	  [dcompile : dynext:compile^ ((require-library "compiler.ss" "dynext"))]
-	  [dlink : dynext:link^ ((require-library "linkr.ss" "dynext"))]
-	  [dfile : dynext:file^ ((require-library "filer.ss" "dynext"))]
-	  [option : compiler:option^ ((require-library "optionr.ss" "compiler"))]
-	  [info : setup:info^ ((require-relative-library "get-infor.ss"))]
-	  [compiler : compiler^ ((require-library "compiler.ss" "compiler")
+    (link [launcher : launcher-maker^ (launcher:unit dcompile dlink)]
+	  [dcompile : dynext:compile^ (dynext:compile:unit)]
+	  [dlink : dynext:link^ (dynext:link:unit)]
+	  [dfile : dynext:file^ (dynext:file:unit)]
+	  [option : compiler:options^ (compiler:options:unit)]
+	  [compiler : compiler^ (compiler:unit
 				 option
-				 function
-				 pretty-print
-				 file
-				 string
-				 compile
-				 info
 				 dcompile
 				 dlink
 				 dfile)]
-	  [setup : () ((require-relative-library "setupr.ss")
-		       soption
-		       info
-		       file
+	  [setup : () (setup:unit
+		       SOPTION
 		       compiler
 		       option
 		       launcher)])

@@ -30,11 +30,13 @@
 		(#%module-begin
 		 defn ...
 		 (define #%info-lookup
-		   (lambda (n)
+		   (case-lambda
+		    [(n) (#%info-lookup n (lambda () (error 'info.ss "no info for ~a" n)))]
+		    [(n fail)
 		     (case n
 		       [(name) name]
 		       ...
-		       [else (error 'info.ss "no info for ~a" n)])))
+		       [else (fail)])]))
 		 (export #%info-lookup))))))])))
 
   (export (rename info-module-begin #%module-begin)

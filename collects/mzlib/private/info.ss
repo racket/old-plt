@@ -1,3 +1,3 @@
 
 (module info (lib "infotab.ss" "setup")
-  (define name "Make"))
+  (define name "MzLib private"))

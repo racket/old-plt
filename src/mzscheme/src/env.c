@@ -1719,7 +1719,7 @@ static Scheme_Object *read_module_variable(Scheme_Object *obj)
   r->type = scheme_module_variable_type;
   SCHEME_PTR1_VAL(r) = SCHEME_CAR(obj);
   SCHEME_PTR2_VAL(r) = SCHEME_CDR(obj);
-  
+
   return r;
 }
 

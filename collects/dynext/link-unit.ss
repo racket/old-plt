@@ -269,7 +269,7 @@
 	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
 	     [else (bad-name name)])]))
       
-      (include "macinc.ss")
+      (include (build-path "private" "macinc.ss"))
       
       (define (macos-link quiet? input-files output-file)
 	(macos-make 'link-extension "linking-project" "so" quiet? 

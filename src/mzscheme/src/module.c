@@ -522,6 +522,11 @@ Scheme_Object *scheme_module_resolve(Scheme_Object *modidx)
     a[0] = ((Scheme_Modidx *)modidx)->path;
     a[1] = base;
     
+    if (SCHEME_FALSEP(a[0])) {
+      scheme_wrong_syntax("import", NULL, NULL, 
+			  "broken compiled code: unresolved module index without path");
+    }
+
     name = scheme_apply(scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_RESOLVER), 2, a);
     
     ((Scheme_Modidx *)modidx)->resolved = name;
@@ -535,6 +540,9 @@ Scheme_Object *scheme_modidx_shift(Scheme_Object *modidx,
 				   Scheme_Object *shift_to_modidx)
 {
   Scheme_Object *base;
+
+  if (!shift_to_modidx)
+    return modidx;
 
   if (SAME_OBJ(modidx, shift_from_modidx))
     return shift_to_modidx;
@@ -739,7 +747,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   for (l = m->imports; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     expstart_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
 		    env, 0, 
-		    SCHEME_CAR(l));
+		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
   }
 
   /* Lazily start the module. Map all syntax names to a lazy marker: */
@@ -770,7 +778,8 @@ static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *synta
 
   for (l = menv->module->et_imports; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     start_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
-		 exp_env, 0, SCHEME_CAR(l));
+		 exp_env, 0,
+		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx));
   }
 
   body = menv->module->et_body;
@@ -818,7 +827,8 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
   
   for (l = m->imports; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     start_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
-		 env, 0, SCHEME_CAR(l));
+		 env, 0, 
+		 scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
   }
 
   menv->running = 1;

@@ -190,7 +190,7 @@
 			       quiet?)
 		(error 'compile-extension "can't find compiler")))))
       
-      (include "macinc.ss")
+      (include (build-path "private" "macinc.ss"))
       
       (define (macos-compile quiet? input-file output-file includes)
 	(macos-make 'compile-extension "extension-project" "lib" quiet? 

@@ -1,14 +1,15 @@
 
 (compound-unit/sig
- (import (FUNCTION : mzlib:function^)
-	 (STRING : mzlib:string^)
-	 (FILE : mzlib:file^)
-	 (URL : mzlib:url^)
-	 (MRED : mred^))
- (link [BTREE : relative-btree^ ((require-relative-library "btree.ss"))]
-       [BULLET : bullet-snip^ ((require-relative-library "bullet.ss") MRED)]
-       [HTML : browser:html^ ((require-relative-library "html.ss") 
-			      FILE STRING BTREE URL BULLET MRED)]
-       [HYPER : browser^ ((require-relative-library "hyper.ss") 
-			  HTML FUNCTION FILE STRING URL BULLET MRED)])
- (export (open HYPER)))
+ (import (function : mzlib:function^)
+	 (string : mzlib:string^)
+	 (file : mzlib:file^)
+	 (url : mzlib:url^)
+	 (mred : mred^)
+	 (framework : framework^))
+ (link [btree : relative-btree^ ((require-relative-library "btree.ss"))]
+       [bullet : bullet-snip^ ((require-relative-library "bullet.ss") mred)]
+       [html : browser:html^ ((require-relative-library "html.ss") 
+			      file string btree url bullet mred)]
+       [hyper : browser^ ((require-relative-library "hyper.ss") 
+			  html function file string url bullet mred framework)])
+ (export (open hyper)))

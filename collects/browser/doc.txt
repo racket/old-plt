@@ -202,3 +202,15 @@ return values are ignored.
 
 > (bullet-size [n]) - Parameter controlling the point size of a
   bullet
+
+-----------------------------------------
+
+The _browserr.ss_ library in the "browser" collection is a unitized version
+of the code documented above. It imports these units:
+
+ (import (function : mzlib:function^)
+	 (string : mzlib:string^)
+	 (file : mzlib:file^)
+	 (url : mzlib:url^)
+	 (mred : mred^)
+	 (framework : framework^))

@@ -61,7 +61,9 @@
 	   (lambda ()
 	     (super-on-frame-active)
 	     (send mred:group:the-frame-group set-active-frame this))]
-	  [keymap (make-object wx:keymap%)]
+	  [keymap (make-object (class-asi wx:keymap%
+				 (public
+				   [DUMMY6 (eval '(make-rectangular 6 1))])))]
 	  [make-root-panel
 	   (lambda (% parent)
 	     (make-object % parent))]
@@ -272,7 +274,11 @@
 	    [WIDTH frame-width]
 	    [HEIGHT frame-height])
 	  
-	  (public)
+	  (public
+	    [on-close
+	     (lambda ()
+	       (and (super-on-close)
+		    (send (get-edit) on-close)))])
 
 	  (public
 	    [get-panel%  (lambda () mred:panel:vertical-edit-panel%)]

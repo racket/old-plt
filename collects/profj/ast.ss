@@ -228,8 +228,8 @@
   ;(make-special-name ?? src string)
   (p-define-struct (special-name expr) (name))
   
-  ;(make-specified-this ?? src name)
-  (p-define-struct (specified-this expr) (class))
+  ;(make-specified-this ?? src name (U string #f))
+  (p-define-struct (specified-this expr) (class var))
   
   ;(make-call ?? src (U #f expression) MethodName (list Expression) (U #f method-record))
   (p-define-struct (call expr) (expr method-name args method-record))

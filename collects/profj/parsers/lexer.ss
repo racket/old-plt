@@ -308,7 +308,7 @@
      
      ;; 3.11
      ((: "(" ")" "{" "}" "[" "]")
-      (syn-val 'keyword lexeme start-pos end-pos))
+      (syn-val 'keyword (string->symbol lexeme) start-pos end-pos))
      ;; 3.11
      ((: ";" "," ".")
       (syn-val 'default lexeme start-pos end-pos))

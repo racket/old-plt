@@ -37,6 +37,9 @@
       
       (drscheme:modes:add-mode "Java mode"
                                (new (colorer mode:surrogate-text%)
+                                    (matches (list (list '|{| '|}|)
+                                                   (list '|(| '|)|)
+                                                   (list '|[| '|]|)))
 				    (get-token get-syntax-token)
                                     (prefix "Java"))
                                (lambda (text prompt-position) 

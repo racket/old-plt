@@ -522,13 +522,12 @@
                                             (accesses-private fields)))
                              ,@(create-private-setters/getters (accesses-private fields))
                              
-                             ,@(generate-inner-makers (members-inner class-members) type-recs)
+                             ,@(generate-inner-makers (members-inner class-members) depth type-recs)
                              ,(when (> depth 0)
                                 `(field ,@(let loop ((d depth))
                                             (cond
                                               ((= d 0) null)
                                               (else 
-                                               (printf "~a~n" d)
                                                (cons `(,(string->symbol (format "encl-this-~a-f" d)) null)
                                                      (loop (sub1 d))))))))
                              
@@ -616,28 +615,33 @@
                 (class-override-table old-override-table))))))))
             
                       
-  ;generate-inner-makers: (list def) type-records -> (list syntax)
-  (define (generate-inner-makers defs type-recs)
+  ;generate-inner-makers: (list def) int type-records -> (list syntax)
+  (define (generate-inner-makers defs depth type-recs)
     (apply append
-           (map (lambda (d) (build-inner-makers d type-recs)) defs)))
+           (map (lambda (d) (build-inner-makers d depth type-recs)) defs)))
   
-  ;build-inner-makers: def type-records -> (list syntax)
-  (define (build-inner-makers def type-recs)
+  ;build-inner-makers: def int type-records -> (list syntax)
+  (define (build-inner-makers def depth type-recs)
     (let* ((class-name (id-string (def-name def)))
            (ctor-name (string-append "construct-" class-name))
            (parms (map method-parms (get-ctors (def-members def) type-recs))))
-      (map (build-inner-maker class-name ctor-name type-recs) parms)))
+      (map (build-inner-maker class-name ctor-name depth type-recs) parms)))
   
-  ;build-inner-maker: string string type-records -> ((list field) -> syntax)
-  (define (build-inner-maker class-name ctor-name type-recs)
+  ;build-inner-maker: string string int type-records -> ((list field) -> syntax)
+  (define (build-inner-maker class-name ctor-name depth type-recs)
     (lambda (parms)
       (let ((translated-parms (translate-parms parms))
+            (encls-this (reverse (let loop ((d depth))
+                                   (cond
+                                     ((= d 0) null)
+                                     (else (cons (string->symbol (format "encl-this-~a-f" d))
+                                                 (loop (sub1 d))))))))
             (parm-types (map (lambda (p) (type-spec-to-type (field-type p) #f 'full type-recs)) parms)))
         (make-syntax #f
                      `(define/public (,(build-identifier (build-method-name ctor-name parm-types)) ,@translated-parms)
                         (let ((temp-obj (make-object ,(build-identifier class-name))))
                           (send temp-obj ,(build-identifier (build-constructor-name class-name parm-types))
-                                this ,@translated-parms)
+                                this ,@encls-this ,@translated-parms)
                           temp-obj))
                      #f))))
 
@@ -878,7 +882,13 @@
           (static? (memq 'static modifiers)))
       
       (when (and ctor? inner?)
-        (set! parms (cons 'encl-this-1 parms)))
+        (set! parms
+              (reverse (append (let loop ((d depth))
+                                 (cond
+                                   ((= d 0) null)
+                                   (else (cons (string->symbol (format "encl-this-~a" d))
+                                               (loop (sub1 d))))))
+                               parms))))
       
       (static-method static?)
       (make-syntax #f
@@ -886,7 +896,12 @@
                      ((and ctor? inner?)
                       `(lambda ,parms
                          (let/ec return-k
-                           (set! encl-this-1-f encl-this-1)
+                           ,@(let loop ((d depth))
+                               (cond
+                                 ((= d 0) null)
+                                 (else (cons `(set! ,(string->symbol (format "encl-this-~a-f" d))
+                                                    ,(string->symbol (format "encl-this-~a" d)))
+                                             (loop (sub1 d))))))
                            ,(translate-statement block type-recs)
                            (void))))
                      ((and block void?)
@@ -1340,7 +1355,6 @@
   ;translates a Java expression into a Scheme expression.
   ;raises an error if it has no implementation for an expression type
   
-  ;converted
   ;translate-expression: Expression -> syntax
   (define translate-expression
     (lambda (expr)
@@ -1360,6 +1374,7 @@
                                           (expr-src expr)))
         ((special-name? expr) (translate-special-name (special-name-name expr)
                                                       (expr-src expr)))
+        ((specified-this? expr) (translate-specified-this (specified-this-var expr) (expr-src expr)))
         ((call? expr) (translate-call (call-expr expr)
                                       (call-method-name expr)
                                       (map translate-expression (call-args expr))
@@ -1542,6 +1557,10 @@
   (define (translate-special-name name src)
     (let ((id (build-identifier name)))
       (make-syntax #f id (build-src src))))
+  
+  ;translate-specified-this: string src -> syntax
+  (define (translate-specified-this var src)
+    (make-syntax #f (build-identifier (string-append var "-f")) (build-src src)))
   
   ;translate-call: (U expression #f) (U special-name id) (list syntax) method-record src-> syntax
   (define (translate-call expr method-name args method-record src)

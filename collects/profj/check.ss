@@ -65,7 +65,7 @@
               (lambda (env)
                 (and (not (null? env))
                      (if (and (or (string=? "this" (var-type-var (car env)))
-                                  (regexp-match "this-encl-" (var-type-var (car env))))
+                                  (regexp-match "encl-this-" (var-type-var (car env))))
                               (type=? type (var-type-type (car env))))
                          (car env)
                          (lookup (cdr env)))))))
@@ -92,21 +92,21 @@
                      (cond
 		      [(string=? name (var-type-var (car env))) 0]
 		      [(or (string=? "this" (var-type-var (car env)))
-                           (regexp-match "this-encl-" (var-type-var (car env))))
+                           (regexp-match "encl-this-" (var-type-var (car env))))
 		       (add1 (lookup (cdr env)))]
 		      [else (lookup (cdr env))])))))
       (lookup (environment-types env))))
   
   ;update-env-for-inner: env -> env
   (define (update-env-for-inner env)
-    (letrec ((str "this-encl-")
+    (letrec ((str "encl-this-")
              (update-env
               (lambda (env)
                 (cond
                   ((null? env) null)
                   ((regexp-match str (var-type-var (car env)))
                    (let* ((var (car env)))
-                     (cons (make-var-type (format "this-encl-~a" 
+                     (cons (make-var-type (format "encl-this-~a" 
                                                   (add1 (string->number (regexp-replace str (var-type-var var) ""))))
                                           (var-type-type var)
                                           (var-type-properties var))
@@ -253,7 +253,7 @@
         (build-inner-info def p-name level type-recs (def-file def) #t))
       (if (interface-def? def)
           (check-interface def p-name level type-recs)
-          (check-class def p-name level type-recs (add-var-to-env "this-encl-1" this-type final-parm inner-env)))
+          (check-class def p-name level type-recs (add-var-to-env "encl-this-1" this-type final-parm inner-env)))
       ;; Propagate uses in internal defn to enclosing defn:
       (for-each (lambda (use)
                   (add-required c-class (req-class use) (req-path use) type-recs))
@@ -1528,7 +1528,9 @@
   (define (check-specified-this exp env static? interact? level type-recs)
     (when static?
       (special-error (expr-src exp) interact?))
-    (var-type-type (lookup-enclosing-this (specified-this-class exp) env level type-recs)))
+    (let ((var (lookup-enclosing-this (specified-this-class exp) env level type-recs)))
+      (set-specified-this-var! exp (var-type-var var))
+      (var-type-type var)))
     
   ;;Skipping package access constraints
   ;; 15.12

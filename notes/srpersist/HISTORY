@@ -1,6 +1,12 @@
 SrPersist 
 =========
 
+Version 204
+-----------
+
+Fixed bug with col-attribute with attribute 
+ 'sql-desc-unsigned, PR 6236
+
 Version 203
 -----------
 

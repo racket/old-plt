@@ -8,7 +8,8 @@
            case->)
   (require-for-syntax mzscheme
                       (lib "list.ss")
-		      (lib "stx.ss" "syntax"))
+		      (lib "name.ss" "syntax")
+                      (lib "stx.ss" "syntax"))
   
   (require (lib "class.ss"))
   
@@ -43,27 +44,32 @@
            (syntax
             (-contract a-contract to-check pos-blame-e neg-blame-e src-loc)))]
         [(_ a-contract-e to-check pos-blame-e neg-blame-e src-info-e)
-         (syntax
-          (let ([a-contract a-contract-e]
-                [name to-check]
-                [neg-blame neg-blame-e]
-                [pos-blame pos-blame-e]
-                [src-info src-info-e])
-            (unless (contract-p? a-contract)
-              (error 'contract "expected a contract as first argument, got: ~e, other args ~e ~e ~e ~e" 
-                     a-contract
-                     name
-                     pos-blame
-                     neg-blame
-                     src-info))
-            (unless (and (symbol? neg-blame)
-                         (symbol? pos-blame))
-              (error 'contract "expected symbols as names for assigning blame, got: ~e and ~e, other args ~e ~e ~e"
-                     neg-blame pos-blame
-                     a-contract 
-                     name
-                     src-info))
-            (check-contract a-contract name pos-blame neg-blame src-info-e)))])))
+         (let ([name (syntax-local-infer-name (syntax a-contract-e))])
+           (with-syntax ([named-a-contract-e
+                          (if name
+                              (syntax-property (syntax a-contract-e) 'inferred-name name)
+                              (syntax a-contract-e))])
+             (syntax
+              (let ([a-contract named-a-contract-e]
+                    [name to-check]
+                    [neg-blame neg-blame-e]
+                    [pos-blame pos-blame-e]
+                    [src-info src-info-e])
+                (unless (contract-p? a-contract)
+                  (error 'contract "expected a contract as first argument, got: ~e, other args ~e ~e ~e ~e" 
+                         a-contract
+                         name
+                         pos-blame
+                         neg-blame
+                         src-info))
+                (unless (and (symbol? neg-blame)
+                             (symbol? pos-blame))
+                  (error 'contract "expected symbols as names for assigning blame, got: ~e and ~e, other args ~e ~e ~e"
+                         neg-blame pos-blame
+                         a-contract 
+                         name
+                         src-info))
+                (check-contract a-contract name pos-blame neg-blame src-info-e)))))])))
   
   (define-syntaxes (-> ->* ->d ->d* case->)
     (let ()
@@ -381,12 +387,23 @@
               (with-syntax ([outer-args outer-args]
                             [inner-check (make-inner-check outer-args)]
                             [(inner-args body) (make-main outer-args)])
-                (add-outer-check
-                 (syntax
-                  (make-contract
-                   (lambda outer-args
-                     inner-check
-                     (lambda inner-args body))))))))))
+                (with-syntax ([inner-lambda 
+                               (set-inferred-name-from
+                                stx
+                                (syntax (lambda inner-args body)))])
+                  (add-outer-check
+                   (syntax
+                    (make-contract
+                     (lambda outer-args
+                       inner-check
+                       inner-lambda))))))))))
+      
+      ;; set-inferred-name-from : syntax syntax -> syntax
+      (define (set-inferred-name-from with-name to-be-named)
+        (let ([name (syntax-local-infer-name with-name)])
+          (if name
+              (syntax-property to-be-named 'inferred-name name)
+              to-be-named)))
       
       ;; ->/f : syntax -> syntax
       ;; the transformer for the -> macro
@@ -415,12 +432,16 @@
                (with-syntax ([outer-args outer-args]
                              [(inner-check ...) (make-inner-check outer-args)]
                              [(body ...) (make-bodies outer-args)])
-                 (add-outer-check
-                  (syntax
-                   (make-contract
-                    (lambda outer-args
-                      inner-check ...
-                      (case-lambda body ...))))))))]))
+                 (with-syntax ([inner-lambda 
+                                (set-inferred-name-from
+                                 stx
+                                 (syntax (case-lambda body ...)))])
+                   (add-outer-check
+                    (syntax
+                     (make-contract
+                      (lambda outer-args
+                        inner-check ...
+                        inner-lambda))))))))]))
       
       ;; case->/h : (listof syntax) -> (values (syntax -> syntax) (syntax -> syntax) (syntax -> syntax))
       ;; like the other /h functions, but composes the wrapper functions
@@ -484,15 +505,22 @@
            union symbols
            subclass?/c implementation?/c is-a?/c
            listof)
+  
+  (define-syntax (name stx)
+    (syntax-case stx ()
+      [(_ name exp)
+       (syntax (let ([name exp])
+                 name))]))
 
   (define (symbols . ss)
-    (lambda (x)
-      (memq x ss)))
+    (name symbols
+          (lambda (x)
+            (memq x ss))))
 
-  (define (>=/c x) (lambda (y) (and (number? y) (>= y x))))
-  (define (<=/c x) (lambda (y) (and (number? y) (<= y x))))
-  (define (</c x) (lambda (y) (and (number? y) (< y x))))
-  (define (>/c x) (lambda (y) (and (number? y) (> y x))))
+  (define (>=/c x) (name >=/c (lambda (y) (and (number? y) (>= y x)))))
+  (define (<=/c x) (name <=/c (lambda (y) (and (number? y) (<= y x)))))
+  (define (</c x) (name </c (lambda (y) (and (number? y) (< y x)))))
+  (define (>/c x) (name >/c (lambda (y) (and (number? y) (> y x)))))
 
   (define (is-a?/c <%>) (lambda (x) (is-a? x <%>)))
   (define (subclass?/c <%>) (lambda (x) (subclass? x <%>)))
@@ -507,7 +535,7 @@
                     (procedure-arity-includes? x 1))
          (error 'union "expected procedures of arity 1, got: ~e" x)))
      fs)
-    (apply or/f fs))
+    (name union (lambda (x) ((apply or/f fs) x))))
 
   (define (and/f . fs)
     (for-each
@@ -516,8 +544,9 @@
                     (procedure-arity-includes? x 1))
          (error 'and/f "expected procedures of arity 1, got: ~e" x)))
      fs)
-    (lambda (x)
-      (andmap (lambda (f) (f x)) fs)))
+    (name and/f
+          (lambda (x)
+            (andmap (lambda (f) (f x)) fs))))
   
   (define (or/f . fs)
     (for-each
@@ -526,16 +555,19 @@
                     (procedure-arity-includes? x 1))
          (error 'or/f "expected procedures of arity 1, got: ~e" x)))
      fs)
-    (lambda (x)
-      (ormap (lambda (f) (f x)) fs)))
+    (name or/f
+          (lambda (x)
+            (ormap (lambda (f) (f x)) fs))))
   
   (define (listof p)
-    (lambda (v)
-      (and (list? v)
-           (andmap p v))))
+    (name listof
+          (lambda (v)
+            (and (list? v)
+                 (andmap p v)))))
   
   (define (vectorof p)
-    (lambda (v)
-      (and (vector? v)
-           (andmap p (vector->list v)))))
+    (name vectorof 
+          (lambda (v)
+            (and (vector? v)
+                 (andmap p (vector->list v))))))
   )

@@ -481,7 +481,7 @@
 "stand-alone executable.")
 
 (drscheme:language:open-input-text
- ((is-a?/c text%) (>/c 0) (>/c 0)
+ ((is-a?/c text%) (>=/c 0) (>=/c 0)
   . -> .
   input-port?)
  (text start end)

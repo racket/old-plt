@@ -73,13 +73,14 @@
     (dynamic-wind
      (lambda () (semaphore-wait ht-lock))
      (lambda ()
-       (hash-table-get
-	ht
-	(string->symbol key)
-	(lambda ()
-	  (let ([v (compute)])
-	    (hash-table-put! ht (string->symbol key) v)
-	    v))))
+       (let ([sym (string->symbol key)])
+	 (hash-table-get
+	  ht
+	  sym
+	  (lambda ()
+	    (let ([v (compute)])
+	      (hash-table-put! ht sym v)
+	      v)))))
      (lambda () (semaphore-post ht-lock))))
 
   (define html-keywords (make-hash-table))
@@ -159,7 +160,7 @@
 			    (fprintf p "'~s" (cadr entry))
 			    (display entry p)))
 		    (get-output-string p)) ; the text to display
-		  "doc.txt" ; file
+		  #f ; file
 		  start ; label (a position in this case)
 		  "doc.txt")))] ; title
 	[else #f]))))
@@ -262,7 +263,9 @@
 				  (car v) ; key
 				  (cadr v) ; display
 				  (list-ref v 4) ; title
-				  (build-path doc (list-ref v 2))
+				  (if (list-ref v 2)
+				      (build-path doc (list-ref v 2))
+				      doc)
 				  (list-ref v 3) ; label
 				  ckey))])
 

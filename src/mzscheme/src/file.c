@@ -4630,6 +4630,7 @@ find_system_path(int argc, Scheme_Object **argv)
 
     switch (which) {
     case id_doc_dir:
+    case id_desk_dir:
       t = 'desk';
       break;
     case id_home_dir:
@@ -4669,6 +4670,7 @@ find_system_path(int argc, Scheme_Object **argv)
   
     if ((which == id_home_dir) 
 	|| (which == id_doc_dir) 
+	|| (which == id_desk_dir) 
 	|| (which == id_temp_dir) 
 	|| (which == id_init_dir) 
 	|| (which == id_sys_dir))

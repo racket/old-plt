@@ -75,7 +75,7 @@ static int unbundle_symset_frameStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
   if (!frameStyle_wxNO_RESIZE_BORDER_sym) WITH_VAR_STACK(init_symset_frameStyle());
-  Scheme_Object *i, *l = v;
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
@@ -192,9 +192,9 @@ os_wxFrame::~os_wxFrame()
 
 void os_wxFrame::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -224,9 +224,9 @@ void os_wxFrame::OnDropFile(pathname x0)
 
 Bool os_wxFrame::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -259,9 +259,9 @@ Bool os_wxFrame::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxFrame::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -294,9 +294,9 @@ Bool os_wxFrame::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxFrame::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -328,7 +328,7 @@ void os_wxFrame::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -357,7 +357,7 @@ void os_wxFrame::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -386,7 +386,7 @@ void os_wxFrame::OnMenuClick()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -413,9 +413,9 @@ void os_wxFrame::OnMenuClick()
 
 void os_wxFrame::OnMenuCommand(ExactLong x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -446,7 +446,7 @@ Bool os_wxFrame::OnClose()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -474,9 +474,9 @@ Bool os_wxFrame::OnClose()
 
 void os_wxFrame::OnActivate(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxFrame *sElF = this;
 #endif
@@ -508,7 +508,7 @@ static Scheme_Object *os_wxFrameOnDropFile(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -535,8 +535,8 @@ static Scheme_Object *os_wxFramePreOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -565,8 +565,8 @@ static Scheme_Object *os_wxFramePreOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -785,7 +785,7 @@ static Scheme_Object *os_wxFrameCreateStatusLine(Scheme_Object *obj, int n,  Sch
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   int x0;
-  string x1;
+  string x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -879,7 +879,7 @@ static Scheme_Object *os_wxFrameSetStatusText(Scheme_Object *obj, int n,  Scheme
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -929,7 +929,7 @@ static Scheme_Object *os_wxFrameSetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMenuBar* x0;
+  class wxMenuBar* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -952,8 +952,8 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxBitmap* x0;
-  class wxBitmap* x1;
+  class wxBitmap* x0 INIT_NULLED_OUT;
+  class wxBitmap* x1 INIT_NULLED_OUT;
   int x2;
 
   SETUP_VAR_STACK_REMEMBERED(4);
@@ -1008,7 +1008,7 @@ static Scheme_Object *os_wxFrameSetTitle(Scheme_Object *obj, int n,  Scheme_Obje
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1029,7 +1029,7 @@ static Scheme_Object *os_wxFrameSetTitle(Scheme_Object *obj, int n,  Scheme_Obje
 #if  NO_GET_MENU_BAR
 static Scheme_Object *objscheme_wxFrame_Getwx_menu_bar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   class wxMenuBar* v;
   REMEMBER_VAR_STACK();
 
@@ -1049,16 +1049,16 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxFrame *realobj;
+  os_wxFrame *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  class wxFrame* x0;
-  string x1;
+  class wxFrame* x0 INIT_NULLED_OUT;
+  string x1 INIT_NULLED_OUT;
   int x2;
   int x3;
   int x4;
   int x5;
   int x6;
-  string x7;
+  string x7 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
@@ -1173,8 +1173,8 @@ int objscheme_istype_wxFrame(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxFrame(class wxFrame *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

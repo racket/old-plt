@@ -141,8 +141,8 @@ static Scheme_Object *wxsGlobalwxsFillPrivateColor(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  class wxDC* x0;
-  class wxColour* x1;
+  class wxDC* x0 INIT_NULLED_OUT;
+  class wxColour* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -183,7 +183,7 @@ static Scheme_Object *wxsGlobalwxSchemeYield(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  void* x0;
+  void* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -211,10 +211,10 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[2], NULL))) {
-    string x0;
-    string x1;
-    string x2;
-    npathname x3;
+    string x0 INIT_NULLED_OUT;
+    string x1 INIT_NULLED_OUT;
+    string x2 INIT_NULLED_OUT;
+    npathname x3 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
@@ -240,10 +240,10 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
     
     
   } else  {
-    string x0;
-    string x1;
+    string x0 INIT_NULLED_OUT;
+    string x1 INIT_NULLED_OUT;
     ExactLong x2;
-    npathname x3;
+    npathname x3 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -280,11 +280,11 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
   REMEMBER_VAR_STACK();
   Bool r;
   if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && (WITH_REMEMBERED_STACK(objscheme_istype_box(p[2], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(objscheme_unbox(p[2], NULL), NULL)))) {
-    string x0;
-    string x1;
+    string x0 INIT_NULLED_OUT;
+    string x1 INIT_NULLED_OUT;
     string _x2;
     string* x2 = &_x2;
-    npathname x3;
+    npathname x3 INIT_NULLED_OUT;
   Scheme_Object *sbox_tmp;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
@@ -312,11 +312,11 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
       WITH_VAR_STACK(objscheme_set_box(p[2], WITH_VAR_STACK(objscheme_bundle_string((char *)_x2))));
     
   } else  {
-    string x0;
-    string x1;
+    string x0 INIT_NULLED_OUT;
+    string x1 INIT_NULLED_OUT;
     long _x2;
     long* x2 = &_x2;
-    npathname x3;
+    npathname x3 INIT_NULLED_OUT;
   Scheme_Object *sbox_tmp;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
@@ -353,7 +353,7 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   string r;
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(2);
   VAR_STACK_PUSH(0, p);
@@ -477,7 +477,7 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   Bool r;
-  string x0;
+  string x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   float x3;
@@ -547,13 +547,13 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   nstring r;
-  nstring x0;
-  npathname x1;
-  nstring x2;
-  nstring x3;
-  nstring x4;
+  nstring x0 INIT_NULLED_OUT;
+  npathname x1 INIT_NULLED_OUT;
+  nstring x2 INIT_NULLED_OUT;
+  nstring x3 INIT_NULLED_OUT;
+  nstring x4 INIT_NULLED_OUT;
   int x5;
-  class wxWindow* x6;
+  class wxWindow* x6 INIT_NULLED_OUT;
   int x7;
   int x8;
 
@@ -608,7 +608,7 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 
 void objscheme_setup_wxsGlobal(void *env)
 {
-  Scheme_Object *functmp;
+  Scheme_Object *functmp INIT_NULLED_OUT;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, env);
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity(wxsGlobalwxsFillPrivateColor, "fill-private-color", 2, 2));

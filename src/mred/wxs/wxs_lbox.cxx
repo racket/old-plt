@@ -94,7 +94,7 @@ static int unbundle_symset_style(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
   if (!style_wxHSCROLL_sym) WITH_VAR_STACK(init_symset_style());
-  Scheme_Object *i, *l = v;
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
@@ -303,9 +303,9 @@ os_wxListBox::~os_wxListBox()
 
 void os_wxListBox::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxListBox *sElF = this;
 #endif
@@ -335,9 +335,9 @@ void os_wxListBox::OnDropFile(pathname x0)
 
 Bool os_wxListBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxListBox *sElF = this;
 #endif
@@ -370,9 +370,9 @@ Bool os_wxListBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxListBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxListBox *sElF = this;
 #endif
@@ -405,9 +405,9 @@ Bool os_wxListBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxListBox::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxListBox *sElF = this;
 #endif
@@ -439,7 +439,7 @@ void os_wxListBox::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxListBox *sElF = this;
 #endif
@@ -468,7 +468,7 @@ void os_wxListBox::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxListBox *sElF = this;
 #endif
@@ -499,7 +499,7 @@ static Scheme_Object *os_wxListBoxSetString(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   int x0;
-  string x1;
+  string x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -547,7 +547,7 @@ static Scheme_Object *os_wxListBoxSetStringSelection(Scheme_Object *obj, int n, 
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -593,7 +593,7 @@ static Scheme_Object *os_wxListBoxSet(Scheme_Object *obj, int n,  Scheme_Object 
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   int x0;
-  string* x1;
+  string* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -722,7 +722,7 @@ static Scheme_Object *os_wxListBoxFindString(Scheme_Object *obj, int n,  Scheme_
   REMEMBER_VAR_STACK();
   int r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -746,7 +746,7 @@ static Scheme_Object *os_wxListBoxSetClientData(Scheme_Object *obj, int n,  Sche
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   int x0;
-  string x1;
+  string x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -932,8 +932,8 @@ static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Obje
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && 1) {
-    string x0;
-    string x1;
+    string x0 INIT_NULLED_OUT;
+    string x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -953,7 +953,7 @@ static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Obje
     
     
   } else  {
-    string x0;
+    string x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -980,7 +980,7 @@ static Scheme_Object *os_wxListBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1007,8 +1007,8 @@ static Scheme_Object *os_wxListBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -1037,8 +1037,8 @@ static Scheme_Object *os_wxListBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -1138,20 +1138,20 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxListBox *realobj;
+  os_wxListBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  class wxPanel* x0;
+  class wxPanel* x0 INIT_NULLED_OUT;
   wxFunction x1;
-  nstring x2;
+  nstring x2 INIT_NULLED_OUT;
   int x3;
   int x4;
   int x5;
   int x6;
   int x7;
   int x8;
-  string* x9;
+  string* x9 INIT_NULLED_OUT;
   int x10;
-  string x11;
+  string x11 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(7);
   VAR_STACK_PUSH(0, p);
@@ -1276,8 +1276,8 @@ int objscheme_istype_wxListBox(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxListBox(class wxListBox *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

@@ -380,6 +380,7 @@ XOBJS = ${XSRCS:gc2/xsrc/%.cc=gc2/%.o} \
 MZOBJS = ../mzscheme/gc2/salloc.o \
 	../mzscheme/gc2/bignum.o \
 	../mzscheme/gc2/bool.o \
+	../mzscheme/gc2/builtin.o \
 	../mzscheme/gc2/char.o \
 	../mzscheme/gc2/complex.o \
 	../mzscheme/gc2/dynext.o \
@@ -391,9 +392,15 @@ MZOBJS = ../mzscheme/gc2/salloc.o \
 	../mzscheme/gc2/hash.o \
 	../mzscheme/gc2/image.o \
 	../mzscheme/gc2/list.o \
+	../mzscheme/gc2/network.o \
+	../mzscheme/gc2/numarith.o \
 	../mzscheme/gc2/number.o \
+	../mzscheme/gc2/numcomp.o \
+	../mzscheme/gc2/numstr.o \
+        ../mzscheme/gc2/objclass.o \
         ../mzscheme/gc2/object.o \
 	../mzscheme/gc2/port.o \
+	../mzscheme/gc2/portfun.o \
 	../mzscheme/gc2/print.o \
 	../mzscheme/gc2/process.o \
 	../mzscheme/gc2/promise.o \
@@ -408,6 +415,7 @@ MZOBJS = ../mzscheme/gc2/salloc.o \
 	../mzscheme/gc2/syntax.o \
 	../mzscheme/gc2/type.o \
         ../mzscheme/gc2/unit.o \
+        ../mzscheme/gc2/unitsig.o \
 	../mzscheme/gc2/vector.o \
 	../mzscheme/gc2/gc2.o
 

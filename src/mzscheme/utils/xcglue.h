@@ -173,6 +173,9 @@ typedef float nnfloat;
 # define CONSTRUCTOR_ARGS(x)             ()
 # define CONSTRUCTOR_INIT(x)             /* empty */
 # define ASSELF                          sElF->
+# define INIT_NULLED_OUT                 = NULLED_OUT
+# define INIT_NULLED_ARRAY(x)            = x
+# define INA_comma                       ,
 #else
 # define SETUP_VAR_STACK(n)              /* empty */
 # define SETUP_VAR_STACK_REMEMBERED(n)   /* empty */
@@ -188,6 +191,9 @@ typedef float nnfloat;
 # define CONSTRUCTOR_ARGS(x)             x
 # define CONSTRUCTOR_INIT(x)             x
 # define ASSELF                          /* empty */
+# define INIT_NULLED_OUT                 /* empty */
+# define INIT_NULLED_ARRAY(x)            /* empty */
+# define INA_comma                       /* empty */
 #endif
 
 #ifdef __cplusplus

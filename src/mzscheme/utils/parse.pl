@@ -387,13 +387,14 @@ sub ReadFields {
 	}
     }
 
-    ($returntype, $returnbundle, $returnunbundle, $returnspideytype) = split('/', $returntype);
+    ($returntype, $returnbundle, $returnunbundle, $returnspideytype, $returnpushable) = split('/', $returntype);
 
     $func = &Wash($func);
     $fname = &Wash($fname);
     $returntype = &Wash($returntype);
     $returnbundle = &Wash($returnbundle);
     $returnunbundle = &Wash($returnunbundle);
+    $returnpushable = &Wash($returnpushable);
 
     ($methpre, $methprecall, $methpostcall, $methpost) 
 	= split('/', $methodpostmacros);

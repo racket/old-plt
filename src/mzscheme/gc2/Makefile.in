@@ -31,6 +31,7 @@ OBJS =  salloc.o \
 	network.o \
 	numarith.o \
 	number.o \
+	numcomp.o \
 	numstr.o \
         objclass.o \
         object.o \
@@ -72,6 +73,7 @@ XSRCS = $(XSRCDIR)/salloc.c \
 	$(XSRCDIR)/list.c \
 	$(XSRCDIR)/network.c \
 	$(XSRCDIR)/numarith.c \
+	$(XSRCDIR)/numcomp.c \
 	$(XSRCDIR)/number.c \
 	$(XSRCDIR)/numstr.c \
         $(XSRCDIR)/objclass.c \
@@ -144,6 +146,8 @@ $(XSRCDIR)/numarith.c: ../src/numarith.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/numarith.c $(XSRCDIR)/numarith.c
 $(XSRCDIR)/number.c: ../src/number.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/number.c $(XSRCDIR)/number.c
+$(XSRCDIR)/numcomp.c: ../src/numcomp.o $(XFORMDEP)
+	$(XFORM) $(SRCDIR)/numcomp.c $(XSRCDIR)/numcomp.c
 $(XSRCDIR)/numstr.c: ../src/numstr.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/numstr.c $(XSRCDIR)/numstr.c
 $(XSRCDIR)/objclass.c: ../src/objclass.o $(XFORMDEP)
@@ -226,6 +230,8 @@ numarith.o: $(XSRCDIR)/numarith.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/numarith.c -o numarith.o
 number.o: $(XSRCDIR)/number.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/number.c -o number.o
+numcomp.o: $(XSRCDIR)/numcomp.c
+	$(CC) $(CFLAGS) -c $(XSRCDIR)/numcomp.c -o numcomp.o
 numstr.o: $(XSRCDIR)/numstr.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/numstr.c -o numstr.o
 objclass.o: $(XSRCDIR)/objclass.c

@@ -451,9 +451,9 @@ os_wxMediaPasteboard::~os_wxMediaPasteboard()
 
 void os_wxMediaPasteboard::AfterInteractiveResize(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -483,9 +483,9 @@ void os_wxMediaPasteboard::AfterInteractiveResize(class wxSnip* x0)
 
 void os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -515,9 +515,9 @@ void os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
 
 Bool os_wxMediaPasteboard::CanInteractiveResize(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -548,9 +548,9 @@ Bool os_wxMediaPasteboard::CanInteractiveResize(class wxSnip* x0)
 
 void os_wxMediaPasteboard::AfterInteractiveMove(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -580,9 +580,9 @@ void os_wxMediaPasteboard::AfterInteractiveMove(class wxMouseEvent* x0)
 
 void os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -612,9 +612,9 @@ void os_wxMediaPasteboard::OnInteractiveMove(class wxMouseEvent* x0)
 
 Bool os_wxMediaPasteboard::CanInteractiveMove(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -645,9 +645,9 @@ Bool os_wxMediaPasteboard::CanInteractiveMove(class wxMouseEvent* x0)
 
 void os_wxMediaPasteboard::InteractiveAdjustResize(class wxSnip* x0, nnfloat* x1, nnfloat* x2)
 {
-  Scheme_Object *p[3];
+  Scheme_Object *p[3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -684,9 +684,9 @@ void os_wxMediaPasteboard::InteractiveAdjustResize(class wxSnip* x0, nnfloat* x1
 
 void os_wxMediaPasteboard::InteractiveAdjustMove(class wxSnip* x0, float* x1, float* x2)
 {
-  Scheme_Object *p[3];
+  Scheme_Object *p[3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -723,9 +723,9 @@ void os_wxMediaPasteboard::InteractiveAdjustMove(class wxSnip* x0, float* x1, fl
 
 void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -760,9 +760,9 @@ void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
 
 void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -794,9 +794,9 @@ void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent* x
 
 void os_wxMediaPasteboard::AfterSelect(class wxSnip* x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -827,9 +827,9 @@ void os_wxMediaPasteboard::AfterSelect(class wxSnip* x0, Bool x1)
 
 void os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -860,9 +860,9 @@ void os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
 
 Bool os_wxMediaPasteboard::CanSelect(class wxSnip* x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -894,9 +894,9 @@ Bool os_wxMediaPasteboard::CanSelect(class wxSnip* x0, Bool x1)
 
 void os_wxMediaPasteboard::AfterResize(class wxSnip* x0, nnfloat x1, nnfloat x2, Bool x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -929,9 +929,9 @@ void os_wxMediaPasteboard::AfterResize(class wxSnip* x0, nnfloat x1, nnfloat x2,
 
 void os_wxMediaPasteboard::OnResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
 {
-  Scheme_Object *p[3];
+  Scheme_Object *p[3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -963,9 +963,9 @@ void os_wxMediaPasteboard::OnResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
 
 Bool os_wxMediaPasteboard::CanResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
 {
-  Scheme_Object *p[3];
+  Scheme_Object *p[3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -998,9 +998,9 @@ Bool os_wxMediaPasteboard::CanResize(class wxSnip* x0, nnfloat x1, nnfloat x2)
 
 void os_wxMediaPasteboard::AfterMoveTo(class wxSnip* x0, float x1, float x2, Bool x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1033,9 +1033,9 @@ void os_wxMediaPasteboard::AfterMoveTo(class wxSnip* x0, float x1, float x2, Boo
 
 void os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1068,9 +1068,9 @@ void os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x
 
 Bool os_wxMediaPasteboard::CanMoveTo(class wxSnip* x0, float x1, float x2, Bool x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1104,9 +1104,9 @@ Bool os_wxMediaPasteboard::CanMoveTo(class wxSnip* x0, float x1, float x2, Bool 
 
 void os_wxMediaPasteboard::AfterDelete(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1136,9 +1136,9 @@ void os_wxMediaPasteboard::AfterDelete(class wxSnip* x0)
 
 void os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1168,9 +1168,9 @@ void os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
 
 Bool os_wxMediaPasteboard::CanDelete(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1201,9 +1201,9 @@ Bool os_wxMediaPasteboard::CanDelete(class wxSnip* x0)
 
 void os_wxMediaPasteboard::AfterInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1237,9 +1237,9 @@ void os_wxMediaPasteboard::AfterInsert(class wxSnip* x0, class wxSnip* x1, float
 
 void os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1273,9 +1273,9 @@ void os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2
 
 Bool os_wxMediaPasteboard::CanInsert(class wxSnip* x0, class wxSnip* x1, float x2, float x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1310,9 +1310,9 @@ Bool os_wxMediaPasteboard::CanInsert(class wxSnip* x0, class wxSnip* x1, float x
 
 void os_wxMediaPasteboard::DoPaste(ExactLong x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1341,9 +1341,9 @@ void os_wxMediaPasteboard::DoPaste(ExactLong x0)
 
 void os_wxMediaPasteboard::DoCopy(ExactLong x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1373,9 +1373,9 @@ void os_wxMediaPasteboard::DoCopy(ExactLong x0, Bool x1)
 
 nstring os_wxMediaPasteboard::PutFile(nstring x0, nstring x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1408,9 +1408,9 @@ nstring os_wxMediaPasteboard::PutFile(nstring x0, nstring x1)
 
 nstring os_wxMediaPasteboard::GetFile(nstring x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1443,7 +1443,7 @@ void os_wxMediaPasteboard::AfterEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1472,7 +1472,7 @@ void os_wxMediaPasteboard::OnEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1499,9 +1499,9 @@ void os_wxMediaPasteboard::OnEditSequence()
 
 void os_wxMediaPasteboard::AfterLoadFile(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1530,9 +1530,9 @@ void os_wxMediaPasteboard::AfterLoadFile(Bool x0)
 
 void os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1563,9 +1563,9 @@ void os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
 
 Bool os_wxMediaPasteboard::CanLoadFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1597,9 +1597,9 @@ Bool os_wxMediaPasteboard::CanLoadFile(string x0, int x1)
 
 void os_wxMediaPasteboard::AfterSaveFile(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1628,9 +1628,9 @@ void os_wxMediaPasteboard::AfterSaveFile(Bool x0)
 
 void os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1661,9 +1661,9 @@ void os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
 
 Bool os_wxMediaPasteboard::CanSaveFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1695,9 +1695,9 @@ Bool os_wxMediaPasteboard::CanSaveFile(string x0, int x1)
 
 class wxSnip* os_wxMediaPasteboard::OnNewBox(int x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1727,9 +1727,9 @@ class wxSnip* os_wxMediaPasteboard::OnNewBox(int x0)
 
 class wxImageSnip* os_wxMediaPasteboard::OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1763,9 +1763,9 @@ class wxImageSnip* os_wxMediaPasteboard::OnNewImageSnip(nstring x0, int x1, Bool
 
 void os_wxMediaPasteboard::InvalidateBitmapCache(float x0, float x1, float x2, float x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1797,9 +1797,9 @@ void os_wxMediaPasteboard::InvalidateBitmapCache(float x0, float x1, float x2, f
 
 void os_wxMediaPasteboard::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8)
 {
-  Scheme_Object *p[9];
+  Scheme_Object *p[9] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1837,9 +1837,9 @@ void os_wxMediaPasteboard::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, 
 
 Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1870,9 +1870,9 @@ Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut* x0)
 
 Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1903,9 +1903,9 @@ Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut* x0)
 
 Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1938,9 +1938,9 @@ Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn* x0, string 
 
 Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -1973,9 +1973,9 @@ Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn* x0, string 
 
 void os_wxMediaPasteboard::SetFilename(nstring x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2006,9 +2006,9 @@ void os_wxMediaPasteboard::SetFilename(nstring x0, Bool x1)
 
 Bool os_wxMediaPasteboard::ReleaseSnip(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2039,9 +2039,9 @@ Bool os_wxMediaPasteboard::ReleaseSnip(class wxSnip* x0)
 
 void os_wxMediaPasteboard::SetModified(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2070,9 +2070,9 @@ void os_wxMediaPasteboard::SetModified(Bool x0)
 
 void os_wxMediaPasteboard::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2104,9 +2104,9 @@ void os_wxMediaPasteboard::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
 
 class wxBufferData* os_wxMediaPasteboard::GetSnipData(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2137,9 +2137,9 @@ class wxBufferData* os_wxMediaPasteboard::GetSnipData(class wxSnip* x0)
 
 void os_wxMediaPasteboard::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4)
 {
-  Scheme_Object *p[5];
+  Scheme_Object *p[5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2173,9 +2173,9 @@ void os_wxMediaPasteboard::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnf
 
 void os_wxMediaPasteboard::Resized(class wxSnip* x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2206,9 +2206,9 @@ void os_wxMediaPasteboard::Resized(class wxSnip* x0, Bool x1)
 
 void os_wxMediaPasteboard::SetCaretOwner(class wxSnip* x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2239,9 +2239,9 @@ void os_wxMediaPasteboard::SetCaretOwner(class wxSnip* x0, int x1)
 
 Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6)
 {
-  Scheme_Object *p[7];
+  Scheme_Object *p[7] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2280,7 +2280,7 @@ void os_wxMediaPasteboard::OnDisplaySize()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2309,7 +2309,7 @@ void os_wxMediaPasteboard::OnChange()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2336,9 +2336,9 @@ void os_wxMediaPasteboard::OnChange()
 
 void os_wxMediaPasteboard::OnFocus(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2367,9 +2367,9 @@ void os_wxMediaPasteboard::OnFocus(Bool x0)
 
 void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2399,9 +2399,9 @@ void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent* x0)
 
 void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2431,9 +2431,9 @@ void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent* x0)
 
 void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2463,9 +2463,9 @@ void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent* x0)
 
 void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2497,7 +2497,7 @@ void os_wxMediaPasteboard::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2526,7 +2526,7 @@ void os_wxMediaPasteboard::BlinkCaret()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2553,9 +2553,9 @@ void os_wxMediaPasteboard::BlinkCaret()
 
 void os_wxMediaPasteboard::OwnCaret(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2584,9 +2584,9 @@ void os_wxMediaPasteboard::OwnCaret(Bool x0)
 
 void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
 {
-  Scheme_Object *p[5];
+  Scheme_Object *p[5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2619,9 +2619,9 @@ void os_wxMediaPasteboard::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, i
 
 class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2652,9 +2652,9 @@ class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent* x0)
 
 void os_wxMediaPasteboard::OnChar(class wxKeyEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2684,9 +2684,9 @@ void os_wxMediaPasteboard::OnChar(class wxKeyEvent* x0)
 
 void os_wxMediaPasteboard::OnEvent(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2716,9 +2716,9 @@ void os_wxMediaPasteboard::OnEvent(class wxMouseEvent* x0)
 
 void os_wxMediaPasteboard::CopySelfTo(class wxMediaBuffer* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2750,7 +2750,7 @@ class wxMediaBuffer* os_wxMediaPasteboard::CopySelf()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaPasteboard *sElF = this;
 #endif
@@ -2910,7 +2910,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveResize(Scheme_Object *
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -2936,7 +2936,7 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveResize(Scheme_Object *obj
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -2963,7 +2963,7 @@ static Scheme_Object *os_wxMediaPasteboardCanInteractiveResize(Scheme_Object *ob
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -2989,7 +2989,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterInteractiveMove(Scheme_Object *ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3015,7 +3015,7 @@ static Scheme_Object *os_wxMediaPasteboardOnInteractiveMove(Scheme_Object *obj, 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3042,7 +3042,7 @@ static Scheme_Object *os_wxMediaPasteboardCanInteractiveMove(Scheme_Object *obj,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3068,7 +3068,7 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustResize(Scheme_Object 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   nnfloat _x1;
   nnfloat* x1 = &_x1;
   nnfloat _x2;
@@ -3105,7 +3105,7 @@ static Scheme_Object *os_wxMediaPasteboardInteractiveAdjustMove(Scheme_Object *o
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float _x1;
   float* x1 = &_x1;
   float _x2;
@@ -3176,8 +3176,8 @@ static Scheme_Object *os_wxMediaPasteboardOnDoubleClick(Scheme_Object *obj, int 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxMouseEvent* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -3205,7 +3205,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterSelect(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -3233,7 +3233,7 @@ static Scheme_Object *os_wxMediaPasteboardOnSelect(Scheme_Object *obj, int n,  S
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -3262,7 +3262,7 @@ static Scheme_Object *os_wxMediaPasteboardCanSelect(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -3290,7 +3290,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterResize(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   nnfloat x1;
   nnfloat x2;
   Bool x3;
@@ -3322,7 +3322,7 @@ static Scheme_Object *os_wxMediaPasteboardOnResize(Scheme_Object *obj, int n,  S
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   nnfloat x1;
   nnfloat x2;
 
@@ -3353,7 +3353,7 @@ static Scheme_Object *os_wxMediaPasteboardCanResize(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   nnfloat x1;
   nnfloat x2;
 
@@ -3383,7 +3383,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterMoveTo(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   Bool x3;
@@ -3415,7 +3415,7 @@ static Scheme_Object *os_wxMediaPasteboardOnMoveTo(Scheme_Object *obj, int n,  S
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   Bool x3;
@@ -3448,7 +3448,7 @@ static Scheme_Object *os_wxMediaPasteboardCanMoveTo(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   Bool x3;
@@ -3480,7 +3480,7 @@ static Scheme_Object *os_wxMediaPasteboardAfterDelete(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3506,7 +3506,7 @@ static Scheme_Object *os_wxMediaPasteboardOnDelete(Scheme_Object *obj, int n,  S
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3533,7 +3533,7 @@ static Scheme_Object *os_wxMediaPasteboardCanDelete(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3559,8 +3559,8 @@ static Scheme_Object *os_wxMediaPasteboardAfterInsert(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxSnip* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
   float x2;
   float x3;
 
@@ -3592,8 +3592,8 @@ static Scheme_Object *os_wxMediaPasteboardOnInsert(Scheme_Object *obj, int n,  S
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxSnip* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
   float x2;
   float x3;
 
@@ -3626,8 +3626,8 @@ static Scheme_Object *os_wxMediaPasteboardCanInsert(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxSnip* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
   float x2;
   float x3;
 
@@ -3660,7 +3660,7 @@ static Scheme_Object *os_wxMediaPasteboardFindNextSelectedSnip(Scheme_Object *ob
   REMEMBER_VAR_STACK();
   class wxSnip* r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3684,7 +3684,7 @@ static Scheme_Object *os_wxMediaPasteboardIsSelected(Scheme_Object *obj, int n, 
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3763,7 +3763,7 @@ static Scheme_Object *os_wxMediaPasteboardRemoveSelected(Scheme_Object *obj, int
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3810,7 +3810,7 @@ static Scheme_Object *os_wxMediaPasteboardAddSelected(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
-    class wxSnip* x0;
+    class wxSnip* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -3860,7 +3860,7 @@ static Scheme_Object *os_wxMediaPasteboardSetSelected(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3887,8 +3887,8 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1)) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[1], NULL, 1))) {
-    class wxStyleDelta* x0;
-    class wxSnip* x1;
+    class wxStyleDelta* x0 INIT_NULLED_OUT;
+    class wxSnip* x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -3908,7 +3908,7 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
     
     
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1))) {
-    class wxStyleDelta* x0;
+    class wxStyleDelta* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -3926,8 +3926,8 @@ static Scheme_Object *os_wxMediaPasteboardChangeStyle(Scheme_Object *obj, int n,
     
     
   } else  {
-    class wxStyle* x0;
-    class wxSnip* x1;
+    class wxStyle* x0 INIT_NULLED_OUT;
+    class wxSnip* x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -3959,8 +3959,8 @@ static Scheme_Object *os_wxMediaPasteboardSetAfter(Scheme_Object *obj, int n,  S
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxSnip* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -3985,8 +3985,8 @@ static Scheme_Object *os_wxMediaPasteboardSetBefore(Scheme_Object *obj, int n,  
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxSnip* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxSnip* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -4011,7 +4011,7 @@ static Scheme_Object *os_wxMediaPasteboardLower(Scheme_Object *obj, int n,  Sche
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4034,7 +4034,7 @@ static Scheme_Object *os_wxMediaPasteboardRaise(Scheme_Object *obj, int n,  Sche
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4058,7 +4058,7 @@ static Scheme_Object *os_wxMediaPasteboardResize(Scheme_Object *obj, int n,  Sch
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   nnfloat x1;
   nnfloat x2;
 
@@ -4089,7 +4089,7 @@ static Scheme_Object *os_wxMediaPasteboardMove(Scheme_Object *obj, int n,  Schem
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
-    class wxSnip* x0;
+    class wxSnip* x0 INIT_NULLED_OUT;
     float x1;
     float x2;
 
@@ -4139,7 +4139,7 @@ static Scheme_Object *os_wxMediaPasteboardMoveTo(Scheme_Object *obj, int n,  Sch
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
 
@@ -4166,7 +4166,7 @@ static Scheme_Object *os_wxMediaPasteboardRemove(Scheme_Object *obj, int n,  Sch
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4265,7 +4265,7 @@ static Scheme_Object *os_wxMediaPasteboardDelete(Scheme_Object *obj, int n,  Sch
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
-    class wxSnip* x0;
+    class wxSnip* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -4311,7 +4311,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
-    class wxSnip* x0;
+    class wxSnip* x0 INIT_NULLED_OUT;
     float x1;
     float x2;
 
@@ -4333,8 +4333,8 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
     
     
   } else if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[1], NULL, 1)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[2], NULL))) {
-    class wxSnip* x0;
-    class wxSnip* x1;
+    class wxSnip* x0 INIT_NULLED_OUT;
+    class wxSnip* x1 INIT_NULLED_OUT;
     float x2;
     float x3;
 
@@ -4358,8 +4358,8 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
     
     
   } else if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[1], NULL, 1))) {
-    class wxSnip* x0;
-    class wxSnip* x1;
+    class wxSnip* x0 INIT_NULLED_OUT;
+    class wxSnip* x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(4);
     VAR_STACK_PUSH(0, p);
@@ -4379,7 +4379,7 @@ static Scheme_Object *os_wxMediaPasteboardInsert(Scheme_Object *obj, int n,  Sch
     
     
   } else  {
-    class wxSnip* x0;
+    class wxSnip* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -4430,8 +4430,8 @@ static Scheme_Object *os_wxMediaPasteboardPutFile(Scheme_Object *obj, int n,  Sc
   REMEMBER_VAR_STACK();
   nstring r;
   objscheme_check_valid(obj);
-  nstring x0;
-  nstring x1;
+  nstring x0 INIT_NULLED_OUT;
+  nstring x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -4460,7 +4460,7 @@ static Scheme_Object *os_wxMediaPasteboardGetFile(Scheme_Object *obj, int n,  Sc
   REMEMBER_VAR_STACK();
   nstring r;
   objscheme_check_valid(obj);
-  nstring x0;
+  nstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4557,7 +4557,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLoadFile(Scheme_Object *obj, int n, 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -4586,7 +4586,7 @@ static Scheme_Object *os_wxMediaPasteboardCanLoadFile(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -4639,7 +4639,7 @@ static Scheme_Object *os_wxMediaPasteboardOnSaveFile(Scheme_Object *obj, int n, 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -4668,7 +4668,7 @@ static Scheme_Object *os_wxMediaPasteboardCanSaveFile(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -4723,7 +4723,7 @@ static Scheme_Object *os_wxMediaPasteboardOnNewImageSnip(Scheme_Object *obj, int
   REMEMBER_VAR_STACK();
   class wxImageSnip* r;
   objscheme_check_valid(obj);
-  nstring x0;
+  nstring x0 INIT_NULLED_OUT;
   int x1;
   Bool x2;
   Bool x3;
@@ -4799,7 +4799,7 @@ static Scheme_Object *os_wxMediaPasteboardOnPaint(Scheme_Object *obj, int n,  Sc
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   Bool x0;
-  class wxDC* x1;
+  class wxDC* x1 INIT_NULLED_OUT;
   float x2;
   float x3;
   float x4;
@@ -4841,7 +4841,7 @@ static Scheme_Object *os_wxMediaPasteboardWriteFootersToFile(Scheme_Object *obj,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamOut* x0;
+  class wxMediaStreamOut* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4868,7 +4868,7 @@ static Scheme_Object *os_wxMediaPasteboardWriteHeadersToFile(Scheme_Object *obj,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamOut* x0;
+  class wxMediaStreamOut* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4895,8 +4895,8 @@ static Scheme_Object *os_wxMediaPasteboardReadFooterFromFile(Scheme_Object *obj,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamIn* x0;
-  string x1;
+  class wxMediaStreamIn* x0 INIT_NULLED_OUT;
+  string x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -4925,8 +4925,8 @@ static Scheme_Object *os_wxMediaPasteboardReadHeaderFromFile(Scheme_Object *obj,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamIn* x0;
-  string x1;
+  class wxMediaStreamIn* x0 INIT_NULLED_OUT;
+  string x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -4955,7 +4955,7 @@ static Scheme_Object *os_wxMediaPasteboardWriteToFile(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamOut* x0;
+  class wxMediaStreamOut* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4979,7 +4979,7 @@ static Scheme_Object *os_wxMediaPasteboardReadFromFile(Scheme_Object *obj, int n
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamIn* x0;
+  class wxMediaStreamIn* x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -5007,7 +5007,7 @@ static Scheme_Object *os_wxMediaPasteboardSetFilename(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  nstring x0;
+  nstring x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -5039,7 +5039,7 @@ static Scheme_Object *os_wxMediaPasteboardReleaseSnip(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5090,8 +5090,8 @@ static Scheme_Object *os_wxMediaPasteboardSetSnipData(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxBufferData* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxBufferData* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -5120,7 +5120,7 @@ static Scheme_Object *os_wxMediaPasteboardGetSnipData(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   class wxBufferData* r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5146,7 +5146,7 @@ static Scheme_Object *os_wxMediaPasteboardNeedsUpdate(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   nnfloat x3;
@@ -5180,7 +5180,7 @@ static Scheme_Object *os_wxMediaPasteboardResized(Scheme_Object *obj, int n,  Sc
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -5208,7 +5208,7 @@ static Scheme_Object *os_wxMediaPasteboardSetCaretOwner(Scheme_Object *obj, int 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -5240,7 +5240,7 @@ static Scheme_Object *os_wxMediaPasteboardScrollTo(Scheme_Object *obj, int n,  S
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   nnfloat x3;
@@ -5352,7 +5352,7 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultChar(Scheme_Object *obj, int 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5378,7 +5378,7 @@ static Scheme_Object *os_wxMediaPasteboardOnDefaultEvent(Scheme_Object *obj, int
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5404,7 +5404,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalChar(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5430,7 +5430,7 @@ static Scheme_Object *os_wxMediaPasteboardOnLocalEvent(Scheme_Object *obj, int n
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5582,7 +5582,7 @@ static Scheme_Object *os_wxMediaPasteboardAdjustCursor(Scheme_Object *obj, int n
   REMEMBER_VAR_STACK();
   class wxCursor* r;
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5608,7 +5608,7 @@ static Scheme_Object *os_wxMediaPasteboardOnChar(Scheme_Object *obj, int n,  Sch
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5634,7 +5634,7 @@ static Scheme_Object *os_wxMediaPasteboardOnEvent(Scheme_Object *obj, int n,  Sc
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5660,7 +5660,7 @@ static Scheme_Object *os_wxMediaPasteboardCopySelfTo(Scheme_Object *obj, int n, 
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMediaBuffer* x0;
+  class wxMediaBuffer* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -5819,7 +5819,7 @@ static Scheme_Object *os_wxMediaPasteboard_ConstructScheme(Scheme_Object *obj, i
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxMediaPasteboard *realobj;
+  os_wxMediaPasteboard *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -5984,8 +5984,8 @@ int objscheme_istype_wxMediaPasteboard(Scheme_Object *obj, const char *stop, int
 
 Scheme_Object *objscheme_bundle_wxMediaPasteboard(class wxMediaPasteboard *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

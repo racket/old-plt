@@ -50,7 +50,7 @@ static int unbundle_symset_panelStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
   if (!panelStyle_wxBORDER_sym) WITH_VAR_STACK(init_symset_panelStyle());
-  Scheme_Object *i, *l = v;
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
@@ -190,9 +190,9 @@ os_wxPanel::~os_wxPanel()
 
 void os_wxPanel::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxPanel *sElF = this;
 #endif
@@ -222,9 +222,9 @@ void os_wxPanel::OnDropFile(pathname x0)
 
 Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxPanel *sElF = this;
 #endif
@@ -257,9 +257,9 @@ Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxPanel *sElF = this;
 #endif
@@ -292,9 +292,9 @@ Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxPanel::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxPanel *sElF = this;
 #endif
@@ -326,7 +326,7 @@ void os_wxPanel::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxPanel *sElF = this;
 #endif
@@ -355,7 +355,7 @@ void os_wxPanel::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxPanel *sElF = this;
 #endif
@@ -406,7 +406,7 @@ static Scheme_Object *os_wxPanelSetLabelFont(Scheme_Object *obj, int n,  Scheme_
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxFont* x0;
+  class wxFont* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -450,7 +450,7 @@ static Scheme_Object *os_wxPanelSetButtonFont(Scheme_Object *obj, int n,  Scheme
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxFont* x0;
+  class wxFont* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -516,7 +516,7 @@ static Scheme_Object *os_wxPanelOnChar(Scheme_Object *obj, int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -539,7 +539,7 @@ static Scheme_Object *os_wxPanelOnEvent(Scheme_Object *obj, int n,  Scheme_Objec
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -582,7 +582,7 @@ static Scheme_Object *os_wxPanelOnDropFile(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -609,8 +609,8 @@ static Scheme_Object *os_wxPanelPreOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -639,8 +639,8 @@ static Scheme_Object *os_wxPanelPreOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -796,16 +796,16 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
   SETUP_PRE_VAR_STACK(2);
   PRE_VAR_STACK_PUSH(0, obj);
   PRE_VAR_STACK_PUSH(1, p);
-  os_wxPanel *realobj;
+  os_wxPanel *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0))) {
-    class wxPanel* x0;
+    class wxPanel* x0 INIT_NULLED_OUT;
     int x1;
     int x2;
     int x3;
     int x4;
     int x5;
-    string x6;
+    string x6 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
@@ -853,13 +853,13 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     
     
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxDialogBox(p[0], NULL, 0))) {
-    class wxDialogBox* x0;
+    class wxDialogBox* x0 INIT_NULLED_OUT;
     int x1;
     int x2;
     int x3;
     int x4;
     int x5;
-    string x6;
+    string x6 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
@@ -907,13 +907,13 @@ static Scheme_Object *os_wxPanel_ConstructScheme(Scheme_Object *obj, int n,  Sch
     
     
   } else  {
-    class wxFrame* x0;
+    class wxFrame* x0 INIT_NULLED_OUT;
     int x1;
     int x2;
     int x3;
     int x4;
     int x5;
-    string x6;
+    string x6 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(5);
     VAR_STACK_PUSH(0, p);
@@ -1019,8 +1019,8 @@ int objscheme_istype_wxPanel(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxPanel(class wxPanel *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 
@@ -1087,7 +1087,7 @@ static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
   if (!dialogStyle_wxMAXIMIZE_sym) WITH_VAR_STACK(init_symset_dialogStyle());
-  Scheme_Object *i, *l = v;
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
@@ -1176,9 +1176,9 @@ os_wxDialogBox::~os_wxDialogBox()
 
 void os_wxDialogBox::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1208,9 +1208,9 @@ void os_wxDialogBox::OnDropFile(pathname x0)
 
 Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1243,9 +1243,9 @@ Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1278,9 +1278,9 @@ Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxDialogBox::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1312,7 +1312,7 @@ void os_wxDialogBox::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1341,7 +1341,7 @@ void os_wxDialogBox::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1370,7 +1370,7 @@ Bool os_wxDialogBox::OnClose()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1398,9 +1398,9 @@ Bool os_wxDialogBox::OnClose()
 
 void os_wxDialogBox::OnActivate(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxDialogBox *sElF = this;
 #endif
@@ -1452,7 +1452,7 @@ static Scheme_Object *os_wxDialogBoxSetTitle(Scheme_Object *obj, int n,  Scheme_
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1475,7 +1475,7 @@ static Scheme_Object *os_wxDialogBoxOnDropFile(Scheme_Object *obj, int n,  Schem
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1502,8 +1502,8 @@ static Scheme_Object *os_wxDialogBoxPreOnEvent(Scheme_Object *obj, int n,  Schem
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -1532,8 +1532,8 @@ static Scheme_Object *os_wxDialogBoxPreOnChar(Scheme_Object *obj, int n,  Scheme
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -1682,17 +1682,17 @@ static Scheme_Object *os_wxDialogBox_ConstructScheme(Scheme_Object *obj, int n, 
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxDialogBox *realobj;
+  os_wxDialogBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  class wxWindow* x0;
-  nstring x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  nstring x1 INIT_NULLED_OUT;
   Bool x2;
   int x3;
   int x4;
   int x5;
   int x6;
   int x7;
-  string x8;
+  string x8 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
@@ -1795,8 +1795,8 @@ int objscheme_istype_wxDialogBox(Scheme_Object *obj, const char *stop, int nullO
 
 Scheme_Object *objscheme_bundle_wxDialogBox(class wxDialogBox *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

@@ -61,7 +61,7 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
   if (!canvasStyle_wxHSCROLL_sym) WITH_VAR_STACK(init_symset_canvasStyle());
-  Scheme_Object *i, *l = v;
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
@@ -180,9 +180,9 @@ os_wxCanvas::~os_wxCanvas()
 
 void os_wxCanvas::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -212,9 +212,9 @@ void os_wxCanvas::OnDropFile(pathname x0)
 
 Bool os_wxCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -247,9 +247,9 @@ Bool os_wxCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -282,9 +282,9 @@ Bool os_wxCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxCanvas::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -316,7 +316,7 @@ void os_wxCanvas::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -345,7 +345,7 @@ void os_wxCanvas::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -372,9 +372,9 @@ void os_wxCanvas::OnKillFocus()
 
 void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -404,9 +404,9 @@ void os_wxCanvas::OnScroll(class wxScrollEvent* x0)
 
 void os_wxCanvas::OnChar(class wxKeyEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -436,9 +436,9 @@ void os_wxCanvas::OnChar(class wxKeyEvent* x0)
 
 void os_wxCanvas::OnEvent(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -470,7 +470,7 @@ void os_wxCanvas::OnPaint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxCanvas *sElF = this;
 #endif
@@ -500,7 +500,7 @@ static Scheme_Object *os_wxCanvasOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -527,8 +527,8 @@ static Scheme_Object *os_wxCanvasPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -557,8 +557,8 @@ static Scheme_Object *os_wxCanvasPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -659,7 +659,7 @@ static Scheme_Object *os_wxCanvasOnScroll(Scheme_Object *obj, int n,  Scheme_Obj
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxScrollEvent* x0;
+  class wxScrollEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1004,7 +1004,7 @@ static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMenu* x0;
+  class wxMenu* x0 INIT_NULLED_OUT;
   int x1;
   int x2;
 
@@ -1031,7 +1031,7 @@ static Scheme_Object *os_wxCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Objec
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1057,7 +1057,7 @@ static Scheme_Object *os_wxCanvasOnEvent(Scheme_Object *obj, int n,  Scheme_Obje
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1127,15 +1127,15 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxCanvas *realobj;
+  os_wxCanvas *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  class wxPanel* x0;
+  class wxPanel* x0 INIT_NULLED_OUT;
   int x1;
   int x2;
   int x3;
   int x4;
   int x5;
-  string x6;
+  string x6 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(5);
   VAR_STACK_PUSH(0, p);
@@ -1245,8 +1245,8 @@ int objscheme_istype_wxCanvas(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxCanvas(class wxCanvas *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

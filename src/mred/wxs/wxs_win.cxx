@@ -178,9 +178,9 @@ os_wxWindow::~os_wxWindow()
 
 void os_wxWindow::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxWindow *sElF = this;
 #endif
@@ -210,9 +210,9 @@ void os_wxWindow::OnDropFile(pathname x0)
 
 Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxWindow *sElF = this;
 #endif
@@ -245,9 +245,9 @@ Bool os_wxWindow::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxWindow *sElF = this;
 #endif
@@ -280,9 +280,9 @@ Bool os_wxWindow::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxWindow::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxWindow *sElF = this;
 #endif
@@ -314,7 +314,7 @@ void os_wxWindow::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxWindow *sElF = this;
 #endif
@@ -343,7 +343,7 @@ void os_wxWindow::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxWindow *sElF = this;
 #endif
@@ -373,7 +373,7 @@ static Scheme_Object *os_wxWindowOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -400,8 +400,8 @@ static Scheme_Object *os_wxWindowPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -430,8 +430,8 @@ static Scheme_Object *os_wxWindowPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -641,7 +641,7 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   float _x1;
   float* x1 = &_x1;
   float _x2;
@@ -650,7 +650,7 @@ static Scheme_Object *os_wxWindowGetTextExtent(Scheme_Object *obj, int n,  Schem
   float* x3 = &_x3;
   float _x4;
   float* x4 = &_x4;
-  class wxFont* x5;
+  class wxFont* x5 INIT_NULLED_OUT;
   Bool x6;
   Scheme_Object *sbox_tmp;
 
@@ -1012,7 +1012,7 @@ static Scheme_Object *os_wxWindowSetCursor(Scheme_Object *obj, int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
   class wxCursor* r;
   objscheme_check_valid(obj);
-  class wxCursor* x0;
+  class wxCursor* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -1216,8 +1216,8 @@ int objscheme_istype_wxWindow(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxWindow(class wxWindow *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

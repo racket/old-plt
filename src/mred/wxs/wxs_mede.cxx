@@ -1001,7 +1001,7 @@ class wxTabSnip* os_wxMediaEdit::OnNewTabSnip()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1031,7 +1031,7 @@ class wxTextSnip* os_wxMediaEdit::OnNewTextSnip()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1059,9 +1059,9 @@ class wxTextSnip* os_wxMediaEdit::OnNewTextSnip()
 
 void os_wxMediaEdit::SetRegionData(nnlong x0, nnlong x1, class wxBufferData* x2)
 {
-  Scheme_Object *p[3];
+  Scheme_Object *p[3] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1093,9 +1093,9 @@ void os_wxMediaEdit::SetRegionData(nnlong x0, nnlong x1, class wxBufferData* x2)
 
 class wxBufferData* os_wxMediaEdit::GetRegionData(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1128,7 +1128,7 @@ void os_wxMediaEdit::AfterSetSizeConstraint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1157,7 +1157,7 @@ void os_wxMediaEdit::OnSetSizeConstraint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1186,7 +1186,7 @@ Bool os_wxMediaEdit::CanSetSizeConstraint()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1216,7 +1216,7 @@ void os_wxMediaEdit::AfterSetPosition()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1243,9 +1243,9 @@ void os_wxMediaEdit::AfterSetPosition()
 
 void os_wxMediaEdit::AfterChangeStyle(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1275,9 +1275,9 @@ void os_wxMediaEdit::AfterChangeStyle(nnlong x0, nnlong x1)
 
 void os_wxMediaEdit::OnChangeStyle(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1307,9 +1307,9 @@ void os_wxMediaEdit::OnChangeStyle(nnlong x0, nnlong x1)
 
 Bool os_wxMediaEdit::CanChangeStyle(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1340,9 +1340,9 @@ Bool os_wxMediaEdit::CanChangeStyle(nnlong x0, nnlong x1)
 
 void os_wxMediaEdit::AfterDelete(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1372,9 +1372,9 @@ void os_wxMediaEdit::AfterDelete(nnlong x0, nnlong x1)
 
 void os_wxMediaEdit::OnDelete(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1404,9 +1404,9 @@ void os_wxMediaEdit::OnDelete(nnlong x0, nnlong x1)
 
 Bool os_wxMediaEdit::CanDelete(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1437,9 +1437,9 @@ Bool os_wxMediaEdit::CanDelete(nnlong x0, nnlong x1)
 
 void os_wxMediaEdit::AfterInsert(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1469,9 +1469,9 @@ void os_wxMediaEdit::AfterInsert(nnlong x0, nnlong x1)
 
 void os_wxMediaEdit::OnInsert(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1501,9 +1501,9 @@ void os_wxMediaEdit::OnInsert(nnlong x0, nnlong x1)
 
 Bool os_wxMediaEdit::CanInsert(nnlong x0, nnlong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1534,9 +1534,9 @@ Bool os_wxMediaEdit::CanInsert(nnlong x0, nnlong x1)
 
 void os_wxMediaEdit::DoPaste(nnlong x0, ExactLong x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1566,9 +1566,9 @@ void os_wxMediaEdit::DoPaste(nnlong x0, ExactLong x1)
 
 void os_wxMediaEdit::DoCopy(nnlong x0, nnlong x1, ExactLong x2, Bool x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1600,9 +1600,9 @@ void os_wxMediaEdit::DoCopy(nnlong x0, nnlong x1, ExactLong x2, Bool x3)
 
 void os_wxMediaEdit::SetAnchor(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1631,9 +1631,9 @@ void os_wxMediaEdit::SetAnchor(Bool x0)
 
 nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1666,9 +1666,9 @@ nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
 
 nstring os_wxMediaEdit::GetFile(nstring x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1701,7 +1701,7 @@ void os_wxMediaEdit::AfterEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1730,7 +1730,7 @@ void os_wxMediaEdit::OnEditSequence()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1757,9 +1757,9 @@ void os_wxMediaEdit::OnEditSequence()
 
 void os_wxMediaEdit::AfterLoadFile(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1788,9 +1788,9 @@ void os_wxMediaEdit::AfterLoadFile(Bool x0)
 
 void os_wxMediaEdit::OnLoadFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1821,9 +1821,9 @@ void os_wxMediaEdit::OnLoadFile(string x0, int x1)
 
 Bool os_wxMediaEdit::CanLoadFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1855,9 +1855,9 @@ Bool os_wxMediaEdit::CanLoadFile(string x0, int x1)
 
 void os_wxMediaEdit::AfterSaveFile(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1886,9 +1886,9 @@ void os_wxMediaEdit::AfterSaveFile(Bool x0)
 
 void os_wxMediaEdit::OnSaveFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1919,9 +1919,9 @@ void os_wxMediaEdit::OnSaveFile(string x0, int x1)
 
 Bool os_wxMediaEdit::CanSaveFile(string x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1953,9 +1953,9 @@ Bool os_wxMediaEdit::CanSaveFile(string x0, int x1)
 
 class wxSnip* os_wxMediaEdit::OnNewBox(int x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -1985,9 +1985,9 @@ class wxSnip* os_wxMediaEdit::OnNewBox(int x0)
 
 class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, int x1, Bool x2, Bool x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2021,9 +2021,9 @@ class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, int x1, Bool x2, B
 
 void os_wxMediaEdit::InvalidateBitmapCache(float x0, float x1, float x2, float x3)
 {
-  Scheme_Object *p[4];
+  Scheme_Object *p[4] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2055,9 +2055,9 @@ void os_wxMediaEdit::InvalidateBitmapCache(float x0, float x1, float x2, float x
 
 void os_wxMediaEdit::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float x4, float x5, float x6, float x7, int x8)
 {
-  Scheme_Object *p[9];
+  Scheme_Object *p[9] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2095,9 +2095,9 @@ void os_wxMediaEdit::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float 
 
 Bool os_wxMediaEdit::WriteFootersToFile(class wxMediaStreamOut* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2128,9 +2128,9 @@ Bool os_wxMediaEdit::WriteFootersToFile(class wxMediaStreamOut* x0)
 
 Bool os_wxMediaEdit::WriteHeadersToFile(class wxMediaStreamOut* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2161,9 +2161,9 @@ Bool os_wxMediaEdit::WriteHeadersToFile(class wxMediaStreamOut* x0)
 
 Bool os_wxMediaEdit::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2196,9 +2196,9 @@ Bool os_wxMediaEdit::ReadFooterFromFile(class wxMediaStreamIn* x0, string x1)
 
 Bool os_wxMediaEdit::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2231,9 +2231,9 @@ Bool os_wxMediaEdit::ReadHeaderFromFile(class wxMediaStreamIn* x0, string x1)
 
 void os_wxMediaEdit::SetFilename(nstring x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2264,9 +2264,9 @@ void os_wxMediaEdit::SetFilename(nstring x0, Bool x1)
 
 Bool os_wxMediaEdit::ReleaseSnip(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2297,9 +2297,9 @@ Bool os_wxMediaEdit::ReleaseSnip(class wxSnip* x0)
 
 void os_wxMediaEdit::SetModified(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2328,9 +2328,9 @@ void os_wxMediaEdit::SetModified(Bool x0)
 
 void os_wxMediaEdit::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2362,9 +2362,9 @@ void os_wxMediaEdit::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
 
 class wxBufferData* os_wxMediaEdit::GetSnipData(class wxSnip* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2395,9 +2395,9 @@ class wxBufferData* os_wxMediaEdit::GetSnipData(class wxSnip* x0)
 
 void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4)
 {
-  Scheme_Object *p[5];
+  Scheme_Object *p[5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2431,9 +2431,9 @@ void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, nnfloat x
 
 void os_wxMediaEdit::Resized(class wxSnip* x0, Bool x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2464,9 +2464,9 @@ void os_wxMediaEdit::Resized(class wxSnip* x0, Bool x1)
 
 void os_wxMediaEdit::SetCaretOwner(class wxSnip* x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2497,9 +2497,9 @@ void os_wxMediaEdit::SetCaretOwner(class wxSnip* x0, int x1)
 
 Bool os_wxMediaEdit::ScrollTo(class wxSnip* x0, float x1, float x2, nnfloat x3, nnfloat x4, Bool x5, int x6)
 {
-  Scheme_Object *p[7];
+  Scheme_Object *p[7] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2538,7 +2538,7 @@ void os_wxMediaEdit::OnDisplaySize()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2567,7 +2567,7 @@ void os_wxMediaEdit::OnChange()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2594,9 +2594,9 @@ void os_wxMediaEdit::OnChange()
 
 void os_wxMediaEdit::OnFocus(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2625,9 +2625,9 @@ void os_wxMediaEdit::OnFocus(Bool x0)
 
 void os_wxMediaEdit::OnDefaultChar(class wxKeyEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2657,9 +2657,9 @@ void os_wxMediaEdit::OnDefaultChar(class wxKeyEvent* x0)
 
 void os_wxMediaEdit::OnDefaultEvent(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2689,9 +2689,9 @@ void os_wxMediaEdit::OnDefaultEvent(class wxMouseEvent* x0)
 
 void os_wxMediaEdit::OnLocalChar(class wxKeyEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2721,9 +2721,9 @@ void os_wxMediaEdit::OnLocalChar(class wxKeyEvent* x0)
 
 void os_wxMediaEdit::OnLocalEvent(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2755,7 +2755,7 @@ void os_wxMediaEdit::SizeCacheInvalid()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2784,7 +2784,7 @@ void os_wxMediaEdit::BlinkCaret()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2811,9 +2811,9 @@ void os_wxMediaEdit::BlinkCaret()
 
 void os_wxMediaEdit::OwnCaret(Bool x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2842,9 +2842,9 @@ void os_wxMediaEdit::OwnCaret(Bool x0)
 
 void os_wxMediaEdit::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
 {
-  Scheme_Object *p[5];
+  Scheme_Object *p[5] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2877,9 +2877,9 @@ void os_wxMediaEdit::Refresh(float x0, float x1, nnfloat x2, nnfloat x3, int x4)
 
 class wxCursor* os_wxMediaEdit::AdjustCursor(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2910,9 +2910,9 @@ class wxCursor* os_wxMediaEdit::AdjustCursor(class wxMouseEvent* x0)
 
 void os_wxMediaEdit::OnChar(class wxKeyEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2942,9 +2942,9 @@ void os_wxMediaEdit::OnChar(class wxKeyEvent* x0)
 
 void os_wxMediaEdit::OnEvent(class wxMouseEvent* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -2974,9 +2974,9 @@ void os_wxMediaEdit::OnEvent(class wxMouseEvent* x0)
 
 void os_wxMediaEdit::CopySelfTo(class wxMediaBuffer* x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -3008,7 +3008,7 @@ class wxMediaBuffer* os_wxMediaEdit::CopySelf()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMediaEdit *sElF = this;
 #endif
@@ -3090,8 +3090,8 @@ static Scheme_Object *os_wxMediaEditSetClickback(Scheme_Object *obj, int n,  Sch
   nnlong x0;
   nnlong x1;
   wxClickbackFunc x2;
-  void* x3;
-  class wxStyleDelta* x4;
+  void* x3 INIT_NULLED_OUT;
+  class wxStyleDelta* x4 INIT_NULLED_OUT;
   Bool x5;
 
   SETUP_VAR_STACK_REMEMBERED(4);
@@ -3128,7 +3128,7 @@ static Scheme_Object *os_wxMediaEditSetWordbreakFunc(Scheme_Object *obj, int n, 
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   wxWordbreakFunc x0;
-  void* x1;
+  void* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3153,7 +3153,7 @@ static Scheme_Object *os_wxMediaEditSetAutowrapBitmap(Scheme_Object *obj, int n,
   REMEMBER_VAR_STACK();
   class wxBitmap* r;
   objscheme_check_valid(obj);
-  class wxBitmap* x0;
+  class wxBitmap* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3288,7 +3288,7 @@ static Scheme_Object *os_wxMediaEditSetWordbreakMap(Scheme_Object *obj, int n,  
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMediaWordbreakMap* x0;
+  class wxMediaWordbreakMap* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3352,7 +3352,7 @@ static Scheme_Object *os_wxMediaEditSetRegionData(Scheme_Object *obj, int n,  Sc
   objscheme_check_valid(obj);
   nnlong x0;
   nnlong x1;
-  class wxBufferData* x2;
+  class wxBufferData* x2 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -3747,7 +3747,7 @@ static Scheme_Object *os_wxMediaEditSetTabs(Scheme_Object *obj, int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  float* x0;
+  float* x0 INIT_NULLED_OUT;
   int x1;
   float x2;
   Bool x3;
@@ -3780,7 +3780,7 @@ static Scheme_Object *os_wxMediaEditGetTabs(Scheme_Object *obj, int n,  Scheme_O
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  float* r;
+  float* r INIT_NULLED_OUT;
   objscheme_check_valid(obj);
   nnint _x0;
   nnint* x0 = &_x0;
@@ -3790,9 +3790,10 @@ static Scheme_Object *os_wxMediaEditGetTabs(Scheme_Object *obj, int n,  Scheme_O
   Bool* x2 = &_x2;
   Scheme_Object *sbox_tmp;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, r);
 
   
   if (n > 0) {
@@ -3927,7 +3928,7 @@ static Scheme_Object *os_wxMediaEditWriteToFile(Scheme_Object *obj, int n,  Sche
   Bool r;
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxMediaStreamOut(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
-    class wxMediaStreamOut* x0;
+    class wxMediaStreamOut* x0 INIT_NULLED_OUT;
     nnlong x1;
     long x2;
 
@@ -3952,7 +3953,7 @@ static Scheme_Object *os_wxMediaEditWriteToFile(Scheme_Object *obj, int n,  Sche
     
     
   } else  {
-    class wxMediaStreamOut* x0;
+    class wxMediaStreamOut* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -3984,7 +3985,7 @@ static Scheme_Object *os_wxMediaEditReadFromFile(Scheme_Object *obj, int n,  Sch
   Bool r;
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxMediaStreamIn(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL))) {
-    class wxMediaStreamIn* x0;
+    class wxMediaStreamIn* x0 INIT_NULLED_OUT;
     long x1;
     Bool x2;
 
@@ -4009,7 +4010,7 @@ static Scheme_Object *os_wxMediaEditReadFromFile(Scheme_Object *obj, int n,  Sch
     
     
   } else  {
-    class wxMediaStreamIn* x0;
+    class wxMediaStreamIn* x0 INIT_NULLED_OUT;
     Bool x1;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -4108,7 +4109,7 @@ static Scheme_Object *os_wxMediaEditGetSnipPosition(Scheme_Object *obj, int n,  
   REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -4132,7 +4133,7 @@ static Scheme_Object *os_wxMediaEditGetSnipPositionAndLocation(Scheme_Object *ob
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   nnlong _x1;
   nnlong* x1 = &_x1;
   float _x2;
@@ -4185,7 +4186,7 @@ static Scheme_Object *os_wxMediaEditFindSnip(Scheme_Object *obj, int n,  Scheme_
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  class wxSnip* r;
+  class wxSnip* r INIT_NULLED_OUT;
   objscheme_check_valid(obj);
   nnlong x0;
   int x1;
@@ -4193,9 +4194,10 @@ static Scheme_Object *os_wxMediaEditFindSnip(Scheme_Object *obj, int n,  Scheme_
   nnlong* x2 = &_x2;
   Scheme_Object *sbox_tmp;
 
-  SETUP_VAR_STACK_REMEMBERED(2);
+  SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
   VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, r);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[0], "find-snip in text%"));
@@ -4224,7 +4226,7 @@ static Scheme_Object *os_wxMediaEditFindStringAll(Scheme_Object *obj, int n,  Sc
   REMEMBER_VAR_STACK();
   long* r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   long _x1;
   long* x1 = &_x1;
   int x2;
@@ -4275,7 +4277,7 @@ static Scheme_Object *os_wxMediaEditFindString(Scheme_Object *obj, int n,  Schem
   REMEMBER_VAR_STACK();
   long r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
   long x2;
   long x3;
@@ -5094,7 +5096,7 @@ static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Sche
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1)) && WITH_REMEMBERED_STACK(objscheme_istype_nonnegative_symbol_integer(p[1], "start", NULL))) {
-    class wxStyleDelta* x0;
+    class wxStyleDelta* x0 INIT_NULLED_OUT;
     long x1;
     long x2;
 
@@ -5119,7 +5121,7 @@ static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Sche
     
     
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxStyleDelta(p[0], NULL, 1))) {
-    class wxStyleDelta* x0;
+    class wxStyleDelta* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -5137,7 +5139,7 @@ static Scheme_Object *os_wxMediaEditChangeStyle(Scheme_Object *obj, int n,  Sche
     
     
   } else  {
-    class wxStyle* x0;
+    class wxStyle* x0 INIT_NULLED_OUT;
     long x1;
     long x2;
 
@@ -5571,7 +5573,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
   objscheme_check_valid(obj);
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
     long x0;
-    string x1;
+    string x1 INIT_NULLED_OUT;
     nnlong x2;
     long x3;
     Bool x4;
@@ -5602,7 +5604,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[0], NULL))) {
     long x0;
-    string x1;
+    string x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -5621,7 +5623,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     
   } else if ((n >= 3) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_string(p[1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[2], NULL))) {
     nnlong x0;
-    string x1;
+    string x1 INIT_NULLED_OUT;
     nnlong x2;
     long x3;
     Bool x4;
@@ -5653,7 +5655,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0], NULL))) {
     nnlong x0;
-    string x1;
+    string x1 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -5672,7 +5674,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     
     
   } else if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[1], NULL))) {
-    class wxSnip* x0;
+    class wxSnip* x0 INIT_NULLED_OUT;
     nnlong x1;
     long x2;
     Bool x3;
@@ -5702,7 +5704,7 @@ static Scheme_Object *os_wxMediaEditInsert(Scheme_Object *obj, int n,  Scheme_Ob
     
     
   } else if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxSnip(p[0], NULL, 0))) {
-    class wxSnip* x0;
+    class wxSnip* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -6232,8 +6234,8 @@ static Scheme_Object *os_wxMediaEditPutFile(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   nstring r;
   objscheme_check_valid(obj);
-  nstring x0;
-  nstring x1;
+  nstring x0 INIT_NULLED_OUT;
+  nstring x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -6262,7 +6264,7 @@ static Scheme_Object *os_wxMediaEditGetFile(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   nstring r;
   objscheme_check_valid(obj);
-  nstring x0;
+  nstring x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -6359,7 +6361,7 @@ static Scheme_Object *os_wxMediaEditOnLoadFile(Scheme_Object *obj, int n,  Schem
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -6388,7 +6390,7 @@ static Scheme_Object *os_wxMediaEditCanLoadFile(Scheme_Object *obj, int n,  Sche
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -6441,7 +6443,7 @@ static Scheme_Object *os_wxMediaEditOnSaveFile(Scheme_Object *obj, int n,  Schem
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -6470,7 +6472,7 @@ static Scheme_Object *os_wxMediaEditCanSaveFile(Scheme_Object *obj, int n,  Sche
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -6525,7 +6527,7 @@ static Scheme_Object *os_wxMediaEditOnNewImageSnip(Scheme_Object *obj, int n,  S
   REMEMBER_VAR_STACK();
   class wxImageSnip* r;
   objscheme_check_valid(obj);
-  nstring x0;
+  nstring x0 INIT_NULLED_OUT;
   int x1;
   Bool x2;
   Bool x3;
@@ -6601,7 +6603,7 @@ static Scheme_Object *os_wxMediaEditOnPaint(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   Bool x0;
-  class wxDC* x1;
+  class wxDC* x1 INIT_NULLED_OUT;
   float x2;
   float x3;
   float x4;
@@ -6643,7 +6645,7 @@ static Scheme_Object *os_wxMediaEditWriteFootersToFile(Scheme_Object *obj, int n
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamOut* x0;
+  class wxMediaStreamOut* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -6670,7 +6672,7 @@ static Scheme_Object *os_wxMediaEditWriteHeadersToFile(Scheme_Object *obj, int n
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamOut* x0;
+  class wxMediaStreamOut* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -6697,8 +6699,8 @@ static Scheme_Object *os_wxMediaEditReadFooterFromFile(Scheme_Object *obj, int n
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamIn* x0;
-  string x1;
+  class wxMediaStreamIn* x0 INIT_NULLED_OUT;
+  string x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -6727,8 +6729,8 @@ static Scheme_Object *os_wxMediaEditReadHeaderFromFile(Scheme_Object *obj, int n
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxMediaStreamIn* x0;
-  string x1;
+  class wxMediaStreamIn* x0 INIT_NULLED_OUT;
+  string x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -6756,7 +6758,7 @@ static Scheme_Object *os_wxMediaEditSetFilename(Scheme_Object *obj, int n,  Sche
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  nstring x0;
+  nstring x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -6788,7 +6790,7 @@ static Scheme_Object *os_wxMediaEditReleaseSnip(Scheme_Object *obj, int n,  Sche
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -6839,8 +6841,8 @@ static Scheme_Object *os_wxMediaEditSetSnipData(Scheme_Object *obj, int n,  Sche
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
-  class wxBufferData* x1;
+  class wxSnip* x0 INIT_NULLED_OUT;
+  class wxBufferData* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -6869,7 +6871,7 @@ static Scheme_Object *os_wxMediaEditGetSnipData(Scheme_Object *obj, int n,  Sche
   REMEMBER_VAR_STACK();
   class wxBufferData* r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -6895,7 +6897,7 @@ static Scheme_Object *os_wxMediaEditNeedsUpdate(Scheme_Object *obj, int n,  Sche
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   nnfloat x3;
@@ -6929,7 +6931,7 @@ static Scheme_Object *os_wxMediaEditResized(Scheme_Object *obj, int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -6957,7 +6959,7 @@ static Scheme_Object *os_wxMediaEditSetCaretOwner(Scheme_Object *obj, int n,  Sc
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   int x1;
 
   SETUP_VAR_STACK_REMEMBERED(3);
@@ -6989,7 +6991,7 @@ static Scheme_Object *os_wxMediaEditScrollTo(Scheme_Object *obj, int n,  Scheme_
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxSnip* x0;
+  class wxSnip* x0 INIT_NULLED_OUT;
   float x1;
   float x2;
   nnfloat x3;
@@ -7101,7 +7103,7 @@ static Scheme_Object *os_wxMediaEditOnDefaultChar(Scheme_Object *obj, int n,  Sc
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7127,7 +7129,7 @@ static Scheme_Object *os_wxMediaEditOnDefaultEvent(Scheme_Object *obj, int n,  S
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7153,7 +7155,7 @@ static Scheme_Object *os_wxMediaEditOnLocalChar(Scheme_Object *obj, int n,  Sche
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7179,7 +7181,7 @@ static Scheme_Object *os_wxMediaEditOnLocalEvent(Scheme_Object *obj, int n,  Sch
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7331,7 +7333,7 @@ static Scheme_Object *os_wxMediaEditAdjustCursor(Scheme_Object *obj, int n,  Sch
   REMEMBER_VAR_STACK();
   class wxCursor* r;
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7357,7 +7359,7 @@ static Scheme_Object *os_wxMediaEditOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxKeyEvent* x0;
+  class wxKeyEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7383,7 +7385,7 @@ static Scheme_Object *os_wxMediaEditOnEvent(Scheme_Object *obj, int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMouseEvent* x0;
+  class wxMouseEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7409,7 +7411,7 @@ static Scheme_Object *os_wxMediaEditCopySelfTo(Scheme_Object *obj, int n,  Schem
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxMediaBuffer* x0;
+  class wxMediaBuffer* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -7458,10 +7460,10 @@ static Scheme_Object *os_wxMediaEdit_ConstructScheme(Scheme_Object *obj, int n, 
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxMediaEdit *realobj;
+  os_wxMediaEdit *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   nnfloat x0;
-  float* x1;
+  float* x1 INIT_NULLED_OUT;
   int x2;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(4);
@@ -7670,8 +7672,8 @@ int objscheme_istype_wxMediaEdit(Scheme_Object *obj, const char *stop, int nullO
 
 Scheme_Object *objscheme_bundle_wxMediaEdit(class wxMediaEdit *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

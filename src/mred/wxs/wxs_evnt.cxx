@@ -67,7 +67,7 @@ os_wxEvent::~os_wxEvent()
 
 static Scheme_Object *objscheme_wxEvent_GettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   ExactLong v;
   REMEMBER_VAR_STACK();
 
@@ -84,7 +84,7 @@ static Scheme_Object *objscheme_wxEvent_GettimeStamp(Scheme_Object *obj, int n, 
 
 static Scheme_Object *objscheme_wxEvent_SettimeStamp(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   ExactLong v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -102,7 +102,7 @@ static Scheme_Object *os_wxEvent_ConstructScheme(Scheme_Object *obj, int n,  Sch
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxEvent *realobj;
+  os_wxEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -164,8 +164,8 @@ int objscheme_istype_wxEvent(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxEvent(class wxEvent *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 
@@ -323,7 +323,7 @@ os_wxCommandEvent::~os_wxCommandEvent()
 
 static Scheme_Object *objscheme_wxCommandEvent_GeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   int v;
   REMEMBER_VAR_STACK();
 
@@ -340,7 +340,7 @@ static Scheme_Object *objscheme_wxCommandEvent_GeteventType(Scheme_Object *obj, 
 
 static Scheme_Object *objscheme_wxCommandEvent_SeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -358,7 +358,7 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxCommandEvent *realobj;
+  os_wxCommandEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
 
@@ -422,8 +422,8 @@ int objscheme_istype_wxCommandEvent(Scheme_Object *obj, const char *stop, int nu
 
 Scheme_Object *objscheme_bundle_wxCommandEvent(class wxCommandEvent *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 
@@ -501,7 +501,7 @@ os_wxPopupEvent::~os_wxPopupEvent()
 
 static Scheme_Object *objscheme_wxPopupEvent_GetmenuId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   ExactLong v;
   REMEMBER_VAR_STACK();
 
@@ -518,7 +518,7 @@ static Scheme_Object *objscheme_wxPopupEvent_GetmenuId(Scheme_Object *obj, int n
 
 static Scheme_Object *objscheme_wxPopupEvent_SetmenuId(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   ExactLong v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -536,7 +536,7 @@ static Scheme_Object *os_wxPopupEvent_ConstructScheme(Scheme_Object *obj, int n,
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxPopupEvent *realobj;
+  os_wxPopupEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -599,8 +599,8 @@ int objscheme_istype_wxPopupEvent(Scheme_Object *obj, const char *stop, int null
 
 Scheme_Object *objscheme_bundle_wxPopupEvent(class wxPopupEvent *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 
@@ -766,7 +766,7 @@ os_wxScrollEvent::~os_wxScrollEvent()
 
 static Scheme_Object *objscheme_wxScrollEvent_GetmoveType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   int v;
   REMEMBER_VAR_STACK();
 
@@ -783,7 +783,7 @@ static Scheme_Object *objscheme_wxScrollEvent_GetmoveType(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxScrollEvent_SetmoveType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -799,7 +799,7 @@ static Scheme_Object *objscheme_wxScrollEvent_SetmoveType(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxScrollEvent_Getdirection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   int v;
   REMEMBER_VAR_STACK();
 
@@ -816,7 +816,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Getdirection(Scheme_Object *obj, i
 
 static Scheme_Object *objscheme_wxScrollEvent_Setdirection(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -832,7 +832,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Setdirection(Scheme_Object *obj, i
 
 static Scheme_Object *objscheme_wxScrollEvent_Getpos(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   int v;
   REMEMBER_VAR_STACK();
 
@@ -849,7 +849,7 @@ static Scheme_Object *objscheme_wxScrollEvent_Getpos(Scheme_Object *obj, int n, 
 
 static Scheme_Object *objscheme_wxScrollEvent_Setpos(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -867,7 +867,7 @@ static Scheme_Object *os_wxScrollEvent_ConstructScheme(Scheme_Object *obj, int n
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxScrollEvent *realobj;
+  os_wxScrollEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
 
   SETUP_VAR_STACK_PRE_REMEMBERED(3);
@@ -933,8 +933,8 @@ int objscheme_istype_wxScrollEvent(Scheme_Object *obj, const char *stop, int nul
 
 Scheme_Object *objscheme_bundle_wxScrollEvent(class wxScrollEvent *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 
@@ -1365,7 +1365,7 @@ os_wxKeyEvent::~os_wxKeyEvent()
 
 static Scheme_Object *objscheme_wxKeyEvent_GetkeyCode(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   int v;
   REMEMBER_VAR_STACK();
 
@@ -1382,7 +1382,7 @@ static Scheme_Object *objscheme_wxKeyEvent_GetkeyCode(Scheme_Object *obj, int n,
 
 static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -1398,7 +1398,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetkeyCode(Scheme_Object *obj, int n,
 
 static Scheme_Object *objscheme_wxKeyEvent_GetshiftDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -1415,7 +1415,7 @@ static Scheme_Object *objscheme_wxKeyEvent_GetshiftDown(Scheme_Object *obj, int 
 
 static Scheme_Object *objscheme_wxKeyEvent_SetshiftDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -1431,7 +1431,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetshiftDown(Scheme_Object *obj, int 
 
 static Scheme_Object *objscheme_wxKeyEvent_GetcontrolDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -1448,7 +1448,7 @@ static Scheme_Object *objscheme_wxKeyEvent_GetcontrolDown(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxKeyEvent_SetcontrolDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -1464,7 +1464,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetcontrolDown(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxKeyEvent_GetmetaDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -1481,7 +1481,7 @@ static Scheme_Object *objscheme_wxKeyEvent_GetmetaDown(Scheme_Object *obj, int n
 
 static Scheme_Object *objscheme_wxKeyEvent_SetmetaDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -1497,7 +1497,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetmetaDown(Scheme_Object *obj, int n
 
 static Scheme_Object *objscheme_wxKeyEvent_GetaltDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -1514,7 +1514,7 @@ static Scheme_Object *objscheme_wxKeyEvent_GetaltDown(Scheme_Object *obj, int n,
 
 static Scheme_Object *objscheme_wxKeyEvent_SetaltDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -1530,7 +1530,7 @@ static Scheme_Object *objscheme_wxKeyEvent_SetaltDown(Scheme_Object *obj, int n,
 
 static Scheme_Object *objscheme_wxKeyEvent_Getx(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   float v;
   REMEMBER_VAR_STACK();
 
@@ -1547,7 +1547,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Getx(Scheme_Object *obj, int n,  Sche
 
 static Scheme_Object *objscheme_wxKeyEvent_Setx(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   float v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -1563,7 +1563,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Setx(Scheme_Object *obj, int n,  Sche
 
 static Scheme_Object *objscheme_wxKeyEvent_Gety(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   float v;
   REMEMBER_VAR_STACK();
 
@@ -1580,7 +1580,7 @@ static Scheme_Object *objscheme_wxKeyEvent_Gety(Scheme_Object *obj, int n,  Sche
 
 static Scheme_Object *objscheme_wxKeyEvent_Sety(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   float v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -1598,7 +1598,7 @@ static Scheme_Object *os_wxKeyEvent_ConstructScheme(Scheme_Object *obj, int n,  
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxKeyEvent *realobj;
+  os_wxKeyEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
 
@@ -1673,8 +1673,8 @@ int objscheme_istype_wxKeyEvent(Scheme_Object *obj, const char *stop, int nullOK
 
 Scheme_Object *objscheme_bundle_wxKeyEvent(class wxKeyEvent *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 
@@ -2012,7 +2012,7 @@ static Scheme_Object *os_wxMouseEventButton(Scheme_Object *obj, int n,  Scheme_O
 
 static Scheme_Object *objscheme_wxMouseEvent_GeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   int v;
   REMEMBER_VAR_STACK();
 
@@ -2029,7 +2029,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GeteventType(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxMouseEvent_SeteventType(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   int v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2045,7 +2045,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SeteventType(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxMouseEvent_GetleftDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -2062,7 +2062,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GetleftDown(Scheme_Object *obj, int
 
 static Scheme_Object *objscheme_wxMouseEvent_SetleftDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2078,7 +2078,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetleftDown(Scheme_Object *obj, int
 
 static Scheme_Object *objscheme_wxMouseEvent_GetmiddleDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -2095,7 +2095,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GetmiddleDown(Scheme_Object *obj, i
 
 static Scheme_Object *objscheme_wxMouseEvent_SetmiddleDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2111,7 +2111,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetmiddleDown(Scheme_Object *obj, i
 
 static Scheme_Object *objscheme_wxMouseEvent_GetrightDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -2128,7 +2128,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GetrightDown(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxMouseEvent_SetrightDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2144,7 +2144,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetrightDown(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxMouseEvent_GetshiftDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -2161,7 +2161,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GetshiftDown(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxMouseEvent_SetshiftDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2177,7 +2177,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetshiftDown(Scheme_Object *obj, in
 
 static Scheme_Object *objscheme_wxMouseEvent_GetcontrolDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -2194,7 +2194,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GetcontrolDown(Scheme_Object *obj, 
 
 static Scheme_Object *objscheme_wxMouseEvent_SetcontrolDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2210,7 +2210,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetcontrolDown(Scheme_Object *obj, 
 
 static Scheme_Object *objscheme_wxMouseEvent_GetmetaDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -2227,7 +2227,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GetmetaDown(Scheme_Object *obj, int
 
 static Scheme_Object *objscheme_wxMouseEvent_SetmetaDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2243,7 +2243,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetmetaDown(Scheme_Object *obj, int
 
 static Scheme_Object *objscheme_wxMouseEvent_GetaltDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   Bool v;
   REMEMBER_VAR_STACK();
 
@@ -2260,7 +2260,7 @@ static Scheme_Object *objscheme_wxMouseEvent_GetaltDown(Scheme_Object *obj, int 
 
 static Scheme_Object *objscheme_wxMouseEvent_SetaltDown(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   Bool v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2276,7 +2276,7 @@ static Scheme_Object *objscheme_wxMouseEvent_SetaltDown(Scheme_Object *obj, int 
 
 static Scheme_Object *objscheme_wxMouseEvent_Getx(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   float v;
   REMEMBER_VAR_STACK();
 
@@ -2293,7 +2293,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Getx(Scheme_Object *obj, int n,  Sc
 
 static Scheme_Object *objscheme_wxMouseEvent_Setx(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   float v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2309,7 +2309,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Setx(Scheme_Object *obj, int n,  Sc
 
 static Scheme_Object *objscheme_wxMouseEvent_Gety(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj;
+  Scheme_Class_Object *cobj INIT_NULLED_OUT;
   float v;
   REMEMBER_VAR_STACK();
 
@@ -2326,7 +2326,7 @@ static Scheme_Object *objscheme_wxMouseEvent_Gety(Scheme_Object *obj, int n,  Sc
 
 static Scheme_Object *objscheme_wxMouseEvent_Sety(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
-  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
+  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;
   float v;
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, cobj);
@@ -2344,7 +2344,7 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxMouseEvent *realobj;
+  os_wxMouseEvent *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   int x0;
 
@@ -2433,8 +2433,8 @@ int objscheme_istype_wxMouseEvent(Scheme_Object *obj, const char *stop, int null
 
 Scheme_Object *objscheme_bundle_wxMouseEvent(class wxMouseEvent *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

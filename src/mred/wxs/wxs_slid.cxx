@@ -50,7 +50,7 @@ static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
   if (!sliderStyle_wxPLAIN_SLIDER_sym) WITH_VAR_STACK(init_symset_sliderStyle());
-  Scheme_Object *i, *l = v;
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
@@ -151,9 +151,9 @@ os_wxSlider::~os_wxSlider()
 
 void os_wxSlider::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxSlider *sElF = this;
 #endif
@@ -183,9 +183,9 @@ void os_wxSlider::OnDropFile(pathname x0)
 
 Bool os_wxSlider::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxSlider *sElF = this;
 #endif
@@ -218,9 +218,9 @@ Bool os_wxSlider::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxSlider::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxSlider *sElF = this;
 #endif
@@ -253,9 +253,9 @@ Bool os_wxSlider::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxSlider::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxSlider *sElF = this;
 #endif
@@ -287,7 +287,7 @@ void os_wxSlider::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxSlider *sElF = this;
 #endif
@@ -316,7 +316,7 @@ void os_wxSlider::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxSlider *sElF = this;
 #endif
@@ -389,7 +389,7 @@ static Scheme_Object *os_wxSliderOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -416,8 +416,8 @@ static Scheme_Object *os_wxSliderPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -446,8 +446,8 @@ static Scheme_Object *os_wxSliderPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -547,11 +547,11 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
 {
   SETUP_PRE_VAR_STACK(1);
   PRE_VAR_STACK_PUSH(0, obj);
-  os_wxSlider *realobj;
+  os_wxSlider *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
-  class wxPanel* x0;
+  class wxPanel* x0 INIT_NULLED_OUT;
   wxFunction x1;
-  nstring x2;
+  nstring x2 INIT_NULLED_OUT;
   int x3;
   int x4;
   int x5;
@@ -559,7 +559,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   int x7;
   int x8;
   int x9;
-  string x10;
+  string x10 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(6);
   VAR_STACK_PUSH(0, p);
@@ -652,8 +652,8 @@ int objscheme_istype_wxSlider(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxSlider(class wxSlider *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

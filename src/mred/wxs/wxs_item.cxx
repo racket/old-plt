@@ -72,7 +72,7 @@ static Scheme_Object *os_wxItemSetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -116,7 +116,7 @@ static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  class wxCommandEvent* x0;
+  class wxCommandEvent* x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -171,8 +171,8 @@ int objscheme_istype_wxItem(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxItem(class wxItem *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 
@@ -281,9 +281,9 @@ os_wxMessage::~os_wxMessage()
 
 void os_wxMessage::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMessage *sElF = this;
 #endif
@@ -313,9 +313,9 @@ void os_wxMessage::OnDropFile(pathname x0)
 
 Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMessage *sElF = this;
 #endif
@@ -348,9 +348,9 @@ Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxMessage::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMessage *sElF = this;
 #endif
@@ -383,9 +383,9 @@ Bool os_wxMessage::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxMessage::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMessage *sElF = this;
 #endif
@@ -417,7 +417,7 @@ void os_wxMessage::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMessage *sElF = this;
 #endif
@@ -446,7 +446,7 @@ void os_wxMessage::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxMessage *sElF = this;
 #endif
@@ -480,7 +480,7 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
   if ((n >= 1) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[0], NULL, 0))) {
-    class wxBitmap* x0;
+    class wxBitmap* x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -498,7 +498,7 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
     
     
   } else  {
-    string x0;
+    string x0 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(3);
     VAR_STACK_PUSH(0, p);
@@ -525,7 +525,7 @@ static Scheme_Object *os_wxMessageOnDropFile(Scheme_Object *obj, int n,  Scheme_
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -552,8 +552,8 @@ static Scheme_Object *os_wxMessagePreOnEvent(Scheme_Object *obj, int n,  Scheme_
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -582,8 +582,8 @@ static Scheme_Object *os_wxMessagePreOnChar(Scheme_Object *obj, int n,  Scheme_O
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -684,15 +684,15 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
   SETUP_PRE_VAR_STACK(2);
   PRE_VAR_STACK_PUSH(0, obj);
   PRE_VAR_STACK_PUSH(1, p);
-  os_wxMessage *realobj;
+  os_wxMessage *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= 2) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0)) && WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap(p[1], NULL, 0))) {
-    class wxPanel* x0;
-    class wxBitmap* x1;
+    class wxPanel* x0 INIT_NULLED_OUT;
+    class wxBitmap* x1 INIT_NULLED_OUT;
     int x2;
     int x3;
     int x4;
-    string x5;
+    string x5 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
@@ -734,12 +734,12 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     
     
   } else  {
-    class wxPanel* x0;
-    string x1;
+    class wxPanel* x0 INIT_NULLED_OUT;
+    string x1 INIT_NULLED_OUT;
     int x2;
     int x3;
     int x4;
-    string x5;
+    string x5 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(6);
     VAR_STACK_PUSH(0, p);
@@ -828,8 +828,8 @@ int objscheme_istype_wxMessage(Scheme_Object *obj, const char *stop, int nullOK)
 
 Scheme_Object *objscheme_bundle_wxMessage(class wxMessage *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

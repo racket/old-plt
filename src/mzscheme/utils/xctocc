@@ -287,8 +287,9 @@ sub DoPrintClass
 	print "static Scheme_Object *objscheme_${oldclass}_Get${ivarname}(";
 	print $scheme_args;
 	print ")\n{\n  ";
-	print "Scheme_Class_Object *cobj;\n  ";
-	print &NormalType($ivartype, 1) . " v;\n";
+	print "Scheme_Class_Object *cobj INIT_NULLED_OUT;\n  ";
+	print &NormalType($ivartype, 1) . " v";
+	print ";\n";
 	print "  REMEMBER_VAR_STACK();\n\n";
 	print "  objscheme_check_valid(obj);\n";
 	print "  if (n) WITH_REMEMBERED_STACK(scheme_wrong_count($longgetname, 0, 0, n, p));\n";
@@ -309,8 +310,9 @@ sub DoPrintClass
 	    print "\nstatic Scheme_Object *objscheme_${oldclass}_Set${ivarname}(";
 	    print $scheme_args;
 	    print ")\n{\n  ";
-	    print "Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;\n  ";
-	    print &NormalType($ivartype, 1) . " v;\n";
+	    print "Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;\n  ";
+	    print &NormalType($ivartype, 1) . " v";
+	    print ";\n";
 	    print "  SETUP_VAR_STACK(1);\n  VAR_STACK_PUSH(0, cobj);\n\n";
 	    print "  WITH_VAR_STACK(objscheme_check_valid(obj));\n";
 	    print "  if (n != 1) WITH_VAR_STACK(scheme_wrong_count($longsetname, 1, 1, n, p));\n\n";
@@ -355,7 +357,7 @@ sub DoPrintClass
 	    print "static Scheme_Object *objscheme_destroy_${newclass}(";
 	    print $scheme_args;
 	    print ")\n{\n";
-	    print "  Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;\n";
+	    print "  Scheme_Class_Object *cobj = (Scheme_Class_Object *)obj;\n";
 	    print "  if (n) scheme_signal_error(\"";
 	    print "destroy: method takes no arguments";
 	    print "\");\n";
@@ -491,7 +493,7 @@ sub DoPrintClass
         print HEADER $setup_d_start;
 	print "$proto\n{\n";
 
-	print "  Scheme_Object *functmp;\n";
+	print "  Scheme_Object *functmp INIT_NULLED_OUT;\n";
 	print "  SETUP_VAR_STACK(1);\n";
 	print "  VAR_STACK_PUSH(0, env);\n";
 
@@ -523,7 +525,7 @@ sub DoPrintClass
     }
 
     if ($#constants >= 0) {
-	print "  Scheme_Object *xcconsttmp;\n";
+	print "  Scheme_Object *xcconsttmp INIT_NULLED_OUT;\n";
     }
     foreach $constant (@constants) {
 	&ReadConstFields($constant);
@@ -566,7 +568,7 @@ sub DoPrintClass
 	    . "(class ${oldclass} *realobj)";
 	print HEADER "$proto;\n";
 	print "$proto\n";
-	print "{\n  Scheme_Class_Object *obj;\n  Scheme_Object *sobj;\n\n";
+	print "{\n  Scheme_Class_Object *obj INIT_NULLED_OUT;\n  Scheme_Object *sobj INIT_NULLED_OUT;\n\n";
 	print "  if (!realobj) return XC_SCHEME_NULL;\n\n";
 	print "  if (realobj->__gc_external)\n";
 	print "    return (Scheme_Object *)realobj->__gc_external;\n";
@@ -829,16 +831,44 @@ sub PrintMethod
 	}
     }
 
+    $returnptr = 0;
+    if ((($methodpost eq "")  || ($methodpost eq undef))
+	&& (($methodpost ne "") || ($methodpost eq undef))
+	&& (&SomeParamNeedsDeref() == 0)) {
+	# No need to push return value
+    } else {
+	if ($returntype ne 'void') {
+	    if ($returnpushable =~ /push/) {
+		if ($returnpushable eq "push") {
+		    $returnptr = 1;
+		}
+	    } elsif (ParamIsPointer($returntype)) {
+		$returnptr = 1;
+	    }
+	}
+    }
+
     # Local variables
     if ($numschemes > 0) {
-	print "  Scheme_Object *p[${numschemes}];\n";
+	print "  Scheme_Object *p[${numschemes}] INIT_NULLED_ARRAY({ ";
+	$i = $numschemes - 1;
+	while ($i > 0) {
+	    print "NULLED_OUT INA_comma ";
+	    $i -= 1;
+	}
+	print "NULLED_OUT });\n";
         $varstacksize = 5;
     } else {
 	print "  Scheme_Object **p = NULL;\n";
         $varstacksize = 2;
     }
-    print "  Scheme_Object *v;\n"; #  mz_jmp_buf savebuf;\n
-    print "  Scheme_Object *method;\n"; #  int sj;\n
+    print "  Scheme_Object *v";
+    if ($returnptr) {
+	printf " INIT_NULLED_OUT";
+	$varstacksize += 1;
+    }
+    print ";\n";
+    print "  Scheme_Object *method INIT_NULLED_OUT;\n";
     print "#ifdef MZ_PRECISE_GC\n";
     print "  ${newclass} *sElF = this;\n";
     print "#endif\n";
@@ -872,6 +902,10 @@ sub PrintMethod
 	$varstackpos = 5;
     } else {
 	$varstackpos = 2;
+    }
+    if ($returnptr) {
+	print "  VAR_STACK_PUSH($varstackpos, v);\n";
+	$varstackpos += 1;
     }
 
     # Push arguments
@@ -1079,8 +1113,9 @@ sub PrintFunction
 	    print "  PRE_VAR_STACK_PUSH(0, obj);\n";
 	}
 	$pre_var_stack = "PRE_";
-	print "  ${newclass} *realobj;\n";
+	print "  ${newclass} *realobj INIT_NULLED_OUT;\n";
 	print "  REMEMBER_VAR_STACK();\n";
+	$returnptr = 0;
     } else {
 	if ($common) {
 	    print &NormalType($returntype);
@@ -1130,8 +1165,32 @@ sub PrintFunction
 	}
 	print "  REMEMBER_VAR_STACK();\n";
 
+	# We only need to push if something's going
+	# to happen after the function/method call.
+	$returnptr = 0;
+	if (($numfuncs == 1)
+	    && (($gluepostcall eq "")  || ($gluepostcall eq undef))
+	    && (($gluepost ne "") || ($gluepost eq undef))
+	    && (&SomeParamNeedsDeref() == 0)) {
+	    # No need to push return value
+	} else {
+	    if ($returntype ne 'void') {
+		if ($returnpushable =~ /push/) {
+		    if ($returnpushable eq "push") {
+			$returnptr = 1;
+		    }
+		} elsif (ParamIsPointer($returntype)) {
+		    $returnptr = 1;
+		}
+	    }
+	}
+
 	if ($returntype ne 'void') {
-	    print "  " . &NormalType($returntype, 1) . " r;\n";
+	    print "  " . &NormalType($returntype, 1) . " r";
+	    if ($returnptr) {
+		print " INIT_NULLED_OUT";
+	    }
+	    print ";\n";
 	}
 
 	if (!$global && !$common) {
@@ -1148,7 +1207,7 @@ sub PrintFunction
 	    $justonemin{$func} = &CalcNumRequired(1);
 	    $justonemax{$func} = &CalcNumPossible(1);
 	}
-	&PrintSpecificFunction("", $iscreator, !$iscreator, "", $pre_var_stack);
+	&PrintSpecificFunction("", $iscreator, !$iscreator, "", $pre_var_stack, $returnptr);
     } else {
 	print "  ";
 
@@ -1220,7 +1279,7 @@ sub PrintFunction
 	    } else {
 		$casename = " ($casename case)";
 	    }
-	    &PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack);
+	    &PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack, $returnptr);
 	    print "  } else ";
 	}
 
@@ -1249,7 +1308,7 @@ sub PrintFunction
 	}
 
 	print " {\n";
-	&PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack);
+	&PrintSpecificFunction("  ", $iscreator, 0, $casename, $pre_var_stack, $returnptr);
 	print "  }";
 	print "\n\n";
     }
@@ -1276,6 +1335,9 @@ sub PrintFunction
 		    print "*";
 		}
 		print "r";
+		if (&CallByRef($returntype)) {
+		    print " INIT_NULLED_OUT";
+		}
 	    }
 	}
 	print ";\n}\n";
@@ -1340,7 +1402,7 @@ sub PrintCallRealMethod
 
 sub PrintSpecificFunction
 {
-    local($prefix, $iscreator, $just_one, $casename, $pre_var_stack) = @_;
+    local($prefix, $iscreator, $just_one, $casename, $pre_var_stack, $returnptr) = @_;
 
     return if ($hidden);
 
@@ -1398,6 +1460,9 @@ sub PrintSpecificFunction
 	    $pointercount = 2;
 	}
     }
+    if ($returnptr) {
+	$pointercount += 1;
+    }
     @pbls = @pushables;
     foreach $paramtype (@paramtypes) {
 	$pt = $paramtype;
@@ -1420,6 +1485,9 @@ sub PrintSpecificFunction
 	    print "$prefix  VAR_STACK_PUSH(2, realobj);\n";
 	}
     }
+    if ($returnptr) {
+	print "$prefix  VAR_STACK_PUSH(2, r);\n";
+    }
     # Push each pounter:
     $paramnum = 0;
     if ($global) {
@@ -1431,7 +1499,10 @@ sub PrintSpecificFunction
 	    $pointercount = 2;
 	}
     }
-
+    if ($returnptr) {
+	$pointercount += 1;
+    }
+    
     @pbls = @pushables;
     foreach $paramtype (@paramtypes) {
 	$pt = $paramtype;
@@ -1936,8 +2007,11 @@ sub PrintLocals
     local($prefix) = @_;
     
     $paramnum = 0;
+    @pbls = @pushables;
     foreach $paramtype (@paramtypes) {
 	$pt = $paramtype;
+	$pushable = shift(@pbls);
+
 	if (&NeedsDeref($pt)) {
 	    $temp = $pt;
 	    substr($temp, -1)  = '';
@@ -1949,6 +2023,14 @@ sub PrintLocals
 	print "$prefix  " . &NormalType($pt, 1) . " x${paramnum}";
 	if ($deref) {
 	    print " = &_x${paramnum}";
+	} else {
+	    if ($pushable =~ /push/) {
+		if ($pushable eq "push") {
+		    print " INIT_NULLED_OUT";
+		}
+	    } elsif (ParamIsPointer($pt)) {
+		print " INIT_NULLED_OUT";
+	    }
 	}
         print ";\n";
 	$paramnum += 1;
@@ -2068,6 +2150,21 @@ sub PrintSboxTmp
 	}
 	$paramnum += 1;
     }	
+}
+
+sub SomeParamNeedsDeref
+{
+    $paramnum = 0;
+    foreach $paramtype (@paramtypes) {
+	if ($schemes[$paramnum]) {
+	    if (&NeedsDeref($paramtype)) {
+		return 1;
+	    }
+	}
+	$paramnum += 1;
+    }
+
+    return 0;
 }
 
 sub PrintTypecheckObj
@@ -2351,7 +2448,7 @@ sub PrintSymSet
 	    print "  if (!${name}_${v}_sym) WITH_VAR_STACK(init_symset_${name}());\n";
 	    if ($multi) {
 		$vv = "i";
-		print "  Scheme_Object *i, *l = v;\n";
+		print "  Scheme_Object *i INIT_NULLED_OUT, *l = v;\n";
 		if ($mode eq 'unbundle') {
 		    print "  long result = 0;\n";
 		} else {

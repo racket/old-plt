@@ -1174,8 +1174,15 @@ void GC_mark(const void *p)
 	  page->type |= MTYPE_INITED;
 	}
 
-	if (!(type & MTYPE_TAGGED))
+	if (!(type & MTYPE_TAGGED)) {
+#if SAFETY
+	  if (!((long)p & MPAGE_MASK)) {
+	    /* Can't point to beginning of non-tagged block! */
+	    CRASH();
+	  }
+#endif
 	  p -= sizeof(void *);
+	}
 
 	offset = ((long)p & MPAGE_MASK) >> 2;
 

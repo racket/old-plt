@@ -45,7 +45,7 @@ static int unbundle_symset_radioboxStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
   if (!radioboxStyle_wxHORIZONTAL_sym) WITH_VAR_STACK(init_symset_radioboxStyle());
-  Scheme_Object *i, *l = v;
+  Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
@@ -366,9 +366,9 @@ os_wxRadioBox::~os_wxRadioBox()
 
 void os_wxRadioBox::OnDropFile(pathname x0)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[1] INIT_NULLED_ARRAY({ NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxRadioBox *sElF = this;
 #endif
@@ -398,9 +398,9 @@ void os_wxRadioBox::OnDropFile(pathname x0)
 
 Bool os_wxRadioBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxRadioBox *sElF = this;
 #endif
@@ -433,9 +433,9 @@ Bool os_wxRadioBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
 
 Bool os_wxRadioBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxRadioBox *sElF = this;
 #endif
@@ -468,9 +468,9 @@ Bool os_wxRadioBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
 
 void os_wxRadioBox::OnSize(int x0, int x1)
 {
-  Scheme_Object *p[2];
+  Scheme_Object *p[2] INIT_NULLED_ARRAY({ NULLED_OUT INA_comma NULLED_OUT });
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxRadioBox *sElF = this;
 #endif
@@ -502,7 +502,7 @@ void os_wxRadioBox::OnSetFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxRadioBox *sElF = this;
 #endif
@@ -531,7 +531,7 @@ void os_wxRadioBox::OnKillFocus()
 {
   Scheme_Object **p = NULL;
   Scheme_Object *v;
-  Scheme_Object *method;
+  Scheme_Object *method INIT_NULLED_OUT;
 #ifdef MZ_PRECISE_GC
   os_wxRadioBox *sElF = this;
 #endif
@@ -678,7 +678,7 @@ static Scheme_Object *os_wxRadioBoxSetStringSelection(Scheme_Object *obj, int n,
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -765,7 +765,7 @@ static Scheme_Object *os_wxRadioBoxFindString(Scheme_Object *obj, int n,  Scheme
   REMEMBER_VAR_STACK();
   int r;
   objscheme_check_valid(obj);
-  string x0;
+  string x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -788,7 +788,7 @@ static Scheme_Object *os_wxRadioBoxOnDropFile(Scheme_Object *obj, int n,  Scheme
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
   objscheme_check_valid(obj);
-  pathname x0;
+  pathname x0 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -815,8 +815,8 @@ static Scheme_Object *os_wxRadioBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxMouseEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxMouseEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -845,8 +845,8 @@ static Scheme_Object *os_wxRadioBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_
   REMEMBER_VAR_STACK();
   Bool r;
   objscheme_check_valid(obj);
-  class wxWindow* x0;
-  class wxKeyEvent* x1;
+  class wxWindow* x0 INIT_NULLED_OUT;
+  class wxKeyEvent* x1 INIT_NULLED_OUT;
 
   SETUP_VAR_STACK_REMEMBERED(4);
   VAR_STACK_PUSH(0, p);
@@ -947,21 +947,21 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
   SETUP_PRE_VAR_STACK(2);
   PRE_VAR_STACK_PUSH(0, obj);
   PRE_VAR_STACK_PUSH(1, p);
-  os_wxRadioBox *realobj;
+  os_wxRadioBox *realobj INIT_NULLED_OUT;
   REMEMBER_VAR_STACK();
   if ((n >= 8) && WITH_REMEMBERED_STACK(objscheme_istype_wxPanel(p[0], NULL, 0)) && (SCHEME_NULLP(p[1]) || WITH_REMEMBERED_STACK(objscheme_istype_proc2(p[1], NULL))) && (XC_SCHEME_NULLP(p[2]) || WITH_REMEMBERED_STACK(objscheme_istype_string(p[2], NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[3], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[4], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[5], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[6], NULL)) && (SCHEME_LISTP(p[7]) && (XC_SCHEME_NULLP(p[7]) || WITH_REMEMBERED_STACK(objscheme_istype_wxBitmap((SCHEME_CAR(p[7])), NULL, 0))))) {
-    class wxPanel* x0;
+    class wxPanel* x0 INIT_NULLED_OUT;
     wxFunction x1;
-    nstring x2;
+    nstring x2 INIT_NULLED_OUT;
     int x3;
     int x4;
     int x5;
     int x6;
     int x7;
-    wxBitmap** x8;
+    wxBitmap** x8 INIT_NULLED_OUT;
     int x9;
     int x10;
-    string x11;
+    string x11 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(7);
     VAR_STACK_PUSH(0, p);
@@ -1006,18 +1006,18 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     delete[] x8;
     realobj->callback_closure = p[cb_pos];
   } else  {
-    class wxPanel* x0;
+    class wxPanel* x0 INIT_NULLED_OUT;
     wxFunction x1;
-    nstring x2;
+    nstring x2 INIT_NULLED_OUT;
     int x3;
     int x4;
     int x5;
     int x6;
     int x7;
-    string* x8;
+    string* x8 INIT_NULLED_OUT;
     int x9;
     int x10;
-    string x11;
+    string x11 INIT_NULLED_OUT;
 
     SETUP_VAR_STACK_PRE_REMEMBERED(7);
     VAR_STACK_PUSH(0, p);
@@ -1132,8 +1132,8 @@ int objscheme_istype_wxRadioBox(Scheme_Object *obj, const char *stop, int nullOK
 
 Scheme_Object *objscheme_bundle_wxRadioBox(class wxRadioBox *realobj)
 {
-  Scheme_Class_Object *obj;
-  Scheme_Object *sobj;
+  Scheme_Class_Object *obj INIT_NULLED_OUT;
+  Scheme_Object *sobj INIT_NULLED_OUT;
 
   if (!realobj) return XC_SCHEME_NULL;
 

@@ -295,6 +295,11 @@
 (test 3 file-position p)
 (close-input-port p)
 
+(close-output-port (open-output-file "tmp4" 'truncate/replace))
+(define p (open-input-file "tmp4"))
+(test eof read p)
+(close-input-port p)
+
 (arity-test call-with-input-file 2 3)
 (arity-test call-with-output-file 2 4)
 (arity-test with-input-from-file 2 3)

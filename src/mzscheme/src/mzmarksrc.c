@@ -970,6 +970,7 @@ mark_load_handler_data {
   gcMARK(d->config);
   gcMARK(d->port);
   gcMARK(d->p);
+  gcMARK(d->stxsrc);
 
  size:
   gcBYTES_TO_WORDS(sizeof(LoadHandlerData));

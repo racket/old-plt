@@ -2617,11 +2617,14 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
   Scheme_Config *config = scheme_config;
   Scheme_Object *port = scheme_get_param(config, MZCONFIG_OUTPUT_PORT);
   Scheme_Object *inport = scheme_get_param(config, MZCONFIG_INPUT_PORT);
+  char *name;
 
   scheme_write_string("> ", 2, port);
   scheme_flush_output(port);
-    
-  return scheme_read(inport);
+  
+  name = ((Scheme_Input_Port *)inport)->name;
+
+  return scheme_read_syntax(inport, scheme_make_string(name));
 }
 
 

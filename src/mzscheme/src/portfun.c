@@ -2057,6 +2057,7 @@ typedef struct {
   Scheme_Config *config;
   Scheme_Object *port;
   Scheme_Process *p;
+  Scheme_Object *stxsrc;
 } LoadHandlerData;
 
 static void post_load_handler(void *data)
@@ -2075,7 +2076,7 @@ static Scheme_Object *do_load_handler(void *data)
   Scheme_Object *last_val = scheme_void, *obj, **save_array = NULL;
   int save_count = 0;
 
-  while ((obj = scheme_internal_read(port, NULL,
+  while ((obj = scheme_internal_read(port, lhd->stxsrc,
 				     1,
 				     config
 #ifdef MZ_REAL_THREADS
@@ -2146,6 +2147,7 @@ static Scheme_Object *default_load(int argc, Scheme_Object *argv[])
   lhd->p = p;
   lhd->config = config;
   lhd->port = port;
+  lhd->stxsrc = scheme_make_string(((Scheme_Input_Port *)port)->name);
 
   return scheme_dynamic_wind(NULL, do_load_handler, post_load_handler,
 			     NULL, (void *)lhd);

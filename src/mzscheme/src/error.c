@@ -937,14 +937,58 @@ void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
 		   name, msg, s, slen);
 }
 
+#define MZERR_MAX_SRC_LEN 100
+
+static char *make_srcloc_string(Scheme_Object *form, long *len)
+{
+  long line, col;
+
+  line = ((Scheme_Stx *)form)->line;
+  col = ((Scheme_Stx *)form)->col;
+
+  if (line >= 0) {
+    Scheme_Object *src;
+    char *srcstr, *result;
+    long srclen, rlen;
+    
+    src = ((Scheme_Stx *)form)->src;
+    if (SCHEME_STRINGP(src)) {
+      /* Truncate from the front, to get the interesting part of paths: */
+      srclen = SCHEME_STRLEN_VAL(src);
+      if (srclen > MZERR_MAX_SRC_LEN) {
+	srcstr = scheme_malloc_atomic(MZERR_MAX_SRC_LEN);
+	memcpy(srcstr, SCHEME_STR_VAL(src) + (srclen - MZERR_MAX_SRC_LEN),
+	       MZERR_MAX_SRC_LEN);
+	srcstr[0] = '.';
+	srcstr[1] = '.';
+	srcstr[2] = '.';
+	srclen = MZERR_MAX_SRC_LEN;
+      } else
+	srcstr = SCHEME_STR_VAL(src);
+    } else
+      srcstr = scheme_display_to_string_w_max(src, &srclen, MZERR_MAX_SRC_LEN);
+    
+    result = (char *)scheme_malloc_atomic(srclen + 15);
+
+    rlen = scheme_sprintf(result, srclen + 15, " %t[%ld.%ld]", 
+			  srcstr, srclen, line, col);
+    
+    if (len) *len = rlen;
+    return result;
+  } else {
+    if (len) *len = 0;
+    return NULL;
+  }
+}
+
 void scheme_wrong_syntax(const char *where, 
 			 Scheme_Object *detail_form, 
 			 Scheme_Object *form, 
 			 const char *detail, ...)
 {
-  long len, slen, vlen, dvlen, blen;
+  long len, slen, vlen, dvlen, blen, plen;
   char *s, *buffer;
-  char *v, *dv;
+  char *v, *dv, *p;
 
   if (!detail) {
     s = "bad syntax";
@@ -964,28 +1008,46 @@ void scheme_wrong_syntax(const char *where,
   
   buffer = init_buf(&len, &blen);
 
-  if (form) 
+  p = NULL;
+  plen = 0;
+
+  if (form) {
+    if (SCHEME_STXP(form)) {
+      p = make_srcloc_string(form, &plen);
+      form = scheme_syntax_to_datum(form, 0);
+    }
     /* don't use error_write_to_string_w_max since this is code */
     v = scheme_write_to_string_w_max(form, &vlen, len);
-  else {
+  } else {
     form = scheme_false;
     v = NULL;
     vlen = 0;
   }
 
-  if (detail_form)
+  if (detail_form) {
+    if (SCHEME_STXP(detail_form)) {
+      if (((Scheme_Stx *)form)->line >= 0)
+	p = make_srcloc_string(detail_form, &plen);
+      detail_form = scheme_syntax_to_datum(detail_form, 0);
+    }
     /* don't use error_write_to_string_w_max since this is code */
     dv = scheme_write_to_string_w_max(detail_form, &dvlen, len);
-  else {
+  } else {
     dv = NULL;
     dvlen = 0;
   }
 
   if (v) {
     if (dv)
-      blen = scheme_sprintf(buffer, blen, "%s: %t at: %t in: %t", where, s, slen, dv, dvlen, v, vlen);
+      blen = scheme_sprintf(buffer, blen, "%s: %t at%t: %t in: %t", 
+			    where, s, slen, 
+			    p, plen, 
+			    dv, dvlen,
+			    v, vlen);
     else
-      blen = scheme_sprintf(buffer, blen, "%s: %t in: %t", where, s, slen, v, vlen);
+      blen = scheme_sprintf(buffer, blen, "%s: %t%t in: %t%t", 
+			    where, s, slen, 
+			    v, vlen, p, plen);
   } else
     blen = scheme_sprintf(buffer, blen, "%s: %t", where, s, slen);
   

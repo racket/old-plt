@@ -88,6 +88,8 @@
 "@flink drscheme:eval:build-user-eventspace/custodian %"
 "."
 ""
+"The \\var{input} argument specifies the source of the program."
+""
 "The \\var{eval-compile-time-part?} argument indicates if"
 "\\Mzhyperref{\rawscm{expand}}{mz:expansion}"
 "is called or if"
@@ -102,6 +104,15 @@
 ""
 "The first argument to \\var{iter} is the expanded program"
 "(represented as syntax) or eof."
+"The \\var{iter} argument is called for each expression in the"
+"expanded program and once more with eof, unless an error is"
+"raised during expansion."
+"It is called from the user's thread."
+"If an exception is raised during expansion of the"
+"user's program, \\var{iter} is not called."
+"Consider setting the exception-handler during \\var{init} to"
+"handle this situation."
+""
 "The second argument to \\var{iter} is a thunk that"
 "continues expanding the rest of the contents of the"
 "definitions window. If the first argument to \\var{iter} was"
@@ -118,7 +129,8 @@
   (-> void?)
   (-> void?)
   . -> .
-  (((union eof-object? syntax? (cons/p string? any?))
+  ((union port? drscheme:language:text/pos?)
+   ((union eof-object? syntax? (cons/p string? any?))
     (-> any)
     . -> .
     any)
@@ -158,7 +170,6 @@
 "."
 "\\end{itemize}"
 ""
-""
 "The \\var{language-settings} argument is the current"
 "language and its settings. See"
 "@flink drscheme:language-configuration:make-language-settings"
@@ -177,8 +188,6 @@
 "@flink drscheme:language-configuration:get-settings-preferences-symbol"
 "for that \\var{language-settings}."
 ""
-"The \\var{input} argument specifies the source of the program."
-""
 "The \\var{init} argument is called after the user's parameters"
 "are all set, but before the program is run. It is called on"
 "the user's thread. The"
@@ -193,22 +202,7 @@
 "called when the thread terminates normally. This procedure is"
 "called from a new, dedicated thread ({\\it i. e.}, not the thread"
 "created to do the expansion, nor the thread that"
-"\\rawscm{drscheme:eval:build-user-eventspace/custodian} was called from.)"
-""
-"The \\var{iter} argument is called for each expression in the"
-"expanded program and once more with eof, unless an error is"
-"raised during expansion."
-"It is called from the user's thread."
-"If an exception is raised during expansion of the"
-"user's program, \\var{iter} is not called."
-"Consider setting the exception-handler during \\var{init} to"
-"handle this situation."
-""
-"If your tool only processes the syntax without evaluating it,"
-"you may need to call"
-"\\rawscm{eval-compile-time-part-of-top-level} on the"
-"syntax object (on the user's thread).")
-
+"\\rawscm{drscheme:eval:build-user-eventspace/custodian} was called from.)")
 
 
                                    

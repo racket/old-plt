@@ -100,7 +100,14 @@ cd ..\..\worksp\mzscheme
 				Name="VCMIDLTool"/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="cd ..\..\mzscheme\dynsrc
+				CommandLine="
+if exist $(TargetPath) goto :MzOK
+echo Error: did not find $(TargetPath)
+exit 1
+:MzOK
+$(TargetPath) -r ..\..\mzscheme\mkincludes.ss &quot;$(TargetDir)/&quot; ..
+if errorlevel 1 exit 1
+cd ..\..\mzscheme\dynsrc
 mkmzdyn.bat
 cd ..\..\worksp\mzscheme
 "/>

@@ -305,7 +305,7 @@ Scheme_Object *jNew(int argc, Scheme_Object **argv) {
 
   if (SCHEME_TYPE(theClass) == jclass_type &&
       SCHEME_TYPE(constructor) == jmethod_type) {
-#ifdef KAFFE
+#ifdef KAFFE_BUG  // fixed 6/10/1999AD by Alexandre Oliva
     //  Ugly lack of abstraction due to a bug in Kaffe-1.0b4
     jvalue *vals;
     int i;
@@ -318,10 +318,10 @@ Scheme_Object *jNew(int argc, Scheme_Object **argv) {
     }
     object = (*jenv)->NewObjectA(jenv, ((jobject_t *)theClass)->val, ((jmethod_t *)constructor)->val, vals);
     free(vals);
-#else // !KAFFE
+#else // !KAFFE_BUG
     object = (*jenv)->AllocObject(jenv, ((jobject_t *)theClass)->val);
     (void)call_helper(object, (jmethod_t *)constructor, argc-2, argv+2);
-#endif // !KAFFE
+#endif // !KAFFE_BUG
   } else {
     scheme_signal_error(JNEW " expected jclass x jmethod . args");
   }

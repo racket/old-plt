@@ -24,28 +24,86 @@ string=? ; exec mzscheme -f "$0" "$@"
 (define compile-java (gen-external "javac"))
 (define jar (gen-external "jar"))
 
-;; This needs to change to something not in my home directory tree.
-(define jdk-base "/home/ptg/.bin/kaffe-1.0b4")
-
 (define install-dir (collection-path "drjava"))
-(define I-flags (list "-I" (build-path jdk-base "include" "kaffe")
-		      "-I" (build-path (collection-path "mzscheme") "include")))
-
-(define mzdyn-dot-o
-  (build-path (collection-path "mzscheme") "lib" (system-library-subpath) "mzdyn.o"))
-(define jdk-libs (build-path jdk-base "lib"))
-
 (define my-libs (build-path install-dir "compiled" "native" (system-library-subpath)))
-(define so-path
+
+(define mzscheme-I
+  (list "-I" (build-path (collection-path "mzscheme") "include")))
+
+;; jar-path : String -> String
+(define (jar-path jar)
+  (build-path (collection-path "drjava") "jars" jar))
+
+(define drjava-jar (jar-path "DrJava.jar"))
+(define jars (list (jar-path "gjc.jar") drjava-jar))
+
+;;;;;;; begin jvm-dependent
+
+;;;; begin kaffe stuff
+(define kaffe-base "/home/ptg/.bin/kaffe-6-10-1999AD")
+(define kaffe-I-flags
+  (list* "-I" (build-path kaffe-base "include" "kaffe") mzscheme-I))
+(define kaffe-libs (build-path kaffe-base "lib"))
+
+(define kaffe-so-path
   (path-list->path-list-string
    (list
     my-libs
-    (build-path jdk-libs "kaffe")
-    jdk-libs
+    (build-path kaffe-libs "kaffe")
+    kaffe-libs
     (build-path "/usr" "site" "gcc-2.8.1" "lib" "gcc-lib" "sparc-sun-solaris2.5.1" "2.8.1"))))
 
-(define c-flags (cons (format "-DKAFFE=~s" jdk-base) I-flags))
-(define ld-flags '("-lkaffevm" "-lsocket" "-lc" "-lnative" "-lgcc" "-lio"))
+(define kaffe-c-flags (cons (format "-DKAFFE=~s" kaffe-base) kaffe-I-flags))
+(define kaffe-ld-flags '("-lkaffevm" "-lsocket" "-lc" "-lnative" "-lgcc" "-lio"))
+
+(define kaffe-classpath
+  (path-list->path-list-string
+    (cons (jar-path "Klasses.jar") jars)))
+
+;;;; end kaffe stuff
+
+;;;; begin reference 1.2.1 stuff
+
+(define ref-base "/home/ptg/jdk1.2.1")
+(define ref-jdk-libs (build-path ref-base "jre" "lib" "sparc"))
+(define ref-so-path
+  (path-list->path-list-string
+   (list
+    my-libs
+    ref-jdk-libs
+    (build-path ref-jdk-libs "native_threads")
+    (build-path ref-jdk-libs "classic"))))
+
+(define ref-c-flags
+  (let ([include (build-path ref-base "include")])
+    (list* "-I" include "-I" (build-path include "solaris") mzscheme-I)))
+
+(define ref-ld-flags '("-ljava" "-ljvm" "-lthread" "-lc"))
+(define ref-classpath
+  (path-list->path-list-string
+   (let ([lib (build-path ref-base "jre" "lib")])
+     (list* (build-path lib "rt.jar")
+	    (build-path lib "i18n.jar")
+	    jars))))
+
+;;;; end reference 1.2.1 stuff
+
+;; select jvm here  (Yes, this should use units.)
+;(define so-path kaffe-so-path)
+;(define c-flags kaffe-c-flags)
+;(define ld-flags kaffe-ld-flags)
+;(define classpath kaffe-classpath)
+
+(define so-path ref-so-path)
+(define c-flags ref-c-flags)
+(define ld-flags ref-ld-flags)
+(define classpath ref-classpath)
+;;;;;;; end jvm-dependent
+
+(define mzdyn-dot-o
+  (build-path (collection-path "mzscheme") "lib" (system-library-subpath) "mzdyn.o"))
+
+
 (define tmp-dir "classes")
 
 ; Targets and Sources
@@ -60,7 +118,6 @@ string=? ; exec mzscheme -f "$0" "$@"
 (define objs (list embed-obj scheme-val-obj))
 (define sos (list mzjvm scheme-val))
 
-(define drjava-jar (build-path install-dir "jars" "DrJava.jar"))
 (define launcher-name (build-path (collection-path "drjava") 'up 'up "bin" "drjava"))
 
 ;; build : -> Void
@@ -76,7 +133,7 @@ string=? ; exec mzscheme -f "$0" "$@"
     (make-directory* my-libs))
   (for-each (lambda (so) (clobber-file so (build-path my-libs so))) sos)
   (parameterize ([current-directory tmp-dir])
-    (apply jar "-cvf"
+    (apply jar "-0cvf"
 	   drjava-jar
 	   (directory-list)))
   (install-launcher))
@@ -135,16 +192,13 @@ string=? ; LD_LIBRARY_PATH=~a export LD_LIBRARY_PATH ; exec $PLTHOME/bin/mred -g
 
 (define libpath (getenv \"LD_LIBRARY_PATH\"))
 
-(define classpath
-  (let ([jar-path (lambda (jar) (build-path (collection-path \"drjava\") \"jars\" jar))])
-    (string-append
-     (jar-path \"gjc.jar\") \":\" (jar-path \"DrJava.jar\") \":\" (jar-path \"Klasses.jar\"))))
+(define classpath ~s)
 
 (putenv \"CLASSPATH\" classpath)
 (putenv \"GJC_PATH\" classpath)
 
 (require-library \"start.ss\" \"drjava\")
 "
-     so-path)
+     so-path classpath)
     (close-output-port out))
   (chmod "755" launcher-name))

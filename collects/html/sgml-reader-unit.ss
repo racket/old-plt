@@ -169,16 +169,19 @@
 	    ;; more here - read while it's numeric (or hex) not until #\;
 	    [(#\#)
 	     (read-char in)
-	     (let* ([str (read-until #\; in)]
-		    [n (case (peek-char in)
-			 [(#\x) (read-char in)
-			  (string->number str 16)]
-			 [else (string->number str)])])
+	     (let* ([hex? (if (equal? #\x (peek-char in))
+			      (and (read-char in) #t)
+			      #f)]
+		    [str (read-until #\; in)]
+		    [n (cond
+			[hex?
+			 (string->number str 16)]
+			[else (string->number str)])])
 	       (if (number? n)
 		   (make-entity start (file-position in) n)
 		   (make-pcdata start (file-position in) (string-append "&#" str))))]
 	    [else
-	     (let ([name (lex-name in)]
+	     (let ([name (lex-name/case-sensitive in)]
 		   [c (peek-char in)])
 	       (if (eq? c #\;)
 		   (begin (read-char in) (make-entity start (file-position in) name))
@@ -320,6 +323,10 @@
 		 (string-lowercase! s)
 		 s)
 	       s))))
+      ;; lex-name/case-sensitive : Input-port -> Symbol
+      (define (lex-name/case-sensitive in)
+	(let ([s (bytes->string/utf-8 (car (regexp-match #rx"^[a-zA-Z_:0-9&.-]*" in)))])
+	  (string->symbol s)))
 #|
       (define (lex-name in)
         (string->symbol

@@ -40,6 +40,7 @@
     (let loop ([name name])
       (cond
        [(ffi-lib? name) name]
+       [(not name) (ffi-lib name)] ; #f => NULL => open this executable
        [(path? name) (loop (path->string name))]
        [(not (string? name)) (raise-type-error 'ffi-lib "library-name" name)]
        [else (let ([name0 name]

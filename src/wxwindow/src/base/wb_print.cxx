@@ -270,7 +270,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
     if (dialog->Run())
       dc = dialog->GetPrintDC();
   } else {
-    dc = new wxPrinterDC(NULL, NULL, NULL, FALSE);
+    dc = new wxPrinterDC(NULL, NULL, NULL, NULL, FALSE);
   }
 
   // May have pressed cancel.

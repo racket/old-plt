@@ -1432,7 +1432,7 @@ static BOOL DoPrintDlg(PRINTDLG *pd, HWND parent)
   return PrintDlg(pd);
 }
 
-wxPrinterDC::wxPrinterDC(char *driver_name, char *device_name, char *file, Bool interactive)
+wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name, char *file, Bool interactive)
 {
   __type = wxTYPE_DC_PRINTER;
   wx_interactive = interactive;
@@ -1443,13 +1443,19 @@ wxPrinterDC::wxPrinterDC(char *driver_name, char *device_name, char *file, Bool 
   else
     filename = NULL;
 
+  HWND hwnd = NULL;
+  if (parent) {
+    wxWnd *wnd = (wxWnd *)parent->handle;
+    hwnd = wnd->handle;
+  }
+
   screen_font = FALSE;
 
   if (interactive) {
     PRINTDLG *pd = new PRINTDLG;
     
     pd->lStructSize = sizeof(PRINTDLG);
-    pd->hwndOwner=NULL;
+    pd->hwndOwner=hwnd;
     pd->hDevMode=(HANDLE)NULL;
     pd->hDevNames=(HANDLE)NULL;
     pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS | PD_HIDEPRINTTOFILE;

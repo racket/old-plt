@@ -161,7 +161,8 @@ class wxPrinterDC: public wxDC
   DECLARE_CLASS(wxPrinterDC)
 
   // Create a printer DC
-  wxPrinterDC(char *driver = NULL, char *device = NULL, char *output = NULL, Bool interactive = TRUE);
+  wxPrinterDC(wxWindow *parent = NULL, 
+	      char *driver = NULL, char *device = NULL, char *output = NULL, Bool interactive = TRUE);
   wxPrinterDC(HDC theDC);
 
   ~wxPrinterDC(void);

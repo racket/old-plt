@@ -2395,22 +2395,23 @@ void StandardWordbreak(wxMediaEdit *win, long *startp, long *endp,
     
     end -= lstart;
     lend -= lstart;
+    tend -= lstart;
 
   try_end_again:
 
     if (!phase1_complete) {
-      while ((end < lend) && !nonbreak(text[end]))
+      while ((end < tend) && !nonbreak(text[end]))
 	end++;
-      if (end < lend)
+      if (end < tend)
 	phase1_complete = 1;
     }
-    while ((end < lend) && nonbreak(text[end]))
+    while ((end < tend) && nonbreak(text[end]))
       end++;
 
-    if ((end == lend) && ((lend + lstart) != tend)) {
+    if ((end == tend) && (tend != lend)) {
       delete[] text;
       text = (unsigned char *)win->GetText(lstart, lstart + lend);
-      lend = tend - lstart;
+      tend = lend;
       goto try_end_again;
     }
 

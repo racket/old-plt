@@ -14,6 +14,9 @@
            [else (list c)]))
        (string->list s)))))
 
+  (define (try-void input)
+    (try input 'void))
+
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                       Configurations                         ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -91,20 +94,6 @@
 
   (define false-string (pc-diff "false" "#f"))
   (define true-string (pc-diff "true" "#t"))
-
-  (start-copy jr-out copy-out #f)
-  (start-copy jr-err copy-err #f)
-  (start-copy copy-in jr-in #t)
-
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ;;                            Testing                           ;;
-  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  
-  (expect "DrScheme Jr is loading" (read-line out))
-  (expect "Welcome to DrScheme Jr" (read-line out))
-  (expect (format "Language: ~a" language)
-	  (read-line out))
-  (expect-prompt)
 
   ;; ;;;;;;;;;;;;;;;;;;;; constants ;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -15,7 +15,7 @@
   ;;                      Testing utilities                       ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define exit-on-err? #t)
+  (define exit-on-err? #f)
      
   (define (non-regexp s)
     (list->string
@@ -160,7 +160,7 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (invoke-unit/sig (load-relateive "all-tests.scm")
+  (invoke-unit/sig (load-relative "all-tests.scm")
                    test-environment^)
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

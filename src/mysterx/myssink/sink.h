@@ -31,7 +31,7 @@ private:
   void unmarshalSchemeObject(Scheme_Object *,VARIANTARG *);
   void handlerUpdateError(char *);
 
-  int getHashValue(DISPID);
+  unsigned int getHashValue(DISPID);
   EVENT_HANDLER_ENTRY *newEventHandlerEntry(DISPID,Scheme_Object *);
   EVENT_HANDLER_ENTRY *lookupHandler(DISPID);
 

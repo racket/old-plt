@@ -725,8 +725,10 @@ Scheme_Object *mx_version(int argc,Scheme_Object **argv) {
   return scheme_make_string(MX_VERSION);
 }
 
-Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
-				    char *machine) {
+Scheme_Object *do_cocreate_instance(CLSID clsId,
+                                    const char *name,
+                                    const char *location,
+				    const char *machine) {
   HRESULT hr;
   IDispatch *pIDispatch;
   MX_COM_Object *com_object;
@@ -742,14 +744,14 @@ Scheme_Object *do_cocreate_instance(CLSID clsId,char *name,char *location,
     OLECHAR machineBuff[1024];
 
     if (machine) {
-      int len;
-      int count;
+        unsigned int len;
+        unsigned int count;
 
       csi.dwReserved1 = 0;
       csi.dwReserved2 = 0;
       csi.pAuthInfo = NULL;
 
-      len = strlen(machine);
+      len = (unsigned int)strlen(machine);
       count = MultiByteToWideChar(CP_ACP,(DWORD)0,
 				  machine,len,
 				  machineBuff,
@@ -836,31 +838,34 @@ void bindCocreateLocation(int argc,Scheme_Object **argv,
 }
 
 Scheme_Object *mx_cocreate_instance_from_coclass(int argc,Scheme_Object **argv) {
-  char *coclass;
-  CLSID clsId;
+  const char *coclass;
   char *location;
   char *machine;
 
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("cocreate-instance-from-coclass","string",0,argc,argv);
+  if (SCHEME_STRINGP (argv[0]) == FALSE &&
+      SCHEME_SYMBOLP (argv[0]) == FALSE) {
+    scheme_wrong_type("cocreate-instance-from-coclass","string or symbol",0,argc,argv);
   }
 
   bindCocreateLocation(argc,argv,&location,&machine,
 		       "cocreate-instance-from-coclass");
 
-  coclass = SCHEME_STR_VAL(argv[0]);
-  clsId = getCLSIDFromCoClass(coclass);
+  coclass = SCHEME_STRINGP (argv[0])
+      ? SCHEME_STR_VAL (argv[0])
+      : SCHEME_SYM_VAL (argv[0]);
 
-  return do_cocreate_instance(clsId,coclass,location,machine);
+  return do_cocreate_instance (getCLSIDFromCoClass (coclass), coclass, location, machine);
 }
 
 CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
   HRESULT hr;
-  char *progId;
+  const char *progId;
   CLSID clsId;
   BSTR wideProgId;
 
-  progId = SCHEME_STR_VAL(obj);
+  progId = SCHEME_STRINGP (obj)
+      ? SCHEME_STR_VAL (obj)
+      : SCHEME_SYM_VAL (obj);
 
   wideProgId = schemeStringToBSTR(obj);
 
@@ -880,37 +885,38 @@ CLSID schemeProgIdToCLSID(Scheme_Object *obj,char *fname) {
 
 Scheme_Object *mx_cocreate_instance_from_progid(int argc,
 						Scheme_Object **argv) {
-  CLSID clsId;
   char *location;
   char *machine;
 
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("cocreate-instance-from-progid","string",0,argc,argv);
+  if (SCHEME_STRINGP (argv[0]) == FALSE &&
+      SCHEME_SYMBOLP (argv[0]) == FALSE) {
+    scheme_wrong_type("cocreate-instance-from-progid","string or symbol",0,argc,argv);
   }
 
   bindCocreateLocation(argc,argv,&location,&machine,
 		       "cocreate-instance-from-progid");
 
-  clsId = schemeProgIdToCLSID(argv[0],"cocreate-instance-from-progid");
-
-  return do_cocreate_instance(clsId,SCHEME_STR_VAL(argv[0]),
-			      location,machine);
+  return do_cocreate_instance (schemeProgIdToCLSID (argv[0],"cocreate-instance-from-progid"),
+                               SCHEME_STRINGP (argv[0])
+                               ? SCHEME_STR_VAL (argv[0])
+                               : SCHEME_SYM_VAL (argv[0]),
+                               location,machine);
 }
 
 Scheme_Object *mx_set_coclass(int argc,Scheme_Object **argv) {
-  CLSID clsId;
 
   if (MX_COM_OBJP(argv[0]) == FALSE) {
     scheme_wrong_type("set-coclass!","com-object",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("set-coclass!","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("set-coclass!","string or symbol",1,argc,argv);
   }
 
-  clsId = getCLSIDFromCoClass(SCHEME_STR_VAL(argv[1]));
-
-  MX_COM_OBJ_CLSID(argv[0]) = clsId;
+  MX_COM_OBJ_CLSID(argv[0]) = getCLSIDFromCoClass(SCHEME_STRINGP (argv[1])
+                                                  ? SCHEME_STR_VAL (argv[1])
+                                                  : SCHEME_SYM_VAL (argv[1]));
 
   return scheme_void;
 }
@@ -987,7 +993,7 @@ Scheme_Object *mx_coclass(int argc,Scheme_Object **argv) {
     }
 
     count = MultiByteToWideChar(CP_ACP,(DWORD)0,
-				clsIdBuffer,strlen(clsIdBuffer),
+				clsIdBuffer,(unsigned int)strlen(clsIdBuffer),
 				oleClsIdBuffer,sizeray(oleClsIdBuffer));
 
     if (count == 0) {
@@ -1060,7 +1066,7 @@ Scheme_Object *mx_progid(int argc,Scheme_Object **argv) {
     scheme_signal_error("progid: Error finding coclass");
   }
 
-  len = wcslen(wideProgId);
+  len = (unsigned int) wcslen(wideProgId);
 
   buff = (char *)scheme_malloc(len + 1);
 
@@ -1081,11 +1087,12 @@ Scheme_Object *mx_set_coclass_from_progid(int argc,Scheme_Object **argv) {
     scheme_wrong_type("set-coclass-from-progid!","com-object",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("set-coclass-from-progid!","string",1,argc,argv);
+  if (SCHEME_STRINGP(argv[1]) == FALSE &&
+      SCHEME_SYMBOLP(argv[1]) == FALSE) {
+    scheme_wrong_type("set-coclass-from-progid!","string or symbol",1,argc,argv);
   }
 
-  clsid = schemeProgIdToCLSID(argv[1],"set-coclass-from-progid!");
+  clsid = schemeProgIdToCLSID (argv[1], "set-coclass-from-progid!");
 
   MX_COM_OBJ_CLSID(argv[0]) = clsid;
 
@@ -1200,7 +1207,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
   ITypeInfo *pITypeInfo;
   BSTR helpFileName;
   char buff[MAX_PATH];
-  int len;
+  unsigned int len;
 
   if (MX_COM_OBJP(argv[0]) == FALSE && MX_COM_TYPEP(argv[0]) == FALSE) {
     scheme_wrong_type("com-help","com-object or com-type",0,argc,argv);
@@ -1235,7 +1242,7 @@ Scheme_Object *mx_com_help(int argc,Scheme_Object **argv) {
 
   buff[sizeof(buff)-1] = '\0';
 
-  len = strlen(buff);
+  len = (unsigned int) strlen(buff);
 
   if (stricmp(buff + len - 4,".CHM") == 0) {
     HWND hwnd;
@@ -1407,7 +1414,7 @@ FUNCDESC *getFuncDescForEvent(LPOLESTR name,ITypeInfo *pITypeInfo) {
 }
 
 Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
-  char *eventName;
+  const char *eventName;
   ITypeInfo *pITypeInfo;
   ISink *pISink;
   FUNCDESC *pFuncDesc;
@@ -1417,22 +1424,25 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
     scheme_wrong_type("com-register-event-handler","com-object",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("com-register-event-handler","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("com-register-event-handler","string or symbol",1,argc,argv);
   }
 
   if (SCHEME_PROCP(argv[2]) == FALSE) {
     scheme_wrong_type("com-register-event-handler","procedure",2,argc,argv);
   }
 
-  eventName = SCHEME_STR_VAL(argv[1]);
+  eventName = SCHEME_STRINGP (argv[1])
+      ? SCHEME_STR_VAL (argv[1])
+      : SCHEME_SYM_VAL (argv[1]);
 
   connectComObjectToEventSink((MX_COM_Object *)argv[0]);
 
   pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
   pISink = MX_COM_OBJ_EVENTSINK(argv[0]);
 
-  unicodeName = schemeStringToBSTR(argv[1]);
+  unicodeName = schemeStringToBSTR (argv[1]);
 
   pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
 
@@ -1450,7 +1460,7 @@ Scheme_Object *mx_com_register_event_handler(int argc,Scheme_Object **argv) {
 }
 
 Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
-  char *eventName;
+  const char *eventName;
   ITypeInfo *pITypeInfo;
   ISink *pISink;
   FUNCDESC *pFuncDesc;
@@ -1460,11 +1470,14 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
     scheme_wrong_type("com-unregister-event-handler","com-object",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("com-unregister-event-handler","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("com-unregister-event-handler","string or symbol",1,argc,argv);
   }
 
-  eventName = SCHEME_STR_VAL(argv[1]);
+  eventName = SCHEME_STRINGP (argv[1])
+      ? SCHEME_STR_VAL (argv[1])
+      : SCHEME_SYM_VAL (argv[1]);
 
   pITypeInfo = MX_COM_OBJ_EVENTTYPEINFO(argv[0]);
 
@@ -1478,7 +1491,7 @@ Scheme_Object *mx_com_unregister_event_handler(int argc,Scheme_Object **argv) {
     return scheme_void;
   }
 
-  unicodeName = schemeStringToBSTR(argv[1]);
+  unicodeName = schemeStringToBSTR (argv[1]);
 
   pFuncDesc = getFuncDescForEvent(unicodeName,pITypeInfo);
 
@@ -2519,7 +2532,7 @@ Scheme_Object *elemDescToSchemeType(ELEMDESC *pElemDesc,BOOL ignoreByRef,BOOL is
     }
   }
 
-  return scheme_intern_exact_symbol(buff,strlen(buff));
+  return scheme_intern_exact_symbol (buff, (unsigned int)strlen(buff));
 }
 
 Scheme_Object *mx_make_function_type(Scheme_Object *paramTypes,
@@ -2806,7 +2819,7 @@ BOOL schemeValueFitsVarType(Scheme_Object *val,VARTYPE vt) {
 
   case VT_BSTR :
 
-    return SCHEME_STRINGP(val);
+    return SCHEME_STRINGP (val) || SCHEME_SYMBOLP (val);
 
   case VT_CY :
 
@@ -2960,6 +2973,7 @@ VARTYPE schemeValueToVarType(Scheme_Object *obj) {
     return VT_R4;
   case scheme_double_type :
     return VT_R8;
+  case scheme_symbol_type :
   case scheme_string_type :
     return VT_BSTR;
   case scheme_vector_type : // may need to specify elt type
@@ -3012,16 +3026,10 @@ void marshalSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
     return;
   }
 
-  if (SCHEME_STRINGP(val)) {
+  if (SCHEME_STRINGP (val) ||
+      SCHEME_SYMBOLP (val)) {
     pVariantArg->vt = VT_BSTR;
-    pVariantArg->bstrVal = schemeStringToBSTR(val);
-    return;
-  }
-
-  if (SCHEME_SYMBOLP(val)) {
-    char *s = SCHEME_SYM_VAL(val);
-    pVariantArg->vt = VT_BSTR;
-    pVariantArg->bstrVal = stringToBSTR(s,strlen(s));
+    pVariantArg->bstrVal = schemeStringToBSTR (val);
     return;
   }
 
@@ -3405,7 +3413,7 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_BSTR :
 
-    return BSTRToSchemeString(pVariantArg->bstrVal);
+    return unmarshalBSTR (pVariantArg->bstrVal);
 
   case VT_CY :
 
@@ -3477,7 +3485,7 @@ Scheme_Object *retvalVariantToSchemeObject(VARIANTARG *pVariantArg) {
   case VT_BYREF|VT_DATE :
     return mx_make_date(pVariantArg->pdate);
   case VT_BYREF|VT_BSTR :
-    return BSTRToSchemeString(*pVariantArg->pbstrVal);
+    return unmarshalBSTR (*pVariantArg->pbstrVal);
   case VT_BYREF|VT_UNKNOWN :
     return mx_make_iunknown (*pVariantArg->ppunkVal);
   case VT_BYREF|VT_PTR :
@@ -3627,13 +3635,15 @@ void unmarshalVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 
   case VT_BSTR :
 
-    updateSchemeStringFromBSTR(val,pVariantArg->bstrVal);
-    SysFreeString(pVariantArg->bstrVal);
+    // Don't try to update symbols!
+    if (!SCHEME_SYMBOLP (val))
+        updateSchemeStringFromBSTR (val,pVariantArg->bstrVal);
+    SysFreeString (pVariantArg->bstrVal);
     break;
 
   case VT_BSTR | VT_BYREF :
 
-    SCHEME_BOX_VAL(val) = BSTRToSchemeString(*pVariantArg->pbstrVal);
+    SCHEME_BOX_VAL(val) = unmarshalBSTR (*pVariantArg->pbstrVal);
     SysFreeString(*pVariantArg->pbstrVal);
     scheme_gc_ptr_ok(pVariantArg->pbstrVal);
     break;
@@ -4248,8 +4258,8 @@ static Scheme_Object *mx_make_call(int argc,Scheme_Object **argv,
 
     // Translate the name to Unicode.
     OLECHAR namebuf[1024];
-    int len = strlen(name);
-    int count = MultiByteToWideChar(CP_ACP,(DWORD)0,name,len,
+    unsigned int len = (unsigned int)strlen(name);
+    unsigned int count = MultiByteToWideChar(CP_ACP,(DWORD)0,name,len,
 				    namebuf,sizeray(namebuf)-1);
     namebuf[len] = '\0';
     if (count < len) {
@@ -4798,7 +4808,7 @@ CLSID getCLSIDFromCoClass(const char *name) {
 
 	while (*p) {
 	  if (stricmp(subkeyBuffer,*p) == 0) {
-	    len = strlen(clsIdBuffer);
+	    len = (unsigned int) strlen(clsIdBuffer);
 	    count = MultiByteToWideChar(CP_ACP,(DWORD)0,
 					clsIdBuffer,len,
 					oleClsIdBuffer,
@@ -4880,6 +4890,7 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   IHTMLElementCollection *pIHTMLElementCollection;
   IHTMLDocument2 *pIHTMLDocument2;
   VARIANT name,index;
+  const char * id_or_name;
   BSTR bstr;
   IDispatch *pEltDispatch;
 
@@ -4887,9 +4898,14 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
     scheme_wrong_type("find-element-by-id-or-name","mx-document",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("find-element-by-id-or-name","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("find-element-by-id-or-name","string or symbol",1,argc,argv);
   }
+
+  id_or_name = SCHEME_STRINGP (argv[1])
+      ? SCHEME_STR_VAL (argv[1])
+      : SCHEME_SYM_VAL (argv[1]);
 
   if (argc > 2 && (SCHEME_INTP(argv[2]) == FALSE ||
 		   SCHEME_INT_VAL(argv[2]) < 0)) {
@@ -4906,18 +4922,13 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
 			"from HTML document");
   }
 
-  bstr = stringToBSTR(SCHEME_STR_VAL(argv[1]),SCHEME_STRLEN_VAL(argv[1]));
+  bstr = schemeStringToBSTR (argv[1]);
 
   name.vt = VT_BSTR;
   name.bstrVal = bstr;
 
   index.vt = VT_I4;
-  if (argc > 2) {
-    index.lVal = SCHEME_INT_VAL(argv[2]);
-  }
-  else {
-    index.lVal = 0;
-  }
+  index.lVal = (argc > 2) ? SCHEME_INT_VAL(argv[2]) : 0;
 
   pIHTMLElementCollection->item(name,index,&pEltDispatch);
 
@@ -4927,8 +4938,7 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
 
   if (pEltDispatch == NULL) {
     scheme_signal_error("find-element-by-id-or-name: "
-			"Couldn't find element with id = %s",
-			SCHEME_STR_VAL(argv[1]));
+			"Couldn't find element with id = %s", id_or_name);
   }
 
   hr = pEltDispatch->QueryInterface(IID_IHTMLElement,(void **)&pIHTMLElement);
@@ -4936,15 +4946,16 @@ Scheme_Object *mx_find_element_by_id_or_name(int argc,Scheme_Object **argv) {
   if (FAILED (hr) || pIHTMLElement == NULL) {
     scheme_signal_error("find-element-by-id-or-name: "
 			"Couldn't retrieve element interface "
-			"for element with id = %s",SCHEME_STR_VAL(argv[1]));
+			"for element with id = %s", id_or_name);
   }
 
   return (Scheme_Object *)(make_mx_element(pIHTMLElement));
 }
 
 // for coclass->html, progid->html
-Scheme_Object *mx_clsid_to_html(CLSID clsId,char *controlName,
-				char *fname,
+Scheme_Object *mx_clsid_to_html(CLSID clsId,
+                                const char *controlName,
+				const char *fname,
 				int argc,Scheme_Object **argv ) {
   LPOLESTR clsIdString;
   char widthBuff[25];
@@ -5024,26 +5035,29 @@ Scheme_Object *mx_coclass_to_html(int argc,Scheme_Object **argv) {
 
 Scheme_Object *mx_progid_to_html(int argc,Scheme_Object **argv) {
   HRESULT hr;
+  const char * name;
   BSTR wideProgId;
   CLSID clsId;
 
-  if (SCHEME_STRINGP(argv[0]) == FALSE) {
-    scheme_wrong_type("progid->html","string",0,argc,argv);
+  if (SCHEME_STRINGP (argv[0]) == FALSE &&
+      SCHEME_SYMBOLP (argv[0]) == FALSE) {
+    scheme_wrong_type("progid->html","string or symbol",0,argc,argv);
   }
 
-  wideProgId = schemeStringToBSTR(argv[0]);
+  name = SCHEME_STRINGP (argv[0])
+      ? SCHEME_STR_VAL (argv[0])
+      : SCHEME_SYM_VAL (argv[0]);
+
+  wideProgId = schemeStringToBSTR (argv[0]);
 
   hr = CLSIDFromProgID(wideProgId,&clsId);
 
-  if (FAILED (hr)) {
-    scheme_signal_error("progid->html: ProgID \"%s\" not found",
-			SCHEME_STR_VAL(argv[0]));
-  }
-
   SysFreeString(wideProgId);
 
-  return mx_clsid_to_html(clsId,SCHEME_STR_VAL(argv[0]),"progid->html",
-			  argc,argv);
+  if (FAILED (hr))
+      scheme_signal_error("progid->html: ProgID \"%s\" not found", name);
+
+  return mx_clsid_to_html(clsId,name,"progid->html", argc,argv);
 }
 
 Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
@@ -5056,13 +5070,14 @@ Scheme_Object *mx_stuff_html(int argc,Scheme_Object **argv,
     scheme_wrong_type(scheme_name,"mx-document",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(scheme_name,"string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type(scheme_name,"string or symbol",1,argc,argv);
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]);
 
-  html = schemeStringToBSTR(argv[1]);
+  html = schemeStringToBSTR (argv[1]);
   pDocument->get_body(&pBody);
 
   if (pBody == NULL) {
@@ -5097,12 +5112,13 @@ Scheme_Object *mx_replace_html(int argc,Scheme_Object **argv) {
     scheme_wrong_type("replace-html","mx-document",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("replace-html","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("replace-html","string or symbol",1,argc,argv);
   }
 
   pDocument = MX_DOCUMENT_VAL(argv[0]);
-  html = schemeStringToBSTR(argv[1]);
+  html = schemeStringToBSTR (argv[1]);
 
   pDocument->get_body(&pBody);
 
@@ -5258,6 +5274,9 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
     return scheme_false;
   }
 
+  mx_unmarshal_strings_as_symbols = scheme_new_param();
+  scheme_set_param (scheme_config, mx_unmarshal_strings_as_symbols, scheme_false);
+
   // export prims + omit value
 
   env = scheme_primitive_module(mx_name,env);
@@ -5408,9 +5427,74 @@ BOOL APIENTRY DllMain(HANDLE hModule,DWORD reason,LPVOID lpReserved) {
   return TRUE;
 }
 
+#if defined(MYSTERX_DOTNET)
+/// JRM HACKS for CLR
+// Note that these must come last because the #include and #import
+// both screw up some names used above.
+
+#include <Mscoree.h>
+// The import has a useless warning in it.
+#pragma warning (disable: 4278)
+#import <mscorlib.tlb>
+#pragma warning (default: 4278)
+
+// This doesn't appear to be necessary.
+//
+//  raw_interfaces_only high_property_prefixes("_get","_put","_putref")
+//
+using namespace mscorlib;
+
+ICorRuntimeHost * pCLR = NULL;
+
+Scheme_Object *
+initialize_dotnet_runtime (int argc, Scheme_Object **argv)
+{
+    HRESULT hr;
+    _AppDomain *pDefaultDomain = NULL;
+    IUnknown   *pAppDomainPunk = NULL;
+    IDispatch  *pAppDomainDispatch = NULL;
+
+    hr = CorBindToRuntimeEx (NULL, // latest version
+                             // workspace mode
+                             L"wks",
+                             // We'll only be running one domain.
+                             STARTUP_LOADER_OPTIMIZATION_SINGLE_DOMAIN,
+                             CLSID_CorRuntimeHost,
+                             IID_ICorRuntimeHost,
+                             (void **) &pCLR);
+
+    if (FAILED (hr))
+        scheme_signal_error ("%%%%initialize-dotnet-runtime:  CorBindToRuntimeEx() failed.");
+
+    hr = pCLR->Start();
+    if (FAILED (hr))
+        scheme_signal_error ("%%%%initialize-dotnet-runtime:  CLR failed to start.");
+
+    hr = pCLR->GetDefaultDomain (&pAppDomainPunk);
+    if (FAILED (hr) || pAppDomainPunk == NULL)
+        scheme_signal_error ("%%%%initialize-dotnet-runtime:  GetDefaultDomain() failed.");
+
+    hr = pAppDomainPunk->QueryInterface (__uuidof (_AppDomain),
+                                         (void **) &pDefaultDomain);
+    if (FAILED (hr) || pDefaultDomain == NULL)
+        scheme_signal_error ("%%%%initialize-dotnet-runtime:  QueryInterface for _AppDomain failed.");
+    pDefaultDomain->Release();
+
+    hr = pAppDomainPunk->QueryInterface (IID_IDispatch, (void **) &pAppDomainDispatch);
+    if (FAILED (hr) || pAppDomainDispatch == NULL)
+        scheme_signal_error ("%%%%initialize-dotnet-runtime:  QueryInterface for IDispatch failed.");
+
+    scheme_set_param (scheme_config, mx_unmarshal_strings_as_symbols, scheme_true);
+
+    return mx_make_idispatch (pAppDomainDispatch);
+}
+
+/// END OF JRM HACK
+#else
 Scheme_Object *
 initialize_dotnet_runtime (int argc, Scheme_Object **argv)
 {
   scheme_signal_error ("%%%%initialize-dotnet-runtime:  Support for .NET is not available in this image.");
   return scheme_false;
 }
+#endif

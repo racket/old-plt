@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <process.h>
 
+#include "escheme.h"
+#include "bstr.h"
 #include "myssink.h"
 #include "sink.h"
 #include "comtypes.h"
@@ -13,11 +15,11 @@
 
 // private methods
 
-int CSink::getHashValue(DISPID dispId) {
+unsigned int CSink::getHashValue(DISPID dispId) {
 
   // casting dispId guarantees positive result
 
-  return (int)((ULONG)dispId % EVENT_HANDLER_TBL_SIZE);
+  return (unsigned int)((ULONG)dispId % EVENT_HANDLER_TBL_SIZE);
 }
 
 EVENT_HANDLER_ENTRY *CSink::newEventHandlerEntry(DISPID dispId,Scheme_Object *handler) {
@@ -32,7 +34,7 @@ EVENT_HANDLER_ENTRY *CSink::newEventHandlerEntry(DISPID dispId,Scheme_Object *ha
 }
 
 EVENT_HANDLER_ENTRY *CSink::lookupHandler(DISPID dispId) {
-  int hashVal;
+  unsigned int hashVal;
   EVENT_HANDLER_ENTRY *p;
 
   hashVal = getHashValue(dispId);
@@ -80,7 +82,7 @@ STDMETHODIMP CSink::set_myssink_table(void * p) {
 }
 
 STDMETHODIMP CSink::register_handler(DISPID dispId,void * handler) {
-  unsigned short hashVal;
+  unsigned int hashVal;
   EVENT_HANDLER_ENTRY *p;
 
   scheme_dont_gc_ptr((Scheme_Object *)handler);
@@ -114,7 +116,7 @@ STDMETHODIMP CSink::register_handler(DISPID dispId,void * handler) {
 }
 
 STDMETHODIMP CSink::unregister_handler(DISPID dispId) {
-  unsigned short hashVal;
+  unsigned int hashVal;
   EVENT_HANDLER_ENTRY *p;
 
   hashVal = getHashValue(dispId);
@@ -243,11 +245,11 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   case VT_BSTR :
 
-    return BSTRToSchemeString(pVariantArg->bstrVal);
+    return unmarshalBSTR (pVariantArg->bstrVal);
 
   case VT_BSTR | VT_BYREF :
 
-    return scheme_box(BSTRToSchemeString(*pVariantArg->pbstrVal));
+    return scheme_box (unmarshalBSTR (*pVariantArg->pbstrVal));
 
   case VT_CY :
 
@@ -323,11 +325,10 @@ void CSink::handlerUpdateError(char *s) {
 }
 
 void CSink::unmarshalSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
-  Scheme_Object *val;
-
-  if (pVariantArg->vt & VT_BYREF) {
-    val = SCHEME_BOX_VAL(obj);
-  }
+  Scheme_Object *val =
+      (pVariantArg->vt & VT_BYREF)
+      ? SCHEME_BOX_VAL(obj)
+      : NULL;
 
   switch (pVariantArg->vt) {
 
@@ -404,8 +405,9 @@ void CSink::unmarshalSchemeObject(Scheme_Object *obj,VARIANTARG *pVariantArg) {
 
     BSTR bstr2;
 
-    if (SCHEME_STRINGP(val) == FALSE) {
-      handlerUpdateError("string");
+    if (SCHEME_STRINGP(val) == FALSE &&
+        SCHEME_SYMBOLP(val) == FALSE) {
+      handlerUpdateError("string or symbol");
     }
 
     bstr2 = schemeStringToBSTR(val);
@@ -509,7 +511,7 @@ HRESULT CSink::InternalQueryInterface(void *pThis,
 typedef struct _named_args_ {
   DISPID dispId;
   VARIANTARG *pVariantArg;
-  short index;
+  unsigned int index;
 } NAMEDARG;
 
 #define MAXINVOKEARGS 128
@@ -518,18 +520,19 @@ int cmpNamedArgs(NAMEDARG *p1,NAMEDARG *p2) {
   return (int)p1->dispId - (int)p2->dispId;
 }
 
-HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
-                      DISPPARAMS* pDispParams,VARIANT* pvarResult,
-		      EXCEPINFO* pexcepinfo,UINT* puArgErr) {
+HRESULT CSink::Invoke(DISPID dispId, REFIID, LCID, WORD,
+                      DISPPARAMS* pDispParams,
+                      VARIANT*, EXCEPINFO*, UINT*) {
 
   Scheme_Object *handler;
   EVENT_HANDLER_ENTRY *p;
   VARIANTARG *pCurrArg;
   NAMEDARG namedArgs[MAXINVOKEARGS];
-  short numParams,actualParams,positionalParams,namedParams;
+  UINT numParams,actualParams,positionalParams,namedParams;
   Scheme_Object *argv[MAXINVOKEARGS];
   mz_jmp_buf jmpSave;
-  int i,j;
+  UINT i;
+  UINT j;
 
   p = lookupHandler(dispId);
 
@@ -592,27 +595,27 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
     actualParams++;
   }
 
-  i = positionalParams;
+  int ii = positionalParams;
   j = 0;
 
   while (j < namedParams) {
 
-    if (i >= MAXINVOKEARGS) {
+    if (ii >= MAXINVOKEARGS) {
       return DISP_E_TYPEMISMATCH;
     }
 
-    while(i < namedArgs[j].dispId) {
-      if (i >= MAXINVOKEARGS) {
+    while(ii < namedArgs[j].dispId) {
+      if (ii >= MAXINVOKEARGS) {
 	return DISP_E_TYPEMISMATCH;
       }
 
-      argv[i] = make_scode(DISP_E_PARAMNOTFOUND);
-      i++,actualParams++;
+      argv[ii] = make_scode(DISP_E_PARAMNOTFOUND);
+      ii++,actualParams++;
     }
 
-    argv[i] = variantToSchemeObject(namedArgs[j].pVariantArg);
-    namedArgs[j].index = i;
-    i++,j++,actualParams++;
+    argv[ii] = variantToSchemeObject(namedArgs[j].pVariantArg);
+    namedArgs[j].index = ii;
+    ii++,j++,actualParams++;
   }
 
   scheme_apply(handler,actualParams,argv);

@@ -10,6 +10,7 @@
 
 #include "escheme.h"
 
+#include "bstr.h"
 #include "myspage.h"
 #include "myssink.h"
 
@@ -92,7 +93,7 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
   case VT_BSTR :
     BSTR bArg;
     SafeArrayGetElement(theArray,allIndices,&bArg);
-    return BSTRToSchemeString((unsigned short *)bArg);
+    return unmarshalBSTR((unsigned short *)bArg);
 
   case VT_ERROR :
     SCODE scodeArg;

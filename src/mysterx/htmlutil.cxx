@@ -10,6 +10,7 @@
 
 #include "escheme.h"
 
+#include "bstr.h"
 #include "myspage.h"
 #include "myssink.h"
 
@@ -257,7 +258,7 @@ Scheme_Object *mx_element_selection(int argc,Scheme_Object **argv) {
     codedComError("element-selection: Error getting selection value",hr);
   }
 
-  return BSTRToSchemeString(selection);
+  return unmarshalBSTR (selection);
 }
 
 Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
@@ -270,8 +271,9 @@ Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-set-selection!","mx-element",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("element-set-selection!","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("element-set-selection!","string or symbol",1,argc,argv);
   }
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
@@ -283,7 +285,7 @@ Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
     codedComError("element-set-selection!: Couldn't find IHTMLSelectElement interface",hr);
   }
 
-  selection = schemeStringToBSTR(argv[1]);
+  selection = schemeStringToBSTR (argv[1]);
 
   hr = pIHTMLSelectElement->put_value(selection);
 
@@ -308,14 +310,15 @@ Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,
     scheme_wrong_type(name,"mx-element",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(name,"string",0,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type (name,"string or symbol",0,argc,argv);
   }
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   whereBSTR = SysAllocString(where);
-  htmlBSTR = schemeStringToBSTR(argv[1]);
+  htmlBSTR = schemeStringToBSTR (argv[1]);
 
   pIHTMLElement->insertAdjacentHTML(whereBSTR,htmlBSTR);
 
@@ -341,14 +344,15 @@ Scheme_Object *mx_element_stuff_text(int argc,Scheme_Object **argv,WCHAR *where,
     scheme_wrong_type(name,"mx-element",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type(name,"string",0,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type(name,"string or symbol",0,argc,argv);
   }
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
   whereBSTR = SysAllocString(where);
-  textBSTR = schemeStringToBSTR(argv[1]);
+  textBSTR = schemeStringToBSTR (argv[1]);
 
   pIHTMLElement->insertAdjacentText(whereBSTR,textBSTR);
 
@@ -374,8 +378,9 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-replace-html","mx-element",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("element-replace-html","string",0,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("element-replace-html","string or symbol",0,argc,argv);
   }
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
@@ -386,7 +391,7 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  htmlBSTR = schemeStringToBSTR(argv[1]);
+  htmlBSTR = schemeStringToBSTR (argv[1]);
 
   pIHTMLElement->put_outerHTML(htmlBSTR);
 
@@ -414,7 +419,7 @@ Scheme_Object *mx_element_get_html(int argc,Scheme_Object **argv) {
 
   pIHTMLElement->get_innerHTML(&bstr);
 
-  retval = BSTRToSchemeString(bstr);
+  retval = BSTRToSchemeString (bstr);
 
   SysFreeString(bstr);
 
@@ -454,8 +459,9 @@ Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-attribute","mx-element",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("element-attribute","string",0,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("element-attribute","string or symbol",0,argc,argv);
   }
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
@@ -464,7 +470,7 @@ Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  attributeBSTR = schemeStringToBSTR(argv[1]);
+  attributeBSTR = schemeStringToBSTR (argv[1]);
 
   pIHTMLElement->getAttribute(attributeBSTR,FALSE,&variant);
 
@@ -483,17 +489,19 @@ Scheme_Object *mx_element_set_attribute(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-set-attribute!","mx-element",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("element-set-attribute!","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("element-set-attribute!","string or symbol",1,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[2]) == FALSE && SCHEME_INTP(argv[2]) == FALSE &&
+  if (SCHEME_STRINGP (argv[2]) == FALSE && SCHEME_INTP(argv[2]) == FALSE &&
+      SCHEME_SYMBOLP (argv[2]) == FALSE &&
 #ifdef MZ_USE_SINGLE_FLOATS
       SCHEME_FLTP(argv[2]) == FALSE &&
 #endif
       SCHEME_DBLP(argv[2]) == FALSE &&
       argv[2] != scheme_true && argv[2] != scheme_false) {
-    scheme_signal_error("Attribute must have a type in {string,integer,float,double,{#t,#f}}");
+    scheme_signal_error("Attribute must have a type in {string,symbol,integer,float,double,{#t,#f}}");
   }
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
@@ -502,7 +510,7 @@ Scheme_Object *mx_element_set_attribute(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  attributeBSTR = schemeStringToBSTR(argv[1]);
+  attributeBSTR = schemeStringToBSTR (argv[1]);
 
   marshalSchemeValueToVariant(argv[2],&variant);
 
@@ -523,8 +531,9 @@ Scheme_Object *mx_element_remove_attribute(int argc,Scheme_Object **argv) {
     scheme_wrong_type("element-remove-attribute!","mx-element",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
-    scheme_wrong_type("element-remove-attribute!","string",1,argc,argv);
+  if (SCHEME_STRINGP (argv[1]) == FALSE &&
+      SCHEME_SYMBOLP (argv[1]) == FALSE) {
+    scheme_wrong_type("element-remove-attribute!","string or symbol",1,argc,argv);
   }
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
@@ -533,7 +542,7 @@ Scheme_Object *mx_element_remove_attribute(int argc,Scheme_Object **argv) {
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
-  attributeBSTR = schemeStringToBSTR(argv[1]);
+  attributeBSTR = schemeStringToBSTR (argv[1]);
 
   pIHTMLElement->removeAttribute(attributeBSTR,FALSE,&success);
 
@@ -564,7 +573,7 @@ Scheme_Object *mx_element_tag(int argc,Scheme_Object **argv) {
 
   pIHTMLElement->get_tagName(&tagBSTR);
 
-  retval = BSTRToSchemeString(tagBSTR);
+  retval = unmarshalBSTR (tagBSTR);
 
   SysFreeString(tagBSTR);
 

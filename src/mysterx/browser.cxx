@@ -11,9 +11,9 @@
 
 #include "escheme.h"
 
-#include "myssink.h"
-
+#include "bstr.h"
 #include "myspage.h"
+#include "myssink.h"
 
 #include "mysterx.h"
 
@@ -288,13 +288,14 @@ Scheme_Object *mx_navigate(int argc,Scheme_Object **argv) {
     scheme_wrong_type("navigate","mx-browser",0,argc,argv);
   }
 
-  if (SCHEME_STRINGP(argv[1]) == FALSE) {
+  if (SCHEME_STRINGP(argv[1]) == FALSE &&
+      SCHEME_SYMBOLP(argv[1]) == FALSE) {
     scheme_wrong_type("navigate","string",1,argc,argv);
   }
 
   pIWebBrowser2 = MX_BROWSER_VAL(argv[0]);
 
-  url = stringToBSTR(SCHEME_STR_VAL(argv[1]),SCHEME_STRLEN_VAL(argv[1]));
+  url = schemeStringToBSTR (argv[1]);
 
   memset(vars,0,sizeof(vars));
 

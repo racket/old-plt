@@ -3,7 +3,8 @@
 ;;  output of zodiac elaboration.
 
 (module zodiac-unit mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "list.ss"))
   (require "kerncase.ss")
 
   (require "zodiac-sig.ss")
@@ -266,15 +267,55 @@
 		  (loop (syntax rhs) null #t))]
 		
 		[(module name init-require . body)
-		 (make-module-form
-		  stx
-		  (mk-back)
-		  (syntax name)
-		  (syntax init-require)
-		  (map (lambda (x)
-			 (loop x env trans?))
-		       (syntax->list (syntax body))))]
-
+		 (let* ([body (map (lambda (x)
+				     (loop x env trans?))
+				   (syntax->list (syntax body)))]
+			[get-required-modules
+			 (lambda (req)
+			   (let loop ([body body])
+			     (cond
+			      [(null? body) null]
+			      [(and (require/provide-form? (car body))
+				    (module-identifier=? req (stx-car (zodiac-stx (car body)))))
+			       (append
+				(map (lambda (r)
+				       (syntax-case* r (prefix all-except rename)
+					   (lambda (a b) (symbol=? 
+							  (syntax-e a)
+							  (syntax-e b)))
+					 [mod
+					  (identifier? r)
+					  r]
+					 [(prefix id mod)
+					  (syntax mod)]
+					 [(rename mod . _)
+					  (syntax mod)]
+					 [(all-except mod . _)
+					  (syntax mod)]))
+				     (stx->list (stx-cdr (zodiac-stx (car body)))))
+				(loop (cdr body)))]
+			      [else (loop (cdr body))])))]
+			[rt-required
+			 (cons (syntax init-require)
+			       (get-required-modules (quote-syntax require)))]
+			[et-required
+			 (cons (syntax init-require)
+			       (get-required-modules (quote-syntax require-for-syntax)))]
+			[et-body
+			 (filter define-syntaxes-form? body)]
+			[rt-body
+			 (filter (lambda (e) (and (not (define-syntaxes-form? e))
+						  (not (require/provide-form? e))))
+				 body)])
+		   (make-module-form
+		    stx
+		    (mk-back)
+		    (syntax name)
+		    rt-required
+		    rt-body
+		    et-required
+		    et-body
+		    provided)]
 		[(require i)
 		 (make-require/provide-form
 		  stx
@@ -612,7 +653,7 @@
       (define (create-define-syntaxes-form z names expr)
 	(make-define-syntaxes-form (zodiac-stx z) (mk-back) names expr))
 
-      (define-struct (module-form struct:parsed) (name init-require body))
+      (define-struct (module-form struct:parsed) (name init-require rt-requires et-requires body))
       (define (create-module-form z name init-require body)
 	(make-module-form (zodiac-stx z) (mk-back) name init-require body))
 

@@ -134,16 +134,16 @@
                 
                [show-var-values
                 (lambda (binding x y)
-                  (let* ([vals (if (z:top-level-varref? binding)
+                  (let* ([
+                         
+                         [vals (if (z:top-level-varref? binding)
                                    (list (global-defined-value (z:varref-var binding)))
                                    (map marks:mark-binding-value (marks:lookup-binding-list stored-mark-list binding)))]
                          [pm (make-object m:popup-menu%)])
                     (for-each (lambda (val)
                                 (add-to-popup pm val))
                               vals)
-                    (send frame popup-menu pm
-                          (inexact->exact x) (inexact->exact y)
-                          )))]
+                    (send frame popup-menu pm (inexact->exact x) (inexact->exact y))))]
                
                [clear-var-highlights
                 (lambda ()
@@ -321,6 +321,7 @@
                     ; will show even stale marks
                     (send context-lbox append (zodiac-abbr (marks:mark-source mark)) mark))
                   mark-list)
+                 (send context-lbox set
                  (send frame show #t))])
                  
       (sequence (super-init))

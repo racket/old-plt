@@ -18,28 +18,41 @@
       ;; type sc = (make-sc symbol (listof (hash-table symbol string)))
       (define-struct sc (language-name constants))
       
+      (define string-constants-file-cache #&#f)
+
       (define (get-string-constants filename)
-        (let* ([filename (build-path (this-expression-source-directory) filename)]
-               [sexp (call-with-input-file filename read 'text)])
-          (unless (and (list? sexp)
-                       (andmap (lambda (x) 
-                                 (and (list? x)
-                                      (= 2 (length x))
-                                      (symbol? (car x))
-                                      (string? (cadr x))))
-                               sexp))
-            (raise-syntax-error 'string-constant
-                                (format "expected `((,symbol string) ...), got: ~s" sexp)))
-          (let ([ht (make-hash-table)])
-            (for-each (lambda (x) 
-                        (when (hash-table-get ht (car x) (lambda () #f))
-                          (raise-syntax-error
-                           'string-constants 
-                           (format "found duplicate for ~a in ~a"
-                                   (car x) filename)))
-                        (hash-table-put! ht (car x) (cadr x)))
-                      sexp)
-            ht)))
+	(unless (unbox string-constants-file-cache)
+	  (set-box! string-constants-file-cache (make-hash-table)))
+	(let ([key (string->symbol filename)])
+	  (hash-table-get
+	   (unbox string-constants-file-cache)
+	   key
+	   (lambda ()
+	     (let* ([filename (build-path (this-expression-source-directory) filename)]
+		    [sexp (call-with-input-file filename read 'text)])
+	       (unless (and (list? sexp)
+			    (andmap (lambda (x) 
+				      (and (list? x)
+					   (= 2 (length x))
+					   (symbol? (car x))
+					   (string? (cadr x))))
+				    sexp))
+		 (raise-syntax-error 'string-constant
+				     (format "expected `((,symbol string) ...), got: ~s" sexp)))
+	       (let ([ht (make-hash-table)])
+		 (for-each (lambda (x) 
+			     (when (hash-table-get ht (car x) (lambda () #f))
+			       (raise-syntax-error
+				'string-constants 
+				(format "found duplicate for ~a in ~a"
+					(car x) filename)))
+			     (hash-table-put! ht (car x) (cadr x)))
+			   sexp)
+		 (hash-table-put!
+		  (unbox string-constants-file-cache)
+		  key
+		  ht)
+		 ht))))))
       
       (define available-string-constant-sets
         (list 

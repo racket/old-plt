@@ -1096,7 +1096,7 @@ static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *
 {
   int len;
 
-  len = scheme_proper_list_length(form);
+  len = scheme_stx_proper_list_length(form);
 
   if (len < 0)
     scheme_wrong_syntax("application", NULL, form, NULL);
@@ -1136,6 +1136,9 @@ static void *compile_k(void)
   rec.keep_unit_debug_info = 1;
   rec.dont_mark_local_use = 0;
   rec.value_name = NULL;
+
+  if (!SCHEME_STXP(form))
+    form = scheme_datum_to_syntax(form, scheme_false);
 
   o = scheme_link_expr(scheme_compile_expr(form, (Scheme_Comp_Env *)env, &rec, 0),
 		       scheme_link_info_create());
@@ -1371,8 +1374,6 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     return scheme_handle_stack_overflow(compile_expand_expr_k);
   }
 #endif
-
- top:
 
   DO_CHECK_FOR_BREAK(scheme_current_process, ;);
 
@@ -3041,6 +3042,9 @@ static void *expand_k(void)
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
+  if (!SCHEME_STXP(obj))
+    obj = scheme_datum_to_syntax(obj, scheme_false);
+
   return scheme_expand_expr(obj, env, p->ku.k.i1);
 }
 
@@ -3224,7 +3228,7 @@ local_expand_body_expression(int argc, Scheme_Object **argv)
 
   /* Check for macro expansion, which could mask the real define-values */
   expr = argv[0];
-  if (SCHEME_PAIRP(expr))
+  if (SCHEME_STX_PAIRP(expr))
     expr = scheme_check_immediate_macro(argv[0], env, NULL, 0, -1, &gval);
   else
     gval = NULL;
@@ -3257,7 +3261,7 @@ Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont
 
   port = scheme_make_string_input_port(str);
   do {
-    expr = scheme_read(port);
+    expr = scheme_read_syntax(port, scheme_false);
     if (SAME_OBJ(expr, scheme_eof))
       cont = 0;
     else if (cont < 0)

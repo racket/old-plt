@@ -90,7 +90,6 @@ static Scheme_Object *primitive_name(int argc, Scheme_Object *argv[]);
 static Scheme_Object *primitive_result_arity (int argc, Scheme_Object *argv[]);
 static Scheme_Object *syntax_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *macro_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *id_macro_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *exp_time_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *call_with_values(int argc, Scheme_Object *argv[]);
 Scheme_Object *scheme_values(int argc, Scheme_Object *argv[]);
@@ -310,11 +309,6 @@ scheme_init_fun (Scheme_Env *env)
   scheme_add_global_constant("macro?", 
 			     scheme_make_folding_prim(macro_p, 
 						      "macro?", 
-						      1, 1, 1), 
-			     env);
-  scheme_add_global_constant("id-macro?", 
-			     scheme_make_folding_prim(id_macro_p, 
-						      "id-macro?", 
 						      1, 1, 1), 
 			     env);
   scheme_add_global_constant("expansion-time-value?", 
@@ -635,33 +629,33 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
 
   data->type = scheme_compiled_unclosed_procedure_type;
 
-  params = allparams = SCHEME_CAR(SCHEME_CDR(code));
+  params = allparams = SCHEME_STX_CAR(SCHEME_STX_CDR(code));
 
   data->num_params = 0;
-  for (; SCHEME_PAIRP(params); params = SCHEME_CDR(params)) {
+  for (; SCHEME_STX_PAIRP(params); params = SCHEME_STX_CDR(params)) {
     data->num_params++;
   }
   data->flags = 0;
-  if (!SCHEME_NULLP(params)) {
+  if (!SCHEME_STX_NULLP(params)) {
     data->flags |= CLOS_HAS_REST;
     data->num_params++;
   }
 
-  forms = SCHEME_CDR(SCHEME_CDR(code));
+  forms = SCHEME_STX_CDR(SCHEME_STX_CDR(code));
 
   frame = scheme_new_compilation_frame(data->num_params, SCHEME_LAMBDA_FRAME, env);
   params = allparams;
   for (i = 0; i < data->num_params; i++) {
-    if (!SCHEME_PAIRP(params))
+    if (!SCHEME_STX_PAIRP(params))
       param = params;
     else
-      param = SCHEME_CAR(params);
+      param = SCHEME_STX_CAR(params);
     scheme_add_compilation_binding(i, param, frame);
-    if (SCHEME_PAIRP(params))
-      params = SCHEME_CDR (params);
+    if (SCHEME_STX_PAIRP(params))
+      params = SCHEME_STX_CDR (params);
   }
 
-  if (SCHEME_NULLP(forms))
+  if (SCHEME_STX_NULLP(forms))
     scheme_wrong_syntax("lambda", NULL, code, "bad syntax (empty body)");
 
   data->name = rec[drec].value_name;
@@ -1224,12 +1218,6 @@ static Scheme_Object *syntax_p(int argc, Scheme_Object *argv[])
 static Scheme_Object *macro_p(int argc, Scheme_Object *argv[])
 {
   return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_macro_type) 
-	  ? scheme_true : scheme_false);
-}
-
-static Scheme_Object *id_macro_p(int argc, Scheme_Object *argv[])
-{
-  return (SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_id_macro_type) 
 	  ? scheme_true : scheme_false);
 }
 

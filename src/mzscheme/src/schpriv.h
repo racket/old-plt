@@ -1073,8 +1073,9 @@ Scheme_Object *scheme_bangboxenv_execute(Scheme_Object *data);
 
 Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *obj);
 
-Scheme_Object *scheme_named_map_1(char *, Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object *form), Scheme_Object *lst, Scheme_Object *form);
-
+Scheme_Object *scheme_named_map_1(char *, 
+				  Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object *form), 
+				  Scheme_Object *lst, Scheme_Object *form);
 
 int scheme_strncmp(const char *a, const char *b, int len);
 

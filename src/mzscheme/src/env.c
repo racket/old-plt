@@ -1218,7 +1218,6 @@ scheme_static_distance(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
     if ((type ==  scheme_syntax_compiler_type)
 	|| (type == scheme_macro_type)
-	|| (type == scheme_id_macro_type)
 	|| (type == scheme_exp_time_type))
       return (Scheme_Object *)b->val;
   }

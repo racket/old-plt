@@ -2,11 +2,22 @@
 (#%define-syntax #%define-macro
   (#%lambda (expr)
     (#%let ([name (#%cadr (#%syntax-e expr))]
-            [f (#%caddr (#%syntax-e expr))])
+            [f (#%caddr (#%syntax-e expr))]
+	    [tmp (gensym)])
       (#%datum->syntax
-       `(#%define-syntax ,name
-          (#%lambda (expr)
-            (#%apply ,f (#%cdr (#%syntax->datum expr)))))
+       (#%list
+	'#%define-syntax 
+	name
+	(#%list '#%let
+		(#%list (#%list tmp f))
+		(#%list '#%lambda 
+			'(expr)
+			(#%list
+			 '#%datum->syntax
+			 (#%list
+			  '#%apply tmp
+			  '(#%cdr (#%syntax->datum expr)))
+			 'expr))))
        expr))))
 
 > kstop define-macro <
@@ -1058,8 +1069,10 @@
       (#%lambda (req-lib/proc rel?)
           (#%letrec ([rl (#%case-lambda 
 			  [(name . collection-path)
-			   (#%let ([name (#%local-expand-defmacro name)]
-				   [collection-path (#%map #%local-expand-defmacro collection-path)]
+			   (#%let ([name (#%syntax->datum (#%local-expand-defmacro name))]
+				   [collection-path (#%map
+						     #%syntax->datum
+						     (#%map #%local-expand-defmacro collection-path))]
 				   [check (#%lambda (s kind)
 					    (#%unless (#%string? s)
 					      (#%let ([rlname (#%if rel? 'require-relative-library 'require-library)])

@@ -871,7 +871,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
 
     return scheme_make_syntax_compile(struct_link, (Scheme_Object *)info);
   } else {
-    Scheme_Object *base, *result;
+    Scheme_Object *base;
     base = (parent_expr 
 	    ? cons(base_symbol,
 		   cons(parent_expr, scheme_null))

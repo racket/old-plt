@@ -550,17 +550,17 @@ scheme_proper_list_length (Scheme_Object *list)
 }
 
 Scheme_Object *
-scheme_named_map_1 (char *name, Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object*), 
-		    Scheme_Object *lst, Scheme_Object *form)
+scheme_named_map_1(char *name, Scheme_Object *(*fun)(Scheme_Object*, Scheme_Object*), 
+		   Scheme_Object *lst, Scheme_Object *form)
 {
-  if (SCHEME_NULLP(lst))
+  if (SCHEME_STX_NULLP(lst))
       return (scheme_null);
-  else if (SCHEME_PAIRP(lst)) {
+  else if (SCHEME_STX_PAIRP(lst)) {
     Scheme_Object *v;
-    v = fun(SCHEME_CAR(lst), form);
+    v = fun(SCHEME_STX_CAR(lst), form);
     return scheme_make_pair(v,
 			    scheme_named_map_1(name, fun, 
-					       SCHEME_CDR(lst), form));
+					       SCHEME_STX_CDR(lst), form));
   } else {
     scheme_wrong_syntax(name, lst, form, "bad syntax (" IMPROPER_LIST_FORM ")");
     return scheme_void;

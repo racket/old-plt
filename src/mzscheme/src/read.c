@@ -882,7 +882,7 @@ scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 							  MZCONFIG_CAN_READ_COMPILED));
 
   p->ku.k.p1 = (void *)port;
-  p->ku.k.p1 = (void *)stxsrc;
+  p->ku.k.p2 = (void *)stxsrc;
   return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
 }
 

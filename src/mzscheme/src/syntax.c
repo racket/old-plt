@@ -630,7 +630,8 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 
     name = SCHEME_STX_CAR(var);
 
-    bucket = (Scheme_Object *)scheme_global_bucket(name, globals);
+    bucket = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name),
+						   globals);
     pr = scheme_make_pair(bucket, scheme_null);
     if (last)
       SCHEME_STX_CDR(last) = pr;
@@ -693,7 +694,8 @@ quote_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 	&& SCHEME_STX_NULLP(SCHEME_STX_CDR(SCHEME_STX_CDR(form)))))
     scheme_wrong_syntax("quote", NULL, form, "bad syntax (wrong number of parts)");
 
-  return scheme_make_pair(quote_symbol, SCHEME_STX_CDR(form));
+  return scheme_datum_to_syntax(scheme_make_pair(quote_symbol, SCHEME_STX_CDR(form)),
+				form);
 }
 
 static Scheme_Object *
@@ -1538,7 +1540,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
       scheme_wrong_syntax(formname, bindings, form, NULL);
     binding = SCHEME_STX_CAR(bindings);
     if (!(SCHEME_STX_PAIRP(binding) && SCHEME_STX_PAIRP(SCHEME_STX_CDR(binding))
-	  && SCHEME_NULLP(SCHEME_STX_CDDR(binding))))
+	  && SCHEME_STX_NULLP(SCHEME_STX_CDDR(binding))))
       scheme_wrong_syntax(formname, binding, form, NULL);
     
     pre_k = k;
@@ -1909,7 +1911,7 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 	&& SCHEME_STX_PAIRP(SCHEME_STX_CDR(SCHEME_STX_CDR(form)))
 	&& SCHEME_STX_PAIRP(SCHEME_STX_CDR(SCHEME_STX_CDR(SCHEME_STX_CDR(form))))))
     scheme_wrong_syntax("named let", NULL, form, NULL);
-  name = SCHEME_CAR (SCHEME_CDR (form));
+  name = SCHEME_STX_CAR(SCHEME_STX_CDR(form));
   bindings = SCHEME_STX_CAR(SCHEME_STX_CDR(SCHEME_STX_CDR(form)));
   if (!SCHEME_STX_PAIRP(bindings) && !SCHEME_STX_NULLP(bindings))
     scheme_wrong_syntax("named let", bindings, form, NULL);
@@ -2220,8 +2222,13 @@ do_def_execute(char *who, Scheme_Object *form, Scheme_Type type, int require_pro
   p->current_local_env = save_env;
 
   if (require_proc)
-    if (!SCHEME_PROCP(val))
-      scheme_raise_exn(MZEXN_MISC, "define-syntax: not a procedure");
+    if (!SCHEME_PROCP(val)) {
+      int len;
+      char *s;
+      s = scheme_make_provided_string(val, 0, &len);
+      scheme_raise_exn(MZEXN_MISC, "define-syntax: not a procedure: %t",
+		       s, len);
+    }
 
   if (SCHEME_TRUEP(name)) {
     macro = scheme_alloc_stubborn_small_object ();
@@ -2281,7 +2288,8 @@ do_def_syntax(char *where,
   do_def_parse(where, form, &name, &code, env);
 
   val = scheme_compile_expr(code, env, rec, drec);
-  name = (Scheme_Object *)scheme_global_bucket(name, scheme_min_env(env));
+  name = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name),
+					       scheme_min_env(env));
 
   return scheme_make_syntax_compile(link, scheme_make_pair(name, val));
 }
@@ -2363,7 +2371,7 @@ do_letmacro(char *where, Scheme_Object *formname,
 	    Scheme_Compile_Info *rec, int drec, int depth,
 	    Scheme_Type type, int anything)
 {
-  Scheme_Object *form, *bindings, *name, *body, *v;
+  Scheme_Object *form, *bindings, *body, *v;
   Scheme_Object *macro;
   Scheme_Comp_Env *save_env;
   Scheme_Process *p = scheme_current_process;
@@ -2383,7 +2391,7 @@ do_letmacro(char *where, Scheme_Object *formname,
 
   check_form(where, bindings);
   
-  for (v = bindings; SCHEME_SYX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
+  for (v = bindings; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
     Scheme_Object *a;
 
     a = SCHEME_STX_CAR(v);
@@ -2401,8 +2409,8 @@ do_letmacro(char *where, Scheme_Object *formname,
   save_env = p->current_local_env;
   p->current_local_env = env;
 
-  for (v = bindings; SCHEME_SYX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
-    Scheme_Object *a, *name, *p;
+  for (v = bindings; SCHEME_STX_PAIRP(v); v = SCHEME_STX_CDR(v)) {
+    Scheme_Object *a, *name;
 
     a = SCHEME_STX_CAR(v);
     name = SCHEME_STX_CAR(a);
@@ -2430,9 +2438,7 @@ do_letmacro(char *where, Scheme_Object *formname,
   } else {
     v = scheme_expand_block(scheme_datum_to_syntax(body, forms), env, depth);
     if (depth >= 0)
-      v = cons(formname,
-	       cons(name,
-		    cons(cl, v)));
+      v = cons(formname, cons(bindings, v));
     else if (SCHEME_STX_NULLP(SCHEME_STX_CDR(v)))
       v = SCHEME_STX_CAR(v);
     else

@@ -15,6 +15,13 @@ created mx-browser% class with methods
 constructor for mx-browser% takes same arguments
  as old constructor for mx-document%; style
  list may include 'scrollbars
+for COM event-handling procedures, added 
+ check for ambiguous COM class; added 
+ procedures set-coclass! and 
+ set-coclass-from-progid! to allow 
+ explicit disambiguation; procedures 
+ coclass and coclass-as-progid return 
+ current value
 added find-element-by-id-or-name,
  elements-with-tag to mx-document%
 added methods selection and 

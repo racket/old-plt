@@ -23,6 +23,10 @@
    coclass->html
    cocreate-instance-from-coclass
    cocreate-instance-from-progid
+   coclass
+   coclass-as-progid
+   set-coclass!
+   set-coclass-from-progid!
    com-object-eq?
    com-object?	
    com-omit
@@ -56,6 +60,10 @@
    coclass->html
    cocreate-instance-from-coclass
    cocreate-instance-from-progid
+   coclass
+   coclass-as-progid
+   set-coclass!
+   set-coclass-from-progid!
    com-object-eq?
    com-object?	
    com-register-object

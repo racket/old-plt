@@ -674,7 +674,6 @@
  (vc-error-format "Erreur: ~a") 
  (vc-current-format "~a v.~a (itération ~a) est à jour")
  (vc-update-format "~a v.~a (itération ~a) doit être remplacé par v.~a (itération ~a)")
- (vc-cancel "Annuler") 
  (vc-binary-name "Binaire")
  (vc-updates-available "Les mises à jour sont disponibles à")
  (vc-latest-binary-information-format "Version la plus récente: ~a (itération ~a)")

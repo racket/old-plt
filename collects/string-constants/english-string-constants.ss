@@ -667,7 +667,6 @@
  (vc-error-format "Error: ~a") 
  (vc-current-format "~a v.~a (iteration ~a) is up-to-date")
  (vc-update-format "~a v.~a (iteration ~a) needs updating to v.~a (iteration ~a)")
- (vc-cancel "Cancel") 
  (vc-binary-name "Binary")
  (vc-updates-available "Updates are available at")
  (vc-latest-binary-information-format "Latest released version: ~a (iteration ~a)")

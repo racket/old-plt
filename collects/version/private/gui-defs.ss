@@ -46,7 +46,7 @@
 	  (parent dialog))
 	 (instantiate 
 	  button% () 
-	  (label (string-constant vc-cancel))
+	  (label (string-constant cancel))
 	  (parent dialog)
 	  (callback (lambda (button ce)
 		      (close-fun)

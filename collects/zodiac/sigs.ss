@@ -1,4 +1,4 @@
-; $Id: sigs.ss,v 1.42 1997/09/18 18:00:08 shriram Exp shriram $
+; $Id: sigs.ss,v 1.43 1997/09/19 17:08:31 shriram Exp shriram $
 
 (reference "namedarg.ss")
 
@@ -7,6 +7,8 @@
     (opt (kwd elaboration-evaluator: elaboration-eval)
       (lambda (expr parsed->raw phase)
 	(eval (parsed->raw expr))))
+    (opt (kwd user-macro-body-evaluator: macro-body-eval)
+      eval)
     (opt (kwd attributes: attr) 'previous)
     (opt (kwd vocabulary: vocab) #f))
 
@@ -15,6 +17,8 @@
     (opt (kwd elaboration-evaluator: elaboration-eval)
       (lambda (expr parsed->raw phase)
 	(eval (parsed->raw expr))))
+    (opt (kwd user-macro-body-evaluator: macro-body-eval)
+      eval)
     (opt (kwd attributes: attr) 'previous)
     (opt (kwd vocabulary: vocab) #f))
 
@@ -23,14 +27,18 @@
     (kwd attributes: attr)
     (kwd vocabulary: vocab)
     (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase) (eval (parsed->raw expr)))))
+      (lambda (expr parsed->raw phase) (eval (parsed->raw expr))))
+    (opt (kwd user-macro-body-evaluator: macro-body-eval)
+      eval))
 
   (define-argument-list zodiac:expand-program/nal
     (kwd expressions: exprs)
     (kwd attributes: attr)
     (kwd vocabulary: vocab)
     (opt (kwd elaboration-evaluator: elaboration-eval)
-      (lambda (expr parsed->raw phase) (eval (parsed->raw expr)))))
+      (lambda (expr parsed->raw phase) (eval (parsed->raw expr))))
+    (opt (kwd user-macro-body-evaluator: macro-body-eval)
+      eval))
 
 (define-signature zodiac:misc^
   (pretty-print debug-level symbol-append flush-printf print-and-return))
@@ -54,6 +62,7 @@
 (define-signature zodiac:expander^
   (expand expand-program expand-expr
     m3-elaboration-evaluator
+    m3-macro-body-evaluator
     add-system-macro-form add-user-macro-form
     add-micro-form add-macro-form
     add-list-micro add-ilist-micro add-lit-micro add-sym-micro

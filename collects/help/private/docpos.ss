@@ -3,15 +3,16 @@
            (lib "contract.ss"))
 
   (provide/contract
-   [standard-html-doc-position (path? . -> . number?)]
-   [user-defined-doc-position (path? . -> . (union false? number?))]
-   [known-docs (listof (cons/p path? string?))]
-   [set-doc-position! (path? number? . -> . void?)]
-   [reset-doc-positions! (void? . -> . void?)])
+   [standard-html-doc-position (string? . -> . number?)])
+  
+  (provide user-defined-doc-position
+           set-doc-position!
+	   reset-doc-positions!
+	   known-docs)
   
   ;; Define an order on the standard docs.
   (define (standard-html-doc-position d)
-    (if (equal? d (string->path "help"))
+    (if (string=? d "help")
         -1
         (let ([line (assoc d docs-and-positions)])
           (if line
@@ -21,18 +22,23 @@
   (define user-doc-positions '())
 
   (define (set-doc-position! manual weight)
-    (unless (assoc manual known-docs)
-      (error 'set-doc-position! "unknown manual ~s" manual))
-    (set! user-doc-positions
-          (cons (list manual weight)
-                (filter (lambda (x) (not (equal? (car x) manual)))
-                        user-doc-positions))))
+    (printf "set-doc-position! ~s ~s\n" manual weight)
+    (let ([man-sym (string->symbol manual)])
+      (unless (assoc manual known-docs)
+	      (error 
+	       'set-doc-position! 
+	       "Unknown manual \"~a\"" manual))
+      (set! user-doc-positions
+	    (cons (list man-sym weight)
+		  (filter (lambda (x)
+			    (not (eq? (car x) man-sym)))
+			  user-doc-positions)))))
 
   (define (reset-doc-positions!)
     (set! user-doc-positions '()))
 
   (define (user-defined-doc-position manual)
-    (let ([result (assoc manual user-doc-positions)])
+    (let ([result (assoc (string->symbol manual) user-doc-positions)])
       (and result (cadr result))))
   
   ;; (listof (list string string number))
@@ -40,7 +46,7 @@
   ;; the second string is the title of the the manual
   ;; the number determines the sorting order for the manuals in the manuals page
   (define docs-and-positions
-    '(("r5rs" "Revised^5 Report on the Algorithmic Language Scheme" -50)
+    `(("r5rs" "Revised^5 Report on the Algorithmic Language Scheme" -50)
       ("mzscheme" "PLT MzScheme: Language Manual" -49)
       ("mred" "PLT MrEd: Graphical Toolbox Manual" -48)
             
@@ -55,7 +61,7 @@
       ("profj-intermediate" "ProfessorJ Intermediate Language" -9)
       ("profj-advanced" "ProfessorJ Advanced Language" -8)
       
-      ("tour" "A Brief Tour of DrScheme version 207" 0)
+      ("tour" ,(format "A Brief Tour of DrScheme version ~a" (version)) 0)
       ("drscheme" "PLT DrScheme: Programming Environment Manual" 1)
       
       ("srfi" "SRFI documents inside PLT" 3)
@@ -75,4 +81,5 @@
       ("t-y-scheme" "Teach Yourself Scheme in Fixnum Days" 100)
       ("tex2page" "TeX2page" 101)))
   
-  (define known-docs (map (lambda (x) (cons (string->path (car x)) (cadr x))) docs-and-positions)))
+  ; known-docs: (listof (cons string[subdir-of-doc-dir] string[title]))
+  (define known-docs (map (lambda (x) (cons (car x) (cadr x))) docs-and-positions)))

@@ -269,22 +269,24 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
      switch or kill, because it triggers Scheme code, then event
      dispatches don't return in the way that Windows expects.
 
-     In practice, things seem to work ok anyway, except:
-     
-     * Thread-switches during WM_PAINT messages. These are handled by
-       a special mechanism other than the trampoline.
+     We therefore set up a special trampoline for events that trigger
+     Scheme code. For example, WM_LBUTTONDOWN. Other events, such as
+     WM_PAINT or WM_SETFOCUS messages, are handled through queued
+     callbacks, since those events may be received other than through
+     an event dispatch (i.e., some other Windows toolbox call triggers
+     and event that it sends directly).
 
-     * Thread kills during messages; Windows seems to run out o some
-       sort of resource.
+     For trampolined events, we return from the Windows-sponsored
+     message send and then re-send the message (where the re-send
+     might trigger Scheme code). These events *cannot* be handled
+     without a trampoline. For example, if somehow the WM_LBUTTONDOWN
+     message is sent directly to a window, we can't handle it. The
+     wx_start_win_event() function returns 0 to say "give up". 
 
-     To avoid this problem, we try to "trampoline" back out of the
-     Windows-sponsored message send and then re-send the message
-     (where the re-send might trigger Scheme code). The trampoline is
-     only works for certain types of messages, but it should be needed
-     only for certain types of messages. 
-
-     It's needed in more places than we have now, but I'm delaying
-     trampolines for many messages until there's more time to test. */
+     For certain kinds of events, the callback queueing is most easily
+     implemented in Scheme within mred.ss. For those cases, we put
+     MzScheme into atomic mode while handling the event. The "mred.ss"
+     implementation promises to run quickly (and not call user code). */
 {
   int tramp;
 
@@ -342,6 +344,8 @@ FILE *log;
 
 int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 {
+  /* See wxEventTrampoline notes above. */
+
 #if wxLOG_EVENTS
   if (!log)
     log = fopen("evtlog", "w");
@@ -372,7 +376,7 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
     case WM_CHAR:
     case WM_INITMENU:
 #if wxLOG_EVENTS
-      fprintf(log, "BAD!)\n");
+      fprintf(log, " CAN'T HANDLE!)\n");
       fflush(log);
 #endif
       return 0;
@@ -391,6 +395,8 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 
 void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 {
+  /* See wxEventTrampoline notes above. */
+
 #if wxLOG_EVENTS
   fprintf(log, " %lx %lx %lx %s %d)\n", scheme_current_thread, hWnd, message, who, tramp);
   fflush(log);

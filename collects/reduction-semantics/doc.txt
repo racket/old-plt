@@ -53,7 +53,7 @@ this tool:
 
        See "iswim.ss" for the reduction-semantics grammar.
 
-       The following are provided by "iswim.ss":
+       The following are provided by "iswim.ss" (case-insensitively):
                Grammar and substitution:
 >                 iswim-grammar : compiled-lang?
 >                 M? : (any? . -> . boolean?)

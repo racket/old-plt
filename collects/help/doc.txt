@@ -52,13 +52,6 @@ browser is started instead.
 The following functions are provided by both `help-desk-mz.ss' and
 `help-desk.ss'.  These functions rely only on MzScheme:
 
-> in-help-desk-navigate? : -> boolean
-
-Returns #t if Help Desk is trying to launch a browser with a 
-particular URL, #f otherwise.  For example, for most of the time
-that a call to `help-desk-browser' (above) is pending, this 
-predicate returns #t.
-
 _Server functions_
 ------------------
 

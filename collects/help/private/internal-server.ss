@@ -26,6 +26,7 @@
            [hd-cookie (make-hd-cookie min-port #f #f addl-browser-frame-mixin)]
            [combined-browser-mixin
             (compose addl-browser-frame-mixin 
+                     help-desk-framework-mixin
                      (make-generic-browser-frame-mixin hd-cookie))])
       (let-values ([(exit-proc browser-maker)
                     (serve configuration min-port #f combined-browser-mixin)])
@@ -33,6 +34,9 @@
         (set-hd-cookie-browser! hd-cookie browser-maker)
         hd-cookie)))
   
+  (define help-desk-framework-mixin
+    (compose (lambda (x) x)))
+     
   (define (make-generic-browser-frame-mixin hd-cookie)
     (mixin (frame:basic<%>) ()
       (rename [super-on-size on-size])

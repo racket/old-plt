@@ -71,6 +71,10 @@ The html-eval-ok parameter controls the evaluation of
 
 > (hyper-frame-mixin frame%) - Extends the given frame% class.
 
+   The result of this mixin takes one argument, a url
+   string. During the initialization of objects created from
+   this mixin, the code shows the frame and visits the url.
+
 > get-hyper-panel% :: (send hyper-frame get-hyper-panel%)
   returns the class that is instantiated with the frame is created.
   Must be a panel with hyper-panel-mixin mixed in. Defaults to
@@ -82,6 +86,18 @@ The html-eval-ok parameter controls the evaluation of
 ----------------------------------------
 
 > hyper-frame% = (hyper-frame-mixin frame%)
+
+------------------------------------------------------------
+
+> (hyper-no-show-frame-mixin frame%) - Extends the given frame% class.
+
+  This is the same as the hyper-frame-mixin, except that it
+  doesn't show the frame and the initialization arguments
+  are unchanged.
+
+----------------------------------------
+
+> hyper-no-show-frame% = (hyper-frame-no-show-mixin frame%)
 
 ----------------------------------------
 

@@ -63,7 +63,13 @@
                            (if browser-frame
 			       (begin (send browser-frame show #t)
 				      (send (send (send browser-frame get-hyper-panel) get-canvas) goto-url url-str #f))
-			       (set! browser-frame (make-object (hyper-frame-extension hyper-frame%) url-str)))
+			       (begin
+                                 (set! browser-frame (make-object (hyper-frame-extension 
+                                                                   hyper-no-show-frame%)))
+                                 (send browser-frame show #t)
+                                 (let* ([hp (send browser-frame get-hyper-panel)]
+                                        [hc (send hp get-canvas)])
+                                   (send hc goto-url url-str #f))))
 			   browser-frame)))
                       TCP BROWSER WEB-SERVER)])
          (export))

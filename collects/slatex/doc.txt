@@ -46,3 +46,14 @@ pdf-latex rather than latex.  In particular, there is now a launcher
 called (PDF-SLaTeX/pdf-slatex), and the file slatex.ss now defines
 pdf-slatex and pdf-latex.
 
+> (pdf-slatex filename)
+
+This procedure `slatex's the file named by filename and
+produces PDF output instead of ps output. It calls
+filename->latex-filename on `filename'.
+
+> (pdf-latex filename)
+
+This procedure `latex's the file named by filename and
+produces PDF output instead of ps output. It calls
+filename->latex-filename on `filename'.

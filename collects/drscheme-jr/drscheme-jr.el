@@ -42,7 +42,7 @@
 (defvar mzrice-stdin-filename "stdin")
 
 (defvar mzrice-error-regexp
-  "^\\(.+\\)\\[\\([0-9]+\\)-\\([0-9]+\\)\\]:[0-9]+\.[0-9]+-[0-9]+\.[0-9]+ ")
+  "^\\(.+\\)\\[\\([0-9]+\\)-\\([0-9]+\\)\\]:[0-9]+\.[0-9]+-[0-9]+\.[0-9]+$")
 
 (defun mzrice-error-parser (pt)
   (save-excursion

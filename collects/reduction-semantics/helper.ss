@@ -1,5 +1,5 @@
 (module helper mzscheme
-  (require (lib "contracts.ss")
+  (require (lib "contract.ss")
            "reduction-semantics.ss")
   
   (define counter 0)

@@ -15,7 +15,7 @@ abstract out the `hole and `(hole name) patterns.
   (require (lib "list.ss")
            (lib "match.ss")
            (lib "etc.ss")
-           (lib "contracts.ss"))
+           (lib "contract.ss"))
   
   (provide (struct nt (name rhs))
            (struct rhs (pattern))

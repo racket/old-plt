@@ -1,7 +1,7 @@
 
 (module reduction-semantics mzscheme
   (require "private/matcher.ss"
-           (lib "contracts.ss")
+           (lib "contract.ss")
            (lib "etc.ss"))
   (require-for-syntax (lib "list.ss"))
 

@@ -1,7 +1,7 @@
 (module iswim mzscheme
   (require (lib "reduction-semantics.ss" "reduction-semantics")
            (lib "subst.ss" "reduction-semantics")
-	   (lib "contracts.ss"))
+	   (lib "contract.ss"))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Expression grammar:

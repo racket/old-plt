@@ -23,8 +23,8 @@ static void exchange(void *a, void *b, size_t size) {
     }
 }
 
-void my_qsort(void *base, size_t nmemb, size_t size,
-        int (*compar)(const void *, const void *)) {
+static void my_qsort(void *base, size_t nmemb, size_t size,
+		     int (*compar)(const void *, const void *)) {
     void *lbStack[MAXSTACK], *ubStack[MAXSTACK];
     int sp;
     unsigned int offset;

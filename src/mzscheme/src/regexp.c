@@ -1738,7 +1738,8 @@ regrepeat(Regwork *rw, rxpos p)
     {
       rxpos opnd2 = OPSTR(opnd);
       NEED_INPUT(rw, scan, 1);
-      while (regstr[opnd2] == rw->instr[scan]) {
+      while (scan != rw->input_end
+	     && (regstr[opnd2] == rw->instr[scan])) {
 	count++;
 	scan++;
 	NEED_INPUT(rw, scan, 1);
@@ -1915,7 +1916,13 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
 /************************************************************/
 
 /* To avoid the broken qsort in Solaris: */
+#ifdef MZ_XFORM
+START_XFORM_SKIP;
+#endif
 #include "../gc2/my_qsort.c"
+#ifdef MZ_XFORM
+END_XFORM_SKIP;
+#endif
 
 static int compare_ranges(const void *a, const void *b)
 {

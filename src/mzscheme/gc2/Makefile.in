@@ -108,7 +108,7 @@ xsrc:
 
 xobjects: $(OBJS)
 
-XFORMDEP = $(srcdir)/gc2.h $(srcdir)/xform.ss
+XFORMDEP = $(srcdir)/gc2.h $(srcdir)/xform.ss $(srcdir)/ctok.ss
 
 $(XSRCDIR)/salloc.c: ../src/salloc.o $(XFORMDEP)
 	$(XFORM) $(SRCDIR)/salloc.c $(XSRCDIR)/salloc.c

@@ -32,8 +32,8 @@ CFLAGS = $(XINCLUDE) $(INC) $(OPTIONS) -Dwx_xt $(COMPFLAGS)
 LDFLAGS = $(XLIB)
 ###########################
 
-XFORM = ../../mzscheme/mzscheme2k -rq $(srcdir)/../../mzscheme/gc2/xform.ss ../../mzscheme/gc2/ctok "gcc -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src -I$(srcdir)/../../wxcommon/jpeg"
-XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/gc2.h
+XFORM = ../../mzscheme/mzscheme2k -rq $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss "gcc -E -I$(srcdir)/../../mzscheme/gc2 $(XINCLUDE) $(NOGCINC) $(OPTIONS) -Dwx_xt -I$(WXDIR)/src/XWidgets -I$(WXDIR)/src -I$(srcdir)/../../wxcommon/jpeg -I../../wxcommon/jpeg"
+XFORMDEP = $(srcdir)/../../mzscheme/gc2/xform.ss $(srcdir)/../../mzscheme/gc2/ctok.ss $(srcdir)/../../mzscheme/gc2/gc2.h
 
 WXBDIR=../../wxxt
 

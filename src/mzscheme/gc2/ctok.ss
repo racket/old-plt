@@ -4,18 +4,17 @@
 ;; list of "elements", where the client defines the representation of
 ;; elements.
 
-;; The `make-triple' imported function must take 3 arguments: a single
+;; The `make-element' imported function must take 3 arguments: a single
 ;; token (symbol, number, or string), a filename, and a line number.
-;; It produces an element (which can be any kind of value, as far as
-;; the tokenizer is concerned).
 
-;; The `make-seq' imported function must take 4 arguments: a character
+;; The `make-seq-element' imported function must take 4 arguments: a character
 ;; (#\(, #\[, or #\{), a file, a line number, and a list of elements
-;; (for the syntax between the parens/brackets/braces). It produces an
-;; element (again, the tokenizer doesn't care).
+;; (for the syntax between the parens/brackets/braces).
+
+;; The token patterns are based on a standard C .lex description.
 
 (unit
-  (import make-triple make-seq)
+  (import make-element make-seq-element)
   (export)
 
   (define (trans pattern)
@@ -37,8 +36,11 @@
   (define seq string-append)
   (define startseq seq)
   (define (arbno s) (format "(~a)*" s))
+  (define (arbno/ s) (format "~a*" s))
   (define (one+ s) (format "(~a)+" s))
+  (define (one+/ s) (format "~a+" s))
   (define (maybe s) (format "(~a)?" s))
+  (define (maybe/ s) (format "~a?" s))
   (define (alt a b) (format "~a|~a" a b))
   (define (alt* . l)
     (let loop ([l l])
@@ -66,13 +68,13 @@
     (line-comment s p))
 
   (define (result s)
-    (make-triple
+    (make-element
      s
      source-file   ; file
      source-line)) ; line
 
   (define (symbol s)
-    (result (string->symbol s) ))
+    (result (string->symbol s)))
 
   (define re:octal (regexp "^0[0-9]+$"))
   (define re:int (regexp "^[0-9]*$"))
@@ -111,7 +113,7 @@
   (define D "[0-9]")
   (define L "[a-zA-Z_]")
   (define H "[a-fA-F0-9]")
-  (define E "[Ee][+-]?{D}+")
+  (define E (format "[Ee][+-]?~a+" D))
   (define FS "(f|F|l|L)")
   (define IS "(u|U|l|L)*")
 
@@ -123,13 +125,13 @@
 
   (define number-complex
     (trans (alt*
-	    (seq (arbno D) "[.]" (one+ D) (maybe E) (maybe FS))
-	    (seq (one+ D) "[.]" (arbno D) (maybe E) (maybe FS))
-	    (seq (one+ D) E (maybe FS))
+	    (seq (arbno/ D) "[.]" (one+/ D) (maybe E) (maybe/ FS))
+	    (seq (one+/ D) "[.]" (arbno D) (maybe E) (maybe/ FS))
+	    (seq (one+/ D) E (maybe/ FS))
 
-	    (seq "0" "[xX]" (one+ H) (maybe IS)) ;; hex
-	    (seq "0" (one+ D) (maybe IS)) ;; octal
-	    (seq (one+ D) (maybe IS))))) ;; integer
+	    (seq "0" "[xX]" (one+/ H) IS) ;; hex
+	    (seq "0" (one+/ D) IS) ;; octal
+	    (seq (one+/ D) IS)))) ;; integer
 
   (define char-complex (trans (seq (maybe L) "'([^\\']|\\\\.)+'")))
   (define string-complex (trans (seq (maybe L) "\"([^\\\"]|\\\\.)*\"")))
@@ -188,12 +190,12 @@
    ")" stop
    "[" start
    "]" stop
-   "." symbol
+   "." #f ; => symbol/num
    "&" symbol
    "!" symbol
    "~" symbol
-   "-" symbol
-   "+" symbol
+   "-" #f ; => symbol/num
+   "+" #f ; => symbol/num
    "*" symbol
    "/" symbol
    "%" symbol
@@ -238,8 +240,16 @@
 				      (lambda (t)
 					(and (or (= 1 (cadr t))
 						 (string=? (car t) (substring s p (+ p (cadr t)))))
-					     (cons ((cddr t) (car t))
-						   (+ p (cadr t)))))
+					     (let ([f (cddr t)])
+					       (if f
+						   (cons (f (car t))
+							 (+ p (cadr t)))
+						   (let ([m (regexp-match-positions number-complex s p)])
+						     (if m
+							 (cons (number (substring s (caar m) (cdar m)))
+							       (cdar m))
+							 (cons (symbol (car t))
+							       (+ p (cadr t)))))))))
 				      sl)))])
 		  (cond
 		   [(not simple)
@@ -272,7 +282,7 @@
 		    (let ([sf source-file]
 			  [sl source-line]
 			  [sub (loop (cdr simple) null)])
-		      (loop (cdr sub) (cons (make-seq
+		      (loop (cdr sub) (cons (make-seq-element
 					     (string-ref s p)
 					     sf
 					     sl

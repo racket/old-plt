@@ -3,14 +3,16 @@
   (require (lib "list.ss")
            (lib "contract.ss"))
 
-  (provide/contract [wrap-in-module ((listof syntax?) any? (listof any?) . -> . (listof syntax?))] )
+  (provide/contract [wrap-in-module ((listof syntax?) any/c (listof any/c) . -> . (listof syntax?))] )
   
   ;; full-on COPIED from plt/collects/lang/htdp-langs.ss
   
   (define (wrap-in-module exps language-module-spec teachpack-specs)
     (let ([new-module-id (gensym "-htdp")])
-      (list (let ([mod (expand-syntax #`(module #,new-module-id #,language-module-spec 
-                                   (require #,@teachpack-specs)
+      (with-syntax ([(tp-spec ...) teachpack-specs])
+      (list (let ([mod (expand #`(module #,new-module-id #,language-module-spec 
+                                   (require-for-syntax mzscheme)
+                                   (require tp-spec ...)
                                    #,@exps))])
               (rewrite-module mod))
             #`(require #,new-module-id)
@@ -22,7 +24,7 @@
 ;                   (unless done-already?
 ;                     (set! done-already? #t)
 ;                     (current-namespace (module->namespace '#,new-module-id))))))
-            )))
+            ))))
   
   ;; rewrite-module : syntax -> syntax
   ;; rewrites te module to provide all definitions and 

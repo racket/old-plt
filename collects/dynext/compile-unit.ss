@@ -27,7 +27,7 @@
       (define current-extension-compiler 
 	(make-parameter 
 	 (case (system-type) 
-	   [(unix beos macosx) (get-unix-compile)]
+	   [(unix macosx) (get-unix-compile)]
 	   [(windows) (get-windows-compile)]
 	   [else #f])
 	 (lambda (v)
@@ -64,9 +64,9 @@
       (define current-extension-compiler-flags
 	(make-parameter
 	 (case (system-type)
-	   [(unix beos macosx) (if unix-cc?
-				   unix-compile-flags
-				   gcc-compile-flags)]
+	   [(unix macosx) (if unix-cc?
+			      unix-compile-flags
+			      gcc-compile-flags)]
 	   [(windows) (if (or win-gcc? win-borland?)
 			  gcc-compile-flags
 			  msvc-compile-flags)]
@@ -82,7 +82,7 @@
       (define current-make-compile-include-strings
 	(make-parameter
 	 (case (system-type)
-	   [(unix beos macosx) unix-compile-include-strings]
+	   [(unix macosx) unix-compile-include-strings]
 	   [(windows) (if (or win-gcc? win-borland?)
 			  unix-compile-include-strings
 			  msvc-compile-include-strings)]
@@ -106,7 +106,7 @@
       (define current-make-compile-output-strings
 	(make-parameter
 	 (case (system-type)
-	   [(unix beos macosx) unix-compile-output-strings]
+	   [(unix macosx) unix-compile-output-strings]
 	   [(windows) (if (or win-gcc? win-borland?)
 			  unix-compile-output-strings
 			  msvc-compile-output-strings)]
@@ -118,7 +118,7 @@
       
       (define (get-standard-compilers)
 	(case (system-type)
-	  [(unix beos macosx) '(gcc cc)]
+	  [(unix macosx) '(gcc cc)]
 	  [(windows) '(gcc msvc borland)]
 	  [(macos) '(cw)]))
 
@@ -126,7 +126,7 @@
 	(define (bad-name name)
 	  (error 'use-standard-compiler "unknown compiler: ~a" name))
 	(case (system-type)
-	  [(unix beos macosx) 
+	  [(unix macosx) 
 	   (case name
 	     [(cc gcc) (let* ([n (if (eq? name 'gcc) "gcc" "cc")]
 			      [f (find-executable-path n n)])
@@ -213,5 +213,5 @@
       
       (define compile-extension
 	(case (system-type)
-	  [(unix beos windows macosx) unix/windows-compile]
+	  [(unix windows macosx) unix/windows-compile]
 	  [(macos) macos-compile])))))

@@ -13,6 +13,8 @@
   (define dynext:link@
     (unit/sig dynext:link^
       (import)
+
+      ;; ---- Find a linker for this platform --------------------
       
       (define (get-windows-linker)
 	(or (find-executable-path "cl.exe" #f)
@@ -26,6 +28,7 @@
 		       [else "ld"])])
 	      (find-executable-path s s))))
       
+      ;; See doc.txt:
       (define current-extension-linker 
 	(make-parameter 
 	 (case (system-type) 
@@ -41,6 +44,8 @@
 			  "linker not found or not executable: ~s" v))
 		 (raise-type-error 'current-extension-linker "pathname string or #f" v)))
 	   v)))
+
+      ;; Helpers to tell us about the selected linker in Windows:
       
       (define (still-win-gcc?)
 	(and (eq? 'windows (system-type))
@@ -54,6 +59,14 @@
       (define win-gcc? (still-win-gcc?))
       (define win-borland? (still-win-borland?))
       
+      ;; ---- The right flags for this platform+linker --------------------
+      
+      ;; We need 
+      ;;   1) the basic flags
+      ;;   2) a way to wrap inputs on the command line
+      ;;   3) a way to wrap the output on the command line
+      ;;   4) needed base libraries and objects
+
       (define (get-unix-link-flags)
 	(case (string->symbol (system-library-subpath))
 	  [(sparc-solaris i386-solaris) (list "-G")]
@@ -72,6 +85,7 @@
       (define win-gcc-linker-flags (list "--dll"))
       (define borland-linker-flags (list "/Tpd" "/c"))
       
+      ;; See doc.txt:
       (define current-extension-linker-flags
 	(make-parameter
 	 (case (system-type)
@@ -85,14 +99,8 @@
 	   (unless (and (list? l) (andmap string? l))
 	     (raise-type-error 'current-extension-link-flags "list of strings" l))
 	   l)))
-      
-      (define-values (my-process* stdio-link)
-	(let-values ([(p* do-stdio) (include (build-path "private" "stdio.ss"))])
-	  (values
-	   p*
-	   (lambda (start-process quiet?)
-	     (do-stdio start-process quiet? (lambda (s) (error 'link-extension "~a" s)))))))
-      
+
+      ;; See doc.txt:
       (define current-make-link-input-strings
 	(make-parameter
 	 (lambda (s) (list s))
@@ -100,15 +108,7 @@
 	   (unless (procedure-arity-includes? p 1)
 	     (raise-type-error 'current-make-link-input-strings "procedure of arity 1" p))
 	   p)))
-      
-      (define (make-win-gcc-temp suffix)
-	(let ([d (find-system-path 'temp-dir)])
-	  (let loop ([n 1])
-	    (let ([f (build-path d (format "tmp~a.~a" n suffix))])
-	      (if (file-exists? f)
-		  (loop (add1 n))
-		  f)))))
-
+            
       (define win-gcc-link-output-strings (lambda (s) (list "--base-file"
 							    (make-win-gcc-temp "base")
 							    "-e" "_dll_entry@12" 
@@ -120,6 +120,7 @@
 									    "bcc" 
 									    "mzdynb.def"))))
       
+      ;; See doc.txt:
       (define current-make-link-output-strings
 	(make-parameter
 	 (case (system-type)
@@ -154,6 +155,7 @@
       (define (get-unix/macos-link-libraries)
 	(list (build-path std-library-dir "mzdyn.o")))
 
+      ;; See doc.txt:
       (define current-standard-link-libraries
 	(make-parameter
 	 (case (system-type)
@@ -164,6 +166,59 @@
 	     (raise-type-error 'current-standard-link-libraries "list of strings" l))
 	   l)))
       
+      ;; ---- Function to install standard linker parameters --------------------
+
+      ;; see doc.txt
+      (define (use-standard-linker name)
+	(define (bad-name name)
+	  (error 'use-standard-linker "unknown linker: ~a" name))
+	(case (system-type)
+	  [(unix beos macosx) 
+	   (case name
+	     [(cc gcc) (current-extension-linker (get-unix-linker))
+	      (current-extension-linker-flags (get-unix-link-flags))
+	      (current-make-link-input-strings (lambda (s) (list s)))
+	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
+	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
+	     [else (bad-name name)])]
+	  [(windows)
+	   (case name
+	     [(gcc) (let ([f (find-executable-path "ld.exe" #f)])
+		      (unless f
+			(error 'use-standard-linker "cannot find gcc's ld.exe"))
+		      (current-extension-linker f)
+		      (current-extension-linker-flags win-gcc-linker-flags)
+		      (current-make-link-input-strings (lambda (s) (list s)))
+		      (current-make-link-output-strings win-gcc-link-output-strings)
+		      (current-standard-link-libraries (make-win-link-libraries #t #f)))]
+	     [(borland) (let ([f (find-executable-path "ilink32.exe" #f)])
+			  (unless f
+			    (error 'use-standard-linker "cannot find ilink32.exe"))
+			  (current-extension-linker f)
+			  (current-extension-linker-flags borland-linker-flags)
+			  (current-make-link-input-strings (lambda (s) (list s)))
+			  (current-make-link-output-strings borland-link-output-strings)
+			  (current-standard-link-libraries (make-win-link-libraries #f #t)))]
+	     [(msvc) (let ([f (find-executable-path "cl.exe" #f)])
+		       (unless f
+			 (error 'use-standard-linker "cannot find MSVC's cl.exe"))
+		       (current-extension-linker f)
+		       (current-extension-linker-flags msvc-linker-flags)
+		       (current-make-link-input-strings (lambda (s) (list s)))
+		       (current-make-link-output-strings msvc-link-output-strings)
+		       (current-standard-link-libraries (make-win-link-libraries #f)))]
+	     [else (bad-name name)])]
+	  [(macos)
+	   (case name
+	     [(cw) (current-extension-linker #f)
+	      (current-extension-linker-flags null)
+	      (current-make-link-input-strings (lambda (s) (list s)))
+	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
+	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
+	     [else (bad-name name)])]))
+
+      ;; ---- The link driver for each platform --------------------
+
       (define unix/windows-link
 	(lambda (quiet? in out)
 	  (let ([c (current-extension-linker)])
@@ -244,56 +299,6 @@
 			  (delete-file expfile))))))
 		(error 'link-extension "can't find linker")))))
       
-      (define (use-standard-linker name)
-	(define (bad-name name)
-	  (error 'use-standard-linker "unknown linker: ~a" name))
-	(case (system-type)
-	  [(unix beos macosx) 
-	   (case name
-	     [(cc gcc) (current-extension-linker (get-unix-linker))
-	      (current-extension-linker-flags (get-unix-link-flags))
-	      (current-make-link-input-strings (lambda (s) (list s)))
-	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
-	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
-	     [else (bad-name name)])]
-	  [(windows)
-	   (case name
-	     [(gcc) (let ([f (find-executable-path "ld.exe" #f)])
-		      (unless f
-			(error 'use-standard-linker "cannot find gcc's ld.exe"))
-		      (current-extension-linker f)
-		      (current-extension-linker-flags win-gcc-linker-flags)
-		      (current-make-link-input-strings (lambda (s) (list s)))
-		      (current-make-link-output-strings win-gcc-link-output-strings)
-		      (current-standard-link-libraries (make-win-link-libraries #t #f)))]
-	     [(borland) (let ([f (find-executable-path "ilink32.exe" #f)])
-			  (unless f
-			    (error 'use-standard-linker "cannot find ilink32.exe"))
-			  (current-extension-linker f)
-			  (current-extension-linker-flags borland-linker-flags)
-			  (current-make-link-input-strings (lambda (s) (list s)))
-			  (current-make-link-output-strings borland-link-output-strings)
-			  (current-standard-link-libraries (make-win-link-libraries #f #t)))]
-	     [(msvc) (let ([f (find-executable-path "cl.exe" #f)])
-		       (unless f
-			 (error 'use-standard-linker "cannot find MSVC's cl.exe"))
-		       (current-extension-linker f)
-		       (current-extension-linker-flags msvc-linker-flags)
-		       (current-make-link-input-strings (lambda (s) (list s)))
-		       (current-make-link-output-strings msvc-link-output-strings)
-		       (current-standard-link-libraries (make-win-link-libraries #f)))]
-	     [else (bad-name name)])]
-	  [(macos)
-	   (case name
-	     [(cw) (current-extension-linker #f)
-	      (current-extension-linker-flags null)
-	      (current-make-link-input-strings (lambda (s) (list s)))
-	      (current-make-link-output-strings (lambda (s) (list "-o" s)))
-	      (current-standard-link-libraries (get-unix/macos-link-libraries))]
-	     [else (bad-name name)])]))
-      
-      (include (build-path "private" "macinc.ss"))
-      
       (define (macos-link quiet? input-files output-file)
 	(macos-make 'link-extension "linking-project" "so" quiet? 
 		    input-files output-file null))
@@ -301,5 +306,23 @@
       (define link-extension
 	(case (system-type)
 	  [(unix beos windows macosx) unix/windows-link]
-	  [(macos) macos-link])))))
+	  [(macos) macos-link]))
 
+      ;; ---- some helpers:
+      
+      (define-values (my-process* stdio-link)
+	(let-values ([(p* do-stdio) (include (build-path "private" "stdio.ss"))])
+	  (values
+	   p*
+	   (lambda (start-process quiet?)
+	     (do-stdio start-process quiet? (lambda (s) (error 'link-extension "~a" s)))))))
+      
+      (define (make-win-gcc-temp suffix)
+	(let ([d (find-system-path 'temp-dir)])
+	  (let loop ([n 1])
+	    (let ([f (build-path d (format "tmp~a.~a" n suffix))])
+	      (if (file-exists? f)
+		  (loop (add1 n))
+		  f)))))
+
+      (include (build-path "private" "macinc.ss")))))

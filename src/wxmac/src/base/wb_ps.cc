@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: PSDC.cc,v 1.12 1998/09/18 22:08:55 mflatt Exp $
+ * RCS_ID:      $Id: wb_ps.cc,v 1.8 1998/09/18 23:32:09 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -1574,9 +1574,11 @@ Bool wxPostScriptDC::Blit (float xdest, float ydest, float fwidth, float fheight
     temp_mdc = new wxMemoryDC(1);
 
   temp_mdc->SelectObject(bm);
-  Blit(xdest, ydest, fwidth, fheight,
+  Bool r = Blit(xdest, ydest, fwidth, fheight,
        temp_mdc, xsrc, ysrc, rop);
   temp_mdc->SelectObject(NULL);
+  
+  return r;
 }
 
 float wxPostScriptDC::GetCharHeight (void)

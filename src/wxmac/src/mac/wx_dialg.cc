@@ -28,7 +28,13 @@ extern "C" {
 }
 #endif
 
-#include <Navigation.h>
+#ifdef powerc
+# define USE_NAVIGATION
+#endif
+
+#ifdef USE_NAVIGATION
+# include <Navigation.h>
+#endif
 
 #define wxDIALOG_DEFAULT_X 300
 #define wxDIALOG_DEFAULT_Y 300
@@ -241,6 +247,8 @@ extern "C" {
 
 //= T.P. ==============================================================================
 
+#ifdef USE_NAVIGATION
+
 static int navinited = 0;
 
 extern void QueueMrEdEvent(EventRecord *e);
@@ -258,11 +266,14 @@ static pascal void EventFilter(NavEventCallbackMessage callBackSelector,
     }
 }
 
+#endif
+
 char *wxFileSelector(char *message, char *default_path,
                      char *default_filename, char *default_extension,
                      char *wildcard, int flags,
                      wxWindow *parent, int x, int y)
 {	
+#ifdef USE_NAVIGATION
   if ((navinited >= 0) && (navinited || NavServicesAvailable())) {
     if (!navinited) {
        if (!NavLoad()) {
@@ -367,6 +378,7 @@ char *wxFileSelector(char *message, char *default_path,
      } else 
        return NULL;
   } else {
+#endif
 	StandardFileReply	rep;
 	SFTypeList typeList = { 'TEXT' };
 	char * name;
@@ -411,5 +423,7 @@ char *wxFileSelector(char *message, char *default_path,
 	  return NULL;
 	
 	return scheme_build_mac_filename(&rep.sfFile, 0);
+#ifdef USE_NAVIGATION
   }
+#endif
 }

@@ -1573,6 +1573,7 @@ static Scheme_Object *MrEdMakeStdIn(void)
 
   return (Scheme_Object *)scheme_make_input_port(intype, NULL,
 						 stdin_getc,
+						 NULL,
 						 stdin_char_ready,
 						 NULL, NULL, 0);
 }

@@ -523,8 +523,9 @@
 	       (lambda (a) (do-scope-traverse a binders))]
 	      [rec-traverse-with-scope-binders 
 	       (lambda (a new-scope-binders) 
-		 (do-scope-traverse a 
-				    (add-binders-to-scope binders new-scope-binders)))])
+		 (do-scope-traverse 
+		  a 
+		  (add-binders-to-scope binders new-scope-binders)))])
 
 
 	 (cond

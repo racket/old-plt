@@ -1305,41 +1305,30 @@
 			   
 			   )])
 	    (emit-indentation)
-	    (cond
-	      [(or (vm:apply? val) (vm:struct? val))
-	       (let ([return-arity-ok?
-		      (and return-arity
-			   (number? return-arity)
-			   (= return-arity num-to-set))])
-		 (if (= num-to-set 1)		      
-		     
-		     (process-set! (car vars) val #t)
-		     
-		     (begin
-		       (emit "{ Scheme_Object * res = ")
-		       (process val indent-level #f #t)
-		       (emit "; ")
-		       (unless return-arity-ok?
-			 (emit "CHECK_MULTIPLE_VALUES(res, ~a);" num-to-set))
-		       (emit "}")
-		       (if (not (null? vars))
-			   (emit "~n"))
-		       (let aloop ([vars vars] [n 0])
-			 (unless (null? vars)
-			   (emit-indentation)
-			   (process-set! (car vars) (format "scheme_multiple_array[~a]" n) #f)
-			   (emit ";~n")
-			   (aloop (cdr vars) (+ n 1))))
-		       )))]
-	      
-		;; not an application.
-	      [else
-	       (if (= num-to-set 1)
-		   (process-set! (car vars) val #t)    
-		   (begin
-		     (emit "CHECK_MULTIPLE_VALUES(")
-		     (process val indent-level #f #t)
-		     (emit ", ~a)" num-to-set)))]))]
+	    (let ([return-arity-ok?
+		   (and return-arity
+			(number? return-arity)
+			(= return-arity num-to-set))])
+	      (if (= num-to-set 1)		      
+		  
+		  (process-set! (car vars) val #t)
+		  
+		  (begin
+		    (emit "{ Scheme_Object * res = ")
+		    (process val indent-level #f #t)
+		    (emit "; ")
+		    (unless return-arity-ok?
+		      (emit "CHECK_MULTIPLE_VALUES(res, ~a);" num-to-set))
+		    (emit "}")
+		    (if (not (null? vars))
+			(emit "~n"))
+		    (let aloop ([vars vars] [n 0])
+		      (unless (null? vars)
+			(emit-indentation)
+			(process-set! (car vars) (format "scheme_multiple_array[~a]" n) #f)
+			(emit ";~n")
+			(aloop (cdr vars) (+ n 1))))
+		    ))))]
 	   
 	 
 	 ;; (set-global! x R)
@@ -1476,7 +1465,7 @@
 			     (vm:compound-assembly ast)))]
 
 	 [(vm:invoke? ast)
-	  (emit-expr (format "_scheme~a_invoke~a_unit~a(arg[0], ~a, arg + 1, arg + 1 + ~a)"
+	  (emit-expr (format "_scheme_invoke~a_unit~a(arg[0], ~a, arg + 1, arg + 1 + ~a)"
 			     (if (vm:invoke-tail? ast) "_tail" "")
 			     (if (and (vm:invoke-multi? ast)
 				      (not (vm:invoke-tail? ast)))

@@ -2,7 +2,7 @@
 ;;
 ;; program.ss
 ;; Richard Cobbe
-;; $Id: program.ss,v 1.3 2004/08/10 16:24:15 cobbe Exp $
+;; $Id: program.ss,v 1.4 2004/08/24 20:35:22 cobbe Exp $
 ;;
 ;; This module defines functions that act on the class inheritance tree.
 ;;
@@ -15,14 +15,14 @@
            "ast.ss")
 
   (provide/contract [find-method (-> class? method-name?
-                                     (union method? false?))]
+                                     (union method? false/c))]
                     [find-field (-> class? field-name?
-                                    (union field? false?))]
+                                    (union field? false/c))]
                     [find-all-fields (-> class? (listof field?))]
                     [find-class (-> program? class-type? class?)]
                     [type-exists? (-> program? (-> type? boolean?))]
                     [type<=? (-> program? type? type? boolean?)]
-                    [type-lub (-> program? type? type? (union type? false?))])
+                    [type-lub (-> program? type? type? (union type? false/c))])
 
   ;; find-first :: (x -> Boolean) (Listof x) -> (Union x #f)
   ;; finds first element in list which satisfies predicate; #f if none.
@@ -63,7 +63,7 @@
           (class-fields c))))
 
   ;; find-class :: Program Class-Name -> Class
-  ;; Looks up the specified class in the program.
+  ;; finds named class in program; throws exn:fail:contract if not found.
   (define find-class
     (lambda (p ct)
       (hash-table-get (program-classes p) (class-type-name ct))))

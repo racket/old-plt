@@ -2,13 +2,13 @@
 ;;
 ;; program-tests.ss
 ;; Richard Cobbe
-;; $Id: program-tests.ss,v 1.5 2004/08/24 20:35:21 cobbe Exp $
+;; $Id: program-tests.ss,v 1.6 2004/12/31 22:12:15 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module program-tests mzscheme
 
-  (require (lib "test.ss" "test")
+  (require "test.ss"
            "parser.ss"
            "ast.ss")
   (provide program-tests)
@@ -36,7 +36,7 @@
 
      (make-test-case "find a direct method"
        (assert-equal? (find-method (find-class test-program
-                                               (make-class-type 'a))
+                                               (make-class-type 'A))
                                    'method-1)
                       (make-method (make-ground-type 'int)
                                    'method-1
@@ -46,7 +46,7 @@
 
      (make-test-case "find inherited method"
        (assert-equal? (find-method (find-class test-program
-                                               (make-class-type 'c))
+                                               (make-class-type 'C))
                                    'method-2)
                       (make-method (make-class-type 'Object)
                                    'method-2
@@ -57,7 +57,7 @@
 
      (make-test-case "find overriding method"
        (assert-equal? (find-method (find-class test-program
-                                               (make-class-type 'c))
+                                               (make-class-type 'C))
                                    'method-1)
                       (make-method (make-ground-type 'int)
                                    'method-1
@@ -67,113 +67,113 @@
 
      (make-test-case "find nonexistent method"
        (assert-false (find-method (find-class test-program
-                                              (make-class-type 'b))
+                                              (make-class-type 'B))
                                   'bad-method)))
 
      (make-test-case "find direct field"
        (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'a)) 'i)
+                                              (make-class-type 'A)) 'i)
                       (make-field (make-ground-type 'int)
-                                  (make-class-type 'a) 'i)))
+                                  (make-class-type 'A) 'i)))
 
      (make-test-case "find inherited field"
        (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'c)) 'b)
+                                              (make-class-type 'C)) 'b)
                       (make-field (make-ground-type 'bool)
-                                  (make-class-type 'a) 'b)))
+                                  (make-class-type 'A) 'b)))
 
      (make-test-case "find shadowing field direct"
        (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'c)) 'i)
+                                              (make-class-type 'C)) 'i)
                       (make-field (make-class-type 'D)
-                                  (make-class-type 'c) 'i)))
+                                  (make-class-type 'C) 'i)))
 
      (make-test-case "find shadowed field direct"
        (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'a)) 'i)
+                                              (make-class-type 'A)) 'i)
                       (make-field (make-ground-type 'int)
-                                  (make-class-type 'a) 'i)))
+                                  (make-class-type 'A) 'i)))
 
      (make-test-case "find shadowing field inherited"
        (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'g)) 'i)
-                      (make-field (make-class-type 'd)
-                                  (make-class-type 'c) 'i)))
+                                              (make-class-type 'G)) 'i)
+                      (make-field (make-class-type 'D)
+                                  (make-class-type 'C) 'i)))
 
      (make-test-case "find shadowed field inherited"
        (assert-equal? (find-field (find-class test-program
-                                              (make-class-type 'c)) 'b)
+                                              (make-class-type 'C)) 'b)
                       (make-field (make-ground-type 'bool)
-                                  (make-class-type 'a) 'b)))
+                                  (make-class-type 'A) 'b)))
 
      (make-test-case "find-field: no such field"
-       (assert-false (find-field (find-class test-program (make-class-type 'd))
+       (assert-false (find-field (find-class test-program (make-class-type 'D))
                                  'bad-field)))
 
      (make-test-case "find-all-fields: object"
        (assert-equal? (find-all-fields (find-class test-program
-                                                   (make-class-type 'object)))
+                                                   (make-class-type 'Object)))
                       null))
 
      (make-test-case "find-all-fields: A"
        (assert-equal? (find-all-fields (find-class test-program
-                                                   (make-class-type 'a)))
+                                                   (make-class-type 'A)))
                       (list (make-field (make-ground-type 'int)
-                                        (make-class-type 'a)
+                                        (make-class-type 'A)
                                         'i)
                             (make-field (make-ground-type 'bool)
-                                        (make-class-type 'a)
+                                        (make-class-type 'A)
                                         'b)
-                            (make-field (make-class-type 'object)
-                                        (make-class-type 'a)
+                            (make-field (make-class-type 'Object)
+                                        (make-class-type 'A)
                                         'o)
-                            (make-field (make-class-type 'b)
-                                        (make-class-type 'a)
+                            (make-field (make-class-type 'B)
+                                        (make-class-type 'A)
                                         'a-b))))
 
      (make-test-case "find-all-fields: C"
        (assert-equal? (find-all-fields (find-class test-program
-                                                   (make-class-type 'c)))
-                      (list (make-field (make-class-type 'b)
-                                        (make-class-type 'c)
+                                                   (make-class-type 'C)))
+                      (list (make-field (make-class-type 'B)
+                                        (make-class-type 'C)
                                         'second-b)
-                            (make-field (make-class-type 'd)
-                                        (make-class-type 'c)
+                            (make-field (make-class-type 'D)
+                                        (make-class-type 'C)
                                         'i)
                             (make-field (make-ground-type 'int)
-                                        (make-class-type 'a)
+                                        (make-class-type 'A)
                                         'i)
                             (make-field (make-ground-type 'bool)
-                                        (make-class-type 'a)
+                                        (make-class-type 'A)
                                         'b)
-                            (make-field (make-class-type 'object)
-                                        (make-class-type 'a)
+                            (make-field (make-class-type 'Object)
+                                        (make-class-type 'A)
                                         'o)
-                            (make-field (make-class-type 'b)
-                                        (make-class-type 'a)
+                            (make-field (make-class-type 'B)
+                                        (make-class-type 'A)
                                         'a-b))))
 
      (make-test-case "find-class: straightforward"
-       (let* ([object (make-class (make-class-type 'object) #f null null)]
-              [b (make-class (make-class-type 'b) object
+       (let* ([object (make-class (make-class-type 'Object) #f null null)]
+              [b (make-class (make-class-type 'B) object
                              (list (make-field (make-ground-type 'int)
-                                               (make-class-type 'b)
+                                               (make-class-type 'B)
                                                'x)
                                    (make-field (make-ground-type 'int)
-                                               (make-class-type 'b) 'i)
+                                               (make-class-type 'B) 'i)
                                    (make-field (make-class-type 'Object)
-                                               (make-class-type 'b) 'o))
+                                               (make-class-type 'B) 'o))
                              null)])
          (assert-equal? (find-class test-program
-                                    (make-class-type 'b)) b)))
+                                    (make-class-type 'B)) b)))
 
      (make-test-case "find-class: object"
-       (assert-equal? (find-class test-program (make-class-type 'object))
-                      (make-class (make-class-type 'object) #f null null)))
+       (assert-equal? (find-class test-program (make-class-type 'Object))
+                      (make-class (make-class-type 'Object) #f null null)))
 
      (make-test-case "find-class: does not exist"
        (assert-true
-        (with-handlers ([exn:application:mismatch? (lambda _ #t)])
+        (with-handlers ([exn:fail:contract? (lambda _ #t)])
           (begin
             (find-class test-program (make-class-type 'does-not-exist))
             #f))))
@@ -187,11 +187,11 @@
 
      (make-test-case "type-exists: good class type"
        (assert-true ((type-exists? test-program)
-                     (make-class-type 'c))))
+                     (make-class-type 'C))))
 
      (make-test-case "type-exists: implicit class type"
        (assert-true ((type-exists? test-program)
-                     (make-class-type 'object))))
+                     (make-class-type 'Object))))
 
      (make-test-case "type-exists: bad class type"
        (assert-false ((type-exists? test-program)
@@ -220,23 +220,23 @@
 
      (make-test-case "c <: any?"
        (assert-false (type<=? test-program
-                              (make-class-type 'c)
+                              (make-class-type 'C)
                               (make-any-type))))
 
      (make-test-case "d <: object?"
        (assert-true (type<=? test-program
-                             (make-class-type 'd)
-                             (make-class-type 'object))))
+                             (make-class-type 'D)
+                             (make-class-type 'Object))))
 
      (make-test-case "b <: d?"
        (assert-false (type<=? test-program
-                              (make-class-type 'b)
-                              (make-class-type 'd))))
+                              (make-class-type 'B)
+                              (make-class-type 'D))))
 
      (make-test-case "b <: b?"
        (assert-true (type<=? test-program
-                             (make-class-type 'b)
-                             (make-class-type 'b))))
+                             (make-class-type 'B)
+                             (make-class-type 'B))))
 
      (make-test-case "lub int int"
        (assert-equal? (type-lub test-program (make-ground-type 'int)
@@ -256,29 +256,29 @@
      (make-test-case "lub any object"
        (assert-equal? (type-lub test-program
                                 (make-any-type)
-                                (make-class-type 'object))
-                      (make-class-type 'object)))
+                                (make-class-type 'Object))
+                      (make-class-type 'Object)))
 
      (make-test-case "lub object any"
        (assert-equal? (type-lub test-program
-                                (make-class-type 'object)
+                                (make-class-type 'Object)
                                 (make-any-type))
-                      (make-class-type 'object)))
+                      (make-class-type 'Object)))
 
      (make-test-case "lub D E"
        (assert-equal? (type-lub test-program
-                                (make-class-type 'd)
-                                (make-class-type 'e))
-                      (make-class-type 'b)))
+                                (make-class-type 'D)
+                                (make-class-type 'E))
+                      (make-class-type 'B)))
 
      (make-test-case "lub E B"
        (assert-equal? (type-lub test-program
-                                (make-class-type 'e)
-                                (make-class-type 'b))
-                      (make-class-type 'b)))
+                                (make-class-type 'E)
+                                (make-class-type 'B))
+                      (make-class-type 'B)))
 
      (make-test-case "lub E A"
        (assert-equal? (type-lub test-program
-                                (make-class-type 'e)
-                                (make-class-type 'a))
-                      (make-class-type 'object))))))
+                                (make-class-type 'E)
+                                (make-class-type 'A))
+                      (make-class-type 'Object))))))

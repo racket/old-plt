@@ -4,7 +4,7 @@
 ;; Richard Cobbe
 ;; July 2004
 ;;
-;; $Id: utils.ss,v 1.5 2004/08/24 20:34:59 cobbe Exp $
+;; $Id: utils.ss,v 1.6 2004/12/31 18:05:04 cobbe Exp $
 ;;
 ;; General utilities used in the implementation of ClassicJava.
 ;;
@@ -37,9 +37,9 @@
 
   (provide with-public-inspector)
 
-  (provide/contract [small-step             (-> (listof red?) any? any)]
-                    [big-step               (-> (listof red?) any? any)]
-                    [small-step-sequence    (-> (listof red?) any? list?)])
+  (provide/contract [small-step             (-> (listof red?) any/c any)]
+                    [big-step               (-> (listof red?) any/c any)]
+                    [small-step-sequence    (-> (listof red?) any/c list?)])
 
   ;; small-step :: (Listof Reduction) Term -> (Union #f Term)
   ;; reduces term a single step; returns #f if no reduction possible.
@@ -77,12 +77,12 @@
   ;; which satisfy the contract c.
   (define nelistof
     (lambda (c)
-      (and/c (listof c) (not/f null?))))
+      (and/c (listof c) (not/c null?))))
 
   ;; contract that recognizes arbitrary s-expressions.
-  (define sexp?
+  (define sexp/c
     (flat-rec-contract sexp
-                       (cons/p sexp sexp)
+                       (cons/c sexp sexp)
                        null?
                        number?
                        symbol?
@@ -91,7 +91,7 @@
                        char?))
 
   ;; contract that recognizes unary predicates
-  (define predicate? (any? . -> . boolean?))
+  (define predicate/c (any/c . -> . boolean?))
 
   ;; mv-map :: (a -> b c) (Listof a) -> (Listof b) (Listof c)
   ;; map, but for functions that return 2 values.
@@ -105,6 +105,6 @@
 
   (provide mv-map)
 
-  (provide/contract [sexp? contract?]
-                    [predicate? contract?]
-                    [nelistof (-> (union contract? predicate?) contract?)]))
+  (provide/contract [sexp/c contract?]
+                    [predicate/c contract?]
+                    [nelistof (-> (union contract? predicate/c) contract?)]))

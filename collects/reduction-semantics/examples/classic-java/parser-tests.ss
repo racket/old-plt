@@ -2,14 +2,14 @@
 ;;
 ;; parser-tests.ss
 ;; Richard Cobbe
-;; $Id: parser-tests.ss,v 1.6 2004/08/18 19:55:46 cobbe Exp $
+;; $Id: parser-tests.ss,v 1.7 2004/12/31 22:12:15 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module parser-tests mzscheme
 
-  (require (lib "test.ss" "test")
-           (lib "etc.ss")
+  (require (lib "etc.ss")
+           "test.ss"
            "ast.ss")
   (require/expose "parser.ss" (make-temp-class
                                temp-class?
@@ -26,7 +26,7 @@
        (assert-exn (lambda (exn)
                      (and (exn:cj:parse? exn)
                           (string=? msg (exn-message exn))
-                          (equal? value (exn:application-value exn))))
+                          (equal? value (exn:cj:parse-src exn))))
                    (lambda () expr))]))
 
   (define-syntax assert-inheritance-cycle
@@ -35,7 +35,7 @@
        (assert-exn (lambda (exn)
                      (and (exn:cj:parse? exn)
                           (string=? "inheritance cycle" (exn-message exn))
-                          (temp-class? (exn:application-value exn))))
+                          (temp-class? (exn:cj:parse-src exn))))
                    (lambda () expr))]))
 
   (define parser-tests
@@ -78,7 +78,7 @@
        (assert-exn (lambda (exn)
                      (and (exn:cj:parse? exn)
                           (string=? "bad program" (exn-message exn))
-                          (equal? 'Object (exn:application-value exn))))
+                          (equal? 'Object (exn:cj:parse-src exn))))
                 (lambda () (parse-init-program 'Object))))
 
      (make-test-case "bad initial program 2"

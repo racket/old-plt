@@ -3,7 +3,7 @@
 ;; elaboration.ss
 ;;
 ;; Richard Cobbe
-;; $Id: elaboration.ss,v 1.2 2004/08/19 21:24:58 cobbe Exp $
+;; $Id: elaboration.ss,v 1.3 2005/01/03 12:44:03 cobbe Exp $
 ;;
 ;; Code to type-check and elaborate the program.
 ;;
@@ -21,10 +21,13 @@
            "ast.ss")
 
   (provide/contract (elab-program (-> program? program?))
-                    (struct exn:cj:elab ()))
+                    (struct (exn:cj:elab exn:fail:contract)
+                            ([message string?]
+                             [continuation-marks continuation-mark-set?]
+                             [obj any/c])))
 
   (with-public-inspector
-   (define-struct (exn:cj:elab exn:application) ()))
+   (define-struct (exn:cj:elab exn:fail:contract) (obj)))
 
   ;; elab-program :: Program -> Program
   ;; ClassesOnce, CompleteClasses, WellFoundedClasses ensured during parsing.

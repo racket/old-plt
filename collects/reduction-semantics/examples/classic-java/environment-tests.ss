@@ -2,7 +2,7 @@
 ;;
 ;; environment-tests
 ;;
-;; $Id: environment-tests.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
+;; $Id: environment-tests.ss,v 1.2 2004/12/31 22:12:15 cobbe Exp $
 ;;
 ;; tests for the environment model.
 ;;
@@ -10,7 +10,7 @@
 
 (module environment-tests mzscheme
 
-  (require (lib "test.ss" "test"))
+  (require "test.ss")
   (provide environment-tests)
   (require/expose "environment.ss" ())
 
@@ -45,7 +45,7 @@
     (make-test-case "extend: mismatch"
       (assert-exn
        (lambda (exn)
-         (and (exn:application:mismatch? exn)
+         (and (exn:fail:contract? exn)
               (string=? (exn-message exn)
                         "extend-env: IDs and bindings must have same length")))
        (lambda () (extend-env (make-empty-env) '(a b c) '(3 4)))))

@@ -2,7 +2,7 @@
 ;;
 ;; reduction.ss
 ;; Richard Cobbe
-;; $Id: reduction.ss,v 1.6 2004/12/31 22:14:18 cobbe Exp $
+;; $Id: reduction.ss,v 1.7 2005/01/02 01:53:41 cobbe Exp $
 ;;
 ;; Contains the definition of ClassicJava for PLT Redex
 ;;
@@ -507,9 +507,9 @@
                     [struct instance ([class class-type?]
                                       [fields (listof ivar?)])]
 
-                    [cj-id? predicate?]
-                    [cj-value? predicate?]
-                    [cj-expr? predicate?]
+                    [cj-id? predicate/c]
+                    [cj-value? predicate/c]
+                    [cj-expr? predicate/c]
                     [subst-args (-> tagged-expr? (listof cj-value?)
                                     (listof cj-id?) cj-expr?)]
                     [cj-subst (-> cj-id? cj-expr? cj-expr? cj-expr?)]

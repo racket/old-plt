@@ -1,6 +1,6 @@
 (module store-tests mzscheme
 
-  (require (lib "test.ss" "test"))
+  (require "test.ss")
   (provide store-tests)
   (require/expose "store.ss" ())
 
@@ -28,7 +28,7 @@
        (assert-false (store-ref (store [0 'foo] [1 'bar]) 3 (lambda () #f))))
 
      (make-test-case "deref bogus address; default fk"
-       (assert-exn exn:application:mismatch?
+       (assert-exn exn:fail:contract?
                    (lambda () (store-ref (store [0 'foo] [1 'bar]) 3))))
 
      (make-test-case "update existing address"
@@ -36,6 +36,6 @@
                       (store [0 'foo] [1 'quux])))
 
      (make-test-case "update bogus address"
-       (assert-exn exn:application:mismatch?
+       (assert-exn exn:fail:contract?
                    (lambda ()
                      (store-update (store [0 'foo] [1 'bar]) 3 'quux)))))))

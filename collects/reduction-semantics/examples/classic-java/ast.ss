@@ -1,7 +1,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; ast.ss
-;; $Id: ast.ss,v 1.8 2004/12/31 18:05:04 cobbe Exp $
+;; $Id: ast.ss,v 1.9 2005/01/03 12:42:20 cobbe Exp $
 ;;
 ;; Defines the AST types used for the ClassicJava system.
 ;;
@@ -182,7 +182,7 @@
    [struct program         ([classes hash-table?]
                             [main expr?])]
    [struct class           ([name class-type?]
-                            [superclass (union false? class?)]
+                            [superclass (union false/c class?)]
                             [fields (listof field?)]
                             [methods (listof method?)])]
 
@@ -195,12 +195,12 @@
                             [arg-types (listof type?)]
                             [body expr?])]
 
-   [type?                  predicate?]
+   [type?                  predicate/c]
    [struct ground-type     ([name (symbols 'int 'bool)])]
    [struct class-type      ([name class-name?])]
    [struct any-type        ()]
 
-   [expr?                  predicate?]
+   [expr?                  predicate/c]
    [struct new             ([type class-type?])]
    [struct var-ref         ([var (union id? (symbols 'this))])]
    [struct nil             ()]
@@ -242,17 +242,17 @@
 
    [type=?                 (-> type? type? boolean?)]
 
-   [src-expr?              predicate?]
-   [tagged-expr?           predicate?]
+   [src-expr?              predicate/c]
+   [tagged-expr?           predicate/c]
 
-   [type->sexpr            (-> type? sexp?)]
+   [type->sexpr            (-> type? sexp/c)]
 
-   [class-name?            predicate?]
-   [defn-name?             predicate?]
-   [type-name?             predicate?]
-   [field-name?            predicate?]
-   [method-name?           predicate?]
-   [arg-name?              predicate?]
-   [binary-prim-name?      predicate?]
-   [unary-prim-name?       predicate?]
-   [id?                    predicate?]))
+   [class-name?            predicate/c]
+   [defn-name?             predicate/c]
+   [type-name?             predicate/c]
+   [field-name?            predicate/c]
+   [method-name?           predicate/c]
+   [arg-name?              predicate/c]
+   [binary-prim-name?      predicate/c]
+   [unary-prim-name?       predicate/c]
+   [id?                    predicate/c]))

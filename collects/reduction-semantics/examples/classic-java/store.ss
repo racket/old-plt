@@ -4,7 +4,7 @@
 ;; Richard Cobbe
 ;; July 2004
 ;;
-;; $Id: store.ss,v 1.2 2004/12/31 18:05:04 cobbe Exp $
+;; $Id: store.ss,v 1.3 2004/12/31 22:07:58 cobbe Exp $
 ;;
 ;; Implementation of a functional store.  This store is an alist, but note that
 ;; store-update does not produce a longer alist; this is helpful for debugging
@@ -37,10 +37,11 @@
   ;; Default fk raises exn:application:mismatch.
   (define store-ref
     (opt-lambda (store locn [fk (lambda ()
-                                  (raise (make-exn:application:mismatch
-                                          "address not in domain of store"
-                                          (current-continuation-marks)
-                                          locn)))])
+                                  (raise (make-exn:fail:contract
+                                          (format 
+                                           "address ~a not in domain of store"
+                                           locn)
+                                          (current-continuation-marks))))])
       (let loop ([entries (store-contents store)])
         (cond
           [(null? entries) (fk)]
@@ -55,10 +56,11 @@
                   (let loop ([entries (store-contents store)])
                     (cond
                       [(null? entries)
-                       (raise (make-exn:application:mismatch
-                               "attempted to update address not in store"
-                               (current-continuation-marks)
-                               locn))]
+                       (raise (make-exn:fail:contract
+                               (format
+                                "attempted to update address (~a) not in store"
+                                locn)
+                               (current-continuation-marks)))]
                       [(= locn (caar entries))
                        (cons (list locn val) (cdr entries))]
                       [else (cons (car entries) (loop (cdr entries)))])))))
@@ -80,12 +82,12 @@
        (create-store (list addr value) ...)]))
 
   (provide/contract
-   [store-alloc     (-> store? any? (values number? store?))]
+   [store-alloc     (-> store? any/c (values number? store?))]
    [store-ref       (opt->* (store? number?)
                             ((-> any))
                             any)]
-   [store-update    (-> store? number? any? store?)]
+   [store-update    (-> store? number? any/c store?)]
    [empty-store     store?]
-   [store?          (-> any? boolean?)])
+   [store?          (-> any/c boolean?)])
 
   (provide [rename build-store store]))

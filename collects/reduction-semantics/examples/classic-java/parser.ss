@@ -2,7 +2,7 @@
 ;;
 ;; parser.ss
 ;; Richard Cobbe
-;; $Id: parser.ss,v 1.7 2004/08/18 19:55:46 cobbe Exp $
+;; $Id: parser.ss,v 1.8 2004/12/31 18:05:04 cobbe Exp $
 ;;
 ;; Implements the parser for the S-Expression based source syntax for
 ;; ClassicJava.
@@ -17,13 +17,16 @@
            "utils.ss"
            "ast.ss")
 
-  (provide/contract (parse-program (-> sexp? program?))
-                    (struct exn:cj:parse ()))
+  (provide/contract (parse-program (-> sexp/c program?))
+                    (struct (exn:cj:parse exn:fail:contract) 
+                            ([message string?]
+                             [continuation-marks continuation-mark-set?]
+                             [src any/c])))
 
   (provide expand-parse-exn)
 
   (with-public-inspector
-   (define-struct (exn:cj:parse exn:application) ())
+   (define-struct (exn:cj:parse exn:fail:contract) (src))
    (define-struct temp-class (name superclass fields methods)))
 
   #;

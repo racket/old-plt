@@ -2,7 +2,7 @@
 ;;
 ;; environment.ss
 ;; Richard Cobbe
-;; $Id: environment.ss,v 1.6 2004/04/15 23:16:55 cobbe Exp $
+;; $Id: environment.ss,v 1.1 2004/07/27 22:41:36 cobbe Exp $
 ;;
 ;; Functions that define a standard environment data type.
 ;;
@@ -27,10 +27,9 @@
   (define extend-env
     (lambda (env syms bindings)
       (unless (= (length syms) (length bindings))
-        (raise (make-exn:application:mismatch
+        (raise (make-exn:fail:contract
                 "extend-env: IDs and bindings must have same length"
-                (current-continuation-marks)
-                bindings)))
+                (current-continuation-marks))))
       (make-rib-env env syms bindings)))
 
   (define (lookup env id fk)
@@ -63,8 +62,8 @@
 
   (provide (rename env-macro env))
 
-  (provide/contract (env? (-> any? boolean?))
+  (provide/contract (env? (-> any/c boolean?))
                     (make-empty-env (-> env?))
                     (lookup (-> env? symbol? (-> any) any))
                     (extend-env (-> env? (listof symbol?) list? env?))
-                    (env->alist (-> env? (listof (cons/p symbol? any?))))))
+                    (env->alist (-> env? (listof (cons/c symbol? any/c))))))

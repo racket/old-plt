@@ -3,14 +3,14 @@
 ;; elaboration-tests.ss
 ;;
 ;; Richard Cobbe
-;; $Id: elaboration-tests.ss,v 1.2 2004/08/19 21:24:58 cobbe Exp $
+;; $Id: elaboration-tests.ss,v 1.3 2004/12/31 22:12:15 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module elaboration-tests mzscheme
 
-  (require (lib "test.ss" "test")
-           (lib "etc.ss")
+  (require (lib "etc.ss")
+           "test.ss"
            "environment.ss"
            "ast.ss"
            "program.ss")
@@ -27,19 +27,19 @@
        (assert-exn (lambda (exn)
                      (and (exn:cj:elab? exn)
                           (string=? msg (exn-message exn))
-                          (equal? val (exn:application-value exn))))
+                          (equal? val (exn:cj:elab-obj exn))))
                    (lambda () expr))]))
 
   (define test-program
     (parse-program
-     '((class base object ([int x] [int y])
+     '((class base Object ([int x] [int y])
          (int get-x () (ref this x))
          (int get-y () 0))
        (class derived base ([bool y] [int z])
          (int get-x () (+ (ref this x) 3))
          (int get-z () (ref this z)))
        (class derived2 derived ([bool x]))
-       (class math object ()
+       (class math Object ()
          (int add ([int x] [int y]) (+ x y))
          (bool is-derived? ([Object o]) false)
          (bool foo? ([base b]) (== (send b get-x) 3)))
@@ -70,7 +70,7 @@
 
     (make-test-case "methods-once: duplicate method"
       (with-program/class program foo
-                          ((class foo object ()
+                          ((class foo Object ()
                              (int bar () 3)
                              (Object bar () null))
                            3)
@@ -84,7 +84,7 @@
     (make-test-case "fields-once: duplicate field name"
       (with-program/class
        program foo
-       ((class foo object ([int x] [bool x]))
+       ((class foo Object ([int x] [bool x]))
         3)
        (assert-elab-exn "duplicate field definition"
                         foo
@@ -96,7 +96,7 @@
     (make-test-case "methods-ok: override breaks type"
       (with-program/class
        program derived
-       ((class base object ()
+       ((class base Object ()
           (int m ([int i]) (+ i 3)))
         (class derived base ()
           (bool m ([int i]) (zero? i)))
@@ -107,16 +107,16 @@
 
     (make-test-case "methods-ok: unrelated classes are independent"
       (let* ([program (parse-program
-                       '((class c1 object ()
+                       '((class c1 Object ()
                            (int m ([int i]) (+ i 3)))
-                         (class c2 object ()
+                         (class c2 Object ()
                            (Object m () null))
                          3))])
         (assert-not-exn (lambda () (methods-ok program)))))
 
     (make-test-case "elab-class: ok"
       (let* ([table (make-hash-table)]
-             [object (make-class (make-class-type 'object) #f null null)]
+             [object (make-class (make-class-type 'Object) #f null null)]
              [base (make-class (make-class-type 'base) object
                                (list (make-field (make-ground-type 'int)
                                                  (make-class-type 'base)
@@ -172,7 +172,7 @@
                                             (make-class-type 'derived)))
                     table)
                    derived
-                   (hash-table ('object object) ('base base)
+                   (hash-table ('Object object) ('base base)
                                ('derived derived)))))
 
     (make-test-case "elab-class: bad field type"

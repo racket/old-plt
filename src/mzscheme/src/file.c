@@ -3588,6 +3588,8 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	AEDescList *list;
 	list = MALLOC_ONE_ATOMIC(AEDescList);
           
+        list->descriptorType = typeNull;
+        list->dataHandle = NULL;
 	*err = AECreateList(NULL, 0, isrec, list);
 	if (*err) {
 	  *stage = "cannot create list/record: ";
@@ -3633,9 +3635,9 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	  }
 	} else {
 	  if (kw)
-	    *err = AEPutParamDesc(ae, keyDirectObject, list);
-	  else
 	    *err = AEPutParamDesc(ae, kw, list);
+	  else
+	    *err = AEPutParamDesc(ae, keyDirectObject, list);
 	  if (*err) {
 	    *stage = "cannot install argument: ";
 	    AEDisposeDesc(list);
@@ -3662,8 +3664,6 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
       *err = AEPutKeyPtr(list_in, kw, type, data, size);
     else
       *err = AEPutPtr(list_in, 0, type, data, size);
-    if (alias)
-      DisposeHandle(alias);
     if (*err) {
       *stage = "cannot add list item: ";
       retval = 0;
@@ -3899,7 +3899,7 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
   AEGetAttributePtr(ae, keyReturnIDAttr, typeLongInteger, &rtype, &id, sizeof(long), &sz);
   
   while (1) {
-    WaitNextEvent(highLevelEventMask, &e, 60, 0L);
+    WaitNextEvent(everyEvent, &e, 60, 0L);
     if (e.what == kHighLevelEvent)
       AEProcessAppleEvent(&e);
     else {

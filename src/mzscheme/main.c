@@ -149,7 +149,9 @@ static int check_break_flag()
 
 static void handle_one(EventRecord *e)
 {
+# ifdef MACINTOSH_SIOUX
   SIOUXHandleOneEvent(e);
+# endif
 }
 
 static Scheme_Object *adjust_break_flag_and_eval(int argc, Scheme_Object **argv)

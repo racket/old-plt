@@ -9,6 +9,7 @@
      extract-field
      remove-field
      insert-field
+     extract-all-fields
      append-headers
      standard-message-header
      data-lines->data

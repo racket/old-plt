@@ -14,7 +14,8 @@
   (require (lib "imap-sig.ss" "net")
 	   (lib "smtp-sig.ss" "net")
 	   (lib "head-sig.ss" "net")
-	   (lib "base64-sig.ss" "net"))
+	   (lib "base64-sig.ss" "net")
+	   (lib "mime-sig.ss" "net"))
 
   (require (lib "hierlist-sig.ss" "hierlist"))
 
@@ -32,6 +33,7 @@
 	      net:smtp^
 	      net:head^
 	      net:base64^
+	      (mime : net:mime^)
 	      hierlist^
 	      (install-text-functions)
 	      (install-emacs-bindings))
@@ -450,6 +452,7 @@
       
       (define show-full-headers? #f)
       (define quote-in-reply? #t)
+      (define mime-mode? #t)
       
       (define unselected-delta (make-object style-delta% 'change-normal-color))
       (define selected-delta (make-object style-delta%))
@@ -461,6 +464,16 @@
       (define marked-delta (make-object style-delta% 'change-italic))
       (define unmarked-delta (make-object style-delta% 'change-style 'normal))
       
+      (define red-delta (make-object style-delta%))
+      (send red-delta set-delta-foreground "red")
+      (define green-delta (make-object style-delta%))
+      (send green-delta set-delta-foreground "green")
+
+      ;; url-delta :  style-delta
+      ;; this is used to higlight urls in the editor window
+      (define url-delta (make-object style-delta% 'change-underline #t))
+      (send url-delta set-delta-foreground "blue")
+
       (define (apply-style i delta)
 	(define (get-header-editors i)
 	  (let ([e (send i get-editor)])
@@ -647,29 +660,26 @@
                  (send e erase)
                  (set-current-selected #f)
                  (let* ([h (get-header uid)]
-                        [small-h (if show-full-headers?
-                                     h
-                                     (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
-                                                [small-h empty-header])
-                                       (if (null? l)
-                                           small-h
-                                           (let ([v (extract-field (car l) h)])
-                                             (if v
-                                                 (loop (cdr l) (insert-field
-                                                                (car l)
-                                                                v
-                                                                small-h))
-                                                 (loop (cdr l) small-h))))))])
+			[small-h (get-viewable-headers h)])
                    (send e insert (crlf->lf small-h)
-                         0 'same #f))
-                 (send e insert 
-                       (crlf->lf (as-background 
-                                  enable-main-frame
-                                  (lambda (break-bad break-ok) 
-                                    (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
-                                      (get-body uid)))
-                                  void))
-                       (send e last-position) 'same #f)
+                         0 'same #f)
+		   ;; Do the body (possibly mime)
+		   (let ([body (as-background 
+				enable-main-frame
+				(lambda (break-bad break-ok) 
+				  (with-handlers ([exn:break? (lambda (x) "<interrupted>")])
+				    (get-body uid)))
+				void)]
+			 [insert (lambda (body delta)
+				   (let ([start (send e last-position)])
+				     (send e set-position start)
+				     (send e insert 
+					   (crlf->lf body)
+					   start 'same #f)
+				     (let ([end (send e last-position)])
+				       (send e change-style (send (send e get-style-list) find-named-style "Standard") start end)
+				       (delta e start end))))])
+		     (parse-and-insert-body h body insert 79)))
                  (when SHOW-URLS (hilite-urls e))
                  ;;(handle-formatting e) ; too slow
                  (send e set-position 0)
@@ -1119,8 +1129,18 @@
           (lambda (i e)
             (auto-file))))
       
+      (define (redisplay-current)
+	(let ([i (send header-list get-selected)])
+	  (when current-selected
+	    (send header-list on-double-select current-selected))))
+
       (make-object separator-menu-item% msg-menu)
       (define sort-menu (make-object menu% "&Sort" msg-menu))
+      (send (make-object checkable-menu-item% "Parse &MIME" msg-menu
+			 (lambda (item e)
+			   (set! mime-mode? (send item is-checked?))
+			   (redisplay-current)))
+	    check mime-mode?)
       (make-object checkable-menu-item% "&Wrap Lines" msg-menu
         (lambda (item e)
           (send (send message get-editor) auto-wrap
@@ -1128,9 +1148,7 @@
       (make-object checkable-menu-item% "&View Full Header" msg-menu
         (lambda (i e)
           (set! show-full-headers? (send i is-checked?))
-          (let ([i (send header-list get-selected)])
-            (when current-selected
-              (send header-list on-double-select current-selected)))))
+	  (redisplay-current)))
       
       (make-object menu-item% "by Sender" sort-menu (lambda (i e) (sort-by-sender)))
       (make-object menu-item% "by Subject" sort-menu (lambda (i e) (sort-by-subject)))
@@ -1526,7 +1544,127 @@
 	(let ([last (car (last-pair (send header-list get-items)))])
 	  (send last select #t)
 	  (queue-callback (lambda () (send last scroll-to)))))
+
       
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Message Parsing                                        ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define get-viewable-headers
+	(lambda (h)
+	  (if show-full-headers?
+	      h
+	      (let loop ([l (reverse MESSAGE-FIELDS-TO-SHOW)]
+			 [small-h empty-header])
+		(if (null? l)
+		    small-h
+		    (let ([v (extract-field (car l) h)])
+		      (if v
+			  (loop (cdr l) (insert-field
+					 (car l)
+					 v
+					 small-h))
+			  (loop (cdr l) small-h))))))))
+
+      (define (parse-and-insert-body header body insert sep-width)
+	(if mime-mode?
+	    (let mime-loop ([msg (with-handlers ([not-break-exn? (lambda (x)
+								   (mime:make-message
+								    #f
+								    (mime:make-entity
+								     'text
+								     'plain 
+								     'charset
+								     'encoding
+								     (mime:make-disposition
+								      'error 
+								      'filename 'creation
+								      'modification 'read
+								      'size 'params)
+								     'params 'id
+								     'description 'other 'fields
+								     null 
+								     (open-input-string
+								      (format "MIME error: ~a"
+									      (if (exn? x)
+										  (exn-message x)
+										  x)))
+								     void)
+								    #f))])
+				   (mime:mime-analyze (string-append header body)))])
+	      (let* ([ent (mime:message-entity msg)]
+		     [slurp (lambda (ent)
+			      (let ([p (mime:entity-body ent)])
+				(let loop ([l null])
+				  (let ([s (read-string 4096 p)])
+				    (if (eof-object? s)
+					(begin
+					  ((mime:entity-close ent))
+					  (apply string-append (reverse! l)))
+					(loop (cons s l)))))))]
+		     [generic (lambda (ent)
+				(let ([fn (or (let ([disp (mime:entity-disposition ent)])
+						(and (not (equal? "" (mime:disposition-filename disp)))
+						     (mime:disposition-filename disp)))
+					      (let ([l (mime:entity-params ent)])
+						(let ([a (assoc "name" l)])
+						  (and a (cdr a)))))]
+				      [sz (mime:disposition-size (mime:entity-disposition ent))])
+				  (insert (format "[~a/~a~a~a]\r\n" 
+						  (mime:entity-type ent)
+						  (mime:entity-subtype ent)
+						  (if fn
+						      (format " \"~a\"" fn)
+						      "")
+						  (if sz
+						      (format " ~a bytes" sz)
+						      ""))
+					  (lambda (t s e)
+					    (send t set-clickback s e
+						  (let ([s #f])
+						    (lambda (a b c)
+						      (let ([fn (put-file "Save Attachement As"
+									  main-frame
+									  #f
+									  fn)])
+							(when fn
+							  (unless s
+							    (set! s (slurp ent)))
+							  (with-output-to-file fn
+							    (lambda ()
+							      (display s))
+							    'truncate/replace)))))
+						  #f #f)
+					    (send t change-style url-delta s e)))))])
+		(case (mime:entity-type ent)
+		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
+			    (if (memq disp '(inline error))
+				(begin
+				  (insert (slurp ent)
+					  (lambda (t s e)
+					    (if (eq? disp 'error)
+						(send t change-style red-delta s e)))))
+				(generic ent)))]
+		  [(multipart message)
+		   (map (lambda (msg)
+			  (unless (eq? (mime:entity-type ent) 'message)
+			    (insert (format "~a\r\n" (make-string sep-width #\-))
+				    (lambda (t s e) (send t change-style green-delta s e))))
+			  (unless (null? (mime:message-fields msg))
+			    (insert (get-viewable-headers
+				     (let loop ([l (mime:message-fields msg)])
+				       (if (null? l)
+					   "\r\n"
+					   (string-append (car l)
+							  "\r\n"
+							  (loop (cdr l))))))
+				    void))
+			  (mime-loop msg))
+		   (mime:entity-parts ent))]
+		  [else (generic ent)])))
+	    ;; Non-mime mode:
+	    (insert body void)))
+
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Biff                                                   ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1606,7 +1744,9 @@
 	(when selected
 	  (let* ([uid (send selected user-data)]
 		 [h (get-header uid)]
-		 [body (get-body uid)])
+		 [body (let ([p (open-output-string)])
+			 (parse-and-insert-body h (get-body uid) (lambda (s delta) (display s p)) 78)
+			 (get-output-string p))])
 	    (start-new-mailer
 	     #f
 	     (or (extract-field "Reply-To" h) 
@@ -1842,11 +1982,6 @@
         (hilite-urls/prefix "http:")
         (hilite-urls/prefix "https:")
         (hilite-urls/prefix "ftp:"))
-
-      ;; url-delta :  style-delta
-      ;; this is used to higlight urls in the editor window
-      (define url-delta (make-object style-delta% 'change-underline #t))
-      (send url-delta set-delta-foreground "blue")
 
       ;;; main init stuff (at least some of it)
       (ask-about-queued-messages))))

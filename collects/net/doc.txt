@@ -1344,7 +1344,7 @@ struct entity
 
    > (disposition-type #<disposition-struct>)
 
-   disposition-type := "inline" / "attachment"  / extension-token
+   disposition-type := 'inline / 'attachment  / extension-token
 
    > (disposition-filename #<disposition-struct>)
 
@@ -1384,9 +1384,6 @@ struct entity
  				   ;  A:-1; (J not used)
  				   ;  M:-12; N:+1; Y:+12
  	    / ( ("+" / "-") 4DIGIT )        ; Local differential
-
-   I know, I know, I should return a time structure, it is in my TODO
-   list. :-)
 
    > (disposition-modification #<disposition-struct>)
 
@@ -1442,7 +1439,7 @@ struct entity
    port contains the body already quoted-printable decoded.).  If type
    is multipart, or message, clearly this defaults to null.
 
-> (entity-body #<entity-struct>)
+> (entity-close #<entity-struct>)
 
    A thunk to close the input port provided by entity-body, above.  It
    really is a procedure that does not receive parameters, and that

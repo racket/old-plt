@@ -65,9 +65,6 @@
                        (display c out)
                        (loop (read-char in)))))))))
       
-      (define qp-encode-stream quoted-printable-encode)
-      (define qp-decode-stream quoted-printable-decode)
-      
       (define quoted-printable-decode
         (lambda (input)
           (let-values
@@ -98,37 +95,39 @@
         (lambda (line out)
           (let ((in (open-input-string line)))
             (let loop ((ch (read-char in)))
-              (unless (eof-object? ch)
-                (case ch
-                  ((#\=);; quoted-printable stuff
-                   (let ((next (read-char in)))
-                     (cond ((eof-object? next);; end of qp-line
-                            null)
-                           ((hex-digit? next)
-                            (let ((next-next (read-char in)))
-                              (cond ((eof-object? next-next)
-                                     (warning "Illegal qp sequence: `=~a'" next)
-                                     (display "=" out)
-                                     (display next out))
-                                    ((hex-digit? next-next)
-                                     ;; qp-encoded
-                                     (display (hex-octet->char
-                                               (format "~a~a" next next-next))
-                                              out))
-                                    (else
-                                     (warning "Illegal qp sequence: `=~a~a'" next next-next)
-                                     (display "=" out)
-                                     (display next out)
-                                     (display next-next out)))))
-                           (else
-                            ;; Warning: invalid
-                            (warning "Illegal qp sequence: `=~a'" next)
-                            (display "=" out)
-                            (display next out))))
-                   (loop (read-char in)))
-                  (else
-                   (display ch out)
-                   (loop (read-char in)))))))))
+              (if (eof-object? ch)
+		  (newline out) ;; preserve linefeed
+		  (case ch
+		    ((#\=);; quoted-printable stuff
+		     (let ((next (read-char in)))
+		       (cond ((eof-object? next);; end of qp-line
+			      null)
+			     ((hex-digit? next)
+			      (let ((next-next (read-char in)))
+				(cond ((eof-object? next-next)
+				       (warning "Illegal qp sequence: `=~a'" next)
+				       (display "=" out)
+				       (display next out))
+				      ((hex-digit? next-next)
+				       ;; qp-encoded
+				       (display (hex-octet->char
+						 (format "~a~a" next next-next))
+						out))
+				      (else
+				       (warning "Illegal qp sequence: `=~a~a'" next next-next)
+				       (display "=" out)
+				       (display next out)
+				       (display next-next out)))))
+			     (else
+			      ;; Warning: invalid
+			      (warning "Illegal qp sequence: `=~a'" next)
+			      (display "=" out)
+			      (display next out)))
+		       (unless (eof-object? next) ;; eol is effectively consumed by =
+			 (loop (read-char in)))))
+		    (else
+		     (display ch out)
+		     (loop (read-char in)))))))))
       
       (define warning
         (lambda (msg . args)
@@ -260,6 +259,10 @@
         (lambda (octet)
           (let ((dec (char->integer octet)))
             (or (and (<= 33 dec) (<= dec 60))
-                (and (<= 62 dec) (<= dec 126)))))))))
+                (and (<= 62 dec) (<= dec 126))))))
+
+
+      (define qp-encode-stream quoted-printable-encode)
+      (define qp-decode-stream quoted-printable-decode))))
 
 ;;; qpr.ss ends here

@@ -109,6 +109,33 @@
 	      (string-append (substring a 0 (- alen 2)) b)
 	      (error 'append-headers "first argument is not a header: ~a" a))))
       
+      (define (extract-all-fields header)
+	(let ([re (regexp (format "(^|[~a][~a])(([^~a~a:]*): *)" 
+				  #\return #\linefeed #\return #\linefeed))]) 
+	  (let loop ([start 0])
+	    (let ([m (regexp-match-positions re header start)])
+	      (if m
+		  (let ([start (cdaddr m)]
+			[field-name (substring header (caaddr (cdr m)) (cdaddr (cdr m)))])
+		    (let ([m2 (regexp-match-positions 
+			       (format "[~a][~a][^: ~a~a]*:"
+				       #\return #\linefeed
+				       #\return #\linefeed)
+			       header
+			       start)])
+		      (if m2
+			  (cons (cons field-name
+				      (substring header start (caar m2)))
+				(loop (caar m2)))
+			  ;; Rest of header is this field, but strip trailing CRLFCRLF:
+			  (list
+			   (cons field-name
+				 (regexp-replace (format "~a~a~a~a$" #\return #\linefeed #\return #\linefeed)
+						 (substring header start (string-length header))
+						 ""))))))
+		  ;; malformed header:
+		  null)))))
+      
       (define (standard-message-header from tos ccs bccs subject)
 	(let ([h (insert-field
 		  "Subject" subject

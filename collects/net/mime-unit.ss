@@ -30,6 +30,7 @@
   (require "mime-sig.ss"
            "qp-sig.ss"
            "base64-sig.ss"
+	   "head-sig.ss"
            "mime-util.ss"
            (lib "unitsig.ss")
            (lib "etc.ss"))
@@ -38,7 +39,8 @@
   (define net:mime@
     (unit/sig net:mime^
       (import net:base64^
-              net:qp^)
+              net:qp^
+	      net:head^)
 
       ;; Constants:
       (define discrete-alist '(("text" . text)
@@ -52,6 +54,7 @@
                                   ("file" . attachment) ;; This is used
                                                         ;; (don't know why)
                                                         ;; by multipart/form-data
+				  ("messagetext" . inline)
                                   ("form-data" . form-data)))
 
       (define composite-alist '(("message" . message)
@@ -60,7 +63,7 @@
       (define mechanism-alist '(("7bit" . 7bit)
                                 ("8bit" . 8bit)
                                 ("binary" . binary)
-                                ("quoted-printable" . qp)
+                                ("quoted-printable" . quoted-printable)
                                 ("base64" . base64)))
       
       (define ietf-extensions '())
@@ -242,11 +245,14 @@
               ((message multipart)
                (let ((boundary (entity-boundary entity)))
                  (when (not boundary)
-                   (raise (make-missing-multipart-boundary-parameter)))
+		   (if (eq? 'multipart (entity-type entity))
+		       (raise (make-missing-multipart-boundary-parameter))))
                  (set-entity-parts! entity
                                     (map (lambda (part)
                                            (mime-analyze part #t))
-                                         (multipart-body iport boundary)))))
+					 (if boundary
+					     (multipart-body iport boundary)
+					     (list iport))))))
               (else
                ;; Unrecognized type, you're on your own! (sorry)
                (mime-decode entity iport)))
@@ -285,33 +291,26 @@
                                          ((regexp-match
                                            (regexp (string-append "^--"
                                                                   boundary
-                                                                  "--.*";; Transpor padding
+                                                                  "--"
                                                                   )) ln)
-                                          (close-output-port pout)
+					  (close-output-port pout)
                                           (values pin #t #f))
                                          ((regexp-match
                                            (regexp (string-append "^--"
                                                                   boundary
-                                                                  ".*";; Transpor padding
                                                                   )) ln)
                                           (close-output-port pout)
                                           (values pin #f #f))
                                          (else
                                           (fprintf pout "~a~n" ln)
                                           (loop (read-line input)))))))))
-            (let loop ((id 0) (parts null))
-              (cond ((zero? id)
-                     ;; Discard preamble
-                     (eat-part) (loop (add1 id) null))
-                    (else
-                     (let-values ([(part close? eof?) (eat-part)])
-                       (cond (close? (append parts (list part)))
-                             (eof?
-                              (raise
-                               (make-malformed-multipart-entity
-                                "eof found while scanning multipart")))
-                             (else
-                              (loop  id (append parts (list part))))))))))))
+	    (eat-part) ;; preamble
+            (let loop ()
+	      (let-values ([(part close? eof?) (eat-part)])
+		(cond (close? (list part))
+		      (eof? null)
+		      (else
+		       (cons part (loop)))))))))
       
       ;; MIME-message-headers := entity-headers
       ;; 			fields
@@ -321,9 +320,8 @@
       ;; 			; definition should be ignored.
       (define MIME-message-headers
         (lambda (headers)
-          (let ((in (open-input-string headers))
-                (message (make-default-message)))
-            (entity-headers in message #t)
+          (let ((message (make-default-message)))
+            (entity-headers headers message #t)
             message)))
       
       ;; MIME-part-headers := entity-headers
@@ -336,9 +334,8 @@
       ;; 		     ; definition should be ignored.
       (define MIME-part-headers
         (lambda (headers)
-          (let ((in (open-input-string headers))
-                (message (make-default-message)))
-            (entity-headers in message #f)
+          (let ((message (make-default-message)))
+            (entity-headers headers message #f)
             message)))
       
       ;; entity-headers := [ content CRLF ]
@@ -347,9 +344,9 @@
       ;; 		  [ description CRLF ]
       ;; 		  *( MIME-extension-field CRLF )
       (define entity-headers
-        (lambda (in message version?)
+        (lambda (headers message version?)
           (let ((entity (message-entity message)))
-            (let-values ([(mime non-mime) (get-fields in)])
+            (let-values ([(mime non-mime) (get-fields headers)])
               (let loop ((fields mime))
                 (unless (null? fields)
                   ;; Process MIME field
@@ -372,35 +369,19 @@
               message))))
       
       (define get-fields
-        (lambda (in)
-          (let ((mime null) (non-mime null) (r (regexp "^[ 	]+([^ 	]+)")))
+        (lambda (headers)
+          (let ((mime null) (non-mime null))
             (letrec ((store-field
                       (lambda (f)
                         (unless (string=? f "")
                           (if (mime-header? f)
                               (set! mime (append mime (list (trim-spaces f))))
                               (set! non-mime (append non-mime (list (trim-spaces f)))))))))
-              (let loop ((ln (read-line in 'return-linefeed))
-                         (field ""))
-                (cond ((eof-object? ln)
-                       ;; Store last field (if any)
-                       (store-field field)
-                       ;; return values to user
-                       (values mime non-mime))
-                      ;; Line continues previous field
-                      ((regexp-match r ln)
-                       (when (string=? field "")
-			 ;; we will ignore this to be robust, though.
-			 (warning
-			  "This is not a valid header according to rfc822: `~a'"
-			  ln))
-                       (loop (read-line in 'return-linefeed)
-                             (format "~a~a" field
-                                     (regexp-replace r ln "\\1"))))
-                      (else ;; ln starts a new field
-                       ;; Store previous field
-                       (store-field field)
-                       (loop (read-line in 'return-linefeed) ln))))))))
+	      (let ([fields (extract-all-fields headers)])
+		(for-each (lambda (p)
+			    (store-field (format "~a: ~a" (car p) (cdr p))))
+			  fields))
+	      (values mime non-mime)))))
       
       (define mime-header?
         (lambda (h)
@@ -461,7 +442,7 @@
             (and target
                  (set-disposition-type!
                   disp-struct
-                  (disp-type (regexp-replace reg h "\\1")))
+		  (disp-type (regexp-replace reg h "\\1")))
                  (disp-params (cdr params) disp-struct)))))
       
       ;; version := "MIME-Version" ":" 1*DIGIT "." 1*DIGIT
@@ -568,20 +549,20 @@
         (lambda (value)
           (if (not value)
               (raise (make-empty-disposition-type))
-              (let ((val (assoc (trim-spaces value) disposition-alist)))
+              (let ((val (assoc (lowercase (trim-spaces value)) disposition-alist)))
                 (if val (cdr val) (extension-token value))))))
       
       ;; discrete-type := "text" / "image" / "audio" / "video" /
       ;; 		 "application" / extension-token
       (define discrete-type
         (lambda (value)
-          (let ((val (assoc (trim-spaces value) discrete-alist)))
+          (let ((val (assoc (lowercase (trim-spaces value)) discrete-alist)))
             (if val (cdr val) (extension-token value)))))
       
       ;; composite-type := "message" / "multipart" / extension-token
       (define composite-type
         (lambda (value)
-          (let ((val (assoc (trim-spaces value) composite-alist)))
+          (let ((val (assoc (lowercase (trim-spaces value)) composite-alist)))
             (if val (cdr val) (extension-token value)))))
       
       ;; extension-token := ietf-token / x-token
@@ -595,7 +576,7 @@
       ;; 	       with IANA.>
       (define ietf-token
         (lambda (value)
-          (let ((ans (assoc (trim-spaces value) ietf-extensions)))
+          (let ((ans (assoc (lowercase (trim-spaces value)) ietf-extensions)))
             (and ans
                  (cdr ans)))))
       

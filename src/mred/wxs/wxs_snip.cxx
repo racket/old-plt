@@ -99,7 +99,7 @@ void os_wxSnip::SetAdmin(class wxSnipAdmin* x0)
   p[0] = objscheme_bundle_wxSnipAdmin(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -131,7 +131,7 @@ Bool os_wxSnip::Resize(float x0, float x1)
   p[1] = scheme_make_double(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -163,7 +163,7 @@ void os_wxSnip::Write(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -194,7 +194,7 @@ Bool os_wxSnip::Match(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -227,7 +227,7 @@ void os_wxSnip::DoFont(int x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -260,7 +260,7 @@ void os_wxSnip::DoEdit(int x0, Bool x1, long x2)
   p[2] = scheme_make_integer(x2);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -291,7 +291,7 @@ void os_wxSnip::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -327,7 +327,7 @@ class wxCursor* os_wxSnip::AdjustCursor(class wxDC* x0, float x1, float x2, floa
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -364,7 +364,7 @@ void os_wxSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4, c
   p[5] = objscheme_bundle_wxKeyEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -400,7 +400,7 @@ void os_wxSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x4, 
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -430,7 +430,7 @@ void os_wxSnip::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -460,7 +460,7 @@ class wxSnip* os_wxSnip::Copy()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -494,7 +494,7 @@ string os_wxSnip::GetText(long x0, long x1, Bool x2, long* x3)
   p[2] = (x2 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -526,7 +526,7 @@ class wxSnip* os_wxSnip::MergeWith(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -560,7 +560,7 @@ void os_wxSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
   p[2] = objscheme_box(objscheme_bundle_wxSnip((*x2)));
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "wx:snip%::split"", extracting return value via box"), "wx:snip%::split"", extracting return value via box", 0);
   if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "wx:snip%::split"", extracting return value via box"), "wx:snip%::split"", extracting return value via box", 0);
@@ -602,7 +602,7 @@ void os_wxSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, flo
   p[9] = scheme_make_integer(x9);
   
 
-  v = scheme_apply(method, 10, p);
+  v = scheme_apply_eb(method, 10, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -636,7 +636,7 @@ float os_wxSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
   p[3] = scheme_make_integer(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -676,7 +676,7 @@ void os_wxSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, float* 
   p[8] = ((x8) ? objscheme_box(scheme_make_double((*x8))) : scheme_null);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "wx:snip%::get-extent"", extracting return value via box"), "wx:snip%::get-extent"", extracting return value via box");
   if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "wx:snip%::get-extent"", extracting return value via box"), "wx:snip%::get-extent"", extracting return value via box");
@@ -1668,7 +1668,7 @@ void os_wxTextSnip::SetAdmin(class wxSnipAdmin* x0)
   p[0] = objscheme_bundle_wxSnipAdmin(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1700,7 +1700,7 @@ Bool os_wxTextSnip::Resize(float x0, float x1)
   p[1] = scheme_make_double(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1732,7 +1732,7 @@ void os_wxTextSnip::Write(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1763,7 +1763,7 @@ Bool os_wxTextSnip::Match(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1796,7 +1796,7 @@ void os_wxTextSnip::DoFont(int x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1829,7 +1829,7 @@ void os_wxTextSnip::DoEdit(int x0, Bool x1, long x2)
   p[2] = scheme_make_integer(x2);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1860,7 +1860,7 @@ void os_wxTextSnip::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1896,7 +1896,7 @@ class wxCursor* os_wxTextSnip::AdjustCursor(class wxDC* x0, float x1, float x2, 
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1933,7 +1933,7 @@ void os_wxTextSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x
   p[5] = objscheme_bundle_wxKeyEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1969,7 +1969,7 @@ void os_wxTextSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float 
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1999,7 +1999,7 @@ void os_wxTextSnip::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2029,7 +2029,7 @@ class wxSnip* os_wxTextSnip::Copy()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2063,7 +2063,7 @@ string os_wxTextSnip::GetText(long x0, long x1, Bool x2, long* x3)
   p[2] = (x2 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2095,7 +2095,7 @@ class wxSnip* os_wxTextSnip::MergeWith(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2129,7 +2129,7 @@ void os_wxTextSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
   p[2] = objscheme_box(objscheme_bundle_wxSnip((*x2)));
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "wx:text-snip%::split"", extracting return value via box"), "wx:text-snip%::split"", extracting return value via box", 0);
   if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "wx:text-snip%::split"", extracting return value via box"), "wx:text-snip%::split"", extracting return value via box", 0);
@@ -2171,7 +2171,7 @@ void os_wxTextSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4,
   p[9] = scheme_make_integer(x9);
   
 
-  v = scheme_apply(method, 10, p);
+  v = scheme_apply_eb(method, 10, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2205,7 +2205,7 @@ float os_wxTextSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
   p[3] = scheme_make_integer(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2245,7 +2245,7 @@ void os_wxTextSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, flo
   p[8] = ((x8) ? objscheme_box(scheme_make_double((*x8))) : scheme_null);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "wx:text-snip%::get-extent"", extracting return value via box"), "wx:text-snip%::get-extent"", extracting return value via box");
   if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "wx:text-snip%::get-extent"", extracting return value via box"), "wx:text-snip%::get-extent"", extracting return value via box");
@@ -3046,7 +3046,7 @@ void os_wxTabSnip::SetAdmin(class wxSnipAdmin* x0)
   p[0] = objscheme_bundle_wxSnipAdmin(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3078,7 +3078,7 @@ Bool os_wxTabSnip::Resize(float x0, float x1)
   p[1] = scheme_make_double(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3110,7 +3110,7 @@ void os_wxTabSnip::Write(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3141,7 +3141,7 @@ Bool os_wxTabSnip::Match(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3174,7 +3174,7 @@ void os_wxTabSnip::DoFont(int x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3207,7 +3207,7 @@ void os_wxTabSnip::DoEdit(int x0, Bool x1, long x2)
   p[2] = scheme_make_integer(x2);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3238,7 +3238,7 @@ void os_wxTabSnip::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3274,7 +3274,7 @@ class wxCursor* os_wxTabSnip::AdjustCursor(class wxDC* x0, float x1, float x2, f
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3311,7 +3311,7 @@ void os_wxTabSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float x4
   p[5] = objscheme_bundle_wxKeyEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3347,7 +3347,7 @@ void os_wxTabSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float x
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3377,7 +3377,7 @@ void os_wxTabSnip::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3407,7 +3407,7 @@ class wxSnip* os_wxTabSnip::Copy()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3441,7 +3441,7 @@ string os_wxTabSnip::GetText(long x0, long x1, Bool x2, long* x3)
   p[2] = (x2 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3473,7 +3473,7 @@ class wxSnip* os_wxTabSnip::MergeWith(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3507,7 +3507,7 @@ void os_wxTabSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
   p[2] = objscheme_box(objscheme_bundle_wxSnip((*x2)));
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "wx:tab-snip%::split"", extracting return value via box"), "wx:tab-snip%::split"", extracting return value via box", 0);
   if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "wx:tab-snip%::split"", extracting return value via box"), "wx:tab-snip%::split"", extracting return value via box", 0);
@@ -3549,7 +3549,7 @@ void os_wxTabSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4, 
   p[9] = scheme_make_integer(x9);
   
 
-  v = scheme_apply(method, 10, p);
+  v = scheme_apply_eb(method, 10, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3583,7 +3583,7 @@ float os_wxTabSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
   p[3] = scheme_make_integer(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3623,7 +3623,7 @@ void os_wxTabSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, floa
   p[8] = ((x8) ? objscheme_box(scheme_make_double((*x8))) : scheme_null);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "wx:tab-snip%::get-extent"", extracting return value via box"), "wx:tab-snip%::get-extent"", extracting return value via box");
   if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "wx:tab-snip%::get-extent"", extracting return value via box"), "wx:tab-snip%::get-extent"", extracting return value via box");
@@ -4378,7 +4378,7 @@ void os_wxImageSnip::SetAdmin(class wxSnipAdmin* x0)
   p[0] = objscheme_bundle_wxSnipAdmin(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4410,7 +4410,7 @@ Bool os_wxImageSnip::Resize(float x0, float x1)
   p[1] = scheme_make_double(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4442,7 +4442,7 @@ void os_wxImageSnip::Write(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4473,7 +4473,7 @@ Bool os_wxImageSnip::Match(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4506,7 +4506,7 @@ void os_wxImageSnip::DoFont(int x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4539,7 +4539,7 @@ void os_wxImageSnip::DoEdit(int x0, Bool x1, long x2)
   p[2] = scheme_make_integer(x2);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4570,7 +4570,7 @@ void os_wxImageSnip::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4606,7 +4606,7 @@ class wxCursor* os_wxImageSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4643,7 +4643,7 @@ void os_wxImageSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   p[5] = objscheme_bundle_wxKeyEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4679,7 +4679,7 @@ void os_wxImageSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4709,7 +4709,7 @@ void os_wxImageSnip::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4739,7 +4739,7 @@ class wxSnip* os_wxImageSnip::Copy()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4773,7 +4773,7 @@ string os_wxImageSnip::GetText(long x0, long x1, Bool x2, long* x3)
   p[2] = (x2 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4805,7 +4805,7 @@ class wxSnip* os_wxImageSnip::MergeWith(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4839,7 +4839,7 @@ void os_wxImageSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
   p[2] = objscheme_box(objscheme_bundle_wxSnip((*x2)));
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "wx:image-snip%::split"", extracting return value via box"), "wx:image-snip%::split"", extracting return value via box", 0);
   if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "wx:image-snip%::split"", extracting return value via box"), "wx:image-snip%::split"", extracting return value via box", 0);
@@ -4881,7 +4881,7 @@ void os_wxImageSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   p[9] = scheme_make_integer(x9);
   
 
-  v = scheme_apply(method, 10, p);
+  v = scheme_apply_eb(method, 10, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4915,7 +4915,7 @@ float os_wxImageSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
   p[3] = scheme_make_integer(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -4955,7 +4955,7 @@ void os_wxImageSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, fl
   p[8] = ((x8) ? objscheme_box(scheme_make_double((*x8))) : scheme_null);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "wx:image-snip%::get-extent"", extracting return value via box"), "wx:image-snip%::get-extent"", extracting return value via box");
   if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "wx:image-snip%::get-extent"", extracting return value via box"), "wx:image-snip%::get-extent"", extracting return value via box");
@@ -5846,7 +5846,7 @@ void os_wxMediaSnip::SetAdmin(class wxSnipAdmin* x0)
   p[0] = objscheme_bundle_wxSnipAdmin(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -5878,7 +5878,7 @@ Bool os_wxMediaSnip::Resize(float x0, float x1)
   p[1] = scheme_make_double(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -5910,7 +5910,7 @@ void os_wxMediaSnip::Write(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -5941,7 +5941,7 @@ Bool os_wxMediaSnip::Match(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -5974,7 +5974,7 @@ void os_wxMediaSnip::DoFont(int x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6007,7 +6007,7 @@ void os_wxMediaSnip::DoEdit(int x0, Bool x1, long x2)
   p[2] = scheme_make_integer(x2);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6038,7 +6038,7 @@ void os_wxMediaSnip::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6074,7 +6074,7 @@ class wxCursor* os_wxMediaSnip::AdjustCursor(class wxDC* x0, float x1, float x2,
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6111,7 +6111,7 @@ void os_wxMediaSnip::OnChar(class wxDC* x0, float x1, float x2, float x3, float 
   p[5] = objscheme_bundle_wxKeyEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6147,7 +6147,7 @@ void os_wxMediaSnip::OnEvent(class wxDC* x0, float x1, float x2, float x3, float
   p[5] = objscheme_bundle_wxMouseEvent(&x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6177,7 +6177,7 @@ void os_wxMediaSnip::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6207,7 +6207,7 @@ class wxSnip* os_wxMediaSnip::Copy()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6241,7 +6241,7 @@ string os_wxMediaSnip::GetText(long x0, long x1, Bool x2, long* x3)
   p[2] = (x2 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6273,7 +6273,7 @@ class wxSnip* os_wxMediaSnip::MergeWith(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6307,7 +6307,7 @@ void os_wxMediaSnip::Split(long x0, class wxSnip** x1, class wxSnip** x2)
   p[2] = objscheme_box(objscheme_bundle_wxSnip((*x2)));
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   if (x1) *x1 = objscheme_unbundle_wxSnip(objscheme_unbox(p[1], "wx:media-snip%::split"", extracting return value via box"), "wx:media-snip%::split"", extracting return value via box", 0);
   if (x2) *x2 = objscheme_unbundle_wxSnip(objscheme_unbox(p[2], "wx:media-snip%::split"", extracting return value via box"), "wx:media-snip%::split"", extracting return value via box", 0);
@@ -6349,7 +6349,7 @@ void os_wxMediaSnip::Draw(class wxDC* x0, float x1, float x2, float x3, float x4
   p[9] = scheme_make_integer(x9);
   
 
-  v = scheme_apply(method, 10, p);
+  v = scheme_apply_eb(method, 10, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6383,7 +6383,7 @@ float os_wxMediaSnip::PartialOffset(class wxDC* x0, float x1, float x2, long x3)
   p[3] = scheme_make_integer(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -6423,7 +6423,7 @@ void os_wxMediaSnip::GetExtent(class wxDC* x0, float x1, float x2, float* x3, fl
   p[8] = ((x8) ? objscheme_box(scheme_make_double((*x8))) : scheme_null);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   if (x3) *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "wx:media-snip%::get-extent"", extracting return value via box"), "wx:media-snip%::get-extent"", extracting return value via box");
   if (x4) *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "wx:media-snip%::get-extent"", extracting return value via box"), "wx:media-snip%::get-extent"", extracting return value via box");
@@ -7610,7 +7610,7 @@ class wxBufferData* os_wxBufferDataClass::Read(class wxMediaStreamIn& x0)
   p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -8068,7 +8068,7 @@ Bool os_wxBufferData::Write(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

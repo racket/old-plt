@@ -197,7 +197,7 @@ long os_wxMediaStreamInBase::Read(char* x0, long x1)
   p[0] = NULL;
   p[0] = ArrayToVector(x0, NULL, x1);
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   VectorToArray(x0, p[0], &x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -228,7 +228,7 @@ Bool os_wxMediaStreamInBase::Bad()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -260,7 +260,7 @@ void os_wxMediaStreamInBase::Skip(long x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -291,7 +291,7 @@ void os_wxMediaStreamInBase::Seek(long x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -321,7 +321,7 @@ long os_wxMediaStreamInBase::Tell()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -585,7 +585,7 @@ void os_wxMediaStreamOutBase::Write(char* x0, long x1)
   p[0] = NULL;
   p[0] = __MakecharList(x0, x1);
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -615,7 +615,7 @@ Bool os_wxMediaStreamOutBase::Bad()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -647,7 +647,7 @@ void os_wxMediaStreamOutBase::Seek(long x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -677,7 +677,7 @@ long os_wxMediaStreamOutBase::Tell()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

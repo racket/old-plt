@@ -204,7 +204,7 @@ void os_wxMediaBuffer::GetViewSize(float* x0, float* x1)
   p[1] = ((x1) ? objscheme_box(scheme_make_double((*x1))) : scheme_null);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-buffer%::get-view-size"", extracting return value via box"), "wx:media-buffer%::get-view-size"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-buffer%::get-view-size"", extracting return value via box"), "wx:media-buffer%::get-view-size"", extracting return value via box");
@@ -236,7 +236,7 @@ class wxDC* os_wxMediaBuffer::GetDC()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -269,7 +269,7 @@ nstring os_wxMediaBuffer::PutFile(nstring x0, nstring x1)
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -301,7 +301,7 @@ nstring os_wxMediaBuffer::GetFile(nstring x0)
   p[0] = objscheme_bundle_string((char *)x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -332,7 +332,7 @@ void os_wxMediaBuffer::AfterEditSequence()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -362,7 +362,7 @@ void os_wxMediaBuffer::OnEditSequence()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -393,7 +393,7 @@ void os_wxMediaBuffer::AfterLoadFile(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -425,7 +425,7 @@ Bool os_wxMediaBuffer::OnLoadFile(string x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -457,7 +457,7 @@ void os_wxMediaBuffer::AfterSaveFile(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -489,7 +489,7 @@ Bool os_wxMediaBuffer::OnSaveFile(string x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -521,7 +521,7 @@ class wxSnip* os_wxMediaBuffer::OnNewBox(int x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -556,7 +556,7 @@ class wxImageSnip* os_wxMediaBuffer::OnNewImageSnip(nstring x0, long x1, Bool x2
   p[3] = (x3 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -591,7 +591,7 @@ void os_wxMediaBuffer::InvalidateBitmapCache(float x0, float x1, float x2, float
   p[3] = scheme_make_double(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -630,7 +630,7 @@ void os_wxMediaBuffer::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, floa
   p[8] = scheme_make_integer(x8);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -661,7 +661,7 @@ Bool os_wxMediaBuffer::WriteFootersToFile(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -693,7 +693,7 @@ Bool os_wxMediaBuffer::WriteHeadersToFile(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -726,7 +726,7 @@ Bool os_wxMediaBuffer::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -759,7 +759,7 @@ Bool os_wxMediaBuffer::ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1)
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -792,7 +792,7 @@ void os_wxMediaBuffer::SetFilename(string x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -823,7 +823,7 @@ Bool os_wxMediaBuffer::ReleaseSnip(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -855,7 +855,7 @@ void os_wxMediaBuffer::SetModified(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -887,7 +887,7 @@ void os_wxMediaBuffer::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   p[1] = objscheme_bundle_wxBufferData(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -918,7 +918,7 @@ class wxBufferData* os_wxMediaBuffer::GetSnipData(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -954,7 +954,7 @@ void os_wxMediaBuffer::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x
   p[4] = scheme_make_double(x4);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -986,7 +986,7 @@ void os_wxMediaBuffer::Resized(class wxSnip* x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1018,7 +1018,7 @@ void os_wxMediaBuffer::SetCaretOwner(class wxSnip* x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1054,7 +1054,7 @@ Bool os_wxMediaBuffer::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, 
   p[5] = (x5 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1085,7 +1085,7 @@ void os_wxMediaBuffer::OnChange()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1116,7 +1116,7 @@ void os_wxMediaBuffer::OnFocus(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1147,7 +1147,7 @@ void os_wxMediaBuffer::OnDefaultChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1178,7 +1178,7 @@ void os_wxMediaBuffer::OnDefaultEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1209,7 +1209,7 @@ void os_wxMediaBuffer::OnLocalChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1240,7 +1240,7 @@ void os_wxMediaBuffer::OnLocalEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1270,7 +1270,7 @@ void os_wxMediaBuffer::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1301,7 +1301,7 @@ void os_wxMediaBuffer::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1336,7 +1336,7 @@ void os_wxMediaBuffer::Refresh(float x0, float x1, float x2, float x3, Bool x4)
   p[4] = (x4 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1367,7 +1367,7 @@ class wxCursor* os_wxMediaBuffer::AdjustCursor(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1399,7 +1399,7 @@ void os_wxMediaBuffer::OnChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1430,7 +1430,7 @@ void os_wxMediaBuffer::OnEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1461,7 +1461,7 @@ void os_wxMediaBuffer::CopySelfTo(class wxMediaBuffer* x0)
   p[0] = objscheme_bundle_wxMediaBuffer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1491,7 +1491,7 @@ class wxMediaBuffer* os_wxMediaBuffer::CopySelf()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

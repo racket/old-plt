@@ -255,7 +255,7 @@ void os_wxTimer::Notify()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -710,7 +710,7 @@ nstring os_wxClipboardClient::GetData(string x0, long* x1)
   p[0] = objscheme_bundle_string((char *)x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   if (SCHEME_STRINGP(v)) (*x1) = SCHEME_STRTAG_VAL(v);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -741,7 +741,7 @@ void os_wxClipboardClient::BeingReplaced()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

@@ -294,7 +294,7 @@ Bool os_wxRadioBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -327,7 +327,7 @@ Bool os_wxRadioBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -360,7 +360,7 @@ void os_wxRadioBox::OnSize(int x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -390,7 +390,7 @@ void os_wxRadioBox::OnSetFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -420,7 +420,7 @@ void os_wxRadioBox::OnKillFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

@@ -132,7 +132,7 @@ void os_wxPanel::OnChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -163,7 +163,7 @@ void os_wxPanel::OnEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -193,7 +193,7 @@ void os_wxPanel::OnPaint()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -224,7 +224,7 @@ void os_wxPanel::OnDefaultAction(class wxItem* x0)
   p[0] = objscheme_bundle_wxItem(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -256,7 +256,7 @@ Bool os_wxPanel::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -289,7 +289,7 @@ Bool os_wxPanel::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -322,7 +322,7 @@ void os_wxPanel::OnSize(int x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -352,7 +352,7 @@ void os_wxPanel::OnSetFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -382,7 +382,7 @@ void os_wxPanel::OnKillFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1329,7 +1329,7 @@ void os_wxDialogBox::OnDefaultAction(class wxItem* x0)
   p[0] = objscheme_bundle_wxItem(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1360,7 +1360,7 @@ void os_wxDialogBox::OnChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1391,7 +1391,7 @@ void os_wxDialogBox::OnEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1421,7 +1421,7 @@ void os_wxDialogBox::OnPaint()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1453,7 +1453,7 @@ Bool os_wxDialogBox::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1486,7 +1486,7 @@ Bool os_wxDialogBox::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1519,7 +1519,7 @@ void os_wxDialogBox::OnSize(int x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1549,7 +1549,7 @@ void os_wxDialogBox::OnSetFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1579,7 +1579,7 @@ void os_wxDialogBox::OnKillFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1609,7 +1609,7 @@ Bool os_wxDialogBox::OnClose()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1641,7 +1641,7 @@ void os_wxDialogBox::OnActivate(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

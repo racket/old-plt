@@ -419,7 +419,7 @@ class wxTabSnip* os_wxMediaEdit::OnNewTabSnip()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -450,7 +450,7 @@ class wxTextSnip* os_wxMediaEdit::OnNewTextSnip()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -484,7 +484,7 @@ void os_wxMediaEdit::SetRegionData(long x0, long x1, class wxBufferData* x2)
   p[2] = objscheme_bundle_wxBufferData(x2);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -516,7 +516,7 @@ class wxBufferData* os_wxMediaEdit::GetRegionData(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -547,7 +547,7 @@ void os_wxMediaEdit::AfterSetSizeConstraint()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -577,7 +577,7 @@ Bool os_wxMediaEdit::OnSetSizeConstraint()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -608,7 +608,7 @@ void os_wxMediaEdit::AfterSetPosition()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -640,7 +640,7 @@ void os_wxMediaEdit::AfterChangeStyle(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -672,7 +672,7 @@ Bool os_wxMediaEdit::OnChangeStyle(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -705,7 +705,7 @@ void os_wxMediaEdit::AfterDelete(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -737,7 +737,7 @@ Bool os_wxMediaEdit::OnDelete(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -770,7 +770,7 @@ void os_wxMediaEdit::AfterInsert(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -802,7 +802,7 @@ Bool os_wxMediaEdit::OnInsert(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -835,7 +835,7 @@ void os_wxMediaEdit::DoPaste(long x0, long x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -869,7 +869,7 @@ void os_wxMediaEdit::DoCopy(long x0, long x1, long x2, Bool x3)
   p[3] = (x3 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -900,7 +900,7 @@ void os_wxMediaEdit::SetAnchor(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -932,7 +932,7 @@ nstring os_wxMediaEdit::PutFile(nstring x0, nstring x1)
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -964,7 +964,7 @@ nstring os_wxMediaEdit::GetFile(nstring x0)
   p[0] = objscheme_bundle_string((char *)x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -995,7 +995,7 @@ void os_wxMediaEdit::AfterEditSequence()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1025,7 +1025,7 @@ void os_wxMediaEdit::OnEditSequence()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1056,7 +1056,7 @@ void os_wxMediaEdit::AfterLoadFile(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1088,7 +1088,7 @@ Bool os_wxMediaEdit::OnLoadFile(string x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1120,7 +1120,7 @@ void os_wxMediaEdit::AfterSaveFile(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1152,7 +1152,7 @@ Bool os_wxMediaEdit::OnSaveFile(string x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1184,7 +1184,7 @@ class wxSnip* os_wxMediaEdit::OnNewBox(int x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1219,7 +1219,7 @@ class wxImageSnip* os_wxMediaEdit::OnNewImageSnip(nstring x0, long x1, Bool x2, 
   p[3] = (x3 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1254,7 +1254,7 @@ void os_wxMediaEdit::InvalidateBitmapCache(float x0, float x1, float x2, float x
   p[3] = scheme_make_double(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1293,7 +1293,7 @@ void os_wxMediaEdit::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, float 
   p[8] = scheme_make_integer(x8);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1324,7 +1324,7 @@ Bool os_wxMediaEdit::WriteFootersToFile(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1356,7 +1356,7 @@ Bool os_wxMediaEdit::WriteHeadersToFile(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1389,7 +1389,7 @@ Bool os_wxMediaEdit::ReadFooterFromFile(class wxMediaStreamIn& x0, string x1)
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1422,7 +1422,7 @@ Bool os_wxMediaEdit::ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1)
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1455,7 +1455,7 @@ void os_wxMediaEdit::SetFilename(string x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1486,7 +1486,7 @@ Bool os_wxMediaEdit::ReleaseSnip(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1518,7 +1518,7 @@ void os_wxMediaEdit::SetModified(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1550,7 +1550,7 @@ void os_wxMediaEdit::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   p[1] = objscheme_bundle_wxBufferData(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1581,7 +1581,7 @@ class wxBufferData* os_wxMediaEdit::GetSnipData(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1617,7 +1617,7 @@ void os_wxMediaEdit::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3,
   p[4] = scheme_make_double(x4);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1649,7 +1649,7 @@ void os_wxMediaEdit::Resized(class wxSnip* x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1681,7 +1681,7 @@ void os_wxMediaEdit::SetCaretOwner(class wxSnip* x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1717,7 +1717,7 @@ Bool os_wxMediaEdit::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, fl
   p[5] = (x5 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1748,7 +1748,7 @@ void os_wxMediaEdit::OnChange()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1779,7 +1779,7 @@ void os_wxMediaEdit::OnFocus(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1810,7 +1810,7 @@ void os_wxMediaEdit::OnDefaultChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1841,7 +1841,7 @@ void os_wxMediaEdit::OnDefaultEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1872,7 +1872,7 @@ void os_wxMediaEdit::OnLocalChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1903,7 +1903,7 @@ void os_wxMediaEdit::OnLocalEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1933,7 +1933,7 @@ void os_wxMediaEdit::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1964,7 +1964,7 @@ void os_wxMediaEdit::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1999,7 +1999,7 @@ void os_wxMediaEdit::Refresh(float x0, float x1, float x2, float x3, Bool x4)
   p[4] = (x4 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2030,7 +2030,7 @@ class wxCursor* os_wxMediaEdit::AdjustCursor(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2062,7 +2062,7 @@ void os_wxMediaEdit::OnChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2093,7 +2093,7 @@ void os_wxMediaEdit::OnEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2124,7 +2124,7 @@ void os_wxMediaEdit::CopySelfTo(class wxMediaBuffer* x0)
   p[0] = objscheme_bundle_wxMediaBuffer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2154,7 +2154,7 @@ class wxMediaBuffer* os_wxMediaEdit::CopySelf()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

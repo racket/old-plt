@@ -174,7 +174,7 @@ void os_wxMediaPasteboard::AfterInteractiveResize(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -205,7 +205,7 @@ Bool os_wxMediaPasteboard::OnInteractiveResize(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -236,7 +236,7 @@ void os_wxMediaPasteboard::AfterInteractiveMove()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -266,7 +266,7 @@ Bool os_wxMediaPasteboard::OnInteractiveMove()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -300,7 +300,7 @@ void os_wxMediaPasteboard::InteractiveAdjustResize(class wxSnip* x0, float* x1, 
   p[2] = objscheme_box(scheme_make_double((*x2)));
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box");
   if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-resize"", extracting return value via box");
@@ -335,7 +335,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMove(class wxSnip* x0, float* x1, fl
   p[2] = objscheme_box(scheme_make_double((*x2)));
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box");
   if (x2) *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-move"", extracting return value via box");
@@ -369,7 +369,7 @@ void os_wxMediaPasteboard::InteractiveAdjustMouse(float* x0, float* x1)
   p[1] = objscheme_box(scheme_make_double((*x1)));
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box"), "wx:media-pasteboard%::interactive-adjust-mouse"", extracting return value via box");
@@ -403,7 +403,7 @@ void os_wxMediaPasteboard::OnDoubleClick(class wxSnip* x0, class wxMouseEvent& x
   p[1] = objscheme_bundle_wxMouseEvent(&x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -435,7 +435,7 @@ void os_wxMediaPasteboard::AfterSelect(class wxSnip* x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -467,7 +467,7 @@ Bool os_wxMediaPasteboard::OnSelect(class wxSnip* x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -502,7 +502,7 @@ void os_wxMediaPasteboard::AfterResize(class wxSnip* x0, float x1, float x2, Boo
   p[3] = (x3 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -535,7 +535,7 @@ Bool os_wxMediaPasteboard::OnResize(class wxSnip* x0, float x1, float x2)
   p[2] = scheme_make_double(x2);
   
 
-  v = scheme_apply(method, 3, p);
+  v = scheme_apply_eb(method, 3, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -570,7 +570,7 @@ void os_wxMediaPasteboard::AfterMoveTo(class wxSnip* x0, float x1, float x2, Boo
   p[3] = (x3 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -604,7 +604,7 @@ Bool os_wxMediaPasteboard::OnMoveTo(class wxSnip* x0, float x1, float x2, Bool x
   p[3] = (x3 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -636,7 +636,7 @@ void os_wxMediaPasteboard::AfterDelete(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -667,7 +667,7 @@ Bool os_wxMediaPasteboard::OnDelete(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -702,7 +702,7 @@ void os_wxMediaPasteboard::AfterInsert(class wxSnip* x0, class wxSnip* x1, float
   p[3] = scheme_make_double(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -736,7 +736,7 @@ Bool os_wxMediaPasteboard::OnInsert(class wxSnip* x0, class wxSnip* x1, float x2
   p[3] = scheme_make_double(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -768,7 +768,7 @@ void os_wxMediaPasteboard::DoPaste(long x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -800,7 +800,7 @@ void os_wxMediaPasteboard::DoCopy(long x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -832,7 +832,7 @@ nstring os_wxMediaPasteboard::PutFile(nstring x0, nstring x1)
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -864,7 +864,7 @@ nstring os_wxMediaPasteboard::GetFile(nstring x0)
   p[0] = objscheme_bundle_string((char *)x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -895,7 +895,7 @@ void os_wxMediaPasteboard::AfterEditSequence()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -925,7 +925,7 @@ void os_wxMediaPasteboard::OnEditSequence()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -956,7 +956,7 @@ void os_wxMediaPasteboard::AfterLoadFile(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -988,7 +988,7 @@ Bool os_wxMediaPasteboard::OnLoadFile(string x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1020,7 +1020,7 @@ void os_wxMediaPasteboard::AfterSaveFile(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1052,7 +1052,7 @@ Bool os_wxMediaPasteboard::OnSaveFile(string x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1084,7 +1084,7 @@ class wxSnip* os_wxMediaPasteboard::OnNewBox(int x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1119,7 +1119,7 @@ class wxImageSnip* os_wxMediaPasteboard::OnNewImageSnip(nstring x0, long x1, Boo
   p[3] = (x3 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1154,7 +1154,7 @@ void os_wxMediaPasteboard::InvalidateBitmapCache(float x0, float x1, float x2, f
   p[3] = scheme_make_double(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1193,7 +1193,7 @@ void os_wxMediaPasteboard::OnPaint(Bool x0, class wxDC* x1, float x2, float x3, 
   p[8] = scheme_make_integer(x8);
   
 
-  v = scheme_apply(method, 9, p);
+  v = scheme_apply_eb(method, 9, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1224,7 +1224,7 @@ Bool os_wxMediaPasteboard::WriteFootersToFile(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1256,7 +1256,7 @@ Bool os_wxMediaPasteboard::WriteHeadersToFile(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1289,7 +1289,7 @@ Bool os_wxMediaPasteboard::ReadFooterFromFile(class wxMediaStreamIn& x0, string 
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1322,7 +1322,7 @@ Bool os_wxMediaPasteboard::ReadHeaderFromFile(class wxMediaStreamIn& x0, string 
   p[1] = objscheme_bundle_string((char *)x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1355,7 +1355,7 @@ void os_wxMediaPasteboard::SetFilename(string x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1386,7 +1386,7 @@ Bool os_wxMediaPasteboard::ReleaseSnip(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1418,7 +1418,7 @@ void os_wxMediaPasteboard::SetModified(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1450,7 +1450,7 @@ void os_wxMediaPasteboard::SetSnipData(class wxSnip* x0, class wxBufferData* x1)
   p[1] = objscheme_bundle_wxBufferData(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1481,7 +1481,7 @@ class wxBufferData* os_wxMediaPasteboard::GetSnipData(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1517,7 +1517,7 @@ void os_wxMediaPasteboard::NeedsUpdate(class wxSnip* x0, float x1, float x2, flo
   p[4] = scheme_make_double(x4);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1549,7 +1549,7 @@ void os_wxMediaPasteboard::Resized(class wxSnip* x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1581,7 +1581,7 @@ void os_wxMediaPasteboard::SetCaretOwner(class wxSnip* x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1617,7 +1617,7 @@ Bool os_wxMediaPasteboard::ScrollTo(class wxSnip* x0, float x1, float x2, float 
   p[5] = (x5 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1648,7 +1648,7 @@ void os_wxMediaPasteboard::OnChange()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1679,7 +1679,7 @@ void os_wxMediaPasteboard::OnFocus(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1710,7 +1710,7 @@ void os_wxMediaPasteboard::OnDefaultChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1741,7 +1741,7 @@ void os_wxMediaPasteboard::OnDefaultEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1772,7 +1772,7 @@ void os_wxMediaPasteboard::OnLocalChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1803,7 +1803,7 @@ void os_wxMediaPasteboard::OnLocalEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1833,7 +1833,7 @@ void os_wxMediaPasteboard::SizeCacheInvalid()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1864,7 +1864,7 @@ void os_wxMediaPasteboard::OwnCaret(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1899,7 +1899,7 @@ void os_wxMediaPasteboard::Refresh(float x0, float x1, float x2, float x3, Bool 
   p[4] = (x4 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1930,7 +1930,7 @@ class wxCursor* os_wxMediaPasteboard::AdjustCursor(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1962,7 +1962,7 @@ void os_wxMediaPasteboard::OnChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1993,7 +1993,7 @@ void os_wxMediaPasteboard::OnEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2024,7 +2024,7 @@ void os_wxMediaPasteboard::CopySelfTo(class wxMediaBuffer* x0)
   p[0] = objscheme_bundle_wxMediaBuffer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2054,7 +2054,7 @@ class wxMediaBuffer* os_wxMediaPasteboard::CopySelf()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

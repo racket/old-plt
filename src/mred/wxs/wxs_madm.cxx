@@ -125,7 +125,7 @@ void os_wxMediaCanvas::OnChar(class wxKeyEvent& x0)
   p[0] = objscheme_bundle_wxKeyEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -156,7 +156,7 @@ void os_wxMediaCanvas::OnEvent(class wxMouseEvent& x0)
   p[0] = objscheme_bundle_wxMouseEvent(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -186,7 +186,7 @@ void os_wxMediaCanvas::OnPaint()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -218,7 +218,7 @@ Bool os_wxMediaCanvas::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
   p[1] = objscheme_bundle_wxMouseEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -251,7 +251,7 @@ Bool os_wxMediaCanvas::PreOnChar(class wxWindow* x0, class wxKeyEvent* x1)
   p[1] = objscheme_bundle_wxKeyEvent(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -284,7 +284,7 @@ void os_wxMediaCanvas::OnSize(int x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -314,7 +314,7 @@ void os_wxMediaCanvas::OnSetFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -344,7 +344,7 @@ void os_wxMediaCanvas::OnKillFocus()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -960,7 +960,7 @@ Bool os_wxMediaAdmin::DelayRefresh()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -991,7 +991,7 @@ void os_wxMediaAdmin::UpdateCursor()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1025,7 +1025,7 @@ void os_wxMediaAdmin::NeedsUpdate(float x0, float x1, float x2, float x3)
   p[3] = scheme_make_double(x3);
   
 
-  v = scheme_apply(method, 4, p);
+  v = scheme_apply_eb(method, 4, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1056,7 +1056,7 @@ void os_wxMediaAdmin::Resized(Bool x0)
   p[0] = (x0 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1087,7 +1087,7 @@ void os_wxMediaAdmin::GrabCaret(int x0)
   p[0] = scheme_make_integer(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1123,7 +1123,7 @@ Bool os_wxMediaAdmin::ScrollTo(float x0, float x1, float x2, float x3, Bool x4, 
   p[5] = scheme_make_integer(x5);
   
 
-  v = scheme_apply(method, 6, p);
+  v = scheme_apply_eb(method, 6, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1159,7 +1159,7 @@ void os_wxMediaAdmin::GetMaxView(float* x0, float* x1, float* x2, float* x3, Boo
   p[4] = (x4 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-admin%::get-max-view"", extracting return value via box"), "wx:media-admin%::get-max-view"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-admin%::get-max-view"", extracting return value via box"), "wx:media-admin%::get-max-view"", extracting return value via box");
@@ -1198,7 +1198,7 @@ void os_wxMediaAdmin::GetView(float* x0, float* x1, float* x2, float* x3, Bool x
   p[4] = (x4 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-admin%::get-view"", extracting return value via box"), "wx:media-admin%::get-view"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-admin%::get-view"", extracting return value via box"), "wx:media-admin%::get-view"", extracting return value via box");
@@ -1234,7 +1234,7 @@ class wxDC* os_wxMediaAdmin::GetDC(float* x0, float* x1)
   p[1] = ((x1) ? objscheme_box(scheme_make_double((*x1))) : scheme_null);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:media-admin%::get-dc"", extracting return value via box"), "wx:media-admin%::get-dc"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:media-admin%::get-dc"", extracting return value via box"), "wx:media-admin%::get-dc"", extracting return value via box");
@@ -1945,7 +1945,7 @@ void os_wxSnipAdmin::UpdateCursor()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -1976,7 +1976,7 @@ Bool os_wxSnipAdmin::ReleaseSnip(class wxSnip* x0)
   p[0] = objscheme_bundle_wxSnip(x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2012,7 +2012,7 @@ void os_wxSnipAdmin::NeedsUpdate(class wxSnip* x0, float x1, float x2, float x3,
   p[4] = scheme_make_double(x4);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2044,7 +2044,7 @@ Bool os_wxSnipAdmin::Recounted(class wxSnip* x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2077,7 +2077,7 @@ void os_wxSnipAdmin::Resized(class wxSnip* x0, Bool x1)
   p[1] = (x1 ? scheme_true : scheme_false);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2109,7 +2109,7 @@ void os_wxSnipAdmin::SetCaretOwner(class wxSnip* x0, int x1)
   p[1] = scheme_make_integer(x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2146,7 +2146,7 @@ Bool os_wxSnipAdmin::ScrollTo(class wxSnip* x0, float x1, float x2, float x3, fl
   p[6] = scheme_make_integer(x6);
   
 
-  v = scheme_apply(method, 7, p);
+  v = scheme_apply_eb(method, 7, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2182,7 +2182,7 @@ void os_wxSnipAdmin::GetView(float* x0, float* x1, float* x2, float* x3, class w
   p[4] = objscheme_bundle_wxSnip(x4);
   
 
-  v = scheme_apply(method, 5, p);
+  v = scheme_apply_eb(method, 5, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:snip-admin%::get-view"", extracting return value via box"), "wx:snip-admin%::get-view"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:snip-admin%::get-view"", extracting return value via box"), "wx:snip-admin%::get-view"", extracting return value via box");
@@ -2218,7 +2218,7 @@ void os_wxSnipAdmin::GetViewSize(float* x0, float* x1)
   p[1] = ((x1) ? objscheme_box(scheme_make_double((*x1))) : scheme_null);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "wx:snip-admin%::get-view-size"", extracting return value via box"), "wx:snip-admin%::get-view-size"", extracting return value via box");
   if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "wx:snip-admin%::get-view-size"", extracting return value via box"), "wx:snip-admin%::get-view-size"", extracting return value via box");
@@ -2250,7 +2250,7 @@ class wxDC* os_wxSnipAdmin::GetDC()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2281,7 +2281,7 @@ class wxMediaBuffer* os_wxSnipAdmin::GetMedia()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2762,7 +2762,7 @@ void os_wxSnipClass::WriteDone()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2793,7 +2793,7 @@ Bool os_wxSnipClass::WriteHeader(class wxMediaStreamOut& x0)
   p[0] = objscheme_bundle_wxMediaStreamOut(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2824,7 +2824,7 @@ void os_wxSnipClass::ReadDone()
   
   
 
-  v = scheme_apply(method, 0, p);
+  v = scheme_apply_eb(method, 0, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2855,7 +2855,7 @@ Bool os_wxSnipClass::ReadHeader(class wxMediaStreamIn& x0)
   p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -2887,7 +2887,7 @@ class wxSnip* os_wxSnipClass::Read(class wxMediaStreamIn& x0)
   p[0] = objscheme_bundle_wxMediaStreamIn(&x0);
   
 
-  v = scheme_apply(method, 1, p);
+  v = scheme_apply_eb(method, 1, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3443,7 +3443,7 @@ Bool os_wxKeymap::HandleMouseEvent(class wxObject* x0, class wxMouseEvent& x1)
   p[1] = objscheme_bundle_wxMouseEvent(&x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
@@ -3476,7 +3476,7 @@ Bool os_wxKeymap::HandleKeyEvent(class wxObject* x0, class wxKeyEvent& x1)
   p[1] = objscheme_bundle_wxKeyEvent(&x1);
   
 
-  v = scheme_apply(method, 2, p);
+  v = scheme_apply_eb(method, 2, p);
   
   
   COPY_JMPBUF(scheme_error_buf, savebuf);

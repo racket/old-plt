@@ -1841,7 +1841,6 @@ void wxWindow::WindowEventHandler(Widget w,
 	if (xev->xmotion.is_hint == NotifyHint) {
 	    // hints need a XQueryPointer
 	    Window root, child;
-	    printf("hint\n");
 	    XQueryPointer(XtDisplay(w), XtWindow(w), &root, &child,
 			  &(xev->xmotion.x_root), &(xev->xmotion.y_root),
 			  &(xev->xmotion.x),      &(xev->xmotion.y),

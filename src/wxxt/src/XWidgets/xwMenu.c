@@ -426,7 +426,7 @@ static void Start(w, ev, params, num_params)
 
     if (!mw->menu.grabbed) {
       XtGrabPointer((Widget)mw, FALSE,
-		    (ButtonMotionMask | PointerMotionHintMask |
+		    (ButtonMotionMask | PointerMotionMask |
 		     ButtonReleaseMask | ButtonPressMask),
 		    GrabModeAsync, GrabModeAsync,
 		    None, mw->menu.cursor, 
@@ -458,11 +458,11 @@ static void Drag(w, event, params, num_params)
     HandleMotionEvent(mw, ev);
     XSync(XtDisplay(mw), FALSE);
     /* allow motion events to be generated again */
-    if (ev->is_hint
-	&& XQueryPointer(XtDisplay(mw), ev->window,
-			 &ev->root, &ev->subwindow,
-			 &ev->x_root, &ev->y_root,
-			 &ev->x, &ev->y, &ev->state)
+    if ((!ev->is_hint
+	 || XQueryPointer(XtDisplay(mw), ev->window,
+			  &ev->root, &ev->subwindow,
+			  &ev->x_root, &ev->y_root,
+			  &ev->x, &ev->y, &ev->state))
 	&& ev->state == state
 	&& (ev->x_root != x || ev->y_root != y)) {
       HandleMotionEvent(mw, ev);
@@ -1237,7 +1237,7 @@ static void MakeNewMenuWindow(MenuWidget mw, menu_state *prev, menu_item *item,
     xswa.override_redirect = TRUE;
     xswa.background_pixel  = mw->core.background_pixel;
     xswa.event_mask        = ExposureMask | ButtonMotionMask | 
-	                     PointerMotionHintMask | ButtonReleaseMask |
+	                     PointerMotionMask | ButtonReleaseMask |
 	                     ButtonPressMask;
     xswa.cursor            = mw->menu.cursor;
     mask                   = CWSaveUnder | CWOverrideRedirect | CWBackPixel |

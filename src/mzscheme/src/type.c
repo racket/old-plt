@@ -507,6 +507,8 @@ void scheme_register_traversers(void)
 
   GC_REG_TRAV(scheme_special_comment_type, small_object);
 
+  GC_REG_TRAV(scheme_progress_evt_type, twoptr_obj);
+
   GC_REG_TRAV(scheme_thread_cell_type, iptr_obj);
 }
 

@@ -7060,7 +7060,6 @@ static void register_traversers(void)
 #endif
 
   GC_REG_TRAV(scheme_subprocess_type, mark_subprocess);
-  GC_REG_TRAV(scheme_progress_evt_type, twoptr_obj);
   GC_REG_TRAV(scheme_write_evt_type, mark_read_write_evt);
 }
 

@@ -1270,7 +1270,7 @@ int input_port_MARK(void *p) {
   gcMARK(ip->output_half);
   gcMARK(ip->special);
   gcMARK(ip->ungotten_special);
-  gcMARK(ip->consumed_evt);
+  gcMARK(ip->progress_evt);
   gcMARK(ip->input_lock);
   gcMARK(ip->input_giveup);
 
@@ -1291,7 +1291,7 @@ int input_port_FIXUP(void *p) {
   gcFIXUP(ip->output_half);
   gcFIXUP(ip->special);
   gcFIXUP(ip->ungotten_special);
-  gcFIXUP(ip->consumed_evt);
+  gcFIXUP(ip->progress_evt);
   gcFIXUP(ip->input_lock);
   gcFIXUP(ip->input_giveup);
 
@@ -2605,7 +2605,7 @@ int mark_user_input_MARK(void *p) {
 
   gcMARK(uip->read_proc);
   gcMARK(uip->peek_proc);
-  gcMARK(uip->consumed_evt_proc);
+  gcMARK(uip->progress_evt_proc);
   gcMARK(uip->peeked_read_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);
@@ -2619,7 +2619,7 @@ int mark_user_input_FIXUP(void *p) {
 
   gcFIXUP(uip->read_proc);
   gcFIXUP(uip->peek_proc);
-  gcFIXUP(uip->consumed_evt_proc);
+  gcFIXUP(uip->progress_evt_proc);
   gcFIXUP(uip->peeked_read_proc);
   gcFIXUP(uip->close_proc);
   gcFIXUP(uip->reuse_str);

@@ -475,7 +475,7 @@ input_port {
   gcMARK(ip->output_half);
   gcMARK(ip->special);
   gcMARK(ip->ungotten_special);
-  gcMARK(ip->consumed_evt);
+  gcMARK(ip->progress_evt);
   gcMARK(ip->input_lock);
   gcMARK(ip->input_giveup);
 
@@ -1032,7 +1032,7 @@ mark_user_input {
 
   gcMARK(uip->read_proc);
   gcMARK(uip->peek_proc);
-  gcMARK(uip->consumed_evt_proc);
+  gcMARK(uip->progress_evt_proc);
   gcMARK(uip->peeked_read_proc);
   gcMARK(uip->close_proc);
   gcMARK(uip->reuse_str);

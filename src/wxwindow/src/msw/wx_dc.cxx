@@ -699,9 +699,7 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
     /* Convention across platforms: line includes pixel on endpoint */
     pw = current_pen->GetWidth();
     forward = 0;
-    if (!pw)
-      forward = 1;
-    else if (pw == 1) {
+    if (pw <= 1) {
       if (current_pen->GetCap() != wxCAP_BUTT) {
 	/* Pen size 1: no need to forward under NT */
 	forward = !is_nt();

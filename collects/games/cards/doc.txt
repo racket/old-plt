@@ -146,6 +146,9 @@ Table methods: [in addition to standard frame% methods]
         of the given card; an exception is raised if the card is not
         on the table.
 
+> all-cards :: (send t all-cards) - returns a list of all cards on the
+        table in stacking order from front to back
+
 > table-width :: (send t table-width) - returns the width of the table
         in pixels.
 

@@ -886,9 +886,10 @@
   (lambda (write? . args)
     (when write?
       (write-log 'separation-newline)
-      (write-log "l.")
-      (write-log *input-line-no*)
-      (write-log #\space)
+      (when (> *input-line-no* 0)
+        (write-log "l.")
+        (write-log *input-line-no*)
+        (write-log #\space))
       (for-each write-log args)
       (write-log 'separation-newline))))
 
@@ -3953,7 +3954,9 @@
 
 (define do-bye
   (lambda ()
-    (unless (null? *tex-if-stack*) (terror 'do-bye "Incomplete \\if"))
+    (unless (null? *tex-if-stack*)
+      (let ((n (length *tex-if-stack*)))
+        (trace-if #t "Found " n " incomplete \\if" (if (> n 1) "s" ""))))
     (unless (null? *tex-env*)
       (trace-if
         #t
@@ -6953,7 +6956,11 @@
      ((and (inside-false-world?) (not (if-aware-ctl-seq? z))) #f)
      ((string=? z "\\enddocument") (probably-latex) ':encountered-bye)
      ((string=? z "\\bye") ':encountered-bye)
-     ((string=? z "\\endinput") ':encountered-endinput)
+     ((string=? z "\\endinput")
+      (let ((next-token (get-token)))
+        (when (and (not (eof-object? next-token)) (string=? next-token "\\fi"))
+          (do-fi)))
+      ':encountered-endinput)
      ((find-count z) (do-count= z #f))
      ((find-toks z) (do-toks= z #f))
      ((find-dimen z) (do-dimen= z #f))
@@ -7044,9 +7051,7 @@
                     "epsf"
                     "epsf.tex"
                     "supp-pdf"
-                    "supp-pdf.tex"
-                    "tex2page"
-                    "tex2page.tex")))
+                    "supp-pdf.tex")))
             #f)
            ((ormap (lambda (z) (string=? f z)) '("texinfo" "texinfo.tex"))
             (let ((txi2p (actual-tex-filename "texinfo2p" #f)))

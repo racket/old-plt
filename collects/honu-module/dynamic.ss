@@ -189,7 +189,7 @@
 	 (start-expr stx))
 
        (define (parse-expr stx)
-	 (let group ([seq (parse-expr-seq stx)])
+         (let group ([seq (parse-expr-seq stx)])
 	   ;; seq is a list that mixes exprs with ops.
 	   ;; Find leftmost oper with maximal precedence
 	   (if (null? (cdr seq))

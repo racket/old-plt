@@ -451,9 +451,10 @@ Scheme_Object *scheme_make_integer_value_from_long_long(mzlonglong i)
   return scheme_make_integer_value(i);
 #else
   if (i < 0) {
-    if (!(((i >> 32) & 0xFFFFFFFF) ^ 0xFFFFFFFF))
+    if (!(((i >> 32) & 0xFFFFFFFF) ^ 0xFFFFFFFF)
+	&& (i & 0x80000000)) {
       return scheme_make_integer_value((long)i);
-    else
+    } else
       return scheme_make_bignum_from_long_long(i);
   } else {
     return scheme_make_integer_value_from_unsigned_long_long(i);

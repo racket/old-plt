@@ -1599,10 +1599,21 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
       return scheme_make_integer_value_from_unsigned(((unsigned long *)str)[0]);
     break;
 #else
+# ifndef NO_LONG_LONG_TYPE
+    {
+      mzlonglong lv;
+      memcpy(&lv, str, sizeof(mzlonglong));
+      if (sgned)
+	return scheme_make_integer_value_from_long_long(lv);
+      else
+	return scheme_make_integer_value_from_unsigned_long_long((umzlonglong)lv);
+      break;
+    }
+# else
     {
       Scheme_Object *h, *l, *a[2];
 
-#if MZ_IS_BIG_ENDIAN
+#  if MZ_IS_BIG_ENDIAN
       /* make little-endian at int level: */
       {
 	int v;
@@ -1611,7 +1622,7 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
 	buf[1] = v;
 	str = (char *)buf;
       }
-#endif
+#  endif
 
       if (sgned)
 	h = scheme_make_integer_value(((int *)str)[1]);
@@ -1623,6 +1634,7 @@ static Scheme_Object *bytes_to_integer (int argc, Scheme_Object *argv[])
       h = scheme_bitwise_shift(2, a);
       return scheme_bin_plus(h, l);
     }
+# endif
 #endif
     break;
   }
@@ -1638,6 +1650,9 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
   char *str;
   int size, sgned;
   long val;
+#if !defined(NO_LONG_LONG_TYPE) && !defined(SIXTY_FOUR_BIT_INTEGERS)
+  mzlonglong llval;
+#endif
   int bigend = MZ_IS_BIG_ENDIAN, bad;
 
   n = argv[0];
@@ -1695,6 +1710,12 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
     else
       bad = !scheme_get_unsigned_int_val(n, (unsigned long *)&val);
 #else
+# ifndef NO_LONG_LONG_TYPE
+    if (sgned)
+      bad = !scheme_get_long_long_val(n, &llval);
+    else
+      bad = !scheme_get_unsigned_long_long_val(n, (umzlonglong *)&llval);
+# else
     if (!num_limits[MZ_U8HI]) {
       Scheme_Object *a[2], *v;
 
@@ -1720,6 +1741,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
 	     || scheme_bin_lt(num_limits[MZ_U8HI], n));
 
     val = 0;
+# endif
 #endif
   }
 
@@ -1764,6 +1786,9 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
 #ifdef SIXTY_FOUR_BIT_INTEGERS
     *(long *)str = val;
 #else
+# ifndef NO_LONG_LONG_TYPE
+    memcpy(str, &llval, sizeof(mzlonglong));
+# else
     {
       Scheme_Object *hi, *lo, *a[2];
       unsigned long ul;
@@ -1795,6 +1820,7 @@ static Scheme_Object *integer_to_bytes(int argc, Scheme_Object *argv[])
 #endif
 
     }
+# endif
 #endif
     break;
   }

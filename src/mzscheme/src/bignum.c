@@ -190,6 +190,8 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
   return (Scheme_Object*) mzALIAS r;
 }
 
+#ifndef NO_LONG_LONG_TYPE
+
 Scheme_Object *scheme_make_bignum_from_long_long(mzlonglong v)
 {
 #if defined(SIXTY_FOUR_BIT_INTEGERS)
@@ -281,6 +283,8 @@ Scheme_Object *scheme_make_bignum_from_unsigned_long_long(umzlonglong v)
 #endif
 }
 
+#endif
+
 /*
   Should only succeed if the bignum can fit into a signed long.
   This means that the bignum must have length 0 or 1 and the top bit
@@ -340,15 +344,18 @@ int scheme_bignum_get_unsigned_int_val(const Scheme_Object *o, unsigned long *v)
 
 int scheme_bignum_get_long_long_val(const Scheme_Object *o, mzlonglong *v)
 {
+#ifdef NO_LONG_LONG_TYPE
+  return scheme_bignum_get_int_val(o, v);
+#else
   if (SCHEME_BIGLEN(o) > MAX_BN_SIZE_FOR_LL) { /* won't fit in a signed long long */
     return 0;
   } else if (SCHEME_BIGLEN(o) == 0) {
     *v = 0;
     return 1;
   } else if (SCHEME_BIGDIG(o)[MAX_BN_SIZE_FOR_LL - 1] == FIRST_BIT_MASK 
-#ifndef USE_LONG_LONG_FOR_BIGDIG
+# ifndef USE_LONG_LONG_FOR_BIGDIG
 	     && !SCHEME_BIGDIG(o)[0]
-#endif
+# endif
 	     && !SCHEME_BIGPOS(o)) {
     /* Special case for the most negative number representable in a signed long long */
     mzlonglong v2;
@@ -370,10 +377,14 @@ int scheme_bignum_get_long_long_val(const Scheme_Object *o, mzlonglong *v)
     *v = v2;
     return 1;
   }
+#endif
 }
 
 int scheme_bignum_get_unsigned_long_long_val(const Scheme_Object *o, umzlonglong *v)
 {
+#ifdef NO_LONG_LONG_TYPE
+  return scheme_bignum_get_unsigned_int_val(o, v);
+#else
   if ((SCHEME_BIGLEN(o) > MAX_BN_SIZE_FOR_LL) || !SCHEME_BIGPOS(o))
     /* Won't fit into word, or not positive */
     return 0;
@@ -389,6 +400,7 @@ int scheme_bignum_get_unsigned_long_long_val(const Scheme_Object *o, umzlonglong
     *v = v2;
     return 1;
   }
+#endif
 }
 
 /* If the bignum fits into a scheme integer, return that instead */

@@ -55,6 +55,10 @@ static Scheme_Object *top_level_require_resolve(Scheme_Object *data, Resolve_Inf
 static Scheme_Object *write_module(Scheme_Object *obj);
 static Scheme_Object *read_module(Scheme_Object *obj);
 
+static void eval_defmacro(Scheme_Object *names, int count,
+			  Scheme_Object *expr, Scheme_Comp_Env *env,
+			  int let_depth, Scheme_Hash_Table *syntax);
+
 #define cons scheme_make_pair
 
 static Scheme_Object *kernel_symbol;
@@ -71,7 +75,7 @@ static Scheme_Object *all_from_except_symbol;
 
 static Scheme_Object *begin_stx;
 static Scheme_Object *define_values_stx;
-static Scheme_Object *define_syntax_stx;
+static Scheme_Object *define_syntaxes_stx;
 static Scheme_Object *require_stx;
 static Scheme_Object *require_for_syntax_stx;
 static Scheme_Object *provide_stx;
@@ -257,7 +261,7 @@ void scheme_finish_kernel(Scheme_Env *env)
 
   REGISTER_SO(begin_stx);
   REGISTER_SO(define_values_stx);
-  REGISTER_SO(define_syntax_stx);
+  REGISTER_SO(define_syntaxes_stx);
   REGISTER_SO(require_stx);
   REGISTER_SO(require_for_syntax_stx);
   REGISTER_SO(provide_stx);
@@ -268,7 +272,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   w = scheme_sys_wraps0;
   begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w, 0, 0);
   define_values_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-values"), scheme_false, w, 0, 0);
-  define_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-syntax"), scheme_false, w, 0, 0);
+  define_syntaxes_stx = scheme_datum_to_syntax(scheme_intern_symbol("define-syntaxes"), scheme_false, w, 0, 0);
   require_stx = scheme_datum_to_syntax(scheme_intern_symbol("require"), scheme_false, w, 0, 0);
   require_for_syntax_stx = scheme_datum_to_syntax(scheme_intern_symbol("require-for-syntax"), scheme_false, w, 0, 0);
   provide_stx = scheme_datum_to_syntax(scheme_intern_symbol("provide"), scheme_false, w, 0, 0);
@@ -910,7 +914,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 			    Scheme_Object *syntax_idx)
 {
   Scheme_Env *menv;
-  Scheme_Object *body, *l;
+  Scheme_Object *body, *l, *names;
 
   if (SAME_OBJ(m, kernel))
     return;
@@ -989,15 +993,19 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   /* Lazily start the module. Map all syntax names to a lazy marker: */
   body = m->et_body;
   for (; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
-    scheme_add_to_table(menv->syntax, 
-			(const char *)SCHEME_VEC_ELS(SCHEME_CAR(body))[0],
-			menv, 0);
+    names = SCHEME_VEC_ELS(SCHEME_CAR(body))[0];
+    while (SCHEME_PAIRP(names)) {
+      scheme_add_to_table(menv->syntax, 
+			  (const char *)SCHEME_CAR(names),
+			  menv, 0);
+      names= SCHEME_CDR(names);
+    }
   }
 }
 
 static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env)
 {
-  Scheme_Object *l, *body, *e, *macro, *name;
+  Scheme_Object *l, *body, *e, *names;
   Scheme_Env *exp_env;
   Scheme_Env *menv;
   int let_depth;
@@ -1021,26 +1029,21 @@ static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *synta
   /* Just in case: set syntax to #f to avoid cyclic forcing of lazy syntax. */
   for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
     e = SCHEME_CAR(body);
-    name = SCHEME_VEC_ELS(e)[0];
-    scheme_add_to_table(syntax, (const char *)name, scheme_false, 0);
+    names = SCHEME_VEC_ELS(e)[0];
+    while (SCHEME_PAIRP(names)) {
+      scheme_add_to_table(syntax, (const char *)SCHEME_CAR(names), scheme_false, 0);
+      names = SCHEME_CDR(names);
+    }
   }
 
   for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
     e = SCHEME_CAR(body);
 
-    name = SCHEME_VEC_ELS(e)[0];
+    names = SCHEME_VEC_ELS(e)[0];
     let_depth = SCHEME_INT_VAL(SCHEME_VEC_ELS(e)[2]);
     e = SCHEME_VEC_ELS(e)[1];
 
-    e = scheme_link_expr(e, exp_env);
-    e = scheme_eval_linked_expr(e, let_depth);
-
-    macro = scheme_alloc_stubborn_small_object();
-    macro->type = scheme_macro_type;
-    SCHEME_PTR_VAL(macro) = e;
-    scheme_end_stubborn_change((void *)macro);
-
-    scheme_add_to_table(syntax, (const char *)name, macro, 0);
+    eval_defmacro(names, scheme_proper_list_length(names), e, exp_env->init, let_depth, syntax);
   }
 }
 
@@ -1168,6 +1171,71 @@ void scheme_finish_primitive_module(Scheme_Env *env)
 Scheme_Bucket *scheme_module_bucket(Scheme_Object *mod, Scheme_Object *var, Scheme_Env *env)
 {
   return NULL;
+}
+
+/**********************************************************************/
+/*                          define-syntaxes                           */
+/**********************************************************************/
+
+static void eval_defmacro(Scheme_Object *names, int count,
+			  Scheme_Object *expr, Scheme_Comp_Env *env,
+			  int let_depth, Scheme_Hash_Table *syntax)
+{
+  Scheme_Object *macro, *vals, *name;
+  int i, g;
+
+  expr = scheme_link_expr(expr, env->genv);
+	
+  scheme_on_next_top(env, NULL, scheme_false);
+  vals = scheme_eval_linked_expr_multi(expr, let_depth);
+  
+  if (SAME_OBJ(vals, SCHEME_MULTIPLE_VALUES)) {
+    g = scheme_current_thread->ku.multiple.count;
+    if (count == g) {
+      Scheme_Object **values;
+
+      values = scheme_current_thread->ku.multiple.array;
+      for (i = 0; i < g; i++, names = SCHEME_CDR(names)) {
+	name = SCHEME_CAR(names);
+
+	macro = scheme_alloc_small_object();
+	macro->type = scheme_macro_type;
+	SCHEME_PTR_VAL(macro) = values[i];
+	
+	scheme_add_to_table(syntax, (const char *)name, macro, 0);
+      }
+	
+      return;
+    }
+  } else if (SCHEME_PAIRP(names) && SCHEME_NULLP(SCHEME_CDR(names))) {
+    name = SCHEME_CAR(names);
+
+    macro = scheme_alloc_small_object();
+    macro->type = scheme_macro_type;
+    SCHEME_PTR_VAL(macro) = vals;
+
+    scheme_add_to_table(syntax, (const char *)name, macro, 0);
+      
+    return;
+  } else
+    g = 1;
+  
+  if (count)
+    name = SCHEME_CAR(names);
+  else
+    name = NULL;
+  
+  {
+    const char *symname;
+    symname = (name ? scheme_symbol_name(name) : "");
+    scheme_wrong_return_arity("define-syntaxes",
+			      count, g,
+			      (g == 1) ? (Scheme_Object **)vals : scheme_current_thread->ku.multiple.array,
+			      "%s%s%s",
+			      name ? "defining \"" : "0 names",
+			      symname,
+			      name ? ((count == 1) ? "\"" : "\", ...") : "");
+  }  
 }
 
 /**********************************************************************/
@@ -1446,6 +1514,11 @@ static void check_require_name(Scheme_Object *name, Scheme_Object *nominal_modid
   scheme_add_to_table(required, (const char *)name, vec, 0);
 }
 
+static Scheme_Object *stx_sym(Scheme_Object *l, Scheme_Object *form)
+{
+  return SCHEME_STX_SYM(l);
+}
+
 static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env, 
 				      Scheme_Compile_Info *rec, int drec,
 				      int depth, Scheme_Object *boundname)
@@ -1484,7 +1557,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_add_local_syntax(9, xenv);
     scheme_set_local_syntax(0, begin_stx, stop, xenv);
     scheme_set_local_syntax(1, define_values_stx, stop, xenv);
-    scheme_set_local_syntax(2, define_syntax_stx, stop, xenv);
+    scheme_set_local_syntax(2, define_syntaxes_stx, stop, xenv);
     scheme_set_local_syntax(3, require_stx, stop, xenv);
     scheme_set_local_syntax(4, require_for_syntax_stx, stop, xenv);
     scheme_set_local_syntax(5, provide_stx, stop, xenv);
@@ -1598,7 +1671,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  Scheme_Object *vars, *val;
 
 	  /* Create top-level vars */
-	  scheme_define_values_parse(e, &vars, &val, env);
+	  scheme_define_parse(e, &vars, &val, 0, env);
 
 	  while (SCHEME_STX_PAIRP(vars)) {
 	    Scheme_Object *name;
@@ -1633,31 +1706,44 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 	
 	  normal = 1;
-	} else if (scheme_stx_module_eq(define_syntax_stx, fst, 0)) {
-	  /************ define-syntax *************/
+	} else if (scheme_stx_module_eq(define_syntaxes_stx, fst, 0)) {
+	  /************ define-syntaxes *************/
 	  /* Define the macro: */
 	  Scheme_Compile_Info mrec;
-	  Scheme_Object *name, *code, *m, *macro, *vec;
+	  Scheme_Object *names, *l, *code, *m, *vec, *boundname;
+	  int count = 0;
 
-	  scheme_defmacro_parse(e, &name, &code, env);
+	  scheme_define_parse(e, &names, &code, 1, env);
 
-	  name = SCHEME_STX_SYM(name);
+	  if (SCHEME_STX_PAIRP(names) && SCHEME_STX_NULLP(SCHEME_STX_CDR(names)))
+	    boundname = SCHEME_STX_CAR(names);
+	  else
+	    boundname = scheme_false;
+	  
+	  names = scheme_named_map_1(NULL, stx_sym, names, NULL);
 
-	  if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
-	    scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
-	    return NULL;
-	  }
+	  for (l = names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	    Scheme_Object *name;
+	    name = SCHEME_CAR(l);
 
-	  /* Check that it's not yet defined: */
-	  if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
-	    scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
-	    return NULL;
-	  }
+	    if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
+	      scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
+	      return NULL;
+	    }
+	    
+	    /* Check that it's not yet defined: */
+	    if (scheme_lookup_in_table(env->genv->toplevel, (const char *)name)) {
+	      scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
+	      return NULL;
+	    }
 
-	  /* Not required: */
-	  if (scheme_lookup_in_table(required, (const char *)name)) {
-	    scheme_wrong_syntax("module", name, e, "identifier is already imported");
-	    return NULL;
+	    /* Not required: */
+	    if (scheme_lookup_in_table(required, (const char *)name)) {
+	      scheme_wrong_syntax("module", name, e, "identifier is already imported");
+	      return NULL;
+	    }
+
+	    count++;
 	  }
 
 	  mrec.dont_mark_local_use = 0;
@@ -1670,39 +1756,30 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 
 	  if (!rec)
-	    code = scheme_expand_expr(code, eenv, -1, name);
+	    code = scheme_expand_expr(code, eenv, -1, boundname);
 	  m = scheme_compile_expr(code, eenv, &mrec, 0);
 	  m = scheme_resolve_expr(m, scheme_resolve_info_create());
 
-	  /* Add code with name and lexical depth to exp-time body: */
+	  /* Add code with names and lexical depth to exp-time body: */
 	  vec = scheme_make_vector(3, NULL);
-	  SCHEME_VEC_ELS(vec)[0] = name;
+	  SCHEME_VEC_ELS(vec)[0] = names;
 	  SCHEME_VEC_ELS(vec)[1] = m;
 	  SCHEME_VEC_ELS(vec)[2] = scheme_make_integer(mrec.max_let_depth);
 	  exp_body = scheme_make_pair(vec, exp_body);
 	
-	  m = scheme_link_expr(m, eenv->genv);
-	
-	  scheme_on_next_top(env, NULL, scheme_false);
-	  m = scheme_eval_linked_expr(m, mrec.max_let_depth);
+	  eval_defmacro(names, count, m, eenv, mrec.max_let_depth, env->genv->syntax);
 
-	  /* Add macro to environment: */
-	  macro = scheme_alloc_stubborn_small_object();
-	  macro->type = scheme_macro_type;
-	  SCHEME_PTR_VAL(macro) = m;
-	  scheme_end_stubborn_change((void *)macro);
-	
-	  scheme_add_to_table(env->genv->syntax, (const char *)name, macro, 0);
-
-	  /* Add a renaming: */
-	  scheme_extend_module_rename(rn, self_modidx, name, name);
+	  /* Add a renaming for each name: */
+	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	    scheme_extend_module_rename(rn, self_modidx, SCHEME_CAR(l), SCHEME_CAR(l));
+	  }
 
 	  if (rec)
 	    e = scheme_compiled_void();
 	  else {
 	    m = SCHEME_STX_CDR(e);
 	    m = SCHEME_STX_CAR(m);
-	    m = scheme_make_pair(define_syntax_stx,
+	    m = scheme_make_pair(define_syntaxes_stx,
 				 scheme_make_pair(m, scheme_make_pair(code, scheme_null)));
 	    e = scheme_datum_to_syntax(m, e, e, 0, 1);
 	  }
@@ -1961,7 +2038,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
       }
     }
 
-    /* Walk through requires, check for re-provideing: */
+    /* Walk through requires, check for re-providing: */
     bs = required->buckets;
     for (i = required->size; i--; ) {
       b = bs[i];
@@ -2007,7 +2084,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
-  /* Re-provideing all of the kernel without prefixing? */
+  /* Re-providing all of the kernel without prefixing? */
   if (reprovide_kernel) {
     if ((reprovide_kernel == (kernel->num_provides - 1))
 	&& exclude_hint) {

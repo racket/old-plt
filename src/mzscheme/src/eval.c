@@ -3430,6 +3430,11 @@ Scheme_Object *scheme_eval_linked_expr(Scheme_Object *obj, int let_depth)
   return _eval(obj, NULL, 1, let_depth, 0, 1);
 }
 
+Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *obj, int let_depth)
+{
+  return _eval(obj, NULL, 1, let_depth, 1, 1);
+}
+
 static void *expand_k(void)
 {
   Scheme_Thread *p = scheme_current_thread;

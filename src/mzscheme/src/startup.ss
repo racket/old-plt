@@ -112,7 +112,7 @@
 (module #%qq-and-or #%kernel
   (require-for-syntax #%stx #%kernel)
 
-  (define-syntax quasiquote
+  (define-syntaxes (quasiquote)
     (lambda (in-form)
       (if (identifier? in-form)
 	  (raise-syntax-error 'quasiquote "bad syntax" in-form))
@@ -255,7 +255,7 @@
 	  form)
 	 in-form))))
 
-  (define-syntax and 
+  (define-syntaxes (and)
     (lambda (x)
       (if (not (stx-list? x))
 	  (raise-syntax-error 'and "bad syntax" x))
@@ -275,7 +275,7 @@
 		       (quote-syntax #f))
 		 x))))))
 
-  (define-syntax or
+  (define-syntaxes (or)
     (lambda (x)
       (if (identifier? x)
 	  (raise-syntax-error 'or "bad syntax" x))
@@ -313,7 +313,7 @@
 (module #%cond #%kernel
   (require-for-syntax #%stx #%qq-and-or #%kernel)
 
-  (define-syntax cond
+  (define-syntaxes (cond)
     (lambda (in-form)
       (if (identifier? in-form)
 	  (raise-syntax-error 'cond "bad syntax" in-form))
@@ -376,55 +376,59 @@
 (module #%define-et-al #%kernel
   (require-for-syntax #%kernel #%stx #%qq-and-or #%cond)
 
-  (define-syntax define
-    (lambda (code)
-      (if (or (identifier? code)
-	      (not (stx-pair? (stx-cdr code))))
-	  (raise-syntax-error 'define "bad syntax" code))
-      (let ([body (stx-cdr code)])
-	(if (stx-null? body)
-	    (raise-syntax-error
-	     'define
-	     "bad syntax (no definition body)"
-	     code))
-	(let ([first (stx-car body)]) 
-	  (cond
-	   [(identifier? first)
-	    (if (and (stx-pair? (stx-cdr body))
-		     (stx-null? (stx-cdr (stx-cdr body))))
-		(datum->syntax-object
-		 (quote-syntax here)
-		 `(define-values (,first) ,@(stx->list (stx-cdr body)))
-		 code)
-		(raise-syntax-error
-		 'define
-		 "bad syntax (zero or multiple expressions after identifier)"
-		 code))]
-	   [(stx-pair? first)
-	    (let ([bad-symbol  (lambda (s) (raise-syntax-error 'define
-							       "bad identifier"
-							       code
-							       s))])
-	      (let loop ([l first])
-		(cond
-		 [(stx-null? l) #f]
-		 [(stx-pair? l) 
-		  (if (identifier? (stx-car l))
-		      (loop (stx-cdr l))
-		      (bad-symbol (stx-car l)))]
-		 [(identifier? l) #f]
-		 [else (bad-symbol l)])))
-	    (datum->syntax-object
-	     (quote-syntax here)
-	     `(define-values (,(stx-car first)) 
-		(lambda ,(stx-cdr first) ,@(stx->list (stx-cdr body))))
-	     code)]
-	   [else
-	    (raise-syntax-error
-	     'define
-	     "not an identifier"
-	     code
-	     first)])))))
+  (define-syntaxes (define define-syntax)
+    (let ([mk-define
+	   (lambda (who base)
+	     (lambda (code)
+	       (if (or (identifier? code)
+		       (not (stx-pair? (stx-cdr code))))
+		   (raise-syntax-error who "bad syntax" code))
+	       (let ([body (stx-cdr code)])
+		 (if (stx-null? body)
+		     (raise-syntax-error
+		      who
+		      "bad syntax (no definition body)"
+		      code))
+		 (let ([first (stx-car body)]) 
+		   (cond
+		    [(identifier? first)
+		     (if (and (stx-pair? (stx-cdr body))
+			      (stx-null? (stx-cdr (stx-cdr body))))
+			 (datum->syntax-object
+			  (quote-syntax here)
+			  `(,base (,first) ,@(stx->list (stx-cdr body)))
+			  code)
+			 (raise-syntax-error
+			  who
+			  "bad syntax (zero or multiple expressions after identifier)"
+			  code))]
+		    [(stx-pair? first)
+		     (let ([bad-symbol  (lambda (s) (raise-syntax-error who
+									"bad identifier"
+									code
+									s))])
+		       (let loop ([l first])
+			 (cond
+			  [(stx-null? l) #f]
+			  [(stx-pair? l) 
+			   (if (identifier? (stx-car l))
+			       (loop (stx-cdr l))
+			       (bad-symbol (stx-car l)))]
+			  [(identifier? l) #f]
+			  [else (bad-symbol l)])))
+		     (datum->syntax-object
+		      (quote-syntax here)
+		      `(,base (,(stx-car first)) 
+			 (lambda ,(stx-cdr first) ,@(stx->list (stx-cdr body))))
+		      code)]
+		    [else
+		     (raise-syntax-error
+		      who
+		      "not an identifier"
+		      code
+		      first)])))))])
+      (values (mk-define 'define (quote-syntax define-values))
+	      (mk-define 'define-syntax (quote-syntax define-syntaxes)))))
 
   (define-syntax when
     (lambda (x)
@@ -567,7 +571,7 @@
 		       core)))
 	     stx))))))
 
-  (provide define when unless let/ec define-struct))
+  (provide define define-syntax when unless let/ec define-struct))
 
 ;;----------------------------------------------------------------------
 ;; #%small-scheme: assembles all basic forms we have so far
@@ -1331,7 +1335,7 @@
 ;; syntax/loc
 
 (module #%stxloc #%kernel
-  (require #%stxcase)
+  (require #%stxcase #%define-et-al)
   (require-for-syntax #%kernel #%stxcase)
 
   ;; Regular syntax-case

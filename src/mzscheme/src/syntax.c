@@ -201,7 +201,7 @@ scheme_init_syntax (Scheme_Env *env)
   with_continuation_mark_symbol = scheme_intern_symbol("with-continuation-mark");
   
   lexical_syntax_symbol = scheme_intern_symbol("quote-syntax");
-  define_macro_symbol = scheme_intern_symbol("define-syntax");
+  define_macro_symbol = scheme_intern_symbol("define-syntaxes");
   let_macro_symbol = scheme_intern_symbol("letrec-syntax");
 
   scheme_register_syntax(DEFINE_VALUES_EXPD, define_values_resolve, 
@@ -320,7 +320,7 @@ scheme_init_syntax (Scheme_Env *env)
 			    scheme_make_compiled_syntax(lexical_syntax_syntax, 
 							lexical_syntax_expand), 
 			    env);
-  scheme_add_global_keyword("define-syntax", scheme_defmacro_syntax, env);
+  scheme_add_global_keyword("define-syntaxes", scheme_defmacro_syntax, env);
   scheme_add_global_keyword("letrec-syntax", 
 			    scheme_make_compiled_syntax(letmacro_syntax, 
 							letmacro_expand), 
@@ -347,7 +347,7 @@ scheme_make_compiled_syntax(Scheme_Syntax *proc,
   return syntax;
 }
 
-static int check_form(char *name, Scheme_Object *form)
+static int check_form(const char *name, Scheme_Object *form)
 {
   int i;
   Scheme_Object *all = form;
@@ -489,16 +489,18 @@ void scheme_set_global_bucket(char *who, Scheme_Bucket *b, Scheme_Object *val,
 }
 
 static Scheme_Object *
-define_values_execute(Scheme_Object *data)
+define_execute(Scheme_Object *vars, Scheme_Object *vals, 
+	       int defmacro, Scheme_Env *dm_home)
 {
-  Scheme_Object *vars, *vals, *l, *name;
+  Scheme_Object *l, *name, *macro;
   int i, g, show_any;
   Scheme_Bucket *b;
 
-  vars = SCHEME_CAR(data);
-  vals = SCHEME_CDR(data);
+  if (defmacro)
+    vals = scheme_eval_linked_expr_multi(vals, 0);
+  else
+    vals = _scheme_eval_linked_expr_multi(vals);
 
-  vals = _scheme_eval_linked_expr_multi(vals);
   if (SAME_OBJ(vals, SCHEME_MULTIPLE_VALUES)) {
     Scheme_Object *v, **values;
 
@@ -509,16 +511,34 @@ define_values_execute(Scheme_Object *data)
       values = scheme_current_thread->ku.multiple.array;
       for (i = 0; i < g; i++, vars = SCHEME_CDR(vars)) {
 	b = (Scheme_Bucket *)SCHEME_CAR(vars);
-	scheme_set_global_bucket("define-values", b, values[i], 1);
-	scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 1);
+	if (defmacro) {
+	  macro = scheme_alloc_small_object();
+	  macro->type = scheme_macro_type;
+	  SCHEME_PTR_VAL(macro) = values[i];
+
+	  scheme_set_global_bucket("define-syntaxes", b, macro, 1);
+	  scheme_shadow(dm_home, (Scheme_Object *)b->key, 0);
+	} else {
+	  scheme_set_global_bucket("define-values", b, values[i], 1);
+	  scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 1);
+	}
       }
 	
       return scheme_void;
     }
   } else if (SCHEME_PAIRP(vars) && SCHEME_NULLP(SCHEME_CDR(vars))) {
     b = (Scheme_Bucket *)SCHEME_CAR(vars);
-    scheme_set_global_bucket("define-values", b, vals, 1);
-    scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 1);
+    if (defmacro) {
+      macro = scheme_alloc_small_object();
+      macro->type = scheme_macro_type;
+      SCHEME_PTR_VAL(macro) = vals;
+      
+      scheme_set_global_bucket("define-syntaxes", b, macro, 1);
+      scheme_shadow(dm_home, (Scheme_Object *)b->key, 0);
+    } else {
+      scheme_set_global_bucket("define-values", b, vals, 1);
+      scheme_shadow(((Scheme_Bucket_With_Home *)b)->home, (Scheme_Object *)b->key, 1);
+    }
 
     return scheme_void;
   } else
@@ -537,7 +557,7 @@ define_values_execute(Scheme_Object *data)
   {
     const char *symname;
     symname = (show_any ? scheme_symbol_name(name) : "");
-    scheme_wrong_return_arity("define-values",
+    scheme_wrong_return_arity(defmacro ? "define-syntaxes" : "define-values",
 			      i, g,
 			      (g == 1) ? (Scheme_Object **)vals : scheme_current_thread->ku.multiple.array,
 			      "%s%s%s",
@@ -547,6 +567,12 @@ define_values_execute(Scheme_Object *data)
   }
 
   return NULL;
+}
+
+static Scheme_Object *
+define_values_execute(Scheme_Object *data)
+{
+  return define_execute(SCHEME_CAR(data), SCHEME_CDR(data), 0, NULL);
 }
 
 static Scheme_Object *
@@ -576,20 +602,24 @@ define_values_resolve(Scheme_Object *data, Resolve_Info *rslv)
   return scheme_make_syntax_resolved(DEFINE_VALUES_EXPD, cons(vars, val));
 }
 
-void scheme_define_values_parse(Scheme_Object *form, 
-				Scheme_Object **var, Scheme_Object **val,
-				Scheme_Comp_Env *env)
+void scheme_define_parse(Scheme_Object *form, 
+			 Scheme_Object **var, Scheme_Object **val,
+			 int defmacro,
+			 Scheme_Comp_Env *env)
 {
   Scheme_Object *vars, *rest;
   int len;
+  GC_CAN_IGNORE const char *who;
+
+  who = (defmacro ? "define-syntaxes" : "define-values");
 
   if (!scheme_is_toplevel(env))
-    scheme_wrong_syntax("define-values", NULL, form, "illegal use (not at top-level)");
+    scheme_wrong_syntax(who, NULL, form, "illegal use (not at top-level)");
 
-  len = check_form("define-values", form);
+  len = check_form(who, form);
   if (len != 3)
-    bad_form(form, "define-values", len);
-
+    bad_form(form, who, len);
+  
   rest = SCHEME_STX_CDR(form);
   vars = SCHEME_STX_CAR(rest);
   rest = SCHEME_STX_CDR(rest);
@@ -601,7 +631,7 @@ void scheme_define_values_parse(Scheme_Object *form,
     Scheme_Object *name, *rest;
 
     name = SCHEME_STX_CAR(vars);
-    scheme_check_identifier("define-values", name, NULL, env, form);
+    scheme_check_identifier(who, name, NULL, env, form);
 
     vars = SCHEME_STX_CDR(vars);
 
@@ -609,12 +639,12 @@ void scheme_define_values_parse(Scheme_Object *form,
       Scheme_Object *param;
       param = SCHEME_STX_CAR(rest);
       if (scheme_stx_bound_eq(param, name, env->genv->phase))
-	scheme_wrong_syntax("define-values", name, form, "duplicate argument name");
+	scheme_wrong_syntax(who, name, form, "duplicate binding name");
     }
   }  
 
   if (!SCHEME_STX_NULLP(vars))
-    scheme_wrong_syntax("define-values", *var, form, "bad variable list");
+    scheme_wrong_syntax(who, *var, form, "bad variable list");
 }
 
 static Scheme_Object *
@@ -625,7 +655,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 
   globals = env->genv;
   
-  scheme_define_values_parse(form, &var, &val, env);
+  scheme_define_parse(form, &var, &val, 0, env);
   variables = var;
   
   while (SCHEME_STX_PAIRP(var)) {
@@ -670,7 +700,7 @@ define_values_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Schem
 {
   Scheme_Object *var, *val, *fn;
 
-  scheme_define_values_parse(form, &var, &val, env);
+  scheme_define_parse(form, &var, &val, 0, env);
 
   env = scheme_no_defines(env);
 
@@ -2709,60 +2739,30 @@ lexical_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Sche
 static Scheme_Object *
 defmacro_execute(Scheme_Object *form)
 {
-  Scheme_Object *name;
-  Scheme_Object *val, *macro;
   Scheme_Thread *p = scheme_current_thread;
 
-  name = SCHEME_CAR(SCHEME_CAR(form));
-  val = SCHEME_CDR(form);
-
   scheme_on_next_top(scheme_get_env(p->config)->init, NULL, scheme_false);
-  val = scheme_eval_linked_expr(val, 0);
-
-  macro = scheme_alloc_stubborn_small_object();
-  macro->type = scheme_macro_type;
-  SCHEME_PTR_VAL(macro) = val;
-  scheme_end_stubborn_change((void *)macro);
-  
-  scheme_set_global_bucket("define-syntax", (Scheme_Bucket *)name, macro, 1);
-  scheme_shadow((Scheme_Env *)SCHEME_CDR(SCHEME_CAR(form)), 
-		(Scheme_Object *)((Scheme_Bucket *)name)->key, 
-		0);
-
-  return scheme_void;
+  return define_execute(SCHEME_CAR(SCHEME_CAR(form)), SCHEME_CDR(form),
+			1, (Scheme_Env *)SCHEME_CDR(SCHEME_CAR(form)));
 }
 
-void scheme_defmacro_parse(Scheme_Object *form, 
-			   Scheme_Object **name, Scheme_Object **code,
-			   Scheme_Comp_Env *env)
+static Scheme_Object *keyword_bucket(Scheme_Object *name, Scheme_Object *info)
 {
-  Scheme_Object *rest;
-
-  if (scheme_stx_proper_list_length(form) != 3)
-    scheme_wrong_syntax("define-syntax", NULL, form, NULL);
-
-  rest = SCHEME_STX_CDR(form);
-  *name = SCHEME_STX_CAR(rest);
-    
-  scheme_check_identifier("define-syntax", *name, NULL, env, form);
-    
-  rest = SCHEME_STX_CDR(rest);
-  rest = SCHEME_STX_CAR(rest);
-  *code = rest;
+  return (Scheme_Object *)scheme_global_keyword_bucket(name, (Scheme_Env *)info);
 }
 
 static Scheme_Object *defmacro_link(Scheme_Object *data, Link_Info *info)
 {
-  Scheme_Object *name = SCHEME_CAR(data);
+  Scheme_Object *names = SCHEME_CAR(data);
   Scheme_Object *val = SCHEME_CDR(data);
 
   scheme_prepare_exp_env(info);
   val = scheme_link_expr(val, info->exp_env);
 
-  name = (Scheme_Object *)scheme_global_keyword_bucket(name, info);
+  names = scheme_named_map_1(NULL, keyword_bucket, names, (Scheme_Object *)info);
   
   return scheme_make_syntax_linked(DEFINE_SYNTAX_EXPD, 
-				   cons(cons(name, (Scheme_Object *)info), val));
+				   cons(cons(names, (Scheme_Object *)info), val));
 }
 
 static Scheme_Object *defmacro_resolve(Scheme_Object *data, Resolve_Info *info)
@@ -2775,41 +2775,49 @@ static Scheme_Object *defmacro_resolve(Scheme_Object *data, Resolve_Info *info)
   return scheme_make_syntax_resolved(DEFINE_SYNTAX_EXPD, cons(name, val));
 }
 
+static Scheme_Object *stx_sym(Scheme_Object *l, Scheme_Object *form)
+{
+  return SCHEME_STX_SYM(l);
+}
+
 static Scheme_Object *
 defmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
 		Scheme_Compile_Info *rec, int drec)
 {
-  Scheme_Object *name, *code;
+  Scheme_Object *names, *code;
   Scheme_Object *val;
 
-  if (!scheme_is_toplevel(env))
-    scheme_wrong_syntax("define-syntax", NULL, form, "illegal use (not at top-level)");
-  
   scheme_compile_rec_done_local(rec, drec);
 
-  scheme_defmacro_parse(form, &name, &code, env);
+  scheme_define_parse(form, &names, &code, 1, env);
 
   scheme_prepare_exp_env(env->genv);
 
   val = scheme_compile_expr(code, env->genv->exp_env->init, rec, drec);
-  name = SCHEME_STX_SYM(name);
 
-  return scheme_make_syntax_compiled(DEFINE_SYNTAX_EXPD, cons(name, val));
+  names = scheme_named_map_1(NULL, stx_sym, names, form);
+
+  return scheme_make_syntax_compiled(DEFINE_SYNTAX_EXPD, cons(names, val));
 }
 
 static Scheme_Object *
 defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *name, *code, *fpart, *fn;
+  Scheme_Object *names, *code, *fpart, *fn, *name;
 
   scheme_prepare_exp_env(env->genv);
 
-  scheme_defmacro_parse(form, &name, &code, env);
+  scheme_define_parse(form, &names, &code, 1, env);
   
-  fpart = scheme_expand_expr(code, env->genv->exp_env->init, depth, name);
+  if (SCHEME_STX_PAIRP(names) && SCHEME_STX_NULLP(SCHEME_STX_CDR(names)))
+    name = SCHEME_STX_CAR(names);
+  else
+    name = scheme_false;
+
+  fpart = scheme_expand_expr(code, env->genv->exp_env->init, depth, names);
   
   code = icons(fpart, scheme_null);
-  code = icons(name, code);
+  code = icons(names, code);
 
   fn = SCHEME_STX_CAR(form);
   return scheme_datum_to_syntax(icons(fn, code), 

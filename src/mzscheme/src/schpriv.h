@@ -1112,6 +1112,7 @@ Scheme_Object *scheme_make_random_state(long seed);
 
 Scheme_Object *scheme_eval_compiled_expr(Scheme_Object *expr, Scheme_Env *env, int let_depth);
 Scheme_Object *scheme_eval_linked_expr(Scheme_Object *expr, int let_depth);
+Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *expr, int let_depth);
 
 Scheme_Object *_scheme_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
 Scheme_Object *_scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands);
@@ -1437,12 +1438,10 @@ int scheme_get_eval_type(Scheme_Object *obj);
 
 Scheme_Object *scheme_get_stop_expander(void);
 
-void scheme_defmacro_parse(Scheme_Object *form, 
-			   Scheme_Object **name, Scheme_Object **code,
-			   Scheme_Comp_Env *env);
-void scheme_define_values_parse(Scheme_Object *form, 
-				Scheme_Object **var, Scheme_Object **val,
-				Scheme_Comp_Env *env);
+void scheme_define_parse(Scheme_Object *form, 
+			 Scheme_Object **vars, Scheme_Object **val,
+			 int defmacro,
+			 Scheme_Comp_Env *env);
 
 void scheme_shadow(Scheme_Env *env, Scheme_Object *n, int stxtoo);
 

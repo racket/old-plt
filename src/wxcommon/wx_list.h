@@ -39,16 +39,22 @@ class wxNode
   wxNode *next;
   wxNode *previous;
 
+  void Setup(wxList *the_list, wxNode *last_one, wxNode *next_one, 
+	     wxObject *object);
+
  public:
   // Optional key stuff
   long integer_key;
   char *string_key;
 
-  wxNode(wxList *the_list = NULL, wxNode *last_one = NULL, wxNode *next_one = NULL, wxObject *object = NULL);
+  wxNode(wxList *the_list = NULL, wxNode *last_one = NULL, 
+	 wxNode *next_one = NULL, wxObject *object = NULL);
   wxNode(wxList *the_list, wxNode *last_one, wxNode *next_one,
          wxObject *object, long the_key);
   wxNode(wxList *the_list, wxNode *last_one, wxNode *next_one,
          wxObject *object, const char *the_key);
+  wxNode(wxList *the_list, wxNode *last_one, wxNode *next_one,
+         wxObject *object, void *the_key);
 
   void Kill(wxList *list);
 
@@ -96,6 +102,7 @@ class wxList: public wxObject
   // Keyed append
   wxNode *Append(long key, wxObject *object);
   wxNode *Append(const char *key, wxObject *object);
+  wxNode *Append(void *key, wxObject *object);
 
   Bool DeleteNode(wxNode *node);
   Bool DeleteObject(wxObject *object);  // Finds object pointer and
@@ -126,6 +133,9 @@ class wxList: public wxObject
 #ifdef MEMORY_USE_METHOD
   long MemoryUse(void);
 #endif
+
+ private:
+   wxNode *DoAppend(wxNode *node);
 };
 
 // String list class. N.B. this always copies strings

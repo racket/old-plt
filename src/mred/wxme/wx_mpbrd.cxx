@@ -777,7 +777,7 @@ void wxMediaPasteboard::Insert(wxSnip *snip, wxSnip *before, float x, float y)
   loc->snip = snip;
   loc->needResize = TRUE;
   loc->selected = FALSE;
-  snipLocationList->Append((long)snip, loc);
+  snipLocationList->Append((void *)snip, loc);
 
   snip->style = styleList->Convert(snip->style);
   if (PTREQ(snip->style, styleList->BasicStyle())) {

@@ -13,8 +13,8 @@ strings are types/comments.
      -
      (user [] "raised by calling \\scmfirst{error}")
      
-     (variable [id "symbol" "the unbound variable's global identifier"]
-	       "unbound global or module variable at run time")
+     (variable [id "symbol" "the variable's identifier"]
+	       "unbound or not-yet-defined global or module variable at run time")
 
      (application [value "value" "the error-specific inappropriate value"] -
 		  (arity [expected "arity" "the correct procedure arity as returned by \\scmfirst{arity}"]

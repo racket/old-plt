@@ -2,7 +2,7 @@
  ((listof (is-a?/c snip-class%)) . -> . void?)
  (snipclasses)
  "sets the parameters that are shared between the repl's"
- "initialization and \\iscmprocedure{expand-program}")
+ "initialization and \\iscmprocedure{drscheme:eval:build-user-eventspace/custodian}")
 
 (drscheme:eval:get-snip-classes
  (-> (listof (is-a?/c snip-class%)))
@@ -121,7 +121,7 @@
 "called when the thread terminates normally. This procedure is"
 "called from a new, dedicated thread ({\\it i. e.}, not the thread"
 "created to do the expansion, nor the thread that"
-"\\rawscm{drscheme:eval:expand-program} was called from.)"
+"\\rawscm{drscheme:eval:build-user-eventspace/custodian} was called from.)"
 ""
 "The \\var{iter} argument is called for each expression in the"
 "expanded program and once more with eof, unless an error is"

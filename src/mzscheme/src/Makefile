@@ -1,9 +1,6 @@
 #
-# Makefile for mzscheme
+# Makefile for mzscheme basic sources
 #
-# 'make' or 'make bin' - makes mzscheme
-# 'make lib' - make libmzscheme.a
-# 'make dynlib' - make mzdyn.o, for use in extending MzScheme
 
 EXPORT= CC='$(CC)' CXX='$(CXX)' AS='$(AS)' RANLIB='$(RANLIB)' PERL='$(PERL)' DEBUGFLAGS='$(DEBUGFLAGS)' OPTIONS='$(OPTIONS) $(THREADFLAGS)' DYNOPTIONS='$(DYNOPTIONS)' WARN='$(WARN)' OPT='$(OPT)' OBJDIR='$(OBJDIR)' GCDIR='$(GCDIR)' LIBS='$(LIBS)' GCLIBMAKEEXTRA='$(GCLIBMAKEEXTRA)'
 

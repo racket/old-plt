@@ -612,14 +612,21 @@ static Scheme_Object *def_event_dispatch_handler(int argc, Scheme_Object *argv[]
 
 static void DoTheEvent(MrEdContext *c)
 {
-  Scheme_Object *a[1], *p;
+  Scheme_Object *p;
 
   c->ready_to_go = 1;
 
   p = scheme_get_param(scheme_config, mred_event_dispatch_param);
   if (p != def_dispatch) {
+    Scheme_Object *a[1];
+    mz_jmp_buf savebuf;
+
     a[0] = (Scheme_Object *)c;
-    _scheme_apply_multi(p, 1, a);
+
+    memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
+    if (!scheme_setjmp(scheme_error_buf))
+      scheme_apply_multi(p, 1, a);
+    memcpy(&scheme_error_buf, &savebuf, sizeof(mz_jmp_buf));
   }
   
   if (c->ready_to_go)

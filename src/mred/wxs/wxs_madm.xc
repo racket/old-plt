@@ -24,6 +24,8 @@
 
 @INCLUDE wxs_fcs.xci
 
+static int capo_propagate_exn = 0;
+
 static void *DoCAPOCallback(void *data)
 {
   jmp_buf savebuf;
@@ -33,10 +35,15 @@ static void *DoCAPOCallback(void *data)
 
   if (!scheme_setjmp(scheme_error_buf))
     r = (void *)scheme_apply_multi((Scheme_Object *)data, 0, NULL);
-  else
+  else {
     r = (void *)scheme_false;
+    capo_propagate_exn = 1;
+  }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  /* Note that we don't call scheme_clear_escape() - we're going to
+     propagate the jump via capo_propagate_exn */
 
   return r;
 }
@@ -72,7 +79,9 @@ typedef void *(*CAPOFunc)(void*);
 @MACRO spAnything = _
 @MACRO spCAPOProc = (-> _)
 
-@ "call-as-primary-owner" : void[]/CastToSO//spAnything CallAsPrimaryOwner(CAPOFunc//ubTestFunc///spCAPOProc, -void[]//ubData);
+@MACRO PROPAGATEEXN = if (capo_propagate_exn) { capo_propagate_exn = 0; scheme_longjmp(scheme_error_buf, 1); }
+
+@ "call-as-primary-owner" : void[]/CastToSO//spAnything CallAsPrimaryOwner(CAPOFunc//ubTestFunc///spCAPOProc, -void[]//ubData); : : //PROPAGATEEXN
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

@@ -301,6 +301,8 @@ static Scheme_Object *bundle_symset_bias(int v) {
 }
 
 
+static int capo_propagate_exn = 0;
+
 static void *DoCAPOCallback(void *data)
 {
   jmp_buf savebuf;
@@ -310,10 +312,15 @@ static void *DoCAPOCallback(void *data)
 
   if (!scheme_setjmp(scheme_error_buf))
     r = (void *)scheme_apply_multi((Scheme_Object *)data, 0, NULL);
-  else
+  else {
     r = (void *)scheme_false;
+    capo_propagate_exn = 1;
+  }
 
   COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  /* Note that we don't call scheme_clear_escape() - we're going to
+     propagate the jump via capo_propagate_exn */
 
   return r;
 }
@@ -322,6 +329,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 // @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
+
 
 
 
@@ -878,7 +886,7 @@ static Scheme_Object *os_wxMediaCanvasCallAsPrimaryOwner(Scheme_Object *obj, int
   
   r = ((wxMediaCanvas *)((Scheme_Class_Object *)obj)->primdata)->CallAsPrimaryOwner(x0, x1);
 
-  
+  if (capo_propagate_exn) { capo_propagate_exn = 0; scheme_longjmp(scheme_error_buf, 1); }
   
   return (Scheme_Object*)r;
 }

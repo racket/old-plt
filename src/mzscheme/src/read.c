@@ -439,6 +439,26 @@ void scheme_clean_list_stack(Scheme_Thread *p)
   }
 }
 
+static void track_indentation(Scheme_Object *indentation, int line, int col)
+{
+  Scheme_Indent *indt = (Scheme_Indent *)SCHEME_CAR(indentation);
+  /* Already checked this line? */
+  if (line > indt->last_line) {
+    indt->last_line = line;
+    indt->multiline = 1;
+    /* At least as indented as before? */
+    if (col >= indt->max_indent)
+      indt->max_indent = col;
+    else if (!indt->suspicious_line) {
+      /* Not as indented, and no suspicious line found
+	 already. Suspect that the closer should have
+	 appeared earlier. */
+      indt->suspicious_closer = indt->closer;
+      indt->suspicious_line = line;
+    }
+  }
+}
+
 /*========================================================================*/
 /*                             parameters                                 */
 /*========================================================================*/
@@ -629,22 +649,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht,
 	  && (ch != ')')
 	  && ((ch != '}') || !params->curly_braces_are_parens)
 	  && ((ch != ']') || !params->square_brackets_are_parens)) {
-	Scheme_Indent *indt = (Scheme_Indent *)SCHEME_CAR(indentation);
-	/* Already checked this line? */
-	if (line > indt->last_line) {
-	  indt->last_line = line;
-	  indt->multiline = 1;
-	  /* At least as indented as before? */
-	  if (col >= indt->max_indent)
-	    indt->max_indent = col;
-	  else if (!indt->suspicious_line) {
-	    /* Not as indented, and no suspicious line found
-	       already. Suspect that the closer should have
-	       appeared earlier. */
-	    indt->suspicious_closer = indt->closer;
-	    indt->suspicious_line = line;
-	  }
-	}
+	track_indentation(indentation, line, col);
       }
     }
   }
@@ -1533,7 +1538,7 @@ read_list(Scheme_Object *port,
   int ch = 0, next, got_ch_already = 0;
   int brackets = params->square_brackets_are_parens;
   int braces = params->curly_braces_are_parens;
-  long start, startcol, startline, dotpos, dotcol, dotline;
+  long start, startcol, startline, dotpos, dotcol, dotline, dot2pos, dot2line, dot2col;
 
   scheme_tell_all(port, &startline, &startcol, &start);
 
@@ -1716,6 +1721,8 @@ read_list(Scheme_Object *port,
 		    || ((next == '}') && braces)))) {
       scheme_tell_all(port, &dotline, &dotcol, &dotpos);
 
+      track_indentation(indentation, dotline, dotcol);
+
       if (((shape != mz_shape_cons) && (shape != mz_shape_hash_elem)) || infixed) {
 	scheme_read_err(port, stxsrc, dotline, dotcol, dotpos, 1, 0, indentation,
 			"read: illegal use of \".\"");
@@ -1733,6 +1740,11 @@ read_list(Scheme_Object *port,
 			    "read: expected '%c' after hash value",
 			    closer);
 	    return NULL;
+	  }
+
+	  {
+	    scheme_tell_all(port, &dot2line, &dot2col, &dot2pos);
+	    track_indentation(indentation, dot2line, dot2col);
 	  }
 
 	  infixed = cdr;
@@ -2855,6 +2867,8 @@ skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
     long col, pos, line;
 
     scheme_tell_all(port, &line, &col, &pos);
+
+    track_indentation(indentation, line, col);
 
     (void)scheme_getc(port); /* re-read ';' */
 

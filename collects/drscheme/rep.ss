@@ -718,6 +718,7 @@
 		      (lambda ()
 			(let* ([start (send edit last-position)]
 			       [c-locked? (send edit locked?)])
+			  (send edit begin-edit-sequence)
 			  (send edit lock #f)
 			  (send edit insert
 				(if (is-a? s mred:snip%)
@@ -727,7 +728,8 @@
 			    ;(send edit change-style null start end) ; wx
 			    (send edit set-prompt-position end)
 			    (style-func start end))
-			  (send edit lock c-locked?)))])
+			  (send edit lock c-locked?)
+			  (send edit end-edit-sequence)))])
 		 (when prompt-mode?
 		   (insert #\newline)
 		   (set-prompt-mode #f))

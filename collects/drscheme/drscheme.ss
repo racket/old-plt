@@ -247,7 +247,7 @@
 (define loading-frame (make-object frame% "Loading message"))
 (define loading-message (make-object message% 
 			  (apply string-append
-				 (let loop ([n (if (eq? (system-type) 'macos) 6 1)])
+				 (let loop ([n (if (eq? (system-type) 'macos) 6 4)])
 				   (cond
 				     [(zero? n) null]
 				     [else (cons "abcdefghijklmnopqrstuvwxyz" (loop (- n 1)))])))

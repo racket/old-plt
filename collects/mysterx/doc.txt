@@ -170,6 +170,13 @@ the ITypeInfo interface.
   Returns a list of strings for all COM classes registered on a system
   that have the "Control" subkey. 
 
+> (cocreate-instance a-coclass)
+
+  `a-coclass` is the name of a COM class.  Returns an instance
+  of the class, of type <com-object>.  Useful for COM classes 
+  without a visual representation, or when a visual representation 
+  is not needed.    
+
 > (methods a-com-object)
 
   `a-com-object' is a COM object.  Returns a list of strings indicating 

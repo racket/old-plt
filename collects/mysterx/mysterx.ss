@@ -714,14 +714,14 @@
 	   [insert-object 
 	    (lambda (object)
 	      (semaphore-wait html-sem)
-	      (insert-html (coclass->html object))
+	      (document-insert-html doc (coclass->html object))
 	      (begin0
 	       (car (document-objects doc))
 	       (semaphore-post html-sem)))]
 	   [append-object 
 	    (lambda (object)
 	      (semaphore-wait html-sem)
-	      (append-html (coclass->html object))
+	      (document-append-html doc (coclass->html object))
 	      (begin0
 	       (car (last-pair (document-objects doc)))
 	       (semaphore-post html-sem)))]

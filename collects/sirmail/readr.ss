@@ -177,7 +177,9 @@
                               (unless (get-PASSWORD)
                                 (let ([p (get-text-from-user "Password" 
                                                              (format "Password for ~a:" (USERNAME))
-							     main-frame)])
+							     main-frame
+							     ""
+							     '(password))])
                                   (unless p (error 'connect "connection cancelled"))
                                   (set-PASSWORD p)))
                               (let*-values ([(imap count new) (let-values ([(server port-no)

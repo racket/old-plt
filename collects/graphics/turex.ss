@@ -400,6 +400,7 @@
 			    ((cadr test))))
 	     stretchable-width #t))
 	  options)
-	  
+
+(make-object ...-pane% frame)	  
 
 (send frame show #t)

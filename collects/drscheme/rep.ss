@@ -844,90 +844,64 @@
 		(printf "calling update-running.4~n")
 		(update-running #f))))]
 
-	  [ok-to-break-semaphore (make-semaphore 1)]
-	  [ok-to-break #f]
 	  [start-callback? #f]
 
-	  [evaluation-running #f]
-	  [evaluation-running-semaphore (make-semaphore 1)]
-
-	  [event-started (make-semaphore 0)]
+	  [waiting-to-turn-on #f]
+	  [skip-turning-on #f]
+	  [turn-on-semaphore (make-semaphore 1)]
+	  
+	  [wait-to-turn-on (make-semaphore 0)]
+	  
 	  [running-callback-start
 	   (lambda ()
-	     (printf "running-callback-start.1 posted event-started~n")
-	     (semaphore-post event-started))]
+	     (semaphore-wait turn-on-semaphore)
+	     (unless waiting-to-turn-on
+	       (set! waiting-to-turn-on #t)
+	       (semaphore-post wait-to-turn-on))
+	     (semaphore-post turn-on-semaphore))]
 	  [running-callback-stop
 	   (lambda ()
-	     (printf "running-callback-stop.0~n")
-	     (semaphore-wait ok-to-break-semaphore)
-	     (printf "running-callback-stop.1 got ok-to-break-semaphore~n")
-	     (when ok-to-break
-	       (printf "running-callback-stop.2 breaking thread; resetting ok-to-break flag~n")
-	       (break-thread running-thread)
-	       (semaphore-post event-started)
-	       (set! ok-to-break #f))
-	     (printf "running-callback-stop.3 conditonally turning running flag off~n")
-	     (conditionally-turn-running-off)
-	     (semaphore-post ok-to-break-semaphore)
-	     (printf "running-callback-stop.4~n"))]
-	  [update-running
-	   (case-lambda
-	    [(flag) (update-running flag #f)]
-	    [(flag got-semaphore?)
-	     (printf "update-running.0 ~a~n" got-semaphore?)
-	     (unless got-semaphore?
-	       (printf "update-running.1.1~n")
-	       (semaphore-wait evaluation-running-semaphore)
-	       (printf "update-running.1.2 got evaluation-running-semaphore~n"))
-	     (when (eq? flag evaluation-running)
-	       (printf "update-running.2.1~n")
-	       (semaphore-post evaluation-running-semaphore)
-	       (printf "update-running.2.2 calling error~n")
-	       (error 'update-running "flags are already the same (~a)!" flag))
-	     (set! evaluation-running flag)
-	     (printf "update-running.3~n")
-	     (system
-	      (lambda ()
-		(if evaluation-running
-		    (mred:queue-callback (lambda () (send (get-top-level-window) running)))
-		    (mred:queue-callback (lambda () (send (get-top-level-window) not-running))))))
-	     (printf "update-running.4 ~a~n" got-semaphore?)
-	     (unless got-semaphore?
-	       (semaphore-post evaluation-running-semaphore)
-	       (printf "update-running.5~n"))])]
-	  [conditionally-turn-running-off
-	   (lambda ()
-	     (semaphore-wait evaluation-running-semaphore)
-	     (when evaluation-running
-	       (printf "calling update-running.1~n")
-	       (update-running #f #t))
-	     (semaphore-post evaluation-running-semaphore))]
+	     (semaphore-wait turn-on-semaphore)
+	     (when waiting-to-turn-on
+	       (set! skip-turning-on #t))
+	     (semaphore-post turn-on-semaphore))]
 	  [running-thread
 	   (thread
 	    (lambda ()
-	      (break-enabled #t)
 	      (let loop ()
-		(printf "running-thread.0~n")
-		(semaphore-wait event-started)
-		(with-handlers ([(lambda (x) #t)
-				 (lambda (x) 
-				   (printf "running-thread.6 broken~n")
-				   (void))])
-		  (printf "running-thread.1 waiting for ok-to-break-semaphore~n")
-		  (semaphore-wait ok-to-break-semaphore)
-		  (set! ok-to-break #t)
-		  (semaphore-post ok-to-break-semaphore)
-		  (printf "running-thread.2 sleeping~n")
-		  (sleep)
-		  (printf "running-thread.3 awoke~n")
-		  (semaphore-wait ok-to-break-semaphore)
-		  (printf "running-thread.4 got ok-to-break-semaphore~n")
-		  (set! ok-to-break #f)
-		  (printf "calling update-running.2~n")
-		  (update-running #t)
-		  (semaphore-post ok-to-break-semaphore)
-		  (printf "running-thread.5~n"))
-		(loop))))])
+		(semaphore-wait wait-to-turn-on)
+		(sleep)
+		(semaphore-wait turn-on-semaphore)
+		(unless skip-turning-on
+		  (update-running #t))
+		(semaphore-post turn-on-semaphore)
+		(loop))))]
+
+	  [turned-on #f]
+	  [turned-on-semaphore (make-semaphore 1)]
+	  
+	  [update-running/semaphore
+	   (lambda (flag)
+	     (when (eq? flag turned-on)
+	       (semaphore-post turned-on-semaphore)
+	       (error 'update-running "flags are already the same (~a)!" flag))
+	     (set! turned-on flag)
+	     (system
+	      (lambda ()
+		(if turned-on
+		    (mred:queue-callback (lambda () (send (get-top-level-window) running)))
+		    (mred:queue-callback (lambda () (send (get-top-level-window) not-running)))))))]
+	  [update-running
+	   (lambda (flag)
+	     (semaphore-wait turned-on-semaphore)
+	     (update-running/semaphore flag)
+	     (semaphore-post turned-on-semaphore))]
+	  [conditionally-turn-running-off
+	   (lambda ()
+	     (semaphore-wait turned-on-semaphore)
+	     (when turned-on
+	       (update-running/semaphore #f))
+	     (semaphore-post turned-on-semaphore))])
 
 
 	;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1073,20 +1047,24 @@
 			    (cond
 			     [(and (= depth 1)
 				   (not in-evaluation?))
-			      (printf "event-dispatch-handler.1 in-evaluation? ~a~n" in-evaluation?)
-			      (reset-break-state)
-			      (printf "event-dispatch-handler.2 reset break~n")
-			      (running-callback-start)
-			      
-			      (printf "event-dispatch-handler.3 started running callback~n")
+			      (printf "event-dispatch-handler.1 in-evaluation? ~a depth ~a~n" in-evaluation? depth)
+			      (system
+			       (lambda ()
+				 (reset-break-state)
+				 (running-callback-start)
+				 (set! depth (+ depth 1))))
+
+			      (printf "event-dispatch-handler.2 started running callback~n")
 			      (protect-user-evaluation
 			       (lambda ()
-				 (printf "event-dispatch-handler.5 finished handling event~n")
-				 (running-callback-stop)
-				 (printf "event-dispatch-handler.6 stopped running~n")
-				 (set! depth (- depth 1)))
+				 (system
+				  (lambda ()
+				    (printf "event-dispatch-handler.4 finished handling event~n")
+				    (running-callback-stop)
+				    (printf "event-dispatch-handler.5 stopped running~n")
+				    (set! depth (- depth 1)))))
 			       (lambda ()
-				 (printf "event-dispatch-handler.4 handling event~n")
+				 (printf "event-dispatch-handler.3 handling event~n")
 				 (mzlib:thread:dynamic-enable-break
 				  (lambda ()
 				    (primitive-dispatch-handler eventspace)))))]

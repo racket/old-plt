@@ -278,7 +278,7 @@ int sizeofCDataType(SQLSMALLINT type) {
   case SQL_C_TIMESTAMP :
     return sizeof(TIMESTAMP_STRUCT);
 
-#ifdef WIN32
+#if HASINT64
 #if (ODBCVER >= 0x0300)
   case SQL_C_SBIGINT :
     return sizeof(__int64);

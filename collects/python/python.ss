@@ -10,23 +10,28 @@
            "python-import.ss"
            ;"base.ss"
            "runtime-support.ss"
-           "get-base.ss"
+           "c-bindings.ss"
+           ;"get-base.ss"
            )
 
 
-  (provide python load-ps py-eval py-gen ssd ssd* ;python-ns
+  (provide python #|load-ps|# py-eval py-gen ssd ssd* python-ns in-ns
            ;read-python
            ;python-to-scheme
            ;compile-python
            ;compile-python-ast
            ;parse-python-port
            ;parse-python-file
+           python-ss-module-ns
+           py-gen-ns
 	   in-python
 	   ns-set!
 	   ns-get
            render-python-value
            render-python-value/format)
 
+  (define py-gen-ns #f)
+  
   (define ssd syntax-object->datum)
   
   (define (ssd* lst) (map ssd lst))
@@ -38,7 +43,7 @@
    ; ((dynamic-require '(lib "primitives.ss" "python") 'py-object%->string) value))
 
   (define (none? py-value)
-    py-none)
+    (eqv? py-value py-none))
 ;    ((dynamic-require '(lib "primitives.ss" "python") 'py-none?) py-value))
 
   (define (render-python-value/format value port port-write)
@@ -57,32 +62,52 @@
             (display to-render port)))))
 
   (define pns (make-python-namespace))
-  (set-python-namespace-name! pns '__main__)
+  ;(set-python-namespace-name! pns '__main__)
 
  ; (set-pyns! pns)
+
+  (define python-ns (make-parameter pns))
+  (define python-ss-module-ns (current-namespace))
   
-  (define (python-ns)
-    pns)
-  
+;  (define (python-ns)
+;    pns)
+
+  #|
   (define (load-ps)
     (parameterize ([current-namespace pns])
       (load-extension (build-path (this-expression-source-directory)
                                   "c" "stringobject.so")))
     (copy-namespace-bindings pns (current-namespace) #f #f))
-
+|#
+  
   (define py-eval
-    (opt-lambda (str [ns pns])
+    (opt-lambda (str [ns ;(current-namespace)])
+                         ;pns])
+                         (python-ns)])
       (map convert-value
-           (eval-python (py-gen str) ns))))
+           (eval-python (py-gen str ns) ns))))
   
-  (define (py-gen str)
-    (let ([is (open-input-string str)])
-      (begin0 (parameterize ([current-runtime-support-context #'here]
-                             [current-toplevel-context #f]);base-importing-stx])
-                (compile-python (parse-python-port is "input string")))
-              (close-input-port is))))
+  ;(require "base.ss")
+  ;(dynamic-require "base.ss" #f #f)
+  
+  (define py-gen
+    (opt-lambda (str [ns (python-ns)])
+      (let ([is (open-input-string str)])
+        (begin0 (parameterize ([current-namespace ns])
+                  (set! py-gen-ns (current-namespace))
+                  (parameterize ([current-runtime-support-context #'here]
+                                 [current-toplevel-context #f]);base-importing-stx])
+  ;                  (eval '(require "c-bindings.ss"))
+                    ;(printf "py-gen: make-py-number is ~a~n" (eval 'make-py-number))
+                    (map syntax-as-top
+                         (compile-python (parse-python-port is "input string")))))
+                (close-input-port is)))))
     
-  
+            (define (syntax-as-top s)
+            (if (syntax? s)
+                (namespace-syntax-introduce s)
+                s))
+
   (define (python path)
     (let ([results (eval-python&copy (parameterize ([current-runtime-support-context #'here]
                                                     [current-toplevel-context #f]);base-importing-stx])
@@ -93,10 +118,15 @@
       ;            results))
       (map convert-value results)))
 
+  (define-syntax (in-ns stx)
+    (syntax-case stx ()
+      [(_ ns exprs ...) #`(parameterize ([current-namespace ns])
+                            exprs ...)]))
+  
   (define-syntax (in-python stx)
     (syntax-case stx ()
-      [(_ expr) #`(parameterize ([current-namespace pns])
-                    expr)]))
+      [(_ exprs ...) #`(parameterize ([current-namespace pns])
+                         exprs ...)]))
   
   (define ns-set! namespace-set-variable-value!)
 

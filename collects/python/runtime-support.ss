@@ -4,16 +4,17 @@
            ;"primitives.ss"
            "python-import.ss"
            "c-bindings.ss"
+           "python-node.ss"
+           (lib "contract.ss")
            )
+  
+  
 ;  (require-for-syntax "compiler.ss") ;; get the compiler context
   (provide get-py-string ;; from C bindings
            get-py-number
            get-py-list
            get-py-tuple
            get-py-dict
-           cpy-object
-           cpy-str
-           cpy-list
            make-py-list
            make-py-string
            make-py-symbol
@@ -21,14 +22,32 @@
            make-py-number
            make-py-code
            make-py-function
+           make-py-dict
            py-object->py-string
            (rename spy-cpython-apply py-apply)
            py-is-a? ;(rename spy-cpython-instanceof py-is-a?)
            (rename cpy-none py-none)
            py-number?
+           py-list?
+           python-node?
            (rename spy-cpython-getattr/obj py-get-attr/obj)
            (rename spy-cpython-getattr/sym py-get-attr/sym)
            (rename spy-cpython-getattr/str py-get-attr/str)
+           (rename spy-cpython-setattr/obj py-set-attr/obj)
+           (rename spy-cpython-setattr/sym py-set-attr/sym)
+           (rename spy-cpython-setattr/str py-set-attr/str)
+           (rename spy-cpython-add py-add)
+           (rename spy-cpython-sub py-sub)
+           (rename spy-cpython-mul py-mul)
+           (rename spy-cpython-div py-div)
+           py-call/cc
+           ;; types
+           cpy-object
+           cpy-str
+           cpy-list
+           cpy-type
+           cpy-tuple
+           cpy-dict
            ;;;;; pure Scheme
            ==
            py>
@@ -53,6 +72,26 @@
   (define py-list? spy-cpython-list?)
   (define python-get-type-name spy-cpython-get-type-name)
   
+  (define (py-none? x) (eqv? x cpy-none))
+  
+  (define (my-append lst item)
+    (spy-cpython-apply (spy-cpython-getattr/sym lst 'append) item))
+
+  (provide/contract [my-append ((and/c py-list?
+                                       (lambda (lst)
+                                         (< (spy-cpython-len/scm lst)
+                                            5)))
+                                python-node?
+                                . -> .
+                                py-none?)])
+  
+  (define (py-call/cc py-fn)
+    (let/cc k
+      (spy-cpython-apply py-fn (make-py-function (make-py-code 'kontinuation
+                                                      k
+                                                      1
+                                                      null)))))
+  
   
   
   (define (py-object%->string x)
@@ -62,7 +101,10 @@
     (make-py-number (if b 1 0)))
   
   (define (py-object%->bool obj)
-    (py-if obj true false))
+    (cond
+      [(py-number? obj) (not (zero? (get-py-number obj)))]
+      [(py-list? obj) (not (zero? (spy-cpython-len/scm obj)))]
+      [else (error 'py-object%->bool "Can't handle this object yet: ~a" (py-object%->string obj))]))
   
   ;; ==: X X -> bool
   (define(== a b)
@@ -110,12 +152,11 @@
     ;(printf "py-compare~n")
     (bool->py-number%
      (and (op x y)
-          (if (null? comp-lst)
-              #t
+          (or (null? comp-lst)
               (py-compare y
-                          (car comp-lst)
-                          (car (cdr comp-lst))
-                          (cdr (cdr comp-lst)))))))
+                          (first comp-lst)
+                          (second comp-lst)
+                          (cddr comp-lst))))))
   
   ;; py-print: (or py-file% #f) (listof X) -> void
   (define (py-print file lst)

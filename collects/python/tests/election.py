@@ -75,3 +75,8 @@ def determine_winners(l):
 print winner_takes_all([['chicken','tofu','steak'],['steak','chicken','tofu']])
 print points_per_place([['chicken','tofu','steak'],['steak','chicken','tofu']])
 print approval_rating([['chicken','tofu','steak'],['steak','chicken','tofu']])
+
+def f( (x,y) ):
+   pass
+
+  

@@ -1,10 +1,12 @@
 (module runtime-context mzscheme ;"runtime-base.ss"
   (provide ;runtime-context
 ;                py-so
+     current-runtime-support-context
+     current-toplevel-context
 		)
   (require ;"primitives.ss"
            ;"python-import.ss"
-           ;"runtime-support.ss"
+           "runtime-support.ss"
            ;(lib "etc.ss")
            )
 ;  (define runtime-context #'my_context)

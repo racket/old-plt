@@ -56,7 +56,7 @@
 
 \usepackage{multicol}           % Multi-column formatting
 
-\usepackage{foilspagecounting} % http://www-users.york.ac.uk/~zrs1/Software/pagecounting.html
+%\usepackage{foilspagecounting} % http://www-users.york.ac.uk/~zrs1/Software/pagecounting.html
 
 \usepackage{listings} % typeset source code
 
@@ -295,7 +295,7 @@ else:
 \jhead{Status: C Extensions}
   \begin{itemize}
     \item Experimental support
-    \item CPython's \verb|stringobject.c| loads correctly
+    \item CPython's \verb|stringobject.c| loads (and works) correctly
     \item Still work to do on a simple tool:
     \begin{itemize}
       \item \verb|mzc --spy pyGtk.c|
@@ -305,8 +305,9 @@ else:
 \jhead{Status: Performance}
   \begin{itemize}
     \item Horrible (3 orders of magnitude slower)
-    \item Too many indirections
+    \item Too many indirections (e.g. wrapping/unwrapping)
     \item Very inefficient runtime library
+    \item No optimization yet
   \end{itemize}
 %----------------------------------------
 \setlength\foilheadskip{-1cm}

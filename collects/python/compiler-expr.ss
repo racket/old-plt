@@ -2,6 +2,7 @@
   (require (lib "class.ss")
            (lib "list.ss")
            (lib "etc.ss") ;build-list
+           (lib "plt-match.ss")
 	   "compiler.ss"
 	   "compiler-target.ss"
          ;  "empty-context.ss")
@@ -458,16 +459,20 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so `(,(py-so 'assoc-list->py-dict%)
+        (->orig-so `(make-py-dict
                      ,(generate-list (let ([key-id (gensym 'key)])
-                                       (map (lambda (key-value-pair)
+                                       (map (match-lambda
+                                                [(list key value)
+                                                 `(cons ,(send key to-scheme)
+                                                        ,(send value to-scheme))])
+  #|                                          (lambda (key-value-pair)
                                               (apply (lambda (key value)
                                                        `(list (let ([,key-id (->scheme ,(send key to-scheme))])
                                                                 (if (string? ,key-id)
                                                                     (string->symbol ,key-id)
                                                                     ,key-id))
                                                               ,(send value to-scheme)))
-                                                     key-value-pair))
+                                                     key-value-pair))|#
                                             key-values))))))
       
       (super-instantiate ())))
@@ -507,7 +512,7 @@
       (define/override (to-scheme)
         (let ([expr (send expression to-scheme)]
               [id (send identifier to-scheme)])
-          (->orig-so `(py-get-attr/obj ,expr (make-py-symbol ',id)))))
+          (->orig-so `(py-get-attr/sym ,expr ',(send identifier get-symbol)))))
                      ;`(if (namespace-variable-value ',expr #t (lambda () #f))
                      ;     (,(py-so 'python-get-member) ,expr ',id)
                      ;     ,(string->symbol (string-append (symbol->string (syntax-e expr))
@@ -635,7 +640,7 @@
                                           `(list (quote ,(send (car e) to-scheme))
                                                  ,(send (cdr e) to-scheme)))
                                         (reverse key))])
-                     (if (is-a? expression attribute-ref%)
+                     (if #f;(is-a? expression attribute-ref%)
                          `(,(py-so 'python-method-call)
                                  ,(send ((class-field-accessor attribute-ref% expression) expression)
                                               to-scheme)
@@ -683,10 +688,10 @@
             (->orig-so (let ([lhs-so (send lhs to-scheme)]
                              [rhs-so (send rhs to-scheme)])
                          (case op
-                           [(+) `(spy-cpython-add ,lhs-so ,rhs-so)]
-                           [(-) `(spy-cpython-sub ,lhs-so ,rhs-so)]
-                           [(*) `(spy-cpython-mul ,lhs-so ,rhs-so)]
-                           [(/) `(spy-cpython-div ,lhs-so ,rhs-so)]
+                           [(+) `(py-add ,lhs-so ,rhs-so)]
+                           [(-) `(py-sub ,lhs-so ,rhs-so)]
+                           [(*) `(py-mul ,lhs-so ,rhs-so)]
+                           [(/) `(py-div ,lhs-so ,rhs-so)]
                            [else (raise (format "binary% op unsupported: ~a" 
                                                     op))])))))
       
@@ -712,7 +717,7 @@
             [(-) (->orig-so (if (and (is-a? rhs literal%)
                                      (number? (send rhs get-value)))
                                 `(make-py-number ,(- (send rhs get-value)))
-                                `(spy-cpython-neg ,s-rhs)))]
+                                `(py-neg ,s-rhs)))]
                     ;;(list (py-so 'python-method-call) s-rhs
                       ;;            ''__neg__))]
             [(~) (raise "bitwise operation ~ not implemented yet")]
@@ -751,11 +756,10 @@
                                    (scheme-op->python-op e)
                                    (send e to-scheme)))
                              comps)])
-           `(,(py-so 'py-compare) ,(car s-comps)
-                                  ,(car (cdr s-comps))
-                                  ,(car (cdr (cdr s-comps)))
-                                  ,(generate-list (cdr (cdr (cdr s-comps))))))))
- 
+           (match s-comps
+             [(list-rest x op y rest-comps)
+              `(py-compare ,x ,op ,y ,rest-comps)]))))
+      
       
       (super-instantiate ())))
   

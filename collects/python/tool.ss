@@ -11,13 +11,22 @@
            "python.ss"
            "compile-python.ss"
            ;"base.ss"
-           "get-base.ss"
+           ;"spy.ss"
+           ;"get-base.ss"
+           ;"runtime-context.ss"
            "runtime-support.ss"
+	   "python-node.ss"
            ;"primitives.ss"
            ;"c-bindings.ss"
            "python-import.ss")
 
-  (provide tool@)
+  (provide tool@ tool-ns on-execute-ns user-thread-ns front-end-ns front-end-thunk-ns)
+     
+     (define tool-ns #f)
+     (define on-execute-ns #f)
+     (define user-thread-ns #f)
+     (define front-end-ns #f)
+     (define front-end-thunk-ns #f)
      
 ;  (my-dynamic-require (current-namespace) '(lib "base.ss" "python"))
 ;  (my-dynamic-require (current-namespace) '(lib "runtime-support.ss" "python"))
@@ -108,6 +117,7 @@
 
 
           (define/public (front-end input settings)
+            (set! front-end-ns (current-namespace))
             (let-values ([(port name)
                           (if (string? input)
                               (values (open-input-file input) (path->complete-path input))
@@ -122,7 +132,8 @@
 
               (let ([ast-list (parse-python-port port name)])
                 (lambda ()
-                  (on-execute settings (lambda (thunk) (thunk)))
+                  (set! front-end-thunk-ns (current-namespace))
+                  ;(on-execute settings (lambda (thunk) (thunk)))
                   (if (null? ast-list)
                       eof
                       (begin0 (parameterize ([current-runtime-support-context #'here]
@@ -154,6 +165,20 @@
           (define my-toplevel-context 'foo)
 
           (define/public (on-execute settings run-in-user-thread)
+            (set! on-execute-ns (current-namespace))
+            (run-in-user-thread
+             (lambda ()
+               (set! user-thread-ns (current-namespace))
+               (error-display-handler
+                (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
+               (current-eval
+                (let ([e (drscheme:debug:make-debug-eval-handler (current-eval))])
+                  (if (python-settings-test-coverage? settings)
+                      (add-annotation e)
+                      e)))
+               (drscheme:debug:test-coverage-enabled (python-settings-test-coverage? settings))
+               (init-python-namespace (current-namespace)))))
+          #|
             (dynamic-require '(lib "base.ss" "python") #f)
             (let ([base-path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
                   [outer-namespace (current-namespace)])
@@ -191,6 +216,7 @@
 ;                                               "c" "stringobject.so"))
                    ))
                  ))))
+          |#
           
           (define (render value port)
             (let ([to-render (if (python-node? value)

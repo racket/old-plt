@@ -4,7 +4,6 @@
            (lib "etc.ss")
            (lib "string.ss")
            ;"compile-python.ss"
-           "c-bindings.ss"
            )
   (provide python-import-from-module
            python-load-module
@@ -12,6 +11,10 @@
            copy-namespace-bindings
            make-python-namespace ; note that make-python-namespace already calls init-...
            init-python-namespace
+           ;;
+           eval-python-ns
+           eval-python-inner-ns
+           ;;
            eval-python&copy
            eval-python
            build-module-path
@@ -21,6 +24,9 @@
            set-python-namespace-name!
            )
 
+  (define eval-python-ns #f)
+  (define eval-python-inner-ns #f)
+  
   (define (python-load-module-path path-str)
     (python-load-module (map string->symbol (regexp-split #rx"\\." path-str))))
 
@@ -84,12 +90,14 @@
 
 
   (define (set-python-namespace-name! ns name)
-    (parameterize ([current-namespace ns])
+  #|  (parameterize ([current-namespace ns])
        (eval (datum->syntax-object (eval '(current-toplevel-context))
                                    `(namespace-set-variable-value! '__name__
-                                                                   ,(make-py-string
+                                                                   (make-py-string
                                                                      (symbol->string name)))))))
 ;                                                                   ,((eval 'symbol->py-string%) name))))))
+  |#
+    #f)
 
 
 ;  (require (lib "date.ss"))
@@ -180,31 +188,29 @@
   (define make-python-namespace
     (opt-lambda ([new-cache? #f])
     (let ([p-n ;(null-environment 5)])
-               (make-namespace 'initial)])
-                               ;'empty)])
-      ;(let ([caller (current-namespace)])
-      ;  (parameterize ([current-namespace p-n])
-      ;    (namespace-attach-module caller 'mzscheme)))
+               (make-namespace ;'initial)])
+                               'empty)])
 ;      (when new-cache?
 ;        (set-python-cache-namespace! p-n))
       (init-python-namespace p-n)
       p-n)))
 
-  ; init-python-namespace: ((-> void) -> void)
-  ;                        (string value -> void)
-  ;                        ((U syntax-object sxp) -> (U value values))
-  ;                        -> void
-  ; see on-execute in the drscheme extension manual
-  (define (init-python-namespace python-namespace)
-    (my-dynamic-require python-namespace '(lib "base.ss" "python"))
-    ;(my-dynamic-require python-namespace '(lib "runtime-support.ss" "python"))
-    ;(my-dynamic-require python-namespace '(lib "python-import.ss" "python"))
-    ;(my-dynamic-require python-namespace '(lib "primitives.ss" "python"))
-   ; (my-dynamic-require/syntax python-namespace '(lib "export-top.ss" "python"))
-  ;  (let ([top (namespace-variable-value '#%top)])
-  ;    (parameterize ([current-namespace python-namespace])
-  ;      (namespace-set-variable-value! '#%top top)))
-    )
+
+  (define init-python-namespace
+    (let ()
+    (dynamic-require '(lib "base.ss" "python") #f)
+    (let ([base-path ((current-module-name-resolver) '(lib "base.ss" "python") #f #f)]
+          [outer-namespace (current-namespace)])
+      (lambda (py-ns)
+        (with-handlers ([void (lambda (e)
+                                (printf (exn-message e)))])
+          (parameterize ([current-namespace py-ns])
+            (namespace-attach-module outer-namespace base-path)
+            (namespace-require base-path)
+            ;(eval `(require (file ,(build-path (this-expression-source-directory)
+            ;                                   "base.ss"))))
+            ))))))
+    
 
   (define outside (current-namespace))
 

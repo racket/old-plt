@@ -132,7 +132,7 @@
          (cond
            [(is-a? target tidentifier%) (let ([target-so (send target to-scheme)])
                                           (if (def-targ? target)
-                                              `(namespace-set-variable-value! #cs(quote ,target-so) ,rhs)
+                                              `(define ,target-so ,rhs)
                                               `(set! ,target-so ,rhs)))]
            [(is-a? target tattribute-ref%) (let* ([expr (send ((class-field-accessor tattribute-ref%
                                                                                      expression) target)
@@ -145,7 +145,7 @@
                                                                 (symbol->string (syntax-e expr))
                                                                 "."
                                                                 (symbol->string (syntax-e id))))])
-                                             `(,(py-so 'python-set-attribute!) ,expr ',id ,rhs))]
+                                             `(py-set-attr/sym ,expr ',id ,rhs))]
            ; `(if (namespace-variable-value ',expr #t (lambda () #f))
                                             ;      (,(py-so 'python-set-member!) ,expr ',id ,rhs)
                                             ;      ,(if top?
@@ -195,12 +195,12 @@
                [body (map (lambda (t)
                             (assignment-so t rhs))
                           targets)])
-          (->orig-so ;(if (top?)
-                     ;    `(begin (namespace-set-variable-value! ',rhs ,(send expression to-scheme))
-                     ;            ,@body)
+          (->orig-so (if (top?)
+                         `(begin (define ,rhs ,(send expression to-scheme))
+                                 ,@body)
                          `(let ([,rhs ,(send expression to-scheme)])
                                    ,@body)
-                     ;    )
+                         )
                      )))
       
       (super-instantiate ())))
@@ -315,7 +315,7 @@
       ;;daniel
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (->orig-so '(void)))
+        (->orig-so 'py-none))
       
       (super-instantiate ())))
   
@@ -788,18 +788,18 @@
       
       (inherit ->orig-so)
       (define/override (to-scheme)
-        (let* ([loop (gensym 'loop)])
-          (set! continue-symbol loop)
+        ;(let* ([loop (gensym 'loop)])
+        ;  (set! continue-symbol loop)
           (->orig-so (let ([normal-body
-                            `(call-with-escape-continuation
-                              (lambda (,break-symbol)
+                            `(let/ec ,break-symbol
                                 (let ,continue-symbol ()
-                                  (,(py-so 'py-if) ,(send test to-scheme)
+                                  (py-if ,(send test to-scheme)
                                     (begin ,(send body to-scheme continue-symbol)
-                                           (,continue-symbol))))))])
+                                           (,continue-symbol)))))])
                        (if else
                            `(begin ,normal-body ,(send else to-scheme))
-                           normal-body)))))
+                           normal-body))))
+      ;)
       
       
       (super-instantiate ())))
@@ -1197,8 +1197,9 @@
        (define/override (to-scheme)
          (let ([class-name (send name to-scheme)]
                [inherit-list (map (lambda (i) (send i to-scheme)) inherit-expr)])
-         (->orig-so `(namespace-set-variable-value! #cs(quote ,class-name)
-                       (,(py-so 'py-call) ,(py-so 'py-type%)
+         (->orig-so `(define ,class-name
+                       (py-apply cpy-type
+                                 #|
                         (list (,(py-so 'symbol->py-string%) #cs',class-name)
                               (,(py-so 'list->py-tuple%) (list ,@(if (empty? inherit-list)
                                                                      `(,(->lex-so 'object (current-toplevel-context)))
@@ -1229,7 +1230,18 @@
                                                            #f)))
                                               (send body defs-and-exprs)))])
                            `(begin ,@(reverse exprs)
-                                   (list ,@defs)))))))))
+                                   (list ,@defs)) |#
+                           (make-py-symbol ',class-name)
+                           (make-py-tuple (list ,@(if (empty? inherit-list)
+                                                      (list 'cpy-object)
+                                                      inherit-list)))
+                           (make-py-dict (let ()
+                                           ,(send body to-scheme)
+                                           (list ,@(map (lambda (b)
+                                                        (let ([id (send b to-scheme)])
+                                                          `(cons (make-py-symbol ',id) ,id)))
+                                                      (send this get-bindings)))))
+                           )))))
                            
        
        (super-instantiate ()))))

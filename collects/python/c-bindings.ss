@@ -9,8 +9,9 @@
        #`(nss fn (lambda (args ...) bodies ...))]
       [(nss id value) #`(namespace-set-variable-value! 'id value)]))
   
-  (define python-ns (let ([ns (current-namespace)])
-                      (lambda () ns)))
+  ;(define python-ns (let ([ns (current-namespace)])
+  ;                    (lambda () ns)))
+                    ;(lambda () (current-namespace)))
   
   
   (define sdir (this-expression-source-directory))
@@ -30,17 +31,18 @@
     (find-relative-path (current-directory) (build-path sdir fname)))
 
   (define gns (current-namespace))
+  (provide gns)
   
-  (define (load-c-spy ns)
-    (parameterize ([current-namespace gns])
+;  (define (load-c-spy ns)
+;    (parameterize ([current-namespace gns])
       ;(namespace-require (here-path "builtin-types-uninitialized.ss"))
       (namespace-require (here-path "python-node.ss"))
-      (namespace-set-variable-value! 'python-ns python-ns)
+      ;(namespace-set-variable-value! 'python-ns python-ns)
       (namespace-set-variable-value! 'spy-add-cpython-type spy-add-cpython-type)
       (load-extension path)
-      ))
+;      ))
   
-  (load-c-spy (current-namespace))
+ ; (load-c-spy (current-namespace))
   
 
 ;  (define names (filter (lambda (name)
@@ -58,6 +60,9 @@
   (export-from-c cpy-object
                  cpy-str
                  cpy-list
+                 cpy-type
+                 cpy-tuple
+                 cpy-dict
                  make-py-list
                  make-py-string
                  make-py-symbol
@@ -65,6 +70,7 @@
                  make-py-number
                  make-py-code
                  make-py-function
+                 make-py-dict
                  py-object->py-string
                  get-py-string
                  get-py-number
@@ -79,9 +85,18 @@
                  spy-cpython-tuple?
                  spy-cpython-list?
                  spy-cpython-get-type-name
+                 spy-cpython-add
+                 spy-cpython-sub
+                 spy-cpython-mul
+                 spy-cpython-div
+                 spy-cpython-len/scm
+                 spy-cpython-len/py
                  spy-cpython-getattr/obj
                  spy-cpython-getattr/str
                  spy-cpython-getattr/sym
+                 spy-cpython-setattr/obj
+                 spy-cpython-setattr/str
+                 spy-cpython-setattr/sym
                  cpy-none
                  )
   

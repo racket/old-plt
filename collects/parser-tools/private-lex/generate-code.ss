@@ -61,7 +61,7 @@
            
            ;; The lexer table for transitions on eof
            (eof-table (make-vector (length (dfa-states dfa)) #f))
-
+           
            ;; The lexer table, one entry per state per char.
            ;; Each entry specifies a state to transition to.
            ;; #f indicates no transition
@@ -138,80 +138,109 @@
       `(c-lambda (scheme-object scheme-object) ;; lex-buf get-next-char
 		 scheme-object 
 		 ,code)))
-			
+  
   
   (define (build-code table)
-    (let ((trans (table-trans table))
-	  (eof (table-eof table))
-	  (start-state (table-start table))
-	  (actions (table-actions table))
-	  (no-look (table-no-lookahead table)))
+    (let* ((trans (table-trans table))
+	   (eof (table-eof table))
+	   (start-state (table-start table))
+	   (actions (table-actions table))
+	   (no-look (table-no-lookahead table)))
       (string-append
        (format "Scheme_Object* char_in;~n")
        (format "Scheme_Object* res[2];~n")
        (format "int longest_match_length, longest_match_action, length;~n")
        (format "longest_match_action = ~a;~n" start-state)
-       (format "longest_match_length = length = 1;~n")
+       (format "longest_match_length = 1;~n")
+       (format "length = 0;~n")
        (format "goto scheme_lexer_~a;~n" start-state)
        (let loop ((current-state 0))
 	 (cond
-	  ((< current-state (vector-length eof))
-	   (string-append
-	    (format "scheme_lexer_~a:~n" current-state)
-	    (format "  char_in = scheme_apply(___arg2, 1, &___arg1);~n")
-	    (format "  switch ((char_in != scheme_eof) ? (SCHEME_STR_VAL(char_in))[0] : 256)~n  {~n")
-	    (let loop ((current-char 0)
-		       (last-goto -1))
-	      (cond
-	       ((< current-char 257)
-		(let ((next-state 
-		       (cond
-			((< current-char 256) (vector-ref trans (+ current-char (* 256 current-state))))
-			(else (vector-ref eof current-state)))))
-		  (cond
-		   ((not next-state) (loop (add1 current-char) last-goto))
-		   ((vector-ref no-look next-state)
-		    (let ((act (vector-ref actions next-state)))
-		      (string-append
-		       (if act
-			   (string-append
-			    (format "  case ~a:~n" current-char)
-			    (format "    longest_match_length = length;~n")
-			    (format "    longest_match_action = ~a;~n" next-state)
-			    (format "    goto scheme_lexer_end;~n"))
-			   (string-append
-			    (format "  case ~a:~n" current-char)
-			    (format "    goto scheme_lexer_end;~n")))
-		       (loop (add1 current-char) last-goto))))
-		   ((= last-goto next-state)
-		    (string-append
-		     (format "  case ~a:~n" current-char)
-		     (loop (add1 current-char) last-goto)))
-		   (else
-		    (let ((act (vector-ref actions next-state)))
-		      (string-append
-		       (if act
-			   (string-append
-			    (format "  case ~a:~n" current-char)
-			    (format "    longest_match_length = length;~n")
-			    (format "    length = length + 1;~n")
-			    (format "    longest_match_action = ~a;~n" next-state)
-			    (format "    goto scheme_lexer_~a;~n" next-state))
-			   (string-append
-			    (format "  case ~a:~n" current-char)
-			    (format "    length = length + 1;~n")
-			    (format "    goto scheme_lexer_~a;~n" next-state)))
-		       (loop (add1 current-char) next-state)))))))
-	       (else (format ""))))
-	    (format "  default:~n")
-	    (format "    goto scheme_lexer_end;~n")
-	    (format "  }~n")
-	    (loop (add1 current-state))))
-	  (else "")))
+           ((< current-state (vector-length eof))
+            (string-append
+             (format "scheme_lexer_~a:~n" current-state)
+             (if (vector-ref actions current-state)
+                 (string-append
+                  (format "  longest_match_action = ~a;~n" current-state)
+                  (format "  longest_match_length = length;~n"))
+                 "")
+             (format "  char_in = scheme_apply(___arg2, 1, &___arg1);~n")
+             (format "  length = length + 1;~n")
+             (format "  switch ((char_in != scheme_eof) ? (SCHEME_STR_VAL(char_in))[0] : 256)~n  {~n")
+            
+             (let ((cases
+                    (let loop ((current-char 0))
+                      (cond
+                        ((< current-char 257)
+                         (let ((next-state
+                                (cond
+                                  ((< current-char 256) 
+                                   (vector-ref trans (+ current-char (* 256 current-state))))
+                                  (else 
+                                   (vector-ref eof current-state)))))
+                           (cond
+                             ((not next-state) 
+                              (cons `(,current-char #f)
+                                    (loop (add1 current-char))))
+                             ((vector-ref no-look next-state)
+                              (cons `(,current-char ("end" ,next-state))
+                                    (loop (add1 current-char))))
+                             (else
+                              (cons `(,current-char ,next-state)
+                                    (loop (add1 current-char)))))))
+                        (else null))))
+                   (no-looks (make-vector (vector-length eof) null))
+                   (gotos (make-vector (vector-length eof) null)))
+               
+               (let loop ((cases cases))
+                 (cond
+                   ((not (null? cases))
+                    (let ((trans (car cases)))
+                      (cond
+                        ((not (cadr trans)) (void))
+                        ((pair? (cadr trans))
+                         (vector-set! no-looks (cadr (cadr trans)) 
+                                      (cons (car trans)
+                                            (vector-ref no-looks (cadr (cadr trans))))))
+                        (else
+                         (vector-set! gotos (cadr trans)
+                                      (cons (car trans)
+                                            (vector-ref gotos (cadr trans))))))
+                      (loop (cdr cases))))))
+               
+               (let loop ((goto-state 0))
+                 (cond
+                   ((< goto-state (vector-length eof))
+                    (string-append
+                     (apply string-append 
+                            (map (lambda (char)
+                                   (format "  case ~a:~n" char))
+                                 (vector-ref gotos goto-state)))
+                     (if (not (null? (vector-ref gotos goto-state)))
+                         (format "    goto scheme_lexer_~a;~n" goto-state)
+                         "")
+                     (apply string-append
+                            (map (lambda (char)
+                                   (format "  case ~a:~n" char))
+                                 (vector-ref no-looks goto-state)))
+                     (if (not (null? (vector-ref no-looks goto-state)))
+                         (string-append
+                          (format "    longest_match_length = length;~n")
+                          (format "    longest_match_action = ~a;~n" goto-state)
+                          (format "    goto scheme_lexer_end;~n"))
+                         "")
+                     (loop (add1 goto-state))))
+                   (else ""))))
+             
+             (format "  default:~n")
+             (format "    goto scheme_lexer_end;~n")
+             (format "  }~n")
+             (loop (add1 current-state))))
+           (else "")))
        (format "scheme_lexer_end:~n")
        (format "  res[0] = scheme_make_integer(longest_match_length);~n")
        (format "  res[1] = scheme_make_integer(longest_match_action);~n")
        (format "  ___result = scheme_values(2, res);~n")
        )))
-
+  
   )

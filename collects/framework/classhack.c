@@ -81,7 +81,7 @@ Scheme_Object *interface_to_super_interfaces(int argc, Scheme_Object **argv)
   if (!SCHEME_INTERFACEP(argv[0]))
     scheme_wrong_type("interface->super-interfaces", "interface", 0, argc, argv);
 
-  return array_to_list(interface->num_supers, interface->supers);
+  return array_to_list(interface->num_supers, (Scheme_Object**)interface->supers);
 }
 
 

@@ -343,8 +343,7 @@ static MrEdContext *MakeContext(MrEdContext *c, Scheme_Config *config)
 
   c->handler_running = NULL;
 
-  c->wd = NULL;
-  c->wdlen = 0;
+  c->wd = scheme_get_thread_current_directory(scheme_current_process, &c->wdlen, 1);
 
   c->busyState = 0;
 

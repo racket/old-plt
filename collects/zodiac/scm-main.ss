@@ -1,4 +1,4 @@
-; $Id: scm-main.ss,v 1.213 2000/06/09 00:38:15 mflatt Exp $
+; $Id: scm-main.ss,v 1.214 2000/06/09 22:03:40 mflatt Exp $
 
 (unit/sig zodiac:scheme-main^
   (import zodiac:misc^ zodiac:structures^
@@ -1781,7 +1781,7 @@
 	     (out-pattern-4 `(#%let ((tmp val))
 			       (#%if (#%eqv? tmp test-expr)
 				   (#%begin ,@(get-expr-pattern #t))
-				   (#%evcase tmp rest ...))))
+				   (evcase tmp rest ...))))
 	     (m&e-1 (pat:make-match&env in-pattern-1 kwd-1))
 	     (m&e-2 (pat:make-match&env in-pattern-2 kwd-2))
 	     (m&e-3 (pat:make-match&env in-pattern-3 kwd-3))

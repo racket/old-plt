@@ -34,15 +34,16 @@
   (define last-header #f)
 
   (define max-reached #f)
-  (define (maxxed-out)
-    (unless max-reached
-      (set! max-reached #t)	    
-      (set! search-responses
-	    (cons `(B ,(color-with 
-			"red"
-			"Search aborted: too many responses"))
-		  search-responses)))
-    (raise 'maxxed-out))
+  (define (build-maxxed-out k)
+    (lambda ()
+      (unless max-reached
+	      (set! max-reached #t)	    
+	      (set! search-responses
+		    (cons `(B ,(color-with 
+				"red"
+				"Search aborted: too many responses"))
+			  search-responses)))
+    (k #f)))
 
   (define (add-header s key)
     (unless max-reached
@@ -131,27 +132,28 @@
 		       len)
 	    "doc.txt"))))
   
-  (define (make-html-href anchored-path)
-    (cond
-     [(hd-servlet? anchored-path) 
-      anchored-path]
-     [(doc-txt? anchored-path) ; collection doc.txt
-      (let ([maybe-coll (maybe-extract-coll last-header)])
-	(format 
-	 no-anchor-format
-	 (hexify-string anchored-path)
-	 (hexify-string (make-caption maybe-coll))
-	 maybe-coll))]
-     [else ; manual, so have absolute path
-      (let* ([tidy-path (tidy-manual-path anchored-path)]
-	     [base-path (path-only anchored-path)]
-	     [exp-base-path (explode-path base-path)]
-	     [doc-dir (car (last-pair exp-base-path))]
-	     [full-doc-dir (build-path (collection-path "doc") doc-dir)]
-	     [installed? (hash-table-get installed-table
-					 doc-dir
-					 (lambda () 'installed-unknown))])
-	(when (eq? installed? 'installed-unknown)
+  (define (make-html-href page-label path)
+    (let ([anchored-path (make-anchored-path page-label path)])
+      (cond
+       [(hd-servlet? anchored-path) 
+	anchored-path]
+       [(doc-txt? anchored-path) ; collection doc.txt
+	(let ([maybe-coll (maybe-extract-coll last-header)])
+	  (format 
+	   no-anchor-format
+	   (hexify-string anchored-path)
+	   (hexify-string (make-caption maybe-coll))
+	   maybe-coll))]
+       [else ; manual, so have absolute path
+	(let* ([tidy-path (tidy-manual-path anchored-path)]
+	       [base-path (path-only path)]
+	       [exp-base-path (explode-path base-path)]
+	       [doc-dir (car (last-pair exp-base-path))]
+	       [full-doc-dir (build-path (collection-path "doc") doc-dir)]
+	       [installed? (hash-table-get installed-table
+					   doc-dir
+					   (lambda () 'installed-unknown))])
+	  (when (eq? installed? 'installed-unknown)
 	      (let ([has-index?
 		     (ormap file-exists? 
 			    (map (lambda (s)
@@ -164,10 +166,10 @@
 	    (let* ([doc-entry (assoc doc-dir known-docs)]
 		   [manual-label (or (and doc-entry (cdr doc-entry)) doc-dir)])
 	      (format "/servlets/missing-manual.ss?manual=~a&name=~a"
-		      doc-dir (hexify-string manual-label)))))]))
+		      doc-dir (hexify-string manual-label)))))])))
                             
   ; path is absolute pathname
-  (define (make-text-href path page-label)
+  (define (make-text-href page-label path)
     (let* ([maybe-coll (maybe-extract-coll last-header)]
 	   [hex-path (hexify-string path)]
 	   [hex-caption (if (eq? maybe-coll last-header)
@@ -191,10 +193,9 @@
 		    ".html"))))
 
   (define (goto-lucky-entry ekey label src path page-label key)
-    (let* ([anchored-path (make-anchored-path page-label path)]
-	   [href (if (html-entry? path)
-		     (make-html-href anchored-path)
-		     (make-text-href anchored-path page-label))])
+    (let* ([href (if (html-entry? path)
+		     (make-html-href page-label path)
+		     (make-text-href page-label path))])
       ; can use refresh here, instead of Javscript here - no semicolon in URL
       (send/finish 
        `(HTML
@@ -206,13 +207,12 @@
 	  (A ((HREF ,href)) "click here") ".")))))
 
   (define (add-entry ekey label src path page-label key)
-    (let* ([anchored-path (make-anchored-path page-label path)]
-	   [entry (if (html-entry? path)
+    (let* ([entry (if (html-entry? path)
 		      (make-search-link 
-		       (make-html-href anchored-path)
+		       (make-html-href page-label path)
 		       label src)
 		      (make-search-link 
-		       (make-text-href anchored-path page-label)
+		       (make-text-href page-label path)
 		       label src))])
       (set! search-responses
 	    (cons entry search-responses))))
@@ -235,15 +235,13 @@
 	   [regexp? (string=? match-type "regexp-match")]
 	   [exact-match? (string=? match-type "exact-match")]
 	   [key (gensym)]
-	   [result (with-handlers
-		    ((void
-		      (lambda (exn) #f)))
+	   [result (let/ec k
 		    (do-search search-string 
 			       search-level
 			       regexp?
 			       exact-match?
 			       key
-			       maxxed-out
+			       (build-maxxed-out k)
 			       add-header
 			       set-current-kind!
 			       (if lucky? goto-lucky-entry add-entry)))]

@@ -2,7 +2,6 @@
   (<= < > >=
    = + * /
    eq?
-   boolean=?
    cons
    set-cdr!
    list*

@@ -18,6 +18,8 @@
    empty
    empty?
 
+   boolean=?
+
    identity
    compose
    foldl

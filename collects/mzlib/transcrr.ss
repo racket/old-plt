@@ -35,7 +35,8 @@
 				(car s)
 				(set! s (cdr s))))))
 		       (lambda () (char-ready? in))
-		       void)))])
+		       void
+		       (lambda () (peek-char in)))))])
       (values
        (lambda (file)
 	 (when in

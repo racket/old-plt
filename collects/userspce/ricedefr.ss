@@ -1,13 +1,6 @@
 (unit/sig ricedefs^
   (import [params : plt:userspace:params^])
 
-  (define boolean=?
-    (lambda (x y)
-      (unless (boolean? x)
-	(error 'boolean=? "expected boolean arguments, received ~e ~e"
-	       x y))
-      (#%eq? x y)))
-  
   (define eq?
     (if (params:eq?-only-compares-symbols)
 	(lambda (x y)

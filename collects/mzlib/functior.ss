@@ -293,6 +293,15 @@
 		 l)
 	     (raise-type-error 'last-pair "pair" l)))))
 
+    (define boolean=?
+      (lambda (x y)
+	(unless (and (boolean? x)
+		     (boolean? y))
+	  (raise-type-error 'boolean=? 
+			    "boolean"
+			    (if (boolean? x) y x)))
+	(eq? x y)))
+
     (define cons? (lambda (x) (pair? x)))
     (define empty? (lambda (x) (null? x)))
     (define empty '())

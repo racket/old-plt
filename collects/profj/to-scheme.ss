@@ -584,17 +584,17 @@
                              
                              (define/override (my-name) ,(class-name))
                              
-                             (rename (super-field-names field-names))
+                             #;(rename (super-field-names field-names))
                              (define/override (field-names)
-                               (append (super-field-names)
+                               (append (super field-names)
                                        (list ,@(map (lambda (n) (id-string (field-name n)))
                                                     (append (accesses-public fields)
                                                             (accesses-package fields)
                                                             (accesses-protected fields)
                                                             (accesses-private fields))))))
-                             (rename (super-field-values field-values))
+                             #;(rename (super-field-values field-values))
                              (define/override (field-values)
-                               (append (super-field-values)
+                               (append (super field-values)
                                        (list ,@(map (lambda (n) (build-identifier (build-var-name (id-string (field-name n)))))
                                                     (append (accesses-public fields)
                                                             (accesses-package fields)
@@ -924,7 +924,7 @@
       (if over?
           (create-syntax #f
                          `(begin
-                            (rename (,(build-identifier (string-append "super." method-string)), method-name))
+                            #;(rename (,(build-identifier (string-append "super." method-string)), method-name))
                             (,definition ,method-name
                              ,(translate-method-body method-string parms block modifiers type 
                                                      all-tail? ctor? inner? depth type-recs)))
@@ -1711,13 +1711,15 @@
            (cond 
              ((special-name? expr)
               (let* ((over? (overridden? (string->symbol m-name)))
-                     (name (translate-id (if (and (equal? (special-name-name expr) "super") over?)
-                                             (format "super.~a" m-name)
-                                             m-name)
-                                         (id-src method-name))))
-                (if (or static? over?)
-                    (create-syntax #f `(,name ,@args) (build-src src))
-                    (create-syntax #f `(send this ,name ,@args) (build-src src)))))
+                     (name (translate-id m-name 
+                                         #;(if (and (equal? (special-name-name expr) "super") over?)
+                                               (format "super.~a" m-name)
+                                               m-name)
+                                           (id-src method-name))))
+                (cond
+                  (static? (create-syntax #f `(,name ,@args) (build-src src)))
+                  (over? (create-syntax #f `(super ,name ,@args) (build-src src)))
+                  (else (create-syntax #f `(send this ,name ,@args) (build-src src))))))
              ((not expr)
               (if (or static? (memq 'private (method-record-modifiers method-record)))
                   (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src))

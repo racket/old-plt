@@ -53,8 +53,9 @@
             location 
             (if (equal? (file-name-from-path location) location)
                 (build-path "compiled")
-                (build-path (substring location 0 (- (string-length location)
-                                                     (string-length (file-name-from-path location)))) "compiled")))
+                (build-path (substring (path->string location) 0 
+                                       (- (string-length (path->string location))
+                                          (string-length (path->string (file-name-from-path location))))) "compiled")))
       (for-each (lambda (dependents)
                   (let ((names (compilation-unit-contains dependents))
                         (syntaxes (compilation-unit-code dependents))
@@ -94,7 +95,7 @@
           (get-class-names 
            (lambda (files)
              (map (lambda (f)
-                    (regexp-replace ".java" (file-name-from-path f) ""))
+                    (regexp-replace ".java" (path->string (file-name-from-path f)) ""))
                   files))))
       (map (lambda (package-files)
              (let* ((files (car package-files))

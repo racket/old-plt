@@ -64,10 +64,11 @@
       (else (cons (car l) (flatten (cdr l))))))
   
   (define (make-compilation-path file-name)
-    (let ((path (explode-path (normalize-path file-name))))
-      (build-path (apply build-path (reverse (cdr (reverse path))))
-                  "compiled" (string-append 
-                              (regexp-replace ".java" (path->string (car (reverse path))) "") ".jinfo"))))
+    (let* ((path (explode-path (normalize-path file-name)))
+           (rev-path (reverse path))
+           (file (path->string (car rev-path))))
+      (build-path (apply build-path (reverse (cdr rev-path)))
+                  "compiled" (string-append (regexp-replace ".java" file "") ".jinfo"))))
   
   (define (write-out-jinfos files jinfos)
     (for-each (lambda (file-name jinfo)

@@ -132,9 +132,9 @@
 
           (define/public (order-manuals x)
             (values (case level
-                      ((beginner) `("profj-beginner" "tour" "drscheme" "help"))
-                      ((intermediate) '("profj-intermediate" "profj-beginner" "tour" "drscheme" "help"))
-                      ((advanced full) '("profj-advanced" "profj-intermediate" "profj-beginner" "tour" "drscheme" "help")))
+                      ((beginner) `(#"profj-beginner" #"tour" #"drscheme" #"help"))
+                      ((intermediate) '(#"profj-intermediate" #"profj-beginner" #"tour" #"drscheme" #"help"))
+                      ((advanced full) '(#"profj-advanced" #"profj-intermediate" #"profj-beginner" #"tour" #"drscheme" #"help")))
                     #f))
           
           ;default-settings: -> profj-settings
@@ -491,6 +491,7 @@
                   (append (compilation-unit-code (car mod-lists))
                           (order (cdr mod-lists))))))
               
+          (define/public (get-comment-character) (values "//" "*"))
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) 
             (cons (string-constant experimental-languages) (list "ProfessorJ" name) ))
@@ -567,10 +568,9 @@
           (define/public (get-comment) "// ")
           (define/public (get-mesg) "Convert to text comment")
 
-          (rename [super-get-text get-text])
           (define/override get-text
             (opt-lambda (offset num [flattened? #t])
-              (let* ([super-res (super-get-text offset num flattened?)]
+              (let* ([super-res (super get-text offset num flattened?)]
                      [replaced (string-append (send this get-comment) 
                                               (regexp-replace* "\n" super-res 
                                                                (string-append "\n" (send this get-comment))))])
@@ -655,7 +655,7 @@
           (define/override (get-position) 'left-top)
 
            (define/public (read-one-special index source line column position)
-            (raise (make-exn:special-comment "msg" (current-continuation-marks) 1)))
+            (raise (make-special-comment "msg" (current-continuation-marks) 1)))
           
           (super-instantiate ())
           (inherit set-snipclass get-editor)

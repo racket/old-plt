@@ -26,6 +26,21 @@
  SrPersist, but you will certainly want to consult an ODBC reference for 
  more information.
 
+ SrPersist is not
+ ----------------
+
+ SrPersist makes the ODBC API available in Scheme, but does not
+ support any abstractions beyond it.  Some useful error-checking is 
+ performed that is not done when using the C version of the API.
+ Serious run-time errors are still possible, such as when a too-small 
+ buffer is bound to a column.  
+
+ We are considering ways in which to build a higher-level layer 
+ on top of SrPersist, to avoid some of the low-level details 
+ of ODBC.  We would welcome ideas and contributions from users  
+ of SrPersist in this area.  Please contact us via email at
+ scheme@cs.rice.edu.
+
  Loading
  -------
 

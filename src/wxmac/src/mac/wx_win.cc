@@ -28,6 +28,10 @@ static const char sccsid[] = "%W% %G%";
   #include <QuickDraw.h>
 #endif
 
+// these offsets are used to eliminate calls to the real SetOrigin
+int SetOriginX = 0;
+int SetOriginY = 0;
+
 wxWindow* wxWindow::gMouseWindow = NULL; 
 
 extern wxScreen* theScreen;
@@ -664,13 +668,12 @@ void wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
 
 	cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
 	if (cParentArea && !wxSubType(__type, wxTYPE_FRAME)) {
-		int theRootX, theRootY;
-		cParentArea->FrameContentAreaOffset(&theRootX, &theRootY);
-		theRootX += cWindowX;
-		theRootY += cWindowY;
-		::SetOrigin(-theRootX, -theRootY);
-	} else
-		::SetOrigin(0, 0);
+		cParentArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
+		SetOriginX += cWindowX;
+		SetOriginY += cWindowY;
+	} else {
+          SetOriginX = SetOriginY = 0;
+        }
 }
 
 //-----------------------------------------------------------------------------
@@ -683,9 +686,7 @@ void wxWindow::SetCurrentMacDC(void) // mac platform only
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
 		cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
-		int theRootX, theRootY;
-		cClientArea->FrameContentAreaOffset(&theRootX, &theRootY);
-		::SetOrigin(-theRootX, -theRootY);
+		cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 	}
 }
 
@@ -699,9 +700,7 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 	if (cMacDC->currentUser() != this)
 	{ // must setup platform
 		cMacDC->setCurrentUser(this);
-		int theRootX, theRootY;
-		cClientArea->FrameContentAreaOffset(&theRootX, &theRootY);
-		::SetOrigin(-theRootX, -theRootY);
+		cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
 		Rect theClipRect;
 		RgnHandle rgn = NULL;
 		if (cHidden) {
@@ -709,6 +708,7 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 			theClipRect.left = theClipRect.right = 0;
 		} else {
 			GetClipRect(cClientArea, &theClipRect);
+                        OffsetRect(&theClipRect,SetOriginX,SetOriginY)
 			MacSetBackground();
 			SetForeground();
 			
@@ -723,18 +723,19 @@ void wxWindow::SetCurrentDC(void) // mac platform only
 		
 		if (rgn) {
 		  RgnHandle clip = NewRgn();
-		  RectRgn(clip, &theClipRect); // SET-ORIGIN FLAGGED
+		  RectRgn(clip, &theClipRect);
 		  DiffRgn(clip, rgn, clip);
 		  DisposeRgn(rgn);
-		  SetClip(clip); // SET-ORIGIN FLAGGED
+		  SetClip(clip);
 		  DisposeRgn(clip);
 		} else 
-		  ::ClipRect(&theClipRect); // SET-ORIGIN FLAGGED
+		  ::ClipRect(&theClipRect);
 		
 		PenMode(patCopy);
 		SetTextInfo();
 	}
 }
+
 
 RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
 {

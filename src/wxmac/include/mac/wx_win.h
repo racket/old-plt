@@ -36,6 +36,9 @@
 typedef       void* wxWindow ;
 #else
 
+extern int SetOriginX;
+extern int SetOriginY;
+
 class wxMacDC;
 class wxFrame;
 class wxBrush;

@@ -51,7 +51,7 @@
 	  s)))
 
   (define (log-warning . args)
-    (apply printf args)
+    ; (apply printf args)
     (void))
   (define log log-warning)
 

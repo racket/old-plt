@@ -356,7 +356,8 @@
  
  (help-menu-label "&Aide")
  (about-info "Auteurs et détails concernant ce logiciel.")
- (about-menu-item "A propos de...")
+ (about-menu-item "A propos de ")
+ (about-menu-item-after "...")
  
  ;;; help-desk-specific menus
  (new-help-desk "&Nouvelle Aide")

@@ -50,7 +50,7 @@
              (f (map srep->attribute (cadr x)) cddr)
              (f null cdr)))]
       [(string? x) (make-pcdata 'scheme 'scheme x)]
-      [(or (symbol? x) (integer? x)) (make-entity x)]
+      [(or (symbol? x) (integer? x)) (make-entity 'scheme 'scheme x)]
       [else x]))
   
   ;; xexpr->string : Xexpression -> String

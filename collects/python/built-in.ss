@@ -13,7 +13,8 @@
            ;; built-in functions
            range
            len
-           (rename sqrt py-sqrt))
+           (rename py-sqrt sqrt)
+           (rename py-map map))
   
   (define object py-object%)
   (define staticmethod py-static-method%)
@@ -33,6 +34,17 @@
     (number->py-number% (length (py-list%->list l))))
   
   (define (py-sqrt n)
-    (number->py-number% (sqrt (py-number%->number))))
+    (number->py-number% (sqrt (py-number%->number n))))
+  
+  (define py-map (procedure->py-function%
+                  (lambda (fn lst . rest)
+    (list->py-list%
+     (apply map
+            (append (list (py-function%->procedure fn)
+                          (py-sequence%->list lst))
+                    (map py-sequence%->list rest)))))
+                  'map))
+                  
+          
   
   )

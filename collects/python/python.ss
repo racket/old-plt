@@ -1,8 +1,11 @@
 (module python mzscheme
   (require (lib "class.ss")
+           (lib "list.ss")
           ; "compiler.ss"
-           "read-python.ss"
-           "base.ss")
+           "python-node.ss"
+           "primitives.ss"
+           "read-python.ss")
+           ;"base.ss")
   
   ;;;; temporary Python Evaluation module by Daniel ;;;;;;;
   

@@ -239,7 +239,7 @@
         (let ([body (if iter
                         (send iter to-scheme expr-so result)
                         `(set! ,result (append ,result (cons ,expr-so null))))])
-        (->orig-so `(for-each (cond
+        (->orig-so `(for-each ,(cond
                                 [(is-a? targ tidentifier%)
                                  `(lambda (,(send targ to-scheme))
                                     ,body)]
@@ -251,7 +251,7 @@
                                        (lambda (,@(map (lambda (t) (send t to-scheme))
                                                        (send targ get-sub-targets)))
                                          ,body)
-                                       ,item)))]
+                                       (,(py-so 'py-sequence%->list) ,item))))]
                                 [else (error "bad target for a list comprehension")])
                               (,(py-so 'py-sequence%->list) ,(send vals to-scheme))))))
       
@@ -554,6 +554,12 @@
       
       (define/public (add-binding id)
         (set! bindings (cons id bindings)))
+      
+      ;;daniel
+      (inherit ->orig-so)
+      (define/override (to-scheme)
+        (->orig-so `(,(py-so 'py-lambda) 'anonymous-function ,(send parms to-scheme)
+                     ,(send body to-scheme))))
       
       (define/public (is-global? b) #f)
       

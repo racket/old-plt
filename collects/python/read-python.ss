@@ -2,7 +2,7 @@
   (require "parser.ss"
            "compiler.ss"
            "compiler-stmt.ss" ; for module-scope%
-           "base.ss"
+           ;"base.ss"
            (lib "mred.ss" "mred")
            (lib "contracts.ss")
            (lib "class.ss"))

@@ -459,6 +459,7 @@
       (define/override (check-break/cont enclosing-loop)
         (void (sub-stmt-map (lambda (s) (send s check-break/cont enclosing-loop)))))
       
+      
       (super-instantiate ())))
 
   ;; 7.2

@@ -2509,147 +2509,143 @@
   ;;                                                        ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
-  (test-name "integer?" (flat-contract integer?))
-  (test-name "boolean?" (flat-contract boolean?))
-  (test-name "char?" (flat-contract char?))
-  (test-name "any?" any?)
-  (test-name "(-> integer? integer?)" (-> integer? integer?))
-  (test-name "(-> integer? any)" (-> integer? any))
-  (test-name "(-> integer? (values boolean? char?))" (-> integer? (values boolean? char?)))
-  (test-name "(->* (integer? boolean?) (char? any?))" (->* (integer? boolean?) (char? any?)))
-  (test-name "(->* (integer? boolean?) any)" (->* (integer? boolean?) any))
-  (test-name "(->* (integer?) boolean? (char? any?))" (->* (integer?) boolean? (char? any?)))
-  (test-name "(->* (integer? char?) boolean? any)" (->* (integer? char?) boolean? any))
-  (test-name "(->d integer? boolean? ...)" (->d integer? boolean? (lambda (x y) char?)))
-  (test-name "(->d* (integer? boolean?) ...)" (->d* (integer? boolean?) (lambda (x y) char?)))
-  (test-name "(->d* (integer? boolean?) any? ...)" (->d* (integer? boolean?) any? (lambda (x y . z) char?)))
-  (test-name "(->r ((x ...)) ...)" (->r ((x number?)) number?))
-  (test-name "(->r ((x ...) (y ...) (z ...)) ...)" (->r ((x number?) (y boolean?) (z pair?)) number?))
-  (test-name "(->r ((x ...) (y ...) (z ...)) rest-x ... ...)" 
+  (test-name 'integer? (flat-contract integer?))
+  (test-name 'boolean? (flat-contract boolean?))
+  (test-name 'char? (flat-contract char?))
+  (test-name 'any? any?)
+  (test-name '(-> integer? integer?) (-> integer? integer?))
+  (test-name '(-> integer? any) (-> integer? any))
+  (test-name '(-> integer? (values boolean? char?)) (-> integer? (values boolean? char?)))
+  (test-name '(->* (integer? boolean?) (char? any?)) (->* (integer? boolean?) (char? any?)))
+  (test-name '(->* (integer? boolean?) any) (->* (integer? boolean?) any))
+  (test-name '(->* (integer?) boolean? (char? any?)) (->* (integer?) boolean? (char? any?)))
+  (test-name '(->* (integer? char?) boolean? any) (->* (integer? char?) boolean? any))
+  (test-name '(->d integer? boolean? ...) (->d integer? boolean? (lambda (x y) char?)))
+  (test-name '(->d* (integer? boolean?) ...) (->d* (integer? boolean?) (lambda (x y) char?)))
+  (test-name '(->d* (integer? boolean?) any? ...) (->d* (integer? boolean?) any? (lambda (x y . z) char?)))
+  (test-name '(->r ((x ...)) ...) (->r ((x number?)) number?))
+  (test-name '(->r ((x ...) (y ...) (z ...)) ...) (->r ((x number?) (y boolean?) (z pair?)) number?))
+  (test-name '(->r ((x ...) (y ...) (z ...)) rest-x ... ...) 
              (->r ((x number?) (y boolean?) (z pair?)) rest-x any? number?))
   
-  (test-name "(case-> (->r ((x ...)) ...))" (case-> (->r ((x number?)) number?)))
-  (test-name "(case-> (->r ((x ...) (y ...) (z ...)) ...))"
+  (test-name '(case-> (->r ((x ...)) ...)) (case-> (->r ((x number?)) number?)))
+  (test-name '(case-> (->r ((x ...) (y ...) (z ...)) ...))
              (case-> (->r ((x number?) (y boolean?) (z pair?)) number?)))
   
-  (test-name "(case-> (-> integer? integer?) (-> integer? integer? integer?))"
+  (test-name '(case-> (-> integer? integer?) (-> integer? integer? integer?))
              (case-> (-> integer? integer?) (-> integer? integer? integer?)))
   
-  (test-name "(union)" (union))
-  (test-name "(union integer? gt0?)" (union integer? (let ([gt0? (lambda (x) (> x 0))]) gt0?)))
-  (test-name "(union integer? boolean?)"
+  (test-name '(union) (union))
+  (test-name '(union integer? gt0?) (union integer? (let ([gt0? (lambda (x) (> x 0))]) gt0?)))
+  (test-name '(union integer? boolean?)
              (union (flat-contract integer?)
                     (flat-contract boolean?)))
-  (test-name "(union (-> (>=/c 5) (>=/c 5)) boolean?)"
+  (test-name '(union (-> (>=/c 5) (>=/c 5)) boolean?)
              (union (-> (>=/c 5) (>=/c 5)) boolean?))
   
-  (test-name "any?" (and/c))
-  (test-name "and/c-contract?" (and/c number? integer?))
-  (test-name "and/c-contract?" (and/c (flat-contract number?)
+  (test-name 'any? (and/c))
+  (test-name 'and/c-contract? (and/c number? integer?))
+  (test-name 'and/c-contract? (and/c (flat-contract number?)
                                       (flat-contract integer?)))
-  (test-name "(and/c number? (-> integer? integer?))" (and/c number? (-> integer? integer?)))
+  (test-name '(and/c number? (-> integer? integer?)) (and/c number? (-> integer? integer?)))
 
-  (test-name "(not/f integer?)" (not/f integer?))
-  (test-name "(=/c 5)" (=/c 5))
-  (test-name "(>=/c 5)" (>=/c 5))
-  (test-name "(<=/c 5)" (<=/c 5))
-  (test-name "(</c 5)" (</c 5))
-  (test-name "(>/c 5)" (>/c 5))
-  (test-name "(integer-in 0 10)" (integer-in 0 10))
-  (test-name "(real-in 1 10)" (real-in 1 10))
-  (test-name "(string/len 3)" (string/len 3))
-  (test-name "natural-number?" natural-number?)
-  (test-name "false?" false?)
-  (test-name "printable?" printable?)
-  (test-name "(symbols 'a 'b 'c)"(symbols 'a 'b 'c))
+  (test-name '(not/f integer?) (not/f integer?))
+  (test-name '(=/c 5) (=/c 5))
+  (test-name '(>=/c 5) (>=/c 5))
+  (test-name '(<=/c 5) (<=/c 5))
+  (test-name '(</c 5) (</c 5))
+  (test-name '(>/c 5) (>/c 5))
+  (test-name '(integer-in 0 10) (integer-in 0 10))
+  (test-name '(real-in 1 10) (real-in 1 10))
+  (test-name '(string/len 3) (string/len 3))
+  (test-name 'natural-number? natural-number?)
+  (test-name 'false? false?)
+  (test-name 'printable? printable?)
+  (test-name '(symbols 'a 'b 'c)(symbols 'a 'b 'c))
   
   (let ([c% (class object% (super-new))])
-    (test-name "(subclass?/c class:c%)" (subclass?/c c%)))
+    (test-name '(subclass?/c class:c%) (subclass?/c c%)))
   
   (let ([i<%> (interface ())])
-    (test-name "(implementation?/c interface:i<%>)" (implementation?/c i<%>)))
+    (test-name '(implementation?/c interface:i<%>) (implementation?/c i<%>)))
   
   (let ([i<%> (interface ())]
         [c% (class object% (super-new))])
-    (test-name "(is-a?/c interface:i<%>)" (is-a?/c i<%>))
-    (test-name "(is-a?/c class:c%)" (is-a?/c c%)))
+    (test-name '(is-a?/c interface:i<%>) (is-a?/c i<%>))
+    (test-name '(is-a?/c class:c%) (is-a?/c c%)))
   
-  (test-name "(listof boolean?)" (listof boolean?))  
-  (test-name "(listof any?)" (listof any?))
-  (test-name "(list-immutableof boolean?)" (list-immutableof boolean?))
-  (test-name "(list-immutableof any?)" (list-immutableof any?))
-  (test-name "(list-immutableof boolean?)" (list-immutableof boolean?))
-  (test-name "(list-immutableof (-> boolean? boolean?))" (list-immutableof (-> boolean? boolean?)))
+  (test-name '(listof boolean?) (listof boolean?))  
+  (test-name '(listof any?) (listof any?))
+  (test-name '(list-immutableof boolean?) (list-immutableof boolean?))
+  (test-name '(list-immutableof any?) (list-immutableof any?))
+  (test-name '(list-immutableof boolean?) (list-immutableof boolean?))
+  (test-name '(list-immutableof (-> boolean? boolean?)) (list-immutableof (-> boolean? boolean?)))
   
-  (test-name "(vectorof boolean?)" (vectorof boolean?))
-  (test-name "(vectorof any?)" (vectorof any?))
+  (test-name '(vectorof boolean?) (vectorof boolean?))
+  (test-name '(vectorof any?) (vectorof any?))
   
-  (test-name "(vector/p boolean? integer?)" (vector/p boolean? integer?))
-  (test-name "(vector/p boolean? integer?)" (vector/p boolean? (flat-contract integer?)))
+  (test-name '(vector/p boolean? integer?) (vector/p boolean? integer?))
+  (test-name '(vector/p boolean? integer?) (vector/p boolean? (flat-contract integer?)))
 
-  (test-name "(cons/p boolean? integer?)" (cons/p boolean? (flat-contract integer?)))
-  (test-name "(cons/p boolean? integer?)" (cons/p boolean? (flat-contract integer?)))
-  (test-name "(cons/p boolean? (cons/p integer? null?))" (list/p boolean? (flat-contract integer?)))
-  (test-name "(cons/p boolean? (cons/p integer? null?))" (list/p boolean? (flat-contract integer?)))
+  (test-name '(cons/p boolean? integer?) (cons/p boolean? (flat-contract integer?)))
+  (test-name '(cons/p boolean? integer?) (cons/p boolean? (flat-contract integer?)))
+  (test-name '(cons/p boolean? (cons/p integer? null?)) (list/p boolean? (flat-contract integer?)))
+  (test-name '(cons/p boolean? (cons/p integer? null?)) (list/p boolean? (flat-contract integer?)))
 
-  (test-name "(cons-immutable/c boolean? integer?)" (cons-immutable/c boolean? (flat-contract integer?)))
-  (test-name "(cons-immutable/c boolean? integer?)" (cons-immutable/c boolean? (flat-contract integer?)))
-  (test-name "(cons-immutable/c boolean? integer?)" (cons-immutable/c boolean? (flat-contract integer?)))
-  (test-name "(cons-immutable/c (-> boolean? boolean?) integer?)" (cons-immutable/c (-> boolean? boolean?) integer?))
+  (test-name '(cons-immutable/c boolean? integer?) (cons-immutable/c boolean? (flat-contract integer?)))
+  (test-name '(cons-immutable/c boolean? integer?) (cons-immutable/c boolean? (flat-contract integer?)))
+  (test-name '(cons-immutable/c boolean? integer?) (cons-immutable/c boolean? (flat-contract integer?)))
+  (test-name '(cons-immutable/c (-> boolean? boolean?) integer?) (cons-immutable/c (-> boolean? boolean?) integer?))
   
-  (test-name "(cons-immutable/c boolean? (cons-immutable/c integer? null?))"
+  (test-name '(cons-immutable/c boolean? (cons-immutable/c integer? null?))
              (list-immutable/c boolean? (flat-contract integer?)))
-  (test-name "(cons-immutable/c boolean? (cons-immutable/c integer? null?))" 
+  (test-name '(cons-immutable/c boolean? (cons-immutable/c integer? null?)) 
              (list-immutable/c boolean? (flat-contract integer?)))
-  (test-name "(cons-immutable/c boolean? (cons-immutable/c integer? null?))"
+  (test-name '(cons-immutable/c boolean? (cons-immutable/c integer? null?))
              (list-immutable/c boolean? (flat-contract integer?)))
-  (test-name "(cons-immutable/c (-> boolean? boolean?) (cons-immutable/c integer? null?))"
+  (test-name '(cons-immutable/c (-> boolean? boolean?) (cons-immutable/c integer? null?))
              (list-immutable/c (-> boolean? boolean?) integer?))
   
-  (test-name "(box/p boolean?)" (box/p boolean?))
-  (test-name "(box/p boolean?)" (box/p (flat-contract boolean?)))
+  (test-name '(box/p boolean?) (box/p boolean?))
+  (test-name '(box/p boolean?) (box/p (flat-contract boolean?)))
   (test-name "the-name" (flat-rec-contract the-name))
 
-  (test-name "(object-contract)" (object-contract))
-  (test-name "(object-contract (field x integer?))" (object-contract (field x integer?)))
-  (test-name "(object-contract (m (-> integer? integer?)))"
+  (test-name '(object-contract) (object-contract))
+  (test-name '(object-contract (field x integer?)) (object-contract (field x integer?)))
+  (test-name '(object-contract (m (-> integer? integer?)))
              (object-contract (m (-> integer? integer?))))
-  (test-name "(object-contract (m (-> integer? any)))"
+  (test-name '(object-contract (m (-> integer? any)))
              (object-contract (m (-> integer? any))))
-  (test-name "(object-contract (m (-> integer? (values integer? integer?))))" 
+  (test-name '(object-contract (m (-> integer? (values integer? integer?)))) 
              (object-contract (m (-> integer? (values integer? integer?)))))
-  (test-name "(object-contract (m (case-> (-> integer? integer? integer?) (-> integer? (values integer? integer?)))))"
+  (test-name '(object-contract (m (case-> (-> integer? integer? integer?) (-> integer? (values integer? integer?)))))
              (object-contract (m (case-> 
                                   (-> integer? integer? integer?)
                                   (-> integer? (values integer? integer?))))))
   (test-name
-   (format
-    "(object-contract (m (case-> (-> integer? symbol?) ~
-                                 (-> integer? boolean? symbol?) ~
-                                 (-> integer? boolean? number? symbol?))))")
+   '(object-contract (m (case-> (-> integer? symbol?)
+                                (-> integer? boolean? symbol?)
+                                (-> integer? boolean? number? symbol?))))
    (object-contract (m (opt->* (integer?) (boolean? number?) (symbol?)))))
   (test-name
-   (format
-    "(object-contract (m (case-> (-> integer? symbol?) ~
-                                 (-> integer? boolean? symbol?) ~
-                                 (-> integer? boolean? number? symbol?))))")
+    '(object-contract (m (case-> (-> integer? symbol?)
+                                 (-> integer? boolean? symbol?)
+                                 (-> integer? boolean? number? symbol?))))
    (object-contract (m (opt-> (integer?) (boolean? number?) symbol?))))
   (test-name
-   (format
-    "(object-contract (m (case-> (-> integer? any) ~
-                                 (-> integer? boolean? any) ~
-                                 (-> integer? boolean? number? any))))")
+    '(object-contract (m (case-> (-> integer? any)
+                                 (-> integer? boolean? any)
+                                 (-> integer? boolean? number? any))))
    (object-contract (m (opt->* (integer?) (boolean? number?) any))))
   (test-name
-   (format
-    "(object-contract (m (case-> (-> integer? (values symbol? boolean?)) ~
-                                 (-> integer? boolean? (values symbol? boolean?)))))")
+    '(object-contract (m (case-> (-> integer? (values symbol? boolean?))
+                                 (-> integer? boolean? (values symbol? boolean?)))))
    (object-contract (m (opt->* (integer?) (boolean?) (symbol? boolean?)))))
   
-  (test-name "(object-contract (m (->r ((x ...)) ...)))" (object-contract (m (->r ((x number?)) number?))))
-  (test-name "(object-contract (m (->r ((x ...) (y ...) (z ...)) ...)))" 
+  (test-name '(object-contract (m (->r ((x ...)) ...))) (object-contract (m (->r ((x number?)) number?))))
+  (test-name '(object-contract (m (->r ((x ...) (y ...) (z ...)) ...))) 
              (object-contract (m (->r ((x number?) (y boolean?) (z pair?)) number?))))
-  (test-name "(object-contract (m (->r ((x ...) (y ...) (z ...)) rest-x ... ...)))" 
+  (test-name '(object-contract (m (->r ((x ...) (y ...) (z ...)) rest-x ... ...))) 
              (object-contract (m (->r ((x number?) (y boolean?) (z pair?)) rest-x any? number?))))
   
   ))

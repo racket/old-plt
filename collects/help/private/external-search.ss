@@ -61,5 +61,5 @@
       (help-desk-navigate 
        cookie
        (make-external-search-url 
-	cookie
+	(hd-cookie->port cookie)
 	(cadr entry))))))

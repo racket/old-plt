@@ -1461,6 +1461,10 @@ if test "${enable_oskit}" = "yes" ; then
   enable_mred=no
 fi
 
+if test "${enable_dynlib}" = "yes" ; then
+  enable_shared=yes
+fi
+
 if test "${enable_mred}" = "no" ; then
   enable_wbuild=no
   enable_xrender=no
@@ -4798,6 +4802,7 @@ case $OS in
       5.*)
        STATICLINK="-Wl,-Bstatic" # after -ldl
        LIBS="$LIBS -lsocket -lnsl -lintl"
+       need_gcc_static_libgcc="yes"
        ;;
       *)
        ;;
@@ -4902,6 +4907,7 @@ case $OS in
       NOT_OSX=".other"
       MZINSTALLTARGET=osx-install
       enable_xrender=no
+      enable_shared=no
       if test "${enable_libfw}" = "yes" ; then
         FRAMEWORK_INSTALL_DIR=/Library/Frameworks
       else
@@ -6662,10 +6668,6 @@ fi
 
 ############## libtool ################
 
-if test "${enable_dynlib}" = "yes" ; then
-  enable_shared=yes
-fi
-
 if test "${enable_shared}" = "yes" ; then
   echo "Configuring libtool"
 
@@ -6673,10 +6675,29 @@ if test "${enable_shared}" = "yes" ; then
     mkdir "lt"
   fi
   abssrcdir=`(cd ${srcdir}; pwd)`
-  absprefix=`(cd ${prefix}; pwd)`
+
+  # Try to convert prefix to an absolute path:
+  if test -d "${prefix}" ; then
+    absprefix=`(cd ${prefix}; pwd)`
+  else
+    absprefix="${prefix}"
+  fi
 
   (cd lt; sh ${abssrcdir}/lt/configure --enable-shared --disable-static)
   LTDIR=`pwd`/lt
+
+  if test "${need_gcc_static_libgcc}" = "yes" ; then
+    need_gcc_static_libgcc=""
+    if test "$CC" = "gcc" ; then
+      gcc_vers_three=`${CC} -v 2>&1 | grep "version 3."`
+      if test "$gcc_vers_three" = "" ; then
+        need_gcc_static_libgcc=""
+      else
+        need_gcc_static_libgcc=" -Wl,-static-libgcc"
+      fi
+    fi
+  fi
+
 
   plt_lib_version=`grep " MZSCHEME_VERSION " ${srcdir}/mzscheme/src/schvers.h | cut -d '"' -f 2`
 
@@ -6684,8 +6705,8 @@ if test "${enable_shared}" = "yes" ; then
   STATIC_AR="${LTDIR}/libtool --mode=link $CC -o"
   ARFLAGS=""
   RANLIB=":"
-  MZLINKER="${LTDIR}/libtool --mode=link $CC"
-  MREDLINKER="${LTDIR}/libtool --mode=link $CXX"
+  MZLINKER="${LTDIR}/libtool --mode=link $CC${need_gcc_static_libgcc} -rpath ${absprefix}/lib"
+  MREDLINKER="${LTDIR}/libtool --mode=link $CXX${need_gcc_static_libgcc} -rpath ${absprefix}/lib"
   PLAIN_CC="$CC"
   CC="${LTDIR}/libtool --mode=compile $CC"
   CXX="${LTDIR}/libtool --mode=compile $CXX"

@@ -9,7 +9,25 @@
           [fw : framework^]
           [d : drscheme:export^])
   
-  
+  (define debugger-text%
+    (class text% args
+      (inherit dc-location-to-editor-location)
+      (rename [super-on-local-event on-local-event])
+      (override
+        [on-local-event
+         (let ([get-pos
+                (lambda (event)
+                  (let*-values ([(event-x event-y)
+                                 (values (send event get-x)
+                                         (send event get-y))]
+                                [(x y) (dc-location-to-editor-location
+                                        event-x event-y)])
+                    (find-position x y)))])
+           (lambda (event)
+             (when (send event button-down? 'left)
+               (message-box "dc-location" (format "dc-location: x: ~a y: ~a~n" x y)))))])
+      (sequence (apply super-init args))))
+         
   
   (fw:preferences:set-default 'debugger-width 400 number?)
   (fw:preferences:set-default 'debugger-height 800 number?)

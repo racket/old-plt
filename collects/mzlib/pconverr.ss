@@ -290,7 +290,7 @@
 				  (lambda () '(class ...)))]
 				[(object? expr) `(make-object
 						     ,(build-named 
-						       (object-class expr)
+						       (object-interface expr)
 						       (lambda () '(class ...)))
 						   ...)]
 				[(void? expr) '(void)]

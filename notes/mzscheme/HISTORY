@@ -1,4 +1,5 @@
-Version 100alpha4, July 14, 1999
+Version 100, ??, 1999
+ + indicates a change since 100alpha4
  * indicates a change since 100alpha3
 Changed class syntax, splitting public clause use into:
  public : defines ivars not in superclass
@@ -6,10 +7,12 @@ Changed class syntax, splitting public clause use into:
 Changed empty superclass from the empty list to object%;
  every class initialization must call super-init
 Added ivar-in-interface?
++ Added class-initialization-arity
 * Added class->interface
 * Added object-interface
-* WARNING: Plan to remove object-class and ivar-in-class? in
- final version 100 or version 101
++ Removed object-class
++ Removed ivar-in-class?; replace (ivar-in-class? x c)
+ with (ivar-in-interface? (class->interface x c))
 Changed interface: raises an exception if a superinterface
  declares a variable that is also declared in the interface
  expression

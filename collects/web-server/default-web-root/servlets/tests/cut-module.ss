@@ -29,13 +29,13 @@
              (build-suspender
               '("Keep shopping")
               `((p "Your order has shipped to a random location.  You may not go back.")
-                (p (input ([type "submit"] [name "Keep Shopping"])))
-                (p (input ([type "submit"] [name "Logout"]))))))]
+                (p (input ([type "submit"] [name "go"] [value "Keep Shopping"])))
+                (p (input ([type "submit"] [name "stop"] [value "Logout"]))))))]
            [next (request-bindings next-request)])
       (cond
-        [(exists-binding? '|Keep+Shopping| next)
+        [(exists-binding? 'go next)
          (start next-request)]
-        [(exists-binding? '|Logout| next)
+        [(exists-binding? 'stop next)
          (send/finish goodbye-page)]
         [else
          (send/finish

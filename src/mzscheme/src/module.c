@@ -1553,6 +1553,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
   if (!menv || restart) {
     if (!menv) {
+      /* printf("new %ld %s\n", env->phase, SCHEME_SYM_VAL(m->modname)); */
       menv = scheme_new_module_env(env, m, 0);
       scheme_hash_set(MODCHAIN_TABLE(env->modchain), m->modname, (Scheme_Object *)menv);
       

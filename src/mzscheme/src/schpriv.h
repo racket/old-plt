@@ -1476,8 +1476,6 @@ Scheme_Object *scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_
 
 Scheme_App_Rec *scheme_malloc_application(int n);
 void scheme_finish_application(Scheme_App_Rec *app);
-void scheme_finish_application2(Scheme_App2_Rec *app);
-void scheme_finish_application3(Scheme_App3_Rec *app);
 
 #define SCHEME_SYNTAX(obj)   ((obj)->u.two_ptr_val.ptr1)
 #define SCHEME_SYNTAX_EXP(obj)   ((obj)->u.two_ptr_val.ptr2)
@@ -1734,6 +1732,7 @@ void scheme_clean_dead_env(Scheme_Env *env);
 Scheme_Module *scheme_extract_compiled_module(Scheme_Object *o);
 
 void scheme_clear_modidx_cache(void);
+void scheme_clear_shift_cache(void);
 
 /*========================================================================*/
 /*                         errors and exceptions                          */

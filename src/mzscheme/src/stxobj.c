@@ -66,6 +66,8 @@ static Scheme_Stx_Srcloc *empty_srcloc;
 
 static Scheme_Object *empty_simplified;
 
+static Scheme_Object *last_phase_shift;
+
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
 #endif
@@ -379,6 +381,8 @@ void scheme_init_stx(Scheme_Env *env)
   empty_simplified = scheme_make_vector(2, scheme_false);
 
   REGISTER_SO(nominal_ipair_cache);
+
+  REGISTER_SO(last_phase_shift);
 }
 
 /*========================================================================*/
@@ -879,15 +883,30 @@ Scheme_Object *scheme_stx_phase_shift(Scheme_Object *stx, long shift,
 {
   if (shift || new_midx) {
     Scheme_Object *vec;
-  
-    vec = scheme_make_vector(3, NULL);
-    SCHEME_VEC_ELS(vec)[0] = scheme_make_integer(shift);
-    SCHEME_VEC_ELS(vec)[1] = (new_midx ? old_midx : scheme_false);
-    SCHEME_VEC_ELS(vec)[2] = (new_midx ? new_midx : scheme_false);
+    
+    if (last_phase_shift
+	&& ((vec = SCHEME_BOX_VAL(last_phase_shift)))
+	&& (SCHEME_VEC_ELS(vec)[0] == scheme_make_integer(shift))
+	&& (SCHEME_VEC_ELS(vec)[1] == (new_midx ? old_midx : scheme_false))
+	&& (SCHEME_VEC_ELS(vec)[2] == (new_midx ? new_midx : scheme_false))) {
+      /* use the old one */
+    } else {
+      vec = scheme_make_vector(3, NULL);
+      SCHEME_VEC_ELS(vec)[0] = scheme_make_integer(shift);
+      SCHEME_VEC_ELS(vec)[1] = (new_midx ? old_midx : scheme_false);
+      SCHEME_VEC_ELS(vec)[2] = (new_midx ? new_midx : scheme_false);
 
-    return scheme_add_rename(stx, scheme_box(vec));
+      last_phase_shift = scheme_box(vec);
+    }
+
+    return scheme_add_rename(stx, last_phase_shift);
   } else
     return (Scheme_Object *)stx;
+}
+
+void scheme_clear_shift_cache(void)
+{
+  last_phase_shift = NULL;
 }
 
 static Scheme_Object *propagate_wraps(Scheme_Object *o, 

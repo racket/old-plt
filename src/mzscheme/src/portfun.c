@@ -827,9 +827,12 @@ user_get_or_peek_string(Scheme_Input_Port *port,
     val = scheme_object_wait_multiple(3, a);
     --uip->block_count;
 
-    if (SAME_OBJ(val, waitable)) {
-      if (SCHEME_SEMAP(waitable))
-	scheme_post_sema(waitable);
+    if (SCHEME_FALSEP(val)) {
+      /* Assert: nonblock is nonzero */
+      return 0;
+    } else if (!SAME_OBJ(val, uip->closed_sema)) {
+      if (SCHEME_SEMAP(val))
+	scheme_post_sema(val);
 
       /* Port may have been closed, or may have been peeked while we
          were waiting: */
@@ -840,9 +843,6 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       }
       if (uip->peeked)
 	goto try_again;
-    } else if (SCHEME_FALSEP(val)) {
-      /* Assert: nonblock is nonzero */
-      return 0;
     } else {
       /* Another thread closed the input port while we were waiting. */
       /* Call scheme_getc to signal the error */
@@ -888,9 +888,9 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 	  val = scheme_object_wait_multiple(3, a);
 	  --uip->block_count;
 	  
-	  if (SAME_OBJ(val, waitable)) {
-	    if (SCHEME_SEMAP(waitable))
-	      scheme_post_sema(waitable);
+	  if (!SAME_OBJ(val, uip->closed_sema)) {
+	    if (SCHEME_SEMAP(val))
+	      scheme_post_sema(val);
 	    
 	    /* Port may have been closed while we were waiting: */
 	    if (port->closed) {
@@ -928,6 +928,9 @@ user_get_or_peek_string(Scheme_Input_Port *port,
       return n;
     } else {
       scheme_thread_block(0.0); /* penalty for inaccuracy? */
+      /* but don't loop forever due to inaccurracy */
+      if (nonblock)
+	return 0;
       goto try_again;
     }
   }
@@ -987,16 +990,17 @@ user_char_ready(Scheme_Input_Port *port)
 int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_Info *sinfo)
 {
   User_Input_Port *uip = (User_Input_Port *)ip->port_data;
-  Scheme_Object *waitable;
+  Scheme_Object *waitable, *val;
 
   if (uip->peeked)
     return 1;
 
   waitable = uip->waitable;
   if (SCHEME_TRUEP(waitable)) {
-    if (scheme_wait_on_waitable(waitable, 1, sinfo)) {
-      if (SCHEME_SEMAP(waitable))
-	scheme_post_sema(waitable);
+    val = scheme_wait_on_waitable(waitable, 1, sinfo);
+    if (val) {
+      if (SCHEME_SEMAP(val))
+	scheme_post_sema(val);
       if (sinfo->false_positive_ok)
 	sinfo->potentially_false_positive = 1;
       return 1;
@@ -1048,7 +1052,7 @@ typedef struct User_Output_Port {
 
 int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Schedule_Info *sinfo)
 {
-  Scheme_Object *waitable;
+  Scheme_Object *waitable, *val;
   User_Output_Port *uop = (User_Output_Port *)port->port_data;
 
   if (port->closed)
@@ -1056,9 +1060,10 @@ int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Sched
 
   waitable = uop->waitable;
   if (SCHEME_TRUEP(waitable)) {
-    if (scheme_wait_on_waitable(waitable, 1, sinfo)) {
-      if (SCHEME_SEMAP(waitable))
-	scheme_post_sema(waitable);
+    val = scheme_wait_on_waitable(waitable, 1, sinfo);
+    if (val) {
+      if (SCHEME_SEMAP(val))
+	scheme_post_sema(val);
       return 1;
     } else
       return 0;
@@ -1070,11 +1075,13 @@ int scheme_user_port_write_probably_ready(Scheme_Output_Port *port, Scheme_Sched
 static int
 user_write_ready(Scheme_Output_Port *port)
 {
-  Scheme_Schedule_Info *sinfo;
+  /* If we ready-checking as a waitable, then 
+     scheme_user_port_write_probably_ready is called instead. */
+  Scheme_Schedule_Info sinfo;
   
-  sinfo = scheme_new_schedule_info(0);
+  scheme_init_schedule_info(&sinfo, 0);
 
-  return scheme_user_port_write_probably_ready(port, sinfo);
+  return scheme_user_port_write_probably_ready(port, &sinfo);
 }
 
 static long
@@ -1160,9 +1167,9 @@ user_write_string(Scheme_Output_Port *port, const char *str, long offset, long l
       val = scheme_object_wait_multiple(3, p);
       --uop->block_count;
 
-      if (SAME_OBJ(val, waitable)) {
-	if (SCHEME_SEMAP(waitable))
-	  scheme_post_sema(waitable);
+      if (!SAME_OBJ(val, uop->waitable)) {
+	if (SCHEME_SEMAP(val))
+	  scheme_post_sema(val);
       }
 
       if (port->closed)

@@ -279,6 +279,8 @@ void scheme_zero_unneeded_rands(Scheme_Thread *p);
 
 int scheme_can_break(Scheme_Thread *p, Scheme_Config *config);
 
+extern int scheme_overflow_count;
+
 #define MZTHREADELEM(p, x) scheme_ ## x
 
 struct Scheme_Custodian {
@@ -837,24 +839,19 @@ extern unsigned long scheme_stack_boundary;
 /*                         semaphores and locks                           */
 /*========================================================================*/
 
-#define SEMAPHORE_WAITING_IS_COLLECTABLE 1
-
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
 typedef struct Scheme_Sema_Waiter {
   MZTAG_IF_REQUIRED
   Scheme_Thread *p;
   int in_line;
   struct Scheme_Sema_Waiter *prev, *next;
 } Scheme_Sema_Waiter;
-#endif
 
 typedef struct Scheme_Sema {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  long value;  
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
+  long value;
+  int unfair_count;
   Scheme_Sema_Waiter *first, *last;
-#endif
 } Scheme_Sema;
 
 #define NOT_BLOCKED 0

@@ -222,7 +222,7 @@ static Scheme_Object *udp_receive_enable_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_read_waitable(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_write_waitable(int argc, Scheme_Object *argv[]);
 
-static int udp_waitable_check_ready(Scheme_Object *uw);
+static int udp_waitable_check_ready(Scheme_Object *uw, Scheme_Schedule_Info *sinfo);
 static void udp_waitable_needs_wakeup(Scheme_Object *_uw, void *fds);
 
 static void register_tcp_listener_wait();
@@ -2540,7 +2540,7 @@ tcp_accept_break(int argc, Scheme_Object *argv[])
 static void register_tcp_listener_wait()
 {
 #ifdef USE_TCP
-  scheme_add_waitable(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL, 0);
+  scheme_add_waitable(scheme_listener_type, (Scheme_Ready_Fun_FPC)tcp_check_accept, tcp_accept_needs_wakeup, NULL, 0);
   scheme_add_waitable(scheme_udp_waitable_type, udp_waitable_check_ready, udp_waitable_needs_wakeup, NULL, 0);
 #endif
 }
@@ -3258,7 +3258,7 @@ static Scheme_Object *udp_write_waitable(int argc, Scheme_Object *argv[])
   return make_udp_waitable("udp->send-waitable", argc, argv, 0);
 }
 
-static int udp_waitable_check_ready(Scheme_Object *_uw)
+static int udp_waitable_check_ready(Scheme_Object *_uw, Scheme_Schedule_Info *sinfo)
 {
   Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)_uw;
 

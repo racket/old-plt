@@ -3345,6 +3345,33 @@ int mark_waiting_FIXUP(void *p) {
 #define mark_waiting_IS_CONST_SIZE 1
 
 
+int mark_sinfo_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
+}
+
+int mark_sinfo_MARK(void *p) {
+  Scheme_Schedule_Info *sinfo = (Scheme_Schedule_Info *)p;
+ 
+  gcMARK(sinfo->target);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
+}
+
+int mark_sinfo_FIXUP(void *p) {
+  Scheme_Schedule_Info *sinfo = (Scheme_Schedule_Info *)p;
+ 
+  gcFIXUP(sinfo->target);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
+}
+
+#define mark_sinfo_IS_ATOMIC 0
+#define mark_sinfo_IS_CONST_SIZE 1
+
+
 #endif  /* THREAD */
 
 /**********************************************************************/

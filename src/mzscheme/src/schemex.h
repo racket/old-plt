@@ -86,14 +86,15 @@ void (*scheme_close_managed)(Scheme_Custodian *m);
 void (*scheme_schedule_custodian_close)(Scheme_Custodian *c);
 void (*scheme_add_atexit_closer)(Scheme_Exit_Closer_Func f);
 void (*scheme_add_waitable)(Scheme_Type type,
-				   Scheme_Ready_Fun ready, 
+				   Scheme_Ready_Fun_FPC ready, 
 				   Scheme_Needs_Wakeup_Fun wakeup, 
-				   Scheme_Wait_Filter_Fun filter);
+				   Scheme_Wait_Filter_Fun filter,
+				   int can_redirect);
 void (*scheme_add_waitable_through_sema)(Scheme_Type type,
 						Scheme_Wait_Sema_Fun sema, 
 						Scheme_Wait_Filter_Fun filter);
 int (*scheme_is_waitable)(Scheme_Object *o);
-int (*scheme_wait_on_waitable)(Scheme_Object *o, int just_try);
+Scheme_Object *(*scheme_wait_on_waitable)(Scheme_Object *o, int just_try, Scheme_Schedule_Info *sinfo);
 void (*scheme_waitable_needs_wakeup)(Scheme_Object *o, void *fds);
 Scheme_Object *(*scheme_object_wait_multiple)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
@@ -101,6 +102,7 @@ Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_O
 int (*scheme_close_should_force_port_closed)();
 void (*scheme_push_kill_action)(Scheme_Kill_Action_Func f, void *d);
 void (*scheme_pop_kill_action)();
+void (*scheme_init_schedule_info)(Scheme_Schedule_Info *, int false_pos_ok);
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/
@@ -295,6 +297,7 @@ Scheme_Object *(*scheme_make_char)(char ch);
 Scheme_Object *(*scheme_make_sema)(long v);
 void (*scheme_post_sema)(Scheme_Object *o);
 int (*scheme_wait_sema)(Scheme_Object *o, int just_try);
+int (*scheme_wait_semas)(int n, Scheme_Object **o, int just_try);
 #endif
 Scheme_Object **scheme_char_constants;
 int (*scheme_get_int_val)(Scheme_Object *o, long *v);

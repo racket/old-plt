@@ -112,68 +112,75 @@ enum {
   scheme_indent_type,
   scheme_udp_type,
   scheme_udp_waitable_type,
-  scheme_id_macro_type,
+  scheme_id_macro_type,  
+  scheme_waitable_set_type,
+
+  scheme_reserved_1_type,
+  scheme_reserved_2_type, /* 100 */
+  scheme_reserved_3_type,
+  scheme_reserved_4_type,
 
 #ifdef MZTAG_REQUIRED
   _scheme_last_normal_type_,
 
   scheme_rt_comp_env,
-  scheme_rt_constant_binding, /* 100 */
+  scheme_rt_constant_binding,
   scheme_rt_resolve_info,
   scheme_rt_compile_info,
   scheme_rt_cont_mark,
   scheme_rt_saved_stack,
-  scheme_rt_eval_in_env,
+  scheme_rt_eval_in_env, /* 110 */
   scheme_rt_reply_item,
   scheme_rt_closure_info,
   scheme_rt_overflow,
   scheme_rt_dyn_wind_cell,
-  scheme_rt_cont_mark_chain, /* 110 */
+  scheme_rt_cont_mark_chain,
   scheme_rt_dyn_wind_info,
   scheme_rt_dyn_wind,
   scheme_rt_dup_check,
   scheme_rt_thread_memory,
-  scheme_rt_input_file,
+  scheme_rt_input_file, /* 120 */
   scheme_rt_input_fd,
   scheme_rt_oskit_console_input,
   scheme_rt_tested_input_file,
   scheme_rt_tested_output_file,
-  scheme_rt_indexed_string, /* 120 */
+  scheme_rt_indexed_string,
   scheme_rt_output_file,
   scheme_rt_load_handler_data,
   scheme_rt_load_data,
   scheme_rt_pipe,
-  scheme_rt_beos_process,
+  scheme_rt_beos_process, /* 130 */
   scheme_rt_system_child,
   scheme_rt_tcp,
   scheme_rt_write_data,
   scheme_rt_tcp_select_info,
-  scheme_rt_namespace_option, /* 130 */
+  scheme_rt_namespace_option,
   scheme_rt_param_data, 
   scheme_rt_will,
   scheme_rt_will_registration,
-  scheme_rt_breakable_wait,
+  scheme_rt_breakable_wait, /* 140 */
   scheme_rt_sema_waiter,
   scheme_rt_struct_proc_info,
   scheme_rt_linker_name,
   scheme_rt_param_map,
   scheme_rt_finalization,
-  scheme_rt_finalizations, /* 140 */
+  scheme_rt_finalizations,
   scheme_rt_cpp_object,
   scheme_rt_cpp_array_object,
   scheme_rt_stack_object, 
   scheme_rt_preallocated_object,
-  scheme_thread_hop_type,
+  scheme_thread_hop_type, /* 150 */
   scheme_rt_breakable,
   scheme_rt_srcloc,
   scheme_rt_waitable,
   scheme_rt_waiting,
-  scheme_rt_comp_prefix, /* 150 */
+  scheme_rt_comp_prefix,
   scheme_rt_user_input, 
   scheme_rt_user_output,
   scheme_rt_compact_port,
   scheme_rt_read_special_dw,
-  scheme_rt_regwork,
+  scheme_rt_regwork, /* 160 */
+  scheme_rt_sinfo,
 #endif
 
   _scheme_last_type_

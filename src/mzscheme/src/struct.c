@@ -542,7 +542,7 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
   if (!((SCHEME_INTP(v) && (SCHEME_INT_VAL(v) >= 0))
 	|| (SCHEME_BIGNUMP(v) && SCHEME_BIGPOS(v))))
     scheme_arg_mismatch("waitable-property-guard",
-			"property value is not a waitable, procedure (arity 0), or exact non-negative integer",
+			"property value is not a waitable, procedure (arity 0), or exact non-negative integer: ",
 			v);
 
   if (SCHEME_BIGNUMP(v))
@@ -552,7 +552,13 @@ static Scheme_Object *check_waitable_property_value_ok(int argc, Scheme_Object *
 
   if (pos >= s->num_islots) {
     scheme_arg_mismatch("waitable-property-guard",
-			"field index >= initialized-field count for structure type",
+			"field index >= initialized-field count for structure type: ",
+			v);
+  }
+
+  if (!s->immutables || !s->immutables[pos]) {
+    scheme_arg_mismatch("waitable-property-guard",
+			"field index not declared immutable: ",
 			v);
   }
 
@@ -569,7 +575,8 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
     v = ((Scheme_Structure *)o)->slots[SCHEME_INT_VAL(v)];
 
   if (scheme_is_waitable(v)) {
-    if (scheme_wait_on_waitable(v, 1, sinfo)) {
+    v = scheme_wait_on_waitable(v, 1, sinfo);
+    if (v) {
       if (SCHEME_SEMAP(v))
 	scheme_post_sema(v);
       return 1;
@@ -583,21 +590,33 @@ static int waitable_struct_is_ready(Scheme_Object *o, Scheme_Schedule_Info *sinf
       return 1;
     }
 
-    while (1) {
-      if (scheme_check_proc_arity(NULL, 0, 0, 1, &v)) {
-	v = _scheme_apply(v, 0, NULL);
+    if (scheme_check_proc_arity(NULL, 0, 0, 1, &v)) {
+      /* we loop calling the procedure, but give up if
+	 the procedure keeps returning ready waitables */
+      int loop_count = 1;
+      Scheme_Object *f = v;
+
+      while (loop_count) {
+	v = scheme_apply(f, 0, NULL);
 	
 	if (scheme_is_waitable(v)) {
-	  if (scheme_wait_on_waitable(v, 1, sinfo)) {
+	  v = scheme_wait_on_waitable(v, 1, sinfo);
+	  if (v) {
 	    if (SCHEME_SEMAP(v))
 	      scheme_post_sema(v);
 	    sinfo->target = NULL;
 	    /* loop to check the proc again */
+	    --loop_count;
+	    sinfo->target = NULL;
 	  } else
 	    return 0;
 	} else
 	  return 1;
       }
+
+      /* If we get here, then we gave up checking whether the
+	 waitable is ready. Don't let MzScheme sleep! */
+      sinfo->spin = 1;
     }
   }
 
@@ -1798,14 +1817,14 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
 	pos = struct_type->num_slots; /* too big */
 
       if (pos >= struct_type->num_islots) {
-	scheme_arg_mismatch("make-struct-type", "index for procedure >= initialized-field count", proc_attr);
+	scheme_arg_mismatch("make-struct-type", "index for procedure >= initialized-field count: ", proc_attr);
 	return NULL;
       }
 
       if (parent_type) {
 	if (parent_type->proc_attr) {
 	  scheme_arg_mismatch("make-struct-type", 
-			      "parent type already has procedure specification, new one disallowed",
+			      "parent type already has procedure specification, new one disallowed: ",
 			      proc_attr);
 	  return NULL;
 	}
@@ -1947,7 +1966,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
     if (!SCHEME_NULLP(l)) {
       /* SCHEME_CAR(l) is a duplicate */
       a = SCHEME_CAR(l);
-      scheme_arg_mismatch("make-struct-type", "duplicate property binding", a);
+      scheme_arg_mismatch("make-struct-type", "duplicate property binding: ", a);
     }
   }
 

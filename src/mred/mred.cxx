@@ -1054,6 +1054,7 @@ void MrEdDoNextEvent(MrEdContext *c,
 {
   wxTimer *timer;
   MrEdEvent evt;
+  Scheme_Schedule_Info sinfo;
   int restricted = 0;
 
 #ifdef wx_msw
@@ -1062,7 +1063,9 @@ void MrEdDoNextEvent(MrEdContext *c,
     restricted = 1;
 #endif
 
-  if (alt && alt(altdata, scheme_new_schedule_info(0))) {
+  scheme_init_schedule_info(&sinfo, 0);
+
+  if (alt && alt(altdata, &sinfo)) {
     /* did nothing since alt fired */
   } else if (check_q_callbacks(2, MrEdSameContext, c, 1)) {
     c->q_callback = 3;
@@ -1444,9 +1447,14 @@ void wxDispatchEventsUntilWakeable(wxDispatch_Check_Fun_FPC f, wxDispatch_Needs_
 		       (Scheme_Object *)data, 0.0);
   } else {
     /* This is the main thread. Handle events */
+    Scheme_Schedule_Info sinfo;
+
     do {
       MrEdDoNextEvent(c, f, wu, data);
-    } while (!f(data, scheme_new_schedule_info(0)));
+      scheme_init_schedule_info(&sinfo, 0);
+      if (f(data, &sinfo))
+	break;
+    } while (1);
   }
 }
 

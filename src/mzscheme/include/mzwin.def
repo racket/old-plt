@@ -47,6 +47,7 @@ EXPORTS
  scheme_close_should_force_port_closed
  scheme_push_kill_action
  scheme_pop_kill_action
+ scheme_init_schedule_info
  scheme_signal_error
  scheme_raise_exn
  scheme_warning
@@ -168,6 +169,7 @@ EXPORTS
  scheme_make_sema
  scheme_post_sema
  scheme_wait_sema
+ scheme_wait_semas
  scheme_char_constants
  scheme_get_int_val
  scheme_get_unsigned_int_val

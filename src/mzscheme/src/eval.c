@@ -184,6 +184,8 @@ static Scheme_Object *top_level_symbol;
 
 static Scheme_Object *zero_rands_ptr; /* &zero_rands_ptr is dummy rands pointer */
 
+int scheme_overflow_count;
+
 static Scheme_Object *scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env, 
 						 Scheme_Compile_Info *rec, int drec, 
 						 int depth, Scheme_Object *boundname,
@@ -395,6 +397,8 @@ scheme_handle_stack_overflow(Scheme_Object *(*k)(void))
      end of this handler (i.e., the target for the longjmp) is
      scheme_top_level_do in fun.c */
   Scheme_Overflow *overflow;
+
+  scheme_overflow_count++;
 
   scheme_overflow_k = k;
   

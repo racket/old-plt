@@ -586,10 +586,8 @@ sema_val {
  mark:
   Scheme_Sema *s = (Scheme_Sema *)p;
 
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
   gcMARK(s->first);
   gcMARK(s->last);
-#endif
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Sema));
@@ -1321,12 +1319,34 @@ mark_waiting {
  mark:
   Waiting *w = (Waiting *)p;
  
-  gcMARK(w->ws);
-  gcMARK(w->argv);
+  gcMARK(w->set);
   gcMARK(w->result);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Waiting));
+}
+
+mark_waitable_set {
+ mark:
+  Waitable_Set *w = (Waiting *)p;
+ 
+  gcMARK(w->ws);
+  gcMARK(w->argv);
+  gcMARK(w->ts);
+  gcMARK(w->tws);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Waitable_Set));
+}
+
+mark_sinfo {
+ mark:
+  Scheme_Schedule_Info *sinfo = (Scheme_Schedule_Info *)p;
+ 
+  gcMARK(sinfo->target);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Schedule_Info));
 }
 
 END thread;

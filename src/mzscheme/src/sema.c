@@ -129,7 +129,6 @@ void scheme_post_sema(Scheme_Object *o)
   if (v > t->value) {
     t->value = v;
 
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
     if (t->first) {
       Scheme_Sema_Waiter *w;
 
@@ -145,7 +144,6 @@ void scheme_post_sema(Scheme_Object *o)
       w->next = NULL;
       scheme_weak_resume_thread(w->p);
     }
-#endif
 
     return;
   }
@@ -204,17 +202,22 @@ static void post_breakable_wait(void *data)
   scheme_set_param(bw->config, MZCONFIG_ENABLE_BREAK, bw->orig_param_val);
 }
 
-#if SEMAPHORE_WAITING_IS_COLLECTABLE
-static int out_of_line(Scheme_Object *w)
+static int out_of_line(Scheme_Object *a)
 {
   Scheme_Thread *p;
+  int n, i;
+  Scheme_Sema_Waiter *w;
 
-  /* Out of line? */
-  if (!((Scheme_Sema_Waiter **)w)[0]->in_line)
-    return 1;
+  /* Out of one line? */
+  n = SCHEME_INT_VAL(((Scheme_Object **)a)[0]);
+  for (i = 0; i < n; i++) {
+    w = (((Scheme_Sema_Waiter ***)a)[1])[i];
+    if (!w->in_line)
+      return 1;
+  }
 
   /* Suspended break? */
-  p = ((Scheme_Thread **)w)[1];
+  p = ((Scheme_Thread **)a)[2];
   if (p->external_break) {
     p->suspend_break = 0;
     if (scheme_can_break(p, p->config))
@@ -224,14 +227,40 @@ static int out_of_line(Scheme_Object *w)
 
   return 0;
 }
-#endif
 
-int scheme_wait_sema(Scheme_Object *o, int just_try)
+static void get_into_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
 {
-  Scheme_Sema *sema = (Scheme_Sema *)o;
-  int v;
+  w->in_line = 1;
+  w->prev = sema->last;
+  if (sema->last)
+    sema->last->next = w;
+  else
+    sema->first = w;
+  sema->last = w;
+  w->next = NULL;
+}
+
+static void get_outof_line(Scheme_Sema *sema, Scheme_Sema_Waiter *w)
+{
+  w->in_line = 0;
+  if (w->prev)
+    w->prev->next = w->next;
+  else
+    sema->first = w->next;
+  if (w->next)
+    w->next->prev = w->prev;
+  else
+    sema->last = w->prev;
+}
+
+int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
+{
+  Scheme_Sema **semas = (Scheme_Sema **)o;
+  int v, i;
 
   if (just_try) {
+    /* assert: n == 1 */
+    Scheme_Sema *sema = semas[0];
     if (just_try > 0) {
       if (sema->value) {
 	--sema->value;
@@ -245,7 +274,7 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 #ifdef MZTAG_REQUIRED
       bw->type = scheme_rt_breakable_wait;
 #endif
-      bw->sema = o;
+      bw->sema = (Scheme_Object *)sema;
       bw->config = scheme_config;
 
       scheme_dynamic_wind(pre_breakable_wait, 
@@ -256,39 +285,45 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
       return 1;
     }
   } else {
-    if (sema->value)
-      --sema->value;
-    else {
-# if SEMAPHORE_WAITING_IS_COLLECTABLE
-      Scheme_Sema_Waiter *w;
+    for (i = 0; i < n; i++) {
+      if (semas[i]->value) {
+	--semas[i]->value;
+	break;
+      }
+    }
 
-      w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
+    if (i >= n) {
+      Scheme_Sema_Waiter **ws, *w;
 
-#  ifdef MZTAG_REQUIRED
-      w->type = scheme_rt_sema_waiter;
-#  endif
-      
-      w->p = scheme_current_thread;
+      ws = MALLOC_N(Scheme_Sema_Waiter*, n);
+      for (i = 0; i < n; i++) {
+	w = MALLOC_ONE_RT(Scheme_Sema_Waiter);
+	ws[i] = w;
+#ifdef MZTAG_REQUIRED
+	w->type = scheme_rt_sema_waiter;
+#endif
+	w->p = scheme_current_thread;
+      }
       
       while (1) {
+	int out_of_a_line;
+
 	/* Get into line */
-	w->in_line = 1;
-	w->prev = sema->last;
-	if (sema->last)
-	  sema->last->next = w;
-	else
-	  sema->first = w;
-	sema->last = w;
-	w->next = NULL;
+	for (i = 0; i < n; i++) {
+	  if (!ws[i]->in_line) {
+	    get_into_line(semas[i], ws[i]);
+	  }
+	}
 
 	if (!scheme_current_thread->next) {
 	  void **a;
-	  a = MALLOC_N(void*, 2);
+	  a = MALLOC_N(void*, 3);
 	  /* We're not allowed to suspend the main thread. Delay
 	     breaks so we get a chance to clean up. */
 	  scheme_current_thread->suspend_break = 1;
-	  a[0] = w;
-	  a[1] = scheme_current_thread;
+	  a[0] = scheme_make_integer(1);
+	  a[1] = ws;
+	  a[2] = scheme_current_thread;
 	  scheme_block_until(out_of_line, NULL, (Scheme_Object *)a, (float)0.0);
 	  scheme_current_thread->suspend_break = 0;
 	} else {
@@ -300,60 +335,85 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	}
 
 	/* We've been resumed. But was it for the semaphore, or a signal? */
-	if (w->in_line) {
-	  /* We weren't woken by the semaphore. Get out of line, block once 
-	     (to handle breaks/kills) and then loop to get back into line. */
-	  if (w->prev)
-	    w->prev->next = w->next;
-	  else
-	    sema->first = w->next;
-	  if (w->next)
-	    w->next->prev = w->prev;
-	  else
-	    sema->last = w->prev;
-	  
-	  scheme_thread_block(0); /* ok if it returns multiple times */
-	} else {
-	  /* The semaphore picked us to go */
-	  if (scheme_current_thread->running & MZTHREAD_KILLED) {
-	    /* We've been killed!  Consume the value and repost,
-	       (because no one else has been told to go). Then die by
-	       calling scheme_thread_block. */
-	    if (sema->value) {
-	      --sema->value;
-	      scheme_post_sema((Scheme_Object *)sema);
-	    }
-	    scheme_thread_block(0); /* dies */
-	  }
+	out_of_a_line = 0;
+	
+	for (i = 0; i < n; i++) {
+	  if (!ws[i]->in_line) {
+	    out_of_a_line = 1;
+	    if (semas[i]->value) {
+	      --(semas[i]->value);
+	      /* If we get the post, we must return WITHOUT BLOCKING. 
+		 MrEd, for example, depends on this special property, which insures
+		 that the thread can't be broken or killed between
+		 receiving the post and returning. */
 
-	  if (sema->value) {
-	    --sema->value;
-	    /* If we get the post, we must return WITHOUT BLOCKING. 
-	       MrEd depends on this special property, which insures
-	       that the thread can't be broken or killed between
-	       receiving the post and returning. */
-	    break;
+	      break;
+	    }
+	    /* otherwise, someone stole the post, so we keep looking */
 	  }
-	  /* Otherwise: someone stole the post! Try again. */
 	}
+
+	if (!out_of_a_line) {
+	  /* We weren't woken by any semaphore. Get out of line, block once 
+	     (to handle breaks/kills) and then loop to get back into line. */
+	  for (i = 0; i < n; i++) {
+	    get_outof_line(semas[i], ws[i]);
+	  } 
+	  
+	  scheme_thread_block(0); /* ok if it returns multiple times */ 
+	  /* [but why would it return multiple times?! there must have been a reason...] */
+	}
+
+	if (scheme_current_thread->running & MZTHREAD_KILLED) {
+	  /* We've been killed! Disown the semaphore post, then die by
+	     calling scheme_thread_block. */
+	  i = -1;
+	}
+
+	/* We got a post from semas[i]. Did any later semaphore pick us? */
+	{
+	  int j;
+
+	  for (j = i+1; j < n; j++) {
+	    if (!ws[j]->in_line) {
+	      if (semas[j]->value) {
+		/* Consume the value and repost, because no one else
+		   has been told to go, and we're accepting a different post. */
+		--semas[j]->value;
+		scheme_post_sema((Scheme_Object *)(semas[j]));
+	      }
+	    }
+	  }
+	}
+
+	/* If we're done, get out of all lines that we're still in. */
+	if (i < n) {
+	  int j;
+	  for (j = 0; j < n; j++) {
+	    if (ws[j]->in_line)
+	      get_outof_line(semas[j], ws[j]);
+	  }
+	}
+
+	if (i == -1) {
+	  scheme_thread_block(0); /* dies */
+	}
+
+	if (i < n)
+	  break;
+
+	/* Otherwise: someone stole the post! Loop to get back in line an try again. */
       }
-# else
-      scheme_current_thread->block_descriptor = SEMA_BLOCKED;
-      scheme_current_thread->blocker = (Scheme_Object *)sema;
-      
-      while (!sema->value)
-	scheme_thread_block(0); /* ok if it returns multiple times */
-      --sema->value;
-      
-      scheme_current_thread->block_descriptor = NOT_BLOCKED;
-      scheme_current_thread->blocker = NULL;
-      scheme_current_thread->ran_some = 1;
-# endif
     }
-    v = 1;
+    v = i + 1;
   }
 
   return v;
+}
+
+int scheme_wait_sema(Scheme_Object *o, int just_try)
+{
+  return scheme_wait_semas(1, &o, just_try);
 }
 
 static Scheme_Object *block_sema_p(int n, Scheme_Object **p)

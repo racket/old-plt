@@ -278,9 +278,10 @@
 	  (let ([s (regexp-match #rx"^[^&<]*" in)])
 	    (make-pcdata start
 			 (file-position in)
-			 (if (trim-whitespace)
-			     (regexp-replace* #rx"[ \t\v\r\n]+" (car s) "")
-			     (car s))))))
+			 (bytes->string/utf-8
+			  (if (trim-whitespace)
+			      (regexp-replace* #rx"[ \t\v\r\n]+" (car s) "")
+			      (car s)))))))
 #|
       ;; Original slow version:
       (define (lex-pcdata in)
@@ -305,7 +306,7 @@
 
       ;; lex-name : Input-port -> Symbol
       (define (lex-name in)
-	(let ([s (car (regexp-match #rx"^[a-zA-Z_:0-9&.-]*" in))])
+	(let ([s (bytes->string/utf-8 (car (regexp-match #rx"^[a-zA-Z_:0-9&.-]*" in)))])
 	  (string->symbol
 	   ;; Common case: string is already lowercased
 	   (if (regexp-match-positions #rx"[A-Z]" s)

@@ -401,7 +401,7 @@ void scheme_init_error(Scheme_Env *env)
   scheme_add_global_constant("raise-type-error", 
 			     scheme_make_prim_w_arity(raise_type_error, 
 						      "raise-type-error",
-						      3, 3), 
+						      3, -1), 
 			     env);
   scheme_add_global_constant("raise-mismatch-error", 
 			     scheme_make_prim_w_arity(raise_mismatch_error, 
@@ -1333,9 +1333,37 @@ static Scheme_Object *raise_type_error(int argc, Scheme_Object *argv[])
   if (!SCHEME_STRINGP(argv[1]))
     scheme_wrong_type("raise-type-error", "string", 1, argc, argv);
 
-  scheme_wrong_type(scheme_symbol_val(argv[0]),
-		    SCHEME_STR_VAL(argv[1]),
-		    -1, 0, &argv[2]);
+  if (argc == 3) {
+    Scheme_Object *v;
+    v = argv[2];
+    scheme_wrong_type(scheme_symbol_val(argv[0]),
+		      SCHEME_STR_VAL(argv[1]),
+		      -1, 0, &v);
+  } else {
+    Scheme_Object **args;
+    int i;
+
+    if (!(SCHEME_INTP(argv[2]) && (SCHEME_INT_VAL(argv[2]) >= 0))
+	&& !(SCHEME_BIGNUMP(argv[2]) && SCHEME_BIGPOS(argv[2])))
+      scheme_wrong_type("raise-type-error", "exact non-negative integer", 2, argc, argv);
+
+    if ((SCHEME_INTP(argv[2]) && (SCHEME_INT_VAL(argv[2]) >= argc))
+	|| SCHEME_BIGNUMP(argv[2]))
+      scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, argv[2],
+		       "raise-type-error: position index is %V, "
+		       "but only %d arguments provided",
+		       argv[2],
+		       argc);
+
+    args = MALLOC_N(Scheme_Object *, argc - 3);
+    for (i = 3; i < argc; i++)
+      args[i - 3] = argv[i];
+
+    scheme_wrong_type(scheme_symbol_val(argv[0]),
+		      SCHEME_STR_VAL(argv[1]),
+		      SCHEME_INT_VAL(argv[2]),
+		      argc - 3, args);
+  }
 
   return NULL;
 }

@@ -7083,13 +7083,13 @@ tcp_listen(int argc, Scheme_Object *argv[])
   if (proto)
 # endif
   {
-    tcp_address addr;
+    tcp_address tcp_listen_addr; /* Use a long name for precise GC's xform.ss */
     tcp_t s;
 
-    addr.sin_family = AF_INET;
-    addr.sin_port = id;
-    memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
-    memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
+    tcp_listen_addr.sin_family = AF_INET;
+    tcp_listen_addr.sin_port = id;
+    memset(&tcp_listen_addr.sin_addr, 0, sizeof(tcp_listen_addr.sin_addr));
+    memset(&tcp_listen_addr.sin_zero, 0, sizeof(tcp_listen_addr.sin_zero));
 
     s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
     if (s != INVALID_SOCKET) {
@@ -7099,7 +7099,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 #else
       fcntl(s, F_SETFL, TCP_NONBLOCKING);
 #endif
-      if (!bind(s, (struct sockaddr *)&addr, sizeof(addr)))
+      if (!bind(s, (struct sockaddr *)&tcp_listen_addr, sizeof(addr)))
 	if (!listen(s, backlog)) {
 	  listener_t *l;
 
@@ -7240,7 +7240,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
 # ifdef USE_SOCKETS_TCP
   tcp_t s;
   int l;
-  tcp_address addr;
+  tcp_address tcp_accept_addr;
 # endif
 # ifdef USE_MAC_TCP
   listener_t *l;
@@ -7282,8 +7282,8 @@ tcp_accept(int argc, Scheme_Object *argv[])
 # ifdef USE_SOCKETS_TCP
   s = ((listener_t *)listener)->s;
 
-  l = sizeof(addr);
-  s = accept(s, (struct sockaddr *)&addr, &l);
+  l = sizeof(tcp_accept_addr);
+  s = accept(s, (struct sockaddr *)&tcp_accept_addr, &l);
   if (s != INVALID_SOCKET) {
     Scheme_Object *v[2];
     Scheme_Tcp *tcp;

@@ -52,8 +52,8 @@ class wxMetaFileDC: public wxbMetaFileDC
   wxMetaFile *Close(void);
   void SetMapMode(int mode);
   /* MATTHEW: [2] 16-bit flag */
-  void GetTextExtent(const char *string, float *x, float *y,
-                     float *descent = NULL, float *externalLeading = NULL, 
+  void GetTextExtent(const char *string, double *x, double *y,
+                     double *descent = NULL, double *externalLeading = NULL, 
 		     wxFont *theFont = NULL, Bool use16bit = FALSE);
 };
 
@@ -64,7 +64,7 @@ class wxMetaFileDC: public wxbMetaFileDC
  *
  */
  
-Bool wxMakeMetaFilePlaceable(char *filename, int x1, int y1, int x2, int y2, float scale = 1.0);
+Bool wxMakeMetaFilePlaceable(char *filename, int x1, int y1, int x2, int y2, double scale = 1.0);
 
 #endif // USE_METAFILE
 #endif // wx_mfh

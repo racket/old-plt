@@ -49,7 +49,7 @@ wxFont::wxFont(void)
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip, float Rotation):
+wxFont::wxFont(int PointSize, int Family, int Style, int Weight, Bool Underlined, int Smoothing, Bool sip, double Rotation):
   wxbFont(PointSize, Family, Style, Weight, Underlined, Smoothing, sip, Rotation)
 {
   COUNT_P(font_count);
@@ -70,7 +70,7 @@ wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weigh
 }
 
 Bool wxFont::Create(int PointSize, int FontId, int Style, int Weight, Bool Underlined, int Smoothing, 
-		    Bool sip, float Rotation)
+		    Bool sip, double Rotation)
 {
   fontid = FontId;
   family = wxTheFontNameDirectory->GetFamily(fontid);
@@ -228,7 +228,7 @@ static int CALLBACK check_font_charset(ENUMLOGFONTEX *lpelfe, NEWTEXTMETRICEX *l
   return 0;
 }
 
-HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, float angle)
+HFONT wxFont::BuildInternalFont(HDC dc, Bool screenFont, double angle)
 {
   int nHeight;
   HFONT cfont;
@@ -430,7 +430,7 @@ wxPen::~wxPen()
   cpen = NULL;
 }
 
-wxPen::wxPen(wxColour *col, float Width, int Style)
+wxPen::wxPen(wxColour *col, double Width, int Style)
 {
   wxColour *c;
 
@@ -461,7 +461,7 @@ wxPen::wxPen(wxColour *col, float Width, int Style)
   ChangePen();
 }
 
-wxPen::wxPen(const char *col, float Width, int Style)
+wxPen::wxPen(const char *col, double Width, int Style)
 {
   wxColour *c;
 

@@ -26,7 +26,7 @@ wxbFont::wxbFont (void)
 /* Constructor for a font. Note that the real construction is done
  * in wxDC::SetFont, when information is available about scaling etc.
  */
-wxbFont::wxbFont (int WXUNUSED(PointSize), int WXUNUSED(Family), int WXUNUSED(Style), int WXUNUSED(Weight), Bool WXUNUSED(Underline), int WXUNUSED(smoothing), Bool WXUNUSED(sip), float WXUNUSED(Rotation))
+wxbFont::wxbFont (int WXUNUSED(PointSize), int WXUNUSED(Family), int WXUNUSED(Style), int WXUNUSED(Weight), Bool WXUNUSED(Underline), int WXUNUSED(smoothing), Bool WXUNUSED(sip), double WXUNUSED(Rotation))
 {
   __type = wxTYPE_FONT;
 }
@@ -311,13 +311,13 @@ wxbPen::~wxbPen ()
     --stipple->selectedIntoDC;
 }
 
-wxbPen::wxbPen (wxColour * WXUNUSED(col), float WXUNUSED(Width), int WXUNUSED(Style))
+wxbPen::wxbPen (wxColour * WXUNUSED(col), double WXUNUSED(Width), int WXUNUSED(Style))
 {
   __type = wxTYPE_PEN;
   locked = 0;
 }
 
-wxbPen::wxbPen (const char *WXUNUSED(col), float WXUNUSED(Width), int WXUNUSED(Style))
+wxbPen::wxbPen (const char *WXUNUSED(col), double WXUNUSED(Width), int WXUNUSED(Style))
 {
   __type = wxTYPE_PEN;
   locked = 0;
@@ -328,7 +328,7 @@ int wxbPen::GetWidth (void)
   return (int)width;
 }
 
-float wxbPen::GetWidthF(void)
+double wxbPen::GetWidthF(void)
 {
   return width;
 }
@@ -379,7 +379,7 @@ void wxbPen::SetColour (char red, char green, char blue)
  colour->Set(red, green, blue);
 }
 
-void wxbPen::SetWidth (float Width)
+void wxbPen::SetWidth (double Width)
 {
   width = Width;
 }
@@ -507,7 +507,7 @@ void wxPenList::AddPen (wxPen * pen)
   list->Show(pen, -1); /* so it can be collected */
 }
 
-wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
+wxPen *wxPenList::FindOrCreatePen (wxColour * colour, double width, int style)
 {
   wxPen *pen; /* MATTHEW: [8] */
   int i = 0;
@@ -540,7 +540,7 @@ wxPen *wxPenList::FindOrCreatePen (wxColour * colour, float width, int style)
   return pen;
 }
 
-wxPen *wxPenList::FindOrCreatePen (char *colour, float width, int style)
+wxPen *wxPenList::FindOrCreatePen (char *colour, double width, int style)
 {
   wxColour *the_colour;
   the_colour = wxTheColourDatabase->FindColour (colour);
@@ -673,7 +673,7 @@ wxPoint::wxPoint (void) : wxObject(WXGC_NO_CLEANUP)
 {
 }
 
-wxPoint::wxPoint (float the_x, float the_y) : wxObject(WXGC_NO_CLEANUP)
+wxPoint::wxPoint (double the_x, double the_y) : wxObject(WXGC_NO_CLEANUP)
 {
   x = the_x;
   y = the_y;

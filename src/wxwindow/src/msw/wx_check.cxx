@@ -167,10 +167,10 @@ void wxCheckBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
 {
   int currentX, currentY;
   char buf[300];
-  float current_width;
+  double current_width;
   int cx;
   int cy;
-  float cyf;
+  double cyf;
   HWND button = (HWND)ms_handle;
 
   GetPosition(&currentX, &currentY);

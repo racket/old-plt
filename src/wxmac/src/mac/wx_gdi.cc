@@ -267,12 +267,12 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
   }
 }
 
-int wxFont::GetEffectiveSmoothing(float scale)
+int wxFont::GetEffectiveSmoothing(double scale)
 {
   /* Fixed width between 9 and 13 inclusive => partial smoothing */
   if ((smoothing == wxSMOOTHING_DEFAULT)
       && (family == wxMODERN)) {
-    float sz;
+    double sz;
     sz = floor(scale * point_size);
     if ((sz > 8) && (sz < 14))
       return wxSMOOTHING_PARTIAL;
@@ -327,7 +327,7 @@ long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str,
 }
 
 //-----------------------------------------------------------------------------
-float wxFont::GetCharHeight(float scale_x, float scale_y)
+double wxFont::GetCharHeight(double scale_x, double scale_y)
 {
   FontInfo fontInfo;
   wxTextFontInfo(GetMacFontNum(),
@@ -338,7 +338,7 @@ float wxFont::GetCharHeight(float scale_x, float scale_y)
 }
 
 //-----------------------------------------------------------------------------
-float wxFont::GetCharWidth(float scale_x, float scale_y)
+double wxFont::GetCharWidth(double scale_x, double scale_y)
 {
   FontInfo fontInfo;
   wxTextFontInfo(GetMacFontNum(),
@@ -349,10 +349,10 @@ float wxFont::GetCharWidth(float scale_x, float scale_y)
 }
 
 //-----------------------------------------------------------------------------
-void wxFont::GetTextExtent(char* string, int delta, float* x, float* y,
-			   float* descent, float* externalLeading, 
+void wxFont::GetTextExtent(char* string, int delta, double* x, double* y,
+			   double* descent, double* externalLeading, 
 			   Bool qd_spacing, Bool ucs4,
-			   float scale_x, float scale_y)
+			   double scale_x, double scale_y)
 {
   wxGetUnicodeTextWidth(string, delta, -1,
 			GetMacFontNum(), point_size, GetMacFontStyle(),
@@ -438,7 +438,7 @@ wxPen::~wxPen()
 }
 
 //-----------------------------------------------------------------------------
-wxPen::wxPen(wxColour *col, float Width, int Style):
+wxPen::wxPen(wxColour *col, double Width, int Style):
 wxbPen(col, Width, Style)
 {
   wxColour *c;
@@ -457,7 +457,7 @@ wxbPen(col, Width, Style)
 }
 
 //-----------------------------------------------------------------------------
-wxPen::wxPen(char *col, float Width, int Style):
+wxPen::wxPen(char *col, double Width, int Style):
 wxbPen(col, Width, Style)
 {
   wxColour *c;

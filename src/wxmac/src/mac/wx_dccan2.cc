@@ -46,7 +46,7 @@ void wxCanvasDC::Clear(void)
   ReleaseCurrentDC();
 }
 
-void wxCanvasDC::GetSize(float *width, float *height)
+void wxCanvasDC::GetSize(double *width, double *height)
 {
   if (canvas) {
     int w, h;
@@ -60,11 +60,11 @@ void wxCanvasDC::GetSize(float *width, float *height)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::CrossHair(float x, float y)
+void wxCanvasDC::CrossHair(double x, double y)
      //-----------------------------------------------------------------------------
 {
   int xx, yy, dpx, dpy;
-  float ww, hh;
+  double ww, hh;
   
   if (!Ok() || !cMacDC || !current_pen || current_pen->GetStyle() == wxTRANSPARENT)
     return;
@@ -85,13 +85,13 @@ void wxCanvasDC::CrossHair(float x, float y)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::FloodFill(float x, float y, wxColour *col, int style)
+void wxCanvasDC::FloodFill(double x, double y, wxColour *col, int style)
      //=============================================================================
 {
 }
 
 //-----------------------------------------------------------------------------
-Bool wxCanvasDC::GetPixel(float x, float y, wxColour *col)
+Bool wxCanvasDC::GetPixel(double x, double y, wxColour *col)
      //=============================================================================
 {
   RGBColor rgb;
@@ -114,7 +114,7 @@ Bool wxCanvasDC::GetPixel(float x, float y, wxColour *col)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::SetPixel(float x, float y, wxColour *col)
+void wxCanvasDC::SetPixel(double x, double y, wxColour *col)
      //=============================================================================
 {
   if (!Ok() || !cMacDC) return;
@@ -210,7 +210,7 @@ void wxCanvasDC::IntDrawLine(int x1, int y1, int x2, int y2)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
+void wxCanvasDC::DrawLine(double x1, double y1, double x2, double y2)
      //-----------------------------------------------------------------------------
 {
   int dpx, dpy;
@@ -234,7 +234,7 @@ void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
 //-----------------------------------------------------------------------------
 static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
 {
-  float x, y, w, h, bw, bh;
+  double x, y, w, h, bw, bh;
   int xstart, xend, ystart, yend, i, j, ibw, ibh;
   wxRegion *old;
   int style;
@@ -302,7 +302,7 @@ void wxCanvasDC::PaintStipple(wxRegion *r)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
+void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double end)
 {
   wxRegion *rgn;
   int xx, yy, xx2, yy2;
@@ -370,7 +370,7 @@ void wxCanvasDC::DrawArc(float x,float y,float w,float h,float start,float end)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawPoint(float x, float y)
+void wxCanvasDC::DrawPoint(double x, double y)
      //-----------------------------------------------------------------------------
 {
   if (!Ok() || !cMacDC) return;
@@ -387,7 +387,7 @@ void wxCanvasDC::DrawPoint(float x, float y)
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
-			     float xoffset, float yoffset, int fillStyle)
+			     double xoffset, double yoffset, int fillStyle)
 {
   wxRegion *rgn;
   Point *xpoints1;
@@ -484,7 +484,7 @@ void wxCanvasDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset)
+void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 {
   if (!Ok() || !cMacDC) return;
   
@@ -524,7 +524,7 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
+void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
      //-----------------------------------------------------------------------------
 {
   wxRegion *rgn;
@@ -568,7 +568,7 @@ void wxCanvasDC::DrawRectangle(float x, float y, float width, float height)
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::DrawRoundedRectangle
-(float x, float y, float width, float height, float radius)
+(double x, double y, double width, double height, double radius)
 {
   wxRegion *rgn;
 
@@ -582,7 +582,7 @@ void wxCanvasDC::DrawRoundedRectangle
   SetCurrentDC();
   
   if (radius < 0.0) {
-    float w = width;
+    double w = width;
     if (height < w)
       w = height;
     radius = (-radius) * w;
@@ -625,7 +625,7 @@ void wxCanvasDC::DrawRoundedRectangle
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
+void wxCanvasDC::DrawEllipse(double x, double y, double width, double height)
 {
   wxRegion *rgn;
 
@@ -668,8 +668,8 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 
 static int noDCSet = 0; /* back door for GCBlit */
 
-Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
-		      wxBitmap *source, float xsrc, float ysrc, int rop, wxColour *c,
+Bool wxCanvasDC::Blit(double xdest, double ydest, double width, double height,
+		      wxBitmap *source, double xsrc, double ysrc, int rop, wxColour *c,
 		      wxBitmap *mask)
 {
   if (!Ok() || !cMacDC || !source->Ok()) return FALSE;
@@ -771,8 +771,8 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   return TRUE;
 }
 
-Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
-			wxBitmap *source, float xsrc, float ysrc)
+Bool wxCanvasDC::GCBlit(double xdest, double ydest, double width, double height,
+			wxBitmap *source, double xsrc, double ysrc)
 {
   /* Non-allocating (i.e. no collectable allocation) Blit. Looks like
      the normal one will work, but we need to be careful about shifting the

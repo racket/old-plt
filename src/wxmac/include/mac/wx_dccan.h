@@ -53,7 +53,7 @@ class wxCanvasDC: public wxbCanvasDC
   ~wxCanvasDC(void);
 
   void SetCanvasClipping() ;
-  void GetClippingBox(float* x,float* y,float* w,float* h) ;
+  void GetClippingBox(double* x,double* y,double* w,double* h) ;
   void ReleaseCurrentDC();
 
   virtual void BeginDrawing(void);
@@ -62,10 +62,10 @@ class wxCanvasDC: public wxbCanvasDC
   int DCOffsetX; // mac platform only 
   int DCOffsetY; // mac platform only
 
-  void FloodFill(float x1, float y1, wxColour* col, int style=wxFLOOD_SURFACE) ;
-  Bool GetPixel(float x1, float y1, wxColour* col) ;
+  void FloodFill(double x1, double y1, wxColour* col, int style=wxFLOOD_SURFACE) ;
+  Bool GetPixel(double x1, double y1, wxColour* col) ;
 
-  void SetPixel(float x1, float y1, wxColour* col) ;
+  void SetPixel(double x1, double y1, wxColour* col) ;
   inline void BeginSetPixel() {}
   inline void EndSetPixel() {}
 
@@ -77,23 +77,23 @@ class wxCanvasDC: public wxbCanvasDC
   void EndGetPixelFast();
   void GetPixelFast(int x, int y, int *r, int *g, int *b);
 
-  void DrawLine(float x1, float y1, float x2, float y2);
+  void DrawLine(double x1, double y1, double x2, double y2);
   void IntDrawLine(int x1, int y1, int x2, int y2);
-  void CrossHair(float x, float y) ;
-  void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc);
-  void DrawPoint(float x, float y);
-  void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0);
+  void CrossHair(double x, double y) ;
+  void DrawArc(double x1,double y1,double x2,double y2,double xc,double yc);
+  void DrawPoint(double x, double y);
+  void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);
   void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0);
-  void DrawPolygon(int n, wxPoint points[], float xoffset = 0, float yoffset = 0,
+  void DrawPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0,
   					int fillStyle=wxODDEVEN_RULE);
-  void DrawRectangle(float x, float y, float width, float height);
-  void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
-  void DrawEllipse(float x, float y, float width, float height);
-  void DrawText(const char* text, float x, float y, 
+  void DrawRectangle(double x, double y, double width, double height);
+  void DrawRoundedRectangle(double x, double y, double width, double height, double radius = 20);
+  void DrawEllipse(double x, double y, double width, double height);
+  void DrawText(const char* text, double x, double y, 
 		Bool combine = FALSE, Bool use16 = FALSE, 
-		int d = 0, float angle = 0.0);
+		int d = 0, double angle = 0.0);
 
-  void GetSize(float *width, float *height);
+  void GetSize(double *width, double *height);
 
   void Clear(void);
   void SetFont(wxFont* font);
@@ -102,14 +102,14 @@ class wxCanvasDC: public wxbCanvasDC
   void SetLogicalFunction(int function);
   void SetBackground(wxColour* c);
   virtual void SetPaintRegion(Rect* paintRect); // mac platform only
-  void SetClippingRect(float x, float y, float width, float height);
+  void SetClippingRect(double x, double y, double width, double height);
   wxRegion* GetClippingRegion();
   void SetClippingRegion(wxRegion*);
 
-  float GetCharHeight(void);
-  float GetCharWidth(void);
-  virtual void GetTextExtent(const char* string, float* x, float* y, float* descent = NULL,
-			     float* externalLeading = NULL, wxFont* the_font = NULL, 
+  double GetCharHeight(void);
+  double GetCharWidth(void);
+  virtual void GetTextExtent(const char* string, double* x, double* y, double* descent = NULL,
+			     double* externalLeading = NULL, wxFont* the_font = NULL, 
 			     Bool combine = FALSE, Bool use16 = FALSE,
 			     int d = 0);
   Bool StartDoc(char* message);
@@ -117,25 +117,25 @@ class wxCanvasDC: public wxbCanvasDC
   void StartPage(void);
   void EndPage(void);
   void SetMapMode(int mode);
-  void SetUserScale(float x, float y);
-  float DeviceToLogicalX(int x);
-  float DeviceToLogicalY(int y);
-  float DeviceToLogicalXRel(int x);
-  float DeviceToLogicalYRel(int y);
-  int LogicalToDeviceX(float x);
-  int LogicalToDeviceY(float y);
-  int LogicalToDeviceXRel(float x);
-  int LogicalToDeviceYRel(float y);
-  float FLogicalToDeviceX(float x);
-  float FLogicalToDeviceY(float y);
-  float FLogicalToDeviceXRel(float x);
-  float FLogicalToDeviceYRel(float y);
+  void SetUserScale(double x, double y);
+  double DeviceToLogicalX(int x);
+  double DeviceToLogicalY(int y);
+  double DeviceToLogicalXRel(int x);
+  double DeviceToLogicalYRel(int y);
+  int LogicalToDeviceX(double x);
+  int LogicalToDeviceY(double y);
+  int LogicalToDeviceXRel(double x);
+  int LogicalToDeviceYRel(double y);
+  double FLogicalToDeviceX(double x);
+  double FLogicalToDeviceY(double y);
+  double FLogicalToDeviceXRel(double x);
+  double FLogicalToDeviceYRel(double y);
 
-  Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap* source, float xsrc, float ysrc, int rop = wxSOLID, wxColour *c = NULL,
+  Bool Blit(double xdest, double ydest, double width, double height,
+            wxBitmap* source, double xsrc, double ysrc, int rop = wxSOLID, wxColour *c = NULL,
             wxBitmap* mask = NULL);
-  Bool GCBlit(float xdest, float ydest, float width, float height,
-            wxBitmap* source, float xsrc, float ysrc);
+  Bool GCBlit(double xdest, double ydest, double width, double height,
+            wxBitmap* source, double xsrc, double ysrc);
 
   void wxMacSetClip(void); // Internal only
   void wxMacSetCurrentTool(wxMacToolType whichTool); // Internal only
@@ -155,17 +155,17 @@ class wxCanvasDC: public wxbCanvasDC
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);
 double wxDrawUnicodeText(const char *text, int d, int len = -1, int ucs4 = FALSE, Bool qd_spacing = FALSE, 
-			 int smoothing = wxSMOOTHING_DEFAULT, float angle = 0.0,
-			 float scale_x = 1.0, float scale_y = 1.0,
-			 int use_start = 0, float start_x = 0.0, float start_y = 0.0,
-			 float device_dx = 0.0, float device_dy = 0.0,
+			 int smoothing = wxSMOOTHING_DEFAULT, double angle = 0.0,
+			 double scale_x = 1.0, double scale_y = 1.0,
+			 int use_start = 0, double start_x = 0.0, double start_y = 0.0,
+			 double device_dx = 0.0, double device_dy = 0.0,
 			 int is_sym = 0);
 void wxGetUnicodeTextWidth(const char *text, int d, int theStrlen, 
 			   short txFont, short txSize, short txFace,
-			   int ucs4, float scale_y,
-			   float* x, float* y,
-			   float* descent, float* externalLeading,
-			   Bool qd_spacing, float scale_x = 1.0,
+			   int ucs4, double scale_y,
+			   double* x, double* y,
+			   double* descent, double* externalLeading,
+			   Bool qd_spacing, double scale_x = 1.0,
 			   int is_sym = 0);
 Bool wxGetUnicodeGlyphAvailable(int c, 
 				short txFont, short txSize, short txFace,

@@ -171,8 +171,8 @@ void wxButton::SetSize(int x, int y, int width, int height, int sizeFlags)
   int actualWidth = width;
   int actualHeight = height;
   int ww, hh;
-  float current_width;
-  float cyf;
+  double current_width;
+  double cyf;
   char buf[300];
 
   GetPosition(&currentX, &currentY);

@@ -1603,9 +1603,9 @@ void wxWindow::SetFont(wxFont* theFont) // mac platform only
 }
 
 //-----------------------------------------------------------------------------
-float wxWindow::GetCharHeight(void)
+double wxWindow::GetCharHeight(void)
 {
-  float theCharHeight;
+  double theCharHeight;
   if (font)
     theCharHeight = font->GetCharHeight();
   else
@@ -1614,9 +1614,9 @@ float wxWindow::GetCharHeight(void)
 }
 
 //-----------------------------------------------------------------------------
-float wxWindow::GetCharWidth(void)
+double wxWindow::GetCharWidth(void)
 {
-  float theCharWidth;
+  double theCharWidth;
   if (font)
     theCharWidth = font->GetCharWidth();
   else
@@ -1625,8 +1625,8 @@ float wxWindow::GetCharWidth(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxWindow::GetTextExtent(const char* string, float* x, float* y, float* descent,
-			     float* externalLeading, wxFont* the_font, Bool use16)
+void wxWindow::GetTextExtent(const char* string, double* x, double* y, double* descent,
+			     double* externalLeading, wxFont* the_font, Bool use16)
 {
   if (the_font)
     the_font->GetTextExtent((char *)string, 0, x, y, descent, externalLeading, TRUE, use16);
@@ -1996,7 +1996,7 @@ Bool wxWindow::IsMacWindow(void) { return FALSE; } // mac platform only
 void wxWindow::SetColourMap(wxColourMap* cmap) { }
 
 //-----------------------------------------------------------------------------
-Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
+Bool wxWindow::PopupMenu(wxMenu *menu, double x, double y)
 {
   MenuHandle m;
   Point pos;

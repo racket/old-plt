@@ -281,7 +281,7 @@ void wxSlider::SetLabel(char *label)
 {
   if (static_label)
   {
-    float w, h;
+    double w, h;
     RECT rect;
     wxWindow *parent;
     POINT point;
@@ -370,15 +370,15 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 {
   int currentX, currentY;
   char buf[300];
-  float min_len;
-  float max_len, val_width;
+  double min_len;
+  double max_len, val_width;
   int x_offset = x;
   int y_offset = y;
-  float label_width = 0;
+  double label_width = 0;
   int ecx, cx;     // slider,min,max sizes
   int ecy, cy;
   int esep;
-  float cyf = 0.0;
+  double cyf = 0.0;
   int cxs = 0;    // label sizes
   int cys = 0;
 
@@ -416,7 +416,7 @@ void wxSlider::SetSize(int x, int y, int width, int height, int sizeFlags)
 #endif
 
   if (edit_value) {
-    float min_len, max_len;
+    double min_len, max_len;
     sprintf(buf, "%d", s_min);
     GetTextExtent(buf, &min_len, &cyf, NULL, NULL, buttonFont);
     sprintf(buf, "%d", s_max);

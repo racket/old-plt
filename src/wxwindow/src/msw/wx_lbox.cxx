@@ -375,8 +375,8 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
   int cy;
   int clx; // label font dimensions
   int cly;
-  float label_width, label_height, label_x, label_y;
-  float control_width, control_height, control_x, control_y;
+  double label_width, label_height, label_x, label_y;
+  double control_width, control_height, control_x, control_y;
 
   GetPosition(&currentX, &currentY);
   if (x == -1)
@@ -406,31 +406,31 @@ void wxListBox::SetSize(int x, int y, int width, int height, int sizeFlags)
     // Given size is total label + edit size, find individual
     // control sizes on that basis.
     if (labelPosition == wxHORIZONTAL) {
-      label_x = (float)x;
-      label_y = (float)y;
-      label_width += (float)clx;
+      label_x = (double)x;
+      label_y = (double)y;
+      label_width += (double)clx;
 
       control_x = label_x + label_width + clx;
-      control_y = (float)y;
+      control_y = (double)y;
       control_width = width - (control_x - label_x);
-      control_height = (float)height;
+      control_height = (double)height;
     } else { // wxVERTICAL
-      label_x = (float)x;
-      label_y = (float)y;
+      label_x = (double)x;
+      label_y = (double)y;
 
-      control_x = (float)x;
+      control_x = (double)x;
       control_y = label_y + label_height + 3; // Allow for 3D border
-      control_width = (float)width;
+      control_width = (double)width;
       control_height = height - label_height - 3;
     }
 
     MoveWindow(static_label, (int)label_x, (int)label_y,
                (int)label_width, (int)label_height, TRUE);
   } else {
-    control_x = (float)x;
-    control_y = (float)y;
-    control_width = (float)width;
-    control_height = (float)height;
+    control_x = (double)x;
+    control_y = (double)y;
+    control_width = (double)width;
+    control_height = (double)height;
   }
 
   // Calculations may have made size too small
@@ -503,7 +503,7 @@ void wxListBox::SetLabel(char *label)
 {
   if (static_label)
   {
-    float w, h;
+    double w, h;
     RECT rect;
     POINT point;
     wxWindow *parent;

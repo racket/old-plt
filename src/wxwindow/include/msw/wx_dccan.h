@@ -25,13 +25,13 @@ class wxCanvasDC: public wxbCanvasDC
 
   // Create a DC corresponding to a canvas
   wxCanvasDC(wxCanvas *canvas);
-  void GetClippingBox(float *x,float *y,float *w,float *h) ;
-  void GetClippingRegion(float *x, float *y, float *width, float *height);
+  void GetClippingBox(double *x,double *y,double *w,double *h) ;
+  void GetClippingRegion(double *x, double *y, double *width, double *height);
 
-  void GetSize(float *width, float *height);
+  void GetSize(double *width, double *height);
 
-  Bool GCBlit(float xdest, float ydest, float width, float height,
-	      wxBitmap *source, float xsrc, float ysrc);
+  Bool GCBlit(double xdest, double ydest, double width, double height,
+	      wxBitmap *source, double xsrc, double ysrc);
 
   ~wxCanvasDC(void);
 };

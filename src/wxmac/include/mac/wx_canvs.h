@@ -120,7 +120,7 @@ class wxCanvas: public wxbCanvas
 
   // Scroll the canvas
   void Scroll(int xPos, int yPos);
-  void ScrollPercent(float xPos, float yPos);
+  void ScrollPercent(double xPos, double yPos);
   void GetScrollUnitsPerPage(int* x_page, int* y_page);
   virtual int GetScrollsPerPage(int orientation); // mac platform only
 

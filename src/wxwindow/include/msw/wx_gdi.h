@@ -25,14 +25,14 @@ class wxFont: public wxbFont
 
   wxFont(void);
   wxFont(int PointSize, int Family, int Style, int Weight, Bool underlined = FALSE, 
-	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, float Rotation = 0.0);
+	 int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE, double Rotation = 0.0);
   wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
 	 Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
   ~wxFont(void);
   Bool Create(int PointSize, int Family, int Style, int Weight, Bool underlined,
-	      int smoothing, Bool sip, float Rotation);
-  HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE, float angle = 0.0);
-  inline HFONT GetInternalFont(HDC dc, float angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
+	      int smoothing, Bool sip, double Rotation);
+  HFONT BuildInternalFont(HDC dc, Bool screen_font = TRUE, double angle = 0.0);
+  inline HFONT GetInternalFont(HDC dc, double angle = 0.0) { return BuildInternalFont(dc, TRUE, angle); }
 
   Bool ScreenGlyphAvailable(int c);
   Bool GlyphAvailable(int c, HDC hdc);
@@ -52,7 +52,7 @@ class wxColourMap: public wxObject
 class wxPen: public wxbPen
 {
  public:
-  float old_width;
+  double old_width;
   int old_style;
   int old_join;
   int old_cap;
@@ -65,8 +65,8 @@ class wxPen: public wxbPen
   HPEN my_old_cpen;
 
   wxPen(void);
-  wxPen(wxColour *col, float width, int style);
-  wxPen(const char *col, float width, int style);
+  wxPen(wxColour *col, double width, int style);
+  wxPen(const char *col, double width, int style);
   ~wxPen(void);
 
   void ChangePen();

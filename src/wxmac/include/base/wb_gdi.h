@@ -137,10 +137,10 @@ class wxColourMap;
 class wxPoint: public wxObject
 {
  public:
-  float x;
-  float y;
+  double x;
+  double y;
   wxPoint(void);
-  wxPoint(float the_x, float the_y);
+  wxPoint(double the_x, double the_y);
   ~wxPoint(void);
 };
 
@@ -160,7 +160,7 @@ class wxBitmap;
 class wxbPen: public wxObject
 {
  protected:
-  float width;
+  double width;
   int style;
   int join ;
   int cap ;
@@ -170,15 +170,15 @@ class wxbPen: public wxObject
   wxDash *dash ;
   wxColour *colour;
   wxbPen(void);
-  wxbPen(wxColour *col, float width, int style);
-  wxbPen(const char *col, float width, int style);
+  wxbPen(wxColour *col, double width, int style);
+  wxbPen(const char *col, double width, int style);
   ~wxbPen(void);
 
   void SetColour(wxColour *col) ;
   void SetColour(const char *col)  ;
   void SetColour(char r, char g, char b)  ;
 
-  void SetWidth(float width)  ;
+  void SetWidth(double width)  ;
   void SetStyle(int style)  ;
   void SetStipple(wxBitmap *stipple)  ;
   void SetDashes(int nb_dashes, wxDash *dash)  ;
@@ -187,7 +187,7 @@ class wxbPen: public wxObject
   
   wxColour *GetColour(void);
   int GetWidth(void);
-  float GetWidthF(void);
+  double GetWidthF(void);
   int GetStyle(void);
   int GetJoin(void);
   int GetCap(void);
@@ -274,8 +274,8 @@ class wxPenList: public wxObject
   wxPenList(void);
   ~wxPenList(void);
   void AddPen(wxPen *pen);
-  wxPen *FindOrCreatePen(wxColour *colour, float width, int style);
-  wxPen *FindOrCreatePen(char *colour, float width, int style);
+  wxPen *FindOrCreatePen(wxColour *colour, double width, int style);
+  wxPen *FindOrCreatePen(char *colour, double width, int style);
 };
 
 class wxBrushList: public wxObject

@@ -73,11 +73,11 @@ public:
     virtual void CalcScrolledPosition(int x, int y, int *xx, int *yy);
 
     // Actually defined in wx_canvs.cc since requires wxCanvas declaration
-    void DeviceToLogical(float *x, float *y);
+    void DeviceToLogical(double *x, double *y);
 
     // Calculate logical (scroll-bar/scaling aware) position from
     // device (pixel) position
-    virtual void CalcUnscrolledPosition(int x, int y, float *xx, float *yy);
+    virtual void CalcUnscrolledPosition(int x, int y, double *xx, double *yy);
 
     // Handlers
     virtual void OnCreate(LPCREATESTRUCT cs);

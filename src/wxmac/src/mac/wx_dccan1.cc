@@ -273,7 +273,7 @@ void wxCanvasDC::SetCanvasClipping(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::GetClippingBox(float *x,float *y,float *w,float *h)
+void wxCanvasDC::GetClippingBox(double *x,double *y,double *w,double *h)
   //-----------------------------------------------------------------------------
 {
   if (current_reg && cMacDC) {
@@ -314,7 +314,7 @@ void wxCanvasDC::SetPaintRegion(Rect* paintRect)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::SetClippingRect(float cx, float cy, float cw, float ch)
+void wxCanvasDC::SetClippingRect(double cx, double cy, double cw, double ch)
   //-----------------------------------------------------------------------------
 {
   wxRegion *r;
@@ -459,7 +459,7 @@ void wxCanvasDC::SetMapMode(int mode)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::SetUserScale(float x, float y)
+void wxCanvasDC::SetUserScale(double x, double y)
   //-----------------------------------------------------------------------------
 {
   user_scale_x = x;
@@ -469,40 +469,40 @@ void wxCanvasDC::SetUserScale(float x, float y)
 }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::DeviceToLogicalX(int x) { return XDEV2LOG(x); }
+double wxCanvasDC::DeviceToLogicalX(int x) { return XDEV2LOG(x); }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::DeviceToLogicalXRel(int x) { return XDEV2LOGREL(x); }
+double wxCanvasDC::DeviceToLogicalXRel(int x) { return XDEV2LOGREL(x); }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::DeviceToLogicalY(int y) { return YDEV2LOG(y); }
+double wxCanvasDC::DeviceToLogicalY(int y) { return YDEV2LOG(y); }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::DeviceToLogicalYRel(int y) { return YDEV2LOGREL(y); }
+double wxCanvasDC::DeviceToLogicalYRel(int y) { return YDEV2LOGREL(y); }
 
 //-----------------------------------------------------------------------------
-int wxCanvasDC::LogicalToDeviceX(float x) { return XLOG2DEV(x); }
+int wxCanvasDC::LogicalToDeviceX(double x) { return XLOG2DEV(x); }
 
 //-----------------------------------------------------------------------------
-int wxCanvasDC::LogicalToDeviceXRel(float x) { return XLOG2DEVREL(x); }
+int wxCanvasDC::LogicalToDeviceXRel(double x) { return XLOG2DEVREL(x); }
 
 //-----------------------------------------------------------------------------
-int wxCanvasDC::LogicalToDeviceY(float y) { return YLOG2DEV(y); }
+int wxCanvasDC::LogicalToDeviceY(double y) { return YLOG2DEV(y); }
 
 //-----------------------------------------------------------------------------
-int wxCanvasDC::LogicalToDeviceYRel(float y) { return YLOG2DEVREL(y); }
+int wxCanvasDC::LogicalToDeviceYRel(double y) { return YLOG2DEVREL(y); }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::FLogicalToDeviceX(float x) { return XLOG2DEV(x); }
+double wxCanvasDC::FLogicalToDeviceX(double x) { return XLOG2DEV(x); }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::FLogicalToDeviceXRel(float x) { return XLOG2DEVREL(x); }
+double wxCanvasDC::FLogicalToDeviceXRel(double x) { return XLOG2DEVREL(x); }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::FLogicalToDeviceY(float y) { return YLOG2DEV(y); }
+double wxCanvasDC::FLogicalToDeviceY(double y) { return YLOG2DEV(y); }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::FLogicalToDeviceYRel(float y) { return YLOG2DEVREL(y); }
+double wxCanvasDC::FLogicalToDeviceYRel(double y) { return YLOG2DEVREL(y); }
 
 //-----------------------------------------------------------------------------
 void wxCanvasDC::wxMacSetClip(void)

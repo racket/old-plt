@@ -116,8 +116,8 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
   int currentX, currentY;
   int clx; // label font dimensions
   int cly;
-  float label_width, label_height, label_x, label_y;
-  float control_width, control_height, control_x, control_y;
+  double label_width, label_height, label_x, label_y;
+  double control_width, control_height, control_x, control_y;
   int defwidth, defheight;
 
   GetPosition(&currentX, &currentY);
@@ -143,11 +143,11 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
     // Given size is total label + edit size, find individual
     // control sizes on that basis.
     if (labelPosition == wxHORIZONTAL) {
-      label_x = (float)x;
-      label_y = (float)y;
+      label_x = (double)x;
+      label_y = (double)y;
 
       control_x = label_x + label_width + clx;
-      control_y = (float)y;
+      control_y = (double)y;
       if (width <= 0)
 	control_width = defwidth;
       else
@@ -155,17 +155,17 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
       if (height <= 0)
 	control_height = defheight;
       else
-	control_height = (float)height;
+	control_height = (double)height;
     } else { // wxVERTICAL
-      label_x = (float)x;
-      label_y = (float)y;
+      label_x = (double)x;
+      label_y = (double)y;
 
-      control_x = (float)x;
+      control_x = (double)x;
       control_y = label_y + label_height + 3;
       if (width <= 0)
 	control_width = defwidth;
       else
-	control_width = (float)width;
+	control_width = (double)width;
       if (height <= 0)
 	control_height = defheight;
       else
@@ -181,10 +181,10 @@ void wxGauge::SetSize(int x, int y, int width, int height, int sizeFlags)
     if (height <= 0)
       height = defheight;
 
-    control_x = (float)x;
-    control_y = (float)y;
-    control_width = (float)width;
-    control_height = (float)height;
+    control_x = (double)x;
+    control_y = (double)y;
+    control_width = (double)width;
+    control_height = (double)height;
   }
 
   MoveWindow((HWND)ms_handle, (int)control_x, (int)control_y, 
@@ -260,7 +260,7 @@ void wxGauge::SetLabel(char *label)
 {
   if (static_label)
   {
-    float w, h;
+    double w, h;
     RECT rect;
     POINT point;
     wxWindow *parent;

@@ -60,7 +60,7 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *label, int style)
   cWindowHeight = (r.bottom - r.top) + GBOX_EXTRA_SPACE;
 #else
   {
-    float x, y;
+    double x, y;
     wxFont *bold;
     bold = new wxFont(font->GetPointSize(), font->GetFontId(), font->GetStyle(), wxBOLD, 0);
     bold->GetTextExtent(wxItemStripLabel(label), 0, &x, &y, NULL, NULL, TRUE, FALSE);

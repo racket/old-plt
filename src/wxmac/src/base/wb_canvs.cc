@@ -115,18 +115,18 @@ void wxbCanvas::OnChar(wxKeyEvent* event)
   }
 }
 
-float wxbCanvas::GetCharHeight(void)
+double wxbCanvas::GetCharHeight(void)
 {
   return wx_dc->GetCharHeight();
 }
 
-float wxbCanvas::GetCharWidth(void)
+double wxbCanvas::GetCharWidth(void)
 {
   return wx_dc->GetCharWidth();
 }
 
-void wxbCanvas::GetTextExtent(const char* string, float* x, float* y, float* descent,
-			      float* externalLeading, wxFont* the_font, Bool use16)
+void wxbCanvas::GetTextExtent(const char* string, double* x, double* y, double* descent,
+			      double* externalLeading, wxFont* the_font, Bool use16)
 {
   wx_dc->GetTextExtent(string, x, y, descent, externalLeading, the_font, FALSE, use16);
 }

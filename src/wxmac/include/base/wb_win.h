@@ -110,10 +110,10 @@ class wxbWindow: public wxObject
   virtual wxCursor *SetCursor(wxCursor *cursor) = 0;
   virtual void SetColourMap(wxColourMap *cmap) = 0;
 
-  virtual float GetCharWidth(void) = 0;
-  virtual float GetCharHeight(void) = 0;
-  inline virtual void GetTextExtent(const char* string, float* x, float* y, float* descent = NULL,
-				    float* externalLeading = NULL, wxFont* the_font = NULL, Bool use16=FALSE) {};
+  virtual double GetCharWidth(void) = 0;
+  virtual double GetCharHeight(void) = 0;
+  inline virtual void GetTextExtent(const char* string, double* x, double* y, double* descent = NULL,
+				    double* externalLeading = NULL, wxFont* the_font = NULL, Bool use16=FALSE) {};
   inline virtual void SetTitle(char *title) {};      // Set window title
   inline virtual char *GetTitle(void) { return NULL; }; // Set window title
   // Most windows have the concept of a label; for frames, this is the
@@ -134,7 +134,7 @@ class wxbWindow: public wxObject
 
   inline virtual void EnablePainting(Bool enable) { paintingEnabled = enable; }
 
-  virtual Bool PopupMenu(wxMenu *menu, float x, float y) = 0;
+  virtual Bool PopupMenu(wxMenu *menu, double x, double y) = 0;
 
   // INTERNAL FUNCTIONS
   virtual void AddChild(wxObject *child) = 0;      // Adds reference to the child object

@@ -446,16 +446,16 @@ void wxRadioBox::SetSize(int x, int y, int width, int height, int WXUNUSED(sizeF
   int currentX, currentY;
   int y_offset = y;
   int x_offset = x;
-  float current_width;
-  float cyf;
+  double current_width;
+  double cyf;
   HWND wnd;
   int cx1, cy1, startX, startY;
   int maxWidth =  -1;
   int maxHeight = -1;
   int hlabel = 0;
   int i;
-  float label_width = 0;
-  float label_height = 0;
+  double label_width = 0;
+  double label_height = 0;
 
   GetPosition(&currentX, &currentY);
   if (x == -1)

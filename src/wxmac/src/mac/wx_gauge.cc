@@ -31,10 +31,10 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
 		 int width, int height, long style, char *name) :
 		 wxbGauge(panel, label, _range, x, y, width, height, style, name)
 {
-  float fWidth;
-  float fHeight;
-  float fDescent;
-  float fLeading;
+  double fWidth;
+  double fHeight;
+  double fDescent;
+  double fLeading;
   int lblh = 0;
   int lblw = 0;
   

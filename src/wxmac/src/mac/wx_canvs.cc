@@ -530,7 +530,7 @@ void wxCanvas::Scroll(int xPos, int yPos)
     cScroll->SetScrollData(scrollData, whatScrollData, NULL);
 }
 
-void wxCanvas::ScrollPercent(float x, float y)
+void wxCanvas::ScrollPercent(double x, double y)
 {
   if (!scrollAutomanaged) {
     /* Not managing  - do nothing */
@@ -658,7 +658,7 @@ void wxCanvas::ClientToLogical(int* x, int* y) // mac platform only; testing
   wxDC* theDC;
   theDC = GetDC();
   if (theDC) {
-    float fX, fY;
+    double fX, fY;
     fX = theDC->DeviceToLogicalX(*x);
     fY = theDC->DeviceToLogicalY(*y);
     *x = (int)fX;

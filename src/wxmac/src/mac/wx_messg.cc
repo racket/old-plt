@@ -214,8 +214,8 @@ wxMessage::~wxMessage(void)
 //-----------------------------------------------------------------------------
 void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common constructor initialization
 {
-  float clientWidth;
-  float clientHeight;
+  double clientWidth;
+  double clientHeight;
 
   if (cStyle & wxBORDER) new wxBorderArea(this);
   sBitmap = NULL;

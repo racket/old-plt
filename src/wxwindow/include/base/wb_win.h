@@ -128,8 +128,8 @@ class wxbWindow: public wxEvtHandler
   virtual Bool Show(Bool show) = 0;
   virtual wxCursor *SetCursor(wxCursor *cursor) = 0;
 
-  inline virtual void GetTextExtent(const char *WXUNUSED(string), float *WXUNUSED(x), float *WXUNUSED(y),
-				    float *WXUNUSED(descent) = NULL, float *WXUNUSED(externalLeading) = NULL, 
+  inline virtual void GetTextExtent(const char *WXUNUSED(string), double *WXUNUSED(x), double *WXUNUSED(y),
+				    double *WXUNUSED(descent) = NULL, double *WXUNUSED(externalLeading) = NULL, 
 				    wxFont *WXUNUSED(theFont) = NULL, Bool WXUNUSED(use16) = FALSE) {};
   
   // Font
@@ -153,7 +153,7 @@ class wxbWindow: public wxEvtHandler
 
   inline virtual void Paint(void) { OnPaint(); }
 
-  virtual Bool PopupMenu(wxMenu *menu, float x, float y) = 0;
+  virtual Bool PopupMenu(wxMenu *menu, double x, double y) = 0;
 
   // Scrolling
   virtual void SetScrollPos(int WXUNUSED(orient), int WXUNUSED(pos)) {};

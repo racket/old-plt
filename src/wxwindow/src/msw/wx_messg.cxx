@@ -151,8 +151,8 @@ void wxMessage::SetSize(int x, int y, int width, int height, int sizeFlags)
   int actualWidth = width;
   int actualHeight = height;
   char buf[300];
-  float current_width;
-  float cyf;
+  double current_width;
+  double cyf;
   int ww, hh;
 
   GetPosition(&currentX, &currentY);

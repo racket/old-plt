@@ -45,24 +45,24 @@ class wxbDC: public wxObject
   wxRegion *clipping;
 
   // Coordinate system variables
-  float logical_origin_x;
-  float logical_origin_y;
+  double logical_origin_x;
+  double logical_origin_y;
 
-  float device_origin_x;
-  float device_origin_y;
+  double device_origin_x;
+  double device_origin_y;
 
-  float logical_scale_x;
-  float logical_scale_y;
+  double logical_scale_x;
+  double logical_scale_y;
 
-  float user_scale_x;
-  float user_scale_y;
+  double user_scale_x;
+  double user_scale_y;
 
   int mapping_mode;
 
-  float min_x;          // bounding box
-  float min_y;
-  float max_x;
-  float max_y;
+  double min_x;          // bounding box
+  double min_y;
+  double max_x;
+  double max_y;
   char *title;
 
   Bool Colour;
@@ -101,33 +101,33 @@ class wxbDC: public wxObject
   inline virtual void BeginDrawing(void) {} ;
   inline virtual void EndDrawing(void) {} ;
 
-  virtual void FloodFill(float x1, float y1, wxColour *col, int style=wxFLOOD_SURFACE) = 0;
-  virtual Bool GetPixel(float x1, float y1, wxColour *col) = 0;
+  virtual void FloodFill(double x1, double y1, wxColour *col, int style=wxFLOOD_SURFACE) = 0;
+  virtual Bool GetPixel(double x1, double y1, wxColour *col) = 0;
 
-  virtual void DrawLine(float x1, float y1, float x2, float y2) = 0;
+  virtual void DrawLine(double x1, double y1, double x2, double y2) = 0;
   virtual void IntDrawLine(int x1, int y1, int x2, int y2) = 0;
-  virtual void CrossHair(float x, float y) = 0;
-  virtual void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc)=0;
-  virtual void DrawPoint(float x, float y) = 0;
+  virtual void CrossHair(double x, double y) = 0;
+  virtual void DrawArc(double x1,double y1,double x2,double y2,double xc,double yc)=0;
+  virtual void DrawPoint(double x, double y) = 0;
   inline virtual void DrawPoint(wxPoint *point) { DrawPoint(point->x, point->y); }
-  virtual void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0) = 0;
+  virtual void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0) = 0;
   virtual void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0) = 0;
-  virtual void DrawLines(wxList *list, float xoffset = 0, float yoffset = 0);
-  virtual void DrawPolygon(int n, wxPoint points[], float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE) = 0;
-  virtual void DrawPolygon(wxList *list, float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE);
-  virtual void DrawRectangle(float x, float y, float width, float height) = 0;
-  virtual void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20) = 0;
-  virtual void DrawEllipse(float x, float y, float width, float height) = 0;
+  virtual void DrawLines(wxList *list, double xoffset = 0, double yoffset = 0);
+  virtual void DrawPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE) = 0;
+  virtual void DrawPolygon(wxList *list, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE);
+  virtual void DrawRectangle(double x, double y, double width, double height) = 0;
+  virtual void DrawRoundedRectangle(double x, double y, double width, double height, double radius = 20) = 0;
+  virtual void DrawEllipse(double x, double y, double width, double height) = 0;
 #if USE_SPLINES
   // Splines
   // 3-point spline
-  virtual void DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3);
+  virtual void DrawSpline(double x1, double y1, double x2, double y2, double x3, double y3);
   // Any number of control points - a list of pointers to wxPoints
   virtual void DrawSpline(wxList *points);
 #endif
-  virtual void DrawText(const char *text, float x, float y,
+  virtual void DrawText(const char *text, double x, double y,
                         Bool combine = FALSE, Bool use16bit = FALSE, 
-			int d = 0, float angle = 0.0) = 0;
+			int d = 0, double angle = 0.0) = 0;
   virtual void Clear(void) = 0;
 
   virtual Bool StartDoc(char *message) = 0;
@@ -144,16 +144,16 @@ class wxbDC: public wxObject
   virtual void SetBackgroundMode(int mode); // wxSOLID or wxTRANSPARENT
                                             // for drawing background colour
   int GetBackgroundMode(void);
-  virtual void SetClippingRect(float x, float y, float width, float height)= 0;
+  virtual void SetClippingRect(double x, double y, double width, double height)= 0;
   virtual wxRegion *GetClippingRegion() = 0;
   virtual void SetClippingRegion(wxRegion *r) = 0;
   inline virtual void SetColourMap(wxColourMap *WXUNUSED(cmap)) {};
 
-  virtual float GetCharHeight(void) = 0;
-  virtual float GetCharWidth(void) = 0;
-  virtual void GetTextExtent(const char *string, float *x, float *y,
-                             float *descent = NULL, 
-                             float *externalLeading = NULL, 
+  virtual double GetCharHeight(void) = 0;
+  virtual double GetCharWidth(void) = 0;
+  virtual void GetTextExtent(const char *string, double *x, double *y,
+                             double *descent = NULL, 
+                             double *externalLeading = NULL, 
                              wxFont *theFont = NULL,
                              Bool combine = FALSE, Bool use16bit = FALSE,
 			     int d = 0) = 0;
@@ -174,36 +174,36 @@ class wxbDC: public wxObject
 
   virtual Bool GlyphAvailable(int c, wxFont *f = NULL) = 0;
  
-  virtual void SetLogicalOrigin(float x, float y);
-  virtual void SetDeviceOrigin(float x, float y);
-  void GetDeviceOrigin(float *x, float *y) {*x = device_origin_x; *y = device_origin_y; }
-  virtual void SetLogicalScale(float x, float y);
-  virtual void SetUserScale(float x, float y) = 0;
-  void GetUserScale(float *x, float *y) {*x = user_scale_x; *y = user_scale_y; }
-  virtual float DeviceToLogicalX(int x) = 0;
-  virtual float DeviceToLogicalY(int y) = 0;
-  virtual float DeviceToLogicalXRel(int x) = 0;
-  virtual float DeviceToLogicalYRel(int y) = 0;
-  virtual int LogicalToDeviceX(float x) = 0;
-  virtual int LogicalToDeviceY(float y) = 0;
-  virtual int LogicalToDeviceXRel(float x) = 0;
-  virtual int LogicalToDeviceYRel(float y) = 0;
-  virtual float FLogicalToDeviceX(float x) = 0;
-  virtual float FLogicalToDeviceY(float y) = 0;
-  virtual float FLogicalToDeviceXRel(float x) = 0;
-  virtual float FLogicalToDeviceYRel(float y) = 0;
+  virtual void SetLogicalOrigin(double x, double y);
+  virtual void SetDeviceOrigin(double x, double y);
+  void GetDeviceOrigin(double *x, double *y) {*x = device_origin_x; *y = device_origin_y; }
+  virtual void SetLogicalScale(double x, double y);
+  virtual void SetUserScale(double x, double y) = 0;
+  void GetUserScale(double *x, double *y) {*x = user_scale_x; *y = user_scale_y; }
+  virtual double DeviceToLogicalX(int x) = 0;
+  virtual double DeviceToLogicalY(int y) = 0;
+  virtual double DeviceToLogicalXRel(int x) = 0;
+  virtual double DeviceToLogicalYRel(int y) = 0;
+  virtual int LogicalToDeviceX(double x) = 0;
+  virtual int LogicalToDeviceY(double y) = 0;
+  virtual int LogicalToDeviceXRel(double x) = 0;
+  virtual int LogicalToDeviceYRel(double y) = 0;
+  virtual double FLogicalToDeviceX(double x) = 0;
+  virtual double FLogicalToDeviceY(double y) = 0;
+  virtual double FLogicalToDeviceXRel(double x) = 0;
+  virtual double FLogicalToDeviceYRel(double y) = 0;
   // Only works for PostScript *after* you've printed an image.
   // Gives width and height of image.
-  virtual void GetSize(float *width, float *height);
-  virtual inline void GetSizeMM(float *width, float *height) { *width = 0.0; *height = 0.0; };
-  virtual void CalcBoundingBox(float x, float y);
+  virtual void GetSize(double *width, double *height);
+  virtual inline void GetSizeMM(double *width, double *height) { *width = 0.0; *height = 0.0; };
+  virtual void CalcBoundingBox(double x, double y);
   // Get the final bounding box of the PostScript or Metafile picture.
-  virtual inline float MinX(void) { return min_x; }
-  virtual inline float MaxX(void) { return max_x; }
-  virtual inline float MinY(void) { return min_y; }
-  virtual inline float MaxY(void) { return max_y; }
-  virtual Bool Blit(float xdest, float ydest, float width, float height,
-                    wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID, 
+  virtual inline double MinX(void) { return min_x; }
+  virtual inline double MaxX(void) { return max_x; }
+  virtual inline double MinY(void) { return min_y; }
+  virtual inline double MaxY(void) { return max_y; }
+  virtual Bool Blit(double xdest, double ydest, double width, double height,
+                    wxBitmap *source, double xsrc, double ysrc, int rop = wxSOLID, 
 		    wxColour* c = NULL, wxBitmap *mask = NULL) = 0;
 
   // Sometimes we need to override optimization, e.g.
@@ -217,10 +217,10 @@ class wxbDC: public wxObject
 
 /*
 extern char wx_printer_file[];
-extern float wx_printer_scale_x;
-extern float wx_printer_scale_y;
-extern float wx_printer_translate_x;
-extern float wx_printer_translate_y;
+extern double wx_printer_scale_x;
+extern double wx_printer_scale_y;
+extern double wx_printer_translate_x;
+extern double wx_printer_translate_y;
 */
 extern int wxPageNumber;
 

@@ -432,7 +432,7 @@ BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD menuId)
 extern void wxResetCurrentCursor(void);
 extern HCURSOR wxMSWSetCursor(HCURSOR c);
 
-Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
+Bool wxWindow::PopupMenu(wxMenu *menu, double x, double y)
 {
   int r;
   HWND hWnd;

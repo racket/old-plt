@@ -44,19 +44,19 @@ class wxFont: public wxbFont
 	       Bool underlined = FALSE, int smoothing = wxSMOOTHING_DEFAULT, Bool sip = FALSE);
 	~wxFont(void);
 
-	float GetCharHeight(float scale_x = 1.0, float scale_y = 1.0);
-	float GetCharWidth(float scale_x = 1.0, float scale_y = 1.0);
-	void  GetTextExtent(char* string, int delta, float* x, float* y,
-			    float* descent, float* externalLeading, 
+	double GetCharHeight(double scale_x = 1.0, double scale_y = 1.0);
+	double GetCharWidth(double scale_x = 1.0, double scale_y = 1.0);
+	void  GetTextExtent(char* string, int delta, double* x, double* y,
+			    double* descent, double* externalLeading, 
 			    Bool qd_spacing = TRUE, Bool use16 = FALSE,
-			    float scale_x = 1.0, float scale_y = 1.0);
+			    double scale_x = 1.0, double scale_y = 1.0);
 
 	int GetMacFontNum(void); // mac platform only
 	Style GetMacFontStyle(void); // mac platform only
 
 	int CanRotate(void);
 
-	int GetEffectiveSmoothing(float yscale);
+	int GetEffectiveSmoothing(double yscale);
 
 	Bool ScreenGlyphAvailable(int c);
 };
@@ -77,8 +77,8 @@ class wxPen: public wxbPen
 {
  public:
   wxPen(void);
-  wxPen(wxColour *col, float width, int style);
-  wxPen(char *col, float width, int style);
+  wxPen(wxColour *col, double width, int style);
+  wxPen(char *col, double width, int style);
   ~wxPen(void);
 
 };

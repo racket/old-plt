@@ -64,12 +64,12 @@ class wxbFont: public wxObject
   int smoothing;
   Bool underlined;
   Bool size_in_pixels;
-  float rotation;
+  double rotation;
  public:
   wxbFont(void);
   wxbFont(int PointSize, int FamilyOrFontId, int Style, int Weight, 
 	  Bool underline = FALSE, int smoothing = wxSMOOTHING_DEFAULT,
-	  Bool sip = FALSE, float Rotation = 0.0);
+	  Bool sip = FALSE, double Rotation = 0.0);
   ~wxbFont();
 
   inline int GetPointSize(void) { return point_size; }
@@ -130,10 +130,10 @@ class wxColourMap;
 class wxPoint: public wxObject
 {
  public:
-  float x;
-  float y;
+  double x;
+  double y;
   wxPoint(void);
-  wxPoint(float the_x, float the_y);
+  wxPoint(double the_x, double the_y);
   ~wxPoint(void);
 };
 
@@ -153,7 +153,7 @@ class wxBitmap;
 class wxbPen: public wxObject
 {
  protected:
-  float width;
+  double width;
   short locked;
   short style;
   int join ;
@@ -166,15 +166,15 @@ class wxbPen: public wxObject
   wxColour *colour;
 
   wxbPen(void);
-  wxbPen(wxColour *col, float width, int style);
-  wxbPen(const char *col, float width, int style);
+  wxbPen(wxColour *col, double width, int style);
+  wxbPen(const char *col, double width, int style);
   ~wxbPen(void);
 
   void SetColour(wxColour *col) ;
   void SetColour(const char *col)  ;
   void SetColour(char r, char g, char b)  ;
 
-  void SetWidth(float width)  ;
+  void SetWidth(double width)  ;
   void SetStyle(int style)  ;
   void SetStipple(wxBitmap *stipple)  ;
   void SetDashes(int nb_dashes, wxDash *dash)  ;
@@ -183,7 +183,7 @@ class wxbPen: public wxObject
 
   wxColour* GetColour(void);
   int GetWidth(void);
-  float GetWidthF(void);
+  double GetWidthF(void);
   int GetStyle(void);
   int GetJoin(void);
   int GetCap(void);
@@ -261,8 +261,8 @@ class wxPenList: public wxObject
   wxPenList(void);
   ~wxPenList(void);
   void AddPen(wxPen *pen);
-  wxPen *FindOrCreatePen(wxColour *colour, float width, int style);
-  wxPen *FindOrCreatePen(char *colour, float width, int style);
+  wxPen *FindOrCreatePen(wxColour *colour, double width, int style);
+  wxPen *FindOrCreatePen(char *colour, double width, int style);
 };
 
 class wxBrushList: public wxObject

@@ -57,7 +57,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
   
   {
     int cx, cy;
-    float current_width, cyf, total_width = 0;
+    double current_width, cyf, total_width = 0;
 
     wxGetCharSize(cparent->handle, &cx, &cy, buttonFont);
     

@@ -312,7 +312,7 @@ void wxCanvas::Scroll (int x_pos, int y_pos)
     SetScrollPos(-wxVERTICAL, y_pos);
 }
 
-void wxCanvas::ScrollPercent(float x, float y)
+void wxCanvas::ScrollPercent(double x, double y)
 {
   wxWnd *wnd = (wxWnd *) handle;
   if (!wnd) 
@@ -409,7 +409,7 @@ void wxCanvas::ViewStart(int *x, int *y, Bool)
   }
 }
 
-void wxWnd::DeviceToLogical (float *x, float *y)
+void wxWnd::DeviceToLogical (double *x, double *y)
 {
   if (is_canvas) {
     wxCanvas *canvas;

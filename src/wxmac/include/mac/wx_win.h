@@ -243,15 +243,15 @@ class wxWindow: public wxbWindow
   /* Quill methods */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   virtual void SetFont(wxFont* theFont); /* mac platform only */
-  float GetCharHeight(void);
-  float GetCharWidth(void);
-  void GetTextExtent(const char* string, float* x, float* y, float* descent = NULL,
-		     float* externalLeading = NULL, wxFont *thefont = NULL,
+  double GetCharHeight(void);
+  double GetCharWidth(void);
+  void GetTextExtent(const char* string, double* x, double* y, double* descent = NULL,
+		     double* externalLeading = NULL, wxFont *thefont = NULL,
 		     Bool use16 = FALSE);
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Other methods */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
-  Bool PopupMenu(wxMenu* menu, float x, float y);
+  Bool PopupMenu(wxMenu* menu, double x, double y);
   wxCursor* SetCursor(wxCursor* cursor);
   void SetColourMap(wxColourMap* cmap);
   virtual Bool IsMacWindow(void); /* mac platform only */

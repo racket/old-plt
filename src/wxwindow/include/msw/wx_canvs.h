@@ -38,7 +38,7 @@ class wxCanvas: public wxbCanvas
 
   // Scroll the canvas
   void Scroll(int x_pos, int y_pos);
-  void ScrollPercent(float x_pos, float y_pos);
+  void ScrollPercent(double x_pos, double y_pos);
   void GetScrollUnitsPerPage(int *x_page, int *y_page);
 
   void ViewStart(int *x, int *y, Bool sb = FALSE);

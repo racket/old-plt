@@ -62,10 +62,10 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 		      int min_value, int max_value, int width, int x, int y,
 		      long style, char *name)
 {
-  float fWidth;
-  float fHeight;
-  float fDescent;
-  float fLeading;
+  double fWidth;
+  double fHeight;
+  double fDescent;
+  double fLeading;
   int	lblh=0;
   int lblw=0;
   int vwid, vhgt, hsp, vsp;

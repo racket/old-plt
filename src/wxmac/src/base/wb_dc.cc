@@ -49,7 +49,7 @@ wxbDC::~wxbDC(void)
   title = NULL;
 }
 
-void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset, int fillStyle)
+void wxbDC::DrawPolygon(wxList *list, double xoffset, double yoffset, int fillStyle)
 {
   int i = 0;
   int n;
@@ -67,7 +67,7 @@ void wxbDC::DrawPolygon(wxList *list, float xoffset, float yoffset, int fillStyl
   DrawPolygon(n, points, xoffset, yoffset, fillStyle);
 }
 
-void wxbDC::DrawLines(wxList *list, float xoffset, float yoffset)
+void wxbDC::DrawLines(wxList *list, double xoffset, double yoffset)
 {
   int i = 0;
   int n;
@@ -103,11 +103,11 @@ void wxbDC::SetBackgroundMode(int mode)
   current_bk_mode = mode;
 }
 
-void wxbDC::GetSize(float *width, float *height)
+void wxbDC::GetSize(double *width, double *height)
 {
   if (!(min_x == 1000.0 && min_y == 1000.0 && max_x == -1000.0 && max_y == -1000.0)) {
-    *width = (float)(max_x - min_x);
-    *height = (float)(max_y - min_y);
+    *width = (double)(max_x - min_x);
+    *height = (double)(max_y - min_y);
   } else {
     *width = 0.0;
     *height = 0.0;
@@ -116,7 +116,7 @@ void wxbDC::GetSize(float *width, float *height)
 
 #if USE_SPLINES
 // Make a 3-point spline
-void wxbDC::DrawSpline(float x1, float y1, float x2, float y2, float x3, float y3)
+void wxbDC::DrawSpline(double x1, double y1, double x2, double y2, double x3, double y3)
 {
   wxList *point_list;
   wxPoint *point1;
@@ -146,26 +146,26 @@ wxColor *wxbDC::GetBackground(void)
   return new wxColour(current_background_color);
 }
 
-void wxbDC::SetLogicalOrigin(float x, float y)
+void wxbDC::SetLogicalOrigin(double x, double y)
 {
   logical_origin_x = x;
   logical_origin_y = y;
 }
 
-void wxbDC::SetDeviceOrigin(float x, float y)
+void wxbDC::SetDeviceOrigin(double x, double y)
 {
   device_origin_x = x;
   device_origin_y = y;
 }
 
 // For use by wxWindows only, unless custom units are required.
-void wxbDC::SetLogicalScale(float x, float y)
+void wxbDC::SetLogicalScale(double x, double y)
 {
   logical_scale_x = x;
   logical_scale_y = y;
 }
 
-void wxbDC::CalcBoundingBox(float x, float y)
+void wxbDC::CalcBoundingBox(double x, double y)
 {
   if (x < min_x) min_x = x;
   if (y < min_y) min_y = y;

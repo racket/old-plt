@@ -56,8 +56,8 @@ class wxWindow: public wxbWindow
   virtual Bool Show(Bool show);
   virtual wxCursor *SetCursor(wxCursor *cursor);
 
-  virtual void GetTextExtent(const char *string, float *x, float *y,
-			     float *descent = NULL, float *externalLeading = NULL, 
+  virtual void GetTextExtent(const char *string, double *x, double *y,
+			     double *descent = NULL, double *externalLeading = NULL, 
 			     wxFont *theFont = NULL, Bool use16bit = FALSE);
 
   void GetSize(int *width, int *height);
@@ -76,7 +76,7 @@ class wxWindow: public wxbWindow
   inline void SetTitle(char *WXUNUSED(title)) {};
   inline void Fit(void) {};
   inline void Centre(int WXUNUSED(direction)) {};
-  Bool PopupMenu(wxMenu *menu, float x, float y);
+  Bool PopupMenu(wxMenu *menu, double x, double y);
 
   void InternalEnable(Bool enable, Bool gray = FALSE);
   Bool IsGray(void);

@@ -106,7 +106,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   cWindowHeight = TAB_TOP_SPACE + TAB_CONTROL_HEIGHT + TAB_CONTENT_MARGIN + TAB_BOTTOM_EXTRA_MARGIN + 5;
   cWindowWidth = TAB_TITLE_SPACE;
   for (i = 0; i < N; i++) {
-    float x, y;
+    double x, y;
     font->GetTextExtent(wxItemStripLabel(Choices[i]), 0, &x, &y, NULL, NULL, TRUE);
     cWindowWidth += TAB_TITLE_SPACE + (int)x;
   }

@@ -706,8 +706,8 @@ Bool wxWindow::Show(Bool show)
   return TRUE;
 }
 
-void wxWindow::GetTextExtent(const char *string, float *x, float *y,
-			     float *descent, float *externalLeading, 
+void wxWindow::GetTextExtent(const char *string, double *x, double *y,
+			     double *descent, double *externalLeading, 
 			     wxFont *theFont, Bool use16bit)
 {
   wxFont *fontToUse = theFont;
@@ -744,10 +744,10 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 
   wxwmReleaseDC(hWnd, dc);
 
-  *x = (len ? (float)sizeRect.cx : (float)0.0);
-  *y = (float)sizeRect.cy;
-  if (descent) *descent = (float)tm.tmDescent;
-  if (externalLeading) *externalLeading = (float)tm.tmExternalLeading;
+  *x = (len ? (double)sizeRect.cx : (double)0.0);
+  *y = (double)sizeRect.cy;
+  if (descent) *descent = (double)tm.tmDescent;
+  if (externalLeading) *externalLeading = (double)tm.tmExternalLeading;
 }
 
 void wxWindow::Refresh(void)
@@ -1658,10 +1658,10 @@ void wxWnd::CalcScrolledPosition(int x, int y, int *xx, int *yy)
   *yy = (calcScrolledOffset ? (y - yscroll_position * yscroll_pixels_per_line) : y);
 }
 
-void wxWnd::CalcUnscrolledPosition(int x, int y, float *xx, float *yy)
+void wxWnd::CalcUnscrolledPosition(int x, int y, double *xx, double *yy)
 {
-  *xx = (float)(calcScrolledOffset ? (x + xscroll_position * xscroll_pixels_per_line) : x);
-  *yy = (float)(calcScrolledOffset ? (y + yscroll_position * yscroll_pixels_per_line) : y);
+  *xx = (double)(calcScrolledOffset ? (x + xscroll_position * xscroll_pixels_per_line) : x);
+  *yy = (double)(calcScrolledOffset ? (y + yscroll_position * yscroll_pixels_per_line) : y);
 }
 
 BOOL wxWnd::OnEraseBkgnd(HDC WXUNUSED(pDC))
@@ -2553,7 +2553,7 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
       w = rect.right - rect.left;
       nMaxWidth = wnd->xscroll_lines*wnd->xscroll_pixels_per_line;
       
-      nHscrollMax = (int)ceil((nMaxWidth - w)/(float)wnd->xscroll_pixels_per_line);
+      nHscrollMax = (int)ceil((nMaxWidth - w)/(double)wnd->xscroll_pixels_per_line);
       nHscrollMax = max(0, nHscrollMax);
 
       nScrollInc = max(-wnd->xscroll_position,
@@ -2582,7 +2582,7 @@ int wxWindow::CalcScrollInc(wxScrollEvent *event)
       
       nMaxHeight = wnd->yscroll_lines*wnd->yscroll_pixels_per_line;
       
-      nVscrollMax = (int)ceil((nMaxHeight - h)/(float)wnd->yscroll_pixels_per_line);
+      nVscrollMax = (int)ceil((nMaxHeight - h)/(double)wnd->yscroll_pixels_per_line);
       nVscrollMax = max(0, nVscrollMax);
       
       nScrollInc = max(-wnd->yscroll_position,

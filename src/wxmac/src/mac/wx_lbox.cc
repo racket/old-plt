@@ -147,8 +147,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
                        int x, int y, int width, int height,
                        int N, char **Choices, long style, char *name)
 {
-  float lblWidth, lblHeight;
-  float tWidth, tHeight, tDescent;
+  double lblWidth, lblHeight;
+  double tWidth, tHeight, tDescent;
   int boxHeight, boxWidth;
   CGrafPtr theMacGrafPort;
   int vscrollwanted = TRUE;

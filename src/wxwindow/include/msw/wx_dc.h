@@ -36,8 +36,8 @@ class wxDC: public wxbDC
   int combine_status;
   int window_ext_x;
   int window_ext_y;
-  float system_scale_x;
-  float system_scale_y;
+  double system_scale_x;
+  double system_scale_y;
 
   wxCanvas *canvas;
   wxBitmap *selected_bitmap;
@@ -66,9 +66,9 @@ class wxDC: public wxbDC
   virtual void BeginDrawing(void);
   virtual void EndDrawing(void);
 
-  void FloodFill(float x1, float y1, wxColour *col, int style=wxFLOOD_SURFACE);
-  Bool GetPixel(float x1, float y1, wxColour *col);
-  void SetPixel(float x1, float y1, wxColour *col);
+  void FloodFill(double x1, double y1, wxColour *col, int style=wxFLOOD_SURFACE);
+  Bool GetPixel(double x1, double y1, wxColour *col);
+  void SetPixel(double x1, double y1, wxColour *col);
 
   inline void BeginSetPixel() {}
   inline void EndSetPixel() {}
@@ -81,26 +81,26 @@ class wxDC: public wxbDC
   void EndGetPixelFast();
   void GetPixelFast(int x, int y, int *r, int *g, int *b);
 
-  void DrawLine(float x1, float y1, float x2, float y2);
+  void DrawLine(double x1, double y1, double x2, double y2);
   void IntDrawLine(int x1, int y1, int x2, int y2);
-  void CrossHair(float x, float y);
-  void DrawArc(float x1,float y1,float x2,float y2,float xc,float yc);
-  void DrawPoint(float x, float y);
+  void CrossHair(double x, double y);
+  void DrawArc(double x1,double y1,double x2,double y2,double xc,double yc);
+  void DrawPoint(double x, double y);
 
-  void DrawLines(int n, wxPoint points[], float xoffset = 0, float yoffset = 0);
+  void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);
   void DrawLines(int n, wxIntPoint points[], int xoffset = 0, int yoffset = 0);
   // MS C7 complains if this overloaded function isn't explicitly mentioned
-  inline void DrawLines(wxList *list, float xoffset = 0, float yoffset = 0)
+  inline void DrawLines(wxList *list, double xoffset = 0, double yoffset = 0)
   { wxbDC::DrawLines(list, xoffset, yoffset); }
 
-  void DrawPolygon(int n, wxPoint points[], float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE);
+  void DrawPolygon(int n, wxPoint points[], double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE);
   // See MS C7 comment above
-  inline void DrawPolygon(wxList *list, float xoffset = 0, float yoffset = 0, int fillStyle=wxODDEVEN_RULE)
+  inline void DrawPolygon(wxList *list, double xoffset = 0, double yoffset = 0, int fillStyle=wxODDEVEN_RULE)
   { wxbDC::DrawPolygon(list, xoffset, yoffset,fillStyle); }
 
-  void DrawRectangle(float x, float y, float width, float height);
-  void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20.0);
-  void DrawEllipse(float x, float y, float width, float height);
+  void DrawRectangle(double x, double y, double width, double height);
+  void DrawRoundedRectangle(double x, double y, double width, double height, double radius = 20.0);
+  void DrawEllipse(double x, double y, double width, double height);
 
   void Clear(void);
   void SetFont(wxFont *font);
@@ -108,48 +108,48 @@ class wxDC: public wxbDC
   void SetBrush(wxBrush *brush);
   void SetBackground(wxColour *c);
   void SetBackgroundMode(int mode);
-  void SetClippingRect(float x, float y, float width, float height);
+  void SetClippingRect(double x, double y, double width, double height);
   wxRegion* GetClippingRegion();
   void SetClippingRegion(wxRegion*);
   void SetColourMap(wxColourMap *cmap);
-  void DrawText(const char *text, float x, float y, 
+  void DrawText(const char *text, double x, double y, 
 		Bool combine = FALSE, Bool use16bit = FALSE, 
-		int d = 0, float angle = 0.0);
+		int d = 0, double angle = 0.0);
 
-  float GetCharHeight(void);
-  float GetCharWidth(void);
-  void GetTextExtent(const char *string, float *x, float *y,
-                     float *descent = NULL, float *externalLeading = NULL, 
+  double GetCharHeight(void);
+  double GetCharWidth(void);
+  void GetTextExtent(const char *string, double *x, double *y,
+                     double *descent = NULL, double *externalLeading = NULL, 
 		     wxFont *theFont = NULL, 
 		     Bool combine = FALSE, Bool use16bit = FALSE, int d = 0);
-  void GetSize(float *width, float *height);
-  void GetSizeMM(float *width, float *height);
+  void GetSize(double *width, double *height);
+  void GetSizeMM(double *width, double *height);
   Bool StartDoc(char *message);
   void EndDoc(void);
   void StartPage(void);
   void EndPage(void);
   void SetMapMode(int mode);
-  void SetUserScale(float x, float y);
-  void SetSystemScale(float x, float y);
-  void SetLogicalOrigin(float x, float y);
-  void SetDeviceOrigin(float x, float y);
-  float DeviceToLogicalX(int x);
-  float DeviceToLogicalY(int y);
-  float DeviceToLogicalXRel(int x);
-  float DeviceToLogicalYRel(int y);
-  int LogicalToDeviceX(float x);
-  int LogicalToDeviceY(float y);
-  int LogicalToDeviceXRel(float x);
-  int LogicalToDeviceYRel(float y);
-  float FLogicalToDeviceX(float x);
-  float FLogicalToDeviceY(float y);
-  float FLogicalToDeviceXRel(float x);
-  float FLogicalToDeviceYRel(float y);
+  void SetUserScale(double x, double y);
+  void SetSystemScale(double x, double y);
+  void SetLogicalOrigin(double x, double y);
+  void SetDeviceOrigin(double x, double y);
+  double DeviceToLogicalX(int x);
+  double DeviceToLogicalY(int y);
+  double DeviceToLogicalXRel(int x);
+  double DeviceToLogicalYRel(int y);
+  int LogicalToDeviceX(double x);
+  int LogicalToDeviceY(double y);
+  int LogicalToDeviceXRel(double x);
+  int LogicalToDeviceYRel(double y);
+  double FLogicalToDeviceX(double x);
+  double FLogicalToDeviceY(double y);
+  double FLogicalToDeviceXRel(double x);
+  double FLogicalToDeviceYRel(double y);
 
   Bool GlyphAvailable(int c, wxFont *f = NULL);
 
-  Bool Blit(float xdest, float ydest, float width, float height,
-            wxBitmap *source, float xsrc, float ysrc, int rop = wxSOLID,
+  Bool Blit(double xdest, double ydest, double width, double height,
+            wxBitmap *source, double xsrc, double ysrc, int rop = wxSOLID,
 	    wxColour *c=NULL, wxBitmap *mask=NULL);
             
   Bool CanDrawBitmap(void);
@@ -160,7 +160,7 @@ class wxDC: public wxbDC
   void SelectOldObjects(HDC dc);
    HDC ThisDC();
    void DoneDC(HDC dc);
-   void ShiftXY(float x, float y, int *ix, int *iy);
+   void ShiftXY(double x, double y, int *ix, int *iy);
 
   Bool StartBrush(HDC dc, Bool no_stipple = FALSE);
   Bool StartPen(HDC dc);

@@ -60,10 +60,10 @@ class wxbCanvas: public wxWindow
 
   // Actual size in pixels when scrolling is taken into account
   virtual void GetVirtualSize(int *x, int *y) = 0;
-  virtual float GetCharHeight(void);
-  virtual float GetCharWidth(void);
-  virtual void GetTextExtent(const char* string, float* x, float* y, 
-			     float* descent = NULL, float* externalLeading = NULL, 
+  virtual double GetCharHeight(void);
+  virtual double GetCharWidth(void);
+  virtual void GetTextExtent(const char* string, double* x, double* y, 
+			     double* descent = NULL, double* externalLeading = NULL, 
 			     wxFont* the_font = NULL, Bool use16=FALSE);
   // Gets 'context' member
   virtual wxCanvasDC *GetDC(void);

@@ -260,7 +260,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   PMResolution res;
   Bool keepGoing = TRUE;
   int copyCount;
-  float w, h;
+  double w, h;
   wxDC* dc;
 
   if (!printout)

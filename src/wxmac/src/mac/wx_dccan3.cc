@@ -24,20 +24,20 @@ extern "C" {
 static ATSUStyle theATSUstyle, theATSUqdstyle;
 
 static void init_ATSU_style(void);
-static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y, int qd_spacing);
+static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, double angle, double scale_y, int qd_spacing);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
-					       float angle, float scale_y, int qd_spacing);
+					       double angle, double scale_y, int qd_spacing);
 static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
 				  int just_meas, int given_font, 
 				  short txFont, short txSize, short txFace,
 				  int again, int qd_spacing, int smoothing,
-				  float angle, int sym_map,
-				  float scale_x, float scale_y,
-				  float pen_delta_x, int with_delta,
-				  float pen_start_x, float pen_start_y, float ddx, float ddy, int with_start);
+				  double angle, int sym_map,
+				  double scale_x, double scale_y,
+				  double pen_delta_x, int with_delta,
+				  double pen_start_x, double pen_start_y, double ddx, double ddy, int with_start);
 
-#ifndef FloatToFixed
-# define FloatToFixed(a) ((Fixed)((float) (a) * fixed1)) 
+#ifndef DoubleToFixed
+# define DoubleToFixed(a) ((Fixed)((double) (a) * fixed1)) 
 #endif
 
 static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
@@ -74,10 +74,10 @@ static int symbol_map[] = { 0, 0, 0, 0, 0, 0, 0, 0,
 			    9120, 9124, 9125, 9126, 9131, 9132, 9133, 0 };
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::DrawText(const char* text, float x, float y, Bool combine, Bool ucs4, int d, float angle)
+void wxCanvasDC::DrawText(const char* text, double x, double y, Bool combine, Bool ucs4, int d, double angle)
 {
   FontInfo fontInfo;
-  float w;
+  double w;
 
   if (!Ok()) return;
   
@@ -104,7 +104,7 @@ void wxCanvasDC::DrawText(const char* text, float x, float y, Bool combine, Bool
 }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::GetCharHeight(void)
+double wxCanvasDC::GetCharHeight(void)
      //-----------------------------------------------------------------------------
 {
   int theCharHeight;
@@ -119,7 +119,7 @@ float wxCanvasDC::GetCharHeight(void)
 }
 
 //-----------------------------------------------------------------------------
-float wxCanvasDC::GetCharWidth(void)
+double wxCanvasDC::GetCharWidth(void)
      //-----------------------------------------------------------------------------
 {
   int theCharWidth;
@@ -134,11 +134,11 @@ float wxCanvasDC::GetCharWidth(void)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::GetTextExtent(const char* string, float* x, float* y, float* descent,
-			       float* internalLeading, wxFont* the_font, 
+void wxCanvasDC::GetTextExtent(const char* string, double* x, double* y, double* descent,
+			       double* internalLeading, wxFont* the_font, 
 			       Bool combine, Bool ucs4, int d)
 {
-  float x2, y2, descent2, externalLeading2;
+  double x2, y2, descent2, externalLeading2;
 
   /* Note: extent result is unscaled. We provide scales only in case it matters
      in font selection. */
@@ -189,13 +189,13 @@ void wxCheckATSUCapability()
 #endif
 }
 
-double wxDrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd_spacing, int smoothing, float angle,
-			 float scale_x, float scale_y, int use_start, float start_x, float start_y, float ddx, float ddy,
+double wxDrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool qd_spacing, int smoothing, double angle,
+			 double scale_x, double scale_y, int use_start, double start_x, double start_y, double ddx, double ddy,
 			 int is_sym)
 {
   int i;
   int again = 0;
-  float pen_delta = 0.0;
+  double pen_delta = 0.0;
   int move_pen_at_end;
 
   if (theStrlen < 0) {
@@ -291,10 +291,10 @@ double wxDrawUnicodeText(const char *text, int d, int theStrlen, int ucs4, Bool 
 
 void wxGetUnicodeTextWidth(const char *text, int d, int theStrlen, 
 			   short txFont, short txSize, short txFace,
-			   int ucs4, float scale_y,
-			   float* x, float* y,
-			   float* descent, float* externalLeading,
-			   Bool qd_spacing, float scale_x,
+			   int ucs4, double scale_y,
+			   double* x, double* y,
+			   double* descent, double* externalLeading,
+			   Bool qd_spacing, double scale_x,
 			   int is_sym)
 {
   FontInfo fontInfo;
@@ -463,10 +463,10 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 				  int just_meas, int given_font, 
 				  short txFont, short txSize, short txFace,
 				  int again, int qd_spacing, int smoothing,
-				  float angle, int is_sym,
-				  float scale_x, float scale_y,
-				  float pen_delta, int use_pen_delta,
-				  float start_x, float start_y, float ddx, float ddy, int with_start)
+				  double angle, int is_sym,
+				  double scale_x, double scale_y,
+				  double pen_delta, int use_pen_delta,
+				  double start_x, double start_y, double ddx, double ddy, int with_start)
 {
   ATSUTextLayout layout;
   UniCharCount ulen;
@@ -710,7 +710,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     ATSUAttributeValuePtr r_theValues[1];
     Fixed deg_angle;
 
-    deg_angle = FloatToFixed(angle * 180 / 3.14159);
+    deg_angle = DoubleToFixed(angle * 180 / 3.14159);
     r_theValues[0] = &deg_angle;
     ATSUSetLayoutControls(layout, 1, r_theTags, r_theSizes, r_theValues); 
   }
@@ -770,7 +770,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 #ifdef OS_X
       if (use_cgctx) {
 	CGRect cgr;
-	float rt, rl, rr, rb;
+	double rt, rl, rr, rb;
 
 	rl = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
 	rt = JUSTDELTA(start_y, scale_y, ddy) - fontInfo.ascent;
@@ -783,16 +783,16 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	cgr.size.height = rb - rt;
 
 	CGContextSetRGBFillColor(cgctx, 
-				 (float)eraseColor.red / 65535.0,
-				 (float)eraseColor.green / 65535.0,
-				 (float)eraseColor.blue / 65535.0,
+				 (double)eraseColor.red / 65535.0,
+				 (double)eraseColor.green / 65535.0,
+				 (double)eraseColor.blue / 65535.0,
 				 1.0);
 	CGContextFillRect(cgctx, cgr);
       } else
 #endif
 	{
 	  Rect theRect;
-	  float rt, rl, rr, rb;
+	  double rt, rl, rr, rb;
 	  
 	  rl = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
 	  rt = COORDCONV(start_y, scale_y, ddy) - (fontInfo.ascent * scale_y);
@@ -811,25 +811,25 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       Fixed sx, sy;
 
       if (use_cgctx) {
-	float isx;
+	double isx;
 	isx = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
-	sx = FloatToFixed(isx);
+	sx = DoubleToFixed(isx);
       } else if (with_start) {
-	float isx;
+	double isx;
 	isx = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
-	sx = FloatToFixed(isx);
+	sx = DoubleToFixed(isx);
       } else {
 	sx = kATSUUseGrafPortPenLoc;
       }
 
       if (use_cgctx) {
-	float isy;
+	double isy;
 	isy = -JUSTDELTA(start_y, scale_y, ddy);
-	sy = FloatToFixed(isy);
+	sy = DoubleToFixed(isy);
       } else if (with_start) {
-	float isy;
+	double isy;
 	isy = COORDCONV(start_y, scale_y, ddy);
-	sy = FloatToFixed(isy);
+	sy = DoubleToFixed(isy);
       } else {
 	sy = kATSUUseGrafPortPenLoc;
       }
@@ -932,7 +932,7 @@ atsuFONDtoFontID( short    iFONDNumber,
 
 static OSStatus
 atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
-			       float angle, float scale_y, int qd_spacing)
+			       double angle, double scale_y, int qd_spacing)
 {
  OSStatus status = noErr;
 
@@ -1019,7 +1019,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 }
 
 static OSStatus
-atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle, float scale_y, int qd_spacing)
+atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, double angle, double scale_y, int qd_spacing)
 {
  short    txFont, txSize;
  SInt16   txFace;

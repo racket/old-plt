@@ -297,10 +297,10 @@ void wxCheckBox::Paint(void)
 	btop = (cWindowHeight - h) / 2;
 	buttonBitmap->DrawMac(IC_BOX_SIZE + IC_X_SPACE, btop);
       } else if (labelString) {
-	float fWidth = 50.0;
-	float fHeight = 12.0;
-	float fDescent = 0.0;
-	float fLeading = 0.0;
+	double fWidth = 50.0;
+	double fHeight = 12.0;
+	double fDescent = 0.0;
+	double fLeading = 0.0;
 	int stop;
 	GetTextExtent(labelString, &fWidth, &fHeight, &fDescent, &fLeading, labelFont);
 	stop = (int)((cWindowHeight + fHeight) / 2);

@@ -222,7 +222,7 @@ wxGL *wxDC::GetGL()
   return wx_gl;
 }
 
-void wxDC::ShiftXY(float x, float y, int *ix, int *iy)
+void wxDC::ShiftXY(double x, double y, int *ix, int *iy)
 {
   *ix = (int)floor(x);
   *iy = (int)floor(y);
@@ -233,7 +233,7 @@ void wxDC::ShiftXY(float x, float y, int *ix, int *iy)
   }
 }
 
-void wxDC::SetClippingRect(float cx, float cy, float cw, float ch)
+void wxDC::SetClippingRect(double cx, double cy, double cw, double ch)
 {
   HDC dc;
 
@@ -445,7 +445,7 @@ Bool wxDC::GlyphAvailable(int c, wxFont *f)
   return r;
 }
 
-void wxDC::FloodFill(float x, float y, wxColour *col, int style)
+void wxDC::FloodFill(double x, double y, wxColour *col, int style)
 {
   HDC dc;
   int xx;
@@ -466,10 +466,10 @@ void wxDC::FloodFill(float x, float y, wxColour *col, int style)
 
   DoneDC(dc);
 
-  CalcBoundingBox((float)x, (float)y);
+  CalcBoundingBox((double)x, (double)y);
 }
 
-Bool wxDC::GetPixel(float x, float y, wxColour *col)
+Bool wxDC::GetPixel(double x, double y, wxColour *col)
 {
   int xx1;
   int yy1;
@@ -502,7 +502,7 @@ void wxDC::IntDrawLine(int x1, int y1, int x2, int y2)
   DrawLine(x1, y1, x2, y2);
 }
 
-void wxDC::CrossHair(float x, float y)
+void wxDC::CrossHair(double x, double y)
 {
   HDC dc;
   int xx, yy;
@@ -536,11 +536,11 @@ void wxDC::CrossHair(float x, float y)
 
   DoneDC(dc);
   
-  CalcBoundingBox((float)x - 2000, (float)y - 2000);
-  CalcBoundingBox((float)x + 2000, (float)y + 2000);
+  CalcBoundingBox((double)x - 2000, (double)y - 2000);
+  CalcBoundingBox((double)x + 2000, (double)y + 2000);
 }
 
-void wxDC::DrawLine(float x1, float y1, float x2, float y2)
+void wxDC::DrawLine(double x1, double y1, double x2, double y2)
 {
   int xx1, yy1, xx2, yy2;
   HDC dc;
@@ -608,7 +608,7 @@ void wxDC::DrawLine(float x1, float y1, float x2, float y2)
 
 static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
 {
-  float x, y, w, h, bw, bh;
+  double x, y, w, h, bw, bh;
   int xstart, xend, ystart, yend, i, j;
   wxRegion *old;
   wxBitmap *bm;
@@ -652,7 +652,7 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   dc->SetClippingRegion(old);
 }
 
-static int round(float f)
+static int round(double f)
 {
   double d;
   
@@ -661,11 +661,11 @@ static int round(float f)
   return (int)d;
 }
 
-void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
+void wxDC::DrawArc(double x, double y, double w, double h, double start, double end)
 {
   int xx1, yy1, xx2, yy2, hh, ww;
-  float cx, cy;
-  float rx1, ry1, rx2, ry2;
+  double cx, cy;
+  double rx1, ry1, rx2, ry2;
 
   HDC dc;
 
@@ -689,13 +689,13 @@ void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
   hh++; xx2++;
   ww++; yy2++;
 
-  cx = xx1 + (float)ww/2;
-  cy = yy1 + (float)hh/2;
+  cx = xx1 + (double)ww/2;
+  cy = yy1 + (double)hh/2;
 
-  rx1 = cx + ((float)ww / 2) * cos(start);
-  ry1 = cy - (((float)hh / 2) * sin(start));
-  rx2 = cx + ((float)ww / 2) * cos(end);
-  ry2 = cy - (((float)hh / 2) * sin(end));
+  rx1 = cx + ((double)ww / 2) * cos(start);
+  ry1 = cy - (((double)hh / 2) * sin(start));
+  rx2 = cx + ((double)ww / 2) * cos(end);
+  ry2 = cy - (((double)hh / 2) * sin(end));
 
   if (StartBrush(dc, 1)) {
     Pie(dc, xx1, yy1, xx2, yy2, 
@@ -717,13 +717,13 @@ void wxDC::DrawArc(float x, float y, float w, float h, float start, float end)
   CalcBoundingBox(x + w, y + h);
 }
 
-void wxDC::DrawPoint(float x, float y)
+void wxDC::DrawPoint(double x, double y)
 {
   if (current_pen)
     SetPixel(x, y, NULL);
 }
 
-void wxDC::SetPixel(float x, float y, wxColour *c)
+void wxDC::SetPixel(double x, double y, wxColour *c)
 {
   wxWnd *wnd = NULL;
   int xx1, yy1;
@@ -753,7 +753,7 @@ void wxDC::SetPixel(float x, float y, wxColour *c)
 
 Bool wxDC::BeginSetPixelFast(int x, int y, int w, int h)
 {
-  float ww, hh;
+  double ww, hh;
   
   GetSize(&ww, &hh);
 
@@ -791,7 +791,7 @@ void wxDC::GetPixelFast(int x1, int y1, int *r, int *g, int *b)
   *b = GetBValue(pixelcolor);
 }
 
-void wxDC::DrawPolygon(int n, wxPoint points[], float xoffset, float yoffset,int fillStyle)
+void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,int fillStyle)
 {
   HDC dc;
   int xoffset1;
@@ -854,7 +854,7 @@ void wxDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
     for (i = 0; i < n; i++) {
       cpoints[i].x = (int)(XLOG2DEV(points[i].x + xoffset1));
       cpoints[i].y = (int)(YLOG2DEV(points[i].y + yoffset1));
-      CalcBoundingBox((float)points[i].x + xoffset, (float)points[i].y + yoffset);
+      CalcBoundingBox((double)points[i].x + xoffset, (double)points[i].y + yoffset);
     }
     
     (void)Polyline(dc, cpoints, n);
@@ -866,7 +866,7 @@ void wxDC::DrawLines(int n, wxIntPoint points[], int xoffset, int yoffset)
 
 }
 
-void wxDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset)
+void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 {
   HDC dc;
 
@@ -897,7 +897,7 @@ void wxDC::DrawLines(int n, wxPoint points[], float xoffset, float yoffset)
   
 }
 
-void wxDC::DrawRectangle(float x, float y, float width, float height)
+void wxDC::DrawRectangle(double x, double y, double width, double height)
 {
   int x1, y1, x2, y2;
   Bool do_brush, do_pen;
@@ -929,13 +929,13 @@ void wxDC::DrawRectangle(float x, float y, float width, float height)
     DonePen(dc);
   }
 
-  CalcBoundingBox((float)x, (float)y);
-  CalcBoundingBox((float)x + width, (float)y + height);
+  CalcBoundingBox((double)x, (double)y);
+  CalcBoundingBox((double)x + width, (double)y + height);
 
   DoneDC(dc);
 }
 
-void wxDC::DrawRoundedRectangle(float x, float y, float width, float height, float radius)
+void wxDC::DrawRoundedRectangle(double x, double y, double width, double height, double radius)
 {
   HDC dc;
   int x1, y1, x2, y2;
@@ -957,12 +957,12 @@ void wxDC::DrawRoundedRectangle(float x, float y, float width, float height, flo
   // A negative radius value is interpreted to mean
   // 'the proportion of the smallest X or Y dimension'
   if (radius < 0.0) {
-    float smallest = 0.0;
+    double smallest = 0.0;
     if (width < height)
       smallest = width;
     else
       smallest = height;
-    radius = (float)(- radius * smallest);
+    radius = (double)(- radius * smallest);
   }
 
   if (StartBrush(dc, 1)) {
@@ -976,13 +976,13 @@ void wxDC::DrawRoundedRectangle(float x, float y, float width, float height, flo
     DonePen(dc);
   }
   
-  CalcBoundingBox((float)x, (float)y);
-  CalcBoundingBox((float)x + width, (float)y + height);
+  CalcBoundingBox((double)x, (double)y);
+  CalcBoundingBox((double)x + width, (double)y + height);
 
   DoneDC(dc);
 }
 
-void wxDC::DrawEllipse(float x, float y, float width, float height)
+void wxDC::DrawEllipse(double x, double y, double width, double height)
 {
   HDC dc;
   int x1, y1, x2, y2;
@@ -1014,8 +1014,8 @@ void wxDC::DrawEllipse(float x, float y, float width, float height)
 
   DoneDC(dc);
 
-  CalcBoundingBox((float)x, (float)y);
-  CalcBoundingBox((float)x + width, (float)y + height);
+  CalcBoundingBox((double)x, (double)y);
+  CalcBoundingBox((double)x + width, (double)y + height);
 }
 
 void wxDC::SetFont(wxFont *the_font)
@@ -1139,12 +1139,12 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
   return unicode;
 }
 
-void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4, int d, float angle)
+void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs4, int d, double angle)
 {
   int xx1, yy1, xx, yy;
   HDC dc;
   DWORD old_background, sz;
-  float w, h;
+  double w, h;
   wchar_t *ustring;
   long len, alen;
   SIZE sizeRect;
@@ -1209,8 +1209,8 @@ void wxDC::DrawText(const char *text, float x, float y, Bool combine, Bool ucs4,
 
   DoneDC(dc);
 
-  CalcBoundingBox((float)x, (float)y);
-  CalcBoundingBox((float)(x + w), (float)(y + h));
+  CalcBoundingBox((double)x, (double)y);
+  CalcBoundingBox((double)(x + w), (double)(y + h));
 }
 
 void wxDC::SetBackground(wxColour *c)
@@ -1403,7 +1403,7 @@ void wxDC::EndPage(void)
   }
 }
 
-float wxDC::GetCharHeight(void)
+double wxDC::GetCharHeight(void)
 {
   TEXTMETRIC lpTextMetric;
   HDC dc;
@@ -1416,10 +1416,10 @@ float wxDC::GetCharHeight(void)
 
   DoneDC(dc);
 
-  return (float)YDEV2LOGREL(lpTextMetric.tmHeight);
+  return (double)YDEV2LOGREL(lpTextMetric.tmHeight);
 }
 
-float wxDC::GetCharWidth(void)
+double wxDC::GetCharWidth(void)
 {
   TEXTMETRIC lpTextMetric;
   HDC dc;
@@ -1432,11 +1432,11 @@ float wxDC::GetCharWidth(void)
 
   DoneDC(dc);
 
-  return (float)XDEV2LOGREL(lpTextMetric.tmAveCharWidth);
+  return (double)XDEV2LOGREL(lpTextMetric.tmAveCharWidth);
 }
 
-void wxDC::GetTextExtent(const char *string, float *x, float *y,
-                         float *descent, float *topSpace, 
+void wxDC::GetTextExtent(const char *string, double *x, double *y,
+                         double *descent, double *topSpace, 
 			 wxFont *theFont, Bool combine, Bool ucs4, int d)
 {
   wxFont *oldFont = NULL;
@@ -1494,10 +1494,10 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
 
   DoneDC(dc);
 
-  *x = (float)XDEV2LOGREL(tx);
-  *y = (float)YDEV2LOGREL(ty);
-  if (descent) *descent = (float)tm.tmDescent;
-  if (topSpace) *topSpace = (float)tm.tmInternalLeading;
+  *x = (double)XDEV2LOGREL(tx);
+  *y = (double)YDEV2LOGREL(ty);
+  if (descent) *descent = (double)tm.tmDescent;
+  if (topSpace) *topSpace = (double)tm.tmInternalLeading;
   
   if (oldFont)
     SetFont(oldFont);
@@ -1517,8 +1517,8 @@ void wxDC::SetMapMode(int mode)
     logical_scale_x = 1.0;
     logical_scale_y = 1.0;
   } else {
-    float mm2pixelsX;
-    float mm2pixelsY;
+    double mm2pixelsX;
+    double mm2pixelsY;
   
     mm2pixelsX = GetDeviceCaps(dc, LOGPIXELSX) * mm2inches;
     mm2pixelsY = GetDeviceCaps(dc, LOGPIXELSY) * mm2inches;
@@ -1534,14 +1534,14 @@ void wxDC::SetMapMode(int mode)
     switch (mode) {
     case MM_TWIPS:
       {
-	logical_scale_x = (float)(twips2mm * mm2pixelsX);
-	logical_scale_y = (float)(twips2mm * mm2pixelsY);
+	logical_scale_x = (double)(twips2mm * mm2pixelsX);
+	logical_scale_y = (double)(twips2mm * mm2pixelsY);
 	break;
       }
     case MM_POINTS:
       {
-	logical_scale_x = (float)(pt2mm * mm2pixelsX);
-	logical_scale_y = (float)(pt2mm * mm2pixelsY);
+	logical_scale_x = (double)(pt2mm * mm2pixelsX);
+	logical_scale_y = (double)(pt2mm * mm2pixelsY);
 	break;
       }
     case MM_METRIC:
@@ -1552,8 +1552,8 @@ void wxDC::SetMapMode(int mode)
       }
     case MM_LOMETRIC:
       {
-	logical_scale_x = (float)(mm2pixelsX/10.0);
-	logical_scale_y = (float)(mm2pixelsY/10.0);
+	logical_scale_x = (double)(mm2pixelsX/10.0);
+	logical_scale_y = (double)(mm2pixelsY/10.0);
 	break;
       }
     default:
@@ -1588,7 +1588,7 @@ void wxDC::SetMapMode(int mode)
   DoneDC(dc);
 }
 
-void wxDC::SetUserScale(float x, float y)
+void wxDC::SetUserScale(double x, double y)
 {
   user_scale_x = x;
   user_scale_y = y;
@@ -1596,7 +1596,7 @@ void wxDC::SetUserScale(float x, float y)
   SetMapMode(mapping_mode);
 }
 
-void wxDC::SetSystemScale(float x, float y)
+void wxDC::SetSystemScale(double x, double y)
 {
   system_scale_x = x;
   system_scale_y = y;
@@ -1604,7 +1604,7 @@ void wxDC::SetSystemScale(float x, float y)
   SetMapMode(mapping_mode);
 }
 
-void wxDC::SetLogicalOrigin(float x, float y)
+void wxDC::SetLogicalOrigin(double x, double y)
 {
   HDC dc;
 
@@ -1620,7 +1620,7 @@ void wxDC::SetLogicalOrigin(float x, float y)
   DoneDC(dc);
 }
 
-void wxDC::SetDeviceOrigin(float x, float y)
+void wxDC::SetDeviceOrigin(double x, double y)
 {
   device_origin_x = x;
   device_origin_y = y;
@@ -1628,62 +1628,62 @@ void wxDC::SetDeviceOrigin(float x, float y)
   SetMapMode(mapping_mode);
 }
 
-float wxDC::DeviceToLogicalX(int x)
+double wxDC::DeviceToLogicalX(int x)
 {
-  return (float)MS_XDEV2LOG(x);
+  return (double)MS_XDEV2LOG(x);
 }
 
-float wxDC::DeviceToLogicalXRel(int x)
+double wxDC::DeviceToLogicalXRel(int x)
 {
-  return (float)MS_XDEV2LOGREL(x);
+  return (double)MS_XDEV2LOGREL(x);
 }
 
-float wxDC::DeviceToLogicalY(int y)
+double wxDC::DeviceToLogicalY(int y)
 {
-  return (float)MS_YDEV2LOG(y);
+  return (double)MS_YDEV2LOG(y);
 }
 
-float wxDC::DeviceToLogicalYRel(int y)
+double wxDC::DeviceToLogicalYRel(int y)
 {
-  return (float)MS_YDEV2LOGREL(y);
+  return (double)MS_YDEV2LOGREL(y);
 }
 
-int wxDC::LogicalToDeviceX(float x)
+int wxDC::LogicalToDeviceX(double x)
 {
   return MS_XLOG2DEV(x);
 }
 
-int wxDC::LogicalToDeviceXRel(float x)
+int wxDC::LogicalToDeviceXRel(double x)
 {
   return MS_XLOG2DEVREL(x);
 }
 
-int wxDC::LogicalToDeviceY(float y)
+int wxDC::LogicalToDeviceY(double y)
 {
   return MS_YLOG2DEV(y);
 }
 
-int wxDC::LogicalToDeviceYRel(float y)
+int wxDC::LogicalToDeviceYRel(double y)
 {
   return MS_YLOG2DEVREL(y);
 }
 
-float wxDC::FLogicalToDeviceX(float x)
+double wxDC::FLogicalToDeviceX(double x)
 {
   return MS_XLOG2DEV(x);
 }
 
-float wxDC::FLogicalToDeviceXRel(float x)
+double wxDC::FLogicalToDeviceXRel(double x)
 {
   return MS_XLOG2DEVREL(x);
 }
 
-float wxDC::FLogicalToDeviceY(float y)
+double wxDC::FLogicalToDeviceY(double y)
 {
   return MS_YLOG2DEV(y);
 }
 
-float wxDC::FLogicalToDeviceYRel(float y)
+double wxDC::FLogicalToDeviceYRel(double y)
 {
   return MS_YLOG2DEVREL(y);
 }
@@ -1697,10 +1697,8 @@ static int tried_ab = 0;
 # define AC_SRC_ALPHA 0x01
 #endif
 
-extern "C" void GC_gcollect();
-
-Bool wxDC::Blit(float xdest, float ydest, float width, float height,
-                wxBitmap *source, float xsrc, float ysrc, int rop,
+Bool wxDC::Blit(double xdest, double ydest, double width, double height,
+                wxBitmap *source, double xsrc, double ysrc, int rop,
 		wxColour *c, wxBitmap *mask)
 {
   int xdest1, ydest1, xdest2, ydest2, xsrc1, ysrc1, iw, ih;
@@ -1987,7 +1985,7 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   return success;
 }
 
-void wxDC::GetSize(float *width, float *height)
+void wxDC::GetSize(double *width, double *height)
 {
   HDC dc;
   int w, h;
@@ -2001,13 +1999,13 @@ void wxDC::GetSize(float *width, float *height)
 
   w=::GetDeviceCaps(dc,HORZRES);
   h=::GetDeviceCaps(dc,VERTRES);
-  *width = (float)MS_XDEV2LOGREL(w);
-  *height = (float)MS_YDEV2LOGREL(h);
+  *width = (double)MS_XDEV2LOGREL(w);
+  *height = (double)MS_YDEV2LOGREL(h);
 
   DoneDC(dc);
 }
 
-void wxDC::GetSizeMM(float *width, float *height)
+void wxDC::GetSizeMM(double *width, double *height)
 {
   HDC dc;
   int w, h;
@@ -2021,8 +2019,8 @@ void wxDC::GetSizeMM(float *width, float *height)
 
   w=::GetDeviceCaps(dc,HORZSIZE);
   h=::GetDeviceCaps(dc,VERTSIZE);
-  *width = (float)w;
-  *height = (float)h;
+  *width = (double)w;
+  *height = (double)h;
 
   DoneDC(dc);
 }
@@ -2060,7 +2058,7 @@ wxCanvasDC::~wxCanvasDC(void)
   }
 }
 
-void wxCanvasDC::GetSize(float *width, float *height)
+void wxCanvasDC::GetSize(double *width, double *height)
 {
   int ww, hh;
 
@@ -2090,8 +2088,8 @@ void wxCanvasDC::TryColour(wxColour *src, wxColour *dest)
   DoneDC(dc);
 }
 
-Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
-			wxBitmap *source, float xsrc, float ysrc)
+Bool wxCanvasDC::GCBlit(double xdest, double ydest, double width, double height,
+			wxBitmap *source, double xsrc, double ysrc)
 {
   if (blit_dc)
     return Blit(xdest, ydest, width, height, source, xsrc, ysrc, wxSTIPPLE, NULL);
@@ -2415,9 +2413,9 @@ wxBitmap* wxMemoryDC::GetObject(void)
   return selected_bitmap;
 }
 
-void wxMemoryDC::GetSize(float *width, float *height)
+void wxMemoryDC::GetSize(double *width, double *height)
 {
-  float bw, bh;
+  double bw, bh;
 
   if (!selected_bitmap)
   {

@@ -29,16 +29,16 @@ void wxbDC::DrawSpline(int n, wxPoint pts[])
 
 // defines and static declarations for DrawSpline
 
-#define half(z1,z2)	(float)((z1+z2)/2.0)
+#define half(z1,z2)	(double)((z1+z2)/2.0)
 
-static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
-				float a3, float b3, float a4, float b4);
+static void wx_quadratic_spline(double a1, double b1, double a2, double b2,
+				double a3, double b3, double a4, double b4);
 static void wx_clear_stack(void);
-static int  wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
-			  float *x3, float *y3, float *x4, float *y4);
-static void wx_spline_push(float x1, float y1, float x2, float y2,
-			   float x3, float y3, float x4, float y4);
-static Bool wx_spline_add_point(float x, float y);
+static int  wx_spline_pop(double *x1, double *y1, double *x2, double *y2,
+			  double *x3, double *y3, double *x4, double *y4);
+static void wx_spline_push(double x1, double y1, double x2, double y2,
+			   double x3, double y3, double x4, double y4);
+static Bool wx_spline_add_point(double x, double y);
 static void wx_spline_draw_point_array(wxbDC *dc);
 
 static wxList *wx_spline_point_list;
@@ -54,8 +54,8 @@ void wxRegisterSplinePointList()
 void wxbDC::DrawSpline(wxList *pts)
 {
   wxPoint *p;
-  float  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
-  float  x1,  y1,  x2 , y2;
+  double  cx1, cy1, cx2, cy2, cx3, cy3, cx4, cy4;
+  double  x1,  y1,  x2 , y2;
   wxNode *node;
 
   node = pts->First();
@@ -109,11 +109,11 @@ void wxbDC::DrawSpline(wxList *pts)
 
 /* iterative version */
 
-static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
-				float a3, float b3, float a4, float b4)
+static void wx_quadratic_spline(double a1, double b1, double a2, double b2,
+				double a3, double b3, double a4, double b4)
 {
-  register float  xmid, ymid;
-  float           x1, y1, x2, y2, x3, y3, x4, y4;
+  register double  xmid, ymid;
+  double           x1, y1, x2, y2, x3, y3, x4, y4;
   int             counter = 10000; /* At most this many points */
 
   wx_clear_stack();
@@ -140,7 +140,7 @@ static void wx_quadratic_spline(float a1, float b1, float a2, float b2,
 // utilities used by spline drawing routines
 
 typedef struct wx_spline_stack_struct {
-  float  x1, y1, x2, y2, x3, y3, x4, y4;
+  double  x1, y1, x2, y2, x3, y3, x4, y4;
 } Stack;
 
 #define SPLINE_STACK_DEPTH  20
@@ -154,8 +154,8 @@ static void wx_clear_stack(void)
   wx_stack_count = 0;
 }
 
-static void wx_spline_push(float x1, float y1, float x2, float y2,
-			   float x3, float y3, float x4, float y4)
+static void wx_spline_push(double x1, double y1, double x2, double y2,
+			   double x3, double y3, double x4, double y4)
 {
   if (wx_stack_count >= SPLINE_STACK_DEPTH) {
     /* Just drop it. */
@@ -170,8 +170,8 @@ static void wx_spline_push(float x1, float y1, float x2, float y2,
   wx_stack_count++;
 }
 
-int wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
-                  float *x3, float *y3, float *x4, float *y4)
+int wx_spline_pop(double *x1, double *y1, double *x2, double *y2,
+                  double *x3, double *y3, double *x4, double *y4)
 {
   if (wx_stack_count == 0)
     return (0);
@@ -184,7 +184,7 @@ int wx_spline_pop(float *x1, float *y1, float *x2, float *y2,
   return (1);
 }
 
-static Bool wx_spline_add_point(float x, float y)
+static Bool wx_spline_add_point(double x, double y)
 {
   wxPoint *point;
   point  = new wxPoint;

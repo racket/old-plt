@@ -365,8 +365,8 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 	
 	event = new wxMouseEvent(et);
 	
-	event->x = (float)x;
-	event->y = (float)y;
+	event->x = (double)x;
+	event->y = (double)y;
 	
 	event->shiftDown = (flags & MK_SHIFT);
 	event->controlDown = (flags & MK_CONTROL);

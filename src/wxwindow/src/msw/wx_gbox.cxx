@@ -52,8 +52,8 @@ wxGroupBox::wxGroupBox(wxPanel *panel, char *Title, long _style):
   the_handle = cparent->handle;
 
   if (the_label) {
-    float label_width = 0;
-    float label_height = 0;
+    double label_width = 0;
+    double label_height = 0;
     int char_width, ignored;
 
     GetTextExtent(wxStripMenuCodes(the_label), &label_width, &label_height, NULL, NULL, labelFont);

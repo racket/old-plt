@@ -63,7 +63,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
 	int x, int y, int width, int height, int N, char **Choices,
 	long style, char *name)
 {
-  float fWidth, fHeight, fDescent, fLeading;
+  double fWidth, fHeight, fDescent, fLeading;
   int lblw, lblh;
   int maxdfltw;
   int maxdflth;

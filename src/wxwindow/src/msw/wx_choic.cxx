@@ -212,8 +212,8 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
   int cy;
   int clx; // label font dimensions
   int cly;
-  float label_width, label_height, label_x, label_y;
-  float control_width, control_height, control_x, control_y;
+  double label_width, label_height, label_x, label_y;
+  double control_width, control_height, control_x, control_y;
 
   GetPosition(&currentX, &currentY);
   if (x == -1)
@@ -243,8 +243,8 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
       control_width = 100;
     else
     {
-      float len, ht;
-      float longest = 0.0;
+      double len, ht;
+      double longest = 0.0;
       int i;
       for (i = 0; i < no_strings; i++)
       {
@@ -254,7 +254,7 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
         if ( len > longest) longest = len;
       }
 
-      control_width = (float)(int)(longest + cx*5);
+      control_width = (double)(int)(longest + cx*5);
     }
   }
 
@@ -277,29 +277,29 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
       if (height<=0)
         height = (int)((max(cy,cly))*EDIT_CONTROL_FACTOR) ;
 
-      label_x = (float)x;
-      label_y = (float)y + 4;
-      label_width += (float)clx/2;
+      label_x = (double)x;
+      label_y = (double)y + 4;
+      label_width += (double)clx/2;
 
       control_x = label_x + label_width;
-      control_y = (float)y;
+      control_y = (double)y;
       if (width >= 0)
         control_width = width - (control_x - label_x);
-      control_height = (float)height;
+      control_height = (double)height;
     }
     else // wxVERTICAL
     {
-      label_x = (float)x;
-      label_y = (float)y;
+      label_x = (double)x;
+      label_y = (double)y;
 
-      control_x = (float)x;
+      control_x = (double)x;
       control_y = label_y + label_height + 3; // Allow for 3D border
 
       if (width >= 0)
-        control_width = (float)width;
+        control_width = (double)width;
 
       if (height<=0)
-        control_height = (float)(int)(cy*EDIT_CONTROL_FACTOR) ;
+        control_height = (double)(int)(cy*EDIT_CONTROL_FACTOR) ;
       else
         control_height = height - label_height - 3;
     }
@@ -308,16 +308,16 @@ void wxChoice::SetSize(int x, int y, int width, int height, int sizeFlags)
   }
   else
   {
-    control_x = (float)x;
-    control_y = (float)y;
+    control_x = (double)x;
+    control_y = (double)y;
     if (width >= 0)
-      control_width = (float)width;
-    control_height = (float)height;
+      control_width = (double)width;
+    control_height = (double)height;
   }
 
   // Calculations may have made text size too small
   if (control_height <= 0)
-    control_height = (float)(int)(cy*EDIT_CONTROL_FACTOR) ;
+    control_height = (double)(int)(cy*EDIT_CONTROL_FACTOR) ;
 
   if (control_width <= 0)
     control_width = 100;
@@ -384,7 +384,7 @@ char *wxChoice::GetLabel(void)
 void wxChoice::SetLabel(char *label)
 {
   if (static_label) {
-    float w, h;
+    double w, h;
     RECT rect;
     wxWindow *parent;
     POINT point;

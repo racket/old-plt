@@ -26,7 +26,7 @@ class wxMemoryDC: public wxbMemoryDC
   ~wxMemoryDC(void);
   virtual void SelectObject(wxBitmap *bitmap);
   virtual wxBitmap* GetObject();
-  void GetSize(float *width, float *height);
+  void GetSize(double *width, double *height);
 
   wxGL *GetGL();
 

@@ -1,4 +1,4 @@
-; $Id: scm-unit.ss,v 1.52 1998/03/03 23:36:45 shriram Exp $
+; $Id: scm-unit.ss,v 1.53 1998/03/04 22:07:53 shriram Exp $
 
 (unit/sig zodiac:scheme-units^
   (import zodiac:misc^ (z : zodiac:structures^)
@@ -165,7 +165,8 @@
 
   (define inside-unit?
     (lambda (attributes)
-      (not (null? (get-attribute attributes 'unit-vars)))))
+      (not (null? (get-attribute attributes 'unit-vars
+		    (lambda () null))))))
 
   (define check-export
     (lambda (id attributes)

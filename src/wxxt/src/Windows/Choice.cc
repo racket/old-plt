@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Choice.cc,v 1.21 1999/11/27 17:58:46 mflatt Exp $
+ * $Id: Choice.cc,v 1.22 1999/11/28 05:21:34 mflatt Exp $
  *
  * Purpose: choice panel item
  *
@@ -337,7 +337,7 @@ void wxChoice::OnEvent(wxMouseEvent *e)
 void wxChoice::MenuEventCallback(wxObject* obj, wxCommandEvent* ev)
 {
     wxChoice       *choice;
-    wxPopupEvent *pu = (wxPopupEvent *)&ev;
+    wxPopupEvent *pu = (wxPopupEvent *)ev;
     wxCommandEvent *event;
 
     choice = (wxChoice*)((wxMenu *)obj)->GetClientData();

@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.12 1999/11/27 17:58:46 mflatt Exp $
+ * $Id: Font.cc,v 1.13 1999/11/28 05:21:34 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -48,7 +48,7 @@ char *wx_font_spec [] = {
 static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
 				    int weight, Bool underlined, 
 				    int again = 1);
-static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid,
+static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int family,
 					   int style, int weight, 
 					   Bool underlined);
 
@@ -156,7 +156,7 @@ void *wxFont::GetInternalFont(float scale)
     if ((node = scaled_xfonts->Find(int_scale))) {
 	xfont = (XFontStruct*)node->Data();
     } else {
-	xfont = wxLoadQueryNearestFont(point_scale, font_id, style, weight,
+	xfont = wxLoadQueryNearestFont(point_scale, font_id, family, style, weight,
 				       underlined);
 	scaled_xfonts->Append(int_scale, (wxObject*)xfont);
     }
@@ -260,15 +260,18 @@ static XFontStruct *wxLoadQueryFont(int point_size, int fontid, int style,
   return s;
 }
 
-static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid,
+static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid, int family,
 					   int style, int weight,
 					   Bool underlined)
 {
     XFontStruct *font;
+    int tried_once = 0;
 
-    font = wxLoadQueryFont(point_size, fontid, style, weight, underlined);
+    while (1) {
 
-    if (!font) {
+      font = wxLoadQueryFont(point_size, fontid, style, weight, underlined);
+
+      if (!font) {
 	// search up and down by stepsize 10
 	int max_size = point_size + 20 * (1 + (point_size/180));
 	int min_size = point_size - 20 * (1 + (point_size/180));
@@ -299,15 +302,25 @@ static XFontStruct *wxLoadQueryNearestFont(int point_size, int fontid,
 	    font = wxLoadQueryFont(120, wxDEFAULT, wxNORMAL, wxNORMAL_WEIGHT,
 				    underlined);
 
-	/* MATTHEW: [6] Last-ditch efforts */
-	if (!font) {
-	  char buffer[40];
-	  sprintf(buffer, "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*", point_size);
-	  font = XLoadQueryFont(wxAPP_DISPLAY, buffer);
-	  
-	  if (!font) /* really last-ditch */
-	    font = XLoadQueryFont(wxAPP_DISPLAY, "-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
-	}
+      }
+      
+      if (font || tried_once)
+	break;
+      else {
+	tried_once = 1;
+	fontid = family;
+      }
     }
+
+    /* Last-ditch efforts */
+    if (!font) {
+      char buffer[40];
+      sprintf(buffer, "-*-*-*-*-*-*-*-%d-*-*-*-*-*-*", point_size);
+      font = XLoadQueryFont(wxAPP_DISPLAY, buffer);
+      
+      if (!font) /* really last-ditch */
+	font = XLoadQueryFont(wxAPP_DISPLAY, "-*-*-*-*-*-*-*-*-*-*-*-*-*-*");
+    }
+
     return font;
 }

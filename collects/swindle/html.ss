@@ -1171,7 +1171,7 @@
                  (file-stream-buffer-mode (current-output-port) 'block)
                  (output-html html))])
     (if fname
-      (begin (display "Making ") (display fname) (newline)
+      (begin (printf "Making ~a\n" fname)
              (let ([d (dirname fname)])
                (unless (directory-exists? d)
                  (make-directory d)))

@@ -26,6 +26,8 @@
 ;; To call for Palm:
 ;;   mzscheme -r xform.ss [--notes] --palm <ctok> <cpp> <src> <dest> <mapdest>
 
+(define power-inspector (current-inspector))
+(current-inspector (make-inspector))
 
 ;; Make sure we can find MzLib:
 (unless (with-handlers ([not-break-exn? (lambda (x) #f)])
@@ -39,6 +41,9 @@
     (current-library-collection-paths 
      (list p))))
 
+(define precompiling-header? #f)
+(define precompiled-header #f)
+
 (define show-info? #f)
 (define check-arith? #t)
 
@@ -46,17 +51,29 @@
 (define pgc? #t)
 
 (define cmd-line (let ([l (vector->list argv)])
-		   (let ([l (if (string=? (car l) "--notes")
-				(begin
-				  (set! show-info? #t)
-				  (cdr l))
-				l)])
-		     (if (string=? (car l) "--palm")
-			 (begin
-			   (set! palm? #t)
-			   (set! pgc? #f)
-			   (cdr l))
-			 l))))
+		   (let ([l (cond
+			     [(string=? (car l) "--precompile")
+			      (set! precompiling-header? #t)
+			      (cdr l)]
+			     [(string=? (car l) "--xform")
+			      (cdr l)]
+			     [else l])])
+		     (let ([l (cond
+			     [(string=? (car l) "--precompiled")
+			      (set! precompiled-header (cadr l))
+			      (cddr l)]
+			     [else l])])
+		       (let ([l (if (string=? (car l) "--notes")
+				    (begin
+				      (set! show-info? #t)
+				      (cdr l))
+				    l)])
+			 (if (string=? (car l) "--palm")
+			     (begin
+			       (set! palm? #t)
+			       (set! pgc? #f)
+			       (cdr l))
+			     l))))))
 
 (define (filter-false s)
   (if (string=? s "-")
@@ -172,15 +189,46 @@
 (define-values (local-ctok-read local-ctok-write)
   (make-pipe 100000))
 
+(define recorded-cpp-out
+  (and precompiling-header?
+       (open-output-file (regexp-replace "[.].*" file-out ".e") 'truncate)))
+(define recorded-cpp-in
+  (and precompiled-header
+       (open-input-file (regexp-replace "[.].*" precompiled-header ".e"))))
+(define (skip-to-interesting-line p)
+  (let ([l (read-line p 'any)])
+    (cond
+     [(eof-object? l) l]
+     [(string=? l "") (skip-to-interesting-line p)]
+     [(eq? #\# (string-ref l 0)) (skip-to-interesting-line p)]
+     [else l])))
+
+(when recorded-cpp-in
+  ;; Skip over common part:
+  (let loop ()
+    (let ([pl (skip-to-interesting-line recorded-cpp-in)])
+      (unless (eof-object? pl)
+	(let ([l (skip-to-interesting-line (car cpp-process))])
+	  (unless (equal? pl l)
+            (error 'precompiled-header "line mismatch with precompiled: ~s versus ~s"
+		   pl
+		   l))
+	  (loop)))))
+  (close-input-port recorded-cpp-in))
+	  
 ;; cpp output to ctok input:
 (thread (lambda ()
 	  (let ([s (make-string 4096)])
 	    (let loop ()
 	      (let ([l (read-string-avail! s (car cpp-process))])
 		(unless (eof-object? l)
-		  (display (if (< l 4096) (substring s 0 l) s)
-			   local-ctok-write)
+	          (let ([s (if (< l 4096) (substring s 0 l) s)])
+		    (when recorded-cpp-out
+		      (display s recorded-cpp-out))
+		    (display s local-ctok-write))
 		  (loop))))
+	    (when recorded-cpp-out
+	      (close-output-port recorded-cpp-out))
 	    (close-input-port (car cpp-process))
 	    (close-output-port local-ctok-write))))
 
@@ -241,7 +289,7 @@
 
 (define per-block-push? #t)
 
-(when pgc?
+(when (and pgc? (not precompiling-header?))
   ;; Header:
   (printf "#define FUNCCALL(setup, x) (setup, x)~n")
   (printf "#define FUNCCALL_EMPTY(x) FUNCCALL(GC_variable_stack = (void **)__gc_var_stack__[0], x)~n")
@@ -293,8 +341,6 @@
 (define-struct prototype (type args static? pointer? pointer?-determined?))
 
 (define-struct c++-class (parent parent-name prototyped top-vars))
-
-(define c++-classes null)
 
 (define semi '|;|)
 (define START_XFORM_SKIP (string->symbol "START_XFORM_SKIP"))
@@ -427,6 +473,78 @@
     (lambda ()
       (set! count (add1 count))
       (format "XfOrM~a" count))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; State
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; See `used-symbols' above
+
+(define c++-classes null)
+
+(define prototyped (make-parameter null))
+(define top-vars (make-parameter null))
+
+(define pointer-types '())
+(define non-pointer-types '(int char long unsigned ulong uint void float double))
+(define struct-defs '())
+
+;; For precompiling a header:
+(define precompiled '())
+
+(define makers (make-hash-table))
+(hash-table-put! makers 'struct:tok make-tok)
+(hash-table-put! makers 'struct:seq make-seq)
+(hash-table-put! makers 'struct:parens make-parens)
+(hash-table-put! makers 'struct:brackets make-brackets)
+(hash-table-put! makers 'struct:braces make-braces)
+(hash-table-put! makers 'struct:callstage-parens make-callstage-parens)
+(hash-table-put! makers 'struct:creation-parens make-creation-parens)
+(hash-table-put! makers 'struct:call make-call)
+(hash-table-put! makers 'struct:block-push make-block-push)
+(hash-table-put! makers 'struct:note make-note)
+(hash-table-put! makers 'struct:vtype make-vtype)
+(hash-table-put! makers 'struct:pointer-type make-pointer-type)
+(hash-table-put! makers 'struct:array-type make-array-type)
+(hash-table-put! makers 'struct:struct-type make-struct-type)
+(hash-table-put! makers 'struct:struct-array-type make-struct-array-type)
+(hash-table-put! makers 'struct:union-type make-union-type)
+(hash-table-put! makers 'struct:non-pointer-type make-non-pointer-type)
+(hash-table-put! makers 'struct:live-var-info make-live-var-info)
+(hash-table-put! makers 'struct:prototype make-prototype)
+(hash-table-put! makers 'struct:c++-class make-c++-class)
+
+(define (unmarshall v)
+  (let loop ([v v])
+    (cond
+     [(pair? v) (cons (loop (car v)) (loop (cdr v)))]
+     [(vector? v)
+      (let ([maker (hash-table-get makers (vector-ref v 0) (lambda () #f))])
+	(if maker
+	    (apply maker (map loop (cdr (vector->list v))))
+	    (list->vector (map loop (vector->list v)))))]
+     [else v])))
+
+(when precompiled-header
+  (let ([p (open-input-file precompiled-header)])
+    (set! precompiled (map unmarshall (read p)))
+
+    (for-each (lambda (x)
+		(hash-table-put! used-symbols (car x) 
+				 (+
+				  (hash-table-get
+				   used-symbols (car x)
+				   (lambda () 0))
+				  (cdr x))))
+	      (read p))
+
+    (set! c++-classes (map unmarshall (read p)))
+    (prototyped (map unmarshall (read p)))
+    (top-vars (map unmarshall (read p)))
+
+    (set! pointer-types (map unmarshall (read p)))
+    (set! non-pointer-types (map unmarshall (read p)))
+    (set! struct-defs (map unmarshall (read p)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Pretty-printing output
@@ -684,7 +802,8 @@
     (let ([name (register-proto-information e)])
       (when show-info?
 	(printf "/* PROTO ~a */~n" name))
-      (if (or (> (hash-table-get used-symbols name) 1)
+      (if (or precompiling-header?
+	      (> (hash-table-get used-symbols name) 1)
 	      (ormap (lambda (v) (eq? (tok-n v) 'virtual)) e))  ; can't drop virtual methods!
 	  (if palm?
 	      (add-segment-label name e)
@@ -807,7 +926,8 @@
   (eq? 'typedef (tok-n (car e))))
 
 (define (simple-unused-def? e)
-  (and (andmap (lambda (x) (and (symbol? (tok-n x))
+  (and (not precompiling-header?)
+       (andmap (lambda (x) (and (symbol? (tok-n x))
 				(not (eq? '|,| (tok-n x)))))
 	       e)
        (= 1 (hash-table-get used-symbols
@@ -818,8 +938,9 @@
   
 (define (unused-struct-typedef? e)
   (let ([once (lambda (s)
-		(= 1 (hash-table-get used-symbols 
-				     (tok-n s))))]
+		(and (not precompiling-header?)
+		     (= 1 (hash-table-get used-symbols 
+					  (tok-n s)))))]
 	[seps (list '|,| '* semi)])
     (and (eq? (tok-n (cadr e)) 'struct)
 	 (brackets? (cadddr e))
@@ -873,9 +994,6 @@
       (loop (cdr e) (cdr l))]
      [else #f])))
 
-(define prototyped (make-parameter null))
-(define top-vars (make-parameter null))
-
 (define (register-proto-information e)
   (let loop ([e e][type null])
     (cond
@@ -911,28 +1029,10 @@
 	  (set-prototype-pointer?-determined?! proto #t))))
     (prototype-pointer? proto)))
 
-(define pointer-types '())
-(define non-pointer-types '(int char long unsigned ulong uint void float double))
-(define struct-defs '())
-(define lazy-struct-defs '())
-
 (define (lookup-non-pointer-type t)
   (memq t non-pointer-types))
 (define (lookup-pointer-type t)
   (assq t pointer-types))
-#|
-(define (lookup-struct-def t)
-  (let ([m (assq t struct-defs)])
-    (or m
-	(let ([m (assq t lazy-struct-defs)])
-	  (if m
-	      (begin
-		;; do work
-		((cdr m) m)
-		;; try again
-		(lookup-struct-defs t))
-	      #f)))))
-|#
 (define (lookup-struct-def t)
   (assq t struct-defs))
 
@@ -1128,15 +1228,6 @@
 	   (begin
 	     (set! struct-defs (cons (cons name l) struct-defs))
 	     name)))))
-
-#|
-(let ([lazy-cell (cons
-		      name
-		      (lambda (c)
-			(set-car! c #f) ; so it won't be found again.
-
-      (set! lazy-struct-defs (cons lazy-cell lazy-struct-defs)))))
-|#
 
 (define (add-segment-label name e)
   (let loop ([e e])
@@ -1357,6 +1448,7 @@
 (define (get-c++-class-method var c++-class)
   (get-c++-class-member var c++-class c++-class-prototyped))
 
+;; Temporary state used during a conversion:
 (define used-self? #f)
 (define important-conversion? #f)
 
@@ -2808,6 +2900,10 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(for-each (lambda (sube)
+	    (print-it sube 0 #t #f))
+	  precompiled)
+
 (let* ([e e-raw])
   (set! e-raw #f) ;; to allow GC
   (foldl-statement
@@ -2817,9 +2913,34 @@
      (let* ([where (or (tok-file (car sube))
 		       where)]
 	    [sube (top-level sube where #t)])
-       (print-it sube 0 #t #f)
+       (if precompiling-header?
+	   (set! precompiled (cons sube precompiled))
+	   (print-it sube 0 #t #f))
        where))
    #f))
+
+(when precompiling-header?
+  (parameterize ([current-inspector power-inspector]
+		 [print-struct #t])
+    (write (reverse! precompiled))
+    (newline)
+
+    (write (hash-table-map used-symbols cons))
+    (newline)
+
+    (write c++-classes)
+    (newline)
+    (write (prototyped))
+    (newline)
+    (write (top-vars))
+    (newline)
+
+    (write pointer-types)
+    (newline)
+    (write non-pointer-types)
+    (newline)
+    (write struct-defs)
+    (newline)))
 
 (close-output-port (current-output-port))
 

@@ -45,7 +45,7 @@
     "type"
     "vector"))
 
-(define (try src deps dest objdest includes)
+(define (try src deps dest objdest includes use-precomp?)
   (unless (and (file-exists? dest)
 	       (let ([t (file-or-directory-modify-seconds dest)])
 		 (andmap
@@ -53,17 +53,26 @@
 		    (> t (file-or-directory-modify-seconds dep)))
 		  deps)))
     (unless (restart-mzscheme #() (lambda (x) x)
-			      (vector "-r"
-				      "xform.ss"
-				      "ctok.ss"
-				      (format "cl.exe /MT /DSCHEME_EMBEDDED_NO_DLL /E ~a" includes)
-				      src
-				      dest)
+			      (list->vector 
+			       (append
+				(list "-r"
+				      "xform.ss")
+				(if objdest
+				    (if use-precomp?
+					(list "--precompiled" "precomp.pss")
+					null)
+				    (list "--precompile"))
+				(list
+				 "ctok.ss"
+				 (format "cl.exe /MT /DSCHEME_EMBEDDED_NO_DLL /E ~a" includes)
+				 src
+				 dest)))
 			      void)
       (when (file-exists? dest)
 	(delete-file dest))
       (error "error xforming")))
-  (compile dest objdest null ""))
+  (when objdest
+    (compile dest objdest null "")))
 
 (define (compile c o deps flags)
   (unless (and (file-exists? o)
@@ -79,6 +88,8 @@
 (define common-deps (list "xform.ss" "ctok.ss"))
 (define (find-obj f d) (format "../../worksp/~a/release/~a.obj" d f))
 
+(try "precomp.c" common-deps "precomp.pss" #f "/I ../include /I ../src" #f)
+
 (for-each
  (lambda (x)
    (try (format "../src/~a.c" x)
@@ -87,7 +98,8 @@
 	       common-deps)
 	(format "xsrc/~a.c" x)
 	(format "xsrc/~a.obj" x)
-	"/I ../include"))
+	"/I ../include"
+	#t))
  srcs)
 
 (try "../main.c"
@@ -96,14 +108,15 @@
 	    common-deps)
      "xsrc/main.c"
      "xsrc/main.obj"
-     "/I ../include")
+     "/I ../include"
+     #f)
 
 (compile "gc2.c" "xsrc/gc2.obj" '("compact.c") "")
 (compile "../src/mzsj86.c" "xsrc/mzsj86.obj" '() "/I ../include")
 
 (define exe "mzscheme3m.exe")
 
-(define libs "kernel32.lib user32.lib wsock32.lib")
+(define libs "kernel32.lib user32.lib wsock32.lib shell32.lib")
 
 (let ([objs (list*
 	     "xsrc/main.obj"

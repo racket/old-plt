@@ -22,7 +22,9 @@
 */
 
 /* Some copilers don't like re-def of GC_malloc in schemef.h: */
-#define SCHEME_NO_GC_PROTO
+#ifndef MZ_PRECISE_GC
+# define SCHEME_NO_GC_PROTO
+#endif
 
 #include "schpriv.h"
 #include <string.h>

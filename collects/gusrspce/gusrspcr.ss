@@ -11,7 +11,7 @@
 			 (define eval-string void)))]
 	  [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 			 core trigger appliction)]
-	  [rice : ricedefs^ ((reference-unit/sig "ricedefr.ss"))]
+	  [rice : ricedefs^ ((reference-library-unit/sig "ricedefr.ss" "userspce"))]
 	  [graphics : graphics^ ((reference-library-unit/sig "graphicr.ss" "graphics"))]
 	  [create-window : turtle:create-window^
 	     ((unit/sig turtle:create-window^

@@ -360,18 +360,19 @@
 			     main-panel))])
 	     (send s gb-add-child i)
 	     (set-selected s)))])
-      (private
+      (init-field
+       [auto-show? #t]
+       [top-level-type FRAME-MODE]
        [frame-label "Frame"]
+       [top-name "top"])
+      (private
        [frame-label-w #f]
        [frame-label-h #f]
-       [top-name "top"]
        [last-frame-paint-w 0]
        [last-frame-paint-h 0]
        [main-panel-x 0]
        [main-panel-y 0]
        [margin 2]
-       [top-level-type FRAME-MODE]
-       [auto-show? #t]
        [configure-frame #f])
       (public*
         [get-top-level-type
@@ -498,6 +499,7 @@
 			  (end-write-header-footer-to-file stream (unbox info))))])
 	     (out "gb:mode" top-level-type)
 	     (out "gb:title" frame-label)
+	     (out "gb:top-name" top-name)
 	     (out "gb:show" (if auto-show? 1 0))))]
 	[read-footer-from-file
 	 (lambda (stream kind)
@@ -508,6 +510,8 @@
 			 (max -FIRST-MODE- (send stream get-exact))))]
 	     [(string=? kind "gb:title") 
 	      (set! frame-label (send stream get-string))]
+	     [(string=? kind "gb:top-name") 
+	      (set! top-name (send stream get-string))]
 	     [(string=? kind "gb:show") 
 	      (set! auto-show? (positive? (send stream get-exact)))]
 	     [else (super-read-footer-from-file stream kind)]))]
@@ -516,7 +520,11 @@
 			(super-copy-self-to e)
 			(send e after-load-file #t))]
 	[copy-self (lambda ()
-		     (let ([e (new gb:edit%)])
+		     (let ([e (new gb:edit%
+				   [auto-show? auto-show?]
+				   [top-level-type top-level-type]
+				   [frame-label frame-label]
+				   [top-name top-name])])
 		       (copy-self-to e)
 		       e))])
       (private

@@ -77,8 +77,8 @@
 	      (let ([param 
 		     ;; Avoid using cm while loading cm-ctime:
 		     (parameterize ([use-compiled-file-kinds 'none])
-		       (dynamic-require-for-syntax '(lib "cm-ctime.ss" "mzlib" "private")
-						   'current-external-file-registrar))]
+		       (dynamic-require '(lib "cm-ctime.ss" "mzlib" "private")
+					'current-external-file-registrar))]
 		    [external-deps null])
 		(let ((code (parameterize ([param (lambda (ext-file)
 						    (set! external-deps (cons ext-file external-deps)))])

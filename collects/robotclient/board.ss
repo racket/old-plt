@@ -322,11 +322,16 @@
 		     (set-robot (get-spot (board)
 					  (robot-x new-robot)
 					  (robot-y new-robot))))
-           (robot-table (make-hash-table 'equal))
+           (robot-table (make-hash-table))
 	   (hash-table-put! (robot-table) (robot-id new-robot) new-robot)))
        flat-responses)
       (robot-indexes alive-robots)
-      (let ((robots (map (lambda (id) (hash-table-get (robot-table) id))
+      (let ((robots (map (lambda (id) (hash-table-get (robot-table) id
+                                                      (lambda ()
+                                                        (printf "~a ~a ~n"
+                                                                id
+                                                                (hash-table-map (robot-table)
+                                                                                (lambda (k v) k))))))
                          (robot-indexes))))
         (cond
           ((gui)
@@ -382,7 +387,7 @@
   
   (define (read-board! input gui?)
     (robot-indexes null)
-    (robot-table (make-hash-table 'equal))
+    (robot-table (make-hash-table))
     (board-width (read input))
     (board-height (read input))
     (board (make-array2d (board-height) (board-width) 0))

@@ -608,23 +608,21 @@ wxListBox::InsertItems(int nItems, char **Items, int pos)
 
 void wxListBox::SetString(int N, char *s)
 {
-  int sel = GetSelection();
+  if ((N < 0) || (N >= no_items))
+    return;
+
+  int sel = Selected(N);
   
   char *oldData = (char *)wxListBox::GetClientData(N);
   
-  SendMessage((HWND)ms_handle, LB_DELETESTRING, N, 0);
+  SendMessage((HWND)ms_handle, LB_INSERTSTRING, N, (LPARAM)s);
+  SendMessage((HWND)ms_handle, LB_DELETESTRING, N + 1, 0);
 
-  int newN = N;
-  if (N == (no_items - 1))
-    newN = -1;
-    
-  SendMessage((HWND)ms_handle, LB_INSERTSTRING, newN, (LPARAM)s);
   if (oldData)
     wxListBox::SetClientData(N, oldData);
 
-  // Selection may have changed if last one deleted, ugh.
-  if (sel == N && newN == -1)
-    SetSelection(sel);
+  if (sel)
+    SetSelection(N, TRUE, FALSE);
 }
 
 

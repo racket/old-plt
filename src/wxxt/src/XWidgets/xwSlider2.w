@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 2.1 for FWF V4.0
 #
-# $Id: xwSlider2.w,v 1.1.1.1 1997/12/22 17:29:03 mflatt Exp $
+# $Id: xwSlider2.w,v 1.2 1998/01/31 01:16:38 mflatt Exp $
 
 @class XfwfSlider2 (XfwfLabel) @file=xwSlider2
 
@@ -300,7 +300,7 @@ and clears the old rectangle to the background color.
 
 @proc move_thumb($, int oldx, int oldy, int wd, int ht, int newx, int newy)
 {
-    int h;
+    int h, ah;
 
     XCopyArea(XtDisplay($), XtWindow($), XtWindow($),
 	      DefaultGCOfScreen(XtScreen($)),
@@ -316,12 +316,13 @@ and clears the old rectangle to the background color.
 	    XClearArea(XtDisplay($), XtWindow($), oldx, newy + ht, wd,h,False);
 	else if (h < 0)
 	    XClearArea(XtDisplay($), XtWindow($), oldx, oldy, wd, -h, False);
+	ah = (h < 0) ? -h : h;
 	if (newx < oldx)
 	    XClearArea(XtDisplay($), XtWindow($), newx + wd,
-		       max(oldy, newy), oldx - newx, ht - abs(h), False);
+		       max(oldy, newy), oldx - newx, ht - ah, False);
 	else if (oldx < newx)
 	    XClearArea(XtDisplay($), XtWindow($), oldx, max(oldy, newy),
-		       newx - oldx, ht - abs(h), False);
+		       newx - oldx, ht - ah, False);
     }
 }
 

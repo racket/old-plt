@@ -1864,7 +1864,7 @@ void DangerThreadTimer::Notify(void)
 
       dangerFrame->NewLine();
 
-      wxButton *b = new wxButton(dangerFrame, DismissDanger, "Ok");
+      wxButton *b = new wxButton(dangerFrame, (wxFunction)DismissDanger, "Ok");
 
       dangerFrame->Fit();
       b->Centre(wxHORIZONTAL);

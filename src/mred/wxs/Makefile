@@ -79,7 +79,7 @@ repatriate:
 	mv $(HIDEDIR)/wxs_objects/objects .
 	rmdir $(HIDEDIR)/wxs_objects
 
-XCTOCXX = ../../mzscheme/utils/xctocc -cxx
+XCTOCXX = $(PERL) ../../mzscheme/utils/xctocc -cxx
 XCDEPEND = ../../mzscheme/utils/xctocc ../../mzscheme/utils/parse.pl wxs.xci common.txt
 
 CB_DEPEND = cb_start.xci cb_end.xci cbgen_s.xci

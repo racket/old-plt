@@ -11,10 +11,13 @@
 # SEE ALSO sconfig.h for more configuration
 
 # This must be an ANSI C compiler.
-CC=gcc
-CXX=gcc
-AS=gcc -c -x assembler-with-cpp
-PERL=/usr/local/bin/perl
+CC = gcc
+CXX = gcc
+AS = gcc -c -x assembler-with-cpp
+
+# If you don't have perl, use:
+# PERL = 
+PERL = perl
 
 # Debugging flags
 DEBUGFLAGS = -g
@@ -41,11 +44,11 @@ WARN = -Wall
 # You may need -ldl for dlopen, etc.  (Added automatically for AIX.)
 # Add lib$(MZPLATFORMSUFFIX)$(MZTHREADSUFFIX)/sproc.o for Irix
 #  sprocs
-LIBS=-lm # -ldl
+LIBS = -lm # -ldl
 
-# If your system needs ranlib, put it here.  Otherwise,
-# use a colon.
-RANLIB=ranlib
+# If your system needs ranlib, put it here.  Otherwise, use
+# RANLIB = :
+RANLIB = ranlib
 
 # GC Directory
 # sgc for SenoraGC

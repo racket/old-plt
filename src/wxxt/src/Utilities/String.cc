@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: String.cc,v 1.1 1996/01/10 14:56:56 markus Exp $
+ * $Id: String.cc,v 1.1.1.1 1997/12/22 17:28:55 mflatt Exp $
  *
  * Purpose: string copy and conversion
  *
@@ -26,6 +26,10 @@
 #include "wx.h"
 
 #include <string.h>
+
+#ifdef _AIX41
+# include <strings.h>
+#endif
 
 char *copystring(const char *s)
 {

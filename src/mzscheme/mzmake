@@ -38,7 +38,7 @@ case $OS in
     fi
     ;;
   FreeBSD)
-    gmake 'CC=gcc' PERL=/usr/bin/perl $GCOPTS "$@"
+    gmake 'CC=gcc' $GCOPTS "$@"
     ;;
   IRIX)
     if [ "${USEIRIXSPROC}" = "yes" ] ; then
@@ -62,9 +62,9 @@ case $OS in
        LINUXTHLIBS=""
     fi
     if [ `file /bin/ls | grep ELF | wc -l` = 1 ]; then
-      make $GCOPTS PERL=/usr/bin/perl LIBS="-lm -ldl -rdynamic $LINUXTHLIBS" THREADFLAGS="$LINUXTHFLAGS" "$@"
+      make $GCOPTS LIBS="-lm -ldl -rdynamic $LINUXTHLIBS" THREADFLAGS="$LINUXTHFLAGS" "$@"
     else
-      make $GCOPTS PERL=/usr/bin/perl "$@"
+      make $GCOPTS "$@"
     fi
     ;;
   OSF1)

@@ -12,9 +12,6 @@ _XFUNCPROTOBEGIN
 #define min(a, b) ((a )<(b )?(a ):(b ))
 
 
-#define abs(a) ((a )<0 ?-(a ):(a ))
-
-
 typedef void (*compute_inside_Proc)(
 #if NeedFunctionPrototypes
 Widget,Position *,Position *,int *,int *

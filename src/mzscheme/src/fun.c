@@ -720,8 +720,8 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   *cc_ok = 1;
 
   if (eb) {
-    /* Maybe we'll turn this on sometime soon... */
 #if 0
+    /* Maybe we'll turn this on one day... */
     if (old_ec_ok)
       *old_ec_ok = 0;
 #endif
@@ -785,7 +785,6 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
 	scheme_longjmpup(&scheme_overflow_cont);
     }
   }
-#endif
 
   memcpy(&save, &p->error_buf, sizeof(mz_jmp_buf));
 

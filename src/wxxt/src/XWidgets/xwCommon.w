@@ -2,7 +2,7 @@
 # Bert Bos <bert@let.rug.nl>
 # Version 1.2 for FWF V4.0
 #
-# $Id: xwCommon.w,v 1.4 1998/02/07 13:43:59 mflatt Exp $
+# $Id: xwCommon.w,v 1.5 1998/10/16 15:55:58 mflatt Exp $
 
 @class XfwfCommon (Composite)  @file=xwCommon
 
@@ -219,7 +219,6 @@ to define them here. They will end up in the private(!) header file.
 
 	@def max(a, b) = ((a) > (b) ? (a) : (b))
 	@def min(a, b) = ((a) < (b) ? (a) : (b))
-	@def abs(a) = ((a) < 0 ? -(a) : (a))
 
 
 @ A private variable is used to track the keyboard focus, but only

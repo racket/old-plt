@@ -47,7 +47,7 @@
 #endif
 #endif
 
-#ifdef _HPUX_SOURCE
+#if defined(_HPUX_SOURCE) || defined(_AIX41)
 #include <strings.h>
 #endif
 

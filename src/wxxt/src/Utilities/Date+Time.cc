@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Date+Time.cc,v 1.1 1996/01/10 14:56:49 markus Exp $
+ * $Id: Date+Time.cc,v 1.1.1.1 1997/12/22 17:28:56 mflatt Exp $
  *
  * Purpose: time and date related functions
  *
@@ -30,44 +30,6 @@
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
-
-void wxSleep(int nSecs)
-{
-#if defined(__sgi)
-    sleep(nSecs);
-#else
-#if defined(SVR4) || (defined(sun) && defined(__svr4__))
-    struct sigset_t oldmask, mask;
-    struct timeval tv;
-
-    tv.tv_sec = nSecs;
-    tv.tv_usec = 0;
-
-    sigemptyset (&mask);
-    sigaddset (&mask, SIGIO);
-    sigaddset (&mask, SIGALRM);
-    sigprocmask (SIG_BLOCK, &mask, &oldmask);
-    if ((select (0, 0, 0, 0, &tv)) == -1) {
-	perror ("select in wxSleep");
-    }
-    sigprocmask (SIG_SETMASK, &oldmask, (sigset_t *) NULL);
-#else
-    int oldmask, mask;
-    struct timeval tv;
-
-    tv.tv_sec = nSecs;
-    tv.tv_usec = 0;
-
-    mask = sigmask (SIGIO);
-    mask |= sigmask (SIGALRM);
-    oldmask = sigblock (mask);
-    if ((select (0, 0, 0, 0, &tv)) == -1) {
-	perror ("select in wxSleep");
-    }
-    sigsetmask (oldmask);
-#endif
-#endif // __sgi
-}
 
 char *wxNow(void)
 {

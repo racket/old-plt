@@ -3571,7 +3571,7 @@ DEP_RSC_MRED_R=\
 ################################################################################
 # Begin Source File
 
-SOURCE=\MFLATT\PROJ\MZSCHEME\UTILS\xcglue.c
+SOURCE=.\..\..\mzscheme\utils\xcglue.c
 
 !IF  "$(CFG)" == "mred - Win32 Release"
 

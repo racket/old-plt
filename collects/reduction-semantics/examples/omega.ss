@@ -35,4 +35,4 @@
       (subterm '() x)]))
       
   
-  (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x (x x))))))
+  (gui lang reductions '((lambda (x) (x x)) (lambda (x) (x x)))))

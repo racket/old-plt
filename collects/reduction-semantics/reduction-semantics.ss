@@ -3,7 +3,7 @@
   (require "private/matcher.ss"
            (lib "contracts.ss")
            (lib "etc.ss"))
-  (require-for-syntax (lib "match.ss"))
+  (require-for-syntax (lib "list.ss"))
 
   (provide reduction
            reduction/context
@@ -95,47 +95,57 @@
                              (let ([name (lookup-binding bindings 'name)] ...)
                                bodies ...)))))))]))
     
-    (define (rewrite-side-conditions stx)
-      (let loop ([term stx])
-        (printf "rewrite-side-conditions: ~s\n" stx)
-        (syntax-case stx (side-condition)
+    (define (rewrite-side-conditions orig-stx)
+      (let loop ([term orig-stx])
+        (syntax-case term (side-condition)
           [(side-condition pat exp)
-           (let ([names (extract-names (syntax pat))])
-             (with-syntax ([(names ...) (map (lambda (x) (datum->syntax-object stx x)) names)])
-               (syntax/loc stx
-                 (side-condition
-                  pat
-                  ,(lambda (bindings)
-                     (let ([names (lookup-binding bindings 'names)] ...)
-                       exp))))))]
-          [(terms ...) (map loop (syntax->list (syntax (terms ...))))]
+           (with-syntax ([(names ...) (extract-names (syntax pat))])
+             (syntax/loc term
+               (side-condition
+                pat
+                ,(lambda (bindings)
+                   (let ([names (lookup-binding bindings 'names)] ...)
+                     exp)))))]
+          [(terms ...)
+           (map loop (syntax->list (syntax (terms ...))))]
           [else term])))
     
     (define (extract-names orig-stx)
-      (let loop ([stx orig-stx]
-                 [names null])
-        (printf "extract-names: ~s\n" names)
-        (syntax-case stx (name in-hole* in-hole)
-          [(name sym pat)
-           (identifier? (syntax sym))
-           (loop (syntax pat) (cons (syntax sym) names))]
-          [(in-hole* sym pat1 pat2)
-           (identifier? (syntax sym))
-           (loop (syntax pat1)
-                 (loop (syntax pat2)
-                       (cons (syntax sym) names)))]
-          [(in-hole pat1 pat2)
-           (loop (syntax pat1)
-                 (loop (syntax pat2)
-                       (cons (datum->syntax-object orig-stx 'hole) 
-                             names)))]
-          [(pat ...)
-           (let i-loop ([pats (syntax->list (syntax (pat ...)))]
-                        [names names])
-             (cond
-               [(null? pats) names]
-               [else (i-loop (cdr pats) (loop (car pats) names))]))]
-          [else names]))))
+      (let ([dups
+             (let loop ([stx orig-stx]
+                        [names null])
+               (syntax-case stx (name in-hole* in-hole)
+                 [(name sym pat)
+                  (identifier? (syntax sym))
+                  (loop (syntax pat) (cons (syntax sym) names))]
+                 [(in-hole* sym pat1 pat2)
+                  (identifier? (syntax sym))
+                  (loop (syntax pat1)
+                        (loop (syntax pat2)
+                              (cons (syntax sym) names)))]
+                 [(in-hole pat1 pat2)
+                  (loop (syntax pat1)
+                        (loop (syntax pat2)
+                              (cons (datum->syntax-object stx 'hole)
+                                    names)))]
+                 [(pat ...)
+                  (let i-loop ([pats (syntax->list (syntax (pat ...)))]
+                               [names names])
+                    (cond
+                      [(null? pats) names]
+                      [else (i-loop (cdr pats) (loop (car pats) names))]))]
+                 [else names]))])
+        (filter-duplicates dups)))
+    
+    (define (filter-duplicates dups)
+      (let loop ([dups dups])
+        (cond
+          [(null? dups) null]
+          [else 
+           (cons
+            (car dups)
+            (filter (lambda (x) (not (module-identifier=? x (car dups))))
+                    (cdr dups)))]))))
 
   (define-syntax (language stx)
     (syntax-case stx ()

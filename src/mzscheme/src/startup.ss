@@ -654,7 +654,6 @@
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
-		   (identifier? hd)
 		   (eq? (syntax-e hd) '...))
 	      (if (and (stx-pair? (stx-cdr p))
 		       (stx-null? (stx-cdr (stx-cdr p))))

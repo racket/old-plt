@@ -11,7 +11,8 @@
 	  gentemp
 	  atom?
 	  putprop getprop
-	  new-cafe)
+	  new-cafe
+	  define-structure)
   
   (define 1+ add1)
   (define 1- sub1)
@@ -78,4 +79,42 @@
 			(lambda ()
 			  (current-eval orig-eval)
 			  (exit-handler orig-exit)))))])])
-      nc)))
+      nc))
+
+  (define-syntax define-structure
+    (lambda (stx)
+      (syntax-case stx ()
+	[(_ (sname field ...))
+	 (syntax (define-structure (sname field ...) ()))]
+	[(_ (sname field ...) ([init-field init] ...))
+	 (andmap identifier? (syntax->list 
+			      (syntax (sname field ... init-field ...))))
+	 (let ([name (symbol->string (syntax-e (syntax sname)))]
+	       [fields (map symbol->string 
+			    (map syntax-e 
+				 (syntax->list (syntax (field ...)))))]
+	       [init-fields (map symbol->string 
+				 (map syntax-e 
+				      (syntax->list (syntax (init-field ...)))))]
+	       [+ (lambda args
+		    (datum->syntax (string->symbol (apply string-append args)) 
+				   (syntax sname) (syntax sname)))])
+	   (with-syntax ([struct: (+ "struct:" name)]
+			 [make- (+ "make-" name)]
+			 [? (+ name "?")]
+			 [(gs ...)
+			  (apply
+			   append
+			   (map (lambda (f) (list (+ name "-" f)
+						  (+ "set-" name "-" f "!")))
+				(append fields init-fields)))])
+	     (syntax
+	      (define-values (struct: make- ? gs ...)
+		(let-values ([(struct: make- ? gs ...)
+			      (struct sname (field ... init-field ...))])
+		  (values struct: 
+			  (let ([make- (lambda (field ...)
+					 (make- field ...
+						init ...))])
+			    make-)
+			  ? gs ...))))))]))))

@@ -89,7 +89,8 @@ static Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *l,
 				    Scheme_Env *env, Scheme_Env *for_syntax_of,
 				    Scheme_Object *rn,
 				    Check_Func ck, void *data,
-				    int start, Scheme_Object *redef_modname);
+				    int start, Scheme_Object *redef_modname,
+				    int unpack_kern);
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, 
 			 Scheme_Env *for_syntax_of, Scheme_Object *syntax_idx);
 static void finish_expstart_module(Scheme_Object *lazy, Scheme_Hash_Table *syntax, Scheme_Env *env);
@@ -1434,7 +1435,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  tables[3] = e;
 	  imods = parse_imports(form, e, self_modidx, env->genv, NULL, 
 				rn, check_import_name, tables, 0,
-				redef_modname);
+				redef_modname, 0);
 	
 	  /* Add imported modules to imports list: */
 	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
@@ -1466,7 +1467,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  et_tables[3] = e;
 	  imods = parse_imports(form, e, self_modidx, env->genv->exp_env, env->genv,
 				et_rn, check_import_name, et_tables, 1,
-				redef_modname);
+				redef_modname, 0);
 
 	  /* Add imported modules to et_imports list: */
 	  for (; !SCHEME_NULLP(imods); imods = SCHEME_CDR(imods)) {
@@ -1976,7 +1977,8 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 			     Scheme_Env *env, Scheme_Env *for_syntax_of,
 			     Scheme_Object *rn,
 			     Check_Func ck, void *data,
-			     int start, Scheme_Object *redef_modname)
+			     int start, Scheme_Object *redef_modname,
+			     int unpack_kern)
 {
   Scheme_Module *m;
   int j, var_count, is_kern;
@@ -2110,7 +2112,8 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
     is_kern = (SAME_OBJ(idx, kernel_symbol)
 	       && !exns
 	       && !prefix
-	       && !iname);
+	       && !iname
+	       && !unpack_kern);
 
     if (prefix)
       prefix = SCHEME_STX_VAL(prefix);
@@ -2193,7 +2196,7 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 	idx = kernel_symbol;
 	exns = m->kernel_exclusion;
 	m = kernel;
-	is_kern = !prefix;
+	is_kern = !prefix && !unpack_kern;
 	iname = NULL;
 	ename = NULL;
       } else
@@ -2238,7 +2241,9 @@ top_level_import_execute(Scheme_Object *data)
   ht = scheme_hash_table(7, SCHEME_hash_ptr, 0, 0);
   rn = scheme_make_module_rename(for_exp, 1);
 
-  (void)parse_imports(form, form, scheme_false, env, NULL, rn, check_dup_import, ht, 1, NULL);
+  (void)parse_imports(form, form, scheme_false, env, NULL, rn, 
+		      check_dup_import, ht, 1, NULL,
+		      !env->module);
 
   brn = env->rename;
   if (!brn) {
@@ -2291,7 +2296,9 @@ static Scheme_Object *do_import(Scheme_Object *form, Scheme_Comp_Env *env,
     genv = genv->exp_env;
   }
 
-  (void)parse_imports(form, form, scheme_false, genv, NULL, rn, check_dup_import, ht, 1, NULL);
+  (void)parse_imports(form, form, scheme_false, genv, NULL, rn, 
+		      check_dup_import, ht, 1, 
+		      NULL, 0);
 
   if (rec) {
     scheme_compile_rec_done_local(rec, drec);

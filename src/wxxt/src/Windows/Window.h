@@ -40,6 +40,10 @@ public:
     EventMask	  translations_eventmask;	// events selected by widget-translations
     unsigned long last_clicktime; 		// last time and button to compute
     unsigned int  last_clickbutton;		//   if a double click has arrived
+#ifndef NO_XMB_LOOKUP_STRING
+    XIC ic;
+    XIM im;
+#endif
 };
 #else
 class wxWindow_Xintern;
@@ -221,7 +225,6 @@ protected:
 
     /* For scrolling with explicit control: */ 
     long hs_pos, vs_pos, hs_page, vs_page, hs_width, vs_width;
-
 
     static void FocusChangeCallback(void *, wxWindow **winp, void *on);
 };

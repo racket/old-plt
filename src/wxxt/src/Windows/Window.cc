@@ -114,6 +114,11 @@ wxWindow::wxWindow(void)
 
 wxWindow::~wxWindow(void)
 {
+#ifndef NO_XMB_LOOKUP_STRING
+    if (X->ic) XDestroyIC(X->ic);
+    if (X->im) XCloseIM(X->im);
+#endif
+
     // destroy children
     DestroyChildren(); DELETE_OBJ children; children = NULL;
     // destroy device context
@@ -1460,6 +1465,16 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
 
 extern Bool wxIsAlt(KeySym key_sym);
 
+/* Used for XLookupString */
+static XComposeStatus compose_status;
+#ifndef NO_XMB_LOOKUP_STRING
+# define XMB_KC_STATUS(status) (status == XLookupKeySym) || (status == XLookupBoth)
+# define DEFAULT_XMB_STATUS XLookupKeySym
+#else
+# define XMB_KC_STATUS(status) (status)
+# define DEFAULT_XMB_STATUS 1
+#endif
+
 void wxWindow::WindowEventHandler(Widget w,
 				  wxWindow **winp,
 				  XEvent *xev,
@@ -1484,17 +1499,44 @@ void wxWindow::WindowEventHandler(Widget w,
 	wxKeyEvent *wxevent;
 	KeySym	   keysym;
 	long       kc;
+	Status     status;
+	char       str[10];
 
 	wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
 
-	(void)XLookupString(&(xev->xkey), NULL, 0, &keysym, NULL);
+#ifndef NO_XMB_LOOKUP_STRING
+	if (!win->X->im) {
+	  win->X->im = XOpenIM(wxAPP_DISPLAY, NULL, NULL, NULL);
+	  if (win->X->im) {
+	    win->X->ic = XCreateIC(win->X->im, 
+				   XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
+				   NULL);
+	  }
+	}
+
+	if (win->X->ic) {
+	  XSetICValues(win->X->ic, 
+		       XNClientWindow, XtWindow(w),
+		       XNFocusWindow,  XtWindow(w),
+		       NULL);
+	  XSetICFocus(win->X->ic);
+	  (void)XmbLookupString(win->X->ic, &(xev->xkey), str, 10, &keysym, &status);
+	} else
+#endif
+	  {
+	    (void)XLookupString(&(xev->xkey), str, 10, &keysym, &compose_status);
+	    status = DEFAULT_XMB_STATUS;
+	  }
 
 	if (wxIsAlt(keysym) && !(xev->xkey.state & (ShiftMask | ControlMask)))
 	  win->misc_flags |= LAST_WAS_ALT_DOWN_FLAG;
 	else if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	  win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
 
-	kc = CharCodeXToWX(keysym);
+	if (XMB_KC_STATUS(status))
+	  kc = CharCodeXToWX(keysym);
+	else
+	  kc = 0;
 
 	// set wxWindows event structure
 	wxevent->eventHandle	= (char*)xev;

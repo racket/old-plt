@@ -81,6 +81,7 @@ typedef struct Module_Renames {
   Scheme_Object *plus_kernel_nominal_source;
   Scheme_Hash_Table *ht; /* localname ->  modidx  OR
                                           (cons modidx exportname) OR
+                                          (cons-immutable modidx nominal_modidx) OR
                                           (list* modidx exportname nominal_modidx nominal_exportname) */
 } Module_Renames;
 
@@ -767,6 +768,9 @@ void scheme_extend_module_rename(Scheme_Object *mrn,
       elem = modname;
     else
       elem = CONS(modname, exname);
+  } else if (SAME_OBJ(exname, nominal_ex)
+	     && SAME_OBJ(localname, exname)) {
+    elem = ICONS(modname, nominal_mod);
   } else {
     elem = CONS(modname, CONS(exname, CONS(nominal_mod, nominal_ex)));
   }
@@ -1101,7 +1105,7 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
      get_names[1] is set to the nominal source module, and get_names[2] is set to
      the nominal source module's export.
    If lexically bound, result is env id, and a get_names[0] is set to scheme_undefined.
-   If neither, result is #f and get_names is unchanged. */
+   If neither, result is #f and get_names[0] is either unchanged or NULL. */
 {
   WRAP_POS wraps;
   Scheme_Object *o_rename_stack = scheme_null;
@@ -1164,14 +1168,23 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 
 	    if (get_names) {
 	      if (SCHEME_PAIRP(rename)) {
-		rename = SCHEME_CDR(rename);
-		if (SCHEME_PAIRP(rename)) {
-		  get_names[0] = SCHEME_CAR(rename);
-		  get_names[1] = SCHEME_CADR(rename);
-		  get_names[2] = SCHEME_CDDR(rename);
+		if (SCHEME_IMMUTABLEP(rename)) {
+		  /* (cons-immutable modidx nominal_modidx) case */
+		  get_names[0] = SCHEME_STX_VAL(a);
+		  get_names[1] = SCHEME_CDR(rename);
+		  get_names[2] = get_names[0];
 		} else {
-		  get_names[0] = rename;
-		  get_names[2] = NULL; /* finish below */
+		  rename = SCHEME_CDR(rename);
+		  if (SCHEME_PAIRP(rename)) {
+		    /* (list* modidx exportname nominal_modidx nominal_exportname) case */
+		    get_names[0] = SCHEME_CAR(rename);
+		    get_names[1] = SCHEME_CADR(rename);
+		    get_names[2] = SCHEME_CDDR(rename);
+		  } else {
+		    /* (cons modidx exportname) case */
+		    get_names[0] = rename;
+		    get_names[2] = NULL; /* finish below */
+		  }
 		}
 	      } else {
 		get_names[0] = SCHEME_STX_VAL(a);
@@ -1186,8 +1199,11 @@ static Scheme_Object *resolve_env(Scheme_Object *a, long phase,
 		  get_names[1] = mresult;
 	      }
 	    }
-	  } else
+	  } else {
 	    mresult = scheme_false;
+	    if (get_names)
+	      get_names[0] = NULL;
+	  }
 	}
       }
     } else if (SCHEME_BOXP(WRAP_POS_FIRST(wraps)) && w_mod) {
@@ -1335,9 +1351,13 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, long phase)
 	  if (rename) {
 	    /* match; set result: */
 	    if (SCHEME_PAIRP(rename)) {
-	      result = SCHEME_CDR(rename);
-	      if (SCHEME_PAIRP(result))
-		result = SCHEME_CAR(result);
+	      if (SCHEME_IMMUTABLEP(rename)) {
+		result = SCHEME_STX_VAL(a);
+	      } else {
+		result = SCHEME_CDR(rename);
+		if (SCHEME_PAIRP(result))
+		  result = SCHEME_CAR(result);
+	      }
 	    } else
 	      result = SCHEME_STX_VAL(a);
 	  } else
@@ -2004,8 +2024,12 @@ static Scheme_Object *wraps_to_datum(Scheme_Object *w_in,
 		  SCHEME_VEC_ELS(l)[j++] = mrn->ht->keys[i];
 		  idi = mrn->ht->vals[i];
 		  /* Drop info on nominals, if any: */
-		  if (SCHEME_PAIRP(idi) && SCHEME_PAIRP(SCHEME_CDR(idi))) {
-		    idi = CONS(SCHEME_CAR(idi), SCHEME_CADR(idi));
+		  if (SCHEME_PAIRP(idi)) {
+		    if (SCHEME_IMMUTABLEP(idi))
+		      idi = SCHEME_CAR(idi);
+		    else if (SCHEME_PAIRP(SCHEME_CDR(idi))) {
+		      idi = CONS(SCHEME_CAR(idi), SCHEME_CADR(idi));
+		    }
 		  }
 		  SCHEME_VEC_ELS(l)[j++] = idi;
 		}

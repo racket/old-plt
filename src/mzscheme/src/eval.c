@@ -1339,7 +1339,7 @@ static Scheme_Object *_compile(Scheme_Object *form, Scheme_Env *env, int writeab
       return SCHEME_STX_VAL(form);
   }
 
-  cenv = scheme_new_comp_env(env->init, 1);
+  cenv = scheme_new_comp_env(env, SCHEME_TOPLEVEL_FRAME);
 
   p->ku.k.p1 = form;
   p->ku.k.p2 = cenv;
@@ -1542,7 +1542,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  scheme_compile_rec_done_local(rec, drec);
 	  if (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)
 	      || SAME_TYPE(SCHEME_TYPE(var), scheme_module_variable_type))
-	    return scheme_register_toplevel_in_prefix(var, env);
+	    return scheme_register_toplevel_in_prefix(var, env, rec, drec);
 	  else
 	    return var;
 	} else
@@ -1890,7 +1890,7 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
   } else
     c = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(c), env->genv);
 
-  return scheme_register_toplevel_in_prefix(c, env);
+  return scheme_register_toplevel_in_prefix(c, env, rec, drec);
 }
 
 static Scheme_Object *
@@ -3507,7 +3507,7 @@ static Scheme_Object *_expand(Scheme_Object *obj, Scheme_Comp_Env *env,
 
 Scheme_Object *scheme_expand(Scheme_Object *obj, Scheme_Env *env)
 {
-  return _expand(obj, scheme_new_expand_env(env->init), -1, 1, -1);
+  return _expand(obj, scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, -1);
 }
 
 Scheme_Object *scheme_tail_eval_expr(Scheme_Object *obj)
@@ -3620,7 +3620,7 @@ static Scheme_Object *expand(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(scheme_config);
 
-  return _expand(argv[0], scheme_new_expand_env(env->init), -1, 1, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), -1, 1, 0);
 }
 
 static Scheme_Object *stop_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
@@ -3726,7 +3726,7 @@ expand_once(int argc, Scheme_Object **argv)
 
   env = scheme_get_env(scheme_config);
 
-  return _expand(argv[0], scheme_new_expand_env(env->init), 1, 1, 0);
+  return _expand(argv[0], scheme_new_expand_env(env, SCHEME_TOPLEVEL_FRAME), 1, 1, 0);
 }
 
 Scheme_Object *scheme_eval_string_all(const char *str, Scheme_Env *env, int cont)

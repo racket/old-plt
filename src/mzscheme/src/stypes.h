@@ -164,6 +164,7 @@ enum {
   scheme_rt_srcloc,
   scheme_rt_waitable,
   scheme_rt_waiting,
+  scheme_rt_comp_prefix,
 #endif
 
   _scheme_last_type_

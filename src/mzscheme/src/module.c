@@ -70,7 +70,8 @@ static Scheme_Object *read_module(Scheme_Object *obj);
 static Scheme_Module *module_load(Scheme_Object *modname, Scheme_Env *env, const char *who);
 
 static void eval_defmacro(Scheme_Object *names, int count,
-			  Scheme_Object *expr, Scheme_Comp_Env *env,
+			  Scheme_Object *expr, 
+			  Scheme_Env *genv, Scheme_Comp_Env *env,
 			  Resolve_Prefix *rp, int let_depth, int shift,
 			  Scheme_Bucket_Table *syntax);
 
@@ -136,9 +137,6 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env);
 static void eval_module_body(Scheme_Env *menv);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
-
-int check_functional_imports(Scheme_Object *l, Scheme_Env *env, int et);
-int check_functional_body(Scheme_Object *l, int et);
 
 void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
 		    int start, int count, int do_uninterned);
@@ -717,12 +715,9 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     }
   }
 
-  if (SCHEME_VOIDP(name)) {
+  if (SCHEME_VOIDP(name))
     expstart_module(m, env, 0, modidx, 0);
-    menv = scheme_module_access(m->modname, env);
-    if (menv->lazy_syntax)
-      finish_expstart_module(menv, env);
-  } else
+  else
     start_module(m, env, 0, modidx, 1);
 
   if (SCHEME_SYMBOLP(name)) {
@@ -1394,7 +1389,8 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   Scheme_Env *menv;
   Scheme_Object *l;
 
-  delay_exptime = 1;
+  if (!delay_exptime)
+    delay_exptime = m->et_functional;
 
   if (SAME_OBJ(m, kernel))
     return;
@@ -1458,7 +1454,7 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   }
 
   if (m->prim_et_body || !SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
-    if (delay_exptime || m->et_functional) {
+    if (delay_exptime) {
       /* Set lazy-syntax flag. */
       menv->lazy_syntax = 1;
     } else
@@ -1515,7 +1511,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
       rp = (Resolve_Prefix *)SCHEME_VEC_ELS(e)[3];
       e = SCHEME_VEC_ELS(e)[1];
       
-      eval_defmacro(names, scheme_proper_list_length(names), e, exp_env->init, 
+      eval_defmacro(names, scheme_proper_list_length(names), e, exp_env, NULL,
 		    rp, let_depth, 1, syntax);
     }
   }
@@ -1745,14 +1741,16 @@ static void *eval_defmacro_k(void)
   Scheme_Object *names;
   int count;
   Scheme_Object *expr;
-  Scheme_Comp_Env *env;
+  Scheme_Env *genv;
+  Scheme_Comp_Env *comp_env;
   Resolve_Prefix *rp;
   int let_depth, shift;
   Scheme_Bucket_Table *syntax;
 
   names = (Scheme_Object *)p->ku.k.p1;
   expr = (Scheme_Object *)p->ku.k.p2;
-  env = (Scheme_Comp_Env *)p->ku.k.p3;
+  genv = (Scheme_Env *)SCHEME_CAR((Scheme_Object *)p->ku.k.p3);
+  comp_env = (Scheme_Comp_Env *)SCHEME_CDR((Scheme_Object *)p->ku.k.p3);
   rp = (Resolve_Prefix *)SCHEME_CAR((Scheme_Object *)p->ku.k.p4);
   syntax = (Scheme_Bucket_Table *)SCHEME_CDR((Scheme_Object *)p->ku.k.p4);
   count = p->ku.k.i1;
@@ -1764,13 +1762,14 @@ static void *eval_defmacro_k(void)
   p->ku.k.p3 = NULL;
   p->ku.k.p4 = NULL;
 
-  eval_defmacro(names, count, expr, env, rp, let_depth, shift, syntax);
+  eval_defmacro(names, count, expr, genv, comp_env, rp, let_depth, shift, syntax);
 
   return NULL;
 }
 
 static void eval_defmacro(Scheme_Object *names, int count,
-			  Scheme_Object *expr, Scheme_Comp_Env *env,
+			  Scheme_Object *expr, 
+			  Scheme_Env *genv, Scheme_Comp_Env *comp_env,
 			  Resolve_Prefix *rp,
 			  int let_depth, int shift, Scheme_Bucket_Table *syntax)
 {
@@ -1782,7 +1781,7 @@ static void eval_defmacro(Scheme_Object *names, int count,
     Scheme_Thread *p = scheme_current_thread;
     p->ku.k.p1 = names;
     p->ku.k.p2 = expr;
-    p->ku.k.p3 = env;
+    p->ku.k.p3 = scheme_make_pair((Scheme_Object *)genv, (Scheme_Object *)comp_env);
     vals = scheme_make_pair((Scheme_Object *)rp, (Scheme_Object *)syntax);
     p->ku.k.p4 = vals;
     p->ku.k.i1 = count;
@@ -1792,12 +1791,12 @@ static void eval_defmacro(Scheme_Object *names, int count,
     return;
   }
 
-  save_runstack = scheme_push_prefix(env->genv, rp,
-				     (shift ? env->genv->module->self_modidx : NULL), 
-				     (shift ? env->genv->link_midx : NULL), 
-				     1, env->genv->phase);
+  save_runstack = scheme_push_prefix(genv, rp,
+				     (shift ? genv->module->self_modidx : NULL), 
+				     (shift ? genv->link_midx : NULL), 
+				     1, genv->phase);
 	
-  scheme_on_next_top(env, NULL, scheme_false);
+  scheme_on_next_top(comp_env, NULL, scheme_false);
   vals = scheme_eval_linked_expr_multi(expr);
 
   scheme_pop_prefix(save_runstack);
@@ -1884,18 +1883,14 @@ module_execute(Scheme_Object *data)
 
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
-  /* Compute whether the module is obviously functional (as opposed to imperative): */
-  if (check_functional_imports(m->requires, env, 0)
-      && check_functional_body(m->body, 0))
-    m->functional = 1;
-  if (check_functional_imports(m->requires, env, 1)
-      && check_functional_imports(m->et_requires, env, 0)
-      && check_functional_imports(m->et_requires, env, 1)
-      && check_functional_body(m->et_body, 1))
-    m->et_functional = 1;
+  /* We might compute whether the module is obviously functional (as
+     opposed to imperative). But it doesn't seem to matter much except 
+     for starting up. */
 
-  /* printf("%s: %d\n", SCHEME_SYM_VAL(m->modname), m->functional);
-     printf("%s et: %d\n", SCHEME_SYM_VAL(m->modname), m->et_functional); */
+  if (scheme_starting_up) {
+    m->functional = 1;
+    m->et_functional = 1;
+  }
 
   /* Replaced an already-running or already-syntaxing module? */
   menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
@@ -1941,6 +1936,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   Scheme_Object *fm, *nm, *ii, *rn, *et_rn, *iidx, *self_modidx;
   Scheme_Module *iim;
   Scheme_Env *menv;
+  Scheme_Comp_Env *benv;
   Scheme_Module *m;
   Scheme_Object *mbval;
   int saw_mb, check_mb = 0;
@@ -2035,6 +2031,11 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   }
 
+  if (rec)
+    benv = scheme_new_comp_env(menv, SCHEME_MODULE_FRAME);
+  else
+    benv = scheme_new_expand_env(menv, SCHEME_MODULE_FRAME);
+
   /* If fm isn't a single expression, it certainly needs a
      `#%module-begin': */
   if (SCHEME_PAIRP(fm) && SCHEME_STX_NULLP(SCHEME_STX_CDR(fm))) {
@@ -2061,7 +2062,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   fm = scheme_add_rename(fm, et_rn);
 
   if (!check_mb) {
-    fm = scheme_check_immediate_macro(fm, menv->init, rec, drec, depth, scheme_false, 0, &mbval);
+    fm = scheme_check_immediate_macro(fm, benv, rec, drec, depth, scheme_false, 0, &mbval);
 
     /* If expansion is not the primitive `#%module-begin', add local one: */
     if (!SAME_OBJ(mbval, modbeg_syntax)) {
@@ -2087,7 +2088,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     m->dummy = dummy;
 
     scheme_compile_rec_done_local(rec, drec);
-    fm = scheme_compile_expr(fm, menv->init, rec, drec);
+    fm = scheme_compile_expr(fm, benv, rec, drec);
 
     /* result should be a module body value: */
     if (!SAME_OBJ(fm, (Scheme_Object *)m)) {
@@ -2098,7 +2099,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   } else {
     Scheme_Object *hints, *formname;
 
-    fm = scheme_expand_expr(fm, menv->init, depth, scheme_false);
+    fm = scheme_expand_expr(fm, benv, depth, scheme_false);
 
     hints = m->hints;
     m->hints = NULL;
@@ -2270,7 +2271,7 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
 
   qsort_provides(exs, exns, exss, 0, nvar, 1);
 
-  /* Worst-case assumptions for now: */
+  /* Worst-case assumptions: */
   m->functional = 0;
   m->et_functional = 0;
 
@@ -2304,62 +2305,6 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
   return scheme_void;
 }
 
-
-int check_functional_imports(Scheme_Object *l, Scheme_Env *env, int et)
-{
-  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-    Scheme_Object *name;
-    Scheme_Module *im;
-    name = SCHEME_CAR(l);
-    
-    /* Don't resolve agreesively: */
-    if (!SCHEME_SYMBOLP(name) && !SCHEME_FALSEP(((Scheme_Modidx *)name)->resolved))
-      name = ((Scheme_Modidx *)name)->resolved;
-    
-    /* Break out of the loop if not functional: */
-    if (SCHEME_SYMBOLP(name)) {
-      im = module_load(name, env, NULL);
-      if (im) {
-	if ((!et && !im->functional)
-	    || (et && !im->et_functional))
-	  break;
-      } else 
-	break;
-    } else
-      break;
-  }
-
-  return SCHEME_NULLP(l);
-}
-
-int check_functional_body(Scheme_Object *l, int et)
-{
-  Scheme_Object *e;
-  int vals;
-
-  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
-    e = SCHEME_CAR(l);
-    if (et) {
-      vals = scheme_list_length(SCHEME_VEC_ELS(e)[0]);
-      e = SCHEME_VEC_ELS(e)[1];
-    } else {
-      if (SAME_TYPE(SCHEME_TYPE(e), scheme_syntax_type)) {
-	if (SCHEME_PINT_VAL(e) == DEFINE_VALUES_EXPD) {
-	  e = SCHEME_IPTR_VAL(e);
-	  vals = scheme_list_length(SCHEME_CAR(e));
-	  e = SCHEME_CDR(e);
-	} else
-	  vals = 1;
-      } else
-	vals = 1;
-    }
-
-    if (!scheme_omittable_expr(e, vals))
-      break;
-  }
-
-  return SCHEME_NULLP(l);
-}
 
 /**********************************************************************/
 /*                          #%module-begin                            */
@@ -2671,13 +2616,13 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  mrec.value_name = NULL;
 
 	  scheme_prepare_exp_env(env->genv);
-	  eenv = scheme_new_comp_env(env->genv->exp_env->init, 0);
+	  eenv = scheme_new_comp_env(env->genv->exp_env, 0);
 
 	  if (!rec)
 	    code = scheme_expand_expr(code, eenv, -1, boundname);
 	  m = scheme_compile_expr(code, eenv, &mrec, 0);
 
-	  rp = scheme_resolve_prefix(1, eenv->prefix, 0);
+	  rp = scheme_resolve_prefix(1, eenv->prefix, 1);
 	  m = scheme_resolve_expr(m, scheme_resolve_info_create(rp));
 
 	  /* Add code with names and lexical depth to exp-time body: */
@@ -2688,7 +2633,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  SCHEME_VEC_ELS(vec)[3] = (Scheme_Object *)rp;
 	  exp_body = scheme_make_pair(vec, exp_body);
 	
-	  eval_defmacro(names, count, m, eenv, rp, mrec.max_let_depth, 0, env->genv->syntax);
+	  eval_defmacro(names, count, m, eenv->genv, NULL, rp, mrec.max_let_depth, 0, env->genv->syntax);
 
 	  /* Add a renaming for each name: */
 	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
@@ -2943,7 +2888,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   if (rec) {
     /* Module manages its own prefix. That's how we get
        multiple instantiation of module with "dynamic linking". */
-    cenv = scheme_new_comp_env(env, 1);
+    cenv = scheme_new_comp_env(env->genv, SCHEME_TOPLEVEL_FRAME);
   } else
     cenv = scheme_extend_as_toplevel(env);
 

@@ -62,6 +62,8 @@ typedef void *(*CAPOFunc)(void*);
 @ "get-lazy-refresh" : bool GetLazyRefresh();
 @ "set-lazy-refresh" : void SetLazyRefresh(bool);
 
+@ "scroll-to" : bool ScrollTo(float,float,nnfloat,nnfloat, bool,SYM[bias]=0); : : : rFALSE
+
 @MACRO CastToSO = (Scheme_Object*){x}
 @MACRO ubTestFunc = DoCAPOCallback
 @MACRO ubData = p[POFFSET]

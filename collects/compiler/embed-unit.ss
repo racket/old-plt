@@ -59,6 +59,20 @@
 		       (loop (add1 pos) (cdr l))
 		       (loop (add1 pos) magic)))])))
 
+      (define (data-fork-size dest)
+	(if (eq? (system-type) 'macos)
+	    ;; Can't use `file-size', because that includes the data fork.
+	    (let ([p (open-input-file dest)]
+		  [s (make-string 4096)])
+	      (let loop ()
+		(if (eof-object? (read-string-avail! s p))
+		    (begin0
+		     (file-position p)
+		     (close-input-port p))
+		    (loop))))
+	    ;; File has only a "data fork":
+	    (file-size dest)))
+
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
       ;; Represent modules with lists starting with the filename, so we
@@ -266,7 +280,7 @@
 				    (when (file-exists? dest)
 				      (delete-file dest))
 				    (raise x))])
-	      (let ([start (file-size dest)])
+	      (let ([start (data-fork-size dest)])
 		(call-with-output-file* 
 		 dest
 		 (lambda (o)

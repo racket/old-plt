@@ -1259,8 +1259,8 @@ extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
 #define scheme_get_frame_settable(f) ((f)->basic.has_set_bang)
 #define scheme_get_binding(f, n) ((f)->values[n])
 
-Scheme_Comp_Env *scheme_new_comp_env(Scheme_Comp_Env *init, int top_level);
-#define scheme_new_expand_env(env) env
+Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, int flags);
+Scheme_Comp_Env *scheme_new_expand_env(Scheme_Env *genv, int flags);
 
 void scheme_check_identifier(const char *formname, Scheme_Object *id, 
 			     const char *where,
@@ -1308,8 +1308,10 @@ Scheme_Object *scheme_make_linked_closure(Scheme_Thread *p,
 
 Scheme_Object *scheme_compiled_void();
 
-Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env);
-Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env);
+Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env, 
+						  Scheme_Compile_Info *rec, int drec);
+Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env, 
+					     Scheme_Compile_Info *rec, int drec);
 
 /* Resolving & linking */
 #define DEFINE_VALUES_EXPD 0
@@ -1499,8 +1501,6 @@ struct Scheme_Env {
   Scheme_Object *rename;    /* module rename record */
   Scheme_Object *et_rename; /* exp-time rename record */
 
-  struct Scheme_Comp_Env *init;
-  
   Scheme_Bucket_Table *syntax;
   struct Scheme_Env *exp_env;
 

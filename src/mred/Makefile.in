@@ -90,7 +90,7 @@ mred.o :  $(srcdir)/mred.cxx $(srcdir)/wxme/wx_media.h $(srcdir)/wxme/wx_medad.h
           $(srcdir)/../wxcommon/wx_list.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mred.cxx -o mred.o
 
-mrmain.o :  $(srcdir)/mrmain.cxx $(srcdir)/mred.h $(srcdir)/wxs/wxsmred.h
+mrmain.o :  $(srcdir)/mrmain.cxx $(srcdir)/mred.h $(srcdir)/wxs/wxsmred.h $(srcdir)/../mzscheme/src/stypes.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mrmain.cxx -o mrmain.o
 
 mred_ee.o : mred.o
@@ -101,10 +101,12 @@ ee-main:
 
 mredx.o : $(srcdir)/mredx.cxx $(srcdir)/../mzscheme/include/scheme.h $(srcdir)/mred.h \
           $(WXDIR)/src/Windows/Frame.h $(WXDIR)/src/DataStructures/Object.h \
-          $(srcdir)/../wxcommon/wxGC.h $(srcdir)/../wxcommon/wx_list.h
+          $(srcdir)/../wxcommon/wxGC.h $(srcdir)/../wxcommon/wx_list.h \
+          $(srcdir)/../mzscheme/src/stypes.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/mredx.cxx -o mredx.o
 
-wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h
+wxGC.o : $(srcdir)/../wxcommon/wxGC.cxx $(srcdir)/../wxcommon/wxGC.h \
+         $(srcdir)/../mzscheme/src/stypes.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c $(srcdir)/../wxcommon/wxGC.cxx -o wxGC.o
 
 wxJPEG.o : $(srcdir)/../wxcommon/wxJPEG.cxx $(srcdir)/../wxcommon/wxGC.h

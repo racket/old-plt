@@ -98,6 +98,22 @@ int local_obj_FIXUP(void *p) {
 }
 
 
+int toplevel_obj_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Toplevel));
+}
+
+int toplevel_obj_MARK(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Toplevel));
+}
+
+int toplevel_obj_FIXUP(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_Toplevel));
+}
+
+
 int c_pointer_obj_SIZE(void *p) {
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Object));
@@ -1417,8 +1433,6 @@ int namespace_val_MARK(void *p) {
   gcMARK(e->rename);
   gcMARK(e->et_rename);
 
-  gcMARK(e->init);
-
   gcMARK(e->syntax);
   gcMARK(e->exp_env);
 
@@ -1443,8 +1457,6 @@ int namespace_val_FIXUP(void *p) {
 
   gcFIXUP(e->rename);
   gcFIXUP(e->et_rename);
-
-  gcFIXUP(e->init);
 
   gcFIXUP(e->syntax);
   gcFIXUP(e->exp_env);
@@ -1487,6 +1499,7 @@ int compilation_top_val_SIZE(void *p) {
 int compilation_top_val_MARK(void *p) {
   Scheme_Compilation_Top *t = (Scheme_Compilation_Top *)p;
   gcMARK(t->code);
+  gcMARK(t->prefix);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Compilation_Top));
@@ -1495,9 +1508,58 @@ int compilation_top_val_MARK(void *p) {
 int compilation_top_val_FIXUP(void *p) {
   Scheme_Compilation_Top *t = (Scheme_Compilation_Top *)p;
   gcFIXUP(t->code);
+  gcFIXUP(t->prefix);
 
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Compilation_Top));
+}
+
+
+int resolve_prefix_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Resolve_Prefix));
+}
+
+int resolve_prefix_val_MARK(void *p) {
+  Resolve_Prefix *rp = (Resolve_Prefix *)p;
+  gcMARK(rp->toplevels);
+  gcMARK(rp->stxes);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Resolve_Prefix));
+}
+
+int resolve_prefix_val_FIXUP(void *p) {
+  Resolve_Prefix *rp = (Resolve_Prefix *)p;
+  gcFIXUP(rp->toplevels);
+  gcFIXUP(rp->stxes);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Resolve_Prefix));
+}
+
+
+int comp_prefix_val_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Comp_Prefix));
+}
+
+int comp_prefix_val_MARK(void *p) {
+  Comp_Prefix *cp = (Comp_Prefix *)p;
+  gcMARK(cp->toplevels);
+  gcMARK(cp->stxes);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Comp_Prefix));
+}
+
+int comp_prefix_val_FIXUP(void *p) {
+  Comp_Prefix *cp = (Comp_Prefix *)p;
+  gcFIXUP(cp->toplevels);
+  gcFIXUP(cp->stxes);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Comp_Prefix));
 }
 
 
@@ -1603,6 +1665,10 @@ int module_val_MARK(void *p) {
 
   gcMARK(m->hints);
 
+  gcMARK(m->comp_prefix);
+  gcMARK(m->prefix);
+  gcMARK(m->dummy);
+
   gcMARK(m->primitive);
   return
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));
@@ -1630,6 +1696,10 @@ int module_val_FIXUP(void *p) {
   gcFIXUP(m->accessible);
 
   gcFIXUP(m->hints);
+
+  gcFIXUP(m->comp_prefix);
+  gcFIXUP(m->prefix);
+  gcFIXUP(m->dummy);
 
   gcFIXUP(m->primitive);
   return
@@ -1684,9 +1754,11 @@ int mark_comp_env_MARK(void *p) {
   gcMARK(e->base.next);
   gcMARK(e->base.values);
   gcMARK(e->base.renames);
+  gcMARK(e->base.prefix);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
+  gcMARK(e->data.stxes_used);
   gcMARK(e->data.const_names);
   gcMARK(e->data.const_vals);
   gcMARK(e->data.use);
@@ -1703,9 +1775,11 @@ int mark_comp_env_FIXUP(void *p) {
   gcFIXUP(e->base.next);
   gcFIXUP(e->base.values);
   gcFIXUP(e->base.renames);
+  gcFIXUP(e->base.prefix);
   
   gcFIXUP(e->data.stat_dists);
   gcFIXUP(e->data.sd_depths);
+  gcFIXUP(e->data.stxes_used);
   gcFIXUP(e->data.const_names);
   gcFIXUP(e->data.const_vals);
   gcFIXUP(e->data.use);
@@ -1723,9 +1797,10 @@ int mark_resolve_info_SIZE(void *p) {
 int mark_resolve_info_MARK(void *p) {
   Resolve_Info *i = (Resolve_Info *)p;
   
-  gcMARK(i->simplify_cache);
+  gcMARK(i->prefix);
   gcMARK(i->old_pos);
   gcMARK(i->new_pos);
+  gcMARK(i->old_stx_pos);
   gcMARK(i->flags);
   gcMARK(i->next);
 
@@ -1736,9 +1811,10 @@ int mark_resolve_info_MARK(void *p) {
 int mark_resolve_info_FIXUP(void *p) {
   Resolve_Info *i = (Resolve_Info *)p;
   
-  gcFIXUP(i->simplify_cache);
+  gcFIXUP(i->prefix);
   gcFIXUP(i->old_pos);
   gcFIXUP(i->new_pos);
+  gcFIXUP(i->old_stx_pos);
   gcFIXUP(i->flags);
   gcFIXUP(i->next);
 
@@ -1883,7 +1959,8 @@ int mark_closure_info_MARK(void *p) {
   Closure_Info *i = (Closure_Info *)p;
   
   gcMARK(i->local_flags);
-  gcMARK(i->real_closure_map);
+  gcMARK(i->base_closure_map);
+  gcMARK(i->stx_closure_map);
 
   return
   gcBYTES_TO_WORDS(sizeof(Closure_Info));
@@ -1893,7 +1970,8 @@ int mark_closure_info_FIXUP(void *p) {
   Closure_Info *i = (Closure_Info *)p;
   
   gcFIXUP(i->local_flags);
-  gcFIXUP(i->real_closure_map);
+  gcFIXUP(i->base_closure_map);
+  gcFIXUP(i->stx_closure_map);
 
   return
   gcBYTES_TO_WORDS(sizeof(Closure_Info));

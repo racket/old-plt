@@ -185,6 +185,7 @@ typedef void *(*CAPOFunc)(void*);
 
 
 
+
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
@@ -839,6 +840,41 @@ static Scheme_Object *os_wxMediaCanvasCallAsPrimaryOwner(int n,  Scheme_Object *
   return (Scheme_Object*)r;
 }
 
+static Scheme_Object *os_wxMediaCanvasScrollTo(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  Bool r;
+  objscheme_check_valid(os_wxMediaCanvas_class, "scroll-to in editor-canvas%", n, p);
+  float x0;
+  float x1;
+  nnfloat x2;
+  nnfloat x3;
+  Bool x4;
+  int x5;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "scroll-to in editor-canvas%"));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "scroll-to in editor-canvas%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+2], "scroll-to in editor-canvas%"));
+  x3 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_float(p[POFFSET+3], "scroll-to in editor-canvas%"));
+  x4 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+4], "scroll-to in editor-canvas%"));
+  if (n > (POFFSET+5)) {
+    x5 = WITH_VAR_STACK(unbundle_symset_bias(p[POFFSET+5], "scroll-to in editor-canvas%"));
+  } else
+    x5 = 0;
+
+  
+  r = WITH_VAR_STACK(((wxMediaCanvas *)((Scheme_Class_Object *)p[0])->primdata)->ScrollTo(x0, x1, x2, x3, x4, x5));
+
+  
+  
+  return (r ? scheme_true : scheme_false);
+}
+
 static Scheme_Object *os_wxMediaCanvasSetLazyRefresh(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1091,7 +1127,7 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaCanvas_class);
 
-  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 19));
+  os_wxMediaCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "editor-canvas%", "canvas%", os_wxMediaCanvas_ConstructScheme, 20));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-char", os_wxMediaCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-event", os_wxMediaCanvasOnEvent, 1, 1));
@@ -1104,6 +1140,7 @@ void objscheme_setup_wxMediaCanvas(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "on-kill-focus", os_wxMediaCanvasOnKillFocus, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "popup-for-editor", os_wxMediaCanvasPopupForMedia, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "call-as-primary-owner", os_wxMediaCanvasCallAsPrimaryOwner, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "scroll-to", os_wxMediaCanvasScrollTo, 5, 6));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "set-lazy-refresh", os_wxMediaCanvasSetLazyRefresh, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "get-lazy-refresh", os_wxMediaCanvasGetLazyRefresh, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaCanvas_class, "scroll-with-bottom-base", os_wxMediaCanvasScrollWithBottomBase, 1, 1));

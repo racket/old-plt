@@ -548,9 +548,12 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
 
   show_any = i;
 
-  if (show_any)
-    name = (Scheme_Object *)((Scheme_Bucket *)SCHEME_CAR(vars))->key;
-  else
+  if (show_any) {
+    Scheme_Object **toplevels;
+    toplevels = (Scheme_Object **)MZ_RUNSTACK[SCHEME_TOPLEVEL_DEPTH(SCHEME_CAR(vars))];
+    b = (Scheme_Bucket *)toplevels[SCHEME_TOPLEVEL_POS(SCHEME_CAR(vars))];
+    name = (Scheme_Object *)b->key;
+  } else
     name = NULL;
   
   {
@@ -653,7 +656,7 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
       bucket = scheme_hash_module_variable(env->genv, env->genv->module->self_modidx, name, -1);
     }
     /* Get indirection through the prefix: */
-    bucket = scheme_register_toplevel_in_prefix(bucket, env);
+    bucket = scheme_register_toplevel_in_prefix(bucket, env, rec, drec);
 
     pr = cons(bucket, scheme_null);
     if (last)
@@ -1039,7 +1042,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_variable_type)
       || SAME_TYPE(SCHEME_TYPE(var), scheme_module_variable_type)) {
-    var = scheme_register_toplevel_in_prefix(var, env);
+    var = scheme_register_toplevel_in_prefix(var, env, rec, drec);
   }
 
   scheme_compile_rec_done_local(rec, drec);
@@ -2573,7 +2576,7 @@ lexical_syntax_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   stx = SCHEME_STX_CAR(stx);
   
   if (rec) {
-    return scheme_register_stx_in_prefix(stx, env);
+    return scheme_register_stx_in_prefix(stx, env, rec, drec);
   } else {
     Scheme_Object *fn;
     fn = SCHEME_STX_CAR(form);
@@ -2624,7 +2627,7 @@ define_syntaxes_execute(Scheme_Object *form)
   dummy = SCHEME_CAR(form);
   form = SCHEME_CDR(form);
 
-  scheme_on_next_top(scheme_get_env(p->config)->init, NULL, scheme_false);
+  scheme_on_next_top(NULL, NULL, scheme_false);
   return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), 1, rp, dummy);
 }
 
@@ -2681,7 +2684,7 @@ define_syntaxes_syntax(Scheme_Object *form, Scheme_Comp_Env *env,
   
   scheme_prepare_exp_env(env->genv);
 
-  exp_env = scheme_new_comp_env(env->genv->exp_env->init, 0);
+  exp_env = scheme_new_comp_env(env->genv->exp_env, 0);
 
   erec.dont_mark_local_use = 0;
   erec.resolve_module_ids = 0;
@@ -2709,7 +2712,9 @@ define_syntaxes_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Sch
   else
     name = scheme_false;
 
-  fpart = scheme_expand_expr(code, env->genv->exp_env->init, depth, names);
+  env = scheme_new_expand_env(env->genv->exp_env, 0);
+
+  fpart = scheme_expand_expr(code, env, depth, names);
   
   code = icons(fpart, scheme_null);
   code = icons(names, code);
@@ -2727,7 +2732,7 @@ Scheme_Object *scheme_make_environment_dummy(Scheme_Comp_Env *env)
   /* Get prefixed-based accessors for a dummy top-level buckets. It's
      used to "link" to the right enviornment. begin_symbol is arbitrary */
   dummy = (Scheme_Object *)scheme_global_bucket(begin_symbol, env->genv);
-  dummy = scheme_register_toplevel_in_prefix(dummy, env);
+  dummy = scheme_register_toplevel_in_prefix(dummy, env, NULL, 0);
 
   return dummy;
 }
@@ -2768,8 +2773,13 @@ static Scheme_Object *eval_letmacro_rhs(Scheme_Object *a, Scheme_Comp_Env *rhs_e
 
   save_runstack = scheme_push_prefix(NULL, rp, NULL, NULL, phase, phase);
 
-  scheme_on_next_top(rhs_env, NULL, scheme_false);
-  a = scheme_eval_linked_expr_multi(a);
+  if (scheme_omittable_expr(a, 1)) {
+    /* short cut */
+    a = _scheme_eval_linked_expr_multi(a);
+  } else {
+    scheme_on_next_top(rhs_env, NULL, scheme_false);
+    a = scheme_eval_linked_expr_multi(a);
+  }
 
   scheme_pop_prefix(save_runstack);
 
@@ -2965,7 +2975,7 @@ do_letrec_syntaxes(const char *where, int normal,
     mrec.resolve_module_ids = 1;
     mrec.value_name = NULL;
 
-    eenv = scheme_new_comp_env(stx_env->genv->exp_env->init, 0);
+    eenv = scheme_new_comp_env(stx_env->genv->exp_env, 0);
 
     a = scheme_compile_expr(a, eenv, &mrec, 0);
 

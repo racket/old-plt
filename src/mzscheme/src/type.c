@@ -338,6 +338,7 @@ static void FIXUP_jmpup(Scheme_Jumpup_Buf *buf)
 
 void scheme_register_traversers(void)
 {
+  GC_REG_TRAV(scheme_toplevel_type, toplevel_obj);
   GC_REG_TRAV(scheme_variable_type, variable_obj);
   GC_REG_TRAV(scheme_local_type, local_obj);
   GC_REG_TRAV(scheme_local_unbox_type, local_obj);
@@ -359,10 +360,15 @@ void scheme_register_traversers(void)
   GC_REG_TRAV(scheme_compiled_let_value_type, comp_let_value);
   GC_REG_TRAV(scheme_compiled_let_void_type, let_header);
   GC_REG_TRAV(scheme_compiled_syntax_type, iptr_obj);
+  GC_REG_TRAV(scheme_compiled_toplevel_type, toplevel_obj);
+  GC_REG_TRAV(scheme_compiled_quote_syntax_type, local_obj);
 
   GC_REG_TRAV(scheme_quote_compilation_type, small_object);
 
   GC_REG_TRAV(_scheme_compiled_values_types_, bad_trav);
+
+  GC_REG_TRAV(scheme_resolve_prefix_type, resolve_prefix_val);
+  GC_REG_TRAV(scheme_rt_comp_prefix, comp_prefix_val);
 
   GC_REG_TRAV(scheme_prim_type, prim_proc);
   GC_REG_TRAV(scheme_closed_prim_type, closed_prim_proc);

@@ -16,6 +16,10 @@
 ;; Do not use block comments (with #| and |#) in this file. The
 ;; pre-processing script to build startup.inc can't handle them.
 
+;; module.c contains a hack so that it assuems all modules defined
+;; during start-up are purely functional (and can therefore be
+;; evaluated lazily). So turn that off if necessary.
+
 ;;----------------------------------------------------------------------
 ;; basic syntax utilities
 

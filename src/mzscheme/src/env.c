@@ -485,19 +485,6 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
     env->syntax = syntax;
     env->modchain = modchain;
     env->module_registry = module_registry;
-
-    {
-      Scheme_Comp_Env *me;
-      me = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
-      env->init = me;
-    }
-#ifdef MZTAG_REQUIRED
-    env->init->type = scheme_rt_comp_env;
-#endif
-    env->init->num_bindings = 0;
-    env->init->next = NULL;
-    env->init->genv = env;
-    init_compile_data(env->init);
   }
 
   return env;
@@ -511,8 +498,6 @@ scheme_new_module_env(Scheme_Env *env, Scheme_Module *m, int new_exp_module_tree
   menv = make_env(env, 0, 7);
 
   menv->module = m;
-  if (menv->init)
-    menv->init->flags |= SCHEME_MODULE_FRAME;
 
   if (new_exp_module_tree) {
     Scheme_Object *p;
@@ -578,19 +563,6 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
   
   menv2->modchain = modchain;
 
-  {
-    Scheme_Comp_Env *me;
-    me = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
-    menv2->init = me;
-  }
-#ifdef MZTAG_REQUIRED
-  menv2->init->type = scheme_rt_comp_env;
-#endif
-  menv2->init->num_bindings = 0;
-  menv2->init->next = NULL;
-  menv2->init->genv = menv2;
-  init_compile_data(menv2->init);
-
   if (!SCHEME_NULLP(menv2->module->et_requires)) {
     /* We'll need the next link in the modchain: */
     modchain = SCHEME_VEC_ELS(modchain)[1];
@@ -654,8 +626,6 @@ void scheme_clean_dead_env(Scheme_Env *env)
     SCHEME_VEC_ELS(modchain)[1] = scheme_void;
     modchain = next;
   }
-
-  env->init = NULL;
 }
 
 /*========================================================================*/
@@ -891,15 +861,37 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
   return frame;
 }
 
-Scheme_Comp_Env *scheme_new_comp_env(Scheme_Comp_Env *env, int top_level)
+Scheme_Comp_Env *scheme_new_comp_env(Scheme_Env *genv, int flags)
 {
   Scheme_Comp_Env *e;
   Comp_Prefix *cp;
 
-  cp = MALLOC_ONE_RT(Comp_Prefix);
+  e = (Scheme_Comp_Env *)MALLOC_ONE_RT(Scheme_Full_Comp_Env);
+#ifdef MZTAG_REQUIRED
+  e->type = scheme_rt_comp_env;
+#endif
+  e->num_bindings = 0;
+  e->next = NULL;
+  e->genv = genv;
+  e->flags = flags;
+  init_compile_data(e);
 
-  e = scheme_new_compilation_frame(0, top_level ? SCHEME_TOPLEVEL_FRAME : 0, env);
+  cp = MALLOC_ONE_RT(Comp_Prefix);
+#ifdef MZTAG_REQUIRED
+  cp->type = scheme_rt_comp_prefix;
+#endif
+
   e->prefix = cp;
+
+  return e;
+}
+
+Scheme_Comp_Env *scheme_new_expand_env(Scheme_Env *genv, int flags)
+{
+  Scheme_Comp_Env *e;
+
+  e = scheme_new_comp_env(genv, flags);
+  e->prefix = NULL;
 
   return e;
 }
@@ -1023,13 +1015,23 @@ Scheme_Comp_Env *scheme_extend_as_toplevel(Scheme_Comp_Env *env)
     return scheme_new_compilation_frame(0, SCHEME_TOPLEVEL_FRAME, env);
 }
 
-Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env)
+Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env,
+						  Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Comp_Env *frame;
   Comp_Prefix *cp = env->prefix;
   Scheme_Hash_Table *ht;
   Scheme_Object *o;
   Scheme_Toplevel *tl;
+
+  if (rec && rec[drec].dont_mark_local_use) {
+    /* Make up anything; it's going to be ignored. */
+    tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
+    tl->type = scheme_compiled_toplevel_type;
+    tl->depth = 0;
+    tl->position = 0;
+    return (Scheme_Object *)tl;
+  }
 
   /* Register use at lambda, if any: */
   frame = env;
@@ -1051,7 +1053,7 @@ Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Com
   if (o)
     return o;
 
-  tl = MALLOC_ONE_TAGGED(Scheme_Toplevel);
+  tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
   tl->type = scheme_compiled_toplevel_type;
   tl->depth = 0;
   tl->position = cp->num_toplevels;
@@ -1063,12 +1065,22 @@ Scheme_Object *scheme_register_toplevel_in_prefix(Scheme_Object *var, Scheme_Com
   return o;
 }
 
-Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env)
+Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env *env, 
+					     Scheme_Compile_Info *rec, int drec)
 {
   Comp_Prefix *cp = env->prefix;
   Scheme_Local *l;
   Scheme_Object *o;
   int pos;
+
+  if (rec && rec[drec].dont_mark_local_use) {
+    /* Make up anything; it's going to be ignored. */
+    l = (Scheme_Local *)scheme_malloc_atomic_tagged(sizeof(Scheme_Local));
+    l->type = scheme_compiled_quote_syntax_type;
+    l->position = 0;
+
+    return (Scheme_Object *)l;
+  }
 
   if (!cp->stxes) {
     Scheme_Hash_Table *ht;
@@ -1078,7 +1090,7 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
 
   pos = cp->num_stxes;
 
-  l = MALLOC_ONE_TAGGED(Scheme_Local);
+  l = (Scheme_Local *)scheme_malloc_atomic_tagged(sizeof(Scheme_Local));
   l->type = scheme_compiled_quote_syntax_type;
   l->position = pos;
 
@@ -1091,7 +1103,7 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
   while (env) {
     if (env->flags & SCHEME_LAMBDA_FRAME) {
       Compile_Data *data = COMPILE_DATA(env);
-
+      
       if (data->max_stx_used <= pos) {
 	char *p;
 	int max_stx_used = (pos * 2) + 10;
@@ -1102,7 +1114,7 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
 	data->stxes_used = p;
 	data->max_stx_used = max_stx_used;
       }
-
+      
       data->stxes_used[pos] = 1;
       break;
     }
@@ -1425,8 +1437,8 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 
 	if (!genv) {
 	  scheme_wrong_syntax("require", NULL, srcsym, 
-			      "broken compiled code (lookup_binding, phase %d): cannot find module %S",
-			      env->genv->phase, modname /*,  scheme_syntax_to_datum(srcsym, 1, NULL) */);
+			      "broken compiled code (phase %d): cannot find module %S",
+			      env->genv->phase, modname);
 	  return NULL;
 	}
       }
@@ -1936,7 +1948,7 @@ Scheme_Object *scheme_resolve_toplevel(Resolve_Info *info, Scheme_Object *expr)
 
   skip = scheme_resolve_toplevel_pos(info);
 
-  tl = MALLOC_ONE_TAGGED(Scheme_Toplevel);
+  tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
   tl->type = scheme_toplevel_type;
   tl->depth = skip + SCHEME_TOPLEVEL_DEPTH(expr); /* depth is 0 (normal) or 1 (exp-time) */
   tl->position = SCHEME_TOPLEVEL_POS(expr);
@@ -2154,7 +2166,7 @@ static Scheme_Object *read_toplevel(Scheme_Object *obj)
 {
   Scheme_Toplevel *tl;
 
-  tl = MALLOC_ONE_TAGGED(Scheme_Toplevel);
+  tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
   tl->type = scheme_toplevel_type;
   tl->depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
   tl->position = SCHEME_INT_VAL(SCHEME_CDR(obj));

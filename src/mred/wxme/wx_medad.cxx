@@ -1339,7 +1339,7 @@ void wxCanvasMediaAdmin::GetMaxView(float *fx, float *fy, float *fw, float *fh,
 }
 
 Bool wxCanvasMediaAdmin::ScrollTo(float localx, float localy,
-				    float w, float h, Bool refresh, int bias)
+				  float w, float h, Bool refresh, int bias)
 {
   if (!canvas->IsFocusOn()) {
     wxCanvasMediaAdmin *a;

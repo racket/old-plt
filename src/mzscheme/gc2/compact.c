@@ -721,8 +721,8 @@ static int mark_weak_array(void *p)
     data = a->data;
     for (i = a->count; i--; ) {
       if (data[i] 
-	  && (*(short *)(data[i]) != 36)
-	  && (*(short *)(data[i]) != 45))
+	  && (*(short *)(data[i]) != 39)
+	  && (*(short *)(data[i]) != 48))
 	CRASH();
     }
   }

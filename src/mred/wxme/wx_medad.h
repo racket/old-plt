@@ -386,7 +386,6 @@ class wxMediaCanvas : public wxCanvas
   void GetView(float *fx, float *fy, float *fh, float *fw, Bool full = FALSE);
   wxDC *GetDCAndOffset(float *fx, float *fy);
   void Redraw(float, float, float, float);
-  Bool ScrollTo(float, float, float, float, Bool refresh = TRUE, int bias = 0);
 
   void NoCustomCursor(void);
 
@@ -400,6 +399,8 @@ class wxMediaCanvas : public wxCanvas
   ~wxMediaCanvas();
 
   Bool IsFocusOn();
+
+  Bool ScrollTo(float, float, float, float, Bool refresh = TRUE, int bias = 0);
 
   /* Override some wxCanvas methods: */
   virtual void OnSize(int, int);

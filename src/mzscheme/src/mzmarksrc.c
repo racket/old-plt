@@ -41,6 +41,12 @@ local_obj {
   gcBYTES_TO_WORDS(sizeof(Scheme_Local));
 }
 
+toplevel_obj {
+ mark:
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_Toplevel));
+}
+
 c_pointer_obj {
  mark:
  size:
@@ -599,8 +605,6 @@ namespace_val {
   gcMARK(e->rename);
   gcMARK(e->et_rename);
 
-  gcMARK(e->init);
-
   gcMARK(e->syntax);
   gcMARK(e->exp_env);
 
@@ -627,9 +631,30 @@ compilation_top_val {
  mark:
   Scheme_Compilation_Top *t = (Scheme_Compilation_Top *)p;
   gcMARK(t->code);
+  gcMARK(t->prefix);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Compilation_Top));
+}
+
+resolve_prefix_val {
+ mark:
+  Resolve_Prefix *rp = (Resolve_Prefix *)p;
+  gcMARK(rp->toplevels);
+  gcMARK(rp->stxes);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Resolve_Prefix));
+}
+
+comp_prefix_val {
+ mark:
+  Comp_Prefix *cp = (Comp_Prefix *)p;
+  gcMARK(cp->toplevels);
+  gcMARK(cp->stxes);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Comp_Prefix));
 }
 
 svector_val {
@@ -687,6 +712,10 @@ module_val {
 
   gcMARK(m->hints);
 
+  gcMARK(m->comp_prefix);
+  gcMARK(m->prefix);
+  gcMARK(m->dummy);
+
   gcMARK(m->primitive);
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Module));
@@ -719,9 +748,11 @@ mark_comp_env {
   gcMARK(e->base.next);
   gcMARK(e->base.values);
   gcMARK(e->base.renames);
+  gcMARK(e->base.prefix);
   
   gcMARK(e->data.stat_dists);
   gcMARK(e->data.sd_depths);
+  gcMARK(e->data.stxes_used);
   gcMARK(e->data.const_names);
   gcMARK(e->data.const_vals);
   gcMARK(e->data.use);
@@ -734,9 +765,10 @@ mark_resolve_info {
  mark:
   Resolve_Info *i = (Resolve_Info *)p;
   
-  gcMARK(i->simplify_cache);
+  gcMARK(i->prefix);
   gcMARK(i->old_pos);
   gcMARK(i->new_pos);
+  gcMARK(i->old_stx_pos);
   gcMARK(i->flags);
   gcMARK(i->next);
 
@@ -814,7 +846,8 @@ mark_closure_info {
   Closure_Info *i = (Closure_Info *)p;
   
   gcMARK(i->local_flags);
-  gcMARK(i->real_closure_map);
+  gcMARK(i->base_closure_map);
+  gcMARK(i->stx_closure_map);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Closure_Info));

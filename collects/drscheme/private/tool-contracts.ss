@@ -340,14 +340,16 @@
   (union procedure? false?)
   . -> .
   void?)
- (error-message dis)
+ (error-message dis k)
  "Shows the backtrace window you get when clicking on the bug in"
  "DrScheme's REPL."
  ""
  "The \\var{error-message} argument is the text of the error,"
- "and \\var{dis} is the debug information, extracted from the"
+ "\\var{dis} is the debug information, extracted from the"
  "continuation mark in the exception record, using"
- "@flink drscheme:debug:get-cm-key %"
+ "@flink drscheme:debug:get-cm-key %, and \\var{dis} k"
+ "is a continuation which may be used to resume execution"
+ "in the case of a breakpoint (or #f for non-breakpoints)"
  ".")
 
 (drscheme:debug:get-cm-key

@@ -33,7 +33,8 @@
                 print-convert
                 mred
                 export*
-                zodiac)]
+                zodiac
+                ((export* interface) : zodiac:interface^))]
 	[app : drscheme:app^ ((require-relative-library "app.ss")
 			      mred
 			      mzlib

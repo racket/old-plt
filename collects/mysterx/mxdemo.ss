@@ -6,7 +6,7 @@
 
 ; the browser with the calendar
 
-(define calwb (make-object mx-browser% "Demo or die!" 350 400 100 100 '()))
+(define calwb (make-object mx-browser% "Demo or die!" 350 400 100 100 '(scrollbars)))
 (define caldoc (send calwb current-document))
 
 (send caldoc insert-html 
@@ -109,13 +109,15 @@
   (when (send ev click?)
 	(com-invoke cal "AboutBox")))
 
+(collect-garbage)
+
 (define (hide-handler ev)
   (when (send ev click?)
-	(send caldoc show #f)))
+	(send calwb show #f)))
 
 (define (show-handler ev)
   (when (send ev click?)
-	(send caldoc show #t)))
+	(send calwb show #t)))
 
 (define rub-me-handler
   (let ([count 0])
@@ -174,10 +176,10 @@
 (for-each
  (lambda (sym-handler)
    (send ctrlwb register-event-handler 
-	(send ctrldoc find-element 
-	              "BUTTON"              ; tag
+		(send ctrldoc find-element 
+		      "BUTTON"              ; tag
                       (car sym-handler))    ; id
-	(cadr sym-handler)))                ; handler
+		(cadr sym-handler)))        ; handler
  button-handlers)
 
 (send ctrlwb handle-events)

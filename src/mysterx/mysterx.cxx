@@ -40,6 +40,8 @@ CComModule _Module;
 
 #include "mysterx.h"
 
+static WNDPROC AtlWndProc;
+
 HINSTANCE hInstance;
 HICON hIcon;
 HANDLE browserHwndMutex;
@@ -110,6 +112,7 @@ static MX_PRIM mxPrims[] = {
   { mx_navigate,"navigate",2,2 },
   { mx_go_back,"go-back",1,1 },
   { mx_go_forward,"go-forward",1,1 },
+  { mx_current_url,"current-url",1,1 },
   { mx_register_navigate_handler,"register-navigate-handler",2,2 },
   { mx_unregister_navigate_handler,"unregister-navigate-handler",1,1 },
   { mx_current_document,"current-document",1,1 },
@@ -546,6 +549,7 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
   // pointer value is used, for hashing
 
   pEntry = (MX_TYPE_TBL_ENTRY *)scheme_malloc(sizeof(MX_TYPE_TBL_ENTRY));
+  scheme_register_extension_global(pEntry,sizeof(MX_TYPE_TBL_ENTRY *));
   pEntry->pTypeDesc = pTypeDesc;
   pEntry->pIDispatch = pIDispatch;
   pEntry->invKind = invKind;
@@ -3762,7 +3766,7 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
 
   if (isatty(fileno(stdin))) {
     fputs("MysterX extension for MzScheme, "
-	  "Copyright (c) 1999-2000 Rice PLT (Paul Steckler)\n",stderr);
+	  "Copyright (c) 1999-2000 Rice PLT (Paul Steckler)",stderr);
   }
   
   return (Scheme_Object *)mx_unit;
@@ -3786,11 +3790,22 @@ void browserHwndMsgLoop(LPVOID p) {
   HWND hwnd;
   IUnknown *pIUnknown;
   BROWSER_WINDOW_INIT *pBrowserWindowInit;
+  LONG hasScrollBars;
   
   pBrowserWindowInit = (BROWSER_WINDOW_INIT *)p;
 
+  // set apparently-unused low bit in style to inform
+  // DHTMLPage object that we want scrollbars 
+  if (pBrowserWindowInit->browserWindow.style & (WS_HSCROLL|WS_VSCROLL)) {
+    hasScrollBars = 1L;
+  }
+  else {
+    hasScrollBars = 0L;
+  }
+
   hwnd = CreateWindow("AtlAxWin","myspage.DHTMLPage.1",
-		      WS_VISIBLE | pBrowserWindowInit->browserWindow.style,
+		      WS_VISIBLE | hasScrollBars | 
+		      (pBrowserWindowInit->browserWindow.style & ~(WS_HSCROLL|WS_VSCROLL)),
 		      pBrowserWindowInit->browserWindow.x,pBrowserWindowInit->browserWindow.y,
 		      pBrowserWindowInit->browserWindow.width,pBrowserWindowInit->browserWindow.height,
 		      NULL,NULL,hInstance,NULL);
@@ -3798,9 +3813,15 @@ void browserHwndMsgLoop(LPVOID p) {
   if (hwnd == NULL) {
     scheme_signal_error("make-browser: Can't create browser window");
   }
-  
+
   browserHwnd = hwnd;
   
+  if (hasScrollBars) {
+    // clear spurious low bit to avoid trouble
+    SetWindowLong(hwnd,GWL_STYLE,
+		  GetWindowLong(hwnd,GWL_STYLE) & ~1L);
+  } 
+
   SetClassLong(hwnd,GCL_HICON,(LONG)hIcon);
   
   SetWindowText(hwnd,pBrowserWindowInit->browserWindow.label);

@@ -7,6 +7,7 @@ clean :
         -@erase htmlevent.obj
         -@erase htmlutil.obj
         -@erase array.obj
+        -@erase browser.obj
         -@erase mysterx.obj
 	-@erase mxmain.dll
 

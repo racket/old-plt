@@ -251,13 +251,14 @@ IUnknown *mx_iunknown_val(Scheme_Object *);
 
 // browsers
 
+MX_PRIM_DECL(mx_browser_show);
 MX_PRIM_DECL(mx_navigate);
 MX_PRIM_DECL(mx_go_back);
 MX_PRIM_DECL(mx_go_forward);
+MX_PRIM_DECL(mx_current_url);
 MX_PRIM_DECL(mx_register_navigate_handler);
 MX_PRIM_DECL(mx_unregister_navigate_handler);
 MX_PRIM_DECL(mx_make_browser);
-MX_PRIM_DECL(mx_browser_show);
 MX_PRIM_DECL(mx_current_document);
 
 // documents

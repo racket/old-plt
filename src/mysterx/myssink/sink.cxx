@@ -25,6 +25,8 @@ int CSink::getHashValue(DISPID dispId) {
 EVENT_HANDLER_ENTRY *CSink::newEventHandlerEntry(DISPID dispId,Scheme_Object *handler) {
   EVENT_HANDLER_ENTRY *p;
   p = (EVENT_HANDLER_ENTRY *)scheme_malloc(sizeof(EVENT_HANDLER_ENTRY));
+  scheme_register_extension_global(p,sizeof(EVENT_HANDLER_ENTRY *));
+  scheme_dont_gc_ptr(p);
   p->dispId = dispId;
   p->handler = handler;
   p->next = NULL;
@@ -66,6 +68,10 @@ STDMETHODIMP CSink::set_myssink_table(int p) {
 STDMETHODIMP CSink::register_handler(DISPID dispId,int handler) {
   unsigned short hashVal;
   EVENT_HANDLER_ENTRY *p;
+
+  scheme_register_extension_global((Scheme_Object *)handler,
+				   sizeof(Scheme_Object *));
+  scheme_dont_gc_ptr((Scheme_Object *)handler);
 
   hashVal = getHashValue(dispId);
   
@@ -464,7 +470,7 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
   Scheme_Object *handler;
   EVENT_HANDLER_ENTRY *p;  
   VARIANTARG *pCurrArg;
-  NAMEDARG *namedArgs;
+  NAMEDARG namedArgs[MAXINVOKEARGS];
   short numParams,actualParams,positionalParams,namedParams;
   Scheme_Object *argv[MAXINVOKEARGS];
   mz_jmp_buf jmpSave;
@@ -491,8 +497,6 @@ HRESULT CSink::Invoke(DISPID dispId,REFIID refiid,LCID lcid,WORD flags,
   namedParams = pDispParams->cNamedArgs;
 
   if (namedParams > 0) {
-    namedArgs = (NAMEDARG *)scheme_malloc(sizeof(NAMEDARG) * namedParams);
-
     for (i = 0; i < namedParams; i++) {
       namedArgs[i].dispId = pDispParams->rgdispidNamedArgs[i];
       namedArgs[i].pVariantArg = &pDispParams->rgvarg[i];

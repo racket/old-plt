@@ -186,6 +186,15 @@ LRESULT CDHTMLPage::OnCreate(UINT,WPARAM,LPARAM,BOOL&) {
   CAxWindow wnd(m_hWnd);
   CComObject<CWrapperDispatch> *pdispWrapper;
   HRESULT hr;
+  BOOL hasScrollBars;
+
+  // low bit set in parent's window style means use scrollbars
+  hasScrollBars = 
+    ::GetWindowLong(::GetParent(m_hWnd),GWL_STYLE) & 1L;
+
+  if (hasScrollBars) {
+    wnd.ModifyStyle(0,WS_HSCROLL|WS_VSCROLL,0);
+  }
 
   hr = wnd.CreateControl(IDH_DHTMLPAGE);
 

@@ -1491,6 +1491,9 @@
 	    [go-forward
 	     (lambda ()
 	       (mxprims:go-forward browser))]
+	    [current-url
+	     (lambda ()
+	       (mxprims:current-url browser))]
 	    [current-document 
 	     (lambda () 
 	       (make-object mx-document% 

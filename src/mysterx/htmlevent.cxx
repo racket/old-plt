@@ -18,11 +18,6 @@
 // number of elts should be same as in EVENT_TYPE enumeration
 static WCHAR *eventNames[11]; 
 
-Scheme_Object *hash_table_get;
-Scheme_Object *hash_table_put;
-Scheme_Object *hash_table_remove;
-Scheme_Object *make_hash_table;
-
 static BOOL html_event_available(MX_Browser_Object *browser) {
   VARIANT_BOOL val;
 

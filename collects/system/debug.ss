@@ -86,7 +86,7 @@
 	    [offset-string "  "]
 	    [indent-string ""]
 	    [counter-max-size 4]
-	    [mt-counter-string (make-string counter-max-size #\space)])
+	    [mt-counter-string (make-string (add1 counter-max-size) #\space)])
     (current-load (lambda (f)
 		    (let* ([file (if (relative-path? f)
 				     (build-path (current-directory) f)

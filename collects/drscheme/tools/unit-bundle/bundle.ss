@@ -130,15 +130,15 @@
 				      (cons snip (loop (send snip next)))
 				      null))])
 			   
-			   ;; build new ones
-			   (build-view-contents view)
-			   (calc-size view)
-			   (position-snips view)
-			   
 			   ;; delete the old snips (why does this break things?)
-			   '(for-each
+			   (for-each
 			     (lambda (snip) (send view delete snip))
-			     old-snips))))])
+			     old-snips)
+
+			   ;; build new ones
+			   (send view set-contents-snip (build-view-contents view))
+			   (calc-size view)
+			   (position-snips view))))])
 		
 		(for-each (f calculate-tree-size) views))))])
        (sequence

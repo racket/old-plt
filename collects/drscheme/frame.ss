@@ -21,7 +21,7 @@
 					   "index.htm")))))
 
     (define frame-group (make-object mred:frame-group%))
-    (send frame-group set-empty-callback (lambda () (mred:exit) #t))
+    (send frame-group set-empty-callback (lambda () (mred:exit) #f))
     
     (define interactions-canvas%
       (mred:make-console-canvas% mred:wrapping-canvas%))
@@ -31,13 +31,26 @@
 	(rename [super-make-root-panel make-root-panel]
 		[super-on-close on-close]
 		[super-make-menu-bar make-menu-bar])
-	(inherit panel)
+	(inherit panel get-edit)
 	(public
 	  [on-close
 	   (lambda ()
-	     (let ([super (super-on-close)]
-		   [grp (send group remove-frame this)])
-	       (and super grp)))])
+	     (let* ([user-allowed-or-not-modified
+		     (let ([edit (get-edit)])
+		       (or (not (send edit modified?))
+			   (case (mred:unsaved-warning (let ([fn (send edit get-filename)])
+							 (if (string? fn)
+							     fn
+							     "Untitled"))
+						       "Close"
+						       #t)
+			     [(continue) #t]
+			     [(save) (send edit save-file)]
+			     [else #f])))]
+		    [super (and user-allowed-or-not-modified (super-on-close))]
+		    [grp (and super (send group remove-frame this))])
+	       grp))])
+
 	(public
 	  [root-panel #f]
 	  [make-root-panel

@@ -13,6 +13,13 @@
 
     (mred:debug:printf 'invoke "drscheme:spawn@")
 
+    (error-display-handler
+     (lambda (msg)
+       (display msg)
+       (newline)
+       (mred:message-box (format "Internal Error: ~a" msg)
+			 "Internal Error!")))
+
     (define build-parameterization
       (let ([orig-eventspace (wx:current-eventspace)]
 	    [bottom-eventspace (wx:make-eventspace)])
@@ -70,12 +77,6 @@
 				    (mred:exit)))))
 		(read-curly-brace-as-paren #t)
 		(read-square-bracket-as-paren #t)
-		(error-display-handler
-		  (lambda (msg)
-		    (display msg)
-		    (newline)
-		    (mred:message-box (format "Internal Error: ~a" msg)
-				      "Internal Error!")))
 		(print-struct #t)
 		(error-print-width 250)))
 	    (drscheme:basis:add-basis n)

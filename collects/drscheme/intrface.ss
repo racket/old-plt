@@ -38,8 +38,12 @@
     (define report-error
       (lambda (type)
 	(lambda (z s . args)
-	  (let ([string (apply format (if mred:debug:on?
-					  (string-append type s)
+	  (let ([string (apply format (if (or mred:debug:on?
+					      (eq? type 'internal))
+					  (string-append
+					   (symbol->string type)
+					   " error: "
+					   s)
 					  s)
 			       args)])
 	    (cond
@@ -49,6 +53,6 @@
 	     [else (mred:message-box string "Error")])
 	    (printf "report-error: cannot escape: ~a~n" string)))))
 
-    (define static-error (report-error "static error: "))
-    (define dynamic-error (report-error "dynamic error: "))
-    (define internal-error (report-error "internal error: "))))
+    (define static-error (report-error 'static))
+    (define dynamic-error (report-error 'dynamic))
+    (define internal-error (report-error 'internal))))

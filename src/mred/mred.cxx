@@ -140,7 +140,7 @@ public:
 MrEdApp *TheMrEdApp;
 #else
 MrEdApp _TheMrEdApp;
-#define TheMrEdApp (&_TheMrEdApp)
+# define TheMrEdApp (&_TheMrEdApp)
 #endif
 
 #ifdef wx_mac

@@ -20,21 +20,23 @@ MzScheme or the default compilation flags.)
  http://www.cs.rice.edu/~mflatt/
 
 ========================================================================
- Compiling for Unix
+ Compiling for Unix or BeOS
 ========================================================================
 
 To compile the `mzscheme' executable for these platforms:
   Alpha OSF1
+  BeOS
   DEC Ultrix
   HP/UX
   i386 FreeBSD
   i386 Linux
+  i386 Solaris [see note below]
+  i386 Win32 with Cygwin beta 20
   PPC Linux
   RS6000 AIX
   SGI IRIX
   Sparc Solaris [see note below]
   Sparc SunOS4    
-  i386 Win32 with Cygwin beta 20
 run the `mzmake' script.
 
 [Solaris Note: To ensure that dynamic extensions work right, use the

@@ -74,7 +74,11 @@
 # include <errno.h>
 # ifdef ECHRNG
 /* Solaris */
-#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-solaris"
+#  if  defined(i386)
+#   define SCHEME_PLATFORM_LIBRARY_SUBPATH "i386-solaris"
+#  else
+#   define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-solaris"
+#  endif
 #  define DIRENT_NO_NAMLEN
 #  define NO_USLEEP
 #  define USE_ULIMIT

@@ -1,0 +1,67 @@
+{ (define LIBNAME "Animated Images")
+  (define FILENAME "image.ss")
+  (include "head.tinc") }
+
+The teachpack provides two kinds of functions. The first four allow
+students to simulate a small world of animated drawings and games: 
+<pre>
+<code>
+;; forall(World):
+   big-bang      ;; Number Number Number World -> true 
+   (big-bang width height n w)
+   create and show a width x height canvas, 
+   start the clock, 
+   make it tick every n seconds, 
+   and make w the first world
+
+   on-tick-event ;; (World -> World) -> true
+   (on-tick-event tock) 
+   call tock on the current world for every clock tick;
+   the result is the next world 
+
+   on-key-event  ;; (KeyEvent World -> World) -> true 
+   (on-key-event react)
+   call react on every keystroke event, 
+   with a char or a symbol representing the keystroke, 
+   and the current world; the result is the next world 
+
+   end-of-time   ;; -> World
+   (end-of-time) 
+   stop the clock. 
+</code>
+
+The rest are functions for creating scenes:
+<code>
+   nw:rectangle   ;; Number Number Mode Color -> Image
+   (nw:rectangle width height mode color)
+   creates a width x height rectangle, solid or outlined, 
+   with its anchor in the NW corner
+
+   empty-scene ;; Number Number -> Scene 
+   (empty-scene width height)
+   creates a width x height "scene" (frame with origin in NW)
+
+   place-image ;; Image Number Number Scence -> Scene
+   (place-image image x y scene)
+   places image at (x,y) into scene; (x,y) are comp. graph. coordinates
+   
+   run-movie   ;; (Listof Image) -> true 
+   (run-movie loi)
+   shows the list of images in loi, time-delayed
+</code>
+
+Finally, the teachpack also adds some one new form of syntax to the
+language: 
+<code>
+   (<b>update</b> &langle;expression&rangle; <b>produce</b> <expression>)
+   ;; update the canvas of the world with the first expression; the result
+   ;; is the value of the second expression. 
+</code>
+ Both update and produce are new keywords. 
+
+</pre>
+
+{(include "foot.tinc")}
+
+
+

@@ -41,9 +41,6 @@ AC_CHECK_HEADERS(sys/mman.h)
 AC_CHECK_FUNCS(mmap)
 AC_FUNC_MMAP_BLACKLIST
 
-dnl The -no-testsuite modules omit the test subdir.
-AM_CONDITIONAL(TESTSUBDIR, test -d $srcdir/testsuite)
-
 TARGETDIR="unknown"
 case "$host" in
 i*86-*-linux*) TARGET=X86; TARGETDIR=x86;;
@@ -252,6 +249,6 @@ test -d src/$TARGETDIR || mkdir src/$TARGETDIR
 
 AC_CONFIG_LINKS(include/ffitarget.h:src/$TARGETDIR/ffitarget.h)
 
-AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile testsuite/Makefile)
+AC_CONFIG_FILES(include/Makefile include/ffi.h Makefile)
 
 AC_OUTPUT

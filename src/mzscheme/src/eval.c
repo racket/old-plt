@@ -1254,14 +1254,28 @@ scheme_compile_expand_macro_app(Scheme_Object *macro,
 {
   Scheme_Comp_Env *save_env;
   Scheme_Process *p = scheme_current_process;
+  Scheme_Object *xformer;
 
   if (!depth)
     return form; /* We've gone as deep as requested */
 
+  xformer = (Scheme_Object *)SCHEME_PTR_VAL(macro);
+
+  if (!scheme_check_proc_arity(NULL, 1, 0, -1, &xformer)) {
+    const char *name;
+
+    if (SCHEME_STX_SYMBOLP(form))
+      name = scheme_symbol_name(SCHEME_STX_SYM(form));
+    else
+      name = scheme_symbol_name(SCHEME_STX_SYM(SCHEME_STX_CAR(form)));
+
+    scheme_wrong_syntax(name, NULL, form, "illegal use of syntax");
+    return NULL;
+  }
+
   save_env = p->current_local_env;
   p->current_local_env = env;
-  form = scheme_apply_macro_to_list((Scheme_Object *)SCHEME_PTR_VAL(macro), 
-				    scheme_make_pair(form, scheme_null), form);
+  form = scheme_apply_macro_to_list(xformer, scheme_make_pair(form, scheme_null), form);
   p->current_local_env = save_env;
 
   if (rec)

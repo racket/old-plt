@@ -2225,7 +2225,7 @@ lexical_syntax_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 
 
 static Scheme_Object *
-do_def_execute(char *who, Scheme_Object *form, Scheme_Type type, int require_proc)
+do_def_execute(char *who, Scheme_Object *form, Scheme_Type type)
 {
   Scheme_Object *name;
   Scheme_Object *val, *macro;
@@ -2240,26 +2240,14 @@ do_def_execute(char *who, Scheme_Object *form, Scheme_Type type, int require_pro
   val = scheme_eval_compiled_expr(val);
   p->current_local_env = save_env;
 
-  if (require_proc)
-    if (!SCHEME_PROCP(val)) {
-      int len;
-      char *s;
-      s = scheme_make_provided_string(val, 0, &len);
-      scheme_raise_exn(MZEXN_MISC, "define-syntax: not a procedure: %t",
-		       s, len);
-    }
-
-  if (SCHEME_TRUEP(name)) {
-    macro = scheme_alloc_stubborn_small_object ();
-    macro->type = type;
-    SCHEME_PTR_VAL(macro) = val;
-    scheme_end_stubborn_change((void *)macro);
-      
-    scheme_set_global_bucket(who, (Scheme_Bucket *)name, macro, 1);
-
-    return scheme_void;
-  } else
-    return val;
+  macro = scheme_alloc_stubborn_small_object();
+  macro->type = type;
+  SCHEME_PTR_VAL(macro) = val;
+  scheme_end_stubborn_change((void *)macro);
+  
+  scheme_set_global_bucket(who, (Scheme_Bucket *)name, macro, 1);
+  
+  return scheme_void;
 }
 
 static void do_def_parse(char *where,
@@ -2333,7 +2321,7 @@ do_def_expand(char *where, Scheme_Object *formname, Scheme_Object *form,
 static Scheme_Object *
 defmacro_execute (Scheme_Object *form)
 {
-  return do_def_execute("define-syntax", form, scheme_macro_type, 1);
+  return do_def_execute("define-syntax", form, scheme_macro_type);
 }
 
 static Scheme_Object *
@@ -2360,7 +2348,7 @@ static Scheme_Object *
 do_letmacro(char *where, Scheme_Object *formname,
 	    Scheme_Object *forms, Scheme_Comp_Env *env, 
 	    Scheme_Compile_Info *rec, int drec, int depth,
-	    Scheme_Type type, int anything)
+	    Scheme_Type type)
 {
   Scheme_Object *form, *bindings, *body, *v;
   Scheme_Object *macro;
@@ -2409,10 +2397,6 @@ do_letmacro(char *where, Scheme_Object *formname,
 
     a = scheme_eval(a, scheme_min_env(env));
 
-    if (!anything && !SCHEME_PROCP(a))
-      scheme_raise_exn(MZEXN_MISC,
-		       "letrec-syntax: not a procedure");    
-
     macro = scheme_alloc_stubborn_small_object();
     macro->type = type;
     SCHEME_PTR_VAL(macro) = a;
@@ -2445,15 +2429,15 @@ static Scheme_Object *
 letmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
 		Scheme_Compile_Info *rec, int drec)
 {
-  return do_letmacro("let-one-syntax", NULL,
-		     form, env, rec, drec, 0, scheme_macro_type, 0);
+  return do_letmacro("letrec-syntax", NULL,
+		     form, env, rec, drec, 0, scheme_macro_type);
 }
 
 static Scheme_Object *
 letmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
-  return do_letmacro("let-one-syntax", let_macro_symbol, 
-		     form, env, NULL, 0, depth, scheme_macro_type, 0);
+  return do_letmacro("letrec-syntax", let_macro_symbol, 
+		     form, env, NULL, 0, depth, scheme_macro_type);
 }
 
 static Scheme_Object *void_execute(Scheme_Object *expr)

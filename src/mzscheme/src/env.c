@@ -63,9 +63,7 @@ static Scheme_Object *list_globals(int argc, Scheme_Object *argv[]);
 static Scheme_Object *defined(int argc, Scheme_Object *argv[]);
 static Scheme_Object *global_defined_value(int, Scheme_Object *[]);
 static Scheme_Object *local_exp_time_value(int argc, Scheme_Object *argv[]);
-static Scheme_Object *global_exp_time_value(int argc, Scheme_Object *argv[]);
 static Scheme_Object *local_exp_time_bound_p(int argc, Scheme_Object *argv[]);
-static Scheme_Object *local_exp_top_level_p(int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *current_loaded_library_table(int argc, Scheme_Object *argv[]);
 
@@ -418,27 +416,16 @@ static void make_init_env(void)
 						      "global-defined-value",
 						      1, 2),
 			     env);
-  scheme_add_global_constant("local-expansion-time-value", 
+  scheme_add_global_constant("expansion-time-value", 
 			     scheme_make_prim_w_arity(local_exp_time_value,
-						      "local-expansion-time-value",
+						      "expansion-time-value",
 						      1, 1),
 			     env);
-  scheme_add_global_constant("global-expansion-time-value", 
-			     scheme_make_prim_w_arity(global_exp_time_value,
-						      "global-expansion-time-value",
-						      1, 1),
-			     env);
-  scheme_add_global_constant("local-expansion-time-bound?", 
+  scheme_add_global_constant("expansion-time-bound?", 
 			     scheme_make_prim_w_arity(local_exp_time_bound_p,
-						      "local-expansion-time-bound?",
+						      "expansion-time-bound?",
 						      1, 1),
-			     env);
-  scheme_add_global_constant("local-expansion-top-level?", 
-			     scheme_make_prim_w_arity(local_exp_top_level_p,
-						      "local-expansion-top-level?",
-						      0, 0),
-			     env);
-  
+			     env);  
 
   DONE_TIME(env);
 
@@ -1585,59 +1572,29 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 
   env = scheme_current_process->current_local_env;
   if (!env)
-    scheme_raise_exn(MZEXN_MISC,
-		     "local-expansion-time-value: illegal at run-time");
+    scheme_raise_exn(MZEXN_MISC, 
+		     "expansion-time-value: illegal at run-time");
 
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("local-expansion-time-value", "symbol", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(argv[0])
+      || !SCHEME_STX_SYMBOLP(argv[0]))
+    scheme_wrong_type("expansion-time-value", "syntax identifier", 0, argc, argv);
 
   v = scheme_static_distance(argv[0], env,
 			     (SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_ELIM_CONST));
 
-  /* Deref globls */
+  /* Deref globals */
   if (SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
     v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
 
   if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type))
     scheme_raise_exn(MZEXN_MISC,
-		     "local-expansion-time-value: %S is not defined "
-		     "as an expansion-time value",
+		     "expansion-time-value: %S is not defined "
+		     "as syntax",
 		     argv[0]);
   
   return SCHEME_PTR_VAL(v);
 }
-
-
-static Scheme_Object *
-global_exp_time_value(int argc, Scheme_Object *argv[])
-{
-  Scheme_Object *v;
-  Scheme_Comp_Env *env;
-
-  env = scheme_current_process->current_local_env;
-  if (!env)
-    scheme_raise_exn(MZEXN_MISC,
-		     "global-expansion-time-value: illegal at run-time");
-
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("global-expansion-time-value", "symbol", 0, argc, argv);
-
-  v = scheme_lookup_global(argv[0], scheme_min_env(env));
-
-  /* Deref global */
-  if (v && (SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type)))
-    v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
-
-  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type))
-    scheme_raise_exn(MZEXN_MISC,
-		     "global-expansion-time-value: %S is not defined "
-		     "as an expansion-time value",
-		     argv[0]);
-  
-  return SCHEME_PTR_VAL(v);
-}
-
 
 static Scheme_Object *
 local_exp_time_bound_p(int argc, Scheme_Object *argv[])
@@ -1650,33 +1607,22 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
     scheme_raise_exn(MZEXN_MISC,
 		     "local-expansion-time-bound?: illegal at run-time");
 
-  if (!SCHEME_SYMBOLP(argv[0]))
-    scheme_wrong_type("local-expansion-time-bound?", "symbol", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(argv[0])
+      || !SCHEME_STX_SYMBOLP(argv[0]))
+    scheme_wrong_type("expansion-time-bound?", "syntax identifier", 0, argc, argv);
 
   v = scheme_static_distance(argv[0], env,
 			     (SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_ELIM_CONST));
 
-  /* Deref globls */
+  /* Deref globals */
   if (SAME_TYPE(SCHEME_TYPE(v), scheme_variable_type))
+    v = (Scheme_Object *)(SCHEME_VAR_BUCKET(v))->val;
+
+  if (!v || NOT_SAME_TYPE(SCHEME_TYPE(v), scheme_macro_type))
     return scheme_false;
   else
     return scheme_true;
-}
-
-static Scheme_Object *
-local_exp_top_level_p(int argc, Scheme_Object *argv[])
-{
-  Scheme_Comp_Env *env;
-
-  env = scheme_current_process->current_local_env;
-  if (!env)
-    scheme_raise_exn(MZEXN_MISC,
-		     "local-expansion-top-level?: illegal at run-time");
-
-  return (scheme_is_toplevel(env)
-	  ? scheme_true
-	  : scheme_false);
 }
 
 /*********************************************************************/

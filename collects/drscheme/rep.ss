@@ -140,7 +140,6 @@
                                 (and (list? x)
                                      (andmap string? x)
 				     (andmap basis:teachpack-ok? x))))
-  
      
   (fw:preferences:add-callback
    'drscheme:teachpack-file

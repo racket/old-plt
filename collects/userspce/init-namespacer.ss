@@ -46,12 +46,11 @@
   (define core-flat@ (require-library-unit/sig "coreflatr.ss"))
   
   ;; build-single-teachpack-unit : string boolean -> (union #f (unit () X))
-  (define (build-single-teachpack-unit v call-invalid?)
+  (define (build-single-teachpack-unit v)
     (with-handlers
      ([(lambda (x) #t)
        (lambda (x)
-	 (when call-invalid?
-	   (invalid-teachpack (exn-message x)))
+	 (invalid-teachpack (exn-message x))
 	 #f)])
      (let ([new-unit (parameterize ([read-case-sensitive #t])
 				   (load/cd v))])
@@ -78,10 +77,9 @@
 		    #f
 		    plt:userspace^)))))
 	   (begin
-	     (when call-invalid?
-	       (invalid-teachpack 
-		(format "loading Teachpack file does not result in a unit/sig, got: ~e"
-			new-unit)))
+	     (invalid-teachpack 
+	      (format "loading Teachpack file does not result in a unit/sig, got: ~e"
+		      new-unit))
 	     #f)))))
 
   ;; build-teachpack-thunk : (listof string)
@@ -171,7 +169,7 @@
        bad-teachpacks)))
 
   (define (teachpack-ok? x)
-    (if (build-single-teachpack-unit x #t)
+    (if (build-single-teachpack-unit x)
 	#t
 	#f))
 

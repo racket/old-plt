@@ -9,6 +9,7 @@
      connect-to-server disconnect-from-server
      open-news-group
      head-of-message body-of-message
+     newnews-since generic-message-command
      make-desired-header extract-desired-headers
 
      (struct nntp ())

@@ -509,6 +509,11 @@ TYPES ----------------------------------------------------------------
   is stored in a communicator, and other procedures take communicators
   as an argument.
 
+> message-index
+
+  A number or string (the number is common, but a string is useful for
+  specifying the entire Message-ID).
+
 > desired
 
   A regular expression that matches against a Usenet header.
@@ -586,13 +591,22 @@ PROCEDURES -----------------------------------------------------------
   are the total number of articles in that group, the first available
   article, and the last available article.
 
-> (head-of-message communicator message-number) -> list of strings
+> (head-of-message communicator message-index) -> list of strings
 
   Given a message number, returns its headers.
 
-> (body-of-message communicator message-number) -> list of strings
+> (body-of-message communicator message-index) -> list of strings
 
   Given a message number, returns the body of the message.
+
+> (newnews-since communicator message-index) -> list of strings
+
+  Implements the NEWNEWS command (often disabled on servers).
+
+> (generic-message-command communicator message-index) -> list of strings
+
+  Useful primitive for implementing head-of-message, body-of-message
+  and other similar commands.
 
 > (make-desired-header tag-string) -> desired
 

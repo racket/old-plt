@@ -1,4 +1,3 @@
-
 (module nntp-unit mzscheme
   (require (lib "unitsig.ss")
 	   (lib "etc.ss"))
@@ -207,14 +206,16 @@
 				"unexpected group opening response: ~s" code)
 		  code rest-of-line)))))))
 
-      ;; head/body-of-message :
-      ;; string x number -> communicator x number -> list (string)
+      ;; generic-message-command :
+      ;; string x number -> communicator x (number U string) -> list (string)
 
-      (define head/body-of-message
+      (define generic-message-command
 	(lambda (command ok-code)
-	  (lambda (communicator message-number)
+	  (lambda (communicator message-index)
 	    (send-to-server communicator (string-append command " ~a")
-			    (number->string message-number))
+			    (if (number? message-index)
+				(number->string message-index)
+				message-index))
 	    (let-values (((code response)
 			  (get-single-line-response communicator)))
 	      (if (= code ok-code)
@@ -222,31 +223,37 @@
 		  (case code
 		    ((423)
 		     ((signal-error make-article-not-in-group
-				    "article number ~s not in group" message-number)
-		      message-number))
+				    "article id ~s not in group" message-index)
+		      message-index))
 		    ((412)
 		     ((signal-error make-no-group-selected
 				    "no group selected")))
 		    ((430)
 		     ((signal-error make-article-not-found
-				    "no article number ~s found" message-number)
-		      message-number))
+				    "no article id ~s found" message-index)
+		      message-index))
 		    (else
 		     ((signal-error make-unexpected-response
 				    "unexpected message access response: ~s" code)
 		      code response))))))))
 
       ;; head-of-message :
-      ;; communicator x number -> list (string)
+      ;; communicator x (number U string) -> list (string)
 
       (define head-of-message
-	(head/body-of-message "HEAD" 221))
+	(generic-message-command "HEAD" 221))
 
       ;; body-of-message :
-      ;; communicator x number -> list (string)
+      ;; communicator x (number U string) -> list (string)
 
       (define body-of-message
-	(head/body-of-message "BODY" 222))
+	(generic-message-command "BODY" 222))
+
+      ;; newnews-since :
+      ;; communicator x (number U string) -> list (string)
+      
+      (define newnews-since
+        (generic-message-command "NEWNEWS" 230))
 
       ;; make-desired-header :
       ;; string -> desired

@@ -2351,11 +2351,11 @@ static char *string_to_from_locale(int to_bytes,
       if (to_bytes) {
 	char bc[1];
 	bc[0] = perm;
-	one = scheme_make_sized_byte_string(bc, 0, 1);
+	one = scheme_make_sized_byte_string(bc, 1, 1);
       } else {
 	mzchar bc[1];
 	bc[0] = perm;
-	one = scheme_make_sized_char_string(bc, 0, 1);
+	one = scheme_make_sized_char_string(bc, 1, 1);
       }
       parts = scheme_make_pair(one, parts);
       delta += 1;

@@ -12,6 +12,8 @@
 (require (lib "pretty.ss"))
 (unless (memq (system-type) '(unix beos))
   (namespace-require '(lib "date.ss")))
+;; See hack at end:
+(require (rename mzscheme mz:require require))
 
 ;;; (software-type) should be set to the generic operating system type.
 ;;; UNIX, VMS, MACOS, AMIGA and MS-DOS are supported.
@@ -329,3 +331,20 @@
       (newline cep))))
 
 (slib:load (in-vicinity (library-vicinity) "require"))
+
+
+;;; Hack `require' to try to work with both SLIB
+;;; and MzScheme:
+
+(define slib:require require)
+(define-syntax (require stx)
+  (syntax-case stx (quote)
+    [_
+     (identifier? stx)
+     #'slib:require]
+    [(_ (quote something))
+     #'(slib:require (quote something))]
+    [(_ req ...)
+     #'(mz:require req ...)]))
+
+

@@ -18,7 +18,16 @@ defined, or if SLIB is installed as an "slib" collection (i.e., in an
 
 SLIB is not integerated with MzScheme's module system.  Instead, SLIB
 works in the top-level environment, and it provides its own "feature"
-system that re-defines `require'.
+system using the function `require'. Unfortunately, that function name
+conflicts with MzScheme's own `require' form. In an attempt to work
+around this collision, "init.ss" re-defines `require' as syntax:
+
+  require [not in app position]  -> slib:require
+> (require '<something>)         -> (slib:require '<something>)
+  (require <any> ...)            -> (mz:require <any> ...)
+
+where `slib:require' is bound to SLIB's require function, and
+`mz:require' is bound to MzScheme's `require' syntax.
 
 
 SLIB's `implementation-vicinity' points to the PLT installation

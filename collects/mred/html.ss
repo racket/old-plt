@@ -269,8 +269,8 @@
 				(if (char-numeric? ch)
 				    (loop (+ (* 10 val) (- (char->integer ch) 48)))
 				    (result (case val
-					      [160 #\space]
-					      [169 "(c)"]
+					      [(160) #\space]
+					      [(169) "(c)"]
 					      [else ""])))))
 			    (let loop ([l (list ch)])
 			      (let ([ch (get-char)])

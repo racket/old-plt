@@ -256,9 +256,9 @@
 			 (send edit install-clickbacks))
 		     (send edit set-follow-on-click 
 			   (case mode
-			     (follow #t)
-			     (view #f)
-			     (nothing ())))
+			     [(follow) #t]
+			     [(view) #f]
+			     [(nothing) ()]))
 		     (send menu-bar check follow-item (eq? mode 'follow))
 		     (send menu-bar check view-item (eq? mode 'view))
 		     (send menu-bar check nothing-item (eq? mode 'nothing))))))]

@@ -250,7 +250,7 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   SetCurrentDC();
   int clientWidth, clientHeight;
 
-  if (dW || dH) {
+  if (1) {
     GetClientSize(&clientWidth, &clientHeight);
     if (clientWidth != CtlRect.right) {
       int needw = CtlRect.right - clientWidth;
@@ -288,7 +288,7 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
       }
       CtlRect.bottom = clientHeight;
     }
-    
+
     ::SizeControl(cMacControl, 
 		  ValueRect.right - ValueRect.left, 
 		  ValueRect.bottom - ValueRect.top);

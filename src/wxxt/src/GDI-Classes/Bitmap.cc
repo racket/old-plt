@@ -323,7 +323,7 @@ Bool wxBitmap::LoadFile(char *fname, long flags)
 	    Xbitmap = NULL;
 	}
     }
-    else if (flags == 0x04000) {
+    else if (flags == wxBITMAP_TYPE_JPEG) {
       if (!read_JPEG_file(fname, this)) {
 	Destroy();
       }

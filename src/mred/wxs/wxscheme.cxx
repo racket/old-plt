@@ -1518,7 +1518,7 @@ int wxsGetImageType(char *fn)
 {
   FILE *f;
   int type;
-  char *expect = NULL;
+  unsigned char *expect = NULL;
 
   f = fopen(fn, "r");
   if (f) {
@@ -1540,7 +1540,8 @@ int wxsGetImageType(char *fn)
       type = wxBITMAP_TYPE_GIF;
       break;
     case 0xFF:
-      type = 0x04000; /* JPEG */
+      expect = "\xD8\xFF\xE0";
+      type = wxBITMAP_TYPE_JPEG;
       break;
     default:
       type = 0;

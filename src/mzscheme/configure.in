@@ -372,12 +372,15 @@ makefiles="Makefile
              mzscheme/gc2/Makefile mzscheme/guile/Makefile
              mzscheme/palm/Makefile"
 
+subbuilds= 
+
 if test "${enable_mred}" = "yes" ; then
   mk_needed_dir wxxt
   mk_needed_dir wxxt/utils
   mk_needed_dir wxxt/utils/image
   mk_needed_dir wxxt/contrib
   mk_needed_dir wxxt/contrib/xpm
+  mk_needed_dir wxcommon
 
   makefiles="$makefiles
              mred/Makefile
@@ -386,14 +389,15 @@ if test "${enable_mred}" = "yes" ; then
              wxxt/src/Makefile wxxt/src/x/Makefile
                wxxt/utils/image/src/Makefile
                wxxt/contrib/xpm/lib/Makefile"
+
+  subbuilds="$subbuilds wxcommon/jpeg"
 fi
 
 if test "${enable_wbuild}" = "yes" ; then
- subbuilds=wxxt/src/x/wbuild
+ subbuilds="$subbuilds wxxt/src/x/wbuild"
  AC_CONFIG_AUX_DIR( wxxt/src/x/wbuild ) 
- AC_CONFIG_SUBDIRS( $subbuilds )
-else
- subbuilds= 
 fi
+
+AC_CONFIG_SUBDIRS( $subbuilds )
 
 AC_OUTPUT($makefiles)

@@ -11,6 +11,7 @@
 @SYM "xbm" : wxBITMAP_TYPE_XBM
 @SYM "xpm" : wxBITMAP_TYPE_XPM
 @SYM "pict" : wxBITMAP_TYPE_PICT
+@SYM "jpeg" : wxBITMAP_TYPE_JPEG
 @SYM "unknown" : wxBITMAP_TYPE_UNKNOWN
 @ENDSYMBOLS
 

@@ -67,6 +67,7 @@
   
   (define traces/pred
     (opt-lambda (lang reductions exprs pred [pp default-pp])
+      (define main-eventspace (current-eventspace))
       (define graph-pb (make-object graph-pasteboard%))
       (define f (instantiate red-sem-frame% ()
                   (label "Reduction Graph")
@@ -114,14 +115,15 @@
       ;; call-on-eventspace-main-thread : (-> any) -> any
       ;; =reduction thread=
       (define (call-on-eventspace-main-thread thnk)
-        (let ([s (make-semaphore 0)]
-              [ans #f])
-          (queue-callback
-           (lambda ()
-             (set! ans (thnk))
-             (semaphore-post s)))
-          (semaphore-wait s)
-          ans))
+        (parameterize ([current-eventspace main-eventspace])
+          (let ([s (make-semaphore 0)]
+                [ans #f])
+            (queue-callback
+             (lambda ()
+               (set! ans (thnk))
+               (semaphore-post s)))
+            (semaphore-wait s)
+            ans)))
         
       ;; only changed on the reduction thread
       ;; frontier : (listof (is-a?/c graph-editor-snip%))
@@ -137,8 +139,6 @@
           (send scheme-delta set-size-mult 0)
           (send scheme-delta set-size-add size)
           (send scheme-standard set-delta scheme-delta)))
- 
-     
       
       ;; reduce-frontier : -> void
       ;; =reduction thread=
@@ -156,7 +156,10 @@
                       [new-snips 
                        (filter 
                         (lambda (x) x)
-                        (map (lambda (sexp) (build-snip snip-cache snip sexp pred pp))
+                        (map (lambda (sexp) 
+                               (call-on-eventspace-main-thread
+                                (λ ()
+                                  (build-snip snip-cache snip sexp pred pp))))
                              (reduce reductions (send snip get-expr))))]
                       [new-y 
                        (call-on-eventspace-main-thread
@@ -427,6 +430,7 @@
   ;;           -> (union #f (is-a?/c graph-editor-snip%))
   ;; returns #f if a snip corresponding to the expr has already been created.
   ;; also adds in the links to the parent snip
+  ;; =eventspace main thread=
   (define (build-snip cache parent-snip expr pred pp)
     (let-values ([(snip new?)
                   (let/ec k
@@ -449,6 +453,7 @@
   ;;             (any port number -> void)
   ;;          -> (is-a?/c graph-editor-snip%)
   ;; unconditionally creates a new graph-editor-snip
+  ;; =eventspace main thread=
   (define (make-snip parent-snip expr pred pp)
     (let* ([bad? (not (pred expr))]
            [text (new program-text% (bad? bad?))]

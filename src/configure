@@ -4137,7 +4137,7 @@ case $OS in
       WXVARIANT="wx_mac"
       MROPTIONS="$MROPTIONS -fpascal-strings"
       INCLUDEDEP="-include"
-      COMPFLAGS="$COMPFLAGS -fno-common"
+      OPTIONS="$OPTIONS -fno-common"
       OSX=""
       NOT_OSX=".other"
       MZINSTALLTARGET=osx-install

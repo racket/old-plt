@@ -106,7 +106,7 @@ LDFLAGS_@OSX@=-framework PLT_MzScheme
 LDFLAGS_@NOT_OSX@=
 
 mzscheme@OSX@: $(MZFW) main.o
-	$(CC) -o mzscheme main.o -F. LDFLAGS_@OSX@
+	$(CC) -o mzscheme main.o -F. $(LDFLAGS_@OSX@)
 
 # OSKit-based MzScheme
 mzscheme.multiboot : libmzscheme.@LIBSFX@ libmzgc.@LIBSFX@ main.o

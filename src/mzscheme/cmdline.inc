@@ -364,7 +364,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
   int no_more_switches = 0;
   int mute_banner = 0;
   int no_argv = 0;
-  char *saw_file_arg = NULL;
 #endif
 #if !defined(DONT_RUN_REP) || !defined(DONT_PARSE_COMMAND_LINE)
   int no_rep = 0;
@@ -632,6 +631,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	case 'x':
 	  no_lib_path = 1;
 	  break;
+	case 'C':
 	case 'r':
 	  script_mode = 1;
 	  no_more_switches = 1;
@@ -645,7 +645,10 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  evals_and_loads[num_enl] = argv[0];
 	  eval_kind[num_enl++] = mzcmd_LOAD;
-	  saw_file_arg = argv[0];
+	  if (*str == 'C') {
+	    evals_and_loads[num_enl] = argv[0];
+	    eval_kind[num_enl++] = mzcmd_MAIN;
+	  }
 	  break;
 	case 'i':
 	  script_mode = 1;
@@ -676,7 +679,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  se = make_require(argv[0]);
 	  evals_and_loads[num_enl] = se;
 	  eval_kind[num_enl++] = mzcmd_EVAL;
-	  saw_file_arg = argv[0];
 	  break;
 	case 'F':
 	  while (argc > 1) {
@@ -684,7 +686,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	    --argc;
 	    evals_and_loads[num_enl] = argv[0];
 	    eval_kind[num_enl++] = mzcmd_LOAD;
-	    saw_file_arg = argv[0];
 	  }
 	  break;
 	case 'D':
@@ -694,7 +695,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	    se = make_load_cd(argv[0]);
 	    evals_and_loads[num_enl] = se;
 	    eval_kind[num_enl++] = mzcmd_EVAL;
-	    saw_file_arg = argv[0];
 	  }
 	  break;
 	case 'T':
@@ -704,7 +704,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	    se = make_require(argv[0]);
 	    evals_and_loads[num_enl] = se;
 	    eval_kind[num_enl++] = mzcmd_EVAL;
-	    saw_file_arg = argv[0];
 	  }
 	  break;
 	case 'l':
@@ -718,7 +717,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  se = make_require_lib(argv[0], "mzlib");
 	  evals_and_loads[num_enl] = se;
 	  eval_kind[num_enl++] = mzcmd_EVAL;
-	  saw_file_arg = argv[0];
 	  break;
 	case 'L':
 	  if (argc < 3) {
@@ -732,7 +730,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  --argc;
 	  se = make_require_lib(argv[0], argv[1]);
 	  evals_and_loads[num_enl] = se;
-	  saw_file_arg = argv[0];
 	  argv++;
 	  --argc;
 	  eval_kind[num_enl++] = mzcmd_EVAL;
@@ -749,13 +746,11 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  se = make_require_coll(argv[0]);
 	  evals_and_loads[num_enl] = se;
 	  eval_kind[num_enl++] = mzcmd_EVAL;
-	  saw_file_arg = argv[0];
 	  break;
 	case 'w':
 	  se = make_require_lib("awk.ss", "mzlib");
 	  evals_and_loads[num_enl] = se;
 	  eval_kind[num_enl++] = mzcmd_EVAL;
-	  saw_file_arg = "awk.ss";
 	  break;
 	case 'k':
 	  if (argc < 3) {
@@ -772,16 +767,6 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  argv++;
 	  --argc;
 	  eval_kind[num_enl++] = mzcmd_EVAL;
-	  break;
-	case 'C':
-	  if (!saw_file_arg) {
-	    PRINTF("%s: no file-loading switch preceding %s switch\n", 
-		   prog, 
-		   real_switch);
-	    goto show_need_help;
-	  }
-	  evals_and_loads[num_enl] = saw_file_arg;
-	  eval_kind[num_enl++] = mzcmd_MAIN;
 	  break;
 	case 'A':
 	  no_argv = 1;
@@ -966,7 +951,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
 	 "  -k <n> <m> : Load executable-embedded code from file offset <n> to <m>.\n"
-	 "  -C, --main : Call `main' w/argument list; car is last-loaded file name.\n"
+	 "  -C, --main : Like -r, then call `main' w/argument list; car is file name.\n"
 	 " Initialization switches:\n"
          "  -x, --no-lib-path : Skips trying to set current-library-collection-paths.\n"
 	 "  -q, --no-init-file : Skips trying to load " INIT_FILENAME ".\n"
@@ -1030,7 +1015,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # endif
 	 "If the executable name has the form scheme-<dialect>, then the command\n"
 	 " line is effectively prefixed with:\n"
-	 "    -qAerC '(require (lib \"init.ss\" \"script-lang\" \"<dialect>\"))'\n"
+	 "    -qAeC '(require (lib \"init.ss\" \"script-lang\" \"<dialect>\"))'\n"
 	 " Thus, the first command-line argument serves as the name of a file;\n"
 	 " the file should define `main', which is called with the arguments in a\n"
 	 " list, starting with the path of the loaded file.\n"

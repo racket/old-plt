@@ -27,7 +27,6 @@
                  ((EOF) #t)
                  ((if return) (parse-statement null first-tok 'start getter))
                  (else (parse-expression null first-tok 'start getter)))))
-          (printf "~a~n ~a" returned-tok (eof? returned-tok))
           (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
               (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a" 
@@ -231,7 +230,7 @@
                 ;Just ended a field
                 ((semi-colon? n-tok) (parse-members next (getter) 'start getter))
                 ((comma? n-tok) 
-                 (parse-error (format "Expected an end to field ~a, field end in ';', ',' is not allowed" (token-value tok))
+                 (parse-error (format "Expected an end to field ~a, fields end in ';', ',' is not allowed" (token-value tok))
                               srt ne))
                 ((o-paren? n-tok) (parse-members next (getter) 'method-parms getter))
                 ((open-separator? n-tok) 
@@ -240,8 +239,10 @@
                  (parse-error 
                   (format "Fields must be separatley declared, method paramters must be in ()s, ~a not allowed" n-out)
                   srt ne))
-                (else (parse-error 
-                       (format "Expected ; to end field or method parameter list, found ~a" n-out) srt ne)))))
+                ((teaching-assignment-operator? n-tok) (parse-error "Expected ';' to end field, found '='" srt ne))
+                (else 
+                 (parse-error 
+                       (format "Expected ';' to end field or '(' to begin method parameters, found ~a" n-out) srt ne)))))
            (else 
             (parse-error 
              (if (keyword? tok)
@@ -503,11 +504,11 @@
                    (cond
                      ((id-token? afterD-tok) (parse-ctor-body afterD (getter) 'assign-op getter))
                      ((keyword? afterD-tok) 
-                      (parse-error (format "Expected identifier after ., found reserved word ~a" (get-token-name afterD-tok))
+                      (parse-error (format "Expected identifier after '.', found reserved word ~a" (get-token-name afterD-tok))
                                    ns ae))
                      (else
-                      (parse-error (format "Expected identifer after ., found ~a" (output-format afterD-tok)) ns ae)))))
-                (else (parse-error (format "Expected this.Field, found ~a instead of ." (output-format next-tok)) ns ne)))))
+                      (parse-error (format "Expected identifer after '.', found ~a" (output-format afterD-tok)) ns ae)))))
+                (else (parse-error (format "Expected this.Field, found ~a instead of '.'" (output-format next-tok)) ns ne)))))
            ((IDENTIFIER)
             (let ((next (getter)))
               (if (dot? (get-tok next)) 
@@ -524,7 +525,7 @@
             (let ((next (getter)))
               (if (eof? (get-tok next))
                   (parse-error "Expected an expression after = for field initialization" start end)
-                  (parse-ctor-body cur-tok (parse-expression null (getter) 'start getter) 'assign-end getter))))
+                  (parse-ctor-body cur-tok (parse-expression null next 'start getter) 'assign-end getter))))
            (else (parse-error (format "Expected = to be used in initializing the field, found ~a" out) start end))))
         ((assign-end)
          (cond
@@ -584,7 +585,7 @@
         ((if-else)
          (case kind
            ((EOF) (parse-error "Expected else for if statement" ps pe))
-           ((else) (parse-statement cur-tok (parse-statement null (getter) 'start getter) 'start getter))
+           ((else) (parse-statement null (getter) 'start getter))
            (else
             (parse-error
              (if (and (id-token? tok) (close-to-keyword? tok 'else))
@@ -594,7 +595,7 @@
         ((return)
          (case kind
            ((EOF) (parse-error "Expected ; to end return statement" ps pe))
-           ((SEMI_COLON) (parse-statement cur-tok (getter) 'start getter))
+           ((SEMI_COLON) (getter))
            (else (parse-error (format "Expected ; to end return statement, found ~a" out) start end)))))))
   
   ;parse-expression: token token state (->token) -> token
@@ -634,16 +635,21 @@
                     (ns (get-start next))
                     (ne (get-end next)))
                 (cond 
-                  ((id-token? next-tok) (parse-expression next (getter) 'method-call-args getter))
+                  ((id-token? next-tok) 
+                   (let* ((afterID (getter)))
+                     (if (o-paren? (get-tok afterID))
+                         (parse-expression next afterID 'method-call-args getter)
+                         afterID)))
                   ((keyword? next-tok) 
                    (parse-error (format "Expected a method name, reserved name ~a may not be a method name" name) ns ne))
-                  (else (parse-error (format "Expected a method name, found ~a" (output-format next-tok)) ns ne)))))
+                  (else (parse-error (format "Expected a name, found ~a" (output-format next-tok)) ns ne)))))
              ((bin-operator? tok) (parse-expression cur-tok (getter) 'start getter))
              (else cur-tok)))
         ((c-paren)
-         (if (c-paren? tok)
-             (parse-expression cur-tok (getter) 'dot-op-or-end getter)
-             (parse-error (format "Expression in parens must have close paren, found ~a instead" out) ps end)))
+         (cond
+           ((eof? tok) (parse-error "Expected a )" ps pe))
+           ((c-paren? tok) (parse-expression cur-tok (getter) 'dot-op-or-end getter))
+           (else (parse-error (format "Expression in parens must have close paren, found ~a instead" out) ps end))))
         ((class-alloc-start)
          (cond
            ((id-token? tok)
@@ -676,7 +682,11 @@
          (case kind
            ((EOF) (parse-error "Expected constructor arguments or )" ps pe))
            ((C_PAREN) (parse-expression cur-tok (getter) 'dot-op-or-end getter))
-           ((COMMA) (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter) 'class-args getter))
+           ((COMMA) 
+            (let ((next (getter)))
+              (if (comma? (get-tok next))
+                  (parse-error "Found ',,' Only one comma is needed to separate arguments" start (get-end next))
+                  (parse-expression cur-tok (parse-expression cur-tok next 'start getter) 'class-args getter))))
            (else 
             (if (close-separator? tok)
                 (parse-error (format "Expected ) to close constructor arguments, found ~a" out) start end)
@@ -700,7 +710,11 @@
          (case kind
            ((EOF) (parse-error "Expected method arguments or )" ps pe))
            ((C_PAREN) (parse-expression cur-tok (getter) 'dot-op-or-end getter))
-           ((COMMA) (parse-expression cur-tok (parse-expression cur-tok (getter) 'start getter) 'method-args getter))
+           ((COMMA) 
+            (let ((next (getter)))
+              (if (comma? (get-tok next))
+                  (parse-error "Found ',,' Only one comma is needed to separate arguments" start (get-end next))
+                  (parse-expression cur-tok (parse-expression cur-tok next 'start getter) 'method-args getter))))
            (else 
             (if (close-separator? tok)
                 (parse-error (format "Expected ) to close method arguments, found ~a" out) start end)

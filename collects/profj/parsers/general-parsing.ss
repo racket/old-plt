@@ -213,7 +213,7 @@
   
   ;only looks for incorrect capitalization at this point, intend to add 1-off spelling errors for at least some keywords
   ;close-to-keyword? token (opt symbol )-> bool
-  (define (close-to-keyword? t args)
+  (define (close-to-keyword? t . args)
     (if (id-token? t)
         (let ((s (token-value t)))
           (string-lowercase! s)

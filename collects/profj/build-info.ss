@@ -204,9 +204,8 @@
       (let ((original-loc (send type-recs get-location))
             (dir (find-directory (cdr name) (lambda () (file-error 'dir name call-src level)))))
         (import-class (car name) (cdr name) dir original-loc type-recs level call-src #f)
-        (begin0
-          (get-record (send type-recs get-class-record name (lambda () #f) type-recs))
-          (send type-recs set-location! original-loc)))))
+        (begin0 (get-record (send type-recs get-class-record name) type-recs)
+                (send type-recs set-location! original-loc)))))
   
   ;find-directory: (list string) ( -> void) -> (list string)
   (define (find-directory path fail)

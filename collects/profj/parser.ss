@@ -3,6 +3,7 @@
   (require "parsers/full-parser.ss"
            "parsers/advanced-parser.ss"
            "parsers/intermediate-parser.ss"
+           "parsers/intermediate-error.ss"
            "parsers/beginner-parser.ss"
            "parsers/beginner-error.ss"
            "parsers/lexer.ss"
@@ -23,7 +24,9 @@
         ((beginner) 
          (determine-error find-beginner-error) 
          (parse-beginner getter))
-        ((intermediate) (parse-intermediate getter))
+        ((intermediate) 
+         (determine-error find-intermediate-error)
+         (parse-intermediate getter))
         ((advanced) (parse-advanced getter))
         ((full) (parse-full getter)))))
   
@@ -36,7 +39,9 @@
         ((beginner) 
          (determine-error find-beginner-error-interactions)
          (parse-beginner-interactions getter))
-        ((intermediate) (parse-intermediate-interactions getter))
+        ((intermediate) 
+         (determine-error find-intermediate-error-interactions)
+         (parse-intermediate-interactions getter))
         ((advanced) (parse-advanced-interactions getter))
         ((full) (parse-full-interactions getter)))))
   )

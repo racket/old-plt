@@ -134,11 +134,11 @@
       (type-exists? name path src level type-recs)
       (make-ref-type name (if (null? path) (send type-recs lookup-path name (lambda () null)) path)))) 
   
-  ;; type-exists: string (list string) src symbol type-records -> record
+  ;; type-exists: string (list string) src symbol type-records -> (U record procedure)
   (define (type-exists? name path src level type-recs)
-    (get-record (send type-recs get-class-record (cons name path)
-                      ((get-importer type-recs) (cons name path) type-recs level src))
-                type-recs))
+    (send type-recs get-class-record (cons name path)
+          ((get-importer type-recs) (cons name path) type-recs level src))
+    type-recs)
   
   
   ;; (make-class-record (list string) (list symbol) boolean (list field-record) 
@@ -200,7 +200,7 @@
 
       ;; get-class-record: (U type (list string) 'string) ( -> 'a) -> (U class-record procedure)
       (define/public (get-class-record ctype . fail) 
-        (let ((fail (if (null? fail) (lambda () #f) (car fail)))
+        (let ((fail (if (null? fail) (lambda () null) (car fail)))
               (key (cond
                      ((eq? ctype 'string) `("String" "java" "lang"))
                      ((ref-type? ctype) (cons (ref-type-class/iface ctype) (ref-type-path ctype)))

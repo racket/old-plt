@@ -262,7 +262,8 @@
        [(this) (make-special-name #f (build-src 1) "this")]
        [(O_PAREN Expression C_PAREN) $2]
        [(ClassInstanceCreationExpression) $1]
-       [(MethodInvocation) $1])
+       [(MethodInvocation) $1]
+       [(FieldAccess) $1])
       
       (ClassInstanceCreationExpression
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)
@@ -289,6 +290,11 @@
         (make-call #f (build-src 5) 
                    (make-special-name #f (build-src 1) "super") 
                    (make-id $3 (build-src 3 3)) null #f)])
+      
+      (FieldAccess
+       [(Primary PERIOD IDENTIFIER) 
+        (make-access #f (build-src 3) (make-field-access $1 
+                                                                 (make-id $3 (build-src 3 3)) #f))])
       
       (PostfixExpression
        [(Primary) $1]
@@ -377,12 +383,8 @@
       
       (LeftHandSide
        [(Name) (name->access $1)]
-       [(Primary PERIOD IDENTIFIER)
-        (make-access #f (build-src 3)
-                     (make-field-access (make-special-name #f (build-src 1) "this")
-                                        (make-id $3 (build-src 3 3))
-                                        #f))])
-      
+       [(FieldAccess) $1])
+            
       (AssignmentOperator
        [(=) '=])
       

@@ -50,7 +50,7 @@
 				printing
 				define-argv?))
 
-  ;; settings : (list-of (list symbol setting))
+  ;; settings : (list-of (vector symbol setting))
   (define settings
     (list (vector 'Beginner (make-setting/parse
 			     `((use-zodiac? #t)
@@ -80,7 +80,7 @@
 				   (allow-improper-lists? #f)
 				   (allow-reader-quasiquote? #f)
 				   (sharing-printing? #f)
-				   (abbreviate-cons-as-list? #f)
+				   (abbreviate-cons-as-list? #t)
 				   (signal-undefined #t)
 				   (signal-not-boolean #t)
 				   (eq?-only-compares-symbols? #t)
@@ -105,7 +105,7 @@
 			       (eq?-only-compares-symbols? #f)
 			       (<=-at-least-two-args #t)
 			       (disallow-untagged-inexact-numbers #f)
-			       (print-tagged-inexact-numbers #f)
+			       (print-tagged-inexact-numbers #t)
 			       (whole/fractional-exact-numbers #f)
 			       (printing constructor-style)
 			       (define-argv? #f))))

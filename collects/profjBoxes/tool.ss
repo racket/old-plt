@@ -6,6 +6,7 @@
    (lib "class.ss")
    (lib "mred.ss" "mred")
    (lib "unitsig.ss")
+   (lib "string-constant.ss" "string-constants")
    (lib "tool.ss" "drscheme")
    "private/example-box.ss"
    "private/interactions-box.ss"
@@ -30,7 +31,7 @@
           (super-new)
           
           (new menu-item%
-               (label "Insert Java Examples")
+               (label (string-constant profjBoxes-insert-java-examples))
                (parent (get-special-menu))
                (callback
                 (lambda (menu event)
@@ -44,7 +45,7 @@
                (demand-callback has-editor-on-demand))
           
           (new menu-item%
-               (label "Insert Java Interactions")
+               (label (string-constant profjBoxes-insert-java-interactions))
                (parent (get-special-menu))
                (callback
                 (lambda (menu event)

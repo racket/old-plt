@@ -1156,6 +1156,17 @@ please adhere to these guidelines:
  (stepper-program-has-changed "WARNING: The program has changed.")
  (stepper-program-window-closed "WARNING: The program window is gone.")
 
+ (stepper-home "Home")
+ (stepper-name "Stepper")
+ (stepper-language-level-message
+  "The language level is set to \"~a\". Currently, the stepper works only for the \"~a\" through the \"~a\" language levels.")
+ (stepper-button-label "Step")
+ (stepper-previous-application "|< Application")
+ (stepper-previous "< Step")
+ (stepper-next "Step >")
+ (stepper-next-application "Application >|")
+ 
+
  (wizard-next "Next")
  (wizard-back "Back")
  (wizard-finish "Finish")
@@ -1202,7 +1213,10 @@ please adhere to these guidelines:
   (profj-java-mode-color-error "error")
   (profj-java-mode-color-identifier "identifier")
   (profj-java-mode-color-default "default")
-  
+
+  (profj-insert-java-comment-box "Insert Java Comment Box")
+  (profj-insert-java-interactions-box "Insert Java Interactions Box")
+
   ;; The Test Suite Tool
   ;; Errors
   (test-case-empty-error "Empty test case")
@@ -1249,5 +1263,23 @@ please adhere to these guidelines:
   ;; The Java identifier of an example of data
   (profjBoxes-name "Name")
   (profjBoxes-value "Value")
+  (profjBoxes-insert-java-examples "Insert Java Examples")
+  (profjBoxes-insert-java-interactions "Insert Java Interactions")
 
+  ;; Slideshow
+  (slideshow-show-slideshow-panel "Show Slideshow Panel")
+  (slideshow-hide-slideshow-panel "Hide Slideshow Panel")
+  (slideshow-freeze-picts "Freeze These Picts")
+  (slideshow-thaw-picts "Show Picts Under Mouse")
+  (slideshow-hide-picts "Show Nested Boxes")
+  (slideshow-show-picts "Show Picts")
+  (slideshow-cannot-show-picts "Cannot show picts; run program to cache sizes first")
+  (slideshow-insert-pict-box "Insert Pict Box") 
+
+  ;; GUI Tool
+  (gui-tool-heading "GUI Tool")
+  (gui-tool-before-clicking-message "Before clicking a tool icon, use \"Insert GUI\" from the \"Special\" menu to insert a root GUI item, or select an already inserted GUI.")
+  (gui-tool-show-gui-toolbar "Show GUI Toolbar")
+  (gui-tool-hide-gui-toolbar "Hide GUI Toolbar")
+  (gui-tool-insert-gui "Insert GUI")
   )

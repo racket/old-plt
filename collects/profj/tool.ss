@@ -661,7 +661,7 @@
           
           (super-new)
           (new menu-item%
-            (label "Insert Java Comment Box")
+            (label  (string-constant profj-insert-java-comment-box))
             (parent (get-special-menu))
             (callback
              (lambda (menu event)
@@ -759,7 +759,7 @@
           
           (super-new)
           (new menu-item%
-               (label "Insert Java Interactions Box")
+               (label (string-constant profj-insert-java-interactions-box))
                (parent (get-special-menu))
                (callback
                 (lambda (menu event)

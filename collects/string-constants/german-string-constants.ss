@@ -1054,6 +1054,16 @@
  (stepper-program-has-changed "WARNUNG: Das Programm wurde geändert.")
  (stepper-program-window-closed "WARNUNG: Das Programm-Fenster ist nicht mehr da.")
 
+ (stepper-home "Anfang")
+ (stepper-name "Stepper")
+ (stepper-language-level-message
+  "Die aktuelle Sprachebene ist \"~a\". Der Stepper funktioniert bisher nur für die Ebenen\"~a\" bis \"~a\".")
+ (stepper-button-label "Stepper")
+ (stepper-previous-application "|< Applikation")
+ (stepper-previous "< Schritt")
+ (stepper-next "Schritt >")
+ (stepper-next-application "Applikation >|")
+ 
  (wizard-next "Weiter")
  (wizard-back "Zurück")
  (wizard-finish "Fertigstellen")
@@ -1101,6 +1111,9 @@
   (profj-java-mode-color-identifier "Bezeichner")
   (profj-java-mode-color-default "sonstiges")
   
+  (profj-insert-java-comment-box "Java-Kommentarkasten einfügen")
+  (profj-insert-java-interactions-box "Java-Interaktions-Kasten einfügen")
+
   ;; The Test Suite Tool
   ;; Errors
   (test-case-empty-error "Leerer Testfall")
@@ -1146,5 +1159,23 @@
   ;; The Java identifier of an example of data
   (profjBoxes-name "Name")
   (profjBoxes-value "Wert")
+  (profjBoxes-insert-java-examples "Java-Beispiele einfügen")
+  (profjBoxes-insert-java-interactions "Java-Interactionen einfügen")
 
+  ;; Slideshow
+  (slideshow-show-slideshow-panel "Slideshow-Panel zeigen")
+  (slideshow-hide-slideshow-panel "Slideshow Panel")
+  (slideshow-freeze-picts "Diese Picts einfrieren")
+  (slideshow-thaw-picts "Picts unter der Maus zeigen")
+  (slideshow-hide-picts "Geschachtelte Kästen anzeigen")
+  (slideshow-show-picts "Picts anzeigen")
+  (slideshow-cannot-show-picts "Kann die Picts nicht anzeigen; Sie müssen erst das Programm zum Cachen der Größen laufen lassen")
+  (slideshow-insert-pict-box "Pict-Kasten einfügen") 
+
+  ;; GUI Tool
+  (gui-tool-heading "GUI-Werkzeug")
+  (gui-tool-before-clicking-message "Befor Sie auf ein Tool-Icon klicken, benutzen Sie \"GUI einfügen\" vom \"Spezial\"-Menü, um ein Wurzel-GUI-Element einzufügen, oder selektieren Sie eine schon vorher eingefügte GUI.")
+  (gui-tool-show-gui-toolbar "GUI-Toolbar einblenden")
+  (gui-tool-hide-gui-toolbar "GUI-Toolbar ausblenden")
+  (gui-tool-insert-gui "GUI einfügen")
   )

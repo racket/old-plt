@@ -4,6 +4,7 @@
            (lib "mred.ss" "mred")
            (lib "unitsig.ss")
            (lib "class.ss")
+	   (lib "string-constant.ss" "string-constants")
 	   "top-level.ss"
 	   "toolbar.ss"
 	   "readable.ss")
@@ -33,11 +34,8 @@
 				(if (e . is-a? . gb:edit%)
 				    (send e insert-element c%)
 				    (message-box 
-				     "GUI Tool"
-				     (string-append "Before clicking a tool icon, "
-						    "use \"Insert GUI\" from the \"Special\" menu "
-						    "to insert a root GUI item, or select an already "
-						    "inserted GUI.")
+				     (string-constant gui-tool-heading)
+				     (string-constant gui-tool-before-clicking-message)
 				     this
 				     '(ok stop))))))
 		 (new vertical-panel% (parent p))))
@@ -45,7 +43,7 @@
 	     (define/override (add-show-menu-items menu)
 	       (super add-show-menu-items menu)
 	       (make-object menu-item% 
-			    "Show GUI Toolbar"
+			    (string-constant gui-tool-show-gui-toolbar)
 			    menu
 			    (lambda (i e)
 			      (let ([p (send toolbar get-parent)])
@@ -55,12 +53,12 @@
 							      (cons toolbar l))))
 				(set! toolbar-shown? (not toolbar-shown?))
 				(send i set-label (if toolbar-shown?
-						      "Hide GUI Toolbar"
-						      "Show GUI Toolbar"))))))
+						      (string-constant gui-tool-hide-gui-toolbar)
+						      (string-constant gui-tool-show-gui-toolbar)))))))
 
 	     (super-new)
 
-	     (make-object menu-item% "Insert GUI" (get-special-menu)
+	     (make-object menu-item% (string-constant gui-tool-insert-gui) (get-special-menu)
 			  (lambda (b e)
 			    (let ([e (get-edit-target-object)])
 			      (when e

@@ -1,0 +1,10 @@
+[((1,19), [Mk {uid=1,dest=(22,18),weight=10},
+Mk {uid=2,dest=(22,20),weight=5}]),
+((7,10), [Mk {uid=3,dest=(15,19),weight=20},
+Mk {uid=4,dest=(22,20),weight=30}])
+((12,10), [Mk {uid=5,dest=(22,18),weight=2},
+Mk {uid=6,dest=(15,19),weight=20}]),
+((13,10), [Mk {uid=7,dest=(22,18),weight=60},
+Mk {uid=8,dest=(15,19),weight=25}]),
+((18,10),  [Mk {uid=9,dest=(22,18),weight=8},
+Mk {uid=10,dest=(22,20),weight=23}])]

@@ -6,7 +6,6 @@
   
   (provide compute-move best-cmd)
   
-  (define step-weight (make-parameter -1))
   (define (weight-from-goal x) (* (step-weight) x))
   
   ;(make-qelt qelt move qelt)

@@ -1091,4 +1091,48 @@
 
 ;; ----------------------------------------
 
+;; Check that a terminated thread cleans up ownership
+;;  of runstack and mark stack (crashes or doesn't):
+(let ()
+  (define bye #f)
+  (define hi #f)
+  (define k #f)
+  
+  (define s (make-semaphore))
+  (define s2 (make-semaphore))
+  (define s3 (make-semaphore))
+  (define s4 (make-semaphore))
+  (define s5 (make-semaphore))
+  
+  (define t0
+    (thread (lambda ()
+	      (semaphore-wait s)
+	      (semaphore-wait s)
+	      (kill-thread t))))
+
+  (define t
+    (thread (lambda () 
+	      (let loop ([n 4000])
+		(with-continuation-mark 'x 10 
+		  (dynamic-wind
+		      void
+		      (lambda ()
+			(let ()
+			  (if (zero? n)
+			      (let ()
+				(let/cc x 
+				  (set! k x) 
+				  (printf "Bye\n")
+				  (semaphore-post s)
+				  (sync s2 s3 s4 s5))
+				(printf "Hi\n"))
+			      (loop (sub1 n)))))
+		      void))))))
+  (semaphore-post s)
+  
+  (thread-wait t)
+  (thread-wait (thread k)))
+
+; ----------------------------------------
+
 (report-errs)

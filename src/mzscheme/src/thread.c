@@ -2093,7 +2093,7 @@ void scheme_swap_thread(Scheme_Thread *new_thread)
 #endif
   if (!swap_no_setjmp && SETJMP(scheme_current_thread)) {
     /* We're back! */
-    /* (see also initial swap in in start_child() */
+    /* See also initial swap in in start_child() */
     thread_swap_count++;
 #ifdef RUNSTACK_IS_GLOBAL
     MZ_RUNSTACK = scheme_current_thread->runstack;
@@ -2313,6 +2313,11 @@ static void remove_thread(Scheme_Thread *r)
 
   r->runstack = NULL;
   r->runstack_swapped = NULL;
+
+  if (r->cont_mark_stack_owner
+      && ((*r->cont_mark_stack_owner) == r)) {
+    *r->cont_mark_stack_owner = NULL;
+  }
 
   r->cont_mark_stack = 0;
   r->cont_mark_stack_owner = NULL;

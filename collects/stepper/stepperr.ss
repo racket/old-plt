@@ -10,6 +10,8 @@
           [f : framework^]
           stepper:shared^)
   
+  (define beginner-level-name "Beginner Student")
+  
   (define (send-to-other-eventspace eventspace thunk)
     (parameterize ([current-eventspace eventspace])
       (queue-callback thunk)))
@@ -548,7 +550,7 @@
   
   (lambda (frame)
     (let ([settings (f:preferences:get 'drscheme:settings)])
-      (if (not (string=? (d:basis:setting-name settings) "Beginner"))
+      (if (not (string=? (d:basis:setting-name settings) beginner-level-name))
           (message-box "Stepper" 
                        (format (string-append "Language level is set to \"~a\".~n"
                                               "The Foot only works for the \"Beginner\" language level.~n")

@@ -26,15 +26,14 @@
       (delete-file x)))
 
   (define (get-precompiled-path file.so)
-    (printf "~a~n" file.so)
-    (let*-values (((path name _) (split-path file.so))
-                  ((path d1 _) (split-path path))
-                  ((path d2 _) (split-path path))
-                  ((path c _) (split-path path)))
-      (build-path (cond
-                    ((eq? 'relative path) 'same)
-                    (else path))
-                  "precompiled" d2 d1 name)))
+    (let loop ([path-in file.so])
+      (let*-values (((path name _) (split-path path-in)))
+        (if (string=? name "compiled")
+	    (build-path (cond
+			 ((eq? 'relative path) 'same)
+			 (else path))
+			"precompiled")
+	    (build-path (loop path) name)))))
   
   (define (do-copy file.so)
     (let ([pre-compiled (get-precompiled-path file.so)])

@@ -317,4 +317,11 @@
                           ((,highlight-placeholder) (24)))
                         `((define-struct mamba (rhythm tempo)) 24))
 
+(test-beginner-sequence "(define a5 (lambda (a5) (+ a5 13))) (a5 23)"
+                        `(((,highlight-placeholder) ((a5 23)))
+                          ((,highlight-placeholder) ((+ 23 13)))
+                          ((,highlight-placeholder) ((+ 23 13)))
+                          ((,highlight-placeholder) (36)))
+                        `((define a5 (lambda (a5) (+ a5 13))) 36))
+
 (report-errs)

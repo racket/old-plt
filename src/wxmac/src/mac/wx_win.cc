@@ -1478,6 +1478,17 @@ void wxWindow::Activate(Bool flag) // mac platform only
   if (!!cActive == !!flag)
     return;
   if (flag && (__type == wxTYPE_FRAME)) {
+    /* If this is the root frame, try to move it behind everything
+       else.  If there is any other window, the root frame shouldn't
+       be frontmost. */
+    if (this == wxRootFrame) {
+      CGrafPtr graf;
+      WindowRef win;
+      graf = cMacDC->macGrafPort();
+      win = GetWindowFromPort(graf);
+      ::SendBehind(win, NULL);
+    }
+
     /* Don't activate unless it's still frontmost */
     if (FrontWindow() != GetWindowFromPort(cMacDC->macGrafPort()))
       return;

@@ -11,22 +11,24 @@
       (ensure-good-test-case stx expanded)
       (test #t compare-objs stx expanded)))
   
+  ;; o1 is the original, and o2 is the expansion result
   (define (compare-objs o1 o2)
     (let loop ([o1 o1]
-               [o2 o2])
+               [o2 o2]
+	       [extra-ok? #f])
       (cond
         [(both? syntax? o1 o2)
          (and (sel-same syntax-position o1 o2)
               (sel-same syntax-source o1 o2)
               (sel-same syntax-column o1 o2)
               (sel-same syntax-line o1 o2)
-              (loop (syntax-e o1) (syntax-e o2)))]
+              (loop (syntax-e o1) (syntax-e o2) #f))]
         [(both? pair? o1 o2)
-         (and (loop (car o1) (car o1))
-              (loop (cdr o1) (cdr o2)))]
-        [(both? vector? o1 o2)
+         (and (loop (car o1) (car o2) #f)
+              (loop (cdr o1) (cdr o2) #t))]
+	[(both? vector? o1 o2)
          (and (sel-same vector-length o1 o2)
-              (andmap loop 
+              (andmap (lambda (a b) (loop a b #f))
                       (vector->list o1)
                       (vector->list o2)))]
         [(both? null? o1 o2) #t]
@@ -34,6 +36,16 @@
          (eq? o1 o2)]
         [(both? boolean? o1 o2)
          (equal? o1 o2)]
+	[(both? number? o1 o2)
+         (equal? o1 o2)]
+	[(both? string? o1 o2)
+         (equal? o1 o2)]
+	;; It's ok for `expand' to make more things syntax objects
+        [(and extra-ok? (pair? o1) (syntax? o2) (pair? (syntax-e o2)))
+	 (and (loop (car o1) (car (syntax-e o2)) #f)
+	      (loop (cdr o1) (cdr (syntax-e o2)) #t))]
+	[(and extra-ok? (null? o1) (syntax? o2) (null? (syntax-e o2)))
+	 #t]
         [else #f])))
   
   ;; this error indicates that the expansion wasn't
@@ -55,20 +67,45 @@
   (compare-expansion #'(#%top . x))
   (compare-expansion #'(if (#%top . a) (#%top . b) (#%top . c)))
   (compare-expansion #'(if (#%top . a) (#%top . b)))
+  (compare-expansion #'(lambda () (#%top . x)))
   (compare-expansion #'(lambda (x) x))
+  (compare-expansion #'(lambda (x y z) x))
+  (compare-expansion #'(lambda (x) x x x))
+  (compare-expansion #'(case-lambda))
+  (compare-expansion #'(case-lambda [() (#%datum . 1)]))
   (compare-expansion #'(case-lambda [() (#%datum . 1)] [(x) x]))
+  (compare-expansion #'(case-lambda [(x y) x]))
+  (compare-expansion #'(define-values () (#%top . x)))
   (compare-expansion #'(define-values (x) (#%top . x)))
+  (compare-expansion #'(define-values (x y z) (#%top . x)))
+  (compare-expansion #'(define-syntaxes () (#%top . x)))
   (compare-expansion #'(define-syntaxes (s) (#%top . x)))
+  (compare-expansion #'(define-syntaxes (s x y) (#%top . x)))
   (compare-expansion #'(require mzscheme))
+  (compare-expansion #'(require (lib "list.ss")))
+  (compare-expansion #'(require (lib "list.ss") mzscheme))
   (compare-expansion #'(require-for-syntax mzscheme))
+  (compare-expansion #'(require-for-syntax (lib "list.ss")))
+  (compare-expansion #'(require-for-syntax (lib "list.ss") mzscheme))
+  (compare-expansion #'(begin))
   (compare-expansion #'(begin (#%top . x)))
+  (compare-expansion #'(begin (#%top . x) (#%datum . 2)))
   (compare-expansion #'(begin0 (#%top . x)))
+  (compare-expansion #'(begin0 (#%top . x) (#%datum . 2)))
+  (compare-expansion #'(begin0 (#%top . x) (#%datum . 2) (#%datum . 2)))
+  (compare-expansion #'(let-values () (#%top . q)))
   (compare-expansion #'(let-values (((x y) (#%top . p))) (#%top . q)))
+  (compare-expansion #'(let-values (((x y) (#%top . p)) ((z) (#%datum . 12))) (#%top . q)))
+  (compare-expansion #'(let-values (((x y) (#%top . p))) (#%top . q) (#%top . p)))
+  (compare-expansion #'(letrec-values () (#%top . q)))
   (compare-expansion #'(letrec-values (((x y) (#%top . p))) (#%top . q)))
+  (compare-expansion #'(letrec-values (((x y) (#%top . p)) ((z) (#%datum . 12))) (#%top . q)))
+  (compare-expansion #'(letrec-values (((x y) (#%top . p))) (#%top . q) (#%top . p)))
   (compare-expansion #'(set! x (#%top . y)))
   (compare-expansion #'(quote-syntax x))
   (compare-expansion #'(with-continuation-mark (#%top . x) (#%top . x) (#%top . x)))
-  (compare-expansion #'(#%app (#%top . f))))
+  (compare-expansion #'(#%app (#%top . f)))
+  (compare-expansion #'(#%app (#%top . f) (#%datum . 1))))
 
 ; Tests macro expansion by setting the eval handler and
 ;  running all tests

@@ -123,6 +123,14 @@
 (test-method #'override-final #'to-override-class%)
 (test-method #'private #'object%)
 
+(syntax-test #'(class*/names foo object% ()))
+(syntax-test #'(class*/names (1) object% ()))
+(syntax-test #'(class*/names (ths 1) object% ()))
+(syntax-test #'(class*/names (ths sup-i 1) object% ()))
+(syntax-test #'(class*/names (ths sup-i sup-mo 1) object% ()))
+(syntax-test #'(class*/names (ths sup-i sup-mo sup-n 10) object% ()))
+(syntax-test #'(class*/names (ths sup-i sup-mo sup-n . arg) object% ()))
+
 ;; ------------------------------------------------------------
 ;; Test badic functionality
 
@@ -193,7 +201,7 @@
 	(error 'bad))
       (set! color 'black))
 
-    (super-instantiate ())))
+    (super-new)))
 
 (define blue-fish (instantiate color-fish% () (color 'blue) (size 10)))
 (define red-fish (instantiate color-fish% () (size 1)))
@@ -310,7 +318,7 @@
 
     (define/public useless-method (case-lambda))
 
-    (super-instantiate () (size 12))))
+    (super-new (size 12))))
 
 (define rest-fish (make-object rest-arg-fish% "Gil" "Finn" "Slick"))
 
@@ -758,6 +766,9 @@
 (test #t object? (make-object (class*/names (thiss super-initt super-moo) object% ()
                                 thiss
                                 (super-initt ()))))
+(test #t object? (make-object (class*/names (thiss super-initt super-moo super-novel) object% ()
+                                thiss
+                                (super-novel))))
 
 (test #t boolean? 
       (send (make-object (class*/names (thiss super-initt super-moo) object% ()

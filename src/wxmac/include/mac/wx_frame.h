@@ -146,6 +146,10 @@ class wxFrame: public wxbFrame
   wxFrame *GetSheetParent(); /* NULL or self */
   wxFrame *GetSheetChild(); /* NULL or child frame  */
 
+  void DesignateRootFrame(void);
+  virtual void OnToolbarButton(void);
+  void SetFrameModified(Bool is_modified);
+
   /*============================================================================= */
   /* Protected methods */
   /*============================================================================= */
@@ -187,6 +191,8 @@ class wxFrame: public wxbFrame
   friend class wxApp;
   friend class wxDialogBox;
 };
+
+extern wxFrame *wxRootFrame;
 
 #endif /* IN_CPROTO */
 #endif /* wx_frameh */

@@ -66,24 +66,34 @@ substitutability is checked properly.
                         [(this-id) (syntax this-id)]
                         [(the-obj) (datum->syntax-object (quote-syntax here) (gensym 'self))]
                         [(the-finder) (datum->syntax-object (quote-syntax here) (gensym 'find-self))]
-                        [(super-instantiate-id super-make-object-id)
+                        [(super-instantiate-id super-make-object-id super-new-id)
                          (let ([s (syntax supers)])
                            (if (stx-null? s)
                                (values (quote-syntax super-instantiate)
-                                       (quote-syntax super-make-object))
-                               (values (stx-car s)
-                                       (let ([s2 (stx-cdr s)])
-                                         (if (stx-null? s2)
-                                             (quote-syntax super-make-object)
-                                             (begin0
-                                               (stx-car s2)
-                                               (unless (stx-null? (stx-cdr s2))
-                                                 (when (and (identifier? (stx-car s))
-                                                            (identifier? (stx-car s2)))
-                                                   (raise-syntax-error
-                                                    #f
-                                                    "extra forms following identifiers for this, super-instantiate, and super-make-object"
-                                                    stx)))))))))])
+                                       (quote-syntax super-make-object)
+                                       (quote-syntax super-new))
+			       (let ([si (stx-car s)]
+				     [s2 (stx-cdr s)])
+				 (if (stx-null? s2)
+				     (values si
+					     (quote-syntax super-make-object)
+					     (quote-syntax super-new))
+				     (let ([s3 (stx-cdr s2)])
+				       (values 
+					si
+					(stx-car s2) 
+					(if (stx-null? s3)
+					    (quote-syntax super-new)
+					    (begin0
+					     (stx-car s3)
+					     (unless (stx-null? (stx-cdr s3))
+					       (when (and (identifier? si)
+							  (identifier? (stx-car s2))
+							  (identifier? (stx-car s3)))
+						 (raise-syntax-error
+						  #f
+						  "extra forms following identifiers for this, super-instantiate, super-make-object, and super-new"
+						  stx)))))))))))])
              (unless (identifier? this-id)
                (raise-syntax-error
                 #f
@@ -102,6 +112,12 @@ substitutability is checked properly.
                 "not an identifier for `super-make-object'"
                 stx
                 super-make-object-id))
+             (unless (identifier? super-new-id)
+               (raise-syntax-error
+                #f
+                "not an identifier for `super-new'"
+                stx
+                super-new-id))
              
              ;; ----- Expand definitions -----
              (let ([defn-and-exprs (let* ([stop-forms
@@ -122,7 +138,8 @@ substitutability is checked properly.
                                              (quote-syntax inherit)
                                              this-id
                                              super-instantiate-id
-                                             super-make-object-id))]
+                                             super-make-object-id
+                                             super-new-id))]
                                           [expand
                                            (lambda (defn-or-expr)
                                              (local-expand
@@ -414,7 +431,8 @@ substitutability is checked properly.
                                               (list 
                                                this-id
                                                super-instantiate-id
-                                               super-make-object-id)
+                                               super-make-object-id
+                                               super-new-id)
                                               (kernel-form-identifier-list
                                                (quote-syntax here)))]
                           [add-method-property (lambda (l)
@@ -628,7 +646,7 @@ substitutability is checked properly.
                                              plain-init-names
                                              inherit-names
                                              rename-names
-                                             (list this-id super-instantiate-id super-make-object-id)))])
+                                             (list this-id super-instantiate-id super-make-object-id super-new-id)))])
                            (when dup
                              (bad "duplicate declared identifier" dup)))
                          
@@ -835,6 +853,7 @@ substitutability is checked properly.
                                    [extra-init-mappings
                                     (with-syntax ([super-instantiate-id super-instantiate-id]
                                                   [super-make-object-id super-make-object-id]
+                                                  [super-new-id super-new-id]
                                                   [(init-error-map ...)
                                                    (map (lambda (x)
                                                           (syntax init-error-map))
@@ -842,10 +861,12 @@ substitutability is checked properly.
                                       (syntax 
                                        ([(plain-init-name ... 
                                                           super-instantiate-id
-                                                          super-make-object-id)
+                                                          super-make-object-id
+                                                          super-new-id)
                                          (values
                                           init-error-map
                                           ...
+                                          super-error-map
                                           super-error-map
                                           super-error-map)])))])
                                
@@ -899,6 +920,7 @@ substitutability is checked properly.
                                                [the-finder the-finder]
                                                [super-instantiate-id super-instantiate-id]
                                                [super-make-object-id super-make-object-id]
+                                               [super-new-id super-new-id]
                                                [name class-name]
                                                [(stx-def ...) (map cdr stx-defines)])
                                    
@@ -955,6 +977,14 @@ substitutability is checked properly.
                                                                                (syntax (-instantiate super-id stx (the-obj si_c si_inited? si_leftovers)
                                                                                                      (list arg (... ...)) 
                                                                                                      (kw kwarg) (... ...))))]))]
+                                                                       [super-new-id
+                                                                        (lambda (stx)
+                                                                          (syntax-case stx () 
+                                                                            [(_ (kw kwarg) (... ...))
+                                                                             (with-syntax ([stx stx])
+                                                                               (syntax (-instantiate super-id stx (the-obj si_c si_inited? si_leftovers)
+                                                                                                     null
+                                                                                                     (kw kwarg) (... ...))))]))]
                                                                        [super-make-object-id
                                                                         (lambda (stx)
                                                                           (let ([code 
@@ -984,9 +1014,10 @@ substitutability is checked properly.
 	       ...)
 	 (with-syntax ([this (datum->syntax-object (syntax form) 'this stx)]
 		       [super-init (datum->syntax-object (syntax form) 'super-instantiate stx)]
-		       [super-make (datum->syntax-object (syntax form) 'super-make-object stx)])
+		       [super-make (datum->syntax-object (syntax form) 'super-make-object stx)]
+		       [super-new (datum->syntax-object (syntax form) 'super-new stx)])
 	   (syntax/loc stx
-	    (class*/names (this super-init super-make) super-expression (interface-expr ...)
+	    (class*/names (this super-init super-make super-new) super-expression (interface-expr ...)
 			  defn-or-expr
 			  ...)))])))
 

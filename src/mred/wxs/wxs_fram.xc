@@ -29,12 +29,17 @@ static wxMenuBar *GetTheMenuBar(wxFrame *f)
   return GET_THE_MENU_BAR(f);
 }
 
+#ifndef wxTOOBAR_BUTTON
+# define wxTOOBAR_BUTTON 0
+#endif
+
 @BEGINSYMBOLS frameStyle > > PRED BUNDLE
 @SYM "no-caption" : wxNO_CAPTION
 @SYM "mdi-parent" : wxMDI_PARENT
 @SYM "mdi-child" : wxMDI_CHILD
 @SYM "no-system-menu" : wxNO_SYSTEM_MENU
 @SYM "no-resize-border" : wxNO_RESIZE_BORDER
+@SYM "toolbar-button" : wxTOOLBAR_BUTTON
 @ENDSYMBOLS
 
 @BEGINSYMBOLS iconKind > ONE > PRED BUNDLE
@@ -53,6 +58,13 @@ static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 {
 #ifdef wx_msw
   f->SystemMenu();
+#endif
+}
+
+static void DesignateRootFrame(wxFrame *f)
+{
+#ifdef wx_mac
+  f->DesignateRootFrame();
 #endif
 }
 
@@ -75,14 +87,17 @@ static void frameMenu(wxFrame *XTMAC_UNUSED(f))
 @ "status-line-exists?" : bool StatusLineExists();
 @ "maximize" : void Maximize(bool)
 @ "create-status-line" : void CreateStatusLine(int = 1, string = "status_line")
+@ "set-modified" : void SetFrameModified(bool)
 
 @ m "system-menu" : void frameMenu();
+@ m "designate-root-frame" : void DesignateRootFrame()
 
 @SETMARK f = d
 @INCLUDE wxs_fram.xci
 
 @ v "on-menu-command" : void OnMenuCommand(ExactLong)
 @ v "on-menu-click" : void OnMenuClick()
+@ v "on-toolbar-click" : void OnToolbarButton()
 
 @SETMARK w = d
 @INCLUDE wxs_win.xci

@@ -116,6 +116,9 @@ wxFrame::wxFrame // Constructor (for frame window)
     }
   }
 
+  if (cStyle & wxTOOLBAR_BUTTON)
+    windowAttributes |= kWindowToolbarButtonAttribute;
+
   result = ::CreateNewWindow(windowClass, windowAttributes, &theBoundsRect, &theMacWindow);  
   
   if (result != noErr) {
@@ -277,6 +280,36 @@ static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef,
   }
 
   return noErr;
+}
+
+//=============================================================================
+// Root frame
+//=============================================================================
+
+wxFrame *wxRootFrame = NULL;
+
+void wxFrame::DesignateRootFrame(void)
+{
+  if (!wxRootFrame) {
+    CGrafPtr graf;
+    WindowRef win;
+
+    graf = cMacDC->macGrafPort();
+    win = GetWindowFromPort(graf);
+
+    cWindowWidth = 0;
+    cWindowHeight = 0;
+    cWindowX = 32000;
+    cWindowY = 32000;
+    ::MoveWindow(win, 32000, 32000, FALSE);
+    ::SizeWindow(win, 0, 0, FALSE);
+
+    wxREGGLOB(wxRootFrame);
+    wxRootFrame = this;
+    Show(TRUE);
+    
+    ::SendBehind(win, NULL);
+  }
 }
 
 //=============================================================================
@@ -447,7 +480,9 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       }
       
       // Call OnSize handler
-      OnSize(width, height);
+      if (this != wxRootFrame) {
+	OnSize(width, height);
+      }
     }
 }
 
@@ -752,6 +787,15 @@ void wxFrame::ShowAsActive(Bool flag)
     else
       cFocusWindow->OnKillFocus();
   }
+}
+
+void wxFrame::OnToolbarButton(void)
+{
+}
+
+void wxFrame::SetFrameModified(Bool is_modified)
+{
+  SetWindowModified(GetWindowFromPort(cMacDC->macGrafPort()), is_modified);
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

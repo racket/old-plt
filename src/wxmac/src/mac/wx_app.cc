@@ -198,22 +198,35 @@ void wxApp::doMacPreEvent()
   if (w) {
     wxFrame* macWxFrame;
     macWxFrame = findMacWxFrame(w);
-    if (macWxFrame)
-      {
-	wxWindow* focusWindow;
+    
+    /* If this is the root frame, try to move it behind everything
+       else.  If there is any other window, the root frame shouldn't
+       be frontmost. */
+    if (macWxFrame == wxRootFrame) {
+      wxMacDC *dc;
+      CGrafPtr graf;
+      dc = wxRootFrame->MacDC();
+      graf = dc->macGrafPort();
+      ::SendBehind(GetWindowFromPort(graf), NULL);
+      w = FrontWindow();
+      macWxFrame = findMacWxFrame(w);
+    }
 
-	if (oldFrontWindow != macWxFrame) {
-	  oldFrontWindow->NowFront(FALSE);
-	  macWxFrame->NowFront(TRUE);
-	  oldFrontWindow = macWxFrame;
-	}
-	
-	focusWindow = macWxFrame->cFocusWindow;
-	if (focusWindow)
-	  {
-	    focusWindow->DoPeriodicAction();
-	  }
+    if (macWxFrame) {
+      wxWindow* focusWindow;
+      
+      if (oldFrontWindow != macWxFrame) {
+	oldFrontWindow->NowFront(FALSE);
+	macWxFrame->NowFront(TRUE);
+	oldFrontWindow = macWxFrame;
       }
+      
+      focusWindow = macWxFrame->cFocusWindow;
+      if (focusWindow)
+	{
+	  focusWindow->DoPeriodicAction();
+	}
+    }
   }
 }
 
@@ -343,6 +356,19 @@ void wxApp::doMacMouseDown(void)
 	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inCollapseBox)))
 	  CollapseWindow(window, TRUE);
       }
+#ifdef OS_X
+    case inToolbarButton:
+      {
+	if ((!StillDown()) || (TrackBox(window, cCurrentEvent.where, inToolbarButton))) {
+	  {
+	    wxFrame* theMacWxFrame;
+	    theMacWxFrame = findMacWxFrame(window);
+	    if (theMacWxFrame)
+	      theMacWxFrame->OnToolbarButton();
+	  } 
+	}
+      }
+#endif
     case inZoomIn:
     case inZoomOut:
       doMacInZoom(window, windowPart); 

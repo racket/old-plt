@@ -474,14 +474,15 @@
       (when (make-so) (make-it "extensions" compile-collection-extension))
 
       (when (make-launchers)
-	(let ([name-list 
+	(let ([name-list
 	       (lambda (l)
-		 (unless (and (list? l)
-			      (andmap (lambda (x)
-					(and (string? x)
-					     (relative-path? x)))
-				      l))
-		   (error "result is not a list of relative path strings:" l)))])
+		 (unless (and (list? l) (andmap (lambda (x) (and (string? x) (relative-path? x))) l))
+		   (error "result is not a list of relative path strings:" l)))]
+              [flags-list
+               (lambda (l)
+                 (unless (and (list? l) (andmap (lambda (fs) (andmap string? fs)) l))
+                   (error "result is not a list of strings:" l)))]
+              [or-f (lambda (f) (lambda (x) (when x (f x))))])
 	  (for-each
 	   (lambda (cc)
 	     (record-error
@@ -491,56 +492,65 @@
 		(let* ([info (cc-info cc)]
 		       [make-launcher
 			(lambda (kind
-				 launcher-libraries
 				 launcher-names
+				 launcher-libraries
+				 launcher-flags
 				 program-launcher-path
 				 make-launcher
 				 up-to-date?)
-			  (let ([mzlls (call-info info launcher-libraries (lambda () null)
-						  name-list)]
-				[mzlns (call-info info launcher-names (lambda () null)
-						  name-list)])
-			    (if (= (length mzlls) (length mzlns))
-				(for-each
-				 (lambda (mzll mzln)
-				   (let ([p (program-launcher-path mzln)]
-					 [aux (cons
-					       `(exe-name . ,mzln)
-					       (build-aux-from-path 
-						(build-path (apply collection-path (cc-collection cc))
-							    (regexp-replace "[.]..?.?$" mzll ""))))])
-				     (unless (up-to-date? p aux)
-				       (setup-printf "Installing ~a~a launcher ~a" 
-						     kind (if (eq? (current-launcher-variant) 'normal)
-							      ""
-							      (current-launcher-variant))
-						     p)
-				       (make-launcher 
-					(if (= 1 (length (cc-collection cc)))
-					    ;; Common case (simpler parsing for Windows to
-					    ;; avoid cygwin bug):
-					    (list
-					     "-qmvL-"
-					     mzll
-					     (car (cc-collection cc)))
-					    (list
-					     "-qmve-"
-					     (format
-					      "~s"
-					      `(require (lib ,mzll ,@(cc-collection cc))))))
-					p
-					aux))))
-				 mzlls mzlns)
-				(setup-printf 
-				 "Warning: ~a launcher library list ~s doesn't match name list ~s"
-				 kind mzlls mzlns))))])
+			  (let ([mzlns (call-info info launcher-names (lambda () null) name-list)]
+				[mzlls (call-info info launcher-libraries (lambda () #f) (or-f name-list))]
+				[mzlfs (call-info info launcher-flags (lambda () #f) (or-f flags-list))])
+                            (cond
+                             [(not (or mzlls mzlfs))
+                              (unless (null? mzlns)
+                                (setup-printf
+				 "Warning: ~a launcher name list ~s has no matching library/flags lists"
+				 kind mzlns))]
+                             [(and (or (not mzlls) (= (length mzlns) (length mzlls)))
+                                   (or (not mzlfs) (= (length mzlns) (length mzlfs))))
+                              (for-each
+                               (lambda (mzln mzll mzlf)
+                                 (let ([p (program-launcher-path mzln)]
+                                       [aux (cons `(exe-name . ,mzln)
+                                                  (build-aux-from-path
+                                                   (build-path (apply collection-path (cc-collection cc))
+                                                               (regexp-replace "[.]..?.?$"
+                                                                               (or mzll mzln) ""))))])
+                                   (unless (up-to-date? p aux)
+                                     (setup-printf "Installing ~a~a launcher ~a"
+                                                   kind (if (eq? (current-launcher-variant) 'normal)
+                                                          ""
+                                                          (current-launcher-variant))
+                                                   p)
+                                     (make-launcher
+                                      (or mzlf
+                                          (if (= 1 (length (cc-collection cc)))
+                                            ;; Common case (simpler parsing for Windows to
+                                            ;; avoid cygwin bug):
+                                            (list "-qmvL-" mzll (car (cc-collection cc)))
+                                            (list "-qmve-"
+                                                  (format "~s" `(require (lib ,mzll ,@(cc-collection cc)))))))
+                                      p
+                                      aux))))
+                               mzlns
+                               (or mzlls (map (lambda (_) #f) mzlns))
+                               (or mzlfs (map (lambda (_) #f) mzlns)))]
+                             [else
+                              (let ([fault (if (or (not mzlls) (= (length mzlns) (length mzlls))) 'f 'l)])
+                                (setup-printf
+                                 "Warning: ~a launcher name list ~s doesn't match ~a list; ~s"
+                                 kind mzlns
+                                 (if (eq? 'l fault) "library" "flags")
+                                 (if (eq? fault 'l) mzlls mzlfs)))])))])
 		  (for-each
 		   (lambda (variant)
 		     (parameterize ([current-launcher-variant variant])
 		       (make-launcher
 			"MrEd"
-			'mred-launcher-libraries
 			'mred-launcher-names
+			'mred-launcher-libraries
+			'mred-launcher-flags
 			mred-program-launcher-path
 			make-mred-launcher
 			mred-launcher-up-to-date?)))
@@ -550,8 +560,9 @@
 		     (parameterize ([current-launcher-variant variant])
 		       (make-launcher
 			"MzScheme"
-			'mzscheme-launcher-libraries
 			'mzscheme-launcher-names
+			'mzscheme-launcher-libraries
+			'mzscheme-launcher-flags
 			mzscheme-program-launcher-path
 			make-mzscheme-launcher
 			mzscheme-launcher-up-to-date?)))

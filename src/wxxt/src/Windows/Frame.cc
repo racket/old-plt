@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.2 1998/01/27 16:38:58 mflatt Exp $
+ * $Id: Frame.cc,v 1.3 1998/03/07 00:36:28 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -134,23 +134,21 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     }
     // create top level or transient shell
     if ( (style = _style) & wxTRANSIENT ) {
-	// create transient shell with WM_TRANSIENT_FOR property
-	wxWindow *p=parent;
-	for (/*wxWindow *p = parent*/; p; p = p->GetParent())
-	    if (wxSubType(p->__type, wxTYPE_FRAME)
+      // create transient shell with WM_TRANSIENT_FOR property
+      wxWindow *p;
+      for (p = parent; p; p = p->GetParent())
+	if (wxSubType(p->__type, wxTYPE_FRAME)
 	    && !(p->GetWindowStyleFlag() & wxTRANSIENT)) // frame must not be transient
-		break;
-        /* MATTHEW: Use name */
-	X->frame = XtVaCreatePopupShell
-	    (name ? name : "shell", transientShellWidgetClass, parent_widget,
-	     XtNsaveUnder, FALSE,
-	     XtNtransientFor, (p ? p->GetHandle()->frame : wxAPP_TOPLEVEL),
-	     NULL);
+	  break;
+      X->frame = XtVaCreatePopupShell
+	(name ? name : "shell", transientShellWidgetClass, parent_widget,
+	 XtNsaveUnder, FALSE,
+	 XtNtransientFor, (p ? p->GetHandle()->frame : wxAPP_TOPLEVEL),
+	 NULL);
     } else {
-	// create top level shell
-        /* MATTHEW: Use name */
-	X->frame = XtVaCreatePopupShell
-	  (name ? name : "shell", topLevelShellWidgetClass, parent_widget, NULL);
+      // create top level shell
+      X->frame = XtVaCreatePopupShell
+	(name ? name : "shell", topLevelShellWidgetClass, parent_widget, NULL);
     }
     // set common data
     SetSize(x, y, width, height, wxSIZE_AUTO);

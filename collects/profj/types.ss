@@ -17,7 +17,7 @@
   ;; type = symbol-type
   ;;      | reference-type
   ;;      | array-type
-  ;;      | contract
+  ;;      | scheme-val
 
   (define-struct ref-type (class/iface path) (make-inspector))
   (define-struct array-type (type dim))
@@ -56,8 +56,7 @@
   ;;is-string?: 'a -> boolean
   (define (is-string-type? s)
     (and (reference-type? s)
-         (or (eq? 'string s)
-             (type=? s string-type))))
+         (or (eq? 'string s) (type=? s string-type))))
   
   ;; 4.2
   ;; prim-integral-type?: 'a -> boolean
@@ -133,6 +132,14 @@
   ;; assignment-conversion: type type type-records -> boolean
   (define (assignment-conversion to from type-recs)
     (cond
+      ((scheme-val? to) 
+       (cond
+         ((scheme-val-type to) => (lambda (t) (assignment-conversion t from type-recs)))
+         (else (set-scheme-val-type! to from) #t)))
+      ((scheme-val? from)
+       (cond
+         ((scheme-val-type from) => (lambda (t) (assignment-conversion to t type-recs)))
+         (else (set-scheme-val-type! from to) #t)))
       ((type=? to from) #t)
       ((and (prim-numeric-type? to) (prim-numeric-type? from))
        (widening-prim-conversion to from))
@@ -565,12 +572,13 @@
                  val))
              (current-namespace old-namespace)))))))
   
-  ;generate-require-spec: string (list string) -> (list symbol string+)
+  ;generate-require-spec: string (list string) -> (U string (list symbol string+))
   (define (generate-require-spec name path)
     (let ((mod (string-append name ".ss")))
-      (if (equal? (car path) "lib")
-          `(lib ,mod ,@(cdr path))
-          `(file ,(build-path (apply build-path path) mod)))))  
+      (cond
+        ((null? path) mod)
+        ((equal? (car path) "lib")  `(lib ,mod ,@(cdr path)))
+        (else `(file ,(build-path (apply build-path path) mod))))))
   
   ;java-name->scheme: string -> string
   (define (java-name->scheme name)

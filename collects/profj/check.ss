@@ -1,4 +1,3 @@
-#cs
 (module check mzscheme
 
   (require "ast.ss"
@@ -1329,66 +1328,81 @@
          (let ((obj (field-access-object acc))
                (fname (id-string (field-access-field acc)))
                (src (id-src (field-access-field acc)))
+               (class-rec null)
                (record null))
            (set! record 
                  (if obj
                      (field-lookup fname (check-sub-expr obj) obj src level type-recs)
-                     (let* ((name (var-access-class (field-access-access acc)))
-                            (class-rec (get-record (send type-recs get-class-record 
+                     (let* ((name (var-access-class (field-access-access acc))))
+                       (set! class-rec (get-record (send type-recs get-class-record 
                                                          (if (pair? name) name (list name))
                                                          #f
                                                          ((get-importer type-recs) name type-recs level src))
-                                                   type-recs)))
-                       (get-field-record fname class-rec
-                                         (lambda () 
-                                           (let* ((class? (member fname (send type-recs get-class-env)))
-                                                  (method? (not (null? (get-method-records fname class-rec)))))
-                                             (field-lookup-error (if class? 'class-name 
-                                                                     (if method? 'method-name 'not-found))
-                                                                 (string->symbol fname)
-                                                                 (make-ref-type (if (pair? name) (car name) name) null)
-                                                                 src)))))))
-           (let* ((field-class (if (null? (cdr (field-record-class record))) 
-                                   (cons (car (field-record-class record))
-                                         (send type-recs lookup-path (car (field-record-class record)) (lambda () null)))
-                                   (field-record-class record)))
-                  (mods (field-record-modifiers record))
-                  (public? (memq 'public mods))
-                  (private? (memq 'private mods))
-                  (protected? (memq 'protected mods)))
-
-             (when (and (eq? level 'beginner)
-                        (eq? (car c-class) (car field-class))
-                        (or (not obj) (and (special-name? obj) (not (expr-src obj)))))
-               (beginner-field-access-error (string->symbol fname) src))
+                                                   type-recs))
+                       (cond
+                         ((class-record? class-rec)
+                          (get-field-record fname class-rec
+                                            (lambda () 
+                                              (let* ((class? (member fname (send type-recs get-class-env)))
+                                                     (method? (not (null? (get-method-records fname class-rec)))))
+                                                (field-lookup-error (if class? 'class-name 
+                                                                        (if method? 'method-name 'not-found))
+                                                                    (string->symbol fname)
+                                                                    (make-ref-type (if (pair? name) (car name) name) null)
+                                                                    src)))))
+                         ((scheme-record? class-rec)
+                          (lookup-scheme class-rec fname 
+                                         (lambda () (field-lookup-error 'not-found
+                                                                        (string->symbol fname)
+                                                                        (make-ref-type (if (pair? name) (car name) name) 
+                                                                                       (list "scheme"))
+                                                                        src))))))))
+           (cond 
+             ((field-record? record)
+              (let* ((field-class (if (null? (cdr (field-record-class record))) 
+                                      (cons (car (field-record-class record))
+                                            (send type-recs lookup-path (car (field-record-class record)) (lambda () null)))
+                                      (field-record-class record)))
+                     (mods (field-record-modifiers record))
+                     (public? (memq 'public mods))
+                     (private? (memq 'private mods))
+                     (protected? (memq 'protected mods)))
+                
+                (when (and (eq? level 'beginner)
+                           (eq? (car c-class) (car field-class))
+                           (or (not obj) (and (special-name? obj) (not (expr-src obj)))))
+                  (beginner-field-access-error (string->symbol fname) src))
            
-             (when (and private? (not (equal? c-class field-class)))
-               (illegal-field-access 'private (string->symbol fname) level (car field-class) src))
-           
-             (when (and protected? (not (or (equal? c-class field-class)
-                                            (is-subclass? c-class (make-ref-type (car field-class) (cdr field-class)) type-recs)
-                                            (package-members? c-class field-class type-recs))))
-               (illegal-field-access 'protected (string->symbol fname) level (car field-class) src))
+                (when (and private? (not (equal? c-class field-class)))
+                  (illegal-field-access 'private (string->symbol fname) level (car field-class) src))
+                
+                (when (and protected? 
+                           (not (or (equal? c-class field-class)
+                                    (is-subclass? c-class (make-ref-type (car field-class) (cdr field-class)) type-recs)
+                                    (package-members? c-class field-class type-recs))))
+                  (illegal-field-access 'protected (string->symbol fname) level (car field-class) src))
                           
-             (when (and (not private?) (not protected?) (not public?) (not (package-members? c-class field-class type-recs)))
-               (illegal-field-access 'package (string->symbol fname) level (car field-class) src))
+                (when (and (not private?) (not protected?) (not public?) (not (package-members? c-class field-class type-recs)))
+                  (illegal-field-access 'package (string->symbol fname) level (car field-class) src))
            
-             
-             (set-field-access-access! acc (make-var-access (memq 'static mods)
-                                                            (memq 'final mods)
-                                                            (field-record-init? record)
-                                                            (cond
-                                                              (private? 'private)
-                                                              (public? 'public)
-                                                              (protected? 'protected)
-                                                              (else 'package))
-                                                            (car field-class)))
-             (add-required c-class (car field-class) (cdr field-class) type-recs)
-
-             (unless (eq? level 'full)
-               (when (is-field-restricted? fname field-class)
-                 (restricted-field-access-err (field-access-field acc) field-class src)))
-             (field-record-type record))))
+                (set-field-access-access! acc (make-var-access (memq 'static mods)
+                                                               (memq 'final mods)
+                                                               (field-record-init? record)
+                                                               (cond
+                                                                 (private? 'private)
+                                                                 (public? 'public)
+                                                                 (protected? 'protected)
+                                                                 (else 'package))
+                                                               (car field-class)))
+                (add-required c-class (car field-class) (cdr field-class) type-recs)
+                (unless (eq? level 'full)
+                  (when (is-field-restricted? fname field-class)
+                    (restricted-field-access-err (field-access-field acc) field-class src)))
+                (field-record-type record)))
+             ((scheme-val? record)
+              (set-field-access-access! acc (make-var-access #t #t #t 'public (scheme-record-name class-rec)))
+              record)
+             (else (error 'internal-error "field-access given unknown form of field information")))))              
         ((local-access? acc) 
          (let ((var (lookup-var-in-env (id-string (local-access-name acc)) env)))
            (if (properties-usable? (var-type-properties var))

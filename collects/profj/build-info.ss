@@ -310,6 +310,7 @@
       ((null? path) (make-dir-path (build-path 'same) #f))
       ((and (scheme-ok?) (equal? (car path) "scheme"))
        (cond
+         ((null? (cdr path)) (make-dir-path (build-path 'same) #t))
          ((not (equal? (cadr path) "lib")) 
           (let ((dir (find-directory (cdr path) fail)))
             (make-dir-path dir #t)))

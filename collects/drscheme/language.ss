@@ -353,7 +353,7 @@
 	     'drscheme:teachpack-file lib-file)
 	    (set! teachpack-directory (path-only lib-file))))))
     (make-object mred:menu-item%
-      "Clear Teackpack"
+      "Clear Teachpack"
       language-menu
       (lambda (_1 _2) (fw:preferences:set 'drscheme:teachpack-file #f)))))
 

@@ -1,3 +1,8 @@
+Version 103:
+
+The application of class/class* turns red when the
+ provided superclass may not be class.
+
 Version 102:
 
 Added column numbers for checks in summary window

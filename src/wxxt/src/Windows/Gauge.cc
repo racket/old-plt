@@ -67,7 +67,12 @@ Bool wxGauge::Create(wxPanel *panel, char *label, int _range,
 
     ChainToPanel(panel, style, name);
 
-    vert = (panel->GetLabelPosition() == wxVERTICAL);
+    if (style & wxVERTICAL_LABEL)
+      vert = 1;
+    else if (style & wxHORIZONTAL_LABEL)
+      vert = 0;
+    else
+      vert = (panel->GetLabelPosition() == wxVERTICAL);
     range     = _range;
 
     label = wxGetCtlLabel(label);

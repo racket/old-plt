@@ -90,7 +90,12 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func, char *title,
 
     ChainToPanel(panel, style | ((long)multiple), name);
     
-    vert = (panel->GetLabelPosition() == wxVERTICAL);
+    if (style & wxVERTICAL_LABEL)
+      vert = 1;
+    else if (style & wxHORIZONTAL_LABEL)
+      vert = 0;
+    else
+      vert = (panel->GetLabelPosition() == wxVERTICAL);
 
     title = wxGetCtlLabel(title);
 

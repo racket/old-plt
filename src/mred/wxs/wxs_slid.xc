@@ -13,6 +13,8 @@
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
 @SYM "plain" : wxPLAIN_SLIDER
+@SYM "vertical-label" : wxVERTICAL_LABEL
+@SYM "horizontal-label" : wxHORIZONTAL_LABEL
 @SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 

@@ -88,6 +88,8 @@ START_XFORM_SKIP;
 
 static Scheme_Object *gaugeStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *gaugeStyle_wxHORIZONTAL_sym = NULL;
+static Scheme_Object *gaugeStyle_wxVERTICAL_LABEL_sym = NULL;
+static Scheme_Object *gaugeStyle_wxHORIZONTAL_LABEL_sym = NULL;
 static Scheme_Object *gaugeStyle_wxINVISIBLE_sym = NULL;
 
 static void init_symset_gaugeStyle(void) {
@@ -96,6 +98,10 @@ static void init_symset_gaugeStyle(void) {
   gaugeStyle_wxVERTICAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical"));
   wxREGGLOB(gaugeStyle_wxHORIZONTAL_sym);
   gaugeStyle_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
+  wxREGGLOB(gaugeStyle_wxVERTICAL_LABEL_sym);
+  gaugeStyle_wxVERTICAL_LABEL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical-label"));
+  wxREGGLOB(gaugeStyle_wxHORIZONTAL_LABEL_sym);
+  gaugeStyle_wxHORIZONTAL_LABEL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal-label"));
   wxREGGLOB(gaugeStyle_wxINVISIBLE_sym);
   gaugeStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
@@ -111,6 +117,8 @@ static int unbundle_symset_gaugeStyle(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (i == gaugeStyle_wxVERTICAL_sym) { result = result | wxVERTICAL; }
   else if (i == gaugeStyle_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
+  else if (i == gaugeStyle_wxVERTICAL_LABEL_sym) { result = result | wxVERTICAL_LABEL; }
+  else if (i == gaugeStyle_wxHORIZONTAL_LABEL_sym) { result = result | wxHORIZONTAL_LABEL; }
   else if (i == gaugeStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);

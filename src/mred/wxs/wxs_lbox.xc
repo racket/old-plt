@@ -41,6 +41,8 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @SYM "always-vscroll" : wxALWAYS_SB    
 @SYM "hscroll" : wxHSCROLL
 @SYM "deleted" : wxINVISIBLE
+@SYM "vertical-label" : wxVERTICAL_LABEL
+@SYM "horizontal-label" : wxHORIZONTAL_LABEL
 @ENDSYMBOLS
 
 @CLASSBASE wxListBox "list-box":"item"

@@ -33,10 +33,16 @@
 START_XFORM_SKIP;
 #endif
 
+static Scheme_Object *choiceStyle_wxVERTICAL_LABEL_sym = NULL;
+static Scheme_Object *choiceStyle_wxHORIZONTAL_LABEL_sym = NULL;
 static Scheme_Object *choiceStyle_wxINVISIBLE_sym = NULL;
 
 static void init_symset_choiceStyle(void) {
   REMEMBER_VAR_STACK();
+  wxREGGLOB(choiceStyle_wxVERTICAL_LABEL_sym);
+  choiceStyle_wxVERTICAL_LABEL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical-label"));
+  wxREGGLOB(choiceStyle_wxHORIZONTAL_LABEL_sym);
+  choiceStyle_wxHORIZONTAL_LABEL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal-label"));
   wxREGGLOB(choiceStyle_wxINVISIBLE_sym);
   choiceStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
 }
@@ -50,6 +56,8 @@ static int unbundle_symset_choiceStyle(Scheme_Object *v, const char *where) {
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
+  else if (i == choiceStyle_wxVERTICAL_LABEL_sym) { result = result | wxVERTICAL_LABEL; }
+  else if (i == choiceStyle_wxHORIZONTAL_LABEL_sym) { result = result | wxHORIZONTAL_LABEL; }
   else if (i == choiceStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
   else { break; } 
   l = SCHEME_CDR(l);
@@ -69,6 +77,8 @@ static int istype_symset_choiceStyle(Scheme_Object *v, const char *where) {
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
+  else if (i == choiceStyle_wxVERTICAL_LABEL_sym) { ; }
+  else if (i == choiceStyle_wxHORIZONTAL_LABEL_sym) { ; }
   else if (i == choiceStyle_wxINVISIBLE_sym) { ; }
   else { break; } 
   l = SCHEME_CDR(l);

@@ -36,6 +36,8 @@ START_XFORM_SKIP;
 static Scheme_Object *radioboxStyle_wxVERTICAL_sym = NULL;
 static Scheme_Object *radioboxStyle_wxHORIZONTAL_sym = NULL;
 static Scheme_Object *radioboxStyle_wxINVISIBLE_sym = NULL;
+static Scheme_Object *radioboxStyle_wxVERTICAL_LABEL_sym = NULL;
+static Scheme_Object *radioboxStyle_wxHORIZONTAL_LABEL_sym = NULL;
 
 static void init_symset_radioboxStyle(void) {
   REMEMBER_VAR_STACK();
@@ -45,12 +47,16 @@ static void init_symset_radioboxStyle(void) {
   radioboxStyle_wxHORIZONTAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal"));
   wxREGGLOB(radioboxStyle_wxINVISIBLE_sym);
   radioboxStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
+  wxREGGLOB(radioboxStyle_wxVERTICAL_LABEL_sym);
+  radioboxStyle_wxVERTICAL_LABEL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("vertical-label"));
+  wxREGGLOB(radioboxStyle_wxHORIZONTAL_LABEL_sym);
+  radioboxStyle_wxHORIZONTAL_LABEL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("horizontal-label"));
 }
 
 static int unbundle_symset_radioboxStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!radioboxStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_radioboxStyle());
+  if (!radioboxStyle_wxHORIZONTAL_LABEL_sym) WITH_VAR_STACK(init_symset_radioboxStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -59,6 +65,8 @@ static int unbundle_symset_radioboxStyle(Scheme_Object *v, const char *where) {
   else if (i == radioboxStyle_wxVERTICAL_sym) { result = result | wxVERTICAL; }
   else if (i == radioboxStyle_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
   else if (i == radioboxStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
+  else if (i == radioboxStyle_wxVERTICAL_LABEL_sym) { result = result | wxVERTICAL_LABEL; }
+  else if (i == radioboxStyle_wxHORIZONTAL_LABEL_sym) { result = result | wxHORIZONTAL_LABEL; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

@@ -11,6 +11,8 @@
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
 @SYM "deleted" : wxINVISIBLE
+@SYM "vertical-label" : wxVERTICAL_LABEL
+@SYM "horizontal-label" : wxHORIZONTAL_LABEL
 @ENDSYMBOLS
 
 @CLASSBASE wxRadioBox "radio-box":"item"

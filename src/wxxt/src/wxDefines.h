@@ -386,34 +386,16 @@ enum {
 #define wxMINIMIZE_BOX		0x00000020
 #define wxMAXIMIZE		0x00000040
 #define wxMAXIMIZE_BOX		0x00000080
-#define wxSDI			0x00000100
-#define wxSTAYS_ON_TOP		0x00000200
 #define wxNO_SYSTEM_MENU       	0x00000400
 #define wxNO_THICK_FRAME       	0x00000800
 #define wxTRANSIENT		0x00001000
 #define wxNO_RESIZE_BORDER     	0x00002000
-#define wxTINY_CAPTION_HORIZ	0x00004000
-#define wxTINI_CAPTION_VERT	0x00008000
-#define wxUSER_COLOURS		0x00010000
 #define wxVSCROLL		0x00020000
 #define wxNO_DC			0x00040000
 #define wxINVISIBLE             0x00080000
-// Enhanced Dialog styles
-#define wxBOTTOM_COMMANDS       wxDEFAULT
-#define wxCANCEL_BUTTON_FIRST   0x01000000
-#define wxCANCEL_BUTTON_LAST    0x02000000
-#define wxCANCEL_BUTTON_SECOND  0x04000000
-#define wxMASK_COMMANDS         wxRIGHT_COMMANDS
-#define wxMASK_STATUS           wxNO_STATUS_FOOTER
-#define wxMASK_CANCEL           wxCANCEL_BUTTON_SECOND
-#define wxNO_CANCEL_BUTTON      wxDEFAULT
-#define wxNO_STATUS_FOOTER      0x08000000
-#define wxRIGHT_COMMANDS        0x10000000
-#define wxSTATUS_FOOTER         wxDEFAULT
 
 #define wxDEFAULT_FRAME		0
 #define wxDEFAULT_DIALOG_STYLE	0
-#define wxENH_DEFAULT		0
 #define wxMAX_STATUS		4
 
 // defines for wxItem and descendants
@@ -430,15 +412,11 @@ enum {
 #define wxNEEDED_SB			0x00000020
 #define wxALWAYS_SB			0x00000040
 #define wxHSCROLL			0x00000080
-#define wxPROCESS_ENTER			0x00000100
-#define wxPASSWORD			0x00000200
-#define wxREADONLY			0x00000400
-#define wxNATIVE_IMPL			0x00000800
+#define wxVERTICAL_LABEL		0x00000100
+#define wxHORIZONTAL_LABEL		0x00000200
 #define wxBACKINGSTORE			0x00001000
-#define wxRETAINED			0x00002000
 #define wxAT_MOST_ONE			0x00004000
 #define wxFLAT				0x00008000
-#define wxPROCESS_ENTER_TO_PANEL	0x00010000
 #define wxGL_CONTEXT                    0x02000000
 #define wxNO_AUTOCLEAR                  0x04000000
 

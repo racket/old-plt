@@ -63,6 +63,8 @@ START_XFORM_SKIP;
 @BEGINSYMBOLS gaugeStyle > > PRED BUNDLE
 @SYM "vertical" : wxVERTICAL
 @SYM "horizontal" : wxHORIZONTAL
+@SYM "vertical-label" : wxVERTICAL_LABEL
+@SYM "horizontal-label" : wxHORIZONTAL_LABEL
 @SYM "deleted" : wxINVISIBLE
 @ENDSYMBOLS
 

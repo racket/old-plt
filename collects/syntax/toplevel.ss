@@ -61,22 +61,26 @@
                               compiled)))])
       (kernel-syntax-case stx #f
         [(require req ...)
-         (for-each (lambda (req) (namespace-require/expansion-time (syntax-object->datum req)))
-                   (syntax->list (syntax (req ...))))
-         (when compile? (compile-syntax stx))]
+	 (begin0
+	  (when compile? (compile-syntax stx))
+	  (for-each (lambda (req) (namespace-require/expansion-time (syntax-object->datum req)))
+		    (syntax->list (syntax (req ...)))))]
         [(module . _)
          (eval/compile stx)]
         [(define-syntaxes . _)
          (eval/compile stx)]
+        [(define-values-for-syntax . _)
+         (eval/compile stx)]
         [(require-for-syntax . _)
          (eval/compile stx)]
         [(define-values (id ...) . _)
-         (for-each (lambda (id)
-                     (with-syntax ([id id]
-                                   [undefined (letrec ([x x]) x)])
-                       (eval-syntax (syntax (define-values (id) undefined)))))
-                   (syntax->list (syntax (id ...))))
-         (when compile? (compile-syntax stx))]
+	 (begin0
+	  (when compile? (compile-syntax stx))
+	  (for-each (lambda (id)
+		      (with-syntax ([id id]
+				    [undefined (letrec ([x x]) x)])
+			(eval-syntax (syntax (define-values (id) undefined)))))
+		    (syntax->list (syntax (id ...)))))]
         [_else 
          (when compile? (compile-syntax stx))])))
   
@@ -85,8 +89,9 @@
   ;; into multiple expressions
   (define (flatten-out-begins expr)
     (let loop ([expr expr])
-      (syntax-case (expand-syntax-to-top-form expr) (begin)
-	[(begin expr ...)
-	 (apply append (map loop (syntax->list (syntax (expr ...)))))]
-	[else 
-         (list expr)]))))
+      (let ([expr (expand-syntax-to-top-form expr)])
+	(syntax-case expr (begin)
+	  [(begin expr ...)
+	   (apply append (map loop (syntax->list (syntax (expr ...)))))]
+	  [else 
+	   (list expr)])))))

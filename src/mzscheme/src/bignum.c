@@ -1207,10 +1207,10 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     if (_stk_rp)
       *_stk_rp = (norm ? scheme_make_integer(0) : scheme_make_bignum(0));
     return;
-  } else {    
-    long n_size, d_size, q_alloc, r_alloc, d_pos;
+  } else {
+    long n_size, d_size, q_alloc, r_alloc, d_pos, i;
     short n_pos;
-    bigdig *q_digs, *r_digs, *n_digs, *d_digs;
+    bigdig *q_digs, *r_digs, *n_digs, *d_digs, *r_ptr, *n_ptr, *d_ptr;
     Scheme_Object *q, *r;
 
     n_size = SCHEME_BIGLEN(n);
@@ -1220,7 +1220,7 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     q->type = scheme_bignum_type;
     r = (Scheme_Object *)scheme_malloc_tagged(sizeof(Scheme_Bignum));
     r->type = scheme_bignum_type;
-    
+
     q_alloc = n_size - d_size + 1;
     r_alloc = d_size;
 
@@ -1232,9 +1232,20 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
     PROTECT(n_digs, n_size);
     PROTECT(d_digs, d_size);
 
-    mpn_tdiv_qr(q_digs, r_digs, 0, 
-		n_digs, n_size,
-		d_digs, d_size);
+    i = 0;
+    while (i < d_size && d_digs[i] == 0)
+    {
+      r_digs[i] = n_digs[i];
+      i = i + 1;
+    }
+
+    r_ptr = r_digs + i;
+    d_ptr = d_digs + i;
+    n_ptr = n_digs + i;
+
+    mpn_tdiv_qr(q_digs, r_ptr, 0,
+		n_ptr, n_size - i,
+		d_ptr, d_size - i);
 
     RELEASE(d_digs);
     RELEASE(n_digs);
@@ -1243,7 +1254,7 @@ void scheme_bignum_divide(const Scheme_Object *n, const Scheme_Object *d,
 
     n_pos = SCHEME_BIGPOS(n);
     d_pos = SCHEME_BIGPOS(d);
-    
+
     if (_stk_rp) {
       SCHEME_BIGDIG(r) = r_digs;
       r_alloc = bigdig_length(r_digs, r_alloc);
@@ -1332,17 +1343,17 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
       rem_alloc = 0;
       rem_digs = NULL;
     }
-    
-    PROTECT(sqr_digs, n_size);  
-    
-    
+
+    PROTECT(sqr_digs, n_size);
+
+
     rem_size = mpn_sqrtrem(res_digs, rem_digs, sqr_digs, n_size);
-    
+
     if (remainder || rem_size == 0) {
       /* An integer result */
       RELEASE(sqr_digs);
       FINISH_RESULT(res_digs, res_alloc);
-      
+
       if (remainder && rem_size == 0)
 	*remainder = scheme_make_integer(0);
       else if (remainder)
@@ -1365,20 +1376,20 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
       return scheme_bignum_normalize(o);
     }
   }
-  
+
   if (remainder || rem_size == 0)
     return o;
   else {
     double v;
-    
+
     RELEASE(res_digs);
     RELEASE(sqr_digs);
-    
+
     if (SCHEME_INTP(n))
       v = (double)SCHEME_INT_VAL(n);
     else {
       v = scheme_bignum_to_double(n);
-      
+
       if (MZ_IS_POS_INFINITY(v)) {
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
 	return scheme_make_float(v);
@@ -1387,9 +1398,9 @@ Scheme_Object *scheme_integer_sqrt_rem(const Scheme_Object *n, Scheme_Object **r
 #endif
       }
     }
-    
+
     v = sqrt(v);
-    
+
 #ifdef USE_SINGLE_FLOATS_AS_DEFAULT
     return scheme_make_float(v);
 #else

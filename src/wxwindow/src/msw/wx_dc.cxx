@@ -1665,7 +1665,7 @@ static int substitute_font(wchar_t *ustring, int d, int alen, wxFont *font, HDC 
   return alen;
 }
 
-static void wxTextSize(wxFont *font, wchar_t *ustring, int d, int alen, double *ow, double *oh)
+static void wxTextSize(HDC dc, wxFont *font, wchar_t *ustring, int d, int alen, double *ow, double *oh)
 {
   /* Gets the text size, caching the result in font when alen == 1 */ 
 
@@ -1702,7 +1702,7 @@ static void wxTextSize(wxFont *font, wchar_t *ustring, int d, int alen, double *
 	sz = (double *)scheme_malloc_atomic(sizeof(double) * 2);
 	sz[0] = *ow;
 	sz[1] = *oh;
-	scheme_hash_set(ht, scheme_make_integer(ustring[d]), sz);
+	scheme_hash_set(ht, scheme_make_integer(ustring[d]), (Scheme_Object *)sz);
       }
     }
   } else {
@@ -1722,7 +1722,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
   long len, alen;
   double oox, ooy;
   int fam, reset = 0;
-  wxFount *theFont;
+  wxFont *theFont;
 
   dc = ThisDC();
 
@@ -1787,7 +1787,7 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     (void)TextOutW(dc, 0, 0, ustring XFORM_OK_PLUS d, alen);
 
     if (alen < len) {
-      wxTextSize(screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
+      wxTextSize(dc, screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
       w += ow * ws;
       h += ow * hs;
     }
@@ -2088,7 +2088,7 @@ void wxDC::GetTextExtent(const char *string, double *x, double *y,
 
     alen = substitute_font(ustring, d, alen, theFont, dc, screen_font, 0.0, &reset);
 
-    wxTextSize(screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
+    wxTextSize(dc, screen_font ? theFont : NULL, ustring, d, alen, &ow, &oh);
 
     tx += ow;
     if (oh > ty)

@@ -79,9 +79,10 @@ Mac OS X:
 Mac OS Classic (PowerPC only):
 
  MrEd compiles for Mac OS Classic using MPW.  Stand-alone MzScheme is
- not suported for Classic (use MrEd instead).
+ not suported for Classic (use MrEd instead), but MzSchemeLib is
+ available for embedding into other executables.
 
- To compile with MPW, set the working directory to the ":mac:mpw"
+ To compile MrEd with MPW, set the working directory to the ":mac:mpw"
  subdirectory of this one, then execute
 
     set -e makefile makefile
@@ -110,6 +111,10 @@ Mac OS Classic (PowerPC only):
 
  and hit Return. The setup program will then run; it compiles Scheme
  source to .zo format, and also creates launchers, such as "DrScheme".
+
+ To build plt:MzSchemeLib, run `buildprogram mz'. The resulting
+ plt:MzSchemeLib needs plt:netglue if and only if TCP support is
+ needed.
 
 ========================================================================
  Compiling for supported Unix variants (including Linux)

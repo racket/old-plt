@@ -2,7 +2,10 @@
   (import reader^ mzlib:function^)
   ;; Xexpr ::= String
   ;;        |  Processing-instruction
-  ;;        |  (list* Symbol (listof Attribute-srep) (list Xexpr))
+  ;;        |  Symbol
+  ;;        |  Number
+  ;;        |  (list* Symbol (listof Attribute-srep) (listof Xexpr))
+  ;;        |  (cons Symbol (listof Xexpr))
   ;; Attribute-srep ::= (list Symbol String)
   
   ;; assoc-sort : (listof (list Symbol a)) -> (listof (list Symbol a))
@@ -13,10 +16,15 @@
   (define (xml->xexpr x)
     (cond
       [(element? x)
-       (list* (element-name x) 
-              (assoc-sort (map attribute->srep (element-attributes x)))
-              (map xml->xexpr (element-content x)))]
+       (let ([body (map xml->xexpr (element-content x))]
+             [atts (element-attributes x)])
+         (cons (element-name x) 
+               (if (null? atts)
+                   body
+                   (cons (assoc-sort (map attribute->srep atts))
+                         body))))]
       [(pcdata? x) (pcdata-string x)]
+      [(entity? x) (entity-text x)]
       [else x]))
   
   ;; attribute->srep : Attribute -> Attribute-srep
@@ -31,9 +39,15 @@
   (define (xexpr->xml x)
     (cond
       [(pair? x)
-       (make-element 'scheme 'scheme (car x) (map srep->attribute (cadr x))
-                     (map xexpr->xml (cddr x)))]
+       (let ([f (lambda (atts body-sel)
+                  (make-element 'scheme 'scheme (car x)
+                                atts
+                                (map xexpr->xml (body-sel x))))])
+         (if (or (null? (cadr x)) (and (pair? (cadr x)) (pair? (caadr x))))
+             (f (map srep->attribute (cadr x)) cddr)
+             (f null cdr)))]
       [(string? x) (make-pcdata 'scheme 'scheme x)]
+      [(or (symbol? x) (integer? x)) (make-entity x)]
       [else x]))
   
   ;; bcompose : (a a -> c) (b -> a) -> (b b -> c)

@@ -24,6 +24,7 @@
   (define amp (char->integer #\&))
   (define hash (char->integer #\#))
   (define quot (char->integer #\"))
+  (define apos (char->integer #\'))
   (define percent (char->integer #\%))
   (define rb (char->integer #\[))
   (define lb (char->integer #\]))
@@ -128,49 +129,21 @@
                   (raise (make-lex:error 
                           (string-append word " is not a legal declaration keyword") word)))))))
   
-  ;build-attVal: fstream null -> list (list char or entRef) fstream
+  ;; build-attVal: fstream null Nat -> list (list char or entRef) fstream
   (define build-attVal
-    (lambda (istream val)
+    (lambda (istream val end)
       (if (null? istream) 
           (raise (make-lex:error "File should not end in the middle of attvalue" val))
           (cond
-            ((eq? (car (fstream-char istream)) quot)
+            ((= (car (fstream-char istream)) end)
              (list (reverse val) ((fstream-rest istream))))
             ((eq? (car (fstream-char istream)) amp)
              (let ((ent-stream (build-entref-intern ((fstream-rest istream)))))
-               (build-attVal (cadr ent-stream) (cons (car ent-stream) val))))
+               (build-attVal (cadr ent-stream) (cons (car ent-stream) val) end)))
             ((eq? (car (fstream-char istream)) lt) (raise (make-lex:error "Attvals cannot have <" val)))
             (else 
              (build-attVal ((fstream-rest istream)) (cons (integer->char (car (fstream-char istream)))
-                                                          val)))))))
-  
-  ;find-keyword: fstream bool string -> list string string? fstream
-  (define find-keyword
-    (lambda (istream start word)
-      (if (null? istream) 
-          (raise (make-lex:error (string-append "File should not end in the middle of " word) word))
-          (if start
-              (if (eq? (car (fstream-char istream)) hash)
-                  (find-keyword ((fstream-rest istream)) #f word)
-                  (error "keyword position: word should start with #"))
-              (if (char-alphabetic? (integer->char (car (fstream-char istream))))
-                  (find-keyword ((fstream-rest istream)) start
-                                (string-append word (string (integer->char 
-                                                             (car (fstream-char istream))))))
-                  (if (equal? word "FIXED")
-                      (list word (build-attVal istream) istream)
-                      (list word istream)))))))
-  
-  ;get-text: fstream string -> list string fstream
-  (define get-text
-    (lambda (istream text)
-      (if (null? istream) 
-          (raise (make-lex:error "File should not end in the middle of text" text))
-          (if (eq? (car (fstream-char istream)) quot)
-              (list text ((fstream-rest istream)))
-              (get-text ((fstream-rest istream)) 
-                        (string-append text (string (integer->char 
-                                                     (car (fstream-char istream)))))))))) 
+                                                          val) end))))))
   
   ;strip-off-whitespace: fstream->fstream
   (define strip-off-whitespace
@@ -291,22 +264,25 @@
                 (name-stream (build-name istream #t (make-string 0)))
                 (istream (strip-off-whitespace (cadr name-stream))))
            (if (eq? (car (fstream-char istream)) eq)
-               (let ((istream (strip-off-whitespace ((fstream-rest istream)))))
-                 (if (eq? (car (fstream-char istream)) quot)
-                     (let ((att-stream (build-attVal ((fstream-rest istream)) null)))
+               (let* ((istream (strip-off-whitespace ((fstream-rest istream))))
+		      [next-char (car (fstream-char istream))])
+                 (if (or (= next-char quot) (= next-char apos))
+                     (let ((att-stream (build-attVal ((fstream-rest istream)) null next-char)))
                        (build-atts (cadr att-stream) 
                                    (cons (list (car name-stream)
                                                (car att-stream)
                                                char-name-start
                                                (cadr (fstream-char (cadr att-stream)))) res)))
-                     (raise (make-lex:error (string-append "Attribute value for " (car name-stream)
-                                                           " position " (cadr (fstream-char istream))
-                                                           " should be surrounded in quotes")
-                                            istream))))
-               (raise (make-lex:error 
-                       (string-append "Attribute declarations should have name=val in "
-                                      (car (name-stream)) " position " 
-                                      (cadr (fstream-char istream))) istream))))))))
+                     (kablooie-attribute "Attribute value for " " should be surrounded in quotes"
+                                         name-stream istream)))
+               (kablooie-attribute "Attribute declarations should have name=val in " ""
+                                   name-stream istream)))))))
+  
+  (define (kablooie-attribute mess0 mess1 name-stream istream)
+    (raise (make-lex:error (string-append mess0 (car name-stream)
+                                          " position " (number->string (cadr (fstream-char istream)))
+                                          mess1)
+                           istream)))
   
   ;build-end-tag: fstream -> tokstream
   (define build-end-tag
@@ -324,6 +300,7 @@
                                    istream))))))
   
   ;find-text: fstream list -> (list list fstream)
+  ;; kathyg's type is wrong - ptg
   (define find-text
     (lambda (istream res stop ref)
       (cond
@@ -352,7 +329,7 @@
   
   (define DOCTYPE (string->symbol "DOCTYPE"))
   (define CDATA (string->symbol "CDATA"))
-
+  
   ;build-doc-tag: fstream -> tokstream
   ;right now, still doesn't allow internal... about to
   (define build-doc-tag
@@ -432,7 +409,7 @@
   (define build-entref-intern
     (make-build-ent (lambda (ent rest) (list ent rest))
                     (lambda (rest) rest)))
-
+  
   ;build-entref: fstream -> tokstream
   (define build-entref
     (make-build-ent

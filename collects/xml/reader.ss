@@ -31,14 +31,17 @@
   
   ;; Attribute ::= (make-attribute Location Location Symbol String)
   (define-struct (attribute struct:source) (name value))
-
+  
   ;; Pcdata ::= (make-pcdata Location Location String)
   (define-struct (pcdata struct:source) (string))
   
   ;; Content ::= Pcdata  
   ;;          |  Processing-instruction
+  ;;          |  Entity
   ;;          |  Element
   
+  ;; Entity ::= (make-entity (U Nat Symbol))
+  (define-struct entity (text))
   
   ;; Processing-instruction ::= (make-pi Location Location String (list String))
   (define-struct (pi struct:source) (target-name instruction))
@@ -318,19 +321,22 @@
                                     (let-values ([(x)(cond
                                                        ((text? token)
                                                         (make-pcdata
-                                                          (text-start token)
-                                                          (text-stop token)
-                                                          (list->string (expand-ref (text-contents token)))))
+                                                         (text-start token)
+                                                         (text-stop token)
+                                                         (list->string (expand-ref (text-contents token)))))
                                                        ((cdata-tag? token) 
                                                         (make-pcdata
-                                                          (cdata-tag-start token)
-                                                          (cdata-tag-stop token)
-                                                          (list->string (cdata-tag-contents token))))
+                                                         (cdata-tag-start token)
+                                                         (cdata-tag-stop token)
+                                                         (list->string (cdata-tag-contents token))))
                                                        ((entity-ref? token) 
-                                                        (make-pcdata 
-                                                          (entity-ref-start token)
-                                                          (entity-ref-stop token)
-                                                          (look-up-ref (list->string (entity-ref-contents token)))))
+                                                        (let ([ref (look-up-ref token)])
+                                                          (cond
+                                                            [(entity? ref) ref]
+                                                            [else (make-pcdata 
+                                                                   (entity-ref-start token)
+                                                                   (entity-ref-stop token)
+                                                                   ref)])))
                                                        ((pi-tag? token) 
                                                         (make-pi 
                                                          (pi-tag-start token)
@@ -351,7 +357,7 @@
                     (if (char? (car lst))
                         (cons (car lst) (expand-ref (cdr lst)))
                         (append (string->list 
-                                 (look-up-ref (list->string (entity-ref-contents (car lst)))))
+                                 (look-up-ref (car lst)))
                                 (expand-ref (cdr lst)))))))
             
             ;; digits->char : String Nat -> Char
@@ -361,26 +367,28 @@
                     (string (integer->char num))
                     (raise (make-xml-read:error "Invalid numeric entity" digits)))))
             
-            ;; look-up-ref : String -> String
-            (define (look-up-ref ent)
-              (case (string->symbol ent)
-                [(lt) "<"]
-                [(gt) ">"]
-                [(amp) "&"]
-                [(apos) "'"]
-                [(quot) "\""]
-                [else
-                 (let ([len (string-length ent)])
-                   (cond
-                     ((eq? (string-ref ent 0) #\#)
-                      (cond
-                        [(< len 2)
-                         (raise (make-xml-read:error "Invalid numeric entity &#;" ent))]
-                        [(eq? (string-ref ent 1) #\x) 
-                         (digits->char (substring ent 2 len) 16)]
-                        [else 
-                         (digits->char (substring ent 1 len) 10)]))
-                     (else
-                      (printf "Warning: user defined entities not supported at this time~n") "")))])))
+            ;; look-up-ref : Entity-ref -> String
+            (define (look-up-ref ent-ref)
+              (let* ([ent (list->string (entity-ref-contents ent-ref))]
+                     [ent-sym (string->symbol ent)])
+                (case ent-sym
+                  [(lt) "<"]
+                  [(gt) ">"]
+                  [(amp) "&"]
+                  [(apos) "'"]
+                  [(quot) "\""]
+                  [else
+                   (let ([len (string-length ent)])
+                     (cond
+                       ((eq? (string-ref ent 0) #\#)
+                        (cond
+                          [(< len 2)
+                           (raise (make-xml-read:error "Invalid numeric entity &#;" ent))]
+                          [(eq? (string-ref ent 1) #\x) 
+                           (digits->char (substring ent 2 len) 16)]
+                          [else 
+                           (digits->char (substring ent 1 len) 10)]))
+                       (else ;(make-entity ent-sym) this breaks too many things -ptg yuck
+                             "")))]))))
       
       (read-document (build-tokstream (port->fstream input)) (make-document null null null)))))

@@ -27,9 +27,10 @@
    (struct pi (target-name instruction))
    (struct source (start stop))
    (struct pcdata (string))
+   (struct entity (text))
    (struct xml-read:error ())))
 
-(define-signature writer^ (write-xml display-xml write-xml/content display-xml/content))
+(define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand))
 (define-signature reader^ ((open xml-structs^) read-xml))
 
 (define-signature xexpr^ (xml->xexpr xexpr->xml))

@@ -1,6 +1,8 @@
 (unit/sig writer^
   (import reader^ mzlib:function^)
   
+  (define empty-tag-shorthand (make-parameter #t))
+  
   ;; gen-write/display-xml : (Nat Output-port -> Void) -> Content [Output-Port]-> Void
   (define (gen-write/display-xml dent)
     (lambda (c . out)
@@ -39,6 +41,7 @@
        [(element? el) write-xml-element]
        [(pcdata? el) write-xml-pcdata]
        [(pi? el) write-xml-pi]
+       [(entity? el) write-xml-entity]
        [else (error 'write-xml-content "received ~a" el)])
      el over dent out))
   
@@ -51,7 +54,7 @@
                   (fprintf out " ~s=~s" (attribute-name att)
                            (escape (attribute-value att) escape-attribute-table)))
                 (element-attributes el))
-      (if (null? content)
+      (if (and (null? content) (empty-tag-shorthand))
           (fprintf out "/>")
           (begin
             (fprintf out ">")
@@ -68,8 +71,12 @@
   (define (write-xml-pcdata str over dent out)
     (write-xml-base (escape (pcdata-string str) escape-table) over dent out))
   
-  ;; write-xml-pi : String Nat (Nat Output-Stream -> Void) Output-Stream -> Void
+  ;; write-xml-pi : Processing-instruction Nat (Nat Output-Stream -> Void) Output-Stream -> Void
   (define write-xml-pi void) ;; more here
+  
+  ;; write-xml-entity : Entity Nat (Nat Output-stream -> Void) Output-stream -> Void
+  (define (write-xml-entity entity over dent out)
+    (fprintf out "&~a;" (entity-text entity)))
     
   (define escape-table
     (map (lambda (x y) (cons (regexp (symbol->string x)) y))

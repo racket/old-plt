@@ -1,3 +1,6 @@
+(define-signature typeset:utils-input^
+  (typeset-size))
+
 (define-signature typeset:utils^
   (single-bracket
    double-bracket
@@ -12,6 +15,6 @@
    sup sub
    postscript
    
-   arrow b-arrow g-arrow bg-arrow checked-arrow)) ;; these should move out
+   arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)) ;; these should move out
 
 (require-library "invoke.ss")

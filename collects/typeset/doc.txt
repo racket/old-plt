@@ -91,4 +91,10 @@ The tool also provides several new primitive functions:
     drawn at the (x,y) coordinates given by the final argument's second and
     third parameters.
 
+  - typeset-size : (union (-> integer) (integer -> void))
+
+    This is a parameter-like function (not a true parameter) that controls
+    the size of the rendered font. It defaults to drscheme's font size, as
+    set in the preferences dialog.
+
   - position : ...

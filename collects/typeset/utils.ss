@@ -1,6 +1,7 @@
 (unit/sig typeset:utils^
   (import mred^
-	  framework^)
+	  framework^
+	  typeset:utils-input^)
 
   (define (snipize obj)
     (if (is-a? obj snip%)
@@ -452,7 +453,7 @@
 		   (send dc draw-point (+ (floor (/ (+ l r) 2))) yp)
 		   (send dc draw-point r yp))))))
 
-  (define-values (arrow b-arrow g-arrow bg-arrow checked-arrow)
+  (define-values (arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)
     (let* ([arrow/letter-space 1]
 	   [arrow-height 6]
 	   [get-w/h/d/s/l/r
@@ -535,8 +536,13 @@
 						 (send old-font get-underlined)))
 			 (draw-text dc x y (string (integer->char 214)) #f)
 			 (send dc set-font old-font)
-			 (draw-arrow dc x y #f))))])
-      (values arrow b-arrow g-arrow bg-arrow checked-arrow)))
+			 (draw-arrow dc x y #f))))]
+	   [blank-arrow
+	    (drawing "robby:blank-arrow"
+		     (get-w/h/d/s/l/r #f)
+		     (lambda (dc x y)
+		       (void)))])
+      (values arrow b-arrow g-arrow bg-arrow checked-arrow blank-arrow)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;                                                     ;;;
@@ -877,8 +883,9 @@
             
 	    (-arrow arrow) (-b-arrow b-arrow)
 	    (-g-arrow g-arrow) (-bg-arrow bg-arrow)
-	    (-checked-arrow checked-arrow))
-
+	    (-checked-arrow checked-arrow)
+	    (-blank-arrow blank-arrow)
+	    (-typset-size typeset-size))
 
     (define -single-bracket single-bracket) 
     (define -double-bracket double-bracket)
@@ -897,4 +904,7 @@
     (define -b-arrow b-arrow)
     (define -g-arrow g-arrow)
     (define -bg-arrow bg-arrow)
-    (define -checked-arrow checked-arrow)))
+    (define -checked-arrow checked-arrow)
+    (define -blank-arrow blank-arrow)
+
+    (define -typeset-size typeset-size)))

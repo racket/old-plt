@@ -7,10 +7,14 @@
    vertical-edit-panel%))
 
 (define-signature mred:url^
-  ([struct url (method path search fragment)]
+  ((struct url (scheme host port path params query fragment))
    unixpath->path
-   parse-url
-   call-with-input-url))
+   http/get-impure-port    ; url [x list (str)] -> in-port
+   display-pure-port      ; in-port -> ()
+   string->url            ; str -> url
+   call/input-url         ; url x (in-port -> ()) [x list (str)] -> ()
+   purify-port            ; in-port -> ()
+   combine-url/relative)) ; url x str -> url
 
 (define-signature mred:exn^
   ((struct exn ())

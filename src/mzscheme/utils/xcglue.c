@@ -214,6 +214,33 @@ int objscheme_istype_box(Scheme_Object *obj, const char *stopifbad)
   return 0;
 }
 
+int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *obj, const char *sym, const char *where)
+{
+  if (SCHEME_SYMBOLP(obj)) {
+    int l = strlen(sym);
+    if (SCHEME_SYM_LEN(obj) == l) {
+      if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
+	return 1;
+      }
+    }
+  }
+
+  if (objscheme_istype_number(obj, NULL)) {
+    long v = objscheme_unbundle_integer(obj, where);
+    if (v >= 0)
+      return 1;
+  }
+
+  if (where) {
+    char *b = scheme_malloc_atomic(50);
+    strcpy(b, "non-negative number or '");
+    strcat(b, sym);
+    scheme_wrong_type(where, b, -1, 0, &obj);
+  }
+
+  return 0;
+}
+
 /************************************************************************/
 
 Scheme_Object *objscheme_box(Scheme_Object *v)
@@ -275,6 +302,27 @@ long objscheme_unbundle_nonnegative_integer(Scheme_Object *obj, const char *wher
   if ((v < 0) && where)
     scheme_wrong_type(where, "non-negative number", -1, 0, &obj);
   return v;
+}
+
+long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *obj, const char *sym, const char *where)
+{
+  if (SCHEME_SYMBOLP(obj)) {
+    int l = strlen(sym);
+    if (SCHEME_SYM_LEN(obj) == l) {
+      if (!strcmp(sym, SCHEME_SYM_VAL(obj))) {
+	return -1;
+      }
+    }
+  }
+
+  if (objscheme_istype_number(obj, NULL)) {
+    long v = objscheme_unbundle_integer(obj, where);
+    if (v >= 0)
+      return v;
+  }
+
+  (void)objscheme_istype_nonnegative_symbol_integer(obj, sym, where);
+  return -1;
 }
 
 ExactLong objscheme_unbundle_ExactLong(Scheme_Object *obj, const char *where)

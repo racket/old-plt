@@ -378,13 +378,13 @@ Scheme_Env *scheme_top_level_env(void)
 			     env);
   scheme_add_global_constant("undefine",
 			     scheme_make_prim_w_arity(undefine,
-					      "undefine",
-					      1, 1),
+						      "undefine",
+						      1, 1),
 			     env);
   scheme_add_global_constant("make-global-value-list",
 			     scheme_make_prim_w_arity(list_globals,
-					      "make-global-value-list",
-					      0, 0),
+						      "make-global-value-list",
+						      0, 0),
 			     env);
   
   scheme_add_global_constant("defined?", 

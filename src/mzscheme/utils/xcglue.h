@@ -69,6 +69,7 @@ int objscheme_istype_generic(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_closed_prim(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_proc2(Scheme_Object *, const char *stopifbad);
 int objscheme_istype_box(Scheme_Object *, const char *stopifbad);
+int objscheme_istype_nonnegative_symbol_integer(Scheme_Object *, const char *symname, const char *stopifbad);
 
 Scheme_Object *objscheme_car(Scheme_Object *, const char *where);
 Scheme_Object *objscheme_bundle_string(char *);
@@ -78,6 +79,7 @@ Scheme_Object *objscheme_bundle_generic(void *);
 void *objscheme_unbundle_generic(Scheme_Object *, const char *);
 long objscheme_unbundle_integer(Scheme_Object *, const char *);
 long objscheme_unbundle_nonnegative_integer(Scheme_Object *, const char *);
+long objscheme_unbundle_nonnegative_symbol_integer(Scheme_Object *, const char *symname, const char *);
 ExactLong objscheme_unbundle_ExactLong(Scheme_Object *, const char *);
 double objscheme_unbundle_float(Scheme_Object *, const char *);
 double objscheme_unbundle_nonnegative_float(Scheme_Object *, const char *);

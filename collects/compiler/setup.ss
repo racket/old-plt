@@ -60,6 +60,7 @@
 			     (complete-path? base)
 			     base))))))))
 
+(printf "Setup version is ~a~n" (version))
 (printf "PLT home directory is ~a~n" plthome)
 (printf "Collection Paths are: ~a~n" (current-library-collection-paths))
 

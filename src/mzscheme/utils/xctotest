@@ -219,9 +219,9 @@ sub PrintSymSet
 	($n, $v) = split(/,/, $sym);
 	$n = &StripQuotes($n);
 	if ($multi) {
-	    print "\n  wx:const-$n";
+	    print "\n  '$n";
 	} else {
-	    print "(send SYM-${name}-example-list add wx:const-$n)\n";
+	    print "(send SYM-${name}-example-list add '$n)\n";
 	}
     }
     

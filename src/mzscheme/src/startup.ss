@@ -183,11 +183,32 @@
     (lambda (l)
       (apply list* (apply map list l))))
 
+  ;; The split procedure is used when matching ellipses
+  ;;  fiollowed by a certain number of patterns
+  (define-values (split-stx-list)
+    (lambda (s n prop?)
+      (let-values ([(pre post m)
+		    (let loop ([s s])
+		      (if (stx-pair? s)
+			  (let-values ([(pre post m) (loop (stx-cdr s))])
+			    (if (< m n)
+				(values '() s (add1 m))
+				(values (cons (stx-car s) pre) post m)))
+			  (values '() s (if prop?
+					    (if (stx-null? s) 
+						0 
+						-inf.0)
+					    (if (stx-null? s)
+						-inf.0
+						1)))))])
+	(values pre post (= m n)))))
+
   (provide identifier? stx-null? stx-null/#f stx-pair? stx-list?
 	   stx-car stx-cdr stx->list
 	   stx-vector? stx-vector-ref
 	   stx-check/esc cons/#f append/#f
-	   stx-rotate stx-rotate*))
+	   stx-rotate stx-rotate*
+	   split-stx-list))
 
 ;;----------------------------------------------------------------------
 ;; quasiquote
@@ -898,6 +919,12 @@
 (module #%sc #%kernel
   (require #%stx #%small-scheme)
 
+  ;; Checks whether s is "..."
+  (define (...? s)
+    (if (symbol? (syntax-e s))
+	(module-identifier=? s (quote-syntax ...))
+	#f))
+
   ;; memq on a list of identifiers, and
   ;;  nested identifiers
   (define (stx-memq ssym l)
@@ -971,43 +998,82 @@
     (define (m&e p local-top use-ellipses? last? id-is-rest?)
       (cond
        [(and use-ellipses? (ellipsis? p))
-	(unless (stx-null? (stx-cdr (stx-cdr p)))
-	  (raise-syntax-error 
-	   'syntax-case
-	   "misplaced ellipses in pattern"
-	   top
-	   p))
-	(let* ([p-head (stx-car p)]
-	       [nestings (get-ellipsis-nestings p-head k)])
-	  (let-values ([(match-head mh-did-var?) (m&e p-head p-head #t #f #f)])
-	    (if just-vars?
-		(values (map list nestings) #f)
-		(let ([nest-vars (flatten-nestings nestings (lambda (x) #t))])
-		  (values
-		   `(lambda (e)
-		      (if (stx-list? e)
-			  ,(let ([b (app-e match-head)])
-			     (if (equal? b '(list e))
-				 (if last?
-				     '(stx->list e)
-				     '(list (stx->list e)))
-				 (if (null? nest-vars)
-				     `(andmap (lambda (e) ,b) (stx->list e))
-				     `(let/ec esc
-					(let ([l (map (lambda (e) (stx-check/esc ,b esc))
-						      (stx->list e))])
-					  (if (null? l)
-					      (quote ,(let ([empties (map (lambda (v) '()) nest-vars)])
-							(if last?
-							    (apply list* empties)
-							    empties)))
-					      (,(if last? 'stx-rotate* 'stx-rotate) l)))))))
-			  #f))
-		   mh-did-var?)))))]
+	(if (stx-null? (stx-cdr (stx-cdr p)))
+	    ;; Simple case: ellipses at the end
+	    (let* ([p-head (stx-car p)]
+		   [nestings (get-ellipsis-nestings p-head k)])
+	      (let-values ([(match-head mh-did-var?) (m&e p-head p-head #t #f #f)])
+		(if just-vars?
+		    (values (map list nestings) #f)
+		    (let ([nest-vars (flatten-nestings nestings (lambda (x) #t))])
+		      (values
+		       `(lambda (e)
+			  (if (stx-list? e)
+			      ,(let ([b (app-e match-head)])
+				 (if (equal? b '(list e))
+				     (if last?
+					 '(stx->list e)
+					 '(list (stx->list e)))
+				     (if (null? nest-vars)
+					 `(andmap (lambda (e) ,b) (stx->list e))
+					 `(let/ec esc
+					    (let ([l (map (lambda (e) (stx-check/esc ,b esc))
+							  (stx->list e))])
+					      (if (null? l)
+						  (quote ,(let ([empties (map (lambda (v) '()) nest-vars)])
+							    (if last?
+								(apply list* empties)
+								empties)))
+						  (,(if last? 'stx-rotate* 'stx-rotate) l)))))))
+			      #f))
+		       mh-did-var?)))))
+	    ;; More stuff after ellipses. We need to make sure that
+	    ;;  the extra stuff doesn't include any ellipses or a dot 
+	    (let ([hd (list (stx-car p) (stx-car (stx-cdr p)))]
+		  [rest (stx-cdr (stx-cdr p))])
+	      (let-values ([(tail-cnt prop?)
+			    (let loop ([rest rest][cnt 0])
+			      (if (stx-null? rest)
+				  (values cnt #t)
+				  (if (stx-pair? rest)
+				      (begin
+					(when (...? (stx-car rest))
+					  (raise-syntax-error 
+					   syntax-case-stxsrc
+					   "misplaced ellipses in pattern (follows other ellipses)"
+					   top
+					   (stx-car rest)))
+					(loop (stx-cdr rest) (add1 cnt)))
+				      (values (add1 cnt) #f))))])
+		;; Like cons case, but with a more elaborate assembly:
+		(let*-values ([(-match-head -mh-did-var?) (if just-vars?
+							      (m&e hd hd use-ellipses? #f #f)
+							      (values 'not 'yet))]
+			      [(match-tail mt-did-var?) (m&e rest local-top use-ellipses? 
+							     last? #t)]
+			      [(match-head mh-did-var?) (if just-vars?
+							    (values -match-head -mh-did-var?)
+							    (m&e hd hd use-ellipses? 
+								 (and last? (not mt-did-var?))
+								 #f))])
+		  (if just-vars?
+		      (values (append match-head match-tail) #f)
+		      (values
+		       `(lambda (e)
+			  (let*-values ([(pre-items post-items ok?) 
+					 (split-stx-list e ,tail-cnt ,prop?)])
+			    (if ok?
+				,(let ([apph (app match-head 'pre-items)]
+				       [appt (app match-tail 'post-items)])
+				   (if mh-did-var?
+				       (app-append apph appt)
+				       `(if ,apph ,appt #f)))
+				#f)))
+		       (or mh-did-var? mt-did-var?)))))))]
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
-		   (eq? (syntax-e hd) '...))
+		   (...? hd))
 	      (if (and (stx-pair? (stx-cdr p))
 		       (stx-null? (stx-cdr (stx-cdr p))))
 		  (let ([dp (stx-car (stx-cdr p))])
@@ -1061,7 +1127,7 @@
 			#f))
 		 #f))
 	    (if (and use-ellipses?
-		     (eq? (syntax-e p) '...))
+		     (...? p))
 		(raise-syntax-error 
 		 syntax-case-stxsrc
 		 "misplaced ellipses in pattern"
@@ -1082,7 +1148,7 @@
 	  ;; If no top-level ellipses, match one by one:
 	  (if (and (not just-vars?)
 		   (or (not use-ellipses?)
-		       (andmap (lambda (x) (not (eq? '... (syntax-e x)))) l)))
+		       (andmap (lambda (x) (not (...? x))) l)))
 	      ;; Match one-by-one:
 	      ;; Do tail first to find out if it has variables.
 	      (let ([len (vector-length (syntax-e p))])
@@ -1223,8 +1289,20 @@
     (define (expander p proto-r local-top use-ellipses? use-tail-pos hash!)
       (cond
        [(and use-ellipses? (ellipsis? p))
-	(let* ([p-head (stx-car p)]
-	       [nestings (and proto-r (get-ellipsis-nestings p-head k))])
+	(let*-values ([(p-head) (stx-car p)]
+		      [(el-count rest-p last-el)
+		       (let loop ([p (stx-cdr (stx-cdr p))][el-count 0][last-el (stx-car (stx-cdr p))])
+			 (if (and (stx-pair? p)
+				  (...? (stx-car p)))
+			     (loop (stx-cdr p) (add1 el-count) (stx-car p))
+			     (values el-count p last-el)))]
+		      [(p-head) (let loop ([el-count el-count])
+				  (if (zero? el-count)
+				      p-head
+				      (datum->syntax-object
+				       #f
+				       (list (loop (sub1 el-count)) (quote-syntax ...)))))]
+		      [(nestings) (and proto-r (get-ellipsis-nestings p-head k))])
 	  (when (null? nestings)
 	    (apply
 	     raise-syntax-error 
@@ -1232,7 +1310,7 @@
 	     "no pattern variables before ellipses in template"
 	     (pick-specificity
 	      top
-	      local-top)))
+	      last-el)))
 	  (let* ([proto-rr+deep?s (and proto-r
 				       (map (lambda (nesting)
 					      (ellipsis-sub-env nesting proto-r top local-top))
@@ -1259,8 +1337,8 @@
 			 "too many ellipses in template"
 			 (pick-specificity
 			  top
-			  local-top))))]
-		 [rest (expander (stx-cdr (stx-cdr p)) proto-r local-top #t use-tail-pos hash!)]
+			  last-el))))]
+		 [rest (expander rest-p proto-r local-top #t use-tail-pos hash!)]
 		 [ehead (expander p-head (and proto-r (append proto-rr-shallow proto-rr-deep)) p-head #t #f hash!)])
 	    (if proto-r
 		`(lambda (r)
@@ -1271,11 +1349,13 @@
 						  flat-nestings-deep)])
 					(cond
 					 [(and (= 1 (length valses))
+					       (= 0 el-count)
 					       (null? flat-nestings-shallow)
 					       (equal? ehead '(lambda (r) (car r))))
 					  ;; Common case: one item in list, no map needed:
 					  (car valses)]
 					 [(and (= 2 (length valses))
+					       (= 0 el-count)
 					       (null? flat-nestings-shallow)
 					       (equal? ehead '(lambda (r) (list (car r) (cadr r)))))
 					  ;; Another common case: a maintained pair
@@ -1283,13 +1363,20 @@
 					    (lambda (a b) (list a b))
 					    ,@valses)]
 					 [else
-					  ;; General case: 
-					  `(map 
-					    (lambda vals (,ehead 
-							  ,(if (null? flat-nestings-shallow)
-							       'vals
-							       '(append shallows vals))))
-					    ,@valses)]))])
+					  ;; General case:
+					  (letrec ([wrap (lambda (expr el-count)
+							   (if (zero? el-count)
+							       expr
+							       (wrap `(apply append ,expr)
+								     (sub1 el-count))))])
+					    (wrap
+					     `(map 
+					       (lambda vals (,ehead 
+							     ,(if (null? flat-nestings-shallow)
+								  'vals
+								  '(append shallows vals))))
+					       ,@valses)
+					     el-count))]))])
 				 (if (null? flat-nestings-shallow)
 				     deeps
 				     `(let ([shallows
@@ -1306,8 +1393,7 @@
        [(stx-pair? p)
 	(let ([hd (stx-car p)])
 	  (if (and use-ellipses?
-		   (identifier? hd)
-		   (eq? (syntax-e hd) '...))
+		   (...? hd))
 	      (if (and (stx-pair? (stx-cdr p))
 		       (stx-null? (stx-cdr (stx-cdr p))))
 		  (let ([dp (stx-car (stx-cdr p))])
@@ -1342,7 +1428,7 @@
 		      `(lambda (r) ,(apply-list-ref 'r (stx-memq-pos p proto-r) use-tail-pos))
 		      (begin
 			(when (and use-ellipses?
-				   (eq? (syntax-e p) '...))
+				   (...? p))
 			  (raise-syntax-error 
 			   syntax-stxsrc
 			   "misplaced ellipses in template"
@@ -1350,7 +1436,7 @@
 			   p))
 			(check-not-pattern p proto-r)
 			`(lambda (r) (quote-syntax ,p)))))
-		(unless (and (eq? (syntax-e p) '...)
+		(unless (and (...? p)
 			     use-ellipses?)
 		  (hash! p))))]
        [(null? p) 
@@ -1499,7 +1585,7 @@
 	  (let ([hd (stx-car p)])
 	    (if (and use-ellipses?
 		     (identifier? hd)
-		     (eq? (syntax-e hd) '...)
+		     (...? hd)
 		     (stx-pair? (stx-cdr p)))
 		(sub (stx-car (stx-cdr p)) #f)
 		(append! (sub (stx-car p) use-ellipses?) 
@@ -1578,8 +1664,8 @@
     (and (stx-pair? x) 
 	 (let ([d (stx-cdr x)])
 	   (and (stx-pair? d) 
-		(eq? (syntax-e (stx-car d)) '...)
-		(not (eq? (syntax-e (stx-car x)) '...))))))
+		(...? (stx-car d))
+		(not (...? (stx-car x)))))))
 
   ;; Takes an environment prototype and removes
   ;; the ellipsis-nesting information.
@@ -1615,7 +1701,7 @@
 	(and (no-ellipses? (stx-car stx))
 	     (no-ellipses? (stx-cdr stx)))]
        [(identifier? stx)
-	(not (eq? (syntax-e stx) '...))]
+	(not (...? stx))]
        [else #t])))
 
   ;; Structure for communicating first-order pattern variable information:

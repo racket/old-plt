@@ -54,7 +54,8 @@
 				Name="VCMIDLTool"
 				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				TypeLibraryName="$(InputName).tlb"
+				OutputDirectory="..\..\..\mysterx\myssink"
 				HeaderFileName="$(InputName).h"
 				EnableErrorChecks="2"/>
 			<Tool
@@ -116,7 +117,8 @@
 				Name="VCMIDLTool"
 				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				TypeLibraryName="$(InputName).tlb"
+				OutputDirectory="..\..\..\mysterx\myssink"
 				HeaderFileName="$(InputName).h"
 				EnableErrorChecks="2"/>
 			<Tool
@@ -182,7 +184,8 @@
 			<Tool
 				Name="VCMIDLTool"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				TypeLibraryName="$(InputName).tlb"
+				OutputDirectory="..\..\..\mysterx\myssink"
 				HeaderFileName="$(InputName).h"/>
 			<Tool
 				Name="VCPostBuildEventTool"

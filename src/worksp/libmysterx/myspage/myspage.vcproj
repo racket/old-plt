@@ -17,7 +17,8 @@
 			ConfigurationType="2"
 			UseOfATL="1"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.obj;*.ilk;*.pdb;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.bat;$(TargetPath)">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
@@ -54,7 +55,8 @@
 				AdditionalIncludeDirectories="..\..\..\mzscheme\include"
 				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				TypeLibraryName="$(InputName).tlb"
+				OutputDirectory="..\..\..\mysterx\myspage"
 				HeaderFileName="$(InputName).h"
 				EnableErrorChecks="2"/>
 			<Tool
@@ -80,7 +82,8 @@
 			ConfigurationType="2"
 			UseOfATL="1"
 			ATLMinimizesCRunTimeLibraryUsage="FALSE"
-			CharacterSet="2">
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.obj;*.ilk;*.pdb;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.bat;$(TargetPath)">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
@@ -117,7 +120,8 @@
 				AdditionalIncludeDirectories="..\..\..\mzscheme\include"
 				WarningLevel="3"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				TypeLibraryName="$(InputName).tlb"
+				OutputDirectory="..\..\..\mysterx\myspage"
 				HeaderFileName="$(InputName).h"
 				EnableErrorChecks="2"/>
 			<Tool
@@ -143,7 +147,8 @@
 			ConfigurationType="2"
 			UseOfATL="1"
 			ATLMinimizesCRunTimeLibraryUsage="TRUE"
-			CharacterSet="2">
+			CharacterSet="2"
+			DeleteExtensionsOnClean="*.obj;*.ilk;*.pdb;*.tlb;*.tli;*.tlh;*.tmp;*.rsp;*.bat;$(TargetPath)">
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
@@ -184,7 +189,8 @@
 				Name="VCMIDLTool"
 				AdditionalIncludeDirectories="..\..\..\mzscheme\include"
 				GenerateStublessProxies="TRUE"
-				TypeLibraryName="$(InputDir)$(InputName).tlb"
+				TypeLibraryName="$(InputName).tlb"
+				OutputDirectory="..\..\..\mysterx\myspage"
 				HeaderFileName="$(InputName).h"/>
 			<Tool
 				Name="VCPostBuildEventTool"

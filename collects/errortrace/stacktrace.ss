@@ -112,97 +112,106 @@
       ;; a transformer expression and #f for a normal expression.
 
       (define (profile-point bodies name expr trans?)
-        (if (profiling-enabled)
-            (let ([key (gensym 'profile-point)])
-              (initialize-profile-point key name expr)
-              (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
-                            [start (datum->syntax-object #f (gensym) (quote-syntax here))]
-                            [profile-key (datum->syntax-object #f profile-key (quote-syntax here))]
-                            [register-profile-start register-profile-start]
-                            [register-profile-done register-profile-done])
-                (with-syntax ([rest 
-                               (insert-at-tail*
-                                (syntax (register-profile-done 'key start))
-                                bodies
-                                trans?)])
-                  (syntax
-                   ((let ([start (register-profile-start 'key)])
-                      (with-continuation-mark 'profile-key 'key
-                        (begin . rest))))))))
-            bodies))
+	(let ([key (gensym 'profile-point)])
+	  (initialize-profile-point key name expr)
+	  (with-syntax ([key (datum->syntax-object #f key (quote-syntax here))]
+			[start (datum->syntax-object #f (gensym) (quote-syntax here))]
+			[profile-key (datum->syntax-object #f profile-key (quote-syntax here))]
+			[register-profile-start register-profile-start]
+			[register-profile-done register-profile-done])
+	    (with-syntax ([rest 
+			   (insert-at-tail*
+			    (syntax (register-profile-done 'key start))
+			    bodies
+			    trans?)])
+	      (syntax
+	       (let ([start (register-profile-start 'key)])
+		 (with-continuation-mark 'profile-key 'key
+		   (begin . rest))))))))
       
       (define (insert-at-tail* e exprs trans?)
-        (if (stx-null? (stx-cdr exprs))
-            (list (insert-at-tail e (stx-car exprs) trans?))
-            (cons (stx-car exprs) (insert-at-tail* e (stx-cdr exprs) trans?))))
-      
+	(let ([new
+	       (rebuild exprs
+			(let loop ([exprs exprs])
+			  (if (stx-null? (stx-cdr exprs))
+			      (list (cons (stx-car exprs)
+					  (insert-at-tail e (stx-car exprs) trans?)))
+			      (loop (stx-cdr exprs)))))])
+	  (if (syntax? exprs)
+	      (certify exprs new)
+	      new)))
+	  
       (define (insert-at-tail se sexpr trans?)
         (with-syntax ([expr sexpr]
                       [e se])
           (kernel-syntax-case sexpr trans?
-                              ;; negligible time to eval
-                              [id
-                               (identifier? sexpr)
-                               (syntax (begin e expr))]
-                              [(quote _) (syntax (begin e expr))]
-                              [(quote-syntax _) (syntax (begin e expr))]
-                              [(#%datum . d) (syntax (begin e expr))]
-                              [(#%top . d) (syntax (begin e expr))]
-                              
-                              ;; No tail effect, and we want to account for the time
-                              [(lambda . _) (syntax (begin0 expr e))]
-                              [(case-lambda . _) (syntax (begin0 expr e))]
-                              [(set! . _) (syntax (begin0 expr e))]
-                              
-                              [(let-values bindings . body)
-                               (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
-                                 (syntax (let-values bindings . rest)))]
-                              [(letrec-values bindings . body)
-                               (with-syntax ([rest (insert-at-tail* se (syntax body) trans?)])
-                                 (syntax (letrec-values bindings . rest)))]
-                              
-                              [(begin . _)
-                               (insert-at-tail* se sexpr trans?)]
-                              [(with-continuation-mark . _)
-                               (insert-at-tail* se sexpr trans?)]
-                              
-                              [(begin0 body ...)
-                               (syntax (begin0 body ... e))]
-                              
-                              [(if test then)
-                               (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)])
-                                 (syntax (if test then2)))]
-                              [(if test then else)
-                               ;; WARNING: e inserted twice!
-                               (with-syntax ([then2 (insert-at-tail se (syntax then) trans?)]
-                                             [else2 (insert-at-tail se (syntax else) trans?)])
-                                 (syntax (if test then2 else2)))]
-                              
-                              [(#%app . rest)
-                               (if (stx-null? (syntax rest))
-                                   ;; null constant
-                                   (syntax (begin e expr))
-                                   ;; application; exploit guaranteed left-to-right evaluation
-                                   (insert-at-tail* se sexpr trans?))]
-                              
-                              [_else
-                               (error 'errortrace
-                                      "unrecognized (non-top-level) expression form: ~e"
-                                      (syntax-object->datum sexpr))])))
+	    ;; negligible time to eval
+	    [id
+	     (identifier? sexpr)
+	     (syntax (begin e expr))]
+	    [(quote _) (syntax (begin e expr))]
+	    [(quote-syntax _) (syntax (begin e expr))]
+	    [(#%datum . d) (syntax (begin e expr))]
+	    [(#%top . d) (syntax (begin e expr))]
+	    
+	    ;; No tail effect, and we want to account for the time
+	    [(lambda . _) (syntax (begin0 expr e))]
+	    [(case-lambda . _) (syntax (begin0 expr e))]
+	    [(set! . _) (syntax (begin0 expr e))]
+
+	    [(let-values bindings . body)
+	     (insert-at-tail* se sexpr trans?)]
+	    [(letrec-values bindings . body)
+	     (insert-at-tail* se sexpr trans?)]
+	    
+	    [(begin . _)
+	     (insert-at-tail* se sexpr trans?)]
+	    [(with-continuation-mark . _)
+	     (insert-at-tail* se sexpr trans?)]
+	    
+	    [(begin0 body ...)
+	     (certify sexpr (syntax (begin0 body ... e)))]
+	    
+	    [(if test then)
+	     (certify
+	      sexpr
+	      (rebuild sexpr (list (cons #'then (insert-at-tail se (syntax then) trans?)))))]
+	    [(if test then else)
+	     ;; WARNING: e inserted twice!
+	     (certify
+	      sexpr
+	      (rebuild sexpr (list
+			      (cons #'then (insert-at-tail se (syntax then) trans?))
+			      (cons #'else (insert-at-tail se (syntax else) trans?)))))]
+	    
+	    [(#%app . rest)
+	     (if (stx-null? (syntax rest))
+		 ;; null constant
+		 (syntax (begin e expr))
+		 ;; application; exploit guaranteed left-to-right evaluation
+		 (insert-at-tail* se sexpr trans?))]
+	    
+	    [_else
+	     (error 'errortrace
+		    "unrecognized (non-top-level) expression form: ~e"
+		    (syntax-object->datum sexpr))])))
       
       (define (profile-annotate-lambda name expr clause bodys-stx trans?)
 	(let* ([bodys (stx->list bodys-stx)]
-	       [bodyl/maybe-stx
-		(profile-point 
-		 (map (lambda (e) (annotate e trans?))
-		      bodys)
-		 name
-		 expr
-		 trans?)]
-	       [bodyl (if (syntax? bodyl/maybe-stx)
-			  (syntax->list bodyl/maybe-stx)
-			  bodyl/maybe-stx)])
-	  (rebuild clause (map cons bodys bodyl))))
+	       [bodyl (map (lambda (e) (annotate e trans?))
+			   bodys)])
+	  (rebuild clause 
+		   (if (profiling-enabled)
+		       (let ([prof-expr (profile-point bodyl name expr trans?)])
+			 ;; Tell rebuild to replace first expressions with (void),
+			 ;; and replace the last expression with prof-expr:
+			 (let loop ([bodys bodys])
+			   (if (null? (cdr bodys))
+			       (list (cons (car bodys) prof-expr))
+			       (cons (cons (car bodys) #'(void))
+				     (loop (cdr bodys))))))
+		       ;; Map 1-to-1:
+		       (map cons bodys bodyl)))))
       
       (define (keep-lambda-properties orig new)
         (let ([p (syntax-property orig 'method-arity-error)]
@@ -249,24 +258,44 @@
 	(syntax-recertify new orig orig-inspector #f))
 
       (define (rebuild expr replacements)
-	(let ([a (assq expr replacements)])
-	  (if a
-	      (cdr a)
-	      (cond
-	       [(pair? expr) (cons (rebuild (car expr) replacements)
-				   (rebuild (cdr expr) replacements))]
-	       [(vector? expr) (list->vector
-				(map (lambda (expr)
-				       (rebuild expr replacements))
-				     (vector->list expr)))]
-	       [(box? expr) (box (rebuild (unbox expr) replacements))]
-	       [(syntax? expr) (if (identifier? expr)
-				   expr
-				   (datum->syntax-object
-				    expr
-				    (rebuild (syntax-e expr) replacements)
-				    expr))]
-	       [else expr]))))
+	(let loop ([expr expr]
+		   [same-k (lambda () expr)]
+		   [diff-k (lambda (x) x)])
+	  (let ([a (assq expr replacements)])
+	    (if a
+		(diff-k (cdr a))
+		(cond
+		 [(pair? expr) (loop (car expr)
+				     (lambda ()
+				       (loop (cdr expr)
+					     same-k
+					     (lambda (y)
+					       (diff-k (cons (car expr) y)))))
+				     (lambda (x)
+				       (loop (cdr expr)
+					     (lambda ()
+					       (diff-k (cons x (cdr expr))))
+					     (lambda (y)
+					       (diff-k (cons x y))))))]
+		 [(vector? expr) 
+		  (loop (vector->list expr)
+			same-k
+			(lambda (x) (diff-k (list->vector x))))]
+		 [(box? expr) (loop (unbox expr)
+				    same-k
+				    (lambda (x)
+				      (diff-k (box x))))]
+		 [(syntax? expr) (if (identifier? expr)
+				     (same-k)
+				     (loop (syntax-e expr)
+					   same-k
+					   (lambda (x)
+					     (diff-k
+					      (datum->syntax-object
+					       expr
+					       x
+					       expr)))))]
+		 [else (same-k)])))))
 
       (define (one-name names-stx)
 	(let ([l (syntax->list names-stx)])

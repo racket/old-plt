@@ -137,5 +137,5 @@
 
   (define (system str)
     (if (eq? (system-type) 'macos)
-	(subprocess #f #f #f "by id" str)
+	(subprocess #f #f #f "by-id" str)
 	(apply system* (shell-path/args "system" str)))))

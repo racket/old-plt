@@ -1,3 +1,9 @@
+version 104:
+
+Removed right-click context menu from browser 
+ windows, because Language option caused errors
+Added print method to mx-browser%
+
 Version 103-p1:
 
 Added optional index argument to 

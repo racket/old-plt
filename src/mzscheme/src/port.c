@@ -710,7 +710,7 @@ scheme_init_port (Scheme_Env *env)
   scheme_add_global_constant("make-input-port", 
 			     scheme_make_prim_w_arity(make_input_port, 
 						      "make-input-port", 
-						      3, 3), 
+						      3, 4), 
 			     env);
   scheme_add_global_constant("make-output-port", 
 			     scheme_make_prim_w_arity(make_output_port, 
@@ -1101,6 +1101,7 @@ Scheme_Input_Port *
 _scheme_make_input_port(Scheme_Object *subtype,
 			void *data,
 			int (*getc_fun) (Scheme_Input_Port*),
+			int (*peekc_fun) (Scheme_Input_Port*),
 			int (*char_ready_fun) (Scheme_Input_Port*),
 			void (*close_fun) (Scheme_Input_Port*),
 			void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
@@ -1113,6 +1114,7 @@ _scheme_make_input_port(Scheme_Object *subtype,
   ip->sub_type = subtype;
   ip->port_data = data;
   ip->getc_fun = getc_fun;
+  ip->peekc_fun = peekc_fun;
   ip->char_ready_fun = char_ready_fun;
   ip->need_wakeup_fun = need_wakeup_fun;
   ip->close_fun = close_fun;
@@ -1146,13 +1148,14 @@ Scheme_Input_Port *
 scheme_make_input_port(Scheme_Object *subtype,
 		       void *data,
 		       int (*getc_fun) (Scheme_Input_Port*),
+		       int (*peekc_fun) (Scheme_Input_Port*),
 		       int (*char_ready_fun) (Scheme_Input_Port*),
 		       void (*close_fun) (Scheme_Input_Port*),
 		       void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
 		       int must_close)
 {
   return _scheme_make_input_port(subtype, data,
-				 getc_fun, char_ready_fun, close_fun, 
+				 getc_fun, peekc_fun, char_ready_fun, close_fun, 
 				 need_wakeup_fun, must_close);
 }
 
@@ -1347,6 +1350,43 @@ scheme_get_chars(Scheme_Object *port, long size, char *buffer)
   END_LOCK_PORT(ip->sema);
 
   return got;
+}
+
+int scheme_peekc(Scheme_Object *port)
+{
+  Scheme_Input_Port *ip;
+
+  ip = (Scheme_Input_Port *)port;
+
+  if (!ip->peekc_fun) {
+    int ch = scheme_getc(port);
+    scheme_ungetc(ch, port);
+    return ch;
+  } else {
+    int ch;
+    
+    BEGIN_LOCK_PORT(ip->sema);
+    
+    if (ip->ungotten_count)
+      ch = ip->ungotten[ip->ungotten_count - 1];
+    else {
+      check_closed("#<primitive:peek-port-char>", "input", port, ip->closed);
+      ch = ip->peekc_fun(ip);
+    }
+
+    END_LOCK_PORT(ip->sema);
+
+    return ch;
+  }
+}
+
+int scheme_peekc_is_ungetc(Scheme_Object *port)
+{
+  Scheme_Input_Port *ip;
+
+  ip = (Scheme_Input_Port *)port;
+
+  return !ip->peekc_fun;
 }
 
 int scheme_are_all_chars_ready(Scheme_Object *port)
@@ -1774,6 +1814,7 @@ _scheme_make_named_file_input_port(FILE *fp, const char *filename,
   ip = _scheme_make_input_port(file_input_port_type,
 			       fip,
 			       file_getc,
+			       NULL,
 			       file_char_ready,
 			       file_close_input,
 			       file_need_wakeup,
@@ -1902,6 +1943,7 @@ make_fd_input_port(int fd, const char *filename)
   ip = _scheme_make_input_port(fd_input_port_type,
 			       fip,
 			       fd_getc,
+			       NULL,
 			       fd_char_ready,
 			       fd_close_input,
 			       fd_need_wakeup,
@@ -2034,6 +2076,7 @@ make_oskit_console_input_port()
   ip = _scheme_make_input_port(oskit_console_input_port_type,
 			       osk,
 			       osk_getc,
+			       NULL,
 			       osk_char_ready,
 			       osk_close_input,
 			       osk_need_wakeup,
@@ -2389,6 +2432,7 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
   ip = _scheme_make_input_port(tested_file_input_port_type,
 			       tip,
 			       tested_file_getc,
+			       NULL,
 			       tested_file_char_ready,
 			       tested_file_close_input,
 			       tested_file_need_wakeup,
@@ -2462,6 +2506,7 @@ scheme_make_sized_string_input_port(const char *str, long len)
   ip = _scheme_make_input_port(string_input_port_type,
 			       make_indexed_string(str, len),
 			       string_getc,
+			       NULL,
 			       string_char_ready,
 			       string_close_in,
 			       NULL, 
@@ -2577,7 +2622,25 @@ user_getc (Scheme_Input_Port *port)
     if (!SCHEME_CHARP(val))
       scheme_raise_exn(MZEXN_I_O_PORT_USER,
 		       port,
-		       "port: user getc returned a non-character");
+		       "port: user read-char returned a non-character");
+    return (unsigned char)SCHEME_CHAR_VAL(val);
+  }
+}
+
+static int 
+user_peekc (Scheme_Input_Port *port)
+{
+  Scheme_Object *fun, *val;
+
+  fun = ((Scheme_Object **) port->port_data)[3];
+  val = _scheme_apply(fun, 0, NULL);
+  if (SCHEME_EOFP(val))
+    return EOF;
+  else {
+    if (!SCHEME_CHARP(val))
+      scheme_raise_exn(MZEXN_I_O_PORT_USER,
+		       port,
+		       "port: user peek-char returned a non-character");
     return (unsigned char)SCHEME_CHAR_VAL(val);
   }
 }
@@ -2814,14 +2877,17 @@ make_input_port(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-input-port", 0, 0, argc, argv);
   scheme_check_proc_arity("make-input-port", 0, 1, argc, argv);
   scheme_check_proc_arity("make-input-port", 0, 2, argc, argv);
+  if (argc > 3)
+    scheme_check_proc_arity("make-input-port", 0, 3, argc, argv);
   
-  copy = (Scheme_Object **)scheme_malloc_stubborn(3 * sizeof(Scheme_Object *));
-  memcpy(copy, argv, 3 * sizeof(Scheme_Object *));
+  copy = (Scheme_Object **)scheme_malloc_stubborn(argc * sizeof(Scheme_Object *));
+  memcpy(copy, argv, argc * sizeof(Scheme_Object *));
   scheme_end_stubborn_change((void *)copy);
 
   ip = _scheme_make_input_port(user_input_port_type,
 			       copy,
 			       user_getc,
+			       (argc > 3) ? user_peekc : NULL,
 			       user_char_ready,
 			       user_close_input,
 			       NULL,
@@ -3308,15 +3374,15 @@ do_read_char(char *name, int argc, Scheme_Object *argv[], int peek)
   else
     port = CURRENT_INPUT_PORT(scheme_config);
 
-  ch = scheme_getc(port);
+  if (peek)
+    ch = scheme_peekc(port);
+  else
+    ch = scheme_getc(port);
 
   if (ch == EOF)
     return (scheme_eof);
-  else {
-    if (peek)
-      scheme_ungetc(ch, port);
+  else
     return _scheme_make_char(ch);
-  }
 }
 
 static Scheme_Object *
@@ -4505,6 +4571,7 @@ void scheme_pipe(Scheme_Object **read, Scheme_Object **write)
   readp = _scheme_make_input_port(pipe_read_port_type,
 				  (void *)pipe,
 				  pipe_getc,
+				  NULL,
 				  pipe_char_ready,
 				  pipe_in_close,
 				  NULL,
@@ -6254,6 +6321,7 @@ make_named_tcp_input_port(void *data, const char *name)
   ip = _scheme_make_input_port(tcp_input_port_type,
 			       data,
 			       tcp_getc,
+			       NULL,
 			       tcp_char_ready,
 			       tcp_close_input,
 			       tcp_need_wakeup,

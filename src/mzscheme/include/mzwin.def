@@ -179,8 +179,10 @@ EXPORTS
  scheme_format
  scheme_printf
  scheme_getc
+ scheme_peekc
  scheme_ungetc
  scheme_char_ready
+ scheme_peekc_is_ungetc
  scheme_need_wakeup
  scheme_get_chars
  scheme_tell

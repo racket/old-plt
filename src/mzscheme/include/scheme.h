@@ -269,6 +269,7 @@ typedef struct Scheme_Input_Port
   Scheme_Manager_Reference *mref;
   void *port_data;
   int (*getc_fun) (struct Scheme_Input_Port *port);
+  int (*peekc_fun) (struct Scheme_Input_Port *port);
   int (*char_ready_fun) (struct Scheme_Input_Port *port);
   void (*close_fun) (struct Scheme_Input_Port *port);
   void (*need_wakeup_fun)(struct Scheme_Input_Port *, void *);

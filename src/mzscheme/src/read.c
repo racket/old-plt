@@ -933,12 +933,19 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
   int brackets = local_square_brackets_are_parens;
   int braces = local_curly_braces_are_parens;
   Scheme_Object *o;
+  int ungetc_ok = scheme_peekc_is_ungetc(port);
+  int (*getc_fun)(Scheme_Object *port);
+
+  if (ungetc_ok)
+    getc_fun = scheme_getc;
+  else
+    getc_fun = scheme_peekc;
 
   i = 0;
   size = MAX_SYMBOL_SIZE - 1;
   buf = onstack;
 
-  while (((ch = scheme_getc (port)) != EOF)
+  while (((ch = getc_fun(port)) != EOF)
 	 && (running_quote
 	     || (!isspace(ch)
 		 && (ch != '(')
@@ -952,6 +959,8 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
 		 && ((ch != '{') || !braces)
 		 && ((ch != ']') || !brackets)
 		 && ((ch != '}') || !braces)))) {
+    if (!ungetc_ok)
+      scheme_getc(port);
     if (ch == '\\' && !running_quote) {
       ch = scheme_getc(port);
       if (ch == EOF) {
@@ -989,7 +998,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
     buf[i++] = ch;
   }
 
-  if (ch != EOF)
+  if (ungetc_ok)
     scheme_ungetc(ch, port);
 
   if (running_quote) {
@@ -1054,7 +1063,7 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
   int ch, next;
 
   ch = scheme_getc(port);
-  next = peek_char(port);
+  next = scheme_peekc(port);
   
   if ((ch >= '0' && ch <= '7') && (next >= '0' && next <= '7')) {
     /* a is the same as next */
@@ -1086,7 +1095,8 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
     i = 1;
     buf = onstack;
     buf[0] = tolower(ch);
-    while (isalpha(ch = scheme_getc(port))) {
+    while (isalpha(ch = scheme_peekc(port))) {
+      scheme_getc(port);
       if (i >= size) {
 	oldsize = size;
 	oldbuf = buf;
@@ -1097,8 +1107,6 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
       }
       buf[i++] = tolower(ch);
     }
-    if (ch != EOF)
-      scheme_ungetc(ch, port);
     buf[i] = '\0';
     
     switch (buf[0]) {
@@ -1226,7 +1234,7 @@ skip_whitespace_comments(Scheme_Object *port)
     while (ch != '\n' && ch != '\r' && ch != EOF);
     goto start_over;
   }
-  if (ch == '#' && (peek_char(port) == '|')) {
+  if (ch == '#' && (scheme_peekc(port) == '|')) {
     int depth = 0;
     int ch2 = 0;
     (void)scheme_getc(port); /* re-read '|' */
@@ -1255,9 +1263,9 @@ peek_char (Scheme_Object *port)
 {
   int ch;
 
-  ch = scheme_getc (port);
-  scheme_ungetc (ch, port);
-  return (ch);
+  ch = scheme_getc(port);
+  scheme_ungetc(ch, port);
+  return ch;
 }
 
 /************************************************************************/

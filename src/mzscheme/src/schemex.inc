@@ -229,8 +229,10 @@
   scheme_extension_table->scheme_format = scheme_format;
   scheme_extension_table->scheme_printf = scheme_printf;
   scheme_extension_table->scheme_getc = scheme_getc;
+  scheme_extension_table->scheme_peekc = scheme_peekc;
   scheme_extension_table->scheme_ungetc = scheme_ungetc;
   scheme_extension_table->scheme_char_ready = scheme_char_ready;
+  scheme_extension_table->scheme_peekc_is_ungetc = scheme_peekc_is_ungetc;
   scheme_extension_table->scheme_need_wakeup = scheme_need_wakeup;
   scheme_extension_table->scheme_get_chars = scheme_get_chars;
   scheme_extension_table->scheme_tell = scheme_tell;

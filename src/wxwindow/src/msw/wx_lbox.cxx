@@ -20,6 +20,9 @@
 
 #endif
 
+#define DEFAULT_ITEM_WIDTH  80
+#define DEFAULT_ITEM_HEIGHT 80
+
 BOOL wxListBox::MSWCommand(UINT param, WORD WXUNUSED(id))
 {
   if (param == LBN_SELCHANGE) {

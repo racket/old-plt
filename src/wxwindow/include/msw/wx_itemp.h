@@ -76,8 +76,6 @@ char	*GROUP_CLASS=FafaStat;
 #define BITRADIO_FLAGS   (FC_BUTTONDRAW|FB_BITMAP|FC_RADIO|WS_CHILD|WS_VISIBLE)
 
 #define MEANING_CHARACTER '0'
-#define DEFAULT_ITEM_WIDTH  200
-#define DEFAULT_ITEM_HEIGHT 80
 #define EDIT_CONTROL_FACTOR (15.0/10.0)
                                         // Scale font to get edit control height
 #if !defined(APIENTRY)	// NT defines APIENTRY, 3.x not

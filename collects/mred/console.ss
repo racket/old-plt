@@ -746,6 +746,7 @@
 	    edit-offset 
 	    other-offset)
 	  (public
+	    [title-prefix "MrEd Console"]
 	    [get-canvas% (lambda () console-canvas%)]
 	    [get-edit% (lambda () console-edit%)])
 	  (public 

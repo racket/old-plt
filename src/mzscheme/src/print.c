@@ -1486,7 +1486,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
         } else if (SCHEME_BYTE_STRINGP(SCHEME_CPTR_TYPE(obj))) {
           print_byte_string(SCHEME_BYTE_STR_VAL(SCHEME_CPTR_TYPE(obj)),
                             SCHEME_BYTE_STRLEN_VAL(SCHEME_CPTR_TYPE(obj)),
-                            notdisplay, pp);
+                            0, pp);
         } else {
           print_this_string(pp, "#", 0, 1);
         }

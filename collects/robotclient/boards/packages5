@@ -1,0 +1,98 @@
+[((44,34), [
+  Mk {uid=0, dest=(1,1), weight=20},
+  Mk {uid=1, dest=(1,1), weight=20},
+  Mk {uid=2, dest=(1,1), weight=20},
+  Mk {uid=3, dest=(1,1), weight=20}]),
+ ((55,34), [
+  Mk {uid=4, dest=(1,62), weight=20},
+  Mk {uid=5, dest=(1,62), weight=20},
+  Mk {uid=6, dest=(1,62), weight=20},
+  Mk {uid=7, dest=(1,62), weight=20}]),
+ ((66,34), [ 
+  Mk {uid=8, dest=(138,62), weight=20},
+  Mk {uid=9, dest=(138,62), weight=20},
+  Mk {uid=10, dest=(138,62), weight=20},
+  Mk {uid=11, dest=(138,62), weight=20}]),
+ ((66,34), [ 
+  Mk {uid=8, dest=(138,62), weight=20},
+  Mk {uid=9, dest=(138,62), weight=20},
+  Mk {uid=10, dest=(138,62), weight=20},
+  Mk {uid=11, dest=(138,62), weight=20}]),
+ ((86,34), [
+  Mk {uid=12, dest=(138,1), weight=20},
+  Mk {uid=13, dest=(138,1), weight=20},
+  Mk {uid=14, dest=(138,1), weight=20},
+  Mk {uid=15, dest=(138,1), weight=20}]),
+ ((44,38), [
+  Mk {uid=16, dest=(1,1), weight=20},
+  Mk {uid=17, dest=(1,1), weight=20},
+  Mk {uid=18, dest=(1,1), weight=20},
+  Mk {uid=19, dest=(1,1), weight=20}]),
+ ((55,38), [
+  Mk {uid=20, dest=(1,62), weight=20},
+  Mk {uid=21, dest=(1,62), weight=20},
+  Mk {uid=22, dest=(1,62), weight=20},
+  Mk {uid=23, dest=(1,62), weight=20}]),
+ ((66,38), [ 
+  Mk {uid=24, dest=(138,62), weight=20},
+  Mk {uid=25, dest=(138,62), weight=20},
+  Mk {uid=26, dest=(138,62), weight=20},
+  Mk {uid=27, dest=(138,62), weight=20}]),
+ ((66,38), 8 
+  Mk {uid=28, dest=(138,62), weight=20},
+  Mk {uid=29, dest=(138,62), weight=20},
+  Mk {uid=30, dest=(138,62), weight=20},
+  Mk {uid=31, dest=(138,62), weight=20}]),
+ ((86,38), [
+  Mk {uid=32, dest=(138,1), weight=20},
+  Mk {uid=33, dest=(138,1), weight=20},
+  Mk {uid=34, dest=(138,1), weight=20},
+  Mk {uid=35, dest=(138,1), weight=20}]),
+ ((13,10), [
+  Mk {uid=36, dest=(1,10), weight=2},
+  Mk {uid=37, dest=(1,10), weight=2},
+  Mk {uid=38, dest=(1,10), weight=2},
+  Mk {uid=39, dest=(1,10), weight=2},
+  Mk {uid=40, dest=(1,10), weight=2}]),
+ ((14,10), [
+  Mk {uid=41, dest=(1,10), weight=2},
+  Mk {uid=42, dest=(1,10), weight=2},
+  Mk {uid=43, dest=(1,10), weight=2},
+  Mk {uid=44, dest=(1,10), weight=2},
+  Mk {uid=45, dest=(1,10), weight=2}]),
+ ((13,11), [
+  Mk {uid=46, dest=(1,10), weight=2},
+  Mk {uid=47, dest=(1,10), weight=2},
+  Mk {uid=48, dest=(1,10), weight=2},
+  Mk {uid=49, dest=(1,10), weight=2},
+  Mk {uid=50, dest=(1,10), weight=2}]),
+ ((14,11), [
+  Mk {uid=51, dest=(1,10), weight=2},
+  Mk {uid=52, dest=(1,10), weight=2},
+  Mk {uid=53, dest=(1,10), weight=2},
+  Mk {uid=54, dest=(1,10), weight=2},
+  Mk {uid=55, dest=(1,10), weight=2}]),
+ ((23,55), [
+  Mk {uid=56, dest=(1,55), weight=2},
+  Mk {uid=57, dest=(1,55), weight=2},
+  Mk {uid=58, dest=(1,55), weight=2},
+  Mk {uid=59, dest=(1,55), weight=2},
+  Mk {uid=60, dest=(1,55), weight=2}]),
+ ((23,56), [
+  Mk {uid=61, dest=(1,55), weight=2},
+  Mk {uid=62, dest=(1,55), weight=2},
+  Mk {uid=63, dest=(1,55), weight=2},
+  Mk {uid=64, dest=(1,55), weight=2},
+  Mk {uid=65, dest=(1,55), weight=2}]),
+ ((24,55), [
+  Mk {uid=66, dest=(1,55), weight=2},
+  Mk {uid=67, dest=(1,55), weight=2},
+  Mk {uid=68, dest=(1,55), weight=2},
+  Mk {uid=69, dest=(1,55), weight=2},
+  Mk {uid=70, dest=(1,55), weight=2}]),
+ ((24,56), [
+  Mk {uid=71, dest=(1,55), weight=2},
+  Mk {uid=72, dest=(1,55), weight=2},
+  Mk {uid=73, dest=(1,55), weight=2},
+  Mk {uid=74, dest=(1,55), weight=2},
+  Mk {uid=75, dest=(1,55), weight=2}])]

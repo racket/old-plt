@@ -92,7 +92,7 @@
 					    (if (home? (board) x y)
 						(home-value)))))
 				(* (next-water-value) (next-to-water? (board) x y))
-				(* (destination-value) (destination? (board) x y))
+				(* (destination-value) (destination? x y (search-player-packages p)))
 				(* (one-destination-value) (one-away-destination? (board) x y (search-player-packages p)))
 				(* (two-destination-value) (two-away-destination? (board) x y (search-player-packages p)))
 				(* (three-destination-value) (three-away-destination? (board) x y (search-player-packages p)))
@@ -106,7 +106,7 @@
 		 [bid (if (could-player-move? (board) x y p)
 			  (figure-bid (board) x y p)
 			  1)])
-		(list weight bid null null))]
+		(values weight bid null null))]
 	   [(eq? mtype 'd)
 	    (let* ([ptod (get-packages-for x y (search-player-packages))]
 		   [weight (+ (if (could-player-move? (board) x y p)
@@ -123,21 +123,19 @@
 		   [bid (if (or (= (wall-danger? (board) x y) 1) (= (water-danger? (board) x y) 1) (= (blank-danger? (board) x y) 1))
 			    (* (water-escape-bid) (max-bid))
 			    1)])
-	      (list weight bid ptod null))]
+	      (values weight bid ptod null))]
 	   [(eq? mtype 'p)
 	    (let* ([ptop (most-of (wleft p) (quicksort list-of-pack (lambda (p1 p2) (< (pack-val p1) (pack-val p2)))))]
 		   [weight (* (pickup-value)
 			      (if (null? ptop)
 				  0
 				  (eval `(* ,@(map pack-val ptop)))))])
-		   (list weight 1 null ptop))]
+		   (values weight 1 null ptop))]
 	   [else
 	    (error "not a recognized symbol")])))
 
-	(define-syntax wleft
-	  (syntax-rules ()
-			((_ p)
-			 (eval `(- (search-player-capacity p) (+ ,@(map package-weight (search-player-packages p))))))))
+	(define (wleft p)
+          (- (search-player-capacity p) (eval `(+ ,@(map package-weight (search-player-packages p))))))
 	;; 
 	(define-syntax figure-bid
 	  (syntax-rules ()
@@ -171,7 +169,9 @@
 	(define-syntax destination?
 	  (syntax-rules ()
 			((_ x y plist)
-			 (not (null? (get-packages-for x y plist))))))
+			 (if (not (null? (get-packages-for x y plist)))
+                             1
+                             0))))
 
 
 	(define-syntax one-away-destination?
@@ -438,8 +438,8 @@
 	  (syntax-rules ()
 			((_ board x y p)
 			 (if (= x (search-player-x p))
-			     (<= (abs (- (search-player-y p) y) 1))
+			     (<= (abs (- (search-player-y p) y)) 1)
 			     (if (= y (search-player-y p))
-				 (<= (abs (- (search-player-x p) x) 1)))))))
+				 (<= (abs (- (search-player-x p) x)) 1))))))
         
         )

@@ -165,7 +165,12 @@ void wxImage::SortColormap()
     }
     fprintf(stderr,"\n\n");
   }
-  
+
+  /* Is the transparent index used? */
+  if (transparent_index >= 0) {
+    if (!hist[transparent_index])
+      transparent_index = -1;
+  }
   
   /* put the actually-used colors into the 'c' array in the order they occur */
   /* also, while we're at it, calculate numcols */

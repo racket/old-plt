@@ -42,9 +42,8 @@ current-load-relative-directory parameter is set to the directory
 during the evaluation of the mzscheme code (in both examples). The
 Scheme code is executed through `eval'.
 
-========================================
-browser.ss
-========================================
+The MZSCHEME forms are disabled unless the web page is a
+file: url that points into the `doc' collection.
 
 ----------------------------------------
 
@@ -53,8 +52,22 @@ browser.ss
   in a vanilla browser frame and returns
   the frame. The frame is an instance of
   hyper-frame%.
- 
-----------------------------------------
+  
+-----------------------------------------
+
+The html-img-ok parameter controls image rendering for the browser.
+
+> (html-img-ok on?) - Sets the value of the parameter to on?
+> (html-img-ok) - Returns the current value of the parameter
+
+The html-eval-ok parameter controls the evaluation of 
+`MZSCHEME=' tags. If the parameter is #f, they are disabled.
+
+> (html-eval-ok on?) - Sets the value of the parameter to on?
+> (html-eval-ok) - Returns the current value of the parameter
+
+
+------------------------------------------------------------
 
 > (hyper-frame-mixin frame%) - Extends the given frame% class.
 

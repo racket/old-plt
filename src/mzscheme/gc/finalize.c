@@ -904,7 +904,7 @@ void GC_enqueue_all_finalizers()
  * finalizers until there are no more left, a potential infinite loop.
  * YUCK.
  * This routine is externally callable, so is called without 
- * the allocation lock 
+ * the allocation lock.
  */
 void GC_finalize_all()
 {

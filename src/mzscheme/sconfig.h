@@ -855,6 +855,7 @@ int scheme_win32_semaphore_try_down(void *);
 # define DONT_IGNORE_FPE_SIGNAL
 
 # define POW_HANDLES_INF_CORRECTLY
+# define USE_PALM_INF_TESTS
 
 # define FLAGS_ALREADY_SET
 

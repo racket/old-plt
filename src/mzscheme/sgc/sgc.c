@@ -26,12 +26,14 @@
  */
 
 #ifdef __palmos__
-# include <Pilot.h>
+# include <PalmOS.h>
 #endif
 #include <stdlib.h>
 #include <setjmp.h>
 #include <stdio.h>
-#include <memory.h>
+#ifndef __palmos__
+# include <memory.h>
+#endif
 #include <string.h>
 #include "../sconfig.h"
 #include "sgc.h"
@@ -1680,7 +1682,7 @@ void *GC_orig_base(void *d)
   return find_ptr(d, NULL, NULL, NULL, NULL, 1);
 }
 
-struct GC_Set *GC_set(void *d)
+GC_Set *GC_set(void *d)
 {
 #if KEEP_SET_NO
   MemoryBlock *block = NULL;
@@ -2444,13 +2446,13 @@ void *do_malloc(SET_NO_BACKINFO
   return s;
 }
 
-struct GC_Set *GC_new_set(char *name, 
-			  GC_trace_init trace_init,
-			  GC_trace_done trace_done,
-			  GC_count_tracer count_tracer,
-			  GC_path_tracer path_tracer,
-			  GC_set_elem_finalizer final,
-			  int flags)
+GC_Set *GC_new_set(char *name, 
+		   GC_trace_init trace_init,
+		   GC_trace_done trace_done,
+		   GC_count_tracer count_tracer,
+		   GC_path_tracer path_tracer,
+		   GC_set_elem_finalizer final,
+		   int flags)
 {
   GC_Set *c, **naya;
   int i;
@@ -2533,7 +2535,7 @@ void *GC_malloc_atomic_uncollectable(size_t size)
 		   do_malloc_ATOMIC_UNLESS_DISABLED | do_malloc_UNCOLLECTABLE);
 }
 
-void *GC_malloc_specific(size_t size, struct GC_Set *set)
+void *GC_malloc_specific(size_t size, GC_Set *set)
 {
   return do_malloc(KEEP_SET_INFO_ARG(set->no)
 		   size, set->blocks, set->othersptr,
@@ -2746,7 +2748,7 @@ void GC_register_finalizer_ignore_self(void *p, void (*f)(void *p, void *data),
 
 /******************************************************************/
 
-void GC_for_each_element(struct GC_Set *set,
+void GC_for_each_element(GC_Set *set,
 			 void (*f)(void *p, int size, void *data),
 			 void *data)
 {
@@ -2810,7 +2812,7 @@ void GC_for_each_element(struct GC_Set *set,
 
 /******************************************************************/
 
-static void free_chunk(MemoryChunk *k, MemoryChunk **prev, struct GC_Set *set)
+static void free_chunk(MemoryChunk *k, MemoryChunk **prev, GC_Set *set)
 {
   MemoryChunk *next;
   
@@ -2857,7 +2859,7 @@ void GC_free(void *p)
   MemoryChunk *chunk = NULL;
   int fpos;
   void *found;
-  struct GC_Set *set;
+  GC_Set *set;
 
 # if CHECK_COLLECTING && CHECK_FREES
   if (collecting_now)
@@ -3062,7 +3064,7 @@ static int num_finishes_stat;
 # define FINISH_STATISTIC(x)
 #endif
 
-static void collect_finish_chunk(MemoryChunk **c, struct GC_Set *set)
+static void collect_finish_chunk(MemoryChunk **c, GC_Set *set)
 {
   unsigned long local_low_plausible;
   unsigned long local_high_plausible;
@@ -3184,7 +3186,7 @@ static void collect_init_common(MemoryBlock **blocks, int uncollectable)
 
 static void collect_finish_common(MemoryBlock **blocks, 
 				  MemoryBlock **block_ends, 
-				  struct GC_Set *set)
+				  GC_Set *set)
 {
   int i;
 #if KEEP_BLOCKS_FOREVER
@@ -3601,7 +3603,7 @@ static void push_locked_common(MemoryBlock **blocks, int atomic)
 
 #endif
 
-static void push_uncollectable_chunk(MemoryChunk *c, struct GC_Set *set)
+static void push_uncollectable_chunk(MemoryChunk *c, GC_Set *set)
 {
 #if ALLOW_TRACE_COUNT
   if (!collecting_with_trace_count
@@ -3656,7 +3658,7 @@ static void push_uncollectable_chunk(MemoryChunk *c, struct GC_Set *set)
 #endif
 }
 
-static void push_uncollectable_common(MemoryBlock **blocks, struct GC_Set *set)
+static void push_uncollectable_common(MemoryBlock **blocks, GC_Set *set)
 {
   int i;
 

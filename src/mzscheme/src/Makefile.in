@@ -29,6 +29,7 @@ OBJS =  salloc.o \
 	network.o \
 	numarith.o \
 	number.o \
+	numcomp.o \
 	numstr.o \
         objclass.o \
         object.o \
@@ -69,6 +70,7 @@ SRCS =  $(srcdir)/salloc.c \
 	$(srcdir)/network.c \
 	$(srcdir)/numarith.c \
 	$(srcdir)/number.c \
+	$(srcdir)/numcomp.c \
 	$(srcdir)/numstr.c \
 	$(srcdir)/objclass.c \
 	$(srcdir)/object.c \
@@ -173,6 +175,8 @@ numarith.o: $(srcdir)/numarith.c
 	$(CC) $(CFLAGS) -c $(srcdir)/numarith.c -o numarith.o
 number.o: $(srcdir)/number.c
 	$(CC) $(CFLAGS) -c $(srcdir)/number.c -o number.o
+numcomp.o: $(srcdir)/numcomp.c
+	$(CC) $(CFLAGS) -c $(srcdir)/numcomp.c -o numcomp.o
 numstr.o: $(srcdir)/numstr.c
 	$(CC) $(CFLAGS) -c $(srcdir)/numstr.c -o numstr.o
 objclass.o: $(srcdir)/objclass.c
@@ -257,6 +261,8 @@ network.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../includ
 numarith.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h
 number.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
+         $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h
+numcomp.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h $(srcdir)/nummacs.h
 numstr.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
          $(srcdir)/../src/stypes.h  $(srcdir)/random.inc

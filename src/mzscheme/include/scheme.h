@@ -70,7 +70,9 @@
 #endif
 
 #ifdef PALMOS_STUFF
-#include <PalmOS.h>
+# include <PalmOS.h>
+typedef long FILE;
+# define _LINUX_TYPES_H  /* Blocks types.h */
 #endif
 
 #ifndef SCHEME_DIRECT_EMBEDDED
@@ -93,6 +95,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
+
+#ifdef PALMOS_STUFF
+typedef jmpbuf jmp_buf[1];
+#endif
 
 #ifdef __cplusplus
 extern "C" 

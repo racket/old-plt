@@ -223,4 +223,4 @@ cygwin-install:
 	cp libmzscheme.a $(srcdir)/../../collects/mzscheme/lib/win32/i386/libmzscheme.a
 
 config:
-	autoconf $(srcdir)/configure.in | mzscheme -r $(srcdir)/clean_ac.ss > $(srcdir)/../configure
+	autoconf $(srcdir)/configure.in | mzscheme -qr $(srcdir)/clean_ac.ss > $(srcdir)/../configure

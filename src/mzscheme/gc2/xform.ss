@@ -251,9 +251,7 @@
 (define END_XFORM_ARITH (string->symbol "END_XFORM_ARITH"))
 (define START_XFORM_ARITH (string->symbol "START_XFORM_ARITH"))
 
-(define _OS_CALL (string->symbol "_OS_CALL"))
-(define _OS_CALL_WITH_SELECTOR (string->symbol "_OS_CALL_WITH_SELECTOR"))
-(define _OS_CALL_WITH_16BIT_SELECTOR (string->symbol "_OS_CALL_WITH_16BIT_SELECTOR"))
+(define __attribute__ (string->symbol "__attribute__"))
 
 (define non-functions
   '(<= < > >= == != !
@@ -595,7 +593,17 @@
 	    (when palm?
 	      (fprintf map-port "(impl ~s)~n" name)
 	      (call-graph name e))
-	    e)
+	    (append
+	     (if (and palm? (eq? 'static (tok-n (car e))))
+		 ;; Need to make sure prototype is there for section
+		 (add-segment-label
+		  name
+		  (let loop ([e e])
+		    (if (braces? (car e))
+			(list (make-tok semi #f #f))
+			(cons (car e) (loop (cdr e))))))
+		 null)
+	     e))
 	  (convert-function e)))]
    [(var-decl? e)
     (when show-info? (printf "/* VAR */~n"))
@@ -919,7 +927,7 @@
       (list (make-tok (string->symbol (format "SEGOF_~a" name) )
 		      #f #f)
 	    (car e))]
-     [(memq (tok-n (car e)) (list _OS_CALL _OS_CALL_WITH_SELECTOR _OS_CALL_WITH_16BIT_SELECTOR))
+     [(memq (tok-n (car e)) (list __attribute__))
       ;; No segment wanted
       e]
      [else

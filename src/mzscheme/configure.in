@@ -315,7 +315,8 @@ makefiles="Makefile
            mzscheme/Makefile
              mzscheme/src/Makefile mzscheme/dynsrc/Makefile
              mzscheme/gc/Makefile mzscheme/sgc/Makefile
-             mzscheme/gc2/Makefile mzscheme/guile/Makefile"
+             mzscheme/gc2/Makefile mzscheme/guile/Makefile
+             mzscheme/palm/Makefile"
 
 if test "${enable_mred}" = "yes" ; then
   mk_needed_dir wxxt

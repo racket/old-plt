@@ -339,6 +339,7 @@ static void make_init_env(void)
   MZTIMEIT(list, scheme_init_list(env));
   MZTIMEIT(number, scheme_init_number(env));
   MZTIMEIT(numarith, scheme_init_numarith(env));
+  MZTIMEIT(numcomp, scheme_init_numcomp(env));
   MZTIMEIT(numstr, scheme_init_numstr(env));
   MZTIMEIT(port, scheme_init_port(env));
   MZTIMEIT(portfun, scheme_init_port_fun(env));

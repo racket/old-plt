@@ -1,4 +1,5 @@
-(define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt"))
+(begin-elaboration-time
+  (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt")))
 
 (define annotate? (not (equal? (getenv "MZRICESKIPARIES") "yes")))
 
@@ -42,9 +43,11 @@
 (reference-library "mzlib.ss")
 (reference-library "pretty.ss")
 
-(load-recent (build-path plt-dir "zodiac" "load"))
+(load-recent (begin-elaboration-time
+	       (build-path plt-dir "zodiac" "load")))
 
-(reference-library (build-path plt-dir "lib" "require.ss"))
+(reference-library (begin-elaboration-time
+		     (build-path plt-dir "lib" "require.ss")))
 (plt:require-library "ariesu.ss")
 (plt:require-library "sparamu.ss")
 (plt:require-library "userspcu.ss")

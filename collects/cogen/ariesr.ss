@@ -136,7 +136,7 @@
 
       (define-struct (undefined struct:exn) (id))
 
-      (define signal-undefined? (make-parameter #t))
+      (define signal-undefined? (make-parameter #f))
 
       (define annotate
 	(lambda (expr)

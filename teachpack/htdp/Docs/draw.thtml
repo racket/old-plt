@@ -62,8 +62,9 @@ suspends evaluation for the given number of seconds
 <code>'green</code>
 <code>'black</code>
 </blockquote>
-Applying the functions to any other symbol triggers an error.
-
+For other colors, guess! For example, <code>'orange</code> works, but
+<code>'mauve</code> doesn't. If you apply the function to a symbol that it
+doesn't recognize as a color, it raises an error. 
 </menu>
 <br>
 <br>

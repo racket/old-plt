@@ -216,8 +216,11 @@ oskit_error_t oskit_get_call_context(const struct oskit_guid *iid, void **out_if
 
 #ifndef OSKIT_TEST
 
-static void oskit_prepare()
+static void oskit_prepare(int _*argc, char ***_argv)
 {
+  int argc = *_argc;
+  char **argv = *_argv;
+
   oskit_clientos_init();
   osenv = oskit_osenv_create_default();
   oskit_register(&oskit_osenv_iid, (void *)osenv);
@@ -301,6 +304,9 @@ static void oskit_prepare()
   oskit_dev_probe();
   oskit_console_init();
 # endif
+
+  *_argc = argc;
+  *_argv = argv;
 }
 
 #endif

@@ -234,7 +234,7 @@ int main(int argc, char **argv)
 #endif
 
 #if defined(OSKIT) && !defined(OSKIT_TEST)
-  oskit_prepare();
+  oskit_prepare(&argc, &argv);
 #endif
 
   scheme_actual_main = actual_main;

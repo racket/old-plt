@@ -5185,10 +5185,10 @@ file_position(int argc, Scheme_Object *argv[])
     Scheme_Output_Port *op;
 
     op = (Scheme_Output_Port *)argv[0];
-    if (SAME_OBJ(op->sub_type, file_output_port_type))
+    if (SAME_OBJ(op->sub_type, file_output_port_type)) {
       f = ((Scheme_Output_File *)op->port_data)->f;
 #ifdef USE_FD_PORTS
-    else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
+    } else if (SAME_OBJ(op->sub_type, fd_output_port_type)) {
       fd = ((Scheme_FD *)op->port_data)->fd;
       had_fd = 1;
 #endif
@@ -5201,10 +5201,10 @@ file_position(int argc, Scheme_Object *argv[])
     Scheme_Input_Port *ip;
   
     ip = (Scheme_Input_Port *)argv[0];
-    if (SAME_OBJ(ip->sub_type, file_input_port_type))
+    if (SAME_OBJ(ip->sub_type, file_input_port_type)) {
       f = ((Scheme_Input_File *)ip->port_data)->f;
 #ifdef USE_FD_PORTS
-    else if (SAME_OBJ(ip->sub_type, fd_input_port_type)) {
+    } else if (SAME_OBJ(ip->sub_type, fd_input_port_type)) {
       fd = ((Scheme_FD *)ip->port_data)->fd;
       had_fd = 1;
 #endif

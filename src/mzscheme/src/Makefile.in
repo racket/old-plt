@@ -174,7 +174,7 @@ sema.o: $(srcdir)/sema.c
 setjmpup.o: $(srcdir)/setjmpup.c
 	$(CC) $(CFLAGS) -c $(srcdir)/setjmpup.c -o setjmpup.o
 string.o: $(srcdir)/string.c
-	$(CC) $(CFLAGS) -c $(srcdir)/string.c -o string.o
+	$(CC) $(CFLAGS) -c $(srcdir)/string.c -I. -o string.o
 struct.o: $(srcdir)/struct.c
 	$(CC) $(CFLAGS) -c $(srcdir)/struct.c -o struct.o
 symbol.o: $(srcdir)/symbol.c
@@ -190,11 +190,7 @@ vector.o: $(srcdir)/vector.c
 
 SCONFIG =   $(srcdir)/../sconfig.h $(srcdir)/../uconfig.h
 
-# Note: 'make depend' is no longer required. As distributed, the below
-#       dependencies have been trimmed to include only dependencies
-#       on MzScheme files
-
-# DO NOT DELETE THIS LINE -- make depend depends on it.
+# More dependencies
 
 salloc.o: $(srcdir)/schpriv.h $(srcdir)/schexn.h $(SCONFIG) $(srcdir)/../include/scheme.h \
             $(srcdir)/../gc/gc.h $(srcdir)/mzmark.c

@@ -25,7 +25,7 @@
               net:imap^
               hierlist^)
   
-      (define (show-error x)
+      (define (show-error x frame)
 	(message-box "Error" 
 		     (if (exn? x)
 			 (exn-message x)

@@ -19,15 +19,15 @@
        [help-menu:before-about
 	(lambda (help-menu)
 	  (make-object mred:menu-item%
-	    "Introduction to DrScheme"
-	    help-menu
-	    (lambda (item evt)
-	      (drscheme:intro:show-introduction)))
-	  (make-object mred:menu-item%
 	    "Help Desk"
 	    help-menu
 	    (lambda (item evt)
-	      (help:help-desk))))]
+	      (help:help-desk)))
+	  (make-object mred:menu-item%
+	    "Welcome to DrScheme"
+	    help-menu
+	    (lambda (item evt)
+	      (drscheme:intro:show-introduction))))]
 
        [help-menu:about (lambda (item evt) (drscheme:app:about-drscheme))]
        [help-menu:about-string (lambda () "DrScheme")]

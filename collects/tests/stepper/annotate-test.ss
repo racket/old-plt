@@ -190,6 +190,25 @@
                        debug-mark-3)))
                     (begin (test (void) check-mark (syntax debug-mark-1) '(+ a) 'all)
                            (test (void) check-mark (syntax debug-mark-3) '(+ a) 'all))])))
+        
+        ; improper arg-list:
+        (list #'(lambda (a b . c) (begin b c)) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case stx (with-continuation-mark begin lambda)
+                  [(with-continuation-mark
+                    key-0
+                    mark-0
+                    (closure-capturing-proc
+                     (lambda (a b . c)
+                       (with-continuation-mark
+                        key-1
+                        mark-1
+                        body))
+                     mark-2))
+                   (begin (test (void) check-mark (syntax mark-0) '() 'all)
+                          (test (void) check-mark (syntax mark-1) '(b c) 'all)
+                          (test (void) check-mark (syntax mark-2) '() 'all))])))
+                    
         ; test of lambda's one-label inferred-names :
         (list #'(define (a x) (+ x 1)) 'mzscheme cadr
               (lambda (stx)
@@ -205,7 +224,7 @@
         ; test of lambda's cons-pair inferred-names (that is, with lifting):
         (list #'(let ([a (lambda (x) (+ x 1))]) 3) 'mzscheme cadr
               (lambda (stx)
-                (syntax-case stx (let*-values with-continuation-mark begin set!-values)
+                (syntax-case stx (let*-values with-continuation-mark begin set!-values set!)
                    [(let*-values _c
                        (with-continuation-mark debug-key_1 debug_mark_1
                                                (begin
@@ -343,7 +362,7 @@
         ; let 
         (list #'(lambda (a b c) (let* ([d b] [e (begin a d)]) (begin a b c d))) 'mzscheme cadr
               (lambda (stx)
-                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark let*-values set!-values)
+                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark let*-values set!-values set!)
                   [(let*-values bindings
                      (with-continuation-mark
                       key-0
@@ -354,12 +373,13 @@
                           break-1
                           (begin
                             (set!-values vars-0 (with-continuation-mark key-1 mark-1 body-1))
+                            (set! let-counter-0 1)
                             (set!-values vars-1 (with-continuation-mark key-2 mark-2 body-2))
                             (begin
                               break-2
                               body-3))))))
                    (begin
-                     (test (void) check-mark (syntax mark-0) '(a b c d e lifter-d-1 lifter-e-2) 'all)
+                     (test (void) check-mark (syntax mark-0) '(a b c d e lifter-d-1 lifter-e-2 let-counter) 'all)
                      (test '(d) syntax-object->datum (syntax vars-0))
                      (test '(e) syntax-object->datum (syntax vars-1))
                      (test (void) check-mark (syntax mark-1) '() 'all)

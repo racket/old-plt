@@ -3,20 +3,20 @@ _prototype-web-server_
 _Overview_
 
 The prototype is intended to completely decouple the continuation mechanism
-for servlets from the rest of the server. The prototype-servlet knows
+for servlets from the rest of the server. The prototype-server knows
 nothing about continuations. Instead, the prototype-server provides a
-simple session-based model akin to traditional cgi.
+simple session-based model akin to traditional CGI.
 
 See prototype-web-server/servlets/add01.ss for an example session-based
 servlet.
 
-See Web Interactive Langauge, and Interactive Language for understanding
+See Web Interactive Language, and Interactive Language for understanding
 how continuations are used with the prototype-web-server.
 
 _Configuring the prototype-server_
 
 Eliminated the dependency on web-server/configuration.ss and simply
-hardcoded the configuration in:
+hard-coded the configuration in:
 prototype-web-server/hardcoded-configuration.ss
 
 
@@ -28,13 +28,13 @@ _Running the prototype-server_
 _Loading Servlets_
 
 Steps:
-1. The url is decoded. If the url encodes a session-id, then the server
+1. The URL is decoded. If the URL encodes a session-id, then the server
    looks up the session in the session table. If the session structure is
    found in the table, then the session-handler is called with the request
    to generate the response. If no session is found an error page is
    generated.
 
-2. If the url does not encode a session-id, then the servlet path is
+2. If the URL does not encode a session-id, then the servlet path is
    resolved to find an executable (see path resolution.) If no executable
    is found, an error page is generated.
 
@@ -46,7 +46,7 @@ Steps:
 
 4. The servlet executable should be a module. The servlet is then invoked
    via dynamic-require within the new session-namespace. During this
-   invokation, the servlet should make a call to start-session in order to
+   invocation, the servlet should make a call to start-session in order to
    install the session handler for the servlet. After the module is
    invoked, the session handler is called with the initial request.
 
@@ -59,7 +59,7 @@ Steps:
   (ii) Empty strings that show up as file names in the url-path are removed
        from the path, so that e.g. a path that looks like "foo////bar"
        would be simplified to "foo/bar".
- (iii) All ".."'s are removed from the path by replacing them withh 'up.
+ (iii) All ".."'s are removed from the path by replacing them with 'up.
   (iv) The path is simplified with respect to the root directory in order
        to prevent path chasing. I.e. if surplus ".." pile up they are
        discarded.
@@ -75,13 +75,13 @@ _Sessions_
 _session.ss_
 
 The prototype web-server creates a session each time a particular servlet
-is loaded. A servlet is loaded when the url specifying the servlet's
+is loaded. A servlet is loaded when the URL specifying the servlets
 filename does not encode a session id. A new namespace is created and
 stored as part of the session. The servlet is then dynamic-required using
-the new namespace. The module session.ss is attached to the servlet's
+the new namespace. The module session.ss is attached to the servlets
 namespace.
 
-NOTE: The session is analgous to the "servlet-instance" in the current
+NOTE: The session is analogous to the "servlet-instance" in the current
 web-server.
 
 The servlet-writer should be aware of the following provides from
@@ -94,7 +94,7 @@ session.ss:
                  [url url?])]
 
 > session-id
-A number that identifies the session. This number is encoded in the url and
+A number that identifies the session. This number is encoded in the URL and
 used by the server to lookup the correct session for an incoming
 request. session-id's are encoded using a path/param.
 
@@ -131,7 +131,7 @@ session.
 > lookup-session
 (number? . -> . (union session? boolean?))
 lookup-session is used internally by the web-server to lookup a session
-once the session-id is decoded from the url.
+once the session-id is decoded from the URL.
 
 > new-session
 (custodian? namespace? url? . -> . session?)
@@ -140,7 +140,7 @@ when a servlet is loaded.
 
 > start-session
 ((request? . -> . response?) . -> . any)
-start-session installs the session-handler for a servlet's session. Start
+start-session installs the session-handler for a servlets session. Start
 session should be called by the servlet exactly once before any responses
 are generated.
 
@@ -150,7 +150,7 @@ _utils.ss_
 ;; url url -> (union (listof string) #f)
 Useful when using the servlet-path to encode additional arguments to the
 server. Servlet writers should use this to recover the suffix of the
-url-path occuring after the servlet file.
+url-path occurring after the servlet file.
 
 > url->servlet-path
 url->servlet-path: path url -> (values (union path #f)
@@ -192,13 +192,13 @@ expr ::= var
 NOTE: The body of the module (excluding requires) is first expanded to
 core-mzscheme forms before execution.
 
-NOTE: The interaction langauge is implemented using non-native
-continuations. I.e. occurences of call/cc within the program are replaced
+NOTE: The interaction language is implemented using non-native
+continuations. I.e. occurrences of call/cc within the program are replaced
 by a new version when the module is expanded.
 
 _Creating an Interactive Module_
 
-An interactive module is created by specifing "interaction.ss" as the language
+An interactive module is created by specifying "interaction.ss" as the language
 for a module.
 
 Example:
@@ -212,7 +212,7 @@ _interaction.ss_
 
 > start-interaction
 (request -> continuation) -> request
-start-interaction establishes the intial interaction point for the
+start-interaction establishes the initial interaction point for the
 interactive module and registers a procedure to be used for decoding
 requests. start-interaction stores the continuation of the call to
 start-interaction. This continuation is resumed using the client interface
@@ -232,7 +232,7 @@ is resumed via the client interface to the interactive module (see below.)
 _client.ss_
 
 > dispatch-start
-request -> reponse
+request -> response
 Pass the initial request to the interactive module. After the module is
 required, it should eventually make a call to start-interaction. After
 start-interaction is called, execution will halt until dispatch-start is
@@ -267,13 +267,13 @@ Example:
 (= 0 (dispatch-start -1))
 
 In the next example, send/suspend is used to establish re-usable
-interaction points. An auxilliary module, table, is used to store
+interaction points. An auxiliary module, table, is used to store
 continuations so that they may be used multiple times. Keys are associated
 with continuations in a hash table. The module body evaluates to a number,
 while interaction points within the computation yield the continuation key
 corresponding to that particular continuation. So a response is either a
 number or a key. A request consists of a key paired with a number. The
-intial request is ignored.
+initial request is ignored.
 
 Example:
 (module table mzscheme
@@ -331,15 +331,15 @@ Use this language for writing servlets.
 
 > start-servlet
 -> request
-Set the intial interaction point for the servlet. This analogous to
+Set the initial interaction point for the servlet. This analogous to
 start-interaction the request handler is built-in and decodes the
-continuation-id from the url. The return value of start-servlet is the
-initial http request.
+continuation-id from the URL. The return value of start-servlet is the
+initial HTTP request.
 
 > send/suspend
 (url -> response) -> request
 Send a response to the client and wait for the request. The continuation of
-the call to send/suspend is encoded in the url that is passed to the
+the call to send/suspend is encoded in the URL that is passed to the
 argument of send/suspend. The argument should produce a request (usually an
 xexpr).
 

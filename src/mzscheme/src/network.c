@@ -401,7 +401,7 @@ static pascal void tcp_notify(StreamPtr stream, unsigned short eventCode,
     if (t->state == SOCK_STATE_LISTENING)
       t->state = SOCK_STATE_CLOSED;
     else if (t->state == SOCK_STATE_EOF_FROM_OTHER)
-      t->state == SOCK_STATE_CLOSED;
+      t->state = SOCK_STATE_CLOSED;
     else
       t->state = SOCK_STATE_UNCONNECTED;
     break;
@@ -489,7 +489,6 @@ static void TCP_INIT(char *name)
 {
   ParamBlockRec pb;
   short errNo;
-  struct GetAddrParamBlock pbr;
 	
   pb.ioParam.ioCompletion = 0L; 
   pb.ioParam.ioNamePtr = (StringPtr) "\p.IPP"; 
@@ -1544,7 +1543,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
     pb->csParam.open.security = 0;
     pb->csParam.open.optionCnt = 0;
 
-    if (errNo = PBControlAsync((ParamBlockRec*)pb)) {
+    if ((errNo = PBControlAsync((ParamBlockRec*)pb))) {
       errpart = 3;
       goto tcp_close_and_error;
     }

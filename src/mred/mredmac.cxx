@@ -654,8 +654,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
   for (q = first; q; q = q->next) {
     switch (q->event.what) {
     case updateEvt:
-      Str255 wtitle;
-      Rect bounds;
       window = (WindowPtr)q->event.message;
       if (WindowStillHere(window)) {
 	fr = wxWindowPtrToFrame(window, c);

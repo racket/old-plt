@@ -587,7 +587,6 @@ int scheme_mac_path_to_spec(const char *filename, FSSpec *spec)
 char *scheme_mac_spec_to_path(FSSpec *spec)
 {
     FSRef fileRef;
-    OSErr err;
     int longEnough = FALSE;
     int strLen = 256;
     char *str;
@@ -958,7 +957,6 @@ int scheme_mac_path_to_spec(const char *filename, FSSpec *spec)
   if (find_mac_file(filename, 1, spec, 0, 0, NULL, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL)) {
     if (wasdir) {
       CInfoPBRec pb;
-      OSErr myErr;
       
       pb.hFileInfo.ioNamePtr = spec->name;
       pb.hFileInfo.ioVRefNum = spec->vRefNum;
@@ -4268,7 +4266,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
 {
 
   DescType rtype;
-  long ret, sz;
+  long sz;
   AEKeyword kw;
   Scheme_Object *result;
 
@@ -4339,7 +4337,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
 	else
 	  recp = NULL;
          
-	for (i = 1; v = ae_unmarshall(NULL, list, i, err, stage, recp); i++) {
+	for (i = 1; (v = ae_unmarshall(NULL, list, i, err, stage, recp)); i++) {
 	  if (v == scheme_void)
 	    break;
 	  else if (!v) {
@@ -4458,7 +4456,7 @@ static pascal OSErr HandleAnswer(const AppleEvent *evt, AppleEvent *rae, long k)
 {
   ReplyItem *r = MALLOC_ONE_RT(ReplyItem);
   DescType rtype;
-  long id, sz;
+  long sz;
   
   AEGetAttributePtr(evt, keyReturnIDAttr, typeLongInteger, &rtype, &r->id, sizeof(long), &sz);
   
@@ -4524,7 +4522,7 @@ int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv,
   AppleEvent *ae = NULL, *reply = NULL;
   AEAddressDesc *target = NULL;
   DescType rtype;
-  int i, retval;
+  int retval;
   long ret, sz, dst;
 
 

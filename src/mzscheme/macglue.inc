@@ -108,12 +108,10 @@ void Drop_Quit()
 #ifndef DONT_PARSE_COMMAND_LINE
 
 # ifdef MACINTOSH_SIOUX
-#  pragma far_data on
 static void SetSIOUX(void)
 {
   SIOUXSettings.initializeTB = 0;
 }
-#  pragma far_data off
 # endif
 
 #endif /* DONT_PARSE_COMMAND_LINE */

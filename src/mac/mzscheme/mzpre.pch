@@ -1,19 +1,13 @@
 #ifdef OS_X
   #pragma precompile_target ":MzHeadersOSX"
 #else
-  #ifdef powerc
-    #pragma precompile_target ":mzpre.ppc"
-  #else
-    #pragma precompile_target ":mzpre.68k"
-  #endif
+  #pragma precompile_target ":MzHeadersPPC"
 #endif
 
 #ifdef OS_X
   #include <Carbon/HIToolbox/Events.h>
 #else
 
-  #define INCLUDE_WITHOUT_PATHS
-  
   #if defined(__powerc)
     #include <MacHeadersPPC>
   #else

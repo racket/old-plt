@@ -71,9 +71,7 @@
 #endif
 #ifdef MACINTOSH_SIOUX
 # include <console.h>
-# pragma far_data on
 # include <SIOUX.h>
-# pragma far_data reset
 #endif
 #ifdef MACINTOSH_SET_STACK
 # include <Memory.h>
@@ -266,9 +264,7 @@ int actual_main(int argc, char *argv[])
   MoreMasters();
 	
 # ifdef MACINTOSH_SIOUX
-#  pragma far_data on
   SIOUXSettings.initializeTB = 0;
-#  pragma far_data off
 # endif
 
   scheme_handle_aewait_event = handle_one;
@@ -304,10 +300,8 @@ int actual_main(int argc, char *argv[])
 	}
   }
   
-# pragma far_data on
   SIOUXSettings.autocloseonquit = 0;
   SIOUXSettings.asktosaveonclose = 0;
-# pragma far_data off
 #endif
 
 #ifdef USE_LOCALE

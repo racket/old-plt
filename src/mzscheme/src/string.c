@@ -1442,7 +1442,6 @@ static void machine_details(char *s)
    long lng;
    char sysvers[30];
    char machine_name[256];
-   int i;
 
    err = Gestalt(gestaltSystemVersion, &lng);
    if (err != noErr) {

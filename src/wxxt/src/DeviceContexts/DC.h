@@ -272,23 +272,26 @@ protected:
     void  CalcBoundingBox(float x, float y);
     void  ComputeScaleAndOrigin(void);
     // abbreviations
-    /* MATTHEW: fixed all abbrevs */
     float XDEV2LOG(int x)
-	{ return float((float(x) + origin_x) / scale_x); }
+      { return float((float(x) + origin_x) / scale_x); }
     float XDEV2LOGREL(int x)
-	{ return float(float(x) / scale_x); }
+      { return float(float(x) / scale_x); }
     float YDEV2LOG(int y)
-	{ return float((float(y) + origin_y) / scale_y); }
+      { return float((float(y) + origin_y) / scale_y); }
     float YDEV2LOGREL(int y)
-	{ return float(float(y) / scale_y); }
+      { return float(float(y) / scale_y); }
     int XLOG2DEV(float x)
-	{ return int(floor((float(x) - origin_x) * scale_x)); }
+      { float a = (x - origin_x) * scale_x;
+	return (int)floor(a); }
     int XLOG2DEVREL(float x)
-	{ return int(floor(float(x) * scale_x)); }
+      { float a = x * scale_x;
+	return (int)floor(a); }
     int YLOG2DEV(float y)
-	{ return int(floor((float(y) - origin_y) * scale_y)); }
+      { float a = (y - origin_y) * scale_y;
+	return (int)floor(a); }
     int YLOG2DEVREL(float y)
-	{ return int(floor(float(y) * scale_y)); }
+      { float a = y * scale_y;
+	return (int)floor(a); }
     // virtual function for spline drawing
     virtual void DrawOpenSpline(wxList *pts);
 };

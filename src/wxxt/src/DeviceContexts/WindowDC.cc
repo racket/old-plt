@@ -1727,7 +1727,7 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 #ifdef WX_USE_XFT
   wxFontStruct *xfontinfo;
 #endif
-  int         cx, cy;
+  float       cx, cy;
   int         ascent;
   int         dev_x;
   int         dev_y;
@@ -1784,8 +1784,8 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
   {
     float tw, th, td, ts;
     GetTextExtent(text, &tw, &th, &td, &ts, current_font, use16bit, dt);
-    cx = (int)(tw * e_scale_x);
-    cy = (int)(th * e_scale_y);
+    cx = (tw * e_scale_x);
+    cy = (th * e_scale_y);
     ascent = (int)((th - td) * e_scale_y);
   }
 
@@ -1817,6 +1817,8 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 
     if ((angle == 0.0) && (current_text_bgmode == wxSOLID)) {
       /* For B & W target, XftDrawRect doesn't seem to work right. */
+      int rw;
+      rw = (int)floor(((x - origin_x) * scale_x) + cx) - dev_x;
       if (Colour) {
 	XftColor bg;
 	bg.pixel = current_text_bg->GetPixel();
@@ -1827,12 +1829,12 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
 	bg.color.blue = current_text_bg->Blue();
 	bg.color.blue = (bg.color.blue << 8) | bg.color.blue;
 	bg.color.alpha = 0xFFFF;
-	XftDrawRect(XFTDRAW, &bg, dev_x, dev_y, cx, xfontinfo->ascent + xfontinfo->descent);
+	XftDrawRect(XFTDRAW, &bg, dev_x, dev_y, rw, xfontinfo->ascent + xfontinfo->descent);
       } else {
 	unsigned long pixel;
 	pixel = current_text_fg->GetPixel(current_cmap, IS_COLOR, 0);
 	XSetForeground(DPY, TEXT_GC, pixel);
-	XFillRectangle(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y, cx, xfontinfo->ascent + xfontinfo->descent);
+	XFillRectangle(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y, rw, xfontinfo->ascent + xfontinfo->descent);
 	pixel = current_text_fg->GetPixel(current_cmap, IS_COLOR, 1);
 	XSetForeground(DPY, TEXT_GC, pixel);
       }
@@ -1969,7 +1971,12 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt,
       }
     }
   CalcBoundingBox(x, y);
-  CalcBoundingBox(x+XDEV2LOG(cx), y+YDEV2LOG(cy));
+  {
+    int icx, icy;
+    icx = (int)cx;
+    icy = (int)cy;
+    CalcBoundingBox(x+XDEV2LOG(icx), y+YDEV2LOG(icy));
+  }
 }
 
 float wxWindowDC::GetCharHeight(void)

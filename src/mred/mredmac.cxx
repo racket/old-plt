@@ -965,6 +965,8 @@ static volatile int thread_running, need_post;
 static SLEEP_PROC_PTR mzsleep;
 static pthread_t watcher;
 static volatile float sleep_secs;
+static ProcessSerialNumber psn;
+
 
 /* These file descriptors act as semaphores: */
 static int watch_read_fd, watch_write_fd;
@@ -980,7 +982,7 @@ static void *do_watch(void *fds)
     mzsleep(sleep_secs, fds);
     if (need_post) {
       need_post = 0;
-      PostEvent(keyUp, 0);
+      WakeUpProcess(&psn);
     }
 
     write(watch_done_write_fd, "y", 1);
@@ -991,30 +993,6 @@ static void *do_watch(void *fds)
 
 static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *fds)
 {
-  int limit, i;
-  fd_set *rd, *wr, *ex;
-  
-  /* First, check whether there's really anything to watch: */
-
-  if (!fds)
-    return 1;
-
-  limit = getdtablesize();
-  rd = (fd_set *)fds;
-  wr = (fd_set *)MZ_GET_FDSET(fds, 1);
-  ex = (fd_set *)MZ_GET_FDSET(fds, 2);
-  for (i = 0; i < limit; i++) {
-    if (FD_ISSET(i, rd)
-	|| FD_ISSET(i, wr)
-	|| FD_ISSET(i, ex))
-      break;
-  }
-
-  if (i == limit)
-    return 1;
-
-  /* Ok, we really need to watch: */
-
   if (!watch_write_fd) {
     int fds[2];
     if (!pipe(fds)) {
@@ -1036,6 +1014,7 @@ static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *
   }
 
   if (!watcher) {
+    GetCurrentProcess(&psn);
     if (pthread_create(&watcher, NULL,  do_watch, fds)) {
       return 0;
     }
@@ -1048,11 +1027,9 @@ static int StartFDWatcher(void (*mzs)(float secs, void *fds), float secs, void *
   write(watch_write_fd, "x", 1);
 }
 
-static int EndFDWatcher(void)
-     /* Returns 1 if watcher posted a keyUp event */
+static void EndFDWatcher(void)
 {
   char buf[1];
-  int retval = 0;
 
   if (thread_running) {
     void *val;
@@ -1060,14 +1037,11 @@ static int EndFDWatcher(void)
     if (need_post) {
       need_post = 0;
       scheme_signal_received();
-    } else
-      retval = 1;
+    }
 
     read(watch_done_read_fd, buf, 1);
     thread_running = 0;
   }
-
-  return retval;
 }
 #endif
 
@@ -1081,7 +1055,6 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
     mzsleep(secs, fds);
   } else {
     EventRecord e;
-    int requeue = 0;
 
     if (!msergn)
       msergn = ::NewRgn();
@@ -1102,23 +1075,11 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 #endif
 
     if (WaitNextEvent(everyEvent, &e, secs ? (long)(secs * 60) : 0x7FFFFFFF, msergn))
-      requeue = 1;
+      QueueTransferredEvent(&e);
 
 #ifdef OS_X
-    if (EndFDWatcher()) {
-      if (requeue && (e.what == keyUp)) {
-	/* Hopefully e is the right keyUp event! */
-	requeue = 0;
-      } else {
-	/* Grab a keyUp event... hopefully the right one. */
-	EventRecord e2;
-	WaitNextEvent(keyUpMask, &e2, 0, NULL);
-      }
-    }
+    EndFDWatcher();
 #endif
-
-    if (requeue)
-      QueueTransferredEvent(&e);
   }
 }
 

@@ -183,6 +183,10 @@
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "sparc-linux"
 #  define FLUSH_SPARC_REGISTER_WINDOWS
 # endif
+# if defined(__x86_64__)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "x86_64-linux"
+#  define REGISTER_POOR_MACHINE
+# endif
 # ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "unknown-linux"
 # endif
@@ -197,7 +201,7 @@
 
 # define HAS_LINUX_IOB
 
-# if defined(__alpha)
+# if defined(__alpha) || defined(__x86_64__)
 #  define SIXTY_FOUR_BIT_INTEGERS
 # endif
 
@@ -210,9 +214,6 @@
 
 # define USE_IEEE_FP_PREDS
 # define USE_EXPLICT_FP_FORM_CHECK
-# if (__GNUC__ >= 3) && defined(i386)
-#  define DONT_INLINE_NZERO_TEST
-# endif
 
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL

@@ -93,6 +93,7 @@ static Scheme_Object *set_box (int argc, Scheme_Object *argv[]);
 
 static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_immutable_hash_table(int argc, Scheme_Object *argv[]);
+static Scheme_Object *hash_table_count(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[]);
 static Scheme_Object *hash_table_get(int argc, Scheme_Object *argv[]);
@@ -437,6 +438,11 @@ scheme_init_list (Scheme_Env *env)
 			     scheme_make_folding_prim(hash_table_p,
 						      "hash-table?",
 						      1, 3, 1),
+			     env);
+  scheme_add_global_constant("hash-table-count",
+			     scheme_make_prim_w_arity(hash_table_count,
+						      "hash-table-count",
+						      1, 1),
 			     env);
   scheme_add_global_constant("hash-table-put!",
 			     scheme_make_prim_w_arity(hash_table_put,
@@ -1361,6 +1367,41 @@ Scheme_Hash_Table *scheme_make_hash_table_equal()
   t->make_hash_indices = make_hash_indices_for_equal;
 
   return t;
+}
+
+static Scheme_Object *hash_table_count(int argc, Scheme_Object *argv[])
+{
+  if (SCHEME_HASHTP(argv[0])) {
+    Scheme_Hash_Table *t = (Scheme_Hash_Table *)argv[0];
+    return scheme_make_integer(t->count);
+  } else if (SCHEME_BUCKTP(argv[0])) {
+    Scheme_Bucket_Table *t = (Scheme_Bucket_Table *)argv[0];
+    int count = 0, weak, i;
+    Scheme_Bucket **buckets, *bucket;
+    const char *key;
+
+    buckets = t->buckets;
+    weak = t->weak;
+
+    for (i = t->size; i--; ) {
+      bucket = buckets[i];
+      if (bucket) {
+	if (weak) {
+	  key = (const char *)HT_EXTRACT_WEAK(bucket->key);
+	} else {
+	  key = bucket->key;
+	}
+	if (key)
+	  count++;
+      }
+      SCHEME_USE_FUEL(1);
+    }
+
+    return scheme_make_integer(count);
+  } else {
+    scheme_wrong_type("hash-table-count", "hash-table", 0, argc, argv);
+    return NULL;
+  }
 }
 
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[])

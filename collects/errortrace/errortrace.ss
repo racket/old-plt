@@ -22,5 +22,5 @@
   
   (current-eval errortrace-eval-handler)
   (error-display-handler errortrace-error-display-handler)
-  (use-compiled-file-paths (cons "compiled/errortrace" 
+  (use-compiled-file-paths (cons (build-path "compiled" "errortrace")
 				 (use-compiled-file-paths))))

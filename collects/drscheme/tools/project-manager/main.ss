@@ -175,9 +175,10 @@
         (let ([n (file:normalize-path file)])
           (ormap (lambda (name) (string=? file (file:normalize-path name)))
                  (append (map (lambda (file)
-                                (if (string? file)
-                                    file
-                                    (build-path (apply collection-path (cdr file)) (car file))))
+                                (case (car file)
+				  [(build-path) (apply build-path (cdr file))]
+				  [(require-library)
+				   (build-path (apply collection-path (cddr file)) (cadr file))]))
                               files)
                          loaded-files))))
       
@@ -592,12 +593,18 @@
 
       (define (open-file)
 	(let* ([file (list-ref files (car (send files-list-box get-selections)))]
-	       [filename (cond
-			  [(string? file) file]
-			  [else (build-path (apply collection-path (cdr file))
-					    (car file))])]
+	       [_ (printf "opening.1: ~s~n" file)]
+	       [filename (case (car file)
+			  [(build-path)
+			   (apply build-path (cdr file))]
+			  [(require-library)
+			   (build-path (apply collection-path (cddr file))
+				       (cadr file))])]
+	       [_ (printf "opening.2 ~s~n" filename)]
                [frame (handler:edit-file filename)])
+	  (printf "opening.3: ~s~n" frame)
           (when (is-a? frame project-aware-frame<%>)
+	    (printf "opening.4:~n")
             (send frame project:set-project-window this))))
         
       (define (remove-file)
@@ -631,11 +638,13 @@
                    (file:normalize-path (build-path project-dir path))]
                   [(absolute-path? path)
                    (if project-dir
-                       (file:find-relative-path path project-dir)
+                       (file:find-relative-path project-dir path)
                        (begin (bell)
                               path))])])
           (set-cdr! file (my-explode-path new-path))
           (send files-list-box set-string index (get-file-list-box-string file))
+	  (send files-list-box set-selection index)
+	  (is-changed)
           (update-buttons)))
 
       (define (update-buttons)

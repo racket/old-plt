@@ -10,10 +10,6 @@ the function, all tests will be run.
 
   runs some memory tests
 
-   sample-solutions.ss
-
-   This tests the sample solutions in HtDP
-   
 |# io.ss #|
 
    This tests the drscheme's io implementation.
@@ -38,6 +34,10 @@ the function, all tests will be run.
 
    This tests the launcher feature of drscheme.
 
+|#   sample-solutions.ss #|
+
+   This tests the sample solutions in HtDP
+   
 ----------------------------------
 --------  MANUAL TESTS  ----------
 ----------------------------------

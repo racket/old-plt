@@ -1727,11 +1727,11 @@
 	     ;;  the style will be changed again (so we wasted effort).
 	     ;; Since output is more common than input, there's certainly room for
 	     ;;  a significant optimization here.
+	     (super-after-insert start len)
 	     (let ([old-r resetting?])
 	       (set-resetting #t)
 	       (change-style input-delta start (+ start len))
-	       (set-resetting old-r))
-	     (super-after-insert start len))])
+	       (set-resetting old-r)))])
 	(override
 	  [do-eval
 	   (lambda (start end)

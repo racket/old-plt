@@ -41,7 +41,7 @@
      (r--> number 
            'num)
      
-     (r--> (lambda ((name x variable) (name t t)) (name body e))
+     (r--> (lambda ((name x x) (name t t)) (name body e))
            `(-> ,t ,(lc-subst x t body)))
      
      (r--> ((-> (name t1 t) (name t2 t)) (name t1 t))

@@ -211,12 +211,23 @@ void MrEdDispatchEvent(MSG *msg)
     can_trampoline_win = 0;
 
     /* See wxEventTrampoline, below: */
-    if (need_trampoline_win == msg->hwnd) {
-      HWND win = need_trampoline_win;
-      need_trampoline_win = 0;
-      wx_trampolining = 1;
-      need_trampoline_proc(win, need_trampoline_message,
-			   need_trampoline_wparam, need_trampoline_lparam);
+    {
+      int iterations;
+
+      for (iterations = 0; iterations < 10; iterations++) {
+	if (need_trampoline_win == msg->hwnd) {
+	  HWND win = need_trampoline_win;
+	  need_trampoline_win = 0;
+	  wx_trampolining = 1;
+	  if (iterations < 9)
+	    can_trampoline_win = win;
+	  else
+	    can_trampoline_win = NULL;
+	  need_trampoline_proc(win, need_trampoline_message,
+			       need_trampoline_wparam, need_trampoline_lparam);
+	} else
+	  break;
+      }
     }
   }
 }
@@ -317,14 +328,6 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
   case WM_NCRBUTTONUP:
   case WM_NCMBUTTONUP:
     if ((wParam == HTVSCROLL) || (wParam == HTHSCROLL)) {
-      tramp = 1;
-      *res = 1;
-    } else
-      tramp = 0;
-    break;
-    /* This is for interactive scrolling: */
-  case WM_SYSCOMMAND:
-    if (((wParam & 0xFFF0) == SC_HSCROLL) || ((wParam & 0xFFF0) == SC_VSCROLL)) {
       tramp = 1;
       *res = 1;
     } else

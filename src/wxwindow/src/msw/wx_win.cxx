@@ -2476,16 +2476,10 @@ void wxWindow::SetScrollPage(int orient, int page)
   if (orient == wxHORIZONTAL) {
     dir = SB_HORZ;    
     range = wnd->xscroll_lines;
-    if (page > range + 1)
-      page = range + 1;
     wnd->xscroll_lines_per_page = page;
   } else {
     dir = SB_VERT;
     range = wnd->yscroll_lines;
-
-    if (page > range + 1)
-      page = range + 1;
-    
     wnd->yscroll_lines_per_page = page;
   }
 

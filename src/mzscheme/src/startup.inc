@@ -1637,7 +1637,7 @@
 "(generate-temporaries(syntax(keyword ...)))))"
 "(syntax(lambda(x)"
 "(syntax-case x(k ...)"
-"((dummy . pattern)(syntax template))"
+"((dummy . pattern)(syntax/loc x template))"
 " ...))))))))"
 "(provide(all-from #%stxcase)(all-from #%small-scheme)"
 "(all-from #%with-stx)(all-from #%stxloc) check-duplicate-identifier"

@@ -376,9 +376,6 @@ static MX_PRIM mxPrims[] = {
   { mx_event_error_pred,"event-error?",1,1},
   { mx_block_until_event,"block-until-event",1,1},
   { mx_process_win_events,"process-win-events",0,0},
-
-  // .NET hacks
-  { initialize_cor, "%initialize-cor", 0, 0},
 };
 
 BOOL isEmptyClsId(CLSID clsId) {

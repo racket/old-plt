@@ -582,7 +582,6 @@ MX_PRIM_DECL(mx_event_error_pred);
 MX_PRIM_DECL(mx_block_until_event);
 MX_PRIM_DECL(mx_process_win_events);
 MX_PRIM_DECL(mx_release_type_table);
-MX_PRIM_DECL(initialize_cor);
 
 void browserHwndMsgLoop(LPVOID);
 void mx_register_com_object(Scheme_Object *,IDispatch *);

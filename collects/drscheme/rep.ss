@@ -293,6 +293,7 @@
                   
                   (send text set-position start-pos end-pos)
                   (send text end-edit-sequence)))])
+      (send current-backtrace-window reflow-container)
       (send text auto-wrap #t)
       (send text set-autowrap-bitmap #f)
       (send text insert error-text)

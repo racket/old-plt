@@ -266,7 +266,7 @@ static void copy_stack(Scheme_Jumpup_Buf *b, void *base, void *start GC_VAR_STAC
     copy = MALLOC_STACK(size);
 
     /* Restore b: */
-    b = (Scheme_Jumpup_Buf *)(base + diff);
+    b = (Scheme_Jumpup_Buf *)(((char *)base) + diff);
 
     set_copy(b->stack_copy, copy);
 #endif

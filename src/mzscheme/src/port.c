@@ -3131,10 +3131,12 @@ static BOOL CALLBACK that_was_a_break(DWORD x)
 static long StupidEofCheck(Tested_Input_File *tip)
 {
   DWORD got;
+  HANDLE h;
 
   RELEASE_SEMAPHORE(tip->stupid_eof_check_going);
   
-  if (ReadFile((HANDLE)_get_osfhandle(_fileno(tip->fp)), NULL, 0, &got, NULL))
+  h = (HANDLE)_get_osfhandle(_fileno(tip->fp));
+  if (ReadFile(h, NULL, 0, &got, NULL))
     tip->stupid_eof_check = 1;
   
   return 0;
@@ -3167,7 +3169,8 @@ static long read_for_tested_file(void *data)
     try_again:
 #ifdef WIN32_FD_HANDLES
       if (!tip->fp->_cnt) {
-	HANDLE file = (HANDLE)_get_osfhandle(_fileno(tip->fp));
+	HANDLE file;
+	file = (HANDLE)_get_osfhandle(_fileno(tip->fp));
 	if (tip->primtype == FILE_TYPE_CHAR) {
 	  /* Console */
 	  HANDLE h[2];
@@ -3277,7 +3280,11 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
   tip->ready_sema = MAKE_SEMAPHORE();
   tip->try_sema = MAKE_SEMAPHORE();
 #ifdef WIN32_FD_HANDLES
-  tip->primtype = GetFileType((HANDLE)_get_osfhandle(_fileno(tip->fp)));
+  {
+    HANDLE h;
+    h = (HANDLE)_get_osfhandle(_fileno(tip->fp));
+    tip->primtype = GetFileType(h);
+  }
   tip->interrupt = MAKE_SEMAPHORE();
   tip->stupid_eof_check_going = NULL;
 #endif
@@ -3303,10 +3310,14 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 # endif
   {
     DWORD id;
-    tip->th = (void *)_beginthreadex(NULL, 5000, 
-				     (LPTHREAD_START_ROUTINE)read_for_tested_file,
-				     tip, 0, &id);
-    tip->thread_memory = scheme_remember_thread((void *)tip->th);
+    Scheme_Thread_Memory *tm;
+    void *th;
+    th = (void *)_beginthreadex(NULL, 5000, 
+				(LPTHREAD_START_ROUTINE)read_for_tested_file,
+				tip, 0, &id);
+    tip->th = th;
+    tm = scheme_remember_thread((void *)tip->th);
+    tip->thread_memory = tm;
   }
 #endif
 
@@ -3349,7 +3360,10 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 			       tested_file_need_wakeup,
 			       1);
 
-  ip->name = scheme_strdup(name);
+  {
+    name = scheme_strdup(name);
+    ip->name = name;
+  }
 
   return (Scheme_Object *)ip;
 }
@@ -3614,10 +3628,12 @@ static Scheme_Object *make_tested_file_output_port(FILE *fp, int tested)
 # endif
   {
     DWORD id;
+    Scheme_Thread_Memory *tm;
     top->th = (void *)_beginthreadex(NULL, 5000, 
 				     (LPTHREAD_START_ROUTINE)write_for_tested_file,
 				     top, 0, &id);
-    top->thread_memory = scheme_remember_thread((void *)top->th);
+    tm = scheme_remember_thread((void *)top->th);
+    top->thread_memory = tm;
   }
 #endif
 
@@ -4269,16 +4285,17 @@ static Scheme_Object *get_process_status(void *sci, int argc, Scheme_Object **ar
 static char *cmdline_protect(char *s)
 {
   char *naya;
+  int ds;
   int has_space = 0, has_quote = 0, was_slash = 0;
   
-  for (naya = s; *naya; naya++) {
-    if (isspace(*naya) || (*naya == '\'')) {
+  for (ds = 0; s[ds]; ds++) {
+    if (isspace(s[ds]) || (s[ds] == '\'')) {
       has_space = 1;
       was_slash = 0;
-    } else if (*naya == '"') {
+    } else if (s[ds] == '"') {
       has_quote += 1 + (2 * was_slash);
       was_slash = 0;
-    } else if (*naya == '\\') {
+    } else if (s[ds] == '\\') {
       was_slash++;
     } else
       was_slash = 0;
@@ -4592,8 +4609,11 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
 #ifdef WINDOWS_PROCESSES
     /* spawnv is too stupid to protect spaces, etc. in the arguments: */
-    for (i = 0; i < c; i++)
-      argv[i] = cmdline_protect(argv[i]);
+    for (i = 0; i < c; i++) {
+      char *cla;
+      cla = cmdline_protect(argv[i]);
+      argv[i] = cla;
+    }
 #endif
 
     /* Set real CWD - and hope no other thread changes it! */

@@ -256,11 +256,12 @@ static void winsock_remember(tcp_t s)
   int i, new_size;
   tcp_t *naya;
 
-  for (i = 0; i < wsr_size; i++)
+  for (i = 0; i < wsr_size; i++) {
     if (!wsr_array[i]) {
       wsr_array[i] = s;
       return;
     }
+  }
 
   if (!wsr_size) {
     REGISTER_SO(wsr_array);
@@ -269,8 +270,9 @@ static void winsock_remember(tcp_t s)
     new_size = 2 * wsr_size;
 
   naya = MALLOC_N_ATOMIC(tcp_t, new_size);
-  for (i = 0; i < wsr_size; i++)
+  for (i = 0; i < wsr_size; i++) {
     naya[i] = wsr_array[i];
+  }
 
   naya[wsr_size] = s;
 
@@ -282,22 +284,24 @@ static void winsock_forget(tcp_t s)
 {
   int i;
 
-  for (i = 0; i < wsr_size; i++)
+  for (i = 0; i < wsr_size; i++) {
     if (wsr_array[i] == s) {
       wsr_array[i] = (tcp_t)NULL;
       return;
     }
+  }
 }
 
 static int winsock_done(void)
 {
   int i;
 
-  for (i = 0; i < wsr_size; i++)
+  for (i = 0; i < wsr_size; i++) {
     if (wsr_array[i]) {
       closesocket(wsr_array[i]);
       wsr_array[i] = (tcp_t)NULL;
     }
+  }
 
   return WSACleanup();
 }

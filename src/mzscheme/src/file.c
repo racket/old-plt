@@ -918,34 +918,38 @@ static int check_dos_slashslash_drive(const char *next, int len,
     for (j = 2; j < len; j++) {
       if (!IS_A_SEP(next[j])) {
 	/* Found non-sep */
-	for (; j < len; j++)
+	for (; j < len; j++) {
 	  if (IS_A_SEP(next[j])) {
 	    /* Found sep again: */
-	    for (; j < len; j++)
+	    for (; j < len; j++) {
 	      if (!IS_A_SEP(next[j])) {
 		/* Found non-sep again */
-		for (; j < len; j++)
+		for (; j < len; j++) {
 		  if (IS_A_SEP(next[j])) {
 		    /* Found sep again... */
 		    if (drive_end)
 		      *drive_end = j;
 		    if (exact) {
-		      for (; j < len; j++)
+		      for (; j < len; j++) {
 			if (!IS_A_SEP(next[j])) {
 			  /* Found non-sep again 
 			     - not a drive (it's absolute path) */
 			  break;
 			}
+		      }
 		    } else
 		      is_drive = 1;
 		    break;
 		  }
+		}
 		if (j >= len)
 		  is_drive = 1;
 		break;
 	      }
+	    }
 	    break;
 	  }
+	}
 	break;
       }
     }
@@ -1210,17 +1214,19 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
 	for (i = 2; i < ilen; i++) {
 	  if (!IS_A_SEP(filename[i])) {
 	    /* Found non-sep */
-	    for (; i < ilen; i++)
+	    for (; i < ilen; i++) {
 	      if (IS_A_SEP(filename[i])) {
 		/* Found sep */
-		for (; i < ilen; i++)
+		for (; i < ilen; i++) {
 		  if (!IS_A_SEP(filename[i])) {
 		    /* Found non-sep; allow leading */
 		    allow_leading = 1;
 		    break;
 		  }
+		}
 		break;
 	      }
+	    }
 	    break;
 	  }
 	}
@@ -2808,7 +2814,9 @@ static Scheme_Object *simplify_path(int argc, Scheme_Object *argv[])
 static Scheme_Object *current_drive(int argc, Scheme_Object *argv[])
 {
 #ifdef DOS_FILE_SYSTEM
-  char *drive = scheme_getdrive();
+  char *drive;
+
+  drive = scheme_getdrive();
 
   return scheme_make_sized_string(drive, strlen(drive), 0);
 #else
@@ -3047,7 +3055,7 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
   {
 #   define DRIVE_BUF_SIZE 1024
     char drives[DRIVE_BUF_SIZE], *s;
-    long len;
+    long len, ds;
 
     len = GetLogicalDriveStrings(DRIVE_BUF_SIZE, drives);
     if (len <= DRIVE_BUF_SIZE)
@@ -3057,18 +3065,19 @@ static Scheme_Object *filesystem_root_list(int argc, Scheme_Object *argv[])
       GetLogicalDriveStrings(len + 1, s);
     }
 
-    while (*s) {
+    ds = 0;
+    while (s[ds]) {
       DWORD a, b, c, d;
       /* GetDiskFreeSpace effectively checks whether we can read the disk: */
-      if (GetDiskFreeSpace(s, &a, &b, &c, &d)) {
-	v = scheme_make_pair(scheme_make_string(s), scheme_null);
+      if (GetDiskFreeSpace(s + ds, &a, &b, &c, &d)) {
+	v = scheme_make_pair(scheme_make_sized_offset_string(s, ds, -1, 1), scheme_null);
 	if (last)
 	  SCHEME_CDR(last) = v;
 	else
 	  first = v;
 	last = v;
       }
-      s += strlen(s) + 1;
+      ds += strlen(s + ds) + 1;
     }
   }
 #endif
@@ -3635,8 +3644,10 @@ find_system_path(int argc, Scheme_Object **argv)
 
 #ifdef DOS_FILE_SYSTEM
   if (which == id_sys_dir) {
-    int size = GetSystemDirectory(NULL, 0);
-    char *s = scheme_malloc_atomic(size + 1);
+    int size;
+    char *s;
+    size = GetSystemDirectory(NULL, 0);
+    s = scheme_malloc_atomic(size + 1);
     GetSystemDirectory(s, size + 1);
     return scheme_make_string(s);
   }
@@ -3647,8 +3658,6 @@ find_system_path(int argc, Scheme_Object **argv)
     int ends_in_slash;
     
     if (which == id_temp_dir) {
-      char *p;
-      
       if ((p = getenv("TMP")) || (p = getenv("TEMP"))) {
 	p = scheme_expand_filename(p, -1, NULL, NULL);
 	if (p && scheme_directory_exists(p))

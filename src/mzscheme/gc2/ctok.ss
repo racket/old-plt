@@ -2,15 +2,21 @@
   (import)
   (export)
 
+  (define (trans pattern)
+    (regexp (format "^(~a)" pattern)))
+
   (define (translations . t)
     (let loop ([t t])
       (if (null? t)
 	  null
 	  (let ([pattern (car t)]
 		[result (cadr t)])
-	    (cons (cons (regexp (format "^(~a)" pattern))
+	    (cons (cons (trans pattern)
 			result)
 		  (loop (cddr t)))))))
+
+  (define (a-regexp-match-positions re s p)
+    (regexp-match-positions re s p))
 
   (define seq string-append)
   (define startseq seq)
@@ -18,6 +24,11 @@
   (define (one+ s) (format "(~a)+" s))
   (define (maybe s) (format "(~a)?" s))
   (define (alt a b) (format "~a|~a" a b))
+  (define (alt* . l)
+    (let loop ([l l])
+      (if (null? (cdr l))
+	  (format "(~a)" (car l))
+	  (format "(~a)|~a" (car l) (loop (cdr l))))))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -52,14 +63,14 @@
   (define (symbol s)
     (result (string->symbol s) ))
 
-  (define re:octal (regexp "0[0-9]+"))
-  (define re:int (regexp "[0-9]*"))
+  (define re:octal (regexp "^0[0-9]+$"))
+  (define re:int (regexp "^[0-9]*$"))
   (define (number s)
     (result
      (cond
-      [(regexp-match re:octal s) 
-       (format "#o~a" s)]
-      [(regexp-match re:int s)
+      [(regexp-match-positions re:octal s) 
+       (string->number s 8)]
+      [(regexp-match-positions re:int s)
        (string->number s)]
       [else (string->symbol s)])))
 
@@ -69,7 +80,7 @@
 
   (define (string s)
     (count-newlines s)
-    (result s))
+    (result (substring s 1 (sub1 (string-length s)))))
 
   (define (start s)
     'start)
@@ -100,21 +111,20 @@
      "#line" cpp
      "#pragma" cpp))
 
-  (define complexes
-    (translations
-     (seq L (arbno (alt L D)))  symbol
+  (define symbol-complex (trans (seq L (arbno (alt L D)))))
 
-     (seq "0" "[xX]" (one+ H) (maybe IS)) number
+  (define number-complex
+    (trans (alt*
+	    (seq (arbno D) "[.]" (one+ D) (maybe E) (maybe FS))
+	    (seq (one+ D) "[.]" (arbno D) (maybe E) (maybe FS))
+	    (seq (one+ D) E (maybe FS))
 
-     (seq "0" (one+ D) (maybe IS)) number
-     (seq (one+ D) (maybe IS)) number
-     (seq (maybe L) "'([^\\']|\\\\.)+'") character
-     
-     (seq (one+ D) E (maybe FS)) number
-     (seq (arbno D) "[.]" (one+ D) (maybe E) (maybe FS)) number
-     (seq (one+ D) "[.]" (arbno D) (maybe E) (maybe FS)) number
+	    (seq "0" "[xX]" (one+ H) (maybe IS)) ;; hex
+	    (seq "0" (one+ D) (maybe IS)) ;; octal
+	    (seq (one+ D) (maybe IS))))) ;; integer
 
-     (seq (maybe L) "\"([^\\\"]|\\\\.)*\"") string))
+  (define char-complex (trans (seq (maybe L) "'([^\\']|\\\\.)+'")))
+  (define string-complex (trans (seq (maybe L) "\"([^\\\"]|\\\\.)*\"")))
 
   (define simple-table (make-vector 256 #f))
 
@@ -211,7 +221,7 @@
 	      (cond
 	       [(char-whitespace? char)
 		(loop (add1 p) result)]
-	       [(and (memq (string-ref s p) '(#\# #\/))
+	       [(and (eq? char '#\#) ;; We only #-based preprocessor left
 		     (ormap (lambda (t)
 			      (and (regexp-match-positions (car t) s p)
 				   (cdr t)))
@@ -229,18 +239,29 @@
 				      sl)))])
 		  (cond
 		   [(not simple)
-		    (let ([complex (ormap
-				    (lambda (t)
-				      (let ([m (regexp-match-positions (car t) s p)])
-					(and m
-					     (cons ((cdr t) (substring s (caar m) (cdar m)))
-						   (cdar m)))))
-				    complexes)])
-		      (cond
-		       [(not complex)
-			(error 'c-tokenize "strange: ~e ~e" p (substring s p (min len (+ p 100))))]
-		       [(car complex)
-			(loop (cdr complex) (cons (car complex) result))]))]
+		    (cond
+		     [(regexp-match-positions symbol-complex s p)
+		      => (lambda (m)
+			   (loop (cdar m)
+				 (cons (symbol (substring s (caar m) (cdar m)))
+				       result)))]
+		     [(regexp-match-positions number-complex s p)
+		      => (lambda (m)
+			   (loop (cdar m)
+				 (cons (number (substring s (caar m) (cdar m)))
+				       result)))]
+		     [(regexp-match-positions char-complex s p)
+		      => (lambda (m)
+			   (loop (cdar m)
+				 (cons (character (substring s (caar m) (cdar m)))
+				       result)))]
+		     [(regexp-match-positions string-complex s p)
+		      => (lambda (m)
+			   (loop (cdar m)
+				 (cons (string (substring s (caar m) (cdar m)))
+				       result)))]
+		     [else
+		      (error 'c-tokenize "strange: ~e ~e" p (substring s p (min len (+ p 100))))])]
 		   [(not (car simple))
 		    (cons (reverse! result) (cdr simple))]
 		   [(eq? (car simple) 'start)

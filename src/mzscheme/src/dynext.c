@@ -290,19 +290,23 @@ static Scheme_Object *do_load_extension(const char *filename, Scheme_Env *env)
     char *vers;
   
     dl = LoadLibrary(filename);
-    if (!dl)
+    if (!dl) {
+      long err;
+      err = GetLastError();
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),
 		       fail_err_symbol,
 		       "load-extension: could not load \"%s\" (%E)",
-		       filename, GetLastError());
+		       filename, err);
+    }
     
     handle = (void *)dl;
     
     f = (Setup_Procedure)GetProcAddress(dl, "scheme_initialize_internal");
     
     if (!f) {
-      long err = GetLastError();
+      long err;
+      err = GetLastError();
       FreeLibrary(dl);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       scheme_make_string(filename),

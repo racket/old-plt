@@ -61,7 +61,7 @@
 (define source-is-c++? (regexp-match "([.]cc$)|([.]cxx$)" file-in))
 
 (require-library "function.ss")
-(require-library "errortrace.ss" "errortrace")
+;(require-library "errortrace.ss" "errortrace")
 (error-print-width 100)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -135,7 +135,7 @@
 	   (close-input-port (car ctok-process)))))
       (thread
        (lambda ()
-	 (let ([u (load-relative "ctok.ss")])
+	 (let ([u (load-extension "ctok.dll")])
 	   (parameterize ([current-input-port local-ctok-read])
 	     (set! e-raw (car (invoke-unit u)))))))))
 
@@ -328,6 +328,11 @@
     scheme_raise_out_of_memory
     ))
 
+(define asm-commands
+  ;; When outputting, add newline before these syms
+  ;; (for __asm blocks in Windows)
+  '(mov shl shld shr shrd sar))
+
 (define (get-constructor v)
   (cond
    [(creation-parens? v) make-creation-parens]
@@ -348,7 +353,7 @@
    [(array-type? vtype)
     3]
    [(struct-type? vtype)
-    (let ([size (let ([m (assq (struct-type-struct vtype) struct-defs)])
+    (let ([size (let ([m (lookup-struct-def (struct-type-struct vtype))])
 		  (apply + (map get-variable-size
 				(cdr m))))])
       (if (struct-array-type? vtype)
@@ -409,7 +414,7 @@
 	       [(struct-type? vtype)
 		(let aloop ([array-index 0][n n][comma comma])
 		  ;; Push each struct in array (or only struct if not an array)
-		  (let loop ([n n][l (cdr (assq (struct-type-struct vtype) struct-defs))][comma comma])
+		  (let loop ([n n][l (cdr (lookup-struct-def (struct-type-struct vtype)))][comma comma])
 		    (if (null? l)
 			(if (and (struct-array-type? vtype)
 				 (< (add1 array-index) (struct-array-type-count vtype)))
@@ -511,6 +516,10 @@
 	     [per-block-push? (printf "SETUP(~a_COUNT)" tag)]
 	     [else (printf "x")])
 	    (newline/indent indent))]
+	 [(memq (tok-n v) asm-commands)
+	  (newline/indent indent)
+	  (display/indent v (tok-n v))
+	  (display/indent v " ")]
 	 [else
 	  (if (string? (tok-n v))
 	      (begin
@@ -573,7 +582,8 @@
    [(typedef? e)
     (when show-info?
       (printf "/* TYPEDEF */~n"))
-    (if (simple-unused-def? e)
+    (if (or (simple-unused-def? e)
+	    (unused-struct-typedef? e))
 	null
 	(begin
 	  (when pgc?
@@ -713,6 +723,22 @@
 				  (tok-n (car e))
 				  (loop (cdr e))))))))
   
+(define (unused-struct-typedef? e)
+  (let ([once (lambda (s)
+		(= 1 (hash-table-get used-symbols 
+				     (tok-n s))))]
+	[seps (list '|,| '* semi)])
+    (and (eq? (tok-n (cadr e)) 'struct)
+	 (braces? (cadddr e))
+	 (once (caddr e))
+	 (let loop ([e (cddddr e)])
+	   (cond
+	    [(null? e) #t]
+	    [(or (memq (tok-n (car e)) seps)
+		 (once (car e)))
+	     (loop (cdr e))]
+	    [else #f])))))
+
 (define (struct-decl? e)
   (memq (tok-n (car e)) '(struct enum)))
 
@@ -752,21 +778,25 @@
 
 (define (register-proto-information e)
   (let loop ([e e][type null])
-    (if (parens? (cadr e))
-	(let ([name (tok-n (car e))]
-	      [type (let loop ([t (reverse type)])
-		      (if (and (pair? t)
-			       (memq (tok-n (car t)) '(extern static inline virtual)))
-			  (loop (cdr t))
-			  t))]
-	      [static? (ormap (lambda (t) (eq? (tok-n t) 'static)) type)])
-	  (prototyped (cons (cons name (make-prototype 
-					type
-					(seq->list (seq-in (cadr e)))
-					static? #f #f))
-			    (prototyped)))
-	  name)
-	(loop (cdr e) (cons (car e) type)))))
+    (cond
+     [(eq? '__declspec (tok-n (car e)))
+      (loop (cddr e) type)]
+     [(parens? (cadr e))
+      (let ([name (tok-n (car e))]
+	    [type (let loop ([t (reverse type)])
+		    (if (and (pair? t)
+			     (memq (tok-n (car t)) '(extern static inline virtual __stdcall __cdecl)))
+			(loop (cdr t))
+			t))]
+	    [static? (ormap (lambda (t) (eq? (tok-n t) 'static)) type)])
+	(prototyped (cons (cons name (make-prototype 
+				      type
+				      (seq->list (seq-in (cadr e)))
+				      static? #f #f))
+			  (prototyped)))
+	name)]
+     [else
+      (loop (cdr e) (cons (car e) type))])))
 
 (define (prototype-for-pointer? m)
   (let ([name (car m)]
@@ -783,6 +813,27 @@
 (define pointer-types '())
 (define non-pointer-types '(int char long unsigned ulong uint void float double))
 (define struct-defs '())
+(define lazy-struct-defs '())
+
+(define (lookup-non-pointer-type t)
+  (memq t pointer-types))
+(define (lookup-pointer-type t)
+  (assq t pointer-types))
+#|
+(define (lookup-struct-def t)
+  (let ([m (assq t struct-defs)])
+    (or m
+	(let ([m (assq t lazy-struct-defs)])
+	  (if m
+	      (begin
+		;; do work
+		((cdr m) m)
+		;; try again
+		(lookup-struct-defs t))
+	      #f)))))
+|#
+(define (lookup-struct-def t)
+  (assq t struct-defs))
 
 (define (check-pointer-type e)
   (let-values ([(pointers non-pointers)
@@ -794,12 +845,12 @@
   (let* ([e (filter (lambda (x) (not (memq (tok-n x) '(volatile const)))) e)]
 	 [base (tok-n (car e))]
 	 [base-is-ptr?
-	  (assq base pointer-types)]
+	  (lookup-pointer-type base)]
 	 [base-struct
 	  (and (eq? base 'struct)
 	       (if (or (braces? (cadr e)) (braces? (caddr e)))
 		   (register-struct e)
-		   (let ([m (assq (tok-n (cadr e)) struct-defs)])
+		   (let ([m (lookup-struct-def (tok-n (cadr e)))])
 		     (and m (car m)))))]
 	 [minpos (if (or (eq? base 'struct)
 			 (eq? base 'union))
@@ -809,7 +860,7 @@
 			[(eq? 'unsigned  (tok-n (car e)))
 			 (if (memq (tok-n (cadr e)) '(int long char))
 			     (list 'unsigned (tok-n (cadr e))))]
-			[(memq (tok-n (car e)) non-pointer-types)
+			[(lookup-non-pointer-type (tok-n (car e)))
 			 (list (tok-n (car e)))]
 			[else #f])])
     (let loop ([l (- (length e) 2)][array-size #f][pointers null][non-pointers null])
@@ -878,7 +929,7 @@
 				      (or union?
 					  (and base-struct
 					       (let has-union? ([base base-struct])
-						 (let ([v (cdr (assq base struct-defs))])
+						 (let ([v (cdr (lookup-struct-def base))])
 						   (ormap
 						    (lambda (v)
 						      (or (union-type? v)
@@ -969,6 +1020,15 @@
 	   (begin
 	     (set! struct-defs (cons (cons name l) struct-defs))
 	     name)))))
+
+#|
+(let ([lazy-cell (cons
+		      name
+		      (lambda (c)
+			(set-car! c #f) ; so it won't be found again.
+
+      (set! lazy-struct-defs (cons lazy-cell lazy-struct-defs)))))
+|#
 
 (define (add-segment-label name e)
   (let loop ([e e])
@@ -1422,7 +1482,7 @@
 	    (set! important-conversion? #t)
 	    (let* ([t (cadr e)]
 		   [obj? (find-c++-class (tok-n t) #f)]
-		   [atom? (memq (tok-n t) non-pointer-types)])
+		   [atom? (lookup-non-pointer-type (tok-n t))])
 	      (unless (or obj? atom?)
 		(log-error "[NEW] ~a in ~a: New used on non-class"
 			   (tok-line (car e)) (tok-file (car e))))
@@ -1747,7 +1807,7 @@
 					[(struct-type? vtype)
 					 (let aloop ([array-index 0])
 					   ;; Push each struct in array (or only struct if not an array)
-					   (let loop ([l (cdr (assq (struct-type-struct vtype) struct-defs))])
+					   (let loop ([l (cdr (lookup-struct-def (struct-type-struct vtype)))])
 					     (if (null? l)
 						 (if (and (struct-array-type? vtype)
 							  (< (add1 array-index) (struct-array-type-count vtype)))
@@ -1786,8 +1846,8 @@
 
 (define (body-var-decl? e)
   (and (pair? e)
-       (or (memq (tok-n (car e)) non-pointer-types)
-	   (assq (tok-n (car e)) pointer-types)
+       (or (lookup-non-pointer-type (tok-n (car e)))
+	   (lookup-pointer-type (tok-n (car e)))
 	   (assq (tok-n (car e)) c++-classes))))
 
 (define (looks-like-call? e-)
@@ -2593,3 +2653,5 @@
 
 (when exit-with-error?
   (error 'xform "Errors converting"))
+
+(close-output-port (current-output-port))

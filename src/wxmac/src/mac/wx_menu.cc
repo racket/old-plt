@@ -248,24 +248,6 @@ static void BuildMacMenuString(StringPtr setupstr, StringPtr showstr, char *item
     setupstr[0] = 1;
 }
 
-static void StripMacMenuString(StringPtr theMacItemString1, char *s)
-{
-  char *d;
-  char spc = '\0';
-  for (d = (char *)&theMacItemString1[1]; *s != '\0'; ) {
-    if (*s == '&') {
-      spc = *++s;
-      if (*s == '\0') break;
-      *d++ = *s;
-    }
-    else {
-      *d++ = *s;
-    }
-    s++;
-  }
-  theMacItemString1[0] = (d - (char *)theMacItemString1)-1;
-}
-
 MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle)
 {
   char t[256], tmp[256];
@@ -296,6 +278,12 @@ MenuHandle wxMenu::CreateCopy(char *title, Bool doabouthack, MenuHandle toHandle
     CopyCStringToPascal(s,tempString);
     nmh = ::NewMenu(cMacMenuId ,tempString);
     CheckMemOK(nmh);
+    if (s) {
+      CFStringRef t;
+      t = CFStringCreateWithCString(NULL, s, kCFStringEncodingISOLatin1);
+      SetMenuTitleWithCFString(nmh, t);
+      CFRelease(t);
+    }
     offset = 1;
     if (helpflg && menu_bar && menu_bar->n) {
       if (menu_bar->menus[menu_bar->n - 1] == this) {

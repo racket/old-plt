@@ -61,6 +61,8 @@
     (define url->string 
       (lambda (x)
 	(match x
+	  [($ url "file" host port path params query fragment)
+	   (string-append "file:" path)]
 	  [($ url scheme host port path params query fragment)
 	   (f:foldr (lambda (both sofar) ;; multiple values suck.
 		      (if (andmap (lambda (x) x) both)

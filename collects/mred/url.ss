@@ -1,6 +1,6 @@
 (define mred:url@
   (unit/sig mred:url^
-    (import ())
+    (import)
 
     (define character-set-size 256)
 

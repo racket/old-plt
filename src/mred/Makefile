@@ -1,8 +1,8 @@
 
 ifdef PLTWXDIR
- WXDIR=../$(PLTWXDIR)
+ WXDIR=$(shell pwd)/../$(PLTWXDIR)
 else
- WXDIR=../wxwindow
+ WXDIR=$(shell pwd)/../wxxt
 endif
 
 include $(WXDIR)/src/make$(MZPLATFORMSUFFIX)$(MREDMAKEFILESUFFIX).env
@@ -50,9 +50,9 @@ FTPDIR = /home/scheme/FTP/plt/staging
 
 all:  objects $(OBJDIR)
 	cd ../mzscheme; $(MAKE) $(EXPORT) mzschemelib++
-	cd wxs; $(MAKE)
-	cd wxme; $(MAKE)
-	cd wxme; $(MAKE) $(OBJDIR)/edjr.o
+	cd wxs; $(MAKE) WXDIR='$(WXDIR)'
+	cd wxme; $(MAKE) WXDIR='$(WXDIR)'
+	cd wxme; $(MAKE) WXDIR='$(WXDIR)' $(OBJDIR)/edjr.o
 	$(MAKE) $(MRED) MRCHECK='$(MRCHECK)'
 
 bin:
@@ -81,7 +81,7 @@ $(OBJDIR)/checkm.o: misc/checkm.c
 	$(CC) $(CFLAGS) $(LOCALFLAGS) -c misc/checkm.c -o $(OBJDIR)/checkm.o
 
 wx:
-	cd $(WXDIR)/src/x; $(MAKE) -f makefile.unx
+	cd $(WXDIR)/src/x; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
 
 $(OBJDIR)/mred.o : mred.cxx wxme/wx_media.h wxme/wx_medad.h wxs/wxscheme.h ../mzscheme/include/scheme.h mred.h
 	$(CXX) $(CPPFLAGS) $(LOCALFLAGS) -c mred.cxx -o $(OBJDIR)/mred.o

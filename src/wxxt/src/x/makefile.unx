@@ -18,7 +18,8 @@ WXOBJS = objects/sys$(MZPLATFORMSUFFIX)
 
 all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
      $(XPMOBJMAINDIR) $(XPMOBJDIR) $(XPMLIBMAINDIR) $(XPMLIBDIR) \
-     ../lib/sys$(MZPLATFORMSUFFIX) \
+     ../../lib/sys$(MZPLATFORMSUFFIX) \
+     ../../include \
      ../Application/objects \
      ../DataStructures/objects \
      ../Dialogs/objects \
@@ -43,12 +44,12 @@ all: $(IMAGELIBDIR) $(IMAGEOBJMAINDIR) $(IMAGEOBJDIR) \
      ../Utilities/$(WXOBJS) \
      ../Windows/$(WXOBJS) \
      ../XWidgets/$(WXOBJS)
-	cd ..; $(MAKE)
-	cd ../../utils/image/src/; $(MAKE) -f makefile.unx
+	cd ..; $(MAKE) WXDIR='$(WXDIR)'
+	cd ../../utils/image/src/; $(MAKE) WXDIR='$(WXDIR)' -f makefile.unx
 	cd ../../contrib/xpm/lib/; if [ -d unshared ]; then echo; else set -x; mkdir unshared; fi
 	cd ../../contrib/xpm/lib/unshared; if [ -d objects ]; then echo; else ln -s ../objects objects; fi
 	cd $(XPMLIBDIR); if [ -f libXpm.a ]; then mv libXpm.a $(XPMBASEDIR); fi
-	cd ../../contrib/xpm/lib/; xmkmf; $(MAKE) libXpm.a CC='$(XPMCC)'
+	cd ../../contrib/xpm/lib/; xmkmf; $(MAKE)  WXDIR='$(WXDIR)' libXpm.a CC='$(XPMCC)'
 	mv $(XPMBASEDIR)/libXpm.a $(XPMLIBDIR)
 
 $(XPMOBJMAINDIR):
@@ -117,6 +118,8 @@ $(IMAGELIBDIR):
 ../XWidgets/$(WXOBJS):
 	mkdir $@
 
-../lib/sys$(MZPLATFORMSUFFIX):
+../../lib/sys$(MZPLATFORMSUFFIX):
 	mkdir $@
 
+../../include:
+	cd ../.. ; tar xf include.tar

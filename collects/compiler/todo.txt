@@ -1,0 +1,24 @@
+RELIABILITY, USABILITY
+-----------------------
+	CR in strings can upset the compiler
+
+	long blocks to multiple functions
+
+	fix n^2 analysis, n^3 vm-generation
+
+	redundant variable merging 
+	 [must be done in back end because
+	  of type problems - must reuse variables of the same type]
+
+RESEARCH WORK
+-------------
+	unitize code
+	
+	interface with Spidey
+
+LOW PRIORITY
+--------------------
+
+	document windows compilation environment variables
+
+	write tests for each phase

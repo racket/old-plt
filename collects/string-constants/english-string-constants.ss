@@ -235,6 +235,7 @@
  (automatically-to-ps "Automatically print to postscript file")
  (use-mdi "Use MDI Windows") ;;; ms windows only -- use that window in a window thingy
  (separate-dialog-for-searching "Use separate dialog for searching")
+ (reuse-existing-frames "Reuse existing frames when opening new files?")
  (default-fonts "Default Fonts")
  
  ; should have entire alphabet
@@ -371,9 +372,11 @@
 
  (open-info "Open a file from disk")
  (open-menu-item "&Open...")
+ (open-here-menu-item "&Open Here...")
 
  (open-recent-info "A list of the recently opened files")
  (open-recent-menu-item "Open Recent")
+ (show-recent-items-window-menu-item "Show Recently Opened Files in Separate Window")
  
  (revert-info "Revert this file to the copy on disk")
  (revert-menu-item "&Revert")

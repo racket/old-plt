@@ -1,5 +1,11 @@
 101/6:
 
+ * Added `timezone-offset' field to the `date' structure.
+   Its value is the number of seconds east of GMT. The value is -18000
+   for CDT.
+
+ * Changed (find-system-path 'sys-dir) to "/etc" for Unix and BeOS.
+
  * Added continuation field to exn:misc:user-break, an escape
    continuation that continues from the point of the break.
 
@@ -7,6 +13,7 @@
    between the raising of an exception and the invocation of the
    exception handler.
 
+ * Fixed (expt x y) where x is negative and y is non-integral
 
 101/5:
 
@@ -28,9 +35,11 @@
 Version 101, ??
 Added 'sys-dir to find-system-path
 Added latin-1-integer->char and char->latin-1-integer
+Added timezone-offset field to the date structure
 Added continuation field to exn:misc:user-break
 Windows: all network sockets are closed on exit
 Fixed (acos 0)
+Fixed (expt x y) where x is negative and y is non-integral
 
 Version 100, August 9, 1999
  + indicates a change since 100alpha4

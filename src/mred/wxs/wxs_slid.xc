@@ -15,10 +15,10 @@
 @CLASSBASE wxSlider "slider" : "item"
 
 @SET CALLBACK_CLASS = wxSlider
-@SET CALLBACK_CLASS_USER = "slider%::initialization"
+@SET CALLBACK_CLASS_USER = METHODNAME("slider%","initialization")
 @INCLUDE cb_start.xci
 
-@MACRO PROGRESS = if (x3 < x4 || x5 < x3) scheme_signal_error("slider%%::initialization: minimum, value, and maximum must be increasing");
+@MACRO PROGRESS = if (x3 < x4 || x5 < x3) scheme_signal_error("%s", METHODNAME("slider%","initialization")": minimum, value, and maximum must be increasing");
 @MACRO NOZEROX[p] = if (x<p> <= 0) x<p> = 1;
 
 @CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int,int,int,int,int=-1,int=-1,SYM[sliderStyle]=wxHORIZONTAL,string="slider"); : : ubCallbackSetup/PROGRESS|NOZEROX[6]//ubCallbackCreatorFinish

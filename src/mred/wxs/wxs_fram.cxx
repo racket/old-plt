@@ -283,7 +283,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "frame%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-event in frame%"", extracting return value");
   }
 }
 
@@ -318,7 +318,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "frame%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-char in frame%"", extracting return value");
   }
 }
 
@@ -482,7 +482,7 @@ return wxFrame::OnClose();
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "frame%::on-close"", extracting return value");
+  return objscheme_unbundle_bool(v, "on-close in frame%"", extracting return value");
   }
 }
 
@@ -527,7 +527,7 @@ static Scheme_Object *os_wxFrameOnDropFile(Scheme_Object *obj, int n,  Scheme_Ob
   pathname x0;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "frame%::on-drop-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in frame%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -550,8 +550,8 @@ static Scheme_Object *os_wxFramePreOnEvent(Scheme_Object *obj, int n,  Scheme_Ob
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "frame%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "frame%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in frame%", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in frame%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -574,8 +574,8 @@ static Scheme_Object *os_wxFramePreOnChar(Scheme_Object *obj, int n,  Scheme_Obj
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "frame%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "frame%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in frame%", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in frame%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -597,8 +597,8 @@ static Scheme_Object *os_wxFrameOnSize(Scheme_Object *obj, int n,  Scheme_Object
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "frame%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "frame%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "on-size in frame%");
+  x1 = objscheme_unbundle_integer(p[1], "on-size in frame%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -657,7 +657,7 @@ static Scheme_Object *os_wxFrameOnMenuCommand(Scheme_Object *obj, int n,  Scheme
   ExactLong x0;
 
   
-  x0 = objscheme_unbundle_ExactLong(p[0], "frame%::on-menu-command");
+  x0 = objscheme_unbundle_ExactLong(p[0], "on-menu-command in frame%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -698,7 +698,7 @@ static Scheme_Object *os_wxFrameOnActivate(Scheme_Object *obj, int n,  Scheme_Ob
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "frame%::on-activate");
+  x0 = objscheme_unbundle_bool(p[0], "on-activate in frame%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -721,11 +721,11 @@ static Scheme_Object *os_wxFrameCreateStatusLine(Scheme_Object *obj, int n,  Sch
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "frame%::create-status-line");
+    x0 = objscheme_unbundle_integer(p[0], "create-status-line in frame%");
   } else
     x0 = 1;
   if (n > 1) {
-    x1 = (string)objscheme_unbundle_string(p[1], "frame%::create-status-line");
+    x1 = (string)objscheme_unbundle_string(p[1], "create-status-line in frame%");
   } else
     x1 = "status_line";
 
@@ -745,7 +745,7 @@ static Scheme_Object *os_wxFrameMaximize(Scheme_Object *obj, int n,  Scheme_Obje
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "frame%::maximize");
+  x0 = objscheme_unbundle_bool(p[0], "maximize in frame%");
 
   
   ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->Maximize(x0);
@@ -797,7 +797,7 @@ static Scheme_Object *os_wxFrameSetStatusText(Scheme_Object *obj, int n,  Scheme
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "frame%::set-status-text");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-status-text in frame%");
 
   
   ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetStatusText(x0);
@@ -824,7 +824,7 @@ static Scheme_Object *os_wxFrameGetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
   
   
 #else
- scheme_signal_error("%s: provided arglist unsupported on this platform", "frame%::get-menu-bar");
+ scheme_signal_error("%s: provided arglist unsupported on this platform", "get-menu-bar in frame%");
 #endif
   return objscheme_bundle_wxMenuBar(r);
 }
@@ -838,7 +838,7 @@ static Scheme_Object *os_wxFrameSetMenuBar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxMenuBar* x0;
 
   
-  x0 = objscheme_unbundle_wxMenuBar(p[0], "frame%::set-menu-bar", 0);
+  x0 = objscheme_unbundle_wxMenuBar(p[0], "set-menu-bar in frame%", 0);
 
   if (GET_THE_MENU_BAR(((wxFrame *)((Scheme_Class_Object *)obj)->primdata))) return scheme_void;
   ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetMenuBar(x0);
@@ -856,7 +856,7 @@ static Scheme_Object *os_wxFrameSetIcon(Scheme_Object *obj, int n,  Scheme_Objec
   class wxIcon* x0;
 
   
-  x0 = objscheme_unbundle_wxIcon(p[0], "frame%::set-icon", 0);
+  x0 = objscheme_unbundle_wxIcon(p[0], "set-icon in frame%", 0);
 
   if (x0 && !x0->Ok()) return scheme_void;
   ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetIcon(x0);
@@ -874,7 +874,7 @@ static Scheme_Object *os_wxFrameIconize(Scheme_Object *obj, int n,  Scheme_Objec
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "frame%::iconize");
+  x0 = objscheme_unbundle_bool(p[0], "iconize in frame%");
 
   
   ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->Iconize(x0);
@@ -892,7 +892,7 @@ static Scheme_Object *os_wxFrameSetTitle(Scheme_Object *obj, int n,  Scheme_Obje
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "frame%::set-title");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-title in frame%");
 
   
   ((wxFrame *)((Scheme_Class_Object *)obj)->primdata)->SetTitle(x0);
@@ -909,7 +909,7 @@ static Scheme_Object *objscheme_wxFrame_Getwx_menu_bar(Scheme_Object *obj, int n
   class wxMenuBar* v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-menu-bar", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-menu-bar in frame%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxFrame *)cobj->primdata)->wxFrame::wx_menu_bar;
@@ -935,31 +935,31 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
   
   if ((n < 2) ||(n > 8)) 
-    scheme_wrong_count("frame%::initialization", 2, 8, n, p);
-  x0 = objscheme_unbundle_wxFrame(p[0], "frame%::initialization", 1);
-  x1 = (string)objscheme_unbundle_string(p[1], "frame%::initialization");
+    scheme_wrong_count("initialization in frame%", 2, 8, n, p);
+  x0 = objscheme_unbundle_wxFrame(p[0], "initialization in frame%", 1);
+  x1 = (string)objscheme_unbundle_string(p[1], "initialization in frame%");
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "frame%::initialization");
+    x2 = objscheme_unbundle_integer(p[2], "initialization in frame%");
   } else
     x2 = -1;
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], "frame%::initialization");
+    x3 = objscheme_unbundle_integer(p[3], "initialization in frame%");
   } else
     x3 = -1;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "frame%::initialization");
+    x4 = objscheme_unbundle_integer(p[4], "initialization in frame%");
   } else
     x4 = -1;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "frame%::initialization");
+    x5 = objscheme_unbundle_integer(p[5], "initialization in frame%");
   } else
     x5 = -1;
   if (n > 6) {
-    x6 = unbundle_symset_frameStyle(p[6], "frame%::initialization");
+    x6 = unbundle_symset_frameStyle(p[6], "initialization in frame%");
   } else
     x6 = 0;
   if (n > 7) {
-    x7 = (string)objscheme_unbundle_string(p[7], "frame%::initialization");
+    x7 = (string)objscheme_unbundle_string(p[7], "initialization in frame%");
   } else
     x7 = "frame";
 
@@ -973,21 +973,12 @@ static Scheme_Object *os_wxFrame_ConstructScheme(Scheme_Object *obj, int n,  Sch
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxFrame(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("frame%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("frame%");
-}
-
 void objscheme_setup_wxFrame(void *env)
 {
 if (os_wxFrame_class) {
     objscheme_add_global_class(os_wxFrame_class, "frame%", env);
 } else {
-  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 21);
-
-  scheme_add_method_w_arity(os_wxFrame_class,"get-class-name",objscheme_classname_os_wxFrame, 0, 0);
+  os_wxFrame_class = objscheme_def_prim_class(env, "frame%", "window%", os_wxFrame_ConstructScheme, 20);
 
  scheme_add_method_w_arity(os_wxFrame_class, "on-drop-file", os_wxFrameOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxFrame_class, "pre-on-event", os_wxFramePreOnEvent, 2, 2);

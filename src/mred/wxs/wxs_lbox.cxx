@@ -139,7 +139,7 @@ static Scheme_Object *bundle_symset_style(int v) {
 #define CALLBACKCLASS os_wxListBox
 #define CB_REALCLASS wxListBox
 #define CB_UNBUNDLE objscheme_unbundle_wxListBox
-#define CB_USER "list-box%::initialization"
+#define CB_USER METHODNAME("list-box%","initialization")
 
 #undef CB_TOSCHEME
 #undef CB_TOC
@@ -351,7 +351,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "list-box%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-event in list-box%"", extracting return value");
   }
 }
 
@@ -386,7 +386,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "list-box%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-char in list-box%"", extracting return value");
   }
 }
 
@@ -497,8 +497,8 @@ static Scheme_Object *os_wxListBoxSetString(Scheme_Object *obj, int n,  Scheme_O
   string x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::set-string");
-  x1 = (string)objscheme_unbundle_string(p[1], "list-box%::set-string");
+  x0 = objscheme_unbundle_integer(p[0], "set-string in list-box%");
+  x1 = (string)objscheme_unbundle_string(p[1], "set-string in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetString(x0, x1);
@@ -517,7 +517,7 @@ static Scheme_Object *os_wxListBoxGetString(Scheme_Object *obj, int n,  Scheme_O
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::get-string");
+  x0 = objscheme_unbundle_integer(p[0], "get-string in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
@@ -535,7 +535,7 @@ static Scheme_Object *os_wxListBoxSetStringSelection(Scheme_Object *obj, int n, 
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "list-box%::set-string-selection");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-string-selection in list-box%");
 
   
   ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetStringSelection(x0);
@@ -555,8 +555,8 @@ static Scheme_Object *os_wxListBoxSetFirstItem(Scheme_Object *obj, int n,  Schem
 
     
     if (n != 1) 
-      scheme_wrong_count("list-box%::set-first-item (index case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "list-box%::set-first-item (index case)");
+      scheme_wrong_count("set-first-item in list-box% (index case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "set-first-item in list-box% (index case)");
 
     if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
     ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetFirstItem(x0);
@@ -568,8 +568,8 @@ static Scheme_Object *os_wxListBoxSetFirstItem(Scheme_Object *obj, int n,  Schem
 
     
     if (n != 1) 
-      scheme_wrong_count("list-box%::set-first-item (string case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "list-box%::set-first-item (string case)");
+      scheme_wrong_count("set-first-item in list-box% (string case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "set-first-item in list-box% (string case)");
 
     
     ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->SetFirstItem(x0);
@@ -592,7 +592,7 @@ static Scheme_Object *os_wxListBoxSet(Scheme_Object *obj, int n,  Scheme_Object 
   
   x1 = NULL;
 
-  x1 = __MakestringArray((0 < n) ? p[0] : scheme_null, &x0, "list%::set");
+  x1 = __MakestringArray((0 < n) ? p[0] : scheme_null, &x0, METHODNAME("list%","set"));
   ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1);
 
   
@@ -694,7 +694,7 @@ static Scheme_Object *os_wxListBoxFindString(Scheme_Object *obj, int n,  Scheme_
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "list-box%::find-string");
+  x0 = (string)objscheme_unbundle_string(p[0], "find-string in list-box%");
 
   
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->FindString(x0);
@@ -713,7 +713,7 @@ static Scheme_Object *os_wxListBoxSetClientData(Scheme_Object *obj, int n,  Sche
   string x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::set-client-data");
+  x0 = objscheme_unbundle_integer(p[0], "set-client-data in list-box%");
   x1 = ((char *)p[1]);
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
@@ -733,7 +733,7 @@ static Scheme_Object *os_wxListBoxGetClientData(Scheme_Object *obj, int n,  Sche
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::get-client-data");
+  x0 = objscheme_unbundle_integer(p[0], "get-client-data in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->GetClientData(x0);
@@ -769,7 +769,7 @@ static Scheme_Object *os_wxListBoxSelected(Scheme_Object *obj, int n,  Scheme_Ob
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::selected?");
+  x0 = objscheme_unbundle_integer(p[0], "selected? in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   r = ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Selected(x0);
@@ -788,9 +788,9 @@ static Scheme_Object *os_wxListBoxSetSelection(Scheme_Object *obj, int n,  Schem
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::set-selection");
+  x0 = objscheme_unbundle_integer(p[0], "set-selection in list-box%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "list-box%::set-selection");
+    x1 = objscheme_unbundle_bool(p[1], "set-selection in list-box%");
   } else
     x1 = TRUE;
 
@@ -810,7 +810,7 @@ static Scheme_Object *os_wxListBoxDeselect(Scheme_Object *obj, int n,  Scheme_Ob
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::deselect");
+  x0 = objscheme_unbundle_integer(p[0], "deselect in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Deselect(x0);
@@ -828,7 +828,7 @@ static Scheme_Object *os_wxListBoxDelete(Scheme_Object *obj, int n,  Scheme_Obje
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::delete");
+  x0 = objscheme_unbundle_integer(p[0], "delete in list-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Delete(x0);
@@ -865,8 +865,8 @@ static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Obje
 
     
     if (n != 2) 
-      scheme_wrong_count("list-box%::append (with data case)", 2, 2, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "list-box%::append (with data case)");
+      scheme_wrong_count("append in list-box% (with data case)", 2, 2, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "append in list-box% (with data case)");
     x1 = ((char *)p[1]);
 
     
@@ -879,8 +879,8 @@ static Scheme_Object *os_wxListBoxAppend(Scheme_Object *obj, int n,  Scheme_Obje
 
     
     if (n != 1) 
-      scheme_wrong_count("list-box%::append (without data case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "list-box%::append (without data case)");
+      scheme_wrong_count("append in list-box% (without data case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "append in list-box% (without data case)");
 
     
     ((wxListBox *)((Scheme_Class_Object *)obj)->primdata)->Append(x0);
@@ -900,7 +900,7 @@ static Scheme_Object *os_wxListBoxOnDropFile(Scheme_Object *obj, int n,  Scheme_
   pathname x0;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "list-box%::on-drop-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in list-box%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -923,8 +923,8 @@ static Scheme_Object *os_wxListBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme_
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "list-box%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "list-box%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in list-box%", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in list-box%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -947,8 +947,8 @@ static Scheme_Object *os_wxListBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_O
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "list-box%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "list-box%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in list-box%", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in list-box%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -970,8 +970,8 @@ static Scheme_Object *os_wxListBoxOnSize(Scheme_Object *obj, int n,  Scheme_Obje
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "list-box%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "list-box%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "on-size in list-box%");
+  x1 = objscheme_unbundle_integer(p[1], "on-size in list-box%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -1041,28 +1041,28 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
 
   Scheme_Object *tmp_callback = NULL;
   if ((n < 3) ||(n > 11)) 
-    scheme_wrong_count("list-box%::initialization", 3, 11, n, p);
-  x0 = objscheme_unbundle_wxPanel(p[0], "list-box%::initialization", 0);
+    scheme_wrong_count("initialization in list-box%", 3, 11, n, p);
+  x0 = objscheme_unbundle_wxPanel(p[0], "initialization in list-box%", 0);
   x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "list-box%::initialization");
+  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "initialization in list-box%");
   if (n > 3) {
-    x3 = unbundle_symset_kind(p[3], "list-box%::initialization");
+    x3 = unbundle_symset_kind(p[3], "initialization in list-box%");
   } else
     x3 = wxSINGLE;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "list-box%::initialization");
+    x4 = objscheme_unbundle_integer(p[4], "initialization in list-box%");
   } else
     x4 = -1;
   if (n > 5) {
-    x5 = objscheme_unbundle_integer(p[5], "list-box%::initialization");
+    x5 = objscheme_unbundle_integer(p[5], "initialization in list-box%");
   } else
     x5 = -1;
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "list-box%::initialization");
+    x6 = objscheme_unbundle_integer(p[6], "initialization in list-box%");
   } else
     x6 = -1;
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "list-box%::initialization");
+    x7 = objscheme_unbundle_integer(p[7], "initialization in list-box%");
   } else
     x7 = -1;
   if (n > 8) {
@@ -1070,15 +1070,15 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   } else
     x9 = NULL;
   if (n > 9) {
-    x10 = unbundle_symset_style(p[9], "list-box%::initialization");
+    x10 = unbundle_symset_style(p[9], "initialization in list-box%");
   } else
     x10 = 0;
   if (n > 10) {
-    x11 = (string)objscheme_unbundle_string(p[10], "list-box%::initialization");
+    x11 = (string)objscheme_unbundle_string(p[10], "initialization in list-box%");
   } else
     x11 = "button";
 
-  if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = __MakestringArray((8 < n) ? p[8] : scheme_null, &x8, "list-box%::initialization");
+  if (!x6) x6 = -1;if (!x7) x7 = -1;x9 = __MakestringArray((8 < n) ? p[8] : scheme_null, &x8, METHODNAME("list-box%","initialization"));
   realobj = new os_wxListBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11);
   delete[] x9;
   realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -1088,21 +1088,12 @@ static Scheme_Object *os_wxListBox_ConstructScheme(Scheme_Object *obj, int n,  S
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxListBox(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("list-box%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("list-box%");
-}
-
 void objscheme_setup_wxListBox(void *env)
 {
 if (os_wxListBox_class) {
     objscheme_add_global_class(os_wxListBox_class, "list-box%", env);
 } else {
-  os_wxListBox_class = objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 27);
-
-  scheme_add_method_w_arity(os_wxListBox_class,"get-class-name",objscheme_classname_os_wxListBox, 0, 0);
+  os_wxListBox_class = objscheme_def_prim_class(env, "list-box%", "item%", os_wxListBox_ConstructScheme, 26);
 
  scheme_add_method_w_arity(os_wxListBox_class, "set-string", os_wxListBoxSetString, 2, 2);
  scheme_add_method_w_arity(os_wxListBox_class, "get-string", os_wxListBoxGetString, 1, 1);

@@ -39,14 +39,14 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 @CLASSID wxTYPE_LIST_BOX
 
 @SET CALLBACK_CLASS = wxListBox
-@SET CALLBACK_CLASS_USER = "list-box%::initialization"
+@SET CALLBACK_CLASS_USER = METHODNAME("list-box%","initialization")
 @INCLUDE cb_start.xci
 
 @SET TYPE = string
 @SET NOTEST = 1
 @INCLUDE list.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,SYM[kind]=wxSINGLE,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,SYM[style]=0,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|glueListSet[string.8.9.8."list-box%::initialization"]/glueCleanup[9]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,SYM[kind]=wxSINGLE,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,SYM[style]=0,string="button"); : : ubCallbackSetup/NOZERO[6]|NOZERO[7]|glueListSet[string.8.9.8.METHODNAME("list-box%","initialization")]/glueCleanup[9]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 
@@ -77,7 +77,7 @@ static Scheme_Object* GetSelectionList(wxListBox *l)
 
 @ m "get-selections" : Scheme_Object*/bundleAny GetSelectionList();
 
-@ "set" : void Set(-int,string[]/bList/ubList/cList); : : /glueListSet[string.0.1.0."list%::set"]//
+@ "set" : void Set(-int,string[]/bList/ubList/cList); : : /glueListSet[string.0.1.0.METHODNAME("list%","set")]//
 @ "set-first-item" : void SetFirstItem(int); : : /RANGE[0] <> index
 @ "set-first-item" : void SetFirstItem(string); <> string
 @ "set-string-selection" : void SetStringSelection(string);

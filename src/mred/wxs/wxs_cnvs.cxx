@@ -210,7 +210,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "canvas%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-event in canvas%"", extracting return value");
   }
 }
 
@@ -245,7 +245,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "canvas%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-char in canvas%"", extracting return value");
   }
 }
 
@@ -486,7 +486,7 @@ static Scheme_Object *os_wxCanvasOnDropFile(Scheme_Object *obj, int n,  Scheme_O
   pathname x0;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "canvas%::on-drop-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in canvas%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -509,8 +509,8 @@ static Scheme_Object *os_wxCanvasPreOnEvent(Scheme_Object *obj, int n,  Scheme_O
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "canvas%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "canvas%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in canvas%", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in canvas%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -533,8 +533,8 @@ static Scheme_Object *os_wxCanvasPreOnChar(Scheme_Object *obj, int n,  Scheme_Ob
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "canvas%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "canvas%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in canvas%", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in canvas%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -556,8 +556,8 @@ static Scheme_Object *os_wxCanvasOnSize(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "canvas%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "canvas%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "on-size in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "on-size in canvas%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -616,7 +616,7 @@ static Scheme_Object *os_wxCanvasOnScroll(Scheme_Object *obj, int n,  Scheme_Obj
   class wxScrollEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxScrollEvent(p[0], "canvas%::on-scroll", 0);
+  x0 = objscheme_unbundle_wxScrollEvent(p[0], "on-scroll in canvas%", 0);
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { return scheme_void; }
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -638,7 +638,7 @@ static Scheme_Object *os_wxCanvasGetScrollPage(Scheme_Object *obj, int n,  Schem
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "canvas%::get-scroll-page");
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-page in canvas%");
 
   
   r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetScrollPage(x0);
@@ -657,7 +657,7 @@ static Scheme_Object *os_wxCanvasGetScrollRange(Scheme_Object *obj, int n,  Sche
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "canvas%::get-scroll-range");
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-range in canvas%");
 
   
   r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetScrollRange(x0);
@@ -676,7 +676,7 @@ static Scheme_Object *os_wxCanvasGetScrollPos(Scheme_Object *obj, int n,  Scheme
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "canvas%::get-scroll-pos");
+  x0 = objscheme_unbundle_integer(p[0], "get-scroll-pos in canvas%");
 
   
   r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetScrollPos(x0);
@@ -695,8 +695,8 @@ static Scheme_Object *os_wxCanvasScroll(Scheme_Object *obj, int n,  Scheme_Objec
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "canvas%::scroll");
-  x1 = objscheme_unbundle_integer(p[1], "canvas%::scroll");
+  x0 = objscheme_unbundle_integer(p[0], "scroll in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "scroll in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->Scroll(x0, x1);
@@ -715,8 +715,8 @@ static Scheme_Object *os_wxCanvasWarpPointer(Scheme_Object *obj, int n,  Scheme_
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "canvas%::warp-pointer");
-  x1 = objscheme_unbundle_integer(p[1], "canvas%::warp-pointer");
+  x0 = objscheme_unbundle_integer(p[0], "warp-pointer in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "warp-pointer in canvas%");
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { return scheme_void; }
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->WarpPointer(x0, x1);
@@ -738,13 +738,13 @@ static Scheme_Object *os_wxCanvasViewStart(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("canvas%::view-start", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("view-start in canvas%", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "canvas%::view-start"), "canvas%::view-start");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "view-start in canvas%"), "view-start in canvas%");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("canvas%::view-start", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("view-start in canvas%", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "canvas%::view-start"), "canvas%::view-start");
+    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "view-start in canvas%"), "view-start in canvas%");
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { FillZero(x0,x1); return scheme_void; }
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->ViewStart(x0, x1);
@@ -774,22 +774,22 @@ static Scheme_Object *os_wxCanvasSetScrollbars(Scheme_Object *obj, int n,  Schem
   Bool x8;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "canvas%::set-scrollbars");
-  x1 = objscheme_unbundle_integer(p[1], "canvas%::set-scrollbars");
-  x2 = objscheme_unbundle_integer(p[2], "canvas%::set-scrollbars");
-  x3 = objscheme_unbundle_integer(p[3], "canvas%::set-scrollbars");
-  x4 = objscheme_unbundle_integer(p[4], "canvas%::set-scrollbars");
-  x5 = objscheme_unbundle_integer(p[5], "canvas%::set-scrollbars");
+  x0 = objscheme_unbundle_integer(p[0], "set-scrollbars in canvas%");
+  x1 = objscheme_unbundle_integer(p[1], "set-scrollbars in canvas%");
+  x2 = objscheme_unbundle_integer(p[2], "set-scrollbars in canvas%");
+  x3 = objscheme_unbundle_integer(p[3], "set-scrollbars in canvas%");
+  x4 = objscheme_unbundle_integer(p[4], "set-scrollbars in canvas%");
+  x5 = objscheme_unbundle_integer(p[5], "set-scrollbars in canvas%");
   if (n > 6) {
-    x6 = objscheme_unbundle_integer(p[6], "canvas%::set-scrollbars");
+    x6 = objscheme_unbundle_integer(p[6], "set-scrollbars in canvas%");
   } else
     x6 = 0;
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "canvas%::set-scrollbars");
+    x7 = objscheme_unbundle_integer(p[7], "set-scrollbars in canvas%");
   } else
     x7 = 0;
   if (n > 8) {
-    x8 = objscheme_unbundle_bool(p[8], "canvas%::set-scrollbars");
+    x8 = objscheme_unbundle_bool(p[8], "set-scrollbars in canvas%");
   } else
     x8 = TRUE;
 
@@ -813,13 +813,13 @@ static Scheme_Object *os_wxCanvasGetVirtualSize(Scheme_Object *obj, int n,  Sche
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("canvas%::get-virtual-size", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("get-virtual-size in canvas%", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "canvas%::get-virtual-size"), "canvas%::get-virtual-size");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-virtual-size in canvas%"), "get-virtual-size in canvas%");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("canvas%::get-virtual-size", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("get-virtual-size in canvas%", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "canvas%::get-virtual-size"), "canvas%::get-virtual-size");
+    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-virtual-size in canvas%"), "get-virtual-size in canvas%");
 
   if (CHECK_FOR_PANEL((wxObject *)((Scheme_Class_Object *)obj)->primdata)) { FillZero(x0,x1); return scheme_void; }
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->GetVirtualSize(x0, x1);
@@ -861,9 +861,9 @@ static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Ob
   float x2;
 
   
-  x0 = objscheme_unbundle_wxMenu(p[0], "canvas%::popup-menu", 0);
-  x1 = objscheme_unbundle_float(p[1], "canvas%::popup-menu");
-  x2 = objscheme_unbundle_float(p[2], "canvas%::popup-menu");
+  x0 = objscheme_unbundle_wxMenu(p[0], "popup-menu in canvas%", 0);
+  x1 = objscheme_unbundle_float(p[1], "popup-menu in canvas%");
+  x2 = objscheme_unbundle_float(p[2], "popup-menu in canvas%");
 
   
   r = ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2);
@@ -881,7 +881,7 @@ static Scheme_Object *os_wxCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Objec
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "canvas%::on-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-char in canvas%", 0);
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
@@ -899,7 +899,7 @@ static Scheme_Object *os_wxCanvasOnEvent(Scheme_Object *obj, int n,  Scheme_Obje
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "canvas%::on-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-event in canvas%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -939,7 +939,7 @@ static Scheme_Object *os_wxCanvasAllowDoubleClick(Scheme_Object *obj, int n,  Sc
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "canvas%::allow-double-click");
+  x0 = objscheme_unbundle_bool(p[0], "allow-double-click in canvas%");
 
   
   ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->AllowDoubleClick(x0);
@@ -963,30 +963,30 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
   
   if ((n < 1) ||(n > 7)) 
-    scheme_wrong_count("canvas%::initialization", 1, 7, n, p);
-  x0 = objscheme_unbundle_wxPanel(p[0], "canvas%::initialization", 0);
+    scheme_wrong_count("initialization in canvas%", 1, 7, n, p);
+  x0 = objscheme_unbundle_wxPanel(p[0], "initialization in canvas%", 0);
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "canvas%::initialization");
+    x1 = objscheme_unbundle_integer(p[1], "initialization in canvas%");
   } else
     x1 = -1;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "canvas%::initialization");
+    x2 = objscheme_unbundle_integer(p[2], "initialization in canvas%");
   } else
     x2 = -1;
   if (n > 3) {
-    x3 = objscheme_unbundle_integer(p[3], "canvas%::initialization");
+    x3 = objscheme_unbundle_integer(p[3], "initialization in canvas%");
   } else
     x3 = -1;
   if (n > 4) {
-    x4 = objscheme_unbundle_integer(p[4], "canvas%::initialization");
+    x4 = objscheme_unbundle_integer(p[4], "initialization in canvas%");
   } else
     x4 = -1;
   if (n > 5) {
-    x5 = unbundle_symset_canvasStyle(p[5], "canvas%::initialization");
+    x5 = unbundle_symset_canvasStyle(p[5], "initialization in canvas%");
   } else
     x5 = 0;
   if (n > 6) {
-    x6 = (string)objscheme_unbundle_string(p[6], "canvas%::initialization");
+    x6 = (string)objscheme_unbundle_string(p[6], "initialization in canvas%");
   } else
     x6 = "canvas";
 
@@ -1000,21 +1000,12 @@ static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Sc
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxCanvas(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("canvas%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("canvas%");
-}
-
 void objscheme_setup_wxCanvas(void *env)
 {
 if (os_wxCanvas_class) {
     objscheme_add_global_class(os_wxCanvas_class, "canvas%", env);
 } else {
-  os_wxCanvas_class = objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 22);
-
-  scheme_add_method_w_arity(os_wxCanvas_class,"get-class-name",objscheme_classname_os_wxCanvas, 0, 0);
+  os_wxCanvas_class = objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 21);
 
  scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file", os_wxCanvasOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event", os_wxCanvasPreOnEvent, 2, 2);

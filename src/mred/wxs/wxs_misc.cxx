@@ -79,11 +79,11 @@ static Scheme_Object *os_baseMetaFileSetClipboard(Scheme_Object *obj, int n,  Sc
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "meta-file%::set-clipboard");
+    x0 = objscheme_unbundle_integer(p[0], "set-clipboard in meta-file%");
   } else
     x0 = 0;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "meta-file%::set-clipboard");
+    x1 = objscheme_unbundle_integer(p[1], "set-clipboard in meta-file%");
   } else
     x1 = 0;
 
@@ -103,7 +103,7 @@ static Scheme_Object *os_baseMetaFilePlay(Scheme_Object *obj, int n,  Scheme_Obj
   class wxDC* x0;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "meta-file%::play", 0);
+  x0 = objscheme_unbundle_wxDC(p[0], "play in meta-file%", 0);
 
   
   ((baseMetaFile *)((Scheme_Class_Object *)obj)->primdata)->Play(x0);
@@ -130,21 +130,12 @@ static Scheme_Object *os_baseMetaFileOk(Scheme_Object *obj, int n,  Scheme_Objec
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *objscheme_classname_os_baseMetaFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("meta-file%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("meta-file%");
-}
-
 void objscheme_setup_baseMetaFile(void *env)
 {
 if (os_baseMetaFile_class) {
     objscheme_add_global_class(os_baseMetaFile_class, "meta-file%", env);
 } else {
-  os_baseMetaFile_class = objscheme_def_prim_class(env, "meta-file%", "object%", NULL, 4);
-
-  scheme_add_method_w_arity(os_baseMetaFile_class,"get-class-name",objscheme_classname_os_baseMetaFile, 0, 0);
+  os_baseMetaFile_class = objscheme_def_prim_class(env, "meta-file%", "object%", NULL, 3);
 
  scheme_add_method_w_arity(os_baseMetaFile_class, "set-clipboard", os_baseMetaFileSetClipboard, 0, 2);
  scheme_add_method_w_arity(os_baseMetaFile_class, "play", os_baseMetaFilePlay, 1, 1);
@@ -292,9 +283,9 @@ static Scheme_Object *os_wxTimerStart(Scheme_Object *obj, int n,  Scheme_Object 
   Bool x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "timer%::start");
+  x0 = objscheme_unbundle_integer(p[0], "start in timer%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "timer%::start");
+    x1 = objscheme_unbundle_bool(p[1], "start in timer%");
   } else
     x1 = FALSE;
 
@@ -349,7 +340,7 @@ static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Sch
 
   
   if (n != 0) 
-    scheme_wrong_count("timer%::initialization", 0, 0, n, p);
+    scheme_wrong_count("initialization in timer%", 0, 0, n, p);
 
   
   realobj = new os_wxTimer(obj);
@@ -361,21 +352,12 @@ static Scheme_Object *os_wxTimer_ConstructScheme(Scheme_Object *obj, int n,  Sch
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxTimer(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("timer%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("timer%");
-}
-
 void objscheme_setup_wxTimer(void *env)
 {
 if (os_wxTimer_class) {
     objscheme_add_global_class(os_wxTimer_class, "timer%", env);
 } else {
-  os_wxTimer_class = objscheme_def_prim_class(env, "timer%", "object%", os_wxTimer_ConstructScheme, 5);
-
-  scheme_add_method_w_arity(os_wxTimer_class,"get-class-name",objscheme_classname_os_wxTimer, 0, 0);
+  os_wxTimer_class = objscheme_def_prim_class(env, "timer%", "object%", os_wxTimer_ConstructScheme, 4);
 
  scheme_add_method_w_arity(os_wxTimer_class, "stop", os_wxTimerStop, 0, 0);
  scheme_add_method_w_arity(os_wxTimer_class, "start", os_wxTimerStart, 1, 2);
@@ -492,8 +474,8 @@ static Scheme_Object *os_wxClipboardGetClipboardData(Scheme_Object *obj, int n, 
   long x2;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "clipboard%::get-clipboard-data");
-  x2 = objscheme_unbundle_integer(p[1], "clipboard%::get-clipboard-data");
+  x0 = (string)objscheme_unbundle_string(p[0], "get-clipboard-data in clipboard%");
+  x2 = objscheme_unbundle_integer(p[1], "get-clipboard-data in clipboard%");
 
   
   r = ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->GetClipboardData(x0, x1, x2);
@@ -512,7 +494,7 @@ static Scheme_Object *os_wxClipboardGetClipboardString(Scheme_Object *obj, int n
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "clipboard%::get-clipboard-string");
+  x0 = objscheme_unbundle_integer(p[0], "get-clipboard-string in clipboard%");
 
   
   r = ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->GetClipboardString(x0);
@@ -548,8 +530,8 @@ static Scheme_Object *os_wxClipboardSetClipboardString(Scheme_Object *obj, int n
   long x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "clipboard%::set-clipboard-string");
-  x1 = objscheme_unbundle_integer(p[1], "clipboard%::set-clipboard-string");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-clipboard-string in clipboard%");
+  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-string in clipboard%");
 
   
   ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->SetClipboardString(x0, x1);
@@ -568,8 +550,8 @@ static Scheme_Object *os_wxClipboardSetClipboardClient(Scheme_Object *obj, int n
   long x1;
 
   
-  x0 = objscheme_unbundle_wxClipboardClient(p[0], "clipboard%::set-clipboard-client", 0);
-  x1 = objscheme_unbundle_integer(p[1], "clipboard%::set-clipboard-client");
+  x0 = objscheme_unbundle_wxClipboardClient(p[0], "set-clipboard-client in clipboard%", 0);
+  x1 = objscheme_unbundle_integer(p[1], "set-clipboard-client in clipboard%");
 
   
   ((wxClipboard *)((Scheme_Class_Object *)obj)->primdata)->SetClipboardClient(x0, x1);
@@ -579,21 +561,12 @@ static Scheme_Object *os_wxClipboardSetClipboardClient(Scheme_Object *obj, int n
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_classname_os_wxClipboard(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("clipboard%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("clipboard%");
-}
-
 void objscheme_setup_wxClipboard(void *env)
 {
 if (os_wxClipboard_class) {
     objscheme_add_global_class(os_wxClipboard_class, "clipboard%", env);
 } else {
-  os_wxClipboard_class = objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 6);
-
-  scheme_add_method_w_arity(os_wxClipboard_class,"get-class-name",objscheme_classname_os_wxClipboard, 0, 0);
+  os_wxClipboard_class = objscheme_def_prim_class(env, "clipboard%", "object%", NULL, 5);
 
  scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-data", os_wxClipboardGetClipboardData, 2, 2);
  scheme_add_method_w_arity(os_wxClipboard_class, "get-clipboard-string", os_wxClipboardGetClipboardString, 1, 1);
@@ -720,7 +693,7 @@ return NULL;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return (nstring)objscheme_unbundle_nullable_string(v, "clipboard-client%::get-data"", extracting return value");
+  return (nstring)objscheme_unbundle_nullable_string(v, "get-data in clipboard-client%"", extracting return value");
   }
 }
 
@@ -781,7 +754,7 @@ static Scheme_Object *os_wxClipboardClientAddType(Scheme_Object *obj, int n,  Sc
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "clipboard-client%::add-type");
+  x0 = (string)objscheme_unbundle_string(p[0], "add-type in clipboard-client%");
 
   
   AddType(((wxClipboardClient *)((Scheme_Class_Object *)obj)->primdata), x0);
@@ -802,7 +775,7 @@ static Scheme_Object *os_wxClipboardClientGetData(Scheme_Object *obj, int n,  Sc
   long* x1 = &_x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "clipboard-client%::get-data");
+  x0 = (string)objscheme_unbundle_string(p[0], "get-data in clipboard-client%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -841,7 +814,7 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(Scheme_Object *obj, i
 
   
   if (n != 0) 
-    scheme_wrong_count("clipboard-client%::initialization", 0, 0, n, p);
+    scheme_wrong_count("initialization in clipboard-client%", 0, 0, n, p);
 
   
   realobj = new os_wxClipboardClient(obj);
@@ -853,21 +826,12 @@ static Scheme_Object *os_wxClipboardClient_ConstructScheme(Scheme_Object *obj, i
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxClipboardClient(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("clipboard-client%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("clipboard-client%");
-}
-
 void objscheme_setup_wxClipboardClient(void *env)
 {
 if (os_wxClipboardClient_class) {
     objscheme_add_global_class(os_wxClipboardClient_class, "clipboard-client%", env);
 } else {
-  os_wxClipboardClient_class = objscheme_def_prim_class(env, "clipboard-client%", "object%", os_wxClipboardClient_ConstructScheme, 5);
-
-  scheme_add_method_w_arity(os_wxClipboardClient_class,"get-class-name",objscheme_classname_os_wxClipboardClient, 0, 0);
+  os_wxClipboardClient_class = objscheme_def_prim_class(env, "clipboard-client%", "object%", os_wxClipboardClient_ConstructScheme, 4);
 
  scheme_add_method_w_arity(os_wxClipboardClient_class, "get-types", os_wxClipboardClientGetTypes, 0, 0);
  scheme_add_method_w_arity(os_wxClipboardClient_class, "add-type", os_wxClipboardClientAddType, 1, 1);
@@ -1045,7 +1009,7 @@ static Scheme_Object *os_wxPrintSetupDatacopy(Scheme_Object *obj, int n,  Scheme
   class wxPrintSetupData* x0;
 
   
-  x0 = objscheme_unbundle_wxPrintSetupData(p[0], "ps-setup%::copy-from", 0);
+  x0 = objscheme_unbundle_wxPrintSetupData(p[0], "copy-from in ps-setup%", 0);
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->copy(*x0);
@@ -1063,7 +1027,7 @@ static Scheme_Object *os_wxPrintSetupDataSetLevel2(Scheme_Object *obj, int n,  S
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "ps-setup%::set-level-2");
+  x0 = objscheme_unbundle_bool(p[0], "set-level-2 in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetLevel2(x0);
@@ -1081,7 +1045,7 @@ static Scheme_Object *os_wxPrintSetupDataSetAFMPath(Scheme_Object *obj, int n,  
   nstring x0;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "ps-setup%::set-afm-path");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "set-afm-path in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetAFMPath(x0);
@@ -1099,7 +1063,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPaperName(Scheme_Object *obj, int n,
   nstring x0;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "ps-setup%::set-paper-name");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "set-paper-name in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPaperName(x0);
@@ -1118,8 +1082,8 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterTranslation(Scheme_Object *ob
   float x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "ps-setup%::set-translation");
-  x1 = objscheme_unbundle_float(p[1], "ps-setup%::set-translation");
+  x0 = objscheme_unbundle_float(p[0], "set-translation in ps-setup%");
+  x1 = objscheme_unbundle_float(p[1], "set-translation in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterTranslation(x0, x1);
@@ -1138,8 +1102,8 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterScaling(Scheme_Object *obj, i
   nnfloat x1;
 
   
-  x0 = objscheme_unbundle_nonnegative_float(p[0], "ps-setup%::set-scaling");
-  x1 = objscheme_unbundle_nonnegative_float(p[1], "ps-setup%::set-scaling");
+  x0 = objscheme_unbundle_nonnegative_float(p[0], "set-scaling in ps-setup%");
+  x1 = objscheme_unbundle_nonnegative_float(p[1], "set-scaling in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterScaling(x0, x1);
@@ -1157,7 +1121,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterOptions(Scheme_Object *obj, i
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "ps-setup%::set-options");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-options in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterOptions(x0);
@@ -1175,7 +1139,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterOrientation(Scheme_Object *ob
   int x0;
 
   
-  x0 = unbundle_symset_psOrientation(p[0], "ps-setup%::set-orientation");
+  x0 = unbundle_symset_psOrientation(p[0], "set-orientation in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterOrientation(x0);
@@ -1193,7 +1157,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterMode(Scheme_Object *obj, int 
   int x0;
 
   
-  x0 = unbundle_symset_psMode(p[0], "ps-setup%::set-mode");
+  x0 = unbundle_symset_psMode(p[0], "set-mode in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterMode(x0);
@@ -1211,7 +1175,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrintPreviewCommand(Scheme_Object *o
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "ps-setup%::set-preview-command");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-preview-command in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrintPreviewCommand(x0);
@@ -1229,7 +1193,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterFile(Scheme_Object *obj, int 
   pathname x0;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "ps-setup%::set-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "set-file in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterFile(x0);
@@ -1247,7 +1211,7 @@ static Scheme_Object *os_wxPrintSetupDataSetPrinterCommand(Scheme_Object *obj, i
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "ps-setup%::set-command");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-command in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->SetPrinterCommand(x0);
@@ -1320,13 +1284,13 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterTranslation(Scheme_Object *ob
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("ps-setup%::get-translation", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("get-translation in ps-setup%", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "ps-setup%::get-translation"), "ps-setup%::get-translation");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-translation in ps-setup%"), "get-translation in ps-setup%");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("ps-setup%::get-translation", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("get-translation in ps-setup%", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "ps-setup%::get-translation"), "ps-setup%::get-translation");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-translation in ps-setup%"), "get-translation in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterTranslation(x0, x1);
@@ -1352,13 +1316,13 @@ static Scheme_Object *os_wxPrintSetupDataGetPrinterScaling(Scheme_Object *obj, i
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("ps-setup%::get-scaling", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("get-scaling in ps-setup%", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "ps-setup%::get-scaling"), "ps-setup%::get-scaling");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-scaling in ps-setup%"), "get-scaling in ps-setup%");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("ps-setup%::get-scaling", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("get-scaling in ps-setup%", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "ps-setup%::get-scaling"), "ps-setup%::get-scaling");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-scaling in ps-setup%"), "get-scaling in ps-setup%");
 
   
   ((wxPrintSetupData *)((Scheme_Class_Object *)obj)->primdata)->GetPrinterScaling(x0, x1);
@@ -1481,7 +1445,7 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, in
 
   
   if (n != 0) 
-    scheme_wrong_count("ps-setup%::initialization", 0, 0, n, p);
+    scheme_wrong_count("initialization in ps-setup%", 0, 0, n, p);
 
   
   realobj = new os_wxPrintSetupData(obj);
@@ -1493,21 +1457,12 @@ static Scheme_Object *os_wxPrintSetupData_ConstructScheme(Scheme_Object *obj, in
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxPrintSetupData(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("ps-setup%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("ps-setup%");
-}
-
 void objscheme_setup_wxPrintSetupData(void *env)
 {
 if (os_wxPrintSetupData_class) {
     objscheme_add_global_class(os_wxPrintSetupData_class, "ps-setup%", env);
 } else {
-  os_wxPrintSetupData_class = objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 24);
-
-  scheme_add_method_w_arity(os_wxPrintSetupData_class,"get-class-name",objscheme_classname_os_wxPrintSetupData, 0, 0);
+  os_wxPrintSetupData_class = objscheme_def_prim_class(env, "ps-setup%", "object%", os_wxPrintSetupData_ConstructScheme, 23);
 
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "copy-from", os_wxPrintSetupDatacopy, 1, 1);
  scheme_add_method_w_arity(os_wxPrintSetupData_class, "set-level-2", os_wxPrintSetupDataSetLevel2, 1, 1);

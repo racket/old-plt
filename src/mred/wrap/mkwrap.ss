@@ -53,8 +53,14 @@
 
 (define code (get-all "mred.ss"))
 
+(define sig (cons 'mred@ (append propagate mred-exports)))
+
 (with-output-to-file "wrap.ss"
   (lambda ()
+    (pretty-print
+     `(define-signature mred^ ,sig))
+    (display "> kstop sig <")
+    (newline)
     (pretty-print
      `(lambda (wx@)
 	(letrec ([ex (invoke-unit
@@ -68,18 +74,21 @@
 				    (wx ,@imports))])
 		       (export)))])
 	  (letrec ([mred@
-		    (compound-unit 
-		     (import)
-		     (link [wx (wx@)]
-			   [mred ((unit (import)
-					(export ,@mred-exports [-mred@ mred@])
-					,@(let loop ([l mred-exports][n 0])
-					    (if (null? l)
-						null
-						(cons `(define ,(car l) (vector-ref ex ,n))
-						      (loop (cdr l) (add1 n)))))
-					(define -mred@ mred@)))])
-		     (export (wx ,@propagate) (mred ,@mred-exports)))])
-	    mred@))))
-    (display "> fstop func <"))
+		    (unit->unit/sig
+		     (compound-unit
+		      (import)
+		      (link [wx (wx@)]
+			    [mred ((unit (import)
+					 (export ,@mred-exports [-mred@ mred@])
+					 ,@(let loop ([l mred-exports][n 0])
+					     (if (null? l)
+						 null
+						 (cons `(define ,(car l) (vector-ref ex ,n))
+						       (loop (cdr l) (add1 n)))))
+					 (define -mred@ mred@)))])
+		      (export (wx ,@propagate) (mred mred@ ,@mred-exports)))
+		     () ,sig)])
+	    (unit/sig->unit mred@)))))
+    (display "> fstop unit <")
+    (newline))
   'replace)

@@ -177,12 +177,12 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("::write-resource (string case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "::write-resource (string case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "::write-resource (string case)");
-    x2 = (string)objscheme_unbundle_string(p[2], "::write-resource (string case)");
+      scheme_wrong_count("write-resource (string case)", 3, 4, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "write-resource (string case)");
+    x1 = (string)objscheme_unbundle_string(p[1], "write-resource (string case)");
+    x2 = (string)objscheme_unbundle_string(p[2], "write-resource (string case)");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "::write-resource (string case)");
+      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "write-resource (string case)");
     } else
       x3 = NULL;
 
@@ -199,12 +199,12 @@ static Scheme_Object *wxsGlobalwxWriteResource(int n,  Scheme_Object *p[])
 
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("::write-resource (number case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "::write-resource (number case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "::write-resource (number case)");
-    x2 = objscheme_unbundle_integer(p[2], "::write-resource (number case)");
+      scheme_wrong_count("write-resource (number case)", 3, 4, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "write-resource (number case)");
+    x1 = (string)objscheme_unbundle_string(p[1], "write-resource (number case)");
+    x2 = objscheme_unbundle_integer(p[2], "write-resource (number case)");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "::write-resource (number case)");
+      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "write-resource (number case)");
     } else
       x3 = NULL;
 
@@ -232,15 +232,15 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("::get-resource (string case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "::get-resource (string case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "::get-resource (string case)");
+      scheme_wrong_count("get-resource (string case)", 3, 4, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "get-resource (string case)");
+    x1 = (string)objscheme_unbundle_string(p[1], "get-resource (string case)");
     if (XC_SCHEME_NULLP(p[2]))
-      scheme_wrong_type("::get-resource (string case)", "non-" XC_NULL_STR, (2 - 0), n, p);
+      scheme_wrong_type("get-resource (string case)", "non-" XC_NULL_STR, (2 - 0), n, p);
     else
-      *x2 = (string)objscheme_unbundle_string(objscheme_unbox(p[2], "::get-resource (string case)"), "::get-resource (string case)");
+      *x2 = (string)objscheme_unbundle_string(objscheme_unbox(p[2], "get-resource (string case)"), "get-resource (string case)");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "::get-resource (string case)");
+      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "get-resource (string case)");
     } else
       x3 = NULL;
 
@@ -260,15 +260,15 @@ static Scheme_Object *wxsGlobalwxGetResource(int n,  Scheme_Object *p[])
 
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("::get-resource (number case)", 3, 4, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "::get-resource (number case)");
-    x1 = (string)objscheme_unbundle_string(p[1], "::get-resource (number case)");
+      scheme_wrong_count("get-resource (number case)", 3, 4, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "get-resource (number case)");
+    x1 = (string)objscheme_unbundle_string(p[1], "get-resource (number case)");
     if (XC_SCHEME_NULLP(p[2]))
-      scheme_wrong_type("::get-resource (number case)", "non-" XC_NULL_STR, (2 - 0), n, p);
+      scheme_wrong_type("get-resource (number case)", "non-" XC_NULL_STR, (2 - 0), n, p);
     else
-      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "::get-resource (number case)"), "::get-resource (number case)");
+      *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "get-resource (number case)"), "get-resource (number case)");
     if (n > 3) {
-      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "::get-resource (number case)");
+      x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "get-resource (number case)");
     } else
       x3 = NULL;
 
@@ -292,7 +292,7 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "::label->plain-label");
+  x0 = (string)objscheme_unbundle_string(p[0], "label->plain-label");
 
   
   r = wxStripMenuCodes_Scheme(x0);
@@ -313,13 +313,13 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("::display-size", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("display-size", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "::display-size"), "::display-size");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "display-size"), "display-size");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("::display-size", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("display-size", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "::display-size"), "::display-size");
+    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "display-size"), "display-size");
 
   
   wxDisplaySize(x0, x1);
@@ -407,12 +407,12 @@ static Scheme_Object *wxsGlobalwxMakeMetaFilePlaceable(int n,  Scheme_Object *p[
   float x5;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "::make-meta-file-placeable");
-  x1 = objscheme_unbundle_float(p[1], "::make-meta-file-placeable");
-  x2 = objscheme_unbundle_float(p[2], "::make-meta-file-placeable");
-  x3 = objscheme_unbundle_float(p[3], "::make-meta-file-placeable");
-  x4 = objscheme_unbundle_float(p[4], "::make-meta-file-placeable");
-  x5 = objscheme_unbundle_float(p[5], "::make-meta-file-placeable");
+  x0 = (string)objscheme_unbundle_string(p[0], "make-meta-file-placeable");
+  x1 = objscheme_unbundle_float(p[1], "make-meta-file-placeable");
+  x2 = objscheme_unbundle_float(p[2], "make-meta-file-placeable");
+  x3 = objscheme_unbundle_float(p[3], "make-meta-file-placeable");
+  x4 = objscheme_unbundle_float(p[4], "make-meta-file-placeable");
+  x5 = objscheme_unbundle_float(p[5], "make-meta-file-placeable");
 
   
   r = wxMakeMetaFilePlaceable(x0, x1, x2, x3, x4, x5);
@@ -459,45 +459,45 @@ static Scheme_Object *wxsGlobalwxFileSelector(int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   nstring r;
-  string x0;
+  nstring x0;
   nstring x1;
   nstring x2;
   nstring x3;
-  string x4;
+  nstring x4;
   int x5;
   class wxWindow* x6;
   int x7;
   int x8;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "::file-selector");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "file-selector");
   if (n > 1) {
-    x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "::file-selector");
+    x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "file-selector");
   } else
     x1 = NULL;
   if (n > 2) {
-    x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "::file-selector");
+    x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "file-selector");
   } else
     x2 = NULL;
   if (n > 3) {
-    x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "::file-selector");
+    x3 = (nstring)objscheme_unbundle_nullable_string(p[3], "file-selector");
   } else
     x3 = NULL;
   if (n > 4) {
-    x4 = (string)objscheme_unbundle_string(p[4], "::file-selector");
+    x4 = (nstring)objscheme_unbundle_nullable_string(p[4], "file-selector");
   } else
     x4 = FILE_SEL_DEF_PATTERN;
   if (n > 5) {
-    x5 = unbundle_symset_fileSelMode(p[5], "::file-selector");
+    x5 = unbundle_symset_fileSelMode(p[5], "file-selector");
   } else
     x5 = wxOPEN;
   x6 = (((n <= 6) || XC_SCHEME_NULLP(p[6])) ? (wxWindow *)NULL : (objscheme_istype_wxFrame(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxFrame(p[6], NULL, 0) : (objscheme_istype_wxDialogBox(p[6], NULL, 1) ? (wxWindow *)objscheme_unbundle_wxDialogBox(p[6], NULL, 0) : (scheme_wrong_type("file-selector", "frame% or dialog-box%", -1, 0, &p[6]), (wxWindow *)NULL))));
   if (n > 7) {
-    x7 = objscheme_unbundle_integer(p[7], "::file-selector");
+    x7 = objscheme_unbundle_integer(p[7], "file-selector");
   } else
     x7 = -1;
   if (n > 8) {
-    x8 = objscheme_unbundle_integer(p[8], "::file-selector");
+    x8 = objscheme_unbundle_integer(p[8], "file-selector");
   } else
     x8 = -1;
 

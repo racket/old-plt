@@ -49,7 +49,7 @@ static Scheme_Object *os_wxItemSetButtonColour(Scheme_Object *obj, int n,  Schem
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "item%::set-button-colour", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "set-button-colour in item%", 0);
 
   
   ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->SetButtonColour(x0);
@@ -67,7 +67,7 @@ static Scheme_Object *os_wxItemSetLabelColour(Scheme_Object *obj, int n,  Scheme
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "item%::set-label-colour", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "set-label-colour in item%", 0);
 
   
   ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->SetLabelColour(x0);
@@ -85,7 +85,7 @@ static Scheme_Object *os_wxItemSetBackgroundColour(Scheme_Object *obj, int n,  S
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "item%::set-background-colour", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "set-background-colour in item%", 0);
 
   
   ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->SetBackgroundColour(x0);
@@ -137,7 +137,7 @@ static Scheme_Object *os_wxItemSetLabel(Scheme_Object *obj, int n,  Scheme_Objec
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "item%::set-label");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-label in item%");
 
   
   ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
@@ -223,7 +223,7 @@ static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object
   class wxCommandEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxCommandEvent(p[0], "item%::command", 0);
+  x0 = objscheme_unbundle_wxCommandEvent(p[0], "command in item%", 0);
 
   
   ((wxItem *)((Scheme_Class_Object *)obj)->primdata)->Command(*x0);
@@ -233,21 +233,12 @@ static Scheme_Object *os_wxItemCommand(Scheme_Object *obj, int n,  Scheme_Object
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_classname_os_wxItem(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("item%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("item%");
-}
-
 void objscheme_setup_wxItem(void *env)
 {
 if (os_wxItem_class) {
     objscheme_add_global_class(os_wxItem_class, "item%", env);
 } else {
-  os_wxItem_class = objscheme_def_prim_class(env, "item%", "window%", NULL, 12);
-
-  scheme_add_method_w_arity(os_wxItem_class,"get-class-name",objscheme_classname_os_wxItem, 0, 0);
+  os_wxItem_class = objscheme_def_prim_class(env, "item%", "window%", NULL, 11);
 
  scheme_add_method_w_arity(os_wxItem_class, "set-button-colour", os_wxItemSetButtonColour, 1, 1);
  scheme_add_method_w_arity(os_wxItem_class, "set-label-colour", os_wxItemSetLabelColour, 1, 1);
@@ -342,12 +333,14 @@ static Scheme_Object *bundle_symset_messageStyle(int v) {
 
 
 
+
 class os_wxMessage : public wxMessage {
  public:
 
   os_wxMessage(Scheme_Object * obj, class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message");
   os_wxMessage(Scheme_Object * obj, class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message");
   ~os_wxMessage();
+  void OnDropFile(pathname x0);
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
   void OnSize(int x0, int x1);
@@ -376,6 +369,39 @@ os_wxMessage::os_wxMessage(Scheme_Object * o, class wxPanel* x0, class wxBitmap*
 os_wxMessage::~os_wxMessage()
 {
     objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+void os_wxMessage::OnDropFile(pathname x0)
+{
+  Scheme_Object *p[1];
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMessage_class, "on-drop-file", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMessage::OnDropFile(x0);
+  } else {
+  
+  p[0] = objscheme_bundle_pathname((char *)x0);
+  
+
+  v = scheme_apply(method, 1, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
+  }
 }
 
 Bool os_wxMessage::PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1)
@@ -409,7 +435,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "message%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-event in message%"", extracting return value");
   }
 }
 
@@ -444,7 +470,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "message%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-char in message%"", extracting return value");
   }
 }
 
@@ -556,10 +582,10 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     if (n != 1) 
-      scheme_wrong_count("message%::set-label (bitmap label case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxBitmap(p[0], "message%::set-label (bitmap label case)", 0);
+      scheme_wrong_count("set-label in message% (bitmap label case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxBitmap(p[0], "set-label in message% (bitmap label case)", 0);
 
-    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", "button%::set-label");
+    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("message%","set-label"));
     ((wxMessage *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
 
     
@@ -569,8 +595,8 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
 
     
     if (n != 1) 
-      scheme_wrong_count("message%::set-label (string label case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "message%::set-label (string label case)");
+      scheme_wrong_count("set-label in message% (string label case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "set-label in message% (string label case)");
 
     
     ((wxMessage *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
@@ -579,6 +605,27 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
     
   }
 
+  return scheme_void;
+}
+
+#pragma argsused
+static Scheme_Object *os_wxMessageOnDropFile(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+  pathname x0;
+
+  
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in message%");
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMessage *)((Scheme_Class_Object *)obj)->primdata)->wxMessage::OnDropFile(x0);
+  else
+    ((wxMessage *)((Scheme_Class_Object *)obj)->primdata)->OnDropFile(x0);
+
+  
+  
   return scheme_void;
 }
 
@@ -592,8 +639,8 @@ static Scheme_Object *os_wxMessagePreOnEvent(Scheme_Object *obj, int n,  Scheme_
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "message%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "message%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in message%", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in message%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -616,8 +663,8 @@ static Scheme_Object *os_wxMessagePreOnChar(Scheme_Object *obj, int n,  Scheme_O
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "message%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "message%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in message%", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in message%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -639,8 +686,8 @@ static Scheme_Object *os_wxMessageOnSize(Scheme_Object *obj, int n,  Scheme_Obje
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "message%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "message%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "on-size in message%");
+  x1 = objscheme_unbundle_integer(p[1], "on-size in message%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -705,27 +752,27 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
 
     
     if ((n < 2) ||(n > 6)) 
-      scheme_wrong_count("message%::initialization (bitmap label case)", 2, 6, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "message%::initialization (bitmap label case)", 0);
-    x1 = objscheme_unbundle_wxBitmap(p[1], "message%::initialization (bitmap label case)", 0);
+      scheme_wrong_count("initialization in message% (bitmap label case)", 2, 6, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "initialization in message% (bitmap label case)", 0);
+    x1 = objscheme_unbundle_wxBitmap(p[1], "initialization in message% (bitmap label case)", 0);
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "message%::initialization (bitmap label case)");
+      x2 = objscheme_unbundle_integer(p[2], "initialization in message% (bitmap label case)");
     } else
       x2 = -1;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "message%::initialization (bitmap label case)");
+      x3 = objscheme_unbundle_integer(p[3], "initialization in message% (bitmap label case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = unbundle_symset_messageStyle(p[4], "message%::initialization (bitmap label case)");
+      x4 = unbundle_symset_messageStyle(p[4], "initialization in message% (bitmap label case)");
     } else
       x4 = 0;
     if (n > 5) {
-      x5 = (string)objscheme_unbundle_string(p[5], "message%::initialization (bitmap label case)");
+      x5 = (string)objscheme_unbundle_string(p[5], "initialization in message% (bitmap label case)");
     } else
       x5 = "message";
 
-    if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", "message::initialization");
+    if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("message%","initialization"));
     realobj = new os_wxMessage(obj, x0, x1, x2, x3, x4, x5);
     
     
@@ -739,23 +786,23 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
 
     
     if ((n < 2) ||(n > 6)) 
-      scheme_wrong_count("message%::initialization (string label case)", 2, 6, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "message%::initialization (string label case)", 0);
-    x1 = (string)objscheme_unbundle_string(p[1], "message%::initialization (string label case)");
+      scheme_wrong_count("initialization in message% (string label case)", 2, 6, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "initialization in message% (string label case)", 0);
+    x1 = (string)objscheme_unbundle_string(p[1], "initialization in message% (string label case)");
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "message%::initialization (string label case)");
+      x2 = objscheme_unbundle_integer(p[2], "initialization in message% (string label case)");
     } else
       x2 = -1;
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "message%::initialization (string label case)");
+      x3 = objscheme_unbundle_integer(p[3], "initialization in message% (string label case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = unbundle_symset_messageStyle(p[4], "message%::initialization (string label case)");
+      x4 = unbundle_symset_messageStyle(p[4], "initialization in message% (string label case)");
     } else
       x4 = 0;
     if (n > 5) {
-      x5 = (string)objscheme_unbundle_string(p[5], "message%::initialization (string label case)");
+      x5 = (string)objscheme_unbundle_string(p[5], "initialization in message% (string label case)");
     } else
       x5 = "message";
 
@@ -771,13 +818,6 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxMessage(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("message%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("message%");
-}
-
 void objscheme_setup_wxMessage(void *env)
 {
 if (os_wxMessage_class) {
@@ -785,9 +825,8 @@ if (os_wxMessage_class) {
 } else {
   os_wxMessage_class = objscheme_def_prim_class(env, "message%", "item%", os_wxMessage_ConstructScheme, 7);
 
-  scheme_add_method_w_arity(os_wxMessage_class,"get-class-name",objscheme_classname_os_wxMessage, 0, 0);
-
  scheme_add_method(os_wxMessage_class, "set-label", os_wxMessageSetLabel);
+ scheme_add_method_w_arity(os_wxMessage_class, "on-drop-file", os_wxMessageOnDropFile, 1, 1);
  scheme_add_method_w_arity(os_wxMessage_class, "pre-on-event", os_wxMessagePreOnEvent, 2, 2);
  scheme_add_method_w_arity(os_wxMessage_class, "pre-on-char", os_wxMessagePreOnChar, 2, 2);
  scheme_add_method_w_arity(os_wxMessage_class, "on-size", os_wxMessageOnSize, 2, 2);

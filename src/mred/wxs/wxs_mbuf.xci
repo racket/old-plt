@@ -60,7 +60,7 @@
 @ Z "write-headers-to-file" : bool WriteHeadersToFile(wxMediaStreamOut%);
 @ Z "write-footers-to-file" : bool WriteFootersToFile(wxMediaStreamOut%);
 
-@ Z "on-paint" : void OnPaint(bool,wxDC!,float,float,float,float,float,float,SYM[caret]);  : : /CHECKOK[1."editor<%>::on-paint"]
+@ Z "on-paint" : void OnPaint(bool,wxDC!,float,float,float,float,float,float,SYM[caret]);  : : /CHECKOK[1.METHODNAME("editor<%>","on-paint")]
 @ Y "invalidate-bitmap-cache" : void InvalidateBitmapCache(float=0.0,float=0.0,float=-1.0,float=-1.0);
 
 @ Z "on-new-image-snip" : wxImageSnip! OnNewImageSnip(nstring,long,bool,bool);

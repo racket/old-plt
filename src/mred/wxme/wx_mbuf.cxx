@@ -509,7 +509,7 @@ static void wxmbSetOK(wxObject& obj, wxEvent& evt)
   image_hit_ok = 1;
 }
 
-int wxMediaBuffer::AppendEditItems(wxMenu *edit, int idOffset)
+int wxMediaBuffer::AppendEditItems(wxMenu *, int)
 {
   return 0;
 }
@@ -558,12 +558,12 @@ void wxMediaBuffer::DoEdit(int op, Bool recursive, long time)
   }
 }
 
-int wxMediaBuffer::AppendFontItems(wxMenu *font, int idOffset)
+int wxMediaBuffer::AppendFontItems(wxMenu *, int)
 {
   return 0;
 }
 
-void wxMediaBuffer::DoFont(int op, Bool recursive)
+void wxMediaBuffer::DoFont(int, Bool)
 {
   return;
 }

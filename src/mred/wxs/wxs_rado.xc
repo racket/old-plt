@@ -15,7 +15,7 @@
 @CLASSBASE wxRadioBox "radio-box":"item"
 
 @SET CALLBACK_CLASS = wxRadioBox
-@SET CALLBACK_CLASS_USER = "radio-box%::initialization"
+@SET CALLBACK_CLASS_USER = METHODNAME("radio-box%", "initialization")
 @INCLUDE cb_start.xci
 
 #include "wxs_bmap.h"
@@ -27,7 +27,7 @@
 @SET TYPE = wxBitmap
 @SET POINTERS = 1
 @SET DOOKTEST = 1
-@DEFINE OKTESTWHERE "radio-box%::initialization"
+@DEFINE OKTESTWHERE METHODNAME("radio-box%", "initialization")
 @INCLUDE list.xci
 
 @MACRO cStringList = (SCHEME_LISTP({x}) && (XC_SCHEME_NULLP({x}) || SCHEME_STRINGP(SCHEME_CAR({x}))))
@@ -35,8 +35,8 @@
 
 @MACRO spBitmapList = (listof wxBitmap-object)
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cStringList,int=0,SYM[radioboxStyle]=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[string.7.8.7."radio-box%::initialization"]/glueCleanup[8]/ubCallbackCreatorFinish <> string list
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int,int,int,int,-int,wxBitmap*[]/bList/ubList/cBitmapList//spBitmapList,int=0,SYM[radioboxStyle]=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[wxBitmap.7.8.7."radio-box%::initialization"]/glueCleanup[8]/ubCallbackCreatorFinish <> bitmap list
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cStringList,int=0,SYM[radioboxStyle]=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[string.7.8.7.METHODNAME("radio-box%","initialization")]/glueCleanup[8]/ubCallbackCreatorFinish <> string list
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int,int,int,int,-int,wxBitmap*[]/bList/ubList/cBitmapList//spBitmapList,int=0,SYM[radioboxStyle]=wxVERTICAL,string="radioBox"); : : ubCallbackSetup/NOZERO[5]|NOZERO[6]|glueListSet[wxBitmap.7.8.7.METHODNAME("radio-box%","initialization")]/glueCleanup[8]/ubCallbackCreatorFinish <> bitmap list
 
 @INCLUDE wxs_item.xci
 

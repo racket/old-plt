@@ -45,7 +45,7 @@ static Scheme_Object *bundle_symset_checkboxStyle(int v) {
 #define CALLBACKCLASS os_wxCheckBox
 #define CB_REALCLASS wxCheckBox
 #define CB_UNBUNDLE objscheme_unbundle_wxCheckBox
-#define CB_USER "check-box%::initialization"
+#define CB_USER METHODNAME("check-box%","initialization")
 
 #undef CB_TOSCHEME
 #undef CB_TOC
@@ -174,7 +174,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "check-box%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-event in check-box%"", extracting return value");
   }
 }
 
@@ -209,7 +209,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "check-box%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-char in check-box%"", extracting return value");
   }
 }
 
@@ -321,10 +321,10 @@ static Scheme_Object *os_wxCheckBoxSetLabel(Scheme_Object *obj, int n,  Scheme_O
 
     
     if (n != 1) 
-      scheme_wrong_count("check-box%::set-label (bitmap label case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_wxBitmap(p[0], "check-box%::set-label (bitmap label case)", 0);
+      scheme_wrong_count("set-label in check-box% (bitmap label case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_wxBitmap(p[0], "set-label in check-box% (bitmap label case)", 0);
 
-    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", "check-box%::set-label");
+    if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("check-box%","set-label"));
     ((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
 
     
@@ -334,8 +334,8 @@ static Scheme_Object *os_wxCheckBoxSetLabel(Scheme_Object *obj, int n,  Scheme_O
 
     
     if (n != 1) 
-      scheme_wrong_count("check-box%::set-label (string label case)", 1, 1, n, p);
-    x0 = (string)objscheme_unbundle_string(p[0], "check-box%::set-label (string label case)");
+      scheme_wrong_count("set-label in check-box% (string label case)", 1, 1, n, p);
+    x0 = (string)objscheme_unbundle_string(p[0], "set-label in check-box% (string label case)");
 
     
     ((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
@@ -355,7 +355,7 @@ static Scheme_Object *os_wxCheckBoxSetValue(Scheme_Object *obj, int n,  Scheme_O
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "check-box%::set-value");
+  x0 = objscheme_unbundle_bool(p[0], "set-value in check-box%");
 
   
   ((wxCheckBox *)((Scheme_Class_Object *)obj)->primdata)->SetValue(x0);
@@ -390,7 +390,7 @@ static Scheme_Object *os_wxCheckBoxOnDropFile(Scheme_Object *obj, int n,  Scheme
   pathname x0;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "check-box%::on-drop-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in check-box%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -413,8 +413,8 @@ static Scheme_Object *os_wxCheckBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "check-box%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "check-box%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in check-box%", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in check-box%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -437,8 +437,8 @@ static Scheme_Object *os_wxCheckBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "check-box%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "check-box%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in check-box%", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in check-box%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -460,8 +460,8 @@ static Scheme_Object *os_wxCheckBoxOnSize(Scheme_Object *obj, int n,  Scheme_Obj
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "check-box%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "check-box%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "on-size in check-box%");
+  x1 = objscheme_unbundle_integer(p[1], "on-size in check-box%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -529,36 +529,36 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
-      scheme_wrong_count("check-box%::initialization (bitmap label case)", 3, 9, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "check-box%::initialization (bitmap label case)", 0);
+      scheme_wrong_count("initialization in check-box% (bitmap label case)", 3, 9, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "initialization in check-box% (bitmap label case)", 0);
     x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = objscheme_unbundle_wxBitmap(p[2], "check-box%::initialization (bitmap label case)", 0);
+    x2 = objscheme_unbundle_wxBitmap(p[2], "initialization in check-box% (bitmap label case)", 0);
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "check-box%::initialization (bitmap label case)");
+      x3 = objscheme_unbundle_integer(p[3], "initialization in check-box% (bitmap label case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "check-box%::initialization (bitmap label case)");
+      x4 = objscheme_unbundle_integer(p[4], "initialization in check-box% (bitmap label case)");
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "check-box%::initialization (bitmap label case)");
+      x5 = objscheme_unbundle_integer(p[5], "initialization in check-box% (bitmap label case)");
     } else
       x5 = -1;
     if (n > 6) {
-      x6 = objscheme_unbundle_integer(p[6], "check-box%::initialization (bitmap label case)");
+      x6 = objscheme_unbundle_integer(p[6], "initialization in check-box% (bitmap label case)");
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = unbundle_symset_checkboxStyle(p[7], "check-box%::initialization (bitmap label case)");
+      x7 = unbundle_symset_checkboxStyle(p[7], "initialization in check-box% (bitmap label case)");
     } else
       x7 = 0;
     if (n > 8) {
-      x8 = (string)objscheme_unbundle_string(p[8], "check-box%::initialization (bitmap label case)");
+      x8 = (string)objscheme_unbundle_string(p[8], "initialization in check-box% (bitmap label case)");
     } else
       x8 = "checkBox";
 
-    if (x2 && !x2->Ok()) scheme_signal_error("%s: bad bitmap", "check-box%::initialization");if (!x5) x5 = -1;if (!x6) x6 = -1;
+    if (x2 && !x2->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("check-box%","initialization"));if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = new os_wxCheckBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
     
     realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -575,32 +575,32 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 9)) 
-      scheme_wrong_count("check-box%::initialization (string label case)", 3, 9, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "check-box%::initialization (string label case)", 0);
+      scheme_wrong_count("initialization in check-box% (string label case)", 3, 9, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "initialization in check-box% (string label case)", 0);
     x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = (string)objscheme_unbundle_string(p[2], "check-box%::initialization (string label case)");
+    x2 = (string)objscheme_unbundle_string(p[2], "initialization in check-box% (string label case)");
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "check-box%::initialization (string label case)");
+      x3 = objscheme_unbundle_integer(p[3], "initialization in check-box% (string label case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "check-box%::initialization (string label case)");
+      x4 = objscheme_unbundle_integer(p[4], "initialization in check-box% (string label case)");
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "check-box%::initialization (string label case)");
+      x5 = objscheme_unbundle_integer(p[5], "initialization in check-box% (string label case)");
     } else
       x5 = -1;
     if (n > 6) {
-      x6 = objscheme_unbundle_integer(p[6], "check-box%::initialization (string label case)");
+      x6 = objscheme_unbundle_integer(p[6], "initialization in check-box% (string label case)");
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = unbundle_symset_checkboxStyle(p[7], "check-box%::initialization (string label case)");
+      x7 = unbundle_symset_checkboxStyle(p[7], "initialization in check-box% (string label case)");
     } else
       x7 = 0;
     if (n > 8) {
-      x8 = (string)objscheme_unbundle_string(p[8], "check-box%::initialization (string label case)");
+      x8 = (string)objscheme_unbundle_string(p[8], "initialization in check-box% (string label case)");
     } else
       x8 = "checkBox";
 
@@ -616,21 +616,12 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxCheckBox(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("check-box%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("check-box%");
-}
-
 void objscheme_setup_wxCheckBox(void *env)
 {
 if (os_wxCheckBox_class) {
     objscheme_add_global_class(os_wxCheckBox_class, "check-box%", env);
 } else {
-  os_wxCheckBox_class = objscheme_def_prim_class(env, "check-box%", "item%", os_wxCheckBox_ConstructScheme, 10);
-
-  scheme_add_method_w_arity(os_wxCheckBox_class,"get-class-name",objscheme_classname_os_wxCheckBox, 0, 0);
+  os_wxCheckBox_class = objscheme_def_prim_class(env, "check-box%", "item%", os_wxCheckBox_ConstructScheme, 9);
 
  scheme_add_method(os_wxCheckBox_class, "set-label", os_wxCheckBoxSetLabel);
  scheme_add_method_w_arity(os_wxCheckBox_class, "set-value", os_wxCheckBoxSetValue, 1, 1);

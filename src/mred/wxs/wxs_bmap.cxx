@@ -222,8 +222,8 @@ static Scheme_Object *os_wxBitmapSaveFile(Scheme_Object *obj, int n,  Scheme_Obj
   int x1;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "bitmap%::save-file");
-  x1 = objscheme_unbundle_integer(p[1], "bitmap%::save-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "save-file in bitmap%");
+  x1 = objscheme_unbundle_integer(p[1], "save-file in bitmap%");
 
   
   ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->SaveFile(x0, x1);
@@ -242,8 +242,8 @@ static Scheme_Object *os_wxBitmapLoadFile(Scheme_Object *obj, int n,  Scheme_Obj
   int x1;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "bitmap%::load-file");
-  x1 = unbundle_symset_bitmapType(p[1], "bitmap%::load-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "load-file in bitmap%");
+  x1 = unbundle_symset_bitmapType(p[1], "load-file in bitmap%");
 
   
   ((wxBitmap *)((Scheme_Class_Object *)obj)->primdata)->LoadFile(x0, x1);
@@ -331,9 +331,9 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if (n != 2) 
-      scheme_wrong_count("bitmap%::initialization (pathname case)", 2, 2, n, p);
-    x0 = (pathname)objscheme_unbundle_pathname(p[0], "bitmap%::initialization (pathname case)");
-    x1 = unbundle_symset_bitmapType(p[1], "bitmap%::initialization (pathname case)");
+      scheme_wrong_count("initialization in bitmap% (pathname case)", 2, 2, n, p);
+    x0 = (pathname)objscheme_unbundle_pathname(p[0], "initialization in bitmap% (pathname case)");
+    x1 = unbundle_symset_bitmapType(p[1], "initialization in bitmap% (pathname case)");
 
     
     realobj = new os_wxBitmap(obj, x0, x1);
@@ -346,15 +346,15 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if ((n < 2) ||(n > 3)) 
-      scheme_wrong_count("bitmap%::initialization (width/height case)", 2, 3, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "bitmap%::initialization (width/height case)");
-    x1 = objscheme_unbundle_integer(p[1], "bitmap%::initialization (width/height case)");
+      scheme_wrong_count("initialization in bitmap% (width/height case)", 2, 3, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "initialization in bitmap% (width/height case)");
+    x1 = objscheme_unbundle_integer(p[1], "initialization in bitmap% (width/height case)");
     if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "bitmap%::initialization (width/height case)");
+      x2 = objscheme_unbundle_integer(p[2], "initialization in bitmap% (width/height case)");
     } else
       x2 = -1;
 
-    if ((x0 < 1) || (x0 > 100000)) scheme_signal_error("bitmap%%::initialization: bad " "width" ": %d", x0);if ((x1 < 1) || (x1 > 100000)) scheme_signal_error("bitmap%%::initialization: bad " "height" ": %d", x1);
+    if ((x0 < 1) || (x0 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "width" ": ", x0);if ((x1 < 1) || (x1 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "height" ": ", x1);
     realobj = new os_wxBitmap(obj, x0, x1, x2);
     
     
@@ -366,16 +366,16 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
 
     
     if ((n < 3) ||(n > 4)) 
-      scheme_wrong_count("bitmap%::initialization (character list case)", 3, 4, n, p);
+      scheme_wrong_count("initialization in bitmap% (character list case)", 3, 4, n, p);
     x0 = NULL;
-    x1 = objscheme_unbundle_integer(p[1], "bitmap%::initialization (character list case)");
-    x2 = objscheme_unbundle_integer(p[2], "bitmap%::initialization (character list case)");
+    x1 = objscheme_unbundle_integer(p[1], "initialization in bitmap% (character list case)");
+    x2 = objscheme_unbundle_integer(p[2], "initialization in bitmap% (character list case)");
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "bitmap%::initialization (character list case)");
+      x3 = objscheme_unbundle_integer(p[3], "initialization in bitmap% (character list case)");
     } else
       x3 = 1;
 
-    if ((x1 < 1) || (x1 > 100000)) scheme_signal_error("bitmap%%::initialization: bad " "width" ": %d", x1);if ((x2 < 1) || (x2 > 100000)) scheme_signal_error("bitmap%%::initialization: bad " "height" ": %d", x2);if (x3 != 1) scheme_signal_error("bitmap%%::initialization: depth %d is illegal (only depth 1 is supported)", x3);if (scheme_proper_list_length(p[0]) < (((x1 * x2) >> 3) * x3)) scheme_signal_error("bitmap%%::initialization: byte list too short");x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, "bitmap%::initialization");
+    if ((x1 < 1) || (x1 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "width" ": ", x1);if ((x2 < 1) || (x2 > 100000)) scheme_signal_error("%s%d",METHODNAME("bitmap%","initialization")": bad " "height" ": ", x2);if (x3 != 1) scheme_signal_error("%s: depth %d is illegal (only depth 1 is supported)", METHODNAME("bitmap%","initialization"), x3);if (scheme_proper_list_length(p[0]) < (((x1 * x2) >> 3) * x3)) scheme_signal_error("%s", METHODNAME("bitmap%","initialization")": byte list too short");x0 = __MakecharArray((0 < n) ? p[0] : scheme_null, NULL, METHODNAME("bitmap%","initialization"));
     realobj = new os_wxBitmap(obj, x0, x1, x2, x3);
     
     
@@ -387,21 +387,12 @@ static Scheme_Object *os_wxBitmap_ConstructScheme(Scheme_Object *obj, int n,  Sc
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxBitmap(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("bitmap%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("bitmap%");
-}
-
 void objscheme_setup_wxBitmap(void *env)
 {
 if (os_wxBitmap_class) {
     objscheme_add_global_class(os_wxBitmap_class, "bitmap%", env);
 } else {
-  os_wxBitmap_class = objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 7);
-
-  scheme_add_method_w_arity(os_wxBitmap_class,"get-class-name",objscheme_classname_os_wxBitmap, 0, 0);
+  os_wxBitmap_class = objscheme_def_prim_class(env, "bitmap%", "object%", os_wxBitmap_ConstructScheme, 6);
 
  scheme_add_method_w_arity(os_wxBitmap_class, "save-file", os_wxBitmapSaveFile, 2, 2);
  scheme_add_method_w_arity(os_wxBitmap_class, "load-file", os_wxBitmapLoadFile, 2, 2);
@@ -500,9 +491,9 @@ static Scheme_Object *os_wxIcon_ConstructScheme(Scheme_Object *obj, int n,  Sche
 
   
   if (n != 2) 
-    scheme_wrong_count("icon%::initialization", 2, 2, n, p);
-  x0 = (string)objscheme_unbundle_string(p[0], "icon%::initialization");
-  x1 = unbundle_symset_bitmapType(p[1], "icon%::initialization");
+    scheme_wrong_count("initialization in icon%", 2, 2, n, p);
+  x0 = (string)objscheme_unbundle_string(p[0], "initialization in icon%");
+  x1 = unbundle_symset_bitmapType(p[1], "initialization in icon%");
 
   
   realobj = new os_wxIcon(obj, x0, x1);
@@ -514,21 +505,12 @@ static Scheme_Object *os_wxIcon_ConstructScheme(Scheme_Object *obj, int n,  Sche
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxIcon(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("icon%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("icon%");
-}
-
 void objscheme_setup_wxIcon(void *env)
 {
 if (os_wxIcon_class) {
     objscheme_add_global_class(os_wxIcon_class, "icon%", env);
 } else {
-  os_wxIcon_class = objscheme_def_prim_class(env, "icon%", "bitmap%", os_wxIcon_ConstructScheme, 1);
-
-  scheme_add_method_w_arity(os_wxIcon_class,"get-class-name",objscheme_classname_os_wxIcon, 0, 0);
+  os_wxIcon_class = objscheme_def_prim_class(env, "icon%", "bitmap%", os_wxIcon_ConstructScheme, 0);
 
 
 

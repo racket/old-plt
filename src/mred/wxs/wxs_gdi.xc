@@ -81,10 +81,10 @@
 @CREATOR (ubyte,ubyte,ubyte); <> rgb values
 @CREATOR (string); <> color name
 
-@ "=" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."color"."color%::="]
+@ "=" : wxColour% operator=(wxColour%);  : : /CHECKMUT[wxColour."color".METHODNAME("color%","=")]
 // @ "get" : void Get(ubyte*,ubyte*,ubyte*);
 @ "ok?" : bool Ok();
-@ "set" : void Set(ubyte,ubyte,ubyte);   : : /CHECKMUT[wxColour."color"."color%::set"]
+@ "set" : void Set(ubyte,ubyte,ubyte);   : : /CHECKMUT[wxColour."color".METHODNAME("color%","set")]
 
 @ "red" : ubyte Red();
 @ "green" : ubyte Green();
@@ -159,15 +159,15 @@
 @CREATOR (string,SYM[brushStyle]); <> color name
 
 @ "get-color" : wxColour% GetColour();
-@ "set-color" : void SetColour(wxColour%); : : /CHECKMUT[wxBrush."brush"."brush::set-colour"] <> color%
-@ "set-color" : void SetColour(string); : : /CHECKMUT[wxBrush."brush"."brush::set-colour"] <> color name
-@ "set-color" : void SetColour(int,int,int); : : /CHECKMUT[wxBrush."brush"."brush::set-colour"] <> rgb values
+@ "set-color" : void SetColour(wxColour%); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color%
+@ "set-color" : void SetColour(string); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> color name
+@ "set-color" : void SetColour(int,int,int); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-colour")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
-@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxBrush."brush"."brush::set-stipple"]
+@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-stipple")]
 
 @ "get-style" : SYM[brushStyle] GetStyle();
-@ "set-style" : void SetStyle(SYM[brushStyle]); : : /CHECKMUT[wxBrush."brush"."brush::set-style"]
+@ "set-style" : void SetStyle(SYM[brushStyle]); : : /CHECKMUT[wxBrush."brush".METHODNAME("brush%","set-style")]
 
 @END
 
@@ -218,15 +218,15 @@
 @ "set-join" : void SetJoin(SYM[join]);
 
 @ "get-colour" : wxColour% GetColour();
-@ "set-colour" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen"."pen::set-colour"] <> color%
-@ "set-colour" : void SetColour(string);  : : /CHECKMUT[wxPen."pen"."pen::set-colour"] <> color name
-@ "set-colour" : void SetColour(int,int,int);  : : /CHECKMUT[wxPen."pen"."pen::set-colour"] <> rgb values
+@ "set-colour" : void SetColour(wxColour%);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color%
+@ "set-colour" : void SetColour(string);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> color name
+@ "set-colour" : void SetColour(int,int,int);  : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-colour")] <> rgb values
 
 @ "get-stipple" : wxBitmap! GetStipple();
-@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen"."pen::set-stipple"]
+@ "set-stipple" : void SetStipple(wxBitmap^); : : /CHECKVOIDABLEOK[0]|CHECKMUT[wxPen."pen".METHODNAME("pen%","set-stipple")]
 
 @ "get-style" : SYM[penStyle] GetStyle();
-@ "set-style" : void SetStyle(SYM[penStyle]); : : /CHECKMUT[wxPen."pen"."pen::set-style"]
+@ "set-style" : void SetStyle(SYM[penStyle]); : : /CHECKMUT[wxPen."pen".METHODNAME("pen%","set-style")]
 
 @END
 

@@ -47,7 +47,7 @@
 
 @CLASSBASE wxMediaEdit "text-editor" : "editor"
 
-@CREATOR (float=1.0,float[]=NULL/bList/ubList/cList,-int=0); : : /glueListSet[float.1.1.2."text-editor%::initialization"]//
+@CREATOR (float=1.0,float[]=NULL/bList/ubList/cList,-int=0); : : /glueListSet[float.1.1.2.METHODNAME("text-editor%","initialization")]//
 
 @CLASSID wxTYPE_MEDIA_EDIT
 
@@ -75,7 +75,7 @@
 @ "flash-off" : void FlashOff();
 
 @MACRO setStringLen[i.s] = x<i> = SCHEME_STRTAG_VAL(p[<s>]);
-@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[<s>]))) scheme_signal_error("text-editor%%::insert: bad string length");
+@MACRO checkStringLen[i.s] = if ((x<i> < 0) || (x<i> > SCHEME_STRTAG_VAL(p[<s>]))) scheme_signal_error("%s",METHODNAME("text-editor%","insert")": bad string length");
 
 @ "insert" : void Insert(-long,string,long,long=-1,bool=TRUE);  : : /setStringLen[0.0] <> string and position
 @ "insert" : void Insert(-long,string);  : : /setStringLen[0.0] <> string without position
@@ -128,7 +128,7 @@
 @ "paragraph-end-line" : long ParagraphEndLine(long);
 @ "last-paragraph" : long LastParagraph();
 
-@MACRO CHECKDIR[p] = if ((x<p> != 1) && (x<p> != -1)) scheme_signal_error("text-editor%%::find-string: direction must be 1 or -1, given %d", x<p>);
+@MACRO CHECKDIR[p] = if ((x<p> != 1) && (x<p> != -1)) scheme_signal_error("%s%d", METHODNAME("text-editor%","find-string")": direction must be 1 or -1, given ", x<p>);
 
 @ "find-string" : long FindString(string,int=1,long=-1,long=-1,bool=TRUE,bool=TRUE);  : : /CHECKDIR[1]
 
@@ -161,7 +161,7 @@
 @MACRO checkNull = if (!x0) x0 = &_x0;
 
 @ "get-tabs" : float[]/bReturnList[float.0] GetTabs(int?=NULL,float?=NULL,bool?=NULL); : : /checkNull/
-@ "set-tabs" : void SetTabs(float[]/bList/ubList/cList,-int,float=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[float.0.0.1."text-editor%::set-tabs"]//
+@ "set-tabs" : void SetTabs(float[]/bList/ubList/cList,-int,float=wxTAB_WIDTH,bool=TRUE); : : /glueListSet[float.0.0.1.METHODNAME("text-editor%","set-tabs")]//
 
 @ "add-editor-functions" : void AddEditorFunctions(wxKeymap!);
 

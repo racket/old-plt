@@ -152,7 +152,7 @@ static wxColour* dcGetTextForeground(wxDC *dc)
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (npathname,bool=TRUE,wxWindow^=NULL); : : /DLGORFRAME[2."post-script-dc::initialization"]
+@CREATOR (npathname,bool=TRUE,wxWindow^=NULL); : : /DLGORFRAME[2.METHODNAME("post-script-dc%","initialization")]
 
 @END
 
@@ -163,7 +163,7 @@ class basePrinterDC : public wxObject
 public:
   basePrinterDC(char *, char *, char *, Bool = TRUE)
   {
-    scheme_signal_error("printer-dc%::initialization: not supported for X Windows");
+    scheme_signal_error("%s", METHODNAME("printer-dc%","initialization")": not supported for X Windows");
   }
 };
 
@@ -211,7 +211,7 @@ class baseMetaFileDC : public wxObject
 {
 public:
   baseMetaFileDC(char * = NULL) {
-    scheme_signal_error("meta-file-dc%::initialization: only supported for Windows");
+    scheme_signal_error("%s", METHODNAME("meta-file-dc%","initialization")": only supported for Windows");
   }
 };
 

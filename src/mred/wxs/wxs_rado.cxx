@@ -81,7 +81,7 @@ static Scheme_Object *bundle_symset_radioboxStyle(int v) {
 #define CALLBACKCLASS os_wxRadioBox
 #define CB_REALCLASS wxRadioBox
 #define CB_UNBUNDLE objscheme_unbundle_wxRadioBox
-#define CB_USER "radio-box%::initialization"
+#define CB_USER METHODNAME("radio-box%", "initialization")
 
 #undef CB_TOSCHEME
 #undef CB_TOC
@@ -185,7 +185,7 @@ static l_TYPE l_POINT *l_MAKE_ARRAY(Scheme_Object *l, l_INTTYPE *c, char *who)
 }
 
 
-#define OKTESTWHERE "radio-box%::initialization" 
+#define OKTESTWHERE METHODNAME("radio-box%", "initialization") 
 #undef l_ADDRESS
 #undef l_DEREF
 #undef l_TEST
@@ -387,7 +387,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "radio-box%::pre-on-event"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-event in radio-box%"", extracting return value");
   }
 }
 
@@ -422,7 +422,7 @@ return FALSE;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "radio-box%::pre-on-char"", extracting return value");
+  return objscheme_unbundle_bool(v, "pre-on-char in radio-box%"", extracting return value");
   }
 }
 
@@ -535,9 +535,9 @@ static Scheme_Object *os_wxRadioBoxEnable(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     if (n != 2) 
-      scheme_wrong_count("radio-box%::enable (single-button case)", 2, 2, n, p);
-    x0 = objscheme_unbundle_integer(p[0], "radio-box%::enable (single-button case)");
-    x1 = objscheme_unbundle_bool(p[1], "radio-box%::enable (single-button case)");
+      scheme_wrong_count("enable in radio-box% (single-button case)", 2, 2, n, p);
+    x0 = objscheme_unbundle_integer(p[0], "enable in radio-box% (single-button case)");
+    x1 = objscheme_unbundle_bool(p[1], "enable in radio-box% (single-button case)");
 
     if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
     ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->Enable(x0, x1);
@@ -549,8 +549,8 @@ static Scheme_Object *os_wxRadioBoxEnable(Scheme_Object *obj, int n,  Scheme_Obj
 
     
     if (n != 1) 
-      scheme_wrong_count("radio-box%::enable (all-buttons case)", 1, 1, n, p);
-    x0 = objscheme_unbundle_bool(p[0], "radio-box%::enable (all-buttons case)");
+      scheme_wrong_count("enable in radio-box% (all-buttons case)", 1, 1, n, p);
+    x0 = objscheme_unbundle_bool(p[0], "enable in radio-box% (all-buttons case)");
 
     
     ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->Enable(x0);
@@ -571,7 +571,7 @@ static Scheme_Object *os_wxRadioBoxGetString(Scheme_Object *obj, int n,  Scheme_
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "radio-box%::get-string");
+  x0 = objscheme_unbundle_integer(p[0], "get-string in radio-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return XC_SCHEME_NULL;
   r = ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->GetString(x0);
@@ -589,7 +589,7 @@ static Scheme_Object *os_wxRadioBoxSetSelection(Scheme_Object *obj, int n,  Sche
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "radio-box%::set-selection");
+  x0 = objscheme_unbundle_integer(p[0], "set-selection in radio-box%");
 
   if ((x0 < 0) || (x0 >= THISOBJECT->Number())) return scheme_void;
   ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->SetSelection(x0);
@@ -607,7 +607,7 @@ static Scheme_Object *os_wxRadioBoxSetStringSelection(Scheme_Object *obj, int n,
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "radio-box%::set-string-selection");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-string-selection in radio-box%");
 
   
   ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->SetStringSelection(x0);
@@ -677,7 +677,7 @@ static Scheme_Object *os_wxRadioBoxFindString(Scheme_Object *obj, int n,  Scheme
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "radio-box%::find-string");
+  x0 = (string)objscheme_unbundle_string(p[0], "find-string in radio-box%");
 
   
   r = ((wxRadioBox *)((Scheme_Class_Object *)obj)->primdata)->FindString(x0);
@@ -695,7 +695,7 @@ static Scheme_Object *os_wxRadioBoxOnDropFile(Scheme_Object *obj, int n,  Scheme
   pathname x0;
 
   
-  x0 = (pathname)objscheme_unbundle_pathname(p[0], "radio-box%::on-drop-file");
+  x0 = (pathname)objscheme_unbundle_pathname(p[0], "on-drop-file in radio-box%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -718,8 +718,8 @@ static Scheme_Object *os_wxRadioBoxPreOnEvent(Scheme_Object *obj, int n,  Scheme
   class wxMouseEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "radio-box%::pre-on-event", 0);
-  x1 = objscheme_unbundle_wxMouseEvent(p[1], "radio-box%::pre-on-event", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-event in radio-box%", 0);
+  x1 = objscheme_unbundle_wxMouseEvent(p[1], "pre-on-event in radio-box%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -742,8 +742,8 @@ static Scheme_Object *os_wxRadioBoxPreOnChar(Scheme_Object *obj, int n,  Scheme_
   class wxKeyEvent* x1;
 
   
-  x0 = objscheme_unbundle_wxWindow(p[0], "radio-box%::pre-on-char", 0);
-  x1 = objscheme_unbundle_wxKeyEvent(p[1], "radio-box%::pre-on-char", 0);
+  x0 = objscheme_unbundle_wxWindow(p[0], "pre-on-char in radio-box%", 0);
+  x1 = objscheme_unbundle_wxKeyEvent(p[1], "pre-on-char in radio-box%", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -765,8 +765,8 @@ static Scheme_Object *os_wxRadioBoxOnSize(Scheme_Object *obj, int n,  Scheme_Obj
   int x1;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "radio-box%::on-size");
-  x1 = objscheme_unbundle_integer(p[1], "radio-box%::on-size");
+  x0 = objscheme_unbundle_integer(p[0], "on-size in radio-box%");
+  x1 = objscheme_unbundle_integer(p[1], "on-size in radio-box%");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -837,29 +837,29 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 8) ||(n > 11)) 
-      scheme_wrong_count("radio-box%::initialization (bitmap list case)", 8, 11, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "radio-box%::initialization (bitmap list case)", 0);
+      scheme_wrong_count("initialization in radio-box% (bitmap list case)", 8, 11, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "initialization in radio-box% (bitmap list case)", 0);
     x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "radio-box%::initialization (bitmap list case)");
-    x3 = objscheme_unbundle_integer(p[3], "radio-box%::initialization (bitmap list case)");
-    x4 = objscheme_unbundle_integer(p[4], "radio-box%::initialization (bitmap list case)");
-    x5 = objscheme_unbundle_integer(p[5], "radio-box%::initialization (bitmap list case)");
-    x6 = objscheme_unbundle_integer(p[6], "radio-box%::initialization (bitmap list case)");
+    x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "initialization in radio-box% (bitmap list case)");
+    x3 = objscheme_unbundle_integer(p[3], "initialization in radio-box% (bitmap list case)");
+    x4 = objscheme_unbundle_integer(p[4], "initialization in radio-box% (bitmap list case)");
+    x5 = objscheme_unbundle_integer(p[5], "initialization in radio-box% (bitmap list case)");
+    x6 = objscheme_unbundle_integer(p[6], "initialization in radio-box% (bitmap list case)");
     x8 = NULL;
     if (n > 8) {
-      x9 = objscheme_unbundle_integer(p[8], "radio-box%::initialization (bitmap list case)");
+      x9 = objscheme_unbundle_integer(p[8], "initialization in radio-box% (bitmap list case)");
     } else
       x9 = 0;
     if (n > 9) {
-      x10 = unbundle_symset_radioboxStyle(p[9], "radio-box%::initialization (bitmap list case)");
+      x10 = unbundle_symset_radioboxStyle(p[9], "initialization in radio-box% (bitmap list case)");
     } else
       x10 = wxVERTICAL;
     if (n > 10) {
-      x11 = (string)objscheme_unbundle_string(p[10], "radio-box%::initialization (bitmap list case)");
+      x11 = (string)objscheme_unbundle_string(p[10], "initialization in radio-box% (bitmap list case)");
     } else
       x11 = "radioBox";
 
-    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = __MakewxBitmapArray((7 < n) ? p[7] : scheme_null, &x7, "radio-box%::initialization");
+    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = __MakewxBitmapArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization"));
     realobj = new os_wxRadioBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11);
     delete[] x8;
     realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -879,24 +879,24 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
 
     Scheme_Object *tmp_callback = NULL;
     if ((n < 3) ||(n > 11)) 
-      scheme_wrong_count("radio-box%::initialization (string list case)", 3, 11, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "radio-box%::initialization (string list case)", 0);
+      scheme_wrong_count("initialization in radio-box% (string list case)", 3, 11, n, p);
+    x0 = objscheme_unbundle_wxPanel(p[0], "initialization in radio-box% (string list case)", 0);
     x1 = (SCHEME_NULLP(p[1]) ? NULL : (WXGC_IGNORE(tmp_callback), objscheme_istype_proc2(p[1], CB_USER), tmp_callback = p[1], (CB_FUNCTYPE)CB_TOSCHEME));
-    x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "radio-box%::initialization (string list case)");
+    x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "initialization in radio-box% (string list case)");
     if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "radio-box%::initialization (string list case)");
+      x3 = objscheme_unbundle_integer(p[3], "initialization in radio-box% (string list case)");
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "radio-box%::initialization (string list case)");
+      x4 = objscheme_unbundle_integer(p[4], "initialization in radio-box% (string list case)");
     } else
       x4 = -1;
     if (n > 5) {
-      x5 = objscheme_unbundle_integer(p[5], "radio-box%::initialization (string list case)");
+      x5 = objscheme_unbundle_integer(p[5], "initialization in radio-box% (string list case)");
     } else
       x5 = -1;
     if (n > 6) {
-      x6 = objscheme_unbundle_integer(p[6], "radio-box%::initialization (string list case)");
+      x6 = objscheme_unbundle_integer(p[6], "initialization in radio-box% (string list case)");
     } else
       x6 = -1;
     if (n > 7) {
@@ -904,19 +904,19 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x8 = NULL;
     if (n > 8) {
-      x9 = objscheme_unbundle_integer(p[8], "radio-box%::initialization (string list case)");
+      x9 = objscheme_unbundle_integer(p[8], "initialization in radio-box% (string list case)");
     } else
       x9 = 0;
     if (n > 9) {
-      x10 = unbundle_symset_radioboxStyle(p[9], "radio-box%::initialization (string list case)");
+      x10 = unbundle_symset_radioboxStyle(p[9], "initialization in radio-box% (string list case)");
     } else
       x10 = wxVERTICAL;
     if (n > 10) {
-      x11 = (string)objscheme_unbundle_string(p[10], "radio-box%::initialization (string list case)");
+      x11 = (string)objscheme_unbundle_string(p[10], "initialization in radio-box% (string list case)");
     } else
       x11 = "radioBox";
 
-    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = __MakestringArray((7 < n) ? p[7] : scheme_null, &x7, "radio-box%::initialization");
+    if (!x5) x5 = -1;if (!x6) x6 = -1;x8 = __MakestringArray((7 < n) ? p[7] : scheme_null, &x7, METHODNAME("radio-box%","initialization"));
     realobj = new os_wxRadioBox(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11);
     delete[] x8;
     realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);
@@ -928,21 +928,12 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxRadioBox(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("radio-box%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("radio-box%");
-}
-
 void objscheme_setup_wxRadioBox(void *env)
 {
 if (os_wxRadioBox_class) {
     objscheme_add_global_class(os_wxRadioBox_class, "radio-box%", env);
 } else {
-  os_wxRadioBox_class = objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 15);
-
-  scheme_add_method_w_arity(os_wxRadioBox_class,"get-class-name",objscheme_classname_os_wxRadioBox, 0, 0);
+  os_wxRadioBox_class = objscheme_def_prim_class(env, "radio-box%", "item%", os_wxRadioBox_ConstructScheme, 14);
 
  scheme_add_method(os_wxRadioBox_class, "enable", os_wxRadioBoxEnable);
  scheme_add_method_w_arity(os_wxRadioBox_class, "get-string", os_wxRadioBoxGetString, 1, 1);

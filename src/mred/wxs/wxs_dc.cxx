@@ -529,7 +529,7 @@ static Scheme_Object *os_wxDCStartDoc(Scheme_Object *obj, int n,  Scheme_Object 
   string x0;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "dc%::start-doc");
+  x0 = (string)objscheme_unbundle_string(p[0], "start-doc in dc<%>");
 
   
   r = ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->StartDoc(x0);
@@ -636,13 +636,13 @@ static Scheme_Object *os_wxDCGetSize(Scheme_Object *obj, int n,  Scheme_Object *
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("dc%::get-size", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("get-size in dc<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "dc%::get-size"), "dc%::get-size");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-size in dc<%>"), "get-size in dc<%>");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("dc%::get-size", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("get-size in dc<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "dc%::get-size"), "dc%::get-size");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-size in dc<%>"), "get-size in dc<%>");
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetSize(x0, x1);
@@ -801,8 +801,8 @@ static Scheme_Object *os_wxDCSetDeviceOrigin(Scheme_Object *obj, int n,  Scheme_
   float x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::set-device-origin");
-  x1 = objscheme_unbundle_float(p[1], "dc%::set-device-origin");
+  x0 = objscheme_unbundle_float(p[0], "set-device-origin in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "set-device-origin in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetDeviceOrigin(x0, x1);
@@ -821,8 +821,8 @@ static Scheme_Object *os_wxDCSetUserScale(Scheme_Object *obj, int n,  Scheme_Obj
   nnfloat x1;
 
   
-  x0 = objscheme_unbundle_nonnegative_float(p[0], "dc%::set-user-scale");
-  x1 = objscheme_unbundle_nonnegative_float(p[1], "dc%::set-user-scale");
+  x0 = objscheme_unbundle_nonnegative_float(p[0], "set-user-scale in dc<%>");
+  x1 = objscheme_unbundle_nonnegative_float(p[1], "set-user-scale in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetUserScale(x0, x1);
@@ -840,7 +840,7 @@ static Scheme_Object *os_wxDCSetBackgroundMode(Scheme_Object *obj, int n,  Schem
   int x0;
 
   
-  x0 = unbundle_symset_solidity(p[0], "dc%::set-background-mode");
+  x0 = unbundle_symset_solidity(p[0], "set-background-mode in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetBackgroundMode(x0);
@@ -859,8 +859,8 @@ static Scheme_Object *os_wxDCTryColour(Scheme_Object *obj, int n,  Scheme_Object
   class wxColour* x1;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "dc%::try-colour", 0);
-  x1 = objscheme_unbundle_wxColour(p[1], "dc%::try-colour", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "try-colour in dc<%>", 0);
+  x1 = objscheme_unbundle_wxColour(p[1], "try-colour in dc<%>", 0);
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->TryColour(x0, x1);
@@ -886,15 +886,15 @@ static Scheme_Object *os_wxDCBlit(Scheme_Object *obj, int n,  Scheme_Object *p[]
   int x7;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::blit");
-  x1 = objscheme_unbundle_float(p[1], "dc%::blit");
-  x2 = objscheme_unbundle_float(p[2], "dc%::blit");
-  x3 = objscheme_unbundle_float(p[3], "dc%::blit");
-  x4 = objscheme_unbundle_wxCanvasDC(p[4], "dc%::blit", 0);
-  x5 = objscheme_unbundle_float(p[5], "dc%::blit");
-  x6 = objscheme_unbundle_float(p[6], "dc%::blit");
+  x0 = objscheme_unbundle_float(p[0], "blit in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "blit in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "blit in dc<%>");
+  x3 = objscheme_unbundle_float(p[3], "blit in dc<%>");
+  x4 = objscheme_unbundle_wxCanvasDC(p[4], "blit in dc<%>", 0);
+  x5 = objscheme_unbundle_float(p[5], "blit in dc<%>");
+  x6 = objscheme_unbundle_float(p[6], "blit in dc<%>");
   if (n > 7) {
-    x7 = unbundle_symset_logicalFunc(p[7], "dc%::blit");
+    x7 = unbundle_symset_logicalFunc(p[7], "blit in dc<%>");
   } else
     x7 = wxCOPY;
 
@@ -916,9 +916,9 @@ static Scheme_Object *os_wxDCDrawIcon(Scheme_Object *obj, int n,  Scheme_Object 
   float x2;
 
   
-  x0 = objscheme_unbundle_wxIcon(p[0], "dc%::draw-icon", 0);
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-icon");
-  x2 = objscheme_unbundle_float(p[2], "dc%::draw-icon");
+  x0 = objscheme_unbundle_wxIcon(p[0], "draw-icon in dc<%>", 0);
+  x1 = objscheme_unbundle_float(p[1], "draw-icon in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-icon in dc<%>");
 
   DO_OK_CHECK(scheme_void)if (!CHECKTHISONE(x0->Ok())) return scheme_void;
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawIcon(x0, x1, x2);
@@ -936,7 +936,7 @@ static Scheme_Object *os_wxDCSetOptimization(Scheme_Object *obj, int n,  Scheme_
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "dc%::set-optimization");
+  x0 = objscheme_unbundle_bool(p[0], "set-optimization in dc<%>");
 
   HIDETHISSTATEMENT(
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetOptimization(x0);
@@ -998,35 +998,35 @@ static Scheme_Object *os_wxDCGetTextExtent(Scheme_Object *obj, int n,  Scheme_Ob
   Bool x6;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "dc%::get-text-extent");
+  x0 = (string)objscheme_unbundle_string(p[0], "get-text-extent in dc<%>");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("dc%::get-text-extent", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("get-text-extent in dc<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "dc%::get-text-extent"), "dc%::get-text-extent");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
   if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("dc%::get-text-extent", "non-" XC_NULL_STR, (2 - 0), n, p);
+    scheme_wrong_type("get-text-extent in dc<%>", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "dc%::get-text-extent"), "dc%::get-text-extent");
+    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
   if (n > 3) {
     if (XC_SCHEME_NULLP(p[3]))
     x3 = NULL;
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "dc%::get-text-extent"), "dc%::get-text-extent");
+    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
   } else
     x3 = NULL;
   if (n > 4) {
     if (XC_SCHEME_NULLP(p[4]))
     x4 = NULL;
   else
-    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "dc%::get-text-extent"), "dc%::get-text-extent");
+    *x4 = objscheme_unbundle_float(objscheme_unbox(p[4], "get-text-extent in dc<%>"), "get-text-extent in dc<%>");
   } else
     x4 = NULL;
   if (n > 5) {
-    x5 = objscheme_unbundle_wxFont(p[5], "dc%::get-text-extent", 1);
+    x5 = objscheme_unbundle_wxFont(p[5], "get-text-extent in dc<%>", 1);
   } else
     x5 = NULL;
   if (n > 6) {
-    x6 = objscheme_unbundle_bool(p[6], "dc%::get-text-extent");
+    x6 = objscheme_unbundle_bool(p[6], "get-text-extent in dc<%>");
   } else
     x6 = FALSE;
 
@@ -1054,7 +1054,7 @@ static Scheme_Object *os_wxDCSetTextForeground(Scheme_Object *obj, int n,  Schem
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "dc%::set-text-foreground", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "set-text-foreground in dc<%>", 0);
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetTextForeground(x0);
@@ -1072,7 +1072,7 @@ static Scheme_Object *os_wxDCSetTextBackground(Scheme_Object *obj, int n,  Schem
   class wxColour* x0;
 
   
-  x0 = objscheme_unbundle_wxColour(p[0], "dc%::set-text-background", 0);
+  x0 = objscheme_unbundle_wxColour(p[0], "set-text-background in dc<%>", 0);
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetTextBackground(x0);
@@ -1090,7 +1090,7 @@ static Scheme_Object *os_wxDCSetPen(Scheme_Object *obj, int n,  Scheme_Object *p
   class wxPen* x0;
 
   
-  x0 = objscheme_unbundle_wxPen(p[0], "dc%::set-pen", 0);
+  x0 = objscheme_unbundle_wxPen(p[0], "set-pen in dc<%>", 0);
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetPen(x0);
@@ -1108,7 +1108,7 @@ static Scheme_Object *os_wxDCSetLogicalFunction(Scheme_Object *obj, int n,  Sche
   int x0;
 
   DO_OK_CHECK(scheme_void)
-  x0 = unbundle_symset_logicalFunc(p[0], "dc%::set-logical-function");
+  x0 = unbundle_symset_logicalFunc(p[0], "set-logical-function in dc<%>");
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetLogicalFunction(x0);
@@ -1126,7 +1126,7 @@ static Scheme_Object *os_wxDCSetFont(Scheme_Object *obj, int n,  Scheme_Object *
   class wxFont* x0;
 
   
-  x0 = objscheme_unbundle_wxFont(p[0], "dc%::set-font", 0);
+  x0 = objscheme_unbundle_wxFont(p[0], "set-font in dc<%>", 0);
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetFont(x0);
@@ -1144,7 +1144,7 @@ static Scheme_Object *os_wxDCSetBrush(Scheme_Object *obj, int n,  Scheme_Object 
   class wxBrush* x0;
 
   
-  x0 = objscheme_unbundle_wxBrush(p[0], "dc%::set-brush", 0);
+  x0 = objscheme_unbundle_wxBrush(p[0], "set-brush in dc<%>", 0);
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetBrush(x0);
@@ -1162,7 +1162,7 @@ static Scheme_Object *os_wxDCSetBackground(Scheme_Object *obj, int n,  Scheme_Ob
   class wxBrush* x0;
 
   
-  x0 = objscheme_unbundle_wxBrush(p[0], "dc%::set-background", 0);
+  x0 = objscheme_unbundle_wxBrush(p[0], "set-background in dc<%>", 0);
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetBackground(x0);
@@ -1188,21 +1188,21 @@ static Scheme_Object *os_wxDCGetClippingRegion(Scheme_Object *obj, int n,  Schem
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("dc%::get-clipping-region", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "dc%::get-clipping-region"), "dc%::get-clipping-region");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("dc%::get-clipping-region", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "dc%::get-clipping-region"), "dc%::get-clipping-region");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
   if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("dc%::get-clipping-region", "non-" XC_NULL_STR, (2 - 0), n, p);
+    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "dc%::get-clipping-region"), "dc%::get-clipping-region");
+    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
   if (XC_SCHEME_NULLP(p[3]))
-    scheme_wrong_type("dc%::get-clipping-region", "non-" XC_NULL_STR, (3 - 0), n, p);
+    scheme_wrong_type("get-clipping-region in dc<%>", "non-" XC_NULL_STR, (3 - 0), n, p);
   else
-    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "dc%::get-clipping-region"), "dc%::get-clipping-region");
+    *x3 = objscheme_unbundle_float(objscheme_unbox(p[3], "get-clipping-region in dc<%>"), "get-clipping-region in dc<%>");
 
   
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->GetClippingRegion(x0, x1, x2, x3);
@@ -1231,10 +1231,10 @@ static Scheme_Object *os_wxDCSetClippingRegion(Scheme_Object *obj, int n,  Schem
   nnfloat x3;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::set-clipping-region");
-  x1 = objscheme_unbundle_float(p[1], "dc%::set-clipping-region");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "dc%::set-clipping-region");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "dc%::set-clipping-region");
+  x0 = objscheme_unbundle_float(p[0], "set-clipping-region in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "set-clipping-region in dc<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "set-clipping-region in dc<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "set-clipping-region in dc<%>");
 
   DO_OK_CHECK(scheme_void)if (x2 < 0) x2 = 0;if (x3 < 0) x3 = 0;
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->SetClippingRegion(x0, x1, x2, x3);
@@ -1274,15 +1274,15 @@ static Scheme_Object *os_wxDCDrawPolygon(Scheme_Object *obj, int n,  Scheme_Obje
   
   x1 = NULL;
   if (n > 1) {
-    x2 = objscheme_unbundle_float(p[1], "dc%::draw-polygon");
+    x2 = objscheme_unbundle_float(p[1], "draw-polygon in dc<%>");
   } else
     x2 = 0;
   if (n > 2) {
-    x3 = objscheme_unbundle_float(p[2], "dc%::draw-polygon");
+    x3 = objscheme_unbundle_float(p[2], "draw-polygon in dc<%>");
   } else
     x3 = 0;
   if (n > 3) {
-    x4 = unbundle_symset_fillKind(p[3], "dc%::draw-polygon");
+    x4 = unbundle_symset_fillKind(p[3], "draw-polygon in dc<%>");
   } else
     x4 = wxODDEVEN_RULE;
 
@@ -1307,11 +1307,11 @@ static Scheme_Object *os_wxDCDrawLines(Scheme_Object *obj, int n,  Scheme_Object
   
   x1 = NULL;
   if (n > 1) {
-    x2 = objscheme_unbundle_float(p[1], "dc%::draw-lines");
+    x2 = objscheme_unbundle_float(p[1], "draw-lines in dc<%>");
   } else
     x2 = 0;
   if (n > 2) {
-    x3 = objscheme_unbundle_float(p[2], "dc%::draw-lines");
+    x3 = objscheme_unbundle_float(p[2], "draw-lines in dc<%>");
   } else
     x3 = 0;
 
@@ -1334,10 +1334,10 @@ static Scheme_Object *os_wxDCDrawEllipse(Scheme_Object *obj, int n,  Scheme_Obje
   nnfloat x3;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::draw-ellipse");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-ellipse");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "dc%::draw-ellipse");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "dc%::draw-ellipse");
+  x0 = objscheme_unbundle_float(p[0], "draw-ellipse in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-ellipse in dc<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "draw-ellipse in dc<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "draw-ellipse in dc<%>");
 
   if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawEllipse(x0, x1, x2, x3);
@@ -1360,12 +1360,12 @@ static Scheme_Object *os_wxDCDrawArc(Scheme_Object *obj, int n,  Scheme_Object *
   float x5;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::draw-arc");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-arc");
-  x2 = objscheme_unbundle_float(p[2], "dc%::draw-arc");
-  x3 = objscheme_unbundle_float(p[3], "dc%::draw-arc");
-  x4 = objscheme_unbundle_float(p[4], "dc%::draw-arc");
-  x5 = objscheme_unbundle_float(p[5], "dc%::draw-arc");
+  x0 = objscheme_unbundle_float(p[0], "draw-arc in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-arc in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-arc in dc<%>");
+  x3 = objscheme_unbundle_float(p[3], "draw-arc in dc<%>");
+  x4 = objscheme_unbundle_float(p[4], "draw-arc in dc<%>");
+  x5 = objscheme_unbundle_float(p[5], "draw-arc in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawArc(x0, x1, x2, x3, x4, x5);
@@ -1386,11 +1386,11 @@ static Scheme_Object *os_wxDCDrawText(Scheme_Object *obj, int n,  Scheme_Object 
   Bool x3;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "dc%::draw-text");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-text");
-  x2 = objscheme_unbundle_float(p[2], "dc%::draw-text");
+  x0 = (string)objscheme_unbundle_string(p[0], "draw-text in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-text in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-text in dc<%>");
   if (n > 3) {
-    x3 = objscheme_unbundle_bool(p[3], "dc%::draw-text");
+    x3 = objscheme_unbundle_bool(p[3], "draw-text in dc<%>");
   } else
     x3 = FALSE;
 
@@ -1415,12 +1415,12 @@ static Scheme_Object *os_wxDCDrawSpline(Scheme_Object *obj, int n,  Scheme_Objec
   float x5;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::draw-spline");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-spline");
-  x2 = objscheme_unbundle_float(p[2], "dc%::draw-spline");
-  x3 = objscheme_unbundle_float(p[3], "dc%::draw-spline");
-  x4 = objscheme_unbundle_float(p[4], "dc%::draw-spline");
-  x5 = objscheme_unbundle_float(p[5], "dc%::draw-spline");
+  x0 = objscheme_unbundle_float(p[0], "draw-spline in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-spline in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-spline in dc<%>");
+  x3 = objscheme_unbundle_float(p[3], "draw-spline in dc<%>");
+  x4 = objscheme_unbundle_float(p[4], "draw-spline in dc<%>");
+  x5 = objscheme_unbundle_float(p[5], "draw-spline in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawSpline(x0, x1, x2, x3, x4, x5);
@@ -1442,12 +1442,12 @@ static Scheme_Object *os_wxDCDrawRoundedRectangle(Scheme_Object *obj, int n,  Sc
   float x4;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::draw-rounded-rectangle");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-rounded-rectangle");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "dc%::draw-rounded-rectangle");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "dc%::draw-rounded-rectangle");
+  x0 = objscheme_unbundle_float(p[0], "draw-rounded-rectangle in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-rounded-rectangle in dc<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "draw-rounded-rectangle in dc<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "draw-rounded-rectangle in dc<%>");
   if (n > 4) {
-    x4 = objscheme_unbundle_float(p[4], "dc%::draw-rounded-rectangle");
+    x4 = objscheme_unbundle_float(p[4], "draw-rounded-rectangle in dc<%>");
   } else
     x4 = 20;
 
@@ -1470,10 +1470,10 @@ static Scheme_Object *os_wxDCDrawRectangle(Scheme_Object *obj, int n,  Scheme_Ob
   nnfloat x3;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::draw-rectangle");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-rectangle");
-  x2 = objscheme_unbundle_nonnegative_float(p[2], "dc%::draw-rectangle");
-  x3 = objscheme_unbundle_nonnegative_float(p[3], "dc%::draw-rectangle");
+  x0 = objscheme_unbundle_float(p[0], "draw-rectangle in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-rectangle in dc<%>");
+  x2 = objscheme_unbundle_nonnegative_float(p[2], "draw-rectangle in dc<%>");
+  x3 = objscheme_unbundle_nonnegative_float(p[3], "draw-rectangle in dc<%>");
 
   if (x2 <= 0) return scheme_void;if (x3 <= 0) return scheme_void;DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawRectangle(x0, x1, x2, x3);
@@ -1492,8 +1492,8 @@ static Scheme_Object *os_wxDCDrawPoint(Scheme_Object *obj, int n,  Scheme_Object
   float x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::draw-point");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-point");
+  x0 = objscheme_unbundle_float(p[0], "draw-point in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-point in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawPoint(x0, x1);
@@ -1514,10 +1514,10 @@ static Scheme_Object *os_wxDCDrawLine(Scheme_Object *obj, int n,  Scheme_Object 
   float x3;
 
   
-  x0 = objscheme_unbundle_float(p[0], "dc%::draw-line");
-  x1 = objscheme_unbundle_float(p[1], "dc%::draw-line");
-  x2 = objscheme_unbundle_float(p[2], "dc%::draw-line");
-  x3 = objscheme_unbundle_float(p[3], "dc%::draw-line");
+  x0 = objscheme_unbundle_float(p[0], "draw-line in dc<%>");
+  x1 = objscheme_unbundle_float(p[1], "draw-line in dc<%>");
+  x2 = objscheme_unbundle_float(p[2], "draw-line in dc<%>");
+  x3 = objscheme_unbundle_float(p[3], "draw-line in dc<%>");
 
   DO_OK_CHECK(scheme_void)
   ((wxDC *)((Scheme_Class_Object *)obj)->primdata)->DrawLine(x0, x1, x2, x3);
@@ -1575,22 +1575,13 @@ static Scheme_Object *os_wxDCBeginDrawing(Scheme_Object *obj, int n,  Scheme_Obj
   return scheme_void;
 }
 
-static Scheme_Object *objscheme_classname_os_wxDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("dc%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("dc%");
-}
-
 void objscheme_setup_wxDC(void *env)
 {
 if (os_wxDC_class) {
     objscheme_add_global_class(os_wxDC_class, "dc%", env);
     objscheme_add_global_interface(os_wxDC_interface, "dc" "<%>", env);
 } else {
-  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 52);
-
-  scheme_add_method_w_arity(os_wxDC_class,"get-class-name",objscheme_classname_os_wxDC, 0, 0);
+  os_wxDC_class = objscheme_def_prim_class(env, "dc%", "object%", NULL, 51);
 
  scheme_add_method_w_arity(os_wxDC_class, "end-page", os_wxDCEndPage, 0, 0);
  scheme_add_method_w_arity(os_wxDC_class, "end-doc", os_wxDCEndDoc, 0, 0);
@@ -1742,9 +1733,9 @@ static Scheme_Object *os_wxCanvasDCSetPixel(Scheme_Object *obj, int n,  Scheme_O
   class wxColour* x2;
 
   
-  x0 = objscheme_unbundle_float(p[0], "canvas-dc%::set-pixel");
-  x1 = objscheme_unbundle_float(p[1], "canvas-dc%::set-pixel");
-  x2 = objscheme_unbundle_wxColour(p[2], "canvas-dc%::set-pixel", 1);
+  x0 = objscheme_unbundle_float(p[0], "set-pixel in canvas-dc%");
+  x1 = objscheme_unbundle_float(p[1], "set-pixel in canvas-dc%");
+  x2 = objscheme_unbundle_wxColour(p[2], "set-pixel in canvas-dc%", 1);
 
   
   ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->SetPixel(x0, x1, x2);
@@ -1797,9 +1788,9 @@ static Scheme_Object *os_wxCanvasDCGetPixel(Scheme_Object *obj, int n,  Scheme_O
   class wxColour* x2;
 
   
-  x0 = objscheme_unbundle_float(p[0], "canvas-dc%::get-pixel");
-  x1 = objscheme_unbundle_float(p[1], "canvas-dc%::get-pixel");
-  x2 = objscheme_unbundle_wxColour(p[2], "canvas-dc%::get-pixel", 1);
+  x0 = objscheme_unbundle_float(p[0], "get-pixel in canvas-dc%");
+  x1 = objscheme_unbundle_float(p[1], "get-pixel in canvas-dc%");
+  x2 = objscheme_unbundle_wxColour(p[2], "get-pixel in canvas-dc%", 1);
 
   
   r = ((wxCanvasDC *)((Scheme_Class_Object *)obj)->primdata)->GetPixel(x0, x1, x2);
@@ -1816,7 +1807,7 @@ static Scheme_Object *os_wxCanvasDC_ConstructScheme(Scheme_Object *obj, int n,  
 
   
   if (n != 0) 
-    scheme_wrong_count("canvas-dc%::initialization", 0, 0, n, p);
+    scheme_wrong_count("initialization in canvas-dc%", 0, 0, n, p);
 
   
   realobj = new os_wxCanvasDC(obj);
@@ -1828,21 +1819,12 @@ static Scheme_Object *os_wxCanvasDC_ConstructScheme(Scheme_Object *obj, int n,  
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxCanvasDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("canvas-dc%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("canvas-dc%");
-}
-
 void objscheme_setup_wxCanvasDC(void *env)
 {
 if (os_wxCanvasDC_class) {
     objscheme_add_global_class(os_wxCanvasDC_class, "canvas-dc%", env);
 } else {
-  os_wxCanvasDC_class = objscheme_def_prim_class(env, "canvas-dc%", "dc%", os_wxCanvasDC_ConstructScheme, 5);
-
-  scheme_add_method_w_arity(os_wxCanvasDC_class,"get-class-name",objscheme_classname_os_wxCanvasDC, 0, 0);
+  os_wxCanvasDC_class = objscheme_def_prim_class(env, "canvas-dc%", "dc%", os_wxCanvasDC_ConstructScheme, 4);
 
  scheme_add_method_w_arity(os_wxCanvasDC_class, "set-pixel", os_wxCanvasDCSetPixel, 3, 3);
  scheme_add_method_w_arity(os_wxCanvasDC_class, "end-set-pixel", os_wxCanvasDCEndSetPixel, 0, 0);
@@ -1943,7 +1925,7 @@ static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Sche
   class wxBitmap* x0;
 
   
-  x0 = objscheme_unbundle_wxBitmap(p[0], "memory-dc%::select-object", 1);
+  x0 = objscheme_unbundle_wxBitmap(p[0], "select-object in memory-dc%", 1);
 
   
   ((wxMemoryDC *)((Scheme_Class_Object *)obj)->primdata)->SelectObject(x0);
@@ -1960,7 +1942,7 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
 
   
   if (n != 0) 
-    scheme_wrong_count("memory-dc%::initialization", 0, 0, n, p);
+    scheme_wrong_count("initialization in memory-dc%", 0, 0, n, p);
 
   
   realobj = new os_wxMemoryDC(obj);
@@ -1972,21 +1954,12 @@ static Scheme_Object *os_wxMemoryDC_ConstructScheme(Scheme_Object *obj, int n,  
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxMemoryDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("memory-dc%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("memory-dc%");
-}
-
 void objscheme_setup_wxMemoryDC(void *env)
 {
 if (os_wxMemoryDC_class) {
     objscheme_add_global_class(os_wxMemoryDC_class, "memory-dc%", env);
 } else {
-  os_wxMemoryDC_class = objscheme_def_prim_class(env, "memory-dc%", "canvas-dc%", os_wxMemoryDC_ConstructScheme, 2);
-
-  scheme_add_method_w_arity(os_wxMemoryDC_class,"get-class-name",objscheme_classname_os_wxMemoryDC, 0, 0);
+  os_wxMemoryDC_class = objscheme_def_prim_class(env, "memory-dc%", "canvas-dc%", os_wxMemoryDC_ConstructScheme, 1);
 
  scheme_add_method_w_arity(os_wxMemoryDC_class, "select-object", os_wxMemoryDCSelectObject, 1, 1);
 
@@ -2085,18 +2058,18 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int 
 
   
   if ((n < 1) ||(n > 3)) 
-    scheme_wrong_count("post-script-dc%::initialization", 1, 3, n, p);
-  x0 = (npathname)objscheme_unbundle_nullable_pathname(p[0], "post-script-dc%::initialization");
+    scheme_wrong_count("initialization in post-script-dc%", 1, 3, n, p);
+  x0 = (npathname)objscheme_unbundle_nullable_pathname(p[0], "initialization in post-script-dc%");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "post-script-dc%::initialization");
+    x1 = objscheme_unbundle_bool(p[1], "initialization in post-script-dc%");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_wxWindow(p[2], "post-script-dc%::initialization", 1);
+    x2 = objscheme_unbundle_wxWindow(p[2], "initialization in post-script-dc%", 1);
   } else
     x2 = NULL;
 
-  if (x2 && !wxSubType(((wxObject *)x2)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x2)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type("post-script-dc::initialization", "frame or dialog box", 2, n, p);
+  if (x2 && !wxSubType(((wxObject *)x2)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x2)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("post-script-dc%","initialization"), "frame or dialog box", 2, n, p);
   realobj = new os_wxPostScriptDC(obj, x0, x1, x2);
   
   
@@ -2106,21 +2079,12 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(Scheme_Object *obj, int 
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_wxPostScriptDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("post-script-dc%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("post-script-dc%");
-}
-
 void objscheme_setup_wxPostScriptDC(void *env)
 {
 if (os_wxPostScriptDC_class) {
     objscheme_add_global_class(os_wxPostScriptDC_class, "post-script-dc%", env);
 } else {
-  os_wxPostScriptDC_class = objscheme_def_prim_class(env, "post-script-dc%", "dc%", os_wxPostScriptDC_ConstructScheme, 1);
-
-  scheme_add_method_w_arity(os_wxPostScriptDC_class,"get-class-name",objscheme_classname_os_wxPostScriptDC, 0, 0);
+  os_wxPostScriptDC_class = objscheme_def_prim_class(env, "post-script-dc%", "dc%", os_wxPostScriptDC_ConstructScheme, 0);
 
 
 
@@ -2188,7 +2152,7 @@ class basePrinterDC : public wxObject
 public:
   basePrinterDC(char *, char *, char *, Bool = TRUE)
   {
-    scheme_signal_error("printer-dc%::initialization: not supported for X Windows");
+    scheme_signal_error("%s", METHODNAME("printer-dc%","initialization")": not supported for X Windows");
   }
 };
 
@@ -2245,12 +2209,12 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n
 
   
   if ((n < 3) ||(n > 4)) 
-    scheme_wrong_count("printer-dc%::initialization", 3, 4, n, p);
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "printer-dc%::initialization");
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "printer-dc%::initialization");
-  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "printer-dc%::initialization");
+    scheme_wrong_count("initialization in printer-dc%", 3, 4, n, p);
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "initialization in printer-dc%");
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "initialization in printer-dc%");
+  x2 = (nstring)objscheme_unbundle_nullable_string(p[2], "initialization in printer-dc%");
   if (n > 3) {
-    x3 = objscheme_unbundle_bool(p[3], "printer-dc%::initialization");
+    x3 = objscheme_unbundle_bool(p[3], "initialization in printer-dc%");
   } else
     x3 = TRUE;
 
@@ -2264,21 +2228,12 @@ static Scheme_Object *os_basePrinterDC_ConstructScheme(Scheme_Object *obj, int n
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_basePrinterDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("printer-dc%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("printer-dc%");
-}
-
 void objscheme_setup_basePrinterDC(void *env)
 {
 if (os_basePrinterDC_class) {
     objscheme_add_global_class(os_basePrinterDC_class, "printer-dc%", env);
 } else {
-  os_basePrinterDC_class = objscheme_def_prim_class(env, "printer-dc%", "dc%", os_basePrinterDC_ConstructScheme, 1);
-
-  scheme_add_method_w_arity(os_basePrinterDC_class,"get-class-name",objscheme_classname_os_basePrinterDC, 0, 0);
+  os_basePrinterDC_class = objscheme_def_prim_class(env, "printer-dc%", "dc%", os_basePrinterDC_ConstructScheme, 0);
 
 
 
@@ -2358,7 +2313,7 @@ class baseMetaFileDC : public wxObject
 {
 public:
   baseMetaFileDC(char * = NULL) {
-    scheme_signal_error("meta-file-dc%::initialization: only supported for Windows");
+    scheme_signal_error("%s", METHODNAME("meta-file-dc%","initialization")": only supported for Windows");
   }
 };
 
@@ -2397,9 +2352,9 @@ static Scheme_Object *os_baseMetaFileDC_ConstructScheme(Scheme_Object *obj, int 
 
   
   if ((n > 1)) 
-    scheme_wrong_count("meta-file-dc%::initialization", 0, 1, n, p);
+    scheme_wrong_count("initialization in meta-file-dc%", 0, 1, n, p);
   if (n > 0) {
-    x0 = (string)objscheme_unbundle_string(p[0], "meta-file-dc%::initialization");
+    x0 = (string)objscheme_unbundle_string(p[0], "initialization in meta-file-dc%");
   } else
     x0 = NULL;
 
@@ -2413,21 +2368,12 @@ static Scheme_Object *os_baseMetaFileDC_ConstructScheme(Scheme_Object *obj, int 
   return obj;
 }
 
-static Scheme_Object *objscheme_classname_os_baseMetaFileDC(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("meta-file-dc%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("meta-file-dc%");
-}
-
 void objscheme_setup_baseMetaFileDC(void *env)
 {
 if (os_baseMetaFileDC_class) {
     objscheme_add_global_class(os_baseMetaFileDC_class, "meta-file-dc%", env);
 } else {
-  os_baseMetaFileDC_class = objscheme_def_prim_class(env, "meta-file-dc%", "dc%", os_baseMetaFileDC_ConstructScheme, 1);
-
-  scheme_add_method_w_arity(os_baseMetaFileDC_class,"get-class-name",objscheme_classname_os_baseMetaFileDC, 0, 0);
+  os_baseMetaFileDC_class = objscheme_def_prim_class(env, "meta-file-dc%", "dc%", os_baseMetaFileDC_ConstructScheme, 0);
 
 
 

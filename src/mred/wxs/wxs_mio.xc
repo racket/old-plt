@@ -23,7 +23,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
   Scheme_Object **a;
 
   if (!SCHEME_VECTORP(vec))
-    scheme_wrong_type("editor-stream-in-base::read", 
+    scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
 		      "character vector", -1, 0, &vec);
 
   c = *len = SCHEME_VEC_SIZE(vec);
@@ -33,7 +33,7 @@ static char *VectorToArray(char *r, Scheme_Object *vec, long *len)
 
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < c; i++) {
     if (!SCHEME_CHARP(a[i]))
-      scheme_wrong_type("editor-stream-in-base::read", 
+      scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
 			"character vector", -1, 0, &vec);
     r[i] = SCHEME_CHAR_VAL(a[i]);
   }
@@ -49,7 +49,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
   if (!vec)
     vec = scheme_make_vector(len, scheme_make_char(0));
   else if (!SCHEME_VECTORP(vec))
-    scheme_wrong_type("editor-stream-in-base::read", 
+    scheme_wrong_type(METHODNAME("editor-stream-in-base%","read"), 
 		      "character vector", -1, 0, &vec);
   
   for (a = SCHEME_VEC_ELS(vec), i = 0; i < len; i++)
@@ -81,7 +81,7 @@ static Scheme_Object *ArrayToVector(char *r, Scheme_Object *vec, long len)
 @ V "tell" : long Tell(); : : : rZERO
 @ V "seek" : void Seek(long);
 @ V "bad?" : bool Bad(); : : : rZERO
-@ V "write" : void Write(char[]/bList/ubList/cList,-long); : /methListSet[char.0.0.1] : /glueListSet[char.0.0.1."editor-stream-out-base%::write"]
+@ V "write" : void Write(char[]/bList/ubList/cList,-long); : /methListSet[char.0.0.1] : /glueListSet[char.0.0.1.METHODNAME("editor-stream-out-base%","write")]
 
 @END
 

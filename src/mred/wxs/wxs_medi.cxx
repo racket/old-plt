@@ -501,8 +501,8 @@ wxMediaBuffer::GetViewSize(x0, x1);
 
   v = scheme_apply(method, 2, p);
   
-  if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "editor%::get-view-size"", extracting return value via box"), "editor%::get-view-size"", extracting return value via box");
-  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "editor%::get-view-size"", extracting return value via box"), "editor%::get-view-size"", extracting return value via box");
+  if (x0) *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box");
+  if (x1) *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-view-size in editor<%>"", extracting return value via box"), "get-view-size in editor<%>"", extracting return value via box");
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
@@ -538,7 +538,7 @@ return wxMediaBuffer::GetDC();
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxDC(v, "editor%::get-dc"", extracting return value", 1);
+  return objscheme_unbundle_wxDC(v, "get-dc in editor<%>"", extracting return value", 1);
   }
 }
 
@@ -573,7 +573,7 @@ return wxMediaBuffer::PutFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return (nstring)objscheme_unbundle_nullable_string(v, "editor%::put-file"", extracting return value");
+  return (nstring)objscheme_unbundle_nullable_string(v, "put-file in editor<%>"", extracting return value");
   }
 }
 
@@ -607,7 +607,7 @@ return wxMediaBuffer::GetFile(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return (nstring)objscheme_unbundle_nullable_string(v, "editor%::get-file"", extracting return value");
+  return (nstring)objscheme_unbundle_nullable_string(v, "get-file in editor<%>"", extracting return value");
   }
 }
 
@@ -739,7 +739,7 @@ return wxMediaBuffer::OnLoadFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::on-load-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "on-load-file in editor<%>"", extracting return value");
   }
 }
 
@@ -807,7 +807,7 @@ return wxMediaBuffer::OnSaveFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::on-save-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "on-save-file in editor<%>"", extracting return value");
   }
 }
 
@@ -841,7 +841,7 @@ return wxMediaBuffer::OnNewBox(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxSnip(v, "editor%::on-new-box"", extracting return value", 0);
+  return objscheme_unbundle_wxSnip(v, "on-new-box in editor<%>"", extracting return value", 0);
   }
 }
 
@@ -878,7 +878,7 @@ return wxMediaBuffer::OnNewImageSnip(x0, x1, x2, x3);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxImageSnip(v, "editor%::on-new-image-snip"", extracting return value", 0);
+  return objscheme_unbundle_wxImageSnip(v, "on-new-image-snip in editor<%>"", extracting return value", 0);
   }
 }
 
@@ -989,7 +989,7 @@ return wxMediaBuffer::WriteFootersToFile(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::write-footers-to-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "write-footers-to-file in editor<%>"", extracting return value");
   }
 }
 
@@ -1023,7 +1023,7 @@ return wxMediaBuffer::WriteHeadersToFile(x0);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::write-headers-to-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "write-headers-to-file in editor<%>"", extracting return value");
   }
 }
 
@@ -1058,7 +1058,7 @@ return wxMediaBuffer::ReadFooterFromFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::read-footer-from-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "read-footer-from-file in editor<%>"", extracting return value");
   }
 }
 
@@ -1093,7 +1093,7 @@ return wxMediaBuffer::ReadHeaderFromFile(x0, x1);
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::read-header-from-file"", extracting return value");
+  return objscheme_unbundle_bool(v, "read-header-from-file in editor<%>"", extracting return value");
   }
 }
 
@@ -1161,7 +1161,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::release-snip"", extracting return value");
+  return objscheme_unbundle_bool(v, "release-snip in editor<%>"", extracting return value");
   }
 }
 
@@ -1262,7 +1262,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxBufferData(v, "editor%::get-snip-data"", extracting return value", 1);
+  return objscheme_unbundle_wxBufferData(v, "get-snip-data in editor<%>"", extracting return value", 1);
   }
 }
 
@@ -1406,7 +1406,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_bool(v, "editor%::scroll-to"", extracting return value");
+  return objscheme_unbundle_bool(v, "scroll-to in editor<%>"", extracting return value");
   }
 }
 
@@ -1771,7 +1771,7 @@ return NULL;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxCursor(v, "editor%::adjust-cursor"", extracting return value", 1);
+  return objscheme_unbundle_wxCursor(v, "adjust-cursor in editor<%>"", extracting return value", 1);
   }
 }
 
@@ -1903,7 +1903,7 @@ return 0;
   
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
-  return objscheme_unbundle_wxMediaBuffer(v, "editor%::copy-self"", extracting return value", 0);
+  return objscheme_unbundle_wxMediaBuffer(v, "copy-self in editor<%>"", extracting return value", 0);
   }
 }
 
@@ -1917,8 +1917,8 @@ static Scheme_Object *os_wxMediaBufferwxbDCToBuffer(Scheme_Object *obj, int n,  
   double x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::dc-location-to-buffer-location");
-  x1 = objscheme_unbundle_float(p[1], "editor%::dc-location-to-buffer-location");
+  x0 = objscheme_unbundle_float(p[0], "dc-location-to-buffer-location in editor<%>");
+  x1 = objscheme_unbundle_float(p[1], "dc-location-to-buffer-location in editor<%>");
 
   
   r = wxbDCToBuffer(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata), x0, x1);
@@ -1938,8 +1938,8 @@ static Scheme_Object *os_wxMediaBufferwxbBufferToDC(Scheme_Object *obj, int n,  
   double x1;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::buffer-location-to-dc-location");
-  x1 = objscheme_unbundle_float(p[1], "editor%::buffer-location-to-dc-location");
+  x0 = objscheme_unbundle_float(p[0], "buffer-location-to-dc-location in editor<%>");
+  x1 = objscheme_unbundle_float(p[1], "buffer-location-to-dc-location in editor<%>");
 
   
   r = wxbBufferToDC(((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata), x0, x1);
@@ -1957,7 +1957,7 @@ static Scheme_Object *os_wxMediaBufferSetInactiveCaretThreshold(Scheme_Object *o
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "editor%::set-inactive-caret-threshold");
+  x0 = objscheme_unbundle_integer(p[0], "set-inactive-caret-threshold in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetInactiveCaretThreshold(x0);
@@ -2011,8 +2011,8 @@ static Scheme_Object *os_wxMediaBufferEndWriteHeaderFooterToFile(Scheme_Object *
   long x1;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "editor%::end-write-header-footer-to-file", 0);
-  x1 = objscheme_unbundle_integer(p[1], "editor%::end-write-header-footer-to-file");
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "end-write-header-footer-to-file in editor<%>", 0);
+  x1 = objscheme_unbundle_integer(p[1], "end-write-header-footer-to-file in editor<%>");
 
   
   r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->EndWriteHeaderFooterToFile(*x0, x1);
@@ -2034,12 +2034,12 @@ static Scheme_Object *os_wxMediaBufferBeginWriteHeaderFooterToFile(Scheme_Object
   long* x2 = &_x2;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "editor%::begin-write-header-footer-to-file", 0);
-  x1 = (string)objscheme_unbundle_string(p[1], "editor%::begin-write-header-footer-to-file");
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "begin-write-header-footer-to-file in editor<%>", 0);
+  x1 = (string)objscheme_unbundle_string(p[1], "begin-write-header-footer-to-file in editor<%>");
   if (XC_SCHEME_NULLP(p[2]))
-    scheme_wrong_type("editor%::begin-write-header-footer-to-file", "non-" XC_NULL_STR, (2 - 0), n, p);
+    scheme_wrong_type("begin-write-header-footer-to-file in editor<%>", "non-" XC_NULL_STR, (2 - 0), n, p);
   else
-    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "editor%::begin-write-header-footer-to-file"), "editor%::begin-write-header-footer-to-file");
+    *x2 = objscheme_unbundle_integer(objscheme_unbox(p[2], "begin-write-header-footer-to-file in editor<%>"), "begin-write-header-footer-to-file in editor<%>");
 
   
   r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->BeginWriteHeaderFooterToFile(*x0, x1, x2);
@@ -2063,19 +2063,19 @@ static Scheme_Object *os_wxMediaBufferPrint(Scheme_Object *obj, int n,  Scheme_O
 
   
   if (n > 0) {
-    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "editor%::print");
+    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "print in editor<%>");
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "editor%::print");
+    x1 = objscheme_unbundle_bool(p[1], "print in editor<%>");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "editor%::print");
+    x2 = objscheme_unbundle_bool(p[2], "print in editor<%>");
   } else
     x2 = FALSE;
   if (n > 3) {
-    x3 = unbundle_symset_printMethod(p[3], "editor%::print");
+    x3 = unbundle_symset_printMethod(p[3], "print in editor<%>");
   } else
     x3 = 0;
 
@@ -2099,19 +2099,19 @@ static Scheme_Object *os_wxMediaBufferInsertImage(Scheme_Object *obj, int n,  Sc
 
   
   if (n > 0) {
-    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "editor%::insert-image");
+    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "insert-image in editor<%>");
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "editor%::insert-image");
+    x1 = objscheme_unbundle_integer(p[1], "insert-image in editor<%>");
   } else
     x1 = -1;
   if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "editor%::insert-image");
+    x2 = objscheme_unbundle_bool(p[2], "insert-image in editor<%>");
   } else
     x2 = FALSE;
   if (n > 3) {
-    x3 = objscheme_unbundle_bool(p[3], "editor%::insert-image");
+    x3 = objscheme_unbundle_bool(p[3], "insert-image in editor<%>");
   } else
     x3 = TRUE;
 
@@ -2132,7 +2132,7 @@ static Scheme_Object *os_wxMediaBufferInsertBox(Scheme_Object *obj, int n,  Sche
 
   
   if (n > 0) {
-    x0 = unbundle_symset_bufferType(p[0], "editor%::insert-box");
+    x0 = unbundle_symset_bufferType(p[0], "insert-box in editor<%>");
   } else
     x0 = wxEDIT_BUFFER;
 
@@ -2158,7 +2158,7 @@ static Scheme_Object *os_wxMediaBufferGetFilename(Scheme_Object *obj, int n,  Sc
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_bool(objscheme_unbox(p[0], "editor%::get-filename"), "editor%::get-filename");
+    *x0 = objscheme_unbundle_bool(objscheme_unbox(p[0], "get-filename in editor<%>"), "get-filename in editor<%>");
   } else
     x0 = NULL;
 
@@ -2197,7 +2197,7 @@ static Scheme_Object *os_wxMediaBufferLock(Scheme_Object *obj, int n,  Scheme_Ob
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::lock");
+  x0 = objscheme_unbundle_bool(p[0], "lock in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->Lock(x0);
@@ -2216,9 +2216,9 @@ static Scheme_Object *os_wxMediaBufferSetCursor(Scheme_Object *obj, int n,  Sche
   Bool x1;
 
   
-  x0 = objscheme_unbundle_wxCursor(p[0], "editor%::set-cursor", 1);
+  x0 = objscheme_unbundle_wxCursor(p[0], "set-cursor in editor<%>", 1);
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "editor%::set-cursor");
+    x1 = objscheme_unbundle_bool(p[1], "set-cursor in editor<%>");
   } else
     x1 = TRUE;
 
@@ -2255,7 +2255,7 @@ static Scheme_Object *os_wxMediaBufferSetLoadOverwritesStyles(Scheme_Object *obj
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::set-load-overwrites-styles");
+  x0 = objscheme_unbundle_bool(p[0], "set-load-overwrites-styles in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetLoadOverwritesStyles(x0);
@@ -2273,7 +2273,7 @@ static Scheme_Object *os_wxMediaBufferSetStyleList(Scheme_Object *obj, int n,  S
   class wxStyleList* x0;
 
   
-  x0 = objscheme_unbundle_wxStyleList(p[0], "editor%::set-style-list", 0);
+  x0 = objscheme_unbundle_wxStyleList(p[0], "set-style-list in editor<%>", 0);
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetStyleList(x0);
@@ -2326,7 +2326,7 @@ static Scheme_Object *os_wxMediaBufferSetKeymap(Scheme_Object *obj, int n,  Sche
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::set-keymap", 1);
+    x0 = objscheme_unbundle_wxKeymap(p[0], "set-keymap in editor<%>", 1);
   } else
     x0 = NULL;
 
@@ -2348,13 +2348,13 @@ static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_
   long x2;
 
   
-  x0 = unbundle_symset_editOp(p[0], "editor%::do-edit-operation");
+  x0 = unbundle_symset_editOp(p[0], "do-edit-operation in editor<%>");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "editor%::do-edit-operation");
+    x1 = objscheme_unbundle_bool(p[1], "do-edit-operation in editor<%>");
   } else
     x1 = TRUE;
   if (n > 2) {
-    x2 = objscheme_unbundle_integer(p[2], "editor%::do-edit-operation");
+    x2 = objscheme_unbundle_integer(p[2], "do-edit-operation in editor<%>");
   } else
     x2 = 0;
 
@@ -2391,7 +2391,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxUndoHistory(Scheme_Object *obj, int 
   int x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "editor%::set-max-undo-history");
+  x0 = objscheme_unbundle_integer(p[0], "set-max-undo-history in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMaxUndoHistory(x0);
@@ -2495,11 +2495,11 @@ static Scheme_Object *os_wxMediaBufferGetViewSize(Scheme_Object *obj, int n,  Sc
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "editor%::get-view-size"), "editor%::get-view-size");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-view-size in editor<%>"), "get-view-size in editor<%>");
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "editor%::get-view-size"), "editor%::get-view-size");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-view-size in editor<%>"), "get-view-size in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -2548,13 +2548,13 @@ static Scheme_Object *os_wxMediaBufferLocalToGlobal(Scheme_Object *obj, int n,  
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("editor%::local-to-global", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("local-to-global in editor<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "editor%::local-to-global"), "editor%::local-to-global");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "local-to-global in editor<%>"), "local-to-global in editor<%>");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("editor%::local-to-global", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("local-to-global in editor<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "editor%::local-to-global"), "editor%::local-to-global");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "local-to-global in editor<%>"), "local-to-global in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->LocalToGlobal(x0, x1);
@@ -2580,13 +2580,13 @@ static Scheme_Object *os_wxMediaBufferGlobalToLocal(Scheme_Object *obj, int n,  
 
   
   if (XC_SCHEME_NULLP(p[0]))
-    scheme_wrong_type("editor%::global-to-local", "non-" XC_NULL_STR, (0 - 0), n, p);
+    scheme_wrong_type("global-to-local in editor<%>", "non-" XC_NULL_STR, (0 - 0), n, p);
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "editor%::global-to-local"), "editor%::global-to-local");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "global-to-local in editor<%>"), "global-to-local in editor<%>");
   if (XC_SCHEME_NULLP(p[1]))
-    scheme_wrong_type("editor%::global-to-local", "non-" XC_NULL_STR, (1 - 0), n, p);
+    scheme_wrong_type("global-to-local in editor<%>", "non-" XC_NULL_STR, (1 - 0), n, p);
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "editor%::global-to-local"), "editor%::global-to-local");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "global-to-local in editor<%>"), "global-to-local in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GlobalToLocal(x0, x1);
@@ -2608,7 +2608,7 @@ static Scheme_Object *os_wxMediaBufferSetAdmin(Scheme_Object *obj, int n,  Schem
   class wxMediaAdmin* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaAdmin(p[0], "editor%::set-admin", 1);
+  x0 = objscheme_unbundle_wxMediaAdmin(p[0], "set-admin in editor<%>", 1);
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetAdmin(x0);
@@ -2643,9 +2643,9 @@ static Scheme_Object *os_wxMediaBufferPrintToDC(Scheme_Object *obj, int n,  Sche
   class wxDC* x0;
 
   
-  x0 = objscheme_unbundle_wxDC(p[0], "editor%::print-to-dc", 0);
+  x0 = objscheme_unbundle_wxDC(p[0], "print-to-dc in editor<%>", 0);
 
-  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", "editor<%>::print-to-dc");
+  if (x0 && !x0->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("editor<%>","print-to-dc"));
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->PrintToDC(x0);
 
   
@@ -2662,7 +2662,7 @@ static Scheme_Object *os_wxMediaBufferFindScrollLine(Scheme_Object *obj, int n, 
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::find-scroll-line");
+  x0 = objscheme_unbundle_float(p[0], "find-scroll-line in editor<%>");
 
   
   r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->FindScrollLine(x0);
@@ -2698,7 +2698,7 @@ static Scheme_Object *os_wxMediaBufferScrollLineLocation(Scheme_Object *obj, int
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "editor%::scroll-line-location");
+  x0 = objscheme_unbundle_integer(p[0], "scroll-line-location in editor<%>");
 
   
   r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ScrollLineLocation(x0);
@@ -2722,23 +2722,23 @@ static Scheme_Object *os_wxMediaBufferGetSnipLocation(Scheme_Object *obj, int n,
   Bool x3;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::get-snip-location", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "get-snip-location in editor<%>", 0);
   if (n > 1) {
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "editor%::get-snip-location"), "editor%::get-snip-location");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-snip-location in editor<%>"), "get-snip-location in editor<%>");
   } else
     x1 = NULL;
   if (n > 2) {
     if (XC_SCHEME_NULLP(p[2]))
     x2 = NULL;
   else
-    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "editor%::get-snip-location"), "editor%::get-snip-location");
+    *x2 = objscheme_unbundle_float(objscheme_unbox(p[2], "get-snip-location in editor<%>"), "get-snip-location in editor<%>");
   } else
     x2 = NULL;
   if (n > 3) {
-    x3 = objscheme_unbundle_bool(p[3], "editor%::get-snip-location");
+    x3 = objscheme_unbundle_bool(p[3], "get-snip-location in editor<%>");
   } else
     x3 = FALSE;
 
@@ -2796,7 +2796,7 @@ static Scheme_Object *os_wxMediaBufferBeginEditSequence(Scheme_Object *obj, int 
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_bool(p[0], "editor%::begin-edit-sequence");
+    x0 = objscheme_unbundle_bool(p[0], "begin-edit-sequence in editor<%>");
   } else
     x0 = TRUE;
 
@@ -2816,7 +2816,7 @@ static Scheme_Object *os_wxMediaBufferStyleHasChanged(Scheme_Object *obj, int n,
   class wxStyle* x0;
 
   
-  x0 = objscheme_unbundle_wxStyle(p[0], "editor%::style-has-changed", 1);
+  x0 = objscheme_unbundle_wxStyle(p[0], "style-has-changed in editor<%>", 1);
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->StyleHasChanged(x0);
@@ -2835,7 +2835,7 @@ static Scheme_Object *os_wxMediaBufferWriteToFile(Scheme_Object *obj, int n,  Sc
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "editor%::write-to-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-to-file in editor<%>", 0);
 
   
   r = ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->WriteToFile(*x0);
@@ -2855,9 +2855,9 @@ static Scheme_Object *os_wxMediaBufferReadFromFile(Scheme_Object *obj, int n,  S
   Bool x1;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "editor%::read-from-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-from-file in editor<%>", 0);
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "editor%::read-from-file");
+    x1 = objscheme_unbundle_bool(p[1], "read-from-file in editor<%>");
   } else
     x1 = FALSE;
 
@@ -2877,7 +2877,7 @@ static Scheme_Object *os_wxMediaBufferSetMinHeight(Scheme_Object *obj, int n,  S
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::set-min-height");
+  x0 = objscheme_unbundle_float(p[0], "set-min-height in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMinHeight(x0);
@@ -2895,7 +2895,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxHeight(Scheme_Object *obj, int n,  S
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::set-max-height");
+  x0 = objscheme_unbundle_float(p[0], "set-max-height in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMaxHeight(x0);
@@ -2947,7 +2947,7 @@ static Scheme_Object *os_wxMediaBufferSetMinWidth(Scheme_Object *obj, int n,  Sc
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::set-min-width");
+  x0 = objscheme_unbundle_float(p[0], "set-min-width in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMinWidth(x0);
@@ -2965,7 +2965,7 @@ static Scheme_Object *os_wxMediaBufferSetMaxWidth(Scheme_Object *obj, int n,  Sc
   float x0;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::set-max-width");
+  x0 = objscheme_unbundle_float(p[0], "set-max-width in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->SetMaxWidth(x0);
@@ -3057,11 +3057,11 @@ static Scheme_Object *os_wxMediaBufferGetExtent(Scheme_Object *obj, int n,  Sche
   if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "editor%::get-extent"), "editor%::get-extent");
+    *x0 = objscheme_unbundle_float(objscheme_unbox(p[0], "get-extent in editor<%>"), "get-extent in editor<%>");
   if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "editor%::get-extent"), "editor%::get-extent");
+    *x1 = objscheme_unbundle_float(objscheme_unbox(p[1], "get-extent in editor<%>"), "get-extent in editor<%>");
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->GetExtent(x0, x1);
@@ -3086,13 +3086,13 @@ static Scheme_Object *os_wxMediaBufferInsertFile(Scheme_Object *obj, int n,  Sch
   Bool x2;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "editor%::insert-file");
+  x0 = (string)objscheme_unbundle_string(p[0], "insert-file in editor<%>");
   if (n > 1) {
-    x1 = unbundle_symset_fileType(p[1], "editor%::insert-file");
+    x1 = unbundle_symset_fileType(p[1], "insert-file in editor<%>");
   } else
     x1 = wxMEDIA_FF_GUESS;
   if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "editor%::insert-file");
+    x2 = objscheme_unbundle_bool(p[2], "insert-file in editor<%>");
   } else
     x2 = TRUE;
 
@@ -3116,15 +3116,15 @@ static Scheme_Object *os_wxMediaBufferSaveFile(Scheme_Object *obj, int n,  Schem
 
   
   if (n > 0) {
-    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "editor%::save-file");
+    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "save-file in editor<%>");
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = unbundle_symset_fileType(p[1], "editor%::save-file");
+    x1 = unbundle_symset_fileType(p[1], "save-file in editor<%>");
   } else
     x1 = wxMEDIA_FF_SAME;
   if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "editor%::save-file");
+    x2 = objscheme_unbundle_bool(p[2], "save-file in editor<%>");
   } else
     x2 = TRUE;
 
@@ -3148,15 +3148,15 @@ static Scheme_Object *os_wxMediaBufferLoadFile(Scheme_Object *obj, int n,  Schem
 
   
   if (n > 0) {
-    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "editor%::load-file");
+    x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "load-file in editor<%>");
   } else
     x0 = NULL;
   if (n > 1) {
-    x1 = unbundle_symset_fileType(p[1], "editor%::load-file");
+    x1 = unbundle_symset_fileType(p[1], "load-file in editor<%>");
   } else
     x1 = wxMEDIA_FF_GUESS;
   if (n > 2) {
-    x2 = objscheme_unbundle_bool(p[2], "editor%::load-file");
+    x2 = objscheme_unbundle_bool(p[2], "load-file in editor<%>");
   } else
     x2 = TRUE;
 
@@ -3197,8 +3197,8 @@ static Scheme_Object *os_wxMediaBufferPutFile(Scheme_Object *obj, int n,  Scheme
   nstring x1;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "editor%::put-file");
-  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "editor%::put-file");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "put-file in editor<%>");
+  x1 = (nstring)objscheme_unbundle_nullable_string(p[1], "put-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3220,7 +3220,7 @@ static Scheme_Object *os_wxMediaBufferGetFile(Scheme_Object *obj, int n,  Scheme
   nstring x0;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "editor%::get-file");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "get-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3279,7 +3279,7 @@ static Scheme_Object *os_wxMediaBufferAfterLoadFile(Scheme_Object *obj, int n,  
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::after-load-file");
+  x0 = objscheme_unbundle_bool(p[0], "after-load-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3302,8 +3302,8 @@ static Scheme_Object *os_wxMediaBufferOnLoadFile(Scheme_Object *obj, int n,  Sch
   int x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "editor%::on-load-file");
-  x1 = unbundle_symset_fileType(p[1], "editor%::on-load-file");
+  x0 = (string)objscheme_unbundle_string(p[0], "on-load-file in editor<%>");
+  x1 = unbundle_symset_fileType(p[1], "on-load-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3324,7 +3324,7 @@ static Scheme_Object *os_wxMediaBufferAfterSaveFile(Scheme_Object *obj, int n,  
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::after-save-file");
+  x0 = objscheme_unbundle_bool(p[0], "after-save-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3347,8 +3347,8 @@ static Scheme_Object *os_wxMediaBufferOnSaveFile(Scheme_Object *obj, int n,  Sch
   int x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "editor%::on-save-file");
-  x1 = unbundle_symset_fileType(p[1], "editor%::on-save-file");
+  x0 = (string)objscheme_unbundle_string(p[0], "on-save-file in editor<%>");
+  x1 = unbundle_symset_fileType(p[1], "on-save-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3370,7 +3370,7 @@ static Scheme_Object *os_wxMediaBufferOnNewBox(Scheme_Object *obj, int n,  Schem
   int x0;
 
   
-  x0 = unbundle_symset_bufferType(p[0], "editor%::on-new-box");
+  x0 = unbundle_symset_bufferType(p[0], "on-new-box in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3395,10 +3395,10 @@ static Scheme_Object *os_wxMediaBufferOnNewImageSnip(Scheme_Object *obj, int n, 
   Bool x3;
 
   
-  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "editor%::on-new-image-snip");
-  x1 = objscheme_unbundle_integer(p[1], "editor%::on-new-image-snip");
-  x2 = objscheme_unbundle_bool(p[2], "editor%::on-new-image-snip");
-  x3 = objscheme_unbundle_bool(p[3], "editor%::on-new-image-snip");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "on-new-image-snip in editor<%>");
+  x1 = objscheme_unbundle_integer(p[1], "on-new-image-snip in editor<%>");
+  x2 = objscheme_unbundle_bool(p[2], "on-new-image-snip in editor<%>");
+  x3 = objscheme_unbundle_bool(p[3], "on-new-image-snip in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3423,19 +3423,19 @@ static Scheme_Object *os_wxMediaBufferInvalidateBitmapCache(Scheme_Object *obj, 
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_float(p[0], "editor%::invalidate-bitmap-cache");
+    x0 = objscheme_unbundle_float(p[0], "invalidate-bitmap-cache in editor<%>");
   } else
     x0 = 0.0;
   if (n > 1) {
-    x1 = objscheme_unbundle_float(p[1], "editor%::invalidate-bitmap-cache");
+    x1 = objscheme_unbundle_float(p[1], "invalidate-bitmap-cache in editor<%>");
   } else
     x1 = 0.0;
   if (n > 2) {
-    x2 = objscheme_unbundle_float(p[2], "editor%::invalidate-bitmap-cache");
+    x2 = objscheme_unbundle_float(p[2], "invalidate-bitmap-cache in editor<%>");
   } else
     x2 = -1.0;
   if (n > 3) {
-    x3 = objscheme_unbundle_float(p[3], "editor%::invalidate-bitmap-cache");
+    x3 = objscheme_unbundle_float(p[3], "invalidate-bitmap-cache in editor<%>");
   } else
     x3 = -1.0;
 
@@ -3466,17 +3466,17 @@ static Scheme_Object *os_wxMediaBufferOnPaint(Scheme_Object *obj, int n,  Scheme
   int x8;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::on-paint");
-  x1 = objscheme_unbundle_wxDC(p[1], "editor%::on-paint", 0);
-  x2 = objscheme_unbundle_float(p[2], "editor%::on-paint");
-  x3 = objscheme_unbundle_float(p[3], "editor%::on-paint");
-  x4 = objscheme_unbundle_float(p[4], "editor%::on-paint");
-  x5 = objscheme_unbundle_float(p[5], "editor%::on-paint");
-  x6 = objscheme_unbundle_float(p[6], "editor%::on-paint");
-  x7 = objscheme_unbundle_float(p[7], "editor%::on-paint");
-  x8 = unbundle_symset_caret(p[8], "editor%::on-paint");
+  x0 = objscheme_unbundle_bool(p[0], "on-paint in editor<%>");
+  x1 = objscheme_unbundle_wxDC(p[1], "on-paint in editor<%>", 0);
+  x2 = objscheme_unbundle_float(p[2], "on-paint in editor<%>");
+  x3 = objscheme_unbundle_float(p[3], "on-paint in editor<%>");
+  x4 = objscheme_unbundle_float(p[4], "on-paint in editor<%>");
+  x5 = objscheme_unbundle_float(p[5], "on-paint in editor<%>");
+  x6 = objscheme_unbundle_float(p[6], "on-paint in editor<%>");
+  x7 = objscheme_unbundle_float(p[7], "on-paint in editor<%>");
+  x8 = unbundle_symset_caret(p[8], "on-paint in editor<%>");
 
-  if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", "editor<%>::on-paint");
+  if (x1 && !x1->Ok()) scheme_signal_error("%s: bad bitmap", METHODNAME("editor<%>","on-paint"));
   if (((Scheme_Class_Object *)obj)->primflag)
     ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnPaint(x0, x1, x2, x3, x4, x5, x6, x7, x8);
   else
@@ -3496,7 +3496,7 @@ static Scheme_Object *os_wxMediaBufferWriteFootersToFile(Scheme_Object *obj, int
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "editor%::write-footers-to-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-footers-to-file in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3518,7 +3518,7 @@ static Scheme_Object *os_wxMediaBufferWriteHeadersToFile(Scheme_Object *obj, int
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "editor%::write-headers-to-file", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-headers-to-file in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3541,8 +3541,8 @@ static Scheme_Object *os_wxMediaBufferReadFooterFromFile(Scheme_Object *obj, int
   string x1;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "editor%::read-footer-from-file", 0);
-  x1 = (string)objscheme_unbundle_string(p[1], "editor%::read-footer-from-file");
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-footer-from-file in editor<%>", 0);
+  x1 = (string)objscheme_unbundle_string(p[1], "read-footer-from-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3565,8 +3565,8 @@ static Scheme_Object *os_wxMediaBufferReadHeaderFromFile(Scheme_Object *obj, int
   string x1;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "editor%::read-header-from-file", 0);
-  x1 = (string)objscheme_unbundle_string(p[1], "editor%::read-header-from-file");
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-header-from-file in editor<%>", 0);
+  x1 = (string)objscheme_unbundle_string(p[1], "read-header-from-file in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3588,9 +3588,9 @@ static Scheme_Object *os_wxMediaBufferSetFilename(Scheme_Object *obj, int n,  Sc
   Bool x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "editor%::set-filename");
+  x0 = (string)objscheme_unbundle_string(p[0], "set-filename in editor<%>");
   if (n > 1) {
-    x1 = objscheme_unbundle_bool(p[1], "editor%::set-filename");
+    x1 = objscheme_unbundle_bool(p[1], "set-filename in editor<%>");
   } else
     x1 = FALSE;
 
@@ -3614,7 +3614,7 @@ static Scheme_Object *os_wxMediaBufferReleaseSnip(Scheme_Object *obj, int n,  Sc
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::release-snip", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "release-snip in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3635,7 +3635,7 @@ static Scheme_Object *os_wxMediaBufferSetModified(Scheme_Object *obj, int n,  Sc
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::set-modified");
+  x0 = objscheme_unbundle_bool(p[0], "set-modified in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3657,8 +3657,8 @@ static Scheme_Object *os_wxMediaBufferSetSnipData(Scheme_Object *obj, int n,  Sc
   class wxBufferData* x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::set-snip-data", 0);
-  x1 = objscheme_unbundle_wxBufferData(p[1], "editor%::set-snip-data", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "set-snip-data in editor<%>", 0);
+  x1 = objscheme_unbundle_wxBufferData(p[1], "set-snip-data in editor<%>", 1);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3680,7 +3680,7 @@ static Scheme_Object *os_wxMediaBufferGetSnipData(Scheme_Object *obj, int n,  Sc
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::get-snip-data", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "get-snip-data in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3705,11 +3705,11 @@ static Scheme_Object *os_wxMediaBufferNeedsUpdate(Scheme_Object *obj, int n,  Sc
   float x4;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::needs-update", 0);
-  x1 = objscheme_unbundle_float(p[1], "editor%::needs-update");
-  x2 = objscheme_unbundle_float(p[2], "editor%::needs-update");
-  x3 = objscheme_unbundle_float(p[3], "editor%::needs-update");
-  x4 = objscheme_unbundle_float(p[4], "editor%::needs-update");
+  x0 = objscheme_unbundle_wxSnip(p[0], "needs-update in editor<%>", 0);
+  x1 = objscheme_unbundle_float(p[1], "needs-update in editor<%>");
+  x2 = objscheme_unbundle_float(p[2], "needs-update in editor<%>");
+  x3 = objscheme_unbundle_float(p[3], "needs-update in editor<%>");
+  x4 = objscheme_unbundle_float(p[4], "needs-update in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3731,8 +3731,8 @@ static Scheme_Object *os_wxMediaBufferResized(Scheme_Object *obj, int n,  Scheme
   Bool x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::resized", 0);
-  x1 = objscheme_unbundle_bool(p[1], "editor%::resized");
+  x0 = objscheme_unbundle_wxSnip(p[0], "resized in editor<%>", 0);
+  x1 = objscheme_unbundle_bool(p[1], "resized in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3754,9 +3754,9 @@ static Scheme_Object *os_wxMediaBufferSetCaretOwner(Scheme_Object *obj, int n,  
   int x1;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::set-caret-owner", 1);
+  x0 = objscheme_unbundle_wxSnip(p[0], "set-caret-owner in editor<%>", 1);
   if (n > 1) {
-    x1 = unbundle_symset_focus(p[1], "editor%::set-caret-owner");
+    x1 = unbundle_symset_focus(p[1], "set-caret-owner in editor<%>");
   } else
     x1 = wxFOCUS_IMMEDIATE;
 
@@ -3785,12 +3785,12 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
   Bool x5;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::scroll-to", 0);
-  x1 = objscheme_unbundle_float(p[1], "editor%::scroll-to");
-  x2 = objscheme_unbundle_float(p[2], "editor%::scroll-to");
-  x3 = objscheme_unbundle_float(p[3], "editor%::scroll-to");
-  x4 = objscheme_unbundle_float(p[4], "editor%::scroll-to");
-  x5 = objscheme_unbundle_bool(p[5], "editor%::scroll-to");
+  x0 = objscheme_unbundle_wxSnip(p[0], "scroll-to in editor<%>", 0);
+  x1 = objscheme_unbundle_float(p[1], "scroll-to in editor<%>");
+  x2 = objscheme_unbundle_float(p[2], "scroll-to in editor<%>");
+  x3 = objscheme_unbundle_float(p[3], "scroll-to in editor<%>");
+  x4 = objscheme_unbundle_float(p[4], "scroll-to in editor<%>");
+  x5 = objscheme_unbundle_bool(p[5], "scroll-to in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3849,7 +3849,7 @@ static Scheme_Object *os_wxMediaBufferOnFocus(Scheme_Object *obj, int n,  Scheme
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::on-focus");
+  x0 = objscheme_unbundle_bool(p[0], "on-focus in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3870,7 +3870,7 @@ static Scheme_Object *os_wxMediaBufferOnDefaultChar(Scheme_Object *obj, int n,  
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "editor%::on-default-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-default-char in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3891,7 +3891,7 @@ static Scheme_Object *os_wxMediaBufferOnDefaultEvent(Scheme_Object *obj, int n, 
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "editor%::on-default-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-default-event in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3912,7 +3912,7 @@ static Scheme_Object *os_wxMediaBufferOnLocalChar(Scheme_Object *obj, int n,  Sc
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "editor%::on-local-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-local-char in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3933,7 +3933,7 @@ static Scheme_Object *os_wxMediaBufferOnLocalEvent(Scheme_Object *obj, int n,  S
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "editor%::on-local-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-local-event in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3973,7 +3973,7 @@ static Scheme_Object *os_wxMediaBufferOwnCaret(Scheme_Object *obj, int n,  Schem
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::own-caret");
+  x0 = objscheme_unbundle_bool(p[0], "own-caret in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -3998,11 +3998,11 @@ static Scheme_Object *os_wxMediaBufferRefresh(Scheme_Object *obj, int n,  Scheme
   Bool x4;
 
   
-  x0 = objscheme_unbundle_float(p[0], "editor%::refresh");
-  x1 = objscheme_unbundle_float(p[1], "editor%::refresh");
-  x2 = objscheme_unbundle_float(p[2], "editor%::refresh");
-  x3 = objscheme_unbundle_float(p[3], "editor%::refresh");
-  x4 = objscheme_unbundle_bool(p[4], "editor%::refresh");
+  x0 = objscheme_unbundle_float(p[0], "refresh in editor<%>");
+  x1 = objscheme_unbundle_float(p[1], "refresh in editor<%>");
+  x2 = objscheme_unbundle_float(p[2], "refresh in editor<%>");
+  x3 = objscheme_unbundle_float(p[3], "refresh in editor<%>");
+  x4 = objscheme_unbundle_bool(p[4], "refresh in editor<%>");
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4024,7 +4024,7 @@ static Scheme_Object *os_wxMediaBufferAdjustCursor(Scheme_Object *obj, int n,  S
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "editor%::adjust-cursor", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "adjust-cursor in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4045,7 +4045,7 @@ static Scheme_Object *os_wxMediaBufferOnChar(Scheme_Object *obj, int n,  Scheme_
   class wxKeyEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxKeyEvent(p[0], "editor%::on-char", 0);
+  x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-char in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4066,7 +4066,7 @@ static Scheme_Object *os_wxMediaBufferOnEvent(Scheme_Object *obj, int n,  Scheme
   class wxMouseEvent* x0;
 
   
-  x0 = objscheme_unbundle_wxMouseEvent(p[0], "editor%::on-event", 0);
+  x0 = objscheme_unbundle_wxMouseEvent(p[0], "on-event in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4087,7 +4087,7 @@ static Scheme_Object *os_wxMediaBufferCopySelfTo(Scheme_Object *obj, int n,  Sch
   class wxMediaBuffer* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "editor%::copy-self-to", 0);
+  x0 = objscheme_unbundle_wxMediaBuffer(p[0], "copy-self-to in editor<%>", 0);
 
   
   if (((Scheme_Class_Object *)obj)->primflag)
@@ -4129,7 +4129,7 @@ static Scheme_Object *os_wxMediaBufferKill(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "editor%::kill");
+    x0 = objscheme_unbundle_integer(p[0], "kill in editor<%>");
   } else
     x0 = 0;
 
@@ -4150,7 +4150,7 @@ static Scheme_Object *os_wxMediaBufferPaste(Scheme_Object *obj, int n,  Scheme_O
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "editor%::paste");
+    x0 = objscheme_unbundle_integer(p[0], "paste in editor<%>");
   } else
     x0 = 0;
 
@@ -4172,11 +4172,11 @@ static Scheme_Object *os_wxMediaBufferCopy(Scheme_Object *obj, int n,  Scheme_Ob
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_bool(p[0], "editor%::copy");
+    x0 = objscheme_unbundle_bool(p[0], "copy in editor<%>");
   } else
     x0 = FALSE;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "editor%::copy");
+    x1 = objscheme_unbundle_integer(p[1], "copy in editor<%>");
   } else
     x1 = 0;
 
@@ -4198,11 +4198,11 @@ static Scheme_Object *os_wxMediaBufferCut(Scheme_Object *obj, int n,  Scheme_Obj
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_bool(p[0], "editor%::cut");
+    x0 = objscheme_unbundle_bool(p[0], "cut in editor<%>");
   } else
     x0 = FALSE;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "editor%::cut");
+    x1 = objscheme_unbundle_integer(p[1], "cut in editor<%>");
   } else
     x1 = 0;
 
@@ -4222,7 +4222,7 @@ static Scheme_Object *os_wxMediaBufferInsert(Scheme_Object *obj, int n,  Scheme_
   class wxSnip* x0;
 
   
-  x0 = objscheme_unbundle_wxSnip(p[0], "editor%::insert", 0);
+  x0 = objscheme_unbundle_wxSnip(p[0], "insert in editor<%>", 0);
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->Insert(x0);
@@ -4240,7 +4240,7 @@ static Scheme_Object *os_wxMediaBufferChangeStyle(Scheme_Object *obj, int n,  Sc
   class wxStyleDelta* x0;
 
   
-  x0 = objscheme_unbundle_wxStyleDelta(p[0], "editor%::change-style", 1);
+  x0 = objscheme_unbundle_wxStyleDelta(p[0], "change-style in editor<%>", 1);
 
   
   ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->ChangeStyle(x0);
@@ -4256,7 +4256,7 @@ static Scheme_Object *objscheme_wxMediaBuffer_GetbufferType(Scheme_Object *obj, 
   int v;
 
   objscheme_check_valid(obj);
-  if (n) scheme_wrong_count("get-buffer-type", 0, 0, n, p);
+  if (n) scheme_wrong_count("get-buffer-type in editor%", 0, 0, n, p);
   cobj = (Scheme_Class_Object *)obj;
   if (cobj->primflag)
     v = ((os_wxMediaBuffer *)cobj->primdata)->wxMediaBuffer::bufferType;
@@ -4272,19 +4272,12 @@ static Scheme_Object *objscheme_wxMediaBuffer_SetbufferType(Scheme_Object *obj, 
   Scheme_Class_Object *cobj=(Scheme_Class_Object *)obj;
   int v;
 
-  if (n != 1) scheme_wrong_count("set-buffer-type", 1, 1, n, p);
+  if (n != 1) scheme_wrong_count("set-buffer-type in editor%", 1, 1, n, p);
 
-  v = unbundle_symset_bufferType(p[0], "editor%::buffer-type");
+  v = unbundle_symset_bufferType(p[0], "set-buffer-type in editor%");
   ((wxMediaBuffer *)cobj->primdata)->bufferType = v;
 
   return scheme_void;
-}
-
-static Scheme_Object *objscheme_classname_os_wxMediaBuffer(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
- WXS_USE_ARGUMENT(obj);
-  if (n) scheme_wrong_count("editor%" "::get-class-name", 0, 0, n, p);
-  return scheme_intern_symbol("editor%");
 }
 
 void objscheme_setup_wxMediaBuffer(void *env)
@@ -4293,9 +4286,7 @@ if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class, "editor%", env);
     objscheme_add_global_interface(os_wxMediaBuffer_interface, "editor" "<%>", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 109);
-
-  scheme_add_method_w_arity(os_wxMediaBuffer_class,"get-class-name",objscheme_classname_os_wxMediaBuffer, 0, 0);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "editor%", "object%", NULL, 108);
 
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "dc-location-to-buffer-location", os_wxMediaBufferwxbDCToBuffer, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "buffer-location-to-dc-location", os_wxMediaBufferwxbBufferToDC, 2, 2);
@@ -4512,7 +4503,7 @@ static Scheme_Object *wxMediaGlobalwxMediaSetXSelectionMode(int n,  Scheme_Objec
   Bool x0;
 
   
-  x0 = objscheme_unbundle_bool(p[0], "editor%::editor-set-x-selection-mode");
+  x0 = objscheme_unbundle_bool(p[0], "editor-set-x-selection-mode in editor%");
 
   
   wxMediaSetXSelectionMode(x0);
@@ -4529,7 +4520,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaPasteboardFunctions(int n,  Scheme_
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-pasteboard-editor-keymap-functions", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "add-pasteboard-editor-keymap-functions in editor%", 0);
 
   
   wxAddMediaPasteboardFunctions(x0);
@@ -4546,7 +4537,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaEditorFunctions(int n,  Scheme_Obje
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-text-editor-keymap-functions", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "add-text-editor-keymap-functions in editor%", 0);
 
   
   wxAddMediaEditorFunctions(x0);
@@ -4563,7 +4554,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaBufferFunctions(int n,  Scheme_Obje
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "editor%::add-editor-keymap-functions", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "add-editor-keymap-functions in editor%", 0);
 
   
   wxAddMediaBufferFunctions(x0);
@@ -4581,7 +4572,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalFooter(int n,  Scheme_Objec
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "editor%::write-editor-global-footer", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-editor-global-footer in editor%", 0);
 
   
   r = wxWriteMediaGlobalFooter(*x0);
@@ -4599,7 +4590,7 @@ static Scheme_Object *wxMediaGlobalwxWriteMediaGlobalHeader(int n,  Scheme_Objec
   class wxMediaStreamOut* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "editor%::write-editor-global-header", 0);
+  x0 = objscheme_unbundle_wxMediaStreamOut(p[0], "write-editor-global-header in editor%", 0);
 
   
   r = wxWriteMediaGlobalHeader(*x0);
@@ -4617,7 +4608,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalFooter(int n,  Scheme_Object
   class wxMediaStreamIn* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "editor%::read-editor-global-footer", 0);
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-editor-global-footer in editor%", 0);
 
   
   r = wxReadMediaGlobalFooter(*x0);
@@ -4635,7 +4626,7 @@ static Scheme_Object *wxMediaGlobalwxReadMediaGlobalHeader(int n,  Scheme_Object
   class wxMediaStreamIn* x0;
 
   
-  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "editor%::read-editor-global-header", 0);
+  x0 = objscheme_unbundle_wxMediaStreamIn(p[0], "read-editor-global-header in editor%", 0);
 
   
   r = wxReadMediaGlobalHeader(*x0);
@@ -4654,11 +4645,11 @@ static Scheme_Object *wxMediaGlobalwxSetMediaPrintMargin(int n,  Scheme_Object *
 
   
   if (n > 0) {
-    x0 = objscheme_unbundle_integer(p[0], "editor%::set-editor-print-margin");
+    x0 = objscheme_unbundle_integer(p[0], "set-editor-print-margin in editor%");
   } else
     x0 = -1;
   if (n > 1) {
-    x1 = objscheme_unbundle_integer(p[1], "editor%::set-editor-print-margin");
+    x1 = objscheme_unbundle_integer(p[1], "set-editor-print-margin in editor%");
   } else
     x1 = -1;
 
@@ -4684,14 +4675,14 @@ static Scheme_Object *wxMediaGlobalwxGetMediaPrintMargin(int n,  Scheme_Object *
     if (XC_SCHEME_NULLP(p[0]))
     x0 = NULL;
   else
-    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "editor%::get-editor-print-margin"), "editor%::get-editor-print-margin");
+    *x0 = objscheme_unbundle_integer(objscheme_unbox(p[0], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%");
   } else
     x0 = NULL;
   if (n > 1) {
     if (XC_SCHEME_NULLP(p[1]))
     x1 = NULL;
   else
-    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "editor%::get-editor-print-margin"), "editor%::get-editor-print-margin");
+    *x1 = objscheme_unbundle_integer(objscheme_unbox(p[1], "get-editor-print-margin in editor%"), "get-editor-print-margin in editor%");
   } else
     x1 = NULL;
 

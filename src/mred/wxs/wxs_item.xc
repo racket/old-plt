@@ -35,11 +35,11 @@
 @CLASSBASE wxMessage "message" : "item"
 
 @CREATOR (wxPanel!,string,int=-1,int=-1,SYM[messageStyle]=0,string="message"); <> string label
-@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,string="message"); : : /CHECKOK[1."message::initialization"] <> bitmap label
+@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,string="message"); : : /CHECKOK[1.METHODNAME("message%","initialization")] <> bitmap label
 
 @INCLUDE wxs_item.xci
 
-@ "set-label" : void SetLabel(wxBitmap!) : : /CHECKOK[0."button%::set-label"] <> bitmap label
+@ "set-label" : void SetLabel(wxBitmap!) : : /CHECKOK[0.METHODNAME("message%","set-label")] <> bitmap label
 @ "set-label" : void SetLabel(string); <> string label
 
 @END

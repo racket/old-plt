@@ -15,7 +15,7 @@
 @CLASSBASE wxMenu "menu" : "object"
 
 @SET CALLBACK_CLASS = wxMenu
-@SET CALLBACK_CLASS_USER = "menu%::initialization"
+@SET CALLBACK_CLASS_USER = METHODNAME("menu%","initialization")
 @INCLUDE cb_start.xci
 
 @MACRO CHECKNEG[pos.result] = if (x<pos> < 0) return <result>;
@@ -55,12 +55,12 @@
 @SET POINTERS = 1
 @INCLUDE list.xci
 
-@MACRO CHECKSAMELENGTH = if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("menu-bar%%::initialization: list size mismatch");
+@MACRO CHECKSAMELENGTH = if (scheme_proper_list_length(p[0]) != scheme_proper_list_length(p[1])) scheme_signal_error("%s", METHODNAME("menu-bar%","initialization")": list size mismatch");
 
 @MACRO spMenuList = (listof wxMenu-object)
 
 @CREATOR (); <> no argument
-@CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList, string[]/bList/ubList/cList); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0."menu-bar%::initialization"] | glueListSet[string.1.2.0."menu-bar%::initialization"]// <> menu% list
+@CREATOR (-int, wxMenu*[]/bList/ubList/cList//spMenuList, string[]/bList/ubList/cList); : : CHECKSAMELENGTH/glueListSet[wxMenu.0.1.0.METHODNAME("menu-bar%","initialization")] | glueListSet[string.1.2.0.METHODNAME("menu-bar%","initialization")]// <> menu% list
 
 @ "append" : void Append(wxMenu!,string);
 @ "delete" : bool Delete(wxMenu^,int=0);

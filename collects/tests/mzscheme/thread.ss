@@ -216,27 +216,28 @@
   (define p (let ([c 0]
 		  [nl-sema (make-semaphore 1)]
 		  [nl? #f])
-	      (make-input-port nl-sema
-			       (lambda (s) 
-				 (let ([c (if nl?
-					      (if (semaphore-try-wait? nl-sema)
-						  #\newline
-						  #f)
-					      (begin
-						(set! nl? #t)
-						(thread (lambda ()
-							  (sleep 0.4)
-							  (semaphore-post nl-sema)))
-						(set! c (add1 c))
-						(semaphore-wait nl-sema)
-						(integer->char c)))])
-				   (if c
-				       (begin
-					 (string-set! s 0 c)
-					 1)
-				       0)))
-			       #f
-			       void)))
+	      (make-custom-input-port 
+	       nl-sema
+	       (lambda (s) 
+		 (let ([c (if nl?
+			      (if (semaphore-try-wait? nl-sema)
+				  #\newline
+				  #f)
+			      (begin
+				(set! nl? #t)
+				(thread (lambda ()
+					  (sleep 0.4)
+					  (semaphore-post nl-sema)))
+				(set! c (add1 c))
+				(semaphore-wait nl-sema)
+				(integer->char c)))])
+		   (if c
+		       (begin
+			 (string-set! s 0 c)
+			 1)
+		       0)))
+	       #f
+	       void)))
   (test #f read-line/expire p 0.2) ; should get char but not newline
   (test "" read-line/expire p 0.6)) ; picks up newline
 
@@ -474,10 +475,15 @@
 	  (try-all-blocked)
 	  (test cw object-wait-multiple #f s t l sr cr cw)
 
-	  (let loop ()
-	    (when (and (object-wait-multiple 0 sw)
-			 (= 4096 (write-string-avail (make-string 4096 #\x) sw)))
-	      (loop)))
+	  ;; Fill up output buffer:
+	  (test sw object-wait-multiple 0 sw)
+	  (test #t
+		positive?
+		(let loop ([n 0])
+		  (if (and (object-wait-multiple 0 sw)
+			   (= 4096 (write-string-avail (make-string 4096 #\x) sw)))
+		      (loop (add1 n))
+		      n)))
 	  (test #f object-wait-multiple 0 sw sr)
 	  (test cr object-wait-multiple 0 sw sr cr)
 	  ;; Flush cr:
@@ -503,6 +509,7 @@
   (test w object-wait-multiple 0 w)
   (display #\y w)
   (test #f object-wait-multiple 0 w)
+  (test 0 write-string-avail* "hello" w)
   (test r object-wait-multiple 0 r w)
   (read-char r)
   (test w object-wait-multiple 0 w)

@@ -258,7 +258,7 @@
   ;;  positions) of a non-string special literal.
   (let* ([pos 0]
 	 [incpos! (lambda () (set! pos (add1 pos)))])
-    (make-input-port
+    (make-custom-input-port
      ;; Waitable:
      #f
      ;; Non-blocking read string:

@@ -13,7 +13,7 @@
 (define file
   (if #f
       (open-output-file "x" 'replace)
-      (make-output-port void void)))
+      (make-custom-output-port #f (lambda (s start end flush?) (- end start)) void void)))
 
 (define try-one
   (lambda (e)

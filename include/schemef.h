@@ -99,6 +99,7 @@ MZ_EXTERN Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Sc
 							 int strong);
 MZ_EXTERN void scheme_remove_managed(Scheme_Custodian_Reference *m, Scheme_Object *o);
 MZ_EXTERN void scheme_close_managed(Scheme_Custodian *m);
+MZ_EXTERN void scheme_schedule_custodian_close(Scheme_Custodian *c);
 
 MZ_EXTERN void scheme_add_atexit_closer(Scheme_Exit_Closer_Func f);
 
@@ -109,6 +110,10 @@ MZ_EXTERN void scheme_add_waitable(Scheme_Type type,
 MZ_EXTERN void scheme_add_waitable_through_sema(Scheme_Type type,
 						Scheme_Wait_Sema_Fun sema, 
 						Scheme_Wait_Filter_Fun filter);
+MZ_EXTERN int scheme_is_waitable(Scheme_Object *o);
+MZ_EXTERN int scheme_wait_on_waitable(Scheme_Object *o, int just_try);
+MZ_EXTERN void scheme_waitable_needs_wakeup(Scheme_Object *o, void *fds);
+MZ_EXTERN Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[]);
 
 MZ_EXTERN void scheme_add_swap_callback(Scheme_Closure_Func f, Scheme_Object *data);
 
@@ -420,7 +425,9 @@ MZ_EXTERN void scheme_display(Scheme_Object *obj, Scheme_Object *port);
 MZ_EXTERN void scheme_write_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl);
 MZ_EXTERN void scheme_display_w_max(Scheme_Object *obj, Scheme_Object *port, long maxl);
 MZ_EXTERN void scheme_write_string(const char *str, long len, Scheme_Object *port);
-MZ_EXTERN void scheme_write_offset_string(const char *str, long d, long len, Scheme_Object *port);
+MZ_EXTERN long scheme_put_string(const char *who, Scheme_Object *port,
+				 const char *str, long d, long len,
+				 int rarely_block);
 MZ_EXTERN char *scheme_write_to_string(Scheme_Object *obj, long *len);
 MZ_EXTERN char *scheme_display_to_string(Scheme_Object *obj, long *len);
 MZ_EXTERN char *scheme_write_to_string_w_max(Scheme_Object *obj, long *len, long maxl);
@@ -439,6 +446,11 @@ MZ_EXTERN void scheme_ungetc(int ch, Scheme_Object *port);
 MZ_EXTERN int scheme_char_ready(Scheme_Object *port);
 MZ_EXTERN int scheme_peekc_is_ungetc(Scheme_Object *port);
 MZ_EXTERN void scheme_need_wakeup(Scheme_Object *port, void *fds);
+MZ_EXTERN long scheme_get_string(const char *who,
+				 Scheme_Object *port, 
+				 char *buffer, long offset, long size,
+				 int only_avail, 
+				 int peek, long peek_skip);
 MZ_EXTERN long scheme_get_chars(Scheme_Object *port, long size, char *buffer, int offset);
 MZ_EXTERN long scheme_tell(Scheme_Object *port);
 MZ_EXTERN long scheme_output_tell(Scheme_Object *port);
@@ -447,22 +459,21 @@ MZ_EXTERN long scheme_tell_column(Scheme_Object *port);
 MZ_EXTERN void scheme_count_lines(Scheme_Object *port);
 MZ_EXTERN void scheme_close_input_port(Scheme_Object *port);
 MZ_EXTERN void scheme_close_output_port(Scheme_Object *port);
-MZ_EXTERN int scheme_are_all_chars_ready(Scheme_Object *port);
 
 MZ_EXTERN Scheme_Object *scheme_make_port_type(const char *name);
 MZ_EXTERN Scheme_Input_Port *scheme_make_input_port(Scheme_Object *subtype, void *data,
-						    int (*getc_fun)(Scheme_Input_Port*, int*, int*),
-						    int (*peekc_fun)(Scheme_Input_Port*),
-						    int (*char_ready_fun)(Scheme_Input_Port*),
-						    void (*close_fun)(Scheme_Input_Port*),
-						    void (*need_wakeup_fun)(Scheme_Input_Port*, void *),
+						    Scheme_Get_String_Fun get_string_fun,
+						    Scheme_Peek_String_Fun peek_string_fun,
+						    Scheme_In_Ready_Fun char_ready_fun,
+						    Scheme_Close_Input_Fun close_fun,
+						    Scheme_Need_Wakeup_Input_Fun need_wakeup_fun,
 						    int must_close);
 MZ_EXTERN Scheme_Output_Port *scheme_make_output_port(Scheme_Object *subtype,
 						      void *data,
-						      void (*write_string_fun)(char*, long, long, Scheme_Output_Port*),
-						      void (*close_fun)(Scheme_Output_Port*),
-						      int (*ready_fun)(Scheme_Output_Port*),
-						      void (*need_wakeup_fun)(Scheme_Output_Port*, void *),
+						      Scheme_Write_String_Fun write_string_fun,
+						      Scheme_Out_Ready_Fun ready_fun,
+						      Scheme_Close_Output_Fun close_fun,
+						      Scheme_Need_Wakeup_Output_Fun need_wakeup_fun,
 						      int must_close);
 
 MZ_EXTERN Scheme_Object *scheme_make_file_input_port(FILE *fp);
@@ -475,7 +486,7 @@ MZ_EXTERN Scheme_Object *scheme_make_string_output_port();
 MZ_EXTERN char *scheme_get_string_output(Scheme_Object *);
 MZ_EXTERN char *scheme_get_sized_string_output(Scheme_Object *, long *len);
 
-MZ_EXTERN void scheme_pipe(Scheme_Object **write, Scheme_Object **read);
+MZ_EXTERN void scheme_pipe(Scheme_Object **read, Scheme_Object **write);
 MZ_EXTERN void scheme_pipe_with_limit(Scheme_Object **write, Scheme_Object **read, int maxsize);
 
 MZ_EXTERN int scheme_file_exists(char *filename);

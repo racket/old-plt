@@ -17,7 +17,7 @@
 			    [else
 			     (cons c (loop (cdr s)))]))))))])
     (let* ([oldp (current-output-port)]
-	   [cp (make-output-port
+	   [cp (make-custom-output-port
 		#f
 		(lambda (s start end flush?)
 		  (display (censor (substring s start end)) oldp)

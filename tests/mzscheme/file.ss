@@ -170,8 +170,8 @@
 (err/rt-test (file-position s 'one))
 (err/rt-test (file-position s -1))
 (err/rt-test (file-position s (expt 2 100)) exn:application:mismatch?)
-(err/rt-test (file-position (make-input-port #f void #f void) 100) exn:application:mismatch?)
-(err/rt-test (file-position (make-output-port #f void void void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-custom-input-port #f void #f void) 100) exn:application:mismatch?)
+(err/rt-test (file-position (make-custom-output-port #f void void void) 100) exn:application:mismatch?)
 (arity-test file-position 1 2)
 
 (define (test-read-line r1 r2 s1 s2 flags sep)
@@ -453,41 +453,45 @@
   (test "aaa" read-string 10 in))
 (close-input-port in)
 
+(arity-test write-string-avail 1 4)
+(arity-test write-string-avail* 1 4)
+(arity-test write-string-avail/enable-break 1 4)
+
 (arity-test make-pipe 0 1)
 (err/rt-test (make-pipe 0))
 (err/rt-test (make-pipe -1))
 (err/rt-test (make-pipe (- (expt 2 40))))
 (err/rt-test (make-pipe "hello"))
 
-(test #t input-port? (make-input-port #f void void void))
-(test #t input-port? (make-input-port #f void #f void))
-(test #t input-port? (make-input-port (make-semaphore) void #f void))
-(err/rt-test (read (make-input-port #f void void void)))
-(err/rt-test (read-char (make-input-port #f void void void)))
-(err/rt-test (peek-char (make-input-port #f void void void)))
-(arity-test make-input-port 4 4)
-(err/rt-test (make-input-port 8 void void void))
-(err/rt-test (make-input-port void void void void))
-(err/rt-test (make-input-port #f 8 void void))
-(err/rt-test (make-input-port #f void 8 void))
-(err/rt-test (make-input-port #f void void 8))
-(err/rt-test (make-input-port #f cons void void))
-(err/rt-test (make-input-port #f void add1 void))
-(err/rt-test (make-input-port #f void void add1))
+(test #t input-port? (make-custom-input-port #f void void void))
+(test #t input-port? (make-custom-input-port #f void #f void))
+(test #t input-port? (make-custom-input-port (make-semaphore) void #f void))
+(err/rt-test (read (make-custom-input-port #f void void void)))
+(err/rt-test (read-char (make-custom-input-port #f void void void)))
+(err/rt-test (peek-char (make-custom-input-port #f void void void)))
+(arity-test make-custom-input-port 4 4)
+(err/rt-test (make-custom-input-port 8 void void void))
+(err/rt-test (make-custom-input-port void void void void))
+(err/rt-test (make-custom-input-port #f 8 void void))
+(err/rt-test (make-custom-input-port #f void 8 void))
+(err/rt-test (make-custom-input-port #f void void 8))
+(err/rt-test (make-custom-input-port #f cons void void))
+(err/rt-test (make-custom-input-port #f void add1 void))
+(err/rt-test (make-custom-input-port #f void void add1))
 
-(test #t output-port? (make-output-port #f void void void))
-(test #t output-port? (make-output-port (make-semaphore) void void void))
-(arity-test make-output-port 4 4)
-(err/rt-test (make-output-port 8 void void void))
-(err/rt-test (make-output-port void void void void))
-(err/rt-test (make-output-port #f 8 void void))
-(err/rt-test (make-output-port #f void 8 void))
-(err/rt-test (make-output-port #f void void 8))
-(err/rt-test (make-output-port #f add1 void void))
-(err/rt-test (make-output-port #f void add1 void))
-(err/rt-test (make-output-port #f void void add1))
+(test #t output-port? (make-custom-output-port #f void void void))
+(test #t output-port? (make-custom-output-port (make-semaphore) void void void))
+(arity-test make-custom-output-port 4 4)
+(err/rt-test (make-custom-output-port 8 void void void))
+(err/rt-test (make-custom-output-port void void void void))
+(err/rt-test (make-custom-output-port #f 8 void void))
+(err/rt-test (make-custom-output-port #f void 8 void))
+(err/rt-test (make-custom-output-port #f void void 8))
+(err/rt-test (make-custom-output-port #f add1 void void))
+(err/rt-test (make-custom-output-port #f void add1 void))
+(err/rt-test (make-custom-output-port #f void void add1))
 
-(let ([p (make-input-port 
+(let ([p (make-custom-input-port 
 	  #f
 	  (lambda (s) (string-set! s 0 #\a) 1)
 	  (lambda (s skip)
@@ -503,7 +507,7 @@
   (test 3 file-position p))
 
 (let* ([s (open-input-string "(apple \"banana\" [coconut])")]
-       [p (make-input-port 
+       [p (make-custom-input-port 
 	   s
 	   (lambda (str) (string-set! str 0 (read-char s)) 1)
 	   (lambda (str skip) (string-set! str 0 (peek-char s)) 1)
@@ -520,7 +524,7 @@
 (close-output-port test-file)
 (check-test-file "tmp2")
 
-(define ui (make-input-port #f (lambda (s) (string-set! s 0 #\") 1) #f void))
+(define ui (make-custom-input-port #f (lambda (s) (string-set! s 0 #\") 1) #f void))
 (test "" read ui)
 (arity-test (port-read-handler ui) 1 3 '(2))
 (err/rt-test ((port-read-handler ui) 8))
@@ -627,6 +631,186 @@
 (err/rt-test (port-write-handler (current-input-port) 8))
 (err/rt-test (port-write-handler sp (lambda (x) 9)))
 (err/rt-test (port-write-handler sp (lambda (x y z) 9)))
+
+;;------------------------------------------------------------
+;; peek-string and variants:
+
+(define (test-a-port p go sync)
+  (let* ([s (string #\1 #\2 #\3)]
+	 [reset-s! (lambda ()
+		     (string-set! s 0 #\1)
+		     (string-set! s 1 #\2)
+		     (string-set! s 2 #\3))]
+	 [test-empty (lambda()
+		       (test #f char-ready? p)
+		       (test 0 peek-string-avail!* s 0 p)
+		       (test 0 peek-string-avail!* s 1 p)
+		       (test 0 read-string-avail!* s p))])
+    (test-empty)
+
+    (test 0 peek-string-avail!* s 500 p)
+    (test 0 read-string-avail!* s p)
+
+    (let ([test-basic
+	   (lambda (str sync?)
+	     (go) 
+	     (when sync?
+	       (sync p)
+	       (test #t char-ready? p)
+	       (test 1 peek-string-avail!* s 0 p)
+	       (test str values s)
+	       (reset-s!))
+	     (test 1 peek-string-avail! s 0 p)
+	     (test str values s)
+	     (reset-s!)
+	     (test 1 peek-string-avail!* s 0 p)
+	     (test str values s)
+	     (reset-s!)
+	     (test 1 read-string-avail!* s p)
+	     (test str values s)
+	     (reset-s!))])
+      (test-basic "A23" #t)
+      (test-basic "B23" #f))
+
+    (test-empty)
+
+    (go) (go)
+
+    (let ([peek0
+	   (lambda ()
+	     (let ([avail (peek-string-avail! s 0 p)])
+	       (cond
+		[(= avail 1) (test "C23" values s)]
+		[(= avail 2) (test "CD3" values s)]
+		[else (test 1-or-2 valuies avail)])))])
+      (peek0)
+      (reset-s!)  
+      (test 1 peek-string-avail! s 1 p)
+      (test "D23" values s)
+      (reset-s!)
+      (peek0)
+      (reset-s!)
+      (test 0 peek-string-avail!* s 2 p)
+      (test 2 read-string-avail! s p)
+      (test "CD3" values s)
+
+      (test-empty)
+
+      (go) (go) (go)
+      (test "E" peek-string 1 0 p)
+      (test "F" peek-string 1 1 p)
+      (test "G" peek-string 1 2 p)
+      (test 0 peek-string-avail!* s 3 p)
+      (test "EFG" read-string 3 p)
+
+      (test-empty)
+
+      (go) (go) (go)
+      (test "HI" peek-string 2 0 p)
+      (test "IJ" peek-string 2 1 p)
+      (test "J" peek-string 1 2 p)
+      (test 0 peek-string-avail!* s 3 p)
+      (test "HI" read-string 2 p)
+      (test "J" read-string 1 p)
+
+      (test-empty)
+
+      (go) (go) (go)
+      (test "KLM" peek-string 3 0 p)
+      (test "LM" peek-string 2 1 p)
+      (test "M" peek-string 1 2 p)
+      (test "K" read-string 1 p)
+      (test "L" read-string 1 p)
+      (test "M" read-string 1 p)
+      
+      (test-empty))))
+
+(define (gdelay go)
+  (lambda ()
+    (thread go)))
+
+(define (gsync port)
+  (object-wait-multiple #f port))
+
+;; Test custom port with test-a-port
+(define (test-a-custom-port supply-peek? gdelay gsync)
+  (let* ([counter 0]
+	 [lock (make-semaphore 1)]
+	 [ready-sema (make-semaphore)]
+	 [extras null]
+	 [go (lambda ()
+	       (semaphore-wait lock)
+	       (semaphore-post ready-sema)
+	       (for-each semaphore-post extras)
+	       (set! extras null)
+	       (semaphore-post lock))]
+	 [p (make-custom-input-port
+	     ready-sema
+	     ;; read-string:
+	     (lambda (s)
+	       (if (semaphore-try-wait? lock)
+		   (begin0
+		    (let loop ([got 0])
+		      (if (and (got . < . (string-length s))
+			       (semaphore-try-wait? ready-sema))
+			  (begin
+			    (string-set! s got (integer->char (+ 65 counter)))
+			    (set! counter (add1 counter))
+			    (loop (add1 got)))
+			  got))
+		    (semaphore-post lock))
+		   #f))
+	     (and supply-peek?
+		  (lambda (s d)
+		    (if (semaphore-try-wait? lock)
+			(begin0
+			 (let loop ([d d][counter counter])
+			   (if (semaphore-try-wait? ready-sema)
+			       (begin0
+				(cond
+				 [(zero? d)
+				  (string-set! s 0 (integer->char (+ 65 counter)))
+				  1]
+				 [else
+				  (loop (sub1 d) (add1 counter))])
+				(semaphore-post ready-sema))
+			       ;; Provide a new semaphore to be posted
+			       ;; when new things appear:
+			       (let ([s (make-semaphore)])
+				 (set! extras (cons s extras))
+				 s)))
+			 (semaphore-post lock))
+			#f)))
+	     void)])
+    (test-a-port p (gdelay go) gsync)))
+
+(test-a-custom-port #f values void)
+(test-a-custom-port #t values void)
+(test-a-custom-port #f gdelay gsync)
+(test-a-custom-port #t gdelay gsync)
+
+;; Pipe
+(define (test-a-pipe gdelay gsync)
+  (let-values ([(r w) (make-pipe)])
+    (let* ([counter 0]
+	   [go (lambda ()
+		 (write-char (integer->char (+ 65 counter)) w)
+		 (set! counter (add1 counter)))])
+      (test-a-port r (gdelay go) gsync))))
+
+(test-a-pipe values void)
+(test-a-pipe gdelay gsync)
+
+(arity-test read-string 1 2)
+(arity-test peek-string 2 3)
+(arity-test read-string-avail! 1 4)
+(arity-test peek-string-avail! 2 5)
+(arity-test read-string-avail!* 1 4)
+(arity-test peek-string-avail!* 2 5)
+(arity-test read-string-avail!/enable-break 1 4)
+(arity-test peek-string-avail!/enable-break 2 5)
+
+;;------------------------------------------------------------
 
 (SECTION 6 10 4)
 (load "tmp1")
@@ -761,7 +945,7 @@
 
 (arity-test read-eval-print-loop 0 0)
 (test (void) 'r-e-p-l-return 
-      (parameterize ([current-input-port (make-input-port
+      (parameterize ([current-input-port (make-custom-input-port
 					  #f
 					  (lambda (s) eof)
 					  #f

@@ -1062,7 +1062,7 @@ do_byte_string_to_char_string(const char *who,
 		       0,
 #endif
 		       NULL, 0, 
-		       (perm > -1) ? 0xFFFF : 0);
+		       (perm > -1) ? 0xD800 : 0);
   if (ulen < 0) {
     scheme_arg_mismatch(who,
 			STRING_IS_NOT_UTF_8,
@@ -1079,11 +1079,11 @@ do_byte_string_to_char_string(const char *who,
 		0,
 #endif
 		NULL, 0, 
-		(perm > -1) ? 0xFFFF : 0);
+		(perm > -1) ? 0xD800 : 0);
   
   if (perm > 0) {
     for (i = 0; i < ulen; i++) {
-      if (v[i] == 0xFFFF)
+      if (v[i] == 0xD800)
 	v[i] = perm;
     }
   }
@@ -3479,7 +3479,7 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
     state = (*_state) & 0x7;
     init_doki = (((*_state) >> 3) & 0x7);
     nextbits = ((((*_state) >> 6) & 0xF) << 2);
-    /* Need v to detect 0xD800, 0xFFFF, etc. 
+    /* Need v to detect 0xD800 through 0xDFFF
        Note that we have 22 bits to work with, which is
        is enough to detect > 0x10FFFF */
     v = ((*_state) >> 10);
@@ -3538,8 +3538,6 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	    }
 	    /* We finished. One last check: */
 	    if ((((v >= 0xD800) && (v <= 0xDFFF))
-		 || (v == 0xFFFE)
-		 || (v == 0xFFFF)
 		 || (v > 0x10FFFF))
 # ifdef WINDOWS_UNICODE_SUPPORT
 		&& (!utf16

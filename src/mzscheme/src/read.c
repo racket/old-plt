@@ -1941,8 +1941,6 @@ read_string(int is_byte, Scheme_Object *port,
 	    }
 	    /* disallow surrogate points, etc */
 	    if (((n >= 0xD800) && (n <= 0xDFFF))
-		|| (n == 0xFFFE)
-		|| (n == 0xFFFF)
 		|| (n > 0x10FFFF)) {
 	      ch = -1;
 	    } else {
@@ -2000,7 +1998,7 @@ read_string(int is_byte, Scheme_Object *port,
     }
 
     if (ch < 0) {
-      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), ch, indentation,
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0, indentation,
 		      "read: out-of-range character in %sstring",
 		      is_byte ? "byte " : "");
       return NULL;
@@ -2626,8 +2624,6 @@ read_character(Scheme_Object *port,
     /* disallow surrogate points, etc. */
     if ((n < 0)
 	|| ((n >= 0xD800) && (n <= 0xDFFF))
-	|| (n == 0xFFFE)
-	|| (n == 0xFFFF)
 	|| (n > 0x10FFFF)) {
       scheme_read_err(port, stxsrc, line, col, pos, count + 2, 0, indentation,
 		      "read: bad character constant #\\%c%u",

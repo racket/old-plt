@@ -255,8 +255,6 @@ Scheme_Object *scheme_make_char_or_nul(mzchar v)
 {
   if ((v >= 0) 
       && (v <= 0x10FFFF)
-      && (v != 0xFFFE)
-      && (v != 0xFFFF)
       && ((v < 0xD800) || (v > 0xDFFF)))
     return scheme_make_char(v);
 
@@ -347,8 +345,6 @@ integer_to_char (int argc, Scheme_Object *argv[])
     v = SCHEME_INT_VAL(argv[0]);
     if ((v >= 0) 
 	&& (v <= 0x10FFFF)
-	&& (v != 0xFFFE)
-	&& (v != 0xFFFF)
 	&& ((v < 0xD800) || (v > 0xDFFF)))
       return _scheme_make_char(v);
   } else if (SCHEME_BIGNUMP(argv[0])
@@ -362,7 +358,7 @@ integer_to_char (int argc, Scheme_Object *argv[])
   }
 
   scheme_wrong_type("integer->char", 
-		    "exact integer in [0,#x10FFFF], not in [#xD800,#xDFFF] or [#xFFFE,#xFFFF]", 
+		    "exact integer in [0,#x10FFFF], not in [#xD800,#xDFFF]", 
 		    0, argc, argv);
   return NULL;
 }

@@ -25,18 +25,6 @@
 			  x)
 			(and x #t)))))
 
-(define draw-bezier-hard-lines
-  (make-parameter #f
-		  (lambda (x)
-		    (if (procedure? x)
-			(begin
-			  (unless (procedure-arity-includes? x 1)
-			    (raise-type-error 'draw-hard-bezier-lines
-					      "boolean or procedure of one argument"
-					      x))
-			  x)
-			(and x #t)))))
-
 (define-struct pict (draw ; drawing instructions
 		     width ; total width
 		     height ; total height >= ascent + desecnt
@@ -757,15 +745,12 @@
     (let loop ([dd (if (draw-bezier-lines) 0 1)])
       (if (> dd (if (draw-bezier-lines) 0 4))
 	  ; give up
-	  (if (or (draw-bezier-lines) (draw-bezier-hard-lines))
+	  (if (draw-bezier-lines)
 	      (let* ([get-len (lambda () (sqrt (+ (* (- x1 x2) (- x1 x2))
 						  (* (- y1 y2)  (- y1 y2)))))]
 		     [c (if (procedure? (draw-bezier-lines))
 			   ((draw-bezier-lines) (get-len))
-			   (if (and (not (draw-bezier-lines))
-				    (procedure? (draw-bezier-hard-lines)))
-			       ((draw-bezier-hard-lines) (get-len))
-			       #f))])
+			   #f)])
 		`(qbezier ,c ,x1 ,y1 ,(quotient (+ x1 x2) 2) ,(quotient (+ y1 y2) 2) ,x2 ,y2))
 	      (let ([xd (- x2 x1)])
 		`(put ,x1 ,y1 (line ,(if (negative? xd) -1 1) 0 ,(abs xd)))))
@@ -781,8 +766,8 @@
 
 (define ~connect 
   (case-lambda
-   [(x1 y1 x2 y2 close-enough) (~connect x1 y1 x2 y2 close-enough #f)]
-   [(x1 y1 x2 y2 close-enough arrow?)
+   [(exact x1 y1 x2 y2 close-enough) (~connect exact x1 y1 x2 y2 close-enough #f)]
+   [(exact x1 y1 x2 y2 close-enough arrow?)
     (if (= x2 x1)
 	; "infinite" slope
 	(let ([dy (- y2 y1)])
@@ -790,26 +775,39 @@
 	(let ([real-slope (/ (- y2 y1) (- x2 x1))]
 	      [split (lambda (xm ym)
 		       (append
-			(~connect xm ym x1 y1 close-enough)
-			(~connect xm ym x2 y2 close-enough)))])
+			(~connect xm ym x1 y1 close-enough #f)
+			(~connect xm ym x2 y2 close-enough arrow?)))])
 	  (if (or (>= real-slope (if arrow? 7/8 11/12))
 		  (<= real-slope (if arrow? -7/8 -11/12)))
 	      ; rounds to "infinite" slope
 	      (if (> (abs (- x2 x1)) close-enough)
 		  (split x1 (truncate (quotient (+ y1 y2) 2)))
 		  (let ([dy (- y2 y1)])
-		    `((put ,x1 ,y1 (,(if arrow? 'vector 'line) 0 ,(if (negative? dy) -1 1) ,(abs dy))))))
-	      (let ([slope (let loop ([slope real-slope][tolerances
-							 (if arrow?
-							     '(1/100 1/12 1/4)
-							     '(1/100 1/50 1/25 1/10 1/6))])
-			     (if (<= (denominator slope) (if arrow? 4 6))
-				 slope
-				 (loop (rationalize real-slope (car tolerances))
-				       (cdr tolerances))))])
-		(if (> (abs (- (* slope (- x2 x1)) (- y2 y1))) close-enough)
-		    (let ([xm (truncate (quotient (+ x1 x2) 2))]) 
-		      (split xm (+ y1 (truncate (* slope (- xm x1))))))
+		    `((put ,x1 ,y1 (,(if arrow? 'vector 'line) 
+				    0 
+				    ,(if (negative? dy) -1 1) ,(abs dy))))))
+	      (let* ([slope (let loop ([slope real-slope][tolerances
+							  (if arrow?
+							      '(1/100 1/12 1/4)
+							      '(1/100 1/50 1/25 1/10 1/6))])
+			      (if (<= (denominator slope) (if arrow? 4 6))
+				  slope
+				  (loop (rationalize real-slope (car tolerances))
+					(cdr tolerances))))]
+		     [exact-x? (or (eq? exact 'x) (zero? slope))]
+		     [dx (if exact-x?
+			     (- x2 x1)
+			     (* (/ 1 slope) (- y2 y1)))]
+		     [dy (* slope dx)])
+		(if (or (and exact-x?
+			     (> (abs (- dy (- y2 y1))) close-enough))
+			(and (not exact-x?)
+			     (> (abs (- dx (- x2 x1))) close-enough)))
+		    (if exact-x?
+			(let ([xm (truncate (quotient (+ x1 x2) 2))]) 
+			  (split xm (+ y1 (truncate (* slope (- xm x1))))))
+			(let ([ym (truncate (quotient (+ y1 y2) 2))]) 
+			  (split (+ x1 (truncate (* (/ slope) (- ym y1)))) ym)))
 		    (let ([same-sign (lambda (v s)
 				       (if (negative? s)
 					   (- (abs v))
@@ -817,7 +815,7 @@
 		      `((put ,x1 ,y1 (,(if arrow? 'vector 'line) 
 				      ,(same-sign (denominator slope) (- x2 x1))
 				      ,(same-sign (numerator slope) (- y2 y1))
-				      ,(abs (- x2 x1)))))))))))]))
+				      ,(abs dx))))))))))]))
 
 (define (picture w h commands)
   (let loop ([commands commands][translated null][children null])
@@ -848,10 +846,14 @@
 						   (list-ref c 5)))
 				      translated))
 			      children)]
-	    [(~connect) (loop rest
-			      (append (apply ~connect (cdr c))
-				      translated)
-			      children)]
+	    [(connect~y) (loop rest
+			       (append (apply ~connect 'x (cdr c))
+				       translated)
+			       children)]
+	    [(connect~x) (loop rest
+			       (append (apply ~connect 'y (cdr c))
+				       translated)
+			       children)]
 	    [(curve) (loop rest
 			   (let ([x1 (cadr c)]
 				 [y1 (caddr c)]

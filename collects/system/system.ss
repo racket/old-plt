@@ -130,14 +130,11 @@
 	(for-each (lambda (x) (apply (car x) (cdr x))) todo)
 	(mred:change-splash-message "Invoking...")
 	(mred:no-more-splash-messages)
-	(unless mred:non-unit-startup?
-	  (invoke-open-unit (mred:make-invokable-unit) #f)
-	  (when mred:load-user-setup?
-	    (mred:user-setup)))
+	(mred:invoke)
 	(for-each mred:edit-file files-to-open)
 	(when mred:non-unit-startup?
 	  (set! mred:console (mred:startup)))
-	(unless (= mred:splash-max mred:splash-counter)
+	'(unless (= mred:splash-max mred:splash-counter)
 	  (printf "WARNING: splash max (~a) != splash counter (~a)~n"
 		  mred:splash-max mred:splash-counter))
 	(mred:close-splash)
@@ -183,7 +180,8 @@
 	    (set! mred:load-user-setup? #f)
 	    (apply mred:initialize rest)]
 	   [(string-ci=? "-nu" arg)
-	    (mred:non-unit-startup)
+	    (set! todo
+		  (cons (list (lambda () (mred:invoke))) todo))
 	    (apply mred:initialize rest)]
 	   [else (set! files-to-open (cons arg files-to-open))
 		 (apply mred:initialize rest)]))]))))

@@ -4,19 +4,20 @@
 
 (define mred:make-mred-invokable-unit
   (lambda ()
-    (let ([application (mred:make-application@)])
-      (unit/sig->unit
-       (compound-unit/sig (import)
-	 (link [core : mzlib:core^ (mzlib:core@)]
-	       [trigger : mzlib:trigger^ (mzlib:trigger@)]
-	       [mred : mred^ (mred@ core trigger application)]
-	       [application : mred:application^ (application mred core)])
-	 (export (unit mred)
-		 (unit application mred)))))))
+    (let* ([application (mred:make-application@)]
+	   [U
+	    (compound-unit/sig (import)
+	      (link [core : mzlib:core^ (mzlib:core@)]
+		    [trigger : mzlib:trigger^ (mzlib:trigger@)]
+		    [mred : mred^ (mred@ core trigger application)]
+		    [application : mred:application^ (application mred core)])
+	      (export (open mred)
+		      (open application)))])
+      (compound-unit/sig (import)
+	 (link [mred : ((open mred^) (open mred:application^)) (U)])
+	 (export (unit mred))))))
 
-;; one of these two definitions will be redefined by the application
-(define mred:make-invokable-unit mred:make-mred-invokable-unit)
-(define mred:make-application@
+(define mred:unit-make-application@
   (lambda ()
     (unit/sig mred:application^
       (import [mred@ : mred^]
@@ -38,29 +39,41 @@
       (define console (make-object wx:frame% '() "hidden"))
       (define eval-string (lambda (string) (void))))))
 
+;; one of these two definitions will be redefined by the application
+(define mred:make-invokable-unit mred:make-mred-invokable-unit)
+(define mred:make-application@ mred:unit-make-application@)
+
 (define mred:non-unit-startup
   (lambda ()
-    (set! mred:non-unit-startup? #t)
     (set! mred:make-application@ mred:non-unit-make-application@)
-    (invoke-open-unit (mred:make-invokable-unit) #f)
-    (when mred:load-user-setup?
-      (mred:user-setup))))
+    (set! mred:non-unit-startup? #t)
+    (mred:invoke)))
+
+(define mred:invoke
+  (let ([invoked? #f])
+    (lambda ()
+      (unless invoked?
+	(set! invoked? #t)
+	(print-struct #t)
+	(invoke-open-unit/sig (mred:make-invokable-unit))
+	(mred:user-setup)))))
 
 (define mred:startup
   (lambda ()
     (make-object mred:console-frame%)))
 	     
-
 (define mred:user-setup
   (lambda ()
-    (let* ([init-file (build-path (wx:find-directory 'init)
-				  (if (eq? wx:platform 'unix)
-				      ".mredrc"
-				      "mredrc.ss"))])
-      (when (file-exists? init-file)
-	(let ([orig-escape (error-escape-handler)])
-	  (catch-errors (lambda (s) (wx:message-box s "Error"))
-			(lambda () (orig-escape))
-			(mred:eval-string 
-			 (string-append
-			  (expr->string `(load/cd ,init-file))))))))))
+    (when mred:load-user-setup?
+      (set! mred:load-user-setup? #f)
+      (let* ([init-file (build-path (wx:find-directory 'init)
+				    (if (eq? wx:platform 'unix)
+					".mredrc"
+					"mredrc.ss"))])
+	(when (file-exists? init-file)
+	  (let ([orig-escape (error-escape-handler)])
+	    (catch-errors (lambda (s) (wx:message-box s "Error"))
+			  (lambda () (orig-escape))
+			  (eval-string 
+			   (string-append
+			    (expr->string `(load/cd ,init-file)))))))))))

@@ -71,11 +71,50 @@
   (define (py-function%-init this name v)
     (python-set-name! this name)
     (python-set-member! this scheme-procedure-key v))
+
+  
+  ;; py-is?: python-object python-object -> bool
+  ;; determine whether two objects are the same exact thing
+  (define py-is? eq?)
+  
+  
+  ;; python-new-static-method: py-type% -> py-static-method%
+  ;; "allocate" a new static-method object
+  (define (python-new-static-method class)
+    (unless (or (py-is? class py-static-method%)
+                (py-is-a? class py-static-method%))
+      (error (py-object%->string class)
+             "is not a subtype of staticmethod."))
+    (let ([sm (python-new-object class)])
+      (python-set-member! sm 'static-method-function #f)
+      sm))
+
+  (define (py-static-method%-init this function-to-wrap)
+    (python-set-member! this 'static-method-function
+                        function-to-wrap))
   
   (define (py-function%->py-static-method% fn)
-    (let ([sm (python-new-object py-static-method%)])
-      (python-set-member! sm 'static-method-function fn)
+    (let ([sm (python-new-static-method py-static-method%)])
+      (py-static-method%-init sm fn)
       sm))
+  
+  (define (py-classmethod%-new class)
+    (unless (or (py-is? class py-classmethod%)
+                (py-is-a? class py-classmethod%))
+      (error (py-object%->string class)
+             "is not a subtype of classmethod."))
+    (let ([cm (python-new-object class)])
+      (python-set-member! cm 'classmethod-function #f)
+      cm))
+  
+  (define (py-classmethod%-init this function-to-wrap)
+    (python-set-member! this 'classmethod-function
+                        function-to-wrap))
+  
+  (define (py-function%->py-classmethod% fn)
+    (let ([cm (py-classmethod%-new py-classmethod%)])
+      (py-classmethod%-init cm fn)
+      cm))
   
   (define py-bad-new (py-function%->py-static-method%
                       (procedure->py-function%
@@ -158,11 +197,6 @@
   (define py-create python-create-object)
   
   
-  
-  ;; py-is?: python-object python-object -> bool
-  ;; determine whether two objects are the same exact thing
-  (define py-is? eq?)
-  
   (define (py-type? node)
     (py-is? (python-node-type node) py-type%))
   
@@ -212,18 +246,15 @@
                                          ;; if it's a proc, make it a py-function% and try again
                                          (begin
                                            (python-set-member! obj '__new__
-                                                               (let ([fn (python-new-object py-function%)])
-                                                                 (python-set-member! fn scheme-procedure-key member)
-                                                                 fn))
-                                           (python-get-member obj '__new__ wrap? orig-call?))
+                                                               (procedure->py-function% member))
+                                           (python-get-member obj '__new__ wrap? #f))
                                          (if (py-is-a? member py-static-method%)
                                              member
                                              ;; if it's not a staticmethod, make it so
                                              (begin
-                                               (let ([sm (python-create-object py-static-method%
-                                                                                         member)])
-                                                 (python-set-member! obj '__new__ sm)
-                                                 sm))))
+                                                 (python-set-member! obj '__new__
+                                                                     (py-function%->py-static-method% member))
+                                                 (python-get-member obj '__new__ wrap? #f))))
                                      (if wrap?
                                          (if (and (python-node? member)
                                                   (py-is-a? member py-function%))  ;; wrap member functions
@@ -240,21 +271,34 @@
                                                                                          obj)))
                                                member))
                                          member))])
-                 (if (and orig-call?
-                          (python-node? post-wrap)
-                          (py-is-a? post-wrap py-static-method%))
-                     ;; x.my_static_method returns a nice, plain function
-                     (let ([fun (python-get-member post-wrap 'static-method-function #f)])
-                       (unless fun
-                         (error "Uninitialized static method object"))
-                       fun)
-                     post-wrap))])))
+                 (cond
+                   [(and orig-call?
+                         (python-node? post-wrap)
+                         (py-is-a? post-wrap py-static-method%))
+                    ;; x.my_static_method returns a nice, plain function
+                    (let ([fun (python-get-member post-wrap 'static-method-function #f)])
+                      (unless fun
+                        (error "Uninitialized static method object"))
+                      fun)]
+                   [(and orig-call?
+                         (python-node? post-wrap)
+                         (py-is-a? post-wrap py-classmethod%))
+                    ;; x.my_classmethod returns a wrapped member function...
+                    (let ([fun (python-get-member post-wrap 'classmethod-function #f)])
+                      (unless fun
+                        (error "Uninitialized classmethod object"))
+                      (python-wrap-method fun py-type% (if (py-type? obj)
+                                                           obj
+                                                           (python-node-type obj))))]
+                     [else post-wrap]))])))
   
   
   
   ;; python-get-name: py-object% -> py-string%
   (define (python-get-name obj)
-    (python-get-member obj '__name__))
+    (cond
+      [(py-is-a? obj py-method%) (python-get-name (python-get-member obj 'im_func false))]
+      [else (python-get-member obj '__name__)]))
   
   
   ;; py-object%->string: py-object% -> string
@@ -293,7 +337,22 @@
       [(py-is-a? x py-function%) (string-append "<function "
                                                 (py-string%->string (python-get-name x))
                                                 ">")]
-      [else (format "<~a object>" (py-object%->string (python-get-type-name (python-node-type x))))]))
+      [(py-is-a? x py-method%) (let ([bound? (python-method-bound? x)])
+       (string-append "<" (if bound?
+                              "bound"
+                              "unbound")
+                      " method "
+                      (py-string%->string
+                       (python-get-name (python-get-member x
+                                                           'im_class)))
+                      "."
+                      (py-string%->string (python-get-name x))
+                      (if bound?
+                          (string-append " of "
+                                         (py-object%->string (python-get-member x 'im_self)))
+                          "")
+                      ">"))]
+      [else (format "<~a object>" (py-string%->string (python-get-type-name (python-node-type x))))]))
   
   ;; python-get-type-name: py-type% -> py-string%
   (define (python-get-type-name type)
@@ -408,23 +467,18 @@
   
   ;;;;;;;;;;;;;;; complete the basic types now ;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  
   (python-add-members py-static-method%
-                      `(;(__new__ ,(let ([lam (lambda (class)
-                        ;                       (unless (or (py-is? class py-static-method%)
-                        ;                                   (py-is-a? class py-static-method%))
-                        ;                         (error (py-object%->string class)
-                        ;                                "is not a subtype of staticmethod."))
-                        ;                       (let ([sm (python-new-object class)])
-                        ;                         (python-set-member! sm 'static-method-function #f)
-                        ;                         sm))])
-                        ;            (let ([sm (python-new-object py-static-method%)])
-                        ;              (python-set-member! sm 'static-method-function
-                        ;                                  (python-create-object py-function%
-                        ;                                                        '__new__
-                        ;                                                        lam)))))
-                        (__init__ ,(lambda (this function-to-wrap)
-                                     (python-set-member! this 'static-method-function
-                                                         function-to-wrap)))))
+                      `((__new__ ,(py-function%->py-static-method%
+                                   (procedure->py-function% python-new-static-method
+                                                            'python-new-static-method)))
+                        (__init__ ,py-static-method%-init)))
+  
+  (python-add-members py-classmethod%
+                      `((__new__ ,(py-function%->py-static-method%
+                                   (procedure->py-function% py-classmethod%-new
+                                                            'py-classmethod%-new)))
+                        (__init__ ,py-classmethod%-init)))
   
   (dprintf "6~n")
   

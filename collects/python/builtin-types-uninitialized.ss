@@ -34,6 +34,7 @@
   (define py-function% (immutable-type 'function))
   (define py-method% (immutable-type '|instance method|))
   (define py-static-method% (immutable-type '|static method|))
+  (define py-classmethod% (immutable-type 'classmethod))
 
 
   (define (python-add-members node assoc-list)

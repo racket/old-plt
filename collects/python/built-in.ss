@@ -2,6 +2,7 @@
   (require "primitives.ss")
   (provide object
            staticmethod
+           classmethod
            int
            float
            StringType
@@ -16,4 +17,5 @@
   (define StringType py-string%)
   (define None py-none)
   (define NoneType py-none%)
-  (define type py-type%))
+  (define type py-type%)
+  (define classmethod py-classmethod%))

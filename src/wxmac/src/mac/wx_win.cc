@@ -506,7 +506,6 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
       MacSetBackground();
       OffsetRect(&oldWindowRect,SetOriginX,SetOriginY);
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect);
-      ::ClipRect(&oldWindowRect);
       ::EraseRect(&oldWindowRect);
     }
   }
@@ -524,7 +523,6 @@ void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform on
       OffsetRect(&newWindowRect,SetOriginX,SetOriginY);
       
       ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
-      ::ClipRect(&newWindowRect);
       ::EraseRect(&newWindowRect);
     }
   }
@@ -647,6 +645,10 @@ void wxWindow::OnAreaDSize(int dW, int dH, int dX, int dY)
 //-----------------------------------------------------------------------------
 void wxWindow::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
+  if (__type == wxTYPE_FRAME) {
+    ::SizeControl(cMacControl, cWindowWidth, cWindowHeight);
+  }
+
   { // Notify child windows of area resize.
     wxChildNode* childWindowNode = ClientArea()->Windows()->First();
     while (childWindowNode) {
@@ -723,39 +725,17 @@ int wxWindow::SetCurrentDC(void) // mac platform only
   if (cMacDC->currentUser() != this) { // must setup platform
     cMacDC->setCurrentUser(this);
     Rect theClipRect;
-    RgnHandle rgn = NULL;
     if (cHidden) {
       theClipRect.top = theClipRect.bottom = 0;
       theClipRect.left = theClipRect.right = 0;
     } else {
       GetClipRect(cClientArea, &theClipRect);
       OffsetRect(&theClipRect,SetOriginX,SetOriginY);
-      MacSetBackground();
-      SetForeground();
-      
-      wxWindow *parent = GetParent();
-      int dx, dy;
-      GetPosition(&dx, &dy);
-#ifndef WX_CARBON // under WX_CARBON, you don't need to mask out the resize rect, the OS does it for you.
-      if (parent) {
-	rgn = parent->GetCoveredRegion(dx + theClipRect.left, dy + theClipRect.top,
-				       theClipRect.right - theClipRect.left,
-				       theClipRect.bottom - theClipRect.top);
-      }
-#endif                
     }
-    
-    if (rgn) {
-      RgnHandle clip = NewRgn();
-      if (clip) {
-	RectRgn(clip, &theClipRect);
-	DiffRgn(clip, rgn, clip);
-	DisposeRgn(rgn);
-	SetClip(clip);
-	DisposeRgn(clip);
-      }
-    } else 
-      ::ClipRect(&theClipRect);
+
+    ::ClipRect(&theClipRect);
+    MacSetBackground();
+    SetForeground();
     
     PenMode(patCopy);
     SetTextInfo();
@@ -784,42 +764,26 @@ RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
 //-----------------------------------------------------------------------------
 void wxWindow::MacSetBackground(void) // mac platform only
 {
-  if (!cEraser)
-    {
-      BackColor(whiteColor);
-      BackPat(GetWhitePattern());
-      return;
-    }
-
-  RGBColor pixel = cEraser->GetColour()->pixel;
-  if (cColour)
-    RGBBackColor(&pixel);
-  else
-    {
-      unsigned char red = cEraser->GetColour()->Red();
-      unsigned char blue = cEraser->GetColour()->Blue();
-      unsigned char green = cEraser->GetColour()->Green();
-      Bool isBlackColour =
-	(red == (unsigned char )0 &&
-	 blue == (unsigned char)0 &&
-	 green == (unsigned char)0);
-      BackColor(isBlackColour ? blackColor : whiteColor);
-    }
+  if (!cEraser) {
+    BackColor(whiteColor);
+    BackPat(GetWhitePattern());
+    return;
+  }
 
   int theBrushStyle = cEraser->GetStyle();
   if (theBrushStyle == wxSOLID)
     BackPat(GetWhitePattern());
   else if (theBrushStyle == wxTRANSPARENT)
-    BackPat(GetWhitePattern()); // WCH: does this work??
-  else if (IS_HATCH(theBrushStyle))
-    {
-      macGetHatchPattern(theBrushStyle, &cMacPattern);
-      BackPat(&cMacPattern);
-    }
-  else
-    {
-      BackPat(GetWhitePattern()); // WCH: must use BackPixPat for stipple
-    }
+    BackPat(GetWhitePattern());
+  else if (IS_HATCH(theBrushStyle)) {
+    macGetHatchPattern(theBrushStyle, &cMacPattern);
+    BackPat(&cMacPattern);
+  } else {
+    BackPat(GetWhitePattern()); // WCH: must use BackPixPat for stipple
+  }
+
+  RGBColor pixel = cEraser->GetColour()->pixel;
+  RGBBackColor(&pixel);
 }
 
 //-----------------------------------------------------------------------------
@@ -873,17 +837,15 @@ void wxWindow::SetForeground(void) // mac platform only
 //-----------------------------------------------------------------------------
 void wxWindow::SetTextInfo(void) // mac platform only
 {
-  if (!font)
-    {
-      font = wxNORMAL_FONT;
-      if (!font)
-	{
-	  ::TextFont(1);
-	  ::TextSize(12);
-	  ::TextFace(0);
-	  return;
-	}
+  if (!font) {
+    font = wxNORMAL_FONT;
+    if (!font) {
+      ::TextFont(1);
+      ::TextSize(12);
+      ::TextFace(0);
+      return;
     }
+  }
 
   ::TextFont(font->GetMacFontNum());
   ::TextSize(font->GetPointSize());
@@ -891,23 +853,23 @@ void wxWindow::SetTextInfo(void) // mac platform only
 }
 
 //-----------------------------------------------------------------------------
-void wxWindow::GetClipRect(wxArea* area, Rect* clipRect) // mac platform only
-{       // get clipRect in area c.s.
+void wxWindow::GetClipRect(wxArea* area, Rect* clipRect)
+{
+  // get clipRect in area c.s.
   ::SetRect(clipRect, 0, 0, area->Width(), area->Height()); // area c.s.
 
-  if (ParentArea()) // WCH: must redo this
-    {
-      wxWindow* windowParent = ParentArea()->ParentWindow();
-      Rect parentClipRect;
-      windowParent->GetClipRect(cParentArea, &parentClipRect);
-      wxMargin parentAreaMargin = area->Margin(cParentArea);
-      int parentAreaX = parentAreaMargin.Offset(Direction::wxLeft);
-      int parentAreaY = parentAreaMargin.Offset(Direction::wxTop);
-      ::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
-      ::SectRect(&parentClipRect, clipRect, clipRect);
-      if (clipRect->top < 0) clipRect->top = 0;
-      if (clipRect->left < 0) clipRect->left = 0;
-    }
+  if (ParentArea()) {
+    wxWindow* windowParent = ParentArea()->ParentWindow();
+    Rect parentClipRect;
+    windowParent->GetClipRect(cParentArea, &parentClipRect);
+    wxMargin parentAreaMargin = area->Margin(cParentArea);
+    int parentAreaX = parentAreaMargin.Offset(Direction::wxLeft);
+    int parentAreaY = parentAreaMargin.Offset(Direction::wxTop);
+    ::OffsetRect(&parentClipRect, -parentAreaX, -parentAreaY); // area c.s.
+    ::SectRect(&parentClipRect, clipRect, clipRect);
+    if (clipRect->top < 0) clipRect->top = 0;
+    if (clipRect->left < 0) clipRect->left = 0;
+  }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -943,39 +905,12 @@ wxWindow* wxWindow::GetGrandParent(void)
    */
 wxFrame* wxWindow::GetRootFrame(void) // mac platform only
 {
-#if 0 // USE_MAC_DIALOG_PANEL
-  wxWindow* theWindow = this;
-  while (theWindow->window_parent != wxScreen::gScreenWindow &&
-	 theWindow->window_parent != NULL)
-    {
-      if (theWindow->__type == wxTYPE_DIALOG_BOX) {
-	wxDialogBox *dlg = (wxDialogBox *)theWindow;
-	wxFrame *theFrame = dlg->cFrame;
-	if (theFrame->IsModal())
-	  return (wxFrame*)theWindow;
-      }
-      theWindow = theWindow->window_parent;
-    }
-  if ( wxSubType(theWindow->__type, wxTYPE_FRAME))
-    return (wxFrame*)theWindow;
-  else 
-    {
-      wxFatalError("No frame found for GetRootFrame.");
-    }
-#else
-  wxWindow* theWindow = this;
-  while (theWindow->window_parent != wxScreen::gScreenWindow &&
-	 theWindow->window_parent != NULL)
-    {
-      theWindow = theWindow->window_parent;
-    }
-  
-  if (!( wxSubType(theWindow->__type, wxTYPE_FRAME) ||
-	wxSubType(theWindow->__type, wxTYPE_DIALOG_BOX))) {
-    wxFatalError("No frame found for GetRootFrame.");
-  }
-#endif
-  return (wxFrame*)theWindow;
+  return (wxFrame*)GetParent()->GetRootFrame();
+}
+
+ControlHandle wxWindow::GetRootControl(void)
+{
+  return GetRootFrame()->cMacControl;
 }
 
 //-----------------------------------------------------------------------------
@@ -1406,19 +1341,18 @@ void wxWindow::Paint(void)
   if (cHidden) return;
 
   wxNode* areaNode = cAreas->Last();
-  while (areaNode)
-    {
-      wxArea* area = (wxArea*)areaNode->Data();
-      wxChildNode* childWindowNode = area->Windows()->First();
-      while (childWindowNode)
-	{
-	  wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
-	  if (!childWindow->cHidden)
-	    childWindow->Paint();
-	  childWindowNode = childWindowNode->Next();
-	}
-      areaNode = areaNode->Previous();
-    }
+  while (areaNode) {
+    wxArea* area = (wxArea*)areaNode->Data();
+    wxChildNode* childWindowNode = area->Windows()->First();
+    while (childWindowNode)
+      {
+	wxWindow* childWindow = (wxWindow*)childWindowNode->Data();
+	if (!childWindow->cHidden)
+	  childWindow->Paint();
+	childWindowNode = childWindowNode->Next();
+      }
+    areaNode = areaNode->Previous();
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1685,8 +1619,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
     char *s = new WXGC_ATOMIC char[l + 3];
     s[0] = s[1] = ' ';
     memcpy(s + 2, menu->title, l + 1);
-    wxMacString1 theMacString1 = wxItemStripLabel(s);
-    InsertMenuItem(m, theMacString1(), 0);
+    InsertMenuItem(m, wxC2P(wxItemStripLabel(s)), 0);
     DisableMenuItem(m, 1);
     InsertMenuItem(m, "\p-", 1);
     di = -2;

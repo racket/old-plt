@@ -3,6 +3,7 @@
   (require (lib "unitsig.ss")
 	   (lib "include.ss")
 	   (lib "process.ss")
+	   (lib "sendevent.ss")
 	   "private/dirs.ss")
 
   (require "link-sig.ss")

@@ -4369,10 +4369,10 @@ static void do_GC_gcollect(void *stack_now)
   }
 
   if (GC_initial_trace_root) {
-#if CHECK_SKIP_MARK_AT_FIRST
+# if CHECK_SKIP_MARK_AT_FIRST
     collect_start_disable_mark_skip = collect_stack_count;
     skip_mark_at_first = GC_inital_root_skip;
-#endif
+# endif
     collect_stack[collect_stack_count++] = (unsigned long)&GC_initial_trace_root;
     collect_stack[collect_stack_count++] = ((unsigned long)&GC_initial_trace_root) + 1;
 # if KEEP_DETAIL_PATH

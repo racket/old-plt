@@ -21,14 +21,13 @@
 wxArea::wxArea
 (
  wxWindow* parentWindow
- )
+ ) :
+ wxObject(WXGC_NO_CLEANUP)
 {
  cWindows = new wxChildList();
   __type = wxTYPE_AREA;	//cjc
-  //__type = wxTYPE_PANEL; // CJC, WCH kludge
-  if (!parentWindow) wxFatalError("No parentWindow for wxArea");
 
-  cParentWindow = parentWindow; /*OLD*/
+  cParentWindow = parentWindow;
   parentWindow->Areas()->Insert(this);
 
   WXGC_IGNORE(this, cParentWindow);

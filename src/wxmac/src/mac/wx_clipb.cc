@@ -35,9 +35,16 @@ static wxList *ClipboardFormats = NULL;
 class ClipboardFormat : public wxObject
 {
 public:
+  ClipboardFormat();
+
   int format;
   char *name;
 };
+
+ClipboardFormat::ClipboardFormat()
+: wxObject(FALSE)
+{
+}
 
 static void InitFormats()
 {
@@ -55,24 +62,18 @@ static void InitFormats()
 
 Bool wxOpenClipboard(void)
 {
-  //TEToScrap();
   return TRUE;
 }
 
 Bool wxCloseClipboard(void)
 {
-  //TEFromScrap();
   return TRUE;
 }
 
 Bool wxEmptyClipboard(void)
 {
-#ifdef WX_CARBON
   ClearCurrentScrap();
   return true;
-#else
-  return ZeroScrap();
-#endif
 }
 
 Bool wxIsClipboardFormatAvailable(int dataFormat)
@@ -85,17 +86,12 @@ Bool wxIsClipboardFormatAvailable(int dataFormat)
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
     return FALSE;
 
-#ifdef WX_CARBON
   ScrapRef scrap;
   OSErr err;
   ScrapFlavorFlags dontcare;
   
   err = GetCurrentScrap(&scrap);
   return ((err != noErr)||(GetScrapFlavorFlags(scrap,format,&dontcare) != noErr));
-#else
-  SInt32 offset;  
-  return (GetScrap(NULL, format, &offset) > 0);
-#endif
 }
 
 Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
@@ -114,7 +110,6 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
     length = (long)width * height;
   }
   
-#ifdef WX_CARBON
   ScrapRef scrap;
   OSErr err;
   
@@ -124,15 +119,12 @@ Bool wxSetClipboardData(int dataFormat, wxObject *obj, int width, int height)
   }
   err = PutScrapFlavor(scrap,format,kScrapFlavorMaskNone,length,(const void *)obj);
   return (err == noErr);
-#else
-  return !PutScrap(length, format, (Ptr)obj);
-#endif
 }
 
 wxObject *wxGetClipboardData(int dataFormat, long *size)
 {
   char *result;
-  long format, length;
+  long format, length, got_length;
 
   if (dataFormat == wxCF_OEMTEXT)
     dataFormat = wxCF_TEXT;
@@ -140,7 +132,6 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
   if (!wxGetClipboardFormatName(dataFormat, (char *)&format, 4))
     return NULL;
 
-#ifdef WX_CARBON
   ScrapRef scrap;
   OSErr err;
   
@@ -153,28 +144,15 @@ wxObject *wxGetClipboardData(int dataFormat, long *size)
     return NULL;
   }
   result = new WXGC_ATOMIC char[length + 1];
-  err = GetScrapFlavorData(scrap,format,&length,result);
+  got_length = length;
+  err = GetScrapFlavorData(scrap,format,&got_length,result);
   if (err != noErr) {
     return NULL;
-  }
-#else  
-  Handle h = NewHandle(10);
-  CheckMemOK(h);
-  SInt32 offset;
-  
-  length = GetScrap(h, format, &offset);
+  } else if (got_length < length)
+    length = got_length;
 
-  if (length < 0)
-    return NULL;
-
-  result = new char[length + ((format == 'TEXT') ? 1 : 0)];
-  HLock(h);
-  memcpy(result, *h, length);
-  HUnlock(h);
-  DisposeHandle(h);
-#endif
   if (format == 'TEXT')
-    result[length++] = 0;
+    result[length] = 0;
 
   if (size)
     *size = length;
@@ -241,7 +219,7 @@ int  wxRegisterClipboardFormat(char *formatName)
   cf = new ClipboardFormat;
 
   cf->format = ClipboardFormats->Number() + CUSTOM_ID_START;
-  cf->name = new char[strlen(formatName)];
+  cf->name = new char[strlen(formatName) + 1];
   strcpy(cf->name, formatName);
 
   ClipboardFormats->Append(cf);
@@ -263,7 +241,10 @@ Bool wxGetClipboardFormatName(int dataFormat, char *formatName, int maxCount)
   for (node = ClipboardFormats->First(); node; node = node->Next()) {
     cf = (ClipboardFormat *)node->Data();
     if (cf->format == dataFormat) {
-      strncpy(formatName, cf->name, maxCount);
+      formatName[0] = cf->name[0];
+      formatName[1] = cf->name[1];
+      formatName[2] = cf->name[2];
+      formatName[3] = cf->name[3];
       return TRUE;
     }
   }

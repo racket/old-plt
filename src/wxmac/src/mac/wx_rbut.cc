@@ -185,15 +185,13 @@ char* wxRadioButton::GetLabel()
 //-----------------------------------------------------------------------------
 void wxRadioButton::SetLabel(char* label)
 {
-  if (label && !buttonBitmap)
-    {
-      if (cMacControl) {
-	SetCurrentDC();
-	wxMacString1 theMacString1 = label;
-	::SetControlTitle(cMacControl, theMacString1());
-      } else
-	labelString = label;
-    }
+  if (label && !buttonBitmap) {
+    if (cMacControl) {
+      SetCurrentDC();
+      ::SetControlTitle(cMacControl, wxC2P(label));
+    } else
+      labelString = label;
+  }
 }
 
 //-----------------------------------------------------------------------------

@@ -191,14 +191,7 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
   if (GetParent()->IsHidden())
     DoShow(FALSE);
          
-#if 0
-  // EMBEDDING                
-  // Embed the control, if possible
-  if (panel->cEmbeddingControl && cMacControl) {
-    ::EmbedControl(cMacControl,panel->cEmbeddingControl);
-  }
-#endif    
-                
+  ::EmbedControl(cMacControl, GetRootControl());
 	
   return TRUE;
 }

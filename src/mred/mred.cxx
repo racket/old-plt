@@ -96,6 +96,11 @@ extern int wx_in_terminal;
 
 wxFrame *mred_real_main_frame;
 
+#if defined(wx_xt) || defined(OS_X)
+# define mred_BREAK_HANDLER
+static Scheme_Thread *user_main_thread;
+#endif
+
 extern void wxMediaIOCheckLSB(void);
 
 #include "mred.h"
@@ -335,6 +340,8 @@ MrEdContext *MrEdGetContext(wxObject *w)
       c = (MrEdContext *)((wxFrame *)w)->context;
       if (c) 
 	return c;
+      else
+	printf("no context! %lx\n", w);
 #if !defined(wx_xt) && !defined(wx_mac)
     } else {
       MrEdContext *c;
@@ -838,7 +845,7 @@ static int check_eventspace_inactive(void *_c)
 
 void mred_wait_eventspace(void)
 {
-  MrEdContext *c;
+  MrEdContext * volatile c;
   c = MrEdGetContext();
   if (c && (c->handler_running == scheme_current_thread)) {
     wxDispatchEventsUntil(check_eventspace_inactive, c);
@@ -1323,12 +1330,18 @@ void wxDoEvents()
     }
 #endif
 
+    /* Create the user's main thread: */
+
     c = (MrEdContext *)MrEdMakeEventspace(NULL);
 
     {
       Scheme_Object *cp;
       cp = scheme_make_closed_prim(CAST_SCP handle_events, c);
-      scheme_thread(cp, c->main_config);
+#ifdef mred_BREAK_HANDLER
+      wxREGGLOB(user_main_thread);
+      user_main_thread = (Scheme_Thread *)
+#endif
+	scheme_thread(cp, c->main_config);
     }
 
 #if WINDOW_STDIO
@@ -1336,7 +1349,7 @@ void wxDoEvents()
       scheme_set_param(scheme_config, MZCONFIG_CUSTODIAN, (Scheme_Object *)oldm);
 #endif
 
-    /* Block until initialized: */
+    /* Block until the user's main thread is initialized: */
     scheme_current_thread->block_descriptor = -1;
     scheme_current_thread->blocker = NULL;
     scheme_current_thread->block_check = CAST_BLKCHK check_initialized;
@@ -1436,10 +1449,10 @@ static void MrEdSleep(float secs, void *fds)
 #endif
 }
 
-#ifdef wx_xt
+#ifdef mred_BREAK_HANDLER
 static void user_break_hit(int ignore)
 {
-  scheme_break_thread(NULL);
+  scheme_break_thread(user_main_thread);
   scheme_signal_received();
 
 #  ifdef SIGSET_NEEDS_REINSTALL
@@ -1450,7 +1463,6 @@ static void user_break_hit(int ignore)
   GC_variable_stack = (void **)__gc_var_stack__[0];
 #  endif
 }
-# define mred_BREAK_HANDLER
 #endif
 
 /****************************************************************************/

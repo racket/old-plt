@@ -23,109 +23,38 @@
 # include <Dialogs.h>
 #endif
 
-//-----------------------------------------------------------------------------
-wxMacString::wxMacString(void)
+char *wxP2C(const unsigned char *p)
 {
-  pString[0] = 0;
+  char *c = new WXGC_ATOMIC char[p[0] + 1];
+  memcpy(c, p + 1, p[0]);
+  c[p[0]]= 0;
+  return c;
 }
 
-//-----------------------------------------------------------------------------
-wxMacString::wxMacString(const char* cString)
+unsigned char *wxC2P(const char *c)
 {
-  if (cString)
-    {
-      long itsLength = strlen(cString);
-      if (itsLength > 255) itsLength = 255;
-      BlockMove(cString, pString+1, itsLength); // BlockMove allows args to overlap
-      pString[0] = itsLength;
-    }
-  else pString[0] = 0;
-}
-
-//-----------------------------------------------------------------------------
-wxMacString::~wxMacString(void)	// destructor
-{
-}
-
-//-----------------------------------------------------------------------------
-wxMacString& wxMacString::operator=(char* cString)
-{ // assignment of cString
-  if (cString)
-    {
-      long itsLength = strlen(cString);
-      if (itsLength > 255) itsLength = 255;
-      BlockMove(cString, pString+1, itsLength); // BlockMove allows args to overlap
-      pString[0] = itsLength;
-    }
-  else pString[0] = 0;
-
-  return *this;
-}
-
-//-----------------------------------------------------------------------------
-Str255& wxMacString::operator() (void)
-{
-  return pString;
-}
-
-//-----------------------------------------------------------------------------
-wxMacString1::wxMacString1(void)
-{
-  pString[0] = 1;
-  pString[1] = ' ';
-}
-
-//-----------------------------------------------------------------------------
-wxMacString1::wxMacString1(char* cString): wxMacString(cString)
-{
-  if (pString[0] == 0)
-    {
-      pString[0] = 1;
-      pString[1] = ' ';
-    }
-}
-
-//-----------------------------------------------------------------------------
-wxMacString1& wxMacString1::operator=(char* cString)
-{ // assignment of cString
-  if (cString)
-    {
-      long itsLength = strlen(cString);
-      if (itsLength > 255) itsLength = 255;
-      BlockMove(cString, pString+1, itsLength); // BlockMove allows args to overlap
-      pString[0] = itsLength;
-    }
-  else pString[0] = 0;
-
-  if (pString[0] == 0)
-    {
-      pString[0] = 1;
-      pString[1] = ' ';
-    }
-
-  return *this;
+  int len = strlen(c);
+  if (len > 255)
+    len = 255;
+  char *p = new WXGC_ATOMIC char[len + 1];
+  memcpy(p + 1, c, len);
+  p[0] = len;
+  return (unsigned char *)p;
 }
 
 //-----------------------------------------------------------------------------
 void wxError(const char *msg, const char *title)
-{	wxMessageBox((char *)msg, (char *)title,wxOK);		
-      }
+{	
+  wxMessageBox((char *)msg, (char *)title,wxOK);		
+}
 
 //-----------------------------------------------------------------------------
 void wxFatalError(const char* msg, const char* title)
 {
-#if defined(PPCC)
-  wxMacString macMsg(msg);
-  wxMacString macTitle(title);
-  ParamText((const unsigned char*) macTitle(),
-	    (const unsigned char*)macMsg(),
-	    (const unsigned char*)"\p",
-	    (const unsigned char*)"\p");	
-#else
-  wxMacString macMsg(msg);
-  wxMacString macTitle(title);
-  ParamText(macTitle(), macMsg(), "\p", "\p");	// WCH: must redo this
-#endif
+  ParamText(wxC2P(title),
+	    wxC2P(msg),
+	    "\p",
+	    "\p");	
   StopAlert(100, NULL); 		// WCH: must redo this
   abort();
 }

@@ -106,16 +106,17 @@ void wxScrollBar::CreateWxScrollBar // common constructor initialization
   int clientHeight = ClientArea()->Height();
   Rect boundsRect = {0, 0, clientHeight, clientWidth};
   OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-  wxMacString theMacLabel = label;
   const Bool drawNow = TRUE;
   const short offValue = 0;
   const short minValue = 0;
   const short maxValue = 0;
   long refCon = (long)this;
-  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
+  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, NULL,
 			     drawNow, offValue, minValue, maxValue, scrollBarProc, refCon);
   CheckMemOK(cMacControl);
   
+  ::EmbedControl(cMacControl, GetRootControl());
+
   if (GetParent()->IsHidden())
     DoShow(FALSE);
   
@@ -150,38 +151,32 @@ char* wxScrollBar::GetLabel()
 //-----------------------------------------------------------------------------
 void wxScrollBar::SetLabel(char* label)
 {
-  if (label)
-    {
-      SetCurrentDC();
-      wxMacString1 theMacString1 = label;
-      ::SetControlTitle(cMacControl, theMacString1());
-    }
 }
 
 //-----------------------------------------------------------------------------
 void wxScrollBar::SetValue(int val)
 {
   SetCurrentDC();
-  ::SetControlValue(cMacControl, val);
+  ::SetControl32BitValue(cMacControl, val);
 }
 
 //-----------------------------------------------------------------------------
 int wxScrollBar::GetValue(void)
 {
-  return ::GetControlValue(cMacControl);
+  return ::GetControl32BitValue(cMacControl);
 }
 
 //-----------------------------------------------------------------------------
 void wxScrollBar::SetMaxValue(int maxValue)
 {
   SetCurrentDC();
-  ::SetControlMaximum(cMacControl, maxValue);
+  ::SetControl32BitMaximum(cMacControl, maxValue);
 }
 
 //-----------------------------------------------------------------------------
 int wxScrollBar::GetMaxValue(void)
 {
-  return ::GetControlMaximum(cMacControl);
+  return ::GetControl32BitMaximum(cMacControl);
 }
 
 
@@ -365,6 +360,16 @@ void wxScrollBar::SetScrollData // adjust scrollBar to match scroll data setting
       int newPosition = scrollData->GetValue(postionScrollData);
       SetValue(newPosition);
     }
+
+  wxWhatScrollData pageScrollData =
+    (horizontal ? wxWhatScrollData::wxPageW : wxWhatScrollData::wxPageH);
+  if ((long)whatScrollData & (long)pageScrollData)
+    {
+      int newPage = scrollData->GetValue(pageScrollData);
+      ::SetControlViewSize(cMacControl, newPage);
+    }
+
+  
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

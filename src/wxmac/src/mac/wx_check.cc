@@ -68,18 +68,16 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   
   label = wxItemStripLabel(label);
 
-#ifdef WX_CARBON
   SetCurrentMacDC();
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
   Rect boundsRect = {0, 0, 0, 0};
   OffsetRect(&boundsRect,SetOriginX + padLeft,SetOriginY + padTop);
-  wxMacString theMacLabel = label;
   const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
   const short offValue = 0;
   const short minValue = 0;
   const short maxValue = 1;
   short refCon = 0;
-  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacLabel(),
+  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, wxC2P(label),
 			     drawNow, offValue, minValue, maxValue, checkBoxProc, refCon);
   CheckMemOK(cMacControl);
   
@@ -93,33 +91,7 @@ void wxCheckBox::Create // Constructor (given parentPanel, label)
   
   ::SizeControl(cMacControl,r.right-r.left,r.bottom-r.top);
 
-#if 0
-  // EMBEDDING
-  if (parentPanel->cEmbeddingControl) {
-    ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
-  }
-#endif
-  
-#else
-
-  if (width <= 0 || height <= 0)
-    {
-      float fLabelWidth = 20.0;
-      float fLabelHeight = 12;
-      if (label)
-	{
-	  GetTextExtent(label, &fLabelWidth, &fLabelHeight, NULL, NULL, buttonFont);
-	  fLabelWidth += 20; // add 20 for width of checkbox icon
-	  if (fLabelHeight < 12) fLabelHeight = 12; // height of checkbox icon is 12
-	}
-      if (width <= 0) cWindowWidth = (int)fLabelWidth;
-      if (height <= 0) cWindowHeight = (int)fLabelHeight;
-      
-    }
-
-  labelString = label;
-  cMacControl = NULL;
-#endif
+  ::EmbedControl(cMacControl, GetRootControl());
   
   if (GetParent()->IsHidden())
     DoShow(FALSE);
@@ -200,8 +172,7 @@ void wxCheckBox::SetLabel(char* label)
   labelString = label ? copystring(wxItemStripLabel(label)) : NULL;
 
   if (label && cMacControl) {
-    wxMacString1 theMacString1 = labelString;
-    ::SetControlTitle(cMacControl, theMacString1());
+    ::SetControlTitle(cMacControl, wxC2P(labelString));
   } else
     Refresh();
 }
@@ -220,9 +191,10 @@ void wxCheckBox::SetLabel(wxBitmap* bitmap)
 //-----------------------------------------------------------------------------
 void wxCheckBox::SetValue(Bool value)
 {
-  if (cMacControl) 
+  if (cMacControl) {
+    SetCurrentDC();
     ::SetControlValue(cMacControl, value ? 1 : 0);
-  else {
+  } else {
     bitmapState = !!value;
     if (!cHidden)
       Paint();
@@ -363,6 +335,7 @@ void wxCheckBox::DoShow(Bool show)
   if (!CanShow(show)) return;
 
   if (cMacControl) {
+    SetCurrentDC();
     if (show)
       ::ShowControl(cMacControl);
     else

@@ -1,7 +1,8 @@
 
 (module slatex mzscheme
   (require (lib "file.ss")
-	   (lib "process.ss"))
+	   (lib "process.ss")
+	   (lib "sendevent.ss"))
 
   (provide slatex latex pdf-slatex pdf-latex slatex/no-latex)
 

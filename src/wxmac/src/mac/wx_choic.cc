@@ -32,47 +32,6 @@
 # include <Controls.h>
 #endif
 
-/* 
-   The restrictions given below are not in force for Appearance Manager
-   code.  Accordingly, I'm rewriting the carbon version to use the 
-   new routines. - JBC, 2001-09
-   
-   The Mac ctl manager routine for popup menus has a problem or two
-   1. It appears that you can only popup menus that are resource based.
-   This makes it hard for the running program to append items.
-   
-   2. Titles (Labels in wx) are only horizontal.
-   
-   Based on IM-V, there are many things to do if we don't have the
-   control mgrs help.
-   1. We have to draw the shadowed box
-   2. Invert the Title (label) where the menu is showing
-   3. We have to draw the currently selected value in the shadowed box
-   Barrowed code from Apple DTS Snippets (PopMenus.p)
-
-   To manage all this, a Mac wxChoice has these components and processing:
-   1. The Title.
-   2. The value area gets the shadowed box and displays the current value
-   3. a Mac Menu handle
-   4. When we get a paint event,
-   we draw the shadowed box and the value (will have to be cached?)
-   constrained to the height and width of the box.
-   5. When we get a mousedown:
-   Invert the Title,
-   InsertMenu(ourmenuhandle, -1)
-   call PopUpMenuSelect()
-   DeleteMenu(ourmenuID)
-   invert the Title
-   draw the [newly] selected current value
-   6. enable and disable - ?
-   
-   Todo
-   1. Free the pieces/parts in the destructor
-   2. Finish the event handling (wxEvents - CommandString needed?)
-   3. Add enable and show
-   4. Finish fixed sizing
-
-   */
 // Because I never get this right and t,l,b,r makes sense to me - CJC
 //
 #define SetBounds(rect, top, left, bottom, right) ::SetRect(rect, left, top, right, bottom)
@@ -248,13 +207,7 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   }
   SetSelection(0);
 
-#if 0
-  //EMBEDDING
-  // Embed the control, if possible
-  if (panel->cEmbeddingControl && cMacControl) {
-    ::EmbedControl(cMacControl,panel->cEmbeddingControl);
-  }
-#endif        
+  ::EmbedControl(cMacControl, GetRootControl());
   //DrawChoice(TRUE);
 
 #ifdef WX_CARBON

@@ -10,9 +10,7 @@
 #ifndef wxMacDCh
 #define wxMacDCh
 
-#include "wxMacObj.h"
-
-class wxMacDC: public wxMacObject
+class wxMacDC
 {
   protected:
 	CGrafPtr	cMacGrafPort;

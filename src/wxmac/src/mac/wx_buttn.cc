@@ -89,7 +89,6 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   SetCurrentMacDC();
   CGrafPtr theMacGrafPort = cMacDC->macGrafPort();
 
-#ifdef WX_CARBON
   // First, create the control with a bogus rectangle;
   OSErr err;
   Rect boundsRect = {0,0,0,0};
@@ -104,50 +103,8 @@ void wxButton::Create // Real constructor (given parentPanel, label)
   cWindowWidth = boundsRect.right - boundsRect.left + (padLeft + padRight);
   cWindowHeight = boundsRect.bottom - boundsRect.top + (padTop + padBottom);
   ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
-#else
-
-  if (width <= 0 || height <= 0)
-    {
-      float fWidth, fHeight;
-      GetTextExtent(label, &fWidth, &fHeight, NULL, NULL, buttonFont);
-      if (width <= 0)
-	{
-	  width = (int)(fWidth + BUTTON_H_SPACE);
-	  if (width < MIN_BUTTON_WIDTH) width = MIN_BUTTON_WIDTH;
-	  cWindowWidth = width;
-	}
-
-      if (height <= 0)
-	{
-	  height = (int)(fHeight + BUTTON_V_SPACE);
-	  cWindowHeight = height;
-	}
-    }
-
-  cBorderArea = new wxArea(this);
-  new wxButtonBorder(cBorderArea);
-
-  Rect boundsRect = {0, 0, ClientArea()->Height(), ClientArea()->Width()};
-  OffsetRect(&boundsRect,SetOriginX,SetOriginY);
-  wxMacString theMacTitle = label;
-  const Bool drawNow = TRUE; // WCH: use FALSE, then show after ChangeColour??
-  const short offValue = 0;
-  const short minValue = 0;
-  const short maxValue = 1;
-  short refCon = 0;
-
-  cMacControl = ::NewControl(GetWindowFromPort(theMacGrafPort), &boundsRect, theMacTitle(),
-			     drawNow, offValue, minValue, maxValue, pushButProc + popupUseWFont, refCon);
-  CheckMemOK(cMacControl);
   
-#endif        
-
-#if 0
-  // EMBEDDING
-  if (parentPanel->cEmbeddingControl) {
-    ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
-  }
-#endif    
+  ::EmbedControl(cMacControl, GetRootControl());
 
   if (style & 1) OnSetDefault(TRUE);
 
@@ -229,48 +186,6 @@ wxButton::~wxButton(void)
 //-----------------------------------------------------------------------------
 void wxButton::ChangeColour(void)
 {
-#ifndef WX_CARBON
-  // all the other controls have null defns for ChangeColour, I don't see why
-  // buttons can't, as well.  Particularly because Custom Color tables aren't 
-  // supported for Carbon.
-
-  if (buttonBitmap)
-    return;
-  if (cColorTable == NULL)
-    {
-      cColorTable = (CCTabHandle)NewHandle(40);
-      CheckMemOK(cColorTable);
-      (**cColorTable).ccSeed = 0;
-      (**cColorTable).ccRider = 0;
-      (**cColorTable).ctSize = 2;
-      (**cColorTable).ctTable[0].value = cFrameColor;
-      (**cColorTable).ctTable[1].value = cBodyColor;
-      (**cColorTable).ctTable[2].value = cTextColor;
-      (**cColorTable).ctTable[3].value = cThumbColor;
-    }
-
-  RGBColor whiteColor = {65535, 65535, 65535};
-  RGBColor blackColor = {0, 0, 0};
-
-  wxColour* backgroundColour = GetBackgroundColour();
-  RGBColor backgroundRGB;
-  backgroundRGB = backgroundColour ? backgroundColour->pixel : blackColor;
-  (**cColorTable).ctTable[0].rgb = backgroundRGB;
-
-  wxColour* buttonColour = GetButtonColour();
-  RGBColor buttonRGB;
-  buttonRGB = buttonColour ? buttonColour->pixel : whiteColor;
-  (**cColorTable).ctTable[1].rgb = buttonRGB;
-
-
-  wxColour* labelColour = GetLabelColour();
-  RGBColor labelRGB;
-  labelRGB = labelColour ? labelColour->pixel : blackColor;
-  (**cColorTable).ctTable[2].rgb = labelRGB;
-
-  if (cMacControl)
-    ::SetControlColor(cMacControl, cColorTable);
-#endif          
 }
 
 //-----------------------------------------------------------------------------
@@ -290,12 +205,12 @@ void wxButton::SetLabel(char* label)
 {
   if (buttonBitmap)
     return;
-  if (label)
-    {
-      wxMacString1 theMacString1 = wxItemStripLabel(label);
-      if (cMacControl)
-	::SetControlTitle(cMacControl, theMacString1());
+  if (label) {
+    if (cMacControl) {
+      SetCurrentDC();
+      ::SetControlTitle(cMacControl, wxC2P(wxItemStripLabel(label)));
     }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -339,12 +254,11 @@ void wxButton::SetDefault(Bool flag) // WCH : modification of original (see belo
 //-----------------------------------------------------------------------------
 void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 { // WCH: the panel should invoke the default button to distinguish itself
-#ifdef WX_CARBON
   if (cMacControl) {
     char byteFlag = (char)flag;
+    SetCurrentDC();
     SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
   } else {
-#endif                
     if (buttonBitmap)
       return;
     if (flag)
@@ -361,9 +275,7 @@ void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 			       cWindowWidth - 8, cWindowHeight - 8,
 			       cWindowX + 4, cWindowY + 4);
       }
-#ifdef WX_CARBON
   }
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -470,6 +382,7 @@ void wxButton::DoShow(Bool show)
   if (!CanShow(show)) return;
 
   if (!buttonBitmap && cMacControl) {
+    SetCurrentDC();
     if (show)
       ::ShowControl(cMacControl);
     else
@@ -488,11 +401,10 @@ void wxButton::Highlight(Bool flag) // mac platform only
       PaintBitmapButton(&bounds, buttonBitmap, flag, FALSE, cColour);
     }
   } else if (cMacControl) {
-    if (cEnable)
-      {
-	if (SetCurrentDC())
-	  ::HiliteControl(cMacControl, flag ? kControlButtonPart : 0);
-      }
+    SetCurrentDC();
+    if (cEnable) {
+      ::HiliteControl(cMacControl, flag ? kControlButtonPart : 0);
+    }
   }
 }
 
@@ -539,13 +451,15 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 //-----------------------------------------------------------------------------
 void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
-  SetCurrentDC();
   if (buttonBitmap || !cMacControl)
     return;
 
+  SetCurrentDC();
+
   Bool isVisible = cMacControl && IsShown();
   Bool hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
-  if (hideToPreventFlicker) ::HideControl(cMacControl);
+  if (hideToPreventFlicker) 
+    ::HideControl(cMacControl);
 
   if (dW || dH)
     {

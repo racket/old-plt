@@ -369,7 +369,8 @@ executable.
   bytecode, and it's possible that the content of the
   `literal-file-list' files only parse when concatenated; the files
   and expression are not compiled or inspected in any way during the
-  embedding process.
+  embedding process. If `literal-sexp' is #f, no literal expression is
+  included in the executable.
 
   The `cmdline-list' argument contains command-line strings that are
   prefixed onto any actual command-line arguments that are provided to

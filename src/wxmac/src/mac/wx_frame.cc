@@ -115,22 +115,11 @@ wxFrame::wxFrame // Constructor (for frame window)
   
   cMacDC = new wxMacDC(GetWindowPort(theMacWindow));
 
-#ifndef WX_CARBON
-  WStateData **wstatedata = (WStateData**)((WindowPeek)theMacWindow)->dataHandle;
-  (*wstatedata)->stdState.right -= 80;
-  //(*wstatedata)->stdState.top = GetMBarHeight() + 5;
-#endif
-
   // Calculate the platformArea size
   Rect theStrucRect;
   Rect theContRect;
-#ifdef WX_CARBON  
   GetWindowBounds(theMacWindow,kWindowStructureRgn,&theStrucRect);
   GetWindowBounds(theMacWindow,kWindowContentRgn,&theContRect);
-#else        
-  theStrucRect = wxMacGetStrucRect();
-  theContRect = wxMacGetContRect();
-#endif        
   wxMargin platformMargin;
   platformMargin.SetMargin(theContRect.left - theStrucRect.left, Direction::wxLeft);
   platformMargin.SetMargin(theContRect.top - theStrucRect.top, Direction::wxTop);
@@ -154,13 +143,11 @@ wxFrame::wxFrame // Constructor (for frame window)
   
   if (wxIsBusy())
     cBusyCursor = 1;
-  
-#if 0
-  // EMBEDDING
+
   // create a root control, to enable control embedding
   ControlRef rootControl;
   ::CreateRootControl(theMacWindow,&rootControl);
-#endif
+  cMacControl = rootControl;
 }
 
 //=============================================================================
@@ -200,8 +187,6 @@ wxFrame::~wxFrame(void)
 //-----------------------------------------------------------------------------
 void wxFrame::InitDefaults(void)
 {
-  cWindowTitle[0] = 0; // kludge
-
   cMaximized = FALSE;
   cIsModal = FALSE;
   cBusyCursor = 0;
@@ -563,23 +548,16 @@ void wxFrame::NowFront(Bool flag) // mac platform only
       if (wx_menu_bar)
 	wx_menu_bar->Install();
       else {
-	if (0 && cIsModal) {
-	  if (!empty_menu_bar)
-	    wxREGGLOB(empty_menu_bar);
-	  empty_menu_bar = new wxMenuBar;
-	  empty_menu_bar->Install();
-	} else {
-	  if (!close_menu_bar) {
-	    close_menu_bar = new wxMenuBar;
-	    /* When a frame doesn't have a menubar, doMacInMenuBar
-	       assumes that any menulelection is the close item. */
-	    wxMenu *file = new wxMenu();
-	    file->Append(1, "Close\tCmd+W");
-	    wxREGGLOB(close_menu_bar);
-	    close_menu_bar->Append(file, "File");
-	  }
-	  close_menu_bar->Install();
+	if (!close_menu_bar) {
+	  close_menu_bar = new wxMenuBar;
+	  /* When a frame doesn't have a menubar, doMacInMenuBar
+	     assumes that any menulelection is the close item. */
+	  wxMenu *file = new wxMenu();
+	  file->Append(1, "Close\tCmd+W");
+	  wxREGGLOB(close_menu_bar);
+	  close_menu_bar->Append(file, "File");
 	}
+	close_menu_bar->Install();
       }
     }
 }
@@ -761,40 +739,6 @@ void wxFrame::MacUpdateWindow(void)
 //-----------------------------------------------------------------------------
 void wxFrame::MacDrawGrowIcon(void)
 {
-#ifndef WX_CARBON
-# if (__powerc) || defined(__ppc__)
-  if (! wxTheApp->MacOS85WindowManagerPresent) {
-# endif
-    if (SetCurrentMacDCNoMargin()) {
-      // Save the clipping region
-      RgnHandle saveClip = NewRgn();
-      CheckMemOK(saveClip);
-      ::GetClip(saveClip);
-      // Compute the bounding rect of the grow icon
-      int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
-      int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
-      Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
-      // Avoid drawing scrollbar outlines
-      ::ClipRect(&growRect);
-      // Draw it
-      WindowPtr theMacWindow = macWindow();
-      RGBColor fore, back;
-      ::GetForeColor(&fore);
-      ::GetBackColor(&back);
-      ::ForeColor(blackColor);
-      ::BackColor(whiteColor);
-      ::EraseRect(&growRect);
-      ::DrawGrowIcon(theMacWindow);
-      // Restore the clipping region
-      ::SetClip(saveClip);
-      ::DisposeRgn(saveClip);
-      ::RGBForeColor(&fore);
-      ::RGBBackColor(&back);
-    }
-# if (__powerc) || defined(__ppc__)
-  }
-# endif
-#endif
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -804,20 +748,17 @@ void wxFrame::MacDrawGrowIcon(void)
 //-----------------------------------------------------------------------------
 char* wxFrame::GetTitle(void) // WCH: return type should be "const char*"
 {
-  Str255		theTitle;
-
+  Str255 theTitle;
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   ::GetWTitle(theMacWindow, theTitle);
-  CopyPascalStringToC(theTitle, cWindowTitle);
-  return cWindowTitle;
+  return wxP2C(theTitle);
 }
 
 //-----------------------------------------------------------------------------
 void wxFrame::SetTitle(char* title)
 {
-  wxMacString theMacString = title;
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
-  ::SetWTitle(theMacWindow, theMacString());
+  ::SetWTitle(theMacWindow, wxC2P(title));
 }
 
 //-----------------------------------------------------------------------------
@@ -842,14 +783,10 @@ void wxFrame::Show(Bool show)
     window_parent->GetChildren()->Show(this, show);
   if (cParentArea)
     cParentArea->Windows()->Show(this, show);
+  wxTopLevelWindows(ContextWindow())->Show(this, show);
 
   WindowPtr theMacWindow = GetWindowFromPort(cMacDC->macGrafPort());
   if (show) {
-#if __WXGARBAGE_COLLECTION_ON
-    wxTopLevelWindows(ContextWindow())->Append(this);
-#else
-    wxTopLevelWindows(ContextWindow())->Show(this, show);
-#endif
     ::ShowWindow(theMacWindow);
     ::SelectWindow(theMacWindow); 
     
@@ -857,11 +794,6 @@ void wxFrame::Show(Bool show)
       /* b/c may be optimized for hidden: */
       cMacDC->setCurrentUser(NULL);
   } else {
-#if __WXGARBAGE_COLLECTION_ON
-    wxTopLevelWindows(ContextWindow())->DeleteObject(this);
-#else
-    wxTopLevelWindows(ContextWindow())->Show(this, show);
-#endif
     if (cFocusWindow) {
       cFocusWindow->OnKillFocus();
       cFocusWindow = NULL;
@@ -912,42 +844,17 @@ void wxFrame::Paint(void)
 {
   if (SetCurrentDC()) {
     RgnHandle rgn, subrgn;
-#ifndef WX_CARBON
-    RgnHandle borderRgn = NULL;
-#endif
     if ((rgn = NewRgn())) {
       if ((subrgn = NewRgn())) {
-#ifndef WX_CARBON
-	if ((cStyle & wxNO_RESIZE_BORDER) || (borderRgn = NewRgn())) {
-	  if (borderRgn) {
-	    int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
-	    int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
-	    Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
-	    RectRgn(borderRgn, &growRect);
-	  }
-#endif		    
-	  SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
-	  AddWhiteRgn(subrgn);
-	  DiffRgn(rgn, subrgn, rgn);
-#ifndef WX_CARBON
-	  if (borderRgn)
-	    DiffRgn(rgn, borderRgn, rgn);
-#endif
-	  EraseRgn(rgn);
-	  RGBColor save;
-	  GetForeColor(&save);
-	  ForeColor(whiteColor);
-#ifndef WX_CARBON
-	  if (borderRgn)
-	    DiffRgn(subrgn, borderRgn, subrgn);
-#endif
-	  PaintRgn(subrgn);
-	  RGBForeColor(&save);
-#ifndef WX_CARBON
-	  if (borderRgn)
-	    DisposeRgn(borderRgn);
-	}
-#endif
+	SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
+	AddWhiteRgn(subrgn);
+	DiffRgn(rgn, subrgn, rgn);
+	EraseRgn(rgn);
+	RGBColor save;
+	GetForeColor(&save);
+	ForeColor(whiteColor);
+	PaintRgn(subrgn);
+	RGBForeColor(&save);
 	DisposeRgn(subrgn);
       }
       DisposeRgn(rgn);
@@ -1017,5 +924,11 @@ void wxFrame::Enable(Bool enable)
   // Enable/disbale menubar
   if (wx_menu_bar)
     wx_menu_bar->Install();	
+}
+
+
+wxFrame *wxFrame::GetRootFrame()
+{
+  return this;
 }
 

@@ -77,7 +77,6 @@ OBJS = \
    wx_dcmem.o \
    wx_print.o \
    wxMacDC.o \
-   wxMacObj.o \
    wx_dcpr1.o \
    wx_rbox.o \
    wx_rbut.o \
@@ -230,8 +229,6 @@ wx_print.o : $(srcdir)/mac/wx_print.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_print.o -c $(srcdir)/mac/wx_print.cc
 wxMacDC.o : $(srcdir)/mac/wxMacDC.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wxMacDC.o -c $(srcdir)/mac/wxMacDC.cc
-wxMacObj.o : $(srcdir)/mac/wxMacObj.cc
-	$(CXX) $(WXMAC_CXXFLAGS) -o wxMacObj.o -c $(srcdir)/mac/wxMacObj.cc
 wx_dcpr1.o : $(srcdir)/mac/wx_dcpr1.cc
 	$(CXX) $(WXMAC_CXXFLAGS) -o wx_dcpr1.o -c $(srcdir)/mac/wx_dcpr1.cc
 wx_rbox.o : $(srcdir)/mac/wx_rbox.cc
@@ -418,7 +415,6 @@ ALSelectors.o : $(ALISTDEPS) $(ALISTDIR)/ALSelectors.c
 @INCLUDEDEP@ wx_dcmem.d
 @INCLUDEDEP@ wx_print.d
 @INCLUDEDEP@ wxMacDC.d
-@INCLUDEDEP@ wxMacObj.d
 @INCLUDEDEP@ wx_dcpr1.d
 @INCLUDEDEP@ wx_rbox.d
 @INCLUDEDEP@ wx_rbut.d

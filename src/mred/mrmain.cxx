@@ -62,7 +62,9 @@ static void dangerdanger(int)
 
 static void yield_indefinitely()
 {
-  mred_wait_eventspace();
+  if (!scheme_setjmp(scheme_error_buf)) {
+    mred_wait_eventspace();
+  }
 }
 
 #ifndef DONT_LOAD_INIT_FILE

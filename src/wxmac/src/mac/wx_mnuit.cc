@@ -128,15 +128,12 @@ char* wxMenuItem::GetLabel(void) {  return itemName; }
 //-----------------------------------------------------------------------------
 void wxMenuItem::SetLabel(char* label)
 {
-  if (itemName) delete[] itemName;
   itemName = macCopyString(label);
 
   short macMenuItem = GetMacItemNumber();
-  if (macMenuItem > 0)
-    {
-      wxMacString1 theMacString1 = label;
-      SetMenuItemText(parentMenu->MacMenu(), macMenuItem, theMacString1());
-    }
+  if (macMenuItem > 0) {
+    SetMenuItemText(parentMenu->MacMenu(), macMenuItem, label[0] ? wxC2P(label) : "\p ");
+  }
 }
 
 //-----------------------------------------------------------------------------

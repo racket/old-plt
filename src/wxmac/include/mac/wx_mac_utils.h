@@ -10,33 +10,16 @@
 #ifndef wx_mac_utilsh
 #define wx_mac_utilsh
 
-#include "wxMacObj.h"
+char *wxP2C(const unsigned char *p);
+void wxP2C(const unsigned char *p, char *c);
+
+unsigned char *wxC2P(const char *c);
+void wxC2P(const char *c, unsigned char *p);
+
 #ifndef WX_CARBON
 # include <Strings.h>
 # include <QuickDraw.h>
 #endif
-
-class wxMacString: public wxMacObject
-{
-  protected:
-	Str255		pString;
-
-  public:
-	wxMacString(void);						// constructor
-	wxMacString(const char* cString);				// constructor from cString
-	~wxMacString(void);						// destructor
-
-	wxMacString& operator=(char* cString);	// assignment of cString
-	Str255& operator() (void);				// get reference to pascal string
-};
-
-class wxMacString1: public wxMacString
-{
-  public:
-	wxMacString1(void);						// constructor
-	wxMacString1(char* cString);				// constructor from cString
-	wxMacString1& operator=(char* cString);	// assignment of cString
-};
 
 char* macCopyString(char* s);
 char* macCopyString0(char* s);

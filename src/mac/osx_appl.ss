@@ -87,9 +87,10 @@ exit 1
         ; maybe someday we'll have Contents/Resources/English.lproj ?
 	(let* ([rsrc-src (build-path "MrEd.rsrc.OSX")]
 	       [rsrc-dest (build-path contents-path "Resources" "MrEd.rsrc")])
-	  (unless (file-exists? rsrc-dest)
-	    (printf "Installing ~a~n" rsrc-dest)
-	    (copy-file rsrc-src rsrc-dest)))
+	  (when (file-exists? rsrc-dest)
+	    (delete-file rsrc-dest))
+	  (printf "Installing ~a~n" rsrc-dest)
+	  (copy-file rsrc-src rsrc-dest))
 	(let* ([icns-name (string-append app-name ".icns")]
 	       [icns-src (build-path plthome "src" "mac" "icon" icns-name)]
 	       [icns-dest (build-path contents-path "Resources" icns-name)])

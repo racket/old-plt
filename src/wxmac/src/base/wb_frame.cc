@@ -40,7 +40,6 @@ wxbFrame::wxbFrame (char* windowName, wxScreen* parentScreen,
 {
   __type = wxTYPE_FRAME;
   
-  /* WXGC_IGNORE(context); - NO, context itself is not finalized */
   context = wxGetContextForFrame();
   
   wxTopLevelWindows(ContextWindow())->Append(this);

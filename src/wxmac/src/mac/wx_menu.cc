@@ -134,8 +134,7 @@ wxMenu::wxMenu // Constructor (given objectType)
   Callback(function);
 
   cMacMenuId = gMenuIdCounter++; // get next unique menuID
-  wxMacString1 theMacString1 = title;
-  cMacMenu = ::NewMenu(cMacMenuId, theMacString1());
+  cMacMenu = ::NewMenu(cMacMenuId, (title && title[0]) ? wxC2P(title) : "\p ");
   CheckMemOK(cMacMenu);
   WXGC_IGNORE(this, menu_bar);
 }
@@ -707,8 +706,8 @@ void wxMenu::AppendSeparator(void)
   menuItems.Append(item);
   no_items ++;
 
-  wxMacString1 theMacItemString1 = item->itemName; // menu item string can't be empty
-  AppendMenu(cMacMenu, theMacItemString1());
+  // menu item string can't be empty
+  AppendMenu(cMacMenu, item->itemName[0] ? wxC2P(item->itemName) : "\p ");
 	
   CheckHelpHack();
 }
@@ -727,8 +726,6 @@ void wxMenu::Append(int Id, char* Label, char* helpString, Bool checkable)
   menuItems.Append(item);
   no_items ++;
 
-  // wxMacString1 theMacItemString1 = item->itemName; // menu item string can't be empty
-  // AppendMenu(cMacMenu, theMacItemString1());
   Str255 menusetup, menustr;
   BuildMacMenuString(menusetup, menustr, item->itemName, FALSE);
   ::AppendMenu(cMacMenu, (ConstStr255Param)menusetup);

@@ -89,7 +89,7 @@ bin:
 	$(MAKE) $(LINKRESULT)
 
 EXTRASETUP_wx_xt =
-EXTRASETUP_wx_mac = MrEd.app
+EXTRASETUP_wx_mac = MrEd.app/Contents/Resources/MrEd.rsrc
 
 $(LINKRESULT) : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB) $(EXTRASETUP_@WXVARIANT@)
 	$(MREDLINKER) $(MREDLDFLAGS) $(MRSTATIC) -o $(LINKRESULT) $(MREDOBJECTS) $(MREDLDLIBS) $(MRSTATIC_STUB)
@@ -97,7 +97,7 @@ $(LINKRESULT) : $(MZSCHEME) mrmain.o $(MREDOBJECTS) $(@WXLIBS@) $(MRSTATIC_STUB)
 libmred.@LIBSFX@: $(WXLIBSNORM)
 	$(AR) $(ARFLAGS) libmred.@LIBSFX@ $(WXLIBSNORM)
 
-MrEd.app: $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
+MrEd.app/Contents/Resources/MrEd.rsrc: $(srcdir)/../mac/osx_appl.ss $(srcdir)/../mac/cw/MrEd.r
 	$(srcdir)/../mac/osx_appl.ss $(srcdir)/..
 
 

@@ -48,8 +48,6 @@ public:
 
 	virtual void OnChar(wxKeyEvent *event); // mac platform only
         
-        ControlHandle cMacControl;
-
     virtual void MaybeMoveControls();
 
     virtual void Activate(Bool gray);

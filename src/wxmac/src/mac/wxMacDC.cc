@@ -6,9 +6,9 @@
 // Updated:	
 // Copyright:  (c) 1993-94, AIAI, University of Edinburgh. All Rights Reserved.
 ///////////////////////////////////////////////////////////////////////////////
-#ifndef WX_CARBON
-# include <QuickDraw.h>
-#endif
+
+
+#include "wx_obj.h"
 #include "wxMacDC.h"
 
 //-----------------------------------------------------------------------------

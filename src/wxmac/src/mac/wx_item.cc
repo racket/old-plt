@@ -122,9 +122,9 @@ void wxItem::ChangeToGray(Bool gray)
   if (cMacControl && cActive) {
     SetCurrentDC();
     if (gray) {
-      DeactivateControl(cMacControl);
+      DisableControl(cMacControl);
     } else {
-      ActivateControl(cMacControl);
+      EnableControl(cMacControl);
     }
   }
   

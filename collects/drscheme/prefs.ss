@@ -1,11 +1,6 @@
 (unit/sig drscheme:prefs^
   (import [mred : mred-interfaces^]
 	  [framework : framework^])
-  
-  (framework:preferences:set-default 'drscheme:keep-interactions-history #f
-			       (lambda (x)
-				 (or (not x)
-				     (eq? x #t))))
 
   (framework:preferences:set-default 'drscheme:execute-warning-once
 				#f
@@ -35,8 +30,6 @@
 				pref-sym 
 				(send evt checked?))))])
 		    (send q set-value (framework:preferences:get pref-sym))))))])
-       (make-check-box 'drscheme:keep-interactions-history
-		       "Keep execution history in interactions window")
        (make-check-box 'drscheme:execute-warning-once
 		       "Only warn once when executions and interactions are not synchronized")
        (make-check-box 'drscheme:open-all-files-in-scheme-mode

@@ -62,8 +62,8 @@
 	    focus)
       
       (when drscheme-test-dir
-	(send top-panel stretchable-in-y #t)
-	(send bottom-panel stretchable-in-y #f)
+	(send top-panel stretchable-height #t)
+	(send bottom-panel stretchable-height #f)
 	(let* ([tests
 		(core:function:quicksort
 		 (core:function:foldl 

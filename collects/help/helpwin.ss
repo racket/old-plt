@@ -499,7 +499,7 @@
 		(split-words (caddr m)))
 	  null)))
 
-  (define (start-search)
+  (define (do-search insert)
     (let* ([given-find (send search-text get-value)]
 	   [tried-find given-find]
 	   [finds (let ([s given-find])
@@ -516,13 +516,6 @@
 	   [regexp? (= 2 (send exact get-selection))]
 	   [exact? (= 0 (send exact get-selection))]
 	   [ckey (gensym)]
-	   [editor (let ([e (send results get-editor)])
-		     (if (is-a? e results-editor%)
-			 e
-			 (let ([e (make-object results-editor%)])
-			   (send e lock #t)
-			   (send results set-page (editor->page e) #t)
-			   e)))]
 	   [hit-count 0])
       (dynamic-wind
        (lambda ()
@@ -537,14 +530,11 @@
 			    (queue-callback
 			     (lambda ()
 			       (when (eq? cycle-key ckey)
-				 (send editor lock #f)
-				 (send editor insert 
-				       (format "(Search stopped~a.)" 
-					       (if (= hit-count MAX-HIT-COUNT)
-						   " - found maximum allowed matches" 
-						   ""))
-				       (send editor last-position) 'same #f)
-				 (send editor lock #t)))
+				 (insert 
+				  (format "(Search stopped~a.)" 
+					  (if (= hit-count MAX-HIT-COUNT)
+					      " - found maximum allowed matches" 
+					      "")))))
 			     #f))])
 	   (semaphore-post break-sema)
 	   (send stop show #t)
@@ -688,4 +678,18 @@
 	 (send exact enable #t)
 	 (end-busy-cursor)))))
 
+  (define (start-search)
+    (let ([editor (let ([e (send results get-editor)])
+		    (if (is-a? e results-editor%)
+			e
+			(let ([e (make-object results-editor%)])
+			  (send e lock #t)
+			  (send results set-page (editor->page e) #t)
+			  e)))])
+      (do-search
+       (lambda (string)
+	 (send editor lock #f)
+	 (send editor insert string (send editor last-position) 'same #f)
+	 (send editor lock #t)))))
+  
   (yield (make-semaphore 0)))

@@ -299,7 +299,6 @@
 	       clear-previous-expr-positions
 	       get-end-position
 	       set-clickback
-	       set-last-header-position
 	       this-err this-err-write 
 	       this-out this-out-write
 	       this-in
@@ -313,7 +312,6 @@
 	       set-prompt-mode
 	       delete lock locked?
 	       line-start-position
-	       reset-console-start-position
 	       last-position
 	       set-resetting
 	       position-line
@@ -731,8 +729,6 @@
 	     (let ([after (last-position)])
 	       (change-style delta before after)
 	       (values before after))))])
-      (override
-	[takeover void])
       (public
 	[shutting-down? #f]
 	[shutdown 
@@ -757,12 +753,10 @@
 	     (set! in-evaluation? #f)
 
 	     (begin-edit-sequence)
-	     (if (fw:preferences:get 'drscheme:keep-interactions-history)
-		 (insert #\newline (last-position) (last-position))
-		 (begin (set-resetting #t)
-			(delete (line-start-position 1) (last-position))
-			(set-prompt-mode #f)
-			(set-resetting #f)))
+	     (set-resetting #t)
+	     (delete (line-start-position 1) (last-position))
+	     (set-prompt-mode #f)
+	     (set-resetting #f)
 	     (set-position (last-position) (last-position))
 	     (insert-delta "Language: " WELCOME-DELTA)
 	     (insert-delta 
@@ -772,8 +766,6 @@
 		 'drscheme:settings)))
 	      RED-DELTA)
 	     (insert-delta (format ".~n") WELCOME-DELTA)
-	     (unless (fw:preferences:get 'drscheme:keep-interactions-history)
-	       (set-last-header-position (last-position)))
 	     (set! repl-initially-active? #t)
 	     (end-edit-sequence)
 
@@ -1007,9 +999,9 @@
 	       (set-clickback before after 
 			      (lambda args (drscheme:app:about-drscheme))
 			      CLICK-DELTA)))
-	   (set-last-header-position (last-position))
 
-	   (if (fw:preferences:get 'drscheme:repl-always-active)
+	   (if (or (fw:preferences:get 'drscheme:repl-always-active)
+		   (not (send (ivar (get-top-level-window) interactions-edit) get-filename)))
 	       (reset-console)
 	       (begin 
 		 (insert-delta "Execute has not been clicked." WARNING-STYLE-DELTA)
@@ -1761,91 +1753,10 @@
 	       ;(clear-undos)
 	       (end-edit-sequence)
 	       (scroll-to-position start-selection #f (last-position) 'start)))])
-	
-	(public
-	  [reset-console-start-position 0]
-	  [reset-console-end-position #f])
-	(private
-	  [reset-console-end-location #f]
-	  [reset-console-start-location #f]
-	  [reset-console-locations
-	   (lambda ()
-	     (when reset-console-end-position
-	       (set! reset-console-end-location
-		     (line-location (position-line reset-console-end-position) #f)))
-	     (when reset-console-start-position
-	       (set! reset-console-start-location
-		     (line-location (position-line reset-console-start-position) #f)))
-	     (when (and reset-console-start-location reset-console-end-location)
-	       (invalidate-bitmap-cache 0
-					(max 0 reset-console-start-location)
-					'end
-					(max 0 (- reset-console-end-location
-						  reset-console-start-location)))))])
-	(public
-	  [set-last-header-position
-	   (lambda (p)
-	     (set! reset-console-start-position p)
-	     (reset-console-locations))])
-	(override
-	  [after-set-size-constraint
-	   (lambda ()
-	     (super-after-set-size-constraint)
-	     (run-after-edit-sequence
-	      (lambda ()
-		(reset-console-locations))
-	      'reset-console-locations))])
 	(public
 	  [reset-console
-	   (let* ([delta (make-object mred:style-delta%)]
-		  [color-add (send delta get-foreground-add)]
-		  [color-mult (send delta get-foreground-mult)])
-	     (send color-mult set 0 0 0)
-	     (send color-add set 127 127 127)
-	     (lambda ()
-	       (cleanup-transparent-io)
-	       (when (number? prompt-position)
-		 (set! reset-console-end-position prompt-position))
-	       (set-resetting #t)
-	       (if (< (mred:get-display-depth) 8)
-		   (begin (reset-console-locations)
-			  (send (get-canvas) force-redraw))
-		   (when (and reset-console-end-position
-			      reset-console-start-position)
-		     (change-style delta reset-console-start-position 
-				   reset-console-end-position)))
-	       (set-resetting #f)))])
-	(override
-	  [on-paint
-	   (lambda (before dc left top right bottom dx dy draw-caret)
-	     (super-on-paint before dc left top right bottom
-			     dx dy draw-caret)
-	     (when (and (not before) 
-			reset-console-start-location
-			reset-console-end-location)
-	       (let ([height (max 0
-				  (- reset-console-end-location
-				     reset-console-start-location))])
-		 (when (> height 0)
-		   (let* ([old-pen (send dc get-pen)]
-			  [old-brush (send dc get-brush)]
-			  [old-logical (send dc get-logical-function)]
-			  [pen (send mred:the-pen-list
-				     find-or-create-pen
-				     "BLACK" 0
-				     'transparent)]
-			  [brush (make-object mred:brush% "BLACK" 'solid)]
-			  [x dx]
-			  [y (+ dy reset-console-start-location)]
-			  [width (let ([b (box 0)])
-				   (get-extent b #f)
-				   (max 0 (unbox b)))])
-		     (send dc set-pen pen)
-		     (send dc set-brush brush)
-		     (send dc draw-rectangle x y width height)
-		     (send dc set-pen old-pen)
-		     (send dc set-brush old-brush)
-		     (send dc set-logical-function old-logical))))))])
+	   (lambda ()
+	     (cleanup-transparent-io))])
 	(public
 	  [ready-non-prompt
 	   (lambda ()
@@ -1905,28 +1816,9 @@
 				 original-write-handler)))
 	      (list this-out this-err this-result)
 	      (list this-out-write this-err-write this-result-write)))])
-	(public
-	  [takeover
-	   (lambda ()
-	     (error-display-handler
-	      (let ([old (error-display-handler)])
-		(rec console-error-display-handler
-		     (lambda (x)
-		       (mred:message-box "Error" (format "~a" x))
-		       (old x)
-		       (flush-console-output)))))
-	     ;(current-output-port this-out)
-	     ;(current-input-port this-in)
-	     ;(current-error-port this-err)
-	     (port-read-handler this-in (lambda (x) (transparent-read)))
-	     (mzlib:pretty-print:pretty-print-display-string-handler 
-	      (lambda (string port)
-		(for-each (lambda (x) (write-char x port))
-			  (string->list string)))))])
 	(sequence
 	  (apply super-init args))
 	(sequence
-	  (takeover)
 	  (set-display/write-handlers)))))
   
   (define make-transparent-io-edit%
@@ -1948,9 +1840,6 @@
 	    (send mult set 0 0 0)
 	    (send add set 0 150 0)))
 	(private [shutdown? #f])
-
-	(override [reset-console-end-position #f]
-		  [reset-console-start-position #f])
 
 	(public
 	  [potential-sexps-protect (make-semaphore 1)]
@@ -2054,7 +1943,6 @@
 		        (mzlib:thread:dynamic-enable-break (lambda () (mred:yield wait-for-sexp)))
 			loop))])))))])
 	(override
-	  [takeover void]
 	  [get-prompt (lambda () "")])
 	(override
 	  [on-insert

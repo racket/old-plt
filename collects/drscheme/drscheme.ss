@@ -317,7 +317,7 @@
 	     f)))))))
 
 
-(define graphical-debug? #f)
+(define graphical-debug? #t)
 
 (define drscheme-custodian #f)
 

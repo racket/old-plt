@@ -102,9 +102,9 @@
 	  [write
 	   (lambda (stream)
 	     (super-write stream)
-	     (send stream << min-value)
-	     (send stream << max-value)
-	     (send stream << init-value))]
+	     (send stream put min-value)
+	     (send stream put max-value)
+	     (send stream put init-value))]
 	  [read
 	   (lambda (stream version)
 	     (super-read stream version)
@@ -183,7 +183,7 @@
 	  [write
 	   (lambda (stream)
 	     (super-write stream)
-	     (send stream << max-value))]
+	     (send stream put max-value))]
 	  [read
 	   (lambda (stream version)
 	     (super-read stream version)

@@ -54,10 +54,10 @@
   (define new-name (lambda (base) (symbol->string (gensym base))))
   
   (define (stream-write-list stream l)
-    (send stream << (length l))
+    (send stream put (length l))
     (for-each
      (lambda (i)
-       (send stream << i))
+       (send stream put i))
      l))
   
   (define (stream-read-list stream)

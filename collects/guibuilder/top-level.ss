@@ -495,7 +495,7 @@
 	   (let ([out (lambda (name val)
 			(let ([info (box 0)])
 			  (begin-write-header-footer-to-file stream name info)
-			  (send stream << val)
+			  (send stream put val)
 			  (end-write-header-footer-to-file stream (unbox info))))])
 	     (out "gb:mode" top-level-type)
 	     (out "gb:title" frame-label)

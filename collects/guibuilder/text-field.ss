@@ -53,7 +53,7 @@
 	  [write
 	   (lambda (stream)
 	     (super-write stream)
-	     (send stream << initial))]
+	     (send stream put initial))]
 	  [read
 	   (lambda (stream version)
 	     (super-read stream version)

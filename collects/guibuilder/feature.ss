@@ -67,7 +67,7 @@
 	  [write
 	   (lambda (stream)
 	     (super-write stream)
-	     (send stream << label))]
+	     (send stream put label))]
 	  [read
 	   (lambda (stream version)
 	     (super-read stream version)
@@ -188,7 +188,7 @@
 	  [write
 	   (lambda (stream)
 	     (super-write stream)
-	     (send stream << (if vertical-label? 1 0)))]
+	     (send stream put (if vertical-label? 1 0)))]
 	  [read
 	   (lambda (stream version)
 	     (super-read stream version)
@@ -246,7 +246,7 @@
 	 [write
 	  (lambda (stream)
 	    (super-write stream)
-	    (send stream << (if vertical-layout? 1 0)))]
+	    (send stream put (if vertical-layout? 1 0)))]
 	 [read
 	  (lambda (stream version)
 	    (super-read stream version)
@@ -318,7 +318,7 @@
 	  [write
 	   (lambda (stream)
 	     (super-write stream)
-	     (send stream << (if (get-tagged-value tag) 1 0)))]
+	     (send stream put (if (get-tagged-value tag) 1 0)))]
 	  [read
 	   (lambda (stream version)
 	     (super-read stream version)
@@ -363,7 +363,7 @@
 	  [write
 	   (lambda (stream)
 	     (super-write stream)
-	     (send stream << (get-tagged-value tag)))]
+	     (send stream put (get-tagged-value tag)))]
 	  [read
 	   (lambda (stream version)
 	     (super-read stream version)

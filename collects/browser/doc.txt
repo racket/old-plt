@@ -150,8 +150,8 @@ The html-eval-ok parameter controls the evaluation of
 >   remove-tag :: (send o remove-tag name)
      Removes a tag.
 
->   post-url :: (send o post-url string[url] post-data)
-     Follows the link in the string. post-data defaults to #f
+>   post-url :: (send o post-url string[url] post-data-bytes)
+     Follows the link in the string. post-data-bytes defaults to #f
 
 >   add-link :: (send o add-link start end url-string)
      Installs a hyperlink.
@@ -219,7 +219,7 @@ The html-eval-ok parameter controls the evaluation of
      includes a particular editor and a visible range within the
      editor.
  
->   goto-url :: (send o goto-url url relative-to-url [progress-proc] [post-data #f])
+>   goto-url :: (send o goto-url url relative-to-url [progress-proc] [post-data-bytes #f])
      Changes to the given url, loading it by calling the `make-editor'
      method. If `relative-to-url' is not #f, it must be a URL for
      resolving `url' as a relative URL. `url' may also be a port, in
@@ -232,8 +232,8 @@ The html-eval-ok parameter controls the evaluation of
      loaded into a browser window, #f otherwise (e.g., the user will
      save the URL content to a file).
 
-     If `post-data' is a string instead of false, the URL GET is
-     changed to a POST with the given data.
+     If `post-data-bytes' is a byte string instead of false, the URL
+     GET is changed to a POST with the given data.
 
 >   set-page :: (send o set-page page notify?)
      Changes to the given page. If `notify?' is not #f, the canvas's
@@ -397,8 +397,8 @@ An interface that extends text% with the following methods:
 > add-thunk-callback :: (send t add-scheme-callback pos endpos thunk)
   --- registers a thunk-invoking hyperlink for the given region
 
-> post-url :: (send t post-url url post-data)
-  --- performs a post to the given `url' with the given `post-data'
+> post-url :: (send t post-url url post-data-bytes)
+  --- performs a post to the given `url' with the given  post data
 
 ----------------------------------------
 

@@ -35,6 +35,7 @@ void objscheme_note_creation(Scheme_Object *obj);
 void objscheme_save_object(void *, Scheme_Object *);
 Scheme_Class_Object *objscheme_find_object(void *);
 void objscheme_check_valid(Scheme_Object *);
+int objscheme_is_shutdown(Scheme_Object *o);
 
 void objscheme_backpointer(void *obj_ptr_address);
 void objscheme_register_primpointer(void *prim_ptr_address);

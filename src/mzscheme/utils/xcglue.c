@@ -614,6 +614,13 @@ void objscheme_check_valid(Scheme_Object *o)
   }
 }
 
+int objscheme_is_shutdown(Scheme_Object *o)
+{
+  Scheme_Class_Object *obj = (Scheme_Class_Object *)o;
+
+  return (obj->primflag < 0);
+}
+
 void objscheme_destroy(void *realobj, Scheme_Object *obj_in)
 {
   int i;

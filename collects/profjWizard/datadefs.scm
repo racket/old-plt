@@ -90,7 +90,7 @@
                               (andmap is-fields? (cadr c))))
      
      
-     #| Tests: |#
+     #| Tests: 
      (require (lib "testing.scm" "testing"))
      
      (test== (java-id? "oops no") #f)
@@ -114,4 +114,5 @@
      (test== (andmap is-variant?  (list (list "B" '()) (list "C" '()))) #t "variants")
      (test== (java-id? "A") #t)
      (test== (is-union? (list "A" (list (list "B" '()) (list "C" '())))) #t)
+     |#
      )

@@ -546,6 +546,22 @@ void wxApp::doMacKeyUpDown(Bool down)
     key = (cCurrentEvent.message & keyCodeMask) >> 8;
     /* Better way than to use hard-wired key codes? */
     switch (key) {
+#   define wxFKEY(code, wxk)  case code: key = wxk; break
+      wxFKEY(122, WXK_F1);
+      wxFKEY(120, WXK_F2);
+      wxFKEY(99, WXK_F3);
+      wxFKEY(118, WXK_F4);
+      wxFKEY(96, WXK_F5);
+      wxFKEY(97, WXK_F6);
+      wxFKEY(98, WXK_F7);
+      wxFKEY(100, WXK_F8);
+      wxFKEY(101, WXK_F9);
+      wxFKEY(109, WXK_F10);
+      wxFKEY(103, WXK_F11);
+      wxFKEY(111, WXK_F12);
+      wxFKEY(105, WXK_F13);
+      wxFKEY(107, WXK_F14);
+      wxFKEY(113, WXK_F15);
     case 0x7e:
     case 0x3e:
       key = WXK_UP;

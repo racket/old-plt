@@ -8,7 +8,7 @@ clean :
 	-@erase testobject.dll
 
 CPP=cl.exe
-CPP_FLAGS=/MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /c
+CPP_FLAGS=/MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /c
 
 MTL=midl.exe
 MTL_SWITCHES=/tlb testobject.tlb /h testobject.h /iid testobject_i.c /Oicf 

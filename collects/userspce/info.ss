@@ -9,9 +9,9 @@
 	       (when (with-handlers ([void (lambda (x) #f)])
 		       (collection-path "mred"))
 		 (require-library "turtles.ss" "graphics")
-		 (require-library "sig.ss" "mred"))
+		 (require-library "sig.ss" "mred")
+		 (require-library "graphics.ss" "graphics"))
 	       (require-library "errors.ss" "userspce")
-	       (require-library "graphics.ss" "graphics")
 	       (require-library "params.ss" "userspce")
 	       (require-library "sig.ss" "userspce"))]
 	   [(compile-omit-files) (list "userspcs.ss" "sig.ss" "errors.ss" "params.ss" "ricedefs.ss")]

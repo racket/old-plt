@@ -2,6 +2,7 @@
 (with-handlers ([void void])
   ; Might not be there if this is MrEd-less DrJr distribution
   (require-relative-library "userspcs.ss"))
+(require-relative-library "ricedefs.ss")
 (require-library "ariess.ss" "cogen")
 (require-library "cores.ss")
 (require-library "pconvers.ss")

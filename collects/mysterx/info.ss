@@ -32,7 +32,7 @@
 	      (for-each
 	       (lambda (dll) 
 		 (system
-		  (format "~a\\REGSVR32 /c ~a\\compiled\\native\\~a" 
+		  (format "~a\\REGSVR32 \"~a\\compiled\\native\\~a\"" 
 			  winsys-dir (current-directory) dll)))
 	       '(myspage.dll myssink.dll))
 	      (fprintf (current-error-port) 

@@ -87,6 +87,9 @@ wxGauge::wxGauge(wxPanel *panel, char *label, int _range, int x, int y,
     }
 #endif
   }
+
+  if (!cMacControl)
+    CreatePaintControl();
   
   if (label) {
     if (labelPosition == wxVERTICAL) {
@@ -130,7 +133,7 @@ void wxGauge::Paint(void)
   SetCurrentDC();
   
   if (cMacControl) {
-    Draw1Control(cMacControl);
+    /* Do nothing */
   } else {
     Rect s = valueRect;
     Rect r, w;
@@ -244,15 +247,25 @@ void wxGauge::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   }
 
   if (dX || dY) {
-    // Changing the position
-    cMacDC->setCurrentUser(NULL); // macDC no longer valid
-    SetCurrentDC(); // put newViewRect at (0, 0)
     if (cMacControl) {
-      MoveControl(cMacControl,SetOriginX + valueRect.left,SetOriginY + valueRect.top);
+      int x, y;
+      GetWinOrigin(&x, &y);
+      MoveControl(cMacControl, x + valueRect.left, y + valueRect.top);
     }
   }
+
+  if (cTitle)
+    cTitle->cLabelText->OnClientAreaDSize(dW, dH, dX, dY);
+
+  wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }
 
+void wxGauge::MaybeMoveControls()
+{
+  if (cTitle)
+    cTitle->cLabelText->MaybeMoveControls();
+  wxItem::MaybeMoveControls();
+}
 
 // --------------------- Client API ---------------------
 

@@ -101,8 +101,9 @@ class wxWindow: public wxbWindow
   wxList* 		cAreas;	/* mac platform only */
   wxArea* 	cClientArea; 	/* mac platform only */
 
-
   ControlHandle cMacControl;
+
+  ControlHandle cPaintControl;
 
   /*============================================================================= */
   /* Public methods */
@@ -290,6 +291,8 @@ class wxWindow: public wxbWindow
   virtual void GetClipRect(wxArea* area, Rect* clipRect); /* mac platform only */
   virtual RgnHandle GetCoveredRegion(int x, int y, int w, int h);
 
+  void GetWinOrigin(int *x, int *y);
+
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
   /* Tree (windows and areas) methods */
   /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ */
@@ -362,6 +365,8 @@ class wxWindow: public wxbWindow
   virtual ControlHandle GetRootControl(void);
 
   void FlushDisplay(void);
+
+  void CreatePaintControl(void);
 	
  protected:
   /* ChildrenInternalGray is a local abstraction which calls

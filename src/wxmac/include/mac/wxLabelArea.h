@@ -19,11 +19,10 @@ class wxFont;
 
 class wxLabelArea: public wxArea
 {
-  protected:
+  public:
 	wxMessage*	cLabelText; 
 	Direction	cDirection;
 
-  public:
 	wxLabelArea // constructor
 	(
 		wxWindow*	parentWindow,

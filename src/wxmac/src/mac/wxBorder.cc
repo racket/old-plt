@@ -78,24 +78,5 @@ void wxBorder::DoShow(Bool show)
 //-----------------------------------------------------------------------------
 void wxBorder::ShowAsActive(Bool flag) // mac platform only
 {
-#ifndef WX_CARBON
-  if (flag && (! cHidden)) {
-    // The following is a kludge, to paint border before subsequent 
-    // update event
-    Paint();
-    int clientWidth, clientHeight;
-    GetClientSize(&clientWidth, &clientHeight);
-    int margin = ParentArea()->Margin().Offset(wxTop);
-    Rect clientRect = {0, 0, clientHeight, clientWidth};
-    RgnHandle outerRgn = ::NewRgn(); CheckMemOK(outerRgn);
-    ::RectRgn(outerRgn, &clientRect);
-    RgnHandle innerRgn = ::NewRgn(); CheckMemOK(innerRgn);
-    ::CopyRgn(outerRgn, innerRgn); InsetRgn(innerRgn, margin, margin);
-    ::DiffRgn(outerRgn, innerRgn, outerRgn);
-    ::OffsetRgn(outerRgn,SetOriginX,SetOriginY);
-    ::ValidRgn(outerRgn);
-    ::DisposeRgn(outerRgn);
-    ::DisposeRgn(innerRgn);
-  }
-#endif
 }
+

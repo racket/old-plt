@@ -24,6 +24,7 @@
 #include "wx_utils.h"
 #include "wx_choic.h"
 #include "wx_menu.h"
+#include "wx_messg.h"
 #include "wx_mac_utils.h"
 #include "wxMacDC.h"
 #include "wx_stdev.h"
@@ -110,35 +111,13 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   }
   lblw = (int)(fWidth + (Title ? HSLOP : 0));
   lblh = (int)(fHeight + (Title ? 2 : 0));
-    
-  if (labelPosition == wxVERTICAL) {
-    padTop += lblh + VSLOP;
-  } else{
-    padLeft += lblw;
-  }
   
-  if (N) {
-    maxdfltw = 30;
-  } else {
-    // No strings - pick something reasonable - say 60 pixels
-    maxdfltw = 60;
-  }
-
-  GetTextExtent("Test", &fWidth, &fHeight, &fDescent, &fLeading, buttonFont);
-  maxdflth = (int)fHeight;
-  valuebase = (int)(fDescent + fLeading);
-
-  // Build the menu and find the width of the longest string
+  // Build the menu
   PopUpID = wxMenu::gMenuIdCounter++;
   hDynMenu = NewMenu(PopUpID, "\p");
   CheckMemOK(hDynMenu);
   for (n = 0; n < N; n++) {
     // attempt to size control by width of largest string
-    GetTextExtent(Choices[n], &fWidth, &fHeight, &fDescent, &fLeading, buttonFont);
-    w = (int)fWidth;
-    h = (int)fHeight;
-    maxdfltw = max(w, maxdfltw);
-    maxdflth = max(h, maxdflth);
     CopyCStringToPascal(Choices[n],temp);
     ::AppendMenu(hDynMenu, "\ptemp");
     ::SetMenuItemText(hDynMenu, n + 1, temp);
@@ -156,37 +135,26 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   
   // Now, ignore the font data and let the control find the "best" size 
   err = ::GetBestControlRect(cMacControl, &r, &baselineOffset);
-  maxdfltw = r.right - r.left + (PAD_X * 2);
-  maxdflth = r.bottom - r.top + (PAD_Y * 2);
+  maxdfltw = r.right - r.left;
+  maxdflth = r.bottom - r.top;
 
   // compute the Rects that contain everything.
   // note valuebase and labelbase are changed from font descents
   // to number of pixels to substract from the rect bottom.
   if (labelPosition == wxVERTICAL) {
-    w = max(lblw, maxdfltw);
-    if (Title) {
-      SetBounds(&TitleRect, 1, 1, lblh+1, w);
-    } else {
-      SetBounds(&TitleRect, 1, 1, 1, 1);
-    }
-    SetBounds(&ValueRect, TitleRect.bottom + VSLOP, 1,
-	      TitleRect.bottom + maxdflth + 1, maxdfltw);
-    valuebase += MSPACEY;
-    SetBounds(&CtlRect, 0, 0, ValueRect.bottom+2, w+1);
+    w = max(lblw, maxdfltw) + padLeft + padRight;
+    h = maxdflth + lblh + MSPACEY + padTop + padBottom;
+    padTop += lblh;
   } else {
-    int bot;
-    h = max(lblh, maxdflth);
-    SetBounds(&ValueRect, 1, lblw+1, h-1, maxdfltw+lblw+1);
-    valuebase += MSPACEY;
-    SetBounds(&CtlRect, 0, 0, h+1, lblw+maxdfltw+2);
-    bot = (h - valuebase) + labelbase;
-    SetBounds(&TitleRect, bot-lblh, 1, bot, lblw);
+    h = max(lblh, maxdflth) + padLeft + padRight;
+    w = maxdfltw + lblw + padTop + padBottom;
+    padLeft += lblw;
   }
 
   if (width < 0 && height < 0) {
     // use the sizes we just calced
-    cWindowWidth = CtlRect.right;
-    cWindowHeight = CtlRect.bottom;
+    cWindowWidth = w;
+    cWindowHeight = h;
   } else {
     OnClientAreaDSize((width == -1 ? 0 : width),
 		      (height == -1 ? 0 : height), 
@@ -195,6 +163,14 @@ Create (wxPanel * panel, wxFunction func, char *Title,
   }
 
   SetSelection(0);
+
+  if (Title) {
+    cTitle = new wxLabelArea(this, Title, labelFont,
+			     ((labelPosition == wxVERTICAL) ? wxTop : wxLeft),
+			     0,
+			     ((labelPosition == wxVERTICAL) ? 0 : ((maxdflth - lblh) / 2) + PAD_Y));
+  } else
+    cTitle = NULL;
 
   ::EmbedControl(cMacControl, GetRootControl());
 
@@ -227,44 +203,17 @@ wxChoice::~wxChoice (void)
 // ---------Draw the Choice Control -----------
 void wxChoice::DrawChoice(Bool active)
 {
-  SetCurrentDC();
-  
-  if (sTitle) {
-    Rect r = { SetOriginY + TitleRect.top - 2, SetOriginX + TitleRect.left, 
-	       SetOriginY + TitleRect.bottom - 2, SetOriginX + TitleRect.right };
-
-    ::EraseRect(&r);
-
-    if (font && (font != wxNORMAL_FONT)) {
-      FontInfo fontInfo;
-      ::GetFontInfo(&fontInfo);
-      MoveTo(SetOriginX, fontInfo.ascent + SetOriginY); // move pen to start drawing text
-      DrawLatin1Text((char *)sTitle, 1, sTitle[0], 0);
-    } else {
-      CFStringRef str;
-      str = CFStringCreateWithCString(NULL, wxP2C(sTitle), kCFStringEncodingISOLatin1);
-      
-      DrawThemeTextBox(str, kThemeSystemFont, kThemeStateActive,
-		       0, &r, teJustLeft, NULL);
-      
-      CFRelease(str);
-    }
-  }
-  
-  ::Draw1Control(cMacControl);
 }
 
 void wxChoice::ChangeToGray(Bool gray)
 {
   wxItem::ChangeToGray(gray);
-  DrawChoice(TRUE);
+  Refresh();
 }
 
 // --------- Event Handling -------------------
 void wxChoice::Paint(void)
 {
-  if (cHidden) return;
-  DrawChoice(TRUE);
   wxWindow::Paint();
 }
 
@@ -273,54 +222,24 @@ void wxChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   int clientWidth, clientHeight;
 
-  SetCurrentDC();
-
-  if (1) {
-    GetClientSize(&clientWidth, &clientHeight);
-    if (clientWidth != CtlRect.right) {
-      int needw = CtlRect.right - clientWidth;
-      if (labelPosition == wxVERTICAL) {
-	// Shrink width of both Title and Value
-	if (sTitle)
-	  TitleRect.right -= needw;
-	ValueRect.right -= needw;
-      } else {
-	ValueRect.right -= needw;
-      }
-      CtlRect.right = clientWidth;
-    } 
-    if (clientHeight != CtlRect.bottom) {
-      int needh = CtlRect.bottom - clientHeight;
-      if (labelPosition == wxVERTICAL) {
-	// Shrink heights equally
-	if (sTitle) {
-	  TitleRect.bottom -= needh/2;
-	  ValueRect.top -= needh/2;
-	}
-	ValueRect.bottom -= needh;
-      } else {
-	// Shrink heights eqally
-	if (sTitle)
-	  TitleRect.bottom -= needh;
-	ValueRect.bottom -= needh;
-      }
-      CtlRect.bottom = clientHeight;
-    }
-
-    ::SizeControl(cMacControl, 
-		  ValueRect.right - ValueRect.left, 
-		  ValueRect.bottom - ValueRect.top);
-  }
-
-  padTop = ValueRect.top+1;
-  padLeft = ValueRect.left;
+  GetClientSize(&clientWidth, &clientHeight);
+  ::SizeControl(cMacControl, clientWidth, clientHeight);
   MaybeMoveControls();
+
+  if (cTitle)
+    cTitle->cLabelText->OnClientAreaDSize(dW, dH, dX, dY);
+
+  wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }
 
 //-----------------------------------------------------------------------------
 void wxChoice::DoShow(Bool show)
 {
+  if (!show && cTitle)
+    cTitle->DoShow(show);
   wxWindow::DoShow(show);
+  if (show && cTitle)
+    cTitle->DoShow(show);
 }
 
 //-----------------------------------------------------------------------------
@@ -332,25 +251,23 @@ void wxChoice::OnEvent(wxMouseEvent *event) // mac platform only
     {
       int startH, startV;
       Point startPt;
+      int trackResult;
 
       SetCurrentDC();
       
       event->Position(&startH, &startV); // client c.s.
 
-      startPt.v = startV + SetOriginY; // port c.s.
-      startPt.h = startH + SetOriginX;
+      startPt.v = startV - PAD_X;
+      startPt.h = startH - PAD_Y;
 
-      if (::StillDown()) {
-	int trackResult;
-	wxTracking();
-	trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
-	if (trackResult) {
-	  wxCommandEvent *commandEvent;
-	  selection = GetControlValue(cMacControl);
-	  selection -= 1;
-	  commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
-	  ProcessCommand(commandEvent);
-	}
+      wxTracking();
+      trackResult = TrackControl(cMacControl,startPt,(ControlActionUPP)-1);
+      if (trackResult) {
+	wxCommandEvent *commandEvent;
+	selection = GetControlValue(cMacControl);
+	selection -= 1;
+	commandEvent = new wxCommandEvent(wxEVENT_TYPE_CHOICE_COMMAND);
+	ProcessCommand(commandEvent);
       }
     }
 }
@@ -371,8 +288,7 @@ void wxChoice::Append (char *Item)
   no_strings++;
   ::SetControlMinimum(cMacControl,1);
   ::SetControlMaximum(cMacControl,no_strings);
-  Paint();
-  Refresh(); /* in case an update is in progress */
+  RefreshIfUpdating();
 }
 
 void wxChoice::Clear (void)
@@ -385,8 +301,7 @@ void wxChoice::Clear (void)
   selection = 0;
   ::SetControlMinimum(cMacControl,0);
   ::SetControlMaximum(cMacControl,0);        
-  Paint();
-  Refresh(); /* in case an update is in progress */
+  RefreshIfUpdating();
 }
 
 
@@ -402,7 +317,6 @@ void wxChoice::SetSelection (int n)
 
   ::SetControlValue(cMacControl,n+1);
   selection = n;
-  DrawChoice(TRUE);
 }
 
 int wxChoice::FindString (char *s)
@@ -444,31 +358,29 @@ void wxChoice::SetButtonColour(wxColour*col)
 
 char* wxChoice::GetLabel(void)
 {
-  int n;
-  if (sTitle && (n = sTitle[0])) {
-    CopyPascalStringToC(sTitle, wxBuffer);
-    return wxBuffer;
-  }
-  else
-    return NULL;
+  return (cTitle ? cTitle->GetLabel() : NULL);
 }
 
 void wxChoice::SetLabel(char *label)
 {
-  char *s;
-  long len;
+  if (cTitle) cTitle->SetLabel(label);
+}
 
-  label = wxItemStripLabel(label);
-  len = strlen(label);
-  s = new char[len + 1];
-  sTitle = (StringPtr)s;
-  CopyCStringToPascal(label, sTitle);
-  
-  if (SetCurrentDC()) {
-    Rect r = TitleRect;
-    OffsetRect(&r,SetOriginX,SetOriginY);
-    EraseRect(&r);
-    Paint();
-    Refresh(); /* in case an update is in progress */
+void wxChoice::InternalGray(int gray_amt)
+{
+  if (cTitle) {
+    wxLabelArea *la;
+    wxWindow *w;
+    la = (wxLabelArea *)cTitle;
+    w = la->GetMessage();
+    w->InternalGray(gray_amt);
   }
+  wxItem::InternalGray(gray_amt);
+}
+
+void wxChoice::MaybeMoveControls()
+{
+  if (cTitle)
+    cTitle->cLabelText->MaybeMoveControls();
+  wxItem::MaybeMoveControls();
 }

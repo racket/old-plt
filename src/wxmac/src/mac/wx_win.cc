@@ -46,6 +46,9 @@ END_XFORM_SKIP;
 #endif
 
 static void RestoreNormalBackground(wxBrush *erase);
+extern void MrEdQueueOnSize(wxWindow *wx_window);
+
+static HIObjectClassRef paintControlClass = NULL;
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Geometry methods
@@ -61,7 +64,7 @@ wxWindow::wxWindow(void)
   cScroll = NULL;
   cAreas = new wxList(wxList::kDestroyData);
   children = new wxChildList();
-  cActive = FALSE;
+  cActive = TRUE;
   cEnable = TRUE;
 
   InitDefaults();
@@ -99,7 +102,7 @@ wxWindow::wxWindow // Constructor (for screen window)
   cWindowWidth = (width >= 0 ? width : 0);
 
   cAreas = new wxList(wxList::kDestroyData);
-  cActive = FALSE;
+  cActive = TRUE;
   cEnable = TRUE;
   
   InitDefaults();
@@ -139,7 +142,7 @@ wxWindow::wxWindow // Constructor (given parentScreen; i.e., this is frame)
   cWindowWidth = (width >= 0 ? width : 0);
   cAreas = new wxList(wxList::kDestroyData);
 
-  cActive = FALSE;
+  cActive = TRUE;
   cEnable = TRUE;
   
   if (!parentScreen) wxFatalError("No parent screen for constructing frame.");
@@ -187,7 +190,7 @@ wxWindow::wxWindow // Constructor (given parentArea)
   cWindowWidth = (width >= 0 ? width : 0);
   cAreas = new wxList(wxList::kDestroyData);
 
-  cActive = FALSE;
+  cActive = TRUE;
   cEnable = TRUE;
 
   if (!parentArea) wxFatalError("No parent area for constructing window.");
@@ -232,7 +235,7 @@ wxWindow::wxWindow // Constructor (given parentWindow)
   cWindowWidth = (width >= 0 ? width : 0);
   cAreas = new wxList(wxList::kDestroyData);
 
-  cActive = FALSE;
+  cActive = TRUE;
   cEnable = TRUE;
 
   if (!parentWindow) wxFatalError("No parent window for constructing window.");
@@ -271,7 +274,7 @@ wxWindow::wxWindow // Constructor (given objectType; i.e., menu or menuBar)
   cWindowWidth = 0;
   cAreas = new wxList(wxList::kDestroyData);
 
-  cActive = FALSE;
+  cActive = TRUE;
   cEnable = TRUE;
 
   InitDefaults();
@@ -349,6 +352,15 @@ wxWindow::~wxWindow(void) // Destructor
   
   // don't send leaveEvt messages to this window anymore.
   if (entered == this) entered = NULL; 
+
+  if (cPaintControl) {
+    void *rc;
+
+    rc = (void *)GetControlReference(cPaintControl);
+    FREE_SAFEREF(rc);
+    DisposeControl(cPaintControl);
+    cPaintControl = NULL;
+  }
 }
 
 //=============================================================================
@@ -392,6 +404,194 @@ void wxWindow::InitWindowPostion(int x, int y)
     }
 }
 
+//-----------------------------------------------------------------------------
+
+const ControlPartCode kControlOpaqueRegionMetaPart = -3;
+
+static OSStatus paintControlHandler(EventHandlerCallRef inCallRef,
+				    EventRef inEvent,
+				    void *data)
+{
+  OSStatus err = noErr;
+  UInt32 eventClass, eventKind;
+
+  eventClass = GetEventClass(inEvent);
+  eventKind = GetEventKind(inEvent);
+
+  switch (eventClass)  {
+  case kEventClassHIObject:
+    switch (eventKind) {
+    case kEventHIObjectConstruct:
+      {
+	/* Is this really necessary? */
+	data = malloc(sizeof(ControlRef));
+	GetEventParameter(inEvent, kEventParamHIObjectInstance,
+			  typeHIObjectRef, NULL, sizeof(HIObjectRef),
+			  NULL, data);
+	SetEventParameter(inEvent, kEventParamHIObjectInstance,
+			  typeVoidPtr, sizeof(ControlRef*), 
+			  &data);
+      }
+      break;
+    case kEventHIObjectInitialize:
+      {
+	Rect bounds;
+
+	err = CallNextEventHandler(inCallRef, inEvent);
+
+	GetEventParameter(inEvent, 'Boun', typeQDRectangle,
+			  NULL, sizeof(Rect), NULL, &bounds);
+	SetControlBounds(*(ControlRef*)data, &bounds);
+      }
+      break;
+    case kEventHIObjectDestruct:
+      free(data);
+      break;
+    }
+    break;
+  case kEventClassControl:
+    {
+      switch (eventKind) {
+      case kEventControlInitialize:
+	break;
+      case kEventControlDraw:
+	{
+	  wxWindow *wx_window;
+	  ThemeDrawingState s;
+	  CGrafPtr savep;
+	  GDHandle savegd;
+	  ControlRef controlRef;
+	  void *rc;
+
+	  controlRef = *(ControlRef*)data;
+	  rc = (void *)GetControlReference(controlRef);
+	  wx_window = (wxWindow *)GET_SAFEREF(rc);
+	  
+	  if (wx_window) {
+	    GetGWorld(&savep, &savegd);
+	    GetThemeDrawingState(&s);
+	    
+	    wx_window->SetCurrentDC();
+#if 0
+	    {
+	      Rect bounds;
+	      int x, y;
+	      GetControlBounds(controlRef, &bounds);
+	      FrameRect(&bounds);
+	      wx_window->GetWinOrigin(&x, &y);
+	      if ((bounds.left != x)
+		  || (bounds.top != y)) {
+		printf("mismatch %d %d %d %d\n",
+		       bounds.left, x, bounds.top, y);
+	      }
+	    }
+#endif
+	    wx_window->Paint();
+
+	    SetGWorld(savep, savegd);
+	    SetThemeDrawingState(s, TRUE);
+	  }
+	}
+	break;
+      case kEventControlHitTest:
+	{
+	  ControlPartCode part = 1;
+	  SetEventParameter(inEvent, kEventParamControlPart, typeControlPartCode, sizeof(part), &part);
+	}
+	break;
+      case kEventControlGetPartRegion:
+	{
+	  RgnHandle hrgn;
+	  ControlRef controlRef;
+	  Rect bounds;
+	  ControlPartCode part;
+
+	  GetEventParameter(inEvent, kEventParamControlPart, typeControlPartCode,
+			    NULL, sizeof(ControlPartCode), NULL, &part);
+	  GetEventParameter(inEvent, kEventParamControlRegion, typeQDRgnHandle, NULL,
+			    sizeof(hrgn), NULL, &hrgn);
+
+	  controlRef = *(ControlRef*)data;
+
+	  if (part == kControlContentMetaPart
+	      || part == kControlStructureMetaPart
+	      /* || part == kControlOpaqueRegionMetaPart */) {
+	    GetControlBounds(controlRef, &bounds);
+	    bounds.right -= bounds.left;
+	    bounds.bottom -= bounds.top;
+	    bounds.left = bounds.top = 0;
+	    RectRgn(hrgn, &bounds);
+	  }
+	}
+	break;
+      }
+    }
+    break;
+  }
+ 
+  return err;
+}
+
+void wxWindow::CreatePaintControl() 
+{
+  ControlHandle pane;
+  Rect boundsRect;
+  CGrafPtr theMacGrafPort;
+  EventRef constructData;
+  OSStatus err;
+  
+  if (!paintControlClass) {
+    EventTypeSpec       eventList[] = {
+      { kEventClassHIObject, kEventHIObjectConstruct },
+      { kEventClassHIObject, kEventHIObjectInitialize },
+      { kEventClassHIObject, kEventHIObjectDestruct },
+      { kEventClassControl, kEventControlInitialize },
+      { kEventClassControl, kEventControlDraw },
+      { kEventClassControl, kEventControlHitTest },
+      { kEventClassControl, kEventControlGetPartRegion } };
+
+    HIObjectRegisterSubclass(CFSTR("org.plt-scheme.MrEdPaintControl"),
+			     kHIViewClassID, // base class ID
+			     NULL, // option bits
+			     paintControlHandler,
+			     GetEventTypeCount(eventList),
+			     eventList,
+			     NULL, // construct data,
+			     &paintControlClass);
+  }
+   
+  boundsRect.top = boundsRect.left = 0;
+  boundsRect.right = cWindowWidth;
+  boundsRect.bottom = cWindowHeight;
+  
+  SetCurrentMacDC();
+  theMacGrafPort = cMacDC->macGrafPort();
+  OffsetRect(&boundsRect, SetOriginX, SetOriginY);    
+
+  CreateEvent(NULL, kEventClassHIObject, kEventHIObjectInitialize,
+	      GetCurrentEventTime(), 0, &constructData);
+
+  SetEventParameter(constructData, 'Boun', typeQDRectangle,
+		    sizeof(Rect), &boundsRect);
+
+  err = HIObjectCreate(CFSTR("org.plt-scheme.MrEdPaintControl"),
+		       constructData,
+		       (HIObjectRef *)&pane);
+  cPaintControl = pane;
+
+  ReleaseEvent(constructData);
+  
+  ::HIViewAddSubview(GetRootControl(), cPaintControl);
+  
+  {
+    void *rc;
+    rc = WRAP_SAFEREF(this);
+    refcon = rc;
+    SetControlReference(cPaintControl, (long)refcon);
+  }
+
+  ::ShowControl(cPaintControl);
+}
 
 //-----------------------------------------------------------------------------
 int wxWindow::Width(void) { return cWindowWidth; } // mac platform only
@@ -526,75 +726,24 @@ void wxWindow::SetSize(int x, int y, int width, int height, int flags) // mac pl
 //-----------------------------------------------------------------------------
 void wxWindow::DoSetSize(int x, int y, int width, int height) // mac platform only
 {
-  Bool xIsChanged, yIsChanged, widthIsChanged, heightIsChanged;
-
-  if (x==-1) 
-    x = cWindowX;
-  if (y==-1) 
-    y = cWindowY;
-  if (width==-1) 
-    width = cWindowWidth;
-  if (height==-1) 
-    height = cWindowHeight;
-  
-  xIsChanged = (x != cWindowX);
-  yIsChanged = (y != cWindowY);
-  widthIsChanged = (width != cWindowWidth);
-  heightIsChanged = (height != cWindowHeight);
-
-  if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged)) {
-    Rect oldWindowRect;
-    ::SetRect(&oldWindowRect, -1, -1, cWindowWidth, cWindowHeight);
-    if (SetCurrentMacDCNoMargin()) {
-      MacSetBackground();
-      OffsetRect(&oldWindowRect,SetOriginX,SetOriginY);
-      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldWindowRect);
-      ::EraseRect(&oldWindowRect);
-      RestoreNormalBackground(cEraser);
-    }
-  }
-
-  if (xIsChanged) cWindowX = x;
-  if (yIsChanged) cWindowY = y;
-  if (widthIsChanged) cWindowWidth = width;
-  if (heightIsChanged) cWindowHeight = height;
-
-  if (!cHidden && (xIsChanged || yIsChanged || widthIsChanged || heightIsChanged)) {
-    Rect newWindowRect;
-    ::SetRect(&newWindowRect, -1, -1, cWindowWidth, cWindowHeight);
-    cMacDC->setCurrentUser(NULL); // macDC no longer valid
-    if (SetCurrentMacDCNoMargin()) { // put newClientRect at (SetOriginX,SetOriginY)
-      OffsetRect(&newWindowRect,SetOriginX,SetOriginY);
-      
-      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&newWindowRect); // force redraw of window
-      ::EraseRect(&newWindowRect);
-      RestoreNormalBackground(cEraser);
-    }
-  }
+  cWindowX = x;
+  cWindowY = y;
+  cWindowWidth = width;
+  cWindowHeight = height;
 }
 
 void wxWindow::Refresh(void)
 {
-  Rect theClipRect;
-  
   if (cHidden) return;
 
-  GetClipRect(cClientArea, &theClipRect);
-  if (SetCurrentMacDC()) {
-    // put newClientRect at (SetOriginX, SetOriginY)
-    OffsetRect(&theClipRect,SetOriginX,SetOriginY);
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&theClipRect); // force redraw of window
-  }
+  if (cPaintControl)
+    HIViewSetNeedsDisplay(cPaintControl, TRUE);
+  if (cMacControl)
+    HIViewSetNeedsDisplay(cMacControl, TRUE);
 }
 
 void wxWindow::RefreshIfUpdating(void)
 {
-  wxFrame *fr;
-
-  fr = GetRootFrame();
-  if (fr && fr->is_in_update) {
-    Refresh();
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -692,8 +841,9 @@ void wxWindow::OnWindowDSize(int dW, int dH, int dX, int dY)
     areaNode = areaNode->Next();
   }
   
-  if ((dW || dH) && (__type != wxTYPE_FRAME))
-    OnSize(cWindowWidth, cWindowHeight);
+  if ((dW || dH) && (__type != wxTYPE_FRAME)) {
+    MrEdQueueOnSize(this);
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -705,6 +855,8 @@ void wxWindow::OnAreaDSize(int dW, int dH, int dX, int dY)
     int right = cWindowX + cWindowWidth + dW;
     int bottom = cWindowY + cWindowHeight + dH;
     GravitateJustify(cGravitate, cJustify, left, top, right, bottom);
+  } else {
+    OnWindowDSize(dW, dH, dX, dY);
   }
 }
 
@@ -713,6 +865,17 @@ void wxWindow::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
   if (__type == wxTYPE_FRAME) {
     ::SizeControl(cMacControl, cWindowWidth, cWindowHeight);
+  }
+
+  if (cPaintControl) {
+    if (dW || dH) {
+      ::SizeControl(cPaintControl, cWindowWidth, cWindowHeight);
+    }
+    if (dX || dY) {
+      int x, y;
+      GetWinOrigin(&x, &y);
+      MoveControl(cPaintControl, x, y);
+    }
   }
 
   { // Notify child windows of area resize.
@@ -756,15 +919,20 @@ int wxWindow::SetCurrentMacDCNoMargin(void) // mac platform only
   ::SetPort(theMacGrafPort);
 
   cMacDC->setCurrentUser(NULL); // kludge, since not doing complete setup of DC
-  if (cParentArea && !wxSubType(__type, wxTYPE_FRAME)) {
-    cParentArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
-    SetOriginX += cWindowX;
-    SetOriginY += cWindowY;
-  } else {
-    SetOriginX = SetOriginY = 0;
-  }
+  GetWinOrigin(&SetOriginX, &SetOriginY);
   
   return vis;
+}
+
+void wxWindow::GetWinOrigin(int *x, int *y)
+{
+  if (cParentArea && !wxSubType(__type, wxTYPE_FRAME)) {
+    cParentArea->FrameContentAreaOffset(x, y);
+    *x += cWindowX;
+    *y += cWindowY;
+  } else {
+    *x = *y = 0;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1452,6 +1620,7 @@ void wxWindow::Activate(Bool flag) // mac platform only
 
   if (!!cActive == !!flag)
     return;
+
   if (flag && (__type == wxTYPE_FRAME)) {
     /* If this is the root frame, try to move it behind everything
        else.  If there is any other window, the root frame shouldn't
@@ -1472,6 +1641,14 @@ void wxWindow::Activate(Bool flag) // mac platform only
   cActive = flag;
   ShowAsActive(flag);
 
+  if (cPaintControl) {
+    if (!flag) {
+      DeactivateControl(cPaintControl);
+    } else {
+      ActivateControl(cPaintControl);
+    }
+  }
+
   areaNode = cAreas->First();
   while (areaNode) {
     area = (wxArea*)areaNode->Data();
@@ -1491,7 +1668,13 @@ void wxWindow::Activate(Bool flag) // mac platform only
 //-----------------------------------------------------------------------------
 void wxWindow::ShowAsActive(Bool flag) // mac platform only
 {
-  // default is to do nothing
+  if (cPaintControl) {
+    if (flag) {
+      DeactivateControl(cPaintControl);
+    } else {
+      ActivateControl(cPaintControl);
+    }
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1506,29 +1689,6 @@ void wxWindow::OnActivate(Bool flag) // mac platform only
 //-----------------------------------------------------------------------------
 void wxWindow::Paint(void)
 {
-  // Called when needs painting
-  wxNode* areaNode;
-  wxArea* area;
-  wxChildNode* childWindowNode;
-  wxChildList *wl;
-  wxWindow* childWindow;
-
-  if (cHidden) return;
-
-  areaNode = cAreas->Last();
-  while (areaNode) {
-    area = (wxArea*)areaNode->Data();
-    wl = area->Windows();
-    childWindowNode = wl->First();
-    while (childWindowNode)
-      {
-	childWindow = (wxWindow*)childWindowNode->Data();
-	if (!childWindow->cHidden)
-	  childWindow->Paint();
-	childWindowNode = childWindowNode->Next();
-      }
-    areaNode = areaNode->Previous();
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1628,6 +1788,10 @@ void wxWindow::InitInternalGray()
 
   if (!p->cEnable || p->internal_gray) {
     InternalGray(p->internal_gray + (p->cEnable ? 0 : 1));
+  }
+
+  if (!p->cActive) {
+    Activate(FALSE);
   }
 }
 
@@ -1747,23 +1911,15 @@ void wxWindow::DoShow(Bool v)
   if (!CanShow(v))
     return;
 
-  v = !v;
-
-  if (SetCurrentMacDCNoMargin()) {
-    // put newClientRect at (SetOriginX, SetOriginY)
-    Rect r;
-
-    ::SetRect(&r, -1, -1, cWindowWidth, cWindowHeight );
-    OffsetRect(&r,SetOriginX,SetOriginY);
-    
+  if (cPaintControl) {
     if (v) {
-      MacSetBackground();
-      ::EraseRect(&r);
-      RestoreNormalBackground(cEraser);
+      ::ShowControl(cPaintControl);
+    } else {
+      ::HideControl(cPaintControl);
     }
-    
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&r);
   }
+
+  v = !v;
 
   cHidden = v;
 
@@ -2041,7 +2197,11 @@ Bool wxWindow::GetsFocus()
 
 void wxWindow::MaybeMoveControls()
 {
-  // do nothing. This method is overridden for windows that have control children.
+  if (cPaintControl) {
+    int x, y;
+    GetWinOrigin(&x, &y);
+    MoveControl(cPaintControl, x, y);
+  }
 }
 
 

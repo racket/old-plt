@@ -241,6 +241,8 @@ Bool wxListBox::Create(wxPanel *panel, wxFunction func,
   
   if (N)
     this->Set(N, Choices);
+
+  CreatePaintControl();
   
   {
     wxWindow *p;
@@ -267,17 +269,9 @@ wxListBox::~wxListBox(void)
 //------------ Event Handling --------------------------------------
 void wxListBox::Paint(void)
 {
-  RgnHandle visibleRgn;
-
   if (cHidden) return;
 
-  SetCurrentDC();
-  visibleRgn = NewRgn();
-  if (visibleRgn) {
-    GetPortVisibleRegion(cMacDC->macGrafPort(),visibleRgn);
-    ::ALUpdate(visibleRgn, cListReference);
-    DisposeRgn(visibleRgn);
-  }
+  ::ALUpdate(NULL, cListReference);
   ReleaseCurrentDC();
   
   wxWindow::Paint();
@@ -346,7 +340,6 @@ void wxListBox::OnEvent(wxMouseEvent *event)
   }
 }
 
-// mflatt:
 void wxListBox::OnChar(wxKeyEvent *event)
 {
   int move = 0;
@@ -621,10 +614,8 @@ void wxListBox::SetClientData(int N, char *s)
     cdt->SetData((wxObject *)s);
 }
 
-// Undocumented !
 void wxListBox::InsertItems(int nItems, char **Items, int pos) 
 {
-  //LSetDrawingMode(FALSE, cListHandle);
   LongPt cell = {pos, 0};		// Point = {v, h} so Cell = {row, col}
   int n;
   StringHandle stringHandle;
@@ -638,8 +629,6 @@ void wxListBox::InsertItems(int nItems, char **Items, int pos)
     ALSetCell(stringHandle, &cell, cListReference);
   }
   no_items = no_items + nItems;
-  // LSetDrawingMode(TRUE, cListHandle);
-  // Paint();
 }
 
 // ------ Manage Selections ----------------------
@@ -824,6 +813,7 @@ void wxListBox::OnSetFocus()
   SetCurrentDC();
   ALSetFocus(kControlListBoxPart,cListReference);
   ReleaseCurrentDC();
+  Refresh();
 
   wxWindow::OnSetFocus();
 }
@@ -834,6 +824,7 @@ void wxListBox::OnKillFocus()
   SetCurrentDC();  
   ALSetFocus(kControlFocusNoPart,cListReference);
   ReleaseCurrentDC();
+  Refresh();
 
   wxWindow::OnKillFocus();
 }
@@ -919,8 +910,9 @@ void wxListBox::MoveBox(int dW, int dH, int dX, int dY)
 
   OffsetRect(&viewRect,SetOriginX,SetOriginY);
 
-  if (dW || dH || dX || dY)
+  if (dW || dH || dX || dY) {
     ALSetViewRect(&viewRect, cListReference);
+  }
 
   if (dW || dH) {
     // Changing the size
@@ -933,10 +925,6 @@ void wxListBox::MoveBox(int dW, int dH, int dX, int dY)
     size.h = clientWidth;
     ALSetCellSize(size, cListReference);
   }
-
-  if (!cHidden && (dW || dH || dX || dY)) {
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
-  }
   
   ReleaseCurrentDC();
 }
@@ -944,4 +932,7 @@ void wxListBox::MoveBox(int dW, int dH, int dX, int dY)
 void wxListBox::MaybeMoveControls()
 {
   MoveBox(1, 1, 0, 0);
+  if (cListTitle)
+    cListTitle->cLabelText->MaybeMoveControls();
+  wxWindow::MaybeMoveControls();
 }

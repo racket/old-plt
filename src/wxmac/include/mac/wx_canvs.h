@@ -164,6 +164,8 @@ private:
 	Bool WantsFocus();
 
 	void ResetGLView(void);
+
+  virtual void MaybeMoveControls();
 };
 
 #endif // IN_CPROTO

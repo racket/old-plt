@@ -26,8 +26,9 @@ class wxCheckBox: public wxbCheckBox
 //=============================================================================
 protected:
 
-	wxBitmap* 		buttonBitmap ;
-	int  bitmapState;
+	wxBitmap *buttonBitmap ;
+	short bitmapState;
+	short trackState;
 	char *labelString;
 
 //=============================================================================

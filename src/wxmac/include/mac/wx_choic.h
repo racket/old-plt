@@ -37,6 +37,7 @@ class wxChoice: public wxbChoice
 	int			valuebase;			// ""
 	wxFont*		valueFont;
 	short		PopUpID;			// Mac Menu Mgr ID - never reused I hope
+	wxLabelArea*	cTitle;
         
  public:
 
@@ -80,6 +81,10 @@ class wxChoice: public wxbChoice
 
   void DrawChoice(Bool flag);
   void ReCalcRect(void);
+
+  virtual void InternalGray(int gray);
+
+  virtual void MaybeMoveControls();
 
  protected:
   virtual void ChangeToGray(Bool gray);

@@ -37,6 +37,7 @@ class wxGauge: public wxbGauge
   
   virtual void Paint(void);
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
+  virtual void MaybeMoveControls();
   virtual char *GetLabel(void);
   virtual void SetLabel(char *);
 

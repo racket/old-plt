@@ -147,8 +147,6 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
   }
 
   Callback(function);
-  
-  SetEraser(wxWHITE_BRUSH);
 
   cBorderArea = new wxArea(this);
   new wxButtonBorder(cBorderArea);
@@ -174,14 +172,13 @@ wxButton::wxButton // Constructor (given parentPanel, bitmap)
 
   if (style & 1) OnSetDefault(TRUE);
 
+  CreatePaintControl();
+
   {
     wxWindow *p;
     p = GetParent();
     if (p->IsHidden())
       DoShow(FALSE);
-    else if (!(style & wxINVISIBLE)) {
-      ::InvalWindowRect(GetWindowFromPort(theMacGrafPort),&bounds);
-    }
   }
   if (style & wxINVISIBLE)
     Show(FALSE);
@@ -277,7 +274,7 @@ void wxButton::SetDefault(Bool flag) // WCH : modification of original (see belo
 //-----------------------------------------------------------------------------
 void wxButton::OnSetDefault(Bool flag) // WCH : addition to original
 {
-  if (cMacControl) {
+  if (!buttonBitmap && cMacControl) {
     char byteFlag = (char)flag;
     SetCurrentDC();
     SetControlData(cMacControl,kControlEntireControl,kControlPushButtonDefaultTag,1,&byteFlag);
@@ -383,7 +380,7 @@ static void PaintBitmapButton(Rect *r, wxBitmap *buttonBitmap, Bool pressed, Boo
 void wxButton::Paint(void)
 {
   if (cHidden) return;
-  if (SetCurrentDC()) {
+  {
     if (buttonBitmap) {
       Rect r;
       ::SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
@@ -434,46 +431,34 @@ void wxButton::Highlight(Bool flag) // mac platform only
 //-----------------------------------------------------------------------------
 void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 {
-  if (event->LeftDown())
-    {
-      int startH, startV;
-      Point startPt;
-      int trackResult;
+  if (!cActive)
+    return;
 
-      SetCurrentDC();
+  if (event->LeftDown()) {
+    int startH, startV;
+    Point startPt;
+    int trackResult;
+
+    SetCurrentDC();
       
-      event->Position(&startH, &startV); // client c.s.
+    event->Position(&startH, &startV); // client c.s.
       
-      startPt.v = startV + SetOriginY; // port c.s.
-      startPt.h = startH + SetOriginX;
+    startPt.v = startV - padTop;
+    startPt.h = startH - padLeft;
 
-      if (::StillDown()) {
-	wxTracking();
-	if (buttonBitmap == NULL && cMacControl) {
-	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
-	} else {
-	  trackResult = Track(startPt);
-	}
-      } else {
-	if (cActive) {
-	  long delayTicks = 4; // one tick is 1/60th of a second
-	  unsigned long finalTicks;
-
-	  Highlight(TRUE); // highlight button
-	  Delay(delayTicks, &finalTicks);
-	  Highlight(FALSE); // unhighlight button
-	  
-	  trackResult = 1;
-	} else
-	  trackResult = 0;
-      }
-      if (trackResult)
-	{
-	  wxCommandEvent *commandEvent;
-	  commandEvent = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
-	  ProcessCommand(commandEvent);
-	}
+    wxTracking();
+    if (buttonBitmap == NULL && cMacControl) {
+      trackResult = ::TrackControl(cMacControl, startPt, NULL);
+    } else {
+      trackResult = Track(startPt);
     }
+    
+    if (trackResult) {
+      wxCommandEvent *commandEvent;
+      commandEvent = new wxCommandEvent(wxEVENT_TYPE_BUTTON_COMMAND);
+      ProcessCommand(commandEvent);
+    }
+  }
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -483,44 +468,21 @@ void wxButton::OnEvent(wxMouseEvent *event) // mac platform only
 //-----------------------------------------------------------------------------
 void wxButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
-  Bool isVisible;
-  Bool hideToPreventFlicker;
+  if (buttonBitmap) {
+    wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
+    return;
+  }
 
-  if (buttonBitmap || !cMacControl)
+  if (!cMacControl)
     return;
 
-  SetCurrentDC();
-
-  isVisible = cMacControl && IsShown();
-  hideToPreventFlicker = (isVisible && (dX || dY) && (dW || dH));
-  if (hideToPreventFlicker) {
-    ::HideControl(cMacControl);
+  if (dW || dH) {
+    int clientWidth, clientHeight;
+    GetClientSize(&clientWidth, &clientHeight);
+    ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
+		  clientHeight - (padTop + padBottom));
   }
-
-  if (dW || dH)
-    {
-      int clientWidth, clientHeight;
-      GetClientSize(&clientWidth, &clientHeight);
-      ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
-		    clientHeight - (padTop + padBottom));
-    }
-
+  
   if (dX || dY)
-    {
-      MaybeMoveControls();
-    }
-
-  if (hideToPreventFlicker) {
-    ::ShowControl(cMacControl);
-  }
-
-  if (!cHidden && (dW || dH || dX || dY))
-    {
-      int clientWidth, clientHeight;
-      Rect clientRect;
-      GetClientSize(&clientWidth, &clientHeight);
-      ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
-      OffsetRect(&clientRect,SetOriginX,SetOriginY);
-      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
-    }
+    MaybeMoveControls();
 }

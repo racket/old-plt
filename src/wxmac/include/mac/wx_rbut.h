@@ -24,7 +24,8 @@ class wxRadioButton: public wxItem
 {
  public:
 	wxBitmap* buttonBitmap ;
-    int bitmapState;
+    short bitmapState;
+    short trackState;
 	char *labelString;
 
 //=============================================================================

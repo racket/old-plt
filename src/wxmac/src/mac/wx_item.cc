@@ -194,11 +194,10 @@ char *wxItemStripLabel(char *label)
 void wxItem::MaybeMoveControls()
 {
   if (cMacControl) {
-    // This operation could be guarded by a memoized check, 
-    // if it turns out to be expensive.  I doubt it will.
-    cMacDC->setCurrentUser(NULL); // macDC no longer valid
-    SetCurrentDC();
-    
-    MoveControl(cMacControl,SetOriginX + padLeft, SetOriginY + padTop);
+    int x, y;
+    GetWinOrigin(&x, &y);
+    MoveControl(cMacControl, x + padLeft, y + padTop);
   }
+
+  wxWindow::MaybeMoveControls();
 }

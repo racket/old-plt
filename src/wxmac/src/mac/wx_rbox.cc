@@ -392,6 +392,9 @@ void wxRadioBox::MaybeMoveControls()
   cRadioPanel->MaybeMoveControls();
   if (cButtonHolder)
     cButtonHolder->MaybeMoveControls();
+  if (cRadioTitle)
+    cRadioTitle->MaybeMoveControls();
+  wxWindow::MaybeMoveControls();
 }
 
 void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
@@ -405,6 +408,11 @@ void wxRadioBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     rbut->OnClientAreaDSize(dW, dH, dX, dY);
     node = node->Next();
   }
+  cRadioPanel->OnClientAreaDSize(dW, dH, dX, dY);
+  if (cButtonHolder)
+    cButtonHolder->OnClientAreaDSize(dW, dH, dX, dY);
+  if (cRadioTitle)
+    cRadioTitle->OnClientAreaDSize(dW, dH, dX, dY);
 
- wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
+  wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }

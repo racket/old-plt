@@ -60,11 +60,6 @@ public:
 	void ScreenToArea(int* h, int* v); // Convert from screen c.s. to this area c.s.
 	Bool WindowPointInArea(int windowH, int windowV);
 	void FrameContentAreaOffset(int* x, int* y); // mac platform only
-
-#if 0
-	// EMBEDDING
-    ControlHandle cEmbeddingControl;
-#endif    
         
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Sizing methods
@@ -85,10 +80,6 @@ public:
 	wxArea* Previous(void);
 	wxArea* Next(void);
 
-//=============================================================================
-// Protected methods
-//=============================================================================
-protected:
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Sizing methods

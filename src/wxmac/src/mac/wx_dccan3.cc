@@ -187,8 +187,14 @@ double DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd
   float pen_delta = 0.0;
   int move_pen_at_end;
 
-  if (theStrlen < 0)
-    theStrlen = strlen(text+d);
+  if (theStrlen < 0) {
+    if (bit16) {
+      for (theStrlen = 0; text[theStrlen] || text[theStrlen+1]; theStrlen += 2) {
+      }
+      theStrlen >>= 1;
+    } else
+      theStrlen = strlen(text+d);
+  }
   
   {
     GrafPtr iGrafPtr;
@@ -290,9 +296,15 @@ void GetLatin1TextWidth(const char *text, int d, int theStrlen,
   int i, is_sym = (txFont == 23);
 
   if (text) {
-    if (theStrlen < 0)
-      theStrlen = strlen(text+d);
-    
+    if (theStrlen < 0) {
+      if (bit16) {
+	for (theStrlen = 0; text[theStrlen] || text[theStrlen+1]; theStrlen += 2) {
+	}
+	theStrlen >>= 1;
+      } else
+	theStrlen = strlen(text+d);
+    }
+
     if (!qd_spacing || ALWAYS_USE_ATSU) {
       i = 0;
     } else {
@@ -430,27 +442,32 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     ATSUCreateStyle(&theATSUstyle);
   }
 
-  usize = theStrlen * 2;
-  if (usize > QUICK_UBUF_SIZE)
-    unicode = new WXGC_ATOMIC char[usize];
-  else
-    unicode = u_buf;
-  ulen = theStrlen;
-
-  if (is_sym) {
-    int i, v, m;
-    for (i = 0; i < theStrlen; i++) {
-      v = ((unsigned char *)text)[d+i];
-      m = symbol_map[v];
-      ((UniCharArrayPtr)unicode)[i] = (m ? m : v);
-    }
+  if (bit16) {
+    usize >>= theStrlen;
+    unicode = text;
   } else {
-    ByteCount ubytes, converted;
-    ConvertFromTextToUnicode(t2uinfo, theStrlen, text + d, 0,
-			     0, NULL,
-			     NULL, NULL,
-			     usize, &converted, &ubytes,
-			     (UniCharArrayPtr)unicode);
+    usize = theStrlen * 2;
+    if (usize > QUICK_UBUF_SIZE)
+      unicode = new WXGC_ATOMIC char[usize];
+    else
+      unicode = u_buf;
+    ulen = theStrlen;
+
+    if (is_sym) {
+      int i, v, m;
+      for (i = 0; i < theStrlen; i++) {
+	v = ((unsigned char *)text)[d+i];
+	m = symbol_map[v];
+	((UniCharArrayPtr)unicode)[i] = (m ? m : v);
+      }
+    } else {
+      ByteCount ubytes, converted;
+      ConvertFromTextToUnicode(t2uinfo, theStrlen, text + d, 0,
+			       0, NULL,
+			       NULL, NULL,
+			       usize, &converted, &ubytes,
+			       (UniCharArrayPtr)unicode);
+    }
   }
 
 #ifdef OS_X
@@ -468,8 +485,11 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     use_cgctx = 0;
 
   if (use_cgctx && !just_meas) {
-    /* Make clipping regions match (including BeginUpdate effect) */
     RgnHandle clipRgn;
+
+    SyncCGContextOriginWithPort(cgctx, qdp);
+
+    /* Make clipping regions match (including BeginUpdate effect) */
     clipRgn = NewRgn();
     if (clipRgn) {
       RgnHandle visRgn;

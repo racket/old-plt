@@ -113,6 +113,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and bitmap)
     cMessage = NULL;
     if (cStyle & wxBORDER) new wxBorderArea(this);
     SetClientSize(sBitmap->GetWidth(), sBitmap->GetHeight());
+    CreatePaintControl();
     {
       wxWindow *p;
       p = GetParent();
@@ -170,6 +171,7 @@ wxMessage::wxMessage // Constructor (given parentPanel and icon id)
 #else
     SetClientSize(32, 32);
 #endif
+    CreatePaintControl();
     {
       wxWindow *p;
       p = GetParent();
@@ -234,6 +236,8 @@ void wxMessage::CreateWxMessage(char* label, wxFont* theFont) // common construc
   }
   SetClientSize((int)floor(clientWidth) + 3, (int)floor(clientHeight)); // mflatt: +3 is needed (even for plain)
 	
+  CreatePaintControl();
+
   {
     wxWindow *p;
     p = GetParent();
@@ -298,11 +302,8 @@ void wxMessage::SetLabel(char* label)
     cMessage = s;
   }
   if (!cHidden) {
-    Paint();
+    Refresh();
     FlushDisplay();
-
-    /* in case paint didn't take, because an update is already in progress: */
-    RefreshIfUpdating();
   }
 }
 
@@ -311,15 +312,11 @@ void wxMessage::Paint(void)
 {
   if (cHidden) return;
 
-  if (SetCurrentDC()) {
+  {
     int clientWidth, clientHeight;
-    Rect clientRect;
 
     GetClientSize(&clientWidth, &clientHeight);
-    ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
-    OffsetRect(&clientRect,SetOriginX,SetOriginY);
-    ::EraseRect(&clientRect);
-	  
+
     if (sBitmap) {
       sBitmap->DrawMac();
     } else if (icon_id) {
@@ -344,6 +341,7 @@ void wxMessage::Paint(void)
       Rect r = { SetOriginY, SetOriginX, 
 		 SetOriginY + clientHeight, SetOriginX + clientWidth };
       CFStringRef str;
+
 
       str = CFStringCreateWithCString(NULL, cMessage, kCFStringEncodingISOLatin1);
 

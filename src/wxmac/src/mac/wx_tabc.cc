@@ -26,9 +26,6 @@ static int OS_103 = -1;
 #define TAB_PANE_OVERLAP (OS_103 ? 6 : 7)
 #define TAB_PANE_CLIP_OVERLAP (OS_103 ? 9 : 3)
 
-static pascal void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart);
-static ControlUserPaneDrawUPP userPaneDrawFunctionUPP = NewControlUserPaneDrawUPP(userPaneDrawFunction); 
-
 static ControlHandle MakeTabs(CGrafPtr theMacGrafPort, int N, char **Choices, Rect *boundsRect)
 {
   ControlTabEntry *array;
@@ -89,21 +86,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   theMacGrafPort = cMacDC->macGrafPort();
   OffsetRect(&boundsRect, SetOriginX, SetOriginY + TAB_TOP_SPACE);
 
-  if (style & wxBORDER) {
-    Rect pRect;
-    
-    pRect.left = boundsRect.left;
-    pRect.right = boundsRect.right;
-    pRect.top = boundsRect.bottom;
-    pRect.right = boundsRect.bottom + 20;
-    pane = NULL;
-    CreateUserPaneControl(GetWindowFromPort(theMacGrafPort), &pRect, 0, &pane);
-    CheckMemOK(pane);
-  } else
-    pane = NULL;
-
-  SetControlData(pane, kControlEntireControl, kControlUserPaneDrawProcTag | kControlSupportsEmbedding, 
-		 sizeof(userPaneDrawFunctionUPP), (Ptr)&userPaneDrawFunctionUPP);
+  /* FIXME: style & wxBORDER */
 
   cMacControl = MakeTabs(theMacGrafPort, N, Choices, &boundsRect);
    
@@ -130,24 +113,15 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction function, char *label,
   padTop = TAB_TOP_SPACE;
 #endif
 
-  ::SizeControl(cMacControl, cWindowWidth, TAB_CONTROL_HEIGHT);
+  ::SizeControl(cMacControl, cWindowWidth, (style & wxBORDER) ? cWindowHeight : TAB_CONTROL_HEIGHT);
 
   ::EmbedControl(cMacControl, GetRootControl());
-
-  if (pane) {
-    ::EmbedControl(pane, GetRootControl());
-
-    padBottom = TAB_CONTENT_MARGIN + TAB_BOTTOM_EXTRA_MARGIN;
-    padLeft = padRight = TAB_CONTENT_MARGIN;
-  }
   
   {
     wxWindow*p;
     p = GetParent();
     if (p->IsHidden())
       DoShow(FALSE);
-    if (pane)
-      ((wxPanel *)p)->paneControl = pane;
   }
   if (style & wxINVISIBLE)
     Show(FALSE);
@@ -164,10 +138,6 @@ wxTabChoice::~wxTabChoice(void)
   if (cMacControl) {
     ::DisposeControl(cMacControl);
     cMacControl = NULL;
-  }
-  if (pane) {
-    ::DisposeControl(pane);
-    pane = NULL;
   }
 }
 
@@ -207,223 +177,62 @@ void wxTabChoice::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
   if (!cMacControl)
     return;
   
-  SetCurrentDC();
-
   if (dW || dH) {
-    wxWindow *parent;
     int clientWidth, clientHeight;
-    int pClientWidth, pClientHeight;
 
     GetClientSize(&clientWidth, &clientHeight);
 
-    ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), TAB_CONTROL_HEIGHT);
-    if (pane) {
+    if (cStyle & wxBORDER) {
+      wxWindow *parent;
+      int pw, ph;
       parent = GetParent();
-      parent->GetClientSize(&pClientWidth, &pClientHeight);
-      ::SizeControl(pane, clientWidth - (padLeft + padRight), 
-		    pClientHeight
-		    - (padTop + padBottom) 
-		    - (TAB_CONTROL_HEIGHT - TAB_PANE_OVERLAP - TAB_CONTENT_MARGIN));
+      parent->GetClientSize(&pw, &ph);
+      ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
+		    ph - (padTop + padBottom));
+    } else {
+      ::SizeControl(cMacControl, clientWidth - (padLeft + padRight), 
+		    TAB_CONTROL_HEIGHT);
     }
   }
 
   if (dX || dY) {
     MaybeMoveControls();
   }
-
-  if (!cHidden && (dW || dH || dX || dY)) {
-    Refresh();
-  }
 }
 
 void wxTabChoice::MaybeMoveControls(void)
 {
-  SetCurrentDC();
-  if (pane)
-    MoveControl(pane, SetOriginX + padLeft, SetOriginY + padTop + TAB_CONTROL_HEIGHT - TAB_PANE_OVERLAP);
   wxItem::MaybeMoveControls();
-  Refresh();
 }
 
 void wxTabChoice::Refresh(void)
 {
-  if (cHidden) return;
-
-  if (SetCurrentMacDC()) {
-    int clientWidth, clientHeight;
-    Rect clientRect;
-
-    GetClientSize(&clientWidth, &clientHeight);
-    clientHeight += 4;
-    ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
-    OffsetRect(&clientRect, SetOriginX, SetOriginY);
-    
-    if (pane) {
-      wxWindow *parent;
-      int pClientWidth, pClientHeight;
-      parent = GetParent();
-      parent->GetClientSize(&pClientWidth, &pClientHeight);
-      
-      clientRect.left -= 2;
-      clientRect.bottom = clientRect.top + pClientHeight + 4;
-      clientRect.right += 2;
-    }
-    
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()), &clientRect);
-  }
+  wxItem::Refresh();
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // Other methods
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-#ifdef MZ_PRECISE_GC
-START_XFORM_SKIP;
-#endif
-
-#ifndef OS_X
-# define IsControlEnabled(x) 1
-#endif
-
-static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart)
-{
-  Rect itemRect;
-
-  GetControlBounds(controlRef, &itemRect);
-  if (OS_103)
-    DrawThemePrimaryGroup(&itemRect, (IsControlEnabled(controlRef) 
-				      && IsControlActive(controlRef)));
-  else
-    DrawThemeTabPane(&itemRect, (IsControlEnabled(controlRef) 
-				 && IsControlActive(controlRef)));
-} 
-
-#ifdef MZ_PRECISE_GC
-END_XFORM_SKIP;
-#endif
-
 //-----------------------------------------------------------------------------
 void wxTabChoice::Paint(void)
 {
-  if (cHidden) return;
-  if (SetCurrentDC()) {
-    if (cMacControl) {
-      ::Draw1Control(cMacControl);
-    }
-    if (pane) {
-      RgnHandle clipRgn, innerRgn, oldClipRgn;
-      Rect itemRect;
-
-      clipRgn = NewRgn();
-      oldClipRgn = NewRgn();
-      innerRgn = NewRgn();
-
-      GetClip(oldClipRgn);
-
-      /* Clip midway through overlap to avoid drawing on
-         the tab, and clip out the inside to avoid
-         drawing on contained items. */
-      GetControlBounds(pane, &itemRect);
-      itemRect.top += TAB_PANE_CLIP_OVERLAP;
-      itemRect.left -= 2;
-      itemRect.right += 2;
-      itemRect.bottom += 3;
-      RectRgn(clipRgn, &itemRect);
-      itemRect.top += 11 - 3;
-      itemRect.left += 3 + 2;
-      itemRect.right -= 2 + 3;
-      itemRect.bottom -= 2 + 3;
-      RectRgn(innerRgn, &itemRect);
-      DiffRgn(clipRgn, innerRgn, clipRgn);
-      SetClip(clipRgn);
-
-      ::EraseRgn(clipRgn);
-      ::Draw1Control(pane);
-
-      SetClip(oldClipRgn);
-
-      DisposeRgn(clipRgn);
-      DisposeRgn(oldClipRgn);
-      DisposeRgn(innerRgn);
-    }
-  }
 }
 
 //-----------------------------------------------------------------------------
 void wxTabChoice::DoShow(Bool show)
 {
-  if (!CanShow(show)) return;
-
-  if (cMacControl) {
-    SetCurrentDC();
-    if (show) {
-      ::ShowControl(cMacControl);
-      if (pane) {
-	::ShowControl(pane);
-      }
-    } else {
-      ::HideControl(cMacControl);
-      if (pane) {
-	::HideControl(pane);
-      }
-    }
-  }
-  
-  wxWindow::DoShow(show);
+  wxItem::DoShow(show);
 }
 
 void wxTabChoice::ChangeToGray(Bool gray)
 {
-  if (cMacControl) {
-    SetCurrentDC();
-    if (gray) {
-#ifdef OS_X
-      DisableControl(cMacControl);
-      if (pane)
-	DisableControl(pane);
-#else
-      HiliteControl(cMacControl, 255);
-      if (pane)
-	HiliteControl(pane, 255);
-#endif
-    } else {
-#ifdef OS_X
-      EnableControl(cMacControl);
-      if (pane)
-	EnableControl(pane);
-#else
-      HiliteControl(cMacControl, 0);
-      if (pane)
-	HiliteControl(pane, 0);
-#endif
-    }
-  }
-  
-  Paint(); /* to paint custom control */
-  Refresh(); /* in case an update is in progress */
-
-  wxWindow::ChangeToGray(gray);
+  wxItem::ChangeToGray(gray);
 }
 
 void wxTabChoice::Activate(Bool on)
 {
-  if (cMacControl) {
-    SetCurrentDC();
-    if (!on) {
-      DeactivateControl(cMacControl);
-      if (pane)
-	DeactivateControl(pane);
-    } else {
-      ActivateControl(cMacControl);
-      if (pane)
-	ActivateControl(pane);
-    }
-  }
-
-  Paint(); /* to paint custom control */
-  Refresh(); /* in case an update is in progress */
-
-  wxWindow::Activate(on);
+  wxItem::Activate(on);
 }
 
 //-----------------------------------------------------------------------------
@@ -439,18 +248,15 @@ void wxTabChoice::OnEvent(wxMouseEvent *event)
       
     event->Position(&startH, &startV); // client c.s.
       
-    startPt.v = startV + SetOriginY; // port c.s.
-    startPt.h = startH + SetOriginX;
+    startPt.v = startV - padTop;
+    startPt.h = startH - padLeft;
 
-    if (::StillDown()) {
-      wxTracking();
-      if (cMacControl)
-	trackResult = ::TrackControl(cMacControl, startPt, NULL);
-      else
-	trackResult = Track(startPt);
-      Paint(); /* This is the handler thread; can't be in update */
-    } else
-      trackResult = 1;
+    wxTracking();
+    if (cMacControl)
+      trackResult = ::TrackControl(cMacControl, startPt, NULL);
+    else
+      trackResult = Track(startPt);
+
     if (trackResult) {
       wxCommandEvent *commandEvent;
       commandEvent = new wxCommandEvent(wxEVENT_TYPE_TAB_CHOICE_COMMAND);
@@ -510,10 +316,7 @@ void wxTabChoice::Append(char *s)
 #endif
   }
 
-  if (s && !cHidden) {
-    Paint();
-    Refresh(); /* in case an update is in progress */
-  }
+  OnClientAreaDSize(1, 1, 1, 1);
 }
 
 void wxTabChoice::Delete(int i)

@@ -140,26 +140,7 @@ void wxGroupBox::MaybeMoveControls(void)
 
 void wxGroupBox::Refresh(void)
 {
-  if (cHidden) return;
-
-  if (SetCurrentMacDC()) {
-    int clientWidth, clientHeight;
-    Rect clientRect;
-    wxWindow *parent;
-    int pClientWidth, pClientHeight;
-
-    GetClientSize(&clientWidth, &clientHeight);
-    
-    ::SetRect(&clientRect, 0, 0, clientWidth, clientHeight);
-    OffsetRect(&clientRect, SetOriginX, SetOriginY);
-
-    parent = GetParent();
-    parent->GetClientSize(&pClientWidth, &pClientHeight);
-      
-    clientRect.bottom = clientRect.top + pClientHeight;
-    
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()), &clientRect);
-  }
+  wxWindow::Refresh();
 }
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -168,39 +149,7 @@ void wxGroupBox::Refresh(void)
 
 void wxGroupBox::Paint(void)
 {
-  if (cHidden) return;
-  if (SetCurrentDC()) {
-    RgnHandle clipRgn, innerRgn, oldClipRgn;
-    Rect itemRect;
-
-    clipRgn = NewRgn();
-    oldClipRgn = NewRgn();
-    innerRgn = NewRgn();
-
-    GetClip(oldClipRgn);
-
-    /* Clip midway through overlap to avoid drawing on
-       the tab, and clip out the inside to avoid
-       drawing on contained items. */
-    GetControlBounds(cMacControl, &itemRect);
-    RectRgn(clipRgn, &itemRect);
-    itemRect.top += (orig_height - GBOX_EXTRA_SPACE);
-    itemRect.left += 4;
-    itemRect.right -= 4;
-    itemRect.bottom -= 4;
-    RectRgn(innerRgn, &itemRect);
-    DiffRgn(clipRgn, innerRgn, clipRgn);
-    SetClip(clipRgn);
-
-    ::EraseRgn(clipRgn);
-    ::Draw1Control(cMacControl);
-
-    SetClip(oldClipRgn);
-
-    DisposeRgn(clipRgn);
-    DisposeRgn(oldClipRgn);
-    DisposeRgn(innerRgn);
-  }
+  /* Shouldn't get here */
 }
 
 //-----------------------------------------------------------------------------
@@ -221,8 +170,6 @@ void wxGroupBox::ChangeToGray(Bool gray)
 void wxGroupBox::Activate(Bool on)
 {
   wxItem::Activate(on);
-  Paint(); /* to paint custom control */
-  Refresh(); /* in case an update is in progress */
 }
 
 char *wxGroupBox::GetLabel()

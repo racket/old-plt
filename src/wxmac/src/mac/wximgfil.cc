@@ -712,7 +712,7 @@ Bool wxLoadGifIntoBitmap(char *fileName, wxBitmap *bm, wxColourMap **pal, int wi
 void CreateOffScreenPixMap (CGrafPtr *cport, CGrafPtr *mask, wxGIF *gif)
 {
   int width, height;
-  Rect bounds = { 0, 0, height, width };
+  Rect bounds;
   GDHandle savegw;
   CGrafPtr saveport;
   QDErr err;

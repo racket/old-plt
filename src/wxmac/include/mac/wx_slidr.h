@@ -57,6 +57,7 @@ public:
   virtual void Paint(void);
   virtual void OnEvent(wxMouseEvent *event);
   virtual void OnClientAreaDSize(int dW, int dH, int dX, int dY);
+  virtual void MaybeMoveControls();
   
   virtual void DoShow(Bool s);
   

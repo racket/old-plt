@@ -33,6 +33,9 @@ extern int wxMenuBarHeight;
 // Public constructors
 //=============================================================================
 
+static pascal void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart);
+static ControlUserPaneDrawUPP userPaneDrawFunctionUPP = NewControlUserPaneDrawUPP(userPaneDrawFunction); 
+
 static OSStatus update_if_in_handler(EventHandlerCallRef inHandlerCallRef, 
 				     EventRef inEvent, 
 				     void *inUserData);
@@ -67,6 +70,7 @@ wxFrame::wxFrame // Constructor (for frame window)
   WindowPtr theMacWindow;
   wxArea *carea, *parea;
   wxMargin pam;
+  int metal = 1;
   
   InitDefaults();
 
@@ -107,8 +111,10 @@ wxFrame::wxFrame // Constructor (for frame window)
       windowClass = kPlainWindowClass;
       if (cStyle & wxNO_RESIZE_BORDER)
 	windowAttributes = kWindowNoAttributes;
-      else
+      else {
+	windowAttributes = kWindowNoAttributes;
 	windowClass = kWindowResizableAttribute;
+      }
     } else {
       windowClass = kDocumentWindowClass;
       if (cStyle & wxNO_RESIZE_BORDER)
@@ -117,6 +123,8 @@ wxFrame::wxFrame // Constructor (for frame window)
 	windowAttributes = kWindowStandardDocumentAttributes;
     }
   }
+
+  windowAttributes |= (metal ? kWindowMetalAttribute : 0) | kWindowCompositingAttribute;
 
 #ifdef OS_X
   if (cStyle & wxTOOLBAR_BUTTON)
@@ -183,9 +191,21 @@ wxFrame::wxFrame // Constructor (for frame window)
   if (wxIsBusy())
     cBusyCursor = 1;
 
-  // create a root control, to enable control embedding
-  ::CreateRootControl(theMacWindow,&rootControl);
+  ::GetRootControl(theMacWindow,&rootControl);
+  if (!rootControl) {
+    // create a root control, to enable control embedding
+    ::CreateRootControl(theMacWindow,&rootControl);
+  }
   cMacControl = rootControl;
+
+  if (!metal) {
+    Rect r = {0, 0, 6000, 6000};
+    ControlRef ctl;
+    CreateUserPaneControl(theMacWindow, &r, 0, &ctl);
+    SetControlData(ctl, kControlEntireControl, kControlUserPaneDrawProcTag, 
+		   sizeof(userPaneDrawFunctionUPP), (Ptr)&userPaneDrawFunctionUPP);
+    ::EmbedControl(ctl, cMacControl);
+  }
 
   EnforceSize(-1, -1, -1, -1, 1, 1);
 
@@ -205,6 +225,22 @@ wxFrame::wxFrame // Constructor (for frame window)
   }
 #endif      
 }
+
+static void userPaneDrawFunction(ControlRef controlRef, SInt16 thePart)
+{
+  Rect itemRect;
+  int depth;
+  ThemeDrawingState s;
+
+  GetThemeDrawingState(&s);
+
+  depth = wxDisplayDepth();
+  SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);
+  GetControlBounds(controlRef, &itemRect);
+  EraseRect(&itemRect);
+
+  SetThemeDrawingState(s, TRUE);
+} 
 
 //=============================================================================
 // Public destructor
@@ -247,8 +283,6 @@ wxFrame::~wxFrame(void)
 
 static int DoPaint(void *_f)
 {
-  wxFrame *f = (wxFrame *)_f;
-  f->Paint();
   return 0;
 }
 
@@ -382,28 +416,6 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
   widthIsChanged = (width != cWindowWidth);
   heightIsChanged = (height != cWindowHeight);
 
-  if (! wxTheApp->MacOS85WindowManagerPresent) {
-    if (width > cWindowWidth || height > cWindowHeight)
-      {
-	// Invalidate grow box:
-	int oldMacWidth, oldMacHeight;
-	Rect oldGrowRect;
-	wxArea *parea;
-	wxMargin pam;
-
-	parea = PlatformArea();
-	pam = parea->Margin();
-      
-	oldMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
-	oldMacHeight = cWindowHeight - pam.Offset(wxVertical);
-	::SetRect(&oldGrowRect, oldMacWidth - 15, oldMacHeight - 15, oldMacWidth, oldMacHeight);
-	if (SetCurrentMacDC()) {
-	  InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&oldGrowRect);
-	  ::EraseRect(&oldGrowRect);
-	}
-      }
-  }
-
   dw = width - cWindowWidth;
   dh = height - cWindowHeight;
 
@@ -439,50 +451,14 @@ void wxFrame::DoSetSize(int x, int y, int width, int height)
       ::SizeWindow(theMacWindow, theMacWidth, theMacHeight, TRUE);
       // Resizing puts windows into the unzoomed state
       cMaximized = FALSE;
-
-      if (dw > 0 || dh > 0) {
-	// Invalidate new region:
-	int w, h;
-	Rect r;
-	w = cWindowWidth - pam.Offset(wxHorizontal);
-	h = cWindowHeight - pam.Offset(wxVertical);
-	if (SetCurrentMacDC()) {
-	  if (dw) {
-	    r.top = 0;
-	    r.bottom = h;
-	    r.left = max(0, w - dw);
-	    r.right = w;
-	    ::InvalWindowRect(theMacWindow, &r);
-	  }
-	  if (dh) {
-	    r.top = max(0, h - dh);
-	    r.bottom = h;
-	    r.left = 0;
-	    r.right = w;
-	    ::InvalWindowRect(theMacWindow, &r);
-	  }
-	}
-      }
       
       if (cStatusPanel) {
 	int w, h;
 
-	if (cStatusPanel->SetCurrentDC()) {
-	  Rect r = {0, 0, 10000, 10000};
-	  OffsetRect(&r,SetOriginX,SetOriginY);
-	  EraseRect(&r);
-	}
-	
 	cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
 			      theMacWidth, -1);
 	cStatusPanel->GetClientSize(&w, &h);
 	cStatusText->SetSize(-1, -1, w, -1);
-	
-	if (cStatusPanel->SetCurrentDC()) {
-	  Rect s = {0, 0, 10000, 10000};
-	  OffsetRect(&s,SetOriginX,SetOriginY);
-	  EraseRect(&s);
-	}
       }
       
       // Call OnSize handler
@@ -506,16 +482,7 @@ void wxFrame::Maximize(Bool maximize)
 
       theMacGrafPort = cMacDC->macGrafPort();
       theMacWindow = GetWindowFromPort(theMacGrafPort);
-      if (SetCurrentDC()) {
-	Rect portBounds;
-	::EraseRect(GetPortBounds(theMacGrafPort,&portBounds));
-	::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
-	InvalWindowRect(theMacWindow,&portBounds);
-      } else {
-	::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
-      }
-
-      cMaximized = maximize;
+      ::ZoomWindow(theMacWindow, maximize ? inZoomOut : inZoomIn, TRUE);
 
       wxMacRecalcNewSize();
       
@@ -530,22 +497,11 @@ void wxFrame::Maximize(Bool maximize)
 
 	theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
 	theMacHeight = cWindowHeight - pam.Offset(wxVertical);
-	if (cStatusPanel->SetCurrentDC()) {
-	  Rect r = {0, 0, 10000, 10000};
-	  OffsetRect(&r,SetOriginX,SetOriginY);
-	  EraseRect(&r);
-	}
 	
 	cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
 			      theMacWidth, -1);
 	cStatusPanel->GetClientSize(&w, &h);
 	cStatusText->SetSize(-1, -1, w, -1);
-
-	if (cStatusPanel->SetCurrentDC()) {
-	  Rect s = {0, 0, 10000, 10000};
-	  OffsetRect(&s,SetOriginX,SetOriginY);
-	  EraseRect(&s);
-	}
       }
       
       {
@@ -556,6 +512,8 @@ void wxFrame::Maximize(Bool maximize)
 	OnWindowDSize(dW, dH, dX, dY);
 	OnSize(cWindowWidth, cWindowHeight);
       }
+
+      cMaximized = maximize;
     }
 }
 
@@ -802,29 +760,6 @@ void wxFrame::NowFront(Bool flag) // mac platform only
 
 void wxFrame::ShowAsActive(Bool flag)
 {
-  if (! wxTheApp->MacOS85WindowManagerPresent) {
-    // Invalidate grow box (appearance changes with window active/inactive)
-    if (SetCurrentDC()) {
-      int theMacWidth, theMacHeight;
-      wxArea *parea;
-      wxMargin pam;
-
-      parea = PlatformArea();
-      pam = parea->Margin();
-
-      theMacWidth = cWindowWidth - pam.Offset(wxHorizontal);
-      theMacHeight = cWindowHeight - pam.Offset(wxVertical);
-      {
-	Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
-	// Erase it now if we're becoming inactive
-	if (!flag) {
-	  ::EraseRect(&growRect);
-	}
-	::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&growRect);
-      }
-    }
-  }
-  
   if (flag && !cFocusWindow && children) {
     wxChildNode *node;
     wxWindow *win;
@@ -895,17 +830,6 @@ Bool wxFrame::IsVisible(void)
 //-----------------------------------------------------------------------------
 void wxFrame::MacUpdateWindow(void)
 {
-  WindowPtr theMacWindow;
-  theMacWindow = macWindow();
-  if (!is_in_update && theMacWindow && SetCurrentDC()) {
-    is_in_update++;
-    ::BeginUpdate(theMacWindow);
-
-    Paint();
-
-    ::EndUpdate(theMacWindow);
-    --is_in_update;
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1070,8 +994,6 @@ void wxFrame::Show(Bool show)
       ::ShowWindow(theMacWindow);
     }
   }
-
-  /* Paint(); */
 }
 
 wxFrame *wxFrame::GetSheetParent()
@@ -1137,38 +1059,9 @@ void wxFrame::LoadAccelerators(char* table) { } // Not Applicable for Mac platfo
 //-----------------------------------------------------------------------------
 void wxFrame::Paint(void)
 {
-  if (SetCurrentDC()) {
-    RgnHandle rgn, subrgn, noerasergn;
-    rgn = NewRgn();
-    if (rgn) {
-      subrgn = NewRgn();
-      if (subrgn) {
-	noerasergn = NewRgn();
-	if (noerasergn) {
-	  RGBColor save;
-	  
-	  SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
-	  AddWhiteRgn(subrgn, noerasergn);
-	  DiffRgn(rgn, subrgn, rgn);
-	  DiffRgn(rgn, noerasergn, rgn);
-	  EraseRgn(rgn);
-	  GetForeColor(&save);
-	  ForeColor(whiteColor);
-	  PaintRgn(subrgn);
-	  RGBForeColor(&save);
-
-	  DisposeRgn(noerasergn);
-	}
-	DisposeRgn(subrgn);
-      }
-      DisposeRgn(rgn);
-    }
-    wxWindow::Paint();
-#if 0
-    if (cStatusPanel)
-      cStatusPanel->Paint();
-#endif
-  }
+  CWindowPtr w;
+  w = GetWindowFromPort(cMacDC->macGrafPort());
+  DrawControls(w);
 }
 
 RgnHandle wxFrame::GetCoveredRegion(int x, int y, int w, int h)

@@ -309,8 +309,8 @@ void wxScrollBar::OnEvent(wxMouseEvent *event) // mac platform only
     
     event->Position(&startH, &startV); // frame c.s.
     
-    startPt.v = startV + SetOriginY; // frame c.s.
-    startPt.h = startH + SetOriginX;
+    startPt.v = startV;
+    startPt.h = startH;
     thePart = ::TestControl(cMacControl, startPt);
     if (thePart) {
       int down;

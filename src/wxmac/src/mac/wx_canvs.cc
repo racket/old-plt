@@ -139,6 +139,11 @@ void wxCanvas::InitDefaults(void)
     canvas_border = new wxBorderArea(this, 3, direction, 0, TRUE);
   }
 
+  if (!(cStyle & wxFLAT)) {
+    cStyle |= wxHIDE_MENUBAR;
+    CreatePaintControl();
+  }
+
   {
     wxWindow *p;
     p = GetParent();
@@ -211,7 +216,44 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   }
 
   ResetGLView();
+
+  /* Calling wxWindow's OnClientAreaDSize does bad
+     things to the scrollbars, and we want to use
+     the client area, only. */
+  if (cPaintControl) {
+    if (dW || dH) {
+      int w, h;
+      GetClientSize(&w, &h);
+      ::SizeControl(cPaintControl, w, h);
+    }
+    MaybeMoveControls();
+  }
+
+  if (canvas_border)
+    canvas_border->cBorder->OnClientAreaDSize(dW, dH, dX, dY);
 }
+
+void wxCanvas::MaybeMoveControls()
+{
+  /* Unlike wxWindow::MaybeMoveControls(),
+     we want the client area, only */
+  {
+    int x, y;
+    GetWinOrigin(&x, &y);
+    if (cStyle & wxCONTROL_BORDER) {
+      x += 3;
+      y += 3;
+    } else if (cStyle & wxCONTROL_BORDER) {
+      x += 1;
+      y += 1;
+    }
+    MoveControl(cPaintControl, x, y);
+  }
+
+  if (canvas_border)
+    canvas_border->cBorder->MaybeMoveControls();
+}
+
 
 //-----------------------------------------------------------------------------
 // horizontal/vertical: number of pixels per unit (e.g. pixels per text line)
@@ -742,12 +784,17 @@ int wxCanvas::GetScrollRange(int dir)
 			 : wxWhatScrollData::wxSizeH);
 }
 
-
-
 void wxCanvas::Paint(void)
 {
-  wxWindow::Paint();
-  OnPaint();
+  if (!cHidden) {
+    Rect itemRect;
+    GetControlBounds(cPaintControl, &itemRect);
+    BackColor(whiteColor);
+    BackPat(GetWhitePattern());
+    EraseRect(&itemRect);
+    
+    MrEdQueuePaint(this);
+  }
 }
 
 void wxCanvas::OnPaint(void)

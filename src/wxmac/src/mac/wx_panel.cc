@@ -31,7 +31,7 @@ wxPanel::wxPanel // Constructor (given parentArea)
  char*		windowName,
  WXTYPE		objectType
  ) :
-  wxbPanel (windowName, parentArea, x, y, width, height, style)
+  wxbPanel (windowName, parentArea, x, y, width, height, style | wxFLAT)
 {
   CreateWxPanel(x, y, width, height);
 }
@@ -48,7 +48,7 @@ wxPanel::wxPanel // Constructor (given parentFrame)
  char*		windowName,
  WXTYPE		objectType
  ) :
-  wxbPanel (windowName, parentFrame, x, y, width, height, style)
+  wxbPanel (windowName, parentFrame, x, y, width, height, style | wxFLAT)
 {
   CreateWxPanel(x, y, width, height);
 }
@@ -65,7 +65,7 @@ wxPanel::wxPanel // Constructor (given parentPanel)
  char*		windowName,
  WXTYPE		objectType
  ) :
-  wxbPanel (windowName, parentPanel, x, y, width, height, style)
+  wxbPanel (windowName, parentPanel, x, y, width, height, style | wxFLAT)
 {
   CreateWxPanel(x, y, width, height);
 }

@@ -197,6 +197,8 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
          
   ::EmbedControl(cMacControl, GetRootControl());
 
+  CreatePaintControl();
+
   {
     wxWindow *p;
     p = GetParent();
@@ -213,7 +215,12 @@ Bool wxSlider::Create(wxPanel *panel, wxFunction func, char *label, int value,
 // ------------ Destructor ----------------------------------------
 wxSlider::~wxSlider(void)
 {
+  void *rc;
+
   ::DisposeControl(cMacControl);
+
+  rc = (void *)GetControlReference(cMacControl);
+  FREE_SAFEREF(rc);
 }
 
 
@@ -222,16 +229,12 @@ void wxSlider::Paint(void)
 {
   if (cHidden) return;
 
-  SetCurrentDC();
-  ::Draw1Control(cMacControl);
-
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
     Rect r = valueRect;
     char t[8];
     CFStringRef str;
 
     OffsetRect(&r,SetOriginX,SetOriginY);
-    ::EraseRect(&r);
     {
       int val;
       val = ::GetControlValue(cMacControl);
@@ -271,7 +274,6 @@ void wxSlider::DoShow(Bool show)
 
 void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
-  SetCurrentDC();
   if (dW || dH) {	
     int clientWidth, clientHeight;
     int vwid, vhgt;
@@ -308,21 +310,39 @@ void wxSlider::OnClientAreaDSize(int dW, int dH, int dX, int dY)
   }
 
   if (dX || dY) {	
-    // Changing the position
-    Rect r;
-
-    cMacDC->setCurrentUser(NULL); // macDC no longer valid
-    SetCurrentDC(); // put newcontrolRect at (0, 0)
-    r = controlRect;
-    InsetSliderRect(&r);
-    ::MoveControl(cMacControl,SetOriginX + r.left,SetOriginY + r.top);
+    MaybeMoveControls();
   }
+
+  if (cTitle)
+    cTitle->cLabelText->OnClientAreaDSize(dW, dH, dX, dY);
+
+  wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
+}
+
+void wxSlider::MaybeMoveControls()
+{
+  {	
+    int x, y, mx, my;
+    wxArea *c;
+    wxMargin margin;
+
+    GetWinOrigin(&x, &y);
+    c = ClientArea();
+    margin = c->Margin(this);
+    mx = margin.Offset(wxLeft);
+    my = margin.Offset(wxTop);
+
+    ::MoveControl(cMacControl, x + padLeft + mx, y + padTop + my);
+  }
+
+  if (cTitle)
+    cTitle->cLabelText->MaybeMoveControls();
 }
 
 #define max(x, y) ((x > y) ? x : y)
 #define min(x, y) ((x > y) ? y : x)
 
-void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
+void wxSlider::OnEvent(wxMouseEvent *event)
 {
   if (event->leftDown) {
     int startH, startV;
@@ -331,8 +351,8 @@ void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 
     SetCurrentDC();
     event->Position(&startH, &startV); // client c.s.
-    pt.v = startV + SetOriginY;
-    pt.h = startH + SetOriginX;
+    pt.v = startV - padTop;
+    pt.h = startH - padLeft;
     part = ::TestControl(cMacControl, pt);
     if (StillDown()) {
       if (part) {
@@ -383,7 +403,8 @@ void wxSlider::TrackPart(int part)
   } // end switch
 	
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
-    Paint();
+    if (cPaintControl)
+      HIViewSetNeedsDisplay(cPaintControl, TRUE);
   }
  
   commandEvent = new wxCommandEvent(wxEVENT_TYPE_SLIDER_COMMAND);
@@ -428,8 +449,7 @@ void wxSlider::SetValue(int value)
   SetCurrentDC();
   ::SetControlValue(cMacControl, value);
   if (!(windowStyle & (wxHORIZONTAL << 2))) {
-    Paint();
-    Refresh(); /* in case an update is in progress */
+    Refresh();
   }
 }
 
@@ -452,8 +472,7 @@ char* wxSlider::GetLabel(void)
 
 void wxSlider::SetLabel(char *label)
 {
-  if (cTitle) cTitle->SetLabel(label);
-	
+  if (cTitle) cTitle->SetLabel(label);	
 }
 
 void wxSlider::InternalGray(int gray_amt)

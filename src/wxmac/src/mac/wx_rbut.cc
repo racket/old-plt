@@ -19,7 +19,7 @@
 # include <QuickDraw.h>
 #endif
 
-#define IR_CIRCLE_SIZE 12
+#define IR_CIRCLE_SIZE 18
 #define IR_X_SPACE 3
 #define IR_Y_SPACE 2
 #define IR_MIN_HEIGHT (IR_CIRCLE_SIZE + 2 * IR_Y_SPACE)
@@ -135,20 +135,14 @@ wxRadioButton::wxRadioButton // Constructor (given parentPanel, bitmap)
   if (cWindowHeight < IR_MIN_HEIGHT)
     cWindowHeight = IR_MIN_HEIGHT;
   OffsetRect(&bounds,SetOriginX,SetOriginY);
+
+  CreatePaintControl();
   
   {
     wxWindow *p;
     p = GetParent();
     if (p->IsHidden())
       DoShow(FALSE);
-  }
-  
-  {
-    int vis;
-    vis = SetCurrentMacDC();
-    if (vis) {
-      ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&bounds);
-    }
   }
 
   InitInternalGray();
@@ -219,13 +213,10 @@ void wxRadioButton::SetLabel(wxBitmap* bitmap)
 void wxRadioButton::SetValue(Bool val)
 {
   if (cMacControl) {
-    SetCurrentDC();
     ::SetControlValue(cMacControl, val ? 1 : 0);
   } else {
     bitmapState = !!val;
     if (!cHidden) {
-      Paint();
-      /* in case paint didn't take, because an update is already in progress: */
       Refresh();
     }
   }
@@ -246,17 +237,13 @@ Bool wxRadioButton::GetValue(void)
 void wxRadioButton::Paint(void)
 {
   if (cHidden) return;
-  SetCurrentDC();
   { 
     Rect r;
 
     SetRect(&r, 0, 0, cWindowWidth, cWindowHeight);
 
     OffsetRect(&r,SetOriginX,SetOriginY);
-    ::EraseRect(&r);
-    if (cMacControl) {
-      ::Draw1Control(cMacControl);
-    } else {
+    {
       if (buttonBitmap) {
 	int btop;
 	btop = (cWindowHeight - buttonBitmap->GetHeight()) / 2;
@@ -278,18 +265,17 @@ void wxRadioButton::Paint(void)
 	int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
 	Rect r = { top, 0, top + IR_CIRCLE_SIZE, IR_CIRCLE_SIZE };
 	OffsetRect(&r,SetOriginX,SetOriginY);
-	PenSize(1, 1);
-	ForeColor(blackColor);
-	FrameOval(&r);
-	InsetRect(&r, 1, 1);
-	ForeColor(whiteColor);
-	PaintOval(&r);
-	ForeColor(blackColor);
-	if (bitmapState) {
-	  InsetRect(&r, IR_ON_INSET - 1, IR_ON_INSET - 1);
-	  PaintOval(&r);
+	{
+	  ThemeButtonDrawInfo state;
+	  
+	  state.state = (trackState
+			 ? kThemeStatePressed
+			 : ((cEnable && cActive) ? kThemeStateActive : kThemeStateInactive));
+	  state.value = bitmapState ? kThemeButtonOn : kThemeButtonOff;
+	  state.adornment = kThemeAdornmentNone;
+	  
+	  DrawThemeButton(&r, kThemeRadioButton, &state, NULL, NULL /* erase */, NULL, NULL);
 	}
-	cMacDC->setCurrentUser(NULL);
       }
     }
   }
@@ -297,15 +283,8 @@ void wxRadioButton::Paint(void)
 
 void wxRadioButton::Highlight(Bool on)
 {
-  int top = (cWindowHeight - IR_CIRCLE_SIZE) / 2;
-  Rect r = { top + 1, 1, top + IR_CIRCLE_SIZE - 1, IR_CIRCLE_SIZE - 1};
-
-  OffsetRect(&r,SetOriginX,SetOriginY);
-  if (!on)
-    ForeColor(whiteColor);
-  PenSize(1, 1);
-  FrameOval(&r);
-  if (!on) ForeColor(blackColor);
+  trackState = on;
+  Refresh();
 }
 
 //-----------------------------------------------------------------------------
@@ -337,16 +316,15 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
       
       event->Position(&startH, &startV); // client c.s.
       
-      startPt.v = startV + SetOriginY; // port c.s.
-      startPt.h = startH + SetOriginX;
-      if (::StillDown()) {
-	wxTracking();
-	if (cMacControl)
-	  trackResult = ::TrackControl(cMacControl, startPt, NULL);
-	else
-	  trackResult = Track(startPt);
-      } else
-	trackResult = 1;
+      startPt.v = startV - padTop;
+      startPt.h = startH - padLeft;
+
+      wxTracking();
+      if (cMacControl)
+	trackResult = ::TrackControl(cMacControl, startPt, NULL);
+      else
+	trackResult = Track(startPt);
+
       if (trackResult) {
 	wxCommandEvent *commandEvent;
 	commandEvent = new wxCommandEvent(wxEVENT_TYPE_RADIOBOX_COMMAND);
@@ -363,14 +341,16 @@ void wxRadioButton::OnEvent(wxMouseEvent *event) // mac platform only
 //-----------------------------------------------------------------------------
 void wxRadioButton::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platform only
 {
-  int clientWidth, clientHeight;
 
-  if (!cMacControl) return;
+  if (cMacControl) {
+    int clientWidth, clientHeight, x,y;
+    
+    GetClientSize(&clientWidth, &clientHeight);
+    GetWinOrigin(&x, &y);
+    
+    ::SizeControl(cMacControl, clientWidth, clientHeight);
+    ::MoveControl(cMacControl, x, y);
+  }
 
-  SetCurrentDC();
-
-  GetClientSize(&clientWidth, &clientHeight);
-
-  ::SizeControl(cMacControl, clientWidth, clientHeight);
-  ::MoveControl(cMacControl, SetOriginX, SetOriginY);
+  wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }

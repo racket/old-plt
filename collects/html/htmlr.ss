@@ -78,9 +78,10 @@
                       (let* ([el (car more)]
                              [possible (may-contain (element-name el))])
                         (if (or (not possible) (memq 'pcdata possible))
-                            (cons (recontent-xml el (append non-elements (clean-up-pcdata (element-content el)) (first-non-elements (cdr more))))
+                            (cons (recontent-xml el (append non-elements (clean-up-pcdata (element-content el)) (eliminate-pcdata (first-non-elements (cdr more)))))
                                   (or (memf element? (cdr more)) null))
-                            (cons el (eliminate-pcdata (cdr more)))))
+                            (cons (recontent-xml el (eliminate-pcdata (element-content el)))
+                                  (eliminate-pcdata (cdr more)))))
                       null)))])
       clean-up-pcdata))
   

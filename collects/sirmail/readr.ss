@@ -1479,7 +1479,8 @@
       (display-message-count (length mailbox))
       (define new-mail-message%
         (class canvas%
-          (inherit get-dc get-client-size get-parent)
+          (inherit get-dc get-client-size get-parent
+		   horiz-margin vert-margin)
           (init-field font)
           (define message "<<unset>>")
           (define/override (on-paint)
@@ -1496,7 +1497,7 @@
           (define/public (set-message n)
             (set! message 
                   (cond
-                    [(preferences:get 'sirmail:always-happy) "New Mail!"]
+                    [(get-pref 'sirmail:always-happy) "New Mail!"]
                     [(n . <= . 50) "New Mail!"]
                     [(n . <= . 200) "New Mail"]
                     [else "New Mail!@#$%"]))
@@ -1508,6 +1509,8 @@
           (super-instantiate ())
           (update-min-width)
           (inherit stretchable-width)
+	  (horiz-margin 2)
+	  (vert-margin 2)
           (stretchable-width #f)))
       (define-values (show-new-mail-msg hide-new-mail-msg disconnected-msg)
 	(let* ([orig-font (send disable-button-panel get-label-font)]

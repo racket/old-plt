@@ -126,7 +126,7 @@
     (lambda (expr env attributes vocab)
       ; (printf "Expanding~n") (pretty-print (sexp->raw expr))
       ; (printf "Expanding~n") (pretty-print expr) (newline))
-      ;	(printf "Expanding~n") (display expr)
+      ; (printf "Expanding~n") (display expr) (newline) (newline)
       ; (printf "in ~s~n" (get-vocabulary-name vocab))
       ;	(printf "in vocabulary~n") (print-env vocab)
       ;	(printf "in attributes~n") (hash-table-map attributes cons)

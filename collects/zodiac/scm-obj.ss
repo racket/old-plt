@@ -117,14 +117,19 @@
 	    (let ((id (z:read-object expr)))
 	      (let ((top-level-space (get-attribute attributes 'top-levels)))
 		(if top-level-space
-		  (create-top-level-varref/bind
-		    id
-		    (hash-table-get top-level-space id
-		      (lambda ()
-			(let ((b (box '())))
-			  (hash-table-put! top-level-space id b)
-			  b)))
-		    expr)
+		  (begin
+		    (let ((ref
+			    (create-top-level-varref/bind
+			      id
+			      (hash-table-get top-level-space id
+				(lambda ()
+				  (let ((b (box '())))
+				    (hash-table-put! top-level-space id b)
+				    b)))
+			      expr)))
+		      (let ((b (top-level-varref/bind-slot ref)))
+			(set-box! b (cons ref (unbox b))))
+		      ref))
 		  (create-top-level-varref id expr)))))
 	  ((public-binding? r)
 	    (create-public-varref r expr))

@@ -11,5 +11,5 @@
      "Dynamic HTML."))
   (define compile-omit-files '("mxdemo.ss"))
   (define install-collection "installer.ss")
-  (define release-version "206p1")
+  (define release-version "207")
   (define release-iteration "0"))

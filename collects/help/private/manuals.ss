@@ -173,9 +173,8 @@
 			      [(= ap bp) (string<? a b)]
 			      [else (< ap bp)])))]
            [docs (quicksort docs compare-docs)]
-           [doc-paths (map (lambda (doc) (string-append "/doc/" doc "/")) docs)]
-	   [names (map get-doc-name docs)]
-	   [names+paths (map cons names doc-paths)]
+           [names (map get-doc-name docs)]
+	   [names+paths (map cons names docs)]
 	   [is-lang? (lambda (name+path)
 		       (let ([name (car name+path)])
 			 (ormap (lambda (s) (regexp-match s name))
@@ -187,26 +186,23 @@
 	   [tool-names (map car tool-names+paths)]
 	   [tool-doc-paths (map cdr tool-names+paths)]
 	   [mk-link (lambda (doc-path name)
-                      ; doc-path is of form /doc/<doc-dir>/
-                      (let* ([manual-dir 
-				(substring doc-path
-				           5
-		                           (sub1 (string-length doc-path)))]
-			     [index-file (build-path manual-dir "index.htm")])
-                        (format "<LI> <A HREF=\"~a\">~a</A>~a"
-			        doc-path
+                      (let* ([manual-name (let-values ([(base manual-name dir?) (split-path doc-path)])
+                                            manual-name)]
+			     [index-file (get-index-file doc-path)])
+                        (format "<LI> <A HREF=\"/doc/~a/~a\">~a</A>~a"
+			        manual-name
+                                index-file
                                 name
                                 (if (and cvs-user?
-                                         (file-exists? index-file))
+                                         (file-exists? (build-path doc-path index-file)))
                                     (string-append 
                                      "<BR>&nbsp;&nbsp;"
 				     "<FONT SIZE=\"-1\">"
-				     (if (is-known-doc? manual-dir)
+				     (if (is-known-doc? doc-path)
 					 (string-append
 					  (format 
 					   "[<A mzscheme=\"((dynamic-require '(lib |refresh-manuals.ss| |help|) 'refresh-manuals) (list (cons |~a| |~a|)))\">~a</A>]"
-					   (let-values ([(base manual-name dir?) (split-path manual-dir)])
-                                             manual-name)
+					   manual-name
 					   name
                                            (string-constant plt:hd:refresh))
 					  "&nbsp;")
@@ -215,7 +211,7 @@
                                              (date->string
                                               (seconds->date
                                                (file-or-directory-modify-seconds
-                                                index-file))))
+                                                (build-path doc-path index-file)))))
 				     "</FONT>")
 				    ""))))]
 	   [break-between (lambda (re l)
@@ -302,7 +298,7 @@
       (or (get-known-doc-name doc-dir)
           (let ([main-file (get-index-file doc-dir)])
             (if main-file
-                (with-input-from-file main-file
+                (with-input-from-file (build-path doc-dir main-file)
                   (lambda ()
                     (let loop ()
                       (let ([r (read-line)])
@@ -356,14 +352,14 @@
   (define (get-index-file doc-dir)
     (cond
       [(file-exists? (build-path doc-dir "index.htm"))
-       (build-path doc-dir "index.htm")]
+       "index.htm"]
       [(file-exists? (build-path doc-dir "index.html"))
-       (build-path doc-dir "index.html")]
+       "index.html"]
       [(tex2page-detected doc-dir)
        =>
        (lambda (x) x)]
       [else #f]))
-    
+  
   ;; tex2page-detected : string -> (union #f string)
   (define (tex2page-detected dir)
     (let loop ([contents (directory-list dir)])
@@ -373,8 +369,8 @@
                      [m (regexp-match #rx"(.*)-Z-H-1.html" file)])
                 (or (and m
                          (file-exists? (build-path dir file))
-                         (let ([index-file (build-path dir (string-append (cadr m) ".html"))])
-                           (if (file-exists? index-file)
+                         (let ([index-file (string-append (cadr m) ".html")])
+                           (if (file-exists? (build-path dir index-file))
                                index-file
                                #f)))
                     (loop (cdr contents))))]))))

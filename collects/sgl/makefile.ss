@@ -79,7 +79,8 @@
 	    (delete/continue file.o))))))
 
   (define (xform src dest)
-    (make-directory* 3mdir)
+    (let-values ([(base name dir?) (split-path dest)])
+      (make-directory* base))
     (parameterize ([current-directory (collection-path "sgl")])
       (restart-mzscheme #() 
 			(lambda (x) x)

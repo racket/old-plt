@@ -894,9 +894,6 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 #else
 	FILE *fp = fopen(name,"rb");
 	if (fp) {
-		// I don't know why we skip 512 bytes. I would have
-		// thought fopen only processes the data fork. I suppose
-		// it could be the "Mac Draw" header block (IM-V, pg 88)
 		fseek(fp, 0, SEEK_END);
 		int fsize = ftell(fp) - 512;
 		fseek(fp, 512, SEEK_SET);	// 0 didn't work
@@ -922,6 +919,7 @@ Bool wxBitmap::LoadFile(char *name, long flags)
 		} else {
 		  ok = FALSE;
         }
+		fclose(fp);
 	} else
 		ok = FALSE;
 #endif

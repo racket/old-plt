@@ -459,7 +459,7 @@ static Scheme_Object *wxSchemeGetColourFromUser(int argc, Scheme_Object **argv)
 #ifdef wx_mac
 # ifdef WX_CARBON
   {
-    struct ColorPickerInfo cpInfo;
+    GC_CAN_IGNORE struct ColorPickerInfo cpInfo;
     
     cpInfo.theColor.profile = NULL; // use the default ColorSync profile
     if (c) {

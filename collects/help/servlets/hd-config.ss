@@ -90,7 +90,7 @@
 	(TITLE "PLT Help Desk configuration")
 	,hd-css)
       (BODY 
-       (H1  "PLT Help Desk configuration")
+       (H1 ,(string-constant hd-configuration))
        (P)
        (FORM ((ACTION "/servlets/update-config.ss")
 	      (METHOD "POST"))

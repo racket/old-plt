@@ -46,11 +46,17 @@
   (define (current-event)
     (list-ref (events) (current-event-num)))
   
+  ; this retrieves the mark list from the most recent event with normal breakpoint info
+  ; unless an event with breakpoint info has been specified, in which case it returns that
   (define (current-mark-list)
-    (unless (normal-breakpoint-info? (current-event))
-      (error 'current-mark-list "current event is not an event with a mark list: ~v" (current-event)))
-    (normal-breakpoint-info-mark-list (current-event)))
-  
+    (if (normal-breakpoint-info? (current-event))
+        (normal-breakpoint-info-mark-list (current-event))
+        (let loop ((l  (reverse (events))))
+          (cond
+            ((null? l) (error 'current-mark-list "no events with mark lists: ~v" (events)))
+            ((normal-breakpoint-info? (car l)) (normal-breakpoint-info-mark-list (car l)))
+            (else (loop (cdr l)))))))
+
   (define (current-frame-num)
     (namespace-variable-value 'current-frame-num))
   
@@ -60,6 +66,21 @@
   (define (check-range num bottom top)
     (when (or (< num bottom) (> num top))
       (error 'check-range "argument ~v out of range [~v ... ~v]" num bottom top)))
+  
+  ; pretty-print code (represented as sexp)
+  ; stolen from MrFlow
+  (define (unexpand t)
+    (if (pair? t)
+        (let ([kw (car t)])
+          (if (list? t)
+              (cond
+                [(eq? kw '#%app) (map unexpand (cdr t))]
+                [else (map unexpand t)])
+              (cond
+                [(eq? kw '#%datum) (cdr t)]
+                [(eq? kw '#%top) (cdr t)]
+                [else t])))
+        t))
   
   (define (set-event-num! num)
     (check-range num 0 (- (length (events)) 1))
@@ -73,7 +94,7 @@
   (define (bt)
     (for-each 
      (lambda (mark num)
-       (printf "~v: ~v\n" num (syntax-object->datum (mark-source mark))))
+       (printf "~v: ~v\n" num (unexpand (syntax-object->datum (mark-source mark)))))
      (current-mark-list)
      (build-list (length (current-mark-list)) (lambda (x) x))))
 

@@ -416,9 +416,6 @@
 
 # include "uconfig.h"
 
-# undef UNIX_DYNAMIC_LOAD
-# define SHL_DYNAMIC_LOAD
-
 # define STACK_GROWS_UP
 # define SCHEME_BIG_ENDIAN
 

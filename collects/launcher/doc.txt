@@ -30,6 +30,13 @@ executables:
    with DrScheme bundles, and can also be built automatically from the 
    source if necessary (and if the user has a copy of Codewarrior 5).
    
+   Note that MzScheme is not able to run 68k libraries.  For this 
+   reason, the creation of launchers on 68k platforms is significantly
+   more fragile than on PPC platforms.  In particular, any launcher
+   created on a 68k platform (or using a 68k binary) must be invoked
+   at least once while that launcher is in the same folder as the
+   MrEd copy it is to be linked to.
+      
    Note also that once created, these launchers are bound in a truly
    tenacious way to MrEd; short of deleting MrEd entirely, it's nearly 
    impossible to disconnect them.
@@ -40,7 +47,7 @@ executables:
 
 > (make-mred-program-launcher file collection dest) - Calls
    `make-mred-launcher' with arguments that start the MrEd program
-   implemednted by `collection': (list "-mvL-" file collection)
+   implemented by `collection': (list "-mvL-" file collection)
 
 > (make-mzscheme-program-launcher file collection dest) - Calls
    `make-mzscheme-launcher' with arguments that start the MzScheme

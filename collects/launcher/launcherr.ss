@@ -299,26 +299,27 @@
            [marker-file (build-path launcher-path "marker-file")])
       (unless (andmap file-exists? (list gomz gomr))
         (error 'install-aliases "startup templates GoMz and GoMr are missing."))
-      (when (or (not (file-exists? extension))                             ; extension is missing altogether, or
-                (and (file-exists? extension-source-file)                  ; extension source file is newer than extension
-                     (> (file-or-directory-modify-seconds extension-source-file)
-                        (file-or-directory-modify-seconds extension))
-                     (directory-exists? (build-path launcher-path "CVS")))); ... and this is a CVS tree
-        (unless (file-exists? extension-source-file)
-          (error 'maybe-install-aliases "need startup-setup.c to compile startup-setup.so extension"))
-        (let ([obj-file (build-path launcher-path "startup-setup.o")])
-          (c:compile-extension #t extension-source-file obj-file null)
-          (l:link-extension #t (list obj-file) extension)))
-      (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (gomz, gomr, extension)
-                (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
-                  (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
-                         (list extension gomz gomr))))
-        (let ([installation-result ((load-extension extension) mz-app mr-app gomz gomr)])
-          (unless installation-result
-            (error 'maybe-install-aliases "installing aliases failed"))
-          (with-output-to-file marker-file
-            (lambda () (printf "aliases successfully installed~n"))
-            'truncate/replace)))))
+      (unless (string=? (system-library-subpath) "68k-mac")   ; cannot use extensions on 68k mac
+        (when (or (not (file-exists? extension))                             ; extension is missing altogether, or
+                  (and (file-exists? extension-source-file)                  ; extension source file is newer than extension
+                       (> (file-or-directory-modify-seconds extension-source-file)
+                          (file-or-directory-modify-seconds extension))
+                       (directory-exists? (build-path launcher-path "CVS")))); ... and this is a CVS tree
+          (unless (file-exists? extension-source-file)
+            (error 'maybe-install-aliases "need startup-setup.c to compile startup-setup.so extension"))
+          (let ([obj-file (build-path launcher-path "startup-setup.o")])
+            (c:compile-extension #t extension-source-file obj-file null)
+            (l:link-extension #t (list obj-file) extension)))
+        (when (or (not (file-exists? marker-file)) ; marker file is missing, or older than any of (gomz, gomr, extension)
+                  (let ([marker-file-date (file-or-directory-modify-seconds marker-file)])
+                    (ormap (lambda (file) (> (file-or-directory-modify-seconds file) marker-file-date))
+                           (list extension gomz gomr))))
+          (let ([installation-result ((load-extension extension) mz-app mr-app gomz gomr)])
+            (unless installation-result
+              (error 'maybe-install-aliases "installing aliases failed"))
+            (with-output-to-file marker-file
+              (lambda () (printf "aliases successfully installed~n"))
+              'truncate/replace))))))
   
   ; how to test:
   ; 1. try with all combinations of mzscheme/mred ppc/68k/missing (6 total) (error)

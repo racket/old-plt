@@ -111,10 +111,13 @@
 	(set! paths (if (and file-name? (file-exists? path-name))
                         (mzlib:file:explode-path (mzlib:file:normalize-path path-name))
                         #f))
-        (set! label (if (and paths (not (null? paths)))
-                        (car (mzlib:function:last-pair paths))
-                        path-name))
-	(update-min-sizes))
+	(let ([new-label (if (and paths (not (null? paths)))
+			     (car (mzlib:function:last-pair paths))
+			     path-name)])
+	  (unless (equal? label new-label)
+	    (set! label new-label)
+	    (update-min-sizes)
+	    (on-paint))))
       
       (define full-name-window #f)
       
@@ -176,18 +179,20 @@
       
       (define (update-min-sizes)
 	(let-values ([(w h) (calc-button-min-sizes (get-dc) label)])
-          (min-width w)
-	  (min-height h))
-	(send parent reflow-container))
+	  (min-width w)
+	  (min-height h)
+	  (send parent reflow-container)))
       
       (define inverted? #f)
       
       (define (on-paint)
 	(let ([dc (get-dc)])
 	  (let-values ([(w h) (get-client-size)])
-	    (draw-button-label dc label w h inverted?))))
+	    (when (and (> w 5) (> h 5))
+	      (draw-button-label dc label w h inverted?)))))
       
       (super-init parent)
+      (update-min-sizes)
       (stretchable-width #f)
       (stretchable-height #f)))
   

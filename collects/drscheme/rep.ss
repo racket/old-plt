@@ -995,19 +995,21 @@
               (send text lock #f)
               (when (is-a? text transparent-io-text<%>)
                 (send text set-program-output #t))
-              (send text insert
-                    (cond
+	      (let ([to-be-inserted
+		     (cond
                       [(is-a? s mred:snip%) (send s copy)]
                       [(and (use-number-snip? s)
 			    (basis:setting-whole/fractional-exact-numbers user-setting))
                        (make-object drscheme:snip:whole/part-number-snip% s)]
-                      [else s])
-                    start
-                    start
-                    #t)
-              (let ([end (send text last-position)])
-                (style-func start end)
-                (send text set-prompt-position end))
+                      [else s])])
+		(send text insert to-be-inserted start start #t)
+		(let ([end (+ start (cond
+				     [(string? to-be-inserted)
+				      (string-length to-be-inserted)]
+				     [(is-a? to-be-inserted mred:snip%)
+				      (send to-be-inserted get-count)]))])
+		  (style-func start end)
+		  (send text set-prompt-position end)))
               
               (when (is-a? text transparent-io-text<%>)
                 (send text set-program-output #f))
@@ -1243,7 +1245,12 @@
                               last-pos last-pos)
                       (change-style click-delta last-pos (last-position))
                       (set-clickback last-pos (last-position)
-                                     (lambda (text start end) (show-backtrace-window dis message))
+                                     (lambda (text start end)
+				       (if (send context needs-execution?)
+					   (mred:message-box
+					    "DrScheme"
+					    "The program or the language have changed; please re-execute the program")
+					   (show-backtrace-window dis message)))
                                      (fw:gui-utils:get-clicked-clickback-delta))
 		      (insert " " (last-position) (last-position))))
                   
@@ -2237,7 +2244,7 @@
                         (not prompt-mode?)
                         (not (eval-busy?)))
                    (insert-prompt)]
-                  [(and (< prompt-position start)
+                  [(and (<= prompt-position start)
                         (only-spaces-after start)
                         (not (eval-busy?)))
                    (if (balance-required)
@@ -2419,8 +2426,7 @@
        [do-eval
 	(lambda (start end)
 	  (do-pre-eval)
-	  (unless (balance-required)
-	    (set! stream-end (+ end 1)))
+	  (set! stream-end (+ end 1))
 	  (semaphore-post wait-for-sexp)
 	  (do-post-eval))])
       (inherit insert-prompt)

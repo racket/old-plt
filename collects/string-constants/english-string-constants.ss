@@ -127,14 +127,6 @@
  
  ;; Help Desk
  (search-results "Search results")
- (help-desk "Help Desk")
- (help-desk-n "Help Desk ~a")
- (about-help-desk "About Help Desk")
- (help-desk-about-string
-  "Help Desk is a complete source of information about PLT software, including DrScheme, MzScheme, and MrEd.\n\nVersion ~a\nCopyright (c) 1995-2002 PLT")
- (help-on-help "Help on Help")
- (help-on-help-details "For help on using Help Desk, follow the `How to use Help Desk' link on Help Desk's home page. (To get to the home page if you're not already there, click the `Home' button at the top of the Help Desk window.)")
- (find-docs-for "Find docs for:")
  (search "Search")
  (search-for "Search for")
  (lucky "Lucky!")
@@ -151,27 +143,41 @@
  (exact-match "exact match")
  (containing-match "containing match")
  (regexp-match "regexp match")
- (feeling-lucky "Feeling Lucky")
  (nothing-found-for-search-key "Nothing found for \"~a\".")
  (searching "Searching...")
  (search-stopped "[Search stopped.]")
  (search-stopped-too-many-matches "[Search aborted: too many matches]")
- (reload "Reload")
- (help "Help")
- (searching... "Searching...")
- (nothing-found-for-empty-search "Nothing found for the empty search")
  (nothing-found-for "Nothing found for ~a")
- (and "and")
  (error-finding-docs "Could not find documentation.\n\n~a")
  (refresh "refresh")
  (refresh-all-manuals "refresh all manuals")
  (manual-installed-date "(installed ~a)")
 
+ ; Help Desk configuration
+			     
+ (hd-configuration "PLT Help Desk configuration")
+ (hd-search-frame-options "Search frame options")
+ (hd-height "Height")
+ (hd-bg-color "Background color")
+ (hd-pixels "pixels")
+ (hd-text-color "Text color")
+ (hd-link-color "Link color")
+ (hd-text-sample "Search frame text appears in this color")
+ (hd-link-sample "Search frame links appear in this color")
+ (hd-save-changes "Save changes")
+ (hd-reset "Reset")
+ (hd-defaults "Defaults")
+ (hd-javascript-note
+    "The selections you make will be shown here if you have Javascript enabled and a recent, standards-compliant browser.")
+
  ;; refreshing manuals
- (refreshing-manuals "Re-downloading Manuals")
- (refresh-downloading... "Downloading ~a...")
- (refresh-deleting... "Deleting old version of ~a...")
- (refresh-installing... "Installing new version of ~a...")
+ (refresh-downloading "Downloading ~a")
+ (refresh-deleting "Deleting ~a")
+ (refresh-installing "Installing ~a")
+ (refresh-progress "PLT manual download progress")
+ (refresh-done "Done refreshing CVS manuals")
+ (refresh-installation-log "Installation log")
+ (refresh-stopped "PLT manuals refresh stopped")
 
  ;; help desk htty proxy
  (http-proxy "HTTP Proxy")
@@ -480,9 +486,6 @@
  (about-menu-item "About...")
  (help-menu-check-for-updates "Check for Updates...")
  
- ;;; help-desk-specific menus
- (new-help-desk "New Help Desk")
-
  ;; open here's new menu item
  (create-new-window-or-clear-current
   "Would you like to create a new window, or clear out the current one?")

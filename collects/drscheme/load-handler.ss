@@ -93,5 +93,8 @@
 				    (send text last-position)
 				    #t
 				    #f)
-		      (send text on-close)))))
+                      ;; this closes the editor when it
+		      ;; is a drscheme:text:text% editor
+		      ;; (send text on-close)
+		      ))))
 	  (basis:drscheme-load-handler filename)))))

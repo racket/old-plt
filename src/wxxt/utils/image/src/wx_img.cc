@@ -949,8 +949,8 @@ void wxImage::CreateXImage()
       if (!imagedata) FatalError("couldn't malloc imagedata");
       
       theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
-			      (char *) imagedata, eWIDE, eHIGH, 24,
-			      3 * eWIDE);
+			      (char *) imagedata, eWIDE, eHIGH, 32,
+			      4 * eWIDE);
       if (!theImage) {
 	return;
 	// FatalError("couldn't create theImage!");
@@ -961,9 +961,11 @@ void wxImage::CreateXImage()
 	  *ip++ = (cols[*pp]>>16) & 0xff;
 	  *ip++ = (cols[*pp]>>8) & 0xff;
 	  *ip++ =  cols[*pp] & 0xff;
+	  *ip++ = 0;
 	}
       else 
 	for (i=eWIDE*eHIGH, pp=epic, ip=imagedata; i>0; i--,pp++) {
+	  *ip++ = 0;
 	  *ip++ =  cols[*pp] & 0xff;
 	  *ip++ = (cols[*pp]>>8) & 0xff;
 	  *ip++ = (cols[*pp]>>16) & 0xff;

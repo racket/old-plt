@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.21 1999/08/09 14:51:30 mflatt Exp $
+ * $Id: Frame.cc,v 1.22 1999/11/04 17:25:37 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -447,7 +447,7 @@ static void ForceFocus(Widget frame)
   static int force_focus = 0;
 
   if (!force_focus) {
-    wxGetResource(wxTheApp->wx_class, "forceFocus", &force_focus);
+    wxGetResource(wxAPP_CLASS, "forceFocus", &force_focus);
     force_focus = !force_focus ? -1 : 1;
   }
 

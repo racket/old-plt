@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.cc,v 1.8 1999/11/04 17:25:31 mflatt Exp $
+ * $Id: AppMain.cc,v 1.9 1999/11/18 16:35:06 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -37,10 +37,6 @@
 //-----------------------------------------------------------------------------
 // wxApp implementation
 //-----------------------------------------------------------------------------
-
-// references to global data for compatibility
-char* wxApp::wx_class        = wxAPP_CLASS;
-char* wxApp::appName         = wxAPP_NAME;
 
 wxApp::wxApp()
 {

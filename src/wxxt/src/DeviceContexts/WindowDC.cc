@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.29 1999/11/04 17:25:33 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.30 1999/11/18 16:35:06 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -135,8 +135,6 @@ wxWindowDC::~wxWindowDC(void)
     if (current_brush) current_brush->Lock(-1);
 
     Destroy();
-
-    delete X; // free space for X data
 }
 
 //-----------------------------------------------------------------------------
@@ -146,6 +144,12 @@ wxWindowDC::~wxWindowDC(void)
 Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 		      float xsrc, float ysrc, int rop, wxColor *dcolor)
 {
+    Bool retval = FALSE;
+    wxPen *savePen, *apen;
+    wxColor saveBack;
+    int scaled_width;
+    int scaled_height;
+
     if (!DRAWABLE) // ensure that a drawable has been associated
       return FALSE;
     
@@ -167,19 +171,14 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     xsrc = floor(xsrc);
     ysrc = floor(ysrc);
 
-    Bool retval = FALSE;
-    wxPen *savePen;
-    wxColor saveBack;
-
     savePen = current_pen;
     saveBack = current_background_color;
     /* Pen GC used for blit: */
-    SetPen(wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop));
+    apen = wxThePenList->FindOrCreatePen(dcolor ? dcolor : wxBLACK, 0, rop);
+    SetPen(apen);
 
-    int scaled_width
-	= src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
-    int scaled_height
-	= src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
+    scaled_width = src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
+    scaled_height = src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
 
     if (DRAWABLE && src->Ok()) {
       // Check if we're copying from a mono bitmap
@@ -196,7 +195,9 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	XChangeGC(DPY, PEN_GC, mask, &values);
 	XFillRectangle(DPY, DRAWABLE, PEN_GC, XLOG2DEV(xdest), YLOG2DEV(ydest), scaled_width, scaled_height);
       } else {
-	XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, PEN_GC,
+	Pixmap pm;
+	pm = GETPIXMAP(src);
+	XCopyPlane(DPY, pm, DRAWABLE, PEN_GC,
 		   (long)xsrc, (long)ysrc,
 		   scaled_width, scaled_height,
 		   XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
@@ -215,6 +216,10 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 			float xsrc, float ysrc)
 {
     /* A non-allocating (of collectable memory) blit */
+  Bool retval = FALSE;
+  int scaled_width;
+  int scaled_height;
+  GC agc;
 
     if (!DRAWABLE) // ensure that a drawable has been associated
       return FALSE;
@@ -230,12 +235,8 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
     xsrc = floor(xsrc);
     ysrc = floor(ysrc);
 
-    Bool retval = FALSE;
-
-    int scaled_width
-	= src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
-    int scaled_height
-	= src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
+    scaled_width = src->GetWidth()  < XLOG2DEVREL(w) ? src->GetWidth()  : XLOG2DEVREL(w);
+    scaled_height = src->GetHeight() < YLOG2DEVREL(h) ? src->GetHeight() : YLOG2DEVREL(h);
 
     if (DRAWABLE && src->Ok()) {
       XGCValues values;
@@ -250,37 +251,42 @@ Bool wxWindowDC::GCBlit(float xdest, float ydest, float w, float h, wxBitmap *sr
 	}
       }
 
-      GC gc = XCreateGC(DPY, DRAWABLE, mask, &values);
+      agc = XCreateGC(DPY, DRAWABLE, mask, &values);
       if (USER_REG || EXPOSE_REG) {
 	Region rgn;
 	if (USER_REG && EXPOSE_REG) {
-	  free_rgn = rgn = XCreateRegion();
+	  rgn = XCreateRegion();
+	  free_rgn = rgn;
 	  XIntersectRegion(EXPOSE_REG, USER_REG, rgn);
 	} else if (USER_REG)
 	  rgn = USER_REG;
 	else
 	  rgn = EXPOSE_REG;
 
-	XSetRegion(DPY, gc, rgn);
+	XSetRegion(DPY, agc, rgn);
       }
 
       retval = TRUE;
       if ((src->GetDepth() == 1) || (DEPTH == 1)) {
 	/* mono to color/mono  or  color/mono to mono */
-	XCopyPlane(DPY, GETPIXMAP(src), DRAWABLE, gc,
+	Pixmap pm;
+	pm = GETPIXMAP(src);
+	XCopyPlane(DPY, pm, DRAWABLE, agc,
 		   (long)xsrc, (long)ysrc,
 		   scaled_width, scaled_height,
 		   XLOG2DEV(xdest), YLOG2DEV(ydest), 1);
       } else if (src->GetDepth() == (int)DEPTH) {
 	/* color to color */
-	XCopyArea(DPY, GETPIXMAP(src), DRAWABLE, gc,
+	Pixmap pm;
+	pm = GETPIXMAP(src);
+	XCopyArea(DPY, pm, DRAWABLE, agc,
 		  (long)xsrc, (long)ysrc,
 		  scaled_width, scaled_height,
 		  XLOG2DEV(xdest), YLOG2DEV(ydest));
       } else
 	retval = FALSE;
 
-      XFreeGC(DPY, gc);
+      XFreeGC(DPY, agc);
 
       if (free_rgn)
 	XDestroyRegion(free_rgn);
@@ -314,6 +320,8 @@ void wxWindowDC::Clear(void)
 
 void wxWindowDC::CrossHair(float x, float y)
 {
+  int xx, yy;
+
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
@@ -322,8 +330,8 @@ void wxWindowDC::CrossHair(float x, float y)
     
     if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
 	return;
-    int xx = XLOG2DEV(x);
-    int yy = YLOG2DEV(y);
+    xx = XLOG2DEV(x);
+    yy = YLOG2DEV(y);
 
     float w, h;
     GetSize(&w, &h);
@@ -334,50 +342,57 @@ void wxWindowDC::CrossHair(float x, float y)
 
 void wxWindowDC::DrawArc(float x, float y, float w, float h, float start, float end)
 {
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
+  int xx, yy, ww, hh;
+  float xw, yh;
+  double degrees1, degrees2;
+  int alpha1, alpha2;
 
-    /* MATTHEW: [5] Implement GetPixel */
-    FreeGetPixelCache();
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+  
+  /* MATTHEW: [5] Implement GetPixel */
+  FreeGetPixelCache();
+  
+  xw = x + w, yh = y + h;
+  
+  xx = XLOG2DEV(x); yy = XLOG2DEV(y);
+  ww = XLOG2DEV(xw) - xx; hh = XLOG2DEVREL(yh) - yy;
     
-    float xw = x + w, yh = y + h;
-
-    int xx = XLOG2DEV(x);       int yy = XLOG2DEV(y);
-    int ww = XLOG2DEV(xw) - xx; int hh = XLOG2DEVREL(yh) - yy;
-    double degrees1, degrees2;
-    degrees1 = start * RAD2DEG;
-    degrees2 = end * RAD2DEG;
-    int alpha1 = int(degrees1 * 64.0);
-    int alpha2 = int((degrees2 - degrees1) * 64.0);
-    while (alpha2 <= 0)
-      alpha2 += 360*64;
-    while (alpha1 > 360*64)
-      alpha1 -= 360*64;
-    
-    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-	XFillArc(DPY,DRAWABLE,BRUSH_GC,xx,yy,ww,hh,alpha1,alpha2);
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawArc(DPY,DRAWABLE,PEN_GC,xx,yy,ww,hh,alpha1,alpha2);
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x + w, y + h);
+  degrees1 = start * RAD2DEG;
+  degrees2 = end * RAD2DEG;
+  alpha1 = int(degrees1 * 64.0);
+  alpha2 = int((degrees2 - degrees1) * 64.0);
+  while (alpha2 <= 0) {
+    alpha2 += 360*64;
+  }
+  while (alpha1 > 360*64) {
+    alpha1 -= 360*64;
+  }
+  
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
+    XFillArc(DPY,DRAWABLE,BRUSH_GC,xx,yy,ww,hh,alpha1,alpha2);
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
+    XDrawArc(DPY,DRAWABLE,PEN_GC,xx,yy,ww,hh,alpha1,alpha2);
+  CalcBoundingBox(x, y);
+  CalcBoundingBox(x + w, y + h);
 }
 
 void wxWindowDC::DrawEllipse(float x, float y, float w, float h)
 {
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    /* MATTHEW: [5] Implement GetPixel */
-    FreeGetPixelCache();
-    
-    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-	XFillArc(DPY, DRAWABLE, BRUSH_GC, XLOG2DEV(x), YLOG2DEV(y),
-		 XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF, 0, 64*360);
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawArc(DPY, DRAWABLE, PEN_GC, XLOG2DEV(x), YLOG2DEV(y),
-		 XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF, 0, 64*360);
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x+w, y+h);
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+  
+  /* MATTHEW: [5] Implement GetPixel */
+  FreeGetPixelCache();
+  
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
+    XFillArc(DPY, DRAWABLE, BRUSH_GC, XLOG2DEV(x), YLOG2DEV(y),
+	     XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF, 0, 64*360);
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
+    XDrawArc(DPY, DRAWABLE, PEN_GC, XLOG2DEV(x), YLOG2DEV(y),
+	     XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF, 0, 64*360);
+  CalcBoundingBox(x, y);
+  CalcBoundingBox(x+w, y+h);
 }
 
 void wxWindowDC::DrawLine(float x1, float y1, float x2, float y2)
@@ -397,58 +412,79 @@ void wxWindowDC::DrawLine(float x1, float y1, float x2, float y2)
 
 void wxWindowDC::DrawLines(int n, wxPoint pts[], float xoff, float yoff)
 {
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
+  XPoint *xpts;
+
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
 
     /* MATTHEW: [5] Implement GetPixel */
-    FreeGetPixelCache();
+  FreeGetPixelCache();
     
-    XPoint *xpts = new XPoint[n];
-    for (int i=0; i<n; ++i)
-	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
-			xpts[i].y = YLOG2DEV(pts[i].y + yoff));
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
-    delete[] xpts;
+  xpts = new XPoint[n];
+  for (int i=0; i<n; ++i) {
+    short x, y;
+    x = XLOG2DEV(pts[i].x + xoff);
+    xpts[i].x = x;
+    y = YLOG2DEV(pts[i].y + yoff);
+    xpts[i].y = y;
+    CalcBoundingBox(xpts[i].x, xpts[i].y);
+  }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
+    XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
 void wxWindowDC::DrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
 {
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    /* MATTHEW: [5] Implement GetPixel */
-    FreeGetPixelCache();
-    
-    XPoint *xpts = new XPoint[n];
-    for (int i=0; i<n; ++i)
-	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
-			xpts[i].y = YLOG2DEV(pts[i].y + yoff));
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
-    delete[] xpts;
+  XPoint *xpts;
+  
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+  
+  /* MATTHEW: [5] Implement GetPixel */
+  FreeGetPixelCache();
+  
+  xpts = new XPoint[n];
+  for (int i=0; i<n; ++i) {
+    short x, y;
+    x = XLOG2DEV(pts[i].x + xoff);
+    xpts[i].x = x;
+    y = YLOG2DEV(pts[i].y + yoff);
+    xpts[i].y = y;
+    CalcBoundingBox(xpts[i].x, xpts[i].y);
+  }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
+    XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
 void wxWindowDC::DrawLines(wxList *pts, float xoff, float yoff)
 {
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
+  int n;
+  XPoint *xpts;
+  int i;
+  wxNode *node;
 
-    /* MATTHEW: [5] Implement GetPixel */
-    FreeGetPixelCache();
-    
-    int n = pts->Number();
-    XPoint *xpts = new XPoint[n];
-    int i = 0;
-    for (wxNode *node=pts->First(); node; node=node->Next()) {
-	wxPoint *point = (wxPoint*)node->Data();
-	CalcBoundingBox(xpts[i].x = XLOG2DEV(point->x + xoff),
-			xpts[i].y = YLOG2DEV(point->y + yoff));
-	++i;
-    }
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
-    delete[] xpts;
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+  
+  /* MATTHEW: [5] Implement GetPixel */
+  FreeGetPixelCache();
+  
+  n = pts->Number();
+  xpts = new XPoint[n];
+  i = 0;
+  for (node = pts->First(); node; node = node->Next()) {
+    wxPoint *point;
+    short x, y;
+    point = (wxPoint*)node->Data();
+    x = XLOG2DEV(point->x + xoff);
+    xpts[i].x = x;
+    y = YLOG2DEV(point->y + yoff);
+    xpts[i].y = y;
+    CalcBoundingBox(xpts[i].x, xpts[i].y);
+    ++i;
+  }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
+    XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
 
 void wxWindowDC::DrawPoint(float x, float y)
@@ -467,16 +503,23 @@ void wxWindowDC::DrawPoint(float x, float y)
 void wxWindowDC::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff,
 			     int fill)
 {
+  XPoint *xpts;
+
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    XPoint *xpts = new XPoint[n+1];
-    for (int i=0; i<n; ++i)
-	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
-			xpts[i].y = YLOG2DEV(pts[i].y + yoff));
+    xpts = new XPoint[n+1];
+    for (int i=0; i<n; ++i) {
+      short x, y;
+      x = XLOG2DEV(pts[i].x + xoff);
+      xpts[i].x = x;
+      y = YLOG2DEV(pts[i].y + yoff);
+      xpts[i].y = y;
+      CalcBoundingBox(xpts[i].x, xpts[i].y);
+    }
     xpts[n].x = xpts[0].x; // close figure
     xpts[n].y = xpts[0].y;
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
@@ -485,47 +528,56 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], float xoff, float yoff,
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n+1, 0);
-    delete[] xpts;
 }
 
 void wxWindowDC::DrawPolygon(wxList *pts, float xoff, float yoff, int fill)
 {
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
+  int n;
+  XPoint *xpts;
+  int i;
+  wxNode *node;
 
-    /* MATTHEW: [5] Implement GetPixel */
-    FreeGetPixelCache();
+  if (!DRAWABLE) // ensure that a drawable has been associated
+    return;
+
+  FreeGetPixelCache();
     
-    int n = pts->Number();
-    XPoint *xpts = new XPoint[n+1];
-    int i=0;
-    for(wxNode *node=pts->First(); node; node=node->Next()) {
-	wxPoint *point = (wxPoint*)node->Data();
-	CalcBoundingBox(xpts[i].x = XLOG2DEV(point->x + xoff),
-			xpts[i].y = YLOG2DEV(point->y + yoff));
-	++i;
-    }
-    xpts[n].x = xpts[0].x; // close figure
-    xpts[n].y = xpts[0].y;
-    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
-	XSetFillRule(DPY, PEN_GC, fill_rule[fill]);
-	XFillPolygon(DPY, DRAWABLE, BRUSH_GC, xpts, n, Complex, 0);
-    }
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n+1, 0);
-    delete[] xpts;
+  n = pts->Number();
+  xpts = new XPoint[n+1];
+  i = 0;
+  for (node = pts->First(); node; node = node->Next()) {
+    wxPoint *point;
+    short x, y;
+    point = (wxPoint*)node->Data();
+    x = XLOG2DEV(point->x + xoff);
+    xpts[i].x = x;
+    y = YLOG2DEV(point->y + yoff);
+    xpts[i].y = y;
+    CalcBoundingBox(xpts[i].x, xpts[i].y);
+    ++i;
+  }
+  xpts[n].x = xpts[0].x; // close figure
+  xpts[n].y = xpts[0].y;
+  if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+    XSetFillRule(DPY, PEN_GC, fill_rule[fill]);
+    XFillPolygon(DPY, DRAWABLE, BRUSH_GC, xpts, n, Complex, 0);
+  }
+  if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
+    XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n+1, 0);
 }
 
 void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
 {
+    int x1, y1, w1, h1;
+    float xw, yh;
+
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    int x1, y1, w1, h1;
-    float xw = x + w, yh = y + h;
+    xw = x + w, yh = y + h;
    
     x1 = XLOG2DEV(x);
     y1 = YLOG2DEV(y);
@@ -543,6 +595,9 @@ void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
 void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
 				      float radius)
 {
+  int xx, yy, ww, hh, rr, dd;
+  float xw, yh;
+
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
@@ -552,12 +607,12 @@ void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
     if (radius < 0.0)
       radius = - radius * ((w < h) ? w : h);
 
-    float xw = x + w, yh = y + h;
-
-    int xx = XLOG2DEV(x);       int yy = YLOG2DEV(y);
-    int ww = XLOG2DEV(xw) - xx; int hh = YLOG2DEV(yh) - yy;
-    int rr = XLOG2DEVREL(radius);
-    int dd = 2 * rr;
+    xw = x + w, yh = y + h;
+    
+    xx = XLOG2DEV(x);       yy = YLOG2DEV(y);
+    ww = XLOG2DEV(xw) - xx; hh = YLOG2DEV(yh) - yy;
+    rr = XLOG2DEVREL(radius);
+    dd = 2 * rr;
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
 	XFillRectangle(DPY, DRAWABLE, BRUSH_GC, xx+rr, yy, ww-dd, hh);
@@ -612,19 +667,25 @@ void wxWindowDC::IntDrawLine(int x1, int y1, int x2, int y2)
 
 void wxWindowDC::IntDrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
 {
+  XPoint *xpts;
+
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    XPoint *xpts = new XPoint[n];
-    for (int i=0; i<n; ++i)
-	CalcBoundingBox(xpts[i].x = XLOG2DEV(pts[i].x + xoff),
-			xpts[i].y = YLOG2DEV(pts[i].y + yoff));
+    xpts = new XPoint[n];
+    for (int i=0; i<n; ++i) {
+      short x, y;
+      x = XLOG2DEV(pts[i].x + xoff);
+      xpts[i].x = x;
+      y = YLOG2DEV(pts[i].y + yoff);
+      xpts[i].y = y;
+      CalcBoundingBox(xpts[i].x, xpts[i].y);
+    }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
-    delete[] xpts;
 }
 
 //-----------------------------------------------------------------------------
@@ -633,33 +694,41 @@ void wxWindowDC::IntDrawLines(int n, wxIntPoint pts[], int xoff, int yoff)
 
 void wxWindowDC::SetBackground(wxColour *c)
 {
-    if (!DRAWABLE) /* MATTHEW: [5] */
-	return;
+  int style;
+  unsigned long pixel;
 
-    current_background_color = *c;
-
-    unsigned long pixel = current_background_color.GetPixel(current_cmap, IS_COLOR, 0);
-
-    if (DRAW_WINDOW)
-      XSetWindowBackground(DPY, DRAW_WINDOW, pixel);
-    XSetForeground(DPY, BG_GC, pixel);
-    XSetBackground(DPY, PEN_GC, pixel);
-    XSetBackground(DPY, BRUSH_GC, pixel);
-
-    // use the correct pixel values for XOR
-
-    int style = current_pen->GetStyle();
-    if ((style >= wxXOR_DOT) && (style <= wxXOR_DOT_DASH))
-      style = wxXOR;
-    if (current_pen && (style == wxXOR))
-      SetPen(current_pen);
-
-    if (current_brush && (current_brush->GetStyle() == wxXOR))
-      SetBrush(current_brush);
+  if (!DRAWABLE) /* MATTHEW: [5] */
+    return;
+  
+  current_background_color = *c;
+  
+  pixel = current_background_color.GetPixel(current_cmap, IS_COLOR, 0);
+  
+  if (DRAW_WINDOW)
+    XSetWindowBackground(DPY, DRAW_WINDOW, pixel);
+  XSetForeground(DPY, BG_GC, pixel);
+  XSetBackground(DPY, PEN_GC, pixel);
+  XSetBackground(DPY, BRUSH_GC, pixel);
+  
+  // use the correct pixel values for XOR
+  
+  style = current_pen->GetStyle();
+  if ((style >= wxXOR_DOT) && (style <= wxXOR_DOT_DASH))
+    style = wxXOR;
+  if (current_pen && (style == wxXOR))
+    SetPen(current_pen);
+  
+  if (current_brush && (current_brush->GetStyle() == wxXOR))
+    SetBrush(current_brush);
 }
 
 void wxWindowDC::SetBrush(wxBrush *brush)
 {
+  XGCValues     values;
+  unsigned long mask;
+  wxBitmap *bm;
+  unsigned long pixel;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
       return;
 
@@ -671,12 +740,11 @@ void wxWindowDC::SetBrush(wxBrush *brush)
     if (current_brush) current_brush->Lock(1);
 
     // for XChangeGC
-    XGCValues     values;
-    unsigned long mask = GCFillStyle | GCForeground | GCFunction;
+    mask = GCFillStyle | GCForeground | GCFunction;
 
     values.fill_style = FillSolid;
     // wxXOR shall work the correct way
-    unsigned long pixel = brush->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
+    pixel = brush->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
     if (brush->GetStyle() == wxXOR) {
 	XGCValues values_req;
 	XGetGCValues(DPY, BRUSH_GC, GCBackground, &values_req);
@@ -687,7 +755,7 @@ void wxWindowDC::SetBrush(wxBrush *brush)
 	values.function = GXcopy;
     }
 
-    wxBitmap *bm = brush->GetStipple();
+    bm = brush->GetStipple();
     if (bm && !bm->Ok())
       bm = NULL;
 
@@ -714,7 +782,8 @@ void wxWindowDC::SetBrush(wxBrush *brush)
 	values.function = GXcopy;
       }
     } else {
-      int style = brush->GetStyle();
+      int style;
+      style = brush->GetStyle();
       if (wxIS_HATCH(style)) {
 	Pixmap stipple = (Pixmap)0; // for FillStippled
 	stipple = hatch_bitmaps[style-wxFIRST_HATCH];
@@ -732,12 +801,24 @@ void wxWindowDC::SetColourMap(wxColourMap *new_cmap)
 {
   current_cmap = new_cmap ? new_cmap : wxAPP_COLOURMAP;
   
-  if (DRAW_WINDOW)
-    XSetWindowColormap(DPY, DRAW_WINDOW, CMAP);
+  if (DRAW_WINDOW) {
+    Window w;
+    Colormap cm;
+    w = DRAW_WINDOW;
+    cm = CMAP;
+    XSetWindowColormap(DPY, w, cm);
+  }
 }
 
 void wxWindowDC::SetPen(wxPen *pen)
 {
+  XGCValues     values;
+  unsigned long mask;
+  wxBitmap *bm;
+  int scale;
+  int style, xor, js, cs, pw;
+  unsigned long pixel;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
       return;
 
@@ -749,21 +830,23 @@ void wxWindowDC::SetPen(wxPen *pen)
     if (current_pen) current_pen->Lock(1);
 
     // for XChangeGC
-    XGCValues     values;
-    unsigned long mask = (GCCapStyle  | GCFillStyle | GCForeground |
-			  GCJoinStyle | GCLineStyle | GCLineWidth |
-			  GCFunction);
+    mask = (GCCapStyle  | GCFillStyle | GCForeground
+	    | GCJoinStyle | GCLineStyle | GCLineWidth
+	    | GCFunction);
 
-    values.cap_style  = cap_style[pen->GetCap()];
+    cs = pen->GetCap();
+    values.cap_style  = cap_style[cs];
     values.fill_style = FillSolid;
-    values.join_style = join_style[pen->GetJoin()];
+    js = pen->GetJoin();
+    values.join_style = join_style[js];
     values.line_style = LineSolid;
-    int scale = // needed for dash-scaling
-    values.line_width = XLOG2DEVREL(pen->GetWidth());
+    pw = pen->GetWidth();
+    scale = XLOG2DEVREL(pw);
+    values.line_width = scale;
     // wxXOR shall work the correct way
-    unsigned long pixel = pen->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
-    int style = pen->GetStyle();
-    int xor = 0;
+    pixel = pen->GetColour()->GetPixel(current_cmap, IS_COLOR, 1);
+    style = pen->GetStyle();
+    xor = 0;
 
     switch (style) {
     case wxXOR:
@@ -788,7 +871,7 @@ void wxWindowDC::SetPen(wxPen *pen)
 	values.function = GXcopy;
     }
 
-    wxBitmap *bm = pen->GetStipple();
+    bm = pen->GetStipple();
     if (bm && !bm->Ok())
       bm = NULL;
 
@@ -832,10 +915,11 @@ void wxWindowDC::SetPen(wxPen *pen)
 	  dashdef  = dashdefs[style-wxFIRST_DASH];
 	}
 	if ((scaleddef = new wxDash[num_dash])) {
-	  int dscale = scale;
+	  int dscale = scale, i;
 	  if (!dscale) dscale = 1;
-	  for (int i=0; i<num_dash; ++i)
+	  for (i = 0; i < num_dash; i++) {
 	    scaleddef[i] = dscale * dashdef[i];
+	  }
 	  XSetDashes(DPY, PEN_GC, 0, (char*)scaleddef, num_dash);
 	  delete[] scaleddef;
 	} else { // not enough memory to scale
@@ -849,15 +933,17 @@ void wxWindowDC::SetPen(wxPen *pen)
 
 void wxWindowDC::TryColour(wxColour *src, wxColour *dest)
 {
+  XColor xcol;
+
   if (!DRAWABLE)
     return;
-
-  XColor xcol;
 
   xcol.pixel = src->GetPixel(current_cmap, IS_COLOR, 1);
 
   if (IS_COLOR) {
-    XQueryColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol);
+    Colormap cm;
+    cm = GETCOLORMAP(current_cmap);
+    XQueryColor(wxAPP_DISPLAY, cm, &xcol);
     
     dest->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
   } else if (xcol.pixel == BlackPixel(DPY, DefaultScreen(DPY))) {
@@ -870,18 +956,25 @@ void wxWindowDC::TryColour(wxColour *src, wxColour *dest)
 
 void wxWindowDC::FillPrivateColor(wxColour *c)
 {
-  if (!DRAWABLE)
-    return;
-
   XColor xcol;
   int free = 0;
+  XGCValues values;
+  int mask = 0;
+  GC agc;
+  float w, h;
+  Colormap cm;
+
+  if (!DRAWABLE)
+    return;
 
   xcol.red = c->Red() << SHIFT;
   xcol.green = c->Green() << SHIFT;
   xcol.blue = c->Blue() << SHIFT;
 
-  if (XAllocColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol) == 1) {
-    XQueryColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol);
+  cm = GETCOLORMAP(current_cmap);
+
+  if (XAllocColor(wxAPP_DISPLAY, cm, &xcol) == 1) {
+    XQueryColor(wxAPP_DISPLAY, cm, &xcol);
     c->Set(xcol.red >> SHIFT, xcol.green >> SHIFT, xcol.blue >> SHIFT);
     free = 1;
   } else {
@@ -889,24 +982,20 @@ void wxWindowDC::FillPrivateColor(wxColour *c)
     c->Set(0, 0, 0);
   }
 
-  XGCValues values;
-  int mask = 0;
-
   values.foreground = xcol.pixel;
   values.fill_style = FillSolid;
   mask |= GCForeground | GCFillStyle;
 
-  GC gc = XCreateGC(DPY, DRAWABLE, mask, &values);
+  agc = XCreateGC(DPY, DRAWABLE, mask, &values);
   
-  float w, h;
   GetSize(&w, &h);
 
-  XFillRectangle(DPY, DRAWABLE, gc, 0, 0, (int)w, (int)h);
+  XFillRectangle(DPY, DRAWABLE, agc, 0, 0, (int)w, (int)h);
 
-  XFreeGC(DPY, gc);
+  XFreeGC(DPY, agc);
 
   if (free)
-    XFreeColors(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol.pixel, 1, 0);
+    XFreeColors(wxAPP_DISPLAY, cm, &xcol.pixel, 1, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -927,19 +1016,24 @@ static int str16len(const char *s)
 
 void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit)
 {
+    XFontStruct *fontinfo;
+    int         direction;
+    int         ascent, descent, cx, cy;
+    int         dev_x;
+    int         dev_y;
+    int         textlen;
+    XCharStruct overall;
+
     if (!DRAWABLE) // ensure that a drawable has been associated
 	return;
 
     if (!current_font) // a font must be associated for drawing
 	return;
 
-    XFontStruct *fontinfo = (XFontStruct*)current_font->GetInternalFont(scale_x);
-    int         direction;
-    int         ascent, descent, cx, cy;
-    int         dev_x = XLOG2DEV(x);
-    int         dev_y = YLOG2DEV(y);
-    int         textlen = use16bit ? str16len(text) : strlen(text);
-    XCharStruct overall;
+    fontinfo = (XFontStruct*)current_font->GetInternalFont(scale_x);
+    dev_x = XLOG2DEV(x);
+    dev_y = YLOG2DEV(y);
+    textlen = use16bit ? str16len(text) : strlen(text);
 
     if (use16bit)
       (void)XTextExtents16(fontinfo, (XChar2b *)text, textlen, &direction, 
@@ -967,30 +1061,36 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit)
 
 float wxWindowDC::GetCharHeight(void)
 {
+    int         direction, ascent, descent;
+    XCharStruct overall;
+    XFontStruct *xfs;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
-	return 0;
+      return 0;
 
     if (!current_font) // no font
 	return YDEV2LOGREL(12);
 
-    int         direction, ascent, descent;
-    XCharStruct overall;
-    XTextExtents ((XFontStruct*)current_font->GetInternalFont(scale_x), "x", 1,
+    xfs = (XFontStruct*)current_font->GetInternalFont(scale_x);
+    XTextExtents (xfs, "x", 1,
 		  &direction, &ascent, &descent, &overall);
     return YDEV2LOGREL(ascent + descent);
 }
 
 float wxWindowDC::GetCharWidth(void)
 {
+    int         direction, ascent, descent;
+    XCharStruct overall;
+    XFontStruct *xfs;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return 0;
 
     if (!current_font)
 	return XDEV2LOGREL(16);
 
-    int         direction, ascent, descent;
-    XCharStruct overall;
-    XTextExtents ((XFontStruct*)current_font->GetInternalFont(scale_x), "x", 1,
+    xfs = (XFontStruct*)current_font->GetInternalFont(scale_x);
+    XTextExtents (xfs, "x", 1,
 		  &direction, &ascent, &descent, &overall);
     return XDEV2LOGREL(overall.width);
 }
@@ -999,19 +1099,23 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
 			       float *_topspace, wxFont *_font,
 			       Bool use16bit)
 {
+  wxFont *font_to_use;
+  int         direction, ascent, descent;
+  XCharStruct overall;
+  XFontStruct *fontinfo;
+  float w, h;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return;
 
-    wxFont *font_to_use = _font ? _font : current_font;
+    font_to_use = _font ? _font : current_font;
     if (!font_to_use) {
 	wxError("set a font before calling GetTextExtent", "wxWindowDC");
 	*_w = *_h = -1.0;
 	return;
     }
 
-    int         direction, ascent, descent;
-    XCharStruct overall;
-    XFontStruct *fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x);
+    fontinfo = (XFontStruct*)font_to_use->GetInternalFont(scale_x);
 
     if (use16bit)
       XTextExtents16(fontinfo, (XChar2b *)s, str16len(s),
@@ -1020,45 +1124,59 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
       XTextExtents(fontinfo, s, strlen(s),
 		   &direction, &ascent, &descent, &overall);
 
-    *_w = XDEV2LOGREL(overall.width);
-    *_h = YDEV2LOGREL(ascent + descent);
-    if (_descent)
-	*_descent = YDEV2LOGREL(descent);
+    w = XDEV2LOGREL(overall.width);
+    *_w = w;
+    h = YDEV2LOGREL(ascent + descent);
+    *_h = h;
+    if (_descent) {
+      float d;
+      d = YDEV2LOGREL(descent);
+      *_descent = d;
+    }
     if (_topspace)
-	*_topspace = 0.0;
+      *_topspace = 0.0;
 }
 
 void wxWindowDC::SetFont(wxFont *font)
 {
+    XFontStruct *xfs;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return;
 
     if (!(current_font = font)) // nothing to do without a font
 	return;
 
-    XSetFont(DPY, TEXT_GC, ((XFontStruct*)font->GetInternalFont(scale_x))->fid);
+    xfs  =(XFontStruct*)font->GetInternalFont(scale_x);
+    XSetFont(DPY, TEXT_GC, xfs->fid);
 }
 
 void wxWindowDC::SetTextForeground(wxColour *col)
 {
+    unsigned long pixel;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return;
 
     if (!col)
 	return;
     current_text_fg = *col;
-    XSetForeground(DPY, TEXT_GC, current_text_fg.GetPixel(current_cmap, IS_COLOR, 1));
+    pixel = current_text_fg.GetPixel(current_cmap, IS_COLOR, 1);
+    XSetForeground(DPY, TEXT_GC, pixel);
 }
 
 void wxWindowDC::SetTextBackground(wxColour *col)
 {
+    unsigned long pixel;
+
     if (!DRAWABLE) /* MATTHEW: [5] */
 	return;
 
     if (!col)
 	return;
     current_text_bg = *col;
-    XSetBackground(DPY, TEXT_GC, current_text_bg.GetPixel(current_cmap, IS_COLOR, 0));
+    pixel = current_text_bg.GetPixel(current_cmap, IS_COLOR, 0);
+    XSetBackground(DPY, TEXT_GC, pixel);
 }
 
 //-----------------------------------------------------------------------------
@@ -1067,7 +1185,8 @@ void wxWindowDC::SetTextBackground(wxColour *col)
 
 void wxWindowDC::SetClippingRect(float x, float y, float w, float h)
 {
-  wxRegion *r = new wxRegion(this);
+  wxRegion *r;
+  r = new wxRegion(this);
   r->SetRectangle(x, y, w, h);
 
   SetClippingRegion(r);
@@ -1110,6 +1229,11 @@ void wxWindowDC::GetSize(float *w, float *h)
 void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
 {
     Drawable GC_drawable; // necessary create a GC (needed for depth,...)
+    wxFont *font;
+    XGCValues values;
+    unsigned long mask;
+    wxColour c;
+    int width, height;
 
     DPY = init->dpy; SCN = init->scn;
 
@@ -1129,7 +1253,6 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
 
     WXGC_IGNORE(X->owner);
 
-    XGCValues values; unsigned long mask;
     values.foreground = BlackPixelOfScreen(SCN);
     values.background = WhitePixelOfScreen(SCN);
     values.graphics_exposures = FALSE;
@@ -1143,7 +1266,7 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     BRUSH_GC = XCreateGC(DPY, GC_drawable, mask, &values);
 
     // set drawing tools
-    wxColour c = current_text_fg; /* Don't pass &current_text_fg to SetTextForeground */
+    c = current_text_fg; /* Don't pass &current_text_fg to SetTextForeground */
     SetTextForeground(&c);
     c = current_text_bg;
     SetTextBackground(&c);
@@ -1151,15 +1274,15 @@ void wxWindowDC::Initialize(wxWindowDC_Xinit* init)
     SetBrush(current_brush);
     SetPen(current_pen);
 
-    wxFont *font = current_font;
+    font = current_font;
     current_font = NULL;
     SetFont(font ? font : wxNORMAL_FONT);
 
     // set display scaling
-    int width  = WidthOfScreen(SCN);
-    int height = HeightOfScreen(SCN);
-    mm_to_pix_x = float(width)  / float(WidthMMOfScreen(SCN));
-    mm_to_pix_y = float(height) / float(HeightMMOfScreen(SCN));
+    width  = WidthOfScreen(SCN);
+    height = HeightOfScreen(SCN);
+    mm_to_pix_x = ((float)width)  / ((float)WidthMMOfScreen(SCN));
+    mm_to_pix_y = ((float)height) / ((float)HeightMMOfScreen(SCN));
 }
 
 void wxWindowDC::Destroy(void)
@@ -1211,6 +1334,13 @@ Bool wxWindowDC::Ok(void)
 Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
 {
   int i, j;
+  int k;
+  unsigned long pixel;
+  XColor xcol;
+  int get_pixel_cache_pos;
+  XColor *get_pixel_color_cache;
+  Bool get_pixel_cache_full;
+  unsigned int w, h;
 
   if (!DRAWABLE)
     return FALSE;
@@ -1219,7 +1349,6 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
   j = YLOG2DEV(y);
 
   
-  unsigned int w, h;
   w = X->width;
   h = X->height;
 
@@ -1233,7 +1362,7 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
     BeginSetPixel();
 
     if (X->get_pixel_image_cache->depth == 1) {
-      XColor *get_pixel_color_cache = X->get_pixel_color_cache;
+      get_pixel_color_cache = X->get_pixel_color_cache;
       
       get_pixel_color_cache[0].pixel = 1;
       get_pixel_color_cache[0].red = 0;
@@ -1249,35 +1378,38 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
     }
   }
 
-  int get_pixel_cache_pos = X->get_pixel_cache_pos;
-  XColor *get_pixel_color_cache = X->get_pixel_color_cache;
-  Bool get_pixel_cache_full = X->get_pixel_cache_full;
-
-  int k;
-  unsigned long pixel;
-  XColor xcol;
+  get_pixel_cache_pos = X->get_pixel_cache_pos;
+  get_pixel_color_cache = X->get_pixel_color_cache;
+  get_pixel_cache_full = X->get_pixel_cache_full;
 
   pixel = XGetPixel(X->get_pixel_image_cache, i, j);
 
-  for (k = get_pixel_cache_pos; k--; )
+  for (k = get_pixel_cache_pos; k--; ) {
     if (get_pixel_color_cache[k].pixel == pixel) {
       col->Set(get_pixel_color_cache[k].red,
 	       get_pixel_color_cache[k].green,
 	       get_pixel_color_cache[k].blue);
       return TRUE;
     }
+  }
 
-  if (get_pixel_cache_full)
-    for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; )
+  if (get_pixel_cache_full) {
+    for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
       if (get_pixel_color_cache[k].pixel == pixel) {
 	col->Set(get_pixel_color_cache[k].red,
 		 get_pixel_color_cache[k].green,
 		 get_pixel_color_cache[k].blue);
 	return TRUE;
       }
+    }
+  }
   
   xcol.pixel = pixel;
-  XQueryColor(wxAPP_DISPLAY, GETCOLORMAP(current_cmap), &xcol);
+  {
+    Colormap cm;
+    cm = GETCOLORMAP(current_cmap);
+    XQueryColor(wxAPP_DISPLAY, cm, &xcol);
+  }
 
   get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
   get_pixel_color_cache[get_pixel_cache_pos].red = xcol.red >> SHIFT;
@@ -1300,13 +1432,14 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
 
 void wxWindowDC::BeginSetPixel()
 {
+  unsigned int w, h;
+
   if (!DRAWABLE)
     return;
 
   if (X->get_pixel_image_cache)
     return;
 
-  unsigned int w, h;
   w = X->width;
   h = X->height;
 
@@ -1315,11 +1448,19 @@ void wxWindowDC::BeginSetPixel()
     return;
   }
 
-  X->get_pixel_image_cache = XGetImage(DPY, DRAWABLE, 0, 0, w, h, AllPlanes, ZPixmap);
+  {
+    XImage img;
+    img = XGetImage(DPY, DRAWABLE, 0, 0, w, h, AllPlanes, ZPixmap);
+    X->get_pixel_image_cache = img;
+  }
   
   X->get_pixel_cache_pos = 0;
   X->get_pixel_cache_full = FALSE;
-  X->get_pixel_color_cache = new XColor[NUM_GETPIX_CACHE_COLORS];
+  {
+    XColor *cols;
+    cols = new XColor[NUM_GETPIX_CACHE_COLORS];
+    X->get_pixel_color_cache = cols;
+  }
   X->set_a_pixel = FALSE;
 }
 
@@ -1339,7 +1480,6 @@ void wxWindowDC::EndSetPixel()
   if (X->get_pixel_image_cache) {
     XDestroyImage(X->get_pixel_image_cache);
     X->get_pixel_image_cache = NULL;
-    delete[] X->get_pixel_color_cache;
     X->get_pixel_color_cache = NULL;
   }
 }
@@ -1347,6 +1487,14 @@ void wxWindowDC::EndSetPixel()
 void wxWindowDC::SetPixel(float x, float y, wxColour * col)
 {
   int i, j;
+  int w, h, k;
+  int red, green, blue;
+  XColor xcol;
+  unsigned long pixel;
+  XImage *get_pixel_image_cache;
+  int get_pixel_cache_pos;
+  XColor *get_pixel_color_cache;
+  Bool get_pixel_cache_full;
 
   BeginSetPixel();
 
@@ -1356,7 +1504,6 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
   i = XLOG2DEV(x);
   j = YLOG2DEV(y);
 
-  int w, h, k;
   w = X->get_pixel_image_cache->width;
   h = X->get_pixel_image_cache->height;
 
@@ -1364,18 +1511,14 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
       || j < 0 || j >= h)
     return;
 
-  int red, green, blue;
-  XColor xcol;
-  unsigned long pixel;
-
   red = col->Red();
   green = col->Green();
   blue = col->Blue();
 
-  XImage *get_pixel_image_cache = X->get_pixel_image_cache;
-  int get_pixel_cache_pos = X->get_pixel_cache_pos;
-  XColor *get_pixel_color_cache = X->get_pixel_color_cache;
-  Bool get_pixel_cache_full = X->get_pixel_cache_full;
+  get_pixel_image_cache = X->get_pixel_image_cache;
+  get_pixel_cache_pos = X->get_pixel_cache_pos;
+  get_pixel_color_cache = X->get_pixel_color_cache;
+  get_pixel_cache_full = X->get_pixel_cache_full;
 
   X->set_a_pixel = TRUE;
 
@@ -1385,28 +1528,35 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
     else
       pixel = 1;
   } else {
-    for (k = get_pixel_cache_pos; k--; )
+    for (k = get_pixel_cache_pos; k--; ) {
       if ((get_pixel_color_cache[k].red == red)
 	  && (get_pixel_color_cache[k].green == green)
 	  && (get_pixel_color_cache[k].blue == blue)) {
 	pixel = get_pixel_color_cache[k].pixel;
 	goto put;
       }
+    }
     
-    if (get_pixel_cache_full)
-      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; )
+    if (get_pixel_cache_full) {
+      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; ) {
 	if ((get_pixel_color_cache[k].red == red)
 	    && (get_pixel_color_cache[k].green == green)
 	    && (get_pixel_color_cache[k].blue == blue)) {
 	  pixel = get_pixel_color_cache[k].pixel;
 	  goto put;
 	}
-    
+      }
+    }
+
     xcol.red = red << 8;
     xcol.green = green << 8;
     xcol.blue = blue << 8;
-    
-    wxAllocColor(DPY, GETCOLORMAP(current_cmap), &xcol);
+
+    {
+      Colormap cm;
+      cm = GETCOLORMAP(current_cmap);
+      wxAllocColor(DPY, cm, &xcol);
+    }
     
     pixel = xcol.pixel;
     

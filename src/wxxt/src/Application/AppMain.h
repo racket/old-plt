@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: AppMain.h,v 1.2 1999/11/04 17:25:31 mflatt Exp $
+ * $Id: AppMain.h,v 1.3 1999/11/18 16:35:06 mflatt Exp $
  *
  * Purpose: wxWindows application and main loop
  *
@@ -52,8 +52,6 @@ public:
     // data
     int    argc;
     char** argv;
-    static char* wx_class;
-    static char* appName;
 private:
     friend int wxEntry(int argc, char **argv);
 

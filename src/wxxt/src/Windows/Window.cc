@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.33 1999/11/17 14:21:25 mflatt Exp $
+ * $Id: Window.cc,v 1.34 1999/11/18 16:35:08 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -498,10 +498,12 @@ wxCursor *wxWindow::SetCursor(wxCursor *new_cursor)
   if (!new_cursor || (new_cursor && new_cursor->Ok())) {
     cursor = new_cursor;
     if (!user_edit_mode) { /* really indicates busy_cursor */
-      XtVaSetValues(X->handle, XtNcursor, new_cursor ? GETCURSOR(new_cursor) : None, NULL);
+      Cursor c;
+      c = new_cursor ? GETCURSOR(new_cursor) : None;
+      XtVaSetValues(X->handle, XtNcursor, c NULL);
       if (__type == wxTYPE_LIST_BOX) {
 	/* Yuck. Set cursor for total client area of listbox */
-	XtVaSetValues(XtParent(X->handle), XtNcursor, new_cursor ? GETCURSOR(new_cursor) : None, NULL);
+	XtVaSetValues(XtParent(X->handle), XtNcursor, c, NULL);
       }
     }
   }
@@ -721,7 +723,8 @@ void wxWindow::ChangeToGray(Bool gray)
 
   /* If disabling and this window has the focus, get rid of it: */
   if (gray && (misc_flags & FOCUS_FLAG)) {
-    wxWindow *p = GetParent();
+    wxWindow *p;
+    p = GetParent();
     while (p) {
       if (wxSubType(p->__type, wxTYPE_FRAME)) {
 	p->SetFocus();
@@ -958,9 +961,12 @@ void wxWindow::OnChar(wxKeyEvent* wxevent)
     if (X->handle->core.tm.translations
 	&& (X->translations_eventmask & _XtConvertTypeToMask(xev->type))) {
       // translate wxKeyEvent to XEvent
-      KeySym keysym = CharCodeWXToX(wxevent->keyCode);
+      KeySym keysym;
+      keysym = CharCodeWXToX(wxevent->keyCode);
       if (keysym != 0) {
-	xev->xkey.keycode = XKeysymToKeycode(xev->xkey.display, keysym);
+	long kc;
+	kc = XKeysymToKeycode(xev->xkey.display, keysym);
+	xev->xkey.keycode = kc;
 	xev->xkey.x	 = (int)wxevent->x;
 	xev->xkey.y	 = (int)wxevent->y;
 	xev->xkey.state &= ~(ShiftMask | ControlMask | Mod1Mask | Mod3Mask);
@@ -1015,7 +1021,9 @@ Bool wxWindow::PreOnEvent(wxWindow *, wxMouseEvent *)
 
 Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *event)
 {
-  wxWindow *p = win->GetParent();
+  wxWindow *p;
+
+  p = win->GetParent();
 
   if (wxSubType(win->__type, wxTYPE_MENU_BAR)
       || wxSubType(win->__type, wxTYPE_MENU))
@@ -1032,7 +1040,9 @@ Bool wxWindow::CallPreOnChar(wxWindow *win, wxKeyEvent *event)
 
 Bool wxWindow::CallPreOnEvent(wxWindow *win, wxMouseEvent *event)
 {
-  wxWindow *p = win->GetParent();
+  wxWindow *p;
+
+  p = win->GetParent();
 
   if (wxSubType(win->__type, wxTYPE_MENU_BAR)
       || wxSubType(win->__type, wxTYPE_MENU))
@@ -1112,6 +1122,7 @@ void wxWindow::RegisterAll(Widget ww)
 void wxWindow::AddEventHandlers(void)
 {
   wxWindow * win;
+  long mask, extra_mask
 
   if (!X->frame || !X->handle) // forbid, if no widget associated
     return;
@@ -1156,7 +1167,13 @@ void wxWindow::AddEventHandlers(void)
 
     win = this;
 
-    win->X->translations_eventmask = XtBuildEventMask(win->X->handle);
+    // for OnPaint (non-xfwfCommonWidget-subclasses)
+    extra_mask = ((win->X->handle, xfwfCommonWidgetClass)
+		  ? NoEventMask 
+		  : ExposureMask);
+
+    mask = XtBuildEventMask(win->X->handle);
+    win->X->translations_eventmask = mask;
     XtInsertEventHandler
       (win->X->handle,	// handle events for client area widget
        KeyPressMask |	// for OnChar
@@ -1168,8 +1185,7 @@ void wxWindow::AddEventHandlers(void)
        PointerMotionHintMask |
        EnterWindowMask |
        LeaveWindowMask |
-       (XtIsSubclass(win->X->handle, xfwfCommonWidgetClass) ?
-	NoEventMask : ExposureMask), // for OnPaint (non-xfwfCommonWidget-subclasses)
+       extra_mask,
        FALSE,
        (XtEventHandler)wxWindow::WindowEventHandler,
        (XtPointer)saferef,
@@ -1193,16 +1209,18 @@ void wxWindow::AddEventHandlers(void)
     if (win->X->scroll)
       RegisterAll(win->X->scroll);
 
+    /* Yucky hack to make PreOnChar work for messages, sliders, and gauges: */
+    extra_mask = ((wxSubType(win->__type, wxTYPE_MESSAGE) 
+		   || wxSubType(win->__type, wxTYPE_SLIDER) 
+		   || wxSubType(win->__type, wxTYPE_GAUGE))
+		  ? (KeyPressMask | KeyReleaseMask) : NoEventMask);
+
     XtInsertEventHandler
       (win->X->frame,	// handle events for frame widget
        EnterWindowMask |
        LeaveWindowMask |
        FocusChangeMask | // for OnKillFocus, OnSetFocus
-       /* Yucky hack to make PreOnChar work for messages, sliders, and gauges: */
-       ((wxSubType(win->__type, wxTYPE_MESSAGE) 
-	 || wxSubType(win->__type, wxTYPE_SLIDER) 
-	 || wxSubType(win->__type, wxTYPE_GAUGE))
-	? (KeyPressMask | KeyReleaseMask) : NoEventMask),
+       extra_mask,
        FALSE,
        (XtEventHandler)wxWindow::WindowEventHandler,
        (XtPointer)saferef,
@@ -1261,7 +1279,8 @@ void wxWindow::FrameEventHandler(Widget w,
     if(!strcmp(XGetAtomName(XtDisplay(w),xev->xclient.message_type),"WM_PROTOCOLS")
        && !strcmp(XGetAtomName(XtDisplay(w),xev->xclient.data.l[0]),"WM_DELETE_WINDOW")){
       // I've reveived a WM_DELETE_WINDOW message for win
-      wxWindow *current_modal = wxGetModalWindow(win);
+      wxWindow *current_modal;
+      current_modal = wxGetModalWindow(win);
       if (current_modal && (current_modal != win))
 	return;
 	
@@ -1361,7 +1380,11 @@ void wxWindow::ScrollEventHandler(Widget    WXUNUSED(w),
       dir = wxHORIZONTAL;
       break;
     }
-    wxevent->pos = win->GetScrollPos(dir);
+    {
+      int pos;
+      pos = win->GetScrollPos(dir);
+      wxevent->pos = pos;
+    }
   } else {
     // sinfo->gx and sinfo->gy are set by the ScrolledWindow widget
     XtMoveWidget(win->X->handle, sinfo->gx, sinfo->gy);
@@ -1423,6 +1446,7 @@ void wxWindow::WindowEventHandler(Widget w,
     case KeyPress: {
 	wxKeyEvent *wxevent;
 	KeySym	   keysym;
+	long       kc;
 
 	wxevent = new wxKeyEvent(wxEVENT_TYPE_CHAR);
 
@@ -1433,9 +1457,11 @@ void wxWindow::WindowEventHandler(Widget w,
 	else if (win->misc_flags & LAST_WAS_ALT_DOWN_FLAG)
 	  win->misc_flags -= LAST_WAS_ALT_DOWN_FLAG;
 
+	kc = CharCodeXToWX(keysym);
+
 	// set wxWindows event structure
 	wxevent->eventHandle	= (char*)xev;
-	wxevent->keyCode	= CharCodeXToWX(keysym);
+	wxevent->keyCode	= kc;
 	wxevent->x		= xev->xkey.x;
 	wxevent->y		= xev->xkey.y;
 	wxevent->altDown	= /* xev->xkey.state & Mod3Mask */ FALSE;

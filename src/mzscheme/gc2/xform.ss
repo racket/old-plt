@@ -5,6 +5,9 @@
 ;;  No gc-triggering code in .h files
 ;;  No instance vars declared as function pointers without a typedef
 ;;    for the func ptr type
+;;
+;; BUGS: doesn't check for pointer comparisons where one of the comparees
+;;       is a function call
 
 (define cmd-line (vector->list argv))
 
@@ -143,6 +146,8 @@
 (define END_XFORM_SKIP (string->symbol "END_XFORM_SKIP"))
 (define Scheme_Object (string->symbol "Scheme_Object"))
 (define sElF (string->symbol "sElF"))
+(define NEW_ARRAY (string->symbol "NEW_ARRAY"))
+(define NEW_OBJECT (string->symbol "NEW_OBJECT"))
 
 (define non-functions
   '(<= < > >= == != !
@@ -410,8 +415,9 @@
 	(convert-function e))]
    [(var-decl? e)
     (when label? (printf "/* VAR */~n"))
-    (let-values ([(pointers non-pointers) (get-vars e "TOPVAR" #f)])
-      (top-vars (append pointers non-pointers (top-vars))))
+    (unless (eq? (tok-n (car e)) 'static)
+      (let-values ([(pointers non-pointers) (get-vars e "TOPVAR" #f)])
+	(top-vars (append pointers non-pointers (top-vars)))))
     e]
 
    [(and (>= (length e) 3)
@@ -847,14 +853,14 @@
 				    (car var))))
 		     (append! pointers non-pointers))))
 		decls))
-    (let loop ([e body-e][can-convert? #t])
+    (let loop ([e body-e][can-convert? #t][paren-arrows? #t])
       (if (null? e)
 	  null
 	  (let ([v (car e)])
 	    (cond
 	     [(memq (tok-n v) '(|.| ->))
 	      ;; Don't check next as class member
-	      (cons v (loop (cdr e) #f))]
+	      (cons v (loop (cdr e) #f paren-arrows?))]
 	     [(and (eq? (tok-n v) 'new)
 		   (not (parens? (cadr e))))
 	      ;; Make `new' expression look like a function call
@@ -862,19 +868,21 @@
 		(if (and (pair? (cddr e))
 			 (seq? (caddr e)))
 		    (loop (list*
-			   v
+			   (make-tok (if (braces? (caddr e)) NEW_ARRAY NEW_OBJECT) (tok-line v) (tok-file v) (tok-col v))
 			   (make-parens
 			    "(" (tok-line v) (tok-col v) (tok-file v) ")"
-			    (list (cadr e) (caddr e)))
+			    (list (cadr e) (make-tok '|,| #f #f #f) (caddr e)))
 			   (cdddr e))
-			  #t)
+			  #t
+			  paren-arrows?)
 		    (loop (list*
 			   v
 			   (make-parens
 			    "(" (tok-line v) (tok-col v) (tok-file v) ")"
 			    (list (cadr e)))
 			   (cddr e))
-			  #t)))]
+			  #t
+			  paren-arrows?)))]
 	     [(and can-convert?
 		   (pair? (cdr e))
 		   (parens? (cadr e))
@@ -884,7 +892,16 @@
 	       (make-tok sElF (tok-line v) (tok-col v) (tok-file v))
 	       (make-tok '-> (tok-line v) (tok-col v) (tok-file v))
 	       v
-	       (loop (cdr e) #t))]
+	       (loop (cdr e) #t paren-arrows?))]
+	     [(and paren-arrows?
+		   (>= (length e) 3)
+		   (eq? '-> (tok-n (cadr e))))
+	      (loop (cons (make-parens
+			   "(" #f #f #f ")"
+			   (list (car e) (cadr e) (caddr e)))
+			  (cdddr e))
+		    can-convert?
+		    #t)]
 	     [else
 	      ;; look for conversion
 	      (cons
@@ -896,7 +913,7 @@
 		[(seq? v)
 		 ((get-constructor v)
 		  (tok-n v) (tok-line v) (tok-col v) (tok-file v) (seq-close v)
-		  (loop (seq-in v) #t))]
+		  (loop (seq-in v) #t #f))]
 		[(and can-convert?
 		      (get-c++-class-var (tok-n v) c++-class))
 		 (make-parens
@@ -905,7 +922,7 @@
 			(make-tok '-> (tok-line v) (tok-col v) (tok-file v))
 			v))]
 		[else v])
-	       (loop (cdr e) #t))]))))))
+	       (loop (cdr e) #t paren-arrows?))]))))))
 		
 (define re:funcarg (regexp "^__funcarg"))
 (define (is-generated? x)
@@ -971,9 +988,10 @@
 						   (eq? semi (tok-n (cadr e))))
 					       (tok-n (car e))
 					       (loop (cdr e))))])
-				(log-error "[DECL] ~a in ~a: Variable declaration (~a ~a) not at the beginning of a block."
-					   (tok-line (caar body)) (tok-file (caar body))
-					   type var)))
+				(unless (eq? ':: (tok-n (cadar body)))
+				  (log-error "[DECL] ~a in ~a: Variable declaration (~a ~a) not at the beginning of a block."
+					     (tok-line (caar body)) (tok-file (caar body))
+					     type var))))
 			    (let*-values ([(rest live-vars) (loop (cdr body))]
 					  [(e live-vars)
 					   (convert-function-calls (car body)
@@ -1048,7 +1066,8 @@
 
 (define (looks-like-call? e-)
   ;; e- is a reversed expression
-  (and (parens? (car e-))
+  (and (pair? e-)
+       (parens? (car e-))
        ;; Something precedes
        (not (null? (cdr e-)))
        ;; Not an assignment, sizeof, if, string
@@ -1080,7 +1099,7 @@
 	;; Call
 	(call-k))))
 
-(define (resolve-indirection v get-c++-class-member c++-class)
+(define (resolve-indirection v get-c++-class-member c++-class locals)
   (and (parens? v)
        (= 3 (length (seq-in v)))
        (eq? '-> (tok-n (cadr (seq-in v))))
@@ -1088,7 +1107,8 @@
 	 (cond
 	  [(eq? sElF (tok-n lhs))
 	   (get-c++-class-member (tok-n (caddr (seq-in v))) c++-class)]
-	  [(resolve-indirection lhs get-c++-class-var c++-class)
+	  [(or (resolve-indirection lhs get-c++-class-var c++-class locals)
+	       (assq (tok-n lhs) locals))
 	   => (lambda (m)
 		(let ([type (cdr m)])
 		  (and (pointer-type? type)
@@ -1107,84 +1127,163 @@
 	  (let loop ([el el]
 		     [new-args null][setups null][new-vars null]
 		     [ok-calls null][must-convert? #t][live-vars live-vars])
-	    (cond
-	     [(null? el)
-	      (if (null? new-vars)
-		  (values null args null ok-calls live-vars)
-		  (values
-		   setups
-		   (make-parens
-		    "(" (tok-line args) (tok-col args) (tok-file args) ")"
-		    (apply append (reverse! new-args)))
-		   new-vars
-		   ok-calls
-		   live-vars))]
-	     [(let ([e- (let ([e- (reverse (car el))])
-			  (if (null? (cdr el))
-			      e-
-			      (cdr e-)))]) ; skip comma
-		(and (looks-like-call? e-)
-		     (cast-or-call e- (lambda () #f) (lambda () (cons (or (and (null? (cddr e-)) 
-									       (cadr e-))
-									  (and (= 3 (length (cdr e-)))
-									       (eq? '-> (tok-n (caddr e-)))
-									       (make-parens
-										"(" #f #f #f ")"
-										(reverse (cdr e-)))))
-								      (car e-))))))
-	      => (lambda (call-form)
-		   (let* ([call-func (car call-form)]
-			  [call-args (cdr call-form)]
-			  [p-m (and must-convert?
-				    call-func
-				    (if (parens? call-func)
-					(resolve-indirection call-func get-c++-class-method c++-class)
-					(assq (tok-n call-func) (prototyped))))])
-		     (if p-m
-			 (let ([new-var (gensym '__funcarg)])
-			   (loop (cdr el)
-				 (cons (append
-					(list (make-tok new-var #f #f #f))
-					(if (null? (cdr el))
-					    null
-					    (list (make-tok '|,| #f #f #f))))
-				       new-args)
-				 (cons (let ([e (car el)])
-					 (if (null? (cdr el))
-					     ;; Add comma
-					     (append e (list (make-tok '|,| #f #f #f)))
-					     e))
-				       setups)
-				 (cons (cons new-var (prototype-for-pointer? p-m))
-				       new-vars)
-				 ok-calls
-				 #t
-				 (make-live-var-info
-				  (live-var-info-tag live-vars)
-				  (live-var-info-maxlive live-vars)
-				  (live-var-info-maxpush live-vars)
-				  (live-var-info-vars live-vars)
-				  ;; Add newly-created vars for lifting to declaration set
-				  (cons (append (prototype-type (cdr p-m))
-						(list
-						 (make-tok new-var #f #f #f)
-						 (make-tok semi #f #f #f)))
-					(live-var-info-new-vars live-vars))
-				  (live-var-info-pushed-vars live-vars)
-				  (live-var-info-num-calls live-vars))))
-			 (loop (cdr el) (cons (car el) new-args) setups new-vars 
-			       (if must-convert?
-				   ok-calls
-				   (cons call-args ok-calls))
-			       #t
-			       live-vars))))]
-	     [(and (= (length (car el)) 2)
-		   (or (string? (tok-n (caar el)))
-		       (number? (tok-n (caar el)))))
-	      ;; Constant => still no need to lift..
-	      (loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls must-convert? live-vars)]
-	     [else
-	      (loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls #t live-vars)]))))))
+	    (letrec ([lift-one?
+		      (lambda (e)
+			(let ([e- (let ([e- (reverse e)])
+				    (if (null? (cdr el))
+					e-
+					(cdr e-)))]) ; skip comma
+			  (and (looks-like-call? e-)
+			       (cast-or-call e- 
+					     (lambda () #f) 
+					     (lambda () 
+					       (lambda (wrap)
+						 (lift-one (cons e
+								 (cons (or (and (null? (cddr e-)) 
+										(cadr e-))
+									   (and (= 3 (length (cdr e-)))
+										(eq? '-> (tok-n (caddr e-)))
+										(make-parens
+										 "(" #f #f #f ")"
+										 (reverse (cdr e-)))))
+								       (car e-)))
+							   wrap)))))))]
+		     [lift-one
+		      (lambda (call-form wrap)
+			(let* ([call (car call-form)]
+			       [call-func (cadr call-form)]
+			       [call-args (cddr call-form)]
+			       [p-m (and must-convert?
+					 call-func
+					 (if (parens? call-func)
+					     (resolve-indirection call-func get-c++-class-method c++-class null)
+					     (assq (tok-n call-func) (prototyped))))])
+			  (if p-m
+			      (let ([new-var (gensym '__funcarg)])
+				(loop (cdr el)
+				      (cons (append
+					     (wrap (list (make-tok new-var #f #f #f)))
+					     (if (null? (cdr el))
+						 null
+						 (list (make-tok '|,| #f #f #f))))
+					    new-args)
+				      (cons (if (null? (cdr el))
+						;; Add comma
+						(append call (list (make-tok '|,| #f #f #f)))
+						call)
+					    setups)
+				      (cons (cons new-var (prototype-for-pointer? p-m))
+					    new-vars)
+				      ok-calls
+				      #t
+				      (make-live-var-info
+				       (live-var-info-tag live-vars)
+				       (live-var-info-maxlive live-vars)
+				       (live-var-info-maxpush live-vars)
+				       (live-var-info-vars live-vars)
+				       ;; Add newly-created vars for lifting to declaration set
+				       (cons (append (prototype-type (cdr p-m))
+						     (list
+						      (make-tok new-var #f #f #f)
+						      (make-tok semi #f #f #f)))
+					     (live-var-info-new-vars live-vars))
+				       (live-var-info-pushed-vars live-vars)
+				       (live-var-info-num-calls live-vars))))
+			      (loop (cdr el) (cons (wrap e) new-args) setups new-vars 
+				    (if must-convert?
+					ok-calls
+					(cons call-args ok-calls))
+				    #t
+				    live-vars))))]
+		     [lift-in-arithmetic?
+		      (lambda (e)
+			(and (pair? e)
+			     (cond
+			      ;; look for: ! <liftable>
+			      [(eq? '! (tok-n (car e)))
+			       (let ([k (lift-in-arithmetic? (cdr e))])
+				 (and k
+				      (lambda (wrap)
+					(k (lambda (x) 
+					     (wrap
+					      (cons (car e) x)))))))]
+			      ;; look for: (<liftable>)
+			      [(and (parens? (car e))
+				    (null? (cdr e)))
+			       (let ([k (lift-in-arithmetic? (seq-in (car e)))])
+				 (and k
+				      (lambda (wrap)
+					(k (lambda (x) 
+					     (wrap (list
+						    (make-parens
+						     "(" #f #f #f ")"
+						     x))))))))]
+			      ;; look for: n op <liftable>
+			      [(and (>= (length e) 3)
+				    (let ([n (tok-n (car e))])
+				      (or (number? n) (symbol? n)))
+				    (memq (tok-n (cadr e)) '(+ - * /)))
+			       (let ([k (lift-in-arithmetic? (cddr e))])
+				 (and k
+				      (lambda (wrap)
+					(k (lambda (x) 
+					     (wrap
+					      (list* (car e) (cadr e) x)))))))]
+			      ;; look for: <liftable> op n
+			      [(let ([len (if (null? el)
+					      (length e)
+					      (sub1 (length e)))]) ; skip comma
+				 (and (>= len 3)
+				      (let ([n (tok-n (list-ref e (sub1 len)))])
+					(or (number? n) (symbol? n)))
+				      (memq (tok-n (list-ref e (- len 2))) '(+ - * /))))
+			       (let* ([last? (null? el)]
+				      [len (if last?
+					       (length e)
+					       (sub1 (length e)))])
+				 (printf "/* this far ~a */~n" (tok-line (car e)))
+				 (let ([k (lift-in-arithmetic? (let loop ([e e])
+								 (if (null? ((if last?
+										 cddr 
+										 cdddr)
+									     e))
+								     (if last?
+									 null
+									 (cddr e))
+								     (cons (car e) (loop (cdr e))))))])
+				   (and k
+					(lambda (wrap)
+					  (k (lambda (x) 
+					       (wrap
+						(append x 
+							(list
+							 (list-ref e (- len 2))
+							 (list-ref e (- len 1)))
+							(if last?
+							    (list (list-ref e len))
+							    null)))))))))]
+			      [(lift-one? e) => values]
+			      [else #f])))])
+	      (cond
+	       [(null? el)
+		(if (null? new-vars)
+		    (values null args null ok-calls live-vars)
+		    (values
+		     setups
+		     (make-parens
+		      "(" (tok-line args) (tok-col args) (tok-file args) ")"
+		      (apply append (reverse! new-args)))
+		     new-vars
+		     ok-calls
+		     live-vars))]
+	       [(lift-in-arithmetic? (car el)) => (lambda (k) (k values))]
+	       [(and (= (length (car el)) 2)
+		     (or (string? (tok-n (caar el)))
+			 (number? (tok-n (caar el)))))
+		;; Constant => still no need to lift other args..
+		(loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls must-convert? live-vars)]
+	       [else
+		(loop (cdr el) (cons (car el) new-args) setups new-vars ok-calls #t live-vars)])))))))
 
 (define (convert-function-calls e vars c++-class live-vars complain-not-in)
   ;; e is a single statement
@@ -1339,7 +1438,7 @@
 					    (= 2 (length result))
 					    (call? (car result))
 					    (eq? semi (tok-n (cadr result)))
-					    (let ([m (resolve-indirection (car assignee) get-c++-class-var c++-class)])
+					    (let ([m (resolve-indirection (car assignee) get-c++-class-var c++-class vars)])
 					      (and m (cdr m))))])
 		(if (and special-case-type
 			 (or (non-pointer-type? special-case-type)
@@ -1397,7 +1496,14 @@
 					 (not (symbol? (tok-n (car assignee)))))
 				     (and (symbol? (tok-n (car assignee)))
 					  (not (null? (cdr assignee)))
+					  ;; ok if preceeding is else or label terminator
 					  (not (memq (tok-n (cadr assignee)) '(else :)))
+					  ;; assignment to field in record is ok
+					  (not (and (eq? (tok-n (cadr assignee)) '|.|)
+						    (pair? (cddr assignee))
+						    (symbol? (tok-n (caddr assignee)))
+						    (null? (cdddr assignee))))
+					  ;; ok if preceeding is `if', `until', etc.
 					  (not (and (parens? (cadr assignee))
 						    (pair? (cddr assignee))
 						    (memq (tok-n (caddr assignee)) '(if while for until))))))

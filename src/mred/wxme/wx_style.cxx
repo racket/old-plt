@@ -365,7 +365,7 @@ Bool wxStyleDelta::Collapse(wxStyleDelta &deltaIn)
 		    aabb + (int)(ambb * babb), 
 		    aabg + (int)(ambg * babg));
 
-  if (family == wxBASE) {
+  if (family == wxBASE && !face) {
     family = deltaIn.family;
     if (deltaIn.face)
       face = copystring(deltaIn.face);

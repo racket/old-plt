@@ -12,7 +12,7 @@
 
 (load "/Users/clements/plt/tests/mzscheme/testing.ss")
 
-(SECTION 'stepper-reconstruct)
+(SECTION 'stepper-reconstruct)  
 
 (reset-namespaces)
 
@@ -127,6 +127,10 @@
 (define (test-beginner-wla-sequence source-list result-list completed-list)
   (reconstruct:set-render-settings! fake-beginner-wla-render-settings)
   (test-sequence source-list result-list completed-list beginner-wla-namespace))
+
+(map syntax-object->datum
+ (parameterize ([current-namespace beginner-namespace])
+   (map expand (string->stx-list "(list a 3 4)"))))
 
 ;;;;;;;;;;;;;
 ;;
@@ -286,6 +290,17 @@
                           ((,highlight-placeholder) ((and false true)))
                           ((,highlight-placeholder) (false)))
                         `(false))
+
+(parameterize ([current-namespace beginner-namespace])
+  (map syntax-object->datum
+       ;(map expand
+            (annotate-exprs (map expand (list '(define (a19 x) x) '(a19 4))) (lambda (x y z) 3))
+            ;)
+            ))
+
+(parameterize ([current-namespace beginner-namespace])
+  (map syntax-object->datum
+       (map expand (map expand (map expand (list 'a19))))))
 
 (test-beginner-sequence "(define (a2 x) x) (a2 4)"
                         `(((,highlight-placeholder) ((a2 4)))

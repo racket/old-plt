@@ -673,12 +673,6 @@
             ((cadr test-case) (car (annotate-exprs-no-break (car test-case)))))
           test-cases)
 
-(define mz-namespace (current-namespace))
-(define beginner-namespace (make-namespace 'empty))
-(parameterize ([current-namespace beginner-namespace])
-  (namespace-attach-module mz-namespace 'mzscheme)
-  (namespace-require '(lib "htdp-beginner.ss" "lang")))
-
 ;(namespace-annotate-expr '(or 3 4 5) beginner-namespace)
   
 (syntax-case (namespace-rewrite-expr '(lambda (a) a) mz-namespace) (lambda)

@@ -9,8 +9,8 @@ cards.ss defines the following procedures:
       with extra methods described below. The table is not intially shown, 
       so (send table show #t) shows it. The arguments are optional,
       with the default values "Cards", 7, and 3.
- (make-deck) returns a list of 52 cards, one for each suite-value 
-      combination. The cards are all face-down, sorted lowest-suite
+ (make-deck) returns a list of 52 cards, one for each suit-value 
+      combination. The cards are all face-down, sorted lowest-suit
       then lowest-value. A card is an object, with methods described 
       below. A card can only be on one table at a time.
  (shuffle-list list count) shuffles the given list count times,
@@ -144,8 +144,8 @@ Card methods:
 
    (send c face-down?) - #t if the card is currently face-down.
 
-   (send c get-suite-id) - 1, 2, 3, or 4.
-   (send c get-suite) - 'clubs, 'diamonds, 'hearts, or 'spades
+   (send c get-suit-id) - 1, 2, 3, or 4.
+   (send c get-suit) - 'clubs, 'diamonds, 'hearts, or 'spades
    (send c get-value) - 1 (Ace), 2, ... 10, 11 (Jack), 12 (Queen), or 13 (King)
    
    (send c user-can-flip)
@@ -162,7 +162,7 @@ Card methods:
        card stays where the user dragged it or snaps back to its original
        place.  Initially #f.
 
-   (send c copy) - makes a new card with the same suite and value.
+   (send c copy) - makes a new card with the same suit and value.
 
 
 Signed Unit and Signature

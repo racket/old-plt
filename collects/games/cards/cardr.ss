@@ -429,7 +429,7 @@
   (send (wx:get-the-snip-class-list) add sc)
 
   (define card%
-    (class wx:snip% (suite-id value width height front back semi-front semi-back)
+    (class wx:snip% (suit-id value width height front back semi-front semi-back)
 	   (inherit set-snipclass set-count get-admin)
 	   (private
 	    [flipped? #f]
@@ -456,11 +456,11 @@
 	    [face-down (lambda () (unless flipped? (flip)))]
 	    [resize
 	     (lambda (w h) (void))]
-	    [get-suite-id
-	     (lambda () suite-id)]
-	    [get-suite
+	    [get-suit-id
+	     (lambda () suit-id)]
+	    [get-suit
 	     (lambda ()
-	       (case suite-id
+	       (case suit-id
 		 [(1) 'clubs]
 		 [(2) 'diamonds]
 		 [(3) 'hearts]
@@ -500,7 +500,7 @@
 		   (send dc blit x y width height 
 			 (if flipped? back front) 
 			 0 0)))]
-	    [copy (lambda () (make-object card% suite-id value width height 
+	    [copy (lambda () (make-object card% suit-id value width height 
 					  front back semi-front semi-back))])
 	   (private
 	     [save-x (box 0)]
@@ -531,11 +531,10 @@
   (wx:flush-display)
   (wx:yield)
 
-  (define (here file)
-    (build-path 
-     (or (current-load-relative-directory) 
-	 "/home/mflatt/proj/plt/collects/games/cards")
-     file))
+  (define here 
+    (let ([cp (collection-path "games" "cards")])
+      (lambda (file)
+	(build-path cp file))))
 
   (define back (get-bitmap (here "back.gif")))
 
@@ -547,20 +546,20 @@
 		   (send m select-object back)
 		   m)]
 	   [semi-back (make-semi back w h)])
-      (let sloop ([suite 4])
-	(if (zero? suite)
+      (let sloop ([suit 4])
+	(if (zero? suit)
 	    null
 	    (let vloop ([value 13])
 	      (sleep)
 	      (if (zero? value)
-		  (sloop (sub1 suite))
+		  (sloop (sub1 suit))
 		  (let ([front (get-bitmap/dc
 				(here 
 				 (format "card-~a-~a.gif"
 					 (sub1 value)
-					 (sub1 suite))))])
+					 (sub1 suit))))])
 		    (cons (make-object card%
-				       suite
+				       suit
 				       value
 				       w h
 				       front back

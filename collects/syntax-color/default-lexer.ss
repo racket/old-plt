@@ -16,7 +16,14 @@
       (values 'white-space #f (position-offset start-pos) (position-offset end-pos)))
      (parens
       (values 'no-color (string->symbol lexeme) (position-offset start-pos) (position-offset end-pos)))
+     ((special)
+      (values 'no-color #f (position-offset start-pos) (position-offset end-pos)))
+     ((special-comment)
+      (values 'comment #f (position-offset start-pos) (position-offset end-pos)))
+     ((special-error)
+      (values 'no-color #f (position-offset start-pos) (position-offset end-pos)))
      ((eof)
       (values 'eof #f #f #f)))))
+     
              
              

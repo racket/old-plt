@@ -1405,7 +1405,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	Scheme_Stx *stx = (Scheme_Stx *)obj;
 	if ((stx->srcloc->line >= 0) || (stx->srcloc->pos >= 0)) {
 	  print_this_string(p, "#<syntax:", 0, 9);
-	  if (stx->srcloc->src && SCHEME_PATH_STRINGP(stx->srcloc->src)) {
+	  if (stx->srcloc->src && SCHEME_PATHP(stx->srcloc->src)) {
 	    print_this_string(p, SCHEME_BYTE_STR_VAL(stx->srcloc->src), 0, SCHEME_BYTE_STRLEN_VAL(stx->srcloc->src));
 	    print_this_string(p, ":", 0, 1);
 	  }

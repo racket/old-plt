@@ -939,15 +939,17 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
     if (scheme_setjmp(p->overflow_buf)) {
       while (1) {
 	/* We get `p' again because it might be a nestee: */
-	Scheme_Thread * volatile pp = scheme_current_thread;
-	Scheme_Overflow * volatile overflow;
+	Scheme_Thread *pp;
+	Scheme_Overflow *overflow;
 
+	pp = scheme_current_thread;
 	overflow = pp->overflow;
 
 	memcpy(&overflow->savebuf, &pp->error_buf, sizeof(mz_jmp_buf));
 	if (scheme_setjmp(pp->error_buf)) {
 	  /* If we use scheme_overflow_reply here, it crashes on
 	     Sparc. Sometimes. Can anyone tell me why? */
+	  pp = scheme_current_thread;
 	  pp->overflow_reply = NULL; /* means "continue the error" */
 	} else {
 	  void *p1, *p2, *p3, *p4;
@@ -981,6 +983,7 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
 	  }
 	}
 
+	pp = scheme_current_thread;
 	overflow = pp->overflow;
 	memcpy(&scheme_error_buf, &overflow->savebuf, sizeof(mz_jmp_buf));
 	pp->overflow = overflow->prev;

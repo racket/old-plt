@@ -227,11 +227,11 @@
 
 	    [file-menu:after-quit (lambda (file-menu) (void))]
 
-	    [edit-menu:undo (lambda () (void))]
+	    [edit-menu:undo #f]
 	    [edit-menu:undo-id #f]
 	    [edit-menu:undo-help-string "Undoes the last action"]
 
-	    [edit-menu:redo (lambda () (void))]
+	    [edit-menu:redo #f]
 	    [edit-menu:redo-id #f]
 	    [edit-menu:redo-help-string "Redoes the last undone action"]
 
@@ -328,13 +328,15 @@
 		 (file-menu:after-quit file-menu)
 		 
 		 
-		 (set! edit-menu:undo-id
-		       (send edit-menu append-item "&Undo"
-			     edit-menu:undo edit-menu:undo-help-string #f "z"))
+		 (when edit-menu:undo
+		   (set! edit-menu:undo-id
+			 (send edit-menu append-item "&Undo"
+			       edit-menu:undo edit-menu:undo-help-string #f "z")))
 			     
-		 (set! edit-menu:redo-id
-		       (send edit-menu append-item "&Redo"
-			     edit-menu:redo edit-menu:redo-help-string #f "y"))
+		 (when edit-menu:redo
+		   (set! edit-menu:redo-id
+			 (send edit-menu append-item "&Redo"
+			       edit-menu:redo edit-menu:redo-help-string #f "y")))
 		 (send edit-menu append-separator)
 		 (set! edit-menu:cut-id
 		       (send edit-menu append-item "Cu&t"

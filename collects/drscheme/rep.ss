@@ -773,6 +773,8 @@
                       (- (last-position) 1)
                       (- (last-position) 1))
               (lock c-locked?)
+	      (for-each (lambda (c) (send c recalc-snips))
+			(get-canvases))	
               (end-edit-sequence))))
         (define (hide-eof-icon) 
           (when eof-icon-shown?
@@ -780,14 +782,15 @@
             (let ([c-locked? (locked?)])
               (begin-edit-sequence)
               (lock #f)
-              (delete (- (last-position) 2) (- (last-position) 1))
+              (delete (- (last-position) 1) (- (last-position) 2))
+	      (for-each (lambda (c) (send c recalc-snips))
+			(get-canvases))
               (lock c-locked?)
               (end-edit-sequence))))
 	(define (submit-eof)
           (when transparent-text
             (send transparent-text eof-received))
-          (hide-eof-icon)
-	  (set! eof-received? #t))
+          (hide-eof-icon))
 
         (define init-transparent-io-do-work  ; =Kernel=, =Handler=
           (lambda (grab-focus?)
@@ -844,7 +847,9 @@
 			  (if eof-received?
 			      (set! char-fetched eof)
 			      (let ([text (init-transparent-input)])
-				(set! char-fetched (send text fetch-char))))
+				(set! char-fetched (send text fetch-char))
+				(when (eof-object? char-fetched)
+				  (set! eof-received? #t))))
 			  (semaphore-post char-fetched-sema))))
 					; Wait for a char, allow breaks:
 		     (with-handlers ([void (lambda (x)
@@ -889,7 +894,7 @@
                   ut
                   (lambda () ; =Kernel=, =Handler=
 		    (if eof-received?
-			#t
+			(set! answer #t)
 			(let ([text (init-transparent-input)])
 			  (set! answer (send text check-char-ready?))))
                     (semaphore-post s)))
@@ -2356,6 +2361,7 @@
 	[eof-received
          (lambda () ; =Kernel=, =Handler=
 	   (set! eof-submitted? #t)
+	   (set! stream-end (last-position))
 	   (semaphore-post wait-for-sexp))]
 	[fetch-char ; =Kernel=, =Handler=, =Non-Reentrant= (queue requests externally)
 	 (lambda ()

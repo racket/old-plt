@@ -239,6 +239,11 @@
 			     (same-dimension? y (get-y))
 			     (same-dimension? width (get-width))
 			     (same-dimension? height (get-height)))
+		  (mred:debug:printf 'container-child-set-size
+				     (string-append
+				      "container-child-set-size: "
+				      "Calling super-set-size ~s ~s ~s ~s")
+				     x y width height)
 		  (super-set-size x y width height)))]
 
 	    ; get-min-size: computes the minimum size the item can

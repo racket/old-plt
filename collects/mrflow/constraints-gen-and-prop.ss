@@ -4418,7 +4418,7 @@
   (define (get-handle-or-type-var label)
     (let* ([type-var (label-type-var label)]
            [handle (type-var-handle type-var)])
-      (if #f;XXXhandle
+      (if handle
           ;(begin (printf ".")
           handle
           ;)
@@ -4466,7 +4466,7 @@
   (define (get-type-from-label sba-state label)
     (add-type-var-to-label label sba-state)
     (let ([handle (type-var-handle (label-type-var label))])
-      (if #f;XXXhandle
+      (if handle
           handle
           (let* (;[_ (begin (print-struct #t)(printf "T: ~a ~a ~a " (type-var-name (label-type-var label))
                  ;                                   (syntax-position (label-term label))
@@ -4484,7 +4484,7 @@
                  [handle (hc:hashcons-type (sba-state-hashcons-tbl sba-state) reconstructed-type)]
                  ;[_ (printf "HC-Time= ~a~n" (- (current-milliseconds) start))]
                  )
-            (set-type-var-handle! (label-type-var label) handle)
+            ;XXX no memoization anymore (set-type-var-handle! (label-type-var label) handle)
             handle))))
   
   ; type (union (hash-table-of type-flow-var (cons label type)) symbol) -> string

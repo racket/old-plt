@@ -1,6 +1,7 @@
 (module defunctionalize mzscheme
   (require (lib "list.ss")
-           "closure.ss")
+           "closure.ss"
+           "syntax-utils.ss")
   (require-for-template mzscheme)
   (provide defunctionalize-definition
            defunctionalize)  
@@ -37,7 +38,7 @@
          (append defs (list #`(define-values (var ...) #,new-expr))))]
       [else
        (raise-syntax-error #f "defunctionalize-definition dropped through" def)]))
-  
+    
   ;; defunctionalize: expr (-> symbol) -> (values expr (listof definition))
   ;; remove lambdas from an expression
   (define (defunctionalize expr labeling)
@@ -56,7 +57,11 @@
                  (append test-defs csq-defs alt-defs)))]
       [(#%app exprs ...)
        (let-values ([(new-exprs defs) (defunctionalize* (syntax->list #'(exprs ...)) labeling)])
-         (values #`(#%app #,@new-exprs) defs))]
+         (values
+          (recertify-dammit
+           #`(#%app #,@new-exprs)
+           expr)
+          defs))]
       
       [(let-values ([(f) rhs])
          (#%app f-apply (with-continuation-mark ignore-key f-mark body-expr)))

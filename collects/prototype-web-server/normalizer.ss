@@ -1,4 +1,5 @@
 (module normalizer mzscheme
+  (require "syntax-utils.ss")
   (require-for-template mzscheme)
   (provide normalize-term
            normalize-definition
@@ -52,8 +53,6 @@
       [_else
        (raise-syntax-error #f "normalize-definition: dropped through" def)]))
   
-;  'expression, 'top-level, 'module, 'module-begin, 
-  
   ;; normalize-term: source-expr -> target-expr
   ;; transform a term into an application chain
   (define (normalize-term src-expr)
@@ -90,7 +89,10 @@
         (lambda (val0)
           (normalize*
            (compose ctxt
-                    (lambda (rest-vals) #`(#%app #,val0 #,@rest-vals)))
+                    (lambda (rest-vals)
+                      (recertify-dammit
+                       #`(#%app #,val0 #,@rest-vals)
+                       expr)))
            (syntax->list #'(expr-rands ...))))
         #'expr-rator)]
       [(#%datum . datum) (ctxt expr)]
@@ -119,7 +121,7 @@
              (multi-ctxt (cons val rest-vals)))
            (cdr exprs)))
         (car exprs))]))
-  
+    
   ;; a context is either
   ;;    frame
   ;;    (compose context frame)
@@ -133,9 +135,7 @@
   (define (compose ctxt frame)
     (if (eq? ctxt id) frame
         (lambda (val)
-          (let ([x (if (syntax-transforming?)
-                       (car (generate-temporaries (list (gensym 'x))))
-                       (datum->syntax-object #f (gensym 'x)))])
-            #`(#%app (lambda (#,x) #,(ctxt x)) #,(frame val))))))
+          (let-values ([(x ref-to-x) (generate-formal 'x)])
+            #`(#%app (lambda (#,x) #,(ctxt ref-to-x)) #,(frame val))))))
   )
 

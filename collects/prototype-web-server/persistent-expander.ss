@@ -85,17 +85,13 @@
           (let ([new-defs (foldl
                            (lambda (first rest)
                              (append (defunctionalize-definition
-                                       (local-expand
-                                        (elim-call/cc-from-definition (normalize-definition first))
-                                        'top-level (list #'#%top))
+                                       (elim-call/cc-from-definition (normalize-definition first))
                                        (make-labeler first))
                                      rest))
                            '()
                            (syntax->list #'rev-defs))])
             (let-values ([(new-body-expr body-defs) (defunctionalize
-                                                      (local-expand
-                                                       (elim-call/cc (normalize-term #'body-expr))
-                                                       'top-level (list #'#%top))
+                                                      (elim-call/cc (normalize-term #'body-expr))
                                                       (make-labeler #'body-expr))])
               #`(begin
                   #,@new-defs

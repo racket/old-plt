@@ -443,6 +443,7 @@
   (paren-match-color "Couleur de surlignage des parenthèses") ; in prefs dialog
   (choose-color "Sélectionnez une couleur") ; in prefs dialog
   (online-coloring-active "Colorier la syntaxe interactivement")
+  (open-files-in-tabs "Ouvrir les fichiers dans de nouveaux onglets (pas dans de nouvelles fenêtres)")
   
   ; title of the color choosing dialog
   (choose-paren-highlight-color "Sélectionnez une couleur pour surligner les parenthèses")
@@ -789,6 +790,8 @@
   (save-interactions-as "Sauvegarder les interactions...")
   (save-interactions-as-text "Sauvegarder les interactions au format texte...")
   (print-interactions "Imprimer les interactions...")
+  (new-tab "Nouvel onglet")
+  (close-tab "Fermer l'onglet")
   
   ;;; edit-menu
   (split-menu-item-label "Di&viser")

@@ -1,4 +1,10 @@
 
+Version 102/5:
+
+ * `with-input-from-file' and `with-output-to-file' close the port
+   when control leaves the dynamic extent of the call (normally,
+   through an exception, or through a general continuation jump).
+
 Version 102/4:
 
  * Fixed number reader to allow +inf.0, -inf.0, and +nan.0 in complex
@@ -39,6 +45,9 @@ Version 102/1:
    means parse as exact.
 
 Version 102, ??
+with-input-from-file and with-output-to-file close the port when
+ control leaves the dynamic extent of the call (normally, through an
+ exception, or through a general continuation jump).
 Added read-decimal-as-inexact parameter
 Fixed number reader to allow +inf.0, -inf.0, and +nan.0 in
  complex constants

@@ -216,9 +216,9 @@ static void dcSetARGBPixels(wxMemoryDC *dc, float x, float y, int w, int h, char
 @INCLUDE wxs_draw.xci
 
 // Also in wxWindow:
-@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]|CheckOk[METHODNAME("dc<%>","get-text-extent")]
-@ Q "get-char-height" : float GetCharHeight(); : : /CheckOk[METHODNAME("dc<%>","get-char-height")]
-@ Q "get-char-width" : float GetCharWidth(); : : /CheckOk[METHODNAME("dc<%>","get-char-width")]
+@ m "get-text-extent" : void[]/CastToSO//spAnything MyTextExtent(string,wxFont^=NULL,bool=FALSE,nnint=0); : : /CheckStringIndex["get-text-extent".0.3]
+@ Q "get-char-height" : float GetCharHeight();
+@ Q "get-char-width" : float GetCharWidth();
 
 @MACRO rZERO = return 0;
 @MACRO rFALSE = return FALSE;

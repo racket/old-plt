@@ -920,14 +920,16 @@ void wxMediaSnipMediaAdmin::Modified(Bool modified)
 
 /************************************************************************/
 
-extern wxMediaEdit *objscheme_unbundle_wxMediaEdit(Scheme_Object *, const char*, int);
+extern wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char*, int);
 
-#define GET_EDIT(vb) objscheme_unbundle_wxMediaEdit((Scheme_Object *)vb, NULL, 0)
+#define GET_EDIT(buf) ((buf->bufferType == wxEDIT_BUFFER) ? (wxMediaEdit *)buf : NULL)
+#define GET_BUF(bv) objscheme_unbundle_wxMediaBuffer((Scheme_Object *)vb, NULL, 0)
 
 #define edf(name, action) \
      static Bool ed_##name(void *vb, wxEvent *, void *) \
-     { wxMediaEdit *b; \
-       b = GET_EDIT(vb); \
+     { wxMediaBuffer *buf; wxMediaEdit *b; \
+       buf = GET_BUF(vb); \
+       b = GET_EDIT(buf); \
        if (!b) return FALSE; \
        b->action; return TRUE; } \
 
@@ -968,7 +970,9 @@ static Bool ed_deletenext(void *vb, wxEvent *, void *)
 {
   long s, e;
   wxMediaEdit *edit;
-  edit = GET_EDIT(vb);
+  wxMediaBuffer *buf;
+  buf = GET_BUF(vb);
+  edit = GET_EDIT(buf);
   if (!edit) return FALSE;
 
   edit->GetPosition(&s, &e);
@@ -982,7 +986,9 @@ static Bool ed_deletenext(void *vb, wxEvent *, void *)
 static Bool ed_deletenextword(void *vb, wxEvent *event, void *)
 {
   wxMediaEdit *edit;
-  edit = GET_EDIT(vb);
+  wxMediaBuffer *buf;
+  buf = GET_BUF(vb);
+  edit = GET_EDIT(buf);
   if (!edit) return FALSE;
 
   edit->BeginEditSequence();
@@ -995,7 +1001,9 @@ static Bool ed_deletenextword(void *vb, wxEvent *event, void *)
 static Bool ed_deleteprevword(void *vb, wxEvent *event, void *)
 {
   wxMediaEdit *edit;
-  edit = GET_EDIT(vb);
+  wxMediaBuffer *buf;
+  buf = GET_BUF(vb);
+  edit = GET_EDIT(buf);
   if (!edit) return FALSE;
 
   edit->BeginEditSequence();
@@ -1008,7 +1016,9 @@ static Bool ed_deleteprevword(void *vb, wxEvent *event, void *)
 static Bool ed_deleteline(void *vb, wxEvent *event, void *)
 {
   wxMediaEdit *edit;
-  edit = GET_EDIT(vb);
+  wxMediaBuffer *buf;
+  buf = GET_BUF(vb);
+  edit = GET_EDIT(buf);
   if (!edit) return FALSE;
 
   edit->BeginEditSequence();

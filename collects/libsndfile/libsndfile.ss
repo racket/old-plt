@@ -1,7 +1,7 @@
 (module libsndfile mzscheme
   
   (require (lib "contract.ss")
-           (lib "homo-vectors.ss" "homogeneous-vectors"))
+           (lib "4.ss" "srfi"))
   
   (define endian-ness-format?
     (symbols 'file 'little 'big 'cpu))

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <sndfile.h>
 
-#include "scheme.h"
+#include "escheme.h"
 
 #include "homo-all-vector-glue.c"
 

@@ -27,8 +27,7 @@
         (list (list (build-path target-dir (append-extension-suffix name)) ; shared-library
                     (list dot-c)
                     (lambda () 
-                      (compile-extension #f dot-c dot-o `(,compiler-include ,homo-vector-include-dir ,"/sw/include")) ; yuck! what a hack
-                      
+                      (compile-extension #f dot-c dot-o `(,compiler-include ,homo-vector-include-dir ,"/sw/include" ,"/usr/local/include")) ; yuck! what a hack
                       (parameterize ([current-extension-linker-flags
                                       (append (current-extension-linker-flags)
                                               (list (format "-L/sw/lib")
@@ -39,7 +38,7 @@
   (define (installer dir)
     (let* ([target-dir (build-path "compiled" "native" (system-library-subpath))]
            [source-dir (build-path 'same)]
-           [homo-vector-include-dir (build-path (collection-path "homogeneous-vectors") "c-generation")])
+           [homo-vector-include-dir (build-path (collection-path "srfi") "4" "c-generation")])
 
       ; yuck! what's the right way to do this?
       (parameterize ([current-directory (collection-path "libsndfile")])

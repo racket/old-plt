@@ -12,6 +12,12 @@
   (define server-name "localhost")
   (define server-port 4004)
   
+  ;; 2 arguments => run mode
+  (let ([cmdl (current-command-line-arguments)])
+    (when (= 2 (vector-length cmdl))
+      (set! server-name (vector-ref cmdl 0))
+      (set! server-port (string->number (vector-ref cmdl 1)))))
+  
   ;; -----------------------------------
   
   (define-values (session board me robots packages)
@@ -37,11 +43,18 @@
     (make-object button% "South" v (lambda (b e) (make-move 's))))
   
   (define (make-move m)
-    (let-values ([(rs ps) (move 1 session m me robots packages)])
-      (set! robots rs)
-      (set! packages ps)
-      (send drawn install-robots&packages rs ps)
-      (list-available-packages)))
+    (with-handlers ([void (lambda (x)
+                            (message-box "Game Over"
+                                         (format "Game Over~nEnd exception: ~a"
+                                                 (if (exn? x)
+                                                     (exn-message x)
+                                                     x)))
+                            (exit))])
+      (let-values ([(rs ps) (move 1 session m me robots packages)])
+        (set! robots rs)
+        (set! packages ps)
+        (send drawn install-robots&packages rs ps)
+        (list-available-packages))))
   
   (define pickup-panel (make-object vertical-panel% bottom))
   (send pickup-panel set-alignment 'left 'center)

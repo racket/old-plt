@@ -62,7 +62,8 @@
       (fill (cadr sub-items) "Money" (robot-money r))
       (fill (caddr sub-items) "Bid" (robot-bid r))
       (fill (cadddr sub-items) "Capacity" (robot-max-lift r))
-      (fill (cadddr (cdr sub-items)) "Load" (apply + (map pack-weight (robot-packages r))))))
+      (fill (cadddr (cdr sub-items)) "Load" (with-handlers ([not-break-exn? (lambda (x) "Unknown")])
+                                              (apply + (map pack-weight (robot-packages r)))))))
   
   (define (set-pack-info p item)
     (let ([sub-items (send item get-items)])

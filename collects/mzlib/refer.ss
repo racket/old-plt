@@ -3,9 +3,12 @@
   (lambda body 
     `(#%begin-elaboration-time ,@body)))
 
+(begin-elaboration-time 
+ (require-library "invoke.ss"))
+
 (begin-elaboration-time
- (invoke-open-unit
-  (require-library "referf.ss")))
+ (define-values/invoke-unit (require-unit reference-file)
+   (require-library "referf.ss")))
 
 (define-macro require-library-unit/sig (require-unit #t #t #f #t 'require-library-unit/sig))
 (define-macro require-library-unit (require-unit #t #t #f #f 'require-library-unit))

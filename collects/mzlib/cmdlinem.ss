@@ -1,9 +1,9 @@
 
-(require-library "refer.ss")
+(begin-elaboration-time
+ (require-library "invoke.ss"))
 
 (begin-elaboration-time
- (invoke-open-unit
-  (require-library "cmdlinemr.ss")))
+ (define-values/invoke-unit (command-line)
+   (require-library "cmdlinemr.ss")))
 
 (define-macro command-line command-line)
-

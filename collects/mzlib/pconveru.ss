@@ -13,27 +13,9 @@
 ;; course, the expression to convert.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(require-library "refer.ss")
-
 (require-library "pconvers.ss")
-(require-library "strings.ss")
-(require-library "functios.ss")
+
+(begin-elaboration-time
+ (require-library "refer.ss"))
 
 (define mzlib:print-convert@ (require-library-unit/sig "pconverr.ss"))
-
-#|
-
-(let ()
-  (define-compound-sigfunctor (linked@ mzlib:print-convert^)
-    (import)
-    (with (mzlib:print-convert@ mzlib:string@ mzlib:function@
-				mzlib:print-convert-hooks@)
-	  (mzlib:string@)
-	  (mzlib:function@)
-	  (mzlib:print-convert-hooks@))
-    (export mzlib:print-convert@))
-
-  (invoke-open-functor (sigfunctor->functor linked@) (mzlib:print-convert@)))
-
-|#
-

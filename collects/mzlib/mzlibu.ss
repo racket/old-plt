@@ -1,8 +1,6 @@
 
 ; Load all of mzlib
 
-(require-library "refer.ss")
-
 (require-library "coreu.ss")
 
 (require-library "synrule.ss")
@@ -16,5 +14,8 @@
 (require-library "transcru.ss")
 
 (require-library "mzlibs.ss")
+
+(begin-elaboration-time
+ (require-library "refer.ss"))
 
 (define mzlib@ (require-library-unit/sig "mzlibr.ss"))

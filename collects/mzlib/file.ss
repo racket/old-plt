@@ -3,7 +3,11 @@
 (require-library "functio.ss")
 (require-library "string.ss")
 
-(invoke-open-unit/sig mzlib:file@
-		      #f
-		      mzlib:string^
-		      mzlib:function^)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig mzlib:file^
+  mzlib:file@
+  #f
+  mzlib:string^
+  mzlib:function^)

@@ -1,4 +1,8 @@
 
+(begin-elaboration-time
+ (require-library "functios.ss")
+ (require-library "strings.ss"))
+
 (define-signature mzlib:file^
   (find-relative-path
    explode-path

@@ -6,7 +6,9 @@
  (require-relative-library "strings.ss")
  (require-relative-library "compiles.ss")
  (require-relative-library "maths.ss")
- (require-relative-library "threads.ss"))
+ (require-relative-library "threads.ss")
+
+ (require-library "refer.ss"))
 
 (define-signature mzlib:core^
   ((unit pretty-print : mzlib:pretty-print^)

@@ -244,18 +244,21 @@
 
 )))
 
+(begin-elaboration-time 
+ (require-library "invoke.ss"))
+
 (begin-elaboration-time
- (invoke-open-unit/sig
-  (compound-unit/sig
-   (import)
+ (define-values/invoke-unit/sig mzlib:trace^
+   (compound-unit/sig
+    (import)
     (link
-      (PRETTY : mzlib:pretty-print^
-	(mzlib:pretty-print@))
-      (TRACE : mzlib:trace^
-	(mzlib:trace@ PRETTY)))
+     (PRETTY : mzlib:pretty-print^
+	     (mzlib:pretty-print@))
+     (TRACE : mzlib:trace^
+	    (mzlib:trace@ PRETTY)))
     (export
-      (open TRACE)))
-  #f))
+     (open TRACE)))
+   #f))
 
 (define-macro trace trace)
 (define-macro untrace untrace)

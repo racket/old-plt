@@ -1,5 +1,9 @@
 
 (require-library "stringu.ss")
 
-(invoke-open-unit/sig mzlib:string@ #f)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig mzlib:string^
+  mzlib:string@)
 

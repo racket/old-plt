@@ -2,6 +2,10 @@
 
 (require-library "inflateu.ss")
 
-(invoke-open-unit/sig mzlib:inflate@ #f)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig mzlib:inflate^
+  mzlib:inflate@)
 
  

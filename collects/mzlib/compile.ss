@@ -1,4 +1,8 @@
 
 (require-library "compileu.ss")
 
-(invoke-open-unit/sig mzlib:compile@ #f)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig mzlib:compile^
+  mzlib:compile@)

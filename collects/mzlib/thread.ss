@@ -1,7 +1,8 @@
 
-
 (require-library "threadu.ss")
 
-(invoke-open-unit/sig mzlib:thread@ #f)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
 
- 
+(define-values/invoke-unit/sig mzlib:thread^
+  mzlib:thread@)

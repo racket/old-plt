@@ -1,17 +1,18 @@
 
-(begin-elaboration-time 
+(begin-elaboration-time
  (require-library "refer.ss"))
 
-(begin-elaboration-time
- (invoke-open-unit
-  (require-library "macroxr.ss")))
+(begin-elaboration-time 
+ (require-library "invoke.ss"))
 
-(define-macro send* send*)
-(define-macro local local)
-(define-macro recur recur)
-(define-macro rec rec)
-(define-macro evcase evcase)
-(define-macro nor nor)
-(define-macro nand nand)
-(define-macro signature->symbols signature->symbols)
+(begin-elaboration-time
+ (define-values/invoke-unit (send*
+			     local
+			     recur
+			     rec
+			     evcase
+			     nor
+			     nand
+			     signature->symbols)
+   (require-library "macroxr.ss")))
 

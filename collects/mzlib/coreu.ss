@@ -1,8 +1,6 @@
 
 ; Load core mzlib
 
-(require-library "refer.ss")
-
 (require-relative-library "corem.ss")
 
 (require-relative-library "prettyu.ss")
@@ -15,5 +13,8 @@
 (require-relative-library "threadu.ss")
 
 (require-relative-library "cores.ss")
+
+(begin-elaboration-time
+ (require-library "refer.ss"))
 
 (define mzlib:core@ (require-relative-library-unit/sig "corer.ss"))

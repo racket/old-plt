@@ -2,5 +2,10 @@
 (require-library "cmdline.ss")
 (require-library "restartu.ss")
 
-(invoke-open-unit/sig mzlib:restart@ #f
-		      mzlib:command-line^)
+(begin-elaboration-time
+ (require-library "invoke.ss"))
+
+(define-values/invoke-unit/sig mzlib:restart^
+  mzlib:restart@
+  #f
+  mzlib:command-line^)

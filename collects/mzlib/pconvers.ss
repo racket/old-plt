@@ -1,4 +1,8 @@
 
+(begin-elaboration-time
+ (require-library "strings.ss")
+ (require-library "functios.ss"))
+
 (define-signature mzlib:print-convert^
   (show-sharing
    constructor-style-printing

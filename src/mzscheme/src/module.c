@@ -2642,6 +2642,16 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  while (SCHEME_STX_PAIRP(vars)) {
 	    Scheme_Object *name;
 	    name = SCHEME_STX_CAR(vars);
+
+	    /* Check that the name doesn't have a foreign source: */
+	    {
+	      Scheme_Object *mod;
+	      mod = scheme_stx_source_module(name, 0);
+	      if (mod && SCHEME_TRUEP(mod) && !SAME_OBJ(mod, self_modidx)) {
+		scheme_wrong_syntax("module", name, e, "identifier originates in a different module");
+	      }
+	    }
+
 	    name = SCHEME_STX_SYM(name);
 
 	    /* Check that it's not yet defined: */
@@ -2688,12 +2698,21 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  else
 	    boundname = scheme_false;
 	  
-	  names = scheme_named_map_1(NULL, stx_sym, names, NULL);
-
-	  for (l = names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+	  for (l = names; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l)) {
 	    Scheme_Object *name;
-	    name = SCHEME_CAR(l);
+	    name = SCHEME_STX_CAR(l);
 
+	    /* Check that the name doesn't have a foreign source: */
+	    {
+	      Scheme_Object *mod;
+	      mod = scheme_stx_source_module(name, 0);
+	      if (mod && SCHEME_TRUEP(mod) && !SAME_OBJ(mod, self_modidx)) {
+		scheme_wrong_syntax("module", name, e, "identifier originates in a different module");
+	      }
+	    }
+
+	    name = SCHEME_STX_SYM(name);
+	    
 	    if (scheme_lookup_in_table(env->genv->syntax, (const char *)name)) {
 	      scheme_wrong_syntax("module", name, e, "duplicate definition for identifier");
 	      return NULL;
@@ -2713,6 +2732,8 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
 	    count++;
 	  }
+
+	  names = scheme_named_map_1(NULL, stx_sym, names, NULL);
 
 	  mrec.dont_mark_local_use = 0;
 	  mrec.resolve_module_ids = 0;

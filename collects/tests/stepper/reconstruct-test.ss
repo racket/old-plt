@@ -130,10 +130,13 @@
 (define (test-mz-sequence source-list result-list)
   (test-sequence source-list result-list #f mz-namespace))
 
-(define beginner-namespace (make-namespace 'empty))
-(parameterize ([current-namespace beginner-namespace])
-  (namespace-attach-module mz-namespace 'mzscheme)
-  (namespace-require '(lib "htdp-beginner.ss" "lang")))
+(define beginner-namespace
+  (let ([new-namespace (make-namespace 'empty)])
+    (parameterize ([current-namespace new-namespace])
+      (namespace-attach-module mz-namespace 'mzscheme)
+      (namespace-require '(lib "htdp-beginner.ss" "lang")))
+    new-namespace))
+
 (define (test-beginner-sequence source-list result-list completed-list)
   (set-fake-beginner-mode #t)
   (test-sequence source-list result-list completed-list beginner-namespace)
@@ -360,6 +363,13 @@
 (test-beginner-sequence "(define (f2 x) (+ (g2 x) 10))"
                         `()
                         `((define (f2 x) (+ (g2 x) 10))))
+
+(err/rt-test (test-beginner-sequence "(cons 1 2)" `() `()) exn:user?)
+
+(test-beginner-sequence "(cons 3 (cons 1 empty)) (list 1 2 3) (define-struct a (b)) (make-a 3)"
+                        `(((,highlight-placeholder) ((list 1 2 3)))
+                          ((,highlight-placeholder) ((cons 1 (cons 2 (cons 3 empty))))))
+                        `((cons 3 (cons 1 empty)) (cons 1 (cons 2 (cons 3 empty))) (define-struct a (b)) (make-a 3)))
 
 
 (report-errs)

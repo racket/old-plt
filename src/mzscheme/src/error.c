@@ -563,7 +563,7 @@ void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o)
   s = scheme_make_provided_string(o, 1, NULL);
 
   scheme_raise_exn(MZEXN_APPLICATION_MISMATCH, o,
-		   "%s: %s %s",
+		   "%s: %s%s",
 		   name, msg, s);
 }
 

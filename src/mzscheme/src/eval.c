@@ -2783,8 +2783,12 @@ static void *eval_k()
   } else if (SAME_TYPE(SCHEME_TYPE(v), scheme_compilation_top_type)) {
     Scheme_Compilation_Top *top = (Scheme_Compilation_Top *)v;
 
-    if (!scheme_check_runstack(top->max_let_depth))
+    if (!scheme_check_runstack(top->max_let_depth)) {
+      p->ku.k.p1 = top;
+      p->ku.k.i1 = multi;
+      p->ku.k.i2 = isexpr;
       return (Scheme_Object *)scheme_enlarge_runstack(top->max_let_depth, eval_k);
+    }
 
     v = top->code;    
 

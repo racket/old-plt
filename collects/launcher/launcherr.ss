@@ -3,17 +3,16 @@
   (import mzlib:file^)
   
   (define plthome
-    (or (with-handlers ([(lambda (x) #t)
-			 (lambda (x) #f)])
-	  (normal-case-path (normalize-path (getenv "PLTHOME"))))
-	(let ([dir (collection-path "mzlib")])
-	  (and dir
-	       (let-values ([(base name dir?) (split-path dir)])
-		 (and (string? base)
-		      (let-values ([(base name dir?) (split-path base)])
-			(and (string? base)
-			     (complete-path? base)
-			     (normal-case-path (normalize-path base))))))))))
+    (with-handlers ([(lambda (x) #t) (lambda (x) #f)])
+      (or (normal-case-path (expand-path (getenv "PLTHOME")))
+	  (let ([dir (collection-path "mzlib")])
+	    (and dir
+		 (let-values ([(base name dir?) (split-path dir)])
+		   (and (string? base)
+			(let-values ([(base name dir?) (split-path base)])
+			  (and (string? base)
+			       (complete-path? base)
+			       (normal-case-path (expand-path base)))))))))))
   
   (define (install-template dest kind mz mr)
     (define src (build-path (collection-path "launcher")

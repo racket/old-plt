@@ -38,7 +38,7 @@ extern "C" {
 };
 
 static int found_nothing;
-static long max_sleep_time;
+static DWORD max_sleep_time;
 
 extern void wxDoPreGM(void);
 extern void wxDoPostGM(void);
@@ -74,7 +74,7 @@ void MrEdDestroyContext(MrEdFinalizedContext *)
 
 void MrEdSyncCurrentDir(void)
 {
-  scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config, 
+  scheme_os_setcwd(SCHEME_STR_VAL(scheme_get_param(scheme_config,
 						   MZCONFIG_CURRENT_DIRECTORY)),
 		   0);
 }
@@ -100,7 +100,7 @@ static MrEdContext *GetContext(HWND hwnd)
   } while (next);
 
   w = wxHWNDtoWindow(wnd);
-  
+
   if (!w)
     return NULL;
 
@@ -139,8 +139,8 @@ static BOOL CALLBACK CheckWindow(HWND wnd, LPARAM param)
       }
       return FALSE;
     }
-    
-    if (PeekMessage(info->msg, wnd, NULL, NULL, 
+
+    if (PeekMessage(info->msg, wnd, NULL, NULL,
                     info->remove ? PM_REMOVE : PM_NOREMOVE)) {
       info->wnd = wnd;
       info->c_return = c;
@@ -189,7 +189,7 @@ int FindReady(MrEdContext *c, MSG *msg, int remove, MrEdContext **c_return)
   return result;
 }
 
-int MrEdGetNextEvent(int check_only, int current_only, 
+int MrEdGetNextEvent(int check_only, int current_only,
 		     MSG *event, MrEdContext **which)
 {
   MrEdContext *c;
@@ -225,8 +225,8 @@ void MrEdDispatchEvent(MSG *msg)
 #if wxLOG_EVENTS
     if (!log)
       log = fopen("evtlog", "w");
-    fprintf(log, "{SEND %lx (%lx) %lx\n", 
-	    msg->hwnd, GetContext(msg->hwnd), 
+    fprintf(log, "{SEND %lx (%lx) %lx\n",
+	    msg->hwnd, GetContext(msg->hwnd),
 	    msg->message);
     fflush(log);
 #endif
@@ -241,8 +241,8 @@ void MrEdDispatchEvent(MSG *msg)
 #if wxLOG_EVENTS
     if (!log)
       log = fopen("evtlog", "w");
-    fprintf(log, " SENT %lx (%lx) %lx %lx %lx}\n", 
-	    msg->hwnd, GetContext(msg->hwnd), msg->message, 
+    fprintf(log, " SENT %lx (%lx) %lx %lx %lx}\n",
+	    msg->hwnd, GetContext(msg->hwnd), msg->message,
 	    need_trampoline_win, need_trampoline_message);
     fflush(log);
 #endif
@@ -275,7 +275,7 @@ void MrEdDispatchEvent(MSG *msg)
 # define WM_MOUSEWHEEL 0x020A
 #endif
 
-int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, 
+int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 		      LRESULT *res, WNDPROC proc)
   /* The Windows event dispatcher doesn't like MrEd's thread
      implementation.  In particular, if a message causes a thread
@@ -300,7 +300,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
      For certain kinds of events, the callback queueing is most easily
      implemented in Scheme within mred.ss. For those cases, we put
      MzScheme into atomic mode while handling the event. The "mred.ss"
-     implementation promises to run quickly (and not call user code). 
+     implementation promises to run quickly (and not call user code).
 
      Scrolling is a special case. To implement interactive scrolling,
      we jump into a special mode started by wxHiEventTrampoline().
@@ -313,13 +313,13 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
 #if wxLOG_EVENTS
   if (!log)
     log = fopen("evtlog", "w");
-  fprintf(log, 
+  fprintf(log,
 	  "[TCHECK %lx %lx (%lx) %lx"
 # ifdef MZ_PRECISE_GC
 	  " %lx"
 # endif
-	  "]\n", 
-	  scheme_current_thread, 
+	  "]\n",
+	  scheme_current_thread,
 	  hWnd, can_trampoline_win, message
 # ifdef MZ_PRECISE_GC
 	  , ((void **)__gc_var_stack__[0])[0]
@@ -357,7 +357,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
     tramp = 1;
     *res = 1;
     break;
-    /* These three are for pre-emptive WM_INITMENU 
+    /* These three are for pre-emptive WM_INITMENU
        and for on-pre-event over scrollbars plus interactive scrolling */
   case WM_NCLBUTTONDOWN:
   case WM_NCRBUTTONDOWN:
@@ -558,7 +558,7 @@ int wx_start_win_event(const char *who, HWND hWnd, UINT message, WPARAM wParam, 
       break;
     }
   }
-  
+
   if (!tramp)
     scheme_start_atomic();
 
@@ -578,7 +578,7 @@ void wx_end_win_event(const char *who, HWND hWnd, UINT message, int tramp)
 # ifdef MZ_PRECISE_GC
 	  " <%lx %lx>"
 # endif
-	  "\n", 
+	  "\n",
 	  scheme_current_thread, hWnd, message, who, tramp
 # ifdef MZ_PRECISE_GC
 	  , GC_variable_stack
@@ -672,7 +672,7 @@ int MrEdCheckForBreak(void)
     shift = hit;
 #endif
     control = GetAsyncKeyState(VK_CONTROL);
-    
+
     return ((c & hit) && (c & hitnow) && (control & hit) && (shift & hit));
   }
 }
@@ -686,7 +686,7 @@ static long signal_fddone(void *fds)
   win_extended_fd_set *r = (win_extended_fd_set *)fds;
   win_extended_fd_set *w = ((win_extended_fd_set *)fds) + 1;
   win_extended_fd_set *e = ((win_extended_fd_set *)fds) + 2;
-  
+
   select(0, &r->set, &w->set, &e->set, 0);
 
   return 0;
@@ -740,7 +740,7 @@ void MrEdMSWSleep(float secs, void *fds)
     found_nothing = 0;
     max_sleep_time = 0;
   }
- 
+
   if (secs > 0) {
     if (secs > 100000)
       msecs = 100000000;
@@ -763,11 +763,11 @@ void MrEdMSWSleep(float secs, void *fds)
     e = ((win_extended_fd_set *)fds) + 2;
   } else
     r = w = e = NULL;
-    
+
   /* Block: use different stratgey if there are handles or fds to watch: */
   if (fds && ((r->added || w->added || e->added)
               || r->num_handles)) {
-      
+
     int num_handles = r->num_handles, *rps, two_rps[2];
     HANDLE *handles, two_handles[2];
     SOCKET fake;
@@ -775,34 +775,34 @@ void MrEdMSWSleep(float secs, void *fds)
     DWORD result;
     DWORD id;
     struct Scheme_Thread_Memory *thread_memory;
-    
+
     if (num_handles) {
-      /* handles has been set up with an extra couple of slots: */ 
+      /* handles has been set up with an extra couple of slots: */
       handles = r->handles;
       rps = r->repost_sema;
     } else {
       handles = two_handles;
       rps = two_rps;
     }
-  
+
     if (r->set.fd_count || w->set.fd_count || e->set.fd_count) {
       fake = socket(PF_INET, SOCK_STREAM, 0);
       FD_SET(fake, e);
 
-      th2 = CreateThread(NULL, 4096, 
+      th2 = CreateThread(NULL, 4096,
 	              (LPTHREAD_START_ROUTINE)signal_fddone,
 		      fds, 0, &id);
       /* Not actually necessary, since GC can't occur during the
 	 thread's life, but better safe than sorry if we change the
 	 code later. */
       thread_memory = scheme_remember_thread((void *)th2);
-    
+
       rps[num_handles] = 0;
       handles[num_handles++] = th2;
     } else
       th2 = NULL;
 
-    result = MsgWaitForMultipleObjects(num_handles, handles, FALSE, 
+    result = MsgWaitForMultipleObjects(num_handles, handles, FALSE,
 				       secs ? msecs : INFINITE,
 				       QS_ALLINPUT);
 
@@ -819,7 +819,7 @@ void MrEdMSWSleep(float secs, void *fds)
       CloseHandle(th2);
     }
   } else if (wxTheApp->keep_going) {
-    MsgWaitForMultipleObjects(0, NULL, FALSE, 
+    MsgWaitForMultipleObjects(0, NULL, FALSE,
 			      secs ? msecs : INFINITE,
 			      QS_ALLINPUT);
   }

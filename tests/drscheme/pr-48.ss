@@ -4,7 +4,7 @@
 
 ;;; Author: Paul Steckler
 
-(require-library/proc "function.ss")
+(require-library "function.ss")
 
 (load-relative "drscheme-test-util.ss")
 

@@ -3,7 +3,7 @@
 ;;; Open the preferences dialog, go to the check syntax section. 
 ;;; Wait for the autosave delay and make sure no autosaves appear.
 
-(require-library/proc "function.ss")
+(require-library "function.ss")
 
 (load-relative "drscheme-test-util.ss")
 

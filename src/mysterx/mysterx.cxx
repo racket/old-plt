@@ -634,6 +634,8 @@ void addTypeToTable(IDispatch *pIDispatch,char *name,
   // because it's not used as an interface, only its
   // pointer value is used, for hashing
 
+  pTypeDesc->pITypeInfo->AddRef();
+
   pEntry = (MX_TYPE_TBL_ENTRY *)scheme_malloc(sizeof(MX_TYPE_TBL_ENTRY));
   scheme_dont_gc_ptr(pEntry);
   pEntry->pTypeDesc = pTypeDesc;
@@ -4404,7 +4406,6 @@ void mx_exit_closer(Scheme_Object *obj,
 
 void mx_cleanup(void) {
   mx_release_type_table();
-
   /* looks like CoUninitialize() gets called automatically */
 }
 
@@ -4479,9 +4480,8 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   }
 
   scheme_add_atexit_closer(mx_exit_closer);
- 
   atexit(mx_cleanup);
-
+ 
   return scheme_void;
 }
 

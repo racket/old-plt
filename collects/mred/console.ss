@@ -427,7 +427,7 @@
 	     (lambda (start len)
 	       '(fprintf mred:constants:original-output-port "after-change-style~n")
 	       (update-highlighted-prompt)
-	       (after-something + start len)
+	       (after-something (lambda (start len) start) start len)
 	       (super-after-change-style start len))]
 	    [on-edit-sequence
 	     (lambda ()

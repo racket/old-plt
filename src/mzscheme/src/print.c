@@ -82,8 +82,7 @@ static Scheme_Hash_Table *global_constants_ht;
     || (qk(p->quick_print_struct  \
 	   && SCHEME_STRUCTP(obj) \
 	   && PRINTABLE_STRUCT(obj, p), 0)) \
-    || (qk(p->quick_print_hash_table \
-	   && SCHEME_HASHTP(obj), 0)))
+    || (qk(p->quick_print_hash_table, 1) && SCHEME_HASHTP(obj)))
 #define ssQUICK(x, isbox) x
 #define ssQUICKp(x, isbox) (p ? x : isbox)
 #define ssALL(x, isbox) 1
@@ -1079,48 +1078,56 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       print_vector(obj, notdisplay, compact, ht, symtab, rnht, p);
       closed = 1;
     }
-  else if (p->quick_print_box && SCHEME_BOXP(obj))
+  else if ((compact || p->quick_print_box) && SCHEME_BOXP(obj))
     {
-      if (compact)
-	print_compact(p, CPT_BOX);
-      else
-	print_this_string(p, "#&", 0, 2);
-      closed = print(SCHEME_BOX_VAL(obj), notdisplay, compact, ht, symtab, rnht, p);
+      if (compact && !p->quick_print_box) {
+	closed = print(scheme_protect_quote(obj), notdisplay, compact, ht, symtab, rnht, p);
+      } else {
+	if (compact)
+	  print_compact(p, CPT_BOX);
+	else
+	  print_this_string(p, "#&", 0, 2);
+	closed = print(SCHEME_BOX_VAL(obj), notdisplay, compact, ht, symtab, rnht, p);
+      }
     }
-  else if (p->quick_print_hash_table && SCHEME_HASHTP(obj))
+  else if ((compact || p->quick_print_hash_table) && SCHEME_HASHTP(obj))
     {
-      if (compact)
-	print_escaped(p, notdisplay, obj, ht);
-      else {
-	Scheme_Hash_Table *t;
-	Scheme_Object **keys, **vals, *val;
-	int i, size, did_one = 0;
+      if (compact && !p->quick_print_hash_table) {
+	closed = print(scheme_protect_quote(obj), notdisplay, compact, ht, symtab, rnht, p);
+      } else {
+	if (compact) {
+	  print_escaped(p, notdisplay, obj, ht);
+	} else {
+	  Scheme_Hash_Table *t;
+	  Scheme_Object **keys, **vals, *val;
+	  int i, size, did_one = 0;
 
-	print_this_string(p, "#hash", 0, 5);
-	if (!scheme_is_hash_table_equal(obj))
-	  print_this_string(p, "eq", 0, 2);
-	print_this_string(p, "(", 0, 1);
+	  print_this_string(p, "#hash", 0, 5);
+	  if (!scheme_is_hash_table_equal(obj))
+	    print_this_string(p, "eq", 0, 2);
+	  print_this_string(p, "(", 0, 1);
 
-	t = (Scheme_Hash_Table *)obj;
-	keys = t->keys;
-	vals = t->vals;
-	size = t->size;
-	for (i = 0; i < size; i++) {
-	  if (vals[i]) {
-	    if (did_one)
-	      print_this_string(p, " ", 0, 1);
-	    print_this_string(p, "(", 0, 1);
-	    val = vals[i];
-	    print(keys[i], notdisplay, compact, ht, symtab, rnht, p);
-	    print_this_string(p, " . ", 0, 3);
-	    print(val, notdisplay, compact, ht, symtab, rnht, p);
-	    print_this_string(p, ")", 0, 1);
-	    did_one = 1;
+	  t = (Scheme_Hash_Table *)obj;
+	  keys = t->keys;
+	  vals = t->vals;
+	  size = t->size;
+	  for (i = 0; i < size; i++) {
+	    if (vals[i]) {
+	      if (did_one)
+		print_this_string(p, " ", 0, 1);
+	      print_this_string(p, "(", 0, 1);
+	      val = vals[i];
+	      print(keys[i], notdisplay, compact, ht, symtab, rnht, p);
+	      print_this_string(p, " . ", 0, 3);
+	      print(val, notdisplay, compact, ht, symtab, rnht, p);
+	      print_this_string(p, ")", 0, 1);
+	      did_one = 1;
+	    }
 	  }
-	}
-	print_this_string(p, ")", 0, 1);
+	  print_this_string(p, ")", 0, 1);
 
-	closed = 1;
+	  closed = 1;
+	}
       }
     }
   else if (SAME_OBJ(obj, scheme_true))
@@ -1484,12 +1491,19 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     {
       Scheme_Hash_Table *q_ht;
       Scheme_Object *v;
-      int counter = 1;
+      int counter = 1, qpht, qpb;
 
       v = SCHEME_PTR_VAL(obj);
 
       /* A quoted expression may have graph structure. We assume that
 	 this structure is local within the quoted expression. */
+
+      qpht = p->quick_print_hash_table;
+      qpb = p->quick_print_box;
+      /* Boxes and hash tables can be literals, so we need to
+	 enable printing as we write compiled code: */
+      p->quick_print_hash_table = 1;
+      p->quick_print_box = 1;
       
       q_ht = scheme_make_hash_table(SCHEME_hash_ptr);
       setup_graph_table(v, q_ht, &counter, p);
@@ -1505,6 +1519,9 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       }
 
       compact = print(v, notdisplay, 1, q_ht, symtab, rnht, p);
+
+      p->quick_print_hash_table = qpht;
+      p->quick_print_box = qpb;
     }
   else if (
 #if !NO_COMPACT

@@ -281,6 +281,8 @@
 			     (or (syntax->list p)
 				 (and (vector? (syntax-e p))
 				      (vector->list (syntax-e p)))
+				 (and (regexp? (syntax-e p))
+				      (list (datum->syntax-object #f (object-name (syntax-e p)))))
 				 (let loop ([p p])
 				   (cond
 				    [(stx-pair? p)
@@ -303,25 +305,37 @@
 		  (remember-immutable-vector constructor elems const))
 		const))))
 
-      (define (big-and-simple? stx size)
+      (define (big-and-simple/cyclic? datum size ht)
 	(cond
-	 [(null? stx) (zero? size)]
-	 [(stx-pair? stx)
-	  (and (big-and-simple? (stx-car stx) 0)
-	       (big-and-simple? (stx-cdr stx) (sub1 size)))]
-	 [(vector? (syntax-e stx))
-	  (let ([len (vector-length (syntax-e stx))])
-	    (and (len . >= . size)
-		 (let loop ([i 0])
-		   (or (= i len)
-		       (and (big-and-simple? (vector-ref (syntax-e stx) i) 0)
-			    (loop (add1 i)))))))]
-	 [(and (zero? size)
-	       (or (number? (syntax-e stx))
-		   (string? (syntax-e stx))
-		   (symbol? (syntax-e stx))
-		   (boolean? (syntax-e stx))
-		   (null? (syntax-e stx))))]
+	 [(null? datum) (negative? size)]
+	 [(hash-table-get ht datum (lambda () #f)) 'cyclic]
+	 [(pair? datum)
+	  (hash-table-put! ht datum #t)
+	  (let ([v (big-and-simple/cyclic? (car datum) 0 ht)])
+	    (if (eq? v 'cyclic)
+		'cyclic
+		(let ([v2 (big-and-simple/cyclic? (cdr datum) (sub1 size) ht)])
+		  (if (eq? v2 'cyclic)
+		      'cyclic
+		      (and v v2)))))]
+	 [(vector? datum)
+	  (let ([len (vector-length datum)])
+	    (and (hash-table-put! ht datum #t)
+		 (let loop ([i 0][so-far? #t])
+		   (if (= i len)
+		       so-far?
+		       (let ([v (big-and-simple/cyclic? (vector-ref datum i) (- size i) ht)])
+			 (if (eq? v 'cyclic)
+			     'cyclic
+			     (loop (add1 i) (and so-far? v))))))))]
+	 [(hash-table? datum) 'cyclic] ;; assume content is ok and cyclic
+	 [(and (negative? size)
+	       (or (number? datum)
+		   (string? datum)
+		   (symbol? datum)
+		   (boolean? datum)
+		   (regexp? datum)))
+	  #t]
 	 [else #f]))
 	 
       (define-struct compiled-string (id len))
@@ -393,8 +407,8 @@
 					(hash-table-put! const:number-table sym num)
 					num))))))]
 
-	   ;; big constants?
-	   [(big-and-simple? (zodiac:zodiac-stx ast) 20)
+	   ;; big/cyclic constants
+	   [(big-and-simple/cyclic? (syntax-object->datum (zodiac:zodiac-stx ast)) 20 (make-hash-table))
 	    (construct-big-constant ast (zodiac:zodiac-stx ast) known-immutable?)]
 	   
 	   ;; lists
@@ -411,6 +425,10 @@
 	   ;; vectors
 	   [(vector? (zodiac:zread-object ast))
 	    (construct-vector-constant ast 'vector known-immutable?)]
+	   
+	   ;; regexp
+	   [(regexp? (zodiac:zread-object ast))
+	    (construct-vector-constant ast 'regexp #t)]
 	   
 	   ;; comes from module paths in analyze:
 	   [(module-path-index? (zodiac:zread-object ast))

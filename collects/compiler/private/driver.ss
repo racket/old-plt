@@ -351,6 +351,8 @@
 			  (and (not (eq? (module-info-part info) 'constructor))
 			       (module-info-invoke info)))))
 
+		  ;; (printf "~a~n" (syntax-line (zodiac:zodiac-stx (car sexps))))
+
 		  (let-values ([(exp free-vars local-vars global-vars used-vars captured-vars
 				     children new-max-arity multi)
 				(analyze-expression! (car sexps) empty-set null (null? (cdr sexps)))])

@@ -377,7 +377,7 @@
 	      (print-struct #t)
 	      (z:interface:internal-error
 		expr
-		(format "unknown object to annotate, ~a~n" expr))])))
+		(format "aries:annotate: unknown object to annotate, ~a~n" expr))])))
 
       (define transform
 	(lambda (port offset file)

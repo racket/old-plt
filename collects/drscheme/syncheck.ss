@@ -458,7 +458,7 @@
                       (let/ec k
                         (hash-table-for-each
                          tacked-hash-table
-                         (lambda (k v)
+                         (lambda (key val)
                            (set! any-tacked? #t)
                            (k (void))))))
                     (set! tacked-hash-table #f)
@@ -540,7 +540,7 @@
                       (let/ec k
                         (hash-table-for-each
                          tacked-hash-table
-                         (lambda (k v)
+                         (lambda (key val)
                            (set! any-tacked? #t)
                            (k (void))))))
                     (when any-tacked?

@@ -1,6 +1,7 @@
 (module server mzscheme 
 
-  (require (lib "web-server.ss" "web-server")
+  (require (lib "etc.ss")
+	   (lib "web-server.ss" "web-server")
 	   (lib "util.ss" "web-server")
 	   (lib "configuration.ss" "web-server")
 	   (lib "configuration-structures.ss" "web-server"))
@@ -29,17 +30,20 @@
 	      curr-port
 	      (loop (add1 curr-port))))))
 
-  (define (start-help-server)
-    (let* ([configuration
-	   (load-developer-configuration
-	    (extract-flag 
-	     'config '() 
-	     (build-path (collection-path "help")
-			 "server-configuration")))]
-	   [help-desk-port (get-free-port)])
-      ; restrict connections to localhost
-      (make-hd-cookie help-desk-port  	
-		      (serve configuration help-desk-port "127.0.0.1")))))
+  (define start-help-server
+    (opt-lambda ([external-connections? #f])
+      (let* ([configuration
+	      (load-developer-configuration
+	       (extract-flag 
+		'config '() 
+		(build-path (collection-path "help")
+			    "server-configuration")))]
+	     [help-desk-port (get-free-port)])
+	(make-hd-cookie 
+	 help-desk-port  	
+	 (if external-connections?
+	     (serve configuration help-desk-port)
+	     (serve configuration help-desk-port "127.0.0.1")))))))
 
 
 

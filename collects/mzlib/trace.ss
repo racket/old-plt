@@ -173,20 +173,15 @@
 			       ids)])
 	     (syntax
 	      (begin
-		(with-handlers ((exn:variable?
-				 (lambda (exn)
-				   (if (eq? (exn:variable-id exn) 'id)
-				       (error 'trace
-					      "~s is not bound" 'id)
-				       (raise exn)))))
-		  (let ((global (namespace-variable-binding 'id)))
-		    (unless (procedure? global)
-		      (error 'trace
-			     "the top-level value of ~s is not a procedure" 'id))))
+		(let ((global (namespace-variable-value 
+			       'id #t 
+			       (lambda () (error 'trace "~s is not bound as a procedure" 'id)))))
+		  (unless (procedure? global)
+		    (error 'trace
+			   "the top-level value of ~s is not a procedure" 'id)))
 		...
-		
 
-		(let ((global-value (namespace-variable-binding 'id)))
+		(let ((global-value (namespace-variable-value 'id)))
 		  (let ((table-entry (hash-table-get -:trace-table 'id (lambda () #f))))
 		    (unless (and table-entry
 				 (eq? global-value
@@ -212,7 +207,7 @@
 				    (sub1 (-:trace-level))))))))
 			(hash-table-put! -:trace-table 'id
 					 (-:make-traced-entry real-value traced-name))
-			(namespace-variable-binding 'id traced-name)))))
+			(namespace-set-variable-value! 'id traced-name #f)))))
 		...
 		'(id ...)))))])))
 
@@ -235,11 +230,11 @@
 		    (let ((entry (hash-table-get -:trace-table
 						 'id (lambda () #f))))
 		      (if (and entry
-			       (eq? (namespace-variable-binding 'id)
+			       (eq? (namespace-variable-value 'id #f)
 				    (-:traced-entry-trace-proc entry)))
 			  (begin
 			    (hash-table-put! -:trace-table 'id #f)
-			    (namespace-variable-binding 'id (-:traced-entry-original-proc entry))
+			    (namespace-set-variable-value! 'id (-:traced-entry-original-proc entry) #f)
 			    (list 'id))
 			  '()))
 		    ...))))])))

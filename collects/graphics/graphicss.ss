@@ -1,3 +1,6 @@
+(begin-elaboration-time
+ (require-library "sig.ss" "mred"))
+
 (require-library "macro.ss")
 (require-library "files.ss")
 

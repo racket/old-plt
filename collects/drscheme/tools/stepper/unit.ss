@@ -38,7 +38,7 @@
     (define stepper-bitmap
       (drscheme:unit:make-bitmap
        "Step"
-       (build-path (collection-path "icons") "old-foot.bmp")))
+       (build-path (collection-path "icons") "foot.bmp")))
 
     (drscheme:get/extend:extend-unit-frame%
      (lambda (super%)

@@ -525,9 +525,9 @@
                                   1 pname params)))))
       (cond
         ((= GL_LIGHT_MODEL_AMBIENT v)
-         (check-length 'light-model-v 4 pname))
+         (check-length 'light-model-v params 4 pname))
         (else 
-         (check-length 'light-model-v 1 pname)))
+         (check-length 'light-model-v params 1 pname)))
       (f v params)))
       
   ;; 2.14.3

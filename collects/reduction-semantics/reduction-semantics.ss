@@ -72,19 +72,18 @@
                          [holeg (datum->syntax-object stx (gensym 'hole))]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
-              (let ([lang lang-exp])
-                (build-red lang
-                           `(in-hole* holeg (name context ctxt) side-condition-rewritten)
-                           (lambda (bindings)
-                             (let ([holeg (lookup-binding bindings 'holeg)]
-                                   [context (lookup-binding bindings 'context)]
-                                   [names (lookup-binding bindings 'names)] ...)
-                               (replace
-                                context
-                                holeg
-                                (begin
-                                  (void)
-                                  bodies ...)))))))))]))
+              (build-red lang-exp
+                         `(in-hole* holeg (name context ctxt) side-condition-rewritten)
+                         (lambda (bindings)
+                           (let ([holeg (lookup-binding bindings 'holeg)]
+                                 [context (lookup-binding bindings 'context)]
+                                 [names (lookup-binding bindings 'names)] ...)
+                             (replace
+                              context
+                              holeg
+                              (begin
+                                (void)
+                                bodies ...))))))))]))
     
     ;; (reduction lang pattern expression ...)
     (define (reduction/proc stx)
@@ -97,12 +96,11 @@
                          [hole (datum->syntax-object stx 'hole)]
                          [side-condition-rewritten (rewrite-side-conditions (syntax pattern))])
              (syntax 
-              (let ([lang lang-exp])
-                (build-red lang
-                           `side-condition-rewritten
-                           (lambda (bindings)
-                             (let ([name (lookup-binding bindings 'name)] ...)
-                               bodies ...)))))))]))
+              (build-red lang-exp
+                         `side-condition-rewritten
+                         (lambda (bindings)
+                           (let ([name (lookup-binding bindings 'name)] ...)
+                             bodies ...))))))]))
     
     (define (language/proc stx)
       (syntax-case stx ()

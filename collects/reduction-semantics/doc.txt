@@ -68,8 +68,12 @@ language, used in various ways:
           | <scheme-constant>
 
 The patterns match sexpressions. The _any_ pattern matches
-any sepxression. The _number_ pattern matches any number. The
-_string_ pattern matches any string. 
+any sepxression. The _number_ pattern matches any
+number. The _string_ pattern matches any string. Those three
+patterns may also be suffixed with an underscore and another
+identifier, in which case they bind the full name (as if it
+were an implicit `name' pattern) and match the portion
+before the underscore.
 
 The _variable_ pattern matches any symbol. The
 _variable-except_ pattern matches any variable except those
@@ -86,8 +90,16 @@ require multiple patterns in a hole.
 
 The _<symbol>_ pattern stands for a literal symbol that must
 match exactly, unless it is the name of a non-terminal in a
-relevant language. In that case, it matches any of the
-right-hand sides of that non-terminal.
+relevant language or contains an underscore. 
+
+If it is a non-terminal, it matches any of the right-hand
+sides of that non-terminal.
+
+If the symbol is a non-terminal followed by an underscore,
+for example e_1, it is implicitly the same as a name pattern
+that matches only the non-terminal, (name e_1 e) for the
+example. If the symbol otherwise has an underscore, it is
+an error.
 
 _name_: The pattern:
 

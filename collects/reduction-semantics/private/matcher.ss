@@ -301,6 +301,9 @@ abstract out the `hole and `(hole name) patterns.
         (make-bindings (append hole-ribs
                                (hash-table-map ht make-rib))))))
   
+  
+  (define underscore-allowed '(any number string))
+
   (define (compile-pattern clang pattern) (compile-pattern/cross? clang pattern #t))
   
   ;; compile-pattern : compiled-lang pattern boolean -> compiled-pattern
@@ -343,6 +346,12 @@ abstract out the `hole and `(hole name) patterns.
               [(hash-table-get clang-ht pattern (lambda () #f))
                (lambda (exp hole-paths)
                  (match-nt clang-ht pattern exp hole-paths))]
+              [(has-underscore? pattern)
+               (let ([before (split-underscore pattern)])
+                 (unless (or (hash-table-get clang-ht before (lambda () #f))
+                             (memq before underscore-allowed))
+                   (error 'compile-pattern "stuff before underscore is illegal in ~s" pattern))
+                 (loop `(name ,pattern ,before)))]
               [else
                (lambda (exp hole-paths)
                  (and (eq? exp pattern)
@@ -403,6 +412,28 @@ abstract out the `hole and `(hole name) patterns.
               (and (eq? pattern exp)
                    (list (make-bindings null))))])))))
 
+  ;; split-underscore : symbol -> symbol
+  ;; returns the text before the underscore in a symbol (as a symbol)
+  ;; raise an error if there is more than one underscore in the input
+  (define (split-underscore sym)
+    (string->symbol
+     (list->string
+      (let loop ([chars (string->list (symbol->string sym))])
+        (cond
+          [(null? chars) (error 'split-underscore "bad")]
+          [else
+           (let ([c (car chars)])
+             (cond
+               [(char=? c #\_)
+                (when (memq #\_ (cdr chars))
+                  (error 'compile-pattern "found a symbol with multiple underscores: ~s" sym))
+                null]
+               [else (cons c (loop (cdr chars)))]))])))))
+  
+  ;; has-underscore? : symbol -> boolean
+  (define (has-underscore? sym)
+    (memq #\_ (string->list (symbol->string sym))))
+  
   ;; memoize2 : (x y -> w) -> x y -> w
   ;; memoizes a function of two arguments
   ;; limits cache size to fixed size
@@ -812,6 +843,9 @@ abstract out the `hole and `(hole name) patterns.
     (test-empty 'hole 1 #f)
     (test-empty '(hole hole-name) 1 #f)
     (test-empty '(name x number) 1 (list (make-bindings (list (make-rib 'x 1)))))
+    (test-empty 'number_x 1 (list (make-bindings (list (make-rib 'number_x 1)))))
+    (test-empty 'string_y "b" (list (make-bindings (list (make-rib 'string_y "b")))))
+    (test-empty 'any_z '(a b) (list (make-bindings (list (make-rib 'any_z '(a b))))))
     
     (test-ellipses '(a) '(a))
     (test-ellipses '(a ...) `(,(make-repeat 'a '())))
@@ -993,6 +1027,15 @@ abstract out the `hole and `(hole name) patterns.
                 '(+ 1 b)
                 #f)
 
+    (test-xab 'exp_1
+              '(+ 1 2)
+              (list (make-bindings (list (make-rib 'exp_1 '(+ 1 2))))))
+    (test-xab '(exp_1 exp_2)
+              '((+ 1 2) (+ 3 4))
+              (list (make-bindings (list (make-rib 'exp_1 '(+ 1 2)) (make-rib 'exp_2 '(+ 3 4))))))
+    (test-xab '(exp_1 exp_1)
+              '((+ 1 2) (+ 3 4))
+              #f)
     (test-xab 'nesting-names
               'b
               (list (make-bindings (list))))

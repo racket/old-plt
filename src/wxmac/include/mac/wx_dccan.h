@@ -164,6 +164,17 @@ class wxCanvasDC: public wxbCanvasDC
   void ResetBackground();
 
   void SetAntiAlias(int v);
+
+  Bool AlignSmoothing();
+  double GetPenSmoothingOffset();
+  double SmoothingXFormX(double x);
+  double SmoothingXFormY(double y);
+  double SmoothingXFormW(double w, double x);
+  double SmoothingXFormH(double h, double y);
+  double SmoothingXFormXB(double x);
+  double SmoothingXFormYB(double y);
+  double SmoothingXFormWL(double w, double x);
+  double SmoothingXFormHL(double h, double y);
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);

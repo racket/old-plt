@@ -718,11 +718,19 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       CGContextSetRGBStrokeColor(cg, r / 255.0, g / 255.0, b / 255.0, 1.0);
 
       pw = current_pen->GetWidthF();
-      if (!pw) {
-	if (user_scale_x > user_scale_y)
-	  pw = 1 / user_scale_y;
+      if (AlignSmoothing()) {
+	pw = (int)pw;
+	if (!pw)
+	  pw = 1;
 	else
-	  pw = 1 / user_scale_x;
+	  pw = (int)(pw * user_scale_x);
+      } else {
+	if (!pw) {
+	  if (user_scale_x > user_scale_y)
+	    pw = 1 / user_scale_y;
+	  else
+	    pw = 1 / user_scale_x;
+	}
       }
       CGContextSetLineWidth(cg, pw);
 
@@ -943,12 +951,102 @@ CGContextRef wxCanvasDC::GetCG()
   CGContextScaleCTM(cg, 1.0, -1.0 );
  
   if (clipping)
-    clipping->Install((long)cg);
+    clipping->Install((long)cg, AlignSmoothing());
   
-  CGContextTranslateCTM(cg, device_origin_x, device_origin_y);
-  CGContextScaleCTM(cg, user_scale_x, user_scale_y);
+  if (!AlignSmoothing()) {
+    CGContextTranslateCTM(cg, device_origin_x, device_origin_y);
+    CGContextScaleCTM(cg, user_scale_x, user_scale_y);
+  }
 
   return cg;
+}
+
+Bool wxCanvasDC::AlignSmoothing()
+{
+  return (anti_alias == 2);
+}
+
+double wxCanvasDC::GetPenSmoothingOffset()
+{
+  int pw;
+  pw = current_pen->GetWidth();
+  if (!pw)
+    pw = 1;
+  else
+    pw = (int)(user_scale_x * pw);
+  return ((pw & 1) * 0.5);
+}
+
+double wxCanvasDC::SmoothingXFormX(double x)
+{
+  if (AlignSmoothing())
+    return floor((x * user_scale_x) + device_origin_x) + GetPenSmoothingOffset();
+  else
+    return x;
+}
+
+double wxCanvasDC::SmoothingXFormY(double y)
+{
+  if (AlignSmoothing())
+    return floor((y * user_scale_y) + device_origin_y) + GetPenSmoothingOffset();
+  else
+    return y;
+}
+
+double wxCanvasDC::SmoothingXFormW(double w, double x)
+{
+  if (AlignSmoothing())
+    return SmoothingXFormX(x + w) - SmoothingXFormX(x);
+  else
+    return w;
+}
+
+double wxCanvasDC::SmoothingXFormH(double h, double y)
+{
+  if (AlignSmoothing())
+    return SmoothingXFormY(y + h) - SmoothingXFormX(y);
+  else
+    return h;
+}
+
+double wxCanvasDC::SmoothingXFormXB(double x)
+{
+  if (AlignSmoothing())
+    return floor((x * user_scale_x) + device_origin_x);
+  else
+    return x;
+}
+
+double wxCanvasDC::SmoothingXFormYB(double y)
+{
+  if (AlignSmoothing())
+    return floor((y * user_scale_y) + device_origin_y);
+  else
+    return y;
+}
+
+double wxCanvasDC::SmoothingXFormWL(double w, double x)
+{
+  if (AlignSmoothing()) {
+    w = SmoothingXFormW(w, x);
+    if (w >= 1.0)
+      return w - 1.0;
+    else
+      return w;
+  } else
+    return w;
+}
+
+double wxCanvasDC::SmoothingXFormHL(double h, double y)
+{
+  if (AlignSmoothing()) {
+    h = SmoothingXFormH(h, y);
+    if (h >= 1.0)
+      return h - 1.0;
+    else
+      return h;
+  } else
+    return h;
 }
 
 /************************************************************************/

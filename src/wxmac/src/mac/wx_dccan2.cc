@@ -257,28 +257,21 @@ void wxCanvasDC::DrawLine(double x1, double y1, double x2, double y2)
     return;
 
   if (anti_alias) {
+    double xx1, yy1, xx2, yy2;
     CGContextRef cg;
-    double pw;
 
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
 
-    pw = current_pen->GetWidthF();
+    xx1 = SmoothingXFormX(x1);
+    yy1 = SmoothingXFormY(y1);
+    xx2 = SmoothingXFormX(x2);
+    yy2 = SmoothingXFormY(y2);
 
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (pw <= 1.0)) {
-      x1 += 0.5;
-      y1 += 0.5;
-      x2 += 0.5;
-      y2 += 0.5;
-    }
-
-    CGContextMoveToPoint(cg, x1, y1);
-    CGContextAddLineToPoint(cg, x2, y2);
+    CGContextMoveToPoint(cg, xx1, yy1);
+    CGContextAddLineToPoint(cg, xx2, yy2);
     
     wxMacSetCurrentTool(kPenTool);
     CGContextStrokePath(cg);
@@ -394,43 +387,49 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
     start = (2 * wxPI) - start;
     end = (2 * wxPI) - end;
 
-    path = CGPathCreateMutable();
-    xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(x, y), w, h);
-    CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, TRUE);
-
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormXB(x);
+      yy = SmoothingXFormYB(y);
+      ww = SmoothingXFormW(w, x);
+      hh = SmoothingXFormH(h, y);
+
+      path = CGPathCreateMutable();
+      xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(xx, yy), ww, hh);
+      CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, TRUE);
+
       wxMacSetCurrentTool(kBrushTool);
       CGContextBeginPath(cg);
       CGContextAddPath(cg, path);
       if ((end != 0) || (start != (2 * wxPI))) {
-	CGContextAddLineToPoint(cg, x + w/2, y + h/2);
+	CGContextAddLineToPoint(cg, xx + ww/2, yy + hh/2);
 	CGContextClosePath(cg);
       }
       CGContextFillPath(cg);
+
+      CGPathRelease(path);
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
-      if ((anti_alias == 2)
-	  && (user_scale_x == 1.0)
-	  && (user_scale_y == 1.0)
-	  && (current_pen->GetWidthF() <= 1.0)) {
-	x += 0.5;
-	y += 0.5;
-	w -= 1.0;
-	h -= 1.0;
+      double xx, yy, ww, hh;
 
-	CGPathRelease(path);
-	path = CGPathCreateMutable();
-	xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(x, y), w, h);
-	CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, TRUE);
-      }
+      xx = SmoothingXFormX(x);
+      yy = SmoothingXFormY(y);
+      ww = SmoothingXFormWL(w, x);
+      hh = SmoothingXFormHL(h, y);
+
+      path = CGPathCreateMutable();
+      xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(xx, yy), ww, hh);
+      CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, TRUE);
+
       wxMacSetCurrentTool(kPenTool);
       CGContextBeginPath(cg);
       CGContextAddPath(cg, path);
       CGContextStrokePath(cg);
+
+      CGPathRelease(path);
     }
     wxMacSetCurrentTool(kNoTool);
-
-    CGPathRelease(path);
 
     CGContextRestoreGState(cg);
 
@@ -525,27 +524,16 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
   if (anti_alias) {
     CGContextRef cg;
     CGMutablePathRef path;
-    double pw;
 
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
 
-    pw = current_pen->GetWidthF();
-
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (pw <= 1.0)) {
-      xoffset += 0.5;
-      yoffset += 0.5;
-    }
-    
     path = CGPathCreateMutable();
-    CGPathMoveToPoint(path, NULL, points[0].x + xoffset, points[0].y + yoffset);
+    CGPathMoveToPoint(path, NULL, SmoothingXFormX(points[0].x + xoffset), SmoothingXFormY(points[0].y + yoffset));
     for (i = 1; i < n; i++) {
-      CGPathAddLineToPoint(path, NULL, points[i].x + xoffset, points[i].y + yoffset);
+      CGPathAddLineToPoint(path, NULL, SmoothingXFormX(points[i].x + xoffset), SmoothingXFormY(points[i].y + yoffset));
     }
     CGPathCloseSubpath(path);
 
@@ -634,25 +622,22 @@ void wxCanvasDC::DrawPath(wxPath *p, double xoffset, double yoffset, int fillSty
   if (anti_alias) {
     CGContextRef cg;
     CGMutablePathRef path;
-    double pw;
 
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
 
-    pw = current_pen->GetWidthF();
-
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (pw <= 1.0)) {
-      xoffset += 0.5;
-      yoffset += 0.5;
-    }
-    
     path = CGPathCreateMutable();
-    p->Install((long)path, xoffset, yoffset);
+    if (AlignSmoothing()) {
+      double pw;
+      pw = GetPenSmoothingOffset();
+      p->Install((long)path, xoffset, yoffset,
+		 device_origin_x, device_origin_y, user_scale_x, user_scale_y,
+		 TRUE, pw, pw);
+    } else
+      p->Install((long)path, xoffset, yoffset,
+		 0, 0, 1, 1, FALSE, 0, 0);
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kBrushTool);
@@ -790,27 +775,16 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffs
 
   if (anti_alias) {
     CGContextRef cg;
-    double pw;
     int i;
-
-    pw = current_pen->GetWidthF();
-
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)
-	&& (pw <= 1.0)) {
-      xoffset += 0.5;
-      yoffset += 0.5;
-    }
 
     SetCurrentDC(TRUE);
     cg = GetCG();
 
     CGContextSaveGState(cg);
 
-    CGContextMoveToPoint(cg, points[0].x + xoffset, points[0].y + yoffset);
+    CGContextMoveToPoint(cg, SmoothingXFormX(points[0].x + xoffset), SmoothingXFormY(points[0].y + yoffset));
     for (i = 1; i < n; i++) {
-      CGContextAddLineToPoint(cg, points[i].x + xoffset, points[i].y + yoffset);
+      CGContextAddLineToPoint(cg, SmoothingXFormX(points[i].x + xoffset), SmoothingXFormY(points[i].y + yoffset));
     }
     
     wxMacSetCurrentTool(kPenTool);
@@ -866,7 +840,6 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
   if (!Ok() || !cMacDC) return;
 
   if (anti_alias) {
-    double pw;
     CGContextRef cg;
 
     SetCurrentDC(TRUE);
@@ -875,32 +848,35 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
     CGContextSaveGState(cg);
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormXB(x);
+      yy = SmoothingXFormYB(y);
+      ww = SmoothingXFormW(width, x);
+      hh = SmoothingXFormH(height, y);
+
       wxMacSetCurrentTool(kBrushTool);
-      CGContextMoveToPoint(cg, x, y);
-      CGContextAddLineToPoint(cg, x + width, y);
-      CGContextAddLineToPoint(cg, x + width, y + height);
-      CGContextAddLineToPoint(cg, x, y + height);
+      CGContextMoveToPoint(cg, xx, yy);
+      CGContextAddLineToPoint(cg, xx + ww, yy);
+      CGContextAddLineToPoint(cg, xx + ww, yy + hh);
+      CGContextAddLineToPoint(cg, xx, yy + hh);
       CGContextClosePath(cg);
       CGContextFillPath(cg);
     }
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
-      pw = current_pen->GetWidthF();
-      if ((anti_alias == 2)
-	  && (user_scale_x == 1.0)
-	  && (user_scale_y == 1.0)
-	  && (pw <= 1.0)) {
-	x += 0.5;
-	y += 0.5;
-	width -= 1.0;
-	height -= 1.0;
-      }
+      double xx, yy, ww, hh;
+
+      xx = SmoothingXFormX(x);
+      yy = SmoothingXFormY(y);
+      ww = SmoothingXFormWL(width, x);
+      hh = SmoothingXFormHL(height, y);
     
       wxMacSetCurrentTool(kPenTool);
-      CGContextMoveToPoint(cg, x, y);
-      CGContextAddLineToPoint(cg, x + width, y);
-      CGContextAddLineToPoint(cg, x + width, y + height);
-      CGContextAddLineToPoint(cg, x, y + height);
+      CGContextMoveToPoint(cg, xx, yy);
+      CGContextAddLineToPoint(cg, xx + ww, yy);
+      CGContextAddLineToPoint(cg, xx + ww, yy + hh);
+      CGContextAddLineToPoint(cg, xx, yy + hh);
       CGContextClosePath(cg);
       CGContextStrokePath(cg);
     }
@@ -971,41 +947,56 @@ void wxCanvasDC::DrawRoundedRectangle
 
     CGContextSaveGState(cg);
 
-    if ((anti_alias == 2)
-	&& (user_scale_x == 1.0)
-	&& (user_scale_y == 1.0)) {
-      x += 0.5;
-      y += 0.5;
-      width -= 1.0;
-      height -= 1.0;
-    }
-      
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      double xx, yy, ww, hh, rr, rr2;
+
+      xx = SmoothingXFormXB(x);
+      yy = SmoothingXFormYB(y);
+      ww = SmoothingXFormW(width, x);
+      hh = SmoothingXFormH(height, y);
+
+      rr = SmoothingXFormW(radius, 0);
+      rr2 = SmoothingXFormH(radius, 0);
+      if (rr2 < rr)
+	rr = rr2;
+
       wxMacSetCurrentTool(kBrushTool);
-      CGContextMoveToPoint(cg, x + radius, y);
-      CGContextAddLineToPoint(cg, x + width - radius, y);
-      CGContextAddArc(cg, x + width - radius, y + radius, radius, 1.5 * wxPI, 2 * wxPI, FALSE);
-      CGContextAddLineToPoint(cg, x + width, y + height - radius);
-      CGContextAddArc(cg, x + width - radius, y + height - radius, radius, 0, 0.5 * wxPI, FALSE);
-      CGContextAddLineToPoint(cg, x + radius, y + height);
-      CGContextAddArc(cg, x + radius, y + height - radius, radius, 0.5 * wxPI, 1.0 * wxPI, FALSE);
-      CGContextAddLineToPoint(cg, x, y + radius);
-      CGContextAddArc(cg, x + radius, y + radius, radius, 1.0 * wxPI, 1.5 * wxPI, FALSE);
+      CGContextMoveToPoint(cg, xx + rr, yy);
+      CGContextAddLineToPoint(cg, xx + ww - rr, yy);
+      CGContextAddArc(cg, xx + ww - rr, yy + rr, rr, 1.5 * wxPI, 2 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, xx + ww, yy + hh - rr);
+      CGContextAddArc(cg, xx + ww - rr, yy + hh - rr, rr, 0, 0.5 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, xx + rr, yy + hh);
+      CGContextAddArc(cg, xx + rr, yy + hh - rr, rr, 0.5 * wxPI, 1.0 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, xx, yy + rr);
+      CGContextAddArc(cg, xx + rr, yy + rr, rr, 1.0 * wxPI, 1.5 * wxPI, FALSE);
       CGContextClosePath(cg);
       CGContextFillPath(cg);
     }
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      double xx, yy, ww, hh, rr, rr2;
+
+      xx = SmoothingXFormX(x);
+      yy = SmoothingXFormY(y);
+      ww = SmoothingXFormWL(width, x);
+      hh = SmoothingXFormHL(height, y);
+      
+      rr = SmoothingXFormWL(radius, 0);
+      rr2 = SmoothingXFormHL(radius, 0);
+      if (rr2 < rr)
+	rr = rr2;
+
       wxMacSetCurrentTool(kPenTool);
-      CGContextMoveToPoint(cg, x + radius, y);
-      CGContextAddLineToPoint(cg, x + width - radius, y);
-      CGContextAddArc(cg, x + width - radius, y + radius, radius, 1.5 * wxPI, 2 * wxPI, FALSE);
-      CGContextAddLineToPoint(cg, x + width, y + height - radius);
-      CGContextAddArc(cg, x + width - radius, y + height - radius, radius, 0, 0.5 * wxPI, FALSE);
-      CGContextAddLineToPoint(cg, x + radius, y + height);
-      CGContextAddArc(cg, x + radius, y + height - radius, radius, 0.5 * wxPI, 1.0 * wxPI, FALSE);
-      CGContextAddLineToPoint(cg, x, y + radius);
-      CGContextAddArc(cg, x + radius, y + radius, radius, 1.0 * wxPI, 1.5 * wxPI, FALSE);
+      CGContextMoveToPoint(cg, xx + rr, yy);
+      CGContextAddLineToPoint(cg, xx + ww - rr, yy);
+      CGContextAddArc(cg, xx + ww - rr, yy + rr, rr, 1.5 * wxPI, 2 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, xx + ww, yy + hh - rr);
+      CGContextAddArc(cg, xx + ww - rr, yy + hh - rr, rr, 0, 0.5 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, xx + rr, yy + hh);
+      CGContextAddArc(cg, xx + rr, yy + hh - rr, rr, 0.5 * wxPI, 1.0 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, xx, yy + rr);
+      CGContextAddArc(cg, xx + rr, yy + rr, rr, 1.0 * wxPI, 1.5 * wxPI, FALSE);
       CGContextClosePath(cg);
       CGContextStrokePath(cg);
     }

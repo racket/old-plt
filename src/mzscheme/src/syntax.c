@@ -2159,7 +2159,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
 
   first = last = NULL;
   while (SCHEME_STX_PAIRP(vars)) {
-    Scheme_Object *rhs;
+    Scheme_Object *rhs, *rhs_name;
 
     v = SCHEME_STX_CAR(vars);
 
@@ -2176,7 +2176,13 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     rhs = SCHEME_STX_CAR(rhs);
     rhs = scheme_add_env_renames(rhs, use_env, origenv);
     
-    v = scheme_expand_expr(rhs, use_env, depth, name);
+    if (SCHEME_STX_PAIRP(name) && SCHEME_STX_NULLP(SCHEME_STX_CDR(name))) {
+      rhs_name = SCHEME_STX_CAR(name);
+    } else {
+      rhs_name = name;
+    }
+
+    v = scheme_expand_expr(rhs, use_env, depth, rhs_name);
 
     v = icons(icons(name, icons(v, scheme_null)), scheme_null);
 

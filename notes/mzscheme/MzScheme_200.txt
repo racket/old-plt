@@ -122,6 +122,11 @@ in several important ways:
    (for consistency with other names). `defined?' is gone, but it can
    be implemented with `namespace-variable-binding'.
 
+ * Compiling an expression no longer links its global-variable
+   references to a particular namespace. Instead, an implicit link
+   phase, at the start of evaluation, connects compiled variable
+   references to actual variables in a specific namespace.
+
  * In the "unitsig.ss" library, all `unit-with-signature' names were
    either replaced by `unit/sig' names or eliminated in favor of
    existing `unit/sig' names.

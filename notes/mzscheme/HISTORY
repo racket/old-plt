@@ -2,6 +2,26 @@
 See MzScheme_200.txt for information on major changes in MzScheme
  199.x. Minor changes are listed below.
 
+Version 199.15:
+
+ * Added `error-print-source-location', which controls whether error
+   messages include source information (line and column, actual
+   expressions). An environment that reads the exception record to
+   hilite source (e.g., DrScheme) can thus provide less cluttered
+   error messages.
+
+ * Added `current-command-line-arguments', which contains a vector of
+   argument strings. (The `argv' variable is still defined, but this
+   parameter is more generally useful.)
+
+ * Fixed syntax expansion so that graph structure under `quote' is
+   preserved. Cyclic graph structure is not supported under `syntax'
+   or `quote-syntax' (i.e., those forms loop forever compiling when
+   given cyclic arguments).
+
+ * Fixed a bug in `module' expansion when a top-level module
+   expression expands to `letrec-syntaxes'.
+
 Version 199.14:
 
  * Changed slightly the way initialization arguments are handled in

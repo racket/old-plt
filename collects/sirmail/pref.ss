@@ -265,7 +265,7 @@
       (make-text-field "SMTP Server" p 20 'sirmail:smtp-server #f)
 
       (make-file/directory-button #t #f p
-				  'sirmail:local-directory
+				  'sirmail:sent-directory
 				  "Save Sent Files")
 
 

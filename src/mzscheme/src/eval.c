@@ -2557,12 +2557,14 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
     if (num_rands >= 0) {
       /* Copy rands: */
       GC_CAN_IGNORE void *ra;
+      if (rands == p->tail_buffer)
+	make_tail_buffer_safe();
       ra = (void *)MALLOC_N(Scheme_Object*, num_rands);
       p->ku.k.p2 = ra;
       {
 	int i;
 	for (i = num_rands; i--; ) {
-	  ((Scheme_Object **)p->ku.k.p2)[i] = rands[i];
+	  ((Scheme_Object **)ra)[i] = rands[i];
 	}
       }
     } else

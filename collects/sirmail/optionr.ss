@@ -9,6 +9,8 @@
   (require "sirmails.ss"
 	   "pref.ss")
 
+  (define shared-password #f)
+
   (provide option@)
   (define option@
     (unit/sig sirmail:options^
@@ -29,15 +31,15 @@
 
       (define (MAIL-FROM) (get-pref 'sirmail:mail-from))
       (define (USERNAME) (get-pref 'sirmail:username))
-      (define PASSWORD (get-pref 'sirmail:password))
       (define (DEFAULT-DOMAIN) (get-pref 'sirmail:default-to-domain))
       (define (IMAP-SERVER) (get-pref 'sirmail:imap-server))
       (define (SMTP-SERVER) (get-pref 'sirmail:smtp-server))
       (define (LOCAL-DIR) (get-pref 'sirmail:local-directory))
       (define (SAVE-SENT) (get-pref 'sirmail:sent-directory))
 
-      (define (get-PASSWORD) PASSWORD)
-      (define (set-PASSWORD p) (set! PASSWORD p))
+      (define PASSWORD (get-pref 'sirmail:password))
+      (define (get-PASSWORD) (or PASSWORD shared-password))
+      (define (set-PASSWORD p) (set! shared-password p))
 
       (define (BIFF-DELAY) (get-pref 'sirmail:biff-delay))
 

@@ -1629,7 +1629,7 @@
                  (if (string=? n "super")
                      (let ((parent (car (class-record-parents this))))
                        (get-method-records (car parent)
-                                           (send type-recs get-class-record parent)))
+                                           (get-record (send type-recs get-class-record parent) type-recs)))
                      (get-method-records (car (class-record-name this)) this))))
               (else
                (cond

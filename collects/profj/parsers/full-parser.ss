@@ -233,9 +233,9 @@
       ;; 19.8.2
       (FieldDeclaration
        [(Modifiers Type VariableDeclarators SEMI_COLON)
-        (map (lambda (d) (build-field-decl $1 $2 d)) $3)]
+        (map (lambda (d) (build-field-decl $1 $2 d)) (reverse $3))]
        [(Type VariableDeclarators SEMI_COLON)
-        (map (lambda (d) (build-field-decl null $1 d)) $2)])
+        (map (lambda (d) (build-field-decl null $1 d)) (reverse $2))])
 
       (VariableDeclarators
        [(VariableDeclarator) (list $1)]
@@ -488,7 +488,7 @@
       
       (LocalVariableDeclaration
        [(Type VariableDeclarators)
-        (map (lambda (d) (build-field-decl null $1 d)) $2)])
+        (map (lambda (d) (build-field-decl null $1 d)) (reverse $2))])
       
       (Statement
        [(StatementWithoutTrailingSubstatement) $1]

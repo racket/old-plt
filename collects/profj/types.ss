@@ -317,9 +317,9 @@
       
       ;lookup-path: string ( -> 'a) -> (U (list string) #f)
       (define/public (lookup-path class fail)
-;        (printf "lookup ~a~n" class)
-;        (hash-table-for-each (hash-table-get class-environment location)
-;                            (lambda (k v) (printf "~a -> ~a~n" k v)))
+        ;(printf "lookup ~a~n" class)
+        ;(hash-table-for-each (hash-table-get class-environment location)
+        ;                    (lambda (k v) (printf "~a -> ~a~n" k v)))
         (if location
             (hash-table-get (hash-table-get class-environment 
                                             location 

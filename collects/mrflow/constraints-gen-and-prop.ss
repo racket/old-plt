@@ -114,11 +114,13 @@
   ; the body of a lambda. Edges flowing into these free variables must be created when the
   ; clause is applied. app-thunk is a thunk that is used to delay the transformation of the
   ; graph when a function flows into an application, until the clause around the application
-  ; is itself applied.
+  ; is itself applied. The two are merged, because one of the delayed app could set! a top level
+  ; variable, and the top level variable can be referenced both before and after the application,
+  ; so lookups and applications have to be done in exactly the right order.
   ; struct is just a placeholder to tell the type of structure a given structure-processing
   ; function is supposed to deal with.
   (define-struct (label-case-lambda label)
-                 (struct rest-arg?s req-args argss exps top-free-varss app-thunks) (make-inspector))
+                 (struct rest-arg?s req-args argss exps top-free-varss&app-thunks) (make-inspector))
   
   ; label = label (a label-cons based list of labels)
   ; used to simulate multiple values. So this label is going to flow around and work pretty
@@ -706,9 +708,8 @@
                               [req-args-in (label-case-lambda-req-args inflowing-case-lambda-label)]
                               [argss-labelss-in (label-case-lambda-argss inflowing-case-lambda-label)]
                               [exps-labels-in (label-case-lambda-exps inflowing-case-lambda-label)]
-                              [top-free-varss-labelss-in
-                               (label-case-lambda-top-free-varss inflowing-case-lambda-label)]
-                              [app-thunks-in (label-case-lambda-app-thunks inflowing-case-lambda-label)]) 
+                              [top-free-varss-labelss&app-thunks-in
+                               (label-case-lambda-top-free-varss&app-thunks inflowing-case-lambda-label)])
                              (if (null? rest-arg?s-in)
                                ; No match found.
                                (begin
@@ -742,42 +743,42 @@
                                     ; exact one-to-one match between in and around, with or without
                                     ; rest args, it's the same
                                     (lambda ()
-                                      (when (lookup-and-bind-top-level-vars
-                                             (car top-free-varss-labelss-in) term)
-                                        ; make internal apps flow
-                                        ((car app-thunks-in))
-                                        (set-car! app-thunks-in *dummy-thunk*)
-                                        (let args-loop-in
-                                          ([args-labels-in (car argss-labelss-in)]
-                                           [args-labels-around (car argss-labelss-around)])
-                                          (unless (null? args-labels-in)
-                                            (add-edge-and-propagate-set-through-edge
-                                             (car args-labels-around)
-                                             (extend-edge-for-values
-                                              (create-simple-edge (car args-labels-in))))
-                                            (args-loop-in (cdr args-labels-in)
-                                                          (cdr args-labels-around))))
-                                        ; edge from body of clause to app term itself
-                                        ; note that we do not detect multiple values here
-                                        (add-edge-and-propagate-set-through-edge
-                                         (car exps-labels-in)
-                                         (create-simple-edge (car exps-labels-around)))))]
+                                      ;(when (lookup-and-bind-top-level-vars
+                                      ;       (car top-free-varss-labelss-in) term)
+                                      ; make internal apps flow and top level vars looked up
+                                      ((car top-free-varss-labelss&app-thunks-in))
+                                      ;(set-car! app-thunks-in *dummy-thunk*)
+                                      (let args-loop-in
+                                        ([args-labels-in (car argss-labelss-in)]
+                                         [args-labels-around (car argss-labelss-around)])
+                                        (unless (null? args-labels-in)
+                                          (add-edge-and-propagate-set-through-edge
+                                           (car args-labels-around)
+                                           (extend-edge-for-values
+                                            (create-simple-edge (car args-labels-in))))
+                                          (args-loop-in (cdr args-labels-in)
+                                                        (cdr args-labels-around))))
+                                      ; edge from body of clause to app term itself
+                                      ; note that we do not detect multiple values here
+                                      (add-edge-and-propagate-set-through-edge
+                                       (car exps-labels-in)
+                                       (create-simple-edge (car exps-labels-around))))]
                                    [(and rest-arg?-in (not rest-arg?-around)
                                          (<= req-arg-in req-arg-around))
                                     ; fixed number of args around and the in function can
                                     ; take them all. So we just have to create a label list for
                                     ; the rest argument.
                                     (lambda ()
-                                      (when (lookup-and-bind-top-level-vars
-                                             (car top-free-varss-labelss-in) term)
-                                        ; make internal apps flow
-                                        ((car app-thunks-in))
-                                        (set-car! app-thunks-in *dummy-thunk*)
-                                        (let args-loop-in
-                                          ([args-labels-in (car argss-labelss-in)]
-                                           [args-labels-around (car argss-labelss-around)])
-                                          ; we know we have a rest arg, so the list is not null
-                                          (if (null? (cdr args-labels-in))
+                                      ;(when (lookup-and-bind-top-level-vars
+                                      ;       (car top-free-varss-labelss-in) term)
+                                      ; make internal apps flow
+                                      ((car top-free-varss-labelss&app-thunks-in))
+                                      ;(set-car! app-thunks-in *dummy-thunk*)
+                                      (let args-loop-in
+                                        ([args-labels-in (car argss-labelss-in)]
+                                         [args-labels-around (car argss-labelss-around)])
+                                        ; we know we have a rest arg, so the list is not null
+                                        (if (null? (cdr args-labels-in))
                                             ; create list for rest arg
                                             (let* ([rest-arg-label (car args-labels-in)]
                                                    [rest-arg-term (label-term rest-arg-label)]
@@ -785,34 +786,34 @@
                                                     (let rest-loop-around ([args-labels-around
                                                                             args-labels-around])
                                                       (if (null? args-labels-around)
-                                                        (let ([null-label
-                                                               (make-label-cst
-                                                                #f #f #t
-                                                                rest-arg-term
-                                                                (make-hash-table)
-                                                                (make-hash-table)
-                                                                '())])
-                                                          ;(set! graph-nodes (add1 graph-nodes))
-                                                          (initialize-label-set-for-value-source
-                                                           null-label)
-                                                          ;(associate-label-with-term-position
-                                                          ; null-label rest-arg-term)
-                                                          null-label)
-                                                        (let ([cons-label
-                                                               (make-label-cons
-                                                                #f #f #t
-                                                                rest-arg-term
-                                                                (make-hash-table)
-                                                                (make-hash-table)
-                                                                (car args-labels-around)
-                                                                (rest-loop-around
-                                                                 (cdr args-labels-around)))])
-                                                          ;(set! graph-nodes (add1 graph-nodes))
-                                                          (initialize-label-set-for-value-source
-                                                           cons-label)
-                                                          ;(associate-label-with-term-position
-                                                          ; cons-label rest-arg-term)
-                                                          cons-label)))])
+                                                          (let ([null-label
+                                                                 (make-label-cst
+                                                                  #f #f #t
+                                                                  rest-arg-term
+                                                                  (make-hash-table)
+                                                                  (make-hash-table)
+                                                                  '())])
+                                                            ;(set! graph-nodes (add1 graph-nodes))
+                                                            (initialize-label-set-for-value-source
+                                                             null-label)
+                                                            ;(associate-label-with-term-position
+                                                            ; null-label rest-arg-term)
+                                                            null-label)
+                                                          (let ([cons-label
+                                                                 (make-label-cons
+                                                                  #f #f #t
+                                                                  rest-arg-term
+                                                                  (make-hash-table)
+                                                                  (make-hash-table)
+                                                                  (car args-labels-around)
+                                                                  (rest-loop-around
+                                                                   (cdr args-labels-around)))])
+                                                            ;(set! graph-nodes (add1 graph-nodes))
+                                                            (initialize-label-set-for-value-source
+                                                             cons-label)
+                                                            ;(associate-label-with-term-position
+                                                            ; cons-label rest-arg-term)
+                                                            cons-label)))])
                                               ; we know args-label-around-inlabellist is not
                                               ; a multiple value...
                                               (add-edge-and-propagate-set-through-edge
@@ -826,11 +827,11 @@
                                                 (create-simple-edge (car args-labels-in))))
                                               (args-loop-in (cdr args-labels-in)
                                                             (cdr args-labels-around)))))
-                                        ; edge from body of clause to app term itself
-                                        ; note that we do not detect multiple values here
-                                        (add-edge-and-propagate-set-through-edge
-                                         (car exps-labels-in)
-                                         (create-simple-edge (car exps-labels-around)))))]
+                                      ; edge from body of clause to app term itself
+                                      ; note that we do not detect multiple values here
+                                      (add-edge-and-propagate-set-through-edge
+                                       (car exps-labels-in)
+                                       (create-simple-edge (car exps-labels-around))))]
                                    [(and (not rest-arg?-in) rest-arg?-around
                                          (>= req-arg-in req-arg-around))
                                     ; in fct takes a fixed number of args and there's some of
@@ -930,15 +931,15 @@
                                                                  (= (+ rest-list-length req-arg-around)
                                                                     req-arg-in))
                                                            (begin
-                                                             (when (lookup-and-bind-top-level-vars
-                                                                    (car top-free-varss-labelss-in) term)
-                                                               ; make internal apps flow
-                                                               ((car app-thunks-in))
-                                                               (set-car! app-thunks-in *dummy-thunk*)
-                                                               (add-edge-and-propagate-set-through-edge
-                                                                inflowing-label
-                                                                splitting-rest-arg-edge)
-                                                               (inner-thunk)))
+                                                             ;(when (lookup-and-bind-top-level-vars
+                                                             ;       (car top-free-varss-labelss-in) term)
+                                                             ; make internal apps flow
+                                                             ((car top-free-varss-labelss&app-thunks-in))
+                                                             ;(set-car! app-thunks-in *dummy-thunk*)
+                                                             (add-edge-and-propagate-set-through-edge
+                                                              inflowing-label
+                                                              splitting-rest-arg-edge)
+                                                             (inner-thunk))
                                                            (begin
                                                              (set! *errors*
                                                                    (cons
@@ -1055,15 +1056,15 @@
                                                                  (= (+ rest-list-length req-arg-around)
                                                                     req-arg-in))
                                                            (begin
-                                                             (when (lookup-and-bind-top-level-vars
-                                                                    (car top-free-varss-labelss-in) term)
-                                                               ; make internal apps flow
-                                                               ((car app-thunks-in))
-                                                               (set-car! app-thunks-in *dummy-thunk*)
-                                                               (add-edge-and-propagate-set-through-edge
-                                                                inflowing-label
-                                                                splitting-rest-arg-edge)
-                                                               (inner-thunk)))
+                                                             ;(when (lookup-and-bind-top-level-vars
+                                                             ;       (car top-free-varss-labelss-in) term)
+                                                             ; make internal apps flow
+                                                             ((car top-free-varss-labelss&app-thunks-in))
+                                                             ;(set-car! app-thunks-in *dummy-thunk*)
+                                                             (add-edge-and-propagate-set-through-edge
+                                                              inflowing-label
+                                                              splitting-rest-arg-edge)
+                                                             (inner-thunk))
                                                            (begin
                                                              (set! *errors*
                                                                    (cons
@@ -1108,16 +1109,16 @@
                                    [(and rest-arg?-in rest-arg?-around
                                          (< req-arg-in req-arg-around))
                                     (lambda ()
-                                      (when (lookup-and-bind-top-level-vars
-                                             (car top-free-varss-labelss-in) term)
-                                        ; make internal apps flow
-                                        ((car app-thunks-in))
-                                        (set-car! app-thunks-in *dummy-thunk*)
-                                        (let args-loop-in
-                                          ([args-labels-in (car argss-labelss-in)]
-                                           [args-labels-around (car argss-labelss-around)])
-                                          ; we know we have a rest arg, so the list is not null
-                                          (if (null? (cdr args-labels-in))
+                                      ;(when (lookup-and-bind-top-level-vars
+                                      ;       (car top-free-varss-labelss-in) term)
+                                      ; make internal apps flow
+                                      ((car top-free-varss-labelss&app-thunks-in))
+                                      ;(set-car! app-thunks-in *dummy-thunk*)
+                                      (let args-loop-in
+                                        ([args-labels-in (car argss-labelss-in)]
+                                         [args-labels-around (car argss-labelss-around)])
+                                        ; we know we have a rest arg, so the list is not null
+                                        (if (null? (cdr args-labels-in))
                                             ; create list for rest arg
                                             (let* ([rest-arg-label (car args-labels-in)]
                                                    [rest-arg-term (label-term rest-arg-label)]
@@ -1125,25 +1126,25 @@
                                                     (let rest-loop-around ([args-labels-around
                                                                             args-labels-around])
                                                       (if (null? (cdr args-labels-around))
-                                                        ; everything in rest-arg-around will flow
-                                                        ; into rest-arg-in, plus some other stuff
-                                                        ; around the list.
-                                                        (car args-labels-around)
-                                                        (let ([cons-label
-                                                               (make-label-cons
-                                                                #f #f #t
-                                                                rest-arg-term
-                                                                (make-hash-table)
-                                                                (make-hash-table)
-                                                                (car args-labels-around)
-                                                                (rest-loop-around
-                                                                 (cdr args-labels-around)))])
-                                                          ;(set! graph-nodes (add1 graph-nodes))
-                                                          (initialize-label-set-for-value-source
-                                                           cons-label)
-                                                          ;(associate-label-with-term-position
-                                                          ; cons-label rest-arg-term)
-                                                          cons-label)))])
+                                                          ; everything in rest-arg-around will flow
+                                                          ; into rest-arg-in, plus some other stuff
+                                                          ; around the list.
+                                                          (car args-labels-around)
+                                                          (let ([cons-label
+                                                                 (make-label-cons
+                                                                  #f #f #t
+                                                                  rest-arg-term
+                                                                  (make-hash-table)
+                                                                  (make-hash-table)
+                                                                  (car args-labels-around)
+                                                                  (rest-loop-around
+                                                                   (cdr args-labels-around)))])
+                                                            ;(set! graph-nodes (add1 graph-nodes))
+                                                            (initialize-label-set-for-value-source
+                                                             cons-label)
+                                                            ;(associate-label-with-term-position
+                                                            ; cons-label rest-arg-term)
+                                                            cons-label)))])
                                               ; we know args-label-around-inlabellist is not
                                               ; a multiple value...
                                               (add-edge-and-propagate-set-through-edge
@@ -1157,16 +1158,16 @@
                                                 (create-simple-edge (car args-labels-in))))
                                               (args-loop-in (cdr args-labels-in)
                                                             (cdr args-labels-around)))))
-                                        ; edge from body of clause to app term itself
-                                        ; note that we do not detect multiple values here
-                                        (add-edge-and-propagate-set-through-edge
-                                         (car exps-labels-in)
-                                         (create-simple-edge (car exps-labels-around)))))]
+                                      ; edge from body of clause to app term itself
+                                      ; note that we do not detect multiple values here
+                                      (add-edge-and-propagate-set-through-edge
+                                       (car exps-labels-in)
+                                       (create-simple-edge (car exps-labels-around))))]
                                    [else ; keep looking for a matching clause
                                     (loop-clauses-in
                                      (cdr rest-arg?s-in) (cdr req-args-in)
                                      (cdr argss-labelss-in) (cdr exps-labels-in)
-                                     (cdr top-free-varss-labelss-in) (cdr app-thunks-in))]))))])
+                                     (cdr top-free-varss-labelss&app-thunks-in))]))))])
                       (if top-in-thunk
                         (loop-clauses-around (lambda ()
                                                ; connect the current around clause
@@ -1505,7 +1506,6 @@
                                                     (list (label-struct-value-fields
                                                            maker-body-label))
                                                     (list maker-body-label)
-                                                    (list '())
                                                     (list *dummy-thunk*))]
                           ; pred
                           [pred-true-label (make-label-cst #f #f #t
@@ -1536,7 +1536,6 @@
                                                    (list 1)
                                                    (list (list pred-arg-label))
                                                    (list pred-body-label)
-                                                   (list '())
                                                    (list *dummy-thunk*))]
                           ; access is a bit tricky: make-struct-field-accessor will
                           ; manually link access's second arg and wrap access inside another
@@ -1561,7 +1560,6 @@
                                                      (list (list access-first-arg-label
                                                                  access-second-arg-label))
                                                      (list (create-simple-prim-label term))
-                                                     (list '())
                                                      (list *dummy-thunk*))]
                           ; same problem with mutate
                           [mutate-first-arg-label (create-simple-prim-label term)]
@@ -1579,7 +1577,6 @@
                                                                  mutate-second-arg-label
                                                                  mutate-third-arg-label))
                                                      (list (create-simple-prim-label term))
-                                                     (list '())
                                                      (list *dummy-thunk*))])
                      ; XXX should all the add-edge-and-propagate-set-through-edge be and-ed ?
                      ; maker
@@ -1625,7 +1622,6 @@
                                                 properties-label
                                                 inspector-label))
                                     (list values-label)
-                                    (list '())
                                     (list *dummy-thunk*))])
       ; make-struct-type args
       (add-edge-and-propagate-set-through-edge name-label name-edge)
@@ -1797,7 +1793,6 @@
                                                        (list 1)
                                                        (list (list accessor-arg-label))
                                                        (list accessor-body-label)
-                                                       (list '())
                                                        (list *dummy-thunk*))])
                      ; this is just to get the type for access right...
                      ; the structure flowing into the accessor flows into access's first arg
@@ -1835,7 +1830,6 @@
                                                           second-arg-label
                                                           third-arg-label))
                                               (list body-label)
-                                              (list '())
                                               (list *dummy-thunk*))])
       (add-edge-and-propagate-set-through-edge first-arg-label first-arg-edge)
       (add-edge-and-propagate-set-through-edge second-arg-label second-arg-edge)
@@ -2007,7 +2001,6 @@
                                                          second-arg-label
                                                          third-arg-label))
                                              (list body-label)
-                                             (list '())
                                              (list *dummy-thunk*))])
       (add-edge-and-propagate-set-through-edge first-arg-label first-arg-edge)
       (add-edge-and-propagate-set-through-edge second-arg-label second-arg-edge)
@@ -2082,7 +2075,6 @@
                                        (list (list mutator-first-arg-label
                                                    mutator-second-arg-label))
                                        (list mutator-body-label)
-                                       (list '())
                                        (list *dummy-thunk*))])
       (initialize-label-set-for-value-source void-label)
       (add-edge-and-propagate-set-through-edge void-label mutator-body-edge)
@@ -2181,7 +2173,6 @@
                                                    mutator-second-arg-label
                                                    mutator-third-arg-label))
                                        (list mutator-body-label)
-                                       (list '())
                                        (list *dummy-thunk*))])
       (initialize-label-set-for-value-source void-label)
       (add-edge-and-propagate-set-through-edge void-label mutator-body-edge)
@@ -2225,7 +2216,6 @@
                      *dummy*
                      *dummy*
                      *dummy*
-                     '()
                      '())]
              [all-labels
               (list:foldr
@@ -2241,12 +2231,12 @@
                    ; list, so we know where to find this element when we need it (we need to
                    ; update the top free vars for the current clause in the #%top case, and
                    ; the application thunk for the current clause in the #%app case).
-                   (set-label-case-lambda-top-free-varss!
+                   (set-label-case-lambda-top-free-varss&app-thunks!
+                    ;label
+                    ;(cons '() (label-case-lambda-top-free-varss label)))
+                    ;(set-label-case-lambda-app-thunks!
                     label
-                    (cons '() (label-case-lambda-top-free-varss label)))
-                   (set-label-case-lambda-app-thunks!
-                    label
-                    (cons *dummy-thunk* (label-case-lambda-app-thunks label)))
+                    (cons *dummy-thunk* (label-case-lambda-top-free-varss&app-thunks label)))
                    (kern:kernel-syntax-case
                     args #f
                     [(args ...)
@@ -2342,13 +2332,13 @@
         ; If the app is inside a lambda, we delay the addition of the edge until the enclosing
         ; lambda is itself applied.
         (if enclosing-lambda-label
-          (let* ([enclosing-lambda-app-thunks
-                  (label-case-lambda-app-thunks enclosing-lambda-label)]
+          (let* ([enclosing-lambda-top-free-varss&app-thunks
+                  (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
                  ; has to be evaluated now, not inside the thunk, otherwise we might have an
                  ; infinite loop (if there's only one clause in the lambda) or complete
                  ; non-sense (if there's several clauses).
-                 [current-thunk (car enclosing-lambda-app-thunks)])
-            (set-car! enclosing-lambda-app-thunks
+                 [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
+            (set-car! enclosing-lambda-top-free-varss&app-thunks
                       (lambda ()
                         ; the order in which we evaluate the thunks here is normally
                         ; insignificant, but it is *very* important to have it in this
@@ -2785,10 +2775,15 @@
         (if enclosing-lambda-label
           ; free var inside a lambda, so add it to the list of free variables, don't do
           ; any lookup now (will be done when the enclosing lambda is applied)
-          (let ([enclosing-lambda-top-free-varss
-                 (label-case-lambda-top-free-varss enclosing-lambda-label)])
-            (set-car! enclosing-lambda-top-free-varss
-                      (cons bound-label (car enclosing-lambda-top-free-varss))))
+          (let* ([enclosing-lambda-top-free-varss&app-thunks
+                 (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
+                 [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
+            (set-car! enclosing-lambda-top-free-varss&app-thunks
+                      (lambda ()
+                        (current-thunk)
+                        (lookup-and-bind-top-level-vars (list bound-label) identifier)
+                        )))
+            ;(cons bound-label (car enclosing-lambda-top-free-varss))))
           ; top level
           (lookup-and-bind-top-level-vars (list bound-label) identifier))
         bound-label)]
@@ -2808,56 +2803,60 @@
                                          (make-hash-table)
                                          (void))])
         (initialize-label-set-for-value-source void-label)
-        (if (search-and-replace gamma var-name var-label)
-          (if enclosing-lambda-label
-            (let* ([enclosing-lambda-app-thunks
-                    (label-case-lambda-app-thunks enclosing-lambda-label)]
-                   [current-thunk (car enclosing-lambda-app-thunks)])
-              (set-car! enclosing-lambda-app-thunks
-                        (lambda ()
-                          (current-thunk)
-                          (add-edge-and-propagate-set-through-edge
-                           exp-label var-edge)
-                          (add-edge-and-propagate-set-through-edge
-                           void-label set!-edge))))
-            (begin
-              (add-edge-and-propagate-set-through-edge
-               exp-label var-edge)
-              (add-edge-and-propagate-set-through-edge
-               void-label set!-edge)))
-          (if (or (lookup-top-level-name var-name)
-                  (eq? var-name 'make-struct-type)
-                  (eq? var-name 'make-struct-field-accessor)
-                  (eq? var-name 'make-struct-field-mutator)
-                  (eq? var-name 'set-car!)
-                  (eq? var-name 'set-cdr!)
-                  (eq? var-name 'string-set!)
-                  (eq? var-name 'string-fill!)
-                  (eq? var-name 'vector-set!)
-                  (eq? var-name 'vector-fill!))
+        (if (lookup-env var-stx gamma)
+            ; lexical variable
             (if enclosing-lambda-label
-              (let* ([enclosing-lambda-app-thunks
-                      (label-case-lambda-app-thunks enclosing-lambda-label)]
-                     [current-thunk (car enclosing-lambda-app-thunks)])
-                (set-car! enclosing-lambda-app-thunks
-                          (lambda ()
-                            (current-thunk)
-                            (add-top-level-name var-stx var-label)
-                            (add-edge-and-propagate-set-through-edge
-                             exp-label var-edge)
-                            (add-edge-and-propagate-set-through-edge
-                             void-label set!-edge))))
-              (begin
-                (add-top-level-name var-stx var-label)
-                (add-edge-and-propagate-set-through-edge
-                 exp-label var-edge)
-                (add-edge-and-propagate-set-through-edge
-                 void-label set!-edge)))
-            (set! *errors*
-                  (cons (list (list term)
-                              'red
-                              (format "set!: cannot set undefined identifier: ~a" var-name))
-                        *errors*))))
+                (let* ([enclosing-lambda-top-free-varss&app-thunks
+                        (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
+                       [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
+                  (set-car! enclosing-lambda-top-free-varss&app-thunks
+                            (lambda ()
+                              (current-thunk)
+                              (search-and-replace gamma var-name var-label)
+                              (add-edge-and-propagate-set-through-edge
+                               exp-label var-edge)
+                              (add-edge-and-propagate-set-through-edge
+                               void-label set!-edge))))
+                (begin
+                  (search-and-replace gamma var-name var-label)
+                  (add-edge-and-propagate-set-through-edge
+                   exp-label var-edge)
+                  (add-edge-and-propagate-set-through-edge
+                   void-label set!-edge)))
+            (if (or (lookup-top-level-name var-name)
+                    (eq? var-name 'make-struct-type)
+                    (eq? var-name 'make-struct-field-accessor)
+                    (eq? var-name 'make-struct-field-mutator)
+                    (eq? var-name 'set-car!)
+                    (eq? var-name 'set-cdr!)
+                    (eq? var-name 'string-set!)
+                    (eq? var-name 'string-fill!)
+                    (eq? var-name 'vector-set!)
+                    (eq? var-name 'vector-fill!))
+                ; top level var
+                (if enclosing-lambda-label
+                    (let* ([enclosing-lambda-top-free-varss&app-thunks
+                            (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
+                           [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
+                      (set-car! enclosing-lambda-top-free-varss&app-thunks
+                                (lambda ()
+                                  (current-thunk)
+                                  (add-top-level-name var-stx var-label)
+                                  (add-edge-and-propagate-set-through-edge
+                                   exp-label var-edge)
+                                  (add-edge-and-propagate-set-through-edge
+                                   void-label set!-edge))))
+                    (begin
+                      (add-top-level-name var-stx var-label)
+                      (add-edge-and-propagate-set-through-edge
+                       exp-label var-edge)
+                      (add-edge-and-propagate-set-through-edge
+                       void-label set!-edge)))
+                (set! *errors*
+                      (cons (list (list term)
+                                  'red
+                                  (format "set!: cannot set undefined identifier: ~a" var-name))
+                            *errors*))))
         set!-label)]
      [(quote-syntax foo ...)
       (set! *errors*
@@ -2922,23 +2921,40 @@
              [var-name (syntax-e var-stx)]
              [binding-label (lookup-env var-stx gamma)])
         (if binding-label
-          (let ([bound-label (create-simple-label term)])
-            (set! ast-nodes (add1 ast-nodes))
-            (if (memq binding-label letrec-trace)
-              (set! *errors*
-                    (cons (list (list term)
-                                'red
-                                (format "bound but undefined variable: ~a" (syntax-object->datum var-stx)))
-                          *errors*))
-              (add-edge-and-propagate-set-through-edge
-               binding-label
-               (extend-edge-for-values (create-simple-edge bound-label))))
-            bound-label)
-          (create-label-from-term
-           (datum->syntax-object var-stx
-                                 (cons '#%top var-stx)
-                                 var-stx var-stx)
-           gamma enclosing-lambda-label letrec-trace)))]
+            ; lexical variable
+            (let ([bound-label (create-simple-label term)])
+              (set! ast-nodes (add1 ast-nodes))
+              (if (memq binding-label letrec-trace)
+                  (set! *errors*
+                        (cons (list (list term)
+                                    'red
+                                    (format "bound but undefined variable: ~a" (syntax-object->datum var-stx)))
+                              *errors*))
+                  (if enclosing-lambda-label
+                      ; we have to delay the binding, because there might be a set! in between.
+                      ; Note that this means we have to redo a lookup later to get the right binder,
+                      ; which will have changed if a set! has occured.
+                      (let* ([enclosing-lambda-top-free-varss&app-thunks
+                              (label-case-lambda-top-free-varss&app-thunks enclosing-lambda-label)]
+                             [current-thunk (car enclosing-lambda-top-free-varss&app-thunks)])
+                        (set-car! enclosing-lambda-top-free-varss&app-thunks
+                                  (lambda ()
+                                    (current-thunk)
+                                    (let ([binding-label (lookup-env var-stx gamma)])
+                                      (add-edge-and-propagate-set-through-edge
+                                       binding-label
+                                       (extend-edge-for-values (create-simple-edge bound-label)))))))
+                      (add-edge-and-propagate-set-through-edge
+                       binding-label
+                       (extend-edge-for-values (create-simple-edge bound-label)))))
+              bound-label)
+            ; probably a top level var (like a primitive name) but without #%top (if it comes
+            ; from a macro, or some strange stuff like that.
+            (create-label-from-term
+             (datum->syntax-object var-stx
+                                   (cons '#%top var-stx)
+                                   var-stx var-stx)
+             gamma enclosing-lambda-label letrec-trace)))]
      ))
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; TYPES
@@ -3516,7 +3532,7 @@
                         (type-case-lambda-req-args type)
                         (car all-labels)
                         (cdr all-labels)
-                        (map (lambda (_) '()) all-labels)
+                        ;(map (lambda (_) '()) all-labels)
                         (map (lambda (_) *dummy-thunk*) all-labels))])
            (initialize-label-set-for-value-source label)
            label)]

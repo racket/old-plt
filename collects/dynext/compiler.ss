@@ -4,7 +4,8 @@
   (define include-dir (collection-path "mzscheme" "include"))
   
   (define (get-unix-compile)
-    (or (find-executable-path "gcc" "gcc")
+    (or (getenv "MZSCHEME_DYNEXT_COMPILER")
+	(find-executable-path "gcc" "gcc")
 	(find-executable-path "cc" "cc")))
   
   (define (get-windows-compile)

@@ -19,7 +19,8 @@ and Unix:
 >  current-extension-compiler - compiler executable pathname or
      #f. The default is set by searching for an executable using
      the PATH environment variable. Under windows, the search
-     looks for cl.exe and then gcc.exe. Under Unix, it looks for 
+     looks for cl.exe and then gcc.exe. Under Unix, it check the
+     MZSCHEME_DYNEXT_COMPILER environment variable, then looks for
      gcc and then cc. #f indicates that no compiler could be
      found.
 
@@ -72,9 +73,10 @@ Linking parameters:
 >  current-extension-linker - linker executable pathname or #f. 
      The default is set by searching for an executable using
      the PATH environment variable. Under Windows, it looks for 
-     cl.exe and then ld.exe. Under Unix except AIX, it looks for 
-     ld. Under AIX, it looks for cc. #f indicates that no linker
-     could be found.
+     cl.exe and then ld.exe. Under Unix it checks the
+     MZSCHEME_DYNEXT_LINKER environment variable, then, except AIX, it
+     looks for ld. Under AIX, it looks for cc. #f indicates that no
+     linker could be found.
 
 >  current-extension-linker-flags - list of strings. Under Windows,
      default is (list "/LD") fo cl.exe and (list "--dll") for ld.exe. 

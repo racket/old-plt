@@ -7,10 +7,11 @@
 	(find-executable-path "ld.exe" "ld.exe")))
 
   (define (get-unix-linker)
-    (let ([s (case (string->symbol (system-library-subpath))
-	       [(rs6k-aix) "cc"]
-	       [else "ld"])])
-      (find-executable-path s s)))
+    (or (getenv "MZSCHEME_DYNEXT_LINKER")
+	(let ([s (case (string->symbol (system-library-subpath))
+		   [(rs6k-aix) "cc"]
+		   [else "ld"])])
+	  (find-executable-path s s))))
   
   (define current-extension-linker 
     (make-parameter 

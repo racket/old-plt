@@ -2208,19 +2208,19 @@ else
   cat > conftest.$ac_ext <<EOF
 #line 2210 "configure"
 #include "confdefs.h"
-static inline int foo() { return 5; }
+static inline int foo() { return 0; }
    int main() {
       return foo();
    }
 EOF
 if { (eval echo configure:2217: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
-  inline=no
+  inline=yes
 else
   echo "configure: failed program was:" >&5
   cat conftest.$ac_ext >&5
   rm -fr conftest*
-  inline=yes
+  inline=no
 fi
 rm -fr conftest*
 fi

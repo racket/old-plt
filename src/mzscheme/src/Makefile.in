@@ -9,7 +9,7 @@ PERL = @PERL@
 
 XMAKE = $(MAKE) $(EXPORT)
 
-CFLAGS = @CFLAGS@ @OPTIONS@ -I$(srcdir)/../include
+CFLAGS = @CFLAGS@ @OPTIONS@ @MZOPTIONS@ -I$(srcdir)/../include
 
 OBJS =  salloc.o \
 	bignum.o \

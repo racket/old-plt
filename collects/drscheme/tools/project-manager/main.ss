@@ -1,9 +1,3 @@
-;; TODO
-;; - track files in project.
-;;   - when project is opened check already open files.
-;;   - after execute, grab files that were loaded (?)
-;; - finish implementing the context<%> object
-
 (unit/sig ()
   (import mred^
 	  mzlib:core^
@@ -1032,7 +1026,7 @@
 		  "Show Elaboration Files"))
 	(send elaboration-files-outer-panel change-children
 	      (lambda (l)
-		(if loaded-files-shown?
+		(if elaboration-files-shown?
 		    (list elaboration-files-panel)
 		    null)))
 	(send elaboration-files-outer-panel stretchable-height elaboration-files-shown?)
@@ -1387,15 +1381,6 @@
         (send spacer stretchable-height #f)
         (send spacer min-height 16))
 
-
-      (define elaboration-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
-      (define elaboration-files-panel (make-object horizontal-panel% elaboration-files-outer-panel))
-      (define elaboration-files-list-box (make-object list-box% #f null elaboration-files-panel
-                                           (lambda (lb evt)
-                                             '(-list-box-callback (send evt get-event-type)))
-                                           '(single)))
-      (send elaboration-files-outer-panel change-children (lambda (l) null))
-
       (define open-button (make-object button% "Open" to-load-button-panel (lambda x (open-file)) '(border)))
       (define remove-button (make-object button% "Remove" to-load-button-panel (lambda x (remove-file))))
       (define pathize-button (make-object button% "Make Abs" to-load-button-panel (lambda x (swap-abs/rel-file))))
@@ -1403,6 +1388,25 @@
       (send to-load-button-panel stretchable-width #f)
       (send to-load-button-panel set-alignment 'center 'center)
 
+      (define elaboration-files-outer-panel (make-object vertical-pane% top-horizontal-panel))
+      (define elaboration-files-panel (make-object horizontal-panel% elaboration-files-outer-panel '(border)))
+      (define elaboration-files-list-box (make-object list-box% #f null elaboration-files-panel
+                                           (lambda (lb evt)
+                                             '(-list-box-callback (send evt get-event-type)))
+                                           '(single)))
+      (define elaboration-files-button-panel (make-object vertical-panel% elaboration-files-panel))
+      (define elaboration-files-up-button (make-object button% "Up" elaboration-files-button-panel (lambda x (move-file-up))))
+      (define elaboration-files-down-button (make-object button% "Down" elaboration-files-button-panel (lambda x (move-file-down))))
+      (let ([spacer (make-object horizontal-panel% elaboration-files-button-panel)])
+        (send spacer stretchable-height #f)
+        (send spacer min-height 16))
+      (define elaboration-files-open-button (make-object button% "Open" elaboration-files-button-panel (lambda x (open-file))))
+      (define elaboration-files-remove-button (make-object button% "Remove" elaboration-files-button-panel (lambda x (remove-file))))
+      (define elaboration-files-pathize-button (make-object button% "Make Abs" elaboration-files-button-panel (lambda x (swap-abs/rel-file))))
+      (send elaboration-files-button-panel stretchable-width #f)
+      (send elaboration-files-button-panel set-alignment 'center 'center)
+      
+      
       (define loaded-files-outer-panel (make-object vertical-panel% top-horizontal-panel))
       (define loaded-files-panel (make-object horizontal-panel% loaded-files-outer-panel '(border)))
       (define loaded-files-hierarchical-list (make-object hierlist% loaded-files-panel))
@@ -1414,8 +1418,10 @@
       (send loaded-files-outer-panel change-children (lambda (l) null))
       (send loaded-files-outer-panel stretchable-height #f)
 
-      (let* ([buttons (list up-button open-button down-button remove-button 
-                            open-loaded-file-button pathize-button)]
+      (let* ([buttons (append
+                       (send to-load-button-panel get-children)
+                       (list open-loaded-file-button)
+                       (send elaboration-files-button-panel get-children))]
 	     [max-width (apply max (map (lambda (x) (send x get-width)) buttons))])
 	(for-each (lambda (button) (send button min-width max-width))
 		  buttons))
@@ -1425,6 +1431,7 @@
       (frame:reorder-menus this)
       (update-loaded-files-shown)
       (update-to-load-files-shown)
+      (update-elaboration-files-shown)
       (update-rep-shown)
       (update-buttons)
       (update-name-message)

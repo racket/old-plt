@@ -7172,8 +7172,8 @@ static void default_sleep(float v, void *fds)
 	array[count++] = th;
 
 #if defined(WIN32_FD_HANDLES)
-	result = WaitForMultipleObjects(count, array, FALSE, 
-					v ? (DWORD)(v * 1000) : INFINITE),
+	result = MsgWaitForMultipleObjects(count, array, FALSE, 
+					   v ? (DWORD)(v * 1000) : INFINITE),
 #endif	
 #if defined(USE_BEOS_PORT_THREADS)
 	result = wait_multiple_sema(count, array, v);

@@ -47,7 +47,7 @@
 # define COLORMAP_CREATE 1
 #endif
 
-@MACRO CHECKMUT[TYPE.what.who] = if (!((<TYPE> *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", <who>, <what>, <what>);
+@MACRO CHECKMUT[TYPE.what.who] = if (!((<TYPE> *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", <who>, <what>, <what>);
 
 @CLASSBASE wxFont "font":"object"
 

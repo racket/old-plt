@@ -425,6 +425,12 @@ mse * msp;
      return(msp-INITIAL_MARK_STACK_SIZE/8);
 }
 
+/* MATTHEW: used by setjmpup: */
+int GC_did_mark_stack_overflow(void)
+{
+    return GC_mark_state == MS_INVALID;
+}
+
 
 /*
  * Mark objects pointed to by the regions described by

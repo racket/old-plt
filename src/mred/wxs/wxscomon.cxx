@@ -6,6 +6,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 // #include "wx.h"
 // #include "wx_media.h"
 #include "wxscheme.h"

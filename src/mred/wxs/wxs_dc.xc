@@ -166,7 +166,7 @@ static void* MyGetSize(wxDC *dc)
 @ "get-pixel" : bool GetPixel(float,float,wxColour^)
 @ "set-pixel" : void SetPixel(float,float,wxColour^)
 
-@ "set-bitmap" : void SelectObject(wxBitmap^);
+@ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("memory-dc","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();
 
 @END

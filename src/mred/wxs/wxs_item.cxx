@@ -13,6 +13,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 #include "wxscheme.h"
 #include "wxs_item.h"
 #include "wxscomon.h"
@@ -366,7 +377,7 @@ static Scheme_Object *os_wxMessageSetLabel(Scheme_Object *obj, int n,  Scheme_Ob
       scheme_wrong_count("set-label in message% (bitmap label case)", 1, 1, n, p);
     x0 = objscheme_unbundle_wxBitmap(p[0], "set-label in message% (bitmap label case)", 0);
 
-    if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("message%","set-label"), "bad bitmap: ", p[0]);
+    { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("message%","set-label"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("message%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }
     ((wxMessage *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
 
     
@@ -553,7 +564,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     } else
       x5 = "message";
 
-    if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[1]);
+    { if (x1 && !x1->Ok()) scheme_arg_mismatch(METHODNAME("message%","initialization"), "bad bitmap: ", p[1]); if (x1 && BM_SELECTED(x1)) scheme_arg_mismatch(METHODNAME("message%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[1]); }
     realobj = new os_wxMessage(obj, x0, x1, x2, x3, x4, x5);
     
     

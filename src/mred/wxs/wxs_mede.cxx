@@ -11,6 +11,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 #include "wxscheme.h"
 #include "wxs_mede.h"
 #include "wxscomon.h"
@@ -658,6 +669,8 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
   default: return NULL;
   }
 }
+
+
 
 
 # define Sym_END_ONLY 2

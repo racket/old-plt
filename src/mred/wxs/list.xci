@@ -21,7 +21,7 @@
 @IFDEFINE l_EXTRA = NULLTERM : 1 : 0
 @IFDEFINE l_TERMINATE = NULLTERM : f[i] = 0; :
 @IFDEFINE l_COPY = POINTWISE : l_COPYDEST.x=l_COPYSRC.x; l_COPYDEST.y=l_COPYSRC.y; : l_COPYDEST=l_COPYSRC;
-@IFDEFINE l_OKTEST = DOOKTEST : if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l));
+@IFDEFINE l_OKTEST = DOOKTEST : { if (!((l_COPYDEST)->Ok())) scheme_arg_mismatch(OKTESTWHERE, "bad bitmap: ", SCHEME_CAR(l)); if (BM_SELECTED(l_COPYDEST)) scheme_arg_mismatch(OKTESTWHERE, "bitmap is currently installed into a bitmap-dc%: ", SCHEME_CAR(l)); }
 @IFDEFINE l_INTTYPE = SIZEISLONG : long : int
 
 @DEFINE l_TYPE = <TYPE>

@@ -1,4 +1,4 @@
-; $Id: sexp.ss,v 1.22 1998/08/26 19:47:09 mflatt Exp $
+; $Id: sexp.ss,v 1.23 1999/05/20 22:36:52 mflatt Exp $
 
 (unit/sig zodiac:sexp^
   (import zodiac:misc^
@@ -15,7 +15,7 @@
 	       (finish (zodiac-finish source)))
 	  (letrec
 	    ((structurize
-	       (lambda (expr)
+	       (lambda (expr origin)
 		 (cond
 		   ((zodiac? expr) expr)
 		   ((and table
@@ -28,7 +28,7 @@
 		       (cond
 			 ((pair? expr)
 			   (loop (cdr expr)
-			     (cons (structurize (car expr)) rev-seen)
+			     (cons (structurize (car expr) default-origin) rev-seen)
 			     (add1 length)))
 			 ((null? expr)
 			   (z:make-list origin start finish
@@ -37,13 +37,13 @@
 			 (else
 			   (z:make-improper-list origin start finish
 			     (reverse
-			       (cons (structurize expr) rev-seen))
+			       (cons (structurize expr default-origin) rev-seen))
 			     (add1 length)
 			     (make-period start)
 			     '())))))
 		   ((vector? expr)
 		    (z:make-vector origin start finish
-				   (map structurize (vector->list expr))
+				   (map (lambda (x) (structurize x default-origin)) (vector->list expr))
 				   (vector-length expr)))
 		   ((symbol? expr)
 		     (z:make-symbol
@@ -65,7 +65,7 @@
 			   'quote 'quote '(-1))
 			 expr)
 		       2 marks))))))
-	    (structurize expr))))))
+	    (structurize expr origin))))))
 
   (define set-macro-origin
     (lambda (parsed-term head-sexp)

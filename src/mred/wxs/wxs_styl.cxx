@@ -12,6 +12,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 #include "wxscheme.h"
 #include "wxs_styl.h"
 #include "wxscomon.h"
@@ -1991,7 +2002,7 @@ static Scheme_Object *os_wxStyleSwitchTo(Scheme_Object *obj, int n,  Scheme_Obje
   x0 = objscheme_unbundle_wxDC(p[0], "switch-to in style%", 0);
   x1 = objscheme_unbundle_wxStyle(p[1], "switch-to in style%", 1);
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("style%","switch-to"), "bad bitmap: ", p[0]);
+  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("style%","switch-to"), "bad device context: ", p[0]);
   ((wxStyle *)((Scheme_Class_Object *)obj)->primdata)->SwitchTo(x0, x1);
 
   

@@ -56,8 +56,10 @@ extern void (*GC_push_last_roots_again)(void);
 
 #ifdef USE_SENORA_GC
 # define GC_is_marked(p) GC_base(p)
+# define GC_did_mark_stack_overflow() 0
 #else
 extern int GC_is_marked(void *);
+extern int GC_did_mark_stack_overflow(void);
 #endif
 
 #define get_copy(s_c) (((CopiedStack *)s_c)->_stack_copy)
@@ -107,7 +109,16 @@ static void push_copied_stacks(int init)
 	pushed_one = 1;
 	cs->pushed = 1;
 	GC_push_all_stack(get_copy(cs), (char *)get_copy(cs) + cs->size);
-	GC_flush_mark_stack();
+	if (GC_did_mark_stack_overflow()) {
+	  /* printf("mark stack overflow\n"); */
+	  return;
+	} else {
+	  GC_flush_mark_stack();
+	  if (GC_did_mark_stack_overflow()) {
+	    /* printf("mark stack overflow (late)\n"); */
+	    return;
+	  }
+	}
       }
   } while (pushed_one);
 }

@@ -14,6 +14,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 #include "wxscheme.h"
 #include "wxs_panl.h"
 #include "wxscomon.h"

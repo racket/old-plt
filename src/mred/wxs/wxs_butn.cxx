@@ -11,6 +11,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 #include "wxscheme.h"
 #include "wxs_butn.h"
 #include "wxscomon.h"
@@ -284,7 +295,7 @@ static Scheme_Object *os_wxButtonSetLabel(Scheme_Object *obj, int n,  Scheme_Obj
       scheme_wrong_count("set-label in button% (bitmap label case)", 1, 1, n, p);
     x0 = objscheme_unbundle_wxBitmap(p[0], "set-label in button% (bitmap label case)", 0);
 
-    if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("button%","set-label"), "bad bitmap: ", p[0]);
+    { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("button%","set-label"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("button%","set-label"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }
     ((wxButton *)((Scheme_Class_Object *)obj)->primdata)->SetLabel(x0);
 
     
@@ -483,7 +494,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x8 = "button";
 
-    if (x2 && !x2->Ok()) scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[2]);if (!x5) x5 = -1;if (!x6) x6 = -1;
+    { if (x2 && !x2->Ok()) scheme_arg_mismatch(METHODNAME("button%","initialization"), "bad bitmap: ", p[2]); if (x2 && BM_SELECTED(x2)) scheme_arg_mismatch(METHODNAME("button%","initialization"), "bitmap is currently installed into a bitmap-dc%: ", p[2]); }if (!x5) x5 = -1;if (!x6) x6 = -1;
     realobj = new os_wxButton(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
     
     realobj->callback_closure = tmp_callback; objscheme_backpointer(&realobj->callback_closure);

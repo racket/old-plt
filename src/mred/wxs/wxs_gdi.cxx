@@ -17,6 +17,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 #include "wxscheme.h"
 #include "wxs_gdi.h"
 #include "wxscomon.h"
@@ -83,6 +94,8 @@ static Scheme_Object *bundle_symset_bitmapType(int v) {
   default: return NULL;
   }
 }
+
+
 
 
 static Scheme_Object *family_wxDEFAULT_sym = NULL;
@@ -838,7 +851,7 @@ static Scheme_Object *os_wxColourSet(Scheme_Object *obj, int n,  Scheme_Object *
   x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set in color%");
   x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set in color%");
 
-  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("color%","set"), "color", "color");
+  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("color%","set"), "color", "color");
   ((wxColour *)((Scheme_Class_Object *)obj)->primdata)->Set(x0, x1, x2);
 
   
@@ -874,7 +887,7 @@ static Scheme_Object *os_wxColouroperatorEQUAL(Scheme_Object *obj, int n,  Schem
   
   x0 = objscheme_unbundle_wxColour(p[0], "copy-from in color%", 0);
 
-  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("color%","copy-from"), "color", "color");
+  if (!((wxColour *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("color%","copy-from"), "color", "color");
   r = &((wxColour *)((Scheme_Class_Object *)obj)->primdata)->operator=(*x0);
 
   
@@ -1458,7 +1471,7 @@ static Scheme_Object *os_wxBrushSetStyle(Scheme_Object *obj, int n,  Scheme_Obje
   
   x0 = unbundle_symset_brushStyle(p[0], "set-style in brush%");
 
-  if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-style"), "brush", "brush");
+  if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-style"), "brush", "brush");
   ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetStyle(x0);
 
   
@@ -1493,7 +1506,7 @@ static Scheme_Object *os_wxBrushSetStipple(Scheme_Object *obj, int n,  Scheme_Ob
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-stipple in brush%", 1);
 
-  if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bad bitmap: ", p[0]);if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-stipple"), "brush", "brush");
+  { if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("brush%","set-stipple"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-stipple"), "brush", "brush");
   ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0);
 
   
@@ -1531,7 +1544,7 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
       scheme_wrong_count("set-color in brush% (color% case)", 1, 1, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "set-color in brush% (color% case)", 0);
 
-    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
+    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
     ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(*x0);
 
     
@@ -1544,7 +1557,7 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
       scheme_wrong_count("set-color in brush% (color name case)", 1, 1, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "set-color in brush% (color name case)");
 
-    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
+    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
     ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0);
 
     
@@ -1561,7 +1574,7 @@ static Scheme_Object *os_wxBrushSetColour(Scheme_Object *obj, int n,  Scheme_Obj
     x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set-color in brush% (rgb values case)");
     x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set-color in brush% (rgb values case)");
 
-    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
+    if (!((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("brush%","set-colour"), "brush", "brush");
     ((wxBrush *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0, x1, x2);
 
     
@@ -2082,7 +2095,7 @@ static Scheme_Object *os_wxPenSetStyle(Scheme_Object *obj, int n,  Scheme_Object
   
   x0 = unbundle_symset_penStyle(p[0], "set-style in pen%");
 
-  if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-style"), "pen", "pen");
+  if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-style"), "pen", "pen");
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetStyle(x0);
 
   
@@ -2117,7 +2130,7 @@ static Scheme_Object *os_wxPenSetStipple(Scheme_Object *obj, int n,  Scheme_Obje
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-stipple in pen%", 1);
 
-  if (x0 && (x0->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not monochrome: ", p[0]);if (x0 && ((x0->GetWidth() != 8) || (x0->GetHeight() != 8))) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not 8x8: ", p[0]);if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bad bitmap: ", p[0]);if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-stipple"), "pen", "pen");
+  if (x0 && (x0->GetDepth() != 1)) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not monochrome: ", p[0]);if (x0 && ((x0->GetWidth() != 8) || (x0->GetHeight() != 8))) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is not 8x8: ", p[0]);{ if (x0 && !x0->Ok()) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bad bitmap: ", p[0]); if (x0 && BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("pen%","set-stipple"), "bitmap is currently installed into a bitmap-dc%: ", p[0]); }if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-stipple"), "pen", "pen");
   ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetStipple(x0);
 
   
@@ -2155,7 +2168,7 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
       scheme_wrong_count("set-color in pen% (color% case)", 1, 1, n, p);
     x0 = objscheme_unbundle_wxColour(p[0], "set-color in pen% (color% case)", 0);
 
-    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
+    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(*x0);
 
     
@@ -2168,7 +2181,7 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
       scheme_wrong_count("set-color in pen% (color name case)", 1, 1, n, p);
     x0 = (string)objscheme_unbundle_string(p[0], "set-color in pen% (color name case)");
 
-    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
+    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0);
 
     
@@ -2185,7 +2198,7 @@ static Scheme_Object *os_wxPenSetColour(Scheme_Object *obj, int n,  Scheme_Objec
     x1 = objscheme_unbundle_integer_in(p[1], 0, 255, "set-color in pen% (rgb values case)");
     x2 = objscheme_unbundle_integer_in(p[2], 0, 255, "set-color in pen% (rgb values case)");
 
-    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc%% or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
+    if (!((wxPen *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this %s%% object is locked (in use by a dc<%%> object or in a list of %s constants)", METHODNAME("pen%","set-colour"), "pen", "pen");
     ((wxPen *)((Scheme_Class_Object *)obj)->primdata)->SetColour(x0, x1, x2);
 
     

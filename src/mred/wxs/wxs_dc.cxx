@@ -24,6 +24,17 @@
 
 
 
+#ifdef wx_x
+# define BM_SELECTED(map) ((map)->selectedTo)
+#endif
+#if defined(wx_mac) || defined(wx_msw)
+# define BM_SELECTED(map) ((map)->selectedInto)
+#endif
+# define BM_IN_USE(map) ((map)->selectedIntoDC)
+
+
+
+
 #include "wxscheme.h"
 #include "wxs_dc.h"
 #include "wxscomon.h"
@@ -1407,7 +1418,7 @@ static Scheme_Object *os_wxMemoryDCSelectObject(Scheme_Object *obj, int n,  Sche
   
   x0 = objscheme_unbundle_wxBitmap(p[0], "set-bitmap in bitmap-dc%", 1);
 
-  
+  if (x0) { if (!x0->Ok()) scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bad bitmap: ", p[0]); if (BM_SELECTED(x0)) scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bitmap is already installed into a bitmap-dc%: ", p[0]); if (BM_IN_USE(x0)) scheme_arg_mismatch(METHODNAME("memory-dc","set-bitmap"), "bitmap is currently installed as a control label or pen/brush stipple: ", p[0]); }
   ((wxMemoryDC *)((Scheme_Class_Object *)obj)->primdata)->SelectObject(x0);
 
   

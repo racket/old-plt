@@ -1743,7 +1743,7 @@
 		   [(integer? num)
 		    (if (vm:fixnum? num) 
 			(emit-expr "scheme_make_integer(~a)" num)
-			(emit-expr "scheme_read_bignum(\"~a\", 10)" num))]
+			(emit-expr "scheme_read_bignum(\"~a\", 0, 10)" num))]
 		   ; rational numbers
 		   [else
 		    (emit-expr "scheme_make_rational(")

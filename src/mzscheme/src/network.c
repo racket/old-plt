@@ -574,8 +574,9 @@ static unsigned long *by_number_array[2];
 static struct hostent by_number_host;
 #endif
 
-static int get_host_address(const char *address, int id, tcp_address *result)
+int scheme_get_host_address(const char *address, int id, void *_result)
 {
+  tcp_address *result = (tcp_address *)_result;
   struct hostent *host;
 
   if (address) {
@@ -2006,7 +2007,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 #endif
 
 #ifdef USE_SOCKETS_TCP
-  if (get_host_address(address, id, &tcp_connect_dest_addr)) {
+  if (scheme_get_host_address(address, id, &tcp_connect_dest_addr)) {
 #ifndef PROTOENT_IS_INT
     proto = getprotobyname("tcp");
     if (proto)
@@ -2254,7 +2255,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
   {
     GC_CAN_IGNORE tcp_address tcp_listen_addr;
 
-    if (get_host_address(address, id, &tcp_listen_addr)) {
+    if (scheme_get_host_address(address, id, &tcp_listen_addr)) {
       tcp_t s;
 
       s = socket(MZ_PF_INET, SOCK_STREAM, PROTO_P_PROTO);
@@ -2841,7 +2842,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
   /* Set id in network order: */
   id = htons(origid);
 
-  if (get_host_address(address, id, &udp_bind_addr)) {
+  if (scheme_get_host_address(address, id, &udp_bind_addr)) {
     if (do_bind) {
       if (!bind(udp->s, (struct sockaddr *)&udp_bind_addr, sizeof(udp_bind_addr))) {
 	udp->bound = 1;
@@ -2983,7 +2984,7 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
     id = origid = 0;
   }
 
-  if (!with_addr || get_host_address(address, id, &udp_dest_addr)) {
+  if (!with_addr || scheme_get_host_address(address, id, &udp_dest_addr)) {
     long x;
     int errid = 0;
 

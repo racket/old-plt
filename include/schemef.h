@@ -538,6 +538,8 @@ MZ_EXTERN void scheme_add_fd_eventmask(void *fds, int mask);
 MZ_EXTERN void scheme_security_check_file(const char *who, const char *filename, int guards);
 MZ_EXTERN void scheme_security_check_network(const char *who, const char *host, int port, int client);
 
+MZ_EXTERN int scheme_get_host_address(const char *address, int id, void *result);
+
 /*========================================================================*/
 /*                        namespace/environment                           */
 /*========================================================================*/

@@ -442,6 +442,7 @@ void (*scheme_add_fd_handle)(void *h, void *fds, int repost);
 void (*scheme_add_fd_eventmask)(void *fds, int mask);
 void (*scheme_security_check_file)(const char *who, const char *filename, int guards);
 void (*scheme_security_check_network)(const char *who, const char *host, int port, int client);
+int (*scheme_get_host_address)(const char *address, int id, void *result);
 /*========================================================================*/
 /*                        namespace/environment                           */
 /*========================================================================*/

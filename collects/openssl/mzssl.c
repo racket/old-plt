@@ -690,8 +690,8 @@ char *check_host_and_convert(int argc, Scheme_Object *argv[])
   return NULL; /* unnecessary, but it makes GCC happy */
 }
 
-/* check_port_and_convert: Make absolutely sure the second argument was a
-   potential port number, and if it is, convert it to a network-order value
+/* check_port_and_convert: Make absolutely sure the second argument
+   was a potential port number, and if it is, convert it into a number
    we can actually use. Or scream if it wasn't kosher. */
 unsigned short check_port_and_convert(int argc, Scheme_Object *argv[])
 {
@@ -732,62 +732,6 @@ SSL_METHOD *check_encrypt_and_convert(int argc, Scheme_Object *argv[], int c)
 			   "one of 'sslv23, 'sslv2, 'sslv3, or 'tls", 
 			   2, argc, argv);
   return NULL; /* unnecessary, but it makes GCC happy */
-}
-
-/* parse_numerical: parse out a numerical address. this is lifted in its 
-   entirely from ${PLTHOME}/src/mzscheme/src/network.c */
-static int parse_numerical(const char *address, unsigned long *addr)
-{
-  unsigned char *s = (unsigned char *)address, n[4];
-  int p = 0, v = 0;
-  while (*s) {
-    if (isdigit(*s)) {
-      if (v < 256)
-	v = (v * 10) + (*s - '0');
-    } else if (*s == '.') {
-      if (p < 4) {
-	n[p] = v;
-	p++;
-      }
-      v = 0;
-    } else
-      break;
-    s++;
-  }
-     
-  if (p == 3) {
-    n[p] = v;
-    p++;
-  }
-     
-  if (!*s && (p == 4)
-      && (s[0] < 256) && (s[1] < 256)
-      && (s[2] < 256) && (s[3] < 256)) {
-    /* Numerical address */
-    *addr = *(unsigned long *)n;
-    return 1;
-  }
-
-  return 0;
-}
-
-/* get_host_by_number: get the hostent structure for the system by parsing
-   in the given numbers. Largely stolen from 
-   $(PLTHOME)/src/mzscheme/src/network.c */
-struct hostent *get_host_by_number(const char *address)
-{
-  static unsigned long by_number_id;
-  static unsigned long *by_number_array[2];
-  static struct hostent by_number_host;
-
-  if(parse_numerical(address, &by_number_id)) {
-    by_number_array[0] = &by_number_id;
-    by_number_host.h_addr_list = (char**)by_number_array;
-    by_number_host.h_length = sizeof(long);
-    return &by_number_host;
-  }
-
-  return NULL;
 }
 
 /* ssl_check_sock: determine if a socket is ready for reading or
@@ -936,9 +880,8 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 {
   char *address = check_host_and_convert(argc, argv);
   unsigned short nport = check_port_and_convert(argc, argv);
-  unsigned long port = SCHEME_INT_VAL(argv[1]);
+  int port = SCHEME_INT_VAL(argv[1]);
   SSL_METHOD *meth = check_encrypt_and_convert(argc, argv, 1);
-  struct hostent *host = NULL;
   int status;
   const char *errstr = "Unknown error";
   int err = 0;
@@ -972,16 +915,12 @@ static Scheme_Object *ssl_connect(int argc, Scheme_Object *argv[])
 #endif
   
   /* lookup hostname and get a reasonable structure */
-  host = get_host_by_number(address);
-  if(!host) host = gethostbyname(address);
-  if(!host) { err = mz_h_errno(); errstr = mz_hstrerror(err); goto clean_up_and_die; }
-    
-  /* make the network connection */
-  addr.sin_family = AF_INET;
-  addr.sin_port = nport;
-  memset(&addr.sin_addr, 0, sizeof(addr.sin_addr));
-  memset(&addr.sin_zero, 0, sizeof(addr.sin_zero));
-  memcpy(&addr.sin_addr, host->h_addr_list[0], host->h_length);
+  if (!scheme_get_host_address(address, nport, &addr)) {
+    err = 0; 
+    errstr = "Unknown error resolving address"; 
+    goto clean_up_and_die;
+  }
+
   status = connect(sock, (struct sockaddr *)&addr, sizeof(addr));
   /* here's the complicated bit */
   if(status == -1) {

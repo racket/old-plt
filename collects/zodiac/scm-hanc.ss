@@ -659,6 +659,13 @@
 	(else
 	  (static-error expr "Malformed compound-unit/sig link clause"))))))
 
+(define cu/s-check-self-import
+  (lambda (tag attributes)
+    (when (eq? (z:read-object tag)
+	    (get-attribute attributes cu/s-this-link-attr
+	      (lambda () (internal-error tag "No this-link attribute"))))
+      (static-error tag "Self import of tag ~s" (z:read-object tag)))))
+
 (define cu/s-link-prim-unit-names-vocab
   (make-vocabulary 'cu/s-link-prim-unit-names-vocab))
 
@@ -769,6 +776,7 @@
 
 (add-sym-micro cu/s-unit-path-linkage-vocab
   (lambda (expr env attributes vocab)
+    (cu/s-check-self-import expr attributes)
     (let ((sig
 	    (tag-table-entry-signature
 	      (cu/s-tag-table-lookup/static-error
@@ -794,6 +802,7 @@
 		   (ids (pat:pexpand '(id ...) p-env kwd))
 		   (sig (pat:pexpand 'sig p-env kwd)))
 	      (valid-syntactic-id? tag)
+	      (cu/s-check-self-import tag attributes)
 	      (map valid-syntactic-id? ids)
 	      (let ((initial-sig
 		      (tag-table-entry-signature
@@ -817,6 +826,7 @@
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
 		   (sig (pat:pexpand 'sig p-env kwd)))
 	      (valid-syntactic-id? tag)
+	      (cu/s-check-self-import tag attributes)
 	      (let ((big-sig
 		      (tag-table-entry-signature
 			(cu/s-tag-table-lookup/static-error
@@ -837,6 +847,7 @@
 	    (let ((tag (pat:pexpand 'tag p-env kwd))
 		   (ids (pat:pexpand '(id ...) p-env kwd)))
 	      (valid-syntactic-id? tag)
+	      (cu/s-check-self-import tag attributes)
 	      (map valid-syntactic-id? ids)
 	      (let ((initial-sig
 		      (tag-table-entry-signature

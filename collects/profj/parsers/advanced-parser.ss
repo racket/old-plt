@@ -566,9 +566,9 @@
        [(new PrimitiveType DimExprs Dims) (make-array-alloc #f (build-src 4) $2 (reverse $3) $4)]
        [(new PrimitiveType DimExprs) (make-array-alloc #f (build-src 3) $2 (reverse $3) 0)]
        [(new ClassOrInterfaceType DimExprs Dims)
-        (make-array-alloc #f (build-src 4) $2 (reverse $3) $4)]
+        (make-array-alloc #f (build-src 4) (make-type-spec $2 0 (build-src 2 2)) (reverse $3) $4)]
        [(new ClassOrInterfaceType DimExprs)
-        (make-array-alloc #f (build-src 3) $2 (reverse $3) 0)]
+        (make-array-alloc #f (build-src 3) (make-type-spec $2 0 (build-src 2 2)) (reverse $3) 0)]
        ;; 1.1
        [(new PrimitiveType Dims ArrayInitializer) 
         (begin (display $2)

@@ -17,7 +17,6 @@
   ;(make-compilation-unit (list string) (list syntax) (list location) (list (list string)))
   (define-struct compilation-unit (contains code locations depends))
   
-  
   ;File takes java AST as defined by ast.ss and produces
   ;semantically (hopefully) equivalent scheme code
   
@@ -185,7 +184,7 @@
   ;-------------------------------------------------------------------------------------------------------------------------
   ;Translation
   
-  (define (translate-interactions prog location type-recs)
+  (define (translate-interactions prog location type-recs lvl)
     (loc location)
     (let ((reqs (send type-recs get-class-reqs))
           (syn (cond 
@@ -1334,73 +1333,84 @@
   
   ;Converted
   ;translate-bin-op: symbol syntax type syntax type src src type-> syntax
-  (define translate-bin-op
-    (lambda (op left left-type right right-type key src type)
-      (let ((source (build-src src))
-            (op-syntax (create-syntax #f op (build-src key)))
-            (left (if (is-char? left-type) 
-                      (make-syntax #f `(char->integer ,left) #f)
-                      left))
-            (right (if (is-char? right-type)
-                       (make-syntax #f `(char->integer ,right) #f)
-                       right)))
-        (case op
-          ;Mathematical operations
-          ;PROBLEM! + and - do not take into account the possibility of overflow
-          ((+)
-           (cond 
-             ((and (is-string-type? type) (is-string-type? left-type))
-              (make-syntax #f `(send ,left concat_java.lang.String (javaRuntime:convert-to-string ,right)) source))
-             ((and (is-string-type? type) (is-string-type? right-type))
-              (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String ,right) source))
-             ((is-string-type? type)
-              (make-syntax #f 
-                           `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String 
-                                  (javaRuntime:convert-to-string ,right)) 
-                           source))
-             (else
-              (create-syntax #f `(,op-syntax ,left ,right) source))))
-          ((- *) (make-syntax #f `(,op-syntax ,left ,right) source))
-          ((/) (if (is-int? type)
-                   (make-syntax #f `(,(create-syntax #f 'javaRuntime:quotient (build-src key)) ,left ,right) source)
-                   (make-syntax #f `(,op-syntax ,left ,right) source)))
-          ((%) (make-syntax #f `(,(create-syntax #f 'javaRuntime:remainder (build-src key)) ,left ,right) source))
-          ;Shift operations
-          ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) ,op ,left ,right) source))
-          ;comparisons
-          ((< > <= >=) (make-syntax #f `(,op-syntax ,left ,right) source))
-          ((==) (make-syntax #f `(,(create-syntax #f 'eq? (build-src key)) ,left ,right) source))
-          ((!=) (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal (build-src key)) ,left ,right) source))
-          ;logicals
-          ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) ,op ,left ,right) source))
-          ;boolean
-          ((&&) (make-syntax #f `(,(create-syntax #f 'javaRuntime:and (build-src key)) ,left ,right) source))
-          ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or (build-src key)) ,left ,right) source))
-          (else
-           (error 'translate-op (format "Translate op given unknown operation ~s" op)))))))
-  
+  (define (translate-bin-op op left left-type right right-type key src type)
+    (let ((source (build-src src))
+          (op-syntax (create-syntax #f op (build-src key)))
+          (left (if (is-char? left-type) 
+                    (make-syntax #f `(char->integer ,left) #f)
+                    left))
+          (right (if (is-char? right-type)
+                     (make-syntax #f `(char->integer ,right) #f)
+                     right)))
+      (case op
+        ;Mathematical operations
+        ;PROBLEM! + and - do not take into account the possibility of overflow
+        ((+)
+         (cond 
+           ((and (is-string-type? type) (is-string-type? left-type))
+            (make-syntax #f `(send ,left concat_java.lang.String (javaRuntime:convert-to-string ,right)) source))
+           ((and (is-string-type? type) (is-string-type? right-type))
+            (make-syntax #f `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String ,right) source))
+           ((is-string-type? type)
+            (make-syntax #f 
+                         `(send (javaRuntime:convert-to-string ,left) concat_java.lang.String 
+                                (javaRuntime:convert-to-string ,right)) 
+                         source))
+           (else
+            (create-syntax #f `(,op-syntax ,left ,right) source))))
+        ((- *) (make-syntax #f `(,op-syntax ,left ,right) source))
+        ((/) (if (is-int? type)
+                 (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-int (build-src key)) ,left ,right) source)
+                 (make-syntax #f `(,(create-syntax #f 'javaRuntime:divide-float (build-src key)) ,left ,right) source)))
+        ((%) (make-syntax #f `(,(create-syntax #f 'javaRuntime:mod (build-src key)) ,left ,right) source))
+        ;Shift operations
+        ((<< >> >>>) (make-syntax #f `(,(create-syntax #f 'javaRuntime:shift (build-src key)) ,op ,left ,right) source))
+        ;comparisons
+        ((< > <= >=) (make-syntax #f `(,op-syntax ,left ,right) source))
+        ((==) (make-syntax #f `(,(create-syntax #f 'eq? (build-src key)) ,left ,right) source))
+        ((!=) (make-syntax #f `(,(create-syntax #f 'javaRuntime:not-equal (build-src key)) ,left ,right) source))
+        ;logicals
+        ((& ^ or) (make-syntax #f `(,(create-syntax #f 'javaRuntime:bitwise (build-src key)) ,op ,left ,right) source))
+        ;boolean
+        ((&&) (make-syntax #f `(,(create-syntax #f 'javaRuntime:and (build-src key)) ,left ,right) source))
+        ((oror) (make-syntax #f `(,(create-syntax #f 'javaRuntime:or (build-src key)) ,left ,right) source))
+        (else
+         (error 'translate-op (format "Translate op given unknown operation ~s" op))))))
+
   ;translate-access: (U field-access local-access) src -> syntax
-  (define translate-access
-    (lambda (name src)
-      (cond
-        ((local-access? name)
-         (translate-id (build-var-name (id-string (local-access-name name)))
-                       (id-src (local-access-name name))))
-        ((field-access? name)
-         (let* ((field-string (id-string (field-access-field name)))
-                (field-src (id-src (field-access-field name)))
-                (access (field-access-access name))
-                (obj (field-access-object name))
-                (expr (if obj (translate-expression obj))))
-           (cond
-             ((var-access-static? access)
-              (translate-id (build-var-name (build-static-name field-string (var-access-class access)))
-                            field-src))
-             ((eq? 'array (var-access-class access))
-              (make-syntax #f `(send ,expr ,(translate-id field-string field-src)) (build-src src)))
-             (else
+  (define (translate-access name src)
+    (cond
+      ((local-access? name)
+       (translate-id (build-var-name (id-string (local-access-name name)))
+                     (id-src (local-access-name name))))
+      ((field-access? name)
+       (let* ((field-string (id-string (field-access-field name)))
+              (field-src (id-src (field-access-field name)))
+              (access (field-access-access name))
+              (obj (field-access-object name))
+              (cant-be-null? (never-null? obj))
+              (expr (if obj (translate-expression obj))))
+         (cond
+           ((var-access-static? access)
+            (translate-id (build-var-name (build-static-name field-string (var-access-class access)))
+                          field-src))
+           ((eq? 'array (var-access-class access))
+            (if cant-be-null?
+                (make-syntax #f `(send ,expr ,(translate-id field-string field-src)) (build-src src))
+                (make-syntax #f
+                             `(if (null? ,expr)
+                                  (javaRuntime:nullError 'field)
+                                  (send ,expr ,(translate-id field-string field-src)))
+                             (build-src src))))
+           (else
               (let ((id (create-get-name field-string (var-access-class access))))
-                (make-syntax #f `(,id ,expr) (build-src src))))))))))
+                (if cant-be-null?
+                    (make-syntax #f `(,id ,expr) (build-src src))
+                    (make-syntax #f
+                                 `(if (null? ,expr)
+                                      (javaRuntime:nullError 'field)
+                                      (,id ,expr))
+                                 (build-src src))))))))))
   
   ;Converted
   ;translate-special-name: string src -> syntax
@@ -1412,46 +1422,67 @@
   
   ;Converted 
   ;translate-call: (U expression #f) (U special-name id) (list syntax) method-record src-> syntax
-  ;Statics?
-  (define translate-call
-    (lambda (expr method-name args method-record src)
-      (let ((expression (if expr (translate-expression expr) #f)))
-        (cond
-          ;Constructor case
-          ((special-name? method-name) 
-           (create-syntax #f
-                          `(send ,(if expr expression 'this) 
-                                 ,(build-identifier (build-constructor-name 
-                                                     (if (equal? (special-name-name method-name) "super")
-                                                         (parent-name)
-                                                         (class-name)) 
-                                                     (method-record-atypes method-record)))
-                                 ,@args) 
-                          (build-src src)))
+  (define (translate-call expr method-name args method-record src)
+    (let ((cant-be-null? (never-null? expr))
+          (expression (if expr (translate-expression expr) #f)))
+      (cond
+        ;Constructor case
+        ((special-name? method-name)
+         (let ((c-name (build-identifier (build-constructor-name 
+                                          (if (equal? (special-name-name method-name) "super")
+                                              (parent-name)
+                                              (class-name)) 
+                                          (method-record-atypes method-record)))))
+           (if cant-be-null?
+               (create-syntax #f `(send ,(if expr expression 'this) ,c-name ,@args) (build-src src))
+               (create-syntax #f 
+                              `(if (null? ,expression)
+                                   (javaRuntime:nullError 'method)
+                                   (send expression ,c-name ,@args))
+                              (build-src src)))))
           
-          ;Normal case
-          ((id? method-name)
-           (let* ((temp (build-method-name (method-record-name method-record)
-                                           (method-record-atypes method-record)))
-                  (m-name (if (memq 'static (method-record-modifiers method-record))
-                              (build-static-name temp (car (method-record-class method-record)))
-                              temp)))
-             (cond 
-               ((special-name? expr)
-                (create-syntax #f
-                               `(send this ,(translate-id (if (and (equal? (special-name-name expr) "super") 
-                                                                   (overridden? m-name))
-                                                              (format "super.~a" m-name)
-                                                              m-name)
-                                                          (id-src method-name))
-                                      ,@args)
-                               (build-src src)))
-               ((not expr)
-                (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))
-               (else
-                (create-syntax #f `(send ,expression ,(translate-id m-name (id-src method-name)) ,@args) 
-                               (build-src src))))))
-          (else (error 'translate-call (format "Translate call given ~s as method-name" method-name)))))))
+        ;Normal case
+        ((id? method-name)
+         (let* ((static? (memq 'static (method-record-modifiers method-record)))
+                (temp (build-method-name (method-record-name method-record)
+                                         (method-record-atypes method-record)))
+                (m-name (if static?
+                            (build-static-name temp (car (method-record-class method-record)))
+                            temp)))
+           (cond 
+             ((special-name? expr)
+              (let ((name (translate-id (if (and (equal? (special-name-name expr) "super") 
+                                                 (overridden? m-name))
+                                            (format "super.~a" m-name)
+                                            m-name)
+                                        (id-src method-name))))
+                (if static?
+                    (create-syntax #f `(,name ,@args) (build-src src))
+                    (create-syntax #f `(send this ,name ,@args) (build-src src)))))
+             ((not expr)
+              (create-syntax #f `(,(translate-id m-name (id-src method-name)) ,@args) (build-src src)))
+             (else
+              (let ((name (translate-id m-name (id-src method-name))))
+                (cond
+                  ((and cant-be-null? (not static?))          
+                   (create-syntax #f `(send ,expression ,name ,@args) (build-src src)))
+                  (static? (create-syntax #f `(,name ,@args) (build-src src)))
+                  (else
+                   (create-syntax #f
+                                  `(if (null? ,expression)
+                                       (javaRuntime:nullError 'method)
+                                       (send expression ,name ,@args))
+                                  (build-src src)))))))))
+        
+        (else (error 'translate-call (format "Translate call given ~s as method-name" method-name))))))
+
+  ;Add more checks perhaps to see in other cases if it can be null
+  ;never-null? expression -> bool
+  (define (never-null? expr)
+    (cond
+      ((not expr) #t)
+      ((special-name? expr) #t)
+      (else #f)))
   
   (define (overridden? name)
     (hash-table-get (class-override-table) name (lambda () #f)))
@@ -1500,8 +1531,11 @@
                    `(make-runtime-type ,(if (symbol? (type-spec-name type))
                                             `(quote ,(type-spec-name type))
                                             ;Come Back : losses src locations
-                                            (build-identifier (append (map id-string (name-path (type-spec-name type)))
-                                                                      (list (id-string (name-id (type-spec-name type)))))))
+                                            (build-identifier 
+                                             (if (null? (name-path (type-spec-name type)))
+                                                 (id-string (name-id (type-spec-name type)))
+                                                 (append (map id-string (name-path (type-spec-name type)))
+                                                         (list (id-string (name-id (type-spec-name type))))))))
                                        ,(type-spec-dim type))
                    (build-src (type-spec-src type)))))
   
@@ -1552,17 +1586,10 @@
   
   ;converted
   ;translate-cast: type-spec syntax src
-  (define translate-cast
-    (lambda (type expr src)
-      (if (symbol? (type-spec-name type))
-          (make-syntax #f `(javaRuntime:cast-primitive ,expr (quote ,(type-spec-name type))) (build-src src))
-          (make-syntax #f `(if (is-a? ,expr ,(get-class-name type))
-                               ,expr
-                               (raise (make-exn 
-                                       (format "MissCastClassException: ~s" 
-                                               (send (send ,expr toString) get-mzscheme-string))
-                                       (current-continuation-marks))))
-                       (build-src src)))))
+  (define (translate-cast type expr src)
+    (if (symbol? (type-spec-name type))
+        (make-syntax #f `(javaRuntime:cast-primitive ,expr (quote ,(type-spec-name type))) (build-src src))
+        (make-syntax #f `(javaRuntime:cast-reference ,expr ,(get-class-name type) (quote ,(get-class-name type))))))
   
   ;converted
   ;translate-instanceof: syntax type-spec src -> syntax

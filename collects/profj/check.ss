@@ -1013,6 +1013,7 @@
                                            (expr-src exp)
                                            check-sub-expr
                                            level
+                                           current-class
                                            type-recs)))
         ((cond-expression? exp)
          (set-expr-type exp
@@ -1509,10 +1510,12 @@
               args atypes))
   
   ;; 15.10
-  ;;check-array-alloc type-spec (list expression) int src (expr->type) symbol type-records -> type
-  (define (check-array-alloc elt-type exps dim src check-sub-exp level type-recs)
+  ;;check-array-alloc type-spec (list expression) int src (expr->type) symbol (list string) type-records -> type
+  (define (check-array-alloc elt-type exps dim src check-sub-exp level c-class type-recs)
     (send type-recs add-req (make-req 'array null))
     (let ((type (type-spec-to-type elt-type level type-recs)))
+      (when (ref-type? type)
+        (add-required c-class (ref-type-class/iface type) (ref-type-path type) type-recs))
       (for-each (lambda (e)
                   (let ((t (check-sub-exp e)))
                     (unless (prim-integral-type? t)

@@ -10,7 +10,8 @@ MzScheme should compile and execute with little or no modification if
 you have an ANSI C compiler on any platform supported by the
 conservative garbage collector. Some flags may need adjustment in the
 Makefile and "sconfig.h".  Special per-platform instructions are
-below, followed by some general notes on compilation.
+below, followed by some general notes on compilation and changing
+MzScheme.
 
 -Matthew Flatt
  Rice University PLT

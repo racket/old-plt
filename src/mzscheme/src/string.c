@@ -2164,6 +2164,7 @@ static char *string_to_from_locale(int to_bytes,
 	*olen = (clen >> 2);
 	((mzchar *)c)[*olen] = 0;
       }
+      iconv_close(cd);
       return c;
     }
 

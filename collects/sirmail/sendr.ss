@@ -565,7 +565,7 @@
 	      (send message-editor insert "X-Mailer: SirMail under MrEd ")
 	      (send message-editor insert (version))
 	      (send message-editor insert " (")
-	      (send message-editor insert (system-library-subpath))
+	      (send message-editor insert (path->string (system-library-subpath)))
 	      (send message-editor insert ")")
 	      (send message-editor insert #\newline)
 	      (send message-editor insert SEPARATOR)

@@ -19,7 +19,12 @@
   (define (ip-string? x) (and (string? x)
 			      (positive? (string-length x))))
   (define (abs-path-or-false? x) (or (not x)
-				     (and (string? x) (absolute-path? x))))
+				     (and (path? x) (absolute-path? x))))
+
+  (define (un/marshall-path pref)
+    (preferences:set-un/marshall pref
+				 (lambda (x) (and x (path->bytes x)))
+				 (lambda (x) (and x (bytes->path x)))))
   
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;  Preference Definitions                                 ;;
@@ -40,15 +45,17 @@
 			   (build-path (find-system-path 'home-dir)
 				       "SirMail")
 			   (lambda (x)
-			     (and (string? x)
+			     (and (path? x)
 				  (absolute-path? x))))
+  (un/marshall-path 'sirmail:local-directory)
   (preferences:set-default 'sirmail:sent-directory 
 			   (build-path (find-system-path 'home-dir)
 				       "SentMail")
 			   (lambda (x)
 			     (or (not x)
-				 (and (string? x)
+				 (and (path? x)
 				      (absolute-path? x)))))
+  (un/marshall-path 'sirmail:sent-directory)
   (preferences:set-default 'sirmail:root-mailbox-folder #f string-or-false?)
 
   (preferences:set-default 'sirmail:initial-sort 'id
@@ -73,8 +80,10 @@
 
   (preferences:set-default 'sirmail:aliases-file (build-path (find-system-path 'home-dir) ".sirmail.aliases")
 			   abs-path-or-false?)
+  (un/marshall-path 'sirmail:aliases-file)
   (preferences:set-default 'sirmail:auto-file-table-file (build-path (find-system-path 'home-dir) ".sirmail.auto-file")
 			   abs-path-or-false?)
+  (un/marshall-path 'sirmail:auto-file-table-file)
 
   (preferences:set-default 'sirmail:self-addresses null
 			   (lambda (x) (and (list? x) (andmap string? x))))
@@ -245,7 +254,7 @@
 				      (preferences:set
 				       pref
 				       (and on?
-					    (send field get-value))))))))
+					    (string->path (send field get-value)))))))))
       (define p (instantiate horizontal-panel% ((or p0 parent))
 			     [stretchable-height #f]))
       (define (set-it v)
@@ -253,9 +262,10 @@
       (define field (make-object text-field% button-label p
 				 ;; For now, just counteract edits:
 				 (lambda (t e)
-				   (send field set-value (preferences:get pref)))
-				 (or (preferences:get pref)
-				     (current-directory))))
+				   (send field set-value (path->string (preferences:get pref))))
+				 (path->string
+				  (or (preferences:get pref)
+				      (current-directory)))))
       (when e
 	(send e set-value (preferences:get pref))
 	(send p enable (send e get-value)))
@@ -264,7 +274,7 @@
 					 (send e set-value val)
 					 (send p enable val))
 				       (when val
-					 (send field set-value val))))
+					 (send field set-value (path->string val)))))
       (make-object button% "Set..." p (lambda (b e)
 					(let ([v ((if dir? get-directory get-file)
 						  (or enabler button-label))])

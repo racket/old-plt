@@ -15,8 +15,6 @@
 		      'linefeed
 		      'return-linefeed))
 
-      (define crlf (string #\return #\linefeed))
-      
       (define (tag-eq? a b)
 	(or (eq? a b)
 	    (and (symbol? a)
@@ -61,7 +59,7 @@
 	      s)))
 
       (define (log-warning . args)
-	;(apply printf args)
+	;; (apply printf args)
 	(void))
       (define log log-warning)
 
@@ -69,18 +67,18 @@
 	(let ([id 0])
 	  (lambda ()
 	    (begin0
-	     (format "a~a " id)
+	     (string->bytes/latin-1 (format "a~a " id))
 	     (set! id (add1 id))))))
 
       (define (starts-with? l n)
-	(and (>= (string-length l) (string-length n))
-	     (string=? n (substring l 0 (string-length n)))))
+	(and (>= (bytes-length l) (bytes-length n))
+	     (bytes=? n (subbytes l 0 (bytes-length n)))))
 
       (define (skip s n)
-	(substring s
-		   (if (number? n) n (string-length n))
-		   (string-length s)))
-
+	(subbytes s
+		  (if (number? n) n (bytes-length n))
+		  (bytes-length s)))
+      
       (define (splice l sep)
 	(if (null? l)
 	    ""
@@ -99,19 +97,19 @@
 		   [eol-k (lambda (accum) (reverse! accum))]
 		   [eop-k (lambda (s accum) (error 'imap-read "unxpected close parenthesis"))])
 	  (cond
-	   [(string=? "" s) (eol-k accum)]
-	   [(char-whitespace? (string-ref s 0))
+	   [(bytes=? #"" s) (eol-k accum)]
+	   [(char-whitespace? (integer->char (bytes-ref s 0)))
 	    (loop (skip s 1) r accum eol-k eop-k)]
 	   [else
-	    (case (string-ref s 0)
-	      [(#\") (let ([m (regexp-match "\"([^\"]*)\"(.*)" s)])
+	    (case (integer->char (bytes-ref s 0))
+	      [(#\") (let ([m (regexp-match #rx#"\"([^\"]*)\"(.*)" s)])
 		       (if m
 			   (loop (caddr m) r (cons (cadr m) accum) eol-k eop-k)
 			   (error 'imap-read "didn't find end of quoted string in: ~a" s)))]
 	      [(#\)) (eop-k (skip s 1) accum)]
 	      [(#\() (letrec ([next-line
 			       (lambda (accum) 
-				 (loop (read-line r eol) r
+				 (loop (read-bytes-line r eol) r
 				       accum
 				       next-line
 				       finish-parens))]
@@ -121,21 +119,23 @@
 				       (cons (reverse! laccum) accum)
 				       eol-k eop-k))])
 		       (loop (skip s 1) r null next-line finish-parens))]
-	      [(#\{) (let ([m (regexp-match "{([0-9]+)}(.*)" s)])
+	      [(#\{) (let ([m (regexp-match #rx#"{([0-9]+)}(.*)" s)])
 		       (cond
 			[(not m) (error 'imap-read "couldn't read {} number: ~a" s)]
-			[(not (string=? (caddr m) "")) (error 'imap-read "{} not at end-of-line: ~a" s)]
-			[else (loop "" r
-				    (cons (read-string (string->number (cadr m)) r)
+			[(not (bytes=? (caddr m) #"")) (error 'imap-read "{} not at end-of-line: ~a" s)]
+			[else (loop #"" r
+				    (cons (read-bytes (string->number 
+						       (bytes->string/latin-1 (cadr m)))
+						      r)
 					  accum)
 				    eol-k eop-k)]))]
-	      [else (let ([m (regexp-match "([^ (){}]+)(.*)" s)])
+	      [else (let ([m (regexp-match #rx#"([^ (){}]+)(.*)" s)])
 		      (if m
 			  (loop (caddr m) r
 				(cons (let ([v (cadr m)])
-					(if (regexp-match "^[0-9]*$" v)
-					    (string->number v)
-					    (string->symbol (cadr m))))
+					(if (regexp-match #rx#"^[0-9]*$" v)
+					    (string->number (bytes->string/latin-1 v))
+					    (string->symbol (bytes->string/latin-1 v))))
 				      accum)
 				eol-k eop-k)
 			  (error 'imap-read "failure reading atom: ~a" s)))])])))
@@ -143,21 +143,21 @@
       (define (imap-send r w cmd info-handler . continuation-handler)
 	(let ([id (make-msg-id)])
 	  (log "sending ~a~a~n" id cmd)
-	  (fprintf w "~a~a~a" id cmd crlf)
+	  (fprintf w "~a~a\r\n" id cmd)
 	  (let loop ()
-	    (let ([l (read-line r eol)])
-					; (log "raw-reply: ~s~n" l)
+	    (let ([l (read-bytes-line r eol)])
+	      ;; (log "raw-reply: ~s~n" l)
 	      (cond
 	       [(starts-with? l id)
 		(let ([reply (imap-read (skip l id) r)])
 		  (log "response: ~a~n" reply)
 		  reply)]
-	       [(starts-with? l "* ")
+	       [(starts-with? l #"* ")
 		(let ([info (imap-read (skip l 2) r)])
 		  (log "info: ~s~n" info)
 		  (info-handler info))
 		(loop)]
-	       [(starts-with? l "+ ")
+	       [(starts-with? l #"+ ")
                 (if (null? continuation-handler)
                     (error 'imap-send "unexpected continuation request: ~a" l)
                     (begin
@@ -167,9 +167,9 @@
 		(log-warning "warning: unexpected response for ~a: ~a" id l)
 		(loop)])))))
 
-      ; str->arg is still not quite right.  It should use {n}crnl prefixes.
+      ;; str->arg is still not quite right.  It should use {n}crnl prefixes.
       (define (str->arg s)
-	(if (or (regexp-match "[ *]" s)
+	(if (or (regexp-match #rx#"[ *]" s)
 		(string=? s ""))
 	    (format "\"~a\"" s)
 	    s))

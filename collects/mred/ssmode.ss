@@ -80,25 +80,27 @@
 			     [symbols (map (lambda (x) (string->symbol (send list-box get-string x))) (unbox selections))])
 			(for-each (lambda (x) (send list-box delete x)) (reverse (unbox selections)))
 			(let ([ht (mred:preferences:get-preference 'mred:tabify)])
-			  (for-each (lambda (x) (hash-table-remove! ht x)) symbols)))))])
-	 (mred:horizontal-panel p #t #t
-	   (list 
-	    (vertical-panel #t #t (let ([msg (message "Begin-like Keywords")]
-					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 begin-keywords)]
-					[add (button (add-callback "Begin" 'begin box) "Add")]
-					[delete (button (delete-callback box) "Delete")])
-				    (send add user-min-width (send delete user-min-width))
-				    (list msg box add delete)))
-	    (vertical-panel #t #t (let ([msg (message "Define-like Keywords")]
-					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 define-keywords)])
-				    (list msg box
-					  (button (add-callback "Define" 'define box) "Add")
-					  (button (delete-callback box) "Delete"))))
-	    (vertical-panel #t #t (let ([msg (message "Lambda-like Keywords")]
-					[box (list-box null "" wx:const-multiple -1 -1 -1 -1 lambda-keywords)])
-				    (list msg box
-					  (button (add-callback "Lambda" 'lambda box) "Add")
-					  (button (delete-callback box) "Delete")))))))))
+			  (for-each (lambda (x) (hash-table-remove! ht x)) symbols)))))]
+		 [main-panel (make-object mred:horizontal-panel% p)]
+		 [make-column
+		  (lambda (string symbol keywords)
+		    (let* ([vert (make-object mred:vertical-panel% main-panel -1 -1 -1 -1 wx:const-border)]
+			   [_ (make-object mred:message% vert (string-append string "-like Keywords"))]
+			   [box (make-object mred:list-box% vert null "" wx:const-multiple -1 -1 -1 -1 keywords)]
+			   [add-panel (make-object mred:horizontal-panel% vert -1 -1 -1 -1 wx:const-border)]
+			   [delete-panel (make-object mred:horizontal-panel% vert -1 -1 -1 -1 wx:const-border)]
+			   [_ (make-object mred:horizontal-panel% delete-panel)]
+			   [delete-button (make-object mred:button% delete-panel (delete-callback box) "Remove")])
+		      (make-object mred:horizontal-panel% add-panel)
+		      (send (make-object mred:button% add-panel (add-callback string symbol box) "Add")
+			    user-min-width (send delete-button get-width))
+		      (send* add-panel (spacing 0) (border 0))
+		      (send* delete-panel (spacing 0) (border 0))
+		      (send vert spacing 0)))])
+	 (make-column "Begin" 'begin begin-keywords)
+	 (make-column "Define" 'define begin-keywords)
+	 (make-column "Lambda" 'lambda begin-keywords)
+	 main-panel)))
 
     (let ([hash-table (make-hash-table)])
 	      (for-each (lambda (x) (hash-table-put! hash-table x 'define))

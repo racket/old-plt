@@ -25,34 +25,6 @@
 
     (define frame-name "MrEd")
 
-    (define empty-frame%
-      (class mred:container:frame% args
-	(rename [super-pre-on-char pre-on-char]
-		[super-pre-on-event pre-on-event])
-	(inherit show)
-	(public
-	  [panel% (class-asi mred:container:vertical-panel%
-		    (public
-		      [default-spacing-width 2]
-		      [default-border-width 2]))]
-	  [on-close (lambda () #t)])
-	(sequence 
-	  (apply super-init args))
-	(public
-	  [keymap (make-object wx:keymap%)]
-	  [panel (make-object panel% this)])
-	(public
-	  [pre-on-char
-	   (lambda (receiver event)
-	     (let ([ans (send keymap handle-key-event this event)])
-	       '(printf "handled keyevent? ~a~n" ans)
-	       (or ans
-		   (super-pre-on-char receiver event))))]
-	  [pre-on-eventt
-	   (lambda (receiver event)
-	     (or (and #f (send keymap handle-key-event this event))
-		 (super-pre-on-event receiver event)))])))
-
     (define frame-width 600)
     (define frame-height 600)
     (let ([w (box 0)]
@@ -62,6 +34,99 @@
 	  (set! frame-width (- (unbox w) 65)))
       (if (< (unbox h) frame-height)
 	  (set! frame-height (- (unbox h) 65))))
+
+    (define empty-frame%
+      (class mred:container:frame% args
+	(rename [super-pre-on-char pre-on-char]
+		[super-pre-on-event pre-on-event])
+	(inherit show)
+	(public
+	  [get-panel% 
+	   (lambda ()
+	     (class-asi mred:container:vertical-panel%
+	       (public
+		 [default-spacing-width 2]
+		 [default-border-width 2])))]
+	  [on-close (lambda () #t)])
+	(sequence 
+	  (apply super-init args))
+	(public
+	  [keymap (make-object wx:keymap%)]
+	  [panel (make-object (get-panel%) this)])
+	(public
+	  [pre-on-char
+	   (lambda (receiver event)
+	     (let ([ans (send keymap handle-key-event this event)])
+	       (or ans
+		   (super-pre-on-char receiver event))))]
+	  [pre-on-eventt
+	   (lambda (receiver event)
+	     (or (and #f (send keymap handle-key-event this event))
+		 (super-pre-on-event receiver event)))])))
+
+    (define time-edit (make-object mred:edit:edit%))
+    (send time-edit lock #t)
+    '(letrec ([loop
+	      (lambda ()
+		(let* ([date (seconds->date (current-seconds))]
+		       [minute (date-minute date)])
+		  (send* time-edit (lock #f) (begin-edit-sequence) (erase)
+			 (insert (if (< 10 minute)
+				     (format "~a:~a" (date-hour date) minute)
+				     (format "~a:0~a" (date-hour date) minute)))
+			 (end-edit-sequence)
+			 (lock #t))
+		  (sleep 45)
+		  (loop)))])
+      (thread loop))
+
+    (mred:preferences:set-preference-default 'mred:status-line #f)
+    (define make-status-line-frame%
+      (lambda (%)
+	(class % args
+	  (inherit get-panel% show)
+	  (rename [super-panel panel]
+		  [super-on-close on-close])
+	  (sequence
+	    (apply super-init args))
+	  (public
+	    [panel (make-object (get-panel%) super-panel)])
+	  (private
+	    [horiz-panel (make-object mred:container:horizontal-panel% super-panel)])
+	  (public
+	    [status-line-panel (make-object mred:container:horizontal-panel% horiz-panel)])
+	  (sequence
+	    (make-object mred:container:vertical-panel% horiz-panel))
+	  (private
+	    [canvas (make-object mred:container:media-canvas% horiz-panel -1 -1 -1 -1
+				 "" (+ wx:const-mcanvas-no-h-scroll
+				       wx:const-mcanvas-no-v-scroll))])
+	  (public
+	    [on-close
+	     (begin
+	       (let ([t (mred:preferences:add-preference-callback
+			 'mred:status-line
+			 (lambda (p val)
+			   (send super-panel
+				 change-children
+				 (lambda (l)
+				   (if val
+				       (list panel horiz-panel)
+				       (list panel))))))])
+		 (lambda ()
+		   (t)
+		   (super-on-close))))])
+	  (sequence
+	    (send* status-line-panel (border 2) (spacing 2))
+	    (send* horiz-panel (border 0) (spacing 0))
+	    (send* super-panel (border 0) (spacing 0))
+	    (send* canvas (set-media time-edit) (user-min-height 35) (user-min-width 65)
+		          (stretchable-in-x? #f))
+	    (send status-line-panel stretchable-in-y? #f)
+	    (unless (mred:preferences:get-preference 'mred:status-line)
+	      (send super-panel change-children (lambda (l) (list panel))))))))
+
+    (define status-line-frame% (make-status-line-frame% empty-frame%))
 
     (define make-menu-frame%
       (lambda (super%)
@@ -301,9 +366,9 @@
     (define make-simple-frame%
       (lambda (super%)
 	(class super% ([name frame-name])
-	  (inherit panel get-client-size get-title set-title set-icon)
+	  (inherit panel get-client-size get-title set-title set-icon status-line-panel)
 	  (rename [super-on-close on-close])
-	  (public 
+	  (public
 	    [WIDTH frame-width]
 	    [HEIGHT frame-height])
 
@@ -377,7 +442,11 @@
 	    (mred:debug:printf 'super-init "after simple-frame%"))
 
 	  
+
 	  (public
+	    [lock-icon '(make-object mred:container:message% status-line-panel "Locked")]
+	    [saved-icon '(make-object mred:container:message% status-line-panel "Saved")]
+
 	    [last-focus-canvas #f] ; Does this need to be inited during make-canvas?
 	    [canvas (make-canvas)])
 	  (sequence

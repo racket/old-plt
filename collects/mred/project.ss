@@ -24,8 +24,9 @@
       (lambda (super%)
 	(class super% ([filename #f] [visible? #t])
 	  (inherit file-menu file-menu:open-id show
-		   get-client-size set-title make-menu panel% panel)
-	  (rename [super-on-size on-size]
+		   get-client-size set-title make-menu panel)
+	  (rename [super-get-panel% get-panel%]
+		  [super-on-size on-size]
 		  [super-on-close on-close])
 	  (public
 	    [WIDTH 200]
@@ -44,7 +45,7 @@
 		   [ask-before-closing-last? #f])))]
 	    [get-panel%
 	     (lambda ()
-	       (class-asi panel%
+	       (class-asi (super-get-panel%)
 		 (public
 		   [on-default-action
 		    (lambda (which)

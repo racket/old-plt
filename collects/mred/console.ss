@@ -84,7 +84,8 @@
 			get-style-list)
 	       (rename [super-on-local-char on-local-char]
 		       [super-after-insert after-insert]
-		       [super-after-delete after-delete])
+		       [super-after-delete after-delete]
+		       [super-erase erase])
 	       (private old-stdout
 			old-stderr
 			old-stdin)
@@ -118,12 +119,14 @@
 		[super-on-delete on-delete]
 		[super-on-change-style on-change-style])
 	       (private
+		[erasing? #f]
 		[on-something
 		 (lambda (super)
 		   (lambda (start len)
-		     (and (or (not (number? prompt-position))
-			      (>= start prompt-position))
-			  ((super) start len))))])
+		     (or erasing?
+			 (and (or (not (number? prompt-position))
+				  (>= start prompt-position))
+			      ((super) start len)))))])
 	       (public
 		[on-insert (on-something (lambda () super-on-insert))]
 		[on-delete (on-something (lambda () super-on-delete))]
@@ -444,14 +447,21 @@
 		     (semaphore-post timer-sema)))]
 		[after-insert
 		 (lambda (start len)
-		   (if (and prompt-mode? (< start prompt-position))
+		   (if (or erasing?
+			   (and prompt-mode? (< start prompt-position)))
 		       (set! prompt-position (+ len prompt-position)))
 		   (super-after-insert start len))]
 		[after-delete
 		 (lambda (start len)
-		   (if (and prompt-mode? (< start prompt-position))
+		   (if (or erasing?
+			   (and prompt-mode? (< start prompt-position)))
 		       (set! prompt-position (- prompt-position len)))
 		   (super-after-delete start len))]
+		[erase
+		 (lambda ()
+		   (set! erasing? #t)
+		   (super-erase)
+		   (set! erasing? #f))]
 		
 		[ready-non-prompt
 		 (lambda ()

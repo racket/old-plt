@@ -1,5 +1,9 @@
 /* srpbuffer.c */
 
+#ifndef ODBCVER
+#error Must define ODBCVER when compiling
+#endif
+
 #include <ctype.h>
 
 #ifdef WIN32

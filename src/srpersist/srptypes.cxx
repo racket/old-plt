@@ -1,5 +1,9 @@
 /* srptypes.c */
 
+#ifndef ODBCVER
+#error Must define ODBCVER when compiling
+#endif
+
 #include "stdafx.h"
 
 #ifdef WIN32

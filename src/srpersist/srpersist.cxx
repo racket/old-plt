@@ -1,5 +1,9 @@
 /* srpersist.cxx */
 
+#ifndef ODBCVER
+#error Must define ODBCVER when compiling
+#endif
+
 #include "stdafx.h"
 
 #include <limits.h>

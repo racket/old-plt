@@ -43,6 +43,23 @@
       (let/cc k
 	(nontail-loop proc-depth k)))
 
+(test 0 'deep-recursion-resume/escape
+      ((let/ec k
+	 (nontail-loop proc-depth
+		       (lambda (v)
+			 (let/cc inside
+			   (k inside))
+			 (k (lambda () 0)))))))
+
+(test (- proc-depth) 'deep-recursion-resume
+      ((lambda (x) (if (procedure? x) (x) x))
+       (let/ec k
+	 (nontail-loop proc-depth
+		       (lambda (v)
+			 (let/cc inside
+			   (k inside))
+			 0)))))
+
 (define (read-deep depth)
   (define paren-port
     (let* ([depth depth]

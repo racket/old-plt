@@ -2636,26 +2636,38 @@
 						    (current-namespace)
 						    ht)
 				   ht)))])
-		      ;; unless it has been loaded already...
-		      (unless (hash-table-get ht modname (lambda () #f))
-			;; Currently loading?
-			(let ([l (continuation-mark-set->list
-				  (current-continuation-marks)
-				  -loading-filename)])
-			  (for-each
-			   (lambda (s)
-			     (when (string=? s filename)
-			       (error
-				'standard-module-name-resolver
-				"cycle in loading at ~e: ~e"
-				filename
-				(reverse (cons s l)))))
-			   l))
-			(let ([prefix (string->symbol abase)])
-			  (with-continuation-mark -loading-filename filename
-			    (parameterize ([current-module-name-prefix prefix])
-			      ((current-load/use-compiled) filename (string->symbol no-sfx)))))
-			(hash-table-put! ht modname #t))
+		      ;; Loaded already?
+		      (let ([got (hash-table-get ht modname (lambda () #f))]
+			    [suffix (let ([m (regexp-match -re:suffix name)])
+				      (if m (car m) #t))])
+			(when got
+			  ;; Check the suffix, which gets lost when creating a key:
+			  (unless (equal? suffix got)
+			    (error
+			     'standard-module-name-resolver
+			     "module previously loaded with suffix ~s, cannot load with suffix ~s: ~e"
+			     (if (eq? #t got) "" got)
+			     (if (eq? #t suffix) "" suffix)
+			     filename)))
+			(unless got
+			  ;; Currently loading?
+			  (let ([l (continuation-mark-set->list
+				    (current-continuation-marks)
+				    -loading-filename)])
+			    (for-each
+			     (lambda (s)
+			       (when (string=? s filename)
+				 (error
+				  'standard-module-name-resolver
+				  "cycle in loading at ~e: ~e"
+				  filename
+				  (reverse (cons s l)))))
+			     l))
+			  (let ([prefix (string->symbol abase)])
+			    (with-continuation-mark -loading-filename filename
+			      (parameterize ([current-module-name-prefix prefix])
+				((current-load/use-compiled) filename (string->symbol no-sfx)))))
+			  (hash-table-put! ht modname suffix)))
 		      ;; Result is the module name:
 		      modname))))))
 	  ;; Just register relto as loaded

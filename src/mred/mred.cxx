@@ -2981,11 +2981,14 @@ int main(int argc, char *argv[])
   GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
 #endif
 
-  /* Set stack base and turn off auto-finding of static variables
-     --- unless this is MacOS, where wxWindows doesn't currently
-     register its static variables. */
-#ifndef MACOS_FIND_STACK_BOUNDS
+  /* Set stack base and turn off auto-finding of static variables ---
+     unless this is MacOS, where wxWindows doesn't currently register
+     its static variables, --- or Windows, where it's called in
+     wxWindows. */
+#ifndef wx_msw
+# ifndef MACOS_FIND_STACK_BOUNDS
   scheme_set_stack_base(stack_start, 1);
+# endif
 #endif
 
 #if defined(_IBMR2)

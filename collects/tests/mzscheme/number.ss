@@ -1694,6 +1694,7 @@
 (error-test '(string->number 1 1))
 
 (test #t andmap (lambda (x) (and (>= x 0) (< x 10))) (map random '(10 10 10 10)))
+(test (void) random-seed 5)
 (test (begin (random-seed 23) (list (random 10) (random 20) (random 30)))
       'random-seed-same
       (begin (random-seed 23) (list (random 10) (random 20) (random 30))))

@@ -228,7 +228,10 @@
                             (break-enabled #f)
                             (restart))))
             (break-enabled #t)
-            (with-handlers ((not-break-exn? void))
+            (with-handlers ((not-break-exn?
+                             (lambda (exn)
+                               (break-enabled #f)
+                               (semaphore-wait lock))))
               (re-tokenize (open-input-text-editor this current-pos end-pos)
                            current-pos))
             ;; Breaks should be disabled from exit of re-tokenize

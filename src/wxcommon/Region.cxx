@@ -988,8 +988,15 @@ void wxRegion::Install(long target)
     cairo_clip(CAIRO_DEV);
 #endif
 #ifdef wx_mac
-    CGContextBeginPath(cg);
-    CGContextClip(cg);
+    {
+      CGContextRef cg = (CGContextRef)target;
+      CGRect r;
+      r.origin.x = 0;
+      r.origin.y = 0;
+      r.size.width = 0;
+      r.size.height = 0;
+      CGContextClipToRect(cg, r);
+    }
 #endif
 #ifdef wx_msw
     {

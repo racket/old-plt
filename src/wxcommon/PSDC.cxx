@@ -574,12 +574,10 @@ void wxPostScriptDC::DrawArc (double x, double y, double w, double h, double sta
       SetBrush(current_brush);
       
       pstream->Out("newpath\n");
-      pstream->Out(cos(start)*radius); pstream->Out(" "); 
-      pstream->Out(sin(start)*radius); pstream->Out(" moveto\n");
+      pstream->Out(0); pstream->Out(" "); 
+      pstream->Out(0); pstream->Out(" moveto\n");
       pstream->Out("0 0 "); pstream->Out(radius); pstream->Out(" "); pstream->Out(a1); 
       pstream->Out(" "); pstream->Out(a2); pstream->Out(" arc\n");
-
-      pstream->Out("0 0 lineto\n");
 
       pstream->Out("closepath\n");
 
@@ -589,7 +587,6 @@ void wxPostScriptDC::DrawArc (double x, double y, double w, double h, double sta
       SetPen(current_pen);
 
       pstream->Out("newpath\n");
-      pstream->Out(cos(start)*radius); pstream->Out(" "); pstream->Out(sin(start)*radius); pstream->Out(" moveto\n");
       pstream->Out("0 0 "); pstream->Out(radius); pstream->Out(" ");
       pstream->Out(a1); pstream->Out(" "); pstream->Out(a2); pstream->Out(" arc\n");
       pstream->Out("stroke\n");

@@ -129,7 +129,7 @@
        [(list? other) 
 	(let+
 	 ([val arg-sym-list (build-list (length sexp) get-arg-symbol)]
-	  [val let-clauses (map (lambda (sym) `(,sym ,*unevaluated*)) arg-sym-list)]
+	  [val let-clauses (map (lambda (sym) `(,sym (#%quote ,*unevaluated*))) arg-sym-list)]
 	  [rec multi-annotate
 	       (letrec ((multi-annotate
 			 (lambda (expr-list)
@@ -200,4 +200,4 @@
 
 (annotate-wrapper '((a b) c))
 
-
+(step-prog '((lambda (a b) (printf "~a~n" (+ a b))) (+ 1 3) 34))

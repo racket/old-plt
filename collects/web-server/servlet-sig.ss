@@ -1,5 +1,6 @@
 (module servlet-sig mzscheme
-  (provide servlet^
+  (provide web-server^
+           servlet^
            (struct response/full (code message seconds mime extras body))
            (struct response/incremental ())
            (struct request (method uri headers host-ip client-ip))
@@ -7,6 +8,13 @@
            (rename get-parsed-bindings request-bindings))
   (require (lib "unitsig.ss"))
 
+  (define-signature web-server^
+    (serve
+     ; for servlet-helpers
+     extract-user-pass
+     ; for environment:
+     server-loop add-new-instance gen-send/suspend make-config))
+  
   (define-signature servlet^
     (initial-request send/suspend send/finish adjust-timeout!))
   

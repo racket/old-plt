@@ -41,7 +41,10 @@ exit 1
 (define plthome (current-directory))
 (putenv "PLTHOME" plthome)
 (putenv "PLTCOLLECTS" "")
-(current-library-collection-paths (list (build-path plthome "collects")))
+(current-library-collection-paths (list (build-path (find-system-path 'addon-dir)
+						    (version)
+						    "collects")
+					(build-path plthome "collects")))
 
 (define plthome (regexp-replace* "\"" plthome "\\\\\""))
 

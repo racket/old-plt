@@ -387,9 +387,6 @@ static void make_init_env(void)
 #ifndef NO_REGEXP_UTILS
   MZTIMEIT(regexp, scheme_regexp_initialize(env));
 #endif
-#ifdef MZ_PRECISE_GC
-  MZTIMEIT(gc2-extensions, scheme_init_gc_extensions(env));
-#endif
 
   MARK_START_TIME();
 

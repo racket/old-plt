@@ -559,6 +559,17 @@ void scheme_init_thread(Scheme_Env *env)
 						      0, 1),
 			     env);
 
+  scheme_add_global_constant("custodian-require-memory",
+			     scheme_make_prim_w_arity(custodian_require_mem,
+						      "custodian-require-memory",
+						      2, 2),
+			     env);
+  scheme_add_global_constant("custodian-limit-memory",
+			     scheme_make_prim_w_arity(custodian_limit_mem,
+						      "custodian-limit-memory",
+						      3, 3),
+			     env);
+  
 
   scheme_add_global_constant("object-waitable?", 
 			     scheme_make_folding_prim(object_waitable_p,
@@ -621,6 +632,66 @@ static Scheme_Object *current_memory_use(int argc, Scheme_Object *args[])
 /*========================================================================*/
 /*                              custodians                                */
 /*========================================================================*/
+
+static Scheme_Object *custodian_require_mem(int argc, Scheme_Object *args[])
+{
+  long lim;
+
+  if (SCHEME_INTP(args[0]) && (SCHEME_INT_VAL(args[0]) > 0)) {
+    lim = SCHEME_INT_VAL(args[0]);
+  } else if (SCHEME_BIGNUMP(args[0]) && SCHEME_BIGPOS(args[0])) {
+    lim = 0x3fffffff; /* more memory than we actually have */
+  } else {
+    scheme_wrong_type("custodian-require-memory", "positive exact integer", 0, argc, args);
+    return NULL;
+  }
+
+  if(NOT_SAME_TYPE(SCHEME_TYPE(args[1]), scheme_custodian_type)) {
+    scheme_wrong_type("custodian-require-memory", "custodian", 1, argc, args);
+    return NULL;
+  }
+
+#ifdef MZ_PRECISE_GC
+  if (GC_set_account_hook(MZACCT_REQUIRE, NULL, lim, args[1]))
+    return scheme_void;
+#endif
+
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "custodian-require-memory: not supported");
+  return NULL; /* doesn't get here */
+}
+
+static Scheme_Object *custodian_limit_mem(int argc, Scheme_Object *args[])
+{
+  long lim;
+  
+  if (NOT_SAME_TYPE(SCHEME_TYPE(args[0]), scheme_custodian_type)) {
+    scheme_wrong_type("custodian-limit-memory", "custodian", 0, argc, args);
+    return NULL;
+  }
+
+  if (SCHEME_INTP(args[1]) && (SCHEME_INT_VAL(args[1]) > 0)) {
+    lim = SCHEME_INT_VAL(args[1]);
+  } else if (SCHEME_BIGNUMP(args[1]) && SCHEME_BIGPOS(args[1])) {
+    lim = 0x3fffffff; /* more memory than we actually have */
+  } else {
+    scheme_wrong_type("custodian-limit-memory", "positive exact integer", 1, argc, args);
+  }
+
+  if(NOT_SAME_TYPE(SCHEME_TYPE(args[2]), scheme_custodian_type)) {
+    scheme_wrong_type("custodian-require-memory", "custodian", 2, argc, args);
+    return NULL;
+  }
+
+#ifdef MZ_PRECISE_GC
+  if (GC_set_account_hook(MZACCT_LIMIT, args[0], SCHEME_INT_VAL(args[1]), args[2]))
+    return scheme_void;
+#endif
+
+  scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		   "custodian-limit-memory: not supported");
+  return NULL; /* doesn't get here */
+}
 
 static void ensure_custodian_space(Scheme_Custodian *m, int k)
 {

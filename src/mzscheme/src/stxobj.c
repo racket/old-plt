@@ -4015,6 +4015,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
 
   if (val) {
     Scheme_Object *wraps, *modinfo_cache;
+    Scheme_Cert *certs;
     long lazy_prefix;
     int graph;
     
@@ -4030,6 +4031,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
       modinfo_cache = stx->u.modinfo_cache;
       lazy_prefix = 0;
     }
+    certs = stx->certs;
 
     stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, l);
 
@@ -4038,6 +4040,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
       stx->u.modinfo_cache = modinfo_cache;
     else
       stx->u.lazy_prefix = lazy_prefix; /* same as NULL modinfo if no SUBSTX */
+    stx->certs = certs;
 
     if (graph)
       STX_KEY(stx) |= STX_GRAPH_FLAG;
@@ -4485,10 +4488,10 @@ static Scheme_Object *syntax_recertify(int argc, Scheme_Object **argv)
 	/* Found an opaque certification. It only matters if its mark
 	   is used in the new object for a protected identifier. */
 
-	if (!HAS_MARKS(((Scheme_Stx *)argv[1])->certs))
-	  accum_all_marks(argv[1], NULL, NULL);
+	if (!HAS_MARKS(((Scheme_Stx *)argv[0])->certs))
+	  accum_all_marks(argv[0], NULL, NULL);
 
-	v = scheme_hash_get((Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)argv[1])->certs), certs->mark);
+	v = scheme_hash_get((Scheme_Hash_Table *)MARK_ONLY(((Scheme_Stx *)argv[0])->certs), certs->mark);
 
 	if (v && SCHEME_TRUEP(v)) {
 	  /* We assume that opaquely certified macros do not refer

@@ -2230,7 +2230,6 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
   p1->error_buf = &newbuf;
 
   scheme_save_env_stack_w_thread(cont->envss, p1);
-  cont->current_local_env = p1->current_local_env;
 
   scheme_push_continuation_frame((Scheme_Cont_Frame_Data *)&cframe);
   scheme_set_cont_mark(mark_key, scheme_true);
@@ -2243,7 +2242,6 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
       v = p2->cjs.u.val;
       copy_cjs(&p2->cjs, &cont->cjs);
       scheme_restore_env_stack_w_thread(cont->envss, p2);
-      p2->current_local_env = cont->current_local_env;
       p2->suspend_break = cont->suspend_break;
       if (n != 1)
 	v = scheme_values(n, vs);
@@ -2508,7 +2506,6 @@ call_cc (int argc, Scheme_Object *argv[])
   copy_cjs(&cont->cjs, &p->cjs);
   cont->save_overflow = p->overflow;
   cont->save_overflow_buf = p->overflow_buf;
-  cont->current_local_env = p->current_local_env;
   scheme_save_env_stack_w_thread(cont->ss, p);
   cont->init_config = p->init_config;
   cont->init_break_cell = p->init_break_cell;
@@ -2581,8 +2578,6 @@ call_cc (int argc, Scheme_Object *argv[])
       mv = NULL;
       mc = 0;
     }
-
-    p->current_local_env = cont->current_local_env;
 
     p->error_buf = cont->savebuf;
 
@@ -3108,12 +3103,9 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 
   scheme_save_env_stack_w_thread(dw->envss, p);
 
-  dw->current_local_env = p->current_local_env;
-
   if (scheme_setjmp(newbuf)) {
     p = scheme_current_thread;
     scheme_restore_env_stack_w_thread(dw->envss, p);
-    p->current_local_env = dw->current_local_env;
     if (p->dw != dw) {
       /* Apparently, a full continuation jump was interrupted by an
 	 escape continuation jump (in a dw pre or post thunk). Either
@@ -3168,7 +3160,6 @@ Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
     if (scheme_setjmp(newbuf)) {
       p = scheme_current_thread;
       scheme_restore_env_stack_w_thread(dw->envss, p);
-      p->current_local_env = dw->current_local_env;
       err = 1;
     } else {
       p->suspend_break++;

@@ -805,7 +805,6 @@ int cont_proc_MARK(void *p) {
   gcMARK(c->dw);
   gcMARK(c->common);
   gcMARK(c->ok);
-  gcMARK(c->current_local_env);
   gcMARK(c->save_overflow);
   gcMARK(c->runstack_copied);
   gcMARK(c->runstack_owner);
@@ -828,7 +827,6 @@ int cont_proc_FIXUP(void *p) {
   gcFIXUP(c->dw);
   gcFIXUP(c->common);
   gcFIXUP(c->ok);
-  gcFIXUP(c->current_local_env);
   gcFIXUP(c->save_overflow);
   gcFIXUP(c->runstack_copied);
   gcFIXUP(c->runstack_owner);
@@ -858,7 +856,6 @@ int mark_dyn_wind_MARK(void *p) {
   Scheme_Dynamic_Wind *dw = (Scheme_Dynamic_Wind *)p;
   
   gcMARK(dw->data);
-  gcMARK(dw->current_local_env);
   gcMARK(dw->cont);
   gcMARK(dw->prev);
     
@@ -872,7 +869,6 @@ int mark_dyn_wind_FIXUP(void *p) {
   Scheme_Dynamic_Wind *dw = (Scheme_Dynamic_Wind *)p;
   
   gcFIXUP(dw->data);
-  gcFIXUP(dw->current_local_env);
   gcFIXUP(dw->cont);
   gcFIXUP(dw->prev);
     
@@ -924,7 +920,6 @@ int escaping_cont_proc_MARK(void *p) {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
   gcMARK(c->mark_key);
-  gcMARK(c->current_local_env);
 
   MARK_cjs(&c->cjs);
   MARK_stack_state(&c->envss);
@@ -937,7 +932,6 @@ int escaping_cont_proc_FIXUP(void *p) {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
   gcFIXUP(c->mark_key);
-  gcFIXUP(c->current_local_env);
 
   FIXUP_cjs(&c->cjs);
   FIXUP_stack_state(&c->envss);

@@ -839,7 +839,6 @@ typedef struct Scheme_Dynamic_Wind {
   void (*pre)(void *);
   void (*post)(void *);
   mz_jmp_buf *saveerr;
-  struct Scheme_Comp_Env *current_local_env;
   struct Scheme_Stack_State envss;
   struct Scheme_Cont *cont;
   struct Scheme_Dynamic_Wind *prev;
@@ -865,7 +864,6 @@ typedef struct Scheme_Cont {
   Scheme_Config *init_config;
   Scheme_Object *init_break_cell;
   struct Scheme_Overflow *save_overflow;
-  struct Scheme_Comp_Env *current_local_env;
   mz_jmp_buf *savebuf; /* save old error buffer here */
 } Scheme_Cont;
 
@@ -874,7 +872,6 @@ typedef struct Scheme_Escaping_Cont {
   Scheme_Continuation_Jump_State cjs;
   Scheme_Object *mark_key;
   struct Scheme_Stack_State envss;
-  struct Scheme_Comp_Env *current_local_env;
   mz_jmp_buf *saveerr;
   int suspend_break;
 } Scheme_Escaping_Cont;

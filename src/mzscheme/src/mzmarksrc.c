@@ -298,7 +298,6 @@ cont_proc {
   gcMARK(c->dw);
   gcMARK(c->common);
   gcMARK(c->ok);
-  gcMARK(c->current_local_env);
   gcMARK(c->save_overflow);
   gcMARK(c->runstack_copied);
   gcMARK(c->runstack_owner);
@@ -320,7 +319,6 @@ mark_dyn_wind {
   Scheme_Dynamic_Wind *dw = (Scheme_Dynamic_Wind *)p;
   
   gcMARK(dw->data);
-  gcMARK(dw->current_local_env);
   gcMARK(dw->cont);
   gcMARK(dw->prev);
     
@@ -346,7 +344,6 @@ escaping_cont_proc {
   Scheme_Escaping_Cont *c = (Scheme_Escaping_Cont *)p;
 
   gcMARK(c->mark_key);
-  gcMARK(c->current_local_env);
 
   MARK_cjs(&c->cjs);
   MARK_stack_state(&c->envss);

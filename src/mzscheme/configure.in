@@ -23,6 +23,8 @@ AC_ARG_ENABLE(wbuild, ""  feature: wbuild         compile and use wbuild for .w 
 AC_ARG_ENABLE(gprof, ""  feature: gprof          compile for profiling with gprof (gcc only))
 AC_ARG_ENABLE(gcov, ""  feature: gcov           compile to gather gcov statistics (gcc only))
 
+AC_ARG_ENABLE(noopt, ""  feature: noopt          drop -O C flags)
+
 ###### Some flags imply other flags #######
 
 if test "${enable_smalloskit}" = "yes" ; then
@@ -344,6 +346,13 @@ if test "${enable_mred}" = "yes" ; then
     fi
     AC_MSG_RESULT($addperm) 
   fi
+fi
+
+############## drop optimization flags ################
+
+if test "${enable_noopt}" = "yes" ; then
+  AWKPRG='BEGIN { FS = "(^| )-O(0|1|2|3|4|5|6|7|8|9|)( |$)" } /.*/ { for (i = 1; i < NF; i++) printf "%s ", $i; print $NF }'
+  CFLAGS=`echo "$CFLAGS" | awk "$AWKPRG"`
 fi
 
 ############## final output ################

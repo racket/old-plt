@@ -2,7 +2,7 @@
 ;;
 ;; reduction-tests.ss
 ;; Richard Cobbe
-;; $Id: reduction-tests.ss,v 1.2 2004/09/10 15:38:54 cobbe Exp $
+;; $Id: reduction-tests.ss,v 1.3 2004/09/21 19:39:34 cobbe Exp $
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -15,6 +15,7 @@
            "elaboration.ss"
            "parser.ss"
            "store.ss")
+  (provide reduction-tests)
 
   (require/expose "reduction.ss" ())
 
@@ -44,8 +45,15 @@
 
   (define test-program (elab-program (parse-program test-program-src)))
 
-  (schemeunit-test
-   (make-test-suite "AJava Reduction Tests"
+  (define-syntax assert-functional-small-step
+    (syntax-rules ()
+      [(_ program store exp result)
+       (assert-equal?
+        (small-step cj-reductions `(,program ,store exp))
+        `(,program ,store result))]))
+
+  (define reduction-tests
+   (make-test-suite "ClassicJava Reduction Tests"
 
      (make-test-case "constant/variable substitution"
        (assert-equal? (cj-subst 'x 3 '(send y x x null true false 4 this))
@@ -249,11 +257,6 @@
                                   (make-ivar (make-class-type 'base)
                                              'shadowed-field 13)))])])
          (assert-equal?
-          (small-step
-           cj-reductions
-           `(,test-program ,test-store (ref 0 derived base-field)))
-          `(,test-program ,test-store 3))
-         (assert-equal?
           (small-step cj-reductions
                       `(,test-program ,test-store
                                       (ref 0 derived shadowed-field)))
@@ -277,7 +280,7 @@
      (make-test-case "reduction [nget]"
        (assert-equal?
         (small-step cj-reductions
-                    `(,test-program ,empty-store (ref nil base base-field)))
+                    `(,test-program ,empty-store (ref null base base-field)))
         `(,test-program ,empty-store "error: dereferenced null")))
 
      (make-test-case "reduction [set]"
@@ -368,8 +371,75 @@
        (assert-equal?
         (small-step cj-reductions `(,test-program
                                     ,empty-store
-                                    (set nil derived derived-field false)))
+                                    (set null derived derived-field false)))
         `(,test-program ,empty-store "error: dereferenced null")))
+
+     (make-test-case "reduction [uprim]"
+       (assert-functional-small-step test-program empty-store
+                                     (not true)
+                                     false)
+       (assert-functional-small-step test-program empty-store
+                                     (not false)
+                                     true)
+       (assert-functional-small-step test-program empty-store
+                                     (null? null)
+                                     true)
+       (assert-functional-small-step test-program empty-store
+                                     (null? 3)
+                                     false)
+       (assert-functional-small-step test-program empty-store
+                                     (zero? 1)
+                                     false)
+       (assert-functional-small-step test-program empty-store
+                                     (zero? 0)
+                                     true))
+
+     (make-test-case "reduction [bprim]"
+       (assert-functional-small-step test-program empty-store
+                                     (+ 3 4)
+                                     7)
+       (assert-functional-small-step test-program empty-store
+                                     (- 3 4)
+                                     -1)
+       (assert-functional-small-step test-program empty-store
+                                     (* 3 4)
+                                     12)
+       (assert-functional-small-step test-program empty-store
+                                     (== 3 4)
+                                     false)
+       (assert-functional-small-step test-program empty-store
+                                     (== 4 4)
+                                     true))
+
+     (make-test-case "reduction [and-true]"
+       (assert-functional-small-step test-program empty-store
+                                     (and true (not false))
+                                     (not false)))
+
+     (make-test-case "reduction [and-false]"
+       (assert-functional-small-step test-program empty-store
+                                     (and false (+ 3 4))
+                                     false))
+
+     (make-test-case "reduction [or-true]"
+       (assert-functional-small-step test-program empty-store
+                                     (or true (+ 3 4))
+                                     true))
+
+     (make-test-case "reduction [or-false]"
+       (assert-functional-small-step test-program empty-store
+                                     (or false (not true))
+                                     (not true)))
+
+     (make-test-case "reduction [if-true]"
+       (assert-functional-small-step test-program empty-store
+                                     (if true (+ 3 4) (* 5 6))
+                                     (+ 3 4)))
+
+     (make-test-case "reduction [if-false]"
+       (assert-functional-small-step test-program empty-store
+                                     (if false (+ 3 4) (* 5 6))
+                                     (* 5 6)))
 
      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -71,9 +71,9 @@
 		 ;;-----------------------------------------------------------------
 		 ;; LETREC EXPRESSIONS
 		 ;;
-		 [(zodiac:letrec*-values-form? ast)
-		  (for-each find! (zodiac:letrec*-values-form-vals ast))
-		  (find! (zodiac:letrec*-values-form-body ast))]
+		 [(zodiac:letrec-values-form? ast)
+		  (for-each find! (zodiac:letrec-values-form-vals ast))
+		  (find! (zodiac:letrec-values-form-body ast))]
 		 
 		 ;;-----------------------------------------------------
 		 ;; IF EXPRESSIONS
@@ -404,26 +404,26 @@
 		 ;;-----------------------------------------------------------------
 		 ;; LETREC EXPRESSIONS
 		 ;;
-		 [(zodiac:letrec*-values-form? ast)
+		 [(zodiac:letrec-values-form? ast)
 		  
-		  (let* ([varses (zodiac:letrec*-values-form-vars ast)]
-			 [vals (zodiac:letrec*-values-form-vals ast)])
+		  (let* ([varses (zodiac:letrec-values-form-vars ast)]
+			 [vals (zodiac:letrec-values-form-vals ast)])
 		 
-		    (zodiac:set-letrec*-values-form-vals! 
+		    (zodiac:set-letrec-values-form-vals! 
 		     ast 
 		     (map (lambda (val) (lift! val code)) vals))
 		    
-		    (zodiac:set-letrec*-values-form-body!
+		    (zodiac:set-letrec-values-form-body!
 		     ast
-		     (lift! (zodiac:letrec*-values-form-body ast) code))
+		     (lift! (zodiac:letrec-values-form-body ast) code))
 		    
-		    (let loop ([varses varses][vals (zodiac:letrec*-values-form-vals ast)]
+		    (let loop ([varses varses][vals (zodiac:letrec-values-form-vals ast)]
 					      [vss-accum null][vs-accum null])
 		      (if (null? varses)
 
 			  (begin
-			    (zodiac:set-letrec*-values-form-vars! ast (reverse! vss-accum))
-			    (zodiac:set-letrec*-values-form-vals! ast (reverse! vs-accum)))
+			    (zodiac:set-letrec-values-form-vars! ast (reverse! vss-accum))
+			    (zodiac:set-letrec-values-form-vals! ast (reverse! vs-accum)))
 
 			  (let ([vars (car varses)]
 				[val (car vals)])
@@ -437,10 +437,10 @@
 				;; Normal binding
 				(loop (cdr varses) (cdr vals) (cons vars vss-accum) (cons val vs-accum))))))
 
-		    (if (null? (zodiac:letrec*-values-form-vars ast))
+		    (if (null? (zodiac:letrec-values-form-vars ast))
 
 			;; All binding values were lifted; return the body
-			(zodiac:letrec*-values-form-body ast)
+			(zodiac:letrec-values-form-body ast)
 			
 			ast))]
 		 

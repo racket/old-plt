@@ -205,17 +205,17 @@
 			       linear)
 			      k))))))]
 		  
-		  [(zodiac:letrec*-values-form? ast)
+		  [(zodiac:letrec-values-form? ast)
 		   (let ([vals (map (lambda (val) (a-normalize val identity))
-				    (zodiac:letrec*-values-form-vals ast))])
-		     (zodiac:make-letrec*-values-form
+				    (zodiac:letrec-values-form-vals ast))])
+		     (zodiac:make-letrec-values-form
 		      (zodiac:zodiac-origin ast)
 		      (zodiac:zodiac-start ast)
 		      (zodiac:zodiac-finish ast)
 		      (zodiac:parsed-back ast)
-		      (zodiac:letrec*-values-form-vars ast)
+		      (zodiac:letrec-values-form-vars ast)
 		      vals
-		      (a-normalize (zodiac:letrec*-values-form-body ast) k)))]
+		      (a-normalize (zodiac:letrec-values-form-body ast) k)))]
 		  
 		  ;;---------------------------------------------------------------
 		  ;; IF EXPRESSIONS

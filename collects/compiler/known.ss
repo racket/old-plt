@@ -149,17 +149,17 @@
 	     (loop (zodiac:let-values-form-body v)
 		   (append (apply append (zodiac:let-values-form-vars v))
 			   extra-known-bindings)))]
-       [(zodiac:letrec*-values-form? v)
+       [(zodiac:letrec-values-form? v)
 	(and (andmap (lambda (vars v) (if (loop v extra-known-bindings)
 					  (begin
 					    (when (= 1 (length vars))
 					      (prephase:set-known-val! (car vars) v))
 					    #t)
 					  #f))
-		     (zodiac:letrec*-values-form-vars v)
-		     (zodiac:letrec*-values-form-vals v))
-	     (loop (zodiac:letrec*-values-form-body v)
-		   (append (apply append (zodiac:letrec*-values-form-vars v))
+		     (zodiac:letrec-values-form-vars v)
+		     (zodiac:letrec-values-form-vals v))
+	     (loop (zodiac:letrec-values-form-body v)
+		   (append (apply append (zodiac:letrec-values-form-vars v))
 			   extra-known-bindings)))]
        [(zodiac:app? v)
 	(let* ([fun (zodiac:app-fun v)]
@@ -216,7 +216,7 @@
        [(zodiac:begin0-form? v) (extract-value (car (zodiac:begin0-form-bodies v)))]
        [(zodiac:with-continuation-mark-form? v) (extract-value (zodiac:with-continuation-mark-form-body v))]
        [(zodiac:let-values-form? v) (extract-value (zodiac:let-values-form-body v))]
-       [(zodiac:letrec*-values-form? v) (extract-value (zodiac:letrec*-values-form-body v))]
+       [(zodiac:letrec-values-form? v) (extract-value (zodiac:letrec-values-form-body v))]
        [(zodiac:app? v)
 	(let ([fun (analyze:prim-fun (zodiac:app-fun v))])
 	  (if fun
@@ -353,10 +353,10 @@
 		 ;;-----------------------------------------------------------------
 		 ;; LETREC EXPRESSIONS
 		 ;;
-		 [(zodiac:letrec*-values-form? ast)
+		 [(zodiac:letrec-values-form? ast)
 		  
-		  (let* ([varses (zodiac:letrec*-values-form-vars ast)]
-			 [vals (zodiac:letrec*-values-form-vals ast)])
+		  (let* ([varses (zodiac:letrec-values-form-vars ast)]
+			 [vals (zodiac:letrec-values-form-vals ast)])
 		 
 		    ; Annotate each binding occurrence
 		    (for-each
@@ -382,11 +382,11 @@
 			    (loop (cdr varses) (cdr vals)
 				  (append vars done-vars))))))
 
-		    (zodiac:set-letrec*-values-form-vals! ast (map analyze! vals))
+		    (zodiac:set-letrec-values-form-vals! ast (map analyze! vals))
 		    
-		    (zodiac:set-letrec*-values-form-body!
+		    (zodiac:set-letrec-values-form-body!
 		     ast
-		     (analyze! (zodiac:letrec*-values-form-body ast)))
+		     (analyze! (zodiac:letrec-values-form-body ast)))
 		    
 		    ast)]
 		 

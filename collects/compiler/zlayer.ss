@@ -232,12 +232,12 @@
 		   (map zodiac->sexp/annotate (zodiac:let-values-form-vals ast)))
 	   ,(zodiac->sexp/annotate (zodiac:let-values-form-body ast)))]
        
-       [(zodiac:letrec*-values-form? ast)
+       [(zodiac:letrec-values-form? ast)
 	`(letrec-values
 	     ,(map list
-		   (map (lambda (l) (map zodiac->sexp l)) (zodiac:letrec*-values-form-vars ast))
-		   (map zodiac->sexp/annotate (zodiac:letrec*-values-form-vals ast)))
-	   ,(zodiac->sexp/annotate (zodiac:letrec*-values-form-body ast)))]
+		   (map (lambda (l) (map zodiac->sexp l)) (zodiac:letrec-values-form-vars ast))
+		   (map zodiac->sexp/annotate (zodiac:letrec-values-form-vals ast)))
+	   ,(zodiac->sexp/annotate (zodiac:letrec-values-form-body ast)))]
 
        [(zodiac:if-form? ast)
 	`(if ,(zodiac->sexp/annotate (zodiac:if-form-test ast))

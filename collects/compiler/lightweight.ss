@@ -164,7 +164,7 @@
 	   [set!-form-action default-action]
 	   [define-values-form-action default-action]
 	   [let-values-form-action default-action]
-	   [letrec*-values-form-action default-action]
+	   [letrec-values-form-action default-action]
 	   [top-level-varref/bind-action default-action]
 	   [varref-action default-action]
 	   [binding-action default-action]
@@ -201,7 +201,7 @@
  (define generic-set!-form-action (make-generic zactor% set!-form-action))
  (define generic-define-values-form-action (make-generic zactor% define-values-form-action))
  (define generic-let-values-form-action (make-generic zactor% let-values-form-action))
- (define generic-letrec*-values-form-action (make-generic zactor% letrec*-values-form-action))
+ (define generic-letrec-values-form-action (make-generic zactor% letrec-values-form-action))
  (define generic-top-level-varref/bind-action (make-generic zactor% top-level-varref/bind-action))
  (define generic-varref-action (make-generic zactor% varref-action))
  (define generic-binding-action (make-generic zactor% binding-action))
@@ -279,11 +279,11 @@
 
 	 (do-traverse (zodiac:let-values-form-body ast)))]
       
-      [(zodiac:letrec*-values-form? ast)
+      [(zodiac:letrec-values-form? ast)
 
-       ((generic-letrec*-values-form-action zactor) ast)
+       ((generic-letrec-values-form-action zactor) ast)
 
-       (let* ([binderss (zodiac:letrec*-values-form-vars ast)])
+       (let* ([binderss (zodiac:letrec-values-form-vars ast)])
 
 	 ; the-vars in scope at all binders and vals
 
@@ -298,11 +298,11 @@
 	 (for-each 
 	  (lambda (val) 
 	    (do-traverse val))
-	  (zodiac:letrec*-values-form-vals ast))
+	  (zodiac:letrec-values-form-vals ast))
 
 	 ; as well as in the body
 
-	 (do-traverse (zodiac:letrec*-values-form-body ast)))]
+	 (do-traverse (zodiac:letrec-values-form-body ast)))]
       
       [(zodiac:top-level-varref/bind? ast) ; must be before varref? test
 
@@ -576,11 +576,11 @@
 	      (zodiac:let-values-form-body ast)
 	      (apply append binderss)))]
 	  
-	  [(zodiac:letrec*-values-form? ast)
+	  [(zodiac:letrec-values-form? ast)
 
-	   ((generic-letrec*-values-form-action zactor) ast binders)
+	   ((generic-letrec-values-form-action zactor) ast binders)
 
-	   (let* ([binderss (zodiac:letrec*-values-form-vars ast)]
+	   (let* ([binderss (zodiac:letrec-values-form-vars ast)]
 		  [flat-binders (apply append binderss)]
 		  [new-binders (add-binders-to-scope binders flat-binders)])
 
@@ -597,12 +597,12 @@
 	     (for-each 
 	      (lambda (val) 
 		(do-scope-traverse val new-binders))
-	      (zodiac:letrec*-values-form-vals ast))
+	      (zodiac:letrec-values-form-vals ast))
 
 	     ; as well as in the body
 
 	     (do-scope-traverse
-	      (zodiac:letrec*-values-form-body ast) 
+	      (zodiac:letrec-values-form-body ast) 
 	      new-binders))]
 	  
 	  [(zodiac:top-level-varref/bind? ast) ; must be before varref? test
@@ -839,7 +839,7 @@
 	   [set!-form-folder default-folder]
 	   [define-values-form-folder default-folder]
 	   [let-values-form-folder default-folder]
-	   [letrec*-values-form-folder default-folder]
+	   [letrec-values-form-folder default-folder]
 	   [top-level-varref/bind-folder default-folder]
 	   [varref-folder default-folder]
 	   [binding-folder default-folder]
@@ -876,7 +876,7 @@
  (define generic-set!-form-folder (make-generic zolder% set!-form-folder))
  (define generic-define-values-form-folder (make-generic zolder% define-values-form-folder))
  (define generic-let-values-form-folder (make-generic zolder% let-values-form-folder))
- (define generic-letrec*-values-form-folder (make-generic zolder% letrec*-values-form-folder))
+ (define generic-letrec-values-form-folder (make-generic zolder% letrec-values-form-folder))
  (define generic-top-level-varref/bind-folder (make-generic zolder% top-level-varref/bind-folder))
  (define generic-varref-folder (make-generic zolder% varref-folder))
  (define generic-binding-folder (make-generic zolder% binding-folder))
@@ -940,15 +940,15 @@
 	(map do-zolder-traverse (zodiac:let-values-form-vals ast))
 	(do-zolder-traverse (zodiac:let-values-form-body ast)))]
 
-      [(zodiac:letrec*-values-form? ast)
+      [(zodiac:letrec-values-form? ast)
 
-       ((generic-letrec*-values-form-folder zolder)
+       ((generic-letrec-values-form-folder zolder)
 	ast 
 	(map (lambda (binders) 
 	       (map do-zolder-traverse binders))
-	     (zodiac:letrec*-values-form-vars ast))
-	(map do-zolder-traverse (zodiac:letrec*-values-form-vals ast))
-	(do-zolder-traverse (zodiac:letrec*-values-form-body ast)))]
+	     (zodiac:letrec-values-form-vars ast))
+	(map do-zolder-traverse (zodiac:letrec-values-form-vals ast))
+	(do-zolder-traverse (zodiac:letrec-values-form-body ast)))]
       
       [(zodiac:top-level-varref/bind? ast) ; must be before varref? test
 
@@ -1165,7 +1165,7 @@
 						 (zodiac:let-values-form-vars a))))))]
 
 
-	   [letrec*-values-form-folder
+	   [letrec-values-form-folder
 	    (lambda (a _ vals-fvs body-fv)
 
 	      ; binders in vals-fvs are free in the letrec*, unless
@@ -1173,7 +1173,7 @@
 
 	      (binder-set-minus (set-union body-fv (fold-sets vals-fvs))
 				(fold-sets
-				 (map list->set (zodiac:letrec*-values-form-vars a)))))]
+				 (map list->set (zodiac:letrec-values-form-vars a)))))]
 
 
 	   [top-level-varref/bind-folder 
@@ -1416,11 +1416,11 @@
 
 			 (prop-phi! body a)))]
 
-		    [letrec*-values-form-action
+		    [letrec-values-form-action
 		     (lambda (a)
-		       (let* ([varss (zodiac:letrec*-values-form-vars a)]
-			      [vals (zodiac:letrec*-values-form-vals a)]
-			      [body (zodiac:letrec*-values-form-body a)])
+		       (let* ([varss (zodiac:letrec-values-form-vars a)]
+			      [vals (zodiac:letrec-values-form-vals a)]
+			      [body (zodiac:letrec-values-form-body a)])
 
 			 (for-each
 			  (lambda (val vars)
@@ -1630,10 +1630,10 @@
 			    vals)
 			   (prop-unknown (zodiac:let-values-form-body a)
 					 a)))]
-		      [letrec*-values-form-folder
+		      [letrec-values-form-folder
 		       (lambda (a _ __ ___)
-			 (let ([binderss (zodiac:letrec*-values-form-vars a)]
-			       [vals (zodiac:letrec*-values-form-vals a)]) 
+			 (let ([binderss (zodiac:letrec-values-form-vars a)]
+			       [vals (zodiac:letrec-values-form-vals a)]) 
 			   (for-each
 			    (lambda (val)
 			      (for-each
@@ -1644,7 +1644,7 @@
 				  binders))
 			       binderss))
 			    vals)
-			   (prop-unknown (zodiac:letrec*-values-form-body a)
+			   (prop-unknown (zodiac:letrec-values-form-body a)
 					 a)))]
 		      [top-level-varref/bind-folder
 		       (lambda (a)
@@ -2023,13 +2023,13 @@
 			   (prop-theta-bar-at-ast a
 						  (theta the-body))))]
 		      
-		      [letrec*-values-form-action
+		      [letrec-values-form-action
 
 		       (lambda (a)
 			 
-			 (let ([the-vals (zodiac:letrec*-values-form-vals a)]
-			       [raw-vars (zodiac:letrec*-values-form-vars a)]
-			       [the-body (zodiac:letrec*-values-form-body a)])
+			 (let ([the-vals (zodiac:letrec-values-form-vals a)]
+			       [raw-vars (zodiac:letrec-values-form-vars a)]
+			       [the-body (zodiac:letrec-values-form-body a)])
 			   
 			   ; x \not\in theta_e-i => x \not\in theta_x-i
 			   ; same as in plain let
@@ -2382,11 +2382,11 @@
 			
 			(merge-pi-classes! body a)))]
 		   
-		   [letrec*-values-form-action
+		   [letrec-values-form-action
 		    (lambda (a)
-		      (let* ([binderss (zodiac:letrec*-values-form-vars a)]
-			     [vals (zodiac:letrec*-values-form-vals a)]
-			     [body (zodiac:letrec*-values-form-body a)])
+		      (let* ([binderss (zodiac:letrec-values-form-vars a)]
+			     [vals (zodiac:letrec-values-form-vals a)]
+			     [body (zodiac:letrec-values-form-body a)])
 			
 			; binderss : binding list list
 			; vals     : parsed list
@@ -2852,7 +2852,7 @@
 		     (lambda (_ __ vals-maxs body-max)
 		       (max (max-over-list vals-maxs) body-max))]
 
-		    [letrec*-values-form-folder
+		    [letrec-values-form-folder
 		     (lambda (_ __ vals-maxs body-max)
 		       (max (max-over-list vals-maxs) body-max))]
 

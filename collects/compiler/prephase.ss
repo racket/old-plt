@@ -522,21 +522,21 @@
 		;;-----------------------------------------------------------
 		;; LETREC EXPRESSIONS
 		;;
-		[(zodiac:letrec*-values-form? ast)
+		[(zodiac:letrec-values-form? ast)
 		 (for-each (lambda (l)
 			     (for-each (lambda (b) 
 					 (prephase:init-binding-properties! b #f #f #f))
 				       l))
-			   (zodiac:letrec*-values-form-vars ast))
-		 (zodiac:set-letrec*-values-form-vals!
+			   (zodiac:letrec-values-form-vars ast))
+		 (zodiac:set-letrec-values-form-vals!
 		  ast
 		  (map (lambda (e name) (prephase! e in-unit? #t name))
-		       (zodiac:letrec*-values-form-vals ast)
-		       (zodiac:letrec*-values-form-vars ast)))
-		 (zodiac:set-letrec*-values-form-body!
+		       (zodiac:letrec-values-form-vals ast)
+		       (zodiac:letrec-values-form-vars ast)))
+		 (zodiac:set-letrec-values-form-body!
 		  ast
 		  (prephase! 
-		   (zodiac:letrec*-values-form-body ast)
+		   (zodiac:letrec-values-form-body ast)
 		   in-unit? 
 		   need-val?
 		   name))

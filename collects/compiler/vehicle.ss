@@ -230,8 +230,8 @@
 	    [(zodiac:let-values-form? ast)
 	     (relate! current-lambda (zodiac:let-values-form-body ast))]
 
-	    [(zodiac:letrec*-values-form? ast)
-	     (relate! current-lambda (zodiac:letrec*-values-form-body ast))]
+	    [(zodiac:letrec-values-form? ast)
+	     (relate! current-lambda (zodiac:letrec-values-form-body ast))]
 	    
 	    ;;-----------------------------------------------------------------
 	    ;; IF EXPRESSIONS

@@ -144,12 +144,12 @@
 	      ast (transform! (zodiac:let-values-form-body ast)))
 	     ast]
 
-	    [(zodiac:letrec*-values-form? ast)
-	     (zodiac:set-letrec*-values-form-vals! 
+	    [(zodiac:letrec-values-form? ast)
+	     (zodiac:set-letrec-values-form-vals! 
 	      ast 
-	      (map transform! (zodiac:letrec*-values-form-vals ast)))
-	     (zodiac:set-letrec*-values-form-body! 
-	      ast (transform! (zodiac:letrec*-values-form-body ast)))
+	      (map transform! (zodiac:letrec-values-form-vals ast)))
+	     (zodiac:set-letrec-values-form-body! 
+	      ast (transform! (zodiac:letrec-values-form-body ast)))
 	     ast]
 	    
 	    ;;-----------------------------------------------------------------

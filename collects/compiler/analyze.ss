@@ -204,10 +204,10 @@
 	       (zodiac:zodiac-start ast)
 	       (zodiac:zodiac-finish ast)
 	       (make-empty-box)
-	       (let linearize-set! ([varses (zodiac:letrec*-values-form-vars ast)]
-				    [vals (zodiac:letrec*-values-form-vals ast)])
+	       (let linearize-set! ([varses (zodiac:letrec-values-form-vars ast)]
+				    [vals (zodiac:letrec-values-form-vals ast)])
 		 (if (null? varses)
-		     (list (zodiac:letrec*-values-form-body ast))
+		     (list (zodiac:letrec-values-form-body ast))
 		     (let* ([vars (car varses)] 
 			    [val (car vals)])
 		       (cons
@@ -220,7 +220,7 @@
 			(linearize-set! (cdr varses) (cdr vals)))))))]
 	     [let-form
 	      ; In this phase, we must only construct let-vales forms with one clause
-	      (let loop ([varses (zodiac:letrec*-values-form-vars ast)])
+	      (let loop ([varses (zodiac:letrec-values-form-vars ast)])
 		(if (null? varses)
 		    body
 		    (let ([vars (car varses)])
@@ -1092,41 +1092,41 @@
 		 ;; are not mutable, we keep this as a letrec, otherwise we 
 		 ;; transform it to a let+set! combination as R4RS.
 		 ;;
-		 [(zodiac:letrec*-values-form? ast)
+		 [(zodiac:letrec-values-form? ast)
 
 		  (if (and 
 		       ;; Well-behaved if everything's a closure
 		       (andmap zodiac:case-lambda-form? 
-			       (zodiac:letrec*-values-form-vals ast))
+			       (zodiac:letrec-values-form-vals ast))
 		       ;; and all are one-variable bindings
 		       (andmap (lambda (l) (= 1 (length l))) 
-			       (zodiac:letrec*-values-form-vars ast))
+			       (zodiac:letrec-values-form-vars ast))
 		       ;; and all are immutable
 		       (andmap (lambda (l)
 				 (not (binding-mutable? (get-annotation (car l)))))
-			       (zodiac:letrec*-values-form-vars ast)))
+			       (zodiac:letrec-values-form-vars ast)))
 		      
 		      ;-----------------------------------------------------------
 		      ; WELL-BEHAVED LETREC (incomplete bindings never exposed)
 		      ;  mark appropriate variables as letrec bound
 		      ;
-		      (let* ([vars (map car (zodiac:letrec*-values-form-vars ast))])
+		      (let* ([vars (map car (zodiac:letrec-values-form-vars ast))])
 			(set! local-vars (set-union (list->set vars) local-vars))
 			(let ([new-env (append vars env)])
 			  (let-values ([(vals) (map (lambda (val)
 						      (analyze!-sv val new-env inlined))
-						    (zodiac:letrec*-values-form-vals ast))]
+						    (zodiac:letrec-values-form-vals ast))]
 				       [(body body-multi) (analyze! 
-							   (zodiac:letrec*-values-form-body ast) 
+							   (zodiac:letrec-values-form-body ast) 
 							   new-env
 							   inlined
 							   tail? wcm-tail?)]
-				       [(vars) (map car (zodiac:letrec*-values-form-vars ast))])
+				       [(vars) (map car (zodiac:letrec-values-form-vars ast))])
 			    
 			    (for-each (lambda (var) (set-binding-rec?! (get-annotation var) #t))
 				      vars)
-			    (zodiac:set-letrec*-values-form-vals! ast vals)
-			    (zodiac:set-letrec*-values-form-body! ast body)
+			    (zodiac:set-letrec-values-form-vals! ast vals)
+			    (zodiac:set-letrec-values-form-body! ast body)
 			    
 			    (values ast body-multi))))
 		      

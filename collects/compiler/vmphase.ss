@@ -425,14 +425,14 @@
 	   ;; Handle non-lambdas because thunk-allocation optimization may
 	   ;; have taken place
 	   ;;
-	   [(zodiac:letrec*-values-form? ast)
+	   [(zodiac:letrec-values-form? ast)
 	    (let* ([Ls (foldr (lambda (val l)
 				(if (compiler:make-closure? val)
 				    (cons (compiler:make-closure-lambda val)
 					  l)
 				    l))
 			      null
-			      (zodiac:letrec*-values-form-vals ast))]
+			      (zodiac:letrec-values-form-vals ast))]
 		   [codes (map get-annotation Ls)]
 		   [closure-reps (map closure-code-rep codes)]
 		   [closure-alloc-reps (map closure-code-alloc-rep codes)]
@@ -480,16 +480,16 @@
 					    l)
 				      l))
 				null
-				(zodiac:letrec*-values-form-vars ast)
-				(zodiac:letrec*-values-form-vals ast))]
+				(zodiac:letrec-values-form-vars ast)
+				(zodiac:letrec-values-form-vals ast))]
 		   [names (foldr (lambda (var val l)
 				   (if (compiler:make-closure? val)
 				       (cons (compiler:make-closure-name val)
 					     l)
 				       l))
 				 null
-				 (zodiac:letrec*-values-form-vars ast)
-				 (zodiac:letrec*-values-form-vals ast))]
+				 (zodiac:letrec-values-form-vars ast)
+				 (zodiac:letrec-values-form-vals ast))]
 		   [nonrec-assigns 
 		    (foldr (lambda (var val l)
 			     (if (compiler:make-closure? val)
@@ -512,8 +512,8 @@
 					#f)
 				       l)))
 			   null
-			   (zodiac:letrec*-values-form-vars ast)
-			   (zodiac:letrec*-values-form-vals ast))])
+			   (zodiac:letrec-values-form-vars ast)
+			   (zodiac:letrec-values-form-vals ast))])
 	      (for-each add-new-local! new-bounds)
 	      (append!
 	       nonrec-assigns
@@ -539,7 +539,7 @@
 		    closure-reps)
 	       (apply append (map fill-label pointers codes))
 	       (apply append! (map fill-env pointers codes))
-	       (convert (zodiac:letrec*-values-form-body ast) multi? leaf tail-pos tail?)))]
+	       (convert (zodiac:letrec-values-form-body ast) multi? leaf tail-pos tail?)))]
 	      
 	    
 	   

@@ -221,9 +221,9 @@
 	  (else
 	    (static-error expr "Malformed reference-unit"))))))
 
-'  (add-micro-form 'include-unit-imports mrspidey-vocabulary
-    (let* ((kwd '(include-unit-imports))
-	    (in-pattern '(include-unit-imports file))
+'  (add-micro-form 'references-unit-imports mrspidey-vocabulary
+    (let* ((kwd '(reference-unit-imports))
+	    (in-pattern '(reference-unit-imports file))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
 	(cond
@@ -231,13 +231,13 @@
 	    =>
 	    (lambda (p-env)
 	      (let ((file (pat:pexpand 'file p-env kwd)))
-		(create-include-unit-form
+		(create-reference-unit-form
 		  file
 		  (current-directory)
 		  'imp
 		  expr))))
 	  (else
-	    (static-error expr "Malformed include-unit-imports"))))))
+	    (static-error expr "Malformed reference-unit-imports"))))))
 
   ; --------------------------------------------------------------------
 

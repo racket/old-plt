@@ -318,12 +318,12 @@ todo: clear annotations
           [(let-values (((variable ...) v-expr) ...) expr ...)
            (with-syntax ([(rewritten-expr ...) (map rewrite-expr (syntax->list (syntax (expr ...))))]
                          [(rewritten-v-expr ...)
-                          (map rewrite-expr (syntax->list (syntax (expr ...))))])
+                          (map rewrite-expr (syntax->list (syntax (v-expr ...))))])
              (syntax (let-values (((variable ...) rewritten-v-expr) ...) rewritten-expr ...)))]
           [(letrec-values (((variable ...) v-expr) ...) expr ...)
            (with-syntax ([(rewritten-expr ...) (map rewrite-expr (syntax->list (syntax (expr ...))))]
                          [(rewritten-v-expr ...)
-                          (map rewrite-expr (syntax->list (syntax (expr ...))))])
+                          (map rewrite-expr (syntax->list (syntax (v-expr ...))))])
              (syntax (letrec-values (((variable ...) rewritten-v-expr) ...) rewritten-expr ...)))]
           [(set! variable expr)
            (with-syntax ([rewritten-expr (rewrite-expr (syntax expr))])

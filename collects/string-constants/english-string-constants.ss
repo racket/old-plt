@@ -1,5 +1,4 @@
 (
-
  ;;; when translating this constant, substitute name of actual langauge for `English'
  (is-this-your-native-language "Is English Your Native Language?")
 
@@ -452,6 +451,7 @@
  (insert-text-box-item "Insert Text Box")
  (insert-pb-box-item "Insert Pasteboard Box")
  (insert-image-item "Insert Image...")
+ (insert-comment-box-menu-item-label "Insert Comment Box")
  (wrap-text-item "Wrap Text")
 
  (windows-menu-label "&Windows")
@@ -584,6 +584,9 @@
  (filename "Filename: ")
  (create "Create")
  (please-choose-an-executable-filename "Please choose a filename to save the executable.")
+ (help-on-executable-types "Help on Executable Types")
+ (help-on-base-executable "Help on Base Executable")
+
  
  (create-servlet "Create Servlet...")
   
@@ -823,4 +826,9 @@
 
  (stepper-program-has-changed "WARNING: The program has changed.")
  (stepper-program-window-closed "WARNING: The program window is gone.")
+
+ (wizard-next "Next")
+ (wizard-back "Back")
+ (wizard-finish "Finish")
+
  )

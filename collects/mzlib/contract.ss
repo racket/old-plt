@@ -675,7 +675,7 @@ add struct contracts for immutable structs?
           [formatted-contract-sexp
            (let ([one-line (format "~s" contract-sexp)])
              (if (< (string-length one-line) 30)
-                 (string-append one-line ": ")
+                 (string-append one-line " ")
                  (let ([sp (open-output-string)])
                    (newline sp)
                    (pretty-print contract-sexp sp)
@@ -683,17 +683,17 @@ add struct contracts for immutable structs?
 	  [specific-blame
 	   (let ([datum (syntax-object->datum src-info)])
 	     (if (symbol? datum)
-		 (format "broke ~a's contract:" datum)
-		 "failed contract"))])
+		 (format " on ~a" datum)
+                 ""))])
       (raise
        (make-exn:fail:contract2
         (string->immutable-string
-         (string-append (format "~a~a: ~a ~a ~a"
+         (string-append (format "~a~a broke the contract ~ait had with ~a~a; "
                                 blame-src
-                                other-party
                                 to-blame
-                                specific-blame
-                                formatted-contract-sexp)
+                                formatted-contract-sexp
+                                other-party
+                                specific-blame)
                         (apply format fmt args)))
         (current-continuation-marks)
         (if src-info

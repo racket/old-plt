@@ -28,12 +28,16 @@
           [col (syntax-column stx)]
           [pos (syntax-position stx)])
       (cond
+        [(and (path? source) line col)
+         (format "~a:~a:~a" (path->string source) line col)]
         [(and (string? source) line col)
-         (format "~a: ~a.~a" source line col)]
+         (format "~a:~a:~a" source line col)]
         [(and line col)
-         (format "~a.~a" line col)]
+         (format "~a:~a" line col)]
         [(and (string? source) pos)
-         (format "~a: ~a" source pos)]
+         (format "~a:~a" source pos)]
+        [(and (path? source) pos)
+         (format "~a:~a" (path->string source) pos)]
         [pos
          (format "~a" pos)]
         [else #f])))

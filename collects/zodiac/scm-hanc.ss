@@ -1,4 +1,4 @@
-; $Id$
+; $Id: scm-hanc.ss,v 1.37 1997/07/21 15:51:43 shriram Exp $
 
 (define-struct signature-element (source))
 (define-struct (name-element struct:signature-element) (name))
@@ -1405,7 +1405,7 @@
     (let ((raw-var (z:read-object variable)))
       (let loop ((elements (signature-elements sig)))
 	(if (null? elements)
-	  (static-error variable "No such variable in signature")
+	  (static-error variable "No such identifier in signature")
 	  (or (and (name-element? (car elements))
 		(eq? raw-var (name-element-name (car elements))))
 	    (loop (cdr elements))))))))

@@ -42,7 +42,7 @@
 	   "private/main.ss")
 
   (provide framework@
-	   framework-prefs@
+	   framework-no-prefs@
 	   framework-small-part@)
 
   (define framework-small-part@
@@ -113,7 +113,7 @@
        (unit scheme)
        (unit main))))
 
-  (define framework-prefs@
+  (define framework-no-prefs@
     (compound-unit/sig
       (import [mred : mred^]
 	      [pref-file : framework:prefs-file^])
@@ -130,7 +130,7 @@
       (import [mred : mred^])
       (link
        [prefs-file : framework:prefs-file^ (framework:prefs-file@)]
-       [f : framework^ (framework-prefs@ mred prefs-file)])
+       [f : framework-no-prefs^ (framework-no-prefs@ mred prefs-file)])
       (export
        (unit prefs-file)
        (open f)))))

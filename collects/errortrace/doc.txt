@@ -187,13 +187,14 @@ _stacktrace-imports^_, and its export signature _stacktrace^_.
 
 The export signature contains these names:
 
-> annotate : syntax (listof ???) boolean -> syntax
-> annotate-top : syntax (listof ???) boolean -> syntax
+> annotate : syntax boolean -> syntax
+> annotate-top : syntax boolean -> syntax
 
 These two functions annotate expressions with errortrace information.
 The `annotate-top' function should be called with a top-level
 expression, and `annotate' should be called with a nested expression
-(e.g., by `profile-point').
+(e.g., by `profile-point'). The boolean argument indicates whether the
+expression is a transformer expression (#t) or a normal expression (#f).
 
 The import signature contains these names:
 
@@ -203,8 +204,12 @@ The import signature contains these names:
   expressions with `with-continuation-mark'. The first argument is the
   source expressions and the second is the expression to be wrapped.
 
-> profile-point : (syntax ?? ?? ?? ?? -> syntax)
+> profile-point : (syntax symbol-or-#f syntax boolean -> syntax)
 
   This procedure is called by `annotate' and `annotate-top' to wrap
   expressions with profile collecting information.  Returning the
   first argument means no profiling information is collected.
+
+  The second argument is the point's inferred name, if any, tne third
+  argument is the source expression, and the fourth argument is #t for
+  a transformer expression and #f for a normal expression.

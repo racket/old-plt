@@ -63,7 +63,7 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Profiling instrumenter
 
-  (define (profile-point body name expr env trans?)
+  (define (profile-point body name expr trans?)
     (if (profiling-enabled)
         (let ([key (gensym)])
           (hash-table-put! profile-info key (list (box #f) 0 0 (and name (syntax-e name)) expr null))
@@ -258,7 +258,7 @@
 							 e))
 			       (not (instrumenting-enabled)))
 			   e
-			   (annotate-top ex null #f))])
+			   (annotate-top ex #f))])
 	       (orig a)))])
      errortrace-eval-handler))
   

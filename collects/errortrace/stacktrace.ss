@@ -14,19 +14,14 @@
       
       ;; Result doesn't have a `lambda', so it works
       ;; for case-lambda
-      (define (annotate-lambda name expr args body env trans?)
-        (let ([env (let loop ([v (syntax args)])
-                     (cond
-		      [(stx-null? v) env]
-		      [(identifier? v) (cons v env)]
-		      [else (cons (stx-car v) (loop (stx-cdr v)))]))])
-          (with-syntax ([body
-			 (profile-point 
-			  (map (lambda (e) (annotate e env trans?)) (stx->list body))
-			  name expr env
-			  trans?)]
-                        [args args])
-            (syntax (args . body)))))
+      (define (annotate-lambda name expr args body trans?)
+	(with-syntax ([body
+		       (profile-point 
+			(map (lambda (e) (annotate e trans?)) (stx->list body))
+			name expr
+			trans?)]
+		      [args args])
+            (syntax (args . body))))
       
       (define (keep-method-property orig new)
         (let ([p (syntax-property orig 'method-arity-error)])
@@ -34,53 +29,48 @@
               (syntax-property new 'method-arity-error p)
               new)))
       
-      (define (annotate-let rec? env trans? varsl rhsl bodyl)
+      (define (annotate-let rec? trans? varsl rhsl bodyl)
         (let ([varses (syntax->list varsl)]
               [rhses (syntax->list rhsl)]
               [bodies (syntax->list bodyl)])
-          (let* ([body-env 
-                  (append (apply append (map syntax->list varses))
-                          env)]
-                 [rhs-env (if rec? body-env env)])
-            (with-syntax ([(rhs ...)
-                           (map
-                            (lambda (vars rhs)
-                              (annotate-named
-                               (syntax-case vars ()
-                                 [(id)
-                                  (syntax id)]
-                                 [_else #f])
-                               rhs
-                               rhs-env
-                               trans?))
-                            varses 
-                            rhses)]
-                          [(body ...)
-                           (map
-                            (lambda (body)
-                              (annotate body env trans?))
-                            bodies)]
-                          [(vars ...) varses]
-                          [let (if rec? 
-                                   (quote-syntax letrec-values)
-                                   (quote-syntax let-values))])
-              (syntax (let ([vars rhs] ...)
-                        body ...))))))
+	  (with-syntax ([(rhs ...)
+			 (map
+			  (lambda (vars rhs)
+			    (annotate-named
+			     (syntax-case vars ()
+			       [(id)
+				(syntax id)]
+			       [_else #f])
+			     rhs
+			     trans?))
+			  varses 
+			  rhses)]
+			[(body ...)
+			 (map
+			  (lambda (body)
+			    (annotate body trans?))
+			  bodies)]
+			[(vars ...) varses]
+			[let (if rec? 
+				 (quote-syntax letrec-values)
+				 (quote-syntax let-values))])
+	    (syntax (let ([vars rhs] ...)
+		      body ...)))))
       
-      (define (annotate-seq env trans? expr who bodyl annotate)
+      (define (annotate-seq trans? expr who bodyl annotate)
         (with-syntax ([who who]
                       [bodyl
                        (map (lambda (b)
-                              (annotate b env trans?))
+                              (annotate b trans?))
                             (syntax->list bodyl))])
           (syntax/loc expr (who . bodyl))))
       
       (define (make-annotate top? name)
-        (lambda (expr env trans?)
+        (lambda (expr trans?)
           (kernel-syntax-case expr trans?
 	    [_
 	     (identifier? expr)
-	     (if (stx-bound-memq expr env)
+	     (if (eq? 'lexical (identifier-binding expr))
 		 ;; lexical variable - no error possile
 		 expr
 		 ;; might be undefined/uninitialized
@@ -103,12 +93,12 @@
 						  (syntax id)]
 						 [_else #f])
 					       (syntax rhs)
-					       env trans?))])
+					       trans?))])
 	       (syntax/loc expr (define-values names marked)))]
 	    [(begin . exprs)
 	     top?
 	     (annotate-seq
-	      env trans? expr (quote-syntax begin)
+	      trans? expr (quote-syntax begin)
 	      (syntax exprs)
 	      annotate-top)]
 	    [(define-syntaxes (name ...) rhs)
@@ -120,7 +110,7 @@
 						      (null? (cdr l))
 						      (car l)))
 					       (syntax rhs)
-					       env #t))])
+					       #t))])
 	       (syntax/loc expr (define-syntaxes (name ...) marked)))]
 	    
 	    ;; Just wrap body expressions
@@ -128,7 +118,7 @@
 	     top?
 	     (with-syntax ([bodyl
 			    (map (lambda (b)
-				   (annotate-top b env trans?))
+				   (annotate-top b trans?))
 				 (syntax->list (syntax (body ...))))])
 	       (datum->syntax-object
 		expr
@@ -153,47 +143,53 @@
 	    [(lambda args . body)
 	     (with-syntax ([cl (annotate-lambda name expr 
 						(syntax args) (syntax body) 
-						env trans?)])
+						trans?)])
 	       (keep-method-property expr (syntax/loc expr (lambda . cl))))]
 	    [(case-lambda [args . body] ...)
 	     (with-syntax ([clauses
 			    (map
 			     (lambda (args body)
-			       (annotate-lambda name expr args body env trans?))
+			       (annotate-lambda name expr args body trans?))
 			     (syntax->list (syntax (args ...))) 
 			     (syntax->list (syntax (body ...))))])
 	       (keep-method-property expr (syntax/loc expr (case-lambda . clauses))))]
 	    
 	    ;; Wrap RHSs and body
 	    [(let-values ([vars rhs] ...) . body)
-	     (annotate-let #f env trans?
-			   (syntax (vars ...))
-			   (syntax (rhs ...))
-			   (syntax body))]
+	     (with-mark expr 
+			(annotate-let #f trans?
+				      (syntax (vars ...))
+				      (syntax (rhs ...))
+				      (syntax body)))]
 	    [(letrec-values ([vars rhs] ...) . body)
-	     (annotate-let #t env trans?
-			   (syntax (vars ...))
-			   (syntax (rhs ...))
-			   (syntax body))]
+	     (with-mark expr 
+			(annotate-let #t trans?
+				      (syntax (vars ...))
+				      (syntax (rhs ...))
+				      (syntax body)))]
 	    
 	    ;; Wrap RHS
 	    [(set! var rhs)
 	     (with-syntax ([rhs (annotate-named 
 				 (syntax var)
 				 (syntax rhs)
-				 env trans?)])
-	       (syntax/loc expr (set! var rhs)))]
+				 trans?)])
+	       ;; set! might fail on undefined variable, or too many values:
+	       (with-mark expr (syntax/loc expr (set! var rhs))))]
 	    
 	    ;; Wrap subexpressions only
 	    [(begin . body)
-	     (annotate-seq env trans? expr (syntax begin) (syntax body) annotate)]
+	     (with-mark expr
+			(annotate-seq trans? expr (syntax begin) (syntax body) annotate))]
 	    [(begin0 . body)
-	     (annotate-seq env trans? expr (syntax begin0) (syntax body) annotate)]
+	     (with-mark expr
+			(annotate-seq trans? expr (syntax begin0) (syntax body) annotate))]
 	    [(if . body)
-	     (annotate-seq env trans? expr (syntax if) (syntax body) annotate)]
+	     (with-mark expr (annotate-seq trans? expr (syntax if) (syntax body) annotate))]
 	    [(with-continuation-mark . body)
-	     (annotate-seq 
-	      env trans? expr (syntax with-continuation-mark) (syntax body) annotate)]
+	     (with-mark expr
+			(annotate-seq 
+			 trans? expr (syntax with-continuation-mark) (syntax body) annotate))]
 	    
 	    ;; Wrap whole application, plus subexpressions
 	    [(#%app . body)
@@ -201,7 +197,7 @@
 		 ;; It's a null:
 		 expr
 		 (with-mark expr
-			    (annotate-seq env trans? expr 
+			    (annotate-seq trans? expr 
 					  (syntax #%app) (syntax body) 
 					  annotate)))]
 	    
@@ -213,10 +209,4 @@
       
       (define annotate (make-annotate #f #f))
       (define annotate-top (make-annotate #t #f))
-      (define annotate-named (lambda (name expr env trans?) ((make-annotate #t name) expr env trans?)))
-      
-      (define (stx-bound-memq ssym l)
-        (ormap (lambda (p)
-                 (and (syntax? P)
-                      (bound-identifier=? ssym p)))
-               l)))))
+      (define annotate-named (lambda (name expr trans?) ((make-annotate #t name) expr trans?))))))

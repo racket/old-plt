@@ -1,5 +1,5 @@
 ;;
-;; $Id: testr.ss,v 1.8 1998/12/06 21:34:36 robby Exp $
+;; $Id: testr.ss,v 1.9 1999/01/10 02:14:40 robby Exp $
 ;;
 ;; (mred:test:run-interval [msec]) is parameterization for the
 ;; interval (in milliseconds) between starting actions.
@@ -447,26 +447,23 @@
   (define menu-tag 'test:menu-select)
   
   (define menu-select
-    (lambda (menu item)
+    (lambda (menu-name item-name)
       (cond
-	[(not (string? menu))
-	 (arg-error menu-tag "expects string, given: ~s" menu)]
-	[(not (string? item))
-	 (arg-error menu-tag "expects string, given: ~s" item)]
+	[(not (string? menu-name))
+	 (arg-error menu-tag "expects string, given: ~s" menu-name)]
+	[(not (string? item-name))
+	 (arg-error menu-tag "expects string, given: ~s" item-name)]
 	[else
 	 (run-one
 	  (lambda ()
-	    (let* ([frame    (get-active-frame)]
-		   [item-id  (menu-item-id frame menu item)])
-	      (send frame command item-id))))])))
+	    (let* ([frame (get-active-frame)]
+		   [item (get-menu-item frame menu-name item-name)]
+		   [evt (make-object mred:control-event% 'menu)])
+	      (send evt set-stamp (current-milliseconds))
+	      (send item command evt))))])))
 
-  ;; get-active-frame => #f for no active frame.
-  ;; get-menu-bar     => () for no menu bar.
-  ;; find-menu-item   => -1 for no such item.
-  ;; dialog boxes don't have menu-bars or get-menu-bar method.
-
-  (define menu-item-id
-    (lambda (frame menu item)
+  (define get-menu-item
+    (lambda (frame menu-name item-name)
       (cond
 	[(not frame)
 	 (run-error menu-tag "no active frame")]
@@ -474,12 +471,25 @@
 	 (run-error menu-tag "active frame does not have menu bar")]
 	[else
 	 (let ([menu-bar  (send frame get-menu-bar)])
-	   (if (null? menu-bar)
-	       (run-error menu-tag "active frame does not have menu bar")
-	       (let ([item-id  (send menu-bar find-menu-item menu item)])
-		 (if (= item-id -1)
-		     (run-error menu-tag "menu ~s does not contain item ~s" menu item)
-		     item-id))))])))
+	   (unless menu-bar
+	     (run-error menu-tag "active frame does not have menu bar"))
+	   (let* ([items (send menu-bar get-items)]
+		  [item (let loop ([items items])
+			  (cond
+			    [(null? items) null]
+			    [else (let ([i (car items)])
+				    (printf "checking ~a~n" (send i get-label))
+				    (cond
+				      [(is-a? i mred:submenu-item<%>) (loop (cdr items))]
+				      [(and (string=? item-name (send i get-label))
+					    (string=? menu-name (send (send (send i get-parent) get-item) get-label)))
+				       (cons i (loop (cdr items)))]
+				      [else (loop (cdr items))]))]))])
+	     (when (null? item) (run-error menu-tag "no such menu ~a | ~a" menu-name item-name))
+	     (unless (= 1 (length item)) (run-error menu-tag "more than one ~a | ~a menu" menu-name item-name))
+	     (unless (is-a? (car item) mred:shortcut-menu-item<%>)
+	       (run-error menu-tag "the menu ~a|~a is not a shortcut-menu-item<%> object"))
+	     (car item)))])))
   
   
   ;;

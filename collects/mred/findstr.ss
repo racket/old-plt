@@ -406,10 +406,6 @@
 			[root (make-object % s-root)])
 		   (set! super-root s-root)
 		   root))])
-	    (sequence
-	      (mred:debug:printf 'super-init "before searchable-frame%")
-	      (apply super-init args)
-	      (mred:debug:printf 'super-init "after searchable-frame%"))
 	    (public
 	      [on-activate
 	       (lambda (on?)
@@ -501,6 +497,10 @@
 		     (begin
 		       (set-search-direction direction)
 		       (send find-edit search #t beep?))))])
+	    (sequence
+	      (mred:debug:printf 'super-init "before searchable-frame%")
+	      (apply super-init args)
+	      (mred:debug:printf 'super-init "after searchable-frame%"))
             (private
 	      [search-panel (make-object mred:container:horizontal-panel% super-root)]
 

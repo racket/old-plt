@@ -23,7 +23,6 @@
 Scheme_Object *scheme_define_values_syntax, *scheme_defmacro_syntax;
 Scheme_Object *scheme_def_id_macro_syntax;
 Scheme_Object *scheme_def_exp_time_syntax;
-Scheme_Object *scheme_begin_exp_time_syntax;
 Scheme_Object *scheme_begin_syntax;
 Scheme_Object *scheme_lambda_syntax;
 Scheme_Object *scheme_compiled_void_code;
@@ -69,8 +68,6 @@ static Scheme_Object *def_id_macro_syntax(Scheme_Object *form, Scheme_Comp_Env *
 static Scheme_Object *def_id_macro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *def_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *def_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
-static Scheme_Object *begin_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
-static Scheme_Object *begin_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *letmacro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
 static Scheme_Object *letmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth);
 static Scheme_Object *let_id_macro_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec);
@@ -138,7 +135,6 @@ static Scheme_Object *define_expansion_time_symbol;
 static Scheme_Object *let_macro_symbol;
 static Scheme_Object *let_id_macro_symbol;
 static Scheme_Object *let_expansion_time_symbol;
-static Scheme_Object *begin_expansion_time_symbol;
 
 typedef struct {
   Scheme_Object *sym;
@@ -161,7 +157,6 @@ scheme_init_syntax (Scheme_Env *env)
     REGISTER_SO(scheme_defmacro_syntax);
     REGISTER_SO(scheme_def_id_macro_syntax);
     REGISTER_SO(scheme_def_exp_time_syntax);
-    REGISTER_SO(scheme_begin_exp_time_syntax);
     REGISTER_SO(scheme_lambda_syntax);
     REGISTER_SO(scheme_begin_syntax);
     REGISTER_SO(scheme_undefined);
@@ -198,7 +193,6 @@ scheme_init_syntax (Scheme_Env *env)
     REGISTER_SO(let_macro_symbol);
     REGISTER_SO(let_id_macro_symbol);
     REGISTER_SO(let_expansion_time_symbol);
-    REGISTER_SO(begin_expansion_time_symbol);
 
     scheme_undefined = scheme_alloc_eternal_object();
     scheme_undefined->type = scheme_undefined_type;
@@ -236,7 +230,6 @@ scheme_init_syntax (Scheme_Env *env)
     let_macro_symbol = scheme_intern_symbol("#%let-macro");
     let_id_macro_symbol = scheme_intern_symbol("#%let-id-macro");
     let_expansion_time_symbol = scheme_intern_symbol("#%let-expansion-time");
-    begin_expansion_time_symbol = scheme_intern_symbol("#%begin-expansion-time");
 
     scheme_register_syntax("d", define_values_execute);
     scheme_register_syntax("!", set_execute);
@@ -273,8 +266,6 @@ scheme_init_syntax (Scheme_Env *env)
 							     def_id_macro_expand);
     scheme_def_exp_time_syntax = scheme_make_compiled_syntax(def_exp_time_syntax, 
 							      def_exp_time_expand);
-    scheme_begin_exp_time_syntax = scheme_make_compiled_syntax(begin_exp_time_syntax, 
-							       begin_exp_time_expand);
     scheme_lambda_syntax = scheme_make_compiled_syntax(lambda_syntax,
 						       lambda_expand);
     scheme_begin_syntax = scheme_make_compiled_syntax(begin_syntax, 
@@ -360,7 +351,6 @@ scheme_init_syntax (Scheme_Env *env)
   scheme_add_global_keyword("define-macro", scheme_defmacro_syntax, env);
   scheme_add_global_keyword("define-id-macro", scheme_def_id_macro_syntax, env);
   scheme_add_global_keyword("define-expansion-time", scheme_def_exp_time_syntax, env);
-  scheme_add_global_keyword("begin-expansion-time", scheme_begin_exp_time_syntax, env);
   scheme_add_global_keyword("let-macro", 
 			    scheme_make_compiled_syntax(letmacro_syntax, 
 							 letmacro_expand), 
@@ -2060,22 +2050,16 @@ do_def_execute(char *who, Scheme_Object *form, Scheme_Type type, int require_pro
 static void do_def_parse(char *where,
 			 Scheme_Object *form, 
 			 Scheme_Object **name, Scheme_Object **code,
-			 Scheme_Comp_Env *env,
-			 int no_name)
+			 Scheme_Comp_Env *env)
 {
-  if (scheme_proper_list_length(form) != (no_name ? 2 : 3))
+  if (scheme_proper_list_length(form) != 3)
     scheme_wrong_syntax(where, NULL, form, NULL);
 
-  if (!no_name) {
-    *name = SCHEME_CAR (SCHEME_CDR (form));
+  *name = SCHEME_CAR (SCHEME_CDR (form));
     
-    scheme_check_identifier(where, *name, NULL, env, form);
+  scheme_check_identifier(where, *name, NULL, env, form);
     
-    *code = SCHEME_CAR(SCHEME_CDR(SCHEME_CDR(form)));
-  } else {
-    *name = scheme_false;
-    *code = SCHEME_CAR(SCHEME_CDR(form));
-  }
+  *code = SCHEME_CAR(SCHEME_CDR(SCHEME_CDR(form)));
 }
 
 static Scheme_Object *do_def_link(Scheme_Syntax_Executer *exec,
@@ -2095,8 +2079,7 @@ static Scheme_Object *
 do_def_syntax(char *where,
 	      Scheme_Object *form, Scheme_Comp_Env *env, 
 	      Scheme_Compile_Info *rec,
-	      Scheme_Syntax_Linker *link,
-	      int no_name)
+	      Scheme_Syntax_Linker *link)
 {
   Scheme_Object *name, *code;
   Scheme_Object *val;
@@ -2106,28 +2089,26 @@ do_def_syntax(char *where,
   
   scheme_compile_rec_done_local(rec);
 
-  do_def_parse(where, form, &name, &code, env, no_name);
+  do_def_parse(where, form, &name, &code, env);
 
   val = scheme_compile_expr(code, env, rec);
-  if (!no_name)
-    name = (Scheme_Object *)scheme_global_bucket(name, scheme_min_env(env));
+  name = (Scheme_Object *)scheme_global_bucket(name, scheme_min_env(env));
 
   return scheme_make_syntax_compile(link, scheme_make_pair(name, val));
 }
 
 static Scheme_Object *
 do_def_expand(char *where, Scheme_Object *formname, Scheme_Object *form, 
-	      Scheme_Comp_Env *env, int depth, int no_name)
+	      Scheme_Comp_Env *env, int depth)
 {
   Scheme_Object *name, *code, *fpart;
 
-  do_def_parse(where, form, &name, &code, env, no_name);
+  do_def_parse(where, form, &name, &code, env);
   
   fpart = scheme_expand_expr(code, env, depth);
   
   code = cons(fpart, scheme_null);
-  if (!no_name)
-    code = cons(name, code);
+  code = cons(name, code);
 
   return cons(formname, code);
 }
@@ -2150,13 +2131,13 @@ defmacro_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 		 Scheme_Compile_Info *rec)
 {
   return do_def_syntax("define-macro", form, env, rec,
-		       defmacro_link, 0);
+		       defmacro_link);
 }
 
 static Scheme_Object *
 defmacro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
-  return do_def_expand("define-macro", define_macro_symbol, form, env, depth, 0);
+  return do_def_expand("define-macro", define_macro_symbol, form, env, depth);
 }
 
 static Scheme_Object *
@@ -2176,7 +2157,7 @@ def_id_macro_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 		     Scheme_Compile_Info *rec)
 {
   return do_def_syntax("define-id-macro", form, env, rec,
-		       def_id_macro_link, 0);
+		       def_id_macro_link);
 }
 
 static Scheme_Object *
@@ -2184,7 +2165,7 @@ def_id_macro_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   return do_def_expand("define-id-macro", 
 		       define_id_macro_symbol, 
-		       form, env, depth, 0);
+		       form, env, depth);
 }
 
 static Scheme_Object *
@@ -2204,7 +2185,7 @@ def_exp_time_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 		      Scheme_Compile_Info *rec)
 {
   return do_def_syntax("define-expansion-time", form, env, rec,
-		       def_exp_time_link, 0);
+		       def_exp_time_link);
 }
 
 static Scheme_Object *
@@ -2212,23 +2193,7 @@ def_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 {
   return do_def_expand("define-expansion-time", 
 		       define_expansion_time_symbol, 
-		       form, env, depth, 0);
-}
-
-static Scheme_Object *
-begin_exp_time_syntax(Scheme_Object *form, Scheme_Comp_Env *env, 
-		      Scheme_Compile_Info *rec)
-{
-  return do_def_syntax("begin-expansion-time", form, env, rec,
-		       def_exp_time_link, 1);
-}
-
-static Scheme_Object *
-begin_exp_time_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
-{
-  return do_def_expand("begin-expansion-time", 
-		       begin_expansion_time_symbol,
-		       form, env, depth, 1);
+		       form, env, depth);
 }
 
 static Scheme_Object *

@@ -1322,28 +1322,6 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       } else {
 	/* Looks illegal, but we're just expanding for now... */
       }
-    } else if (SAME_OBJ(gval, scheme_begin_exp_time_syntax)) {
-      /* Convert to let-exp-time-macro */
-      Scheme_Object *body, *rest, *var;
-      char *where = "begin-expansion-time (embedded)", buffer[20];
-      static int counter = 1;
-      
-      rest = SCHEME_CDR(result);
-      
-      first = SCHEME_CDR(first);
-      if (!SCHEME_PAIRP(first))
-	scheme_wrong_syntax(where, first, result, NULL);
-      body = first;
-      
-      sprintf(buffer, "g-bet-%d", counter++);
-      var = scheme_make_symbol(buffer);
-      
-      result = cons(let_exp_time_symbol,
-		   cons(var,
-			cons(cons(begin_symbol, body),
-			     rest)));
-      
-       name = NULL;
     } else if (SAME_OBJ(gval, scheme_defmacro_syntax)
 	       || SAME_OBJ(gval, scheme_def_id_macro_syntax)
 	       || SAME_OBJ(gval, scheme_def_exp_time_syntax)) {

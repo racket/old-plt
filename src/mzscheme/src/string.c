@@ -681,12 +681,12 @@ static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2)
 {
 #ifdef USE_LOCALE
   /* USE_LOCALE contributed by Boris Tobotras, tobotras@jet.msk.su. */
+  /* Caveat emptor. */
   /* The problem with using strcoll is that MzScheme strings may
      contain a null character. In that case, if the strings match up
      to the first null character but differ afterwards, strcoll will
      return the wrong result. (This is why we use mz_strcmp instead of
-     strcmp in the first place.) 
-     Caveat emptor. */
+     strcmp in the first place.) */
   return strcoll(str1, str2);
 #else  
   int endres;
@@ -719,6 +719,9 @@ static int mz_strcmp(unsigned char *str1, int l1, unsigned char *str2, int l2)
 static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2)
 {
   int endres;
+#ifdef USE_LOCALE
+  unsigned char *cstr1, cstr2;
+#endif
 
   if (l1 > l2) {
     l1 = l2;
@@ -729,6 +732,33 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
     else
       endres = 0;
   }
+
+#ifdef USE_LOCALE
+
+# define USE_ALLOCA 1
+# if USE_ALLOCA
+#  define LALLOC alloca
+# else
+#  define LALLOC scheme_malloc_atomic
+# endif
+  unsigned char *cstr1 = LALLOC(l1 + 1);
+  unsigned char *cstr2 = LALLOC(l1 + 1);
+  int retCode, idx;
+
+  strncpy(cstr1, str1, l1);
+  strncpy(cstr2, str2, l1);
+  Str1[l1] = Str2[l1] = '\0';
+
+  for (i = 0; i < l1; ++i) {
+    cstr1[i] = toupper(cstr1[i]);
+    cstr2[i] = toupper(cstr2[i]);
+  }
+  retCode = strcoll(cstr1, cstr2);
+  
+  if (retCode)
+    return retCode;
+
+#else
 
   while (l1--) {
     unsigned int a, b;
@@ -742,6 +772,8 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
     if (a)
       return a;
   }
+
+#endif /* USE_LOCALE */
 
   return endres;
 }
@@ -1020,9 +1052,13 @@ char *scheme_version(void)
 }
 
 #ifdef USE_SENORA_GC
-#define VERSION_SUFFIX " (sgc)"
+# define VERSION_SUFFIX " (sgc)"
 #else
-#define VERSION_SUFFIX /* empty */
+# ifdef USE_LOCALE
+#  define VERSION_SUFFIX " (using locale)"
+# else
+#  define VERSION_SUFFIX /* empty */
+# endif
 #endif
 
 char *scheme_banner(void)

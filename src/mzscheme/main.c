@@ -314,6 +314,7 @@ int actual_main(int argc, char *argv[])
 #endif
 
 #ifdef USE_LOCALE
+  /* See note in string.c */
   setlocale( LC_ALL, "" );
 #endif
   

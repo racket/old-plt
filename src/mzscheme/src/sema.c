@@ -28,7 +28,6 @@ static Scheme_Object *block_sema_p(int n, Scheme_Object **p);
 static Scheme_Object *block_sema(int n, Scheme_Object **p);
 static Scheme_Object *block_sema_breakable(int n, Scheme_Object **p);
 static Scheme_Object *sema_callback(int n, Scheme_Object **p);
-static Scheme_Object *sema_input_port(int n, Scheme_Object **p);
 
 void scheme_init_sema(Scheme_Env *env)
 {
@@ -65,11 +64,6 @@ void scheme_init_sema(Scheme_Env *env)
   scheme_add_global_constant("semaphore-callback", 
 			     scheme_make_prim_w_arity(sema_callback, 
 						      "semaphore-callback", 
-						      2, 2), 
-			     env);
-  scheme_add_global_constant("input-port-post-semaphore", 
-			     scheme_make_prim_w_arity(sema_input_port, 
-						      "input-port-post-semaphore", 
 						      2, 2), 
 			     env);
 }
@@ -283,16 +277,6 @@ static Scheme_Object *sema_callback(int n, Scheme_Object **p)
   cb->callback = p[1];
   
   scheme_add_sema_callback(cb);
-
-  return scheme_void;
-}
-
-static Scheme_Object *sema_input_port(int n, Scheme_Object **p)
-{
-  if (!SCHEME_INPORTP(p[0]))
-    scheme_wrong_type("input-port-post-semaphore", "input port", 0, n, p);
-  if (!SCHEME_SEMAP(p[1]))
-    scheme_wrong_type("input-port-post-semaphore", "semaphore", 1, n, p);
 
   return scheme_void;
 }

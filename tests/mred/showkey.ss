@@ -7,8 +7,10 @@
 	 (override
 	   [on-event
 	    (lambda (ev)
-	      (printf "MOUSE ~a  meta: ~a  control: ~a  alt: ~a  shift: ~a buttons: ~a ~a ~a~n" 
+	      (printf "MOUSE ~a (~a,~a)  meta: ~a  control: ~a  alt: ~a  shift: ~a buttons: ~a ~a ~a~n" 
 		      (send ev get-event-type)
+		      (send ev get-x)
+		      (send ev get-y)
 		      (send ev get-meta-down)
 		      (send ev get-control-down)
 		      (send ev get-alt-down)

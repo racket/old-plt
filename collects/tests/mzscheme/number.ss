@@ -117,6 +117,15 @@
 (test "+nan.0" number->string +nan.0)
 (test "+nan.0" number->string +nan.0)
 
+(map (lambda (n)
+       ;; test that fresh strings are generated:
+       (let ([n1 (number->string n)]
+	     [n2 (number->string n)])
+	 (string-set! n1 0 #\?)
+	 (test n2 number->string n)
+	 (test n1 string-append "?" (substring n2 1 (string-length n2)))))
+     '(+inf.0 -inf.0 +nan.0 -nan.0 0.0 -0.0 0 1/2 3.4 1+2i))
+
 (test #t = 0.0 -0.0)
 (test #f eqv? 0.0 -0.0)
 

@@ -62,6 +62,9 @@ Bool wxCanvas::Create(wxPanel *panel, int x, int y, int width, int height,
 {
     wxWindow_Xintern *ph;
     Widget wgt;
+
+    bgcol = (style & wxTRANSPARENT_WIN) ? wxGREY : wxWHITE;
+
     ChainToPanel(panel, style, name);
 
     ph = parent->GetHandle();
@@ -161,13 +164,33 @@ void wxCanvas::SetBackgroundToGray(void)
 
 }
 
+void wxCanvas::SetCanvasBackground(wxColor *c)
+{
+  if (!bgcol || !c)
+    return;
+  
+  if (c && c->IsMutable()) {
+    c = new wxColour(c);
+    c->Lock(1);
+  }
+   
+  bgcol = c;
+
+  XtVaSetValues(X->handle, XtNbackground,  c->GetPixel(), NULL);
+}
+
+wxColour *wxCanvas::GetCanvasBackground()
+{
+  return bgcol;
+}
+
 void wxCanvas::Paint(void)
 {
   if (!(style & wxNO_AUTOCLEAR)) {
     /* Need to erase, first */
     wxColor *c;
     c = dc->GetBackground();
-    dc->SetBackground((style & wxTRANSPARENT_WIN) ? wxGREY : wxWHITE);
+    dc->SetBackground(bgcol);
     dc->Clear();
     dc->SetBackground(c);
   }

@@ -66,9 +66,14 @@ public:
     virtual void OnChar(wxKeyEvent *event);
     virtual void Paint(void);
 
+    virtual void SetCanvasBackground(wxColor *c);
+    wxColor *GetCanvasBackground();
+
 private:
     int	h_size, h_units, h_units_per_page,
 	v_size, v_units, v_units_per_page;
+
+    wxColour *bgcol;
 };
 
 #endif // Canvas_h

@@ -447,7 +447,11 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
 
   if (!(wstyle & wxNO_AUTOCLEAR)) {
     int free_brush = 0;
-
+	wxColor *bgcol;
+	
+	canvas = (wxCanvas *)wx_window;
+	bgcol = canvas->GetCanvasBackground();
+    
     GetClientRect(handle, &rect);
     mode = SetMapMode(pDC, MM_TEXT);
     if (wstyle & wxTRANSPARENT_WIN) {
@@ -468,7 +472,6 @@ BOOL wxCanvasWnd::OnEraseBkgnd (HDC pDC)
     if (free_brush)
       DeleteObject(brsh);
 
-    canvas = (wxCanvas *)wx_window;
     if (canvas->wx_dc) {
       SetViewportExtEx(pDC, VIEWPORT_EXTENT, VIEWPORT_EXTENT, NULL);
       SetWindowExtEx(pDC, canvas->wx_dc->window_ext_x, canvas->wx_dc->window_ext_y, NULL);

@@ -2,6 +2,9 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.12
+Added hash-table-count
+
 Version 299.11
 New forms:
   require-for-template [core form]

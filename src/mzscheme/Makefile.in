@@ -257,10 +257,10 @@ install:
 install-3m-basic:
 	cd ..; $(ICP) mzscheme/mzscheme3m $(prefix)/bin/mzscheme3m
 	cd ..; $(ICP) mzscheme/mzdyn3m.o $(prefix)/lib/mzdyn3m.o
-	cd ..; $(ICP) mzscheme/libmzscheme3m.@LIBSFX@ $(LIBIDIR)/libmzscheme3m.@LIBSFX@
 
 install-3m@NOT_OSX@:
 	$(MAKE) install-3m-basic
+	cd ..; $(ICP) mzscheme/libmzscheme3m.@LIBSFX@ $(LIBIDIR)/libmzscheme3m.@LIBSFX@
 
 LIBIDIR=`(cd $(prefix); pwd)`/lib
 BUILDINFO=$(LIBIDIR)/buildinfo

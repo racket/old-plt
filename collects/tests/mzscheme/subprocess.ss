@@ -204,6 +204,26 @@
 	(test "Howdy" read-line)
 	(test '("nosuchfile") regexp-match "nosuchfile" (read-line))))))
 
+;; strings for everyone
+
+(let ([f (open-input-string (string-append
+			     "1"
+			     (make-string 50000 #\0)
+			     "\n"))]
+      [f2 (open-output-string)])
+  (let ([p (process*/ports f2 f f2 cat "-" "nosuchfile")])
+    (test #f car p)
+    (test #f cadr p)
+    (test #f cadddr p)
+
+    ((list-ref p 4) 'wait)
+    (test 'done-error (list-ref p 4) 'status)
+    
+    (let ([p (open-input-string (get-output-string f2))])
+      (test (expt 10 50000) read p)
+      (test "" read-line p)
+      (test '("nosuchfile") regexp-match "nosuchfile" (read-line p)))))
+
 ;; Check error cases
 
 (let ([f (open-input-file tmpfile)]

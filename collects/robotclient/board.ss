@@ -182,7 +182,7 @@
         (else (cons next (loop (read in)))))))
   
   (define (read-response in)
-    (let* ((t (regexp-replace "#" (read-line in) " ^ "))
+    (let* ((t (regexp-replace* "#" (read-line in) " ^ "))
            (s (open-input-string t)))
       (with-handlers ((exn:user? (lambda (ex) (printf "~a~n" t))))
         (response-parser (lambda ()
@@ -233,7 +233,7 @@
          (loop (cdr l) (cons (car l) r))))))
           
   
-  (define (read-response! packages in gui-update)
+  (define (read-response! set-score packages in gui-update)
     (let* ((responses (read-response in))
            (flat-responses (apply append responses))
            (alive-robots (remove-dups (map (lambda (x) 
@@ -258,12 +258,12 @@
                                                    (filter (lambda (x)
                                                              (eq? 'P (response-name x)))
                                                            good-responses)))))
-                             ((p) (list (response-id (car good-responses))
+                             ((d) (list (response-id (car good-responses))
                                         0
-                                        (cons 'pick
+                                        (cons 'drop
                                               (map response-arg
                                                    (filter (lambda (x)
-                                                             (eq? 'P (response-name x)))
+                                                             (eq? 'D (response-name x)))
                                                            good-responses))))))))
                        (filter (lambda (rl)
                                  (not (eq? 'nothing (response-name (car rl)))))
@@ -306,6 +306,13 @@
                 (cond
                   ((= (response-id r) (player-id))
                    (let ((drop (response-arg r)))
+                     (for-each (lambda (p)
+                                 (cond
+                                   ((and (= (package-id p) drop)
+                                         (= (get-player-x) (package-x p))
+                                         (= (get-player-y) (package-y p)))
+                                    (set-score (package-weight p)))))
+                               (packages-held))
                      (packages-held
                       (filter (lambda (p)
                                 (not (= drop (package-id p))))

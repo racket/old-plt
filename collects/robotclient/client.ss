@@ -4,17 +4,24 @@
            "search.ss")
   (provide start-client)
   
+  (define score (make-parameter 0))
+  
   (define (start-client baseline? gui? host-name port)
     (let ((client-custodian (make-custodian)))
       (parameterize ((current-custodian client-custodian))
-        (with-handlers ((exn? (lambda (ex) (custodian-shutdown-all client-custodian))))
+        (with-handlers ((exn? (lambda (ex)
+                                (custodian-shutdown-all client-custodian)
+                                (printf "~a~n" (exn-message ex))
+                                (score))))
           (let-values (((input output) (tcp-connect host-name port)))
             (display "Player" output)
             (newline output)
             (read-board! input (cond
                                  (gui? (dynamic-require "gui-client.ss" 'initialize))
                                  (else void)))
-            (do-turn baseline? gui? input output))))))
+            (do-turn (lambda (x) (score (+ (score) x))) 
+                     baseline? gui? input output)
+            (score))))))
 
   (define (read-packages in)
     (let* ((x (read-line in))
@@ -50,7 +57,7 @@
        
   
   
-  (define (do-turn baseline? gui? in out)
+  (define (do-turn update-score baseline? gui? in out)
     (let loop ((packages (read-packages in))
                (robots null))
       (cond
@@ -59,8 +66,11 @@
         (baseline? (send-command (compute-baseline-move packages robots) out))
         (else
          (send-command (compute-move packages robots) out)))
-      (let ((robots (read-response! packages in (cond
-                                                  (gui? (dynamic-require "gui-client.ss" 'update))
-                                                  (else void)))))
+      (let ((robots (read-response! update-score
+                                    packages
+                                    in 
+                                    (cond
+                                      (gui? (dynamic-require "gui-client.ss" 'update))
+                                      (else void)))))
         (loop (read-packages in) robots))))
   )

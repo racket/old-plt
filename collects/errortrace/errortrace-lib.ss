@@ -280,11 +280,12 @@
 		  (not (compiled-expression? (if (syntax? e)
 						 (syntax-e e)
 						 e))))
-	     (errortrace-annotate
-	      (if (syntax? e)
-		  e
-		  (namespace-syntax-introduce
-		   (datum->syntax-object #f e))))
+	     (let ([e2 (errortrace-annotate
+			(if (syntax? e)
+			    e
+			    (namespace-syntax-introduce
+			     (datum->syntax-object #f e))))])
+	       e2)
 	     e)
 	 immediate-eval?))))
 

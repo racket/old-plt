@@ -378,7 +378,7 @@
 		  (let* ([clauses (syntax->list (syntax (clause ...)))]
 			 [clausel
 			  (map
-			   (lambda (args body clause) (profile-annotate-lambda name expr clause args body trans?))
+			   (lambda (body clause) (profile-annotate-lambda name expr clause body ctx flexible? trans?))
 			   (syntax->list (syntax (body ...)))
 			   clauses)])
 		    (certify

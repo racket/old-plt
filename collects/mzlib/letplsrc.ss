@@ -220,7 +220,7 @@
 								   (,inner-k #f))])
 						   ,code)])
 				     (call-with-values (lambda () (begin ,@bodies))
-						       (lambda args (apply ,outer-k args)))))))
+						       ,outer-k)))))
 			    pattern-body-pairs)
 		     (error 'rmatch "no patterns matched"))))))]
     (lambda (x y) (main x y))))
@@ -334,6 +334,6 @@
   )
 
   
-;(test)
+(test)
 
 ;(expand-defmacro '(let+ ([val (values x y) 3]) 11))

@@ -367,7 +367,10 @@
   (define (collapse-module-path-index mpi relto-mp)
     (let-values ([(path base) (module-path-index-split mpi)])
       (if path
-	  (collapse-module-path path relto-mp)
+	  (collapse-module-path path 
+				(if base
+				    (collapse-module-path-index base relto-mp)
+				    relto-mp))
 	  relto-mp)))
 
   (define (show-import-tree module-path)

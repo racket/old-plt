@@ -602,6 +602,7 @@ void wxListBox::Append(char *Item)
 
 void wxListBox::Set(int n, char *choices[])
 {
+  SetCurrentDC();
   if (no_items > 0) {
 	this->Clear();
   }

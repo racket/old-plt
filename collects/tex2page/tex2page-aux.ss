@@ -18,7 +18,7 @@
 ;(c) Dorai Sitaram, 
 ;http://www.ccs.neu.edu/~dorai/scmxlate/scmxlate.html
 
-(define *tex2page-version* "2003-06-23")
+(define *tex2page-version* "2003-07-17")
 
 (define *tex2page-website*
   "http://www.ccs.neu.edu/~dorai/tex2page/tex2page-doc.html")
@@ -1584,7 +1584,7 @@
 
 (defstruct cdef (argpat #f) (expansion #f) (optarg #f) (active #f))
 
-(define copy-tdef
+(define kopy-tdef
   (lambda (lft rt)
     (set!tdef.argpat lft (tdef.argpat rt))
     (set!tdef.expansion lft (tdef.expansion rt))
@@ -1593,7 +1593,7 @@
     (set!tdef.prim lft (tdef.prim rt))
     (set!tdef.defer lft (tdef.defer rt))))
 
-(define copy-cdef
+(define kopy-cdef
   (lambda (lft rt)
     (set!cdef.argpat lft (cdef.argpat rt))
     (set!cdef.expansion lft (cdef.expansion rt))
@@ -1648,7 +1648,7 @@
                   (cons (cons lft lft-def) (texframe.definitions frame)))
                 lft-def)))))
       (cond
-       ((find-def rt) => (lambda (rt-def) (copy-tdef lft-def rt-def)))
+       ((find-def rt) => (lambda (rt-def) (kopy-tdef lft-def rt-def)))
        (else (cleanse-tdef lft-def) (set!tdef.defer lft-def rt))))))
 
 (define tex-let-prim (lambda (lft rt) (tex-let lft rt *primitive-texframe*)))
@@ -1745,7 +1745,7 @@
      ((find-chardef-in-top-frame c) => (lambda (y) (set!cdef.active y #t)))
      (else
       (let* ((y (find-chardef c)) (d (ensure-cdef c (top-texframe))))
-        (when y (copy-cdef d y))
+        (when y (kopy-cdef d y))
         (set!cdef.active d #t))))))
 
 (define deactivate-cdef
@@ -1756,7 +1756,7 @@
       =>
       (lambda (y)
         (let ((d (ensure-cdef c (top-texframe))))
-          (copy-cdef d y)
+          (kopy-cdef d y)
           (set!cdef.active d #f)))))))
 
 (define do-undefcsactive
@@ -2566,24 +2566,22 @@
               (if c
                 (cdr c)
                 (terror 'do-definecolor "Color name " name " not defined")))
-            (let ((rgb #f)
-                  (i
-                   (open-input-string
-                     (tex-string->html-string
-                       (string-append "\\defcsactive\\,{ }" spec)))))
-              (cond
-               ((string=? model "cmyk")
-                (let* ((c (read i)) (m (read i)) (y (read i)) (k (read i)))
-                  (set! rgb (cmyk->rgb c m y k))))
-               ((string=? model "rgb")
-                (let* ((r (read i)) (g (read i)) (b (read i)))
-                  (set! rgb (rgb.frac->hex r g b))))
-               ((string=? model "gray") (set! rgb (cmyk->rgb 0 0 0 (read i))))
-               (else (terror 'do-definecolor "Unknown color model")))
-              (close-input-port i)
-              (egroup)
-              rgb)))
-         *color-names*)))))
+            (let ((rgb #f))
+              (call-with-input-string
+                (tex-string->html-string
+                  (string-append "\\defcsactive\\,{ }" spec))
+                (lambda (i)
+                  (cond
+                   ((string=? model "cmyk")
+                    (let* ((c (read i)) (m (read i)) (y (read i)) (k (read i)))
+                      (cmyk->rgb c m y k)))
+                   ((string=? model "rgb")
+                    (let* ((r (read i)) (g (read i)) (b (read i)))
+                      (rgb.frac->hex r g b)))
+                   ((string=? model "gray") (cmyk->rgb 0 0 0 (read i)))
+                   (else (terror 'do-definecolor "Unknown color model"))))))))
+         *color-names*))
+      (egroup))))
 
 (define do-switch
   (lambda (sw)
@@ -2634,62 +2632,53 @@
            (lambda () (emit "</span>")))
           ((cmyk)
            (bgroup)
-           (let* ((i
-                   (open-input-string
-                     (tex-string->html-string
-                       (string-append "\\defcsactive\\,{}" (get-token)))))
-                  (c (read i))
-                  (m (read i))
-                  (y (read i))
-                  (k (read i)))
-             (close-input-port i)
-             (egroup)
-             (ignorespaces)
-             (emit "<font color=\"#")
-             (emit (cmyk->rgb c m y k))
-             (emit "\">")
-             (lambda () (emit "</font>"))))
+           (call-with-input-string
+             (tex-string->html-string
+               (string-append "\\defcsactive\\,{}" (get-token)))
+             (lambda (i)
+               (let* ((c (read i)) (m (read i)) (y (read i)) (k (read i)))
+                 (ignorespaces)
+                 (emit "<font color=\"#")
+                 (emit (cmyk->rgb c m y k))
+                 (emit "\">"))))
+           (egroup)
+           (lambda () (emit "</font>")))
           ((rgb)
            (bgroup)
-           (let* ((i
-                   (open-input-string
-                     (tex-string->html-string
-                       (string-append "\\defcsactive\\,{}" (get-token)))))
-                  (r (read i))
-                  (g (read i))
-                  (b (read i)))
-             (close-input-port i)
-             (egroup)
-             (ignorespaces)
-             (emit "<font color=\"#")
-             (emit (rgb.frac->hex r g b))
-             (emit "\">")
-             (lambda () (emit "</font>"))))
+           (call-with-input-string
+             (tex-string->html-string
+               (string-append "\\defcsactive\\,{}" (get-token)))
+             (lambda (i)
+               (let* ((r (read i)) (g (read i)) (b (read i)))
+                 (ignorespaces)
+                 (emit "<font color=\"#")
+                 (emit (rgb.frac->hex r g b))
+                 (emit "\">"))))
+           (egroup)
+           (lambda () (emit "</font>")))
           ((rgb255)
            (bgroup)
-           (let* ((i
-                   (open-input-string
-                     (tex-string->html-string
-                       (string-append "\\defcsactive\\,{}" (get-token)))))
-                  (r (read i))
-                  (g (read i))
-                  (b (read i)))
-             (close-input-port i)
-             (egroup)
-             (ignorespaces)
-             (emit "<font color=\"#")
-             (emit (rgb.dec->hex r g b))
-             (emit "\">")
-             (lambda () (emit "</font>"))))
+           (call-with-input-string
+             (tex-string->html-string
+               (string-append "\\defcsactive\\,{}" (get-token)))
+             (lambda (i)
+               (let* ((r (read i)) (g (read i)) (b (read i)))
+                 (ignorespaces)
+                 (emit "<font color=\"#")
+                 (emit (rgb.dec->hex r g b))
+                 (emit "\">"))))
+           (egroup)
+           (lambda () (emit "</font>")))
           ((gray)
-           (let* ((i (open-input-string (tex-string->html-string (get-token))))
-                  (g (read i)))
-             (close-input-port i)
-             (ignorespaces)
-             (emit "<font color=\"#")
-             (emit (cmyk->rgb 0 0 0 (- 1 g)))
-             (emit "\">")
-             (lambda () (emit "</font>"))))
+           (call-with-input-string
+             (tex-string->html-string (get-token))
+             (lambda (i)
+               (let ((g (read i)))
+                 (ignorespaces)
+                 (emit "<font color=\"#")
+                 (emit (cmyk->rgb 0 0 0 (- 1 g)))
+                 (emit "\">"))))
+           (lambda () (emit "</font>")))
           ((colornamed)
            (let* ((name (get-peeled-group))
                   (c (lassoc name *color-names* string=?)))
@@ -3954,63 +3943,62 @@
 
 (define do-diacritic-aux
   (lambda (diac c)
-    (let ((done? #f))
-      (case diac
-        ((acute)
-         (case c
-           ((#\a #\e #\i #\o #\u #\y #\A #\E #\I #\O #\U #\Y)
-            (emit #\&)
-            (emit c)
-            (emit "acute;"))
-           ((#\space) (emit #\'))
-           (else (emit c) (emit #\'))))
-        ((cedilla)
-         (case c
-           ((#\c #\C) (emit #\&) (emit c) (emit "cedil;"))
-           ((#\space) (emit #\,))
-           (else (emit c) (emit #\,))))
-        ((circumflex)
-         (case c
-           ((#\a #\e #\i #\o #\u #\A #\E #\I #\O #\U)
-            (emit #\&)
-            (emit c)
-            (emit "circ;"))
-           ((#\space) (emit #\^))
-           (else (emit c) (emit #\^))))
-        ((grave)
-         (case c
-           ((#\a #\e #\i #\o #\u #\A #\E #\I #\O #\U)
-            (emit #\&)
-            (emit c)
-            (emit "grave;"))
-           ((#\space) (emit #\`))
-           (else (emit c) (emit #\`))))
-        ((hacek)
-         (case c
-           ((#\s) (emit *html-scaron*))
-           ((#\S) (emit *html-scaron-cap*))
-           ((#\space) (emit #\^))
-           (else (emit c) (emit #\^))))
-        ((ring)
-         (case c
-           ((#\a #\A) (emit #\&) (emit c) (emit "ring;"))
-           ((#\space) (emit "&deg;"))
-           (else (emit c) (emit "&deg;"))))
-        ((tilde)
-         (case c
-           ((#\a #\n #\o #\A #\N #\O) (emit #\&) (emit c) (emit "tilde;"))
-           ((#\space) (emit #\~))
-           (else (emit c) (emit #\~))))
-        ((umlaut)
-         (case c
-           ((#\a #\e #\i #\o #\u #\y #\A #\E #\I #\O #\U)
-            (emit #\&)
-            (emit c)
-            (emit "uml;"))
-           ((#\Y) (emit *html-yuml-cap*))
-           ((#\space) (emit "&quot;"))
-           (else (emit c) (emit "&quot;"))))
-        (else (emit "<u>") (emit c) (emit "</u>"))))))
+    (case diac
+      ((acute)
+       (case c
+         ((#\a #\e #\i #\o #\u #\y #\A #\E #\I #\O #\U #\Y)
+          (emit #\&)
+          (emit c)
+          (emit "acute;"))
+         ((#\space) (emit #\'))
+         (else (emit c) (emit #\'))))
+      ((cedilla)
+       (case c
+         ((#\c #\C) (emit #\&) (emit c) (emit "cedil;"))
+         ((#\space) (emit #\,))
+         (else (emit c) (emit #\,))))
+      ((circumflex)
+       (case c
+         ((#\a #\e #\i #\o #\u #\A #\E #\I #\O #\U)
+          (emit #\&)
+          (emit c)
+          (emit "circ;"))
+         ((#\space) (emit #\^))
+         (else (emit c) (emit #\^))))
+      ((grave)
+       (case c
+         ((#\a #\e #\i #\o #\u #\A #\E #\I #\O #\U)
+          (emit #\&)
+          (emit c)
+          (emit "grave;"))
+         ((#\space) (emit #\`))
+         (else (emit c) (emit #\`))))
+      ((hacek)
+       (case c
+         ((#\s) (emit *html-scaron*))
+         ((#\S) (emit *html-scaron-cap*))
+         ((#\space) (emit #\^))
+         (else (emit c) (emit #\^))))
+      ((ring)
+       (case c
+         ((#\a #\A) (emit #\&) (emit c) (emit "ring;"))
+         ((#\space) (emit "&deg;"))
+         (else (emit c) (emit "&deg;"))))
+      ((tilde)
+       (case c
+         ((#\a #\n #\o #\A #\N #\O) (emit #\&) (emit c) (emit "tilde;"))
+         ((#\space) (emit #\~))
+         (else (emit c) (emit #\~))))
+      ((umlaut)
+       (case c
+         ((#\a #\e #\i #\o #\u #\y #\A #\E #\I #\O #\U)
+          (emit #\&)
+          (emit c)
+          (emit "uml;"))
+         ((#\Y) (emit *html-yuml-cap*))
+         ((#\space) (emit "&quot;"))
+         (else (emit c) (emit "&quot;"))))
+      (else (emit "<u>") (emit c) (emit "</u>")))))
 
 (define do-diacritic
   (lambda (diac)
@@ -5910,8 +5898,7 @@
 
 (define expand-tex-macro
   (lambda (optarg argpat rhs)
-    (let* ((arg-pat-n (length argpat))
-           (k 0)
+    (let* ((k 0)
            (r
             (if (not optarg)
               '()

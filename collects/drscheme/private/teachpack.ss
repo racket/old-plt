@@ -58,7 +58,7 @@
       ;; load-teachpack/cache : teachpack-cache string[filename] -> void
       ;; =Handler=, =Kernel=
       ;; may load a new teahpack file, if the cached value is out of date.
-      ;; updates teachpack-units if the file needed to be reloaded.
+      ;; updates teachpack-cache if the file needed to be reloaded.
       ;; shows an error message to the user if the teachpack file doesn't exist.
       (define (load-teachpack/cache teachpack-cache tp-filename)
 	(let/ec escape
@@ -91,7 +91,7 @@
       ;; installs the loaded teachpacks
       ;; expects teachpack-units to be initialized
       (define (install-teachpacks cache)
-        (for-each install-teachpack (teachpack-cache-tps cache)))
+        (for-each invoke-teachpack (teachpack-cache-tps cache)))
       
       ;; install-teachpack : cache-entry -> void
       ;; =Handler=, =User=

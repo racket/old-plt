@@ -211,10 +211,14 @@
 			      (cadr b)
 			      (syntax-e stx))
 			  (let ([modname (and (pair? b) (car b))])
-			    (if trans?
-				(box modname)
-				modname))
-			  (get-slot stx (if trans? trans-slot-table slot-table))))))]
+			    modname)
+			  (get-slot stx (if trans? trans-slot-table slot-table))
+			  trans?
+			  (and b
+			       ((if trans?
+				    identifier-transformer-binding-export-position
+				    identifier-binding-export-position)
+				stx))))))]
 
 		[(#%top . id)
 		 ;; Top-level (or module) reference:
@@ -222,8 +226,10 @@
 		  stx
 		  (mk-back)
 		  (syntax-e (syntax id))
-		  (if trans? (box #f) #f)
-		  (get-slot (syntax id) (if trans? trans-slot-table slot-table)))]
+		  #f
+		  (get-slot (syntax id) (if trans? trans-slot-table slot-table))
+		  trans?
+		  #f)]
 
 		[(#%datum . val)
 		 (let ([val (syntax val)])
@@ -246,7 +252,9 @@
 				(cadr b)
 				(syntax-e stx))
 			    (and (pair? b) (car b))
-			    (get-slot stx slot-table))))
+			    (get-slot stx slot-table)
+			    #f
+			    #f)))
 		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #f))]
 		
@@ -263,7 +271,9 @@
 				(cadr b)
 				(syntax-e stx))
 			    (and (pair? b) (car b))
-			    (get-slot stx syntax-slot-table))))
+			    (get-slot stx syntax-slot-table)
+			    #f
+			    #f)))
 		       (syntax->list (syntax names)))
 		  (loop (syntax rhs) null #t))]
 		
@@ -591,9 +601,9 @@
 
       (define-struct (varref parsed) (var))
 
-      (define-struct (top-level-varref varref) (module slot))
-      (define (create-top-level-varref z var module slot)
-	(make-top-level-varref (zodiac-stx z) (mk-back) var module slot))
+      (define-struct (top-level-varref varref) (module slot exptime? position))
+      (define (create-top-level-varref z var module slot exptime? position)
+	(make-top-level-varref (zodiac-stx z) (mk-back) var module slot exptime? position))
 
       (define-struct (bound-varref varref) (binding))
       (define (create-bound-varref z var binding)

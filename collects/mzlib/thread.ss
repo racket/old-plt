@@ -146,7 +146,7 @@
 		;; Make a custodian for the next session:
 		(let ([c (make-custodian)])
 		  (parameterize ([current-custodian c])
-		    ;; disabled breaks during session set-up...
+		    ;; disable breaks during session set-up...
 		    (parameterize ([break-enabled #f])
 		      ;; ... but enabled breaks while blocked on an accept:
 		      (let-values ([(r w) ((if can-break?

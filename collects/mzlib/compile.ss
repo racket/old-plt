@@ -33,7 +33,8 @@
 			      (with-handlers ([void void])
 				(delete-file dest))
 			      (raise exn))])
-	     (let ([out (open-output-file dest 'truncate/replace)])
+	     (let ([out (open-output-file dest 'truncate/replace)]
+		   [ok? #f])
 	       (dynamic-wind
 		void
 		(lambda ()
@@ -41,7 +42,12 @@
 		    (let ([r (read-syntax src in)])
 		      (unless (eof-object? r)
 			(write (compile r) out)
-			(loop)))))
-		(lambda () (close-output-port out))))))
+			(loop))))
+		  (set! ok? #t))
+		(lambda () 
+		  (close-output-port out)
+		  (unless ok?
+		    (with-handlers ([void void])
+		      (delete-file dest))))))))
 	 (lambda () (close-input-port in))))])))
 

@@ -50,8 +50,8 @@
      (struct parsed (back))
 
      (struct varref (var))
-     (struct top-level-varref (module slot)) create-top-level-varref ; added module
-                                                                     ; boxed moudle => exp-time
+     (struct top-level-varref (module slot exptime? position))  ; added module, exptime?, position
+     create-top-level-varref
      (struct bound-varref (binding))   create-bound-varref
 
      (struct binding (var orig-name))  create-binding

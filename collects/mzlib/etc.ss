@@ -496,14 +496,19 @@
 	  (syntax/loc stx
 	    (define-syntaxes (id ...)
 	      (finish-syntax-set orig-stx)))))]))
-  
+
   (define-syntax (hash-table stx)
-    (syntax-case stx ()
-      [(_ (key value) ...)
-       (syntax/loc stx
-         (let ([ht (make-hash-table)])
-           (hash-table-put! ht key value) ...
-           ht))]))
+    (syntax-case stx (quote)
+      [(_ x ...)
+       (let loop ([xs #'(x ...)] [flags '()])
+         (syntax-case xs (quote)
+           [('flag x ...) (loop #'(x ...) (cons #''flag flags))]
+           [([key val] ...)
+            (with-syntax ([(flag ...) (reverse flags)])
+              (syntax/loc stx
+                (let ([ht (make-hash-table flag ...)])
+                  (hash-table-put! ht key val) ...
+                  ht)))]))]))
 
   (define-syntax (begin-with-definitions stx)
     ;; Body can have mixed exprs and defns. Wrap expressions with

@@ -190,7 +190,7 @@
 	       ,@(map (lambda (args body)
 			(let ((args (arglist->ilist args)))
 			  (improper-map check-for-keyword args)
-			  `(,(map z:binding-var args)
+			  `(,(improper-map z:binding-var args)
 			     ,(annotate body))))
 		   (z:case-lambda-form-args expr)
 		   (z:case-lambda-form-bodies expr)))]

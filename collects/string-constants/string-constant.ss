@@ -24,18 +24,18 @@
   (define language (get-preference 'plt:human-language (lambda () 'english)))
   
   (define-syntax-set (string-constant string-constants this-language all-languages)
-    ;; type sc = (make-sc symbol (listof (list symbol string)))
-    (define-struct sc (language-name constants))
+    ;; type sc = (make-sc symbol (listof (list symbol string)) (union #f hash-table[symbol -o> #t]))
+    (define-struct sc (language-name constants ht))
     
     (define available-string-constant-sets
       (list 
-       (make-sc 'english english:string-constants)
-       (make-sc 'spanish spanish:string-constants)
-       (make-sc 'french french:string-constants)
-       (make-sc 'german german:string-constants)
-       (make-sc 'dutch dutch:string-constants)
-       (make-sc 'danish danish:string-constants)
-       (make-sc 'italian italian:string-constants)))
+       (make-sc 'english english:string-constants #f)
+       (make-sc 'spanish spanish:string-constants #f)
+       (make-sc 'french french:string-constants #f)
+       (make-sc 'german german:string-constants #f)
+       (make-sc 'dutch dutch:string-constants #f)
+       (make-sc 'danish danish:string-constants #f)
+       (make-sc 'italian italian:string-constants #f)))
     
     (define first-string-constant-set (car available-string-constant-sets))
     
@@ -61,43 +61,52 @@
       (and env-var-set
            (with-handlers ([exn:read? (lambda (x) #t)])
              (read (open-input-string env-var-set)))))
-
+    
     (define the-warning-message #f)
     (define (get-warning-message)
       (unless the-warning-message
-	(set! the-warning-message
+        (set! the-warning-message
 	      (let* (;; type no-warning-cache-key = (cons symbol symbol)
 		     ;; warning-table : (listof (list no-warning-cache-key (listof (list sym string))))
-		     [warning-table null]
-		     [check-one-way
+                     [warning-table null]
+		     [extract-ht
+                      (lambda (sc)
+                        (unless (sc-ht sc)
+                          (let ([ht (make-hash-table)])
+                            (for-each (lambda (ent) (hash-table-put! ht (car ent) #t))
+                                      (sc-constants sc))
+                            (set-sc-ht! sc ht)))
+                        (sc-ht sc))]
+                     [check-one-way
 		      (lambda (sc1 sc2)
 			(let ([assoc1 (sc-constants sc1)]
-			      [assoc2 (sc-constants sc2)])
+			      [assoc2 (sc-constants sc2)]
+                              [ht2 (extract-ht sc2)])
 			  (for-each
 			   (lambda (pair1)
 			     (let* ([constant1 (car pair1)]
 				    [value1 (cadr pair1)]
-				    [pair2 (assq constant1 assoc2)])
+				    [pair2 (hash-table-get ht2 constant1 (lambda () #f))])
 			       (unless pair2
 				 (let ([no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
 				   (when (or (env-var-set? (sc-language-name sc1))
 					     (env-var-set? (sc-language-name sc2)))
 				     (cond
-				      [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
-				       =>
-				       (lambda (x)
-					 (let ([ent (car x)])
-					   (set-car! (cdr ent) (cons (list constant1 value1) (cadr ent)))))]
-				      [else
-				       (set! warning-table (cons (list no-warning-cache-key
-								       (list (list constant1 value1)))
-								 warning-table))]))))))
+                                       [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
+                                        =>
+                                        (lambda (x)
+                                          (let ([ent (car x)])
+                                            (set-car! (cdr ent) (cons (list constant1 value1) (cadr ent)))))]
+                                       [else
+                                        (set! warning-table (cons (list no-warning-cache-key
+                                                                        (list (list constant1 value1)))
+                                                                  warning-table))]))))))
 			   assoc1)))])
-		
-		(for-each (lambda (x) 
-			    (check-one-way x first-string-constant-set)
-			    (check-one-way first-string-constant-set x))
-			  (cdr available-string-constant-sets))
+                
+                (for-each (lambda (x) 
+                            (check-one-way x first-string-constant-set)
+                            (check-one-way first-string-constant-set x))
+                          (cdr available-string-constant-sets))
 		
 		(let ([sp (open-output-string)])
 		  (for-each

@@ -47,10 +47,63 @@
                                               null)
                                           (filter (compose not head?) (peel-f body? peeled null))))))))
   
+  ;; clean-up-pcdata : (listof Content) -> (listof Content)
+  ;; Each pcdata inside a tag that isn't supposed to contain pcdata is either
+  ;; a) appended to the end of the previous subelement, if that subelement may contain pcdata
+  ;; b) prepended to the front of the next subelement, if that subelement may contain pcdata
+  ;; c) discarded
+  ;; unknown tags may contain pcdata
+  ;; the top level may contain pcdata
+  (define clean-up-pcdata
+    ;; clean-up-pcdata : (listof Content) -> (listof Content)
+    (letrec ([clean-up-pcdata
+              (lambda (content)
+                (map (lambda (to-fix)
+                       (cond
+                         [(element? to-fix)
+                          (recontent-xml to-fix
+                                         (let ([possible (may-contain (element-name to-fix))]
+                                               [content (element-content to-fix)])
+                                           (if (or (not possible) (memq 'pcdata possible))
+                                               (clean-up-pcdata content)
+                                               (eliminate-pcdata content))))]
+                         [else to-fix]))
+                     content))]
+             [eliminate-pcdata
+              ;: (listof Content) -> (listof Content)
+              (lambda (content)
+                (let ([non-elements (first-non-elements content)]
+                      [more (memf element? content)])
+                  (if more
+                      (let* ([el (car more)]
+                             [possible (may-contain (element-name el))])
+                        (if (or (not possible) (memq 'pcdata possible))
+                            (cons (recontent-xml el (append non-elements (clean-up-pcdata (element-content el)) (first-non-elements (cdr more))))
+                                  (or (memf element? (cdr more)) null))
+                            (cons el (eliminate-pcdata (cdr more)))))
+                      null)))])
+      clean-up-pcdata))
+  
+  ;; first-non-elements : (listof Content) -> (listof Content)
+  (define (first-non-elements content)
+    (cond
+      [(null? content) null]
+      [else (if (element? (car content))
+                null
+                (cons (car content) (first-non-elements (cdr content))))]))
+  
+  ;; recontent-xml : Element (listof Content) -> Element
+  (define (recontent-xml e c)
+    (make-element (source-start e) (source-stop e) (element-name e) (element-attributes e) c))
+  
   ;; implicit-starts : Symbol Symbol -> (U #f Symbol)
   (define (implicit-starts parent child)
     (and (eq? child 'tr) (eq? parent 'table) 'tbody))
   
+  ;; may-contain : Kid-lister
+  (define may-contain
+    (sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read)))
+  
   ;; read-html : [Input-port] -> Html
   (define read-html
-    (compose repackage-html xml-contents->html (sgml:gen-read-sgml (sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read)) implicit-starts))))
+    (compose repackage-html xml-contents->html clean-up-pcdata (sgml:gen-read-sgml may-contain implicit-starts))))

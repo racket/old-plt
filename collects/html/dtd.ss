@@ -20,3 +20,6 @@
 
 ;; loosedtd.txt is from www.w3c.org's html4.0.1 spec.
 ;(define dtd (call-with-input-file "/home/ptg/Docs/Standards/loosedtd.txt" read-sgml-dtd))
+;(call-with-output-file "html-spec"
+;  (lambda (out) (write (cons '((mzscheme) pcdata) (summarize-dtd dtd)) out))
+;  'truncate)

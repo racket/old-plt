@@ -48,18 +48,20 @@
          `(define (xml-single-content->html x acc)
             (cond
               [(element? x)
-               (cons (case (element-name x)
-                       ,@(append
-                          (map (lambda (name)
-                                 `[(,name) (,(string->symbol (string-append "make-" (symbol->string name)))
-                                            (element-attributes x))])
-                               empty-names)
-                          (map (lambda (name)
-                                 `[(,name) (,(string->symbol (string-append "make-" (symbol->string name)))
+               (case (element-name x)
+                 ,@(append
+                    (map (lambda (name)
+                           `[(,name) (cons (,(string->symbol (string-append "make-" (symbol->string name)))
+                                            (element-attributes x))
+                                           acc)])
+                         empty-names)
+                    (map (lambda (name)
+                           `[(,name) (cons (,(string->symbol (string-append "make-" (symbol->string name)))
                                             (element-attributes x)
-                                            (xml-contents->html (element-content x)))])
-                               non-empty-names)))
-                     acc)]
+                                            (xml-contents->html (element-content x)))
+                                           acc)])
+                         non-empty-names))
+                 [else acc])]
               [(or (pcdata? x) (entity? x)) (cons x acc)]
               [else acc]))
          out))

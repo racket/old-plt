@@ -166,10 +166,12 @@
   ; The algorithm consists of five steps.
   ; All we need to do, is to call them in order.
   
-  ; md5 : string -> string
-  (define (md5 str)
-    (step5 (step4 (step2 (* 8 (string-length str)) 
-                         (step1 (string->bytes str))))))
+  ; md5 : byte-string -> byte-string
+  (define (md5 bstr)
+    (unless (bytes? bstr)
+      (raise-type-error 'md5 "byte string" bstr))
+    (step5 (step4 (step2 (* 8 (bytes-length bstr)) 
+                         (step1 (bytes->list bstr))))))
   
   
   ;;; Step 1  -  Append Padding Bits
@@ -393,16 +395,16 @@
   ; To finish up, we convert the word to hexadecimal string
   ; - and make sure they end up in order.
   
+  (define hex #(48 49 50 51 52 53 54 55 56 57 97 98 99 100 101 102))
+
   ; step5 : "(list word word word word)" -> string
   (define (step5 l)
     
     (define (number->hex n)
-      (let ((str (number->string n 16)))
-        (case (string-length str)
-          ((1)  (string-append "0" str))
-          (else str))))
+      (bytes (vector-ref hex (quotient n 16))
+	     (vector-ref hex (modulo n 16))))
     
-    (apply string-append
+    (apply bytes-append
            (map number->hex
                 (apply append (map word->bytes l)))))
   

@@ -1,4 +1,3 @@
-Time-stamp: <00/08/21 15:42:02 shriram>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:
@@ -1131,6 +1130,324 @@ PROCEDURES -----------------------------------------------------------
   first nameserver address.
 
 ==========================================================================
+_MIME support__
+==========================================================================
+
+To load directly: (require (lib "mime.ss" "net"))
+Module files: _mime.ss_ - provides the procedures documented below
+              _mime-unit.ss_ - provides unit net:mime@
+                               imports net:base64^ from "base64-sig.ss"
+                               and net:qp^ from "qp-sig.ss"
+              _mime-sig.ss_ - provides signalture net:mime^
+
+ABSTRACT -------------------------------------------------------------
+
+   MIME stands for Multipurpose Internet Mail Extensions. the mime
+   library provides support for MIME as described in: rfc2045 through
+   rfc2049.  
+
+   This library is supposed to be used by PLT Scheme applications, or
+   libraries to make the MIME-aware.  For instance, MUAs, (Fast)CGI
+   libraries to support multipart/form-data extensions, etc.
+
+EXCEPTIONS -----------------------------------------------------------
+
+   unexpected-termination
+
+   This exception is raised when eof is reached while parsing the
+   headers of a MIME entity.  And it usually means, that the message
+   does not conform to rfc2045, and friends. It has a message
+   parameter, `msg', that gives exact information on the problem:
+   unexpected-termination-msg.
+
+   missing-multipart-boundary-parameter
+
+   A multipart type is signalled, but no `boundary' parameter is
+   given, also an error on the producer end of the message.  
+
+   malformed-multipart-entity
+
+   Similar to `unexpected-termination', but it is used only while
+   scanning parts of a multipart message.
+
+   empty-mechanism
+
+   No transport encoding mechanism was provided with the
+   Conent-Transfer-Encoding field.
+
+   empty-type
+
+   No type specified for Content-Type, or incorrectly formated.
+
+   empty-subtype
+
+   No subtype specified for Content-Type, or incorrectly formated.
+
+   empty-disposition-type
+
+   No type specified for the Content-Disposition field, or incorrectly
+   formated.
+
+
+   mime-error
+
+   A catch-all exception.   
+
+PROCEDURES -----------------------------------------------------------
+
+> (mime-analyze message)
+
+   Message must conform to the RFC 2045, 2046, 2047, 2048, and 2049.
+
+   This is basically the only function provided by the MIME support
+   library.  It returns a `message' structure, having the following
+   fields: version, entity, and fields.
+
+   > (message-version #<message-struct>)
+
+   the value of the MIME-version header.  It has a default 1.0 value
+   when message does not contain a MIME-version header.
+
+   > (message-entity #<message-struct>)
+
+   another structure, `entity'.  According to rfc2045, and entity
+   refers to the MIME-defined header fields and contents of either a
+   message or one of the parts in the body of a multipart entity.
+
+   See below, for the fields of an entity-structure.  All the
+   MIME-headers, parts (sub-entities), and/or contents of message are
+   stored into this structure.
+
+   > (message-fields #<message-struct>)
+
+   a list of all non-MIME headers in message.  If message is an
+   rfc822, for instance, this list could contain 'From', 'Subject',
+   etc.
+   
+struct entity
+-------------
+
+   These kind of structure contains all the headers, parameters, and
+   contents of a given entity, and its parts (sub-entities).  These
+   are the fields of the entity structure:
+
+   type, subtype, charset, encoding, disposition, params, id,
+   description, other, fields, parts, body, close.
+
+> (entity-type #<entity-struct>)
+
+   In rfc822 BNF extension:
+
+   type := discrete-type | composite-type
+
+   discrete-type := "text" / "image" / "audio" / "video" /
+  			"application" / extension-token
+
+   composite-type := "message" / "multipart" / extension-token
+
+   extension-token := ietf-token / x-token
+
+   ietf-token := <An extension token defined by a standards-track 
+                  RFC and registered with IANA.>
+
+   x-token := <The two characters "X-" or "x-" followed, with no 
+               intervening white space, by any token>
+
+   In English, it returns one of the symbols: text, image, audio,
+   video, application, an ietf-extension, and x-token, or a local
+   extension (not recommended by the way.)
+
+> (entity-subtype #<entity-struct>)
+
+   subtype := extension-token / iana-token
+
+   Also a symbol, it depends on the value of type.  Quoting RFC 1700:
+
+ Type            Subtype         Description                 Reference
+ ----            -------         -----------                 ---------
+ text            plain                                   [RFC1521,NSB]
+                 richtext                                [RFC1521,NSB]
+                 tab-separated-values                   [Paul Lindner]
+ 
+ multipart       mixed                                   [RFC1521,NSB]
+                 alternative                             [RFC1521,NSB]
+                 digest                                  [RFC1521,NSB]
+                 parallel                                [RFC1521,NSB]
+                 appledouble                [MacMime,Patrik Faltstrom]
+                 header-set                             [Dave Crocker]
+ 
+ message         rfc822                                  [RFC1521,NSB]
+                 partial                                 [RFC1521,NSB]
+                 external-body                           [RFC1521,NSB]
+                 news                        [RFC 1036, Henry Spencer]
+ 
+ application     octet-stream                            [RFC1521,NSB]
+     		 postscript                              [RFC1521,NSB]
+     		 oda                                     [RFC1521,NSB]
+     		 atomicmail                           [atomicmail,NSB]
+     		 andrew-inset                       [andrew-inset,NSB]
+     		 slate                           [slate,terry crowley]
+     		 wita              [Wang Info Transfer,Larry Campbell]
+     		 dec-dx            [Digital Doc Trans, Larry Campbell]
+     		 dca-rft        [IBM Doc Content Arch, Larry Campbell]
+     		 activemessage                          [Ehud Shapiro]
+     		 rtf                                    [Paul Lindner]
+     		 applefile                  [MacMime,Patrik Faltstrom]
+     		 mac-binhex40               [MacMime,Patrik Faltstrom]
+     		 news-message-id              [RFC1036, Henry Spencer]
+     		 news-transmission            [RFC1036, Henry Spencer]
+     		 wordperfect5.1                         [Paul Lindner]
+     		 pdf                                    [Paul Lindner]
+     		 zip                                    [Paul Lindner]
+     		 macwriteii                             [Paul Lindner]
+     		 msword                                 [Paul Lindner]
+     		 remote-printing                         [RFC1486,MTR]
+ 
+ image           jpeg                                    [RFC1521,NSB]
+                 gif                                     [RFC1521,NSB]
+                 ief             Image Exchange Format       [RFC1314]
+                 tiff            Tag Image File Format           [MTR]
+ 
+ audio           basic                                   [RFC1521,NSB]
+ 
+ video           mpeg                                    [RFC1521,NSB]
+                 quicktime                              [Paul Lindner]
+
+
+> (entity-charset #<entity-struct>)
+
+   The value of the `charset' parameter of the Content-Type header.
+   By default, the symbol: us-ascii.
+
+> (entity-encoding #<entity-struct>)
+
+   The value of the Content-Transfer-Encoding header, one of the
+   symbols: 7bit, 8bit, binary, quoted-printable, base64.  If no
+   Content-Transfer-Encoding header is given, message should be 7bit,
+   thus, 7bit is the default value of this field.
+
+> (entity-disposition #<entity-struct>)
+
+   This one is a litter bit complex, so it is yet another structure.
+   These `disposition' structures represent the value of the
+   Content-Disposition header, as defined in rfc2183:
+
+  disposition := "Content-Disposition" ":"
+  		  disposition-type
+  		  *(";" disposition-parm)
+
+   disposition structs have the following fields: type, filename,
+   creation, modification, read, size, and params.  Only type is
+   required.
+
+   > (disposition-type #<disposition-struct>)
+
+   disposition-type := "inline" / "attachment"  / extension-token
+
+   > (disposition-filename #<disposition-struct>)
+
+   string representing the `filename' parameter of the
+   Content-Disposition header.
+
+   > (disposition-creation #<disposition-struct>)
+
+   string representing the `creation-date' parameter, which must
+   follow this BNF grammar:
+
+ date-time   =  [ day "," ] date time        ; dd mm yy
+ 				   ;  hh:mm:ss zzz
+ 
+ day         =  "Mon"  / "Tue" /  "Wed"  / "Thu"
+ 	    /  "Fri"  / "Sat" /  "Sun"
+ 
+ date        =  1*2DIGIT month 2DIGIT        ; day month year
+ 				   ;  e.g. 20 Jun 82
+ 
+ month       =  "Jan"  /  "Feb" /  "Mar"  /  "Apr"
+ 	    /  "May"  /  "Jun" /  "Jul"  /  "Aug"
+ 	    /  "Sep"  /  "Oct" /  "Nov"  /  "Dec"
+ 
+ time        =  hour zone                    ; ANSI and Military
+ 
+ hour        =  2DIGIT ":" 2DIGIT [":" 2DIGIT]
+ 				   ; 00:00:00 - 23:59:59
+ 
+ zone        =  "UT"  / "GMT"                ; Universal Time
+ 				   ; North American : UT
+ 	    /  "EST" / "EDT"                ;  Eastern:  - 5/ - 4
+ 	    /  "CST" / "CDT"                ;  Central:  - 6/ - 5
+ 	    /  "MST" / "MDT"                ;  Mountain: - 7/ - 6
+ 	    /  "PST" / "PDT"                ;  Pacific:  - 8/ - 7
+ 	    /  1ALPHA                       ; Military: Z = UT;
+ 				   ;  A:-1; (J not used)
+ 				   ;  M:-12; N:+1; Y:+12
+ 	    / ( ("+" / "-") 4DIGIT )        ; Local differential
+
+   I know, I know, I should return a time structure, it is in my TODO
+   list. :-)
+
+   > (disposition-modification #<disposition-struct>)
+
+   String representing the `modification-date' parameter, it has the
+   same syntax as `disposition-creation'.
+
+   > (disposition-read #<disposition-struct>)
+
+   String representing the `read-date' parameter, it has the same
+   syntax as `disposition-creation'.
+
+   > (disposition-size #<disposition-struct>)
+  
+   Number representing the `size' parameter (the size of the file).
+
+   > (disposition-params #<disposition-struct>)
+
+   List of extra parameters (non-standard) following the
+   Content-Disposition header.
+
+> (entity-params #<entity-struct>)
+
+   List of `parameters' given with all the MIME headers above.  Each
+   of these parameters is a pair of the form: (parameter-name . value)
+
+> (entity-id #<entity-struct>)
+
+   The value of the Content-Id header.
+
+> (entity-description #<entity-struct>)
+
+   The value of the Content-description header.
+
+> (entity-other #<entity-struct>)
+
+   MIME extension fields (non-standard) they all start with
+   "Content-".
+
+> (entity-fields #<entity-struct>)
+
+   A list of all non-MIME headers.
+
+> (entity-parts #<entity-struct>)
+
+   A list of `message'-structs see above.  Each entry represents a
+   part of the current MIME entity (only multipart, or message
+   entities can have parts).
+
+> (entity-body #<entity-struct>)
+
+   An input port containing the body of the current entity properly
+   decoded (e.g. if body was quoted-printable encoded, then this input
+   port contains the body already quoted-printable decoded.).  If type
+   is multipart, or message, clearly this defaults to null.
+
+> (entity-body #<entity-struct>)
+
+   A thunk to close the input port provided by entity-body, above.  It
+   really is a procedure that does not receive parameters, and that
+   kills the thread spawned to handle the reading (and if necessary)
+   decoding of the body of the current MIME entity.
+
+==========================================================================
 _Base 64 Encoding_, _base64_
 ==========================================================================
 
@@ -1170,3 +1487,60 @@ PROCEDURES -----------------------------------------------------------
   Reads a Base 64 encoding from `input-port' and writes the decoded
   result to `output-port'. The procedure returns when it encounters an
   end-of-file or Base 64 terminator (=) from `input-port'.
+
+==========================================================================
+_Quoted Printable Encoding_, _qp__
+==========================================================================
+
+To load directly: (require (lib "qp.ss" "net"))
+Module files: _qp.ss_ - provides the procedures documented below
+              _qp-unit.ss_ - provides unit net:qp@
+              _qp-sig.ss_ - provides signalture net:qp^
+
+ABSTRACT -------------------------------------------------------------
+
+Implements Quoted Printable (mime-standard) encoder and decoder. As 
+proposed by the rfc2045 section 6.7.
+
+EXCEPTIONS -----------------------------------------------------------
+
+
+  qp-wrong-input
+
+  This exception is raised when input to any of the qp-procedures (see
+  below) is neither a string, nor an input port.
+
+  qp-wrong-line-size
+
+  If the length of a supposedly quoted-printable line is longer than
+  76 this exception is raised.
+
+  qp-error
+
+  is a catch all exception.
+
+PROCEDURES -----------------------------------------------------------
+
+
+> (qp-encode string) -> string
+  
+  Consumes a string and returns its quoted printable representation as
+  a new string.
+
+> (qp-decode string) -> string
+
+  Consumes a string and returns its un-quoted printable representation
+  as a new string.
+
+> (qp-encode-stream input) -> (values: output close-output-thunk)
+
+  Reads characters from `input' and writes the quoted printable
+  encoded result to `output'.  Returns two values: the `output'-port,
+  and a thunk to kill the output.
+
+> (qp-decode-stream input) -> (values: output close-output-thunk)
+
+   Reads characters from `input' and writes de un-quoted printable
+   result to `output'.  Returns two values: the `output'-port, and a
+   thunk to kill the output.
+

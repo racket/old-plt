@@ -35,7 +35,7 @@ code, according to the comments.
 5) cd top of the plt tree, start up mzscheme and evaluate
    the following two expressions:
    
-  (require-library "pack.ss" "compiler")
+  (require-library "pack.ss" "setup")
 
   (pack "<version-number>p<n>.plt"
         "<version-number>p<n>"

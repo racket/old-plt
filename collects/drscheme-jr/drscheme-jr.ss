@@ -236,47 +236,57 @@
 		 read)))])
       (mzrice-expand-eval read))))
 
+(define load-dir/path
+  (lambda (f)
+    (let-values (((base name must-be-dir?)
+		   (split-path (path->complete-path f (current-directory)))))
+      base)))
+
 (define mzrice-load
   (let ([zo-file?
-	 (lambda (f)
-	   (let ([l (string-length f)])
-	     (and (<= 3 l)
-		  (string=? ".zo" (substring f (- l 3) l)))))]
-	[old-handler (current-load)])
+	  (lambda (f)
+	    (let ([l (string-length f)])
+	      (and (<= 3 l)
+		(string=? ".zo" (substring f (- l 3) l)))))]
+	 [old-handler (current-load)])
     (lambda (f)
       (if (zo-file? f)
-	  (with-parameterization parameterization
-	    (lambda ()
-	      (parameterize ([current-eval (with-parameterization 
-					       system-parameterization
-					     current-eval)])
-		((with-parameterization system-parameterization
-		   current-load)
-		 f))))
+	(with-parameterization parameterization
+	  (lambda ()
+	    (parameterize ((current-eval (with-parameterization 
+					   system-parameterization
+					   current-eval))
+			    (current-load-relative-directory
+			      (load-dir/path f)))
+	      ((with-parameterization system-parameterization
+		 current-load)
+		f))))
+	(parameterize ((current-load-relative-directory
+			 (load-dir/path f)))
 	  (call-with-input-file f
 	    (lambda (p)
 	      (let ([read (let* ([fn
-				  (normalize-path
-				   (if (relative-path? f)
+				   (normalize-path
+				     (if (relative-path? f)
 				       (build-path (current-directory) f)
 				       f))]
-				 [t (with-parameterization system-parameterization
-				      (lambda ()
-					(zodiac:read
-					 p
-					 (zodiac:make-location
-					  1 1 0
-					  fn))))])
+				  [t (with-parameterization system-parameterization
+				       (lambda ()
+					 (zodiac:read
+					   p
+					   (zodiac:make-location
+					     1 1 0
+					     fn))))])
 			    (lambda ()
 			      (with-parameterization system-parameterization
 				t)))])
 		(let loop ([this (read)]
-			   [next (read)])
+			    [next (read)])
 		  (cond
 		    [(zodiac:eof? this) (void)]
 		    [(zodiac:eof? next) (mzrice-expand-eval this)]
 		    [else (begin (mzrice-expand-eval this)
-				 (loop next (read)))])))))))))
+			    (loop next (read)))]))))))))))
 
 (define parameterization (make-parameterization))
 

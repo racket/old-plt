@@ -156,16 +156,16 @@
 					(pre)
 					(general-trailer defs)))
 			    (post))))])
-	  (eval-common repl rhs
-		       (if index
-			   (gen-wrap-def (lambda () (set-car! old-def-pair bogus-def))
-					 (mtq)
-					 (lambda () (set-car! old-def-pair old-def))
-					 old-defs)
-			   (gen-wrap-def void set-funny-q void (cons bogus-def old-defs))))
-	  (if index
-	      (set-car! old-def-pair def)
-	      (set-repl-defs! repl (cons def old-defs)))))))
+	  (when (eval-common repl rhs
+                             (if index
+                                 (gen-wrap-def (lambda () (set-car! old-def-pair bogus-def))
+                                               (mtq)
+                                               (lambda () (set-car! old-def-pair old-def))
+                                               old-defs)
+                                 (gen-wrap-def void set-funny-q void (cons bogus-def old-defs))))
+            (if index
+                (set-car! old-def-pair def)
+                (set-repl-defs! repl (cons def old-defs))))))))
   
   ;;   rawdef<-q : Queue(Scanned) -> Rawdef
   ;;   pre: (def? q) must be true

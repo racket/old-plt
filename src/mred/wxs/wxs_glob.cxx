@@ -455,68 +455,65 @@ static Scheme_Object *wxsGlobalwxStripMenuCodes_Scheme(int n,  Scheme_Object *p[
   return WITH_REMEMBERED_STACK(objscheme_bundle_string((char *)r));
 }
 
+static Scheme_Object *wxsGlobalwxDisplayOrigin(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int _x0;
+  int* x0 = &_x0;
+  int _x1;
+  int* x1 = &_x1;
+  Scheme_Object *sbox_tmp;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+0], "display-origin")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-origin"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+1], "display-origin")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-origin"", extracting boxed argument")));
+
+  
+  WITH_VAR_STACK(wxDisplayOrigin(x0, x1));
+
+  
+  if (n > (0+0))
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[0+0], sbv_)); } 
+  if (n > (0+1))
+    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[0+1], sbv_)); } 
+  
+  READY_TO_RETURN;
+  return scheme_void;
+}
+
 static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  SETUP_PRE_VAR_STACK(1);
-  PRE_VAR_STACK_PUSH(0, p);
   REMEMBER_VAR_STACK();
-  if ((n >= (0+3)) && (WITH_REMEMBERED_STACK(objscheme_istype_box(p[0+0], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(objscheme_unbox(p[0+0], NULL), NULL))) && (WITH_REMEMBERED_STACK(objscheme_istype_box(p[0+1], NULL)) && WITH_REMEMBERED_STACK(objscheme_istype_number(objscheme_unbox(p[0+1], NULL), NULL))) && WITH_REMEMBERED_STACK(objscheme_istype_number(p[0+2], NULL))) {
-    int _x0;
-    int* x0 = &_x0;
-    int _x1;
-    int* x1 = &_x1;
-    int x2;
+  int _x0;
+  int* x0 = &_x0;
+  int _x1;
+  int* x1 = &_x1;
+  int x2;
   Scheme_Object *sbox_tmp;
 
-    SETUP_VAR_STACK_PRE_REMEMBERED(1);
-    VAR_STACK_PUSH(0, p);
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
 
-    
-    if (n != (0+3)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("display-size", 0+3, 0+3, n, p, 0));
-          *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+0], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
-          *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+1], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
-    x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0+2], "display-size"));
+  
+      *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+0], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
+      *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+1], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0+2], "display-size"));
 
-    
-    WITH_VAR_STACK(wxDisplaySize(x0, x1, x2));
+  
+  WITH_VAR_STACK(wxDisplaySize(x0, x1, x2));
 
-    
-    if (n > (0+0))
-      { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[0+0], sbv_)); } 
-    if (n > (0+1))
-      { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[0+1], sbv_)); } 
-    
-    READY_TO_PRE_RETURN;
-  } else  {
-    int _x0;
-    int* x0 = &_x0;
-    int _x1;
-    int* x1 = &_x1;
-  Scheme_Object *sbox_tmp;
-
-    SETUP_VAR_STACK_PRE_REMEMBERED(1);
-    VAR_STACK_PUSH(0, p);
-
-    
-    if (n != (0+2)) 
-      WITH_VAR_STACK(scheme_wrong_count_m("display-origin", 0+2, 0+2, n, p, 0));
-          *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+0], "display-origin")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-origin"", extracting boxed argument")));
-          *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+1], "display-origin")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-origin"", extracting boxed argument")));
-
-    
-    WITH_VAR_STACK(wxDisplaySize(x0, x1));
-
-    
-    if (n > (0+0))
-      { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[0+0], sbv_)); } 
-    if (n > (0+1))
-      { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[0+1], sbv_)); } 
-    
-    READY_TO_PRE_RETURN;
-  }
-
+  
+  if (n > (0+0))
+    { Scheme_Object *sbv_ = scheme_make_integer(_x0); WITH_VAR_STACK(objscheme_set_box(p[0+0], sbv_)); } 
+  if (n > (0+1))
+    { Scheme_Object *sbv_ = scheme_make_integer(_x1); WITH_VAR_STACK(objscheme_set_box(p[0+1], sbv_)); } 
+  
+  READY_TO_RETURN;
   return scheme_void;
 }
 
@@ -752,8 +749,10 @@ void objscheme_setup_wxsGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("get-resource", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxStripMenuCodes_Scheme, "label->plain-label", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("label->plain-label", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxDisplaySize, "display-origin", 2, 3));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxDisplayOrigin, "display-origin", 2, 2));
   WITH_VAR_STACK(scheme_install_xc_global("display-origin", functmp, env));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxDisplaySize, "display-size", 3, 3));
+  WITH_VAR_STACK(scheme_install_xc_global("display-size", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxBell, "bell", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("bell", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxEndBusyCursor, "end-busy-cursor", 0, 0));

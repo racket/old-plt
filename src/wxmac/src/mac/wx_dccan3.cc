@@ -16,8 +16,8 @@ extern CGrafPtr wxMainColormap;
 static ATSUStyle theATSUstyle;
 static TextToUnicodeInfo t2uinfo;
 
-static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing);
-static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing);
+static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle);
+static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, float angle);
 static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit16,
 				 int just_meas, int given_font, 
 				 short txFont, short txSize, short txFace,
@@ -373,9 +373,9 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 
   if (!again) {
     if (given_font)
-      atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, smoothing);
+      atsuSetStyleFromGrafPtrParams(theATSUstyle, txFont, txSize, txFace, smoothing, angle);
     else
-      atsuSetStyleFromGrafPtr(theATSUstyle, smoothing);
+      atsuSetStyleFromGrafPtr(theATSUstyle, smoothing, angle);
   }
 
   ATSUCreateTextLayoutWithTextPtr((UniCharArrayPtr)unicode,
@@ -544,7 +544,7 @@ atsuFONDtoFontID( short    iFONDNumber,
 #define apple_require(x, y) if (!(x)) return status;
 
 static OSStatus
-atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing)
+atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, float angle)
 {
  OSStatus status = noErr;
 
@@ -638,7 +638,7 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
 }
 
 static OSStatus
-atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing)
+atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, float angle)
 {
  short    txFont, txSize;
  SInt16   txFace;
@@ -650,5 +650,5 @@ atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing)
  txSize = GetPortTextSize(iGrafPtr);
  txFace = GetPortTextFace(iGrafPtr);
  
- return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace, smoothing);
+ return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace, smoothing, angle);
 }

@@ -29,9 +29,6 @@ void wxCanvasDC::Clear(void)
   Rect theClearRect;
   
   if (!Ok() || !cMacDC) return;
-  
-  SetCurrentDC();
-  wxMacSetCurrentTool(kBGTool);
 
   if (canvas)
     canvas->GetVirtualSize(&w, &h);
@@ -39,6 +36,38 @@ void wxCanvasDC::Clear(void)
     w = pixmapWidth;
     h = pixmapHeight;
   }
+  
+  if (anti_alias) {
+    CGContextRef cg;
+    wxColor *c = current_background_color;
+    int r, g, b;
+      
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    r = c->Red();
+    g = c->Green();
+    b = c->Blue();
+      
+    CGContextSetRGBFillColor(cg, r / 255.0, g / 255.0, b / 255.0, 1.0);
+
+    CGContextMoveToPoint(cg, 0, 0);
+    CGContextAddLineToPoint(cg, w, 0);
+    CGContextAddLineToPoint(cg, w, h);
+    CGContextAddLineToPoint(cg, 0, h);
+    CGContextFillPath(cg);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
+  
+  SetCurrentDC();
+  wxMacSetCurrentTool(kBGTool);
 
   ::SetRect(&theClearRect, 0, 0, w, h);
   OffsetRect(&theClearRect,SetOriginX,SetOriginY);
@@ -264,6 +293,15 @@ void wxCanvasDC::DrawLine(double x1, double y1, double x2, double y2)
 
     CGContextSaveGState(cg);
 
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)) {
+      x1 += 0.5;
+      y1 += 0.5;
+      x2 += 0.5;
+      y2 += 0.5;
+    }
+
     CGContextMoveToPoint(cg, x1, y1);
     CGContextAddLineToPoint(cg, x2, y2);
     
@@ -386,15 +424,15 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
     path = CGPathCreateMutable();
     xform = CGAffineTransformScale(CGAffineTransformMakeTranslation(x, y), w, h);
     CGPathAddArc(path, &xform, 0.5, 0.5, 0.5, start, end, TRUE);
-    if ((end != 0) || (start != (2 * wxPI))) {
-      CGPathAddLineToPoint(path, &xform, 0.5, 0.5);
-      CGPathCloseSubpath(path);
-    }
 
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
       wxMacSetCurrentTool(kBrushTool);
       CGContextBeginPath(cg);
       CGContextAddPath(cg, path);
+      if ((end != 0) || (start != (2 * wxPI))) {
+	CGContextAddLineToPoint(cg, x + w/2, y + h/2);
+	CGContextClosePath(cg);
+      }
       CGContextFillPath(cg);
     }
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
@@ -509,6 +547,13 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
 
     CGContextSaveGState(cg);
 
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)) {
+      xoffset += 0.5;
+      yoffset += 0.5;
+    }
+    
     path = CGPathCreateMutable();
     CGPathMoveToPoint(path, NULL, points[0].x + xoffset, points[0].y + yoffset);
     for (i = 1; i < n; i++) {
@@ -598,6 +643,13 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffs
     CGContextRef cg;
     int i;
 
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)) {
+      xoffset += 0.5;
+      yoffset += 0.5;
+    }
+
     SetCurrentDC(TRUE);
     cg = GetCG();
 
@@ -660,6 +712,52 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
   wxRegion *rgn;
 
   if (!Ok() || !cMacDC) return;
+
+  if (anti_alias) {
+    CGContextRef cg;
+
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kBrushTool);
+      CGContextMoveToPoint(cg, x, y);
+      CGContextAddLineToPoint(cg, x + width, y);
+      CGContextAddLineToPoint(cg, x + width, y + height);
+      CGContextAddLineToPoint(cg, x, y + height);
+      CGContextClosePath(cg);
+      CGContextFillPath(cg);
+    }
+
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      if ((anti_alias == 2)
+	  && (user_scale_x == 1.0)
+	  && (user_scale_y == 1.0)) {
+	x += 0.5;
+	y += 0.5;
+	width -= 1.0;
+	height -= 1.0;
+      }
+
+      wxMacSetCurrentTool(kPenTool);
+      CGContextMoveToPoint(cg, x, y);
+      CGContextAddLineToPoint(cg, x + width, y);
+      CGContextAddLineToPoint(cg, x + width, y + height);
+      CGContextAddLineToPoint(cg, x, y + height);
+      CGContextClosePath(cg);
+      CGContextStrokePath(cg);
+    }
+
+    wxMacSetCurrentTool(kNoTool);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
   
   if ((rgn = BrushStipple())) {
     rgn->SetRectangle(x, y, width, height);
@@ -703,7 +801,70 @@ void wxCanvasDC::DrawRoundedRectangle
   wxRegion *rgn;
 
   if (!Ok() || !cMacDC) return;
+
+  if (radius < 0.0) {
+    double w = width;
+    if (height < w)
+      w = height;
+    radius = (-radius) * w;
+  }
   
+  if (anti_alias) {
+    CGContextRef cg;
+
+    SetCurrentDC(TRUE);
+    cg = GetCG();
+
+    CGContextSaveGState(cg);
+
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)) {
+      x += 0.5;
+      y += 0.5;
+      width -= 1.0;
+      height -= 1.0;
+    }
+      
+    if (current_brush && current_brush->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kBrushTool);
+      CGContextMoveToPoint(cg, x + radius, y);
+      CGContextAddLineToPoint(cg, x + width - radius, y);
+      CGContextAddArc(cg, x + width - radius, y + radius, radius, 1.5 * wxPI, 2 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, x + width, y + height - radius);
+      CGContextAddArc(cg, x + width - radius, y + height - radius, radius, 0, 0.5 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, x + radius, y + height);
+      CGContextAddArc(cg, x + radius, y + height - radius, radius, 0.5 * wxPI, 1.0 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, x, y + radius);
+      CGContextAddArc(cg, x + radius, y + radius, radius, 1.0 * wxPI, 1.5 * wxPI, FALSE);
+      CGContextClosePath(cg);
+      CGContextFillPath(cg);
+    }
+
+    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
+      wxMacSetCurrentTool(kPenTool);
+      CGContextMoveToPoint(cg, x + radius, y);
+      CGContextAddLineToPoint(cg, x + width - radius, y);
+      CGContextAddArc(cg, x + width - radius, y + radius, radius, 1.5 * wxPI, 2 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, x + width, y + height - radius);
+      CGContextAddArc(cg, x + width - radius, y + height - radius, radius, 0, 0.5 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, x + radius, y + height);
+      CGContextAddArc(cg, x + radius, y + height - radius, radius, 0.5 * wxPI, 1.0 * wxPI, FALSE);
+      CGContextAddLineToPoint(cg, x, y + radius);
+      CGContextAddArc(cg, x + radius, y + radius, radius, 1.0 * wxPI, 1.5 * wxPI, FALSE);
+      CGContextClosePath(cg);
+      CGContextStrokePath(cg);
+    }
+
+    wxMacSetCurrentTool(kNoTool);
+
+    CGContextRestoreGState(cg);
+
+    ReleaseCurrentDC();
+
+    return;
+  }
+ 
   if ((rgn = BrushStipple())) {
     rgn->SetRoundedRectangle(x, y, width, height, radius);
     PaintStipple(rgn);
@@ -711,13 +872,6 @@ void wxCanvasDC::DrawRoundedRectangle
 
   SetCurrentDC();
   
-  if (radius < 0.0) {
-    double w = width;
-    if (height < w)
-      w = height;
-    radius = (-radius) * w;
-  }
-
   {
     int phys_radius = XLOG2DEVREL(radius);
     

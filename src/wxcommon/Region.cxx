@@ -8,6 +8,18 @@
 
 #define CAIRO_DEV ((cairo_t *)target)
 
+#ifdef wx_mac
+typedef struct {
+  CGMutablePathRef path;
+  CGAffineTransform xform;
+  CGMutablePathRef *paths;
+  int npaths, apaths;
+} PathTarget;
+# define CGCG ((PathTarget *)target)->path
+# define CGPATH ((PathTarget *)target)->path
+# define CGXFORM (&((PathTarget *)target)->xform)
+#endif
+
 wxRegion::wxRegion(wxDC *_dc, wxRegion *r, Bool _no_prgn)
 {
   dc = _dc;
@@ -70,8 +82,18 @@ void wxRegion::Cleanup()
   }
 #endif
 #ifdef WX_USE_PATH_RGN
-  if (!no_prgn)
+  if (!no_prgn) {
     prgn = NULL;
+# ifdef wx_mac
+    if (paths) {
+      int i;
+      for (i = 0; i < npaths; i++) {
+	CGPathRelease(paths[i]);
+      }
+      paths = NULL;
+    }
+# endif
+  }
 #endif
 }
 
@@ -376,14 +398,27 @@ void wxRegion::SetPolygon(int n, wxPoint points[], double xoffset, double yoffse
   rgn = XPolygonRegion(cpoints, n, (fillStyle == wxODDEVEN_RULE) ? EvenOddRule : WindingRule);
 #endif
 #ifdef wx_mac
-  rgn = NewRgn();
-  OpenRgn();
-  MoveTo(cpoints[0].x, cpoints[0].y); // SET-ORIGIN FLAGGED
-  for (i = 0; i < n; i++) {
-    LineTo(cpoints[i].x, cpoints[i].y); // SET-ORIGIN FLAGGED
+  /* This code uses the current port. We don't know what the current
+     port might be, so we have to pick one to be sure that QuickDraw
+     is allowed. */
+  {
+    CGrafPtr savep;
+    GDHandle savegd;
+    
+    ::GetGWorld(&savep, &savegd);  
+    ::SetGWorld(wxGetGrafPtr(), GetMainDevice());
+
+    rgn = NewRgn();
+    OpenRgn();
+    MoveTo(cpoints[0].x, cpoints[0].y);
+    for (i = 0; i < n; i++) {
+      LineTo(cpoints[i].x, cpoints[i].y);
+    }
+    LineTo(cpoints[0].x, cpoints[0].y);
+    CloseRgn(rgn);
+
+    ::SetGWorld(savep, savegd);
   }
-  LineTo(cpoints[0].x, cpoints[0].y); // SET-ORIGIN FLAGGED
-  CloseRgn(rgn);
 #endif
 }
 
@@ -794,12 +829,60 @@ void wxRegion::Install(long target)
     cairo_init_clip(CAIRO_DEV);
     cairo_new_path(CAIRO_DEV);
 #endif
+#ifdef wx_mac
+    CGContextRef cg = (CGContextRef)target;
+    CGAffineTransform xform;
+    PathTarget *t;
+    CGMutablePathRef path;
+    int i;
+    
+    if (paths) {
+      for (i = 0; i < npaths; i++) {
+	CGContextBeginPath(cg);
+	CGContextAddPath(cg, paths[i]);
+	CGContextClip(cg);
+      }
+      return;
+    }
+  
+    path = CGPathCreateMutable();
+  
+    t = (PathTarget *)malloc(sizeof(PathTarget));
+    t->path = path;
+    xform = CGAffineTransformMakeTranslation(geometry ? geometry[0] : 0, geometry ? geometry[1] : 0);
+    xform = CGAffineTransformScale(xform, geometry ? geometry[2] : 1, geometry ? geometry[3] : 1);
+    t->xform = xform;
+
+    t->paths = NULL;
+    t->npaths = 0;
+    t->apaths = 0;
+    
+    target = (long)t;
+#endif
+
     prgn->Install(target, 0);
+
 #ifdef WX_USE_CAIRO
     cairo_clip(CAIRO_DEV);
     cairo_new_path(CAIRO_DEV);
     cairo_set_matrix(CAIRO_DEV, m);
     cairo_matrix_destroy(m);
+#endif
+#ifdef wx_mac
+    npaths = t->npaths + 1;
+    paths = new WXGC_ATOMIC CGMutablePathRef[npaths];
+    for (i = 0; i < npaths - 1; i++) {
+      paths[i] = t->paths[i];
+    }
+    paths[npaths - 1] = t->path;
+
+    free(t);
+
+    for (i = 0; i < npaths; i++) {
+      CGContextBeginPath(cg);
+      CGContextAddPath(cg, paths[i]);
+      CGContextClip(cg);
+    }
 #endif
   }
 }
@@ -1007,6 +1090,19 @@ void wxRectanglePathRgn::Install(long target, Bool reverse)
   }
   cairo_close_path(CAIRO_DEV);
 #endif
+#ifdef wx_mac
+  CGPathMoveToPoint(CGPATH, CGXFORM, x, y);
+  if (reverse) {
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + height);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + height);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y);
+  } else {
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + height);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + height);
+  }
+  CGPathCloseSubpath(CGPATH);
+#endif
 }
 
 wxRoundedRectanglePathRgn::wxRoundedRectanglePathRgn(double _x, double _y, double _width, double _height, double _radius)
@@ -1053,6 +1149,29 @@ void wxRoundedRectanglePathRgn::Install(long target, Bool reverse)
   }
   cairo_close_path(CAIRO_DEV);
 #endif
+#ifdef wx_mac
+  if (reverse) {
+    CGPathMoveToPoint(CGPATH, CGXFORM, x + radius, y);
+    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + radius, radius, 1.5 * wxPI, 1.0 * wxPI, TRUE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + height - radius);
+    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + height - radius, radius, 1.0 * wxPI, 0.5 * wxPI, TRUE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width - radius, y + height);
+    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + height - radius, radius, 0.5 * wxPI, 0, TRUE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + radius);
+    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + radius, radius, 2 * wxPI, 1.5 * wxPI, TRUE);
+  } else {
+    CGPathMoveToPoint(CGPATH, CGXFORM, x + radius, y);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width - radius, y);
+    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + radius, radius, 1.5 * wxPI, 2 * wxPI, FALSE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + width, y + height - radius);
+    CGPathAddArc(CGPATH, CGXFORM, x + width - radius, y + height - radius, radius, 0, 0.5 * wxPI, FALSE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x + radius, y + height);
+    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + height - radius, radius, 0.5 * wxPI, 1.0 * wxPI, FALSE);
+    CGPathAddLineToPoint(CGPATH, CGXFORM, x, y + radius);
+    CGPathAddArc(CGPATH, CGXFORM, x + radius, y + radius, radius, 1.0 * wxPI, 1.5 * wxPI, FALSE);
+  }
+  CGPathCloseSubpath(CGPATH);
+#endif
 }
 
 wxPolygonPathRgn::wxPolygonPathRgn(int _n, wxPoint _points[], double _xoffset, double _yoffset, int _fillStyle)
@@ -1080,6 +1199,21 @@ void wxPolygonPathRgn::Install(long target, Bool reverse)
     }
   }
   cairo_close_path(CAIRO_DEV);
+#endif
+#ifdef wx_mac
+  int i;
+  if (reverse) {
+    CGPathMoveToPoint(CGPATH, CGXFORM, points[n-1].x + xoffset, points[n-1].y + yoffset);
+    for (i = n-1; i--; ) {
+      CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
+    }
+  } else {
+    CGPathMoveToPoint(CGPATH, CGXFORM, points[0].x + xoffset, points[0].y + yoffset);
+    for (i = 1; i < n; i++) {
+      CGPathAddLineToPoint(CGPATH, CGXFORM, points[i].x + xoffset, points[i].y + yoffset);
+    }
+  }
+  CGPathCloseSubpath(CGPATH);
 #endif
 }
 
@@ -1111,6 +1245,18 @@ void wxArcPathRgn::Install(long target, Bool reverse)
   cairo_matrix_destroy(m);
   cairo_close_path(CAIRO_DEV);
 #endif
+#ifdef wx_mac
+  CGAffineTransform xform;
+  xform = CGAffineTransformTranslate(*CGXFORM, x, y);
+  xform = CGAffineTransformScale(xform, w, h);
+  if ((start != 0.0) || (end != (2 * wxPI)))
+    CGPathMoveToPoint(CGPATH, &xform, 0.5, 0.5);
+  if (!reverse)
+    CGPathAddArc(CGPATH, &xform, 0.5, 0.5, 0.5, (2 * wxPI) - end, (2 * wxPI) - start, FALSE);
+  else
+    CGPathAddArc(CGPATH, &xform, 0.5, 0.5, 0.5, (2 * wxPI) - start, (2 * wxPI) - end, TRUE);
+  CGPathCloseSubpath(CGPATH);
+#endif
 }
 
 wxUnionPathRgn::wxUnionPathRgn(wxPathRgn *_f, wxPathRgn *_s)
@@ -1141,6 +1287,29 @@ void wxIntersectPathRgn::Install(long target, Bool reverse)
 #ifdef WX_USE_CAIRO
   cairo_clip(CAIRO_DEV);
   cairo_new_path(CAIRO_DEV);
+#endif
+#ifdef wx_mac
+  {
+    PathTarget *t = (PathTarget *)target;
+    CGMutablePathRef path;
+    int i;
+
+    if (t->npaths + 1 >= t->apaths) {
+      CGMutablePathRef *naya;
+      int n = (t->apaths + 5) * 2;
+      
+      naya = new WXGC_ATOMIC CGMutablePathRef[n];
+      for (i = 0; i < t->npaths; i++) {
+	naya[i] = t->paths[i];
+      }
+
+      t->paths = naya;
+      t->apaths = n;
+    }
+    t->paths[t->npaths++] = t->path;
+    path = CGPathCreateMutable();
+    t->path = path;
+  }
 #endif
   b->Install(target, reverse);
 }

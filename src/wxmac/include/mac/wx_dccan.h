@@ -164,7 +164,7 @@ class wxCanvasDC: public wxbCanvasDC
 
   void ResetBackground();
 
-  void SetAntiAlias(Bool v);
+  void SetAntiAlias(int v);
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);

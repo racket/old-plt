@@ -12,7 +12,7 @@ typedef Region XtRegion;
 typedef void *XtRegion;
 #endif
 
-#if defined(WX_USE_CAIRO)
+#if defined(WX_USE_CAIRO) || defined(wx_mac) || defined(wx_msw)
 # define WX_USE_PATH_RGN
 #endif
 
@@ -35,6 +35,10 @@ class wxRegion : public wxObject
 #ifdef WX_USE_PATH_RGN
   wxPathRgn *prgn;
   double *geometry;
+# ifdef wx_mac
+  int npaths;
+  CGMutablePathRef *paths;
+# endif
 #endif
   wxDC *dc;
   wxPSRgn *ps;

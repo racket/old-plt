@@ -687,13 +687,22 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
     if (cg) {
       wxColor *c = current_pen->GetColour();
       int r, g, b;
+      double pw;
 
       r = c->Red();
       g = c->Green();
       b = c->Blue();
       
       CGContextSetRGBStrokeColor(cg, r / 255.0, g / 255.0, b / 255.0, 1.0);
-      CGContextSetLineWidth(cg, current_pen->GetWidthF());
+
+      pw = current_pen->GetWidthF();
+      if (!pw) {
+	if (user_scale_x > user_scale_y)
+	  pw = 1 / user_scale_y;
+	else
+	  pw = 1 / user_scale_x;
+      }
+      CGContextSetLineWidth(cg, pw);
     } else {
       int pensize;
       int thePenWidth;
@@ -851,13 +860,17 @@ CGContextRef wxCanvasDC::GetCG()
   /* Make clipping regions match (including BeginUpdate effect) */
   clipRgn = NewRgn();
   if (clipRgn) {
-    RgnHandle visRgn;
-    visRgn = NewRgn();
-    if (visRgn) {
-      GetPortClipRegion(qdp, clipRgn);
-      GetPortVisibleRegion(qdp, visRgn);
-      SectRgn(clipRgn, visRgn, clipRgn);
-      DisposeRgn(visRgn);
+    if (onpaint_reg) {
+      RgnHandle visRgn;
+      visRgn = NewRgn();
+      if (visRgn) {
+	::CopyRgn(onpaint_reg, clipRgn); // GetPortClipRegion(qdp, clipRgn);
+	GetPortVisibleRegion(qdp, visRgn);
+	SectRgn(clipRgn, visRgn, clipRgn);
+	DisposeRgn(visRgn);
+      }
+    } else {
+      GetPortVisibleRegion(qdp, clipRgn);
     }
   }
 
@@ -868,9 +881,13 @@ CGContextRef wxCanvasDC::GetCG()
     ClipCGContextToRegion(cg, &portRect, clipRgn);
     DisposeRgn(clipRgn);
   }
-  CGContextTranslateCTM(cg, 0, (float)(portRect.bottom - portRect.top));
+  CGContextTranslateCTM(cg, 0, (float)(portRect.bottom - portRect.top - gdy));
   CGContextScaleCTM(cg, 1.0, -1.0 );
  
+  if (clipping)
+    clipping->Install((long)cg);
+  
+  CGContextTranslateCTM(cg, device_origin_x, device_origin_y);
   CGContextScaleCTM(cg, user_scale_x, user_scale_y);
 
   return cg;

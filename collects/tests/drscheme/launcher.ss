@@ -31,13 +31,18 @@
   (delete-file tmp-filename))
 (save-drscheme-window-as tmp-filename)
 
-(when (file-exists? tmp-launcher)
-  (delete-file tmp-launcher))
-(use-open/close-dialog
- (lambda ()
-   (fw:test:menu-select "Scheme" "Create Launcher..."))
- tmp-launcher)
-(system tmp-launcher)
-(define-values (in out) (tcp-accept listener))
-(unless (null? (read in))
-  (error))
+(define (create-launcher language teachpack)
+  (set-language-level! language)
+  (when (file-exists? tmp-launcher)
+    (delete-file tmp-launcher))
+  (use-open/close-dialog
+   (lambda ()
+     (fw:test:menu-select "Scheme" "Create Launcher..."))
+   tmp-launcher)
+  (let-values ([(l-in l-out l-pid l-err l-proc) (apply values (process* tmp-launcher))]
+	       [(in out) (tcp-accept listener)])
+    (printf "about to read~n")
+    (unless (null? (read in))
+      (error))))
+
+(create-launcher "Graphical without Debugging (MrEd)" #f)

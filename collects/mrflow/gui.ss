@@ -304,12 +304,13 @@
                                label
                                menu
                                (lambda (item evt)
-                                 (for-each (lambda (var)
-                                             (let ([loc (get-loc var)])
-                                               (when loc
-                                                 (let ([parent/child (var-pos->edit-pos loc)])
-                                                   (set! arrows (cons (pair pos parent/child) arrows))))))
-                                           (children/parents set-var))
+                                 (for-each
+                                  (lambda (var)
+                                    (let ([loc (get-loc var)])
+                                      (when loc
+                                        (let ([parent/child (var-pos->edit-pos loc)])
+                                          (set! arrows (cons (pair pos parent/child) arrows))))))
+                                  (children/parents set-var))
                                  (invalidate-bitmap-cache))))])
                       (make-children/parents-item "Parents" parents (lambda (x y) (cons y x)))
                       (make-children/parents-item "Children" children cons))
@@ -362,49 +363,55 @@
             button% ()
             (label (flow-bitmap this))
             (parent (get-button-panel))
-            (callback (lambda (button evt)
-                        (clear-annotations)
-                        (mrflow:reset-all)
-                        (let ([start (current-milliseconds)])
-                          (send (get-interactions-text)
-                                expand-program
-                                (drscheme:language:make-text/pos (get-definitions-text) 
-                                                                 0
-                                                                 (send (get-definitions-text)
-                                                                       last-position))
-                                (frame:preferences:get
-                                 (drscheme:language-configuration:get-settings-preferences-symbol))
-                                (lambda (exception? syntax-object/exception run-in-expansion-thread loop)
-                                  (if exception?
-                                      (let ([message (car syntax-object/exception)]
-                                            [exn (cdr syntax-object/exception)])
-                                        (cond
-                                          [(exn:read? exn)
-                                           (let ([end (exn:read-position exn)])
-                                             (send (get-definitions-text) change-style red-style (- end 1) end)
-                                             (message-box "read exception"
-                                                          (string-append "read exception: " message)
-                                                          #f '(ok)))]
-                                          [(exn:syntax? exn)
-                                           (let ([syntax-object (exn:syntax-expr exn)])
-                                             (when syntax-object
-                                               (let ([start (- (syntax-position syntax-object) 1)])
-                                                 (send (get-definitions-text) change-style red-style
-                                                       start (+ start (syntax-span syntax-object)))
-                                                 (message-box "syntax exception"
-                                                              (string-append "syntax exception: " message)
-                                                              #f '(ok)))))]
-                                          [else
-                                           (message-box "unknown exception" (format "unknown exception: ~a" exn))]))
-                                      (mrflow:create-label-from-term syntax-object/exception '() #f))
-                                  (loop)))
-                          (printf "time: ~a ms~n" (- (current-milliseconds) start)))
-                        
-                        ; XXX perf analysis
-                        (printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n" mrflow:ast-nodes mrflow:graph-nodes mrflow:graph-edges)
-                        
-                        (send (get-definitions-text) mrflow:run-analysis))))])
+            (callback
+             (lambda (button evt)
+               (clear-annotations)
+               (mrflow:reset-all)
+               (let ([start (current-milliseconds)])
+                 (send (get-interactions-text)
+                       expand-program
+                       (drscheme:language:make-text/pos (get-definitions-text) 
+                                                        0
+                                                        (send (get-definitions-text)
+                                                              last-position))
+                       (frame:preferences:get
+                        (drscheme:language-configuration:get-settings-preferences-symbol))
+                       (lambda (exception? syntax-object/exception run-in-expansion-thread loop)
+                         (if exception?
+                             (let ([message (car syntax-object/exception)]
+                                   [exn (cdr syntax-object/exception)])
+                               (cond
+                                 [(exn:read? exn)
+                                  (let ([end (exn:read-position exn)])
+                                    (send (get-definitions-text)
+                                          change-style red-style (- end 1) end)
+                                    (message-box "read exception"
+                                                 (string-append "read exception: " message)
+                                                 #f '(ok)))]
+                                 [(exn:syntax? exn)
+                                  (let ([syntax-object (exn:syntax-expr exn)])
+                                    (when syntax-object
+                                      (let ([start (- (syntax-position syntax-object) 1)])
+                                        (send (get-definitions-text) change-style red-style
+                                              start (+ start (syntax-span syntax-object)))
+                                        (message-box "syntax exception"
+                                                     (string-append "syntax exception: " message)
+                                                     #f '(ok)))))]
+                                 [else
+                                  (message-box "unknown exception"
+                                               (format "unknown exception: ~a" exn))]))
+                             (mrflow:create-label-from-term syntax-object/exception '() #f))
+                         (loop)))
+                 (mrflow:check-primitive-types)
+                 (printf "time: ~a ms~n" (- (current-milliseconds) start)))
+               
+               ; XXX perf analysis
+               (printf "ast-nodes: ~a  graph-nodes: ~a  graph-edges: ~a~n"
+                       mrflow:ast-nodes mrflow:graph-nodes mrflow:graph-edges)
+               
+               (send (get-definitions-text) mrflow:run-analysis))))])
          ;(sequence
+         (mrflow:initialize-primitive-type-schemes)
          (send (get-button-panel) change-children
                (lambda (l)
                  (cons flow:analyze-button (remq flow:analyze-button l))))

@@ -59,16 +59,6 @@
     
   (define exception-reporting-rep (make-parameter #f))
 
-  ;; syntax-checking-primitive-eval : sexp -> value
-  ;; effect: raises user-exn if expression ill-formed
-  (define (syntax-checking-primitive-eval expr)
-    (drscheme:init:primitive-eval
-     (with-handlers ([(lambda (x) #t)
-		      (lambda (x)
-			(error 'internal-syntax-error (exn-message x)))])
-       (expand-defmacro expr))))
-
-
   (define (process-edit/zodiac setting vocab edit f start end annotate?)
     (basis:process/zodiac
      setting
@@ -138,6 +128,22 @@
        [super-reset-console reset-console]
        [super-init-transparent-io-do-work init-transparent-io-do-work])
       
+      (private
+	;; syntax-checking-primitive-eval : sexp -> value
+	;; effect: raises user-exn if expression ill-formed
+	[syntax-checking-primitive-eval
+	 (lambda (expr)
+	   (if (basis:setting-use-zodiac? user-setting)
+	       (drscheme:init:primitive-eval
+		(with-handlers ([(lambda (x) #t)
+				 (lambda (x)
+				   (error 'internal-syntax-error (exn-message x)))])
+		  (expand-defmacro expr)))
+	       (drscheme:init:primitive-eval expr)))])
+
+
+
+
       (public
 	[init-transparent-io
 	 (lambda (grab-focus?)
@@ -230,17 +236,12 @@
 				 answer)
 			     (begin (set! answer
 					  (call-with-values
-					   (lambda ()
-					     (if (basis:setting-use-zodiac? user-setting)
-						 (with-parameterization user-param
-						   (lambda ()
-						     (syntax-checking-primitive-eval annotated)))
-						 (with-parameterization user-param
-						   (lambda ()
-						     (drscheme:init:primitive-eval annotated)))))
+					   (lambda () (syntax-checking-primitive-eval annotated))
 					   (lambda x x)))
 				    (recur))))])
-		 (apply values (process-sexp sexp z f #t))))))]
+		 (with-parameterization user-param
+		   (lambda ()
+		     (apply values (process-sexp sexp z f #t))))))))]
 	[display-result
 	 (lambda (v)
 	   (unless (void? v)
@@ -432,14 +433,7 @@
 						    (semaphore-post evaluation-sucessful)]
 						   [else
 						    (let ([answers (call-with-values
-								    (lambda ()
-								      (if (basis:setting-use-zodiac? user-setting)
-									  (with-parameterization user-param
-									    (lambda ()
-									      (syntax-checking-primitive-eval expr)))
-									  (with-parameterization user-param
-									    (lambda ()
-									      (drscheme:init:primitive-eval expr)))))
+								    (lambda () (syntax-checking-primitive-eval expr))
 								    (lambda x x))])
 						      (display-results answers)
 						      (recur))]))
@@ -460,7 +454,7 @@
 	[break (lambda ()
 		 (cond
 		  [(not evaluation-thread)
-		   '(wx:bell)]
+		   (void)]
 		  [ask-about-kill? 
 		   (if (mred:get-choice
 			"Do you want to kill the evaluation?"
@@ -556,24 +550,20 @@
 					  (with-handlers ([(lambda (x) #t)
 							   (lambda (exn) 
 							     (report-exception-error exn))])
-					    (if (basis:setting-use-zodiac? user-setting)
-						(with-parameterization user-param
-						  (lambda ()
-						    (syntax-checking-primitive-eval sexp)))
-						(with-parameterization user-param
-						  (lambda ()
-						    (drscheme:init:primitive-eval sexp))))))
+					    (syntax-checking-primitive-eval sexp)))
 					(lambda x x)))
 				 (recur)])))])
-		     (apply values 
-			    (if (equal? chars (list #\W #\X #\M #\E))
-				(let ([edit (make-object drscheme:edit:edit%)])
-				  (send edit load-file filename)
-				  (process-edit edit process-sexps
-						0 
-						(send edit last-position)
-						#t))
-				(process-file filename process-sexps #t))))
+		     (with-parameterization user-param
+		       (lambda ()
+			 (apply values 
+				(if (equal? chars (list #\W #\X #\M #\E))
+				    (let ([edit (make-object drscheme:edit:edit%)])
+				      (send edit load-file filename)
+				      (process-edit edit process-sexps
+						    0 
+						    (send edit last-position)
+						    #t))
+				    (process-file filename process-sexps #t))))))
 		   (with-parameterization user-param
 		     (lambda ()
 		       (drscheme:init:primitive-load filename)))))))])

@@ -46,6 +46,10 @@
 
    (struct process-finish (error?))
 
+   level->number
+   level-symbols
+   level-strings
+
    copy-setting
    (struct setting (use-zodiac?
 		    vocabulary-symbol
@@ -67,6 +71,7 @@
 
 (define-signature drscheme:interface^ 
   ((open zodiac:interface^)
+   set-zodiac-phase
    (struct zodiac-exn (message start-location end-location type))))
 
 (define-signature drscheme:exported-zodiac^ zodiac:system^)

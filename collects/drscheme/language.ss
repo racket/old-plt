@@ -10,18 +10,6 @@
   
   (mred:debug:printf 'invoke "drscheme:language@")
   
-  (define level->number
-    (lambda (x)
-      (case x
-	[(core) 0]
-	[(structured) 1]
-	[(side-effecting) 2]
-	[(advanced) 3]
-	[(raw) 4]
-	[else (error 'level->number "unexpected level: ~a" x)])))
-  (define level-symbols (list 'core 'structured 'side-effecting 'advanced 'raw))
-  (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS" "Raw"))
-
   (mred:set-preference-default 'drscheme:settings
 			       (basis:get-default-setting)
 			       basis:setting?)
@@ -83,6 +71,9 @@
 					   (when (= which len)
 					     (show-specifics #t))
 					   (when (< which len)
+					     (print-struct #t)
+					     (printf "setting language to: ~a~n"
+						     (list-ref basis:settings which))
 					     (mred:set-preference
 					      'drscheme:settings
 					      (basis:copy-setting (second (list-ref basis:settings which)))))))
@@ -115,12 +106,8 @@
 				(lambda (vocab evt)
 				  (let ([pos (send evt get-selection)]
 					[s (mred:get-preference 'drscheme:settings)])
-				    (if (= pos (length level-symbols))
-					(basis:set-setting-use-zodiac?! s #f)
-					(begin 
-					  (basis:set-setting-use-zodiac?! s #t)
-					  (basis:set-setting-vocabulary-symbol!
-					   s (list-ref level-symbols pos))))
+				    (basis:set-setting-vocabulary-symbol! s (list-ref basis:level-symbols pos))
+				    (basis:set-setting-use-zodiac?! s (not (= pos (- (length basis:level-symbols) 1))))
 				    (mred:set-preference 'drscheme:settings s)))
 				"Vocabulary"
 				-1 -1 -1 -1
@@ -238,10 +225,13 @@
 		   (compare-check-box abbreviate-cons-as-list? basis:setting-abbreviate-cons-as-list?)
 		   (eq? (printer-number->symbol (send printing get-selection))
 			(basis:setting-printing setting))
-		   (if (= (send vocab get-selection) 
-			  (length level-symbols))
+		   (printf "language dialog.compare: ~a ~a~n"
+			   (send vocab get-selection)
+			   (length basis:level-symbols))
+		   (if (= (send vocab get-selection)
+			  (length basis:level-symbols))
 		       (not (basis:setting-use-zodiac? setting))
-		       (= (level->number (basis:setting-vocabulary-symbol setting))
+		       (= (basis:level->number (basis:setting-vocabulary-symbol setting))
 			  (send vocab get-selection))))))]
 	 [reset-choice
 	  (lambda ()
@@ -251,19 +241,17 @@
 			      (if (compare-setting-to-gui setting)
 				  (begin
 				    (send language-choice set-selection
-					  (level->number
+					  (basis:level->number
 					   (basis:setting-vocabulary-symbol setting)))
 				    #f)
 				  #t)))
 			  basis:settings)
 	      (send language-choice set-selection
-		    (length level-symbols))))]
+		    (length basis:level-symbols))))]
 	 [update-to
 	  (lambda (v)
 	    (let ([zodiac? (basis:setting-use-zodiac? v)])
-	      (send vocab set-selection (if zodiac?
-					    (level->number (basis:setting-vocabulary-symbol v))
-					    (length level-symbols)))
+	      (send vocab set-selection (basis:level->number (basis:setting-vocabulary-symbol v)))
 	      (for-each (lambda (control) (send control enable zodiac?))
 			(list allow-improper-lists?
 			      signal-undefined

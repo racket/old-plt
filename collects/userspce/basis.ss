@@ -24,8 +24,6 @@
   (define eq?-only-compares-symbols (make-parameter #f))
   (define r4rs-style-printing (make-parameter #f))
   
-  (define current-vocab (make-parameter 'current-vocab-uninitialized))
-
   (define-struct/parse setting (use-zodiac?
 				vocabulary-symbol
 				case-sensitive?
@@ -119,6 +117,23 @@
 			       (whole/fractional-exact-numbers #f)
 			       (printing r4rs-style))))))
 
+  ;; level->number : symbol -> int
+  (define level->number
+    (lambda (x)
+      (case x
+	[(core) 0]
+	[(structured) 1]
+	[(side-effecting) 2]
+	[(advanced) 3]
+	[(raw) 4]
+	[else (error 'level->number "unexpected level: ~a" x)])))
+
+  ;; level-symbols (list-of sym)
+  (define level-symbols (list 'core 'structured 'side-effecting 'advanced 'raw))
+
+  ;; level-strings : (list-of string)
+  (define level-strings (list "Beginner" "Intermediate" "Advanced" "Quasi-R4RS" "Raw"))
+
   ;; find-setting-name : setting -> symbol
   (define (find-setting-name setting)
     (or (ormap (lambda (x)
@@ -157,14 +172,12 @@
   ;; process-file/zodiac : setting
   ;;                       zodiac:vocabulary
   ;;                       string
-  ;;                       (((+ sexp zodiac:parsed) ( -> A) -> A)
+  ;;                       (((+ sexp zodiac:parsed) ( -> void) -> void)
   ;;                       boolean
-  ;;                    -> A
+  ;;                    -> void
   ;; note: the boolean controls which variant of the union the 3rd arg is passed.
   (define (process-file/zodiac setting vocab filename f annotate?)
-    (let ([port (with-handlers ([(lambda (x) #t)
-				 (lambda (x) (report-error x))])
-		  (open-input-file filename))])
+    (let ([port (open-input-file filename)])
       (process/zodiac
        setting
        vocab
@@ -180,14 +193,17 @@
 
   ;; process-file/no-zodiac : setting
   ;;                          string
-  ;;                          sexp ( -> A) -> A
-  ;;                       -> A
+  ;;                          (sexp ( -> void) -> void)
+  ;;                       -> void
   (define (process-file/no-zodiac setting filename f)
     (call-with-input-file filename
       (lambda (port)
 	(process/no-zodiac setting (lambda () (read port)) f))))
 
-
+  ;; process-sexp/no-zodiac : setting
+  ;;                          sexp
+  ;;                          (sexp ( -> void) -> void)
+  ;;                       -> void
   (define (process-sexp/no-zodiac setting sexp f)
     (process/no-zodiac setting
 		       (let ([first? #t]) 
@@ -198,6 +214,12 @@
 			       eof)))
 		       f))
 
+  ;; process-sexp/zodiac : setting
+  ;;                       vocabulary
+  ;;                       sexp
+  ;;                       zodiac:sexp
+  ;;                       (sexp ( -> void) -> void)
+  ;;                    -> void
   (define (process-sexp/zodiac setting vocab sexp z f annotate?)
     (let ([reader
 	   (let ([gone #f])
@@ -210,69 +232,63 @@
   ;; process/zodiac : setting
   ;;                  zodiac:vocabulary
   ;;                  ( -> zodiac:sexp)
-  ;;                  ((TST + process-finish) ( -> A) -> A)
+  ;;                  ((TST + process-finish) ( -> void) -> void)
   ;;                  boolean
-  ;;               -> A
+  ;;               -> void
   (define (process/zodiac setting vocab reader f annotate?)
     (let ([cleanup
 	   (lambda (error?)
 	     (f (make-process-finish error?) void))])
       (let loop ()
 	(let ([next-iteration
-	       (with-handlers ([zodiac:interface:zodiac-exn?
-				(lambda (exn)
-				  (report-error (zodiac:interface:zodiac-exn-start-location exn)
-						(zodiac:interface:zodiac-exn-end-location exn)
-						(zodiac:interface:zodiac-exn-type exn)
-						(zodiac:interface:zodiac-exn-message exn))
-				  (lambda () (cleanup #t)))])
-		 (let/ec k
-		   (let ([zodiac-read
-			  (parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
-			    (reader))])
-		     (if (zodiac:eof? zodiac-read)
-			 (lambda () (cleanup #f))
-			 (let* ([send-scheme (lambda x (error 'send-scheme))]
-				[wait-on-scheme
-				 (lambda (expr)
-				   (let-values ([(answers error?) (send-scheme expr)])
-				     (if error?
-					 (k (lambda () (cleanup #t)))
-					 (apply values answers))))]
-				[evaluator
-				 (lambda (exp _ macro)
-				   (wait-on-scheme (aries:annotate exp)))]
-				[user-macro-body-evaluator
-				 (lambda (x . args)
-				   (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
-				[exp (call/nal zodiac:scheme-expand/nal
-					       zodiac:scheme-expand
-					       [expression: zodiac-read]
-					       [vocabulary: vocab]
-					       [user-macro-body-evaluator: user-macro-body-evaluator]
-					       [elaboration-evaluator: evaluator])]
-				[heading-out (if annotate? 
-						 (aries:annotate exp)
-						 exp)])
-			   (lambda () (f heading-out loop)))))))])
+	       (let/ec k
+		 (let ([zodiac-read
+			(parameterize ([read-case-sensitive (setting-case-sensitive? setting)])
+			  (dynamic-wind
+			   (lambda () (zodiac:interface:set-zodiac-phase 'reader))
+			   (lambda () (reader))
+			   (lambda () (zodiac:interface:set-zodiac-phase #f))))])
+		   (if (zodiac:eof? zodiac-read)
+		       (lambda () (cleanup #f))
+		       (let* ([send-scheme (lambda x (error 'send-scheme))]
+			      [wait-on-scheme
+			       (lambda (expr)
+				 (let-values ([(answers error?) (send-scheme expr)])
+				   (if error?
+				       (k (lambda () (cleanup #t)))
+				       (apply values answers))))]
+			      [evaluator
+			       (lambda (exp _ macro)
+				 (wait-on-scheme (aries:annotate exp)))]
+			      [user-macro-body-evaluator
+			       (lambda (x . args)
+				 (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
+			      [exp
+			       (dynamic-wind
+				(lambda ()
+				  (zodiac:interface:set-zodiac-phase 'expander))
+				(lambda ()
+				  (call/nal zodiac:scheme-expand/nal
+					    zodiac:scheme-expand
+					    [expression: zodiac-read]
+					    [vocabulary: vocab]
+					    [user-macro-body-evaluator: user-macro-body-evaluator]
+					    [elaboration-evaluator: evaluator]))
+				(lambda ()
+				  (zodiac:interface:set-zodiac-phase #f)))]
+			      [heading-out (if annotate? 
+					       (aries:annotate exp)
+					       exp)])
+			 (lambda () (f heading-out loop))))))])
 	  (next-iteration)))))
 
-  ;; process/no-zodiac : setting ( -> sexp) ((TST + process-finish) ( -> A) -> A) -> A
+  ;; process/no-zodiac : setting ( -> sexp) ((TST + process-finish) ( -> void) -> void) -> void
   (define (process/no-zodiac setting reader f)
     (let loop ()
-      (let-values ([(expr error?) (with-handlers ([(lambda (x) #t)
-						   (lambda (exn) (values exn #t))])
-				    (values (reader) #f))])
-	(if error?
-	    (begin
-	      (report-unlocated-error
-	       (if (exn? expr)
-		   (exn-message expr)
-		   (format "uncaught exception: ~e" expr)))
-	      (f (make-process-finish #t) void))
-	    (if (eof-object? expr)
-		(f (make-process-finish #f) void)
-		(f expr loop))))))
+      (let ([expr (reader)])
+	(if (eof-object? expr)
+	    (f (make-process-finish #f) void)
+	    (f expr loop)))))
 
   ;; (parameter (string debug-info -> void))
   (define error-display/debug-handler
@@ -348,7 +364,8 @@
 	  (print-struct #t)
 	  (error-print-width 250)
 
-	  (zodiac:current-vocabulary (setting-vocabulary-symbol setting))
+	  (when (setting-use-zodiac? setting)
+	    (zodiac:current-vocabulary (setting-vocabulary-symbol setting)))
 	  
 	  (read-case-sensitive (setting-case-sensitive? setting))
 

@@ -3,11 +3,22 @@
   
   (define-struct zodiac-exn (message start-location end-location type))
   
+  (define zodiac-phase #f)
+  (define (set-zodiac-phase sym)
+    (unless (or (not sym)
+		(memq sym '(reader expander)))
+      (error 'set-zodiac-phase "unknown phase: ~a~n" sym))
+    (set! zodiac-phase sym))
+
   ;; dispatch-report : symbol string number number -> ALPHA 
   ;; escapes
   (define dispatch-report
     (lambda (string object)
-      (raise (make-exn:syntax string object #f))))
+      (raise
+       (case zodiac-phase
+	 [(expander) (make-exn:syntax string object #f)]
+	 [(reader) (make-exn:read string object #f)]
+	 [else (error 'dispatch-report "unknown phase: ~a (~a ~a)~n" zodiac-phase string object)]))))
   
   ;; report-error : symbol -> (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA
   ;; escapes
@@ -21,8 +32,12 @@
 			     args)])
 	  (cond
 	    [(zodiac:zodiac? z) (dispatch-report string z)]
-	    [(zodiac:eof? z) (dispatch-report string (zodiac:make-zodiac 'origin (zodiac:eof-location z) (zodiac:eof-location z)))]
-	    [(zodiac:period? z) (dispatch-report string (zodiac:make-zodiac 'origin (zodiac:period-location z) (zodiac:period-location z)))]
+	    [(zodiac:eof? z) (dispatch-report string (zodiac:make-zodiac 'origin
+									 (zodiac:eof-location z)
+									 (zodiac:eof-location z)))]
+	    [(zodiac:period? z) (dispatch-report string (zodiac:make-zodiac 'origin
+									    (zodiac:period-location z)
+									    (zodiac:period-location z)))]
 	    [else ((error-display-handler) (format "internal-error.report-error: ~a: ~a" z string))])))))
   
   ;; static-error : (+ zodiac:zodiac zodiac:eof zodiac:period) string (listof TST) ->* ALPHA

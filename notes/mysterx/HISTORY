@@ -10,7 +10,8 @@ added AddRef() for HTML elements, fixing
   occasional crashes on GC
 added tag, id information for find-element
   failures
-renamed mysterx.dll to mxmain.dll
+renamed mysterx.dll to mxmain.dll, moved all
+  dll's to dlls subdirectory
 added clean option to Makefile
 
 Version 100:

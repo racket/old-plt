@@ -86,19 +86,6 @@ Check Syntax separates four classes of identifiers:
                      ;   ;  ;; ;;    ;   
                       ;;;    ;;;   ;;;;; 
                      
-                     
-
-      ;; prefix-style : (union symbol string) -> string
-      (define (prefix-style x) (format "syntax-coloring:Scheme:~a" x))      
-            
-      ;; all strings naming styles
-      (define unbound-variable-style-str (prefix-style 'unbound-variable))
-      (define constant-style-str (prefix-style 'constant))
-
-      (define lexically-bound-variable-style-str (prefix-style 'lexically-bound-variable))
-      (define lexically-bound-syntax-style-str (prefix-style 'lexically-bound-syntax))
-      (define imported-syntax-style-str (prefix-style 'imported-syntax))
-      (define imported-variable-style-str (prefix-style 'imported-variable))
             
       ;; used for quicker debugging of the preference panel
       '(define test-preference-panel
@@ -1164,7 +1151,19 @@ Check Syntax separates four classes of identifiers:
         (send keymap map-function "c:x;n" "jump to next bound occurrence")
         (send keymap map-function "c:x;d" "jump to definition (in other file)"))
         
-      
+            
+
+      ;; prefix-style : (union symbol string) -> string
+      (define (prefix-style x) (format "syntax-coloring:Scheme:~a" x))      
+            
+      ;; all strings naming styles
+      (define unbound-variable-style-str (prefix-style 'unbound-variable))
+      (define constant-style-str (prefix-style 'constant))
+
+      (define lexically-bound-variable-style-str (prefix-style 'lexically-bound-variable))
+      (define lexically-bound-syntax-style-str (prefix-style 'lexically-bound-syntax))
+      (define imported-syntax-style-str (prefix-style 'imported-syntax))
+      (define imported-variable-style-str (prefix-style 'imported-variable))
                                           
                                           
 
@@ -2271,8 +2270,9 @@ Check Syntax separates four classes of identifiers:
       ;; for-each-ids : id-set ((listof identifier) -> void) -> void
       (define (for-each-ids mapping f)
         (module-identifier-mapping-for-each mapping (lambda (x y) (f y))))
+
       
-;                                                 
+      ;                                                 
 ;                                                 
 ;                                                 
 ;  ;    ;    ; ;                                  

@@ -119,8 +119,7 @@ typedef SOCKET tcp_t;
 
 #ifdef USE_SOCKETS_TCP
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   tcp_t s;
   Scheme_Custodian_Reference *mref;
 } listener_t;
@@ -137,8 +136,7 @@ typedef struct tcp_t {
 } tcp_t;
 
 typedef struct {
-  Scheme_Type type; 
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   int hostid;
   int portid;
   int count;
@@ -174,7 +172,7 @@ static void **tcp_send_buffers;
 #ifdef UDP_IS_SUPPORTED
 
 typedef struct Scheme_UDP {
-  Scheme_Type type; /* scheme_udp_type */
+  Scheme_Object so; /* scheme_udp_type */
   MZ_HASH_KEY_EX
   tcp_t s; /* ok, tcp_t was a bad name */
   char bound, connected;
@@ -183,8 +181,7 @@ typedef struct Scheme_UDP {
 } Scheme_UDP;
 
 typedef struct Scheme_UDP_Waitable {
-  Scheme_Type type; /* scheme_udp_type */
-  MZ_HASH_KEY_EX
+  Scheme_Object so; /* scheme_udp_waitable_type */
   Scheme_UDP *udp;
   int for_read;
 } Scheme_UDP_Waitable;
@@ -1381,7 +1378,7 @@ static Scheme_Tcp *make_tcp_port_data(MAKE_TCP_ARG int refcount)
   
   data = MALLOC_ONE_RT(Scheme_Tcp);
 #ifdef MZTAG_REQUIRED
-  data->b.type = scheme_rt_tcp;
+  data->b.so.type = scheme_rt_tcp;
 #endif
 #ifdef USE_SOCKETS_TCP
   data->tcp = tcp;
@@ -1779,7 +1776,7 @@ static long tcp_write_string(Scheme_Output_Port *port,
 	for (i = num_tcp_send_buffers; i < nayac; i++) {
 	  wd = MALLOC_ONE_RT(WriteData);
 #ifdef MZTAG_REQUIRED
-	  wd->type = scheme_rt_write_data;
+	  wd->so.type = scheme_rt_write_data;
 #endif
 	  wd->xpb = NULL;
 	  e = wd->e;
@@ -2259,7 +2256,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     if (!errid) {
       listener_t *l = MALLOC_ONE_TAGGED(listener_t);
 
-      l->type = scheme_listener_type;
+      l->so.type = scheme_listener_type;
       l->portid = id;
       l->hostid = hostid;
       l->count = backlog;
@@ -2304,7 +2301,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
 	    listener_t *l;
 
 	    l = MALLOC_ONE_TAGGED(listener_t);
-	    l->type = scheme_listener_type;
+	    l->so.type = scheme_listener_type;
 	    l->s = s;
 	    {
 	      Scheme_Custodian_Reference *mref;
@@ -2758,7 +2755,7 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
   }
 
   udp = MALLOC_ONE_TAGGED(Scheme_UDP);
-  udp->type = scheme_udp_type;
+  udp->so.type = scheme_udp_type;
   udp->s = s;
   udp->bound = 0;
   udp->connected = 0;
@@ -3345,7 +3342,7 @@ static Scheme_Object *make_udp_waitable(const char *name, int argc, Scheme_Objec
 
 #ifdef UDP_IS_SUPPORTED
   uw = MALLOC_ONE_TAGGED(Scheme_UDP_Waitable);
-  uw->type = scheme_udp_waitable_type;
+  uw->so.type = scheme_udp_waitable_type;
   uw->udp = (Scheme_UDP *)argv[0];
   uw->for_read = for_read;
 

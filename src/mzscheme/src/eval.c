@@ -715,8 +715,8 @@ int scheme_is_compiled_procedure(Scheme_Object *o, int can_be_closed)
 {
   if (SAME_TYPE(SCHEME_TYPE(o), scheme_compiled_unclosed_procedure_type)) {
     if (!can_be_closed) {
-      Scheme_Closure_Compilation_Data *data;
-      data = (Scheme_Closure_Compilation_Data *)o;
+      Scheme_Closure_Data *data;
+      data = (Scheme_Closure_Data *)o;
       /* Because == 0 is like a constant */
       return (data->closure_size > 0);
     } else
@@ -789,11 +789,11 @@ static Scheme_Object *make_application(Scheme_Object *v)
 
     f = SCHEME_CAR(v);
 
-    if ((SCHEME_PRIMP(f) && (((Scheme_Primitive_Proc *)f)->flags & SCHEME_PRIM_IS_FOLDING))
+    if ((SCHEME_PRIMP(f) && (((Scheme_Primitive_Proc *)f)->pp.flags & SCHEME_PRIM_IS_FOLDING))
 	|| (SCHEME_CLSD_PRIMP(f) 
-	    && (((Scheme_Closed_Primitive_Proc *)f)->flags & SCHEME_PRIM_IS_FOLDING))
+	    && (((Scheme_Closed_Primitive_Proc *)f)->pp.flags & SCHEME_PRIM_IS_FOLDING))
 	|| (SAME_TYPE(SCHEME_TYPE(f), scheme_closure_type)
-	    && (((Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(f))->flags
+	    && ((SCHEME_CLOSURE_DATA_FLAGS(SCHEME_COMPILED_CLOS_CODE(f)))
 		& CLOS_FOLDABLE))) {
       f = try_apply(f, SCHEME_CDR(v));
       
@@ -806,7 +806,7 @@ static Scheme_Object *make_application(Scheme_Object *v)
     Scheme_App2_Rec *app;
 
     app = MALLOC_ONE_TAGGED(Scheme_App2_Rec);
-    app->type = scheme_application2_type;
+    app->iso.so.type = scheme_application2_type;
 
     app->rator = SCHEME_CAR(v);
     v = SCHEME_CDR(v);
@@ -817,7 +817,7 @@ static Scheme_Object *make_application(Scheme_Object *v)
     Scheme_App3_Rec *app;
 
     app = MALLOC_ONE_TAGGED(Scheme_App3_Rec);
-    app->type = scheme_application3_type;
+    app->iso.so.type = scheme_application3_type;
 
     app->rator = SCHEME_CAR(v);
     v = SCHEME_CDR(v);
@@ -849,7 +849,7 @@ Scheme_App_Rec *scheme_malloc_application(int n)
 	  + n * sizeof(char));
   app = (Scheme_App_Rec *)scheme_malloc_tagged(size);
 
-  app->type = scheme_application_type;
+  app->so.type = scheme_application_type;
 
   app->num_args = n - 1;
 
@@ -919,7 +919,7 @@ static Scheme_Object *resolve_application2(Scheme_Object *o, Resolve_Info *info)
   et = et << 3;
   et += scheme_get_eval_type(app->rator);
   
-  app->flags = et;
+  SCHEME_APPN_FLAGS(app) = et;
 
   return (Scheme_Object *)app;
 }
@@ -949,7 +949,7 @@ static Scheme_Object *resolve_application3(Scheme_Object *o, Resolve_Info *info)
   et = et << 3;
   et += scheme_get_eval_type(app->rator);
   
-  app->flags = et;
+  SCHEME_APPN_FLAGS(app) = et;
 
   return (Scheme_Object *)app;
 }
@@ -968,7 +968,7 @@ scheme_make_branch(Scheme_Object *test, Scheme_Object *thenp,
   }
 
   b = MALLOC_ONE_TAGGED(Scheme_Branch_Rec);
-  b->type = scheme_branch_type;
+  b->so.type = scheme_branch_type;
 
 #if 0
   /* Try optimize: (if (not x) y z) => (if x z y) */
@@ -1095,7 +1095,7 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
 
   o = malloc_sequence(count + addconst);
 
-  o->type = ((opt < 0) ? scheme_begin0_sequence_type : scheme_sequence_type);
+  o->so.type = ((opt < 0) ? scheme_begin0_sequence_type : scheme_sequence_type);
   o->count = count + addconst;
   
   --total;
@@ -1149,7 +1149,7 @@ static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
 	  Scheme_Sequence *naya;
 
 	  naya = malloc_sequence(nsize);
-	  naya->type = scheme_sequence_type;
+	  naya->so.type = scheme_sequence_type;
 	  naya->count = nsize;
 	  nv = (Scheme_Object *)naya;
 
@@ -1162,7 +1162,7 @@ static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
 	if (esize > 1) {
 	  Scheme_Sequence *e;
 	  e = malloc_sequence(esize);
-	  e->type = scheme_sequence_type;
+	  e->so.type = scheme_sequence_type;
 	  e->count = esize;
 
 	  for (i = 0; i < esize; i++) {
@@ -1616,7 +1616,7 @@ static void *compile_k(void)
       o = scheme_resolve_expr(o, scheme_resolve_info_create(rp));
       
       top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
-      top->type = scheme_compilation_top_type;
+      top->so.type = scheme_compilation_top_type;
       top->max_let_depth = rec.max_let_depth;
       top->code = o;
       top->prefix = rp;
@@ -2981,7 +2981,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  || (num_rands > prim->maxa && prim->maxa >= 0)) {
 	scheme_wrong_count_m(prim->name, prim->mina, prim->maxa,
 			     num_rands, rands,
-			     prim->flags & SCHEME_PRIM_IS_METHOD);
+			     prim->pp.flags & SCHEME_PRIM_IS_METHOD);
 	return NULL; /* Shouldn't get here */
       }
 
@@ -2989,13 +2989,13 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
       DEBUG_CHECK_TYPE(v);
     } else if (type == scheme_closure_type) {
-      Scheme_Closure_Compilation_Data *data;
+      Scheme_Closure_Data *data;
       GC_CAN_IGNORE Scheme_Object **stack, **src;
       int i, has_rest, num_params;
       
       DO_CHECK_FOR_BREAK(p, UPDATE_THREAD_RSPTR_FOR_GC(); if (rands == p->tail_buffer) make_tail_buffer_safe(););
       
-      data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(obj);
+      data = SCHEME_COMPILED_CLOS_CODE(obj);
 
       if ((RUNSTACK - RUNSTACK_START) < data->max_let_depth) {
 	if (rands == p->tail_buffer) {
@@ -3017,7 +3017,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       }
 
       num_params = data->num_params;
-      has_rest = (data->flags & CLOS_HAS_REST);
+      has_rest = SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST;
       
       if (num_params) {
 	if (has_rest) {
@@ -3029,7 +3029,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    scheme_wrong_count_m(scheme_get_proc_name(obj, NULL, 1), 
 				 num_params - 1, -1,
 				 num_rands, rands,
-				 data->flags & CLOS_IS_METHOD);
+				 SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_IS_METHOD);
 	    return NULL; /* Doesn't get here */
 	  }
 
@@ -3091,7 +3091,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    scheme_wrong_count_m(scheme_get_proc_name(obj, NULL, 1), 
 				 num_params, num_params,
 				 num_rands, rands,
-				 data->flags & CLOS_IS_METHOD);
+				 SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_IS_METHOD);
 	    return NULL; /* Doesn't get here */
 	  }
 	
@@ -3166,7 +3166,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  || (num_rands > prim->maxa && prim->maxa >= 0)) {
 	scheme_wrong_count_m(prim->name, prim->mina, prim->maxa, 
 			     num_rands, rands,
-			     prim->flags & SCHEME_PRIM_IS_METHOD);
+			     prim->pp.flags & SCHEME_PRIM_IS_METHOD);
 	return NULL; /* Shouldn't get here */
       }
       
@@ -3175,16 +3175,16 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       DEBUG_CHECK_TYPE(v);
     } else if (type == scheme_case_closure_type) {
       Scheme_Case_Lambda *seq;
-      Scheme_Closure_Compilation_Data *data;
+      Scheme_Closure_Data *data;
       
       int i;
       
       seq = (Scheme_Case_Lambda *)obj;
       for (i = 0; i < seq->count; i++) {
-	data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(seq->array[i]);
-	if ((!(data->flags & CLOS_HAS_REST) 
+	data = SCHEME_COMPILED_CLOS_CODE(seq->array[i]);
+	if ((!(SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST) 
 	     && (data->num_params == num_rands))
-	    || ((data->flags & CLOS_HAS_REST)
+	    || ((SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST)
 		&& (data->num_params - 1 <= num_rands))) {
 	  obj = seq->array[i];
 	  goto apply_top;
@@ -3502,7 +3502,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  app = (Scheme_App2_Rec *)obj;
 	  
 	  obj = app->rator;
-	  flags = app->flags;
+	  flags = SCHEME_APPN_FLAGS(app);
 
 	  rands = PUSH_RUNSTACK(p, RUNSTACK, 1);
 	  RUNSTACK_CHANGED();
@@ -3561,7 +3561,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  app = (Scheme_App3_Rec *)obj;
 	  
 	  obj = app->rator;
-	  flags = app->flags;
+	  flags = SCHEME_APPN_FLAGS(app);
 
 	  rands = PUSH_RUNSTACK(p, RUNSTACK, 2);
 	  RUNSTACK_CHANGED();
@@ -3608,7 +3608,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
 	  arg = app->rand2;
 
-	  switch (app->flags >> 6) {
+	  switch (SCHEME_APPN_FLAGS(app) >> 6) {
 	  case SCHEME_EVAL_CONSTANT:
 	    break;
 	  case SCHEME_EVAL_GLOBAL:
@@ -3673,7 +3673,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  c = lv->count;
 
 	  i = lv->position;
-	  ab = lv->autobox;
+	  ab = SCHEME_LET_AUTOBOX(lv);
 	  value = lv->value;
 	  obj = lv->body;
 
@@ -3735,7 +3735,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  PUSH_RUNSTACK(p, RUNSTACK, c);
 	  RUNSTACK_CHANGED();
 
-	  if (lv->autobox) {
+	  if (SCHEME_LET_AUTOBOX(lv)) {
 	    Scheme_Object **stack = RUNSTACK;
 
 	    UPDATE_THREAD_RSPTR_FOR_GC();
@@ -3773,12 +3773,12 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  /* Close them: */
 	  i = l->count;
 	  while (i--) {
-	    GC_CAN_IGNORE Scheme_Closed_Compiled_Procedure *closure;
-	    GC_CAN_IGNORE Scheme_Closure_Compilation_Data *data;
+	    GC_CAN_IGNORE Scheme_Closure *closure;
+	    GC_CAN_IGNORE Scheme_Closure_Data *data;
 	    int j;
 
-	    closure = (Scheme_Closed_Compiled_Procedure *)stack[i];
-	    data = (Scheme_Closure_Compilation_Data *)a[i];
+	    closure = (Scheme_Closure *)stack[i];
+	    data = (Scheme_Closure_Data *)a[i];
 
 	    map = data->closure_map;
 	    j = data->closure_size;
@@ -3801,7 +3801,7 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  PUSH_RUNSTACK(p, RUNSTACK, 1);
 	  RUNSTACK_CHANGED();
 
-	  switch (lo->eval_type) {
+	  switch (SCHEME_LET_EVAL_TYPE(lo)) {
 	  case SCHEME_EVAL_CONSTANT:
 	    RUNSTACK[0] = lo->value;
 	    break;
@@ -4749,7 +4749,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack,
     break;
   case scheme_unclosed_procedure_type:
     {
-      Scheme_Closure_Compilation_Data *data = (Scheme_Closure_Compilation_Data *)expr;
+      Scheme_Closure_Data *data = (Scheme_Closure_Data *)expr;
       int i, cnt, q, p, sz, base;
       mzshort *map;
       char *new_stack;
@@ -4794,13 +4794,13 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack,
 
       for (i = 0; i < c; i++, p++) {
 	if ((q < 0) 
-	    || (lv->autobox && ((p >= depth)
-				|| (stack[p] != VALID_BOX)))
-	    || (!lv->autobox && ((p >= letlimit)
-				 || ((stack[p] != VALID_VAL) && (stack[p] != VALID_NOT)))))
+	    || (SCHEME_LET_AUTOBOX(lv) && ((p >= depth)
+					   || (stack[p] != VALID_BOX)))
+	    || (!SCHEME_LET_AUTOBOX(lv) && ((p >= letlimit)
+					    || ((stack[p] != VALID_VAL) && (stack[p] != VALID_NOT)))))
 	  scheme_ill_formed_code(port);
 
-	if (!lv->autobox) {
+	if (!SCHEME_LET_AUTOBOX(lv)) {
 	  stack[p] = VALID_VAL;
 
 	  /* Check for wrappers on the RHS that box the `i'th result: */
@@ -4831,7 +4831,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack,
       if ((c < 0) || (c > delta))
 	scheme_ill_formed_code(port);
 
-      if (lv->autobox) {
+      if (SCHEME_LET_AUTOBOX(lv)) {
 	for (i = 0; i < c; i++) {
 	  stack[--delta] = VALID_BOX;
 	}
@@ -4891,7 +4891,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack,
   default:
     /* All values are definitely ok, except pre-closed closures: */
     if (SAME_TYPE(type, scheme_closure_type)) {
-      expr = SCHEME_COMPILED_CLOS_CODE(expr);
+      expr = (Scheme_Object *)SCHEME_COMPILED_CLOS_CODE(expr);
       goto top;
     }
     break;
@@ -4989,7 +4989,7 @@ static Scheme_Object *read_with_cont_mark(Scheme_Object *obj)
     return NULL; /* bad .zo */
 
   wcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
-  wcm->type = scheme_with_cont_mark_type;
+  wcm->so.type = scheme_with_cont_mark_type;
   wcm->key = SCHEME_CAR(obj);
   wcm->val = SCHEME_CADR(obj);
   wcm->body = SCHEME_CDR(SCHEME_CDR(obj));

@@ -286,8 +286,8 @@ make_a_symbol(const char *name, unsigned int len, int kind)
 
   sym = (Scheme_Symbol *)scheme_malloc_atomic_tagged(sizeof(Scheme_Symbol) + len - 3);
 
-  sym->type = scheme_symbol_type;
-  sym->keyex = kind;
+  sym->iso.so.type = scheme_symbol_type;
+  MZ_OPT_HASH_KEY(&sym->iso) = kind;
   sym->len = len;
   memcpy(sym->s, name, len);
   sym->s[len] = 0;

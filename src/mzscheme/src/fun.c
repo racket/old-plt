@@ -401,14 +401,14 @@ scheme_make_prim_w_everything(Scheme_Prim *fun, int eternal,
     prim = (Scheme_Primitive_Proc *)scheme_malloc_eternal_tagged(size);
   else
     prim = (Scheme_Primitive_Proc *)scheme_malloc_tagged(size);
-  prim->type = scheme_prim_type;
+  prim->pp.so.type = scheme_prim_type;
   SCHEME_PRIM(prim) = fun;
   prim->name = name;
   prim->mina = mina;
   prim->maxa = maxa;
-  prim->flags = ((folding ? SCHEME_PRIM_IS_FOLDING : 0)
-		 | (scheme_defining_primitives ? SCHEME_PRIM_IS_PRIMITIVE : 0)
-		 | (hasr ? SCHEME_PRIM_IS_MULTI_RESULT : 0));
+  prim->pp.flags = ((folding ? SCHEME_PRIM_IS_FOLDING : 0)
+		    | (scheme_defining_primitives ? SCHEME_PRIM_IS_PRIMITIVE : 0)
+		    | (hasr ? SCHEME_PRIM_IS_MULTI_RESULT : 0));
 
   if (hasr) {
     ((Scheme_Prim_W_Result_Arity *)prim)->minr = minr;
@@ -468,15 +468,15 @@ scheme_make_closed_prim_w_everything(Scheme_Closed_Prim *fun,
 
   prim = (Scheme_Closed_Primitive_Proc *)scheme_malloc_tagged(size);
 
-  prim->type = scheme_closed_prim_type;
+  prim->pp.so.type = scheme_closed_prim_type;
   SCHEME_CLSD_PRIM(prim) = fun;
   SCHEME_CLSD_PRIM_DATA(prim) = data;
   prim->name = name;
   prim->mina = mina;
   prim->maxa = maxa;
-  prim->flags = ((folding ? SCHEME_PRIM_IS_FOLDING : 0)
-		 | (scheme_defining_primitives ? SCHEME_PRIM_IS_PRIMITIVE : 0)
-		 | (hasr ? SCHEME_PRIM_IS_MULTI_RESULT : 0));
+  prim->pp.flags = ((folding ? SCHEME_PRIM_IS_FOLDING : 0)
+		    | (scheme_defining_primitives ? SCHEME_PRIM_IS_PRIMITIVE : 0)
+		    | (hasr ? SCHEME_PRIM_IS_MULTI_RESULT : 0));
 
   if (hasr) {
     ((Scheme_Closed_Prim_W_Result_Arity *)prim)->minr = minr;
@@ -512,9 +512,9 @@ scheme_make_closed_prim(Scheme_Closed_Prim *fun, void *data)
 void scheme_prim_is_method(Scheme_Object *o)
 {
   if (SCHEME_CLSD_PRIMP(o))
-    ((Scheme_Closed_Primitive_Proc *)o)->flags |= SCHEME_PRIM_IS_METHOD;
+    ((Scheme_Closed_Primitive_Proc *)o)->pp.flags |= SCHEME_PRIM_IS_METHOD;
   else
-    ((Scheme_Primitive_Proc *)o)->flags |= SCHEME_PRIM_IS_METHOD;
+    ((Scheme_Primitive_Proc *)o)->pp.flags |= SCHEME_PRIM_IS_METHOD;
 }
 
 int scheme_has_method_property(Scheme_Object *code)
@@ -532,22 +532,22 @@ scheme_make_closure(Scheme_Thread *p, Scheme_Object *code, int close)
         time; note that the byte-code marshaller in print.c can handle
         empty closures for that reason). */
 {
-  Scheme_Closure_Compilation_Data *data;
-  Scheme_Closed_Compiled_Procedure *closure;
+  Scheme_Closure_Data *data;
+  Scheme_Closure *closure;
   Scheme_Object **runstack, **dest;
   mzshort *map;
   int i;
 
-  data = (Scheme_Closure_Compilation_Data *)code;
+  data = (Scheme_Closure_Data *)code;
 
   i = data->closure_size;
 
-  closure = (Scheme_Closed_Compiled_Procedure *)
-    scheme_malloc_tagged(sizeof(Scheme_Closed_Compiled_Procedure)
+  closure = (Scheme_Closure *)
+    scheme_malloc_tagged(sizeof(Scheme_Closure)
 			 + (i - 1) * sizeof(Scheme_Object *));
 
-  closure->type = scheme_closure_type;
-  SCHEME_COMPILED_CLOS_CODE(closure) = code;
+  closure->so.type = scheme_closure_type;
+  SCHEME_COMPILED_CLOS_CODE(closure) = data;
 
 #ifdef MZ_PRECISE_GC
   closure->closure_size = i; /* needed for getting the object's size in bytes */
@@ -585,15 +585,15 @@ typedef struct {
 Scheme_Object *
 scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
 {
-  Scheme_Closure_Compilation_Data *data;
+  Scheme_Closure_Data *data;
   int i, closure_size, offset;
   mzshort *oldpos, *stx_oldpos, *closure_map;
   Closure_Info *cl;
   Resolve_Info *new_info;
 
-  data = (Scheme_Closure_Compilation_Data *)_data;
+  data = (Scheme_Closure_Data *)_data;
   cl = (Closure_Info *)data->closure_map;
-  data->type = scheme_unclosed_procedure_type;
+  data->iso.so.type = scheme_unclosed_procedure_type;
 
   /* Set local_flags: */
   for (i = 0; i < data->num_params; i++) {
@@ -681,7 +681,7 @@ scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_Info *info)
   }
 
   if (SCHEME_TYPE(data->code) > _scheme_compiled_values_types_)
-    data->flags |= CLOS_FOLDABLE;
+    SCHEME_CLOSURE_DATA_FLAGS(data) |= CLOS_FOLDABLE;
 
   if (!data->closure_size)
     /* If the closure is empty, go ahead and finalize closure */
@@ -731,7 +731,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
      /* Compiles a `lambda' expression */
 {
   Scheme_Object *allparams, *params, *forms, *param, *name;
-  Scheme_Closure_Compilation_Data *data;
+  Scheme_Closure_Data *data;
   Scheme_Compile_Info lam;
   Scheme_Comp_Env *frame;
   Closure_Info *cl;
@@ -739,9 +739,9 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   long num_params;
   mzshort dcs, *dcm;
 
-  data  = MALLOC_ONE_TAGGED(Scheme_Closure_Compilation_Data);
+  data  = MALLOC_ONE_TAGGED(Scheme_Closure_Data);
 
-  data->type = scheme_compiled_unclosed_procedure_type;
+  data->iso.so.type = scheme_compiled_unclosed_procedure_type;
 
   params = SCHEME_STX_CDR(code);
   params = SCHEME_STX_CAR(params);
@@ -751,9 +751,9 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   for (; SCHEME_STX_PAIRP(params); params = SCHEME_STX_CDR(params)) {
     num_params++;
   }
-  data->flags = 0;
+  SCHEME_CLOSURE_DATA_FLAGS(data) = 0;
   if (!SCHEME_STX_NULLP(params)) {
-    data->flags |= CLOS_HAS_REST;
+    SCHEME_CLOSURE_DATA_FLAGS(data) |= CLOS_HAS_REST;
     num_params++;
   }
   data->num_params = num_params;
@@ -761,7 +761,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
     /* scheme_too_deep(code); */
   }
   if ((data->num_params > 0) && scheme_has_method_property(code))
-    data->flags |= CLOS_IS_METHOD;
+    SCHEME_CLOSURE_DATA_FLAGS(data) |= CLOS_IS_METHOD;
 
   forms = SCHEME_STX_CDR(code);
   forms = SCHEME_STX_CDR(forms);
@@ -873,7 +873,8 @@ void *top_level_do(void *(*k)(void), int eb, void *sj_start)
   mz_jmp_buf save, oversave;
   Scheme_Stack_State envss;
   Scheme_Comp_Env * volatile save_current_local_env;
-  Scheme_Object * volatile save_mark, *  volatile save_name, * volatile save_list_stack;
+  Scheme_Object * volatile save_mark, *  volatile save_name;
+  Scheme_Simple_Object * volatile save_list_stack;
   Scheme_Thread * volatile p = scheme_current_thread;
   volatile int save_suspend_break;
   int set_overflow;
@@ -1439,7 +1440,7 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
     maxa = -1;
   } else if (type == scheme_case_closure_type) {
     Scheme_Case_Lambda *seq;
-    Scheme_Closure_Compilation_Data *data;
+    Scheme_Closure_Data *data;
     int i;
     Scheme_Object *first, *last = NULL, *v;
 
@@ -1450,9 +1451,9 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
 
     seq = (Scheme_Case_Lambda *)p;
     for (i = 0; i < seq->count; i++) {
-      data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(seq->array[i]);
+      data = SCHEME_COMPILED_CLOS_CODE(seq->array[i]);
       mina = maxa = data->num_params;
-      if (data->flags & CLOS_HAS_REST) {
+      if (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST) {
 	--mina;
 	maxa = -1;
       }
@@ -1490,11 +1491,11 @@ static Scheme_Object *get_or_check_arity(Scheme_Object *p, long a)
     SCHEME_USE_FUEL(1);
     goto top;
   } else {
-    Scheme_Closure_Compilation_Data *data;
+    Scheme_Closure_Data *data;
 
-    data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(p);
+    data = SCHEME_COMPILED_CLOS_CODE(p);
     mina = maxa = data->num_params;
-    if (data->flags & CLOS_HAS_REST) {
+    if (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST) {
       --mina;
       maxa = -1;
     }
@@ -1573,9 +1574,9 @@ static Scheme_Object *primitive_p(int argc, Scheme_Object *argv[])
   int isprim;
 
   if (SCHEME_PRIMP(argv[0]))
-    isprim = (((Scheme_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
+    isprim = (((Scheme_Primitive_Proc *)argv[0])->pp.flags & SCHEME_PRIM_IS_PRIMITIVE);
   else if (SCHEME_CLSD_PRIMP(argv[0]))
-    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
+    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->pp.flags & SCHEME_PRIM_IS_PRIMITIVE);
   else
     isprim = 0;
 
@@ -1587,7 +1588,7 @@ static Scheme_Object *primitive_closure_p(int argc, Scheme_Object *argv[])
   int isprim;
 
   if (SCHEME_CLSD_PRIMP(argv[0]))
-    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->flags & SCHEME_PRIM_IS_PRIMITIVE);
+    isprim = (((Scheme_Closed_Primitive_Proc *)argv[0])->pp.flags & SCHEME_PRIM_IS_PRIMITIVE);
   else
     isprim = 0;
 
@@ -1677,9 +1678,9 @@ const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error)
       goto top;
     }
   } else {
-    Scheme_Closure_Compilation_Data *data;
+    Scheme_Closure_Data *data;
 
-    data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(p);
+    data = SCHEME_COMPILED_CLOS_CODE(p);
     if (data->name) {
       if (for_error < 0) {
 	s = (char *)data->name;
@@ -1713,14 +1714,14 @@ static Scheme_Object *primitive_result_arity(int argc, Scheme_Object *argv[])
   o = argv[0];
 
   if (SCHEME_PRIMP(o)
-      && (((Scheme_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE)) {
-    if (((Scheme_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_MULTI_RESULT) {
+      && (((Scheme_Primitive_Proc *)o)->pp.flags & SCHEME_PRIM_IS_PRIMITIVE)) {
+    if (((Scheme_Primitive_Proc *)o)->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT) {
       Scheme_Prim_W_Result_Arity *p = (Scheme_Prim_W_Result_Arity *)o;
       return scheme_make_arity(p->minr, p->maxr);
     }
   } else if (SCHEME_CLSD_PRIMP(o)
-	     && (((Scheme_Closed_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_PRIMITIVE)) {
-    if (((Scheme_Closed_Primitive_Proc *)o)->flags & SCHEME_PRIM_IS_MULTI_RESULT) {
+	     && (((Scheme_Closed_Primitive_Proc *)o)->pp.flags & SCHEME_PRIM_IS_PRIMITIVE)) {
+    if (((Scheme_Closed_Primitive_Proc *)o)->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT) {
       Scheme_Closed_Prim_W_Result_Arity *p = (Scheme_Closed_Prim_W_Result_Arity *)o;
       return scheme_make_arity(p->minr, p->maxr);
     }
@@ -2100,7 +2101,7 @@ scheme_call_ec (int argc, Scheme_Object *argv[])
   mark_key = scheme_make_pair(scheme_false, scheme_false);
 
   cont = MALLOC_ONE_TAGGED(Scheme_Escaping_Cont);
-  cont->type = scheme_escaping_cont_type;
+  cont->so.type = scheme_escaping_cont_type;
   cont->mark_key = mark_key;
   cont->suspend_break = p1->suspend_break;
   copy_cjs(&cont->cjs, &p1->cjs);
@@ -2299,7 +2300,7 @@ call_cc (int argc, Scheme_Object *argv[])
 			  0, argc, argv);
 
   cont = MALLOC_ONE_TAGGED(Scheme_Cont);
-  cont->type = scheme_cont_type;
+  cont->so.type = scheme_cont_type;
   scheme_init_jmpup_buf(&cont->buf);
   cont->ok = p->cc_ok;
   cont->dw = p->dw;
@@ -2586,7 +2587,7 @@ static Scheme_Object *continuation_marks(Scheme_Thread *p,
     return (Scheme_Object *)first;
 
   set = MALLOC_ONE_TAGGED(Scheme_Cont_Mark_Set);
-  set->type = scheme_cont_mark_set_type;
+  set->so.type = scheme_cont_mark_set_type;
   set->chain = first;
   set->cmpos = cmpos;
 
@@ -3448,11 +3449,11 @@ scheme_default_prompt_read_handler(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *write_compiled_closure(Scheme_Object *obj)
 {
-  Scheme_Closure_Compilation_Data *data;
+  Scheme_Closure_Data *data;
 
-  data = (Scheme_Closure_Compilation_Data *)obj;
+  data = (Scheme_Closure_Data *)obj;
 
-  return CONS(scheme_make_integer(data->flags),
+  return CONS(scheme_make_integer(SCHEME_CLOSURE_DATA_FLAGS(data)),
 	      CONS(scheme_make_integer(data->num_params),
 		   CONS(scheme_make_integer(data->max_let_depth),
 			CONS(data->name ? data->name : scheme_null,
@@ -3463,20 +3464,20 @@ static Scheme_Object *write_compiled_closure(Scheme_Object *obj)
 
 static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
 {
-  Scheme_Closure_Compilation_Data *data;
+  Scheme_Closure_Data *data;
   Scheme_Object *v;
 
 #define BAD_CC "bad compiled closure"
 #define X_SCHEME_ASSERT(x, y)
 
-  data  = (Scheme_Closure_Compilation_Data *)scheme_malloc_tagged(sizeof(Scheme_Closure_Compilation_Data));
+  data  = (Scheme_Closure_Data *)scheme_malloc_tagged(sizeof(Scheme_Closure_Data));
 
-  data->type = scheme_unclosed_procedure_type;
+  data->iso.so.type = scheme_unclosed_procedure_type;
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   v = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
-  data->flags = (short)(SCHEME_INT_VAL(v));
+  SCHEME_CLOSURE_DATA_FLAGS(data) = (short)(SCHEME_INT_VAL(v));
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   v = SCHEME_CAR(obj);
@@ -3505,11 +3506,11 @@ static Scheme_Object *read_compiled_closure(Scheme_Object *obj)
   data->closure_size = SCHEME_SVEC_LEN(v);
   data->closure_map = SCHEME_SVEC_VEC(v);
 
-  if (data->flags & CLOS_FOLDABLE)
-    data->flags -= CLOS_FOLDABLE;
+  if (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_FOLDABLE)
+    SCHEME_CLOSURE_DATA_FLAGS(data) -= CLOS_FOLDABLE;
 
   if (SCHEME_TYPE(data->code) > _scheme_values_types_)
-    data->flags |= CLOS_FOLDABLE;
+    SCHEME_CLOSURE_DATA_FLAGS(data) |= CLOS_FOLDABLE;
 
   if (!data->closure_size)
     /* If the closure is empty, go ahead and finalize */

@@ -978,7 +978,7 @@ with_cont_mark_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
   scheme_merge_compile_recs(rec, drec, recs, 3);
 
   wcm = MALLOC_ONE_TAGGED(Scheme_With_Continuation_Mark);
-  wcm->type = scheme_with_cont_mark_type;
+  wcm->so.type = scheme_with_cont_mark_type;
   wcm->key = key;
   wcm->val = val;
   wcm->body = expr;
@@ -1083,12 +1083,12 @@ set_resolve(Scheme_Object *data, Resolve_Info *rslv)
     cv = scheme_compiled_void();
 
     lv = MALLOC_ONE_TAGGED(Scheme_Let_Value);
-    lv->type = scheme_let_value_type;
+    lv->iso.so.type = scheme_let_value_type;
     lv->body = cv;
     lv->count = 1;
     li = scheme_resolve_info_lookup(rslv, SCHEME_LOCAL_POS(var), &flags);
     lv->position = li;
-    lv->autobox = (flags & SCHEME_INFO_BOXED);
+    SCHEME_LET_AUTOBOX(lv) = (flags & SCHEME_INFO_BOXED);
     lv->value = val;
 
     if (!(flags & SCHEME_INFO_BOXED))
@@ -1263,7 +1263,7 @@ case_lambda_execute(Scheme_Object *expr)
   seqout = (Scheme_Case_Lambda *)
     scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
 			 + (seqin->count - 1) * sizeof(Scheme_Object *));
-  seqout->type = scheme_case_closure_type;
+  seqout->so.type = scheme_case_closure_type;
   seqout->count = seqin->count;
   seqout->name = seqin->name;
 
@@ -1407,7 +1407,7 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   cl = (Scheme_Case_Lambda *)
     scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
 			 + (count - 1) * sizeof(Scheme_Object *));
-  cl->type = scheme_case_lambda_sequence_type;
+  cl->so.type = scheme_case_lambda_sequence_type;
   cl->count = count;
   cl->name = name;
 
@@ -1426,16 +1426,16 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
   scheme_merge_compile_recs(rec, drec, recs, count);
 
   if (scheme_has_method_property(orig_form)) {
-    Scheme_Closure_Compilation_Data *data;
+    Scheme_Closure_Data *data;
     /* Make sure no branch has 0 arguments: */
     for (i = 0; i < count; i++) {
-      data = (Scheme_Closure_Compilation_Data *)cl->array[i];
+      data = (Scheme_Closure_Data *)cl->array[i];
       if (!data->num_params)
 	break;
     }
     if (i >= count) {
-      data = (Scheme_Closure_Compilation_Data *)cl->array[0];
-      data->flags |= CLOS_IS_METHOD;
+      data = (Scheme_Closure_Data *)cl->array[0];
+      SCHEME_CLOSURE_DATA_FLAGS(data) |= CLOS_IS_METHOD;
     }
   }
 
@@ -1593,7 +1593,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
   /* Special case: (let ([x E]) x) where E is lambda, case-lambda,
      etc.  (If we allowed arbitrary E here, it would affect the
      tailness of E.) */
-  if (!head->recursive && (head->count == 1) && (head->num_clauses == 1)) {
+  if (!SCHEME_LET_RECURSIVE(head) && (head->count == 1) && (head->num_clauses == 1)) {
     clv = (Scheme_Compiled_Let_Value *)head->body;
     if (SAME_TYPE(SCHEME_TYPE(clv->body), scheme_local_type)
 	&& (((Scheme_Local *)clv->body)->position == 0)) {
@@ -1616,7 +1616,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
   }
 
   recbox = 0;
-  if (head->recursive) {
+  if (SCHEME_LET_RECURSIVE(head)) {
     /* Do we need to box vars in a letrec? */
     clv = (Scheme_Compiled_Let_Value *)head->body;
     for (i = head->num_clauses; i--; clv = (Scheme_Compiled_Let_Value *)clv->body) {
@@ -1708,11 +1708,11 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
 	  int et;
 
 	  lo = MALLOC_ONE_TAGGED(Scheme_Let_One);
-	  lo->type = scheme_let_one_type;
+	  lo->iso.so.type = scheme_let_one_type;
 	  lo->value = le;
 
 	  et = scheme_get_eval_type(lo->value);
-	  lo->eval_type = et;
+	  SCHEME_LET_EVAL_TYPE(lo) = et;
 
 	  if (last)
 	    ((Scheme_Let_One *)last)->body = (Scheme_Object *)lo;
@@ -1788,7 +1788,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
     if (SAME_TYPE(SCHEME_TYPE(body), scheme_let_void_type)) {
       Scheme_Let_Void *lvd = (Scheme_Let_Void *)body;
       
-      if (!!lvd->autobox == !!recbox) {
+      if (!!SCHEME_LET_AUTOBOX(lvd) == !!recbox) {
 	/* Do collapse: */
 	extra_alloc = lvd->count;
 	body = lvd->body;
@@ -1801,7 +1801,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
   if (num_rec_procs) {
     Scheme_Object **sa;
     letrec = MALLOC_ONE_TAGGED(Scheme_Letrec);
-    letrec->type = scheme_letrec_type;
+    letrec->so.type = scheme_letrec_type;
     letrec->count = num_rec_procs;
     sa = MALLOC_N(Scheme_Object *, num_rec_procs);
     letrec->procs = sa;
@@ -1828,7 +1828,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
 	first = (Scheme_Object *)lv;
       last = lv;
       
-      lv->type = scheme_let_value_type;
+      lv->iso.so.type = scheme_let_value_type;
       lv->value = expr;
       if (clv->count) {
 	int li;
@@ -1837,7 +1837,7 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
       } else
 	lv->position = 0;
       lv->count = clv->count;
-      lv->autobox = recbox;
+      SCHEME_LET_AUTOBOX(lv) = recbox;
 
       for (j = lv->count; j--; ) {
 	if (!recbox
@@ -1868,10 +1868,10 @@ scheme_resolve_lets(Scheme_Object *form, Resolve_Info *info)
     Scheme_Let_Void *lvd;
 
     lvd = MALLOC_ONE_TAGGED(Scheme_Let_Void);
-    lvd->type = scheme_let_void_type;
+    lvd->iso.so.type = scheme_let_void_type;
     lvd->body = first;
     lvd->count = head->count + extra_alloc;
-    lvd->autobox = recbox;
+    SCHEME_LET_AUTOBOX(lvd) = recbox;
 
     first = (Scheme_Object *)lvd;
   }
@@ -2020,7 +2020,7 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
     }
 
     lv = MALLOC_ONE_TAGGED(Scheme_Compiled_Let_Value);
-    lv->type = scheme_compiled_let_value_type;
+    lv->so.type = scheme_compiled_let_value_type;
     if (!last)
       first = (Scheme_Object *)lv;
     else
@@ -2092,11 +2092,11 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *origenv, char *formname,
     Scheme_Let_Header *head;
     
     head = MALLOC_ONE_TAGGED(Scheme_Let_Header);
-    head->type = scheme_compiled_let_void_type;
+    head->iso.so.type = scheme_compiled_let_void_type;
     head->body = first;
     head->count = num_bindings;
     head->num_clauses = num_clauses;
-    head->recursive = recursive;
+    SCHEME_LET_RECURSIVE(head) = recursive;
 
     first = (Scheme_Object *)head;
   }
@@ -2932,7 +2932,7 @@ static void define_syntaxes_validate(Scheme_Object *data, Mz_CPort *port,
   data = SCHEME_CDDR(data);
   if (!SCHEME_PAIRP(data)
       || !SCHEME_PAIRP(SCHEME_CDR(data))
-      || !SAME_TYPE(rp->type, scheme_resolve_prefix_type)
+      || !SAME_TYPE(rp->so.type, scheme_resolve_prefix_type)
       || (sdepth < 0))
     scheme_ill_formed_code(port);
 
@@ -3467,7 +3467,7 @@ static Scheme_Object *write_let_value(Scheme_Object *obj)
 
   return cons(scheme_make_integer(lv->count),
 	      cons(scheme_make_integer(lv->position),
-		   cons(lv->autobox ? scheme_true : scheme_false,
+		   cons(SCHEME_LET_AUTOBOX(lv) ? scheme_true : scheme_false,
 			cons(scheme_protect_quote(lv->value), 
 			     scheme_protect_quote(lv->body)))));
 }
@@ -3477,7 +3477,7 @@ static Scheme_Object *read_let_value(Scheme_Object *obj)
   Scheme_Let_Value *lv;
  
   lv = (Scheme_Let_Value *)scheme_malloc_tagged(sizeof(Scheme_Let_Value));
-  lv->type = scheme_let_value_type;
+  lv->iso.so.type = scheme_let_value_type;
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   lv->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
@@ -3486,7 +3486,7 @@ static Scheme_Object *read_let_value(Scheme_Object *obj)
   lv->position = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
   if (!SCHEME_PAIRP(obj)) return NULL;
-  lv->autobox = SCHEME_TRUEP(SCHEME_CAR(obj));
+  SCHEME_LET_AUTOBOX(lv) = SCHEME_TRUEP(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
   if (!SCHEME_PAIRP(obj)) return NULL;
   lv->value = SCHEME_CAR(obj);
@@ -3502,7 +3502,7 @@ static Scheme_Object *write_let_void(Scheme_Object *obj)
   lv = (Scheme_Let_Void *)obj;
 
   return cons(scheme_make_integer(lv->count), 
-	      cons(lv->autobox ? scheme_true : scheme_false,
+	      cons(SCHEME_LET_AUTOBOX(lv) ? scheme_true : scheme_false,
 		   scheme_protect_quote(lv->body)));
 }
 
@@ -3511,13 +3511,13 @@ static Scheme_Object *read_let_void(Scheme_Object *obj)
   Scheme_Let_Void *lv;
  
   lv = (Scheme_Let_Void *)scheme_malloc_tagged(sizeof(Scheme_Let_Void));
-  lv->type = scheme_let_void_type;
-
+  lv->iso.so.type = scheme_let_void_type;
+  
   if (!SCHEME_PAIRP(obj)) return NULL;
   lv->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
   if (!SCHEME_PAIRP(obj)) return NULL;
-  lv->autobox = SCHEME_TRUEP(SCHEME_CAR(obj));
+  SCHEME_LET_AUTOBOX(lv) = SCHEME_TRUEP(SCHEME_CAR(obj));
   lv->body = SCHEME_CDR(obj);
 
   return (Scheme_Object *)lv;
@@ -3556,7 +3556,7 @@ static Scheme_Object *read_letrec(Scheme_Object *obj)
 
   lr = MALLOC_ONE_TAGGED(Scheme_Letrec);
 
-  lr->type = scheme_letrec_type;
+  lr->so.type = scheme_letrec_type;
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   c = lr->count = SCHEME_INT_VAL(SCHEME_CAR(obj));
@@ -3591,7 +3591,7 @@ static Scheme_Object *read_top(Scheme_Object *obj)
   Scheme_Compilation_Top *top;
 
   top = MALLOC_ONE_TAGGED(Scheme_Compilation_Top);
-  top->type = scheme_compilation_top_type;
+  top->so.type = scheme_compilation_top_type;
   if (!SCHEME_PAIRP(obj)) return NULL;
   top->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
@@ -3636,7 +3636,7 @@ static Scheme_Object *read_case_lambda(Scheme_Object *obj)
     scheme_malloc_tagged(sizeof(Scheme_Case_Lambda)
 			 + (count - 1) * sizeof(Scheme_Object *));
 
-  cl->type = scheme_case_lambda_sequence_type;
+  cl->so.type = scheme_case_lambda_sequence_type;
   cl->count = count;
   cl->name = SCHEME_CAR(obj);
   if (SCHEME_NULLP(cl->name))

@@ -1291,10 +1291,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
   else if (SCHEME_CLOSUREP(obj)) 
     {
       if (compact) {
-	Scheme_Closed_Compiled_Procedure *closure = (Scheme_Closed_Compiled_Procedure *)obj;
+	Scheme_Closure *closure = (Scheme_Closure *)obj;
 	if (ZERO_SIZED(closure)) {
 	  /* Print original code: */
-	  compact = print(SCHEME_COMPILED_CLOS_CODE(closure), notdisplay, compact, ht, symtab, rnht, p);
+	  compact = print((Scheme_Object *)SCHEME_COMPILED_CLOS_CODE(closure), notdisplay, compact, ht, symtab, rnht, p);
 	} else
 	  cannot_print(p, notdisplay, obj, ht);
       } else {

@@ -294,8 +294,7 @@ extern int scheme_overflow_count;
 #define MZTHREADELEM(p, x) scheme_ ## x
 
 struct Scheme_Custodian {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   short shut_down;
   int count, alloc;
   Scheme_Object ***boxes;
@@ -315,8 +314,7 @@ struct Scheme_Custodian {
 Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_Func f);
 
 typedef struct Scheme_Security_Guard {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   struct Scheme_Security_Guard *parent;
   Scheme_Object *file_proc;    /* who-symbol path mode-symbol -> void */
   Scheme_Object *network_proc; /* who-symbol host-string-or-'listen port-k -> void */
@@ -351,8 +349,7 @@ typedef struct {
 } Scheme_Parameterization;
 
 struct Scheme_Config {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *key;
   Scheme_Object *cell;
   struct Scheme_Config *next;
@@ -398,15 +395,13 @@ void scheme_require_from_original_env(Scheme_Env *env, int syntax_only);
 /*========================================================================*/
 
 typedef struct Scheme_Inspector {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   int depth;
   struct Scheme_Inspector *superior;
 } Scheme_Inspector;
 
 typedef struct Scheme_Struct_Property {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *name; /* a symbol */
   Scheme_Object *guard; /* NULL or a procedure */
 } Scheme_Struct_Property;
@@ -415,8 +410,7 @@ int scheme_is_subinspector(Scheme_Object *i, Scheme_Object *sup);
 int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos);
 
 typedef struct Scheme_Struct_Type {
-  Scheme_Type type; /* scheme_structure_type or scheme_proc_struct_type */
-  MZ_HASH_KEY_EX
+  Scheme_Object so; /* scheme_structure_type or scheme_proc_struct_type */
   mzshort num_slots, num_islots;
   mzshort name_pos;
 
@@ -440,13 +434,12 @@ typedef struct Scheme_Struct_Type {
 
 typedef struct Scheme_Structure
 {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Struct_Type *stype;
   Scheme_Object *slots[1];
 } Scheme_Structure;
 
-#define SCHEME_STRUCT_TYPE(o) (((Scheme_Structure *) mzALIAS o)->stype)
+#define SCHEME_STRUCT_TYPE(o) (((Scheme_Structure *)o)->stype)
 
 #define SCHEME_STRUCT_NUM_SLOTS(o) (SCHEME_STRUCT_TYPE(o)->num_slots)
 #define SCHEME_STRUCT_NAME_SYM(o) (SCHEME_STRUCT_TYPE(o)->name)
@@ -468,7 +461,7 @@ Scheme_Object *scheme_extract_struct_procedure(Scheme_Object *obj, int num_rands
 
 Scheme_Object *scheme_proc_struct_name_source(Scheme_Object *a);
 
-#define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *) mzALIAS obj)->stype->inspector)
+#define SCHEME_STRUCT_INSPECTOR(obj) (((Scheme_Structure *)obj)->stype->inspector)
 
 extern Scheme_Object *scheme_source_property;
 
@@ -486,8 +479,7 @@ typedef struct Scheme_Stx_Srcloc {
 #define STX_SUBSTX_FLAG 0x2
 
 typedef struct Scheme_Stx {
-  Scheme_Type type;
-  short hash_code; /* Precise GC; 0x1 and 0x2 used */
+  Scheme_Inclhash_Object iso; /* 0x1 and 0x2 of keyex used */
   Scheme_Object *val;
   Scheme_Stx_Srcloc *srcloc;
   Scheme_Object *wraps;
@@ -499,7 +491,7 @@ typedef struct Scheme_Stx {
 } Scheme_Stx;
 
 typedef struct Scheme_Stx_Offset {
-  Scheme_Type type;
+  Scheme_Object so;
   long line, col, pos;
   Scheme_Object *src;
 } Scheme_Stx_Offset;
@@ -585,7 +577,7 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
 
 Scheme_Object *scheme_stx_strip_module_context(Scheme_Object *stx);
 
-#define SCHEME_STX_VAL(s) ((Scheme_Stx *) mzALIAS s)->val
+#define SCHEME_STX_VAL(s) ((Scheme_Stx *)s)->val
 
 #define SCHEME_STX_PAIRP(o) (SCHEME_PAIRP(o) || (SCHEME_STXP(o) && SCHEME_PAIRP(SCHEME_STX_VAL(o))))
 #define SCHEME_STX_SYMBOLP(o) (SCHEME_SYMBOLP(o) || (SCHEME_STXP(o) && SCHEME_SYMBOLP(SCHEME_STX_VAL(o))))
@@ -604,44 +596,43 @@ Scheme_Object *scheme_source_to_name(Scheme_Object *code);
 /*========================================================================*/
 
 typedef struct {
-  Scheme_Type type;
+  Scheme_Object so;
   mzshort num_args;
   Scheme_Object *args[1];
   /* After array of f & args, array of chars for eval type */
 } Scheme_App_Rec;
 
 typedef struct {
-  Scheme_Type type;
-  short flags;
+  Scheme_Inclhash_Object iso; /* keyex used for num_args */
   Scheme_Object *rator;
   Scheme_Object *rand;
 } Scheme_App2_Rec;
 
+#define SCHEME_APPN_FLAGS(app) MZ_OPT_HASH_KEY(&app->iso)
+
 typedef struct {
-  Scheme_Type type;
-  short flags;
+  Scheme_Inclhash_Object iso; /* keyex used for flags */
   Scheme_Object *rator;
   Scheme_Object *rand1;
   Scheme_Object *rand2;
 } Scheme_App3_Rec;
 
 typedef struct {
-  Scheme_Type type;
+  Scheme_Object so;
   Scheme_Object *test;
   Scheme_Object *tbranch;
   Scheme_Object *fbranch;
 } Scheme_Branch_Rec;
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   mzshort max_let_depth;
   Scheme_Object *code;
   struct Resolve_Prefix *prefix;
 } Scheme_Compilation_Top;
 
 typedef struct Scheme_Compiled_Let_Value {
-  Scheme_Type type;
+  Scheme_Object so;
   mzshort count;
   mzshort position;
   int *flags;
@@ -650,22 +641,23 @@ typedef struct Scheme_Compiled_Let_Value {
 } Scheme_Compiled_Let_Value;
 
 typedef struct Scheme_Let_Header {
-  Scheme_Type type;
-  short recursive;
+  Scheme_Inclhash_Object iso; /* keyex used for recursive */
   mzshort count;
   mzshort num_clauses;
   Scheme_Object *body;
 } Scheme_Let_Header;
 
+#define SCHEME_LET_RECURSIVE(lh) MZ_OPT_HASH_KEY(&lh->iso)
+
 typedef struct {
-  Scheme_Type type;
+  Scheme_Object so;
   Scheme_Object *key;
   Scheme_Object *val;
   Scheme_Object *body;
 } Scheme_With_Continuation_Mark;
 
 typedef struct Scheme_Local {
-  Scheme_Type type;
+  Scheme_Object so;
   mzshort position;
 #ifdef MZ_PRECISE_GC
 # ifdef MZSHORT_IS_SHORT
@@ -675,62 +667,62 @@ typedef struct Scheme_Local {
 #endif
 } Scheme_Local;
 
-#define SCHEME_LOCAL_POS(obj)    (((Scheme_Local *) mzALIAS (obj))->position)
+#define SCHEME_LOCAL_POS(obj)    (((Scheme_Local *)(obj))->position)
 
 typedef struct Scheme_Toplevel {
-  Scheme_Type type;
+  Scheme_Object so;
   mzshort depth;
   int position;
 } Scheme_Toplevel;
 
-#define SCHEME_TOPLEVEL_DEPTH(obj)    (((Scheme_Toplevel *) mzALIAS (obj))->depth)
-#define SCHEME_TOPLEVEL_POS(obj)    (((Scheme_Toplevel *) mzALIAS (obj))->position)
+#define SCHEME_TOPLEVEL_DEPTH(obj)    (((Scheme_Toplevel *)(obj))->depth)
+#define SCHEME_TOPLEVEL_POS(obj)    (((Scheme_Toplevel *)(obj))->position)
 
 typedef struct Scheme_Let_Value {
-  Scheme_Type type;
-  short autobox;
+  Scheme_Inclhash_Object iso; /* keyex used for autobox */
   mzshort count;
   mzshort position;
   Scheme_Object *value;
   Scheme_Object *body;
 } Scheme_Let_Value;
 
+#define SCHEME_LET_AUTOBOX(lh) MZ_OPT_HASH_KEY(&lh->iso)
+
 typedef struct Scheme_Let_One {
-  Scheme_Type type;
-  short eval_type;
+  Scheme_Inclhash_Object iso; /* keyex used for eval_type */
   Scheme_Object *value;
   Scheme_Object *body;
 } Scheme_Let_One;
 
+#define SCHEME_LET_EVAL_TYPE(lh) MZ_OPT_HASH_KEY(&lh->iso)
+
 typedef struct Scheme_Let_Void {
-  Scheme_Type type;
-  short autobox;
+  Scheme_Inclhash_Object iso; /* keyex used for autobox */
   mzshort count;
   Scheme_Object *body;
 } Scheme_Let_Void;
 
 typedef struct Scheme_Letrec {
-  Scheme_Type type;
+  Scheme_Object so;
   mzshort count;
   Scheme_Object **procs;
   Scheme_Object *body;
 } Scheme_Letrec;
 
 typedef struct {
-  Scheme_Type type;
+  Scheme_Object so;
   mzshort num_bindings;
   Scheme_Object *body;
 } Scheme_Let_Frame_Data;
 
 typedef struct {
-  Scheme_Type type;
+  Scheme_Object so;
   mzshort count;
   Scheme_Object *array[1];
 } Scheme_Sequence;
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   mzshort count;
   Scheme_Object *name; /* see note below */
   Scheme_Object *array[1];
@@ -797,8 +789,7 @@ typedef struct Scheme_Cont_Mark_Chain {
 } Scheme_Cont_Mark_Chain;
 
 typedef struct Scheme_Cont_Mark_Set {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   struct Scheme_Cont_Mark_Chain *chain;
   long cmpos;
 } Scheme_Cont_Mark_Set;
@@ -829,8 +820,7 @@ typedef struct Scheme_Dynamic_Wind {
 } Scheme_Dynamic_Wind;
 
 typedef struct Scheme_Cont {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *value;
   Scheme_Jumpup_Buf buf;
   long *ok;
@@ -853,8 +843,7 @@ typedef struct Scheme_Cont {
 } Scheme_Cont;
 
 typedef struct Scheme_Escaping_Cont {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Continuation_Jump_State cjs;
   Scheme_Object *mark_key;
   struct Scheme_Stack_State envss;
@@ -863,7 +852,7 @@ typedef struct Scheme_Escaping_Cont {
   int suspend_break;
 } Scheme_Escaping_Cont;
 
-#define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *) mzALIAS (obj))->f)
+#define SCHEME_CONT_F(obj) (((Scheme_Escaping_Cont *)(obj))->f)
 
 int scheme_escape_continuation_ok(Scheme_Object *);
 
@@ -905,8 +894,7 @@ extern unsigned long scheme_stack_boundary;
 /*========================================================================*/
 
 typedef struct Scheme_Channel_Waiter {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Thread *p;
   char in_line, picked;
   struct Scheme_Channel_Waiter *prev, *next;
@@ -916,22 +904,19 @@ typedef struct Scheme_Channel_Waiter {
 } Scheme_Channel_Waiter;
 
 typedef struct Scheme_Sema {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Channel_Waiter *first, *last;
   long value;
 } Scheme_Sema;
 
 typedef struct Scheme_Channel {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Channel_Waiter *put_first, *put_last;
   Scheme_Channel_Waiter *get_first, *get_last;
 } Scheme_Channel;
 
 typedef struct Scheme_Channel_Put {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Channel *ch;
   Scheme_Object *val;
 } Scheme_Channel_Put;
@@ -941,8 +926,7 @@ typedef struct Scheme_Channel_Put {
 #define SLEEP_BLOCKED 1
 
 typedef struct Waitable_Set {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
 
   int argc;
   Scheme_Object **argv; /* no waitable sets; nested sets get flattened */
@@ -976,8 +960,8 @@ void scheme_get_outof_line(Scheme_Channel_Waiter *ch_w);
 
 #ifdef MPW_C
 /* Optimizer bug! */
-# define scheme_exact_zero ((Scheme_Object *) mzALIAS 0x1)
-# define scheme_exact_one ((Scheme_Object *) mzALIAS 0x3)
+# define scheme_exact_zero ((Scheme_Object *)0x1)
+# define scheme_exact_one ((Scheme_Object *)0x3)
 #else
 # define scheme_exact_zero scheme_make_integer(0)
 # define scheme_exact_one scheme_make_integer(1)
@@ -992,20 +976,23 @@ typedef unsigned long bigdig;
 #endif
 
 typedef struct {
-  Scheme_Type type;
-#if MZ_PRECISE_GC
-  char pos;
-  char allocated_inline;
-#else
-  short pos;
-#endif
+  Scheme_Inclhash_Object iso;
   int len;
   bigdig *digits;
 } Scheme_Bignum;
 
-#define SCHEME_BIGPOS(b) (((Scheme_Bignum *) mzALIAS b)->pos)
-#define SCHEME_BIGLEN(b) (((Scheme_Bignum *) mzALIAS b)->len)
-#define SCHEME_BIGDIG(b) (((Scheme_Bignum *) mzALIAS b)->digits)
+#if MZ_PRECISE_GC
+# define SCHEME_BIGPOS(b) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) & 0x1)
+# define SCHEME_SET_BIGPOS(b, v) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) = v | SCHEME_BIGINLINE(b)
+# define SCHEME_BIGINLINE(b) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) & 0x2)
+# define SCHEME_SET_BIGINLINE(b, v) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso) = (v << 1) | SCHEME_BIGPOS(b)
+#else
+# define SCHEME_BIGPOS(b) MZ_OPT_HASH_KEY(&((Scheme_Bignum *)b)->iso)
+# define SCHEME_SET_BIGPOS(b, v) SCHEME_BIGPOS(b) = v
+#endif
+
+#define SCHEME_BIGLEN(b) (((Scheme_Bignum *)b)->len)
+#define SCHEME_BIGDIG(b) (((Scheme_Bignum *)b)->digits)
 
 typedef struct {
   Scheme_Bignum o;
@@ -1053,8 +1040,7 @@ float scheme_bignum_to_float_inf_info(const Scheme_Object *n, int just_use, int 
 /****** Rational numbers *******/
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *num;
   Scheme_Object *denom;
 } Scheme_Rational;
@@ -1090,16 +1076,15 @@ Scheme_Object *scheme_rational_sqrt(const Scheme_Object *n);
 /****** Complex numbers *******/
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *r;
   Scheme_Object *i;
 } Scheme_Complex;
 
 typedef Scheme_Complex Small_Complex;
 
-#define _scheme_complex_real_part(n) (((Scheme_Complex *) mzALIAS (n))->r)
-#define _scheme_complex_imaginary_part(n) (((Scheme_Complex *) mzALIAS (n))->i)
+#define _scheme_complex_real_part(n) (((Scheme_Complex *)(n))->r)
+#define _scheme_complex_imaginary_part(n) (((Scheme_Complex *)(n))->i)
 
 Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *space);
 Scheme_Object *scheme_real_to_complex(const Scheme_Object *n);
@@ -1184,7 +1169,7 @@ extern int scheme_is_nan(double);
 # endif
 #endif
 
-#define IZI_REAL_PART(n) (((Scheme_Complex *) mzALIAS (n))->r)
+#define IZI_REAL_PART(n) (((Scheme_Complex *)(n))->r)
 
 extern double scheme_infinity_val, scheme_minus_infinity_val;
 extern double scheme_floating_point_zero;
@@ -1259,8 +1244,7 @@ int scheme_nonneg_exact_p(Scheme_Object *n);
 
 #define	MZ_RANDOM_STATE_DEG 31
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   short fpos, rpos;
   long state[MZ_RANDOM_STATE_DEG];
 } Scheme_Random_State;
@@ -1365,7 +1349,7 @@ typedef struct Scheme_Compile_Info
 
 typedef struct Resolve_Prefix
 {
-  Scheme_Type type;
+  Scheme_Object so;
   int num_toplevels, num_stxes;
   Scheme_Object **toplevels;
   Scheme_Object **stxes; /* simplified */
@@ -1402,35 +1386,34 @@ typedef void (*Scheme_Syntax_Validater)(Scheme_Object *data, Mz_CPort *port,
 
 typedef struct Scheme_Object *(*Scheme_Syntax_Executer)(struct Scheme_Object *data);
 
-typedef struct Scheme_Closure_Compilation_Data
+typedef struct Scheme_Closure_Data
 {
-  Scheme_Type type;
-  /* Scheme_Object *src; */
-  short flags;
+  Scheme_Inclhash_Object iso; /* keyex used for flags */
   mzshort num_params; /* includes collecting arg if has_rest */
   mzshort max_let_depth;
   mzshort closure_size;
   mzshort *closure_map; /* Actually a Closure_Info* until resolved! */
   Scheme_Object *code;
   Scheme_Object *name;
-} Scheme_Closure_Compilation_Data;
+} Scheme_Closure_Data;
+
+#define SCHEME_CLOSURE_DATA_FLAGS(obj) MZ_OPT_HASH_KEY(&(obj)->iso)
 
 int scheme_has_method_property(Scheme_Object *code);
 
 typedef struct {
-  Scheme_Type type;
+  Scheme_Object so;
 #ifdef MZ_PRECISE_GC
-  MZ_HASH_KEY_EX
   int closure_size;
 #else
   short zero_sized;
 #endif
-  Scheme_Object *code;
+  Scheme_Closure_Data *code;
   Scheme_Object *vals[1];
-} Scheme_Closed_Compiled_Procedure;
+} Scheme_Closure;
 
-#define SCHEME_COMPILED_CLOS_CODE(c) ((Scheme_Closed_Compiled_Procedure *) mzALIAS c)->code
-#define SCHEME_COMPILED_CLOS_ENV(c) ((Scheme_Closed_Compiled_Procedure *) mzALIAS c)->vals
+#define SCHEME_COMPILED_CLOS_CODE(c) ((Scheme_Closure *)c)->code
+#define SCHEME_COMPILED_CLOS_ENV(c) ((Scheme_Closure *)c)->vals
 
 #define MAX_CONST_LOCAL_POS 64
 extern Scheme_Object *scheme_local[MAX_CONST_LOCAL_POS][2];
@@ -1583,8 +1566,8 @@ Scheme_Object *scheme_resolve_closure_compilation(Scheme_Object *_data, Resolve_
 Scheme_App_Rec *scheme_malloc_application(int n);
 void scheme_finish_application(Scheme_App_Rec *app);
 
-#define SCHEME_SYNTAX(obj)   ((obj)->u.two_ptr_val.ptr1)
-#define SCHEME_SYNTAX_EXP(obj)   ((obj)->u.two_ptr_val.ptr2)
+#define SCHEME_SYNTAX(obj)     SCHEME_PTR1_VAL(obj)
+#define SCHEME_SYNTAX_EXP(obj) SCHEME_PTR2_VAL(obj)
 
 int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 
@@ -1631,8 +1614,8 @@ Scheme_Object *scheme_flatten_begin(Scheme_Object *expr, Scheme_Object *append_o
 
 Scheme_Object *scheme_make_svector(mzshort v, mzshort *a);
 
-#define SCHEME_SVEC_LEN(obj) ((obj)->u.svector_val.len)
-#define SCHEME_SVEC_VEC(obj) ((obj)->u.svector_val.vec)
+#define SCHEME_SVEC_LEN(obj) (((Scheme_Simple_Object *)(obj))->u.svector_val.len)
+#define SCHEME_SVEC_VEC(obj) (((Scheme_Simple_Object *)(obj))->u.svector_val.vec)
 
 Scheme_Object *scheme_hash_percent_name(const char *name, int len);
 
@@ -1701,8 +1684,7 @@ Scheme_Object *scheme_check_name_property(Scheme_Object *stx, Scheme_Object *cur
 /*========================================================================*/
 
 struct Scheme_Env {
-  Scheme_Type type; /* scheme_namespace_type */
-  MZ_HASH_KEY_EX
+  Scheme_Object so; /* scheme_namespace_type */
 
   struct Scheme_Module *module; /* NULL => top-level */
 
@@ -1743,8 +1725,7 @@ struct Scheme_Env {
 
 typedef struct Scheme_Module
 {
-  Scheme_Type type; /* scheme_module_type */
-  MZ_HASH_KEY_EX
+  Scheme_Object so; /* scheme_module_type */
 
   Scheme_Object *modname;
 
@@ -1791,8 +1772,7 @@ typedef struct Scheme_Module
 } Scheme_Module;
 
 typedef struct Scheme_Modidx {
-  Scheme_Type type; /* scheme_module_index_type */
-  MZ_HASH_KEY_EX
+  Scheme_Object so; /* scheme_module_index_type */
 
   Scheme_Object *path;
   Scheme_Object *base;
@@ -1802,8 +1782,7 @@ typedef struct Scheme_Modidx {
 } Scheme_Modidx;
 
 typedef struct Module_Variable {
-  Scheme_Type type; /* scheme_module_variable_type */
-  MZ_HASH_KEY_EX
+  Scheme_Object so; /* scheme_module_variable_type */
   Scheme_Object *modidx;
   Scheme_Object *sym;
   int pos;
@@ -2126,8 +2105,8 @@ Scheme_Object *scheme_regexp_source(Scheme_Object *re);
 int scheme_regexp_is_byte(Scheme_Object *re);
 Scheme_Object *scheme_make_regexp(Scheme_Object *str, int byte, int * volatile result_is_err_string);
 
-#define SCHEME_SYM_UNINTERNEDP(o) (((Scheme_Symbol *) mzALIAS o)->keyex & 0x1)
-#define SCHEME_SYM_PARALLELP(o) (((Scheme_Symbol *) mzALIAS o)->keyex & 0x2)
-#define SCHEME_SYM_WEIRDP(o) (((Scheme_Symbol *) mzALIAS o)->keyex & 0x3)
+#define SCHEME_SYM_UNINTERNEDP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x1)
+#define SCHEME_SYM_PARALLELP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x2)
+#define SCHEME_SYM_WEIRDP(o) (MZ_OPT_HASH_KEY(&((Scheme_Symbol *)(o))->iso) & 0x3)
 
 #endif /* __mzscheme_private__ */

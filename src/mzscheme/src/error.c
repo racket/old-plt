@@ -894,9 +894,9 @@ void scheme_wrong_count_m(const char *name, int minc, int maxc,
     if (SCHEME_CLOSUREP((Scheme_Object *)name)) {
       Scheme_Case_Lambda *cl = (Scheme_Case_Lambda *)name;
       if (cl->count) {
-	Scheme_Closure_Compilation_Data *data;
-	data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(cl->array[0]);
-	if (data->flags & CLOS_IS_METHOD)
+	Scheme_Closure_Data *data;
+	data = (Scheme_Closure_Data *)SCHEME_COMPILED_CLOS_CODE(cl->array[0]);
+	if (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_IS_METHOD)
 	  is_method = 1;
       } else if (cl->name && SCHEME_BOXP(cl->name)) {
 	/* See note in schpriv.h about the IS_METHOD hack */
@@ -959,11 +959,11 @@ char *scheme_make_arity_expect_string(Scheme_Object *proc,
     mina = -2;
     maxa = 0;
   } else {
-    Scheme_Closure_Compilation_Data *data;
+    Scheme_Closure_Data *data;
 
-    data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(proc);
+    data = (Scheme_Closure_Data *)SCHEME_COMPILED_CLOS_CODE(proc);
     mina = maxa = data->num_params;
-    if (data->flags & CLOS_HAS_REST) {
+    if (SCHEME_CLOSURE_DATA_FLAGS(data) & CLOS_HAS_REST) {
       --mina;
       maxa = -1;
     }

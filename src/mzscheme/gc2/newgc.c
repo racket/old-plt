@@ -621,11 +621,11 @@ unsigned long GC_get_stack_base()
       var_stack = (void **)((char *)var_stack + delta);               \
       if(var_stack == limit) return;                                  \
                                                                       \
-      size = *(long*)(var_stack + 1); p = (void***)(var_stack + 2);   \
+      size = *(long*)(void*)(var_stack + 1); p = (void***)(void*)(var_stack + 2);   \
       while(size--) {                                                 \
         a = *p;                                                       \
         if(!a) {                                                      \
-          count = ((long *)p)[2]; a = ((void***)p)[1];                \
+          count = ((long *)(void*)p)[2]; a = ((void***)(void*)p)[1];  \
           p += 2; size -= 2; a = (void**)((char *)a + delta);         \
           while(count--) { operation(*a); a++; }                      \
         } else {                                                      \
@@ -1496,7 +1496,7 @@ static void propagate_accounting_marks(void)
   struct mpage *page;
   void *p;
 
-  while(pop_2ptr((void**)&page, &p) && !kill_propagation_loop) {
+  while(pop_2ptr((void**)(void*)&page, &p) && !kill_propagation_loop) {
     GCDEBUG((DEBUGOUTF, "btc_account: popped off page %p, ptr %p\n", page, p));
     if(page->big_page)
       mark_acc_big_page(page);
@@ -1885,7 +1885,7 @@ int print_object_reaches(Scheme_Object *obj)
     total_reach_use = 0;
     
     gcMARK(obj);
-    while(pop_2ptr((void**)&page, &ptr) && !kill_reach_prop) {
+    while(pop_2ptr((void**)(void*)&page, &ptr) && !kill_reach_prop) {
       if(page->big_page && !(page->generation == 0)) {
 	void **start = PPTR(NUM(page) + HEADER_SIZEB + WORD_SIZE);
 	void **end = PPTR(NUM(page) + page->size);

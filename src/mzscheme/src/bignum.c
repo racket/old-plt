@@ -132,8 +132,8 @@ Scheme_Object *scheme_make_small_bignum(long v, Small_Bignum *o)
 {
   bigdig bv;
 
-  o->o.type = scheme_bignum_type;
-  SCHEME_BIGPOS(&o->o) = ((v >= 0) ? 1 : 0);
+  o->o.iso.so.type = scheme_bignum_type;
+  SCHEME_SET_BIGPOS(&o->o, ((v >= 0) ? 1 : 0));
   if (v < 0)
     bv = -v;
   else
@@ -174,10 +174,10 @@ Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v)
   Small_Bignum *r;
   r = MALLOC_ONE_TAGGED(Small_Bignum);
 #if MZ_PRECISE_GC
-  r->o.allocated_inline = 1;
+  SCHEME_SET_BIGINLINE(&r->o, 1);
 #endif
-  r->o.type = scheme_bignum_type;
-  SCHEME_BIGPOS(&r->o) = 1;
+  r->o.iso.so.type = scheme_bignum_type;
+  SCHEME_SET_BIGPOS(&r->o, 1);
   if (v == 0)
     SCHEME_BIGLEN(&r->o) = 0;
   else
@@ -268,8 +268,8 @@ static Scheme_Object *make_single_bigdig_result(int pos, bigdig d)
 
   /* May not need to allocate: */
   sm = &quick;
-  sm->o.type = scheme_bignum_type;
-  SCHEME_BIGPOS(sm) = pos;
+  sm->o.iso.so.type = scheme_bignum_type;
+  SCHEME_SET_BIGPOS(sm, pos);
   SCHEME_BIGLEN(sm) = 1;
   SCHEME_BIGDIG(sm) = sm->v;
   sm->v[0] = d;
@@ -277,11 +277,11 @@ static Scheme_Object *make_single_bigdig_result(int pos, bigdig d)
   o = scheme_bignum_normalize((Scheme_Object *) mzALIAS sm);
   if (SAME_OBJ(o, (Scheme_Object *) mzALIAS sm)) {
     sm = MALLOC_ONE_TAGGED(Small_Bignum);
-    sm->o.type = scheme_bignum_type;
+    sm->o.iso.so.type = scheme_bignum_type;
 #if MZ_PRECISE_GC
-    sm->o.allocated_inline = 1;
+    SCHEME_SET_BIGINLINE(sm, 1);
 #endif
-    SCHEME_BIGPOS(sm) = pos;
+    SCHEME_SET_BIGPOS(sm, pos);
     SCHEME_BIGLEN(sm) = 1;
     SCHEME_BIGDIG(sm) = sm->v;
     sm->v[0] = d;
@@ -305,7 +305,7 @@ static Scheme_Object *bignum_copy(const Scheme_Object *a, long msd)
 
   o->type = scheme_bignum_type;
   SCHEME_BIGLEN(o) = c;
-  SCHEME_BIGPOS(o) = SCHEME_BIGPOS(a);
+  SCHEME_SET_BIGPOS(o, SCHEME_BIGPOS(a));
   o_digs = (bigdig *)scheme_malloc_atomic(sizeof(bigdig) * (c + (msd ? 1 : 0)));
   SCHEME_BIGDIG(o) = o_digs;
 
@@ -400,7 +400,7 @@ Scheme_Object *scheme_bignum_negate(const Scheme_Object *n)
     /* Can't share bigdig array when n is a Small_Bignum */
     o = (Scheme_Object *)scheme_malloc_tagged(sizeof(Small_Bignum));
 #if MZ_PRECISE_GC
-    ((Scheme_Bignum *)o)->allocated_inline = 1;
+    SCHEME_SET_BIGINLINE(o, 1);
 #endif
     ((Small_Bignum *)o)->v[0] = SCHEME_BIGDIG(n)[0];
     SCHEME_BIGDIG(o) = ((Small_Bignum *) mzALIAS o)->v;
@@ -410,7 +410,7 @@ Scheme_Object *scheme_bignum_negate(const Scheme_Object *n)
   }
 
   o->type = scheme_bignum_type;
-  SCHEME_BIGPOS(o) = !SCHEME_BIGPOS(n);
+  SCHEME_SET_BIGPOS(o, !SCHEME_BIGPOS(n));
   SCHEME_BIGLEN(o) = len;
 
   return o;
@@ -458,7 +458,7 @@ static Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object
     return scheme_bignum_normalize(bignum_copy(a, 0));
   else if (a_size == 0) {
     o = bignum_copy(b, 0);
-    SCHEME_BIGPOS(o) = b_pos;
+    SCHEME_SET_BIGPOS(o, b_pos);
     return scheme_bignum_normalize(o);
   }
 
@@ -481,7 +481,7 @@ static Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object
     else
       carry = mpn_add(o_digs, b_digs, b_size, a_digs, a_size);
 
-    SCHEME_BIGPOS(o) = a_pos;
+    SCHEME_SET_BIGPOS(o, a_pos);
     SCHEME_BIGLEN(o) = max_size;
     SCHEME_BIGDIG(o) = o_digs;
     if (carry)
@@ -513,7 +513,7 @@ static Scheme_Object *bignum_add_sub(const Scheme_Object *a, const Scheme_Object
     else
       mpn_sub(o_digs, a_digs, a_size, b_digs, b_size);
 
-    SCHEME_BIGPOS(o) = xor(sw, a_pos);
+    SCHEME_SET_BIGPOS(o, xor(sw, a_pos));
     max_size = bigdig_length(o_digs, max_size);
     SCHEME_BIGLEN(o) = max_size;
     SCHEME_BIGDIG(o) = o_digs;
@@ -608,7 +608,7 @@ static Scheme_Object *bignum_multiply(const Scheme_Object *a, const Scheme_Objec
   res_size = bigdig_length(o_digs, res_size);
   SCHEME_BIGLEN(o) = res_size;
   SCHEME_BIGDIG(o) = o_digs;
-  SCHEME_BIGPOS(o) = !xor(a_pos, b_pos);
+  SCHEME_SET_BIGPOS(o, !xor(a_pos, b_pos));
 
   return (norm ? scheme_bignum_normalize(o) : o);
 }
@@ -811,7 +811,7 @@ static Scheme_Object *do_bitop(const Scheme_Object *a, const Scheme_Object *b, i
   } else {
     o = (Scheme_Object*)scheme_malloc_tagged(sizeof(Scheme_Bignum));
     o->type = scheme_bignum_type;
-    SCHEME_BIGPOS(o) = res_pos;
+    SCHEME_SET_BIGPOS(o, res_pos);
     SCHEME_BIGLEN(o) = res_alloc;
     SCHEME_BIGDIG(o) = res_digs;
 

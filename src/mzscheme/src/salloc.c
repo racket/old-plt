@@ -1374,7 +1374,7 @@ void scheme_check_home(Scheme_Object *root)
 long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 {
   Scheme_Type type;
-  long s = sizeof(Scheme_Object), e = 0;
+  long s = sizeof(Scheme_Simple_Object), e = 0;
   int need_align = 0;
   struct GC_Set *home;
 
@@ -1467,10 +1467,10 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_unclosed_procedure_type:
   case scheme_compiled_unclosed_procedure_type:
     {
-      Scheme_Closure_Compilation_Data *data = 
-	(Scheme_Closure_Compilation_Data *)root;
+      Scheme_Closure_Data *data = 
+	(Scheme_Closure_Data *)root;
 
-      s = sizeof(Scheme_Closure_Compilation_Data);
+      s = sizeof(Scheme_Closure_Data);
       s += data->closure_size * sizeof(mzshort);
 #if FORCE_KNOWN_SUBPARTS
       e = COUNT(data->code);
@@ -1578,7 +1578,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
     break;
   case scheme_prim_type:
     {
-      if (((Scheme_Primitive_Proc *)root)->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+      if (((Scheme_Primitive_Proc *)root)->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
 	s = sizeof(Scheme_Prim_W_Result_Arity);
       else
 	s = sizeof(Scheme_Primitive_Proc);
@@ -1586,10 +1586,10 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
     break;
   case scheme_closure_type:
     {
-      Scheme_Closure_Compilation_Data *data;
+      Scheme_Closure_Data *data;
       Scheme_Object **vals;
       
-      data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(root);
+      data = SCHEME_COMPILED_CLOS_CODE(root);
       vals = SCHEME_COMPILED_CLOS_ENV(root);
 
       s += (data->closure_size * sizeof(Scheme_Object *));
@@ -1600,7 +1600,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
     break;
   case scheme_closed_prim_type:
     {
-      if (((Scheme_Closed_Primitive_Proc *)root)->flags & SCHEME_PRIM_IS_MULTI_RESULT)
+      if (((Scheme_Closed_Primitive_Proc *)root)->pp.flags & SCHEME_PRIM_IS_MULTI_RESULT)
 	s = sizeof(Scheme_Closed_Prim_W_Result_Arity);
       else
 	s = sizeof(Scheme_Closed_Primitive_Proc);
@@ -1655,7 +1655,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
     break;
   case scheme_will_executor_type:
-    s = sizeof(Scheme_Object);
+    s = sizeof(Scheme_Simple_Object);
     break;
   case scheme_custodian_type: 
     {

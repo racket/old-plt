@@ -172,8 +172,7 @@ System_Child *scheme_system_children;
 #endif
 
 typedef struct Scheme_Subprocess {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   void *handle;
   int pid;
 } Scheme_Subprocess;
@@ -959,7 +958,7 @@ scheme_make_input_port(Scheme_Object *subtype,
   int cl;
 
   ip = MALLOC_ONE_TAGGED(Scheme_Input_Port);
-  ip->type = scheme_input_port_type;
+  ip->so.type = scheme_input_port_type;
   ip->sub_type = subtype;
   ip->port_data = data;
   ip->get_string_fun = get_string_fun;
@@ -1012,7 +1011,7 @@ scheme_make_output_port(Scheme_Object *subtype,
   Scheme_Output_Port *op;
 
   op = MALLOC_ONE_TAGGED(Scheme_Output_Port);
-  op->type = scheme_output_port_type;
+  op->so.type = scheme_output_port_type;
   op->sub_type = subtype;
   op->port_data = data;
   op->name = name;
@@ -6113,7 +6112,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*--------------------------------------*/
 
   subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
-  subproc->type = scheme_subprocess_type;
+  subproc->so.type = scheme_subprocess_type;
   subproc->handle = (void *)sc;
   subproc->pid = pid;
 # if defined(WINDOWS_PROCESSES)

@@ -330,7 +330,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(kernel);
 
   kernel = MALLOC_ONE_TAGGED(Scheme_Module);
-  kernel->type = scheme_module_type;
+  kernel->so.type = scheme_module_type;
   
   scheme_initial_env->module = kernel;
 
@@ -1300,7 +1300,7 @@ Scheme_Object *scheme_make_modidx(Scheme_Object *path,
     return path;
 
   modidx = MALLOC_ONE_TAGGED(Scheme_Modidx);
-  modidx->type = scheme_module_index_type;
+  modidx->so.type = scheme_module_index_type;
   modidx->path = path;
   modidx->base = base_modidx;
   modidx->resolved = resolved;
@@ -1841,7 +1841,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Obj
     /* To simplify mzc's job, we make up an environment where the
        syntax table is the same as menv, and the exp_env is exp_env */
     cenv = MALLOC_ONE_TAGGED(Scheme_Env);
-    cenv->type = scheme_namespace_type;
+    cenv->so.type = scheme_namespace_type;
     cenv->module = menv->module;
     cenv->syntax = menv->syntax;
     cenv->exp_env = exp_env;    
@@ -1998,7 +1998,7 @@ Scheme_Env *scheme_primitive_module(Scheme_Object *name, Scheme_Env *for_env)
   Scheme_Object *prefix;
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
-  m->type = scheme_module_type;
+  m->so.type = scheme_module_type;
   
   env = scheme_new_module_env(for_env, m, 0);
 
@@ -2393,7 +2393,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   fm = SCHEME_STX_CDR(fm);
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
-  m->type = scheme_module_type;
+  m->so.type = scheme_module_type;
   
   m->modname = SCHEME_STX_VAL(nm); /* must set before calling new_module_env */
   if (SAME_OBJ(m->modname, kernel_symbol)) {
@@ -2624,7 +2624,7 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
   kernel_exclusion = SCHEME_CAR(shape);
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
-  m->type = scheme_module_type;
+  m->so.type = scheme_module_type;
 
   prefix = scheme_get_param(scheme_current_config(), MZCONFIG_CURRENT_MODULE_PREFIX);
   if (SCHEME_SYMBOLP(prefix))
@@ -4559,7 +4559,7 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   int i, count;
 
   m = MALLOC_ONE_TAGGED(Scheme_Module);
-  m->type = scheme_module_type;
+  m->so.type = scheme_module_type;
 
   if (!SCHEME_PAIRP(obj)) return NULL;
   m->modname = SCHEME_CAR(obj);

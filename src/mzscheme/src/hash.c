@@ -117,7 +117,7 @@ Scheme_Hash_Table *scheme_make_hash_table(int type)
   table->step = 0;
   table->size = 0;
     
-  table->type = scheme_hash_table_type;
+  table->iso.so.type = scheme_hash_table_type;
 
   if (type == SCHEME_hash_string) {
     table->make_hash_indices = string_hash_indices;
@@ -320,7 +320,7 @@ scheme_make_bucket_table (int size, int type)
 
   table->count = 0;
 
-  table->type = scheme_bucket_table_type;
+  table->so.type = scheme_bucket_table_type;
 
   asize = (size_t)table->size * sizeof(Scheme_Bucket *);
   {
@@ -461,7 +461,7 @@ get_bucket (Scheme_Bucket_Table *table, const char *key, int add, Scheme_Bucket 
 
     bucket = (Scheme_Bucket *)scheme_malloc_tagged(bsize);
 
-    bucket->type = type;
+    bucket->so.type = type;
 
     if (type == scheme_variable_type)
       ((Scheme_Bucket_With_Flags *)bucket)->flags = GLOB_HAS_HOME_PTR;
@@ -644,9 +644,9 @@ static long hash_general(Scheme_Object *o)
 
 static long hash_symbol(Scheme_Object *o)
 {
-  if (!(((short *)o)[1] & 0xFFFC)) {
-    Scheme_Symbol *s = (Scheme_Symbol *)o;
-    if (!(s->keyex & 0x1)) {
+  if (!(((short *) mzALIAS o)[1] & 0xFFFC)) {
+    Scheme_Symbol *s = (Scheme_Symbol *) mzALIAS o;
+    if (!(MZ_OPT_HASH_KEY(&s->iso) & 0x1)) {
       /* Interned. Make key depend only on the content. */
       int i, h = 0;
       for (i = s->len; i--; ) {
@@ -655,12 +655,12 @@ static long hash_symbol(Scheme_Object *o)
       h += (h << 2);
       if (!(((short)h) & 0xFFFC))
 	h = 0x10;
-      s->keyex |= (((short)h) & 0xFFFC);
+      MZ_OPT_HASH_KEY(&s->iso) |= (((short)h) & 0xFFFC);
     } else
       return hash_general(o);
   }
 
-  return *(long *)o;
+  return *(long *) mzALIAS o;
 }
 
 static long hash_prim(Scheme_Object *o)
@@ -1010,9 +1010,9 @@ long scheme_equal_hash_key(Scheme_Object *o)
   case scheme_symbol_type:
     {
       Scheme_Symbol *s = (Scheme_Symbol *)o;
-      if (!(s->keyex & 0x1)) {
+      if (!(MZ_OPT_HASH_KEY(&s->iso) & 0x1)) {
 	/* Interned. Make key depend only on the content. */
-	if (!s->keyex & 0xFFFC) {
+	if (!MZ_OPT_HASH_KEY(&s->iso) & 0xFFFC) {
 	  int i, h = 0;
 	  for (i = s->len; i--; ) {
 	    h += (h << 5) + h + s->s[i];
@@ -1020,10 +1020,10 @@ long scheme_equal_hash_key(Scheme_Object *o)
 	  h += (h << 2);
 	  if (!(((short)h) & 0xFFFC))
 	    h = 0x10;
-	  s->keyex |= (((short)h) & 0xFFFC);
+	  MZ_OPT_HASH_KEY(&s->iso) |= (((short)h) & 0xFFFC);
 	}
 	
-	return k + (s->keyex & 0xFFFC);
+	return k + (MZ_OPT_HASH_KEY(&s->iso) & 0xFFFC);
       } else
 	return k + (PTR_TO_LONG(o) >> 4);
     }

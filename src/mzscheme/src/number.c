@@ -601,7 +601,7 @@ Scheme_Object *scheme_make_double(double d)
   }
 
   sd = (Scheme_Double *)scheme_malloc_atomic_tagged(sizeof(Scheme_Double));
-  sd->type = scheme_double_type;
+  sd->so.type = scheme_double_type;
   SCHEME_DBL_VAL(sd) = d;
   return (Scheme_Object *)sd;
 }

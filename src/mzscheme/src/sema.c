@@ -50,8 +50,7 @@ static void register_traversers(void);
 #endif
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   double sleep_end;
 } Scheme_Alarm;
 
@@ -147,7 +146,7 @@ Scheme_Object *scheme_make_sema(long v)
   sema = MALLOC_ONE_TAGGED(Scheme_Sema);
   sema->value = v;
 
-  sema->type = scheme_sema_type;
+  sema->so.type = scheme_sema_type;
 
   return (Scheme_Object *)sema;
 }
@@ -393,7 +392,7 @@ static void ext_get_into_line(Scheme_Object *ch, Scheme_Schedule_Info *sinfo)
 
   /* Get into line */
   w = MALLOC_ONE_RT(Scheme_Channel_Waiter);
-  w->type = scheme_channel_waiter_type;
+  w->so.type = scheme_channel_waiter_type;
   w->p = scheme_current_thread;
   w->waiting = (Waiting *)sinfo->current_waiting;
   w->obj = ch;
@@ -501,7 +500,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
     /* assert: n == 1, !waiting */
     Scheme_Sema *sema = semas[0];
     if (just_try > 0) {
-      if (sema->type == scheme_sema_type) {
+      if (sema->so.type == scheme_sema_type) {
 	if (sema->value) {
 	  if (sema->value > 0)
 	    --sema->value;
@@ -552,13 +551,13 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
       /* Randomized start position for poll ensures fairness: */
       i = (start_pos + ii) % n;
 
-      if (semas[i]->type == scheme_sema_type) {
+      if (semas[i]->so.type == scheme_sema_type) {
 	if (semas[i]->value) {
 	  if ((semas[i]->value > 0) && (!waiting || !waiting->reposts || !waiting->reposts[i]))
 	    --semas[i]->value;
 	  break;
 	}
-      } else if (semas[i]->type == scheme_channel_waiter_type) {
+      } else if (semas[i]->so.type == scheme_channel_waiter_type) {
 	/* Probably no need to poll */
       } else if (try_channel(semas[i], waiting, i, NULL))
 	break;
@@ -571,13 +570,13 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 
       ws = MALLOC_N(Scheme_Channel_Waiter*, n);
       for (i = 0; i < n; i++) {
-	if (semas[i]->type == scheme_channel_waiter_type) {
+	if (semas[i]->so.type == scheme_channel_waiter_type) {
 	  ws[i] = (Scheme_Channel_Waiter *)semas[i];
 	  semas[i] = (Scheme_Sema *)ws[i]->obj;
 	} else {
 	  w = MALLOC_ONE_RT(Scheme_Channel_Waiter);
 	  ws[i] = w;
-	  w->type = scheme_channel_waiter_type;
+	  w->so.type = scheme_channel_waiter_type;
 	  w->p = scheme_current_thread;
 	  w->waiting = waiting;
 	  w->obj = (Scheme_Object *)semas[i];
@@ -720,7 +719,7 @@ int scheme_wait_semas_chs(int n, Scheme_Object **o, int just_try, Waiting *waiti
 	for (ii = 0; ii < n; ii++) {
 	  i = (start_pos + ii) % n;
 
-	  if (semas[i]->type == scheme_sema_type) {
+	  if (semas[i]->so.type == scheme_sema_type) {
 	    if (semas[i]->value) {
 	      if ((semas[i]->value > 0) && (!waiting || !waiting->reposts || !waiting->reposts[i]))
 		--semas[i]->value;
@@ -844,7 +843,7 @@ Scheme_Object *scheme_make_channel()
   Scheme_Channel *c;
 
   c = MALLOC_ONE_TAGGED(Scheme_Channel);
-  c->type = scheme_channel_type;
+  c->so.type = scheme_channel_type;
   
   return (Scheme_Object *)c;
 }
@@ -862,7 +861,7 @@ static Scheme_Object *make_channel_put(int argc, Scheme_Object **argv)
     scheme_wrong_type("make-channel-put-waitable", "channel", 0, argc, argv);
 
   cp = MALLOC_ONE_TAGGED(Scheme_Channel_Put);
-  cp->type = scheme_channel_put_type;
+  cp->so.type = scheme_channel_put_type;
   cp->ch = (Scheme_Channel *)argv[0];
   cp->val = argv[1];
 
@@ -929,7 +928,7 @@ static Scheme_Object *make_alarm(int argc, Scheme_Object **argv)
   sleep_end = scheme_get_val_as_double(argv[0]);
 
   a = MALLOC_ONE_TAGGED(Scheme_Alarm);
-  a->type = scheme_alarm_type;
+  a->so.type = scheme_alarm_type;
   a->sleep_end = sleep_end;
 
   return (Scheme_Object *)a;

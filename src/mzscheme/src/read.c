@@ -177,7 +177,7 @@ static int skip_whitespace_comments(Scheme_Object *port, Scheme_Object *stxsrc,
 
 typedef struct {
   int pos;
-  Scheme_Object *stack;
+  Scheme_Simple_Object *stack;
 } ListStackRec;
 
 #define STACK_START(r) (r.pos = local_list_stack_pos, r.stack = local_list_stack)
@@ -335,9 +335,9 @@ void scheme_init_read(Scheme_Env *env)
 
 void scheme_alloc_list_stack(Scheme_Thread *p)
 {
-  Scheme_Object *sa;
+  Scheme_Simple_Object *sa;
   p->list_stack_pos = 0;
-  sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+  sa = MALLOC_N_RT(Scheme_Simple_Object, NUM_CELLS_PER_STACK);
   p->list_stack = sa;
 #ifdef MZ_PRECISE_GC
   /* Must set the tag on the first element: */
@@ -349,7 +349,7 @@ void scheme_clean_list_stack(Scheme_Thread *p)
 {
   if (p->list_stack) {
     memset(p->list_stack + p->list_stack_pos, 0, 
-	   (NUM_CELLS_PER_STACK - p->list_stack_pos) * sizeof(Scheme_Object));
+	   (NUM_CELLS_PER_STACK - p->list_stack_pos) * sizeof(Scheme_Simple_Object));
   }
 }
 
@@ -1413,16 +1413,16 @@ read_list(Scheme_Object *port,
     if (USE_LISTSTACK(use_stack)) {
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
-	Scheme_Object *sa;
-	sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	Scheme_Simple_Object *sa;
+	sa = MALLOC_N_RT(Scheme_Simple_Object, NUM_CELLS_PER_STACK);
 	local_list_stack = sa;
 	local_list_stack_pos = 0;
       }
 
       pair = local_list_stack + (local_list_stack_pos++);
       pair->type = scheme_pair_type;
-      pair->u.pair_val.car = car;
-      pair->u.pair_val.cdr = scheme_null;
+      SCHEME_CAR(pair) = car;
+      SCHEME_CDR(pair) = scheme_null;
     } else {
       pair = scheme_make_pair(car, scheme_null);
       if (stxsrc)
@@ -2912,14 +2912,14 @@ static Scheme_Object *read_compact(CPort *port,
 	int et;
 
 	lo = (Scheme_Let_One *)scheme_malloc_tagged(sizeof(Scheme_Let_One));
-	lo->type = scheme_let_one_type;
+	lo->iso.so.type = scheme_let_one_type;
 
 	v = read_compact(port, ht, symtab, 1);
 	lo->value = v;
 	v = read_compact(port, ht, symtab, 1);
 	lo->body = v;
 	et = scheme_get_eval_type(lo->value);
-	lo->eval_type = et;
+	SCHEME_LET_EVAL_TYPE(lo) = et;
 
 	v = (Scheme_Object *)lo;
       }
@@ -2959,7 +2959,7 @@ static Scheme_Object *read_compact(CPort *port,
 	pos = read_compact_number(port);
 
 	mv = MALLOC_ONE_TAGGED(Module_Variable);
-	mv->type = scheme_module_variable_type;
+	mv->so.type = scheme_module_variable_type;
 	mv->modidx = mod;
 	mv->sym = var;
 	mv->pos = pos;
@@ -3067,7 +3067,7 @@ static Scheme_Object *read_compact(CPort *port,
 	Scheme_App2_Rec *app;
 
 	app = MALLOC_ONE_TAGGED(Scheme_App2_Rec);
-	app->type = scheme_application2_type;
+	app->iso.so.type = scheme_application2_type;
 
 	v = read_compact(port, ht, symtab, 1);
 	app->rator = v;
@@ -3077,7 +3077,7 @@ static Scheme_Object *read_compact(CPort *port,
 	et = scheme_get_eval_type(app->rand);
 	et = et << 3;
 	et += scheme_get_eval_type(app->rator);
-	app->flags = et;
+	SCHEME_APPN_FLAGS(app) = et;
 	
 	v = (Scheme_Object *)app;
       }
@@ -3088,7 +3088,7 @@ static Scheme_Object *read_compact(CPort *port,
 	Scheme_App3_Rec *app;
 
 	app = MALLOC_ONE_TAGGED(Scheme_App3_Rec);
-	app->type = scheme_application3_type;
+	app->iso.so.type = scheme_application3_type;
 
 	v = read_compact(port, ht, symtab, 1);
 	app->rator = v;
@@ -3102,7 +3102,7 @@ static Scheme_Object *read_compact(CPort *port,
 	et += scheme_get_eval_type(app->rand1);
 	et = et << 3;
 	et += scheme_get_eval_type(app->rator);
-	app->flags = et;
+	SCHEME_APPN_FLAGS(app) = et;
 	
 	v = (Scheme_Object *)app;
       }
@@ -3122,15 +3122,15 @@ static Scheme_Object *read_compact(CPort *port,
 	if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	  /* Overflow */
 	  Scheme_Object *sa;
-	  sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	  sa = MALLOC_N_RT(Scheme_Simple_Object, NUM_CELLS_PER_STACK);
 	  local_list_stack = sa;
 	  local_list_stack_pos = 0;
 	}
 	
 	pair = local_list_stack + (local_list_stack_pos++);
 	pair->type = scheme_pair_type;
-	pair->u.pair_val.car = v;
-	pair->u.pair_val.cdr = scheme_null;
+	SCHEME_CAR(pair) = v;
+	SCHEME_CDR(pair) = scheme_null;
       } else
 	pair = scheme_make_pair(v, scheme_null);
 
@@ -3164,15 +3164,15 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
     if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
       /* Overflow */
       Scheme_Object *sa;
-      sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+      sa = MALLOC_N_RT(Scheme_Simple_Object, NUM_CELLS_PER_STACK);
       local_list_stack = sa;
       local_list_stack_pos = 0;
     }
     
     last = local_list_stack + (local_list_stack_pos++);
     last->type = scheme_pair_type;
-    last->u.pair_val.car = v;
-    last->u.pair_val.cdr = scheme_null;
+    SCHEME_CAR(last) = v;
+    SCHEME_CDR(last) = scheme_null;
   } else
     last = scheme_make_pair(v, scheme_null);
 
@@ -3185,15 +3185,15 @@ static Scheme_Object *read_compact_list(int c, int proper, int use_stack,
       if (local_list_stack_pos >= NUM_CELLS_PER_STACK) {
 	/* Overflow */
 	Scheme_Object *sa;
-	sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
+	sa = MALLOC_N_RT(Scheme_Simple_Object, NUM_CELLS_PER_STACK);
 	local_list_stack = sa;
 	local_list_stack_pos = 0;
       }
       
       pair = local_list_stack + (local_list_stack_pos++);
       pair->type = scheme_pair_type;
-      pair->u.pair_val.car = v;
-      pair->u.pair_val.cdr = scheme_null;
+      SCHEME_CAR(pair) = v;
+      SCHEME_CDR(pair) = scheme_null;
     } else
       pair = scheme_make_pair(v, scheme_null);
 

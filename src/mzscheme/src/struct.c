@@ -47,15 +47,13 @@ typedef struct {
 } Struct_Proc_Info;
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *waitable;
   Scheme_Object *wrapper;
 } Wrapped_Waitable;
 
 typedef struct {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *maker;
 } Nack_Guard_Waitable;
 
@@ -426,11 +424,11 @@ Scheme_Object *scheme_make_initial_inspectors(void)
   Scheme_Inspector *superior, *root;
 
   superior = MALLOC_ONE_TAGGED(Scheme_Inspector);
-  superior->type = scheme_inspector_type;
+  superior->so.type = scheme_inspector_type;
   superior->depth = 0;
   
   root = MALLOC_ONE_TAGGED(Scheme_Inspector);
-  root->type = scheme_inspector_type;
+  root->so.type = scheme_inspector_type;
   root->depth = 1;
   root->superior = superior;
 
@@ -450,7 +448,7 @@ Scheme_Object *make_inspector(int argc, Scheme_Object **argv)
     superior = scheme_get_param(scheme_current_config(), MZCONFIG_INSPECTOR);
 
   naya = MALLOC_ONE_TAGGED(Scheme_Inspector);
-  naya->type = scheme_inspector_type;
+  naya->so.type = scheme_inspector_type;
   naya->depth = ((Scheme_Inspector *)superior)->depth + 1;
   naya->superior = (Scheme_Inspector *)superior;
 
@@ -569,7 +567,7 @@ static Scheme_Object *make_struct_type_property(int argc, Scheme_Object *argv[])
   }
 
   p = MALLOC_ONE_TAGGED(Scheme_Struct_Property);
-  p->type = scheme_struct_property_type;
+  p->so.type = scheme_struct_property_type;
   p->name = argv[0];
   if ((argc > 1) && SCHEME_TRUEP(argv[1]))
     p->guard = argv[1];
@@ -823,7 +821,7 @@ scheme_make_struct_instance(Scheme_Object *_stype, int argc, Scheme_Object **arg
     scheme_malloc_tagged(sizeof(Scheme_Structure) 
 			 + ((c - 1) * sizeof(Scheme_Object *)));
   
-  inst->type = (stype->proc_attr ? scheme_proc_struct_type : scheme_structure_type);
+  inst->so.type = (stype->proc_attr ? scheme_proc_struct_type : scheme_structure_type);
   inst->stype = stype;
 
   /* Apply guards, if any: */
@@ -1289,7 +1287,7 @@ int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos)
 
 
 #define STRUCT_PROCP(o, t) \
-    (SCHEME_STRUCT_PROCP(o) && (((Scheme_Closed_Primitive_Proc *)o)->flags & t))
+    (SCHEME_STRUCT_PROCP(o) && (((Scheme_Closed_Primitive_Proc *)o)->pp.flags & t))
 
 static Scheme_Object *
 struct_setter_p(int argc, Scheme_Object *argv[])
@@ -1394,7 +1392,7 @@ static Scheme_Object *wrap_waitable(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-wrapped-waitable", 1, 1, argc, argv);
 
   ww = MALLOC_ONE_TAGGED(Wrapped_Waitable);
-  ww->type = scheme_wrapped_waitable_type;
+  ww->so.type = scheme_wrapped_waitable_type;
   ww->waitable = argv[0];
   ww->wrapper = argv[1];
 
@@ -1408,7 +1406,7 @@ static Scheme_Object *nack_waitable(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-nack-guard-waitable", 1, 0, argc, argv);
 
   nw = MALLOC_ONE_TAGGED(Nack_Guard_Waitable);
-  nw->type = scheme_nack_guard_waitable_type;
+  nw->so.type = scheme_nack_guard_waitable_type;
   nw->maker = argv[0];
 
   return (Scheme_Object *)nw;
@@ -1421,7 +1419,7 @@ static Scheme_Object *poll_waitable(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-poll-guard-waitable", 1, 0, argc, argv);
 
   nw = MALLOC_ONE_TAGGED(Nack_Guard_Waitable);
-  nw->type = scheme_poll_waitable_type;
+  nw->so.type = scheme_poll_waitable_type;
   nw->maker = argv[0];
 
   return (Scheme_Object *)nw;
@@ -1809,7 +1807,7 @@ make_struct_proc(Scheme_Struct_Type *struct_type,
     }
   }
 
-  ((Scheme_Closed_Primitive_Proc *)p)->flags |= flags;
+  ((Scheme_Closed_Primitive_Proc *)p)->pp.flags |= flags;
 
   return p;
 }
@@ -2003,7 +2001,7 @@ static Scheme_Object *_make_struct_type(Scheme_Object *basesym, const char *base
   /* defeats optimizer bug in gcc 2.7.2.3: */
   depth = parent_type ? (1 + parent_type->name_pos) : 0;
 
-  struct_type->type = scheme_struct_type_type;
+  struct_type->so.type = scheme_struct_type_type;
 
   struct_type->name_pos = depth;
   struct_type->parent_types[depth] = struct_type;

@@ -260,7 +260,7 @@ Scheme_Env *scheme_basic_env()
 #else
 	v = (Scheme_Toplevel *)scheme_malloc_eternal_tagged(sizeof(Scheme_Toplevel));
 #endif
-	v->type = scheme_toplevel_type;
+	v->so.type = scheme_toplevel_type;
 	v->depth = i;
 	v->position = k;
 	
@@ -586,13 +586,13 @@ static Scheme_Env *make_env(Scheme_Env *base, int semi, int toplevel_size)
 	SCHEME_VEC_ELS(modchain)[0] = (Scheme_Object *)modules;
 
 	module_registry = scheme_make_hash_table(SCHEME_hash_ptr);
-	module_registry->type = scheme_module_registry_type;
+	module_registry->iso.so.type = scheme_module_registry_type;
       }
     }
   }
 
   env = MALLOC_ONE_TAGGED(Scheme_Env);
-  env->type = scheme_namespace_type;
+  env->so.type = scheme_namespace_type;
 
   env->toplevel = toplevel;
 
@@ -662,7 +662,7 @@ Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Obj
   Scheme_Env *menv2;
 
   menv2 = MALLOC_ONE_TAGGED(Scheme_Env);
-  menv2->type = scheme_namespace_type;
+  menv2->so.type = scheme_namespace_type;
 
   menv2->module = menv->module;
 
@@ -1154,7 +1154,7 @@ static Scheme_Object *make_toplevel(mzshort depth, int position, int resolved)
   }
 
   tl = (Scheme_Toplevel *)scheme_malloc_atomic_tagged(sizeof(Scheme_Toplevel));
-  tl->type = (resolved ? scheme_toplevel_type : scheme_compiled_toplevel_type);
+  tl->so.type = (resolved ? scheme_toplevel_type : scheme_compiled_toplevel_type);
   tl->depth = depth;
   tl->position = position;
   return (Scheme_Object *)tl;
@@ -1212,7 +1212,7 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
   if (rec && rec[drec].dont_mark_local_use) {
     /* Make up anything; it's going to be ignored. */
     l = (Scheme_Local *)scheme_malloc_atomic_tagged(sizeof(Scheme_Local));
-    l->type = scheme_compiled_quote_syntax_type;
+    l->so.type = scheme_compiled_quote_syntax_type;
     l->position = 0;
 
     return (Scheme_Object *)l;
@@ -1227,7 +1227,7 @@ Scheme_Object *scheme_register_stx_in_prefix(Scheme_Object *var, Scheme_Comp_Env
   pos = cp->num_stxes;
 
   l = (Scheme_Local *)scheme_malloc_atomic_tagged(sizeof(Scheme_Local));
-  l->type = scheme_compiled_quote_syntax_type;
+  l->so.type = scheme_compiled_quote_syntax_type;
   l->position = pos;
 
   cp->num_stxes++;
@@ -1364,7 +1364,7 @@ Scheme_Object *scheme_hash_module_variable(Scheme_Env *env, Scheme_Object *modid
     Module_Variable *mv;
 
     mv = MALLOC_ONE_TAGGED(Module_Variable);
-    mv->type = scheme_module_variable_type;
+    mv->so.type = scheme_module_variable_type;
     
     mv->modidx = modidx;
     mv->sym = stxsym;
@@ -2260,7 +2260,7 @@ Resolve_Prefix *scheme_resolve_prefix(int phase, Comp_Prefix *cp, int simplify)
   int i;
 
   rp = MALLOC_ONE_TAGGED(Resolve_Prefix);
-  rp->type = scheme_resolve_prefix_type;
+  rp->so.type = scheme_resolve_prefix_type;
   rp->num_toplevels = cp->num_toplevels;
   rp->num_stxes = cp->num_stxes;
   
@@ -3088,7 +3088,7 @@ static Scheme_Object *read_variable(Scheme_Object *obj)
       Module_Variable *mv;
       
       mv = MALLOC_ONE_TAGGED(Module_Variable);
-      mv->type = scheme_module_variable_type;
+      mv->so.type = scheme_module_variable_type;
       
       mv->modidx = modname;
       mv->sym = varname;
@@ -3151,7 +3151,7 @@ static Scheme_Object *read_resolve_prefix(Scheme_Object *obj)
   sv = SCHEME_CDR(obj);
 
   rp = MALLOC_ONE_TAGGED(Resolve_Prefix);
-  rp->type = scheme_resolve_prefix_type;
+  rp->so.type = scheme_resolve_prefix_type;
   rp->num_toplevels = SCHEME_VEC_SIZE(tv);
   rp->num_stxes = SCHEME_VEC_SIZE(sv);
 

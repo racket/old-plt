@@ -34,14 +34,14 @@ static Scheme_Object *make_complex(const Scheme_Object *r, const Scheme_Object *
   Scheme_Complex *c;
 
   c = MALLOC_ONE_TAGGED(Scheme_Complex);
-  c->type = scheme_complex_type;
+  c->so.type = scheme_complex_type;
   c->r = (Scheme_Object *)r;
   c->i = (Scheme_Object *)i;
 
   if (normalize)
-    return scheme_complex_normalize((Scheme_Object *) mzALIAS c);
+    return scheme_complex_normalize((Scheme_Object *)c);
   else
-    return (Scheme_Object *) mzALIAS c;
+    return (Scheme_Object *)c;
 }
 
 Scheme_Object *scheme_make_complex(const Scheme_Object *r, const Scheme_Object *i)
@@ -60,11 +60,11 @@ START_XFORM_SKIP;
 
 Scheme_Object *scheme_make_small_complex(const Scheme_Object *n, Small_Complex *s)
 {
-  s->type = scheme_complex_type;
-  s->r = (Scheme_Object *) mzALIAS n;
+  s->so.type = scheme_complex_type;
+  s->r = (Scheme_Object *)n;
   s->i = zero;
 
-  return (Scheme_Object *) mzALIAS s;
+  return (Scheme_Object *)s;
 }
 
 #ifdef MZ_XFORM
@@ -73,14 +73,14 @@ END_XFORM_SKIP;
 
 int scheme_is_complex_exact(const Scheme_Object *o)
 {
-  Scheme_Complex *c = (Scheme_Complex *) mzALIAS o;
+  Scheme_Complex *c = (Scheme_Complex *)o;
 
   return !SCHEME_FLOATP(c->r) && !SCHEME_FLOATP(c->i);
 }
 
 Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
 {
-  Scheme_Complex *c = (Scheme_Complex *) mzALIAS o;
+  Scheme_Complex *c = (Scheme_Complex *)o;
 
   if (c->i == zero)
     return c->r;
@@ -88,15 +88,15 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
     /* No coercions, but check izi type */
     if (SCHEME_DBLP(c->i)) {
       if (SCHEME_DBL_VAL(c->i) == 0.0)
-	c->type = scheme_complex_izi_type;
+	c->so.type = scheme_complex_izi_type;
     } 
 #ifdef MZ_USE_SINGLE_FLOATS
     if (SCHEME_FLTP(c->i)) {
       if (SCHEME_FLT_VAL(c->i) == 0.0f)
-	c->type = scheme_complex_izi_type;
+	c->so.type = scheme_complex_izi_type;
     }
 #endif
-    return (Scheme_Object *) mzALIAS c; 
+    return (Scheme_Object *)c; 
   }
 
   if (SCHEME_DBLP(c->i)) {
@@ -106,7 +106,7 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
       c->r = r;
     }
     if (SCHEME_DBL_VAL(c->i) == 0.0)
-      c->type = scheme_complex_izi_type;
+      c->so.type = scheme_complex_izi_type;
   } else if (SCHEME_DBLP(c->r)) {
     Scheme_Object *i;
     i = scheme_make_double(scheme_get_val_as_double(c->i));
@@ -119,42 +119,42 @@ Scheme_Object *scheme_complex_normalize(const Scheme_Object *o)
       if (SCHEME_DBLP(c->r)) {
 	c->i = scheme_make_double(SCHEME_FLT_VAL(c->i));
 	if (SCHEME_DBL_VAL(c->i) == 0.0)
-	  c->type = scheme_complex_izi_type;
+	  c->so.type = scheme_complex_izi_type;
       } else {
 	c->r = scheme_make_float(scheme_get_val_as_float(c->r));
 	if (SCHEME_FLT_VAL(c->i) == 0.0f)
-	  c->type = scheme_complex_izi_type;
+	  c->so.type = scheme_complex_izi_type;
       }
     } else {
       if (SCHEME_FLT_VAL(c->i) == 0.0f)
-	c->type = scheme_complex_izi_type;
+	c->so.type = scheme_complex_izi_type;
     }
   }
 #endif
 
-  return (Scheme_Object *) mzALIAS c;
+  return (Scheme_Object *)c;
 }
 
 Scheme_Object *scheme_complex_real_part(const Scheme_Object *n)
 {
-  return ((Scheme_Complex *) mzALIAS n)->r;
+  return ((Scheme_Complex *)n)->r;
 }
 
 Scheme_Object *scheme_complex_imaginary_part(const Scheme_Object *n)
 {
-  return ((Scheme_Complex *) mzALIAS n)->i;
+  return ((Scheme_Complex *)n)->i;
 }
 
 int scheme_complex_eq(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Complex *ca = (Scheme_Complex *) mzALIAS a;
-  Scheme_Complex *cb = (Scheme_Complex *) mzALIAS b;
+  Scheme_Complex *ca = (Scheme_Complex *)a;
+  Scheme_Complex *cb = (Scheme_Complex *)b;
   return scheme_bin_eq(ca->r, cb->r) && scheme_bin_eq(ca->i, cb->i);
 }
 
 Scheme_Object *scheme_complex_negate(const Scheme_Object *o)
 {
-  Scheme_Complex *c = (Scheme_Complex *) mzALIAS o;
+  Scheme_Complex *c = (Scheme_Complex *)o;
 
   return make_complex(scheme_bin_minus(scheme_make_integer(0),
 				       c->r), 
@@ -165,8 +165,8 @@ Scheme_Object *scheme_complex_negate(const Scheme_Object *o)
 
 Scheme_Object *scheme_complex_add(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Complex *ca = (Scheme_Complex *) mzALIAS a;
-  Scheme_Complex *cb = (Scheme_Complex *) mzALIAS b;
+  Scheme_Complex *ca = (Scheme_Complex *)a;
+  Scheme_Complex *cb = (Scheme_Complex *)b;
 
   return scheme_make_complex(scheme_bin_plus(ca->r, cb->r),
 			     scheme_bin_plus(ca->i, cb->i));
@@ -174,8 +174,8 @@ Scheme_Object *scheme_complex_add(const Scheme_Object *a, const Scheme_Object *b
 
 Scheme_Object *scheme_complex_subtract(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Complex *ca = (Scheme_Complex *) mzALIAS a;
-  Scheme_Complex *cb = (Scheme_Complex *) mzALIAS b;
+  Scheme_Complex *ca = (Scheme_Complex *)a;
+  Scheme_Complex *cb = (Scheme_Complex *)b;
 
   return scheme_make_complex(scheme_bin_minus(ca->r, cb->r),
 			     scheme_bin_minus(ca->i, cb->i));
@@ -199,8 +199,8 @@ Scheme_Object *scheme_complex_sub1(const Scheme_Object *n)
 
 Scheme_Object *scheme_complex_multiply(const Scheme_Object *a, const Scheme_Object *b)
 {
-  Scheme_Complex *ca = (Scheme_Complex *) mzALIAS a;
-  Scheme_Complex *cb = (Scheme_Complex *) mzALIAS b;
+  Scheme_Complex *ca = (Scheme_Complex *)a;
+  Scheme_Complex *cb = (Scheme_Complex *)b;
 
   return scheme_make_complex(scheme_bin_minus(scheme_bin_mult(ca->r, cb->r),
 					      scheme_bin_mult(ca->i, cb->i)),
@@ -211,8 +211,8 @@ Scheme_Object *scheme_complex_multiply(const Scheme_Object *a, const Scheme_Obje
 
 Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object *d)
 { 
-  Scheme_Complex *cn = (Scheme_Complex *) mzALIAS n;
-  Scheme_Complex *cd = (Scheme_Complex *) mzALIAS d;
+  Scheme_Complex *cn = (Scheme_Complex *)n;
+  Scheme_Complex *cd = (Scheme_Complex *)d;
   Scheme_Object *a_sq_p_b_sq, *r, *i;
   
   if ((cn->r == zero) && (cn->i == zero))
@@ -244,8 +244,8 @@ Scheme_Object *scheme_complex_divide(const Scheme_Object *n, const Scheme_Object
 
 Scheme_Object *scheme_complex_power(const Scheme_Object *base, const Scheme_Object *exponent)
 {
-  Scheme_Complex *cb = (Scheme_Complex *) mzALIAS base;
-  Scheme_Complex *ce = (Scheme_Complex *) mzALIAS exponent;
+  Scheme_Complex *cb = (Scheme_Complex *)base;
+  Scheme_Complex *ce = (Scheme_Complex *)exponent;
   double a, b, c, d, bm, ba, nm, na, r1, r2;
 
   if ((ce->i == zero) && !SCHEME_FLOATP(ce->r)) {
@@ -287,7 +287,7 @@ Scheme_Object *scheme_complex_power(const Scheme_Object *base, const Scheme_Obje
 
 Scheme_Object *scheme_complex_sqrt(const Scheme_Object *o)
 {
-  Scheme_Complex *c = (Scheme_Complex *) mzALIAS o;
+  Scheme_Complex *c = (Scheme_Complex *)o;
   Scheme_Object *r, *i, *ssq, *srssq, *nrsq, *prsq, *nr, *ni;
 
   r = c->r;
@@ -302,7 +302,7 @@ Scheme_Object *scheme_complex_sqrt(const Scheme_Object *o)
     /* We may have lost too much precision, if i << r.  The result is
        going to be inexact, anyway, so switch to using expt. */
     Scheme_Object *a[2];
-    a[0] = (Scheme_Object *) mzALIAS o;
+    a[0] = (Scheme_Object *)o;
     a[1] = scheme_make_double(0.5);
     return scheme_expt(2, a);
   }

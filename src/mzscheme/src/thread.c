@@ -146,8 +146,7 @@ Scheme_Thread *scheme_main_thread = NULL;
 Scheme_Thread *scheme_first_thread = NULL;
 
 typedef struct Scheme_Thread_Set {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   struct Scheme_Thread_Set *parent;
   Scheme_Object *first;
   Scheme_Object *next;
@@ -330,7 +329,7 @@ enum {
 };
 
 typedef struct Scheme_Thread_Custodian_Hop {
-  Scheme_Type type;
+  Scheme_Object so;
   Scheme_Thread *p; /* really an indirection with precise gc */
 } Scheme_Thread_Custodian_Hop;
 
@@ -920,8 +919,8 @@ typedef struct {
   Scheme_Custodian *val;
 } Scheme_Custodian_Weak_Box;
 
-# define MALLOC_MREF() (Scheme_Custodian_Reference *) mzALIAS scheme_make_weak_box(NULL)
-# define CUSTODIAN_FAM(x) ((Scheme_Custodian_Weak_Box *) mzALIAS x)->val
+# define MALLOC_MREF() (Scheme_Custodian_Reference *)scheme_make_weak_box(NULL)
+# define CUSTODIAN_FAM(x) ((Scheme_Custodian_Weak_Box *)x)->val
 # define xCUSTODIAN_FAM(x) SCHEME_BOX_VAL(x)
 #else
 # define MALLOC_MREF() MALLOC_ONE_WEAK(Scheme_Custodian_Reference)
@@ -968,7 +967,7 @@ static void adjust_custodian_family(void *mgr, void *skip_move)
      locks. And it is synchronized against all finalizations, so a
      managee can't try to unregister while we're shuffling its
      custodian. */
-  Scheme_Custodian *r = (Scheme_Custodian *) mzALIAS mgr, *parent, *m;
+  Scheme_Custodian *r = (Scheme_Custodian *)mgr, *parent, *m;
   int i;
 
   parent = CUSTODIAN_FAM(r->parent);
@@ -1015,7 +1014,7 @@ static void adjust_custodian_family(void *mgr, void *skip_move)
 	    Scheme_Object *o;
 	    o = xCUSTODIAN_FAM(r->boxes[i]);
 	    if (SAME_TYPE(SCHEME_TYPE(o), scheme_thread_hop_type)) {
-	      o = WEAKIFIED(((Scheme_Thread_Custodian_Hop *) mzALIAS o)->p);
+	      o = WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
 	      if (o)
 		GC_register_thread(o, parent);
 	    }
@@ -1073,7 +1072,7 @@ Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent)
   
   m = MALLOC_ONE_TAGGED(Scheme_Custodian);
 
-  m->type = scheme_custodian_type;
+  m->so.type = scheme_custodian_type;
 
   m->alloc = m->count = 0;
 
@@ -1099,7 +1098,7 @@ Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent)
 
 static void rebox_willdone_object(void *o, void *mr)
 {
-  Scheme_Custodian *m = CUSTODIAN_FAM((Scheme_Custodian_Reference *) mzALIAS mr);
+  Scheme_Custodian *m = CUSTODIAN_FAM((Scheme_Custodian_Reference *)mr);
   Scheme_Close_Custodian_Client *f;
   void *data;
 
@@ -1121,7 +1120,7 @@ static void rebox_willdone_object(void *o, void *mr)
     xCUSTODIAN_FAM(b) = o;
     
     /* Put the custodian back: */
-    CUSTODIAN_FAM((Scheme_Custodian_Reference *) mzALIAS mr) = m;
+    CUSTODIAN_FAM((Scheme_Custodian_Reference *)mr) = m;
 
     add_managed_box(m, (Scheme_Object **)b, (Scheme_Custodian_Reference *)mr, f, data);
   }
@@ -1129,7 +1128,7 @@ static void rebox_willdone_object(void *o, void *mr)
 
 static void managed_object_gone(void *o, void *mr)
 {
-  Scheme_Custodian *m = CUSTODIAN_FAM((Scheme_Custodian_Reference *) mzALIAS mr);
+  Scheme_Custodian *m = CUSTODIAN_FAM((Scheme_Custodian_Reference *)mr);
 
   /* Still has management? */
   if (m)
@@ -1247,7 +1246,7 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
 	if (!cf && (SAME_TYPE(SCHEME_TYPE(o), scheme_thread_hop_type))) {
 	  /* We've added an indirection and made it weak. See mr_hop note above. */
 	  is_thread = 1;
-	  the_thread = (Scheme_Thread *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *) mzALIAS o)->p);
+	  the_thread = (Scheme_Thread *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
 	} else {
 	  is_thread = 0;
 	  the_thread = NULL;
@@ -1354,7 +1353,7 @@ static void for_each_managed(Scheme_Type type, Scheme_For_Each_Func cf)
 	  if (SAME_TYPE(type, scheme_thread_hop_type)) {
 	    /* We've added an indirection and made it weak. See mr_hop note above. */
 	    Scheme_Thread *t;
-	    t = (Scheme_Thread *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *) mzALIAS o)->p);
+	    t = (Scheme_Thread *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
 	    if (SAME_OBJ(t->mref, m->mrefs[i]))
 	      o = (Scheme_Object *)t;
 	    else {
@@ -1431,7 +1430,7 @@ static Scheme_Object *custodian_close_all(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *extract_thread(Scheme_Object *o)
 {
-  return (Scheme_Object *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *) mzALIAS o)->p);
+  return (Scheme_Object *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
 }
 
 void scheme_add_custodian_extractor(Scheme_Type t, Scheme_Custodian_Extractor e)
@@ -1647,7 +1646,7 @@ static Scheme_Thread_Set *create_thread_set(Scheme_Thread_Set *parent)
   Scheme_Thread_Set *t_set;
 
   t_set = MALLOC_ONE_TAGGED(Scheme_Thread_Set);
-  t_set->type = scheme_thread_set_type;
+  t_set->so.type = scheme_thread_set_type;
 
   t_set->parent = parent;
 
@@ -1688,33 +1687,33 @@ static Scheme_Object *current_thread_set(int argc, Scheme_Object *argv[])
 static TSET_IL void set_t_set_next(Scheme_Object *o, Scheme_Object *n)
 {
   if (SCHEME_THREADP(o))
-    ((Scheme_Thread *) mzALIAS o)->t_set_next = n;
+    ((Scheme_Thread *)o)->t_set_next = n;
   else
-    ((Scheme_Thread_Set *) mzALIAS o)->next = n;
+    ((Scheme_Thread_Set *)o)->next = n;
 }
 
 static TSET_IL void set_t_set_prev(Scheme_Object *o, Scheme_Object *n)
 {
   if (SCHEME_THREADP(o))
-    ((Scheme_Thread *) mzALIAS o)->t_set_prev = n;
+    ((Scheme_Thread *)o)->t_set_prev = n;
   else
-    ((Scheme_Thread_Set *) mzALIAS o)->prev = n;
+    ((Scheme_Thread_Set *)o)->prev = n;
 }
 
 static TSET_IL Scheme_Object *get_t_set_next(Scheme_Object *o)
 {
   if (SCHEME_THREADP(o))
-    return ((Scheme_Thread *) mzALIAS o)->t_set_next;
+    return ((Scheme_Thread *)o)->t_set_next;
   else
-    return ((Scheme_Thread_Set *) mzALIAS o)->next;
+    return ((Scheme_Thread_Set *)o)->next;
 }
 
 static TSET_IL Scheme_Object *get_t_set_prev(Scheme_Object *o)
 {
   if (SCHEME_THREADP(o))
-    return ((Scheme_Thread *) mzALIAS o)->t_set_prev;
+    return ((Scheme_Thread *)o)->t_set_prev;
   else
-    return ((Scheme_Thread_Set *) mzALIAS o)->prev;
+    return ((Scheme_Thread_Set *)o)->prev;
 }
 
 static void schedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
@@ -1729,7 +1728,7 @@ static void schedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
 
     t_set->current = s;
 
-    s = (Scheme_Object *) mzALIAS t_set;
+    s = (Scheme_Object *)t_set;
     t_set = t_set->parent;
   }
 }
@@ -1762,7 +1761,7 @@ static void unschedule_in_set(Scheme_Object *s, Scheme_Thread_Set *t_set)
     if (t_set->current)
       break;
     
-    s = (Scheme_Object *) mzALIAS t_set;
+    s = (Scheme_Object *)t_set;
     t_set = t_set->parent;
   }
 }
@@ -1780,7 +1779,7 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
 
   process = MALLOC_ONE_TAGGED(Scheme_Thread);
 
-  process->type = scheme_thread_type;
+  process->so.type = scheme_thread_type;
 
   process->stack_start = 0;
 
@@ -1936,10 +1935,10 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
     Scheme_Custodian_Reference *mref;
     hop = MALLOC_ONE_WEAK_RT(Scheme_Thread_Custodian_Hop);
     process->mr_hop = hop;
-    hop->type = scheme_thread_hop_type;
+    hop->so.type = scheme_thread_hop_type;
     {
       Scheme_Thread *wp;
-      wp = (Scheme_Thread *)WEAKIFY((Scheme_Object *) mzALIAS process);
+      wp = (Scheme_Thread *)WEAKIFY((Scheme_Object *)process);
       hop->p = wp;
     }
 
@@ -1948,7 +1947,7 @@ static Scheme_Thread *make_thread(Scheme_Config *config,
     process->extra_mrefs = scheme_null;
 
 #ifndef MZ_PRECISE_GC
-    scheme_weak_reference((void **) mzALIAS &hop->p);
+    scheme_weak_reference((void **)&hop->p);
 #endif
   }
 
@@ -2111,9 +2110,9 @@ static void select_thread()
 
   /* Try to pick a next thread to avoid DOS attacks
      through whatever kinds of things call select_thread() */
-  o = (Scheme_Object *) mzALIAS thread_set_top;
+  o = (Scheme_Object *)thread_set_top;
   while (!SCHEME_THREADP(o)) {
-    t_set = (Scheme_Thread_Set *) mzALIAS o;
+    t_set = (Scheme_Thread_Set *)o;
     o = get_t_set_next(t_set->current);
     if (!o)
       o = t_set->first;
@@ -2122,7 +2121,7 @@ static void select_thread()
      new thread, but the loop below will pick a definitely suitable
      thread. */
   
-  new_thread = (Scheme_Thread *) mzALIAS o;
+  new_thread = (Scheme_Thread *)o;
   do {
     if (!new_thread)
       new_thread = scheme_first_thread;
@@ -2468,7 +2467,7 @@ static Scheme_Object *thread_dead_p(int argc, Scheme_Object *args[])
 
 static int thread_wait_done(Scheme_Object *p)
 {
-  int running = ((Scheme_Thread *) mzALIAS p)->running;
+  int running = ((Scheme_Thread *)p)->running;
   return !MZTHREAD_STILL_RUNNING(running);
 }
 
@@ -2661,7 +2660,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   wait_until_suspend_ok();
 
   np = MALLOC_ONE_TAGGED(Scheme_Thread);
-  np->type = scheme_thread_type;
+  np->so.type = scheme_thread_type;
 #ifdef MZ_PRECISE_GC
   GC_register_thread(np, mgr);
 #endif
@@ -2759,17 +2758,17 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     Scheme_Custodian_Reference *mref;
     hop = MALLOC_ONE_WEAK_RT(Scheme_Thread_Custodian_Hop);
     np->mr_hop = hop;
-    hop->type = scheme_thread_hop_type;
+    hop->so.type = scheme_thread_hop_type;
     {
       Scheme_Thread *wp;
-      wp = (Scheme_Thread *)WEAKIFY((Scheme_Object *) mzALIAS np);
+      wp = (Scheme_Thread *)WEAKIFY((Scheme_Object *)np);
       hop->p = wp;
     }
     mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
     np->mref = mref;
     np->extra_mrefs = scheme_null;
 #ifndef MZ_PRECISE_GC
-    scheme_weak_reference((void **) mzALIAS &hop->p);
+    scheme_weak_reference((void **)&hop->p);
 #endif
   }
 
@@ -2807,7 +2806,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
 #ifdef MZ_PRECISE_GC
   WEAKIFIED(np->mr_hop->p) = NULL;
 #else
-  scheme_unweak_reference((void **) mzALIAS &np->mr_hop->p);
+  scheme_unweak_reference((void **)&np->mr_hop->p);
 #endif
   scheme_remove_all_finalization(np->mr_hop);
 
@@ -3259,7 +3258,7 @@ void scheme_thread_block(float sleep_time)
        blocked. */
     
     /* Start from the root */
-    next_in_set = (Scheme_Object *) mzALIAS thread_set_top;
+    next_in_set = (Scheme_Object *)thread_set_top;
     t_set = NULL; /* this will get set at the beginning of the loop */
     
     /* Each thread may or may not be available. If it's not available,
@@ -3272,7 +3271,7 @@ void scheme_thread_block(float sleep_time)
 	 started searching for something to run, so we'll know when
 	 we've tried everything in the set. */
       while (!SCHEME_THREADP(next_in_set)) {
-	t_set = (Scheme_Thread_Set *) mzALIAS next_in_set;
+	t_set = (Scheme_Thread_Set *)next_in_set;
 	next_in_set = get_t_set_next(t_set->current);
 	if (!next_in_set)
 	  next_in_set = t_set->first;
@@ -3282,7 +3281,7 @@ void scheme_thread_block(float sleep_time)
 
       /* Now `t_set' is the set we're trying, and `next' will be the
          thread to try: */
-      next = (Scheme_Thread *) mzALIAS next_in_set;
+      next = (Scheme_Thread *)next_in_set;
       
       /* If we get back to the current thread, then
 	 no other thread was ready. */
@@ -4498,14 +4497,14 @@ static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target,
       Scheme_Object **argv;
       Waitable **ws;
        
-      argv = (Scheme_Object **)splice_ptr_array((void **) mzALIAS waitable_set->argv, 
+      argv = (Scheme_Object **)splice_ptr_array((void **)waitable_set->argv, 
 						waitable_set->argc,
-						(void **) mzALIAS wts->argv, 
+						(void **)wts->argv, 
 						wts->argc,
 						i);
-      ws = (Waitable **)splice_ptr_array((void **) mzALIAS waitable_set->ws, 
+      ws = (Waitable **)splice_ptr_array((void **)waitable_set->ws, 
 					 waitable_set->argc,
-					 (void **) mzALIAS wts->ws, 
+					 (void **)wts->ws, 
 					 wts->argc,
 					 i);
 
@@ -4513,7 +4512,7 @@ static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target,
       waitable_set->ws = ws;
 
       if (waiting->wrapss) {
-	argv = (Scheme_Object **)splice_ptr_array((void **) mzALIAS waiting->wrapss, 
+	argv = (Scheme_Object **)splice_ptr_array((void **)waiting->wrapss, 
 						  waitable_set->argc,
 						  (void **)NULL,
 						  wts->argc,
@@ -4521,7 +4520,7 @@ static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target,
 	waiting->wrapss = argv;
       }
       if (waiting->nackss) {
-	argv = (Scheme_Object **)splice_ptr_array((void **) mzALIAS waiting->nackss, 
+	argv = (Scheme_Object **)splice_ptr_array((void **)waiting->nackss, 
 						  waitable_set->argc,
 						  (void **)NULL,
 						  wts->argc,
@@ -4549,7 +4548,7 @@ static void set_wait_target(Waiting *waiting, int i, Scheme_Object *target,
       argv = waitable_set->argv;
       for (i = waitable_set->argc; i--; ) {
 	if (SAME_TYPE(SCHEME_TYPE(argv[i]), scheme_channel_waiter_type)) {
-	  ((Scheme_Channel_Waiter *) mzALIAS argv[i])->waiting_i = i;
+	  ((Scheme_Channel_Waiter *)argv[i])->waiting_i = i;
 	}
       }
 
@@ -4712,7 +4711,7 @@ static void waiting_needs_wakeup(Scheme_Object *s, void *fds)
   int i;
   Scheme_Object *o;
   Waitable *w;
-  Waitable_Set *waitable_set = ((Waiting *) mzALIAS s)->set;
+  Waitable_Set *waitable_set = ((Waiting *)s)->set;
 
   for (i = 0; i < waitable_set->argc; i++) {
     o = waitable_set->argv[i];
@@ -4753,12 +4752,12 @@ Waitable_Set *make_waitable_set(const char *name, int argc, Scheme_Object **argv
       iws[i] = w;
       count++;
     } else {
-      count += ((Waitable_Set *) mzALIAS argv[i+delta])->argc;
+      count += ((Waitable_Set *)argv[i+delta])->argc;
     }
   }
 
   waitable_set = MALLOC_ONE_TAGGED(Waitable_Set);
-  waitable_set->type = scheme_waitable_set_type;
+  waitable_set->so.type = scheme_waitable_set_type;
   waitable_set->argc = count;
 
   if (count == (argc - delta))
@@ -4770,7 +4769,7 @@ Waitable_Set *make_waitable_set(const char *name, int argc, Scheme_Object **argv
   for (i = delta, j = 0; i < argc; i++, j++) {
     if (SCHEME_WAITSETP(argv[i])) {
       int k, n;
-      subset = (Waitable_Set *) mzALIAS argv[i];
+      subset = (Waitable_Set *)argv[i];
       n = subset->argc;
       for (k = 0; k < n; k++, j++) {
 	args[j] = subset->argv[k];
@@ -4804,7 +4803,7 @@ static void post_waiting_nacks(Waiting *waiting)
   
   for (i = 0; i < c; i++) {
     if (SAME_TYPE(SCHEME_TYPE(waiting->set->argv[i]), scheme_channel_waiter_type))
-      scheme_get_outof_line((Scheme_Channel_Waiter *) mzALIAS waiting->set->argv[i]);
+      scheme_get_outof_line((Scheme_Channel_Waiter *)waiting->set->argv[i]);
     if (waiting->nackss) {
       if ((i + 1) != waiting->result) {
 	l = waiting->nackss[i];
@@ -4849,7 +4848,7 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
   /* Special case: only argument is an immutable waitable set: */
   if ((argc == 2) && SCHEME_WAITSETP(argv[1])) {
     int i;
-    waitable_set = (Waitable_Set *) mzALIAS argv[1];
+    waitable_set = (Waitable_Set *)argv[1];
     for (i = waitable_set->argc; i--; ) {
       if (waitable_set->ws[i]->can_redirect) {
 	/* Need to copy this set to handle redirections. */
@@ -4910,7 +4909,7 @@ static Scheme_Object *object_wait_multiple(const char *name, int argc, Scheme_Ob
     o = waitable_set->argv[waiting->result - 1];
     if (SAME_TYPE(SCHEME_TYPE(o), scheme_channel_waiter_type)) {
       /* This is a put that got changed to a waiter, but not changed back */
-      o = ((Scheme_Channel_Waiter *) mzALIAS o)->obj;
+      o = ((Scheme_Channel_Waiter *)o)->obj;
     }
     if (waiting->wrapss) {
       l = waiting->wrapss[waiting->result - 1];
@@ -4996,7 +4995,7 @@ Scheme_Object *scheme_make_thread_cell(Scheme_Object *def_val, int inherited)
 {
   Scheme_Object *c;
 
-  c = MALLOC_ONE_TAGGED(Scheme_Object);
+  c = MALLOC_ONE_TAGGED(Scheme_Simple_Object);
   c->type = scheme_thread_cell_type;
   SCHEME_IPTR_VAL(c) = def_val;
   SCHEME_PINT_VAL(c) = inherited;
@@ -5096,7 +5095,7 @@ static Scheme_Config *do_extend_config(Scheme_Config *c, Scheme_Object *key, Sch
      imagine that it matters). */
 
   naya = MALLOC_ONE_TAGGED(Scheme_Config);
-  naya->type = scheme_config_type;
+  naya->so.type = scheme_config_type;
   naya->key = key;
   naya->cell = cell; /* could be just a value */
   naya->next = c;
@@ -5134,7 +5133,7 @@ Scheme_Object *find_param_cell(Scheme_Config *c, Scheme_Object *k, int force_cel
       return c->cell;
     } else if (!c->next) {
       /* Eventually bottoms out here */
-      Scheme_Parameterization *p = (Scheme_Parameterization *) mzALIAS c->cell;
+      Scheme_Parameterization *p = (Scheme_Parameterization *)c->cell;
       if (SCHEME_INTP(k))
 	return p->prims[SCHEME_INT_VAL(k)];
       else {
@@ -5220,7 +5219,7 @@ Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
 	}
 	c = c->next;
       } else {
-	paramz2 = (Scheme_Parameterization *) mzALIAS c->cell;
+	paramz2 = (Scheme_Parameterization *)c->cell;
 
 	for (i = 0; i < max_configs; i++) {
 	  if (!paramz->prims[i])
@@ -5251,7 +5250,7 @@ Scheme_Parameterization *flatten_config(Scheme_Config *orig_c)
       }
     }
 
-    orig_c->cell = (Scheme_Object *) mzALIAS paramz;
+    orig_c->cell = (Scheme_Object *)paramz;
     orig_c->key = NULL;
     orig_c->next = NULL;
   }
@@ -5270,7 +5269,7 @@ static Scheme_Object *parameterization_p(int argc, Scheme_Object **argv)
 
 
 #define SCHEME_PARAMETERP(v) ((SCHEME_PRIMP(v) || SCHEME_CLSD_PRIMP(v)) \
-                              && (((Scheme_Primitive_Proc *) mzALIAS v)->flags & SCHEME_PRIM_IS_PARAMETER))
+                              && (((Scheme_Primitive_Proc *)v)->pp.flags & SCHEME_PRIM_IS_PARAMETER))
 
 static Scheme_Object *extend_parameterization(int argc, Scheme_Object *argv[])
 {
@@ -5290,11 +5289,11 @@ static Scheme_Object *extend_parameterization(int argc, Scheme_Object *argv[])
       a[1] = scheme_false;
       if (SCHEME_PRIMP(argv[i])) {
 	Scheme_Prim *proc;
-	proc = ((Scheme_Primitive_Proc *) mzALIAS argv[i])->prim_val;
+	proc = ((Scheme_Primitive_Proc *)argv[i])->prim_val;
 	key = proc(2, a); /* leads to scheme_param_config to set a[1] */
       } else {
 	/* sets a[1] */
-	key = do_param(((Scheme_Closed_Primitive_Proc *) mzALIAS argv[i])->data, 2, a);
+	key = do_param(((Scheme_Closed_Primitive_Proc *)argv[i])->data, 2, a);
       }
       c = do_extend_config(c, key, a[1]);
     }
@@ -5317,7 +5316,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
   Scheme_Object *guard, **argv2, *pos[2];
 
   if (argc && argv[0]) {
-    guard = ((ParamData *) mzALIAS data)->guard;
+    guard = ((ParamData *)data)->guard;
     if (guard) {
       Scheme_Object *v;
       
@@ -5326,7 +5325,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
       if (argc == 2) {
 	/* Special hook for parameterize: */
 	argv[1] = v;
-	return ((ParamData *) mzALIAS data)->key;
+	return ((ParamData *)data)->key;
       }
 
       argv2 = MALLOC_N(Scheme_Object *, argc);
@@ -5335,14 +5334,14 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
     } if (argc == 2) {
       /* Special hook for parameterize: */
       argv[1] = argv[0];
-      return ((ParamData *) mzALIAS data)->key;
+      return ((ParamData *)data)->key;
     } else
       argv2 = argv;
   } else
     argv2 = argv;    
 
-  pos[0] = ((ParamData *) mzALIAS data)->key;
-  pos[1] = ((ParamData *) mzALIAS data)->defcell;
+  pos[0] = ((ParamData *)data)->key;
+  pos[1] = ((ParamData *)data)->defcell;
   
   return scheme_param_config("parameter-procedure", 
 			     (Scheme_Object *)pos,
@@ -5372,7 +5371,7 @@ static Scheme_Object *make_parameter(int argc, Scheme_Object **argv)
 
   p = scheme_make_closed_prim_w_arity(do_param, (void *)data, 
 				      "parameter-procedure", 0, 1);
-  ((Scheme_Primitive_Proc *) mzALIAS p)->flags |= SCHEME_PRIM_IS_PARAMETER;
+  ((Scheme_Primitive_Proc *)p)->pp.flags |= SCHEME_PRIM_IS_PARAMETER;
 
   return p;
 }
@@ -5385,10 +5384,10 @@ static Scheme_Object *parameter_procedure_eq(int argc, Scheme_Object **argv)
   b = argv[1];
 
   if (!((SCHEME_PRIMP(a) || SCHEME_CLSD_PRIMP(a))
-	&& (((Scheme_Primitive_Proc *) mzALIAS a)->flags & SCHEME_PRIM_IS_PARAMETER)))
+	&& (((Scheme_Primitive_Proc *)a)->pp.flags & SCHEME_PRIM_IS_PARAMETER)))
     scheme_wrong_type("parameter-procedure=?", "parameter-procedure", 0, argc, argv);
   if (!((SCHEME_PRIMP(b) || SCHEME_CLSD_PRIMP(b))
-	&& (((Scheme_Primitive_Proc *) mzALIAS b)->flags & SCHEME_PRIM_IS_PARAMETER)))
+	&& (((Scheme_Primitive_Proc *)b)->pp.flags & SCHEME_PRIM_IS_PARAMETER)))
     scheme_wrong_type("parameter-procedure=?", "parameter-procedure", 1, argc, argv);
 
   return (SAME_OBJ(a, b)
@@ -5434,7 +5433,7 @@ static void make_initial_config(Scheme_Thread *p)
 #endif
 
   config = MALLOC_ONE_TAGGED(Scheme_Config);
-  config->type = scheme_config_type;
+  config->so.type = scheme_config_type;
   config->cell = (Scheme_Object *)paramz;
 
   p->init_config = config;
@@ -5552,7 +5551,7 @@ static void make_initial_config(Scheme_Thread *p)
     Scheme_Security_Guard *sg;
 
     sg = MALLOC_ONE_TAGGED(Scheme_Security_Guard);
-    sg->type = scheme_security_guard_type;
+    sg->so.type = scheme_security_guard_type;
     init_param(cells, paramz, MZCONFIG_SECURITY_GUARD, (Scheme_Object *)sg);
   }
 
@@ -5584,7 +5583,7 @@ Scheme_Object *scheme_register_parameter(Scheme_Prim *function, char *name, int 
     return config_map[which];
 
   o = scheme_make_prim_w_arity(function, name, 0, 1);
-  ((Scheme_Primitive_Proc *) mzALIAS o)->flags |= SCHEME_PRIM_IS_PARAMETER;
+  ((Scheme_Primitive_Proc *)o)->pp.flags |= SCHEME_PRIM_IS_PARAMETER;
 
   config_map[which] = o;
 
@@ -5615,9 +5614,9 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
     if (arity == -2) {
       Scheme_Object *cell;
 
-      cell = find_param_cell(config, ((Scheme_Object **) mzALIAS pos)[0], 0);
+      cell = find_param_cell(config, ((Scheme_Object **)pos)[0], 0);
       if (!cell)
-	cell = ((Scheme_Object **) mzALIAS pos)[1];
+	cell = ((Scheme_Object **)pos)[1];
 
       if (SCHEME_THREAD_CELLP(cell))
 	return scheme_thread_cell_get(cell, scheme_current_thread->cell_values);
@@ -5671,9 +5670,9 @@ Scheme_Object *scheme_param_config(char *name, Scheme_Object *pos,
     } else {
       Scheme_Object *cell;
       
-      cell = find_param_cell(config, ((Scheme_Object **) mzALIAS pos)[0], 1);
+      cell = find_param_cell(config, ((Scheme_Object **)pos)[0], 1);
       if (!cell)
-	cell = ((Scheme_Object **) mzALIAS pos)[1];
+	cell = ((Scheme_Object **)pos)[1];
 
       scheme_thread_cell_set(cell, scheme_current_thread->cell_values, naya);
     }
@@ -5774,7 +5773,7 @@ static Scheme_Object *make_security_guard(int argc, Scheme_Object *argv[])
   scheme_check_proc_arity("make-security-guard", 4, 2, argc, argv);
 
   sg = MALLOC_ONE_TAGGED(Scheme_Security_Guard);
-  sg->type = scheme_security_guard_type;
+  sg->so.type = scheme_security_guard_type;
   sg->parent = (Scheme_Security_Guard *)argv[0];
   sg->file_proc = argv[1];
   sg->network_proc = argv[2];
@@ -5885,8 +5884,7 @@ typedef struct ActiveWill {
 } ActiveWill;
 
 typedef struct WillExecutor {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   Scheme_Object *sema;
   ActiveWill *first, *last;
 } WillExecutor;
@@ -5899,7 +5897,7 @@ typedef struct WillRegistration {
 
 static void activate_will(void *o, void *data) 
 {
-  WillRegistration *r = (WillRegistration *) mzALIAS data;
+  WillRegistration *r = (WillRegistration *)data;
   ActiveWill *a;
   WillExecutor *w;
     
@@ -5943,7 +5941,7 @@ static Scheme_Object *make_will_executor(int argc, Scheme_Object **argv)
   w = MALLOC_ONE_TAGGED(WillExecutor);
   sema = scheme_make_sema(0);
 
-  w->type = scheme_will_executor_type;
+  w->so.type = scheme_will_executor_type;
   w->first = NULL;
   w->last = NULL;
   w->sema = sema;

@@ -79,9 +79,10 @@ static void register_traversers(void);
 
 #define HAS_SUBSTX(obj) (SCHEME_PAIRP(obj) || SCHEME_VECTORP(obj) || SCHEME_BOXP(obj))
 
+#define STX_KEY(stx) MZ_OPT_HASH_KEY(&(stx)->iso)
+
 typedef struct Module_Renames {
-  Scheme_Type type; /* = scheme_rename_table_type */
-  MZ_HASH_KEY_EX
+  Scheme_Object so; /* scheme_rename_table_type */
   char plus_kernel, nonmodule;
   long phase;
   Scheme_Object *plus_kernel_nominal_source;
@@ -407,8 +408,8 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
   Scheme_Stx *stx;
 
   stx = MALLOC_ONE_TAGGED(Scheme_Stx);
-  stx->type = scheme_stx_type;
-  stx->hash_code = HAS_SUBSTX(val) ? STX_SUBSTX_FLAG : 0;
+  stx->iso.so.type = scheme_stx_type;
+  STX_KEY(stx) = HAS_SUBSTX(val) ? STX_SUBSTX_FLAG : 0;
   stx->val = val;
   stx->srcloc = srcloc;
   stx->wraps = scheme_null;
@@ -468,7 +469,7 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col, lo
 {
   Scheme_Object *tmp, *key;
 
-  ((Scheme_Stx *)stx)->hash_code |= STX_GRAPH_FLAG;
+  STX_KEY((Scheme_Stx *)stx) |= STX_GRAPH_FLAG;
   
   /* Add back-pointing property to track sharing 
      independent of marks. */
@@ -643,10 +644,10 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
   /* Clone nstx, keeping wraps, changing props to ne */
 
-  graph = (nstx->hash_code & STX_GRAPH_FLAG);
+  graph = (STX_KEY(nstx) & STX_GRAPH_FLAG);
 
   wraps = nstx->wraps;
-  if (nstx->hash_code & STX_SUBSTX_FLAG) {
+  if (STX_KEY(nstx) & STX_SUBSTX_FLAG) {
     modinfo_cache = NULL;
     lazy_prefix = nstx->u.lazy_prefix;
   } else {
@@ -663,7 +664,7 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
     nstx->u.lazy_prefix = lazy_prefix;
 
   if (graph)
-    nstx->hash_code |= STX_GRAPH_FLAG;
+    STX_KEY(nstx) |= STX_GRAPH_FLAG;
 
   return (Scheme_Object *)nstx;
 }
@@ -683,9 +684,9 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   long lp;
   int graph;
 
-  graph = (stx->hash_code & STX_GRAPH_FLAG);
+  graph = (STX_KEY(stx) & STX_GRAPH_FLAG);
 
-  if (stx->hash_code & STX_SUBSTX_FLAG)
+  if (STX_KEY(stx) & STX_SUBSTX_FLAG)
     lp = stx->u.lazy_prefix;
   else
     lp = 1;
@@ -704,12 +705,12 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->srcloc, stx->props);
   stx->wraps = wraps;
 
-  if (stx->hash_code & STX_SUBSTX_FLAG)
+  if (STX_KEY(stx) & STX_SUBSTX_FLAG)
     stx->u.lazy_prefix = lp;
   /* else cache should stay zeroed */
 
   if (graph)
-    stx->hash_code |= STX_GRAPH_FLAG;
+    STX_KEY(stx) |= STX_GRAPH_FLAG;
 
   return (Scheme_Object *)stx;
 }
@@ -761,7 +762,7 @@ Scheme_Object *scheme_make_module_rename(long phase, int nonmodule, Scheme_Hash_
   Scheme_Hash_Table *ht;
 
   mr = MALLOC_ONE_TAGGED(Module_Renames);
-  mr->type = scheme_rename_table_type;
+  mr->so.type = scheme_rename_table_type;
 
   ht = scheme_make_hash_table(SCHEME_hash_ptr);
 
@@ -950,10 +951,10 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   long lp;
   int graph;
 
-  graph = (stx->hash_code & STX_GRAPH_FLAG);
+  graph = (STX_KEY(stx) & STX_GRAPH_FLAG);
 
   wraps = CONS(rename, stx->wraps);
-  if (stx->hash_code & STX_SUBSTX_FLAG)
+  if (STX_KEY(stx) & STX_SUBSTX_FLAG)
     lp = stx->u.lazy_prefix + 1;
   else
     lp = 0;
@@ -964,7 +965,7 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   stx->u.lazy_prefix = lp; /* same as zeroing cache if no SUBSTX */
 
   if (graph)
-    stx->hash_code |= STX_GRAPH_FLAG;
+    STX_KEY(stx) |= STX_GRAPH_FLAG;
 
   return (Scheme_Object *)stx;
 }
@@ -1030,9 +1031,9 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
       long lp;
       int graph;
 
-      graph = (stx->hash_code & STX_GRAPH_FLAG);
+      graph = (STX_KEY(stx) & STX_GRAPH_FLAG);
 
-      if (stx->hash_code & STX_SUBSTX_FLAG)
+      if (STX_KEY(stx) & STX_SUBSTX_FLAG)
 	lp = stx->u.lazy_prefix + len;
       else
 	lp = 0;
@@ -1042,7 +1043,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
       stx->u.lazy_prefix = lp; /* same as zeroing cache if no SUBSTX */
 
       if (graph)
-	stx->hash_code |= STX_GRAPH_FLAG;
+	STX_KEY(stx) |= STX_GRAPH_FLAG;
 
       return (Scheme_Object *)stx;
     }
@@ -1122,7 +1123,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
 
-  if ((stx->hash_code & STX_SUBSTX_FLAG) && stx->u.lazy_prefix) {
+  if ((STX_KEY(stx) & STX_SUBSTX_FLAG) && stx->u.lazy_prefix) {
     Scheme_Object *v = stx->val, *result;
     Scheme_Object *here_wraps;
     Scheme_Object *ml = NULL;
@@ -2452,7 +2453,7 @@ static Scheme_Object *syntax_to_datum_inner(Scheme_Object *o,
 #endif
   SCHEME_USE_FUEL(1);
 
-  if (stx->hash_code & STX_GRAPH_FLAG) {
+  if (STX_KEY(stx) & STX_GRAPH_FLAG) {
     Scheme_Object *key;
 
     if (!*ht) {
@@ -2601,7 +2602,7 @@ static int syntax_is_graph_inner(Scheme_Object *o)
 #endif
   SCHEME_USE_FUEL(1);
 
-  if (stx->hash_code & STX_GRAPH_FLAG)
+  if (STX_KEY(stx) & STX_GRAPH_FLAG)
     return 1;
 
   v = stx->val;
@@ -3146,7 +3147,7 @@ static void simplify_syntax_inner(Scheme_Object *o,
 #endif
   SCHEME_USE_FUEL(1);
 
-  if (stx->hash_code & STX_GRAPH_FLAG) {
+  if (STX_KEY(stx) & STX_GRAPH_FLAG) {
     /* Instead of potentially losing graph sructure
        (or looping!), give up on simplifying. */
     return;
@@ -3211,7 +3212,7 @@ static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-graph?", "syntax", 0, argc, argv);
 
-  return ((((Scheme_Stx *)argv[0])->hash_code & STX_GRAPH_FLAG)
+  return ((STX_KEY((Scheme_Stx *)argv[0]) & STX_GRAPH_FLAG)
 	  ? scheme_true
 	  : scheme_false);
 }
@@ -3510,12 +3511,12 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
     long lazy_prefix;
     int graph;
     
-    graph = (stx->hash_code & STX_GRAPH_FLAG);
+    graph = (STX_KEY(stx) & STX_GRAPH_FLAG);
 
     l = CONS(CONS(key, val), l);
 
     wraps = stx->wraps;
-    if (stx->hash_code & STX_SUBSTX_FLAG) {
+    if (STX_KEY(stx) & STX_SUBSTX_FLAG) {
       modinfo_cache = NULL;
       lazy_prefix = stx->u.lazy_prefix;
     } else {
@@ -3532,7 +3533,7 @@ Scheme_Object *scheme_stx_property(Scheme_Object *_stx,
       stx->u.lazy_prefix = lazy_prefix; /* same as NULL modinfo if no SUBSTX */
 
     if (graph)
-      stx->hash_code |= STX_GRAPH_FLAG;
+      STX_KEY(stx) |= STX_GRAPH_FLAG;
 
     return (Scheme_Object *)stx;
   } else

@@ -2134,7 +2134,7 @@ static Scheme_Object *make_offset(Scheme_Object *delta, Scheme_Object *src)
     pos = scheme_make_integer(-1);
 
   o = MALLOC_ONE_TAGGED(Scheme_Stx_Offset);
-  o->type = scheme_stx_offset_type;
+  o->so.type = scheme_stx_offset_type;
   o->src = src;
   o->line = SCHEME_INT_VAL(line);
   o->col = SCHEME_INT_VAL(col);

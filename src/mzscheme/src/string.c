@@ -83,8 +83,7 @@ static void (*iconv_close)(iconv_t cd);
 #define mzUTF8_KIND 1
 
 typedef struct Scheme_Converter {
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
+  Scheme_Object so;
   short closed;
   short kind;
   iconv_t cd;
@@ -3079,7 +3078,7 @@ static Scheme_Object *byte_string_open_converter(int argc, Scheme_Object **argv)
   }
 
   c = MALLOC_ONE_TAGGED(Scheme_Converter);
-  c->type = scheme_string_converter_type;
+  c->so.type = scheme_string_converter_type;
   c->closed = 0;
   c->kind = kind;
   c->permissive = permissive;

@@ -222,8 +222,12 @@ static int out_of_line(Scheme_Object *w)
 
   /* Suspended break? */
   p = ((Scheme_Process **)w)[1];
-  if (p->external_break && scheme_can_break(p, p->config))
-    return 1;
+  if (p->external_break) {
+    p->suspend_break = 0;
+    if (scheme_can_break(p, p->config))
+      return 1;
+    p->suspend_break = 1;
+  }
 
   return 0;
 }

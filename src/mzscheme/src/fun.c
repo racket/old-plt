@@ -2221,6 +2221,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
 {
   UNBUNDLE_TIME_TYPE lnow;
   int hour, min, sec, month, day, year, wday, yday, dst;
+  long tzoffset;
 #ifdef USE_MACTIME
 # define CHECK_TIME_T unsigned long
   DateTimeRec localTime;
@@ -2229,7 +2230,7 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
   struct tm *localTime;
 #endif
   CHECK_TIME_T now;
-  Scheme_Object *p[9], *secs;
+  Scheme_Object *p[10], *secs;
 
   secs = argv[0];
 
@@ -2278,8 +2279,19 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
           /* It is a leap-year */
           yday++;
       }
-      
-      dst = 0; /* We don't really know */
+
+      {
+	MachineLocation loc;
+	ReadLocation(&loc);
+
+	dst = (loc.gmtFlags.dlsDelta > 0);
+
+	tzoffset = loc.gmtFlags.gmtDelta; /* 3-byte value in a long!! */
+	/* Copied from Inside mac: */
+	tzoffset = tzoffset & 0xFFFFFF;
+	if (tzoffset && (0x1 << 23))
+	  tzoffset |= 0xFF000000;
+      }
 #else
       hour = localTime->tm_hour;
       min = localTime->tm_min;
@@ -2293,6 +2305,8 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       yday = localTime->tm_yday;
       
       dst = localTime->tm_isdst;
+
+      tzoffset = timezone;
 #endif
 
       p[0] = scheme_make_integer(sec);
@@ -2304,8 +2318,9 @@ static Scheme_Object *seconds_to_date(int argc, Scheme_Object **argv)
       p[6] = scheme_make_integer(wday);
       p[7] = scheme_make_integer(yday);
       p[8] = dst ? scheme_true : scheme_false;
+      p[9] = scheme_make_integer(timezone);
       
-      return scheme_make_struct_instance(scheme_date, 9, p);
+      return scheme_make_struct_instance(scheme_date, 10, p);
     }
   }
 

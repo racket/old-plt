@@ -107,9 +107,9 @@ scheme_init_struct (Scheme_Env *env)
   if (scheme_starting_up) {
     static const char *arity_fields[1] = { "value" };
 #ifdef TIME_SYNTAX
-    static const char *date_fields[9] = { "second", "minute", "hour",
+    static const char *date_fields[10] = { "second", "minute", "hour",
 					    "day", "month", "year",
-					    "week-day", "year-day", "dst?" };
+					    "week-day", "year-day", "dst?", "time-zone-offset" };
 #endif
 #ifndef NO_UNIT_SYSTEM
     static const char *unit_fields[3] = { "unit", "imports", "exports" };
@@ -146,11 +146,11 @@ scheme_init_struct (Scheme_Env *env)
 						   &as_count);
 
 #ifdef TIME_SYNTAX
-    scheme_date = scheme_make_struct_type_from_string("date", NULL, 9);
+    scheme_date = scheme_make_struct_type_from_string("date", NULL, 10);
 
     ts_names 
       = scheme_make_struct_names_from_array("date",
-					    9, date_fields,
+					    10, date_fields,
 					    BUILTIN_STRUCT_FLAGS, &ts_count);
 #endif
 

@@ -117,8 +117,8 @@
                    (and (identifier? (syntax struct-name))
                         (andmap identifier? (syntax->list (syntax (field-name ...)))))
                    (let ([sc (build-struct-code (syntax struct-name)
-                                          (syntax->list (syntax (field-name ...)))
-                                          (syntax->list (syntax (contract ...))))])
+                                                (syntax->list (syntax (field-name ...)))
+                                                (syntax->list (syntax (contract ...))))])
                      (cons sc (code-for-each-clause (cdr clauses))))]
                   [(struct name)
                    (identifier? (syntax name))
@@ -170,8 +170,9 @@
          ;; constructs the code for a struct clause
          (define (build-struct-code struct-name field-names field-contracts)
            (let* ([field-contract-ids (map (lambda (field-name) 
-                                             (mangle-id field-name
-                                                        "provide/contract-field-contract"))
+                                             (mangle-id "provide/contract-field-contract"
+                                                        field-name
+                                                        struct-name))
                                            field-names)]
                   [selector-ids (map (lambda (field-name) 
                                        (build-selector-id struct-name field-name))
@@ -288,9 +289,9 @@
          ;; given the syntax for an identifier and a contract,
          ;; builds a begin expression for the entire contract and provide
          (define (code-for-one-id id ctrct)
-           (with-syntax ([id-rename (mangle-id id "provide/contract-id")]
-                         [contract-id (mangle-id id "provide/contract-contract-id")]
-                         [pos-module-source (mangle-id id "provide/contract-pos-module-source")]
+           (with-syntax ([id-rename (mangle-id "provide/contract-id" id)]
+                         [contract-id (mangle-id "provide/contract-contract-id" id)]
+                         [pos-module-source (mangle-id "provide/contract-pos-module-source" id)]
                          [pos-stx (datum->syntax-object provide-stx 'here)]
                          [module-source-as-symbol (datum->syntax-object provide-stx 'module-source-as-symbol)]
                          [id id]
@@ -331,16 +332,24 @@
                                       (module-source-as-symbol #'neg-stx)
                                       (quote-syntax _)))])))))))))
          
-         ;; mangle-id : syntax string -> syntax
+         ;; mangle-id : string syntax ... -> syntax
          ;; constructs a mangled name of an identifier from an identifier
-         ;; the name isn't fresh, so `id' must already be unique.
-         (define (mangle-id id prefix)
+         ;; the name isn't fresh, so `id' combined with `ids' must already be unique.
+         (define (mangle-id prefix id . ids)
            (datum->syntax-object
             provide-stx
             (string->symbol
              (string-append
               prefix
-              (format "-~a-ACK-DONT_USE_ME" (syntax-object->datum id))))))
+              (format 
+               "-~a~a-ACK-DONT_USE_ME"
+               (syntax-object->datum id)
+               (apply 
+                string-append 
+                (map 
+                 (lambda (id)
+                   (format "-~a" (syntax-object->datum id)))
+                 ids)))))))
          
          (with-syntax ([(bodies ...) (code-for-each-clause (syntax->list (syntax (p/c-ele ...))))])
            (syntax 

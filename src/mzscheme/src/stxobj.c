@@ -781,12 +781,6 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
       } else
 	i--;
     } else {
-      if (SCHEME_VECTORP(a)
-	  && ((SCHEME_VEC_SIZE(a) <= 2)
-	      || SCHEME_SYMBOLP(SCHEME_VEC_ELS(a)[2]))) {
-	*(long *)0x0 = 1; /* crash */
-      }
-
       if (mutable) {
 	a = scheme_make_pair(a, ((Scheme_Stx *)o)->wraps);
 	((Scheme_Stx *)o)->wraps = a;

@@ -727,19 +727,18 @@
 	      (let ([nest-vars (flatten-nestings nestings (lambda (x) #t))])
 		`(lambda (e esc)
 		   (if (stx-list? e)
-		       (let ([l ,(let ([b (app-e-esc match-head)])
-				   (let ([f (if (equal? b '(list e))
-						 'list
-						 `(lambda (e) ,b))])
-				     `(map ,f
-					   (stx->list e))))])
-			 (if (null? l)
-			     (quote ,(map (lambda (v)
-					    '())
-					  nest-vars))
-			     (apply map
-				    list
-				    l)))
+		       ,(let ([b (app-e-esc match-head)])
+			  (if (equal? b '(list e))
+			      '(list (stx->list e))
+			      `(let ([l (map (lambda (e) ,b)
+					     (stx->list e))])
+				 (if (null? l)
+				     (quote ,(map (lambda (v)
+						    '())
+						  nest-vars))
+				     (apply map
+					    list
+					    l)))))
 		       (esc #f))))))]
        [(stx-pair? p)
 	(let ([hd (stx-car p)])

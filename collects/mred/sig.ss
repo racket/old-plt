@@ -1,3 +1,7 @@
+(define-signature mred:version^
+  (add-version-spec
+   version))
+
 (define-signature mred:html^
   (html-convert))
 
@@ -332,6 +336,7 @@
 (define-signature mred^
   ((unit debug : mred:debug^)
    (open mred:constants^)
+   (open mred:version^)
    (open mred:exn-external^)
    (open mred:container^) (open mred:preferences^)
    (open mred:autoload^) (open mred:autosave^) (open mred:exit^)

@@ -277,8 +277,8 @@
       (when (eq? level 'beginner)
         (let ((parent (send type-recs get-class-record (car (class-record-parents class-record)))))
           (when (memq 'abstract (class-record-modifiers parent))
-            (set! inherited-fields (filter (lambda (f) (not (field-record-init? f)))
-                                           (get-field-records parent))))))
+            (set! inherited-fields 
+                  (filter (lambda (f) (not (field-record-init? f))) (get-field-records parent))))))
       (let loop ((rest members) (statics empty-env) (fields env))
         (unless (null? rest)
           (let ((member (car rest)))
@@ -432,7 +432,8 @@
          (beginner-assn-error 'right-this (expr-src (assignment-right body))))
        (list body))
       ((call? body) 
-       (if (expr-src body)
+       (if (not (and (special-name? (call-method-name body)) 
+                     (equal? "super" (special-name-name (call-method-name body)))))
            (beginner-ctor-error class body (expr-src body))
            null))
       (else 
@@ -561,6 +562,8 @@
         (inherited-field-not-set-error (field-record-name field) src)
         (let* ((assign (car assigns))
                (left (assignment-left assign)))
+          (when (access? left)
+            (set! left (access-name left)))
           (or (cond
                 ((local-access? left)
                  (equal? (id-string (local-access-name left))

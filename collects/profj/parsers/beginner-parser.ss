@@ -100,6 +100,7 @@
       ;; 19.6
       (CompilationUnit
        [(ImportDeclarations TypeDeclarations) (make-package #f (reverse $1) (reverse $2))]
+       [(ImportDeclarations) (make-package #f (reverse $1) null)]
        [(TypeDeclarations) (make-package #f null (reverse $1))]
        [() (make-package #f null null)])
       
@@ -126,7 +127,9 @@
        [(ImportDeclarations ImportDeclaration) (cons $2 $1)])
       
       (ImportDeclaration
-       [(import Name SEMI_COLON) (make-import $2 #f (build-src 1) (build-src 3) (file-path))])
+       [(import Name SEMI_COLON) (make-import $2 #f (build-src 1) (build-src 3) (file-path))]
+       [(import Name PERIOD * SEMI_COLON)
+	(make-import $2 #t (build-src 1) (build-src 5) (file-path))])
       
       ;; 19.8.1
       (ClassDeclaration
@@ -240,12 +243,24 @@
        [(IDENTIFIER O_PAREN C_PAREN) (list (make-id $1 (build-src 1)) null)])
       
       (ConstructorBody
+       [(O_BRACE ExplicitConstructorInvocation BlockStatements C_BRACE)
+	(make-block (cons $2 (reverse $3)) (build-src 4))]
+       [(O_BRACE ExplicitConstructorInvocation C_BRACE)
+	(make-block (list $2) (build-src 3))]
        [(O_BRACE BlockStatements C_BRACE)
 	(make-block 
 	 (cons (make-call #f #f #f (make-special-name #f #f "super") null #f)
 	       (reverse $2))
 	 (build-src 3))]
        [(O_BRACE C_BRACE) (make-block null (build-src 2))])
+ 
+      (ExplicitConstructorInvocation
+       [(super O_PAREN ArgumentList C_PAREN SEMI_COLON)
+	(make-call #f (build-src 5) 
+		       #f (make-special-name #f (build-src 1) "super") (reverse $3) #f)]
+       [(super O_PAREN C_PAREN SEMI_COLON)
+	(make-call #f (build-src 4) 
+		       #f (make-special-name #f (build-src 1) "super") null #f)])
       
       ;; 19.11
       (Block

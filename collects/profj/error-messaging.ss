@@ -96,6 +96,10 @@
     (cond
       ((ifS? s) 'if)
       ((return? s) 'return)
-      ((call? s) (string->symbol (id-string (call-method-name s))))))
+      ((call? s) 
+       (let ((method (call-method-name s)))
+         (string->symbol (if (special-name? method)
+                             (special-name-name method)
+                             (id-string method)))))))
 
   )

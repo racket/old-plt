@@ -110,6 +110,7 @@
       (CompilationUnit
        [(ImportDeclarations TypeDeclarations) (make-package #f (reverse $1) (reverse $2))]
        [(TypeDeclarations) (make-package #f null (reverse $1))]
+       [(ImportDeclarations) (make-package #f null (reverse $1))]
        [() (make-package #f null null)])
       
       (ImportDeclarations
@@ -117,7 +118,9 @@
        [(ImportDeclarations ImportDeclaration) (cons $2 $1)])
       
       (ImportDeclaration
-       [(import Name SEMI_COLON) (make-import $2 #f (build-src 1) (build-src 3) (file-path))])
+       [(import Name SEMI_COLON) (make-import $2 #f (build-src 1) (build-src 3) (file-path))]
+       [(import Name PERIOD * SEMI_COLON)
+	(make-import $2 #t (build-src 1) (build-src 5) (file-path))])
       
       (IntermediateInteractions
        [(Statement) $1]
@@ -293,12 +296,6 @@
 	 (build-src 2))])
       
       (ExplicitConstructorInvocation
-       [(this O_PAREN ArgumentList C_PAREN SEMI_COLON)
-	(make-call #f (build-src 5) 
-		       #f (make-special-name #f (build-src 1) "this") (reverse $3) #f)]
-       [(this O_PAREN C_PAREN SEMI_COLON)
-	(make-call #f (build-src 4) 
-		       #f (make-special-name #f (build-src 1) "this") null #f)]
        [(super O_PAREN ArgumentList C_PAREN SEMI_COLON)
 	(make-call #f (build-src 5) 
 		       #f (make-special-name #f (build-src 1) "super") (reverse $3) #f)]

@@ -155,6 +155,7 @@
   (define-token? c-brace? 'C_BRACE)
   (define-token? o-bracket? 'O_BRACKET)
   (define-token? c-bracket? 'C_BRACKET)
+  (define-token? star? '*)
   (define-token? semi-colon? 'SEMI_COLON)
   (define-token? colon? 'COLON)
   (define-token? dot? 'PERIOD)

@@ -1336,7 +1336,7 @@ static void *compile_k(void)
   p->ku.k.p2 = NULL;
 
   rec.dont_mark_local_use = 0;
-  rec.resolve_module_ids = !writeable;
+  rec.resolve_module_ids = !writeable && !env->genv->module;
   rec.value_name = NULL;
 
   if (!SCHEME_STXP(form))

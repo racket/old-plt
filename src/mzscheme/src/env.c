@@ -606,6 +606,25 @@ Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home
   return r;
 }
 
+void scheme_clean_dead_env(Scheme_Env *env)
+{
+  Scheme_Object *modchain, *next;
+
+  if (env->exp_env) {
+    scheme_clean_dead_env(env->exp_env);
+    env->exp_env = NULL;
+  }
+  
+  modchain = env->modchain;
+  env->modchain = NULL;
+  while (modchain && !SCHEME_VECTORP(modchain)) {
+    next = SCHEME_VEC_ELS(modchain)[1];
+    SCHEME_VEC_ELS(modchain)[1] = scheme_void;
+    modchain = next;
+  }
+
+  env->init = NULL;
+}
 
 void
 scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym, 

@@ -986,7 +986,25 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 	    memcpy(t2 + len, buffer, len2 + 1);
 	    len += len2;
 	    type = t2;
+	  } else if (!scheme_strncmp(type, "#<namespace", 11)) {
+	    char buffer[256];
+	    char *t2;
+	    int len2;
+	    
+	    sprintf(buffer, "[%ld:%.100s]",
+		    ((Scheme_Env *)v)->phase,
+		    (((Scheme_Env *)v)->module
+		     ? SCHEME_SYM_VAL(((Scheme_Env *)v)->module->modname)
+		     : "toplevel"));
+	    
+	    len2 = strlen(buffer);
+	    t2 = scheme_malloc_atomic(len + len2 + 1);
+	    memcpy(t2, type, len);
+	    memcpy(t2 + len, buffer, len2 + 1);
+	    len += len2;
+	    type = t2;
 	  }
+
 	  sep = "=";
 	} else if (scheme_external_dump_type) {
 	  type = scheme_external_dump_type(v);
@@ -1151,7 +1169,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_sequence_type:
   case scheme_case_lambda_sequence_type:
   case scheme_begin0_sequence_type:
-  case scheme_case_closure_type:
     {
       Scheme_Sequence *seq = (Scheme_Sequence *)root;
       int i;
@@ -1291,12 +1308,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 	s = sizeof(Scheme_Primitive_Proc);
     }	
     break;
-  case scheme_closure_type:
-#if FORCE_KNOWN_SUBPARTS
-    e = (COUNT(SCHEME_CLOS_CODE(root))
-	 + COUNT(SCHEME_CLOS_ENV(root)));
-#endif
-    break;
   case scheme_linked_closure_type:
     {
       Scheme_Closure_Compilation_Data *data;
@@ -1356,27 +1367,9 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
     break;
   case scheme_macro_type:
   case scheme_id_macro_type:
-  case scheme_exp_time_type:
     s = sizeof(Scheme_Small_Object);
 #if FORCE_KNOWN_SUBPARTS
     e = COUNT(SCHEME_PTR_VAL(root));
-#endif
-    break;
-  case scheme_promise_type: 
-    s = sizeof(Scheme_Promise);
-#if FORCE_KNOWN_SUBPARTS
-    {
-      Scheme_Promise *p = (Scheme_Promise *)root;
-      Scheme_Object *v = p->val;
-
-      if (p->forced && SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)) {
-	int i = p->multi_count;
-	e = 0;
-	while (i--)
-	  e += COUNT(p->multi_array[i]);
-      } else
-	e = COUNT(v);
-    }
 #endif
     break;
   case scheme_box_type:
@@ -1433,7 +1426,7 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 
       s = sizeof(Scheme_Env);
 #if FORCE_KNOWN_SUBPARTS
-      e = COUNT(env->globals);
+      e = COUNT(env->toplevel);
 #endif
     }
     break;
@@ -1454,23 +1447,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
     }
     break;
-#ifndef NO_UNIT_SYSTEM
-  case scheme_unit_type:
-  case scheme_compiled_unit_type:
-  case scheme_unit_body_data_type:
-  case scheme_unit_compound_data_type:
-  case scheme_invoke_unit_data_type:
-    scheme_count_unit(type, root, &s, &e, ht);    
-    break;
-#endif
-#ifndef NO_OBJECT_SYSTEM
-  case scheme_object_type:
-    scheme_count_object(root, &s, &e, ht);
-    break;
-  case scheme_class_type:
-    scheme_count_class(root, &s, &e, ht);
-    break;
-#endif
   case scheme_structure_type:
     {
       Scheme_Object **slots = ((Scheme_Structure *)root)->slots;
@@ -1529,11 +1505,6 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
 #endif
     }
     break;
-#ifndef NO_OBJECT_SYSTEM
-  case scheme_generic_data_type:
-    scheme_count_generic(root, &s, &e, ht);
-    break;
-#endif
   case scheme_weak_box_type:
     s = sizeof(Scheme_Small_Object);
     e = COUNT(SCHEME_BOX_VAL(root));
@@ -1567,22 +1538,12 @@ long scheme_count_memory(Scheme_Object *root, Scheme_Hash_Table *ht)
   case scheme_random_state_type:
     s = 130; /* wild guess */
     break;
-  case scheme_reserved_1_type:
   case scheme_reserved_3_type:
-  case scheme_reserved_5_type:
     s = 0; /* Not yet used */
     break;
   case scheme_eval_waiting_type:
   case scheme_tail_call_waiting_type:
     /* Only one */
-    break;
-#ifndef NO_OBJECT_SYSTEM
-  case scheme_class_data_type:
-    scheme_count_class_data(root, &s, &e, ht);
-    break;
-#endif
-  case scheme_struct_info_type:
-    scheme_count_struct_info(root, &s, &e, ht);
     break;
   case scheme_multiple_values_type:
     /* Only one */

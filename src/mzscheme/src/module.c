@@ -637,11 +637,29 @@ static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[])
   return do_namespace_require(argc, argv, 1);
 }
 
+static void pre_post_force(void *_v)
+{
+  Scheme_Object *old, *v = (Scheme_Object *)_v;
+
+  old = scheme_get_param(scheme_config, MZCONFIG_ENV);
+  scheme_set_param(scheme_config, MZCONFIG_ENV, SCHEME_VEC_ELS(v)[0]);
+  SCHEME_VEC_ELS(v)[0] = old;
+}
+	
+static Scheme_Object *now_do_force(void *_v)
+{
+  Scheme_Object *v = (Scheme_Object *)_v;
+  finish_expstart_module((Scheme_Env *)SCHEME_VEC_ELS(v)[1], 
+			 (Scheme_Env *)scheme_get_param(scheme_config, MZCONFIG_ENV));
+  return scheme_void;
+}
+	
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
 {
   Scheme_Env *from_env, *to_env, *menv, *menv2;
   Scheme_Object *todo, *next_phase_todo, *name, *notifies = scheme_null, *a[3], *resolver;
-  Scheme_Object *to_modchain, *from_modchain;
+  Scheme_Object *to_modchain, *from_modchain, *l;
+  Scheme_Hash_Table *checked, *next_checked;
   Scheme_Module *m2;
 
   if (!SCHEME_NAMESPACEP(argv[0]))
@@ -652,16 +670,18 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
   from_env = (Scheme_Env *)argv[0];
   to_env = scheme_get_env(scheme_config);
 
-  todo = scheme_make_pair(argv[1], scheme_null);
+  todo = scheme_make_pair(scheme_module_resolve(argv[1]), scheme_null);
   next_phase_todo = scheme_null;
   from_modchain = from_env->modchain;
   to_modchain = to_env->modchain;
 
   /* Check whether todo, or anything it needs, is already declared incompatibly: */
   while (!SCHEME_NULLP(todo)) {
+    checked = scheme_hash_table(7, SCHEME_hash_ptr);
+    next_checked = scheme_hash_table(7, SCHEME_hash_ptr);
+
     while (!SCHEME_NULLP(todo)) {
       name = SCHEME_CAR(todo);
-      name = scheme_module_resolve(name);
 
       todo = SCHEME_CDR(todo);
 
@@ -696,13 +716,38 @@ static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[])
       
 	if (!menv2) {
 	  /* Push requires onto the check list: */
-	  todo = scheme_append(menv->module->requires, todo);
+	  l = menv->module->requires;
+	  while (!SCHEME_NULLP(l)) {
+	    name = scheme_module_resolve(SCHEME_CAR(l));
+	    if (!scheme_lookup_in_table(checked, (const char *)name)) {
+	      todo = scheme_make_pair(name, todo);
+	      scheme_add_to_table(checked, (const char *)name, scheme_true, 0);
+	    }
+	    l = SCHEME_CDR(l);
+	  }
 
 	  /* Have to force laziness in source to ensure sharing: */
-	  if (menv->lazy_syntax)
-	    finish_expstart_module(menv, from_env);
+	  if (menv->lazy_syntax) {
+	    Scheme_Object *v;
 
-	  next_phase_todo = scheme_append(menv->module->et_requires, next_phase_todo);
+	    v = scheme_make_vector(2, NULL);
+	    SCHEME_VEC_ELS(v)[0] = (Scheme_Object *)from_env;
+	    SCHEME_VEC_ELS(v)[1] = (Scheme_Object *)menv;
+
+	    scheme_dynamic_wind(pre_post_force, now_do_force,
+				pre_post_force, NULL,
+				(void *)v);
+	  }
+
+	  l = menv->module->et_requires;
+	  while (!SCHEME_NULLP(l)) {
+	    name = scheme_module_resolve(SCHEME_CAR(l));
+	    if (!scheme_lookup_in_table(next_checked, (const char *)name)) {
+	      next_phase_todo = scheme_make_pair(name, next_phase_todo);
+	      scheme_add_to_table(next_checked, (const char *)name, scheme_true, 0);
+	    }
+	    l = SCHEME_CDR(l);
+	  }
 	}
       }
     }
@@ -1076,11 +1121,6 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
     expstart_module(scheme_module_load(scheme_module_resolve(SCHEME_CAR(l)), env), 
 		    env, 0, 
 		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
-  }
-
-  /* Make sure et_requires are at least defined: */
-  for (l = m->et_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
-    scheme_module_resolve(SCHEME_CAR(l));
   }
 
   if (!SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
@@ -2065,9 +2105,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     normal = SCHEME_TRUEP(SCHEME_CDR(e));
     e = SCHEME_CAR(e);
     if (normal) {
-      if (rec)
+      if (rec) {
+	recs[num_to_compile].resolve_module_ids = 0;
 	e = scheme_compile_expr(e, cenv, recs, num_to_compile++);
-      else
+      } else
 	e = scheme_expand_expr(e, cenv, depth, scheme_false);
     }
     SCHEME_CAR(p) = e;
@@ -2078,7 +2119,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_merge_compile_recs(rec, drec, recs, num_to_compile);
   }
 
-  env->genv->exp_env = NULL;
+  scheme_clean_dead_env(env->genv);
 
   /* Compute provides for re-provides: */
   {

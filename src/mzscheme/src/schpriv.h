@@ -1556,6 +1556,8 @@ Scheme_Hash_Table *scheme_clone_toplevel(Scheme_Hash_Table *ht, Scheme_Env *home
 
 Scheme_Env *scheme_clone_module_env(Scheme_Env *menv, Scheme_Env *ns, Scheme_Object *modchain);
 
+void scheme_clean_dead_env(Scheme_Env *env);
+
 /*========================================================================*/
 /*                         errors and exceptions                          */
 /*========================================================================*/

@@ -422,8 +422,8 @@
 	       (lambda ()
 		 (send super-root delete-child search-panel)
 		 (clear-highlight)
-		 (when '(not (active-canvas))
-		   (send super-root set-focus))
+		 (send (send (get-edit-to-search)
+			     get-canvas) set-focus)
 		 (set! hidden? #t))]
 	      [unhide-search
 	       (lambda ()

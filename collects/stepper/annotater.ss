@@ -164,7 +164,7 @@
            [struct-proc-names (cdr names)]
            [closure-records (map (lambda (proc-name) `(,make-closure-record
                                                        (#%quote ,proc-name) 
-                                                       (lambda () #f)
+                                                       (#%lambda () #f)
                                                        ,(eq? proc-name (car struct-proc-names))))
                                  struct-proc-names)]
            [proc-arg-temp-syms (cdr arg-temp-syms)]

@@ -1,6 +1,16 @@
 (define-signature stepper:error^
   (static-error dynamic-error internal-error))
 
+(define-signature stepper:settings^
+  (get-namespace
+   get-global-defined-vars
+   get-constructor-style-printing
+   get-abbreviate-cons-as-list
+   get-empty-list-name
+   get-show-sharing
+   get-cons
+   get-vector))
+
 (define-signature stepper:shared^
   (list-take
    read-exprs
@@ -26,6 +36,8 @@
   (annotate))
 
 (define-signature stepper:reconstruct^
-  (reconstruct set-global-defined-vars! final-mark-list? stop-here?))
+  (reconstruct 
+   final-mark-list?
+   stop-here?))
 
   

@@ -20,29 +20,32 @@
                                      (default-error-handler 'syntax-error))
                                    (define dynamic-error
                                      (default-error-handler 'runtime-syntax-error))))]
-        [PRETTY : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
-        [SHARED : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
+        [pretty : mzlib:pretty-print^ ((require-library-unit/sig "prettyr.ss"))]
+        [shared : stepper:shared^ ((require-library-unit/sig "sharedr.ss" "stepper")
                                    zodiac
                                    error)]
-        [ANNOTATE : stepper:annotate^
+        [annotate : stepper:annotate^
                   ((require-library-unit/sig "annotater.ss" "stepper")
                    zodiac
                    (core function)
                    error
                    shared)]
-        [RECONSTRUCT : stepper:reconstruct^ 
+        [reconstruct : stepper:reconstruct^ 
                      ((require-library-unit/sig "reconstructr.ss" "stepper")
                       zodiac
                       (core function)
                       error
                       print-convert
                       (drscheme basis)
+                      stepper
                       shared)]
-        [STEPPER : ()
+        [stepper : stepper:settings^
                  ((require-library-unit/sig "stepperr.ss" "stepper")
                   pretty
                   mred
+                  (drscheme basis)
                   drscheme
+                  print-convert
                   annotate
                   reconstruct
                   framework)])       

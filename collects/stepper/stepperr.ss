@@ -1,12 +1,40 @@
-(unit/sig ()
+(unit/sig stepper:settings^
   (import mzlib:pretty-print^
           mred^
+          [b : userspace:basis^]
           [d : drscheme:export^]
+          [p : mzlib:print-convert^]
           [a : stepper:annotate^]
           [r : stepper:reconstruct^]
           [f : framework^])
   
   (define drscheme-eventspace (current-eventspace))
+
+  ;; exported parameters of the user's thread:
+  
+  (define par-namespace #f)
+  (define (get-namespace) par-namespace)
+  
+  (define par-global-defined-vars #f)
+  (define (get-global-defined-vars) par-global-defined-vars)
+  
+  (define par-constructor-style-printing #f)
+  (define (get-constructor-style-printing) par-constructor-style-printing)
+  
+  (define par-abbreviate-cons-as-list #f)
+  (define (get-abbreviate-cons-as-list) par-abbreviate-cons-as-list)
+  
+  (define par-empty-list-name #f)
+  (define (get-empty-list-name) par-empty-list-name)
+  
+  (define par-show-sharing #f)
+  (define (get-show-sharing) par-show-sharing)
+  
+  (define par-cons #f)
+  (define (get-cons) par-cons)
+  
+  (define par-vector #f)
+  (define (get-vector) par-vector)
   
   (define stepper-canvas%
     (class editor-canvas% (parent (editor #f) (style null) (scrolls-per-page 100))
@@ -40,8 +68,7 @@
 ;		     (send dc set-font old-font)
 ;		     (mzlib:pretty-print:pretty-print-columns new-columns))))))]
   
-      
-  (lambda (frame)
+  (define (stepper-go frame settings)
     (letrec ([edit (ivar frame definitions-text)]
              [text (send edit get-text)]
              [stepper-semaphore (make-semaphore)]
@@ -49,7 +76,7 @@
              
              [history null]
              
-             [highlight-color (make-object color% 130 200 130)]
+             [highlight-color (make-object color% 193 251 181)]
              
              [store-step
               (lambda (reconstructed redex)
@@ -106,7 +133,7 @@
              [output-delta (make-object style-delta% 'change-family 'modern)]
              [result-delta (make-object style-delta% 'change-family 'modern)]
              [error-delta (make-object style-delta%)]
-                                       
+             
              [button-panel (make-object horizontal-panel% s-frame)]
              [home-button (make-object button% "Home" button-panel
                                        (lambda (_1 _2) (home)))]
@@ -124,9 +151,7 @@
                 (send previous-button enable (not (zero? view)))
                 (send home-button enable (not (zero? view)))
                 (send next-button enable (not (eq? final-view view))))]
-             
-             [global-defined-vars #f]
-             
+                         
              [break 
               (lambda (mark-list all-defs current-def)
                 (when (r:stop-here? mark-list)
@@ -139,7 +164,7 @@
                   (semaphore-wait stepper-semaphore)))]
              
              [user-eventspace (make-eventspace)]
-           
+             
              [make-exception-handler
               (lambda (k)
                 (lambda (exn)
@@ -161,41 +186,37 @@
              
              [stepper-start
               (lambda ()
-                (call-with-current-continuation
-                 (lambda (k)
-                   (let-values ([(annotated exprs)
-                                 (a:annotate text break (make-exception-handler k))])
-                     (set! expr-list exprs)
-                     (let ([expanded-annotated
-                            (cons `((require-library "beginner.ss" "userspce"))
-                                  (cons `(,(lambda () (r:set-global-defined-vars! 
-                                                       (map car (make-global-value-list)))))
-                                        annotated))])
-                       (parameterize ([current-eventspace user-eventspace])
-                         (queue-callback 
-                          (lambda ()
-                            (call-with-current-continuation
-                             (lambda (k)
-                               (current-exception-handler
-                                (make-exception-handler k))
-                               (current-namespace (make-namespace))
-                               (for-each eval expanded-annotated)))))))))))]
-           
-;                          (d:basis:initialize-parameters
-;                           (current-custodian)
-;                           null
-;                           (d:basis:find-setting-named "Beginner"))
-           
+                (parameterize ([current-eventspace user-eventspace])
+                  (queue-callback 
+                   (lambda ()
+                     (call-with-current-continuation
+                      (lambda (k)
+                        (let ([primitive-eval (current-eval)])
+                          (d:basis:initialize-parameters (make-custodian) null settings)
+                          (let-values ([(annotated exprs)
+                                        (a:annotate text break (make-exception-handler k))])
+                            (set! expr-list exprs)
+                            (set! par-namespace (current-namespace))
+                            (set! par-global-defined-vars (map car (make-global-value-list)))
+                            (set! par-constructor-style-printing (p:constructor-style-printing))
+                            (set! par-abbreviate-cons-as-list (p:abbreviate-cons-as-list)) 
+                            (set! par-empty-list-name (p:empty-list-name))
+                            (set! par-show-sharing (p:show-sharing))
+                            (set! par-cons (global-defined-value 'cons))
+                            (set! par-vector (global-defined-value 'vector))
+                            (current-exception-handler
+                             (make-exception-handler k))
+                            (for-each primitive-eval annotated)))))))))]
+             
              [update-view/next-step
               (lambda (new-view)
                 (set! view-currently-updating new-view)
                 (semaphore-post stepper-semaphore))])
-             
-             
-
+      
+      
+      
       (send result-delta set-delta-foreground "BLACK")
       (send output-delta set-delta-foreground "PURPLE")
-;      (send redex-delta set-delta-foreground "BLUE")
       (send error-delta set-delta-foreground "RED")
       (set! view-currently-updating 0)
       (stepper-start)
@@ -206,4 +227,14 @@
       (send canvas min-height 500)
       (send previous-button enable #f)
       (send home-button enable #f)
-      (send s-frame show #t))))
+      (send s-frame show #t)))
+  
+  (lambda (frame)
+    (let ([settings (f:preferences:get 'drscheme:settings)])
+      (if (not (string=? (b:setting-name settings) "Beginner"))
+          (message-box "Stepper" 
+                       (format "Language level is set to \"~a\".~nPlease set the language level to \"Beginner\"" 
+                               (b:setting-name settings))
+                       #f 
+                       '(ok))
+          (stepper-go frame settings)))))

@@ -4711,10 +4711,3 @@ void scheme_gmp_tls_unload(long *s)
 }
 
 #endif
-
-/****************************************/
-
-#if defined (__alpha) && (W_TYPE_SIZE == 64) && defined (__GNUC__)
-
-
-#endif

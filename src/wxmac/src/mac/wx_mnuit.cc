@@ -162,7 +162,7 @@ void wxMenuItem::SetLabel(char* label)
     if (subMenu)
       ::SetMenuItemHierarchicalID(nmh, macMenuItem, subMenu->cMacMenuId);
 
-    if (!cEnabled)
+    if (!cIsEnabled)
       DisableMenuItem(nmh, macMenuItem);    
   }
 }

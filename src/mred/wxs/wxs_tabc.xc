@@ -19,6 +19,8 @@ public:
     int   Number(void);
     void  SetSelection(int n);
     void  Enable(Bool enable);
+    void  Append(char *);
+    void  Delete(int);
 };
 
 wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
@@ -30,6 +32,8 @@ int wxTabChoice::GetSelection(void) { return 0; }
 int wxTabChoice::Number(void) { return 0; }
 void wxTabChoice::SetSelection(int n) { }
 void wxTabChoice::Enable(Bool enable) { }
+void wxTabChoice::Append(char *name) { }
+void wxTabChoice::Delete(int which) { }
 #endif
 
 @HEADER

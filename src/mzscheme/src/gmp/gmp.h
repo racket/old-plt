@@ -356,8 +356,7 @@ void mpn_tdiv_qr _PROTO ((mp_ptr, mp_ptr, mp_size_t, mp_srcptr, mp_size_t, mp_sr
     __x = *__p + incr;					\
     *__p = __x;						\
     if (__x < incr)					\
-      while (++(*(++__p)) == 0)				\
-        ;						\
+      while (++(*(++__p)) == 0) {}		      	\
   } while (0)
 
 #define mpn_decr_u(p,incr) \
@@ -365,8 +364,7 @@ void mpn_tdiv_qr _PROTO ((mp_ptr, mp_ptr, mp_size_t, mp_srcptr, mp_size_t, mp_sr
     __x = *__p;						\
     *__p = __x - incr;					\
     if (__x < incr)					\
-      while ((*(++__p))-- == 0)				\
-        ;						\
+      while ((*(++__p))-- == 0)	{}			\
   } while (0)
 
 #if (defined (__GNUC__) || defined (_FORCE_INLINES)) && !defined(PALMOS_STUFF)

@@ -1,5 +1,24 @@
 #|
 
+TODO:
+
+ - make each player frame specific to a board (more vertical space)
+ - add collections of puzzles
+ - add a feature that takes a list of saved editor files and makes a puzzle collection
+ - add resize and "shrink to fit" features to editor
+
+Annoying bugs to be fixed:
+
+ - In large boards, the off-by-1 spacing for the groups of 5 probably makes a bug.
+   Make groups have size 1 to test
+ - In editors, when a column label has an entry with a 10 or more, the sizing is not
+   right. Need to check this case and resize the columns.
+
+|#
+
+
+#|
+
 types:
 
   (define-type cols (listof (listof number)))
@@ -11,18 +30,8 @@ types:
 
 |#
 
-(require-library "functios.ss")
-(require-library "prettys.ss")
-(require-library "spidey.ss")
+(require-library "mred-interfaces.ss" "framework")
+(require-library "frameworks.ss" "framework")
+(require-library "raw-sig.ss" "games" "paint-by-numbers")
+(require-library "errortrace.ss" "errortrace")
 
-(define-signature GUI^
-  (paint-by-numbers-canvas%
-   design-paint-by-numbers-canvas%))
-
-(define-signature SOLVE^
-  (solve)) ; : ((list-of (list-of nat)) (list-of (list-of nat)) -> void)
-
-(define-signature BOARD^
-  (setup-progress ; : (nat -> (-> void))
-   set-entry      ; : (nat nat (union 'on 'off 'unknown) -> void)
-   get-entry))    ; : (nat nat -> (union 'on 'off 'unknown))

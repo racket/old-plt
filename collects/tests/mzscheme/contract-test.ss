@@ -40,7 +40,9 @@
           expression))
   
   (define (test/well-formed stx)
-    (expand stx))
+    (test (void) 
+          (let ([expand/ret-void (lambda (x) (expand x) (void))]) expand/ret-void)
+          stx))
   
   (test/spec-passed
    'contract-flat1 
@@ -1111,7 +1113,7 @@
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;
-  ;;   case-> arity tests                                   ;;
+  ;;   case-> arity checking tests                          ;;
   ;;                                                        ;;
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   
@@ -1119,8 +1121,15 @@
   (test/well-formed #'(case-> (-> integer? integer?) (-> integer? integer? integer?)))
   (test/well-formed #'(case-> (-> integer? integer?) (-> integer? integer? any)))
   (test/well-formed #'(case-> (-> integer? any) (-> integer? integer? any)))
-  (test/well-formed #'(case-> (integer? integer? . ->d . (lambda x integer?)) ((any?) any? . ->* . (any?))))
+  
+  (test/well-formed #'(case-> (->d (lambda x any?)) (-> integer? integer?)))
+
+  (test/well-formed #'(case-> (->* (any? any?) (integer?)) (-> integer? integer?)))
+  (test/well-formed #'(case-> (->* (any? any?) any? (integer?)) (-> integer? integer?)))
+  (test/well-formed #'(case-> (->* (any? any?) any? any) (-> integer? integer?)))
+  
+  (test/well-formed #'(case-> (->d* (any? any?) (lambda x any?)) (-> integer? integer?)))
+  (test/well-formed #'(case-> (->d* (any? any?) any? (lambda x any?)) (-> integer? integer?)))
   
   ))
-
 (report-errs)

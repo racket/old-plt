@@ -178,7 +178,8 @@
 		(lambda (edit event)
 		  (let ([sel-start (send edit get-start-position)]
 			[sel-end (send edit get-end-position)])
-		    (when (= sel-start sel-end)
+		    (when (and (= sel-start sel-end)
+			       (positive? sel-start))
 		      (let ([sel-start
 			     (if (= sel-start
 				    (send edit line-end-position

@@ -1550,7 +1550,15 @@
 					   first-field 
 					   h)))])
 		       (hash-table-put! ht uid p)
-		       p))))])
+		       p))))]
+	       [just-by-name? (and (= (length fields) 1)
+				   (string=? (caar fields) "from"))]
+	       [mailbox-ht (and just-by-name?
+				(let ([ht (make-hash-table)])
+				  (for-each (lambda (m)
+					      (hash-table-put! ht (car m) m))
+					    mailbox)
+				  ht))])
 	  (as-background
 	   enable-main-frame
 	   (lambda (break-bad break-ok)
@@ -1563,10 +1571,9 @@
                          ;; fastest: order recived:
                          [(null? fields) (< aid bid)]
                          ;; faster: sender
-                         [(and (= (length fields) 1)
-                               (string=? (caar fields) "from"))
-                          (let ([ma (assq aid mailbox)]
-                                [mb (assq bid mailbox)])
+                         [just-by-name?
+                          (let ([ma (hash-table-get mailbox-ht aid)]
+                                [mb (hash-table-get mailbox-ht bid)])
                             (let ([c ((cadar fields) 
                                       aid bid
                                       (parse-iso-8859-1 (message-from ma))

@@ -3028,7 +3028,7 @@ static Scheme_Object *directory_list(int argc, Scheme_Object *argv[])
 
     if (!(find_position & 0x15)) {
       scheme_thread_block(0);
-      scheme_current_process->ran_some = 1;
+      scheme_current_thread->ran_some = 1;
     }
     
     n = scheme_make_sized_offset_string(buf, 1, buf[0], 1);

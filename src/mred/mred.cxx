@@ -2068,7 +2068,6 @@ static Scheme_Object *MrEdMakeStdIn(void)
 			      mrconsole_char_ready,
 			      mrconsole_close,
 			      NULL,
-				  NULL,
 			      0);
   
   return (Scheme_Object *)ip;

@@ -81,7 +81,9 @@
 				 (let ([p (make-parameterization)])
 				   (with-parameterization 
 				    p
-				    (lambda () (break-enabled #f)))
+				    (lambda () 
+				      (user-break-poll-handler (lambda () #f))
+				      (break-enabled #f)))
 				   p))]
 	       [threads (parameterize ([parameterization-branch-handler
 					branch-handler])

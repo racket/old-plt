@@ -497,4 +497,18 @@
        set-box!
        box?
        call/cc
-       call-with-current-continuation)))
+       call-with-current-continuation
+       turtles
+       turtles
+       turn
+       turn/radians
+       move
+       erase
+       move-offfset
+       draw-offfset
+       erase-offfset
+       clear
+       save-turtle-bitmap
+       splitfn
+       split*fn
+       tpromptfn)))

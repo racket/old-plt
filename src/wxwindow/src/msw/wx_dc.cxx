@@ -1030,12 +1030,14 @@ static wchar_t u_buf[QUICK_UBUF_SIZE];
 
 int CALLBACK proc(CONST LOGFONT *lplf, CONST TEXTMETRIC *lptm, DWORD dwType, LPARAM lpData)
 {
-  fnt = CreateFontIndirect(lplf);
   GCP_RESULTSW gcp;
   wchar_t s[4], gl[4];
   char classes[4];
   DWORD ok;
-  HDC = (HDC)lpData;
+  HDC hdc = (HDC)lpData;
+  HFONT fnt;
+
+  fnt = CreateFontIndirect(lplf);
 
   s[0] = 0x202D;
   s[1] = 'a';
@@ -1069,7 +1071,7 @@ wchar_t *convert_to_drawable_format(const char *text, int d, int ucs4, long *_ul
   if (!combine) {
     if (!dc->combine_status) {
       /* Check whether text renderer knows how to deal with ZWNJ, etc. */
-      if (!EnumFonts(hdc, NULL, (FONTENUMPROC)proc, hdc))
+      if (!EnumFonts(hdc, NULL, (FONTENUMPROC)proc, (long)hdc))
 	dc->combine_status = 1;
       else
 	dc->combine_status = -1;

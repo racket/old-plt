@@ -221,7 +221,8 @@ case $OS in
       CFLAGS="$CFLAGS -Wp,-H,64000 -Aa -D_HPUX_SOURCE +Z"
     fi
     LIBS="$LIBS -Wl,-E"
-    # For -lXaw and -lXmu
+    # For Xaw and Xmu:
+    X_CFLAGS="-I/usr/contrib/X11R6/include/ $X_CFLAGS"
     X_LIBS="-L/usr/contrib/X11R6/lib/ $X_LIBS"
     ;;
   SCO) # How do you really recognize SCO?

@@ -18,8 +18,9 @@
   (define (string-or-false? x) (or (not x) (string? x)))
   (define (ip-string? x) (and (string? x)
 			      (positive? (string-length x))))
-  (define (abs-path-or-false? x) (or (not x)
-				     (and (path? x) (absolute-path? x))))
+  (define (abs-path-or-false? x) 
+    (or (not x)
+	(and (path? x) (absolute-path? x))))
 
   (define (un/marshall-path pref)
     (preferences:set-un/marshall pref

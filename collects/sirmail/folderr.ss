@@ -177,7 +177,7 @@
               (and root-box (string->bytes/utf-8 root-box))
               root-box
               #f ;; arbitrary
-              (let loop ([mailbox-name root-box])
+              (let loop ([mailbox-name (and root-box (string->bytes/utf-8 root-box))])
                 (let ([mailbox-name-length (if mailbox-name
 					       (bytes-length mailbox-name)
 					       0)]

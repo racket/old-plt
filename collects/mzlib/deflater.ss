@@ -2237,11 +2237,11 @@
 (define (gzip infile outfile)
   (let ([i (open-input-file infile)])
     (dynamic-wind
-     (lambda () (close-input-port i))
+     void
      (lambda ()
-       (let ([o (open-input-file outfile 'truncate/replace)])
+       (let ([o (open-output-file outfile 'truncate/replace)])
 	 (dynamic-wind
-	  (lambda () (close-output-port o))
+	  void
 	  (lambda ()
 	    (let ([name (with-handlers ([not-break-exn? (lambda (x) #f)])
 			  (let-values ([(base name dir?) (split-path infile)])
@@ -2249,8 +2249,8 @@
 		  [timestamp (with-handlers ([not-break-exn? (lambda (x) 0)])
 			       (file-or-directory-modify-seconds infile))])
 	      (gzip-through-ports i o name timestamp)))
-	  void)))
-     void)))
+	  (lambda () (close-output-port o)))))
+     (lambda () (close-input-port i)))))
 
 (list gzip gzip-through-ports deflate)))
 

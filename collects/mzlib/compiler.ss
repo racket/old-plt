@@ -40,7 +40,7 @@
 	   (for-each
 	    (lambda (gvp)
 	      (unless (defined? (car gvp))
-		      (eval `(define ,(car gvp) (quote ,(cdr gvp))))))
+		      (global-defined-value (car gvp) (cdr gvp))))
 	    gvs)
 	   (setup-preserving-compile-namespace preserve-elab? do-elab? preserve-constr? do-constr?))
 	  n)))

@@ -64,9 +64,6 @@
 	`(a ((href ,(make-k k tag)))
 	    ,label))
 
-      (define (cleanup-name f)
-	(format "~a.scm" (regexp-replace #rx"-?0$" f "")))
-
       (define (handin-link k user hi)
 	(let* ([dir (build-path (if (directory-exists? (build-path "active" hi))
 				    "active"
@@ -74,7 +71,7 @@
 				hi
 				user)]
 	       [l (filter (lambda (f)
-			    (regexp-match #rx"[^0-9]0$" f))
+			    (not (regexp-match #rx"^BACKUP-[0-9]+$" f)))
 			  (with-handlers ([not-break-exn? (lambda (x) null)])
 			    (directory-list dir)))])
 	  (if (pair? l)
@@ -87,8 +84,7 @@
 			 (let ([hi (build-path dir f)])
 			   `(font 
 			     ()
-			     (a ((href ,(make-k k hi)))
-				,(cleanup-name f))
+			     (a ((href ,(make-k k hi))) ,f)
 			     " ("
 			     ,(date->string
 			       (seconds->date

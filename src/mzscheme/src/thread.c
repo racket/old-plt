@@ -5777,6 +5777,8 @@ static void make_initial_config(Scheme_Thread *p)
   init_param(cells, paramz, MZCONFIG_PRINT_HASH_TABLE, scheme_false);
   init_param(cells, paramz, MZCONFIG_PRINT_UNREADABLE, scheme_true);
 
+  init_param(cells, paramz, MZCONFIG_HONU_MODE, scheme_false);
+
   {
     Scheme_Object *s;
     s = scheme_make_immutable_sized_utf8_string("", 0);

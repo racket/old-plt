@@ -69,7 +69,7 @@ static Scheme_Object *print_box(int, Scheme_Object *[]);
 static Scheme_Object *print_vec_shorthand(int, Scheme_Object *[]);
 static Scheme_Object *print_hash_table(int, Scheme_Object *[]);
 static Scheme_Object *print_unreadable(int, Scheme_Object *[]);
-static Scheme_Object *read_print_honu(int, Scheme_Object *[]);
+static Scheme_Object *print_honu(int, Scheme_Object *[]);
 
 #define NOT_EOF_OR_SPECIAL(x) ((x) >= 0)
 
@@ -419,9 +419,9 @@ void scheme_init_read(Scheme_Env *env)
 						       MZCONFIG_PRINT_UNREADABLE),
 			     env);
 
-  scheme_add_global_constant("read-print-honu",
-			     scheme_register_parameter(read_print_honu,
-						       "read-print-honu",
+  scheme_add_global_constant("print-honu",
+			     scheme_register_parameter(print_honu,
+						       "print-honu",
 						       MZCONFIG_HONU_MODE),
 			     env);
 
@@ -573,9 +573,9 @@ print_unreadable(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
-read_print_honu(int argc, Scheme_Object *argv[])
+print_honu(int argc, Scheme_Object *argv[])
 {
-  DO_CHAR_PARAM("read-print-honu", MZCONFIG_HONU_MODE);
+  DO_CHAR_PARAM("print-honu", MZCONFIG_HONU_MODE);
 }
 
 /*========================================================================*/
@@ -1534,7 +1534,7 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 }
 
 Scheme_Object *
-_scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
+_scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int honu_mode)
 {
   Scheme_Object *v, *v2;
   Scheme_Config *config;
@@ -1562,12 +1562,17 @@ _scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc)
   params.can_read_quasi = SCHEME_TRUEP(v);
   v = scheme_get_param(config, MZCONFIG_CAN_READ_DOT);
   params.can_read_dot = SCHEME_TRUEP(v);
-  v = scheme_get_param(config, MZCONFIG_HONU_MODE);
-  params.honu_mode = SCHEME_TRUEP(v);
+  params.honu_mode = honu_mode;
 
   ht = MALLOC_N(Scheme_Hash_Table *, 1);
   do {
-    v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
+    if (params.honu_mode) {
+      long line, col, pos;
+      scheme_tell_all(port, &line, &col, &pos);
+      v = read_list(port, stxsrc, line, col, pos, EOF, mz_shape_cons, 0, ht, scheme_null, &params);
+    } else {
+      v = read_inner(port, stxsrc, ht, scheme_null, &params, RETURN_FOR_HASH_COMMENT);
+    }
 
     if (*ht) {
       /* Resolve placeholders: */
@@ -1596,11 +1601,11 @@ static void *scheme_internal_read_k(void)
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
 
-  return (void *)_scheme_internal_read(port, stxsrc, p->ku.k.i1);
+  return (void *)_scheme_internal_read(port, stxsrc, p->ku.k.i1, p->ku.k.i2);
 }
 
 Scheme_Object *
-scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int cantfail)
+scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int cantfail, int honu_mode)
 {
   Scheme_Thread *p = scheme_current_thread;
 
@@ -1612,11 +1617,12 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int ca
     scheme_alloc_list_stack(p);
 
   if (cantfail) {
-    return _scheme_internal_read(port, stxsrc, crc);
+    return _scheme_internal_read(port, stxsrc, crc, honu_mode);
   } else {
     p->ku.k.p1 = (void *)port;
     p->ku.k.p2 = (void *)stxsrc;
     p->ku.k.i1 = crc;
+    p->ku.k.i2 = honu_mode;
 
     return (Scheme_Object *)scheme_top_level_do(scheme_internal_read_k, 0);
   }
@@ -1624,12 +1630,12 @@ scheme_internal_read(Scheme_Object *port, Scheme_Object *stxsrc, int crc, int ca
 
 Scheme_Object *scheme_read(Scheme_Object *port)
 {
-  return scheme_internal_read(port, NULL, -1, 0);
+  return scheme_internal_read(port, NULL, -1, 0, 0);
 }
 
 Scheme_Object *scheme_read_syntax(Scheme_Object *port, Scheme_Object *stxsrc)
 {
-  return scheme_internal_read(port, stxsrc, -1, 0);
+  return scheme_internal_read(port, stxsrc, -1, 0, 0);
 }
 
 Scheme_Object *scheme_resolve_placeholders(Scheme_Object *obj, int mkstx)
@@ -1944,9 +1950,10 @@ honu_add_module_wrapper(Scheme_Object *list, Scheme_Object *stxsrc, Scheme_Objec
       if (SCHEME_BYTE_STR_VAL(name)[i] == '.')
 	break;
     }
-    if (i <= 0)
-      i = SCHEME_BYTE_STRLEN_VAL(name);
-    name = scheme_intern_exact_symbol(SCHEME_BYTE_STR_VAL(name), i);
+    if (i > 0)
+      name = scheme_make_sized_path(SCHEME_BYTE_STR_VAL(name), i, 0);
+    name = scheme_byte_string_to_char_string_locale(name);
+    name = scheme_intern_exact_char_symbol(SCHEME_CHAR_STR_VAL(name), SCHEME_CHAR_STRLEN_VAL(name));
   } else if (!SCHEME_SYMBOLP(name)) {
     name = scheme_intern_symbol("unknown");
   }

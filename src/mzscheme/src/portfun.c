@@ -44,7 +44,9 @@ static Scheme_Object *call_with_input_file (int, Scheme_Object *[]);
 static Scheme_Object *with_input_from_file (int, Scheme_Object *[]);
 static Scheme_Object *with_output_to_file (int, Scheme_Object *[]);
 static Scheme_Object *read_f (int, Scheme_Object *[]);
+static Scheme_Object *read_honu_f (int, Scheme_Object *[]);
 static Scheme_Object *read_syntax_f (int, Scheme_Object *[]);
+static Scheme_Object *read_honu_syntax_f (int, Scheme_Object *[]);
 static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *read_byte (int, Scheme_Object *[]);
@@ -356,6 +358,16 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("read-syntax",
 			     scheme_make_prim_w_arity(read_syntax_f,
 						      "read-syntax",
+						      0, 3),
+			     env);
+  scheme_add_global_constant("read-honu",
+			     scheme_make_prim_w_arity(read_honu_f,
+						      "read-honu",
+						      0, 1),
+			     env);
+  scheme_add_global_constant("read-honu-syntax",
+			     scheme_make_prim_w_arity(read_honu_syntax_f,
+						      "read-honu-syntax",
 						      0, 3),
 			     env);
   scheme_add_global_constant("read-char",
@@ -2649,22 +2661,22 @@ static Scheme_Object *sch_default_read_handler(void *ignore, int argc, Scheme_Ob
   else
     src = NULL;
 
-  return scheme_internal_read(argv[0], src, -1, 0);
+  return scheme_internal_read(argv[0], src, -1, 0, 0);
 }
 
-static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
+static Scheme_Object *do_read_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode)
 {
   Scheme_Object *port;
 
   if (argc && !SCHEME_INPORTP(argv[0]))
-    scheme_wrong_type("read", "input-port", 0, argc, argv);
+    scheme_wrong_type(who, "input-port", 0, argc, argv);
 
   if (argc)
     port = argv[0];
   else
     port = CURRENT_INPUT_PORT(scheme_current_config());
 
-  if (((Scheme_Input_Port *)port)->read_handler) {
+  if (((Scheme_Input_Port *)port)->read_handler && !honu_mode) {
     Scheme_Object *o[1];
     o[0] = port;
     return _scheme_apply(((Scheme_Input_Port *)port)->read_handler, 1, o);
@@ -2672,17 +2684,27 @@ static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port, NULL, -1, 0);
+    return scheme_internal_read(port, NULL, -1, 0, honu_mode);
   }
 }
 
-static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
+static Scheme_Object *read_f(int argc, Scheme_Object *argv[])
+{
+  return do_read_f("read", argc, argv, 0);
+}
+
+static Scheme_Object *read_honu_f(int argc, Scheme_Object *argv[])
+{
+  return do_read_f("read-honu", argc, argv, 1);
+}
+
+static Scheme_Object *do_read_syntax_f(const char *who, int argc, Scheme_Object *argv[], int honu_mode)
 {
   Scheme_Object *port;
   Scheme_Object *delta = scheme_false;
 
   if ((argc > 1) && !SCHEME_INPORTP(argv[1]))
-    scheme_wrong_type("read-syntax", "input-port", 1, argc, argv);
+    scheme_wrong_type(who, "input-port", 1, argc, argv);
 
   if (argc > 1)
     port = argv[1];
@@ -2692,12 +2714,12 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   if (argc > 2) {
     /* Argument should be a list: (list line col pos) */
     if (!check_offset_list(argv[2]))
-      scheme_wrong_type("read-syntax", "#f or list of three non-negative exact integers or #fs", 2, argc, argv);
+      scheme_wrong_type(who, "#f or list of three non-negative exact integers or #fs", 2, argc, argv);
 
     delta = argv[2];
   }
 
-  if (((Scheme_Input_Port *)port)->read_handler) {
+  if (((Scheme_Input_Port *)port)->read_handler && !honu_mode) {
     Scheme_Object *o[3], *result;
     o[0] = port;
     o[1] = (argc ? argv[0] : ((Scheme_Input_Port *)port)->name);
@@ -2728,8 +2750,18 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();
 
-    return scheme_internal_read(port, src, -1, 0);
+    return scheme_internal_read(port, src, -1, 0, honu_mode);
   }
+}
+
+static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
+{
+  return do_read_syntax_f("read-syntax", argc, argv, 0);
+}
+
+static Scheme_Object *read_honu_syntax_f(int argc, Scheme_Object *argv[])
+{
+  return do_read_syntax_f("read-honu-syntax", argc, argv, 1);
 }
 
 static Scheme_Object *
@@ -3855,7 +3887,7 @@ static Scheme_Object *do_load_handler(void *data)
   Scheme_Env *genv;
   int save_count = 0, got_one = 0;
 
-  while ((obj = scheme_internal_read(port, lhd->stxsrc, 1, 0))
+  while ((obj = scheme_internal_read(port, lhd->stxsrc, 1, 0, 0))
 	 && !SCHEME_EOFP(obj)) {
     save_array = NULL;
     got_one = 1;
@@ -3928,7 +3960,7 @@ static Scheme_Object *do_load_handler(void *data)
       }
 
       /* Check no more expressions: */
-      d = scheme_internal_read(port, lhd->stxsrc, 1, 0);
+      d = scheme_internal_read(port, lhd->stxsrc, 1, 0, 0);
       if (!SCHEME_EOFP(d)) {
 	scheme_raise_exn(MZEXN_FAIL,
 			 "default-load-handler: expected only a `module' declaration for `%S', but found an extra expression in: %V",

@@ -73,8 +73,9 @@ static int print(Scheme_Object *obj, int notdisplay, int compact,
 		 Scheme_Hash_Table *ht,
 		 Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht,
 		 PrintParams *p);
-static void print_char_string(const char *s, int l, const mzchar *us, int delta, int ul, int notdisplay, PrintParams *pp);
-static void print_byte_string(const char *s, int l, int notdisplay, PrintParams *pp);
+static void print_char_string(const char *s, int l, const mzchar *us, int delta, int ul, 
+			      int notdisplay, int honu_char, PrintParams *pp);
+static void print_byte_string(const char *s, int delta, int l, int notdisplay, PrintParams *pp);
 static void print_pair(Scheme_Object *pair, int notdisplay, int compact, 
 		       Scheme_Hash_Table *ht, 
 		       Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, 
@@ -870,7 +871,7 @@ static void do_print_string(int compact, int notdisplay,
     print_compact_number(pp, l);
     print_this_string(pp, buf, 0, el);
   } else {
-    print_char_string(buf, el, s, offset, l, notdisplay, pp);
+    print_char_string(buf, el, s, offset, l, notdisplay, 0, pp);
   }
   if (reset)
     quick_encode_buffer = buf;
@@ -1024,11 +1025,21 @@ static void print_named(Scheme_Object *obj, const char *kind,
   print_utf8_string(pp, ">", 0, 1);
 }
 
+static void always_scheme(PrintParams *pp, int reset)
+{
+  if (pp->honu_mode) {
+    print_utf8_string(pp, "#sx", 0, 3);
+    if (reset)
+      pp->honu_mode = 0;
+  }
+}
+
 static int
 print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       Scheme_Hash_Table *symtab, Scheme_Hash_Table *rnht, PrintParams *pp)
 {
   int closed = 0;
+  int save_honu_mode;
 
 #if NO_COMPACT
   compact = 0;
@@ -1093,6 +1104,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     }
   }
 
+  save_honu_mode = pp->honu_mode;
+
   if (ht && HAS_SUBSTRUCT(obj, ssQUICK)) {
     long val;
     
@@ -1105,10 +1118,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	  return 1;
 	} else {
 	  if (val > 0) {
+	    always_scheme(pp, 1);
 	    sprintf(quick_buffer, "#%ld=", (val - 3) >> 1);
 	    print_utf8_string(pp, quick_buffer, 0, -1);
 	    scheme_hash_set(ht, obj, (Scheme_Object *)(-val));
 	  } else {
+	    always_scheme(pp, 0);
 	    sprintf(quick_buffer, "#%ld#", ((-val) - 3) >> 1);
 	    print_utf8_string(pp, quick_buffer, 0, -1);
 	    return 0;
@@ -1159,16 +1174,42 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	l = SCHEME_INT_VAL(idx);
 	print_compact_number(pp, l);
       } else if (notdisplay) {
-	const char *s;
-	
-	s = scheme_symbol_name_and_size(obj, (unsigned int *)&l, 
-					((pp->can_read_pipe_quote 
-					  ? SCHEME_SNF_PIPE_QUOTE
-					  : SCHEME_SNF_NO_PIPE_QUOTE)
-					 | (pp->case_sens
-					    ? 0
-					    : SCHEME_SNF_NEED_CASE)));
-	print_utf8_string(pp, s, 0, l);
+	if (pp->honu_mode) {
+	  /* Honu symbol... */
+	  print_utf8_string(pp, "sym(", 0, 4);
+	  {
+	    int i;
+	    /* Check for fast case: */
+	    for (i = SCHEME_SYM_LEN(obj); i--; ) {
+	      if (((unsigned char *)SCHEME_SYM_VAL(obj))[i] > 127)
+		break;
+	    }
+	    if (i < 0) {
+	      /* Fits as byte string (fast case) */
+	      print_byte_string((char *)obj, SCHEME_SYMSTR_OFFSET(obj), SCHEME_SYM_LEN(obj),
+				notdisplay, pp);
+	    } else {
+	      /* Coerce to string (slower) */
+	      Scheme_Object *s;
+	      s = scheme_make_sized_offset_utf8_string((char *)obj,
+						       SCHEME_SYMSTR_OFFSET(obj),
+						       SCHEME_SYM_LEN(obj));
+	      do_print_string(0, notdisplay, pp, SCHEME_CHAR_STR_VAL(s), 0, SCHEME_CHAR_STRLEN_VAL(s));
+	    }
+	  }
+	  print_utf8_string(pp, ")", 0, 1);
+	} else {
+	  const char *s;
+	  
+	  s = scheme_symbol_name_and_size(obj, (unsigned int *)&l, 
+					  ((pp->can_read_pipe_quote 
+					    ? SCHEME_SNF_PIPE_QUOTE
+					    : SCHEME_SNF_NO_PIPE_QUOTE)
+					   | (pp->case_sens
+					      ? 0
+					      : SCHEME_SNF_NEED_CASE)));
+	  print_utf8_string(pp, s, 0, l);
+	}
       } else {
 	print_utf8_string(pp, (char *)obj, ((char *)(SCHEME_SYM_VAL(obj))) - ((char *)obj), 
 			  SCHEME_SYM_LEN(obj));
@@ -1184,9 +1225,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_compact_number(pp, l);
 	print_this_string(pp, SCHEME_BYTE_STR_VAL(obj), 0, l);
       } else {
-	if (notdisplay)
+	if (notdisplay) {
+	  always_scheme(pp, 0);
 	  print_utf8_string(pp, "#", 0, 1);
+	}
 	print_byte_string(SCHEME_BYTE_STR_VAL(obj), 
+			  0,
 			  SCHEME_BYTE_STRLEN_VAL(obj), 
 			  notdisplay, pp);
 	closed = 1;
@@ -1205,6 +1249,14 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	print_compact(pp, CPT_CHAR);
 	cv = SCHEME_CHAR_VAL(obj);
 	print_compact_number(pp, cv);
+      } else if (notdisplay && pp->honu_mode) {
+	/* Honu char */
+	char s[MAX_UTF8_CHAR_BYTES];
+	mzchar us[1];
+	int l;
+	us[0] = SCHEME_CHAR_VAL(obj);
+	l = scheme_utf8_encode(us, 0, 1, s, 0, 0);
+	print_char_string(s, l, us, 0, 1, notdisplay, 1, pp);
       } else
 	print_char(obj, notdisplay, pp);
     }
@@ -1230,15 +1282,21 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact) {
 	print_escaped(pp, notdisplay, obj, ht);
 	closed = 1;
-      } else
+      } else {
+	if (SCHEME_COMPLEXP(obj))
+	  always_scheme(pp, 0);
 	print_utf8_string(pp, scheme_number_to_string(10, obj), 0, -1);
+      }
     }
   else if (SCHEME_NULLP(obj))
     {
       if (compact) {
 	print_compact(pp, CPT_NULL);
       } else {
-	print_utf8_string(pp, "()", 0, 2);
+	if (pp->honu_mode)
+	  print_utf8_string(pp, "null", 0, 4);
+	else
+	  print_utf8_string(pp, "()", 0, 2);
 	closed = 1;
       }
     }
@@ -1259,8 +1317,10 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       } else {
 	if (compact)
 	  print_compact(pp, CPT_BOX);
-	else
+	else {
+	  always_scheme(pp, 1);
 	  print_utf8_string(pp, "#&", 0, 2);
+	}
 	closed = print(SCHEME_BOX_VAL(obj), notdisplay, compact, ht, symtab, rnht, pp);
       }
     }
@@ -1277,6 +1337,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
 	else
 	  print_compact_number(pp, 0);
       } else {
+	always_scheme(pp, 1);
 	print_utf8_string(pp, "#hash", 0, 5);
 	if (!scheme_is_hash_table_equal(obj))
 	  print_utf8_string(pp, "eq", 0, 2);
@@ -1317,6 +1378,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     {
       if (compact)
 	print_compact(pp, CPT_TRUE);
+      else if (pp->honu_mode)
+	print_utf8_string(pp, "true", 0, 4);
       else
 	print_utf8_string(pp, "#t", 0, 2);
     }
@@ -1324,6 +1387,8 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
     {
       if (compact)
 	print_compact(pp, CPT_FALSE);
+      else if (pp->honu_mode)
+	print_utf8_string(pp, "false", 0, 5);
       else
 	print_utf8_string(pp, "#f", 0, 2);
     }
@@ -1557,6 +1622,7 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
                             SCHEME_SYM_LEN(name));
         } else if (SCHEME_BYTE_STRINGP(name)) {
           print_byte_string(SCHEME_BYTE_STR_VAL(name),
+			    0,
                             SCHEME_BYTE_STRLEN_VAL(name),
                             0, pp);
         } else if (SCHEME_CHAR_STRINGP(name)) {
@@ -1913,26 +1979,40 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       closed = 1;
     }
 
+  if (save_honu_mode != pp->honu_mode)
+    pp->honu_mode = save_honu_mode;
+
   return (closed || compact);
 }
 
 static void
 print_char_string(const char *str, int len, 
 		  const mzchar *ustr, int delta, int ulen,
-		  int notdisplay, PrintParams *pp)
+		  int notdisplay, int honu_char, PrintParams *pp)
 {
   char minibuf[12], *esc;
   int a, i, v, ui, cont_utf8 = 0, isize;
 
   if (notdisplay) {
-    print_utf8_string(pp, "\"", 0, 1);
+    print_utf8_string(pp, honu_char ? "'" : "\"", 0, 1);
 
     for (a = i = ui = 0; i < len; i += isize, ui++) {
       v = ((unsigned char *)str)[i];
       isize = 1;
 
       switch (v) {
-      case '\"': esc = "\\\""; break;
+      case '\"': 
+	if (honu_char)
+	  esc = NULL;
+	else
+	  esc = "\\\""; 
+	break;
+      case '\'': 
+	if (honu_char)
+	  esc = "\\'"; 
+	else
+	  esc = NULL;
+	break;
       case '\\': esc = "\\\\"; break;
       case '\a': esc = "\\a";  break;
       case '\b': esc = "\\b";  break;
@@ -1986,14 +2066,14 @@ print_char_string(const char *str, int len,
     if (a < i)
       print_utf8_string(pp, str, a, i-a);
 
-    print_utf8_string(pp, "\"", 0, 1);
+    print_utf8_string(pp, honu_char ? "'" : "\"", 0, 1);
   } else if (len) {
     print_utf8_string(pp, str, 0, len);
   }
 }
 
 static void
-print_byte_string(const char *str, int len, int notdisplay, PrintParams *pp)
+print_byte_string(const char *str, int delta, int len, int notdisplay, PrintParams *pp)
 {
   char minibuf[8], *esc;
   int a, i, v;
@@ -2001,7 +2081,7 @@ print_byte_string(const char *str, int len, int notdisplay, PrintParams *pp)
   if (notdisplay) {
     print_utf8_string(pp, "\"", 0, 1);
 
-    for (a = i = 0; i < len; i++) {
+    for (a = i = delta; i < delta + len; i++) {
       /* Escape-sequence handling by Eli Barzilay. */
       switch (((unsigned char *)str)[i]) {
       case '\"': esc = "\\\""; break;
@@ -2044,7 +2124,7 @@ print_byte_string(const char *str, int len, int notdisplay, PrintParams *pp)
 
     print_utf8_string(pp, "\"", 0, 1);
   } else if (len) {
-    print_this_string(pp, str, 0, len);
+    print_this_string(pp, str, delta, len);
   }
 }
 
@@ -2087,6 +2167,56 @@ print_pair(Scheme_Object *pair, int notdisplay, int compact,
 	super_compact = -1;
       }
     }
+  } else if (pp->honu_mode) {
+    /* Honu list printing */
+    cdr = SCHEME_CDR(pair);
+    while (SCHEME_PAIRP(cdr)) {
+      if (ht) {
+	if ((long)scheme_hash_get(ht, cdr) != 1) {
+	  /* This needs a tag */
+	  break;
+	}
+      }cdr = SCHEME_CDR(cdr);
+    }
+    if (SCHEME_NULLP(cdr)) {
+      /* Proper list without sharing. */
+      print_utf8_string(pp, "list(", 0, 5);
+      (void)print(SCHEME_CAR(pair), notdisplay, compact, ht, symtab, rnht, pp);
+      cdr = SCHEME_CDR(pair);
+      while (SCHEME_PAIRP(cdr)) {
+	print_utf8_string(pp, ", ", 0, 2);
+	(void)print(SCHEME_CAR(cdr), notdisplay, compact, ht, symtab, rnht, pp);
+	cdr = SCHEME_CDR(cdr);
+      }
+      print_utf8_string(pp, ")", 0, 1);
+    } else {
+      /* Use cons cells. */
+      int cnt = 1;
+      print_utf8_string(pp, "cons(", 0, 5);
+      (void)print(SCHEME_CAR(pair), notdisplay, compact, ht, symtab, rnht, pp);
+      cdr = SCHEME_CDR(pair);
+      while (SCHEME_PAIRP(cdr)) {
+	print_utf8_string(pp, ", ", 0, 2);
+	if (ht) {
+	  if ((long)scheme_hash_get(ht, cdr) != 1) {
+	    /* This needs a tag */
+	    (void)print(cdr, notdisplay, compact, ht, symtab, rnht, pp);
+	    break;
+	  }
+	}
+	 
+	print_utf8_string(pp, "cons(", 0, 5);
+	(void)print(SCHEME_CAR(cdr), notdisplay, compact, ht, symtab, rnht, pp);
+	cnt++;
+	cdr = SCHEME_CDR(cdr);
+      }
+      print_utf8_string(pp, ", ", 0, 2);
+      (void)print(cdr, notdisplay, compact, ht, symtab, rnht, pp);
+      while (cnt--) {
+	print_utf8_string(pp, ")", 0, 1);
+      }
+    }
+    return;
   }
 
   if (compact) {
@@ -2152,19 +2282,33 @@ print_vector(Scheme_Object *vec, int notdisplay, int compact,
     elems = NULL; /* Precise GC: because VEC_ELS is not aligned */
     
     if (notdisplay && pp->print_vec_shorthand) {
-      char buffer[100];
-      sprintf(buffer, "#%d(", size);
-      print_utf8_string(pp, buffer, 0, -1);
-      size -= common;
-    } else
+      if (size == 0) {
+	if (pp->honu_mode)
+	  print_utf8_string(pp, "vectorN(0", 0, 7);
+	else
+	  print_utf8_string(pp, "#0(", 0, 3);
+      } else {
+	char buffer[100];
+	sprintf(buffer, pp->honu_mode ? "vectorN(%d, " : "#%d(", size);
+	print_utf8_string(pp, buffer, 0, -1);
+	size -= common;
+      }
+    } else if (pp->honu_mode)
+      print_utf8_string(pp, "vector(", 0, 7);
+    else
       print_utf8_string(pp, "#(", 0, 2);
   }
 
   for (i = 0; i < size; i++) {
     print(SCHEME_VEC_ELS(vec)[i], notdisplay, compact, ht, symtab, rnht, pp);
-    if (i < (size - 1))
-      if (!compact)
-	print_utf8_string(pp, " ", 0, 1);
+    if (i < (size - 1)) {
+      if (!compact) {
+	if (pp->honu_mode)
+	  print_utf8_string(pp, ", ", 0, 2);
+	else
+	  print_utf8_string(pp, " ", 0, 1);
+      }
+    }
   }
 
   if (!compact)

@@ -1,7 +1,11 @@
 
 (let ([ht (make-hash-table)])
   (lambda (manual index-key label)
-    (with-handlers ([void (lambda (x) "???")])
+    (with-handlers ([(lambda (x) #t) 
+                     (lambda (x) 
+                       (format 
+                        "<font color=\"red\">[internal error:finddoc didn't find link; manual: ~s index-key: ~s label: ~s]</font>"
+                        manual index-key label))])
       (let ([key (string->symbol manual)]
 	    [docdir (build-path (collection-path "doc") manual)])
 	(let ([l (hash-table-get

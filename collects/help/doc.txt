@@ -240,3 +240,18 @@ Each index entry is a list of four values:
     "How to Create Help Desk Documents"
 
 See plt/collects/doc/mzscheme/hdindex for an example.
+
+_Help Desk Entry Points_
+========================
+
+ The Help Desk documentation base supports the following entry
+ points, which may be used by applications.
+
+> Help Desk Start Page
+
+  Found at (build-path (collection-path "doc" "help") "index.html")
+
+> Help Desk Release Notes
+ 
+  Found at (build-path (collection-path "doc" "help" "release") "notes.html")
+

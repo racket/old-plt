@@ -261,10 +261,17 @@
     (let ((record (send type-recs get-class-record name (lambda () #f))))
       (cond
         ((class-record? record) record)
-        ((procedure? record) (get-record record type-recs))
+        ((procedure? record) 
+         (let ((cur-src-loc (build-info-location)))
+           (begin0 (get-record record type-recs)
+                   (build-info-location cur-src-loc))))
         ((eq? record 'in-progress)
          (dependence-error 'cycle (name-id n) (name-src n)))
-        (else (get-record (find-implicit-import name type-recs level (name-src n)) type-recs)))))
+        (else 
+         (let ((cur-src-loc (build-info-location)))
+           (begin0
+             (get-record (find-implicit-import name type-recs level (name-src n)) type-recs)
+             (build-info-location cur-src-loc)))))))
   
   (define (class-specific-field? field)
     (not (memq 'private 

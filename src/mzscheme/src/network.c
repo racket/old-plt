@@ -161,14 +161,30 @@ static int num_tcp_send_buffers = 0;
 static void **tcp_send_buffers;
 #endif
 
+#ifndef USE_MAC_TCP
+/* UDP not supported in Mac OS Classic */
+# define UDP_IS_SUPPORTED
+#endif
+
+#ifdef UDP_IS_SUPPORTED
+
 typedef struct Scheme_UDP {
   Scheme_Type type; /* scheme_udp_type */
   MZ_HASH_KEY_EX
   tcp_t s; /* ok, tcp_t was a bad name */
   char bound, connected;
   Scheme_Object *previous_from_addr;
-    Scheme_Custodian_Reference *mref;
+  Scheme_Custodian_Reference *mref;
 } Scheme_UDP;
+
+typedef struct Scheme_UDP_Waitable {
+  Scheme_Type type; /* scheme_udp_type */
+  MZ_HASH_KEY_EX
+  Scheme_UDP *udp;
+  int for_read;
+} Scheme_UDP_Waitable;
+
+#endif /* UDP_IS_SUPPORTED */
 
 #endif /* USE_TCP */
 
@@ -199,6 +215,11 @@ static Scheme_Object *udp_send_enable_break(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_receive(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_receive_star(int argc, Scheme_Object *argv[]);
 static Scheme_Object *udp_receive_enable_break(int argc, Scheme_Object *argv[]);
+static Scheme_Object *udp_read_waitable(int argc, Scheme_Object *argv[]);
+static Scheme_Object *udp_write_waitable(int argc, Scheme_Object *argv[]);
+
+static int udp_waitable_check_ready(Scheme_Object *uw);
+static void udp_waitable_needs_wakeup(Scheme_Object *_uw, void *fds);
 
 static void register_tcp_listener_wait();
 
@@ -353,6 +374,16 @@ void scheme_init_network(Scheme_Env *env)
 			     scheme_make_prim_w_arity(udp_receive_enable_break,
 						      "udp-receive!/enable-break", 
 						      2, 2), 
+			     env);
+  scheme_add_global_constant("udp->receive-waitable", 
+			     scheme_make_prim_w_arity(udp_read_waitable,
+						      "udp->receive-waitable", 
+						      1, 1), 
+			     env);
+  scheme_add_global_constant("udp->send-waitable", 
+			     scheme_make_prim_w_arity(udp_write_waitable,
+						      "udp->send-waitable", 
+						      1, 1), 
 			     env);
 
   register_tcp_listener_wait();
@@ -2509,6 +2540,7 @@ static void register_tcp_listener_wait()
 {
 #ifdef USE_TCP
   scheme_add_waitable(scheme_listener_type, tcp_check_accept, tcp_accept_needs_wakeup, NULL);
+  scheme_add_waitable(scheme_udp_waitable_type, udp_waitable_check_ready, udp_waitable_needs_wakeup, NULL);
 #endif
 }
 
@@ -2667,11 +2699,12 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
     return NULL;
   }
 
-  udp = (Scheme_UDP *)scheme_malloc_atomic_tagged(sizeof(Scheme_UDP));
+  udp = MALLOC_ONE_TAGGED(Scheme_UDP);
   udp->type = scheme_udp_type;
   udp->s = s;
   udp->bound = 0;
   udp->connected = 0;
+  udp->previous_from_addr = NULL;
 
 #ifdef USE_WINSOCK_TCP
   {
@@ -2761,7 +2794,7 @@ static Scheme_Object *udp_bind_or_connect(const char *name, int argc, Scheme_Obj
   if ((do_bind && udp->bound)
       || (!do_bind && udp->connected)) {
     scheme_raise_exn(MZEXN_I_O_UDP,
-		     "%s: udp socket is already %s: %v",
+		     "%s: udp socket is already %s: %V",
 		     name,
 		     do_bind ? "bound" : "connected",
 		     udp);
@@ -2880,7 +2913,7 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
   } else
     delta = -2;
   
-  scheme_get_substring_indices(name, argv[1], 
+  scheme_get_substring_indices(name, argv[3 + delta], 
 			       argc, argv,
 			       4 + delta, 5 + delta, &start, &end);
 
@@ -2905,17 +2938,19 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
       if (udp->s == INVALID_SOCKET) {
 	/* socket was closed, maybe while we slept */
 	scheme_raise_exn(MZEXN_I_O_UDP,
-			 "%s: udp socket is closed: %v",
+			 "%s: udp socket is closed: %V",
 			 name, udp);
 	return NULL;
       }
       if (!with_addr && !udp->connected) {
 	/* socket is unconnected, maybe disconnected while we slept */
 	scheme_raise_exn(MZEXN_I_O_UDP,
-			 "%s: udp socket is not connected: %v",
+			 "%s: udp socket is not connected: %V",
 			 name, udp);
 	return NULL;
       }
+
+      udp->bound = 1; /* in case it's not bound already, send[to] binds it */
 
       if (with_addr)
 	x = sendto(udp->s, SCHEME_STR_VAL(argv[3+delta]) + start, end - start, 
@@ -2940,7 +2975,8 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
 			 name,
 			 x, end - start);
 	return NULL;
-      }
+      } else
+	break;
     }
     
     if (x > -1) {
@@ -3055,7 +3091,8 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 
   if (!udp->bound) {
     scheme_raise_exn(MZEXN_I_O_UDP,
-		     "udp-bind: udp socket is not bound: %v",
+		     "%s: udp socket is not bound: %V",
+		     name,
 		     udp);
     return NULL;
   }
@@ -3065,14 +3102,14 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
       /* socket was closed, maybe while we slept */
       scheme_raise_exn(MZEXN_APPLICATION_MISMATCH,
 		       (Scheme_Object *)udp,
-		       "%s: udp socket is closed: %v",
+		       "%s: udp socket is closed: %V",
 		       name, udp);
       return NULL;
     }
 
     {
-      socklen_t asize = sizeof(udp_src_addr);
-      x = recvfrom(udp->s, SCHEME_STR_VAL(argv[1]) + start, start - end, 0,
+      int asize = sizeof(udp_src_addr);
+      x = recvfrom(udp->s, SCHEME_STR_VAL(argv[1]) + start, end - start, 0,
 		   (struct sockaddr *)&udp_src_addr, &asize);
     }
 
@@ -3090,7 +3127,8 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
 	}
       } else if (NOT_WINSOCK(errid) != EINTR)
 	break;
-    }
+    } else
+      break;
   }
   
   if (x > -1) {
@@ -3115,7 +3153,7 @@ static Scheme_Object *udp_recv(const char *name, int argc, Scheme_Object *argv[]
     return scheme_values(3,v);
   } else {
     scheme_raise_exn(MZEXN_I_O_UDP,
-		     "%s: send failed (%E)", 
+		     "%s: receive failed (%E)", 
 		     name,
 		     errid);
     return NULL;
@@ -3129,12 +3167,57 @@ static Scheme_Object *udp_receive(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *udp_receive_star(int argc, Scheme_Object *argv[])
 {
-  return udp_recv("udp-receive!*", argc, argv, 1);
+  return udp_recv("udp-receive!*", argc, argv, 0);
 }
 
 static Scheme_Object *udp_receive_enable_break(int argc, Scheme_Object *argv[])
 {
   return scheme_call_enable_break(udp_receive, argc, argv);
+}
+
+static Scheme_Object *make_udp_waitable(const char *name, int argc, Scheme_Object **argv, int for_read)
+{
+  Scheme_UDP_Waitable *uw;
+
+  if (!SCHEME_UDPP(argv[0]))
+    scheme_wrong_type(name, "udp-socket", 0, argc, argv);
+
+  uw = MALLOC_ONE_TAGGED(Scheme_UDP_Waitable);
+  uw->type = scheme_udp_waitable_type;
+  uw->udp = (Scheme_UDP *)argv[0];
+  uw->for_read = for_read;
+
+  return (Scheme_Object *)uw;
+}
+
+static Scheme_Object *udp_read_waitable(int argc, Scheme_Object *argv[])
+{
+  return make_udp_waitable("udp->receive-waitable", argc, argv, 1);
+}
+
+static Scheme_Object *udp_write_waitable(int argc, Scheme_Object *argv[])
+{
+  return make_udp_waitable("udp->send-waitable", argc, argv, 0);
+}
+
+static int udp_waitable_check_ready(Scheme_Object *_uw)
+{
+  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)_uw;
+
+  if (uw->for_read)
+    return udp_check_recv((Scheme_Object *)uw->udp);
+  else
+    return udp_check_send((Scheme_Object *)uw->udp);
+}
+
+static void udp_waitable_needs_wakeup(Scheme_Object *_uw, void *fds)
+{
+  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)_uw;
+
+  if (uw->for_read)
+    udp_recv_needs_wakeup((Scheme_Object *)uw->udp, fds);
+  else
+    udp_send_needs_wakeup((Scheme_Object *)uw->udp, fds);
 }
 
 /*========================================================================*/
@@ -3154,6 +3237,10 @@ static void register_traversers(void)
   GC_REG_TRAV(scheme_rt_tcp, mark_tcp);
 # ifdef USE_MAC_TCP
   GC_REG_TRAV(scheme_rt_write_data, mark_write_data);
+# endif
+# ifdef UDP_IS_SUPPORTED
+  GC_REG_TRAV(scheme_udp_type, mark_udp);
+  GC_REG_TRAV(scheme_udp_waitable_type, mark_udp_waitable);
 # endif
 #endif
   GC_REG_TRAV(scheme_listener_type, mark_listener);  

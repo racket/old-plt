@@ -2960,6 +2960,62 @@ int mark_write_data_FIXUP(void *p) {
 #define mark_write_data_IS_CONST_SIZE 1
 
 # endif
+
+# ifdef UDP_IS_SUPPORTED
+int mark_udp_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP));
+}
+
+int mark_udp_MARK(void *p) {
+  Scheme_UDP *udp = (Scheme_UDP *)p;
+
+  gcMARK(udp->previous_from_addr);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP));
+}
+
+int mark_udp_FIXUP(void *p) {
+  Scheme_UDP *udp = (Scheme_UDP *)p;
+
+  gcFIXUP(udp->previous_from_addr);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP));
+}
+
+#define mark_udp_IS_ATOMIC 0
+#define mark_udp_IS_CONST_SIZE 1
+
+
+int mark_udp_waitable_SIZE(void *p) {
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+}
+
+int mark_udp_waitable_MARK(void *p) {
+  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)p;
+
+  gcMARK(uw->udp);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+}
+
+int mark_udp_waitable_FIXUP(void *p) {
+  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)p;
+
+  gcFIXUP(uw->udp);
+
+  return
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+}
+
+#define mark_udp_waitable_IS_ATOMIC 0
+#define mark_udp_waitable_IS_CONST_SIZE 1
+
+# endif
 #endif
 
 #endif  /* NETWORK */

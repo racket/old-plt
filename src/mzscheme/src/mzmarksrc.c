@@ -1174,6 +1174,28 @@ mark_write_data {
   gcBYTES_TO_WORDS(sizeof(WriteData));
 }
 # endif
+
+# ifdef UDP_IS_SUPPORTED
+mark_udp {
+ mark:
+  Scheme_UDP *udp = (Scheme_UDP *)p;
+
+  gcMARK(udp->previous_from_addr);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP));
+}
+
+mark_udp_waitable {
+ mark:
+  Scheme_UDP_Waitable *uw = (Scheme_UDP_Waitable *)p;
+
+  gcMARK(uw->udp);
+
+ size:
+  gcBYTES_TO_WORDS(sizeof(Scheme_UDP_Waitable));
+}
+# endif
 #endif
 
 END network;

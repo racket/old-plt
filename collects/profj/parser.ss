@@ -4,7 +4,9 @@
            "parsers/advanced-parser.ss"
            "parsers/intermediate-parser.ss"
            "parsers/beginner-parser.ss"
-           "parsers/lexer.ss")
+           "parsers/beginner-error.ss"
+           "parsers/lexer.ss"
+           "parameters.ss")
   
   (require (lib "lex.ss" "parser-tools"))
   
@@ -18,7 +20,9 @@
     (file-path filename)
     (let ((getter (lambda () (get-token is))))
       (case level
-        ((beginner) (parse-beginner getter))
+        ((beginner) 
+         (determine-error (lambda () (find-beginner-error is))) 
+         (parse-beginner getter))
         ((intermediate) (parse-intermediate getter))
         ((advanced) (parse-advanced getter))
         ((full) (parse-full getter)))))
@@ -29,7 +33,9 @@
     (file-path loc)
     (let ((getter (lambda () (get-token is))))
       (case level
-        ((beginner) (parse-beginner-interactions getter))
+        ((beginner) 
+         (determine-error (lambda () (find-beginner-error-interactions is)))
+         (parse-beginner-interactions getter))
         ((intermediate) (parse-intermediate-interactions getter))
         ((advanced) (parse-advanced-interactions getter))
         ((full) (parse-full-interactions getter)))))

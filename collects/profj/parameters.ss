@@ -22,4 +22,7 @@
   ;Stores if we are execution window executing
   (define execution? (make-parameter #f))
   
+  ;Stores the error function to trigger for parsing
+  (define determine-error (make-parameter (lambda () #t)))
+  
   ) 

@@ -93,7 +93,13 @@
     (syntax-rules ()
                   [(_ name check)
                    (define (name token) (and (token? token) (eq? (token-name token) check)))]))
- 
+
+  ;get-token-name: (U symbol token) -> symbol
+  (define (get-token-name token)
+    (cond
+      ((token? token) (token-name token))
+      (else token)))
+  
   ;Special
   (define-sym-token? eof? 'EOF)
   
@@ -135,15 +141,15 @@
     (and (symbol? token) (memq token `(= += -= *= /= &= ^= %= <<= >>= >>>=))))
   
   ;Separators
-  (define-sym-token? o-paren? 'O_PAREN)
-  (define-sym-token? c-paren? 'C_PAREN)
-  (define-sym-token? o-brace? 'O_BRACE)
-  (define-sym-token? c-brace? 'C_BRACE)
-  (define-sym-token? o-bracket? 'O_BRACKET)
-  (define-sym-token? c-bracket? 'C_BRACKET)
-  (define-sym-token? semi-colon? 'SEMI_COLON)
-  (define-sym-token? dot? 'PERIOD)
-  (define-sym-token? comma? 'COMMA)
+  (define-token? o-paren? 'O_PAREN)
+  (define-token? c-paren? 'C_PAREN)
+  (define-token? o-brace? 'O_BRACE)
+  (define-token? c-brace? 'C_BRACE)
+  (define-token? o-bracket? 'O_BRACKET)
+  (define-token? c-bracket? 'C_BRACKET)
+  (define-token? semi-colon? 'SEMI_COLON)
+  (define-token? dot? 'PERIOD)
+  (define-token? comma? 'COMMA)
   
   ;top-level keywords
   (define-sym-token? package-token? 'package)

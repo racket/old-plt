@@ -281,7 +281,6 @@ MX_PRIM_DECL(mx_document_pred);
 
 // COM
 
-MX_PRIM_DECL(mx_com_terminate);
 MX_PRIM_DECL(mx_com_invoke);
 MX_PRIM_DECL(mx_com_set_property);
 MX_PRIM_DECL(mx_com_get_property);

@@ -2,6 +2,7 @@
   
   (require (prefix kernel: (lib "kerncase.ss" "syntax"))
            (lib "contracts.ss")
+           "shared.ss"
            "breakpoint-token.ss")
   
   ;(provide/contract [annotate (-> syntax-object? 
@@ -12,25 +13,25 @@
   ; (-> (-> 
   (define expr-syntax-object-iterator 
     (contract
-     (-> (-> syntax-object? syntax-object?)
-         syntax-object?
-         syntax-object?)
+     (-> (-> syntax? syntax?)
+         syntax?
+         syntax?)
      (lambda (fn stx)
        (let* ([lambda-clause-abstraction
                (lambda (clause)
-                 (kernel:kernel-syntax-case stx
+                 (kernel:kernel-syntax-case stx #f
                    [((variable ...) . bodies)
-                    (rebuild-stx #`((variable ...) #,@(map fn (syntax->list bodies))) stx)]
+                    (rebuild-stx #`((variable ...) #,@(map fn (syntax->list #'bodies))) stx)]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected (case-)lambda clause: ~a\n" (syntax-object->datum stx))]))]
               [let-values-abstraction
                (lambda (stx)
-                 (kernel:kernel-syntax-case stx
+                 (kernel:kernel-syntax-case stx #f
                    [(kwd ((variable ...) ...) . bodies)
                     (rebuild-stx #`(kwd ((variable ...) ...) #,@(map fn (syntax->list #'bodies))))]
                    [else
                     (error 'expr-syntax-object-iterator "unexpected let(rec) expression: ~a\n" (syntax-object->datum stx))]))]) 
-         (kernel:kernel-syntax-case stx
+         (kernel:kernel-syntax-case stx #f
            [var-stx
             (identifier? (syntax var-stx))
             stx]
@@ -41,7 +42,7 @@
            [(if test then)
             (rebuild-stx #`(if #,(fn #'test) #,(fn #'then)))]
            [(if test then else)
-            (rebuild-stx #`(if #,(fn #'test) #,(fn #'then) #,(fn else)))]
+            (rebuild-stx #`(if #,(fn #'test) #,(fn #'then) #,(fn #'else)))]
            [(begin . bodies)
             (rebuild-stx #`(begin #,@(map fn (syntax->list #'bodies))))]
            [(begin0 . bodies)

@@ -3,11 +3,15 @@
   (import)
 
   (define ID "localhost")
-  (define TIMEOUT 30)
+  (define TIMEOUT 9000)
 
   (define debug-via-stdio? #f)
 
   (define crlf (string #\return #\linefeed))
+
+  (define (log . args)
+    '(apply printf args)
+    (void))
 
   (define (starts-with? l n)
     (and (>= (string-length l) (string-length n))
@@ -60,27 +64,34 @@
 				    (error 'send-smtp-message "communication timeout")
 				    (raise x)))])
 	  (check-reply r 220)
+	  (log "hello~n")
 	  (fprintf w "HELO ~a~a" ID crlf)
 	  (check-reply r 250)
 	  
+	  (log "from~n")
 	  (fprintf w "MAIL FROM:<~a>~a" sender crlf)
 	  (check-reply r 250)
 	  
+	  (log "to~n")
 	  (for-each
 	   (lambda (dest)
 	     (fprintf w "RCPT TO:<~a>~a" dest crlf)
 	     (check-reply r 250))
 	   recipients)
 	  
+	  (log "header~n")
 	  (fprintf w "DATA~a" crlf)
 	  (check-reply r 354)
 	  (fprintf w "~a" header)
 	  (for-each
 	   (lambda (l)
+	     (log "body: ~a~n" l)
 	     (fprintf w "~a~a" (protect-line l) crlf))
 	   message-lines)
 	  (fprintf w ".~a" crlf)
 	  (check-reply r 250)
+
+	  (log "quit~n")
 	  (fprintf w "QUIT~a" crlf)
 	  (check-reply r 221)
 	  (close-output-port w)

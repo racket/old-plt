@@ -97,8 +97,8 @@ public:
 
 #ifdef MZ_PRECISE_GC
   /* Overridden in each subclass: */
-  virtual void gcMark();
-  virtual void gcFixup();
+  virtual inline void gcMark();
+  virtual inline void gcFixup();
 #endif
 };
 
@@ -113,10 +113,30 @@ public:
   void install_cleanup();  
 
 #ifdef MZ_PRECISE_GC
-  void gcMark();
-  void gcFixup();
+  inline void gcMark();
+  inline void gcFixup();
 #endif
 };
+
+#ifdef MZ_PRECISE_GC
+inline void gc::gcMark()
+{
+}
+
+inline void gc::gcFixup()
+{
+}
+
+inline void gc_cleanup::gcMark()
+{
+  gcMARK(__gc_external);
+}
+
+inline void gc_cleanup::gcFixup()
+{
+  gcFIXUP(__gc_external);
+}
+#endif
 
 /***** Constructors and Destructors: ******/
 

@@ -1048,6 +1048,7 @@
 			    (let ([mk-proc
 				   (lambda (name marker)
 				     (list
+				      (make-tok 'inline #f #f)
 				      (make-tok 'void #f #f)
 				      (make-tok name #f #f)
 				      (make-parens

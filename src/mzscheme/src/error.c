@@ -858,10 +858,12 @@ char *scheme_make_args_string(char *s, int which, int argc, Scheme_Object **argv
       }
     }
     other[pos] = 0;
-    *_olen = pos;
+    if (_olen)
+      *_olen = pos;
   } else {
     sprintf(other, "; given %d arguments total", argc);
-    *_olen = strlen(other);
+    if (_olen)
+      *_olen = strlen(other);
   }
 
   return other;

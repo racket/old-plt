@@ -188,6 +188,8 @@ int GC_is_wx_object(void *v)
 
 #ifdef MZ_PRECISE_GC
 
+# define ZERO_OUT_DISPATCH 0
+
 typedef struct {
   short tag;
   short filler_used_for_hashing;
@@ -199,31 +201,15 @@ void *GC_weak_box_val(void *b)
   return ((GC_WB *)b)->val;
 }
 
-void gc::gcMark()
-{
-}
-
-void gc::gcFixup()
-{
-}
-
-void gc_cleanup::gcMark()
-{
-  gcMARK(__gc_external);
-}
-
-void gc_cleanup::gcFixup()
-{
-  gcFIXUP(__gc_external);
-}
-
 #include "scheme.h"
 
 static void mark_cpp_object(void *p)
 {
   gc *obj = (gc *)p;
 
+#if ZERO_OUT_DISPATCH
   if (*(long *)obj)
+#endif
     obj->gcMark();
 }
 
@@ -231,7 +217,9 @@ static void fixup_cpp_object(void *p)
 {
   gc *obj = (gc *)p;
 
+#if ZERO_OUT_DISPATCH
   if (*(long *)obj)
+#endif
     obj->gcFixup();
 }
 
@@ -261,8 +249,9 @@ void *GC_cpp_malloc(size_t size)
 void GC_cpp_delete(gc *v)
 {
   v->~gc();
-
+#if ZERO_OUT_DISPATCH
   ((long *)v)[0] = 0;
+#endif
 }
 
 #endif

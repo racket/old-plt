@@ -231,7 +231,8 @@ double DrawLatin1Text(const char *text, int d, int theStrlen, int bit16, Bool qd
       }
 
       if (use_start) {
-	MoveTo((short)floor((start_x * scale_x) + ddx), (short)floor((start_y * scale_y) + ddy));
+	MoveTo((short)floor((start_x * scale_x) + ddx), 
+	       (short)floor((start_y * scale_y) + ddy));
 	use_start = 0;
       }
       ::GetPen(&pen_start);
@@ -408,6 +409,9 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 #endif
   };
   ATSUAttributeValuePtr ll_theValues[ lxNUM_TAGS /* = sizeof(ll_theTags) / sizeof(ATSUAttributeTag) */ ];
+  int need_convert;
+#define JUSTDELTA(v, s, d) (need_convert ? v : ((v - d) / s))
+#define COORDCONV(v, s, d) (need_convert ? ((v * s) + d) : v)
 #ifdef OS_X
   CGrafPtr qdp;
   CGContextRef cgctx;
@@ -483,8 +487,12 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 
   if (use_cgctx) {
     /* Set scale */
-    if (with_start) {
-      CGContextTranslateCTM(cgctx, ddx, -ddy);
+    if (!just_meas) {
+      long h;
+      h = portRect.bottom - portRect.top;
+      CGContextTranslateCTM(cgctx, 
+			    (with_start ? ddx : 0), 
+			    h - (with_start ? ddy : 0));
       ddx = 0;
       ddy = 0;
     }
@@ -581,26 +589,30 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
       GetPen(&start);
       start_x = start.h;
       start_y = start.v;
+      ddx = 0;
+      ddy = 0;
+      need_convert = 0;
     } else {
-      start_x = (start_x * scale_x) + ddx;
-      start_y = (start_y * scale_y) + ddy;
+      need_convert = 1;
     }
     
     if ((angle == 0.0) && (GetPortTextMode(iGrafPtr) == srcCopy)) {
-      float rt, rl, rr, rb;
       FontInfo fontInfo;
       ::GetFontInfo(&fontInfo);
-      rl = start_x + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
-      rt = start_y - (fontInfo.ascent * scale_y);
-      rb = start_y + (fontInfo.descent * scale_y);
-      rr = rl + (result * scale_x);
 #ifdef OS_X
       if (use_cgctx) {
 	CGRect cgr;
-	cgr.origin.x = rl / scale_x;
-	cgr.origin.y = (portRect.top + (portRect.bottom - rb)) / scale_y;
-	cgr.size.width = (rr - rl) / scale_x;
-	cgr.size.height = (rb - rt) / scale_y;
+	float rt, rl, rr, rb;
+
+	rl = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
+	rt = JUSTDELTA(start_y, scale_y, ddy) - fontInfo.ascent;
+	rb = JUSTDELTA(start_y, scale_y, ddy) + fontInfo.descent;
+	rr = rl + result;
+
+	cgr.origin.x = rl;
+	cgr.origin.y = -rb;
+	cgr.size.width = rr - rl;
+	cgr.size.height = rb - rt;
 
 	CGContextSetRGBFillColor(cgctx, 
 				 (float)eraseColor.red / 65535.0,
@@ -612,6 +624,13 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 #endif
 	{
 	  Rect theRect;
+	  float rt, rl, rr, rb;
+	  
+	  rl = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
+	  rt = COORDCONV(start_y, scale_y, ddy) - (fontInfo.ascent * scale_y);
+	  rb = COORDCONV(start_y, scale_y, ddy) + (fontInfo.descent * scale_y);
+	  rr = rl + (result * scale_x);
+
 	  theRect.left = (int)floor(rl);
 	  theRect.top = (int)floor(rt);
 	  theRect.right = (int)floor(rr);
@@ -623,9 +642,13 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
     {
       Fixed sx, sy;
 
-      if (use_cgctx || with_start) {
+      if (use_cgctx) {
 	float isx;
-	isx = (start_x + (use_pen_delta ? (pen_delta * scale_x) : 0.0)) / scale_x;
+	isx = JUSTDELTA(start_x, scale_x, ddx) + (use_pen_delta ? pen_delta : 0.0);
+	sx = FloatToFixed(isx);
+      } else if (with_start) {
+	float isx;
+	isx = COORDCONV(start_x, scale_x, ddx) + (use_pen_delta ? (pen_delta * scale_x) : 0.0);
 	sx = FloatToFixed(isx);
       } else {
 	sx = kATSUUseGrafPortPenLoc;
@@ -633,11 +656,11 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 
       if (use_cgctx) {
 	float isy;
-	isy = xOS_X_ONLY((portRect.top + (portRect.bottom - start_y)) / scale_y);
+	isy = -JUSTDELTA(start_y, scale_y, ddy);
 	sy = FloatToFixed(isy);
       } else if (with_start) {
 	float isy;
-	isy = (start_y / scale_y);
+	isy = COORDCONV(start_y, scale_y, ddy);
 	sy = FloatToFixed(isy);
       } else {
 	sy = kATSUUseGrafPortPenLoc;

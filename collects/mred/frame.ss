@@ -408,7 +408,7 @@
 	  (sequence
 	    (when (send mred:icon:icon ok?)
 	      (set-icon mred:icon:icon))
-	    (send (get-canvas) set-focus)
-	    (do-title)))))
+	    (do-title)
+	    '(send (get-canvas) set-focus)))))
 
     (define simple-menu-frame% (make-simple-frame% standard-menus-frame%)))

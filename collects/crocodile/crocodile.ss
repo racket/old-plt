@@ -40,21 +40,28 @@
    ;; --------------------------------------------------------
    ;; Parsing blocks
 
+   (define (parse-block-one body k done-k)
+     (cond
+      [(stx-null? body) (done-k)]
+      [(and (identifier? (stx-car body))
+	    (let ([v (syntax-local-value (stx-car body) (lambda () #f))])
+	      (and (croc-transformer? v) v)))
+       => (lambda (transformer)
+	    (let-values ([(code rest) (transformer body)])
+	      (k code rest)))]
+      [else
+       (raise-syntax-error 
+	'block
+	"unknown form" 
+	(stx-car body))]))
+
    (define (parse-block stx)
-     (let loop ([body stx])
-       (cond
-	[(stx-null? body) null]
-	[(and (identifier? (stx-car body))
-	      (let ([v (syntax-local-value (stx-car body) (lambda () #f))])
-		(and (croc-transformer? v) v)))
-	 => (lambda (transformer)
-	      (let-values ([(code rest) (transformer body)])
-		(cons code  (loop rest))))]
-	[else
-	 (raise-syntax-error 
-	  'block
-	  "unknown form" 
-	  (stx-car body))])))
+     (let loop ([stx stx])
+       (parse-block-one stx 
+			(lambda (code rest)
+			  (cons code (loop rest)))
+			(lambda ()
+			  null))))
 
    ;; --------------------------------------------------------
    ;; Parsing expressions
@@ -273,7 +280,7 @@
 			(with-syntax ([((arg arg-type) ...) (parse-arguments #'prest #'id)])
 			  (values #`(define (id arg ...)
 				      (let ([arg (check-expr-for-type id arg arg-type)] ...)
-					(crocodile-block #,@(parse-block #'body))))
+					(crocodile-unparsed-block . body)))
 				  #'rest))]
 		       ;; --- Error handling ---
 		       [((#%parens . prest) . bad-rest)
@@ -373,6 +380,10 @@
 		[else
 		 (loop (cdr exprs) prev-defns (cons (car exprs) prev-exprs))])))))
 
+  (define-syntax (crocodile-unparsed-block stx)
+    (syntax-case stx ()
+      [(_ . body) #`(crocodile-block #,@(parse-block #'body))]))
+
   (define-syntax (crocodile-return stx)
     (syntax-case stx ()
       [(_ expr) #'expr]))
@@ -450,11 +461,20 @@
   ;; ----------------------------------------
   ;; Main compiler loop
 
+  (define-syntax (croc-unparsed-begin stx)
+    (syntax-case stx ()
+      [(_) #'(begin)]
+      [(_ . body) (let-values ([(code rest) (parse-block-one #'body 
+							     values
+							     (lambda ()
+							       (values #'(void) null)))])
+		    #`(begin
+			#,code
+			(croc-unparsed-begin #,@rest)))]))
+
   (define-syntax (croc-module-begin stx)
     #`(#%module-begin
-       #,@(let ([v (parse-block (stx-cdr stx))])
-	    #;(printf "~a~n" (syntax-object->datum (datum->syntax-object #f v)))
-	    v)))
+       (croc-unparsed-begin #,@(stx-cdr stx))))
   
   (provide int obj (rename string-type string)
 	   (rename set! =)

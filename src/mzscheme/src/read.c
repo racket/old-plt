@@ -1106,6 +1106,12 @@ read_string(Scheme_Object *port,
       case 'r': ch = '\r'; break;
       case 't': ch = '\t'; break;
       case 'v': ch = '\v'; break;
+      case '\r':
+        if (scheme_peekc(port) == '\n')
+	  scheme_getc(port);
+	continue; /* <---------- !!!! */
+      case '\n': 
+        continue; /* <---------- !!!! */
       case 'x':
 	ch = scheme_getc(port);
 	if (isxdigit(ch)) {

@@ -1457,10 +1457,18 @@ void machine_details(char *buff)
 }
 #endif
 
+/***************************** OSKit **********************************/
+
+#ifdef USE_OSKIT_CONSOLE
+void machine_details(char *buff)
+{
+  strcpy(buff, "OSKit");
+}
+#endif
+
 /***************************** Unix ***********************************/
 
-
-#if !defined(MACINTOSH_EVENTS) && !defined(DOS_FILE_SYSTEM)
+#if !defined(MACINTOSH_EVENTS) && !defined(DOS_FILE_SYSTEM) && !defined(USE_OSKIT_CONSOLE)
 static char *uname_locations[] = { "/bin/uname",
 				   "/usr/bin/uname",
 				   /* The above should cover everything, but

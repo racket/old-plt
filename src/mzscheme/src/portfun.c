@@ -146,7 +146,7 @@ scheme_init_port_fun(Scheme_Env *env)
     
   default_read_handler = scheme_make_prim_w_arity(sch_default_read_handler,
 						  "default-port-read-handler", 
-						  1, 1);
+						  1, 3);
   default_display_handler = scheme_make_prim_w_arity(sch_default_display_handler,
 						     "default-port-display-handler", 
 						     2, 2);
@@ -1385,17 +1385,96 @@ with_input_from_file(int argc, Scheme_Object *argv[])
   return v;
 }
 
+static int check_offset_list(Scheme_Object *l)
+{
+  Scheme_Object *a;
+
+  if (SCHEME_PAIRP(l)) {
+    a = SCHEME_CAR(l);
+    if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
+	|| (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+      l = SCHEME_CDR(l);
+      if (SCHEME_PAIRP(l)) {
+	a = SCHEME_CAR(l);
+	if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
+	    || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+	  l = SCHEME_CDR(l);
+	  if (SCHEME_PAIRP(l)) {
+	    a = SCHEME_CAR(l);
+	    if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
+		|| (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
+	      l = SCHEME_CDR(l);
+	      if (SCHEME_NULLP(l))
+		return 1;
+	    }
+	  }
+	}
+      }
+    }
+  }
+
+  return 0;
+}
+
+static Scheme_Object *make_offset(Scheme_Object *delta, Scheme_Object *src)
+{
+  Scheme_Stx_Offset *o;
+  Scheme_Object *line, *col, *pos;
+      
+  line = SCHEME_CAR(delta);
+  delta = SCHEME_CDR(delta);
+  col = SCHEME_CAR(delta);
+  pos = SCHEME_CADR(delta);
+
+  /* FIXME: what do we do with offsets that are too large? */
+  if (SCHEME_BIGNUMP(line))
+    line = scheme_make_integer(0);
+  if (SCHEME_BIGNUMP(col))
+    col = scheme_make_integer(0);
+  if (SCHEME_BIGNUMP(pos))
+    pos = scheme_make_integer(0);
+
+  o = MALLOC_ONE_TAGGED(Scheme_Stx_Offset);
+  o->type = scheme_stx_offset_type;
+  o->src = src;
+  o->line = SCHEME_INT_VAL(line);
+  o->col = SCHEME_INT_VAL(col);
+  o->pos = SCHEME_INT_VAL(pos);
+
+  if (!o->line && !o->col && !o->pos)
+    return src;
+
+  return (Scheme_Object *)o;
+}
+
 static Scheme_Object *sch_default_read_handler(int argc, Scheme_Object *argv[])
 {
   Scheme_Thread *p = scheme_current_thread;
+  Scheme_Object *src;
 
   if (!SCHEME_INPORTP(argv[0]))
     scheme_wrong_type("default-port-read-handler", "input-port", 0, argc, argv);
 
+  if (argc == 2) {
+    /* FIXME: need to use case-lambda-like functionality to report the
+       error properly. */
+    scheme_wrong_count("default-port-read-handler", 3, 3, argc, argv);
+  }
+
+  if (argc == 3) {
+    if (!check_offset_list(argv[2]))
+      scheme_wrong_type("default-port-read-handler", "#f or list of three non-negative exact integers", 2, argc, argv);
+  }
+
   if ((Scheme_Object *)argv[0] == scheme_orig_stdin_port)
     scheme_flush_orig_outputs();
 
-  return scheme_internal_read(argv[0], ((argc > 1) ? argv[1] : NULL),
+  if (argc > 1)
+    src = make_offset(argv[2], argv[1]);
+  else
+    src = NULL;
+
+  return scheme_internal_read(argv[0], src,
 			      SCHEME_TRUEP(scheme_get_param(p->config, MZCONFIG_CAN_READ_COMPILED)),
 			      p->config
 #ifdef MZ_REAL_THREADS
@@ -1451,34 +1530,7 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
 
   if (argc > 2) {
     /* Argument should be a list: (list line col pos) */
-    Scheme_Object *a, *l;
-    
-    l = argv[2];
-    if (SCHEME_PAIRP(l)) {
-      a = SCHEME_CAR(l);
-      if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
-	  || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
-	l = SCHEME_CDR(l);
-	if (SCHEME_PAIRP(l)) {
-	  a = SCHEME_CAR(l);
-	  if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
-	      || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
-	    l = SCHEME_CDR(l);
-	    if (SCHEME_PAIRP(l)) {
-	      a = SCHEME_CAR(l);
-	      if ((SCHEME_INTP(a) && (SCHEME_INT_VAL(a) >= 0))
-		  || (SCHEME_BIGNUMP(a) && SCHEME_BIGPOS(a))) {
-		l = SCHEME_CDR(l);
-		if (SCHEME_NULLP(l))
-		  l = NULL;
-	      }
-	    }
-	  }
-	}
-      }
-    }
-
-    if (l)
+    if (!check_offset_list(argv[2]))
       scheme_wrong_type("read-syntax", "#f or list of three non-negative exact integers", 2, argc, argv);
     
     delta = argv[2];
@@ -1507,32 +1559,8 @@ static Scheme_Object *read_syntax_f(int argc, Scheme_Object *argv[])
   } else {
     Scheme_Object *src = argv[0];
 
-    if (SCHEME_TRUEP(delta)) {
-      Scheme_Stx_Offset *o;
-      Scheme_Object *line, *col, *pos;
-      
-      line = SCHEME_CAR(delta);
-      delta = SCHEME_CDR(delta);
-      col = SCHEME_CAR(delta);
-      pos = SCHEME_CADR(delta);
-
-      /* FIXME: what do we do with offsets that are too large? */
-      if (SCHEME_BIGNUMP(line))
-	line = scheme_make_integer(0);
-      if (SCHEME_BIGNUMP(col))
-	col = scheme_make_integer(0);
-      if (SCHEME_BIGNUMP(pos))
-	pos = scheme_make_integer(0);
-
-      o = MALLOC_ONE_TAGGED(Scheme_Stx_Offset);
-      o->type = scheme_stx_offset_type;
-      o->src = src;
-      o->line = SCHEME_INT_VAL(line);
-      o->col = SCHEME_INT_VAL(col);
-      o->pos = SCHEME_INT_VAL(pos);
-
-      src = (Scheme_Object *)o;
-    }
+    if (SCHEME_TRUEP(delta))
+      src = make_offset(delta, src);
 
     if (port == scheme_orig_stdin_port)
       scheme_flush_orig_outputs();

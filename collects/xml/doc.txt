@@ -56,12 +56,14 @@ Functions
 Parameters
 ==========
 
-> empty-tag-shorthand : Bool
-       Default: #t
+> empty-tag-shorthand : 'always | 'never | (listof Symbol)
+       Default: 'always
        This determines if the output functions should use the <empty/> tag
        notation instead of writing <empty></empty>.  The first form is the
-       preferred XML notation.  However, it's not part of HTML, so this
-       parameter provides backward compatability.
+       preferred XML notation.  However, most browsers designed for HTML
+       will only properly render XHTML if the document uses a mixture of the
+       two formats.  _html-empty-tags_ contains the W3 consortium's
+       recommended list of XHTML tags that should use the shorthand.
 
 > trim-whitespace : Bool
        Default: #f
@@ -75,6 +77,15 @@ Parameters
        interoperating with ad hoc extentions to other languages sometimes
        requires processing comments anyway.
 
+> xexpr-drop-empty-attributes : Bool
+       Default: #f
+       It's easier to write functionsn processing Xexpressions, if they always
+       have a list of attributes.  On the other hand, it's less cumbersome to
+       write Xexpresssions by hand without empty lists of attributes
+       everywhere.  Normally xml->xexpr leaves in empty attribute lists.
+       Setting this parameter to #t drops them, so further editing the
+       Xexpression by hand is less annoying.
+
 Examples
 ========
 
@@ -82,6 +93,7 @@ Reading an Xexpression:
        (xml->xexpr (document-element (read-xml input-port)))
 
 Writing an Xexpression:
+       (empty-tag-shorthand html-empty-tags)
        (write-xml/content (xexpr->xml `(html (head (title ,banner))
 					     (body ((bgcolor "white"))
 						   ,text)))

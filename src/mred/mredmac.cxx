@@ -385,7 +385,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
        TEToScrap();
      }
 
-#ifndef OS_X
+#if 1 // #ifndef OS_X
 	 /* for OS_X, activate events are automatically generated for the frontmost
 	  * window in an application when that application comes to the front.
 	  */

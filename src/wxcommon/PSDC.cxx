@@ -1672,8 +1672,12 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   if (!fontToUse)
     fontToUse = current_font;
     
-  if (!pstream)
+  if (!pstream) {
+    *x = *y = 0;
+    if (descent) *descent = 0.0;
+    if (topSpace) *topSpace = 0.0;
     return;
+  }
   
   // ************************************************************
   // method for calculating string widths in postscript:
@@ -2139,7 +2143,11 @@ void wxInitializePrintSetupData(Bool /* init */)
   
   wxThePrintSetupData->SetPrintPreviewCommand(PS_PREVIEW_COMMAND);
   wxThePrintSetupData->SetPrinterOrientation(PS_PORTRAIT);
+#ifdef wx_x
   wxThePrintSetupData->SetPrinterMode(PS_PREVIEW);
+#else
+  wxThePrintSetupData->SetPrinterMode(PS_FILE);
+#endif
   wxThePrintSetupData->SetPaperName(PS_DEFAULT_PAPER);
   wxThePrintSetupData->SetPrinterCommand(PS_PRINTER_COMMAND);
   wxThePrintSetupData->SetPrinterOptions(PS_PRINTER_OPTIONS);

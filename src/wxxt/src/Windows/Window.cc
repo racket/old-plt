@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.26 1999/07/14 23:34:08 mflatt Exp $
+ * $Id: Window.cc,v 1.27 1999/07/16 16:52:15 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -1500,7 +1500,9 @@ void wxWindow::WindowEventHandler(Widget w,
 	  if (subWin)
 	    *continue_to_dispatch_return = TRUE;
 	  else {
-	    if (Press && !wxSubType(win->__type, wxTYPE_MENU_BAR))
+	    if (Press 
+		&& !wxSubType(win->__type, wxTYPE_MENU_BAR)
+		&& !wxSubType(win->__type, wxTYPE_PANEL))
 	      win->SetFocus();
 	    win->GetEventHandler()->OnEvent(wxevent);
 	  }

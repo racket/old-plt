@@ -596,7 +596,6 @@
 #ifndef XONX
 # undef SYSTEM_TYPE_NAME
 # define SYSTEM_TYPE_NAME "macosx"
-# define MACROMAN_CHAR_SET
 #endif
 
 # define STACK_GROWS_DOWN
@@ -605,6 +604,7 @@
 
 # define USE_IEEE_FP_PREDS
 # define POW_HANDLES_INF_CORRECTLY
+# define TRIG_ZERO_NEEDS_SIGN_CHECK
 
 # define UNDERSCORE_DYNLOAD_SYMBOL_PREFIX
 

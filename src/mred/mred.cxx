@@ -340,8 +340,6 @@ MrEdContext *MrEdGetContext(wxObject *w)
       c = (MrEdContext *)((wxFrame *)w)->context;
       if (c) 
 	return c;
-      else
-	printf("no context! %lx\n", w);
 #if !defined(wx_xt) && !defined(wx_mac)
     } else {
       MrEdContext *c;

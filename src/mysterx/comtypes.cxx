@@ -205,6 +205,14 @@ BOOL gt64(_int64 n1,_int64 n2) {
   return n1 > n2;
 }
 
+_int64 add64(_int64 n,int m) {
+  return n + m;
+}
+
+_int64 sub64(_int64 n,int m) {
+  return n - m;
+}
+
 _int64 scanNum64(char *s,_int64 (*combine)(_int64,int),
 		 BOOL (*cmp)(_int64,_int64),Scheme_Object *obj) {
   _int64 cy,last;
@@ -224,27 +232,22 @@ _int64 scanNum64(char *s,_int64 (*combine)(_int64,int),
   return cy;
 }
 
-_int64 add64(_int64 n,int m) {
-  return n + m;
-}
-
-_int64 sub64(_int64 n,int m) {
-  return n - m;
-}
-
 Scheme_Object *scheme_number_to_mx_currency(int argc,Scheme_Object **argv) {
-  char *p,*q,*r;
+  char *p,*q,*r,*s;
   char buff[40];
   _int64 cy;
   int neededZeroes;
   int len;
   int i;
 
-  if (SCHEME_REALP(argv[0]) == FALSE) {
-    scheme_wrong_type("number->com-currency","number",0,argc,argv);
+  if (SCHEME_EXACT_INTEGERP(argv[0]) == FALSE && 
+      SCHEME_FLOATP(argv[0]) == FALSE) {
+    scheme_wrong_type("number->com-currency","exact or inexact number",0,argc,argv);
   }
 
-  strcpy(buff,scheme_display_to_string(argv[0],NULL));
+  s = scheme_display_to_string(argv[0],NULL);
+  strncpy(buff,s,sizeof(buff)-1);
+  buff[min(strlen(s),sizeof(buff))] = '\0';
   
   // multiply by 10,000
 

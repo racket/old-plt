@@ -6,9 +6,31 @@
 #define SPY_GLOBALS_SCHEME_STRUCT() _spy_g_scheme_struct
 #define SPY_GLOBALS_PYTHON_NODE() _spy_g_python_node
 
+// #define DEBUG_SPY
+
+#ifdef DEBUG_SPY
+ #define PRINTF(fmt, args...) printf(fmt, ##args)
+#else
+ #define PRINTF(fmt, args...)
+#endif
+
+#define Scheme_Struct_Type void
+
+typedef struct Scheme_Structure
+{
+  Scheme_Type type;
+  MZ_HASH_KEY_EX
+  Scheme_Struct_Type *stype;
+  Scheme_Object *slots[3];
+} Scheme_Structure;
+
+#define SCHEME_STRUCT_TYPE(o) (((Scheme_Structure *)o)->stype)
+
+// cache SCHEME_STRUCT and PYTHON-NODE (for spy_init_obj, etc)
 Scheme_Type _spy_g_scheme_struct;
 Scheme_Object* _spy_g_python_node;
 
+//// what are these for??
 int _PyTrash_delete_nesting = 0;
 PyObject* _PyTrash_delete_later = NULL;
 
@@ -38,8 +60,16 @@ Scheme_Object* scheme_python_dispatch_method( int argc, Scheme_Object* argv[] );
 PyObject* make_py_string(int argc, Scheme_Object* argv[]);
 Scheme_Object* get_py_string(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_unary(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn_binary(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_ternary(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_fn_inquiry(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_coercion(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_intarg(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_intintarg(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_intobjarg(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_intintobjarg(int argc, Scheme_Object* argv[]);
+PyObject* spy_ext_call_fn_objobj(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_bound_varargs(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_bound_noargs(int argc, Scheme_Object* argv[]);
 PyObject* spy_ext_call_bound_onearg(int argc, Scheme_Object* argv[]);
@@ -49,7 +79,8 @@ Scheme_Object* spy_ext_object_to_string(int argc, Scheme_Object* argv[]);
 
 //extern PyMethodDef string_methods[];
 
-static PyMethodDef module_methods[] = {
+
+static const PyMethodDef empty_method_table[] = {
     {NULL}  /* Sentinel */
 };
 
@@ -75,17 +106,6 @@ PyObject* spy_ext_new_instance(PyTypeObject* type)
 //  sapply1("python-new-object", (PyObject*) type);
 }
 
-#define Scheme_Struct_Type void
-
-typedef struct Scheme_Structure
-{
-  Scheme_Type type;
-  MZ_HASH_KEY_EX
-  Scheme_Struct_Type *stype;
-  Scheme_Object *slots[3];
-} Scheme_Structure;
-
-#define SCHEME_STRUCT_TYPE(o) (((Scheme_Structure *)o)->stype)
 
 Scheme_Env* spy_global_env;
 extern Scheme_Env* spy_global_env;
@@ -150,13 +170,49 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
                      scheme_make_prim_w_arity(spy_ext_call_fn, "spy-ext-call-fn", 1, -1),
                      pns );
 
+  scheme_add_global( "spy-ext-call-fn-unary",
+                     scheme_make_prim_w_arity(spy_ext_call_fn_unary, "spy-ext-call-fn-unary", 2, 2),
+                     pns );
+
   scheme_add_global( "spy-ext-call-fn-binary",
                      scheme_make_prim_w_arity(spy_ext_call_fn_binary, "spy-ext-call-fn-binary", 3, 3),
+                     pns );
+
+  scheme_add_global( "spy-ext-call-fn-ternary",
+                     scheme_make_prim_w_arity(spy_ext_call_fn_ternary, "spy-ext-call-fn-ternary", 4, 4),
                      pns );
 
   scheme_add_global( "spy-ext-call-fn-inquiry",
                      scheme_make_prim_w_arity(spy_ext_call_fn_inquiry, "spy-ext-call-fn-inquiry", 2, 2),
                      pns );
+
+  scheme_add_global( "spy-ext-call-fn-coercion",
+                     scheme_make_prim_w_arity(spy_ext_call_fn_inquiry, "spy-ext-call-fn-coercion", 3, 3),
+                     pns );
+
+#define ADD_CALL_GLOBAL(arity_name, arity_number) \
+  scheme_add_global( "spy-ext-call-fn-##arity_name##" , \
+                     scheme_make_prim_w_arity(spy_ext_call_fn_##arity_name , "spy-ext-call-fn-##arity_name##", arity_number, arity_number), \
+                     pns );
+
+ADD_CALL_GLOBAL(intarg, 3);
+ADD_CALL_GLOBAL(intintarg, 4);
+ADD_CALL_GLOBAL(intobjarg, 4);
+ADD_CALL_GLOBAL(intintobjarg, 5);
+ADD_CALL_GLOBAL(objobj, 3);
+
+  scheme_add_global( "spy-ext-call-fn-coercion",
+                     scheme_make_prim_w_arity(spy_ext_call_fn_inquiry, "spy-ext-call-fn-coercion", 3, 3),
+                     pns );
+
+  scheme_add_global( "spy-ext-call-fn-coercion",
+                     scheme_make_prim_w_arity(spy_ext_call_fn_inquiry, "spy-ext-call-fn-coercion", 3, 3),
+                     pns );
+
+  scheme_add_global( "spy-ext-call-fn-coercion",
+                     scheme_make_prim_w_arity(spy_ext_call_fn_inquiry, "spy-ext-call-fn-coercion", 3, 3),
+                     pns );
+
 
   scheme_add_global( "spy-ext-call-bound-varargs",
                      scheme_make_prim_w_arity(spy_ext_call_bound_varargs, "spy-ext-call-bound-varargs", 2, -1),
@@ -184,7 +240,7 @@ Scheme_Object* scheme_initialize(Scheme_Env* env)
 
   //initspam();
   printf("SPY now initializing the CPY module\n");
-  m = Py_InitModule("cpy", module_methods);
+  m = Py_InitModule("cpy", empty_method_table);
 #ifdef SPY_STRING
   printf("SPY now adding the String type\n");
   if ( PyString_Type.tp_methods )
@@ -213,18 +269,18 @@ Scheme_Object* scheme_module_name() { return scheme_false; }
 PyMethodDef *method_def_array = NULL;
 
 // Scheme_Object*[] arr -> PyTupleObject, when arr.length != 1
-// Scheme_Object*[] arr -> PyObject,  when arr.length = 1
+// Scheme_Object*[] arr -> PyObject,  when arr.length = 1 (NOT ANYMORE, JUST CASE1 FOR NOW)
 PyObject* scheme_argv_to_python_tuple( int argc, Scheme_Object* argv[] )
 {
   PyObject* tuple;
   int i;
-
+/*
   if ( argc == 1 )
     {
     printf("scheme_argv_to_python_tuple: argc == 1, returning argv[0]\n");
     return argv[0];
     }
-
+  */
   tuple = PyTuple_New(argc);
 
   printf( "scheme_argv_to_python_tuple: argc: %d\n", argc );
@@ -240,17 +296,17 @@ Scheme_Object* scheme_python_dispatch_method( int argc, Scheme_Object* argv[] )
   char* method_name = SCHEME_STR_VAL(argv[0]);
   PyCFunction method;
 
-  printf( "entered scheme_python_dispatch_method, looking for %s\n", method_name );
-  printf( "the second argument is %s\n", PyString_AsString(argv[1]));
+  printf( "scheme_python_dispatch_method: looking for %s\n", method_name );
+  printf( "scheme_python_dispatch_method: second argument is %s\n", PyString_AsString(argv[1]));
 
   for ( i = 0; method_def_array[i].ml_meth; i++ )
     if ( !strcmp( method_def_array[i].ml_name, method_name ) )
       {
-      printf( "found method\n" );
+      printf( "scheme_python_dispatch_method: found method\n" );
       method = method_def_array[i].ml_meth;
       break;
       }
-  printf( "finished searching\n" );
+  printf( "scheme_python_dispatch_method: finished searching\n" );
   argv++; argc--;
   return (*method)( NULL, scheme_argv_to_python_tuple(argc, argv) );
 }
@@ -305,26 +361,94 @@ Scheme_Object* get_py_string(int argc, Scheme_Object* argv[])
     return scheme_make_string( ((PyStringObject*) argv[0])->ob_sval );
 }
 
+PyObject* spy_ext_call_fn_unary(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  printf("spy_ext_call_fn_unary: calling\n");
+  return (*((unaryfunc) SCHEME_CPTR_VAL(fn)))(argv[1]);
+}
+
 PyObject* spy_ext_call_fn_binary(int argc, Scheme_Object* argv[])
 {
   Scheme_Object* fn = argv[0];
-  printf("calling Spy binary extension function\n");
+  printf("spy_ext_call_fn_binary: calling\n");
   return (*((binaryfunc) SCHEME_CPTR_VAL(fn)))(argv[1], argv[2]);
+}
+
+PyObject* spy_ext_call_fn_ternary(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  printf("spy_ext_call_fn_ternary: calling\n");
+  return (*((ternaryfunc) SCHEME_CPTR_VAL(fn)))(argv[1], argv[2], argv[3]);
+}
+
+PyObject* spy_ext_call_fn_coercion(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  PyObject* rhs = argv[1];
+  PyObject* lhs = argv[2];
+  int ret;
+  printf("spy_ext_call_fn_coercion: calling\n");
+  ret = (*((coercion) SCHEME_CPTR_VAL(fn)))(&rhs, &lhs);
+  return PyInt_FromInt(ret);
 }
 
 PyObject* spy_ext_call_fn_inquiry(int argc, Scheme_Object* argv[])
 {
   Scheme_Object* fn = argv[0];
-  printf("calling Spy inquiry extension function\n");
-  int ret = (*((inquiry) SCHEME_CPTR_VAL(fn)))(argv[1]);
+  int ret;
+  printf("spy_ext_call_fn_inquiry: calling\n");
+  ret = (*((inquiry) SCHEME_CPTR_VAL(fn)))(argv[1]);
   return PyInt_FromInt(ret);
 }
+
+PyObject* spy_ext_call_fn_intarg(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  printf("spy_ext_call_fn_intarg: calling\n");
+  return (*((intargfunc) SCHEME_CPTR_VAL(fn)))(argv[1], PyInt_AsInt(argv[2]));
+}
+
+PyObject* spy_ext_call_fn_intintarg(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  printf("spy_ext_call_fn_intintarg: calling\n");
+  return (*((intintargfunc) SCHEME_CPTR_VAL(fn)))(argv[1], PyInt_AsInt(argv[2]), PyInt_AsInt(argv[3]));
+}
+
+PyObject* spy_ext_call_fn_intobjarg(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  int ret;
+  printf("spy_ext_call_fn_intobjarg: calling\n");
+  ret = (*((intobjargproc) SCHEME_CPTR_VAL(fn)))(argv[1], PyInt_AsInt(argv[2]), argv[3]);
+  return PyInt_FromInt(ret);
+}
+
+PyObject* spy_ext_call_fn_intintobjarg(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  int ret;
+  printf("spy_ext_call_fn_intintobjarg: calling\n");
+  ret = (*((intintobjargproc) SCHEME_CPTR_VAL(fn)))(argv[1], PyInt_AsInt(argv[2]), PyInt_AsInt(argv[3]), argv[4]);
+  return PyInt_FromInt(ret);
+}
+
+PyObject* spy_ext_call_fn_objobj(int argc, Scheme_Object* argv[])
+{
+  Scheme_Object* fn = argv[0];
+  int ret;
+  printf("spy_ext_call_fn_objobj: calling\n");
+  ret = (*((objobjproc) SCHEME_CPTR_VAL(fn)))(argv[1], argv[2]);
+  return PyInt_FromInt(ret);
+}
+
 
 PyObject* spy_ext_call_fn(int argc, Scheme_Object* argv[])
 {
   Scheme_Object* fn = argv[0];
   argv++;
-  printf("calling Spy extension function\n");
+  printf("spy_ext_call_fn: calling Spy extension function\n");
   return (*((PyCFunction) SCHEME_CPTR_VAL(fn)))(NULL, scheme_argv_to_python_tuple(argc - 1, argv));
 }
 
@@ -335,10 +459,10 @@ PyObject* spy_ext_call_bound_varargs(int argc, Scheme_Object* argv[])
   argv++;
   argv++;
   ASSERT_PN(self);
-  printf("calling Spy bound method (with varargs)\n");
+  printf("spy_ext_call_bound_varargs\n");
   PyObject* ret = (*((PyCFunction) SCHEME_CPTR_VAL(fn)))(self, scheme_argv_to_python_tuple(argc - 2, argv));
   ASSERT_PN(ret);
-  printf("returning from spy-ext-call-bound-varargs\n");
+  printf("spy_ext_call_bound_varargs: returning\n");
   return ret;
 }
 
@@ -347,10 +471,10 @@ PyObject* spy_ext_call_bound_noargs(int argc, Scheme_Object* argv[])
   Scheme_Object* fn = argv[0];
   PyObject* self = argv[1];
   ASSERT_PN(self);
-  printf("calling Spy bound method (with no args)\n");
+  printf("spy_ext_call_bound_noargs\n");
   PyObject* ret = (*((PyNoArgsFunction) SCHEME_CPTR_VAL(fn)))(self);
   ASSERT_PN(ret);
-  printf("returning from spy-ext-call-bound-noargs\n");
+  printf("spy_ext_call_bound_noargs: returning\n");
   return ret;
 }
 
@@ -361,10 +485,10 @@ PyObject* spy_ext_call_bound_onearg(int argc, Scheme_Object* argv[])
   PyObject* arg = argv[2];
   ASSERT_PN(self);
   ASSERT_PN(arg);
-  printf("calling Spy bound method (with one arg)\n");
+  printf("spy_ext_call_bound_onearg\n");
   PyObject* ret = (*((PyCFunction) SCHEME_CPTR_VAL(fn)))(self, arg);
   ASSERT_PN(ret);
-  printf("returning from spy-ext-call-bound-onearg\n");
+  printf("spy_ext_call_bound_onearg: returning\n");
   return ret;
 }
 
@@ -378,13 +502,13 @@ PyObject* spy_ext_call_bound_kwargs(int argc, Scheme_Object* argv[])
   argv++;
   argv++;
   ASSERT_PN(self);
-  printf("calling Spy bound method (with kw args)\n");
+  printf("spy_ext_call_bound_kwargs\n");
   tuple = scheme_argv_to_python_tuple(argc - 3, argv);
-  printf("converted scheme argv to pytuple\n");
+  printf("spy_ext_call_bound_kwargs: converted scheme argv to pytuple\n");
   // TODO: implement keyword arguments here
   PyObject* ret = (*((PyCFunctionWithKeywords) SCHEME_CPTR_VAL(fn)))(self, tuple, kwargs);
   ASSERT_PN(ret);
-  printf("returning from spy-ext-call-bound-kwargs\n");
+  printf("spy_ext_call_bound_kwargs: returning\n");
   return ret;
 }
 
@@ -396,70 +520,103 @@ PyObject* wrap_ext_function(PyCFunction f, const char* name)
 
 static PyObject* wrap_ext_method_varargs(PyCFunction m, const char* name)
 {
-  printf("wrapping method: %s\n", name);
+  printf("wrap_ext_method_varargs: name: %s\n", name);
   PyObject* wrapped = sapply2("python-wrap-ext-method-varargs", scheme_make_cptr((void*) m, "python-ext-method"), sym(name));
   ASSERT_PN(wrapped);
-  printf("wrapped method: %s\n", name);
+  printf("wrap_ext_method_varargs: done with: %s\n", name);
   return wrapped;
 }
 
 static PyObject* wrap_ext_method_noargs(PyNoArgsFunction m, const char* name)
 {
-  printf("wrapping method: %s\n", name);
+  printf("wrap_ext_method_noargs: name: %s\n", name);
   PyObject* wrapped = sapply2("python-wrap-ext-method-noargs", scheme_make_cptr((void*) m, "python-ext-method"), sym(name));
   ASSERT_PN(wrapped);
-  printf("wrapped method: %s\n", name);
+  printf("wrap_ext_method_noargs: done with: %s\n", name);
   return wrapped;
 }
 
 static PyObject* wrap_ext_method_onearg(PyCFunction m, const char* name)
 {
-  printf("wrapping one-arg method: %s\n", name);
+  printf("wrap_ext_method_onearg: name: %s\n", name);
   PyObject* wrapped = sapply2("python-wrap-ext-method-onearg", scheme_make_cptr((void*) m, "python-ext-method-onearg"), sym(name));
   ASSERT_PN(wrapped);
-  printf("wrapped one-arg method: %s\n", name);
+  printf("wrap_ext_method_onearg done with: %s\n", name);
   return wrapped;
 }
 
 static PyObject* wrap_ext_method_kwargs(PyCFunctionWithKeywords m, const char* name)
 {
-  printf("wrapping method: %s\n", name);
+  printf("wrap_ext_method_kwargs: name: %s\n", name);
   PyObject* wrapped = sapply2("python-wrap-ext-method-kwargs", scheme_make_cptr((void*) m, "python-ext-method"), sym(name));
   ASSERT_PN(wrapped);
-  printf("wrapped method: %s\n", name);
+  printf("wrap_ext_method_kwargs: done with: %s\n", name);
+  return wrapped;
+}
+
+static PyObject* wrap_ext_function_unary(unaryfunc f, const char* name)
+{
+  printf("wrap_ext_function_unary: name: %s\n", name);
+  PyObject* wrapped = sapply2("python-wrap-ext-function-unary",
+                              scheme_make_cptr((void*) f, "python-ext-function-unary"),
+                              sym(name));
+  ASSERT_PN(wrapped);
+  printf("wrap_ext_function_unary: done with: %s\n", name);
   return wrapped;
 }
 
 static PyObject* wrap_ext_function_binary(binaryfunc f, const char* name)
 {
-  printf("wrapping binary fun: %s\n", name);
+  printf("wrap_ext_function_binary: name: %s\n", name);
   PyObject* wrapped = sapply2("python-wrap-ext-function-binary",
                               scheme_make_cptr((void*) f, "python-ext-function-binary"),
                               sym(name));
   ASSERT_PN(wrapped);
-  printf("wrapped binary fun: %s\n", name);
+  printf("wrap_ext_function_binary: done with: %s\n", name);
+  return wrapped;
+}
+
+static PyObject* wrap_ext_function_ternary(ternaryfunc f, const char* name)
+{
+  printf("wrap_ext_function_ternary: name: %s\n", name);
+  PyObject* wrapped = sapply2("python-wrap-ext-function-ternary",
+                              scheme_make_cptr((void*) f, "python-ext-function-ternary"),
+                              sym(name));
+  ASSERT_PN(wrapped);
+  printf("wrap_ext_function_ternary: done with: %s\n", name);
   return wrapped;
 }
 
 static PyObject* wrap_ext_function_inquiry(inquiry f, const char* name)
 {
-  printf("wrapping inquiry fun: %s\n", name);
+  printf("wrap_ext_function_inquiry: name: %s\n", name);
   PyObject* wrapped = sapply2("python-wrap-ext-function-inquiry",
                               scheme_make_cptr((void*) f, "python-ext-function-inquiry"),
                               sym(name));
   ASSERT_PN(wrapped);
-  printf("wrapped inquiry fun: %s\n", name);
+  printf("wrap_ext_function_inquiry: done with: %s\n", name);
+  return wrapped;
+}
+
+static PyObject* wrap_ext_function_coercion(coercion f, const char* name)
+{
+  printf("wrap_ext_function_coercion: name: %s\n", name);
+  PyObject* wrapped = sapply2("python-wrap-ext-function-coercion",
+                              scheme_make_cptr((void*) f, "python-ext-function-coercion"),
+                              sym(name));
+  ASSERT_PN(wrapped);
+  printf("wrap_ext_function_coercion: done with: %s\n", name);
   return wrapped;
 }
 
 
 static void addmethod_wrapped(PyTypeObject* type, char* meth_name, PyObject* wrapped)
 {
-  printf("setting attribute: %s\n", meth_name);
+  printf("addmethod_wrapped: setting attribute: %s\n", meth_name);
   sapply3("python-set-attribute!", type, sym(meth_name), wrapped);
   ASSERT_PN(type);
   ASSERT_PN(scheme_hash_get((Scheme_Hash_Table*) sapply1("python-node-dict", type), sym(meth_name)));
-  printf("set attribute: %s\n", meth_name);
+  printf("addmethod_wrapped: set attribute: %s\n", meth_name);
 }
 
 static void addmethod(PyTypeObject* type, char* meth_name, PyCFunction method, int flags, char* doc)
@@ -481,11 +638,105 @@ static void addmethod(PyTypeObject* type, char* meth_name, PyCFunction method, i
   addmethod_wrapped(type, meth_name, wrapped);
 }
 
+typedef struct name_inquiry_fn_pair
+  {
+  const char* name;
+  inquiry f;
+  } name_inquiry_fn_pair;
+
+static void addmethod_inquiry_many(PyTypeObject* type, const name_inquiry_fn_pair pairs[])
+{
+  int i;
+  for ( i = 0; pairs[i].name; i++ )
+    addmethod_wrapped(type, pairs[i].name, wrap_ext_function_inquiry(pairs[i].f, pairs[i].name));
+}
+
+typedef struct name_unary_fn_pair
+  {
+  const char* name;
+  unaryfunc f;
+  } name_unary_fn_pair;
+
+static void addmethod_unary_many(PyTypeObject* type, const name_unary_fn_pair pairs[])
+{
+  int i;
+  for ( i = 0; pairs[i].name; i++ )
+    addmethod_wrapped(type, pairs[i].name, wrap_ext_function_unary(pairs[i].f, pairs[i].name));
+}
+
+
+typedef struct name_binary_fn_pair
+  {
+  const char* name;
+  binaryfunc f;
+  } name_binary_fn_pair;
+
+static void addmethod_binary_many(PyTypeObject* type, const name_binary_fn_pair pairs[])
+{
+  int i;
+  for ( i = 0; pairs[i].name; i++ )
+    addmethod_wrapped(type, pairs[i].name, wrap_ext_function_binary(pairs[i].f, pairs[i].name));
+}
+
+typedef struct name_ternary_fn_pair
+  {
+  const char* name;
+  ternaryfunc f;
+  } name_ternary_fn_pair;
+
+static void addmethod_ternary_many(PyTypeObject* type, const name_ternary_fn_pair pairs[])
+{
+  int i;
+  for ( i = 0; pairs[i].name; i++ )
+    addmethod_wrapped(type, pairs[i].name, wrap_ext_function_ternary(pairs[i].f, pairs[i].name));
+}
+
+typedef struct name_coercion_fn_pair
+  {
+  const char* name;
+  coercion f;
+  } name_coercion_fn_pair;
+
+static void addmethod_coercion_many(PyTypeObject* type, const name_coercion_fn_pair pairs[])
+{
+  int i;
+  for ( i = 0; pairs[i].name; i++ )
+    addmethod_wrapped(type, pairs[i].name, wrap_ext_function_coercion(pairs[i].f, pairs[i].name));
+}
+
+#define DEF_ADDMETHOD(arity_name, fn_type) \
+  static PyObject* wrap_ext_function_##arity_name (coercion f, const char* name) \
+  { \
+    printf("wrap_ext_function_##arity_name : name: %s\n", name); \
+    PyObject* wrapped = sapply2("python-wrap-ext-function-##arity_name##", \
+                                scheme_make_cptr((void*) f, "python-ext-function-##arity_name##"), \
+                                sym(name)); \
+    ASSERT_PN(wrapped); \
+    printf("wrap_ext_function_##arity_name : done with: %s\n", name); \
+    return wrapped; \
+  } \
+  typedef struct name_##arity_name##_fn_pair \
+    { \
+    const char* name; \
+    fn_type f; \
+    } name_##arity_name##_fn_pair; \
+  static void addmethod_##arity_name##_many(PyTypeObject* type, const name_##arity_name##_fn_pair pairs[]) \
+  { \
+    int i; \
+    for ( i = 0; pairs[i].name; i++ ) \
+      addmethod_wrapped(type, pairs[i].name, wrap_ext_function_##arity_name (pairs[i].f, pairs[i].name)); \
+  }
+
+DEF_ADDMETHOD(intarg, intargfunc)
+DEF_ADDMETHOD(intintarg, intintargfunc)
+DEF_ADDMETHOD(intobjarg, intobjargproc)
+DEF_ADDMETHOD(intintobjarg, intintobjargproc)
+DEF_ADDMETHOD(objobj, objobjproc)
 
 // init-spy-ext-method-table: py-module% symbol py-type% -> void
 Scheme_Object* init_spy_ext_method_table(int argc, Scheme_Object* argv[])
 {
-  PyObject* module = argv[0];
+ PyObject* module = argv[0];
   Scheme_Object* type_name = argv[1];
   PyTypeObject* type = (PyTypeObject*) argv[2];
   struct PyMethodDef *methods = PY_TYPE_METHODS(type);
@@ -522,25 +773,87 @@ Scheme_Object* init_spy_ext_method_table(int argc, Scheme_Object* argv[])
 	}
   if ( type->tp_as_number )
     {
-	PyNumberMethods* num_meths = type->tp_as_number;
-	if ( num_meths->nb_add )
-	  addmethod_wrapped(type, "__add__", wrap_ext_function_binary(num_meths->nb_add, "__add__"));
-	if ( num_meths->nb_subtract )
-	  addmethod_wrapped(type, "__sub__", wrap_ext_function_binary(num_meths->nb_subtract, "__sub__"));
-	if ( num_meths->nb_multiply )
-	  addmethod_wrapped(type, "__mul__", wrap_ext_function_binary(num_meths->nb_multiply, "__mul__"));
-	if ( num_meths->nb_divide )
-	  addmethod_wrapped(type, "__div__", wrap_ext_function_binary(num_meths->nb_divide, "__div__"));
-	if ( num_meths->nb_remainder )
-	  addmethod_wrapped(type, "__mod__", wrap_ext_function_binary(num_meths->nb_remainder, "__mod__"));
-       // TODO: add the resto f the number fns
+    PyNumberMethods* num_meths = type->tp_as_number;
+    const name_unary_fn_pair upairs[] = {{"__neg__", num_meths->nb_negative},
+                                         {"__pos__", num_meths->nb_positive},
+                                         {"__abs__", num_meths->nb_absolute},
+                                         {"__invert__", num_meths->nb_invert},
+                                         {"__int__", num_meths->nb_int},
+                                         {"__long__", num_meths->nb_long},
+                                         {"__float__", num_meths->nb_float},
+                                         {"__oct__", num_meths->nb_oct},
+                                         {"__hex__", num_meths->nb_hex},
+                                         {0,0}};
+    const name_binary_fn_pair bpairs[] = {{"__add__", num_meths->nb_add},
+                                          {"__sub__", num_meths->nb_subtract},
+                                          {"__mul__", num_meths->nb_multiply},
+                                          {"__div__", num_meths->nb_divide},
+                                          {"__mod__", num_meths->nb_remainder},
+                                          {"__floordiv__", num_meths->nb_floor_divide},
+                                          {"__truediv__", num_meths->nb_true_divide},
+                                          {"__divmod__", num_meths->nb_divmod},
+                                          {"__lshift__", num_meths->nb_lshift},
+                                          {"__rshift__", num_meths->nb_rshift},
+                                          {"__and__", num_meths->nb_and},
+                                          {"__xor__", num_meths->nb_xor},
+                                          {"__or__", num_meths->nb_or},
+                                          {"__iadd__", num_meths->nb_inplace_add},
+                                          {"__isub__", num_meths->nb_inplace_subtract},
+                                          {"__imul__", num_meths->nb_inplace_multiply},
+                                          {"__idiv__", num_meths->nb_inplace_divide},
+                                          {"__imod__", num_meths->nb_inplace_remainder},
+                                          {"__ilshift__", num_meths->nb_inplace_lshift},
+                                          {"__irshift__", num_meths->nb_inplace_rshift},
+                                          {"__iand__", num_meths->nb_inplace_and},
+                                          {"__ixor__", num_meths->nb_inplace_xor},
+                                          {"__ior__", num_meths->nb_inplace_or},
+                                          {"__ifloordiv__", num_meths->nb_inplace_floor_divide},
+                                          {"__itruediv__", num_meths->nb_inplace_true_divide},
+                                          {0,0}};
+    const name_ternary_fn_pair tpairs[] = {{"__pow__", num_meths->nb_power},
+                                           {"__ipow__", num_meths->nb_inplace_power},
+                                           {0,0}};
+    const name_coercion_fn_pair cpairs[] = {{"__coerce__", num_meths->nb_coerce},
+                                            {0,0}};
+    const name_inquiry_fn_pair ipairs[] = {{"__nonzero__", num_meths->nb_nonzero},
+                                           {0,0}};
+    addmethod_unary_many(type, upairs);
+    addmethod_binary_many(type, bpairs);
+    addmethod_ternary_many(type, tpairs);
+    addmethod_coercion_many(type, cpairs);
+    addmethod_inquiry_many(type, ipairs);
     }
 
   if ( type->tp_as_sequence )
     {
-    PySequenceMethods* seq_meths = type->tp_as_sequence;
-    if ( seq_meths->sq_length )
-      addmethod_wrapped(type, "__len__", wrap_ext_function_inquiry(seq_meths->sq_length, "__len__"));
+    PySequenceMethods* sm = type->tp_as_sequence;
+    const name_binary_fn_pair bpairs[] = {{"__add__", sm->sq_concat},
+                                          {"__iadd__", sm->sq_inplace_concat},
+                                          {0,0}};
+    const name_inquiry_fn_pair ipairs[] = {{"__len__", sm->sq_length},
+                                           {0,0}};
+    const name_intarg_fn_pair iapairs[] = {{"__mul__", sm->sq_repeat},
+                                           {"__getitem__", sm->sq_item},
+                                           {0,0}};
+    const name_intintarg_fn_pair iiapairs[] = {{"__getslice__", sm->sq_slice},
+                                           {0,0}};
+    const name_intobjarg_fn_pair ioapairs[] = {{"__setitem__", sm->sq_ass_item},
+                                           {0,0}};
+    const name_intintobjarg_fn_pair iioapairs[] = {{"__setslice__", sm->sq_ass_slice},
+                                               {0,0}};
+    const name_objobj_fn_pair oopairs[] = {{"__contains__", sm->sq_contains},
+                                           {0,0}};
+    //addmethod_unary_many(type, upairs);
+    addmethod_binary_many(type, bpairs);
+    //addmethod_ternary_many(type, tpairs);
+    //addmethod_coersion_many(type, cpairs);
+    addmethod_inquiry_many(type, ipairs);
+    addmethod_intarg_many(type, iapairs);
+    addmethod_intintarg_many(type, iiapairs);
+    addmethod_intobjarg_many(type, ioapairs);
+    addmethod_intintobjarg_many(type, iioapairs);
+    addmethod_objobj_many(type, oopairs);
+
     // TODO: the rest of the sequence methods
     }
 
@@ -726,9 +1039,9 @@ Py_FatalError (char * message)
 PyObject *
 PyTuple_New (int size)
 {
-  printf( "about to create a new tuple of size %d\n", size );
+  printf( "PyTuple_New: size: %d\n", size );
   PyObject* tuple = sapply2("python-create-object", slookup("py-tuple%"), scheme_make_integer(size));
-  printf( "created tuple\n" );
+  //printf( "PyTuple_New: created tuple\n" );
   return tuple;
 }
 
@@ -1121,7 +1434,7 @@ int PySlice_GetIndicesEx(PySliceObject *r, int length,
 PyObject * PyType_GenericAlloc(PyTypeObject *type, int size)
 {
   PyObject* obj = PyMem_Malloc(size ? size : 1);
-  printf("PyType_GenericAlloc------\n");
+  PRINTF("PyType_GenericAlloc ------\n");
   spy_init_obj(obj, type);
   return obj;
 }
@@ -1133,7 +1446,7 @@ PyObject * PyType_GenericNew(PyTypeObject *type,
 					       PyObject *args, PyObject *kw)
 {
   //return sapply1("python-new-object", type);
-  printf("PyType_GenericNew---------\n");
+  PRINTF("PyType_GenericNew ---------\n");
   return spy_ext_new_instance(type);
 }
 
@@ -1154,35 +1467,26 @@ void spy_copy_s_obj(PyObject* dest, PyObject* src)
 
 void* PyMem_Realloc(void* o, size_t new_size)
 {
-// if ( !o )
-//   return PyMem_MALLOC(new_size);
-// printf ("PyMem_Realloc: size of obj: %d\n", sizeof(o));
-// exit(1);
-//#if 0
   int amt_to_copy;
-  //PyObject* new_obj;
   void *new_buffer;
-  //PyVarObject* orig;
   printf("PyMem_Realloc\n");
   if ( new_size == 0 )
-    return NULL;
-  printf("PyMem_Realloc: size != 0\n");
-//  orig = (PyVarObject*) o;
+    {
+    printf("PyMem_Realloc: size = 0, returning free()\n");
+    return NULL; /* no free() in a GC environment */
+    }
   if ( !o )
    {
-   printf("PyMem_Realloc: original object is null, acting like Malloc\n");
+   printf("PyMem_Realloc: orig is null, returning malloc(%d)\n", new_size);
    return PyMem_MALLOC(new_size);
    }
-  amt_to_copy = new_size;//MIN(new_size, orig->ob_size);
+  amt_to_copy = new_size; // how can I get the old size? should be min(new_size, old_size)
   printf("PyMem_Realloc: allocating %d bytes\n", new_size);
   new_buffer = PyMem_Malloc(new_size ? new_size : sizeof(PyVarObject));
   printf("PyMem_Realloc: allocated new object\n");
-//  printf("PyMem_Realloc: old obj->ob_size: %d, new_size: %d\n", orig->ob_size, new_size);
   printf("PyMem_Realloc: copying %d bytes\n", amt_to_copy);
   if ( amt_to_copy )
     memcpy(new_buffer, o, amt_to_copy);
-//  spy_copy_s_obj(new_obj, (PyObject*) o);
   return new_buffer;
-//#endif
 }
 

@@ -623,7 +623,7 @@
 	(mzlib:pretty-print:pretty-print-show-inexactness (setting-print-tagged-inexact-numbers setting))
 	(mzlib:print-convert:show-sharing (setting-sharing-printing? setting))
 	(mzlib:print-convert:whole/fractional-exact-numbers (setting-whole/fractional-exact-numbers setting))
-	(print-graph (setting-sharing-printing? setting))
+	(print-graph (and (r4rs-style-printing) (setting-sharing-printing? setting)))
 	(mzlib:print-convert:abbreviate-cons-as-list (setting-abbreviate-cons-as-list? setting))
 
 	(when extra-definitions

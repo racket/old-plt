@@ -95,7 +95,8 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Sizing methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	void Centre(int direction);
+	void wxPanel::DoSetSize(int x, int y, int width, int height);
+        void Centre(int direction);
 	void Fit(void);
 
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

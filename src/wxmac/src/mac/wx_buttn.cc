@@ -110,6 +110,9 @@ void wxButton::Create // Real constructor (given parentPanel, label)
         cWindowWidth = boundsRect.right - boundsRect.left + (PAD_X * 2);
         cWindowHeight = boundsRect.bottom - boundsRect.top + (PAD_Y * 2);
         ::SizeControl(cMacControl,boundsRect.right - boundsRect.left, boundsRect.bottom - boundsRect.top);
+        if (parentPanel->cEmbeddingControl) {
+            ::EmbedControl(cMacControl,parentPanel->cEmbeddingControl);
+        }
 #else
 
 	if (width <= 0 || height <= 0)

@@ -5,6 +5,10 @@ Added optional index argument to
  methods of mx-document%
 Added methods get-html, get-text to
  mx-element% class
+Added title method to mx-document% class
+Methods find-element, find-element-by-id-or-name,
+ and find-elements-with-tag can return the BODY
+ element itself, as well as its children
 
 Version 103:
 

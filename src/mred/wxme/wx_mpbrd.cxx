@@ -953,6 +953,8 @@ Bool wxMediaPasteboard::_Delete(wxSnip *del_snip,
       AfterDelete(del_snip);
       changed = TRUE;
 
+      needResize = TRUE;
+
       writeLocked++;
       EndEditSequence();
       --writeLocked;

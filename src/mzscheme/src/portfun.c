@@ -265,12 +265,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("open-input-bytes", 
 			     scheme_make_prim_w_arity(open_input_byte_string, 
 						      "open-input-bytes", 
-						      1, 1), 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("open-input-string", 
 			     scheme_make_prim_w_arity(open_input_char_string, 
 						      "open-input-string", 
-						      1, 1), 
+						      1, 2), 
 			     env);
   scheme_add_global_constant("open-output-file", 
 			     scheme_make_prim_w_arity(open_output_file,
@@ -280,12 +280,12 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("open-output-bytes", 
 			     scheme_make_prim_w_arity(open_output_string,
 						      "open-output-bytes", 
-						      0, 0),
+						      0, 1),
 			     env);
   scheme_add_global_constant("open-output-string", 
 			     scheme_make_prim_w_arity(open_output_string,
 						      "open-output-string", 
-						      0, 0),
+						      0, 1),
 			     env);
   scheme_add_global_constant("get-output-bytes", 
 			     scheme_make_prim_w_arity(get_output_byte_string,
@@ -663,7 +663,7 @@ scheme_init_port_fun(Scheme_Env *env)
   scheme_add_global_constant("make-pipe", 
 			     scheme_make_prim_w_arity2(sch_pipe, 
 						       "make-pipe", 
-						       0, 1,
+						       0, 3,
 						       2, 2), 
 			     env);
 
@@ -2080,6 +2080,11 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
 
   scheme_pipe_with_limit(&v[0], &v[1], bufmax);
 
+  if (argc > 1)
+    ((Scheme_Input_Port *)(v[0]))->name = args[1];
+  if (argc > 2)
+    ((Scheme_Output_Port *)(v[1]))->name = args[2];
+
   return scheme_values(2, v);
 }
 
@@ -2282,11 +2287,17 @@ open_input_file (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 open_input_byte_string (int argc, Scheme_Object *argv[])
 {
+  Scheme_Object *o;
+
   if (!SCHEME_BYTE_STRINGP(argv[0]))
     scheme_wrong_type("open-input-bytes", "byte string", 0, argc, argv);
 
-  return scheme_make_sized_byte_string_input_port(SCHEME_BYTE_STR_VAL(argv[0]), 
-						  SCHEME_BYTE_STRTAG_VAL(argv[0]));
+  o = scheme_make_sized_byte_string_input_port(SCHEME_BYTE_STR_VAL(argv[0]), 
+					       SCHEME_BYTE_STRTAG_VAL(argv[0]));
+  if (argc > 1)
+    ((Scheme_Input_Port *)o)->name = argv[1];
+
+  return o;
 }
 
 static Scheme_Object *
@@ -2299,8 +2310,13 @@ open_input_char_string (int argc, Scheme_Object *argv[])
 
   o = scheme_char_string_to_byte_string(argv[0]);
 
-  return scheme_make_sized_byte_string_input_port(SCHEME_BYTE_STR_VAL(o), 
-						  SCHEME_BYTE_STRTAG_VAL(o));
+  o = scheme_make_sized_byte_string_input_port(SCHEME_BYTE_STR_VAL(o), 
+					       SCHEME_BYTE_STRTAG_VAL(o));
+
+  if (argc > 1)
+    ((Scheme_Input_Port *)o)->name = argv[1];
+
+  return o;
 }
 
 static Scheme_Object *
@@ -2318,7 +2334,14 @@ open_input_output_file (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 open_output_string (int argc, Scheme_Object *argv[])
 {
-  return scheme_make_byte_string_output_port();
+  Scheme_Object *o;
+
+  o = scheme_make_byte_string_output_port();
+
+  if (argc)
+    ((Scheme_Output_Port *)o)->name = argv[0];
+
+  return o;
 }
 
 Scheme_Object *do_get_output_string(const char *who, int is_byte,

@@ -1337,8 +1337,12 @@ print(Scheme_Object *obj, int notdisplay, int compact, Scheme_Hash_Table *ht,
       if (compact || !pp->print_unreadable) {
 	cannot_print(pp, notdisplay, obj, ht, compact);
       } else {
-	print_this_string(pp, "#<", 0, 2);
-	print_string_in_angle(pp, SCHEME_PATH_VAL(obj), "path:", -1);
+	print_this_string(pp, "#<path:", 0, 7);
+	{
+	  Scheme_Object *str;
+	  str = scheme_byte_string_to_char_string_locale(obj);
+	  print(str, 0, 0, ht, symtab, rnht, pp);
+	}
 	PRINTADDRESS(pp, obj);
 	print_this_string(pp, ">", 0, 1);
       }

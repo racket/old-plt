@@ -48,7 +48,10 @@
 	      '("libmzgc"
 		"libmzsch"))
     (for-each (lambda (f)
-                (let ([p (build-path plthome f)])
+                (let ([p (build-path plthome f)]
+		      [re:xxxx (if (regexp-match "lib$" f)
+				   #rx"xxxxxxx" ; even more dangerous?
+				   #rx"xxxxxxx[.]dll")])
 		  (when (file-exists? p)
 		    (let ([i (open-input-file p)]
 			  [o (open-output-file p 'append)])
@@ -59,7 +62,7 @@
 			;;  the file format properly (I expected to find
 			;;  DLL imports in an ".idata" section, but there
 			;;  isn't one.)
-			(let ([m (regexp-match-positions "xxxxxxx[.]dll" i)])
+			(let ([m (regexp-match-positions re:xxxx i)])
 			  (when m
 			    (file-position o (caar m))
 			    (display new-version o)
@@ -72,8 +75,8 @@
                 "libmzschxxxxxxx.dll"
                 "libmzgcxxxxxxx.dll"
                 "libmredxxxxxxx.dll"
-		"lib/msvc/libmzgcxxxxxxx.dll"
-		"lib/msvc/libmzschxxxxxxx.dll"))
+		"lib/msvc/libmzgcxxxxxxx.lib"
+		"lib/msvc/libmzschxxxxxxx.lib"))
     (for-each (lambda (b suffix)
 		(let ([src (build-path plthome (string-append b "xxxxxxx" suffix))]
 		      [dest (build-path plthome (string-append b new-version suffix))])

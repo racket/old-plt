@@ -1,7 +1,7 @@
 # myspage.mak
 
 CPP=cl.exe
-CPP_FLAGS=/I"$(SHELL32)/Include" /I"../../../collects/mzscheme/include" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
+CPP_FLAGS=/I"$(SHELL32)/Include" /I"../../../include" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /D "_ATL_MIN_CRT" /c
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $<
@@ -12,7 +12,7 @@ RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"myspage.res"
 
 LINK32=link.exe
-LINK32_FLAGS=..\..\..\collects\mzscheme\lib\win32\i386\msvc\mzdyn.obj kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib "$(SHELL32)\Lib\shell32.lib" ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /incremental:no /machine:I386 /def:myspage.def /out:myspage.dll
+LINK32_FLAGS=..\..\..\lib\msvc\mzdyn.obj kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib "$(SHELL32)\Lib\shell32.lib" ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /dll /incremental:no /machine:I386 /def:myspage.def /out:myspage.dll
 DEF_FILE= myspage.def
 LINK32_OBJS= dhtmlpage.obj event.obj eventqueue.obj myspage.obj stdafx.obj \
 	myspage.res
@@ -33,7 +33,6 @@ clean :
 	-@erase StdAfx.obj
 	-@erase myspage.dll
 	-@erase myspage.exp
-	-@erase myspage.ilk
 	-@erase myspage.lib
 	-@erase myspage.h
 	-@erase myspage.tlb

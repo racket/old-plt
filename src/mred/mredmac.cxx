@@ -261,7 +261,7 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
 # endif
     *sleep_time = last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
    
-  *delay_time = last_was_front ? DELAY_TIME : 0;
+  *delay_time = DELAY_TIME;
 #endif
 }
 

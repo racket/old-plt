@@ -134,12 +134,15 @@
 		     (mrspidey:zodiac:interface@ INTERACTION)]
 	  [URL : mzlib:url^
 	       ((require-library "urlr.ss" "net") (MZLIB file))]
+          [INSTALLER : setup:plt-installer^
+               ((require-library "plt-installerr.ss" "setup")
+                MRED)]
 	  [BROWSER : browser^
 		   ((require-library "browserr.ss" "browser")
 		    (MZLIB function)
 		    (MZLIB string)
 		    (MZLIB file)
-		    URL MRED FRAMEWORK)]
+		    URL INSTALLER MRED FRAMEWORK)]
 	  [INTERACTION : mrspidey:interaction^
 		      (mrspidey:interaction@ 
 		       ZODIAC

@@ -1,7 +1,7 @@
 (module installer mzscheme
   (require (lib "process.ss"))
-  (provide installer)
-  (define installer
+  (provide post-installer)
+  (define post-installer
     (lambda (plt-home) 
       (if (not (eq? (system-type) 'windows))
 	  (fprintf (current-error-port) 

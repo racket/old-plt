@@ -143,7 +143,7 @@ $(OBJDIR)/env.o: env.c
 	$(CC) $(CFLAGS) -c env.c -o $(OBJDIR)/env.o
 $(OBJDIR)/error.o: error.c
 	$(CC) $(CFLAGS) -c error.c -o $(OBJDIR)/error.o
-$(OBJDIR)/eval.o: eval.c
+$(OBJDIR)/eval.o: eval.c schapp.inc
 	$(CC) $(CFLAGS) -c eval.c -o $(OBJDIR)/eval.o
 $(OBJDIR)/file.o: file.c
 	$(CC) $(CFLAGS) -c file.c -o $(OBJDIR)/file.o

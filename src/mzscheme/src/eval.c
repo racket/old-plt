@@ -1706,61 +1706,47 @@ static Scheme_Object *do_apply_known_k(void)
 }
 
 #if 0
-#define DEBUG_CHECK_TYPE(v) if (SCHEME_TYPE(v) > _scheme_last_type_) \
+# define DEBUG_CHECK_TYPE(v) if (SCHEME_TYPE(v) > _scheme_last_type_) \
   { Scheme_Object *o = *(Scheme_Object **)(v); \
     if (SCHEME_TYPE(o) > _scheme_last_type_) scheme_signal_error("bad type"); }
 #else
-#define DEBUG_CHECK_TYPE(v) /**/
+# define DEBUG_CHECK_TYPE(v) /**/
 #endif
 
 Scheme_Object *_scheme_apply_known_closed_prim_multi(Scheme_Object *rator,
 						     int argc,
 						     Scheme_Object **argv)
 {
-  Scheme_Object *v;
-  Scheme_Closed_Primitive_Proc *prim;
-  Scheme_Process *p = scheme_current_process;
+#define PRIM_CHECK_ARITY 0
+#define PRIM_CHECK_MULTI 0
+#include "schapp.inc"
+}
 
-#ifdef DO_STACK_CHECK
-#define SCHEME_CURRENT_PROCESS p
-#ifdef MZ_REAL_THREADS
-#define SCHEME_STACK_BOUNDARY ((unsigned long)p->stack_end)
-#endif
-#include "mzstkchk.h"
-  {
-#ifndef ERROR_ON_OVERFLOW
-    Scheme_Process *p = scheme_current_process;
-    p->ku.k.p1 = (void *)rator;
-    p->ku.k.i1 = argc;
-    p->ku.k.p2 = (void *)argv;
-#endif
-    return scheme_handle_stack_overflow(do_apply_known_k);
-  }
-#endif
-
-  DO_CHECK_FOR_BREAK(p, ;);
-
-  prim = (Scheme_Closed_Primitive_Proc *)rator;
-  
-  v = prim->prim_val(prim->data, argc, argv);
-  v = _scheme_force_value(v);
-
-  DEBUG_CHECK_TYPE(v);
-
-  return v;
+Scheme_Object *_scheme_apply_closed_prim_multi(Scheme_Object *rator,
+					       int argc,
+					       Scheme_Object **argv)
+{
+#define PRIM_CHECK_ARITY 1
+#define PRIM_CHECK_MULTI 0
+#include "schapp.inc"
 }
 
 Scheme_Object *_scheme_apply_known_closed_prim(Scheme_Object *rator,
 					       int argc,
 					       Scheme_Object **argv)
 {
-  Scheme_Object *v;
+#define PRIM_CHECK_ARITY 0
+#define PRIM_CHECK_MULTI 1
+#include "schapp.inc"
+}
 
-  v = _scheme_apply_known_closed_prim_multi(rator, argc, argv);
-
-  if (v == SCHEME_MULTIPLE_VALUES)
-    scheme_wrong_return_arity(NULL, 1, scheme_multiple_count, scheme_multiple_array, NULL);
-  return v;
+Scheme_Object *_scheme_apply_closed_prim(Scheme_Object *rator,
+					 int argc,
+					 Scheme_Object **argv)
+{
+#define PRIM_CHECK_ARITY 1
+#define PRIM_CHECK_MULTI 1
+#include "schapp.inc"
 }
 
 Scheme_Object *scheme_check_one_value(Scheme_Object *v)

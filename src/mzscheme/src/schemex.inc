@@ -88,6 +88,8 @@
   scheme_extension_table->scheme_eval_string_all = scheme_eval_string_all;
   scheme_extension_table->_scheme_apply_known_closed_prim = _scheme_apply_known_closed_prim;
   scheme_extension_table->_scheme_apply_known_closed_prim_multi = _scheme_apply_known_closed_prim_multi;
+  scheme_extension_table->_scheme_apply_closed_prim = _scheme_apply_closed_prim;
+  scheme_extension_table->_scheme_apply_closed_prim_multi = _scheme_apply_closed_prim_multi;
   scheme_extension_table->scheme_values = scheme_values;
   scheme_extension_table->scheme_check_one_value = scheme_check_one_value;
   scheme_extension_table->scheme_tail_apply = scheme_tail_apply;

@@ -163,6 +163,10 @@ Scheme_Object *_scheme_apply_known_closed_prim(Scheme_Object *rator, int argc,
 					       Scheme_Object **argv);
 Scheme_Object *_scheme_apply_known_closed_prim_multi(Scheme_Object *rator, int argc,
 						     Scheme_Object **argv);
+Scheme_Object *_scheme_apply_closed_prim(Scheme_Object *rator, int argc,
+					 Scheme_Object **argv);
+Scheme_Object *_scheme_apply_closed_prim_multi(Scheme_Object *rator, int argc,
+					       Scheme_Object **argv);
 
 Scheme_Object *scheme_values(int c, Scheme_Object **v);
 

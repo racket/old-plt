@@ -143,6 +143,13 @@ static int buffer_init_size = INIT_TB_SIZE;
 Scheme_Thread *scheme_current_thread = NULL;
 Scheme_Thread *scheme_main_thread = NULL;
 Scheme_Thread *scheme_first_thread = NULL;
+
+typedef struct Scheme_Thread_Set {
+  struct Scheme_Thread_Set *
+} Scheme_Thread_Set;
+
+Scheme_Thread_Set *thread_set_top;
+
 #ifdef LINK_EXTENSIONS_BY_TABLE
 Scheme_Thread **scheme_current_thread_ptr;
 volatile int *scheme_fuel_counter_ptr;
@@ -1618,6 +1625,16 @@ Scheme_Thread *scheme_make_thread()
   return make_thread(NULL, NULL, NULL);
 }
 
+static void scheme_check_tail_buffer_size(Scheme_Thread *p)
+{
+  if (p->tail_buffer_size < buffer_init_size) {
+    Scheme_Object **tb;
+    tb = MALLOC_N(Scheme_Object *, buffer_init_size);
+    p->tail_buffer = tb;
+    p->tail_buffer_size = buffer_init_size;
+  }
+}
+
 void scheme_set_tail_buffer_size(int s)
 {
   if (s > buffer_init_size) {
@@ -1626,12 +1643,7 @@ void scheme_set_tail_buffer_size(int s)
     buffer_init_size = s;
 
     for (p = scheme_first_thread; p; p = p->next) {
-      if (p->tail_buffer_size < s) {
-	Scheme_Object **tb;
-	tb = MALLOC_N(Scheme_Object *, buffer_init_size);
-	p->tail_buffer = tb;
-	p->tail_buffer_size = buffer_init_size;
-      }
+      scheme_check_tail_buffer_size(p);
     }
   }
 }
@@ -3066,6 +3078,7 @@ void scheme_weak_resume_thread(Scheme_Thread *r)
       scheme_first_thread = r;
       r->next->prev = r;
       r->ran_some = 1;
+      scheme_check_tail_buffer_size(r);
     }
   }
 }

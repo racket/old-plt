@@ -696,6 +696,7 @@ typedef struct Scheme_Thread {
 
   struct Scheme_Thread *next;
   struct Scheme_Thread *prev;
+  struct Scheme_Thread_Set *t_set;
 
   mz_jmp_buf error_buf;
   Scheme_Continuation_Jump_State cjs;

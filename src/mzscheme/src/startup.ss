@@ -1399,8 +1399,9 @@
   (define-syntax syntax
     (lambda (x)
       (unless (and (stx-pair? x)
-		   (stx-pair? (stx-cdr x))
-		   (stx-null? (stx-cdr (stx-cdr x))))
+		   (let ([rest (stx-cdr x)])
+		     (and (stx-pair? rest)
+			  (stx-null? (stx-cdr rest)))))
 	(raise-syntax-error
 	 'syntax
 	 "bad form"
@@ -1419,7 +1420,8 @@
 	     (if (or (null? var-bindings)
 		     (not (ormap (lambda (x) x) var-bindings)))
 		 ;; Constant template:
-		 (list (quote-syntax quote-syntax) pattern)	     
+		 (list (quote-syntax quote-syntax) pattern)
+		 ;; Non-constant:
 		 (let ([proto-r (let loop ([vars unique-vars][bindings var-bindings])
 				  (if (null? bindings)
 				      null
@@ -1442,6 +1444,8 @@
 						     rest
 						     (cons (car vars) rest)))))])
 		   (let ([build-from-template
+			  ;; Even if we don't use the builder, we need to check
+			  ;; for a well-formed pattern:
 			  (make-pexpand pattern proto-r non-pattern-vars pattern)]
 			 [r (let loop ([vars unique-vars][bindings var-bindings])
 			      (cond

@@ -86,11 +86,11 @@
         (var-init-init decl)
         (var-init-src decl)))))
   
-  (define (parse-class-box box)
+  (define (parse-class-box box box-pos level)
     (let*-values (((old-input-port) (input-port))
                   ((old-file-path) (file-path))
                   ((func _ __) (class:send (class-case-box box) read-one-special 0 #f #f #f #f))
-                  ((parse-port-list) (func 'beginner)))
+                  ((parse-port-list) (func 'level)))
       (input-port (car parse-port-list))
       (begin0
         (car (package-defs ((cadr parse-port-list))))

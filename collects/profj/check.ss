@@ -1,6 +1,6 @@
 #cs
 (module check mzscheme
-  
+
   (require "ast.ss"
            "types.ss"
            "parameters.ss"
@@ -37,11 +37,9 @@
   (define parm (make-properties #t #f #f #t #f #t))
   (define final-parm (make-properties #t #f #f #f #t #t))
   (define obj-field (make-properties #f #t #f #t #f #t))
-  (define (final-field settable)
-    (make-properties #f #t #f settable #t #t))
+  (define (final-field settable) (make-properties #f #t #f settable #t #t))
   (define class-field (make-properties #f #t #t #f #t #t))
-  (define (final-class-field settable)
-    (make-properties #f #t #t settable #t #t))
+  (define (final-class-field settable) (make-properties #f #t #t settable #t #t))
   (define inherited-conflict (make-properties #f #t #f #f #f #f))
   
   ;; add-var-to-env: string type properties env -> env
@@ -59,7 +57,20 @@
                          (car env)
                          (lookup (cdr env)))))))
       (lookup (environment-types env))))
-  
+
+  ;lookup-specific-this: name env symbol type-records -> bool
+  (define (lookup-enclosing-this name env level type-recs)
+    (letrec ((type (name->type name #f (name-src name) level type-recs))
+             (lookup
+              (lambda (env)
+                (and (not (null? env))
+                     (if (and (or (string=? "this" (var-type-var (car env)))
+                                  (regexp-match "this-encl-" (var-type-var (car env))))
+                              (type=? type (var-type-type (car env))))
+                         (car env)
+                         (lookup (cdr env)))))))
+      (lookup (environment-types env))))
+                               
   ;remove-var-from-env string env -> env
   (define (remove-var-from-env name env)
     (letrec ((remove-from-env
@@ -70,6 +81,38 @@
                    (remove-from-env (cdr env)))
                   (else (cons (car env) (remove-from-env (cdr env))))))))
       (make-environment (remove-from-env (environment-types env))
+                        (environment-exns env)
+                        (environment-labels env))))
+  
+  ;;lookup-containing-class-depth: string env -> num
+  (define (lookup-containing-class-depth name env)
+    (letrec ((lookup
+              (lambda (env)
+                (and (not (null? env))
+                     (cond
+		      [(string=? name (var-type-var (car env))) 0]
+		      [(or (string=? "this" (var-type-var (car env)))
+                           (regexp-match "this-encl-" (var-type-var (car env))))
+		       (add1 (lookup (cdr env)))]
+		      [else (lookup (cdr env))])))))
+      (lookup (environment-types env))))
+  
+  ;update-env-for-inner: env -> env
+  (define (update-env-for-inner env)
+    (letrec ((str "this-encl-")
+             (update-env
+              (lambda (env)
+                (cond
+                  ((null? env) null)
+                  ((regexp-match str (var-type-var (car env)))
+                   (let* ((var (car env)))
+                     (cons (make-var-type (format "this-encl-~a" 
+                                                  (add1 (string->number (regexp-replace str (var-type-var var) ""))))
+                                          (var-type-type var)
+                                          (var-type-properties var))
+                           (update-env (cdr env)))))
+                  (else (cons (car env) (update-env (cdr env))))))))
+      (make-environment (update-env (environment-types env))
                         (environment-exns env)
                         (environment-labels env))))
   
@@ -115,7 +158,7 @@
       (if this 
           (send type-recs get-class-record (var-type-type this))
           interactions-record)))
-
+  
   ;add-required (list string) string (list string) type-records -> void
   (define (add-required test-class class path type-recs)
     (unless (equal? (car test-class) class)
@@ -203,14 +246,14 @@
   
   ;check-inner def symbol type-records (list string) env -> void
   (define (check-inner-def def level type-recs c-class env)
-    (let ((p-name (cdr c-class)))
+    (let ((p-name (cdr c-class))
+          (inner-env (update-env-for-inner env))
+          (this-type (var-type-type (lookup-var-in-env "this" env))))
       (when (or (eq? (def-kind def) 'anon) (eq? (def-kind def) 'statement))
         (build-inner-info def p-name level type-recs (def-file def) #t))
       (if (interface-def? def)
-        (check-interface def p-name level type-recs)
-        (check-class def p-name level type-recs (add-var-to-env "encl-this-1" 
-                                                                (var-type-type (lookup-this type-recs env))
-                                                                final-parm env)))
+          (check-interface def p-name level type-recs)
+          (check-class def p-name level type-recs (add-var-to-env "this-encl-1" this-type final-parm inner-env)))
       ;; Propagate uses in internal defn to enclosing defn:
       (for-each (lambda (use)
                   (add-required c-class (req-class use) (req-path use) type-recs))
@@ -1086,6 +1129,8 @@
                         (check-access exp check-sub-expr env level type-recs current-class interactions?)))
         ((special-name? exp)
          (set-expr-type exp (check-special-name exp env static? interactions?)))
+        ((specified-this? exp)
+         (set-expr-type exp (check-specified-this exp env static? interactions? level type-recs)))
         ((call? exp)
          (set-expr-type exp (check-call exp
                                         (map check-sub-expr (call-args exp))
@@ -1273,9 +1318,7 @@
                                              (field-lookup-error (if class? 'class-name 
                                                                      (if method? 'method-name 'not-found))
                                                                  (string->symbol fname)
-                                                                 (make-ref-type (if (pair? name)
-                                                                                    (car name)
-                                                                                    name) null)
+                                                                 (make-ref-type (if (pair? name) (car name) name) null)
                                                                  src)))))))
 
            (when (and (eq? level 'beginner)
@@ -1289,7 +1332,7 @@
                                           (field-record-init? record)
                                           (car (field-record-class record))))
            (add-required c-class 
-                         (car (field-record-class record)) 
+                         (car (field-record-class record))
                          (if (null? (cdr (field-record-class record)))
                              (send type-recs lookup-path (car (field-record-class record))
                                    (lambda () null))
@@ -1315,15 +1358,14 @@
                     (let* ((static-class (find-static-class acc level type-recs))
                            (accs (cadr static-class)))
                       (build-field-accesses 
-                       (make-access #f 
-                                    (expr-src exp)
+                       (make-access #f (expr-src exp)
                                     (make-field-access 
                                      #f
                                      (car accs)
                                      (make-var-access #t #f #f (class-record-name (car static-class)))))
                        (cdr accs))))
                    ((and (memq level '(beginner intermediate advanced)) (not first-binding) (> (length acc) 1)
-                         (with-handlers ((exn:syntax? (lambda (e) #f))) 
+                         (with-handlers ((exn:syntax? (lambda (e) #f)))
                            (type-exists? first-acc null c-class (id-src (car acc)) level type-recs)))
                     (build-field-accesses
                      (make-access #f
@@ -1337,22 +1379,33 @@
                      (make-access #f (expr-src exp) (make-local-access (car acc)))
                      (cdr acc)))
                    (first-binding
-                    (if (properties-static? (var-type-properties first-binding))
-                        (build-field-accesses
-                         (make-access #f (expr-src exp)
-                                      (make-field-access #f
-                                                         (car acc)
-                                                         (make-var-access #t #f #f c-class)))
-                         (cdr acc))
-                        (if interactions?
-                            (build-field-accesses (make-access #f (expr-src exp) (make-local-access (car acc)))
-                                                  (cdr acc))
-                            (build-field-accesses
-                             (make-access #f (expr-src exp)
-                                          (make-field-access (make-special-name #f #f "this")
-                                                             (car acc)
-                                                             #f))
-                             (cdr acc)))))
+                    (let* ((encl-depth (lookup-containing-class-depth (id-string (car acc)) env))
+                           (encl-type (if (= encl-depth 0) 
+                                          (var-type-type (lookup-var-in-env "this" env))
+                                          (lookup-var-in-env (format "encl-this-~a" encl-depth) env)))
+                           (encl-class (cons (ref-type-class/iface encl-type) (ref-type-path encl-type))))
+                      (if (properties-static? (var-type-properties first-binding))
+                          (build-field-accesses
+                           (make-access #f (expr-src exp)
+                                        (make-field-access #f
+                                                           (car acc)
+                                                           (make-var-access #t #f #f encl-class)))
+                           (cdr acc))
+                          (if interactions?
+                              (build-field-accesses (make-access #f (expr-src exp) (make-local-access (car acc)))
+                                                    (cdr acc))
+                              (build-field-accesses
+                               (make-access #f (expr-src exp)
+                                            (make-field-access 
+                                             (if (= encl-depth 0)
+                                                 (make-special-name #f #f "this")
+                                                 (make-access #f (expr-src exp) 
+                                                              (make-id 
+                                                               (make-local-access (format "encl-this-~a" encl-depth))
+                                                               (expr-src exp))))
+                                             (car acc)
+                                             #f))
+                               (cdr acc))))))
                    (else 
                     (let ((class? (member (id-string (car acc)) (send type-recs get-class-env)))
                           (method? (not (null? (get-method-records (id-string (car acc)) (lookup-this type-recs env))))))
@@ -1452,6 +1505,12 @@
       (special-error (expr-src exp) interact?))
     (var-type-type (lookup-var-in-env "this" env)))
   
+  ;check-specified-this: expression env bool bool -> type
+  (define (check-specified-this exp env static? interact? level type-recs)
+    (when static?
+      (special-error (expr-src exp) interact?))
+    (var-type-type (lookup-enclosing-this (specified-this-class exp) env level type-recs)))
+    
   ;;Skipping package access constraints
   ;; 15.12
   ;check-call: call (list type) (expr->type) (list string) symbol env type-records bool bool-> type
@@ -2412,7 +2471,7 @@
                      ((static-already-set) (already-set #t))
                      ((field-already-set) (already-set #f))
                      ((static) (format "final field ~a may only be set in the containing class's static initialization" n))
-                     ((field) (format "final field ~a may only be set in the containing class's constructor" n)))                     
+                     ((field) (format "final field ~a may only be set in the containing class's constructor" n)))
                    n (id-src name))))
 
   

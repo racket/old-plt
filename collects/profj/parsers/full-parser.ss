@@ -678,7 +678,7 @@
        ;; 1.1
        [(void PERIOD class) (unimplemented-1.1 (build-src 1))]
        ;; 1.1
-       [(Name PERIOD this) (unimplemented-1.1 (build-src 1))])
+       [(Name PERIOD this) (make-specified-this #f (build-src 3) $1)])
       
       (ClassInstanceCreationExpression
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)

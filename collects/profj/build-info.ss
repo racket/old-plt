@@ -125,7 +125,7 @@
 		      ;; Adjust id to attach the prefix:
 		      (let ([id (def-name member)])
 			(set-id-string! id (string-append prefix (id-string id))))
-		      (add-def-info member pname level type-recs current-loc #f #t)))
+		      (add-def-info member pname type-recs current-loc #f (def-level def))))
 		  (def-members def)))))
   
   ;build-anon-info: def (list string) symbol type-records loc bool -> void
@@ -430,7 +430,7 @@
                      
                      (for-each (lambda (member)
 			     (when (def? member)
-			       (process-class/iface member package-name type-recs #f level #t)))
+			       (process-class/iface member package-name type-recs #f level)))
 			   members)
                      
                      record))))))
@@ -853,8 +853,8 @@
   
   ;process-inner def (list name) type-records symbol -> inner-record
   (define (process-inner def cname type-recs level)
-    (make-inner-record (filename-extension (def-name def))
-                       (map modifier-kind (header-modifiers (modifier-kind def)))
+    (make-inner-record (filename-extension (id-string (def-name def)))
+                       (map modifier-kind (header-modifiers (def-header def)))
                        (class-def? def)))
 
   ;overrides?: string (list type) (list method-record) -> (U bool method-record)

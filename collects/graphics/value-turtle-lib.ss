@@ -175,7 +175,7 @@
 	       (send dc set-pen b-pen)
 	       (send dc set-brush w-brush)
 	       (send dc draw-rectangle x y (+ width 2) (+ height 2))
-	       (send dc set-clipping-rect (+ x 1) (+ y 1) height width)
+	       (send dc set-clipping-rect (+ x 1) (+ y 1) width height)
 	       (send dc draw-bitmap bitmap (+ x 1) (+ y 1))
 	       (flip-icons dc (+ x 1) (+ y 1))
 	       (send dc set-pen old-pen)

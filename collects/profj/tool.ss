@@ -6,9 +6,8 @@
            (lib "class.ss")
 	   (lib "string-constant.ss" "string-constants")
            (lib "Object.ss" "profj" "libs" "java" "lang") (lib "array.ss" "profj" "libs" "java" "lang")
-           (lib "String.ss" "profj" "libs" "java" "lang")                 
-           "compile.ss" "parameters.ss" "parsers/lexer.ss")
-  (require "parser.ss")
+           (lib "String.ss" "profj" "libs" "java" "lang"))
+  (require "compile.ss" "parameters.ss" "parsers/lexer.ss" "parser.ss" "ast.ss")
 
   (provide tool@)
 
@@ -133,13 +132,13 @@
           (define/public (order-manuals x)
             (values (case level
                       ((beginner) `(#"profj-beginner" #"tour" #"drscheme" #"help"))
-                      ((intermediate) `(#"profj-intermediate" #"tour" #"drscheme" #"help"))
-                      ((advanced full) '(#"profj-advanced" #"profj-intermediate" #"profj-beginner" #"tour" #"drscheme" #"help")))
+                      ((intermediate) `(#"profj-intermediate" ,@(order-manuals 'beginner)))
+                      ((advanced full) `(#"profj-advanced" ,@(order-manuals 'intermediate))))
                     #f))
           
           ;default-settings: -> profj-settings
           (define/public (default-settings) 
-            (if (memq level `(beginner intermediate))
+            (if (memq level `(beginner intermediate advanced))
                 (make-profj-settings 'field #f null)
                 (make-profj-settings 'type #f null)))
           ;default-settings? any -> bool
@@ -334,67 +333,51 @@
           ;;execute-types: type-record 
           (define execute-types (create-type-record))
           
-          
           (define/public (front-end/complete-program port settings teachpack-cache)
             (set! execute-types (create-type-record))
-            (let ([name (object-name port)]
-                  (main-mod #f)
-                  (require? #f)
-                  (name-to-require #f)
-                  (modules null)
-                  (extras null))
+            (let ([name (object-name port)])
               (lambda ()
                 (syntax-as-top
                  (let ((end? (eof-object? (peek-char-or-special port))))
-                   (cond
-                     ((and end? (not require?) (null? modules) (null? extras)) eof)
-                     ((and end? (not require?) (null? modules))
-                      (begin0 (car extras) (set! extras (cdr extras))))
-                     ((and end? require?) 
-                      (set! require? #f)
-                      (with-syntax ([name name-to-require])
-                        (syntax (require name))))
-                     (end?
-                      (set! require? #t)
-                      (let-values (((name syn) (if (eq? main-mod (car modules))
-                                                   (add-main-call (expand (car modules)))
-                                                   (get-module-name (expand (car modules))))))
-                        (set! name-to-require name)
-                        (set! modules (cdr modules))
-                        syn))
-                     (else
-                      (execution? #t)
-                      (let ((mods (compile-java 'port 'out level #f port name execute-types)))
-                        (set! extras (process-extras (send execute-types get-interactions-boxes)))
-                        (set! main-mod (find-main-module mods))
-                        (set! mods (order mods))
-                        (cond
-                          ((and (null? mods) (null? extras)) eof)
-                          ((null? mods) (begin0 (car extras) (set! extras (cdr extras))))
-                          (else (set! require? #t)
-                                (let-values (((name syn) (if (eq? main-mod (car mods))
-                                                             (add-main-call (expand (car mods)))
-                                                             (get-module-name (expand (car mods))))))
-                                  (set! name-to-require name)
-                                  (set! modules (cdr mods))
-                                  syn)))))))))))
-          
+                   (if end? 
+                       eof 
+                       (datum->syntax-object #f `(parse-java-full-program ,(parse port name level)) #f)))))))          
           (define/public (front-end/interaction port settings teachpack-cache)
             (let ([name (object-name port)])
-              ;(interactions-offset (drscheme:language:text/pos-start input))
               (lambda ()
                 (if (eof-object? (peek-char-or-special port))
                     eof
-		    (syntax-as-top (compile-interactions port name execute-types level))))))
+		    (syntax-as-top
+                     (datum->syntax-object 
+                      #f 
+                      `(parse-java-interactions ,(begin (printf "parsing interactions")
+                                                        (parse-interactions port name level)) ,name)
+                      #f))))))
 
 	  (define/private (syntax-as-top s)
 	    (if (syntax? s)
 		(namespace-syntax-introduce s)
 		s))
           
-          (define/private (process-extras extras)
+          (define/private (process-extras extras type-recs)
             (cond
               ((null? extras) null)
+              ((example-box? (car extras)) 
+               (let ((contents (eval (example-box-contents (car extras)))))
+                 (append (map (lambda (example)
+                                (let ((name-text (send (cadr example) get-text)))
+                                  (compile-interactions-ast 
+                                   (make-var-init (make-var-decl (make-id name-text #f)
+                                                                 null
+                                                                 (make-type-spec 'int 0 #f)
+                                                                 #f)
+                                                  (parse-expression (open-input-text-editor (caddr example)) (caddr example) level)
+                                                  #f)
+                                   (caddr example)
+                                   level
+                                   type-recs)))
+                              contents))
+                 (process-extras (cdr extras) type-recs)))
               ((test-case? (car extras))
                (cons 
                 (let ((new-test-case
@@ -405,7 +388,7 @@
                                         (andmap (dynamic-require '(lib "profj-testing.ss" "profj") 'java-values-equal?)
                                                 to-test-values exp-values)))
                            (set-actuals to-test-values)))))
-                  (let-values (((syn t t2) (send (test-case-test (car extras)) read-one-special 0 #f #f #f #f)))
+                  (let-values (((syn t t2) (send (test-case-test (car extras)) read-special #f #f #f #f)))
                     (syntax-case syn ()
                       ((test-case equal? exp1 exp2 exp3 exp4) 
                        (syntax-case (syntax exp1) (begin require)
@@ -432,7 +415,7 @@
                           (else 
                            (datum->syntax-object #f `(,new-test-case ,(syntax exp1) ,(syntax exp2) ,(syntax exp3) ,(syntax exp4)) #f))))))
                       (else syn))))
-                (process-extras (cdr extras))))
+                (process-extras (cdr extras) type-recs)))
               ((interact-case? (car extras))
                (let ((interact-box (interact-case-box (car extras))))
                  (send interact-box set-level level)
@@ -444,8 +427,8 @@
                                      (send execute-types clear-interactions)
                                      (raise e))))
                     (let-values (((syn-list t t2) 
-                                  (send interact-box read-one-special 0 #f #f #f #f))) syn-list))
-                  (process-extras (cdr extras)))))))
+                                  (send interact-box read-special #f #f #f #f))) syn-list))
+                  (process-extras (cdr extras) type-recs))))))
           
           ;find-main-module: (list compilation-unit) -> (U syntax #f)
           (define (find-main-module mod-lists)
@@ -475,7 +458,7 @@
                   (append (compilation-unit-code (car mod-lists))
                           (order (cdr mod-lists))))))
               
-          (define/public (get-comment-character) (values "//" #\*))
+          (define/public (get-comment-character) (values "//" "*"))
           (define/public (get-style-delta) #f)
           (define/public (get-language-position) 
             (cons (string-constant experimental-languages) (list "ProfessorJ" name) ))
@@ -493,8 +476,38 @@
                (lambda ()
                  (error-display-handler 
                   (drscheme:debug:make-debug-error-display-handler (error-display-handler)))
-                 (current-eval 
-                  (drscheme:debug:make-debug-eval-handler (current-eval)))
+                 (let ((old-current-eval (drscheme:debug:make-debug-eval-handler (current-eval))))
+                   (current-eval 
+                    (lambda (exp)
+                      (syntax-case exp (parse-java-full-program parse-java-interactions)
+                        ((parse-java-full-program ex)
+                         (let ((exp (old-current-eval (syntax ex))))
+                           (execution? #t)
+                           (let ((name-to-require #f))
+                             (let loop ((mods (order (compile-ast exp level execute-types)))
+                                        (extras (process-extras 
+                                                 (send execute-types get-interactions-boxes) execute-types))
+                                        (require? #f))
+                               (cond
+                                 ((and (not require?) (null? mods) (null? extras)) (void))
+                                 ((and (not require?) (null? mods))
+                                  (old-current-eval (syntax-as-top (car extras)))
+                                  (loop mods (cdr extras) require?))
+                                 (require? 
+                                  (old-current-eval (syntax-as-top
+                                                     (with-syntax ([name name-to-require])
+                                                       (syntax (require name)))))
+                                  (loop mods extras #f))
+                                 (else 
+                                  (let-values (((name syn) (get-module-name (expand (car mods)))))
+                                    (set! name-to-require name)
+                                    (old-current-eval (syntax-as-top syn))
+                                    (loop (cdr mods) extras #t))))))))
+                        ((parse-java-interactions ex loc)
+                         (let ((exp (old-current-eval (syntax ex))))
+                           (old-current-eval 
+                            (syntax-as-top (compile-interactions-ast exp (syntax loc) level execute-types)))))
+                        (_ (old-current-eval exp))))))
                  (with-handlers ([void (lambda (x)  (printf "~a~n" (exn-message x)))])
                    (namespace-attach-module n path)
                    (namespace-require 'mzscheme)
@@ -638,10 +651,7 @@
           (define/override (get-corner-bitmap) comment-gif)
           (define/override (get-position) 'left-top)
 
-          (define/public (read-special index source line column position)
-            (raise (make-special-comment "msg" (current-continuation-marks) 1)))
-          
-           (define/public (read-one-special index source line column position)
+          (define/public (read-special source line column position)
             (raise (make-special-comment "msg" (current-continuation-marks) 1)))
           
           (super-instantiate ())
@@ -694,11 +704,8 @@
           (define-struct input-length (start-pos end-pos))
 
           (define/private (newline? char) (memq char '(#\015 #\012)))
-
-          (define/public (read-special index source line column position)
-            (read-one-special index source line column position))
           
-          (define/public (read-one-special index source line column position)
+          (define/public (read-special source line column position)
             (let* ((ed (get-editor))
                    (port (open-input-text-editor ed 0 'end (editor-filter #t)))
                    (inputs-list null))
@@ -732,8 +739,8 @@
                                   (reverse inputs-list))))
 ;                (printf "~a~n~a~n" syntax-list (map remove-requires syntax-list))
                 (if ret-list?
-                    (values syntax-list #t)
-                    (values (datum->syntax-object #f `(begin ,@(map remove-requires syntax-list)) #f) #t)))))
+                    syntax-list
+                    (datum->syntax-object #f `(begin ,@(map remove-requires syntax-list)) #f)))))
           (define (remove-requires syn)
             (syntax-case* syn (begin require) (lambda (r1 r2) (eq? (syntax-e r1) (syntax-e r2)))
               ((begin (require x ...) exp1 exp ...) (syntax (begin exp1 exp ...)))

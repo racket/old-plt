@@ -11,6 +11,7 @@
   
   (provide (all-defined))
   (define-struct test-case (test))
+  (define-struct example-box (contents))
   (define-struct interact-case (box))
   (define-struct class-case (box))
   
@@ -42,7 +43,7 @@
                  (STRING_LIT CHAR_LIT INTEGER_LIT LONG_LIT FLOAT_LIT DOUBLE_LIT 
                              IDENTIFIER STRING_ERROR NUMBER_ERROR HEX_LIT OCT_LIT HEXL_LIT OCTL_LIT))
   
-  (define-tokens special-toks (CLASS_BOX INTERACTIONS_BOX TEST_SUITE OTHER_SPECIAL))
+  (define-tokens special-toks (CLASS_BOX INTERACTIONS_BOX EXAMPLE TEST_SUITE OTHER_SPECIAL))
   
   (define (trim-string s f l)
     (substring s f (- (string-length s) l)))
@@ -303,12 +304,21 @@
      ("/*" (begin (read-block-comment input-port) (return-without-pos (get-token input-port))))
      #;("/**" (begin (read-document-comment input-port) (return-without-pos (get-token input-port))))
        
-     ((special)
-      (cond
+     ((special) 
+      (begin (printf "lexing a special")
+             (syntax-case lexeme ()
+               ((parse-example-box examples) (token-EXAMPLE (make-example-box (syntax examples))))
+               (_ (token-OTHER_SPECIAL (list lexeme start-pos end-pos))))))
+     #;(begin(printf "lexing a special")
+            (syntax-case lexeme ()
+              ((test-case equal? exp1 exp2 exp3 exp4)
+               (token-TEST_SUITE (make-test-case (syntax exp1) (syntax exp2) (syntax exp3) (syntax exp4))))
+              (_ (token-OTHER_SPECIAL (list lexeme start-pos end-pos)))))
+      #;(cond
         ((class-case? lexeme) (token-CLASS_BOX lexeme))
         ((interact-case? lexeme) (token-INTERACTIONS_BOX lexeme))
         ((test-case? lexeme) (token-TEST_SUITE lexeme))
-        (else (token-OTHER_SPECIAL (list lexeme start-pos end-pos)))))
+        (else (token-OTHER_SPECIAL (list lexeme start-pos end-pos))))
        
      ;; 3.6
      ((re:+ WhiteSpace) (return-without-pos (get-token input-port)))

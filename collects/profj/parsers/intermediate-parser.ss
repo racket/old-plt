@@ -17,13 +17,13 @@
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))  
   
-  (provide parse-intermediate parse-intermediate-interactions parse-intermediate-method)
+  (provide parse-intermediate parse-intermediate-interactions parse-intermediate-expression)
   ;(provide intermediate-grammar)
   
   
   (define parsers
     (testing-parser
-     (start CompilationUnit IntermediateInteractions MethodDeclaration)
+     (start CompilationUnit IntermediateInteractions Expression)
      ;;(debug "parser.output")
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
@@ -141,6 +141,7 @@
        [(InterfaceDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
        [(CLASS_BOX) (parse-class-box $1 (build-src 1) 'intermediate)]
+       [(EXAMPLE) $1]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
       
@@ -596,6 +597,6 @@
   
   (define parse-intermediate (car parsers))
   (define parse-intermediate-interactions (cadr parsers))
-  (define parse-intermediate-method (caddr parsers))
+  (define parse-intermediate-expression (caddr parsers))
   
   )

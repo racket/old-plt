@@ -7,9 +7,9 @@
            (lib "readerr.ss" "syntax")
            (all-except (lib "lex.ss" "parser-tools") input-port))
   
-  (provide find-intermediate-error find-intermediate-error-interactions find-intermediate-error-method
-           find-beginner-error find-beginner-error-interactions find-beginner-error-method
-           find-advanced-error find-advanced-error-interactions find-advanced-error-method)
+  (provide find-intermediate-error find-intermediate-error-interactions find-intermediate-error-expression
+           find-beginner-error find-beginner-error-interactions find-beginner-error-expression
+           find-advanced-error find-advanced-error-interactions find-advanced-error-expression)
 
   (define level (make-parameter 'beginner))
   (define (beginner?) (eq? (level) 'beginner))
@@ -23,17 +23,17 @@
       (let ((getter ((lex-stream))))
         (parse-program null (getter) 'start getter))))
 
-  ;find-method-error: symbol -> (-> (U void #t))
-  (define (find-method-error level-set)
+  ;find-expression-error: symbol -> (-> (U void #t))
+  (define (find-expression-error level-set)
     (lambda ()
       (level level-set)
       (let ((getter ((lex-stream))))
-        (parse-members null (getter) 'start getter #f #t))))
+        (parse-expression null (getter) 'start getter #f #f))))
   
   ;find-beginner-error: -> (U void #t)
   (define find-beginner-error (find-error 'beginner))
   
-  (define find-beginner-error-method (find-method-error 'beginner))
+  (define find-beginner-error-expression (find-expression-error 'beginner))
 
   ;find-beginner-error-interaction: -> (U bool or token)
   ;Should not return
@@ -66,8 +66,8 @@
   ;find-intermediate-error: -> (U void #t)
   (define find-intermediate-error (find-error 'intermediate))
 
-  ;find-intermediate-error: -> void
-  (define find-intermediate-error-method (find-method-error 'intermediate))
+  ;find-intermediate-error-expression: -> void
+  (define find-intermediate-error-expression (find-expression-error 'intermediate))
   
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
@@ -102,8 +102,8 @@
       (level 'advanced)
       (parse-package null (getter) 'start getter)))
 
-  ;find-advanced-error-method: -> void
-  (define find-advanced-error-method (find-method-error 'advanced))
+  ;find-advanced-error-expression: -> void
+  (define find-advanced-error-expression (find-expression-error 'advanced))
   
   ;find-error-interaction: -> (U bool or token)
   ;Should not return
@@ -190,6 +190,7 @@
                       (cadr (token-value tok)) (caddr (token-value tok))))
         ((eq? (get-token-name tok) 'TEST_SUITE) (format "Test Suite Test"))
         ((eq? (get-token-name tok) 'INTERACTIONS_BOX) (format "Java Interactions Box"))
+        ((eq? (get-token-name tok) 'EXAMPLE) (format "Java Example Box"))
         ((eq? (get-token-name tok) 'CLASS_BOX) (format "Java Class Box"))
         (else (get-token-name tok)))))
 

@@ -16,12 +16,12 @@
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))
   
-  (provide parse-advanced parse-advanced-interactions parse-advanced-method)
+  (provide parse-advanced parse-advanced-interactions parse-advanced-expression)
   ;(provide advanced-grammar)  
   
   (define parsers
-    (testing-parser
-     (start CompilationUnit AdvancedInteractions MethodDeclaration)
+    (parser
+     (start CompilationUnit AdvancedInteractions VariableInitializer)
      ;;(debug "parser.output")
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
@@ -157,6 +157,7 @@
        [(INTERACTIONS_BOX) $1]
        [(CLASS_BOX) (parse-class-box $1 (build-src 1) 'advanced)]
        [(TEST_SUITE) $1]
+       [(EXAMPLE) $1]
        [(SEMI_COLON) #f])
       
       ;; 19.7
@@ -799,5 +800,5 @@
   
   (define parse-advanced (car parsers))
   (define parse-advanced-interactions (cadr parsers))
-  (define parse-advanced-method (caddr parsers))
+  (define parse-advanced-expression (caddr parsers))
   )

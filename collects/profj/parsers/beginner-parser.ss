@@ -17,12 +17,12 @@
     (syntax-rules ()
       ((_ parse-info ...) (parser parse-info ...))))
     
-  (provide parse-beginner parse-beginner-interactions parse-beginner-method)
+  (provide parse-beginner parse-beginner-interactions parse-beginner-expression)
   ;(provide beginner-grammar)
   
   (define parsers
     (parser
-     (start CompilationUnit BeginnerInteractions MethodDeclaration)
+     (start CompilationUnit BeginnerInteractions Expression)
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      ;(terminals val-tokens special-tokens keyword-tokens separator-tokens literal-tokens operator-tokens)
      (error (lambda (tok-ok name val start-pos end-pos)
@@ -114,6 +114,7 @@
       (TypeDeclaration
        [(ClassDeclaration) $1]
        [(INTERACTIONS_BOX) $1]
+       [(EXAMPLE) $1]
        [(CLASS_BOX) (parse-class-box $1 (build-src 1) 'beginner)]
        [(TEST_SUITE) $1]
        [(SEMI_COLON) #f])
@@ -450,5 +451,5 @@
   
   (define parse-beginner (car parsers))
   (define parse-beginner-interactions (cadr parsers))
-  (define parse-beginner-method (caddr parsers))
+  (define parse-beginner-expression (caddr parsers))
   )

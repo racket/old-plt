@@ -10,7 +10,7 @@
            (all-except (lib "lex.ss" "parser-tools") input-port)
            (lib "readerr.ss" "syntax"))
   
-  (provide parse-full parse-full-interactions parse-full-method)
+  (provide parse-full parse-full-interactions parse-full-expression)
     
   ;; A parser for Java based on the LALR(1) grammar in the Java
   ;; Language Specification First Edition, extended to support Java 1.1
@@ -19,7 +19,7 @@
   
   (define parsers
     (parser
-     (start CompilationUnit Interactions MethodDeclaration)
+     (start CompilationUnit Interactions VariableInitializer)
      ;;(debug "parser.output")
      (tokens java-vals special-toks Keywords Separators EmptyLiterals Operators)
      (error (lambda (tok-ok name val start-pos end-pos)
@@ -156,6 +156,7 @@
        [(INTERACTIONS_BOX) $1]
        [(CLASS_BOX) (parse-class-box $1 (build-src 1) 'full)]
        [(TEST_SUITE) $1]
+       [(EXAMPLE) $1]
        [(SEMI_COLON) #f])
       
       ;; 19.7
@@ -989,6 +990,6 @@
   
   (define parse-full (car parsers))
   (define parse-full-interactions (cadr parsers))
-  (define parse-full-method (caddr parsers))
+  (define parse-full-expression (caddr parsers))
 
   )

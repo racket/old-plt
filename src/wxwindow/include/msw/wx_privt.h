@@ -44,6 +44,7 @@ public:
 
     Bool mouse_in_window;
     Bool is_canvas;
+    Bool is_panel;
     Bool is_dialog;
     HDC cdc;
 

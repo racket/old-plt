@@ -32,6 +32,7 @@ wxPanelWnd::wxPanelWnd(wxWnd *parent, char *winClass, wxWindow *wx_win,
   : wxSubWnd(parent, winClass, wx_win, x, y, width, height, flags, 
 	     NULL, extendedStyle)
 {
+  is_panel = 1;
 }
 
 LONG wxPanelWnd::DefWindowProc(UINT nMsg, UINT wParam, LONG lParam)

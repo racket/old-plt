@@ -1420,7 +1420,7 @@ void wxWnd::OnButton(int x, int y, UINT flags, int evttype)
   event->rightDown = (flags & MK_RBUTTON);
   event->SetTimestamp(last_msg_time);
 
-  if (wx_window && is_canvas) {
+  if (wx_window && (is_canvas || is_panel)) {
     if ((evttype == wxEVENT_TYPE_LEFT_DOWN)
 	|| (evttype == wxEVENT_TYPE_MIDDLE_DOWN)
 	|| (evttype == wxEVENT_TYPE_RIGHT_DOWN))

@@ -13,6 +13,7 @@
  (accept-and-exit "Accept and Exit")
  
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
+ (plt "PLT")
  (drscheme "DrScheme")
  (ok "OK")
  (cancel "Cancel")
@@ -490,6 +491,8 @@
  (already-added-teachpack "Already added ~a Teachpack")
  
  ;;; Language dialog
+ (introduction-to-language-dialog
+  "Please select a language. Most students in introductory courses can just use the defaults.")
  (language-dialog-title "Configure Language")
  (case-sensitive-label "Case sensitive")
  (output-style-label "Output Style")
@@ -514,11 +517,12 @@
  (beginning-student/abbrev "Beginning Student with List Abbreviations")
  (intermediate-student "Intermediate Student")
  (advanced-student "Advanced Student")
+ (full-language "Full") ;; also in the HtDP languages section
  (how-to-design-programs "How to Design Programs") ;; should agree with MIT Press on this one...
  (r5rs-like-languages "R5RS-like")
  (mred-lang-name "Graphical without debugging (MrEd)")
  (mzscheme-lang-name "Textual without debugging (MzScheme)")
- (r5rs-lang-name "R5RS without debugging")
+ (r5rs-lang-name "Standard (R5RS)")
  (unknown-debug-frame "[unknown]")
  
  (bad-module-language-specs
@@ -531,7 +535,6 @@
  (stack-frame-in-current-definitions "definitions")
  (mzscheme-w/debug "Textual (MzScheme)")
  (mred-w/debug "Graphical (MrEd)")
- (r5rs-w/debug "R5RS")
  
  ;;; repl stuff
  (evaluation-terminated "Evaluation Terminated")

@@ -261,7 +261,7 @@
                   (define/override (use-namespace-require/copy?) #t)
                   (super-instantiate ())))]
              [make-simple
-              (lambda (module position)
+              (lambda (module position numbers)
                 (instantiate 
                     (use-copy-mixin
                      (drscheme:language:module-based-language->language-mixin
@@ -269,19 +269,22 @@
                        drscheme:language:simple-module-based-language%)))
                   ()
                   (module module)
-                  (language-position position)))])
+                  (language-position position)
+                  (language-numbers numbers)))])
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mred.ss" "lang")
-                      (list (string-constant r5rs-like-languages)
-                            (string-constant mred-w/debug))))
+                      (list (string-constant plt)
+                            (string-constant mred-w/debug))
+                      (list -10 1)))
 	(drscheme:language-configuration:add-language
 	 (make-simple '(lib "full-mzscheme.ss" "lang") 
-                      (list (string-constant r5rs-like-languages)
-                            (string-constant mzscheme-w/debug))))
+                      (list (string-constant plt)
+                            (string-constant mzscheme-w/debug))
+                      (list -10 2)))
         (drscheme:language-configuration:add-language
 	 (make-simple '(lib "r5rs.ss" "lang")
-                      (list (string-constant r5rs-like-languages)
-                            (string-constant r5rs-w/debug)))))
+                      (list (string-constant r5rs-lang-name))
+                      (list -1000))))
       
       (drscheme:module-language:add-module-language)
       (drscheme:language-configuration:add-info-specified-languages)

@@ -12,6 +12,7 @@
  (accept-and-exit "Aceptar y salir")
 
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
+ (plt "PLT")
  (drscheme "DrScheme")
  (ok "OK")
  (cancel "Cancelar")

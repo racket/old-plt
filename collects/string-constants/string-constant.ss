@@ -70,10 +70,12 @@
 		     ht1
 		     (lambda (constant value)
 		       (unless (hash-table-get ht2 constant (lambda () #f))
-			 (let ([unknown-word (string-append "UNK" value)]
+			 (let ([unknown-word ;(string-append "UNK" value)
+                                             value
+                                             ]
 			       [no-warning-cache-key (cons (sc-language-name sc1) (sc-language-name sc2))])
 			   (hash-table-put! ht2 constant unknown-word)
-			   (unless (unbox already-printed)
+			   '(unless (unbox already-printed)
 			     (cond
 			       [(memf (lambda (x) (equal? (car x) no-warning-cache-key)) warning-table)
 				=>

@@ -36,9 +36,9 @@ WARNING: printf is rebound in the mosdule to always print
         (interface ()
           get-module
           get-language-position
-          sharing-printing
-          abbreviate-cons-as-list
-          allow-sharing?))
+          get-sharing-printing
+          get-abbreviate-cons-as-list
+          get-allow-sharing?))
             
       ;; module-based-language-extension :    (implements drscheme:language:module-based-language<%>) 
       ;;                                   -> (implements drscheme:language:module-based-language<%>)
@@ -49,21 +49,21 @@ WARNING: printf is rebound in the mosdule to always print
           (rename [super-on-execute on-execute]
                   [super-render-value/format render-value/format]
                   [super-render-value render-value])
-          (inherit sharing-printing abbreviate-cons-as-list)
+          (inherit get-sharing-printing get-abbreviate-cons-as-list)
           
           (define (default-settings)
             (drscheme:language:make-simple-settings 
              #t
              'constructor
-             (sharing-printing)
+             (get-sharing-printing)
              #t
              #f))
           
           (override config-panel)
           (rename [super-config-panel config-panel])
-          (inherit allow-sharing?)
+          (inherit get-allow-sharing?)
           (define (config-panel parent)
-            (sharing/not-config-panel (allow-sharing?) parent))
+            (sharing/not-config-panel (get-allow-sharing?) parent))
 
           
           (define (on-execute settings run-in-user-thread)
@@ -80,7 +80,7 @@ WARNING: printf is rebound in the mosdule to always print
 
           (define (set-printing-parameters thunk)
             (parameterize ([pc:booleans-as-true/false #t]
-                           [pc:abbreviate-cons-as-list (abbreviate-cons-as-list)]
+                           [pc:abbreviate-cons-as-list (get-abbreviate-cons-as-list)]
                            [pretty-print-show-inexactness #t]
                            [pretty-print-.-symbol-without-bars #t]
                            [drscheme:rep:use-number-snip htdp-lang-use-number-snip]
@@ -287,81 +287,83 @@ WARNING: printf is rebound in the mosdule to always print
                    (oe annotated)))])
           teaching-language-eval-handler))
       
+      (define simple-htdp-language%
+        (class* drscheme:language:simple-module-based-language% (htdp-language<%>)
+          (init-field sharing-printing
+                      abbreviate-cons-as-list
+                      allow-sharing?)
+          (define/public (get-sharing-printing) sharing-printing)
+          (define/public (get-abbreviate-cons-as-list) abbreviate-cons-as-list)
+          (define/public (get-allow-sharing?) allow-sharing?)
+          (super-instantiate ())))
+
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;                                                                  ;;
       ;;                     put it all together                          ;;
       ;;                                                                  ;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       
-      ;; add-htdp-language : (implements htdp-language<%>) -> void
-      (define (add-htdp-language class%)
-        (let ([% (drscheme:language:module-based-language->language-mixin
-                  (module-based-language-extension
-                   (drscheme:language:simple-module-based-language->module-based-language-mixin
-                    class%)))])
-          (drscheme:language-configuration:add-language
-           (make-object %)
-           #t)))
+      (define htdp-language%
+        (drscheme:language:module-based-language->language-mixin
+         (module-based-language-extension
+          (drscheme:language:simple-module-based-language->module-based-language-mixin
+           simple-htdp-language%))))
+
+      ;; add-htdp-language : (instanceof htdp-language<%>) -> void
+      (define (add-htdp-language o)
+        (drscheme:language-configuration:add-language o))
 
       (add-htdp-language
-       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>) 
-         (public get-module
-                 get-language-position
-                 sharing-printing
-                 abbreviate-cons-as-list
-                 allow-sharing?)
-         (define (get-module) '(lib "advanced.ss" "lang"))
-         (define (get-language-position)
-           (list (string-constant how-to-design-programs)
-                 (string-constant advanced-student)))
-         (define (sharing-printing) #t)
-         (define (abbreviate-cons-as-list) #t)
-         (define (allow-sharing?) #t)
-         (super-instantiate ())))
+       (instantiate htdp-language% ()
+         (sharing-printing #t)
+         (abbreviate-cons-as-list #t)
+         (allow-sharing? #t)
+         (language-numbers '(-500 5))
+         (module '(lib "big.ss" "lang"))
+         (language-position
+          (list (string-constant how-to-design-programs)
+                (string-constant full-language)))))
       
       (add-htdp-language
-       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>) 
-         (public get-module
-                 get-language-position
-                 sharing-printing
-                 abbreviate-cons-as-list
-                 allow-sharing?)
-         (define (get-module) '(lib "intermediate.ss" "lang"))
-         (define (get-language-position)
+       (instantiate htdp-language% ()
+         (module '(lib "advanced.ss" "lang"))
+         (language-position
+          (list (string-constant how-to-design-programs)
+                (string-constant advanced-student)))
+         (language-numbers '(-500 4))
+         (sharing-printing #t)
+         (abbreviate-cons-as-list #t)
+         (allow-sharing? #t)))
+      
+      (add-htdp-language
+       (instantiate htdp-language% ()
+         (module '(lib "intermediate.ss" "lang"))
+         (language-position
            (list (string-constant how-to-design-programs)
                  (string-constant intermediate-student)))
-         (define (sharing-printing) #f)
-         (define (abbreviate-cons-as-list) #t)
-         (define (allow-sharing?) #f)
-         (super-instantiate ())))
+         (language-numbers '(-500 3))
+         (sharing-printing #f)
+         (abbreviate-cons-as-list #t)
+         (allow-sharing? #f)))
       
       (add-htdp-language
-       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>)
-         (public get-module
-                 get-language-position
-                 sharing-printing
-                 abbreviate-cons-as-list
-                 allow-sharing?)
-         (define (get-module) '(lib "beginner-abbr.ss" "lang"))
-         (define (get-language-position)
+       (instantiate htdp-language% ()
+         (module '(lib "beginner-abbr.ss" "lang"))
+         (language-position
            (list (string-constant how-to-design-programs)
                  (string-constant beginning-student/abbrev)))
-         (define (sharing-printing) #f)
-         (define (abbreviate-cons-as-list) #t)
-         (define (allow-sharing?) #f)
-         (super-instantiate ())))
+         (language-numbers '(-500 2))
+         (sharing-printing #f)
+         (abbreviate-cons-as-list #t)
+         (allow-sharing? #f)))
       
       (add-htdp-language
-       (class* object% (htdp-language<%> drscheme:language:simple-module-based-language<%>)
-         (public get-module
-                 get-language-position
-                 sharing-printing
-                 abbreviate-cons-as-list
-                 allow-sharing?)
-         (define (get-module) '(lib "beginner.ss" "lang"))
-         (define (get-language-position) (list (string-constant how-to-design-programs)
-                                               (string-constant beginning-student)))
-         (define (sharing-printing) #f)
-         (define (abbreviate-cons-as-list) #f)
-         (define (allow-sharing?) #f)
-         (super-instantiate ()))))))
+       (instantiate htdp-language% ()
+         (module '(lib "beginner.ss" "lang"))
+         (language-position
+           (list (string-constant how-to-design-programs)
+                 (string-constant beginning-student)))
+         (language-numbers '(-500 1))
+         (sharing-printing #f)
+         (abbreviate-cons-as-list #f)
+         (allow-sharing? #f))))))

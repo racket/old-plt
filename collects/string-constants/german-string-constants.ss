@@ -10,6 +10,7 @@
   "Sind Sie sicher, dass Sie die Sprache der GUI wechseln wollen? (Wenn ja, muss DrScheme neugestartet werden)")
  
  ;;; general purpose (DrScheme is hereby a word in every language, by decree of Robby :)
+ (plt "PLT")
  (drscheme "DrScheme")
  (ok "OK")
  (cancel "Abbruch")

@@ -140,18 +140,19 @@
   (define (get-item-property obj item)
     (cond
      [(and (list? item)
-	   (= 2 (length item)))
-      (mxprims:com-get-property obj (car item) (cadr item))]
+	   (string? (car item))
+	   (= (length item) 2)) ; apparently, can only use one ppty index
+      (apply mxprims:com-get-property obj item)]
      [(string? item)
       (mxprims:com-get-property obj item)]
      [else
-      (error "For COM property name, expected a string or a string/value pair")]))
+      (error "For COM property, expected a string or a 2-element list with a string a the first element")]))
 
   (define (com-get-property obj . path)
     (cond 
      [(null? path) 
       (error 'com-get-property
-	     "Expected one or more property names (strings), or name/value pairs")]
+	     "Expected one or more properties (strings or 2-element lists with a string as the first element)")]
      [(null? (cdr path))
       (get-item-property obj (car path))]
      [else (apply com-get-property
@@ -163,12 +164,18 @@
      [(or (null? path-and-value) 
 	  (null? (cdr path-and-value)))
       (error 'com-set-property!
-	     "Expected one or more property names (strings) and a value")]
-     [(null? (cddr path-and-value))
-      (let ([item (car path-and-value)])
-	(if (list? item)
-	    (mxprims:com-set-property! obj (car item) (cadr item) (cadr path-and-value))
-	    (mxprims:com-set-property! obj item (cadr path-and-value))))]
+	     "Expected one or more properties (strings or lists with a string as the first element) and a value")]
+     [(null? (cddr path-and-value)) ; (property value)
+      (let ([ppty (car path-and-value)]
+	    [val (cadr path-and-value)])
+	(if (list? ppty)
+	    (if (and (string? (car ppty))
+		     (= 2 (length ppty)))
+		(apply mxprims:com-set-property! obj 
+		       (append ppty (list val)))
+		(error 'com-set-property! 
+		       "Indexed property must be a 2-element list with a string (property name) as the first element"))
+	    (mxprims:com-set-property! obj ppty val)))]
      [else (apply com-set-property!
 		  (get-item-property obj (car path-and-value))
 		  (cdr path-and-value))]))

@@ -1212,7 +1212,7 @@
 				(if (null? rest)
 				  (cond-clause-answer first)
 				  (static-error (cond-clause-text first)
-				    "else only allowed in last position")))
+				    "else allowed only in last position")))
 			      (else
 				`(if ,(cond-clause-question first)
 				   ,(cond-clause-answer first)

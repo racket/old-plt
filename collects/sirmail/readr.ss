@@ -16,6 +16,7 @@
 	   (lib "head-sig.ss" "net")
 	   (lib "base64-sig.ss" "net")
 	   (lib "mime-sig.ss" "net")
+	   (lib "qp-sig.ss" "net")
            (lib "htmltext.ss" "browser"))
 
   (require (lib "hierlist-sig.ss" "hierlist"))
@@ -35,6 +36,7 @@
 	      net:head^
 	      net:base64^
 	      (mime : net:mime^)
+	      net:qp^
 	      hierlist^
 	      (install-text-functions)
 	      (install-emacs-bindings))
@@ -185,6 +187,20 @@
 	     (imap-force-disconnect connection)
 	     (set! connection #f)))))
       
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;  Decoding `from' names                                  ;;
+      ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+      (define re:iso (regexp "=[?]iso-8859-1[?]Q[?](.*)[?]="))
+      (define (parse-iso-8859-1 s)
+	(and s
+	     (let ([m (regexp-match re:iso s)])
+	       (if m
+		   (let ([s (qp-decode (cadr m))])
+		     ;; strip newline:
+		     (substring s 0 (sub1 (string-length s))))
+		   s))))
+
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Mailbox actions                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -939,7 +955,8 @@
 	  (send e insert sep)
 	  (send e insert subject)
 	  (send (send from get-editor) insert 
-		(one-line (or (message-from m) "<unknown>")))
+		(one-line (or (parse-iso-8859-1 (message-from m))
+			      "<unknown>")))
 	  (send (send subject get-editor) insert 
 		(one-line (or (message-subject m) no-subject-string)))
 	  (unless (message-downloaded? m)
@@ -1284,8 +1301,8 @@
                                 [mb (assq bid mailbox)])
                             (let ([c ((cadar fields) 
                                       aid bid
-                                      (message-from ma)
-                                      (message-from mb))])
+                                      (parse-iso-8859-1 (message-from ma))
+                                      (parse-iso-8859-1 (message-from mb)))])
                               (if (eq? c 'same)
                                   (< aid bid)
                                   c)))]
@@ -1576,7 +1593,6 @@
 	  (send last select #t)
 	  (queue-callback (lambda () (send last scroll-to)))))
 
-      
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;;  Message Parsing                                        ;;
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1865,7 +1881,7 @@
 	       (if quote-in-reply?
 		   (string-append
 		    (format "Quoting ~a:~a" 
-			    (let ([from (extract-field "From" h)])
+			    (let ([from (parse-iso-8859-1 (extract-field "From" h))])
 			      (let ([name (with-handlers ([void (lambda (x) #f)])
 					    (car (extract-addresses from 'name)))])
 				(or name "<unknown>")))

@@ -9,7 +9,8 @@
 	  (lib "smtp-sig.ss" "net")
 	  (lib "head-sig.ss" "net")
 	  (lib "base64-sig.ss" "net")
-	  (lib "mime-sig.ss" "net"))
+	  (lib "mime-sig.ss" "net")
+	  (lib "qp-sig.ss" "net"))
 
   (require (lib "hierlist-sig.ss" "hierlist"))
 
@@ -28,6 +29,7 @@
 	     (HEAD : net:head^)
 	     (BASE64 : net:base64^)
 	     (MIME : net:mime^)
+	     (QP : net:qp^)
 	     (HIER : hierlist^)
 	     (TXT : (install-text-functions))
 	     (EMACS : (install-emacs-bindings)))
@@ -42,7 +44,7 @@
 	   [READ : sirmail:read^
 		 (read@
 		  OPTIONS ENV UTILS SEND
-		  MRED IMAP SMTP HEAD BASE64 MIME HIER
+		  MRED IMAP SMTP HEAD BASE64 MIME QP HIER
 		  TXT EMACS)]
 	   [SEND : sirmail:send^
 		 (send@

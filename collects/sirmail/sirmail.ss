@@ -20,11 +20,13 @@
 	   (lib "head-sig.ss" "net")
 	   (lib "base64-sig.ss" "net")
 	   (lib "mime-sig.ss" "net")
+	   (lib "qp-sig.ss" "net")
 	   (lib "imap.ss" "net")
 	   (lib "smtp.ss" "net")
 	   (lib "head.ss" "net")
 	   (lib "base64.ss" "net")
-	   (lib "mime.ss" "net"))
+	   (lib "mime.ss" "net")
+	   (lib "qp.ss" "net"))
 
   (require (lib "hierlist-sig.ss" "hierlist")
 	   (lib "hierlist.ss" "hierlist"))
@@ -84,6 +86,7 @@
 	  net:head^
 	  net:base64^
 	  net:mime^
+	  net:qp^
 	  hierlist^
 	  (install-text-functions)
 	  (install-emacs-bindings))))]))

@@ -466,42 +466,6 @@
   (define (check-contract contract val pos neg src-info)
     (cond
       [(contract? contract)
-       ((contract-f contract) 
-        val
-        (lambda (rev-contract) (check-contract rev-contract val neg pos src-info))
-        (lambda (same-contract) (check-contract same-contract val pos neg src-info))
-        (lambda () (raise-contract-error
-                    src-info
-                    pos
-                    neg
-                    "expected type <~a>, given: ~e"
-                    (flat-named-contract-type-name contract)
-                    val))
-        (lambda (v) v))]
-      [(flat-named-contract? contract)
-       (if ((flat-named-contract-predicate contract) val)
-           val
-           (raise-contract-error
-            src-info
-            pos
-	    neg
-            "expected type <~a>, given: ~e"
-	    (flat-named-contract-type-name contract)
-	    val))]
-      [else
-       (if (contract val)
-           val
-           (raise-contract-error
-            src-info
-            pos
-	    neg
-            "~agiven: ~e"
-	    (predicate->expected-msg contract)
-	    val))]))
-  
-  (define (check-implication contract1 contract2 val tbb src-info)
-    (cond
-      [(contract? contract)
        ((contract-f contract) val pos neg src-info)]
       [(flat-named-contract? contract)
        (if ((flat-named-contract-predicate contract) val)
@@ -553,9 +517,8 @@
   ;;                            sym
   ;;                            sym
   ;;                            (union syntax #f)
-  ;;                            (contract beta sym sym (union syntax #f) -> beta)
   ;;                            -> 
-  ;;                            beta))
+  ;;                            alpha))
   ;; generic contract container; 
   ;; the first argument to f is the value to test the contract.
   ;; the second to f is a symbol representing the name of the positive blame
@@ -840,7 +803,7 @@
                      (error '->* "expected contract as argument, given: ~e" rng-x)) ...
                    body))))
             (lambda (stx)
-              (with-syntax ([(val check-rev-contract check-same-contract) stx])
+              (with-syntax ([(val pos-blame neg-blame src-info) stx])
                 (syntax
                  (unless (and (procedure? val)
                               (procedure-arity-includes? val arity))
@@ -857,11 +820,14 @@
                  ((arg-x ...)
                   (let-values ([(res-x ...)
                                 (val
-                                 (check-rev-contract dom-x arg-x)
+                                 (check-contract dom-x arg-x neg-blame pos-blame src-info)
                                  ...)])
-                    (values (check-same-contract
+                    (values (check-contract
                              rng-x
-                             res-x)
+                             res-x
+                             pos-blame
+                             neg-blame
+                             src-info)
                             ...))))))))]
         [(_ (dom ...) rest (rng ...))
          (with-syntax ([(dom-x ...) (generate-temporaries (syntax (dom ...)))]

@@ -1337,7 +1337,7 @@ static long tcp_get_string(Scheme_Input_Port *port,
 # ifdef USE_WINSOCK_TCP
 #  define RECV_NOT_READY(e) ((e == WSAEWOULDBLOCK) || (e == WSAEINPROGRESS))
 # else
-#  define RECV_NOT_READY(e) ((errid == EWOULDBLOCK) || (errid == EAGAIN))
+#  define RECV_NOT_READY(e) ((e == EWOULDBLOCK) || (e == EAGAIN))
 # endif
   if (RECV_NOT_READY(errid))
     goto top;

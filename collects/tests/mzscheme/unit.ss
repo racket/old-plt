@@ -445,7 +445,15 @@
 		  (import)
 		  (export)
 		  (define define-values 10))))
-
+(test 10 'invoke-w/shadowed 
+      (let ([define-values 5])
+	(invoke-unit
+	 (unit
+	   (import)
+	   (export)
+	   (define define-values 10)
+	   define-values))))
+	
 ; Not ok if defining an imported name, but error should be about
 ; redefining an imported name. (This behavior is not actually tested.)
 (syntax-test '(unit 

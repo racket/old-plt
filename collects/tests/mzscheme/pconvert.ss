@@ -13,7 +13,7 @@
 (define (xu) (unit (import) (export)))
 (define (xc) (class object% () (sequence (super-init))))
 
-(init
+(let ()
   (define-struct test (value constructor-sexp
 			     whole/frac-constructor-sexp
 			     shared-constructor-sexp
@@ -179,8 +179,8 @@
 		       xl-ID-BETTER-NOT-BE-DEFINED)
 		     '(lambda () ...))
      (make-same-test xc 'xc)
-     (make-same-test (letrec ([xc (class '() ())]) xc) '(class ...))
-     (make-same-test (letrec ([xc-ID-BETTER-NOT-BE-DEFINED (class '() ())]) 
+     (make-same-test (letrec ([xc (class object% ())]) xc) '(class ...))
+     (make-same-test (letrec ([xc-ID-BETTER-NOT-BE-DEFINED (class object% ())]) 
 		       xc-ID-BETTER-NOT-BE-DEFINED)
 		     '(class ...))
      (make-same-test xu 'xu)
@@ -307,7 +307,7 @@
 			   -0-))))
   (for-each run-test tests))
 
-(begin
+(let ()
   (define make-test-shared
     (lambda (shared?)
       (lambda (object output)
@@ -336,9 +336,9 @@
   (test-not-shared 'x ''x)
   (test-not-shared (lambda (x) x) '(lambda (a1) ...))
   (test-not-shared (make-promise (lambda () 1)) '(delay ...))
-  (test-not-shared (class () ()) '(class ...))
+  (test-not-shared (class object% ()) '(class ...))
   (test-not-shared (unit (import) (export)) '(unit ...))
-  (test-not-shared (make-object (class () ())) '(make-object (class ...) ...))
+  (test-not-shared (make-object (class object% () (sequence (super-init)))) '(make-object (class ...) ...))
 
   (test-shared "abc" "abc")
   (test-shared (list 1 2 3) '(list 1 2 3))

@@ -112,12 +112,15 @@ wxFont::~wxFont()
   COUNT_M(font_count);
 }
 
+#if 0
 typedef ???? (WINAPI *wxGET_GLYPH_INDICES_PROC)(HANDLE, HDC, ???);
 static wxGET_GLYPH_INDICES_PROC wxGetGlyphIndices;
 static int indices_tried = 0;
+#endif
 
 static int glyph_exists_in_selected_font(HDC hdc, int c)
 {
+#if 0
   GCP_RESULTSW gcp;
   wchar_t s[2], gl[2];
   char classes[2];
@@ -154,6 +157,8 @@ static int glyph_exists_in_selected_font(HDC hdc, int c)
 	    && (gcp.nGlyphs == 2)
 	    && (gl[0] != gl[1]));
   }
+#endif
+  return 1;
 }
 
 typedef struct {
@@ -166,9 +171,10 @@ static int CALLBACK glyph_exists(ENUMLOGFONT FAR* lpelf,
 				 DWORD type, 
 				 LPARAM _data)
 {
+#if 0
   GlyphFindData *gfd = (GlyphFindData *)_data;
 
-  if (...) {
+  if (0) {
     HFONT old, cfont;
     int ok;
 
@@ -187,6 +193,8 @@ static int CALLBACK glyph_exists(ENUMLOGFONT FAR* lpelf,
   }
 
   return 1;
+#endif
+  return 0;
 }
 
 Bool wxFont::GlyphAvailable(int c, HDC hdc)

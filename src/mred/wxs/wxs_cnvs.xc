@@ -39,6 +39,7 @@ static void wxSetBackgroundToGray(wxCanvas *c)
 @SYM "gl" : 0
 @SYM "no-autoclear" : wxNO_AUTOCLEAR
 @SYM "deleted" : wxINVISIBLE
+@SYM "transparent" : wxTRANSPARENT_WIN
 @ENDSYMBOLS
 
 @INCLUDE wxs_ornt.xci

@@ -49,13 +49,16 @@ static Scheme_Object *read_char (int, Scheme_Object *[]);
 static Scheme_Object *read_char_spec (int, Scheme_Object *[]);
 static Scheme_Object *read_line (int, Scheme_Object *[]);
 static Scheme_Object *sch_read_string (int, Scheme_Object *[]);
+static Scheme_Object *sch_read_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *sch_peek_string (int, Scheme_Object *[]);
+static Scheme_Object *sch_peek_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang_nonblock (int, Scheme_Object *[]);
 static Scheme_Object *read_string_bang_break (int, Scheme_Object *[]);
 static Scheme_Object *peek_string_bang (int, Scheme_Object *[]);
 static Scheme_Object *peek_string_bang_nonblock (int, Scheme_Object *[]);
 static Scheme_Object *peek_string_bang_break (int, Scheme_Object *[]);
+static Scheme_Object *write_string(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_string_avail(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_string_avail_nonblock(int argc, Scheme_Object *argv[]);
 static Scheme_Object *write_string_avail_break(int argc, Scheme_Object *argv[]);
@@ -340,10 +343,20 @@ scheme_init_port_fun(Scheme_Env *env)
 						      "read-string", 
 						      1, 2), 
 			     env);
+  scheme_add_global_constant("read-string!", 
+			     scheme_make_prim_w_arity(sch_read_string_bang, 
+						      "read-string!", 
+						      1, 4), 
+			     env);
   scheme_add_global_constant("peek-string", 
 			     scheme_make_prim_w_arity(sch_peek_string, 
 						      "peek-string", 
 						      2, 3), 
+			     env);
+  scheme_add_global_constant("peek-string!", 
+			     scheme_make_prim_w_arity(sch_peek_string_bang, 
+						      "peek-string!", 
+						      2, 5), 
 			     env);
   scheme_add_global_constant("read-string-avail!", 
 			     scheme_make_prim_w_arity(read_string_bang, 
@@ -374,6 +387,11 @@ scheme_init_port_fun(Scheme_Env *env)
 			     scheme_make_prim_w_arity(peek_string_bang_break, 
 						      "peek-string-avail!/enable-break", 
 						      2, 5), 
+			     env);
+  scheme_add_global_constant("write-string", 
+			     scheme_make_prim_w_arity(write_string, 
+						      "write-string", 
+						      1, 4),
 			     env);
   scheme_add_global_constant("write-string-avail", 
 			     scheme_make_prim_w_arity(write_string_avail, 
@@ -2350,9 +2368,21 @@ sch_read_string(int argc, Scheme_Object *argv[])
 }
 
 static Scheme_Object *
+sch_read_string_bang(int argc, Scheme_Object *argv[])
+{
+  return do_general_read_string("read-string!", argc, argv, 0, 0, 0);
+}
+
+static Scheme_Object *
 sch_peek_string(int argc, Scheme_Object *argv[])
 {
   return do_general_read_string("peek-string", argc, argv, 1, 0, 1);
+}
+
+static Scheme_Object *
+sch_peek_string_bang(int argc, Scheme_Object *argv[])
+{
+  return do_general_read_string("peek-string!", argc, argv, 0, 0, 1);
 }
 
 static Scheme_Object *
@@ -2413,6 +2443,12 @@ do_write_string_avail(const char *who, int argc, Scheme_Object *argv[], int rare
     return scheme_false;
   else
     return scheme_make_integer(putten);
+}
+
+static Scheme_Object *
+write_string(int argc, Scheme_Object *argv[])
+{
+  return do_write_string_avail("write-string", argc, argv, 0);
 }
 
 static Scheme_Object *

@@ -202,6 +202,7 @@ wxMediaCanvas::wxMediaCanvas(wxWindow *parent,
 	    + wxOVERRIDE_KEY_TRANSLATIONS 
 	    + INIT_SB 
 	    + (style & wxINVISIBLE ? wxINVISIBLE : 0)
+	    + (style & wxTRANSPARENT_WIN ? wxTRANSPARENT_WIN : 0)
 	    + (style & wxCONTROL_BORDER ? wxCONTROL_BORDER : 0)), 
 	   name)
 {

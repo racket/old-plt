@@ -107,6 +107,7 @@ static Scheme_Object *string_unicode_index (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_unicode_ref (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_unicode_length (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_copy (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_copy_bang (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_fill (int argc, Scheme_Object *argv[]);
 static Scheme_Object *string_to_immutable (int argc, Scheme_Object *argv[]);
 static Scheme_Object *version(int argc, Scheme_Object *argv[]);
@@ -312,6 +313,11 @@ scheme_init_string (Scheme_Env *env)
 			     scheme_make_prim_w_arity(string_copy,
 						      "string-copy",
 						      1, 1),
+			     env);
+  scheme_add_global_constant("string-copy!", 
+			     scheme_make_prim_w_arity(string_copy_bang,
+						      "string-copy!",
+						      4, 5),
 			     env);
   scheme_add_global_constant("string-fill!", 
 			     scheme_make_prim_w_arity(string_fill,
@@ -1199,6 +1205,40 @@ string_copy (int argc, Scheme_Object *argv[])
   naya = scheme_make_sized_string(SCHEME_STR_VAL(argv[0]), 
 				  SCHEME_STRTAG_VAL(argv[0]), 1);
   return naya;
+}
+
+static Scheme_Object *
+string_copy_bang(int argc, Scheme_Object *argv[])
+{
+  long istart, ifinish;
+  long ostart, ofinish;
+
+  if (!SCHEME_STRINGP(argv[0]))
+    scheme_wrong_type("string-copy!", "string", 0, argc, argv);
+
+  scheme_get_substring_indices("string-copy!", argv[0], 
+			       argc, argv, 1, 2, 
+			       &istart, &ifinish);
+
+  if (!SCHEME_MUTABLE_STRINGP(argv[3]))
+    scheme_wrong_type("string-copy!", "mutable-string", 3, argc, argv);
+
+  scheme_get_substring_indices("string-copy!", argv[3], 
+			       argc, argv, 4, 5, 
+			       &ostart, &ofinish);
+
+  if (ofinish - ostart > ifinish - istart) {
+    scheme_arg_mismatch("string-copy!",
+			"not enough room in output string: ",
+			argv[3]);
+    return NULL;
+  }
+
+  memmove(SCHEME_STR_VAL(argv[3]) + ostart,
+	  SCHEME_STR_VAL(argv[0]) + istart,
+	  ifinish - istart);
+  
+  return scheme_void;
 }
 
 static Scheme_Object *

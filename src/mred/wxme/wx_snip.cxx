@@ -606,7 +606,7 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 #endif
 
   if (i < 0) {
-    dc->GetTextExtent((char *)buffer, &_w, &h, NULL, NULL, font, TRUE, dtext);
+    dc->GetTextExtent((char *)buffer, &_w, &h, NULL, NULL, font, FALSE, TRUE, dtext);
   } else {
     /* text includes null chars */
     float ex_w;
@@ -624,7 +624,7 @@ void wxTextSnip::GetTextExtent(wxDC *dc, int count, float *wo)
 	  float piece_w, h;
 	  wxchar save = buffer[dtext + i];
 	  buffer[dtext + i] = 0;
-	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, TRUE, dtext + start);
+	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, FALSE, TRUE, dtext + start);
 	  buffer[dtext + i] = save;
 	  _w += piece_w;
 	}
@@ -720,7 +720,7 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
   }
   
   if (i < 0)
-    dc->DrawText((char *)buffer, x, y, TRUE, dtext);
+    dc->DrawText((char *)buffer, x, y, FALSE, TRUE, dtext);
   else {
     /* text includes null chars */
     float px, h, ex_w;
@@ -735,8 +735,8 @@ void wxTextSnip::Draw(wxDC *dc, float x, float y,
 	  float piece_w, h;
 	  wxchar save = buffer[dtext + i];
 	  buffer[dtext + i] = 0;
-	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, TRUE, dtext + start);
-	  dc->DrawText((char *)buffer, px, y, TRUE, dtext + start);
+	  dc->GetTextExtent((char *)buffer, &piece_w, &h, NULL, NULL, NULL, FALSE, TRUE, dtext + start);
+	  dc->DrawText((char *)buffer, px, y, FALSE, TRUE, dtext + start);
 	  buffer[dtext + i] = save;
 	  px += piece_w;
 	}

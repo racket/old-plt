@@ -64,6 +64,7 @@ static Scheme_Object *canvasStyle_wxHSCROLL_sym = NULL;
 static Scheme_Object *canvasStyle_0_sym = NULL;
 static Scheme_Object *canvasStyle_wxNO_AUTOCLEAR_sym = NULL;
 static Scheme_Object *canvasStyle_wxINVISIBLE_sym = NULL;
+static Scheme_Object *canvasStyle_wxTRANSPARENT_WIN_sym = NULL;
 
 static void init_symset_canvasStyle(void) {
   REMEMBER_VAR_STACK();
@@ -81,12 +82,14 @@ static void init_symset_canvasStyle(void) {
   canvasStyle_wxNO_AUTOCLEAR_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("no-autoclear"));
   wxREGGLOB(canvasStyle_wxINVISIBLE_sym);
   canvasStyle_wxINVISIBLE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("deleted"));
+  wxREGGLOB(canvasStyle_wxTRANSPARENT_WIN_sym);
+  canvasStyle_wxTRANSPARENT_WIN_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("transparent"));
 }
 
 static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   SETUP_VAR_STACK(1);
   VAR_STACK_PUSH(0, v);
-  if (!canvasStyle_wxINVISIBLE_sym) WITH_VAR_STACK(init_symset_canvasStyle());
+  if (!canvasStyle_wxTRANSPARENT_WIN_sym) WITH_VAR_STACK(init_symset_canvasStyle());
   Scheme_Object *i INIT_NULLED_OUT, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
@@ -99,6 +102,7 @@ static int unbundle_symset_canvasStyle(Scheme_Object *v, const char *where) {
   else if (i == canvasStyle_0_sym) { result = result | 0; }
   else if (i == canvasStyle_wxNO_AUTOCLEAR_sym) { result = result | wxNO_AUTOCLEAR; }
   else if (i == canvasStyle_wxINVISIBLE_sym) { result = result | wxINVISIBLE; }
+  else if (i == canvasStyle_wxTRANSPARENT_WIN_sym) { result = result | wxTRANSPARENT_WIN; }
   else { break; } 
   l = SCHEME_CDR(l);
   }

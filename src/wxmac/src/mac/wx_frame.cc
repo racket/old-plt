@@ -311,6 +311,23 @@ void wxFrame::Maximize(Bool maximize)
 		cMaximized = maximize;
 
 		wxMacRecalcNewSize();
+		
+		if (cStatusPanel) {
+ 		  int theMacWidth = cWindowWidth - PlatformArea()->Margin().Offset(Direction::wxHorizontal);
+		  int theMacHeight = cWindowHeight - PlatformArea()->Margin().Offset(Direction::wxVertical);
+		  Rect r = {0, 0, 32000, 32000};
+ 		  cStatusPanel->SetCurrentDC();
+ 		  EraseRect(&r);
+ 		  
+ 		  cStatusPanel->SetSize(0, theMacHeight - cStatusPanel->Height(),
+ 		  	                    theMacWidth, -1);
+ 		  int w, h;
+ 		  cStatusPanel->GetClientSize(&w, &h);
+ 		  cStatusText->SetSize(-1, -1, w, -1);
+
+ 		  cStatusPanel->SetCurrentDC();
+ 		  EraseRect(&r);
+ 		}
 	
 		int dW = cWindowWidth - oldWindowWidth;
 		int dH = cWindowHeight - oldWindowHeight;
@@ -370,7 +387,7 @@ void wxFrame::CreateStatusLine(int number, char* name)
 
 	wxMargin clientAreaMargin = ClientArea()->Margin(wxScreen::gScreenWindow);
     clientAreaMargin.SetMargin(clientAreaMargin.Offset(Direction::wxBottom) 
-    	                        + statusLineHeight, 
+    	                        + statusLineHeight - 1, 
  							   	Direction::wxBottom);
 	ClientArea()->SetMargin(clientAreaMargin);
 	OnSize(cWindowWidth, cWindowHeight);
@@ -805,7 +822,7 @@ void wxFrame::Paint(void)
               Rect growRect = {theMacHeight - 15, theMacWidth - 15, theMacHeight, theMacWidth};
               RectRgn(borderRgn, &growRect);
 		    }
-		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight);
+		    SetRectRgn(rgn, 0, 0, cWindowWidth, cWindowHeight + 1);
 			AddWhiteRgn(subrgn);
 			DiffRgn(rgn, subrgn, rgn);
 			DiffRgn(rgn, borderRgn, rgn);
@@ -826,23 +843,17 @@ void wxFrame::Paint(void)
 	wxWindow::Paint();
 	if (cStatusPanel) {
 	  int statusLineHeight = cStatusPanel->Height();
-	  wxMargin clientAreaMargin = ClientArea()->Margin(wxScreen::gScreenWindow);
-	  clientAreaMargin.SetMargin(clientAreaMargin.Offset(Direction::wxBottom) 
-    	                         - statusLineHeight, 
- 							   	 Direction::wxBottom);
-	  ClientArea()->SetMargin(clientAreaMargin);
 
 	  int w, h;
 	  cStatusPanel->GetSize(&w, &h);
 
 	  cStatusPanel->SetCurrentDC();
-	  Rect r = { 0, 0, h, w };
+      Rect r = { -1, 0, h + 1, w };
+      
+      ClipRect(&r); /* hack! */
+      
 	  EraseRect(&r);
 	  cStatusPanel->Paint();
-	  clientAreaMargin.SetMargin(clientAreaMargin.Offset(Direction::wxBottom) 
-    	                         + statusLineHeight, 
- 							   	 Direction::wxBottom);
- 	  ClientArea()->SetMargin(clientAreaMargin);
     }
  	// SetCurrentDC();
  	// If the right type of Window: MacDrawGrowIcon();

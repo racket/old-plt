@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.18 1999/01/09 18:15:02 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.19 1999/01/14 22:24:11 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -330,8 +330,10 @@ void wxWindowDC::DrawArc(float x, float y, float w, float h, float start, float 
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
-    int xx = XLOG2DEV(x); int yy = XLOG2DEV(y);
-    int ww = XLOG2DEVREL(w); int hh = XLOG2DEVREL(h);
+    float xw = x + w, yh = y + h;
+
+    int xx = XLOG2DEV(x);       int yy = XLOG2DEV(y);
+    int ww = XLOG2DEV(xw) - xx; int hh = XLOG2DEVREL(yh) - yy;
     double degrees1, degrees2;
     degrees1 = start * RAD2DEG;
     degrees2 = end * RAD2DEG;
@@ -512,12 +514,18 @@ void wxWindowDC::DrawRectangle(float x, float y, float w, float h)
     /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
     
+    int x1, y1, w1, h1;
+    float xw = x + w, yh = y + h;
+   
+    x1 = XLOG2DEV(x);
+    y1 = YLOG2DEV(y);
+    w1 = XLOG2DEV(xw) - x1;
+    h1 = XLOG2DEV(yh) - y1;
+
     if (current_brush && current_brush->GetStyle() != wxTRANSPARENT)
-	XFillRectangle(DPY, DRAWABLE, BRUSH_GC, XLOG2DEV(x), YLOG2DEV(y),
-		       XLOG2DEVREL(w), YLOG2DEVREL(h));
+      XFillRectangle(DPY, DRAWABLE, BRUSH_GC, x1, y1, w1, h1);
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawRectangle(DPY, DRAWABLE, PEN_GC, XLOG2DEV(x), YLOG2DEV(y),
-		       XLOG2DEVREL(w) - WX_GC_CF, YLOG2DEVREL(h) - WX_GC_CF);
+      XDrawRectangle(DPY, DRAWABLE, PEN_GC, x1, y1, w1 - WX_GC_CF, h1 - WX_GC_CF);
     CalcBoundingBox(x, y);
     CalcBoundingBox(x+w, y+h);
 }
@@ -532,9 +540,12 @@ void wxWindowDC::DrawRoundedRectangle(float x, float y, float w, float h,
     FreeGetPixelCache();
     
     if (radius < 0.0)
-	radius = - radius * ((w < h) ? w : h);
-    int xx = XLOG2DEV(x);    int yy = YLOG2DEV(y);
-    int ww = XLOG2DEVREL(w); int hh = YLOG2DEVREL(h);
+      radius = - radius * ((w < h) ? w : h);
+
+    float xw = x + w, yh = y + h;
+
+    int xx = XLOG2DEV(x);       int yy = YLOG2DEV(y);
+    int ww = XLOG2DEV(xw) - xx; int hh = YLOG2DEV(yh) - yy;
     int rr = XLOG2DEVREL(radius);
     int dd = 2 * rr;
 

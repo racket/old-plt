@@ -431,7 +431,7 @@
 		 (unless (void? v)
 		   (with-parameterization user-parameterization
 		     (lambda ()
-		       (display v this-result)))))]
+		       (write v this-result)))))]
 	      [eval-and-display
 	       (lambda (str)
 		 (catch-errors
@@ -444,7 +444,20 @@
 			 (dynamic-enable-break
 			  (lambda ()
 			    (eval-str str))))))
-		   (lambda v (map display-result v)))))])
+		   (lambda v
+		     (let ([v
+			    (let loop ([v v])
+			      (cond
+			       [(null? v) null]
+			       [(void? (car v)) (loop (cdr v))]
+			       [else (cons (car v) (loop (cdr v)))]))])
+		       (if (null? v)
+			   (void)
+			   (begin (display-result (car v))
+				  (for-each (lambda (x)
+					      (newline this-result)
+					      (display-result x))
+					    (cdr v)))))))))])
 	    
 	    (private
 	      [only-spaces-after

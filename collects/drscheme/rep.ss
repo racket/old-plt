@@ -166,10 +166,9 @@
 	    [user-eval
 	     (let* ([primitive-eval (current-eval)])
 	       (lambda (expr)
-		 (let ([ans (with-parameterization param
-			      (lambda ()
-				(primitive-eval expr)))])
-		   ans)))]
+		 (with-parameterization param
+		   (lambda ()
+		     (primitive-eval expr)))))]
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (get-expr [before void] [after void])
@@ -182,13 +181,21 @@
 			   (call-with-values
 			    (lambda () (user-eval (get-expr)))
 			    (lambda anss
-			      (for-each
-			       (lambda (ans)
-				 (display-result
-				  (if (eq? print-style 'r4rs-style)
-				      ans
-				      (print-convert:print-convert ans))))
-			       anss))))])
+			      (let ([anss (let loop ([v anss])
+					    (cond
+					     [(null? v) null]
+					     [(void? (car v)) (loop (cdr v))]
+					     [else (cons (car v) (loop (cdr v)))]))])
+				(if (null? anss)
+				    (void)
+				    (let ([f (lambda (ans)
+					       (display-result
+						(if (eq? print-style 'r4rs-style)
+						    ans
+						    (print-convert:print-convert ans))))])
+				      (f (car anss))
+				      (for-each (lambda (x) (newline this-result) (f x))
+						(cdr anss))))))))])
 		   (set! current-thread-desc
 			 (thread
 			  (lambda ()

@@ -319,10 +319,16 @@ static double DrawMeasLatin1Text(const char *text, int d, int theStrlen, int bit
 				  &layout);
 
   {
+#if 1
+    /* We write down a literal constant because the 10.1
+       headers are broken. */
+    ll_attribs = 0x11f4040;
+#else
     ll_attribs = (kATSLineFractDisable 
 		  | kATSLineDisableAutoAdjustDisplayPos
 		  | kATSLineDisableAllLayoutOperations
 		  | kATSLineUseDeviceMetrics);
+#endif
     ll_theValues[0] = &ll_attribs;
     ATSUSetLayoutControls(layout, 1, ll_theTags, ll_theSizes, ll_theValues);
   }

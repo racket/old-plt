@@ -20,75 +20,34 @@
            (lib "timer.ss" "web-server")
            (all-except (lib "request-parsing.ss" "web-server")
                        request-bindings)
+
+           "backend-servlet-testing.ss"
            )
 
   (provide start-servlet resume-servlet resume-servlet/headers)
 
   ;; Start the servlet
   (define (start-servlet svt)
-    (run-servlet (new-request) svt))
-
-  (define the-instance
-    (make-servlet-instance 'id0 (make-hash-table) 0 (make-semaphore 0)))
-
-  ;; new-servlet-context: request o-port (-> void) -> servlet-context
-  (define (new-servlet-context req op suspend )
-    (make-servlet-context
-      the-instance
-      (let ((cust (make-custodian)))
-        (make-connection
-          (start-timer 15 (lambda () (custodian-shutdown-all cust)))
-          (open-input-string "foo") op cust #t))
-      req
-      suspend))
-
-   ;; run-servlet: request string -> s-expression
-   ;; Run a servlet and return its next response. Note that the servlet may be a
-   ;; continuation.
-   (define (run-servlet req svt)
-     (let* ((cust (make-custodian))
-            (result-channel (make-channel))
-            (op (open-output-string))
-            (sc (new-servlet-context
-                  req op
-                  (make-suspender result-channel op cust))))
-       (parameterize ((current-custodian cust))
-         (thread
-           (lambda ()
-             (thread-cell-set! current-servlet-context sc)
-             (svt))))
-       (channel-get result-channel)))
-
-   ;; make-suspender: channel o-port custodian -> (-> void)
-   (define (make-suspender result-channel op cust)
-     (lambda ()
-       (channel-put
-         result-channel
-         (let ((ip (open-input-string (get-output-string op))))
-           (purify-port ip)
-           (xml->xexpr (read-xml/element ip))))))
+    (simple-start-servlet
+      (make-request 'get (string->url "http://example.com/")
+                    '() '() "a-host-ip" "a-client-ip")
+      svt))
 
   (define (resume-servlet/headers prev-url input headers)
     (with-handlers
       ((exn:fail:contract?
          (lambda (e)
-           `(html (head (title "Timeout"))
+           '(html (head (title "Timeout"))
                   (body
                     (p "The transaction referred to by this url is no longer "
-                       "active.  Please "
-                       (a ((href ,(servlet-instance-k-table the-instance)))
-                          "restart")
+                       "active.  Please " (a ((href "...")) "restart")
                        " the transaction."))))))
-    (let ((u (string->url prev-url)))
-      (cond
-        ((continuation-url? u)
-         => (lambda (res)
-              (let ((k (hash-table-get (servlet-instance-k-table the-instance)
-                                       (cadr res)))
-                    (new-req (new-request/url+headers
-                               (embed-url-bindings input u) headers)))
-                (run-servlet new-req (lambda () (k new-req))))))
-        (else (error "url doesn't encode a servlet continuation"))))))
+      (let ((a-url (string->url prev-url)))
+        (simple-resume-servlet
+          (let ((new-url (embed-url-bindings input a-url)))
+            (make-request 'get new-url headers (url-query new-url)
+                          "a-host-ip" "a-client-ip"))
+          a-url))))
 
   ;; Resume the servlet
   (define (resume-servlet prev-url input)
@@ -107,33 +66,5 @@
         (url-path in-url)
         (append env old-env)
         (url-fragment in-url))))
-
-  (define (remove-query an-url)
-    (make-url
-      (url-scheme an-url)
-      (url-user an-url)
-      (url-host an-url)
-      (url-port an-url)
-      (url-path an-url)
-      '()
-      (url-fragment an-url)))
-
-  ;; Produce a new request
-  (define (new-request)
-    (new-request/bindings '()))
-
-  ;; Produce a new request, with an url
-  (define (new-request/url new-url)
-    (new-request/url+headers new-url '()))
-
-  ;; Produce a new request, with an url and headers
-  (define (new-request/url+headers new-url headers)
-    (make-request 'get (remove-query new-url) headers (url-query new-url)
-                  "a-host-ip" "a-client-ip"))
-
-  ;; Produce a new request, with bindings
-  (define (new-request/bindings bs)
-    (make-request 'get (string->url "http://www.example.com/") '() bs
-                  "a-host-ip" "a-client-ip"))
 
   )

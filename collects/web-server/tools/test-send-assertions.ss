@@ -1,6 +1,6 @@
 (module test-send-assertions mzscheme
   (require (lib "test.ss" "schemeunit")
-           "servlet.ss"
+           (lib "servlet.ss" "web-server")
            "send-assertions.ss"
            )
 
@@ -28,7 +28,7 @@
                              (lambda (k-url)
                                `(form ((action ,k-url)) (input ((name "num"))))))))))
               (send/finish `(p ,num))))
-          (list (cons (lambda (x) (cadr (car (cadr x))))
+          (list (list (lambda (x) (cadr (car (cadr x))))
                       (list (cons 'num "5"))))
           '(p () "5")))
 
@@ -39,7 +39,7 @@
             (send/suspend/callback
               `(p () (a ((href ,(lambda (req) (send/finish '(p "Finished")))))
                         "Next"))))
-          (list (cons (lambda (x) (cadr (car (cadr (caddr x)))))
+          (list (list (lambda (x) (cadr (car (cadr (caddr x)))))
                       '()))
           '(p () "Finished")))
 
@@ -52,8 +52,8 @@
                      (p2 `(p () (a ((href ,(lambda (req) (send/suspend/callback p1))))
                                    "Previous"))))
               (send/suspend/callback p1)))
-          (list (cons (lambda (x) (cadr (car (cadr (caddr x))))) '())
-                (cons (lambda (x) (cadr (car (cadr (caddr x))))) '()))
+          (list (list (lambda (x) (cadr (car (cadr (caddr x))))) '())
+                (list (lambda (x) (cadr (car (cadr (caddr x))))) '()))
           `(p () (a ((href ,(make-unknown))) "Next")))))
 
     )

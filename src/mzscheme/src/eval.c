@@ -112,7 +112,6 @@ int scheme_stack_grows_up;
 
 static Scheme_Object *app_symbol;
 static Scheme_Object *datum_symbol;
-static Scheme_Object *symbol_symbol;
 
 static Scheme_Object *stop_expander;
 
@@ -129,8 +128,6 @@ static Scheme_Object *current_eval(int argc, Scheme_Object *[]);
 static Scheme_Object *allow_auto_cond_else(int argc, Scheme_Object **argv);
 static Scheme_Object *allow_set_undefined(int argc, Scheme_Object **argv);
 
-static Scheme_Object *symbol_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *symbol_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 static Scheme_Object *app_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *app_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 static Scheme_Object *datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
@@ -307,16 +304,10 @@ scheme_init_eval (Scheme_Env *env)
 
   REGISTER_SO(app_symbol);
   REGISTER_SO(datum_symbol);
-  REGISTER_SO(symbol_symbol);
 
   app_symbol = scheme_intern_symbol("#%app");
   datum_symbol = scheme_intern_symbol("#%datum");
-  symbol_symbol = scheme_intern_symbol("#%symbol");
 
-  scheme_add_global_keyword("#%symbol", 
-			    scheme_make_compiled_syntax(symbol_syntax,
-							symbol_expand), 
-			    env);
   scheme_add_global_keyword("#%app", 
 			    scheme_make_compiled_syntax(app_syntax,
 							app_expand), 
@@ -1365,9 +1356,36 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
   if (SCHEME_STX_NULLP(form)) {
     stx = app_symbol;
   } else if (!SCHEME_STX_PAIRP(form)) {
-    if (SCHEME_STX_SYMBOLP(form))
-      stx = symbol_symbol;
-    else
+    if (SCHEME_STX_SYMBOLP(form)) {
+      var = scheme_static_distance(form, env, 
+				   SCHEME_ENV_CONSTANTS_OK
+				   + ((rec && !ENV_PRIM_GLOBALS_ONLY(env))
+				      ? SCHEME_ELIM_CONST 
+				      : 0)
+				   + (app_position 
+				      ? SCHEME_APP_POS 
+				      : 0)
+				   + ((rec && drec[rec].dont_mark_local_use) ? 
+				      SCHEME_DONT_MARK_USE 
+				      : 0));
+
+      if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
+	if (var == stop_expander)
+	  return form;
+	else {
+	  scheme_wrong_syntax("compile", NULL, form, "bad syntax");
+	  return NULL;
+	}
+      } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
+		 || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
+	return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
+
+      if (rec) {
+	scheme_compile_rec_done_local(rec, drec);
+	return var;
+      } else
+	return form;
+    } else
       stx = datum_symbol;
   } else {
     name = SCHEME_STX_CAR(form);
@@ -1437,65 +1455,6 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			SCHEME_STX_VAL(stx));
     return NULL;
   }
-}
-
-static Scheme_Object *
-compile_expand_sym(Scheme_Object *forms, Scheme_Comp_Env *env, 
-		   Scheme_Compile_Info *rec, int drec, 
-		   int depth, Scheme_Object *boundname)
-{
-  Scheme_Object *form, *var;
-
-  form = SCHEME_STX_CDR(forms);
-
-  if (!SCHEME_STX_SYMBOLP(form))
-    scheme_wrong_syntax("#%symbol", NULL, forms, NULL);
-
-  var = scheme_static_distance(form, env, 
-			       SCHEME_ENV_CONSTANTS_OK
-			       + ((rec && !ENV_PRIM_GLOBALS_ONLY(env))
-				  ? SCHEME_ELIM_CONST 
-				  : 0)
-#if 0
-			       + (app_position 
-				  ? SCHEME_APP_POS 
-				  : 0)
-#endif
-			       + ((rec && drec[rec].dont_mark_local_use) ? 
-				  SCHEME_DONT_MARK_USE 
-				  : 0));
-
-  if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
-    if (var == stop_expander)
-      return form;
-    else {
-      scheme_wrong_syntax("compile", NULL, form, "bad syntax");
-      return NULL;
-    }
-  } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
-	     || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
-    return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth, boundname);
-  
-  if (rec) {
-    scheme_compile_rec_done_local(rec, drec);
-    return var;
-  } else {
-    /* Re-wrap symbol: */
-    form = scheme_datum_to_syntax(SCHEME_STX_VAL(form), form, forms);
-    return form;
-  }
-}
-
-static Scheme_Object *
-symbol_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
-{
-  return compile_expand_sym(form, env, rec, drec, 0, scheme_false);
-}
-
-static Scheme_Object *
-symbol_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
-{
-  return compile_expand_sym(form, env, NULL, 0, depth, boundname);
 }
 
 static Scheme_Object *

@@ -54,6 +54,8 @@ static Scheme_Object *current_inspector(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
+static Scheme_Object *make_named_constructor(int argc, Scheme_Object *argv[]);
+
 static Scheme_Object *struct_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_type_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *struct_length(int argc, Scheme_Object *argv[]);
@@ -203,6 +205,12 @@ scheme_init_struct (Scheme_Env *env)
 						     "struct-ref",
 						     2, 2),
 			    env);
+  
+  scheme_add_global_constant("make-naming-constructor",
+			     scheme_make_prim_w_arity(make_named_constructor,
+						      "make-naming-constructor",
+						      2, 2),
+			     env);
 
   scheme_add_global_constant("struct->vector",
 			    scheme_make_prim_w_arity(struct_to_vector,
@@ -1023,6 +1031,25 @@ static Scheme_Object *
 struct_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
   return do_struct_syntax(form, env, NULL, 0, depth, boundname);
+}
+
+static Scheme_Object *make_named_constructor(int argc, Scheme_Object *argv[])
+{
+  Scheme_Object *t, **nms, **vs;
+  int c, flags;
+
+  if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_struct_type_type))
+    scheme_wrong_type("make-naming-constructor", "struct type", 0, argc, argv);
+  if (!SCHEME_SYMBOLP(argv[1]))
+    scheme_wrong_type("make-naming-constructor", "symbol", 1, argc, argv);
+
+  flags = SCHEME_STRUCT_NO_TYPE | SCHEME_STRUCT_NO_PRED;
+
+  t = scheme_make_struct_type(argv[1], argv[0], NULL, 0);
+  nms = scheme_make_struct_names(argv[1], scheme_null, flags, &c);
+  vs = scheme_make_struct_values(t, nms, c, flags);
+
+  return vs[0];
 }
 
 static Scheme_Object *

@@ -1,5 +1,5 @@
 This is the source code for MysterX.  Compilation requires 
-Visual C++ 6.0.
+Visual C++ 6 or Visual Studio .NET.
 
 	nmake clean
 
@@ -23,16 +23,21 @@ You may need to change these according to your local
 installation before compiling.  The REGSVR32 utility
 is ordinarily located in the Windows\SYSTEM directory
 under Windows 95/98, and in the WINNT\System32 directory
-under Windows NT/2000.
+under Windows NT/2000/XP.
 
 If you get errors about a missing file atlbase.h,
 check the value of the environment variable INCLUDE.
-The subdirectory ATL beneath the Visual C++ directory
+The subdirectory `ATL' (VC6) or `atlmfc' (VS.NET) beneath 
+the Visual C++ directory
 needs to be in the list of INCLUDE directories.
 For example, if Visual Studio 6 is installed at the root of
 the C: drive, that directory would be
 
   C:\Microsoft Visual Studio\VC98\ATL
+
+In Visual Studio .NET, the equivalent directory is
+
+  C:\Microsoft Visual Studio .NET\Vc7\atlmfc
 
 The Microsoft HTML Help Workshop must be installed to
 build mxmain.dll.  The files are on the Visual Studio

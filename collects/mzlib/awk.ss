@@ -117,7 +117,10 @@
 			      [(eq? test '/)
 			       (let ([g (gensym)]
 				     [re (car body)]
-				     [vars (caddr body)]
+				     [vars (append (map (lambda (s)
+							  (or s (gensym)))
+							(caddr body))
+						   (gensym))]
 				     [body (cdddr body)])
 				 (set! initvars (cons `(,g (regexp ,re)) initvars))
 				 (cons

@@ -25,13 +25,13 @@
       (import drscheme:tool^)
 
       (define styles
-        `((keyword ,(make-style-delta "black" #t #f #f))
-          (string ,(make-style-delta "green" #f #f #f))
-          (literal ,(make-style-delta "green" #f #f #f))
+        `((keyword ,(make-style-delta "black" #f #f #f))
+          (string ,(make-style-delta "darkgreen" #f #f #f))
+          (literal ,(make-style-delta "darkgreen" #f #f #f))
           (comment ,(make-style-delta "mediumgray" #f #f #f))
-          (error ,(make-style-delta "red" #t #f #f))
+          (error ,(make-style-delta "red" #f #f #f))
           (identifier ,(make-style-delta "blue" #f #f #f))
-          (default ,(make-style-delta "black" #f #f #f))))
+          (default ,(make-style-delta "darkgray" #f #f #f))))
       
       (add-to-colorer-prefs "Java" styles)
       
@@ -524,15 +524,15 @@
 
       
       (define full-lang% 
-        (java-lang-mixin 'full "ProfessorJ: Java" (list "ProfessorJ" "Full Java") (list 1000 10 4) "Java 1.0 (some 1.1)"))
+        (java-lang-mixin 'full "ProfessorJ: Java" (list "ProfessorJ" "ProfessofJ : Full") (list 1000 10 4) "Like Java 1.0 (some 1.1)"))
       (define advanced-lang% 
-        (java-lang-mixin 'advanced "ProfessorJ: Advanced Java" 
-                         (list "ProfessorJ" "Advanced") (list 1000 10 3) "Java Advanced teaching language"))
+        (java-lang-mixin 'advanced "ProfessorJ: Advanced" 
+                         (list "ProfessorJ" "Advanced") (list 1000 10 3) "Java-like Advanced teaching language"))
       (define intermediate-lang% 
-        (java-lang-mixin 'intermediate "ProfessorJ: Intermediate Java" 
-                         (list "ProfessorJ" "Intermediate") (list 1000 10 2) "Java Intermediate teaching language"))
-      (define beginner-lang% (java-lang-mixin 'beginner "ProfessorJ: Beginner Java" (list "ProfessorJ" "Beginner")
-                                              (list 1000 10 1) "Java Beginner teaching language"))
+        (java-lang-mixin 'intermediate "ProfessorJ: Intermediate" 
+                         (list "ProfessorJ" "Intermediate") (list 1000 10 2) "Java-like Intermediate teaching language"))
+      (define beginner-lang% (java-lang-mixin 'beginner "ProfessorJ: Beginner" (list "ProfessorJ" "Beginner")
+                                              (list 1000 10 1) "Java-like Beginner teaching language"))
       
       
       

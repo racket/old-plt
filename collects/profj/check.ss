@@ -867,16 +867,15 @@
   
   ;check-block: (list (U statement field)) env (statement env -> void) (expr -> type) symbol type-records -> void
   (define (check-block stmts env check-s check-e level type-recs)
-    (let loop ((stmts stmts) (block-env env) (c-e (lambda (e) (check-e e env))))
+    (let loop ((stmts stmts) (block-env env))
       (cond 
         ((null? stmts) (void))
         ((field? (car stmts))
          (loop (cdr stmts) 
-               (check-local-var (car stmts) block-env c-e level type-recs)
-               (lambda (e) (check-e e block-env))))
+               (check-local-var (car stmts) block-env (lambda (e) (check-e e block-env)) level type-recs)))
         (else
          (check-s (car stmts) block-env)
-         (loop (cdr stmts) block-env (lambda (e) (check-e e block-env)))))))
+         (loop (cdr stmts) block-env )))))
       
   ;check-break: (U id #f) src bool bool symbol env-> void
   (define (check-break label src in-loop? in-switch? level env)
@@ -1049,7 +1048,8 @@
                                            type-recs
                                            current-class
                                            env
-                                           level)))
+                                           level
+                                           static?)))
         ((array-alloc? exp)
          (set-expr-type exp
                         (check-array-alloc (array-alloc-name exp)
@@ -1145,9 +1145,7 @@
            (let ((right-to-left (assignment-conversion l r type-recs))
                  (left-to-right (assignment-conversion r l type-recs)))
              (cond
-               ((and right-to-left left-to-right) 'boolean)
-               (right-to-left (bin-op-equality-error 'left op l r src))
-               (left-to-right (bin-op-equality-error 'right op l r src))
+               ((or right-to-left left-to-right) 'boolean)
                (else (bin-op-equality-error 'both op l r src)))))
           (else 
            (bin-op-equality-error 'prim op l r src))))
@@ -1567,8 +1565,8 @@
   
   ;;Skip package access controls
   ;; 15.9
-  ;;check-class-alloc: expr name (list type) src type-records (list string) env symbol -> type
-  (define (check-class-alloc exp name args src type-recs c-class env level)
+  ;;check-class-alloc: expr name (list type) src type-records (list string) env symbol bool-> type
+  (define (check-class-alloc exp name args src type-recs c-class env level static?)
     (let* ((type (name->type name (name-src name) level type-recs))
            (class-record (send type-recs get-class-record type))
            (methods (get-method-records (ref-type-class/iface type) class-record)))
@@ -1588,7 +1586,9 @@
                         (when (check-ctor-args args (method-record-atypes (car methods)) type src level type-recs)
                           (car methods))))
              (mods (method-record-modifiers const))
-             (this (lookup-this type-recs env)))
+             (this (if static? 
+                       class-record
+                       (lookup-this type-recs env))))
         (when (eq? level 'full)
           (for-each (lambda (thrown)
                       (unless (lookup-exn thrown env type-recs level)
@@ -1797,12 +1797,8 @@
       (raise-error 
        op
        (case type
-         ((right) 
-          (format "Right hand side of ~a should be assignable to ~a. Given ~a which is not" op lt rt))
-         ((left) 
-          (format "Left hand side of ~a should be assignable to ~a. Given ~a which is not" op rt lt))
          ((both) 
-          (format "~a expects its arguments to be assignable to each other, ~a and ~a cannot" op lt rt))
+          (format "~a expects one argument to be assignable to the other, neither ~a nor ~a can be" op lt rt))
          (else 
           (format "~a expects its arguments to be equivalent types, given non-equivalent ~a and ~a" 
                   op lt rt)))

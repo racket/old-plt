@@ -1854,11 +1854,11 @@
       (define (not-me? name-addr-full)
 	(let ([addr (cadr name-addr-full)])
 	  (cond
-            [(string=? addr my-address)
+            [(string-ci=? addr my-address)
              #f]
             [(and SELF-ADDRESSES (member addr SELF-ADDRESSES)) #f]
             [(and (> (string-length addr) (string-length  my-username-@))
-                  (string=? my-username-@ (substring addr 0 (string-length  my-username-@))))
+                  (string-ci=? my-username-@ (substring addr 0 (string-length  my-username-@))))
              (eq? (message-box
                    "Identity?"
                    (format "Are you ~a?" (caddr name-addr-full))

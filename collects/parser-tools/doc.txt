@@ -20,6 +20,11 @@ collects/syntax-color/scheme-lexer.ss yielded the following comparison
 800MHZ Pentium 3:
 Dragon book algorithm: 1191 states, 13.86 seconds, .0116 seconds per state
 Brzozowski algorithm: 464 states, 5.695 seconds, .0122 seconds per state
+
+For the Java lexer (get-token) in collects/profj/parsers/lexer.ss:
+Dragon book algorithm: 268 states, 1.28 seconds, .0048 seconds per state
+Brzozowski algorithm: 220 states, 1.34 seconds, .0061 seconds per state
+
 Furthermore, the Brzozowski algorithm is more suited to functional
 programming, so the dfa generation code is much more pleasant.
 
@@ -27,7 +32,6 @@ programming, so the dfa generation code is much more pleasant.
 CHANGE: (eof) is no longer treated as a character, but as a 
  special.  This means that (eof) cannot appear except as the
  whole regular expression in a lex rule.
-
 
 _lex.ss_
 A regular expression is one of the following:

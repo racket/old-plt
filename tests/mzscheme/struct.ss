@@ -3,20 +3,20 @@
 
 (SECTION 'STRUCT)
 
-(let-values ([(prop:p p? p-ref) (make-struct-type-property 'prop)]
+(let-values ([(prop:p p? p-ref) (make-struct-type-property 'prop (lambda (x y) (add1 x)))]
 	     [(prop:p2 p2? p2-ref) (make-struct-type-property 'prop2)]
 	     [(insp1) (make-inspector)]
 	     [(insp2) (make-inspector)])
-  (arity-test make-struct-type-property 1 1)
+  (arity-test make-struct-type-property 1 2)
   (test 3 primitive-result-arity make-struct-type-property)
   (arity-test p? 1 1)
   (arity-test p-ref 1 1)
   (arity-test struct-type-property? 1 1)
   (test #t struct-type-property? prop:p)
   (test #f struct-type-property? 5)
-  (let-values ([(type make pred sel set) (make-struct-type 'a #f 2 1 'un (list (cons prop:p 88)) (make-inspector insp1))]
+  (let-values ([(type make pred sel set) (make-struct-type 'a #f 2 1 'un (list (cons prop:p 87)) (make-inspector insp1))]
 	       [(typex makex predx selx setx) (make-struct-type 'ax #f 0 5 #f null (make-inspector insp2))])
-    (arity-test make-struct-type 4 8)
+    (arity-test make-struct-type 4 9)
     (test 5 primitive-result-arity make-struct-type)
     (test #t struct-type? type)
     (test #t procedure? make)
@@ -105,7 +105,13 @@
 	    (err/rt-test (make-struct-type 'bb type 0 0 #f (list (cons prop:p 12))) exn:application:mismatch?)
 	    (err/rt-test (make-struct-type 'bb btype 0 0 #f (list (cons prop:p3 12))) exn:application:mismatch?)
 	    (err/rt-test (make-struct-type 'bb #f 0 0 #f (list (cons prop:p 12) (cons prop:p2 12) (cons prop:p 12))) exn:application:mismatch?)
-
+	    (err/rt-test (make-struct-type 'bb type 0 0 #f (list (cons (let-values ([(p p? p-v)
+										     (make-struct-type-property 'p (lambda (v s)
+														     ;; this guard will fail!
+														     (/ 1 v)))])
+									 p)
+								       0))) exn:application:divide-by-zero?)
+	    
 	    (test #t p3? btype)
 	    (test #t p3? btypex)
 	    (test #f p3? type)
@@ -160,18 +166,22 @@
 		(err/rt-test (struct-type-info typex) exn:application:mismatch?)
 		(err/rt-test (struct-type-info btype) exn:application:mismatch?)
 
-		(let-values ([(name size get put super skipped?) (struct-type-info type)])
+		(let-values ([(name size get put const super skipped?) (struct-type-info type)])
 		  (test 'bone get a-b 0)
 		  (put a-b 0 'ok)
 		  (test 'ok get a-b 0)
-		  (test (list 'a 3 #f #f) list name size super skipped?))
-		(let-values ([(name size get put super skipped?) (struct-type-info btypex)])
+		  (test (list 'a 3 null #f #f) list name size const super skipped?))
+		(let-values ([(name size get put const super skipped?) (struct-type-info btypex)])
 		  (test 'byi get a-bx 0)
 		  (put a-bx 0 'yep)
 		  (test 'yep get a-bx 0)
-		  (test (list 'bx 6 #f #t) list name size super skipped?))
+		  (test (list 'bx 6 null #f #t) list name size const super skipped?))
 
 		'...))))))))
+
+(err/rt-test (make-struct-type-property 1))
+(err/rt-test (make-struct-type-property 's (lambda () 10)))
+(err/rt-test (make-struct-type-property 's (lambda (x) 10)))
 
 (let ([t-insp (make-inspector)])
   (define (try-proc-structs proc proc2 bad-arity name re 1-2-value t-insp)
@@ -180,54 +190,44 @@
 		    [(type2 make2 pred2 sel2 set2) (make-struct-type 'q type 1 2 (lambda (x) (pred2 x)) null t-insp #f)]
 		    ;; Derived, adds proc
 		    [(type3 make3 pred3 sel3 set3) (make-struct-type 'r struct:arity-at-least 1 1 (lambda (x) (pred3 x)) 
-								     null t-insp proc)]
-		    ;; Derived, overrides proc
-		    [(type4 make4 pred4 sel4 set4) (make-struct-type 's type 1 1 (lambda (x) (pred4 x)) null t-insp proc2)])
+								     null t-insp proc)])
       (let* ([bad1 (make 17)]
 	     [bad2 (make2 18 -18)]
 	     [bad3 (make3 #f 19)]
-	     [bad4 (make4 21 33)]
 	     [bad11 (make bad1)])
 	(test #t pred bad1)
 	(test #t pred2 bad2)
 	(test #t pred3 bad3)
-	(test #t pred4 bad4)
 	(test #t pred bad11)
 
 	(test #t procedure? bad1)
 	(test #t procedure? bad2)
 	(test #t procedure? bad3)
-	(test #t procedure? bad4)
 	(test #t procedure? bad11)
 
 	(test bad-arity procedure-arity bad1)
 	(test bad-arity procedure-arity bad2)
 	(test bad-arity procedure-arity bad3)
-	(test bad-arity procedure-arity bad4)
 	(test bad-arity procedure-arity bad11)
 
 	(test 'p object-name bad1)
 	(test 'q object-name bad2)
 	(test 'r object-name bad3)
-	(test 's object-name bad4)
 	(test 'p object-name bad11)
 
 	(when (equal? 2 bad-arity)
 	  (test 1-2-value bad1 1 2)
 	  (test 1-2-value bad2 1 2)
 	  (test 1-2-value bad3 1 2)
-	  (test 1-2-value bad4 1 2)
 	  (test 1-2-value bad11 1 2))
 
 	(err/rt-test (bad1) exn:application:arity?)
 	(err/rt-test (bad2) exn:application:arity?)
 	(err/rt-test (bad3) exn:application:arity?)
-	(err/rt-test (bad4) exn:application:arity?)
 	(err/rt-test (bad11) exn:application:arity?)
 	(err/rt-test (bad1 1) exn:application:arity?)
 	(err/rt-test (bad2 1) exn:application:arity?)
 	(err/rt-test (bad3 1) exn:application:arity?)
-	(err/rt-test (bad4 1) exn:application:arity?)
 	(err/rt-test (bad11 1) exn:application:arity?)
 
 	(test #f not (regexp-match "p:"
@@ -239,9 +239,6 @@
 	(test #f not (regexp-match "r:"
 				   (with-handlers ([not-break-exn? exn-message])
 				     (bad3))))
-	(test #f not (regexp-match "s:"
-				   (with-handlers ([not-break-exn? exn-message])
-				     (bad4))))
 	(test #f not (regexp-match "p:"
 				   (with-handlers ([not-break-exn? exn-message])
 				     (bad11)))))
@@ -249,42 +246,35 @@
       (let* ([cons1 (make cons)]
 	     [cons2 (make2 cons -18)]
 	     [cons3 (make3 #f cons)]
-	     [cons4 (make4 #f cons)]
 	     [cons11 (make cons1)])
 	(test #t pred cons1)
 	(test #t pred2 cons2)
 	(test #t pred3 cons3)
-	(test #t pred4 cons4)
 	(test #t pred cons11)
 
 	(test #t procedure? cons1)
 	(test #t procedure? cons2)
 	(test #t procedure? cons3)
-	(test #t procedure? cons4)
 	(test #t procedure? cons11)
 
 	(test 2 procedure-arity cons1)
 	(test 2 procedure-arity cons2)
 	(test 2 procedure-arity cons3)
-	(test 2 procedure-arity cons4)
 	(test 2 procedure-arity cons11)
 
 	(test (name 'p) object-name cons1)
 	(test (name 'q) object-name cons2)
 	(test (name 'r) object-name cons3)
-	(test (name 's) object-name cons4)
 	(test (name 'p) object-name cons11)
 
 	(arity-test cons1 2 2)
 	(arity-test cons2 2 2)
 	(arity-test cons3 2 2)
-	(arity-test cons4 2 2)
 	(arity-test cons11 2 2)
 
 	(test 1-2-value cons1 1 2)
 	(test 1-2-value cons2 1 2)
 	(test 1-2-value cons3 1 2)
-	(test 1-2-value cons4 1 2)
 	(test 1-2-value cons11 1 2)
 
 	(test #f not (regexp-match (re "p:")
@@ -296,9 +286,6 @@
 	(test #f not (regexp-match (re "r:")
 				   (with-handlers ([not-break-exn? exn-message])
 				     (cons3))))
-	(test #f not (regexp-match (re "s:")
-				   (with-handlers ([not-break-exn? exn-message])
-				     (cons4))))
 	(test #f not (regexp-match (re "p:")
 				   (with-handlers ([not-break-exn? exn-message])
 				     (cons11)))))
@@ -326,6 +313,11 @@
 		      (unless ((vector-ref (struct->vector s) 5) s) (error "should be instance"))
 		      (cons b a))
 		    2 values values '(2 . 1) t-insp))
+
+(err/rt-test (let-values ([(s:s make-s s? s-ref s-set!)
+			   (make-struct-type 'a #f 1 1 #f null (current-inspector) 0)])
+	       (make-struct-type 'b s:s 1 1 #f null (current-inspector) 0))
+	     exn:application:mismatch?)
 
 (let-values ([(type make pred sel set) (make-struct-type 'p #f 1 0 #f null #f (lambda () 5))])
   (let ([useless (make 7)])

@@ -186,7 +186,7 @@
 	    [orig-stderr (current-error-port)])
 	  (public
 	    [CACHE-TIME 10] 
-	    [CACHE-WRITE-COUNT 100]
+	    [CACHE-WRITE-COUNT 300]
 	    
 	    [normal-font wx:const-modern]
 	    [normal-delta null]
@@ -559,32 +559,36 @@
 	     (lambda (x)
 	       (super-set-auto-set-wrap x)
 	       (for-each (lambda (c) (send c widen-snips x)) canvases))]
+	    [init-transparent-io-do-work
+	     (lambda (grab-focus?)
+	       (let ([starting-at-prompt-mode? prompt-mode?])
+		 (set! transparent-edit (make-object transparent-io-edit%))
+		 (send transparent-edit enable-autoprompt #f)
+		 (dynamic-wind
+		  (lambda () (begin-edit-sequence #f))
+		  (lambda ()		  
+		    (when starting-at-prompt-mode?
+		      (set! prompt-mode? #f)
+		      (insert #\newline))
+		    (send transparent-edit set-auto-set-wrap #t)
+		    (let ([snip (make-object wx:media-snip% transparent-edit)])
+		      (insert snip)
+		      (insert #\newline)
+		      (for-each (lambda (c) (send c add-wide-snip snip))
+				canvases))
+		    (when grab-focus?
+		      (let ([a (send transparent-edit get-admin)])
+			(unless (null? a)
+			  (send a grab-caret))))
+		    (when starting-at-prompt-mode?
+		      (insert-prompt)))
+		  (lambda () 
+		    (end-edit-sequence)))
+		 (set! prompt-position (last-position))))]
 	    [init-transparent-io
 	     (lambda (grab-focus?)
 	       (unless transparent-edit
-		 (let ([starting-at-prompt-mode? prompt-mode?])
-		   (set! transparent-edit (make-object transparent-io-edit%))
-		   (send transparent-edit enable-autoprompt #f)
-		   (dynamic-wind
-		    (lambda () (begin-edit-sequence #f))
-		    (lambda ()		  
-		      (when starting-at-prompt-mode?
-			(set! prompt-mode? #f)
-			(insert #\newline))
-		      (send transparent-edit set-auto-set-wrap #t)
-		      (let ([snip (make-object wx:media-snip% transparent-edit)])
-			(insert snip)
-			(insert #\newline)
-			(for-each (lambda (c) (send c add-wide-snip snip))
-				  canvases))
-		      (when grab-focus?
-			(let ([a (send transparent-edit get-admin)])
-			  (unless (null? a)
-			    (send a grab-caret))))
-		      (when starting-at-prompt-mode?
-			(insert-prompt)))
-		    (lambda () (end-edit-sequence)))
-		   (set! prompt-position (last-position)))))]
+		 (init-transparent-io-do-work grab-focus?)))]
 	    [single-threader (make-single-threader)]
 	    [this-in-read
 	     (let* ([g (lambda ()

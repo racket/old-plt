@@ -121,9 +121,9 @@ void wxMenu::Append(long Id, char *Label, char *helpString, Bool checkable)
   mustBeBreaked = FALSE;
 
   if (ms_handle)
-    AppendMenu((HMENU)ms_handle, MF_STRING|ms_flags, menuId, Label);
+    AppendMenuW((HMENU)ms_handle, MF_STRING|ms_flags, menuId, wxWIDE_STRING(Label));
   else if (save_ms_handle)
-    AppendMenu((HMENU)save_ms_handle, MF_STRING|ms_flags, menuId, Label);
+    AppendMenuW((HMENU)save_ms_handle, MF_STRING|ms_flags, menuId, wxWIDE_STRING(Label));
 
   if (Id == -2) {
     int ms_flag = MF_DISABLED;
@@ -187,7 +187,7 @@ void wxMenu::Append(long Id, char *Label, wxMenu *SubMenu, char *helpString)
   child = (HMENU)SubMenu->ms_handle;
   SubMenu->save_ms_handle = (HANDLE)child;
   SubMenu->ms_handle = NULL;
-  AppendMenu(menu, MF_POPUP | MF_STRING | ms_flags, (UINT)child, Label);
+  AppendMenuW(menu, MF_POPUP | MF_STRING | ms_flags, (UINT)child, wxWIDE_STRING(Label));
 
   no_items++;
 }
@@ -351,9 +351,9 @@ void wxMenu::SetTitle(char *label)
 
   mh = ms_handle ? (HMENU)ms_handle : (HMENU)save_ms_handle;
   if (mh)
-    ModifyMenu(mh, 0,
-	       MF_BYPOSITION | MF_STRING | MF_DISABLED,
-	       -2, title);
+    ModifyMenuW(mh, 0,
+		MF_BYPOSITION | MF_STRING | MF_DISABLED,
+		-2, wxWIDE_STRING(title));
 }
 
 char *wxMenu::GetTitle()
@@ -378,11 +378,11 @@ void wxMenu::SetLabel(long Id,char *label)
     if (!item->subMenu) {
       UINT was_flag;
       was_flag = GetMenuState(mh, pos, MF_BYPOSITION);
-      ModifyMenu(mh, pos, MF_BYPOSITION|MF_STRING|was_flag, 
-		 item->menuId, label);
+      ModifyMenuW(mh, pos, MF_BYPOSITION|MF_STRING|was_flag, 
+		 item->menuId, wxWIDE_STRING(label));
     } else {
-      ModifyMenu(mh, pos, MF_BYPOSITION|MF_STRING|MF_POPUP,
-		 (UINT)item->subMenu->save_ms_handle, label);
+      ModifyMenuW(mh, pos, MF_BYPOSITION|MF_STRING|MF_POPUP,
+		  (UINT)item->subMenu->save_ms_handle, wxWIDE_STRING(label));
     }
   }
 }
@@ -551,11 +551,11 @@ Bool wxMenuBar::OnAppend(wxMenu *a_menu, char *title)
   a_menu->save_ms_handle = a_menu->ms_handle;
   a_menu->ms_handle = NULL;
 
-  InsertMenu((HMENU)ms_handle,
-	     n,
-	     MF_BYPOSITION | MF_POPUP | MF_STRING, 
-	     (UINT)a_menu->save_ms_handle,
-	     title);
+  InsertMenuW((HMENU)ms_handle,
+	      n,
+	      MF_BYPOSITION | MF_POPUP | MF_STRING, 
+	      (UINT)a_menu->save_ms_handle,
+	      wxWIDE_STRING(title));
 
   menu_bar_frame->DrawMenuBar();
 

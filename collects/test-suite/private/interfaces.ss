@@ -29,7 +29,7 @@
   
   ;; the interface that is implemented by item in a test-suite
   (define test-suite:item<%>
-    (interface (aligned-snip<%>)
+    (interface (stretchable-snip<%>)
       ;; show-test (boolean? . -> . void?)
       ;; how/hide the test in the display
       show-test

@@ -368,7 +368,7 @@
       (update status)))
   
   ;; a text field fit to be in a test-case (no borders or margins etc.)
-  ;; STATUS: this should really return an aligned-snip<%> not an editor-snip% of fixed size.
+  ;; STATUS: this should really return an stretchable-snip<%> not an editor-snip% of fixed size.
   (define text-field
     (opt-lambda (text (snipclass editor-snip%))
       (new snipclass

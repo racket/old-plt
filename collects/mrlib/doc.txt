@@ -236,7 +236,7 @@ of vertical-panel% and horizontal-panel%
 It provides: horizontal-pasteboard%, vertical-pasteboard%,
 aligned-editor-snip%, aligned-editor-canvas%,
 aligned-pasteboard<%>,aligned-pasteboard-parent<%>, and
-aligned-snip<%>
+stretchable-snip<%>
 
 ============================================================
 
@@ -301,23 +301,23 @@ aligned-pasteboard-parent<%>
 
 ============================================================
 
-The _aligned-snip<%>_ interface must be implemented
+The _stretchable-snip<%>_ interface must be implemented
 by any snip class who's objects will be stretchable when
 inserted into an aligned-pasteboard<%>.
 
-> (send an-aligned-snip get-aligned-min-width)
+> (send a-stretchable-snip get-aligned-min-width)
 
 The minimum width that the snip can be resized to
 
-> (send an-aligned-snip get-aligned-min-height)
+> (send a-stretchable-snip get-aligned-min-height)
 
 The minimum height that the snip can be resized to
 
-> (send an-aligned-snip stretchable-width)
+> (send a-stretchable-snip stretchable-width)
 
 Whether or not the snip can be stretched in the X dimension
 
-> (send an-aligned-snip stretchable-height)
+> (send a-stretchable-snip stretchable-height)
 
 Whether or not the snip can be stretched in the Y dimension
 

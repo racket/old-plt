@@ -415,11 +415,12 @@
 		 (basis:build-parameterization
 		  null
 		  settings:setting
-		  (lambda (in-allow-improper-lists in-eq?-only-compares-symbols parameterization)
+		  (lambda (in-<=-at-least-two-args in-allow-improper-lists in-eq?-only-compares-symbols parameterization)
 		    (let ([u (compound-unit/sig (import)
-			       (link [params : (allow-improper-lists eq?-only-compares-symbols)
-					     ((unit/sig (allow-improper-lists eq?-only-compares-symbols)
+			       (link [params : plt:userspace:params^
+					     ((unit/sig plt:userspace:params^
 						(import)
+						(define <=-at-least-two-args in-<=-at-least-two-args)
 						(define allow-improper-lists in-allow-improper-lists)
 						(define eq?-only-compares-symbols in-eq?-only-compares-symbols)))]
 				     [U : plt:userspace^ ((require-library-unit/sig "userspcr.ss" "userspce") params)])

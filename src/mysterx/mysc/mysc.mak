@@ -10,7 +10,7 @@ SHELL32=F:\SBN
 
 CPP=cl.exe
 CPP_FLAGS=/I"../../../include" /I"$(SHELL32)\Include" \
-	/I"$(HTMLHELP)\include" /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /c
+	/I"$(HTMLHELP)\include" /MT /W3 /EHsc /O2 /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /c
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $<

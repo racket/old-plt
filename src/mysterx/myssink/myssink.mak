@@ -1,10 +1,10 @@
 # myssink.mak
 
 CPP=cl.exe
-CPP_FLAGS=/I"../../../include" /I"../mysc" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_ATL_STATIC_REGISTRY" /c
+CPP_FLAGS=/I"../../../include" /I"../mysc" /MT /W3 /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "_WINDLL" /D "MYSSINK_EXPORTS" /D "_ATL_STATIC_REGISTRY" /c
 
 MTL=midl.exe
-MTL_SWITCHES=/tlb myssink.tlb /h myssink.h /iid myssink_i.c /Oicf 
+MTL_SWITCHES=/tlb myssink.tlb /h myssink.h /iid myssink_i.c /Oicf
 RSC=rc.exe
 RSC_PROJ=/l 0x409 /fo"myssink.res"
 
@@ -38,9 +38,9 @@ clean :
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $<
 
-myssink.obj : myssink.cxx myssink.h sink.h comtypes.h stdafx.h 
+myssink.obj : myssink.cxx myssink.h sink.h comtypes.h stdafx.h
 
-sink.obj : sink.cxx myssink.h sink.h comtypes.h stdafx.h 
+sink.obj : sink.cxx myssink.h sink.h comtypes.h stdafx.h
 
 comtypes.obj : comtypes.cxx comtypes.h stdafx.h
 

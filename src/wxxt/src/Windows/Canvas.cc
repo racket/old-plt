@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Canvas.cc,v 1.3 1998/09/06 01:43:30 mflatt Exp $
+ * $Id: Canvas.cc,v 1.4 1998/09/20 21:48:49 mflatt Exp $
  *
  * Purpose: canvas panel item
  *
@@ -143,7 +143,17 @@ void wxCanvas::GetVirtualSize(int *x, int *y)
 
 void wxCanvas::Scroll(int x_pos, int y_pos)
 {
-    wxItem::Scroll(x_pos*h_units, y_pos*v_units);
+  if (misc_flags & 8) {
+    /* Not managing */
+    wxItem::Scroll(x_pos, y_pos);
+  } else {
+    /* Managing */
+    /* Get the actual scroll step, which is the client size, rather
+       than h_units/v_unit */
+    int cw, ch;
+    GetClientSize(&cw, &ch);
+    wxItem::Scroll(x_pos * cw, y_pos * ch);
+  }
 }
 
 void wxCanvas::SetScrollbars(int h_pixels, int v_pixels, int x_len, int y_len,

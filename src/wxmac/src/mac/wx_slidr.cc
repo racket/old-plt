@@ -264,10 +264,8 @@ static ControlActionUPP SCTrackActionProcUPP = NewControlActionUPP(SCTrackAction
 void wxSlider::OnEvent(wxMouseEvent *event) // WCH: mac only ?
 {
 	if (event->leftDown) {
-		float fStartH, fStartV;
-		event->Position(&fStartH, &fStartV); // client c.s.
-		int startH = (int)fStartH;
-		int startV = (int)fStartV;
+		int startH, startV;
+		event->Position(&startH, &startV); // client c.s.
 		Point pt = {startV, startH};
 		SetCurrentDC();
 		int part;

@@ -371,10 +371,9 @@ void wxListBox::OnEvent(wxMouseEvent *event) // WCH : mac only ?
 {
 	SetCurrentDC();
 	if (event->leftDown || event->rightDown) {
-		float fStartH, fStartV;
-		event->Position(&fStartH, &fStartV); // client c.s.
-		int startH = (int)fStartH;
-		int startV = (int)fStartV;
+		int startH;
+		int startV;
+                event->Position(&startH,&startV); // client c.s.
 		
 		Point startPt = {startV, startH}; 	// client c.s.
 		int modifiers = 0;

@@ -1430,6 +1430,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	scheme_compile_rec_done_local(rec, drec);
 	return var;
       }
+    } else if (rec) {
+      if (SCHEME_STXP(form))
+	return SCHEME_STX_VAL(form);
     }
 
     return form;
@@ -1771,6 +1774,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     else
       recs[1].value_name = vname;
 
+    rest = scheme_datum_to_syntax(rest, forms);
+
     first = scheme_compile_expr(first, env, recs, 0);
 #if EMBEDDED_DEFINES_START_ANYWHERE
     forms = scheme_compile_expand_block(rest, env, recs, 1, 1);
@@ -1817,7 +1822,7 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   while (SCHEME_STX_PAIRP(fm)) {
     Scheme_Object *r, *p;
 
-    r = scheme_expand_expr(SCHEME_CAR(fm), env, depth);
+    r = scheme_expand_expr(SCHEME_STX_CAR(fm), env, depth);
     p = scheme_make_pair(r, scheme_null);
     if (last)
       SCHEME_CDR(last) = p;

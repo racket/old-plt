@@ -410,7 +410,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 {
   Scheme_Object *result, *ph = NULL;
 
-  if (SCHEME_SYNTAXP(o))
+  if (SCHEME_STXP(o))
     return o;
 
 #ifdef DO_STACK_CHECK
@@ -484,14 +484,14 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     result = scheme_box(o);
   } else if (SCHEME_VECTORP(o)) {
     int size = SCHEME_VEC_SIZE(o), i;
-      Scheme_Object *a;
+    Scheme_Object *a;
 
-      result = scheme_make_vector(size, NULL);
-
-      for (i = 0; i < size; i++) {
-	a = datum_to_syntax_inner(SCHEME_VEC_ELS(o)[i], stx, ht);
-	SCHEME_VEC_ELS(result)[i] = a;
-      }
+    result = scheme_make_vector(size, NULL);
+    
+    for (i = 0; i < size; i++) {
+      a = datum_to_syntax_inner(SCHEME_VEC_ELS(o)[i], stx, ht);
+      SCHEME_VEC_ELS(result)[i] = a;
+    }
   } else {
     result = o;
   }

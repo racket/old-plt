@@ -1690,7 +1690,7 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
     letrec = 1;
     formname = "letrec";
   } else if (SAME_OBJ(fmname, letrec_values_symbol)
-      || SAME_OBJ(fmname, letrec_values_symbol_nohp)) {
+	     || SAME_OBJ(fmname, letrec_values_symbol_nohp)) {
     letrec = 1;
     multi = 1;
     formname = "letrec-values";
@@ -1713,7 +1713,7 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
   
   vars = SCHEME_STX_CDR(form);
 
-  named = !multi && !letrec && !letstar && SCHEME_PAIRP(vars) && SCHEME_SYMBOLP(SCHEME_CAR(vars));
+  named = !multi && !letrec && !letstar && SCHEME_STX_PAIRP(vars) && SCHEME_STX_SYMBOLP(SCHEME_STX_CAR(vars));
   
   if (named)
     return named_let_syntax(form, env, NULL, 0, depth);

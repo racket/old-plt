@@ -33,13 +33,18 @@ following public methods:
   Sets to draw the drawing method of all spaces whose info is equal? to the
   given info.
 
-> (set-piece-draw info draw): X (->) ->
+> (set-piece-draw info draw): X (boolean ->) ->
   Sets to draw the drawing method of all pieces whose info is equal? to the
-  given info.
+  given info.  The drawing method takes a boolean.  If the value it true, 
+  then the piece should be drawn for creating its shadow.  Otherwise is should
+  be drawn normally.
 
 > (enable-piece info on?): X boolean ->
   Enables or disables a piece whose info is equal? to the given info.
   Disabled pieces are not selectable.
+
+> (enabled? info): X -> boolean
+  If a piece whose info is equal? to the given info is enabled or not.
 
 > (remove-piece info): X ->
   Removes all pieces whose info is equal? to the given info.

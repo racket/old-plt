@@ -7,13 +7,13 @@
 	   (lib "pretty.ss")
 	   (lib "restart.ss")
 	   (lib "launcher.ss" "launcher")
-           (lib "13.ss" "srfi"))
+           (lib "13.ss" "srfi")
+           "make-gl-info.ss")
 
   (provide pre-installer)
     
   (define dir (build-path "compiled" "native" (system-library-subpath #f)))
   (define 3mdir (build-path dir "3m"))
-  (define precomp.h (build-path "gl-vectors" 3mdir "precomp.h"))
 
   (define use-3m?
     (and (memq (system-type) '(unix macosx windows))
@@ -170,68 +170,24 @@
           (append-h-suffix str)
           (build-path 3mdir (append-c-suffix str))
           (build-path 3mdir (append-extension-suffix str))))
-  (define (generate input-file output-file trans)
-    (let ((in-str (call-with-input-file input-file
-                    (lambda (in)
-                      (read-string (expt 2 20) in)))))
-      (let* ((out-str (regexp-replace* "<type>" in-str (car trans)))
-             (out-str (regexp-replace* "<type-name>" out-str (cadr trans)))
-             (out-str (regexp-replace* "<sreal-to-type>" out-str (caddr trans)))
-             (out-str (regexp-replace* "<type-to-scheme>" out-str (cadddr trans))))
-        (call-with-output-file output-file (lambda (x) (display out-str x)) 'replace))))
 
   (define mz-headers
     (let ([inc-dir (build-path (collection-path "mzlib") 'up 'up "include")])
       (list (build-path inc-dir "scheme.h")
 	    (build-path inc-dir "schvers.h"))))
   
-  (define (make-gl-vector file-name+replacements home)
-    (let* ((file-name (car file-name+replacements))
-           (replacements (cadr file-name+replacements))
-           (names (map (lambda (n) (build-path "gl-vectors" n))
-                       (build-names file-name)))
-           (file (car names))
-           (file.so (cadr names))
-           (file.c (caddr names))
-           (file.h (cadddr names))
-           (file3m.c (list-ref names 4))
-           (file3m.so (list-ref names 5)))
-      (let ([so-rule (lambda (file.so file.c variant)
-		       `(,file.so ,(let ((p (get-precompiled-path file.so)))
-				     (cond
-				      ((file-exists? p) (list p))
-				      (else (list file.c file.h))))
-			 ,(lambda () (compile-c-to-so file file.c file.so home variant))))])
-	`(,(so-rule file.so file.c 'normal)
-	  ,(so-rule file3m.so file3m.c '3m)
-	  (,file.c ("gl-vectors/gl-vector.c" ,@mz-headers)
-           ,(lambda ()
-	      (delete/continue file.c)
-	      (generate "gl-vectors/gl-vector.c" file.c replacements)))
-	  (,file.h ("gl-vectors/gl-vector.h")
-           ,(lambda ()
-	      (delete/continue file.h)
-	      (generate "gl-vectors/gl-vector.h" file.h replacements)))
-	  (,file3m.c (,file.c ,@mz-headers)
-	   ,(lambda ()
-	      (delete/continue file3m.c)
-	      (xform home file.c file3m.c precomp.h #f)))))))
-    
-  (define (make-gl-prims file-name vecs home)
+
+  (define (make-gl-info-rules file-name home)
     (let* ((names (build-names file-name))
            (file (car names))
            (file.so (cadr names))
            (file.c (caddr names))
            (file3m.c (list-ref names 4))
-           (file3m.so (list-ref names 5))
-           (vec-sos (map (lambda (v)
-                           (build-path "gl-vectors"
-                                       (cadr (build-names v))))
-                         vecs)))
+           (file3m.so (list-ref names 5)))
       `((,file.so (,@(let ((p (get-precompiled-path file.so)))
                        (cond
                          ((file-exists? p) (list p))
-                         (else `(,file.c "gl-prims.h" ,@vec-sos ,@mz-headers)))))
+                         (else `(,file.c ,@mz-headers)))))
          ,(lambda ()
 	    (compile-c-to-so file file.c file.so home 'normal)))
 	(,file3m.so (,@(let ((p (get-precompiled-path file3m.so)))
@@ -240,31 +196,11 @@
 			  (else `(,file3m.c ,@mz-headers)))))
 	 ,(lambda ()
 	    (compile-c-to-so file file3m.c file3m.so home '3m)))
-	(,file3m.c (,file.c  "gl-prims.h" ,@mz-headers)
+	(,file3m.c (,file.c ,@mz-headers)
 	 ,(lambda ()
 	    (delete/continue file3m.c)
 	    (xform home file.c file3m.c #f #f))))))
-  
-  (define vec-names
-    '(("gl-double-vector"
-       ("GLdouble" "double" "scheme_real_to_double" "scheme_make_double"))
-      ("gl-float-vector"
-       ("GLfloat" "float" "scheme_real_to_double" "scheme_make_double"))
-      ("gl-uint-vector"
-       ("GLuint" "uint" "scheme_get_uint" "scheme_make_integer_value_from_unsigned"))
-      ("gl-ushort-vector"
-       ("GLushort" "ushort" "scheme_get_uint" "scheme_make_integer_value_from_unsigned"))
-      ("gl-ubyte-vector"
-       ("GLubyte" "ubyte" "scheme_get_uint" "scheme_make_integer_value_from_unsigned"))
-      ("gl-int-vector"
-       ("GLint" "int" "scheme_get_int" "scheme_make_integer_value"))
-      ("gl-short-vector"
-       ("GLshort" "short" "scheme_get_int" "scheme_make_integer_value"))
-      ("gl-byte-vector"
-       ("GLbyte" "byte" "scheme_get_int" "scheme_make_integer_value"))
-      ("gl-boolean-vector"
-       ("GLboolean" "boolean" "scheme_get_boolean" "scheme_make_boolean"))))
-             
+               
   (define (use-names names)
     ;; Extract all .so names to build
     (if use-3m?
@@ -277,23 +213,9 @@
 		   (make-print-checking #f))
       (make/proc
        `((,dir () ,(lambda () (make-directory* dir)))
-         (,(build-path "gl-vectors" dir) ()
-          ,(lambda ()
-             (make-directory* (build-path "gl-vectors" dir))))
-         ,@(apply append (map (lambda (x) (make-gl-vector x home)) vec-names))
-         ,@(make-gl-prims "gl-prims" (map car vec-names) home)
-         ,@(make-gl-prims "gl-prims-unsafe" (map car vec-names) home))
+         ("gl-info.c" ("make-gl-info.ss") ,(lambda () (make-gl-info "gl-info.c")))
+         ,@(make-gl-info-rules "gl-info" home))
        (list->vector
-        `(,dir
-          ,(build-path "gl-vectors" dir)
-          ,@(apply
-	     append
-	     (map (lambda (x)
-		    (map (lambda (name)
-			   (build-path "gl-vectors" name))
-			 (use-names (build-names (car x)))))
-		  vec-names))
-          ,@(use-names (build-names "gl-prims"))
-          ,@(use-names (build-names "gl-prims-unsafe")))))))
-
+        `(,dir "gl-info.c" ,@(use-names (build-names "gl-info")))))))
+         
   )

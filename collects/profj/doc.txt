@@ -1,10 +1,17 @@
-_drj_
+_professorj_
 
-This is preliminary documentation for a preliminary version of DrJ,
+This is preliminary documentation for a preliminary version of ProfessorJ,
 including information about the constructs allowed at different
 language levels, and known bugs. If a bug is listed in known bugs,
 please do not report it, it will be fixed at some point. Otherwise,
 please for now, report bugs directly to me at kathyg@cs.utah.eud
+
+Changed: as of Apr 15, 2003
+drj is now ProfessorJ (dir profj)
+Much of type checking is completed.
+Language levels have changed.
+A new documentation file will be coming to outline new known-bugs, and
+the updated language levels.
 
 Changed: As of Feb 20, 2003
 Statements now work in the interactions window
@@ -28,7 +35,7 @@ legal for the level, and except for beginner can have variable
 declarations. The definitions window should only have classes,
 interfaces, package declarations and import statements.
 
-Known Bugs for all of DrJ:
+Known Bugs for all of ProfessorJ:
 
 Parse errors are all of the form "parse error near" and do not offer
 further information

@@ -794,7 +794,10 @@ Bool wxMediaEdit::ScrollToPosition(long start, Bool ateol, Bool refresh,
   PositionLocation(start, &topx, &topy, TRUE, ateol, TRUE);
   PositionLocation(end, &botx, &boty, FALSE, ateol, TRUE);
 
-  return admin->ScrollTo(topx, topy, botx - topx, boty - topy, refresh, bias);
+  float w = botx - topx;
+  float h = boty - topy;
+
+  return admin->ScrollTo(topx, topy, w, h, refresh, bias);
 }
 
 Bool wxMediaEdit::ScrollToPosition(long start, Bool ateol, long end, int bias)

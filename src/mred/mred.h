@@ -86,6 +86,7 @@ void MrEdDestroyContext(MrEdFinalizedContext *c);
 
 #ifdef wx_msw
 void MrEdMSWSleep(float secs, void *fds);
+void mred_clean_up_gdi_objects(void);
 #endif
 
 #ifdef wx_mac

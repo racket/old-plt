@@ -1037,7 +1037,7 @@ static int tcp_getc(Scheme_Input_Port *port)
     int rn;
     do {
       rn = recv(data->tcp, data->b.buffer, TCP_BUFFER_SIZE, 0);
-    } while ((rn == -1) && (errno = EINTR));
+    } while ((rn == -1) && (errno == EINTR));
     data->b.bufmax = rn;
   }
   errid = errno;
@@ -1924,7 +1924,7 @@ tcp_accept(int argc, Scheme_Object *argv[])
 
   do {
     s = accept(s, (struct sockaddr *)&tcp_accept_addr, &l);
-  } while ((s == -1) && (NOT_WINSOCK(errno) = EINTR));
+  } while ((s == -1) && (NOT_WINSOCK(errno) == EINTR));
 
   if (s != INVALID_SOCKET) {
     Scheme_Object *v[2];

@@ -1667,6 +1667,9 @@ public:
       if (stdio_kills_prog) {
 	if (scheme_exit)
 	  scheme_exit(exit_val);
+#ifdef wx_msw
+	mred_clean_up_gdi_objects();
+#endif	
 	exit(exit_val);
       } else
 	have_stdio = 0;
@@ -2653,6 +2656,9 @@ static void MrEdExit(int v)
     return;
   }
 
+#ifdef wx_msw
+  mred_clean_up_gdi_objects();
+#endif	
   exit(v);
 }
 #endif
@@ -2663,8 +2669,12 @@ static void on_main_killed(Scheme_Process *p)
   
   if (scheme_exit)
     scheme_exit(exit_val);
-  else
+  else {
+#ifdef wx_msw
+    mred_clean_up_gdi_objects();
+#endif	
     exit(exit_val);
+  }
 }
 
 void MrEdApp::RealInit(void)
@@ -2806,6 +2816,10 @@ int actual_main(int argc, char **argv)
   wxCreateApp();
 
   r = wxEntry(argc, argv);
+
+#ifdef wx_msw
+  mred_clean_up_gdi_objects();
+#endif	
 
   return r;
 }

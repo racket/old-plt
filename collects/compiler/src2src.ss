@@ -617,19 +617,25 @@
         (cond
           ;; ((lambda (a ...) ...) v ...) => (let ([a v] ...) ...)
           [(and (is-a? rator lambda%)
-                (send rator arg-body-exists? (length rands))
                 (send rator can-inline?))
-           (send rator drop-other-uses (length rands))
-           (let-values ([(vars body) (send rator arg-vars-and-body (length rands))])
-             (for-each (lambda (var rand)
-                         (install-values (list var) rand))
-                       vars rands)
-             (send (make-object let%
-                     (map list vars)
-                     rands
-                     body
-                     src-stx)
-                   simplify ctx))]
+	   (if (send rator arg-body-exists? (length rands))
+	       (begin
+		 (send rator drop-other-uses (length rands))
+		 (let-values ([(vars body) (send rator arg-vars-and-body (length rands))])
+		   (for-each (lambda (var rand)
+			       (install-values (list var) rand))
+			     vars rands)
+		   (send (make-object let%
+				      (map list vars)
+				      rands
+				      body
+				      src-stx)
+			 simplify ctx)))
+	       (begin
+		 (unless (send rator arg-count-ok? (length rands))
+		   (warning "immediate procedure called with wrong number of arguments"
+			    this))
+		 this))]
           
           ;; constant folding
           [(and (is-a? rator global%)
@@ -767,8 +773,20 @@
                 (equal? 1 (send (car rands) get-result-arity)))
            (known-single-result (car rands))]
           
+          ;; Check arity of other calls to primitives
+          [(and (is-a? rator global%)
+                (send rator is-kernel?))
+	   (let ([f (dynamic-require 'mzscheme (send rator orig-name))])
+	     (cond
+	      [(not (procedure? f))
+	       (warning "call of non-procedure" this)]
+	      [(not (procedure-arity-includes? f (length rands)))
+	       (warning "primitive called with wrong number of arguments" this)]))
+           this]
+
           ;; inlining
-          [(and (> (fuel) 0)
+          [(and #f ;; disabled!
+		(> (fuel) 0)
                 (or (is-a? rator ref%) (is-a? rator global%))
                 (is-a? (send rator get-value) lambda%)
                 (not (send (send rator get-value) get-simplifying-body)))
@@ -783,6 +801,15 @@
                    (simplify ctx)
                    (fuel max-fuel))
                  (simplify ctx)))]
+
+          ;; Check arity of a call to a known (non-primitive) function
+          [(and (or (is-a? rator ref%) (is-a? rator global%))
+                (is-a? (send rator get-value) lambda%))
+           (let ([f (send rator get-value)])
+	     (unless (send f arg-count-ok? (length rands))
+	       (warning "procedure called with wrong number of arguments"
+			this))
+	     this)]
           
           [else this]))
       
@@ -851,6 +878,10 @@
       
       (define/public (arg-body-exists? n)
         (ormap (lambda (vs n?) (and n? (= n (length vs))))
+               varss normal?s))
+      (define/public (arg-count-ok? n)
+        (ormap (lambda (vs n?) (or (and n? (= n (length vs)))
+				   (and (not n?) (n . >= . (sub1 (length vs))))))
                varss normal?s))
       (define/public (arg-vars-and-body n)
         (let loop ([varss varss][normal?s normal?s][bodys bodys])
@@ -1445,6 +1476,32 @@
       (define/override (no-side-effect?) #f)
       (super-instantiate ())))
   
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Warning reporting
+  ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (define (print-warning msg exp)
+    (let ([stx (send exp get-stx)])
+      (when (syntax-source stx)
+	(fprintf (current-output-port) "~a:" (syntax-source stx))
+	(cond
+	 [(syntax-column stx)
+	  (fprintf (current-output-port) "~a:~a:" 
+		   (syntax-line stx)
+		   (syntax-column stx))]
+	 [(syntax-position stx)
+	  (fprintf (current-output-port) ":~a:" 
+		   (syntax-position stx))])
+	(fprintf (current-output-port) " "))
+      (fprintf (current-output-port) 
+	       "~a: ~e~n"
+	       msg
+	       (syntax-object->datum (send exp sexpr)))))
+
+  (define (warning msg exp)
+    ; (print-warning msg exp)
+    (void))
+
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Parser
   ;; converts a syntax object to an exp%

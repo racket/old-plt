@@ -460,7 +460,6 @@
 						  "Rename"
 						  menu
 						  (lambda (item evt)
-						    (printf "arrows.1: ~a~n" (null? arrows))
 						    (unless (null? arrows)
 						      (let* ([arrow (car arrows)]
 							     [id-name (arrow-id-name arrow)]
@@ -470,7 +469,6 @@
 							       (format "Rename ~a to:" id-name)
 							       #f
 							       (format "~a" id-name))])
-							(printf "arrows.2: id-name ~a new-id ~a~n" id-name new-id)
 							((arrow-rename arrow) new-id))
 						      (invalidate-bitmap-cache))))])
 			       (send (get-canvas) popup-menu menu
@@ -560,7 +558,6 @@
 			  [const-style (send style-list find-named-style "mzprizm:constant")]
 			  [rename-bindings
 			   (lambda (occurrances input-name)
-			     (printf "rename-bindings.1~n")
 			     (dynamic-wind
 			      (lambda ()
 				(send definitions-edit begin-edit-sequence))
@@ -578,7 +575,6 @@
 						 (zodiac:location-offset (zodiac:zodiac-start z))
 						 (add1 (zodiac:location-offset (zodiac:zodiac-finish z))))))])
 				  (for-each rename-one sorted))
-				(printf "re-checking syntax~n")
 				(button-callback))
 			      (lambda ()
 				(send definitions-edit end-edit-sequence))))]

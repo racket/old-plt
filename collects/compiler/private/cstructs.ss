@@ -53,10 +53,11 @@
       (define varref:in-module 128)
 
       (define mi-counter -1)
-      (define-struct varref:module-invoke (id))
-      (define (make-module-invoke)
+      (define-struct varref:module-invoke (id syntax?))
+      (define (make-module-invokes)
 	(set! mi-counter (add1 mi-counter))
-	(make-varref:module-invoke mi-counter))
+	(values (make-varref:module-invoke mi-counter #f)
+		(make-varref:module-invoke mi-counter #t)))
 
       (define (get-num-module-invokes)
 	(add1 mi-counter))
@@ -224,6 +225,8 @@
 
       (define-struct module-info (invoke
 				  ;; a module-invoke record
+				  syntax-invoke
+				  ;; another module-invoke record
 				  part
 				  ;; 'body, 'syntax-body, or 'constructor
 				  ))

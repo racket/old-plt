@@ -598,7 +598,8 @@
 		     ;;
 		     [(zodiac:module-form? ast)
 
-		      (set-annotation! ast (make-module-info (make-module-invoke) #f))
+		      (let-values ([(mi smi) (make-module-invokes)])
+			(set-annotation! ast (make-module-info mi smi #f)))
 
 		      (zodiac:set-module-form-body!
 		       ast

@@ -71,7 +71,7 @@
 		      #f
 		      (box '())
 		      lam
-		      pls?)]
+		      (and pls? (varref:current-invoke-module)))]
 		 [def (zodiac:make-define-values-form 
 		       (zodiac:zodiac-stx lam)
 		       (make-empty-box)
@@ -94,14 +94,19 @@
 					   #f #f #f)])
 				 (set-annotation! 
 				  def 
-				  (make-module-info (varref:current-invoke-module) 'body)) ; FIXME!!!
+				  (let ([mi (varref:current-invoke-module)])
+				    (make-module-info mi
+						      #f
+						      (if (varref:module-invoke-syntax? mi)
+							  'syntax-body
+							  'body))))
 				 def)
 			       def)])
 		  
 		  (let ([mi (varref:current-invoke-module)])
 		    (varref:add-attribute! sv (or mi varref:per-load-static))
 		    ((if mi
-			 compiler:add-per-invoke-static-list!
+			 (lambda (v) (compiler:add-per-invoke-static-list! v mi))
 			 compiler:add-per-load-static-list!)
 		     var)
 		    (set! compiler:once-closures-list (cons def compiler:once-closures-list))

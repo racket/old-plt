@@ -65,8 +65,8 @@
      varref:env
      varref:in-module
 
-     (struct varref:module-invoke (id))
-     make-module-invoke
+     (struct varref:module-invoke (id syntax?))
+     make-module-invokes
      get-num-module-invokes
      is-module-invoke?
 
@@ -100,7 +100,7 @@
 
      (struct app (tail? prim? prim-name))
 
-     (struct module-info (invoke part))
+     (struct module-info (invoke syntax-invoke part))
 
      varref:current-invoke-module
 
@@ -202,6 +202,8 @@
      (struct rep:pointer (to))
      (struct rep:struct (name orig-name fields))
      (struct rep:struct-field (name orig-name rep))
+
+     (struct rep:atomic/invoke (module-invoke))
 
      compiler:get-structs
      compiler:init-structs!
@@ -337,6 +339,7 @@
      (struct vm:per-load-static-varref ())
      (struct vm:per-invoke-static-varref ())
      (struct vm:per-load-static-varref-from-lift (lambda))
+     (struct vm:per-invoke-static-varref-from-lift (lambda))
      (struct vm:primitive-varref (var))
      (struct vm:symbol-varref (var))
      (struct vm:inexact-varref (var))

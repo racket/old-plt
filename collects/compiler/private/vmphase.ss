@@ -901,7 +901,9 @@
 			   [(top-level-varref/bind-from-lift? ast)
 			    (lambda (a d ast)
 			      ((if (top-level-varref/bind-from-lift-pls? ast)
-				   make-vm:per-load-static-varref-from-lift
+				   (if (varref:module-invoke? (top-level-varref/bind-from-lift-pls? ast))
+				       make-vm:per-invoke-static-varref-from-lift
+				       make-vm:per-load-static-varref-from-lift)
 				   make-vm:static-varref-from-lift)
 			       a d (top-level-varref/bind-from-lift-lambda ast)))]
 			   [(varref:has-attribute? ast varref:per-load-static)

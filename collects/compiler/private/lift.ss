@@ -71,7 +71,7 @@
 		     ;; LAMBDA EXPRESSIONS
 		     ;;
 		     [(zodiac:case-lambda-form? ast)
-		      (set! procedures (cons ast procedures))
+		      (set! procedures (cons (cons ast (varref:current-invoke-module )) procedures))
 		      (for-each find! (zodiac:case-lambda-form-bodies ast))]
 		     
 		     ;;--------------------------------------------------------------
@@ -157,7 +157,9 @@
 		     ;; MODULE
 		     ;;
 		     [(zodiac:module-form? ast)
-		      (find! (zodiac:module-form-body ast))]
+		      (parameterize ([varref:current-invoke-module 
+				      (module-info-invoke (get-annotation ast))])
+			(find! (zodiac:module-form-body ast)))]
 		     
 		     [else (compiler:internal-error
 			    ast
@@ -574,13 +576,19 @@
 	    ;;  now because we'll check again:
 	    (for-each
 	     (lambda (l)
-	       (let ([c (get-annotation l)])
-		 (unless (procedure-code-liftable c)
-		   (set-procedure-code-liftable! c 'unknown-liftable))))
+	       (let ([l (car l)])
+		 (let ([c (get-annotation l)])
+		   (unless (procedure-code-liftable c)
+		     (set-procedure-code-liftable! c 'unknown-liftable)))))
 	     procedures)
 
 	    ;; Set liftable flags
-	    (for-each set-liftable! procedures)
+	    (for-each (lambda (l)
+			(let ([l (car l)]
+			      [mi (cdr l)])
+			  (parameterize ([varref:current-invoke-module mi])
+			    (set-liftable! l))))
+		      procedures)
 
 	    (set! globals empty-set)
 	    (let ([ast (lift! ast code)])

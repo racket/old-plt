@@ -81,6 +81,7 @@
       (define-struct (vm:per-load-static-varref struct:vm:static-varref) ())
       (define-struct (vm:per-invoke-static-varref struct:vm:static-varref) ())
       (define-struct (vm:per-load-static-varref-from-lift struct:vm:per-load-static-varref) (lambda))
+      (define-struct (vm:per-invoke-static-varref-from-lift struct:vm:per-invoke-static-varref) (lambda))
       (define-struct (vm:primitive-varref zodiac:struct:zodiac) (var))
       (define-struct (vm:symbol-varref zodiac:struct:zodiac) (var))
       (define-struct (vm:inexact-varref zodiac:struct:zodiac) (var))

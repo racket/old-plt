@@ -3,7 +3,8 @@
 ;; (c) 1997-2001 PLT
 
 (module vm2c mzscheme
-  (require (lib "unitsig.ss"))
+  (require (lib "unitsig.ss")
+	   (lib "list.ss"))
 
   (require (lib "zodiac-sig.ss" "syntax"))
 
@@ -245,7 +246,7 @@
 			  (let ([mi (cdr p)]
 				[var (car p)])
 			    (hash-table-put! ht (varref:module-invoke-id mi)
-					     (cons var
+					     (cons (cons var (varref:module-invoke-syntax? mi))
 						   (hash-table-get
 						    ht
 						    (varref:module-invoke-id mi)
@@ -261,13 +262,20 @@
 	       ht
 	       (lambda (id vars)
 		 (fprintf port "/* compiler-written per-invoke variables for module ~a */~n" id)
-		 (fprintf port "typedef struct Scheme_Per_Invoke_Statics_~a {~n" id)
-		 (if (null? vars)
-		     (fprintf port "  int dummy;~n")
-		     (emit-static-variable-fields! port vars))
-		 (fprintf port "} Scheme_Per_Invoke_Statics_~a;~n" id)
-		 (newline port)))))))
-
+		 (let ([vars (map car (filter (lambda (i) (not (cdr i))) vars))]
+		       [syntax-vars (map car (filter (lambda (i) (cdr i)) vars))])
+		   (fprintf port "typedef struct Scheme_Per_Invoke_Statics_~a {~n" id)
+		   (if (null? vars)
+		       (fprintf port "  int dummy;~n")
+		       (emit-static-variable-fields! port vars))
+		   (fprintf port "} Scheme_Per_Invoke_Statics_~a;~n" id)
+		   (fprintf port "typedef struct Scheme_Per_Invoke_Syntax_Statics_~a {~n" id)
+		   (if (null? syntax-vars)
+		       (fprintf port "  int dummy;~n")
+		       (emit-static-variable-fields! port syntax-vars))
+		   (fprintf port "} Scheme_Per_Invoke_Syntax_Statics_~a;~n" id)
+		   (newline port))))))))
+      
       ;; when statics have binding information, this need only register
       ;; pointer declarations
       (define vm->c:emit-registration!
@@ -329,7 +337,9 @@
 		   kind i
 		   (if (or per-load? module) ", Scheme_Per_Load_Statics *PLS" "")
 		   (if module
-		       (format ", Scheme_Object *self_modidx, Scheme_Per_Invoke_Statics_~a *PMIS" module)
+		       (format ", Scheme_Object *self_modidx, Scheme_Per_Invoke_~aStatics_~a *PMIS" 
+			       (if mod-syntax? "Syntax_" "")
+			       module)
 		       ""))
 	  (when (> max-arity 0)
 	    (fprintf c-port
@@ -470,8 +480,12 @@
 				[(scheme-bucket) "Scheme_Bucket *"]
 				[(scheme-per-load-static) "struct Scheme_Per_Load_Statics *"]
 				[(scheme-per-invoke-static) 
-				 (format "struct Scheme_Per_Invoke_Statics_~a *"
-					 (varref:module-invoke-id (rep:struct-field-orig-name rep)))]
+				 (let ([mi (rep:atomic/invoke-module-invoke rep)])
+				   (format "struct Scheme_Per_Invoke_~aStatics_~a *"
+					   (if (varref:module-invoke-syntax? mi)
+					       "Syntax_"
+					       "")
+					   (varref:module-invoke-id mi)))]
 				[(label) "int"]
 				[(prim) "Scheme_Closed_Primitive_Proc"]
 				[(prim-case) "Scheme_Closed_Case_Primitive_Proc"]
@@ -491,7 +505,7 @@
 		  #f
 		  (format "vm->c:convert-type-definition: ~a not a valid representation" rep))])))
 
-					; must handle structs as well as atomic types
+      ;; must handle structs as well as atomic types
       (define vm->c:type-definition->malloc
 	(lambda (rep)
 	  (format "scheme_malloc(sizeof(~a))"

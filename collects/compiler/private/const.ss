@@ -86,15 +86,31 @@
 	(set! compiler:per-load-static-list
 	      (cons var compiler:per-load-static-list)))
 
-      (define (compiler:add-per-invoke-static-list! var)
+      (define (compiler:add-per-invoke-static-list! var mi)
 	(set! compiler:per-invoke-static-list
-	      (cons var compiler:per-invoke-static-list)))
+	      (cons (cons var mi) compiler:per-invoke-static-list)))
 
       (define-values (const:the-per-load-statics-table
 		      const:per-load-statics-table?)
 	(let-struct const:per-load-statics-table ()
 		    (values (make-const:per-load-statics-table)
 			    const:per-load-statics-table?)))
+
+      (define (wrap-module-definition def mi)
+	(let ([def (zodiac:make-module-form
+		    (zodiac:zodiac-stx def)
+		    (make-empty-box)
+		    #f #f #f
+		    def #f
+		    #f #f #f)])
+	  (set-annotation! 
+	   def 
+	   (make-module-info mi 
+			     #f
+			     (if (varref:module-invoke-syntax? mi)
+				 'syntax-body
+				 'body)))
+	  def))
 
       ;; we need to make this in a-normalized, analyzed form from the beginning
       (define compiler:add-const!
@@ -121,15 +137,7 @@
 	     [(varref:module-invoke? attr)
 	      (set! compiler:per-invoke-static-list
 		    (cons (cons var attr) compiler:per-invoke-static-list)) 
-	      (let ([def (zodiac:make-module-form
-			  (zodiac:zodiac-stx def)
-			  (make-empty-box)
-			  #f #f #f
-			  def #f
-			  #f #f #f)])
-		(set-annotation! 
-		 def 
-		 (make-module-info attr 'body)) ; FIXME!!!
+	      (let ([def (wrap-module-definition def attr)])
 		(compiler:add-local-per-invoke-define-list! def))]
 	     [else
 	      (set! compiler:static-list (cons var compiler:static-list))
@@ -415,15 +423,19 @@
 		((if (varref:current-invoke-module)
 		     compiler:add-local-per-invoke-define-list!
 		     compiler:add-local-per-load-define-list!)
-		 (zodiac:make-define-values-form 
-		  #f
-		  (make-empty-box) (list sv)
-		  (compiler:re-quote 
-		   (zodiac:make-read
-		    (datum->syntax-object
-		     #f
-		     strvar ;; <------ HACK! See "HACK!" in vm2c.ss
-		     #f)))))
+		 (let ([def
+			(zodiac:make-define-values-form 
+			 #f
+			 (make-empty-box) (list sv)
+			 (compiler:re-quote 
+			  (zodiac:make-read
+			   (datum->syntax-object
+			    #f
+			    strvar ;; <------ HACK! See "HACK!" in vm2c.ss
+			    #f))))])
+		   (if (varref:current-invoke-module)
+		       (wrap-module-definition def (varref:current-invoke-module))
+		       def)))
 
 		;; Create construction code for each
 		;;  syntax variable:
@@ -451,10 +463,14 @@
 		      ((if (varref:current-invoke-module)
 			   compiler:add-local-per-invoke-define-list!
 			   compiler:add-local-per-load-define-list!)
-		       (zodiac:make-define-values-form 
-			(cdar l)
-			(make-empty-box) (list (caar l))
-			app))
+		       (let ([def
+			      (zodiac:make-define-values-form 
+			       (cdar l)
+			       (make-empty-box) (list (caar l))
+			       app)])
+			 (if (varref:current-invoke-module)
+			     (wrap-module-definition def (varref:current-invoke-module))
+			     def)))
 		      (loop (cdr l) (add1 pos))))))))
 	  (set! syntax-constants null))))))
 

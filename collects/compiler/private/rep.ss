@@ -55,6 +55,8 @@
       (define-struct rep:struct (name orig-name fields))
       (define-struct rep:struct-field (name orig-name rep))
 
+      (define-struct (rep:atomic/invoke struct:rep:atomic) (module-invoke))
+
       (define (rep:same-shape? a b)
 	(let ([al (rep:struct-fields a)]
 	      [bl (rep:struct-fields b)])
@@ -187,7 +189,9 @@
 						 (if (const:per-load-statics-table? global)
 						     (make-rep:atomic 'scheme-per-load-static)
 						     (if (varref:module-invoke? global)
-							 'scheme-per-invoke-static
+							 (make-rep:atomic/invoke 
+							  'scheme-per-invoke-static
+							  global)
 							 (make-rep:atomic 'scheme-bucket)))))
 					      (set->list (code-global-vars code))))])
 			   (if (null? fields)

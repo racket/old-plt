@@ -77,15 +77,18 @@
 				(cond
 				 [(or (vm:local-varref? closure)
 				      (vm:static-varref-from-lift? closure)
-				      (vm:per-load-static-varref-from-lift? closure))
+				      (vm:per-load-static-varref-from-lift? closure)
+				      (vm:per-invoke-static-varref-from-lift? closure))
 				  (let ([known 
 					 (cond
 					  [(vm:local-varref? closure) (extract-varref-known-val 
 								       (vm:local-varref-binding closure))]
 					  [(vm:static-varref-from-lift? closure)
 					   (vm:static-varref-from-lift-lambda closure)]
+					  [(vm:per-load-static-varref-from-lift? closure)
+					   (vm:per-load-static-varref-from-lift-lambda closure)]
 					  [else
-					   (vm:per-load-static-varref-from-lift-lambda closure)])])
+					   (vm:per-invoke-static-varref-from-lift-lambda closure)])])
 				    (and known
 					 (zodiac:case-lambda-form? known)
 					 (begin (set! L known) #t)

@@ -63,14 +63,14 @@
 
 (module driver mzscheme
   (require (lib "unitsig.ss")
-	  (lib "list.ss")
-	  (lib "etc.ss")
-	  (lib "pretty.ss"))
+	   (lib "list.ss")
+	   (lib "etc.ss")
+	   (lib "pretty.ss"))
   
   (require (lib "zodiac-sig.ss" "syntax")
-	  (lib "compile-sig.ss" "dynext")
-	  (lib "link-sig.ss" "dynext")
-	  (lib "file-sig.ss" "dynext"))
+	   (lib "compile-sig.ss" "dynext")
+	   (lib "link-sig.ss" "dynext")
+	   (lib "file-sig.ss" "dynext"))
 
   (require "../sig.ss")
   (require "sig.ss")
@@ -228,7 +228,7 @@
 
       ;; see (single) use for info:
       (define (split-module m)
-	(let ([mi (get-annotation m)])
+	(let ([info (get-annotation m)])
 	  (let ([mk
 		 (lambda (expr mode)
 		   (let ([ast (zodiac:make-module-form
@@ -243,7 +243,12 @@
 			       (zodiac:module-form-kernel-reprovide-hint m))])
 		     (set-annotation! 
 		      ast 
-		      (make-module-info (module-info-invoke mi) mode))
+		      (make-module-info ((if (eq? mode 'syntax-body)
+					     module-info-syntax-invoke
+					     module-info-invoke)
+					 info)
+					#f 
+					mode))
 		     ast))]
 		[body->list
 		 (lambda (expr)
@@ -297,7 +302,16 @@
 				(analyze-expression! (car sexps) empty-set null (null? (cdr sexps)))])
 
 		    ;; Adds to const, per-load-const, per-invoke-const lists:
-		    (compiler:finish-syntax-constants!)
+		    (when (or (null? (cdr sexps))
+			      (not (zodiac:module-form? (car sexps)))
+			      (not (zodiac:module-form? (cadr sexps)))
+			      (let ([a1 (get-annotation (car sexps))]
+				    [a2 (get-annotation (cadr sexps))])
+				(not (and (eq? (module-info-part a1)
+					       (module-info-part a2))
+					  (eq? (module-info-invoke a1)
+					       (module-info-invoke a2))))))
+		      (compiler:finish-syntax-constants!))
 
 		    (varref:current-invoke-module #f)
 
@@ -358,7 +372,10 @@
 					       #f #f
 					       (list
 						(get-annotation 
-						 (zodiac:define-values-form-val ll)))))
+						 (zodiac:define-values-form-val 
+						  (if (zodiac:module-form? ll)
+						      (zodiac:module-form-body ll)
+						      ll))))))
 				  (compiler:get-once-closures-list)
 				  (compiler:get-once-closures-globals-list))
 			     (map reset-globals c (map cdr l)))))

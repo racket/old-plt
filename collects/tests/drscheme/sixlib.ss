@@ -1,6 +1,6 @@
 (require-library "macro.ss")
 (require-library "graphic.ss" "graphics")
-
+(error)
 (open-graphics)
 
 (let ([vp (open-pixmap "snip test" 100 100)])
@@ -151,6 +151,15 @@
 		    (loop (+ x (car ((get-string-size v) s)))))]
        [else (loop x)])))
   (close-viewport v))
+
+(let* ([fraction 1/5]
+       [test 
+        (list
+         (rgb-red (make-rgb fraction 0 0))
+         (rgb-green (make-rgb 0 fraction 0))
+         (rgb-blue (make-rgb 0 0 fraction)))])
+  (unless (equal? (list fraction fraction fraction) test)
+    (error 'color-construction "wrong: ~s" test)))
 
 (close-graphics)
 

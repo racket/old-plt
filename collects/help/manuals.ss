@@ -38,7 +38,7 @@
 		      [(regexp-match "<TITLE>(.*)</TITLE>" r) => cadr]
 		      [else (loop)]))))))
 	   doc-paths)])
-    (let-values ([(collections collection-names)
+    (let-values ([(collections-doc-files collection-names)
 		  ((require-library "colldocs.ss" "help") quicksort)])
 
       (apply
@@ -56,11 +56,11 @@
 	 names)
 	(list "</UL><P><UL>")
 	(map
-	 (lambda (collection name)
+	 (lambda (collection-doc-file name)
 	   (format "<LI> <A HREF=\"file:~a\">~a collection</A>"
-		   (build-path collection "doc.txt")
+		   collection-doc-file
 		   name))
-	 collections
+	 collections-doc-files
 	 collection-names)
 	(list "</UL>")
 	(let ([uninstalled (let loop ([l known-docs])

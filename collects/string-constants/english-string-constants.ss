@@ -1020,8 +1020,8 @@ please adhere to these guidelines:
  ;; the next two are used in the initial wizard dialog.
  ;; Note that vc-wizard-check-prompt can (should) have newlines so
  ;; it will not make the dialog too wide.
- (vc-wizard-check-note "To check the PLT servers for a new version\nbefore proceeding, click the button.")
- (vc-wizard-check-button "Check Now")
+ (vc-wizard-check-note "The version you are about to install may not be the latest\n one. If you would like, DrScheme can check for you.")
+ (vc-wizard-check-button "Check for Updates")
  (vc-update-check "Update check")
  (vc-please-wait "Please wait")
  (vc-connecting-version-server "Connecting to PLT version server")

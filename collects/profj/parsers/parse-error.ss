@@ -1289,9 +1289,12 @@
   ;Intermediate
   ;parse-method-body: token token (->token) bool bool-> token
   (define (parse-method-body pre cur-tok getter ctor? call-seen?)
+;    (printf "parse-method-body pre ~a cur-tok ~a~n" pre cur-tok)
     (case (get-token-name (get-tok cur-tok))
       ((C_BRACE EOF) cur-tok)
-      (else (parse-method-body pre (parse-statement pre cur-tok 'start getter #t ctor? call-seen?) getter ctor? call-seen?))))
+      (else (parse-method-body pre 
+                               (parse-statement pre cur-tok 'start getter #t ctor? call-seen?) 
+                               getter ctor? call-seen?))))
   
   ;Intermediate - addition of parameter id-ok?
   ;parse-statement: token token symbol (->token) bool bool bool-> token
@@ -1405,7 +1408,8 @@
                                                   'c-paren getter #f)
                                 'end-exp getter id-ok? ctor? super-seen?))
               ;Intermediate
-              ((O_BRACE) (parse-statement cur-tok (parse-method-body cur-tok (getter) getter ctor? super-seen?) 
+              ((O_BRACE) 
+               (parse-statement cur-tok (parse-method-body cur-tok (getter) getter ctor? super-seen?) 
                                           'c-brace getter #t ctor? super-seen?))
               ;Intermediate - changed wholly
               (else
@@ -1472,7 +1476,7 @@
            ((EOF) (parse-error "Expected ';' to end 'return' statement" ps pe))
            ((SEMI_COLON) (getter))
            (else (parse-error (format "Expected ';' to end 'return' statement, found ~a" out) start end))))
-        ;Intermediate
+        ;Intermediate & Advanced
         ((statement-or-var)
          (case kind
            ((EOF) (parse-error "Expected remainder of statement" ps pe))
@@ -1491,14 +1495,68 @@
                                    (parse-expression null next 'start getter #f) 'assign-end getter id-ok? ctor? super-seen?))))
            ((O_PAREN) (parse-statement cur-tok (parse-expression pre cur-tok 'method-call-args getter #f)
                                        'end-exp getter id-ok? ctor? super-seen?))
-           (else (parse-error (format "Expected assignment or method call, found ~a, which is not valid for a statement" out)
-                              start end))))
+           (else 
+            (cond
+              ((and (advanced?) (eq? kind 'O_BRACKET))
+               (let* ((next (getter))
+                      (next-tok (get-tok next)))
+                 (if (eof? next-tok) 
+                     (parse-error "Expected an index for array" start end)
+                     (let* ((afterOB (parse-expression cur-tok next 'start getter #f))
+                            (afterOB-tok (get-tok afterOB)))
+                       (if (eof? afterOB-tok)
+                           (parse-error "Expected a ']' to end array index" start (get-end afterOB))
+                           (parse-statement afterOB (getter) 'assignment getter id-ok? ctor? super-seen?))))))
+              ((advanced?)
+               (parse-statement pre cur-tok 'unary-check getter id-ok? ctor? super-seen?))
+              (else
+               (parse-error (format "Expected assignment or method call, found ~a, which is not valid for a statement" out)
+                            start end))))))
+        ((assignment)
+         (case kind
+           ((EOF) (parse-error "Expected remainder of assignment" ps pe))
+           ((=)
+            ;From Assignment
+            (let ((next (getter)))
+              (if (eof? (get-tok next))
+                  (parse-error "Expected an expression after '=' for assignment" start end)
+                  (parse-statement cur-tok 
+                                   (parse-expression null next 'start getter #f) 'assign-end getter id-ok? ctor? super-seen?))))
+           ((O_BRACKET)
+            (let* ((next (getter))
+                   (next-tok (get-tok next)))
+              (if (eof? next-tok) 
+                  (parse-error "Expected an index for array" start end)
+                  (let* ((afterOB (parse-expression cur-tok next 'start getter #f))
+                         (afterOB-tok (get-tok afterOB)))
+                    (if (eof? afterOB-tok)
+                        (parse-error "Expected a ']' to end array index" start (get-end afterOB))
+                        (parse-statement afterOB (getter) 'assignment getter id-ok? ctor? super-seen?))))))
+           (else
+            (parse-error (format "Expected assignment, found ~a, which is not valid for a statement" out)
+                            start end))))
         ;Intermediate - from Assignment, error messages changed
         ((assign-end)
          (cond
            ((eof? tok) (parse-error "Expected a ';' to end assignment" ps pe))
            ((semi-colon? tok) (getter))
            (else (parse-error (format "Expected a ';' to end assignment, found ~a" out) start end))))
+        ((unary-check)
+         (let ((pre-out (token-value (get-tok pre))))
+           (case kind
+             ((EOF) (parse-error "Expected remainder of statement" ps pe))
+             ((++ --) 
+              (let* ((next (getter))
+                     (next-tok (get-tok next)))
+                (cond
+                  ((eof? next-tok) 
+                   (parse-error (format "Expected a ';' to end ~a~a" pre-out kind) ps end))
+                ((semi-colon? next-tok) (getter))
+                (else
+                 (parse-error (format "Expected a ';' to end ~a~a, found ~a" pre-out kind (output-format next-tok))
+                              ps (get-end next))))))
+             (else (parse-error (format "Expected a statement ~a ~a is not the valid start of a statement"
+                                        pre-out out) ps end)))))
         ;Intermediate
         ((end-exp)
          (case kind

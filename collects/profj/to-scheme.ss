@@ -1152,50 +1152,47 @@
   
   ;translate-while: syntax syntax src -> syntax
   (define (translate-while cond body src)
-    (make-syntax #f `(let/ec break-k
+    (make-syntax #f `(let/ec loop-k
                        (let loop ((dummy #f))
-                         (let/ec continue-k
-                           (when ,cond
-                             ,body
-                             (loop #f)))))
+                         (when ,cond
+                           ,body
+                           (loop #f))))
                  (build-src src)))
-  
+
   ;translate-do: syntax syntax src -> syntax
   (define (translate-do body cond src)
-    (make-syntax #f `(let/ec break-k
+    (make-syntax #f `(let/ec loop-k
                        (let loop ((dummy #f))
-                         (let/ec continue-k
-                           ,body
-                           (when ,cond (loop #f)))))
-                   (build-src src)))
+                         ,body
+                         (when ,cond (loop #f))))
+                 (build-src src)))
   
   ;translate-for: (U (list statement) (list field)) syntax (list syntax) syntax src type-records-> syntax
   (define (translate-for init cond incr body src type-recs)
-    (let ((loop `(let/ec break-k
+    (let ((loop `(let/ec loop-k
                    (let loop ((continue? #f))
-                     (let/ec continue-k
-                       (when continue? ,@incr)
-                       (when ,cond 
-                         ,body
-                         ,@incr
-                         (loop #f))))))
-            (source (build-src src)))
-        (if (and (pair? init) (field? (car init)))
-            (make-syntax #f `(letrec (,@(map (lambda (var)
-                                               `(,(translate-id (build-var-name (id-string (field-name var)))
-                                                                (id-src (field-name var)))
-                                                 ,(if (var-init? var)
-                                                      (if (array-init? (var-init-init var))
-                                                          (initialize-array (array-init-vals (var-init-init var)) 
-                                                                            (field-type var))
-                                                          (translate-expression (var-init-init var)))
-                                                      (get-default-value (field-type var))))) 
-                                             init))
-                               ,loop) source)
-            (make-syntax #f `(begin
-                               ,@(map (lambda (s) (translate-statement s type-recs)) init)
-                               ,loop)
-                         source))))
+                     (when continue? ,@incr)
+                     (when ,cond 
+                       ,body
+                       ,@incr
+                       (loop #f)))))
+          (source (build-src src)))
+      (if (and (pair? init) (field? (car init)))
+          (make-syntax #f `(letrec (,@(map (lambda (var)
+                                             `(,(translate-id (build-var-name (id-string (field-name var)))
+                                                              (id-src (field-name var)))
+                                                ,(if (var-init? var)
+                                                     (if (array-init? (var-init-init var))
+                                                         (initialize-array (array-init-vals (var-init-init var)) 
+                                                                           (field-type var))
+                                                         (translate-expression (var-init-init var)))
+                                                     (get-default-value (field-type var))))) 
+                                           init))
+                             ,loop) source)
+          (make-syntax #f `(begin
+                             ,@(map (lambda (s) (translate-statement s type-recs)) init)
+                             ,loop)
+                       source))))
   
   ;Converted
   ;initialize-array: (list (U expression array-init)) type-spec-> syntax
@@ -1331,16 +1328,16 @@
   ;translate-break: (U id #f) src -> syntax
   (define (translate-break id src)
     (if (not id)
-        (make-syntax #f `(break-k (void)) (build-src src))
+        (make-syntax #f `(loop-k (void)) (build-src src))
         (make-syntax #f `(,(translate-id (string-append (id-string id "-k")) (id-src id)) void) (build-src src))))
   
   ;Converted
   ;translate-continue: (U string #f) src -> syntax
   (define (translate-continue id src)
     (if (not id)
-        (make-syntax #f `(continue-k (loop #t)) (build-src src))
+        (make-syntax #f `(loop-k (loop #t)) (build-src src))
         (make-syntax #f `(,(translate-id (string-append (id-string id) "-k") (id-src id)) 
-                          (,(build-identifier (string-append (id-string id) "-continue"))))
+                           (,(build-identifier (string-append (id-string id) "-continue"))))
                      (build-src src))))
   
   ;translate-label: id syntax src -> syntax

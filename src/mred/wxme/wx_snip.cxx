@@ -83,6 +83,7 @@ extern void *wxMallocAtomicIfPossible(size_t s);
 /***************************************************************/
 
 wxSnipClass::wxSnipClass()
+: wxObject(WXGC_NO_CLEANUP)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_SNIP_CLASS;
@@ -1697,7 +1698,7 @@ wxSnip *MediaSnipClass::Read(wxMediaStreamIn *f)
 /***************************************************************/
 
 wxSnipClassList::wxSnipClassList(void)
-: wxList((KeyType)wxKEY_STRING)
+: wxList((KeyType)wxKEY_STRING, FALSE)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_SNIP_CLASS_LIST;
@@ -1885,6 +1886,7 @@ wxStandardSnipClassList *wxMakeTheSnipClassList(void)
 /***************************************************************/
 
 wxBufferDataClass::wxBufferDataClass()
+: wxObject(WXGC_NO_CLEANUP)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_BUFFER_DATA_CLASS;
@@ -1895,6 +1897,7 @@ wxBufferDataClass::wxBufferDataClass()
 }
 
 wxBufferData::wxBufferData()
+: wxObject(WXGC_NO_CLEANUP)
 {
 #if USE_OLD_TYPE_SYSTEM
   __type = wxTYPE_BUFFER_DATA;
@@ -1953,7 +1956,7 @@ Bool wxLocationBufferData::Write(wxMediaStreamOut *f)
 /**************************************************************/
 
 wxBufferDataClassList::wxBufferDataClassList(void)
-: wxList((KeyType)wxKEY_STRING)
+: wxList((KeyType)wxKEY_STRING, FALSE)
 {
   wxList *ul;
 

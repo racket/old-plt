@@ -76,6 +76,7 @@ class wxSnipLocation : public wxObject
   Bool selected, needResize;
   wxSnip *snip;
 
+  wxSnipLocation();
   void Resize(wxDC *dc);
 };
 
@@ -100,7 +101,7 @@ wxMediaPasteboard::wxMediaPasteboard()
   writeLocked = 0;
 
   snips = lastSnip = NULL;
-  sll = new wxList(wxKEY_INTEGER);
+  sll = new wxList(wxKEY_INTEGER, FALSE);
   snipLocationList = sll;
   snipLocationList->DeleteContents(TRUE);
 
@@ -3030,6 +3031,11 @@ void wxMediaPasteboard::PrintToDC(wxDC *dc, int page)
 }
 
 /************************************************************************/
+
+wxSnipLocation::wxSnipLocation()
+: wxObject(WXGC_NO_CLEANUP)
+{
+}
 
 void wxSnipLocation::Resize(wxDC *dc)
 {

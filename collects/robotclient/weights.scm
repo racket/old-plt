@@ -97,31 +97,31 @@
                                            0)
                                        (* (next-water-value) (next-to-water? (board) x y))
                                        (if (null? (search-player-packages (player-cur)))
-                                                  0
+					          0
                                                   (let loop ([dist 0]
                                                              [counter 0])
-                                                    (cond [(> (dest-squares) dist) counter]
+                                                    (cond [(< (dest-squares) dist) counter]
                                                           [else (let ([toadd (if (package-away-goal? dist x y (search-player-packages (player-cur)))
-                                                                                 (* (destination-value) (if (dest-geometric)
-                                                                                                            (expt (dest-falloff) dist)
-                                                                                                            (let ([arith (* (- (dest-falloff)) dist)])
-                                                                                                              (if (< arith 0)
-                                                                                                                  0
-                                                                                                                  arith))))
+										 (if (dest-geometric)
+										     (* (destination-value) (expt (dest-falloff) dist))
+										     (+ (destination-value) (let ([arith (* (- (dest-falloff)) dist)])
+													      (if (> (abs arith) (destination-value))
+														  (- (destination-value))
+														  arith))))
                                                                                  0)])
                                                                   (loop (+ 1 dist) (+ counter toadd)))])))
                                        
                                        (if (null? (search-player-packages (player-cur)))
                                            (let loop ([dist 0]
                                                       [counter 0])
-                                             (cond [(> (dest-squares) dist) counter]
+                                             (cond [(< (home-squares) dist) counter]
                                                    [else (let ([toadd (if (home-away-goal? dist x y (home-list))
-                                                                          (* (home-value) (if (home-geometric)
-                                                                                              (expt (home-falloff) dist)
-                                                                                              (let ([arith (* (- (home-falloff)) dist)])
-                                                                                                (if (< arith 0)
-                                                                                                    0
-                                                                                                    arith))))
+									  (if (home-geometric)
+									      (* (home-value) (expt (home-falloff) dist))
+									      (+ (home-value) (let ([arith (* (- (home-falloff)) dist)])
+												(if (> (abs arith) (home-value))
+												    (- (home-value))
+												    arith))))
                                                                           0)])
                                                            (loop (+ 1 dist) (+ counter toadd)))]))
                                            0))])
@@ -143,7 +143,7 @@
 			  (figure-bid (board) x y p))
 			  1)])
 		(values weight (if (= (round bid) 0)
-                                   1
+				   1
                                    (inexact->exact (round bid))) null null))]
 	   [(eq? mtype 'd)
 	    (let* ([ptod (get-packages-for x y (search-player-packages (player-cur)))]
@@ -237,12 +237,14 @@
 (define-syntax package-away-goal?
   (syntax-rules ()
     ((_ n x y plist)
-     (not (null? (filter (lambda (p) (x-away-goal? n x y (package-x p) (package-y p)))))))))
+     (not (null? (filter (lambda (p) (x-away-goal? n x y (package-x p) (package-y p))) plist))))))
 
 (define-syntax home-away-goal?
   (syntax-rules ()
     ((_ n x y hlist)
-     (not (null? (filter (lambda (h) (x-away-goal? n x y (car h) (cdr h)))))))))
+     (let ([res (not (null? (filter (lambda (h) (x-away-goal? n x y (car h) (cdr h))) hlist)))])
+;       (when res (printf "res: ~a~n" res))
+       res))))
   
 	(define-syntax is-robot?
 	  (syntax-rules ()

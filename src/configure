@@ -7308,7 +7308,7 @@ subdirs="$subdirs foreign/gcc/libffi "
 
   makefiles="$makefiles foreign/Makefile"
   FOREIGNTARGET="foreign-stuff"
-  FOREIGN_OBJSLIB_IF_USED="\$(FOREIGN_OBJLIB)"
+  FOREIGN_OBJSLIB_IF_USED="\$(FOREIGN_OBJSLIB)"
   FOREIGN_LIB_IF_USED="\$(FOREIGN_LIB)"
   # --disable-multilib is needed to avoid problems when running libffi's
   # configure script.  This thing affects all usages of AC_CONFIG_SUBDIRS, but

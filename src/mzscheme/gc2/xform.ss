@@ -48,7 +48,10 @@
     (begin
       (unless (and (file-exists? "xform-collects/version.ss")
 		   (equal? (version)
-			   (with-input-from-file "xform-collects/version.ss" read)))
+			   (with-input-from-file "xform-collects/version.ss" read))
+		   (>= (file-or-directory-modify-seconds (build-path "xform-collects/xform/xform-mod.ss"))
+		       (file-or-directory-modify-seconds (build-path (current-load-relative-directory) "xform-mod.ss"))))
+		      
 	(load-relative "setup.ss"))
       
       (current-library-collection-paths (list (build-path (current-directory) "xform-collects")))

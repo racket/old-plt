@@ -821,7 +821,6 @@
 	 __builtin_constant_p __builtin_memset
 	 __error __errno_location __toupper __tolower
 	 __attribute__ __mode__ ; not really functions in gcc
-	 scheme_get_env
 	 scheme_get_milliseconds scheme_get_process_milliseconds
 	 scheme_rational_to_double scheme_bignum_to_double
 	 scheme_rational_to_float scheme_bignum_to_float
@@ -3577,8 +3576,10 @@
 		;; Not a decl
 		(values (reverse! decls) el))))))
 
+  (define braces-then-semi '(typedef struct union enum __extension__))
+
   (define (get-one e comma-sep?)
-    (let loop ([e e][result null][first #f][second #f])
+    (let loop ([e e][result null][first #f])
       (cond
        [(null? e) (values (reverse! result) null)]
        [(pragma? (car e)) 
@@ -3592,17 +3593,17 @@
        [(and (eq? '|,| (tok-n (car e))) comma-sep?)
 	(values (reverse! (cons (car e) result)) (cdr e))]
        [(and (braces? (car e))
-	     (not (memq first '(typedef struct union enum __extension__)))
-	     (not (memq second '(typedef struct union enum __extension__))))
+	     (not (memq first '(typedef enum __extension__)))
+	     (or (not (memq first '(static extern const struct union)))
+		 (ormap parens? result)))
 	(let ([rest (cdr e)])
 	  (if (or (null? rest)
 		  (pragma? (car rest))
 		  (not (eq? semi (tok-n (car rest)))))
 	      (values (reverse! (cons (car e) result)) rest)
 	      (values (reverse! (list* (car rest) (car e) result)) (cdr rest))))]
-       [else (loop (cdr e) (cons (car e) result) 
-		   (or first (tok-n (car e)))
-		   (or second (and first (tok-n (car e)))))])))
+       [else (loop (cdr e) (cons (car e) result)
+		   (or first (tok-n (car e))))])))
 
   (define (foldl-statement e comma-sep? f a-init)
     (let loop ([e e][a a-init])

@@ -68,6 +68,14 @@ case $OS in
     # gcc:
     # make AR='ar' LIBS='-Wl,-E' DYNOPTIONS='-fPIC' $GCOPTS DEBUGFLAGS='' "$@"
     ;;
+  CYGWIN32*)
+    if [ "${MZNOEXTTABLE}" = "yes" ]; then 
+      make cygwin-dll-setup
+      make $GCOPTS LIBS='gmzwin.exp' "$@"
+    else
+      make $GCOPTS "$@"
+    fi
+    ;;
   *)
     make $GCOPTS "$@"
     ;;

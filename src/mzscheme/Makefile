@@ -118,15 +118,12 @@ objects:
 	mkdir objects
 
 dynlib:
+	cd src; $(XMAKE) -e mzheaders
 	cd dynsrc; $(XMAKE) LIBDIR='$(LIBDIR)' -e dynlib 
 
 dynexample:
 	$(XMAKE) dynlib
 	cd dynsrc; $(XMAKE) LIBDIR='$(LIBDIR)' -e dynexample 
-
-withwin:
-	$(XMAKE) dynlib
-	cd dynsrc; $(XMAKE) -e withwin 
 
 oe:
 	$(XMAKE) dynlib
@@ -135,6 +132,13 @@ oe:
 aixdl:
 	cd aixdlfcn; $(MAKE) CC='$(CC)'
 	$(XMAKE) $(LIBDIR)/libdl.a
+
+cygwin-dll-setup:
+	cd src; $(XMAKE) -e mzheaders
+	$(XMAKE) gmzwin.exp
+
+gmzwin.exp: include/gmzwin.def
+	dlltool --def include/gmzwin.def --output-exp gmzwin.exp --output-lib gmzwin.a --dllname mzscheme.exe
 
 g-c: $(GCDIR)/objects $(GCDIR)/$(OBJDIR)
 	cd $(GCDIR); $(XMAKE) -e $(OBJDIR)/gc.a 

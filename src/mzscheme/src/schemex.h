@@ -18,7 +18,7 @@
 /* The scheme_extension_table parser is touchy: don't leave a space
    between a function name and it's opening parameter parenthesis. */
 
-#ifdef WINDOWS_DYNAMIC_LOAD
+#if defined(WINDOWS_DYNAMIC_LOAD) && !defined(LINK_EXTENSIONS_BY_TABLE)
 # if SCHEME_DIRECT_EMBEDDED
 #  define NONPROC /* empty */
 # elif defined(__CYGWIN32__)

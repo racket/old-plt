@@ -51,6 +51,9 @@ Or, to compile the `mzscheme' executable for other Unix platforms:
 
   3) Execute `make bin' (or just `make')
 
+  [CYGWIN32 note: either use `mzmake', or `make cygwin-setup' before
+   `make bin'.]
+
 To compile parts of MzScheme for embedding or extending:
 
   * `[mz]make mzschemelib' (or `mzmake mzschemelib') compiles 
@@ -109,15 +112,18 @@ placed in the same directory as the main "Makefile".
  Compiling for Windows
 ========================================================================
 
-To compile with MSVC, read the instructions in "plt/src/worksp/README".
+To compile with MSVC, read the instructions in "plt\src\worksp\README".
+
 To compile with CYGWIN32's gcc, follow the Unix instructions above.
+Then, to set up the libraries for buidling extensions (or compiling
+with mzc), go to "plt\src\mzscheme\dynsrc" and run "gmkmzdyn.bat".
 
 ========================================================================
  Compiling for MacOS
 ========================================================================
 
-Unpack the Compactor archive "plt/src/cw.cpt" to "plt/src/cw" and then
-see "plt/src/cw/ABOUT MZSCHEME".
+Unpack the Compactor archive "plt:src:cw.cpt" to "plt:src:cw" and then
+see "plt:src:cw:ABOUT MZSCHEME".
 
 ========================================================================
  General Compilation Notes

@@ -11,8 +11,8 @@ scheme_new_param
 scheme_param_config
 scheme_register_parameter
 scheme_get_env
-scheme_current_process_ptr
-scheme_fuel_counter_ptr
+scheme_current_process
+scheme_fuel_counter
 scheme_make_namespace
 scheme_thread
 scheme_thread_w_manager

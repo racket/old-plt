@@ -11,8 +11,8 @@ EXPORTS
  scheme_param_config
  scheme_register_parameter
  scheme_get_env
- scheme_current_process DATA
- scheme_fuel_counter DATA
+ scheme_current_process
+ scheme_fuel_counter
  scheme_make_namespace
  scheme_thread
  scheme_thread_w_manager
@@ -42,12 +42,12 @@ EXPORTS
  scheme_make_type
  scheme_install_type_reader
  scheme_install_type_writer
- scheme_eof DATA
- scheme_null DATA
- scheme_true DATA
- scheme_false DATA
- scheme_void DATA
- scheme_undefined DATA
+ scheme_eof
+ scheme_null
+ scheme_true
+ scheme_false
+ scheme_void
+ scheme_undefined
  scheme_tail_call_waiting
  scheme_multiple_values
  scheme_eval

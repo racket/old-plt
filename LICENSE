@@ -1,0 +1,47 @@
+PLT Software
+Copyright (c) 1995-98 PLT, Rice University
+
+PLT software is distributed under the GNU Library General Public
+License (LGPL).  This means you can link PLT software (such as
+MzScheme or MrEd) into proprietary applications, provided you follow
+the specific rules stated in the LGPL.  You can also modify PLT
+software; if you distribute a modified version, you must distribute it
+under the terms of the LGPL, which in particular means that you must
+release the source code for the modified software. See
+notes/COPYING.LIB for more information.
+
+PLT software is based on:
+
+  wxWindows
+  Copyright (c) 1994 Artificial Intelligence Applications Institute,
+                     The University of Edinburgh
+  All rights reserved.
+
+and/or
+
+  wxWindows Xt
+  Copyright (c) 1994 Artificial Intelligence Applications Institute,
+                     The University of Edinburgh
+  Copyright (c) 1995 GNU (Markus Holzem)
+  All rights reserved.
+
+  Therefore, the non-Motif X Windows version of DrScheme.MrEd is under
+  the GNU General Public License.
+
+and
+
+  libscheme
+  Copyright (c) 1994 Brent Benson
+  All rights reserved.
+
+and
+
+  Conservative garbage collector
+  Copyright 1988, 1989 Hans-J. Boehm, Alan J. Demers
+  Copyright (c) 1991-1994 by Xerox Corporation.  
+  All rights reserved.
+
+  C++ extension by Jesse Hull and John Ellis
+  Copyright (c) 1994 by Xerox Corporation.  
+  All rights reserved.
+

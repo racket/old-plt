@@ -204,15 +204,21 @@ clean:
 install:
 	$(MAKE) @MZINSTALLTARGET@
 
+LIBIDIR=$(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)
+BUILDINFO=$(LIBIDIR)/buildinfo
+
 normal-install:
 	if [ ! -d $(srcdir)/../../.bin ] ; then mkdir $(srcdir)/../../.bin ; fi
 	if [ ! -d $(srcdir)/../../.bin/$(INSTALLSYS) ] ; then mkdir $(srcdir)/../../.bin/$(INSTALLSYS) ; fi
 	rm -f $(srcdir)/../../.bin/$(INSTALLSYS)/mzscheme
 	cp mzscheme $(srcdir)/../../.bin/$(INSTALLSYS)/mzscheme
-	if [ ! -d $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS) ] ; then mkdir $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS) ; fi
-	cp mzdyn.o $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)/mzdyn.o
-	cp libgc.a $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)/libgc.a
-	cp libmzscheme.a $(srcdir)/../../collects/mzscheme/lib/$(INSTALLSYS)/libmzscheme.a
+	if [ ! -d $(LIBIDIR) ] ; then mkdir $(LIBIDIR) ; fi
+	cp mzdyn.o $(LIBIDIR)/mzdyn.o
+	cp libgc.a $(LIBIDIR)/libgc.a
+	cp libmzscheme.a $(LIBIDIR)/libmzscheme.a
+	echo 'CC=@CC@' > $(BUILDINFO)
+	echo 'CFLAGS=@CFLAGS@ @OPTIONS@' >> $(BUILDINFO)
+	echo 'LIBS=@LIBS@' >> $(BUILDINFO)
 
 cygwin-install:
 	rm -f $(srcdir)/../../mzscheme.exe

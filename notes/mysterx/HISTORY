@@ -1,5 +1,8 @@
 Version 102:
 
+cocreate-instance renamed to 
+ cocreate-instance-from-coclass;
+ added cocreate-instance-from-progid
 added Scheme-syntax property getters and 
  setters for HTML elements - old string versions
  are available as "-native" methods

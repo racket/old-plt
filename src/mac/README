@@ -8,34 +8,43 @@ Read the instructions in plt/src/mac/cw/README
  Compiling for MacOS X
 ========================================================================
 
-It is possible to compile MzScheme for OS X using only make & cc.
-However, the preferred method for MzScheme compilation and the only
-method for MrEd compilation is to use Codewarrior 7.0.  Instructions
-for compiling MzScheme without Codewarrior appear at the end of this 
-file.  Nevertheless, the Codewarrior compilation does require the use
-of make and cc, so familiarity with the command line is required.
+THESE INSTRUCTIONS ARE IN FLUX.  I am in the process of moving from
+all-IDE development to (hopefully) all-makefile.  There are some
+issues, as you'll see.
+
+In order to compile MzScheme and MrEd for OS X, you will need to have
+_both_ the Metrowerks tools (currently 7.1) and the Apple developer
+tools installed. This compilation uses 'make', so you will need to be
+comfortable with the command-line (Terminal).
+
+Hmmm... I think you'll also need to have the dlcompat library installed.
+You can get this from fink.
+
 Also, these instructions are needlessly complicated because I haven't
 yet written scripts to do everything in the right order.
 
-*** OPTION 1: Compiling for Mac OS X using Codewarrior (and cc):
-
 0) You must have the Apple Developer Tools installed, as well
-as Codewarrior 7.0.
+as Codewarrior 7.1 (or higher). Make sure that 'mwccppc', the
+metrowerks command-line compiler, is in your path, and the various
+shell variables used by mwccppc are in place.  After a full install
+of Metrowerks, both of these should be true (although I think the
+installation assumes you're using tcsh, and just plops everything
+in a .tchsrc)
 
-1) cd to the plt/src directory, and execute './configure'
+1) cd to the plt/src directory, and execute 'env CC="mwccppc" ./configure'
 
-2) cd to plt/src/mzscheme, and execute 'make g-c'
+2) cd to plt/src/mzscheme, and execute 'make mz'
 
-3) In Codewarrior, open the project file plt/src/mac/cw/MzScheme-app.mcp,
-choose the "MzScheme-app.OSX" target from the pull-down menu in the upper-
-left corner, and then Make (cmd-m). (Ignore warning on opening the file
-of the form "couldn't find /usr/local/lib".)
+3) now execute 'make mzinstall'
 
 4) cd to plt/src/mac and execute the pre-make script by typing 
 ./pre-make
 (This step requires mzscheme, which is why we had to build it first.)
 
-5) As for MzScheme; in Codewarrior, open the project file
+4.5) HORRIBLE ICKY HACK: find scheme.h and comment out the lines that
+require 'carbon-precomp'.  This is strictly a temporary thing. YUCK!
+
+5) As for MrEd; in Codewarrior, open the project file
 plt/src/mac/cw/MrEd.mcp, choose the "MrEd.OSX" target from the
 pull-down menu in the upper-left corner, and then Make
 (cmd-m). (Ignore warning on opening the file of the form "couldn't

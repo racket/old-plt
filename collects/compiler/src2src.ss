@@ -2,7 +2,8 @@
 ;; Implements a source-to-source optimizer
 
 ;; The src-to-src transformation currently drops
-;;  properties, which is bad. The 'mzc-cffi property is
+;;  properties, which is bad. The 'mzc-cffi and
+;;  'method-arity-error properties are
 ;;  specially preserved for `lambda' expressions.
 
 (module src2src mzscheme
@@ -32,11 +33,15 @@
   (define (non-valueable-prims) (procedure-calling-prims))
 
   (define (keep-mzc-property stx-out stx)
-    (let ([v (syntax-property stx 'mzc-cffi)])
-      (if v
-	  (syntax-property stx-out 'mzc-cffi v)
-	  stx-out)))
-
+    (let ([v (syntax-property stx 'mzc-cffi)]
+	  [v2 (syntax-property stx 'method-arity-error)])
+      (let ([stx-out2 (if v
+			  (syntax-property stx-out 'mzc-cffi v)
+			  stx-out)])
+	(if v2
+	    (syntax-property stx-out2 'method-arity-error v2)
+	    stx-out2))))
+  
   (define-struct context (need indef))
   ;; need = #f => don't need  the value
   ;; need = 'bool => need bool only
@@ -913,15 +918,15 @@
 			  (map (lambda (body)
 				 (get-body-sexpr body))
 			       bodys)])
-	     (if (multi?)
-		 (syntax/loc stx
-		   (case-lambda
-		    [vars . body] ...))
-		 (keep-mzc-property
+	     (keep-mzc-property
+	      (if (multi?)
+		  (syntax/loc stx
+		      (case-lambda
+		       [vars . body] ...))
 		  (with-syntax ([body (car (syntax->list (syntax (body ...))))])
 		    (syntax/loc stx
-				(lambda vars ... . body)))
-		  stx))))])
+			(lambda vars ... . body))))
+	      stx)))])
       (sequence
 	(super-init stx))))
 

@@ -210,6 +210,9 @@
 	 ;; inlined.
 	 liftable
 	 ;; top-level-varref => procedure is lifted
+	 method?
+	 ;; #t => arity errors hide first argument
+	 ;;  (triggered by 'method-arity-error property)
 	 ))
 
       (define-struct (case-code struct:code)

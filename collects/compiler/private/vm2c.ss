@@ -713,14 +713,15 @@
 	    (if (= 1 (length (zodiac:case-lambda-form-bodies L)))
 		(values 1 #f)
 		(begin
-					; The foreign entry label      
+		  ;; The foreign entry label      
 		  (fprintf port "FGN~a:~n" label)
 		  (let loop ([args (zodiac:case-lambda-form-args L)][i 0])
 		    (if (null? args)
 			(begin
-			  (fprintf port "~a~ascheme_case_lambda_wrong_count(~s, argc, argv, ~a"
+			  (fprintf port "~a~ascheme_case_lambda_wrong_count(~s, argc, argv, ~a, ~a"
 				   vm->c:indent-spaces vm->c:indent-spaces
 				   (vm->c:extract-inferred-name (closure-code-name code))
+				   (if (procedure-code-method? code) "1" "0")
 				   (length (zodiac:case-lambda-form-args L)))
 			  (let loop ([l (zodiac:case-lambda-form-args L)])
 			    (unless (null? l)
@@ -1259,10 +1260,11 @@
 			  "")
 		      (vm:make-procedure-closure-vehicle ast))
 		(process (vm:make-closure-closure ast) indent-level #f #t)
-		(emit ", ~s, ~a, ~a)" 
+		(emit ", ~s, ~a, ~a, ~a)" 
 		      (vm->c:extract-inferred-name (vm:make-procedure-closure-name ast))
 		      (vm:make-procedure-closure-min-arity ast)
-		      (vm:make-procedure-closure-max-arity ast))]
+		      (vm:make-procedure-closure-max-arity ast)
+		      (if (vm:make-procedure-closure-method? ast) "SCHEME_PRIM_IS_METHOD" "0"))]
 
 	       [(vm:make-case-procedure-closure? ast)
 		(emit "_scheme_make_c_case_proc_closure~a(vehicle_~a, " 
@@ -1271,10 +1273,11 @@
 			  "")
 		      (vm:make-case-procedure-closure-vehicle ast))
 		(process (vm:make-closure-closure ast) indent-level #f #t)
-		(emit ", ~s, ~a, S.casesArities[~a])" 
+		(emit ", ~s, ~a, S.casesArities[~a], ~a)" 
 		      (vm->c:extract-inferred-name (vm:make-case-procedure-closure-name ast))
 		      (vm:make-case-procedure-closure-num-cases ast)
-		      (vm:make-case-procedure-closure-case-arities ast))]
+		      (vm:make-case-procedure-closure-case-arities ast)
+		      (if (vm:make-case-procedure-closure-method? ast) "SCHEME_PRIM_IS_METHOD" "0"))]
 
 	       [(vm:deref? ast)
 		(emit "(*")

@@ -952,7 +952,12 @@
 						   'unknown-proc-parent #f null
 						   #f #f #f #f 0 #f (get-annotation ast) ; ann. = name
 						   'unknown-case-infos #f 
-						   'unknown-liftable)]
+						   'unknown-liftable
+						   (and (syntax-property (zodiac:zodiac-stx ast) 'method-arity-error)
+							;; Make sure that no case accepts 0 arguments:
+							(andmap
+							 (lambda (a) (not (null? (zodiac:arglist-vars a))))
+							 (zodiac:case-lambda-form-args ast))))]
 			     [case-infos
 			      (map
 			       (lambda (args body)

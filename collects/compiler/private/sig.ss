@@ -97,7 +97,7 @@
 			       return-multi ; #f, #t, or 'possible
 			       name))
 
-     (struct procedure-code (case-codes case-arities liftable))
+     (struct procedure-code (case-codes case-arities liftable method?))
 
      (struct case-code (has-continue?))
 
@@ -318,8 +318,8 @@
      (struct vm:alloc (type))
      (struct vm:build-constant (text))
      (struct vm:make-closure (closure))
-     (struct vm:make-procedure-closure (vehicle min-arity max-arity name empty?))
-     (struct vm:make-case-procedure-closure (vehicle num-cases case-arities name empty?))
+     (struct vm:make-procedure-closure (vehicle min-arity max-arity name empty? method?))
+     (struct vm:make-case-procedure-closure (vehicle num-cases case-arities name empty? method?))
      (struct vm:apply (closure argc known? multi? prim simple-tail-prim?))
      (struct vm:macro-apply (name primitive args tail? bool?))
      (struct vm:call (label closure))

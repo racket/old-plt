@@ -37,42 +37,17 @@ static void closure_alloc_inc()
 # define CLOSURE_ALLOC_PP /**/
 #endif
 
-#define _scheme_make_c_proc_closure(cfunc, rec, name, amin, amax) \
-  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, &rec->data, name, amin, amax))
+#define _scheme_make_c_proc_closure(cfunc, rec, name, amin, amax, flags) \
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, &rec->data, name, amin, amax, flags))
 
-#define _scheme_make_c_proc_closure_empty(cfunc, rec, name, amin, amax) \
-  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, NULL, name, amin, amax))
+#define _scheme_make_c_proc_closure_empty(cfunc, rec, name, amin, amax, flags) \
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_closure(&rec->prim, cfunc, NULL, name, amin, amax, flags))
 
-#define _scheme_make_c_case_proc_closure(cfunc, rec, name, ccnt, cses) \
-  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, &rec->data, name, ccnt, cses))
+#define _scheme_make_c_case_proc_closure(cfunc, rec, name, ccnt, cses, flags) \
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, &rec->data, name, ccnt, cses, flags))
 
-#define _scheme_make_c_case_proc_closure_empty(cfunc, rec, name, ccnt, cses) \
-  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, NULL, name, ccnt, cses))
-
-#define _scheme_make_c_unit_closure_basic(cfunc, rec, name, imc, exc, expts, datav) \
-  (rec->unit.type = scheme_unit_type, \
-   rec->unit.num_imports = imc, \
-   rec->unit.num_exports = exc, \
-   rec->unit.exports = expts, \
-   rec->unit.init_func = cfunc, \
-   rec->unit.data = (Scheme_Object *)datav, \
-   (Scheme_Object *)rec)
-
-#define _scheme_make_c_unit_closure(cfunc, rec, name, imc, exc, expts) \
-  _scheme_make_c_unit_closure_basic(cfunc, rec, name, imc, exc, expts, &rec->data)
-
-#define _scheme_make_c_unit_closure_empty(cfunc, rec, name, imc, exc, expts) \
-  _scheme_make_c_unit_closure_basic(cfunc, rec, name, imc, exc, expts, NULL)
-
-#define _scheme_make_c_class_closure(assembly, rec, super, interfaces) \
-   scheme_create_class(assembly, rec, super, interfaces)
-
-#define _scheme_invoke_unit(u, ni, ins, anchs) \
-      scheme_invoke_unit(u, ni, ins, anchs, 0, 0)
-#define _scheme_tail_invoke_unit(u, ni, ins, anchs) \
-      scheme_invoke_unit(u, ni, ins, anchs, 1, 0)
-#define _scheme_invoke_unit_multi(u, ni, ins, anchs) \
-      scheme_invoke_unit(u, ni, ins, anchs, 0, 1)
+#define _scheme_make_c_case_proc_closure_empty(cfunc, rec, name, ccnt, cses, flags) \
+  (CLOSURE_ALLOC_PP (Scheme_Object *)_scheme_fill_prim_case_closure(&rec->prim, cfunc, NULL, name, ccnt, cses, flags))
 
 #define NO_MULTIPLE_VALUES(res) \
 	if (res == SCHEME_MULTIPLE_VALUES) \

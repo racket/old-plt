@@ -156,14 +156,16 @@
 									      min-arity
 									      max-arity
 									      name
-									      (not closure-rep)))
+									      (not closure-rep)
+									      (procedure-code-method? (get-annotation L))))
 					    (make-vm:make-case-procedure-closure #f
 										 pointer
 										 vehicle
 										 (length (zodiac:case-lambda-form-args L))
 										 (procedure-code-case-arities (get-annotation L))
 										 name
-										 (not closure-rep)))]
+										 (not closure-rep)
+										 (procedure-code-method? (get-annotation L))))]
 				       [else
 					(compiler:internal-error
 					 #f

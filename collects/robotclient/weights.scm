@@ -110,7 +110,9 @@
 				 (set-valid (get-spot (board) x y))
 				 new-weight)))]
 		 [bid (if (could-player-move? (board) x y p)
-			  (figure-bid (board) x y p)
+                          (begin
+                            (printf "Possible player move, max-bid:~a~n" (max-bid))
+			  (figure-bid (board) x y p))
 			  1)])
 		(values weight (if (= (round bid) 0)
                                    1
@@ -169,7 +171,8 @@
 			  [(blank-escape? board x y p) (* (blank-escape-bid) (max-bid))]
 			  [(wall-escape? board x y p) (* (wall-escape-bid) (max-bid))]
 			  [(blank-push? board x y p) (* (blank-push-bid) (max-bid))]
-			  [(wall-push? board x y p) (* (wall-push-bid) (max-bid))]))))
+			  [(wall-push? board x y p) (* (wall-push-bid) (max-bid))]
+                          [else 1]))))
 	
 	(define (most-of player-left lop)
 	  (if (null? lop)

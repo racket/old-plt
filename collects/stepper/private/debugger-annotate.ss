@@ -194,7 +194,7 @@
              [my-tail-bound (tail-bound prior-tail-bound newly-bound-in-parent we-are-tail?)]
              [new-f (f-maker my-tail-bound (newly-bound stx) new-result-box)]
              [sub-annotated (expr-iterator new-f stx)] ; recursive call
-             [debug-info (make-debug-info stx my-tail-bound (append (free-vars stx) (unbox result-box)) 'none #f)])
+             [debug-info (make-debug-info stx my-tail-bound (append (free-vars stx) (unbox new-result-box)) 'none #f)])
         #`(with-continuation-mark #,debug-key #,debug-info #,sub-annotated))))
   
   

@@ -86,10 +86,11 @@ The html-eval-ok parameter controls the evaluation of
 ----------------------------------------
 
 > (hyper-text-mixin text%) - Extends the given text% class. The
-   initializtion arguments are extended with a three new first
+   initializtion arguments are extended with a four new first
    arguments: a url or a port to be loaded into the text% object, a
-   top-level-window or #f to use as a parent for status dialogs, and a
-   progress procedure used as for `get-url'.
+   top-level-window or #f to use as a parent for status dialogs, a
+   progress procedure used as for `get-url', and a list of post
+   strings to be sent to a web server.
 
    Sets the autowrap-bitmap to #f.
    
@@ -161,7 +162,7 @@ The html-eval-ok parameter controls the evaluation of
 
   The mixin adds the following instance variables:
 
->   make-editor :: (send o make-editor url)
+>   make-editor :: (send o make-editor url progress post-data)
      Creates an hypertext editor for the canvas, called to navigate
      among hypertext pages. Changing the page changes the editor in
      the canvas, and the page history is maintained by keeping the old

@@ -128,11 +128,9 @@
 			  (url-host url))))
             (tcp-connect host port-number))))
       
-      ;; http://get-impure-port : url [x list (str)] -> in-port
-      (define http://get-impure-port
-        (case-lambda 
-         [(url) (http://get-impure-port url '())]
-         [(url strings)
+      ;; http://getpost-impure-port : bool x url x list (str) -> in-port
+      (define http://getpost-impure-port
+	(lambda (get? url strings)
           (let*-values (((proxy) (assoc (url-scheme url) (current-proxy-servers)))
 			((server->client client->server)
 			 (make-ports url proxy)))
@@ -146,12 +144,12 @@
               (for-each (lambda (s)
                           (display s client->server)
                           (display "\r\n" client->server))
-                        (cons (format "GET ~a HTTP/1.0" access-string)
+                        (cons (format "~a ~a HTTP/1.0" (if get? "GET" "POST") access-string)
                               (cons (format "Host: ~a" (url-host url))
                                     strings))))
             (display "\r\n" client->server)
             (tcp-abandon-port client->server)
-            server->client)]))
+            server->client)))
       
       ;; file://get-pure-port : url -> in-port
       (define file://get-pure-port
@@ -163,40 +161,66 @@
       (define (schemeless-url url)
 	(url-error "Missing protocol (usually \"http:\") at the beginning of URL: ~a" url))
 
-      ;; get-impure-port : url [x list (str)] -> in-port
-      (define get-impure-port
-        (case-lambda
-         [(url) (get-impure-port url '())]
-         [(url strings)
+      ;; getpost-impure-port : bool x url x list (str) -> in-port
+      (define getpost-impure-port
+	(lambda (get? url strings)
           (let ((scheme (url-scheme url)))
             (cond
 	     ((not scheme)
 	      (schemeless-url url))
 	     ((string=? scheme "http")
-	      (http://get-impure-port url strings))
+	      (http://getpost-impure-port get? url strings))
 	     ((string=? scheme "file")
 	      (url-error "There are no impure file: ports"))
 	     (else
-	      (url-error "Scheme ~a unsupported" scheme))))]))
+	      (url-error "Scheme ~a unsupported" scheme))))))
+      
+      ;; get-impure-port : url [x list (str)] -> in-port
+      (define get-impure-port
+        (case-lambda
+         [(url) (get-impure-port url '())]
+         [(url strings) (getpost-impure-port #t url strings)]))
+
+      ;; post-impure-port : url [x list (str)] -> in-port
+      (define post-impure-port
+        (case-lambda
+         [(url) (post-impure-port url '())]
+         [(url strings) (getpost-impure-port #f url strings)]))
+
+      ;; getpost-pure-port : bool x url x list (str) -> in-port
+      (define getpost-pure-port
+        (lambda (get? url strings)
+          (let ((scheme (url-scheme url)))
+            (cond
+	     ((not scheme)
+	      (schemeless-url url))
+	     ((string=? scheme "http")
+	      (let ((port (http://getpost-impure-port get? url strings)))
+		(with-handlers ([void (lambda (exn)
+					(close-input-port port)
+					(raise exn))])
+		  (purify-port port))
+		;; Note: if a break happens here, the port
+		;;  never gets closed! Same is true before
+		;;  and outside the `with-handlers'
+		port))
+	     ((string=? scheme "file")
+	      (file://get-pure-port url))
+	     (else
+	      (url-error "Scheme ~a unsupported" scheme))))))
       
       ;; get-pure-port : url [x list (str)] -> in-port
       (define get-pure-port
         (case-lambda
          [(url) (get-pure-port url '())]
-         [(url strings)
-          (let ((scheme (url-scheme url)))
-            (cond
-	     ((not scheme)
-	      (schemeless-url url))
-	     ((string=? scheme "http")
-	      (let ((port (http://get-impure-port url strings)))
-		(purify-port port)
-		port))
-	     ((string=? scheme "file")
-	      (file://get-pure-port url))
-	     (else
-	      (url-error "Scheme ~a unsupported" scheme))))]))
-      
+         [(url strings) (getpost-pure-port #t url strings)]))
+
+      ;; post-pure-port : url [x list (str)] -> in-port
+      (define post-pure-port
+        (case-lambda
+         [(url) (post-pure-port url '())]
+         [(url strings) (getpost-pure-port #f url strings)]))
+
       ;; display-pure-port : in-port -> ()
       (define display-pure-port
         (lambda (server->client)

@@ -6,6 +6,8 @@
     ((struct url (scheme host port path params query fragment))
      get-pure-port			;; url [x list (str)] -> in-port
      get-impure-port			;; url [x list (str)] -> in-port
+     post-pure-port			;; url [x list (str)] -> in-port
+     post-impure-port			;; url [x list (str)] -> in-port
      display-pure-port			;; in-port -> ()
      purify-port			;; in-port -> list (mime-header)
      netscape/string->url		;; (string -> url)

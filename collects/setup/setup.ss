@@ -1,7 +1,7 @@
 
 ;; Because setup is used to rebuild .zos, we may need to turn off the
 ;; use of compiled code before we do anything. This startup stub looks
-;; at argv and pessimistically turns of compiled files if -n could be
+;; at argv and pessimistically turns of compiled files if -c could be
 ;; in the command line.
 
 (module setup mzscheme

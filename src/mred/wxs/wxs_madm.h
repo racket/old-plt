@@ -89,9 +89,7 @@ extern Scheme_Object *objscheme_bundle_wxMouseEvent(class wxMouseEvent *);
 extern Scheme_Object *objscheme_bundle_wxKeyEvent(class wxKeyEvent *);
 extern class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *, const char *, int);
 extern class wxKeymap *objscheme_unbundle_wxKeymap(Scheme_Object *, const char *, int);
-extern int objscheme_istype_wxKeyEvent(Scheme_Object *, const char *, int);
-extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
-extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
+extern class wxEvent *objscheme_unbundle_wxEvent(Scheme_Object *, const char *, int);
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 #endif

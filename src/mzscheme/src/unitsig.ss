@@ -546,10 +546,10 @@
 								    (if (complete-path? base)
 									base
 									(path->complete-path base
-											     (if old-dir 
-												 old-dir 
+											     (or old-dir 
 												 (current-directory))))
-								    (current-directory))])
+								    (or old-dir
+									(current-directory)))])
 						   (dynamic-wind
 						    void
 						    (lambda ()

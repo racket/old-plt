@@ -711,7 +711,7 @@ extern wxMediaEdit *objscheme_unbundle_wxMediaEdit(Scheme_Object *, const char*,
 #define GET_EDIT(vb) objscheme_unbundle_wxMediaEdit((Scheme_Object *)vb, NULL, 0)
 
 #define edf(name, action) \
-     static Bool ed_##name(void *vb, wxKeyEvent &, void *) \
+     static Bool ed_##name(void *vb, wxEvent &, void *) \
      { wxMediaEdit *b = GET_EDIT(vb); \
        if (!b) return FALSE; \
        b->action; return TRUE; } \
@@ -749,7 +749,7 @@ edf(delete, Delete())
 
 edf(pastenext, PasteNext())
 
-static Bool ed_deletenext(void *vb, wxKeyEvent &, void *)
+static Bool ed_deletenext(void *vb, wxEvent &, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;
@@ -763,7 +763,7 @@ static Bool ed_deletenext(void *vb, wxKeyEvent &, void *)
   return TRUE;
 }
 
-static Bool ed_deletenextword(void *vb, wxKeyEvent &event, void *)
+static Bool ed_deletenextword(void *vb, wxEvent &event, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;
@@ -775,7 +775,7 @@ static Bool ed_deletenextword(void *vb, wxKeyEvent &event, void *)
   return TRUE;
 }
 
-static Bool ed_deleteprevword(void *vb, wxKeyEvent &event, void *)
+static Bool ed_deleteprevword(void *vb, wxEvent &event, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;
@@ -787,7 +787,7 @@ static Bool ed_deleteprevword(void *vb, wxKeyEvent &event, void *)
   return TRUE;
 }
 
-static Bool ed_deleteline(void *vb, wxKeyEvent &event, void *)
+static Bool ed_deleteline(void *vb, wxEvent &event, void *)
 {
   wxMediaEdit *edit = GET_EDIT(vb);
   if (!edit) return FALSE;
@@ -807,7 +807,7 @@ void wxMediaEdit::AddEditorFunctions(wxKeymap *tab)
 
 void wxAddMediaEditorFunctions(wxKeymap *tab)
 {
-#define setf(name, func) tab->AddKeyFunction(name, ed_##func, NULL)
+#define setf(name, func) tab->AddFunction(name, ed_##func, NULL)
 
   setf("forward-character", right);
   setf("backward-character", left);

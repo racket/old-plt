@@ -181,25 +181,22 @@ typedef void *(*CAPOFunc)(void*);
 typedef Scheme_Object KeymapCallbackToSchemeRec;
 #define kctsr(o) o
 
-static int KeyCallbackToScheme(UNKNOWN_OBJ, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
-static int MouseCallbackToScheme(UNKNOWN_OBJ, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
-static int GrabKeyCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
-static int GrabMouseCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
+static Bool KMCallbackToScheme(UNKNOWN_OBJ, wxEvent &, KeymapCallbackToSchemeRec *data);
+static Bool GrabKeyCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxKeyEvent &, KeymapCallbackToSchemeRec *data);
+static Bool GrabMouseCallbackToScheme(char *s, wxKeymap *km, UNKNOWN_OBJ, wxMouseEvent &, KeymapCallbackToSchemeRec *data);
 static void ErrorCallbackToScheme(KeymapCallbackToSchemeRec *data, char *str);
 static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 
 @MACRO bCallback =
 @MACRO ubSetup = KeymapCallbackToSchemeRec *cb;
 
-@MACRO ubCallbackKey = (wxKeyFunction)KeyCallbackToScheme
-@MACRO ubCallbackMouse = (wxMouseFunction)MouseCallbackToScheme
+@MACRO ubCallbackKM = (wxKMFunction)KMCallbackToScheme
 @MACRO ubCallbackGrabKey = (wxGrabKeyFunction)GrabKeyCallbackToScheme
 @MACRO ubCallbackGrabMouse = (wxGrabMouseFunction)GrabMouseCallbackToScheme
 @MACRO ubCallbackError = (wxKeyErrorFunction)ErrorCallbackToScheme
 @MACRO ubCallbackBreak = (wxBreakSequenceFunction)BreakSequenceCallbackToScheme
 
-@MACRO spCallbackKey = (wxObject-object wxKeyEvent-object -> bool)
-@MACRO spCallbackMouse = (wxObject-object wxMousrEvent-object -> bool)
+@MACRO spCallbackKM = (wxObject-object wxEvent-object -> bool)
 @MACRO spCallbackGrabKey = (str wxKeymap-object wxObject-object wxKeyEvent-object -> bool)
 @MACRO spCallbackGrabMouse = (str wxKeymap-object wxObject-object wxMouseEvent-object -> bool)
 @MACRO spCallbackError = (str -> void)
@@ -224,30 +221,28 @@ static void BreakSequenceCallbackToScheme(KeymapCallbackToSchemeRec *data);
 @ v "handle-mouse-event" : bool HandleMouseEvent(UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxMouseEvent%);
 @ "break-sequence" : void BreakSequence();
 @ "map-function" : void MapFunction(string,string);
-@ "add-key-function" : void AddKeyFunction(string,wxKeyFunction/bCallback/ubCallbackKey/cCallback//spCallbackKey,-unknown#void*=NULL); : : ubSetup / ubSetData[1.2]
+@ "add-function" : void AddFunction(string,wxKMFunction/bCallback/ubCallbackKM/cCallback//spCallbackKM,-unknown#void*=NULL); : : ubSetup / ubSetData[1.2]
 @ "set-grab-key-function" : void SetGrabKeyFunction(wxGrabKeyFunction/bCallback/ubCallbackGrabKey/cCallback//spCallbackGrabKey,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "remove-grab-key-function" : void RemoveGrabKeyFunction()
-@ "add-mouse-function" : void AddMouseFunction(string,wxMouseFunction/bCallback/ubCallbackMouse/cCallback2//spCallbackMouse,-unknown#void*=NULL); : : ubSetup / ubSetData[1.2]
 @ "set-grab-mouse-function" : void SetGrabMouseFunction(wxGrabMouseFunction/bCallback/ubCallbackGrabMouse/cCallback//spCallbackGrabMouse,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "remove-grab-mouse-function" : void RemoveGrabMouseFunction()
-@ "call-function" : bool CallFunction(string,UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxKeyEvent%,bool=FALSE); <> key-event%
-@ "call-function" : bool CallFunction(string,UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxMouseEvent%,bool=FALSE); <> mouse-event%
+@ "call-function" : bool CallFunction(string,UNKNOWN_OBJ/bAnythingFromVoid/ubAnythingToVoid/cAnything,wxEvent%,bool=FALSE);
 @ "set-break-sequence-callback" : void SetBreakSequenceCallback(wxBreakSequenceFunction/bCallback/ubCallbackBreak/cCallback//spCallbackBreak,-unknown#void*=NULL); : : ubSetup / ubSetData[0.1]
 @ "chain-to-keymap" : void ChainToKeymap(wxKeymap!,bool);
 @ "remove-chained-keymap" : void RemoveChainedKeymap(wxKeymap!);
 
 @END
 
-static Bool KeyCallbackToScheme(UNKNOWN_OBJ media, wxKeyEvent &event, 
+static Bool KMCallbackToScheme(UNKNOWN_OBJ media, wxEvent &event, 
 			       KeymapCallbackToSchemeRec *data)
 {
-  extern Scheme_Object *objscheme_bundle_wxKeyEvent(wxKeyEvent *);
+  extern Scheme_Object *objscheme_bundle_wxEvent(wxEvent *);
   Scheme_Object *p[2], *obj;
   Bool retval;
   jmp_buf savebuf;
 
   p[0] = (Scheme_Object *)media;
-  p[1] = objscheme_bundle_wxKeyEvent(&event);
+  p[1] = objscheme_bundle_wxEvent(&event);
 
   COPY_JMPBUF(savebuf, scheme_error_buf);
 

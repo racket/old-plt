@@ -1,4 +1,13 @@
 
+# !!! Don't forget to use gnumake or gmake !!!
+ifndef WXDIR
+ ifdef PLTWXDIR
+  WXDIR=$(shell pwd)/../../$(PLTWXDIR)
+ else
+  WXDIR=$(shell pwd)/../../$(shell if [ -d ../../wxxt ] ; then echo wxxt ; else echo wxwindow ; fi)
+ endif
+endif
+
 include $(WXDIR)/src/make$(MZPLATFORMSUFFIX).env
 
 OBJDIR=objects/sys$(MZPLATFORMSUFFIX)$(GUISUFFIX)

@@ -2022,7 +2022,7 @@ Bool wxMediaBuffer::GetLoadOverwritesStyles()
 /****************************************************************/
 
 #define edf(name, action, kname) \
-     static Bool ed_##name(void *vb, wxKeyEvent kname, void *) \
+     static Bool ed_##name(void *vb, wxEvent kname, void *) \
      { wxMediaBuffer *b = objscheme_unbundle_wxMediaBuffer((Scheme_Object *)vb, NULL, 0); \
        if (!b) \
         return FALSE; \
@@ -2047,7 +2047,7 @@ void wxMediaBuffer::AddBufferFunctions(wxKeymap *tab)
 
 void wxAddMediaBufferFunctions(wxKeymap *tab)
 {
-#define setf(name, func) tab->AddKeyFunction(name, ed_##func, NULL)
+#define setf(name, func) tab->AddFunction(name, ed_##func, NULL)
 
   setf("copy-clipboard", copy);
   setf("copy-append-clipboard", copyappend);

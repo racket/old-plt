@@ -7,10 +7,7 @@
 
 #define UNKNOWN_OBJ void*
 
-typedef Bool (*wxKeyFunction)(UNKNOWN_OBJ media, wxKeyEvent &event, 
-			      void *data);
-typedef Bool (*wxMouseFunction)(UNKNOWN_OBJ media, wxMouseEvent &event, 
-				void *data);
+typedef Bool (*wxKMFunction)(UNKNOWN_OBJ media, wxEvent &event, void *data);
 
 typedef Bool (*wxGrabKeyFunction)(char *str, class wxKeymap *km,
 				  UNKNOWN_OBJ media, wxKeyEvent &event, 
@@ -40,7 +37,7 @@ enum {
 
 class wxKeymap : public wxObject
 {
-  wxHashTable *keyfunctions, *mousefunctions;
+  wxHashTable *functions;
   wxHashTable *keys;
 
   int usage;
@@ -69,23 +66,27 @@ class wxKeymap : public wxObject
 
   class wxKeycode *FindKey(long, Bool, Bool, Bool, Bool, class wxKeycode *);
   int HandleEvent(long code, Bool shift, Bool ctrl, Bool alt, Bool meta,
-		  char **fname);
+		  int score, char **fname);
+  int GetBestScore(long code, Bool shift, Bool ctrl, Bool alt, Bool meta);
 
   Bool CycleCheck(wxKeymap *km);
 
   int ChainHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
 			  wxGrabKeyFunction grab, void *grabData,
-			  int try_state);
+			  int try_state, int score);
   int ChainHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
 			    wxGrabMouseFunction grab, void *grabData,
-			    int try_state);
+			    int try_state, int score);
 
   int OtherHandleKeyEvent(UNKNOWN_OBJ media, wxKeyEvent &event,
 			  wxGrabKeyFunction grab, void *grabData,
-			  int try_state);
+			  int try_state, int score);
   int OtherHandleMouseEvent(UNKNOWN_OBJ media, wxMouseEvent &event,
 			    wxGrabMouseFunction grab, void *grabData,
-			    int try_state);
+			    int try_state, int score);
+
+  int GetBestScore(wxKeyEvent &event);
+  int GetBestScore(wxMouseEvent &event);
 
   void Reset(void);
 
@@ -110,11 +111,8 @@ class wxKeymap : public wxObject
 			       int keytype = wxKEY_FINAL);
   void MapFunction(char *keyname, char *fname);
 
-  void AddKeyFunction(char *name, wxKeyFunction func, void *data);
-  void AddMouseFunction(char *name, wxMouseFunction func, void *data);
-  Bool CallFunction(char *name, UNKNOWN_OBJ media, wxKeyEvent &event, 
-		    Bool try_chained = FALSE);
-  Bool CallFunction(char *name, UNKNOWN_OBJ media, wxMouseEvent &event, 
+  void AddFunction(char *name, wxKMFunction func, void *data);
+  Bool CallFunction(char *name, UNKNOWN_OBJ media, wxEvent &event, 
 		    Bool try_chained = FALSE);
 
   void ChainToKeymap(wxKeymap *, Bool prefix);

@@ -1030,7 +1030,7 @@ wxStyle *wxStyleList::FindOrCreateJoinStyle(wxStyle *baseStyle,
 
   style->joinStyle = TRUE;
 
-  WXGC_IGNORE(style->u.shiftStyle);
+  // WXGC_IGNORE(style->u.shiftStyle);
   style->u.shiftStyle = shiftStyle;
   shiftStyle->children.Append(style);
 

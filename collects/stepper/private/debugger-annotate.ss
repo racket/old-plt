@@ -1,16 +1,16 @@
-(define debugger-annotate mzscheme
+(module debugger-annotate mzscheme
   
   (require (prefix kernel: (lib "kerncase.ss" "syntax"))
            (lib "contracts.ss")
-           "breakpoint-token")
+           "breakpoint-token.ss")
   
-  (provide/contract [annotate (-> syntax-object? 
-                                  syntax-object?)])
+  ;(provide/contract [annotate (-> syntax-object? 
+  ;                                syntax-object?)])
   
   ; what does the iterator need to know about 
   
-  (-> (-> 
-  (define (syntax-object-iterator fn stx)
+  ; (-> (-> 
+  '(define (syntax-object-iterator fn stx)
     (kernel:kernel-syntax-case stx
       [(lambda . clause)
        ...]
@@ -50,4 +50,4 @@
       [else ; require, require-for-syntax, define-syntaxes, module, provide
        ...]))
   
-  
+  )

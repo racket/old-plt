@@ -200,7 +200,7 @@
 (define recorded-cpp-in
   (and precompiled-header
        (open-input-file (change-suffix precompiled-header ".e"))))
-(define re:boring (regexp "^(()|(# .*)|(#pragma implementation.*))$"))
+(define re:boring (regexp "^(()|(# .*)|(#pragma implementation.*)|(#pragma interface.*))$"))
 (define (skip-to-interesting-line p)
   (let ([l (read-line p 'any)])
     (cond
@@ -605,7 +605,9 @@
       (let ([v (car e)])
 	(cond
 	 [(pragma? v)
-	  (printf "\n#pragma ~a\n\n" (pragma-s v))]
+	  (let ([s (format "#pragma ~a" (pragma-s v))])
+	    (unless (regexp-match re:boring s)
+	      (printf "\n~a\n\n" s)))]
 	 [(seq? v)
 	  (display/indent v (tok-n v))
 	  (let ([subindent (if (braces? v)

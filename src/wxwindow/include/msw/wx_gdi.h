@@ -113,6 +113,7 @@ class wxBitmap: public wxObject
  public:
   wxBitmap *mask;
   HBITMAP ms_bitmap;
+  void *accounting;
   wxDC *selectedInto; // So bitmap knows whether it's been selected into
                       // a device context (for error checking)
   Bool selectedIntoDC;

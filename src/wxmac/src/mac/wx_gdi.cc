@@ -1008,6 +1008,10 @@ wxBitmap::~wxBitmap(void)
     FreeGWorld(x_pixmap);
     x_pixmap = NULL;
   }
+  if (accounting) {
+    GC_free_accounting_shadow(accounting);
+    accounting = NULL;
+  }
 }
 
 Bool wxBitmap::Create(int wid, int hgt, int deep)
@@ -1039,6 +1043,7 @@ Bool wxBitmap::Create(int wid, int hgt, int deep)
     ok = TRUE;
     x_pixmap = newGWorld;
     SetGWorld(saveport, savegw);
+    accounting = GC_malloc_accounting_shadow((width * height * ((depth == 1) ? 1 : 32)) >> 3);
   }
   else {
     ok = FALSE;
@@ -1066,6 +1071,8 @@ Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
   if (x_pixmap) {
     FreeGWorld(x_pixmap);
     x_pixmap = NULL;
+    GC_free_accounting_shadow(accounting);
+    accounting = NULL;
   }
 
   ok = FALSE;
@@ -1096,6 +1103,7 @@ Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
       ok = TRUE;
       x_pixmap = ximage->bitmap;	// Actually a GWorldPtr!
       XImageFree(ximage);		// does not delete the GWorld
+      accounting = GC_malloc_accounting_shadow(width * height * 4);
     }
     return ok;
   }
@@ -1116,6 +1124,8 @@ Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
       if (x_pixmap) {
 	FreeGWorld(x_pixmap);
 	x_pixmap = NULL;
+	GC_free_accounting_shadow(accounting);
+	accounting = NULL;
       }
       ok = FALSE;
     }	
@@ -1125,6 +1135,8 @@ Bool wxBitmap::LoadFile(char *name, long flags, wxColour *bg)
       if (x_pixmap) {
 	FreeGWorld(x_pixmap);
 	x_pixmap = NULL;
+	GC_free_accounting_shadow(accounting);
+	accounting = NULL;
       }
       ok = FALSE;
     }	

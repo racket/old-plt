@@ -112,48 +112,91 @@ wxFont::~wxFont()
   COUNT_M(font_count);
 }
 
-static int glyph_index(HDC hdc, int c)
+typedef ???? (WINAPI *wxGET_GLYPH_INDICES_PROC)(HANDLE, HDC, ???);
+static wxGET_GLYPH_INDICES_PROC wxGetGlyphIndices;
+static int indices_tried = 0;
+
+static int glyph_exists_in_selected_font(HDC hdc, int c)
 {
   GCP_RESULTSW gcp;
-  wchar_t s[1], gl[1];
-  char classes[1];
+  wchar_t s[2], gl[2];
+  char classes[2];
   DWORD ok;
   
-  if ((c < 0) || (c >= 0x10000))
-    c = 1;
-
   s[0] = c;
-  
-  gcp.lStructSize = sizeof(GCP_RESULTSW);
-  gcp.lpOutString = NULL;
-  gcp.lpDx = NULL;
-  gcp.lpCaretPos = NULL;
-  gcp.lpOrder = NULL;
-  gcp.lpClass = classes;
-  gcp.lpGlyphs = gl;
-  gcp.nGlyphs = 1;
+  s[1] = 1;
 
-  ok = GetCharacterPlacementW(hdc, s, 1, 0, &gcp, 0);
-  
-  if (ok && gcp.lpGlyphs)
-    return gl[0];
-  else
-    return -1;
+  if (!indices_tried) {
+    HMODULE hm;
+    hm = LoadLibrary("XXX.dll");
+    if (hm) {
+      wxGetGlyphIndices = (wxGET_GLYPH_INDICES_PROC)GetProcAddress(hm, "GetGlyphIndicesW");
+    }
+    indices_tried = 1;
+  }
+
+  if (wxGetGlyphIndices) {
+    
+  } else {
+    gcp.lStructSize = sizeof(GCP_RESULTSW);
+    gcp.lpOutString = NULL;
+    gcp.lpDx = NULL;
+    gcp.lpCaretPos = NULL;
+    gcp.lpOrder = NULL;
+    gcp.lpClass = classes;
+    gcp.lpGlyphs = gl;
+    gcp.nGlyphs = 2;
+    
+    ok = GetCharacterPlacementW(hdc, s, 2, 0, &gcp,
+				FLI_MASK & GetFontLanguageInfo(hdc));
+    
+    return (ok 
+	    && (gcp.nGlyphs == 2)
+	    && (gl[0] != gl[1]));
+  }
+}
+
+typedef struct {
+  HDC hdc;
+  int c;
+} GlyphFindData;
+
+static int CALLBACK glyph_exists(ENUMLOGFONT FAR* lpelf, 
+				 NEWTEXTMETRIC FAR* lpntm, 
+				 DWORD type, 
+				 LPARAM _data)
+{
+  GlyphFindData *gfd = (GlyphFindData *)_data;
+
+  if (...) {
+    HFONT old, cfont;
+    int ok;
+
+    cfont = CreateFont(&lpelf->elfLogFont);
+
+    old = (HFONT)::SelectObject(gfd->hdc, cfont);
+
+    ok = glyph_exists_in_selected_font(gfd->hdc, gdf->c);
+
+    ::SelectObject(gfd->hdc, old);
+
+    DeleteObject(cfont);
+
+    if (ok)
+      return 0;
+  }
+
+  return 1;
 }
 
 Bool wxFont::GlyphAvailable(int c, HDC hdc)
 {
-  int i1, i2;
+  GlyphFindData gfd;
 
-  /* There doesn't seem to be a way to ask directly
-     whether a glyph exists, at least not before
-     Windows 2000. But ctl-A should never have a real glyph,
-     so we can check whether c's glyph is the same as
-     Ctl-A's. */
-  i1 = glyph_index(hdc, 1);
-  i2 = glyph_index(hdc, c);
+  gfd.hdc = hdc;
+  gfd.c = c;
 
-  return (i1 != i2);
+  return !EnumFontFamilies(hdc, NULL, (FONTENUMPROC)glyph_exists, (LPARAM)&gfd);
 }
 
 Bool wxFont::ScreenGlyphAvailable(int c)
@@ -1202,9 +1245,10 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 
   RegisterGDIObject(ms_bitmap);
 
-  if (ms_bitmap)
+  if (ms_bitmap) {
     ok = TRUE;
-  else
+    accounting = GC_malloc_accounting_shadow((the_width * the_height) >> 3); 
+  } else
     ok = FALSE;
 
   selectedInto = NULL;
@@ -1287,6 +1331,8 @@ wxBitmap::wxBitmap(char **data, wxItem *WXUNUSED(anItem))
       numColors = xpmAttr.npixels;
       XpmFreeAttributes(&xpmAttr);
 
+      accounting = GC_malloc_accounting_shadow(width * height * 4); 
+
       XImageFree(ximage);	// releases the malloc, but does not detroy
 			// the bitmap
       ok = TRUE;
@@ -1318,9 +1364,10 @@ Bool wxBitmap::Create(int w, int h, int d)
     depth = wxDisplayDepth();
   }
   RegisterGDIObject(ms_bitmap);
-  if (ms_bitmap)
+  if (ms_bitmap) {
     ok = TRUE;
-  else
+    accounting = GC_malloc_accounting_shadow((width * height * ((d == 1) ? 1 : 32)) >> 3);
+  } else
     ok = FALSE;
 
   is_dib = 0;
@@ -1425,6 +1472,8 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
   if (ms_bitmap) {
     DeleteRegisteredGDIObject(ms_bitmap);
     ms_bitmap = NULL;
+    GC_free_accounting_shadow(accounting);
+    accounting = NULL;
   }
 
   if (flags & wxBITMAP_TYPE_BMP_RESOURCE)
@@ -1438,6 +1487,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
       width = bm.bmWidth;
       height = bm.bmHeight;
       depth = bm.bmPlanes;
+      accounting = GC_malloc_accounting_shadow(width * height * 4);
     }
   }
 
@@ -1455,7 +1505,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
       ReleaseDC(NULL, glob_dc);
       if (ms_bitmap) {
 	HDC dc;
-
+	
 	dc = ::CreateCompatibleDC(NULL);
 	
 	if (dc)
@@ -1481,6 +1531,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
 	    width = w;
 	    height = h;
 	    depth = 1;
+	    accounting = GC_malloc_accounting_shadow((w * h) >> 3);
 	  } else {
 	    DeleteRegisteredGDIObject(ms_bitmap);
 	    ms_bitmap = NULL;
@@ -1518,6 +1569,9 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
 	  XpmFreeAttributes(&xpmAttr);
 	  XImageFree(ximage);
 	
+	  accounting = GC_malloc_accounting_shadow(width * height * 4);
+
+
 	  ok = TRUE;
 	} else {
 	  ok = FALSE;
@@ -1559,6 +1613,8 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
       if (ms_bitmap) {
 	DeleteRegisteredGDIObject(ms_bitmap);
 	ms_bitmap = NULL;
+	GC_free_accounting_shadow(accounting);
+	accounting = NULL;
       }
       ok = FALSE;
     }
@@ -1571,6 +1627,8 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
       if (ms_bitmap) {
 	DeleteRegisteredGDIObject(ms_bitmap);
 	ms_bitmap = NULL;
+	GC_free_accounting_shadow(accounting);
+	accounting = NULL;
       }
       ok = FALSE;
     }
@@ -1594,6 +1652,10 @@ wxBitmap::~wxBitmap(void)
     DeleteRegisteredGDIObject(ms_bitmap);
   }
   ms_bitmap = NULL;
+  if (accounting) {
+    GC_free_accounting_shadow(accounting);
+    accounting = NULL;
+  }
 
   if (bitmapColourMap)
     delete bitmapColourMap;
@@ -1752,6 +1814,8 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **pal)
     bitmap->SetHeight(bm.bmHeight);
     bitmap->SetDepth(bm.bmPlanes * bm.bmBitsPixel);
     bitmap->SetOk(TRUE);
+    bitmap->accounting = GC_malloc_accounting_shadow((bm.bmWidth * bm.bmHeight) >> 3);
+
     return TRUE;
   }
   else return FALSE;

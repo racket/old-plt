@@ -111,6 +111,7 @@ class wxBitmap: public wxObject
   wxMemoryDC *selectedInto;
   Bool selectedIntoDC;
   wxBitmap *mask;
+  void *accoutning;
 
   wxBitmap(void) ;
   wxBitmap(char bits[], int width, int height);

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#define MZ_PRECISE_GC 1
 #include "gc2.h"
 #include "../src/schpriv.h"
 
@@ -200,6 +201,7 @@ static short ot_addentry(Scheme_Custodian *cust) {
 	ot_table[i]->custs = cl_add(ot_table[i]->custs, cust);
 	cust = box ? (Scheme_Custodian*)box->u.two_ptr_val.ptr1 : NULL;
       }
+      printf("Created new owner entry %i\n", i);
       return i;
     }
 
@@ -220,12 +222,17 @@ static short ot_convert(Scheme_Custodian *cust) {
   return ot_addentry(cust);
 }
 
-static short ot_current() {
-  if(scheme_current_thread && scheme_current_thread->config) {
-    Scheme_Custodian *c =
-      (Scheme_Custodian*)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+short ot_current() {
+  Scheme_Custodian *c;
+
+  if(!scheme_current_thread) {
+    return 0;
+  } else if(!(scheme_current_thread->config)) {
+    return NULL;
+  } else {
+    c = (Scheme_Custodian*)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
     return ot_convert(c);
-  } else return 0;
+  }
 }
 
 static short ot_union(short own1, short own2) {
@@ -337,6 +344,7 @@ struct root *roots = NULL;
 
 void GC_add_roots(void *start, void *end) {
   struct root *newroot = malloc(sizeof(struct root));
+  newroot->owner = 23945;
   newroot->owner = ot_current();
   newroot->start = (void**)start;
   newroot->end = (void**)end;

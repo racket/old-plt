@@ -24,7 +24,7 @@
   ;; to work fine and .dep files will just contain absolute path names.  These
   ;; functions work on dep elements -- either a pathname or a pair with a
   ;; pathname in its cdr, the plthome-ified pathname will itself be a pair.
-  (define plthome/ (let* ([plthome (splify-path plthome)]
+  (define plthome/ (let* ([plthome (simplify-path plthome)]
                           [plthome (if (eq? 'windows (system-type))
                                      (regexp-replace* #rx"\\\\" plthome "/")
                                      plthome)])

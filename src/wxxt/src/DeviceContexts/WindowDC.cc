@@ -2441,6 +2441,7 @@ static wxGL *current_gl_context = NULL;
 static int gl_registered;
 static XVisualInfo *vi, *sb_vi;
 
+typedef int (*X_Err_Handler)(Display*, XErrorEvent*);
 static int errorFlagged;
 static int FlagError(Display*, XErrorEvent*)
 {

@@ -27,4 +27,6 @@
    hyper-panel%
 
    editor->page
-   page->editor))
+   page->editor
+
+   on-installer-run))

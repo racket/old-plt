@@ -207,6 +207,9 @@
 	  [else (list c)]))
        (string->list s)))))
   
+  (define (doc-collections-changed)
+    (set! doc-collection-date #f))
+
   (define (do-search given-find search-level regexp? exact? ckey maxxed-out
 		     add-doc-section add-kind-section add-choice)
     ; When new docs are installed, the directory's modification date changes:

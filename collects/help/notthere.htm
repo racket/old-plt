@@ -18,11 +18,16 @@ The documentation is not installed on this machine, probably because
                    (let* ([subpath (if (directory-exists? (build-path (collection-path |help|) |CVS|))
                                        |Internal/DocBundles|
                                        (format |packages/~a/DocBundles| (version)))]
-                          [url (format |http://www.cs.rice.edu/CS/PLT/~a/~a-doc.plt| subpath missing-doc-name)])
-                     (format |You can download the documentation as<UL><LI><A href=\|~a\|>~a</A></UL>
-                              (Follow the above link within Help Desk to download the
+                          [url (format |http://www.cs.rice.edu/CS/PLT/~a/~a-doc.plt| subpath missing-doc-name)]
+                          [web-url (format |http://www.cs.rice.edu/CS/PLT/packages/~a/doc/~a/~a|
+                                           (version) missing-doc-name missing-html-file)])
+                     (format |<H3>To Read the Documentation Online</H3>
+                              <UL><LI><A href=\|~a\|>~a</A></UL><P>
+                              <H3>To Download and Install the Documentation</H3>
+                              <UL><LI><A href=\|~a\|>~a</A></UL>
+                              Follow the above link within Help Desk to download the
                                documentation. Help Desk will install it automatically.
-                               After installing, click the <B><TT>Rewind</TT></B> button
-                               above and continue.)|
-                             url url))
+                               After installing, <A HREF=\|~a\|>continue</A> to the newly-installed
+                               documentation.|
+                             web-url web-url url url missing-html-url))
                    ||)" -->

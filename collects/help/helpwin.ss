@@ -12,6 +12,8 @@
 
   (define last-url-string #f)
 
+  (on-installer-run doc-collections-changed)
+
   (define (open-url-from-user parent goto-url)
     (letrec ([d (make-object dialog% "Open URL" parent 500)]
 	     [t (make-object text-field% "URL:" d
@@ -232,12 +234,12 @@
 								;;  the collection directory. Many things can go wrong,
 								;;  in which case we let the normal error happen.
 								(let-values ([(doc-dir) (normalize-path (collection-path "doc"))]
-									     [(dest-dir dest-doc)
-									      (let-values ([(base name dir?)
+									     [(dest-dir dest-doc dest-file)
+									      (let-values ([(base filename dir?)
 											    (split-path (simplify-path (url-path url)))]) 
 										(let-values ([(base name dir?)
 											      (split-path base)])
-										  (values (normalize-path base) name)))])
+										  (values (normalize-path base) name filename)))])
 								  (when (and (string=? doc-dir dest-dir)
 									     (not (string=? dest-doc "help")))
 								    ;; Looks like the user needs to download some docs,
@@ -246,6 +248,8 @@
 								    (escape
 								     (lambda ()
 								       (global-defined-value 'missing-doc-name dest-doc)
+								       (global-defined-value 'missing-html-file dest-file)
+								       (global-defined-value 'missing-html-url (url->string url))
 								       (send (get-canvas) goto-url 
 									     (string-append
 									      "file:"

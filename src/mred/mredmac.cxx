@@ -206,9 +206,7 @@ static void QueueTransferredEvent(EventRecord *e)
     WindowPtr w = (WindowPtr)e->message;
     q->rgn = NewRgn();
 #ifdef WX_CARBON
-    RgnHandle updateRegion = NewRgn();
-    GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
-    CopyRgn(updateRegion,q->rgn);
+    GetWindowRegion(w,kWindowUpdateRgn,q->rgn);
 #else      
     CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
 #endif      
@@ -378,7 +376,6 @@ int WNE(EventRecord *e, double sleep_secs)
 static int TransferQueue(int all)
 {
   EventRecord e;
-  short mask;
   int sleep_time;
   int delay_time;
   
@@ -1011,10 +1008,15 @@ void MrEdDispatchEvent(EventRecord *e)
 # ifdef WX_CARBON
     {
       Rect windowBounds;
+      RgnHandle contentRgn = NewRgn();
+
       GetWindowBounds(w, kWindowContentRgn, &windowBounds);
+      GetWindowRegion(w, kWindowContentRgn, contentRgn);
+      SectRgn(contentRgn, rgn, rgn);
       OffsetRgn(rgn, -1 * windowBounds.left, -1 * windowBounds.top);
       InvalWindowRgn(w, rgn);
       DisposeRgn(rgn);
+      DisposeRgn(contentRgn);
     }
 # else
     if (!((WindowRecord *)w)->updateRgn)

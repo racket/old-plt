@@ -723,7 +723,7 @@ int wxWindow::SetCurrentDC(void) // mac platform only
   vis = IsWindowVisible(GetWindowFromPort(theMacGrafPort));
 
   ::SetGWorld(theMacGrafPort, wxGetGDHandle());
-  
+
   cClientArea->FrameContentAreaOffset(&SetOriginX, &SetOriginY);
   
   if (cMacDC->currentUser() != this) { // must setup platform
@@ -786,7 +786,6 @@ RgnHandle wxWindow::GetCoveredRegion(int x, int y, int w, int h)
 //-----------------------------------------------------------------------------
 void wxWindow::MacSetBackground(void) // mac platform only
 {
-#if 1
   if (cEraser == wxWHITE_BRUSH) {
     BackColor(whiteColor);
     BackPat(GetWhitePattern());
@@ -795,26 +794,6 @@ void wxWindow::MacSetBackground(void) // mac platform only
     depth = wxDisplayDepth();
     SetThemeBackground(kThemeBrushDialogBackgroundActive, depth, depth > 1);
   }
-#else 
-  wxBrush *bg;
-
-  bg = cEraser ? cEraser : wxCONTROL_BACKGROUND_BRUSH;
-
-  int theBrushStyle = bg->GetStyle();
-  if (theBrushStyle == wxSOLID)
-    BackPat(GetWhitePattern());
-  else if (theBrushStyle == wxTRANSPARENT)
-    BackPat(GetWhitePattern());
-  else if (IS_HATCH(theBrushStyle)) {
-    macGetHatchPattern(theBrushStyle, &cMacPattern);
-    BackPat(&cMacPattern);
-  } else {
-    BackPat(GetWhitePattern()); // WCH: must use BackPixPat for stipple
-  }
-
-  RGBColor pixel = bg->GetColour()->pixel;
-  RGBBackColor(&pixel);
-#endif
 }
 
 //-----------------------------------------------------------------------------

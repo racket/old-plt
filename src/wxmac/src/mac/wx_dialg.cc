@@ -17,6 +17,7 @@
 #include "wx_messg.h"
 #include "wx_main.h"
 #include "wx_buttn.h"
+#include "wx_mac_utils.h"
 #include "wx_macevents.h"
 #ifndef WX_CARBON
 # include <StandardFile.h>
@@ -278,7 +279,92 @@ static void ExtensionCallback(NavEventCallbackMessage callBackSelector,
 			      NavCBRecPtr callBackParms, 
 			      void *callBackUD)
 {
-  /* action here */
+#if 0
+  switch (callBackSelector) {
+  case kNavCBStart:
+    break;
+  case kNavCBAccept:
+    {
+      Str255 sv;
+      StringPtr s;
+      char *c, *suffix = ".app";
+      int i, sl;
+
+      s = sv;
+      NavCustomControl(callBackParms->context, kNavCtlGetEditFileName, s);
+
+      c = wxP2C(s);
+      for (i = s[0]; i--; ) {
+	if (c[i] == '.')
+	  break;
+      }
+      if (i < 0)
+	i = 0;
+      if (strcmp(c + i, suffix)) {
+	unsigned char *s2;
+	sl = strlen(suffix);
+	s2 = new WXGC_ATOMIC char[s[0] + sl + 1];
+	memcpy(s2 + 1, s + 1, s[0]);
+	memcpy(s2 + 1 + s[0], suffix, sl);
+	s2[0] = s[0] + sl;
+	NavCustomControl(callBackParms->context, kNavCtlSetEditFileName, s2);
+	s = s2;
+      }
+
+      {
+	AEDesc here, there;
+	FSRef fsref;
+	OSErr err;
+	char *dir = NULL;
+
+	NavCustomControl(callBackParms->context, kNavCtlGetLocation, &here);
+
+	err = AECoerceDesc(&here, typeFSRef, &there);
+	if (err != noErr) {
+	  if (err == errAECoercionFail) {
+	    /* Try FSSpec: */
+	    FSSpec spec;
+
+	    err = AECoerceDesc(&here, typeFSRef, &there);
+	    if (err == noErr) {	    
+	      err = AEGetDescData(&there, &spec, sizeof(FSSpec));
+	      if (err == noErr)
+		dir = scheme_mac_spec_to_path(&spec);
+	      AEDisposeDesc(&there);
+	    }
+	  }
+	} else {
+	  err = AEGetDescData(&there, &fsref, sizeof(fsref));
+	  if (err == noErr)
+	    dir = wxFSRefToPath(fsref);
+	  AEDisposeDesc(&there);
+	}
+
+	if (dir) {
+	  AlertStdAlertParamRec rec;
+	  SInt16 which;
+
+	  rec.movable = FALSE;
+	  rec.helpButton = FALSE;
+	  rec.filterProc = NULL;
+	  rec.defaultText = "\pReplace";
+	  rec.cancelText = (ConstStringPtr)kAlertDefaultCancelText;
+	  rec.otherText = NULL;
+	  rec.defaultButton = kAlertStdAlertCancelButton;
+	  rec.cancelButton = 0;
+	  rec.position = kWindowAlertPositionParentWindowScreen;
+
+	  err = StandardAlert(kAlertCautionAlert,
+			      "\pReally replace?",
+			      NULL,
+			      &rec,
+			      &which);
+	}
+      }
+    }      
+    break;
+  }
+#endif
 }
 
 static char *GetNthPath(NavReplyRecord *reply, int index)
@@ -345,6 +431,10 @@ char *wxFileSelector(char *message, char *default_path,
       dialogOptions.optionFlags |= kNavSupportPackages;
     if (!(flags & wxMULTIOPEN))
       dialogOptions.optionFlags -= (dialogOptions.optionFlags & kNavAllowMultipleFiles);
+
+#if 0
+    dialogOptions.optionFlags |= kNavDontConfirmReplacement;
+#endif
 
     // No way to set the starting directory? (There was in the old nav interface, but
     // apparently not anymore.)

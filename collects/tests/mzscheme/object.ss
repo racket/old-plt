@@ -751,6 +751,16 @@
   (err/rt-test (generic c% priv) exn:object?)
   (err/rt-test (make-generic c% 'priv) exn:object?))
 
+;; Make sure local name works with `send' in an area where the
+;;  name is also directly bound:
+(let ([c% (let ()
+	    (define-local-member-name priv)
+	    (class object%
+	      (define/public (priv x) (+ x 10))
+	      (define/public (pub y) (send this priv (* 2 y)))
+	      (super-new)))])
+  (test 16 'send-using-local (send (new c%) pub 3)))
+
 ;; ------------------------------------------------------------
 ;; class*/names rebinds names
 
@@ -779,7 +789,7 @@
 
 
 ;; ------------------------------------------------------------
-;; new tests
+;; `new' tests
 
 (syntax-test #'(new))
 (syntax-test #'(new x x))

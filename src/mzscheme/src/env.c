@@ -73,6 +73,7 @@ static Scheme_Object *local_get_shadower(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_introducer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_set_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *set_transformer_p(int argc, Scheme_Object *argv[]);
+static Scheme_Object *set_transformer_proc(int argc, Scheme_Object *argv[]);
 static Scheme_Object *make_rename_transformer(int argc, Scheme_Object *argv[]);
 static Scheme_Object *rename_transformer_p(int argc, Scheme_Object *argv[]);
 
@@ -465,6 +466,12 @@ static void make_init_env(void)
   scheme_add_global_constant("set!-transformer?", 
 			     scheme_make_prim_w_arity(set_transformer_p,
 						      "set!-transformer?",
+						      1, 1),
+			     env);
+
+  scheme_add_global_constant("set!-transformer-procedure", 
+			     scheme_make_prim_w_arity(set_transformer_proc,
+						      "set!-transformer-procedure",
 						      1, 1),
 			     env);
 
@@ -2911,6 +2918,15 @@ set_transformer_p(int argc, Scheme_Object *argv[])
   return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_set_macro_type))
 	  ? scheme_true
 	  : scheme_false);
+}
+
+static Scheme_Object *
+set_transformer_proc(int argc, Scheme_Object *argv[])
+{
+  if (!(SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_set_macro_type)))
+    scheme_wrong_type("set!-transformer-procedure", "set!-transformer", 1, argc, argv);
+
+  return SCHEME_PTR_VAL(argv[0]);
 }
 
 static Scheme_Object *

@@ -3,6 +3,12 @@
 
   (require (lib "stx.ss" "syntax"))
 
+  (define-values (struct:s!t make-s!t s!t? s!t-ref s!t-set!)
+    (make-struct-type 'set!-transformer #f 2 0 #f null (current-inspector) 0))
+  
+  (define (mk-set!-trans old-id proc)
+    (make-set!-transformer (make-s!t proc old-id)))
+
   (define (make-method-apply id this orig-args)
     (let loop ([args orig-args][accum null])
       (cond
@@ -17,7 +23,7 @@
     (let ([this-id (syntax-local-value the-finder)])
       (datum->syntax-object this-id name src)))
 
-  ;; Help Desk binding info:
+  ;; Check Syntax binding info:
   (define (binding from to stx)
     (syntax-property
      stx
@@ -25,9 +31,10 @@
      (cons from (syntax-local-introduce to))))
 
 
-  (define (make-this-map the-finder the-obj)
+  (define (make-this-map orig-id the-finder the-obj)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
-      (make-set!-transformer
+      (mk-set!-trans
+       orig-id
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
@@ -42,7 +49,8 @@
 
   (define (make-field-map the-finder the-obj the-binder field-accessor field-mutator field-pos/null)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
-      (make-set!-transformer
+      (mk-set!-trans
+       the-binder
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
@@ -70,7 +78,8 @@
 
   (define (make-method-map the-finder the-obj the-binder method-accessor)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
-      (make-set!-transformer
+      (mk-set!-trans
+       the-binder
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
@@ -96,7 +105,8 @@
   ;;  (e.g., private methods)
   (define (make-direct-method-map the-finder the-obj the-binder new-name)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
-      (make-set!-transformer
+      (mk-set!-trans
+       the-binder
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
@@ -117,7 +127,8 @@
 
   (define (make-rename-map the-finder the-obj the-binder rename-temp)
     (let ([set!-stx (datum->syntax-object the-finder 'set!)])
-      (make-set!-transformer
+      (mk-set!-trans
+       the-binder
        (lambda (stx)
 	 (syntax-case stx ()
 	   [(set! id expr)
@@ -184,14 +195,19 @@
 
   (define-struct private-name (orig-id gen-id))
 
-  (define (localize id)
-    (let ([v (syntax-local-value id (lambda () #f))])
-      (if (and v (private-name? v))
+  (define (localize orig-id)
+    (let loop ([id orig-id])
+      (let ([v (syntax-local-value id (lambda () #f))])
+	(cond
+	 [(and v (private-name? v))
 	  (list 'unquote 
 		(binding (private-name-orig-id v)
 			 id
-			 (private-name-gen-id v)))
-	  id)))
+			 (private-name-gen-id v)))]
+	 [(and (set!-transformer? v)
+	       (s!t? (set!-transformer-procedure v)))
+	  (loop (s!t-ref (set!-transformer-procedure v) 1))]
+	 [else orig-id]))))
 
 
   (provide make-this-map make-field-map make-method-map 

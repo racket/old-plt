@@ -15,10 +15,12 @@
         (do-turn baseline? gui? input output)))
 
   (define (read-packages in)
-    (let ((in (open-input-string (read-line in))))
+    (let* ((x (read-line in))
+           (in (open-input-string x)))
+      (printf "~a~n" x)
       (let loop ((id (read in)))
         (cond
-          ((eof-object? in) null)
+          ((eof-object? id) null)
           (else
            (cons
             (make-package id (read in) (read in) (read in))
@@ -27,10 +29,10 @@
   (define (send-command command out)
     (display (command-bid command) out)
     (case (command-command command)
-      ((n) (display "Move N" out))
-      ((s) (display "Move S" out))
-      ((e) (display "Move E" out))
-      ((w) (display "Move W" out))
+      ((n) (display " Move N" out))
+      ((s) (display " Move S" out))
+      ((e) (display " Move E" out))
+      ((w) (display " Move W" out))
       ((p) 
        (display "Pick " out)
        (for-each (lambda (x)
@@ -50,7 +52,6 @@
   (define (do-turn baseline? gui? in out)
     (let loop ((packages (read-packages in))
                (robots null))
-      (printf "here~n")
       (cond
         ((null? packages) (fix-home!)))
       (cond

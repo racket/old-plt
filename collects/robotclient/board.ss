@@ -1,14 +1,16 @@
 (module board mzscheme
   
   (require "array2d.ss"
-           (lib "list.ss"))
+           (lib "list.ss")
+           (lib "lex.ss" "parser-tools")
+           (lib "yacc.ss" "parser-tools"))
 
   (provide get-type get-robot get-valid set-valid set-invalid get-weight set-weight
            get-spot set-spot get-player-x get-player-y
            board-height board-width board
            (struct command (bid command arg))
            (struct package (id weight x y))
-           player-id player-money player-capacity packages-held
+           player-id player-money player-initial-money player-capacity packages-held
            (struct robot (id x y))
            read-board! read-response!
            fix-home!)
@@ -129,6 +131,7 @@
   
   (define player-id (make-parameter 0))
   (define player-money (make-parameter 0))
+  (define player-initial-money (make-parameter 0))
   (define player-capacity (make-parameter 0))
   (define packages-held (make-parameter null))
   
@@ -144,33 +147,52 @@
 
   (define-struct response (id name arg))
   
+  (define-tokens rt (NUM))
+  (define-empty-tokens ert (^ X Y N S E W P D EOF))
+  
+  (define response-parser
+    (parser
+     (tokens rt ert)
+     (start response-list)
+     (end EOF)
+     (error void)
+     (grammar
+      (response ((^ NUM com-list) 
+                 (map (lambda (com)
+                        (make-response $2 (car com) (cdr com)))
+                      $3)))
+      (response-list ((response) $1)
+                     ((response response-list) (append $1 $2)))
+      (com ((X NUM Y NUM) (cons 'X (cons $2 $4)))
+           ((N) (cons 'N null))
+           ((S) (cons 'S null))
+           ((E) (cons 'E null))
+           ((W) (cons 'W null))
+           ((P num-list) (cons 'P $2))
+           ((D num-list) (cons 'D $2)))
+      (com-list ((com) (list $1))
+                ((com com-list) (cons $1 $2)))
+      (num-list (() null)
+                ((NUM num-list) (cons $1 $2))))))
+       
+  
   (define (read-num-list in)
     (let loop ((next (read in)))
       (cond
-        ((or (eof-object? in) (eq? '^ in)) null)
+        ((or (eof-object? next) (eq? '^ next)) null)
         (else (cons next (loop (read in)))))))
   
   (define (read-response in)
-    (let ((s (open-input-string (regexp-replace "#" (read-line in) " ^ "))))
-      (let loop ((next (read s)))
-        (cond
-          ((eof-object? next) null)
-          (else
-           (let* ((id (read s))
-                  (command (read s)))
-             (case command
-               ((N S E W) (cons (make-response id command #f)
-                                (loop (read s))))
-               ((P D) (cons (make-response id command (read-num-list s))
-                            (loop '^)))
-               ((X) 
-                (cons
-                 (let ((x (read s)))
-                   (read s)
-                   (make-response id 'X (cons x (read-num-list s))))
-                 (loop (read s)))))))))))
-    
-  
+    (let* ((t (regexp-replace "#" (read-line in) " ^ "))
+           (s (open-input-string t)))
+      (response-parser (lambda ()
+                         (let ((i (read s)))
+                           (cond
+                             ((memq i `(^ X Y N S E W P D)) i)
+                             ((number? i)
+                              (token-NUM i))
+                             (else 'EOF)))))))
+          
   (define (read-initial-response! in init-gui)
     (let* ((responses
             (filter (lambda (x)
@@ -310,6 +332,7 @@
     (player-id (read input))
     (player-capacity (read input))
     (player-money (read input))
+    (player-initial-money (player-money))
     (read-line input)
     (read-initial-response! input init-gui))
     

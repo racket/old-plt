@@ -204,6 +204,10 @@ SOURCE=..\..\Mzscheme\Src\Bool.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\mzscheme\src\builtin.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Mzscheme\Src\Char.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
@@ -468,6 +472,14 @@ SOURCE=..\..\Mzscheme\Src\mzsj86.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\mzscheme\src\network.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\mzscheme\src\numarith.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\Mzscheme\Src\Number.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
@@ -487,6 +499,18 @@ SOURCE=..\..\Mzscheme\Src\Number.c
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\mzscheme\src\numcomp.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\mzscheme\src\numstr.c
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\mzscheme\src\objclass.c
 # End Source File
 # Begin Source File
 
@@ -531,6 +555,10 @@ SOURCE=..\..\Mzscheme\Src\Port.c
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\mzscheme\src\portfun.c
 # End Source File
 # Begin Source File
 
@@ -883,6 +911,10 @@ SOURCE=..\..\Mzscheme\Src\Unit.c
 
 !ENDIF 
 
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\mzscheme\src\unitsig.c
 # End Source File
 # Begin Source File
 

@@ -482,10 +482,11 @@ double scheme_real_to_double(Scheme_Object *r)
     return 0.0;
 }
 
+static
 #ifndef NO_INLINE_KEYWORD
 MSC_IZE(inline)
 #endif
-int scheme_minus_zero_p(double d)
+int minus_zero_p(double d)
 {
   double a[2];
   long *f, *s;
@@ -500,6 +501,11 @@ int scheme_minus_zero_p(double d)
     return 1;
 
   return 0;
+}
+
+int scheme_minus_zero_p(double d)
+{
+  return minus_zero_p(d);
 }
 
 #ifdef DEFEAT_FP_COMP_OPTIMIZATION

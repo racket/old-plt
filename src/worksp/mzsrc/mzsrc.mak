@@ -42,6 +42,7 @@ ALL : "$(OUTDIR)\mzsrc.lib"
 CLEAN :
 	-@erase "$(INTDIR)\Bignum.obj"
 	-@erase "$(INTDIR)\Bool.obj"
+	-@erase "$(INTDIR)\builtin.obj"
 	-@erase "$(INTDIR)\Char.obj"
 	-@erase "$(INTDIR)\Complex.obj"
 	-@erase "$(INTDIR)\Dynext.obj"
@@ -54,9 +55,15 @@ CLEAN :
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
 	-@erase "$(INTDIR)\mzsj86.obj"
+	-@erase "$(INTDIR)\network.obj"
+	-@erase "$(INTDIR)\numarith.obj"
 	-@erase "$(INTDIR)\Number.obj"
+	-@erase "$(INTDIR)\numcomp.obj"
+	-@erase "$(INTDIR)\numstr.obj"
+	-@erase "$(INTDIR)\objclass.obj"
 	-@erase "$(INTDIR)\Object.obj"
 	-@erase "$(INTDIR)\Port.obj"
+	-@erase "$(INTDIR)\portfun.obj"
 	-@erase "$(INTDIR)\Print.obj"
 	-@erase "$(INTDIR)\Process.obj"
 	-@erase "$(INTDIR)\Promise.obj"
@@ -73,6 +80,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
+	-@erase "$(INTDIR)\unitsig.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\Vector.obj"
@@ -155,7 +163,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\unitsig.obj" \
+	"$(INTDIR)\numarith.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
+	"$(INTDIR)\portfun.obj" \
+	"$(INTDIR)\builtin.obj" \
+	"$(INTDIR)\network.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -176,6 +192,7 @@ ALL : "$(OUTDIR)\mzsrc.lib"
 CLEAN :
 	-@erase "$(INTDIR)\Bignum.obj"
 	-@erase "$(INTDIR)\Bool.obj"
+	-@erase "$(INTDIR)\builtin.obj"
 	-@erase "$(INTDIR)\Char.obj"
 	-@erase "$(INTDIR)\Complex.obj"
 	-@erase "$(INTDIR)\Dynext.obj"
@@ -188,9 +205,15 @@ CLEAN :
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
 	-@erase "$(INTDIR)\mzsj86.obj"
+	-@erase "$(INTDIR)\network.obj"
+	-@erase "$(INTDIR)\numarith.obj"
 	-@erase "$(INTDIR)\Number.obj"
+	-@erase "$(INTDIR)\numcomp.obj"
+	-@erase "$(INTDIR)\numstr.obj"
+	-@erase "$(INTDIR)\objclass.obj"
 	-@erase "$(INTDIR)\Object.obj"
 	-@erase "$(INTDIR)\Port.obj"
+	-@erase "$(INTDIR)\portfun.obj"
 	-@erase "$(INTDIR)\Print.obj"
 	-@erase "$(INTDIR)\Process.obj"
 	-@erase "$(INTDIR)\Promise.obj"
@@ -207,6 +230,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
+	-@erase "$(INTDIR)\unitsig.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\Vector.obj"
@@ -289,7 +313,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\unitsig.obj" \
+	"$(INTDIR)\numarith.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
+	"$(INTDIR)\portfun.obj" \
+	"$(INTDIR)\builtin.obj" \
+	"$(INTDIR)\network.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -310,6 +342,7 @@ ALL : "$(OUTDIR)\mzsrc.lib"
 CLEAN :
 	-@erase "$(INTDIR)\Bignum.obj"
 	-@erase "$(INTDIR)\Bool.obj"
+	-@erase "$(INTDIR)\builtin.obj"
 	-@erase "$(INTDIR)\Char.obj"
 	-@erase "$(INTDIR)\Complex.obj"
 	-@erase "$(INTDIR)\Dynext.obj"
@@ -322,9 +355,15 @@ CLEAN :
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
 	-@erase "$(INTDIR)\mzsj86.obj"
+	-@erase "$(INTDIR)\network.obj"
+	-@erase "$(INTDIR)\numarith.obj"
 	-@erase "$(INTDIR)\Number.obj"
+	-@erase "$(INTDIR)\numcomp.obj"
+	-@erase "$(INTDIR)\numstr.obj"
+	-@erase "$(INTDIR)\objclass.obj"
 	-@erase "$(INTDIR)\Object.obj"
 	-@erase "$(INTDIR)\Port.obj"
+	-@erase "$(INTDIR)\portfun.obj"
 	-@erase "$(INTDIR)\Print.obj"
 	-@erase "$(INTDIR)\Process.obj"
 	-@erase "$(INTDIR)\Promise.obj"
@@ -341,6 +380,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
+	-@erase "$(INTDIR)\unitsig.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\Vector.obj"
@@ -423,7 +463,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\unitsig.obj" \
+	"$(INTDIR)\numarith.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
+	"$(INTDIR)\portfun.obj" \
+	"$(INTDIR)\builtin.obj" \
+	"$(INTDIR)\network.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -444,6 +492,7 @@ ALL : "$(OUTDIR)\mzsrc.lib"
 CLEAN :
 	-@erase "$(INTDIR)\Bignum.obj"
 	-@erase "$(INTDIR)\Bool.obj"
+	-@erase "$(INTDIR)\builtin.obj"
 	-@erase "$(INTDIR)\Char.obj"
 	-@erase "$(INTDIR)\Complex.obj"
 	-@erase "$(INTDIR)\Dynext.obj"
@@ -456,9 +505,15 @@ CLEAN :
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
 	-@erase "$(INTDIR)\mzsj86.obj"
+	-@erase "$(INTDIR)\network.obj"
+	-@erase "$(INTDIR)\numarith.obj"
 	-@erase "$(INTDIR)\Number.obj"
+	-@erase "$(INTDIR)\numcomp.obj"
+	-@erase "$(INTDIR)\numstr.obj"
+	-@erase "$(INTDIR)\objclass.obj"
 	-@erase "$(INTDIR)\Object.obj"
 	-@erase "$(INTDIR)\Port.obj"
+	-@erase "$(INTDIR)\portfun.obj"
 	-@erase "$(INTDIR)\Print.obj"
 	-@erase "$(INTDIR)\Process.obj"
 	-@erase "$(INTDIR)\Promise.obj"
@@ -475,6 +530,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
+	-@erase "$(INTDIR)\unitsig.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\Vector.obj"
@@ -557,7 +613,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\unitsig.obj" \
+	"$(INTDIR)\numarith.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
+	"$(INTDIR)\portfun.obj" \
+	"$(INTDIR)\builtin.obj" \
+	"$(INTDIR)\network.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -578,6 +642,7 @@ ALL : "$(OUTDIR)\mzsrc.lib"
 CLEAN :
 	-@erase "$(INTDIR)\Bignum.obj"
 	-@erase "$(INTDIR)\Bool.obj"
+	-@erase "$(INTDIR)\builtin.obj"
 	-@erase "$(INTDIR)\Char.obj"
 	-@erase "$(INTDIR)\Complex.obj"
 	-@erase "$(INTDIR)\Dynext.obj"
@@ -590,9 +655,15 @@ CLEAN :
 	-@erase "$(INTDIR)\image.obj"
 	-@erase "$(INTDIR)\List.obj"
 	-@erase "$(INTDIR)\mzsj86.obj"
+	-@erase "$(INTDIR)\network.obj"
+	-@erase "$(INTDIR)\numarith.obj"
 	-@erase "$(INTDIR)\Number.obj"
+	-@erase "$(INTDIR)\numcomp.obj"
+	-@erase "$(INTDIR)\numstr.obj"
+	-@erase "$(INTDIR)\objclass.obj"
 	-@erase "$(INTDIR)\Object.obj"
 	-@erase "$(INTDIR)\Port.obj"
+	-@erase "$(INTDIR)\portfun.obj"
 	-@erase "$(INTDIR)\Print.obj"
 	-@erase "$(INTDIR)\Process.obj"
 	-@erase "$(INTDIR)\Promise.obj"
@@ -609,6 +680,7 @@ CLEAN :
 	-@erase "$(INTDIR)\Tsymbol.obj"
 	-@erase "$(INTDIR)\Type.obj"
 	-@erase "$(INTDIR)\Unit.obj"
+	-@erase "$(INTDIR)\unitsig.obj"
 	-@erase "$(INTDIR)\vc60.idb"
 	-@erase "$(INTDIR)\vc60.pdb"
 	-@erase "$(INTDIR)\Vector.obj"
@@ -691,7 +763,15 @@ LIB32_OBJS= \
 	"$(INTDIR)\Tsymbol.obj" \
 	"$(INTDIR)\Type.obj" \
 	"$(INTDIR)\Unit.obj" \
-	"$(INTDIR)\Vector.obj"
+	"$(INTDIR)\Vector.obj" \
+	"$(INTDIR)\unitsig.obj" \
+	"$(INTDIR)\numarith.obj" \
+	"$(INTDIR)\numcomp.obj" \
+	"$(INTDIR)\numstr.obj" \
+	"$(INTDIR)\objclass.obj" \
+	"$(INTDIR)\portfun.obj" \
+	"$(INTDIR)\builtin.obj" \
+	"$(INTDIR)\network.obj"
 
 "$(OUTDIR)\mzsrc.lib" : "$(OUTDIR)" $(DEF_FILE) $(LIB32_OBJS)
     $(LIB32) @<<
@@ -818,6 +898,12 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 
 !ENDIF 
+
+SOURCE=..\..\mzscheme\src\builtin.c
+
+"$(INTDIR)\builtin.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 SOURCE=..\..\Mzscheme\Src\Char.c
 
@@ -1467,6 +1553,18 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 !ENDIF 
 
+SOURCE=..\..\mzscheme\src\network.c
+
+"$(INTDIR)\network.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\mzscheme\src\numarith.c
+
+"$(INTDIR)\numarith.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
 SOURCE=..\..\Mzscheme\Src\Number.c
 
 !IF  "$(CFG)" == "mzsrc - Win32 Release"
@@ -1520,6 +1618,24 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 
 !ENDIF 
+
+SOURCE=..\..\mzscheme\src\numcomp.c
+
+"$(INTDIR)\numcomp.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\mzscheme\src\numstr.c
+
+"$(INTDIR)\numstr.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
+
+SOURCE=..\..\mzscheme\src\objclass.c
+
+"$(INTDIR)\objclass.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 SOURCE=..\..\Mzscheme\Src\Object.c
 
@@ -1628,6 +1744,12 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 
 !ENDIF 
+
+SOURCE=..\..\mzscheme\src\portfun.c
+
+"$(INTDIR)\portfun.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 SOURCE=..\..\Mzscheme\Src\Print.c
 
@@ -2492,6 +2614,12 @@ CPP_SWITCHES=/nologo /MD /W3 /GX /Zi /O2 /I "..\..\mzscheme\include" /I "..\..\m
 
 
 !ENDIF 
+
+SOURCE=..\..\mzscheme\src\unitsig.c
+
+"$(INTDIR)\unitsig.obj" : $(SOURCE) "$(INTDIR)"
+	$(CPP) $(CPP_PROJ) $(SOURCE)
+
 
 SOURCE=..\..\Mzscheme\Src\Vector.c
 

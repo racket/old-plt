@@ -3282,6 +3282,8 @@ typedef struct {
 #endif
 } Tested_Output_File;
 
+static void flush_tested(Scheme_Output_Port *port);
+
 static void release_inuse_lock(Scheme_Process *p)
 {
   Tested_Output_File *top;
@@ -4809,6 +4811,17 @@ static long select_for_tcp(void *data)
 
   return 0;
 }
+
+# ifdef USE_WINSOCK_TCP
+#  define TCP_T SOCKET
+# else
+#  define TCP_T int
+# endif
+
+# ifndef MZ_PF_INET
+#  define MZ_PF_INET PF_INET
+# endif
+
 #endif
 
 /********************* BeOS wait_multiple_sema *****************/
@@ -5066,7 +5079,7 @@ static void default_sleep(float v, void *fds)
 	   When either happens, kill the thread. */
 	OS_THREAD_TYPE th;
 	Tcp_Select_Info *info;
-	tcp_t fake;
+	TCP_T fake;
 #if defined(WIN32_FD_HANDLES)
 	struct Scheme_Thread_Memory *thread_memory;
 #endif

@@ -2715,10 +2715,18 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
 #ifdef USE_WINSOCK_TCP
   {
     unsigned long ioarg = 1;
+    BOOL bc = 1;
     ioctlsocket(s, FIONBIO, &ioarg);
+    setsockopt(s, SOL_SOCKET, SO_BROADCAST, &bc, sizeof(BOOL));
   }
 #else
   fcntl(s, F_SETFL, MZ_NONBLOCKING);
+# ifdef SO_BROADCAST
+  {
+    int bc = 1;
+    setsockopt(s, SOL_SOCKET, SO_BROADCAST, &bc, sizeof(bc));
+  }
+# endif
 #endif
 
   {

@@ -949,7 +949,7 @@ void wxImage::CreateXImage()
       if (!imagedata) FatalError("couldn't malloc imagedata");
       
       theImage = XCreateImage(theDisp,theVisual,dispDEEP,ZPixmap,0,
-			      (char *) imagedata, eWIDE, eHIGH, 32,
+			      (char *) imagedata, eWIDE, eHIGH, 24,
 			      4 * eWIDE);
       if (!theImage) {
 	return;

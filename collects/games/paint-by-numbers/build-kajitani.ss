@@ -2,7 +2,7 @@
 
 string=? ; exec mzscheme -qr $0
 
-;; this builds raw-kajitani.ss from raw-kajitani
+;; this builds raw-kajitani.ss from full-kajitani
 ;; raw-kajitani.ss is used in build-problems.ss
 
 (require-library "pretty.ss")
@@ -11,7 +11,7 @@ string=? ; exec mzscheme -qr $0
 (require-library "string.ss")
 
 (define raw-kajitani (call-with-input-file (build-path (collection-path "games" "paint-by-numbers")
-                                                       "raw-kajitani")
+                                                       "full-kajitani")
 		       read))
 
 (define allowed-emails

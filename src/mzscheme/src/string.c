@@ -1276,43 +1276,123 @@ int mz_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
 {
 #ifdef MZ_USE_STRCOLL
 # define MZ_SC_BUF_SIZE 32
-  long clen1, clen2;
+# ifdef SCHEME_BIG_ENDIAN
+#  define MZ_UCS4_NAME "UCS-4BE"
+# else
+#  define MZ_UCS4_NAME "UCS-4LE"
+# endif
+  long clen1, clen2, used1, used2, origl1, origl2;
   char *c1, *c2, buf1[MZ_SC_BUF_SIZE], buf2[MZ_SC_BUF_SIZE];
   char case_buf1[MZ_SC_BUF_SIZE], case_buf2[MZ_SC_BUF_SIZE];
-  int status;
+  int status, got_more;
 
-  /* First, convert UCS-4 to locale-specific encoding.  There should
-     be no conversion errors, but if there are, we'll get back
-     shorter strings, and just continue. */
+  /* First, convert UCS-4 to locale-specific encoding. If some
+     characters don't fit into the encoding, then we'll have leftover
+     characters. Count unconvertable charc as greater than anything
+     that can be converted */
+
+  origl1 = l1;
+  origl2 = l2;
+  
+  /* Loop to check both convertable and unconvertable parts */
+  while (1) {
+
+    /* Loop to get consistent parts of the wto strings, in case
+       a conversion fails. */
+    got_more = 0;
+    l1 = origl1;
+    l2 = origl2;
+    while (1) {
+      c1 = scheme_locale_convert(MZ_UCS4_NAME, NULL, 
+				 s1, d1 * 4, 4 * l1,
+				 buf1, 0, MZ_SC_BUF_SIZE - 1,
+				 1 /* grow */, 1 /* terminator size */,
+				 &used1, &clen1,
+				 &status);
+      c2 = scheme_locale_convert(MZ_UCS4_NAME, NULL, 
+				 s2, d2 * 4, 4 * l2,
+				 buf2, 0, MZ_SC_BUF_SIZE - 1,
+				 1 /* grow */, 1 /* terminator size */,
+				 &used2, &clen2,
+				 &status);
+
+      if ((used1 < 4 * l1) || (used2 < 4 * l2)) {
+	if (got_more) {
+	  /* Something went wrong. We've already tried to
+	     even out the parts that work. Let's give up
+	     on the first characters */
+	  clen1 = clen2 = 0;
+	  break;
+	} else if (used1 == used2) {
+	  /* Not everything, but both ended at the same point */
+	  break;
+	} else {
+	  /* Pick the smallest */
+	  if (used2 < used1) {
+	    used1 = used2;
+	    got_more = 1;
+	  } else
+	    got_more = 2;
+	  l2 = (used1 >> 2);
+	  l1 = (used1 >> 2);
+	}
+      } else
+	/* Got all that we wanted */
+	break;
+    }
     
-  c1 = scheme_locale_convert("UCS-4LE", NULL, 
-			     s1, d1 * 4, 4 * l1,
-			     buf1, 0, MZ_SC_BUF_SIZE - 1,
-			     1 /* grow */, 1 /* terminator size */,
-			     NULL, &clen1,
-			     &status);
-  c2 = scheme_locale_convert("UCS-4LE", NULL, 
-			     s2, d2 * 4, 4 * l2,
-			     buf2, 0, MZ_SC_BUF_SIZE - 1,
-			     1 /* grow */, 1 /* terminator size */,
-			     NULL, &clen2,
-			     &status);
-    
-  if (cvt_case) {
-    c1 = scheme_recase_locale_string(0, c1, 0, clen1,
-				     case_buf1, 0, MZ_SC_BUF_SIZE - 1,
-				     &clen1);
-    c2 = scheme_recase_locale_string(0, c2, 0, clen2,
-				     case_buf2, 0, MZ_SC_BUF_SIZE - 1,
-				     &clen2);
-    /* Again, there shouldn't have been conversion errors, but we
-       might have received a NULL */
-    if (!c1) c1 = "";
-    if (!c2) c2 = "";
+    if (cvt_case) {
+      c1 = scheme_recase_locale_string(0, c1, 0, clen1,
+				       case_buf1, 0, MZ_SC_BUF_SIZE - 1,
+				       &clen1);
+      c2 = scheme_recase_locale_string(0, c2, 0, clen2,
+				       case_buf2, 0, MZ_SC_BUF_SIZE - 1,
+				       &clen2);
+      /* There shouldn't have been conversion errors, but just in
+	 case, care of NULL. */
+      if (!c1) c1 = "";
+      if (!c2) c2 = "";
+    }
+
+    /* Collate, finally. */
+    status = strcoll(c1, c2);
+
+    /* If one is bigger than the other, we're done. */
+    if (status)
+      return status;
+
+    /* Otherwise, is there more to check? */
+    origl1 -= (used1 >> 2);
+    origl2 -= (used2 >> 2);
+    d1 += (used1 >> 2);
+    d2 += (used2 >> 2);
+    if (!origl1 && !origl2)
+      return 0;
+
+    /* There's more. It must be that the next character wasn't
+       convertable in one of the encodings. */
+    if (got_more)
+      return ((got_more == 1) ? 1 : -1);
+
+    if (!origl1)
+      return -1;
+
+    /* Compare an unconverable character directly. No case conversions
+       if it's outside the locale. */
+    if (((unsigned int *)s1)[d1] > ((unsigned int *)s2)[d2])
+      return 1;
+    else if (((unsigned int *)s1)[d1] < ((unsigned int *)s2)[d2])
+      return -1;
+    else {
+      /* We've skipped one unconvertable char, and they still look the
+	 same.  Now try again. */
+      origl1 -= 1;
+      origl2 -= 1;
+      d1 += 1;
+      d2 += 1;
+    }
   }
 
-  /* Collate, finally. */
-  return strcoll(c1, c2);
 #endif
 #ifdef MACOS_UNICODE_SUPPORT
   ...

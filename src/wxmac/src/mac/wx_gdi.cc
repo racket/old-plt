@@ -210,7 +210,7 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
       break;
     } else {
       CopyCStringToPascal(name,buffer);
-      ::GetFNum((ConstStr255Param)buffer, &macFontId);
+      macFontId = ::FMGetFontFamilyFromName((ConstStr255Param)buffer);
 
       if (macFontId || tried_once)
 	break;

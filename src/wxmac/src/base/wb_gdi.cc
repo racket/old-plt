@@ -354,6 +354,8 @@ char *wxColourDatabase::FindName (wxColour *colour)
 void 
 wxInitializeStockObjects (void)
 {
+  SetOutlinePreferred(TRUE);
+
   wxREGGLOB(wxTheBrushList);
   wxTheBrushList = new wxBrushList;
   wxREGGLOB(wxThePenList);
@@ -361,22 +363,31 @@ wxInitializeStockObjects (void)
   wxREGGLOB(wxTheFontList);
   wxTheFontList = new wxFontList;
 
-#ifdef WX_CARBON
-# define BIG_FONT_SIZE 13
-# define SMALL_FONT_SIZE 11
-#else
-# define BIG_FONT_SIZE 12
-# define SMALL_FONT_SIZE 10
-#endif
- 
-  wxREGGLOB(wxNORMAL_FONT);
-  wxNORMAL_FONT = new wxFont (BIG_FONT_SIZE, wxSYSTEM, wxNORMAL, wxNORMAL);
-  wxREGGLOB(wxSMALL_FONT);
-  wxSMALL_FONT = new wxFont (SMALL_FONT_SIZE, wxSWISS, wxNORMAL, wxNORMAL);
-  wxREGGLOB(wxITALIC_FONT);
-  wxITALIC_FONT = new wxFont (BIG_FONT_SIZE, wxROMAN, wxITALIC, wxNORMAL);
-  wxREGGLOB(wxSWISS_FONT);
-  wxSWISS_FONT = new wxFont (BIG_FONT_SIZE, wxSWISS, wxNORMAL, wxNORMAL);
+  {
+    Str255 name;
+    SInt16 big_size, small_size;
+    Style style, small_style;
+
+    GetThemeFont(kThemeSystemFont,
+		 smSystemScript,
+		 name,
+		 &big_size,
+		 &style);
+    GetThemeFont(kThemeSmallSystemFont,
+		 smSystemScript,
+		 name,
+		 &small_size,
+		 &small_style);
+
+    wxREGGLOB(wxNORMAL_FONT);
+    wxNORMAL_FONT = new wxFont (big_size, wxSYSTEM, wxNORMAL, wxNORMAL);
+    wxREGGLOB(wxSMALL_FONT);
+    wxSMALL_FONT = new wxFont (small_size, wxSWISS, wxNORMAL, wxNORMAL);
+    wxREGGLOB(wxITALIC_FONT);
+    wxITALIC_FONT = new wxFont (big_size, wxROMAN, wxITALIC, wxNORMAL);
+    wxREGGLOB(wxSWISS_FONT);
+    wxSWISS_FONT = new wxFont (big_size, wxSWISS, wxNORMAL, wxNORMAL);
+  }
 
   wxREGGLOB(wxRED_PEN);
   wxRED_PEN = new wxPen ("RED", 0, wxSOLID);

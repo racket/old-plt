@@ -798,17 +798,12 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
   i = 0;
 #endif
 #ifdef wx_mac
-  MenuHandle fmenu;
-  Str255 buffer;
+  FMFontFamilyIterator iterator;
+  FMFontFamily fam;
+  Str255 fname;
   char temp[256];
-  int count, i = 0;
-  
-  fmenu = NewMenu(42, "\p");
-  if (!fmenu)
-    return scheme_null;
-  AppendResMenu(fmenu, 'FONT');
-  
-  count = CountMenuItems(fmenu);
+
+  FMCreateFontFamilyIterator(NULL, NULL, kFMDefaultIterationScope, &iterator);
 #endif
 #ifdef wx_msw
   gfData data;
@@ -865,22 +860,12 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
     s = names[i++];
 #endif
 #ifdef wx_mac
-    if (i == count) {
-      s = "systemfont";
-      l = strlen(s);
-      i++;
-    } else if (i == count + 1) {
-      s = "applicationfont";
-      l = strlen(s);
-      i++;
-    } else if (i > count)
+    if (FMGetNextFontFamily(&iterator, &fam) != noErr)
       break;
-    else {
-      GetMenuItemText(fmenu, ++i, buffer);
-      CopyPascalStringToC(buffer,temp);
-      l = strlen(temp);
-      s = temp;
-    }
+    FMGetFontFamilyName(fam, fname);
+    CopyPascalStringToC(fname,temp);
+    l = strlen(temp);
+    s = temp;
 #endif
 #ifdef wx_msw
     if (i >= data.count)
@@ -902,6 +887,9 @@ static Scheme_Object *wxSchemeGetFontList(int, Scheme_Object **)
 #endif
 #ifdef wx_msw
    ReleaseDC(NULL, dc);
+#endif
+#ifdef wx_mac
+  FMDisposeFontFamilyIterator(&iterator);
 #endif
 
   return first;

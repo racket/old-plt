@@ -17,16 +17,6 @@ class. This is intended for the contract library only, since
 it needs to be able to create wrapper classes that act just
 like the original classes.
 
-  (make-object/sneaky obj class init-args ...)
-  
-This creates an object like make-object would with 
-the class and init-args. In addition, this object
-behaves as its first argument would to these
-primitives:
-
-  is-a?
-  object-interface
-  
 These functions:
 
   set-sneaky-class-contract-table!
@@ -1648,15 +1638,12 @@ substitutability is checked properly.
 		   #t)) ; no super-init
 
   (vector-set! (class-supers object%) 0 object%)
-  (define-values (struct:object-predicate? struct:object-selector)
-    (let*-values ([(struct:obj make-obj obj? -get -set!)
-                   (make-struct-type 'object #f 1 0 #f null insp)]
-                  [(struct:tagged-obj make-tagged-obj tagged-obj? tagged-get tagged-set!)
-                   (make-struct-type 'object struct:obj 0 0 #f (list (cons prop:object object%)) insp)])
-      (set-class-struct:object! object% struct:obj)
-      (set-class-make-object! object% make-tagged-obj)
-      (values obj?
-              -get)))
+  (let*-values ([(struct:obj make-obj obj? -get -set!)
+                 (make-struct-type 'object #f 0 0 #f null insp)]
+                [(struct:tagged-obj make-tagged-obj tagged-obj? tagged-get tagged-set!)
+                 (make-struct-type 'object struct:obj 0 0 #f (list (cons prop:object object%)) insp)])
+    (set-class-struct:object! object% struct:obj)
+    (set-class-make-object! object% make-tagged-obj))
   (set-class-object?! object% object?) ; don't use struct pred; it wouldn't work with prim classes
 
   (set-interface-class! object<%> object%)
@@ -1668,10 +1655,6 @@ substitutability is checked properly.
   (define make-object 
     (lambda (class . args)
       (do-make-object class args null)))
-  
-  (define make-object/sneaky
-    (lambda (obj class . args)
-      (do-make-object class args null obj)))
   
   (define-syntax instantiate
     (lambda (stx)
@@ -1714,17 +1697,13 @@ substitutability is checked properly.
 			 kwarg)]))
 		   (syntax->list (syntax (kwarg ...))))])))
 
-  (define do-make-object
-    (opt-lambda (class by-pos-args named-args [sneaky #f])
-      (unless (class? class)
-        (raise-type-error 'instantiate "class" class))
-      (let* ([maker (class-make-object class)]
-             [o (if (equal? 1 (procedure-arity maker))
-                    (maker sneaky)
-                    (maker))])
-        ;; Initialize it:
-        (continue-make-object o class by-pos-args named-args #t)
-        o)))
+  (define (do-make-object class by-pos-args named-args)
+    (unless (class? class)
+      (raise-type-error 'instantiate "class" class))
+    (let ([o ((class-make-object class))])
+      ;; Initialize it:
+      (continue-make-object o class by-pos-args named-args #t)
+      o))
 
   (define (continue-make-object o c by-pos-args named-args explict-named-args?)
     (let ([by-pos-only? (not (class-init-args c))])
@@ -2115,7 +2094,7 @@ substitutability is checked properly.
   
   (define (is-a? v c)
     (cond
-     [(class? c) ((class-object? (unsneak-class c)) (unsneak-object v))]
+     [(class? c) ((class-object? (unsneak-class c)) v)]
      [(interface? c)
       (and (object? v)
 	   (implementation? (object-ref v) c))]
@@ -2192,17 +2171,6 @@ substitutability is checked properly.
     (let ([v (class-supers c)]) 
       (and ((vector-length v) . > . 1)
            (vector-ref v (- (vector-length v) 2)))))
-  
-  ;; unsneak-object : object -> object
-  ;; returns the object that the sneaky
-  ;; object is masquerading as.
-  (define (unsneak-object o)
-    (let loop ([o o])
-      (let ([sneak (and (struct:object-predicate? o)
-                        (struct:object-selector o 0))])
-        (if sneak
-            (loop sneak)
-            o))))
   
   ;;--------------------------------------------------------------------
   ;;  primitive classes
@@ -2312,7 +2280,7 @@ substitutability is checked properly.
   (define (for-intf name)
     (if name (format " for interface: ~a" name) ""))
   
-  (provide class*/names-sneaky make-object/sneaky
+  (provide class*/names-sneaky
            set-sneaky-class-contract-table! sneaky-class-contract-table sneaky-class?
            class-super-class
            

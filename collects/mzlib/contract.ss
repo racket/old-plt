@@ -11,7 +11,7 @@
            opt->*
            class-contract
            class-contract/prim
-           object-contract
+           ;object-contract ;; not yet good enough
            (rename -contract? contract?)
            provide/contract
            define/contract)

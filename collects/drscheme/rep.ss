@@ -330,6 +330,7 @@
            process-file
            process-sexp
            
+           get-user-setting
            user-setting
            user-custodian
            user-eventspace
@@ -947,7 +948,8 @@
         [define eval-busy? (lambda () (not (and user-thread
                                                 (thread-running? user-thread))))]
         
-        [define user-setting (fw:preferences:get 'drscheme:settings)]
+        [define (get-user-setting) (fw:preferences:get 'drscheme:settings)]
+        [define user-setting (get-user-setting)]
         [define user-custodian (make-custodian)]
         [define user-eventspace #f]
         [define user-namespace #f]
@@ -1467,7 +1469,7 @@
             (lock #f)
             (update-running #f)
             
-            (set! user-setting (fw:preferences:get 'drscheme:settings))
+            (set! user-setting (get-user-setting))
             
             (begin-edit-sequence)
             (set-resetting #t)

@@ -184,7 +184,7 @@
 	    (save-as)))
 
       (define (save-as)
-	(let ([new-fn (get-file "Choose a project filename" this)])
+	(let ([new-fn (put-file "Choose a project filename" this)])
 	  (if new-fn
 	      (begin (set! filename new-fn)
 		     (save-file filename)
@@ -395,7 +395,8 @@
 		    (when collection-paths
 		      (current-library-collection-paths collection-paths))
 		    
-		    (drscheme:basis:error-display/debug-handler
+		    
+                    '(drscheme:basis:error-display/debug-handler
 		     (let ([project-manager-error-display/debug-handler
 			    (lambda (msg zodiac exn)
 			      (if (and zodiac
@@ -409,11 +410,9 @@
 		       (lambda (l)
 			 (dynamic-wind
 			  (lambda ()
-			    (printf "push ~s~n" l)
 			    (push-file l))
 			  (lambda () (ol l))
 			  (lambda ()
-			    (printf "pop ~s~n" l)
 			    (pop-file))))))))
 
 	    (send rep do-many-evals
@@ -1081,6 +1080,10 @@
       
       (define localized-rep-text%
         (class drscheme:rep:text% ()
+          (override
+            [get-user-setting
+             (lambda ()
+               language-settings)])
           (sequence
             (super-init (make-object context%)))))
 

@@ -74,8 +74,9 @@ wxPrintData::wxPrintData(void)
 {
   PRINTDLG *pd = new PRINTDLG;
   printData = (void *)pd;
-  
-  pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS /* | PD_HIDEPRINTTOFILE */;
+
+  memset(pd, 0, sizeof(PRINTDLG));
+  pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS;
   pd->lStructSize = sizeof(PRINTDLG);
   pd->hwndOwner = (HWND)NULL;
   pd->hDevMode = (HANDLE)NULL;
@@ -236,7 +237,7 @@ Bool wxPrinter::Print(wxWindow *parent, wxPrintout *printout, Bool prompt)
   if (toPage != 0)
     printData->SetToPage(toPage);
 
-  if (minPage != 0) {
+  if (1) {
     printData->EnablePageNumbers(TRUE);
     if (printData->GetFromPage() < printData->GetMinPage())
       printData->SetFromPage(printData->GetMinPage());
@@ -410,10 +411,24 @@ Bool wxPrintout::HasPage(int page)
 
 void wxPrintout::GetPageInfo(int *minPage, int *maxPage, int *fromPage, int *toPage)
 {
-  *minPage = 1;
-  *maxPage = 32000;
-  *fromPage = 1;
-  *toPage = 1;
+  OSVERSIONINFO info;
+  int is_win95;
+
+  info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+  GetVersionEx(&info);
+  is_win95 = (info.dwPlatformId != VER_PLATFORM_WIN32_NT);
+
+  if (is_win95) {
+    *minPage = 1;
+    *maxPage = 0xFFFF;
+    *fromPage = 0xFFFF;
+    *toPage = 0xFFFF;
+  } else {
+    *minPage = 1;
+    *maxPage = 0xFFFF;
+    *fromPage = 1;
+    *toPage = 1;
+  }
 }
 
 /****************************************************************************

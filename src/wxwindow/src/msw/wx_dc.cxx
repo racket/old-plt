@@ -16,9 +16,7 @@
 
 #include <math.h>
 
-#if USE_COMMON_DIALOGS
-# include <commdlg.h>
-#endif
+#include <commdlg.h>
 
 // Declarations local to this file
 
@@ -1514,15 +1512,16 @@ wxPrinterDC::wxPrinterDC(wxWindow *parent, char *driver_name, char *device_name,
   if (interactive) {
     PRINTDLG *pd = new PRINTDLG;
     
+    memset(pd, 0, sizeof(PRINTDLG));
     pd->lStructSize = sizeof(PRINTDLG);
     pd->hwndOwner=hwnd;
     pd->hDevMode=(HANDLE)NULL;
     pd->hDevNames=(HANDLE)NULL;
-    pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS | PD_HIDEPRINTTOFILE;
-    pd->nFromPage=0;
-    pd->nToPage=0;
-    pd->nMinPage=0;
-    pd->nMaxPage=0;
+    pd->Flags = PD_RETURNDC | PD_NOSELECTION | PD_NOPAGENUMS;
+    pd->nFromPage=0xFFFF;
+    pd->nToPage=0xFFFF;
+    pd->nMinPage=1;
+    pd->nMaxPage=0xFFFF;
     pd->nCopies=1;
     pd->hInstance=(HINSTANCE)NULL;
     

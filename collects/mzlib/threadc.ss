@@ -6,4 +6,4 @@
 (constant mzlib:thread@)
 (constant mzlib:thread^)
 
-(constant-signature-content mzlib:thread^)
+(constant-signature-content "threads.ss")

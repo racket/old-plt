@@ -4,4 +4,4 @@
 
 (constant mzlib:pretty-print@)
 
-(constant-signature-content mzlib:pretty-print^)
+(constant-signature-content "prettys.ss")

@@ -5,4 +5,4 @@
 (constant mzlib:date@)
 (constant mzlib:date^)
 
-(constant-signature-content mzlib:date^)
+(constant-signature-content "dates.ss")

@@ -5,4 +5,4 @@
 (constant mzlib:file^)
 (constant mzlib:file@)
 
-(constant-signature-content mzlib:file^)
+(constant-signature-content "files.ss")

@@ -6,4 +6,4 @@
 (constant mzlib:print-convert@)
 (constant mzlib:print-convert-hooks@)
 
-(constant-signature-content mzlib:print-convert^)
+(constant-signature-content "pconvers.ss")

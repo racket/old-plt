@@ -5,4 +5,4 @@
 (constant mzlib:inflate@)
 (constant mzlib:inflate^)
 
-(constant-signature-content mzlib:inflate^)
+(constant-signature-content "inflates.ss")

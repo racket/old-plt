@@ -5,5 +5,5 @@
 (constant mzlib:string^)
 (constant mzlib:string@)
 
-(constant-signature-content mzlib:string^)
+(constant-signature-content "strings.ss")
 

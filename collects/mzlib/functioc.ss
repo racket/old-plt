@@ -5,4 +5,4 @@
 (constant mzlib:function^)
 (constant mzlib:function@)
 
-(constant-signature-content mzlib:function^)
+(constant-signature-content "functios.ss")

@@ -132,7 +132,7 @@
 	       (cond
 		[(null? body) null]
 		[(not (pair? body))
-		 (syntax-error who expr "improper signature list form")]
+		 (syntax-error who expr "improper signature list form" body)]
 		[else
 		 (let ([first (car body)]
 		       [k (lambda () (loop (cdr body)))])
@@ -212,7 +212,8 @@
 		       (unless (and (pair? odef)
 				    (null? (cdr odef)))
 			       (syntax-error who expr 
-					     "improper `open' clause form"))
+					     "improper `open' clause form"
+					     first))
 		       (let ([s (get-sig who expr #f (car odef))])
 			 (append (signature-elems s) (k))))]
 		    [else
@@ -848,6 +849,14 @@
 			   (or (symbol? p)
 			       (and (list? p)
 				    (andmap symbol? p))))]
+		 [spath? (lambda (p)
+			   (or (and (list? p)
+				    (= 3 (length p))
+				    (eq? ': (cadr p))
+				    (upath? (car p))
+				    (or (symbol? (caddr p))
+					(parse-signature cpd-unit/sig expr #f (caddr p))))
+			       (upath? p)))]
 		 [exports 
 		  (map
 		   (lambda (export)
@@ -864,7 +873,7 @@
 			[(eq? (car export) 'open)
 			 (let ([odef (cdr export)])
 			   (unless (and (pair? odef)
-					(upath? (car odef))
+					(spath? (car odef))
 					(null? (cdr odef)))
 				   (syntax-error cpd-unit/sig expr 
 						 "bad `open' sub-clause of `export'"
@@ -932,7 +941,7 @@
 			 [(eq? (car export) 'unit)
 			  (let ([udef (cdr export)])
 			    (unless (and (pair? udef)
-					 (upath? (car udef))
+					 (spath? (car udef))
 					 (or (null? (cdr udef))
 					     (and (pair? (cdr udef))
 						  (symbol? (cadr udef))

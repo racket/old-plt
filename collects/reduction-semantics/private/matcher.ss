@@ -68,7 +68,7 @@ before the pattern compiler is invoked.
   ;; hole-path = (listof (union 'car 'cdr))
   
   (define hole-path? (listof (symbols 'car 'cdr)))
-  (define compiled-pattern (any? hole-path? . -> . (union false? (listof bindings?))))
+  (define compiled-pattern (any? hole-path? symbol? . -> . (union false? (listof bindings?))))
   
   (define-struct compiled-lang (lang ht across-ht))
   
@@ -213,6 +213,12 @@ before the pattern compiler is invoked.
                 `(in-hole* ,hole-name
                            ,(match-context l)
                            ,(match-contractum l))))]
+           [`(in-hole+ ,context ,contractum)
+            (let ([match-context (loop context)]
+                  [match-contractum (loop contractum)])
+              (lambda (l)
+                `(in-hole+ ,(match-context l)
+                           ,(match-contractum l))))]
            [`(side-condition ,pat ,condition)
             (let ([patf (loop pat)])
               (lambda (l)
@@ -342,43 +348,14 @@ before the pattern compiler is invoked.
                                                    (bindings-table bindings))))
                             matches)))))]
            [`(in-hole ,context ,contractum) (loop `(in-hole* hole ,context ,contractum))]
-           [`(in-hole* ,this-hole-name ,context ,contractum)
+           [`(in-hole* ,this-hole-name ,context ,contractum) 
             (let ([match-context (loop context)]
                   [match-contractum (loop contractum)])
-              (lambda (exp hole-path hole-name)
-                (let ([bindingss (match-context exp '() this-hole-name)])
-                  (and bindingss
-                       (apply
-                        append
-                        (filter
-                         (lambda (x) x)
-                         (map (lambda (bindings)
-                                (let ([holes (filter (lambda (x) (eq? this-hole-name (rib-name x)))
-                                                     (bindings-table bindings))])
-                                  (when (null? holes)
-                                    (error 'match-pattern "found no hole in ~e for ~e" context exp))
-                                  (unless (null? (cdr holes))
-                                    (error 'match-pattern "found more than one hole match in ~e ~e, holes: ~e" 
-                                           context exp holes))
-                                  (let* ([hole-rib (car holes)]
-                                         [a-hole (rib-exp hole-rib)]
-                                         [a-hole-exp (hole-binding-exp a-hole)]
-                                         [a-hole-path (hole-binding-path a-hole)]
-                                         [contractum-bindingss (match-contractum 
-                                                                a-hole-exp 
-                                                                a-hole-path
-                                                                hole-name)]
-                                         [ans 
-                                          (and contractum-bindingss
-                                               (map (lambda (contractum-bindings)
-                                                      (make-bindings
-                                                       (append (bindings-table contractum-bindings)
-                                                               (bindings-table bindings))))
-                                                    contractum-bindingss))])
-                                    ;(printf "~s ~s contractum: ~s ~s\n" context contractum a-hole-exp contractum-bindingss)
-                                    ;(printf "~s ans ~s\n" context ans)
-                                    ans)))
-                              bindingss)))))))]
+              (match-in-hole context contractum exp match-context match-contractum this-hole-name #t))]
+           [`(in-hole+ ,context ,contractum) 
+            (let ([match-context (loop context)]
+                  [match-contractum (loop contractum)])
+              (match-in-hole context contractum exp match-context match-contractum 'hole+ #f))]
            [`(side-condition ,pat ,condition)
             (let ([match-pat (loop pat)])
               (lambda (exp hole-path hole-name)
@@ -411,6 +388,50 @@ before the pattern compiler is invoked.
                     (hash-table-put! ht key res)
                     res))])
           (hash-table-get ht key compute/cache)))))
+  
+  ;; match-in-hole : sexp sexp sexp compiled-pattern compiled-pattern symbol boolean -> compiled-pattern
+  (define (match-in-hole context contractum exp match-context match-contractum this-hole-name bind-hole?)
+    (lambda (exp hole-path hole-name)
+      (let ([bindingss (match-context exp '() this-hole-name)])
+        (and bindingss
+             (apply
+              append
+              (filter
+               (lambda (x) x)
+               (map (lambda (pre-bindings)
+                      (let ([bindings
+                             (if bind-hole?
+                                 pre-bindings
+                                 (make-bindings
+                                  (filter (lambda (x) (not (eq? this-hole-name (rib-name x))))
+                                          (bindings-table pre-bindings))))]
+                            [holes (filter (lambda (x) (eq? this-hole-name (rib-name x)))
+                                           (bindings-table pre-bindings))])
+                        (when (null? holes)
+                          (error 'match-pattern "found no hole in ~e for ~e" context exp))
+                        (unless (null? (cdr holes))
+                          (error 'match-pattern "found more than one hole match in ~e ~e, holes: ~e" 
+                                 context exp holes))
+                        (let* ([hole-rib (car holes)]
+                               [a-hole (rib-exp hole-rib)]
+                               [a-hole-exp (hole-binding-exp a-hole)]
+                               [a-hole-path (hole-binding-path a-hole)]
+                               [contractum-bindingss (match-contractum 
+                                                      a-hole-exp 
+                                                      a-hole-path
+                                                      hole-name)]
+                               [ans 
+                                (and contractum-bindingss
+                                     (map (lambda (contractum-bindings)
+                                            (make-bindings
+                                             (append (bindings-table contractum-bindings)
+                                                     (bindings-table bindings))))
+                                          contractum-bindingss))])
+                          '(print-struct #t)
+                          '(printf "context ~s\ncontractum ~s\na-hole-exp ~s\ncontractum-bindings ~s\nans ~s\n\n"
+                                  context contractum a-hole-exp contractum-bindingss ans)
+                          ans)))
+                    bindingss)))))))
   
   ;; match-list : (listof (union repeat compiled-pattern)) sexp hole-path symbol -> (union #f (listof bindings))
   (define (match-list patterns exp hole-path hole-name)
@@ -599,6 +620,7 @@ before the pattern compiler is invoked.
         [`(name ,name ,pat) (loop pat (cons (make-rib name '()) ribs))]
         [`(in-hole ,context ,contractum) (loop context (loop contractum ribs))]
         [`(in-hole* ,hole-name ,context ,contractum) (loop context (loop contractum ribs))]
+        [`(in-hole+ ,context ,contractum) (loop context (loop contractum ribs))]
         [`(side-condition ,pat ,test) (loop pat ribs)]
         [(? list?)
          (let ([rewritten (rewrite-ellipses pattern (lambda (x) x))])
@@ -721,6 +743,10 @@ before the pattern compiler is invoked.
     (test-empty '() 1 #f)
     (test-empty '(in-hole (z hole) a) '(z a) 
                 (list (make-bindings (list (make-rib 'hole (make-hole-binding 'a '(cdr car)))))))
+    (test-empty '(in-hole+ (z hole) a) '(z a) 
+                (list (make-bindings (list))))
+    (test-empty '(in-hole+ (z hole) (in-hole+ (z hole) a)) '(z (z a))
+                (list (make-bindings (list))))
     (test-empty '(in-hole* eloh (x hole) a) '(x a)
                 (list (make-bindings (list (make-rib 'eloh (make-hole-binding 'a '(cdr car)))))))
     (test-empty '(in-hole (z hole) (in-hole* hole2 (x hole) a)) '(z (x a)) 

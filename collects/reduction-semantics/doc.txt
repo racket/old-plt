@@ -58,6 +58,7 @@ language, used in various ways:
           | (name <symbol> <pattern>)
           | (in-hole <pattern> <pattern>)
           | (in-hole* <symbol> <pattern> <pattern>)
+          | (in-hole+ <pattern> <pattern>)
           | (side-condition <pattern> <guard>)
           | (cross <symbol>>)
           | (pattern ...)
@@ -96,6 +97,11 @@ implicitly bound. This is important to write reductions with nested
 contexts; if you were to use in-hole twice, you would get two bindings
 of `hole' and the pattern matcher would require them to be equal,
 according to the semantics of repeated variables.
+
+_in-hole+_: The pattern (in-hole+ <pattern> <pattern>) is
+just like the in-hole pattern, except that it does not bind
+anything in the result, making it suitable for use in the
+definition of a non-terminal.
 
 _side-condition_: The (side-condition pattern guard) pattern matches
 what the embedded pattern matches, and then the guard expression is

@@ -12,7 +12,7 @@
             *
             /)
      
-     (e-ctxt (binop e e-ctxt)
+     (e-ctxt (binop v e-ctxt)
              (binop e-ctxt e)
              (sqrt e-ctxt)
              hole)

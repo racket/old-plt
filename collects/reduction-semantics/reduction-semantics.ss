@@ -50,7 +50,7 @@
                         [res ((red-reduct red) bindings)])
                     (replace context hole res))))))
   
-  (define-syntax-set (reduction/context reduction)
+  (define-syntax-set (reduction/context reduction language)
     
     ;; (reduction/context lang ctxt pattern expression ...)
     (define (reduction/context/proc stx)
@@ -94,6 +94,30 @@
                            (lambda (bindings)
                              (let ([name (lookup-binding bindings 'name)] ...)
                                bodies ...)))))))]))
+    
+    (define (language/proc stx)
+      (syntax-case stx ()
+        [(_ (name rhs ...) ...)
+         (andmap identifier? (syntax->list (syntax/loc stx (name ...))))
+         (with-syntax ([((r-rhs ...) ...) (map (lambda (rhss) (map rewrite-side-conditions (syntax->list rhss)))
+                                               (syntax->list (syntax ((rhs ...) ...))))])
+           (syntax/loc stx
+             (compile-language (list (make-nt 'name (list (make-rhs `r-rhs) ...)) ...))))]
+        [(_ (name rhs ...) ...)
+         (for-each
+          (lambda (name)
+            (unless (identifier? name)
+              (raise-syntax-error 'language "expected name" stx name)))
+          (syntax->list (syntax (name ...))))]
+        [(_ x ...)
+         (for-each
+          (lambda (x)
+            (syntax-case x ()
+              [(name rhs ...)
+               (void)]
+              [_
+               (raise-syntax-error 'language "malformed non-terminal" stx x)]))
+          (syntax->list (syntax (x ...))))]))
     
     (define (rewrite-side-conditions orig-stx)
       (let loop ([term orig-stx])
@@ -146,28 +170,6 @@
             (car dups)
             (filter (lambda (x) (not (module-identifier=? x (car dups))))
                     (loop (cdr dups))))]))))
-
-  (define-syntax (language stx)
-    (syntax-case stx ()
-      [(_ (name rhs ...) ...)
-       (andmap identifier? (syntax->list (syntax/loc stx (name ...))))
-       (syntax/loc stx
-        (compile-language (list (make-nt 'name (list (make-rhs 'rhs) ...)) ...)))]
-      [(_ (name rhs ...) ...)
-       (for-each
-        (lambda (name)
-          (unless (identifier? name)
-            (raise-syntax-error 'language "expected name" stx name)))
-        (syntax->list (syntax (name ...))))]
-      [(_ x ...)
-       (for-each
-        (lambda (x)
-          (syntax-case x ()
-            [(name rhs ...)
-             (void)]
-            [_
-             (raise-syntax-error 'language "malformed non-terminal" stx x)]))
-        (syntax->list (syntax (x ...))))]))
   
   (define (language->predicate lang id)
     (let ([p (compile-pattern lang id)])

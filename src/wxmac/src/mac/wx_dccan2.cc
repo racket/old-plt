@@ -408,23 +408,6 @@ void wxCanvasDC::DrawEllipse(float x, float y, float width, float height)
 	CalcBoundingBox(x + width, y + height);
 }
 
-//-----------------------------------------------------------------------------
-void wxCanvasDC::DrawIcon(wxIcon *icon, float x, float y)
-{
-	int h, w;
-	w = icon->GetWidth();
-	h = icon->GetHeight();
-	if (!icon->selectedIntoDC && icon->Ok()) {
-		wxMemoryDC *mdc;
-		mdc = new wxMemoryDC();
-		mdc->SelectObject(icon);
-		if (mdc->Ok())
-			Blit(x, y, w, h, mdc, 0, 0);
-		mdc->SelectObject(NULL);
-		delete mdc;
-	}
-}
-
 /*-----------------------------------
 	Ideally, Blit() should munged its args and call the Mac ToolBox 
 	CopyBits() function. 
@@ -433,17 +416,13 @@ void wxCanvasDC::DrawIcon(wxIcon *icon, float x, float y)
 		I.e if (this->device != source->device)
 */
 Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
-                wxCanvasDC *source, float xsrc, float ysrc, int rop)
+                wxBitmap *source, float xsrc, float ysrc, int rop)
 {
-	if (device != source->device) {
-		// Switch Gworld to this
-		SetGWorld(cMacDC->macGrafPort(), 0);
-		cMacDC->setCurrentUser(NULL); // macDC no longer valid
-		SetCurrentDC();
-	}
-	else {
-		SetCurrentDC();
-	}
+	// Switch Gworld to this
+	SetGWorld(cMacDC->macGrafPort(), 0);
+	cMacDC->setCurrentUser(NULL); // macDC no longer valid
+	SetCurrentDC();
+	
 	if (rop == wxCOLOR) {
 	  wxMacSetCurrentTool(kColorBlitTool);
 	  rop = wxCOPY;
@@ -451,7 +430,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 	  wxMacSetCurrentTool(kBlitTool);
 	Bool theResult = FALSE;
 
-	if (pixmap && source->pixmap)
+	if (pixmap && source->Ok())
 	{
 		int mode;
 		switch (rop)
@@ -490,8 +469,8 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
 		int w = width;
 		int x = XLOG2DEV(xdest);
 		int y = YLOG2DEV(ydest);
-		int ixsrc = source->LogicalToDeviceX(xsrc);
-		int iysrc = source->LogicalToDeviceY(ysrc);
+		int ixsrc = floor(xsrc);
+		int iysrc = floor(ysrc);
 		Rect srcr = {iysrc, ixsrc, iysrc + h, ixsrc + w};
 		Rect destr = {y, x, y+h, x+w };
 		
@@ -508,7 +487,7 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
         }
 
 		// Lock PixMaps
-		PixMapHandle srpixh = source->pixmap;
+		PixMapHandle srpixh = pixmap = ::GetGWorldPixMap(source->x_pixmap);
 		int rs = ::LockPixels(srpixh);
 
 		::CopyBits((BitMap *)(*srpixh), dstbm, &srcr, &destr, mode, NULL);

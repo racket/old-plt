@@ -74,7 +74,6 @@ class wxCanvasDC: public wxbCanvasDC
   void DrawRectangle(float x, float y, float width, float height);
   void DrawRoundedRectangle(float x, float y, float width, float height, float radius = 20);
   void DrawEllipse(float x, float y, float width, float height);
-  void DrawIcon(wxIcon* icon, float x, float y);
   void DrawText(const char* text, float x, float y, Bool use16 = FALSE);
 
   void GetSize(float *width, float *height);
@@ -110,7 +109,7 @@ class wxCanvasDC: public wxbCanvasDC
   int LogicalToDeviceYRel(float y);
 
   Bool Blit(float xdest, float ydest, float width, float height,
-            wxCanvasDC* source, float xsrc, float ysrc, int rop = wxCOPY);
+            wxBitmap* source, float xsrc, float ysrc, int rop = wxCOPY);
 
   void wxMacSetClip(void); // Internal only
   void wxMacSetCurrentTool(wxMacToolType whichTool); // Internal only

@@ -333,7 +333,6 @@ class wxbBrush: public wxObject
 #endif
 class wxBitmap;
 class wxCursor;
-class wxIcon;
 
 // Management of pens, brushes and fonts
 class wxPenList: public wxObject
@@ -397,7 +396,6 @@ extern wxFontList   *wxTheFontList;
 extern wxGDIList   *wxTheBitmapList;
 #ifdef wx_mac
 extern wxGDIList   *wxTheCursorList;
-extern wxGDIList   *wxTheIconList;
 #endif
 
 // Stock objects

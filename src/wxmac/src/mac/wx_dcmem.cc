@@ -30,7 +30,7 @@ static const char sccsid[] = "%W% %G%";
 */
 extern CGrafPtr wxMainColormap;
 
-wxMemoryDC::wxMemoryDC(void)
+wxMemoryDC::wxMemoryDC(Bool ro)
 {
   __type = wxTYPE_DC_MEMORY;
   device = wxDEVICE_PIXMAP;
@@ -40,6 +40,7 @@ wxMemoryDC::wxMemoryDC(void)
   current_pen_dash = NULL ;
   current_stipple = NULL ;
 
+  read_only = ro;
   pixmap = 0;
   pixmapWidth = 0;
   pixmapHeight = 0;
@@ -82,66 +83,13 @@ wxMemoryDC::wxMemoryDC(void)
   SetPen(wxBLACK_PEN);
 }
 
-/*
- * Create a new dc from an old dc
- *
- */
-
-wxMemoryDC::wxMemoryDC(wxCanvasDC *old_dc):wxbMemoryDC(old_dc)
-{
-  min_x = 0; min_y = 0; max_x = 0; max_y = 0;
-  __type = wxTYPE_DC_MEMORY;
-  device = wxDEVICE_PIXMAP;
-  current_pen_join = -1 ;
-  current_pen_cap = -1 ;
-  current_pen_nb_dash = -1 ;
-  current_pen_dash = NULL ;
-  current_stipple = NULL ;
-
-  pixmap = 0;
-  pixmapWidth = 0;
-  pixmapHeight = 0;
-  canvas = NULL;
-
-  ok = FALSE;
-  title = NULL;
-
-  current_logical_function = wxCOPY;
-  font = wxNORMAL_FONT;
-  logical_origin_x = 0;
-  logical_origin_y = 0;
-
-  device_origin_x = 0;
-  device_origin_y = 0;
-
-  logical_scale_x = 1.0;
-  logical_scale_y = 1.0;
-
-  user_scale_x = 1.0;
-  user_scale_y = 1.0;
-
-  mapping_mode = MM_TEXT;
-
-  current_pen = NULL;
-  current_brush = NULL;
-  current_background_brush = wxWHITE_BRUSH;
-  current_text_foreground = *wxBLACK;
-//  current_text_background = NULL;
-
-  // mflatt: NOT ok
-  // ok = TRUE;
-  selected_pixmap = NULL;
-  gworldH = NULL;
-  Colour = wxColourDisplay();
-  SetBrush(wxWHITE_BRUSH);
-  SetPen(wxBLACK_PEN);
-}
-
 wxMemoryDC::~wxMemoryDC(void)
 {
   if (selected_pixmap) {
+    if (!read_only) {
 	selected_pixmap->selectedInto = NULL;
 	selected_pixmap->selectedIntoDC = 0;
+     }
 	gworldH = NULL;
   } else {
     if (gworldH) {
@@ -162,14 +110,18 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 		// set cMacDC ??
 		return;
   }
-  if (bitmap && bitmap->selectedIntoDC)
+  if (!read_only) {
+    if (bitmap && bitmap->selectedIntoDC)
 	// This bitmap is selected into a different memoryDC
     return;
+  }
 
   if (selected_pixmap) {
+     if (!read_only) {
 	selected_pixmap->selectedInto = NULL;
 	selected_pixmap->selectedIntoDC = 0;
-	gworldH = NULL;
+      }
+      gworldH = NULL;
   } else {
     if (gworldH) {
   	  ::DisposeGWorld(gworldH);
@@ -189,8 +141,10 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	pixmap = NULL;
 	return;
   }
-  bitmap->selectedInto = this;
-  bitmap->selectedIntoDC = -1;
+  if (!read_only) {
+    bitmap->selectedInto = this;
+    bitmap->selectedIntoDC = -1;
+  }
   pixmapWidth = bitmap->GetWidth();
   pixmapHeight = bitmap->GetHeight();
   if (bitmap->Ok()) {
@@ -205,6 +159,11 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
 	  ok = TRUE;
     }
   }
+}
+
+wxBitmap* wxMemoryDC::GetObject()
+{
+  return selected_pixmap;
 }
 
 GWorldPtr wxMemoryDC::MacCreateGWorld(int width, int height)

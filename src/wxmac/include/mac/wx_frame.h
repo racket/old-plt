@@ -100,7 +100,7 @@ public:
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 	// Icon methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	void SetIcon(wxIcon* icon);
+	void SetIcon(wxBitmap* icon);
 	void Iconize(Bool iconize);
 	Bool Iconized(void);
 

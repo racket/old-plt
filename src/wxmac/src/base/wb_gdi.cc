@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_gdi.cc,v 1.4 1998/02/15 19:24:34 mflatt Exp $
+ * RCS_ID:      $Id: wb_gdi.cc,v 1.5 1998/04/16 14:34:55 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -494,7 +494,6 @@ wxInitializeStockObjects (void)
   wxTheBitmapList = new wxGDIList;
 #ifdef wx_mac
   wxTheCursorList = new wxGDIList;
-  wxTheIconList =  new wxGDIList;
 #endif
   // wxTheColourList =  new wxGDIList;
 

@@ -143,7 +143,6 @@ class wxbDC: public wxObject
   virtual void DrawSpline(wxList *points);
   virtual void DrawSpline(int n, wxPoint points[]);
 #endif
-  virtual void DrawIcon(wxIcon *icon, float x, float y) = 0;
   virtual void DrawText(const char *text, float x, float y, Bool use16 = FALSE) = 0;
   virtual void Clear(void) = 0;
 
@@ -207,7 +206,7 @@ class wxbDC: public wxObject
   virtual inline float MinY(void) { return min_y; }
   virtual inline float MaxY(void) { return max_y; }
   virtual Bool Blit(float xdest, float ydest, float width, float height,
-            wxCanvasDC *source, float xsrc, float ysrc, int rop = wxCOPY) = 0;
+            wxBitmap *source, float xsrc, float ysrc, int rop = wxCOPY) = 0;
             
     virtual void TryColour(wxColour *src, wxColour *dest);
 };

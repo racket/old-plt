@@ -18,7 +18,6 @@ typedef       void    *wxFont ;
 typedef       void    *wxColourMap;
 typedef       void    *wxPen;
 typedef       void    *wxBrush;
-typedef       void    *wxIcon;
 typedef       void    *wxCursor;
 typedef       void    *wxBitmap;
 typedef       void    *XFontInfo;
@@ -99,7 +98,7 @@ class wxBitmap: public wxObject
   Bool selectedIntoDC;
 
   wxBitmap(void) ;
-  wxBitmap(char bits[], int width, int height, int depth = 1);
+  wxBitmap(char bits[], int width, int height);
 #if USE_XPM_IN_MAC
   // Initialize with XPM data
   wxBitmap(char **bits, wxItem *anItem = NULL);
@@ -108,7 +107,7 @@ class wxBitmap: public wxObject
   wxBitmap(char *name, long flags = wxBITMAP_DISCARD_COLOURMAP | wxBITMAP_TYPE_RESOURCE);
 
   // If depth is omitted, will create a bitmap compatible with the display
-  wxBitmap(int width, int height, int depth = -1);
+  wxBitmap(int width, int height, Bool bandw = FALSE);
   ~wxBitmap(void);
 
   virtual Bool Create(int width, int height, int depth = -1);
@@ -131,17 +130,6 @@ class wxBitmap: public wxObject
   // Some Mac extensions ---- should only be used inside wxWindows, Please.
   void DrawMac(void);
   void DrawMac(int x, int y, int mode = srcCopy);
-};
-
-// Icon
-class wxIcon: public wxBitmap
-{
- protected:
- public:
-  wxIcon(void);
-  wxIcon(char bits[], int width, int height);
-  wxIcon(char *name, int type = wxBITMAP_TYPE_XBM);
-  ~wxIcon(void);
 };
 
 // Cursor

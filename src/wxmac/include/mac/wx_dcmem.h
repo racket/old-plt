@@ -24,11 +24,12 @@ class wxMemoryDC: public wxbMemoryDC
 {
  public:
   GWorldPtr	gworldH;
-  wxMemoryDC(void);
-  wxMemoryDC(wxCanvasDC *old_dc); // Create compatible DC
+  Bool read_only;
+  wxMemoryDC(Bool read_only = FALSE);
 
   ~wxMemoryDC(void);
   virtual void SelectObject(wxBitmap *bitmap);
+  wxBitmap *GetObject();
 
   GWorldPtr MacCreateGWorld(int width, int height);
 };

@@ -397,34 +397,6 @@ wxBrush::wxBrush(char *col, int Style):
 #endif
 }
 
-// Icons - Remember a wxIcon is for minimized windows which the
-// Mac can't do.
-
-//-----------------------------------------------------------------------------
-wxIcon::wxIcon(char bits[], int Width, int Height)
-: wxBitmap(bits, Width, Height)
-{
-  __type = wxTYPE_ICON;
-}
-
-//-----------------------------------------------------------------------------
-wxIcon::wxIcon(void) : wxBitmap()
-{
-  __type = wxTYPE_ICON;
-}
-
-//-----------------------------------------------------------------------------
-wxIcon::wxIcon(char *icon_file, int file_format)
-: wxBitmap(icon_file, file_format)
-{
-  __type = wxTYPE_ICON;
-}
-
-//-----------------------------------------------------------------------------
-wxIcon::~wxIcon(void)
-{
-}
-
 // Cursors
 
 //-----------------------------------------------------------------------------
@@ -672,17 +644,17 @@ wxBitmap::wxBitmap(void)
 }
 
 //-----------------------------------------------------------------------------
-wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
+wxBitmap::wxBitmap(char bits[], int the_width, int the_height)
 {
   __type = wxTYPE_BITMAP;
-  depth = no_bits;
+  depth = 1;
   width = the_width;
   height = the_height;
   //Rect bounds = {0, 0, the_height, the_width};
   GDHandle savegd;
   CGrafPtr saveport;
   GetGWorld(&saveport, &savegd);
-  Create(the_width, the_height, no_bits);
+  Create(the_width, the_height, 1);
   if (ok) {
   	SetGWorld(x_pixmap, 0);
   	int i, j;
@@ -690,9 +662,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
   	int bit1;
 	RGBColor	cpix;
 	// look in contrib/wxwxpm/simx.c for a clue on finishing this 
-  	switch (no_bits) {
-	  case 0:
-	  case 1:
+  	
 		GetForeColor(&cpix);
 		for (i = 0; i < the_height; i++) {
 			for (j = 0; j < the_width; i++) {
@@ -705,20 +675,7 @@ wxBitmap::wxBitmap(char bits[], int the_width, int the_height, int no_bits)
 				}
 			}
 		}
-		break;
-	  case 8:
-		for (i = 0; i < the_height; i++) {
-			for (j = 0; j < the_width; i++) {
-				// convert byte to RGB - how ? FIXME				
-				::SetCPixel(j, i, &cpix);
-			}
-		}
-		break;
-	  case 16:
-	  case 24:
-	  case 32:
-		break;
-	} // end switch
+	  
     SetGWorld(saveport, savegd);
   }
   //ok = TRUE;
@@ -769,9 +726,9 @@ wxBitmap::wxBitmap(char *bitmap_file, long flags)
 //-----------------------------------------------------------------------------
 // Create a new bitmap of a given size and depth
 //-----------------------------------------------------------------------------
-wxBitmap::wxBitmap(int w, int h, int d)
+wxBitmap::wxBitmap(int w, int h, Bool bandw)
 {
-	Create(w, h, d);
+	Create(w, h, bandw ? 1 : -1);
 }
 
 //-----------------------------------------------------------------------------

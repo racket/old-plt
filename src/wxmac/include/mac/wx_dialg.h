@@ -68,7 +68,7 @@ public:
 	virtual void Fit(void);
 	virtual void Centre(int d) { cFrame->Centre(d); }
 
-	void SetIcon(wxIcon* icon) { cFrame->SetIcon(icon); }
+	void SetIcon(wxBitmap* icon) { cFrame->SetIcon(icon); }
 	void Iconize(Bool iconize) { cFrame->Iconize(iconize); }
 	Bool Iconized(void)	   { return cFrame->Iconized(); }
 	

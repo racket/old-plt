@@ -519,7 +519,7 @@ void wxFrame::ShowAsActive(Bool flag)
 	// Icon methods
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-void wxFrame::SetIcon(wxIcon* wx_icon) { }		// not implemented
+void wxFrame::SetIcon(wxBitmap* wx_icon) { }		// not implemented
 
 void wxFrame::Iconize(Bool iconize) { }			// not implemented
 

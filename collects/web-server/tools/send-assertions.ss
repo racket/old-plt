@@ -113,10 +113,10 @@
       (if k-url
         (cond
           ((= (length l) 2) (make-history k-url (cadr l) #f))
-          ((= (length l) 3) (make-history k-url (cadr l) (caadr l))))
+          ((= (length l) 3) (make-history k-url (cadr l) (caddr l))))
         (fail (format "~a~n~v~n~a~v~n"
-                       "Failed to match the response" r
-                       "with the function" (car l))))))
+                       "Failed to match the response " r
+                       "with the function " (car l))))))
 
   ;; resumer : history? . -> . response?
   ;; Resume the servlet correctly.

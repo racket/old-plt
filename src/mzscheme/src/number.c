@@ -1585,15 +1585,15 @@ scheme_expt(int argc, Scheme_Object *argv[])
   if (!SCHEME_NUMBERP(n))
     scheme_wrong_type("expt", "number", 0, argc, argv);
 
-  if (argv[1] == scheme_make_integer(1))
+  if (e == scheme_make_integer(1))
     return n;
   if (n == scheme_make_integer(1)) {
     /* Power of one: */
-    if (SCHEME_NUMBERP(argv[1]))
+    if (SCHEME_NUMBERP(e))
       return n;
   }
 
-  if (argv[0] == zeroi) {
+  if (n == zeroi) {
     /* Power of exact zero */
     int neg;
 
@@ -1655,8 +1655,10 @@ scheme_expt(int argc, Scheme_Object *argv[])
 	    norm = 1;
 	}
 
-	if (!norm) {
-	  int ispos, iseven, negz;
+	if (!norm && (e == zeroi)) {
+	  return scheme_make_integer(1);
+	} else if (!norm) {
+	  int isnonneg, iseven, negz;
 #ifdef MZ_USE_SINGLE_FLOATS
 	  int single = !SCHEME_DBLP(n) && !SCHEME_DBLP(e);
 #endif
@@ -1667,10 +1669,10 @@ scheme_expt(int argc, Scheme_Object *argv[])
 	    /* Treat it as even for sign purposes: */
 	    iseven = 1;
 	  }
-	  ispos = SCHEME_TRUEP(scheme_positive_p(1, &e));
+	  isnonneg = SCHEME_FALSEP(scheme_negative_p(1, &e));
 	  negz = scheme_minus_zero_p(d);
 	  
-	  if (ispos) {
+	  if (isnonneg) {
 	    if (iseven || !negz) {
 #ifdef MZ_USE_SINGLE_FLOATS
 	      if (single)

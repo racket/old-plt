@@ -19,6 +19,6 @@
    ("mzscheme" . "PLT MzScheme: Language Manual")
    ("mred" . "PLT MrEd: Graphical Toolbox Manual")
    ("framework" . "PLT Framework: GUI Application Framework")
-   ("misclib" "PLT Miscellaneous Libraries: Reference Manual")
+   ("misclib" . "PLT Miscellaneous Libraries: Reference Manual")
    ("mzc" . "PLT mzc: MzScheme Compiler Manual")
    ("insidemz" . "Inside PLT MzScheme")))

@@ -526,17 +526,22 @@ Scheme_Object **scheme_make_struct_values(Scheme_Object *type,
 	      ? struct_type->parent_types[struct_type->name_pos - 1]->num_slots 
 	      : 0);
   while (pos < count) {
-    if (!(flags & SCHEME_STRUCT_NO_GET))
-      values[pos++] = make_struct_proc(struct_type,
-				       names[pos],
-				       SCHEME_GETTER,
-				       slot_num);
+    if (!(flags & SCHEME_STRUCT_NO_GET)) {
+      values[pos] = make_struct_proc(struct_type,
+				     names[pos],
+				     SCHEME_GETTER,
+				     slot_num);
+      pos++;
+    }
     
-    if (!(flags & SCHEME_STRUCT_NO_SET))
-      values[pos++] = make_struct_proc(struct_type,
-				       names[pos],
-				       SCHEME_SETTER,
-				       slot_num);
+    if (!(flags & SCHEME_STRUCT_NO_SET)) {
+      values[pos] = make_struct_proc(struct_type,
+				     names[pos],
+				     SCHEME_SETTER,
+				     slot_num);
+      pos++;
+    }
+
     slot_num++;
   }
   

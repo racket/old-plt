@@ -202,6 +202,9 @@
   ;; Debugging: wrote out the AST as an annotated program
   (define zodiac->sexp/annotate
     (lambda (ast)
+      (zodiac:print-start! (current-error-port) ast)
+      (fprintf (current-error-port) "getting annotation (p: ~a gc: ~a real: ~a)~n"
+	       (current-process-milliseconds) (current-gc-milliseconds) (current-milliseconds))
       (let ([v (mrspidey:SDL-type ast)])
 	(if v
 	    `(: ,(zodiac->sexp ast) ,v)

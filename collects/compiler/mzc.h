@@ -203,3 +203,19 @@ static Scheme_Object * c_struct_imp(int multiok, Scheme_Object * super, int n_fi
 #define MZC_PLUS2(cp, av, bv) MZC_ARITH_OP(cp, av, bv, +, -)
 #define MZC_MINUS2(cp, av, bv) MZC_ARITH_OP(cp, av, bv, -, +)
 
+#define MZC_MAXMIN_OP(cp, av, bv, minlt) \
+            ((SCHEME_INTP(av) && SCHEME_INTP(bv)) \
+             ? ((SCHEME_INT_VAL(av) minlt SCHEME_INT_VAL(bv)) ? av : bv) \
+             : (arg[0] = av, arg[1] = bv, _scheme_direct_apply_primitive_multi(cp, 2, arg)))
+
+#define MZC_MAX2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, >)
+#define MZC_MIN2(cp, av, bv) MZC_MAXMIN_OP(cp, av, bv, <)
+
+#if 0
+static Scheme_Object *DEBUG_CHECK(Scheme_Object *v)
+{
+  if ((SCHEME_TYPE(v) < _scheme_values_types_) || (SCHEME_TYPE(v) > _scheme_last_type_ + 5))
+    printf("wrong!\n");
+  return v;
+}
+#endif

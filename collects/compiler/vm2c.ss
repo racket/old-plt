@@ -1337,7 +1337,9 @@
 		      [(eq? arg-type:register argtype) (emit "reg~a = (long)" n)]
 		      [else (compiler:internal-error 
 			     #f (format "vm->c: ~a unknown arg type" (vm:args-type ast)))]))
+		  ; (emit "DEBUG_CHECK(") ;; DEBUGGING
 		  (process (car args) indent-level #f #t)
+		  ; (emit ")") ;; DEBUGGING
 		  (unless (null? (cdr args))
 		    (emit ";~n"))
 		  (loop (add1 n) (cdr args)))))]

@@ -700,7 +700,9 @@
       (define first-gap 35)
       (define second-gap 15)
       (define line-space 8)
-      
+      (define extra-height 3)
+      (define left-edge-space 2)
+
       (define line-snip%
         (class snip%
           (init-field from subject uid)
@@ -710,7 +712,7 @@
                 
                 (let ([old-clip (send dc get-clipping-region)])
                   (send dc set-clipping-rect x y (+ FROM-WIDTH (/ first-gap 2) (- line-space)) h)
-                  (send dc draw-text from x y)
+                  (send dc draw-text from (+ x left-edge-space) y)
                   (send dc set-clipping-rect 
                         (+ x FROM-WIDTH (/ first-gap 2) line-space)
                         y 
@@ -729,22 +731,22 @@
 			(+ x FROM-WIDTH (/ first-gap 2))
 			y
 			(+ x FROM-WIDTH (/ first-gap 2))
-			(+ y h))
+			(+ y h extra-height))
 		  (send dc draw-line 
 			(+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
 			y
 			(+ x FROM-WIDTH first-gap SUBJECT-WIDTH (/ second-gap 2))
-			(+ y h))
+			(+ y h extra-height))
 		  (send dc set-pen p)))))
 
           (inherit get-style)
           (define/override (get-extent dc x y wb hb db sb lb rb)
             (let-values ([(w h d s) (send dc get-text-extent "yX" (send (get-style) get-font))])
-              (set-box/f! hb h)
+              (set-box/f! hb (+ extra-height h))
               (set-box/f! wb (get-width))
 	      (set-box/f! db d)
 	      (set-box/f! sb s)
-	      (set-box/f! lb 0)
+	      (set-box/f! lb 2)
 	      (set-box/f! rb 0)))
 
           (inherit get-admin)

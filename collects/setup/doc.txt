@@ -88,10 +88,10 @@ Additional info.ss fields trigger additional setup actions:
 
 >  install-collection - a string for a library module relative to the
    collection. The module must provide `installer' as a procedure that
-   accepts a directory path argument (the path to the collection) and
-   performs collection-specific installation work.  This procedure
-   should avoid unnecessary work in the case that it is called
-   multiple times for the same installation.
+   accepts a directory path argument (the path to PLT installation
+   directory) and performs collection-specific installation work.
+   This procedure should avoid unnecessary work in the case that it is
+   called multiple times for the same installation.
 
 >  clean - a list of pathnames to be deleted when the --clean or -c
    flag is passed to Setup PLT. The pathnames must be relative to the

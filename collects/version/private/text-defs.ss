@@ -20,7 +20,7 @@
 	 (lambda (c)
 	   (printf " ~a~n" c))
 	 (cdr captions))
-	(when details
+	(when (and details (not (null? details)))
 	      (printf (string-constant vc-details-text))
               (for-each
 		(lambda (d)		

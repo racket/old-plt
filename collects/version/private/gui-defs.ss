@@ -101,6 +101,7 @@
 				    (label "") (parent buttons-panel)))]
                  [details-button 
 		  (and details
+		       (not (null? details))
 		       (instantiate button% ()
 				    (label show-details-button-text)
 				    (min-width 20)

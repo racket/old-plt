@@ -73,8 +73,8 @@
   ; answers true to bound-identifier=? with itself, just like a varref
   ; in the scope of that binding would.
   
-  ; binding-set-union: BINDING-SET *-> BINDING-SET
-  ; varref-set-union: VARREF-SET *-> VARREF-SET
+  ; binding-set-union: (listof BINDING-SET) -> BINDING-SET
+  ; varref-set-union: (listof VARREF-SET) -> VARREF-SET
   
   (define-values (binding-set-union
                   varref-set-union)
@@ -87,15 +87,15 @@
             (define (binding-set-pair-union a-set b-set)
               (set-pair-union a-set b-set eq?))
             
-            (define (pair-union->varargs-union fn)
-              (lambda args
+            (define (pair-union->many-union fn)
+              (lambda (args)
                 (foldl fn null args)))
             
             (define binding-set-union
-              (pair-union->varargs-union binding-set-pair-union))
+              (pair-union->many-union binding-set-pair-union))
             
             (define varref-set-union
-              (pair-union->varargs-union varref-set-pair-union)))
+              (pair-union->many-union varref-set-pair-union)))
       (values binding-set-union
               varref-set-union)))
 
@@ -369,7 +369,7 @@
                   ; note: no pre-break for the body of a let; it's handled by the break for the
                   ; let itself.
                   [let-body-recur (lambda (expr bindings) 
-                                    (annotate/inner expr (binding-set-union tail-bound bindings) #f #f procedure-name-info))]
+                                    (annotate/inner expr (binding-set-union (list tail-bound bindings)) #f #f procedure-name-info))]
                   [cheap-wrap-recur (lambda (expr) (let-values ([(ann _) (tail-recur expr)]) ann))]
                   [no-enclosing-recur (lambda (expr) (annotate/inner expr 'all #f #f #f))]
                   [class-rhs-recur (lambda (expr read-name) (annotate/inner expr 'all #f #f (utils:read->raw read-name)))]
@@ -442,7 +442,7 @@
                           [(annotated-body free-bindings-body)
                            (let-body-recur (body-fn expr) binding-list)]
                           [free-bindings (varref-set-remove-bindings 
-                                          (apply varref-set-union free-bindings-body free-bindings-vals) 
+                                          (varref-set-union (cons free-bindings-body free-bindings-vals)) 
                                           binding-list)])
                          
                          ;; COME BACK TO THIS WHEN WE TACKLE LET & LETREC
@@ -478,8 +478,8 @@
                                                                                                          annotated-body)))]
                                       [wrapped-begin
                                        (wcm-wrap (make-debug-info expr 
-                                                                  (binding-set-union tail-bound binding-list)
-                                                                  (varref-set-union free-bindings binding-list) ; NB using bindings as varrefs
+                                                                  (binding-set-union (list tail-bound binding-list))
+                                                                  (varref-set-union (list free-bindings binding-list)) ; NB using bindings as varrefs
                                                                   null ; advance warning
                                                                   'let-body
                                                                   foot-wrap?)
@@ -494,9 +494,10 @@
                        (utils:improper-foreach mark-never-undefined args)
                        (let*-2vals ([(annotated-bodies free-varref-sets)
                                      (2vals-map lambda-body-recur (syntax (body ...)))]
-                                    [new-free-varrefs (varref-set-remove-bindings (apply varref-set-union free-varref-sets)
+                                    [new-free-varrefs (varref-set-remove-bindings (varref-set-union free-varref-sets)
                                                                                   (syntax args))])
-                         (2vals (d->so clause (cons args annotated-bodies)) new-free-bindings))))]
+                         (with-syntax ([annotated-bodies annotated-bodies])
+                           (2vals (syntax/loc clause (args . annotated-bodies)) new-free-bindings)))))]
                   
                   [outer-lambda-abstraction
                    (lambda (annotated-lambda free-varrefs)
@@ -528,10 +529,10 @@
                                          (d->so expr `(,closure-storing-proc ,patched ,closure-info))]
                                         [(pair? procedure-name-info)
                                          (if foot-wrap?
-                                             (d->so `(,closure-storing-proc ,patched ,closure-info ,(cadr procedure-name-info)))
-                                             (d->so `(,closure-storing-proc ,patched ,closure-info #f)))]
+                                             (d->so expr `(,closure-storing-proc ,patched ,closure-info ,(cadr procedure-name-info)))
+                                             (d->so expr `(,closure-storing-proc ,patched ,closure-info #f)))]
                                         [else
-                                         (d->so `(,closure-storing-proc ,patched ,closure-info))]))])
+                                         (d->so expr `(,closure-storing-proc ,patched ,closure-info))]))])
                           (2vals
                            (ccond [foot-wrap? 
                                    (wcm-wrap (make-debug-info-normal new-free-bindings)
@@ -552,19 +553,54 @@
                              
              (syntax-case expr 
 
-                 [(lambda . clause)
-                  (let*-2vals ([(annotated-clause free-varrefs)
-                                (lambda-clause-abstraction (syntax clause))]
-                               [annotated-lambda
-                                (d->so expr `(lambda ,@(syntax->list annotated-clause)))])
-                    (outer-lambda-abstraction annotated-lambda free-varrefs))]
-                   
-                 [(case-lambda . clauses)
-                  (let*-2vals ([(annotated-cases free-bindings-cases)
-                                (2vals-map lambda-clause-abstraction (syntax->list (syntax clauses)))]
-                               [annotated-case-lambda (d->so expr `(case-lambda ,@annotated-cases))]
-                               [free-varrefs (apply varref-set-union free-varrefs-cases)])
-                    (outer-lambda-abstraction annotated-case-lambda free-varrefs))]
+               [(lambda . clause)
+                (let*-2vals ([(annotated-clause free-varrefs)
+                              (lambda-clause-abstraction (syntax clause))]
+                             [annotated-lambda
+                              (with-syntax ([annotated-clause annotated-clause])
+                                (syntax/loc expr (lambda . annotated-clause)))])
+                  (outer-lambda-abstraction annotated-lambda free-varrefs))]
+               
+               [(case-lambda . clauses)
+                (let*-2vals ([(annotated-cases free-bindings-cases)
+                              (2vals-map lambda-clause-abstraction (syntax->list (syntax clauses)))]
+                             [annotated-case-lambda (with-syntax ([annotated-cases annotated-cases])
+                                                      (syntax/loc expr (case-lambda . annotated-cases)))]
+                             [free-varrefs (varref-set-union free-varrefs-cases)])
+                  (outer-lambda-abstraction annotated-case-lambda free-varrefs))]
+               
+               [(if test then else)
+		(let*-2vals
+                    ([(annotated-test free-varrefs-test) 
+                      (non-tail-recur (z:if-form-test expr))]
+                     [(annotated-then free-varrefs-then) 
+                      (tail-recur (z:if-form-then expr))]
+                     [(annotated-else free-varrefs-else) 
+                      (tail-recur (z:if-form-else expr))]
+                     [free-varrefs (varref-set-union (list free-varrefs-test 
+                                                           free-varrefs-then 
+                                                           free-varrefs-else))]
+                     [annotated-if
+                      (d->so expr `(if ,annotated-test ,annotated-then ,annotated-else))])
+                  (if (or cheap-wrap? (and ankle-wrap?
+                                           test-is-varref?
+                                           (memq 'no-temps-for-varrefs wrap-opts)))
+                      (let ([annotated (if (utils:signal-not-boolean)
+                                           `(#%let ((,if-temp-sym ,annotated-test)) ,annotated-2)
+                                           `(#%if ,annotated-test ,annotated-then ,annotated-else))])
+                        (values (appropriate-wrap annotated free-varrefs) free-varrefs))
+                      (let* ([annotated `(#%begin
+                                          (#%set! ,if-temp-sym ,annotated-test)
+                                          ,(break-wrap annotated-2))]
+                             [debug-info (make-debug-info-app (binding-set-union (list tail-bound (list if-temp)))
+                                                              (varref-set-union (list free-varrefs (list if-temp)))
+                                                              'none)]
+                             [wcm-wrapped (wcm-wrap debug-info annotated)]
+                             [outer-annotated `(#%let ((,if-temp-sym ,*unevaluated*)) ,wcm-wrapped)])
+                        (values outer-annotated free-varrefs))))]  
+                
+               
+               
 
 	       ; the variable forms 
 	       
@@ -642,7 +678,7 @@
                     ([(sub-exprs) (cons (z:app-fun expr) (z:app-args expr))]
                      [(annotated-sub-exprs free-bindings-sub-exprs)
                       (dual-map non-tail-recur sub-exprs)]
-                     [(free-bindings) (apply varref-set-union free-bindings-sub-exprs)])
+                     [(free-bindings) (varref-set-union (cons free-bindings-sub-exprs))])
                   (values 
                    (ccond [cheap-wrap? (appropriate-wrap annotated-sub-exprs free-bindings)]
                           [(or ankle-wrap? foot-wrap?)
@@ -666,7 +702,7 @@
                                       [set!-list (map (lambda (arg-symbol annotated-sub-expr)
                                                         `(#%set! ,arg-symbol ,annotated-sub-expr))
                                                       arg-temp-syms annotated-sub-exprs)]
-                                      [new-tail-bound (binding-set-union tail-bound arg-temps)]
+                                      [new-tail-bound (binding-set-union (list tail-bound arg-temps))]
                                       [app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
                                       [final-app (break-wrap (simple-wcm-wrap app-debug-info 
                                                                               (if (let ([fun-exp (z:app-fun expr)])
@@ -676,7 +712,7 @@
                                                                                   (return-value-wrap arg-temp-syms)
                                                                                   arg-temp-syms)))]
                                       [debug-info (make-debug-info-app new-tail-bound
-                                                                       (varref-set-union free-bindings arg-temps) ; NB using bindings as vars
+                                                                       (varref-set-union (list free-bindings arg-temps)) ; NB using bindings as vars
                                                                        'not-yet-called)]
                                       [let-body (wcm-wrap debug-info `(#%begin ,@set!-list ,final-app))])
                                  `(#%let-values ,let-clauses ,let-body)))])
@@ -705,47 +741,7 @@
                                         (wcm-wrap (make-debug-info-normal null) annotated)]) 
                                 null))))]
 
-	       [(z:if-form? expr) 
-		(let*-values
-                    ([(annotated-test free-bindings-test) 
-                      (non-tail-recur (z:if-form-test expr))]
-                     [(annotated-then free-bindings-then) 
-                      (tail-recur (z:if-form-then expr))]
-                     [(annotated-else free-bindings-else) 
-                      (tail-recur (z:if-form-else expr))]
-                     [(free-bindings) (varref-set-union free-bindings-test 
-                                                         free-bindings-then 
-                                                         free-bindings-else)]
-                     [(if-temp-sym) (z:binding-var if-temp)]
-                     [(inner-annotated) `(#%if ,if-temp-sym
-                                          ,annotated-then
-                                          ,annotated-else)]
-                     [(annotated-2) (if (utils:signal-not-boolean)
-                                        `(#%if (#%boolean? ,if-temp-sym)
-                                          ,inner-annotated
-                                          (#%raise (,utils:make-not-boolean
-                                                    (#%format ,utils:not-boolean-error-format
-                                                     ,if-temp-sym)
-                                                    (#%current-continuation-marks)
-                                                    ,if-temp-sym)))
-                                        inner-annotated)]
-                     [(test-is-varref?) (z:varref? (z:if-form-test expr))])
-                  (if (or cheap-wrap? (and ankle-wrap?
-                                           test-is-varref?
-                                           (memq 'no-temps-for-varrefs wrap-opts)))
-                      (let ([annotated (if (utils:signal-not-boolean)
-                                           `(#%let ((,if-temp-sym ,annotated-test)) ,annotated-2)
-                                           `(#%if ,annotated-test ,annotated-then ,annotated-else))])
-                        (values (appropriate-wrap annotated free-bindings) free-bindings))
-                      (let* ([annotated `(#%begin
-                                          (#%set! ,if-temp-sym ,annotated-test)
-                                          ,(break-wrap annotated-2))]
-                             [debug-info (make-debug-info-app (binding-set-union tail-bound (list if-temp))
-                                                              (varref-set-union free-bindings (list if-temp))
-                                                              'none)]
-                             [wcm-wrapped (wcm-wrap debug-info annotated)]
-                             [outer-annotated `(#%let ((,if-temp-sym ,*unevaluated*)) ,wcm-wrapped)])
-                        (values outer-annotated free-bindings))))]
+	       
 	       
 	       [(z:quote-form? expr)
                 (let* ([raw (utils:read->raw (z:quote-form-expr expr))]
@@ -766,7 +762,7 @@
                                    (top-level-annotate/inner expr)) 
                                  bodies)])
                        (values `(#%begin ,@annotated-bodies)
-                               (apply varref-set-union free-bindings)))
+                               (varref-set-union free-bindings)))
                     (let*-values 
                         ([(bodies) (z:begin-form-bodies expr)]
                          [(all-but-last-body last-body-list) 
@@ -776,7 +772,7 @@
                           (dual-map non-tail-recur all-but-last-body)]
                          [(annotated-final free-bindings-final)
                           (tail-recur last-body)]
-                         [(free-bindings) (apply varref-set-union free-bindings-final free-bindings-a)]
+                         [(free-bindings) (varref-set-union (cons free-bindings-final free-bindings-a))]
                          [(debug-info) (make-debug-info-normal free-bindings)]
                          [(annotated) `(#%begin ,@(append annotated-a (list annotated-final)))])
                        (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
@@ -790,7 +786,7 @@
                       (result-recur (car bodies))]
                      [(annotated-bodies free-bindings-lists)
                       (dual-map non-tail-recur (cdr bodies))]
-                     [(free-bindings) (apply varref-set-union free-bindings-first free-bindings-lists)]
+                     [(free-bindings) (varref-set-union (cons free-bindings-first free-bindings-lists))]
                      [(debug-info) (make-debug-info-normal free-bindings)]
                      [(annotated) `(#%begin0 ,annotated-first ,@annotated-bodies)])
                   (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
@@ -849,10 +845,10 @@
                       (set!-rhs-recur (z:set!-form-val expr) (if (z:top-level-varref? var)
                                                                  (z:varref-var var)
                                                                  (z:binding-orig-name (z:bound-varref-binding var))))]
-                     [(free-bindings) (varref-set-union (if (z:top-level-varref? var)
-                                                             null
-                                                             (list (z:bound-varref-binding var)))
-                                                         rhs-free-bindings)]
+                     [(free-bindings) (varref-set-union (list (if (z:top-level-varref? var)
+                                                                  null
+                                                                  (list (z:bound-varref-binding var)))
+                                                              rhs-free-bindings))]
                      [(debug-info) (make-debug-info-normal free-bindings)]
                      [(annotated) `(#%set! ,v ,annotated-body)])
                    (values (ccond [(or cheap-wrap? ankle-wrap?) (appropriate-wrap annotated free-bindings)]
@@ -875,7 +871,7 @@
                       (non-tail-recur (z:with-continuation-mark-form-val expr))]
                      [(annotated-body free-bindings-body)
                       (result-recur (z:with-continuation-mark-form-body expr))]
-                     [(free-bindings) (varref-set-union free-bindings-key free-bindings-val free-bindings-body)]
+                     [(free-bindings) (varref-set-union (list free-bindings-key free-bindings-val free-bindings-body))]
                      [(debug-info) (make-debug-info-normal free-bindings)]
                      [(annotated) `(#%with-continuation-mark
                                     ,annotated-key

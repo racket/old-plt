@@ -32,7 +32,7 @@
    3)
 
   (fw:application:current-app-name "DrScheme")
-  (fw:version:add-spec 'd 102)
+  (fw:version:add-spec 'd 103)
 
   (define (valid-setting? setting)
     (ormap (lambda (x)

@@ -279,7 +279,7 @@
  ;;; more information is required from the user before completing
  ;;; the command.
  
- (file-menu-label-windows "&Fichier")
+ (file-menu-label-windows "Fichier")
  (file-menu-label-other "F&ichier")
  
  (new-info  "Ouvrir un nouveau fichier.")
@@ -304,7 +304,7 @@
  (close-menu-item "&Fermer")
  
  (quit-info "Fermer toutes les fenêtres.")
- (quit-menu-item-windows "S&ortir")
+ (quit-menu-item-windows "&Quitter")
  (quit-menu-item-others "&Quitter")
  
  (edit-menu-label "&Editer")
@@ -316,20 +316,20 @@
  (redo-menu-item "&Refaire")
  
  (cut-info "Déplacer dans le porte-bloc les éléments sélectionés, pour collage ultérieur.")
- (cut-menu-item "Coupe&r")
+ (cut-menu-item "&Couper")
  
  (copy-info "Copier dans le porte-bloc les éléments sélectionés, pour collage ultérieur.")
- (copy-menu-item "&Copier")
+ (copy-menu-item "Co&pier")
  
  (paste-info "Coller à la place des éléments sélectionnés les éléments qui ont été copiés ou coupés le plus récemment.")
- (paste-menu-item "&Coller")
+ (paste-menu-item "C&oller")
  
  (clear-info "Effacer les éléments sélectionnés sans modifier le porte-bloc ou le collage.")
  (clear-menu-item-others "Effacer")
  (clear-menu-item-windows "&Effacer")
  
  (select-all-info "Sélectionner tout le document.")
- (select-all-menu-item "Sélectionner t&out")
+ (select-all-menu-item "&Sélectionner tout")
  
  (find-info "Rechercher une chaîne de caractères.")
  (find-menu-item "Rechercher...")
@@ -354,7 +354,7 @@
  (insert-image-item "Insérer une image...")
  (wrap-text-item "Replier le texte")
  
- (windows-menu-label "&Fenêtres")
+ (windows-menu-label "Fe&nêtres")
  (bring-frame-to-front "Amener une fenêtre au premier plan")       ;;; title of dialog
  (bring-frame-to-front... "Amener une fenêtre au premier plan...") ;;; corresponding title of menu item
  
@@ -428,14 +428,14 @@
  (print-interactions "Imprimer les interactions...")
  
  ;;; edit-menu
- (split-menu-item-label "&Diviser")
- (collapse-menu-item-label "R&assembler")
+ (split-menu-item-label "Di&viser")
+ (collapse-menu-item-label "&Rassembler")
  
  ;;; language menu
  (language-menu-name "&Language")
  
  ;;; scheme-menu
- (scheme-menu-name "S&cheme")
+ (scheme-menu-name "&Scheme")
  (execute-menu-item-label "Exécuter")
  (execute-menu-item-help-string "Réexécuter le program de la fenêtre de définition.")
  (break-menu-item-label "Stopper")

@@ -29,6 +29,7 @@ typedef struct {
 # define GP ((PathTarget *)target)->path
 # define PathTargetPath_t GraphicsPath*
 # define THIS_GP current_path
+# define PATH_GP ((GraphicsPath *)target)
 #endif
 
 wxRegion::wxRegion(wxDC *_dc, wxRegion *r, Bool _no_prgn)
@@ -434,8 +435,8 @@ void wxRegion::SetPath(wxPath *p, double xoffset, double yoffset, int fillStyle)
 
   for (i = 0, k = 0; i < cnt; i++) {
     for (j = 0; j < lens[i]; j += 2) {
-      a[k].x = ptss[i][j];
-      a[k].y = ptss[i][j+1];
+      a[k].x = ptss[i][j] + xoffset;
+      a[k].y = ptss[i][j+1] + yoffset;
       k++;
     }
   }
@@ -1404,6 +1405,7 @@ Bool wxPathPathRgn::Install(long target, Bool reverse)
 
 Bool wxPathPathRgn::InstallPS(wxPostScriptDC *dc, wxPSStream *s)
 {
+  p->InstallPS(dc, s, 0, 0);
   return (fillStyle == wxODDEVEN_RULE);
 }
 
@@ -1822,6 +1824,7 @@ void wxPath::Close()
 {
   if ((last_cmd > -1) && (cmds[last_cmd] != CMD_CLOSE)) {
     MakeRoom(1);
+    last_cmd = cmd_size;
     cmds[cmd_size++] = CMD_CLOSE;
   }
 }
@@ -1921,7 +1924,7 @@ void wxPath::Arc(double x, double y, double w, double h, double start, double en
     y3 = (y3 * h/2) + y;
 
     if (!did_one) {
-      if ((last_cmd > -1) && (cmds[last_cmd] != CMD_CLOSE)) {
+      if (IsOpen()) {
 	LineTo(x0, y0);
       } else {
 	MoveTo(x0, y0);
@@ -2109,7 +2112,6 @@ void wxPath::Reverse(int start_cmd)
 
     start_cmd = e;
   }
-  
 }
 
 void wxPath::AddPath(wxPath *p)
@@ -2169,6 +2171,7 @@ void wxPath::AddPath(wxPath *p)
 void wxPath::Install(long target, double dx, double dy)
 {
   int i = 0;
+  double lx, ly;
 
 #ifdef WX_USE_CAIRO
   cairo_new_path(CAIRO_DEV);
@@ -2179,40 +2182,82 @@ void wxPath::Install(long target, double dx, double dy)
 #ifdef WX_USE_CAIRO
       cairo_close_path(CAIRO_DEV);
 #endif
+#ifdef wx_msw
+      wxGPathCloseFigure(PATH_GP);
+#endif
       i += 1;
     } else if (cmds[i] == CMD_MOVE) {
 #ifdef WX_USE_CAIRO
       cairo_move_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
 #endif
+      lx = cmds[i+1];
+      ly = cmds[i+2];
       i += 3;
     } else if (cmds[i] == CMD_LINE) {
+      if ((cmds[i+1] != lx) || (cmds[i+2] != ly)) {
 #ifdef WX_USE_CAIRO
-      cairo_line_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
+	cairo_line_to(CAIRO_DEV, cmds[i+1]+dx, cmds[i+2]+dy);
 #endif
+#ifdef wx_msw
+	wxGPathAddLine(PATH_GP, lx+dx, ly+dy, cmds[i+1]+dx, cmds[i+2]+dy);
+#endif
+      }
+      lx = cmds[i+1];
+      ly = cmds[i+2];
       i += 3;
     } else if (cmds[i] == CMD_CURVE) {
+      if ((cmds[i+5] != lx) || (cmds[i+6] != ly)) {
 #ifdef WX_USE_CAIRO
-      cairo_curve_to(CAIRO_DEV, 
-		     cmds[i+1]+dx, cmds[i+2]+dy, 
-		     cmds[i+3]+dx, cmds[i+4]+dy, 
-		     cmds[i+5]+dx, cmds[i+6]+dy);
+	cairo_curve_to(CAIRO_DEV, 
+		       cmds[i+1]+dx, cmds[i+2]+dy, 
+		       cmds[i+3]+dx, cmds[i+4]+dy, 
+		       cmds[i+5]+dx, cmds[i+6]+dy);
 #endif
+#ifdef wx_msw
+	wxGPathAddBezier(PATH_GP, lx+dx, ly+dy, 
+			 cmds[i+1]+dx, cmds[i+2]+dy, 
+			 cmds[i+3]+dx, cmds[i+4]+dy, 
+			 cmds[i+5]+dx, cmds[i+6]+dy);
+#endif
+      }
+      lx = cmds[i+5];
+      ly = cmds[i+6];
       i += 7;
     }
   }
 }
 
-void wxPath::InstallPS()
+void wxPath::InstallPS(wxPostScriptDC *dc, wxPSStream *s, double dx, double dy)
 {
   int i = 0;
+
   while (i < cmd_size) {
     if (cmds[i] == CMD_CLOSE) {
+      s->Out("closepath\n");
       i += 1;
-    } else if (cmds[i] == CMD_MOVE) {
-      i += 3;
-    } else if (cmds[i] == CMD_LINE) {
+    } else if ((cmds[i] == CMD_MOVE) 
+	       || (cmds[i] == CMD_LINE)) {
+      double x, y;
+      x = dc->FLogicalToDeviceX(cmds[i+1]+ dx);
+      y = dc->FLogicalToDeviceY(cmds[i+2]+ dy);
+      s->Out(x); s->Out(" "); s->Out(y);
+      if (cmds[i] == CMD_LINE)
+	s->Out(" lineto\n");
+      else
+	s->Out(" moveto\n");
       i += 3;
     } else if (cmds[i] == CMD_CURVE) {
+      double x1, y1, x2, y2, x3, y3;
+      x1 = dc->FLogicalToDeviceX(cmds[i+1] + dx);
+      y1 = dc->FLogicalToDeviceY(cmds[i+2] + dy);
+      x2 = dc->FLogicalToDeviceX(cmds[i+3] + dx);
+      y2 = dc->FLogicalToDeviceY(cmds[i+4] + dy);
+      x3 = dc->FLogicalToDeviceX(cmds[i+5] + dx);
+      y3 = dc->FLogicalToDeviceY(cmds[i+6] + dy);
+      s->Out(x1); s->Out(" "); s->Out(y1); s->Out(" "); 
+      s->Out(x2); s->Out(" "); s->Out(y2); s->Out(" "); 
+      s->Out(x3); s->Out(" "); s->Out(y3); s->Out(" "); 
+      s->Out("curveto\n");
       i += 7;
     }
   }
@@ -2334,4 +2379,54 @@ int wxPath::ToPolygons(int **_lens, double ***_ptss, double sx, double sy)
   *_ptss = ptss;
 
   return cnt;
+}
+
+void wxPath::BoundingBox(double *_x1, double *_y1, double *_x2, double *_y2)
+{
+  double x1, x2, y1, y2;
+  int i;
+
+  if (cmd_size) {
+    /* First command must be move-to: */
+    x1 = cmds[1];
+    y1 = cmds[2];
+    x2 = x1;
+    y2 = y1;
+    for (i = 3; i < cmd_size; ) {
+      if (cmds[i] == CMD_CLOSE) {
+	i += 1;
+      } else if ((cmds[i] == CMD_MOVE)
+		 || (cmds[i] == CMD_LINE)) {
+	if (cmds[i+1] < x1)
+	  x1 = cmds[i+1];
+	if (cmds[i+1] > x2)
+	  x2 = cmds[i+1];
+	if (cmds[i+2] < y1)
+	  y1 = cmds[i+2];
+	if (cmds[i+2] > y2)
+	  y2 = cmds[i+2];
+	i += 3;
+      } else if (cmds[i] == CMD_CURVE) {
+	int j;
+	for (j = 0; j < 6; j += 2) {
+	  if (cmds[i+j+1] < x1)
+	    x1 = cmds[i+j+1];
+	  if (cmds[i+j+1] > x2)
+	    x2 = cmds[i+j+1];
+	  if (cmds[i+j+2] < y1)
+	    y1 = cmds[i+j+2];
+	  if (cmds[i+j+2] > y2)
+	    y2 = cmds[i+j+2];
+	}
+	i += 7;
+      }
+    }
+  } else {
+    x1 = y1 = x2 = y2 = 0.0;
+  }
+
+  *_x1 = x1;
+  *_x2 = x2;
+  *_y1 = y1;
+  *_y2 = y2;
 }

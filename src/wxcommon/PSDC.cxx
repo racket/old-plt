@@ -236,11 +236,6 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
   user_scale_x = 1.0;
   user_scale_y = 1.0;
 
-  min_x = 10000.0;
-  min_y = 10000.0;
-  max_x = -10000.0;
-  max_y = -10000.0;
-
   current_pen = NULL;
   current_brush = NULL;
   current_background_color = new wxColour(wxWHITE);
@@ -261,6 +256,11 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
   filename = NULL;
 
   pstream = NULL;
+
+  min_x = 10000.0;
+  min_y = 10000.0;
+  max_x = -10000.0;
+  max_y = -10000.0;
 
   clipx = -100000.0;
   clipy = -100000.0;
@@ -463,7 +463,7 @@ void wxPostScriptDC::CalcBoundingBoxClip(double x, double y)
   
   if (y < clipy)
     y = clipy;
-  else if (y >= (cliph + cliph))
+  else if (y >= (clipy + cliph))
     y = clipy + cliph;
 
   if (x < min_x) min_x = x;
@@ -708,9 +708,7 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], double xoffset, doubl
 	    }
 
 	  // Close the polygon
-	  xx = points[0].x + xoffset;
-	  yy = (points[0].y + yoffset);
-	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
+	  pstream->Out(" closepath\n");
 
 	  // Output the line
 	  pstream->Out("stroke\n");
@@ -720,8 +718,37 @@ void wxPostScriptDC::DrawPolygon (int n, wxPoint points[], double xoffset, doubl
 
 void wxPostScriptDC::DrawPath(wxPath *p, double xoff, double yoff, int fillStyle)
 {
+  int did = 0;
+
   if (!pstream)
     return;
+  
+  if (current_brush && current_brush->GetStyle () != wxTRANSPARENT) {
+    SetBrush (current_brush);
+    pstream->Out("newpath\n");
+    p->InstallPS(this, pstream, xoff, yoff);
+    pstream->Out(((fillStyle == wxODDEVEN_RULE) ? "eofill\n" : "fill\n"));
+    did = 1;
+  }
+
+  if (current_pen && current_pen->GetStyle () != wxTRANSPARENT) {
+    SetPen (current_pen);
+    pstream->Out("newpath\n");
+    p->InstallPS(this, pstream, xoff, yoff);
+    pstream->Out("stroke\n");
+    did = 1;
+  }
+
+  if (did) {
+    double x1, x2, y1, y2;
+    p->BoundingBox(&x1, &y1, &x2, &y2);
+    x1 += xoff; 
+    x2 += xoff;
+    y1 += yoff; 
+    y2 += yoff;
+    CalcBoundingBoxClip(XSCALEBND(x1), YSCALEBND(y1));
+    CalcBoundingBoxClip(XSCALEBND(x2), YSCALEBND(y2));
+  }
 }
 
 
@@ -729,29 +756,29 @@ void wxPostScriptDC::DrawLines (int n, wxPoint points[], double xoffset, double 
 {
   if (!pstream)
     return;
-  if (n > 0) {
+
+  if (n > 0 && current_pen && (current_pen->GetStyle () != wxTRANSPARENT)) {
     int i;
     double xx, yy;
 
-      if (current_pen)
-	SetPen (current_pen);
-
-      pstream->Out("newpath\n");
-
-      xx = points[0].x + xoffset;
-      yy = (points[0].y + yoffset);
-      pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
-      CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
-
-      for (i = 1; i < n; i++)
-	{
-	  xx = points[i].x + xoffset;
-	  yy = (points[i].y + yoffset);
-	  pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
-	  CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
-	}
-      pstream->Out("stroke\n");
-    }
+    SetPen(current_pen);
+    
+    pstream->Out("newpath\n");
+    
+    xx = points[0].x + xoffset;
+    yy = (points[0].y + yoffset);
+    pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" moveto\n");
+    CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
+    
+    for (i = 1; i < n; i++)
+      {
+	xx = points[i].x + xoffset;
+	yy = (points[i].y + yoffset);
+	pstream->Out(XSCALE(xx)); pstream->Out(" "); pstream->Out(YSCALE(yy)); pstream->Out(" lineto\n");
+	CalcBoundingBoxClip(XSCALEBND(xx), YSCALEBND(yy));
+      }
+    pstream->Out("stroke\n");
+  }
 }
 
 void wxPostScriptDC::DrawRectangle (double x, double y, double width, double height)
@@ -967,6 +994,7 @@ void wxPostScriptDC::SetPen (wxPen * pen)
   wxPen *oldPen = current_pen;
   char *psdash = NULL;
   unsigned char red, blue, green;
+  int val;
   double width;
 
   if (!pstream)
@@ -1020,6 +1048,36 @@ void wxPostScriptDC::SetPen (wxPen * pen)
   if (oldPen != pen) {
     pstream->Out(psdash); pstream->Out(" setdash\n");
   }
+
+  switch (pen->GetCap()) {
+  case wxCAP_ROUND:
+    val = 1;
+    break;
+  case wxCAP_PROJECTING:
+    val = 2;
+    break;
+  default:
+  case wxCAP_BUTT:
+    val = 0;
+    break;
+  }
+  pstream->Out(val);
+  pstream->Out(" setlinecap\n");
+
+  switch (pen->GetJoin()) {
+  case wxJOIN_ROUND:
+    val = 1;
+    break;
+  case wxJOIN_BEVEL:
+    val = 2;
+    break;
+  default:
+  case wxJOIN_MITER:
+    val = 0;
+    break;
+  }
+  pstream->Out(val);
+  pstream->Out(" setlinejoin\n");
 
   // Line colour
   {

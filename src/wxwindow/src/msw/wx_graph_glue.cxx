@@ -49,6 +49,9 @@ typedef void (*p_wxGPathRelease)(GraphicsPath *gp);
 typedef void (*p_wxGPathAddArc)(GraphicsPath *gp, double x, double y, double w, double h, double start, double span);
 typedef void (*p_wxGPathAddPie)(GraphicsPath *gp, double x, double y, double w, double h, double start, double span);
 typedef void (*p_wxGPathAddLine)(GraphicsPath *gp, double x1, double y1, double x2, double y2);
+typedef void (*p_wxGPathAddBezier)(GraphicsPath *gp, double x1, double y1, double x2, double y2,
+				   double x3, double y3, double x4, double y4);
+
 typedef void (*p_wxGPathCloseFigure)(GraphicsPath *gp);
 typedef void (*p_wxGPathTransform)(GraphicsPath *gp, Matrix *m);
 
@@ -105,6 +108,7 @@ p_wxGPathRelease wxGPathRelease;
 p_wxGPathAddArc wxGPathAddArc;
 p_wxGPathAddPie wxGPathAddPie;
 p_wxGPathAddLine wxGPathAddLine;
+p_wxGPathAddBezier wxGPathAddBezier;
 p_wxGPathCloseFigure wxGPathCloseFigure;
 p_wxGPathTransform wxGPathTransform;
 
@@ -163,6 +167,8 @@ static void GetProcs(HMODULE m)
   wxGPathAddArc = (p_wxGPathAddArc)GetProcAddress(m, "wxGPathAddArc");
   wxGPathAddPie = (p_wxGPathAddPie)GetProcAddress(m, "wxGPathAddPie");
   wxGPathAddLine = (p_wxGPathAddLine)GetProcAddress(m, "wxGPathAddLine");
+  wxGPathAddBezier = (p_wxGPathAddBezier)GetProcAddress(m, "wxGPathAddBezier");
+
   wxGPathCloseFigure = (p_wxGPathCloseFigure)GetProcAddress(m, "wxGPathCloseFigure");
   wxGPathTransform = (p_wxGPathTransform)GetProcAddress(m, "wxGPathTransform");
 

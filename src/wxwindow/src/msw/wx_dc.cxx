@@ -908,6 +908,127 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
   DoneDC(dc);
 }
 
+void wxDC::DrawPath(wxPath *p, double xoffset, double yoffset,int fillStyle)
+{
+  HDC dc;
+  double **ptss;
+  int *lens, cnt, i, total_cnt, j, k;
+  POINT *pts;
+  int xoffset1;
+  int yoffset1;
+
+  dc = ThisDC();
+
+  if (!dc) return;
+
+  if (anti_alias) {
+    GraphicsPath *gp;
+
+    InitGraphics(dc);
+    
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)
+	&& (current_pen->GetWidthF() <= 1.0)) {
+      xoffset += 0.5;
+      yoffset += 0.5;
+    }
+
+    gp = wxGPathNew((fillStyle == wxODDEVEN_RULE) ? FillModeAlternate : FillModeWinding);
+    p->Install((long)gp, xoffset, yoffset);
+
+    if (current_brush && (current_brush->GetStyle() != wxTRANSPARENT)) {
+      wxGFillPath(g, current_brush->GraphicsBrush(), gp);
+    }
+
+    if (current_pen && (current_pen->GetStyle() != wxTRANSPARENT)) {    
+      wxGDrawPath(g, current_pen->GraphicsPen(), gp);
+    }
+
+    wxGPathRelease(gp);
+
+    DoneDC(dc);
+    return;
+  }
+
+  cnt = p->ToPolygons(&lens, &ptss, user_scale_x, user_scale_y);
+
+  if (!cnt)
+    return;
+
+  total_cnt = 0;
+  for (i = 0; i < cnt; i++) {
+    total_cnt += (lens[i] / 2);
+  }
+  
+  pts = new WXGC_ATOMIC POINT[total_cnt];
+
+  for (i = 0, k = 0; i < cnt; i++) {
+    for (j = 0; j < lens[i]; j += 2) {
+      ShiftXY(ptss[i][j] + xoffset, ptss[i][j+1] + yoffset, &xoffset1, &yoffset1);
+      pts[k].x = xoffset1;
+      pts[k].y = yoffset1;
+      k++;
+    }
+  }
+
+
+   {
+     (void)Polygon(dc, cpoints, n);
+    DoneBrush(dc);
+  }
+  if (StartPen(dc)) {
+    (void)Polygon(dc, cpoints, n);
+    DonePen(dc);
+  }
+
+  prev = SetPolyFillMode(dc, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
+
+  if (StartBrush(dc, 1)) {
+    if (cnt == 1) {
+      (void)Polygon(dc, pts, total_cnt);
+    } else {
+      HRGN rgn = 0, rgn1;
+
+      for (i = 0, k = 0; i < cnt; i++) {
+	j = (lens[i] / 2);
+	rgn1 = CreatePolygonRgn(pts + k, j, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
+	if (rgn) {
+	  /* Xoring implements the even-odd rule */
+	  CombineRgn(rgn, rgn1, rgn, RGN_XOR);
+	  DeleteObject(rgn1);
+	} else {
+	  rgn = rgn1;
+	}
+	k += j;
+      }
+
+      SelectClipRgn(dc, rgn);
+      
+      (void)Rectangle(dc, 0, 0, 32000, 32000);
+
+      DoClipping(dc);
+
+      DeleteObject(rgn);
+    }      
+  }
+  if (StartPen(dc)) {
+    for (i = 0, k = 0; i < cnt; i++) {
+      j = (lens[i] / 2);
+      if ((i + 1 == cnt) && p->IsOpen()) {
+	(void)Polyline(dc, pts + k, j);
+      } else {
+	(void)Polygon(dc, pts + k, j);
+      }
+      k += j;
+    }
+  }
+
+  SetPolyFillMode(dc, prev);
+
+  DoneDC(dc);
+}
+
 void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
 {
   HDC dc;

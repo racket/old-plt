@@ -96,10 +96,6 @@ class wxRegion : public wxObject
   
   void Cleanup();
 
-  /* PS Stuff */
-  void Put(const char *s);
-  void Put(double d);
-
   void Install(long target);
   void InstallPS(wxPostScriptDC *dc, wxPSStream *s);
 };
@@ -252,8 +248,10 @@ class wxPath : public wxObject
   void AddPath(wxPath *p);
   
   void Install(long target, double dx, double dy);
-  void InstallPS();
+  void InstallPS(wxPostScriptDC *dc, wxPSStream *s, double dx, double dy);
   int ToPolygons(int **_lens, double ***_pts, double sx, double sy);
+
+  void BoundingBox(double *x1, double *y1, double *x2, double *y2);
 
  private:
   void MakeRoom(int n);

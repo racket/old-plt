@@ -49,6 +49,9 @@ WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddArc)(GraphicsPath *gp, double x, doub
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddPie)(GraphicsPath *gp, double x, double y, double w, double h, double start, double span);
 
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddLine)(GraphicsPath *gp, double x1, double y1, double x2, double y2);
+WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathAddBezier)(GraphicsPath *gp, double x1, double y1, double x2, double y2,
+						   double x3, double y3, double x4, double y4);
+
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathCloseFigure)(GraphicsPath *gp);
 WX_GRAPHICS_EXPORT void WX_GPROC(wxGPathTransform)(GraphicsPath *gp, Matrix *m);
 

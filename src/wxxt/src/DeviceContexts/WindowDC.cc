@@ -1416,11 +1416,10 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
 
     InitCairoDev();
 
-    pw = SetCairoPen();
     if ((anti_alias == 2)
 	&& (scale_x == 1.0)
 	&& (scale_y == 1.0)
-	&& (pw <= 1.0)) {
+	&& (current_pen->GetWidthF() <= 1.0)) {
       xoff += 0.5;
       yoff += 0.5;
     }
@@ -1556,11 +1555,12 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
 
 #ifdef WX_USE_CAIRO
     if (anti_alias) {
-      double xx = x, yy = y, ww = w, hh = h, pw;
+      double xx = x, yy = y, ww = w, hh = h;
 
       if ((anti_alias == 2)
 	  && (scale_x == 1.0)
-	  && (scale_y == 1.0)) {
+	  && (scale_y == 1.0)
+	  && (current_pen->GetWidthF() <= 1.0)) {
 	xx += 0.5;
 	yy += 0.5;
 	ww -= 1.0;
@@ -1582,18 +1582,7 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
 	cairo_fill(CAIRO_DEV);    
       }
 
-      pw = SetCairoPen();
-      if (pw) {
-	if ((anti_alias == 2)
-	    && (scale_x == 1.0)
-	    && (scale_y == 1.0)
-	    && (pw > 1.0)) {
-	  xx -= 0.5;
-	  yy -= 0.5;
-	  ww += 1.0;
-	  hh += 1.0;
-	}
-
+      if (SetCairoPen()) {
 	cairo_move_to(CAIRO_DEV, xx, yy + radius);
 	cairo_line_to(CAIRO_DEV, xx, yy + hh - radius);
 	cairo_arc_negative(CAIRO_DEV, xx + radius, yy + hh - radius, radius, wxPI, 0.5 * wxPI);
@@ -1659,6 +1648,14 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
 
 #ifdef WX_USE_CAIRO
   if (anti_alias) {
+
+    if ((anti_alias == 2)
+	&& (user_scale_x == 1.0)
+	&& (user_scale_y == 1.0)
+	&& (current_pen->GetWidthF() <= 1.0)) {
+      xoff += 0.5;
+      yoff += 0.5;
+    }
     
     InitCairoDev();
     if (SetCairoBrush()) {
@@ -1695,12 +1692,12 @@ void wxWindowDC::DrawPath(wxPath *p, double xoff, double yoff, int fill)
 
   for (i = 0, k = 0; i < cnt; i++) {
     for (j = 0; j < lens[i]; j += 2) {
-      xpts[k].x = XLOG2DEV(ptss[i][j]);
-      xpts[k].y = YLOG2DEV(ptss[i][j+1]);
+      xpts[k].x = XLOG2DEV(ptss[i][j]+xoff);
+      xpts[k].y = YLOG2DEV(ptss[i][j+1]+yoff);
       k++;
     }
-    xpts[k].x = XLOG2DEV(ptss[i][0]);
-    xpts[k].y = YLOG2DEV(ptss[i][1]);
+    xpts[k].x = XLOG2DEV(ptss[i][0]+xoff);
+    xpts[k].y = YLOG2DEV(ptss[i][1]+yoff);
     k++;
   }
 

@@ -23,7 +23,6 @@
     (unit/sig ()
       (import drscheme:tool^)
 
-
       (define (printf . args) (apply fprintf o args))
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -817,7 +816,7 @@
       ;;;                                                                ;;;
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-       ;; type req/tag = (make-req/tag syntax sexp boolean)
+      ;; type req/tag = (make-req/tag syntax sexp boolean)
       (define-struct req/tag (req-stx req-sexp used?))
       
       ;; annotate-complete :    namespace
@@ -830,7 +829,7 @@
       ;;
       ;; annotates the non-local portions of a complete program.
       ;; for the purposes of check syntax, a complete program is either
-      ;; a module expression, or everything at the toplevel.
+      ;; a module expression, or everything at the top level.
       ;;
       ;; the inputs match the outputs of annotate-basic, except this
       ;; accepts the user's namespace in addition and doesn't accept
@@ -842,19 +841,21 @@
                                  requires
                                  require-for-syntaxes
                                  referenced-macros)
-        (let ([non-require-varrefs (annotate-require-vars 
-                                    varrefs
-                                    requires
-                                    require-for-syntaxes
-                                    referenced-macros)])
-          (annotate-variables users-namespace binders non-require-varrefs tops)))
+        (let-values ([(non-require-varrefs non-require-referenced-macros)
+                      (annotate-require-vars 
+                       varrefs
+                       requires
+                       require-for-syntaxes
+                       referenced-macros)])
+          (annotate-variables users-namespace binders non-require-varrefs non-require-referenced-macros tops)))
 
       ;; annotate-require-vars :    (listof (cons boolean syntax[identifier]))
       ;;                            (listof syntax)
       ;;                            (listof syntax)
       ;;                            (listof (cons boolean syntax[original]))
-      ;;                         -> (listof syntax)
-      ;; returns the sublist of `varrefs' that did not come from module imports.
+      ;;                         -> (listof syntax) (listof syntax)
+      ;; returns the sublist of `varrefs' that did not come from module imports and
+      ;;     and the sublist of `referenced-macros' that didn't come from module imports
       ;; effect: colors all require-bound ids from `varrefs' and draws arrow for them. 
       (define (annotate-require-vars varrefs/levels requires require-for-syntaxes referenced-macros)
         (let* ([maker (lambda (x) (make-req/tag x (syntax-object->datum x) #f))]
@@ -873,27 +874,39 @@
                                       (annotate-require-var req/tags varref #f))])
                             (if include?
                                 (loop (cdr varrefs/levels))
-                                (cons varref (loop (cdr varrefs/levels)))))]))])
-          (for-each (annotate-macro req/tags #f)
-                    (map cdr (filter (lambda (x) (not (car x))) referenced-macros)))
-          (for-each (annotate-macro req-syn/tags #t)
-                    (map cdr (filter car referenced-macros)))
+                                (cons varref (loop (cdr varrefs/levels)))))]))]
+
+               [reduced-referenced-macros
+                (filter (annotate-macro req/tags #f)
+                        (map cdr (filter (lambda (x) (not (car x))) referenced-macros)))]
+
+               ;; hopefully, this is the empty list (no idea if it ever can be non-empty or what it would mean...)
+               [reduced-hl-referenced-macros
+                (filter (annotate-macro req-syn/tags #t)
+                        (map cdr (filter car referenced-macros)))])
+
           (for-each annotate-unused-require req/tags)
           (for-each annotate-unused-require req-syn/tags)
-          reduced-varrefs))
+          (values reduced-varrefs
+                  reduced-referenced-macros)))
       
-      ;; annotate-macro : (listof req/tag) -> syntax[original] -> void
+      ;; annotate-macro : (listof req/tag) boolean -> syntax[original] -> boolean
+      ;; result indicates if this macro definition came from a require
+      ;; #f means from require, #t means not from require
       (define (annotate-macro req/tags high-level?)
         (lambda (stx)
           (let ([mod-req-path (get-module-req-path ((if high-level?
                                                         identifier-transformer-binding
                                                         identifier-binding)
-                                                    stx))])
+                                                    stx))]
+                [unused? #t])
             (for-each (lambda (req/tag)
                         (when (equal? (req/tag-req-sexp req/tag) mod-req-path)
-                          (connect-syntaxes (req/tag-req-stx req/tag) stx )
+                          (set! unused? #t)
+                          (connect-syntaxes (req/tag-req-stx req/tag) stx)
                           (set-req/tag-used?! req/tag #t)))
-                      req/tags))))
+                      req/tags)
+            unused?)))
 
       ;; annotate-unused-require : syntax -> void
       (define (annotate-unused-require req/tag)
@@ -930,36 +943,31 @@
 
                    (let-values ([(base offset) (module-path-index-split mod-path)])
                      base)
-
-;                   (let loop ([mpi mod-path]
-;                              [ph #f])
-;                     (let-values ([(main rest) (module-path-index-split mpi)])
-;                       (if rest
-;                           (loop rest main)
-;                           ph)))
-
-
                    mod-path))))
       
-      ;; annotate-variables : namespace (listof syntax) (listof syntax) (listof syntax) -> void
+      ;; annotate-variables : namespace (listof syntax) (listof syntax) (listof syntax) (listof syntax) -> void
       ;; colors the variables, free are turned unbound color, bound are turned
       ;; bound color and all binders are turned bound color.
       ;; vars-ht maps from the name of an identifier to all of the ids that
       ;;         have that name. Filter the result for
       ;;         access to variables that are all module-identifier=?
       ;; similarly for binders-ht, except it maps only binding location ids.
-      (define (annotate-variables users-namespace binders varrefs tops)
+      (define (annotate-variables users-namespace binders varrefs referenced-macros tops)
         (let ([vars-ht (make-hash-table)]
               [binders-ht (make-hash-table)])
           (for-each (add-var vars-ht) varrefs)
+          (for-each (add-var vars-ht) referenced-macros)
           (for-each (add-var vars-ht) tops)
           (for-each (add-var vars-ht) binders)
           (for-each (add-var binders-ht) binders)
 
+
           (for-each (annotate-binder vars-ht) binders)
-          (for-each (annotate-varref handle-no-binders/lexical vars-ht binders-ht)
+          (for-each (annotate-varref (handle-no-binders/lexical #t) vars-ht binders-ht #f)
                     varrefs)
-          (for-each (annotate-varref (handle-no-binders/top users-namespace) vars-ht binders-ht)
+          (for-each (annotate-varref (handle-no-binders/lexical #t) vars-ht binders-ht #t)
+                    referenced-macros)
+          (for-each (annotate-varref (handle-no-binders/top users-namespace) vars-ht binders-ht #f)
                     tops)))
       
       ;; add-var : hash-table -> syntax -> void
@@ -970,21 +978,19 @@
                  [prev (hash-table-get ht key (lambda () null))])
             (hash-table-put! ht key (cons var prev)))))
       
-      ;; annotate-binder : (listof syntax) (listof syntax) (listof syntax) -> syntax -> void
+      ;; annotate-binder : vars-hash-table -> syntax -> void
       ;; annotates a variable in a binding position
       (define (annotate-binder vars-ht)
         (lambda (binder)
           (when (syntax-original? binder)
-            (let ([same-as-binder?
-                   (lambda (x) (module-identifier=? x binder))])
-              (make-rename-menu binder vars-ht))
-            (color binder bound-variable-style-str))))
+            (let ([same-as-binder? (lambda (x) (module-identifier=? x binder))])
+              (make-rename-menu binder vars-ht)))))
       
-      ;; annotate-varref : (syntax -> void) (listof syntax) (listof syntax) -> syntax -> void
-      ;; annotates a variable reference with either green or red,
+      ;; annotate-varref : (syntax -> void) (listof syntax) (listof syntax) boolean -> syntax -> void
+      ;; annotates a variable reference with green (if bound)
       ;; and adds the arrows from the varref to the 
       ;; (possibly multiple) binding locations.
-      (define (annotate-varref handle-no-binders vars-ht binders-ht)
+      (define (annotate-varref handle-no-binders vars-ht binders-ht keyword?)
         (lambda (varref)
           (when (syntax-original? varref)
             (let* ([same-as-varref? (lambda (x) (module-identifier=? x varref))]
@@ -1002,7 +1008,10 @@
                     (when (syntax-original? binder)
                       (connect-syntaxes binder varref)))
                   binders)
-                 (color varref bound-variable-style-str)])))))
+                 (color varref
+                        (if keyword?
+                            keyword-style-str
+                            bound-variable-style-str))])))))
       
       ;; handle-no-binders/top : top-level-info -> syntax[original] -> void
       (define (handle-no-binders/top users-namespace)
@@ -1016,15 +1025,16 @@
                 (color varref bound-variable-style-str)
                 (color varref unbound-variable-style-str)))))
       
-      ;; handle-no-binders/lexical : syntax[original] -> void
-      (define (handle-no-binders/lexical varref)
-        (let ([binding (identifier-binding varref)])
-          (cond
-            [(not binding)
-             (color varref unbound-variable-style-str)]
-            [(pair? binding)
-             (color varref bound-variable-style-str)]
-            [else (void)])))
+      ;; handle-no-binders/lexical : boolean -> syntax[original] -> void
+      (define (handle-no-binders/lexical keyword?)
+        (lambda (varref)
+          (let ([binding (identifier-binding varref)])
+            (cond
+              [(not binding)
+               (color varref unbound-variable-style-str)]
+              [(pair? binding)
+               (color varref (if keyword? keyword-style-str bound-variable-style-str))]
+              [else (void)]))))
       
       ;; connect-syntaxes : syntax[original] syntax[original] -> void
       ;; adds an arrow from `from' to `to', unless they have the same source loc. 
@@ -1088,14 +1098,14 @@
                 [(lambda args bodies ...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (set! binders (combine-binders (syntax args) binders))
+                   (set! binders (combine/color-binders (syntax args) binders bound-variable-style-str))
                    (for-each loop (syntax->list (syntax (bodies ...)))))]
                 [(case-lambda [argss bodiess ...]...)
                  (begin
                    (annotate-raw-keyword sexp)
                    (for-each
                     (lambda (args bodies)
-                      (set! binders (combine-binders args binders))
+                      (set! binders (combine/color-binders args binders bound-variable-style-str))
                       (for-each loop (syntax->list bodies)))
                     (syntax->list (syntax (argss ...)))
                     (syntax->list (syntax ((bodiess ...) ...)))))]
@@ -1123,14 +1133,14 @@
                 [(let-values (((xss ...) es) ...) bs ...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
                    (for-each loop (syntax->list (syntax (bs ...)))))]
                 [(letrec-values (((xss ...) es) ...) bs ...)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (for-each (lambda (x) (set! binders (combine-binders x binders)))
+                   (for-each (lambda (x) (set! binders (combine/color-binders x binders bound-variable-style-str)))
                              (syntax->list (syntax ((xss ...) ...))))
                    (for-each loop (syntax->list (syntax (es ...))))
                    (for-each loop (syntax->list (syntax (bs ...)))))]
@@ -1141,14 +1151,12 @@
                    (loop (syntax E)))]
                 [(quote datum)
                  (begin 
-                   (when (syntax-original? sexp)
-                     (annotate-raw-keyword sexp))
+                   (annotate-raw-keyword sexp)
                    (when (syntax-original? (syntax datum))
                      (color (syntax datum) constant-style-str)))]
                 [(quote-syntax datum)
                  (begin 
-                   (when (syntax-original? sexp)
-                     (annotate-raw-keyword sexp))
+                   (annotate-raw-keyword sexp)
                    (when (syntax-original? (syntax datum))
                      (color (syntax datum) constant-style-str)))]
                 [(with-continuation-mark a b c)
@@ -1172,12 +1180,12 @@
                 [(define-values vars b)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (set! binders (combine-binders (syntax vars) binders))
+                   (set! binders (combine/color-binders (syntax vars) binders bound-variable-style-str))
                    (loop (syntax b)))]
                 [(define-syntaxes names exp)
                  (begin
                    (annotate-raw-keyword sexp)
-                   (set! binders (combine-binders (syntax names) binders))
+                   (set! binders (combine/color-binders (syntax names) binders keyword-style-str))
                    (level-loop (syntax exp) #t))]
                 [(module m-name lang (#%plain-module-begin bodies ...))
                  (begin
@@ -1346,21 +1354,28 @@
             [_ stx])))
       
       
-
-      ;; combine-binders : syntax (listof syntax) -> (listof syntax)
+      ;; combine/color-binders : boolean syntax (listof syntax) str -> (listof syntax)
       ;; transforms an argument list into a bunch of symbols/symbols and puts 
       ;; them on `incoming'
-      (define (combine-binders stx incoming)
+      (define (combine/color-binders stx incoming style-str)
         (let loop ([stx stx]
                    [sofar incoming])
           (let ([e (if (syntax? stx) (syntax-e stx) stx)])
             (cond
               [(cons? e)
-               (if (syntax? (car e))
-                   (loop (cdr e) (cons (car e) sofar))
-                   (loop (cdr e) sofar))]
+               (let ([fst (car e)]
+                     [rst (cdr e)])
+                 (if (syntax? fst)
+                     (begin
+                       (when (syntax-original? fst)
+                         (color fst style-str))
+                       (loop rst (cons fst sofar)))
+                     (loop rst sofar)))]
               [(null? e) sofar]
-              [else (cons stx sofar)]))))
+              [else 
+               (when (syntax-original? stx)
+                 (color stx style-str))
+               (cons stx sofar)]))))
       
       
       ;; annotate-original-keywords : syntax -> void
@@ -1407,7 +1422,7 @@
                       (color stx bound-variable-style-str)))
                   (syntax->list stx)))
       
-      ;; color : syntax str -> void
+      ;; color : syntax[original] str -> void
       ;; colors the syntax with style-name's style
       (define (color stx style-name)
         (let ([source (syntax-source stx)])

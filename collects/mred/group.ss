@@ -92,13 +92,13 @@
 								    reason
 								    #t)])
 			       (case action
-				 [cancel #f]
-				 [continue
+				 [(cancel) #f]
+				 [(continue)
 				  (set-buffer-modified-ok! buffer #t)
 				  (if autosave?
 				      (send edit remove-autosave))
 				  (check-buffers reason pred)]
-				 [save
+				 [(save)
 				  (and (send edit save-file)
 				       (check-buffers reason pred))])))
 			   (loop (cdr buffers)))))))]

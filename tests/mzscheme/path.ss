@@ -337,7 +337,8 @@
 (test-path (build-path "a" "b") simplify-path (build-path "a" "b"))
 (let ([full-path
        (lambda args (apply build-path (current-directory) args))])
-  (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "b"))
+  (unless (string=? (build-path "a" "b") (build-path "a" 'same "b"))
+    (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "b")))
   (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'up "b"))
   (test-path (full-path "a" "b") simplify-path (build-path "a" 'same "noexistsdir" 'same 'up "b" 'same 'same))
   (test-path (full-path "a" "b") simplify-path (build-path 'same "noexistsdir" 'same 'up "a" 'same "b" 'same 'same)))

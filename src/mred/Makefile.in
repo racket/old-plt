@@ -252,6 +252,8 @@ install_wx_mac:
 	$(ICP) -r PLT_MrEd.framework/Versions/$(FWVERSION)/Resources $(MRFWDIR)/Versions/$(FWVERSION)/Resources
 	ln -s Versions/$(FWVERSION)/PLT_MrEd $(MRFWDIR)/
 	ln -s Versions/$(FWVERSION)/Resources $(MRFWDIR)/
+	if [ ! -d $(prefix)/collects ] ; then mkdir $(prefix)/collects ; fi
+	if [ ! -d $(prefix)/collects/launcher ] ; then mkdir $(prefix)/collects/launcher ; fi
 	cd ..; $(ICP) -r mred/Starter.app $(prefix)/collects/launcher/.
 
 LIBIDIR=$(prefix)/lib
@@ -290,6 +292,8 @@ install-3m_wx_mac:
 	cd ..; $(ICP) -r mred/MrEd3m.app $(prefix)/.
 	$(ICP) PLT_MrEd.framework/Versions/$(FWVERSION)_3m/PLT_MrEd $(MRFWDIR)/Versions/$(FWVERSION)_3m/PLT_MrEd
 	$(ICP) -r PLT_MrEd.framework/Versions/$(FWVERSION)_3m/Resources $(MRFWDIR)/Versions/$(FWVERSION)_3m/Resources
+	if [ ! -d $(prefix)/collects ] ; then mkdir $(prefix)/collects ; fi
+	if [ ! -d $(prefix)/collects/launcher ] ; then mkdir $(prefix)/collects/launcher ; fi
 	cd ..; $(ICP) -r mred/Starter3m.app $(prefix)/collects/launcher/.
 
 install-3m:

@@ -244,7 +244,7 @@ static void QueueTransferredEvent(EventRecord *e)
   }
 }
 
-/* Called by wxWindows to queue leave events: */
+/* Called by wxWindows to queue leave and activate events: */
  
 void QueueMrEdEvent(EventRecord *e)
 {

@@ -49,9 +49,8 @@
 		  ((zodiac:top-level-varref? id) (zodiac:id-var id))
 		  (else
 		    (error 'check-for-keyword "given ~s" id)))))
-	  (printf "Checking for keywordness of ~s~n" id)
 	  (when (keyword-name? id)
-	    (error id "Invalid use of keyword")))))
+	    (zodiac:interface:static-error id "Invalid use of keyword")))))
 
     (define annotate
       (lambda (expr)

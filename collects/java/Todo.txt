@@ -1,0 +1,92 @@
+I have listed the known shortcomings of the Java compiler. This is a
+kind of list of things to do.
+
+Java 1.1
+
+  Java 1.1 is not supported. That means no inner classes and other
+extension of Java 1.1
+
+Definite assignment.
+
+  There is no verification of the definite assignment rules.
+
+Unreachable statememts
+
+  Most of the rules are implemented according to JLS, but not all. In
+  particular for catch clauses and breaks with a label.. Actually it
+  is more complex than it looks, and Sun's compiler does not implement
+  them properly for many cases. See docCompiler.tex.
+
+Make of compile.
+
+  The make facility is not implemented. That is the compiler does not
+check if source files are newer than class files to start compilation.
+In particular, the compiler cannot compile compilation units
+recursively referring each other.
+
+Floating-point numbers.
+ 
+   Some conversion imprecision of floating-point numbers. May be this
+can be fixed by avoiding some Scheme functions such as log and expt.
+But I doubt it. There is seems to be some imprecision of the MzScheme
+implementation of multiplication of floating-point numbers.
+
+The maximum local variables size in a class file.
+
+The maximum number of locals of a method is not yet set properly in
+the class file. It should be correctly calculated in the method type.
+To be verified and the class file should be set up with that value.
+
+Strings
+
+  Utf strings are not fully implemented. This is a tedious job to
+have strings to handle the full range of strings since Scheme does not
+handle them.
+
+The \uxxxx escapes
+
+  The unicode escapes defined by 3.3 are not handled at all. This
+  requires a Scheme implementation capable of handling the full
+  Unicode set. At least, this encoding should be recognised and
+  modified to something else as it will fail to pass in the lexer due
+  to wrong escape lexem.
+
+Throws of a method
+
+ The throws declaration of methods are not verified.
+
+Jar files
+
+  No jar files can be used.
+
+Private, public and access modifiers.
+
+  This should be tested thoroughly. I think it will fail for the
+  default access between packages.
+
+Static block initializer.
+
+  These are not implemented. Not to be confused with initializer of
+  fields and local variables which are implemented. But see Initializers.
+
+Constant expressions
+
+  The values NaN, infinities and minus zeroes are not supported in
+the evaluation of constant expressions.
+
+Initializers
+
+ The forward references are not checked.
+
+Reading of class files.
+
+  Reading class files may terminate the compiler if they are
+  corrupted. That code should be made more robust by verifying every
+  possible corruption of the file and terminate with appropriate
+  message. 
+
+Class name in class file.
+
+I have not enforced the rules of class name vs file name in class
+files.  I have thought to leave it that way to be independent of any
+directory structures.

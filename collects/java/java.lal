@@ -1,0 +1,791 @@
+;; Mario Latendresse, 9 May 2000.
+;;
+;; This grammar was derived from java11.y
+;; It is a LALR(1) grammar.
+;; There is one shift/reduce conflict, due to dangling else.
+;;
+;; It handles 1.1 inner class, including anonymous class.
+
+(define java-grammar
+  '(
+
+ ABSTRACT
+ BOOLEAN BREAK BYTE BYVALUE
+ CASE CAST CATCH CHAR CLASS CONST CONTINUE
+ DEFAULT DO DOUBLE
+ ELSE EXTENDS
+ FINAL FINALLY FLOAT FOR FUTURE
+ GENERIC GOTO
+ IF IMPLEMENTS IMPORT INNER INSTANCEOF INT INTERFACE
+ LONG
+ NATIVE NEW JNULL
+ OPERATOR OUTER
+ PACKAGE PRIVATE PROTECTED PUBLIC
+ REST RETURN
+ SHORT STATIC SUPER SWITCH SYNCHRONIZED
+ THIS THROW THROWS TRANSIENT TRY
+ VAR VOID VOLATILE
+ WHILE
+ OP_INC OP_DEC
+ OP_SHL OP_SHR OP_SHRR
+ OP_GE OP_LE OP_EQ OP_NE
+ OP_LAND OP_LOR
+ OP_DIM
+ ASS_MUL ASS_DIV ASS_MOD ASS_ADD ASS_SUB
+ ASS_SHL ASS_SHR ASS_SHRR ASS_AND ASS_XOR ASS_OR
+ IDENTIFIER 
+ LITERAL-DEC LITERAL-OCT LITERAL-HEX 
+ LITERAL-DEC-LONG LITERAL-OCT-LONG LITERAL-HEX-LONG
+ LITERAL-CHAR LITERAL-FLOATING LITERAL-FLOAT LITERAL-DOUBLE
+ LITERAL-STRING
+ BOOLLIT
+
+ SEMICOLON DOT COLON COMMA AND OR EQUAL GT LT RPAREN LPAREN 
+ LBRACE RBRACE LSQPAREN RSQPAREN QUESTION EXCLAMATION
+ TILDE STAR PLUS MINUS XOR SLASH PERCENT
+
+;; For Contract Java
+
+ PRE POST BEGCONTRACT ENDCONTRACT OLD RESULT
+
+;; %start CompilationUnit
+
+ (CompilationUnit
+  (ProgramFile) : $1)
+
+ (ProgramFile
+  (PackageStatement ImportStatements TypeDeclarations) : 
+              (make-n-program $1 $2 $3 #f)
+  (PackageStatement ImportStatements)                  : 
+              (make-n-program $1 $2 '() #f)
+  (PackageStatement                  TypeDeclarations) : 
+              (make-n-program $1 '() $2 #f)
+  (                 ImportStatements TypeDeclarations) : 
+              (make-n-program #f $1 $2 #f)
+  (PackageStatement                                  ) : 
+              (make-n-program $1 '() '() #f)
+  (                  ImportStatements)			: 
+              (make-n-program #f $1 '() #f)
+  (                                   TypeDeclarations) : 
+              (make-n-program #f '() $1 #f)
+  )
+
+ (PackageStatement
+  (PACKAGE QualifiedName SemiColons) : $2
+  )
+
+ (TypeDeclarations
+  (TypeDeclarationOptSemi)                  : `(,$1)    
+  (TypeDeclarations TypeDeclarationOptSemi) : `(,@$1 ,$2)
+  )
+
+ (TypeDeclarationOptSemi
+  (TypeDeclaration)            : $1
+  (TypeDeclaration SemiColons) : $1
+  )
+
+ (ImportStatements
+  (ImportStatement)                   : `(,$1)    
+  (ImportStatements ImportStatement)  : `(,@$1 ,$2)
+  )
+ 
+ (ImportStatement
+  (IMPORT QualifiedName SemiColons)          : 
+          (make-n-import $2 #f (ls->ns $1))
+  (IMPORT QualifiedName DOT STAR SemiColons) : 
+          (make-n-import $2 #t (ls->ns $1))
+  )
+
+ (TypeDeclaration
+  (ClassHeader LBRACE FieldDeclarations RBRACE) : (make-n-type $1 $3 (n-header-src $1))
+  (ClassHeader LBRACE RBRACE)                   : (make-n-type $1 '() (n-header-src $1))
+  )
+
+ (ClassHeader
+  (Modifiers ClassWord IDENTIFIER Extendings Interfaces) : 
+    (make-n-header (list-but-last $1) (car $2) (lexeme-s $3) $4 $5 
+	              (list-last $1))
+  (Modifiers ClassWord IDENTIFIER Extendings)	         : 
+    (make-n-header (list-but-last $1) (car $2) (lexeme-s $3) $4 '() 
+                      (list-last $1))
+  (Modifiers ClassWord IDENTIFIER         Interfaces)    : 
+     (make-n-header (list-but-last $1) (car $2) (lexeme-s $3) '() $4 
+                       (list-last $1))
+  (          ClassWord IDENTIFIER Extendings Interfaces) : 
+      (make-n-header '() (car $1) (lexeme-s $2) $3 $4 (list-last $1))
+  (Modifiers ClassWord IDENTIFIER)		         : 
+    (make-n-header (list-but-last $1) (car $2) (lexeme-s $3) '() '() 
+                      (list-last $1))
+  (          ClassWord IDENTIFIER Extendings)	         : 
+    (make-n-header '() (car $1) (lexeme-s $2) $3 '() (list-last $1))
+  (          ClassWord IDENTIFIER         Interfaces)    : 
+    (make-n-header '() (car $1) (lexeme-s $2) '() $3 (list-last $1))
+  (          ClassWord IDENTIFIER)                       : 
+    (make-n-header '() (car $1) (lexeme-s $2) '() '() (list-last $1))
+  )
+
+
+;;%%
+
+ (TypeSpecifier
+   (TypeName)      : (make-n-typeSpecifier #f (if (pair? $1) (car $1) $1) 0  (ns->ns $1))
+   (TypeName Dims) : (make-n-typeSpecifier #f (if (pair? $1) (car $1) $1) $2 (ns->ns $1))
+   )
+
+ (TypeName
+  (PrimitiveType)  : $1
+  (QualifiedName)  : $1
+  )
+
+ (PrimitiveType
+  (BOOLEAN) : `(boolean ,(ls->ns $1)) 
+  (CHAR)    : `(char    ,(ls->ns $1))
+  (BYTE)    : `(byte    ,(ls->ns $1))
+  (SHORT)   : `(short   ,(ls->ns $1))
+  (INT)	    : `(int     ,(ls->ns $1))
+  (LONG)    : `(long    ,(ls->ns $1))
+  (FLOAT)   : `(float   ,(ls->ns $1))
+  (DOUBLE)  : `(double  ,(ls->ns $1))
+  (VOID)    : `(void    ,(ls->ns $1))
+  )
+
+ (SemiColons
+  (SEMICOLON)             : $1
+  (SemiColons SEMICOLON)  : `(,$1 ,$2)
+  )
+
+ (QualifiedName
+  (IDENTIFIER)   : (make-n-qName (lexeme-s $1) (ls->ns $1) #f)
+  (QualifiedName DOT IDENTIFIER) : 
+	(make-n-qName `(,@(if (pair? (n-qName-name $1))
+                                 (n-qName-name $1)
+	                         (list (n-qName-name $1)))
+	                        ,(lexeme-s $3)) 
+                           (n-qName-src $1)
+	                   #f
+                           )
+   )
+
+
+ (Modifiers
+  (Modifier)            : $1    
+  (Modifiers Modifier)  : `(,@`(,@(list-but-last $1) ,(car $2)) ,(cadr $2))
+  )
+
+ (Modifier
+  (ABSTRACT)      : `(abstract     ,(ls->ns $1))    
+  (FINAL)	  : `(final        ,(ls->ns $1))
+  (PUBLIC)	  : `(public       ,(ls->ns $1))
+  (PROTECTED)	  : `(protected    ,(ls->ns $1))
+  (PRIVATE)	  : `(private      ,(ls->ns $1))
+  (STATIC)	  : `(static       ,(ls->ns $1))
+  (TRANSIENT)	  : `(transient    ,(ls->ns $1))
+  (VOLATILE)	  : `(volatile     ,(ls->ns $1))
+  (NATIVE)	  : `(native       ,(ls->ns $1))
+  (SYNCHRONIZED)  : `(synchronized ,(ls->ns $1))
+  )
+
+ (ClassWord
+  (CLASS)     : `(class     ,(ls->ns $1))
+  (INTERFACE) : `(interface ,(ls->ns $1))
+  )		
+		
+ (Interfaces	
+  (IMPLEMENTS ClassNameList) : $2
+  )		
+
+ (ClassNameList
+  (QualifiedName)                     : `(,$1)
+  (ClassNameList COMMA QualifiedName) : `(,@$1 ,$3)
+  )
+		
+ (FieldDeclarations
+  (FieldDeclarationOptSemi)                    : `(,$1)    
+  (FieldDeclarations FieldDeclarationOptSemi)  : `(,@$1 ,$2)
+  )
+
+ (FieldDeclarationOptSemi
+  (FieldDeclaration)            :  $1
+  (FieldDeclaration SemiColons) :  $1
+  )
+
+ (FieldDeclaration
+  (FieldVariableDeclaration SEMICOLON) : $1
+  (MethodDeclaration)		       : $1
+  (ConstructorDeclaration)	       : $1
+  (StaticInitializer)		       : $1
+  (NonStaticInitializer)	       : $1
+  (TypeDeclaration)                    : $1
+  )
+
+ (FieldVariableDeclaration
+  (Modifiers TypeSpecifier VariableDeclarators) : 
+    (make-n-fieldDecl (list-but-last $1) $2 $3 (ns->ns $1))
+  (          TypeSpecifier VariableDeclarators) : 
+    (make-n-fieldDecl '() $1 $2 (ns->ns $1))
+  )
+
+ (VariableDeclarators
+  (VariableDeclarator)                            : `(,$1)    
+  (VariableDeclarators COMMA VariableDeclarator)  : `(,@$1 ,$3)
+  )
+
+ (VariableDeclarator
+  (DeclaratorName)                           : $1
+  (DeclaratorName EQUAL VariableInitializer) : (make-n-varInit $1 $3 (ls->ns $2) #f)
+  )
+
+ (VariableInitializer
+  (Expression)                      : $1
+  (LBRACE RBRACE)		    : 
+           (make-n-arrayInit '() (ls->ns $1) #f)
+  (LBRACE ArrayInitializers RBRACE) : 
+           (make-n-arrayInit $2 (ls->ns $1) #f)
+  )
+
+ (ArrayInitializers
+  (VariableInitializer)                           : `(,$1)
+  (ArrayInitializers COMMA VariableInitializer)	  : `(,@$1 ,$3)
+  ;; Ignore extra comma 10.6
+  (ArrayInitializers COMMA)                       : $1
+  )
+
+  ;; For Contract Java, PrePost
+ (MethodDeclaration
+  (Modifiers TypeSpecifier MethodDeclarator PrePost Throwings MethodBody) : 
+   (make-n-method (list-but-last $1) $2 (car $3) (cadr $3) (caddr $3) $5 $6 (list-last $1) #f $4)
+  (Modifiers TypeSpecifier MethodDeclarator PrePost MethodBody): 
+     (make-n-method (list-but-last $1) $2 (car $3) (cadr $3) (caddr $3) '() $5 (list-last $1) #f $4)
+  (          TypeSpecifier MethodDeclarator PrePost Throwings MethodBody) : 
+     (make-n-method '() $1 (car $2) (cadr $2) (caddr $2) $4 $5 (n-typeSpecifier-src $1) #f $3)
+  (          TypeSpecifier MethodDeclarator PrePost  MethodBody): 
+     (make-n-method '() $1 (car $2) (cadr $2) (caddr $2) '() $4 (n-typeSpecifier-src $1) #f $3)
+
+  (Modifiers TypeSpecifier MethodDeclarator Throwings MethodBody) : 
+   (make-n-method (list-but-last $1) $2 (car $3) (cadr $3) (caddr $3) $4 $5 (list-last $1) #f #f)
+  (Modifiers TypeSpecifier MethodDeclarator MethodBody): 
+     (make-n-method (list-but-last $1) $2 (car $3) (cadr $3) (caddr $3) '() $4 (list-last $1) #f #f)
+  (          TypeSpecifier MethodDeclarator Throwings MethodBody) : 
+     (make-n-method '() $1 (car $2) (cadr $2) (caddr $2) $3 $4 (n-typeSpecifier-src $1) #f #f)
+  (          TypeSpecifier MethodDeclarator MethodBody): 
+     (make-n-method '() $1 (car $2) (cadr $2) (caddr $2) '() $3 (n-typeSpecifier-src $1) #f #f)
+
+  )
+
+ (PrePost
+   (BEGCONTRACT PRE ContractBody ENDCONTRACT)                   : (make-n-prepost $3 #f (ls->ns $1))       
+   (BEGCONTRACT POST  ContractBody ENDCONTRACT)                   : (make-n-prepost #f $3 (ls->ns $1))      
+   (BEGCONTRACT PRE   ContractBody POST ContractBody ENDCONTRACT) : (make-n-prepost $3 $5 (ls->ns $1))
+  )
+
+ (MethodDeclarator
+  (Identifier LPAREN ParameterList RPAREN) : `(,(lexeme-s $1) ,$3 0)
+  (Identifier LPAREN RPAREN)               : `(,(lexeme-s $1) () 0)
+  (MethodDeclarator OP_DIM)         : `(,(car $1) ,(cadr $1) ,(+ 1 (caddr $1)))  
+  )
+
+ (ParameterList
+  (Parameter)                      : `(,$1)    
+  (ParameterList COMMA Parameter)  : `(,@$1 ,$3)
+  )
+
+ (Parameter
+  (      TypeSpecifier DeclaratorName)  : 
+          (begin
+              (set-n-typeSpecifier-final! $1 #f) 
+              (make-n-parm $1 $2 (ns->ns $1))
+              )
+  (FINAL TypeSpecifier DeclaratorName)  : 
+          (begin
+              (set-n-typeSpecifier-final! $2 #t) 
+	      (set-n-typeSpecifier-src!  $2 (ls->ns $1))
+              (make-n-parm $2 $3 (ls->ns $1))
+              )
+  )
+
+ (DeclaratorName
+  (IDENTIFIER): (make-n-declaratorName (lexeme-s $1) 0 (ls->ns $1))
+  (DeclaratorName OP_DIM)  : 
+      (make-n-declaratorName (n-declaratorName-id  $1) 
+                                (+ 1 (n-declaratorName-dim $1)) 
+                          	(n-declaratorName-src $1))
+  )
+
+ (Throwings
+  (THROWS ClassNameList)   : $2
+  )
+
+ (MethodBody
+  (Block)      : $1
+
+  ;; There is a difference between an empty block ({}) and a non 
+  ;; specified block (;). In this later case we represent it with 
+  ;; 'none instead of '().
+
+  (SEMICOLON)  : #f
+  )
+
+ (ContractBody
+   (LPAREN Expression RPAREN)    :  $2
+ ) 
+
+
+ ;; A constructor declaration has no type and no dim; therefore set to #f.
+ ;; The original grammar used Block instead of MethodBody. But this
+ ;; was changed to syntaxically allow a semicolon, and then give
+ ;; a semantic error that a constructor must have a non empty body.
+ (ConstructorDeclaration
+  (Modifiers ConstructorDeclarator Throwings MethodBody) : 
+         (make-n-method (list-but-last $1) #f (car $2) (cadr $2) #f $3 $4 (list-last $1) #f #f)
+  (Modifiers ConstructorDeclarator           MethodBody) : 
+         (make-n-method (list-but-last $1) #f (car $2) (cadr $2) #f '() $3 (list-last $1) #f #f)
+  (          ConstructorDeclarator Throwings MethodBody) : 
+         (make-n-method '() #f (car $1) (cadr $1) #f $2 $3 (caddr $1) #f #f)
+  (          ConstructorDeclarator           MethodBody) : 
+         (make-n-method '() #f (car $1) (cadr $1) #f '() $2 (caddr $1) #f #f)
+  )
+
+;; TBF: I have removed the DIM_OP but that is probably wrong.
+ (ConstructorDeclarator
+  (IDENTIFIER LPAREN ParameterList RPAREN) : `(,(lexeme-s $1) ,$3 ,(ls->ns $1))
+  (IDENTIFIER LPAREN RPAREN)               : `(,(lexeme-s $1) () ,(ls->ns $1))
+  )
+
+ (StaticInitializer
+  (STATIC Block)  : (make-n-initz #t $2 (ls->ns $1))
+  )
+
+ (NonStaticInitializer
+  (Block)         : (make-n-initz #f $1 (n-block-src $1))
+  )
+
+ (Extendings
+  (EXTENDS TypeName)           : `(,(if (pair? $2) (car $2) $2))
+  (Extendings COMMA TypeName)  : `(,@$1 ,(if (pair? $3) (car $3) $3))
+  )
+
+ (Block
+  (LBRACE LocalVariableDeclarationsAndStatements RBRACE) : (make-n-block $2 (ls->ns $1))
+  ;; A empty block is represented by an empty list, not #f. 
+  ;; The representation #f is used for an absent block, that is a semicolon.
+  ;; This is different, so it should be maintained in the AST.
+  (LBRACE RBRACE)                                        : (make-n-block '() (ls->ns $1))
+  )
+
+ (LocalVariableDeclarationsAndStatements
+  (LocalVariableDeclarationOrStatement)  : `(,$1)
+  (LocalVariableDeclarationsAndStatements 
+   LocalVariableDeclarationOrStatement)  : `(,@$1 ,$2)
+   )
+
+ (LocalVariableDeclarationOrStatement
+  (LocalVariableDeclarationStatement) : $1
+  (Statement)                         : $1
+  )
+
+ (LocalVariableDeclarationStatement
+  (      TypeSpecifier VariableDeclarators SEMICOLON)  : 
+        (begin
+	   (set-n-typeSpecifier-final! $1 #f)
+	   (make-n-localVarDecl $1 $2 (ns->ns $1)))
+  (FINAL TypeSpecifier VariableDeclarators SEMICOLON)  : 
+        (begin
+	   (set-n-typeSpecifier-final! $2 #t)
+           (set-n-typeSpecifier-src! $2 (ls->ns $1))
+	   (make-n-localVarDecl $2 $3 (ls->ns $1)))
+  )
+
+ (Statement
+  (EmptyStatement)                 : $1
+  ;; I have separated the label from the case of the switch.
+  (LabelStatement Statement)	   : (make-n-label $1 $2 (ns->ns $1) #f)
+  (LabelCaseStatement)             : $1
+  (ExpressionStatement SEMICOLON)  : $1
+  (SelectionStatement)		   : $1
+  (IterationStatement)		   : $1
+  (JumpStatement)		   : $1
+  (GuardingStatement)		   : $1
+  (Block)                          : $1
+  (TypeDeclaration)                : $1 ;; 1.1 inner class as a statement 
+  )
+
+ (EmptyStatement
+  (SEMICOLON)   : (make-n-emptyStatement (ls->ns $1))
+  )
+
+ (LabelStatement
+  (IDENTIFIER COLON)              : (make-n-qName  (lexeme-s $1) (ls->ns $1)#f))
+  (LabelCaseStatement  
+   (CASE ConstantExpression COLON) : (make-n-case   $2 (ls->ns $1))
+   (DEFAULT COLON)                 : (make-n-case   'default (ls->ns $1))
+  )
+
+ (ExpressionStatements
+  (ExpressionStatement)                            : `(,$1)    
+  (ExpressionStatements COMMA ExpressionStatement) : `(,@$1 ,$3)
+  )
+
+ (ExpressionStatement
+  (Expression)         : $1
+  )
+
+ (SelectionStatement
+  (IF LPAREN Expression RPAREN Statement)                : (make-n-if $3  $5 #f (ls->ns $1))  
+  (IF LPAREN Expression RPAREN Statement ELSE Statement) : (make-n-if $3  $5 $7 (ls->ns $1))
+  (SWITCH LPAREN Expression RPAREN Block)                : (make-n-switch $3 $5 (ls->ns $1) #f)
+  )
+
+ (IterationStatement
+  (WHILE LPAREN Expression RPAREN Statement)             : (make-n-while $3 $5 (ls->ns $1))
+  (DO Statement WHILE LPAREN Expression RPAREN SEMICOLON): (make-n-do $2 $5 (ls->ns $1))
+  (FOR LPAREN ForInit ForExpr ForIncr RPAREN Statement)	 : (make-n-for $3 $4 $5 $7 (ls->ns $1))
+  (FOR LPAREN ForInit ForExpr         RPAREN Statement)  : (make-n-for $3 $4 '() $6 (ls->ns $1))
+  )
+
+ (ForInit
+  (ExpressionStatements SEMICOLON)    : $1
+  (LocalVariableDeclarationStatement) : $1
+  (SEMICOLON)                         : '()
+  )
+
+ (ForExpr
+  (Expression SEMICOLON) : $1
+  (SEMICOLON)            : #f
+  )
+
+ (ForIncr
+  (ExpressionStatements) : $1
+  )
+
+ (JumpStatement
+  (BREAK IDENTIFIER    SEMICOLON) : (make-n-break (lexeme-s $2) (ls->ns $1) #f)
+  (BREAK               SEMICOLON) : (make-n-break #f (ls->ns $1) #f)
+  (CONTINUE IDENTIFIER SEMICOLON) : (make-n-continue (lexeme-s $2) (ls->ns $1) #f)
+  (CONTINUE            SEMICOLON) : (make-n-continue #f (ls->ns $1) #f)
+  (RETURN Expression   SEMICOLON) : (make-n-return $2 (ls->ns $1)#f)
+  (RETURN              SEMICOLON) : (make-n-return #f (ls->ns $1)#f)
+  (THROW Expression    SEMICOLON) : (make-n-throw $2 (ls->ns $1)) 
+  )
+
+ (GuardingStatement
+  (SYNCHRONIZED LPAREN Expression RPAREN Statement)  : (make-n-syn $3 $5 #f (ls->ns $1))
+  (TRY Block FinallyBlock)			     : (make-n-try $2 '() $3 (ls->ns $1) #f)
+  (TRY Block Catches)				     : (make-n-try $2 $3 #f (ls->ns $1) #f)
+  (TRY Block Catches FinallyBlock)                   : (make-n-try $2 $3 $4 (ls->ns $1) #f)
+  )
+
+ (Catches
+  (Catching)         : `(,$1)    
+  (Catches Catching) : `(,@$1 ,$2)
+  )
+
+ (Catching
+  (CatchHeader Block) : (make-n-catching $1 $2 (n-catch-src $1))
+  )
+
+ (CatchHeader
+  (CATCH LPAREN TypeSpecifier IDENTIFIER RPAREN) : (make-n-catch $3 (lexeme-s $4) (ls->ns $1) #f)
+  ;; The following has been removed as of nov 21, 2000, since
+  ;; it seems that not having a parameter name is an error.
+  ;; (CATCH LPAREN TypeSpecifier RPAREN)            : (make-n-catch $3 #f (ls->ns $1) #f)
+  )
+
+ (FinallyBlock
+  (FINALLY Block)  : $2
+  )
+
+ (Expression
+  (AssignmentExpression) : $1
+  )
+ 
+ (ConstantExpression
+  (ConditionalExpression) : $1
+  )
+
+ (PrimaryExpression
+  (QualifiedName)  : $1
+  (NotJustName)    : $1
+  )
+
+ (NotJustName
+  (SpecialName)             : $1
+  (NewAllocationExpression) : $1
+  (ComplexPrimary)          : $1
+  )
+
+ (ComplexPrimary
+  (LPAREN Expression RPAREN)    : $2
+  (ComplexPrimaryNoParenthesis) : $1
+  (SpecialContractExpression)   : $1
+  )
+
+  (SpecialContractExpression
+     (OLD LPAREN Expression RPAREN) : (make-n-specCExpr 'old $3 (ls->ns $1))
+     (RESULT)       : (make-n-specCExpr 'result #f (ls->ns $1))
+   )
+
+ (ComplexPrimaryNoParenthesis
+  (LITERAL-DEC)   : (make-n-literal 'int (string->number (lexeme-s $1) 10) (ls->ns $1))
+  (LITERAL-OCT)   : (make-n-literal 'int (string-bin-int->number (lexeme-s $1) 8) (ls->ns $1))
+  (LITERAL-HEX)   : (make-n-literal 'int (string-bin-int->number (remove-hex-prefix (lexeme-s $1)) 16) (ls->ns $1))
+
+  (LITERAL-DEC-LONG)   : (make-n-literal 'long  (string->number (remove-suffix (lexeme-s $1)) 10) (ls->ns $1))
+  (LITERAL-OCT-LONG)   : (make-n-literal 'long  (string-bin-long->number (remove-suffix (lexeme-s $1)) 8) (ls->ns $1))
+  (LITERAL-HEX-LONG)   : (make-n-literal 'long  (string-bin-long->number (remove-hex-prefix (remove-suffix (lexeme-s $1))) 16) (ls->ns $1))
+
+
+  (LITERAL-FLOAT) : (make-n-literal 'float  (string->number (remove-suffix (lexeme-s $1))) (ls->ns $1))
+  (LITERAL-FLOATING) : (make-n-literal 'double (string->number (lexeme-s $1)) (ls->ns $1))
+  (LITERAL-DOUBLE): (make-n-literal 'double (string->number (remove-suffix (lexeme-s $1))) (ls->ns $1))
+   ;; To be modified to handle all Unicode characters specification.
+  (LITERAL-CHAR)  : (make-n-literal 'char (javaCharConst->char (remove-ends (lexeme-s $1))) (ls->ns $1))
+  (LITERAL-STRING): (make-n-literal '("java" "lang" "String") (javaConstString->str (remove-ends (lexeme-s $1))) (ls->ns $1))
+  (BOOLLIT)	  : (make-n-boollit (if (string=? "true" (lexeme-s $1)) 
+                                           'true 
+                                           'false) 
+                                        (ls->ns $1))
+  (ArrayAccess)	  : $1
+  (FieldAccess)	  : $1
+  (MethodCall)    : $1
+  )
+
+ (ArrayAccess
+  (QualifiedName  LSQPAREN Expression RSQPAREN) : 
+      (make-n-arrayAccess $1 $3 (ls->ns $2) #f)
+  (ComplexPrimary LSQPAREN Expression RSQPAREN) : 
+      (make-n-arrayAccess $1 $3 (ls->ns $2) #f)
+  )
+
+ ;; 15.10 
+ (FieldAccess
+  (NotJustName DOT IDENTIFIER)  : 
+       (make-n-fieldAccess $1 (lexeme-s $3) (ls->ns $2) #f)
+;; The case of RealPostfixExpression does not seem valid to
+;; me. Removed from the grammar. ML 22 august 2000.
+;;  (RealPostfixExpression DOT IDENTIFIER)  : 
+;;	 (make-n-fieldAccess $1 (lexeme-s $3) (ls->ns $2) #f)
+;; I have removed the following cases from the grammar
+;; as I do not understand their validity. ML 22 august 2000.
+;; Is this an added feature of Java 1.1?
+;;  (QualifiedName DOT THIS) : 
+;;	 (make-n-fieldAccess $1 'this (ls->ns $2) #f)
+;;  (QualifiedName DOT CLASS) : 
+;;	 (make-n-fieldAccess $1 'class (ls->ns $2) #f)
+;;  (PrimitiveType DOT CLASS)  : 
+;;	 (make-n-fieldAccess (car $1) 'class (ls->ns $2) #f)
+  )
+ 
+ (MethodCall
+  (MethodAccess LPAREN ArgumentList RPAREN) : (make-n-call $1 $3 (ls->ns $2) #f)
+  (MethodAccess LPAREN RPAREN)              : (make-n-call $1 '() (ls->ns $2)#f)
+  )
+
+ (MethodAccess
+  (ComplexPrimaryNoParenthesis) : $1
+  (SpecialName)			: $1
+  (QualifiedName)               : $1
+  )
+
+ (SpecialName
+  (THIS)      : (make-n-specialName 'this  (ls->ns $1))
+  (SUPER)     : (make-n-specialName 'super (ls->ns $1))
+  (JNULL)     : (make-n-specialName 'null  (ls->ns $1))
+  )
+
+ (ArgumentList
+  (Expression)                    : `(,$1)    
+  (ArgumentList COMMA Expression) : `(,@$1 ,$3)
+  )
+
+ (NewAllocationExpression
+  (                  PlainNewAllocationExpression)  : 
+       (make-n-alloc #f $1 (ns->ns $1))
+  (QualifiedName DOT PlainNewAllocationExpression)  : 
+       (make-n-alloc $1 $3 (ls->ns $1))
+  )
+
+ (PlainNewAllocationExpression
+  (ArrayAllocationExpression)     : 
+       (make-n-arrayAlloc (car $1) (cadr $1) (caddr $1) #f (cadddr $1))
+  (ClassAllocationExpression)	  : 
+       (make-n-classAlloc (car $1) (cadr $1) #f (caddr $1) #f)
+  (ArrayAllocationExpression LBRACE RBRACE) : 
+       (make-n-arrayAlloc (car $1) (cadr $1) (caddr $1) '() (cadddr $1))
+  (ClassAllocationExpression LBRACE RBRACE)		       : 
+       (make-n-classAlloc (car $1) (cadr $1)  '() (caddr $1) #f)
+  (ArrayAllocationExpression LBRACE ArrayInitializers RBRACE)  : 
+       (make-n-arrayAlloc (car $1) (cadr $1) (caddr $1) $3 (cadddr $1))
+  (ClassAllocationExpression LBRACE FieldDeclarations RBRACE)  : 
+       (make-n-classAlloc (car $1) (cadr $1)  $3 (caddr $1) #f)
+  )
+  
+ (ClassAllocationExpression
+  (NEW TypeName LPAREN ArgumentList RPAREN) : `(,(if (pair? $2) (car $2) $2) ,$4 ,(ls->ns $1))
+  (NEW TypeName LPAREN              RPAREN) : `(,(if (pair? $2) (car $2) $2) () ,(ls->ns $1))
+  )
+
+ (ArrayAllocationExpression
+  (NEW TypeName DimExprs Dims) : `(,(if (pair? $2) (car $2) $2) ,$3 ,$4 ,(ls->ns $1))
+  (NEW TypeName DimExprs)      : `(,(if (pair? $2) (car $2) $2) ,$3 0   ,(ls->ns $1))
+  (NEW TypeName          Dims) : `(,(if (pair? $2) (car $2) $2) #f ,$3  ,(ls->ns $1))
+  )
+
+ (DimExprs
+  (DimExpr)           : `(,$1)
+  (DimExprs DimExpr)  : `(,@$1 ,$2)
+  )
+
+ (DimExpr
+  (LSQPAREN Expression RSQPAREN) : $2
+  )
+
+ (Dims
+  (OP_DIM)       : 1
+  (Dims OP_DIM)  : (+ $1 1)
+  )
+
+ (PostfixExpression
+  (PrimaryExpression)         : $1 
+  (RealPostfixExpression)     : $1
+  )
+
+ (RealPostfixExpression
+  (PostfixExpression OP_INC)  : (make-n-postExpr $1 '++ (ls->ns $2))
+  (PostfixExpression OP_DEC)  : (make-n-postExpr $1 '-- (ls->ns $2))
+  )
+
+ (UnaryExpression
+  (OP_INC UnaryExpression)                :  (make-n-unary '++ $2 (ls->ns $1))
+  (OP_DEC UnaryExpression)		  :  (make-n-unary '-- $2 (ls->ns $1))
+  (ArithmeticUnaryOperator CastExpression):  (make-n-unary (car $1) $2  (cadr $1))
+  (LogicalUnaryExpression)                :  $1
+  )
+
+ (LogicalUnaryExpression                   
+  (PostfixExpression)                      : $1
+  (LogicalUnaryOperator UnaryExpression)   : (make-n-unary (car $1) $2 (cadr $1))
+  )
+
+ (LogicalUnaryOperator
+  (TILDE)               : `(~ ,(ls->ns $1))
+  (EXCLAMATION)         : `(! ,(ls->ns $1))
+  )
+
+ (ArithmeticUnaryOperator
+  (PLUS)                : `(+ ,(ls->ns $1))
+  (MINUS)               : `(- ,(ls->ns $1))
+  )
+
+ (CastExpression
+  (UnaryExpression)                                       : $1
+  (LPAREN PrimitiveTypeExpression RPAREN CastExpression)  
+       : (make-n-cast $2 $4(ls->ns $1) #f)
+  (LPAREN ClassTypeExpression RPAREN CastExpression)	  
+       : (make-n-cast $2 $4(ls->ns $1) #f)
+  (LPAREN Expression RPAREN LogicalUnaryExpression)       
+       : (make-n-cast $2 $4(ls->ns $1) #f)
+  )
+
+ (PrimitiveTypeExpression
+  (PrimitiveType)          : (car $1)
+  (PrimitiveType Dims)     : `(,(car $1) ,$2)
+  )
+
+ (ClassTypeExpression
+  (QualifiedName Dims)     : `(,$1 ,$2)
+  )
+
+ (MultiplicativeExpression
+  (CastExpression)                                   : $1
+  (MultiplicativeExpression STAR CastExpression)     : 
+        (make-n-op '* $1 $3 (ls->ns $2) #f)
+  (MultiplicativeExpression SLASH CastExpression)    : 
+        (make-n-op '/ $1 $3 (ls->ns $2) #f)
+  (MultiplicativeExpression PERCENT CastExpression)  : 
+        (make-n-op '% $1 $3 (ls->ns $2) #f)
+  )
+
+ (AdditiveExpression
+  (MultiplicativeExpression)                          : $1
+  (AdditiveExpression PLUS MultiplicativeExpression)  : (make-n-op '+ $1 $3 (ls->ns $2) #f)
+  (AdditiveExpression MINUS MultiplicativeExpression) : (make-n-op '- $1 $3 (ls->ns $2) #f)
+  )
+
+ (ShiftExpression
+  (AdditiveExpression)                           : $1
+  (ShiftExpression OP_SHL AdditiveExpression)	 : (make-n-op '<<  $1 $3 (ls->ns $2) #f)
+  (ShiftExpression OP_SHR AdditiveExpression)	 : (make-n-op '>>  $1 $3 (ls->ns $2) #f)
+  (ShiftExpression OP_SHRR AdditiveExpression)   : (make-n-op '>>> $1 $3 (ls->ns $2) #f)
+  )
+
+ (RelationalExpression
+  (ShiftExpression)                               : $1
+  (RelationalExpression LT ShiftExpression)	  : (make-n-op '< $1 $3 (ls->ns $2) #f)
+  (RelationalExpression GT ShiftExpression)	  : (make-n-op '> $1 $3 (ls->ns $2) #f)    
+  (RelationalExpression OP_LE ShiftExpression)	  : (make-n-op '<= $1 $3 (ls->ns $2) #f)
+  (RelationalExpression OP_GE ShiftExpression)	  : (make-n-op '>= $1 $3 (ls->ns $2) #f)    
+  (RelationalExpression INSTANCEOF TypeSpecifier) : (make-n-instanceof $1 $3 (ls->ns $2) #f)
+  )
+
+ (EqualityExpression
+  (RelationalExpression)                            : $1
+  (EqualityExpression OP_EQ RelationalExpression)   : (make-n-op '== $1 $3 (ls->ns $2) #f)
+  (EqualityExpression OP_NE RelationalExpression)   : (make-n-op '!= $1 $3 (ls->ns $2) #f)
+  )
+
+ (AndExpression
+  (EqualityExpression)                      : $1
+  (AndExpression AND EqualityExpression)    : (make-n-op '& $1 $3 (ls->ns $2) #f)
+  )
+
+ (ExclusiveOrExpression
+  (AndExpression)                            : $1
+  (ExclusiveOrExpression XOR AndExpression)  : (make-n-op '^ $1 $3 (ls->ns $2) #f)
+  )
+
+ (InclusiveOrExpression
+  (ExclusiveOrExpression)                          : $1
+  (InclusiveOrExpression OR ExclusiveOrExpression) : (make-n-op 'or $1 $3 (ls->ns $2) #f)
+  )
+
+ (ConditionalAndExpression
+  (InclusiveOrExpression)                                   : $1
+  (ConditionalAndExpression OP_LAND InclusiveOrExpression)  : (make-n-op '&& $1 $3 (ls->ns $2) #f)
+  )
+
+ (ConditionalOrExpression
+  (ConditionalAndExpression)                                : $1
+  (ConditionalOrExpression OP_LOR ConditionalAndExpression) : (make-n-op 'oror $1 $3 (ls->ns $2) #f)
+  )
+
+ (ConditionalExpression
+  (ConditionalOrExpression)                           : $1
+  (ConditionalOrExpression  
+   QUESTION Expression COLON ConditionalExpression)   : (make-n-question $1 $3 $5 (ls->ns $2))
+  )
+
+ (AssignmentExpression
+  (ConditionalExpression)                                   : $1
+  (UnaryExpression AssignmentOperator AssignmentExpression) : (make-n-assignment $1 (car $2) $3 (cadr $2))
+  )
+
+ (AssignmentOperator
+  (EQUAL)     : `(=   ,(ls->ns $1))   
+  (ASS_MUL)   : `(*=  ,(ls->ns $1))
+  (ASS_DIV)   : `(/=  ,(ls->ns $1))
+  (ASS_MOD)   : `(%=  ,(ls->ns $1))
+  (ASS_ADD)   : `(+=  ,(ls->ns $1))
+  (ASS_SUB)   : `(-=  ,(ls->ns $1))
+  (ASS_SHL)   : `(<<= ,(ls->ns $1))
+  (ASS_SHR)   : `(>>= ,(ls->ns $1))
+  (ASS_SHRR)  : `(>>>=,(ls->ns $1))
+  (ASS_AND)   : `(&=  ,(ls->ns $1))
+  (ASS_XOR)   : `(^=  ,(ls->ns $1))
+  (ASS_OR)    : `(or= ,(ls->ns $1))
+  )
+
+ ))
+
+
+
+

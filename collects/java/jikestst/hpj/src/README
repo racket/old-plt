@@ -1,0 +1,94 @@
+Mario Latendresse, November 2, 2000. January 10, 2001.
+Java Compiler
+
+Does work
+---------
+  AbsClass0
+  AbsClass1
+  AbsClassMain
+  array1
+  array2
+  array3
+  array4
+  array5
+  arraymethod      But imprecision in floating point creates differences
+  bigi
+  BigComp
+  Bottle
+  callmm
+  checkarray    
+  checkcast1
+  checkcast2    
+  checkcast6    
+  checkcast7       
+  checkcastjp   
+  classname
+  cmplx1
+  cmplx2
+  cnvi2b_1
+  cnvi2b_2
+  cnvi2c_1
+  cnvi2c_2
+  cnvi2l_1
+  cnvi2l_2
+  cnvi2s_1
+  cnvi2s_2
+  cnvl2i_1
+  cont1         
+  CNotFound
+  dgram2        
+  dgram1        
+  FISTest
+  FOSTest
+  FTest
+  foreign
+  for1
+  for2
+  float1
+  implement
+  initinter
+  initintersuper
+  instance1
+  instance          A fairly complex test of instanceof and cast conversion.
+  LoopTest
+  Mfg
+  mmult
+  multarg     But there is a slight problem due to floating point imprecision.
+  multchild
+  multgrand
+  multmain
+  multparent
+  ques
+  QuesStmt
+  RAFTest
+  RefComp
+  recur
+  serversock
+  shift
+  Simpa
+  simparray
+  syncm1
+  testtrains   
+  Train
+  truckarray
+  Try1
+  Try2
+  Trychk1
+  Trychk2
+  Trychk3
+  Trychk6
+  Trychk7
+  Trychk8
+  while1
+  while2
+
+Does not work
+-------------
+  tryexcept        These two files refer to each other recursively
+  trysub           
+  Dgram1Thread     Same recursive situation for these three files.
+  Dgram2Thread     " "
+  DgramTest        " "
+  Basket           Block static initializer
+
+

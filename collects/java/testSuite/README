@@ -1,0 +1,6 @@
+Mario Latendresse, 2000.
+
+This is the main test suite for the Java compiler written in Scheme.
+
+The test files generates semantic errors, whereas the run files should
+not generate any. 

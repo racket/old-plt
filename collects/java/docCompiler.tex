@@ -1,0 +1,555 @@
+% Mario Latendresse, October 2, 2000.
+% This is a draft documentation for the Java compiler.
+
+\documentclass{book}
+
+
+\newcommand{\func}[1]{\verb+#1+}
+\newcommand{\var}[1]{\verb+#1+}
+\newcommand{\file}[1]{\verb+#1+}
+\newcommand{\classfile}[1]{\verb+#1+}
+\newcommand{\jinst}[1]{\verb+#1+}	
+\newcommand{\javaMethod}[1]{{\it #1}}
+\newcommand{\javaFile}[1]{\verb+#1+}
+
+\begin{document}
+
+{\Large This compiler documentation is a very rough draft that should
+not be considered final.}
+
+\section{Introduction}
+
+The Java compiler is written in Scheme. It can be run under MzScheme
+and also under other Scheme implementations by adding the macros to
+define the structures.
+
+The compiler can generate bytecode, that is class files.
+
+\section{Passes of the front-end}
+
+The front-end makes three passes. This simplifies forward references.
+Consult functions \func{first-pass}, \func{second-pass}, and
+\func{third-pass}.
+
+The first pass registers the types of the compilation unit. It builds
+the basic content of the global table.
+
+The second pass verifies the existence of extends and implements, that
+is they are resolved. It also checks for cycle. If one is found, the
+compiler stops.
+
+The third pass goes through all method statements. It is clearly the
+most complex.
+
+\section{Table lookup of names}
+
+This is a rather complex issue where the data structure of the table
+has to be designed carefully. 
+
+There are three different table structures: Ltable, Ttable, and Gtable
+(see corresponding structures in \file{java_struct.scm}). The Ltable
+is for local variables of a method, the Ttable is for a type, and
+Gtable for the types of a compilation unit.
+
+Three functions are used to search for names. The most general is
+\func{lup}. It can search through the file system. 
+
+\subsection{Introducing a package name}
+
+\subsection{Looking up a qualified name}
+
+Looking up names in Java is tricky. I think that even the current Sun
+compiler (1.2.1) does not do a correct job. But I rely on it to
+understand some strange cases.
+
+\subsection{The function lup}
+
+If the name is a true qualified name with several components, the
+search starts with the first component. This is what \func{lup} does
+in case1 and case2. But for case3 it looks up for a type with the full
+qualified name.
+
+\subsubsection{An error in Sun's compiler?}
+
+The following class cannot be compile under Sun's compiler version
+1.2.1.
+
+class java { static int x; }
+
+The compiler generates the following message:
+
+  Superclass java.lang.Object of class java not found. 
+
+Obviously the type 'java' makes it no longer possible to lookup the
+package java.lang. This seems an error according to the last paragraph
+of page 107 of section 6.8.1 of JLS. Our compiler do compile this
+class since when it looks for 'java.lang.Object' it knows that it must
+be a type due to the context. So there is no reference to `java'.
+
+Furthermore, if the file \classfile{java.class}\ exists in the current
+directory, Sun's compiler (version 1.2.1) no longer can access the
+class \class{java.lang.Object}. So in that case a compilation of any
+class will not work. This seems to be an error and I have tried to
+avoid it in the current compiler. 
+
+To remove this error, when the context explicitly calls for a type,
+the function \func{lup}\ is called asking for a type (i.e. kind type).
+
+\section{Detection of cycle in types}
+
+It is necessary to detect cyclic definition of types. It is done after
+pass two and before pass three. As soon as a cycle is found, the
+compiler should stop to avoid any non terminating computation is pass
+three.
+
+The detection algorithm must go through all classes of the hierarchy
+involved in the compilation unit. This is the reason for reading
+classes and interfaces in libraries declared as extend and implements.
+
+%----------------------------------------------------------------------
+\section{Reading class files}
+
+Class files are read by the module \file{readWriteClass.scm} and
+transformed to an AST by \file{classToAst.scm}.
+
+\subsection{Lazy resolution of type names}
+
+References to types in the constant pool are not resolved when the
+file is read. Otherwise a large number of class files might be read.
+A type is resolved when needed. The function \func{res-T} does this
+resolution.
+
+For example, it occurs for extends when a field or method is searched
+in \func{lup-T}. It also occurs for the parameters type of a method
+and its result. This is one of the tricky complication when
+manipulating the name of a type. A type has a name, or qualified name,
+but internally it is represented as a structure (type).
+
+The compiler tries to delay the reading of a type class files but it
+is not done as much as it could. For example, when searching for
+applicable methods, the resolution of parameter types could be delayed
+further by first looking at the primitive types. This would prevent
+trying to resolve some type name when primitive types are enough to
+conclude that the method is not applicable. There is no explicit
+presentation of these details in the JLS books.
+
+%----------------------------------------------------------------------
+\section{Definite assignment}
+
+The compiler does not verify for definite assignment. 
+
+\section{Static initializer and instance initializer}
+
+Such initializers are not implemented in the present compiler.
+Note that instance initializer is a feature of Java 1.1 only.
+
+\section{Line numbers}
+
+A class file may contain a line table attribute on a code
+attribute. This line table attribute may be used by the JVM to print
+the source line number of a run-time error.
+
+In the current version of the compiler, a line table attribute is
+produced. See function \func{attribute-sourceFile}. The Scheme code
+generates '(lineNumber i) elements in the bytecode which is treated at
+the end by \func{code->code-lineNumberTable}.
+
+\section{Unreachable statements}
+
+The notion of unreachable statements is presented in JLS section
+14.19. We have sligthly diverted from these rules as noted below.
+
+The function ver-stmt has one boolean parameter to help detect
+unreachable statements. If true, it means that either the statement to
+analyze is reachable or an error message has been given stating that
+it is unreachable. It does not simply says that the statement is
+reachable or unreachable since that could generates too many error
+messages in the case of multiple adjacent unreachable statements.
+
+The technique to detect unreachable statements can be summarized as
+follows.
+
+An instruction that follows a break, continue, return or throw is
+unreachable. The first instruction of a block that is unreachable is
+considered unreachable. The inside statement of a loop (for, do,
+while) is unreachable if its conditional expression is a constant
+expression evaluated to false. The instruction following a loop
+statement is unreachable if its conditional value is a constant
+expression evaluating to true and there is no break that goes outside
+the loop. A reachable break without a label goes outside the loop, and
+a reachable break with a label attached to the loop does it too. All
+other breaks do not go outside the loop.
+
+An empty statement is never considered unreachable. Actually, if it is 
+unreachable according to 14.19, its unreachability is passed to the
+statement following the empty statement.
+
+Additionally, catch expressions have to be verified to detect
+unreachable catch blocks. A catch block is unreachable if its exception
+expression is the same type or a supertype of an earlier catch block's
+exception expression or that no exception is raised in the try block
+assignable to it. Note that a RuntimeException is always considered
+possible without explicitly being thrown.
+
+The if statement is not treated like a loop, that is the conditional
+expression does not affect reachable statements. This allows
+``conditional compilation.''
+
+Sun's compiler behavior is such that an unreachable statement is
+considered to complete normally. It implies that if a statement is
+unreachable the following one will not a priori be considered
+unreachable. This allows a resetting of the algorithm to further
+detect unreachable statements.
+
+After a statement is analysed three values are returned: a list of
+thrown exceptions and two boolean indicators to signal normal
+completion and the presence of a break statement without a label.
+
+\section{Field access}
+
+\subsection{Static field}
+
+A reference to a non static field of a class, with implicit or
+explicit `this', in a static context is an error.
+
+There is also the other direction. The case A.x where A is a type only
+works if x is a static field.  This is verified by the function lup.
+
+Let suppose the access a.b, where a is of type T and b is a static
+field of T. The code for a.b does not involve a, although it is used
+to construct the type of the access (the type of b). Similarly, a
+long sequence a.b.c.d where d is static does not require code to
+access a.b.c.
+
+An access V[e].a where a is a static field would not require an
+evaluation of expression e and an access to V, but the Sun's compiler
+1.2.1 does generate code to evaluate it. The value is then discarded
+and a \jinst{getstatic}\ is executed. Our compiler does not evaluate
+it.
+
+\section{Evaluation of constant expressions}
+
+Constant expressions must be recognised to properly report semantic
+errors.  For example, in the switch instructionm, case values must be
+constant expressions.
+
+The evaluation of constant expressions can be tricky as it is
+necessary to emulate part of the operations available on the virtual
+machine. For example, the addition of integers must be performed
+according to the truncation of two's complement encoding. For 
+example 2*6536*65536 results in the value 0, without an error or
+warning from the compiler.
+
+A local variable or field act as a constant only if it is declared
+final. By the time it is used it must have a definite value. According
+to Java 1.0, this value must be provided as an initializer.
+
+Characters act as integer values. Therefore 'a'+'a' is correct and
+results as 194. As soon as an arithmetic operation is performed using
+a character, that character is considered to be an int.
+
+String concatenation, using +, should follow the rules of the Java
+language. Therefore, 9+"a" gives "9a", whereas 'a'+"a" gives "aa".
+Note though that ('a'+'a')+"a" results in "194a".
+
+Casts can be applied on intermediate values. So (byte)256+(byte)256 is
+0 not 512. Every cast operations should be performed to truncate
+values.
+
+There are further complications involving NaN, infinities, and minus
+zero. 
+
+Chapter 15 of JLS lay down the rules of constant expression evaluation.
+
+See files testConstExpr.java and runConstExpr.java for a list of
+test cases.
+
+\section{Method definition}
+
+\subsection{The maximum height of the stack}
+
+The maximum height of the stack is not actually calculated, it is
+arbitrarily set to 1000.
+
+\subsection{Constructor declaration}
+
+When there is no constructor of any signature in a class, one, with
+signature (), must be added by the compiler. This is done in pass
+two. It is preferable to add default constructors (<init>) before the
+third walk, since it might refer to these constructors, for example
+when a subclass constructor implicitly or explicitly refers to it.
+
+\section{Method invocation}
+
+\subsection{Constructor}
+
+A constructor cannot be called as a method but only during instance
+creation (new) or as a call using super. This fact allows us to change
+all constructor names to <init> in the table and its type. This is
+done once the second pass is finished.
+
+\subsection{Super invocation}
+
+A super invocation super(...) can only be at the very beginning of the
+constructor, even before any declaration. Moreover, there can only be
+one. This allows a simple manipulation when initializer code is
+inserted after the super call but before the code of the constructor
+(see \func{block->jvm}).
+
+\subsection{Special invocation}
+
+Private and <init> methods, as well as calls of the form super.f(...)
+must be done with \jinst{invokespecial}.
+
+\subsection{Static method}
+
+A static method cannot access a non static field of its class.
+Therefore the form this.a or simply a where a is a non static field is
+an error. 
+
+\subsection{The return statement}
+
+All method should end by the execution of a \jinst{return} instruction.
+
+If the return is nested in a try with a finally, it must first execute
+the finally block before returning. Actually there might be several
+finally blocks to execute. 
+
+Note the following special situation: If a return statement returns a
+value it must be calculated before calling the finally blocks. To
+implement this semantic, the expression is first evaluated and stored
+in a local variable, the finally blocks are called (\jinst{jsr}), then the
+saved value is put back on stack before returning (return).
+
+\section{Initializers of fields, block, and local variables}
+
+See the function \verb+type->fields&Init+.
+
+A field may have an initializer. If it is a constant expression, it is
+an attribute in the constant pool; otherwise it is an expression or an
+array initializer\footnote{An array of constants is not a constant
+inserted in the constant pool.}.
+
+If a field is static, its initializer code is in the method
+\verb+<clinit>+, otherwise it is in every constructor between the call
+of its super class constructor and the code of the constructor. A
+static field is initialized with \verb+putstatic+, whereas a non
+static field uses \verb+putfield+\footnote{Since the local variable 0
+contains \verb+this+, a \verb+aload_0+ will be used in combination of
+\verb+putfield+.}.
+
+Since a non static field with an initializer may appear after a class
+constructor, it is easier to scan all fields before the methods to
+gather the initializer codes to insert in the constructors.
+
+The method \verb+<clinit>+ is constructed from all static
+initializers. Most of this code is created while scanning the fields
+declaration by \verb+type->fields&Init+. It simply concatenates all
+initializer code in the order they appear in the source code. It is
+important to maintain that order since some code may depend on
+previous values. After that a return instruction is added at the end
+by \verb+type->methods+.
+
+An interface may have only one method, namely \verb+<clinit>+,
+containing all static initializers.
+
+For a local variable, the code of its initializer is in the method
+itself before the code proper. If a local variable has a constant
+expression can it be safely removed from the frame?
+
+A block of code can be a member of a class (not for an interface).  If
+it is declared static, its code goes into <clinit>, otherwise it goes
+in every constructor of the class. The block of codes must be gathered
+in the order they occur in the source file. No return statement may
+appear in such a block. This is verified by \func{ver-stmt} using the
+parameter \var{init?}. In a static block, the prefix \var{this}\ and
+\var{super}\ cannot be used. This is enforced by the usual
+verification of non-static references in a static context.
+
+It has not yet been implemented to verify the circularity or the
+forward reference to a variable in an initializer.
+
+
+\section{Synchronized statement}
+
+The synchronized statement uses the JVM instructions
+\jinst{monitorenter} and \jinst{monitorexit}. The lock of the
+synchronized is applied to an object. This object is stored in a local
+variable to be used by the two JVM instructions. It is the
+responsibility of the generated code to release the lock in all
+circumstances, including raised exception, break statements, etc.
+
+It is necessary to generate an entry in the exception table to catch
+any exception type for the range of the synchronized statement. This
+small exception handler release the lock of the synchronized object
+and rethrow the exception.
+
+For branches outside the synchronized statement, done by continue,
+break, and return statements, a release of the lock must be done.
+
+\section{The try statement}
+
+The generation of code for the try statement requires special
+attention for the continue, break, and return statements -- with or
+without a label -- when a finally clause is present. In that case,
+these statements are preceded by a call (jsr) to the finally
+block. The finally block commonly ends by a `ret' statement, therefore
+back to the execution of those statements.
+
+\subsection{catch}
+
+The catch block has one parameter. Its name is always different than
+all other local variable and parameters. At the entry of the catch the
+exception object is on the top of the stack. It is immediately stored
+in the parameter of the catch and the block is executed. At the end
+there is a call (jsr) to the finally block, if present. Afterward a
+branch is done outside the try statement.
+
+\subsection{finally}
+
+The finally block is always called by a jsr instruction. It starts by
+storing the return adress in a local variable. It always ends by the
+ret instruction specifying the local variable containing the return
+address. 
+
+It is called even if there is a break or continue going outside the
+try. (This is not properly handled by the pizza compiler. See
+runTry.java.)
+
+The compiler generates a very short exception handler, inserted after
+all catch blocks, to catch all possible exceptions. This block simply
+calls the finally block and throw a second time the exception. A
+typical block is
+
+\begin{verbatim}
+ astore_2   ; stores the exception object
+ jsr 85     ; call finally
+ aload_2    ; throw the exception,
+ athrow     ;   a second time.
+\end{verbatim}
+
+\section{Labels}
+
+A label may appear on any statement. They are not inserted in any
+table.  Conceptually they must be in a different name space than all
+other names. Label are not inserted in the label, but in a separate
+list.  The list of active labels is one of the parameter of
+\func{ver-stmt}.
+
+\subsection{Break and continue}
+
+The label of a continue must be on a loop (for, do, and while). The
+label of a break can be on any statement. In both cases the label must
+be on an enclosing instruction. Therefore, a label on a simple
+instruction, as an assignment, is useless.
+
+\section{Assignment expression}
+
+An assignment of the form v op= e is similar to v = v op e, but there
+is a difference. Actually it is equivalent to v = (type of v)(v op e).
+That is, there is an implicit cast applied to the expression after its
+evaluation. This is mostly useful in the case that a narrowing must be
+done in order to have a correctly typed assignment.
+
+For example if variable v is an int, the assignment v += 1L is legal,
+eventhough 1L is a long.
+
+%----------------------------------------------------------------------
+\section{Modifiers}
+
+
+\subsection{Accessibility}
+
+The type accessibility discuss in this section applies to members
+only: fields, methods, and constructors.
+
+There are three explicit accessibility modifiers: public, protected,
+and private. There is a fourth implicit accessibility: the absence of
+any modifier, called the default accessibility.
+
+A member that is private can only be referenced in the class where it
+is defined. Even a `super.x' cannot refer to a private member x.
+
+There is a difference of interpretation of accessibility between
+fields, methods, and constructors.
+
+A field declaration in a subtype can override the same field of its
+supertype with a different accessibility.
+
+\subsubsection{Field accessibility}
+
+The simplest accessibility is public. Its verification does not
+require to know the origin of the reference and source of the field.
+All public fields are accessible, regardless of the hierachies and
+packages.
+
+
+Protected accessibility is tricky. Consider for example two classes
+declared in two packages:
+
+\begin{verbatim}
+   package A;
+   class A { protected int a; }
+   
+   package B;
+   class B extends A.A { int m(A.A x){ return x.a; } };
+\end{verbatim}
+
+Although B.B is a subclass of A.A, the field x.a is not accessible in
+method m. (If B were in the same package as A, field a would be
+accessible.) Therefore, the class name containing the reference and
+class name where the field is declared are not sufficient to detect
+such a case: the origin of the reference is indeed a subclass of the
+class declaring the field, but it is not accessible.
+
+For protected, private, and default accessibility, a verification can
+be done with the full class name where the reference occurs and the
+full class name of the field accessed.
+
+A field access can be ambiguous. This is detected by function lupT-f.
+To do so, it is essential that the accessibility be taken into
+account. 
+
+
+\subsubsection{Method accessibility}
+
+\subsubsection{Constructor accessibility}
+
+\section{Contract Java}
+
+The compiler has been extended to handle contracts on methods and
+constructors. These contracts can be specified in interfaces and
+classes.
+
+New lexemes and rules were added to the lexer and grammar
+descriptions. Consult files java.lex and java.lal under `contract'.
+
+The structure tyM has a component `contract' to keep track of methods
+with contracts and new methods added to handle them.
+
+For every method \javaMethod{m}\ that has a contract, a new method
+\javaMethod{m}\verb+<c>+ is added. This new method is called a
+wrapper. It implements the verification of contracts and the
+hierarchy. Any call to \javaMethod{m}\ should now call
+\javaMethod{m}\verb+<c>+. Old code that were calling \javaMethod{m}\
+should be recompiled to effectively call the wrapper.
+
+The redirection of the call is done when the bytecode is generated,
+not at semantic analysis.
+
+The wrapper is built by the semantic analyses. It is mainly an AST
+construction followed by a semantic analysis.  Since the wrapper makes
+a call to the original method \javaMethod{m}\, the bytecode generator
+must recognised that fact and not make a call to the wrapper
+itself. The field contract of structure tyM is used by the bytecode
+generator to make the appropriate decision.
+
+\subsection{Hierarchy checking}
+
+If the method with a contract overrides a method in the supertype, two
+new methods are added to verify upwardly the hierarchy.
+
+If the overriden method has no pre-condition, it is assumed to be
+`true'. If it has no post-condition it is assumed to be `false'.
+
+\end{document}

@@ -1,0 +1,12 @@
+#!/bin/tcsh
+wc classToAst.scm     
+wc readWriteClass.scm 
+wc compiler.scm      
+wc genJVMcode.scm    
+wc genParserLexer.scm
+wc java_utilites.scm 
+wc java_struct.scm    
+wc java.lal           
+wc java.lex           
+wc semantic.scm       
+wc testSuite.scm      

@@ -1,0 +1,23 @@
+Mario Latendresse, November 10, 2000
+
+The test suite is divided between two sets: files runX and testX.  The
+runX files should not generate any compile-time error, whereas testX
+files do.
+
+The testX Java files
+--------------------
+
+Name                 Purpose
+
+testHierarchy        Search field and methods through hierarchies of
+                     interfaces and classes. 
+                     Test various aspects of extending and implementing
+                     interfaces.
+
+testCycleType        Test cycle in declarations of interfaces and classes.
+
+testExtensionInterface 
+                     Test the ambiguous access to fields.
+
+The runX Java files
+-------------------

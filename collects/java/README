@@ -1,0 +1,68 @@
+;; Mario Latendresse, 10 May 2000
+;; README file
+
+To compile a Java file
+----------------------
+
+See file compiler.scm and modify CLASSPATH to point to the location of
+your Java libraries (necessary).
+
+Load the file exec.scm in MzScheme
+
+(java-compile-file dir file)
+
+Consult testSuite.scm for some examples of compilation.
+
+To generate the lexer and the parser from file genParserLexer.scm
+-----------------------------------------------------------------
+
+(go-gen-lexer)
+(go-gen-parser)
+
+
+Files
+-----
+
+classToAst.scm        Functions to transform a class structure into an AST.
+readWriteClass.scm    Functions to read and write class files.
+compiler.scm          The main functions to compile.
+genJVMcode.scm        Generates bytecode after semantic analysis.
+genParserLexer.scm    Code to generate the lexer and parser.
+java_utilites.scm     Some functions used by other files.
+java_struct.scm       The structures.
+java.lal              Description of the grammar.
+java.lex              Description of the lexer.
+semantic.scm          Semantic analysis
+testSuite.scm         Code to apply a test suite.
+Todo.txt              The list of things known not to work.
+
+Test
+----
+
+The main test suite is in the directory `testSuite'. These files are
+synthetic tests trying to go through various cases of semantic errors
+and bytecode generation. Consult the readme file of that directory.
+
+There is an additional test suite from Jikes IBM in directory jikestst.
+Consult README file in directory jikestst/hpj/src for a list of
+Java programs compiling under the current compiler.
+
+
+File sizes as of 2 February, 2001.
+---------------------------------
+The testSuite contains around 100 Java files.
+
+Result of executing the script file sizes
+
+    420    2016   15017 classToAst.scm
+   2081    7348   63808 readWriteClass.scm
+    102     393    3500 compiler.scm
+   2320   11121   82737 genJVMcode.scm
+     22      45     504 genParserLexer.scm
+    546    2416   14598 java_utilites.scm
+    393    1681   12515 java_struct.scm
+    781    2926   28141 java.lal
+    213     731    9367 java.lex
+   3710   19178  138473 semantic.scm
+     28     103    1277 testSuite.scm
+

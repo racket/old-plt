@@ -1,0 +1,63 @@
+Readme file for SILex version 1.0
+
+This software is Copyright (C) 1997 by Danny Dube', all rights reserved
+
+Description
+-----------
+
+SILex is a lexical analyser generator with a Lex-like syntax.
+This directory contains the sources of the program and documentation.
+
+Contents of the directory:
+
+README		This file.
+action.l	Action lexical analyser specification.
+action.l.scm	Action lexical analyser.
+class.l		Character class lexical analyser specification.
+class.l.scm	Character class lexical analyser.
+lex.scm		Entire program, uses "load"s.
+lexparser.scm	Parser for specification files.
+macro.l		Macro lexical analyser specification.
+macro.l.scm	Macro lexical analyser.
+main.scm	Main module.
+multilex.scm	Run-time module for the user's programs.
+nfa2dfa.scm	Transformation from a NFA to a DFA.
+noeps.scm	Elimination of epsilon-transitions.
+output.scm	Output files generation.
+output2.scm	Auxiliary generation module; automatically generated.
+prep.scm	Some pre-printing functions.
+re2nfa.scm	Transformation from regular expressions to a NFA.
+regexp.l	Regular expressions lexical analyser specification.
+regexp.l.scm	Regular expressions lexical analyser.
+silex.scm	Entire program; automatically generated.
+silex.texi	Source of the documentation in Texinfo.
+string.l	String lexical analyser specification.
+string.l.scm	String lexical analyser.
+sweep.scm	Elimination of "dead" states.
+updateo2.scm	Generation of the module "output2.scm".
+updatesi.scm	Generation of the file "silex.scm".
+util.scm	Constants, data structures and common functions.
+
+Permissions
+-----------
+
+The program can be used freely for personal, educational or research
+purposes.  For any commercial use, the author must be contacted.
+
+The program can be modified as long as the permissions remain the same
+as they are now.
+
+This program is distributed in the hope that it will be useful, but
+without any warranty.
+
+Author
+------
+
+The author is Danny Dube'.
+
+Bug reports or other messages can be sent at:
+	dube@iro.umontreal.ca
+
+If you want to modify or improve the program yourself, you can get the
+sources in the home page of the author at:
+	http://www.iro.umontreal.ca/~dube

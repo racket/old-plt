@@ -1,0 +1,17 @@
+Mario Latendresse, Februray 2001
+
+Various programs to test the Java compiler.
+
+
+
+As of February 2001, the following programs has been compiled and seem to
+run properly. (The fact that a name is not there does not mean that it
+did not pass the test. It may simply has not been verified.)
+
+
+Bottles.java
+
+
+
+
+The following programs are none to have failed to compile or run improperly.

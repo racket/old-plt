@@ -1,0 +1,22 @@
+harissa_linux_nocompress
+hi -p jBYTEmark0
+cp vm.prof vm_0.prof
+hi -p jBYTEmark1
+cp vm.prof vm_1.prof
+hi -p jBYTEmark2
+cp vm.prof vm_2.prof
+hi -p jBYTEmark3
+cp vm.prof vm_3.prof
+hi -p jBYTEmark4
+cp vm.prof vm_4.prof
+hi -p jBYTEmark5
+cp vm.prof vm_5.prof
+hi -p jBYTEmark6
+cp vm.prof vm_6.prof
+hi -p jBYTEmark7
+cp vm.prof vm_7.prof
+hi -p jBYTEmark8
+cp vm.prof vm_8.prof
+hi -p jBYTEmark9
+cp vm.prof vm_9.prof
+

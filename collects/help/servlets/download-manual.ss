@@ -5,7 +5,7 @@
 	 (lib "url.ss" "net"))
 
 (require "private/util.ss"
-         "private/headelts.ss")
+         "private/headelts.ss"
          "private/refresh-util.ss"
          "private/external.ss")
 

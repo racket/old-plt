@@ -423,7 +423,7 @@ scheme_init_list (Scheme_Env *env)
   scheme_add_global_constant("hash-table?", 
 			     scheme_make_folding_prim(hash_table_p, 
 						      "hash-table?", 
-						      1, 1, 1), 
+						      1, 3, 1), 
 			     env);
   scheme_add_global_constant("hash-table-put!", 
 			     scheme_make_prim_w_arity(hash_table_put, 
@@ -1253,27 +1253,31 @@ static void make_hash_indices_for_equal(void *v, long *_stk_h1, long *_stk_h2)
   *_stk_h2 = scheme_equal_hash_key2((Scheme_Object *)v);
 }
 
-static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
+static void check_hash_table_flags(const char *name, int i, int argc, Scheme_Object **argv, int *flags)
 {
-  int flags[2] = { 0, 0 };
-  int i;
-  
-  for (i = 0; i < argc; i++) {
+  for (; i < argc; i++) {
     int j;
     if (SAME_OBJ(argv[i], weak_symbol))
       j = 0;
     else if (SAME_OBJ(argv[i], equal_symbol))
       j = 1;
     else {
-      scheme_wrong_type("make-hash-table", "'weak or 'equal", i, argc, argv);
+      scheme_wrong_type(name, "'weak or 'equal", i, argc, argv);
       return NULL;
     }
 
     if (flags[j])
-      scheme_arg_mismatch("make-hash-table", "redundant flag: ", argv[i]);
+      scheme_arg_mismatch(name, "redundant flag: ", argv[i]);
 
     flags[j] = 1;
   }
+}
+
+static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
+{
+  int flags[2] = { 0 /* weak */ , 0 /* equal */ };
+
+  check_hash_table_flags("make-hash-table", 0, argc, argv, flags);
 
   if (flags[0]) {
     /* Weak */
@@ -1310,7 +1314,23 @@ static Scheme_Object *make_hash_table(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *hash_table_p(int argc, Scheme_Object *argv[])
 {
-  return (SCHEME_HASHTP(argv[0]) || SCHEME_BUCKTP(argv[0])) ? scheme_true : scheme_false;
+  Scheme_Object *o = argv[0];
+  int flags[2] = { 0 /* weak */ , 0 /* equal */ };
+
+  check_hash_table_flags("hash-table?", 1, argc, argv, flags);
+
+  if (SCHEME_HASHTP(o)) {
+    if (flags[0])
+      return scheme_false;
+    if (flags[1] && (((Scheme_Hash_Table *)o)->compare != compare_equal))
+      return scheme_false;
+    return scheme_true;
+  } else if (SCHEME_BUCKTP(o)) {
+    if (flags[1] && (((Scheme_Bucket_Table *)o)->compare != compare_equal))
+      return scheme_false;
+    return scheme_true;
+  } else
+    return scheme_false;
 }
 
 static Scheme_Object *hash_table_put(int argc, Scheme_Object *argv[])

@@ -2206,7 +2206,7 @@ static void raise_break(Scheme_Thread *p)
   p->block_needs_wakeup = NULL;
   p->ran_some = 1;
   
-  a[0] = scheme_make_prim((Scheme_Prim)raise_user_break);
+  a[0] = scheme_make_prim((Scheme_Prim *)raise_user_break);
 
   scheme_call_ec(1, a);
 

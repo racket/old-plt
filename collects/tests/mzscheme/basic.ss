@@ -1666,79 +1666,134 @@
 (err/rt-test (make-hash-table 'weak 'weak) exn:application:mismatch?)
 (err/rt-test (make-hash-table 'equal 'equal) exn:application:mismatch?)
 
-(let ([check-hash-tables
-       (lambda (maybe-weak)
-	 (define-struct a (b c) (make-inspector))
+(let ()
+  (define-struct ax (b c)) ; opaque
+  (define-struct a (b c) (make-inspector))
 	 
-	 (let ([h1 (apply make-hash-table maybe-weak)]
-	       [l (list 1 2 3)])
-	   (test #t eq? (eq-hash-code l) (eq-hash-code l))
-	   (test #t eq? (equal-hash-code l) (equal-hash-code l))
-	   (test #t eq? (equal-hash-code l) (equal-hash-code (list 1 2 3)))
-	   (hash-table-put! h1 l 'ok)
-	   (test 'ok hash-table-get h1 l)
-	   (test 'nope hash-table-get h1 (list 1 2 3) (lambda () 'nope))
-	   (test '(((1 2 3) . ok)) hash-table-map h1 (lambda (k v) (cons k v)))
-	   (hash-table-remove! h1 l)
-	   (test 'nope hash-table-get h1 l (lambda () 'nope)))
-	 
-	 (let ([h1 (apply make-hash-table 'equal maybe-weak)]
-	       [l (list 1 2 3)]
-	       [v (vector 5 6 7)]
-	       [a (make-a 1 (make-a 2 3))]
-	       [b (box (list 1 2 3))])
-	   (hash-table-put! h1 l 'list)
-	   (hash-table-put! h1 "Hello World!" 'string)
-	   (hash-table-put! h1 123456789123456789123456789 'bignum)
-	   (hash-table-put! h1 3.45 'flonum)
-	   (hash-table-put! h1 3/45 'rational)
-	   (hash-table-put! h1 3+45i 'complex)
-	   (hash-table-put! h1 3+0.0i 'izi-complex)
-	   (hash-table-put! h1 v 'vector)
-	   (hash-table-put! h1 a 'struct)
-	   (hash-table-put! h1 b 'box)
-	   (test 'list hash-table-get h1 l)
-	   (test 'list hash-table-get h1 (list 1 2 3))
-	   (test 'string hash-table-get h1 "Hello World!")
-	   (test 'bignum hash-table-get h1 123456789123456789123456789)
-	   (test 'flonum hash-table-get h1 3.45)
-	   (test 'rational hash-table-get h1 3/45)
-	   (test 'complex hash-table-get h1 3+45i)
-	   (test 'izi-complex hash-table-get h1 3+0.0i)
-	   (test 'vector hash-table-get h1 v)
-	   (test 'vector hash-table-get h1 #(5 6 7))
-	   (test 'struct hash-table-get h1 a)
-	   (test 'struct hash-table-get h1 (make-a 1 (make-a 2 3)))
-	   (test 'box hash-table-get h1 b)
-	   (test 'box hash-table-get h1 #&(1 2 3))
-	   (test #t
-		 andmap
-		 (lambda (i)
-		   (and (member i 
-				(hash-table-map h1 (lambda (k v) (cons k v))))
-			#t))
-		 `(((1 2 3) . list)
-		   ("Hello World!" . string)
-		   (123456789123456789123456789 . bignum)
-		   (3.45 . flonum)
-		   (3/45 . rational)
-		   (3+45i . complex)
-		   (3+0.0i . izi-complex)
-		   (#(5 6 7) . vector)
-		   (,a . struct)
-		   (#&(1 2 3) . box)))
-	   (hash-table-remove! h1 (list 1 2 3))
-	   (test 'not-there hash-table-get h1 l (lambda () 'not-there))
-	   (let ([c 0])
-	     (hash-table-for-each h1 (lambda (k v) (set! c (add1 c))))
-	     (test 9 'count c))))])
-  (check-hash-tables null)
-  (check-hash-tables (list 'weak)))
+  (define an-ax (make-ax 1 2))
+
+  (let ([check-hash-tables
+	 (lambda (maybe-weak reorder?)
+	   (let ([h1 (apply make-hash-table maybe-weak)]
+		 [l (list 1 2 3)])
+	     (test #t eq? (eq-hash-code l) (eq-hash-code l))
+	     (test #t eq? (equal-hash-code l) (equal-hash-code l))
+	     (test #t eq? (equal-hash-code l) (equal-hash-code (list 1 2 3)))
+	     (hash-table-put! h1 l 'ok)
+	     (test 'ok hash-table-get h1 l)
+	     (test 'nope hash-table-get h1 (list 1 2 3) (lambda () 'nope))
+	     (test '(((1 2 3) . ok)) hash-table-map h1 (lambda (k v) (cons k v)))
+	     (hash-table-remove! h1 l)
+	     (test 'nope hash-table-get h1 l (lambda () 'nope)))
+	   
+	   (let ([h1 (apply make-hash-table 'equal maybe-weak)]
+		 [l (list 1 2 3)]
+		 [v (vector 5 6 7)]
+		 [a (make-a 1 (make-a 2 3))]
+		 [b (box (list 1 2 3))])
+
+	     ;; Fill in table. Use `puts1' and `puts2' so we can
+	     ;; vary the order of additions.
+	     (let ([puts1 (lambda ()
+			    (hash-table-put! h1 l 'list)
+			    (hash-table-put! h1 "Hello World!" 'string)
+			    (hash-table-put! h1 123456789123456789123456789 'bignum)
+			    (hash-table-put! h1 3.45 'flonum)
+			    (hash-table-put! h1 3/45 'rational)
+			    (hash-table-put! h1 3+45i 'complex))]
+		   [puts2 (lambda ()
+			    (hash-table-put! h1 (list 5 7) 'another-list)
+			    (hash-table-put! h1 3+0.0i 'izi-complex)
+			    (hash-table-put! h1 v 'vector)
+			    (hash-table-put! h1 a 'struct)
+			    (hash-table-put! h1 an-ax 'structx)
+			    (hash-table-put! h1 b 'box))])
+	       (if reorder?
+		   (begin (puts2) (puts1))
+		   (begin (puts1) (puts2))))
+
+	     (test 'list hash-table-get h1 l)
+	     (test 'list hash-table-get h1 (list 1 2 3))
+	     (test 'another-list hash-table-get h1 (list 5 7))
+	     (test 'string hash-table-get h1 "Hello World!")
+	     (test 'bignum hash-table-get h1 123456789123456789123456789)
+	     (test 'flonum hash-table-get h1 3.45)
+	     (test 'rational hash-table-get h1 3/45)
+	     (test 'complex hash-table-get h1 3+45i)
+	     (test 'izi-complex hash-table-get h1 3+0.0i)
+	     (test 'vector hash-table-get h1 v)
+	     (test 'vector hash-table-get h1 #(5 6 7))
+	     (test 'struct hash-table-get h1 a)
+	     (test 'struct hash-table-get h1 (make-a 1 (make-a 2 3)))
+	     (test 'structx hash-table-get h1 an-ax)
+	     (test #f hash-table-get h1 (make-ax 1 2) (lambda () #f))
+	     (test 'box hash-table-get h1 b)
+	     (test 'box hash-table-get h1 #&(1 2 3))
+	     (test #t
+		   andmap
+		   (lambda (i)
+		     (and (member i 
+				  (hash-table-map h1 (lambda (k v) (cons k v))))
+			  #t))
+		   `(((1 2 3) . list)
+		     ((5 7) . another-list)
+		     ("Hello World!" . string)
+		     (123456789123456789123456789 . bignum)
+		     (3.45 . flonum)
+		     (3/45 . rational)
+		     (3+45i . complex)
+		     (3+0.0i . izi-complex)
+		     (#(5 6 7) . vector)
+		     (,(make-a 1 (make-a 2 3)) . struct)
+		     (,an-ax . structx)
+		     (#&(1 2 3) . box)))
+	     (hash-table-remove! h1 (list 1 2 3))
+	     (test 'not-there hash-table-get h1 l (lambda () 'not-there))
+	     (let ([c 0])
+	       (hash-table-for-each h1 (lambda (k v) (set! c (add1 c))))
+	       (test 11 'count c))
+	     ;; return the hash table:
+	     h1))])
+
+    (let ([check-tables-equal
+	   (lambda (t1 t2)
+	     (test #t equal? t1 t2)
+	     (test (equal-hash-code t1) equal-hash-code t2)
+	     (let ([meta-ht (make-hash-table 'equal)])
+	       (hash-table-put! meta-ht t1 'the-table)
+	       (test 'the-table hash-table-get meta-ht t2 (lambda () #f))))])
+
+      (check-tables-equal (check-hash-tables null #f)
+			  (check-hash-tables null #t))
+      (check-tables-equal (check-hash-tables (list 'weak) #f)
+			  (check-hash-tables (list 'weak) #t)))))
+
+(test #f hash-table? 5)
+(test #t hash-table? (make-hash-table))
+(test #f hash-table? 5 'equal)
+(test #f hash-table? (make-hash-table) 'equal)
+(test #t hash-table? (make-hash-table 'equal) 'equal)
+(test #f hash-table? (make-hash-table 'weak) 'equal)
+(test #t hash-table? (make-hash-table 'weak 'equal) 'equal)
+(test #f hash-table? 5 'weak)
+(test #f hash-table? (make-hash-table) 'weak)
+(test #f hash-table? (make-hash-table 'equal) 'weak)
+(test #t hash-table? (make-hash-table 'weak) 'weak)
+(test #t hash-table? (make-hash-table 'weak 'equal) 'weak)
+(test #f hash-table? 5 'weak 'equal)
+(test #f hash-table? (make-hash-table) 'weak 'equal)
+(test #f hash-table? (make-hash-table 'equal) 'weak 'equal)
+(test #f hash-table? (make-hash-table 'weak) 'weak 'equal)
+(test #t hash-table? (make-hash-table 'weak 'equal) 'weak 'equal)
 
 (err/rt-test (hash-table-put! 1 2 3))
 (err/rt-test (hash-table-get 1 2))
 (err/rt-test (hash-table-remove! 1 2))
 (err/rt-test (hash-table-get (make-hash-table) 2) exn:application:mismatch?)
+(err/rt-test (hash-table? 5 5))
+(err/rt-test (hash-table? 5 'equal 5))
+(err/rt-test (hash-table? (make-hash-table) 'equal 'equal) exn:application:mismatch?)
+(err/rt-test (hash-table? (make-hash-table) 'weak 'weak) exn:application:mismatch?)
 
 (arity-test make-hash-table 0 2)
 (arity-test hash-table-get 2 3)
@@ -1746,6 +1801,7 @@
 (arity-test hash-table-remove! 2 2)
 (arity-test hash-table-map 2 2)
 (arity-test hash-table-for-each 2 2)
+(arity-test hash-table? 1 3)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Misc

@@ -2870,7 +2870,7 @@
 						 ""))
 		     s)))
 	      ;; At this point, filename is a complete path
-	      (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
+	      (let ([filename (simplify-path (expand-path filename))])
 		(let-values ([(base name dir?) (split-path filename)])
 		  (let ([no-sfx (regexp-replace -re:suffix name "")]
 			[abase (format ",~a" base)])

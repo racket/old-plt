@@ -978,12 +978,22 @@ LONG WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, int dialo
 // Main window proc
 LRESULT APIENTRY wxWndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+  LRESULT res;
+
+  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxWndProc))
+    return res;
+
   return WindowProc(hWnd, message, wParam, lParam, 0);
 }
 
 // Dialog window proc
 LONG APIENTRY wxDlgProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+  LRESULT res;
+
+  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxDlgProc))
+    return res;
+
   return WindowProc(hWnd, message, wParam, lParam, 1);
 }
 

@@ -431,6 +431,12 @@ int wxDoItemPres(wxItem *item, HWND hWnd, UINT message, WPARAM wParam, LPARAM lP
 LONG APIENTRY _EXPORT
   wxSubclassedGenericControlProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+  LRESULT res;
+
+  /* See mredmsw.cxx: */
+  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxSubclassedGenericControlProc))
+    return res;
+
   if (message == WM_GETDLGCODE)
     return DLGC_WANTMESSAGE;
 

@@ -220,6 +220,13 @@ int MrEdGetNextEvent(int check_only, int current_only,
   return FindReady(c, event, !check_only, which);
 }
 
+static HWND can_trampoline_win;
+static HWND need_trampoline_win;
+static UINT need_trampoline_message;
+static WPARAM need_trampoline_wparam;
+static LPARAM need_trampoline_lparam;
+static WNDPROC need_trampoline_proc;
+
 void MrEdDispatchEvent(MSG *msg)
 {
   if (msg->message == WM_MRED_LEAVE) {
@@ -228,9 +235,74 @@ void MrEdDispatchEvent(MSG *msg)
     wxDoLeaveEvent(e->wnd, e->x, e->y, e->flags);
   } else if (!wxTheApp->ProcessMessage(msg)) {
     TranslateMessage(msg);
+
+    can_trampoline_win = msg->hwnd;
     last_msg_time = msg->time;
+
     DispatchMessage(msg);
+
+    can_trampoline_win = 0;
+
+    /* See wxEventTrampoline, below: */
+    if (need_trampoline_win == msg->hwnd) {
+      HWND win = need_trampoline_win;
+      need_trampoline_win = 0;
+      need_trampoline_proc(win, need_trampoline_message,
+			   need_trampoline_wparam, need_trampoline_lparam);
+    }
   }
+}
+
+int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, 
+		      LRESULT *res, WNDPROC proc)
+  /* The Windows event dispatcher doesn't like MrEd's thread
+     implementation.  In particular, if a message causes a thread
+     switch or kill, because it triggers Scheme code, then event
+     dispatches don't return in the way that Windows expects.
+
+     In practice, things seem to work ok anyway, except:
+     
+     * Thread-switches during WM_PAINT messages. These are handled by
+       a special mechanism other than the trampoline.
+
+     * Thread kills during messages; Windows seems to run out o some
+       sort of resource.
+
+     To avoid this problem, we try to "trampoline" back out of the
+     Windows-sponsored message send and then re-send the message
+     (where the re-send might trigger Scheme code). The trampoline is
+     only works for certain types of messages, but it should be needed
+     only for certain types of messages. 
+
+     It's needed in more places than we have now, but I'm delaying
+     trampolines for many messages until there's more time to test. */
+{
+  int tramp;
+
+  if (can_trampoline_win != hWnd)
+    return 0;
+
+  switch (message) {
+  case WM_QUERYENDSESSION:
+  case WM_CLOSE:
+    tramp = 1;
+    *res = (message == WM_CLOSE);
+    break;
+  default:
+    tramp = 0;
+    break;
+  }
+
+  if (tramp) {
+    can_trampoline_win = 0;
+    need_trampoline_win = hWnd;
+    need_trampoline_proc = proc;
+    need_trampoline_message = message;
+    need_trampoline_wparam = wParam;
+    need_trampoline_lparam = lParam;
+    return 1;
+  } else
+    return 0;
 }
 
 int MrEdCheckForBreak(void)

@@ -119,4 +119,7 @@ wxWindow *wxGetActiveWindow(void);
 int wxCharCodeMSWToWX(int keySym);
 int wxCharCodeWXToMSW(int id, Bool *IsVirtual);
 
+int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam, 
+		      LRESULT *res, WNDPROC proc);
+
 #endif

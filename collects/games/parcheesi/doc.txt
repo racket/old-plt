@@ -39,3 +39,14 @@ These rules induce a number of unexpected corner cases, but
 the GUI only lets you make legal moves. Watch the space
 along the bottom of the board for reasons why a move is
 illegal or why you have not used all of your die rolls.
+
+The automated players are:
+
+ - Reckless Renee, who she tries to maximize the chances
+   that someone else bops her.
+
+ - Polite Polly, who tries to minimize the distance her
+   pawns move ("no, after _you_. I insist."), and
+
+ - Amazing Grace, who tries to minimize the chance she gets
+   bopped while moving as far as possible.

@@ -387,7 +387,7 @@ int wxFont::CanRotate(void)
   return 1; 
 }
 
-Bool wxFont::ScreenGlyphAvailable(int c)
+Bool wxFont::ScreenGlyphAvailable(int c, Bool)
 {
   return wxGetUnicodeGlyphAvailable(c,
 				    GetMacFontNum(), point_size, GetMacFontStyle(),

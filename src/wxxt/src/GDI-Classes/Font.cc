@@ -366,7 +366,7 @@ char *wxFont::GetFaceString(void)
   }
 }
 
-Bool wxFont::ScreenGlyphAvailable(int c)
+Bool wxFont::ScreenGlyphAvailable(int c, Bool)
 {
   XFontStruct *fontinfo;
 #ifdef WX_USE_XFT

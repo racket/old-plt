@@ -236,7 +236,7 @@ static int CALLBACK glyph_exists(ENUMLOGFONTW FAR* lpelf,
   return 1;
 }
 
-Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font)
+Bool wxFont::GlyphAvailable(int c, HDC hdc, int screen_font, Bool for_label)
 {
   GlyphFindData gfd;
 
@@ -252,14 +252,23 @@ Bool wxFont::GlyphAvailableNow(int c, HDC hdc, int screen_font)
   return glyph_exists_in_selected_font(hdc, c);
 }
 
-Bool wxFont::ScreenGlyphAvailable(int c)
+Bool wxFont::ScreenGlyphAvailable(int c, Bool for_label)
 {
   HDC hdc;
   Bool r;
 
   hdc = ::GetDC(NULL);
 
-  r = GlyphAvailable(c, hdc, 1);
+  if (for_label) {
+    HFONT old, cfont;
+    
+    cfont = font->BuildInternalFont(hdc, 1, 0.0);
+    old = (HFONT)::SelectObject(hdc, cfont);
+    ok = glyph_exists_in_selected_font(hdc, c);
+    ::SelectObject(hdc, old);
+  } else {
+    r = GlyphAvailable(c, hdc, 1, for_label);
+  }
 
   ReleaseDC(NULL, hdc);
 

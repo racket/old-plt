@@ -58,7 +58,7 @@ class wxFont: public wxbFont
 
 	int GetEffectiveSmoothing(double yscale);
 
-	Bool ScreenGlyphAvailable(int c);
+	Bool ScreenGlyphAvailable(int c, Bool for_label = FALSE);
 };
 
 class wxColourMap: public wxObject

@@ -69,7 +69,7 @@
 
 @ "get-font-id" : int GetFontId();
 
-@ "screen-glyph-exists?" : bool ScreenGlyphAvailable(mzchar)
+@ "screen-glyph-exists?" : bool ScreenGlyphAvailable(mzchar,bool=FALSE)
 
 @END
 

@@ -311,15 +311,20 @@ static Scheme_Object *os_wxFontScreenGlyphAvailable(int n,  Scheme_Object *p[])
   Bool r;
   objscheme_check_valid(os_wxFont_class, "screen-glyph-exists? in font%", n, p);
   mzchar x0;
+  Bool x1;
 
   SETUP_VAR_STACK_REMEMBERED(1);
   VAR_STACK_PUSH(0, p);
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_char(p[POFFSET+0], "screen-glyph-exists? in font%"));
+  if (n > (POFFSET+1)) {
+    x1 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+1], "screen-glyph-exists? in font%"));
+  } else
+    x1 = FALSE;
 
   
-  r = WITH_VAR_STACK(((wxFont *)((Scheme_Class_Object *)p[0])->primdata)->ScreenGlyphAvailable(x0));
+  r = WITH_VAR_STACK(((wxFont *)((Scheme_Class_Object *)p[0])->primdata)->ScreenGlyphAvailable(x0, x1));
 
   
   
@@ -657,7 +662,7 @@ void objscheme_setup_wxFont(Scheme_Env *env)
 
   os_wxFont_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "font%", "object%", (Scheme_Method_Prim *)os_wxFont_ConstructScheme, 10));
 
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "screen-glyph-exists?" " method", (Scheme_Method_Prim *)os_wxFontScreenGlyphAvailable, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "screen-glyph-exists?" " method", (Scheme_Method_Prim *)os_wxFontScreenGlyphAvailable, 1, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-font-id" " method", (Scheme_Method_Prim *)os_wxFontGetFontId, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-size-in-pixels" " method", (Scheme_Method_Prim *)os_wxFontGetSizeInPixels, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxFont_class, "get-underlined" " method", (Scheme_Method_Prim *)os_wxFontGetUnderlined, 0, 0));

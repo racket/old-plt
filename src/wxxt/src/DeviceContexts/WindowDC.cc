@@ -3324,12 +3324,13 @@ static XVisualInfo *GetWindowVisual(wxGLConfig *cfg, Boolean offscreen)
       gl_attribs[ac++] = GLX_SAMPLES_ARB;
       gl_attribs[ac++] = cfg->multisample;
     }
-#elif defined(GLX_VERSION_1_1) && defined(GLX_SGIS_multisample) \
-      && defined(GLX_SAMPLES_SGIS)
+#else
+# if defined(GLX_VERSION_1_1) && defined(GLX_SGIS_multisample) && defined(GLX_SAMPLES_SGIS)
     if (cfg->multisample) {
-      gl_attribs[n++] = GLX_SAMPLES_SGIS;
-      gl_attribs[n++] = cfg->multisample;
+      gl_attribs[ac++] = GLX_SAMPLES_SGIS;
+      gl_attribs[ac++] = cfg->multisample;
     }
+# endif
 #endif    
     
     gl_attribs[ac] = None;

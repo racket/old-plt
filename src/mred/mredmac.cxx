@@ -63,6 +63,7 @@ typedef struct {
 	         EventRecord *event, MrEdContext **which);
 } EventFinderClosure;
 
+static int queue_size, max_queue_size;
 
 void MrEdInitFirstContext(MrEdContext *)
 {
@@ -196,6 +197,11 @@ static void QueueTransferredEvent(EventRecord *e)
     first = q;
   last = q;
   
+  queue_size++;
+  if (queue_size > max_queue_size) {
+    max_queue_size = queue_size;
+  }
+
   q->rgn = NULL;
   
   if (e->what == updateEvt) {
@@ -268,7 +274,9 @@ static int TransferQueue(int all)
 {
   EventRecord e;
   short mask;
-  int sleep_time, delay_time;
+  int sleep_time;
+#ifndef OS_X
+  int delay_time;
   
   GetSleepTime(&sleep_time, &delay_time);
   
@@ -276,6 +284,9 @@ static int TransferQueue(int all)
   static unsigned long lastTime;
   if (TickCount() <= lastTime + delay_time)
     return 0;
+#else
+  sleep_time = 0;
+#endif
 
   mask = everyEvent;
   
@@ -283,7 +294,9 @@ static int TransferQueue(int all)
     QueueTransferredEvent(&e);
   }
   
+#ifndef OS_X
   lastTime = TickCount();
+#endif
   
   return 1;
 }
@@ -298,6 +311,8 @@ static void MrDequeue(MrQueueElem *q)
     q->next->prev = q->prev;
   else
     last = q->prev;
+
+  --queue_size;
 }
 
 static MrQueueRef Find(EventFinderClosure *closure)
@@ -478,7 +493,7 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
       } else {
 	MrEdContext *clickOk;
 
-	fr = wxWindowPtrToFrame(window, NULL);
+	fr = wxWindowPtrToFrame(window, c);
 	fc = fr ? (MrEdContext *)fr->context : NULL;
 	
 	if (!fr || (c && (fr->context != (void *)c)) 
@@ -736,11 +751,12 @@ int MrEdGetNextEvent(int check_only, int current_only,
       last = q;
       
       q->rgn = NULL;
-      
     
       q->event.what = activateEvt;
       q->event.modifiers = we_are_front ? activeFlag : 0;
       q->event.message = (long)front;
+
+      queue_size++;
       
       if (we_are_front)
         wxSetCursor(NULL); /* reset cursor */
@@ -911,7 +927,7 @@ void MrEdDispatchEvent(EventRecord *e)
     }
 # endif
   }
-    
+
   wxTheApp->doMacPreEvent();
   wxTheApp->doMacDispatch(e);
   wxTheApp->doMacPostEvent();

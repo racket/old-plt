@@ -81,12 +81,12 @@ wxFrame::wxFrame // Constructor (for frame window)
   WindowAttributes windowAttributes;
   
   if (cStyle & wxMDI_CHILD) { // hack : MDI_CHILD means dialog box
-    windowClass = kMovableModalWindowClass;
+    windowClass = kDocumentWindowClass;  /* kMovableModalWindowClass => OS X does modality, which we don't want */
     if (cStyle & wxNO_RESIZE_BORDER) {
       windowAttributes = kWindowNoAttributes;
     } else {
       cIsResizableDialog = TRUE;
-      windowAttributes = (kWindowResizableAttribute);
+      windowAttributes = kWindowResizableAttribute;
     }
   } else {
     windowClass = kDocumentWindowClass;

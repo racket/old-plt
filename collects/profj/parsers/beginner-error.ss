@@ -26,12 +26,31 @@
                (case (get-token-name (car first-tok))
                  ((EOF) #t)
                  ((if return) (parse-statement null first-tok 'start getter))
-                 (else (parse-expression null first-tok 'start getter)))))
+;Taken from Intermediate to allow interaction to say int x = 4;
+                 ((IDENTIFIER)
+                  (let ((next (getter)))
+                    (if (id-token? (get-tok next))
+                        (parse-field first-tok next 'start getter)
+                        (parse-expression first-tok next 'name getter))))
+                 (else
+                  (if (prim-type? (get-tok first-tok))
+                      (parse-field first-tok (getter) 'start getter)
+                       (parse-expression first-tok 'start getter))))))
+          
           (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
               returned-tok
-              (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a" 
-                                   (output-format (get-tok returned-tok)))
-                           (get-start returned-tok) (get-end returned-tok)))))))
+              (if (and (pair? returned-tok) (semi-colon? (get-tok returned-tok)))
+                  (parse-error "';' is not allowed here" (get-start returned-tok) (get-end returned-tok))
+                  (parse-error (format "Only 1 statement, expression, or definition is allowed, found extra input ~a"
+                                       (output-format (get-tok returned-tok)))
+                               (get-start returned-tok) (get-end returned-tok))))))))
+                 
+;                 (else (parse-expression null first-tok 'start getter)))))
+;          (if (or (and (pair? returned-tok) (eof? (get-tok returned-tok))) (boolean? returned-tok))
+;              returned-tok
+;              (parse-error (format "Only 1 statement or expression is allowed, found extra input ~a" 
+;                                   (output-format (get-tok returned-tok)))
+;                           (get-start returned-tok) (get-end returned-tok)))))))
   
   ;parse-error: string position position
   (define (parse-error message start stop)
@@ -533,6 +552,50 @@
            ((semi-colon? tok) (parse-ctor-body cur-tok (getter) 'start getter))
            (else (parse-error (format "Expected a ; to end field initialization, found ~a" out) start end)))))))
 
+  ;parse-field: token token symbol (->token) -> token
+  (define (parse-field pre cur-tok state getter)
+    (let* ((tok (get-tok cur-tok))
+           (kind (get-token-name tok))
+           (out (output-format tok))
+           (start (get-start cur-tok))
+           (end (get-end cur-tok))
+           (ps (if (null? pre) null (get-start pre)))
+           (pe (if (null? pre) null (get-end pre))))
+      (case state
+        ((start)
+         (case kind
+           ((EOF) (parse-error "Expected a name for this variable declaration" ps pe))
+           ((IDENTIFIER) (parse-field cur-tok (getter) 'equals getter))
+           ((=) (parse-error "Expected a name for this variable declaration inbetween the type and =" ps end))
+           (else
+            (if (keyword? tok)
+                (parse-error 
+                 (format "Expected a name for this declaration, reserved word ~a may not be the name" kind) start end)
+                (parse-error
+                 (format "Expected a name for this declaration, found ~a" out) start end)))))
+        ((equals)
+         (case kind
+           ((=) 
+            (let ((next (getter)))
+              (if (eof? (get-tok next))
+                  (parse-error "Expected an expression for this declaration" start end)
+                  (parse-field cur-tok (parse-expression cur-tok next 'start getter) 'end getter))))
+           ((COMMA)
+            (parse-error "Expected an assignment of the given name to a value, found ',' which is not allowed here."
+                         ps end))
+           ((SEMI_COLON)
+            (parse-error "Expected an assignment of the given name to a value, found ';' which is not allowed here."
+                         ps end))
+           (else
+            (parse-error (format "Expected an assignment of the given name to a value, found ~a" out) ps end))))
+        ((end)
+         (case kind
+           ((EOF) (parse-error "Declaration must end with a ';'" ps pe))
+           ((SEMI_COLON) (getter))
+           (else
+            (parse-error "Expected an end to this declartion, found ~a" out start end)))))))
+
+    
   ;parse-statement: token token symbol (->token) -> token
   (define (parse-statement pre cur-tok state getter)
     (let* ((tok (get-tok cur-tok))

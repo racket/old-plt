@@ -487,8 +487,7 @@
   ;;                       -> void
   ;; effect: sets the parameters for drscheme and drscheme-jr
   (define (initialize-parameters custodian setting)
-    (let ([namespace (make-namespace ;'empty
-				     )])
+    (let ([namespace (make-namespace 'empty)])
       
       (current-setting setting)
       (current-custodian custodian)

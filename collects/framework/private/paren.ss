@@ -68,7 +68,7 @@
 			     (min end-pos (send edit last-position))
 			     (max end-pos 0))]
 	     [get-char (if forward?
-			   (lambda (edit) (send edit get-character))
+			   (lambda (n) (send edit get-character n))
 			   ;; DEVIOUS TRICK: we're going to virtually swap
 			   ;; each escaping \ with the character it escapes. Now,
 			   ;; in a backward read of the buffer, a backslash appears
@@ -156,7 +156,7 @@
 				 eol-comment-list)
 			  (let ([forward-match-string (match-string-at-pos* 
 						       add1 
-						       (lambda (edit) (send edit get-character))
+						       (lambda (number) (send edit get-character number))
 						       string-ref)])
 			    (let loop ([p linestart])
 			      (if (>= p pos) 

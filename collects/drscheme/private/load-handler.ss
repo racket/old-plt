@@ -4,7 +4,6 @@
 	   (lib "unitsig.ss")
            (lib "class.ss")
 	   "drsig.ss"
-           (lib "sig.ss" "userspce")
            (lib "etc.ss")
            (lib "framework.ss" "framework")
            (lib "zodiac.ss" "syntax")

@@ -2,6 +2,7 @@
   (import [drscheme : drscheme:export^]
           [zodiac : zodiac:system^]
           [mred : mred^]
+          [utils : cogen-utils^]
           [marks : stepper:marks^]
           [annotate : stepper:annotate^])
   
@@ -25,6 +26,7 @@
   
   (define (extract-zodiac-location mark-set)
     (let ([mark-list (continuation-mark-set->list mark-set annotate:debug-key)])
+      (printf "extracted location: ~a~n" (car ((car mark-list))))
       (car ((car mark-list)))))
   
   (define (break)
@@ -45,7 +47,7 @@
         break-resume-value)))
   
   (define signal-not-boolean utils:signal-not-boolean)
-  (define signal-undefined utils:signal-not-boolean)
+  (define signal-undefined utils:signal-undefined)
   
   ; initialization --- should be called once per execute
   (set! current-environments annotate:initial-env-package))

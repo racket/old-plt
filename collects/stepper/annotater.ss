@@ -228,8 +228,8 @@
          ; a) a zodiac expression to annotate
          ; b) a list of all varrefs s.t. this expression is tail w.r.t. their bindings
          ;    or 'all to indicate that this expression is tail w.r.t. _all_ bindings.
-         ; c) a list of bound-varrefs of 'floating' variables; i.e. lexical bindings 
-         ;    whose value must be captured in order to reconstruct outer expressions.
+         ; c) a list of bound-varrefs of 'floating' variables; i.e. lexical bindings  NO: TAKEN OUT
+         ;    whose value must be captured in order to reconstruct outer expressions. 
          ;    Necessitated by 'unit', useful for 'letrec*-values'.
          ; d) a boolean indicating whether this expression will be the r.h.s. of a reduction
          ;    (and therefore should be broken before)
@@ -243,16 +243,16 @@
 	 ;(z:parsed (union (list-of z:varref) 'all) (list-of z:varref) bool bool -> 
          ;          sexp (list-of z:varref))
 	 
-	 (define (annotate/inner expr tail-bound floating-vars pre-break? top-level?)
+	 (define (annotate/inner expr tail-bound pre-break? top-level?)
 	   
 	   (let* ([tail-recur (lambda (expr) (annotate/inner expr tail-bound #t #f))]
                   [define-values-recur (lambda (expr) (annotate/inner expr tail-bound #f #f))]
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f #f))]
                   [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t #f))]
                   [make-debug-info-normal (lambda (free-vars)
-                                            (make-debug-info expr tail-bound free-vars floating-vars 'none))]
+                                            (make-debug-info expr tail-bound free-vars 'none))]
                   [make-debug-info-app (lambda (tail-bound free-vars label)
-                                         (make-debug-info expr tail-bound free-vars floating-vars label))]
+                                         (make-debug-info expr tail-bound free-vars label))]
                   [wcm-wrap (if pre-break?
                                 wcm-pre-break-wrap
                                 simple-wcm-wrap)]
@@ -269,7 +269,9 @@
 	       ; the variable forms 
 	       
                [(z:varref? expr)
-                (let* ([v (z:varref-var expr)]
+                (let* ([v (if (z:top-level-varref? expr)
+                              (z:varref-var expr)
+                              (utils:get-binding-name (z:bound-varref-binding expr)))]
                        [real-v (if (z:top-level-varref? expr)
                                    v
                                    (z:binding-orig-name
@@ -277,7 +279,7 @@
                        [maybe-undef? (or (and (z:bound-varref? expr) 
                                               (not (never-undefined? (z:bound-varref-binding expr))))
                                          (utils:is-unit-bound? expr))]
-                       [truly-top-level? (and (z:top-level-varref? expr) (not (utils:unit-bound-varref? expr)))]
+                       [truly-top-level? (and (z:top-level-varref? expr) (not (utils:is-unit-bound? expr)))]
                        [_ (when truly-top-level?
                             (utils:check-for-syntax-or-macro-keyword expr))]
                        [free-vars (list expr)]
@@ -405,9 +407,9 @@
                        [val (values annotated-bodies free-vars-lists)
                             (dual-map non-tail-recur bodies)]
                        [val free-vars (apply var-set-union free-vars-lists)]
-                       [debug-info (make-debug-info-normal free-vars)])
+                       [val debug-info (make-debug-info-normal free-vars)])
                    (values (wcm-wrap debug-info
-                                     `(#%begin0 ,@annotated-bodes))
+                                     `(#%begin0 ,@annotated-bodies))
                            free-vars))]
                
                ; gott in himmel! this transformation is complicated.  Just for the record,
@@ -433,7 +435,7 @@
                        [val var-set-list (apply append var-sets)]
                        [val vals (z:let-values-form-vals expr)]
                        [_ (for-each utils:check-for-keyword var-set-list)]
-                       [_ (for-each mark-never-undefined var-set)]
+                       [_ (for-each mark-never-undefined var-set-list)]
                        [val dummy-var-sets
                             (let ([counter 0])
                               (map (lambda (var-set)
@@ -445,7 +447,7 @@
                                    var-sets))]
                        [val dummy-var-list (apply append dummy-var-sets)]
                        [val outer-dummy-initialization
-                            `([,dummy-var-list (#%values ,@(build-list (length dummy-var-list) *undefined*))])]
+                            `([,dummy-var-list (#%values ,@(build-list (length dummy-var-list) '(#%quote *undefined*)))])]
                        [val (values annotated-vals free-vars-vals)
                             (dual-map non-tail-recur vals)]
                        [val set!-clauses
@@ -472,20 +474,20 @@
                             `(#%let-values ,outer-dummy-initialization ,wrapped-begin)])
                    (values whole-thing free-vars))]
                
-               [(z:letrec*-values-form? expr)
+               [(z:letrec-values-form? expr)
                 ; Are all RHSes values? ...
-                (when (andmap z:case-lambda-form? (z:letrec*-values-form-vals expr))
+                (when (andmap z:case-lambda-form? (z:letrec-values-form-vals expr))
                   ; ...yes , mark vars as never undefined.
                   ; (We do this before annotating any RHS!)
                   (for-each (lambda (vars)
                               (for-each mark-never-undefined vars))
-                            (z:letrec*-values-form-vars expr)))
-                (let+ ([val var-sets (z:letrec*-values-form-vars expr)]
+                            (z:letrec-values-form-vars expr)))
+                (let+ ([val var-sets (z:letrec-values-form-vars expr)]
                        [val var-set-list (apply append var-sets)]
-                       [val vals (z:letrec*-values-form-vals expr)]
+                       [val vals (z:letrec-values-form-vals expr)]
                        [_ (when (andmap z:case-lambda-form? vals)
                             (for-each mark-never-undefined var-set-list))]
-                       [_ (for-each check-for-keyword var-set-list)]
+                       [_ (for-each utils:check-for-keyword var-set-list)]
                        [val outer-initialization
                             `((,var-set-list (values ,@var-set-list)))]
                        [val (values annotated-bodies free-vars-vals)
@@ -494,9 +496,9 @@
                             (map (lambda (var-set val)
                                    `(#%set!-values ,var-set ,val))
                                  var-sets
-                                 annotated-vals)]
+                                 annotated-bodies)]
                        [val (values annotated-body free-vars-body)
-                            (tail-recur (z:letrec*-values-form-body expr))]
+                            (tail-recur (z:letrec-values-form-body expr))]
                        [val middle-begin
                             `(#%begin ,@set!-clauses ,annotated-body)]
                        [val free-vars (apply var-set-union free-vars-body free-vars-vals)]
@@ -539,11 +541,14 @@
 	       
 	       [(z:set!-form? expr)
                 (utils:check-for-keyword (z:set!-form-var expr))
-                (let+ ([val (values annotated rhs-free-vars)
+                (let+ ([val v (if (z:top-level-varref? expr)
+                                  (z:varref-var expr)
+                                  (utils:get-binding-name (z:bound-varref-binding expr)))]
+                       [val (values annotated rhs-free-vars)
                             (non-tail-recur (z:set!-form-val expr))]
                        [val free-vars (var-set-union (list z:set!-form-var) rhs-free-vars)]
                        [val debug-info (make-debug-info-normal free-vars)])
-                   (values `(#%set! (translate-varref #f
+                   (values `(#%set! ,v ,annotated) free-vars))]
                 
 	       [(z:case-lambda-form? expr)
 		(let* ([annotate-case
@@ -555,7 +560,8 @@
 					  (lambda-body-recur body)])
 			      (let* ([new-free-vars (varref-remove* var-list free-vars)]
                                      [args (utils:arglist->ilist arglist)]
-                                     [new-annotated (list (utils:improper-map z:binding-var args) annotated)])
+                                     [new-annotated (list (utils:improper-map utils:get-binding-name args) 
+                                                          annotated)])
                                 (utils:improper-foreach utils:check-for-keyword args)
                                 (utils:improper-foreach mark-never-undefined args)
 				(list new-annotated new-free-vars)))))]
@@ -581,11 +587,11 @@
                
                [(z:with-continuation-mark-form? expr)
                 (let+ ([val (values annotated-key free-vars-key)
-                            (recur-non-tail (z:with-continuation-mark-form-key expr))]
+                            (non-tail-recur (z:with-continuation-mark-form-key expr))]
                        [val (values annotated-val free-vars-val)
-                            (recur-non-tail (z:with-continuation-mark-form-val expr))]
+                            (non-tail-recur (z:with-continuation-mark-form-val expr))]
                        [val (values annotated-body free-vars-body)
-                            (recur-non-tail (z:with-continuation-mark-form-body expr))]
+                            (non-tail-recur (z:with-continuation-mark-form-body expr))]
                        [val free-vars (var-set-union free-vars-key free-vars-val free-vars-body)]
                        [val debug-info (make-debug-info-normal free-vars)])
                    (values (wcm-wrap debug-info

@@ -47,6 +47,7 @@
                            drscheme
                            zodiac
                            mred
+                           utils
                            marks
                            annotate)])       
   (export (open debug-wrapper)))

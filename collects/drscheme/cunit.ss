@@ -7,6 +7,12 @@
 
     (mred:debug:printf 'invoke "drscheme:compound-unit@")
 
+    (define BLACK-PEN (send wx:the-pen-list find-or-create-pen
+			    "BLACK" 0 wx:const-solid))
+
+    (define BLACK-BRUSH (send wx:the-brush-list find-or-create-brush
+			      "BLACK" wx:const-solid))
+
     (define project-pasteboard%
       (class-asi mred:pasteboard%
 	(inherit find-first-snip get-snip-location get-frame get-canvas
@@ -135,26 +141,29 @@
 		 [last-x 0]
 		 [last-y 0]
 		 [orig-snip #f]
+		 [old-function 0]
+		 [save-dc
+		  (lambda ()
+		    (set! old-function (send (get-dc) get-logical-function)))]
 		 [restore-dc
-		  (lambda (f)
-		    (let* ([dc (get-dc)]
-			   [old-function (send dc get-logical-function)])
-		      (f dc)
-		      (send dc set-logical-function old-function)))]
+		  (lambda ()
+		    (send (get-dc) set-logical-function old-function))]
 		 [restore-drawing-state
 		  (lambda ()
-		    (restore-dc
-		     (lambda (dc)
-		       (send dc set-logical-function wx:const-xor)
-		       (send dc draw-line from-x from-y last-x last-y)
-		       (set! from-x #f)
-		       (set! from-y #f))))])
+		    (let ([dc (get-dc)])
+		      (save-dc)
+		      (send dc set-logical-function wx:const-xor)
+		      (send dc draw-line from-x from-y last-x last-y)
+		      (set! from-x #f)
+		      (set! from-y #f)
+		      (restore-dc)))])
 	    (lambda (evt)
 	      '(printf "evt: ~a dragging? ~a button-up? ~a button-down? ~a button3 ~a~n"
 		       evt (send evt dragging?) (send evt button-up?) (send evt button-down?)
 		       (send evt get-right-down))
 	      (let ([x (send evt get-x)]
-		    [y (send evt get-y)])
+		    [y (send evt get-y)]
+		    [dc (get-dc)])
 		(cond
 		 [(send evt button-down? 3)
 		  '(printf "dragging.1~n")
@@ -166,13 +175,13 @@
 		      (set! last-x x)
 		      (set! last-y y)))]
 		 [(and from-x (send evt dragging?))
-		  (restore-dc
-		   (lambda (dc)
-		     (send dc set-logical-function wx:const-xor)
-		     (send dc draw-line from-x from-y last-x last-y)
-		     (set! last-x x)
-		     (set! last-y y)
-		     (send dc draw-line from-x from-y last-x last-y)))]
+		  (save-dc)
+		  (send dc set-logical-function wx:const-xor)
+		  (send dc draw-line from-x from-y last-x last-y)
+		  (set! last-x x)
+		  (set! last-y y)
+		  (send dc draw-line from-x from-y last-x last-y)
+		  (restore-dc)]
 		 [(and from-x (send evt button-up? 3))
 		  (restore-drawing-state)
 		  (let ([s (find-snip x y)])
@@ -206,25 +215,21 @@
 		    '(printf "x: ~a y: ~a: cx: ~a cy: ~a m: ~a~n" x y cx cy m)
 		    (if (eq? 'infinite m)
 			(values x
-				(if (<= (abs (- x top))
-					(abs (- x bottom)))
+				(if (<= (abs (- y top))
+					(abs (- y bottom)))
 				    top
 				    bottom))
 			(let*-values
-			    ([(get-x)
-			      (lambda (yp)
-				(values (+ x (/ (- yp y) m)) yp))]
-			     [(get-y)
-			      (lambda (xp)
-				(values xp (+ y (* m (- xp x)))))]
-			     [(hx hy) (get-x (if (<= (abs (- top y))
-						     (abs (- bottom y)))
-						 top
-						 bottom))]
-			     [(vx vy) (get-y (if (<= (abs (- right x))
-						     (abs (- left x)))
-						 right
-						 left))]
+			    ([(xp) (if (<= (abs (- right x))
+					   (abs (- left x)))
+				       right
+				       left)]
+			     [(yp) (if (<= (abs (- top y))
+					   (abs (- bottom y)))
+				       top
+				       bottom)]
+			     [(hx hy) (values (+ x (/ (- yp y) m)) yp)]
+			     [(vx vy) (values xp (+ y (* m (- xp x))))]
 			     [(dh) (distance hx hy x y)]
 			     [(dv) (distance vx vy x y)]
 			     [(h-good) (<= left hx right)]
@@ -256,59 +261,68 @@
 		(lambda (alpha theta x y)
 		  (values (+ alpha theta) x y))]
 	       [draw-arrow
-		(lambda (dc dx dy x-orig y-orig x2 y2)
-		  (let*-values ([(head-width-angle) (* 7/8 pi)]
-				[(head-major-length) 20]
-				[(head-minor-length) 10]
-				[(theta-orig) 
-				 (let ([arctangent (atan (/ (- y-orig y2)
-							    (- x-orig x2)))])
-				   (cond
-				     [(and (= x-orig x2) (<= y-orig y2)) (- (/ pi 2))]
-				     [(= x-orig x2) (/ pi 2)]
-				     [(< x2 x-orig) 
-				      '(printf "arctangent.1: ~a~n" arctangent)
-				      arctangent]
-				     [else
-				      '(printf "arctangent.2: ~a~n" arctangent)
-				      (+ arctangent pi)]))]
-				[(theta x y) (turn head-width-angle theta-orig x-orig y-orig)]
-				[(theta x1 y1) (move head-major-length theta x y)]
-				
-				[(theta x y) (turn pi theta-orig x-orig y-orig)]
-				[(theta x2 y2) (move head-minor-length theta x y)]
-				
-				[(theta x y) (turn (- head-width-angle) theta-orig x-orig y-orig)]
-				[(theta x3 y3) (move head-major-length theta x y)]
-				
-				[(brush) (send dc get-brush)])
-		    (send* dc
-		      (set-brush (make-object wx:brush% "BLACK" wx:const-solid))
-		      (draw-polygon (list (make-object wx:point% x-orig y-orig)
-					  (make-object wx:point% x1 y1)
-					  (make-object wx:point% x2 y2)					
-					  (make-object wx:point% x3 y3))
-				    dx 
-				    dy)
-		      (set-brush brush))))]
+		(let* ([one (make-object wx:point% 0 0)]
+		       [two (make-object wx:point% 0 0)]
+		       [three (make-object wx:point% 0 0)]					
+		       [four (make-object wx:point% 0 0)]
+		       [poly (list one two three four)])
+		  (lambda (dc dx dy x-orig y-orig x2 y2)
+		    (let*-values ([(head-width-angle) (* 7/8 pi)]
+				  [(head-major-length) 20]
+				  [(head-minor-length) 10]
+				  [(theta-orig) 
+				   (let ([arctangent (atan (/ (- y-orig y2)
+							      (- x-orig x2)))])
+				     (cond
+				       [(and (= x-orig x2) (<= y-orig y2)) (- (/ pi 2))]
+				       [(= x-orig x2) (/ pi 2)]
+				       [(< x2 x-orig) 
+					'(printf "arctangent.1: ~a~n" arctangent)
+					arctangent]
+				       [else
+					'(printf "arctangent.2: ~a~n" arctangent)
+					(+ arctangent pi)]))]
+				  [(theta x y) (turn head-width-angle theta-orig x-orig y-orig)]
+				  [(theta x1 y1) (move head-major-length theta x y)]
+				  
+				  [(theta x y) (turn pi theta-orig x-orig y-orig)]
+				  [(theta x2 y2) (move head-minor-length theta x y)]
+				  
+				  [(theta x y) (turn (- head-width-angle) theta-orig x-orig y-orig)]
+				  [(theta x3 y3) (move head-major-length theta x y)])
+		      (send* one 
+			(set-x x-orig)
+			(set-y y-orig))
+		      (send* two
+			(set-x x1)
+			(set-y y1))
+		      (send* three
+			(set-x x2)
+			(set-y y2))
+		      (send* four
+			(set-x x3)
+			(set-y y3))
+		      (send dc draw-polygon poly dx dy))))]
 	       [get-rectangle 
-		(lambda (snip)
-		  (let ([x (box 0)]
-			[y (box 0)]
-			[x2 (box 0)]
-			[y2 (box 0)]
-			[extra-space 4])
-		    (get-snip-location snip x y #f)
-		    (get-snip-location snip x2 y2 #t)
-		    (values (- (unbox x) extra-space)
-			    (- (unbox y) extra-space)
-			    (+ (unbox x2) extra-space)
-			    (+ (unbox y2) extra-space))))]
+		(let ([x (box 0)]
+		      [y (box 0)]
+		      [x2 (box 0)]
+		      [y2 (box 0)])
+		  (lambda (snip)
+		    (let ([extra-space 4])
+		      (get-snip-location snip x y #f)
+		      (get-snip-location snip x2 y2 #t)
+		      (values (- (unbox x) extra-space)
+			      (- (unbox y) extra-space)
+			      (+ (unbox x2) extra-space)
+			      (+ (unbox y2) extra-space)))))]
 	       [draw-self-loop
 		(lambda (left top right bottom)
 		  (void))])
 	    (lambda (before dc left top right bottom dx dy draw-caret)
 	      (unless before
+		(send dc set-pen BLACK-PEN)
+		(send dc set-brush BLACK-BRUSH)
 		(let* ([draw-children
 			(lambda (snip)
 			  (let*-values ([(sl st sr sb) (get-rectangle snip)]
@@ -354,8 +368,12 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 		(send s open)
 		(loop (find-next-selected-snip s)))))])))
 
+    (define super-frame% 
+      (drscheme:frame:make-frame%
+       mred:simple-menu-frame%))
+
     (define frame%
-      (class drscheme:frame:frame% (fn snip [show? #t])
+      (class super-frame% (fn snip [show? #t])
 	(inherit show get-edit show-menu panel)
 	(public
 	  [on-close
@@ -409,6 +427,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 	       mb))])
 	(public
 	  [get-panel% (lambda () mred:horizontal-panel%)]
+	  [get-canvas% (lambda () mred:media-canvas%)]
 	  [get-edit% (lambda () project-pasteboard%)])
 
 	(sequence

@@ -33,24 +33,29 @@
 
   (define report-exception-error
     (lambda (exn last-resort-edit)
-      (if (exn? exn)
-	  (let ([di (exn-debug-info exn)])
-	    (if (zodiac:zodiac? di)
-		(let* ([start (zodiac:zodiac-start di)]
-		       [finish (zodiac:zodiac-finish di)]
-		       [file (zodiac:location-file start)]
-		       [edit (if (is-a? file wx:media-edit%)
-				 file
-				 last-resort-edit)]
-		       [frame (send edit get-frame)]
-		       [interactions (ivar frame interactions-edit)])
-		  (send interactions report-error start finish
-			'dynamic (exn-message exn)))
-		(mred:message-box
-		 (format "~a" (exn-message exn))
-		 "Uncaught Exception")))
-	  (mred:message-box (format "~s" exn)
-			    "Uncaught Exception"))))
+      (let ([uncaught-exn
+	     (lambda (obj)
+	       (let ([str (format "~a" obj)])
+		 (with-parameterization drscheme:init:system-parameterization
+		   (lambda ()
+		     (display str)
+		     (newline)))
+		 (mred:message-box str "Uncaught Exception")))])
+	(if (exn? exn)
+	    (let ([di (exn-debug-info exn)])
+	      (if (zodiac:zodiac? di)
+		  (let* ([start (zodiac:zodiac-start di)]
+			 [finish (zodiac:zodiac-finish di)]
+			 [file (zodiac:location-file start)]
+			 [edit (if (is-a? file wx:media-edit%)
+				   file
+				   last-resort-edit)]
+			 [frame (send edit get-frame)]
+			 [interactions (ivar frame interactions-edit)])
+		    (send interactions report-error start finish
+			  'dynamic (exn-message exn)))
+		  (uncaught-exn (exn-message exn))))
+	    (uncaught-exn (format "~s" exn))))))
 
   (define build-parameterization
     (lambda (user-custodian last-resort-edit)
@@ -70,26 +75,32 @@
 	    (current-custodian user-custodian)
 	    (require-library-use-compiled #f)
 	    (error-value->string-handler
-	     (lambda (x n)
-	       (let* ([port (open-output-string)]
-		      [error-value
-		       (if (drscheme:language:r4rs-style-printing)
-			   x
-			   (print-convert:print-convert x))]
-		      [long-string
-		       (begin (mzlib:pretty-print@:pretty-print error-value port 'infinity)
-			      (get-output-string port))])
-		 (if (<= (string-length long-string) n)
-		     long-string
-		     (let ([short-string (substring long-string 0 n)]
-			   [trim 3])
-		       (unless (<= n trim)
-			 (let loop ([i trim])
-			   (unless (<= i 0)
-			     (string-set! short-string (- n i) #\.)
-			     (loop (sub1 i)))))
-		       short-string)))))
-	    (debug-info-handler (lambda () (unbox aries:error-box)))
+	     (let ([drs-error-value->string-handler
+		    (lambda (x n)
+		      (with-parameterization drscheme:init:system-parameterization
+			(lambda ()
+			  (let* ([port (open-output-string)]
+				 [error-value
+				  (if (drscheme:language:r4rs-style-printing)
+				      x
+				      (print-convert:print-convert x))]
+				 [long-string
+				  (begin (mzlib:pretty-print@:pretty-print error-value port 'infinity)
+					 (get-output-string port))])
+			    (if (<= (string-length long-string) n)
+				long-string
+				(let ([short-string (substring long-string 0 n)]
+				      [trim 3])
+				  (unless (<= n trim)
+				    (let loop ([i trim])
+				      (unless (<= i 0)
+					(string-set! short-string (- n i) #\.)
+					(loop (sub1 i)))))
+				  short-string))))))])
+	       drs-error-value->string-handler))
+	    (debug-info-handler (let ([drs-debug-info
+				       (lambda () (unbox aries:error-box))])
+				  drs-debug-info))
 	    (current-namespace n)
 	    (break-enabled #t)
 	    (wx:current-eventspace bottom-eventspace)
@@ -105,6 +116,69 @@
 
   (define-struct process/zodiac-finish (error?))
 
+  (define consumer-thread
+    (case-lambda
+     [(f) (consumer-thread f void)]
+     [(f init)
+      (unless (procedure? f) (raise-type-error 'consumer-thread "procedure" f))
+      (let ([sema (make-semaphore 0)]
+            [protect (make-semaphore 1)]
+            [front-state null]
+            [back-state null])
+        (values 
+         (thread
+          (letrec ([loop
+                    (lambda ()
+		      (printf "consumer-thread; waiting~n")
+                      (semaphore-wait sema)
+		      (printf "consumer-thread; got signal~n")
+                      (let ([local-state
+                             (begin
+			       (printf "consumer-thread; waiting for args~n")
+                               (semaphore-wait protect)
+                               (if (null? back-state)
+                                   (let ([new-front (reverse front-state)])
+				     (printf "consumer-thread; getting arg.1~n")
+                                     (set! back-state (cdr new-front))
+                                     (set! front-state null)
+                                     (semaphore-post protect)
+                                     (car new-front))
+                                   (begin0
+				     (printf "consumer-thread; getting arg.2~n")
+				     (car back-state)
+				     (set! back-state (cdr back-state))
+				     (semaphore-post protect))))])
+			(printf "consumer-thread; calling function~n")
+			(dynamic-wind
+			 void
+			 (lambda () 
+			   (apply f local-state))
+			 (lambda ()
+			   (printf "consumer-thread; return from function")
+			   (loop)))))])
+            (lambda ()
+              (init)
+              (loop))))
+         (lambda new-state
+           (let ([num (length new-state)])
+             (unless (procedure-arity-includes? f num) 
+	       (raise 
+		(make-exn:application:arity
+		 (format "<procedure-from-consumer-thread>: consumer procedure arity is ~e; provided ~s argument~a"
+			 (arity f) num (if (= 1 num) "" "s"))
+		 ((debug-info-handler))
+		 num
+		 (arity f)))))
+	   (printf "consumer-thread (here); waiting to add arg ---------------------------~n")
+	   (mzlib:pretty-print@:pretty-print new-state)
+	   (printf "consumer-thread (here); waiting to add arg ---------------------------~n")
+           (semaphore-wait protect)
+           (set! front-state (cons new-state front-state))
+           (semaphore-post protect)
+	   (printf "consumer-thread (here); added arg; signalling thread~n")
+           (semaphore-post sema))))]))
+
+  
   (define make-edit%
     (lambda (super%)
       (class super% args
@@ -274,20 +348,38 @@
 							 (zodiac:interface:zodiac-exn-type exn)
 							 (zodiac:interface:zodiac-exn-message exn))
 					   (lambda () (cleanup #t)))])
-			  (let ([zodiac-read (reader)])
-			    (if (zodiac:eof? zodiac-read)
-				(lambda () (cleanup #f))
-				(let* ([exp (call/nal zodiac:scheme-expand/nal
-						      zodiac:scheme-expand
-						      (expression: zodiac-read)
-						      (vocabulary: vocab)
-						      (parameterization: user-param))]
-				       [heading-out (if annotate? 
-							(aries:annotate exp)
-							exp)])
-				  (mred:debug:when 'drscheme:sexp
-						   (mzlib:pretty-print@:pretty-print heading-out))
-				  (lambda () (f heading-out loop))))))])
+			  (let/ec k
+			    (let ([zodiac-read (reader)])
+			      (if (zodiac:eof? zodiac-read)
+				  (lambda () (cleanup #f))
+				  (let* ([wait-on-scheme
+					  (lambda (expr)
+					    (printf "~n~n~nsending to scheme~n")
+					    (mzlib:pretty-print@:pretty-print expr)
+					    (let-values ([(answers error?) (send-scheme expr)])
+					      (printf "got response, continuting (error? ~a)~n" error?)
+					      (mzlib:pretty-print@:pretty-print answers)
+					      (if error?
+						  (k (lambda () (cleanup #t)))
+						  (apply values answers))))]
+					 [evaluator
+					  (lambda (exp _ macro)
+					    (wait-on-scheme (aries:annotate exp)))]
+					 [user-macro-body-evaluator
+					  (lambda (x . args)
+					    (wait-on-scheme `(,x ,@(map (lambda (x) `(#%quote ,x)) args))))]
+					 [exp (call/nal zodiac:scheme-expand/nal
+							zodiac:scheme-expand
+							[expression: zodiac-read]
+							[vocabulary: vocab]
+							[user-macro-body-evaluator: user-macro-body-evaluator]
+							[elaboration-evaluator: evaluator])]
+					 [heading-out (if annotate? 
+							  (aries:annotate exp)
+							  exp)])
+				    (mred:debug:when 'drscheme:sexp
+						     (mzlib:pretty-print@:pretty-print heading-out))
+				    (lambda () (f heading-out loop)))))))])
 		   (next-iteration)))))])
 	(private
 	  [in-evaluation? #f]
@@ -352,6 +444,15 @@
                                     so no evaluation can take place until ~
                                     the next execution.")
 			   "Warning")))))]
+	  [display-results
+	   (lambda (anss)
+	     (let ([c-locked? locked?])
+	       (unless (andmap void? anss)
+		 (begin-edit-sequence)
+		 (lock #f)
+		 (for-each display-result anss)
+		 (lock c-locked?)
+		 (end-edit-sequence))))]
 	  [do-many-buffer-evals
 	   (lambda (edit start end)
 	     (mred:debug:printf 'console-threading "do-many-buffer-evals: waiting in-evaluation")
@@ -412,21 +513,23 @@
 				   "thread-kill terminating (thread-grace running? ~s)"
 				   (thread-running? thread-grace))))])
 		       (void))
-		     (process-edit/zodiac edit
-					  (lambda (expr recur)
-					    (cond
-					      [(process/zodiac-finish? expr)
-					       (semaphore-post evaluation-sucessful)]
-					      [else
-					       (send-scheme expr 
-							    (lambda (error?)
-							      (if error?
-								  (semaphore-post
-								   evaluation-sucessful)
-								  (recur))))]))
-					  start
-					  end
-					  #t)))))])
+		     (run-in-evaluation-thread
+		      (lambda ()
+			(process-edit/zodiac edit
+					     (lambda (expr recur)
+					       (cond
+						 [(process/zodiac-finish? expr)
+						  (semaphore-post evaluation-sucessful)]
+						 [else
+						  (let-values ([(answers error?) (send-scheme expr)])
+						    (display-results answers)
+						    (if error?
+							(semaphore-post
+							 evaluation-sucessful)
+							(recur)))]))
+					     start
+					     end
+					     #t)))))))])
 	(public
 	  [reset-break-state (lambda () (set! ask-about-kill? #f))]
 	  [break-semaphore (make-semaphore 1)]
@@ -464,8 +567,6 @@
 		      (mred:debug:printf 'console-threading "break: posting break.1.3")
 		      (semaphore-post break-semaphore)]))])
 	(public
-	  [send-scheme (opt-lambda (x [after void]) (void))]
-	  [evaluation-thread #f]
 	  [current-thread-directory (current-directory)]
 	  [escape
 	   (lambda ()
@@ -476,58 +577,55 @@
 			       "Error Escape")
 	     (error-escape-handler))]
 	  [exception-handler void]
+	  [error-escape-k void]
+	  [escape-handler
+	   (lambda ()
+	     (error-escape-k (list (void)) #t))]
+	  [send-scheme 
+	   (lambda (expr)
+	     (printf "evaluator-function~n")
+	     (dynamic-wind
+	      (lambda () (current-directory current-thread-directory))
+	      (lambda ()
+		(let/ec k
+		  (set! error-escape-k k)
+		  (call-with-values
+		   (lambda ()
+		     (set! exception-handler
+			   (lambda (exn)
+			     (printf "exception-handler~n")
+			     (with-parameterization drscheme:init:system-parameterization
+			       (lambda ()
+				 (report-exception-error exn this)))
+			     ((error-escape-handler))
+			     (with-parameterization drscheme:init:system-parameterization
+			       (lambda ()
+				 (mred:message-box "error-escape-handler didn't escape"
+						   "Error Escape")))
+			     (k (list (void)) #t)))
+		     (printf "evaluating~n")
+		     (with-parameterization user-param
+		       (lambda ()
+			 (drscheme:init:primitive-eval expr))))
+		   (lambda anss
+		     (values anss #f)))))
+	      (lambda () 
+		(set! current-thread-directory (current-directory))
+		(printf "calling after function~n"))))])
+	(public
+	  [evaluation-thread #f]
+	  [run-in-evaluation-thread void]
 	  [init-evaluation-thread
 	   (lambda ()
-	     (parameterize ([current-custodian user-custodian])
-	       (let-values 
-		   ([(evaluation-thread2 send-scheme2)
-		     (let* ([error-escape-k void]
-			    [escape-handler
-			     (lambda ()
-			       (error-escape-k #t))])
-		       (mzlib:thread@:consumer-thread
-			(opt-lambda (expr [after void])
-			  (let/ec k
-			    (set! error-escape-k k)
-			    (let* ([user-code-error? #t])
-			      (dynamic-wind
-			       (lambda ()
-				 (current-directory current-thread-directory))
-			       (lambda ()
-				 (let/ec k
-				   (call-with-values
-				    (lambda ()
-				      (set! exception-handler
-					    (lambda (exn)
-					      (with-parameterization drscheme:init:system-parameterization
-						(lambda ()
-						  (report-exception-error exn this)))
-					      ((error-escape-handler))
-					      (with-parameterization drscheme:init:system-parameterization
-						(lambda ()
-						  (mred:message-box "error-escape-handler didn't escape"
-								    "Error Escape")
-						  (set! user-code-error? #t)))
-					      (k (void))))
-				      (with-parameterization user-param
-					(lambda ()
-					  (drscheme:init:primitive-eval expr))))
-				    (lambda anss
-				      (let ([c-locked? locked?])
-					(unless (andmap void? anss)
-					  (begin-edit-sequence)
-					  (lock #f)
-					  (for-each display-result anss)
-					  (lock c-locked?)
-					  (end-edit-sequence)))))
-				   (set! user-code-error? #f)))
-			       (lambda () 
-				 (set! current-thread-directory (current-directory))
-				 (after user-code-error?))))))
-			(lambda ()
-			  (current-parameterization drscheme:init:eval-thread-parameterization)
-			  (error-escape-handler escape-handler))))])
-		 (set! send-scheme send-scheme2)
+	     (let ([run-function (lambda (f) (f))]
+		   [init-eval-thread
+		    (lambda ()
+		      (current-parameterization drscheme:init:eval-thread-parameterization)
+		      (error-escape-handler escape-handler))])
+	       (let-values ([(evaluation-thread2 run-in-evaluation-thread2)
+			     (parameterize ([current-custodian user-custodian])
+			       (consumer-thread run-function init-eval-thread))])
+		 (set! run-in-evaluation-thread run-in-evaluation-thread2)
 		 (set! evaluation-thread evaluation-thread2))))])
 	(public
 	  [userspace-load

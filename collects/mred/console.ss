@@ -924,8 +924,10 @@
 		 (let* ([old-pen (send dc get-pen)]
 			[old-brush (send dc get-brush)]
 			[old-logical (send dc get-logical-function)]
-			[pen (make-object wx:pen% "BLACK" 1
-					  wx:const-transparent)]
+			[pen (send wx:the-pen-list
+				   find-or-create-pen
+				   "BLACK" 0
+				   wx:const-transparent)]
 			[brush (make-object wx:brush% "BLACK" 
 					    wx:const-stipple)]
 			[x dx]

@@ -7,12 +7,13 @@
 	    [drscheme:unit : drscheme:unit^]
 	    [drscheme:parameters : drscheme:parameters^]
 	    [drscheme:compound-unit : drscheme:compound-unit^]
+	    [drscheme:app : drscheme:app^]
 	    [zodiac : drscheme:zodiac^])
     
     (mred:debug:printf 'invoke "drscheme:frame@")
     
-    (define frame%
-      (class mred:simple-menu-frame% (name snip)
+    (define (make-frame% super%)
+      (class super% (name snip)
 	(rename [super-make-root-panel make-root-panel]
 		[super-on-close on-close]
 		[super-make-menu-bar make-menu-bar])
@@ -88,7 +89,8 @@
 	     '(send file-menu append-item "New Compound Unit"
 		   (lambda ()
 		     (make-object drscheme:compound-unit:frame% #f #f))))]
-	  [file-menu:open (lambda () (mred:open-file) #t)])
+	  [file-menu:open (lambda () (mred:open-file) #t)]
+	  [help-menu:about (lambda () (drscheme:app:about-drscheme))])
 
 	(sequence 
 	  (mred:debug:printf 'super-init "before drscheme:frame%")

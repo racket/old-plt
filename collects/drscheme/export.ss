@@ -19,7 +19,7 @@
 	       ((reference-unit/sig "frame.ss")
 		mred mzlib basis
 		setup unit parameters
-		compound-unit zodiac)]
+		compound-unit app zodiac)]
 	[unit : drscheme:unit^
 	  ((reference-unit/sig "unit.ss")
 	   mred mzlib app setup compound-unit frame edit rep

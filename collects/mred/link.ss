@@ -1,5 +1,5 @@
 ;;
-;; $Id: link.ss,v 1.40 1997/08/13 15:34:11 krentel Exp $
+;; $Id: link.ss,v 1.41 1997/09/11 16:00:52 robby Exp $
 ;;
 
   (compound-unit/sig
@@ -97,7 +97,7 @@
 				container canvas (core function@))]
 	  [frame : mred:frame^ 
 		 ((reference-unit/sig "frame.ss") wx 
-		  constants
+		  constants console
 		  preferences edit container canvas icon
 		  menu group finder find-string hyper-frame
 		  handler keymap exit autosave

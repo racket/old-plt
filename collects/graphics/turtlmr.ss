@@ -10,9 +10,9 @@
       (public 
 	[bitmap (make-object wx:bitmap% width height)])
       (private
-	[w-pen (make-object wx:pen% "white" 1 wx:const-solid)]
+	[w-pen (make-object wx:pen% "white" 0 wx:const-solid)]
 	[w-brush (make-object wx:brush% "white" wx:const-solid)]
-	[b-pen (make-object wx:pen% "black" 1 wx:const-solid)]
+	[b-pen (make-object wx:pen% "black" 0 wx:const-solid)]
 	[b-brush (make-object wx:brush% "black" wx:const-solid)]
 	[memory-dc (make-object wx:memory-dc%)])
       (public

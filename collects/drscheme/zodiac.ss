@@ -21,7 +21,8 @@
 
 	   default-initial-location
 	   mzscheme-libraries-provided
-	   zodiac-user-parameterization
+	   m3-elaboration-evaluator
+	   m3-macro-body-evaluator
 
 	   scan:def-first-col
 	   scan:def-vect-val

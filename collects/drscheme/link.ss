@@ -43,10 +43,28 @@
 	       drzodiac
 	       export)]
 	[app : drscheme:app^ ((reference-unit/sig "app.ss")
-			      (export unit) 
-			      (export frame)
-			      (export parameters)
-			      I
 			      mred
-			      mzlib)])
-  (export (open app)))
+			      mzlib)]
+	[main : drscheme:main^ ((reference-unit/sig "main.ss")
+				I
+				mred
+				print-convert
+				(export compound-unit)
+				(export parameters))])
+  (export (unit init)
+	  (unit mzlib)
+	  (unit mred)
+	  (unit print-convert)
+	  (unit prefs drscheme:prefs)
+	  (unit basis drscheme:basis)
+	  (unit aries drscheme:aries)
+	  (unit language drscheme:language)
+	  (unit interface drscheme:interface)
+	  (unit drzodiac zodiac)
+	  (unit edit drscheme:edit)
+	  (unit setup drscheme:setup)
+	  (unit snip drscheme:snip)
+	  (unit export drscheme:export)
+	  (unit tool drscheme:tool)
+	  (unit app drscheme:app)
+	  (unit main drscheme:main)))

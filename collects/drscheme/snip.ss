@@ -54,7 +54,7 @@
 	       (set-box! h-box (+ (* 2 white-around) height))))]
 	  [draw
 	   (let* ([body-pen (send wx:the-pen-list find-or-create-pen
-				  "BLACK" 1 wx:const-solid)]
+				  "BLACK" 0 wx:const-solid)]
 		  [body-brush (send wx:the-brush-list find-or-create-brush
 				    "BLACK" wx:const-solid)])
 	     (lambda (dc x y left top right bottom dx dy drawCaret)
@@ -121,12 +121,13 @@
 	     (let*-values
 		 ([(bw?) (< (wx:display-depth) 3)]
 		  [(body-pen) (send wx:the-pen-list find-or-create-pen
-				    "BLACK" 1 wx:const-solid)]
+				    "BLACK" 0 wx:const-solid)]
 		  [(body-brush) (send wx:the-brush-list find-or-create-brush
 				      "BLACK" wx:const-solid)]
 		  [(shadow-pen shadow-brush)
 		   (if bw?
-		       (let* ([pen (make-object wx:pen%)]
+		       (let* ([pen (make-object wx:pen% "BLACK" 0
+						wx:const-solid)]
 			      [brush (make-object wx:brush%)]
 			      [a (integer->char #b01010101)]
 			      [b (integer->char #b10101010)]
@@ -144,7 +145,7 @@
 			 (values pen brush))
 		       (values
 			(send wx:the-pen-list find-or-create-pen
-			      "GRAY" 1 wx:const-solid)
+			      "GRAY" 0 wx:const-solid)
 			(send wx:the-brush-list find-or-create-brush
 			      "GRAY" wx:const-solid)))])
 	       (lambda (dc x y left top right bottom dx dy drawCaret)

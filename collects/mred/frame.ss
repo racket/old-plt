@@ -2,6 +2,7 @@
   (unit/sig mred:frame^
     (import mred:wx^
 	    [mred:constants : mred:constants^]
+	    [mred:console : mred:console^]
 	    [mred:preferences : mred:preferences^]
 	    [mred:edit : mred:edit^]
 	    [mred:container : mred:container^]
@@ -120,7 +121,17 @@
 	    (apply super-init args)
 	    (mred:debug:printf 'super-init "after mred:menu-frame%")
 	    ; Build and install the menu bar:
-	    (let ([menu-bar (make-menu-bar)])
+	    (let* ([menu-bar (make-menu-bar)]
+		   [move-right
+		    (lambda (name)
+		      (let ([menu (send menu-bar get-menu-named name)])
+			(and menu
+			     (begin 
+			       (send menu-bar delete menu -1)
+			       (send menu-bar append menu "Help")
+			       #t))))])
+	      (or (move-right "Help")
+		  (move-right "&Help"))
 	      (set-menu-bar menu-bar)
 	      (send menu-bar set-frame this))))))
 
@@ -170,18 +181,27 @@
 				    [menu-before-string (an-item-menu-string-before item)]
 				    [menu-after-string (an-item-menu-string-after item)]
 				    [key (an-item-key item)]
-				    [file-menu? (string=? (substring name-string 0 9) "file-menu")])
-			       `(when ,name
-				  (set! ,(build-id name "-id")
-					(send ,(if file-menu? 'file-menu 'edit-menu) append-item 
-					      (join ,menu-before-string 
-						    ,(build-id name "-string")
-						    ,menu-after-string)
-					      ,name ,(build-id name "-help-string")
-					      #f 
-					      (and (mred:preferences:get-preference
-						    'mred:menu-bindings)
-						   ,key))))))]
+				    [file-menu? (string=? (substring name-string 0 9) "file-menu")]
+				    [edit-menu? (string=? (substring name-string 0 9) "edit-menu")]
+				    [help-menu? (string=? (substring name-string 0 9) "help-menu")])
+			       `(begin
+				  (when ,name
+				    (set! ,(build-id name "-id")
+					  (send ,(cond
+						   [file-menu? 'file-menu]
+						   [edit-menu? 'edit-menu]
+						   [help-menu? 'help-menu]
+						   [else '(begin (printf "WARNING: defaulting item to help-menu ~s~n" name-string)
+								 help-menu)])
+						append-item 
+						(join ,menu-before-string 
+						      ,(build-id name "-string")
+						      ,menu-after-string)
+						,name ,(build-id name "-help-string")
+						#f 
+						(and (mred:preferences:get-preference
+						      'mred:menu-bindings)
+						     ,key)))))))]
 			  [build-between-ivar
 			   (lambda (between)
 			     (string->symbol 
@@ -205,10 +225,13 @@
 				  (let ([,mb (super-make-menu-bar)])
 				    (set! file-menu (make-menu))
 				    (set! edit-menu (make-menu))
-				    (send* ,mb (append file-menu
-						       (if (eq? wx:platform 'windows)
-							   "&File" "F&ile"))
-					   (append edit-menu "&Edit"))
+				    (set! help-menu (make-menu))
+				    (send* ,mb 
+				      (append file-menu
+					      (if (eq? wx:platform 'windows)
+						  "&File" "F&ile"))
+				      (append edit-menu "&Edit")
+				      (append help-menu "&Help"))
 				    ,@(map (lambda (x)
 					     (if (between? x)
                                                  (build-between-proc-clause x)
@@ -268,15 +291,23 @@
 				 (make-an-item 'edit-menu:replace "Search and replace a string in the buffer"
 					       #f #f "Replace" "")
 				 (make-between 'edit-menu 'between-replace-and-preferences #t)
-				 (make-an-item 'edit-menu:preferences ""
+				 (make-an-item 'edit-menu:preferences "Configure your preferences"
 					       '(lambda () (mred:preferences:show-preferences-dialog) #t)
 					       #f "Preferences..." "")
-				 (make-between 'edit-menu 'after-standard-items #f))])
+				 (make-between 'edit-menu 'after-standard-items #f)
+
+				 (make-an-item 'help-menu:about "About this application"
+					       '(lambda () (mred:console:credits))
+					       #f
+					       "About "
+					       "...")
+				 (make-between 'help-menu 'after-help-menu #f))])
                   `(class-asi super%
                      (inherit make-menu on-close show)
                      (rename [super-make-menu-bar make-menu-bar])
                      (public [file-menu 'file-menu-uninitialized]
-                       [edit-menu 'edit-menu-uninitialized])
+			     [edit-menu 'edit-menu-uninitialized]
+			     [help-menu 'help-menu-uninitialized])
                      ,@(map (lambda (x)
                               (if (between? x)
                                 (build-between-public-clause x)
@@ -438,12 +469,12 @@
 	       (send edit-menu append-separator))])
 
 	  (public
-	    [make-menu-bar
+	    [help-menu:about (lambda () (mred:console:credits))]
+	    [help-menu:about-string mred:application:app-name]
+	    [help-menu:after-help-menu
 	     (let ([reg (regexp "<TITLE>(.*)</TITLE>")])
-	       (lambda ()
-		 (let* ([mb (super-make-menu-bar)]
-			[help-menu (make-menu)]
-			[dir (with-handlers ([void (lambda (x) #f)]) (collection-path "doc"))])
+	       (lambda (help-menu)
+		 (let* ([dir (with-handlers ([void (lambda (x) #f)]) (collection-path "doc"))])
 		   (if (and dir (directory-exists? dir))
 		       (let* ([dirs (directory-list dir)]
 			      [find-title
@@ -476,11 +507,10 @@
 				(mzlib:function:foldl build-item null dirs)
 				(lambda (x y) (string-ci<? (car x) (car y))))])
 			 (unless (null? item-pairs)
-			   (send mb append help-menu "Help"))
+			   (send help-menu append-separator))
 			 (for-each (lambda (x) (apply (ivar help-menu append-item) x))
 				   item-pairs))
-		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory"))
-		   mb)))])
+		       (mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory")))))])
 	  
 	  (sequence
 	    (mred:debug:printf 'super-init "before simple-frame%")

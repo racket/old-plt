@@ -203,6 +203,7 @@
 		  [super-delete delete])
 	  (private
 	    [menus init-menus]
+	    [titles init-titles]
 	    [keymap%
 	     (class-asi wx:keymap%
 	       (rename [super-map-function map-function])
@@ -241,6 +242,7 @@
 	       (when (not (ivar menu menu-bar))
 		 (super-append menu name)
 		 (set! menus (#%append menus (list menu)))
+		 (set! titles (#%append titles (list name)))
 		 (send menu set-menu-bar this)))]
 	    [get-nth-menu
 	     (lambda (pos)
@@ -248,6 +250,15 @@
 		   (list-ref menus pos)
 		   (error 'get-nth-menu "arg too large, got: ~a, only ~ a menus."
 			  pos (length menus))))]
+	    [get-menu-named
+	     (lambda (name)
+	       (let loop ([menus menus]
+			  [titles titles])
+		 (cond
+		   [(null? titles) #f]
+		   [(string=? (car titles) name) (car menus)]
+		   [else (loop (cdr menus)
+			       (cdr titles))])))]
 	    [delete
 	     (opt-lambda (menu [pos 0])
 	       (if (null? menu)

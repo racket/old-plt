@@ -1,6 +1,7 @@
 (module help-bg mzscheme 
   (require (lib "cmdline.ss")
-	   "private/server.ss")
+           "private/server-config.ss"
+	   "private/external-server.ss")
 
   (define external-connections? #f)
   (define quiet? #f)

@@ -1184,16 +1184,62 @@
   
   (test/spec-passed/result
    'object-contract/field6
-   '(send (contract (object-contract [m (integer? . -> . integer?)])
-                    (new (class object% (define x 1) (define/public (m y) x) (super-new)))
-                    'pos
-                    'neg)
-          m
-          2)
-   1)
+   '(let ([o (contract (object-contract [m (integer? . -> . integer?)])
+                       (new (class object% (field [x 1]) (define/public (m y) x) (super-new)))
+                       'pos
+                       'neg)])
+      (list (send o m 2)
+            (send/apply o m '(2))
+            (let ([x '(2)]) (send o m . x))
+            (with-method ([mm (o m)])
+              (mm 2))
+            (send* o (m 3) (m 4))))
+   (list 1 1 1 1 1))
   
   (test/spec-passed/result
    'object-contract/field7
+   '(let ([o (contract (object-contract)
+                       (new (class object% (field [x 1]) (define/public (m y) x) (super-new)))
+                       'pos
+                       'neg)])
+      (list (send o m 2)
+            (send/apply o m '(2))
+            (let ([x '(2)]) (send o m . x))
+            (with-method ([mm (o m)])
+              (mm 2))
+            (send* o (m 3) (m 4))))
+   (list 1 1 1 1 1))
+  
+  (test/spec-passed/result
+   'object-contract/field8
+   '(let ([o (contract (object-contract [m (integer? . -> . integer?)])
+                       (new (class object% (define x 6) (define/public (m y) x) (super-new)))
+                       'pos
+                       'neg)])
+      (list (send o m 2)
+            (send/apply o m '(2))
+            (let ([x '(2)]) (send o m . x))
+            (with-method ([mm (o m)])
+              (mm 2))
+            (send* o (m 3) (m 4))))
+   (list 6 6 6 6 6))
+  
+  (test/spec-passed/result
+   'object-contract/field9
+   '(let ([o (contract (object-contract)
+                       (new (class object% (define x 6) (define/public (m y) x) (super-new)))
+                       'pos
+                       'neg)])
+      (list (send o m 2)
+            (send/apply o m '(2))
+            (let ([x '(2)]) (send o m . x))
+            (with-method ([mm (o m)])
+              (mm 2))
+            (send* o (m 3) (m 4))))
+   (list 6 6 6 6 6))
+  
+  (test/spec-passed/result
+   'object-contract/field10
    '(send (contract (object-contract)
                     (new (class object% (define x 1) (define/public (m y) x) (super-new)))
                     'pos

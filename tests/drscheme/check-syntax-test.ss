@@ -38,6 +38,8 @@
 	 ("add1" "")
 	 ("(lambda (x) x)" ""))])
 
+  (set-language-level! "R4RS+" drs-frame)
+
   (printf "Starting check-syntax tests~n") 
 
   (for-each 

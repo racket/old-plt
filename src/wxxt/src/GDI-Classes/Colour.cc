@@ -119,8 +119,9 @@ wxColour* wxColour::CopyFrom(wxColour *col)
 {
   if (col->Ok()) {
     FreePixel(FALSE);
-    if (!X)
+    if (!X) {
       X  = new wxColour_Xintern; // create new X representation;
+    }
     *X = *(col->X);	       // assign data
     X->have_pixel = FALSE;
   } else
@@ -137,8 +138,9 @@ wxColour* wxColour::CopyFrom(const char *col)
   
   if (the_colour) {
     FreePixel(FALSE);
-    if (!X)
+    if (!X) {
        X = new wxColour_Xintern; // create new X representation
+     }
     *X = *(the_colour->X);	   // assign data
     X->have_pixel = FALSE;
   } else
@@ -153,8 +155,9 @@ void wxColour::Set(unsigned char r, unsigned char g, unsigned char b)
 {
     FreePixel(FALSE);
 
-    if (!X)
+    if (!X) {
        X = new wxColour_Xintern; // create new X representation
+     }
 
     X->xcolor.red   = ((unsigned short)r) << SHIFT; // init XColor structure
     X->xcolor.green = ((unsigned short)g) << SHIFT;

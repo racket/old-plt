@@ -161,6 +161,8 @@ class wxFrame: public wxbFrame
   void EnforceSize(int minw, int minh, int maxw, int maxh, int incw=1, int inch=1);
   void GetSizeLimits(Rect *r);
 
+  void Unfocus();
+
   /*============================================================================= */
   /* Protected methods */
   /*============================================================================= */
@@ -187,6 +189,9 @@ class wxFrame: public wxbFrame
   Rect wxMacGetStrucRect(void);
   inline wxDialogBox* wxMacGetDialog(void) {return cDialogPanel;} 
 
+  void TakeoverFocus();
+  void ReleaseFocus();
+
   /*============================================================================= */
   /* Private methods */
   /*============================================================================= */
@@ -204,6 +209,7 @@ class wxFrame: public wxbFrame
 };
 
 extern wxFrame *wxRootFrame;
+extern wxFrame *wxGetFocusFrame();
 
 #endif /* IN_CPROTO */
 #endif /* wx_frameh */

@@ -43,6 +43,9 @@ extern int wxNumHelpItems;
 
 extern Bool doCallPreMouseEvent(wxWindow *in_win, wxWindow *win, wxMouseEvent *evt);
 
+extern WindowPtr MrEdMouseWindow(Point where);
+extern WindowPtr MrEdKeyWindow();
+
 int wxMenuBarHeight;
 
 extern wxApp *wxTheApp;
@@ -178,7 +181,7 @@ void wxApp::doMacPreEvent()
   static Bool noWinMode = FALSE;
   WindowPtr w;
 
-  w = FrontWindow();
+  w = FrontNonFloatingWindow();
 
   wxCheckFinishedSounds();
 
@@ -213,7 +216,7 @@ void wxApp::doMacPreEvent()
       dc = wxRootFrame->MacDC();
       graf = dc->macGrafPort();
       ::SendBehind(GetWindowFromPort(graf), NULL);
-      w = FrontWindow();
+      w = FrontNonFloatingWindow();
       macWxFrame = findMacWxFrame(w);
     }
 
@@ -288,7 +291,7 @@ void wxApp::doMacMouseDown(void)
 
   windowPart = FindWindow(cCurrentEvent.where, &window);
   if (!window)
-    window = FrontWindow();
+    window = FrontNonFloatingWindow();
 
   /* Check whether this window is blocked by a modal dialog: */
   {
@@ -304,7 +307,7 @@ void wxApp::doMacMouseDown(void)
 	WindowPtr w;
 
 	w = modal->macWindow();
-	if (w != FrontWindow()) {
+	if (w != FrontNonFloatingWindow()) {
 	  ::SelectWindow(w);
 	}
 
@@ -334,7 +337,7 @@ void wxApp::doMacMouseDown(void)
 	long menuResult;
 	WindowPtr theMacWindow;
 
-	theMacWindow = FrontWindow();
+	theMacWindow = FrontNonFloatingWindow();
 
 	/* Give the menu bar a chance to build on-demand items: */
 	if (theMacWindow) {
@@ -434,7 +437,7 @@ void wxApp::doMacMouseUp(void)
   else
     {
       wxFrame* macWxFrame;
-      macWxFrame = findMacWxFrame(FrontWindow());
+      macWxFrame = findMacWxFrame(MrEdMouseWindow(cCurrentEvent.where));
       if (macWxFrame)
 	{
 	  int hitX = cCurrentEvent.where.h; // screen window c.s.
@@ -514,7 +517,7 @@ void wxApp::doMacMouseMotion(void)
   else
     {
       wxFrame* macWxFrame;
-      macWxFrame = findMacWxFrame(FrontWindow());
+      macWxFrame = findMacWxFrame(MrEdMouseWindow(cCurrentEvent.where));
       if (macWxFrame)
 	{
 	  int hitX = cCurrentEvent.where.h; // screen window c.s.
@@ -594,7 +597,7 @@ void wxApp::doMacKeyUpDown(Bool down)
   wxKeyEvent *theKeyEvent;
   int key;
 
-  theMacWxFrame = findMacWxFrame(FrontWindow());
+  theMacWxFrame = findMacWxFrame(MrEdKeyWindow());
   
   if (down) {
     if (!theMacWxFrame || theMacWxFrame->CanAcceptEvent())
@@ -930,7 +933,7 @@ void wxApp::doMacHighLevelEvent(void)
 void wxApp::doMacResumeEvent(void)
 {
   wxFrame* theMacWxFrame;
-  theMacWxFrame = findMacWxFrame(FrontWindow());
+  theMacWxFrame = findMacWxFrame(FrontNonFloatingWindow());
   if (theMacWxFrame)
     {
 #ifndef WX_CARBON
@@ -946,7 +949,7 @@ void wxApp::doMacResumeEvent(void)
 void wxApp::doMacSuspendEvent(void)
 {
   wxFrame* theMacWxFrame;
-  theMacWxFrame = findMacWxFrame(FrontWindow());
+  theMacWxFrame = findMacWxFrame(FrontNonFloatingWindow());
   if (theMacWxFrame)
     {
       Bool becomingActive = TRUE;
@@ -1026,7 +1029,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
     }
   }
 
-  theMacWindow = FrontWindow();
+  theMacWindow = FrontNonFloatingWindow();
   if (!theMacWindow) {
     // Must be quit
     exit(0);
@@ -1113,17 +1116,7 @@ void wxApp::doMacInContent(WindowPtr window)
   theMacWxFrame = findMacWxFrame(window);
   if (theMacWxFrame)
     {
-      if (window != FrontWindow())
-	{		
-	  wxFrame* frontFrame;
-	  frontFrame = findMacWxFrame(FrontWindow());
-	  if (!frontFrame) wxFatalError("No wxFrame for frontWindow.");
-	  ::SysBeep(3);
-	}
-      else
-	{
-	  doMacContentClick(theMacWxFrame);
-	}
+      doMacContentClick(theMacWxFrame);
     }
 }
 
@@ -1285,7 +1278,7 @@ wxFrame* wxApp::findMacWxFrame(WindowPtr theMacWindow)
 void wxApp::AdjustCursor(void)
 {
   wxFrame* theMacWxFrame;
-  theMacWxFrame = findMacWxFrame(FrontWindow());
+  theMacWxFrame = findMacWxFrame(MrEdMouseWindow(cCurrentEvent.where));
   if (theMacWxFrame) {
     if (theMacWxFrame->cBusyCursor)
       wxSetCursor(wxHOURGLASS_CURSOR);

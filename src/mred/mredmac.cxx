@@ -7,9 +7,6 @@
  * Copyright:   (c) 1996, Matthew Flatt
  */
 
-#ifndef OS_X
-# define SELF_SUSPEND_RESUME
-#endif
 #include "common.h"
 
 #include "wx_main.h"
@@ -23,22 +20,6 @@
 #ifdef OS_X
 # include <fcntl.h>
 #endif
-
-#ifdef SELF_SUSPEND_RESUME
-/* Note on handling Suspend/Resume events:
-    Before OS X, something in the handling of events messes up the sending of 
-    suspend and resume events. So, we ignore these events if they happen 
-    to occur, but notice suspension and resumption ourselves (by testing 
-    for the current process).
-*/
-static int last_was_front;
-#else
-# define last_was_front 1
-#endif
-
-#define DELAY_TIME 5
-#define FG_SLEEP_TIME 0
-#define BG_SLEEP_TIME DELAY_TIME
 
 static int dispatched = 1;
 
@@ -54,6 +35,9 @@ class MrQueueElem; /* defined below */
 
 static void QueueTransferredEvent(EventRecord *e);
 static void MrDequeue(MrQueueElem *q);
+
+WindowPtr MrEdMouseWindow(Point where);
+WindowPtr MrEdKeyWindow();
 
 typedef MrQueueElem *MrQueueRef;
 
@@ -250,27 +234,15 @@ static void QueueTransferredEvent(EventRecord *e)
     UpdateRgnToWindowCoords(w, q->rgn);
   } else if (e->what == osEvt) {
     /* Must be a suspend/resume event */
-
-#ifdef SELF_SUSPEND_RESUME
-    /* Forget it; we do fg/bg ourselves. See note at top. */
-    last = q->prev;
-    if (last)
-      last->next = NULL;
-    else
-      first = NULL;
-#else
     int we_are_front = e->message & resumeFlag;
     WindowPtr front;
-    front = FrontWindow();
+
+    front = ActiveNonFloatingWindow();
     
-    /* This code generates activate events; under classic MacOS, returning an 
-     * application to the foreground does not generate (de)activate events.
-     */
-    
+    /* Generate an activate event */
     q->event.what = activateEvt;
     q->event.modifiers = we_are_front ? activeFlag : 0;
     q->event.message = (long)front;
-#endif
   }
 }
 
@@ -295,27 +267,11 @@ void DequeueMrEdEvents(int type, long message)
 
 static void GetSleepTime(int *sleep_time, int *delay_time)
 {
-#ifdef OS_X
   /* No need to cooperate: */
   *sleep_time = 0;
   *delay_time = 0;
-#else
-# if FG_SLEEP_TIME
-  if (last_was_front && Button())
-    *sleep_time = 0;
-  else
-# endif
-    *sleep_time = last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
-   
-  *delay_time = DELAY_TIME;
-#endif
 }
 
-#ifdef OPTION_KEY_HACK
-/* Use Ctl-F2 instead */
-static int no_modifiers_last_time = 1;
-static int last_was_option_down;
-#endif
 static int WeAreFront(); /* forward decl */
 static int waiting_for_next_event;
 
@@ -331,42 +287,9 @@ int WNE(EventRecord *e, double sleep_secs)
   waiting_for_next_event = 1;
 
   if (noErr == ReceiveNextEvent(0, NULL, sleep_secs, TRUE, &ref)) {
-    Boolean ok, need_click = FALSE;
+    Boolean ok;
 
     waiting_for_next_event = 0;
-
-#ifdef OPTION_KEY_HACK    
-    if ((GetEventClass(ref) == kEventClassKeyboard)
-	&& (GetEventKind(ref) == kEventRawKeyModifiersChanged)) {
-      /* Watch for down-up of option => convert to click at 10, 10 */
-      UInt32 modifiers;
-
-      GetEventParameter(ref, kEventParamKeyModifiers, typeUInt32, 
-			NULL, sizeof(modifiers), NULL, &modifiers);
-      
-      switch (modifiers & (shiftKey | cmdKey | controlKey | optionKey)) {
-      case optionKey:
-	if (no_modifiers_last_time)
-	  last_was_option_down = 1;
-	break;
-      case 0:
-	no_modifiers_last_time = 1;
-	if (last_was_option_down) {
-	  last_was_option_down = 0;
-	  need_click = TRUE;
-	}
-	last_was_option_down = 0;
-	break;
-      default:
-	no_modifiers_last_time = 0;
-	last_was_option_down = 0;
-	break;
-      } 
-    } else {
-      no_modifiers_last_time = 0;
-      last_was_option_down = 0;
-    }
-#endif
 
     if (GetEventClass(ref) == kEventClassMouse)
       wxUnhideCursor();
@@ -374,15 +297,7 @@ int WNE(EventRecord *e, double sleep_secs)
     ok = ConvertEventRefToEventRecord(ref, e);
 
     if (!ok) {
-      if (need_click) {
-	/* fake a click to make the menu bar acitve (only with OPTION_KEY_HACK) */
-	e->what = mouseMenuDown;
-	e->message = 0;
-	e->modifiers = 0;
-	e->where.h = 20;
-	e->where.v = 20;
-	ok = TRUE;
-      } else if ((GetEventClass(ref) == kEventClassMouse)
+      if ((GetEventClass(ref) == kEventClassMouse)
 		 && (GetEventKind(ref) == kEventMouseWheelMoved)) {
 	UInt32 modifiers;
 	EventMouseWheelAxis axis;
@@ -433,11 +348,6 @@ int WNE(EventRecord *e, double sleep_secs)
     }
 
     ReleaseEvent(ref);
-
-#ifdef OPTION_KEY_HACK
-    if (ok)
-      no_modifiers_last_time = !(e->modifiers & (shiftKey | cmdKey | controlKey | optionKey));
-#endif
 
     return ok;
   }
@@ -537,8 +447,11 @@ static MrEdContext *KeyOk(int current_only)
   
   c = current_only ? MrEdGetContext() : NULL;
   
-  w = FrontWindow();
-  fr = wxWindowPtrToFrame(w, c);
+  fr = wxGetFocusFrame();
+  if (!fr) {
+    w = ActiveNonFloatingWindow();
+    fr = wxWindowPtrToFrame(w, c);
+  }
   if (!fr || (c && (fr->context != (void *)c)) 
       || (!c && !((MrEdContext *)fr->context)->ready))
     return NULL;
@@ -548,17 +461,7 @@ static MrEdContext *KeyOk(int current_only)
 
 static int WindowStillHere(WindowPtr win)
 {
-  WindowPtr f;
-
-  f = FrontWindow();
-
-  while (f) {
-    if (f == win)
-      return TRUE;
-    f = GetNextWindow(f);
-  }
-
-  return FALSE;
+  return IsValidWindowPtr(win);
 }
 
 static int WeAreFront()
@@ -678,15 +581,16 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
   case mouseMenuDown:
   case mouseDown:
     {
-      WindowPtr window, front;
+      WindowPtr window, front = NULL;
       int part;
 
       saw_mdown = 1;
-	
+      
       part = FindWindow(e->where, &window);
-      front = FrontWindow();
-      if (part == inMenuBar)
+      if (part == inMenuBar) {
+	front = ActiveNonFloatingWindow();
 	window = front;
+      }
 
       if (!window) {
 	MrDequeue(osq);
@@ -707,19 +611,28 @@ static int CheckForMouseOrKey(EventRecord *e, MrQueueRef osq, int check_only,
 	else
 	  clickOk = fc;
 
+	if (!front)
+	  front = ActiveNonFloatingWindow();
 	if (window != front) {
-	  /* Handle bring-window-to-front click immediately */
-	  if (!osq->half_done) {
-	    if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
-	      SelectWindow(window);
-	      cont_mouse_context = NULL;
-	    } else if (fc && fc->modal_window) {
-	      wxFrame *mfr;
-	      mfr = (wxFrame *)fc->modal_window;
-	      cont_mouse_context = NULL;
-	      SelectWindow(mfr->macWindow());
+	  WindowClass wc;
+
+	  GetWindowClass(window, &wc);
+	  if ((wc != kFloatingWindowClass)
+	      && (wc != kUtilityWindowClass)
+	      && (wc != kToolbarWindowClass)) {
+	    /* Handle bring-window-to-front click immediately */
+	    if (!osq->half_done) {
+	      if (fc && (!fc->modal_window || (fr == fc->modal_window))) {
+		SelectWindow(window);
+		cont_mouse_context = NULL;
+	      } else if (fc && fc->modal_window) {
+		wxFrame *mfr;
+		mfr = (wxFrame *)fc->modal_window;
+		cont_mouse_context = NULL;
+		SelectWindow(mfr->macWindow());
+	      }
+	      osq->half_done = 1;
 	    }
-	    osq->half_done = 1;
 	  }
 	}
 
@@ -887,9 +800,6 @@ int MrEdGetNextEvent(int check_only, int current_only,
   MrEdContext *c, *keyOk, *foundc;
   int found = 0;
   int skip_transfer = 0;
-#ifdef SELF_SUSPEND_RESUME 
-  int we_are_front;
-#endif
 
   saw_mdown = 0; saw_kdown = 0;
 
@@ -917,7 +827,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
     quickUpdateWait = 0;
 
-    front = FrontWindow();
+    front = FrontNonFloatingWindow();
     if (front) {
       if (!quickUpdateRgn)
 	quickUpdateRgn = NewRgn();
@@ -957,47 +867,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
   if (cont_mouse_context)
     if (!WindowStillHere(cont_mouse_context_window))
       cont_mouse_context = NULL;
-  
-#ifdef SELF_SUSPEND_RESUME 
-  /* Do fg/bg ourselves. See note at top. */
-  we_are_front = WeAreFront();
-  if (we_are_front != last_was_front) {
-    last_was_front = we_are_front;
-
-    /* for OS_X, activate events are automatically generated for the frontmost
-     * window in an application when that application comes to the front.
-     */
-	       
-    WindowPtr front;
-
-    front = FrontWindow();
-  
-    if (front) {
-      MrQueueElem *q;
-
-      q = new MrQueueElem;
-      q->next = NULL;
-      q->prev = last;
-      if (last)
-	last->next = q;
-      else
-	first = q;
-      last = q;
-      
-      q->rgn = NULL;
     
-      q->event.what = activateEvt;
-      q->event.modifiers = we_are_front ? activeFlag : 0;
-      q->event.message = (long)front;
-
-      queue_size++;
-      
-      if (we_are_front)
-        wxSetCursor(NULL); /* reset cursor */
-    }
-  }
-#endif
-  
   closure.c = c;
   closure.check_only = check_only;
   closure.keyOk = keyOk;
@@ -1067,12 +937,15 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
   /* Generate a motion event? */
   if (keyOk) {
+    WindowPtr front;
+
     GetMouse(&event->where);
     LocalToGlobal(&event->where);
-      
+    front = MrEdMouseWindow(event->where);
+
     if (((event->where.v != last_mouse.v)
 	 || (event->where.h != last_mouse.h)
-	 || last_front_window != FrontWindow())
+	 || last_front_window != front)
 	&& (!cont_mouse_context || (cont_mouse_context == keyOk))) {
       long ticks;
 
@@ -1089,7 +962,7 @@ int MrEdGetNextEvent(int check_only, int current_only,
 
       last_mouse.v = event->where.v;
       last_mouse.h = event->where.h;
-      last_front_window = FrontWindow();
+      last_front_window = front;
 
       event->what = nullEvent;
       ticks = TickCount();
@@ -1414,43 +1287,71 @@ void MrEdMacSleep(float secs, void *fds, SLEEP_PROC_PTR mzsleep)
 
 wxWindow *wxLocationToWindow(int x, int y)
 {
+  Point p;
   WindowPtr f;
   Rect bounds;
+  int part;
 
-  f = FrontWindow();
-  while (f) {
-    GetWindowBounds(f, kWindowContentRgn, &bounds);
-    if (IsWindowVisible(f)
-	&& (bounds.left <= x)
-	&& (bounds.right >= x)
-	&& (bounds.top <= y)
-	&& (bounds.bottom >= y)) {
-      /* Found it */
-      wxFrame *frame;
-      void *refcon;
+  p.h = x;
+  p.v = y;
+  part = FindWindow(p, &f);
+  
+  GetWindowBounds(f, kWindowContentRgn, &bounds);
+  if (IsWindowVisible(f)
+      && (bounds.left <= x)
+      && (bounds.right >= x)
+      && (bounds.top <= y)
+      && (bounds.bottom >= y)) {
+    /* Found it */
+    wxFrame *frame;
+    void *refcon;
 
-      refcon = (void *)GetWRefCon(f);
-      frame = (wxFrame *)GET_SAFEREF(refcon);
+    refcon = (void *)GetWRefCon(f);
+    frame = (wxFrame *)GET_SAFEREF(refcon);
 
-      if (frame) {
-	/* Mac: some frames really represent dialogs. Any modal frame is
-	   a dialog, so extract its only child. */
-	if (frame->IsModal()) {
-	  wxChildNode *node2;
-	  wxChildList *cl;
-	  cl = frame->GetChildren();
-	  node2 = cl->First();
-	  if (node2)
-	    return (wxWindow *)node2->Data();
-	} else
-	  return frame;
+    if (frame) {
+      /* Mac: some frames really represent dialogs. Any modal frame is
+	 a dialog, so extract its only child. */
+      if (frame->IsModal()) {
+	wxChildNode *node2;
+	wxChildList *cl;
+	cl = frame->GetChildren();
+	node2 = cl->First();
+	if (node2)
+	  return (wxWindow *)node2->Data();
       } else
-	return NULL;
-    }
-    f = GetNextWindow(f);
+	return frame;
+    } else
+      return NULL;
   }
   
   return NULL;
+}
+
+WindowPtr MrEdMouseWindow(Point where)
+{
+  WindowPtr win;
+  WindowClass wc;
+  int part;
+
+  part = FindWindow(where, &win);
+  if (part == inMenuBar)
+    return FrontNonFloatingWindow();
+
+  GetWindowClass(win, &wc);
+  if ((wc == kFloatingWindowClass)
+      || (wc == kUtilityWindowClass)
+      || (wc == kToolbarWindowClass)) {
+    /* Floating windows always receive events: */
+    return win;
+  } else {
+    return FrontNonFloatingWindow();
+  }
+}
+
+WindowPtr MrEdKeyWindow()
+{
+  return FrontWindow();
 }
 
 /***************************************************************************/

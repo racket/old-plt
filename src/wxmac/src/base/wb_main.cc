@@ -66,6 +66,7 @@ void wxRegisterSplinePointList();
 void wxRegisterAbortWindow();
 void wxRegisterEntered();
 void wxRegisterOldFrontWindow();
+void wxRegisterFocusWindow();
 void wxRegisterCurCursor();
 void wxRegisterLastInstalledBar();
 
@@ -88,6 +89,7 @@ void wxCommonInit(void)
   wxRegisterSplinePointList();
   wxRegisterEntered();
   wxRegisterOldFrontWindow();
+  wxRegisterFocusWindow();
   wxRegisterCurCursor();
   wxRegisterLastInstalledBar();
 }

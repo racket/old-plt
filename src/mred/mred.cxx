@@ -2100,6 +2100,20 @@ void MrEdQueueOnSize(wxWindow *wx_window)
   MrEdQueueWindowCallback(wx_window, CAST_SCP call_on_size);
 }
 
+# ifdef wx_mac
+static Scheme_Object *call_unfocus(void *d, int, Scheme_Object **argv)
+{
+  wxFrame *w = (wxFrame *)d;
+  w->Unfocus();
+  return scheme_void;
+}
+
+void MrEdQueueUnfocus(wxWindow *wx_window)
+{
+  MrEdQueueWindowCallback(wx_window, CAST_SCP call_unfocus);
+}
+# endif
+
 #endif
 
 static Scheme_Object *call_being_replaced(void *d, int, Scheme_Object **argv)

@@ -1697,7 +1697,7 @@ void wxWindow::Activate(Bool flag) // mac platform only
     }
 
     /* Don't activate unless it's still frontmost */
-    if ((FrontWindow() != GetWindowFromPort(cMacDC->macGrafPort()))
+    if ((FrontNonFloatingWindow() != GetWindowFromPort(cMacDC->macGrafPort()))
 	&& !wx_activate_anyway)
       return;
 

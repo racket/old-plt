@@ -26,6 +26,8 @@
 
 static wxMenuBar *close_menu_bar;
 
+static wxFrame *current_focus_window;
+
 extern int mred_current_thread_is_handler(void *ctx);
 extern int mred_in_restricted_context();
 extern int wxMenuBarHeight;
@@ -34,6 +36,7 @@ extern int wx_activate_anyway;
 extern void MrEdQueuePaint(wxWindow *wx_window);
 extern void MrEdQueueClose(wxWindow *wx_window);
 extern void MrEdQueueZoom(wxWindow *wx_window);
+extern void MrEdQueueUnfocus(wxWindow *wx_window);
 
 static OSStatus window_evt_handler(EventHandlerCallRef inHandlerCallRef, 
 				   EventRef inEvent, 
@@ -115,13 +118,24 @@ wxFrame::wxFrame // Constructor (for frame window)
       windowAttributes = kWindowResizableAttribute;
     }
   } else {
-    if (cStyle & wxNO_CAPTION) {
+    if (cStyle & wxFLOAT_FRAME) {
+      if (cStyle & wxNO_CAPTION) {
+	windowClass = kToolbarWindowClass;
+	windowAttributes = kWindowNoAttributes;
+      } else {
+	windowClass = kUtilityWindowClass;
+	windowAttributes = kWindowCloseBoxAttribute;
+	if (!(cStyle & wxNO_RESIZE_BORDER)) {
+	  windowAttributes |= kWindowFullZoomAttribute | kWindowResizableAttribute;
+	}
+      }
+    } else if (cStyle & wxNO_CAPTION) {
       windowClass = kPlainWindowClass;
       if (cStyle & wxNO_RESIZE_BORDER)
 	windowAttributes = kWindowNoAttributes;
       else {
+	/* Can't support resizable, though */
 	windowAttributes = kWindowNoAttributes;
-	windowClass = kWindowResizableAttribute;
       }
     } else {
       windowClass = kDocumentWindowClass;
@@ -720,7 +734,7 @@ void wxFrame::SetMenuBar(wxMenuBar* menu_bar)
   if (menu_bar) menu_bar->menu_bar_frame = this;
   wx_menu_bar = menu_bar;
 
-  front = FrontWindow();
+  front = FrontNonFloatingWindow();
   if (front == theMacWindow) {
     NowFront(TRUE);
   }
@@ -792,6 +806,7 @@ void wxFrame::NowFront(Bool flag) // mac platform only
 
 void wxFrame::ShowAsActive(Bool flag)
 {
+  /* Find child to accept focus, if none already has the focus: */
   if (flag && !cFocusWindow && children) {
     wxChildNode *node;
     wxWindow *win;
@@ -806,11 +821,15 @@ void wxFrame::ShowAsActive(Bool flag)
     }
   }
 
+  /* Notify child with focus: */
   if (cFocusWindow) {
-    if (flag)
+    if (flag) {
+      TakeoverFocus();
       cFocusWindow->OnSetFocus();
-    else
+    } else {
+      ReleaseFocus();
       cFocusWindow->OnKillFocus();
+    }
   }
 }
 
@@ -1002,6 +1021,7 @@ void wxFrame::Show(Bool show)
     }
   } else {
     if (cFocusWindow) {
+      ReleaseFocus();
       cFocusWindow->OnKillFocus();
       cFocusWindow = NULL;
     }
@@ -1056,13 +1076,17 @@ wxFrame *wxFrame::GetSheetChild()
 //-----------------------------------------------------------------------------
 Bool wxFrame::IsFrontWindow(void)
 {
-  WindowPtr theMacWindow, front;
-  theMacWindow = macWindow();
-  if (theMacWindow) {
-    front = FrontWindow();
-    return (theMacWindow == front);
-  } else
+  if (cStyle & wxFLOAT_FRAME) {
     return FALSE;
+  } else {
+    WindowPtr theMacWindow, front;
+    theMacWindow = macWindow();
+    if (theMacWindow) {
+      front = FrontNonFloatingWindow();
+      return (theMacWindow == front);
+    } else
+      return FALSE;
+  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1082,10 +1106,54 @@ wxWindow* wxFrame::GetFocusWindow(void) { return cFocusWindow; }
 void wxFrame::SetFocusWindow(wxWindow* window)
 {
   if (window != cFocusWindow) {
-    if (cFocusWindow && cActive) cFocusWindow->OnKillFocus();
+    if (cFocusWindow && cActive) {
+      ReleaseFocus();
+      cFocusWindow->OnKillFocus();
+    }
     cFocusWindow = window;
-    if (window && cActive) window->OnSetFocus();
+    if (window && cActive) {
+      TakeoverFocus();
+      window->OnSetFocus();
+    }
   }
+}
+
+void wxRegisterFocusWindow()
+{
+  wxREGGLOB(current_focus_window);
+}
+
+void wxFrame::TakeoverFocus()
+{
+  if (current_focus_window) {
+    if (current_focus_window->context == context) {
+      current_focus_window->Unfocus();
+    } else {
+      MrEdQueueUnfocus(current_focus_window);
+      current_focus_window = NULL;
+    }
+  }
+  current_focus_window = this;
+}
+
+void wxFrame::ReleaseFocus()
+{
+  if (current_focus_window == this)
+    current_focus_window = NULL;
+}
+
+void wxFrame::Unfocus()
+{
+  ReleaseFocus();
+  if (cFocusWindow && cActive) {
+    cFocusWindow->OnKillFocus();
+    cFocusWindow = NULL;
+  }
+}
+
+wxFrame *wxGetFocusFrame()
+{
+  return current_focus_window;
 }
 
 //-----------------------------------------------------------------------------

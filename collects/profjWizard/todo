@@ -30,6 +30,8 @@ doesn't exist as a class, then the wizard inserts a buggy program.
 
 |#
 
+bugs: 
+
 drawing: 
 
 * finish drawing unions, recursion
@@ -42,6 +44,7 @@ view
 
 both
 
+* allow common fields in abstract classes
 * parameterize over language level? 
 * privacy modifiers
 

@@ -42,29 +42,35 @@
      ;; String (Listof VariantClass) -> String 
      (define make-union
        (opt-lambda (the-union [toString? #t][template? #t])
-         (let ([type (car the-union)][subt (cadr the-union)])
+         (let ([type (dt-type the-union)][type-fields (dt-fields the-union)])
            (string-append
-            (car (purpose-statement (union-purpose the-union)))
-            (abstractClass type template?)
+            (car (purpose-statement (dt-purpose the-union)))
+            (abstractClass type type-fields template?)
             "\n"
             (commas
              (map (lambda (sc)
                     (make-class
-                     (list (car sc) type (cadr sc)) toString? template?))
-                  subt)
+                     `(,(car sc) ,type ,(cadr sc) ,(variant-purpose sc))
+                     toString? 
+                     template?
+                     type-fields))
+                  (dt-variants the-union))
              "\n")))))
-     
+
      ;; String -> String 
-     (define (abstractClass type template?)
+     (define (abstractClass type type-fields template?)
        (apply string-append 
               `(,(format abstractF type)
+                 ;; fields
+                 ,@(map (lambda (f) (format declaf (car f) (cadr f))) type-fields)
+                 ;; optional abstract template 
                  ,@(if (not template?)
                        (list "")
                        `( ,cmnt/*
-                           ,warnin
-                           ,purpos                            
-                           ,absteg
-                           ,cmnt*/))
+                          ,warnin
+                          ,purpos                            
+                          ,absteg
+                          ,cmnt*/))
                  ,endclf)))
      
      ;; ------------------------------------------------------------------------
@@ -72,7 +78,7 @@
      
      ;; create class definition (as string) from name, super and list of fields
      (define make-class 
-       (opt-lambda (the-class [toString? #t][template? #t])
+       (opt-lambda (the-class [toString? #t][template? #t][super-fields '()])
          (let ([type   (car the-class)]
                [super  (cadr the-class)]
                [fields (caddr the-class)]
@@ -84,9 +90,7 @@
                       ,@(map (lambda (f) (format declaf (car f) (cadr f))) fields)
                       "\n"
                       ;; constructor
-                      ,(format constf type (parameters fields))
-                      ,@(map (lambda (f) (format initif (cadr f) (cadr f))) fields)
-                      ,endMet
+                      ,(class-constructor type fields super-fields)
                       ;; optional template draft:
                       ,@(make-template super fields template?)
                       ;; optional toString method:
@@ -96,6 +100,22 @@
      ;; String -> String
      (define (extends super) (if (string=? "" super) "" (format extendsf super)))
      
+     ;; String Fields Fields -> String
+     (define (class-constructor type fields super-fields)
+       (apply string-append
+              `( ,(format constf type (parameters (append super-fields fields)))
+                  #| When we switch to super in beginner, this will need to change.
+                  ;; call to super(super-fields)
+                  ,@(if (null? super-fields) '()
+                        (list (format superf (commas (map cadr super-fields)))))
+                  |#
+                  ;; init for fields 
+                  ,@(map (lambda (f) (format initif (cadr f) (cadr f))) 
+                         ;; When we switch to super in beginner, ... 
+                         (append super-fields fields))
+                  ,endMet)))
+     
+
      ;; Fields -> String 
      ;; create a paremeter list from a field specifications
      (define (parameters fs)
@@ -162,6 +182,7 @@
      (define declaf "  ~a ~a;~n")
      ;; Constructor
      (define constf "  ~a(~a) {~n") (define paraf "~a ~a")
+     (define superf "    super(~a);~n")
      (define initif "    this.~a = ~a;~n")
      (define endMet "  }\n")
      (define endclf "}\n")
@@ -202,7 +223,7 @@
          "*/\n"
          "\n"))
      
-     #| Tests : 
+     #| Tests :
      (require (lib "testing.scm" "testing"))
      
      (test== (commas '()) "")
@@ -247,6 +268,25 @@
      
      (test== (toString "Foo" '(("Foo" "x") ("int" "y") ("Z" "z")) #f)
              (list ""))
+     
+     (test== (class-constructor "Node" '(("int" "x")) '(("Info" "i") ("ATree" "parent")))
+             (string-append
+                    "  Node(Info i, ATree parent, int x) {\n"
+                    "    this.i = i;\n"
+                    "    this.parent = parent;\n"
+                    "    this.x = x;\n"
+                    "  }\n"
+                    )
+             "class constructor with super fields")
+
+     '(test== (class-constructor "Node" '(("int" "x")) '(("Info" "i") ("ATree" "parent")))
+             (string-append
+                    "  Node(Info i, ATree parent, int x) {\n"
+                    "    super(i, parent);\n"
+                    "    this.x = x;\n"
+                    "  }\n"
+                    )
+             "class constructor with super fields")
      
      (test== (make-class (list "foo" "" '()))
              (apply string-append 
@@ -322,12 +362,19 @@
                       "  }\n"
                       "}\n")))
      
-     (test== (abstractClass "Foo" #f)
+     (test== (abstractClass "Foo" '() #f)
              (string-append 
               "abstract class Foo {\n"
               "}\n"))
      
-     (test== (abstractClass "Foo" #t)
+     (test== (abstractClass "Foo" '(("int" "x")) #f)
+             (string-append 
+              "abstract class Foo {\n"
+              "  int x;\n"
+              "}\n")
+             "abstract class with fields")
+     
+     (test== (abstractClass "Foo" '() #t)
              (apply string-append 
                     `("abstract class Foo {\n"
                       ,cmnt/*                        
@@ -337,9 +384,21 @@
                       ,cmnt*/
                       "}\n")))
      
+     (test== (abstractClass "Foo" '(("int" "x")) #t)
+             (apply string-append 
+                    `("abstract class Foo {\n"
+                      "  int x;\n"
+                      ,cmnt/*                        
+                      ,warnin
+                      ,purpos
+                      "  abstract ??? mmm();\n"
+                      ,cmnt*/
+                      "}\n"))
+             "abstract class with fields and template")
+     
      (test== 
       (make-union
-       (list "AList" '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest"))))))
+       (make-dt "AList" '() '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")))) ""))
       (apply string-append 
              `(
                "abstract class AList {\n"
@@ -393,7 +452,7 @@
      
      (test== 
       (make-union
-       (list "AList" '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")))))
+       (make-dt "AList" '() '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")))) "")
        #f #f)
       (apply string-append 
              `(
@@ -432,10 +491,10 @@
                        "    return \"new foo(\" + \")\";\n"
                        "  }\n"
                        "}\n")))
-     
+
      (test== 
       (make-union
-       (list "AList" '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")))) "hello world")
+       (make-dt "AList" '() '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")))) "hello world")
        #f #f)
       (apply string-append 
              `("// hello world\n"
@@ -460,7 +519,75 @@
                )
              )
       "make union with purpose statement")
-
+     
+     (test== 
+      (make-union
+       (make-dt
+        "AList" '() '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")) "pair")) "hello world")
+       #f #f)
+      (apply string-append 
+             `("// hello world\n"
+               "abstract class AList {\n"
+               "}\n"
+               "\n"
+               "class MT extends AList {\n"
+               "\n"
+               "  MT() {\n"
+               "  }\n"
+               "}\n"
+               "\n"
+               "// pair\n"
+               "class Cons extends AList {\n"
+               "  int first;\n"
+               "  AList rest;\n"
+               "\n"
+               "  Cons(int first, AList rest) {\n"
+               "    this.first = first;\n"
+               "    this.rest = rest;\n"
+               "  }\n"
+               "}\n"
+               )
+             )
+      "make union with purpose statement for variants")
+     
+     (test== 
+      (make-union
+       (make-dt
+        "AList"
+        '(("Common" "field") ("Common" "field2"))
+        '(("MT" ()) ("Cons" (("int" "first") ("AList" "rest")) "pair"))
+        "hello world")
+       #f #f)
+      (apply string-append 
+             `("// hello world\n"
+               "abstract class AList {\n"
+               "  Common field;\n"
+               "  Common field2;\n"
+               "}\n"
+               "\n"
+               "class MT extends AList {\n"
+               "\n"
+               "  MT(Common field, Common field2) {\n"
+               "    this.field = field;\n"
+               "    this.field2 = field2;\n"
+               "  }\n"
+               "}\n"
+               "\n"
+               "// pair\n"
+               "class Cons extends AList {\n"
+               "  int first;\n"
+               "  AList rest;\n"
+               "\n"
+               "  Cons(Common field, Common field2, int first, AList rest) {\n"
+               "    this.field = field;\n"
+               "    this.field2 = field2;\n"
+               "    this.first = first;\n"
+               "    this.rest = rest;\n"
+               "  }\n"
+               "}\n"
+               )
+             )
+      "make union with common fields")
      |#
      )
    

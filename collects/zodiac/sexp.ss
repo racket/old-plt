@@ -65,12 +65,13 @@
 
   (define set-macro-origin
     (lambda (parsed-term head-sexp)
-      (set-zodiac-origin! parsed-term
-	(make-origin 'macro
-	  (if (z:symbol? head-sexp)
-	    head-sexp
-	    (internal-error 'set-macro-origin
-	      "Shouldn't get ~s here" head-sexp))))))
+      (when (zodiac? parsed-term)
+	(set-zodiac-origin! parsed-term
+	  (make-origin 'macro
+	    (if (z:symbol? head-sexp)
+	      head-sexp
+	      (internal-error 'set-macro-origin
+		"Shouldn't get ~s here" head-sexp)))))))
 
   (define sexp->raw
     (opt-lambda (expr (table #f))

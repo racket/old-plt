@@ -131,11 +131,14 @@ static Scheme_Object *parse_requires(Scheme_Object *form,
 				     Check_Func ck, void *data,
 				     int start, Scheme_Object *redef_modname,
 				     int unpack_kern);
-static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx);
-static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx);
+static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime);
+static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, Scheme_Object *syntax_idx, int delay_exptime);
 static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env);
 
 static Scheme_Object *default_module_resolver(int argc, Scheme_Object **argv);
+
+int check_functional_imports(Scheme_Object *l, Scheme_Env *env, int et);
+int check_functional_body(Scheme_Object *l, int et);
 
 void qsort_provides(Scheme_Object **exs, Scheme_Object **exsns, Scheme_Object **exss, 
 		    int start, int count, int do_uninterned);
@@ -333,6 +336,9 @@ void scheme_finish_kernel(Scheme_Env *env)
     }
   }
  
+  kernel->functional = 1;
+  kernel->et_functional = 1;
+
   kernel->provides = exs;
   kernel->provide_srcs = NULL;
   kernel->provide_src_names = exs;
@@ -520,7 +526,7 @@ void scheme_install_initial_module_set(Scheme_Env *env)
 
     /* Make sure module is running: */
     m = (Scheme_Module *)scheme_hash_get(initial_modules_env->module_registry, a[1]);
-    start_module(m, initial_modules_env, 0, a[1]);
+    start_module(m, initial_modules_env, 0, a[1], 0);
 
     namespace_attach_module(3, a);
   }
@@ -711,13 +717,10 @@ static Scheme_Object *_dynamic_require(int argc, Scheme_Object *argv[],
     }
   }
 
-  if (SCHEME_VOIDP(name)) {
-    expstart_module(m, env, 0, modidx);
-    menv = scheme_module_access(m->modname, env);
-    if (menv->lazy_syntax)
-      finish_expstart_module(menv, env);
-  } else
-    start_module(m, env, 0, modidx);
+  if (SCHEME_VOIDP(name))
+    expstart_module(m, env, 0, modidx, 0);
+  else
+    start_module(m, env, 0, modidx, 1);
 
   if (SCHEME_SYMBOLP(name)) {
     menv = scheme_module_access(srcmname, env);
@@ -1375,7 +1378,7 @@ void scheme_module_force_lazy(Scheme_Env *env, int previous)
 }
 
 static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart, 
-			    Scheme_Object *syntax_idx)
+			    Scheme_Object *syntax_idx, int delay_exptime)
 {
   Scheme_Env *menv;
   Scheme_Object *l;
@@ -1385,8 +1388,11 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
 
   if (!restart) {
     menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
-    if (menv)
+    if (menv) {
+      if (!delay_exptime && menv->lazy_syntax)
+	finish_expstart_module(menv, env);
       return;
+    }
   }
 
   if (m->primitive) {
@@ -1434,12 +1440,16 @@ static void expstart_module(Scheme_Module *m, Scheme_Env *env, int restart,
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     expstart_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
 		    env, 0, 
-		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
+		    scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx),
+		    delay_exptime);
   }
 
   if (m->prim_et_body || !SCHEME_NULLP(m->et_body) || !SCHEME_NULLP(m->et_requires)) {
-    /* Set lazy-syntax flag. */
-    menv->lazy_syntax = 1;
+    if (delay_exptime || (1 || m->et_functional)) {  /* <<<<<<<<<<<<<<<  1 || */
+      /* Set lazy-syntax flag. */
+      menv->lazy_syntax = 1;
+    } else
+      finish_expstart_module(menv, env);
   }
 }
 
@@ -1464,7 +1474,8 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
   for (l = menv->module->et_requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     start_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
 		 exp_env, 0,
-		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx));
+		 scheme_modidx_shift(SCHEME_CAR(l), menv->module->self_modidx, exp_env->link_midx),
+		 0);
   }
   
   if (menv->module->prim_et_body) {
@@ -1494,7 +1505,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env)
 }
 
 static void start_module(Scheme_Module *m, Scheme_Env *env, int restart, 
-			 Scheme_Object *syntax_idx)
+			 Scheme_Object *syntax_idx, int delay_expstart)
 {
   Scheme_Env *menv;
   Scheme_Object *body, *e, *l;
@@ -1502,7 +1513,7 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
   if (SAME_OBJ(m, kernel))
     return;
 
-  expstart_module(m, env, restart, syntax_idx);
+  expstart_module(m, env, restart, syntax_idx, delay_expstart);
 
   if (m->primitive)
     return;
@@ -1518,7 +1529,8 @@ static void start_module(Scheme_Module *m, Scheme_Env *env, int restart,
   for (l = m->requires; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
     start_module(module_load(scheme_module_resolve(SCHEME_CAR(l)), env, NULL), 
 		 env, 0, 
-		 scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx));
+		 scheme_modidx_shift(SCHEME_CAR(l), m->self_modidx, syntax_idx),
+		 delay_expstart);
   }
 
   menv->running = 1;
@@ -1610,6 +1622,9 @@ void scheme_finish_primitive_module(Scheme_Env *env)
       exs[count++] = (Scheme_Object *)b->key;
   }
  
+  m->functional = 1;
+  m->et_functional = 1;
+
   m->provides = exs;
   m->provide_srcs = NULL;
   m->provide_src_names = exs;
@@ -1766,13 +1781,28 @@ module_execute(Scheme_Object *data)
 
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
+  /* Compute whether the module is obviously functional (as opposed to imperative): */
+  if (scheme_starting_up) {
+    m->functional = 1;
+    m->et_functional = 1;
+  } else {
+    if (check_functional_imports(m->requires, env, 0)
+	&& check_functional_body(m->body, 0))
+      m->functional = 1;
+    if (check_functional_imports(m->requires, env, 1)
+	&& check_functional_imports(m->et_requires, env, 0)
+	&& check_functional_imports(m->et_requires, env, 1)
+	&& check_functional_body(m->et_body, 1))
+      m->et_functional = 1;
+  }
+
   /* Replaced an already-running or already-syntaxing module? */
   menv = (Scheme_Env *)scheme_hash_get(MODCHAIN_TABLE(env->modchain), m->modname);
   if (menv) {
     if (menv->running)
-      start_module(m, env, 1, NULL);
+      start_module(m, env, 1, NULL, 1);
     else
-      expstart_module(m, env, 1, NULL);
+      expstart_module(m, env, 1, NULL, 1);
   }
 
   return scheme_void;
@@ -1860,7 +1890,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* load the module for the initial require */
   iim = module_load(_module_resolve(iidx, ii), menv, NULL); 
-  expstart_module(iim, menv, 0, iidx);
+  expstart_module(iim, menv, 0, iidx, 0);
 
   if (scheme_hash_get(menv->module_registry, m->modname)) {
     /* Redefinition: cycles are possible. */
@@ -2132,6 +2162,10 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
 
   qsort_provides(exs, exns, exss, 0, nvar, 1);
 
+  /* Worst-case assumptions for now: */
+  m->functional = 0;
+  m->et_functional = 0;
+
   m->provides = exs;
   m->provide_srcs = exss;
   m->provide_src_names = exns;
@@ -2160,6 +2194,63 @@ Scheme_Object *scheme_declare_module(Scheme_Object *shape, Scheme_Invoke_Proc iv
   scheme_hash_set(env->module_registry, m->modname, (Scheme_Object *)m);
 
   return scheme_void;
+}
+
+
+int check_functional_imports(Scheme_Object *l, Scheme_Env *env, int et)
+{
+  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    Scheme_Object *name;
+    Scheme_Module *im;
+    name = SCHEME_CAR(l);
+    
+    /* Don't resolve agreesively: */
+    if (!SCHEME_SYMBOLP(name) && !SCHEME_FALSEP(((Scheme_Modidx *)name)->resolved))
+      name = ((Scheme_Modidx *)name)->resolved;
+    
+    /* Break out of the loop if not functional: */
+    if (SCHEME_SYMBOLP(name)) {
+      im = module_load(name, env, NULL);
+      if (im) {
+	if ((!et && !im->functional)
+	    || (et && !im->et_functional))
+	  break;
+      } else 
+	break;
+    } else
+      break;
+  }
+
+  return SCHEME_NULLP(l);
+}
+
+int check_functional_body(Scheme_Object *l, int et)
+{
+  Scheme_Object *e;
+  int vals;
+
+  for (; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {
+    e = SCHEME_CAR(l);
+    if (et) {
+      vals = scheme_list_length(SCHEME_VEC_ELS(e)[0]);
+      e = SCHEME_VEC_ELS(e)[1];
+    } else {
+      if (SAME_TYPE(SCHEME_TYPE(e), scheme_syntax_type)) {
+	if (SCHEME_PINT_VAL(e) == DEFINE_VALUES_EXPD) {
+	  e = SCHEME_IPTR_VAL(e);
+	  vals = scheme_list_length(SCHEME_CAR(e));
+	  e = SCHEME_CDR(e);
+	} else
+	  vals = 1;
+      } else
+	vals = 1;
+    }
+
+    if (!scheme_omittable_expr(e, vals))
+      break;
+  }
+
+  return SCHEME_NULLP(l);
 }
 
 /**********************************************************************/
@@ -2777,7 +2868,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     Scheme_Object *prev = NULL, *next;
     for (p = first; !SCHEME_NULLP(p); p = next) {
       next = SCHEME_CDR(p);
-      if (scheme_omittable_expr(SCHEME_CAR(p))) {
+      if (scheme_omittable_expr(SCHEME_CAR(p), 1)) {
 	if (prev)
 	  SCHEME_CDR(p) = next;
 	else
@@ -3402,9 +3493,9 @@ Scheme_Object *parse_requires(Scheme_Object *form,
       prevent_cyclic_requires(m, redef_modname, env);
 
     if (start)
-      start_module(m, env, 0, idx);
+      start_module(m, env, 0, idx, 0);
     else
-      expstart_module(m, env, 0, idx);
+      expstart_module(m, env, 0, idx, 0);
 
     is_kern = (SAME_OBJ(idx, kernel_symbol)
 	       && !exns

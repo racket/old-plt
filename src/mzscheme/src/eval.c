@@ -526,9 +526,11 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 /*           compiling applications, sequences, and branches              */
 /*========================================================================*/
 
-int scheme_omittable_expr(Scheme_Object *o)
+int scheme_omittable_expr(Scheme_Object *o, int vals)
 {
   Scheme_Type vtype;
+
+ try_again:
 
   vtype = SCHEME_TYPE(o);
 
@@ -538,14 +540,59 @@ int scheme_omittable_expr(Scheme_Object *o)
       || (vtype == scheme_unclosed_procedure_type)
       || (vtype == scheme_compiled_unclosed_procedure_type)
       || (vtype == scheme_case_lambda_sequence_type))
-    return 1;
+    return (vals == 1);
 
   if ((vtype == scheme_branch_type)) {
     Scheme_Branch_Rec *b;
     b = (Scheme_Branch_Rec *)o;
-    return (scheme_omittable_expr(b->test)
-	    && scheme_omittable_expr(b->tbranch)
-	    && scheme_omittable_expr(b->fbranch));
+    return (scheme_omittable_expr(b->test, 1)
+	    && scheme_omittable_expr(b->tbranch, vals)
+	    && scheme_omittable_expr(b->fbranch, vals));
+  }
+
+  if ((vtype == scheme_let_value_type)) {
+    Scheme_Let_Value *lv = (Scheme_Let_Value *)o;
+    return (scheme_omittable_expr(lv->value, lv->count)
+	    && scheme_omittable_expr(lv->body, vals));
+  }
+
+  if ((vtype == scheme_let_one_type)) {
+    Scheme_Let_One *lo = (Scheme_Let_One *)o;
+    return (scheme_omittable_expr(lo->value, 1)
+	    && scheme_omittable_expr(lo->body, vals));
+  }
+
+  if ((vtype == scheme_let_void_type)) {
+    o = ((Scheme_Let_Void *)o)->body;
+    goto try_again;
+  }
+
+  if ((vtype == scheme_letrec_type)) {
+    o = ((Scheme_Letrec *)o)->body;
+    goto try_again;
+  }
+
+  if ((vtype == scheme_syntax_type)) {
+    int expd;
+    expd = SCHEME_PINT_VAL(o);
+    if (expd == QUOTE_SYNTAX_EXPD)
+      return (vals == 1);
+  }
+
+  if ((vtype == scheme_application_type)) {
+    /* Look for multiple values */
+    Scheme_App_Rec *app = (Scheme_App_Rec *)o;
+    if (app->num_args == vals) {
+      if (SAME_OBJ(scheme_values_func, app->args[0])) {
+	int i;
+	for (i = vals; i--; ) {
+	  if (!scheme_omittable_expr(app->args[i + 1], 1))
+	    return 0;
+	}
+	return 1;
+      }
+    }
+    return 0;
   }
 
   return 0;
@@ -892,7 +939,7 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
       total++;
     } else if (opt 
 	       && (((opt > 0) && !last) || ((opt < 0) && !first))
-	       && scheme_omittable_expr(v)) {
+	       && scheme_omittable_expr(v, 1)) {
       /* A value that is not the result. We'll drop it. */
       total++;
     } else {
@@ -913,7 +960,7 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
     return scheme_compiled_void();
   
   if (count == 1) {
-    if ((opt < 0) && !scheme_omittable_expr(SCHEME_CAR(seq))) {
+    if ((opt < 0) && !scheme_omittable_expr(SCHEME_CAR(seq), 1)) {
       /* We can't optimize (begin expr cont) to expr because
 	 exp is not in tail position in the original (so we'd mess
 	 up continuation marks. */
@@ -945,7 +992,7 @@ Scheme_Object *scheme_make_sequence_compilation(Scheme_Object *seq, int opt)
     } else if (opt 
 	       && ((opt > 0 && (k < total))
 		   || ((opt < 0) && k))
-	       && scheme_omittable_expr(v)) {
+	       && scheme_omittable_expr(v, 1)) {
       /* Value not the result. Do nothing. */
     } else
       o->array[i++] = v;
@@ -970,7 +1017,7 @@ static Scheme_Object *look_for_letv_change(Scheme_Sequence *s)
     v = s->array[i];
     if (SAME_TYPE(SCHEME_TYPE(v), scheme_let_value_type)) {
       Scheme_Let_Value *lv = (Scheme_Let_Value *)v;
-      if (scheme_omittable_expr(lv->body)) {
+      if (scheme_omittable_expr(lv->body, 1)) {
 	int esize = s->count - (i + 1);
 	int nsize = i + 1;
 	Scheme_Object *nv, *ev;

@@ -196,6 +196,7 @@ void scheme_do_add_global_symbol(Scheme_Env *env, Scheme_Object *sym,
 /*========================================================================*/
 
 extern Scheme_Object *scheme_void_func;
+extern Scheme_Object *scheme_values_func;
 
 extern Scheme_Object *scheme_not_prim;
 extern Scheme_Object *scheme_define_values_syntax, *scheme_define_syntaxes_syntax;
@@ -1425,7 +1426,7 @@ void scheme_prepare_exp_env(Scheme_Env *env);
 int scheme_used_app_only(Scheme_Comp_Env *env, int which);
 int scheme_used_ever(Scheme_Comp_Env *env, int which);
 
-int scheme_omittable_expr(Scheme_Object *o);
+int scheme_omittable_expr(Scheme_Object *o, int vals);
 
 int scheme_is_env_variable_boxed(Scheme_Comp_Env *env, int which);
 
@@ -1500,6 +1501,9 @@ typedef struct Scheme_Module
 
   Scheme_Object *body;        /* or data, if prim_body */
   Scheme_Object *et_body;
+
+  int functional;
+  int et_functional;
 
   Scheme_Object **provides;          /* symbols (extenal names) */
   Scheme_Object **provide_srcs;      /* module access paths, #f for self */

@@ -3058,7 +3058,7 @@ do_letrec_syntaxes(const char *where, int normal,
     a = scheme_resolve_expr(a, scheme_resolve_info_create(NULL));
     a = scheme_link_expr(a, NULL);
 
-    if (scheme_omittable_expr(a)) {
+    if (scheme_omittable_expr(a, 1)) {
       /* short cut */
       a = _scheme_eval_linked_expr_multi(a);
     } else {

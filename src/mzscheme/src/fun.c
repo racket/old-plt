@@ -56,6 +56,7 @@ int scheme_defining_primitives;
 
 Scheme_Object scheme_void[1];
 Scheme_Object *scheme_void_func;
+Scheme_Object *scheme_values_func;
 
 Scheme_Object *scheme_tail_call_waiting;
 
@@ -180,11 +181,14 @@ scheme_init_fun (Scheme_Env *env)
 						       2, 2,
 						       0, -1),
 			     env);
+
+  REGISTER_SO(scheme_values_func);
+  scheme_values_func = scheme_make_prim_w_arity2(scheme_values,  
+						 "values",
+						 0, -1,
+						 0, -1);
   scheme_add_global_constant("values",
-			     scheme_make_prim_w_arity2(scheme_values,  
-						       "values",
-						       0, -1,
-						       0, -1),
+			     scheme_values_func,
 			     env);
 
   o = scheme_make_prim_w_arity2(scheme_call_ec,  

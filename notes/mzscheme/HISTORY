@@ -1,7 +1,7 @@
 
 Version 203.5
 Changed make-custom-input-port to drop the initial
- waitable argument; instead the read and peek
+ waitable argument; instead, the read and peek
  functions should return a waitable instead of 0
 Changed make-custom-output-port so that the first
  argument is #f or a procedure to return a waitable
@@ -17,7 +17,7 @@ Changed make-struct-type to accept a list of immutable
 Changed struct-type-info to return 8 values instead of 6
  to include information on immutable fields
 Changed proc-spec handling in make-struct-type; an integer
- value must be <= init-field-k, and overriding is disallowed
+ value must be < init-field-k, and overriding is disallowed
  (for consistency with user-defined properties)
 Added prop:waitable
 

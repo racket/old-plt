@@ -167,7 +167,7 @@ The _plt-single-installer.ss_ module provides a function for
 installing a single .plt file:
 
 > (run-single-installer file get-dir-proc)
-     file : string
+     file : path string
      get-dir-proc: (-> (union string #f))
 
    Creates a separate thread and namespace, runs the installer in that

@@ -171,11 +171,12 @@
 # endif
 # if defined(powerpc)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-linux"
-#  define SCHEME_BIG_ENDIAN
 # endif
 # if defined(__mc68000__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "m68k-linux"
-#  define SCHEME_BIG_ENDIAN
+# endif
+# if defined(mips)
+#  define SCHEME_PLATFORM_LIBRARY_SUBPATH "mips-linux"
 # endif
 # if defined(__alpha__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-linux"
@@ -193,6 +194,11 @@
 # endif
 # ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "unknown-linux"
+# endif
+
+# include <endian.h>
+# if __BYTE_ORDER == __BIG_ENDIAN
+#  define SCHEME_BIG_ENDIAN
 # endif
 
 # include "uconfig.h"
@@ -330,7 +336,7 @@
   /************** SGI/IRIX with SGI cc ****************/
 
 #if  (defined(mips) || defined(__mips)) \
-     && !(defined(ultrix) || defined(__ultrix))
+     && !(defined(ultrix) || defined(__ultrix) || defined(linux))
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "mips-irix"
 

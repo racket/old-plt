@@ -164,7 +164,6 @@ typedef struct Scheme_FD {
   unsigned char *buffer;
 
 # ifdef WINDOWS_FILE_HANDLES
-  /* for general case of pipes in Win 98 */
   Win_FD_Input_Thread *th;
   struct Win_FD_Output_Thread *oth;
 # endif
@@ -3326,6 +3325,7 @@ make_fd_input_port(int fd, const char *filename, int regfile)
     HANDLE h;
  
     th = (Win_FD_Input_Thread *)malloc(sizeof(Win_FD_Input_Thread));
+    fip->th = th;
 
     /* Replace buffer with a malloced one: */
     bfr = (unsigned char *)malloc(MZPORT_FD_BUFFSIZE);
@@ -3336,6 +3336,7 @@ make_fd_input_port(int fd, const char *filename, int regfile)
     th->avail = 0;
     th->err = 0;
     th->eof = 0;
+    th->checking = 0;
     th->checking_sema = CreateSemaphore(NULL, 0, 1, NULL);
     th->ready_sema = CreateSemaphore(NULL, 0, 1, NULL);
     th->you_clean_up_sema = CreateSemaphore(NULL, 1, 1, NULL);

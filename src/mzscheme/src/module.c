@@ -17,7 +17,13 @@
     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
+/* This file implements the first-order, top-level module system. An
+   initiantiated module is implemented essentially as a namespace. The
+   bindings at the top level of a module are namespace top-level
+   bindings. */
+
 #include "schpriv.h"
+#include "schmach.h"
 
 /* globals */
 Scheme_Object *scheme_sys_wraps0;
@@ -194,6 +200,9 @@ void scheme_init_module(Scheme_Env *env)
 
 void scheme_finish_kernel(Scheme_Env *env)
 {
+  /* When this function is called, the initial namespace has all the
+     primitive bindings for syntax and procedures. This function fills
+     in the module wrapper for #%kernel. */
   Scheme_Hash_Table *ht;
   int i, j, count, syntax_start = 0;
   Scheme_Bucket **bs;

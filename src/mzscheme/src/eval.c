@@ -155,7 +155,7 @@ static Scheme_Object *read_syntax(Scheme_Object *obj);
 
 static Scheme_Object *define_values_symbol, *letrec_values_symbol, *lambda_symbol;
 static Scheme_Object *unknown_symbol, *void_link_symbol, *quote_symbol;
-static Scheme_Object *letmacro_symbol, *begin_symbol;
+static Scheme_Object *letrec_syntaxes_symbol, *begin_symbol;
 static Scheme_Object *let_symbol;
 
 static Scheme_Object *zero_rands_ptr; /* &zero_rands_ptr is dummy rands pointer */
@@ -227,7 +227,7 @@ scheme_init_eval (Scheme_Env *env)
   REGISTER_SO(unknown_symbol);
   REGISTER_SO(void_link_symbol);
   REGISTER_SO(quote_symbol);
-  REGISTER_SO(letmacro_symbol);
+  REGISTER_SO(letrec_syntaxes_symbol);
   REGISTER_SO(begin_symbol);
   REGISTER_SO(let_symbol);
   
@@ -238,7 +238,7 @@ scheme_init_eval (Scheme_Env *env)
   unknown_symbol = scheme_intern_symbol("unknown");
   void_link_symbol = scheme_intern_symbol("-v");
   quote_symbol = scheme_intern_symbol("quote");
-  letmacro_symbol = scheme_intern_symbol("letrec-syntax");
+  letrec_syntaxes_symbol = scheme_intern_symbol("letrec-syntaxes");
   begin_symbol = scheme_intern_symbol("begin");
   
   scheme_install_type_writer(scheme_application_type, write_application);
@@ -2006,7 +2006,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
       goto try_again;
     } else if (SAME_OBJ(gval, scheme_define_values_syntax)
-	       || SAME_OBJ(gval, scheme_defmacro_syntax)) {
+	       || SAME_OBJ(gval, scheme_define_syntaxes_syntax)) {
       /* Turn defines into a letrec: */
       Scheme_Object *var, *vars, *v, *link, *l = scheme_null, *start = NULL;
       int values = SAME_OBJ(gval, scheme_define_values_syntax);
@@ -2049,7 +2049,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	    first = scheme_check_immediate_macro(first, env, rec, drec, depth, scheme_false, &gval);
 	    name = SCHEME_STX_CAR(first);
 	    if ((values && NOT_SAME_OBJ(gval, scheme_define_values_syntax))
-		|| (!values && NOT_SAME_OBJ(gval, scheme_defmacro_syntax))) {
+		|| (!values && NOT_SAME_OBJ(gval, scheme_define_syntaxes_syntax))) {
 	      if (SAME_OBJ(gval, scheme_begin_syntax)) {
 		/* Inline content */
 		Scheme_Object *content;
@@ -2073,7 +2073,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       }
 
       if (SCHEME_STX_PAIRP(result)) {
-	result = scheme_make_pair(values ? letrec_values_symbol : letmacro_symbol, 
+	result = scheme_make_pair(values ? letrec_values_symbol : letrec_syntaxes_symbol, 
 				  scheme_make_immutable_pair(start, result));
 	result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps(env), 0, 1);
 

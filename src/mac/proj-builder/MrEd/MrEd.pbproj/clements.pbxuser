@@ -40,22 +40,15 @@
 		lineNumber = 142;
 		state = 1;
 	};
-	1D95026F00FA27E97F000001 = {
-		fileReference = 03172A9500BAB1077F000001;
-		isa = PBXFileBreakpoint;
-		lineNumber = 312;
-		state = 1;
-	};
 	20286C28FDCF999611CA2CEA = {
 		activeBuildStyle = 05952DFCFFF02D1B11CA0E50;
-		activeTarget = 00F450E000EC642C7F000001;
+		activeTarget = 20286C34FDCF999611CA2CEA;
 		addToTargets = (
-			20286C34FDCF999611CA2CEA,
+			00F450E000EC642C7F000001,
 		);
 		breakpoints = (
 			019D45C600F10E70810A7369,
 			0FBB85F900F3A57C7F000001,
-			1D95026F00FA27E97F000001,
 		);
 		perUserDictionary = {
 			PBXWorkspaceConfiguration = {

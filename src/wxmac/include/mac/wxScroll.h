@@ -10,6 +10,7 @@
 #ifndef wxScrollh
 #define wxScrollh
 
+#include "wx_stdev.h"
 #include "wx_obj.h"
 #include "wx_list.h"
 #include "wxScrollData.h"

@@ -44,7 +44,7 @@
 #else
 #include <ctype.h>
 #endif
-#if defined(FOR_MAC)
+#if (defined(FOR_MAC) && defined(__MWERKS__))
 extern int strcasecmp(char *s1, char *s2);
 #endif
 LFUNC(xpmVisualType, int, (Visual *visual));

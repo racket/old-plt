@@ -9,6 +9,8 @@
 
 static const char sccsid[] = "%W% %G%";
 
+#pragma implementation
+
 #include "common.h"
 #include "wx_setup.h"
 

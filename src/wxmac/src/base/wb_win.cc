@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_win.cc,v 1.2 1998/04/16 14:34:56 robby Exp $
+ * RCS_ID:      $Id: wb_win.cc,v 1.3 1999/11/22 17:23:15 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -20,6 +20,7 @@
 #include "wx_win.h"
 #include "wx_gdi.h"
 #include "wx_utils.h"
+#include "wx_dialg.h"
 
 // If not MS C++, don't include wx.h: we'll just include
 // the minimum set of files.

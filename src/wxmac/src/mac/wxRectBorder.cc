@@ -10,6 +10,7 @@
 static const char sccsid[] = "%W% %G%";
 
 #include "wxRectBorder.h"
+#include "wxMacDC.h"
 #include "wx_area.h"
 
 //=============================================================================

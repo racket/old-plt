@@ -18,6 +18,7 @@
 
 #include "common.h"
 #include "wx_setup.h"
+#include "wx_gdi.h"
 
 #if USE_CLIPBOARD
 

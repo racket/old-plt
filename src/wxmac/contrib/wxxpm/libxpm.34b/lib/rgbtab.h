@@ -39,6 +39,9 @@
 
 #ifdef FOR_MAC
 typedef unsigned long COLORREF;
+#ifndef WX_FAR
+# define WXFAR /**/
+#endif
 #endif
 
 typedef struct {

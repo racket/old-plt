@@ -12,6 +12,7 @@ static const char sccsid[] = "%W% %G%";
 #include "wxBorder.h"
 #include "wxMacDC.h"
 #include "wx_area.h"
+#include "wx_gdi.h"
 #ifndef OS_X
   #include <Windows.h>
   #include "wxBorderArea.h"

@@ -929,7 +929,7 @@ void wxPostScriptDC::DrawEllipse (float x, float y, float width, float height)
       pstream->Out(XSCALEREL(width / 2)); pstream->Out(" "); pstream->Out(YSCALEREL(height / 2)); pstream->Out(" 0 360 ellipse\n");
       pstream->Out("fill\n");
 
-      CalcBoundingBox(XSCALEBND(x - width), YSCALEBND(y - height));
+      CalcBoundingBox(XSCALEBND(x), YSCALEBND(y));
       CalcBoundingBox(XSCALEBND(x + width), YSCALEBND(y + height));
     }
   if (current_pen && current_pen->GetStyle () != wxTRANSPARENT)
@@ -941,7 +941,7 @@ void wxPostScriptDC::DrawEllipse (float x, float y, float width, float height)
       pstream->Out(XSCALEREL(width / 2)); pstream->Out(" "); pstream->Out(YSCALEREL(height / 2)); pstream->Out(" 0 360 ellipse\n");
       pstream->Out("stroke\n");
 
-      CalcBoundingBox (XSCALEBND(x - width), YSCALEBND(y - height));
+      CalcBoundingBox (XSCALEBND(x), YSCALEBND(y));
       CalcBoundingBox (XSCALEBND(x + width), YSCALEBND(y + height));
     }
 }

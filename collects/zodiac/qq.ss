@@ -14,8 +14,6 @@
 	    (let ((template (pat:pexpand 'template p-env kwd))
 		   (new-qq-level
 		     (add1 qq-base-level)))
-;		     (add1 (or (get-attribute attributes 'qq-level)
-;			     qq-base-level))))
 	      (put-attribute attributes 'qq-level new-qq-level)
 	      (put-attribute attributes 'qq-changed? #f)
 	      (let ((result (expand-expr template

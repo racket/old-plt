@@ -340,7 +340,25 @@
                         . rest)))
                    (test 'a syntax-property (syntax procedure) 'inferred-name)])))
         ; let 
-;        (list #'( (let ([c 1] [d 2]) 
+        (list #'(lambda (a b c) (let* ([d b] [e (begin a d)]) (begin a b c d))) 'mzscheme cadr
+              (lambda (stx)
+                (syntax-case (strip-outer-lambda stx) (begin with-continuation-mark let*-values)
+                  [(let*-values bindings
+                     (with-continuation-mark
+                      key-0
+                      mark-0
+                      (begin
+                        pre-break-0
+                        (begin
+                          break-1
+                          (begin
+                            (set!-values vars-0 vals-0)
+                            (set!-values vars-1 vals-1)
+                            . rest)))))
+                   (begin
+                     (test (void) check-mark (syntax mark-0) '(a b c d e lifter-d-1 lifter-e-2) 'all))
+                   
+                   ])))
         
                     ))
 

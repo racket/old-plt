@@ -1096,4 +1096,10 @@ Scheme_Object *scheme_make_random_state(long seed);
 
 extern int scheme_internal_checking_char;
 
+#define MZTHREAD_RUNNING 0x1
+#define MZTHREAD_SUSPENDED 0x2
+#define MZTHREAD_KILLED 0x4
+#define MZTHREAD_NEED_KILL_CLEANUP 0x8
+#define MZTHREAD_STILL_RUNNING(running) ((running) && !((running) & MZTHREAD_KILLED))
+
 #endif /* __mzscheme_private__ */

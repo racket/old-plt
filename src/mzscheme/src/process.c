@@ -149,7 +149,8 @@ void (*scheme_wakeup_on_input)(void *fds);
 int (*scheme_check_for_break)(void);
 
 #ifndef MZ_REAL_THREADS
-static int scheme_do_atomic = 0;
+static int do_atomic = 0;
+static int missed_context_switch = 0;
 static int have_activity = 0;
 int scheme_active_but_sleeping = 0;
 static int process_ended_with_activity;
@@ -607,7 +608,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 
   scheme_init_jmpup_buf(&process->jmpup_buf);
 
-  process->running = 1;
+  process->running = MZTHREAD_RUNNING;
 
   process->dw = NULL;
 
@@ -1268,7 +1269,7 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
   scheme_init_error_escape_proc(child);
   
 #ifndef MZ_REAL_THREADS
-  if (scheme_do_atomic)
+  if (do_atomic)
     return_to_process = scheme_current_process;
   else
 #endif
@@ -1393,11 +1394,11 @@ Scheme_Object *scheme_make_namespace(int argc, Scheme_Object *argv[])
   }
   
 #ifndef MZ_REAL_THREADS
-  scheme_do_atomic++;
+  do_atomic++;
 #endif
   env = (empty ? scheme_make_empty_env() : scheme_top_level_env());
 #ifndef MZ_REAL_THREADS
-  --scheme_do_atomic;
+  --do_atomic;
 #endif
 
   scheme_no_keywords = save_no_key;   
@@ -1437,7 +1438,7 @@ static int check_sleep(int need_activity, int sleep_now)
   void *fds;
 
   /* Is everything blocked? */
-  if (!scheme_do_atomic) {
+  if (!do_atomic) {
     p = scheme_first_process;
     while (p) {
       if (p->ran_some || p->block_descriptor == NOT_BLOCKED)
@@ -1457,7 +1458,7 @@ static int check_sleep(int need_activity, int sleep_now)
   process_ended_with_activity = 0;
   
   if (need_activity && !end_with_act && 
-      (scheme_do_atomic 
+      (do_atomic 
        || (!p && ((!sleep_now && scheme_wakeup_on_input)
 		  || (sleep_now && scheme_sleep))))) {
     float max_sleep_time = 0;
@@ -1694,7 +1695,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   Scheme_Config *config = p->config;
 
 #ifndef MZ_REAL_THREADS
-  if (p->running < 0) {
+  if (p->running & MZTHREAD_KILLED) {
     /* This thread is dead! Give up now. */
     remove_process(p);
     scheme_swap_process(scheme_first_process);
@@ -1703,7 +1704,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   if (scheme_active_but_sleeping)
     scheme_wake_up();
 #else
-  if (p->running <= 0) {
+  if (!p->running || (p->running & MZTHREAD_KILLED))) {
     remove_process(p);
     SCHEME_EXIT_THREAD();
   }
@@ -1730,7 +1731,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     WillExecutor *w;
     
     w = (WillExecutor *)scheme_get_param(config, MZCONFIG_WILL_EXECUTOR);
-    while (w->first && !w->running && (p->running >= 0)) {
+    while (w->first && !w->running && MZTHREAD_STILL_RUNNING(p->running)) {
       p->ran_some = 1;
       do_next_will(w, 0);
       p->ran_some = 1;
@@ -1738,7 +1739,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   }
 
 #ifndef MZ_REAL_THREADS
-  if (!scheme_do_atomic && (sleep_time >= 0.0)) {
+  if (!do_atomic && (sleep_time >= 0.0)) {
     /* Find the next process. Skip processes that are definitely
        blocked. */
     
@@ -1750,9 +1751,14 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 	break;
       }
       
-      if (next->running < 0) {
-	/* This one has been terminated */
-	remove_process(next);
+      if (next->running & MZTHREAD_KILLED) {
+	/* This one has been terminated. */
+	if (next->running & MZTHREAD_NEED_KILL_CLEANUP) {
+	  /* The thread needs to clean up. Swap it in so it can die. */
+	  break;
+	} else
+	  remove_process(next);
+	break;
       } else if (next->external_break && scheme_can_break(next, next->config)) {
 	break;
       } else {
@@ -1805,7 +1811,7 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
     p->sleep_time = sleep_time;
   }
 
-  if (next && (!next->running || (next->running == 2))) {
+  if (next && (!next->running || (next->running & MZTHREAD_SUSPENDED))) {
     /* In the process of selecting another thread, it was suspended or
        removed. Very unusual, but possible if a block checker does
        stange things??? */
@@ -1852,13 +1858,18 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
 
 #ifndef MZ_REAL_THREADS
   /* Killed while I was asleep? */
-  if (p->running < 0) {
+  if (p->running & MZTHREAD_KILLED) {
     /* This thread is dead! Give up now. */
-    remove_process(p);
-    scheme_swap_process(scheme_first_process);
+    if (p->running & MZTHREAD_NEED_KILL_CLEANUP) {
+      /* The thread needs to clean up. It will block immediately to die. */
+      return;
+    } else {
+      remove_process(p);
+      scheme_swap_process(scheme_first_process);
+    }
   }
 #else
-  if (p->running <= 0) {
+  if (p->running || (p->running & MZTHREAD_KILLED)) {
     remove_process(p);
     SCHEME_EXIT_THREAD();
   }
@@ -1908,7 +1919,26 @@ void scheme_process_block_w_process(float sleep_time, Scheme_Process *p)
   }
 #endif
 
+#ifndef MZ_REAL_THREADS
+  if (do_atomic)
+    missed_context_switch = 1;
+#endif
+
   MZTHREADELEM(p, fuel_counter) = p->engine_weight;
+}
+
+void scheme_start_atomic(void)
+{
+  if (!do_atomic)
+    missed_context_switch = 0;
+  do_atomic++;
+}
+
+void scheme_end_atomic(void)
+{
+  --do_atomic;
+  if (!do_atomic && missed_context_switch)
+    scheme_process_block(0.0);
 }
 
 void scheme_weak_suspend_thread(Scheme_Process *r)
@@ -1927,7 +1957,7 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
 
   r->next = r->prev = NULL;
 
-  r->running = 2; /* 2 => running, but weakly suspended */
+  r->running |= MZTHREAD_SUSPENDED;
 
   if (r == scheme_current_process) {
     if (!swap_to)
@@ -1944,8 +1974,8 @@ void scheme_weak_suspend_thread(Scheme_Process *r)
 void scheme_weak_resume_thread(Scheme_Process *r)
 {
 #ifndef MZ_REAL_THREADS
-  if (r->running == 2) {
-    r->running = 1;
+  if (r->running & MZTHREAD_SUSPENDED) {
+    r->running -= MZTHREAD_SUSPENDED;
     r->next = scheme_first_process;
     r->prev = NULL;
     scheme_first_process = r;
@@ -2033,7 +2063,7 @@ static int do_kill_thread(Scheme_Process *p)
     exit(0);
   }
 
-  if (p->running <= 0)
+  if (p->running & MZTHREAD_KILLED)
     return 0;
 
   if (p->on_kill)
@@ -2044,7 +2074,7 @@ static int do_kill_thread(Scheme_Process *p)
 #ifdef MZ_REAL_THREADS
   SCHEME_GET_LOCK();
   if (p->running) {
-    p->running = -1;
+    p->running |= MZTHREAD_KILLED;
     if (p == scheme_current_process)
       kill_self = 1;
     else
@@ -2052,8 +2082,10 @@ static int do_kill_thread(Scheme_Process *p)
   }
   SCHEME_RELEASE_LOCK();
 #else
-  if (p->running)
-    p->running = -1;
+  if (p->running) {
+    p->running |= MZTHREAD_KILLED;
+    scheme_weak_resume_thread(p);
+  }
   if (p == scheme_current_process)
     kill_self = 1;
 #endif
@@ -2085,7 +2117,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_process_type))
     scheme_wrong_type("kill-thread", "thread", 0, argc, argv);
 
-  if (p->running <= 0)
+  if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
 
   /* Check management of the thread: */
@@ -2148,16 +2180,21 @@ static Scheme_Object *processp(int argc, Scheme_Object *args[])
 
 static Scheme_Object *process_running_p(int argc, Scheme_Object *args[])
 {
+  int running;
+
   if (!SCHEME_PROCESSP(args[0]))
     scheme_wrong_type("thread-running?", "thread", 0, argc, args);
 
-  return ((Scheme_Process *)args[0])->running ? scheme_true : scheme_false;
+  running = ((Scheme_Process *)args[0])->running;
+
+  return MZTHREAD_STILL_RUNNING(running) ? scheme_true : scheme_false;
 }
 
 #ifndef MZ_REAL_THREADS
 static int thread_wait_done(Scheme_Object *p)
 {
-  return !((Scheme_Process *)p)->running;
+  int running = ((Scheme_Process *)p)->running;
+  return !MZTHREAD_STILL_RUNNING(running);
 }
 #endif
 
@@ -2170,7 +2207,7 @@ static Scheme_Object *process_wait(int argc, Scheme_Object *args[])
 
   p = (Scheme_Process *)args[0];
 
-  if (p->running) {
+  if (MZTHREAD_STILL_RUNNING(p->running)) {
 #ifndef MZ_REAL_THREADS
     scheme_block_until(thread_wait_done, NULL, p, 0);
 #else

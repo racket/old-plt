@@ -264,13 +264,18 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	if (!scheme_current_process->next) {
 	  /* We're not allowed to suspend the main thread. */
 	  scheme_block_until(out_of_line, NULL, w, (float)0.0);
-	} else
+	} else {
+	  /* Mark the thread to indicate that we need to clean up
+	     if the thread is killed. */
+	  scheme_current_process->running |= MZTHREAD_NEED_KILL_CLEANUP;
 	  scheme_weak_suspend_thread(scheme_current_process);
+	  scheme_current_process->running -= MZTHREAD_NEED_KILL_CLEANUP;
+	}
 
 	/* We've been resumed. But was it for the semaphore, or a signal? */
 	if (w->in_line) {
 	  /* We weren't woken by the semaphore. Get out of line, block once 
-	     (to handle breaks) and then loop to get back into line. */
+	     (to handle breaks/kills) and then loop to get back into line. */
 	  if (w->prev)
 	    w->prev->next = w->next;
 	  else
@@ -282,20 +287,31 @@ int scheme_wait_sema(Scheme_Object *o, int just_try)
 	  
 	  scheme_process_block(0);
 	} else {
+	  /* The semaphore picked us to go */
+	  if (scheme_current_process->running & MZTHREAD_KILLED) {
+	    /* We've been killed!  Consume the value and repost,
+	       (because no one else has been told to go). Then die by
+	       calling scheme_process_block. */
+	    if (sema->value) {
+	      --sema->value;
+	      scheme_post_sema((Scheme_Object *)sema);
+	    }
+	    scheme_process_block(0);
+	  }
+
 	  if (sema->value) {
 	    --sema->value;
 	    break;
 	  }
-	  /* Otherwise: the semaphore picked us to go, but someone stole the post! */
+	  /* Otherwise: someone stole the post! Try again. */
 	}
       }
 # else
       scheme_current_process->block_descriptor = SEMA_BLOCKED;
       scheme_current_process->blocker = (Scheme_Object *)sema;
       
-      while (!sema->value) {	
+      while (!sema->value)
 	scheme_process_block(0);
-      }
       --sema->value;
       
       scheme_current_process->block_descriptor = NOT_BLOCKED;

@@ -1,8 +1,18 @@
 SYSTEM HISTORY
 --------------
 Version 49:
-- mred:frame% and mred:dialog% now have a `delay-updates' parameter-like
-  method. set-perform-updates is obsolete.
+- The perform-updates and set-perform-update ivars in mred:panel%,
+  mred:frame%, and mred:dialog-box% have been replaced with the
+  delay-updates method in mred:frame% and mred:dialog-box%.
+
+  Added on-container-resize method to mred:panel%, etc. to handle
+  container resize events, rather than inferring a container resize via
+  on-size (which could confuse real container resizes with external
+  events).
+
+  Changed force-redraw to ignore refresh requests when the
+  redraw-requesting window is not shown. Redraw requests are now
+  propogated to the top-level frame or dialog via child-redraw-request.
 - if your application is unititized, then you need to change the
   startup procedure. See the application startup section in the
   toolbox manual.

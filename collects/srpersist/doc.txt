@@ -105,11 +105,8 @@
   exn-still-executing   SQL_STILL_EXECUTING
   exn-need-data         SQL_NEED_DATA
   exn-with-info         SQL_SUCCESS_WITH_INFO
-  exn-no-data           SQL_NO_DATA
-
- SQL_NO_DATA was introduced in ODBC 3.0, so the exn-no-data
- exception may be raised only if SrPersist was compiled for 
- ODBC 3.0 or greater.  
+  exn-no-data           SQL_NO_DATA_FOUND (before ODBC 3.0)
+  exn-no-data           SQL_NO_DATA (ODBC 3.0 or greater)
 
  Each of these exceptions is an ordinary Scheme structure
  derived from `struct:exn'.  Only `exn-need-data` and `exn-with-info' 
@@ -1673,12 +1670,15 @@
  'sql-desc-rowver                         boolean
  'sql-desc-scale                          integer
  'sql-desc-schema-name                    string
- 'sql-desc-searchable                     'sql-searchable, or 
+ 'sql-desc-searchable                     for ODBC 3.0 or greater:
                                           'sql-pred-char, or 
-                                          'sql-like-only, or 
                                           'sql-pred-basic, or 
-                                          'sql-all-except-like, or
                                           'sql-pred-none, or 
+					  'sql-pred-searchable 
+                                          for earlier versions:
+                                          'sql-all-except-like, or
+                                          'sql-like-only, or 
+					  'sql-searchable, or 
                                           'sql-unsearchable
  'sql-desc-table-name                     string
  'sql-desc-type                           SQL data type (except intervals)
@@ -1789,12 +1789,15 @@
    'sql-desc-precision              integer
    'sql-desc-scale                  integer 
    'sql-desc-schema-name            string
-   'sql-desc-searchable             'sql-searchable, or 
+   'sql-desc-searchable             ODBC 3.0 or greater:
                                     'sql-pred-char, or
-                                    'sql-like-only, or
                                     'sql-pred-basic, or
-                                    'sql-all-except-like, or
                                     'sql-pred-none, or
+                                    'sql-pred-searchable
+	                            earlier versions of ODBC:
+                                    'sql-like-only, or
+                                    'sql-all-except-like, or
+                                    'sql-searchable, or 
                                     'sql-unsearchable
    'sql-desc-table-name             string
    'sql-desc-type                   concise SQL data type 
@@ -2326,6 +2329,25 @@
  `num-elts' is a nonnegative exact integer indicating the number 
  of buffer elements.
 
+> (read-buffer sql-buffer) 
+
+ Returns the contents of an sql-buffer.  For a buffer of type
+ 'sql-c-char or 'sql-c-wchar, a string is returned.  For all other 
+ types, a list of values of appropriate type is returned.  In the
+ case of 'sql-c-wchar, each wide character is truncated to the
+ the least significant 16 bits.  The truncation is done because 
+ MzScheme does not support wide characters.
+
+> (write-buffer sql-buffer vals) 
+
+ Updates the contents of an sql-buffer.  The type of `vals' should 
+ depend on the C type used to create the buffer.  Also, if
+ `vals' is a list, its length should depend on the size of 
+ `sql-buffer'.  Using the wrong type or overflowing the buffer
+ has unpredictable consequences.  For a type of 'sql-c-char or
+ 'sql-c-wchar, `vals' should be a string.  For all other types, `vals' 
+ should be a a list of values of appropriate Scheme type.
+
 > (read-row-status an-sql-row-status)
 
  Given an sql-row-status value, returns a list, each element of which 
@@ -2358,6 +2380,9 @@
  'sql-wchar
  'sql-wvarchar
  'sql-wlongvarchar
+ 'sql-date
+ 'sql-time
+ 'sql-timestamp
  'sql-decimal
  'sql-numeric
  'sql-smallint
@@ -2400,11 +2425,14 @@
  an ODBC reference for more details.
 
  'sql-c-char
+ 'sql-c-wchar
  'sql-c-long
  'sql-c-short
  'sql-c-float
  'sql-c-double
  'sql-c-date
+ 'sql-c-time
+ 'sql-c-timestamp
  'sql-c-binary
  'sql-c-bit
  'sql-c-tinyint
@@ -2441,3 +2469,4 @@
 
   [ODBC 3.5 or greater]
  'sql-c-guid
+

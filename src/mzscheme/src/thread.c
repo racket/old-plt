@@ -3365,12 +3365,16 @@ Scheme_Object *scheme_object_wait_multiple(int argc, Scheme_Object *argv[])
   if (timeout < 0.0) {
     int i;
     for (i = waitable_set->argc; i--; ) {
-      if (SCHEME_SEMAP(waitable_set->argv[i]))
+      if (!SCHEME_SEMAP(waitable_set->argv[i]))
 	break;
     }
-    if (i >= 0) {
+    if (i < 0) {
       /* Hit the special case. */
       i = scheme_wait_semas(waitable_set->argc, waitable_set->argv, 0);
+      if (i)
+	return waitable_set->argv[i - 1];
+      else
+	return scheme_false;
     }
   }
 

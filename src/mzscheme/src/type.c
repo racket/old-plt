@@ -183,7 +183,7 @@ scheme_init_type (Scheme_Env *env)
   set_name(scheme_udp_type, "<udp-socket>");
   set_name(scheme_udp_waitable_type, "<udp-socket-waitable>");
 
-  set_name(scheme_waitable_set_type, "<compound-waitable>");
+  set_name(scheme_waitable_set_type, "<waitable-set>");
 
   set_name(scheme_reserved_1_type, "<reserved1>");
   set_name(scheme_reserved_2_type, "<reserved2>");

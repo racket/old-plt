@@ -141,6 +141,7 @@ void scheme_post_sema(Scheme_Object *o)
 	t->first->prev = NULL;
       
       w->in_line = 0;
+      w->prev = NULL;
       w->next = NULL;
       scheme_weak_resume_thread(w->p);
     }
@@ -219,10 +220,12 @@ static int out_of_line(Scheme_Object *a)
   /* Suspended break? */
   p = ((Scheme_Thread **)a)[2];
   if (p->external_break) {
+    int v;
     p->suspend_break = 0;
-    if (scheme_can_break(p, p->config))
-      return 1;
+    v = scheme_can_break(p, p->config);
     p->suspend_break = 1;
+    if (v)
+      return 1; 
   }
 
   return 0;
@@ -321,9 +324,10 @@ int scheme_wait_semas(int n, Scheme_Object **o, int just_try)
 	  /* We're not allowed to suspend the main thread. Delay
 	     breaks so we get a chance to clean up. */
 	  scheme_current_thread->suspend_break = 1;
-	  a[0] = scheme_make_integer(1);
+	  a[0] = scheme_make_integer(n);
 	  a[1] = ws;
 	  a[2] = scheme_current_thread;
+	  
 	  scheme_block_until(out_of_line, NULL, (Scheme_Object *)a, (float)0.0);
 	  scheme_current_thread->suspend_break = 0;
 	} else {

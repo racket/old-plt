@@ -211,6 +211,18 @@
       (kill-thread t1)
       (kill-thread t2)
       result)))
+;; the main thread is special for semaphore blocking,
+;;  so we try read-line/expire1 in sub-threads for a couple
+;;  of configurations:
+(define (read-line/expire3 port expiration)
+  (call-in-nested-thread (lambda ()
+			   (read-line/expire1 port expiration))))
+(define (read-line/expire4 port expiration)
+  (let ([v #f])
+    (let ([t (thread (lambda ()
+		       (set! v (read-line/expire1 port expiration))))])
+      (thread-wait t)
+      v)))
 
 (define (go read-line/expire)
   (define p (let ([c 0]
@@ -227,6 +239,7 @@
 				(set! nl? #t)
 				(thread (lambda ()
 					  (sleep 0.4)
+					  (make-waitable-set nl-sema)
 					  (semaphore-post nl-sema)))
 				(set! c (add1 c))
 				(semaphore-wait nl-sema)
@@ -243,6 +256,8 @@
 
 (go read-line/expire1)
 (go read-line/expire2)
+(go read-line/expire3)
+(go read-line/expire4)
 
 ;; Make sure queueing works, and check kill/wait interaction:
 (let* ([s (make-semaphore)]
@@ -397,6 +412,19 @@
 		       (equal? w (list s2 s))))
     (test #f semaphore-try-wait? s)
     (test #f semaphore-try-wait? s2)))
+
+;; same test, but throw in an empty pipe to avoid the
+;;  special case for just semaphores:
+(let ([s (make-semaphore 1)]
+      [s2 (make-semaphore 1)])
+  (let-values ([(r w) (make-pipe)])
+    (let ([w (list
+	      (object-wait-multiple #f s r s2)
+	      (object-wait-multiple #f s r s2))])
+      (test #t 'both (or (equal? w (list s s2))
+			 (equal? w (list s2 s))))
+      (test #f semaphore-try-wait? s)
+      (test #f semaphore-try-wait? s2))))
 
 (let ([s (make-semaphore)]
       [s-t (make-semaphore)]

@@ -891,7 +891,7 @@ user_get_or_peek_string(Scheme_Input_Port *port,
 	  if (!SAME_OBJ(val, uip->closed_sema)) {
 	    if (SCHEME_SEMAP(val))
 	      scheme_post_sema(val);
-	    
+
 	    /* Port may have been closed while we were waiting: */
 	    if (port->closed) {
 	      /* Another thread closed the input port while we were waiting. */
@@ -1001,6 +1001,7 @@ int scheme_user_port_char_probably_ready(Scheme_Input_Port *ip, Scheme_Schedule_
     if (val) {
       if (SCHEME_SEMAP(val))
 	scheme_post_sema(val);
+
       if (sinfo->false_positive_ok)
 	sinfo->potentially_false_positive = 1;
       return 1;

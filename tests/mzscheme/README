@@ -25,9 +25,6 @@ Additionally, test expand-defmacro by running:
 Test compilation and writing/reading compiled code with:
  > (load "PATHTOHERE/compile.ss")
 
-Test deep non-tail recursion with:
- > (load "PATHTOHERE/deep.ss")
-
 Run the standard tests with no output except for the results with:
  > (load "PATHTOHERE/quiet.ss")
 

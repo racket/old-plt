@@ -13,6 +13,8 @@
 (load-relative "unit.ss")
 (load-relative "unitsig.ss")
 (load-relative "thread.ss")
+(load-relative "sync.ss")
+(load-relative "deep.ss")
 (load-relative "contmark.ss")
 (load-relative "will.ss")
 (load-relative "namespac.ss")

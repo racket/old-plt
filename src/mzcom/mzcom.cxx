@@ -136,6 +136,7 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
   if (bRun)
     {
         _Module.StartMonitor();
+
 #if _WIN32_WINNT >= 0x0400 & defined(_ATL_FREE_THREADED)
         hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, 
 					    REGCLS_SINGLEUSE | REGCLS_SUSPENDED);

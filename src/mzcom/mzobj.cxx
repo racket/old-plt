@@ -141,7 +141,7 @@ void setupSchemeEnv(void) {
 		     "(lambda () (let ((v (getenv \"PLTHOME\"))) "
 		     "(and v (build-path v \"collects\")))) "
 		     "(lambda () (find-executable-path mzcom-exe \"..\")) "
-		     "(lambda () \"c:\\plt\\collects\") "
+		     "(lambda () \"c:\\\\plt\\\\collects\") "
 		     ")) null)))",
 		     env); 
 }
@@ -167,7 +167,6 @@ DWORD WINAPI evalLoop(LPVOID args) {
   // make sure all MzScheme calls in this thread
 
   scheme_set_stack_base(NULL,1);
-
   setupSchemeEnv();
 
   scheme_exit = exitHandler;
@@ -333,6 +332,7 @@ CMzObj::CMzObj(void) {
   evalDoneSems[1] = exitSem;
 
   startMzThread();
+
 }
 
 void CMzObj::killMzThread(void) {

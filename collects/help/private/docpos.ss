@@ -75,7 +75,8 @@
       ("tools" "PLT Tools: DrScheme Extension Manual" 30)
       ("insidemz" "Inside PLT MzScheme" 50)
 
-      ("web-server" "User Manual for Web Server" 60)
+      ("plot"       "PLoT Manual"       60)
+      ("web-server" "Web Server Manual" 61)
 
       ("t-y-scheme" "Teach Yourself Scheme in Fixnum Days" 100)
       ("tex2page" "TeX2page" 101)))

@@ -1664,7 +1664,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     REGISTER_SO(empty_self_modidx);
     REGISTER_SO(empty_self_symbol);
     empty_self_modidx = scheme_make_modidx(scheme_false, scheme_false, scheme_false);
-    empty_self_symbol = scheme_make_symbol("module-local"); /* uninterned */
+    empty_self_symbol = scheme_make_symbol("expanded module"); /* uninterned */
   }
 
   /* phase shift to replace self_modidx of previous expansion (if any): */

@@ -78,7 +78,7 @@ Version 103.2:
 
 Version 200, ???
 (cond) alays returns void; the cond-allow-fallthough parameter and
-   exn:cond exception have been removed
+ exn:cond exception have been removed
 Changed all comparison precedures to require at least two
  operands, including =, <, ..., char=?, char<?, ...,
  string=?, string<?, ...
@@ -91,6 +91,7 @@ Fixed leaks (file descriptors, etc.) that could happen with
  thread kills
 Fixed memory bug in the run-time support for mzc-compiled code
 Added port-count-lines!, which enables line-couting for a port
+Added read-dot-as-symbol parameter
 Fixed quotient, remainder, and modulo when the first argument
  is exact 0 and the second argument is inexact
 Upgraded to gc 6.0alpha4

@@ -26,7 +26,7 @@ strings are types/comments.
 		  (*continuation [] "attempt to cross a continuation boundary or apply another thread's continuation"))
      
      (syntax [expr "syntax object or {\\scmfalse}" "illegal expression (or {\\scmfalse} if unknown)"
-		   form "symbol" "the syntactic form name that detected the error"
+		   form "symbol or {\\scmfalse}" "the syntactic form name that detected the error (or {\\scmfalse} if unknown)"
 		   module "symbol or {\\scmfalse}" "the form-defining module (or {\\scmfalse} if unknown)"]
 	     "syntax error, but not a \\scmfirst{read} error")
      

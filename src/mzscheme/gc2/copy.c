@@ -1520,7 +1520,7 @@ void *GC_resolve(void *p)
       size = ((*(long *)p) & 0x0FFFFFFF);
       
       if (!size)
-	return ((void **)p)[1] + 4;
+	return ((void **)p)[1];
       else
 	return p + 4;
     }

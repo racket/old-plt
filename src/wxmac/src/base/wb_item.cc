@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_item.cc,v 1.3 1998/04/23 19:10:29 mflatt Exp $
+ * RCS_ID:      $Id: wb_item.cc,v 1.4 1998/08/14 13:56:01 robby Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -699,7 +699,7 @@ Bool wxbListBox::SetStringSelection (char *s)
   int sel = FindString (s);
   if (sel > -1)
     {
-      SetSelection (sel);
+      SetOneSelection(sel);
       return TRUE;
     }
   else

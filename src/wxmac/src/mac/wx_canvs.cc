@@ -250,6 +250,9 @@ void wxCanvas::SetScrollbars(int horizontal, int vertical,
         }
       }
     }
+    
+    if (x_pos > x_length) x_pos = x_length;
+    if (y_pos > y_length) y_pos = y_length;
 
 	scrollAutomanaged = automgmt; //mflatt
 

@@ -668,12 +668,12 @@ int wxListBox::NumberOfVisibleItems()
    return r;
 }
 
-void wxListBox::SetSelection(int N, Bool select)
+void wxListBox::SetSelection(int N, Bool select, Bool just_one)
 {
   if (N < 0 || (N >= no_items))
     return;
 
-   if (select && ((**cListHandle).selFlags & lOnlyOne)) {
+   if (select && (just_one || ((**cListHandle).selFlags & lOnlyOne))) {
      int s = GetSelection();
      if (s == N)
        return;
@@ -687,6 +687,11 @@ void wxListBox::SetSelection(int N, Bool select)
 	Cell cell = {N, 0};
 	SetCurrentDC();
 	LSetSelect(select, cell, cListHandle);
+}
+
+void wxListBox::SetOneSelection(int N)
+{
+	SetSelection(N, TRUE, TRUE);
 }
 
 Bool wxListBox::Selected(int N)

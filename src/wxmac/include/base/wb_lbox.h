@@ -51,7 +51,8 @@ class wxbListBox: public wxItem
   virtual void Set(int N, char *Choices[]) = 0;
   virtual int FindString(char *s) = 0;
   virtual void Clear(void) = 0;
-  virtual void SetSelection(int N, Bool select = TRUE) = 0;
+  virtual void SetSelection(int N, Bool select = TRUE, Bool one = TRUE) = 0;
+  virtual void SetOneSelection(int N) = 0;
   virtual char *GetClientData(int N) = 0;
   virtual void Deselect(int N) = 0;
   virtual int GetSelection(void) = 0;  // For single choice list item only

@@ -114,6 +114,14 @@
 	(write "\a\b\t\n\f\r\e\v\\\"\101\40\5A\xFP\xfP\xdDD\3777\0011" p)
 	(get-output-string p)))
 
+;; Test return, linefeed, and return--linefeed escapes:
+(test "12" values "1\
+2")
+(test "123" read (open-input-string (string #\" #\1 #\\ #\newline #\2 #\\ #\return #\3 #\")))
+(test "123" read (open-input-string (string #\" #\1 #\\ #\return #\2 #\\ #\newline #\3 #\")))
+(test "12\r3" read (open-input-string (string #\" #\1 #\\ #\return #\newline #\2 #\\ #\newline #\return #\3 #\")))
+(test "1\r23" read (open-input-string (string #\" #\1 #\\ #\newline #\return #\2 #\\ #\return #\newline #\3 #\")))
+
 ; Test string ports with file-position:
 (let ([s (open-output-string)])
   (test (string) get-output-string s)
@@ -500,10 +508,10 @@
 
 (define ui (make-input-port (lambda () #\") (lambda () #t) void))
 (test "" read ui)
-(arity-test (port-read-handler ui) 1 1)
+(arity-test (port-read-handler ui) 1 3 '(2))
 (err/rt-test ((port-read-handler ui) 8))
 (let ([old (port-read-handler ui)])
-  (port-read-handler ui (lambda (x) "hello"))
+  (port-read-handler ui (case-lambda [(x) "hello"][(x y z) "goodbye"]))
   (test "hello" read ui)
   (port-read-handler ui old)
   (test "" read ui))
@@ -512,7 +520,9 @@
 (err/rt-test (port-read-handler ui 8))
 (err/rt-test (port-read-handler (current-output-port) 8))
 (err/rt-test (port-read-handler ui (lambda () 9)))
+(err/rt-test (port-read-handler ui (lambda (x) 9)))
 (err/rt-test (port-read-handler ui (lambda (x y) 9)))
+(err/rt-test (port-read-handler ui (lambda (x y z) 9)))
 
 (define sp (open-output-string))
 (test (void) display "hello" sp)

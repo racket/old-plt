@@ -3,7 +3,25 @@
 
 (SECTION 'stx)
 
-(test #t syntax? (datum->syntax 'hello #f #f))
+(test #t syntax? (datum->syntax-object #f 'hello #f))
+
+(test #f syntax-line (datum->syntax-object #f 10 '(aha 19)))
+(test #f syntax-column (datum->syntax-object #f 10 '(aha 19)))
+(test 19 syntax-position (datum->syntax-object #f 10 '(aha 19)))
+(test 'aha syntax-source (datum->syntax-object #f 10 '(aha 19)))
+
+(test 7 syntax-line (datum->syntax-object #f 10 '(aha 7 88)))
+(test 88 syntax-column (datum->syntax-object #f 10 '(aha 7 88)))
+(test #f syntax-position (datum->syntax-object #f 10 '(aha 7 88)))
+(test 'aha syntax-source (datum->syntax-object #f 10 '(aha 7 88)))
+
+(err/rt-test (datum->syntax-object #f 10 10))
+(err/rt-test (datum->syntax-object #f 10 '(10)))
+(err/rt-test (datum->syntax-object #f 10 '(a -10)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10.0)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 11 12)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 11.0)))
+(err/rt-test (datum->syntax-object #f 10 '(a 10 -11)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Test basic expansion and property propagation
@@ -117,7 +135,7 @@
 (define-syntax mcr7
   (lambda (stx)
     (syntax-case stx ()
-      [(_ x) (local-expand (syntax x) (list (quote-syntax #%datum)))])))
+      [(_ x) (local-expand (syntax x) 'internal-define (list (quote-syntax #%datum)))])))
 
 (define s (quote-syntax (mcr7 (mcr2 5))))
 (define se (expand-once s))
@@ -238,13 +256,13 @@
   (require mta)
 
   ;; For #':
-  (define-syntax syntax
+  (define-syntaxes (syntax)
     (lambda (stx)
-      (datum->syntax
+      (datum->syntax-object
+       stx
        (cons
 	(quote-syntax quote-syntax)
 	(cdr (syntax-e stx)))
-       stx
        stx)))
 
   (define-values (run-mt2-test)

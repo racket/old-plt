@@ -1329,7 +1329,7 @@
    (unless (= (+ code (vector-ref bl_count MAX_BITS)-1)
 	      (- (<< 1 MAX_BITS) 1))
      "inconsistent bit counts"))
-  (DEBUG (Tracev stderr "\~ngen_codes: max_code ~a " max_code))
+  (DEBUG (Tracev stderr "\ngen_codes: max_code ~a " max_code))
 
   (for  0 <= max_code add1
 	(lambda (n)

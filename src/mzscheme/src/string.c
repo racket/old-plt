@@ -1563,7 +1563,9 @@ void scheme_reset_locale(void)
 /**************************** MacOS ***********************************/
 
 #ifdef MACINTOSH_EVENTS
+#ifndef OS_X
 # include <Gestalt.h>
+#endif
 static void machine_details(char *s)
 {
    OSErr err;

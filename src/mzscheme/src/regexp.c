@@ -795,6 +795,7 @@ regexec(regexp *prog, char *string, int stringlen, char **startp, char **endp)
     while ((s = l_strchr(s, slen, ((char *)prog + prog->regmust)[0])) != NULL) {
       int i, l = prog->regmlen;
       char *p = ((char *)prog + prog->regmust);
+      slen = stringlen - (s - string);
       for (i = 0; (i < l) && (i < slen); i++) {
 	if (s[i] != p[i])
 	  break;
@@ -817,14 +818,12 @@ regexec(regexp *prog, char *string, int stringlen, char **startp, char **endp)
 
   /* Messy cases:  unanchored match. */
   s = string;
-  slen = stringlen;
   if (prog->regstart != '\0')
     /* We know what char it must start with. */
-    while ((s = l_strchr(s, slen, prog->regstart)) != NULL) {
-	  if (regtry(prog, s, stringlen - (s - string), startp, endp))
+    while ((s = l_strchr(s, stringlen - (s - string), prog->regstart)) != NULL) {
+      if (regtry(prog, s, stringlen - (s - string), startp, endp))
 	return(1);
       s++;
-      slen = stringlen - (s - string);
     }
   else {
     /* We don't -- general case. */

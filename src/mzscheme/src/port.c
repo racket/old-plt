@@ -3238,6 +3238,7 @@ static int fd_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
 	if (fip->textmode == 2) {
 	  delta = 1;
 	  rgot--;
+	  fip->buffer[1] = '\r';
 	} else
 	  delta = 0;
 	
@@ -3247,6 +3248,44 @@ static int fd_getc(Scheme_Input_Port *port, int *nonblock, int *eof_on_error)
 	  bc = -1;
 	  errno = GetLastError();
 	}
+
+	/* bc == 0 and no err => EOF */
+
+	/* Finish text-mode handling: */
+	if (fip->textmode && (bc >= 0)) {
+	  int i, j;
+	  unsigned char *buf;
+
+	  if (fip->textmode == 2) {
+	    /* we had added a CR */
+	    bc++;
+	    fip->textmode = 1;
+	  }
+
+	  /* If bc is only 1, then we've reached the end, and
+	     any leftover CR there should stay. */
+	  if (bc > 1) {
+	    /* Collapse CR-LF: */
+	    buf = fip->buffer;
+	    for (i = 0, j = 0; i < bc - 1; i++) {
+	      if ((buf[i] == '\r')
+		  && (buf[i+1] == '\n')) {
+		buf[j++] = '\n';
+		i++;
+	      } else
+		buf[j++] = buf[i];
+	    }
+	    if (i < bc) /* common case: didn't end with CRLF */
+	      buf[j++] = buf[i];
+	    bc = j;
+	    /* Check for CR at end, to maybe get a LF on the next read: */
+	    if (buf[bc - 1] == '\r') {
+	      bc--;
+	      fip->textmode = 2; /* 2 indicates a leftover CR */
+	    }
+	  }
+	}
+
       } else {
 	/* If we get this far, there's definitely data available.
 	   Extract data made available by the reader thread. */
@@ -3989,20 +4028,65 @@ static int flush_fd(Scheme_Output_Port *op,
 #ifdef WINDOWS_FILE_HANDLES
       DWORD wrote;
 
+      full_write_buffer = 0;
+
       if (fop->regfile) {
 	/* Regular files never block, so this code looks like the Unix
 	   code.  We've cheated in the make_fd proc and called
 	   FILE_TYPE_CHAR devices (e.g., console) regular files,
 	   because they cannot block, either. */
+	int orig_len;
+
+	if (fop->textmode) {
+	  /* Convert LF to CRLF. We're relying on the fact that WriteFile
+	     will write everything. */
+	  int i, c = 0;
+	  
+	  for (i = offset; i < buflen; i++) {
+	    if (bufstr[i] == '\n')
+	      c++;
+	  }
+
+	  orig_len = buflen - offset;
+
+	  if (c) {
+	    char *naya;
+	    int j;
+
+	    naya = scheme_malloc_atomic(orig_len + c);
+
+	    for (i = offset, j = 0; i < buflen; i++) {
+	      if (bufstr[i] == '\n') {
+		naya[j++] = '\r';
+		naya[j++] = '\n';
+	      } else
+		naya[j++] = bufstr[i];
+	    } 
+
+	    bufstr = naya;
+	    offset = 0;
+	    buflen = orig_len + c;
+	  }
+	} else
+	  orig_len = 0; /* not used */
+
 	if (WriteFile((HANDLE)fop->fd, bufstr + offset, buflen - offset, &wrote, NULL)) {
-	  len = wrote;
-	  full_write_buffer = 0;
+	  if (fop->textmode) {
+	    if (wrote != buflen) {
+	      /* Trouble! This shouldn't happen. We pick an random error msg. */
+	      errsaved = ERROR_NEGATIVE_SEEK;
+	      len = -1;
+	    } else {
+	      len = orig_len;
+	      buflen = orig_len; /* so we don't loop! */
+	    }
+	  } else
+	    len = wrote;
 	} else {
 	  errsaved = GetLastError();
 	  len = -1;
 	}
       } else {
-	full_write_buffer = 0;
 	errsaved = 0;
 	len = -1;
 

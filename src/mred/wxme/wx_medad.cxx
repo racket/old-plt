@@ -368,9 +368,13 @@ void wxMediaCanvas::ResetSize()
 #endif
   {
     wxDC *adc;
-    adc = GetDC();
-    adc->SetBackground(GetCanvasBackground());
-    adc->Clear();
+    wxColor *bg;
+    bg = GetCanvasBackground();
+    if (bg) {
+      adc = GetDC();
+      adc->SetBackground(bg);
+      adc->Clear();
+    }
   }
 #endif
 
@@ -740,9 +744,13 @@ void wxMediaCanvas::OnPaint(void)
     }
   } else {
     wxDC *adc;
-    adc = GetDC();
-    adc->SetBackground(GetCanvasBackground());
-    adc->Clear();
+    wxColor *bg;
+    bg = GetCanvasBackground();
+    if (bg) {
+      adc = GetDC();
+      adc->SetBackground(bg);
+      adc->Clear();
+    }
   }
   
   wxCanvas::OnPaint();
@@ -1140,9 +1148,13 @@ Bool wxMediaCanvas::ResetVisual(Bool reset_scroll)
       vspp = hspp = 1;
       if (!media) {
 	wxDC *adc;
-	adc = GetDC();
-	adc->SetBackground(GetCanvasBackground());
-	adc->Clear();
+	wxColor *bg;
+	bg = GetCanvasBackground();
+	if (bg) {
+	  adc = GetDC();
+	  adc->SetBackground(bg);
+	  adc->Clear();
+	}
       }
     }    
 

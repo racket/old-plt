@@ -76,11 +76,25 @@
 
   (require-library "srpersistu.ss" "srpersist")
 
- binds `srpersist@' to the unit, with signature `srpersist^',
- which is defined in the file `sigs.ss' in the srpersist collection.
- The contents of that signature depend on the value of 
- odbc-version.   This unit can be invoked or imported into other 
- units as needed.
+ binds `srpersist@' to the unit, with a signature that depends 
+ on the variable odbc-version.  The possible signatures are 
+ `srpersist:odbc-1.0^', `srpersist:odbc-2.0^', `srpersist:odbc-3.0^',
+ and `srpersist:odbc-3.5^', which are defined in the file `sigs.ss' 
+ in the srpersist collection.  The signature is chosen as 
+ follows, in pseudocode:
+
+   (cond
+     [(>= odbc-version 3.5)
+      signature is srpersist:odbc-3.5^]
+     [(>= odbc-version 3.0)
+      signature is srpersist:odbc-3.0^]
+     [(>= odbc-version 2.0)
+      signature is srpersist:odbc-2.0^]
+     [(>= odbc-version 1.0)
+      signature is srpersist:odbc-1.0^]
+     [else fail])
+
+ This unit can be invoked or imported into other units as needed.
 
  Overview of ODBC
  ----------------

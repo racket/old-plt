@@ -60,7 +60,10 @@
 			      ()
 			      srpersist:odbc-1.0^))])
 	   (export
-	    (open srpersist)))]))
+	    (open srpersist)))]
+	[else 
+	 (error "odbc-version must be a number at least 1.0, but is" 
+		odbc-version)]))
 
       ; no ODBC version defined
 

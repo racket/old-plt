@@ -2,12 +2,12 @@
 #define INCLUDE_WITHOUT_PATHS
 
 #ifdef OS_X
-  #include <Carbon/Carbon.h>
-
   #define OPAQUE_TOOLBOX_STRUCTS 1
   #define TARGET_API_MAC_CARBON 1
 
   #define SGC_STD_DEBUGGING 1
+
+  #include <Carbon/Carbon.h>
 #else
   #ifdef __MWERKS__
   #if defined(__powerc)

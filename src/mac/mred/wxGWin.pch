@@ -10,9 +10,17 @@
   #define TARGET_API_MAC_CARBON 1
   #define OPAQUE_TOOLBOX_STRUCTS 1
   #define PM_USE_SESSION_APIS 0
-  
+
+  #define SGC_STD_DEBUGGING 1
+    
   #include <Carbon/Carbon.h>
 #else
+  #ifdef __powerc
+    #pragma precompile_target ":wxGHeadersPPC"
+  #else
+    #pragma precompile_target ":wxGHeaders68K" 
+  #endif
+
   #include <MacHeaders.h>
 #endif
 

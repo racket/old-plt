@@ -25,6 +25,7 @@
   (require (lib "list.ss")
 	   (lib "file.ss")
 	   (lib "compile.ss") ; gets compile-file
+	   (lib "cm.ss")
 	   (lib "getinfo.ss" "setup"))
 
   (provide compiler@)
@@ -202,22 +203,29 @@
 				   (map
 				    normal-case-path
 				    (directory-list)))])
-			(make-collection
-			 ((or info (lambda (a f) (f)))
-			  'name 
-			  (lambda () (error 'compile-collection "info did not provide a name for collection: ~e" cp)))
-			 (remove*
-			  (map normal-case-path
-			       (info 
-				(if zos? 
-				    'compile-zo-omit-files 
-				    'compile-extension-omit-files)
-				(lambda () null)))
-			  (remove*
-			   (map normal-case-path 
-				(info 'compile-omit-files (lambda () null)))
-			   sses))
-			 (if zos? #("zo") #())))))
+			(let ([filtered-sses
+			       (remove*
+				(map normal-case-path
+				     (info 
+				      (if zos? 
+					  'compile-zo-omit-files 
+					  'compile-extension-omit-files)
+				      (lambda () null)))
+				(remove*
+				 (map normal-case-path 
+				      (info 'compile-omit-files (lambda () null)))
+				 sses))])
+			  (if zos?
+			      ;; Verbose compilation manager:
+			      (parameterize ([manager-trace-handler (lambda (s) (printf "~a~n" s))])
+			        (map managed-compile-zo filtered-sses))
+			      ;; Old collection compiler:
+			      (make-collection
+			       ((or info (lambda (a f) (f)))
+				'name 
+				(lambda () (error 'compile-collection "info did not provide a name for collection: ~e" cp)))
+			       filtered-sses
+			       (if zos? #("zo") #())))))))
 		  (lambda () (current-directory orig)))
 	      (when (compile-subcollections)
 		(for-each

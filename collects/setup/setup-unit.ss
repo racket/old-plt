@@ -12,9 +12,8 @@
 	   (lib "sig.ss" "compiler")
 	   (lib "launcher-sig.ss" "launcher")
 
-	   "unpack.ss")
-
-  (require "getinfo.ss")
+	   "unpack.ss"
+	   "getinfo.ss")
 
   (provide setup@)
 
@@ -344,15 +343,15 @@
 	(for-each (lambda (cc)
 		    (record-error
 		     cc
-		     (format "Making ~a" desc)
+		     (format "Compiling ~a" desc)
 		     (lambda ()
 		       (unless (control-io-apply 
 				(lambda (p) 
-				  (setup-fprintf p "Making ~a for ~a at ~a" 
+				  (setup-fprintf p "Compiling ~a for ~a at ~a" 
 						 desc (cc-name cc) (cc-path cc)))
 				compile-collection
 				(cc-collection cc))
-			 (setup-printf "No need to make ~a for ~a at ~a" 
+			 (setup-printf "No more ~a for ~a at ~a" 
 				       desc (cc-name cc) (cc-path cc)))
 		       (collect-garbage))))
 		  collections-to-compile))

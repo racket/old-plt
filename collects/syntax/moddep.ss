@@ -80,18 +80,12 @@
        (lambda ()
 	 (let ([v (with-module-reading-parameterization
 		   (lambda ()
-		     (read p)))])
+		     (read-syntax path p)))])
 	   (when (eof-object? v)
 	     (error 'read-one "empty file; expected a module declaration in: ~a" path))
-	   (when src?
-	     (unless (and (pair? v) (eq? 'module (car v)))
-	       (error 'read-one "expected a module declaration, found: ~e in: ~a" v path))
-	     (let ([name (let-values ([(base name dir?) (split-path path)])
-			   (string->symbol (regexp-replace re:suffix name "")))])
-	       (unless (and (pair? (cdr v))
-			    (eq? (cadr v) name))
-		 (error 'read-one "expected a module declaration named ~a, found: ~e in: ~a" 
-			name v path))))
+	   (let ([name (let-values ([(base name dir?) (split-path path)])
+				   (string->symbol (regexp-replace re:suffix name "")))])
+	     (check-module-form v name path))
 	   (unless (eof-object? (read p))
 	     (error 
 	      'read-one
@@ -146,7 +140,8 @@
 	  (read-one zo #f)]
 	 [(not path-d)
 	  (error 'get-module-code "no such file: ~e" path)]
-	 [else (with-dir (lambda () (compile (read-one path #t))))]))))
+	 [else 
+	  (with-dir (lambda () (compile (read-one path #t))))]))))
 
   (define re:dir (regexp "(.+?)/+(.*)"))
 

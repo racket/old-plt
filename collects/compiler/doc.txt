@@ -11,7 +11,7 @@ next section.
  Single-file extension compilation
  ---------------------------------
 
->  ((compile-extensions expr) scheme-file-list dest-dir)
+>  ((compile-extension expr) scheme-file-list dest-dir)
 
       `(compile-extension expr)' returns a compiler that is
       initialized with the elaboration-time expression `expr', as

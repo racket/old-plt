@@ -1,18 +1,19 @@
 (unit/sig drscheme:prefs^
-  (import [mred : mred^])
+  (import [mred : mred^]
+	  [framework : framework^])
   
-  (mred:set-preference-default 'drscheme:keep-interactions-history #f
+  (framework:preferences:set-default 'drscheme:keep-interactions-history #f
 			       (lambda (x)
 				 (or (not x)
 				     (eq? x #t))))
 
-    (mred:set-preference-default 'drscheme:execute-warning-once
-				 #f
-				 (lambda (x)
-				   (or (eq? x #t)
-				       (not x))))
+  (framework:preferences:set-default 'drscheme:execute-warning-once
+				#f
+				(lambda (x)
+				  (or (eq? x #t)
+				      (not x))))
 
-  (mred:add-preference-panel
+  (framework:preferences:add-panel
    "General II"
    (lambda (panel)
      (let* ([main (make-object mred:vertical-panel% panel)]
@@ -28,11 +29,11 @@
 		(lambda (p)
 		  (let ([q (make-object mred:check-box% p
 					(lambda (checkbox evt)
-					  (mred:set-preference 
+					  (framework:preferences:set 
 					   pref-sym 
 					   (send evt checked?)))
 					string)])
-		    (send q set-value (mred:get-preference pref-sym))))))])
+		    (send q set-value (framework:preferences:get pref-sym))))))])
        (make-check-box 'drscheme:keep-interactions-history
 		       "Keep execution history in interactions window")
        (make-check-box 'drscheme:execute-warning-once
@@ -43,4 +44,3 @@
 		       "Interactions window always active")
        (make-object mred:vertical-panel% main)
        main))))
-       

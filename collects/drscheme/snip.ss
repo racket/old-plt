@@ -1,8 +1,5 @@
 (unit/sig drscheme:snip^
-  (import [wx : wx^]
-	  [mred : mred^])
-
-  (mred:debug:printf 'invoke "drscheme:snip@")
+  (import [mred : mred^])
 
   (define separator-snipclass
     (make-object

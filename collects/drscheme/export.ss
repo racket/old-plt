@@ -1,11 +1,9 @@
-(compound-unit/sig (import [wx : wx^]
-			   [mred : mred^]
+(compound-unit/sig (import [mred : mred^]
 			   [mzlib : mzlib:core^]
 			   [print-convert : mzlib:print-convert^]
 			   [app : drscheme:app^]
 			   [edit : drscheme:edit^]
 			   [language : drscheme:language^]
-			   [setup : drscheme:setup^]
 			   [snip : drscheme:snip^]
 			   [init : drscheme:init^]
 			   [interface : drscheme:interface^]
@@ -30,12 +28,11 @@
 	      interface init snip language app basis edit)]
 	[frame : drscheme:frame^
 	       ((require-relative-library "frame.ss")
-		wx mred mzlib
-		setup unit
+		wx mred mzlib unit
 		compound-unit* app zodiac)]
 	[unit : drscheme:unit^
 	  ((require-relative-library "unit.ss")
-	   wx mred mzlib app setup compound-unit* frame edit rep
+	   wx mred mzlib app compound-unit* frame edit rep
 	   language get/extend face)]
 	[compound-unit* : drscheme:compound-unit^
 	  ((require-relative-library "cunit.ss")

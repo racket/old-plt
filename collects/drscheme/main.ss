@@ -1,6 +1,5 @@
 (unit/sig drscheme:main^
-  (import [wx : wx^]
-	  [I : mred:application-imports^]
+  (import [I : (program argv)]
 	  [mred : mred^]
 	  [pretty-print : mzlib:pretty-print^]
 	  [print-convert : mzlib:print-convert^]
@@ -8,8 +7,6 @@
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:get/extend : drscheme:get/extend^])
   
-  (mred:debug:printf 'invoke "drscheme:main@")
-
   (mred:current-app-name "DrScheme")
   '(mred:add-version-spec 'd 1)
   

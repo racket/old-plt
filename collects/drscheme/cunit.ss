@@ -1,12 +1,9 @@
 (unit/sig drscheme:compound-unit^
-  (import [wx : wx^]
-	  [mred : mred^]
+  (import [mred : mred^]
 	  [mzlib : mzlib:core^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:frame : drscheme:frame^]
 	  [drscheme:face : drscheme:face^])
-  
-  (mred:debug:printf 'invoke "drscheme:compound-unit@")
   
   (define BLACK-PEN (send wx:the-pen-list find-or-create-pen
 			  "BLACK" 0 wx:const-solid))

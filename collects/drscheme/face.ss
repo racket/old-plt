@@ -1,8 +1,6 @@
 (unit/sig drscheme:face^
   (import [mred : mred^])
   
-  (mred:debug:printf 'invoke "drscheme:face@")
-  
   (define unitI (interface ()
 		  get-filename
 		  get-collections

@@ -1,7 +1,6 @@
 
 (unit/sig drscheme:language^
-  (import [wx : wx^]
-	  [mred : mred^]
+  (import [mred : mred^]
 	  [drscheme:unit : drscheme:unit^]
 	  [aries : plt:aries^]
 	  [zodiac : drscheme:zodiac^]
@@ -9,8 +8,6 @@
 	  mzlib:function^
 	  mzlib:file^
 	  mzlib:print-convert^)
-  
-  (mred:debug:printf 'invoke "drscheme:language@")
   
   (mred:set-preference-default 'drscheme:settings
 			       (basis:get-default-setting)

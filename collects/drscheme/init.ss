@@ -1,6 +1,5 @@
 (unit/sig drscheme:init^
-  (import [wx : wx^]
-	  [mred : mred^])
+  (import [mred : mred^])
   
   (define primitive-eval (current-eval))
   (define primitive-load (current-load))
@@ -25,8 +24,8 @@
       (list current-exception-handler)
       (lambda (x) #f))))
 
-  (define system-eventspace (wx:make-eventspace))
-  (wx:current-eventspace system-eventspace)
+  (define system-eventspace (mred:make-eventspace))
+  (mred:current-eventspace system-eventspace)
 
   (print-struct #t)
   (break-enabled #f)

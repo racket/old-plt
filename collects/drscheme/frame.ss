@@ -1,14 +1,10 @@
 (unit/sig drscheme:frame^
-  (import [wx : wx^]
-	  [mred : mred^]
+  (import [mred : mred^]
 	  [mzlib : mzlib:core^]
-	  [drscheme:setup : drscheme:setup^]
 	  [drscheme:unit : drscheme:unit^]
 	  [drscheme:compound-unit : drscheme:compound-unit^]
 	  [drscheme:app : drscheme:app^]
 	  [zodiac : drscheme:zodiac^])
-  
-  (mred:debug:printf 'invoke "drscheme:frame@")
   
   (define (make-frame% super%)
     (rec drscheme:frame:frame%
@@ -51,16 +47,14 @@
 						     (send f set-title-prefix title)
 						     f)))
 					   output))
-					(begin (mred:debug:printf 'help-menu "couldn't find ~a" f)
-					       output))))]
+					output)))]
 			       [item-pairs 
 				(mzlib:function:quicksort
 				 (mzlib:function:foldl build-item null dirs)
 				 (lambda (x y) (string-ci<? (car x) (car y))))])
 			  (unless (null? item-pairs)
 			    (send help-menu append-separator))
-			  (help-menu:insert-items item-pairs))
-			(mred:debug:printf 'help-menu "couldn't find PLTHOME/doc directory")))))]
+			  (help-menu:insert-items item-pairs))))))]
 
 	     [root-panel #f]
 	     [make-root-panel
@@ -119,9 +113,7 @@
 	     [help-menu:about (lambda () (drscheme:app:about-drscheme))])
 	   
 	   (sequence 
-	     (mred:debug:printf 'super-init "before drscheme:frame%")
-	     (super-init (send unit get-name))
-	     (mred:debug:printf 'super-init "after drscheme:frame%"))
+	     (super-init (send unit get-name)))
 	   
 	   (private
 	     [running-message

@@ -1424,7 +1424,11 @@
 					[(and super (class-init-args super))
 					 (loop al (class-init-args super) super)]
 					[(eq? 'list (class-init-mode ic))
-					 (map (lambda (x) (cons #f x)) al)]
+					 ;; All unconsumed named-args must have #f
+					 ;;  "name"s, otherwise an error is raised in
+					 ;;  the leftovers checking.
+					 (append (map (lambda (x) (cons #f x)) al)
+						 named-args)]
 					[else
 					 (obj-error 'make-object 
 						    "too many initialization arguments:~a~a" 
@@ -1462,9 +1466,7 @@
 				       ;; Normal mode: merge leftover keyword-based args with new ones
 				       (append
 					new-named-args
-					(if (eq? 'list (class-init-mode c))
-					    null
-					    leftovers)))])
+					leftovers))])
 		   (loop (vector-ref (class-supers c) (sub1 (class-pos c))) 
 			 by-pos-args 
 			 named-args

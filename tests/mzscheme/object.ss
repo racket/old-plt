@@ -268,4 +268,34 @@
 (err/rt-test (instantiate allow-rest/size-already-fish% ("Gil" "Finn" 18))
 	     exn:object?)
 
+
+;; Subclass where superclass has rest arg, check by-pos:
+
+(define with-rest%
+  (class object%
+    (init-rest args)
+    (field [a args])
+
+    (public get-args)
+    (define (get-args) a)
+    (super-instantiate ())))
+
+(define to-rest%
+  (class with-rest%
+    (super-instantiate ())))
+
+(test '("hi" "there") 'to-rest (send (instantiate to-rest% ("hi" "there")) get-args))
+(err/rt-test (instantiate to-rest% () (by-name "hi"))
+	     exn:object?)
+
+;; Check by-pos with super-instantiate:
+
+(define to-rest2%
+  (class with-rest%
+    (super-instantiate ("hey,"))))
+
+(test '("hey," "hi" "there") 'to-rest (send (instantiate to-rest2% ("hi" "there")) get-args))
+(err/rt-test (instantiate to-rest2% () (by-name "hi"))
+	     exn:object?)
+
 (report-errs)

@@ -10,13 +10,26 @@
   
   (define analyze (require-library "spidey2r.ss" "newspidey"))
 
+  ;; used for clickable locations in the program
   (define can-click-style (make-object style-delta% 'change-weight 'bold))
   (send can-click-style set-delta-foreground "purple")
-  (define no-can-click-style (make-object style-delta% 'change-weight 'normal))
-  (send no-can-click-style set-delta-foreground "black")
+
+  ;; used for 'red primitives
+  (define red-style (make-object style-delta% 'change-weight 'bold))
+  (send red-style set-delta-foreground "red")
+
+  ;; used for 'green primitives
+  (define green-style (make-object style-delta% 'change-weight 'bold))
+  (send green-style set-delta-foreground "forest green")
+
+  ;; normal style must cancel out can-click-style, red-style, and green-style
+  (define normal-style (make-object style-delta% 'change-weight 'normal))
+  (send normal-style set-delta-foreground "black")
+  
+  ;; used for the inserted type boxes
   (define box-style (make-object style-delta%))
   (send box-style set-delta-foreground "purple")
-  
+
   (define spidey-bitmap
     (drscheme:unit:make-bitmap
      "Analyze2"
@@ -71,12 +84,36 @@
 	    (set! has-member? _:has-member?)
 
 	    (begin-edit-sequence #f)
+
+	    ;; color clickable positions
 	    (let loop ([i (last-position)])
 	      (unless (zero? i)
 		(when (get-var (- i 1))
 		  (change-style can-click-style (- i 1) i))
 		(loop (- i 1))))
 	    (end-edit-sequence)
+
+	    ;; color primitives
+	    ;; this will overwrite the highlighting for
+	    ;; the clickable spots in the primitives because
+	    ;; each primitive should be clickable (only each
+	    ;; first character of the primitives is clickable
+	    ;; now)
+	    (for-each
+	     (lambda (prim)
+	       (let ([start (zodiac:location-offset (car prim))]
+		     [end (+ (zodiac:location-offset (cadr prim)) 1)]
+		     [color (caddr prim)])
+		 ;; only color primitives in this 
+		 (when (and (eq? this
+				 (zodiac:location-file (car prim)))
+			    (eq? this
+				 (zodiac:location-file (cadr prim))))
+		   (case color
+		     [(red) (change-style red-style start end)]
+		     [(green) (change-style green-style start end)]
+		     [else (void)]))))
+	     (get-prims))
 
 	    (set! analyzed? #t))])
 
@@ -144,7 +181,7 @@
 	    (begin-edit-sequence #f)
             (clear-arrows)
 	    (clear-inserted-snips)
-	    (change-style no-can-click-style 0 (last-position))
+	    (change-style normal-style 0 (last-position))
 	    (end-edit-sequence))])
        (rename [super-can-insert? can-insert?]
 	       [super-after-insert after-insert]
@@ -265,8 +302,8 @@
                                                   (set! arrows (cons (pair pos parent/child) arrows))))))
                                           (children/parents set-var))
                                 (invalidate-bitmap-cache))))])
-                     (make-children/parents-item "Parents" parents cons)
-                     (make-children/parents-item "Children" children (lambda (x y) (cons y x))))
+                     (make-children/parents-item "Parents" parents (lambda (x y) (cons y x)))
+                     (make-children/parents-item "Children" children cons))
                    
                    (send (get-canvas) popup-menu menu
                          (+ 1 (inexact->exact (floor (send event get-x))))

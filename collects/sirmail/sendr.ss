@@ -388,6 +388,9 @@
 					      
 					      (super-new))))
 	(define enclosure-list (make-object hierarchical-list% (send mailer-frame get-area-container)))
+	
+	(define plain-cursor (make-object cursor% 'arrow))
+	(define arrow-watch-cursor (make-object cursor% 'arrow-watch))
 
 	(define (enable on? refocus cancel-proc)
 	  (let ([w (send mailer-frame get-focus-window)])
@@ -395,6 +398,9 @@
 	    (send mb enable on?)
 	    (send c enable on?)
 	    (send cancel-button enable (not on?))
+	    (let* ([cursor (if on? plain-cursor arrow-watch-cursor)])
+	      (send mailer-frame set-cursor cursor)
+	      (send (send c get-editor) set-cursor (if on? #f cursor) #t))
 	    (when (and on? refocus)
 	      (send refocus focus))
 	    w))

@@ -657,7 +657,6 @@ wxCursor::wxCursor(int cursor_type)
 
   switch (cursor_type)
     {
-    case wxCURSOR_WAIT:
     case wxCURSOR_WATCH:
       {
 	cMacCursor = (Cursor **)hackWATCH_CURSOR;
@@ -765,6 +764,11 @@ wxCursor::wxCursor(int cursor_type)
     case wxCURSOR_BLANK:
       {
 	cMacCursor = GetCursor(5128);
+	break;
+      }
+    case wxCURSOR_WAIT:
+      {
+	cMacCursor = GetCursor(5141);
 	break;
       }
     }

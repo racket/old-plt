@@ -1277,6 +1277,7 @@
 
       (define drag-cursor (make-object cursor% 'hand))      
       (define plain-cursor (make-object cursor% 'arrow))
+      (define arrow-watch-cursor (make-object cursor% 'arrow-watch))
       
       (define header-list%
 	(class hierarchical-list%
@@ -1691,6 +1692,11 @@
 	  (send sorting-list enable on?)
 	  (send header-list enable on?)
 	  (send message enable on?)
+	  (let* ([cursor (if on? plain-cursor arrow-watch-cursor)])
+	    (send main-frame set-cursor cursor)
+	    (send (send sorting-list get-editor) set-cursor cursor #t)
+	    (send (send header-list get-editor) set-cursor cursor #t)
+	    (send (send message get-editor) set-cursor (if on? #f cursor) #t))
 	  (send (send main-frame get-menu-bar) enable on?)
 	  (set! cancel-button-todo break-proc)
 	  (send cancel-button enable (not on?))

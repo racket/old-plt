@@ -157,4 +157,98 @@
     (test-write-sym (cadar l) (cadar l) (cadar l))
     (loop (cdr l))]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Test #$
+
+(define-struct special (size))
+
+(define a-special (make-special 7))
+(define b-special (make-special 19))
+
+(define (make-p stream special-size)
+  (let* ([special-ready #f]
+	 [pos 0]
+	 [incpos! (lambda () (set! pos (add1 pos)))])
+    (make-input-port
+     ;; Read char:
+     (lambda ()
+       (when special-ready
+	 (error "#$ result followed not by a request for special"))
+       (let loop ([s stream][p pos])
+	 (if (null? s)
+	     eof
+	     (let ([i (car s)])
+	       (if (string? i)
+		   (if ((string-length i) . > . p)
+		       (begin
+			(incpos!)
+			(string-ref i p))
+		       (loop (cdr s) (- p (string-length i))))
+		   ;; a special:
+		   (cond
+		    [(zero? p) (incpos!) #\#]
+		    [(= p 1) (incpos!) (set! special-ready i) #\$]
+		    [else (loop (cdr s) (- p 2))]))))))
+     ;; Char ready?
+     (lambda () #t)
+     ;; Close proc
+     (lambda () #t)
+     ;; Peek proc
+     #f
+     ;; Get special
+     (lambda ()
+       (unless special-ready
+	 (error "special request when no special is ready"))
+       (begin0
+	(values special-ready (special-size special-ready))
+	(set! special-ready #f))))))
+
+;; Simple read:
+(let* ([p (make-p `("(list "
+		    ,a-special
+		    " "
+		    ,b-special
+		    "))")
+		  special-size)]
+       [v (read p)])
+  (test 'list car v)
+  (test a-special cadr v)
+  (test b-special caddr v))
+
+;; Read with src loc:
+(let* ([p (make-p `("(list "
+		    ,a-special
+		    " "
+		    ,b-special
+		    " end))")
+		  special-size)]
+       [v (read-syntax 'dk p)]
+       [l (syntax->list v)]
+       [v2 (syntax-object->datum v)])
+  (test 'list car v2)
+  (test a-special cadr v2)
+  (test b-special caddr v2)
+  (test 'end cadddr v2)
+  
+  (test 2 syntax-position (car l))
+  (test 7 syntax-position (cadr l))
+  (test 15 syntax-position (caddr l))
+  (test 35 syntax-position (cadddr l))
+
+  ;; Read with specials as syntax syntax already:
+  (let* ([stx v]
+	 [p (make-p `("(list "
+		      ,stx
+		      " end))")
+		    (lambda (x)
+		      ;; pretend it's 100 wide
+		      100))]
+	 [v (read-syntax 'dk p)]
+	 [l (syntax->list v)])
+    ;; make sure syntax object is intact:
+    (test stx cadr l)
+    (test 108 syntax-position (caddr l))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (report-errs)

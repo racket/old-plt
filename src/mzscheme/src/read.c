@@ -1113,7 +1113,7 @@ read_character(Scheme_Object *port CURRENTPROCPRM)
     i = 1;
     buf = onstack;
     buf[0] = tolower(ch);
-    while (isalpha(ch = scheme_peekc(port))) {
+    while ((ch = scheme_peekc(port), isalpha(ch))) {
       scheme_getc(port);
       if (i >= size) {
 	oldsize = size;

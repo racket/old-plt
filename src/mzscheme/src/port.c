@@ -5479,10 +5479,12 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     case 0: /* child */
 
-      /* Ignore signals here */
-      START_XFORM_SKIP;
-      MZ_SIGSET(SIGCHLD, SIG_IGN);
-      END_XFORM_SKIP;
+      {
+	/* Ignore signals here */
+	START_XFORM_SKIP;
+	MZ_SIGSET(SIGCHLD, SIG_IGN);
+	END_XFORM_SKIP;
+      }
 
       if (!synchonous) {
 	/* Copy pipe descriptors to stdin and stdout */

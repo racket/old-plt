@@ -614,6 +614,7 @@
 					 ;; These are functions, but they don't trigger GC:
 					 strcpy strlen memcpy strcat cos sin exp pow log sqrt atan2
 					 floor ceil round fmod fabs __maskrune
+					 isalpha isdigit isspace
 					 fread fwrite socket fcntl setsockopt connect send recv close
 					 __builtin_next_arg printf sprintf vsprintf vprintf
 					 scheme_get_env

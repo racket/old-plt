@@ -216,10 +216,10 @@ a subset of the R5RS scheme syntax: (and must read an entire file)
      (tokens value-tokens grouping-tokens)
      (end EOF)
      (grammar
-      (sexp [(SYM) 3]
-            [(OPEN sexp-list CLOSE) 5])
-      (sexp-list [() 6]
-                 [(sexp sexp-list) 7]))))
+      (sexp [(SYM) $1]
+            [(OPEN sexp-list CLOSE) $2])
+      (sexp-list [() null]
+                 [(sexp sexp-list) (cons $1 $2)]))))
   
   (define (simple-read input-port)
     (let ((ip (make-lex-buf input-port)))

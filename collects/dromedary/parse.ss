@@ -583,7 +583,7 @@
      [(BEGIN <seq_expr> END)
       $2]
      [(BEGIN END)
-      (ast:make-expression (ast:make-pexp_construct (ast:make-lident "()") null #f) (build-src 2))]
+      (ast:make-expression (ast:make-pexp_construct (ast:make-lident (datum->syntax-object $1 "()" (build-syn-list $1 $2)) ) null #f) (build-src 2))]
 ;;     [(BEGIN <seq_expr> error)
 ;; Unclosed error
      [(LPAREN <seq_expr> <type_constraint> RPAREN)
@@ -1034,12 +1034,7 @@
     (<constr_ident>
      [(UIDENT) $1]
 ;;     [(LBRACKET RBRACKET) "[]"] Commented out
-     [(LPAREN RPAREN) (datum->syntax-object $1 "()" (list #f
-							  (syntax-line $1)
-							  (syntax-column $1)
-							  (syntax-position $1)
-							  (- (+ (syntax-position $2) (syntax-span $2))
-							     (syntax-position $1))))]
+     [(LPAREN RPAREN) (datum->syntax-object $1 "()" (build-syn-list $1 $2))]
      [(COLONCOLON) (datum->syntax-object $1 "::" (build-syn-list $1))]
      [(FALSE) (datum->syntax-object $1 "false" (build-syn-list $1))]
      [(TRUE) (datum->syntax-object $1 "true" (build-syn-list $1))])
@@ -1050,10 +1045,10 @@
 
     (<constr_longident>
      [(<mod_longident>) $1]
-     [(LBRACKET RBRACKET) (ast:make-lident "[]")]
-     [(LPAREN RPAREN) (ast:make-lident "()")]
-     [(FALSE) (ast:make-lident "false")]
-     [(TRUE) (ast:make-lident "true")])
+     [(LBRACKET RBRACKET) (ast:make-lident (datum->syntax-object $1 "[]" (build-syn-list $1 $2)))]
+     [(LPAREN RPAREN) (ast:make-lident (datum->syntax-object $1 "()" (build-syn-list $1 $2)))]
+     [(FALSE) (ast:make-lident (datum->syntax-object $1 "false" (build-syn-list $1)))]
+     [(TRUE) (ast:make-lident (datum->syntax-object $1 "true" (build-syn-list $1)))])
 
     (<label_longident>
      [(LIDENT) (ast:make-lident $1)]
@@ -1116,8 +1111,8 @@
      [(SEMI) null])
 
     (<subtractive>
-     [(MINUS) "-"]
-     [(MINUSDOT) "-."]))))
+     [(MINUS) (datum->syntax-object $1 "-" (build-syn-list $1))]
+     [(MINUSDOT) (datum->syntax-object $1 "-." (build-syn-list $1))]))))
   
  
 (define (mktailexp taillist src)
@@ -1178,12 +1173,19 @@
 					      (- (position-offset end-pos)
 						 (position-offset start-pos))))))))
   
- (define (build-syn-list syn)
-   (list #f
-	 (syntax-line syn)
-	 (syntax-column syn)
-	 (syntax-position syn)
-	 (syntax-span syn)))
+ (define (build-syn-list syn . others)
+   (if (null? others)
+       (list #f
+	     (syntax-line syn)
+	     (syntax-column syn)
+	     (syntax-position syn)
+	     (syntax-span syn))
+       (list #f
+	     (syntax-line syn)
+	     (syntax-column syn)
+	     (syntax-position syn)
+	     (- (+ (syntax-column (car others)) (syntax-span (car others)))
+		(syntax-column syn)))))
 
  (define-syntax build-src-list
    (syntax-rules ()

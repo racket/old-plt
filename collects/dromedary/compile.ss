@@ -221,7 +221,11 @@
 	       (pretty-print (format "Source for ~a is: ~a" (unlongident name) (longident-src name)))
 	       (datum->syntax-object (current-compile-context)
 				     (translate-id
-				      (or (lookup-ident name) (unlongident name))
+				      (or (let ([res (lookup-ident name)])
+					    (begin
+					      (pretty-print (format "lookup-ident result: ~a" res))
+					      res))
+					  (unlongident name))
 				      (longident-src name)))]
 
 	      [($ ast:pexp_function label expr pelist)

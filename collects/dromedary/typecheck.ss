@@ -9,6 +9,10 @@
 
 	   (define cur-var #\a)
 
+	   (define (hash-table-put!print ht key val)
+	       (pretty-print (format "hash-table-put! ~a ~a ~a" ht key val))
+	       (hash-table-put! ht key val))
+
 ;;;; Stolen from Matthew
 	   (define (at expr src)
 	     (datum->syntax-object (current-compile-context) expr
@@ -79,7 +83,7 @@
 		    [($ ast:pstr_exception name decl)
 		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-ml decl (repeat context (length decl)))) "exception")])
 		       (begin
-			 (hash-table-put! <constructors> (syntax-object->datum name) (cons (make-tconstructor 
+			 (hash-table-put!print <constructors> (syntax-object->datum name) (cons (make-tconstructor 
 											    (let ([args (map typecheck-ml decl (repeat context (length decl)))])
 											      (if (null? args)
 												  null
@@ -215,13 +219,13 @@
 		      [($ ast:ptype_abstract dummy)
 		       (let ([rtype (typecheck-type (ast:type_declaration-manifest typedecl) boundlist)])
 			 (begin
-			   (hash-table-put! <constructors> name (cons rtype "some error"))
+			   (hash-table-put!print <constructors> name (cons rtype "some error"))
 			   (format "type ~a = ~a" name rtype)))]
 		      [($ ast:ptype_variant scll)
 		       (let* ([tscll (typecheck-scll name scll boundlist)]
 			      [ntv (make-tvariant name (map syntax-object->datum (map car scll)) tscll)])
 			 (begin
-			   (hash-table-put! <constructors> name (cons name "some error"))
+			   (hash-table-put!print <constructors> name (cons name "some error"))
 			   ntv))])))
 
 	   (define (typecheck-scll sname scll boundlist)
@@ -231,16 +235,16 @@
 			[name (syntax-object->datum (car current))]
 			[ttypes (map typecheck-type (cdr current) (repeat boundlist (length (cdr current))))])
 		   (begin
-		     (hash-table-put! <constructors> name (cond
+		     (hash-table-put!print <constructors> name (cond
 							   [(> (length ttypes) 1)
 							    (cons (make-tconstructor (make-<tuple> ttypes) sname)
-								  #`#,(string->symbol (format "make-~a" name)))]
+								  (string->symbol (format "make-~a" name)))]
 							   [(= (length ttypes) 1)
 							    (cons (make-tconstructor (car ttypes) sname)
-								  #`#,(string->symbol (format "make-~a" name)))]
+								  (string->symbol (format "make-~a" name)))]
 							   [(= (length ttypes) 0)
 							    (cons (make-tconstructor null sname)
-								  #`(#,(string->symbol (format "make-~a" name)) #f))]))
+								  (string->symbol (format "make-~a" name)))]))
 		     (cons (cond
 			    [(> (length ttypes) 1)
 			     (make-tconstructor (make-<tuple> ttypes) sname)]
@@ -265,7 +269,7 @@
 		 (let ([definedtypes (reverse (map car (map unconvert-tvars (map car (map cdr contextwithbindings)) (repeat null (length contextwithbindings)))))])
 		   (begin
 		     (for-each (lambda (name type)
-				 (hash-table-put! built-in-and-user-funcs name (cons type #`#,(string->symbol name))))
+				 (hash-table-put!print built-in-and-user-funcs name (cons type (string->symbol name))))
 			       (reverse (map car contextwithbindings))
 			       definedtypes)
 		     (map make-value-set (reverse (map car contextwithbindings)) definedtypes))))))

@@ -126,7 +126,16 @@
 c-files-string
 
 ; now call mzc on them
-(system (string-append mzc " -d " tmp-dir " --cc " c-files-string))
+(system 
+ (string-append 
+  mzc 
+  " -d " tmp-dir 
+  " "
+  "++ccf " flag "DWITH_PNG " 
+  "++ccf " flag "DPLD_png " 
+  "++ccf " flag "DPLD_mem "
+  "++ccf " flag "I" tmp-dir " "
+  "--cc " c-files-string))
 
 ; find all the object files..
 

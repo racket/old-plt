@@ -1,6 +1,7 @@
 #cs
 (module ast mzscheme
-
+  (require (lib "contracts.ss"))
+  
 	;;Macro for structure definition and provision
 	(define-syntax p-define-struct
 	  (syntax-rules ()
@@ -8,23 +9,44 @@
 			 (begin
 			   (provide (struct name fields))
 			   (define-struct (name inherit) fields (make-inspector)))]
-			[(_ name fields)
+                        [(_ name ((fname con) ...))
+                         (begin
+                           (provide/contract (struct name ((fname con) ...)))
+                           (define-struct name (fname ...) (make-inspector)))]
+                        [(_ name fields)
 			 (begin
 			   (provide (struct name fields))
 			   (define-struct name fields (make-inspector)))]))
 
 	;(make-src int int int)
-	(p-define-struct src (line col pos span))
+	(p-define-struct src ((line natural-number?)
+                              (col natural-number?)
+                              (pos natural-number?)
+                              (span natural-number?)))
 
 	;(make-ptop-def structure)
-	(p-define-struct ptop_def (structure))
+	(p-define-struct ptop_def ((structure structure?)))
 
 	;(make-stucture list)
-	(p-define-struct structure (structure_items))
+	(p-define-struct structure ((structure_items (listof structure_item?))))
 
 	;(make-structure_item structure_item_desc src)
-	(p-define-struct structure_item (pstr_desc pstr_src))
+	(p-define-struct structure_item ((pstr_desc structure_item?)
+                                         (pstr_src src?)))
 
+        (define structure_item_desc/p (or/f pstr_eval?
+                                            pstr_value?
+                                            pstr_primitive? 
+                                            pstr_type?
+                                            pstr_exception?
+                                            pstr_exn_rebind?
+                                            ;;pstr_module? 
+                                            ;;pstr_modtype?
+                                            pstr_open?
+                                            pstr_class?
+                                            pstr_class_type?))
+                                            ;;pstr_include?))
+  
 	;structure_item_desc => eval
 	;                     | value
 	;                     | primitive
@@ -39,9 +61,11 @@
 	;                     | include
 
 	;(make-pstr_eval expression)
-	(p-define-struct pstr_eval (expr))
+	(p-define-struct pstr_eval ((expr expression?)))
 	;(make-pstr_value boolean list)
-	(p-define-struct pstr_value (rec_flag pattern*expression-list))
+	(p-define-struct pstr_value ((rec_flag any?)
+                                     (pattern*expression-list
+                                      (listof (cons/p pattern? expression?)))))
 	;(make-pstr_primitive string value_description)
 	(p-define-struct pstr_primitive (name desc))
 	;(make-pstr_type list)

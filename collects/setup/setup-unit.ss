@@ -138,13 +138,18 @@
               ;; to conflict with each other.
               (list (cons 'lib (map path->string collection-p)) 1 0))))))
       
+      ;; remove-falses : listof (union X #f) -> listof X
+      ;; returns the non-false elements of l in order
+      (define (remove-falses l) (filter (lambda (x) x) l))
+      
       (define (planet->cc path owner pkg-file extra-path maj min)
         (unless (path? path)
-          (error 'path->cc "non-path when building package ~a" pkg-file))
-        (let* ([info (with-handlers ([exn:fail? (warning-handler #f)])
-                       (get-info/full path))]
-               [name (call-info info 'name (lambda () #f)
-                                (lambda (x)
+            (error 'path->cc "non-path when building package ~a" pkg-file))
+        (let/ec return
+          (let* ([info (with-handlers ([exn:fail? (warning-handler #f)])
+                         (get-info/full path))]
+                 [name (call-info info 'name (lambda () (return #f))
+                                  (lambda (x)
                                     (when x
                                       (unless (string? x)
                                         (error 
@@ -152,24 +157,22 @@
                                           "'name' result from directory ~s is not a string:"
                                           path)
                                          x)))))])
-          (and
-           name
-           (make-cc
-            #f
-            path
-            name
-            info
-            (build-path (find-system-path 'addon-dir) "cache.ss")
-            (list `(planet ,owner ,pkg-file ,@extra-path) maj min)))))
+            (make-cc
+             #f
+             path
+             name
+             info
+             (build-path (find-system-path 'addon-dir) "cache.ss")
+             (list `(planet ,owner ,pkg-file ,@extra-path) maj min)))))
       
       ;; this is an awful hack
       (define (planet-cc->sub-cc cc subdir)
-        (match-let ([('planet owner pkg-file (extra-path ...) maj min) (cc-shadowing-policy cc)])
+        (match-let ([(('planet owner pkg-file extra-path ...) maj min) (cc-shadowing-policy cc)])
           (planet->cc 
            (build-path (cc-path cc) subdir)
            owner
            pkg-file
-           (append extra-path (list subdir))
+           (append extra-path (list (path->string subdir)))
            maj
            min)))
 
@@ -180,8 +183,7 @@
 		   c)))
       
       (define planet-dirs-to-compile 
-        (filter
-         (lambda (x) x)
+        (remove-falses
          (map (lambda (spec) (apply planet->cc spec))
               (if (and (null? x-specific-collections) (null? x-specific-planet-dirs))
                   (get-installed-planet-archives)
@@ -275,21 +277,22 @@
 		  (let* ([cc (car l)]
 			 [info (cc-info cc)])
 		    (append
-		     (map
-                      (lambda (p) (planet-cc->sub-cc cc p))
-                      (call-info info 'compile-subcollections
-				 (lambda ()
-                                   (filter
-                                    (lambda (p)
-                                      (let ((d (build-path (cc-path cc) p)))
-                                        (and (directory-exists? d)
-                                             (file-exists? (build-path d "info.ss"))))) 
-                                    (directory-list (cc-path cc))))
-                                 ;; Result checker:
-                                 path?))
+		     (remove-falses
+                      (map
+                       (lambda (p) (planet-cc->sub-cc cc p))
+                       (call-info info 'compile-subcollections
+                                  (lambda ()
+                                    (filter
+                                     (lambda (p)
+                                       (let ((d (build-path (cc-path cc) p)))
+                                         (and (directory-exists? d)
+                                              (file-exists? (build-path d "info.ss"))))) 
+                                     (directory-list (cc-path cc))))
+                                  ;; Result checker:
+                                  path?)))
                      (list cc)
                      (loop (cdr l)))))))
-     
+
       (define ccs-to-compile (append collections-to-compile planet-dirs-to-compile))
       
       ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

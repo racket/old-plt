@@ -295,9 +295,13 @@
 	(error "multiple addresses"))
       #t))
 
+  (define (check-simple-user-address who tl s)
+    (and (check-user-address who tl s)
+	 (car (extract-addresses s 'address))))
+
   (define (check-id who tl s) #t)
       
-  (define (make-text-list label parent pref)
+  (define (make-text-list label parent pref check-item)
     (let ([p (make-object vertical-panel% parent '(border))])
       (define l (make-object list-box% label (or (preferences:get pref) null) p
 			     (lambda (l e)
@@ -307,11 +311,19 @@
 			      [stretchable-height #f]
 			      [alignment '(center center)]))
       (define add (make-object button% "Add" hp (lambda (b e)
-						  (let ([v (get-text-from-user (format "Add to ~a" label) ""
-									       (send parent get-top-level-window))])
-						    (when v
-						      (send l append v)
-						      (set-prefs))))))
+						  (let loop ([init ""])
+						    (let ([v (get-text-from-user (format "Add to ~a" label)
+										 (format "Add to ~a" label)
+										 (send parent get-top-level-window)
+										 init)])
+						      (when v
+							(let ([revised (check-item (format "item for ~a" label)
+										   (send b get-top-level-window) v)])
+							  (if revised
+							      (begin
+								(send l append (if (string? revised) revised v))
+								(set-prefs))
+							      (loop v)))))))))
       (define delete (make-object button% "Delete" hp (lambda (b e)
 							(let ([d (send l get-selections)])
 							  (for-each (lambda (i)
@@ -352,7 +364,7 @@
 				  'sirmail:aliases-file
 				  "Aliases File")
 
-      (make-text-list "Self Addresses" p 'sirmail:self-addresses)
+      (make-text-list "Self Addresses" p 'sirmail:self-addresses check-simple-user-address)
 
       p))
 
@@ -374,7 +386,7 @@
 				  'sirmail:auto-file-table-file
 				  "Auto-File Table File")
 
-      (make-text-list "Shown Header Fields" p 'sirmail:fields-to-show)
+      (make-text-list "Shown Header Fields" p 'sirmail:fields-to-show void)
 
       p))
 

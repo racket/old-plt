@@ -114,6 +114,7 @@ void (*scheme_case_lambda_wrong_count)(const char *name, int argc,
 void (*scheme_wrong_type)(const char *name, const char *expected, 
 		       int which, int argc,
 		       Scheme_Object **argv);
+void (*scheme_arg_mismatch)(const char *name, const char *msg, Scheme_Object *o);
 void (*scheme_wrong_return_arity)(const char *where, 
 			       int expected, int got,
 			       Scheme_Object **argv,

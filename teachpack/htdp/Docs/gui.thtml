@@ -41,7 +41,7 @@
 
 <p>Example 1:
 <pre>
-> (create-window (list (list (make-button "QUIT" hide-window))))
+> (define w (create-window (list (list (make-button "QUIT" (lambda (e) (hide-window w)))))))
 </pre>
 A button appears on the screen. Click on the button and it will disappear.
 <pre>
@@ -66,12 +66,13 @@ The frame reappears.
 
 ; set up window with three "lines": a text field, a message, and two buttons
 ; fill in text and click OKAY
-(create-window
- (list
-  (list text1)
-  (list msg1)
-  (list (make-button "OKAY" respond)
-        (make-button "QUIT" hide-window))))
+(define w 
+ (create-window
+  (list
+   (list text1)
+   (list msg1)
+   (list (make-button "OKAY" respond)
+	 (make-button "QUIT" (lambda (e) (hide-window w)))))))
 </pre>
 
 {(include "foot.tinc")}

@@ -65,7 +65,7 @@ exit 1
       (error 'install
              "Can't find the PLT installation this script (~a) is part of"
              this))
-    (set! this-script name)))
+    (set! this-script (path->string name))))
 
 (define (setup-environment)
   (putenv "PLTHOME" plthome)

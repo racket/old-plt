@@ -465,24 +465,22 @@ int wxXRenderHere(void)
 }
 
 #ifndef WX_USE_XFT
+# define WX_XR_PICTURE
+#else
+# ifndef XFT_MAJOR
+/* No XftDrawPicture, so still use direct Xrender interface */
+#  define WX_OLD_XFT
+#  define WX_XR_PICTURE
+# endif
+#endif
+
+#ifdef WX_XR_PICTURE
 static XRenderPictFormat *format, *mask_format, *alpha_format;
 #endif
 
-long wxMakePicture(Drawable d, int color)
+#ifdef WX_XR_PICTURE
+long wxMakeXrenderPicture(Drawable d, int color)
 {
-#ifdef WX_USE_XFT
-  if (color) {
-    Visual *visual;
-    Colormap cm;
-
-    cm = DefaultColormapOfScreen(wxAPP_SCREEN);
-
-    visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY, cm));
-    
-    return (long)XftDrawCreate(wxAPP_DISPLAY, d, visual, cm);
-  } else 
-    return (long)XftDrawCreateBitmap(wxAPP_DISPLAY, d);
-#else
   /* Create format records, if not done already: */
   if (!format) {
     Visual *visual;
@@ -516,6 +514,25 @@ long wxMakePicture(Drawable d, int color)
 				    color ? format : mask_format,
 				    0,
 				    NULL);
+}
+#endif
+
+long wxMakePicture(Drawable d, int color)
+{
+#ifdef WX_USE_XFT
+  if (color) {
+    Visual *visual;
+    Colormap cm;
+
+    cm = DefaultColormapOfScreen(wxAPP_SCREEN);
+
+    visual = XcmsVisualOfCCC(XcmsCCCOfColormap(wxAPP_DISPLAY, cm));
+    
+    return (long)XftDrawCreate(wxAPP_DISPLAY, d, visual, cm);
+  } else 
+    return (long)XftDrawCreateBitmap(wxAPP_DISPLAY, d);
+#else
+  return wxMakeXrenderPicture(d, color);
 #endif
 }
 
@@ -622,30 +639,51 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       Picture destp, srcp, maskp;
       wxBitmap *free_bmp = NULL;
       int mono_src;
-# ifdef WX_USE_XFT
+# ifndef WX_XR_PICTURE
       XftDraw *maskd = NULL;
 # endif
 
       mono_src = (src->GetDepth() == 1);
 
-      /* Create an Xrender picture for each X pixmap: */
+      /* Create an Xrender picture for each X pixmap.
+	 With old XFT version, give up on caching Picture. */
+# ifdef WX_OLD_XFT
+      destp = wxMakeXrenderPicture(DRAWABLE, Colour);
+# else
       if (!PICTURE)
 	InitPicture();
       destp = PICTURE;
+# endif
 
+# ifdef WX_OLD_XFT
+      {
+	int sd;
+	Pixmap spm;
+	spm = GETPIXMAP(src);
+	sd = src->GetDepth();
+	srcp = wxMakeXrenderPicture(spm, sd != 1);
+      }
+# else
       {
 	long p;
 	p = src->GetPicture();
 	srcp = TO_PICTURE(p);
       }
+# endif
 
       /* Mask case is more difficult if it's not 1 bit: */
       if (mask) {
 	if (mono_src) {
 	  /* Easy: */
+# ifdef WX_OLD_XFT
+	  Pixmap mpm;
+	  mpm = GETPIXMAP(mask);
+	  maskp = wxMakeXrenderPicture(mpm, 0);
+# else
 	  long p;
 	  p = mask->GetPicture();
 	  maskp = TO_PICTURE(p);
+# endif
 	} else {
 	  /* Difficult. Need to create an 8-bit alpha (grayscale)
 	     pixmap by reading pixels of the mask pixmap. Note that we
@@ -692,17 +730,17 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
 	      XFreeGC(DPY, agc);
 	    }
 
-# ifdef WX_USE_XFT
-	    maskd = XftDrawCreateAlpha(wxAPP_DISPLAY,
-				       bpm,
-				       8);
-	    maskp = TO_PICTURE(maskd);
-# else
+# ifdef WX_XR_PICTURE
 	    maskp = XRenderCreatePicture(wxAPP_DISPLAY,
 					 bpm,
 					 alpha_format,
 					 0,
 					 NULL);
+# else
+	    maskd = XftDrawCreateAlpha(wxAPP_DISPLAY,
+				       bpm,
+				       8);
+	    maskp = TO_PICTURE(maskd);
 # endif
 	    
 	    free_bmp = bm;
@@ -731,12 +769,20 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
       
       retval = 1; /* or so we assume */
 
-      /* Free temporary data */
-      if (free_bmp) {
-# ifdef WX_USE_XFT
-	XftDrawDestroy(maskd);	
-# else
+      /* Free temporary data (old Xft) */
+# ifdef WX_OLD_XFT
+      XRenderFreePicture(wxAPP_DISPLAY, destp);
+      XRenderFreePicture(wxAPP_DISPLAY, srcp);
+      if (!free_bmp)
 	XRenderFreePicture(wxAPP_DISPLAY, maskp);
+# endif
+
+      /* Free temporary data (all modes) */
+      if (free_bmp) {
+# ifdef WX_XR_PICTURE
+	XRenderFreePicture(wxAPP_DISPLAY, maskp);
+# else
+	XftDrawDestroy(maskd);	
 # endif
 	DELETE_OBJ free_bmp;
       }
@@ -1660,9 +1706,9 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
   if (xfontinfo) {
     XGlyphInfo overall;
     if (use16bit)
-      XftTextExtents16(DPY, xfontinfo, (FcChar16 *)(text + dt), textlen, &overall);
+      XftTextExtents16(DPY, xfontinfo, (XftChar16 *)(text + dt), textlen, &overall);
     else
-      XftTextExtents8(DPY, xfontinfo, (FcChar8 *)(text + dt), textlen, &overall);
+      XftTextExtents8(DPY, xfontinfo, (XftChar8 *)(text + dt), textlen, &overall);
     ascent = xfontinfo->ascent;
     descent = xfontinfo->descent;
     cx = overall.xOff;
@@ -1721,9 +1767,9 @@ void wxWindowDC::DrawText(char *text, float x, float y, Bool use16bit, int dt)
     }
 
     if (use16bit)
-      XftDrawString16(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (FcChar16 *)(text + dt), textlen);
+      XftDrawString16(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (XftChar16 *)(text + dt), textlen);
     else
-      XftDrawString8(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (FcChar8 *)(text + dt), textlen);
+      XftDrawString8(XFTDRAW, &col, xfontinfo, dev_x, dev_y+ascent, (XftChar8 *)(text + dt), textlen);
 
     if (CURRENT_REG)
       XftDrawSetClip(XFTDRAW, None);
@@ -1801,9 +1847,9 @@ void wxWindowDC::GetTextExtent(const char *s, float *_w, float *_h, float *_desc
   if (xfontinfo) {
     XGlyphInfo overall;
     if (use16bit)
-      XftTextExtents16(DPY, xfontinfo, (FcChar16 *)(s + dt), str16len(s + dt), &overall);
+      XftTextExtents16(DPY, xfontinfo, (XftChar16 *)(s + dt), str16len(s + dt), &overall);
     else
-      XftTextExtents8(DPY, xfontinfo, (FcChar8 *)(s + dt), strlen(s + dt), &overall);
+      XftTextExtents8(DPY, xfontinfo, (XftChar8 *)(s + dt), strlen(s + dt), &overall);
     ascent = xfontinfo->ascent;
     descent = xfontinfo->descent;
     w = XDEV2LOGREL(overall.xOff);

@@ -887,7 +887,10 @@
        (load-with-cd           (str -> void))
        (promise?               (_ -> bool) (predicate promise))
        (read-eval-print-loop   (-> void))
-       (read-line              (optional iport -> (union str eof)))
+       (read-line              (case-> 
+				 (iport sym -> (union str eof))
+				 (iport -> (union str eof))
+				 (-> (union str eof))))
        (system-type            (-> sym))
        (version                (-> str))
 

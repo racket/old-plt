@@ -517,8 +517,8 @@
 	  (lambda ()
 	    (send check-syntax-button enable #f)
 	    (super-disable-evaluation))])
-	(public
-	  [syncheck:clear-highlighting
+	(private
+	  [clear-highlighting
 	   (lambda ()
 	     (let* ([list (send definitions-text get-style-list)]
 		    [style (send list find-named-style "Standard")])
@@ -526,13 +526,38 @@
 	       (if style
 		   (send definitions-text
 			 change-style style 0 (send definitions-text last-position))
-		   (printf "Warning: couldn't find Standard style~n"))))]
+		   (printf "Warning: couldn't find Standard style~n"))))])
+	(public
+	  [syncheck:clear-highlighting
+	   (lambda ()
+	     (hide-error-report-window)
+	     (clear-highlighting))]
 	  [syncheck:enable-checking
 	   (lambda (on?)
 	     (set! button-visible? on?)
 	     (when (object? check-syntax-button)
 	       (send check-syntax-button show on?)))])
 	
+	(private
+	  [report-error-frame (make-object mred:frame% "Check Syntax Error" #f 400 10)]
+	  [report-error-text (make-object mred:text%)]
+	  [report-error-canvas (make-object mred:editor-canvas% report-error-frame report-error-text
+					    '(hide-hscroll hide-vscroll))]
+	  [hide-error-report-window (lambda () (send report-error-frame show #f))]
+	  [report-error
+	   (lambda (message)
+	     (send* report-error-text
+		    (begin-edit-sequence)
+		    (lock #f)
+		    (erase)
+		    (insert message)
+		    (lock #t)
+		    (end-edit-sequence))
+	     (send report-error-frame show #t))])
+	(sequence
+	  (send report-error-text hide-caret #t)
+	  (send report-error-canvas set-line-count 1))
+
 	(public
 	  [syncheck:principal?
 	   (lambda (zodiac-ast)
@@ -629,11 +654,11 @@
 			 (send definitions-text end-edit-sequence))]
 		      [color-loop
 		       (lambda (zodiac-ast)
-			 (let* ([z:start (zodiac:location-offset
-					  (zodiac:zodiac-start zodiac-ast))]
+			 (let* ([z:start (zodiac:location-offset (zodiac:zodiac-start zodiac-ast))]
 				[z:finish (+ 1
 					     (zodiac:location-offset
 					      (zodiac:zodiac-finish zodiac-ast)))]
+				[z:text (zodiac:location-file (zodiac:zodiac-start zodiac-ast))]
 				[search-for-orig-syntax
 				 (lambda (zobj)
 				   (let loop ([zobj zobj])
@@ -651,13 +676,17 @@
 				     (let* ([start (find-next-non-whitespace (add1 z:start))]
 					    [finish (find-next-whitespace start)])
 				       (when (and finish start)
-					 (change-style syntax-style start finish)))))]
+					 (if (is-a? z:text mred:text%)
+					     (send z:text change-style syntax-style start finish)
+					     (change-style syntax-style start finish))))))]
 				
 				[color
 				 (lambda (delta)
 				   (when (and (syncheck:principal? zodiac-ast)
 					      z:finish z:start)
-				     (change-style delta z:start z:finish)))])
+				     (if (is-a? z:text mred:text%)
+					 (send z:text change-style delta z:start z:finish)
+					 (change-style delta z:start z:finish))))])
 					; No matter what this expression is,
 					; if it's not direct from the
 					; source, it might be a macro or micro expansion.
@@ -836,7 +865,7 @@
 		     (lambda ()
 					; reset all of the buffer to the default style
 					; and clear out arrows
-		       (syncheck:clear-highlighting)
+		       (clear-highlighting)
                        (send definitions-text syncheck:init-arrows)
 		       
 		       ;; color each exp
@@ -876,13 +905,22 @@
 				      #f
 				      #t)))))
 			 (semaphore-wait semaphore)
-			 (when error-raised?
-			   (send interactions-text report-located-error msg debug error)))
-		       
+			 (if error-raised?
+			     (begin (send interactions-text highlight-error
+					  (zodiac:location-file (zodiac:zodiac-start debug))
+					  (zodiac:location-offset (zodiac:zodiac-start debug))
+					  (+ (zodiac:location-offset (zodiac:zodiac-finish debug)) 1))
+				    (report-error msg))
+			     (hide-error-report-window)))
+
 					; color the top-level varrefs
 		       (for-each
 			(lambda (var)
-			  (let ([id (zodiac:varref-var var)])
+			  (let* ([id (zodiac:varref-var var)]
+				 [text (zodiac:location-file (zodiac:zodiac-start var))]
+				 [change-style (if (is-a? text mred:text%)
+						   (ivar text change-style)
+						   change-style)])
 			    (change-style
 			     (cond
 			      [(hash-table-get defineds id (lambda () #f))

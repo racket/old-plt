@@ -169,24 +169,34 @@
       (define (can-close?)
 	(if (is-changed?)
 	    (case (gui-utils:unsaved-warning
-		   filename
+		   (if (string? filename)
+		       filename
+		       "Untitled")
 		   "Close"
 		   #t)
 	      [(continue) #t]
-	      [(save) (save-file filename) #t]
+	      [(save) (save)]
 	      [(cancel) #f])
 	    #t))
 
-      (define (file-menu:save . xxx)
+      (define (save)
 	(if filename
-	    (save-file filename)
-	    (file-menu:save-as)))
+	    (begin (save-file filename) #t)
+	    (save-as)))
+
+      (define (save-as)
+	(let ([new-fn (get-file "Choose a project filename" this)])
+	  (if new-fn
+	      (begin (set! filename new-fn)
+		     (save-file filename)
+		     #t)
+	      #f)))
+
+      (define (file-menu:save . xxx)
+	(save))
 
       (define (file-menu:save-as . xxx)
-	(let ([new-fn (get-file "Choose a project filename" this)])
-	  (when new-fn
-	    (set! filename new-fn)
-	    (save-file filename))))
+	(save-as))
 
       (define project-name
 	(if filename

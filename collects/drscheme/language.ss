@@ -341,7 +341,7 @@
        #\l))
     (make-object mred:separator-menu-item% language-menu)
     (make-object mred:menu-item%
-      "Set Teachpack To..."
+      "Add Teachpack..."
       language-menu
       (lambda (_1 _2)
 	(let ([lib-file (fw:finder:get-file 
@@ -349,11 +349,18 @@
 			 "Select a Teachpack" 
 			 ".*\\.(ss|scm)$")])
 	  (when lib-file
-	    (fw:preferences:set
-	     'drscheme:teachpack-file lib-file)
+	    (let ([old-pref (fw:preferences:get
+			     'drscheme:teachpack-file)])
+	      (fw:preferences:set
+	       'drscheme:teachpack-file
+	       (cons lib-file
+		     (cond
+		      [(string? old-pref) (list old-pref)]
+		      [(not old-pref) null]
+		      [else old-pref]))))
 	    (set! teachpack-directory (path-only lib-file))))))
     (make-object mred:menu-item%
-      "Clear Teachpack"
+      "Clear Teachpack(s)"
       language-menu
       (lambda (_1 _2) (fw:preferences:set 'drscheme:teachpack-file #f)))))
 

@@ -48,10 +48,13 @@
 
 (define wxdir 
   (simplify-path 
-   (build-path (find-system-path 'exec-file)
-               (alt 
-                (build-path 'up "src" "wxcommon")
-                (build-path 'up 'up "src" "wxcommon")))))
+   (build-path 
+	(collection-path "mzlib" )
+	'up
+	'up
+	"src"
+	"wxcommon")))
+
                     
 
 ; now copy *everything* into tmpdir
@@ -169,8 +172,7 @@ c-files-string
 
 ; clean up the messs
 
-(delete-directory/files (build-path "src" "tmp"))
-
+(delete-directory/files tmp-dir)
 
 ; now to make the fit module..
 
@@ -202,7 +204,7 @@ c-files-string
 
 ; clear the obj-files
 (for-each delete-file fit-objs)
-
+(exit)
 
 
 

@@ -131,21 +131,21 @@
    (standard-menus<%>)
    args
    (inherit on-menu-char on-traverse-char)
-   (private
-    (remove-prefs-callback
-     (preferences:add-callback
-       'framework:menu-bindings
-       (lambda (p v)
-         (let ((mb (get-menu-bar)))
-           (let loop ((menu (get-menu-bar)))
-             (cond
-              ((is-a? menu menu-item-container<%>)
-               (for-each loop (send menu get-items)))
-              ((is-a? menu selectable-menu-item<%>)
-               (when (is-a? menu menu:can-restore<%>)
-                 (if v
-                   (send menu restore-keybinding)
-                   (send menu set-shortcut #f)))))))))))
+   (private-field
+     (remove-prefs-callback
+       (preferences:add-callback
+         'framework:menu-bindings
+         (lambda (p v)
+           (let ((mb (get-menu-bar)))
+             (let loop ((menu (get-menu-bar)))
+               (cond
+                ((is-a? menu menu-item-container<%>)
+                 (for-each loop (send menu get-items)))
+                ((is-a? menu selectable-menu-item<%>)
+                 (when (is-a? menu menu:can-restore<%>)
+                   (if v
+                     (send menu restore-keybinding)
+                     (send menu set-shortcut #f)))))))))))
    (inherit get-menu-bar show can-close? get-edit-target-object)
    (sequence (apply super-init args))
    (override (on-close (lambda () (remove-prefs-callback) (super-on-close))))
@@ -436,522 +436,535 @@
    (sequence (void))
    (sequence (void))
    (sequence (void))
-   (private
-    (file-menu:new-item
-     (and file-menu:new
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda () (file-menu:new-on-demand this) (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:new-string)) (base "&New") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:new (lambda (item evt) (file-menu:new item evt))))
-             file-menu:new)
-            #\n
-            (file-menu:new-help-string)))))
+   (private-field
+     (file-menu:new-item
+       (and file-menu:new
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:new-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:new-string)) (base "&New") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:new (lambda (item evt) (file-menu:new item evt))))
+               file-menu:new)
+              #\n
+              (file-menu:new-help-string)))))
    (sequence (file-menu:between-new-and-open (get-file-menu)))
-   (private
-    (file-menu:open-item
-     (and file-menu:open
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (file-menu:open-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:open-string)) (base "&Open") (suffix "..."))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:open (lambda (item evt) (file-menu:open item evt))))
-             file-menu:open)
-            #\o
-            (file-menu:open-help-string)))))
+   (private-field
+     (file-menu:open-item
+       (and file-menu:open
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:open-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:open-string))
+                (base "&Open")
+                (suffix "..."))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:open (lambda (item evt) (file-menu:open item evt))))
+               file-menu:open)
+              #\o
+              (file-menu:open-help-string)))))
    (sequence (file-menu:between-open-and-revert (get-file-menu)))
-   (private
-    (file-menu:revert-item
-     (and file-menu:revert
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (file-menu:revert-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:revert-string)) (base "&Revert") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:revert
-                (lambda (item evt) (file-menu:revert item evt))))
-             file-menu:revert)
-            #f
-            (file-menu:revert-help-string)))))
+   (private-field
+     (file-menu:revert-item
+       (and file-menu:revert
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:revert-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:revert-string))
+                (base "&Revert")
+                (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:revert
+                  (lambda (item evt) (file-menu:revert item evt))))
+               file-menu:revert)
+              #f
+              (file-menu:revert-help-string)))))
    (sequence (file-menu:between-revert-and-save (get-file-menu)))
-   (private
-    (file-menu:save-item
-     (and file-menu:save
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (file-menu:save-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:save-string)) (base "&Save") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:save (lambda (item evt) (file-menu:save item evt))))
-             file-menu:save)
-            #\s
-            (file-menu:save-help-string)))))
-   (private
-    (file-menu:save-as-item
-     (and file-menu:save-as
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (file-menu:save-as-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:save-as-string))
-              (base "Save")
-              (suffix " &As..."))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:save-as
-                (lambda (item evt) (file-menu:save-as item evt))))
-             file-menu:save-as)
-            #f
-            (file-menu:save-as-help-string)))))
+   (private-field
+     (file-menu:save-item
+       (and file-menu:save
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:save-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:save-string)) (base "&Save") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:save (lambda (item evt) (file-menu:save item evt))))
+               file-menu:save)
+              #\s
+              (file-menu:save-help-string)))))
+   (private-field
+     (file-menu:save-as-item
+       (and file-menu:save-as
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:save-as-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:save-as-string))
+                (base "Save")
+                (suffix " &As..."))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:save-as
+                  (lambda (item evt) (file-menu:save-as item evt))))
+               file-menu:save-as)
+              #f
+              (file-menu:save-as-help-string)))))
    (sequence (file-menu:between-save-as-and-print (get-file-menu)))
-   (private
-    (file-menu:print-item
-     (and file-menu:print
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (file-menu:print-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:print-string))
-              (base "&Print")
-              (suffix "..."))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:print (lambda (item evt) (file-menu:print item evt))))
-             file-menu:print)
-            #\p
-            (file-menu:print-help-string)))))
+   (private-field
+     (file-menu:print-item
+       (and file-menu:print
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:print-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:print-string))
+                (base "&Print")
+                (suffix "..."))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:print
+                  (lambda (item evt) (file-menu:print item evt))))
+               file-menu:print)
+              #\p
+              (file-menu:print-help-string)))))
    (sequence (file-menu:between-print-and-close (get-file-menu)))
-   (private
-    (file-menu:close-item
-     (and file-menu:close
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (file-menu:close-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:close-string)) (base "&Close") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:close (lambda (item evt) (file-menu:close item evt))))
-             file-menu:close)
-            #\w
-            (file-menu:close-help-string)))))
+   (private-field
+     (file-menu:close-item
+       (and file-menu:close
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:close-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:close-string)) (base "&Close") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:close
+                  (lambda (item evt) (file-menu:close item evt))))
+               file-menu:close)
+              #\w
+              (file-menu:close-help-string)))))
    (sequence (file-menu:between-close-and-quit (get-file-menu)))
-   (private
-    (file-menu:quit-item
-     (and file-menu:quit
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (file-menu:quit-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (file-menu:quit-string))
-              (base (if (eq? (system-type) 'windows) "E&xit" "Quit"))
-              (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-file-menu)
-            (let
-             ((file-menu:quit (lambda (item evt) (file-menu:quit item evt))))
-             file-menu:quit)
-            #\q
-            (file-menu:quit-help-string)))))
+   (private-field
+     (file-menu:quit-item
+       (and file-menu:quit
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (file-menu:quit-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (file-menu:quit-string))
+                (base (if (eq? (system-type) 'windows) "E&xit" "Quit"))
+                (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-file-menu)
+              (let
+               ((file-menu:quit (lambda (item evt) (file-menu:quit item evt))))
+               file-menu:quit)
+              #\q
+              (file-menu:quit-help-string)))))
    (sequence (file-menu:after-quit (get-file-menu)))
-   (private
-    (edit-menu:undo-item
-     (and edit-menu:undo
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:undo-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:undo-string)) (base "&Undo") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:undo (lambda (item evt) (edit-menu:undo item evt))))
-             edit-menu:undo)
-            #\z
-            (edit-menu:undo-help-string)))))
-   (private
-    (edit-menu:redo-item
-     (and edit-menu:redo
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:redo-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:redo-string)) (base "&Redo") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:redo (lambda (item evt) (edit-menu:redo item evt))))
-             edit-menu:redo)
-            #\y
-            (edit-menu:redo-help-string)))))
+   (private-field
+     (edit-menu:undo-item
+       (and edit-menu:undo
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:undo-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:undo-string)) (base "&Undo") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:undo (lambda (item evt) (edit-menu:undo item evt))))
+               edit-menu:undo)
+              #\z
+              (edit-menu:undo-help-string)))))
+   (private-field
+     (edit-menu:redo-item
+       (and edit-menu:redo
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:redo-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:redo-string)) (base "&Redo") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:redo (lambda (item evt) (edit-menu:redo item evt))))
+               edit-menu:redo)
+              #\y
+              (edit-menu:redo-help-string)))))
    (sequence (edit-menu:between-redo-and-cut (get-edit-menu)))
-   (private
-    (edit-menu:cut-item
-     (and edit-menu:cut
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda () (edit-menu:cut-on-demand this) (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:cut-string)) (base "Cu&t") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:cut (lambda (item evt) (edit-menu:cut item evt))))
-             edit-menu:cut)
-            #\x
-            (edit-menu:cut-help-string)))))
+   (private-field
+     (edit-menu:cut-item
+       (and edit-menu:cut
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:cut-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:cut-string)) (base "Cu&t") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:cut (lambda (item evt) (edit-menu:cut item evt))))
+               edit-menu:cut)
+              #\x
+              (edit-menu:cut-help-string)))))
    (sequence (edit-menu:between-cut-and-copy (get-edit-menu)))
-   (private
-    (edit-menu:copy-item
-     (and edit-menu:copy
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:copy-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:copy-string)) (base "&Copy") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:copy (lambda (item evt) (edit-menu:copy item evt))))
-             edit-menu:copy)
-            #\c
-            (edit-menu:copy-help-string)))))
+   (private-field
+     (edit-menu:copy-item
+       (and edit-menu:copy
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:copy-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:copy-string)) (base "&Copy") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:copy (lambda (item evt) (edit-menu:copy item evt))))
+               edit-menu:copy)
+              #\c
+              (edit-menu:copy-help-string)))))
    (sequence (edit-menu:between-copy-and-paste (get-edit-menu)))
-   (private
-    (edit-menu:paste-item
-     (and edit-menu:paste
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:paste-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:paste-string)) (base "&Paste") (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:paste (lambda (item evt) (edit-menu:paste item evt))))
-             edit-menu:paste)
-            #\v
-            (edit-menu:paste-help-string)))))
+   (private-field
+     (edit-menu:paste-item
+       (and edit-menu:paste
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:paste-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:paste-string)) (base "&Paste") (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:paste
+                  (lambda (item evt) (edit-menu:paste item evt))))
+               edit-menu:paste)
+              #\v
+              (edit-menu:paste-help-string)))))
    (sequence (edit-menu:between-paste-and-clear (get-edit-menu)))
-   (private
-    (edit-menu:clear-item
-     (and edit-menu:clear
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:clear-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:clear-string))
-              (base (if (eq? (system-type) 'macos) "Clear" "&Delete"))
-              (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:clear (lambda (item evt) (edit-menu:clear item evt))))
-             edit-menu:clear)
-            #f
-            (edit-menu:clear-help-string)))))
+   (private-field
+     (edit-menu:clear-item
+       (and edit-menu:clear
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:clear-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:clear-string))
+                (base (if (eq? (system-type) 'macos) "Clear" "&Delete"))
+                (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:clear
+                  (lambda (item evt) (edit-menu:clear item evt))))
+               edit-menu:clear)
+              #f
+              (edit-menu:clear-help-string)))))
    (sequence (edit-menu:between-clear-and-select-all (get-edit-menu)))
-   (private
-    (edit-menu:select-all-item
-     (and edit-menu:select-all
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:select-all-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:select-all-string))
-              (base "Select A&ll")
-              (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:select-all
-                (lambda (item evt) (edit-menu:select-all item evt))))
-             edit-menu:select-all)
-            #\a
-            (edit-menu:select-all-help-string)))))
+   (private-field
+     (edit-menu:select-all-item
+       (and edit-menu:select-all
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:select-all-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:select-all-string))
+                (base "Select A&ll")
+                (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:select-all
+                  (lambda (item evt) (edit-menu:select-all item evt))))
+               edit-menu:select-all)
+              #\a
+              (edit-menu:select-all-help-string)))))
    (sequence (edit-menu:between-select-all-and-find (get-edit-menu)))
-   (private
-    (edit-menu:find-item
-     (and edit-menu:find
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:find-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:find-string)) (base "Find") (suffix "..."))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:find (lambda (item evt) (edit-menu:find item evt))))
-             edit-menu:find)
-            #\f
-            (edit-menu:find-help-string)))))
-   (private
-    (edit-menu:find-again-item
-     (and edit-menu:find-again
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:find-again-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:find-again-string))
-              (base "Find Again")
-              (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:find-again
-                (lambda (item evt) (edit-menu:find-again item evt))))
-             edit-menu:find-again)
-            #\g
-            (edit-menu:find-again-help-string)))))
-   (private
-    (edit-menu:replace-and-find-again-item
-     (and edit-menu:replace-and-find-again
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:replace-and-find-again-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:replace-and-find-again-string))
-              (base "Replace && Find Again")
-              (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:replace-and-find-again
-                (lambda (item evt)
-                  (edit-menu:replace-and-find-again item evt))))
-             edit-menu:replace-and-find-again)
-            #\h
-            (edit-menu:replace-and-find-again-help-string)))))
+   (private-field
+     (edit-menu:find-item
+       (and edit-menu:find
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:find-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:find-string)) (base "Find") (suffix "..."))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:find (lambda (item evt) (edit-menu:find item evt))))
+               edit-menu:find)
+              #\f
+              (edit-menu:find-help-string)))))
+   (private-field
+     (edit-menu:find-again-item
+       (and edit-menu:find-again
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:find-again-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:find-again-string))
+                (base "Find Again")
+                (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:find-again
+                  (lambda (item evt) (edit-menu:find-again item evt))))
+               edit-menu:find-again)
+              #\g
+              (edit-menu:find-again-help-string)))))
+   (private-field
+     (edit-menu:replace-and-find-again-item
+       (and edit-menu:replace-and-find-again
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:replace-and-find-again-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:replace-and-find-again-string))
+                (base "Replace && Find Again")
+                (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:replace-and-find-again
+                  (lambda (item evt)
+                    (edit-menu:replace-and-find-again item evt))))
+               edit-menu:replace-and-find-again)
+              #\h
+              (edit-menu:replace-and-find-again-help-string)))))
    (sequence (edit-menu:between-find-and-preferences (get-edit-menu)))
-   (private
-    (edit-menu:preferences-item
-     (and edit-menu:preferences
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (edit-menu:preferences-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (edit-menu:preferences-string))
-              (base "Preferences...")
-              (suffix ""))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-edit-menu)
-            (let
-             ((edit-menu:preferences
-                (lambda (item evt) (edit-menu:preferences item evt))))
-             edit-menu:preferences)
-            #f
-            (edit-menu:preferences-help-string)))))
+   (private-field
+     (edit-menu:preferences-item
+       (and edit-menu:preferences
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (edit-menu:preferences-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (edit-menu:preferences-string))
+                (base "Preferences...")
+                (suffix ""))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-edit-menu)
+              (let
+               ((edit-menu:preferences
+                  (lambda (item evt) (edit-menu:preferences item evt))))
+               edit-menu:preferences)
+              #f
+              (edit-menu:preferences-help-string)))))
    (sequence (edit-menu:after-preferences (get-edit-menu)))
    (sequence (help-menu:before-about (get-help-menu)))
-   (private
-    (help-menu:about-item
-     (and help-menu:about
-          (make-object (class
-             (get-menu-item%)
-             args
-             (rename (super-on-demand on-demand))
-             (override
-               (on-demand
-                 (lambda ()
-                   (help-menu:about-on-demand this)
-                   (super-on-demand))))
-             (sequence (apply super-init args)))
-            (let
-             ((special (help-menu:about-string))
-              (base "About ")
-              (suffix "..."))
-             (if (string=? special "")
-               (string-append base suffix)
-               (string-append base " " special suffix)))
-            (get-help-menu)
-            (let
-             ((help-menu:about (lambda (item evt) (help-menu:about item evt))))
-             help-menu:about)
-            #f
-            (help-menu:about-help-string)))))
+   (private-field
+     (help-menu:about-item
+       (and help-menu:about
+            (make-object (class
+               (get-menu-item%)
+               args
+               (rename (super-on-demand on-demand))
+               (override
+                 (on-demand
+                   (lambda ()
+                     (help-menu:about-on-demand this)
+                     (super-on-demand))))
+               (sequence (apply super-init args)))
+              (let
+               ((special (help-menu:about-string))
+                (base "About ")
+                (suffix "..."))
+               (if (string=? special "")
+                 (string-append base suffix)
+                 (string-append base " " special suffix)))
+              (get-help-menu)
+              (let
+               ((help-menu:about
+                  (lambda (item evt) (help-menu:about item evt))))
+               help-menu:about)
+              #f
+              (help-menu:about-help-string)))))
    (sequence (help-menu:after-about (get-help-menu)))
    (sequence (reorder-menus this))))

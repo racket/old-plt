@@ -73,8 +73,8 @@
 	    (when (keyword-name? real-id)
 	      (z:interface:static-error id "Invalid use of keyword")))))
 
-      (define optarglist->ilist
-	(lambda (optarglist)
+      (define paroptarglist->ilist
+	(lambda (paroptarglist)
 	  (let ((process-args
 		  (lambda (element)
 		    (if (pair? element)
@@ -84,19 +84,19 @@
 		      (and (check-for-keyword element)
 			(z:binding-var element))))))
 	    (cond
-	      ((z:sym-optarglist? optarglist)
-		(process-args (car (z:optarglist-vars optarglist))))
-	      ((z:list-optarglist? optarglist)
-		(map process-args (z:optarglist-vars optarglist)))
-	      ((z:ilist-optarglist? optarglist)
+	      ((z:sym-paroptarglist? paroptarglist)
+		(process-args (car (z:paroptarglist-vars paroptarglist))))
+	      ((z:list-paroptarglist? paroptarglist)
+		(map process-args (z:paroptarglist-vars paroptarglist)))
+	      ((z:ilist-paroptarglist? paroptarglist)
 		(let loop ((vars (map process-args 
-				   (z:optarglist-vars optarglist))))
+				   (z:paroptarglist-vars paroptarglist))))
 		  (if (null? (cddr vars))
 		    (cons (car vars) (cadr vars))
 		    (cons (car vars) (loop (cdr vars))))))
 	      (else
-		(z:interface:internal-error optarglist
-		  "Given to optarglist->ilist"))))))
+		(z:interface:internal-error paroptarglist
+		  "Given to paroptarglist->ilist"))))))
 
       (define arglist->ilist
 	(lambda (arglist)

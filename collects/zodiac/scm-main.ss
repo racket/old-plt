@@ -1513,8 +1513,6 @@
 
 	      (gen
 		(lambda (p level)
-		  (printf "gen at ~a:~n" level)
-		  (pretty-print (sexp->raw p)) (newline)
 		  (cond
 		    ((pat:match-against m&e-17 p env)
 		      =>

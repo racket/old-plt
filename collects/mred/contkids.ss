@@ -73,7 +73,30 @@
       (lambda (new-dim current-dim)
 	(or (= new-dim current-dim)
 	    (= new-dim -1))))
-    
+
+    ; make-item-param: makes a getter/setter function which
+    ;   controls a parameter of one of the container items.
+    ; input: object: class instance associated with this function
+    ;        init-value: initial value for parameter
+    ;        test: function which takes one argument and returns a
+    ;          boolean indicating whether or not a value is
+    ;          acceptable as a value of the parameter.
+    ;        failure: function which takes one argument (the
+    ;          illegal value); called when the value passed in is
+    ;          illegal. 
+    ; returns: function of zero or 1 args which gets/sets a
+    ;   parameter. 
+    (define make-item-param
+      (lambda (object init-value test failure)
+	(let ([curr-value init-value])
+	  (case-lambda
+	    [() curr-value]
+	    [(new-val) (if (test new-val)
+			   (begin
+			     (set! curr-value new-val)
+			     (send object force-redraw))
+			   (failure new-val))]))))
+	    
     ; make-item%: creates items which are suitable for placing into
     ;  containers.
     ; input: item%: a wx:item% descendant (but see below) from which the
@@ -109,28 +132,6 @@
 	  
 	  (public
 	    
-	    ; make-item-param: makes a getter/setter function which
-	    ;   controls a parameter of one of the container items.
-	    ; input: init-value: initial value for parameter
-	    ;        test: function which takes one argument and returns a
-	    ;          boolean indicating whether or not a value is
-	    ;          acceptable as a value of the parameter.
-	    ;        failure: function which takes one argument (the
-	    ;          illegal value); called when the value passed in is
-	    ;          illegal. 
-	    ; returns: function of zero or 1 args which gets/sets a
-	    ;   parameter. 
-	    [make-item-param
-	     (lambda (init-value test failure)
-	       (let ([curr-value init-value])
-		 (case-lambda
-		  [() curr-value]
-		  [(new-val) (if (test new-val)
-				 (begin
-				   (set! curr-value new-val)
-				   (force-redraw))
-				 (failure new-val))])))]
-	    
 	    ; a unique numeric ID for the object (for debugging).
 	    object-ID
 	    
@@ -140,18 +141,21 @@
 	    min-width
 	    min-height
 	    
+	    [default-x-stretch stretch-x]
+	    [default-y-stretch stretch-y]
+
 	    ; default-x: gets/sets default x position.  Errors out if new
 	    ; value is not a real number; forces a redraw upon a set.
 	    [default-x
 	     (make-item-param 
-	      0 real?
+	      this 0 real?
 	      (lambda (val)
 		(error 'default-x
 		       "Expected a non-negative real; received ~s" val)))]
 	    
 	    [default-y
 	     (make-item-param
-	      0 real?
+	      this 0 real?
 	      (lambda (val)
 		(error 'default-y
 		       "Expected a non-negative real; received ~s" val)))]
@@ -161,7 +165,7 @@
 	    ; redraw upon a set.
 	    [user-min-width
 	     (make-item-param
-	      0 non-negative-number?
+	      this 0 non-negative-number?
 	      (lambda (val)
 		(error 'user-min-width
 		       "Expected a non-negative real; received ~s" val)))]
@@ -169,7 +173,7 @@
 	    ; like user-min-width, but the other direction.
 	    [user-min-height
 	     (make-item-param
-	      0 non-negative-number?
+	      this 0 non-negative-number?
 	      (lambda (val)
 		(error 'user-min-height
 		       "Expected a non-negative real; received ~s" val)))]
@@ -182,7 +186,7 @@
 	    ;   prop. to specified value.
 	    [stretchable-in-x
 	     (make-item-param 
-	      stretch-x boolean?
+	      this default-x-stretch boolean?
 	      (lambda (val)
 		(error 'stretchable-in-x
 		       "Expected a boolean; received ~s" val)))]
@@ -191,7 +195,7 @@
             ;   for "x" and "horizontal" for "vertical".
 	    [stretchable-in-y
 	     (make-item-param
-	      stretch-y boolean?
+	      this default-y-stretch boolean?
 	      (lambda (val)
 		(error 'stretchable-in-y
 		       "Expected a boolean; received ~s" val)))]

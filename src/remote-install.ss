@@ -39,41 +39,41 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
 
 (define plt-relative-files
   (case (system-type)
-    [(macosx) (list (make-pr (build-path "src" "mred" "MrEd.app")
+    [(macosx) (list (make-pr (build-path "MrEd.app")
                              (build-path 'same))
-                    (make-pr (build-path "src" "mred" "MrEd3m.app")
+                    (make-pr (build-path "MrEd3m.app")
                              (build-path 'same))
-                    (make-pr (build-path "src" "mred" "Starter.app")
+                    (make-pr (build-path "collects" "launcher" "Starter.app")
                              (build-path "collects" "launcher"))
-                    (make-pr (build-path "src" "mred" "Starter3m.app")
+                    (make-pr (build-path "collects" "launcher" "Starter3m.app")
                              (build-path "collects" "launcher"))
-                    (make-pr (build-path "src" "mzscheme" "mzscheme")
+                    (make-pr (build-path "bin" "mzscheme")
                              (build-path "bin"))
-                    (make-pr (build-path "src" "mzscheme" "mzscheme3m")
+                    (make-pr (build-path "bin" "mzscheme3m")
                              (build-path "bin"))
-		    (make-pr (build-path "src" "mzscheme" "mzdyn.o")
+		    (make-pr (build-path "lib" "mzdyn.o")
 			     (build-path "lib"))
-		    (make-pr (build-path "src" "mzscheme" "libmzgc.a")
+		    (make-pr (build-path "lib" "libmzgc.a")
 			     (build-path "lib"))
-		    (make-pr (build-path "src" "mzscheme" "libmzscheme.a")
+		    (make-pr (build-path "lib" "libmzscheme.a")
 			     (build-path "lib"))
-		    (make-pr (build-path "src" "mzscheme" "mzdyn3m.o")
+		    (make-pr (build-path "lib" "mzdyn3m.o")
 			     (build-path "lib")))]
     [else (error 'remote-install.ss "only works for macos x")]))
 
 (define home-directory-relative-files
   (case (system-type)
-    [(macosx) (list (make-pr (build-path "src"
-					 "mred"
+    [(macosx) (list (make-pr (build-path "Library"
+                                         "Frameworks"
                                          "PLT_MrEd.framework"
                                          "Versions"
-                                         (version))
+					 (version))
                              (build-path "Library"
                                          "Frameworks"
                                          "PLT_MrEd.framework"
                                          "Versions"))
-                    (make-pr (build-path "src"
-					 "mred"
+                    (make-pr (build-path "Library"
+                                         "Frameworks"
                                          "PLT_MrEd.framework"
                                          "Versions"
                                          (string-append (version) "_3m"))
@@ -81,8 +81,8 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MrEd.framework"
                                          "Versions"))
-                    (make-pr (build-path "src"
-					 "mzscheme"
+                    (make-pr (build-path "Library"
+                                         "Frameworks"
                                          "PLT_MzScheme.framework"
                                          "Versions"
                                          (version))
@@ -90,8 +90,8 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
                                          "Frameworks"
                                          "PLT_MzScheme.framework"
                                          "Versions"))
-                    (make-pr (build-path "src"
-					 "mzscheme"
+                    (make-pr (build-path "Library"
+                                         "Frameworks"
                                          "PLT_MzScheme.framework"
                                          "Versions"
                                          (string-append (version) "_3m"))
@@ -113,4 +113,6 @@ string=? ; exec "$PLTHOME/bin/mzscheme" -qr $0 "$@"
       (system cmd))))
 
 (for-each (do-copy src-plt-home dest-plt-home) plt-relative-files)
-(for-each (do-copy src-plt-home "~") home-directory-relative-files)
+
+(when (or from-remote-host to-remote-host)
+  (for-each (do-copy "~" "~") home-directory-relative-files))

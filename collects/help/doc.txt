@@ -323,6 +323,16 @@ _Supplemental Help Desk documentation libraries_
 
 These libraries are used to build dynamic portions of the documentation.
 
+> Find Doc
+  The _finddoc.ss_ library is a module that defines on procedure:
+> (finddoc manual index-key label)
+  It accepts three strings. The first is the name of a doc collection,
+  the second is an index entry in that manual and the final is a
+  desriptive string. It returns a string representation of an 
+  anchor (in html) that goes to that index entry in the manual.
+  If the manual is not found, or the index-key is not in the manual,
+  it returns html code that shows an error.
+
 > Installed Components
   The _installed-components.ss_ library is a module that defines one procedure:
 > (help-desk:installed-components)
@@ -341,7 +351,7 @@ These libraries are used to build dynamic portions of the documentation.
   This opens a window for a user to submit a bug report about DrScheme.
 
 > Known Manuals
-  The _docpos.ss_ library contains a module that defines one procedure:
+  The _manuals.ss_ library contains a module that defines one procedure:
 > (find-manuals)
   It returns a string version of html code that, when rendered, shows
   the installed and known uninstalled manuals.

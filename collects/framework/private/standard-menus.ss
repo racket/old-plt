@@ -184,7 +184,7 @@
     (file-menu:get-new-item (lambda () file-menu:new-item))
     (file-menu:new-string (lambda () ""))
     (file-menu:new-help-string (lambda () "Open a new file"))
-    (file-menu:new-on-demand (lambda () (void)))
+    (file-menu:new-on-demand (lambda (menu-item) (void)))
     (file-menu:create-new? (lambda () #t)))
    (public (file-menu:between-new-and-open (lambda (menu) (void))))
    (public
@@ -192,7 +192,7 @@
     (file-menu:get-open-item (lambda () file-menu:open-item))
     (file-menu:open-string (lambda () ""))
     (file-menu:open-help-string (lambda () "Open a file from disk"))
-    (file-menu:open-on-demand (lambda () (void)))
+    (file-menu:open-on-demand (lambda (menu-item) (void)))
     (file-menu:create-open? (lambda () #t)))
    (public (file-menu:between-open-and-revert (lambda (menu) (void))))
    (public
@@ -201,7 +201,7 @@
     (file-menu:revert-string (lambda () ""))
     (file-menu:revert-help-string
      (lambda () "Revert this file to the copy on disk"))
-    (file-menu:revert-on-demand (lambda () (void)))
+    (file-menu:revert-on-demand (lambda (menu-item) (void)))
     (file-menu:create-revert? (lambda () #f)))
    (public (file-menu:between-revert-and-save (lambda (menu) (void))))
    (public
@@ -209,7 +209,7 @@
     (file-menu:get-save-item (lambda () file-menu:save-item))
     (file-menu:save-string (lambda () ""))
     (file-menu:save-help-string (lambda () "Save this file to disk"))
-    (file-menu:save-on-demand (lambda () (void)))
+    (file-menu:save-on-demand (lambda (menu-item) (void)))
     (file-menu:create-save? (lambda () #f)))
    (public
     (file-menu:save-as-callback (lambda (x y) (void)))
@@ -217,7 +217,7 @@
     (file-menu:save-as-string (lambda () ""))
     (file-menu:save-as-help-string
      (lambda () "Prompt for a filename and save this file to disk"))
-    (file-menu:save-as-on-demand (lambda () (void)))
+    (file-menu:save-as-on-demand (lambda (menu-item) (void)))
     (file-menu:create-save-as? (lambda () #f)))
    (public
     (file-menu:between-save-as-and-print
@@ -227,7 +227,7 @@
     (file-menu:get-print-item (lambda () file-menu:print-item))
     (file-menu:print-string (lambda () ""))
     (file-menu:print-help-string (lambda () "Print this file"))
-    (file-menu:print-on-demand (lambda () (void)))
+    (file-menu:print-on-demand (lambda (menu-item) (void)))
     (file-menu:create-print? (lambda () #f)))
    (public
     (file-menu:between-print-and-close
@@ -238,7 +238,7 @@
     (file-menu:get-close-item (lambda () file-menu:close-item))
     (file-menu:close-string (lambda () ""))
     (file-menu:close-help-string (lambda () "Close this file"))
-    (file-menu:close-on-demand (lambda () (void)))
+    (file-menu:close-on-demand (lambda (menu-item) (void)))
     (file-menu:create-close? (lambda () #t)))
    (public (file-menu:between-close-and-quit (lambda (menu) (void))))
    (public
@@ -248,7 +248,7 @@
     (file-menu:get-quit-item (lambda () file-menu:quit-item))
     (file-menu:quit-string (lambda () ""))
     (file-menu:quit-help-string (lambda () "Quit"))
-    (file-menu:quit-on-demand (lambda () (void)))
+    (file-menu:quit-on-demand (lambda (menu-item) (void)))
     (file-menu:create-quit? (lambda () #t)))
    (public (file-menu:after-quit (lambda (menu) (void))))
    (public
@@ -446,7 +446,7 @@
     (edit-menu:get-preferences-item (lambda () edit-menu:preferences-item))
     (edit-menu:preferences-string (lambda () ""))
     (edit-menu:preferences-help-string (lambda () "Configure the preferences"))
-    (edit-menu:preferences-on-demand (lambda () (void)))
+    (edit-menu:preferences-on-demand (lambda (menu-item) (void)))
     (edit-menu:create-preferences? (lambda () #t)))
    (public (edit-menu:after-preferences (lambda (menu) (void))))
    (public (help-menu:before-about (lambda (menu) (void))))
@@ -456,7 +456,7 @@
     (help-menu:about-string (lambda () ""))
     (help-menu:about-help-string
      (lambda () "Learn something about this application"))
-    (help-menu:about-on-demand (lambda () (void)))
+    (help-menu:about-on-demand (lambda (menu-item) (void)))
     (help-menu:create-about? (lambda () #f)))
    (public (help-menu:after-about (lambda (menu) (void))))
    (sequence (apply super-init args))

@@ -744,8 +744,23 @@ void *MrEdForEachFrame(ForEachFrameProc fp, void *data)
     node = f->list->First();
 
     while (node) {
-      if (node->IsShown())
-	data = fp(node->Data(), data);
+      if (node->IsShown()) {
+	wxObject *o;
+	o = node->Data();
+#ifdef wx_mac
+	/* Mac: some frames really represent dialogs. Any modal frame is
+	   a dialog, so extract its only child. */
+	if (((wxFrame *)o)->IsModal()) {
+	  wxChildNode *node2;
+	  wxChildList *cl;
+	  cl = ((wxFrame *)o)->GetChildren();
+	  node2 = cl->First();
+	  if (node2)
+	    o = node2->Data();
+	}
+#endif
+	data = fp(o, data);
+      }
       node = node->Next();
     }
 

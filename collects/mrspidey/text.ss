@@ -16,6 +16,8 @@
 ; Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 ; ----------------------------------------------------------------------
 
+(require-library "mzlib.ss")
+(reference-relative-library "pltrc-co.ss")
 (load-relative "handlers.ss")
 (load-relative "macros.ss")
 

@@ -807,7 +807,11 @@
 		   
 		   ;value
 		   (lambda ()
-		     (fprintf c-port "#include \"compiled.h\"~n~n")
+		     (fprintf c-port "#include \"~ascheme.h\"~n"
+			      (if (compiler:option:compile-for-embedded)
+				  ""
+				  "e"))
+		     (fprintf c-port "#include \"mzc.h\"~n~n")
 		     (vm->c:emit-struct-definitions! compiler:structs c-port)
 		     (vm->c:emit-symbol-declarations! c-port)
 		     (vm->c:emit-prim-ref-declarations! c-port)

@@ -169,7 +169,7 @@
 	 [(dir) (let ([s (apply build-path (read p))])
 		  (unless (relative-path? s)
 		    (error "expected a directory name relative path string, got" s))
-		  (when (filter s plthome)
+		  (when (filter 'dir s plthome)
 		   (let ([d (build-path plthome s)])
 		     (unless (directory-exists? d)
 		       (when (verbose)
@@ -181,7 +181,7 @@
 		   (let ([len (read p)])
 		     (unless (and (number? len) (integer? len))
 		       (error "expected a file name size, got" len))
-		     (let* ([write? (filter s plthome)]
+		     (let* ([write? (filter 'file s plthome)]
 			    [path (build-path plthome s)])
 		       (let ([out (and write?
 				       (not (file-exists? path))
@@ -230,36 +230,44 @@
    (call-with-input-file
     archive
     (lambda (p64)
-      (let* ([p (port64gz->port p64)]
-	     [n (make-namespace)]
-	     [info (eval (read p) n)])
-	(unless (and (procedure? info)
-		     (procedure-arity-includes? info 2))
-	  (error "expected a procedure of arity 2, got" info))
-	(let ([name (call-info info 'name #f (lambda (n) 
-					       (unless (string? n)
-						 (if name
-						     (error "couldn't find the package name")
-						     (error "expected a string")))))]
-	      [unpacker (call-info info 'unpacker #f (lambda (n) 
-						       (unless (eq? n 'mzscheme)
-							 (error "unpacker isn't mzscheme:" n))))])
-	  (unless (and name unpacker)
+      (let* ([p (port64gz->port p64)])
+	(unless (and (eq? #\P (read-char p))
+		     (eq? #\L (read-char p))
+		     (eq? #\T (read-char p)))
+	   (error "not an unpackable distribution archive"))
+	(let* ([n (make-namespace)]
+	       [info (eval (read p) n)])
+	  (unless (and (procedure? info)
+		       (procedure-arity-includes? info 2))
+	     (error "expected a procedure of arity 2, got" info))
+	  (let ([name (call-info info 'name #f (lambda (n) 
+						 (unless (string? n)
+						  (if name
+						      (error "couldn't find the package name")
+						      (error "expected a string")))))]
+		[unpacker (call-info info 'unpacker #f (lambda (n) 
+							 (unless (eq? n 'mzscheme)
+							   (error "unpacker isn't mzscheme:" n))))])
+	    (unless (and name unpacker)
 	     (error "bad name or unpacker"))
-	  (printf "Unpacking ~a from ~a~n" name archive)
-	  (let ([u (eval (read p) n)])
-	    (unless (unit? u)
-	       (error "expected a unit, got" u))
-	    (let ([plthome plthome]
-		  [unmztar (lambda (filter)
-			     (unmztar p filter))])
-	      (invoke-unit u plthome unmztar)))))))))
+	    (printf "Unpacking ~a from ~a~n" name archive)
+	    (let ([u (eval (read p) n)])
+	      (unless (unit? u)
+	        (error "expected a unit, got" u))
+	      (let ([plthome plthome]
+		    [unmztar (lambda (filter)
+			       (unmztar p filter))])
+		(invoke-unit u plthome unmztar))))))))))
 
 (set! specific-collections
       (apply 
        append
        specific-collections
        (map unpack-archive archives)))
+
+(unless (null? archives)
+  (when (null? specific-collections)
+     (exit 0))) ; done
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;           Collection Compilation             ;;

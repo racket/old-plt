@@ -117,7 +117,11 @@
   (with-output-to-file
      (build-path dest-dir _loader.c)
     (lambda ()
-      (printf "#include \"linked.h\"~n~n")
+      (printf "#include \"~ascheme.h\"~n"
+	      (if (compiler:option:compile-for-embedded)
+		  ""
+		  "e"))
+      (printf "#include \"mzclink.h\"~n~n")
       
       (for-each
        (lambda (suffix)

@@ -212,6 +212,10 @@
 	       (new-AV! tvar-e (traverse-const-exact b))
 	       (make-constructed-AV 'box tvar-e))]
 	    [($ zodiac:external _ _ _ ext)
+	     (unless (object? ext)
+		     (error 
+		      "traverse-const-exact: external contains non-object" 
+		      ext))
 	     (case (inferred-name (object-interface ext))
 	       [(image-snip%)
 		(make-constructed-AV 'image)]

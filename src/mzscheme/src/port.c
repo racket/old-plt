@@ -5436,7 +5436,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
 
   {
     int i;
-    Scheme_Object *a[4];
+    Scheme_Object *a[4], *appname;
     Scheme_Subprocess *subproc;
 
     for (i = 0; i < 3; i++) {
@@ -5450,19 +5450,27 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
       if (c == 5) {
 	if (!SCHEME_STRINGP(args[3]) || scheme_string_has_null(args[3]))
 	  scheme_wrong_type(name, STRING_W_NO_NULLS, 3, c, args);
-	if (!strcmp(SCHEME_STR_VAL(args[3]), "by-id"))
+	if (strcmp(SCHEME_STR_VAL(args[3]), "by-id"))
 	  scheme_arg_mismatch(name, 
 			      "in five-argument mode on this platform, the 4th argument must be \"by-id\": ", 
 			      args[3]);
 	
-	i = scheme_mac_start_app((char *)name, 1, args[4]);
+	appname = args[4];
+	i = scheme_mac_start_app((char *)name, 1, appname);
       } else
 	scheme_arg_mismatch(name,
 			    "extra arguments after the application id are "
 			    "not allowed on this platform: ",
 			    args[5]);
-    } else
-      i = scheme_mac_start_app((char *)name, 0, args[3]);
+    } else {
+      appname = args[3];
+      i = scheme_mac_start_app((char *)name, 0, appname);
+    }
+
+    if (!i) {
+      scheme_raise_exn(MZEXN_MISC, "%s: launch failed for application: %Q", name, appname);
+      return NULL;
+    }
 
     subproc = MALLOC_ONE_TAGGED(Scheme_Subprocess);
     subproc->type = scheme_subprocess_type;

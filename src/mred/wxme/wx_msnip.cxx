@@ -296,8 +296,16 @@ void wxMediaSnip::GetExtent(wxDC *dc,
     *h += topMargin + bottomMargin;
   }
 
-  if (descent)
+  if (descent) {
     *descent = (me ? me->GetDescent() : 0.0) + bottomMargin;
+    if (me && (me->bufferType == wxEDIT_BUFFER)) {
+      if (tightFit) {
+	*descent -= ((wxMediaEdit *)me)->GetLineSpacing();
+	if (*descent < 0)
+	  *descent = 0;
+      }
+    }
+  }
   if (space)
     *space = (me ? me->GetSpace() : 0.0) + topMargin;
   if (lspace)

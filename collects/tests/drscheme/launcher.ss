@@ -24,7 +24,7 @@
 (define (run-launcher/no-teachpack listener test expected)
   (when (file-exists? tmp-launcher)
     (delete-file tmp-launcher))
-  (use-open/close-dialog
+  (use-get/put-dialog
    (lambda ()
      (fw:test:menu-select "Scheme" "Create Launcher..."))
    tmp-launcher)
@@ -37,10 +37,12 @@
 (define (teachpackless-test)
   (define-values (port-num listener) (get-port))
   (define drs (wait-for-drscheme-frame))
+  (clear-definitions drs)
   (type-in-definitions
    drs
    `(let-values ([(in out) (tcp-connect "localhost" ,port-num)])
-      (write 'the-correct-answer out)))
+      (write 'the-correct-answer out)
+      (newline out)))
   (when (file-exists? tmp-filename)
     (delete-file tmp-filename))
   (save-drscheme-window-as tmp-filename)
@@ -58,11 +60,14 @@
 	  (define (send-back sexp)
 	    (let-values ([(in out) (tcp-connect "localhost" ,port-num)])
 	      (write sexp out)
+	      (newline out)
 	      (close-output-port out)
 	      (close-input-port in))))
        port))
     'truncate)
+  (clear-definitions drs)
   (type-in-definitions drs `(send-back 'the-correct-answer))
+  (fw:test:menu-select "File" "Save")
   (fw:test:menu-select "Language" "Clear All Teachpacks")
   (use-get/put-dialog
    (lambda ()

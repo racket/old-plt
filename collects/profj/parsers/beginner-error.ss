@@ -117,23 +117,31 @@
          (case tok-kind
            ((EOF) (parse-error "'class' should be followed by a class name and body" (get-start pre) (get-end pre)))
            ((IDENTIFIER) 
-            (let ((next-tok (getter)))
+            (let* ((next (getter))
+                   (next-tok (get-tok next)))
               (cond
-                ((eof? (car next-tok)) (parse-error (format "expected class body after ~a" (token-value next-tok)) start stop))
-                ((extends? (car next-tok)) (parse-definition cur-tok next-tok 'extends getter))
-                ((o-brace? (car next-tok)) (parse-definition cur-tok next-tok 'body getter))
+                ((eof? next-tok) (parse-error (format "expected class body after ~a" (token-value tok)) start stop))
+                ((extends? next-tok) (parse-definition cur-tok next-tok 'extends getter))
+                ((o-brace? next-tok) (parse-definition cur-tok next-tok 'body getter))
                 (else 
                  (cond
-                   ((close-to-keyword? tok 'extends) 
-                    (parse-error (format "found ~a, which is similar to 'extends'" (token-value tok)) start stop))
-                   ((open-separator? tok)
-                    (parse-error (format "expected { to begin class body, but found ~a" (output-format tok)) start stop))
+                   ((close-to-keyword? next-tok 'extends) 
+                    (parse-error (format "found ~a, which is similar to 'extends'" (token-value next-tok))
+                                 (get-start next) (get-end next)))
+                   ((open-separator? next-tok)
+                    (parse-error (format "expected { to begin class body, but found ~a" (output-format next-tok))
+                                 (get-start next) (get-end next)))
                    ((close-separator? tok)
                     (parse-error (format "Class body must be opened with { before being closed, found ~a" 
-                                         (output-format tok)) start stop))
+                                         (output-format tok)) (get-start next) (get-end next)))
                    (else
-                    (raise-error 'brace-or-extends-not-found-after-class-id cur-tok next-tok)))))))
-           (else (raise-error 'class-identifier-not-found cur-tok null))))
+                    (parse-error (format "class name must be followed by 'extends' clause or { to start class body, found ~a"
+                                         (output-format next-tok)) start (get-end next))))))))
+           (else 
+            (if (keyword? tok) 
+                (parse-error (format "class may not be called ~a as this is a reserved term" tok-kind))
+                (parse-error (format "expected a name for this class, given ~a" (output-format tok))
+                             start stop)))))
         ((extends) 
          (let ((next-tok (getter)))
            (cond

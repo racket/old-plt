@@ -168,7 +168,7 @@
                    (send type-recs get-class-record class-name (lambda () 'internal-error "Failed to add record"))
                    )))
          (send type-recs add-require-syntax class-name (build-require-syntax class path dir #t)))
-        (else (file-error 'file (cons class path) caller-src)))
+        (else (file-error 'file (cons class path) caller-src level)))
       (when add-to-env (send type-recs add-to-env class path loc))
       (send type-recs add-class-req class-name (not add-to-env) loc)))
 
@@ -202,7 +202,7 @@
   (define (find-implicit-import name type-recs level call-src)
     (lambda ()
       (let ((original-loc (send type-recs get-location))
-            (dir (find-directory (cdr name) (lambda () (file-error 'dir name call-src)))))
+            (dir (find-directory (cdr name) (lambda () (file-error 'dir name call-src level)))))
         (import-class (car name) (cdr name) dir original-loc type-recs level call-src #f)
         (begin0
           (get-record (send type-recs get-class-record name (lambda () #f) type-recs))
@@ -1128,14 +1128,21 @@
                  (format "Import ~a not found" (path->ext (name->path imp)))
                  'import src))
 
-  ;file-error: symbol (list string) src -> void
-  (define (file-error kind path src)
-    (let ((k (if (eq? kind 'file) 'file-not-found 'directory-not-found)))
-      (raise-error k
-                   (case kind
-                     ((file) (format "Required file ~a not found" (path->ext path)))
-                     ((dir) (format "Required directory ~a not found" (path->ext path))))
-                   k src)))
+  ;file-error: symbol (list string) src symbol -> void
+  (define (file-error kind path src level)
+    (if (eq? level 'full)
+        (let ((k (if (eq? kind 'file) 'file-not-found 'directory-not-found)))
+          (raise-error k
+                       (case kind
+                         ((file) (format "Required file ~a not found" (path->ext path)))
+                         ((dir) (format "Required directory ~a not found" (path->ext path))))
+                       k src))
+        (raise-error (string->symbol (car path))
+                     (case kind
+                       ((file) (format "Class ~a is not known" (path->ext path)))
+                       ((dir) (format "Directory to search ~a is not known" (path->ext path))))
+                     (string->symbol (car path))
+                     src)))
 
   ;used-restricted-import: string (list string) src -> void
   (define (used-restricted-import class path src)

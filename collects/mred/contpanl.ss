@@ -23,13 +23,18 @@
       (class-asi (make-item% wx:panel% #t #t list)
 	(inherit
 	  object-ID
+	  get-x
+	  get-y
 	  get-width
 	  get-height
 	  user-min-width
 	  user-min-height
 	  get-client-size
-	  set-cursor
+	  set-item-cursor
 	  get-parent)
+
+	(rename
+	  [super-set-size set-size])
 	
 	(private
 	  
@@ -80,7 +85,8 @@
 	       (change-children
 		 (lambda (l)
 		   (append l (list new-child))))
-	       (set-cursor 0 0)))]
+	       (when (eq? wx:window-system 'motif)
+		 (set-item-cursor 0 0))))]
 	  
 	  ; change-children: changes the list of children.
 	  ; input: f is a function which takes the current list of children
@@ -90,10 +96,10 @@
 	  [change-children
 	   (lambda (f)
 	     (let ([new-children (f children)])
-	       (mred:debug:printf 'container-change-children
-				  "Inside a panel's change-children")
-	       (mred:debug:printf 'container-change-children
-				  "Old children: ~s~nNew children: ~s"
+	       (mred:debug:printf 'container-panel-change-children
+				  "container-panel-change-children: Inside a panel's change-children")
+	       (mred:debug:printf 'container-panel-change-children
+				  "container-panel-change-children: Old children: ~s~nNew children: ~s"
 				  children new-children)
 	       (unless (andmap (lambda (child)
 				 (eq? this (send child get-parent)))
@@ -103,12 +109,16 @@
 		     "children of this panel ~s~nlist: ~s")
 		   this new-children))
 	       ; show all new children, hide all deleted children.
+	       (mred:debug:printf 'container-panel-change-children
+		                  "container-panel-change-children: showing and hiding children as appropriate")
 	       (let ([added-children (list-diff new-children children)]
 		     [removed-children (list-diff children new-children)])
 		 (for-each (lambda (child) (send child show #t))
 			   added-children)
 		 (for-each (lambda (child) (send child show #f))
 			   removed-children))
+	       (mred:debug:printf 'container-panel-change-children
+		                  "container-panel-change-children: Changing children list and forcing redraw.")
 	       (set! children new-children)
 	       (force-redraw)))]
 	  
@@ -129,12 +139,12 @@
 	  ; effects: upon exit, children-info is eq? to result.
 	  [get-children-info
 	   (lambda ()
-	     (mred:debug:printf 'container-get-children-info
-				"Entering get-children-info; object ~s"
+	     (mred:debug:printf 'container-panel-get-children-info
+				"container-panel-get-children-info: Entering get-children-info; object ~s"
 				object-ID)
 	     (unless children-info
-	       (mred:debug:printf 'container-get-children-info
-		 "Recomputing children info")
+	       (mred:debug:printf 'container-panel-get-children-info
+		 "container-panel-get-children-info: Recomputing children info")
 	       (set! children-info (map (lambda (child)
 					  (send child get-info))
 					children)))
@@ -147,16 +157,15 @@
 	  ;   itself and all of its children.
 	  [force-redraw
 	   (lambda ()
-	     (mred:debug:printf 'container-force-redraw
-				"Entering force-redraw; object ~s" object-ID)
+	     (mred:debug:printf 'container-panel-force-redraw
+	       "container-panel-force-redraw: Entering force-redraw; object ~s" object-ID)
 	     (set! children-info #f)
 	     (set! curr-width #f)
 	     (let ([parent (get-parent)])
-	       (if (null? parent)
-		   (let-values ([(width height)
-				 (get-two-int-values get-client-size)])
-		     (redraw width height))
-		   (send parent force-redraw))))]
+	       (unless (null? parent)
+		 (mred:debug:printf 'container-panel-force-redraw
+		   "container-panel-force-redraw: calling parent's force-redraw")
+		 (send parent force-redraw))))]
 	  
 	  ; get-min-size: poll children and return minimum possible size
 	  ;   for the container.
@@ -193,8 +202,26 @@
 			      (+ delta-w (car min-client-size)))
 		         (max (user-min-height)
 			   (+ delta-h (cadr min-client-size))))))))]
-		     
 	  
+	  ; set-size:
+	  [set-size
+	    (lambda (x y width height)
+	      (if (and (= x (get-x))
+		       (= y (get-y))
+		       (= width (get-width))
+		       (= height (get-height)))
+		  (begin
+		    (mred:debug:printf 'container-panel-set-size
+		      "container-panel-set-size: redrawing children")
+		    (call-with-values
+		      (lambda ()
+			(get-two-int-values get-client-size))
+		      redraw))
+		  (begin
+		    (mred:debug:printf 'container-panel-set-size
+		      "container-panel-set-size: calling super-set-size")
+		    (super-set-size x y width height))))]
+
 	  ; on-size: called when the container is resized (usu by its
           ;   parent) 
 	  ; input: new-width/new-height: new size of panel
@@ -202,23 +229,24 @@
 	  ; effects: causes children to redraw themselves.
 	  [on-size
 	    (lambda (new-width new-height)
-	      (mred:debug:printf 'container-on-size
-				 "Entering on-size; object ID ~s;  " object-ID)
-	      (mred:debug:printf 'container-on-size
-				 "New size: ~s x ~s" new-width new-height)
+	      (mred:debug:printf 'container-panel-on-size
+		"container-panel-on-size: Entering panel on-size; object ID ~s;  "
+				 object-ID)
+	      (mred:debug:printf 'container-panel-on-size
+		"container-panel-on-size: New size: ~s x ~s" new-width new-height)
 	      (let-values ([(client-width client-height)
 			    (get-two-int-values get-client-size)])
-		(mred:debug:printf 'container-on-size
-				   "Client size: ~s x ~s" client-width
-				   client-height)
+		(mred:debug:printf 'container-panel-on-size
+		  "container-panel-on-size: Client size: ~s x ~s"
+		  client-width client-height)
 		(unless (and (number? curr-width)
 			     (number? curr-height)
 			     (= client-width curr-width)
 			     (= client-height curr-height))
 		  (set! curr-width client-width)
 		  (set! curr-height client-height)
-		  (mred:debug:printf 'container-on-size
-				     "On-size is forcing a redraw.")
+		  (mred:debug:printf 'container-panel-on-size
+		    "container-panel-on-size: On-size is forcing a redraw.")
 		  (redraw client-width client-height))))]
 	  
 
@@ -260,6 +288,8 @@
 			     (cdr children)
 			     (cdr placement-info)))))])
 	     (lambda (width height)
+	       (mred:debug:printf 'container-panel-redraw
+		 "container-panel-redraw: Redrawing panel's children")
 	       (redraw-helper children
 		 (place-children (get-children-info) width height))))])))
     
@@ -394,7 +424,10 @@
 			       (get-y-info major-size minor-size))
 			     (pc-help (cdr kid-info)
 			       (+ major-size major-posn spacing))))))])
-		(pc-help kid-info border)))))))
+		(mred:debug:printf 'container-panel-redraw
+		  "container-panel-redraw: redrawing panel's children")
+		(pc-help kid-info (+ border
+				     (/ (apply major-dim delta-list) 2)))))))))
 
     (define make-spacing
       (lambda (panel)
@@ -430,9 +463,6 @@
     ; stretchable items. 
     (define horizontal-panel%
       (class-asi panel%
-	(inherit
-	  get-children-info
-	  force-redraw)
 	
 	(public
 	  [default-spacing-width const-default-spacing]
@@ -470,11 +500,7 @@
     ; "horizontal" and "vertical."
     (define vertical-panel%
       (class-asi panel%
-	(inherit
-	  set-cursor
-	  force-redraw)
-;	(rename
-;	  [super-add add-child])
+
 	(public
 	  [default-spacing-width const-default-spacing]
 	  [default-border-width const-default-spacing]
@@ -482,11 +508,6 @@
 	  [spacing (make-spacing this)]
 
 	  [border (make-border this)]
-	  
-;	  [add-child
-;	   (lambda (new-child)
-;	     (super-add new-child)
-;	     (set-cursor 0 0))]
 	  
 	  [get-min-size
 	    (make-get-size this
@@ -560,6 +581,11 @@
 	  [change-children
 	    (lambda (f)
 	      (let ([new-children (f children)])
+		(mred:debug:printf 'container-panel-change-children
+		  "container-panel-change-children: Changing children")
+		(mred:debug:printf 'container-panel-change-children
+		  "container-panel-change-children: old children ~s~nnewchildren ~s"
+		  children new-children)
 		(unless (andmap (lambda (child)
 				  (eq? this (send child get-parent)))
 			  new-children)
@@ -569,6 +595,8 @@
 		    this new-children))
 		(unless (memq (active-child) new-children)
 		  (active-child null))
+		(mred:debug:printf 'container-panel-change-children
+		  "container-panel-change-children: setting children and forcing redraw")
 		(set! children new-children)
 		(force-redraw)))]
 
@@ -594,10 +622,10 @@
 	  ; only place the active child.
 	  [place-children
 	    (lambda (children-info width height)
-	      (mred:debug:printf 'container-place-children
+	      (mred:debug:printf 'container-panel-place-children
 		"Entering place-children; object ~s" object-ID)
 	      (unless (null? active)
-		(mred:debug:printf 'container-place-children
+		(mred:debug:printf 'container-panel-place-children
 		  "Placing active child")
 		(let* ([active-info (send active get-info)]
 		       [x-stretch (child-info-x-stretch active-info)]
@@ -620,8 +648,9 @@
 
 	  [redraw
 	    (lambda (width height)
-	      (mred:debug:printf 'container-redraw
-		"Entering redraw; object ~s" object-ID)
+	      (mred:debug:printf 'container-panel-redraw
+		"container-panel-redraw: Entering redraw; object ~s"
+		object-ID)
 	      (unless (null? active)
 		(apply
 		  (ivar active set-size)

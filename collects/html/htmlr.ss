@@ -47,6 +47,10 @@
                                               null)
                                           (filter (compose not head?) (peel-f body? peeled null))))))))
   
+  ;; implicit-starts : Symbol Symbol -> (U #f Symbol)
+  (define (implicit-starts parent child)
+    (and (eq? child 'tr) (eq? parent 'table) 'tbody))
+  
   ;; read-html : [Input-port] -> Html
   (define read-html
-    (compose repackage-html xml-contents->html (sgml:gen-read-sgml (sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read))))))
+    (compose repackage-html xml-contents->html (sgml:gen-read-sgml (sgml:gen-may-contain (call-with-input-file (find-library "html-spec" "html") read)) implicit-starts))))

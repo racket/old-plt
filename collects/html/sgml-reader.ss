@@ -29,14 +29,14 @@
       (lambda (name)
         (hash-table-get table name (lambda () #f)))))
   
-  ;; gen-read-sgml : Kid-lister -> [Input-port] -> (listof Content)
-  (define (gen-read-sgml may-contain)
+  ;; gen-read-sgml : Kid-lister (Symbol Symbol -> (U #f Symbol)) -> [Input-port] -> (listof Content)
+  (define (gen-read-sgml may-contain auto-insert)
     (case-lambda
-     [(in) (read-from-port may-contain in)]
-     [() (read-from-port may-contain (current-input-port))]))
+     [(in) (read-from-port may-contain auto-insert in)]
+     [() (read-from-port may-contain auto-insert (current-input-port))]))
   
-  ;; read-from-port : Kid-lister Input-port -> (listof Content)
-  (define (read-from-port may-contain in)
+  ;; read-from-port : Kid-lister (Symbol Symbol -> (U #f Symbol)) Input-port -> (listof Content)
+  (define (read-from-port may-contain auto-insert in)
     (let loop ([tokens (let read-tokens ()
                          (let ([tok (lex in)])
                            (cond
@@ -48,13 +48,13 @@
          (let ([tok (car tokens)] [rest-tokens (cdr tokens)])
            (cond
              [(start-tag? tok)
-              (let-values ([(el more-tokens) (read-element tok null may-contain rest-tokens)])
+              (let-values ([(el more-tokens) (read-element tok null may-contain auto-insert rest-tokens)])
                 (cons el (loop more-tokens)))]
              [(end-tag? tok) (loop rest-tokens)]
              [else (let ([rest-contents (loop rest-tokens)])
                      (expand-content tok rest-contents))]))])))
   
-  ;; read-element : Start-tag (listof Symbol) Kid-lister (listof Token) -> Element (listof Token)
+  ;; read-element : Start-tag (listof Symbol) Kid-lister (Symbol Symbol -> (U #f Symbol)) (listof Token) -> Element (listof Token)
   ;; Note: How elements nest depends on their content model.
   ;;   If a kind of element can't contain anything, then its start tags are implicitly ended, and
   ;;   end tags are implicitly started.
@@ -65,47 +65,53 @@
   ;; more here (or not) - the (memq name context) test leaks for a worst case of O(n^2) in the
   ;;                      tag nesting depth.  However, this only should be a problem when the tag is there,
   ;;                      but far back.  That shouldn't happen often.  I'm guessing n will be about 3.
-  (define (read-element start-tag context may-contain tokens)
-    (let* ([start-name (start-tag-name start-tag)]
-           [ok-kids (may-contain start-name)])
-      (let-values ([(content remaining)
-                    (cond
-                      [(null? ok-kids) (values null tokens)]
-                      [else 
+  (define (read-element start-tag context may-contain auto-insert tokens)
+    (let read-el ([start-tag start-tag] [context context] [tokens tokens])
+      (let* ([start-name (start-tag-name start-tag)]
+             [ok-kids (may-contain start-name)])
+        (let-values ([(content remaining)
+                      (cond
+                        [(null? ok-kids) (values null tokens)]
+                        [else 
                        ;; read-content : (listof Token) -> (listof Content) (listof Token)
-                       (let read-content ([tokens tokens])
-                         (cond
-                           [(null? tokens) (values null tokens)]
-                           [else
-                            (let ([tok (car tokens)] [next-tokens (cdr tokens)])
-                              (cond
-                                [(start-tag? tok)
-                                 (let ([name (start-tag-name tok)])
-                                   (if (and ok-kids
-                                            (not (memq name ok-kids))
-                                            (may-contain name))
-                                       (values null tokens)
-                                       (let*-values ([(element post-element) (read-element tok (cons name context) may-contain next-tokens)]
-                                                     [(more-contents left-overs) (read-content post-element)])
-                                         (values (cons element more-contents) left-overs))))]
-                                [(end-tag? tok)
-                                 (let ([name (end-tag-name tok)])
-                                   (if (eq? name start-name)
-                                       (values null next-tokens)
-                                       (if (memq name context)
-                                           (values null tokens)
-                                           (read-content next-tokens))))]
-                                [else ;; content
-                                 (let-values ([(more-contents left-overs) (read-content next-tokens)])
-                                   (values
-                                    (expand-content tok more-contents)
-                                    left-overs))]))]))])])
-        (values (make-element (source-start start-tag)
-                              (source-stop start-tag)
-                              start-name
-                              (start-tag-attrs start-tag)
-                              content)
-                remaining))))
+                         (let read-content ([tokens tokens])
+                           (cond
+                             [(null? tokens) (values null tokens)]
+                             [else
+                              (let ([tok (car tokens)] [next-tokens (cdr tokens)])
+                                (cond
+                                  [(start-tag? tok)
+                                   (let* ([name (start-tag-name tok)]
+                                          [auto-start (auto-insert start-name name)])
+                                     (if (and ok-kids
+                                              (not (memq name ok-kids))
+                                              (may-contain name)
+                                              (not auto-start))
+                                         (values null tokens)
+                                         (let*-values ([(element post-element)
+                                                        (if auto-start
+                                                            (read-el (make-start-tag (source-start tok) (source-stop tok) auto-start null) (cons auto-start context) tokens)
+                                                            (read-el tok (cons name context) next-tokens))]
+                                                       [(more-contents left-overs) (read-content post-element)])
+                                           (values (cons element more-contents) left-overs))))]
+                                  [(end-tag? tok)
+                                   (let ([name (end-tag-name tok)])
+                                     (if (eq? name start-name)
+                                         (values null next-tokens)
+                                         (if (memq name context)
+                                             (values null tokens)
+                                             (read-content next-tokens))))]
+                                  [else ;; content
+                                   (let-values ([(more-contents left-overs) (read-content next-tokens)])
+                                     (values
+                                      (expand-content tok more-contents)
+                                      left-overs))]))]))])])
+          (values (make-element (source-start start-tag)
+                                (source-stop start-tag)
+                                start-name
+                                (start-tag-attrs start-tag)
+                                content)
+                  remaining)))))
   
   ;; expand-content : Content (listof Content) -> (listof Content)
   (define (expand-content x lst)
@@ -372,7 +378,7 @@
              (let* ([c (read-char in)]
                     [matched (fall-back matched c)])
                (cond
-                 [(= matched len) (out null)]
+                 [(or (eof-object? c) (= matched len)) (out null)]
                  [(zero? matched) (cons c (let/ec out (loop matched out)))]
                  [else (cons c (loop matched out))]))))))))
   

@@ -921,14 +921,7 @@ set_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec,
 
   if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
     /* Redirect to a macro. */
-    Scheme_Process *p = scheme_current_process;
-    Scheme_Comp_Env *save_env;
- 
-    save_env = p->current_local_env;
-    p->current_local_env = env;
-    form = scheme_apply_macro_to_list(SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)),
-				      scheme_make_pair(form, scheme_null), form);
-    p->current_local_env = save_env;
+    form = scheme_apply_macro(SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), form, env);
 
     return scheme_compile_expr(form, env, rec, drec);
   }
@@ -988,13 +981,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
 
   if ((depth != 0) && SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
     /* Redirect to a macro. */
-    Scheme_Process *p = scheme_current_process;
-    Scheme_Comp_Env *save_env;
-    save_env = p->current_local_env;
-    p->current_local_env = env;
-    form = scheme_apply_macro_to_list(SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), 
-				      scheme_make_pair(form, scheme_null), form);
-    p->current_local_env = save_env;
+    form = scheme_apply_macro(SCHEME_PTR_VAL(SCHEME_PTR_VAL(var)), form, env);
 
     if (depth > 0)
       depth--;
@@ -1106,9 +1093,11 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_wrong_syntax("case-lambda", form, orig_form, NULL);
   if (SCHEME_STX_NULLP(SCHEME_STX_CDR(form))) {
     case_lambda_check_line(SCHEME_STX_CAR(form), orig_form, env);
+
+    c = scheme_make_pair(lambda_symbol, SCHEME_STX_CAR(form));
+    c = scheme_datum_to_syntax(c, orig_form);
     
-    return lambda_syntax(scheme_make_pair(lambda_symbol,
-					  SCHEME_STX_CAR(form)), env, rec, drec);
+    return lambda_syntax(c, env, rec, drec);
   }
 
   name = rec[drec].value_name;
@@ -1116,10 +1105,15 @@ case_lambda_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
 
   list = last = NULL;
   while (SCHEME_STX_PAIRP(form)) {
-    case_lambda_check_line(SCHEME_STX_CAR(form), orig_form, env);
+    Scheme_Object *clause;
+    clause = SCHEME_STX_CAR(form);
+    case_lambda_check_line(clause, orig_form, env);
 
-    c = scheme_make_pair(scheme_make_pair(lambda_symbol, SCHEME_STX_CAR(form)),
+    c = scheme_make_pair(scheme_make_pair(lambda_symbol, clause),
 			 scheme_null);
+
+    c = scheme_datum_to_syntax(c, clause);
+
     if (list)
       SCHEME_STX_CDR(last) = c;
     else
@@ -1827,6 +1821,7 @@ let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth)
       name = cons(name, scheme_null);
 
     rhs = SCHEME_STX_CDR(v);
+    rhs = scheme_datum_to_syntax(rhs, v);
     rhs = scheme_add_env_renames(rhs, use_env, origenv);
     
     v = scheme_expand_expr(rhs, use_env, depth);

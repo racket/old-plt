@@ -155,6 +155,9 @@ Scheme_Object *scheme_new_mark()
 
 Scheme_Object *add_remove_mark(Scheme_Object *wraps, Scheme_Object *m)
 {
+  if (!SCHEME_NUMBERP(m))
+    scheme_signal_error("internal error: mark is not a number");
+
   if (SCHEME_PAIRP(wraps) &&
       SAME_OBJ(m, SCHEME_CAR(wraps)))
     return SCHEME_CDR(wraps);
@@ -215,11 +218,11 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *name, Scheme_O
 static Scheme_Object *propagate_wraps(Scheme_Object *o, Scheme_Object *wl)
 {
   while (!SCHEME_NULLP(wl)) {
-    if (SCHEME_NUMBERP(wl)) {
+    if (SCHEME_NUMBERP(SCHEME_CAR(wl))) {
       o = scheme_add_remove_mark(o, SCHEME_CAR(wl));
       wl = SCHEME_CDR(wl);
     } else {
-      o = scheme_add_rename(o, SCHEME_CAR(wl), SCHEME_CADR(wl));
+      o = scheme_add_rename(o, SCHEME_CADR(wl), SCHEME_CAR(wl));
       wl = SCHEME_CDR(SCHEME_CDR(wl));
     }
   }
@@ -233,7 +236,7 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 
   if (HAS_SUBSTX(stx->val) 
       && !SCHEME_FALSEP(stx->wraps)
-      && !SCHEME_NULLP(SCHEME_CAR(stx->wraps))) {
+      && !SCHEME_NULLP(SCHEME_CDR(stx->wraps))) {
     Scheme_Object *v = stx->val, *result;
     Scheme_Object *wraps, *here_wraps;
     Scheme_Object *ml = scheme_null;
@@ -286,43 +289,138 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
   return stx->val;
 }
 
-int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
+static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
 {
-  if (!a || !b)
-    return (a == b);
+  while (1) {
+    /* Skip over renames: */
+    while (!SCHEME_NULLP(awl)
+	   && !SCHEME_NUMBERP(SCHEME_CAR(awl)))
+      awl = SCHEME_CDDR(awl);
+    while (!SCHEME_NULLP(bwl)
+	   && !SCHEME_NUMBERP(SCHEME_CAR(bwl)))
+      bwl = SCHEME_CDDR(bwl);
 
-  if (SCHEME_STXP(a))
-    a = SCHEME_STX_VAL(a);
-  if (SCHEME_STXP(b))
-    b = SCHEME_STX_VAL(b);
+    /* Either at end? Then the same only if both at end. */
+    if (SCHEME_NULLP(awl) || SCHEME_NULLP(bwl))
+      return (SCHEME_NULLP(awl) && SCHEME_NULLP(bwl));
 
-  return SAME_OBJ(a, b);
+    /* Same first mark? */
+    if (!scheme_bin_eq(SCHEME_CAR(awl), SCHEME_CAR(bwl)))
+      return 0;
+
+    awl = SCHEME_CDR(awl);
+    bwl = SCHEME_CDR(bwl);
+  }
+}
+
+static Scheme_Object *resolve_env(Scheme_Object *a)
+{
+  Scheme_Object *wraps = ((Scheme_Stx *)a)->wraps;
+  Scheme_Object *rename_stack = scheme_null;
+
+  while (1) {
+    if (SCHEME_NULLP(wraps)) {
+      Scheme_Object *result = scheme_false;
+      /* See rename case for info on rename_stack: */
+      while (!SCHEME_NULLP(rename_stack)) {
+	if (SAME_OBJ(SCHEME_CAAR(rename_stack), result))
+	  result = SCHEME_CDR(SCHEME_CAR(rename_stack));
+	rename_stack = SCHEME_CDR(rename_stack);
+      }
+      return result;
+    } else if (SCHEME_NUMBERP(SCHEME_CAR(wraps)))
+      wraps = SCHEME_CDR(wraps);
+    else {
+      /* Rename: */
+      Scheme_Object *envname, *renamed;
+
+      envname = SCHEME_CAR(wraps);
+
+      renamed = SCHEME_CADR(wraps);
+      wraps = SCHEME_CDDR(wraps);
+
+      if (SAME_OBJ(SCHEME_STX_VAL(renamed), SCHEME_STX_VAL(a))) {
+	if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
+	  Scheme_Object *other_env = resolve_env(renamed);
+	  /* If it turns out that we're going to return
+	     other_env, then return envname instead. */
+	  rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
+					  rename_stack);
+	}
+      }
+    }
+  }
 }
 
 int scheme_stx_free_eq(Scheme_Object *a, Scheme_Object *b)
 {
+  Scheme_Object *asym, *bsym;
+
   if (!a || !b)
     return (a == b);
 
   if (SCHEME_STXP(a))
-    a = SCHEME_STX_VAL(a);
+    asym = SCHEME_STX_VAL(a);
+  else
+    asym = a;
   if (SCHEME_STXP(b))
-    b = SCHEME_STX_VAL(b);
+    bsym = SCHEME_STX_VAL(b);
+  else
+    bsym = b;
 
+  /* Same name? */
+  if (!SAME_OBJ(asym, bsym))
+    return 0;
+
+  if ((a == asym) || (b == bsym))
+    return 1;
+  
+  a = resolve_env(a);
+  b = resolve_env(b);
+
+  /* Same binding environment? */
   return SAME_OBJ(a, b);
 }
 
 int scheme_stx_env_bound_eq(Scheme_Object *a, Scheme_Object *b, Scheme_Object *uid)
 {
+  Scheme_Object *asym, *bsym;
+
   if (!a || !b)
     return (a == b);
 
   if (SCHEME_STXP(a))
-    a = SCHEME_STX_VAL(a);
+    asym = SCHEME_STX_VAL(a);
+  else
+    asym = a;
   if (SCHEME_STXP(b))
-    b = SCHEME_STX_VAL(b);
+    bsym = SCHEME_STX_VAL(b);
+  else
+    bsym = b;
 
+  /* Same name? */
+  if (!SAME_OBJ(asym, bsym))
+    return 0;
+
+  if ((a == asym) || (b == bsym))
+    return 1;
+
+  if (!same_marks(((Scheme_Stx *)a)->wraps, ((Scheme_Stx *)b)->wraps))
+    return 0;
+  
+  a = resolve_env(a);
+  if (uid)
+    b = uid;
+  else
+    b = resolve_env(b);
+
+  /* Same binding environment? */
   return SAME_OBJ(a, b);
+}
+
+int scheme_stx_bound_eq(Scheme_Object *a, Scheme_Object *b)
+{
+  return scheme_stx_env_bound_eq(a, b, NULL);
 }
 
 int scheme_stx_list_length(Scheme_Object *list)
@@ -632,8 +730,12 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     result = scheme_make_stx(result, -1, -1, scheme_false);
   else
     result = scheme_make_stx(result, stx->line, stx->col, stx->src);
-
-  ((Scheme_Stx *)result)->wraps = HAS_SUBSTX(SCHEME_STX_VAL(result)) ? scheme_false : scheme_null;
+  
+  if (HAS_SUBSTX(SCHEME_STX_VAL(result)))
+    ((Scheme_Stx *)result)->wraps = scheme_false;
+  else
+    ((Scheme_Stx *)result)->wraps = scheme_null;
+  
   if (ph) {
     ((Scheme_Stx *)result)->hash_code |= STX_GRAPH_FLAG;
     SCHEME_PTR_VAL(ph) = result;
@@ -656,13 +758,6 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx)
 
   if (ht)
     v = scheme_resolve_placeholders(v, 1);
-
-  /* FIXME! */
-#if 0
-  if (!SCHEME_FALSEP(stx)) {
-    ((Scheme_Stx *)v)->wraps = ((Scheme_Stx *)stx)->wraps;
-  }
-#endif
 
   return v;
 }

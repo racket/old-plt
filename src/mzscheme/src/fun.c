@@ -652,6 +652,9 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   if (SCHEME_STX_NULLP(forms))
     scheme_wrong_syntax("lambda", NULL, code, "bad syntax (empty body)");
 
+  forms = scheme_datum_to_syntax(forms, code);
+  forms = scheme_add_env_renames(forms, frame, env);
+
   data->name = rec[drec].value_name;
 
   scheme_compile_rec_done_local(rec, drec);
@@ -1005,13 +1008,6 @@ X_scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *rands, int force,
   num_rands = scheme_list_length(rands);
   rands_vec = MALLOC_N(Scheme_Object *, num_rands);
 
-  if (macro_apply) {
-    /* Check arity now so we can give the right error message: */
-    if (SCHEME_FALSEP(get_or_check_arity(rator, num_rands)))
-      scheme_wrong_syntax("macro application", NULL, macro_apply, 
-			  "bad syntax (wrong number of parts)");
-  }
-
   for (i = 0; i < num_rands ; i++) {
     if (!SCHEME_PAIRP(rands)) {
       if (macro_apply)
@@ -1023,7 +1019,7 @@ X_scheme_apply_to_list(Scheme_Object *rator, Scheme_Object *rands, int force,
     rands_vec[i] = SCHEME_CAR (rands);
     rands = SCHEME_CDR (rands);
   }
-  
+
   if (top_level)  {
     if (force)
       return scheme_apply(rator, num_rands, rands_vec);
@@ -1062,10 +1058,28 @@ _scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 }
 
 Scheme_Object *
-scheme_apply_macro_to_list(Scheme_Object *rator, Scheme_Object *rands,
-			   Scheme_Object *code)
+scheme_apply_macro(Scheme_Object *rator, Scheme_Object *code,
+		   Scheme_Comp_Env *env)
 {
-  return X_scheme_apply_to_list(rator, rands, 1, 1, code);
+  Scheme_Object *mark;
+  Scheme_Comp_Env *save_env;
+  Scheme_Process *p = scheme_current_process;
+
+  mark = scheme_new_mark();
+  code = scheme_add_remove_mark(code, mark);
+
+  save_env = p->current_local_env;
+  p->current_local_env = env;
+  code = X_scheme_apply_to_list(rator, scheme_make_pair(code, scheme_null), 
+				1, 1, code);
+  p->current_local_env = save_env;
+
+  if (!SCHEME_STXP(code)) {
+    scheme_raise_exn(MZEXN_MISC,
+		     "macro: return value from expander was not syntax");
+  }
+
+  return scheme_add_remove_mark(code, mark);
 }
 
 /* locals */

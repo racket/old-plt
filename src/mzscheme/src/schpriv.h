@@ -1195,8 +1195,8 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 Scheme_Object *scheme_compile_expand_macro_app(Scheme_Object *macro,
 					       Scheme_Object *form, Scheme_Comp_Env *env,
 					       Scheme_Compile_Info *rec, int drec, int depth);
-Scheme_Object *scheme_apply_macro_to_list(Scheme_Object *f, Scheme_Object *argss,
-					  Scheme_Object *code);
+Scheme_Object *scheme_apply_macro(Scheme_Object *f, Scheme_Object *code,
+				  Scheme_Comp_Env *env);
 
 Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags, Scheme_Comp_Env *env);
 void scheme_add_compilation_binding(int index, Scheme_Object *val, 

@@ -1254,8 +1254,6 @@ scheme_compile_expand_macro_app(Scheme_Object *macro,
 				Scheme_Object *form, Scheme_Comp_Env *env,
 				Scheme_Compile_Info *rec, int drec, int depth)
 {
-  Scheme_Comp_Env *save_env;
-  Scheme_Process *p = scheme_current_process;
   Scheme_Object *xformer;
 
   if (!depth)
@@ -1277,10 +1275,7 @@ scheme_compile_expand_macro_app(Scheme_Object *macro,
     return NULL;
   }
 
-  save_env = p->current_local_env;
-  p->current_local_env = env;
-  form = scheme_apply_macro_to_list(xformer, scheme_make_pair(form, scheme_null), form);
-  p->current_local_env = save_env;
+  form = scheme_apply_macro(xformer, form, env);
 
   if (rec)
     return scheme_compile_expr(form, env, rec, drec);

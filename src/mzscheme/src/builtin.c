@@ -36,6 +36,8 @@ static void primitive_syntax_through_scheme(const char *name,
 {
   Scheme_Object *hp, *sym;
 
+  printf("done: %s\n", name);
+
   hp = scheme_hash_percent_name(name, -1);
   scheme_set_keyword(hp, env);
 

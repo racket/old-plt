@@ -4,11 +4,14 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dialg.cxx,v 1.2 1998/02/10 02:50:15 mflatt Exp $
+ * RCS_ID:      $Id: wx_dialg.cxx,v 1.3 1998/03/07 00:37:48 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
 // $Log: wx_dialg.cxx,v $
+// Revision 1.3  1998/03/07 00:37:48  mflatt
+// dialog parents
+//
 // Revision 1.2  1998/02/10 02:50:15  mflatt
 // dialog fixes
 //
@@ -123,10 +126,28 @@ wxDialogBox::wxDialogBox(void)
   modal = FALSE;
 }
 
-void UnmapBulletinBoard(Widget, wxDialogBox *client, XtPointer)
+void UnmapBulletinBoard(Widget w)
 {
-  client->modal_showing = FALSE;
-  client->SetShowing(FALSE);
+  wxDialogBox *client = (wxDialogBox *)wxWidgetHashTable->Get((long)w);
+
+  if (client) {
+    client->modal_showing = FALSE;
+    client->SetShowing(FALSE);
+  }
+}
+
+void UnmapShell(Widget, Widget w, XEvent *e)
+{
+  wxDialogBox *client = (wxDialogBox *)wxWidgetHashTable->Get((long)w);
+
+  if (client) {
+    if (e->xany.type == UnmapNotify) {
+      if (client->IsShown()) {
+	/* Deiconize if it was iconized... */
+	client->Show(TRUE);
+      }
+    }
+  }
 }
 
 wxDialogBox::wxDialogBox(wxWindow *Parent, char *Title, Bool Modal, 
@@ -206,6 +227,9 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 				   wxGetDisplay(), NULL, 0);
     wxRegisterFrameWidget(parentShell);
     localParentShell = parentShell;
+
+    XtVaSetValues(parentShell, XmNmappedWhenManaged, False, NULL);
+    XtRealizeWidget(parentShell);
   } else
     localParentShell = 0;
 
@@ -218,19 +242,19 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
 
   // Force dialog box to be positioned correctly
   Arg args[1];
-  XtSetArg (args[0], XmNdefaultPosition, False);
+  XtSetArg(args[0], XmNdefaultPosition, False);
   dialogShell = XmCreateBulletinBoardDialog(parentShell, windowName, args, 1);
 
-  // We don't want margins, since there is enough elsewhere.
+  // We don't want margins, since there are enough elsewhere.
   XtVaSetValues(dialogShell,
-		XmNmarginHeight,   0,
-		XmNmarginWidth,    0,
+		XmNmarginHeight, 0,
+		XmNmarginWidth, 0,
 		XmNresizePolicy, /* (style & wxPUSH_PIN) ? XmRESIZE_GROW : XmRESIZE_NONE */ XmRESIZE_NONE,
-		NULL) ;
+		NULL);
 
   panelWidget = dialogShell;
 
-  Widget shell = XtParent(dialogShell) ;
+  Widget shell = XtParent(dialogShell);
   if (Title) {
     XmString str = XmStringCreateSimple(Title);
     XtVaSetValues(dialogShell,
@@ -304,7 +328,24 @@ Bool wxDialogBox::Create(wxWindow *Parent, char *Title, Bool Modal,
   
   XtAddCallback(dialogShell, XmNunmapCallback,
 		(XtCallbackProc)UnmapBulletinBoard, 
-		this);
+		NULL);
+
+  {
+    wxWindow *p;
+
+    for (p = Parent; p; p = p->GetParent()) {
+      if (!wxSubType(p->__type, wxTYPE_DIALOG_BOX))
+	break;
+    }
+
+    if (!p)
+      XtInsertEventHandler(XtParent(dialogShell),
+			   StructureNotifyMask,
+			   TRUE,
+			   (XtEventHandler)UnmapShell,
+			   (XtPointer)dialogShell,
+			   XtListHead);
+  }
   
   // Positioning of the dialog doesn't work properly unless the dialog
   // is managed, so we manage without mapping to the screen.

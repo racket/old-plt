@@ -7,7 +7,7 @@ plt\src\mzscheme\README.
 The source code for MzScheme and MrEd is split into several
 projects. To make the project named `X', either open the file
 worksp\X\X.mdp with MSVC, or go into worksp\X and run
-`nmake -f X.mak' (assuimg the MSVC programs are in your
+`nmake -f X.mak' (assuiming the MSVC programs are in your
 path).
 
 To build MzScheme, make these projects in order:
@@ -18,7 +18,7 @@ To build MzScheme, make these projects in order:
 To build MrEd, make these projects in order:
    gc - makes plt\src\worksp\gc\Release\gc.lib
    mzsrc - makes plt\src\worksp\mzsrc\Release\mzsrc.lib
-   wxutils - makes ... well, you get the idea
+   wxutils - makes ... you get the idea
    wxwin
    wxs
    mred - makes plt\mred.exe
@@ -28,6 +28,9 @@ programs used by the launcher collection to make drscheme.exe
 and mzc.exe:
    mzstart - makes plt\collects\launcher\mzstart.exe
    mrstart - makes plt\collects\launcher\mrstart.exe
+Then, set up all the other executables (besides mred.exe
+and mzscheme.exe) by running
+   mzscheme.exe -mvqL start.ss compiler
 
 As always, submit bug reports using
   http://www.cs.rice.edu/CS/PLT/Bugs/

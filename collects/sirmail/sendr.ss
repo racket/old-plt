@@ -29,30 +29,31 @@
     (let-values ([(seconds minutes hours days) (apply values (how-long-ago-list diff))])
       (cond
 	[days
-	 (string-append
-	  (build-ele days "day" "")
-	  " and "
-	  (build-ele hours "hour" ""))]
+         (string-append
+          (build-ele days "day")
+          " and "
+          (build-ele hours "hour"))]
 	[hours
 	 (string-append
-	  (build-ele hours "hour" "")
+	  (build-ele hours "hour")
 	  " and "
-	  (build-ele minutes "minute" ""))]
+	  (build-ele minutes "minute"))]
 	[minutes
-	 (build-ele minutes "minute" "")
-	 " and "
-	 (build-ele seconds "second" "")]
+         (string-append
+          (build-ele minutes "minute")
+          " and "
+          (build-ele seconds "second"))]
 	[else
-	 (build-ele seconds "second" "")])))
+	 (build-ele seconds "second")])))
   
-  (define (build-ele count name extra)
+  (define (build-ele count name)
     (cond
       [(or (not count) (zero? count))
-       ""]
+       (format "0 ~as" name)]
       [(= count 1)
-       (format "1 ~a~a" name extra)]
+       (format "1 ~a" name)]
       [else
-       (format "~a ~as~a" count name extra)]))
+       (format "~a ~as" count name)]))
   
   (define (how-long-ago-list diff)
     (let loop ([divs '(60 60 24)]
@@ -68,8 +69,7 @@
                     (cons (modulo diff div)
                           (loop (cdr divs)
                                 (quotient diff div)))))])))
-
-
+  
   (define (how-much-memory)
     (let loop ([n (current-memory-use)])
       (cond

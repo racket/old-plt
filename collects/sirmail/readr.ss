@@ -1750,7 +1750,8 @@
 					    (send t change-style url-delta s (sub1 e))))
 				  (lambda ()
 				    (unless s
-				      (set! s (slurp ent))))))])
+				      (set! s (slurp ent)))
+				    s)))])
 		(case (mime:entity-type ent)
 		  [(text) (let ([disp (mime:disposition-type (mime:entity-disposition ent))])
                             (cond

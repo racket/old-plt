@@ -845,11 +845,12 @@ static int tcp_check_accept(Scheme_Object *listener)
 #ifdef USE_MAC_TCP
   int i, count;
   Scheme_Tcp **datas;
-  count = ((listener_t *)listener)->count;
-  datas = ((listener_t *)listener)->datas;
 
   if (LISTENER_WAS_CLOSED(listener))
     return 1;
+
+  count = ((listener_t *)listener)->count;
+  datas = ((listener_t *)listener)->datas;
 
   for (i = 0; i < count; i++)
     if (datas[i] && (datas[i]->tcp.state != SOCK_STATE_LISTENING))
@@ -862,13 +863,15 @@ static int tcp_check_accept(Scheme_Object *listener)
 static void tcp_accept_needs_wakeup(Scheme_Object *listener, void *fds)
 {
 #ifdef USE_SOCKETS_TCP
-  tcp_t s = ((listener_t *)listener)->s;
-  void *fds2;
+  if (!LISTENER_WAS_CLOSED(listener)) {
+    tcp_t s = ((listener_t *)listener)->s;
+    void *fds2;
 
-  fds2 = MZ_GET_FDSET(fds, 2);
-
-  MZ_FD_SET(s, (fd_set *)fds);
-  MZ_FD_SET(s, (fd_set *)fds2);
+    fds2 = MZ_GET_FDSET(fds, 2);
+    
+    MZ_FD_SET(s, (fd_set *)fds);
+    MZ_FD_SET(s, (fd_set *)fds2);
+  }
 #endif
 }
 

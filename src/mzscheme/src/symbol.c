@@ -67,6 +67,12 @@ extern long scheme_hash_primes[];
 
 #define SYMTAB_LOST_CELL scheme_false
 
+#ifdef MZ_PRECISE_GC
+# define WEAK_ARRAY_HEADSIZE 4
+#else
+# define WEAK_ARRAY_HEADSIZE 0
+#endif
+
 /* Special hashing for symbols: */
 static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table, 
 				    const char *key, int length,
@@ -101,7 +107,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
   if (h2 < 0)
     h2 = -h2;
 
-  while ((bucket = table->buckets[h])) {
+  while ((bucket = table->buckets[WEAK_ARRAY_HEADSIZE + h])) {
     if (SAME_OBJ((Scheme_Object *)bucket, SYMTAB_LOST_CELL)) {
       if (naya) {
 	/* We're re-using, so decrement count and it will be
@@ -137,17 +143,18 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
 						  SYMTAB_LOST_CELL);
 #else
       ba = MALLOC_N_ATOMIC(Scheme_Bucket *, newsize);
+      memset((char *)ba, 0, asize);
 #endif
       table->buckets = ba;
     }
     table->size = newsize;
-    memset((char *)table->buckets, 0, asize);
 
     table->count = 0;
     for (i = 0; i < oldsize; i++) {
-      if (old[i] && (((Scheme_Object *)old[i]) != SYMTAB_LOST_CELL))
-	symbol_bucket(table, SCHEME_SYM_VAL(old[i]), SCHEME_SYM_LEN(old[i]),
-		      (Scheme_Object *)old[i]);
+      Scheme_Bucket *cb;
+      cb = old[WEAK_ARRAY_HEADSIZE + i] ;
+      if (cb && (((Scheme_Object *)cb) != SYMTAB_LOST_CELL))
+	symbol_bucket(table, SCHEME_SYM_VAL(cb), SCHEME_SYM_LEN(cb), (Scheme_Object *)cb);
     }
 
     /* Restore GC-misaligned key: */
@@ -156,7 +163,7 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     goto rehash_key;
   }
 
-  table->buckets[h] = (Scheme_Bucket *)naya;
+  table->buckets[WEAK_ARRAY_HEADSIZE + h] = (Scheme_Bucket *)naya;
 
   table->count++;
 
@@ -176,13 +183,13 @@ static void clean_symbol_table(void)
     void *b;
     
     while (i--) {
-      if (buckets[i] && !SAME_OBJ(buckets[i], SYMTAB_LOST_CELL)
-	  && (!(b = GC_base(buckets[i]))
+      if (buckets[WEAK_ARRAY_HEADSIZE + i] && !SAME_OBJ(buckets[WEAK_ARRAY_HEADSIZE + i], SYMTAB_LOST_CELL)
+	  && (!(b = GC_base(buckets[WEAK_ARRAY_HEADSIZE + i]))
 #ifndef USE_SENORA_GC
 	      || !GC_is_marked(b)
 #endif
 	      ))
-	buckets[i] = SYMTAB_LOST_CELL;
+	buckets[WEAK_ARRAY_HEADSIZE + i] = SYMTAB_LOST_CELL;
     }
   }
 }
@@ -194,10 +201,22 @@ void
 scheme_init_symbol_table ()
 {
   if (scheme_starting_up) {
+    int size;
+    Scheme_Bucket **ba;
+
     REGISTER_SO(scheme_symbol_table);
 
     scheme_symbol_table = scheme_hash_table(HASH_TABLE_SIZE, 
 					    SCHEME_hash_ptr, 0, 1);
+
+    size = scheme_symbol_table->size * sizeof(Scheme_Bucket *);
+#ifdef MZ_PRECISE_GC
+    ba = (Scheme_Bucket **)GC_malloc_weak_array(size, SYMTAB_LOST_CELL);
+#else
+    ba = MALLOC_N_ATOMIC(Scheme_Bucket *, size);
+    memset((char *)ba, 0, size);
+#endif
+    scheme_symbol_table->buckets = ba;
 
 #ifndef MZ_PRECISE_GC
     GC_custom_finalize = clean_symbol_table;

@@ -322,7 +322,7 @@ void *GC_malloc_weak_array(size_t size_in_bytes, void *replace_val)
   w->replace_val = replace_val;
   w->count = (size_in_bytes >> 2);
   
-  return &(w->data[0]);
+  return w;
 }
 
 typedef struct GC_Weak_Box {
@@ -1122,6 +1122,7 @@ void gcollect(int needsize)
 	    } else if (v & 0x10000000) {
 	      /* xtagged */
 	      GC_fixup_xtagged(mp);
+	      mp += size;
 	    } else {
 	      /* Array of tagged */
 	      int i, elem_size;

@@ -478,7 +478,7 @@ void scheme_init_thread(Scheme_Env *env)
   scheme_add_global_constant("custodian-shutdown-all",
 			     scheme_make_prim_w_arity(custodian_close_all,
 						      "custodian-shutdown-all",
-						      1, 2),
+						      1, 1),
 			     env);
   scheme_add_global_constant("custodian-managed-list",
 			     scheme_make_prim_w_arity(custodian_to_list,
@@ -868,10 +868,11 @@ static void remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o,
   Scheme_Custodian *m;
   int i;
 
-  m = CUSTODIAN_FAM(mr);
-  if (!m) {
+  if (!mr)
     return;
-  }
+  m = CUSTODIAN_FAM(mr);
+  if (!m)
+    return;
 
   for (i = m->count; i--; ) {
     if (m->boxes[i] && SAME_OBJ((xCUSTODIAN_FAM(m->boxes[i])),  o)) {
@@ -942,6 +943,17 @@ static void adjust_custodian_family(void *mgr, void *skip_move)
 	if (r->boxes[i]) {
 	  CUSTODIAN_FAM(r->mrefs[i]) = parent;
 	  add_managed_box(parent, r->boxes[i], r->mrefs[i], r->closers[i], r->data[i]);
+#ifdef MZ_PRECISE_GC
+	  {
+	    Scheme_Object *o;
+	    o = xCUSTODIAN_FAM(m->boxes[i]);
+	    if (SAME_TYPE(SCHEME_TYPE(r->boxes[i]), scheme_thread_hop_type)) {
+	      o = WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
+	      if (o)
+		GC_register_thread(o, parent);
+	    }
+	  }
+#endif
 	}
       }
     }
@@ -1018,12 +1030,6 @@ Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *parent)
   return m;
 }
 
-static void move_custodian(Scheme_Custodian *child, Scheme_Custodian *old_parent, Scheme_Custodian *new_parent) 
-{
-  adjust_custodian_family(child, old_parent);
-  insert_custodian(child, new_parent);
-}
-
 static void rebox_willdone_object(void *o, void *mr)
 {
   Scheme_Custodian *m = CUSTODIAN_FAM((Scheme_Custodian_Reference *)mr);
@@ -1063,9 +1069,20 @@ static void managed_object_gone(void *o, void *mr)
     remove_managed(mr, o, NULL, NULL);
 }
 
+void scheme_custodian_check_available(Scheme_Custodian *m, const char *who, const char *what)
+{
+  if (!m)
+    m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+  
+  if (m->shut_down) {
+    scheme_arg_mismatch(who, "the custodian has been shut down: ",
+			(Scheme_Object *)m);
+  }
+}
 
 Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Object *o, 
-					     Scheme_Close_Custodian_Client *f, void *data, int must_close)
+					       Scheme_Close_Custodian_Client *f, void *data, 
+					       int must_close)
 {
 #ifdef MZ_PRECISE_GC
     Scheme_Object *b;
@@ -1073,6 +1090,17 @@ Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Objec
     Scheme_Object **b;
 #endif
   Scheme_Custodian_Reference *mr;
+
+  if (!m)
+    m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+  
+  if (m->shut_down) {
+    /* The custodian was shut down in the time that it took
+       to allocate o. This situation should be avoided if at
+       all possible, but here's the fail-safe. */
+    f(o, data);
+    return NULL;
+  }
 
 #ifdef MZ_PRECISE_GC
   b = scheme_make_weak_box(NULL);
@@ -1082,9 +1110,6 @@ Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Objec
   xCUSTODIAN_FAM(b) = o;
 
   mr = MALLOC_MREF();
-
-  if (!m)
-    m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
 
   CUSTODIAN_FAM(mr) = m;
 
@@ -1110,12 +1135,20 @@ void scheme_remove_managed(Scheme_Custodian_Reference *mr, Scheme_Object *o)
 Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_Func cf)
 {
   Scheme_Thread *kill_self = NULL;
-  Scheme_Custodian *c, *start;
-  int i, j, is_thread, drop;
+  Scheme_Custodian *c, *start, *next_m;
+  int i, is_thread;
   Scheme_Thread *the_thread;
+  Scheme_Object *o;
+  Scheme_Close_Custodian_Client *f;
+  void *data;
 
   if (!m)
     m = main_custodian;
+
+  if (m->shut_down)
+    return NULL;
+
+  m->shut_down = 1;
 
   /* Need to kill children first, transitively, so find
      last decendent. The family will be the global-list from
@@ -1129,16 +1162,8 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
   start = m;
   m = c;
   while (1) {
-    /* A GC might occur while we're shutting something down.
-       This can cause something new to show up in our custodian
-       if a child gets GCd and its charges move here. But those
-       always go to the end. So walk from the back, then compact
-       at the end. */
     for (i = m->count; i--; ) {
       if (m->boxes[i]) {
-	Scheme_Object *o;
-	Scheme_Close_Custodian_Client *f;
-	void *data;
 
 	o = xCUSTODIAN_FAM(m->boxes[i]);
 
@@ -1149,28 +1174,50 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
 	  /* We've added an indirection and made it weak. See mr_hop note above. */
 	  is_thread = 1;
 	  the_thread = (Scheme_Thread *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
-	  drop = !the_thread->suspend_to_kill;
 	} else {
 	  is_thread = 0;
 	  the_thread = NULL;
-	  drop = 1;
 	}
 
-	if (drop) {
-	  CUSTODIAN_FAM(m->boxes[i]) = NULL;
-	  m->boxes[i] = NULL;
-	  CUSTODIAN_FAM(m->mrefs[i]) = NULL;
-	  m->mrefs[i] = NULL;
-	  m->data[i] = NULL;
-	} /* else this is a thread that we'll merely suspend. */
-
+	CUSTODIAN_FAM(m->boxes[i]) = NULL;
+	CUSTODIAN_FAM(m->mrefs[i]) = NULL;
+	
 	if (cf) {
 	  cf(o, f, data);
 	} else {
 	  if (is_thread) {
 	    if (the_thread) {
-	      if (do_kill_thread(the_thread))
-		kill_self = the_thread;
+	      /* Only kill the thread if it has no other custodians */
+	      if (SCHEME_NULLP(the_thread->extra_mrefs)) {
+		if (do_kill_thread(the_thread))
+		  kill_self = the_thread;
+	      } else {
+		Scheme_Custodian_Reference *mref;
+
+		mref = m->mrefs[i];
+		if (mref == the_thread->mref) {
+		  /* Designate a new main custodian for the thread */
+		  mref = (Scheme_Custodian_Reference *)SCHEME_CAR(the_thread->extra_mrefs);
+		  the_thread->mref = mref;
+		  the_thread->extra_mrefs = SCHEME_CDR(the_thread->extra_mrefs);
+#ifdef MZ_PRECISE_GC
+		  GC_register_thread(the_thread, CUSTODIAN_FAM(mref));
+#endif
+		} else {
+		  /* Just remove mref from the list of extras */
+		  Scheme_Object *l, *prev = NULL;
+		  for (l = the_thread->extra_mrefs; 1; l = SCHEME_CDR(l)) {
+		    if (SAME_OBJ(SCHEME_CAR(l), (Scheme_Object *)mref)) {
+		      if (prev)
+			SCHEME_CDR(prev) = SCHEME_CDR(l);
+		      else
+			the_thread->extra_mrefs = SCHEME_CDR(l);
+		      break;
+		    }
+		    prev = l;
+		  }
+		}
+	      }
 	    }
 	  } else {
 	    f(o, data);
@@ -1179,25 +1226,21 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
       }
     }
 
-    /* Compact remaining items (which should be just suspended threads) */
-    for (i = 0, j = 0; i < m->count; i++) {
-      if (m->boxes[i]) {
-	if (i > j) {
-	  m->boxes[j] = m->boxes[i];
-	  m->mrefs[j] = m->mrefs[i];
-	  m->data[j] = m->data[i];
-	  m->boxes[i] = NULL;
-	  m->mrefs[i] = NULL;
-	  m->data[i] = NULL;
-	}
-	j++;
-      }
-    }
-    m->count = j;
-
+    m->count = 0;
+    m->alloc = 0;
+    m->boxes = NULL;
+    m->closers = NULL;
+    m->data = NULL;
+    m->mrefs = NULL;
+    
     if (SAME_OBJ(m, start))
       break;
-    m = CUSTODIAN_FAM(m->global_prev);
+    next_m = CUSTODIAN_FAM(m->global_prev);
+
+    /* Remove this custodian from its parent */
+    adjust_custodian_family(m, m);
+
+    m = next_m;
   }
 
   return kill_self;
@@ -1276,6 +1319,11 @@ static Scheme_Object *make_custodian(int argc, Scheme_Object *argv[])
   } else
     m = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
 
+  if (m->shut_down)
+    scheme_arg_mismatch("make-custodian", 
+			"the custodian has been shut down: ", 
+			(Scheme_Object *)m);
+
   return (Scheme_Object *)scheme_make_custodian(m);
 }
 
@@ -1286,38 +1334,10 @@ static Scheme_Object *custodian_p(int argc, Scheme_Object *argv[])
 
 static Scheme_Object *custodian_close_all(int argc, Scheme_Object *argv[])
 {
-  Scheme_Custodian *c;
-
   if (!SCHEME_CUSTODIANP(argv[0]))
     scheme_wrong_type("custodian-shutdown-all", "custodian", 0, argc, argv);
 
-  c = (Scheme_Custodian *)argv[0];
-
-  if (argc > 1) {
-    Scheme_Custodian *c2, *prev_c;
-
-    if (!SCHEME_CUSTODIANP(argv[1]))
-      scheme_wrong_type("custodian-shutdown-all", "custodian", 1, argc, argv);
-    
-    c2 = (Scheme_Custodian *)argv[1];
-
-    /* Look for prev_c2, a child of c whose descendent is c2 */
-    prev_c = c;
-    while (c && NOT_SAME_OBJ(c, c2)) {
-      prev_c = c;
-      c = CUSTODIAN_FAM(c->parent);
-    }
-    if (c)
-      c = prev_c;
-    else {
-      scheme_arg_mismatch("custodian-shutdown-all",
-			  "the second custodian does not "
-			  "manage the first custodian: ",
-			  argv[0]);
-    }
-  }
-
-  scheme_close_managed(c);
+  scheme_close_managed((Scheme_Custodian *)argv[0]);
 
   return scheme_void;
 }
@@ -1483,25 +1503,45 @@ static void check_scheduled_kills()
   }
 }
 
-static void check_current_custodian_allows(const char *who, 
-					   Scheme_Custodian_Reference *mref, 
-					   Scheme_Object *o)
+static void check_current_custodian_allows(const char *who, Scheme_Thread *p)
 {
+  Scheme_Object *l;
+  Scheme_Custodian_Reference *mref;
   Scheme_Custodian *m, *current;
 
   /* Check management of the thread: */
   current = (Scheme_Custodian *)scheme_get_param(scheme_config, MZCONFIG_CUSTODIAN);
+
+  for (l = p->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+    mref = (Scheme_Custodian_Reference *)SCHEME_CAR(l);
+    m = CUSTODIAN_FAM(mref);
+    while (NOT_SAME_OBJ(m, current)) {
+      m = CUSTODIAN_FAM(m->parent);
+      if (!m)
+	goto bad;
+    }
+  }
+
+  mref = p->mref;
+  if (!mref)
+    return;
   m = CUSTODIAN_FAM(mref);
+  if (!m)
+    return;
 
   while (NOT_SAME_OBJ(m, current)) {
     m = CUSTODIAN_FAM(m->parent);
-    if (!m) {
-      scheme_arg_mismatch(who,
-			  "the current custodian does not "
-			  "manage the specified object: ",
-			  o);
-    }
+    if (!m)
+      goto bad;
   }
+
+  return;
+
+ bad:
+  scheme_arg_mismatch(who,
+		      "the current custodian does not "
+		      "solely manage the specified thread: ",
+		      (Scheme_Object *)p);  
 }
 
 /*========================================================================*/
@@ -1817,6 +1857,7 @@ static Scheme_Thread *make_thread(Scheme_Config *config, Scheme_Custodian *mgr)
 
     mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
     process->mref = mref;
+    process->extra_mrefs = scheme_null;
 
 #ifndef MZ_PRECISE_GC
     scheme_weak_reference((void **)&hop->p);
@@ -2049,6 +2090,7 @@ static void thread_is_dead(Scheme_Thread *r)
 static void remove_thread(Scheme_Thread *r)
 {
   Scheme_Saved_Stack *saved;
+  Scheme_Object *l;
 
   r->running = 0;
 
@@ -2106,6 +2148,10 @@ static void remove_thread(Scheme_Thread *r)
     RESETJMP(r);
 
   scheme_remove_managed(r->mref, (Scheme_Object *)r->mr_hop);
+  for (l = r->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+    scheme_remove_managed((Scheme_Custodian_Reference *)SCHEME_CAR(l), (Scheme_Object *)r->mr_hop);
+  }
+  r->extra_mrefs = scheme_null;
 }
 
 static void start_child(Scheme_Thread * volatile child,
@@ -2238,6 +2284,7 @@ static Scheme_Object *sch_thread(int argc, Scheme_Object *args[])
   Scheme_Config *c;
 
   scheme_check_proc_arity("thread", 0, 0, argc, args);
+  scheme_custodian_check_available(NULL, "thread", "thread");
 
   c = (Scheme_Config *)scheme_branch_config();
   return scheme_thread(args[0], c);
@@ -2248,6 +2295,7 @@ static Scheme_Object *sch_thread_nokill(int argc, Scheme_Object *args[])
   Scheme_Config *c;
 
   scheme_check_proc_arity("thread/suspend-to-kill", 0, 0, argc, args);
+  scheme_custodian_check_available(NULL, "thread/suspend-to-kill", "thread");
 
   c = (Scheme_Config *)scheme_branch_config();
   return scheme_thread_w_custodian_killkind(args[0], c, NULL, 0);
@@ -2476,6 +2524,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   } else
     mgr = (Scheme_Custodian *)scheme_get_param(p->config, MZCONFIG_CUSTODIAN);
 
+  scheme_custodian_check_available(mgr, "call-in-nested-thread", "thread");
+
   SCHEME_USE_FUEL(25);
 
   wait_until_suspend_ok();
@@ -2568,6 +2618,7 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     }
     mref = scheme_add_managed(mgr, (Scheme_Object *)hop, NULL, NULL, 0);
     np->mref = mref;
+    np->extra_mrefs = scheme_null;
 #ifndef MZ_PRECISE_GC
     scheme_weak_reference((void **)&hop->p);
 #endif
@@ -2596,6 +2647,14 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
   }
 
   scheme_remove_managed(np->mref, (Scheme_Object *)np->mr_hop);
+  {
+    Scheme_Object *l;
+    for (l = np->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+      scheme_remove_managed((Scheme_Custodian_Reference *)SCHEME_CAR(l), 
+			    (Scheme_Object *)np->mr_hop);
+    }
+  }
+  np->extra_mrefs = scheme_null;
 #ifdef MZ_PRECISE_GC
   WEAKIFIED(np->mr_hop->p) = NULL;
 #else
@@ -3479,6 +3538,13 @@ static int do_kill_thread(Scheme_Thread *p)
     p->on_kill(p);
 
   scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
+  {
+    Scheme_Object *l;
+    for (l = p->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+      scheme_remove_managed((Scheme_Custodian_Reference *)SCHEME_CAR(l), 
+			    (Scheme_Object *)p->mr_hop);
+    }
+  }
 
   if (p->running) {
     if (p->running & MZTHREAD_USER_SUSPENDED) {
@@ -3528,7 +3594,7 @@ static Scheme_Object *kill_thread(int argc, Scheme_Object *argv[])
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
 
-  check_current_custodian_allows("kill-thread", p->mref, (Scheme_Object *)p);
+  check_current_custodian_allows("kill-thread", p);
 
   scheme_kill_thread(p);
 
@@ -3585,7 +3651,7 @@ static Scheme_Object *thread_suspend(int argc, Scheme_Object *argv[])
 
   p = (Scheme_Thread *)argv[0];
 
-  check_current_custodian_allows("thread-suspend", p->mref, (Scheme_Object *)p);
+  check_current_custodian_allows("thread-suspend", p);
 
   suspend_thread(p);
 
@@ -3725,9 +3791,87 @@ static void transitive_resume(Scheme_Object *resumes)
   }
 }
 
+static void promote_thread(Scheme_Thread *p, Scheme_Custodian *to_c)
+{
+  Scheme_Custodian *c, *cx;
+  Scheme_Custodian_Reference *mref;  
+  Scheme_Object *l;
+  
+  if (!p->mref || !CUSTODIAN_FAM(p->mref)) {
+    /* The thread has no running custodian, so fall through to
+       just use to_c */
+  } else {
+    c = CUSTODIAN_FAM(p->mref);
+
+    /* Check whether c is an ancestor of to_c (in which case we do nothing) */
+    for (cx = to_c; cx && NOT_SAME_OBJ(cx, c); ) {
+      cx = CUSTODIAN_FAM(cx->parent);
+    }
+    if (cx) return;
+
+    /* Check whether any of the extras are super to to_c. 
+       If so, do nothing. */
+    for (l = p->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+      mref = (Scheme_Custodian_Reference *)SCHEME_CAR(l);
+      c = CUSTODIAN_FAM(mref);
+      
+      for (cx = to_c; cx && NOT_SAME_OBJ(cx, c); ) {
+	cx = CUSTODIAN_FAM(cx->parent);
+      }
+      if (cx) return;
+    }
+
+    /* Check whether to_c is super of c: */
+    for (cx = c; cx && NOT_SAME_OBJ(cx, to_c); ) {
+      cx = CUSTODIAN_FAM(cx->parent);
+    }
+    
+    /* If cx, fall through to replace the main custodian with to_c, 
+       because it's an ancestor of the current one. Otherwise, they're
+       unrelated. */
+    if (!cx) {
+      /* Check whether any of the extras should be replaced by to_c */
+      for (l = p->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	/* Is to_c super of c? */
+	for (cx = c; cx && NOT_SAME_OBJ(cx, to_c); ) {
+	  cx = CUSTODIAN_FAM(cx->parent);
+	}
+	if (cx) {
+	  /* Replace this custodian with to_c */
+	  mref = (Scheme_Custodian_Reference *)SCHEME_CAR(l);
+	  scheme_remove_managed(mref, (Scheme_Object *)p->mr_hop);
+	  mref = scheme_add_managed(to_c, (Scheme_Object *)p->mr_hop, NULL, NULL, 0);
+	  SCHEME_CAR(l) = (Scheme_Object *)mref;
+
+	  /* It's possible that one of the other custodians is also
+	     junior to to_c. Maybe clean that up in the future. */
+
+	  return;
+	}
+      }
+
+      /* Otherwise, this is custodian is unrelated to the existing ones.
+	 Add it as an extra custodian. */
+      mref = scheme_add_managed(to_c, (Scheme_Object *)p->mr_hop, NULL, NULL, 0);
+      l = scheme_make_pair((Scheme_Object *)mref, p->extra_mrefs);
+      p->extra_mrefs = l;
+      return;
+    }
+  }
+
+  /* Replace p's main custodian (if any) with to_c */
+  scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
+  mref = scheme_add_managed(to_c, (Scheme_Object *)p->mr_hop, NULL, NULL, 0);
+  p->mref = mref;
+#ifdef MZ_PRECISE_GC
+  GC_register_thread(p, to_c);
+#endif
+}
+
 static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
 {
-  Scheme_Thread *p, *promote_to;
+  Scheme_Thread *p, *promote_to = NULL;
+  Scheme_Custodian *promote_c = NULL;
 
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_thread_type))
     scheme_wrong_type("thread-resume", "thread", 0, argc, argv);
@@ -3735,80 +3879,57 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
   p = (Scheme_Thread *)argv[0];
 
   if (argc > 1) {
-    if (!SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_thread_type))
-      scheme_wrong_type("thread-resume", "thread", 1, argc, argv);
-    promote_to = (Scheme_Thread *)argv[1];
-  } else
-    promote_to = NULL;
+    if (SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_thread_type))
+      promote_to = (Scheme_Thread *)argv[1];
+    else if (SAME_TYPE(SCHEME_TYPE(argv[1]), scheme_custodian_type)) {
+      promote_c = (Scheme_Custodian *)argv[1];
+      if (promote_c->shut_down)
+	promote_c = NULL;
+    } else {
+      scheme_wrong_type("thread-resume", "thread or custodian", 1, argc, argv);
+      return NULL;
+    }
+  }
 
   if (!MZTHREAD_STILL_RUNNING(p->running))
     return scheme_void;
 
+  /* Change/add custodians for p from promote_p */
   if (promote_to) {
-    /* Promote p so that it's managed by the custodian that is
-       the least upper bound of the custodians managing p
-       and promote_to. If that custodian is not generated,
-       and it's neither p's nor promote_to's custodian,
-       then make one and splice it in between. */
-    Scheme_Custodian *c1, *c2, *c;
-    int depth1, depth2;
+    Scheme_Object *l;
+    Scheme_Custodian_Reference *mref;
 
-    c1 = CUSTODIAN_FAM(p->mref);
-    c2 = CUSTODIAN_FAM(promote_to->mref);
-
-    for (c = c2, depth2 = 0; c && NOT_SAME_OBJ(c, c1); depth2++) {
-      c = CUSTODIAN_FAM(c->parent);
-    }
-    if (!c) {
-      for (c = c1, depth1 = 0; c && NOT_SAME_OBJ(c, c2); depth1++) {
-	c = CUSTODIAN_FAM(c->parent);
-      }
-      if (!c) {
-	Scheme_Custodian *prev_c1 = NULL, *prev_c2 = NULL;
-
-	/* c1 and c2 have some common ancestor. Balance
-	   the depths to start looking in lock step: */
-	while (depth1 > depth2) {
-	  prev_c1 = c1;
-	  c1 = CUSTODIAN_FAM(c1->parent);
-	  --depth1;
-	}
-	while (depth2 > depth2) {
-	  prev_c1 = c2;
-	  c2 = CUSTODIAN_FAM(c2->parent);
-	  --depth2;
-	}
-
-	while (NOT_SAME_OBJ(c1, c2)) {
-	  prev_c1 = c1;
-	  prev_c2 = c2;
-	  c1 = CUSTODIAN_FAM(c1->parent);
-	  c2 = CUSTODIAN_FAM(c2->parent);
-	}
-	c = c1; /* which is the same as c2 */
-
-	if (!c->was_gen) {
-	  /* Move prev_c1 and prev_c2 to a new child of c */
-	  c1 = scheme_make_custodian(c);
-	  c1->was_gen = 1;
-	  move_custodian(prev_c1, c, c1);
-	  move_custodian(prev_c2, c, c1);
-	  c = c1;
-	}
-      } /* else c2 is more powerful than c1, and that's what we want */
+    /* If promote_to doesn't have a working custodian, there's
+       nothing to donate */
+    if (promote_to->mref && CUSTODIAN_FAM(promote_to->mref)) {
+      promote_thread(p, CUSTODIAN_FAM(promote_to->mref));
       
-
-      /* Move p to be managed by c: */
-      {
-	Scheme_Custodian_Reference *mref;
-	scheme_remove_managed(p->mref, (Scheme_Object *)p->mr_hop);
-	mref = scheme_add_managed(c, (Scheme_Object *)p->mr_hop, NULL, NULL, 0);
-	p->mref = mref;
-#ifdef MZ_PRECISE_GC
-	GC_register_thread(p, c);
-#endif
+      for (l = p->extra_mrefs; !SCHEME_NULLP(l); l = SCHEME_CDR(l)) {
+	mref = (Scheme_Custodian_Reference *)SCHEME_CAR(l);
+	promote_thread(p, CUSTODIAN_FAM(mref));
       }
-    } /* else c1 is already more powerful than c2 */
+    }
+  }
+  if (promote_c)
+    promote_thread(p, promote_c);
+
+  /* Set up transitive resume for future resumes of promote_to: */
+  if (promote_to 
+      && MZTHREAD_STILL_RUNNING(promote_to->running)
+      && !SAME_OBJ(promote_to, p))
+    add_transitive_resume(promote_to, p);
+
+  /* Check whether the thread has a non-shut-down custodian */
+  {
+    Scheme_Custodian *c;
+    
+    if (p->mref)
+      c = CUSTODIAN_FAM(p->mref);
+    else
+      c = NULL;
+
+    if (!c || c->shut_down)
+      return scheme_void;
   }
 
   if (p->running & MZTHREAD_USER_SUSPENDED) {
@@ -3825,12 +3946,6 @@ static Scheme_Object *thread_resume(int argc, Scheme_Object *argv[])
     if (p->transitive_resumes)
       transitive_resume(p->transitive_resumes);
   }
-
-  /* Set up transitive resume for future resumes of promote_to: */
-  if (promote_to 
-      && MZTHREAD_STILL_RUNNING(promote_to->running)
-      && !SAME_OBJ(promote_to, p))
-    add_transitive_resume(promote_to, p);
 
   return scheme_void;
 }

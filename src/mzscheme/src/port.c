@@ -2239,6 +2239,8 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 				    NULL,
 				    SCHEME_GUARD_FILE_READ);
 
+  scheme_custodian_check_available(NULL, name, "file-stream");
+
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */
   do {
@@ -2442,6 +2444,8 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 				     | ((existsok > 1)
 					? SCHEME_GUARD_FILE_READ
 					: 0)));
+
+  scheme_custodian_check_available(NULL, name, "file-stream");
 
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */
@@ -5473,6 +5477,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   }
 
   command = argv[0];
+
+  if (!inport || !outport || !errport)
+    scheme_custodian_check_available(NULL, name, "file-stream");
 
   /*--------------------------------------*/
   /*          Create needed pipes         */

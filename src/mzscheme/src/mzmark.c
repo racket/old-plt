@@ -1436,6 +1436,7 @@ int thread_val_MARK(void *p) {
   
   gcMARK(pr->mr_hop);
   gcMARK(pr->mref);
+  gcMARK(pr->extra_mrefs);
 
   gcMARK(pr->name);
 
@@ -1517,6 +1518,7 @@ int thread_val_FIXUP(void *p) {
   
   gcFIXUP(pr->mr_hop);
   gcFIXUP(pr->mref);
+  gcFIXUP(pr->extra_mrefs);
 
   gcFIXUP(pr->name);
 

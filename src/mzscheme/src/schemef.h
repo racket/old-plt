@@ -101,6 +101,7 @@ MZ_EXTERN Scheme_Custodian *scheme_make_custodian(Scheme_Custodian *);
 MZ_EXTERN Scheme_Custodian_Reference *scheme_add_managed(Scheme_Custodian *m, Scheme_Object *o,
 							 Scheme_Close_Custodian_Client *f, void *data,
 							 int strong);
+MZ_EXTERN void scheme_custodian_check_available(Scheme_Custodian *m, const char *who, const char *what);
 MZ_EXTERN void scheme_remove_managed(Scheme_Custodian_Reference *m, Scheme_Object *o);
 MZ_EXTERN void scheme_close_managed(Scheme_Custodian *m);
 MZ_EXTERN void scheme_schedule_custodian_close(Scheme_Custodian *c);

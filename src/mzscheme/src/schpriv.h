@@ -290,7 +290,7 @@ extern int scheme_overflow_count;
 struct Scheme_Custodian {
   Scheme_Type type;
   MZ_HASH_KEY_EX
-  short was_gen;
+  short shut_down;
   int count, alloc;
   Scheme_Object ***boxes;
   Scheme_Custodian_Reference **mrefs;

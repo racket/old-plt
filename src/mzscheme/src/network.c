@@ -1958,6 +1958,7 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
   origid = (unsigned short)SCHEME_INT_VAL(argv[1]);
 
   scheme_security_check_network("tcp-connect", address, origid, 1);
+  scheme_custodian_check_available(NULL, "tcp-connect", "network");
 
 #ifdef USE_TCP
   /* Set id in network order: */
@@ -2102,24 +2103,6 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	    }
 	  }
 #endif
-	  /* Old way to test for success.
-	   * This seems to cause a problem on later Linux kernels.
-	   * Thanks to John R. Hall for tracking down the problem.
-	   *
-	   *  do {
-	   *   status = recv(s, NULL, 0, 0); // test input
-	   * } while ((status == -1) && (errno == EINTR));
-	   * if (!status) {
-	   *	 do {
-	   *	   status = send(s, NULL, 0, 0); // test output
-	   *   } while ((status == -1) && (errno == EINTR));
-	   * }
-	   */
-	  /* Old way for Windows
-	   * status = send(s, "", 0, 0); // test output
-	   * if (status)
-	   *  errno = WSAGetLastError();
-	   */
 	}
 	
 	if (!status) {
@@ -2215,6 +2198,7 @@ tcp_listen(int argc, Scheme_Object *argv[])
     address = NULL;
 
   scheme_security_check_network("tcp-listen", address, origid, 0);
+  scheme_custodian_check_available(NULL, "tcp-listen", "network");
 
 #ifdef USE_TCP
   /* Set id in network order: */
@@ -2485,6 +2469,8 @@ tcp_accept(int argc, Scheme_Object *argv[])
 		     "tcp-accept: listener is closed");
     return NULL;
   }
+
+  scheme_custodian_check_available(NULL, "tcp-accept", "network");
   
 # ifdef USE_SOCKETS_TCP
   s = ((listener_t *)listener)->s;
@@ -2741,6 +2727,7 @@ static Scheme_Object *make_udp(int argc, Scheme_Object *argv[])
   TCP_INIT("udp-open-socket");
 
   scheme_security_check_network("udp-open-socket", NULL, -1, 1);
+  scheme_custodian_check_available(NULL, "udp-open-socket", "network");
 
   s = socket(PF_INET, SOCK_DGRAM, 0);
 
@@ -3055,7 +3042,7 @@ static Scheme_Object *udp_send_it(const char *name, int argc, Scheme_Object *arg
     origid = (unsigned short)SCHEME_INT_VAL(argv[2]);
 
     scheme_security_check_network(name, address, origid, 1);
-    
+
     /* Set id in network order: */
     id = htons(origid);
   } else {

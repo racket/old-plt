@@ -34,6 +34,7 @@ EXPORTS
  scheme_tls_get
  scheme_make_custodian
  scheme_add_managed
+ scheme_custodian_check_available
  scheme_remove_managed
  scheme_close_managed
  scheme_schedule_custodian_close

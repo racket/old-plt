@@ -834,6 +834,7 @@ typedef struct Scheme_Thread {
 
   struct Scheme_Thread_Custodian_Hop *mr_hop;
   Scheme_Custodian_Reference *mref;
+  Scheme_Object *extra_mrefs; /* More owning custodians */
   Scheme_Object *transitive_resumes; /* A hash table of running-boxes */
 
   Scheme_Object *name;

@@ -574,6 +574,7 @@ thread_val {
   
   gcMARK(pr->mr_hop);
   gcMARK(pr->mref);
+  gcMARK(pr->extra_mrefs);
 
   gcMARK(pr->name);
 

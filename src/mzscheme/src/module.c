@@ -37,6 +37,7 @@ static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[]
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_require_copy(int argc, Scheme_Object *argv[]);
+static Scheme_Object *namespace_require_etonly(int argc, Scheme_Object *argv[]);
 static Scheme_Object *namespace_attach_module(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_p(int argc, Scheme_Object *argv[]);
 static Scheme_Object *module_compiled_name(int argc, Scheme_Object *argv[]);
@@ -240,6 +241,11 @@ void scheme_init_module(Scheme_Env *env)
   scheme_add_global_constant("namespace-require/copy",
 			     scheme_make_prim_w_arity(namespace_require_copy,
 						      "namespace-require/copy",
+						      1, 1),
+			     env);  
+  scheme_add_global_constant("namespace-require/expansion-time",
+			     scheme_make_prim_w_arity(namespace_require_etonly,
+						      "namespace-require/expansion-time",
 						      1, 1),
 			     env);
   
@@ -743,7 +749,7 @@ static Scheme_Object *dynamic_require_for_syntax(int argc, Scheme_Object *argv[]
   return _dynamic_require(argc, argv, scheme_get_env(scheme_config), 0, 1, 0, 1, -1);
 }
 
-static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp, int copy)
+static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int for_exp, int copy, int etonly)
 {
   Scheme_Object *form, *rn, *brn;
   Scheme_Env *env;
@@ -761,7 +767,7 @@ static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int 
   rn = scheme_make_module_rename(for_exp, 1);
 
   (void)parse_requires(form, scheme_false, env, rn, 
-		       NULL, NULL, 1, NULL, 1, copy);
+		       NULL, NULL, !etonly, NULL, 1, copy);
 
   brn = env->rename;
   if (!brn) {
@@ -776,17 +782,22 @@ static Scheme_Object *do_namespace_require(int argc, Scheme_Object *argv[], int 
 
 static Scheme_Object *namespace_require(int argc, Scheme_Object *argv[])
 {
-  return do_namespace_require(argc, argv, 0, 0);
+  return do_namespace_require(argc, argv, 0, 0, 0);
 }
 
 static Scheme_Object *namespace_trans_require(int argc, Scheme_Object *argv[])
 {
-  return do_namespace_require(argc, argv, 1, 0);
+  return do_namespace_require(argc, argv, 1, 0, 0);
 }
 
 static Scheme_Object *namespace_require_copy(int argc, Scheme_Object *argv[])
 {
-  return do_namespace_require(argc, argv, 0, 1);
+  return do_namespace_require(argc, argv, 0, 1, 0);
+}
+
+static Scheme_Object *namespace_require_etonly(int argc, Scheme_Object *argv[])
+{
+  return do_namespace_require(argc, argv, 0, 0, 1);
 }
 
 static void pre_post_force(void *_v)

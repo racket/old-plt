@@ -1,0 +1,109 @@
+Time-stamp: <98/03/16 23:13:05 shriram>
+
+Package: url
+Collection: net
+Files: nntp.ss, nntpr.ss, nntps.ss, nntpu.ss
+
+ABSTRACT -------------------------------------------------------------
+
+The url pakage manages features of URLs.
+
+TYPES ----------------------------------------------------------------
+
+struct url (scheme host port path params query fragment)
+scheme : string + #f
+host : string + #f
+port : num + #f
+path : string
+params : string + #f
+query : string + #f
+fragment : string + #f
+
+  The basic structure for all URLs.
+
+  http://www.cs.rice.edu:80/cgi-bin/finger;xyz?name=shriram&host=nw#top
+    1          2          3       4         5           6            7
+
+  1 = scheme, 2 = host, 3 = port, 4 = path,
+  5 = params, 6 = query, 7 = fragment
+
+pure-port:
+
+  A pure port is one from which the MIME headers have been removed, so
+  that what remains is purely the first content fragment.
+
+mime-header:
+
+  String correspoding to an Internet header of the sort used by MIME.
+
+PROCEDURES -----------------------------------------------------------
+
+unixpath->path :
+string -> string
+
+  Given a path from a URL structure, turns it into a path that
+  conforms to the local OS path specifications.  Useful for file
+  accesses on the local disk system.
+
+get-pure-port :
+url [x list (str)] -> iport
+
+  Takes a URL and returns a pure port corresponding to it.  Writes the
+  optional strings to the server.
+
+get-impure-port :
+url [x list (str)] -> iport
+
+  Takes a URL and returns an impure port corresponding to it.  Writes
+  the optional strings to the server.
+
+display-pure-port :
+iport -> ()
+
+  Writes the output of a pure port.  For debugging purposes.
+
+purify-port :
+iport -> list (mime-header)
+
+  Purifies a port, returning the MIM headers.
+
+string->url :
+string -> url
+
+  Turns a string into a URL.
+  
+netscape/string->url :
+string -> url
+
+  Turns a string into a URL, applying (what appear to be) Netscape's
+  conventions on automatically specifying the scheme: a string
+  starting with a slash gets the scheme "file", while all others get
+  the scheme "http".
+
+url->string :
+url -> string
+
+  Generates a string corresponding to the contents of the url struct.
+
+call/input-url :
+url x (url -> iport) x  (iport -> ()) [x list (str)] -> ()
+
+  First argument is the URL to open.  Second is a procedure that takes
+  a URL and turns it into a (pure or impure) port.  The third takes
+  the (pure or impure) port and handles its contents.  The optional
+  fourth argument is a set of strings to send to the server.
+
+combine-url/relative :
+url x string -> url
+
+  Given a base URL and a relative path, combines the two and returns a
+  new URL.
+
+EXAMPLE --------------------------------------------------------------
+
+(invoke-open-unit/sig mzlib:url@ #f)
+(define url:cs (string->url "http://www.cs.rice.edu/"))
+(define url:me (string->url "http://www.cs.rice.edu/~shriram/"))
+(define comb combine-url/relative)
+(define (test url)
+  (call/input-url url get-pure-port display-pure-port))

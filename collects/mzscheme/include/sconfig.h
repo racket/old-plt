@@ -340,7 +340,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
   /************** ALPHA/OSF1 with gcc ****************/
 
-# if defined(__alpha)
+#if defined(__alpha)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "alpha-osf1"
 
@@ -360,7 +360,7 @@ int   scheme_sproc_semaphore_try_down(void *);
 
   /************** HP/UX with gcc ****************/
 
-# if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
+#if defined(_PA_RISC1_0) || defined(_PA_RISC1_1)
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "parisc-hpux"
 
@@ -378,6 +378,33 @@ int   scheme_sproc_semaphore_try_down(void *);
 # define USE_EXPLICT_FP_FORM_CHECK
 
 # define USE_ULIMIT
+
+# define FLAGS_ALREADY_SET
+
+#endif
+
+  /************** x86/SCO Unix with gcc ****************/
+  /* Contributed by Atanas Ivanov <nasko@noac.bg>      */
+
+#if defined(_M_XENIX) && defined(_M_SYSV)
+
+# define SCHEME_PLATFORM_LIBRARY_SUBPATH "sco-i386"
+
+# include "uconfig.h"
+# undef HAS_STANDARD_IOB
+#ifndef __ELF__
+# undef UNIX_DYNAMIC_LOAD
+#endif
+
+# define DIRENT_NO_NAMLEN
+
+# define HAS_SCO_IOB
+
+# define STACK_GROWS_DOWN
+
+# define USE_SCO_IEEE_FP_PREDS
+# define USE_EXPLICT_FP_FORM_CHECK
+# define USE_FCNTL_O_NONBLOCK
 
 # define FLAGS_ALREADY_SET
 
@@ -740,9 +767,10 @@ int scheme_win32_semaphore_try_down(void *);
 #define FILES_HAVE_FDS
 #define USE_UNIX_SOCKETS_TCP
 
- /* HAS_STANDARD_IOB, HAS_GNU_IOB, HAS_LINUX_IOB, and HAS_BSD_IOB
-     are mutually exclusive; they describe how to read the FILE* 
-     structure to determine if there are available cached characters. */
+ /* HAS_STANDARD_IOB, HAS_GNU_IOB, HAS_LINUX_IOB, HAS_BSD_IOB, and 
+    HAS_SCO_IOB are mutually exclusive; they describe how to read the
+    FILE* structure to determine if there are available cached 
+    characters. */
 
  /* FILES_HAVE_FDS means that a FILE* is always associated with a
     file desciptor, which can be select-ed to see if there are
@@ -775,8 +803,7 @@ int scheme_win32_semaphore_try_down(void *);
 
  /* USE_DYNAMIC_FDSET_SIZE allocates fd_set records based on the
     current fd limit instead of relying on the compile-time size
-    of fd_set. [This is not known to be actually helpful anywhere
-    currently, particularly not for FreeBSD.] */
+    of fd_set. */
 
  /* UNIX_LIMIT_FDSET_SIZE insures that the fd limit at start-up is
     no greater than FD_SETSIZE */
@@ -839,6 +866,9 @@ int scheme_win32_semaphore_try_down(void *);
     of using HUGE_VAL. */
 
  /* USE_IEEE_FP_PREDS uses isinf() and isnan() to implement tests for
+    infinity. */
+
+ /* USE_SCO_IEEE_FP_PREDS uses fpclass() and isnan() to implement tests for
     infinity. */
 
  /* IGNORE_BY_CONTROL_387 turns off floating-point error for

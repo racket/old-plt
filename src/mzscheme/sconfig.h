@@ -803,8 +803,7 @@ int scheme_win32_semaphore_try_down(void *);
 
  /* USE_DYNAMIC_FDSET_SIZE allocates fd_set records based on the
     current fd limit instead of relying on the compile-time size
-    of fd_set. [This is not known to be actually helpful anywhere
-    currently, particularly not for FreeBSD.] */
+    of fd_set. */
 
  /* UNIX_LIMIT_FDSET_SIZE insures that the fd limit at start-up is
     no greater than FD_SETSIZE */

@@ -593,18 +593,23 @@ typedef Scheme_Object *(*Scheme_Type_Writer)(Scheme_Object *obj);
 #include "../src/schexn.h"
 #endif
 
-#if defined(USE_FAR_MZ_FDCALLS) || defined(DETECT_WIN32_CONSOLE_STDIN) || defined(WINDOWS_PROCESSES)
-# define MZ_GET_FDSET(p, n) scheme_get_fdset(p, n)
-#else
-# define MZ_GET_FDSET(p, n) ((void *)(((fd_set *)p) + n))
+#if defined(DETECT_WIN32_CONSOLE_STDIN) || defined(WINDOWS_PROCESSES)
+# ifndef NO_STDIO_THREADS
+#  define USE_FAR_MZ_FDCALLS
+# endif
+#endif
+#ifdef USE_DYNAMIC_FDSET_SIZE
+# define USE_FAR_MZ_FDCALLS
 #endif
 
 #ifdef USE_FAR_MZ_FDCALLS
+# define MZ_GET_FDSET(p, n) scheme_get_fdset(p, n)
 # define MZ_FD_ZERO(p) scheme_fdzero(p)
 # define MZ_FD_SET(n, p) scheme_fdset(p, n)
 # define MZ_FD_CLR(n, p) scheme_fdclr(p, n)
 # define MZ_FD_ISSET(n, p) scheme_fdisset(p, n)
 #else
+# define MZ_GET_FDSET(p, n) ((void *)(((fd_set *)p) + n))
 # define MZ_FD_ZERO(p) FD_ZERO(p)
 # define MZ_FD_SET(n, p) FD_SET(n, p)
 # define MZ_FD_CLR(n, p) FD_CLR(n, p)

@@ -853,10 +853,7 @@ void *scheme_alloc_fdset_array(int count, int permanent)
     dynamic_fd_size = getdtablesize();
 #endif
     /* divide by bits-per-byte: */
-    dynamic_fd_size = dynamic_fd_size >> 3;
-    /* Then again, don't make it smaller than the header says */
-    if (sizeof(fd_set) > dynamic_fd_size)
-      dynamic_fd_size = sizeof(fd_set);
+    dynamic_fd_size = (dynamic_fd_size + 7) >> 3;
     /* word-align: */
     if (dynamic_fd_size % sizeof(void*))
       dynamic_fd_size += sizeof(void*) - (dynamic_fd_size % sizeof(void*));

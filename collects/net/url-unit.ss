@@ -146,7 +146,7 @@
         (lambda (url)
           (when (url-host url)
             (url-error "Don't know how to get files from remote hosts"))
-          (open-input-file (url-path url))))
+          (open-input-file (apply build-path (url-path url)))))
 
       (define (schemeless-url url)
 	(url-error "Missing protocol (usually \"http:\") at the beginning of URL: ~a" url))
@@ -221,40 +221,6 @@
                (not (url-fragment url))
                (null? (url-path url)))))
       
-      ;; file://combine-url/relative : fs-path x s/t/r -> fs-path
-      
-      (define file://combine-url/relative 
-        (let ((path-segment-regexp (regexp "([^/]*)/(.*)"))
-              (translate-dir
-               (lambda (s)
-                 (cond
-		  [(string=? s "") 'same] ;; handle double slashes
-		  [(string=? s "..") 'up]
-		  [(string=? s ".") 'same]
-		  [else s]))))
-          (lambda (index offset)
-	    (let*-values ([(simple-index) (simplify-path index)]
-			  [(base name dir?)
-			   (split-path simple-index)])
-	      (if (string=? "" offset)
-		  (build-path base name)
-		  (build-path
-		   (if (or dir?
-			   (directory-exists? simple-index))
-		       simple-index
-		       (if (eq? base 'relative)
-			   'same
-			   base))
-		   (let loop ((str offset))
-		     (let ((m (regexp-match path-segment-regexp str)))
-		       (cond
-			[(not m) str]
-			[else
-			 (if (string=? "" (caddr m))
-			     (translate-dir (cadr m))
-			     (build-path (translate-dir (cadr m))
-					 (loop (caddr m))))])))))))))
-      
       (define (combine-url/relative base string)
         (let ([relative (string->url string)])
           (cond
@@ -267,17 +233,6 @@
             [else                             ; Step 2c
              (set-url-scheme! relative (url-scheme base))
              (cond
-               ;; This case is here because the above tests
-               ;; ensure the relative extension is not really
-               ;; an absolute path itself, so we need not
-               ;; examine its contents further.
-               [(and (url-scheme base)   ; Interloper step
-                     (string=? (url-scheme base) "file"))
-                (set-url-path! relative
-                               (file://combine-url/relative 
-                                (url-path base)
-                                (url-path relative)))
-                relative]
                [(url-host relative)	; Step 3
                 relative]
                [else

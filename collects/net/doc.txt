@@ -92,12 +92,9 @@ PROCEDURES -----------------------------------------------------------
   This procedure, which used to be provided by this library, is no
   longer supported.
 
-> (string->url string) -> url/user
+> (string->url string) -> url
 
-  Turns a string into a URL.  If the string represents a URL with
-  scheme "file", the portion of the string past "file:" must respond
-  to either absolute-path? or relative-path?.  It is then inserted
-  verbatim into the url structure.
+  Parses the url specified by the string into a url struct. 
 
 > (combine-url/relative url string) -> url
 
@@ -151,11 +148,6 @@ PROCEDURES -----------------------------------------------------------
 > (url->string url) -> string
 
   Generates a string corresponding to the contents of the url struct.
-  In the case of a URL with the "file:" scheme, the result does not
-  include the params, query, or fragment portion of the URL (because
-  they might be intended as part of a file path). For a scheme other
-  than "file:", if no slash appears after host, then "/" is reported
-  as the path.
 
 > (decode-some-url-parts url) -> url
 
@@ -241,15 +233,6 @@ PROCEDURES -----------------------------------------------------------
   is the empty list (i.e., no proxies).
 
 PRAGMATICS -----------------------------------------------------------
-
-_file:_
-
-  The path portion of a file: URL is a platform-dependent string as
-  constructed by build-path.  Therefore, the simplest way to construct
-  a file: URL is to string-append "file:" onto the output of
-  build-path (or build-relative-path), then pass this to string->url
-  to obtain a URL structure.  Refer to the documentation on pathname
-  utilities to specify disks and so forth.
 
 _web documents_
 

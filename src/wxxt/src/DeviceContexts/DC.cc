@@ -52,8 +52,6 @@ wxDC::wxDC(void)
     logical_scale_x = logical_scale_y
 	= user_scale_x = user_scale_y
 	= scale_x = scale_y = 1.0;
-    max_x = max_y = -100000.0;
-    min_x = min_y =  100000.0;
 
     c = new wxColour(wxWHITE);
     current_background_color = c;
@@ -139,18 +137,6 @@ void wxDC::SetUserScale(double xs, double ys)
     ComputeScaleAndOrigin();
     SetFont(current_font);
     SetPen(current_pen);
-}
-
-//-----------------------------------------------------------------------------
-// Bounding Box
-//-----------------------------------------------------------------------------
-
-void wxDC::CalcBoundingBox(double x, double y)
-{
-    if (x < min_x) min_x = x;
-    if (y < min_y) min_y = y;
-    if (x > max_x) max_x = x;
-    if (y > max_y) max_y = y;
 }
 
 //-----------------------------------------------------------------------------

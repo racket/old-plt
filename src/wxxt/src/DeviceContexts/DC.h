@@ -80,7 +80,6 @@ public:
     virtual Bool  CanGetTextExtent(void) = 0;
     virtual Bool  CanDrawBitmap(void) = 0;
     virtual void  Clear(void) = 0;
-    virtual void  CrossHair(double x, double y) = 0;
     virtual void  DrawArc(double x, double y, double w, double h, double start, double end) = 0;
     virtual void  DrawEllipse(double x, double y, double w, double h) = 0;
     virtual void  DrawLine(double x1, double y1, double x2, double y2) = 0;
@@ -97,17 +96,14 @@ public:
     virtual void  DrawRoundedRectangle(double x, double y, double w, double h,
 				       double radius=20) = 0;
 
-  virtual void  DrawText(char *text, double x, double y, Bool combine=FALSE,
+    virtual void  DrawText(char *text, double x, double y, Bool combine=FALSE,
 			   Bool use16 = FALSE, int dt = 0, double angle = 0.0) = 0;
-    virtual void  FloodFill(double x, double y, wxColour *col,
-			    int style=wxFLOOD_SURFACE) = 0;
     virtual double GetCharHeight(void) = 0;
     virtual double GetCharWidth(void) = 0;
     virtual void  GetTextExtent(const char *s, double *w, double *h,
 				double *descent = 0, double *ext_leading = 0,
 				wxFont *font=NULL, 
 				Bool combine=FALSE, Bool use16bit=FALSE, int dt=0) = 0;
-    virtual void  IntDrawLine(int x1, int y1, int x2, int y2) = 0;
     virtual void  SetBackground(wxColour *c) = 0;
     virtual void  SetBrush(wxBrush *brush) = 0;
     virtual void  SetClippingRect(double x, double y, double w, double h) = 0;
@@ -119,7 +115,6 @@ public:
     virtual void  SetTextBackground(wxColour *col) = 0;
     virtual void  SetTextForeground(wxColour *col) = 0;
 
-    /* MATTHEW */
     virtual void TryColour(wxColour *src, wxColour *dest) = 0;
 
     // only necessary for printing
@@ -160,9 +155,8 @@ public:
     Bool GetPixel(double WXUNUSED(x), double WXUNUSED(y),
 		  wxColour *WXUNUSED(col))
 	{ return FALSE; }
-    /* MATTHEW */
     virtual void GetSize(double *w, double *h)
-	{ *w = (double)(max_x-min_x); *h = (double)(max_y-min_y); }
+	{ *w = (double)10; *h = (double)10; }
     void GetSizeMM(double *w, double *h)
 	{ GetSize(w, h); *w/=(scale_x*mm_to_pix_x); *h/=(scale_y*mm_to_pix_y); }
     int GetTextAlignment(void)
@@ -187,15 +181,6 @@ public:
 	{ return YLOG2DEV(y); }
     virtual double FLogicalToDeviceYRel(double y)
 	{ return YLOG2DEVREL(y); }
-    double MaxX(void)
-	{ return max_x; }
-    double MaxY(void)
-	{ return max_y; }
-    double MinX(void)
-	{ return min_x; }
-    double MinY(void)
-	{ return min_y; }
-    /* MATTHEW: */
     virtual Bool Ok(void)
 	{ return ok; }
     void SetBackgroundMode(int mode)
@@ -236,7 +221,6 @@ protected:
     double scale_x, scale_y;
     double device_origin_x, device_origin_y;
     double logical_scale_x, logical_scale_y, user_scale_x, user_scale_y;
-    double max_x, max_y, min_x, min_y;
     // Tools for drawing
     wxColour*    current_background_color;
     wxBrush*     current_brush;

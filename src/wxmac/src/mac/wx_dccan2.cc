@@ -90,37 +90,6 @@ void wxCanvasDC::GetSize(double *width, double *height)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::CrossHair(double x, double y)
-     //-----------------------------------------------------------------------------
-{
-  int xx, yy, dpx, dpy;
-  double ww, hh;
-  
-  if (!Ok() || !cMacDC || !current_pen || current_pen->GetStyle() == wxTRANSPARENT)
-    return;
-
-  SetCurrentDC();
-
-  dpx = (XLOG2DEVREL(current_pen->GetWidth()) >> 1);
-  dpy = (YLOG2DEVREL(current_pen->GetWidth()) >> 1);
-
-  wxMacSetCurrentTool(kPenTool);
-  xx = XLOG2DEV(x);
-  yy = YLOG2DEV(y);
-  GetSize(&ww, &hh) ;
-  wxMacDrawLine(0, yy-dpy, (int)floor(ww), yy-dpy);
-  wxMacDrawLine(xx-dpx, 0, xx-dpx, (int)floor(hh));
-
-  ReleaseCurrentDC();
-}
-
-//-----------------------------------------------------------------------------
-void wxCanvasDC::FloodFill(double x, double y, wxColour *col, int style)
-     //=============================================================================
-{
-}
-
-//-----------------------------------------------------------------------------
 Bool wxCanvasDC::GetPixel(double x, double y, wxColour *col)
      //=============================================================================
 {
@@ -268,13 +237,6 @@ void wxCanvasDC::GetPixelFast(int x, int y, int *r, int *g, int *b)
 }
 
 //-----------------------------------------------------------------------------
-void wxCanvasDC::IntDrawLine(int x1, int y1, int x2, int y2)
-     //-----------------------------------------------------------------------------
-{
-  DrawLine(x1, y1, x2, y2);
-}
-
-//-----------------------------------------------------------------------------
 void wxCanvasDC::DrawLine(double x1, double y1, double x2, double y2)
      //-----------------------------------------------------------------------------
 {
@@ -322,8 +284,6 @@ void wxCanvasDC::DrawLine(double x1, double y1, double x2, double y2)
   SetCurrentDC();
   wxMacSetCurrentTool(kPenTool);
   wxMacDrawLine(XLOG2DEV(x1)-dpx, YLOG2DEV(y1)-dpy, XLOG2DEV(x2)-dpx, YLOG2DEV(y2)-dpy);
-  CalcBoundingBox(x1, y1);
-  CalcBoundingBox(x2, y2);
   ReleaseCurrentDC();
 }
 
@@ -503,9 +463,6 @@ void wxCanvasDC::DrawArc(double x,double y,double w,double h,double start,double
     FrameArc(&rect, alpha1, alpha2);
   }
   
-  CalcBoundingBox(x, y);
-  CalcBoundingBox(x + w, y + h);
-
   ReleaseCurrentDC();
 }
 
@@ -521,7 +478,6 @@ void wxCanvasDC::DrawPoint(double x, double y)
   SetCurrentDC();
   wxMacSetCurrentTool(kPenTool);
   wxMacDrawPoint(XLOG2DEV(x), YLOG2DEV(y));
-  CalcBoundingBox(x, y);
   ReleaseCurrentDC();
 }
 
@@ -602,7 +558,6 @@ void wxCanvasDC::DrawPolygon(int n, wxPoint points[],
   for (i = 0; i < n; i++) {
     xpoints1[i].h = XLOG2DEV(points[i].x + xoffset);
     xpoints1[i].v = YLOG2DEV(points[i].y + yoffset);
-    CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
   }
 
   // Close figure
@@ -698,7 +653,6 @@ void wxCanvasDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffs
     for (i = 0; i < n; i++) {
       xpoints[i].h = XLOG2DEV(points[i].x + xoffset);
       xpoints[i].v = YLOG2DEV(points[i].y + yoffset); // WCH: original mistype "h" for "v"
-      CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset); // WCH: not in original??
     }
       
     thePolygon = OpenPoly();
@@ -798,8 +752,6 @@ void wxCanvasDC::DrawRectangle(double x, double y, double width, double height)
       wxMacSetCurrentTool(kPenTool);
       FrameRect(&theRect);
     }
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x + width, y + height);
   }
 
   ReleaseCurrentDC();
@@ -911,9 +863,6 @@ void wxCanvasDC::DrawRoundedRectangle
       wxMacSetCurrentTool(kPenTool);
       FrameRoundRect(&theRect, phys_rwidth, phys_rheight);
     }
-    
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x + width, y + height);
   }
 
   ReleaseCurrentDC();
@@ -959,8 +908,6 @@ void wxCanvasDC::DrawEllipse(double x, double y, double width, double height)
       wxMacSetCurrentTool(kPenTool);
       FrameOval(&theRect);
     }
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x + width, y + height);
   }
 
   ReleaseCurrentDC();
@@ -1059,9 +1006,6 @@ Bool wxCanvasDC::Blit(double xdest, double ydest, double width, double height,
       } else {
 	::CopyBits(srcbm, dstbm, &srcr, &destr, mode, NULL);
       }
-      
-      CalcBoundingBox(xdest, ydest);
-      CalcBoundingBox(xdest + width, ydest + height);
     }
   }
 

@@ -71,7 +71,6 @@ class wxCanvasDC: public wxbCanvasDC
 
   CGContextRef GetCG();
 
-  void FloodFill(double x1, double y1, wxColour* col, int style=wxFLOOD_SURFACE) ;
   Bool GetPixel(double x1, double y1, wxColour* col) ;
 
   void SetPixel(double x1, double y1, wxColour* col) ;
@@ -88,8 +87,6 @@ class wxCanvasDC: public wxbCanvasDC
   void GetPixelFast(int x, int y, int *r, int *g, int *b);
 
   void DrawLine(double x1, double y1, double x2, double y2);
-  void IntDrawLine(int x1, int y1, int x2, int y2);
-  void CrossHair(double x, double y) ;
   void DrawArc(double x1,double y1,double x2,double y2,double xc,double yc);
   void DrawPoint(double x, double y);
   void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0);

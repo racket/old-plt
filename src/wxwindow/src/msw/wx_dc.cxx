@@ -445,30 +445,6 @@ Bool wxDC::GlyphAvailable(int c, wxFont *f)
   return r;
 }
 
-void wxDC::FloodFill(double x, double y, wxColour *col, int style)
-{
-  HDC dc;
-  int xx;
-  int yy;
-
-  dc = ThisDC();
-  if (!dc) return;
-
-  ShiftXY(x, y, &xx, &yy);
-
-  SetBrush(current_brush);
-
-  (void)ExtFloodFill(dc, (int)XLOG2DEV(xx), (int)YLOG2DEV(yy),
-		     col->pixel,
-		     (style == wxFLOOD_SURFACE
-		      ? FLOODFILLSURFACE
-		      : FLOODFILLBORDER));
-
-  DoneDC(dc);
-
-  CalcBoundingBox((double)x, (double)y);
-}
-
 Bool wxDC::GetPixel(double x, double y, wxColour *col)
 {
   int xx1;
@@ -495,49 +471,6 @@ Bool wxDC::GetPixel(double x, double y, wxColour *col)
     col->Set(GetRValue(pixelcolor),GetGValue(pixelcolor),GetBValue(pixelcolor));
   
   return TRUE;
-}
-
-void wxDC::IntDrawLine(int x1, int y1, int x2, int y2)
-{
-  DrawLine(x1, y1, x2, y2);
-}
-
-void wxDC::CrossHair(double x, double y)
-{
-  HDC dc;
-  int xx, yy;
-  int xx1;
-  int yy1;
-  int xx2;
-  int yy2;
-
-  dc = ThisDC(); 
-
-  if (!dc) return;
-
-  ShiftXY(x, y, &xx, &yy);
-
-  // We suppose that our screen is 2000x2000 max.
-
-  xx1 = xx-2000;
-  yy1 = yy-2000;
-  xx2 = xx+2000;
-  yy2 = yy+2000;
-
-  if (StartPen(dc)) {
-    (void)MoveToEx(dc, (int)XLOG2DEV(xx1), (int)YLOG2DEV(yy), NULL);
-    (void)LineTo(dc, (int)XLOG2DEV(xx2), (int)YLOG2DEV(yy));
-    
-    (void)MoveToEx(dc, (int)XLOG2DEV(xx), (int)YLOG2DEV(yy1), NULL);
-    (void)LineTo(dc, (int)XLOG2DEV(xx), (int)YLOG2DEV(yy2));
-
-    DonePen(dc);
-  }
-
-  DoneDC(dc);
-  
-  CalcBoundingBox((double)x - 2000, (double)y - 2000);
-  CalcBoundingBox((double)x + 2000, (double)y + 2000);
 }
 
 void wxDC::DrawLine(double x1, double y1, double x2, double y2)
@@ -601,9 +534,6 @@ void wxDC::DrawLine(double x1, double y1, double x2, double y2)
   }
 
   DoneDC(dc);
-
-  CalcBoundingBox(x1, y1);
-  CalcBoundingBox(x2, y2);
 }
 
 static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
@@ -712,9 +642,6 @@ void wxDC::DrawArc(double x, double y, double w, double h, double start, double 
   }
   
   DoneDC(dc);
-  
-  CalcBoundingBox(x, y);
-  CalcBoundingBox(x + w, y + h);
 }
 
 void wxDC::DrawPoint(double x, double y)
@@ -747,8 +674,6 @@ void wxDC::SetPixel(double x, double y, wxColour *c)
   }
 
   DoneDC(dc);
-
-  CalcBoundingBox(x, y);
 }
 
 Bool wxDC::BeginSetPixelFast(int x, int y, int w, int h)
@@ -815,7 +740,6 @@ void wxDC::DrawPolygon(int n, wxPoint points[], double xoffset, double yoffset,i
     ShiftXY(points[i].x + xoffset, points[i].y + yoffset, &xoffset1, &yoffset1);
     cpoints[i].x = xoffset1;
     cpoints[i].y = yoffset1;
-    CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
   }
 
   prev = SetPolyFillMode(dc, (fillStyle == wxODDEVEN_RULE) ? ALTERNATE : WINDING);
@@ -853,7 +777,6 @@ void wxDC::DrawLines(int n, wxPoint points[], double xoffset, double yoffset)
       ShiftXY(points[i].x + xoffset, points[i].y + yoffset, &xoffset1, &yoffset1);
       cpoints[i].x = xoffset1;
       cpoints[i].y = yoffset1;
-      CalcBoundingBox(points[i].x + xoffset, points[i].y + yoffset);
     }
     
     (void)Polyline(dc, cpoints, n);
@@ -901,9 +824,6 @@ void wxDC::DrawRectangle(double x, double y, double width, double height)
     DonePen(dc);
   }
 
-  CalcBoundingBox((double)x, (double)y);
-  CalcBoundingBox((double)x + width, (double)y + height);
-
   DoneDC(dc);
 }
 
@@ -947,9 +867,6 @@ void wxDC::DrawRoundedRectangle(double x, double y, double width, double height,
 		    (int)YLOG2DEV(y2), (int)XLOG2DEV(radius), (int)YLOG2DEV(radius));
     DonePen(dc);
   }
-  
-  CalcBoundingBox((double)x, (double)y);
-  CalcBoundingBox((double)x + width, (double)y + height);
 
   DoneDC(dc);
 }
@@ -985,9 +902,6 @@ void wxDC::DrawEllipse(double x, double y, double width, double height)
   }
 
   DoneDC(dc);
-
-  CalcBoundingBox((double)x, (double)y);
-  CalcBoundingBox((double)x + width, (double)y + height);
 }
 
 void wxDC::SetFont(wxFont *the_font)
@@ -1174,16 +1088,13 @@ void wxDC::DrawText(const char *text, double x, double y, Bool combine, Bool ucs
     h += XDEV2LOGREL(sizeRect.cy);
 
     len -= alen;
-	d += alen;
+    d += alen;
   }
 
   if (current_text_background->Ok())
     (void)SetBkColor(dc, old_background);
 
   DoneDC(dc);
-
-  CalcBoundingBox((double)x, (double)y);
-  CalcBoundingBox((double)(x + w), (double)(y + h));
 }
 
 void wxDC::SetBackground(wxColour *c)

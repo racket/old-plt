@@ -126,7 +126,6 @@ public:
     Bool  CanGetTextExtent(void) { return TRUE; }
     Bool  CanDrawBitmap(void) { return TRUE; }
     void  Clear(void);
-    void  CrossHair(double x, double y);
     void  DrawArc(double x1, double y1, double x2, double y2, double xc, double yc);
     void  DrawEllipse(double x, double y, double w, double h);
     void  DrawLine(double x1, double y1, double x2, double y2);
@@ -137,13 +136,11 @@ public:
     void  DrawRoundedRectangle(double x, double y, double w, double h, double radius=20);
 
     void  DrawText(char *text, double x, double y, Bool combine = FALSE, Bool use16 = FALSE, int dt = 0, double angle = 0.0);
-    void  FloodFill(double x, double y, wxColour *col,int style=wxFLOOD_SURFACE);
     double GetCharHeight(void);
     double GetCharWidth(void);
     void  GetTextExtent(const char *s, double *w, double *h, double *descent = 0,
 			double *ext_leading = 0,	wxFont *font=NULL,
 			Bool combine=FALSE, Bool use16bit=FALSE, int dt=0);
-    void  IntDrawLine(int x1, int y1, int x2, int y2);
     void  SetBackground(wxColour *c);
     void  SetBrush(wxBrush *brush);
     void  SetClippingRect(double x, double y, double w, double h);
@@ -154,6 +151,7 @@ public:
     void  SetPen(wxPen *pen);
     void  SetTextBackground(wxColour *col);
     void  SetTextForeground(wxColour *col);
+
     // methods unique to wxWindowDC
     void  SetCanvasClipping(void);
 

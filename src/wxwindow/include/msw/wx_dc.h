@@ -82,8 +82,6 @@ class wxDC: public wxbDC
   void GetPixelFast(int x, int y, int *r, int *g, int *b);
 
   void DrawLine(double x1, double y1, double x2, double y2);
-  void IntDrawLine(int x1, int y1, int x2, int y2);
-  void CrossHair(double x, double y);
   void DrawArc(double x1,double y1,double x2,double y2,double xc,double yc);
   void DrawPoint(double x, double y);
 

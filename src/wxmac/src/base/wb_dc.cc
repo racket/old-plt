@@ -165,14 +165,6 @@ void wxbDC::SetLogicalScale(double x, double y)
   logical_scale_y = y;
 }
 
-void wxbDC::CalcBoundingBox(double x, double y)
-{
-  if (x < min_x) min_x = x;
-  if (y < min_y) min_y = y;
-  if (x > max_x) max_x = x;
-  if (y > max_y) max_y = y;
-}
-
 void wxbDC::TryColour(wxColour *src, wxColour *dest)
 {
   dest->CopyFrom(src);

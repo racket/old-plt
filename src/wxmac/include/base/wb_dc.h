@@ -105,12 +105,9 @@ class wxbDC: public wxObject
   inline virtual void BeginDrawing(void) {} ;
   inline virtual void EndDrawing(void) {} ;
 
-  virtual void FloodFill(double x1, double y1, wxColour *col, int style=wxFLOOD_SURFACE) = 0;
   virtual Bool GetPixel(double x1, double y1, wxColour *col) = 0;
 
   virtual void DrawLine(double x1, double y1, double x2, double y2) = 0;
-  virtual void IntDrawLine(int x1, int y1, int x2, int y2) = 0;
-  virtual void CrossHair(double x, double y) = 0;
   virtual void DrawArc(double x1,double y1,double x2,double y2,double xc,double yc)=0;
   virtual void DrawPoint(double x, double y) = 0;
   virtual void DrawLines(int n, wxPoint points[], double xoffset = 0, double yoffset = 0) = 0;
@@ -189,12 +186,6 @@ class wxbDC: public wxObject
   // Only works for PostScript *after* you've printed an image.
   // Gives width and height of image.
   virtual void GetSize(double *width, double *height);
-  virtual void CalcBoundingBox(double x, double y);
-  // Get the final bounding box of the PostScript or Metafile picture.
-  virtual inline double MinX(void) { return min_x; }
-  virtual inline double MaxX(void) { return max_x; }
-  virtual inline double MinY(void) { return min_y; }
-  virtual inline double MaxY(void) { return max_y; }
   virtual Bool Blit(double xdest, double ydest, double width, double height,
             wxBitmap *source, double xsrc, double ysrc, int rop = wxSOLID, 
             wxColour *c = NULL, wxBitmap *mask = NULL) = 0;

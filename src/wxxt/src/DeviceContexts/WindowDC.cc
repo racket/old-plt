@@ -881,8 +881,6 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 		       scaled_width, scaled_height,
 		       tx, ty, 1);
 	  }
-	  CalcBoundingBox(xdest, ydest);
-	  CalcBoundingBox(xdest + w, ydest + h);
 	  
 	  /* restore pen: */
 	  if (mask)
@@ -1125,46 +1123,45 @@ extern "C" {
 
 void wxWindowDC::Clear(void)
 {
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    FreeGetPixelCache();
-    
-    // clear means to clear the entire canvas without expose region clipping
-    // EXPOSE_REG = NULL;
-    // SetCanvasClipping();
-
-    // clear canvas
-    {
-      unsigned int w, h;
-      Window wdummy; int sdummy; unsigned int udummy;
-      XGetGeometry(DPY, DRAWABLE, &wdummy, &sdummy, &sdummy,
-		   &w, &h, &udummy, &udummy);
-      
-      XFillRectangle(DPY, DRAWABLE, BG_GC, 0, 0, w, h);
-
-    }
-}
-
-void wxWindowDC::CrossHair(double x, double y)
-{
-  int xx, yy;
-  double w, h;
-
+  unsigned int w, h;
+  Window wdummy; int sdummy; unsigned int udummy;
+  
   if (!DRAWABLE) // ensure that a drawable has been associated
     return;
-
+  
   FreeGetPixelCache();
+  
+  XGetGeometry(DPY, DRAWABLE, &wdummy, &sdummy, &sdummy,
+	       &w, &h, &udummy, &udummy);
+  
+#ifdef WX_USE_CAIRO
+  if (anti_alias && Colour) {
+    wxColour *c;
+    int r, g, b;
     
-  if (!current_pen || current_pen->GetStyle() == wxTRANSPARENT)
+    InitCairoDev();
+
+    c = current_background_color;
+    r = c->Red();
+    g = c->Green();
+    b = c->Blue();
+    cairo_set_rgb_color(CAIRO_DEV, r / 255.0, g / 255.0, b / 255.0);    
+
+    cairo_save(CAIRO_DEV);
+    cairo_default_matrix(CAIRO_DEV);    
+    cairo_new_path(CAIRO_DEV);
+    cairo_move_to(CAIRO_DEV, 0, 0);
+    cairo_line_to(CAIRO_DEV, w, 0);
+    cairo_line_to(CAIRO_DEV, w, h);
+    cairo_line_to(CAIRO_DEV, 0, h);
+    cairo_fill(CAIRO_DEV);
+    cairo_restore(CAIRO_DEV);
+
     return;
-  xx = XLOG2DEV(x);
-  yy = YLOG2DEV(y);
-
-  GetSize(&w, &h);
-
-  XDrawLine(DPY, DRAWABLE, PEN_GC, 0, yy, (int)w, yy);
-  XDrawLine(DPY, DRAWABLE, PEN_GC, xx, 0, xx, (int)h);
+  }
+#endif
+ 
+  XFillRectangle(DPY, DRAWABLE, BG_GC, 0, 0, w, h);
 }
 
 void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, double end)
@@ -1180,7 +1177,7 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
   FreeGetPixelCache();
 
 #ifdef WX_USE_CAIRO
-  if (anti_alias) {
+  if (anti_alias && Colour) {
     double pw;
 
     InitCairoDev();
@@ -1260,9 +1257,6 @@ void wxWindowDC::DrawArc(double x, double y, double w, double h, double start, d
     XFillArc(DPY,DRAWABLE,BRUSH_GC,xx,yy,ww,hh,alpha1,alpha2);
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
     XDrawArc(DPY,DRAWABLE,PEN_GC,xx,yy,ww,hh,alpha1,alpha2);
-
-  CalcBoundingBox(x, y);
-  CalcBoundingBox(x + w, y + h);
 }
 
 void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
@@ -1276,7 +1270,7 @@ void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
   FreeGetPixelCache();
 
 #ifdef WX_USE_CAIRO
-  if (anti_alias) {
+  if (anti_alias && Colour) {
     DrawArc(x, y, w, h, 0, 2 * wxPI);
     return;
   }
@@ -1295,8 +1289,6 @@ void wxWindowDC::DrawEllipse(double x, double y, double w, double h)
   if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
     XDrawArc(DPY, DRAWABLE, PEN_GC, x1, y1,
 	     w1 - WX_GC_CF, h1 - WX_GC_CF, 0, 64*360);
-  CalcBoundingBox(x, y);
-  CalcBoundingBox(x+w, y+h);
 }
 
 void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
@@ -1308,7 +1300,7 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT) {
 #ifdef WX_USE_CAIRO
-      if (anti_alias) {
+      if (anti_alias && Colour) {
 	double xx1 = x1, yy1 = y1, xx2 = x2, yy2 = y2, pw;
 
 	InitCairoDev();
@@ -1334,9 +1326,6 @@ void wxWindowDC::DrawLine(double x1, double y1, double x2, double y2)
 	XDrawLine(DPY, DRAWABLE, PEN_GC,
 		  XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
     }
-
-    CalcBoundingBox(x1, y1);
-    CalcBoundingBox(x2, y2);
 }
 
 void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
@@ -1356,7 +1345,7 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
   FreeGetPixelCache();
   
 #if defined(WX_USE_XFT) && !defined(WX_OLD_XFT)
-  if (anti_alias) {
+  if (anti_alias && Colour) {
     double pw;
     int i;
 
@@ -1390,7 +1379,6 @@ void wxWindowDC::DrawLines(int n, wxPoint pts[], double xoff, double yoff)
     xpts[i].x = x;
     y = YLOG2DEV(pts[i].y + yoff);
     xpts[i].y = y;
-    CalcBoundingBox(xpts[i].x, xpts[i].y);
   }
   XDrawLines(DPY, DRAWABLE, PEN_GC, xpts, n, 0);
 }
@@ -1404,7 +1392,6 @@ void wxWindowDC::DrawPoint(double x, double y)
     
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
 	XDrawPoint(DPY, DRAWABLE, PEN_GC, XLOG2DEV(x), YLOG2DEV(y));
-    CalcBoundingBox(x, y);
 }
 
 void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
@@ -1418,11 +1405,20 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
   FreeGetPixelCache();
 
 #ifdef WX_USE_CAIRO
-  if (anti_alias) {
+  if (anti_alias && Colour) {
     double pw;
 
     InitCairoDev();
 
+    pw = SetCairoPen();
+    if ((anti_alias == 2)
+	&& (scale_x == 1.0)
+	&& (scale_y == 1.0)
+	&& (pw <= 1.0)) {
+      xoff += 0.5;
+      yoff += 0.5;
+    }
+      
     if (SetCairoBrush()) {
       int i;     
 
@@ -1444,14 +1440,6 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
     if (pw) {
       int i;
 
-      if ((anti_alias == 2)
-	  && (scale_x == 1.0)
-	  && (scale_y == 1.0)
-	  && (pw <= 1.0)) {
-	xoff += 0.5;
-	yoff += 0.5;
-      }
-    
       cairo_new_path(CAIRO_DEV);
       cairo_move_to(CAIRO_DEV, pts[0].x + xoff, pts[0].y + yoff);
       for (i = 1; i < n; i++) {
@@ -1472,7 +1460,6 @@ void wxWindowDC::DrawPolygon(int n, wxPoint pts[], double xoff, double yoff,
     xpts[i].x = x;
     y = YLOG2DEV(pts[i].y + yoff);
     xpts[i].y = y;
-    CalcBoundingBox(xpts[i].x, xpts[i].y);
   }
   xpts[n].x = xpts[0].x; // close figure
   xpts[n].y = xpts[0].y;
@@ -1495,7 +1482,7 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
     FreeGetPixelCache();
     
 #ifdef WX_USE_CAIRO
-    if (anti_alias) {
+    if (anti_alias && Colour) {
       double pw;
       
       InitCairoDev();
@@ -1545,8 +1532,6 @@ void wxWindowDC::DrawRectangle(double x, double y, double w, double h)
       XFillRectangle(DPY, DRAWABLE, BRUSH_GC, x1, y1, w1, h1);
     if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
       XDrawRectangle(DPY, DRAWABLE, PEN_GC, x1, y1, w1 - WX_GC_CF, h1 - WX_GC_CF);
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x+w, y+h);
 }
 
 void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
@@ -1564,7 +1549,7 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
       radius = - radius * ((w < h) ? w : h);
 
 #ifdef WX_USE_CAIRO
-    if (anti_alias) {
+    if (anti_alias && Colour) {
       double xx = x, yy = y, ww = w, hh = h, pw;
 
       if ((anti_alias == 2)
@@ -1653,31 +1638,6 @@ void wxWindowDC::DrawRoundedRectangle(double x, double y, double w, double h,
 		 270*64, 90*64);
 	XDrawArc(DPY, DRAWABLE, PEN_GC, xx, yy+hh-dd, dd, dd, 180*64, 90*64);
     }
-    CalcBoundingBox(x, y);
-    CalcBoundingBox(x+w, y+h);
-}
-
-void wxWindowDC::FloodFill(double WXUNUSED(x), double WXUNUSED(y),
-			   wxColour *WXUNUSED(col),int WXUNUSED(style))
-{
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    FreeGetPixelCache();
-    
-    // don't know how to do it for X11
-}
-
-void wxWindowDC::IntDrawLine(int x1, int y1, int x2, int y2)
-{
-    if (!DRAWABLE) // ensure that a drawable has been associated
-	return;
-
-    FreeGetPixelCache();
-    
-    if (current_pen && current_pen->GetStyle() != wxTRANSPARENT)
-	XDrawLine(DPY, DRAWABLE, PEN_GC,
-		  XLOG2DEV(x1), YLOG2DEV(y1), XLOG2DEV(x2), YLOG2DEV(y2));
 }
 
 //-----------------------------------------------------------------------------
@@ -2405,13 +2365,6 @@ void wxWindowDC::DrawText(char *orig_text, double x, double y,
 	}
       }
     }
-  CalcBoundingBox(x, y);
-  {
-    int icx, icy;
-    icx = (int)cx;
-    icy = (int)cy;
-    CalcBoundingBox(x+XDEV2LOG(icx), y+YDEV2LOG(icy));
-  }
 }
 
 double wxWindowDC::GetCharHeight(void)

@@ -334,10 +334,11 @@
                            [_ (send summary-edit get-position init-pos-box)]
                            [_ (send summary-edit insert str)]
                            [_ (send summary-edit insert 
-                                (format " in file ~s line ~s"
+                                (format " in file ~s: line ~s, column ~s" 
                                   (file-name-from-path
                                     (zodiac:location-file loc))
-                                  (zodiac:location-line loc)))]
+                                  (zodiac:location-line loc)
+				  (zodiac:location-column loc)))]
                            [_ (send summary-edit insert #\newline)]
                            ;; Find start and end of word
                            [end (unbox init-pos-box)]

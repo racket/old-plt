@@ -288,9 +288,12 @@ static void MARK_stack_state(Scheme_Stack_State *ss)
 
   Scheme_Object **old = ss->runstack_start;
 
+  gcMARK(ss->runstack_alive);
+  if (ss->runstack_alive && *(ss->runstack_alive)) {
+    gcMARK(ss->runstack_start);
+    ss->runstack = ss->runstack_start + (ss->runstack - old);
+  }
   gcMARK(ss->runstack_saved);
-  gcMARK(ss->runstack_start);
-  ss->runstack = ss->runstack_start + (ss->runstack - old);
 }
 
 static void FIXUP_stack_state(Scheme_Stack_State *ss)

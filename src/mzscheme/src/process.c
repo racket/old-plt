@@ -533,7 +533,7 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
 				    Scheme_Manager *mgr)
 {
   Scheme_Process *process;
-  int prefix = 0;
+  int prefix = 0, *alive;
 
   ATSTEP("making process");
 
@@ -659,6 +659,9 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
   SCHEME_RELEASE_LOCK();
 
   process->runstack_size = INIT_SCHEME_STACK_SIZE;
+  alive = MALLOC_ONE_ATOMIC(int);
+  process->runstack_alive = alive;
+  *(alive) = 1;
   {
     Scheme_Object **sa;
     sa = scheme_malloc_allow_interior(sizeof(Scheme_Object*) * INIT_SCHEME_STACK_SIZE);
@@ -1245,6 +1248,7 @@ static void remove_process(Scheme_Process *r)
 #ifdef SENORA_GC_NO_FREE
   memset(r->runstack_start, 0, r->runstack_size * sizeof(Scheme_Object*));
 #else
+  *(r->runstack_alive) = 0;
   GC_free(r->runstack_start);
 #endif
   r->runstack_start = NULL;
@@ -1252,6 +1256,7 @@ static void remove_process(Scheme_Process *r)
 #ifdef SENORA_GC_NO_FREE
     memset(saved->runstack_start, 0, saved->runstack_size * sizeof(Scheme_Object*));
 #else
+    *(saved->runstack_alive) = 0;
     GC_free(saved->runstack_start);
 #endif
     saved->runstack_start = NULL;
@@ -2648,6 +2653,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
   np->runstack = p->runstack;
   np->runstack_start = p->runstack_start;
   np->runstack_size = p->runstack_size;
+  np->runstack_alive = p->runstack_alive;
   np->runstack_saved = p->runstack_saved;
   np->stack_start = p->stack_start;
   np->stack_end = p->stack_end;
@@ -2761,6 +2767,7 @@ static Scheme_Object *call_as_nested_process(int argc, Scheme_Object *argv[])
 
   np->nester = NULL;
   np->runstack_start = NULL;
+  np->runstack_alive = NULL;
   np->runstack_saved = NULL;
   np->list_stack = NULL;
   np->config = NULL;

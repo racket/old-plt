@@ -459,12 +459,13 @@ process_val {
 
   gcMARK(pr->config);
 
-  {
+  gcMARK(pr->runstack_alive);
+  if (pr->runstack_alive && *(pr->runstack_alive)) {
     Scheme_Object **rs = pr->runstack_start;
     gcMARK(pr->runstack_start);
     pr->runstack = pr->runstack_start + (pr->runstack - rs);
-    gcMARK(pr->runstack_saved);
   }
+  gcMARK(pr->runstack_saved);
   
   gcMARK(pr->cont_mark_stack_segments);
   
@@ -654,8 +655,11 @@ mark_saved_stack {
   Scheme_Object **old = saved->runstack_start;
   
   gcMARK(saved->prev);
-  gcMARK(saved->runstack_start);
-  saved->runstack = saved->runstack_start + (saved->runstack - old);
+  gcMARK(saved->runstack_alive);
+  if (saved->runstack_alive && *(saved->runstack_alive)) {
+    gcMARK(saved->runstack_start);
+    saved->runstack = saved->runstack_start + (saved->runstack - old);
+  }
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_Saved_Stack));

@@ -1968,6 +1968,7 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   Scheme_Process *p = scheme_current_process;
   Scheme_Saved_Stack *saved;
   void *v;
+  int *alive;
 
   saved = MALLOC_ONE_RT(Scheme_Saved_Stack);
 
@@ -1978,6 +1979,7 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   saved->runstack = MZ_RUNSTACK;
   saved->runstack_start = MZ_RUNSTACK_START;
   saved->runstack_size = p->runstack_size;
+  saved->runstack_alive = p->runstack_alive;
   
   size += TAIL_COPY_THRESHOLD;
   if (size < SCHEME_STACK_SIZE)
@@ -1985,6 +1987,9 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
 
   p->runstack_saved = saved;
   p->runstack_size = size;
+  alive = MALLOC_ONE_ATOMIC(int);
+  p->runstack_alive = alive;
+  *(alive) = 1;
   MZ_RUNSTACK_START = scheme_malloc_allow_interior(sizeof(Scheme_Object*) * size);
   MZ_RUNSTACK = MZ_RUNSTACK_START + size;
   
@@ -1994,6 +1999,7 @@ void *scheme_enlarge_runstack(long size, void *(*k)())
   MZ_RUNSTACK = saved->runstack;
   MZ_RUNSTACK_START = saved->runstack_start;
   p->runstack_size = saved->runstack_size;
+  p->runstack_alive = saved->runstack_alive;
 
   return v;
 }

@@ -18,9 +18,7 @@
                              (if (eq? kind 'mzscheme) mz mr)))
     (when (file-exists? dest)
       (delete-file dest))
-    (unless (copy-file src dest)
-      (error 'make-launcher "Couldn't copy template: ~a to destination: ~a" 
-              src dest)))
+    (copy-file src dest))
   
   (define (string-append/spaces f flags)
     (if (null? flags)

@@ -272,14 +272,18 @@ void *make_namespace_mutex;
 #define RELEASE_CUST_LOCK() /* empty */
 #else
 static void *will_mutex;
+# ifdef MZ_KEEP_LOCK_INFO
 static int will_lock_c;
-#define GET_WILL_LOCK() (SCHEME_LOCK_MUTEX(will_mutex), will_lock_c++)
-#define RELEASE_WILL_LOCK()  (--will_lock_c, SCHEME_UNLOCK_MUTEX(will_mutex))
+# endif
+# define GET_WILL_LOCK() (SCHEME_LOCK_MUTEX(will_mutex) _MZ_LOCK_INFO(will_lock_c++))
+# define RELEASE_WILL_LOCK()  (MZ_LOCK_INFO_(--will_lock_c) SCHEME_UNLOCK_MUTEX(will_mutex))
 
 static void *cust_mutex;
+# ifdef MZ_KEEP_LOCK_INFO
 static int cust_lock_c;
-#define GET_CUST_LOCK() (SCHEME_LOCK_MUTEX(cust_mutex), cust_lock_c++)
-#define RELEASE_CUST_LOCK()  (--cust_lock_c, SCHEME_UNLOCK_MUTEX(cust_mutex))
+# endif
+# define GET_CUST_LOCK() (SCHEME_LOCK_MUTEX(cust_mutex) _MZ_LOCK_INFO(cust_lock_c++))
+# define RELEASE_CUST_LOCK()  (MZ_LOCK_INFO_(--cust_lock_c) SCHEME_UNLOCK_MUTEX(cust_mutex))
 #endif
 
 #ifdef WIN32_THREADS
@@ -3252,6 +3256,43 @@ static void *start_pthread_thread(void *_cl)
   return NULL;
 }
 
+#ifdef MZ_KEEP_LOCK_INFO
+extern int scheme_fin_lock_c;
+static int made_printer = 0;
+static void print_lock_info(void *ignored)
+{
+  {
+    long start = scheme_get_milliseconds();
+    
+    do {
+      sleep(5);
+    } while ((scheme_get_milliseconds() - start) < 30000);
+  }
+
+  while (1) {
+    Scheme_Process *p;
+    int c = 0;
+    long start = scheme_get_milliseconds();
+    
+    do {
+      sleep(5);
+    } while ((scheme_get_milliseconds() - start) < 5000);
+    
+    for (p = scheme_first_process; p; p = p->next)
+      c++;
+    
+    printf("gl: %d cl: %d wl: %d fnl: %d tw: %d tc: %d fpb: %d\n", 
+	   scheme_global_lock_c,
+	   cust_lock_c, will_lock_c, scheme_fin_lock_c,
+	   c,
+	   scheme_first_process->block_descriptor);
+    for (p = scheme_first_process; p; p = p->next)
+      printf("[%d] ", p->block_descriptor);
+    printf("\n");
+  }
+}
+#endif
+
 void scheme_pthread_create_thread(void (*f)(void *), void *data, 
 				  unsigned long *stackend, void **thp)
 {
@@ -3271,12 +3312,23 @@ void scheme_pthread_create_thread(void (*f)(void *), void *data,
 
   pthread_create(&naya, NULL, start_pthread_thread, (void *)cl);
 
+  pthread_detach(naya);
+
   *thp = (void *)naya;
 
   sem_post(&cl->go_sema);
 
   sem_wait(&cl->stackset_sema);
   sem_destroy(&cl->stackset_sema);
+
+#ifdef MZ_KEEP_LOCK_INFO
+  if (!made_printer) {
+    void *th;
+    unsigned long e;
+    made_printer = 1;
+    scheme_pthread_create_thread(print_lock_info, NULL, &e, &th);
+  }
+#endif
 }
 
 void scheme_pthread_exit_thread()
@@ -3342,23 +3394,9 @@ int scheme_pthread_semaphore_up(void *s)
   return !sem_post((sem_t *)s);
 }
 
-static int pwaiting;
-
 int scheme_pthread_semaphore_down_breakable(void *s)
 {
-  int v;
-
-  SCHEME_GET_LOCK();
-  pwaiting++;
-  SCHEME_RELEASE_LOCK();
-
-  v = !sem_wait((sem_t *)s);
-
-  SCHEME_GET_LOCK();
-  --pwaiting;
-  SCHEME_RELEASE_LOCK();
-
-  return v;
+  return !sem_wait((sem_t *)s);
 }
 
 int scheme_pthread_semaphore_try_down(void *s)

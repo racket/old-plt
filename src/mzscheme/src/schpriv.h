@@ -738,16 +738,24 @@ extern Scheme_Object *scheme_null_break_poll;
 
 
 #ifndef MZ_REAL_THREADS
-#define SCHEME_GET_LOCK() /* empty */
-#define SCHEME_RELEASE_LOCK() /* empty */
+# define SCHEME_GET_LOCK() /* empty */
+# define SCHEME_RELEASE_LOCK() /* empty */
 #else
-#define SCHEME_SEMA_DOWN(sema) scheme_real_sema_down(sema)
+# define SCHEME_SEMA_DOWN(sema) scheme_real_sema_down(sema)
 void scheme_real_sema_down(void *sema);
 
 extern void *scheme_global_lock;
+# ifdef MZ_KEEP_LOCK_INFO
 extern int scheme_global_lock_c;
-#define SCHEME_GET_LOCK() (SCHEME_LOCK_MUTEX(scheme_global_lock), scheme_global_lock_c++)
-#define SCHEME_RELEASE_LOCK()  (--scheme_global_lock_c, SCHEME_UNLOCK_MUTEX(scheme_global_lock))
+#  define _MZ_LOCK_INFO(x) , x
+#  define MZ_LOCK_INFO_(x) x,
+# else
+#  define _MZ_LOCK_INFO(x) /**/
+#  define MZ_LOCK_INFO_(x) /**/
+# endif
+
+# define SCHEME_GET_LOCK() (SCHEME_LOCK_MUTEX(scheme_global_lock) _MZ_LOCK_INFO(scheme_global_lock_c++))
+# define SCHEME_RELEASE_LOCK()  (MZ_LOCK_INFO_(--scheme_global_lock_c) SCHEME_UNLOCK_MUTEX(scheme_global_lock))
 #endif
 
 #ifdef MUST_REGISTER_GLOBALS

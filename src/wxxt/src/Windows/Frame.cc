@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.cc,v 1.5 1998/04/11 13:57:30 mflatt Exp $
+ * $Id: Frame.cc,v 1.6 1998/07/13 21:00:16 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -451,7 +451,7 @@ Bool wxFrame::Show(Bool show)
 // virtual event functions
 //-----------------------------------------------------------------------------
 
-void wxFrame::OnMenuSelect(int id)
+void wxFrame::OnMenuSelect(long id)
 {
   SetStatusText(menubar->GetHelpString(id));
 }

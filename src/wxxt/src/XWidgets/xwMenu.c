@@ -1,4 +1,4 @@
-/* $Id: xwMenu.c,v 1.5 1998/04/22 15:36:35 mflatt Exp $ */
+/* $Id: xwMenu.c,v 1.6 1998/05/05 00:07:08 mflatt Exp $ */
 
 /***********************************************************
 Copyright 1995 by Markus Holzem
@@ -688,7 +688,7 @@ static void MenuButtonSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
     MenuTextSize(mw, item, in_menubar, l, m, r, h);
     if (!in_menubar && item->key_binding)
 	*r += StringWidth(mw, ResourcedText(mw, item, SUBRESOURCE_KEY)) 
-	      + mw->menu.spacing;
+	      + (3 * mw->menu.spacing);
 }
 
 static void MenuToggleSize(MenuWidget mw, menu_item *item, Boolean in_menubar,
@@ -843,7 +843,7 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	XDrawString(
 	    XtDisplay(mw), ms->win,
 	    item->enabled ? mw->menu.normal_GC : mw->menu.inactive_GC,
-	    x+ms->wLeft+ms->wMiddle+mw->menu.spacing,
+	    x+ms->wLeft+ms->wMiddle+(3 * mw->menu.spacing),
 	    y+mw->menu.shadow_width+mw->menu.vmargin+mw->menu.font->ascent,
 	    key, strlen(key));
 }

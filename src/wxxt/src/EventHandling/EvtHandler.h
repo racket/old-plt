@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: EvtHandler.h,v 1.2 1998/08/08 03:33:01 mflatt Exp $
+ * $Id: EvtHandler.h,v 1.3 1998/08/14 21:44:40 mflatt Exp $
  *
  * Purpose: base event handler of windows etc.
  *
@@ -83,8 +83,8 @@ public:
     inline virtual void OnKillFocus(void) {};
     inline virtual void OnLeftClick(int WXUNUSED(x), int WXUNUSED(y),
 				    int WXUNUSED(keys)) {};
-    inline virtual void OnMenuCommand(int WXUNUSED(cmd)) {};
-    inline virtual void OnMenuSelect(int WXUNUSED(cmd)) {};
+    inline virtual void OnMenuCommand(long WXUNUSED(cmd)) {};
+    inline virtual void OnMenuSelect(long WXUNUSED(cmd)) {};
     inline virtual void OnMove(int WXUNUSED(x), int WXUNUSED(y)) {};
     inline virtual void OnPaint(void) {};
     inline virtual void OnRightClick(int WXUNUSED(x), int WXUNUSED(y),

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Frame.h,v 1.1 1996/01/10 14:57:10 markus Exp $
+ * $Id: Frame.h,v 1.1.1.1 1997/12/22 17:28:58 mflatt Exp $
  *
  * Purpose: base class for all frames
  *
@@ -75,7 +75,7 @@ public:
     void  LoadAccelerators(char *WXUNUSED(resource)) {}
     Bool  Show(Bool show);
     // virtual event functions
-    virtual void  OnMenuSelect(int id);
+    virtual void  OnMenuSelect(long id);
 
     void SetToolBar(wxToolBar*);
     wxToolBar *GetToolBar(void);

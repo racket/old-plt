@@ -120,6 +120,10 @@
 		(printf "WARNING: bad bitmap ~s" filename)))
 	  (printf "WARNING: bitmap path ~s not found~n" filename)))))
 
+(define mred:no-more-splash-messages
+  (lambda ()
+    (set! mred:splash-message #f)))
+
 (define mred:change-splash-message
   (lambda (s)
     (when mred:splash-message

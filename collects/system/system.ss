@@ -129,6 +129,7 @@
 	(mred:change-splash-message "Command Line...")
 	(for-each (lambda (x) (apply (car x) (cdr x))) todo)
 	(mred:change-splash-message "Invoking...")
+	(mred:no-more-splash-messages)
 	(unless mred:non-unit-startup?
 	  (invoke-open-unit (mred:make-invokable-unit) #f)
 	  (when mred:load-user-setup?

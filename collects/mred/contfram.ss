@@ -159,7 +159,9 @@
 			(begin
 			  (mred:debug:printf
 			    'container-frame-correct-size
-			    "container-frame-correct-size: setting panel's size to ~s ~s ~s ~s"
+			    (string-append
+			    "container-frame-correct-size: "
+			    "setting panel's size to ~s ~s ~s ~s")
 			    WX-BORDER-SIZE WX-BORDER-SIZE
 			    (- f-client-w (* 2 WX-BORDER-SIZE))
 			    (- f-client-h (* 2 WX-BORDER-SIZE)))
@@ -233,11 +235,17 @@
 		      correct-w correct-h)
 		    (unless (and (= new-width correct-w)
 			      (= new-height correct-h))
-		      (mred:debug:printf 'container-frame-on-size
-			"container-frame-on-size: resizing frame to correct size")
+		      (mred:debug:printf 
+		       'container-frame-on-size
+		       (string-append
+			"container-frame-on-size: "
+			"resizing frame to correct size"))
 		      (set-size -1 -1 correct-w correct-h))
-		    (mred:debug:printf 'container-frame-on-size
-		      "container-frame-on-size: Leaving onsize at the end."))))])
+		    (mred:debug:printf 
+		     'container-frame-on-size
+		     (string-append
+		      "container-frame-on-size: "
+		      "Leaving onsize at the end.")))))])
 	  (sequence
 	    (apply super-init args)
 	    (set! object-ID counter)

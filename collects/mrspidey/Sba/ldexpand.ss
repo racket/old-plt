@@ -160,6 +160,7 @@
 
   (define (expander-eval e)
     (parameterize ([current-namespace expander-namespace])
+      (printf "~a~n" e)
       (eval e)))
   '(when (st:system-expand)
      (expander-eval '(load "/home/cormac/Spidey/Code/Sba/expander-boot.ss")))
@@ -341,14 +342,13 @@
 
   (define (my-scheme-expand-program defs needs-expand?)
     ;;(printf "my-scheme-expand-program defs=~s~n" defs)
-    (parameterize ([current-namespace expander-namespace])
-      (require-library "core.ss")
-      (require-library "macro.ss"))
     (let* ([defs2 (if needs-expand?
-		      (zodiac:scheme-expand-program 
-		       defs
-		       attributes
-		       zodiac:mrspidey-vocabulary)
+		      (parameterize ([current-namespace expander-namespace])
+			(zodiac:prepare-current-namespace-for-vocabulary zodiac:mrspidey-vocabulary)
+			(zodiac:scheme-expand-program 
+			 defs
+			 attributes
+			 zodiac:mrspidey-vocabulary))
 		      defs)]
 	   [defs2 (zodiac:inline-begins defs2)]
 	   [_ (zodiac:initialize-mutated defs2)]

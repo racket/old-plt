@@ -1,3 +1,25 @@
+(reference-library "file.ss")
+(reference-library "prettyu.ss")
+
+(begin-elaboration-time
+  (define plt-home-directory
+    (let ([plt (getenv "PLTHOME")])
+      (normalize-path
+	(or plt
+	  (case (system-type)
+	    [unix "/usr/local/lib/plt/"]
+	    [windows "C:\\PLT"]
+	    [else (let-values ([(base name dir?)
+				 (split-path (current-directory))])
+		    (if (string? base)
+		      base
+		      (current-directory)))]))))))
+(require-library (build-path (begin-elaboration-time plt-home-directory)
+		   "lib" "require.ss"))
+(plt:require-library "sparams.ss")
+
+(reference "load.ss")
+
 (define zodiac:default-interface@
   (unit/sig zodiac:interface^
     (import)

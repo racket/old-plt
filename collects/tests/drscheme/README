@@ -14,6 +14,11 @@ the function, all tests will be run.
 
    runs some memory tests
 
+|# stepper-test.ss #|
+
+   runs the stepper on the sample solutions and
+   checks the results.
+   
 |# io.ss #|
 
    This tests the drscheme's io implementation.

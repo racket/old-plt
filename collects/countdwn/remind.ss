@@ -296,7 +296,7 @@
 	       [topm (box 0)]
 	       [bottomm (box 0)]
 	       [left-edge-box (box 0)]
-	       [top-edge-box (box 0)])
+	       [ignored-box (box 0)])
 	   (lambda (s)
 	     (when (is-a? s editor-snip%)
 	       (let* ([edit (get-editor)]
@@ -313,7 +313,7 @@
 		 (let ([fallback
 			(lambda ()
 			  (send edit get-snip-position-and-location
-				s #f left-edge-box top-edge-box))])
+				s #f left-edge-box ignored-box))])
 		   (cond
 		    [(let ([prev (send s previous)])
 		       (and prev
@@ -323,15 +323,17 @@
 
 
 		 
-		 (let ([snip-width (- (unbox width)
-				      (unbox left-edge-box)
-				      (unbox leftm)
-				      (unbox rightm)
-				      
-				      ;; this two is the space that 
-				      ;; the caret needs at the right of
-				      ;; a buffer.
-				      2)])
+		 (let ([snip-width
+			(max 0
+			     (- (unbox width)
+				(unbox left-edge-box)
+				(unbox leftm)
+				(unbox rightm)
+				
+				;; this two is the space that 
+				;; the caret needs at the right of
+				;; a buffer.
+				2))])
 		   (send* s 
 			  (set-min-width snip-width)
 			  (set-max-width snip-width))

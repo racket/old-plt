@@ -28,8 +28,9 @@
     (if (eq? 'windows (system-type))
       (lambda (str) (regexp-replace* #rx"\\\\" (simplify-path str) "/"))
       simplify-path))
-  (define plthome/ (regexp-replace #rx"/?$" (simplify-path* plthome) "/"))
-  (define plthome/-len (string-length plthome/))
+  (define plthome/ (and plthome
+			(regexp-replace #rx"/?$" (simplify-path* plthome) "/")))
+  (define plthome/-len (and plthome/ (string-length plthome/)))
   (define (maybe-cdr-op f)
     (lambda (x)
       (if (and (pair? x) (not (eq? 'plthome (car x))))

@@ -820,6 +820,7 @@
 	   (cond
 	    [(null? e) #t]
 	    [(or (memq (tok-n (car e)) seps)
+		 (braces? (car e))
 		 (once (car e)))
 	     (loop (cdr e))]
 	    [else #f])))))

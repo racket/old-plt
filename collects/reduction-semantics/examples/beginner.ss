@@ -240,11 +240,11 @@ reflects the (broken) spec).
       . e--> .
       "+: expects type <number>")
      
-     ((side-condition (/ number_1 number_2s ...)
+     ((side-condition (/ number_1 number_2 ...)
                       (andmap (lambda (number_2) (not (zero? number_2))) (term (number_2 ...))))
       . --> .
-      (apply / (term (number_1 number_2s ...))))
-     ((side-condition (/ number_1 number_2s ...)
+      (apply / (term (number_1 number_2 ...))))
+     ((side-condition (/ number_1 number_2 ...)
                       (ormap (lambda (number_2) (zero? number_2)) (term (number_2 ...))))
       . e--> . 
       "/: division by zero")

@@ -86,7 +86,7 @@ scheme_temp_dec_mark_depth
 scheme_temp_inc_mark_depth
 scheme_current_continuation_marks
 scheme_do_eval
-scheme_eval_nice_compiled_string
+scheme_eval_compiled_stx_string
 GC_malloc
 GC_malloc_atomic
 GC_malloc_stubborn

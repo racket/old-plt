@@ -1629,9 +1629,16 @@ static long read_compact_number(CPort *port)
 
   flag = CP_GETC(port);
 
-  if (flag < 253)
+  if (flag < 252)
     return flag;
-  if (flag == 254)
+  else if (flag == 252) {
+    a = CP_GETC(port);
+    b = CP_GETC(port);
+    
+    v = a
+      + (b << 8);
+    return v;
+  } else if (flag == 254)
     return -CP_GETC(port);
   
   a = CP_GETC(port);
@@ -2150,13 +2157,20 @@ static long read_compact_number_from_port(Scheme_Object *port)
 
   flag = scheme_getc(port);
 
-  if (flag < 253)
+  if (flag < 252)
     return flag;
   if (flag == 254)
     return -scheme_getc(port);
   
   a = scheme_getc(port);
   b = scheme_getc(port);
+
+  if (flag == 252) {
+    v = a
+      + (b << 8);
+    return v;
+  }
+
   c = scheme_getc(port);
   d = scheme_getc(port);
 

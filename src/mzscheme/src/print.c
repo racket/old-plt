@@ -700,12 +700,19 @@ static void print_compact_number(Scheme_Thread *p, long n)
       n = -n;
       s[0] = 255;
     }
-  } else if (n < 253) {
+  } else if (n < 252) {
     s[0] = n;
     print_this_string(p, (char *)s, 1);
     return;
-  } else
+  } else if (n < 0x10000) {
+    s[0] = 252;
+    s[1] = n & 0xFF;
+    s[2] = (n >> 8) & 0xFF;
+    print_this_string(p, (char *)s, 3);
+    return;
+  } else {
     s[0] = 253;
+  }
 
   s[1] = n & 0xFF;
   s[2] = (n >> 8) & 0xFF;

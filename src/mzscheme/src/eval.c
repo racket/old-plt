@@ -3456,8 +3456,7 @@ Scheme_Object *scheme_eval_linked_expr_multi(Scheme_Object *obj, int let_depth)
 }
 
 /* for mzc: */
-Scheme_Object *
-scheme_eval_nice_compiled_string(Scheme_Object *str, Scheme_Env *env)
+Scheme_Object *scheme_eval_compiled_stx_string(Scheme_Object *str, Scheme_Env *env)
 {
   Scheme_Object *port, *expr;
 #ifdef MZ_REAL_THREADS

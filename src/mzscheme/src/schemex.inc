@@ -115,7 +115,7 @@
 #else
   scheme_extension_table->scheme_do_eval_w_thread = scheme_do_eval_w_thread;
 #endif
-  scheme_extension_table->scheme_eval_nice_compiled_string = scheme_eval_nice_compiled_string;
+  scheme_extension_table->scheme_eval_compiled_stx_string = scheme_eval_compiled_stx_string;
 #ifndef SCHEME_NO_GC
 # ifndef SCHEME_NO_GC_PROTO
   scheme_extension_table->GC_malloc = GC_malloc;

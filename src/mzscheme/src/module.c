@@ -456,7 +456,7 @@ void scheme_install_initial_module_set(Scheme_Env *env)
   /* Copy renamings: */
   if (!env->rename) {
     Scheme_Object *rn;
-    rn = scheme_make_module_rename(0, 0);
+    rn = scheme_make_module_rename(0, 1);
     env->rename = rn;
   }
   scheme_append_module_rename(initial_renames, env->rename);

@@ -46,10 +46,16 @@
 	       (set-plt-browser!)
                ; shutdown old server
 	       ((hd-cookie->exit-proc hd-cookie))
+	       (fprintf (current-error-port)
+			"Switching to PLT browser.~n")
 	       (internal-start-help-server hd-cookie)
                (set! browser-param (external-browser))
 	       (send-url url)))])
-	  (send-url (build-dispatch-url hd-cookie url)))))
+          (with-handlers 
+	    ([void (lambda _ (fprintf (current-error-port)
+				      (string-append
+				       "Help Desk browser failed.~n")))])
+	    (send-url (build-dispatch-url hd-cookie url))))))
 
   (define (help-desk-browser hd-cookie)
     (help-desk-navigate hd-cookie 

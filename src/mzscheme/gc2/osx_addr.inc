@@ -15,10 +15,8 @@
 #define EXTRACT_REGC(iw)    (((iw) & 0x0000F800) >> 11)
 #define EXTRACT_DISP(iw)    ((short *) &(iw))[1]
 
-static char *get_fault_addr(struct sigcontext *scp)
+static char *get_fault_addr(unsigned int instr, unsigned int * regs)
 {
-   unsigned int   instr = *((unsigned int *) scp->sc_ir);
-   unsigned int * regs = &((unsigned int *) scp->sc_regs)[2];
    int            disp = 0, tmp;
    unsigned int   baseA = 0, baseB = 0;
    unsigned int   addr, alignmask = 0xFFFFFFFF;

@@ -10,6 +10,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__) && !defined(OS_X)
+# define OS_X
+#endif
+
 /**************** Configuration ****************/
 
 #define GROW_FACTOR 1.5
@@ -23,9 +27,13 @@
 #endif
 
 #ifdef OS_X
-/* In 10.2, SIGBUS handling doesn't work right. */
 # undef GENERATIONS
-# define GENERATIONS 0
+# define GENERATIONS 1
+/* Under OS, the SIGBUS handler seems not to receive the right
+   information about the fault. We figured out where the relevant
+   information is on the stack --- as an offset from the last argument
+   to the handler --- but it's quite a hack.  So we make it easy to
+   disable above. */
 #endif
 
 #define USE_FREELIST 0
@@ -3132,7 +3140,7 @@ static void designate_modified(void *p)
 
 /**********************************************************************/
 
-/* Linux signal handler: */
+/* ========== Linux signal handler ========== */
 #if defined(linux)
 # include <signal.h>
 # include <linux/version.h>
@@ -3157,7 +3165,7 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
 }
 #endif
 
-/* FreeBSD signal handler: */
+/* ========== FreeBSD signal handler ========== */
 #if defined(__FreeBSD__)
 # include <signal.h>
 void fault_handler(int sn, int code, struct sigcontext *sc, char *addr)
@@ -3167,7 +3175,7 @@ void fault_handler(int sn, int code, struct sigcontext *sc, char *addr)
 # define NEED_SIGBUS
 #endif
 
-/* Solaris signal handler: */
+/* ========== Solaris signal handler ========== */
 #if defined(sun)
 # include <signal.h>
 void fault_handler(int sn, struct siginfo *si, void *ctx)
@@ -3178,7 +3186,7 @@ void fault_handler(int sn, struct siginfo *si, void *ctx)
 # define USE_SIGACTON_SIGNAL_KIND SIGSEGV
 #endif
 
-/* Windows signal handler: */
+/* ========== Windows signal handler ========== */
 #if defined(_WIN32)
 LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e) 
 {
@@ -3193,15 +3201,32 @@ LONG WINAPI fault_handler(LPEXCEPTION_POINTERS e)
 # define NEED_SIGWIN
 #endif
 
-/* Mac OS X signal handler: */
-#if defined(__APPLE__) && defined(__ppc__) && defined(__MACH__)
+/* ========== Mac OS X signal handler ========== */
+#if defined(OS_X)
+/* Note: sigaction with SA_SIGINFO doesn't work.  si->si_addr is
+   normally the faulting referenced address (on other platforms), but
+   it turns out to be the faulting instruction address in 10.2. So we
+   have to parse machine-code instructions and look at the
+   registers. */
 # include <signal.h>
 # include "osx_addr.inc"
-void fault_handler(int sn, int code, struct sigcontext *sc)
+void fault_handler(int sn, siginfo_t *si, struct sigcontext *scp)
 {
-  designate_modified(get_fault_addr(sc));
-}
+# if 0
+  /* Old approach from CGC, doesn't seem to work in 10.2 because scp
+     is nonsense. */
+  unsigned int   instr = *((unsigned int *) scp->sc_ir);
+  unsigned int * regs = &((unsigned int *) scp->sc_regs)[2];
+  designate_modified(get_fault_addr(instr, regs));
+# else
+  /* Hack: relevant context info seems to be 50 words deeper into the
+     stack than &scp */
+  unsigned int   instr = *(((unsigned int **)&scp)[50]);
+  unsigned int * regs = ((unsigned int *)&scp) + 52;
+  designate_modified(get_fault_addr(instr, regs));
+# endif
 # define NEED_OSX_SIGBUS
+}
 #endif
 
 #endif /* GENERATIONS */

@@ -251,14 +251,15 @@ static int finish_cmd_line_run(FinishArgs *fa, Repl_Proc repl)
 	  break;
 	}
       } else if (fa->eval_kind[i] == mzcmd_MAIN) {
-	if (!exit_val) {
-	  if (!scheme_setjmp(scheme_error_buf)) {
-	    Scheme_Object *a[1], *m;
-	    
-	    m = scheme_eval_string("main", fa->global_env);
-	    a[0] = scheme_vector_to_list(fa->main_args);
-	    (void)scheme_apply(m, 1, a);
-	  }
+	if (!scheme_setjmp(scheme_error_buf)) {
+	  Scheme_Object *a[1], *m;
+	  
+	  m = scheme_eval_string("main", fa->global_env);
+	  a[0] = scheme_vector_to_list(fa->main_args);
+	  (void)scheme_apply(m, 1, a);
+	} else {
+	  exit_val = 1;
+	  break;
 	}
       }
     }
@@ -944,7 +945,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 # endif
 	 "  -w, --awk : Same as -l awk.ss.\n"
 	 "  -k <n> <m> : Load executable-embedded code from file offset <n> to <m>.\n"
-	 "  -C, --main : Call `main' with a list of arg strings, if no prior errors.\n"
+	 "  -C, --main : Call `main' with a list of arg strings.\n"
 	 " Initialization switches:\n"
          "  -x, --no-lib-path : Skips trying to set current-library-collection-paths.\n"
 	 "  -q, --no-init-file : Skips trying to load " INIT_FILENAME ".\n"
@@ -990,9 +991,10 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 " the image. Images are not supported on all platforms.\n"
 #endif
          "Expressions/files/--main/etc. are evaluated/loaded in order as provided.\n"
+	 " An error during evaluation/loading causes later ones to be skipped.\n"
 	 "The current-library-collection-paths is automatically set before any\n"
-	 "  expressions/files are evaluated/loaded, unless the -x or --no-lib-path\n"
-	 "  switch is used.\n"
+	 " expressions/files are evaluated/loaded, unless the -x or --no-lib-path\n"
+	 " switch is used.\n"
 	 "The file " INIT_FILENAME
 	 " is loaded before any provided expressions/files\n"
 	 " are evaluated/loaded, unless the -q or --no-init-file switch is used.\n"

@@ -4,6 +4,36 @@
 
     (define-struct url (method path search fragment))
 
+    ;; if the path is absolute, it just arbitrarily picks the first
+    ;; filesystem root.
+    (define unixpath->path
+      (letrec* ([r (regexp "([^/]*)/(.*)")]
+		[translate-dir
+		 (lambda (s)
+		   (cond
+		    [(string=? s "") 'same] ;; handle double slashes
+		    [(string=? s "..") 'up]
+		    [(string=? s ".") 'same]
+		    [else s]))]
+		[build-relative-path
+		 (lambda (s)
+		   (let ([m (regexp-match r s)])
+		     (cond
+		      [(string=? s "") 'same]
+		      [(not m) s]
+		      [else
+		       (build-path (translate-dir (cadr m))
+				   (build-relative-path (caddr m)))])))])
+	       (lambda (s)
+		 (let ([root (car (filesystem-root-list))])
+		   (cond
+		    [(string=? s "") ""]
+		    [(string=? s "/") root]
+		    [(char=? #\/ (string-ref s 0))
+		     (build-path root
+				 (build-relative-path (substring s 1 (string-length s))))]
+		    [else (build-relative-path s)])))))
+
     (define character-set-size 256)
 
     (define marker-list

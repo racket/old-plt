@@ -1,8 +1,6 @@
 (define mred:non-unit-startup? #f)
 (define mred:load-user-setup? #t)
 
-(define mred@ #f)
-
 (define mred:build-spidey-unit
   (lambda ()
     (when mred:output-spidey-file
@@ -13,7 +11,7 @@
 	     (define mred:explicit-wx? #t)
 	     (define plt:home-directory ,plt:home-directory)
 	     (define mred:plt-home-directory ,mred:plt-home-directory)
-	     (current-library-path ,(current-library-path)))
+	     (current-library-path (list ,@(current-library-collection-paths))))
 	   port)
 
 	  (pretty-print `(reference-library "match.ss") port)
@@ -36,8 +34,7 @@
 	     (compound-unit/sig (import)
 	       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 		     [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
-		     [mred : mred^ ((reference-unit/sig ,(build-path mred:system-source-directory 
-								     "link.ss"))
+		     [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 				    core trigger application)]
 		     [application : mred:application^
 				  ((reference-unit/sig ,(cond
@@ -55,19 +52,14 @@
 
 (define mred:make-invokable-unit 
   (lambda ()
-    (let ([app (load-recent mred:app-location)])
+    (let ([app (load/use-compiled mred:app-location)])
       (unless (unit/sig? app)
 	(error 'invokation "the application file didn't return a unit, got: ~a" app))
       (let ([U
 	     (compound-unit/sig (import)
 	       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 		     [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
-		     [mred : mred^ ((let ([u@ (reference-unit/sig
-					       (begin-elaboration-time
-						(build-path mred:system-source-directory
-							    "link.ss")))])
-				      (set! mred@ u@)
-				      u@)
+		     [mred : mred^ ((reference-library-unit/sig "link.ss" "mred")
 				    core trigger application)]
 		     [application : mred:application^ (app mred core)])
 	       (export (open mred)

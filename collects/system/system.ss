@@ -1,9 +1,7 @@
-; Always load the standard system with load/cd
-
 (error-print-width 250)
 
 (when (getenv "MREDCOMPILE")
-  (load "compsys.ss"))
+  (load-relative "compsys.ss"))
 
 (define mred:explicit-wx? #f)
 
@@ -13,7 +11,7 @@
 (define mred:original-input-port-backup mred:original-output-port)
 
 ; Remember this directory
-(define mred:system-source-directory (current-directory))
+(define mred:system-source-directory (current-load-relative-directory))
 (constant-name 'mred:system-source-directory)
 
 (define mzlib:constant-lib? #t)
@@ -42,14 +40,19 @@
 					"mred.gif"))
 (define mred:default-splash-title "MrEd")
 
+(current-library-collection-paths
+ (list* (build-path plt:home-directory "lib")
+	mred:system-source-directory
+	(current-library-collection-paths)))
+
 (let ([libdir
-       (let ([try-dir (build-path (current-directory) 'up "mzlib")])
+       (let ([try-dir (build-path mred:system-source-directory 'up "mzlib")])
 	 (if (directory-exists? try-dir)
 	     try-dir
-	     (let ([try-dir (build-path (current-directory) 'up "mzscheme" "mzlib")])
+	     (let ([try-dir (build-path mred:system-source-directory 'up "mzscheme" "mzlib")])
 	       (if (directory-exists? try-dir)
 		   try-dir
-		   (let ([try-dir (build-path (current-directory) 'up 'up "mzscheme" "mzlib")])
+		   (let ([try-dir (build-path mred:system-source-directory 'up 'up "mzscheme" "mzlib")])
 		     (if (directory-exists? try-dir)
 			 try-dir
 			 (let* ([v (getenv "PLTHOME")]
@@ -61,39 +64,34 @@
 					  [(eq? wx:platform 'windows)
 					   "c:\\plt"]
 					  [else ; macintosh (there is no good default here)
-					   (current-directory)]))])
+					   mred:system-source-directory]))])
 			   (build-path dir "mzscheme" "mzlib"))))))))])
-  (current-library-path libdir))
+
+  (unless (directory-exists? libdir)
+    (wx:message-box "Cannot find the MzScheme libraries." "Error")
+    (error 'mrsystem "cannot find the MzScheme libraries"))
+  (current-library-collection-paths
+   (cons libdir (current-library-collection-paths))))
 
 (require-library "referc.ss")
 
-(load "debug.ss")
-(load "splash.ss")
+(load-relative "debug.ss")
+(load-relative "splash.ss")
 
 (mred:debug:printf 'startup "mred:plt-home-directory: ~a" mred:plt-home-directory)
 (mred:debug:printf 'startup "mred:system-source-directory: ~a" mred:system-source-directory)
 
 (define (load-system)
-  (let ([old (current-directory)])
 
-    (when (not (directory-exists? (current-library-path)))
-      (wx:message-box "Cannot find the MzScheme libraries." "Error")
-      (error 'mrsystem "cannot find the MzScheme libraries"))
+  (require-library "corec.ss")
+  (require-library "triggerc.ss")
 
-    (require-library "corec.ss")
-    (require-library "triggerc.ss")
+  (reference-library "sig.ss" "mred")
+  (when mred:app-sig-location
+    (load/use-compiled mred:app-sig-location))
+  (reference "invoke.ss"))
 
-    (let ([p (build-path mred:plt-home-directory "lib" "require.ss")])
-      (when (file-exists? p)
-	(require-library p)))
-
-    (reference "macros.ss")
-    (reference "sig.ss")
-    (when mred:app-sig-location
-      (load-recent mred:app-sig-location))
-    (reference "invoke.ss")))
-
-(define mred:mred-startup-directory #f)
+(define mred:mred-startup-directory (current-directory))
 
 ;; called with the arguments on the command line
 (define mred:initialize
@@ -102,8 +100,6 @@
 	[todo null]
 	[no-show-splash? #f])
     (lambda args
-      (unless mred:mred-startup-directory
-	(set! mred:mred-startup-directory (current-directory)))
       (cond
 	[(null? args)
 	 (current-directory mred:system-source-directory)
@@ -118,7 +114,8 @@
 		(unbox path-box)
 		default-path)))
 	 (load-system)
-	 (current-library-path (normalize-path (current-library-path)))
+	 (current-library-collection-paths
+	  (map normalize-path (current-library-collection-paths)))
 	 (set! mred:plt-home-directory (normalize-path mred:plt-home-directory))
 	 ;(constant-name 'mred:plt-home-directory)
 	 (when (and (eq? wx:platform 'windows))
@@ -156,7 +153,7 @@
 		    (current-directory mred:mred-startup-directory)
 		    (begin0(f x)
 			   (current-directory mred:system-source-directory))))]
-	       [do-f (wrap load-with-cd)]
+	       [do-f (wrap load/cd)]
 	       [do-e (wrap eval-string)]
 	       [ep
 		(lambda (x)

@@ -1,4 +1,4 @@
-(begin-elaboration-time
+(begin-construction-time
  (define mred:constants:debug-param (current-parameterization))
  (define mred:constants:debug-param-backup mred:constants:debug-param)
  (define mred:constants:debug-on

@@ -42,7 +42,7 @@
     (get-preference pref (lambda () default)))
 
   (define (get-bool-pref/default pref default)
-    (let ([raw-pref (get-pref/default pref (lambda () default))])
+    (let ([raw-pref (get-pref/default pref default)])
       (if (string=? raw-pref "false") #f #t)))
 
   (define (put-prefs names vals)

@@ -16,8 +16,6 @@
 
 #include "mysterx.h"
 
-#include "htmlutil.h"
-
 IHTMLElement *findBodyElement(IHTMLDocument2 *pDocument,
 			      char *tag,char *id,int index) {
   IHTMLElementCollection *pTagCollection;
@@ -209,11 +207,7 @@ Scheme_Object *mx_element_focus(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   IHTMLElement2 *pIHTMLElement2;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-focus","mx-element",0,argc,argv);
-  }
-
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
+  pIHTMLElement = MX_ELEMENT_VAL (GUARANTEE_ELEMENT ("element-focus", 0));
 
   hr = pIHTMLElement->QueryInterface(IID_IHTMLElement2,
 				     (void **)&pIHTMLElement2);
@@ -237,11 +231,7 @@ Scheme_Object *mx_element_selection(int argc,Scheme_Object **argv) {
   IHTMLSelectElement *pIHTMLSelectElement;
   BSTR selection;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-selection","mx-element",0,argc,argv);
-  }
-
-  pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
+  pIHTMLElement = MX_ELEMENT_VAL (GUARANTEE_ELEMENT ("element-selection", 0));
 
   hr = pIHTMLElement->QueryInterface(IID_IHTMLSelectElement,
 				     (void **)&pIHTMLSelectElement);
@@ -267,14 +257,8 @@ Scheme_Object *mx_element_set_selection(int argc,Scheme_Object **argv) {
   IHTMLSelectElement *pIHTMLSelectElement;
   BSTR selection;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-set-selection!","mx-element",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("element-set-selection!","string or symbol",1,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("element-set-selection!", 0);
+  GUARANTEE_STRSYM ("element-set-selection!", 1);
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
@@ -306,14 +290,8 @@ Scheme_Object *mx_element_stuff_html(int argc,Scheme_Object **argv,WCHAR *where,
   IHTMLElement *pIHTMLElement;
   BSTR whereBSTR,htmlBSTR;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type(name,"mx-element",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type (name,"string or symbol",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT (name, 0);
+  GUARANTEE_STRSYM (name, 1);
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
@@ -340,14 +318,8 @@ Scheme_Object *mx_element_stuff_text(int argc,Scheme_Object **argv,WCHAR *where,
   IHTMLElement *pIHTMLElement;
   BSTR whereBSTR,textBSTR;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type(name,"mx-element",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type(name,"string or symbol",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT (name, 0);
+  GUARANTEE_STRSYM (name, 1);
 
   pIHTMLElement = MX_ELEMENT_VAL(argv[0]);
 
@@ -374,14 +346,8 @@ Scheme_Object *mx_element_replace_html(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   BSTR htmlBSTR;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-replace-html","mx-element",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("element-replace-html","string or symbol",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("element-replace-html", 0);
+  GUARANTEE_STRSYM ("element-replace-html", 1);
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
     scheme_signal_error("element-replace-html: Element no longer valid");
@@ -407,9 +373,7 @@ Scheme_Object *mx_element_get_html(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   Scheme_Object *retval;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("get-html","mx-element",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("get-html", 0);
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
     scheme_signal_error("get-html: Element no longer valid");
@@ -431,9 +395,7 @@ Scheme_Object *mx_element_get_text(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
   Scheme_Object *retval;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("get-text","mx-element",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("get-text", 0);
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
     scheme_signal_error("get-text}: Element no longer valid");
@@ -455,14 +417,8 @@ Scheme_Object *mx_element_attribute(int argc,Scheme_Object **argv) {
   BSTR attributeBSTR;
   VARIANT variant;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-attribute","mx-element",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("element-attribute","string or symbol",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("element-attribute", 0);
+  GUARANTEE_STRSYM ("element-attribute", 1);
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
     scheme_signal_error("Element no longer valid");
@@ -485,17 +441,10 @@ Scheme_Object *mx_element_set_attribute(int argc,Scheme_Object **argv) {
   BSTR attributeBSTR;
   VARIANT variant;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-set-attribute!","mx-element",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("element-set-attribute!", 0);
+  GUARANTEE_STRSYM ("element-set-attribute!", 1);
 
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("element-set-attribute!","string or symbol",1,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[2]) == FALSE && SCHEME_INTP(argv[2]) == FALSE &&
-      SCHEME_SYMBOLP (argv[2]) == FALSE &&
+  if (SCHEME_STRSYMP (argv[2]) == FALSE && SCHEME_INTP(argv[2]) == FALSE &&
 #ifdef MZ_USE_SINGLE_FLOATS
       SCHEME_FLTP(argv[2]) == FALSE &&
 #endif
@@ -527,14 +476,8 @@ Scheme_Object *mx_element_remove_attribute(int argc,Scheme_Object **argv) {
   BSTR attributeBSTR;
   VARIANT_BOOL success;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-remove-attribute!","mx-element",0,argc,argv);
-  }
-
-  if (SCHEME_STRINGP (argv[1]) == FALSE &&
-      SCHEME_SYMBOLP (argv[1]) == FALSE) {
-    scheme_wrong_type("element-remove-attribute!","string or symbol",1,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("element-remove-attribute!", 0);
+  GUARANTEE_STRSYM ("element-remove-attribute!", 1);
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
     scheme_signal_error("Element no longer valid");
@@ -561,9 +504,7 @@ Scheme_Object *mx_element_tag(int argc,Scheme_Object **argv) {
   BSTR tagBSTR;
   Scheme_Object *retval;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-tag","mx-element",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("element-tag", 0);
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
     scheme_signal_error("Element no longer valid");
@@ -583,9 +524,7 @@ Scheme_Object *mx_element_tag(int argc,Scheme_Object **argv) {
 Scheme_Object *mx_element_click(int argc,Scheme_Object **argv) {
   IHTMLElement *pIHTMLElement;
 
-  if (MX_ELEMENTP(argv[0]) == FALSE) {
-    scheme_wrong_type("element-click","mx-element",0,argc,argv);
-  }
+  GUARANTEE_ELEMENT ("element-click", 0);
 
   if (MX_ELEMENT_VALIDITY(argv[0]) == FALSE) {
     scheme_signal_error("Element no longer valid");
@@ -622,9 +561,42 @@ IHTMLStyle *styleInterfaceFromElement(Scheme_Object *o) {
   return pIHTMLStyle;
 }
 
-// function definitions using C macros in htmlutil.h
-
     // strings
+
+#define elt_style_string_getter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  BSTR bstr; \
+  Scheme_Object *retval; \
+  pIHTMLStyle = styleInterfaceFromElement (GUARANTEE_ELEMENT (scm_name, 0)); \
+  hr = pIHTMLStyle->dhtml_name(&bstr); \
+  retval = unmarshalBSTR (bstr); \
+  SysFreeString(bstr); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return retval; \
+}
+
+#define elt_style_string_setter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  BSTR bstr; \
+  GUARANTEE_ELEMENT (scm_name, 0); \
+  GUARANTEE_STRSYM (scm_name, 1);  \
+  pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
+  bstr = schemeStringToBSTR (argv[1]); \
+  hr = pIHTMLStyle->dhtml_name(bstr); \
+  SysFreeString(bstr); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_void; \
+}
 
 elt_style_string_getter(mx_element_font_family,"element-font-family",
 			get_fontFamily)
@@ -920,6 +892,35 @@ elt_style_string_getter(mx_element_style_string,
 
   // bools
 
+#define elt_style_bool_getter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  VARIANT_BOOL boolVal; \
+  pIHTMLStyle = styleInterfaceFromElement (GUARANTEE_ELEMENT (scm_name, 0)); \
+  hr = pIHTMLStyle->dhtml_name(&boolVal); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return (boolVal == 0) ? scheme_false : scheme_true; \
+}
+
+#define elt_style_bool_setter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  VARIANT_BOOL boolVal;	\
+  pIHTMLStyle = styleInterfaceFromElement (GUARANTEE_ELEMENT (scm_name, 0)); \
+  boolVal = (argv[1] == scheme_false) ? 0 : -1; \
+  hr = pIHTMLStyle->dhtml_name(boolVal); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_void; \
+}
+
 elt_style_bool_getter(mx_element_text_decoration_none,
 		      "element-text-decoration-none",
 		      get_textDecorationNone)
@@ -957,6 +958,39 @@ elt_style_bool_setter(mx_element_set_text_decoration_blink,
 
   // longs
 
+#define elt_style_long_getter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  long val; \
+  pIHTMLStyle = styleInterfaceFromElement (GUARANTEE_ELEMENT (scm_name, 0)); \
+  hr = pIHTMLStyle->dhtml_name(&val); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_make_integer(val); \
+}
+
+#define elt_style_long_setter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  long val; \
+  GUARANTEE_ELEMENT (scm_name, 0); \
+  GUARANTEE_INTEGER (scm_name, 1); \
+  pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
+  if (scheme_get_int_val(argv[1],&val) == 0) { \
+      scheme_signal_error("Integer argument won't fit in a long"); \
+  } \
+  hr = pIHTMLStyle->dhtml_name(val); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_void; \
+}
+
 elt_style_long_getter(mx_element_pixel_top,
 		      "element-pixel-top",
 		      get_pixelTop)
@@ -987,6 +1021,66 @@ elt_style_long_setter(mx_element_set_pixel_height,
 
   // floats
 
+#ifdef MZ_USE_SINGLE_FLOATS
+#define elt_style_float_getter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  float val; \
+  pIHTMLStyle = styleInterfaceFromElement (GUARANTEE_ELEMENT (scm_name, 0)); \
+  hr = pIHTMLStyle->dhtml_name(&val); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_make_float(val); \
+}
+
+#define elt_style_float_setter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  GUARANTEE_ELEMENT (scm_name, 0); \
+  GUARANTEE_TYPE (scm_name, 1, SCHEME_FLTP, "float"); \
+  pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
+  hr = pIHTMLStyle->dhtml_name(SCHEME_FLT_VAL(argv[1]); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_void; \
+}
+#else
+#define elt_style_float_getter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  float val; \
+  pIHTMLStyle = styleInterfaceFromElement(GUARANTEE_ELEMENT (scm_name, 0)); \
+  hr = pIHTMLStyle->dhtml_name(&val); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_make_double((double)val); \
+}
+
+#define elt_style_float_setter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  GUARANTEE_ELEMENT (scm_name, 0); \
+  GUARANTEE_TYPE (scm_name, 1, SCHEME_DBLP, "double"); \
+  pIHTMLStyle = styleInterfaceFromElement(argv[0]); \
+  hr = pIHTMLStyle->dhtml_name((float)SCHEME_DBL_VAL(argv[1])); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_void; \
+}
+#endif
+
 elt_style_float_getter(mx_element_pos_top,
 		       "element-pos-top",
 		       get_posTop)
@@ -1016,6 +1110,35 @@ elt_style_float_setter(mx_element_set_pos_height,
 		       put_posHeight)
 
   // variants
+
+#define elt_style_variant_getter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  VARIANT variant; \
+  pIHTMLStyle = styleInterfaceFromElement (GUARANTEE_ELEMENT (scm_name, 0)); \
+  hr = pIHTMLStyle->dhtml_name(&variant); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return variantToSchemeObject(&variant); \
+}
+
+#define elt_style_variant_setter(fun_name,scm_name,dhtml_name) \
+Scheme_Object *fun_name(int argc,Scheme_Object **argv) { \
+  HRESULT hr; \
+  IHTMLStyle *pIHTMLStyle; \
+  VARIANT variant; \
+  pIHTMLStyle = styleInterfaceFromElement(GUARANTEE_ELEMENT (scm_name, 0)); \
+  marshalSchemeValueToVariant(argv[1],&variant); \
+  hr = pIHTMLStyle->dhtml_name(variant); \
+  pIHTMLStyle->Release(); \
+  if (FAILED(hr)) { \
+    scheme_signal_error(#dhtml_name " failed with code %X",hr); \
+  } \
+  return scheme_void; \
+}
 
 elt_style_variant_getter(mx_element_font_size,
 			 "element-font-size",

@@ -305,7 +305,7 @@ please adhere to these guidelines:
  (plt:hd:refresh-downloading... "Downloading ~a...")
  (plt:hd:refresh-deleting... "Deleting old version of ~a...")
  (plt:hd:refresh-installing... "Installing new version of ~a...")
- (plt:hd:refresh-clearing-indicies "Clearing cached indicies")
+ (plt:hd:refresh-clearing-indicies "Clearing cached indices")
  (plt:hd:refreshing-manuals-finished "Finished.")
  (plt:hd:about-help-desk "About Help Desk")
  (plt:hd:help-desk-about-string

@@ -290,7 +290,7 @@
 		   ,(z:binding-var (z:class*/names-form-super-init expr)))
 		 ,(annotate (z:class*/names-form-super-expr expr))
 		 ,(map annotate (z:class*/names-form-interfaces expr))
-		 ,(paroptarglist->ilist (z:class*-form-init-vars expr))
+		 ,(paroptarglist->ilist (z:class*/names-form-init-vars expr))
 		 ,@(map
 		     (lambda (clause)
 		       (cond
@@ -346,7 +346,7 @@
 			   `(sequence
 			      ,@(map annotate
 				  (z:sequence-clause-exprs clause))))))
-		     (z:class*-form-inst-clauses expr)))]
+		     (z:class*/names-form-inst-clauses expr)))]
 
 	    [else
 	      (print-struct #t)

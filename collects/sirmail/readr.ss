@@ -629,7 +629,6 @@
 		     (lambda ()
 		       (send e lock #f)
 		       (send e begin-edit-sequence))
-		     void
 		     (lambda ()
 		       (send e erase)
 		       (set-current-selected #f)

@@ -284,6 +284,8 @@ Scheme_Object *(*scheme_append_string)(Scheme_Object *, Scheme_Object *);
 Scheme_Object *(*scheme_make_vector)(int size, Scheme_Object *fill);
 Scheme_Object *(*scheme_make_integer_value)(long i);
 Scheme_Object *(*scheme_make_integer_value_from_unsigned)(unsigned long i);
+Scheme_Object *(*scheme_make_integer_value_from_long_long)(unsigned long lohalf, unsigned long hihalf);
+Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_long)(unsigned long lohalf, unsigned long hihalf);
 Scheme_Object *(*scheme_make_double)(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
 Scheme_Object *(*scheme_make_float)(float f) ;

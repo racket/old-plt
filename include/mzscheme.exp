@@ -159,6 +159,8 @@ scheme_append_string
 scheme_make_vector
 scheme_make_integer_value
 scheme_make_integer_value_from_unsigned
+scheme_make_integer_value_from_long_long
+scheme_make_integer_value_from_unsigned_long_long
 scheme_make_double
 scheme_make_char
 scheme_make_sema

@@ -836,15 +836,17 @@
                      `(define/public (,(build-identifier (build-method-name ctor-name parm-types)) ,@translated-parms)
                         (let ((temp-obj (make-object ,(build-identifier class-name))))
                           (send temp-obj ,(build-identifier (build-constructor-name class-name parm-types))
-                                this ,@translated-parms)))
+                                this ,@translated-parms)
+                          temp-obj))
                      #f))))
 
-  ;get-ctors: (list method) -> (list method)
-  (define (get-ctors methods type-recs)
+  ;get-ctors: (list member) -> (list method)
+  (define (get-ctors members type-recs)
     (filter
-     (lambda (method)
-       (eq? 'ctor (type-spec-to-type (method-type method) #f 'full type-recs)))
-     methods))
+     (lambda (member)
+       (and (method? member)
+            (eq? 'ctor (type-spec-to-type (method-type member) #f 'full type-recs))))
+     members))
   
   ;------------------------------------------------------------
   ;;Method translation functions
@@ -1449,6 +1451,11 @@
                                                     (map translate-expression (class-alloc-args expr))
                                                     (expr-src expr)
                                                     (class-alloc-ctor-record expr)))
+        ((inner-alloc? expr) (translate-inner-alloc (translate-expression (inner-alloc-obj expr))
+                                                    (inner-alloc-name expr)
+                                                    (map translate-expression (inner-alloc-args expr))
+                                                    (expr-src expr)
+                                                    (inner-alloc-ctor-record expr)))
         ((array-alloc? expr)(translate-array-alloc (array-alloc-name expr)
                                                    (map translate-expression (array-alloc-size expr))
                                                    (expr-src expr)))
@@ -1685,23 +1692,30 @@
   (define (overridden? name)
     (hash-table-get (class-override-table) name (lambda () #f)))
   
-  ;translate-class-alloc: java-name (list type) (list syntax) src method-record-> syntax
+  ;translate-class-alloc: name (list type) (list syntax) src method-record-> syntax
   (define (translate-class-alloc class-type arg-types args src ctor-record)
-    (if (name? class-type)
-        (let ((class-string (get-class-string class-type))
-              (class-id (name-id class-type)))
-          (make-syntax #f `(let ((new-o (make-object ,(translate-id class-string
-                                                                    (id-src class-id)))))
-                             (send new-o ,(translate-id (build-constructor-name 
-                                                         (if (null? (name-path class-type)) 
-                                                             class-string 
-                                                             (id-string (name-id class-type)))
-                                                         (method-record-atypes ctor-record))
-                                                        (id-src class-id))
-                                   ,@args)
-                             new-o) 
-                       (build-src src)))
-        (error 'translate-class-alloc "does not have gj-name implemented")))
+    (let ((class-string (get-class-string class-type))
+          (class-id (name-id class-type)))
+      (make-syntax #f `(let ((new-o (make-object ,(translate-id class-string
+                                                                (id-src class-id)))))
+                         (send new-o ,(translate-id (build-constructor-name 
+                                                     (if (null? (name-path class-type)) 
+                                                         class-string 
+                                                         (id-string (name-id class-type)))
+                                                     (method-record-atypes ctor-record))
+                                                    (id-src class-id))
+                               ,@args)
+                         new-o) 
+                   (build-src src))))
+  
+  ;translate-inner-alloc: syntax id (list syntax) src method-record -> syntax
+  (define (translate-inner-alloc obj class args src ctor-record)
+    (make-syntax #f `(send ,obj ,(translate-id (build-method-name (string-append "construct-"
+                                                                                 (get-class-string (make-name class null #f)))
+                                                                  (method-record-atypes ctor-record))
+                                               (id-src class))
+                           ,@args)
+                 (build-src src)))
   
   ;translate-array-alloc: type-spec (list syntax) src -> syntax
   (define (translate-array-alloc type sizes src)

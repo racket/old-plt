@@ -8,7 +8,8 @@
 
   (require "servlets/private/util.ss")
 
-  (define servlet-dir (build-path (collection-path "help") "servlets"))
+  (define servlet-dir (normalize-path 
+		       (build-path (collection-path "help") "servlets")))
   (define exploded-servlet-dir-len (length (explode-path servlet-dir)))
   (define dest-dir (build-path (collection-path "help") 'up "doc" "help"))
 

@@ -6,5 +6,8 @@
    make-mred-program-launcher
    make-mzscheme-program-launcher
 
+   mred-program-launcher-path
+   mzscheme-program-launcher-path
+
    install-mred-program-launcher
    install-mzscheme-program-launcher))

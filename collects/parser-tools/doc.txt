@@ -65,7 +65,8 @@ This gives you the following syntactic forms:
      wrapping position around it.
 
    The lexer will raise an exception (exn:read) if none of the regular
-   expressions match the input.
+   expressions match the input.  The lexer will also raise an exn:read
+   if there is no remaining unprocessed input in the buffer.
    Hint: If ((- #\000 #\377) custom-error-behavior) is the last rule,
    then there will always be a match and custom-error-behavior will be
    executed to handle the error situation as desired, only consuming
@@ -296,7 +297,6 @@ TODO:
 lexer:
 
 parser:
-Error productions don't work in src-pos parsers.
 Error check that start production is defined
 
 both:

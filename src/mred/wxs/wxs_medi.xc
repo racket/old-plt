@@ -189,8 +189,8 @@ static void *wxbDCToBuffer(wxMediaBuffer *b, double x, double y)
 @ "write-editor-global-footer" : bool wxWriteMediaGlobalFooter(wxMediaStreamOut%);
 
 @ "add-editor-keymap-functions" : void wxAddMediaBufferFunctions(wxKeymap!);
-@ "add-text-editor-keymap-functions" : void wxAddMediaEditorFunctions(wxKeymap!);
-@ "add-pasteboard-editor-keymap-functions" : void wxAddMediaPasteboardFunctions(wxKeymap!);
+@ "add-text-keymap-functions" : void wxAddMediaEditorFunctions(wxKeymap!);
+@ "add-pasteboard-keymap-functions" : void wxAddMediaPasteboardFunctions(wxKeymap!);
 
 @ "editor-set-x-selection-mode" : void wxMediaSetXSelectionMode(bool);
 

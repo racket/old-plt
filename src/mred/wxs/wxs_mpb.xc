@@ -9,7 +9,7 @@
 
 @INCLUDE wxs_fcs.xci
 
-@CLASSBASE wxMediaPasteboard "pasteboard-editor" : "editor"
+@CLASSBASE wxMediaPasteboard "pasteboard" : "editor"
 
 @CREATOR ()
 

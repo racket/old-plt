@@ -20,8 +20,8 @@
  window%
  get-top-level-windows
  editor-snip%
- text-editor%
- pasteboard-editor%
+ text%
+ pasteboard%
  play-sound
  display-size
  application-file-handler

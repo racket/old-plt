@@ -1,8 +1,8 @@
 
 (add-color%
  add-editor-keymap-functions
- add-text-editor-keymap-functions
- add-pasteboard-editor-keymap-functions
+ add-text-keymap-functions
+ add-pasteboard-keymap-functions
  begin-busy-cursor
  bell
  bitmap%

@@ -4520,7 +4520,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaPasteboardFunctions(int n,  Scheme_
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "add-pasteboard-editor-keymap-functions in editor%", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "add-pasteboard-keymap-functions in editor%", 0);
 
   
   wxAddMediaPasteboardFunctions(x0);
@@ -4537,7 +4537,7 @@ static Scheme_Object *wxMediaGlobalwxAddMediaEditorFunctions(int n,  Scheme_Obje
   class wxKeymap* x0;
 
   
-  x0 = objscheme_unbundle_wxKeymap(p[0], "add-text-editor-keymap-functions in editor%", 0);
+  x0 = objscheme_unbundle_wxKeymap(p[0], "add-text-keymap-functions in editor%", 0);
 
   
   wxAddMediaEditorFunctions(x0);
@@ -4703,8 +4703,8 @@ void objscheme_setup_wxMediaGlobal(void *env)
   scheme_install_xc_global("get-the-buffer-data-class-list", scheme_make_prim_w_arity(wxMediaGlobalwxGetTheBufferDataClassList, "get-the-buffer-data-class-list", 0, 0), env);
   scheme_install_xc_global("get-the-snip-class-list", scheme_make_prim_w_arity(wxMediaGlobalwxGetTheSnipClassList, "get-the-snip-class-list", 0, 0), env);
   scheme_install_xc_global("editor-set-x-selection-mode", scheme_make_prim_w_arity(wxMediaGlobalwxMediaSetXSelectionMode, "editor-set-x-selection-mode", 1, 1), env);
-  scheme_install_xc_global("add-pasteboard-editor-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaPasteboardFunctions, "add-pasteboard-editor-keymap-functions", 1, 1), env);
-  scheme_install_xc_global("add-text-editor-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaEditorFunctions, "add-text-editor-keymap-functions", 1, 1), env);
+  scheme_install_xc_global("add-pasteboard-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaPasteboardFunctions, "add-pasteboard-keymap-functions", 1, 1), env);
+  scheme_install_xc_global("add-text-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaEditorFunctions, "add-text-keymap-functions", 1, 1), env);
   scheme_install_xc_global("add-editor-keymap-functions", scheme_make_prim_w_arity(wxMediaGlobalwxAddMediaBufferFunctions, "add-editor-keymap-functions", 1, 1), env);
   scheme_install_xc_global("write-editor-global-footer", scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalFooter, "write-editor-global-footer", 1, 1), env);
   scheme_install_xc_global("write-editor-global-header", scheme_make_prim_w_arity(wxMediaGlobalwxWriteMediaGlobalHeader, "write-editor-global-header", 1, 1), env);

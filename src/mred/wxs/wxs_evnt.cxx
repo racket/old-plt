@@ -175,10 +175,10 @@ static void init_symset_actionType(void) {
   actionType_wxEVENT_TYPE_CHOICE_COMMAND_sym = scheme_intern_symbol("choice");
   actionType_wxEVENT_TYPE_LISTBOX_COMMAND_sym = scheme_intern_symbol("list-box");
   actionType_wxEVENT_TYPE_LISTBOX_DCLICK_COMMAND_sym = scheme_intern_symbol("list-box-dclick");
-  actionType_wxEVENT_TYPE_TEXT_COMMAND_sym = scheme_intern_symbol("text");
+  actionType_wxEVENT_TYPE_TEXT_COMMAND_sym = scheme_intern_symbol("text-field");
   actionType_wxEVENT_TYPE_SLIDER_COMMAND_sym = scheme_intern_symbol("slider");
   actionType_wxEVENT_TYPE_RADIOBOX_COMMAND_sym = scheme_intern_symbol("radio-box");
-  actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = scheme_intern_symbol("text-enter");
+  actionType_wxEVENT_TYPE_TEXT_ENTER_COMMAND_sym = scheme_intern_symbol("text-field-enter");
   actionType_wxEVENT_TYPE_MENU_SELECT_sym = scheme_intern_symbol("menu");
 }
 

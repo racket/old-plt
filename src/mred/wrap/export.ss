@@ -17,8 +17,7 @@
  vertical-panel%
  radio-box%
  slider%
- text%
- multi-text%
+ text-field%
  window<%>
  area<%>
  top-level-window<%>
@@ -39,8 +38,8 @@
  popup-menu%
  get-top-level-windows
  editor-snip%
- text-editor%
- pasteboard-editor%
+ text%
+ pasteboard%
  graphical-read-eval-print-loop
  message-box
  get-file

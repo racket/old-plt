@@ -11,8 +11,6 @@
     
     (mred:debug:printf 'invoke "drscheme:frame@")
 
-    (send mred:the-frame-group set-empty-callback (lambda () (mred:exit) #f))
-
     (define frame%
       (class mred:simple-menu-frame% (name snip)
 	(rename [super-make-root-panel make-root-panel]
@@ -32,7 +30,7 @@
 						       "Close"
 						       #t)
 			     [(continue) #t]
-			     [(save) (send edit save-file)]
+			     [(save) (begin (send edit save-file) #t)]
 			     [else #f])))])
 	       (and user-allowed-or-not-modified (super-on-close))))])
 

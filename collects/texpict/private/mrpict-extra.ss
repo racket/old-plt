@@ -148,9 +148,19 @@
 				      'italic
 				      (send font get-weight))]
 			[else font]))]
+		    [(and (pair? style)
+			  (memq (car style) '(combine no-combine)))
+		     (loop (cdr style))]
 		    [else (raise-type-error 'text
 					    "style"
 					    orig-style)]))]
+		[combine? (let loop ([style orig-style])
+			    (cond
+			     [(eq? style 'modern) #f]
+			     [(not (pair? style)) #t]
+			     [(eq? (car style) 'combine) #t]
+			     [(eq? (car style) 'no-combine) #f]
+			     [else (loop (cdr style))]))]
 		[sub? (memq* 'subscript orig-style)]
 		[sup? (memq* 'superscript orig-style)])
 	    (let ([s-font (if (or sub? sup?)
@@ -165,7 +175,7 @@
 	      (let-values ([(w h d s) (with-text-scale
 				       dc
 				       (lambda ()
-					 (send dc get-text-extent string s-font)))])
+					 (send dc get-text-extent string s-font combine?)))])
 		(if (or sub? sup?)
 		    (let-values ([(ww wh wd ws) (with-text-scale
 						 dc
@@ -177,7 +187,8 @@
 					(send dc draw-text string
 					      x (if sub?
 						    (+ y (- wh h))
-						    y))
+						    y)
+					      combine?)
 					(send dc set-font f)))
 				    w wh (- wh wd) wd))
 		    (if (zero? angle)
@@ -185,7 +196,7 @@
 			(prog-picture (lambda (dc x y)
 					(let ([f (send dc get-font)])
 					  (send dc set-font font)
-					  (send dc draw-text string x y)
+					  (send dc draw-text string x y combine?)
 					  (send dc set-font f)))
 				      w h (- h d) d)
 			;; Rotation case. Need to find the bounding box.
@@ -220,7 +231,7 @@
 					    (let ([f (send dc get-font)])
 					      (send dc set-font font)
 					      (send dc draw-text string (+ x dx) (+ y dy)
-						    #f 0 angle)
+						    combine? 0 angle)
 					      (send dc set-font f)))
 					  pw ph 0 0))))))))]))
 

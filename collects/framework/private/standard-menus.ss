@@ -254,9 +254,7 @@
      (lambda () (string-constant save-as-info)))
    (define/public file-menu:save-as-on-demand (lambda (menu-item) (void)))
    (define/public file-menu:create-save-as? (lambda () #f))
-   (define/public
-     file-menu:between-save-as-and-print
-     (lambda (menu) (make-object separator-menu-item% menu)))
+   (define/public file-menu:between-save-as-and-print (lambda (menu) (void)))
    (define/public file-menu:print-callback (lambda (item control) (void)))
    (define/public file-menu:get-print-item (lambda () file-menu:print-item))
    (define/public

@@ -96,27 +96,24 @@
                     (check-one-way first-string-constant-set x))
                   (cdr available-string-constant-sets))
         
-        ;; in some cases, the printf may raise an exception because the error port
-        ;; is gone. If so, just don't display the warning.
-        (with-handlers ([not-break-exn? (lambda (exn) "")])
-          (let ([sp (open-output-string)])
-            (for-each
-             (lambda (bad)
-               (let* ([lang-pair (car bad)]
-                      [constants (cadr bad)]
-                      [lang1-name (car lang-pair)]
-                      [lang2-name (cdr lang-pair)])
-                 (fprintf sp "WARNING: language ~a had but ~a does not:\n"
-                          lang1-name
-                          lang2-name)
-                 (for-each
-                  (lambda (x) (fprintf sp "   ~s\n" x))
-                  (quicksort
-                   constants
-                   (lambda (x y) (string<=? (symbol->string (car x)) (symbol->string (car y))))))
-                 (newline sp)))
-             warning-table)
-            (get-output-string sp)))))
+        (let ([sp (open-output-string)])
+          (for-each
+           (lambda (bad)
+             (let* ([lang-pair (car bad)]
+                    [constants (cadr bad)]
+                    [lang1-name (car lang-pair)]
+                    [lang2-name (cdr lang-pair)])
+               (fprintf sp "WARNING: language ~a had but ~a does not:\n"
+                        lang1-name
+                        lang2-name)
+               (for-each
+                (lambda (x) (fprintf sp "   ~s\n" x))
+                (quicksort
+                 constants
+                 (lambda (x y) (string<=? (symbol->string (car x)) (symbol->string (car y))))))
+               (newline sp)))
+           warning-table)
+          (get-output-string sp))))
     
     (define (string-constant/proc stx)
       (syntax-case stx ()

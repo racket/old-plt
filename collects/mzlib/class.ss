@@ -59,29 +59,31 @@
 	      super-make-object-id))
 
 	   ;; ----- Expand definitions -----
-	   (let ([defn-and-exprs (let ([expand
-					(lambda (defn-or-expr)
-					  (local-expand
-					   defn-or-expr
-					   'internal-define
-					   (append
-					    (kernel-form-identifier-list (quote-syntax here))
-					    (list 
-					     (quote-syntax init)
-					     (quote-syntax init-rest)
-					     (quote-syntax field)
-					     (quote-syntax init-field)
-					     (quote-syntax inherit-field)
-					     (quote-syntax private)
-					     (quote-syntax public)
-					     (quote-syntax override)
-					     (quote-syntax public-final)
-					     (quote-syntax override-final)
-					     (quote-syntax rename)
-					     (quote-syntax inherit)
-					     this-id
-					     super-instantiate-id
-					     super-make-object-id))))])
+	   (let ([defn-and-exprs (let* ([stop-forms
+					 (append
+					  (kernel-form-identifier-list (quote-syntax here))
+					  (list 
+					   (quote-syntax init)
+					   (quote-syntax init-rest)
+					   (quote-syntax field)
+					   (quote-syntax init-field)
+					   (quote-syntax inherit-field)
+					   (quote-syntax private)
+					   (quote-syntax public)
+					   (quote-syntax override)
+					   (quote-syntax public-final)
+					   (quote-syntax override-final)
+					   (quote-syntax rename)
+					   (quote-syntax inherit)
+					   this-id
+					   super-instantiate-id
+					   super-make-object-id))]
+					[expand
+					 (lambda (defn-or-expr)
+					   (local-expand
+					    defn-or-expr
+					    'internal-define
+					    stop-forms))])
 				   (let loop ([l defn-and-exprs])
 				     (if (null? l)
 					 null
@@ -113,9 +115,9 @@
 						rename inherit)
 			   [(form idp ...)
 			    (and (identifier? (syntax form))
-				 (ormap (lambda (f) (module-identifier=? (syntax form) f))
-					(list (quote-syntax init)
-					      (quote-syntax init-field))))
+				 (or (module-identifier=? (syntax form) (quote-syntax init))
+				     (module-identifier=? (syntax form) (quote-syntax init-field))))
+
 			    (let ([form (syntax-e (syntax form))])
 			      (for-each 
 			       (lambda (idp)
@@ -170,11 +172,11 @@
 			   [(form idp ...)
 			    (and (identifier? (syntax form))
 				 (ormap (lambda (f) (module-identifier=? (syntax form) f))
-					(list (quote-syntax public)
-					      (quote-syntax override)
-					      (quote-syntax public-final)
-					      (quote-syntax override-final)
-					      (quote-syntax inherit))))
+					(syntax-e (quote-syntax (public
+								  override
+								  public-final
+								  override-final
+								  inherit)))))
 			    (let ([form (syntax-e (syntax form))])
 			      (for-each
 			       (lambda (idp)
@@ -243,28 +245,28 @@
 					   (let-values ([(in out) (extract kws l void)])
 					     in))]
 			     [(decls exprs)
-			      (extract (list (quote-syntax inherit-field)
-					     (quote-syntax private)
-					     (quote-syntax public)
-					     (quote-syntax override)
-					     (quote-syntax public-final)
-					     (quote-syntax override-final)
-					     (quote-syntax rename)
-					     (quote-syntax inherit))
+			      (extract (syntax-e (quote-syntax (inherit-field
+								private
+								public
+								override
+								public-final
+								override-final
+								rename
+								inherit)))
 				       defn-and-exprs
 				       cons)]
 			     [(plain-inits)
 			      (flatten values 
-				       (extract* (list (quote-syntax init)
-						       (quote-syntax init-rest))
+				       (extract* (syntax-e 
+						  (quote-syntax (init init-rest)))
 						 exprs))]
 			     [(init-rest-decls _) 
 			      (extract (list (quote-syntax init-rest))
 				       exprs
 				       void)]
 			     [(inits)
-			      (flatten values (extract* (list (quote-syntax init)
-							      (quote-syntax init-field))
+			      (flatten values (extract* (syntax-e 
+							 (quote-syntax (init init-field)))
 							exprs))]
 			     [(plain-inits)
 			      (flatten values (extract* (list (quote-syntax init)
@@ -562,8 +564,8 @@
 					      (and (identifier? (syntax -init))
 						   (ormap (lambda (it) 
 							    (module-identifier=? it (syntax -init)))
-							  (list (quote-syntax init)
-								(quote-syntax init-field))))
+							  (syntax-e (quote-syntax (init
+										   init-field)))))
 					      (let ([ids (map 
 							  (lambda (idp)
 							    (if (identifier? idp)

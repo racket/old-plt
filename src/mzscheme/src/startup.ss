@@ -803,7 +803,7 @@
 	       (if (equal? ,(syntax-e p) (syntax-e e))
 		   null
 		   (esc #f))))]))
-    (let ([r (m&e p p #t #t)])
+    (let ([r (m&e p p #t #f)])
       (if just-vars?
 	  ;; Look for duplicate uses of variable names:
 	  (let ([ht (make-hash-table)])
@@ -823,11 +823,16 @@
 		(loop (cdr r))]
 	       [else (void)]))
 	    r)
-	  `(lambda (e ,@(if phase-param?
-			    '(module-identifier=?) 
-			    null))
-	     (let/ec esc
-	       ,(app-e-esc r))))))
+	  ;; A common trivial case is just return the expression
+	  (if (equal? r '(lambda (e esc) (list e)))
+	      (if phase-param?
+		  '(lambda (e module-identifier=?) (list e))
+		  'list)
+	      `(lambda (e ,@(if phase-param?
+				'(module-identifier=?) 
+				null))
+		 (let/ec esc
+		   ,(app-e-esc r)))))))
 
   (define (make-match&env p k phase-param?)
     (make-match&env/extract-vars p k #f phase-param?))
@@ -837,8 +842,7 @@
 
   ;; Create an S-expression that applies
   ;; rest to `e' and `esc'. Optimize
-  ;; ((lambda (e esc) E) V esc) to
-  ;; ((lambda (esc) E) V), etc.
+  ;; ((lambda (e esc) E) e esc) to E.
   (define (app-e-esc rest)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
@@ -847,19 +851,22 @@
 	`(,rest e esc)))
 
   ;; Create an S-expression that applies
-  ;; rest to e and `esc'. Optimize...
+  ;; rest to e and `esc'.
   (define (app-esc rest e)
     (if (and (pair? rest)
 	     (eq? (car rest) 'lambda)
 	     (equal? (cadr rest) '(e esc)))
 	(let ([r (caddr rest)])
+	  ;; special (common) case: body is `(list e)'
 	  (if (and (pair? r)
 		   (eq? (car r) 'list)
 		   (pair? (cdr r))
 		   (eq? (cadr r) 'e)
 		   (null? (cddr r)))
 	      `(list ,e)
-	      `((lambda (e) ,r) ,e)))
+	      ;; The following could be `((lambda (e) ,r) ,e),
+	      ;;  but that's an anti-lightweight conversion!
+	      `(,rest ,e esc)))
 	`(,rest ,e esc)))
 
   ;; Create an S-expression that appends
@@ -871,7 +878,7 @@
 	     (null? (cddr e1)))
 	`(cons ,(cadr e1) ,e2)
 	`(append ,e1 ,e2)))
-  
+
   ;; ----------------------------------------------------------------------
   ;; Output generator
 

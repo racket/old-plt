@@ -1346,7 +1346,7 @@ scheme_inner_compile_list(Scheme_Object *form, Scheme_Comp_Env *env,
 
     scheme_merge_compile_recs(rec, drec, recs, 2);
 
-    return scheme_make_pair(c1, c2);
+    return scheme_make_immutable_pair(c1, c2);
   } else
     return scheme_compile_expr(form, env, rec, drec);
 }
@@ -1731,7 +1731,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       f = (Scheme_Syntax *)SCHEME_SYNTAX(var);
       return f(form, env, rec, drec);
     } else {
-      form = scheme_datum_to_syntax(scheme_make_pair(stx, form), form, form, 0, 1);
+      form = scheme_datum_to_syntax(scheme_make_immutable_pair(stx, form), form, form, 0, 1);
       
       if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	if (rec) {
@@ -1882,7 +1882,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 
       if (NOT_SAME_OBJ(name, origname)) {
 	form = SCHEME_STX_CDR(form);
-	form = scheme_datum_to_syntax(scheme_make_pair(name, form), forms, forms, 0, 1);
+	form = scheme_datum_to_syntax(scheme_make_immutable_pair(name, form), forms, forms, 0, 1);
       }
     }
     
@@ -1900,7 +1900,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
     Scheme_Object *first;
 
     first = SCHEME_STX_CAR(forms);
-    return scheme_datum_to_syntax(scheme_make_pair(first, naya),
+    return scheme_datum_to_syntax(scheme_make_immutable_pair(first, naya),
 				  forms,
 				  forms, 0, 1);
   }
@@ -2114,7 +2114,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	  vars = SCHEME_STX_CDR(vars);
 	}
 	
-	link = scheme_make_pair(v, scheme_null);
+	link = scheme_make_immutable_pair(v, scheme_null);
 	if (!start)
 	  start = link;
 	else
@@ -2153,8 +2153,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       }
 
       if (SCHEME_STX_PAIRP(result)) {
-	result = scheme_make_pair(values ? letrec_values_symbol : letrec_syntaxes_symbol, 
-				  scheme_make_immutable_pair(start, result));
+	result = scheme_make_immutable_pair(values ? letrec_values_symbol : letrec_syntaxes_symbol, 
+					    scheme_make_immutable_pair(start, result));
 	result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps(env), 0, 1);
 
 	more = 0;
@@ -2175,7 +2175,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	  result = scheme_expand_expr(result, env, depth, boundname);
       }
       
-      return scheme_make_pair(result, scheme_null);
+      return scheme_make_immutable_pair(result, scheme_null);
     }
   }
 
@@ -2216,7 +2216,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 #endif
   }
 
-  return scheme_make_pair(first, forms);
+  return scheme_make_immutable_pair(first, forms);
 }
 
 Scheme_Object *
@@ -2250,7 +2250,7 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
 			   (SCHEME_STX_NULLP(p)
 			    ? boundname
 			    : scheme_false));
-    p = scheme_make_pair(r, scheme_null);
+    p = scheme_make_immutable_pair(r, scheme_null);
     if (last)
       SCHEME_CDR(last) = p;
     else

@@ -137,13 +137,13 @@
       (let ([m (regexp-match-peek-positions pattern input-port start-k end-k)])
         (and m
              ;; What happens if someone swipes our chars before we can get them?
-             (begin
+             (let ([drop (caar m)])
                ;; drop prefix before match:
-               (read-string (caar m) input-port)
-               (let ([s (read-string (- (cdar m) (caar m)) input-port)])
+               (read-string drop input-port)
+               (let ([s (read-string (- (cdar m) drop) input-port)])
                  (cons s
                        (map (lambda (p)
-                              (substring s (- (car p) (caar m)) (- (cdr p) (caar m))))
+                              (and p (substring s (- (car p) drop) (- (cdr p) drop))))
                             (cdr m)))))))))
 
   ;; Helper function for the regexp functions below.

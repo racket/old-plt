@@ -3,6 +3,7 @@
   (require "../util.ss"
            "planet-getinfo.ss"
            "../server-config.ss"
+           (file "/usr/local/iplt/web/common/layout.ss")
            (lib "xml.ss" "xml")
            (lib "list.ss"))
   
@@ -15,13 +16,37 @@
   
   
   (define (build-web-page-file webroot)
-    (with-output-to-file (build-path webroot (WEB-PAGE-FILE))
-      (lambda () (write-xml/content (xexpr->xml (generate-web-page webroot))))
-      'replace))
+    (parameterize ((current-write-page 
+                    (lambda (x y) 
+                      (let ((out (open-output-file
+                                  (build-path webroot (WEB-PAGE-FILE))
+                                  'replace)))
+                        (write-xml/content (xexpr->xml y) out)
+                        (close-output-port out)))))
+      (write-tall-page 
+       "http://planet.plt-scheme.org/"
+       "PLaneT Package Repository"
+       (generate-web-page webroot)
+       (list (make-hubs-panel #f #f)))))
   
-  ;; generate-web-page : -> xexpr[xhtml]
-  ;; makes a web page telling all currently-available packages
+  ;; generate-web-page : -> listof xexpr[xhtml]
+  ;; makes the body of a web page telling all currently-available packages
   (define (generate-web-page webroot)
+    (list*
+     `(div 
+       ((class "description"))
+       (p (strong "PLaneT") " is PLT Scheme's centralized package distribution system. Here you"
+          " will find user-contributed Scheme packages along with instructions for using them.")
+       (p "The packages on this site are user-contributed and not part of PLT Scheme. Be aware "
+          "that when you download one of them for use in your programs, you are installing "
+          "software on your computer that could deliberately or accidentally harm your system. "
+          "Do not require from PLaneT any packages you do not trust.")
+       (p "For more about how to use PLaneT and for instructions on turning your own code into"
+          " packages, look up PLaneT in the DrScheme Help Desk."))
+     (make-tall-page-section "Available Packages")
+     (packages->xexprs webroot)))
+  
+  (define (packages->xexprs webroot)
     
     (define (owner-line->html owner)
       `(div 
@@ -42,12 +67,13 @@
                                              (METAINFO-FILE)))
       
       (define metainfo
-        (let ((getter (get-info-from-file metainfo-file-path)))
-          (if getter
-              (lambda (item default) 
-                (with-handlers ([not-break-exn? (lambda (x) (default))])
-                  (getter item)))
-              (lambda (x default) (default)))))
+        (with-handlers ([not-break-exn? (lambda (e) (lambda (x y) (y)))])
+          (let ((getter (get-info-from-file metainfo-file-path)))
+            (if getter
+                (lambda (item default) 
+                  (with-handlers ([not-break-exn? (lambda (x) (default))])
+                    (getter item)))
+                (lambda (x default) (default))))))
       
       (define description 
         (let ((orig-blurb (metainfo 'blurb (lambda () "No description available."))))
@@ -60,7 +86,8 @@
       (define latest-major-version (apply max (pkg->major-versions pkg)))
       (define latest-minor-version (apply max (pkg->minor-versions pkg latest-major-version)))
       
-      `(div ((class "package"))
+      `(div ((class "package")
+             (style "background-color: #f3f4ff; padding-left: 10px; margin-left: 10px; margin-right: 30px;"))
             (h3 ,(pkg->name pkg))
             (div ((class "latestVersion"))
                  ,(if (file-exists? (build-path webroot
@@ -78,105 +105,22 @@
                                           latest-minor-version)))
                           "documentation")
                       `(span ((class "noDocs")) "[no documentation available]"))
+                 'nbsp 'sdot 'nbsp
+                 "latest version: " ,(format "~a.~a" 
+                                             (number->string latest-major-version)
+                                             (number->string latest-minor-version))
+
                  (br)
-                 "Latest major version: " ,(number->string latest-major-version)
-                 (br)
-                 "Latest minor version: " ,(number->string latest-minor-version)
-                 (br)
-                 "To require: " (tt ,(format "(require (planet ~s (~s ~s ~s ~s)))" file-to-require owner-name (pkg->name pkg) latest-major-version latest-minor-version)))
+                 (tt ,(format "(require (planet ~s (~s ~s ~s ~s)))" file-to-require owner-name (pkg->name pkg) latest-major-version latest-minor-version)))
             (p ,@description)))
     
     
     (let* ([owners/all-versions (current-repository-contents)]
            [owners (let ((x (assoc (version) owners/all-versions)))
                      (if x (cdr x) '()))])
-      `(html ((xmlns "http://www.w3.org/1999/xhtml"))
-             (head (title "PLaneT PLT Scheme Package Repository")
-                   (style ((type "text/css"))
-                          "@import \"style.css\";")
-                   (link ((rel "icon") 
-                          (href "http://www.plt-scheme.org/plticon.ico")
-                          (type "image/ico")))
-                   (link ((rel "shortcut icon")
-                          (href "http://www.plt.scheme.org/plticon.ico"))))
-             (body
-              (table 
-               ((width "100%") (cellspacing "0") (border "0") (cellpadding "20"))
-               (tr 
-                (td ((height "100%") (width "35%") (align "center") (valign "top") (bgcolor "#73CA57"))
-                 (table 
-                  ((border "0") (cellpadding "30"))
-                  (tr
-                   (td
-                    (table 
-                     ((border "0"))
-                     (tr
-                      (td
-                       ((align "center"))
-                       (img ((src "http://www.plt-scheme.org/plt-green.jpg") (alt "icon")))))
-                     (tr
-                      (td 
-                       ((align "center"))
-                       (font ((size "+2"))
-                             (b (span ((class "sansa")) "PLaneT")))))
-                     (tr
-                      (td 
-                       (span 
-                        ((class "description"))
-                        (p (strong "PLaneT") " is PLT Scheme's centralized package distribution system. Here you"
-                           " will find user-contributed Scheme packages along with instructions for using them.")
-                        (p "The packages on this site are user-contributed and not part of PLT Scheme. Be aware "
-                           "that when you download one of them for use in your programs, you are installing "
-                           "software on your computer that could deliberately or accidentally hare your system. "
-                           "Do not require from PLaneT any packages you do not trust."))))
-                     (tr
-                      (td 
-                       ((align "center"))
-                       (small
-                        (span 
-                         ((class "sansa"))
-                         (a 
-                          ((href "http://www.plt-scheme.org/"))
-                          (font 
-                           ((color "#3A652B"))
-                           "PLT"))
-                         160
-                         "|"
-                         160
-                         (a 
-                          ((href "http://www.drscheme.org/"))
-                          (font 
-                           ((color "#3A652B"))
-                           "DrScheme"))
-                         160
-                         "|"
-                         160
-                         (a 
-                          ((href "http://www.teach-scheme.org/"))
-                          (font 
-                           ((color "#3A652B"))
-                           "TeachScheme!"))
-                         160
-                         "|"
-                         160
-                         (a 
-                          ((href "http://www.htdp.org/"))
-                          (font 
-                           ((color "#3A652B"))
-                           "HtDP"))
-                         160
-                         "|"
-                         160
-                         (a 
-                          ((href "http://www.htus.org/"))
-                          (font 
-                           ((color "#3A652B"))
-                           "HtUS")))))))))))
-                (td 
-                 ((height "100%") (width "*") (valign "top"))
-                 ,@(map 
-                    owner-line->html
-                    (quicksort owners (lambda (a b) (string<? (owner->name a) (owner->name b))))))))))))
+      (map 
+       owner-line->html
+       (quicksort owners (lambda (a b) (string<? (owner->name a) (owner->name b)))))))
   
   
   

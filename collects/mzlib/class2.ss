@@ -535,7 +535,8 @@
 					    (let ([plain-init-name undefined]
 						  ...)
 					      (letrec-syntax mappings
-						. exprs)))))))))))))))))))))])))
+						. exprs))))))
+				     #f)))))))))))))))])))
 
   (define-syntax class*
     (lambda (stx)
@@ -576,6 +577,7 @@
 			method-ids     ; ordered list of public method names
 
 			methods        ; vector of methods
+			prim-flags     ; vector: #t means primitive-implemented
 
 			field-width    ; total number of fields
 			field-ht       ; maps public field names to (cons accessor mutator)
@@ -585,11 +587,12 @@
 			object?        ; predicate
 			make-object    ; constructor
 
-			init-args      ; list of symbols in order
+			init-args      ; list of symbols in order; #f => only by position
 
 			init           ; initializer
-			)
-                        insp)
+
+			no-super-init?)    ; #t => no super-init needed
+                    insp)
 
   (define (compose-class name               ; symbol
 			 super              ; class
@@ -605,7 +608,9 @@
 
 			 init-args          ; list of symbols in order
 			 
-			 make-methods)      ; takes field and method accessors
+			 make-methods       ; takes field and method accessors
+			 make-struct:prim)  ; see "primitive classes", below
+
     ;; -- Check superclass --
     (unless (class? super)
       (obj-error 'class* "superclass expression returned a non-class: ~a~a" 
@@ -722,40 +727,64 @@
 		   [super-interfaces (cons (class->interface super) interfaces)]
 		   [i (interface-make name super-interfaces method-names #f)]
 		   [methods (make-vector method-width)]
+		   [prim-flags (make-vector method-width)]
 		   [c (class-make name
 				  (add1 (class-pos super))
 				  (list->vector (append (vector->list (class-supers super)) (list #f)))
 				  i
 				  method-width method-ht method-names
-				  methods
+				  methods prim-flags
 				  field-width field-ht field-names
 				  'struct:object 'object? 'make-object
 				  init-args
-				  'init)]
+				  'init
+				  (and make-struct:prim #t))]
 		   [obj-name (if name
 				 (string->symbol (format "object:~a" name))
-				 'object)])
+				 'object)]
+		   ;; Used only for prim classes
+		   [dispatcher (lambda (obj box)
+				 (when (symbol? (unbox box))
+				   ;; Map symbol to number:
+				   (set-box! box (hash-table-get method-ht (unbox box))))
+				 (let ([c (object-ref obj)]
+				       [n (unbox box)])
+				   (if (vector-ref (class-prim-flags c) n)
+				       #f
+				       (vector-ref (class-methods c) n))))])
 	      (vector-set! (class-supers c) (add1 (class-pos super)) c)
 
 	      ;; --- Mane the new object struct ---
-	      (let*-values ([(struct:object object-make object? object-field-ref object-field-set!)
-			     (make-struct-type obj-name
-					       (class-struct:object super)
-					       0 ;; No init fields
-					       ;; Fields for new slots:
-					       num-fields undefined
-					       null
-					       insp)]
+	      (let*-values ([(prim-tagged-object-make prim-object? struct:prim-object)
+			     (if make-struct:prim
+				 (make-struct:prim c prop:object dispatcher)
+				 (values #f #f #f))]
+			    [(struct:object object-make object? object-field-ref object-field-set!)
+			     (if make-struct:prim
+				 ;; Use prim struct:
+				 (values struct:prim-object #f prim-object? #f #f)
+				 ;; Normal struct creation:
+				 (make-struct-type obj-name
+						   (class-struct:object super)
+						   0 ;; No init fields
+						   ;; Fields for new slots:
+						   num-fields undefined
+						   null
+						   insp))]
 			    ;; The second structure associates prop:object with the class.
 			    ;; Other classes extend struct:object, so we can't put the
 			    ;; property there.
 			    [(struct:tagged-object tagged-object-make tagged-object? -ref -set!)
-			     (make-struct-type obj-name
-					       struct:object
-					       0 0 #f
-					       ;; Map object property to class:
-					       (list (cons prop:object c))
-					       insp)])
+			     (if make-struct:prim
+				 ;; Use prim struct:
+				 (values #f prim-tagged-object-make #f #f #f)
+				 ;; Normal second-struct creation:
+				 (make-struct-type obj-name
+						   struct:object
+						   0 0 #f
+						   ;; Map object property to class:
+						   (list (cons prop:object c))
+						   insp))])
 		(set-class-struct:object! c struct:object)
 		(set-class-object?! c object?)
 		(set-class-make-object! c tagged-object-make)
@@ -817,15 +846,18 @@
 			(hash-table-for-each
 			 (class-method-ht super)
 			 (lambda (name index)
-			   (vector-set! methods index (vector-ref (class-methods super) index))))
+			   (vector-set! methods index (vector-ref (class-methods super) index))
+			   (vector-set! prim-flags index (vector-ref (class-prim-flags super) index))))
 			;; Add new methods:
 			(for-each (lambda (index method)
-				    (vector-set! methods index method))
+				    (vector-set! methods index method)
+				    (vector-set! prim-flags index (and make-struct:prim #t)))
 				  new-indices
 				  new-methods)
 			;; Override old methods:
 			(for-each (lambda (index method)
-				    (vector-set! methods index method))
+				    (vector-set! methods index method)
+				    (vector-set! prim-flags index (and make-struct:prim #t)))
 				  replace-indices
 				  override-methods)
 
@@ -948,7 +980,7 @@
 			      object<%>
 
 			      0 (make-hash-table) null
-			      (vector)
+			      (vector) (vector)
 			      
 			      0 (make-hash-table) null
 			      
@@ -959,7 +991,9 @@
 			      (lambda (this super-init args) 
 				(unless (null? args)
 				  (obj-error "make-object" "unused initialization arguments: ~e" args))
-				(void))))
+				(void))
+
+			      #t)) ; no super-init
 
   (vector-set! (class-supers object%) 0 object%)
   (let*-values ([(struct:obj make-obj obj? -get -set!)
@@ -967,8 +1001,8 @@
 		[(struct:tagged-obj make-tagged-obj tagged-obj? -get -set!)
 		 (make-struct-type 'object struct:obj 0 0 #f (list (cons prop:object object%)) insp)])
     (set-class-struct:object! object% struct:obj)
-    (set-class-object?! object% obj?)
     (set-class-make-object! object% make-tagged-obj))
+  (set-class-object?! object% object?) ; don't use struct pred; it wouldn't work with prim classes
 
   (set-interface-class! object<%> object%)
 
@@ -1021,26 +1055,39 @@
     (let ([o ((class-make-object class))])
       ;; Initialize it:
       (let loop ([c class][by-pos-args by-pos-args][named-args named-args])
-	;; Merge by-pos into named args:
-	(let ([named-args (let loop ([al by-pos-args][nl (class-init-args c)])
-			    (cond
-			     [(null? al) named-args]
-			     [(null? nl) (obj-error "make-object" "too many initialization arguments: ~e~a" 
-						    by-pos-args
-						    (for-class (class-name c)))]
-			     [else (cons (cons (car nl) (car al))
-					 (loop (cdr al) (cdr nl)))]))])
-	  ;; Check for duplicate arguments
+	;; Primitive class with by-pos arguments?
+	(when (not (class-init-args c))
 	  (unless (null? named-args)
-	    (let loop ([l named-args])
-	      (unless (null? (cdr l))
-		(if (assq (caar l) (cdr l))
-		    (obj-error "make-object" "duplicate initialization argument: ~a in: ~e~a"
-			       (caar l)
-			       named-args
-			       (for-class (class-name c)))
-		    (loop (cdr l))))))
-	  (let ([inited? (eq? c object%)])
+	    (obj-error 
+	     "make-object" 
+	     "keyword-based arguments for a class that has only by-position initializers: ~e~a" 
+	     by-pos-args
+	     (for-class (class-name c)))))
+	;; Merge by-pos into named args:
+	(let ([named-args (if (class-init-args c)
+			      ;; Normal merge
+			      (let loop ([al by-pos-args][nl (class-init-args c)])
+				(cond
+				 [(null? al) named-args]
+				 [(null? nl) (obj-error "make-object" "too many initialization arguments: ~e~a" 
+							by-pos-args
+							(for-class (class-name c)))]
+				 [else (cons (cons (car nl) (car al))
+					     (loop (cdr al) (cdr nl)))]))
+			      ;; Fake merge for by-position initializers:
+			      by-pos-args)])
+	  ;; Check for duplicate arguments
+	  (when (class-init-args c)
+	    (unless (null? named-args)
+	      (let loop ([l named-args])
+		(unless (null? (cdr l))
+		  (if (assq (caar l) (cdr l))
+		      (obj-error "make-object" "duplicate initialization argument: ~a in: ~e~a"
+				 (caar l)
+				 named-args
+				 (for-class (class-name c)))
+		      (loop (cdr l)))))))
+	  (let ([inited? (class-no-super-init? c)])
 	    ((class-init c) 
 	     o 
 	     ;;; ----- This is the super-init function -----
@@ -1208,6 +1255,57 @@
       (raise-type-error 'interface->method-names "interface" i))
     ;; copy list
     (map values (interface-public-ids i)))
+
+  ;;--------------------------------------------------------------------
+  ;;  primitive classes
+  ;;--------------------------------------------------------------------
+  
+  (define (make-primitive-class 
+	   make-struct:prim     ; see below
+	   prim-init            ; primitive initializer: takes obj and list of name-arg pairs
+	   name                 ; symbol
+	   super                ; superclass
+	   override-names       ; overridden method names
+	   new-names            ; new (public) method names
+	   override-methods     ; list of methods
+	   new-methods)         ; list of methods
+
+    ; The `make-struct:prim' function takes prop:object, a
+    ;  class, and a dispatcher function, and produces:
+    ;    * a struct constructor (must have prop:object)
+    ;    * a struct predicate
+    ;    * a struct type for derived classes (mustn't have prop:object)
+    ;
+    ; The supplied dispatched takes an object and a boxed symbol/num
+    ;  (converts a symbol to a num first time) and returns a method if the
+    ;  corresponding method is overridden in the object's class relative to
+    ;  the primitive class, #f otherwise.
+    ;
+    ; When a primitive class have a primitive superclass, the
+    ;  struct:prim maker is responsible for ensuring that the returned
+    ;  struct items match the supertype predicate.
+
+    (compose-class name
+		   (or super object%)
+		   null
+		   
+		   0 null ; no fields
+
+		   null ; no renames
+		   new-names
+		   override-names
+		   null ; no inherits
+		   
+		   #f ; => init args by position only
+			 
+		   (lambda accessors
+		     (values
+		      new-methods
+		      override-methods
+		      (lambda (this super/ignored init-args)
+			(apply prim-init this init-args))))
+
+		   make-struct:prim))
 
   ;;--------------------------------------------------------------------
   ;;  misc utils

@@ -2142,7 +2142,8 @@ add structu contracts for immutable structs?
        (for-each (lambda (name)
                    (unless (identifier? name)
                      (raise-syntax-error 'flat-rec-contract
-                                         "expected an identifier" stx name))))]
+                                         "expected an identifier" stx name)))
+                 (syntax->list (syntax (name ...))))]
       [(_ ([name ctc ...] ...))
        (raise-syntax-error 'flat-rec-contract "expected at least one body expression" stx)]))
       

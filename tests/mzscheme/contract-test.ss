@@ -1943,6 +1943,9 @@
                                             even1)
                       '(1 2 3 4)
                       '(1 2 3))
+  (syntax-test #'(flat-murec-contract ([(x) y]) x)) ;; malformed binder
+  (syntax-test #'(flat-murec-contract ([x y]))) ;; missing body
+
   
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;                                                        ;;

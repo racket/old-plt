@@ -731,11 +731,8 @@ wxBitmap *wxLoadBitmap(char *s, wxColourMap **cmap)
 {
   wxBitmap *bitmap = new wxBitmap;
   if (wxLoadIntoBitmap(s, bitmap, cmap))
-  {
     return bitmap;
-  }
-  else
-  {
+  else {
     delete bitmap;
     return NULL;
   }

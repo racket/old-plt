@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.cc,v 1.11 1998/10/10 15:27:57 mflatt Exp $
+ * $Id: WindowDC.cc,v 1.12 1998/10/16 15:55:54 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -30,6 +30,7 @@
 
 #define  Uses_XLib
 #define  Uses_wxWindowDC
+#define  Uses_wxMemoryDC
 #define  Uses_wxList
 #include "wx.h"
 
@@ -153,8 +154,10 @@ Bool wxWindowDC::Blit(float xdest, float ydest, float w, float h, wxBitmap *src,
     if (!src->Ok())
       return FALSE;
 
-    /* MATTHEW: [5] Implement GetPixel */
     FreeGetPixelCache();
+
+    if (src->selectedTo)
+      src->selectedTo->EndSetPixel();
     
     xsrc = floor(xsrc);
     ysrc = floor(ysrc);
@@ -614,9 +617,11 @@ void wxWindowDC::SetBrush(wxBrush *brush)
       Pixmap stipple = (Pixmap)0; // for FillStippled
       Pixmap tile    = (Pixmap)0; // for FillTiled
       if (bm->GetDepth() == 1) {
+	if (bm->selectedTo) bm->selectedTo->EndSetPixel();
 	stipple = GETPIXMAP(bm);
 	values.fill_style = ((brush->GetStyle()==wxSTIPPLE) ? FillOpaqueStippled : FillStippled);
       } else if (bm->GetDepth() == (signed)DEPTH) {
+	if (bm->selectedTo) bm->selectedTo->EndSetPixel();
 	tile = GETPIXMAP(bm);
 	values.fill_style = FillTiled;
       } // else wrong depth
@@ -713,9 +718,11 @@ void wxWindowDC::SetPen(wxPen *pen)
       Pixmap stipple = (Pixmap)0; // for FillStippled
       Pixmap tile    = (Pixmap)0; // for FillTiled
       if (bm->GetDepth() == 1) {
+	if (bm->selectedTo) bm->selectedTo->EndSetPixel();
 	stipple = GETPIXMAP(bm);
 	values.fill_style = FillStippled;
       } else if (bm->GetDepth() == (signed)DEPTH) {
+	if (bm->selectedTo) bm->selectedTo->EndSetPixel();
 	tile = GETPIXMAP(bm);
 	values.fill_style = FillTiled;
       } // else wrong depth
@@ -1072,15 +1079,7 @@ Bool wxWindowDC::GetPixel(float x, float y, wxColour * col)
 #define NUM_GETPIX_CACHE_COLORS 256
 
   if (!X->get_pixel_image_cache) {
-    if (X->is_window) /* Disallow for now */
-      return FALSE;
-
-    X->get_pixel_image_cache = 
-      XGetImage(DPY, DRAWABLE, 0, 0, w, h, AllPlanes, ZPixmap);
-
-    X->get_pixel_cache_pos = 0;
-    X->get_pixel_cache_full = FALSE;
-    X->get_pixel_color_cache = new XColor[NUM_GETPIX_CACHE_COLORS];
+    BeginSetPixel();
 
     if (X->get_pixel_image_cache->depth == 1) {
       XColor *get_pixel_color_cache = X->get_pixel_color_cache;
@@ -1171,6 +1170,7 @@ void wxWindowDC::BeginSetPixel()
   X->get_pixel_cache_pos = 0;
   X->get_pixel_cache_full = FALSE;
   X->get_pixel_color_cache = new XColor[NUM_GETPIX_CACHE_COLORS];
+  X->set_a_pixel = FALSE;
 }
 
 void wxWindowDC::EndSetPixel()
@@ -1178,18 +1178,27 @@ void wxWindowDC::EndSetPixel()
   if (!X->get_pixel_image_cache)
     return;
 
-  int w, h;
-  w = X->get_pixel_image_cache->width;
-  h = X->get_pixel_image_cache->height;
+  if (X->set_a_pixel) {
+    int w, h;
+    w = X->get_pixel_image_cache->width;
+    h = X->get_pixel_image_cache->height;
+    
+    XPutImage(DPY, DRAWABLE, PEN_GC, X->get_pixel_image_cache, 0, 0, 0, 0, w, h);
+  }
 
-  XPutImage(DPY, DRAWABLE, PEN_GC, X->get_pixel_image_cache, 0, 0, 0, 0, w, h);
-
-  FreeGetPixelCache();
+  if (X->get_pixel_image_cache) {
+    XDestroyImage(X->get_pixel_image_cache);
+    X->get_pixel_image_cache = NULL;
+    delete[] X->get_pixel_color_cache;
+    X->get_pixel_color_cache = NULL;
+  }
 }
 
 void wxWindowDC::SetPixel(float x, float y, wxColour * col)
 {
   int i, j;
+
+  BeginSetPixel();
 
   if (!X->get_pixel_image_cache)
     return;
@@ -1218,40 +1227,48 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
   XColor *get_pixel_color_cache = X->get_pixel_color_cache;
   Bool get_pixel_cache_full = X->get_pixel_cache_full;
 
-  
-  for (k = get_pixel_cache_pos; k--; )
-    if ((get_pixel_color_cache[k].red == red)
-	&& (get_pixel_color_cache[k].green == green)
-	&& (get_pixel_color_cache[k].blue == blue)) {
-      pixel = get_pixel_color_cache[k].pixel;
-      goto put;
-    }
+  X->set_a_pixel = TRUE;
 
-  if (get_pixel_cache_full)
-    for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; )
+  if (X->get_pixel_image_cache->depth == 1) {
+    if ((red == 255) && (green == 255) && (blue == 255))
+      pixel = 0;
+    else
+      pixel = 1;
+  } else {
+    for (k = get_pixel_cache_pos; k--; )
       if ((get_pixel_color_cache[k].red == red)
 	  && (get_pixel_color_cache[k].green == green)
 	  && (get_pixel_color_cache[k].blue == blue)) {
 	pixel = get_pixel_color_cache[k].pixel;
 	goto put;
       }
-
-  xcol.red = red << 8;
-  xcol.green = green << 8;
-  xcol.blue = blue << 8;
-  
-  wxAllocColor(DPY, GETCOLORMAP(current_cmap), &xcol);
-
-  pixel = xcol.pixel;
-
-  get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
-  get_pixel_color_cache[get_pixel_cache_pos].red = red;
-  get_pixel_color_cache[get_pixel_cache_pos].green = green;
-  get_pixel_color_cache[get_pixel_cache_pos].blue = blue;
-
-  if (++(X->get_pixel_cache_pos) >= NUM_GETPIX_CACHE_COLORS) {
-    X->get_pixel_cache_pos = 0;
-    X->get_pixel_cache_full = TRUE;
+    
+    if (get_pixel_cache_full)
+      for (k = NUM_GETPIX_CACHE_COLORS; k-- > get_pixel_cache_pos; )
+	if ((get_pixel_color_cache[k].red == red)
+	    && (get_pixel_color_cache[k].green == green)
+	    && (get_pixel_color_cache[k].blue == blue)) {
+	  pixel = get_pixel_color_cache[k].pixel;
+	  goto put;
+	}
+    
+    xcol.red = red << 8;
+    xcol.green = green << 8;
+    xcol.blue = blue << 8;
+    
+    wxAllocColor(DPY, GETCOLORMAP(current_cmap), &xcol);
+    
+    pixel = xcol.pixel;
+    
+    get_pixel_color_cache[get_pixel_cache_pos].pixel = pixel;
+    get_pixel_color_cache[get_pixel_cache_pos].red = red;
+    get_pixel_color_cache[get_pixel_cache_pos].green = green;
+    get_pixel_color_cache[get_pixel_cache_pos].blue = blue;
+    
+    if (++(X->get_pixel_cache_pos) >= NUM_GETPIX_CACHE_COLORS) {
+      X->get_pixel_cache_pos = 0;
+      X->get_pixel_cache_full = TRUE;
+    }
   }
 
  put:
@@ -1260,11 +1277,6 @@ void wxWindowDC::SetPixel(float x, float y, wxColour * col)
 
 void wxWindowDC::DoFreeGetPixelCache(void)
 {
-  if (X->get_pixel_image_cache) {
-    XDestroyImage(X->get_pixel_image_cache);
-    X->get_pixel_image_cache = NULL;
-    delete[] X->get_pixel_color_cache;
-    X->get_pixel_color_cache = NULL;
-  }
+  EndSetPixel();
 }
 

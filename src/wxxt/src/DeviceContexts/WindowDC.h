@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: WindowDC.h,v 1.4 1998/09/23 00:11:58 mflatt Exp $
+ * $Id: WindowDC.h,v 1.5 1998/10/10 15:27:57 mflatt Exp $
  *
  * Purpose: device context to draw drawables
  *          (windows and pixmaps, even if pixmaps are covered by wxMemoryDC)
@@ -68,7 +68,7 @@ public:
     XImage *get_pixel_image_cache;
     int get_pixel_cache_pos;
     XColor *get_pixel_color_cache;
-    Bool get_pixel_cache_full;
+    short get_pixel_cache_full, set_a_pixel;
     Bool         is_window;
 };
 // easier access to private data

@@ -344,6 +344,7 @@
 	    [basis : userspace:basis^]
 	    [mzlib:pretty-print : mzlib:pretty-print^]
 	    [mzlib:function : mzlib:function^]
+	    [mzlib:thread : mzlib:thread^]
 	    [settings : drscheme-jr:settings^])
     (define system-parameterization (current-parameterization))
     (define user-parameterization (current-parameterization))
@@ -366,7 +367,7 @@
 				  (zodiac:make-location 1 1 (file-position (current-output-port)) "stdin"))
 		     (lambda (sexp loop)
 		       (unless (basis:process-finish? sexp)
-			 (dynamic-enable-break
+			 (mzlib:thread:dynamic-enable-break
 			  (lambda ()
 			    ((current-print)
 			     (primitive-eval
@@ -431,7 +432,7 @@
 
 	    (with-parameterization param
 	      (lambda ()
-		(mzlib:function:dynamic-disable-break
+		(mzlib:thread:dynamic-disable-break
 		 (lambda ()
 		   (global-defined-value 'read/zodiac read/zodiac)
 		   (global-defined-value 'restart
@@ -486,8 +487,8 @@
 			     (define program _program))))]
 	   [mzlib : mzlib:core^ ((require-library "corer.ss"))]
 	   [print-convert : mzlib:print-convert^ ((require-library "pconverr.ss")
-						  (mzlib string@)
-						  (mzlib function@))]
+						  (mzlib string)
+						  (mzlib function))]
 	   [cmd-line : mzlib:command-line^ ((require-library "cmdliner.ss"))]
 	   [aries : plt:aries^ ((require-library-unit/sig "ariesr.ss" "cogen")
 				(drzodiac : zodiac:system^)
@@ -498,8 +499,8 @@
 		     ((require-library-unit/sig "zlink.ss" "userspce")
 		      basis
 		      (interface : zodiac:interface^)
-		      (mzlib pretty-print@)
-		      (mzlib file@))]
+		      (mzlib pretty-print)
+		      (mzlib file))]
 	   [basis-import : userspace:basis-import^ ((unit/sig userspace:basis-import^
 						      (import)
 						      (define in-mzscheme? #t)))]
@@ -510,20 +511,21 @@
 		   interface
 		   aries
 		   print-convert
-		   (mzlib pretty-print@)
-		   (mzlib function@))]
+		   (mzlib pretty-print)
+		   (mzlib function))]
 	   [settings : drscheme-jr:settings^
 		     (build-settingU mz
 				     cmd-line
 				     basis
-				     (mzlib pretty-print@)
-				     (mzlib function@))]
+				     (mzlib pretty-print)
+				     (mzlib function))]
 	   [dr-jr : () (dr-jrU
 			(drzodiac : zodiac:system^)
 			print-convert
 			basis
-			(mzlib pretty-print@)
-			(mzlib function@)
+			(mzlib pretty-print)
+			(mzlib function)
+			(mzlib thread)
 			settings)])
      (export))))
 

@@ -9,7 +9,7 @@
     (define-struct (:-form struct:parsed) (exp type))
     (define-struct (type:-form struct:parsed) (type attrs))
     (define-struct (st:control-form struct:parsed) (para val))
-    (define-struct (cache-form struct:parsed) (exp za kind cd))
+    (define-struct (include-unit-form struct:parsed) (file cd kind))
     (define-struct (define-type-form struct:parsed) (sym type))
     (define-struct (define-constructor-form struct:parsed) (sym modes))
 
@@ -41,12 +41,12 @@
 	  (make-empty-back-box)
 	  para val)))
 
-    (define create-cache-form
-      (lambda (exp za kind cd source)
-	(make-cache-form (z:zodiac-origin source)
+    (define create-include-unit-form
+      (lambda (file cd kind source)
+	(make-include-unit-form (z:zodiac-origin source)
 	  (z:zodiac-start source) (z:zodiac-finish source)
 	  (make-empty-back-box)
-	  exp za kind cd)))
+	  file cd kind)))
 
     (define create-define-type-form
       (lambda (sym type source)
@@ -179,51 +179,41 @@
 	    (else
 	      (static-error expr "Malformed define-constructor"))))))
 
-    (add-micro-form 'cache-exp scheme-vocabulary
-      (let* ((kwd '(cache-exp))
-	      (in-pattern '(cache-exp exp za))
+    (add-micro-form 'include-unit scheme-vocabulary
+      (let* ((kwd '(include-unit))
+	      (in-pattern '(include-unit file))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond
 	    ((pat:match-against m&e expr env)
 	      =>
 	      (lambda (p-env)
-		(let ((exp (pat:pexpand 'exp p-env kwd))
-		       (za (pat:pexpand 'za p-env kwd)))
-		  ; Cormac passes the arguments
-		  ; exp, (normalize-path za), 'exp, (current-directory)
-		  ; to create-cache-form.
-		  (create-cache-form
-		    exp
-		    za
+		(let ((file (pat:pexpand 'file p-env kwd)))
+		  (create-include-unit-form
+                    file
+                    (current-directory)
 		    'exp
-		    (current-directory)
-		    expr))))
+                    expr))))
 	    (else
-	      (static-error expr "Malformed cache-exp"))))))
+	      (static-error expr "Malformed include-unit"))))))
 
-    (add-micro-form 'cache-inv scheme-vocabulary
-      (let* ((kwd '(cache-inv))
-	      (in-pattern '(cache-inv exp za))
+    (add-micro-form 'include-unit-imports scheme-vocabulary
+      (let* ((kwd '(include-unit-imports))
+	      (in-pattern '(include-unit-imports file))
 	      (m&e (pat:make-match&env in-pattern kwd)))
 	(lambda (expr env attributes vocab)
 	  (cond
 	    ((pat:match-against m&e expr env)
 	      =>
 	      (lambda (p-env)
-		(let ((exp (pat:pexpand 'exp p-env kwd))
-		       (za (pat:pexpand 'za p-env kwd)))
-		  ; Cormac passes the arguments
-		  ; exp, (normalize-path za), 'inv, (current-directory)
-		  ; to create-cache-form.
-		  (create-cache-form
-		    exp
-		    za
-		    'inv
-		    (current-directory)
-		    expr))))
+		(let ((file (pat:pexpand 'file p-env kwd)))
+		  (create-include-unit-form
+                    file
+                    (current-directory)
+		    'imp
+                    expr))))
 	    (else
-	      (static-error expr "Malformed cache-inv"))))))
+	      (static-error expr "Malformed include-unit-imports"))))))
 
     ; --------------------------------------------------------------------
 
@@ -244,14 +234,13 @@
 	`(st:control ,(st:control-form-para expr)
 	   ,(st:control-form-val expr))))
 
-    (extend-parsed->raw cache-form?
+    (extend-parsed->raw include-unit-form?
       (lambda (expr p->r)
-	(case (cache-form-kind expr)
-	  ((exp) `(cache-exp ,(sexp->raw (cache-form-exp expr))
-		    ,(sexp->raw (cache-form-za expr))))
-	  ((inv) `(cache-inv ,(sexp->raw (cache-form-exp expr))
-		    ,(sexp->raw (cache-form-za expr))))
-	  (else (error 'cache-form "Invalid kind")))))
+	(case (include-unit-form-kind expr)
+	  ((exp) `(include-unit ,(sexp->raw (include-unit-form-file expr))))
+	  ((imp) `(include-unit-imports
+                    ,(sexp->raw (include-unit-form-file expr))))
+	  (else (error 'include-unit-form "Invalid kind")))))
 
     (extend-parsed->raw define-type-form?
       (lambda (expr p->r)

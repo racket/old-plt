@@ -139,7 +139,7 @@
   (define-struct (hist/text struct:hist) (text))
   (define-struct (hist/creation struct:hist) ())
   (define-struct (hist/apocalypse struct:hist) ())
-
+  
   ;; toString : jobject -> Void
   ;; Actually this uses String.valueOf(Object) since it works for null.
   (define toString
@@ -150,7 +150,7 @@
   
   (define (repl-text-mixin super-class)
     (class super-class ()
-      (inherit insert get-text last-position erase find-snip set-position insert-box set-caret-owner get-end-position get-keymap set-keymap)
+      (inherit insert get-text last-position erase find-snip set-position insert-box set-caret-owner get-end-position get-keymap set-keymap get-character delete)
       (private
         (make-printer
          (lambda (style)
@@ -249,7 +249,13 @@
                  last
                  (begin (insert #\newline) (set-position (last-position))
                         (insert (make-object editor-snip%))
-                        (get-output-snip)))))))
+                        (get-output-snip))))))
+        (all-white?
+         (lambda (current end)
+           (let loop ([current current])
+             (or (>= current end)
+                 (and (char-whitespace? (get-character current))
+                      (loop (add1 current))))))))
       (rename (super-on-default-char on-default-char))
       (override
         (can-insert?
@@ -270,11 +276,14 @@
          (lambda (event)
            (when not-evaluating
              (let ([key (send event get-key-code)])
-               (cond
-                 [(and (eq? #\return key)
-                       (= (last-position) (get-end-position)))
-                  (eval)]
-                 [else (super-on-default-char event)]))))))
+               (if (and (eq? #\return key)
+                        (let ([start (get-end-position)]
+                              [end (last-position)])
+                          (or (= start end); for short cutting only
+                              (and (all-white? start end)
+                                   (delete start end)))))
+                   (eval)
+                   (super-on-default-char event)))))))
       (sequence
         (super-init)
         (let ([keymap (make-object keymap%)]

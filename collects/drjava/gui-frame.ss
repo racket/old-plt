@@ -7,7 +7,7 @@
       (private
         (base-editor% text:info%);(get-editor%))
         (defs% (definitions-text-mixin base-editor%))
-        (forwarding-mess (make-object forwarding-message))
+        (forwarding-mess (make-object forwarding-message this))
         (defs (make-object defs% forwarding-mess)))
       (override
        (make-editor (lambda () defs))
@@ -66,14 +66,15 @@
   
   
   (define forwarding-message
-    (class object% ()
+    (class object% (frame)
       (private
         (forward-to #f))
       (public
         (set-label
          (lambda (message)
            (when forward-to
-             (send forward-to set-label message))))
+             (send forward-to set-label message)
+             (send frame set-label message))))
         (set-forward-to!
          (lambda (forwardee)
            (set! forward-to forwardee))))

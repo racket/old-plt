@@ -145,10 +145,16 @@
 		 (cond
 		  [(null? collection-paths) 
 		   (hash-table-map ht (lambda (k v) v))]
-		  [else (let ([cp (car collection-paths)])
-			  (let loop ([collections (if (directory-exists? cp)
-						      (directory-list cp)
-						      null)])
+		  [else (let* ([cp (car collection-paths)]
+			       [cp-contents
+				(if (directory-exists? cp)
+				    (directory-list cp)
+				    null)])
+			  (let loop ([collections (filter
+						   (lambda (x)
+						     (directory-exists?
+						      (build-path cp x)))
+						   cp-contents)])
 			    (cond
 			     [(null? collections) (void)]
 			     [else (let* ([collection (car collections)]

@@ -5,7 +5,7 @@
 #include "wx_list.h"
 #include "wx_gdi.h"
 #ifdef wx_xt
-#include "wx_dc.h"
+# include "wx_dc.h"
 #endif
 
 @INCLUDE wxs.xci
@@ -16,10 +16,11 @@
 
 #define USE_FONT_NAME_DIRECTORY 1
 
+/* Not used, anyway: */
 #if defined(wx_mac) || defined(wx_xt)
-#define COLORMAP_CREATE 0
+# define COLORMAP_CREATE 0
 #else
-#define COLORMAP_CREATE 1
+# define COLORMAP_CREATE 1
 #endif
 
 @MACRO CHECKMUT[TYPE.what.who] = if (!((<TYPE> *)((Scheme_Class_Object *)obj)->primdata)->IsMutable()) scheme_signal_error("%s: this wx:%s%% object is locked (in use by a wx:dc%% or in a list of %s constants)", <who>, <what>, <what>);

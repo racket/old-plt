@@ -25,13 +25,13 @@
 #define Uses_XLib /* for getting black pixel value */
 #include "wx_dialg.h"
 #ifndef OLD_WXWINDOWS
-#include "wx_cmdlg.h"
+# include "wx_cmdlg.h"
 #endif
 #include "wx_utils.h"
 #include "wx_dcps.h"
 #include "wx_media.h"
 #ifdef wx_xt
-#include "wx_types.h"
+# include "wx_types.h"
 #endif
 
 #include <string.h>

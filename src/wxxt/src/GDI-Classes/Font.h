@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Font.h,v 1.1 1996/01/10 14:56:14 markus Exp $
+ * $Id: Font.h,v 1.1.1.1 1997/12/22 17:28:50 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -66,14 +66,14 @@ private:
     int    font_id; /* MATTHEW */
 };
 
-class wxFontList : public wxList {
+class wxFontList : public wxObject {
 DECLARE_DYNAMIC_CLASS(wxFontList)
+   wxChildList *list;
 public:
-    wxFontList(void) : wxList() { }
+    wxFontList(void);
     ~wxFontList(void);
 
-    void AddFont(wxFont *font)    { Append(font); }
-    void RemoveFont(wxFont *font) { DeleteObject(font); }
+    void AddFont(wxFont *font);
 
     wxFont *FindOrCreateFont(int PointSize, int FontIdOrFamily, int Style, 
 			     int Weight, Bool underline = FALSE);

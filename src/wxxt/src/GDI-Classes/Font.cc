@@ -1,5 +1,5 @@
  /*								-*- C++ -*-
- * $Id: Font.cc,v 1.1 1996/01/10 14:56:14 markus Exp $
+ * $Id: Font.cc,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
  *
  * Purpose: wxWindows font handling
  *
@@ -155,19 +155,24 @@ void *wxFont::GetInternalFont(float scale)
 }
 
 //-----------------------------------------------------------------------------
-// wxFontList destroy
+// wxFontList
 //-----------------------------------------------------------------------------
+
+wxFontList::wxFontList(void)
+: wxObject(WXGC_NO_CLEANUP)
+{
+  list = new wxChildList;
+}
 
 wxFontList::~wxFontList(void)
 {
-    wxNode *node = First();
-    while (node) {
-	wxFont *font = (wxFont*)node->Data();
-	wxNode *next = node->Next();
-	delete font;
-	node = next;
-    }
 }
+
+void wxFontList::AddFont(wxFont *Font) 
+{ 
+  list->Append(Font); 
+  list->Show(Font, FALSE); /* so it can be collected */
+} 
 
 //-----------------------------------------------------------------------------
 // search for font in fontlist
@@ -177,8 +182,9 @@ wxFont *wxFontList::FindOrCreateFont(int PointSize, int FontIdOrFamily,
 				     int Style, int Weight, Bool underline)
 {
   wxFont *font;
+  int i = 0;
   
-  for (wxNode *node = First(); node; node = node->Next()) {
+  while (wxChildNode *node = list->NextNode(i)) {
     wxFont *each_font = (wxFont*)node->Data();
     if (each_font &&
 	each_font->GetPointSize() == PointSize &&

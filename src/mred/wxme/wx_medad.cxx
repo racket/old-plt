@@ -23,7 +23,7 @@
 #define YMARGIN 5
 
 #ifdef wx_motif
-#define MEDIA_CANVAS_COMBAT_CLIP_BUG
+# define MEDIA_CANVAS_COMBAT_CLIP_BUG
 #endif
 
 class SimpleScroll
@@ -69,7 +69,7 @@ class SimpleScroll
 };
 
 #ifdef MEDIA_CANVAS_INTERNAL_SCROLLS
-#define SB_WIDTH 14
+# define SB_WIDTH 14
 #endif
 
 class wxUpdateCursorTimer : public wxTimer 

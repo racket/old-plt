@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Pen+Brush.cc,v 1.1 1996/01/10 14:56:15 markus Exp $
+ * $Id: Pen+Brush.cc,v 1.1.1.1 1997/12/22 17:28:51 mflatt Exp $
  *
  * Purpose: pen and brush classes needed for drawing
  *
@@ -191,97 +191,105 @@ void wxBrush::SetStipple(wxBitmap *s)
 // wxPenList
 //-----------------------------------------------------------------------------
 
+wxPenList::wxPenList(void)
+: wxObject(WXGC_NO_CLEANUP)
+{
+  list = new wxChildList;
+}
+
 wxPenList::~wxPenList(void)
 {
-    wxNode *node = First();
-    while (node) {
-	wxPen *pen = (wxPen*)node->Data();
-	wxNode *next = node->Next();
-#if !WXGARBAGE_COLLECTION_ON
-	delete pen;
-#endif
-	node = next;
-    }
 }
+
+void wxPenList::AddPen(wxPen *Pen) 
+{ 
+  list->Append(Pen); 
+  list->Show(Pen, FALSE); /* so it can be collected */
+} 
 
 wxPen *wxPenList::FindOrCreatePen(wxColour *colour, int w, int style)
 {
   wxPen *pen;
-
-    if (!colour)
-	return NULL;
-
-    for (wxNode *node = First(); node; node = node->Next()) {
-	wxPen *each_pen = (wxPen*)node->Data();
-	if (each_pen &&
-	    each_pen->GetWidth() == w &&
-	    each_pen->GetStyle() == style &&
-	    each_pen->GetColour().Red() == colour->Red() &&
-	    each_pen->GetColour().Green() == colour->Green() &&
-	    each_pen->GetColour().Blue() == colour->Blue())
-	    return each_pen;
-    }
-
-    pen = new wxPen(*colour, w, style);
-    pen->Lock(1);
-    AddPen(pen);
-
-    return pen;
+  int i = 0;
+  
+  if (!colour)
+    return NULL;
+  
+  while (wxChildNode *node = list->NextNode(i)) {
+    wxPen *each_pen = (wxPen*)node->Data();
+    if (each_pen &&
+	each_pen->GetWidth() == w &&
+	each_pen->GetStyle() == style &&
+	each_pen->GetColour().Red() == colour->Red() &&
+	each_pen->GetColour().Green() == colour->Green() &&
+	each_pen->GetColour().Blue() == colour->Blue())
+      return each_pen;
+  }
+  
+  pen = new wxPen(*colour, w, style);
+  pen->Lock(1);
+  AddPen(pen);
+  
+  return pen;
 }
 
 wxPen *wxPenList::FindOrCreatePen(char *colour, int width, int style)
 {
-    wxColour *the_colour = wxTheColourDatabase->FindColour(colour);
-    if (the_colour)
-	return FindOrCreatePen(the_colour, width, style);
-    return NULL;
+  wxColour *the_colour = wxTheColourDatabase->FindColour(colour);
+  if (the_colour)
+    return FindOrCreatePen(the_colour, width, style);
+  return NULL;
 }
 
 //-----------------------------------------------------------------------------
 // wxBrushList
 //-----------------------------------------------------------------------------
 
+wxBrushList::wxBrushList(void)
+: wxObject(WXGC_NO_CLEANUP)
+{
+  list = new wxChildList;
+}
+
 wxBrushList::~wxBrushList(void)
 {
-    wxNode *node = First();
-    while (node) {
-	wxBrush *brush = (wxBrush*)node->Data();
-	wxNode *next = node->Next();
-#if !WXGARBAGE_COLLECTION_ON
-	delete brush;
-#endif
-	node = next;
-    }
 }
+
+void wxBrushList::AddBrush(wxBrush *Brush) 
+{ 
+  list->Append(Brush); 
+  list->Show(Brush, FALSE); /* so it can be collected */
+} 
 
 wxBrush *wxBrushList::FindOrCreateBrush(wxColour *colour, int style)
 {
   wxBrush *brush;
+  int i = 0;
 
-    if (!colour)
-	return NULL;
+  if (!colour)
+    return NULL;
 
-    for (wxNode *node = First(); node; node = node->Next()) {
-	wxBrush *each_brush = (wxBrush*)node->Data();
-	if (each_brush &&
-	    each_brush->GetStyle() == style &&
-	    each_brush->GetColour().Red() == colour->Red() &&
-	    each_brush->GetColour().Green() == colour->Green() &&
-	    each_brush->GetColour().Blue() == colour->Blue())
-	    return each_brush;
-    }
+  while (wxChildNode *node = list->NextNode(i)) {
+    wxBrush *each_brush = (wxBrush*)node->Data();
+    if (each_brush &&
+	each_brush->GetStyle() == style &&
+	each_brush->GetColour().Red() == colour->Red() &&
+	each_brush->GetColour().Green() == colour->Green() &&
+	each_brush->GetColour().Blue() == colour->Blue())
+      return each_brush;
+  }
 
-    brush = new wxBrush(*colour, style);
-    brush->Lock(1);
-    AddBrush(brush);
-
-    return brush;
+  brush = new wxBrush(*colour, style);
+  brush->Lock(1);
+  AddBrush(brush);
+  
+  return brush;
 }
 
 wxBrush *wxBrushList::FindOrCreateBrush(char *colour, int style)
 {
-    wxColour *the_colour = wxTheColourDatabase->FindColour(colour);
-    if (the_colour)
-	return FindOrCreateBrush(the_colour, style);
-    return NULL;
+  wxColour *the_colour = wxTheColourDatabase->FindColour(colour);
+  if (the_colour)
+    return FindOrCreateBrush(the_colour, style);
+  return NULL;
 }

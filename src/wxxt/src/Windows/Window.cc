@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: Window.cc,v 1.1.1.1 1997/12/22 17:28:57 mflatt Exp $
+ * $Id: Window.cc,v 1.2 1998/01/27 16:38:58 mflatt Exp $
  *
  * Purpose: base class for all windows
  *
@@ -101,6 +101,9 @@ wxWindow::wxWindow(void)
     saferef = (wxWindow **)MALLOC_SAFEREF(sizeof(wxWindow *));
     *saferef = this;
     misc_flags = 0;
+    /* except for frames, windows start out shown: */
+    if (!wxSubType(__type, wxTYPE_FRAME))
+      misc_flags |= SHOWN_FLAG;
     internal_disabled = 0;
 
     WXGC_IGNORE(parent);

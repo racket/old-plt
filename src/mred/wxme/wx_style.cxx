@@ -25,7 +25,7 @@
 #include "wx_main.h"
 #include "wx_dialg.h"
 #ifndef OLD_WXWINDOWS
-#include "wx_cmdlg.h"
+# include "wx_cmdlg.h"
 #endif
 #include "wx_style.h"
 #include "wx_mtype.h"
@@ -44,9 +44,9 @@ static int defaultSize = 12;
 #endif
 
 #if !defined(wx_xt) || defined(WXME_FOR_MRED)
-#define FONT_DIRECTORY wxTheFontNameDirectory
+# define FONT_DIRECTORY wxTheFontNameDirectory
 #else
-#define FONT_DIRECTORY (*wxTheFontNameDirectory)
+# define FONT_DIRECTORY (*wxTheFontNameDirectory)
 #endif
 
 wxStyleList *wxTheStyleList;
@@ -654,11 +654,11 @@ int wxStyle::GetFamily()
 char *wxStyle::GetFace()
 {
 #ifndef NO_GENERAL_FONTS
-#ifndef WXME_FOR_MRED
+# ifndef WXME_FOR_MRED
   return font->GetFaceName();
-#else
+# else
   return font->GetFaceString();
-#endif
+# endif
 #else
   return font->GetFamilyString();
 #endif

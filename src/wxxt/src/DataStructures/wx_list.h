@@ -197,6 +197,7 @@ class wxChildList
   inline wxChildNode *First(void) { return FindNode(NULL); }
   
   wxChildNode *FindNode(wxChildNode *after);
+  wxChildNode *NextNode(int &pos);
 
   void Show(wxObject *object, Bool show);
 

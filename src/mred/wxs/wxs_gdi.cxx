@@ -10,7 +10,7 @@
 #include "wx_list.h"
 #include "wx_gdi.h"
 #ifdef wx_xt
-#include "wx_dc.h"
+# include "wx_dc.h"
 #endif
 
 
@@ -26,10 +26,11 @@
 
 #define USE_FONT_NAME_DIRECTORY 1
 
+/* Not used, anyway: */
 #if defined(wx_mac) || defined(wx_xt)
-#define COLORMAP_CREATE 0
+# define COLORMAP_CREATE 0
 #else
-#define COLORMAP_CREATE 1
+# define COLORMAP_CREATE 1
 #endif
 
 

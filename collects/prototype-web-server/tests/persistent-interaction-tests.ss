@@ -92,6 +92,33 @@
          (assert equal? (list 1 2 3) (test-m01.1 '(dispatch-start 3)))
          (assert equal? (list 1 2 'foo) (test-m01.1 '(dispatch-start 'foo)))))
       
+      (make-test-case
+       "recertify context test (1)"
+       (let ([test-m01.2
+              (make-module-eval
+               (module m01.1 "../persistent-interaction.ss"
+                 `(foo ,@(list 1 2 3))))])
+         (assert-true #t)))
+      
+      (make-test-case
+       "recertify context test (2)"
+       (let ([test-m01.3
+              (make-module-eval  
+               (module m01.3 "../persistent-interaction.ss"
+                 (lambda (n)
+                   `(n ,@(list 1 2 3)))))])
+         (assert-true #t)))
+      
+      (make-test-case
+       "recertify context test (3)"
+       (let ([test-m01.4
+              (make-module-eval
+               (module m1 "../persistent-interaction.ss"
+                 (define (bar n)
+                   `(n ,@(list 1 2 3)))
+                 (bar 7)))])
+         (assert-true #t)))
+      
       ;; start-interaction may be called mutitple times
       ;; each call overwrites the previous interaction
       ;; continuation with the latest one.

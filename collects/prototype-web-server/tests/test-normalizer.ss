@@ -297,8 +297,8 @@
           "multi-valued let-values"
           (assert-true (check-unsupported-let
                         (normalize-term (expand (syntax (let-values ([(x y) (values 1 2)]) (+ x y))))))))
-      
-      (make-test-case
+      ; this is supported now
+      #; (make-test-case
        "let/multiple clauses before body"
        (assert-true (check-unsupported-let
                      (normalize-term (expand (syntax (let ([x 1] [y 2]) (+ x y)))))))))

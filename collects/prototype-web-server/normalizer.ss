@@ -17,6 +17,7 @@
   ;;       |  (if expr expr expr)
   ;;       |  (let-values ([(var)] expr) expr)
   ;;       |  (let-values ([(var ...)] expr) expr)
+  ;;       |  (let-values ([(var ...)] expr) expr ...)
   ;;       |  (#%app expr ...)
   ;;       |  (#%datum . datum)
   ;;       |  (#%top . var)
@@ -51,7 +52,8 @@
   (define (normalize-definition def)
     (syntax-case def (define-values)
       [(define-values (ids ...) body-expr)
-       #`(define-values (ids ...) #,(normalize-term #'body-expr))]
+       (with-syntax ([body-expr (recertify #'body-expr def)])
+         #`(define-values (ids ...) #,(normalize-term #'body-expr)))]
       [_else
        (raise-syntax-error #f "normalize-definition: dropped through" def)]))
   
@@ -65,51 +67,63 @@
   (define (normalize ctxt expr)
     (syntax-case expr (lambda if let-values #%app #%datum #%top quote begin)
       [(lambda (formals ...) body)
-       (ctxt #`(lambda (formals ...) #,(normalize-term #'body)))]
+       (with-syntax ([body (recertify #'body expr)])
+         (ctxt #`(lambda (formals ...) #,(normalize-term #'body))))]
       [(lambda . anything)
        (raise-syntax-error #f "Not all lambda-expressions supported" expr)]
       [(if tst-expr csq-expr)
-       (normalize
-        (compose ctxt
-                 (lambda (val)
-                   #`(if #,val #,(normalize-term #'csq-expr))))
-        #'tst-expr)]
+       (with-syntax ([(tst-expr csq-expr) (recertify* (list #'tst-expr #'csq-expr) expr)])
+         (normalize
+          (compose ctxt
+                   (lambda (val)
+                     #`(if #,val #,(normalize-term #'csq-expr))))
+          #'tst-expr))]
       [(if tst-expr csq-expr alt-expr)
-       (normalize
-        (compose ctxt
-                 (lambda (val)
-                   #`(if #,val
-                         #,(normalize-term #'csq-expr)
-                         #,(normalize-term #'alt-expr))))
-        #'tst-expr)]
+       (with-syntax ([(tst-expr csq-expr alt-expr) (recertify* (list #'tst-expr #'csq-expr #'alt-expr) expr)])
+         (normalize
+          (compose ctxt
+                   (lambda (val)
+                     #`(if #,val
+                           #,(normalize-term #'csq-expr)
+                           #,(normalize-term #'alt-expr))))
+          #'tst-expr))]
       [(let-values ([(var) rhs-expr]) body)
-       (normalize ctxt #'(#%app (lambda (var) body) rhs-expr))]
+       (with-syntax ([(rhs-expr body) (recertify* (list #'rhs-expr #'body) expr)])
+         (normalize ctxt #'(#%app (lambda (var) body) rhs-expr)))]
       [(let-values ([(vars ...) rhs-expr]) body)
-       (normalize ctxt #'(#%app call-with-values
-                                (lambda () rhs-expr)
-                                (lambda (vars ...) body)))]
-      [(let-values . anything)
-       (raise-syntax-error #f "Not all let-values-expressions supported" expr)]
+       (with-syntax ([(rhs-expr body) (recertify* (list #'rhs-expr #'body) expr)])
+         (normalize ctxt #'(#%app call-with-values
+                                  (lambda () rhs-expr)
+                                  (lambda (vars ...) body))))]
+      [(let-values ([(vars ...) rhs-expr]) body-expr rest-body-exprs ...)
+       (with-syntax ([(rhs-expr body-expr rest-body-exprs ...)
+                      (recertify* (syntax->list #'(rhs-expr body-expr rest-body-exprs ...)) expr)])
+         (normalize ctxt #'(let-values ([(vars ...) rhs-expr])
+                             (let-values ([(throw-away) body-expr]) rest-body-exprs ...))))]
       [(#%app expr-rator expr-rands ...)
-       (normalize
-        (lambda (val0)
-          (normalize*
-           (compose ctxt
-                    (lambda (rest-vals)
-                      (recertify-dammit
-                       #`(#%app #,val0 #,@rest-vals)
-                       expr)))
-           (syntax->list #'(expr-rands ...))))
-        #'expr-rator)]
+       (with-syntax ([(expr-rator expr-rands ...)
+                      (recertify* (syntax->list #'(expr-rator expr-rands ...)) expr)])
+         (normalize
+          (lambda (val0)
+            (normalize*
+             (compose ctxt
+                      (lambda (rest-vals)
+                        #`(#%app #,val0 #,@rest-vals)))
+             (syntax->list #'(expr-rands ...))))
+          #'expr-rator))]
       [(#%datum . datum) (ctxt expr)]
       [(#%top . var) (ctxt expr)]
       [(begin) (normalize ctxt #'(#%app (#%top . void)))]
-      [(begin last-expr) (normalize ctxt #'last-expr)]
-      [(begin first-expr . rest-expr)
-       (normalize ctxt #'(let-values ([(throw-away) first-expr])
-                           (begin . rest-expr)))]
+      [(begin last-expr)
+       (with-syntax ([last-expr (recertify #'last-expr expr)])
+         (normalize ctxt #'last-expr))]
+      [(begin first-expr rest-exprs ...)
+       (with-syntax ([(first-expr rest-exprs ...)
+                      (recertify* (syntax->list #'(first-expr rest-exprs ...)) expr)])
+         (normalize ctxt #'(let-values ([(throw-away) first-expr])
+                             (begin rest-exprs ...))))]
       [(quote datum) (ctxt expr)]
-      [x (symbol? (syntax-object->datum #'x))
+      [x (identifier? #'x)
          (ctxt expr)]
       [_else
        (raise-syntax-error #f "normalize: unsupported form" expr)]))

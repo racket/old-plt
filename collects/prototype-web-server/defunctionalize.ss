@@ -34,8 +34,9 @@
   (define (defunctionalize-definition def labeling)
     (syntax-case def ()
       [(define-values (var ...) expr)
-       (let-values ([(new-expr defs) (defunctionalize #'expr labeling)])
-         (append defs (list #`(define-values (var ...) #,new-expr))))]
+       (with-syntax ([expr (recertify #'expr def)])
+         (let-values ([(new-expr defs) (defunctionalize #'expr labeling)])
+           (append defs (list #`(define-values (var ...) #,new-expr)))))]
       [else
        (raise-syntax-error #f "defunctionalize-definition dropped through" def)]))
     
@@ -44,55 +45,57 @@
   (define (defunctionalize expr labeling)
     (syntax-case expr (if #%app lambda let-values #%top #%datum with-continuation mark quote)
       [(if test-expr csq-expr)
-       (let-values ([(new-test-expr test-defs) (defunctionalize #'test-expr labeling)]
-                    [(new-csq-expr csq-defs) (defunctionalize #'csq-expr labeling)])
-         (values 
-          #`(if #,new-test-expr #,new-csq-expr)
-          (append test-defs csq-defs)))]
+       (with-syntax ([(tst-expr csq-expr) (recertify* (list #'tst-expr #'csq-expr) expr)])
+         (let-values ([(new-test-expr test-defs) (defunctionalize #'test-expr labeling)]
+                      [(new-csq-expr csq-defs) (defunctionalize #'csq-expr labeling)])
+           (values 
+            #`(if #,new-test-expr #,new-csq-expr)
+            (append test-defs csq-defs))))]
       [(if test-expr csq-expr alt-expr)
-       (let-values ([(new-test-expr test-defs) (defunctionalize #'test-expr labeling)]
-                    [(new-csq-expr csq-defs) (defunctionalize #'csq-expr labeling)]
-                    [(new-alt-expr alt-defs) (defunctionalize #'alt-expr labeling)])
-         (values #`(if #,new-test-expr #,new-csq-expr #,new-alt-expr)
-                 (append test-defs csq-defs alt-defs)))]
+       (with-syntax ([(tst-expr csq-expr alt-expr) (recertify* (list #'tst-expr #'csq-expr #'alt-expr) expr)])
+         (let-values ([(new-test-expr test-defs) (defunctionalize #'test-expr labeling)]
+                      [(new-csq-expr csq-defs) (defunctionalize #'csq-expr labeling)]
+                      [(new-alt-expr alt-defs) (defunctionalize #'alt-expr labeling)])
+           (values #`(if #,new-test-expr #,new-csq-expr #,new-alt-expr)
+                   (append test-defs csq-defs alt-defs))))]
       [(#%app exprs ...)
-       (let-values ([(new-exprs defs) (defunctionalize* (syntax->list #'(exprs ...)) labeling)])
-         (values
-          (recertify-dammit
-           #`(#%app #,@new-exprs)
-           expr)
-          defs))]
-      
+       (with-syntax ([(exprs ...) (recertify* (syntax->list #'(exprs ...)) expr)])
+         (let-values ([(new-exprs defs) (defunctionalize* (syntax->list #'(exprs ...)) labeling)])
+           (values
+            #`(#%app #,@new-exprs)
+            defs)))]
       [(let-values ([(f) rhs])
          (#%app f-apply (with-continuation-mark ignore-key f-mark body-expr)))
        ;; (and (bound-identifier=? #'f #'f-apply) (bound-identifier=? #'f #'f-mark))
-       (let-values ([(new-rhs rhs-defs) (defunctionalize #'rhs labeling)]
-                    [(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
-         (values
-          #`(let ([f #,new-rhs])
-              (f-apply (with-continuation-mark ignore-key f-mark #,new-body-expr)))
-          (append rhs-defs body-defs)))]
-      
+       (with-syntax ([(rhs f-apply ignore-key f-mark body-expr)
+                      (recertify* (syntax->list #'(rhs f-apply ignore-key f-mark body-expr)) expr)])
+         (let-values ([(new-rhs rhs-defs) (defunctionalize #'rhs labeling)]
+                      [(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
+           (values
+            #`(let ([f #,new-rhs])
+                (f-apply (with-continuation-mark ignore-key f-mark #,new-body-expr)))
+            (append rhs-defs body-defs))))]
       [(let-values ([(f) rhs]) (#%app f-apply body-expr))
-       (let-values ([(new-rhs rhs-defs) (defunctionalize #'rhs labeling)]
-                    [(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
-         (values
-          #`(let ([f #,new-rhs])
-              (f-apply #,new-body-expr))
-          (append rhs-defs body-defs)))]
-      
+       (with-syntax ([(rhs f-apply body-expr) (recertify* (syntax->list #'(rhs f-apply body-expr) expr))])
+         (let-values ([(new-rhs rhs-defs) (defunctionalize #'rhs labeling)]
+                      [(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
+           (values
+            #`(let ([f #,new-rhs])
+                (f-apply #,new-body-expr))
+            (append rhs-defs body-defs))))]
       [(lambda (formals ...) body-expr)
-       (let-values ([(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
-         (let ([fvars (free-vars expr)]
-               [tag (labeling)])
-           (let-values ([(make-CLOSURE closure-definitions)
-                         (make-closure-definition-syntax tag (syntax->list #'(formals ...)) fvars new-body-expr)])
-             (values
-              (if (null? fvars)
-                  #`(#,make-CLOSURE)
-                  #`(#,make-CLOSURE (lambda () (values #,@fvars))))
-              (append body-defs
-                      closure-definitions)))))]
+       (with-syntax ([body-expr (recertify #'body-expr expr)])
+         (let-values ([(new-body-expr body-defs) (defunctionalize #'body-expr labeling)])
+           (let ([fvars (free-vars expr)]
+                 [tag (labeling)])
+             (let-values ([(make-CLOSURE closure-definitions)
+                           (make-closure-definition-syntax tag (syntax->list #'(formals ...)) fvars new-body-expr)])
+               (values
+                (if (null? fvars)
+                    #`(#,make-CLOSURE)
+                    #`(#,make-CLOSURE (lambda () (values #,@fvars))))
+                (append body-defs
+                        closure-definitions))))))]
       [(#%top . var) (values expr '())]
       [(#%datum . var) (values expr '())]
       [(quote datum) (values expr '())]

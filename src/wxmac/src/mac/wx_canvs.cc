@@ -438,7 +438,7 @@ void wxCanvas::Scroll(int xPos, int yPos)
 		cScroll->SetScrollData(&scrollData, whatScrollData, NULL);
 }
 
-void wxCanvas::ScrollPercent(float xPos, float yPos)
+void wxCanvas::ScrollPercent(float x, float y)
 {
   if (!scrollAutomanaged) {
     /* Not managing  - do nothing */

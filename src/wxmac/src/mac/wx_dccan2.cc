@@ -588,8 +588,8 @@ Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
   	return theResult;
 }
 
-Bool wxCanvasDC::Blit(float xdest, float ydest, float width, float height,
-		      wxBitmap *source, float xsrc, float ysrc)
+Bool wxCanvasDC::GCBlit(float xdest, float ydest, float width, float height,
+			wxBitmap *source, float xsrc, float ysrc)
 {
   /* Non-allocating (i.e. no collectable allocation) Blit. Look like
      the normal one will work. */

@@ -22,7 +22,7 @@
 ;;     `syntax-local-context' function lets us key this to
 ;;     specific internal-definition contexts.
 ;;
-;;  2. Implementing the binding effetc of an `open', which needs
+;;  2. Implementing the binding effect of an `open', which needs
 ;;     to expose the bindings hidden by a `package', but also
 ;;     needs to override shadowing.
 ;;
@@ -583,11 +583,20 @@
 			stx
 			elem)))
 		   path)
-	 (quasisyntax/loc
-	  stx
-	  (let ()
-	    (define-dot/derived #,stx tmp path1 path2 path-rest ...)
-	    tmp))))))
-    
-  )
+	 (let*-values ([(path field) (split path)])
+	   (quasisyntax/loc
+	    stx
+	    (let ()
+	      (package this-pkg all-defined
+		(open/derived #,stx #f #,@path))
+	      (let-syntax ([#,field (lambda (stx)
+				      (raise-syntax-error
+				       #f
+				       "no such exported identifier"
+				       (quote-syntax #,stx)
+				       stx))])
+		(open/derived #f #f this-pkg)
+		(let ()
+		  #,field)))))))))
 
+  )

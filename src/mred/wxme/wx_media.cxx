@@ -56,20 +56,29 @@ extern "C" {
   int scheme_utf8_encode_all(const unsigned int *us, int len, unsigned char *s);
 };
 
-void wxme_utf8_decode(char *str, long len, wxchar **us, long *ulen)
+void wxme_utf8_decode(char *str, long len, wxchar **_us, long *_ulen)
 {
-  *ulen = scheme_utf8_decode_all((unsigned char *)str, len, NULL, '?');
-  *us = new WXGC_ATOMIC wxchar[*ulen+1];
-  *ulen = scheme_utf8_decode_all((unsigned char *)str, len, *us, '?');
-  (*us)[*ulen] = 0;
+  long ulen;
+  wxchar *us;
+
+  ulen = scheme_utf8_decode_all((unsigned char *)str, len, NULL, '?');
+  us = new WXGC_ATOMIC wxchar[ulen+1];
+  ulen = scheme_utf8_decode_all((unsigned char *)str, len, us, '?');
+  us[ulen] = 0;
+  *_us = us;
+  *_ulen = ulen;
 }
 
-void wxme_utf8_encode(wxchar *us, long ulen, char **s, long *len)
+void wxme_utf8_encode(wxchar *us, long ulen, char **_s, long *_len)
 {
-  *len = scheme_utf8_encode_all(us, ulen, NULL);
-  *s = new WXGC_ATOMIC char[*len + 1];
-  *len = scheme_utf8_encode_all(us, ulen, (unsigned char *)*s);
-  (*s)[*len] = 0;
+  char *s;
+  long len;
+  len = scheme_utf8_encode_all(us, ulen, NULL);
+  s = new WXGC_ATOMIC char[len + 1];
+  len = scheme_utf8_encode_all(us, ulen, (unsigned char *)s);
+  s[len] = 0;
+  *_s = s;
+  *_len = len;
 }
 
 int wxstrlen(wxchar *s)
@@ -1797,9 +1806,9 @@ void wxMediaEdit::Insert(wxchar *str)
 
 void wxMediaEdit::Insert(char *str, long start, long end, Bool scrollOk)
 {
-  int len;
-  len = strlen(str);
-  Insert(len, str, start, end, scrollOk);
+  int l;
+  l = strlen(str);
+  Insert(l, str, start, end, scrollOk);
 }
 
 void wxMediaEdit::Insert(char *str)
@@ -2594,14 +2603,14 @@ wxchar *wxMediaEdit::GetText(long start, long end, Bool flatt, Bool forceCR, lon
 char *wxMediaEdit::GetTextUTF8(long start, long end, Bool flatt, Bool forceCR, long *_got)
 {
   wxchar *s;
-  long got, len;
+  long got, l;
   char *r = NULL;
 
   s = GetText(start, end, flatt, forceCR, &got);
-  wxme_utf8_encode(s, got, &r, &len);
+  wxme_utf8_encode(s, got, &r, &l);
 
   if (_got)
-    *_got = len;
+    *_got = l;
 
   return r;
 }
@@ -3205,10 +3214,10 @@ Bool wxMediaEdit::SaveFile(char *file, int format, Bool showErrors)
   if (format == wxMEDIA_FF_TEXT || format == wxMEDIA_FF_TEXT_FORCE_CR) {
     wxchar *us;
     char *s = 0;
-    long len;
+    long l;
     us = GetText(-1, -1, TRUE, format == wxMEDIA_FF_TEXT_FORCE_CR);
-    wxme_utf8_encode(us, wxstrlen(us), &s, &len);
-    scheme_put_string("save-file", f, s, 0, len, 0);
+    wxme_utf8_encode(us, wxstrlen(us), &s, &l);
+    scheme_put_string("save-file", f, s, 0, l, 0);
     scheme_close_output_port(f);
   } else {
     wxMediaStreamOutFileBase *b;
@@ -3586,7 +3595,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 	yl = firstLine->GetLocation();
 	*y = yl;
 	if (!top)
-	  *y += firstLine->h;
+	  (*y) += firstLine->h;
       }
       return;
     }
@@ -3613,7 +3622,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 	yl = lastLine->GetLocation();
 	*y = yl;
 	if (!top)
-	  *y += lastLine->h;
+	  (*y) += lastLine->h;
       }
       return;
     }
@@ -3626,7 +3635,7 @@ void wxMediaEdit::PositionLocation(long start, float *x, float *y,
 	yl = line->GetLocation();
 	*y = yl;
 	if (!top)
-	  *y += line->h;
+	  (*y) += line->h;
       }
       if (!x)
 	return;

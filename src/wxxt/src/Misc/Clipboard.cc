@@ -299,7 +299,7 @@ static void wxGetSelection(Widget WXUNUSED(w), XtPointer WXUNUSED(cbv), Atom *WX
 {
   wxClipboard *cb = wxTheClipboard;
 
-  cb->receivedString = new char[*len + 1];
+  cb->receivedString = new char[(*len) + 1];
   memcpy(cb->receivedString, value, *len);
   cb->receivedString[*len] = 0;
   cb->receivedLength = *len;

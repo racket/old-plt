@@ -1332,7 +1332,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
   }
 
   pstream->Out("(");
-  len = strlen(text + dt);
+  len = strlen(text XFORM_OK_PLUS dt);
   for (i = 0; i < len; i++)
     {
       char ch = text[i + dt];

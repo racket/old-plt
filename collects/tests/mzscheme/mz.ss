@@ -2,6 +2,7 @@
 (load-relative "loadtest.ss")
 
 (load-relative "basic.ss")
+(load-relative "utf8.ss")
 (load-relative "read.ss")
 (load-relative "macro.ss")
 (load-relative "syntax.ss")

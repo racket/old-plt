@@ -1853,12 +1853,30 @@ char *regsub(regexp *prog, char *src, int sourcelen, long *lenout, char *insrc, 
 
 /************************************************************/
 /*              UTF-8 -> per-byte translation               */
+/* Translate a UTF-8-encode regexp over the language of     */
+/* unicode code points into a per-byte regexp that matches  */
+/* equivalent portionals of a UTF-8-encoded sequences of    */
+/* code points.                                             */
 /************************************************************/
 
+/* To avoid the broken qsort in Solaris: */
+#include "../gc2/my_qsort.c"
+
+static int compare_ranges(const void *a, const void *b)
+{
+  if (*(unsigned int *)a < *(unsigned int *)b)
+    return -1;
+  else
+    return 1;
+}
+
+/* For allocating the traslated string, as we go. When writing an
+   original char (or something that takes its place), there's always
+   space, but call make_room() before adding new content. */
 typedef struct {
-  int i;
-  int orig_len;
-  int size;
+  int i;         /* number of original chars written */
+  int orig_len;  /* original length */
+  int size;      /* allocated size */
 } RoomState;
 
 static unsigned char *make_room(unsigned char *r, int j, int need_extra, RoomState *rs)
@@ -1877,34 +1895,27 @@ static unsigned char *make_room(unsigned char *r, int j, int need_extra, RoomSta
   return r;
 }
 
-#include "../gc2/my_qsort.c"
-
-static int compare_ranges(const void *a, const void *b)
-{
-  if (*(unsigned int *)a < *(unsigned int *)b)
-    return -1;
-  else
-    return 1;
-}
-
 static unsigned char *add_byte_range(const unsigned char *lo, const unsigned char *hi, int count,
 				     unsigned char *r, int *_j, RoomState *rs,
-				     int did_alt, int wrap_alts)
+				     /* did_alt => no need to start with "|" */
+				     int did_alt, 
+				     /* wrap_alts => wrap "(?:...)" around multiple alts */
+				     int wrap_alts)
+     /* Adds alternatives for matching valid UTF-8 encodings lo
+	through hi lexicographically. See add_range to get started. */
 {
   int same_chars, j, i;
   const unsigned char *lowest = "\200\200\200\200\200";
   const unsigned char *highest = "\277\277\277\277\277";
   unsigned char p, q;
 
+  /* Look for a common prefix: */
   for (same_chars = 0; same_chars < count; same_chars++) {
     if (lo[same_chars] != hi[same_chars])
       break;
   }
 
   j = *_j;
-
-  /* We assume that in the curent context, it's ok to produce
-     alternatives without parens around the set of alternatives */
 
   /* Match exactly the part that's the same for hi and lo */
   if (same_chars) {
@@ -1923,7 +1934,9 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
        Find p such that p >= n and p0000 >= nxxxx, and
        find q such that q0000 <= mxxxx */
     int choices = 0;
-    
+
+    /* If the xxxxs in nxxxx are 0, then p is n,
+       otherwise it's n + 1 */
     for (i = same_chars + 1; i < count; i++) {
       if (lo[i] != 128)
 	break;
@@ -1935,6 +1948,8 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       choices++;
     }
 
+    /* If the xxxxs in mxxxx are 0, then q is m,
+       otherwise it's m - 1 */
     for (i = same_chars + 1; i < count; i++) {
       if (hi[i] != 191)
 	break;
@@ -1960,7 +1975,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       r[j++] = ':';
     }
 
-    
+    /* Fill out [nxxxx, p0000) */
     if (p > lo[same_chars]) {
       r = make_room(r, j, 2, rs);
       if (!did_alt) {
@@ -1976,6 +1991,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       did_alt = 0;
     }
     
+    /* Fill out [m0000, mxxxx] */
     if (q < hi[same_chars]) {
       r = make_room(r, j, 2, rs);
       if (!did_alt) {
@@ -1992,6 +2008,7 @@ static unsigned char *add_byte_range(const unsigned char *lo, const unsigned cha
       q = hi[same_chars] - 1;
     }
     
+    /* Fill out [p0000,m0000) */
     if (p <= q) {
       /* Make the alternative that lets the initial digit vary,
 	 since there's room between the lo and hi leading digit */
@@ -2083,7 +2100,7 @@ static unsigned char *add_range(unsigned char *r, int *_j, RoomState *rs,
   return add_byte_range(lo, hi, count, r, _j, rs, did_alt, 0);
 }
 
-int translate(unsigned char *s, int len, char **result)
+static int translate(unsigned char *s, int len, char **result)
 {
   int j;
   RoomState rs;

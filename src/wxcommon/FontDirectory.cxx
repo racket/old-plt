@@ -588,7 +588,7 @@ void wxSuffixMap::Initialize(const char *resname, const char *devresname,
 	    ds = drn;
 	  }
 
-	  len = strlen(src + ds);
+	  len = strlen(src XFORM_OK_PLUS ds);
 	  if (src[ds] == '-') {
 	    char *prefix;
 	    int c = 0;

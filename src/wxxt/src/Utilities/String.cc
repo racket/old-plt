@@ -50,7 +50,7 @@ char *copystring_to_aligned(const char *s, int d)
   size_t len;
   char *news;
 
-  len = strlen(s + d);
+  len = strlen(s XFORM_OK_PLUS d);
   news = new WXGC_ATOMIC char[len + 1];
   memcpy(news, s + d, len + 1);
   return news;

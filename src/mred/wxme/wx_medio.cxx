@@ -173,7 +173,7 @@ void wxMediaStreamOutBase::Write(char *data, long len, int delta)
   if (delta) {
     char *d;
     d = new WXGC_ATOMIC char[len];
-    memcpy(d, data + delta);
+    memcpy(d, data + delta, len);
     delta = 0;
     data = d;
   }

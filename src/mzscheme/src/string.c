@@ -35,6 +35,9 @@
 # ifdef MACOS_UNICODE_SUPPORT
 #  include <CoreFoundation/CFString.h>
 # endif
+# ifdef WINDOWS_UNICODE_SUPPORT
+#  include <windows.h>
+# endif
 #endif
 
 #ifndef SCHEME_PLATFORM_LIBRARY_SUBPATH
@@ -1594,8 +1597,20 @@ int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cv
 #endif
 
 #ifdef WINDOWS_UNICODE_SUPPORT
-#endif
+int mz_native_strcoll(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case)
+     /* The s1 and s2 arguments are actually UTF-16. */
+{
+  int r;
 
+  r = CompareString(LOCALE_USER_DEFAULT,
+		    ((cvt_case ? NORM_IGNORECASE : 0)
+		     | NORM_IGNOREKANATYPE
+		     | NORM_IGNOREWIDTH),
+		    d1, l1, d2, l2);
+
+  return r - 2;
+}
+#endif
 
 typedef int (*strcoll_proc)(char *s1, int d1, int l1, char *s2, int d2, int l2, int cvt_case);
 
@@ -1749,7 +1764,7 @@ char *do_locale_recase(int to_up, char *in, int delta, int len, long *olen)
 
 #ifdef MACOS_UNICODE_SUPPORT
 char *do_native_recase(int to_up, char *in, int delta, int len, long *olen)
-/* The in argument is actually UTF-16. */
+     /* The in argument is actually UTF-16. */
 {
   CFMutableStringRef mstr;
   CFStringRef str;
@@ -1772,6 +1787,25 @@ char *do_native_recase(int to_up, char *in, int delta, int len, long *olen)
   CFStringGetCharacters(mstr, CFRangeMake(0, len), (UniChar *)result);
   CFRelease(mstr);
   
+  return result;
+}
+#endif
+
+#ifdef WINDOWS_UNICODE_SUPPORT
+char *do_native_recase(int to_up, char *in, int delta, int len, long *olen)
+     /* The in argument is actually UTF-16. */
+{
+  char *result;
+
+  result = (char *)scheme_malloc_atomic(len * 2);
+  memcpy(result, in + (2 * delta), len * 2);
+  
+  if (to_up)
+    CharUpperBuffW(result, len);
+  else
+    CharLowerBuffW(result, len);
+
+  *olen = len;
   return result;
 }
 #endif

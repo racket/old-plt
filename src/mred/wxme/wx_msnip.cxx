@@ -306,7 +306,7 @@ void wxMediaSnip::GetExtent(wxDC *dc,
   if (w) {
     if (me && (me->bufferType == wxEDIT_BUFFER)) {
       if (tightFit)
-	*w -= CURSOR_WIDTH;
+	(*w) -= CURSOR_WIDTH;
       else
 	--(*w); /* It still looks better to subtract 1 */
       if (*w < 0)
@@ -317,12 +317,12 @@ void wxMediaSnip::GetExtent(wxDC *dc,
     else if (maxWidth > 0 && *w > maxWidth)
       *w = maxWidth;
 
-    *w += rightMargin + leftMargin;
+    (*w) += rightMargin + leftMargin;
   }
   if (h) {
     if (me && (me->bufferType == wxEDIT_BUFFER)) {
       if (tightFit) {
-	*h -= ((wxMediaEdit *)me)->GetLineSpacing();
+	(*h) -= ((wxMediaEdit *)me)->GetLineSpacing();
 	if (*h < 0)
 	  *h = 0;
       }
@@ -332,7 +332,7 @@ void wxMediaSnip::GetExtent(wxDC *dc,
     else if (maxHeight > 0 && *h > maxHeight)
       *h = maxHeight;
 
-    *h += topMargin + bottomMargin;
+    (*h) += topMargin + bottomMargin;
   }
 
   {

@@ -243,7 +243,7 @@ void wxWindow::SetTitle(char *title)
 	return;
 
     if (!utf8_atom) {
-      utf8_atom = XInternAtom(XtDisplay(wxAPP_TOPLEVEL), "UTF-8", FALSE);
+      utf8_atom = XInternAtom(XtDisplay(X->frame), "UTF-8", FALSE);
     }
 
     XtVaSetValues(X->frame, 

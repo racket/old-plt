@@ -833,7 +833,7 @@ wxDC *wxMediaCanvas::GetDCAndOffset(float *fx, float *fy)
 	  *fy = v;
 	}
 	if (scrollBottomBased && (scrollHeight || scrollToLast))
-	  *fy -= h;
+	  (*fy) -= h;
       } else
 	*fy = -ymargin;
     }

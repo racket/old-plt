@@ -1724,19 +1724,19 @@ static unsigned int *convert_to_drawable_format(const char *s, int ds, long *_ul
       if (ulen <= bufsize)
 	us = buf;
       else
-	us = new WXGC_ATOMIC unsigned int[ulen];
+	us = new WXGC_ATOMIC unsigned[ulen];
       memcpy(us, s + (ds * sizeof(int)), ulen * sizeof(unsigned int));
     }
   } else {
     int length;
 
-    length = strlen(s + ds);
+    length = strlen(s XFORM_OK_PLUS ds);
     
     ulen = scheme_utf8_decode((const unsigned char *)s, ds, ds + length, NULL, 0, -1, NULL, 0, '?');
     if (ulen <= bufsize)
       us = buf;
     else
-      us = new WXGC_ATOMIC unsigned int[ulen];
+      us = new WXGC_ATOMIC unsigned[ulen];
     ulen = scheme_utf8_decode((const unsigned char *)s, ds, ds + length, us, 0, -1, NULL, 0, '?');
   }
 
@@ -1862,14 +1862,15 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y, Bool isUnicode, int
 #ifdef WX_USE_XFT
   if (xfontinfo) {
     int xasc;
+    int v;
     XftColor col;
     col.pixel = current_text_fg->GetPixel();
-    col.color.red = current_text_fg->Red();
-    col.color.red = (col.color.red << 8) | col.color.red;
-    col.color.green = current_text_fg->Green();
-    col.color.green = (col.color.green << 8) | col.color.green;
-    col.color.blue = current_text_fg->Blue();
-    col.color.blue = (col.color.blue << 8) | col.color.blue;
+    v = current_text_fg->Red();
+    col.color.red = (v << 8) | v;
+    v = current_text_fg->Green();
+    col.color.green = (v << 8) | v;
+    v = current_text_fg->Blue();
+    col.color.blue = (v << 8) | v;
     col.color.alpha = 0xFFFF;
 
     if (CURRENT_REG)
@@ -1882,12 +1883,12 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y, Bool isUnicode, int
       if (Colour) {
 	XftColor bg;
 	bg.pixel = current_text_bg->GetPixel();
-	bg.color.red = current_text_bg->Red();
-	bg.color.red = (bg.color.red << 8) | bg.color.red;
-	bg.color.green = current_text_bg->Green();
-	bg.color.green = (bg.color.green << 8) | bg.color.green;
-	bg.color.blue = current_text_bg->Blue();
-	bg.color.blue = (bg.color.blue << 8) | bg.color.blue;
+	v = current_text_bg->Red();
+	bg.color.red = (v << 8) | v;
+	v = current_text_bg->Green();
+	bg.color.green = (v << 8) | v;
+	v = current_text_bg->Blue();
+	bg.color.blue = (v << 8) | v;
 	bg.color.alpha = 0xFFFF;
 	XftDrawRect(XFTDRAW, &bg, dev_x, dev_y, rw, xfontinfo->ascent + xfontinfo->descent);
       } else {

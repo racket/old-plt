@@ -387,12 +387,6 @@
 
 (SECTION 6 6)
 
-;; Let Matthew perform some basic sanity checks for locale-sensitive
-;; comparisons:
-(define known-locale? (and (regexp-match "mflatt" (find-system-path 'home-dir))
-			   (regexp-match "linux" (system-library-subpath))))
-
-
 (define (char-tests)
   (test #t eqv? '#\  #\Space)
   (test #t eqv? #\space '#\Space)
@@ -563,39 +557,7 @@
   (err/rt-test (char-ci>=? #\a #\b 1)) 
   (err/rt-test (char-ci>=? 1 #\a)))
 
-(char-tests)
-(define (locale-comps char<? char=? char>?
-		      char-ci<? char-ci=? char-ci>?)
-  (parameterize ([current-locale "en_US"])
-    (char-tests)
-    (let ([p #\p]
-	  [n #\n]
-	  [o: (integer->char 246)]
-	  [big-O: (integer->char 214)])
-      (test #f char<? p o:)
-      (test #t char<? n o:)
-      (test #t char>? #\A #\a)
-      (test #f char<? #\A #\a)
-      (test #t char>? big-O: o:)
-      (test #f char<? big-O: o:)
-      (test #f char=? big-O: o:)
-      (test #t char<? n big-O:)
-      (test #t char<? big-O: p)
-      (test #t char-ci=? big-O: o:)
-      (test #t char-ci<? n big-O:)
-      (test #t char-ci<? big-O: p)
-      (parameterize ([current-locale #f])
-	(test #t char<? p o:)
-	(test #t char<? n o:)
-	(test #t char<? n big-O:)
-	(test #f char>? #\A #\a)
-	(test #t char<? #\A #\a)
-	(test #f char-ci=? big-O: o:)))))
-
-(when known-locale?
-  (locale-comps char-locale<? char=? char-locale>?
-		char-locale-ci<? char-locale-ci=? char-locale-ci>?))
-      
+(char-tests)      
 
 (define (ascii-range start end)
   (let ([s (or (and (number? start) start) (char->integer start))]
@@ -609,24 +571,6 @@
 (define uppers (ascii-range #\A #\Z))
 (define lowers (ascii-range #\a #\z))
 
-;; The following macos-specfic stuff is not needed anymore,
-;; due to enforcement of locale-insensitive rules:
-#|
-(when (eq? (system-type) 'macos)
-  ; There are more alphabetics:
-  (set! uppers (append uppers
-  					   (ascii-range 128 134)
-  					   (ascii-range 174 175)
-  					   (ascii-range 203 206)
-  					   (ascii-range 217 217)
-  					   (ascii-range 229 239)
-  					   (ascii-range 241 244)))
-  (set! lowers (append lowers
-  					   (ascii-range 135 159)
-  					   (ascii-range 190 191)
-  					   (ascii-range 207 207)
-  					   (ascii-range 216 216))))
-|#
 
 (define alphas (append uppers lowers))
 (define digits (ascii-range #\0 #\9))
@@ -689,30 +633,6 @@
 
 (test-up/down char-upcase 'char-upcase lowers (map cons lowers uppers))
 (test-up/down char-downcase 'char-downcase uppers (map cons uppers lowers))
-
-((load-relative "censor.ss")
- (lambda ()
-   (let loop ([n 0])
-     (unless (= n 256)
-       (let ([c (integer->char n)])
-	 (if (or (char<=? #\a c #\z)
-		 (char<=? #\A c #\Z)
-		 (char<=? #\0 c #\9))
-	     (begin
-	       (test c latin-1-integer->char n)
-	       (test n char->latin-1-integer c))
-	     (when (latin-1-integer->char n)
-	       (test n char->latin-1-integer (latin-1-integer->char n)))))
-       (loop (add1 n))))))
-
-(arity-test latin-1-integer->char 1 1)
-(arity-test char->latin-1-integer 1 1)
-(err/rt-test (latin-1-integer->char 5.0))
-(err/rt-test (latin-1-integer->char 'a))
-(err/rt-test (latin-1-integer->char -1))
-(err/rt-test (latin-1-integer->char 256))
-(err/rt-test (latin-1-integer->char 10000000000000000))
-(err/rt-test (char->latin-1-integer 5))
 
 (SECTION 6 7)
 (test #t string? "The word \"recursion\\\" has many meanings.")
@@ -960,28 +880,6 @@
   (test #t string-ci>=? ay abigx))
 
 (string-tests)
-(when known-locale?
-  (parameterize ([current-locale "en_US"])
-    (string-tests)))
-
-(when known-locale?
-  ;; Test string comparisons with locales; especially
-  ;; check various uses of the nul character
-  (let loop ([templates (list 
-			 "~a"
-			 "aa~ax"
-			 "a\000~a"
-			 "~a\000a"
-			 "\000~a"
-			 "~a\000"
-			 "z\000z\000z\000~az\000z\000z\000")])
-    (unless (null? templates)
-      (let ([mk (lambda (?)
-		  (lambda (x y)
-		    (? (format (car templates) x) (format (car templates) y))))])
-	(locale-comps (mk string-locale<?) (mk string=?) (mk string-locale>?)
-		      (mk string-locale-ci<?) (mk string-locale-ci=?) (mk string-locale-ci>?))
-	(loop (cdr templates))))))
 
 (map (lambda (pred)
        (arity-test pred 2 -1)
@@ -998,6 +896,7 @@
 	   string-ci<? 
 	   string-ci>=? 
 	   string-ci<=?
+	   string-locale=? 
 	   string-locale>? 
 	   string-locale<? 
 	   string-locale-ci=? 
@@ -1179,6 +1078,11 @@
 ;; Regexps that shouldn't work:
 (err/rt-test (regexp "[a--b]") exn:misc?)
 (err/rt-test (regexp "[a-b-c]") exn:misc?)
+
+;; A good test of unicode-friendly ".":
+(test '("load-extension: couldn't open \\\" (%s)\"") 
+      regexp-match 
+      (regexp "^(?:[^\\\"]|\\\\.)*\"") "load-extension: couldn't open \\\" (%s)\"")
 
 (arity-test regexp 1 1)
 (arity-test regexp? 1 1)

@@ -356,7 +356,7 @@ int wxImage::openPic(char *fullname)
   if (!tmp)  {
     tmp = fullname; 
   } else {
-    tmp++;
+    tmp = tmp XFORM_OK_PLUS 1;
   }
   strcpy(basename,tmp);
   tmp = NULL;

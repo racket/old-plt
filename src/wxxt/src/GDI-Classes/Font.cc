@@ -357,7 +357,7 @@ void *wxFont::GetNextAASubstitution(int index, float scale_x, float scale_y, flo
       return NULL;
 
     i++;
-    len = strlen(name + i);
+    len = strlen(name XFORM_OK_PLUS i);
     next_name = new char[len + 2];
     memcpy(next_name + 1, name + i, len + 1);
     next_name[0] = ' ';
@@ -515,7 +515,7 @@ static wxFontStruct *wxLoadQueryNearestAAFont(int point_size, float scale_x, flo
       XftPattern *pat;
       XftResult res;
 
-      pat = XftNameParse(name + 1);
+      pat = XftNameParse(name XFORM_OK_PLUS 1);
 
       pat = XftPatternBuild(pat,
 			    (sip ? XFT_PIXEL_SIZE : XFT_SIZE), XftTypeInteger, point_size,

@@ -79,7 +79,7 @@ void scheme_init_numstr(Scheme_Env *env)
   scheme_add_global_constant("string->number", 
 			     scheme_make_folding_prim(string_to_number,
 						      "string->number", 
-						      1, 2, 1),
+						      1, 3, 1),
 			     env);
 
   scheme_add_global_constant("integer-byte-string->integer", 
@@ -944,8 +944,13 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     const char *cpy;
     char *ptr;
 
-    if (has_expt && !(str[has_expt + 1]))
+    if (has_expt && !(str[has_expt + 1])) {
+      if (report)
+	scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
+			"read-number: no digits after \"%c\": %t",
+			str[has_expt], str, len);
       return scheme_false;
+    }
 
     if (has_expt && (str[has_expt] != 'e' && str[has_expt] != 'E')) {
       char *str2;
@@ -1001,6 +1006,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 
     if (has_expt) {
       char *substr;
+
+      if (!str[has_expt + 1]) {
+	if (report)
+	  scheme_read_err(complain, stxsrc, line, col, pos, span, 0, indentation,
+			  "read-number: no digits after \"%c\": %t",
+			  str[has_expt], str, len);
+	return scheme_false;
+      }
 
 #ifdef MZ_PRECISE_GC
       {
@@ -1301,11 +1314,12 @@ string_to_number (int argc, Scheme_Object *argv[])
   long radix;
   long len;
   char *str;
-  int decimal_inexact;
+  int decimal_inexact, div_by_zero = 0;
+  Scheme_Object *v, *dbz_result;
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("string->number", "string", 0, argc, argv);
-  if (argc == 2) {
+  if (argc > 1) {
     if (SCHEME_INTP(argv[1]))
       radix = SCHEME_INT_VAL(argv[1]);
     else
@@ -1317,6 +1331,10 @@ string_to_number (int argc, Scheme_Object *argv[])
     }
   } else
     radix = 10;
+  if (argc > 2)
+    dbz_result = argv[2];
+  else
+    dbz_result = scheme_false;
 
   str = SCHEME_STR_VAL(argv[0]);
   len = SCHEME_STRTAG_VAL(argv[0]);
@@ -1324,11 +1342,16 @@ string_to_number (int argc, Scheme_Object *argv[])
   decimal_inexact = SCHEME_TRUEP(scheme_get_param(scheme_config, 
 						  MZCONFIG_READ_DECIMAL_INEXACT));
   
-  return scheme_read_number(str, len, 
-			    0, 0, decimal_inexact,
-			    radix, 0, NULL, NULL,
-			    0, NULL, 0, 0, 0, 0,
-			    NULL);
+  v = scheme_read_number(str, len, 
+			 0, 0, decimal_inexact,
+			 radix, 0, NULL, &div_by_zero,
+			 0, NULL, 0, 0, 0, 0,
+			 NULL);
+
+  if (div_by_zero)
+    return dbz_result;
+  else
+    return v;
 }
 
 

@@ -87,6 +87,8 @@ extern void *GC_weak_box_val(void *);
 #  define END_XFORM_SKIP /**/
 #  define GC_CAN_IGNORE /**/
 #  define GC_MAYBE_IGNORE_INTERIOR /**/
+#  define XFORM_OK_PLUS +
+#  define XFORM_OK_MINUS -
 # else
 #  ifdef GC_INTERIORABLES_NEVER_MOVE
 #   define GC_MAYBE_IGNORE_INTERIOR GC_CAN_IGNORE

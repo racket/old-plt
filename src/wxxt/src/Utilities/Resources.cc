@@ -119,9 +119,9 @@ static void wxXMergeDatabases(void)
       environment = GetIniFile(filename, NULL);
       len = strlen(environment);
 #if !defined(SVR4) || defined(__sgi)
-      gethostname(environment + len, 1024 - len);
+      gethostname(environment XFORM_OK_PLUS len, 1024 - len);
 #else
-      sysinfo(SI_HOSTNAME, environment + len, 1024 - len);
+      sysinfo(SI_HOSTNAME, environment XFORM_OK_PLUS len, 1024 - len);
 #endif
     }
     if ((homeDB = wxXrmGetFileDatabase(environment)))

@@ -501,7 +501,23 @@
                    (s? (make-s 1))
                    (set-s-a! (make-s 1) 2)))))
   
-  
-  ))
+  (test/spec-passed
+   'provide/contract4
+   '(let ()
+      (eval '(module contract-test-suite5 mzscheme
+               (require (lib "contracts.ss"))
+               (provide/contract (struct s ((a any?)))
+                                 (struct t ((a any?))))
+               (define-struct s (a))
+               (define-struct t (a))))
+      (eval '(require contract-test-suite5))
+      (eval '(list (make-s 1)
+                   (s-a (make-s 1))
+                   (s? (make-s 1))
+                   (set-s-a! (make-s 1) 2)
+                   (make-t 1)
+                   (t-a (make-t 1))
+                   (t? (make-t 1))
+                   (set-t-a! (make-t 1) 2)))))))
 
 (report-errs)

@@ -276,8 +276,8 @@
 				     zodiac:scheme-expand
 				     (expression: zodiac-read)
 				     (parameterization: 
-				      (make-parameterization system-parameterization)
-				      ;param
+				      ;(make-parameterization system-parameterization)
+				      param
 				      ))])
 			   (f (if annotate? (aries:annotate exp) exp)
 			      loop))))))))])

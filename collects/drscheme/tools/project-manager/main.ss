@@ -114,14 +114,14 @@
 				     '()
 				     '(border)))])
 	      (send (if pref project-button file-button) focus)
-	      (send execute-callback-dialog show #t))
+	      (send execute-callback-dialog show #t)
 
-	    (unless cancelled?
-	      (if (preferences:get 'drscheme:project-manager:execute-callback-project?)
-		  (begin
-		    (send project-window show #t)
-		    (send project-window execute-project))
-		  (super-execute-callback))))]
+              (unless cancelled?
+                (if (preferences:get 'drscheme:project-manager:execute-callback-project?)
+                    (begin
+                      (send project-window show #t)
+                      (send project-window execute-project))
+                    (super-execute-callback)))))]
 	 [else
 	  (super-execute-callback)]))
 	  

@@ -350,17 +350,17 @@
   
   (menu-item-container<%> menu% menu-bar% popup-menu%)
 
-  menu%
   popup-menu%
   menu-bar%
   
   (menu-item<%> separator-menu-item%  labelled-menu-item<%>)
-  (labelled-menu-item<%> shortcut-menu-item<%> submenu-item<%>)
-  (shortcut-menu-item<%> menu-item% checkable-menu-item%)
-  submenu-item<%>
+  (labelled-menu-item<%> selectable-menu-item<%> menu%)
+  (selectable-menu-item<%> menu-item% checkable-menu-item%)
   separator-menu-item%
   menu-item%
   checkable-menu-item%
+
+  menu%
 
   timer%
 
@@ -832,7 +832,6 @@
 (send menu%-example-list add m)
 (send popup-menu%-example-list add (make-object popup-menu% "Popup Menu 1"))
   
-(send submenu-item<%>-example-list add (send m get-item))
 (send separator-menu-item%-example-list add (make-object separator-menu-item% m))
 (send menu-item%-example-list add (make-object menu-item% "Menu Item 1" m void))
 (send checkable-menu-item%-example-list add (make-object checkable-menu-item% "Checkable Menu Item 1" m void))

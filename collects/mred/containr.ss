@@ -789,6 +789,10 @@
 		  (error 'insert-panel
 		    "Expected a mred:panel% descendant; got ~s"
 		    new-panel))
+		(unless (eq? this (send panel get-parent))
+		  (error 'insert-panel
+		    "Added panel ~s to a frame (~s) not its parent"
+		    new-panel this))
 		(set! panel new-panel)
 		(send panel set-size 0 0 (get-width) (get-height))
 		(force-redraw))]

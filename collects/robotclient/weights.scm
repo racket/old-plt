@@ -167,12 +167,12 @@
 	  (syntax-rules ()
 			((_ board x y p)
 			 (cond
-			  [(= (water-escape? board x y p) 1) (begin (printf "Doing a water escape~n") (* (water-escape-bid) (max-bid)))]
-			  [(= (water-push? board x y p) 1) (begin (printf "Doing a water push") (* (water-push-bid) (max-bid)))]
-			  [(= (blank-escape? board x y p) 1) (begin (printf "Doing a blank escape")  (* (blank-escape-bid) (max-bid)))]
-			  [(= (wall-escape? board x y p) 1) (begin (printf "Doing a wall escape") (* (wall-escape-bid) (max-bid)))]
-			  [(= (blank-push? board x y p) 1) (begin (printf "Doing a blank push")  (* (blank-push-bid) (max-bid)))]
-			  [(= (wall-push? board x y p) 1) (begin (printf "Doing a wall push") (* (wall-push-bid) (max-bid)))]
+			  [(= (water-escape? board x y p) 1) (begin (* (water-escape-bid) (max-bid)))]
+			  [(= (water-push? board x y p) 1) (begin (* (water-push-bid) (max-bid)))]
+			  [(= (blank-escape? board x y p) 1) (begin   (* (blank-escape-bid) (max-bid)))]
+			  [(= (wall-escape? board x y p) 1) (begin  (* (wall-escape-bid) (max-bid)))]
+			  [(= (blank-push? board x y p) 1) (begin  (* (blank-push-bid) (max-bid)))]
+			  [(= (wall-push? board x y p) 1) (begin  (* (wall-push-bid) (max-bid)))]
                           [else 1]))))
 	
 	(define (most-of player-left lop)
@@ -333,28 +333,28 @@
                               (and (is-robot? board (- x 1) y )
 				  (= t (get-type (get-spot board (+ x 1) y))))
                               (begin
-                                (printf "pinned (- x 1) y~n")
+                                ;(printf "pinned (- x 1) y~n")
                                 #t)
                               #f)
                              (if
 			     (and (is-robot? board (+ x 1) y )
 				  (= t (get-type (get-spot board (- x 1) y))))
                              (begin
-                                (printf "pinned (+ x 1) y~n")
+                                ;(printf "pinned (+ x 1) y~n")
                                 #t)
                               #f)
 			     (if
                               (and (is-robot? board x (- y 1) )
 				  (= t (get-type (get-spot board x (+ y 1)))))
                               (begin
-                                (printf "pinned (- y 1) y~n")
+                                ;(printf "pinned (- y 1) y~n")
                                 #t)
                               #f)
 			     (if
                               (and (is-robot? board x (+ y 1) )
 				  (= t (get-type (get-spot board x (- y 1)))))
                               (begin
-                                (printf "pinned (+ y 1) y~n")
+                                ;(printf "pinned (+ y 1) y~n")
                                 #t)
                               #f)))))
 
@@ -407,7 +407,7 @@
 			 (if (and 
                               (if (pinned? board (search-player-x (player-cur)) (search-player-y (player-cur)) 1)
                                   (begin
-                                    (printf "Pinned on a water escape~n")
+                                    ;(printf "Pinned on a water escape~n")
                                     #t)
                                   #f)
 				  (or (not (is-robot? board x y )) (not (wall? board (+ x (- x (search-player-x (player-cur)))) (+ y (- y (search-player-y (player-cur))))))))

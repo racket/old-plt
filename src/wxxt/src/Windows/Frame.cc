@@ -317,7 +317,7 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     }
 
 
-    if ((x >= 0) && (y >= 0)) {
+    if ((x > wxDEFAULT_POSITION) && (y > wxDEFAULT_POSITION)) {
       /* Tell the window manager that we really meant the initial position: */
       XSizeHints hints;
       hints.flags = USPosition;
@@ -444,6 +444,7 @@ void wxFrame::SetClientSize(int width, int height)
 void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int inch)
 {
   XSizeHints sh;
+  int x, y;
 
   if (minw < 0)
     minw = 0;
@@ -454,13 +455,17 @@ void wxFrame::EnforceSize(int minw, int minh, int maxw, int maxh, int incw, int 
   if (maxh < 0)
     maxh = 32000;
 
-  sh.flags = (PMinSize | PMaxSize | PResizeInc);
+  sh.flags = (PMinSize | PMaxSize | PResizeInc | USPosition);
   sh.min_width = minw;
   sh.min_height = minh;
   sh.max_width = maxw;
   sh.max_height = maxh;
   sh.width_inc = incw;
   sh.height_inc = inch;
+
+  GetPosition(&x, &y);
+  sh.x = x;
+  sh.y = y;
 
   XSetWMNormalHints(XtDisplay(X->frame), 
 		    XtWindow(X->frame),

@@ -3724,7 +3724,7 @@ random_seed(int argc, Scheme_Object *argv[])
   }
 
   if (i < 0)
-    scheme_wrong_type("random-seed", "integer in [0, 2147483647]", 0, argc, argv);
+    scheme_wrong_type("random-seed", "exact integer in [0, 2147483647]", 0, argc, argv);
 
   sch_srand(i, (Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE));
 
@@ -3744,7 +3744,7 @@ sch_random(int argc, Scheme_Object *argv[])
   }
 
   if (i <= 0)
-    scheme_wrong_type("random", "integer in [1, 2147483647]", 0, argc, argv);
+    scheme_wrong_type("random", "exact integer in [1, 2147483647]", 0, argc, argv);
   
   v = sch_rand((Scheme_Random_State *)scheme_get_param(scheme_config, MZCONFIG_RANDOM_STATE)) % i;
 

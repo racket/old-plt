@@ -1945,11 +1945,13 @@ sch_sleep(int argc, Scheme_Object *args[])
   float t;
 
   if (argc && !SCHEME_REALP(args[0]))
-    scheme_wrong_type("sleep", "real", 0, argc, args);
+    scheme_wrong_type("sleep", "non-negative real number", 0, argc, args);
 
-  if (argc)
+  if (argc) {
     t = scheme_real_to_double(args[0]);
-  else
+    if (t < 0)
+      scheme_wrong_type("sleep", "non-negative real number", 0, argc, args);
+  } else
     t = 0;
 
   scheme_process_block(t);

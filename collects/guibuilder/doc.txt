@@ -1,10 +1,12 @@
 
 _GUI builder_
 
-To run the GUI builder:
+To run the GUI builder, use DrScheme and select "Insert GUI"
+from the "Special" menu.
 
-  (require-library "gb.ss" "guibuilder")
+Though less recommended, you can also run
 
-Save yuor files with the extension ".gui" to ensure that they can be
-re-loaded later.
+  (require (lib "guibuilder.ss" "guibuilder"))
 
+to get a stand-alone builder. Save your files with the extension
+".gui" to ensure that they can be re-loaded later.

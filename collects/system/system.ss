@@ -3,7 +3,7 @@
 ; Print a little more than MzScheme automatically does:
 (error-print-width 100)
 
-(define mred:debug? #f)
+(define mred:debug? #t)
 
 (unless (defined? 'mred:startup-print-status)
    (define mred:startup-print-status 
@@ -43,7 +43,6 @@
     (wx:message-box "Cannot find the MzScheme libraries." "Error")
     (error 'mrsystem "cannot find the MzScheme libraries"))
 (define mzlib:constant-lib? #t)
-(current-library-path "~mflatt/proj/mred/mzscheme/mzlib")
 (require-library "corec.ss")
 (require-library "triggerc.ss")
 
@@ -185,8 +184,11 @@
 	    (define console-canvas (ivar console-frame canvas))
 	    (define eval-string (ivar console-edit do-eval)))))
 
+(define mred:load-user-setup? #t)
+(define mred:non-unit-startup? #f)
+
 ;; links mred together
-(define mred:startup
+(define mred:invoke-open-mred
   (lambda ()
     (let ([application (mred:make-application@)])
       (invoke-open-unit (compound-unit/s ((open mred^)
@@ -200,7 +202,17 @@
 			  (export (open mred) (open application)))
 			mred))))
 
-(define mred:load-user-setup? #t)
+(define mred:non-unit-startup
+  (lambda ()
+    (set! mred:non-unit-startup? #t)
+    (set! mred:make-application@
+	  (lambda ()
+	    (unit/s mred:application^
+		   (import (mred mred^)
+			   (core mzlib:core^))
+		   (define console-frame (make-object wx:frame% '() "hidden"))
+		   (define eval-string (lambda (string) (void))))))
+    (mred:invoke-open-mred)))
 
 ;; called with the initialization arguments
 (define mred:initialize
@@ -208,10 +220,13 @@
     (lambda args
       (cond
 	[(null? args) 
-	 (mred:startup)
+	 (unless mred:non-unit-startup?
+	   (mred:invoke-open-mred))
 	 (when mred:load-user-setup?
 	   (mred:user-setup))
 	 (for-each mred:edit-file files-to-open)
+	 (when mred:non-unit-startup?
+	   (set! mred:console-frame (mred:startup)))
 	 mred:console-frame]
 	[else 
 	 (let ([arg (car args)]
@@ -220,11 +235,11 @@
 	     [(string-ci=? "-f" arg)
 	      (if (null? rest)
 		  (error "expected a filename to load after -f flag")
-		  (begin (mred:startup-print-status 
-			  (format "Loading: ~a" (car rest)))
+ 		  (begin (mred:startup-print-status (format "Loading: ~a" (car rest)))
 			 (load-with-cd (car rest))
 			 (apply mred:initialize (cdr rest))))]
-	     [(string-ci=? "-q" arg)
+	     [(or (string-ci=? "-q" arg) 
+		  (string-ci=? "--no-init-file" arg))
 	      (set! mred:load-user-setup? #f)
 	      (apply mred:initialize rest)]
 	     [(string-ci=? "-e" arg)
@@ -233,6 +248,10 @@
 		  (begin (eval-string (car rest))
 			 (apply mred:initialize (cdr rest))))]
 	     [(string-ci=? "--" arg) (for-each mred:edit-file rest)]
+	     [(string-ci=? "-nu" arg)
+	      (mred:non-unit-startup)
+	      (mred:startup-print-status "Non-unit startup")
+	      (apply mred:initialize rest)]
 	     [else (set! files-to-open (cons arg files-to-open))
 		   (apply mred:initialize rest)]))]))))
 

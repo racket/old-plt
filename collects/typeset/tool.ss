@@ -145,7 +145,10 @@
           ;; cannot do this because the styles information in the saved texts screws up.
           (define/override (make-editor)
             (make-object (drscheme:unit:program-editor-mixin 
-                          (scheme:text-mixin (editor:keymap-mixin text:basic%)))))
+                          (scheme:text-mixin
+                           (editor:keymap-mixin
+                            (mode:host-text-mixin
+                             text:basic%))))))
           
           (define/override (make-snip) (make-object evaluated-snip%))
           

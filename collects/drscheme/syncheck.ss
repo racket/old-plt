@@ -878,8 +878,9 @@
            [report-error-parent-panel 'uninitialized-report-error-parent-panel]
            [report-error-panel 'uninitialized-report-error-panel]
            [report-error-text (make-object (fw:scheme:text-mixin 
-                                            (fw:editor:keymap-mixin
-                                             fw:text:hide-caret/selection%)))])
+                                            (fw:mode:host-text-mixin
+                                             (fw:editor:keymap-mixin
+                                              fw:text:hide-caret/selection%))))])
           (send report-error-text auto-wrap #t)
           (send report-error-text set-autowrap-bitmap #f)
           (send report-error-text lock #t)

@@ -52,7 +52,9 @@
                     (syntax-object->datum
                      (syntax name))))))])
            (with-syntax ([(cases ...) 
-                          (map (make-lambda-case (syntax name) super-call-name)
+                          (map (make-lambda-case (syntax name)
+						 super-name
+						 super-call-name)
                                (syntax->list (syntax (argspec ...))))]
                          [(super-proc-cases ...)
                           (map (make-super-proc-case super-name)
@@ -62,8 +64,8 @@
              (syntax
               (begin
                 (rename [super-name name])
-                (define/private super-call-name
-                  (case-lambda super-proc-cases ...))
+                (field [super-call-name
+			(case-lambda super-proc-cases ...)])
                 (define/override name
                   (case-lambda cases ...))))))]))
     
@@ -89,39 +91,15 @@
         (lambda (spec)
           (syntax-case spec ()
             [(id ...) (syntax [(id ...)
-                               (printf "calling.1 ~s\n" 'name)
                                (if surrogate
                                    (send surrogate name this super-call id ...)
                                    (super-call id ...))])]
             [id
              (identifier? (syntax id))
              (syntax [name 
-                      (printf "calling.2 ~s\n" 'name)
                       (if surrogate
                           (send surrogate name this super-call . id)
-                          (apply super-call id))])]))))
-    
-    (define (make-lambda-case name super-name)
-      (with-syntax ([super-name super-name]
-                    [name name])
-        (lambda (spec)
-          (syntax-case spec ()
-            [(id ...) (syntax [(id ...)
-                               (let ([super-call
-                                      (lambda (id ...) 
-                                        (super-name id ...))])
-                                 (if surrogate
-                                     (send surrogate name this super-call id ...)
-                                     (super-call id ...)))])]
-            [id
-             (identifier? (syntax id))
-             (syntax [name 
-                      (let ([super-call
-                             (lambda id
-                               (super-name . id))])
-                        (if surrogate
-                            (send surrogate name this super-call . id)
-                            (apply super-call id)))])]))))
+                          (super-name . id))])]))))
     
     (syntax-case stx ()
       [(_ method-spec ...)

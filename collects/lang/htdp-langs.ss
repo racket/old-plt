@@ -259,10 +259,8 @@ not to forget: teachpakcs
                                             (cons result (loop)))))]
                                    [language-module (get-module)]
                                    [(require-specs ...) 
-                                    (begin
-                                      '(teachpack-cache-require-specs 
-                                        (send rep get-user-teachpack-cache))
-                                      '())])
+                                    (drscheme:teachpack:teachpack-cache-require-specs 
+                                     (send (drscheme:rep:current-rep) get-user-teachpack-cache))])
                        (set! state 'require)
                        (let ([mod (expand (syntax (module #%htdp language-module 
                                                     (require require-specs ...)
@@ -312,7 +310,7 @@ not to forget: teachpakcs
                                     ids 
                                     (filter-ids (syntax (new-vars ...))))))]
                  [(require specs ...)
-                  (loop (cdr bodies) ids)]
+                  (cons body (loop (cdr bodies) ids))]
                  [(require-for-syntax specs ...)
                   (cons body (loop (cdr bodies) ids))]
                  [(provide specs ...)

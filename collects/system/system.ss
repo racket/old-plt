@@ -39,36 +39,50 @@
 (invoke-open-unit mred:debug@ mred:debug)
 
 (when mred:debug:on?
-  (let ([old-handler (current-load)])
+  (letrec* ([old-handler (current-load)]
+	    [offset-string "  "]
+	    [indent-string ""]
+	    [link?
+	     (lambda (x)
+	       (let ([len (string-length x)])
+		 (and (> len 4)
+		      (string=? (substring x (- len 4) len) "link"))))])
     (current-load (lambda (f)
 		    (let ([file (if (relative-path? f)
 				    (build-path (current-directory) f)
-				    f)]
-			  [continue (lambda (y)
-				      (mred:debug:printf 'load "Loading ~a..." y)
-				      (old-handler y))])
-		      (if (and (or (eq? mred:debug:on? 'compile) (eq? mred:debug:on? 'compile-and-exit))
-			       (string=? ".ss" (substring file
-							  (- (string-length file) 3)
-							  (string-length file))))
-			(begin
-			  (let* ([zo (string-append (substring file 0 (- (string-length file) 3)) ".zo")]
-				 [compiled? (and (or (not (file-exists? zo))
-						     (<= (file-modify-seconds zo)
-							 (file-modify-seconds file)))
-						 (begin (mred:debug:printf 'load "Compiling ~a..." file)
-							(with-handlers ((void 
-									 (lambda (e) 
-									   (delete-file zo)
-									   ((error-display-handler)
-									    (exn-message e))
-									   #f)))
-							  (compile-file file zo)
-							  #t)))])
-			    (if compiled?
-				(continue zo)
-				(continue file))))
-			(continue file)))))))
+				    f)])
+		      (mred:debug:printf 'load "~aLoading ~a..." indent-string file)
+		      (dynamic-wind (lambda ()
+				      (set! indent-string (string-append offset-string indent-string)))
+				    (lambda () (old-handler file))
+				    (lambda ()
+				      (set! indent-string
+					    (substring indent-string
+						       0
+						       (max (- (string-length indent-string)
+							       (string-length offset-string))
+							    0)))))
+		      (let* ([len (string-length file)]
+			     [basename (substring file 0 (- len 3))]
+			     [suffix (substring file (- len 3) len)]
+			     [zo (string-append basename ".zo")])
+			(when (and (or (eq? mred:debug:on? 'compile)
+				       (eq? mred:debug:on? 'compile-and-exit))
+				   (not (link? basename))
+				   (string=? ".ss" suffix)
+				   (or (not (file-exists? zo))
+				       (<= (file-modify-seconds zo)
+					   (file-modify-seconds file))))
+			  (mred:debug:printf 'load "~aCompiling ~a..." indent-string file)
+			  (with-handlers ((void 
+					   (lambda (e) 
+					     (delete-file zo)
+					     ((error-display-handler)
+					      (string-append indent-string
+							     (exn-message e)))
+					     #f)))
+					 (compile-file file zo)
+					 #t))))))))
 
 (define mred:debug:new-eval #f)
 (define mred:debug:new-console (void))  

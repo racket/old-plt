@@ -163,6 +163,23 @@
 	     (s:string-lowercase! extension))
 	extension)))
 
+
+   (define (delete-directory/files path)
+     (cond
+      [(or (link-exists? path) (file-exists? path))
+       (unless (delete-file path)
+	  (error 'delete-directory/files
+		 "error deleting file or link: ~a" path))]
+      [(directory-exists? path)
+       (for-each (lambda (e) (delete-directory/files (build-path path e)))
+		 (directory-list path))
+       (unless (delete-directory path)
+	       (error 'delete-directory/files
+		      "error deleting a directory: ~a" path))]
+      [else (error 'delete-directory/files
+		   "encountered ~a, neither a file nor a directory"
+		   path)]))
+
    (define find-library
      (case-lambda 
       [(name) (find-library name "mzlib")]

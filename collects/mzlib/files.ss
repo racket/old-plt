@@ -8,4 +8,5 @@
    filename-extension
    file-name-from-path
    path-only
+   delete-directory/files
    find-library))

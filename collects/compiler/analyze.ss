@@ -1495,7 +1495,7 @@
 		 ;;-------------------------------------------------------------------
 		 ;; INTERFACE
 		 ;;
-		 ;; nothing much to do except analyze the super exprs
+		 ;; analyze the super exprs, register arity, and build assembly
 		 ;;
 		 [(zodiac:interface-form? ast)
 		  (zodiac:set-interface-form-super-exprs!
@@ -1509,6 +1509,27 @@
 						(compiler:add-interface! ast))
 		  
 		  (values ast #f)]
+
+		 ;;-------------------------------------------------------------------
+		 ;; WITH-CONTINUATION-MARK
+		 ;;
+		 ;; analyze the key, val, and body
+		 ;;
+		 [(zodiac:with-continuation-mark-form? ast)
+		  
+		  (zodiac:set-with-continuation-mark-form-key!
+		   ast
+		   (analyze!-sv (zodiac:with-continuation-mark-form-key ast) env inlined #f))
+		 
+		  (zodiac:set-with-continuation-mark-form-val!
+		   ast
+		   (analyze!-sv (zodiac:with-continuation-mark-form-val ast) env inlined #f))
+		 
+		  (zodiac:set-with-continuation-mark-form-body!
+		   ast
+		   (analyze!-sv (zodiac:with-continuation-mark-form-body ast) env inlined #f))
+
+		  (values ast 'possible)]
 		 
 		 [else (compiler:internal-error
 			ast

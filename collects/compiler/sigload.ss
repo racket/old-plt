@@ -340,6 +340,7 @@
    (struct vm:interface (assembly))
    (struct vm:call (label closure))
    (struct vm:begin0-extract (var))
+   (struct vm:wcm (key val lam tail?))
 
    (struct vm:global-varref (var))
    (struct vm:bucket (var))

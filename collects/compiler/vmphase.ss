@@ -849,6 +849,23 @@
 			(leaf (tail-pos exp))
 			(leaf exp))))]
 
+	   ;;-------------------------------------------------------------------
+	   ;; WITH-CONTINUATION-MARK
+	   ;;
+	   ;;
+	   [(zodiac:with-continuation-mark-form? ast)
+	    (let ([key (convert (zodiac:with-continuation-mark-form-key ast) #f identity #f #f)]
+		  [val (convert (zodiac:with-continuation-mark-form-val ast) #f identity #f #f)]
+		  [lam (convert (zodiac:with-continuation-mark-form-body ast) #f identity #f #f)])
+	      (let ([exp (make-vm:wcm
+			  (zodiac:zodiac-origin ast)
+			  (zodiac:zodiac-start ast)
+			  (zodiac:zodiac-finish ast)
+			  key val lam tail?)])
+		(if tail-pos
+		    (leaf (tail-pos exp))
+		    (leaf exp))))]
+
 	   ;;-----------------------------------------------------------------
 	   ;; APPLICATIONS
 	   ;;

@@ -19,6 +19,9 @@
 ;      to set!s (but the original bindings are kept)
 ;   - ((lambda (x1 ... xn) e) a1 ... an1) => let expression
 ;   - (define-values () e) => (let-values [() e] (void))
+;   - (with-continuation-mark k v b) =>
+;     (with-continuation-mark k v (lambda () b)) so that
+;     it can be implemented with scheme_wcm_apply()
 ; (After this phase, a zodiac:top-level-varref is always
 ;  a global variable.)
 ; Infers names for closures and interfaces. (Do this early so
@@ -1065,12 +1068,39 @@
 		 ast]
 
 		;;-----------------------------------------------------------
+		;; WITH-CONTINUATION-MARK
+		;;
+		[(zodiac:with-continuation-mark-form? ast)
+		 
+		 (zodiac:set-with-continuation-mark-form-key!
+		  ast
+		  (prephase! (zodiac:with-continuation-mark-form-key ast) in-unit? #t #f))
+		 
+		 (zodiac:set-with-continuation-mark-form-val!
+		  ast
+		  (prephase! (zodiac:with-continuation-mark-form-val ast) in-unit? #t #f))
+		 
+		 (let* ([body (zodiac:with-continuation-mark-form-body ast)]
+			[lam (zodiac:make-case-lambda-form
+			      (zodiac:zodiac-origin body)
+			      (zodiac:zodiac-start body)
+			      (zodiac:zodiac-finish body)
+			      (make-empty-box)
+			      (list (zodiac:make-list-arglist null))
+			      (list body))])
+		   (zodiac:set-with-continuation-mark-form-body!
+		    ast
+		    (prephase! lam in-unit? #t #f)))
+		 
+		 ast]
+
+		;;-----------------------------------------------------------
 		;; MrSpidey forms
-		;;  MrSpidye is done, so we can just get rid of them
+		;;  MrSpidey is done, so we can just get rid of them
 		[(zodiac::-form? ast)
-		 (zodiac::-form-exp ast)]
+		 (prephase! (zodiac::-form-exp ast) in-unit? need-val? name)]
 		[(zodiac:poly-form? ast)
-		 (zodiac:poly-form-exp ast)]
+		 (prephase! (zodiac:poly-form-exp ast) in-unit? need-val? name)]
 
 		;;-----------------------------------------------------------
 		;; Unsupported forms

@@ -171,11 +171,21 @@
 		 ;;-------------------------------------------------------------------
 		 ;; INTERFACE
 		 ;;
-		 ;; nothing much to do except analyze the super exprs
+		 ;; analyze the super exprs
 		 ;;
 		 [(zodiac:interface-form? ast)
 		  (for-each find! (zodiac:interface-form-super-exprs ast))]
 		 
+		 ;;-------------------------------------------------------------------
+		 ;; WITH-CONTINUATION-MARK
+		 ;;
+		 ;; analyze the key, val, and body
+		 ;;
+		 [(zodiac:with-continuation-mark-form? ast)
+		  (find! (zodiac:with-continuation-mark-form-key ast))
+		  (find! (zodiac:with-continuation-mark-form-val ast))
+		  (find! (zodiac:with-continuation-mark-form-body ast))]
+
 		 [else (compiler:internal-error
 			ast
 			(format "unsupported syntactic form (~a)"
@@ -621,7 +631,28 @@
 			(zodiac:interface-form-super-exprs ast)))
 
 		  ast]
-		
+
+		 ;;-------------------------------------------------------------------
+		 ;; WITH-CONTINUATION-MARK
+		 ;;
+		 ;; analyze the key, val, and body
+		 ;;
+		 [(zodiac:with-continuation-mark-form? ast)
+
+		  (zodiac:set-with-continuation-mark-form-key!
+		   ast
+		   (lift! (zodiac:with-continuation-mark-form-key ast) code))
+		 
+		  (zodiac:set-with-continuation-mark-form-val!
+		   ast
+		   (lift! (zodiac:with-continuation-mark-form-val ast) code))
+		 
+		  (zodiac:set-with-continuation-mark-form-body!
+		   ast
+		   (lift! (zodiac:with-continuation-mark-form-body ast) code))
+
+		  ast]
+
 		 [else (compiler:internal-error
 			ast
 			(format "unsupported syntactic form (~a)"

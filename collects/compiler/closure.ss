@@ -280,6 +280,26 @@
 
 	     ast]
 	    
+	    ;;-------------------------------------------------------------------
+	    ;; WITH-CONTINUATION-MARK
+	    ;;
+	    ;;
+	    [(zodiac:with-continuation-mark-form? ast)
+	     
+	     (zodiac:set-with-continuation-mark-form-key!
+	      ast
+	      (transform! (zodiac:with-continuation-mark-form-key ast)))
+	     
+	     (zodiac:set-with-continuation-mark-form-val!
+	      ast
+	      (transform! (zodiac:with-continuation-mark-form-val ast)))
+	     
+	     (zodiac:set-with-continuation-mark-form-body!
+	      ast
+	      (transform! (zodiac:with-continuation-mark-form-body ast)))
+	     
+	     ast]
+	    
 	    [else (compiler:internal-error 
 		   ast 
 		   (format

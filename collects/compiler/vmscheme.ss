@@ -53,6 +53,7 @@
   (define-struct (vm:interface zodiac:struct:zodiac) (assembly))
   (define-struct (vm:call zodiac:struct:zodiac) (label closure))
   (define-struct (vm:begin0-extract zodiac:struct:zodiac) (var))
+  (define-struct (vm:wcm zodiac:struct:zodiac) (key val lam tail?))
 
   ;; a-values
   (define-struct (vm:global-varref zodiac:struct:zodiac) (var))

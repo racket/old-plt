@@ -638,13 +638,34 @@
 		 ;;-------------------------------------------------------------------
 		 ;; INTERFACE
 		 ;;
-		 ;; nothing much to do except analyze the super exprs
+		 ;; analyze the super exprs
 		 ;;
 		 [(zodiac:interface-form? ast)
 		  (zodiac:set-interface-form-super-exprs!
 		   ast
 		   (map (lambda (expr) (analyze! expr))
 			(zodiac:interface-form-super-exprs ast)))
+
+		  ast]
+
+		 ;;-------------------------------------------------------------------
+		 ;; WITH-CONTINUATION-MARK
+		 ;;
+		 ;; analyze the key, val, and body
+		 ;;
+		 [(zodiac:with-continuation-mark-form? ast)
+		  
+		  (zodiac:set-with-continuation-mark-form-key!
+		   ast
+		   (analyze! (zodiac:with-continuation-mark-form-key ast)))
+		 
+		  (zodiac:set-with-continuation-mark-form-val!
+		   ast
+		   (analyze! (zodiac:with-continuation-mark-form-val ast)))
+		 
+		  (zodiac:set-with-continuation-mark-form-body!
+		   ast
+		   (analyze! (zodiac:with-continuation-mark-form-body ast)))
 
 		  ast]
 		

@@ -13,13 +13,15 @@
 ;;   4) A-normalization - anorm.ss
 ;;   5) Known-value analysis - known.ss
 ;;   6) Lexical analysis and inlining - analyze.ss
-;;   7) Lightweight closure conversion - lightweight.ss (optional)
-;;   8) Closure conversion - closure.ss
-;;   9) Closure vehicle assignment - vehicle.ss
-;;  10) Representation choosing - rep.ss
-;;  11) Scheme to virtual machine translation - vmphase.ss
-;;  12) Optimizations on VM code - vmopt.ss
-;;  13) VM to C translation - vm2c.ss
+;;   7) Static procedure lifting - lift.ss
+;;   8) Lightweight closure conversion - lightweight.ss (optional)
+;;   9) Static procedure lifting after LWCC - lift.ss (optional)
+;;  10) Closure conversion - closure.ss
+;;  11) Closure vehicle assignment - vehicle.ss
+;;  12) Representation choosing - rep.ss
+;;  13) Scheme to virtual machine translation - vmphase.ss
+;;  14) Optimizations on VM code - vmopt.ss
+;;  15) VM to C translation - vm2c.ss
 ;;
 ;; For more information about a phase, see the file
 ;;  implementing that phase.

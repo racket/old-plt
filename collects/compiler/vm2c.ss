@@ -1495,6 +1495,16 @@
 	  (emit-expr (format "scheme_create_interface(S.interfaceAssemblies[~a], arg)"
 			     (vm:interface-assembly ast)))]
 	 
+	 ;; with-continuation-mark
+	 [(vm:wcm? ast)
+	  (emit-expr "scheme_wcm_apply(")
+	  (process (vm:wcm-key ast) indent-level #f #f)
+	  (emit ", ")
+	  (process (vm:wcm-val ast) indent-level #f #f)
+	  (emit ", ")
+	  (process (vm:wcm-lam ast) indent-level #f #f)
+	  (emit ", ~a)" (if (vm:wcm-tail? ast) "1" "0"))]
+
 	 ;; (continue) -> continue;
 	 [(vm:continue? ast)
 	  (unless (compiler:option:disable-interrupts)

@@ -465,7 +465,7 @@
 				 (car (zodiac:sequence-clause-exprs
 				       (car (zodiac:class*/names-form-inst-clauses ast))))
 				 identity))))))))))]
-
+		  
 		  ;;-----------------------------------------------------------
 		  ;; INTERFACE
 		  ;;
@@ -481,6 +481,27 @@
 			(zodiac:parsed-back ast)
 			interfaces
 			(zodiac:interface-form-variables ast)))))]
+
+		  ;;-----------------------------------------------------------
+		  ;; WITH-CONTINUATION-MARK
+		  ;;
+		  [(zodiac:with-continuation-mark-form? ast)
+		   (normalize-name
+		    (zodiac:with-continuation-mark-form-key ast)
+		    (lambda (key)
+		      (normalize-name
+		       (zodiac:with-continuation-mark-form-val ast)
+		       (lambda (val)
+			 (normalize-name
+			  (zodiac:with-continuation-mark-form-body ast)
+			  (lambda (body)
+			    (k (zodiac:make-with-continuation-mark-form
+				(zodiac:zodiac-origin ast)
+				(zodiac:zodiac-start ast)
+				(zodiac:zodiac-finish ast)
+				(zodiac:parsed-back ast)
+				key val body))))))))]
+		
 
 		  [else (error 'a-normalize "unsupported ~a" ast)]))])
       a-normalize))

@@ -5,6 +5,7 @@
            "types.ss"
            "parameters.ss"
            (lib "match.ss")
+           (lib "file.ss")
            (lib "class.ss")
            (lib "list.ss"))
   (provide check-defs check-interactions-types)
@@ -488,7 +489,7 @@
   (define (wrong-switch-type given)
     (format "Switch expression must be of type byte, short, int or char. Given: ~a" given))
   (define (incompatible-case given expected)
-    (format "Each case of a switch statement must be of the type of the expression. Given ~a: expected ~a" given expected))
+    (format "Each switch case must be the same type as switch expression. Given ~a: expected ~a" given expected))
   
   ;raise-statement-error: ast src symbol ( 'a -> string) -> void
   (define (raise-statement-error code src kind msg)
@@ -527,7 +528,7 @@
                                       type-recs)))
         ((access? exp)
          (set-expr-type exp
-                        (check-access exp check-sub-expr env type-recs current-class)))
+                        (check-access exp check-sub-expr env level type-recs current-class)))
       ((special-name? exp)
        (set-expr-type exp (check-special-name exp env #f)))
       
@@ -539,8 +540,8 @@
                                       level
                                       env
                                       type-recs
-                                      ctor? ; #t
-                                      static?))) ;#f
+                                      ctor?
+                                      static?)))
       ((class-alloc? exp)
        (set-expr-type exp
                       (check-class-alloc (class-alloc-name exp)
@@ -672,8 +673,8 @@
       ((or (eq? 'long t1) (eq? 'long t2)) 'long)
       (else 'int)))
 
-  ;;check-access: expression (expr -> type) env type-records (list string) -> type
-  (define (check-access exp check-sub-expr env type-recs c-class)
+  ;;check-access: expression (expr -> type) env symbol type-records (list string) -> type
+  (define (check-access exp check-sub-expr env level type-recs c-class)
     (let ((acc (access-name exp)))
       (cond
         ((field-access? acc)
@@ -710,19 +711,17 @@
                 (first-binding (lookup-var-in-env first-acc env))
                 (new-acc
                  (cond
-                   ((and (not first-binding) (> (length acc) 1))
-                    (let ((static-class (find-static-class acc type-recs #t)))
-                      (if (not static-class)
-                          (raise-error #f #f)
-                          (let ((accs (cadr static-class)))
-                            (build-field-accesses 
-                             (make-access #f 
-                                          (expr-src exp)
-                                          (make-field-access 
-                                           #f
-                                           (car accs)
-                                           (make-var-access #t (field-record-class (car static-class)))))
-                             (cdr accs))))))
+                   ((and (eq? level 'full) (not first-binding) (> (length acc) 1))
+                    (let* ((static-class (find-static-class acc type-recs))
+                           (accs (cadr static-class)))
+                      (build-field-accesses 
+                       (make-access #f 
+                                    (expr-src exp)
+                                    (make-field-access 
+                                     #f
+                                     (car accs)
+                                     (make-var-access #t (class-record-name (car static-class)))))
+                       (cdr accs))))
                    ((and first-binding (var-type-local? first-binding))
                     (build-field-accesses
                      (make-access #f (expr-src exp) (make-local-access (car acc)))
@@ -774,9 +773,9 @@
                      (make-field-access start (car accesses) #f))
         (cdr accesses)))))
   
-  ;;find-static-class: (list access) type-recs bool-> (U (list class-record (list access)) #f)
+  ;;find-static-class: (list access) type-recs -> (list class-record (list access))
   (define find-static-class 
-    (lambda (accs type-recs field?)
+    (lambda (accs type-recs)
       (let ((path (send type-recs lookup-path (id-string (car accs)) (lambda () #f))))
         (if path
             (list (let* ((name (cons (id-string (car accs)) path))
@@ -784,25 +783,54 @@
                                   (send type-recs get-class-record name 
                                         ((get-importer type-recs) name type-recs 'full))
                                              type-recs)))
-                    (if field? 
-                        (get-field-record (id-string (cadr accs)) record (lambda () (raise-error #f #f)))
-                        (get-method-records (id-string (cadr accs)) record)))
+                    record)
                   (cdr accs))
-            (letrec ((assemble-path
-                      (lambda (f r)
-                        (if (null? r)
-                            (error 'find-static-class 
-                                   "Internal error: find static class needs to look in class path for exisiting path")
-                            (let* ((name (cons (id-string (car r)) f))
-                                   (record (send type-recs get-class-record (cons (id-string (car r)) f)
-                                                (lambda () #f))))
-                              (if record
-                                  (list (if field?
-                                            (get-field-record (id-string (cadr r)) record (lambda () (raise-error #f #f)))
-                                            (get-method-records (id-string (cadr r)) record))
-                                        (cdr r))
-                                  (assemble-path (append f (list (car r))) (cdr r))))))))
-              (assemble-path (list (car accs)) (cdr accs)))))))
+            (let ((found? (find-static (list (car accs)) (cdr accs))))
+              (if (car found?)
+                  (list (get-record (send type-recs get-class-record (car found?)) type-recs)
+                        (cdr found?))
+                  (raise-error (list (id-src (car accs)) (cadr found?)) class-lookup-failed)))))))
+  
+  ;find-static: (list id) (list id) -> (list (U #f (list id)) (list string)))
+  (define (find-static test-path remainder)
+    (let ((string-path (map id-string test-path)))
+      (cond
+        ((null? (cdr remainder))
+         (list #f (list (apply build-path string-path))))
+        ((find-directory string-path) =>
+         (lambda (directory)
+           (if (class-exists? directory (id-string (car remainder)))
+               (list (cdr remainder) (cons (id-string (car remainder)) string-path))
+               (find-static (append string-path (list (id-string (car remainder))))
+                            (cdr remainder)))))
+      (else (list #f (apply build-path (append string-path (list (id-string (car remainder))))))))))
+  
+  ;find-directory: (list string) -> (U string bool)
+  (define (find-directory path)
+    (if (null? path)
+        (build-path 'same)
+        (let loop ((paths (get-classpath)))
+          (cond
+            ((null? paths) #f)
+            ((directory-exists? (build-path (car paths)
+                                            (apply build-path path)))
+             (build-path (car paths) (apply build-path path)))
+            (else (loop (cdr paths)))))))
+  
+  ;get-classpath: -> (list string)
+  (define (get-classpath)
+    (cons (build-path 'same)
+          (get-preference 'classpath
+                          (lambda ()
+                            (let ((libs (map (lambda (p) (build-path "drj" "libs"))
+                                             (current-library-collection-paths))))
+                              (put-preferences `(classpath) (list libs))
+                              libs)))))
+
+  ;class-exists?: string string -> bool
+  (define (class-exists? path class)
+    (or (file-exists? (string-append (build-path path class) ".java"))
+        (file-exists? (string-append (build-path path "compiled" class) ".jinfo"))))
   
   ;check-special-name: expression env bool -> type
   (define (check-special-name exp env static?)
@@ -821,16 +849,15 @@
            (exp-type #f)
            (handle-call-error 
             (lambda (exn)
-              (unless (access? expr) (raise exn))
-              (let ((members (car (find-static-class 
+              (unless (or (access? expr) (eq? level 'full)) (raise exn))
+              (let ((record (car (find-static-class 
                                    (append (access-name expr) (list name))
-                                   type-recs #f))))
-                (unless (null? members)
-                  (set-call-expr! call #f)
-                  (let ((class (method-record-class (car members))))
-                    (unless (equal? (car class) (car c-class))
-                      (send type-recs add-req (make-req (car class) (cdr class))))))
-                members)))
+                                   type-recs))))
+                (set-call-expr! call #f)
+                (unless (equal? (class-record-name record) c-class)
+                  (send type-recs add-req (make-req (car (class-record-name record))
+                                                    (cdr (class-record-name record)))))
+                (get-method-records name record))))
            (methods 
             (cond 
               ((special-name? name)
@@ -1185,6 +1212,11 @@
   (define (assignment-convert-fail op d ltype rtype)
     (format "~a requires that the right hand type be equivalent to or a subtype of ~a: given ~a" 
             op ltype rtype))
+
+  ;implicit import error
+  (define (class-lookup-failed class)
+    (format "Implicit import of class ~a failed as this class does not exist at the specified location"
+            class))
   
   (define (raise-error wrong-code make-msg)
     (match wrong-code
@@ -1225,6 +1257,7 @@
                            (make-msg (get-expected expt) (type->ext-name type))
                            (make-so 'index src))]
       ;Covers super-meth-* local-meth-* *-meth-called ctor-not-ctor special* variable-not-found
+      ;       class-lookup-failed
       [(src (? string? name))
        (raise-syntax-error #f (make-msg name) (make-so (string->symbol name) src))]
       ;Covers call-arg-error

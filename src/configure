@@ -6438,7 +6438,7 @@ if test "${enable_xft}" = "" ; then
 fi
 
 if test "${enable_xft}" = "yes" ; then
-  xft_config_ok=`xft-config --version  2> /dev/null`
+  xft_config_ok=`xft-config --cflags  2> /dev/null`
   if test "$xft_config_ok" = "" ; then
     if test "${ac_cv_header_X11_Xft_Xft_h+set}" = set; then
   echo "$as_me:$LINENO: checking for X11/Xft/Xft.h" >&5

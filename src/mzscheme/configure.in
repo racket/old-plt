@@ -759,7 +759,7 @@ if test "${enable_xft}" = "" ; then
 fi
 
 if test "${enable_xft}" = "yes" ; then  
-  xft_config_ok=`xft-config --version  2> /dev/null`
+  xft_config_ok=`xft-config --cflags  2> /dev/null`
   if test "$xft_config_ok" = "" ; then
     AC_CHECK_HEADER(X11/Xft/Xft.h, enable_xft=yes, enable_xft=no)
     if test "${enable_xft}" = "yes" ; then  

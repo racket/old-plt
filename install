@@ -43,7 +43,7 @@ exec "$mz" -qC "$0" "$@"
 exit 1
 |#
 
-(use-compiled-file-kinds 'none)
+(use-compiled-file-paths null)
 
 (define plthome #f)
 (define this-script #f)
@@ -167,7 +167,7 @@ exit 1
          ;; including ones we've already loaded.  We also need to re-enable
          ;; compiled files, since cm.ss checks on that flag.
          [current-namespace (make-namespace)]
-         [use-compiled-file-kinds 'all]
+         [use-compiled-file-paths '("compiled")]
          [current-command-line-arguments
           (list->vector
            (append (if install-mode? '("-n" "--trust-zos" "--no-install") '())

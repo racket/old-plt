@@ -895,10 +895,8 @@
                       (change-style click-delta last-pos (last-position))
                       (set-clickback last-pos (last-position)
                                      (lambda (text start end) (show-backtrace-window dis))
-                                     (fw:gui-utils:get-clicked-clickback-delta))))
-
-                  (when (and show-file? show-bug?)
-                    (insert " " (last-position) (last-position)))
+                                     (fw:gui-utils:get-clicked-clickback-delta))
+		      (insert " " (last-position) (last-position))))
                   
                   (when show-file?
                     (let ([last-pos (last-position)])
@@ -906,7 +904,8 @@
                       (change-style click-delta last-pos (last-position))
                       (set-clickback last-pos (last-position)
                                      (lambda (text start end) (open-and-highlight-in-file (car dis)))
-                                     (fw:gui-utils:get-clicked-clickback-delta))))
+                                     (fw:gui-utils:get-clicked-clickback-delta)))
+		      (insert " " (last-position) (last-position)))
                   
                   (lock old-locked?)
                   (end-edit-sequence)

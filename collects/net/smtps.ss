@@ -1,3 +1,3 @@
 
 (define-signature mzlib:smtp^
-  (send-message))
+  (send-smtp-message))

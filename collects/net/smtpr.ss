@@ -43,10 +43,10 @@
 	    (string-append "." l) ; it was all dots
 	    l)))
 
-  (define send-message
+  (define send-smtp-message
     (case-lambda
      [(server sender recipients header message-lines)
-      (send-message server sender recipients header message-lines 25)]
+      (send-smtp-message server sender recipients header message-lines 25)]
      [(server sender recipients header message-lines pos)
       (when (null? recipients)
 	(error 'mysendmail "no recievers"))
@@ -57,7 +57,7 @@
 				(close-input-port r)
 				(close-output-port w)
 				(if (exn:misc:user-break? x)
-				    (error 'send-message "communication timeout")
+				    (error 'send-smtp-message "communication timeout")
 				    (raise x)))])
 	  (check-reply r 220)
 	  (fprintf w "HELO ~a~a" ID crlf)

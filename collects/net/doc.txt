@@ -1,4 +1,4 @@
-Time-stamp: <99/01/07 12:26:01 mflatt>
+Time-stamp: <99/02/07 12:26:01 mflatt>
 
 The `net' collection contains libraries that provide access to the
 following _Internet_ (quasi-)protocols:

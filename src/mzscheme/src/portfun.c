@@ -35,6 +35,7 @@ static Scheme_Object *make_input_port (int, Scheme_Object *[]);
 static Scheme_Object *make_output_port (int, Scheme_Object *[]);
 static Scheme_Object *open_input_file (int, Scheme_Object *[]);
 static Scheme_Object *open_output_file (int, Scheme_Object *[]);
+static Scheme_Object *open_input_output_file (int, Scheme_Object *[]);
 static Scheme_Object *close_input_port (int, Scheme_Object *[]);
 static Scheme_Object *close_output_port (int, Scheme_Object *[]);
 static Scheme_Object *call_with_output_file (int, Scheme_Object *[]);
@@ -256,6 +257,11 @@ scheme_init_port_fun(Scheme_Env *env)
 			     scheme_make_prim_w_arity(get_output_string,
 						      "get-output-string",
 						      1, 1),
+			     env);
+  scheme_add_global_constant("open-input-output-file", 
+			     scheme_make_prim_w_arity(open_input_output_file,
+						      "open-input-output-file",
+						      1, 3),
 			     env);
   scheme_add_global_constant("close-input-port", 
 			     scheme_make_prim_w_arity(close_input_port,
@@ -1713,7 +1719,13 @@ open_input_string (int argc, Scheme_Object *argv[])
 static Scheme_Object *
 open_output_file (int argc, Scheme_Object *argv[])
 {
-  return scheme_do_open_output_file("open-output-file", 0, argc, argv);
+  return scheme_do_open_output_file("open-output-file", 0, argc, argv, 0);
+}
+
+static Scheme_Object *
+open_input_output_file (int argc, Scheme_Object *argv[])
+{
+  return scheme_do_open_output_file("open-input-output-file", 0, argc, argv, 1);
 }
 
 static Scheme_Object *
@@ -1767,7 +1779,7 @@ call_with_output_file (int argc, Scheme_Object *argv[])
 
   scheme_check_proc_arity("call-with-output-file", 1, 1, argc, argv);
 
-  port = scheme_do_open_output_file("call-with-output-file", 1, argc, argv);
+  port = scheme_do_open_output_file("call-with-output-file", 1, argc, argv, 0);
   
   v = _scheme_apply_multi(argv[1], 1, &port);
 
@@ -1837,7 +1849,7 @@ with_output_to_file (int argc, Scheme_Object *argv[])
 
   scheme_check_proc_arity("with-output-to-file", 0, 1, argc, argv);
 
-  port = scheme_do_open_output_file("with-output-to-file", 1, argc, argv);
+  port = scheme_do_open_output_file("with-output-to-file", 1, argc, argv, 0);
   
   v = scheme_dynamic_wind(with_set_output_port,
 			  with_call_thunk,

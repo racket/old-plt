@@ -1056,6 +1056,7 @@ mark_input_fd {
   Scheme_FD *fd = (Scheme_FD *)p;
 
   gcMARK(fd->buffer);
+  gcMARK(fd->refcount);
 
  size:
   gcBYTES_TO_WORDS(sizeof(Scheme_FD));

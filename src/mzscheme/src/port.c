@@ -210,6 +210,7 @@ typedef struct Scheme_FD {
   long bufcount, buffpos;
   char flushing, regfile, flush, textmode;
   unsigned char *buffer;
+  int *refcount;
 
 # ifdef WINDOWS_FILE_HANDLES
   Win_FD_Input_Thread *th;   /* input mode */
@@ -313,8 +314,8 @@ OS_SEMAPHORE_TYPE scheme_break_semaphore;
 #endif
 
 #ifdef MZ_FDS
-static Scheme_Object *make_fd_input_port(int fd, const char *filename, int regfile, int textmode);
-static Scheme_Object *make_fd_output_port(int fd, int regfile, int textmode);
+static Scheme_Object *make_fd_input_port(int fd, const char *filename, int regfile, int textmode, int *refcount);
+static Scheme_Object *make_fd_output_port(int fd, int regfile, int textmode, char *read_too_filename);
 #endif
 #ifdef USE_OSKIT_CONSOLE
 static Scheme_Object *make_oskit_console_input_port();
@@ -463,9 +464,9 @@ scheme_init_port (Scheme_Env *env)
 #else
 # ifdef MZ_FDS
 #  ifdef WINDOWS_FILE_HANDLES
-			    : make_fd_input_port((int)GetStdHandle(STD_INPUT_HANDLE), "STDIN", 0, 0)
+			    : make_fd_input_port((int)GetStdHandle(STD_INPUT_HANDLE), "STDIN", 0, 0, NULL)
 #  else
-			    : make_fd_input_port(0, "STDIN", 0, 0)
+			    : make_fd_input_port(0, "STDIN", 0, 0, NULL)
 #  endif
 # else
 			    : scheme_make_named_file_input_port(stdin, "STDIN")
@@ -477,9 +478,9 @@ scheme_init_port (Scheme_Env *env)
 			     ? scheme_make_stdout()
 #ifdef MZ_FDS
 # ifdef WINDOWS_FILE_HANDLES
-			     : make_fd_output_port((int)GetStdHandle(STD_OUTPUT_HANDLE), 0, 0)
+			     : make_fd_output_port((int)GetStdHandle(STD_OUTPUT_HANDLE), 0, 0, NULL)
 # else
-			     : make_fd_output_port(1, 0, 0)
+			     : make_fd_output_port(1, 0, 0, NULL)
 # endif
 #else
 			     : scheme_make_file_output_port(stdout)
@@ -490,9 +491,9 @@ scheme_init_port (Scheme_Env *env)
 			     ? scheme_make_stderr()
 #ifdef MZ_FDS
 # ifdef WINDOWS_FILE_HANDLES
-			     : make_fd_output_port((int)GetStdHandle(STD_ERROR_HANDLE), 0, 0)
+			     : make_fd_output_port((int)GetStdHandle(STD_ERROR_HANDLE), 0, 0, NULL)
 # else
-			     : make_fd_output_port(2, 0, 0)
+			     : make_fd_output_port(2, 0, 0, NULL)
 # endif
 #else
 			     : scheme_make_file_output_port(stderr)
@@ -2034,93 +2035,6 @@ static void filename_exn(char *name, char *msg, char *filename, int err)
 		   err);
 }
 
-#ifdef WINDOWS_FILE_HANDLES
-
-/* We keep track of handles to special devices in an array of
-   null-terminated arrays. This works around the device locking that
-   Windows seems to insist on. (One reason we don't want locking is so
-   we can open a serial port for both reading and writing; that takes
-   two opens.)
-
-   In the inner arrays, first elem is closed only when all others are
-   closed, and all others are handle duplicates of the first. */
-
-static HANDLE **spec_handle;
-
-HANDLE dup_spec_handle(HANDLE h, int id)
-{
-  HANDLE *hp;
-  int i, len;
-
-  if (!id)
-    return h;
-
-  if (!spec_handle) {
-    REGISTER_SO(spec_handle);
-    spec_handle = MALLOC_N(HANDLE *, NUM_SPECIAL_FILE_KINDS);
-  }
-
-  if (!spec_handle[id])
-    len = 0;
-  else {
-    for (len = 0; spec_handle[id][len] != INVALID_HANDLE_VALUE; len++) {
-    }
-  }
-
-  hp = MALLOC_N_ATOMIC(HANDLE, len + 3);
-  for (i = 0; i < len; i++) {
-    hp[i] = spec_handle[id][i];
-  }
-
-  if (!len)
-    hp[len++] = h;
-
-  if (!DuplicateHandle(GetCurrentProcess(), hp[0],
-		       GetCurrentProcess(), &h, 0, 
-		       1, /* inherited */
-		       DUPLICATE_SAME_ACCESS)) {
-    h = 0;
-  } else {
-    hp[len++] = h;
-  }
-  hp[len] = INVALID_HANDLE_VALUE;
-
-  spec_handle[id] = hp;
-
-  return h;
-}
-
-static void mzCloseHandle(HANDLE h)
-{
-  int i, j, k;
-
-  if (spec_handle) {
-    for (i = 0; i < NUM_SPECIAL_FILE_KINDS; i++) {
-      if (spec_handle[i]) {
-	for (j = 1; spec_handle[i][j] != INVALID_HANDLE_VALUE; j++) {
-	  if (spec_handle[i][j] == h) {
-	    /* Close an delete from the array: */
-	    CloseHandle(h);
-	    for (j++; spec_handle[i][j] != INVALID_HANDLE_VALUE; j++) {
-	      spec_handle[i][j-1] = spec_handle[i][j];
-	    }
-	    spec_handle[i][j-1] = INVALID_HANDLE_VALUE; /* terminator */
-	    /* Only one left? If so, close it */
-	    if (j == 2) {
-	      CloseHandle(spec_handle[i][0]);
-	      spec_handle[i] = NULL;
-	    }
-	    return;
-	  }
-	}
-      }
-    }
-  }
-
-  CloseHandle(h);
-}
-#endif
-
 Scheme_Object *
 scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[])
 {
@@ -2130,7 +2044,6 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 #else
 # ifdef WINDOWS_FILE_HANDLES
   HANDLE fd;
-  int spec_id;
 # else
   FILE *fp;
 # endif
@@ -2212,25 +2125,18 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     } else {
       regfile = S_ISREG(buf.st_mode);
       scheme_file_open_count++;
-      result = make_fd_input_port(fd, filename, regfile, 0);
+      result = make_fd_input_port(fd, filename, regfile, 0, NULL);
     }
   }
 #else
 # ifdef WINDOWS_FILE_HANDLES
-  spec_id = scheme_is_special_filename(filename, 1);
-  if (spec_id && spec_handle && spec_handle[spec_id]) {
-    fd = dup_spec_handle(0, spec_id);
-  } else {
-    fd = CreateFile(filename,
-		    GENERIC_READ | (spec_id ? GENERIC_WRITE : 0),
-		    FILE_SHARE_READ | FILE_SHARE_WRITE,
-		    NULL,
-		    OPEN_EXISTING,
-		    0,
-		    NULL);
-    if (fd != INVALID_HANDLE_VALUE)
-      fd = dup_spec_handle(fd, spec_id);
-  }
+  fd = CreateFile(filename,
+		  GENERIC_READ,
+		  FILE_SHARE_READ | FILE_SHARE_WRITE,
+		  NULL,
+		  OPEN_EXISTING,
+		  0,
+		  NULL);
 
   if (fd == INVALID_HANDLE_VALUE) {
     filename_exn(name, "cannot open input file", filename, GetLastError());
@@ -2239,12 +2145,12 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     regfile = (GetFileType(fd) == FILE_TYPE_DISK);
 
   if ((mode[1] == 't') && !regfile) {
-    mzCloseHandle(fd);
+    CloseHandle(fd);
     filename_exn(name, "cannot use text-mode on a non-file device", filename, 0);
     return NULL;
   }
 
-  result = make_fd_input_port((int)fd, filename, regfile, mode[1] == 't');
+  result = make_fd_input_port((int)fd, filename, regfile, mode[1] == 't', NULL);
 # else
   if (scheme_directory_exists(filename)) {
     filename_exn(name, "cannot open directory as a file", filename, 0);
@@ -2259,7 +2165,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
     if (scheme_mac_path_to_spec(filename, &spec)) {
       errno = FSpOpenDF(&spec, fsRdWrShPerm, &refnum);
       if (errno == noErr)
-	result = make_fd_input_port(refnum, filename, 1, mode[1] == 't');
+	result = make_fd_input_port(refnum, filename, 1, mode[1] == 't', NULL);
       else {
 	filename_exn(name, "could not open file", filename, errno);
 	return NULL;
@@ -2288,7 +2194,7 @@ scheme_do_open_input_file(char *name, int offset, int argc, Scheme_Object *argv[
 }
 
 Scheme_Object *
-scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[])
+scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv[], int and_read)
 {
 #ifdef USE_FD_PORTS
   int fd;
@@ -2300,7 +2206,6 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   HANDLE fd;
   int hmode, regfile;
   BY_HANDLE_FILE_INFORMATION info;
-  int spec_id;
 # else
   FILE *fp;
 # endif
@@ -2401,7 +2306,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 #ifdef USE_FD_PORTS
   /* Note: assuming there's no difference between text and binary mode */
 
-  flags = O_WRONLY | O_CREAT;
+  flags = (and_read ? O_RDWR : O_WRONLY) | O_CREAT;
 
   if (mode[0] == 'a')
     flags |= O_APPEND;
@@ -2468,7 +2373,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 
   regfile = S_ISREG(buf.st_mode);
   scheme_file_open_count++;
-  return make_fd_output_port(fd, regfile, 0);
+  return make_fd_output_port(fd, regfile, 0, (and_read ? filename : NULL));
 #else
 # ifdef WINDOWS_FILE_HANDLES
   if (!existsok)
@@ -2480,21 +2385,13 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   else if (existsok  == 2)
     hmode = OPEN_ALWAYS;
 
-  spec_id = scheme_is_special_filename(filename, 1);
-  if (spec_id && spec_handle && spec_handle[spec_id] 
-      && (hmode != CREATE_NEW) && (hmode != CREATE_ALWAYS)) {
-    fd = dup_spec_handle(0, spec_id);
-  } else {
-    fd = CreateFile(filename,
-		    GENERIC_WRITE | (spec_id ? GENERIC_READ : 0),
-		    FILE_SHARE_READ | FILE_SHARE_WRITE,
-		    NULL,
-		    hmode,
-		    FILE_FLAG_BACKUP_SEMANTICS, /* lets us detect directories in NT */
-		    NULL);
-    if (fd != INVALID_HANDLE_VALUE)
-      fd = dup_spec_handle(fd, spec_id);
-  }
+  fd = CreateFile(filename,
+		  GENERIC_WRITE | (and_read ? GENERIC_READ : 0),
+		  FILE_SHARE_READ | FILE_SHARE_WRITE,
+		  NULL,
+		  hmode,
+		  FILE_FLAG_BACKUP_SEMANTICS, /* lets us detect directories in NT */
+		  NULL);
 
   if (fd == INVALID_HANDLE_VALUE) {
     int err;
@@ -2535,7 +2432,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 
   if (GetFileInformationByHandle(fd, &info)) {
     if (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-      mzCloseHandle(fd);
+      CloseHandle(fd);
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,
 		       argv[0],
 		       scheme_intern_symbol("already-exists"),
@@ -2548,7 +2445,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   regfile = (GetFileType(fd) == FILE_TYPE_DISK);
 
   if ((mode[1] == 't') && !regfile) {
-    mzCloseHandle(fd);
+    CloseHandle(fd);
     filename_exn(name, "cannot use text-mode on a non-file device", filename, 0);
     return NULL;
   }
@@ -2561,7 +2458,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
   }
 
   scheme_file_open_count++;
-  return make_fd_output_port((int)fd, regfile, mode[1] == 't');
+  return make_fd_output_port((int)fd, regfile, mode[1] == 't', (and_read ? filename : NULL));
 # else
   if (scheme_directory_exists(filename)) {
     if (!existsok)
@@ -2610,7 +2507,7 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
 	  scheme_file_create_hook(filename);
 	
 	scheme_file_open_count++;
-	return make_fd_output_port(refnum, 1, mode[1] == 't');
+	return make_fd_output_port(refnum, 1, mode[1] == 't', (and_read ? filename : NULL));
       } else {
 	filename_exn(name, "could not open file", filename, errno);
 	return NULL;
@@ -2621,6 +2518,13 @@ scheme_do_open_output_file(char *name, int offset, int argc, Scheme_Object *argv
     }
   }
 #  else
+
+  if (and_read) {
+    scheme_raise_exn(MZEXN_MISC_UNSUPPORTED,
+		     "%s: not supported on this platform",
+		     name);
+    return NULL;
+  }
 
   if (scheme_file_exists(filename)) {
     int uok;
@@ -2689,7 +2593,7 @@ Scheme_Object *scheme_open_output_file(const char *name, const char *who)
 
   a[0]= scheme_make_string(name);
   a[1] = truncate_replace_symbol;
-  return scheme_do_open_output_file((char *)who, 0, 2, a);
+  return scheme_do_open_output_file((char *)who, 0, 2, a, 0);
 }
 
 Scheme_Object *
@@ -3504,6 +3408,9 @@ fd_close_input(Scheme_Input_Port *port)
 
   fip = (Scheme_FD *)port->port_data;
 
+  if (fip->refcount)
+    *fip->refcount -= 1;
+
 #ifdef WINDOWS_FILE_HANDLES
   if (fip->th) {
     /* -1 for checking means "shut down" */
@@ -3517,15 +3424,19 @@ fd_close_input(Scheme_Input_Port *port)
       WindowsFDICleanup(fip->th);
     } /* otherwise, thread is responsible for clean-up */
   }
-  mzCloseHandle((HANDLE)fip->fd);
+  if (!fip->refcount || !*fip->refcount) {
+    CloseHandle((HANDLE)fip->fd);
+  }
 #else
+  if (!fip->refcount || !*fip->refcount) {
 # ifdef MAC_FILE_HANDLES
-  FSClose(fip->fd);
+    FSClose(fip->fd);
 # else
-  do {
-    cr = close(fip->fd);
-  } while ((cr == -1) && (errno == EINTR));
+    do {
+      cr = close(fip->fd);
+    } while ((cr == -1) && (errno == EINTR));
 # endif
+  }
 #endif
 
   --scheme_file_open_count;
@@ -3574,7 +3485,7 @@ fd_need_wakeup(Scheme_Input_Port *port, void *fds)
 }
 
 static Scheme_Object *
-make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode)
+make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode, int *refcount)
 {
   Scheme_Input_Port *ip;
   Scheme_FD *fip;
@@ -3593,6 +3504,8 @@ make_fd_input_port(int fd, const char *filename, int regfile, int win_textmode)
 
   fip->regfile = regfile;
   fip->textmode = win_textmode;
+
+  fip->refcount = refcount;
 
   ip = _scheme_make_input_port(fd_input_port_type,
 			       fip,
@@ -4652,6 +4565,9 @@ fd_close_output(Scheme_Output_Port *port)
   if (port->closed)
     return;
 
+  if (fop->refcount)
+    *fop->refcount -= 1;
+
 #ifdef WINDOWS_FILE_HANDLES
   if (fop->oth) {
     fop->oth->done = 1;
@@ -4664,25 +4580,30 @@ fd_close_output(Scheme_Output_Port *port)
     } /* otherwise, thread is responsible for clean-up */
     fop->oth = NULL;
   }
-  mzCloseHandle((HANDLE)fop->fd);
+  if (!fop->refcount || !*fop->refcount) {
+    CloseHandle((HANDLE)fop->fd);
+  }
 #else
+  if (!fop->refcount || !*fop->refcount) {
 # ifdef MAC_FILE_HANDLES
-  FSClose(fop->fd);
+    FSClose(fop->fd);
 # else
-  do {
-    cr = close(fop->fd);
-  } while ((cr == -1) && (errno == EINTR));
+    do {
+      cr = close(fop->fd);
+    } while ((cr == -1) && (errno == EINTR));
 # endif
+  }
 #endif
 
   --scheme_file_open_count;
 }
 
 static Scheme_Object *
-make_fd_output_port(int fd, int regfile, int win_textmode)
+make_fd_output_port(int fd, int regfile, int win_textmode, char *and_read_filename)
 {
   Scheme_FD *fop;
   unsigned char *bfr;
+  Scheme_Object *the_port;
 
   fop = MALLOC_ONE_RT(Scheme_FD);
 #ifdef MZTAG_REQUIRED
@@ -4708,13 +4629,24 @@ make_fd_output_port(int fd, int regfile, int win_textmode)
   /* No buffering for stderr: */
   fop->flush = ((fd == 2) ? MZ_FLUSH_ALWAYS : MZ_FLUSH_BY_LINE);
 
-  return (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
-						  fop,
-						  fd_write_string,
-						  (Scheme_Out_Ready_Fun)fd_write_ready,
-						  fd_close_output,
-						  (Scheme_Need_Wakeup_Output_Fun)fd_write_need_wakeup,
-						  1);
+  the_port = (Scheme_Object *)scheme_make_output_port(fd_output_port_type,
+						      fop,
+						      fd_write_string,
+						      (Scheme_Out_Ready_Fun)fd_write_ready,
+						      fd_close_output,
+						      (Scheme_Need_Wakeup_Output_Fun)fd_write_need_wakeup,
+						      1);
+  if (and_read_filename) {
+    int *rc;
+    Scheme_Object *a[2];
+    rc = (int *)scheme_malloc_atomic(sizeof(int));
+    *rc = 2;
+    fop->refcount = rc;
+    a[1] = the_port;
+    a[0] = make_fd_input_port(fd, and_read_filename, regfile, win_textmode, rc);
+    return scheme_values(2, a);
+  } else
+    return the_port;
 }
 
 static void flush_if_output_fds(Scheme_Object *o, Scheme_Close_Custodian_Client *f, void *data)
@@ -5638,9 +5570,9 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   /*        Create new port objects       */
   /*--------------------------------------*/
 
-  in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0, 0));
-  out = (out ? out : make_fd_output_port(to_subprocess[1], 0, 0));
-  err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0, 0));
+  in = (in ? in : make_fd_input_port(from_subprocess[0], "subprocess-stdout", 0, 0, NULL));
+  out = (out ? out : make_fd_output_port(to_subprocess[1], 0, 0, NULL));
+  err = (err ? err : make_fd_input_port(err_subprocess[0], "subprocess-stderr", 0, 0, NULL));
 
   /*--------------------------------------*/
   /*          Return result info          */

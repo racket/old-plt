@@ -7,12 +7,13 @@
 
 (unit (import)
   (export define-argument-list lambda/nal call/nal)
-  
+
   (define-struct argument-list-entry ())
   (define-struct (flat-argument-list-entry struct:argument-list-entry) ())
   (define-struct (var-argument struct:flat-argument-list-entry) (var))
   (define-struct (kwd-argument struct:flat-argument-list-entry) (kwd var))
   (define-struct (opt-argument struct:argument-list-entry) (arg val))
+
   (define argument-list-table
     (make-hash-table))
   (define-struct argument-list-table-entry

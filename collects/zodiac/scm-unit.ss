@@ -812,7 +812,7 @@
   ; --------------------------------------------------------------------
 
   (define reference-unit-maker
-    (lambda (form-name library? sig?)
+    (lambda (form-name sig?)
       (add-primitivized-micro-form form-name scheme-vocabulary
 	(let* ((kwd '())
 		(in-pattern `(_ filename))
@@ -828,9 +828,7 @@
 			    (z:string? (quote-form-expr f)))
 			(expand-expr
 			  (structurize-syntax
-			    `(let ((result (,(if library?
-					       '#%require-library
-					       '#%load/use-compiled)
+			    `(let ((result (#%load/use-compiled
 					     ,(quote-form-expr f))))
 			       (unless (,(if sig?
 					   '#%unit/sig?
@@ -857,7 +855,68 @@
 
   (reference-unit-maker 'reference-unit #f #f)
   (reference-unit-maker 'reference-unit/sig #f #t)
-  (reference-unit-maker 'reference-library-unit #t #f)
-  (reference-unit-maker 'reference-library-unit/sig #t #t)
+
+  (define reference-library-unit-maker
+    (lambda (form-name sig?)
+      (add-primitivized-micro-form form-name scheme-vocabulary
+	(let* ((kwd '())
+		(in-pattern-1 `(_ filename))
+		(in-pattern-2 `(_ filename collection))
+		(m&e-1 (pat:make-match&env in-pattern-1 kwd))
+		(m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+	  (lambda (expr env attributes vocab)
+	    (cond
+	      ((pat:match-against m&e-1 expr env)
+		=>
+		(lambda (p-env)
+		  (expand-expr
+		    (structurize-syntax
+		      (pat:pexpand
+			`(,form-name file "standard")
+			p-env kwd)
+		      expr)
+		    env attributes vocab)))
+	      ((pat:match-against m&e expr env)
+		=>
+		(lambda (p-env)
+		  (let ((filename (pat:pexpand 'filename p-env kwd))
+			 (collection (pat:pexpand 'collection p-env kwd)))
+		    (let ((f (expand-expr filename env attributes vocab))
+			   (c (expand-expr collection env attributes vocab)))
+		      (unless (and (quote-form? f)
+				(z:string? (quote-form-expr f)))
+			(static-error filename
+			  "Does not yield a filename"))
+		      (unless (and (quote-form? c)
+				(z:string? (quote-form-expr c)))
+			(static-error collection
+			  "Does not yield a string"))
+			(expand-expr
+			  (structurize-syntax
+			    `(let ((result (#%require-library
+					     ,(quote-form-expr f))))
+			       (unless (,(if sig?
+					   '#%unit/sig?
+					   '#%unit?)
+					 result)
+				 (#%raise
+				   (,(if sig?
+				       '#%make-exn:unit:signature:non-signed-unit
+				       '#%make-exn:unit:non-unit)
+				     ,(format
+					"~s: result from ~s is not ~aunit"
+					form-name
+					(sexp->raw (quote-form-expr f))
+					(if sig? "signed " ""))
+				     ((debug-info-handler))
+				     result)))
+			       result)
+			    expr)
+			  env attributes vocab)))))
+	      (else
+		(static-error expr "Malformed ~a" form-name))))))))
+
+  (reference-library-unit-maker 'reference-library-unit #t #f)
+  (reference-library-unit-maker 'reference-library-unit/sig #t #t)
 
   )

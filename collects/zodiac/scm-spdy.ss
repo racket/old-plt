@@ -12,7 +12,9 @@
   (define-struct (type:-form struct:parsed) (type attrs))
   (define-struct (st:control-form struct:parsed) (para val))
   (define-struct (reference-unit-form struct:parsed)
-    (file cd kind signed? library?))
+    (file cd kind signed?))
+  (define-struct (reference-library-unit-form struct:parsed)
+    (file collection library-dirs kind signed?))
   (define-struct (define-type-form struct:parsed) (sym type))
   (define-struct (define-constructor-form struct:parsed) (sym modes))
 
@@ -44,12 +46,19 @@
 	(make-empty-back-box)
 	para val)))
 
-  (define create-reference-unit-form
-    (lambda (file cd kind signed? library? source)
+    (define create-reference-unit-form
+    (lambda (file cd kind signed? source)
       (make-reference-unit-form (z:zodiac-origin source)
 	(z:zodiac-start source) (z:zodiac-finish source)
 	(make-empty-back-box)
-	file cd kind signed? library?)))
+	file cd kind signed?)))
+
+  (define create-reference-library-unit-form
+    (lambda (file collection library-dirs kind signed? source)
+      (make-reference-unit-form (z:zodiac-origin source)
+	(z:zodiac-start source) (z:zodiac-finish source)
+	(make-empty-back-box)
+	file collection library-dirs kind signed?)))
 
   (define create-define-type-form
     (lambda (sym type source)
@@ -187,88 +196,165 @@
 	  (else
 	    (static-error expr "Malformed define-constructor"))))))
 
-  (define reference-maker
-    (lambda (form-name library?)
-      (add-primitivized-micro-form form-name mrspidey-vocabulary
-	(let* ((kwd '())
-		(in-pattern `(_ file))
-		(m&e (pat:make-match&env in-pattern kwd)))
-	  (lambda (expr env attributes vocab)
-	    (cond
-	      ((pat:match-against m&e expr env)
-		=>
-		(lambda (p-env)
-		  (let ((file (pat:pexpand 'file p-env kwd)))
-		    (let ((f (expand-expr file env attributes vocab)))
-		      (if (and (quote-form? f)
-			    (z:string? (quote-form-expr f)))
-			(let* ((raw (z:read-object (quote-form-expr f)))
-				(raw-filename
-				  (if library?
-				    (if (complete-path? raw)
-				      raw
-				      (build-path (current-library-path) raw))
-				    raw)))
-			  (if (and library?
-				(member raw mzscheme-libraries-provided))
-			    (expand-expr (structurize-syntax '(#%void) expr)
-			      env attributes vocab)
-			    (let-values (((base name dir?)
-					   (split-path raw-filename)))
-			      (when dir?
-				(static-error file
-				  "Cannot include a directory"))
-			      (let ((original-directory (current-directory))
-				     (p (with-handlers
-					  ((exn:i/o:filesystem:filename?
-					     (lambda (exn)
-					       (static-error file
-						 "Unable to open file ~a"
-						 raw-filename))))
-					  (open-input-file raw-filename))))
-				(dynamic-wind
-				  (lambda ()
-				    (when (string? base)
-				      (current-directory base)))
-				  (lambda ()
-				    (let ((reader
-					    (z:read p
-					      (z:make-location
-						(z:location-line
-						  z:default-initial-location)
-						(z:location-column
-						  z:default-initial-location)
-						(z:location-offset
-						  z:default-initial-location)
-						(build-path
-						  (current-directory)
-						  name)))))
-				      (let ((code
-					      (let loop ()
-						(let ((input (reader)))
-						  (if (z:eof? input)
-						    '()
-						    (cons input
-						      (loop)))))))
-					(if (null? code)
-					  (static-error expr "Empty file")
-					  (expand-expr
-					    (structurize-syntax
-					      `(begin ,@code)
-					      expr)
-					    env attributes vocab)))))
-				  (lambda ()
-				    (current-directory original-directory)
-				    (close-input-port p)))))))
-			(static-error file "Does not yield a filename"))))))
-	      (else
-		(static-error expr "Malformed ~a" form-name))))))))
+  (add-primitivized-micro-form 'reference mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ file))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((file (pat:pexpand 'file p-env kwd)))
+		(let ((f (expand-expr file env attributes vocab)))
+		  (if (and (quote-form? f)
+			(z:string? (quote-form-expr f)))
+		    (let* ((raw-filename (z:read-object (quote-form-expr f))))
+		      (let-values (((base name dir?)
+				     (split-path raw-filename)))
+			(when dir?
+			  (static-error file
+			    "Cannot include a directory"))
+			(let ((original-directory (current-directory))
+			       (p (with-handlers
+				    ((exn:i/o:filesystem:filename?
+				       (lambda (exn)
+					 (static-error file
+					   "Unable to open file ~a"
+					   raw-filename))))
+				    (open-input-file raw-filename))))
+			  (dynamic-wind
+			    (lambda ()
+			      (when (string? base)
+				(current-directory base)))
+			    (lambda ()
+			      (let ((reader
+				      (z:read p
+					(z:make-location
+					  (z:location-line
+					    z:default-initial-location)
+					  (z:location-column
+					    z:default-initial-location)
+					  (z:location-offset
+					    z:default-initial-location)
+					  (build-path
+					    (current-directory)
+					    name)))))
+				(let ((code
+					(let loop ()
+					  (let ((input (reader)))
+					    (if (z:eof? input)
+					      '()
+					      (cons input
+						(loop)))))))
+				  (if (null? code)
+				    (static-error expr "Empty file")
+				    (expand-expr
+				      (structurize-syntax
+					`(begin ,@code)
+					expr)
+				      env attributes vocab)))))
+			    (lambda ()
+			      (current-directory original-directory)
+			      (close-input-port p))))))
+		    (static-error file "Does not yield a filename"))))))
+	  (else
+	    (static-error expr "Malformed ~a" form-name))))))
 
-  (reference-maker 'reference #f)
-  (reference-maker 'reference-library #t)
+  (add-primitivized-micro-form 'reference-library mrspidey-vocabulary
+    (let* ((kwd '())
+	    (in-pattern-1 `(_ file))
+	    (in-pattern-2 `(_ file collection))
+	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	    (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e-1 expr env)
+	    =>
+	    (lambda (p-env)
+	      (expand-expr
+		(structurize-syntax
+		  (pat:pexpand
+		    '(reference-library file "standard")
+		    p-env kwd)
+		  expr)
+		env attributes vocab)))
+	  ((pat:match-against m&e-2 expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((file (pat:pexpand 'file p-env kwd))
+		     (collection (pat:pexpand 'collection p-env kwd)))
+		(let ((f (expand-expr file env attributes vocab))
+		       (c (expand-expr collection env attributes vocab)))
+		  (unless (and (quote-form? f)
+			    (z:string? (quote-form-expr f)))
+		    (static-error file "Does not yield a filename"))
+		  (unless (and (quote-form? c)
+			    (z:string? (quote-form-expr c)))
+		    (static-error collection "Does not yield a string"))
+		  (let* ((raw-f (z:read-object (quote-form-expr f)))
+			  (raw-c (z:read-object (quote-form-expr c)))
+			  (raw-filename
+			    (if (complete-path? raw-f)
+			      raw-f
+			      (or (find-library raw-f raw-c)
+				(static-error file
+				  "No such library file found")))))
+		    (if (member raw-f mzscheme-libraries-provided)
+		      (expand-expr (structurize-syntax '(#%void) expr)
+			env attributes vocab)
+		      (let-values (((base name dir?)
+				     (split-path raw-filename)))
+			(when dir?
+			  (static-error file
+			    "Cannot include a directory"))
+			(let ((original-directory (current-directory))
+			       (p (with-handlers
+				    ((exn:i/o:filesystem:filename?
+				       (lambda (exn)
+					 (static-error file
+					   "Unable to open file ~a"
+					   raw-filename))))
+				    (open-input-file raw-filename))))
+			  (dynamic-wind
+			    (lambda ()
+			      (when (string? base)
+				(current-directory base)))
+			    (lambda ()
+			      (let ((reader
+				      (z:read p
+					(z:make-location
+					  (z:location-line
+					    z:default-initial-location)
+					  (z:location-column
+					    z:default-initial-location)
+					  (z:location-offset
+					    z:default-initial-location)
+					  (build-path
+					    (current-directory)
+					    name)))))
+				(let ((code
+					(let loop ()
+					  (let ((input (reader)))
+					    (if (z:eof? input)
+					      '()
+					      (cons input
+						(loop)))))))
+				  (if (null? code)
+				    (static-error expr "Empty file")
+				    (expand-expr
+				      (structurize-syntax
+					`(begin ,@code)
+					expr)
+				      env attributes vocab)))))
+			    (lambda ()
+			      (current-directory original-directory)
+			      (close-input-port p)))))))))))
+	  (else
+	    (static-error expr "Malformed ~a" form-name))))))
 
   (define reference-unit-maker
-    (lambda (form-name signed? library?)
+    (lambda (form-name signed?)
       (add-primitivized-micro-form form-name mrspidey-vocabulary
 	(let* ((kwd '())
 		(in-pattern `(_ file))
@@ -284,21 +370,62 @@
 			    (z:string? (quote-form-expr f)))
 			(create-reference-unit-form
 			  (quote-form-expr f)
-			  ((if library?
-			     current-library-path
-			     current-directory))
+			  (current-directory)
 			  'exp
 			  signed?
-			  library?
 			  expr)
 			(static-error file "Does not yield a filename"))))))
 	      (else
 		(static-error expr "Malformed ~a" form-name))))))))
 
-  (reference-unit-maker 'reference-unit #f #f)
-  (reference-unit-maker 'reference-unit/sig #t #f)
-  (reference-unit-maker 'reference-library-unit #f #t)
-  (reference-unit-maker 'reference-library-unit/sig #t #t)
+  (reference-unit-maker 'reference-unit #f)
+  (reference-unit-maker 'reference-unit/sig #t)
+
+  (define reference-library-unit-maker
+    (lambda (form-name signed?)
+      (add-primitivized-micro-form form-name mrspidey-vocabulary
+	(let* ((kwd '())
+		(in-pattern-1 `(_ file))
+		(in-pattern-2 `(_ file collection))
+		(m&e-1 (pat:make-match&env in-pattern-1 kwd))
+		(m&e-2 (pat:make-match&env in-pattern-2 kwd)))
+	  (lambda (expr env attributes vocab)
+	    (cond
+	      ((pat:match-against m&e-1 expr env)
+		=>
+		(lambda (p-env)
+		  (expand-expr
+		    (structurize-syntax
+		      (pat:pexpand
+			`(,form-name file "standard")
+			p-env kwd)
+		      expr)
+		    env attributes vocab)))
+	      ((pat:match-against m&e-2 expr env)
+		=>
+		(lambda (p-env)
+		  (let ((file (pat:pexpand 'file p-env kwd))
+			 (collection (pat:pexpand 'collection p-env kwd)))
+		    (let ((f (expand-expr file env attributes vocab))
+			   (c (expand-expr collection env attributes vocab)))
+		      (unless (and (quote-form? f)
+				(z:string? (quote-form-expr f)))
+			(static-error file "Does not yield a filename"))
+		      (unless (and (quote-form? c)
+				(z:string? (quote-form-expr c)))
+			(static-error collection "Does not yield a string"))
+		      (create-reference-library-unit-form
+			(quote-form-expr f)
+			(quote-form-expr c)
+			(current-library-collection-paths)
+			'exp
+			signed?
+			expr)))))
+	      (else
+		(static-error expr "Malformed ~a" form-name))))))))
+
+  (reference-library-unit-maker 'reference-library-unit #f)
+  (reference-library-unit-maker 'reference-library-unit/sig #t)
 
 '  (add-primitivized-micro-form 'references-unit-imports mrspidey-vocabulary
     (let* ((kwd '())

@@ -1524,26 +1524,44 @@
 
   (add-primitivized-micro-form 'reference-library scheme-vocabulary
     (let* ((kwd '())
-	    (in-pattern '(_ filename))
-	    (m&e (pat:make-match&env in-pattern kwd)))
+	    (in-pattern-1 '(_ filename))
+	    (in-pattern-2 '(_ filename collection))
+	    (m&e-1 (pat:make-match&env in-pattern-1 kwd))
+	    (m&e-2 (pat:make-match&env in-pattern-2 kwd)))
       (lambda (expr env attributes vocab)
 	(cond
+	  ((pat:match-against m&e-1 expr env)
+	    =>
+	    (lambda (p-env)
+	      (expand-expr
+		(structurize-syntax
+		  (pat:pexpand
+		    '(reference-library filename "standard")
+		    p-env kwd)
+		  expr)
+		env attributes vocab)))
 	  ((pat:match-against m&e expr env)
 	    =>
 	    (lambda (p-env)
-	      (let ((filename (pat:pexpand 'filename p-env kwd)))
-		(let ((f (expand-expr filename env attributes vocab)))
-		  (if (and (quote-form? f)
-			(z:string? (quote-form-expr f)))
-		    (expand-expr
-		      (structurize-syntax
-			(if (member (z:read-object (quote-form-expr f))
-			      mzscheme-libraries-provided)
-			  `(#%void)
-			  `(require-library ,(quote-form-expr f)))
-			expr)
-		      env attributes vocab)
-		    (static-error filename "Does not yield a filename"))))))
+	      (let ((filename (pat:pexpand 'filename p-env kwd))
+		     (collection (pat:pexpand 'collection p-env kwd)))
+		(let ((f (expand-expr filename env attributes vocab))
+		       (c (expand-expr collection env attributes vocab)))
+		  (unless (and (quote-form? f)
+			    (z:string? (quote-form-expr f)))
+		    (static-error filename "Does not yield a filename"))
+		  (unless (and (quote-form? c)
+			    (z:string? (quote-form-expr c)))
+		    (static-error collection "Does not yield a string"))
+		  (expand-expr
+		    (structurize-syntax
+		      (if (member (z:read-object (quote-form-expr f))
+			    mzscheme-libraries-provided)
+			`(#%void)
+			`(require-library ,(quote-form-expr f)
+			   ,(quote-form-expr c)))
+		      expr)
+		    env attributes vocab)))))
 	  (else
 	    (static-error expr "Malformed reference-library"))))))
 

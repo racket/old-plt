@@ -944,6 +944,31 @@ void MyCloseMovie(Movie movie, short resRefNum)
   if (osErr != noErr)
     scheme_signal_error("cannot close movie file (errno = %d)", osErr);
 }
+
+int movieInitialized = FALSE;
+
+int MovieInitialize(void)
+{
+  short osErr;
+  long result;
+  
+  osErr = Gestalt(gestaltQuickTime, &result);
+  if (osErr != noErr) {
+    scheme_signal_error("Movie Toolbox not available");
+  }
+  
+  if (result < 0x03000000) {
+    scheme_signal_error("Quicktime 3.0 or later required to play sounds.");
+  }
+  
+  osErr = EnterMovies();
+  if (osErr != noErr) {
+    scheme_signal_error("Unable to initialize Movie Toolbox (errno = %d)", osErr);
+  }
+  
+  movieInitialized = TRUE;
+} 
+  
   
 void wxCheckFinishedSounds(void)
 {
@@ -998,6 +1023,10 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   Handle soundHandle = NULL;
   Track myTrack;
   long trackCount;
+  
+  if (! movieInitialized) {
+    MovieInitialize();
+  }
   
   osErr = scheme_mac_path_to_spec(f,&spec,FALSE);
   if (! osErr) 

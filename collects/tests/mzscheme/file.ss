@@ -371,6 +371,14 @@
   (test #\a read-char p)
   (test 3 file-position p))
 
+(let* ([s (open-input-string "(apple \"banana\" [coconut])")]
+       [p (make-input-port 
+	   (lambda () (read-char s))
+	   (lambda () #t)
+	   void 
+	   (lambda () (peek-char s)))])
+  (test '(apple "banana" [coconut]) read p))
+
 (define test-file 
   (open-output-file "tmp2" 'truncate))
 (write-char #\; test-file)

@@ -233,11 +233,7 @@
                     (field-set? field (if (memq 'static (map modifier-kind (field-modifiers field)))
                                           static-assigns assigns)))
                   setting-fields))))
-  
-  (define field-needs-set? (lambda (m l) #f))
-  (define get-static-assigns null)
-  (define field-set? null)
-  
+    
   ;create-field-env: (list field-record) env -> env
   (define (create-field-env fields env)
     (cond
@@ -274,13 +270,20 @@
                       (environment-exn-env env)
                       (environment-label-env env)))
 
+  ;field-needs-set?: field symbol -> bool
+  (define (field-needs-set? field level)
+    (cond
+      ((eq? level 'beginner) #t)
+      (else #f)))
+  
   ;get-assigns: (list member) symbol -> (list assignment)
   (define (get-assigns members level)
     (if (eq? level 'beginner)
         (get-beginner-assigns members)
         (get-instance-assigns members)))
   
-  (define (get-instance-assigns m)null)
+  (define (get-instance-assigns m)
+    null)
   
   ;get-beginner-assigns: (list member) -> (list assign)
   (define (get-beginner-assigns members)
@@ -316,6 +319,9 @@
                    (format "Constructor for ~a may only assign the fields of ~a. Found illegal statement ~a"
                            class class exp)
                    exp src)))
+  
+  (define (get-static-assigns m l) null)
+  (define (field-set? f a) null)
   
   ;check-method: method env type-records (list string) boolean-> void
   (define (check-method method env level type-recs c-class static?)

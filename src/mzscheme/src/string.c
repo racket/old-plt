@@ -637,9 +637,9 @@ GEN_STRING_COMP(string_ci_gt_eq, "string-ci>=?", mz_strcmp_ci, >=, 0)
 
 GEN_STRING_COMP(string_locale_lt, "string-locale<?", mz_strcmp, <, 1)
 GEN_STRING_COMP(string_locale_gt, "string-locale>?", mz_strcmp, >, 1)
-GEN_STRING_COMP(string_locale_ci_eq, "string-ci=?", mz_strcmp_ci, ==, 1)
-GEN_STRING_COMP(string_locale_ci_lt, "string-ci<?", mz_strcmp_ci, <, 1)
-GEN_STRING_COMP(string_locale_ci_gt, "string-ci>?", mz_strcmp_ci, >, 1)
+GEN_STRING_COMP(string_locale_ci_eq, "string-locale-ci=?", mz_strcmp_ci, ==, 1)
+GEN_STRING_COMP(string_locale_ci_lt, "string-locale-ci<?", mz_strcmp_ci, <, 1)
+GEN_STRING_COMP(string_locale_ci_gt, "string-locale-ci>?", mz_strcmp_ci, >, 1)
 
 
 void scheme_get_substring_indices(const char *name, Scheme_Object *str, 
@@ -979,7 +979,7 @@ static int mz_strcmp_ci(unsigned char *str1, int l1, unsigned char *str2, int l2
       cstr2[i] = toupper(cstr2[i]);
     }
 
-    i = mz_strcmp(cstr1, l1, cstr2, l1, 0);
+    i = mz_strcmp(cstr1, l1, cstr2, l1, 1);
     if (i)
       endres = i;
 

@@ -321,12 +321,12 @@ static void char_un_error(char *name, int argc, Scheme_Object *argv[])
    if (!SCHEME_CHARP(argv[0]))      \
      scheme_wrong_type(#scheme_name, "character", 0, argc, argv);     \
    prev = ((unsigned char)SCHEME_CHAR_VAL(argv[0]));     \
-   UPCASE(scheme_locale_on, prev = _toupper(prev), prev = mz_portable_toupper(prev)) \
+   UPCASE(scheme_locale_on, prev = toupper(prev), prev = mz_portable_toupper(prev)) \
    for (i = 1; i < argc; i++) {     \
      if (!SCHEME_CHARP(argv[i]))      \
        scheme_wrong_type(#scheme_name, "character", i, argc, argv);     \
      c = ((unsigned char)SCHEME_CHAR_VAL(argv[i]));     \
-     UPCASE(scheme_locale_on, c = _toupper(c), c = mz_portable_toupper(c)) \
+     UPCASE(scheme_locale_on, c = toupper(c), c = mz_portable_toupper(c)) \
      LOCCOMP(scheme_locale_on, prev, c, comp, rv) \
      if (!(prev comp c)) rv = scheme_false;   \
      prev = c;     \

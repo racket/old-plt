@@ -2,12 +2,13 @@
 MzScheme version 200 is different from previous versions of MzScheme
 in several significant ways:
 
- * There is a new module system that supports only top-level,
-   first-order modules. The library-collection system now works with
-   the module system. In particular, `require-library' has been
-   replaced by a `require' form.
+ * The new module system supports top-level, first-order modules that
+   import and export both syntax and run-time variables. The
+   library-collection system now works with the module system. In
+   particular, `require-library' has been replaced by a `require'
+   form.
 
- * There is no built-in object or unit system. These have been moved
+ * No object or unit system is built into MzScheme. These have been moved
    to MzLib-defined syntax modules: "class.ss" (or "class-old.ss"),
    "unit.ss", and "unitsig.ss" in the "mzlib" collection. For example,
    to get the old class system, use
@@ -22,8 +23,8 @@ in several significant ways:
 
        (require (lib "defmacro.ss"))
 
-   The macro procedure cannot access global bindings as in previous
-   versions, however. See the MzLib and MzScheme manuals for details.
+   IMPORTANT: a macro procedure cannot access global bindings as in
+   previous versions. See the MzLib and MzScheme manuals for details.
 
  * Although MzScheme has no class system, there is still a "standard"
    one (i.e., the one that works with MrEd), and it is different from
@@ -202,13 +203,17 @@ in several significant ways:
  * The mzc compiler supports a subset of the Gambit-C foreign-function
    interface.
 
- * Nearly all #% names are gone, since they are unnecessary with the
-   new syntax system. However, a few new syntactic forms, which are
-   usually implicit, use #%: `#%app', `#%datum', `#%top', etc.
+ * All of the old #% names are gone, since they are unnecessary with
+   the new module and macro system. However, a few new syntactic
+   forms, which are usually implicit, use #%: `#%app', `#%datum',
+   `#%top', etc.
 
  * `global-defined-value' is replaced by `namespace-variable-value'
    and `namespace-set-variable-value!'. The `defined?' procedure moved
    to the "etc.ss" MzLib library, renamed as `namespace-defined?'.
+   The `make-global-value-list' procedure is gone, but a new
+   `namespace-mapped-symbols' procedure provides similar
+   functionality.
 
  * Compiling an expression no longer links its global-variable
    references to a particular namespace. Instead, an implicit link
@@ -239,7 +244,7 @@ MzLib changes:
  * "process.ss" is new.
 
  * The default for the whole/fractional-exact-numbers parameter in
-   the pconvert.ss library is now #f.
+   the "pconvert.ss" library is now #f.
 
 Inside MzScheme:
 
@@ -248,6 +253,9 @@ Inside MzScheme:
 
  * "manager" in function, type, and macro names was replaced by
    "custodian".
+
+ * The functions to make and use input and output ports changed
+   considerably.
 
  * scheme_rep() is gone; use the Scheme procedure returned by
    scheme_builtin_value("read-eval-print-loop") instead.

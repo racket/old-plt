@@ -540,6 +540,44 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht)
 	case 'f': return (stxsrc 
 			  ? scheme_make_stx_w_offset(scheme_false, line, col, pos, 2, stxsrc, STX_SRCTAG) 
 			  : scheme_false);
+	case 'c':
+	case 'C':
+	  {
+	    Scheme_Object *v;
+	    int save_sens, sens;
+
+	    ch = scheme_getc_special_ok(port);
+	    switch ( ch ) {
+	    case 'i':
+	    case 'I':
+	      sens = 0;
+	      break;
+	    case 's':
+	    case 'S':
+	      sens = 1;
+	      break;
+	    default:
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, ch, 
+			      "read: expected `s' or `i' after #c");
+	      return NULL;
+	    }
+
+	    save_sens = local_case_sensitive;
+	    local_case_sensitive = sens;
+
+	    v = read_inner(port, stxsrc, ht);
+
+	    local_case_sensitive = save_sens;
+
+	    if (SCHEME_EOFP(v)) {
+	      scheme_read_err(port, stxsrc, line, col, pos, 2, EOF, 
+			      "read: end-of-file after #c%c",
+			      sens ? 's' : 'i');
+	      return NULL;
+	    }
+
+	    return v;
+	  }
 	case 'X':
 	case 'x': return read_number(port, stxsrc, line, col, pos, 0, 0, 16, 1);
 	case 'B':

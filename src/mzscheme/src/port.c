@@ -1493,7 +1493,9 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
   Scheme_Object *r, *val, *pd, *f, *a[4];
   Scheme_Input_Port *ip;
   long pos_delta;
-  
+  int crc, crpq, crb, crg, cs, sbap, cbap, rdi, crd, crq;
+  Scheme_Thread *p = scheme_current_thread;
+
   SCHEME_USE_FUEL(1);
 
   ip = (Scheme_Input_Port *)port;
@@ -1524,6 +1526,19 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
 
   CHECK_PORT_CLOSED("#<primitive:get-special>", "input", port, ip->closed);
 
+  /* In case there'sa recursive call to `read', save the "quick" param vals
+     and restore them afterward */
+  crc = p->quick_can_read_compiled;
+  crpq = p->quick_can_read_pipe_quote;
+  crb = p->quick_can_read_box;
+  crg = p->quick_can_read_graph;
+  cs = p->quick_case_sens;
+  sbap = p->quick_square_brackets_are_parens;
+  cbap = p->quick_curly_braces_are_parens;
+  rdi = p->quick_read_decimal_inexact;
+  crd = p->quick_can_read_dot;
+  crq = p->quick_can_read_quasi;
+
   f = ip->special;
   ip->special = NULL;
 
@@ -1532,6 +1547,17 @@ Scheme_Object *scheme_get_special(Scheme_Object *port, Scheme_Object *src, long 
   a[2] = (col > 0) ? scheme_make_integer(col) : scheme_false;
   a[3] = (pos > 0) ? scheme_make_integer(pos) : scheme_false;
   r = _scheme_apply_multi(f, 4, a);
+
+  p->quick_can_read_compiled = crc;
+  p->quick_can_read_pipe_quote = crpq;
+  p->quick_can_read_box = crb;
+  p->quick_can_read_graph = crg;
+  p->quick_case_sens = cs;
+  p->quick_square_brackets_are_parens = sbap;
+  p->quick_curly_braces_are_parens = cbap;
+  p->quick_read_decimal_inexact = rdi;
+  p->quick_can_read_dot = crd;
+  p->quick_can_read_quasi = crq;
 
   /* Should be multiple values: */
   if (SAME_OBJ(r, SCHEME_MULTIPLE_VALUES)) {

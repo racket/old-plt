@@ -2619,7 +2619,7 @@ static Scheme_Object *do_param(void *data, int argc, Scheme_Object *argv[])
       
       v = _scheme_apply(guard, 1, argv);
       argv2 = MALLOC_N(Scheme_Object *, argc);
-      memcpy(argv2, argv, argc * sizeof(Scheme_Object **));
+      memcpy(argv2, argv, argc * sizeof(Scheme_Object *));
       argv2[0] = v;
     } else
       argv2 = argv;

@@ -1049,9 +1049,11 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
 		      : 0));
   
   if (!data->stat_dists) {
-    data->stat_dists = MALLOC_N_ATOMIC(char*, frame->num_bindings);
+    int k;
+    data->stat_dists = MALLOC_N(char*, frame->num_bindings);
     data->sd_depths = MALLOC_N_ATOMIC(int, frame->num_bindings);
-    /* Rely on GC to zero-out array */
+    for (k = frame->num_bindings; k--; )
+      data->sd_depths[k] = 0;
   }
   
   if (data->sd_depths[i] <= j) {
@@ -1059,6 +1061,8 @@ static Scheme_Local *get_frame_loc(Scheme_Comp_Env *frame, Compile_Data *data,
     int k;
     
     naya = MALLOC_N_ATOMIC(char, (j + 1));
+    for (k = j + 1; k--; )
+      naya[k] = 0;
     a = data->stat_dists[i];
     for (k = data->sd_depths[i]; k--; )
       naya[k] = a[k];
@@ -1264,9 +1268,18 @@ Link_Info *scheme_link_info_extend(Link_Info *info, int size, int oldsize, int m
   naya->pos = 0;
   naya->anchor_offset = 0;
   if (mapc) {
+    int i;
+
     naya->old_pos = MALLOC_N_ATOMIC(short, mapc);
     naya->new_pos = MALLOC_N_ATOMIC(short, mapc);
     naya->flags = MALLOC_N_ATOMIC(int, mapc);
+
+    /* necessary? added when changed allocation to atomic */
+    for (i = mapc; i--; ) {
+      naya->old_pos[i] = 0;
+      naya->new_pos[i] = 0;
+      naya->flags[i] = 0;
+    }
   }
 
   naya->can_optimize_constants = info->can_optimize_constants;

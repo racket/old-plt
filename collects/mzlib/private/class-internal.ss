@@ -49,7 +49,7 @@
 		 "use of a class keyword is not in a class top-level"
 		 stx))))
 	   (define-syntax id
-	     (make-parameter-rename-transformer #'param-id)))
+	     (make-rename-transformer #'param-id)))
 	 ...)]))
 
   (define/provide-context-keyword

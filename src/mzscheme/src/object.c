@@ -59,6 +59,7 @@
 #define IVAR_IN_CLASS "ivar-in-class?"
 #define IVAR_IN_INTERFACE "ivar-in-interface?"
 #define OBJECT_CLASS "object-class"
+#define OBJECT_INTERFACE "object-interface"
 #define CLASS_TO_INTERFACE "class->interface"
 #define NULL_CLASS "object%"
 
@@ -395,11 +396,7 @@ void install_class_interface(Scheme_Class *sclass)
   in->supers = NULL;
   in->super_offsets = NULL;
 
-  if (sclass->defname) {
-    int len;
-    in->defname = scheme_intern_symbol(scheme_format("interface of ~a", 15, 1, &sclass->defname, &len));
-  } else
-    in->defname = NULL;
+  in->defname = sclass->defname;
 
   in->num_names = 0;
   in->names = NULL;
@@ -944,8 +941,8 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     Scheme_Interface *source = NULL;
     in->supclass = null_class;
     for (i = 0; i < num_supers; i++) {
-      if (!scheme_is_subclass((Scheme_Object *)supers[i]->supclass, (Scheme_Object *)in->supclass)) {
-	if (!scheme_is_subclass((Scheme_Object *)in->supclass, (Scheme_Object *)supers[i]->supclass)) {
+      if (!scheme_is_subclass((Scheme_Object *)in->supclass, (Scheme_Object *)supers[i]->supclass)) {
+	if (!scheme_is_subclass((Scheme_Object *)supers[i]->supclass, (Scheme_Object *)in->supclass)) {
 	  scheme_raise_exn(MZEXN_OBJECT,
 			   "interface: inconsistent implementation requirements "
 			   "between superinterfaces: %s and %s",
@@ -3542,7 +3539,7 @@ int scheme_is_implementation(Scheme_Object *c, Scheme_Object *n)
 
 int scheme_is_interface_extension(Scheme_Object *exn, Scheme_Object *basen)
 {
-  int i;
+  int i, offset;
   Scheme_Interface *ex, *base, **ins;
 
   if (!SCHEME_INTERFACEP(exn) || !SCHEME_INTERFACEP(basen))
@@ -3556,7 +3553,8 @@ int scheme_is_interface_extension(Scheme_Object *exn, Scheme_Object *basen)
     if (SAME_OBJ(base, ins[i]))
       return 1;
 
-  return 0;
+  /* Maybe it's implicit inthe class... */
+  return find_implementation((Scheme_Object *)ex->supclass, (Scheme_Object *)base, &offset) ? 1 : 0;
 }
 
 static Scheme_Object *IsA(int c, Scheme_Object *p[])
@@ -3669,6 +3667,14 @@ static Scheme_Object *ObjectClass(int c, Scheme_Object *p[])
     scheme_wrong_type(OBJECT_CLASS, "object", 0, c, p);
 
   return ((Scheme_Class_Object *)p[0])->sclass;
+}
+
+static Scheme_Object *ObjectInterface(int c, Scheme_Object *p[])
+{
+  if (!SCHEME_OBJP(p[0]))
+    scheme_wrong_type(OBJECT_INTERFACE, "object", 0, c, p);
+
+  return (Scheme_Object *)((Scheme_Class *)((Scheme_Class_Object *)p[0])->sclass)->equiv_intf;
 }
 
 #if ADD_TEST_PRIM_OBJ
@@ -3822,6 +3828,11 @@ void scheme_init_object(Scheme_Env *env)
   scheme_add_global_constant(OBJECT_CLASS, 
 			     scheme_make_folding_prim(ObjectClass, 
 						      OBJECT_CLASS,
+						      1, 1, 1), 
+			     env);
+  scheme_add_global_constant(OBJECT_INTERFACE, 
+			     scheme_make_folding_prim(ObjectInterface, 
+						      OBJECT_INTERFACE,
 						      1, 1, 1), 
 			     env);
 

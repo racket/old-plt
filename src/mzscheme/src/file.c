@@ -1900,7 +1900,8 @@ static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt
 {
   if (!scheme_is_complete_path(filename, ilen)) {
     char *naya;
-    
+    int skip_sep = 0;
+
     if (!wrt) {
       Scheme_Object *wd = CURRENT_WD();
       wrt = SCHEME_STR_VAL(wd);
@@ -1911,14 +1912,16 @@ static char *do_path_to_complete_path(char *filename, long ilen, const char *wrt
     if (!scheme_is_relative_path(filename, ilen)) {
       /* Absolute, not complete. Fill in the disk */
       wrt = get_drive_part(wrt, wlen);
-      wlen = strlen(wrt);
+      wlen = strlen(wrt) - 1; /* drop trailing separator */
+      skip_sep = 1;
     }
 #endif
 
     naya = (char *)scheme_malloc_atomic(ilen + wlen + 2);
     memcpy(naya, wrt, wlen);
-    if (!IS_A_SEP(naya[wlen - 1]))
-      naya[wlen++] = FN_SEP;
+    if (!skip_sep)
+      if (!IS_A_SEP(naya[wlen - 1]))
+	naya[wlen++] = FN_SEP;
 #ifdef MAC_FILE_SYSTEM
     if (IS_A_SEP(filename[0])) {
       filename++;

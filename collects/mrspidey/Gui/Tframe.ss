@@ -24,7 +24,9 @@
 
 (define spidey:frame%
 
-  (class frame:searchable%
+  (drscheme:frame:basics-mixin
+
+   (class frame:searchable%
 
     (arg-main arg-filename summary-edit . init-locs)
 
@@ -106,23 +108,6 @@
      [file-menu:save-as #f]
      [file-menu:close on-close]
 
-     [file-menu:between-open-and-revert
-      (lambda (file-menu)
-	(let ([new-item 
-	       (lambda (label cb)
-		 (make-object menu-item% label file-menu cb))])
-	  (new-item "Open..." 
-		    (lambda (mi ce) (send main open-analyzed-file-choice)))
-	  (new-item "Open All"
-		    (lambda (mi ce) (wrap-busy-cursor 
-				     (lambda () (send main open-all #t)))))
-	  (new-item "Load All" 
-		    (lambda (mi ce) (wrap-busy-cursor 
-				     (lambda () (send main open-all #f)))))
-	  (new-item "Reanalyze" 
-		    (lambda (mi ce) (wrap-busy-cursor 
-				     (lambda () (send main reanalyze)))))))]
-
       [file-menu:between-save-as-and-print (lambda args (void))]
 
       [edit-menu:undo #f]   
@@ -200,6 +185,7 @@
 
     (sequence
       (let* ([menu-bar (get-menu-bar)]
+	     [actions-menu (make-object menu% "Actions" menu-bar)]
 	     [show-menu (make-object menu% "Show" menu-bar)]
 	     [clear-menu (make-object menu% "Clear" menu-bar)]
 	     [filter-menu (make-object menu% "Filter" menu-bar)]
@@ -220,6 +206,9 @@
 						 s show-menu show-callback))]
 	     [add-clear-item (lambda (s f) (make-object menu-item% 
 							s clear-menu f))]
+	     [add-action-item
+	      (lambda (s f) (make-object menu-item%
+					 s actions-menu f))]
 	     [filters (analysis-get-filters)]
 	     [filter-items '()])
 
@@ -234,6 +223,18 @@
 	(send check-program check #t)
 
 	(set-show-mode canvas-show-mode)
+
+	(add-action-item "Open Referenced File..." 
+	 (lambda (mi ce) (send main open-analyzed-file-choice)))
+	(add-action-item "Open All"
+	 (lambda (mi ce) (wrap-busy-cursor 
+			  (lambda () (send main open-all #t)))))
+	(add-action-item "Load All" 
+	 (lambda (mi ce) (wrap-busy-cursor 
+			  (lambda () (send main open-all #f)))))
+	(add-action-item "Reanalyze" 
+	 (lambda (mi ce) (wrap-busy-cursor 
+			  (lambda () (send main reanalyze)))))
 
 	(add-clear-item "Arrows+Types"  
 			(lambda (mi ce) 
@@ -336,6 +337,6 @@
       (calc-show)
       (show #t)
       
-      )))
+      ))))
 
 

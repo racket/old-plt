@@ -23,6 +23,7 @@
   (unit/sig mrspidey-gui^
     (import mred^
 	    framework^
+	    (drscheme : drscheme:export^)
 	    browser^ 
 	    mrspidey:mzlib:function^
 	    mzlib:pretty-print^

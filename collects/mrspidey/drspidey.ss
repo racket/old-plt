@@ -167,6 +167,7 @@
 	      (mrspidey-gui@ 
 	       MRED 
 	       FRAMEWORK
+	       DRSCHEME
 	       BROWSER
 	       ((MZLIB function) : mrspidey:mzlib:function^)
 	       (MZLIB pretty-print)

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-string=? ; exec mzscheme/mzscheme -qr $0 "$@"
+string=? ; exec $PLTHOME/bin/mzscheme -qr $0 "$@"
 
 (require (lib "cmdline.ss")
 	 (lib "process.ss"))
@@ -47,8 +47,16 @@ string=? ; exec mzscheme/mzscheme -qr $0 "$@"
                              (build-path "collects" "launcher"))
                     (make-pr (build-path "src" "mzscheme" "mzscheme")
                              (build-path "bin"))
-                    (make-pr (build-path "mzscheme" "mzscheme3m")
-                             (build-path "bin")))]
+                    (make-pr (build-path "src" "mzscheme" "mzscheme3m")
+                             (build-path "bin"))
+		    (make-pr (build-path "src" "mzscheme" "mzdyn.o")
+			     (build-path "lib"))
+		    (make-pr (build-path "src" "mzscheme" "libmzgc.a")
+			     (build-path "lib"))
+		    (make-pr (build-path "src" "mzscheme" "libmzscheme.a")
+			     (build-path "lib"))
+		    (make-pr (build-path "src" "mzscheme" "mzdyn3m.o")
+			     (build-path "lib")))]
     [else (error 'remote-install.ss "only works for macos x")]))
 
 (define home-directory-relative-files

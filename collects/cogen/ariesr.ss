@@ -7,7 +7,7 @@
 ;   pretty.ss  [for debugging]
 
     (unit/sig plt:aries^
-      (import [z : drscheme:zodiac^]
+      (import [z : zodiac:system^]
 	[z:interface : zodiac:interface^])
 
       (define error-box

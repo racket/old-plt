@@ -31,7 +31,7 @@
 	       (set! cur-var #\a)
 	       (set! loc location)
 	       (let ([progtype (typecheck-ml stmt (empty-context))])
-		 (begin ; (pretty-print (format "initial progtype: ~a" progtype))
+		 (begin ;(pretty-print (format "initial progtype: ~a" progtype))
 		 (if (list? progtype)
 		     (letrec ([ucvert (lambda (ttlist)
 					(if (null? ttlist)
@@ -63,7 +63,7 @@
 		    [($ ast:structure_item desc src)
 		     (typecheck-structure desc src context)]
 		    [else
-		     (raise-syntax-error #f (format "Cannot typecheck: ~a" stmt) (at stmt (ast:make-src 0 0 0 0)))]))
+		     (raise-syntax-error #f (format "Cannot typecheck: ~a" stmt) (at stmt (ast:make-src 1 1 1 1)))]))
 
 	   (define (typecheck-structure desc src context)
 ;	     (pretty-print (format "typecheck-structure ~a" desc))
@@ -71,14 +71,14 @@
 		    [($ ast:pstr_value rec_flag pelist)
 		     (typecheck-defines rec_flag pelist context)]
 		    [($ ast:pstr_type stdlist)
-		     (begin ; (pretty-print (format "Length of stdlist is ~a" (length stdlist)))
+		     (begin ;(pretty-print (format "Length of stdlist is ~a" (length stdlist)))
 		     (map typecheck-typedecl stdlist (repeat (newboundtypes stdlist) (length stdlist))))]
 		    [($ ast:pstr_eval expr)
 		     (typecheck-ml expr context)]
 		    [($ ast:pstr_exception name decl)
-		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-ml decl)) "exception")])
+		     (let ([nconst (make-tconstructor (make-<tuple> (map typecheck-ml decl (repeat context (length decl)))) "exception")])
 		       (begin
-			 (hash-table-put! <constructors> (syntax-object->datum name) (make-tconstructor (make-<tuple> (map typecheck-ml decl))) "exception")
+			 (hash-table-put! <constructors> (syntax-object->datum name) (cons (make-tconstructor (make-<tuple> (map typecheck-ml decl (repeat context (length decl)))) "exception" ) #`#,(string->symbol (format "make-~a" (syntax-object->datum name)))))
 			 (make-mlexn (syntax-object->datum name) nconst)))]
 		       
 		    [else
@@ -141,6 +141,8 @@
 		    [($ ast:pexp_construct name expr bool)
 		     (let ([fconstructor (hash-table-get <constructors> (unlongident name) (lambda () #f))])
 		       (if fconstructor
+			   (begin
+			     ;(pretty-print (format "fconstructor ~a" fconstructor))
 			   (let ([constructor (car (convert-tvars (car fconstructor) null))])
 			     (if (tconstructor? constructor)
 				 (if (null? (tconstructor-argtype constructor))
@@ -150,6 +152,7 @@
 				     (if (unify (tconstructor-argtype constructor) (typecheck-ml expr context) (at expr (ast:expression-pexp_src expr)))
 					 (tconstructor-result constructor)))
 				 constructor))
+			   )
 				 ;; Special case for cons
 ;				 (if (equal? (cdr fconstructor) cons)
 ;				     (let* ([listtype (typecheck-ml (car (ast:pexp_tuple-expression-list (ast:expression-pexp_desc expr))) context)]
@@ -244,8 +247,10 @@
 		   (car expts))))
 
 	   (define (typecheck-defines rec bindings context)
+	     ;(pretty-print "typecheckdefines called")
 	     (let ([contextwithbindings (typecheck-bindings rec bindings context)])
 	       (begin 
+		 ;(pretty-print (format "contextwithbindings: ~a" contextwithbindings))
 		 (set! cur-var #\a)
 		 (let ([definedtypes (reverse (map car (map unconvert-tvars (map car (map cdr contextwithbindings)) (repeat null (length contextwithbindings)))))])
 		   (begin
@@ -271,7 +276,7 @@
 						   [tf (if constraint
 							   (typecheck-type (ast:ppat_constraint-type (ast:pattern-ppat_desc (car cur-bind))) null)
 							   (make-arrow (list (fresh-type-var)) (fresh-type-var)))])
-					      (update (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat)) (cons tf null) (bind-vars (cdr bindings)))))))])
+					      (update (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) (cons tf null) (bind-vars (cdr bindings))))))])
 			  (let ([cprime (bind-vars bindings)])
 			    (foldl (lambda (next init)
 				     (update (syntax-object->datum (car next)) (cdr next) init))
@@ -280,9 +285,16 @@
 					  (cons (car mapping) (schema (cdr mapping) context)))
 					(map typecheck-binding bindings (repeat rec (length bindings)) (repeat cprime (length bindings)))))))
 		 (let ([ncontexts (map typecheck-binding bindings (repeat rec (length bindings)) (repeat context (length bindings)))])
-		   (foldl union-envs (car ncontexts) (cdr ncontexts)))))
+		   
+		   (let ([res (foldl union-envs (car ncontexts) (cdr ncontexts))])
+		     (begin
+		       ;(pretty-print (format "foldl result: ~a" res))
+		       res))
+
+)))
 
 	   (define (typecheck-binding binding rec context)
+	     ;(pretty-print (format "typecheck-binding ~a ~a ~a" binding rec context))
 	     (let* ([rpat (if (ast:ppat_constraint? (ast:pattern-ppat_desc (car binding)))
 			      (ast:ppat_constraint-pat (ast:pattern-ppat_desc (car binding)))
 			      (car binding))])
@@ -294,7 +306,12 @@
 			 (if (unify (get-result tf) (get-result te) (at (cdr binding) (ast:expression-pexp_src (cdr binding))))
 			     (cons (syntax-object->datum (ast:ppat_var-name (ast:pattern-ppat_desc rpat))) tf)))
 		       (raise-syntax-error #f "This kind of expression is not allowed as right-hand side of 'let rec'" (at (cdr binding) (ast:expression-pexp_src (cdr binding)))))
-		   (patcheck context (typecheck-ml (cdr binding) context) rpat))))
+		   (begin ;(pretty-print "not rec in typecheck-binding")
+		   (let ([newcont
+			  (patcheck context (typecheck-ml (cdr binding) context) rpat)])
+		     (begin
+		       ;(pretty-print (format "patcheck result in typecheck-binding ~a" newcont))
+		       newcont))))))
 
 ;; Note, I should be checking for no duplicate binding
 ;; I'm also not doing anything with contraints here
@@ -311,7 +328,9 @@
 ;	     (let* ([patenvs (map patcheck (repeat context (length pelist)) (map typecheck-type (map ast:ppat_constraint-type (map ast:pattern-ppat_desc (map car pelist))) (repeat context (length pelist))) (map car pelist))]
 	     (let* (
 		    [funvarenvs (map funvarcheck (repeat context (length pelist)) (map car pelist))]
-		    [expts (map typecheck-ml (map cdr pelist) (map cdr funvarenvs))])
+		    [expts (begin ;(pretty-print (format "funvarenvs in typecheck-function: ~a" funvarenvs))
+				  ;(pretty-print (format "env after funvarenv ~a" (cdr (car funvarenvs))))
+				  (map typecheck-ml (map cdr pelist) (map cdr funvarenvs)))])
 	     
 	       (if (and (same-types? (map car funvarenvs) (map grab-syntax pelist)) (same-types? expts (map at (map cdr pelist) (map ast:expression-pexp_src (map cdr pelist)))))
 ;; Should also be checking that the patterns are exhaustive for t and don't overlap
@@ -395,16 +414,17 @@
 	   (define (funvarcheck context pat)
 	     (if (unique-var pat null)
 		 (let ([varenv (funenv pat)])
-		   (cons (car varenv) (union-envs (cdr varenv) context)))))
+		   (begin ;(pretty-print (format "var-env from funvarcheck: ~a" varenv))
+			  (cons (car varenv) (union-envs (cdr varenv) context))))))
 
 	   (define (patcheck context type pat) 
-	     ; (pretty-print (format "patcheck: ~a" pat))
+	     ;(pretty-print (format "patcheck: ~a" pat))
 	     (if (unique-var pat null)
 		 (union-envs (patenv pat type context) context)
 		 'fuzzle))
 
 	   (define (unique-var pat curvars)
-	     ; (pretty-print (format "unique-var: ~a" pat))
+	     ;(pretty-print (format "unique-var: ~a" pat))
 	     (match (ast:pattern-ppat_desc pat)
 		    [($ ast:ppat_any dummy)
 		     curvars]
@@ -440,7 +460,8 @@
 		     (cons (constant-check const) (empty-context))]
 		    [($ ast:ppat_tuple plist)
 		     (let ([varenvs (map funenv plist)])
-		       (cons (make-<tuple> (map car varenvs)) (map cdr varenvs)))]
+		       (begin ;(pretty-print (format "varenvs from funenv: ~a" varenvs))
+		       (cons (make-<tuple> (map car varenvs)) (foldl union-envs (car (map cdr varenvs)) (cdr (map cdr varenvs))))))]
 		    [($ ast:ppat_construct longident cpat bool)
 		       (let* ([pat-type (hash-table-get <constructors> (unlongident longident) (lambda () #f))])
 			 (if pat-type
@@ -482,7 +503,11 @@
 			 (let ([tlist (<tuple>-list type)])
 			   (if (= (length tlist) (length plist))
 			       (let ([nenvs (map patenv plist tlist (repeat context (length plist)))])
-				 (foldl union-envs (car nenvs) (cdr nenvs)))
+				 (let ([res (foldl union-envs (car nenvs) (cdr nenvs))])
+				   (begin
+				     ;(pretty-print (format "foldl result2: ~a" res))
+				     res))
+)
 			       (raise-syntax-error #f (format "Expected tuple of length ~a but found tuple of length " (length tlist) (length plist)) patsyn)) )
 			 (raise-syntax-error #f (format "Expected ~a but found tuple" type) patsyn) )]
 		    [($ ast:ppat_construct longident cpat bool)
@@ -637,11 +662,16 @@
 	   (define (lookup-ident uname syntax)
 	     (match uname
 		    [($ ast:lident name)
-		     (let ([result (hash-table-get built-in-and-user-funcs (eval name) (lambda () #f))])
+		     (let* ([rname (cond
+				    [(syntax? name) (syntax-object->datum name)]
+				    [(string? name) name])]
+				    
+			    [result (hash-table-get built-in-and-user-funcs rname (lambda () #f))])
 		       (if result
 			   (car result)
 			   (begin
-			     (raise-syntax-error #f (format "Error: Unbound variable ~a" name) (if syntax
+;			     (+ 1 #f)
+			     (raise-syntax-error #f (format "Error: Unbound variable ~a" rname) (if syntax
 												   syntax
 												   uname ))
 			     #f)))]
@@ -821,7 +851,7 @@
 	     (cond
 	      [(null? c1) c2]
 	      [(null? c2) c1]
-	      [(equal? (car c1) (car c2)) c2]
+	      [(equal? (car c1) (car c2)) (cons (car c1) (union-envs (cdr c1) (cdr c2)))]
 	      [else (cons (car c1) (union-envs (cdr c1) c2))]))
 
 	   
@@ -833,15 +863,18 @@
 		     (present? var (cdr vlist)))))
 
 	   (define (get-type var context)
+	     ;(pretty-print (format "get-type ~a ~a" var context))
 	     (if (null? context)
 		 #f
-		 (begin ; (pretty-print (format "Comparing ~a and ~a" (caar context) var))
+		 (begin ;(pretty-print (format "Comparing ~a and ~a" (caar context) var))
 		 (if (equal? (caar context) var)
 		     (cdar context)
 		     (get-type var (cdr context))))))
 
 	   (define (update var type-tvarlist context)
-	     (cons (cons var type-tvarlist) context))
+	     (let ([new-context (cons (cons var type-tvarlist) context)])
+	       (begin ;(pretty-print (format "Update: ~a" new-context))
+		      new-context)))
 
 	   (define (empty-context) null)
 

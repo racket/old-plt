@@ -46,12 +46,12 @@ ALIST_API OSErr ALMakeUserPaneControl(ALHandle hAL, Boolean canFocus, ControlHan
 
 		if (numberOfUsers == 0 && drawUPP == nil) {
 			// If nobody is using these yet, create  the UserPane Routine Descriptors.
-			drawUPP = NewControlUserPaneDrawProc( local_ALUserPaneDrawProc );
-			testUPP = NewControlUserPaneHitTestProc( local_ALUserPaneHitTestProc );
-			trackingUPP = NewControlUserPaneTrackingProc( local_ALUserPaneTrackProc );
-			downUPP = NewControlUserPaneKeyDownProc( local_ALUserPaneKeyDownProc );
-			activateUPP = NewControlUserPaneActivateProc( local_ALUserPaneActivateProc );
-			focusUPP = NewControlUserPaneFocusProc( local_ALUserPaneFocusProc );
+			drawUPP = NewControlUserPaneDrawUPP( local_ALUserPaneDrawProc );
+			testUPP = NewControlUserPaneHitTestUPP( local_ALUserPaneHitTestProc );
+			trackingUPP = NewControlUserPaneTrackingUPP( local_ALUserPaneTrackProc );
+			downUPP = NewControlUserPaneKeyDownUPP( local_ALUserPaneKeyDownProc );
+			activateUPP = NewControlUserPaneActivateUPP( local_ALUserPaneActivateProc );
+			focusUPP = NewControlUserPaneFocusUPP( local_ALUserPaneFocusProc );
 		}
 
 		numberOfUsers++;

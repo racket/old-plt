@@ -6,7 +6,14 @@
  *	Support for automatically naming the precompiled header file ...
  */
 
-#include <MacHeaders.h>
+#ifdef OS_X
+  #define TARGET_API_MAC_CARBON 1
+  #define OPAQUE_TOOLBOX_STRUCTS 1
+  
+  #include <Carbon/Carbon.h>
+#else
+  #include <MacHeaders.h>
+#endif
 
 #define macintosh
 #define FOR_MAC	// needed for wxxpm
@@ -24,12 +31,3 @@ extern int wxOutOfMemory();
 #include <string.h>
 
 #undef GUSI
-
-/* code added by JBC because compiler no longer handles keyword 
-   'far' for PPC */
-   
-#if defined(__powerc)
-#  define WX_FAR /**/
-# else
-#  define WX_FAR far
-# endif

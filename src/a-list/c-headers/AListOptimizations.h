@@ -62,24 +62,24 @@
 
 /* If we're using an old version of the Universal Interfaces, set the new macro
 		TARGET_RT_MAC_CFM to be equal to the old macro GENERATINGCFM */
+#ifdef __MWERKS__
 #if !defined(UNIVERSAL_INTERFACES_VERSION) ||  (UNIVERSAL_INTERFACES_VERSION < 0x0300)
 #define TARGET_RT_MAC_CFM		GENERATINGCFM
+#endif
 #endif
 
 /* If we're using an old version of the Universal Interfaces, set the new macro
 		PRAGMA_STRUCT_ALIGN to be equal to the old macro PRAGMA_ALIGN_SUPPORTED */
+#ifdef __MWERKS__
 #if !defined(UNIVERSAL_INTERFACES_VERSION) ||  (UNIVERSAL_INTERFACES_VERSION < 0x0320)
 #define PRAGMA_STRUCT_ALIGN	PRAGMA_ALIGN_SUPPORTED
+#endif
 #endif
 
 /* Set ALIST_USE_UPPS to 0 if you don't need UPPs.
 	Note: with Carbon, you don't need UPPs since it's all PPC code.  However, as a shared library under Carbon, you may need
 	UPPs.  I haven't tested that configuration.
 */
-
-#ifdef OS_X
-#define ALIST_USE_UPPS 0
-#endif
 
 #if !defined( ALIST_USE_UPPS )
 	#if !defined( TARGET_API_MAC_CARBON ) || ( TARGET_API_MAC_CARBON == 0 )

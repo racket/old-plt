@@ -11,7 +11,9 @@
 #define wx_mac_utilsh
 
 #include "wxMacObj.h"
+#ifndef OS_X
 #include <Strings.h>
+#endif
 #include <QuickDraw.h>
 
 class wxMacString: public wxMacObject

@@ -48,8 +48,11 @@
 #include <math.h>
 #include <ctype.h>
 #include <string.h>
+
+#ifdef __MWERKS__
 extern int   errno;             /* this SHOULD be in errno.h */
 extern char *sys_errlist[];     /* this SHOULD be in errno.h */
+#endif
 
 #if !defined(__convexc__) && !defined(VMS) /* Convex doesn't have <memory.h> */
 #include <memory.h>             /* for 'memset()' prototype */
@@ -328,7 +331,7 @@ typedef struct {
   int entries[MAX_CMAP_SIZE][2];
 } CCELL;
 
-extern WX_FAR byte    r[],g[],b[];  /* colormap */
+extern byte    r[],g[],b[];  /* colormap */
 extern byte           gamcr[];   /* gamma correction curve */
 extern byte           fsgamcr[]; /* gamma correction curve (for FS dither) */
 #ifdef wx_x

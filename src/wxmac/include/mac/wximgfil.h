@@ -40,15 +40,6 @@ typedef unsigned long ulong;
 
 typedef unsigned char byte;
     
-#ifndef HUGE
-#ifdef wx_msw
-#define HUGE huge
-#else
-#define HUGE
-#endif
-#endif
-
-
 #ifndef BOOL
 typedef int BOOL;
 #endif
@@ -83,11 +74,11 @@ public:
   uchar buf[GIFBUFTAM];
   ushort bad_code_count;
 
-  char HUGE* lpbi;  		//  Image data from msw
+  char * lpbi;  		//  Image data from msw
   Ptr GetRawImage();
-  char HUGE* RawImage;  		//  Image data
+  char * RawImage;  		//  Image data
   ushort ItCount;
-  char HUGE* IterImage;  		//  Image data
+  char * IterImage;  		//  Image data
   ushort Deep;	 				// (bits x pixel)
   ushort Width, Height;    //  Dimensions
   long EfeWidth;	 // Efective Width

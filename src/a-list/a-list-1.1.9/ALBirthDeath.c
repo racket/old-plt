@@ -21,9 +21,13 @@
 	#include <ToolUtils.h>
 #endif
 
+#include <Drag.h>
+
 // Include the DragManagerAdditions only if we're using an old version of the Universal Interfaces.
+#ifdef __MWERKS__
 #if !defined(UNIVERSAL_INTERFACES_VERSION) ||  (UNIVERSAL_INTERFACES_VERSION < 0x0300)
 	#include "DragManagerAdditions.h"
+#endif
 #endif
 
 #include "AListInternal.h"
@@ -464,9 +468,9 @@ void _ALSetStandardHooks(ALHandle hAL)
 		uppInfo._alStdInputFlavorsProc = NewALInputFlavorsProc( local_ALStdInputFlavors );
 		uppInfo._alStdOutputFlavorsProc = NewALOutputFlavorsProc( local_ALStdOutputFlavors );
 		uppInfo._alStdDisposeCellDataProc = NewALDisposeCellDataProc( local_ALStdDisposeCellData );
-		uppInfo._alStdSendDataDragProc = NewDragSendDataProc( local_ALStdSendData );
-		uppInfo._alHorzTrackerUPP = NewControlActionProc( _ALHorzScrollActionProc );
-		uppInfo._alVertTrackerUPP = NewControlActionProc( _ALVertScrollActionProc );
+		uppInfo._alStdSendDataDragProc = NewDragSendDataUPP( local_ALStdSendData );
+		uppInfo._alHorzTrackerUPP = NewControlActionUPP( _ALHorzScrollActionProc );
+		uppInfo._alVertTrackerUPP = NewControlActionUPP( _ALVertScrollActionProc );
 		uppInfo._alStdStringSearchProc = NewALStringSearchProc( local_ALStringSearch );
 	} // if called for the first time
 

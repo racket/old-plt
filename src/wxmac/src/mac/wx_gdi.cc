@@ -599,7 +599,7 @@ int wxDisplayDepth(void)
 void wxDisplaySize(int *width, int *height)
 {
 	*width = qd.screenBits.bounds.right - qd.screenBits.bounds.left;
-	*height = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - LMGetMBarHeight();
+	*height = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - GetMBarHeight();
 }
 
 //------------------ BitMaps ------------------------------------------

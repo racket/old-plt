@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wb_frame.cc,v 1.4 1999/01/09 18:19:48 mflatt Exp $
+ * RCS_ID:      $Id: wb_frame.cc,v 1.5 1999/07/12 14:25:38 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -82,12 +82,12 @@ wxbFrame::wxbFrame (char* windowName, wxScreen* parentScreen,
 		int x, int y, int width, int height, long style)
 	:
 		wxWindow ( windowName, parentScreen, x, y, width, height, style),
-		frame_type (style & (wxSDI | wxMDI_PARENT | wxMDI_CHILD)),
-		icon (NULL),
 		modal_showing (FALSE),
-		nb_status (0),
+		wx_menu_bar (NULL),
+		icon (NULL),
 		status_line_exists (FALSE),
-		wx_menu_bar (NULL)
+		frame_type (style & (wxSDI | wxMDI_PARENT | wxMDI_CHILD)),
+		nb_status (0)
 {
   __type = wxTYPE_FRAME;
   

@@ -423,6 +423,9 @@ char *wxFileSelector(char *message, char *default_path,
        return NULL;
   } else {
 #endif
+#ifdef OS_X
+    wxFatalError("Navigation Services Unavailable.","");
+#else
 	StandardFileReply	rep;
 	SFTypeList typeList = { 'TEXT' };
 	char * name;
@@ -483,6 +486,7 @@ char *wxFileSelector(char *message, char *default_path,
 	} else {
 	    return name;
 	}
+#endif
 #ifdef USE_NAVIGATION
   }
 #endif

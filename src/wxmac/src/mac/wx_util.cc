@@ -492,12 +492,15 @@ void wxBell()
 
 int wxGetOsVersion(int *a, int *b)
 {
-  SysEnvRec sysEnvRec;
-  ::SysEnvirons(2, &sysEnvRec);
+  long systemVersion;
+  
+  ::Gestalt(gestaltSystemVersion,&systemVersion);
 
-  *a = sysEnvRec.systemVersion >> 8;
-  *b = (sysEnvRec.systemVersion >> 4) & 0xF;
-
+  *a = 10 * ((systemVersion >> 12) & 0xF) +
+            ((systemVersion >>  8) & 0xF);
+  *b =      ((systemVersion >>  4) & 0xF);
+  // sub-version num (bottom four bits) is ignored
+  
   return wxMACINTOSH;
 }
 

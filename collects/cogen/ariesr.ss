@@ -37,10 +37,10 @@
 	      [(z:list? read) (map unparse-read (z:read-object read))]
 	      [else (z:read-object read)]))))
 
-					; Objects that are passed to eval get quoted by M3.  These objects
-					; do not belong in the `read' structure framework.  Hence, if they
-					; are passed to z:sexp->raw, they will error.  Thus, we first check
-					; before sending things there.
+      ; Objects that are passed to eval get quoted by M3.  These objects
+      ; do not belong in the `read' structure framework.  Hence, if they
+      ; are passed to z:sexp->raw, they will error.  Thus, we first check
+      ; before sending things there.
 
       (define read->raw
 	(lambda (read)
@@ -279,11 +279,12 @@
 		      "given as name-spec for invoke-open-unit"))))]
 
 	    [(z:class*-form? expr)
-	      `(#%class* ,(map (lambda (super-var super-val)
-				 (list (z:binding-var super-var)
-				   (annotate super-val)))
-			    (z:class*-form-super-names expr)
-			    (z:class*-form-super-exprs expr))
+	      `(#%class* ,(z:binding-var (z:class*-form-this expr))
+		 ,(map (lambda (super-var super-val)
+			 (list (z:binding-var super-var)
+			   (annotate super-val)))
+		    (z:class*-form-super-names expr)
+		    (z:class*-form-super-exprs expr))
 		 ,(optarglist->ilist (z:class*-form-init-vars expr))
 		 ,@(map
 		     (lambda (clause)

@@ -79,7 +79,9 @@
 		((z:vector? expr)
 		  (apply vector objects)))))
 	  (else
-	    (internal-error expr "Invalid object to sexp->raw")))))
+	    (if (zodiac? expr)
+	      (internal-error expr "Invalid object to sexp->raw")
+	      expr)))))
 
     ; ----------------------------------------------------------------------
 

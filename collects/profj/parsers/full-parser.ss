@@ -686,9 +686,9 @@
       
       (ClassInstanceCreationExpression
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN)
-	(make-class-alloc #f (build-src 5) $2 (reverse $4) #f)]
+	(make-class-alloc #f (build-src 5) $2 (reverse $4) #f #f)]
        [(new ClassOrInterfaceType O_PAREN C_PAREN) 
-	(make-class-alloc #f (build-src 4) $2 null #f)]
+	(make-class-alloc #f (build-src 4) $2 null #f #f)]
        ;; 1.1
        [(new ClassOrInterfaceType O_PAREN ArgumentList C_PAREN ClassBody)
         (make-anon-class-alloc (build-src 5)
@@ -978,7 +978,7 @@
 					(file-path)
 					'full
 					null 'anon)
-			(reverse args) #f)))
+			(reverse args) #t #f)))
   
   (define parse-full (car parsers))
   (define parse-full-interactions (cadr parsers))

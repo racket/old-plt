@@ -1406,6 +1406,7 @@
                                                     (map expr-types (class-alloc-args expr))
                                                     (map translate-expression (class-alloc-args expr))
                                                     (expr-src expr)
+                                                    (class-alloc-inner? expr)
                                                     (class-alloc-ctor-record expr)))
         ((inner-alloc? expr) (translate-inner-alloc (translate-expression (inner-alloc-obj expr))
                                                     (inner-alloc-name expr)
@@ -1658,21 +1659,27 @@
   (define (overridden? name)
     (hash-table-get (class-override-table) name (lambda () #f)))
   
-  ;translate-class-alloc: name (list type) (list syntax) src method-record-> syntax
-  (define (translate-class-alloc class-type arg-types args src ctor-record)
+  ;translate-class-alloc: name (list type) (list syntax) src bool method-record-> syntax
+  (define (translate-class-alloc class-type arg-types args src inner? ctor-record)
     (let ((class-string (get-class-string class-type))
           (class-id (name-id class-type)))
-      (make-syntax #f `(let ((new-o (make-object ,(translate-id class-string
-                                                                (id-src class-id)))))
-                         (send new-o ,(translate-id (build-constructor-name 
-                                                     (if (null? (name-path class-type)) 
-                                                         class-string 
-                                                         (id-string (name-id class-type)))
-                                                     (method-record-atypes ctor-record))
-                                                    (id-src class-id))
-                               ,@args)
-                         new-o) 
-                   (build-src src))))
+      (if inner?
+          (make-syntax #f `(send this ,(translate-id (build-method-name (string-append "construct-" class-string)
+                                                                        (method-record-atypes ctor-record))
+                                                     (id-src class-id))
+                                 ,@args)
+                       (build-src src))
+          (make-syntax #f `(let ((new-o (make-object ,(translate-id class-string
+                                                                    (id-src class-id)))))
+                             (send new-o ,(translate-id (build-constructor-name 
+                                                         (if (null? (name-path class-type)) 
+                                                             class-string 
+                                                             (id-string (name-id class-type)))
+                                                         (method-record-atypes ctor-record))
+                                                        (id-src class-id))
+                                   ,@args)
+                             new-o) 
+                       (build-src src)))))
   
   ;translate-inner-alloc: syntax id (list syntax) src method-record -> syntax
   (define (translate-inner-alloc obj class args src ctor-record)

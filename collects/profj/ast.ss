@@ -173,14 +173,14 @@
 
   (provide statement-expression?)
   ;statement-expression?: StatementExpression -> bool
-  (define statement-expression?
-    (lambda (stmt)
-      (or (call? stmt)
-          (post-expr? stmt)
-          (pre-expr? stmt)
-          (unary? stmt)
-          (assignment? stmt)
-          (class-alloc? stmt))))
+  (define (statement-expression? stmt)
+    (or (call? stmt)
+        (post-expr? stmt)
+        (pre-expr? stmt)
+        (unary? stmt)
+        (assignment? stmt)
+        (class-alloc? stmt)
+        (inner-alloc? stmt)))
   
   ;(make-expr (U symbol ??) src)
   (p-define-struct expr (types src)) 
@@ -238,8 +238,8 @@
   ;MethodName => special-name
   ;           |  id
   
-  ;(make-class-alloc ?? src name (list Expression) (U #f method-record))
-  (p-define-struct (class-alloc expr) (name args ctor-record))
+  ;(make-class-alloc ?? src name (list Expression) (U #f method-record) bool)
+  (p-define-struct (class-alloc expr) (name args ctor-record inner?))
   
   ;(make-inner-alloc ?? src expr name (list Expression) (U #f method-record))
   (p-define-struct (inner-alloc expr) (obj name args ctor-record))

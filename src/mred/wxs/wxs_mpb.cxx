@@ -401,7 +401,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   Bool WriteHeadersToFile(class wxMediaStreamOut& x0);
   Bool ReadFooterFromFile(class wxMediaStreamIn& x0, string x1);
   Bool ReadHeaderFromFile(class wxMediaStreamIn& x0, string x1);
-  void SetFilename(string x0, Bool x1 = FALSE);
+  void SetFilename(nstring x0, Bool x1 = FALSE);
   Bool ReleaseSnip(class wxSnip* x0);
   void SetModified(Bool x0);
   void SetSnipData(class wxSnip* x0, class wxBufferData* x1);
@@ -2005,7 +2005,7 @@ return wxMediaPasteboard::ReadHeaderFromFile(x0, x1);
   }
 }
 
-void os_wxMediaPasteboard::SetFilename(string x0, Bool x1)
+void os_wxMediaPasteboard::SetFilename(nstring x0, Bool x1)
 {
   Scheme_Object *p[2];
   Scheme_Object *v;
@@ -4660,11 +4660,11 @@ static Scheme_Object *os_wxMediaPasteboardSetFilename(Scheme_Object *obj, int n,
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   objscheme_check_valid(obj);
-  string x0;
+  nstring x0;
   Bool x1;
 
   
-  x0 = (string)objscheme_unbundle_string(p[0], "set-filename in pasteboard%");
+  x0 = (nstring)objscheme_unbundle_nullable_string(p[0], "set-filename in pasteboard%");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "set-filename in pasteboard%");
   } else

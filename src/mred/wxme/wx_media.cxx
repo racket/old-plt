@@ -2975,7 +2975,7 @@ void wxMediaEdit::SetFilename(char *name, Bool temp)
 
   if (filename)
     delete[] filename;
-  filename = copystring(name);
+  filename = name ? copystring(name) : NULL;
   tempFilename = temp;
 
   Bool wl = writeLocked, fl = flowLocked;

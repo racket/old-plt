@@ -1,20 +1,51 @@
+#|
+
+A bundle-anchor% is an anchor class. It keeps track of an instance
+of a Bundle Contents and the views associated with that instance.
+It supports two methods:
+  create-view : (-> void)
+    constructs a Bundle-view appropriate for this kind of bundle
+  
+  bundle-changed : (-> void)
+    notifies all views of this bundle to update themselves.
+    
+-- 
+
+A Bundle is a tree representing the structure of the bundle,
+using the interpreter pattern:
+
+            bundle%
+              |
+      +---------------+
+      |               |
+ bundle-node%   leaf-bundle%
+  
+
+ bundle% supports:
+   
+    set-bundle-anchor : (bundle-anchor<%> -> void)
+      sets the anchor (used for 2
+ 
+|#
+
 (invoke-unit/sig
  (unit/sig ()
    (import mred^)
    
-   (define bundle<%>
+   (define bundle-anchor<%>
      (interface ()
-       create-view))
+       create-view
+       bundle-changed))
    
-   (define bundle%
-     (class* object% (bundle<%>) (contents)
+   (define bundle-anchor%
+     (class* object% (bundle-anchor<%>) (contents)
        (private
 	 [views null]
 	 [interior-height-addition 10]
 	 [calculate-tree-size
 	  (lambda (view)
 	    (let o-loop ([contents-snip (send view get-contents-snip)])
-	      (let ([contents (send contents-snip get-bundle-contents)])
+	      (let ([contents (send contents-snip get-bundle)])
 		(cond
 		  [(is-a? contents-snip leaf-bundle-snip%)
 		   (let ([xl (box 0)]
@@ -29,12 +60,12 @@
 		       (send contents set-tree-height h)
 		       (values w h)))]
 		  [(is-a? contents-snip node-bundle-snip%)
-		   (let i-loop ([bundle-contents
-				 (send contents-snip get-bundle-contents-snips)]
+		   (let i-loop ([bundle
+				 (send contents-snip get-bundle-snips)]
 				[width 0]
 				[height 0])
 		     (cond
-		       [(null? bundle-contents)
+		       [(null? bundle)
 			(let ([xl (box 0)]
 			      [yt (box 0)]
 			      [xr (box 0)]
@@ -47,8 +78,8 @@
 			    (send contents set-tree-width w)
 			    (send contents set-tree-height h)
 			    (values w h)))]
-		       [else (let*-values ([(c-width c-height) (o-loop (car bundle-contents))])
-			       (i-loop (cdr bundle-contents)
+		       [else (let*-values ([(c-width c-height) (o-loop (car bundle))])
+			       (i-loop (cdr bundle)
 				       (+ c-width width)
 				       (max c-height height)))]))]
 		  [else (error 'position-view-contents
@@ -65,8 +96,8 @@
 		[(is-a? contents-snip node-bundle-snip%)
 		 
 		 ;; set this snips position
-		 (let* ([bundle-contents (send contents-snip get-bundle-contents)]
-			[tree-width (send bundle-contents get-tree-width)]
+		 (let* ([bundle (send contents-snip get-bundle)]
+			[tree-width (send bundle get-tree-width)]
 			[width (send contents-snip get-width)])
 		   (send view move-to contents-snip (+ x (/ (- tree-width width) 2)) y))
 		 
@@ -76,19 +107,19 @@
 				     (send view get-snip-location contents-snip #f yt #f)
 				     (send view get-snip-location contents-snip #f yb #t)
 				     (- (unbox yb) (unbox yt)))])
-		   (let i-loop ([bundle-contents-snips (send contents-snip get-bundle-contents-snips)]
+		   (let i-loop ([bundle-snips (send contents-snip get-bundle-snips)]
 				[x x])
 		     (cond
-		       [(null? bundle-contents-snips) (void)]
-		       [else (let* ([bundle-content-snip (car bundle-contents-snips)]
-				    [bundle-content (send bundle-content-snip get-bundle-contents)]
+		       [(null? bundle-snips) (void)]
+		       [else (let* ([bundle-content-snip (car bundle-snips)]
+				    [bundle-content (send bundle-content-snip get-bundle)]
 				    
 				    [tree-width (send bundle-content get-tree-width)]
 				    [tree-height (send bundle-content get-tree-width)])
 			       (o-loop bundle-content-snip 
 				       x 
 				       (+ y interior-height-addition text-space))
-			       (i-loop (cdr bundle-contents-snips)
+			       (i-loop (cdr bundle-snips)
 				       (+ x tree-width)))])))]
 		[else (error 'position-snips "fell off cond: ~e~n" contents-snip)])))]
 	 [build-view-contents
@@ -102,7 +133,7 @@
 		[(is-a? contents node-bundle%)
 		 (let ([snip (make-object node-bundle-snip%
 					  contents
-					  (map loop (send contents get-bundle-contents)))])
+					  (map loop (send contents get-bundle)))])
 		   (send view insert snip)
 		   snip)]
 		[else (error 'create-view "fell off cond: ~e~n" contents)])))])
@@ -117,7 +148,7 @@
 	      (position-snips view)
 	      (set! views (cons view views))
 	      snip))]
-	 [contents-changed
+	 [bundle-changed
 	  (lambda ()
 	    (unless (null? views)
 	      (let ([f
@@ -144,17 +175,17 @@
        (sequence
 	 (super-init)
 	 (send contents traverse
-	       (lambda (c x) (send c set-bundle this))
+	       (lambda (c x) (send c set-bundle-anchor this))
 	       (void)))))
    
-   (define bundle-contents<%>
+   (define bundle<%>
      (interface ()
-       set-bundle
-       traverse ; ((bundle-contents A -> A) A -> A)
+       set-bundle-anchor
+       traverse ; ((bundle A -> A) A -> A)
        ))
    
-   (define bundle-contents%
-     (class* object% (bundle-contents<%>) ()
+   (define bundle%
+     (class* object% (bundle<%>) ()
        
        (private
 	 [tree-width 0]
@@ -166,17 +197,17 @@
 	 [set-tree-height (lambda (h) (set! tree-height h))])
        
        (private
-	 [bundle #f])
+	 [bundle-anchor #f])
        (public
-	 [get-bundle
+	 [get-bundle-anchor
 	  (lambda ()
-	    bundle)]
-	 [set-bundle
+	    bundle-anchor)]
+	 [set-bundle-anchor
 	  (lambda (b)
-	    (unless (is-a? b bundle<%>)
-	      (error 'set-bundle "expected a bundle<%>, got: ~e"
+	    (unless (is-a? b bundle-anchor<%>)
+	      (error 'set-bundle-anchor "expected a bundle-anchor<%>, got: ~e"
 		     b))
-	    (set! bundle b))]
+	    (set! bundle-anchor b))]
 	 [traverse
 	  (lambda (f init)
 	    (void))])
@@ -184,7 +215,7 @@
 	 (super-init))))
    
    (define leaf-bundle%
-     (class bundle-contents% (_names)
+     (class bundle% (_names)
        (private
 	 [names _names])
        (override
@@ -207,11 +238,11 @@
 	 (set-names _names))))
    
    (define node-bundle%
-     (class bundle-contents% (_label _bundle-contents)
+     (class bundle% (_label _bundle)
        (override
 	[traverse
 	 (lambda (f init)
-	   (let loop ([contents bundle-contents]
+	   (let loop ([contents bundle]
 		      [init init])
 	     (cond
 	       [(null? contents) (f this init)]
@@ -223,20 +254,20 @@
 			    init))])))])
        (private
 	 [label _label]
-	 [bundle-contents _bundle-contents])
+	 [bundle _bundle])
        (public
 	 [get-label
 	  (lambda ()
 	    label)]
-	 [get-bundle-contents
+	 [get-bundle
 	  (lambda ()
-	    bundle-contents)]
-	 [set-bundle-contents
+	    bundle)]
+	 [set-bundle
 	  (lambda (bc)
 	    (unless (and (list? bc)
-			 (andmap (lambda (x) (is-a? x bundle-contents<%>)) bc))
-	      (error 'set-names "expected a list of symbols, got: ~e" bc))
-	    (set! bundle-contents bc))]
+			 (andmap (lambda (x) (is-a? x bundle<%>)) bc))
+	      (error 'set-names "expected a list of bundle<%> objects, got: ~e" bc))
+	    (set! bundle bc))]
 	 [set-label
 	  (lambda (s)
 	    (unless (symbol? s)
@@ -244,16 +275,16 @@
 		     s))
 	    (set! label s))])
 
-       (inherit get-bundle)
+       (inherit get-bundle-anchor)
        (public
 	 [add-child
 	  (lambda (c)
-	    (set! bundle-contents (cons c bundle-contents))
-	    (send (get-bundle) contents-changed))])
+	    (set! bundle (cons c bundle))
+	    (send (get-bundle-anchor) bundle-changed))])
        (sequence
 	 (super-init)
 	 (set-label _label)
-	 (set-bundle-contents _bundle-contents))))
+	 (set-bundle _bundle))))
    
    (define bundle-pasteboard%
      (class pasteboard% ()
@@ -295,17 +326,17 @@
 		   [(is-a? contents-snip node-bundle-snip%)
 		    (let ([x (get-snip-x-location contents-snip)]
 			  [y (get-snip-bottom-location contents-snip)])
-		      (let i-loop ([bundle-contents-snips
-				    (send contents-snip get-bundle-contents-snips)])
+		      (let i-loop ([bundle-snips
+				    (send contents-snip get-bundle-snips)])
 			(cond
-			  [(null? bundle-contents-snips) (void)]
+			  [(null? bundle-snips) (void)]
 			  [else
-			   (let* ([bundle-content-snip (car bundle-contents-snips)])
+			   (let* ([bundle-content-snip (car bundle-snips)])
 			     (let ([bx (get-snip-x-location bundle-content-snip)]
 				   [by (get-snip-top-location bundle-content-snip)])
 			       (send dc draw-line (+ x dx) (+ y dy) (+ bx dx) (+ by dy))
 			       (o-loop bundle-content-snip)
-			       (i-loop (cdr bundle-contents-snips))))])))]
+			       (i-loop (cdr bundle-snips))))])))]
 		   [else (error 'on-paint "fell off cond: ~e~n" contents-snip)]))
 	       (send dc set-pen pen))))])
        (sequence
@@ -314,7 +345,7 @@
    (define leaf-bundle-snip%
      (class editor-snip% (leaf-bundle)
        (public
-	 [get-bundle-contents
+	 [get-bundle
 	  (lambda ()
 	    leaf-bundle)])
        (private
@@ -346,14 +377,14 @@
    (define black (make-object color% "BLACK"))
    
    (define node-bundle-snip%
-     (class snip% (node-bundle bundle-contents-snips)
+     (class snip% (node-bundle bundle-snips)
        (public
-	 [get-bundle-contents
+	 [get-bundle
 	  (lambda ()
 	    node-bundle)]
-	 [get-bundle-contents-snips
+	 [get-bundle-snips
 	  (lambda ()
-	    bundle-contents-snips)])
+	    bundle-snips)])
        (private
 	 [width 10]
 	 [height 10])
@@ -408,7 +439,7 @@
 			   x)]
 		     [else (error)]))
 		 null))
-   (define bundle (make-object bundle% int2))
+   (define bundle (make-object bundle-anchor% int2))
    
    (define frame (make-object frame% "Bundles" #f 400 400))
    (define button-panel (make-object horizontal-panel% frame))
@@ -453,7 +484,7 @@
 			  (is-a? snip node-bundle-snip%)
 			  (not (send pb find-next-selected-snip snip)))
 	       (out))
-	     (let ([node-bundle (send snip get-bundle-contents)])
+	     (let ([node-bundle (send snip get-bundle)])
 	       (send node-bundle add-child (make-object leaf-bundle% '(zzz)))))))))
 
    (define (new-node) (void))

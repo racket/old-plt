@@ -324,14 +324,19 @@ _Supplemental Help Desk documentation libraries_
 These libraries are used to build dynamic portions of the documentation.
 
 > Find Doc
-  The _finddoc.ss_ library is a module that defines on procedure:
+  The _finddoc.ss_ library is a module that defines two procedures:
 > (finddoc manual index-key label)
   It accepts three strings. The first is the name of a doc collection,
   the second is an index entry in that manual and the final is a
   desriptive string. It returns a string representation of an 
   anchor (in html) that goes to that index entry in the manual.
   If the manual is not found, or the index-key is not in the manual,
-  it returns html code that shows an error.
+  it returns html code that shows an error. Because the link is
+  a "file:" link, it cannot link to a particular anchor in the target.
+> (findreldoc to-doc-path manual index-key label)
+  Like `fonddoc', but `to-doc-path' is a Unix-style relative path that
+  reachs the "docs" collection. The resulting link is relative, and
+  it can point to a specific anchor in the target.
 
 > Installed Components
   The _installed-components.ss_ library is a module that defines one procedure:

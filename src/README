@@ -306,16 +306,25 @@ opposed to "conservation garbage collection"). The experimental forms
 are called MzScheme3m and MrEd3m, repsectively, where the "3m" stands
 for "moving memory manager". MrEd3m is not yet available under Windows.
 
-To build MzScheme3m and MrEd3m for Unix or Mac OS X, run `make
-3m'. Building MzScheme3m and MrEd3m first builds the normal MzScheme
-and MrEd executables, then uses them to build the 3m versions.
+* Building for Unix and Mac OS X
 
-To build MzScheme3m for Windows with Microsoft Visual C, first build
-and install the normal MzScheme executable, and make sure that cl.exe
-is in your shell path. Then, in a shell, change directories to
-plt\src\mzscheme\gc2 and run
-  mzscheme -r winmake.ss
-Move the resulting mzscheme3m.exe binary to your PLT directory.
+ Run `make 3m'. Building MzScheme3m and MrEd3m first builds the normal
+ MzScheme and MrEd executables, then uses them to build the 3m
+ versions. Run `make install-3m' to install the 3m binaries.
+
+* Windows
+
+ Build and install the normal MzScheme and MrEd executables using
+ Micsrosoft Visual C, and make sure that cl.exe is in your shell
+ path. Then, in a shell, change directories to plt\src\worksp\gc2 and
+ run
+
+   ../../../mzscheme.exe -r make.ss
+
+ The resulting MzScheme3m.exe and MrEd3m.exe will appear in the "plt"
+ directory, along with DLLs libmzsch3mxxxxxxx.dll and
+ libmred3mxxxxxxx.dll. (There is no correspingd libmzgc3mxxxxxxx.dll.
+ Instead, it is merged with libmzsch3mxxxxxxx.dll.)
 
 Configuration Options
 ---------------------

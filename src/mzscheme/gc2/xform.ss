@@ -43,7 +43,7 @@
    (lambda ()
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
-     '(when file-out
+     (when file-out
        (delete-file file-out))
      (eh))))
 
@@ -119,6 +119,7 @@
        = >>= <<= ^= += *= /= -= %= \|= &= ++ --
        return sizeof if for while else switch case
        asm __asm __asm__ __volatile __volatile__ volatile __extension__
+       __typeof
        
        ;; The following are functions, but they don't trigger GC, and
        ;; they either take one argument or no pointer arguments.
@@ -520,7 +521,7 @@
 							       (has-union? (struct-type-struct v)))))
 						    v))))))
 			     (fprintf (current-error-port)
-				      "Warning [UNION] ~a in ~a: can't handle union or record with union, ~a.~n"
+				      "Warning [UNION] ~a in ~a: Can't handle union or record with union, ~a.~n"
 				      (tok-line v) (tok-file v) name))
 			   (if (and (or pointer?
 					base-is-ptr?
@@ -715,8 +716,15 @@
 				(values (if end? rest (cons (car body) rest)) live-vars)))]
 			   [else
 			    (when (body-var-decl? (car body))
-			      (log-error "[DECL] ~a in ~a: Variable declaration not at the beginning of a block."
-					 (tok-line (caar body)) (tok-file (caar body))))
+			      (let ([type (tok-n (caar body))]
+				    [var (let loop ([e (car body)])
+					   (if (or (null? (cdr e))
+						   (eq? semi (tok-n (cadr e))))
+					       (tok-n (car e))
+					       (loop (cdr e))))])
+				(log-error "[DECL] ~a in ~a: Variable declaration (~a ~a) not at the beginning of a block."
+					   (tok-line (caar body)) (tok-file (caar body))
+					   type var)))
 			    (let*-values ([(rest live-vars) (loop (cdr body))]
 					  [(e live-vars)
 					   (convert-function-calls (car body)
@@ -1190,9 +1198,10 @@
 		(not (memq (tok-n (car e)) '(return case)))
 		;; Not a label, field lookup, pointer deref
 		(not (memq (tok-n (cadr e)) '(: |.| ->)))
-		;; No parens/braces in first two parts
+		;; No parens/braces in first two parts, except __typeof
 		(not (seq? (car e)))
-		(not (seq? (cadr e)))))
+		(or (not (seq? (cadr e)))
+		    (eq? '__typeof (tok-n (car e))))))
 	      ;; Looks like a decl
 	      (loop (cdr el) (cons e decls))
 	      ;; Not a decl

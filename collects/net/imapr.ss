@@ -154,13 +154,15 @@
 
   (define-struct imap-connection (r w))
 
+  (define imap-port-number (make-parameter 143))
+
   (define (imap-connect server username password inbox)
     ; => imap count-k recent-k
     (let-values ([(r w) (if debug-via-stdio?
 			    (begin
 			      (printf "stdin == ~a~n" server)
 			      (values  (current-input-port) (current-output-port)))
-			    (tcp-connect server 143))])
+			    (tcp-connect server (imap-port-number)))])
       (with-handlers ([void
 		       (lambda (x)
 			 (close-input-port r)

@@ -784,6 +784,11 @@ PROCEDURES -----------------------------------------------------------
 
   Creates the specified mailbox. (It must not exist already.)
 
+> (imap-port-number [k])
+
+  A parameter that determines the server port number. The initial
+  value is 143.
+
 ==========================================================================
 _mail headers_
 ==========================================================================

@@ -1330,6 +1330,7 @@ Check Syntax separates four classes of identifiers:
               
               [requires null]
               [require-for-syntaxes null]
+              [tail-ht (make-hash-table)]
               [has-module? #f])
           (let level-loop ([sexp sexp]
                            [high-level? #f])

@@ -483,6 +483,7 @@ typedef struct Scheme_Env
   MZ_HASH_KEY_EX
 
   Scheme_Object *modname;
+  Scheme_Object *rename;  /* module rename record */
   Scheme_Object *imports; /* list of module names */
 
   Scheme_Object *body;

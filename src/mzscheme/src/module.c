@@ -86,7 +86,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   Scheme_Hash_Table *ht;
   int i, j, count, syntax_start = 0;
   Scheme_Bucket **bs;
-  Scheme_Object **exs, *w;
+  Scheme_Object **exs, *rn;
 
   REGISTER_SO(kernel);
 
@@ -133,16 +133,18 @@ void scheme_finish_kernel(Scheme_Env *env)
   env->num_var_exports = syntax_start;
   env->running = 1;
 
-  w = scheme_datum_to_syntax(scheme_intern_symbol("kernel"),
-			     scheme_false,
-			     scheme_false);
+  rn = scheme_make_module_rename();
+
   /* Add a module mapping for all kernel syntax exports: */
   for (i = syntax_start; i < count; i++) {
-    w = scheme_add_rename(w, scheme_make_module_rename(kernel_symbol, exs[i], exs[i]));
+    scheme_extend_module_rename(rn, kernel_symbol, exs[i], exs[i]);
   }
-
+  
   REGISTER_SO(scheme_sys_wraps);
-  scheme_sys_wraps = w;
+  scheme_sys_wraps = scheme_datum_to_syntax(scheme_intern_symbol("kernel"),
+					    scheme_false,
+					    scheme_false);
+  scheme_sys_wraps = add_rename(scheme_sys_wraps, rn);
 
   REGISTER_SO(begin_stx);
   REGISTER_SO(define_values_stx);
@@ -242,7 +244,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
 				Scheme_Compile_Info *rec, int drec,
 				int depth, Scheme_Object *boundname)
 {
-  Scheme_Object *fm, *nm, *ii, *mb, *mw;
+  Scheme_Object *fm, *nm, *ii, *mb, *mw, *rn;
   Scheme_Env *iim;
   Scheme_Env *menv;
 
@@ -277,8 +279,12 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
   /* Expand the body of the module via `#%module-begin' */
   fm = scheme_make_pair(module_begin_symbol, fm);
 
+  rn = scheme_make_module_rename();
+  scheme_extend_module_rename(rn, mw, scheme_false, scheme_false);
+  menv->rename = rn;
+
   fm = scheme_datum_to_syntax(fm, form, form);
-  fm = scheme_add_rename(fm, scheme_make_module_rename(mw, scheme_false, scheme_false));
+  fm = scheme_add_rename(fm, rn);
 
   /* For each (direct) export in iim, add a module rename to fm */
   {
@@ -288,7 +294,7 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     exs = iim->exports;
     exsns = iim->export_src_names;
     for (i = iim->num_exports; i--; ) {
-      fm = scheme_add_rename(fm, scheme_make_module_rename(iim->modname, exs[i], exsns[i]));
+      scheme_extend_module_rename(rn, iim->modname, exs[i], exsns[i]);
     }
   }
   

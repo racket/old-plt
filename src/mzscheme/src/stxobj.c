@@ -48,9 +48,10 @@ static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
    - A pair (cons (vector <sym> <stx> <sym-or-#f>) v) is a lexical rename
                           env   var   var-resolved
                                       #f => not yet computed
-   - A pair (cons (vector <sym> <sym-or-#f> <sym-or-#f>) v) is a module rename
-                          mod   var         ex
-                                #f => self  #f => self
+   - A pair (cons (box (list mrename ...)) v) is a module rename
+       where an mrename is (vector <sym> <sym-or-#f> <sym-or-#f>)
+                                   mod   var         ex
+                                         #f => self  #f => self
 
    For object with sub-syntax:
 
@@ -222,18 +223,26 @@ Scheme_Object *scheme_make_rename(Scheme_Object *name, Scheme_Object *newname)
   return v;
 }
 
-Scheme_Object *scheme_make_module_rename(Scheme_Object *modname, 
-					 Scheme_Object *localname, 
-					 Scheme_Object *exname)
+Scheme_Object *scheme_make_module_rename()
 {
-  Scheme_Object *v;
+  return scheme_box(scheme_null);
+}
+
+void scheme_extend_module_rename(Scheme_Object *mrn,
+				 Scheme_Object *modname, 
+				 Scheme_Object *localname, 
+				 Scheme_Object *exname)
+{
+  Scheme_Object *v, *l;
 
   v = scheme_make_vector(3, NULL);
   SCHEME_VEC_ELS(v)[0] = modname;
   SCHEME_VEC_ELS(v)[1] = localname;
   SCHEME_VEC_ELS(v)[2] = exname;
 
-  return v;
+  l = SCHEME_PTR_VAL(mrn);
+  l = scheme_make_pair(v, l);
+  SCHEME_PTR_VAL(mrn) = l;
 }
 
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
@@ -355,10 +364,12 @@ static int same_marks(Scheme_Object *awl, Scheme_Object *bwl)
   while (1) {
     /* Skip over renames: */
     while (!SCHEME_NULLP(awl)
-	   && SCHEME_VECTORP(SCHEME_CAR(awl)))
+	   && (SCHEME_VECTORP(SCHEME_CAR(awl))
+	       || SCHEME_BOXP(SCHEME_CAR(awl))))
       awl = SCHEME_CDR(awl);
     while (!SCHEME_NULLP(bwl)
-	   && SCHEME_VECTORP(SCHEME_CAR(bwl)))
+	   && (SCHEME_VECTORP(SCHEME_CAR(bwl))
+	       || SCHEME_BOXP(SCHEME_CAR(bwl))))
       bwl = SCHEME_CDR(bwl);
 
     /* Either at end? Then the same only if both at end. */
@@ -389,46 +400,49 @@ static Scheme_Object *resolve_env(Scheme_Object *a, int lexonly)
 	rename_stack = SCHEME_CDR(rename_stack);
       }
       return result;
+    } else if (SCHEME_BOXP(SCHEME_CAR(wraps)) && !lexonly) {
+      /* Module rename: */
+      Scheme_Object *l = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
+
+      while (!SCHEME_NULLP(l)) {
+	Scheme_Object *rename, *renamed;
+	
+	rename = SCHEME_CAR(l);
+	renamed = SCHEME_VEC_ELS(rename)[1];
+	if ((SCHEME_FALSEP(renamed) || SAME_OBJ(renamed, SCHEME_STX_VAL(a)))) {
+	  /* Match: set result for the case of no lexical capture: */
+	  result = SCHEME_VEC_ELS(rename)[0];
+	  break;
+	}
+	l = SCHEME_CDR(l);
+      }
     } else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
-      /* Rename: */
+      /* Lexical rename: */
       Scheme_Object *rename, *renamed;
 
       rename = SCHEME_CAR(wraps);
       renamed = SCHEME_VEC_ELS(rename)[1];
-	
-      if (!SCHEME_STXP(renamed)) {
-	/* Module rename: */
-	/* Applies? End of the line: */
-	if (!lexonly
-	    && (SCHEME_FALSEP(renamed) || SAME_OBJ(renamed, SCHEME_STX_VAL(a)))) {
-	  result = SCHEME_VEC_ELS(rename)[0];
-	  wraps = scheme_null;
-	} else
-	  wraps = SCHEME_CDR(wraps);
-      } else {
-	/* Normal rename: */
-	if (SAME_OBJ(SCHEME_STX_VAL(renamed), SCHEME_STX_VAL(a))) {
-	  if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
-	    Scheme_Object *other_env, *envname;
-	    
-	    envname = SCHEME_VEC_ELS(rename)[0];
-	    other_env = SCHEME_VEC_ELS(rename)[2];
-	    
-	    if (SCHEME_FALSEP(other_env)) {
-	      other_env = resolve_env(renamed, 0);
-	      SCHEME_VEC_ELS(rename)[2] = other_env;
-	    }
-	    
-	    /* If it turns out that we're going to return
-	       other_env, then return envname instead. */
-	    rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
-					    rename_stack);
+
+      if (SAME_OBJ(SCHEME_STX_VAL(renamed), SCHEME_STX_VAL(a))) {
+	if (same_marks(((Scheme_Stx *)renamed)->wraps, wraps)) {
+	  Scheme_Object *other_env, *envname;
+	  
+	  envname = SCHEME_VEC_ELS(rename)[0];
+	  other_env = SCHEME_VEC_ELS(rename)[2];
+	  
+	  if (SCHEME_FALSEP(other_env)) {
+	    other_env = resolve_env(renamed, 0);
+	    SCHEME_VEC_ELS(rename)[2] = other_env;
 	  }
+	  
+	  /* If it turns out that we're going to return
+	     other_env, then return envname instead. */
+	  rename_stack = scheme_make_pair(scheme_make_pair(other_env, envname),
+					  rename_stack);
 	}
-	wraps = SCHEME_CDR(wraps);
       }
-    } else 
-      wraps = SCHEME_CDR(wraps);
+    }
+    wraps = SCHEME_CDR(wraps);
   }
 }
 
@@ -439,18 +453,22 @@ static Scheme_Object *get_module_src_name(Scheme_Object *a, int always)
   while (1) {
     if (SCHEME_NULLP(wraps))
       return always ? SCHEME_STX_VAL(a) : NULL; /* top-level */
-    else if (SCHEME_VECTORP(SCHEME_CAR(wraps))) {
+    else if (SCHEME_BOXP(SCHEME_CAR(wraps))) {
       /* Rename: */
-      Scheme_Object *rename = SCHEME_CAR(wraps);
-      Scheme_Object *renamed = SCHEME_VEC_ELS(rename)[1];
+      Scheme_Object *l = SCHEME_PTR_VAL(SCHEME_CAR(wraps));
 
-      if (!SCHEME_STXP(renamed)) {
+      while (!SCHEME_NULLP(l)) {
+	Scheme_Object *rename = SCHEME_CAR(l);
+	Scheme_Object *renamed = SCHEME_VEC_ELS(rename)[1];
+	
 	if (SCHEME_FALSEP(renamed) || SAME_OBJ(SCHEME_STX_VAL(a), renamed)) {
 	  if (SCHEME_FALSEP(renamed)) 
 	    return always ? SCHEME_STX_VAL(a) : NULL;
 	  else
 	    return SCHEME_VEC_ELS(rename)[2];
 	}
+
+	l = SCHEME_CDR(l);
       }
     }
     

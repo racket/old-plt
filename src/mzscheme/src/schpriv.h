@@ -399,8 +399,9 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
 Scheme_Object *scheme_make_rename(Scheme_Object *oldname, Scheme_Object *newname);
-Scheme_Object *scheme_make_module_rename(Scheme_Object *modname, 
-					 Scheme_Object *locname, Scheme_Object *exname);
+Scheme_Object *scheme_make_module_rename();
+void scheme_extend_module_rename(Scheme_Object *rn, Scheme_Object *modname, 
+				 Scheme_Object *locname, Scheme_Object *exname);
 Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename);
 Scheme_Object *scheme_stx_content(Scheme_Object *o);
 Scheme_Object *scheme_flatten_syntax_list(Scheme_Object *lst, int *islist);

@@ -104,7 +104,7 @@ MRED_EXTERN void mred_clean_up_gdi_objects(void);
 #endif
 
 #ifdef wx_mac
-void MrEdMacSleep(float secs);
+void MrEdMacSleep(float secs, void *fds);
 #endif
 
 typedef void *(*ForEachFrameProc)(wxObject *, void *);

@@ -124,13 +124,15 @@ static wxFrame *wxWindowPtrToFrame(WindowPtr w, MrEdContext *c)
 }
 
 /* Under classic, there's no way to handle the event queue
- * non-sequentially.  That is, we want to handle certain kinds of
- * events before handling other kinds of events.  The only solution is
- * to suck all of the events into a queue of our own, and deal with
- * them there.  This causes certain problems, but not horrible ones.
- * Under Carbon, however, there's no need for this trickery, because
- * we can scan the event queue for certain kinds of events.  So this
- * file has a severe personality split. */
+   non-sequentially.  That is, we want to handle certain kinds of
+   events before handling other kinds of events.  The only solution is
+   to suck all of the events into a queue of our own, and deal with
+   them there.  This causes certain problems, but not horrible ones.
+   Under Carbon, in principle, there's no need for this trickery,
+   because we can scan the event queue for certain kinds of
+   events. However, there appears to be no way to sleep until a new
+   event arrives in the queue, except through something like
+   WaitNextEvent(). So we're back to the old solution. */
 
 /***************************************************************************/
 /*                            Carbon Event Queue                           */
@@ -308,9 +310,9 @@ static int QueueTransferredEvent(EventRecord *e)
       WindowPtr w = (WindowPtr)e->message;
       q->rgn = NewRgn();
 #ifdef OS_X
-        RgnHandle updateRegion = NewRgn();
-        GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
-        CopyRgn(updateRegion,q->rgn);
+      RgnHandle updateRegion = NewRgn();
+      GetWindowRegion(w,kWindowUpdateRgn,updateRegion);
+      CopyRgn(updateRegion,q->rgn);
 #else      
       CopyRgn(((WindowRecord *)w)->updateRgn, q->rgn);
 #endif      
@@ -369,7 +371,7 @@ static void GetSleepTime(int *sleep_time, int *delay_time)
     *sleep_time = 0;
   else
 #endif
-   *sleep_time = last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
+    *sleep_time = last_was_front ? FG_SLEEP_TIME : BG_SLEEP_TIME;
    
   *delay_time = last_was_front ? DELAY_TIME : 0;
 }
@@ -1017,12 +1019,13 @@ void MrEdDispatchEvent(EventRecord *e)
     }
     
 # ifdef OS_X
-    RgnHandle copied = NewRgn();
-    Rect windowBounds;
-    CopyRgn(rgn,copied);
-    GetWindowBounds(w,kWindowContentRgn,&windowBounds);
-    OffsetRgn(copied,-1 * windowBounds.left,-1 * windowBounds.top);
-    InvalWindowRgn(w,copied);
+    {
+      Rect windowBounds;
+      GetWindowBounds(w, kWindowContentRgn, &windowBounds);
+      OffsetRgn(rgn, -1 * windowBounds.left, -1 * windowBounds.top);
+      InvalWindowRgn(w, rgn);
+      DisposeRgn(rgn);
+    }
 # else
     if (!((WindowRecord *)w)->updateRgn)
       ((WindowRecord *)w)->updateRgn = rgn;
@@ -1068,14 +1071,19 @@ int MrEdCheckForBreak(void)
   return FALSE;
 }
 
-void MrEdMacSleep(float secs)
+#ifdef OS_X
+static void StartFDWatcher(void)
 {
-  secs = 0;
-  
-  EventRecord e;
-  
+}
+
+static void EndFDWatcher(void)
+{
+}
+#endif
+
+void MrEdMacSleep(float secs, void *fds)
+{
 #ifndef USE_OS_X_EVENTHANDLER
-  /* This is right only if there is no TCP blocking */
   RgnHandle rgn;
   rgn = ::NewRgn();
   if (rgn) {
@@ -1084,8 +1092,21 @@ void MrEdMacSleep(float secs)
     LocalToGlobal(&pt);
     ::SetRectRgn(rgn, pt.h - 1, pt.v - 1, pt.h + 1, pt.v + 1); 
   }
+
+# ifdef OS_X
+  StartFDWatcher(); secs = 0;
+# else 
+  /* No way to know when fds are ready: */
+  secs = 0;
+# endif
+
   if (WaitNextEvent(everyEvent, &e, secs ? secs * 60 : BG_SLEEP_TIME, rgn))
     QueueTransferredEvent(&e);
+
+# ifdef OS_X
+  EndFDWatcher();
+# endif
+  
 #endif    
 }
 

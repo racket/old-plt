@@ -25,13 +25,11 @@
 			   (apply build-path dll-path-list)))
 			 (for-each	
 			  (lambda (dll)
-			    (system
-			     (format "~a ~a" 
-				     (build-path winsys-dir 
-						 "REGSVR32")
-				     dll)))
+			    (system*
+			     (build-path winsys-dir "REGSVR32.EXE")
+			     dll))
 			  dlls))
-			(fprintf 
+			(fprintf
 			 (current-error-port) 
 			 "Warning: Can't run REGSVR32 on libraries~n")))))))))
   (provide installer))

@@ -76,6 +76,8 @@ Scheme_Object *scheme_tail_call_waiting;
 
 Scheme_Object *scheme_inferred_name_symbol;
 
+int scheme_cont_capture_count;
+
 static Scheme_Object *certify_mode_symbol, *transparent_symbol, *opaque_symbol;
 
 /* locals */
@@ -138,8 +140,6 @@ static long *thread_init_cc_ok;
 
 static long *available_cc_ok;
 static long *available_cws_cc_ok;
-
-static int cont_capture_count;
 
 typedef void (*DW_PrePost_Proc)(void *);
 
@@ -2086,14 +2086,14 @@ do_map(int argc, Scheme_Object *argv[], char *name, int make_result,
       working[i] = SCHEME_CDR(working[i]);
     }
 
-    cc = cont_capture_count;
+    cc = scheme_cont_capture_count;
 
     if (can_multi)
       v = _scheme_apply_multi(argv[0], argc, args);
     else
       v = _scheme_apply(argv[0], argc, args);
 
-    if (cc != cont_capture_count) {
+    if (cc != scheme_cont_capture_count) {
       /* Copy arrays to avoid messing with other continuations */
       if (make_result && (size > NUM_QUICK_RES)) {
 	Scheme_Object **naya;
@@ -2579,7 +2579,7 @@ call_cc (int argc, Scheme_Object *argv[])
       overflow->captured = 1;
     }
   }
-  cont_capture_count++;
+  scheme_cont_capture_count++;
 
   if (p->cc_ok == thread_init_cc_ok) {
     /* This continuation can be used by other threads,

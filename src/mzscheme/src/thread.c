@@ -130,7 +130,7 @@ extern void scheme_gmp_tls_snapshot(long *s, long *save);
 extern void scheme_gmp_tls_restore_snapshot(long *s, long *save, int do_free);
 
 /*========================================================================*/
-/*                    local variables and proptypes                       */
+/*                    local variables and prototypes                      */
 /*========================================================================*/
 
 #define INIT_TB_SIZE  20
@@ -224,6 +224,10 @@ static Scheme_Object *nested_exn_handler;
 static Scheme_Object *closers;
 
 static Scheme_Object *thread_swap_callbacks;
+
+static Scheme_Object *recycle_cell;
+static Scheme_Object *maybe_recycle_cell;
+static int recycle_cc_count;
 	
 static mz_jmp_buf main_init_error_buf;
 	
@@ -726,6 +730,9 @@ void scheme_init_parameterization(Scheme_Env *env)
   scheme_parameterization_key = scheme_make_symbol("paramz");
   scheme_break_enabled_key = scheme_make_symbol("break-on?");
   
+  REGISTER_SO(recycle_cell);
+  REGISTER_SO(maybe_recycle_cell);
+
   v = scheme_intern_symbol("#%paramz");
   newenv = scheme_primitive_module(v, env);
   
@@ -2298,7 +2305,7 @@ static void remove_thread(Scheme_Thread *r)
   r->runstack = NULL;
   r->runstack_swapped = NULL;
 
-  r->cont_mark_stack = NULL;
+  r->cont_mark_stack = 0;
   r->cont_mark_stack_owner = NULL;
   r->cont_mark_stack_swapped = NULL;
 
@@ -2415,8 +2422,11 @@ static Scheme_Object *make_subprocess(Scheme_Object *child_thunk,
     config = scheme_current_config();
   if (!cells)
     cells = scheme_inherit_cells(NULL);
-  if (!break_cell)
+  if (!break_cell) {
     break_cell = scheme_current_break_cell();
+    if (SAME_OBJ(break_cell, maybe_recycle_cell))
+      maybe_recycle_cell = NULL;
+  }
 
   config = scheme_init_error_escape_proc(config);
   config = scheme_extend_config(config, MZCONFIG_EXN_HANDLER,
@@ -2812,6 +2822,8 @@ static Scheme_Object *call_as_nested_thread(int argc, Scheme_Object *argv[])
     p->can_break_at_swap = cb;
     bc = scheme_current_break_cell();
     np->init_break_cell = bc;
+    if (SAME_OBJ(bc, maybe_recycle_cell))
+      maybe_recycle_cell = NULL;
   }
   np->cont_mark_pos = (MZ_MARK_POS_TYPE)1;
   /* others 0ed already by allocation */
@@ -3153,6 +3165,9 @@ void scheme_set_can_break(int on)
 
   scheme_thread_cell_set(v, scheme_current_thread->cell_values, 
 			 (on ? scheme_true : scheme_false));
+
+  if (SAME_OBJ(v, maybe_recycle_cell))
+    maybe_recycle_cell = NULL;
 }
 
 void scheme_check_break_now(void)
@@ -3171,16 +3186,27 @@ static Scheme_Object *check_break_now(int argc, Scheme_Object *args[])
   return scheme_void;
 }
 
-
 void scheme_push_break_enable(Scheme_Cont_Frame_Data *cframe, int on, int post_check)
 {
-  Scheme_Object *v;
+  Scheme_Object *v = NULL;
 
-  v = scheme_make_thread_cell(on ? scheme_true : scheme_false, 1);
+  if (recycle_cell) {
+    if (!SCHEME_TRUEP(SCHEME_IPTR_VAL(recycle_cell)) == !on) {
+      v = recycle_cell;
+      recycle_cell = NULL;
+    }
+  }
+
+  if (!v)
+    v = scheme_make_thread_cell(on ? scheme_true : scheme_false, 1);
   scheme_push_continuation_frame(cframe);
   scheme_set_cont_mark(scheme_break_enabled_key, v);
   if (post_check)
     scheme_check_break_now();    
+
+  cframe->cache = v;
+  maybe_recycle_cell = v;
+  recycle_cc_count = scheme_cont_capture_count;
 }
 
 void scheme_pop_break_enable(Scheme_Cont_Frame_Data *cframe, int post_check)
@@ -3188,6 +3214,13 @@ void scheme_pop_break_enable(Scheme_Cont_Frame_Data *cframe, int post_check)
   scheme_pop_continuation_frame(cframe);
   if (post_check)
     scheme_check_break_now();    
+
+  if (cframe->cache == maybe_recycle_cell) {
+    if (recycle_cc_count == scheme_cont_capture_count) {
+      recycle_cell = maybe_recycle_cell;
+    }
+    maybe_recycle_cell = NULL;
+  }
 }
 
 static Scheme_Object *raise_user_break(int argc, Scheme_Object ** volatile argv)
@@ -4046,9 +4079,9 @@ static void suspend_thread(Scheme_Thread *p)
   if (p->running & MZTHREAD_USER_SUSPENDED)
     return;
 
-  /* Get running now, just in case the thread is
-     waiting on its own suspend event (in which
-     case posting to the sema will unsuspend the thread */
+  /* Get running now, just in case the thread is waiting on its own
+     suspend event (in which case posting to the sema will unsuspend
+     the thread) */
   running = p->running;
 
   p->resumed_box = NULL;

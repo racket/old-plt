@@ -22,8 +22,13 @@ MZSRC = $(srcdir)/src
 FOREIGN_DIR = ../foreign
 FOREIGN_OBJ = $(FOREIGN_DIR)/foreign.@LTO@
 FOREIGN_OBJS = $(FOREIGN_OBJ) $(FOREIGN_DIR)/gcc/libffi/src/*.@LTO@ $(FOREIGN_DIR)/gcc/libffi/src/*/*.@LTO@
-FOREIGN_LIB = $(FOREIGN_OBJ) ../foreign/gcc/libffi/libffi@FOREIGN_CONVENIENCE@.@LTA@
+FOREIGN_LIB = $(FOREIGN_OBJ) ../foreign/gcc/libffi/libffi@FOREIGN_CONVENIENCE@.la
 FOREIGN_OBJSLIB = @FOREIGN_OBJSLIB@
+# Dependency always uses FOREIGN_LIB, but linker uses FOREIGN_OBJSLIB. The
+#  FOREIGN_OBJSLIB expansion has to many "*"s to be a valid make target,
+#  while FOREIGN_LIB is not always acceptable to the linker.
+# The foreign build always uses libtool, so that's why we use .la instead of @LTA@
+#  in FOREIGN_LIB.
 
 ################################################################################
 
@@ -96,8 +101,8 @@ mzlibrary:
 	cd src; $(MAKE) all 
 	$(MAKE) libmzscheme.@LIBSFX@
 
-libmzscheme.@LIBSFX@: src/*.@LTO@ @FOREIGN_OBJS_IF_USED@
-	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.@LTO@ @FOREIGN_OBJS_IF_USED@
+libmzscheme.@LIBSFX@: src/*.@LTO@ @FOREIGN_LIB_IF_USED@
+	$(AR) $(ARFLAGS) libmzscheme.@LIBSFX@ src/*.@LTO@ @FOREIGN_OBJSLIB_IF_USED@
 	$(RANLIB) libmzscheme.@LIBSFX@
 
 # Irix sproc, only

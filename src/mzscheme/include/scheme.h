@@ -733,14 +733,13 @@ typedef struct Scheme_Continuation_Jump_State {
   short is_kill;
 } Scheme_Continuation_Jump_State;
 
-/* Although it's really an integer, it seems beneficial to declare the
-   mark position counter as a poiner, perhaps due to locality effects. */
-#define MZ_MARK_POS_TYPE char*
-#define MZ_MARK_STACK_TYPE char*
+#define MZ_MARK_POS_TYPE int
+#define MZ_MARK_STACK_TYPE int
 
 typedef struct Scheme_Cont_Frame_Data {
   MZ_MARK_POS_TYPE cont_mark_pos;
   MZ_MARK_STACK_TYPE cont_mark_stack;
+  void *cache;
 } Scheme_Cont_Frame_Data;
 
 /*========================================================================*/

@@ -265,10 +265,6 @@ void wxListBox::Paint(void)
 
 void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 {
-  Rect viewRect;
-  int clientWidth;
-  wxArea *carea;
-
   if (cHidden) return;
 
   if (dX || dY) {
@@ -276,40 +272,7 @@ void wxListBox::OnClientAreaDSize(int dW, int dH, int dX, int dY)
     cMacDC->setCurrentUser(NULL); // macDC no longer valid
   }
   
-  SetCurrentDC();
-  
-  carea = ClientArea();
-
-  viewRect.top = VIEW_RECT_OFFSET + 1;
-  viewRect.bottom = carea->Height() - VIEW_RECT_OFFSET;
-  viewRect.left = VIEW_RECT_OFFSET;
-  viewRect.right = carea->Width() - VIEW_RECT_OFFSET;
-  
-  clientWidth = carea->Width() - VIEW_RECT_OFFSET;
-  /*if (cHaveVScroll)*/ clientWidth -= KSBWidth;
-
-  OffsetRect(&viewRect,SetOriginX,SetOriginY);
-
-  if (dW || dH || dX || dY)
-    ALSetViewRect(&viewRect, cListReference);
-
-  if (dW || dH) {
-    // Changing the size
-    Rect cellRect;
-    LongPt cell = {0,0};
-    Point size;
-
-    ALGetCellRect(&cellRect,&cell,cListReference);
-    size.v = cellRect.bottom - cellRect.top;
-    size.h = clientWidth;
-    ALSetCellSize(size, cListReference);
-  }
-
-  if (!cHidden && (dW || dH || dX || dY)) {
-    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
-  }
-  
-  ReleaseCurrentDC();
+  MoveBox(dW, dH, dX, dY);
 
   wxWindow::OnClientAreaDSize(dW, dH, dX, dY);
 }
@@ -904,3 +867,49 @@ void wxListBox::ReleaseCurrentDC(int really)
   wxWindow::ReleaseCurrentDC(1);
 }
 
+void wxListBox::MoveBox(int dW, int dH, int dX, int dY)
+{  
+  Rect viewRect;
+  int clientWidth;
+  wxArea *carea;
+
+  SetCurrentDC();
+   
+  carea = ClientArea();
+
+  viewRect.top = VIEW_RECT_OFFSET + 1;
+  viewRect.bottom = carea->Height() - VIEW_RECT_OFFSET;
+  viewRect.left = VIEW_RECT_OFFSET;
+  viewRect.right = carea->Width() - VIEW_RECT_OFFSET;
+  
+  clientWidth = carea->Width() - VIEW_RECT_OFFSET;
+  /*if (cHaveVScroll)*/ clientWidth -= KSBWidth;
+
+  OffsetRect(&viewRect,SetOriginX,SetOriginY);
+
+  if (dW || dH || dX || dY)
+    ALSetViewRect(&viewRect, cListReference);
+
+  if (dW || dH) {
+    // Changing the size
+    Rect cellRect;
+    LongPt cell = {0,0};
+    Point size;
+
+    ALGetCellRect(&cellRect,&cell,cListReference);
+    size.v = cellRect.bottom - cellRect.top;
+    size.h = clientWidth;
+    ALSetCellSize(size, cListReference);
+  }
+
+  if (!cHidden && (dW || dH || dX || dY)) {
+    ::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&viewRect);
+  }
+  
+  ReleaseCurrentDC();
+}
+
+void wxListBox::MaybeMoveControls()
+{
+  MoveBox(1, 1, 0, 0);
+}

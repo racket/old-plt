@@ -90,3 +90,35 @@
 // @ "set-title" : void SetTitle(string);
 
 @END
+
+
+class wxsMenuItem : public wxObject
+{
+public:
+  wxsMenuItem(void) {
+  }
+
+  int Id(void) {
+    return (int)this;
+  }
+};
+
+wxsMenuItem* wxsIdToMenuItem(int id)
+{
+  return (wxsMenuItem *)id;
+}
+
+@CLASSBASE wxsMenuItem "wx:menu-item" : "wx:object"
+
+@CREATOR ()
+
+@ "id" : int Id();
+
+@END
+
+
+@GLOBAL wxsMenuItemGlobal
+
+@ "wx:id-to-menu-item" : wxsMenuItem! wxsIdToMenuItem(int);
+
+@END

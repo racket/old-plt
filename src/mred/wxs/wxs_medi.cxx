@@ -391,6 +391,7 @@ static Scheme_Object *bundle_symset_printMethod(int v) {
 
 
 
+
 // X are Methods not intended to be overriden by the user,
 // but acutally are implemented with virtual
 
@@ -457,6 +458,7 @@ class os_wxMediaBuffer : public wxMediaBuffer {
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
   Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5);
+  void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
   void OnDefaultChar(class wxKeyEvent& x0);
@@ -1414,6 +1416,38 @@ return 0;
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "wx:media-buffer%::scroll-to"", extracting return value");
+  }
+}
+
+void os_wxMediaBuffer::OnDisplaySize()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaBuffer_class, "on-display-size", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMediaBuffer::OnDisplaySize();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
   }
 }
 
@@ -2392,7 +2426,7 @@ static Scheme_Object *os_wxMediaBufferDoEdit(Scheme_Object *obj, int n,  Scheme_
   long x2;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-buffer%::do-edit");
+  x0 = unbundle_symset_editOp(p[0], "wx:media-buffer%::do-edit");
   if (n > 1) {
     x1 = objscheme_unbundle_bool(p[1], "wx:media-buffer%::do-edit");
   } else
@@ -3896,6 +3930,25 @@ static Scheme_Object *os_wxMediaBufferScrollTo(Scheme_Object *obj, int n,  Schem
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaBufferOnDisplaySize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->wxMediaBuffer::OnDisplaySize();
+  else
+    ((wxMediaBuffer *)((Scheme_Class_Object *)obj)->primdata)->OnDisplaySize();
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaBufferOnChange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4365,7 +4418,7 @@ void objscheme_setup_wxMediaBuffer(void *env)
 if (os_wxMediaBuffer_class) {
     objscheme_add_global_class(os_wxMediaBuffer_class,  "wx:media-buffer%", env);
 } else {
-  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "wx:media-buffer%", "wx:object%", NULL, 113);
+  os_wxMediaBuffer_class = objscheme_def_prim_class(env, "wx:media-buffer%", "wx:object%", NULL, 114);
 
   scheme_add_method_w_arity(os_wxMediaBuffer_class,"get-class-name",objscheme_classname_os_wxMediaBuffer, 0, 0);
 
@@ -4459,6 +4512,7 @@ if (os_wxMediaBuffer_class) {
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "resized", os_wxMediaBufferResized, 2, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "set-caret-owner", os_wxMediaBufferSetCaretOwner, 1, 2);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "scroll-to", os_wxMediaBufferScrollTo, 6, 6);
+ scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-display-size", os_wxMediaBufferOnDisplaySize, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-change", os_wxMediaBufferOnChange, 0, 0);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-focus", os_wxMediaBufferOnFocus, 1, 1);
  scheme_add_method_w_arity(os_wxMediaBuffer_class, "on-default-char", os_wxMediaBufferOnDefaultChar, 1, 1);

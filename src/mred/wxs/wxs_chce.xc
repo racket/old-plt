@@ -7,6 +7,9 @@
 
 @HEADER
 
+@BEGINSYMBOLS choiceStyle
+@ENDSYMBOLS
+
 @CLASSBASE wxChoice "wx:choice":"wx:item"
 
 @SET CALLBACK_CLASS = wxChoice
@@ -20,7 +23,7 @@
 #define RANGECLASS wxChoice
 @INCLUDE range.xci
 
-@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,long=0,string="checkBox"); : : ubCallbackSetup/glueListSet[string.7.8.7."wx:choice%::initialization"]|NOZERO[5]|NOZERO[6]/glueCleanup[8]/ubCallbackCreatorFinish
+@CREATOR (wxPanel!,wxFunction/bCallback/ubCallback/cCallback//spCallback,nstring,int=-1,int=-1,int=-1,int=-1,-int=0,string[]=NULL/bList/ubList/cList,SYM[choiceStyle]=0,string="checkBox"); : : ubCallbackSetup/glueListSet[string.7.8.7."wx:choice%::initialization"]|NOZERO[5]|NOZERO[6]/glueCleanup[8]/ubCallbackCreatorFinish
 
 @INCLUDE wxs_item.xci
 

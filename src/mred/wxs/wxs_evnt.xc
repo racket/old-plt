@@ -47,7 +47,7 @@ Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
 
 @CLASSBASE wxCommandEvent "wx:command-event":"wx:event"
 
-@CREATOR (int)
+@CREATOR (SYM[commandType])
 
 @ "checked?" : bool Checked();
 @ "is-selection?" : bool IsSelection();
@@ -176,7 +176,7 @@ Bool CommandEventIsDoubleClick(wxCommandEvent *ce)
 
 @CLASSBASE wxMouseEvent "wx:mouse-event":"wx:event"
 
-@CREATOR (int);
+@CREATOR (SYM[mouseEventType]);
 
 @ "button?" : bool Button(int);
 @ "button-d-click?" : bool ButtonDClick(int=-1);

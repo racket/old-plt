@@ -91,6 +91,7 @@ static Scheme_Object *bundle_symset_canvasStyle(int v) {
 // @INCLUDE wxs_drws.xci
 
 
+// @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1,SYM[canvasStyle]=0,string="canvas") : : /NOZERO[3]|NOZERO[4]/ <> frame
 
 
 
@@ -115,7 +116,6 @@ static Scheme_Object *bundle_symset_canvasStyle(int v) {
 class os_wxCanvas : public wxCanvas {
  public:
 
-  os_wxCanvas(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "canvas");
   os_wxCanvas(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, int x5 = 0, string x6 = "canvas");
   ~os_wxCanvas();
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
@@ -130,14 +130,6 @@ class os_wxCanvas : public wxCanvas {
 };
 
 Scheme_Object *os_wxCanvas_class;
-
-os_wxCanvas::os_wxCanvas(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, int x5, string x6)
-: wxCanvas(x0, x1, x2, x3, x4, x5, x6)
-{
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
-}
 
 os_wxCanvas::os_wxCanvas(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, int x5, string x6)
 : wxCanvas(x0, x1, x2, x3, x4, x5, x6)
@@ -905,92 +897,47 @@ static Scheme_Object *os_wxCanvasAllowDoubleClick(Scheme_Object *obj, int n,  Sc
 static Scheme_Object *os_wxCanvas_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxCanvas *realobj;
-  if ((n >= 1) && objscheme_istype_wxPanel(p[0], NULL, 0)) {
-    class wxPanel* x0;
-    int x1;
-    int x2;
-    int x3;
-    int x4;
-    int x5;
-    string x6;
+  class wxPanel* x0;
+  int x1;
+  int x2;
+  int x3;
+  int x4;
+  int x5;
+  string x6;
 
-    
-    if ((n < 1) ||(n > 7)) 
-      scheme_wrong_count("wx:canvas%::initialization (panel case)", 1, 7, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "wx:canvas%::initialization (panel case)", 0);
-    if (n > 1) {
-      x1 = objscheme_unbundle_integer(p[1], "wx:canvas%::initialization (panel case)");
-    } else
-      x1 = -1;
-    if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "wx:canvas%::initialization (panel case)");
-    } else
-      x2 = -1;
-    if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:canvas%::initialization (panel case)");
-    } else
-      x3 = -1;
-    if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:canvas%::initialization (panel case)");
-    } else
-      x4 = -1;
-    if (n > 5) {
-      x5 = unbundle_symset_canvasStyle(p[5], "wx:canvas%::initialization (panel case)");
-    } else
-      x5 = 0;
-    if (n > 6) {
-      x6 = (string)objscheme_unbundle_string(p[6], "wx:canvas%::initialization (panel case)");
-    } else
-      x6 = "canvas";
+  
+  if ((n < 1) ||(n > 7)) 
+    scheme_wrong_count("wx:canvas%::initialization", 1, 7, n, p);
+  x0 = objscheme_unbundle_wxPanel(p[0], "wx:canvas%::initialization", 0);
+  if (n > 1) {
+    x1 = objscheme_unbundle_integer(p[1], "wx:canvas%::initialization");
+  } else
+    x1 = -1;
+  if (n > 2) {
+    x2 = objscheme_unbundle_integer(p[2], "wx:canvas%::initialization");
+  } else
+    x2 = -1;
+  if (n > 3) {
+    x3 = objscheme_unbundle_integer(p[3], "wx:canvas%::initialization");
+  } else
+    x3 = -1;
+  if (n > 4) {
+    x4 = objscheme_unbundle_integer(p[4], "wx:canvas%::initialization");
+  } else
+    x4 = -1;
+  if (n > 5) {
+    x5 = unbundle_symset_canvasStyle(p[5], "wx:canvas%::initialization");
+  } else
+    x5 = 0;
+  if (n > 6) {
+    x6 = (string)objscheme_unbundle_string(p[6], "wx:canvas%::initialization");
+  } else
+    x6 = "canvas";
 
-    if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = new os_wxCanvas(obj, x0, x1, x2, x3, x4, x5, x6);
-    
-    
-  } else  {
-    class wxFrame* x0;
-    int x1;
-    int x2;
-    int x3;
-    int x4;
-    int x5;
-    string x6;
-
-    
-    if ((n < 1) ||(n > 7)) 
-      scheme_wrong_count("wx:canvas%::initialization (frame case)", 1, 7, n, p);
-    x0 = objscheme_unbundle_wxFrame(p[0], "wx:canvas%::initialization (frame case)", 0);
-    if (n > 1) {
-      x1 = objscheme_unbundle_integer(p[1], "wx:canvas%::initialization (frame case)");
-    } else
-      x1 = -1;
-    if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "wx:canvas%::initialization (frame case)");
-    } else
-      x2 = -1;
-    if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:canvas%::initialization (frame case)");
-    } else
-      x3 = -1;
-    if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:canvas%::initialization (frame case)");
-    } else
-      x4 = -1;
-    if (n > 5) {
-      x5 = unbundle_symset_canvasStyle(p[5], "wx:canvas%::initialization (frame case)");
-    } else
-      x5 = 0;
-    if (n > 6) {
-      x6 = (string)objscheme_unbundle_string(p[6], "wx:canvas%::initialization (frame case)");
-    } else
-      x6 = "canvas";
-
-    if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = new os_wxCanvas(obj, x0, x1, x2, x3, x4, x5, x6);
-    
-    
-  }
-
+  if (!x3) x3 = -1;if (!x4) x4 = -1;
+  realobj = new os_wxCanvas(obj, x0, x1, x2, x3, x4, x5, x6);
+  
+  
   ((Scheme_Class_Object *)obj)->primdata = realobj;
   objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
   ((Scheme_Class_Object *)obj)->primflag = 1;

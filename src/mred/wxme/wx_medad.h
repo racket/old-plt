@@ -285,6 +285,8 @@ class wxMediaBuffer : public wxObject
   virtual void OnEditSequence(void);
   virtual void AfterEditSequence(void);
 
+  virtual void OnDisplaySize(void);
+
   virtual wxImageSnip *OnNewImageSnip(char *filename, long type, 
 				      Bool relative, Bool inlineImg);
 

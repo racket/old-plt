@@ -36,6 +36,8 @@
 
 @ Y "on-change" : void OnChange();
 
+@ Z "on-display-size" : void OnDisplaySize();
+
 @ Y "scroll-to" : bool ScrollTo(wxSnip!,float,float,float,float,bool); : : : : XrZERO
 @ Y "set-caret-owner" : void SetCaretOwner(wxSnip^,SYM[focus]=wxFOCUS_IMMEDIATE);
 @ Y "resized" : void Resized(wxSnip!,bool);

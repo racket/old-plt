@@ -1406,6 +1406,7 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxsGauge(global_env);
   objscheme_setup_wxMenu(global_env);
   objscheme_setup_wxMenuBar(global_env);
+  objscheme_setup_wxsMenuItem(global_env);
   objscheme_setup_wxEvent(global_env);
   objscheme_setup_wxCommandEvent(global_env);
   objscheme_setup_wxKeyEvent(global_env);
@@ -1458,6 +1459,7 @@ static void wxScheme_Install(Scheme_Env *env, void *global_env)
   objscheme_setup_wxPrintSetupData(global_env);
 
   objscheme_setup_wxsGlobal(global_env);
+  objscheme_setup_wxsMenuItemGlobal(global_env);
 
   scheme_defining_primitives = 0;
 }

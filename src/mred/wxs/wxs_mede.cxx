@@ -517,6 +517,7 @@ static Scheme_Object *bundle_symset_caret(int v) {
 
 
 
+
 			
 
 
@@ -733,6 +734,7 @@ class os_wxMediaEdit : public wxMediaEdit {
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
   Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5);
+  void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
   void OnDefaultChar(class wxKeyEvent& x0);
@@ -2172,6 +2174,38 @@ return wxMediaEdit::ScrollTo(x0, x1, x2, x3, x4, x5);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "wx:media-edit%::scroll-to"", extracting return value");
+  }
+}
+
+void os_wxMediaEdit::OnDisplaySize()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaEdit_class, "on-display-size", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMediaEdit::OnDisplaySize();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
   }
 }
 
@@ -5739,6 +5773,25 @@ static Scheme_Object *os_wxMediaEditScrollTo(Scheme_Object *obj, int n,  Scheme_
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaEditOnDisplaySize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->wxMediaEdit::OnDisplaySize();
+  else
+    ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->OnDisplaySize();
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaEditOnChange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -6078,7 +6131,7 @@ void objscheme_setup_wxMediaEdit(void *env)
 if (os_wxMediaEdit_class) {
     objscheme_add_global_class(os_wxMediaEdit_class,  "wx:media-edit%", env);
 } else {
-  os_wxMediaEdit_class = objscheme_def_prim_class(env, "wx:media-edit%", "wx:media-buffer%", os_wxMediaEdit_ConstructScheme, 125);
+  os_wxMediaEdit_class = objscheme_def_prim_class(env, "wx:media-edit%", "wx:media-buffer%", os_wxMediaEdit_ConstructScheme, 126);
 
   scheme_add_method_w_arity(os_wxMediaEdit_class,"get-class-name",objscheme_classname_os_wxMediaEdit, 0, 0);
 
@@ -6192,6 +6245,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "resized", os_wxMediaEditResized, 2, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "set-caret-owner", os_wxMediaEditSetCaretOwner, 1, 2);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "scroll-to", os_wxMediaEditScrollTo, 6, 6);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "on-display-size", os_wxMediaEditOnDisplaySize, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-change", os_wxMediaEditOnChange, 0, 0);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-focus", os_wxMediaEditOnFocus, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "on-default-char", os_wxMediaEditOnDefaultChar, 1, 1);

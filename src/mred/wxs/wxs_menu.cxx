@@ -1176,3 +1176,183 @@ class wxMenuBar *objscheme_unbundle_wxMenuBar(Scheme_Object *obj, const char *wh
     return (wxMenuBar *)o->primdata;
 }
 
+
+
+class wxsMenuItem : public wxObject
+{
+public:
+  wxsMenuItem(void) {
+  }
+
+  int Id(void) {
+    return (int)this;
+  }
+};
+
+wxsMenuItem* wxsIdToMenuItem(int id)
+{
+  return (wxsMenuItem *)id;
+}
+
+
+
+
+class os_wxsMenuItem : public wxsMenuItem {
+ public:
+
+  os_wxsMenuItem(Scheme_Object * obj);
+  ~os_wxsMenuItem();
+};
+
+Scheme_Object *os_wxsMenuItem_class;
+
+os_wxsMenuItem::os_wxsMenuItem(Scheme_Object * o)
+: wxsMenuItem()
+{
+  __gc_external = (void *)o;
+  objscheme_backpointer(&__gc_external);
+  objscheme_note_creation(o);
+}
+
+os_wxsMenuItem::~os_wxsMenuItem()
+{
+    objscheme_destroy(this, (Scheme_Object *)__gc_external);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxsMenuItemId(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  int r;
+  objscheme_check_valid(obj);
+
+  
+
+  
+  r = ((wxsMenuItem *)((Scheme_Class_Object *)obj)->primdata)->Id();
+
+  
+  
+  return scheme_make_integer(r);
+}
+
+#pragma argsused
+static Scheme_Object *os_wxsMenuItem_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  os_wxsMenuItem *realobj;
+
+  
+  if (n != 0) 
+    scheme_wrong_count("wx:menu-item%::initialization", 0, 0, n, p);
+
+  
+  realobj = new os_wxsMenuItem(obj);
+  
+  
+  ((Scheme_Class_Object *)obj)->primdata = realobj;
+  objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
+  ((Scheme_Class_Object *)obj)->primflag = 1;
+  return obj;
+}
+
+static Scheme_Object *objscheme_classname_os_wxsMenuItem(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(obj);
+  if (n) scheme_wrong_count("wx:menu-item%" "::get-class-name", 0, 0, n, p);
+  return scheme_intern_symbol("wx:menu-item%");
+}
+
+void objscheme_setup_wxsMenuItem(void *env)
+{
+if (os_wxsMenuItem_class) {
+    objscheme_add_global_class(os_wxsMenuItem_class,  "wx:menu-item%", env);
+} else {
+  os_wxsMenuItem_class = objscheme_def_prim_class(env, "wx:menu-item%", "wx:object%", os_wxsMenuItem_ConstructScheme, 2);
+
+  scheme_add_method_w_arity(os_wxsMenuItem_class,"get-class-name",objscheme_classname_os_wxsMenuItem, 0, 0);
+
+ scheme_add_method_w_arity(os_wxsMenuItem_class, "id", os_wxsMenuItemId, 0, 0);
+
+
+  scheme_made_class(os_wxsMenuItem_class);
+
+
+}
+}
+
+int objscheme_istype_wxsMenuItem(Scheme_Object *obj, const char *stop, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return 1;
+  if (SAME_TYPE(SCHEME_TYPE(obj), scheme_object_type)
+      && scheme_is_subclass(((Scheme_Class_Object *)obj)->sclass,          os_wxsMenuItem_class))
+    return 1;
+  else {
+    if (!stop)
+       return 0;
+    scheme_wrong_type(stop, nullOK ? "wx:menu-item% object or " XC_NULL_STR: "wx:menu-item% object", -1, 0, &obj);
+    return 0;
+  }
+}
+
+Scheme_Object *objscheme_bundle_wxsMenuItem(class wxsMenuItem *realobj)
+{
+  Scheme_Class_Object *obj;
+  Scheme_Object *sobj;
+
+  if (!realobj) return XC_SCHEME_NULL;
+
+  if (realobj->__gc_external)
+    return (Scheme_Object *)realobj->__gc_external;
+  if ((sobj = objscheme_bundle_by_type(realobj, realobj->__type)))
+    return sobj;
+  obj = (Scheme_Class_Object *)scheme_make_uninited_object(os_wxsMenuItem_class);
+
+  obj->primdata = realobj;
+  objscheme_register_primpointer(&obj->primdata);
+  obj->primflag = 0;
+
+  realobj->__gc_external = (void *)obj;
+  objscheme_backpointer(&realobj->__gc_external);
+  return (Scheme_Object *)obj;
+}
+
+class wxsMenuItem *objscheme_unbundle_wxsMenuItem(Scheme_Object *obj, const char *where, int nullOK)
+{
+  if (nullOK && XC_SCHEME_NULLP(obj)) return NULL;
+
+  (void)objscheme_istype_wxsMenuItem(obj, where, nullOK);
+  Scheme_Class_Object *o = (Scheme_Class_Object *)obj;
+  objscheme_check_valid(obj);
+  if (o->primflag)
+    return (os_wxsMenuItem *)o->primdata;
+  else
+    return (wxsMenuItem *)o->primdata;
+}
+
+
+
+
+
+#pragma argsused
+static Scheme_Object *wxsMenuItemGlobalwxsIdToMenuItem(int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  class wxsMenuItem* r;
+  int x0;
+
+  
+  x0 = objscheme_unbundle_integer(p[0], "wx:menu-item%::wx:id-to-menu-item");
+
+  
+  r = wxsIdToMenuItem(x0);
+
+  
+  
+  return objscheme_bundle_wxsMenuItem(r);
+}
+
+void objscheme_setup_wxsMenuItemGlobal(void *env)
+{
+  scheme_install_xc_global("wx:id-to-menu-item", scheme_make_prim_w_arity(wxsMenuItemGlobalwxsIdToMenuItem, "wx:id-to-menu-item", 1, 1), env);
+}
+

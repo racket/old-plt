@@ -17,40 +17,54 @@
 #include "wxscomon.h"
 
 
+static Scheme_Object *radioboxStyle_wxVERTICAL_sym = NULL;
+static Scheme_Object *radioboxStyle_wxHORIZONTAL_sym = NULL;
 
-static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
-static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
-
-static void init_symset_orientation(void) {
-  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
-  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+static void init_symset_radioboxStyle(void) {
+  radioboxStyle_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  radioboxStyle_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
 }
 
-static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+static int unbundle_symset_radioboxStyle(Scheme_Object *v, const char *where) {
+  if (!radioboxStyle_wxHORIZONTAL_sym) init_symset_radioboxStyle();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
   if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return 1; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_orientation(int v) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  switch (v) {
-  case wxVERTICAL: return orientation_wxVERTICAL_sym;
-  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
-  default: return NULL;
+  else if (i == radioboxStyle_wxVERTICAL_sym) { result = result | wxVERTICAL; }
+  else if (i == radioboxStyle_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "radioboxStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_radioboxStyle(Scheme_Object *v, const char *where) {
+  if (!radioboxStyle_wxHORIZONTAL_sym) init_symset_radioboxStyle();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == radioboxStyle_wxVERTICAL_sym) { ; }
+  else if (i == radioboxStyle_wxHORIZONTAL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "radioboxStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_radioboxStyle(int v) {
+  if (!radioboxStyle_wxHORIZONTAL_sym) init_symset_radioboxStyle();
+  Scheme_Object *l = scheme_null;
+  if (v & wxVERTICAL) l = scheme_make_pair(radioboxStyle_wxVERTICAL_sym, l);
+  if (v & wxHORIZONTAL) l = scheme_make_pair(radioboxStyle_wxHORIZONTAL_sym, l);
+  return l;
 }
 
 
@@ -781,7 +795,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x9 = 0;
     if (n > 9) {
-      x10 = unbundle_symset_orientation(p[9], "wx:radio-box%::initialization (bitmap list case)");
+      x10 = unbundle_symset_radioboxStyle(p[9], "wx:radio-box%::initialization (bitmap list case)");
     } else
       x10 = wxVERTICAL;
     if (n > 10) {
@@ -838,7 +852,7 @@ static Scheme_Object *os_wxRadioBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x9 = 0;
     if (n > 9) {
-      x10 = unbundle_symset_orientation(p[9], "wx:radio-box%::initialization (string list case)");
+      x10 = unbundle_symset_radioboxStyle(p[9], "wx:radio-box%::initialization (string list case)");
     } else
       x10 = wxVERTICAL;
     if (n > 10) {

@@ -232,6 +232,7 @@ static Scheme_Object *bundle_symset_caret(int v) {
 
 
 
+
   
 
 
@@ -295,6 +296,7 @@ class os_wxMediaPasteboard : public wxMediaPasteboard {
   void Resized(class wxSnip* x0, Bool x1);
   void SetCaretOwner(class wxSnip* x0, int x1 = wxFOCUS_IMMEDIATE);
   Bool ScrollTo(class wxSnip* x0, float x1, float x2, float x3, float x4, Bool x5);
+  void OnDisplaySize();
   void OnChange();
   void OnFocus(Bool x0);
   void OnDefaultChar(class wxKeyEvent& x0);
@@ -1888,6 +1890,38 @@ return wxMediaPasteboard::ScrollTo(x0, x1, x2, x3, x4, x5);
   COPY_JMPBUF(scheme_error_buf, savebuf);
 
   return objscheme_unbundle_bool(v, "wx:media-pasteboard%::scroll-to"", extracting return value");
+  }
+}
+
+void os_wxMediaPasteboard::OnDisplaySize()
+{
+  Scheme_Object **p = NULL;
+  Scheme_Object *v;
+  mz_jmp_buf savebuf;
+  Scheme_Object *method;
+  int sj;
+  static void *mcache = 0;
+
+  method = objscheme_find_method((Scheme_Object *)__gc_external, os_wxMediaPasteboard_class, "on-display-size", &mcache);
+  if (method && !OBJSCHEME_PRIM_METHOD(method)) {
+    COPY_JMPBUF(savebuf, scheme_error_buf);
+    sj = scheme_setjmp(scheme_error_buf);
+    if (sj) {
+      COPY_JMPBUF(scheme_error_buf, savebuf);
+      scheme_clear_escape();
+    }
+  } else sj = 1;
+  if (sj) {
+wxMediaPasteboard::OnDisplaySize();
+  } else {
+  
+  
+
+  v = scheme_apply(method, 0, p);
+  
+  
+  COPY_JMPBUF(scheme_error_buf, savebuf);
+
   }
 }
 
@@ -4232,6 +4266,25 @@ static Scheme_Object *os_wxMediaPasteboardScrollTo(Scheme_Object *obj, int n,  S
 }
 
 #pragma argsused
+static Scheme_Object *os_wxMediaPasteboardOnDisplaySize(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+ WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  objscheme_check_valid(obj);
+
+  
+
+  
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->wxMediaPasteboard::OnDisplaySize();
+  else
+    ((wxMediaPasteboard *)((Scheme_Class_Object *)obj)->primdata)->OnDisplaySize();
+
+  
+  
+  return scheme_void;
+}
+
+#pragma argsused
 static Scheme_Object *os_wxMediaPasteboardOnChange(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -4654,7 +4707,7 @@ void objscheme_setup_wxMediaPasteboard(void *env)
 if (os_wxMediaPasteboard_class) {
     objscheme_add_global_class(os_wxMediaPasteboard_class,  "wx:media-pasteboard%", env);
 } else {
-  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "wx:media-pasteboard%", "wx:media-buffer%", os_wxMediaPasteboard_ConstructScheme, 95);
+  os_wxMediaPasteboard_class = objscheme_def_prim_class(env, "wx:media-pasteboard%", "wx:media-buffer%", os_wxMediaPasteboard_ConstructScheme, 96);
 
   scheme_add_method_w_arity(os_wxMediaPasteboard_class,"get-class-name",objscheme_classname_os_wxMediaPasteboard, 0, 0);
 
@@ -4734,6 +4787,7 @@ if (os_wxMediaPasteboard_class) {
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "resized", os_wxMediaPasteboardResized, 2, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "set-caret-owner", os_wxMediaPasteboardSetCaretOwner, 1, 2);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "scroll-to", os_wxMediaPasteboardScrollTo, 6, 6);
+ scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-display-size", os_wxMediaPasteboardOnDisplaySize, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-change", os_wxMediaPasteboardOnChange, 0, 0);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-focus", os_wxMediaPasteboardOnFocus, 1, 1);
  scheme_add_method_w_arity(os_wxMediaPasteboard_class, "on-default-char", os_wxMediaPasteboardOnDefaultChar, 1, 1);

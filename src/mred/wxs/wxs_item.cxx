@@ -319,6 +319,20 @@ class wxItem *objscheme_unbundle_wxItem(Scheme_Object *obj, const char *where, i
 }
 
 
+static int istype_symset_messageStyle(Scheme_Object *v, const char *where) {
+  if SCHEME_NULLP(v) return 1;
+  if (where) scheme_wrong_type(where, "messageStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int unbundle_symset_messageStyle(Scheme_Object *v, const char *where) {
+  istype_symset_messageStyle(v, where);
+  return 0;
+}
+static Scheme_Object *bundle_symset_messageStyle(int v) {
+  return scheme_null;
+}
+
 
 
 
@@ -331,8 +345,8 @@ class wxItem *objscheme_unbundle_wxItem(Scheme_Object *obj, const char *where, i
 class os_wxMessage : public wxMessage {
  public:
 
-  os_wxMessage(Scheme_Object * obj, class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, long x4 = 0, string x5 = "message");
-  os_wxMessage(Scheme_Object * obj, class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, long x4 = 0, string x5 = "message");
+  os_wxMessage(Scheme_Object * obj, class wxPanel* x0, string x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message");
+  os_wxMessage(Scheme_Object * obj, class wxPanel* x0, class wxBitmap* x1, int x2 = -1, int x3 = -1, int x4 = 0, string x5 = "message");
   ~os_wxMessage();
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
@@ -343,7 +357,7 @@ class os_wxMessage : public wxMessage {
 
 Scheme_Object *os_wxMessage_class;
 
-os_wxMessage::os_wxMessage(Scheme_Object * o, class wxPanel* x0, string x1, int x2, int x3, long x4, string x5)
+os_wxMessage::os_wxMessage(Scheme_Object * o, class wxPanel* x0, string x1, int x2, int x3, int x4, string x5)
 : wxMessage(x0, x1, x2, x3, x4, x5)
 {
   __gc_external = (void *)o;
@@ -351,7 +365,7 @@ os_wxMessage::os_wxMessage(Scheme_Object * o, class wxPanel* x0, string x1, int 
   objscheme_note_creation(o);
 }
 
-os_wxMessage::os_wxMessage(Scheme_Object * o, class wxPanel* x0, class wxBitmap* x1, int x2, int x3, long x4, string x5)
+os_wxMessage::os_wxMessage(Scheme_Object * o, class wxPanel* x0, class wxBitmap* x1, int x2, int x3, int x4, string x5)
 : wxMessage(x0, x1, x2, x3, x4, x5)
 {
   __gc_external = (void *)o;
@@ -686,7 +700,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     class wxBitmap* x1;
     int x2;
     int x3;
-    long x4;
+    int x4;
     string x5;
 
     
@@ -703,7 +717,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:message%::initialization (bitmap label case)");
+      x4 = unbundle_symset_messageStyle(p[4], "wx:message%::initialization (bitmap label case)");
     } else
       x4 = 0;
     if (n > 5) {
@@ -720,7 +734,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     string x1;
     int x2;
     int x3;
-    long x4;
+    int x4;
     string x5;
 
     
@@ -737,7 +751,7 @@ static Scheme_Object *os_wxMessage_ConstructScheme(Scheme_Object *obj, int n,  S
     } else
       x3 = -1;
     if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:message%::initialization (string label case)");
+      x4 = unbundle_symset_messageStyle(p[4], "wx:message%::initialization (string label case)");
     } else
       x4 = 0;
     if (n > 5) {

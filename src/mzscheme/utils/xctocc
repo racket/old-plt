@@ -1922,6 +1922,22 @@ sub PrintSymSet
 	$char = 0;
     }
 
+    if ($#syms < 0) {
+	print "static int istype_symset_${name}(Scheme_Object *v, const char *where) {\n";
+	print "  if SCHEME_NULLP(v) return 1;\n";
+	print "  if (where) scheme_wrong_type(where, \"$name symbol${lname}\", -1, 0, &v);\n";
+	print "  return 0;\n";
+	print "}\n\n";
+	print "static int unbundle_symset_${name}(Scheme_Object *v, const char *where) {\n";
+	print "  istype_symset_${name}(v, where);\n";
+	print "  return 0;\n";
+	print "}\n";
+	print "static Scheme_Object *bundle_symset_${name}(int v) {\n";
+        print "  return scheme_null;\n";
+        print "}\n\n";
+	return;
+    }
+
     foreach $sym (@syms) {
 	($n, $v) = split(/,/, $sym);
 	print "static Scheme_Object *${name}_${v}_sym = NULL;\n";

@@ -15,9 +15,7 @@ extern Scheme_Object *objscheme_bundle_wxCanvasDC(class wxCanvasDC *);
 extern class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *, const char *, int);
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
-extern int objscheme_istype_wxPanel(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);
-extern class wxFrame *objscheme_unbundle_wxFrame(Scheme_Object *, const char *, int);
 #endif
 void objscheme_setup_wxCanvas(void *env);
 #ifndef WXS_SETUP_ONLY

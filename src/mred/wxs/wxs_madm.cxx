@@ -278,6 +278,7 @@ static void *DoCAPOCallback(void *data)
 typedef void *(*CAPOFunc)(void*);
 
 
+// @CREATOR (wxFrame!,int=-1,int=-1,int=-1,int=-1, string="",SYM[style]=0,int=100,wxMediaBuffer^=NULL); : : /NOZERO[3]|NOZERO[4] <> frame
 
 
 
@@ -299,7 +300,6 @@ typedef void *(*CAPOFunc)(void*);
 class os_wxMediaCanvas : public wxMediaCanvas {
  public:
 
-  os_wxMediaCanvas(Scheme_Object * obj, class wxFrame* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
   os_wxMediaCanvas(Scheme_Object * obj, class wxPanel* x0, int x1 = -1, int x2 = -1, int x3 = -1, int x4 = -1, string x5 = "", int x6 = 0, int x7 = 100, class wxMediaBuffer* x8 = NULL);
   ~os_wxMediaCanvas();
   void OnChar(class wxKeyEvent& x0);
@@ -313,14 +313,6 @@ class os_wxMediaCanvas : public wxMediaCanvas {
 };
 
 Scheme_Object *os_wxMediaCanvas_class;
-
-os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object * o, class wxFrame* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8)
-: wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8)
-{
-  __gc_external = (void *)o;
-  objscheme_backpointer(&__gc_external);
-  objscheme_note_creation(o);
-}
 
 os_wxMediaCanvas::os_wxMediaCanvas(Scheme_Object * o, class wxPanel* x0, int x1, int x2, int x3, int x4, string x5, int x6, int x7, class wxMediaBuffer* x8)
 : wxMediaCanvas(x0, x1, x2, x3, x4, x5, x6, x7, x8)
@@ -942,112 +934,57 @@ static Scheme_Object *os_wxMediaCanvasSetMedia(Scheme_Object *obj, int n,  Schem
 static Scheme_Object *os_wxMediaCanvas_ConstructScheme(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   os_wxMediaCanvas *realobj;
-  if ((n >= 1) && objscheme_istype_wxPanel(p[0], NULL, 0)) {
-    class wxPanel* x0;
-    int x1;
-    int x2;
-    int x3;
-    int x4;
-    string x5;
-    int x6;
-    int x7;
-    class wxMediaBuffer* x8;
+  class wxPanel* x0;
+  int x1;
+  int x2;
+  int x3;
+  int x4;
+  string x5;
+  int x6;
+  int x7;
+  class wxMediaBuffer* x8;
 
-    
-    if ((n < 1) ||(n > 9)) 
-      scheme_wrong_count("wx:media-canvas%::initialization (panel case)", 1, 9, n, p);
-    x0 = objscheme_unbundle_wxPanel(p[0], "wx:media-canvas%::initialization (panel case)", 0);
-    if (n > 1) {
-      x1 = objscheme_unbundle_integer(p[1], "wx:media-canvas%::initialization (panel case)");
-    } else
-      x1 = -1;
-    if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "wx:media-canvas%::initialization (panel case)");
-    } else
-      x2 = -1;
-    if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:media-canvas%::initialization (panel case)");
-    } else
-      x3 = -1;
-    if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:media-canvas%::initialization (panel case)");
-    } else
-      x4 = -1;
-    if (n > 5) {
-      x5 = (string)objscheme_unbundle_string(p[5], "wx:media-canvas%::initialization (panel case)");
-    } else
-      x5 = "";
-    if (n > 6) {
-      x6 = unbundle_symset_style(p[6], "wx:media-canvas%::initialization (panel case)");
-    } else
-      x6 = 0;
-    if (n > 7) {
-      x7 = objscheme_unbundle_integer(p[7], "wx:media-canvas%::initialization (panel case)");
-    } else
-      x7 = 100;
-    if (n > 8) {
-      x8 = objscheme_unbundle_wxMediaBuffer(p[8], "wx:media-canvas%::initialization (panel case)", 1);
-    } else
-      x8 = NULL;
+  
+  if ((n < 1) ||(n > 9)) 
+    scheme_wrong_count("wx:media-canvas%::initialization", 1, 9, n, p);
+  x0 = objscheme_unbundle_wxPanel(p[0], "wx:media-canvas%::initialization", 0);
+  if (n > 1) {
+    x1 = objscheme_unbundle_integer(p[1], "wx:media-canvas%::initialization");
+  } else
+    x1 = -1;
+  if (n > 2) {
+    x2 = objscheme_unbundle_integer(p[2], "wx:media-canvas%::initialization");
+  } else
+    x2 = -1;
+  if (n > 3) {
+    x3 = objscheme_unbundle_integer(p[3], "wx:media-canvas%::initialization");
+  } else
+    x3 = -1;
+  if (n > 4) {
+    x4 = objscheme_unbundle_integer(p[4], "wx:media-canvas%::initialization");
+  } else
+    x4 = -1;
+  if (n > 5) {
+    x5 = (string)objscheme_unbundle_string(p[5], "wx:media-canvas%::initialization");
+  } else
+    x5 = "";
+  if (n > 6) {
+    x6 = unbundle_symset_style(p[6], "wx:media-canvas%::initialization");
+  } else
+    x6 = 0;
+  if (n > 7) {
+    x7 = objscheme_unbundle_integer(p[7], "wx:media-canvas%::initialization");
+  } else
+    x7 = 100;
+  if (n > 8) {
+    x8 = objscheme_unbundle_wxMediaBuffer(p[8], "wx:media-canvas%::initialization", 1);
+  } else
+    x8 = NULL;
 
-    if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = new os_wxMediaCanvas(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
-    
-    
-  } else  {
-    class wxFrame* x0;
-    int x1;
-    int x2;
-    int x3;
-    int x4;
-    string x5;
-    int x6;
-    int x7;
-    class wxMediaBuffer* x8;
-
-    
-    if ((n < 1) ||(n > 9)) 
-      scheme_wrong_count("wx:media-canvas%::initialization (frame case)", 1, 9, n, p);
-    x0 = objscheme_unbundle_wxFrame(p[0], "wx:media-canvas%::initialization (frame case)", 0);
-    if (n > 1) {
-      x1 = objscheme_unbundle_integer(p[1], "wx:media-canvas%::initialization (frame case)");
-    } else
-      x1 = -1;
-    if (n > 2) {
-      x2 = objscheme_unbundle_integer(p[2], "wx:media-canvas%::initialization (frame case)");
-    } else
-      x2 = -1;
-    if (n > 3) {
-      x3 = objscheme_unbundle_integer(p[3], "wx:media-canvas%::initialization (frame case)");
-    } else
-      x3 = -1;
-    if (n > 4) {
-      x4 = objscheme_unbundle_integer(p[4], "wx:media-canvas%::initialization (frame case)");
-    } else
-      x4 = -1;
-    if (n > 5) {
-      x5 = (string)objscheme_unbundle_string(p[5], "wx:media-canvas%::initialization (frame case)");
-    } else
-      x5 = "";
-    if (n > 6) {
-      x6 = unbundle_symset_style(p[6], "wx:media-canvas%::initialization (frame case)");
-    } else
-      x6 = 0;
-    if (n > 7) {
-      x7 = objscheme_unbundle_integer(p[7], "wx:media-canvas%::initialization (frame case)");
-    } else
-      x7 = 100;
-    if (n > 8) {
-      x8 = objscheme_unbundle_wxMediaBuffer(p[8], "wx:media-canvas%::initialization (frame case)", 1);
-    } else
-      x8 = NULL;
-
-    if (!x3) x3 = -1;if (!x4) x4 = -1;
-    realobj = new os_wxMediaCanvas(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
-    
-    
-  }
-
+  if (!x3) x3 = -1;if (!x4) x4 = -1;
+  realobj = new os_wxMediaCanvas(obj, x0, x1, x2, x3, x4, x5, x6, x7, x8);
+  
+  
   ((Scheme_Class_Object *)obj)->primdata = realobj;
   objscheme_register_primpointer(&((Scheme_Class_Object *)obj)->primdata);
   ((Scheme_Class_Object *)obj)->primflag = 1;

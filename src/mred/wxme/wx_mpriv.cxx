@@ -2575,6 +2575,8 @@ static long page_width = 612, page_height = 792;
 /* Printing margins: */
 static long h_margin = 36, v_margin = 36;
 
+#define wxGetPrinterOrientation() wxGetThePrintSetupData()->GetPrinterOrientation()
+
 void wxmeGetDefaultSize(float *w, float *h)
 {
   *w = page_width;

@@ -40,11 +40,14 @@ class wxsGauge : public wxGauge
 
 @HEADER
 
-@INCLUDE wxs_ornt.xci
+@BEGINSYMBOLS gaugeStyle
+@SYM "vertical" : wxVERTICAL
+@SYM "horizontal" : wxHORIZONTAL
+@ENDSYMBOLS
 
 @CLASSBASE wxsGauge "wx:gauge" : "wx:item"
 
-@CREATOR (wxPanel!,nstring,int,int=-1,int=-1,int=-1,int=-1,SYM[orientation]=wxHORIZONTAL,string="gauge"); : : /NOZERO[5]|NOZERO[6]//
+@CREATOR (wxPanel!,nstring,int,int=-1,int=-1,int=-1,int=-1,SYM[gaugeStyle]=wxHORIZONTAL,string="gauge"); : : /NOZERO[5]|NOZERO[6]//
 
 @INCLUDE wxs_item.xci
 

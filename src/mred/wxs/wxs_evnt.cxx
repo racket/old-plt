@@ -628,7 +628,7 @@ static Scheme_Object *os_wxCommandEvent_ConstructScheme(Scheme_Object *obj, int 
   
   if (n != 1) 
     scheme_wrong_count("wx:command-event%::initialization", 1, 1, n, p);
-  x0 = objscheme_unbundle_integer(p[0], "wx:command-event%::initialization");
+  x0 = unbundle_symset_commandType(p[0], "wx:command-event%::initialization");
 
   
   realobj = new os_wxCommandEvent(obj, x0);
@@ -2099,7 +2099,7 @@ static Scheme_Object *os_wxMouseEvent_ConstructScheme(Scheme_Object *obj, int n,
   
   if (n != 1) 
     scheme_wrong_count("wx:mouse-event%::initialization", 1, 1, n, p);
-  x0 = objscheme_unbundle_integer(p[0], "wx:mouse-event%::initialization");
+  x0 = unbundle_symset_mouseEventType(p[0], "wx:mouse-event%::initialization");
 
   
   realobj = new os_wxMouseEvent(obj, x0);

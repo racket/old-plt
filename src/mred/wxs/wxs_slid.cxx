@@ -17,40 +17,54 @@
 #include "wxscomon.h"
 
 
+static Scheme_Object *sliderStyle_wxVERTICAL_sym = NULL;
+static Scheme_Object *sliderStyle_wxHORIZONTAL_sym = NULL;
 
-static Scheme_Object *orientation_wxVERTICAL_sym = NULL;
-static Scheme_Object *orientation_wxHORIZONTAL_sym = NULL;
-
-static void init_symset_orientation(void) {
-  orientation_wxVERTICAL_sym = scheme_intern_symbol("vertical");
-  orientation_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
+static void init_symset_sliderStyle(void) {
+  sliderStyle_wxVERTICAL_sym = scheme_intern_symbol("vertical");
+  sliderStyle_wxHORIZONTAL_sym = scheme_intern_symbol("horizontal");
 }
 
-static int unbundle_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
+static int unbundle_symset_sliderStyle(Scheme_Object *v, const char *where) {
+  if (!sliderStyle_wxHORIZONTAL_sym) init_symset_sliderStyle();
+  Scheme_Object *i, *l = v;
+  long result = 0;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
   if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return wxVERTICAL; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return wxHORIZONTAL; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static int istype_symset_orientation(Scheme_Object *v, const char *where) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  if (0) { }
-  else if (v == orientation_wxVERTICAL_sym) { return 1; }
-  else if (v == orientation_wxHORIZONTAL_sym) { return 1; }
-  if (where) scheme_wrong_type(where, "orientation symbol", -1, 0, &v);
-  return 0;
-}
-
-static Scheme_Object *bundle_symset_orientation(int v) {
-  if (!orientation_wxHORIZONTAL_sym) init_symset_orientation();
-  switch (v) {
-  case wxVERTICAL: return orientation_wxVERTICAL_sym;
-  case wxHORIZONTAL: return orientation_wxHORIZONTAL_sym;
-  default: return NULL;
+  else if (i == sliderStyle_wxVERTICAL_sym) { result = result | wxVERTICAL; }
+  else if (i == sliderStyle_wxHORIZONTAL_sym) { result = result | wxHORIZONTAL; }
+  else { break; } 
+  l = SCHEME_CDR(l);
   }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "sliderStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int istype_symset_sliderStyle(Scheme_Object *v, const char *where) {
+  if (!sliderStyle_wxHORIZONTAL_sym) init_symset_sliderStyle();
+  Scheme_Object *i, *l = v;
+  long result = 1;
+  while (SCHEME_PAIRP(l)) {
+  i = SCHEME_CAR(l);
+  if (0) { }
+  else if (i == sliderStyle_wxVERTICAL_sym) { ; }
+  else if (i == sliderStyle_wxHORIZONTAL_sym) { ; }
+  else { break; } 
+  l = SCHEME_CDR(l);
+  }
+  if (SCHEME_NULLP(l)) return result;
+  if (where) scheme_wrong_type(where, "sliderStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static Scheme_Object *bundle_symset_sliderStyle(int v) {
+  if (!sliderStyle_wxHORIZONTAL_sym) init_symset_sliderStyle();
+  Scheme_Object *l = scheme_null;
+  if (v & wxVERTICAL) l = scheme_make_pair(sliderStyle_wxVERTICAL_sym, l);
+  if (v & wxHORIZONTAL) l = scheme_make_pair(sliderStyle_wxHORIZONTAL_sym, l);
+  return l;
 }
 
 
@@ -469,7 +483,7 @@ static Scheme_Object *os_wxSlider_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x8 = -1;
   if (n > 9) {
-    x9 = unbundle_symset_orientation(p[9], "wx:slider%::initialization");
+    x9 = unbundle_symset_sliderStyle(p[9], "wx:slider%::initialization");
   } else
     x9 = wxHORIZONTAL;
   if (n > 10) {

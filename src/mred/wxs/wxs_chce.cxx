@@ -17,6 +17,21 @@
 #include "wxscomon.h"
 
 
+static int istype_symset_choiceStyle(Scheme_Object *v, const char *where) {
+  if SCHEME_NULLP(v) return 1;
+  if (where) scheme_wrong_type(where, "choiceStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int unbundle_symset_choiceStyle(Scheme_Object *v, const char *where) {
+  istype_symset_choiceStyle(v, where);
+  return 0;
+}
+static Scheme_Object *bundle_symset_choiceStyle(int v) {
+  return scheme_null;
+}
+
+
 
 
 #define CB_FUNCTYPE wxFunction 
@@ -148,7 +163,7 @@ class os_wxChoice : public wxChoice {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxChoice(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, long x9 = 0, string x10 = "checkBox");
+  os_wxChoice(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, nstring x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string* x8 = NULL, int x9 = 0, string x10 = "checkBox");
   ~os_wxChoice();
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
@@ -159,7 +174,7 @@ class os_wxChoice : public wxChoice {
 
 Scheme_Object *os_wxChoice_class;
 
-os_wxChoice::os_wxChoice(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, long x9, string x10)
+os_wxChoice::os_wxChoice(Scheme_Object * o, class wxPanel* x0, wxFunction x1, nstring x2, int x3, int x4, int x5, int x6, int x7, string* x8, int x9, string x10)
 : wxChoice(x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10)
 {
   __gc_external = (void *)o;
@@ -621,7 +636,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   int x6;
   int x7;
   string* x8;
-  long x9;
+  int x9;
   string x10;
 
   Scheme_Object *tmp_callback = NULL;
@@ -651,7 +666,7 @@ static Scheme_Object *os_wxChoice_ConstructScheme(Scheme_Object *obj, int n,  Sc
   } else
     x8 = NULL;
   if (n > 8) {
-    x9 = objscheme_unbundle_integer(p[8], "wx:choice%::initialization");
+    x9 = unbundle_symset_choiceStyle(p[8], "wx:choice%::initialization");
   } else
     x9 = 0;
   if (n > 9) {

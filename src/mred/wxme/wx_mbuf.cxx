@@ -2275,6 +2275,11 @@ void wxMediaBuffer::AfterEditSequence(void)
   /* Do nothing */
 }
 
+void wxMediaBuffer::OnDisplaySize(void)
+{
+  /* Do nothing */
+}
+
 char *wxMediaBuffer::GetFile(char *path)
 {
   return wxFileSelector("Choose a file", path, NULL,

@@ -29,11 +29,13 @@
 
 @END
 
+@BEGINSYMBOLS messageStyle
+@ENDSYMBOLS
 
 @CLASSBASE wxMessage "wx:message" : "wx:item"
 
-@CREATOR (wxPanel!,string,int=-1,int=-1,long=0,string="message"); <> string label
-@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,long=0,string="message"); : : /CHECKOK[1."wx:message::initialization"] <> bitmap label
+@CREATOR (wxPanel!,string,int=-1,int=-1,SYM[messageStyle]=0,string="message"); <> string label
+@CREATOR (wxPanel!,wxBitmap!,int=-1,int=-1,SYM[messageStyle]=0,string="message"); : : /CHECKOK[1."wx:message::initialization"] <> bitmap label
 
 @INCLUDE wxs_item.xci
 

@@ -17,6 +17,21 @@
 #include "wxscomon.h"
 
 
+static int istype_symset_checkboxStyle(Scheme_Object *v, const char *where) {
+  if SCHEME_NULLP(v) return 1;
+  if (where) scheme_wrong_type(where, "checkboxStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int unbundle_symset_checkboxStyle(Scheme_Object *v, const char *where) {
+  istype_symset_checkboxStyle(v, where);
+  return 0;
+}
+static Scheme_Object *bundle_symset_checkboxStyle(int v) {
+  return scheme_null;
+}
+
+
 
 
 #define CB_FUNCTYPE wxFunction 
@@ -60,8 +75,8 @@ class os_wxCheckBox : public wxCheckBox {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxCheckBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, long x7 = 0, string x8 = "checkBox");
-  os_wxCheckBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, long x7 = 0, string x8 = "checkBox");
+  os_wxCheckBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "checkBox");
+  os_wxCheckBox(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "checkBox");
   ~os_wxCheckBox();
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
@@ -72,7 +87,7 @@ class os_wxCheckBox : public wxCheckBox {
 
 Scheme_Object *os_wxCheckBox_class;
 
-os_wxCheckBox::os_wxCheckBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, long x7, string x8)
+os_wxCheckBox::os_wxCheckBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8)
 : wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
   __gc_external = (void *)o;
@@ -80,7 +95,7 @@ os_wxCheckBox::os_wxCheckBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1
   objscheme_note_creation(o);
 }
 
-os_wxCheckBox::os_wxCheckBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, long x7, string x8)
+os_wxCheckBox::os_wxCheckBox(Scheme_Object * o, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, string x8)
 : wxCheckBox(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
   __gc_external = (void *)o;
@@ -453,7 +468,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x4;
     int x5;
     int x6;
-    long x7;
+    int x7;
     string x8;
 
     Scheme_Object *tmp_callback = NULL;
@@ -479,7 +494,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = objscheme_unbundle_integer(p[7], "wx:check-box%::initialization (bitmap label case)");
+      x7 = unbundle_symset_checkboxStyle(p[7], "wx:check-box%::initialization (bitmap label case)");
     } else
       x7 = 0;
     if (n > 8) {
@@ -499,7 +514,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     int x4;
     int x5;
     int x6;
-    long x7;
+    int x7;
     string x8;
 
     Scheme_Object *tmp_callback = NULL;
@@ -525,7 +540,7 @@ static Scheme_Object *os_wxCheckBox_ConstructScheme(Scheme_Object *obj, int n,  
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = objscheme_unbundle_integer(p[7], "wx:check-box%::initialization (string label case)");
+      x7 = unbundle_symset_checkboxStyle(p[7], "wx:check-box%::initialization (string label case)");
     } else
       x7 = 0;
     if (n > 8) {

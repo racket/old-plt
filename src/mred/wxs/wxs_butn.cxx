@@ -17,6 +17,21 @@
 #include "wxscomon.h"
 
 
+static int istype_symset_buttonStyle(Scheme_Object *v, const char *where) {
+  if SCHEME_NULLP(v) return 1;
+  if (where) scheme_wrong_type(where, "buttonStyle symbol list", -1, 0, &v);
+  return 0;
+}
+
+static int unbundle_symset_buttonStyle(Scheme_Object *v, const char *where) {
+  istype_symset_buttonStyle(v, where);
+  return 0;
+}
+static Scheme_Object *bundle_symset_buttonStyle(int v) {
+  return scheme_null;
+}
+
+
 
 
 
@@ -62,8 +77,8 @@ class os_wxButton : public wxButton {
  public:
   Scheme_Object *callback_closure;
 
-  os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, long x7 = 0, string x8 = "button");
-  os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, long x7 = 0, string x8 = "button");
+  os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, string x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button");
+  os_wxButton(Scheme_Object * obj, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3 = -1, int x4 = -1, int x5 = -1, int x6 = -1, int x7 = 0, string x8 = "button");
   ~os_wxButton();
   Bool PreOnEvent(class wxWindow* x0, class wxMouseEvent* x1);
   Bool PreOnChar(class wxWindow* x0, class wxKeyEvent* x1);
@@ -74,7 +89,7 @@ class os_wxButton : public wxButton {
 
 Scheme_Object *os_wxButton_class;
 
-os_wxButton::os_wxButton(Scheme_Object * o, class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, long x7, string x8)
+os_wxButton::os_wxButton(Scheme_Object * o, class wxPanel* x0, wxFunction x1, string x2, int x3, int x4, int x5, int x6, int x7, string x8)
 : wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
   __gc_external = (void *)o;
@@ -82,7 +97,7 @@ os_wxButton::os_wxButton(Scheme_Object * o, class wxPanel* x0, wxFunction x1, st
   objscheme_note_creation(o);
 }
 
-os_wxButton::os_wxButton(Scheme_Object * o, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, long x7, string x8)
+os_wxButton::os_wxButton(Scheme_Object * o, class wxPanel* x0, wxFunction x1, class wxBitmap* x2, int x3, int x4, int x5, int x6, int x7, string x8)
 : wxButton(x0, x1, x2, x3, x4, x5, x6, x7, x8)
 {
   __gc_external = (void *)o;
@@ -436,7 +451,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x4;
     int x5;
     int x6;
-    long x7;
+    int x7;
     string x8;
 
     Scheme_Object *tmp_callback = NULL;
@@ -462,7 +477,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = objscheme_unbundle_integer(p[7], "wx:button%::initialization (bitmap label case)");
+      x7 = unbundle_symset_buttonStyle(p[7], "wx:button%::initialization (bitmap label case)");
     } else
       x7 = 0;
     if (n > 8) {
@@ -482,7 +497,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     int x4;
     int x5;
     int x6;
-    long x7;
+    int x7;
     string x8;
 
     Scheme_Object *tmp_callback = NULL;
@@ -508,7 +523,7 @@ static Scheme_Object *os_wxButton_ConstructScheme(Scheme_Object *obj, int n,  Sc
     } else
       x6 = -1;
     if (n > 7) {
-      x7 = objscheme_unbundle_integer(p[7], "wx:button%::initialization (string label case)");
+      x7 = unbundle_symset_buttonStyle(p[7], "wx:button%::initialization (string label case)");
     } else
       x7 = 0;
     if (n > 8) {

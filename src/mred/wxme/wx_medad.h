@@ -6,7 +6,7 @@ class wxStyleCanvas;
 class wxStyleScrollbar;
 
 const long
-wxMCANVAS_NO_H_SCROLL = 0x1,
+wxMCANVAS_NO_H_SCROLL = 0x10,
 wxMCANVAS_NO_V_SCROLL = 0x2,
 wxMCANVAS_HIDE_H_SCROLL = 0x4,
 wxMCANVAS_HIDE_V_SCROLL = 0x8;

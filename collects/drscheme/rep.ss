@@ -112,6 +112,190 @@
 
   (define (show-interactions-history) (mred:message-box "Interactions History" "Not yet implemented"))
 
+  (define-struct sexp (left right prompt))
+  
+  (define newline-string (string #\newline))
+  
+  (define separator-snipclass
+    (make-object
+     (class-asi mred:snip-class%
+       (override
+	 [read (lambda (s) 
+		 (let ([size-box (box 0)])
+		   (send s get size-box)
+		   (make-object separator-snip%)))]))))
+  (send* separator-snipclass
+    (set-version 1)
+    (set-classname "mred:sepatator-snip%"))
+  (send (mred:get-the-snip-class-list) add separator-snipclass)
+  
+  ;; the two numbers 1 and 2 which appear here are to line up this snip
+  ;; with the embedded snips around it in the drscheme rep.
+  ;; I have no idea where the extra pixels are going.
+  (define separator-snip%
+    (class mred:snip% ()
+      (inherit get-style set-snipclass set-flags get-flags get-admin)
+      (private [width 500]
+	       [height 1]
+	       [white-around 2])
+      (override
+	[write (lambda (s) 
+		 (send s put (char->integer #\r)))]
+	[copy (lambda () 
+		(let ([s (make-object (object-class this))])
+		  (send s set-style (get-style))
+		  s))]
+	[get-extent
+	 (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
+	   (for-each (lambda (box) (when box (set-box! box 0)))
+		     (list descent-box space-box lspace-box rspace-box))
+	   (let* ([admin (get-admin)]
+		  [reporting-media (send admin get-text)]
+		  [reporting-admin (send reporting-media get-admin)]
+		  [widthb (box 0)]
+		  [space 2])
+	     (send reporting-admin get-view #f #f widthb #f)
+	     (set! width (- (unbox widthb)
+			    space
+			    2)))
+	   (set! height 1)
+	   (when w-box
+	     (set-box! w-box width))
+	   (when h-box
+	     (set-box! h-box (+ (* 2 white-around) height))))]
+	[draw
+	 (let* ([body-pen (send mred:the-pen-list find-or-create-pen
+				"BLUE" 0 'solid)]
+		[body-brush (send mred:the-brush-list find-or-create-brush
+				  "BLUE" 'solid)])
+	   (lambda (dc x y left top right bottom dx dy drawCaret)
+	     (let ([orig-pen (send dc get-pen)]
+		   [orig-brush (send dc get-brush)])
+	       (send dc set-pen body-pen)
+	       (send dc set-brush body-brush)
+	       
+	       (send dc draw-rectangle (+ x 1)
+		     (+ white-around y) width height)
+	       
+	       (send dc set-pen orig-pen)
+	       (send dc set-brush orig-brush))))]
+	[get-text
+	 (opt-lambda (offset num [flattened? #f])
+	   "separator-snip")])
+      (sequence
+	(super-init)
+	(set-flags (cons 'hard-newline (get-flags)))
+	(set-snipclass separator-snipclass))))
+  
+  (define make-single-threader
+    (lambda ()
+      (let ([sema (make-semaphore 1)])
+	(lambda (thunk)
+	  (dynamic-wind
+	   (lambda () (semaphore-wait sema))
+	   thunk
+	   (lambda () (semaphore-post sema)))))))
+  
+  (define console-max-save-previous-exprs 30)
+  (let* ([list-of? (lambda (p?)
+		     (lambda (l)
+		       (and (list? l)
+			    (andmap p? l))))]
+	 [snip/string? (lambda (s) (or (is-a? s mred:snip%) (string? s)))]
+	 [list-of-snip/strings? (list-of? snip/string?)]
+	 [list-of-lists-of-snip/strings? (list-of? list-of-snip/strings?)])
+    (fw:preferences:set-default
+     'mred:console-previous-exprs
+     null
+     list-of-lists-of-snip/strings?))
+  (let ([only-text-snips?
+	 (lambda (ls)
+	   (and (list? ls)
+		(andmap (lambda (s)
+			  (is-a? s mred:string-snip%))
+			ls)))]
+	[marshall 
+	 (lambda (lls)
+	   (map (lambda (ls)
+		  (map (lambda (s)
+			 (cond
+			   [(is-a? s mred:string-snip%)
+			    (send s get-text 0 (send s get-count))]
+			   [(string? s) s]
+			   [else "'non-text-snip"]))
+		       ls))
+		lls))]
+	[unmarshall (lambda (x) x)])
+    (fw:preferences:set-un/marshall
+     'mred:console-previous-exprs
+     marshall unmarshall))
+  
+  (define share-except 
+    (lambda (cp l)
+      (lambda ()
+	(make-parameterization-with-sharing
+	 cp cp
+	 l
+	 (lambda (pm) #f)))))
+
+  (define (dynamic-disable-break f)
+    (with-parameterization ((share-except
+			     (current-parameterization)
+			     (list break-enabled
+				   current-custodian 
+				   current-exception-handler
+				   parameterization-branch-handler)))
+      (lambda ()
+	(mzlib:thread:dynamic-disable-break f))))
+  
+  (define (dynamic-not-killable c needs-break? f)
+    ; Assume breaking is currently disabled
+    (let* ([cp (current-parameterization)]
+	   [result #f]
+	   [t-done (make-semaphore)]
+	   [t (parameterize ([current-custodian c]
+			     [parameterization-branch-handler
+			      (share-except
+			       cp
+			       ; Share break-enabled!
+			       (list current-exception-handler))])
+		   (thread
+		    (lambda ()
+		      (if needs-break?
+			  (with-handlers ([exn:misc:user-break?
+					   void])
+			       (set! result (f)))
+			  (set! result (f)))
+		      (semaphore-post t-done))))]
+	   [orig-t (current-thread)]
+	   [t2 (if needs-break?
+		   (parameterize ([current-custodian c]
+				  [parameterization-branch-handler
+				   (share-except
+				    cp
+				    (list break-enabled current-exception-handler))])
+		       (thread
+			(lambda ()
+			  ; If the original thread is killed, break the
+			  ;  work thread.
+			  (thread-wait orig-t)
+			  (break-thread t))))
+		   #f)]
+	   [kill-t2 (lambda ()
+		      (when t2
+			(parameterize ([current-custodian c])
+			   (kill-thread t2))))])
+      (if needs-break?
+	  (with-handlers ([exn:misc:user-break?
+			   (lambda (x)
+			     (break-thread t)
+			     (kill-t2)
+			     (raise x))])
+	     (mred:yield t-done))
+	  (mred:yield t-done))
+      (kill-t2)
+      result))
+
   (define (make-edit% super%)
     (class super% args
       (inherit insert change-style
@@ -839,191 +1023,6 @@
 		 (lock #t))))])
       (sequence
 	(apply super-init args))))
-  
-
-  (define-struct sexp (left right prompt))
-  
-  (define newline-string (string #\newline))
-  
-  (define separator-snipclass
-    (make-object
-     (class-asi mred:snip-class%
-       (override
-	 [read (lambda (s) 
-		 (let ([size-box (box 0)])
-		   (send s get size-box)
-		   (make-object separator-snip%)))]))))
-  (send* separator-snipclass
-    (set-version 1)
-    (set-classname "mred:sepatator-snip%"))
-  (send (mred:get-the-snip-class-list) add separator-snipclass)
-  
-  ;; the two numbers 1 and 2 which appear here are to line up this snip
-  ;; with the embedded snips around it in the drscheme rep.
-  ;; I have no idea where the extra pixels are going.
-  (define separator-snip%
-    (class mred:snip% ()
-      (inherit get-style set-snipclass set-flags get-flags get-admin)
-      (private [width 500]
-	       [height 1]
-	       [white-around 2])
-      (override
-	[write (lambda (s) 
-		 (send s put (char->integer #\r)))]
-	[copy (lambda () 
-		(let ([s (make-object (object-class this))])
-		  (send s set-style (get-style))
-		  s))]
-	[get-extent
-	 (lambda (dc x y w-box h-box descent-box space-box lspace-box rspace-box)
-	   (for-each (lambda (box) (when box (set-box! box 0)))
-		     (list descent-box space-box lspace-box rspace-box))
-	   (let* ([admin (get-admin)]
-		  [reporting-media (send admin get-text)]
-		  [reporting-admin (send reporting-media get-admin)]
-		  [widthb (box 0)]
-		  [space 2])
-	     (send reporting-admin get-view #f #f widthb #f)
-	     (set! width (- (unbox widthb)
-			    space
-			    2)))
-	   (set! height 1)
-	   (when w-box
-	     (set-box! w-box width))
-	   (when h-box
-	     (set-box! h-box (+ (* 2 white-around) height))))]
-	[draw
-	 (let* ([body-pen (send mred:the-pen-list find-or-create-pen
-				"BLUE" 0 'solid)]
-		[body-brush (send mred:the-brush-list find-or-create-brush
-				  "BLUE" 'solid)])
-	   (lambda (dc x y left top right bottom dx dy drawCaret)
-	     (let ([orig-pen (send dc get-pen)]
-		   [orig-brush (send dc get-brush)])
-	       (send dc set-pen body-pen)
-	       (send dc set-brush body-brush)
-	       
-	       (send dc draw-rectangle (+ x 1)
-		     (+ white-around y) width height)
-	       
-	       (send dc set-pen orig-pen)
-	       (send dc set-brush orig-brush))))]
-	[get-text
-	 (opt-lambda (offset num [flattened? #f])
-	   "separator-snip")])
-      (sequence
-	(super-init)
-	(set-flags (cons 'hard-newline (get-flags)))
-	(set-snipclass separator-snipclass))))
-  
-  (define make-single-threader
-    (lambda ()
-      (let ([sema (make-semaphore 1)])
-	(lambda (thunk)
-	  (dynamic-wind
-	   (lambda () (semaphore-wait sema))
-	   thunk
-	   (lambda () (semaphore-post sema)))))))
-  
-  (define console-max-save-previous-exprs 30)
-  (let* ([list-of? (lambda (p?)
-		     (lambda (l)
-		       (and (list? l)
-			    (andmap p? l))))]
-	 [snip/string? (lambda (s) (or (is-a? s mred:snip%) (string? s)))]
-	 [list-of-snip/strings? (list-of? snip/string?)]
-	 [list-of-lists-of-snip/strings? (list-of? list-of-snip/strings?)])
-    (fw:preferences:set-default
-     'mred:console-previous-exprs
-     null
-     list-of-lists-of-snip/strings?))
-  (let ([only-text-snips?
-	 (lambda (ls)
-	   (and (list? ls)
-		(andmap (lambda (s)
-			  (is-a? s mred:string-snip%))
-			ls)))]
-	[marshall 
-	 (lambda (lls)
-	   (map (lambda (ls)
-		  (map (lambda (s)
-			 (cond
-			   [(is-a? s mred:string-snip%)
-			    (send s get-text 0 (send s get-count))]
-			   [(string? s) s]
-			   [else "'non-text-snip"]))
-		       ls))
-		lls))]
-	[unmarshall (lambda (x) x)])
-    (fw:preferences:set-un/marshall
-     'mred:console-previous-exprs
-     marshall unmarshall))
-  
-  (define share-except 
-    (lambda (cp l)
-      (lambda ()
-	(make-parameterization-with-sharing
-	 cp cp
-	 l
-	 (lambda (pm) #f)))))
-
-  (define (dynamic-disable-break f)
-    (with-parameterization ((share-except
-			     (current-parameterization)
-			     (list break-enabled
-				   current-custodian 
-				   current-exception-handler
-				   parameterization-branch-handler)))
-      (lambda ()
-	(mzlib:thread:dynamic-disable-break f))))
-  
-  (define (dynamic-not-killable c needs-break? f)
-    ; Assume breaking is currently disabled
-    (let* ([cp (current-parameterization)]
-	   [result #f]
-	   [t-done (make-semaphore)]
-	   [t (parameterize ([current-custodian c]
-			     [parameterization-branch-handler
-			      (share-except
-			       cp
-			       ; Share break-enabled!
-			       (list current-exception-handler))])
-		   (thread
-		    (lambda ()
-		      (if needs-break?
-			  (with-handlers ([exn:misc:user-break?
-					   void])
-			       (set! result (f)))
-			  (set! result (f)))
-		      (semaphore-post t-done))))]
-	   [orig-t (current-thread)]
-	   [t2 (if needs-break?
-		   (parameterize ([current-custodian c]
-				  [parameterization-branch-handler
-				   (share-except
-				    cp
-				    (list break-enabled current-exception-handler))])
-		       (thread
-			(lambda ()
-			  ; If the original thread is killed, break the
-			  ;  work thread.
-			  (thread-wait orig-t)
-			  (break-thread t))))
-		   #f)]
-	   [kill-t2 (lambda ()
-		      (when t2
-			(parameterize ([current-custodian c])
-			   (kill-thread t2))))])
-      (if needs-break?
-	  (with-handlers ([exn:misc:user-break?
-			   (lambda (x)
-			     (break-thread t)
-			     (kill-t2)
-			     (raise x))])
-	     (mred:yield t-done))
-	  (mred:yield t-done))
-      (kill-t2)
-      result))
 
   (define make-console-edit%
     (lambda (super%)

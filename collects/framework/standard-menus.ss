@@ -255,7 +255,10 @@
                            "")
                           (get-file-menu)
                           file-menu:new
-                          #\n
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\n
+                           #f)
                           (file-menu:new-help-string)))))
          (sequence (file-menu:between-new-and-open (get-file-menu)))
          (private (file-menu:open-item
@@ -270,7 +273,10 @@
                            "...")
                           (get-file-menu)
                           file-menu:open
-                          #\o
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\o
+                           #f)
                           (file-menu:open-help-string)))))
          (sequence (file-menu:between-open-and-revert (get-file-menu)))
          (private (file-menu:revert-item
@@ -285,7 +291,7 @@
                            "")
                           (get-file-menu)
                           file-menu:revert
-                          #f
+                          (if (preferences:get 'framework:menu-bindings) #f #f)
                           (file-menu:revert-help-string)))))
          (sequence (file-menu:between-revert-and-save (get-file-menu)))
          (private (file-menu:save-item
@@ -300,7 +306,10 @@
                            "")
                           (get-file-menu)
                           file-menu:save
-                          #\s
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\s
+                           #f)
                           (file-menu:save-help-string)))))
          (private (file-menu:save-as-item
                    (and file-menu:save-as
@@ -314,7 +323,7 @@
                            " &As...")
                           (get-file-menu)
                           file-menu:save-as
-                          #f
+                          (if (preferences:get 'framework:menu-bindings) #f #f)
                           (file-menu:save-as-help-string)))))
          (sequence (file-menu:between-save-as-and-print (get-file-menu)))
          (private (file-menu:print-item
@@ -329,7 +338,10 @@
                            "...")
                           (get-file-menu)
                           file-menu:print
-                          #\p
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\p
+                           #f)
                           (file-menu:print-help-string)))))
          (sequence (file-menu:between-print-and-close (get-file-menu)))
          (private (file-menu:close-item
@@ -344,7 +356,10 @@
                            "")
                           (get-file-menu)
                           file-menu:close
-                          #\w
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\w
+                           #f)
                           (file-menu:close-help-string)))))
          (sequence (file-menu:between-close-and-quit (get-file-menu)))
          (private (file-menu:quit-item
@@ -359,7 +374,10 @@
                            "")
                           (get-file-menu)
                           file-menu:quit
-                          #\q
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\q
+                           #f)
                           (file-menu:quit-help-string)))))
          (sequence (file-menu:after-quit (get-file-menu)))
          (private (edit-menu:undo-item
@@ -374,7 +392,10 @@
                            "")
                           (get-edit-menu)
                           edit-menu:undo
-                          #\z
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\z
+                           #f)
                           (edit-menu:undo-help-string)))))
          (private (edit-menu:redo-item
                    (and edit-menu:redo
@@ -388,7 +409,10 @@
                            "")
                           (get-edit-menu)
                           edit-menu:redo
-                          #\y
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\y
+                           #f)
                           (edit-menu:redo-help-string)))))
          (sequence (edit-menu:between-redo-and-cut (get-edit-menu)))
          (private (edit-menu:cut-item
@@ -403,7 +427,10 @@
                            "")
                           (get-edit-menu)
                           edit-menu:cut
-                          #\x
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\x
+                           #f)
                           (edit-menu:cut-help-string)))))
          (sequence (edit-menu:between-cut-and-copy (get-edit-menu)))
          (private (edit-menu:copy-item
@@ -418,7 +445,10 @@
                            "")
                           (get-edit-menu)
                           edit-menu:copy
-                          #\c
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\c
+                           #f)
                           (edit-menu:copy-help-string)))))
          (sequence (edit-menu:between-copy-and-paste (get-edit-menu)))
          (private (edit-menu:paste-item
@@ -433,7 +463,10 @@
                            "")
                           (get-edit-menu)
                           edit-menu:paste
-                          #\v
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\v
+                           #f)
                           (edit-menu:paste-help-string)))))
          (sequence (edit-menu:between-paste-and-clear (get-edit-menu)))
          (private (edit-menu:clear-item
@@ -448,7 +481,7 @@
                            "")
                           (get-edit-menu)
                           edit-menu:clear
-                          #f
+                          (if (preferences:get 'framework:menu-bindings) #f #f)
                           (edit-menu:clear-help-string)))))
          (sequence (edit-menu:between-clear-and-select-all (get-edit-menu)))
          (private (edit-menu:select-all-item
@@ -463,7 +496,10 @@
                            "")
                           (get-edit-menu)
                           edit-menu:select-all
-                          #\a
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\a
+                           #f)
                           (edit-menu:select-all-help-string)))))
          (sequence (edit-menu:between-select-all-and-find (get-edit-menu)))
          (private (edit-menu:find-item
@@ -478,7 +514,10 @@
                            "")
                           (get-edit-menu)
                           edit-menu:find
-                          #\f
+                          (if
+                           (preferences:get 'framework:menu-bindings)
+                           #\f
+                           #f)
                           (edit-menu:find-help-string)))))
          (sequence (edit-menu:between-find-and-preferences (get-edit-menu)))
          (private (edit-menu:preferences-item
@@ -493,7 +532,7 @@
                            "")
                           (get-edit-menu)
                           edit-menu:preferences
-                          #f
+                          (if (preferences:get 'framework:menu-bindings) #f #f)
                           (edit-menu:preferences-help-string)))))
          (sequence (edit-menu:after-preferences (get-edit-menu)))
          (private (help-menu:about-item
@@ -508,6 +547,6 @@
                            "...")
                           (get-help-menu)
                           help-menu:about
-                          #f
+                          (if (preferences:get 'framework:menu-bindings) #f #f)
                           (help-menu:about-help-string)))))
          (sequence (help-menu:after-about (get-help-menu)))))

@@ -1,5 +1,4 @@
 (define (wait-for-frame name)
-  (printf "???~n")
   (let ([timeout 10]
 	[pause-time 1/2])
     (send-sexp-to-mred

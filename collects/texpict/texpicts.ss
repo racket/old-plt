@@ -11,6 +11,8 @@
 
    draw-bezier-lines
 
+   output-measure-commands
+
    tex-series-prefix
    serialize-tex-picts
    

@@ -18,6 +18,11 @@
 		  (lambda (x)
 		    (and x #t))))
 
+(define output-measure-commands
+  (make-parameter #t
+		  (lambda (x)
+		    (and x #t))))
+
 (define draw-bezier-lines
   (make-parameter #f
 		  (lambda (x)
@@ -220,8 +225,10 @@
 	   [d (if info (cadddr info) guess-height)])
       (make-pict `(picture ,w ,(+ d h)
 			   (put 0 ,d
-				,(format "\\mztpMeasure{~a}{~a}"
-					 t label)))
+				,(if (output-measure-commands)
+				     (format "\\mztpMeasure{~a}{~a}"
+					     t label)
+				     t)))
 		 w
 		 (+ d h)
 		 h d

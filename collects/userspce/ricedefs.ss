@@ -1,5 +1,3 @@
-; -*- Scheme -*-
-
 (define-signature ricedefs^
   (random-char
    call/cc0
@@ -8,5 +6,6 @@
    2vector-init 2vector-print
    build-vector build-string build-list tabulate
    ; atom? cons? 
-   cons list? set-cdr!))
+   cons set-cdr! list? list* append append!))
+   
    

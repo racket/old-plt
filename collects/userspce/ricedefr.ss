@@ -1,14 +1,11 @@
-
 (plt:require-library "ricedefs.ss")
 
 (define ricedefs@
   (unit/sig ricedefs^
-    (import)
+    (import [params : plt:parameters^])
     
-    ; ----------------------------------------------------------------------
-    
-    (define random-char
       ; return random lower case character
+    (define random-char
       (lambda ()
 	(integer->char (+ 97 (random 26)))))
     
@@ -125,30 +122,42 @@
     
     (define cons? pair?)
     
-    (define cons
-      (let ((cons #%cons)(pair? pair?)(not not)
-	    (make-exn make-exn:application:type)(raise raise)
-	    (format format) (debug-info-handler debug-info-handler))
-	(lambda (x y)
-	  (if (not (or (pair? y) (null? y)))
-	      (raise (make-exn (format "cons: second argument must be a list; provided ~s" y)
-			       ((debug-info-handler))
-			       y
-			       'list))
-	      (cons x y)))))
-    
-    (define list?
-      (let ((pair? pair?) (null? null?))
-	(lambda (l) (or (pair? l) (null? l)))))
-    
-    (define set-cdr!
-      (let ((pair? pair?) (null? null?) (set-cdr! #%set-cdr!) (error error)
-	    (make-exn make-exn:application:type)(raise raise)
-	    (format format) (debug-info-handler debug-info-handler))
-	(lambda (x y)
-	  (if (not (or (pair? y) (null? y)))
-	      (raise (make-exn (format "set-cdr!: second argument must be a list; provided ~s" y)
-			       ((debug-info-handler))
-			       y
-			       'list))
-	      (set-cdr! x y)))))))
+    (define last
+      (lambda (l)
+	(cond
+	  [(null? l) (error 'last "received an empty list")]
+	  [(null? (cdr l)) (car l)]
+	  [else (last (cdr l))])))
+
+    (define make-last-checked
+      (lambda (prim prim-name)
+	(if params:allow-improper-lists?
+	    prim
+	    (lambda args
+	      (let ([l (last args)])
+		(if (cons? l)
+		    (apply prim args)
+		    (error prim-name
+			   "last argument must be of type <proper list>, given ~a; all args: ~a"
+			   l
+			   args)))))))
+
+    (define make-second-checked 
+      (lambda (prim prim-name)
+	(if params:allow-improper-lists?
+	    prim
+	    (lambda (a b)
+	      (if (cons? b)
+		  (prim a b)
+		  (error prim-name
+			 "second argument must be of type <proper list>, given ~a and ~a"
+			 a b))))))
+
+    (define cons (make-second-checked #%cons 'cons))
+    (define set-cdr! (make-second-checked #%set-cdr! 'set-cdr!))
+    (define list? (if params:allow-improper-lists?
+		      #%list?
+		      (lambda (l) (or (cons? l) (null? l)))))
+    (define list* (make-last-checked #%list* 'list*))
+    (define append (make-last-checked #%append 'append))
+    (define append! (make-last-checked #%append! 'append!))))

@@ -44,7 +44,7 @@
 	  [edit : drscheme:edit^ (drscheme:edit@ mred print-convert spawn)]
 	  [frame : drscheme:frame^
 	    (drscheme:frame@ mred mzlib setup project tool)]
-	  [aries : drscheme:aries^ (drscheme:aries@ mred mzlib zodiac interface edit frame)]
+	  [aries : drscheme:aries^ (drscheme:aries@ mred mzlib print-convert zodiac interface edit frame)]
 	  [project : drscheme:project^ (drscheme:project@ mred mzlib aries edit spawn)])
     (export (open setup)
 	    (open tool)

@@ -2,7 +2,7 @@
 ;; a text when the file begins with WXME so that mred saved
 ;; files still load properly.
 
-(when '(getenv "MREDDEBUG")
+(when (getenv "MREDDEBUG")
   (require-library "errortrace.ss" "errortrace") (error-print-width 200)
   (current-load (let ([ol (current-load)]) (lambda (x) (printf "~a~n" x) (ol x)))))
 

@@ -1,3 +1,15 @@
+
+Version 102/1:
+
+ * Added `read-decimal-as-inexact' parameter, which controls how
+   numbers containg a decimal or exponent are interpreted by `read' and
+   `string->number' when an explicit exactness tag is not present. The
+   default is #t, which means parse as inexact (normal behavior). #f
+   means parse as exact.
+
+Version 101, ??
+Added read-decimal-as-inexact parameter
+
 Version 101, October 25, 1999
 Added 'sys-dir to find-system-path
 Added latin-1-integer->char and char->latin-1-integer

@@ -42,7 +42,7 @@
 				   (unbox report))
 			  (zodiac:interface:dynamic-error
 			   (unbox report) "~a" (exn-message exn)))))
-		    (mred:message-box (format "~a" exn) "Uncaught Exception")
+		    (mred:message-box (format "~s" exn) "Uncaught Exception")
 		    ((error-escape-handler))))  
 		(error-value->string-handler
 		 (lambda (x n)
@@ -148,10 +148,10 @@
 				  [current-load do-load]
 				  [mzlib:pretty-print@:pretty-print-size-hook size-hook]
 				  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
-				 (eval expr)))))]
+		     (eval expr)))))]
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
-	       (opt-lambda (expr [callback void])
+	       (opt-lambda (expr [before void] [after void])
 		 (let* ([user-code
 			 (lambda ()
 			   '(begin (printf "sending scheme:~n")
@@ -175,7 +175,8 @@
 			      (mzlib:function@:dynamic-wind/protect-break
 			       (lambda () 
 				 (semaphore-wait s)
-				 (set! current-thread-desc (current-thread)))
+				 (set! current-thread-desc (current-thread))
+				 (before))
 			       (lambda ()
 				 (set! user-code-error? (let/ec k 
 							  (mzlib:function@:dynamic-disable-break
@@ -187,7 +188,7 @@
 				 (set! current-thread-desc #f)
 				 (set-escape #f)
 				 (semaphore-post s)
-				 (callback user-code-error?))))))))))]
+				 (after user-code-error?))))))))))]
 	    [do-many-buffer-evals
 	     (lambda (edit start end pre post)
 	       (let ([pre (lambda ()
@@ -196,39 +197,26 @@
 		     [post (lambda () 
 			     (wx:end-busy-cursor)
 			     (post))]
-		     [get-sexps
+		     [get-zodiac-code
 		      (lambda ()
-			(call-with-values 
-			 (lambda ()
-			   (aries:transform 
-			    (mred:read-snips/chars-from-buffer edit start end)
-			    start edit))
-			 (lambda e e)))])
-		 (do-many-evals get-sexps pre post)))]
+			(let* ([structurized (send edit get-zodiac-sexp)]
+			       [expanded (zodiac:expand structurized)]
+			       [annotated (aries:annotate expanded)])
+			  annotated))])
+		 (do-many-evals get-zodiac-code pre post)))]
 	    [do-many-evals
 	     (lambda (get-sexps pre post)
-	       (let ([post-done? #f])
 		 (let/ec k
-		   (dynamic-wind
-		    (lambda ()
-		      (set-escape (lambda () (k #f)))
-		      (pre))
-		    (lambda ()
-		      (let ([sexps (get-sexps)])
-			(set! post-done? #t)
-			(set-escape #f)
-			(let loop ([exprs sexps])
-			  (cond
-			   [(null? exprs) (post)]
-			   [else (send-scheme (car exprs)
-					      (lambda (error?)
-						(if error?
-						    (post)
-						    (loop (cdr exprs)))))]))))
-		    (lambda ()
-		      (unless post-done?
-			(set-escape #f)
-			(post)))))))]
+		   (let ([new-pre
+			  (lambda ()
+			    (set-escape (lambda () (k #f)))
+			    (pre))]
+			 [new-post 
+			  (lambda (sucessful?)
+			    (set-escape #f)
+			    (post))]
+			 [sexp (get-sexps)])
+		     (send-scheme sexp new-pre new-post))))]
 	    [do-load
 	     (lambda (filename)
 	       (call-with-input-file filename
@@ -244,12 +232,32 @@
 				      (loop (cdr sexps)))])))))))]
 	    [do-eval
 	     (lambda (start end)
-	       (mred:local-busy-cursor
-		(get-canvas)
-		(lambda ()
-		  (do-many-buffer-evals this start end
-		   (lambda () (do-pre-eval))
-		   (lambda () (do-post-eval))))))])
+	       (let ([get-sexp
+		      (lambda ()
+			(let* ([loc (zodiac:make-location 0 0 start this)]
+			       [reader (zodiac:read
+					(mred:read-snips/chars-from-buffer
+					 this start end)
+					loc)]
+			       [exprs (let loop ()
+					(let ([expr (reader)])
+					  (if (zodiac:eof? expr)
+					      null
+					      (cons expr (loop)))))]
+			       [built `(begin ,@exprs)]
+			       [structurized (zodiac:structurize-syntax
+					      built
+					      (zodiac:make-zodiac 'rep loc loc))]
+			       [expanded (zodiac:expand structurized)]
+			       [annotated (aries:annotate expanded)])
+			  annotated))])
+		 (mred:local-busy-cursor
+		  (get-canvas)
+		  (lambda ()
+		    (do-many-evals
+		     get-sexp
+		     (lambda () (do-pre-eval))
+		     (lambda () (do-post-eval)))))))])
 	  (public
 	    [reset-console
 	     (lambda ()

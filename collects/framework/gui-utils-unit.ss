@@ -220,7 +220,7 @@
               (send text split-snip start)
               (send text split-snip end)
               
-	  ;; must get all of the snips out of the buffer before reading -- they may change.
+	      ;; must get all of the snips out of the buffer before reading -- they may change.
               (let loop ([snips (get-snips text start end)])
                 
                 (cond

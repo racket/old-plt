@@ -452,6 +452,23 @@ Bool wxGetUnicodeGlyphAvailable(int c,
   return (r != kATSUFontsNotMatched);
 }
 
+static atomic_timeout_t pre_scheme()
+{
+  atomic_timeout_t old;
+
+  old = scheme_on_atomic_timeout;
+  scheme_on_atomic_timeout = NULL;
+  scheme_start_atomic();
+  scheme_current_thread->suspend_break++;
+  return old;
+}
+
+static void post_scheme(atomic_timeout_t old)
+{
+  --scheme_current_thread->suspend_break;
+  scheme_end_atomic_no_swap();
+  scheme_on_atomic_timeout = old;
+}
 
 #define QUICK_UBUF_SIZE 512
 static UniChar u_buf[QUICK_UBUF_SIZE];
@@ -604,7 +621,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   if (qd_spacing) {
     /* Get all cached sizes */
     double r = 0;
-    int i, all = 1;
+    int i, all = 1, wc, di;
     atomic_timeout_t old;
 
     if (ulen > QUICK_UBUF_SIZE)
@@ -612,13 +629,18 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     else
       widths = widths_buf;
 
-    old = scheme_on_atomic_timeout;
-    scheme_on_atomic_timeout = NULL;
-    scheme_start_atomic();
-    scheme_current_thread->suspend_break++;
+    old = pre_scheme();
 
-    for (i = 0; i < (int)ulen; i++) {
-      ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = unicode[i];
+    for (i = 0; i < (int)ulen; i += di) {
+      wc = unicode[i];
+      if ((wc & 0xF800) == 0xD800) {
+	/* Yuck. Re-un-parse UTF-16... */
+	wc = ((wc & 0x3FF) << 10) + (unicode[i+1] & 0x3FF);
+	di = 2;
+      } else
+	di = 1;
+      
+      ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = uc;
       val = scheme_hash_get(width_table, table_key);
       if (!val) {
 	val = scheme_hash_get(old_width_table, table_key);
@@ -639,9 +661,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       }
     }
 
-    --scheme_current_thread->suspend_break;
-    scheme_end_atomic_no_swap();
-    scheme_on_atomic_timeout = old;
+    post_scheme(old);
 
     if (all && just_meas)
       return r;
@@ -737,13 +757,20 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   /* unicode string could move, and because GCing might attempt to   */
   /* draw a bitmap into the same port. */
 
-  one_ulen = (qd_spacing ? 1 : ulen);
-
   delta = 0;
 	
   while (1) {
     if (delta >= ulen)
       break;
+
+    if (qd_spacing) {
+      if ((unicode[delta] & 0xF800) == 0xD800) {
+	/* Surrogate pair; need to handle 2 at a time */
+	one_ulen = 2;
+      } else
+	one_ulen = 1;
+    } else
+      one_ulen = ulen;
 
     if (qd_spacing) {
       if (widths[delta] >= 0) {
@@ -981,18 +1008,23 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     /* Record collected widths. (We can't record these during the
        drawing loop because it might trigger a GC, which might try to
        draw a GC bitmap, etc. */
-    int j;
+    int j, wc, dj;
     atomic_timeout_t old;
 
-    old = scheme_on_atomic_timeout;
-    scheme_on_atomic_timeout = NULL;
-    scheme_start_atomic();
-    scheme_current_thread->suspend_break++;
+    old = pre_scheme();
 
-    for (j = 0; j < (int)ulen; j++) {
+    for (j = 0; j < (int)ulen; j += dj) {
+      wc = unicode[i];
+      if ((wc & 0xF800) == 0xD800) {
+	/* Yuck. Re-un-parse UTF-16... */
+	wc = ((wc & 0x3FF) << 10) + (unicode[i+1] & 0x3FF);
+	dj = 2;
+      } else
+	dj = 1;
+
       if (widths[j] >= 0) {
 	val = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
-	((wxKey *)SCHEME_BYTE_STR_VAL(val))->code = unicode[j];
+	((wxKey *)SCHEME_BYTE_STR_VAL(val))->code = wc;
 	scheme_hash_set(width_table, val, scheme_make_double(widths[j]));
 	if (width_table->mcount >= MAX_WIDTH_MAPPINGS) {
 	  /* rotate tables, so width_table doesn't grow indefinitely,
@@ -1003,9 +1035,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       }
     }
 
-    --scheme_current_thread->suspend_break;
-    scheme_end_atomic_no_swap();
-    scheme_on_atomic_timeout = old;
+    post_scheme(old);
   }
 
   END_TIME(draw);

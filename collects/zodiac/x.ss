@@ -22,10 +22,18 @@
 
   (define create-vocabulary
     (opt-lambda (name (root #f)
-		  (symbol-error "Invalid symbol syntax")
-		  (literal-error "Invalid literal syntax")
-		  (list-error "Invalid list syntax")
-		  (ilist-error "Invalid improper-list syntax"))
+		  (symbol-error (if root
+				  (vocabulary-record-symbol-error root)
+				  "Invalid symbol syntax"))
+		  (literal-error (if root
+				   (vocabulary-record-literal-error root)
+				   "Invalid literal syntax"))
+		  (list-error (if root
+				(vocabulary-record-list-error root)
+				"Invalid list syntax"))
+		  (ilist-error (if root
+				 (vocabulary-record-ilist-error root)
+				 "Invalid improper-list syntax")))
       (let ((h (make-hash-table)))
 	(make-vocabulary-record name h root
 	  symbol-error literal-error list-error ilist-error))))

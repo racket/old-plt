@@ -21,11 +21,6 @@
 ; media-canvas%
 ; text-window%
 
-  (let-macro PRINTF
-    ; Swap commenting of the next two lines to enable/disbale debugging
-    ; (lambda args (list* 'mred:debug:printf args))
-    void
-    
     (unit/sig mred:container-children^
       (import [mred:constants : mred:constants^]
 	      [mred:connections : mred:connections^]
@@ -239,7 +234,7 @@
 	      ; intended to be called by item's parent upon resize.
 	      [get-info
 	       (lambda ()
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-child-get-info
 		  "container-child-get-info: Entering get-info; object ~s"
 		  object-ID)
@@ -249,7 +244,7 @@
 						 (x-margin-width) (y-margin-height)
 						 (stretchable-in-x)
 						 (stretchable-in-y))])
-		   (PRINTF 
+		   (mred:debug:printf 
 		    'container-child-get-info
 		    "container-child-get-info: Result: ~s" result)
 		   result))]
@@ -262,7 +257,7 @@
 	      ;   invalid.
 	      [force-redraw
 	       (lambda ()
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-child-force-redraw
 		  (string-append
 		   "container-child-force-redraw: "
@@ -270,7 +265,7 @@
 		  object-ID)
 		 (let ([parent (get-parent)])
 		   (unless (null? parent)
-		     (PRINTF
+		     (mred:debug:printf
 		      'container-child-force-redraw
 		      (string-append
 		       "container-child-force-redraw: "
@@ -290,7 +285,7 @@
 			      (same-dimension? y (get-y))
 			      (same-dimension? width (get-width))
 			      (same-dimension? height (get-height)))
-		   (PRINTF 'container-child-set-size
+		   (mred:debug:printf 'container-child-set-size
 			   (string-append
 			    "container-child-set-size: "
 			    "Calling super-set-size ~s ~s ~s ~s")
@@ -305,20 +300,20 @@
 	      ; returns: a list containing the minimum width & height.
 	      [get-min-size
 	       (lambda ()
-		 (PRINTF
+		 (mred:debug:printf
 		  'container-child-get-min-size
 		  "container-child-get-min-size; object ~s;  "
 		  object-ID)
 		 (let ([w (+ (* 2 (x-margin-width)) (max min-width (user-min-width)))]
 		       [h (+ (* 2 (y-margin-height)) (max min-height (user-min-height)))])
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-get-min-size
 		    "container-child-get-min-size: Result:  ~s"
 		    (list w h))
 		   (list w h)))])
 	    
 	    (sequence
-	      (PRINTF 'container-child-init
+	      (mred:debug:printf 'container-child-init
 		      "container-child-init: Args to super-init: ~s"
 		      (apply make-default-size args))
 	      (apply super-init (apply make-default-size args))
@@ -426,21 +421,21 @@
 		       [delta-h (- (get-height) client-height)]
 		       [horizontal 
 			(positive? (bitwise-and style wx:const-horizontal))])
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-set-min-sizes
 		    (string-append
 		     "container-child-set-min-sizes: "
 		     "entering gauge set-min-size; args ~s ~s")
 		    range style)
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-set-min-sizes
 		    "container-child-set-min-sizes: client size: ~s x ~s"
 		    client-width client-height)
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-set-min-sizes
 		    "container-child-set-min-sizes: actual size: ~s x ~s"
 		    (get-width) (get-height))
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-set-min-sizes
 		    "container-child-set-min-sizes: setting sizes & leaving")
 		   (set-min-width (if horizontal
@@ -465,7 +460,7 @@
 			    (list* parent label range x y const-default-size
 				   const-default-size style args))
 			  args)])
-	      (PRINTF
+	      (mred:debug:printf
 	       'container-gauge-init
 	       "container-gauge-init: Args to gauge: ~s" new-args)
 	      (apply super-init new-args)
@@ -550,21 +545,21 @@
 		       [range (add1 (- max-val min-val))]
 		       [horizontal 
 			(positive? (bitwise-and style wx:const-horizontal))])
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-set-min-sizes
 		    (string-append
 		     "container-child-set-min-sizes: "
 		     "Entering slider's set-min-size; args ~s ~s ~s")
 		    min-val max-val style)
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-set-min-sizes
 		    "container-child-set-min-sizes: Client size: ~s x ~s"
 		    client-w client-h)
-		   (PRINTF
+		   (mred:debug:printf
 		    'container-child-set-min-sizes
 		    "container-child-set-min-sizes: Full size: ~s x ~s"
 		    full-width full-height)
-		   (PRINTF 
+		   (mred:debug:printf         
 		    'container-child-set-min-sizes
 		    (string-append
 		     "container-child-set-min-sizes: "
@@ -650,4 +645,4 @@
       (define media-canvas% (make-item%
 			     mred:connections:connections-media-canvas%
 			     0 0 #t #t canvas-args))
-      (define text-window% (make-item% wx:text-window% 0 0 #t #t canvas-args))))
+      (define text-window% (make-item% wx:text-window% 0 0 #t #t canvas-args)))

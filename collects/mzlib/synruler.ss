@@ -264,6 +264,11 @@
 		(cond ((not (pair? l)) #f)
 		      ((equal? (car l) x) i)
 		      (else (loop (cdr l) (+ i 1))))))]
+           [mbe:append-map
+            (lambda (f l)
+              (let loop ((l l))
+                (if (null? l) '()
+                    (append (f (car l)) (loop (cdr l))))))]
 	   [mbe:matches-pattern?
 	    (lambda (p e k)
 	      (cond 
@@ -332,10 +337,24 @@
 		 [(symbol? p) (if (memq p k) '() (list p))]
 		 [else '()])))]
 	   [mbe:ellipsis-sub-envs
-	    (lambda (nestings r)
-	      (ormap (lambda (c)
-		       (if (mbe:contained-in? nestings (car c)) (cdr c) #f))
-		     r))]
+            (lambda (nestings r)
+              (let ((sub-envs-list 
+                     (let loop ((r r) (sub-envs-list '()))
+                       (if (null? r) (reverse! sub-envs-list)
+                           (let ((c (car r)))
+                             (loop (cdr r)
+                                   (if (mbe:contained-in? nestings (car c))
+                                       (cons (cdr c) sub-envs-list)
+                                       sub-envs-list)))))))
+                (case (length sub-envs-list)
+                  ((0) #f)
+                  ((1) (car sub-envs-list))
+                  (else
+                   (let loop ((sub-envs-list sub-envs-list) (final-sub-envs '()))
+                     (if (ormap null? sub-envs-list) (reverse! final-sub-envs)
+                         (loop (map cdr sub-envs-list)
+                               (cons (mbe:append-map car sub-envs-list)
+                                     final-sub-envs))))))))]
 	   [mbe:contained-in?
 	    (lambda (v y)
 	      (if (or (symbol? v) (symbol? y)) (eq? v y)

@@ -67,6 +67,9 @@ The make process for MrEd automatically builds
    wxwin - makes plt\src\worksp\wxwin\Release\wxwin.lib
    wxs  - makes plt\src\worksp\wxs\Release\wxs.lib
    wxme  - makes plt\src\worksp\wxme\Release\wxme.lib
+   jpeg  - makes plt\src\worksp\jpeg\Release\jpeg.lib
+   png  - makes plt\src\worksp\jpeg\Release\png.lib
+   zlib  - makes plt\src\worksp\jpeg\Release\zlib.lib
 
 To complete a build, run the versioning script described in the next
 section.

@@ -10,6 +10,7 @@
   (define make-so (make-parameter #f))
   (define make-launchers (make-parameter #t))
   (define call-install (make-parameter #t))
+  (define pause-on-errors (make-parameter #f))
 
   (define specific-collections (make-parameter null))
   (define archives (make-parameter null)))

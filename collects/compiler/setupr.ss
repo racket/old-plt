@@ -525,6 +525,10 @@
 	 (setup-fprintf (current-error-port) " Error during ~a for ~a (~a)"
 			desc (cc-name cc) (cc-path cc))))
      errors)
+    (when (pause-on-errors)
+      (fprintf (current-error-port)
+	       "INSTALLATION FAILED.~nPress Enter to continue...~n")
+      (read-line))
     (exit -1))
 
   (exit 0))

@@ -12,5 +12,6 @@
    make-so
    make-launchers
    call-install
+   pause-on-errors
    specific-collections
    archives))

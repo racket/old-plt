@@ -33,6 +33,8 @@
     [("-r" "--compile-verbose") "See make and compiler verbose messages"
 				(make-verbose #t)
 				(compiler-verbose #t)]
+    [("-p" "--pause") "Pause at the end if there are any errors"
+		      (pause-on-errors #t)]
     [("-l") =>
 	    (lambda (flag . collections)
 	      (map list collections))

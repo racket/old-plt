@@ -123,7 +123,7 @@
 	     [use-read-syntax (quasi-read-style-printing)]
 	     [doesnt-contain-shared-conses
 	      (lambda (input-expr)
-		(local [(define doesnt-contain-shared-conses
+		(letrec ([doesnt-contain-shared-conses
 			  (lambda (expr)
 			    (cond
 			      [(and (pair? expr)
@@ -131,7 +131,7 @@
 			       #f]
 			      [(pair? expr)
 			       (doesnt-contain-shared-conses (cdr expr))]
-			      [else #t])))]
+			      [else #t]))])
 		  (let ([answer (doesnt-contain-shared-conses input-expr)])
 		    answer)))]
 	     [print

@@ -145,7 +145,7 @@
 			  (map cdr l))]))))
 	(case-lambda
 	 [(f init l) (fold-one f init l)]
-	 [(f init . ls) (fold-n f init ls)]))))
+	 [(f init l . ls) (fold-n f init (cons l ls))]))))
    
    (define foldr
      (polymorphic
@@ -169,7 +169,7 @@
 					(fold-n f init (map cdr l))))]))))
 	(case-lambda
 	 [(f init l) (fold-one f init l)]
-	 [(f init . ls) (fold-n f init ls)]))))
+	 [(f init l . ls) (fold-n f init (cons l ls))]))))
    
    (define first (polymorphic car))
    (define second (polymorphic cadr))

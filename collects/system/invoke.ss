@@ -51,7 +51,10 @@
 	     (compound-unit/sig (import)
 	       (link [core : mzlib:core^ ((reference-library-unit/sig "corer.ss"))]
 		     [trigger : mzlib:trigger^ ((reference-library-unit/sig "triggerr.ss"))]
-		     [mred : mred^ ((let ([u@ (reference-unit/sig "link.ss")])
+		     [mred : mred^ ((let ([u@ (reference-unit/sig
+					       (begin-elaboration-time
+						(build-path mred:system-source-directory
+							    "link.ss")))])
 				      (set! mred@ u@)
 				      u@)
 				    core trigger application)]

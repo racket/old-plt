@@ -30,7 +30,7 @@
 	      mred:system-source-directory)))))
 
 (define mred:app-sig-location #f)
-(define mred:app-location "app.ss")
+(define mred:app-location (build-path mred:system-source-directory "app.ss"))
 (define mred:output-spidey-file #f)
 
 (define plt:home-directory mred:plt-home-directory)
@@ -99,9 +99,10 @@
 	[todo null]
 	[no-show-splash? #f])
     (lambda args
+      (unless mred:mred-startup-directory
+	(set! mred:mred-startup-directory (current-directory)))
       (cond
 	[(null? args)
-	 (set! mred:mred-startup-directory (current-directory))
 	 (current-directory mred:system-source-directory)
 	 (unless (or mred:splash-frame no-show-splash?)
 	   (mred:open-splash mred:default-splash mred:default-splash-title #f))
@@ -128,6 +129,8 @@
 	 
 	 (for-each (lambda (x) (apply (car x) (cdr x))) (reverse todo))
 	 
+	 (current-directory mred:mred-startup-directory)
+
 	 (mred:invoke)
 	 (when (getenv "MREDCOMPILE")
 	   (wx:exit))
@@ -141,7 +144,6 @@
 			    (printf "WARNING: splash max (~a) != splash counter (~a)~n"
 				    mred:splash-max mred:splash-counter)))
 	 (mred:close-splash)
-	 (current-directory mred:mred-startup-directory)
 	 mred:console]
        [else 
 	(let* ([arg (car args)]
@@ -157,7 +159,7 @@
 	       [ep
 		(lambda (x)
 		  (if (relative-path? x)
-		      (build-path (current-directory) x)
+		      (build-path mred:mred-startup-directory x)
 		      x))]
 	       [use-next-arg
 		(lambda (f)
@@ -214,5 +216,5 @@
 	    (set! todo
 		  (cons (list (lambda () (mred:non-unit-startup))) todo))
 	    (apply mred:initialize rest)]
-	   [else (set! files-to-open (cons arg files-to-open))
+	   [else (set! files-to-open (cons (ep arg) files-to-open))
 		 (apply mred:initialize rest)]))]))))

@@ -2286,6 +2286,7 @@ static void remove_thread(Scheme_Thread *r)
     }
   }
 
+  r->runstack = NULL;
   r->runstack_swapped = NULL;
 
   r->cont_mark_stack = NULL;

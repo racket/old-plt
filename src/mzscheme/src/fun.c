@@ -2519,6 +2519,8 @@ call_cc (int argc, Scheme_Object *argv[])
     p->overflow = cont->save_overflow;
     scheme_restore_env_stack_w_thread(cont->ss, p);
 
+    if (p->runstack_owner)
+      *p->runstack_owner = NULL;
     p->runstack_owner = cont->runstack_owner;
     if (p->runstack_owner && (*p->runstack_owner != p)) {
       Scheme_Thread *op;

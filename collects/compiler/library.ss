@@ -1,5 +1,10 @@
 ;; Library of functions for the compiler
 
+(unit/sig
+ compiler:library^
+ (import (zodiac : zodiac:system^)
+	 mzlib:function^)
+
 (define logical-inverse
   (lambda (fun)
     (lambda (obj)
@@ -177,13 +182,15 @@
               
 (define compiler:gensym gensym)
 (define compiler:label-number 0)
+(define (compiler:reset-label-number!)
+  (set! compiler:label-number 0))
 (define compiler:genlabel
   (lambda ()
     (begin0 compiler:label-number
-	    (set! compiler:label-number (1+ compiler:label-number)))))
+	    (set! compiler:label-number (add1 compiler:label-number)))))
 
 (define compiler:bad-chars
-  (string->list "#+-.*/<=>!?:$%_&~^@;^()[]{}|\\,~\"`'"))
+  (string->list "#+-.*/<=>!?:$%_&~^@;^()[]{}|\\,~\"`' "))
 
 (define (compiler:clean-string s)
   (let* ((str (string->list s)))
@@ -193,10 +200,7 @@
 			  c))
 	  str))))
      
-
-(define compiler:varref->string
-  (lambda (v)
-    (compiler:clean-string (symbol->string (cs:varref-var v)))))
-
 (define (global-defined-value* v)
   (and v (global-defined-value v)))
+
+)

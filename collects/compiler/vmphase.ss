@@ -1,6 +1,20 @@
 ;; Scheme->VMScheme conversion phase
 ;; (c) 1996-7 Sebastian Good
 
+(unit/sig
+ compiler:vmphase^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:const^
+	 compiler:vmstructs^
+	 compiler:rep^
+	 compiler:vehicle^
+	 compiler:driver^
+	 mzlib:function^)
+
 ; vm:convert-bound-varref takes a bound-varref and turns it 
 ; into a vm:local-varref, taking into account its representation.
 (define vm:convert-bound-varref
@@ -877,9 +891,14 @@
 	       (convert ast multi? (or leaf list) tail-pos tail?))
 	      new-locals))))
 
+)
+
+#|
+
 (define (vmphase-go f . o)
   (set! driver:debug 'vmphase)
   (apply s:compile (cons f (cons 'c-only o)))
   driver:debug)
 	  
 	  
+|#

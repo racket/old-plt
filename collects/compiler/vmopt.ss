@@ -4,6 +4,20 @@
 ;; This pass only allows T & V statements to be expanded into multiple statments
 ;; there is not a mechanism to expand R, A, or L expressions.
 
+(unit/sig
+ compiler:vmopt^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:vmstructs^
+	 compiler:analyze^
+	 compiler:rep^
+	 compiler:vmphase^
+	 compiler:driver^
+	 mzlib:function^)
+
 (define satisfies-arity?
   (lambda (arity L arglist)
     (let-values ([(min-arity max-arity) (compiler:formals->arity*
@@ -504,8 +518,13 @@
 	(values
 	 (process! ast)
 	 new-locs)))))
+)
+
+#|
 
 (define (vmopt-go f . o)
   (set! driver:debug 'vmopt)
   (apply s:compile (cons f (cons 'c-only o)))
   driver:debug)
+
+|#

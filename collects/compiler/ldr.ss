@@ -1,13 +1,26 @@
 
-(require-library "compile.ss" "mzscheme" "dynext")
-(require-library "link.ss" "mzscheme" "dynext")
-(require-library "file.ss" "mzscheme" "dynext")
+(unit/sig
+ compiler:linker^
+ (import dynext:compile^
+	 dynext:link^
+	 dynext:file^
+	 mzlib:function^
+	 (compiler:option : compiler:option^))
+ (rename (link-extension* link-extension))
 
-(require-library "functio.ss")
-(require-library "options.ss" "compiler")
-(require-library "library.ss" "compiler")
 
-(define (link-multi-file-extension
+ ; Copied from library.ss; please fix me!
+ (define compiler:bad-chars
+   (string->list "#+-.*/<=>!?:$%_&~^@;^()[]{}|\\,~\"`' "))
+ (define (compiler:clean-string s)
+   (let* ((str (string->list s)))
+     (list->string
+      (map (lambda (c) (if (member c compiler:bad-chars)
+			   #\_
+			   c))
+	   str))))
+
+(define (link-extension*
 	 files
 	 dest-dir)
 
@@ -210,3 +223,4 @@
 
     (printf " [output to \"~a\"]~n" (build-path dest-dir _loader.so))))
 
+)

@@ -1,6 +1,16 @@
 ;; Representation choosing phase of the the compiler
 ;; (c) 1996-7 Sebastian Good
 
+(unit/sig
+ compiler:rep^
+ (import compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:const^
+	 compiler:vehicle^
+	 compiler:driver^)
+
 ;;----------------------------------------------------------------------------
 ;; REPRESENTATION (TYPE) LANGUAGE
 ;;
@@ -39,6 +49,8 @@
 
 (define compiler:struct-index 0)
 (define compiler:structs empty-set)
+(define (compiler:init-structs!)
+  (set! compiler:structs empty-set))
 (define compiler:add-struct!
   (lambda (struct)
     (let loop ([l (set->list compiler:structs)])
@@ -191,6 +203,9 @@
 	(set-code-closure-rep! code struct)
 	(set-code-closure-alloc-rep! code alloc-struct)))))
 
+)
+#|
+
 (define rep->sexp
   (lambda (rep)
     (cond
@@ -198,3 +213,5 @@
       [(rep:pointer? rep) `(pointer ,(rep->sexp (rep:pointer-to rep)))]
       [(rep:struct? rep) `(struct)])))
 
+
+|#

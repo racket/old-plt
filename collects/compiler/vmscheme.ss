@@ -1,6 +1,14 @@
 ;; VM-Scheme
 ;; (c) 1996-7 Sebastian Good
 
+(unit/sig 
+ compiler:vmstructs^
+ (import compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:driver^
+	 mzlib:function^)
 
 ;; Block statements
 (define-struct (vm:sequence zodiac:struct:zodiac) (vals))
@@ -99,6 +107,10 @@
 	  zodiac:void?
 	  zodiac:undefined?))
 
+)
+
+#|
+
 (define vm:vm->sexp
   (lambda (ast)
     (cond
@@ -169,3 +181,4 @@
 			  [else (error 'vm:vm->sexp "~a bad immediate text" text)])))]
       [else
        (error 'vm:vm->sexp "~a not supported" ast)])))
+|#

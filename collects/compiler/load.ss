@@ -1,16 +1,34 @@
-(require-library "compat.ss")   ; gets lots of good stuff
-(require-library "file.ss")     ; gets normalize-path
-(require-library "function.ss") ; gets identity, compose, etc.
-(require-library "cmdline.ss")
 
-(require-library "options.ss" "compiler") ; if not already here
+(reference-library "refer.ss")
 
-(require-library "invoke.ss" "zodiac")
-(zodiac:invoke-system)
-(require-library "zlayer.ss" "compiler")
-(compiler:register-with-zodiac)
+(reference-relative-library "sigload.ss")
 
-(require-library "compiler.ss" "compiler")
-(compiler:initialize-zodiac-errors)
+(reference-library "functio.ss")
+(reference-library "file.ss")
+(reference-library "pretty.ss")
 
+(reference-library "compile.ss" "mzscheme" "dynext")
+(reference-library "link.ss" "mzscheme" "dynext")
+(reference-library "file.ss" "mzscheme" "dynext")
 
+(reference-library "option.ss" "compiler")
+
+(invoke-open-unit/sig
+ (reference-relative-library-unit/sig "loadr.ss")
+ mzc
+ mzlib:function^
+ mzlib:pretty-print^
+ mzlib:file^
+ dynext:compile^
+ dynext:link^
+ dynext:file^
+ (compiler:option : compiler:option^))
+
+(invoke-open-unit/sig
+ (reference-relative-library-unit/sig "ldr.ss")
+ mzc
+ dynext:compile^
+ dynext:link^
+ dynext:file^
+ mzlib:function^
+ (compiler:option : compiler:option^))

@@ -1,6 +1,14 @@
 ;; Zodiac interface and library routines
 ;; (c)1996-7 Sebastian Good
 
+(unit/sig
+ compiler:zlayer^
+ (import (compiler:option : compiler:option^)
+	 (zodiac : zodiac:system^)
+	 compiler:cstructs^
+	 compiler:driver^
+	 mzlib:function^)
+
 ;;----------------------------------------------------------------------------
 ;; ANNOTATIONS
 ;;
@@ -16,37 +24,39 @@
   (set-annotation! ast compiler:empty-annotation))
 
 ;; register-with-zodiac sets the getter and setter procedures
-(define (compiler:register-with-zodiac)
-  (let-values ([(getter setter)
-		(zodiac:register-client 'compiler 
-					(lambda ()
-					  compiler:empty-annotation))])
+;; IMPLICATION: Zodiac must be invoked first
+(let-values ([(getter setter)
+	      (zodiac:register-client 'compiler 
+				      (lambda ()
+					compiler:empty-annotation))])
     (set! get-annotation
 	  (lambda (ast)
 	    (getter (zodiac:parsed-back ast))))
     (set! set-annotation!
 	  (lambda (ast obj)
-	    (setter (zodiac:parsed-back ast) obj)))))
+	    (setter (zodiac:parsed-back ast) obj))))
 
 (define compiler:escape-on-error (make-parameter #f))
 
 ;; initialize zodiac-error procedures
-(define (compiler:initialize-zodiac-errors)
-      (let ([zodiac-error-template
-	     (lambda (c s)
-	       (lambda (where fmt-spec . args)
-		 (c where 
-		    (string-append s
-				   (apply format (cons fmt-spec args))))
-		 (when (compiler:escape-on-error)
-		       (error 'compiler "parsing error"))))])
+(define zodiac-error-template
+  (lambda (c s)
+    (lambda (where fmt-spec . args)
+      (c where 
+	 (string-append s
+			(apply format (cons fmt-spec args))))
+      (when (compiler:escape-on-error)
+	    (error 'compiler "parsing error")))))
 	
-	(set! zodiac:static-error 
-	      (zodiac-error-template compiler:fatal-error "(syntax) "))
-	(set! zodiac:internal-error 
-	      (lambda x (raise x)))
-	(set! zodiac:dynamic-error
-	      (zodiac-error-template compiler:fatal-error "(parser dynamic) "))))
+(define (call-compiler:fatal-error . args)
+  (apply compiler:fatal-error args))
+
+(define static-error 
+  (zodiac-error-template call-compiler:fatal-error "(syntax) "))
+(define internal-error
+  (zodiac-error-template call-compiler:fatal-error "(elaboration) "))
+(define dynamic-error
+  (zodiac-error-template call-compiler:fatal-error "(parser dynamic) "))
     
 
 ;;----------------------------------------------------------------------------
@@ -152,21 +162,30 @@
 ;;----------------------------------------------------------------------------
 ;; POSITION REPORTING
 
-(define (zodiac:print-start! port ast)
-  (let ([bad (lambda () (fprintf port " [?,?]: "))])
-    (if (and ast (zodiac:zodiac? ast))
-	(let* ([start (zodiac:zodiac-start ast)]
-	       [good (lambda ()
-		       (fprintf port " [~a,~a]: "
-				(zodiac:location-line start)
-				(zodiac:location-column start)))])
-	  (if (zodiac:location? start)
-	      (good)
-	      (begin	    
-		(when (compiler:option:debug)
-		  (fprintf port "{~a had ~a for location info}" ast start))
-		(bad))))
-	(bad))))
+(define main-source-file (make-parameter #f))
+
+(define zodiac:print-start!
+  (lambda (port ast)
+    (let ([bad (lambda () (fprintf port " [?,?]: "))])
+      (if (and ast (zodiac:zodiac? ast))
+	  (let* ([start (zodiac:zodiac-start ast)]
+		 [good (lambda ()
+			 (fprintf port " ~a[~a,~a]: "
+				  (if (equal? (main-source-file) (zodiac:location-file start))
+				      ""
+				      (format "~s " (zodiac:location-file start)))
+				  (zodiac:location-line start)
+				  (zodiac:location-column start)))])
+	    (if (zodiac:location? start)
+		(good)
+		(begin	    
+		  (when (compiler:option:debug)
+			(fprintf port "{~a had ~a for location info}" ast start))
+		  (bad))))
+	  (bad)))))
+)
+
+#|
 
 ;;----------------------------------------------------------------------------
 ;; SOME RANDOM DEBUGGING STUFF USED IN THE PAST
@@ -313,4 +332,5 @@
      
      [else
       (error 'zodiac->sexp "unsupported ~s" ast)])))
+|#
 

@@ -1,6 +1,20 @@
 ;; 1st analysis phase of the compiler [lexical analysis]
 ;; (c) 1996-7 Sebastian Good
 
+(unit/sig
+ compiler:analyze^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:prephase^
+	 compiler:anorm^
+	 compiler:const^
+	 compiler:rep^
+	 compiler:driver^
+	 mzlib:function^)
+
 (define compiler:global-symbols (make-hash-table))
 (define compiler:add-global-varref!
   (lambda (varref)
@@ -33,8 +47,20 @@
 (define compiler:local-define-list null)
 (define compiler:local-per-load-define-list null)
 
-(define compiler:static-list null)
-(define compiler:per-load-static-list null)
+(define (compiler:init-define-lists!)
+  (set! compiler:define-list null)
+  (set! compiler:per-load-define-list null)
+  (set! compiler:global-symbols (make-hash-table))
+  (set! compiler:primitive-refs empty-set)
+  (set! compiler:compounds null)
+  (set! compiler:interfaces null))
+
+(define (compiler:add-local-per-load-define-list! def)
+  (set! compiler:local-per-load-define-list 
+	(cons def compiler:local-per-load-define-list)))
+(define (compiler:add-local-define-list! def)
+  (set! compiler:local-define-list 
+	(cons def compiler:local-define-list)))
 
 (define-struct case-info (body case-code global-vars captured-vars max-arity))
 
@@ -1112,6 +1138,10 @@
 		  locals-captured
 		  max-arity))))))
 
+)
+
+#|
+
 (define (analyze-go . f)
   (set! compiler:messages null)
   (let* ([p (if (null? f)
@@ -1126,4 +1156,4 @@
     (let-values ([(exp _ __ % %%) (analyze-expression! x empty-set #f)])
       (printf "ok")
       (append compiler:define-list (list exp)))))
-   
+|#

@@ -2,14 +2,36 @@
 ;; constant construction code generator
 ;; (c) 1996-7 Sebastian Good
 
+(unit/sig
+ compiler:const^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:analyze^
+	 compiler:zlayer^
+	 compiler:vmstructs^
+	 compiler:top-level^
+	 compiler:driver^)
+
+
 (define const:symbol-table (make-hash-table))
 (define const:symbol-counter 0)
 (define const:number-table (make-hash-table))
 
-(define (const:init-tables)
+(define compiler:static-list null)
+(define compiler:per-load-static-list null)
+
+(define (const:init-tables!)
   (set! const:symbol-table (make-hash-table))
   (set! const:symbol-counter 0)
-  (set! const:number-table (make-hash-table)))
+  (set! const:number-table (make-hash-table))
+  (set! compiler:static-list null)
+  (set! compiler:per-load-static-list null))
+
+(define (compiler:add-per-load-static-list! var)
+  (set! compiler:per-load-static-list
+	(cons var compiler:per-load-static-list)))
 
 (define-values (const:the-per-load-statics-table
 		const:per-load-statics-table?)
@@ -41,11 +63,10 @@
 	  (begin
 	    (set! compiler:per-load-static-list
 		  (cons var compiler:per-load-static-list)) 
-	    (set! compiler:local-per-load-define-list 
-		  (cons def compiler:local-per-load-define-list)))
+	    (compiler:add-local-per-load-define-list! def))
 	  (begin
 	    (set! compiler:static-list (cons var compiler:static-list))
-	    (set! compiler:local-define-list (cons def compiler:local-define-list))))
+	    (compiler:add-local-define-list! def)))
       sv)))
 
 (define compiler:get-symbol-const!
@@ -190,3 +211,4 @@
        (compiler:internal-error
 	ast
 	(format "unknown constant kind: ~a" ast))])))
+)

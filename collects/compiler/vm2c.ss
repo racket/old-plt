@@ -2,6 +2,20 @@
 ;; (c) 1996-7 Sebastian Good
 ;; lots of messy immediate strings
 
+(unit/sig
+ compiler:vm2c^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:analyze^
+	 compiler:const^
+	 compiler:rep^
+	 compiler:vehicle^
+	 compiler:vmstructs^
+	 compiler:driver^)
+
 (define vm->c:indent-by 4)
 (define vm->c:indent-spaces
   (make-string vm->c:indent-by #\space))
@@ -22,7 +36,7 @@
 	  (compiler:internal-error #f (format "vm->c:bucket-name: no bucket for ~a" symbol))))))
 
 (define (vm->c:SYMBOLS-name)
-  (if (compiler:option:multi-o-constant-pool)
+  (if compiler:multi-o-constant-pool?
       (format "SYMBOLS~a" compiler:setup-suffix)
       "SYMBOLS"))
 
@@ -42,13 +56,13 @@
 
 (define (vm->c:emit-symbol-declarations! port)
   (unless (zero? const:symbol-counter)
-    (unless (compiler:option:multi-o-constant-pool)
+    (unless compiler:multi-o-constant-pool?
        (fprintf port "static const char *SYMBOL_STRS[~a] = {~n" const:symbol-counter)
        (vm->c:emit-symbol-list! port ",")
        (fprintf port "}; /* end of SYMBOL_STRS */~n~n"))
 
     (fprintf port "~aScheme_Object * ~a[~a];~n~n" 
-	     (if (compiler:option:multi-o-constant-pool) "" "static ")
+	     (if compiler:multi-o-constant-pool? "" "static ")
 	     (vm->c:SYMBOLS-name)
 	     const:symbol-counter)))
 
@@ -172,7 +186,7 @@
 	   (lambda (v)
 	     (fprintf port "~ascheme_register_extension_global(&~a, sizeof(~a));~n"
 		      vm->c:indent-spaces v v))])
-      (unless (or (zero? const:symbol-counter) (compiler:option:multi-o-constant-pool))
+      (unless (or (zero? const:symbol-counter) compiler:multi-o-constant-pool?)
 	  (register "SYMBOLS"))
       (unless (set-empty? compiler:primitive-refs)
 	  (register "P"))
@@ -1620,7 +1634,4 @@
 		     (format "vm:build-constant: not supported ~a" ast))]))]
 	 
 	 [else (compiler:internal-error #f (format "vm2c: ~a not supported" ast))])))))
-	  
-
-
-
+)

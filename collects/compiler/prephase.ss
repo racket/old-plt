@@ -1,9 +1,14 @@
 ;; pre-compilation scan
 ;; (c) 1996-7 Sebastian Good
 
-(define prephase:safety-net-forms
-  '(opt-lambda))
-        
+(unit/sig
+ compiler:prephase^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:driver^)
 
 ;; notes mutability of lexical variables
 ;; flags forms that are not supported by the compiler
@@ -698,16 +703,6 @@
 		  ;;
 		  [(zodiac:app? ast)
 
-		   (let* ([fun (zodiac:app-fun ast)]
-			  [name (and (zodiac:top-level-varref? fun)
-				     (zodiac:varref-var fun))])
-		     (when (and name (member name prephase:safety-net-forms))
-		       (compiler:warning 
-			ast
-			(format
-			 "unsupported syntactic form '~a'?"
-			 name))))
-		   
 		   (let ([process-normally
 			  (lambda ()
 			    (zodiac:set-app-fun!
@@ -1020,8 +1015,4 @@
 
 (define prephase! (curry-prephase!))
 
-(define (prephase-go f)
-  (set! driver:debug 'prephase)
-  (s:compile f))
-
-
+)

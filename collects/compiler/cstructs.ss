@@ -1,6 +1,12 @@
 ;; Compiler structures
 ;; (c) 1996-7 Sebastian Good
 
+(unit/sig
+ compiler:cstructs^
+ (import compiler:library^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 mzlib:function^)
 
 ;;----------------------------------------------------------------------------
 ;; VARREF ATTRIBUTES
@@ -105,3 +111,5 @@
 (define-struct (compiler:fatal-error struct:compiler:message) ())
 (define-struct (compiler:internal-error struct:compiler:message) ())
 (define-struct (compiler:warning struct:compiler:message) ())
+
+)

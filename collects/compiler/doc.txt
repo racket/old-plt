@@ -1,0 +1,266 @@
+
+The Compiler
+============
+
+To use the compiler, require "compile.ss".  It defines the following
+functions (plus a few signatures).  Options that control the compiler
+are documented in the next section.
+
+ Single-file extension compilation
+ ---------------------------------
+
+   ((compile-extensions expr) scheme-file-list dest-dir)
+
+      `(compile-extension expr)' returns a compiler that is initialized with
+      the elaboration-time expression `expr'.  The compiler takes a list
+      of Scheme files and compiles each of them to an extension, placing
+      the resulting extensions in the directory specified by `dest-dir'.
+      If `dest-dir' is #f, each extension is placed in the same directory
+      as its source file.
+
+   ((compile-extensions-to-c expr) scheme-file-list dest-dir)
+
+     Like `compile-extensions', but only .c files are produced, not
+     extensions.
+
+   (compile-c-extensions c-file-list dest-dir)
+
+     Compiles each .c file (usually produced with `compile-extensions-to-c') 
+     in c-file-list to an extension.  `dest-dir' is handled as in
+     `compile-extensions'.
+
+ Multi-file extension compilation
+ ---------------------------------
+
+   ((compile-extension-parts expr) scheme-file-list dest-dir)
+
+      `(compile-extension expr)' returns a compiler that is initialized with
+      the elaboration-time expression `expr'.  The compiler takes a list
+      of Scheme files and compiles each of them to a linkable object and
+      a .kp (constant pool) file, placing the resulting objects and .kp files
+      in the directory specified by `dest-dir'.  If `dest-dir' is #f, each object 
+      and .kp file is placed in the same directory as its source file.
+ 
+   ((compile-extension-parts-to-c expr)  scheme-file-list dest-dir)
+
+     Like `compile-extension-parts', but only .c and .kp files are produced, 
+     not compiled objects.
+
+   (compile-c-extension-parts c-file-list dest-dir)
+
+     Compiles each .c file (produced with `compile-extension-parts-to-c')
+     in c-file-list to an extension.  `dest-dir' is handled as in
+     `compile-extension-parts'.
+
+   (link-extension-parts obj-and-kp-file-list dest-dir)
+
+     Links objects for a multi-object extension together, using .kp
+     files to generate and link pooled constants.  The objects and
+     .kp files in `obj-and-kp-file' can be in any order.  The resulting
+     extension "_loader" is placed in the directory specified by `dest-dir'.
+
+ zo compilation
+ --------------
+
+   ((compile-zos expr) scheme-file-list dest-dir)
+
+      `(compile-zos expr)' returns a compiler that is initialized with
+      the elaboration-time expression `expr'.  The compiler takes a list
+      of Scheme files and compiles each of them to a .zo file, placing
+      the resulting .zo files in the directory specified by `dest-dir'.
+      If `dest-dir' is #f, each .zo file is placed in the same directory
+      as its source file.
+ 
+ Colelction compilation
+ ----------------------
+
+   (compile-collection-extension collection sub-collection ...)
+
+      Compiles the specified (sub-)collection to an extension
+      "_loader", putting intermediate .c and .kp files in the
+      collection's "compiled/native" directory, and object files and
+      the resulting "_loader" extension in the collection's
+      "compiled/native/PLATFORM" directory (where `PLATFORM' is the
+      system name for the current platform).
+
+      The collection compiler reads the collection's "info.ss"
+      file to obtain information about compiling the collection.
+      The following fields are used:
+
+       `compile-prefix' - an expression to use as the elaboration-time
+         prefix expression for compiling all files in the collection.
+
+       `compile-omit-files' - a list of filenames (without paths); all
+         Scheme files in the collection are compiled except for the
+         files in this list.  If a file contains elaboration time
+         expressions (e.g., macros) that are not intended to be local
+         to the file, then the file should be included in this list.
+
+      The compilation process is driven by the `make-collection'
+      function in the "collection.ss" library of the "make"
+      collection.
+
+   (compile-collection-zos collection sub-collection ...)
+
+      Compiles the specified (sub-)collection files to .zo files.
+      The .zo files are placed into the collection's "compiled"
+      directory.
+
+      The "info.ss" file is used as in `compile-collection-extension'.
+
+      The compilation process is driven by the `make-collection'
+      function in the "collection.ss" library of the "make"
+      collection.
+
+---------------------------------------------------------------------------
+
+Options for the Compiler
+========================
+
+To set options for the "compile.ss" extension compiler, load the
+libray "option.ss".  (This library is automatically loaded by
+"compile.ss", but it can also be loaded earlier.) Options are set by
+the following parameters:
+
+  compiler:option:verbose - #t causes the compiler to print
+     verbose messages about its operations.  Default = #f.
+
+  compiler:option:setup-prefix - a string to embed in public names.
+     This is used mainly for compiling extensions with the collection
+     name so that cross-extension conflicts are less likely in
+     architectures that expose the public names of loaded extensions.
+     Note that `compile-collection' handles prefixing automatically
+     (by setting this option).  Default = "".
+
+  compiler:option:clean-intermediate-files - #t keeps intermediate
+     .c/.o files.  Default = #f.
+
+  compiler:option:propagate-constants - #t improves the code by
+     propogating constants.  Default = #t.
+
+  compiler:option:assume-primitives - #t equates X with #%X when
+     #%X exists.  This is useful only with non-unitized code.
+     Default = #f.
+
+  compiler:option:stupid - Allow obvious non-syntactic errors; e.g.:
+    ((lambda () 0) 1 2 3).  Default = #f.
+
+  compiler:option:vehicles - Controls how closures are compiled.  The
+    possible values are: 'vehicles:automatic - auto-groups
+                         'vehicles:functions - groups by procedue
+                         'vechicles:units - groups by unit
+                         'vehicles:monolithic - groups randomly
+    Default = 'vehicles:automatic.
+
+  compiler:option:vehicles:monoliths - Sets the number of random
+    groups for 'vehicles:monolithic.
+
+  compiler:option:seed - Sets the randomizer seed for
+    'vehicles:monolithic.
+
+  compiler:option:max-exprs-per-top-level-set - Sets the number of
+    top-level Scheme expressions crammed into one C function.  Default
+    = 25.
+
+  compiler:option:unpack-environments - #f might help for
+    register-poor architectures.  Default = #t.
+
+  compiler:option:debug - #t creates debug.txt debugging file.  Default
+    = #f.
+
+  compiler:option:test - #t ignores top-level expressions with syntax
+   errors.  Default = #f.
+
+More options are defined by "mzscheme" "dynext"'s "compile.ss" and
+"link.ss" libraries.  Those options control the actual C compiler and
+linker that are used.  See "doc.txt" in the "mzscheme" "dynext"
+collection for more information about those options.
+
+The "optionr.ss" library is a unit/sig matching the signature
+`compiler:option^' containing these options.  (The unitized option
+names do not have the `compiler:option:' prefix.) The "sig.ss" library
+defines the `compiler:option^' signature.
+
+---------------------------------------------------------------------------
+
+The Compiler as a Unit
+======================
+
+The "compiler.ss" library is a unit/sig matching `compiler^' that
+provides the "compile.ss" functions.  This signature and all auxilliary
+signatures needed by "compiler.ss" are defined by the "sig.ss"
+library.
+
+The "compiler.ss" signed unit requires the following imports:
+
+   compiler:option^ - from "optionr.ss" or "option.ss" (the latter
+                      uses a `compiler:option:' prefix)
+   mzlib:function^
+   mzlib:pretty-print^
+   mzlib:file^
+   mzlib:compile^
+   dynext:compile^ - From the collection "mzscheme" "dynext"
+   dynext:link^
+   dynext:file^
+
+---------------------------------------------------------------------------
+
+Low-level Extension Compiler and Linker
+=======================================
+
+The high-level "compile.ss" interface relies on low-level
+implementations of the extension compiler and linker.  (Of course, .zo
+compilation is handled by MzLib's "compile.ss" library.)
+
+The "loadr.ss" and "ldr.ss" libraries define unit/sigs for the
+low-level extension compiler and multi-file linker.  The "load.ss"
+library opens these units into the current namespace with the prefix
+`mzc:'.
+
+The low-level functions are:
+
+  (mzc:eval-compile-prefix expr) - Evaluates an elaboration-time
+    expression `expr'.  Future calls to mzc:compile-XXX will see the
+    effects of the elaboration expression.
+
+  (mzc:compile-extension scheme-source dest-dir) - Compiles a
+    single Scheme file to an extension.
+
+  (mzc:compile-extension-to-c scheme-source dest-dir) - Compiles
+    a single Scheme file to a .c file.
+
+  (mzc:compile-c-extension c-source dest-dir) - Compiles a single .c
+    file to an extension.
+
+  (mzc:compile-extension-part scheme-source dest-dir) - Compiles a
+    single Scheme file to a compiled object and .kp file toward a
+    multi-file extension.
+
+  (mzc:compile-extension-part-to-c scheme-source dest-dir) - Compiles
+    a single Scheme file to .c and .kp files towards a multi-file
+    extension.
+
+  (mzc:compile-c-extension-part c-source dest-dir) - Compiles a single
+    .c file to a compiled object towards a multi-file extension.
+
+  (mzc:link-extension object-and-kp-file-list dest-dir) - Links
+    compiled object and .kp files into a multi-file extension.
+
+All but the last function are from the "loadr.ss" unit, and the
+last one is from "ldr.ss".  The "loadr.ss" unit/sig requires the
+following imports:
+   mzlib:function^
+   mzlib:pretty-print^
+   mzlib:file^
+   dynext:compile^ - From the collection "mzscheme" "dynext"
+   dynext:link^
+   dynext:file^
+   compiler:option^ - from "optionr.ss" or "option.ss" (the latter
+                      uses a `compiler:option:' prefix)
+and the "ldr.ss" unit/sig requires the following imports:
+   dynext:compile^ - From the collection "mzscheme" "dynext"
+   dynext:link^
+   dynext:file^
+   mzlib:function^
+   compiler:option^ - from "optionr.ss" or "option.ss" (the latter
+                      uses a `compiler:option:' prefix)

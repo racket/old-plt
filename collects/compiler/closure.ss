@@ -1,14 +1,23 @@
 ;; closure.ss
 ;; analyzes & transforms code
 
+(unit/sig
+ compiler:closure^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:const^
+	 compiler:driver^)
+
+
 (define compiler:lambda-list null)
 (define compiler:add-lambda!
   (lambda (l)
     (set! compiler:lambda-list
 	  (cons l compiler:lambda-list))))
 
-
-;; MATTHEW:
 ;; adds a one-time closure-creation to be performed at startup
 (define compiler:once-closures-list null)
 (define compiler:once-closures-globals-list null)
@@ -31,10 +40,16 @@
       (set-annotation! sv (varref:empty-attributes))
       (varref:add-attribute! sv varref:static)
       (varref:add-attribute! sv varref:per-load-static)
-      (set! compiler:per-load-static-list (cons var compiler:per-load-static-list)) 
+      (compiler:add-per-load-static-list! var)
       (set! compiler:once-closures-list (cons def compiler:once-closures-list))
       (set! compiler:once-closures-globals-list (cons globals compiler:once-closures-globals-list))
       sv)))
+
+
+(define (compiler:init-lambda-lists!)
+  (set! compiler:lambda-list null)
+  (set! compiler:once-closures-list null)
+  (set! compiler:once-closures-globals-list null))
 
 (define closure-expression!
   (letrec
@@ -232,8 +247,13 @@
 		  (format
 		   "closure-expression: form not supported: ~a" ast))]))])
     (lambda (ast) (transform! ast))))
+)
 	    
+#|
+
 (define (closure-go f . o)
   (set! driver:debug 'closure)
   (apply s:compile (cons f (cons 'c-only o)))
   driver:debug)
+
+|#

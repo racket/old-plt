@@ -1,9 +1,32 @@
 ;; Compiler driver routines 
 ;; (c) 1996-7 Sebastian Good
 
-(require-library "compile.ss" "mzscheme" "dynext")
-(require-library "link.ss" "mzscheme" "dynext")
-(require-library "file.ss" "mzscheme" "dynext")
+(unit/sig
+ compiler:driver^
+  (import (compiler:option : compiler:option^)
+	  compiler:library^
+	  compiler:cstructs^
+	  (zodiac : zodiac:system^)
+	  compiler:zlayer^
+	  compiler:prephase^
+	  compiler:anorm^
+	  compiler:analyze^
+	  compiler:const^
+	  compiler:closure^
+	  compiler:vehicle^
+	  compiler:rep^
+	  compiler:vmstructs^
+	  compiler:vmphase^
+	  compiler:vmopt^
+	  compiler:vm2c^
+	  compiler:top-level^
+	  dynext:compile^
+	  dynext:link^
+	  dynext:file^
+	  mzlib:function^)
+  (rename (compile-extension* compile-extension))
+
+(define pretty-print write)
 
 (define driver:debug #f)
 (define (driver:debug-when flag thunk)
@@ -21,7 +44,7 @@
   (lambda x
     (when (and (compiler:option:debug) debug:port)
       (apply fprintf (cons debug:port x))
-      (flush-output-port debug:port))))
+      (flush-output debug:port))))
 
 (define (protect-comment s)
   (string-append
@@ -42,10 +65,10 @@
 ; 5) a dll output path
 ; 6) a scheme_setup suffix
 (define s:process-filenames
-  (lambda (input-name dest-dir)
+  (lambda (input-name dest-dir c?)
     (let-values ([(basedir file dir?) (split-path input-name)])
-       (let* ([sbase (extract-base-filename/ss file)]
-	      [cbase (extract-base-filename/c file)]
+       (let* ([sbase (extract-base-filename/ss file (if c? #f 'mzc))]
+	      [cbase (extract-base-filename/c file (if c? 'mzc #f))]
 	      [base (or sbase cbase)])
 	 (unless base
 		 (error 'mzc "not a Scheme or C file: ~a" input-name))
@@ -54,7 +77,7 @@
 		 (build-path dest-dir (append-constant-pool-suffix base))
 		 (build-path dest-dir (append-object-suffix base))
 		 (build-path dest-dir (append-extension-suffix base))
-		 (string-append (compiler:option:setup-prefix) "_" (compiler:clean-string base)))))))
+		 (string-append (compiler:clean-string (compiler:option:setup-prefix)) "_" (compiler:clean-string base)))))))
 
 (define elaboration-exn-handler
   (lambda (exn)
@@ -151,21 +174,16 @@
 
 (define elaborate-namespace (make-namespace))
 
-(define (compiler:load-prefixes files)
-   (for-each
-    (lambda (f)
-      (with-handlers ([void top-level-exn-handler])
-       (with-handlers ([void elaboration-exn-handler])
-        (parameterize ([current-namespace elaborate-namespace]
-		       [require-library-use-compiled #f]
-		       [compiler:escape-on-error #t])
-	  (if (string? f)
-	      (load-prefix-file f)
-	      (parameterize ([current-load load-prefix-file])
-		(eval f)))
-	  (set! compiler:messages (reverse! compiler:messages))
-	  (compiler:report-messages! #t)))))
-    files))
+(define (eval-compile-prefix prefix)
+  (with-handlers ([void top-level-exn-handler])
+     (with-handlers ([void elaboration-exn-handler])
+       (parameterize ([current-namespace elaborate-namespace]
+		      [require-library-use-compiled #f]
+		      [compiler:escape-on-error #t]
+		      [current-load load-prefix-file])
+	  (eval prefix))
+       (set! compiler:messages (reverse! compiler:messages))
+       (compiler:report-messages! #t))))
 
 ; takes a list of a-normalized expressions and analyzes them
 ; returns the analyzed code, a list of local variable lists, and captured variable lists
@@ -294,24 +312,44 @@
 ;;   Runs the phases in order, reporting errors
 ;;
 
+(define (compile-extension* input-name dest-directory)
+  (s:compile #f #f #f input-name dest-directory))
+(define (compile-extension-to-c input-name dest-directory)
+  (s:compile #t #f #f input-name dest-directory))
+(define (compile-c-extension input-name dest-directory)
+  (s:compile #f #f #t input-name dest-directory))
+
+(define (compile-extension-part input-name dest-directory)
+  (s:compile #f #t #f input-name dest-directory))
+(define (compile-extension-part-to-c input-name dest-directory)
+  (s:compile #t #t #f input-name dest-directory))
+(define (compile-c-extension-part input-name dest-directory)
+  (s:compile #f #t #t input-name dest-directory))
+
+
+(define compiler:multi-o-constant-pool? #f)
+
 (define s:compile
-  (lambda (input-name input-directory dest-directory)
+  (lambda (c-only? multi-o? c? input-name dest-directory)
+    (define input-directory 
+      (let-values ([(base file dir?)
+		    (split-path (path->complete-path input-name))])
+		  base))
+    (set! compiler:multi-o-constant-pool? multi-o?)
     (set! s:file-block (make-empty-block))
     (set! s:max-arity 0)
     (set! total-cpu-time 0)
     (set! total-real-time 0)
     (random-seed (compiler:option:seed))
     (set! compiler:messages null)
-    (set! compiler:static-list null)
-    (set! compiler:per-load-static-list null)
-    (const:init-tables)
+    (const:init-tables!)
     ; process the input string - try to open the input file
     (let-values ([(input-path c-output-path constant-pool-output-path obj-output-path dll-output-path setup-suffix)
-		  (s:process-filenames input-name dest-directory)])
+		  (s:process-filenames input-name dest-directory c?)])
       (unless (or (not input-path) (file-exists? input-path))
 	(error 's:compile "could not open ~a for input" input-path))
       (set! compiler:setup-suffix
-	    (if (compiler:option:multi-o)
+	    (if multi-o?
 		setup-suffix
 		""))
 
@@ -325,7 +363,7 @@
 	(when (file-exists? debug:file) (delete-file debug:file))
 	(set! debug:port (open-output-file debug:file 'text)))
      
-      (when input-path
+      (when input-path (parameterize ([main-source-file input-path])
        (let ([input-port (open-input-file input-path 'text)])
 	
 	;;-----------------------------------------------------------------------
@@ -417,12 +455,7 @@
 	  (debug " = ANALYZE =~n"))
 
 	; analyze top level expressions, cataloguing local variables
-	(set! compiler:define-list null)
-	(set! compiler:per-load-define-list null)
-	(set! compiler:global-symbols (make-hash-table))
-	(set! compiler:primitive-refs empty-set)
-	(set! compiler:compounds null)
-	(set! compiler:interfaces null)
+	(compiler:init-define-lists!)
 	(set! compiler:messages null)
 	(let ([bnorm-thunk
 	       (lambda ()
@@ -472,7 +505,7 @@
 		 ;; close over but gloabls and per-load-constants) may be created.
 		 ;; Merge them into s:file-block just before the top-level expression
 		 ;; that the closure is a part of.
-		 (set! compiler:lambda-list null)
+		 (compiler:init-lambda-lists!)
 		 (let loop ([el (block-source s:file-block)]
 			    [ll (block-local-vars s:file-block)]
 			    [gl (block-global-vars s:file-block)]
@@ -488,8 +521,6 @@
 			 (set-block-global-vars! s:file-block (reverse g-acc))
 			 (set-block-captured-vars! s:file-block (reverse c-acc)))
 		       (begin
-			 (set! compiler:once-closures-list null)
-			 (set! compiler:once-closures-globals-list null)
 			 (let ([s (closure-expression! (car el))])
 			   (loop (cdr el) (cdr ll) (cdr gl) (cdr cl)
 				 (append (list s)
@@ -518,7 +549,7 @@
 	(when (compiler:option:verbose)
 	  (printf " closure->vehicle mapping~n"))
 	
-	(when (eq? (compiler:option:vehicles) vehicles:automatic)
+	(when (eq? (compiler:option:vehicles) 'vehicles:automatic)
 	      (for-each 
 	       (lambda (L)
 		 (when (zodiac:case-lambda-form? L)
@@ -527,18 +558,14 @@
 			    (zodiac:case-lambda-form-bodies L))))
 	       compiler:lambda-list))
 	
-	(when (eq? (compiler:option:vehicles) vehicles:units)
+	(when (eq? (compiler:option:vehicles) 'vehicles:units)
 	  (compiler:fatal-error 
 	   #f 
 	   "unit-wise vehicle mapping not currently supported~n"))
 	(let ([vehicle-thunk
 	       (lambda ()
-		 (set! compiler:vehicles (make-hash-table))
-		 (set! compiler:total-vehicles 0)
-		 (set! compiler:label-number 0)
-		 (set! compiler:case-lambdas null)
-		 (set! compiler:total-unit-exports null)
-		 (set! compiler:classes null)
+		 (compiler:init-vehicles!)
+		 (compiler:reset-label-number!)
 		 (choose-vehicles!))])
 	  (verbose-time vehicle-thunk))
 
@@ -552,7 +579,7 @@
 	
 	(let ([rep-thunk
 	       (lambda ()
-		 (set! compiler:structs empty-set)
+		 (compiler:init-structs!)
 		 ; top-level
 		 (map
 		  choose-binding-representations! 
@@ -790,7 +817,7 @@
 			 (loop (+ n 1))))
 		     (newline c-port)
 		     
-		     (unless (compiler:option:multi-o-constant-pool)
+		     (unless compiler:multi-o-constant-pool?
 		       (fprintf c-port "~nstatic void make_symbols()~n{~n")
 		       (vm->c:emit-symbol-definitions! c-port)
 		       (fprintf c-port "}~n"))
@@ -873,7 +900,7 @@
 				s:max-arity)
 		       (fprintf c-port "~agc_registration();~n"
 				vm->c:indent-spaces)
-		       (unless (compiler:option:multi-o-constant-pool)
+		       (unless compiler:multi-o-constant-pool?
 			   (fprintf c-port "~amake_symbols();~n"
 				    vm->c:indent-spaces))
 		       (fprintf c-port "~amake_export_symbols();~n"
@@ -927,10 +954,10 @@
 			   ; sort the functions by index to get an optimal case statement
 			   ; even for stupid compilers
 			   (set! lambda-list
-				 (sort (lambda (l1 l2)
-					 (< (code-label (get-annotation l1))
-					    (code-label (get-annotation l2))))
-				       lambda-list ))
+				 (quicksort lambda-list
+					    (lambda (l1 l2)
+					      (< (code-label (get-annotation l1))
+						 (code-label (get-annotation l2))))))
 			   (for-each (lambda (L)
 				       (let ([code (get-annotation L)]
 					     [start (zodiac:zodiac-start l)])
@@ -1014,26 +1041,29 @@
 		   
 		   ;post (dynamic wind cleanup)
 		   (lambda ()  (close-output-port c-port)))))])
-	  (verbose-time vm2c-thunk))
+	  (with-handlers ([void (lambda (exn)
+				  (delete-file c-output-path)
+				  (raise exn))])
+	    (verbose-time vm2c-thunk)))
 		
 	(set! compiler:messages (reverse! compiler:messages))
 	(compiler:report-messages! #t)
 	
 	;; Write out symbols for multi-o constant pool
-	(when (compiler:option:multi-o-constant-pool)
+	(when compiler:multi-o-constant-pool?
 	   (call-with-output-file constant-pool-output-path
 	     (lambda (port)
 	       (fprintf port "(~s~n (symbols~n" compiler:setup-suffix)
 	       (vm->c:emit-symbol-list! port "")
 	       (fprintf port "  )~n )~n"))))
 
-	))
+	)))
 
 	;;--------------------------------------------------------------------
 	;; COMPILATION TO NATIVE CODE
 	;;
 
-	(if (compiler:option:c-only)
+	(if c-only?
 	    (printf " [output to \"~a\"]~n" c-output-path)
 
 	  (begin
@@ -1066,7 +1096,7 @@
 		       input-path)
 		  (delete-file c-output-path))
 	  
-	    (if (compiler:option:multi-o)
+	    (if multi-o?
 		(printf " [output to \"~a\"]~n" obj-output-path)
 	      
 		(begin
@@ -1098,13 +1128,10 @@
 	  (close-output-port debug:port))
 
 	;; clean up for the garbage collector
-	(set! compiler:define-list #f)
-	(set! compiler:per-load-define-list #f)
-	(set! compiler:global-symbols #f)
-	(set! compiler:primitive-refs #f)
-	(set! compiler:static-list #f)
-	(set! compiler:per-load-static-list #f)
-	(set! compiler:vehicles #f)
+	(compiler:init-define-lists!)
+	(const:init-tables!)
+	(compiler:init-lambda-lists!)
+	(compiler:init-structs!)
 	(set! s:file-block #f)
 	(when (compiler:option:verbose)
 	      (printf " finished [cpu ~a, real ~a].~n"
@@ -1112,5 +1139,4 @@
 		      total-real-time))
 
 	)))
-
-
+)

@@ -2,6 +2,19 @@
 ; vehicle choosing phase
 ; (c) 1997 Sebastian Good, Rice PLT
 
+(unit/sig
+ compiler:vehicle^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:const^
+	 compiler:analyze^
+	 compiler:closure^
+	 compiler:driver^)
+
+
 ;; Used for union-find for lambda vehicles:
 (define (get-vehicle-top code)
   (let loop ([code code])
@@ -20,6 +33,11 @@
 (define vehicle:procedure 'vehicle:procedure)
 (define vehicle:unit 'vehicle:unit)
 (define vehicle:class 'vehicle:class)
+
+(define vehicles:automatic 'vehicles:automatic)
+(define vehicles:functions 'vehicles:functions)
+(define vehicles:units 'vechicles:units)
+(define vehicles:monolithic 'vehicles:monolithic)
 
 (define (make-empty-vehicle type)
   (case type
@@ -57,10 +75,18 @@
 (define compiler:total-unit-exports null)
 (define compiler:classes null)
 
+(define (compiler:init-vehicles!)
+  (set! compiler:vehicles (make-hash-table))
+  (set! compiler:total-vehicles 0)
+  (set! compiler:case-lambdas null)
+  (set! compiler:total-unit-exports null)
+  (set! compiler:classes null))
+
 (define choose-vehicles!
   (lambda ()
     (when (eq? (compiler:option:vehicles) vehicles:monolithic) 
       (set! compiler:total-vehicles (compiler:option:vehicles:monoliths)))
+
     (for-each (lambda (L)
 		(let* ([code (get-annotation L)]
 		       [type (cond
@@ -229,3 +255,4 @@
 
 (define (vehicle:only-code-in-vehicle? code)
   (= (vehicle-total-labels (get-vehicle (code-vehicle code))) 1))
+)

@@ -6,6 +6,16 @@
 ;; This linear time algorithm is adapted from "The Essence
 ;; of Compiling with Continuations"(Flanagan/Sabry/Duba/Felleisen)
 
+(unit/sig
+ compiler:anorm^
+ (import (compiler:option : compiler:option^)
+	 compiler:library^
+	 compiler:cstructs^
+	 (zodiac : zodiac:system^)
+	 compiler:zlayer^
+	 compiler:driver^
+	 mzlib:function^)
+
 ;; a-normalize is a pure function from a zodiac AST to another
 ;; zodiac AST.  It can be applied at any stage in a program transformation.
 
@@ -548,9 +558,9 @@
 		     (zodiac:set-begin0-form-first! 
 		      ast 
 		      (a-normalize! (zodiac:begin0-form-first ast) identity))
-		     (zodiac:set-begin0-form-last! 
+		     (zodiac:set-begin0-form-rest! 
 		      ast 
-		      (a-normalize! (zodiac:begin0-form-last ast) identity))
+		      (a-normalize! (zodiac:begin0-form-rest ast) identity))
 		     ast)]
 		  
 		  ;;---------------------------------------------------------------
@@ -646,7 +656,7 @@
 		       (lambda (interfaces)
 			 (zodiac:set-class*/names-form-super-expr! super-expr)
 			 (zodiac:set-class*/names-form-interfaces! interfaces)
-			 (zodiac:set-class*/names-form-init-args! ast (a-normalize-init-args ast))
+			 (zodiac:set-class*/names-form-init-vars! ast (a-normalize-init-args ast))
 			 (let ([l (zodiac:sequence-clause-exprs
 				   (car (zodiac:class*/names-form-inst-clauses ast)))])
 			   (set-car! l (a-normalize (car l) identity)))
@@ -672,6 +682,10 @@
 (define-values (a-normalize a-normalize!)
    (parameterized-a-normalize compiler:a-value?))
 
+)
+
+#|
+
 (define (a-go . f)
   (set! compiler:messages null)
   (let ((p (if (null? f)
@@ -695,3 +709,4 @@
 		  (compiler:report-messages! #f)
 		  (set! compiler:messages null)
 		  (loop))))))))))
+|#

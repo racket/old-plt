@@ -166,6 +166,7 @@
 
   (define (thick b) (thickness 'thicklines b))
   (define (thin b) (thickness 'thinlines b))
+  (define (line-thickness n b) (thickness n b))
 
   (define inset
     (case-lambda

@@ -7,6 +7,7 @@
 
    text caps-text
    dc
+   linewidth
 
    draw-pict
    make-pict-drawer))

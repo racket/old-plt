@@ -94,4 +94,5 @@
 
 (define-signature texpict-internal^
   (prepare-for-output
-   pict->command-list))
+   pict->command-list
+   line-thickness))

@@ -129,6 +129,8 @@
 			   (loop (cdr l) (not up?)))))])
 	  (apply hbl-append 0 picts)))]))
 
+  (define (linewidth n p) (line-thickness n p))
+
   (define connect
     (case-lambda
      [(x1 y1 x2 y2) (connect x1 y1 x2 y2 #f)]
@@ -140,15 +142,17 @@
      [(exact close-enough x1 y1 x2 y2 arrow?)
       `((put ,x1 ,y1 (,(if arrow? 'vector 'line) ,(- x2 x1) ,(- y2 y1) 1)))]))
 
-  (define (render dc w h l dx dy)
+  (define (render dc h+top l dx dy)
     (define b&w? #f)
 
     (define draw-line (ivar dc draw-line))
     (define draw-spline (ivar dc draw-spline))
     (define get-pen (ivar dc get-pen))
     (define get-brush (ivar dc get-brush))
+    (define get-text-foreground (ivar dc get-text-foreground))
     (define set-pen (ivar dc set-pen))
     (define set-brush (ivar dc set-brush))
+    (define set-text-foreground (ivar dc set-text-foreground))
     (define find-or-create-pen (ivar the-pen-list find-or-create-pen))
     (define find-or-create-brush (ivar the-brush-list find-or-create-brush))
 
@@ -169,59 +173,64 @@
 		       [ys (caddr x)]
 		       [len (cadddr x)])
 		   (draw-line 
-		    dx (- h dy)
-		    (+ dx (* xs len)) (- h (+ dy (* ys len)))))]
+		    dx (- h+top dy)
+		    (+ dx (* xs len)) (- h+top (+ dy (* ys len)))))]
 		[(circle circle*)
 		 (let ([size (cadr x)])
 		   (send dc draw-ellipse 
-			 dx (- h dy size)
+			 dx (- h+top dy size)
 			 size size))]
 		[(oval)
 		 (let ([b (get-brush)])
 		   (set-brush (find-or-create-brush "BLACK" 'transparent))
 		   (send dc draw-rounded-rectangle
 			 (- dx (/ (cadr x) 2))
-			 (- h dy (/ (caddr x) 2))
+			 (- h+top dy (/ (caddr x) 2))
 			 (cadr x) (caddr x)
 			 -0.2)
 		   (set-brush b))]
 		[(bezier)
 		 (draw-spline (+ dx (list-ref x 1))
-			      (- h (+ dy (list-ref x 2)))
+			      (- h+top (+ dy (list-ref x 2)))
 			      (+ dx (list-ref x 3))
-			      (- h (+ dy (list-ref x 4)))
+			      (- h+top (+ dy (list-ref x 4)))
 			      (+ dx (list-ref x 5))
-			      (- h (+ dy (list-ref x 6))))]
+			      (- h+top (+ dy (list-ref x 6))))]
 		[(with-color)
 		 (if b&w?
 		     (loop dx dy (caddr x) color)
 		     (let ([p (get-pen)]
-			   [b (get-brush)])
+			   [b (get-brush)]
+			   [fg (get-text-foreground)])
 		       (set-pen (find-or-create-pen (cadr x) (send p get-width) 'solid))
 		       (set-brush (find-or-create-brush (cadr x) 'solid))
+		       (set-text-foreground (send the-color-database find-color (cadr x)))
 		       (loop dx dy (caddr x) (cadr x))
 		       (set-pen p)
-		       (set-brush b)))]
+		       (set-brush b)
+		       (set-text-foreground fg)))]
 		[(with-thickness)
 		 (let ([p (get-pen)])
 		   (set-pen (find-or-create-pen (send p get-color) 
-						(if (eq? (cadr x) 'thicklines)
-						    1
-						    0)
+						(if (number? (cadr x))
+						    (cadr x)
+						    (if (eq? (cadr x) 'thicklines)
+							1
+							0))
 						'solid))
 		   (loop dx dy (caddr x) color)
 		   (set-pen p))]
 		[(prog)
-		 ((cadr x) dc dx (- h dy (caddr x)))]
+		 ((cadr x) dc dx (- h+top dy (caddr x)))]
 		[else (error 'rander "unknown command: ~a~n" x)])))
 	(loop dx dy (cdr l) color))))
 
   (define (make-pict-drawer p)
     (let ([cmds (pict->command-list p)])
       (lambda (dc dx dy)
-	(render dc (pict-width p) (pict-height p)
+	(render dc (+ (pict-height p) dy)
 		cmds
-		dx dy))))
+		dx 0))))
 
   (define (draw-pict p dc dx dy)
     ((make-pict-drawer p) dc dx dy))

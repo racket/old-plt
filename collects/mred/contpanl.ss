@@ -59,7 +59,9 @@
 		   "Attempted to add child ~s to panel ~s (not child's parent)"
 		   new-child this))
 	       (send new-child show show?)
-	       (change-children (add-at-end new-child))))]
+	       (change-children
+		 (lambda (l)
+		   (append l (list new-child))))))]
 	  
 	  ; change-children: changes the list of children.
 	  ; input: f is a function which takes the current list of children
@@ -370,7 +372,7 @@
 
     (define make-spacing
       (lambda (panel)
-	(let ([curr-spacing const-default-spacing])
+	(let ([curr-spacing (ivar panel default-spacing-width)])
 	  (case-lambda
 	    [() curr-spacing]
 	    [(new-val)
@@ -383,7 +385,7 @@
 
     (define make-border
       (lambda (panel)
-	(let ([curr-border const-default-spacing])
+	(let ([curr-border (ivar panel default-border-width)])
 	  (case-lambda
 	    [() curr-border]
 	    [(new-val)
@@ -407,6 +409,9 @@
 	  force-redraw)
 	
 	(public
+	  [default-spacing-width const-default-spacing]
+	  [default-border-width const-default-spacing]
+	  
 	  [spacing (make-spacing this)]
 
 	  [border (make-border this)]
@@ -445,6 +450,9 @@
 	(rename
 	  [super-add add-child])
 	(public
+	  [default-spacing-width const-default-spacing]
+	  [default-border-width const-default-spacing]
+	  
 	  [spacing (make-spacing this)]
 
 	  [border (make-border this)]
@@ -501,6 +509,8 @@
 	  
 	  ; pointer to currently active child
 	  [active null]
+	  
+	  [default-border-width const-default-spacing]
 	  
 	  [border (make-border this)]
 

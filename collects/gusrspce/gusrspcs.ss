@@ -12,4 +12,5 @@
    (open ricedefs^)
    (open graphics^)
    (open turtle^)
-   (unit mred : mred^)))
+   (unit mred : mred^)
+   (unit wx : wx^)))

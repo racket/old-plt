@@ -27,4 +27,5 @@
 	  (open rice)
 	  (open graphics)
 	  (open turtle)
-	  (unit mred)))
+	  (unit mred)
+	  (unit wx)))

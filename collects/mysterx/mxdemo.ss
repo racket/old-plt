@@ -26,7 +26,7 @@
 	(string-append	
 	"<table align = center>"
 
-	"<caption><b>Control Panel</b></caption>"
+	"<caption id=\"Caption\"><b>Keypress here</b></caption>"
 
 	"<colgroup align=left>"
 	"<colgroup align=center>"
@@ -74,7 +74,7 @@
 	"<td><BUTTON id=\"Rub-me\">Rub me!</BUTTON></td>"
 
 	"</table>"
-	
+
 	"<table align=center>"
 
 	"<td><BUTTON id=\"About\">About</BUTTON></td>"
@@ -161,6 +161,12 @@
     ("Next-month" ,next-month-handler)
     ("Last-year" ,last-year-handler)
     ("Next-year" ,next-year-handler)))
+
+(send ctrldoc register-event-handler 
+  (send ctrldoc find-element "CAPTION" "Caption")
+	(lambda (ev)
+	  (when (send ev keypress?)
+		(printf "ooh that tickles~n"))))
 
 (for-each
  (lambda (sym-handler)

@@ -1,23 +1,19 @@
 
-Version 204.9
-Added set!-transformer-procedure
+Version 205, August 2003
 Extended regexp language with "(?:...)"
-
-Version 204.8
 Added 'addon-dir for find-system-path
 Changed default library collections path list to include
-  (build-path (find-system-path 'addons-dir) (version) "collects")
+  (build-path (find-system-path 'addon-dir) (version) "collects")
+Added #; reader comment syntax
+Added namespace-module-registry
+Added module->namespace
 Changed eval handler so that when it is given a syntax object, it
  does not extend the object's lexical context with top-level
  bindings from the current namespace
 Added namespace-syntax-introduce
 Added eval-syntax, compile-syntax, expand-syntax, expand-syntax-once,
  and expand-syntax-to-top-form
-
-Version 204.7
-Added namespace-module-registry
-Added module->namespace
-Added #; reader comment syntax
+Added set!-transformer-procedure
 Added namespace-undefine-variable!
 syntax-local-context can return a list for internal-define
  expansion, and local-expand accepts a list to mean 
@@ -31,32 +27,23 @@ Changed top-level `define-syntaxes' to treat zero results
  declares the ids. This is useful for macros that
  expand to mutuaully recursive definitions of private
  variables
-
-Version 204.5
+Changed the expansion-time information associated with a
+ struct type to include an identifier for the super-type
 Handling of --main/-C command-line flag changed
+Changed "scheme-<dialect>" script handling to add the script
+ path as an argument, which matches SRFI-22
 Changed Windows extension-linking convention; extensions
  link directly to the MzScheme/GC DLLs
-
-Version 204.4
+Added an optional argument to system-library-subath
 Added custodian-managed-list
 Changed vector-set-performance-stats! to accept an optional
  thread argument for thread-specific stats
 Mac OS Classic: file-size result no longer includes
  the resource-fork size
-Changed "scheme-<dialect>" script handling to add the script
- path as an argument, which matches SRFI-22
-
-Version 204.2
-Added a super-new local form to (lib "class.ss")
-
-Version 204.1
-Added a new form to (lib "class.ss")
-Changed the expansion-time information associated with a
- struct type to include an identifier for the super-type
-Added an optional argument to system-library-subath
+Added a `super-new' local form to (lib "class.ss")
+Added a `new' form to (lib "class.ss")
 3m: changed to the calling convention for managing
  GC_variable_stack
-
 
 Version 204, May 2003
 Added UDP operations

@@ -389,7 +389,7 @@ typedef struct Scheme_Stx {
   Scheme_Object *src;
   Scheme_Object *xtra;
   Scheme_Object *wraps;
-  Scheme_Object *lazy_wraps;
+  long lazy_prefix; /* # if initial items in wraps to propagate */
 } Scheme_Stx;
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 

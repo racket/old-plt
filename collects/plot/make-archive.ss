@@ -57,7 +57,7 @@
   (define src-structure
     '(("src")
    ;   ("src" "plplot")
-   ;   ("src" "fit")
+      ("src" "fit")
 ;	      ("src" "gd")))
       ("src" "tmp")))
   

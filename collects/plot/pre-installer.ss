@@ -1,19 +1,23 @@
-(module installer mzscheme
-  (require (lib "make.ss" "make")
-           (lib "setup-extension.ss" "make")
-           (lib "file.ss" "dynext")
-           (lib "compile.ss" "dynext")
-           (lib "link.ss" "dynext")
-           (lib "compiler.ss" "compiler")
-           (lib "option.ss" "compiler")
-           (lib "file.ss")
-           (lib "list.ss"))
+(module pre-installer mzscheme
+  (require 
+   (lib "file.ss")
+   (lib "make.ss" "make")
+   (lib "setup-extension.ss" "make")
+   (lib "file.ss" "dynext")
+   (lib "compile.ss" "dynext")
+   (lib "link.ss" "dynext")
+   (lib "compiler.ss" "compiler")
+   (lib "option.ss" "compiler")
+   (lib "list.ss")
+   (lib "etc.ss"))
   
   ;(verbose)
   ; compile-extension
+
+  (define here (this-expression-source-directory))
   
   
-  (define dir (build-path "compiled" "native" (system-library-subpath)))
+  (define dir (build-path here "compiled" "native" (system-library-subpath)))
   
   (if (not (directory-exists? dir))
       (make-directory* dir))
@@ -42,7 +46,7 @@
   
   (define final-so-file
     (lambda (file-name)
-      (build-path dir (append-extension-suffix file-name))))
+      (build-path dir (file-name-from-path (append-extension-suffix file-name)))))
   
   (verbose #t)
   
@@ -64,7 +68,7 @@
                          #f
                          objects
                          final-so)))
-                (list (append-c-suffix (build-path src-dir scheme-file))
+                (list (append-c-suffix (build-path src-dir (file-name-from-path scheme-file)))
                       (list scheme-file-with-ext)
                       (lambda ()
                         ((compile-extensions-to-c #f) (list scheme-file-with-ext) src-dir)))
@@ -81,19 +85,21 @@
    pre-installer)
   
   (define (pre-installer plthome)
+    (display plthome)
+    (newline)
     (let*
         [(fit-src-dir
-          (build-path "src" "fit"))
+          (build-path here "src" "fit"))
          (fit-scheme-file 
-          "fit-low-level")
+          (build-path here "fit-low-level"))
          (fit-c-files
-          `(,fit-scheme-file "fit" "matrix"))]
+          `("fit-low-level" "fit" "matrix"))]
       (unless 
           (do-copy (final-so-file fit-scheme-file))
         (make-ext fit-scheme-file fit-c-files fit-src-dir)))
     
     (let
-        [(plot-scheme-file  "plplot-low-level")]
+        [(plot-scheme-file (build-path here "plplot-low-level"))]
       (unless
           (do-copy (final-so-file plot-scheme-file))
         (parameterize 
@@ -105,29 +111,25 @@
                  (else '("-DHAVE_LIBPNG" "-DPLD_png")))))]
           (let*
               [(plot-src-dir 
-                (build-path "src" "tmp"))
+                (build-path here "src" "tmp"))
                (plot-c-files               
                 (map
                  (lambda (f)
                    (regexp-replace
                     #rx".c$"
                     f
-                    ""))           
-                 (filter
-                  (lambda (f)
-                    (and                      
-                     (regexp-match
-                      #rx".c$"
-                      f)
-                     (not 
+                    ""))
+                 (cons 
+                  (file-name-from-path plot-scheme-file)
+                  (filter
+                   (lambda (f)
+                     (and                      
                       (regexp-match
-                       plot-scheme-file
-                       f))))
-                  (directory-list  plot-src-dir))))]
-            (make-ext plot-scheme-file plot-c-files plot-src-dir))))))
-  
-  
-  
-  
-  
-  )
+                       #rx".c$"
+                       f)
+                      (not 
+                       (regexp-match
+                        (file-name-from-path plot-scheme-file)
+                        f))))
+                   (directory-list  plot-src-dir)))))]
+            (make-ext plot-scheme-file plot-c-files plot-src-dir)))))))

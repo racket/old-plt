@@ -536,7 +536,7 @@
 ;; build-flat-file-list : string -> (-> (union string #f))
 ;; thread: first application: eventspace main thread, second applications: searching thread
 (define (build-flat-file-list dir)
-  (let ([contents (map (lambda (x) (build-path dir x)) (directory-contents dir))])
+  (let ([contents (map (lambda (x) (build-path dir x)) (directory-list dir))])
     (lambda ()
       (if (null? contents)
           #f

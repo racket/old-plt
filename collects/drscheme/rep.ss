@@ -36,19 +36,6 @@
 			   (unbox report) "~a" (exn-message exn)))))
 		    (mred:message-box (format "~a" exn) "Uncaught Exception")
 		    ((error-escape-handler))))  
-
-		'(current-load
-		 (let ([old-handler (current-load)])
-		   (lambda (f) 
-		     (call-with-input-file f 
-		       (lambda (p) 
-			 (let ([read (zodiac:read p (zodiac:make-location 1 1 0 f))]) 
-			   (let loop ([v (read)] 
-				      [last (void)]) 
-			     (if (zodiac:eof? v) 
-				 last 
-				 (loop (read) (mzrice-eval v)))))))))) 
- 
 		(error-value->string-handler
 		 (lambda (x n)
 		   (let ([long-string 
@@ -106,7 +93,7 @@
 		   do-post-eval
 		   display-result
 		   insert-prompt
-		   erase
+		   erase prompt-mode?
 		   get-canvas
 		   ready-non-prompt autoprompting?
 		   last-position
@@ -130,7 +117,11 @@
 	  
 	  (private
 	    [escape-fn #f]
-	    [print-hook (lambda (x _) (insert (send x copy) (last-position)))]
+	    [print-hook (lambda (x _)
+			  (when prompt-mode?
+			    (insert #\newline)
+			    (set! prompt-mode? #f))
+			  (insert (send x copy) (last-position)))]
 	    [size-hook (lambda (x _) (and (is-a? x wx:snip%) 1))])
 	  (public
 	    [takeover void]
@@ -149,12 +140,13 @@
 		   (parameterize ([current-output-port this-out]
 				  [current-error-port this-err]
 				  [current-input-port this-in]
+				  [current-load do-load]
 				  [mzlib:pretty-print@:pretty-print-size-hook size-hook]
 				  [mzlib:pretty-print@:pretty-print-print-hook print-hook])
 				 (eval expr)))))]
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
-	       (opt-lambda (expr [callback (lambda (error?) (void))])
+	       (opt-lambda (expr [callback void])
 		 (let* ([user-code
 			 (lambda ()
 			   '(begin (printf "sending scheme:~n")
@@ -191,47 +183,66 @@
 				 (set-escape #f)
 				 (semaphore-post s)
 				 (callback user-code-error?))))))))))]
-	    [do-many-aries-evals
+	    [do-many-buffer-evals
 	     (lambda (edit start end pre post)
-	       (let ([post-done? #f]
-		     [pre (lambda ()
+	       (let ([pre (lambda ()
 			    (wx:begin-busy-cursor)
 			    (pre))]
 		     [post (lambda () 
 			     (wx:end-busy-cursor)
-			     (post))])
+			     (post))]
+		     [get-sexps
+		      (lambda ()
+			(call-with-values 
+			 (lambda ()
+			   (aries:transform 
+			    (mred:read-snips/chars-from-buffer edit start end)
+			    start edit))
+			 (lambda e e)))])
+		 (do-many-evals get-sexps pre post)))]
+	    [do-many-evals
+	     (lambda (get-sexps pre post)
+	       (let ([post-done? #f])
 		 (let/ec k
 		   (dynamic-wind
 		    (lambda ()
 		      (set-escape (lambda () (k #f)))
 		      (pre))
 		    (lambda ()
-		      (call-with-values 
-		       (lambda ()
-			 (aries:transform 
-			  (mred:read-snips/chars-from-buffer edit start end)
-			  start edit))
-		       (lambda e
-			 (set! post-done? #t)
-			 (set-escape #f)
-			 (let loop ([exprs e])
-			   (cond
-			     [(null? exprs) (post)]
-			     [else (send-scheme (car exprs)
-						(lambda (error?)
-						  (if error?
-						      (post)
-						      (loop (cdr exprs)))))])))))
+		      (let ([sexps (get-sexps)])
+			(set! post-done? #t)
+			(set-escape #f)
+			(let loop ([exprs sexps])
+			  (cond
+			   [(null? exprs) (post)]
+			   [else (send-scheme (car exprs)
+					      (lambda (error?)
+						(if error?
+						    (post)
+						    (loop (cdr exprs)))))]))))
 		    (lambda ()
 		      (unless post-done?
 			(set-escape #f)
 			(post)))))))]
+	    [do-load
+	     (lambda (filename)
+	       (call-with-input-file filename
+		 (lambda (p)
+		   (call-with-values
+		    (lambda () (aries:transform p 0 filename))
+		    (lambda e
+		      (let loop ([sexps e])
+			(cond
+			 [(null? sexps) (void)]
+			 [(null? (cdr sexps)) (eval (car sexps))]
+			 [else (begin (eval (car sexps))
+				      (loop (cdr sexps)))])))))))]
 	    [do-eval
 	     (lambda (start end)
 	       (mred:local-busy-cursor
 		(get-canvas)
 		(lambda ()
-		  (do-many-aries-evals this start end
+		  (do-many-buffer-evals this start end
 		   (lambda () (do-pre-eval))
 		   (lambda () (do-post-eval))))))])
 	  (public

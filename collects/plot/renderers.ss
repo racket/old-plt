@@ -114,7 +114,7 @@
   
   ; the symbol-> char table
   (define point-syms
-    '((square 16) (circle 9)))
+    '((square 16) (odot 9) (bullet 17) (circle 4)))
 
 
 	

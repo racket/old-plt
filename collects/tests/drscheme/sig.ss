@@ -19,6 +19,7 @@
    clear-definitions
    type-in-definitions
    type-in-interactions
+   type-string
    wait
    wait-pending
    get-sub-panel

@@ -410,6 +410,10 @@
        reverse
        assq
        equal?
+       set-first!
+       set-rest!
+       set-car!
+       set-cdr!
        char?
        char=?
        char<?

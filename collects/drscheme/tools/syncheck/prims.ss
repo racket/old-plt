@@ -55,7 +55,7 @@
       beginning
       '/
       '("/: (num num num ... -> num)"
-        "   to compute the rational quotient of its input. The last number must not be zero."))
+        "   to compute the rational quotient of its input.               None but the first number can be zero."))
     (hash-table-put!
       beginning
       'max
@@ -809,7 +809,7 @@
       intermediate
       '/
       '("/: (num num num ... -> num)"
-        "   to compute the rational quotient of its input. The last number must not be zero."))
+        "   to compute the rational quotient of its input.               None but the first number can be zero."))
     (hash-table-put!
       intermediate
       'max
@@ -1566,7 +1566,7 @@
       advanced
       '/
       '("/: (num num num ... -> num)"
-        "   to compute the rational quotient of its input. The last number must not be zero."))
+        "   to compute the rational quotient of its input.               None but the first number can be zero."))
     (hash-table-put!
       advanced
       'max
@@ -1975,6 +1975,26 @@
       'equal?
       '("equal?: (list list -> boolean)"
         "        to determine whether two lists are equal"))
+    (hash-table-put!
+      advanced
+      'set-first!
+      '("set-first!: ((cons y (listof x)) y -> void)"
+        "            to update the first item of a non-empty list"))
+    (hash-table-put!
+      advanced
+      'set-rest!
+      '("set-rest!: ((cons y (listof x)) (listof x) -> void)"
+        "           to update the rest of a non-empty list"))
+    (hash-table-put!
+      advanced
+      'set-car!
+      '("set-car!: ((cons y (listof x)) y -> void)"
+        "          to update the first item of a non-empty list"))
+    (hash-table-put!
+      advanced
+      'set-cdr!
+      '("set-cdr!: ((cons y (listof x)) (listof x) -> void)"
+        "          to update the rest of a non-empty list"))
     (hash-table-put! advanced 'char? '("char?: (any -> boolean)" "        "))
     (hash-table-put!
       advanced

@@ -744,7 +744,10 @@
             [(beginner) zodiac:beginner-vocabulary]
             [(intermediate) zodiac:intermediate-vocabulary]
             [(advanced) zodiac:advanced-vocabulary]
-            [(mzscheme-debug mred-debug) zodiac:scheme-vocabulary]
+            [(mzscheme-debug mred-debug)
+             (if (setting-teaching-primitives-and-syntax? setting)
+                 zodiac:extended-scheme-vocabulary
+                 zodiac:scheme-vocabulary)]
             [else (error 'init "bad vocabulary spec: ~a ~e"
                          (setting-vocabulary-symbol setting) setting)])))
         (zodiac:reset-previous-attribute 
@@ -753,6 +756,8 @@
               'mred-debug))
 	(zodiac:prepare-current-namespace-for-vocabulary (current-vocabulary)))
       
+      (init-namespace:add-teachpack-macros (current-vocabulary))
+
       (read-case-sensitive (setting-case-sensitive? setting))
       
       (aries:signal-undefined (setting-signal-undefined setting))

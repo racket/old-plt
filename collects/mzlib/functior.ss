@@ -252,6 +252,11 @@
                                (unless (pair? x)
                                  (raise-type-error 'first "non-empty list" x))
                                (car x))))
+  (define set-first! 
+    (polymorphic (lambda (x v)
+                   (unless (pair? x)
+                     (raise-type-error 'set-first! "non-empty list" x))
+                   (set-car! x v))))
   (define (lget name npos)
     (lambda (x)
       (let loop ([l x][pos npos])
@@ -277,6 +282,13 @@
                               (unless (pair? x)
                                 (raise-type-error 'rest "non-empty list" x))
                               (cdr x))))
+  
+  (define set-rest! (polymorphic (lambda (x v)
+                                   (unless (pair? x)
+                                     (raise-type-error 'set-rest! "non-empty list" x))
+                                   (unless (or (null? v) (pair? v))
+                                     (raise-type-error 'set-rest! "second argument must be a list" v))
+                                   (set-cdr! x v))))
   
   (define  build-string
     (lambda  (n  fcn)

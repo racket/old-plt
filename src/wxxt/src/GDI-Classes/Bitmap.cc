@@ -566,7 +566,11 @@ wxBitmap *wxBitmap::GetMaskBit()
   if (maskBit)
     return maskBit;
 
+#ifdef WX_USE_XRENDER
   mono = !wxXRenderHere();
+#else
+  mono = 1;
+#endif
 
   mw = GetWidth();
   mh = GetHeight();

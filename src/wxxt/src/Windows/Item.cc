@@ -93,6 +93,7 @@ char *wxGetCtlLabel(char *label)
 
 wxBitmap *wxItem::CheckMask(wxBitmap *bm)
 {
+#ifdef WX_USE_XRENDER
   wxBitmap *mbm;
 
   if (!bm)
@@ -120,6 +121,7 @@ wxBitmap *wxItem::CheckMask(wxBitmap *bm)
       return mbm;
     }
   }
+#endif
 
   return NULL;
 }

@@ -47,11 +47,14 @@
 
 ;; ===== Displaying & Hiding ==================================================
 
+(defxosd xosd-show* : _xosd -> _status)
+(provide xosd-show)
+(define (xosd-show xosd) (unless (xosd-is-onscreen? xosd) (xosd-show* xosd)))
+(defxosd xosd-hide* : _xosd -> _status)
+(provide xosd-hide)
+(define (xosd-hide xosd) (when   (xosd-is-onscreen? xosd) (xosd-hide* xosd)))
+
 (defxosd* xosd-set-timeout : _xosd _int -> _status)
-(defxosd* xosd-show* : _xosd -> _status)
-(define* (xosd-show xosd) (unless (xosd-is-onscreen? xosd) (xosd-show* xosd)))
-(defxosd* xosd-hide* : _xosd -> _status)
-(define* (xosd-hide xosd) (when   (xosd-is-onscreen? xosd) (xosd-hide* xosd)))
 (defxosd* xosd-wait-until-no-display : _xosd -> _status)
 
 ;; ===== Attributed ===========================================================
@@ -86,14 +89,15 @@
   (get-ffi-obj "xosd_display" libxosd
                (_fun _xosd _int _xosd-command _string -> _status)))
 
+(provide xosd-display-percentage xosd-display-string xosd-display-slider)
 ;; xosd-obj percent [line-num] -> int
-(define* (xosd-display-percentage xosd percent . line)
+(define (xosd-display-percentage xosd percent . line)
   (disp-int* xosd (if (pair? line) (car line) 0) 'percentage percent))
 ;; xosd-obj string [line-num] -> int
-(define* (xosd-display-string xosd str . line)
+(define (xosd-display-string xosd str . line)
   (disp-string* xosd (if (pair? line) (car line) 0) 'string str))
 ;; xosd-obj percent [line-num] -> int
-(define* (xosd-display-slider xosd int . line)
+(define (xosd-display-slider xosd int . line)
   (disp-int* xosd (if (pair? line) (car line) 0) 'slider int))
 
 (defxosd* xosd-set-bar-length : _xosd _int -> _status)

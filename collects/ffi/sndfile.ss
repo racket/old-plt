@@ -304,7 +304,8 @@
 ;; ==================== Exposed Scheme interface ====================
 
 ;; types of samples we handle: 'short, 'int, or 'float
-(define* sample-type
+(provide sample-type)
+(define sample-type
   (make-parameter
    'float (lambda (x)
             (if (memq x '(short int float))
@@ -314,26 +315,32 @@
 ;; srfi/4-like thing.  possibly also determine if a list/vector gets automatic
 ;; treatment of 1-channel - not converting it into a list of singleton lists.
 
-(define* default-samplerate
+(provide default-samplerate)
+(define default-samplerate
   (make-parameter
    11025 (lambda (x)
            (if (and (integer? x) (positive? x))
              x (error 'default-samplerate "bad samplerate: ~s" x)))))
 
-(define* default-file-format ; no guard, but should be good for _sf-format
+(provide default-file-format)
+(define default-file-format ; no guard, but should be good for _sf-format
   (make-parameter '(wav pcm-16 file)))
 
-(define* (read-sound file)
+(provide read-sound)
+(define (read-sound file)
   (read-sound-internal file #f))
 
-(define* (read-sound* file)
+(provide read-sound*)
+(define (read-sound* file)
   (read-sound-internal file #t))
 
-(define* (write-sound file data)
+(provide write-sound)
+(define (write-sound file data)
   (write-sound-internal file data '()))
 
 ;; meta is used only for samplerate & format
-(define* (write-sound* file data meta)
+(provide write-sound*)
+(define (write-sound* file data meta)
   (write-sound-internal file data meta))
 
 )

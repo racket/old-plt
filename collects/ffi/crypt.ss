@@ -4,7 +4,8 @@
 
 (define libcrypt (ffi-lib "libcrypt"))
 
-(define* crypt
+(provide crypt)
+(define crypt
   (get-ffi-obj "crypt" libcrypt (_fun _string _string -> _bytes)))
 
 (define set-key*
@@ -20,8 +21,9 @@
     (encrypt* str flag)
     (keystring->string8 str)))
 
-(define* (encrypt str key) (*crypt (string->bytes/utf-8 str) key #f))
-(define* (decrypt str key) (bytes->string/utf-8 (*crypt str key #t)))
+(provide encrypt decrypt)
+(define (encrypt str key) (*crypt (string->bytes/utf-8 str) key #f))
+(define (decrypt str key) (bytes->string/utf-8 (*crypt str key #t)))
 
 (define (string8->keystring str)
   (let* ([len (bytes-length str)]

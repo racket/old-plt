@@ -31,7 +31,8 @@
 ;; similar but no finalizer
 (define _sample* (make-ctype _int sample-num make-sample))
 
-(define* esd-open-sound ; -> esd
+(provide esd-open-sound)
+(define esd-open-sound ; -> esd
   (let ([f (get-ffi-obj "esd_open_sound" libesd (_fun _string -> _esd))])
     (lambda host? (f (and (pair? host?) (car host?))))))
 
@@ -73,6 +74,7 @@
 (defesd* esd-sample-loop  : [_esd] _sample -> _int)
 (defesd* esd-sample-stop  : [_esd] _sample -> _int)
 (defesd* esd-sample-kill  : [_esd] _sample -> _int)
-(define* default-esd (make-parameter (esd-open-sound) esd?))
+(provide default-esd)
+(define default-esd (make-parameter (esd-open-sound) esd?))
 
 )

@@ -4,7 +4,9 @@
 
 (define libtcl (ffi-lib "libtcl"))
 
-(define* current-interp
+(provide current-interp create-interp eval-tcl)
+
+(define current-interp
   (make-parameter
    #f (lambda (x)
         (if (and x (cpointer? x))
@@ -25,7 +27,7 @@
   (syntax-id-rules ()
     [_ (type: _interp expr: (current-interp))]))
 
-(define* create-interp
+(define create-interp
   (get-ffi-obj "Tcl_CreateInterp" libtcl (_fun -> _interp)))
 (define delete-interp
   (let ([f (get-ffi-obj "Tcl_DeleteInterp" libtcl (_fun _interp -> _void))])
@@ -43,7 +45,7 @@
       (when (eq? x 'error) (error 'tcl (get-string-result (current-interp))))
       x)))
 
-(define* eval-tcl
+(define eval-tcl
   (get-ffi-obj "Tcl_Eval" libtcl (_fun _interp* (expr : _string) -> _tclret)))
 
 )

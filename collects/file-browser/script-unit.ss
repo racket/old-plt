@@ -65,9 +65,6 @@
       ;; selection: file list
       (define selection null)
       
-      ;; get-selection: -> file list
-      (define (get-selection) selection)
-      
       ;; print-selection: ->
       (define (print-selection)
         (parameterize ((current-inspector fs:file-inspector))

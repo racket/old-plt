@@ -34,7 +34,6 @@
      set-current-dir!
      get-current-dir
      
-     get-selection
      print-selection
      clear-selection
      cons-selection

@@ -166,7 +166,7 @@
                   (set! history (cddr history)))))
           
           (define (get-restricted-selection)
-            (filter (lambda (f) (script:file=? (script:file-dir f) dir)) (script:get-selection)))
+            (filter (lambda (f) (script:file=? (script:file-dir f) dir)) (script:map-selection (lambda (x) x))))
           
           (define (selection-updated)
             (send file-pasteboard selection-updated (get-restricted-selection)))

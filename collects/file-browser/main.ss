@@ -136,7 +136,8 @@
 	     (with-handlers ((void (lambda (x) (printf "~a~n" (exn-message x)))))
                (script-unit-param script)
 	       (namespace-attach-module prog-namespace module-name)
-	       (namespace-require `(lib "script.ss" "file-browser")))
+	       (namespace-require `(lib "script.ss" "file-browser"))
+               (load (build-path (find-system-path 'pref-dir) ".file-browser.ss")))
              (set! user-namespace (current-namespace))))))
       
       (define (phase1)

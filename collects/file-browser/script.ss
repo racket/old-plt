@@ -3,7 +3,7 @@
            "sigs.ss"
            "script-param.ss")
   
-  (provide (all-defined-except get-selection))
+  (provide (all-defined))
   (define-values/invoke-unit/sig script^ (script-unit-param))
   
   ;; all-files: file -> bool
@@ -30,21 +30,12 @@
       (else (alphabet f1 f2))))
   
   ;; find: (string U file) * (file ->) -> ()
-  (define find
-    (letrec ((find
-              (lambda (start-dir func)
-                (let ((files (directory-list start-dir)))
-                  (for-each func files)
-                  (for-each (lambda (file)
-                              (if (is-directory? file)
-                                  (find file func)))
-                            files)))))
-      (case-lambda
-        ((func)
-         (find (get-current-dir) func))
-        ((sd func)
-         (find sd func)))))
-  
-  
+  (define (find start-dir func)
+    (let ((files (directory-list start-dir)))
+      (for-each func files)
+      (for-each (lambda (file)
+                  (if (is-directory? file)
+                      (find file func)))
+                files)))
   
   )

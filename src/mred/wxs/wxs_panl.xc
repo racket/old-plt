@@ -57,6 +57,7 @@ static void dialogMenu(wxDialogBox *d)
 
 @BEGINSYMBOLS dialogStyle
 @SYM "no-caption" : wxNO_CAPTION
+@SYM "resize-border" : wxMAXIMIZE
 @ENDSYMBOLS
 
 @INCLUDE wxs_espc.xci

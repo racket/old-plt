@@ -5514,7 +5514,7 @@
 "(check-style"
 " cwho"
 " #f"
-" '(no-caption)"
+" '(no-caption resize-border)"
 " style)"
 "(check-container-ready"
 " cwho"

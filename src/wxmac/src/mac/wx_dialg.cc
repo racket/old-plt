@@ -195,7 +195,8 @@ wxDialogBox::wxDialogBox // Constructor (for dialog window)
 	) :
 		wxPanel (new wxFrame(NULL, windowTitle, 
 				  x, y,
-				  width, height, style | wxMDI_CHILD | wxNO_RESIZE_BORDER, windowName, objectType),
+				  width, height, style | wxMDI_CHILD | ((style & wxMAXIMIZE) ? 0 : wxNO_RESIZE_BORDER), 
+                                  windowName, objectType),
 	              0, 0, width, height),
 		cButtonPressed (0)
 {

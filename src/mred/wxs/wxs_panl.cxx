@@ -889,19 +889,22 @@ static void dialogMenu(wxDialogBox *d)
 }
 
 static Scheme_Object *dialogStyle_wxNO_CAPTION_sym = NULL;
+static Scheme_Object *dialogStyle_wxMAXIMIZE_sym = NULL;
 
 static void init_symset_dialogStyle(void) {
   dialogStyle_wxNO_CAPTION_sym = scheme_intern_symbol("no-caption");
+  dialogStyle_wxMAXIMIZE_sym = scheme_intern_symbol("resize-border");
 }
 
 static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
-  if (!dialogStyle_wxNO_CAPTION_sym) init_symset_dialogStyle();
+  if (!dialogStyle_wxMAXIMIZE_sym) init_symset_dialogStyle();
   Scheme_Object *i, *l = v;
   long result = 0;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
   else if (i == dialogStyle_wxNO_CAPTION_sym) { result = result | wxNO_CAPTION; }
+  else if (i == dialogStyle_wxMAXIMIZE_sym) { result = result | wxMAXIMIZE; }
   else { break; } 
   l = SCHEME_CDR(l);
   }
@@ -911,13 +914,14 @@ static int unbundle_symset_dialogStyle(Scheme_Object *v, const char *where) {
 }
 
 static int istype_symset_dialogStyle(Scheme_Object *v, const char *where) {
-  if (!dialogStyle_wxNO_CAPTION_sym) init_symset_dialogStyle();
+  if (!dialogStyle_wxMAXIMIZE_sym) init_symset_dialogStyle();
   Scheme_Object *i, *l = v;
   long result = 1;
   while (SCHEME_PAIRP(l)) {
   i = SCHEME_CAR(l);
   if (0) { }
   else if (i == dialogStyle_wxNO_CAPTION_sym) { ; }
+  else if (i == dialogStyle_wxMAXIMIZE_sym) { ; }
   else { break; } 
   l = SCHEME_CDR(l);
   }
@@ -927,9 +931,10 @@ static int istype_symset_dialogStyle(Scheme_Object *v, const char *where) {
 }
 
 static Scheme_Object *bundle_symset_dialogStyle(int v) {
-  if (!dialogStyle_wxNO_CAPTION_sym) init_symset_dialogStyle();
+  if (!dialogStyle_wxMAXIMIZE_sym) init_symset_dialogStyle();
   Scheme_Object *l = scheme_null;
   if (v & wxNO_CAPTION) l = scheme_make_pair(dialogStyle_wxNO_CAPTION_sym, l);
+  if (v & wxMAXIMIZE) l = scheme_make_pair(dialogStyle_wxMAXIMIZE_sym, l);
   return l;
 }
 

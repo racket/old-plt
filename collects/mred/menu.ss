@@ -74,7 +74,7 @@
 
     (define make-menu%
       (lambda (super%)
-	(class-asi super%
+	(class super% ([title null] [func #f])
 	  (inherit check)
 	  (rename [super-append append]
 		  [super-delete delete])
@@ -181,7 +181,10 @@
 		   (let ([v (assoc id callbacks)])
 		     (if v
 			 ((cdr v))
-			 #f))))]))))
+			 #f))))])
+
+	  (sequence
+	    (super-init title (or func dispatch))))))
 
     (define menu% (make-menu% wx:menu%))
 

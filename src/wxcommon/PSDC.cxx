@@ -1592,7 +1592,7 @@ void wxPostScriptDC::StartPage (void)
     return;
   pstream->Out("%%Page: "); pstream->Out(page_number++); pstream->Out("\n");
   pstream->Out("%%BeginPageSetup\n");
-  pstream->Out("userdict /pgsave save put\n");
+  /* pstream->Out("userdict /pgsave save put\n"); */
 
   pstream->Out((paper_x + paper_margin_x + (landscape ? (paper_h * paper_y_scale) : 0)));
   pstream->Out(" "); pstream->Out(paper_y + paper_margin_y); pstream->Out(" translate\n");
@@ -1615,7 +1615,7 @@ void wxPostScriptDC::EndPage (void)
 {
   if (!pstream)
     return;
-  pstream->Out("userdict /pgsave get restore\n");
+  /* pstream->Out("userdict /pgsave get restore\n"); */
   pstream->Out("showpage\n");
 }
 

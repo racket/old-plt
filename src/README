@@ -43,8 +43,7 @@ The mkbordyn.bat script requires bcc23.exe.
  Compiling for MacOS
 ========================================================================
 
-Unpack the Stuffit archive plt:src:cw.sit.hqz to plt:src:cw, and then
-see `README' in that folder.
+Read the instructions in plt/src/mac/README.
 
 ========================================================================
  Compiling for Unix (including Linux), Cygwin, or BeOS

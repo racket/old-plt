@@ -1004,8 +1004,6 @@
       
       (define sm-frame%
 	(class sm-super-frame%
-          (rename [super-on-subwindow-char on-subwindow-char]
-		  [super-on-close on-close])
           (inherit get-menu-bar set-icon)
 
           (define/override (file-menu:create-new?) #f)
@@ -1074,7 +1072,6 @@
           
           ;; -------------------- Help Menu --------------------
           
-          (rename [super-help-menu:after-about help-menu:after-about])
           (define/override (help-menu:after-about menu)
             (make-object menu-item% "&Help" menu
               (lambda (i e)
@@ -1087,7 +1084,7 @@
                         (build-path (collection-path "sirmail")
                                     "doc.txt"))
                   (send f show #t))))
-            (super-help-menu:after-about menu))
+            (super help-menu:after-about menu))
           
           ;; -------------------- Misc. --------------------
           
@@ -1095,16 +1092,15 @@
           (define/override (get-text-to-search) 
             (send message get-editor))
           
-          (rename [super-on-size on-size])
           [define/override on-size
             (lambda (w h)
               (put-pref 'sirmail:frame-width w)
               (put-pref 'sirmail:frame-height h)
               (update-frame-width)
-              (super-on-size w h))]
+              (super on-size w h))]
           [define/override can-close? (lambda () (send (get-menu-bar) is-enabled?))]
           [define/override on-close (lambda () 
-				      (super-on-close)
+				      (super on-close)
 				      (logout))]
           [define/override on-subwindow-char
             (lambda (w e)
@@ -1117,7 +1113,7 @@
                                       header-list
                                       message)
                                   focus))))
-                  (super-on-subwindow-char w e)))]
+                  (super on-subwindow-char w e)))]
           (super-instantiate ())
           (when icon
             (set-icon icon icon-mask 'both))))
@@ -1363,7 +1359,6 @@
                  (last-status #f)
                  (drag-start-x 0)
                  (drag-start-y 0))
-          (rename [super-on-event on-event])
           (define/override (on-event evt)
             (cond
               [(send evt button-down?)
@@ -1441,7 +1436,7 @@
                  (send (get-editor) set-cursor plain-cursor)
                  (status ""))])
 
-            (super-on-event evt))
+            (super on-event evt))
 
           (super-instantiate ())
           (show-focus #t)))

@@ -172,7 +172,7 @@
    (inherit get-menu-bar show can-close? get-edit-target-object)
    (define/override
      on-close
-     (lambda () (remove-prefs-callback) (super-on-close)))
+     (lambda () (remove-prefs-callback) (super on-close)))
    (define/public get-menu% (lambda () menu:can-restore-underscore-menu%))
    (define/public get-menu-item% (lambda () menu:can-restore-menu-item%))
    (define/public
@@ -571,7 +571,6 @@
    (define/public help-menu:create-about? (lambda () #f))
    (define/public help-menu:after-about (lambda (menu) (void)))
    (super-instantiate ())
-   (rename (super-on-close on-close))
    (define file-menu
      (make-object (get-menu%)
        (if

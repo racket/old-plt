@@ -230,15 +230,13 @@
           [define/public get-selected-mailbox
             (lambda ()
               selected-mailbox)]
-          (rename [super-on-select on-select])
           (define/override on-select
             (lambda (i)
               (send frame set-status-text "")
               (set! selected-mailbox (and i 
                                           (send i selectable?)
                                           (send i get-full-mailbox-name)))
-              (super-on-select i)))
-          (rename [super-on-double-select on-double-select])
+              (super on-select i)))
           (define/override on-double-select
             (lambda (i)
               (when (and i (send i selectable?))
@@ -246,7 +244,7 @@
                   (send frame set-status-text (format "Opening ~a" mail-box))
                   (setup-mailboxes-file mail-box)
                   (open-mailbox (bytes->string/utf-8 mail-box))))
-              (super-on-double-select i)))
+              (super on-double-select i)))
           (super-instantiate ())))
       
       (define (update-gui orig-mbf)
@@ -278,7 +276,6 @@
       
       (define folders-frame%
         (class frame:basic%
-          (rename [super-on-close on-close])
           (define/override (on-size w h)
             (put-pref 'sirmail:folder-window-w w)
             (put-pref 'sirmail:folder-window-h h))
@@ -287,7 +284,7 @@
             (put-pref 'sirmail:folder-window-y y))
           (define/override (on-close)
             (shutdown-folders-window)
-            (super-on-close))
+            (super on-close))
           (define/override (on-message msg)
             (let ([s (and (list? msg)
                           (number? (car msg))

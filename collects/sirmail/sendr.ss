@@ -266,7 +266,6 @@
       ;; new-mailer : ... -> frame[with send-message method]
       (define (new-mailer file to cc subject other-headers body enclosures)
 	(define f% (class frame:basic%
-		     (rename [super-on-close on-close])
 		     (inherit get-menu-bar set-icon)
                      [define/public (send-message)
                        (send-msg)]
@@ -280,7 +279,7 @@
                                       this)))))
                      (define/override (on-close)
                        (send message-editor on-close)
-		       (super-on-close)
+		       (super on-close)
                        (exit-sirmail))
                      (super-instantiate ())
                      (when send-icon
@@ -345,11 +344,6 @@
            (editor:backup-autosave-mixin
             text:standard-style-list%)))
 	(define message-editor (make-object (class message-editor-super%
-					      (rename [super-set-modified set-modified]
-						      [super-can-insert? can-insert?]
-						      [super-on-insert on-insert]
-						      [super-can-delete? can-delete?]
-						      [super-on-delete on-delete])
 					      (inherit reset-region)
 					      
 					      (define immutable-start 0)
@@ -357,35 +351,35 @@
 					      
 					      (define/override (set-modified mod?)
 						(send mailer-frame modified mod?)
-						(super-set-modified mod?))
+						(super set-modified mod?))
 					      (define/public (set-no-change-region start end)
 						(set! immutable-start start)
 						(set! immutable-end end)
 						(reset-region end 'end))
 
-					      (define/override (can-insert? start len)
-						(and (super-can-insert? start len)
-						     (or (<= (+ start len) immutable-start)
-							 (>= start immutable-end))))
-					      (define/override (on-insert start len)
-						(super-on-insert start len)
+					      (define/augment (can-insert? start len)
+						(and (or (<= (+ start len) immutable-start)
+							 (>= start immutable-end))
+						     (inner #t can-insert? start len)))
+					      (define/augment (on-insert start len)
 						(if (<= start immutable-start)
 						    (begin
 						      (set! immutable-start (+ immutable-start len))
 						      (set! immutable-end (+ immutable-end len))
-						      (reset-region immutable-end 'end))))
+						      (reset-region immutable-end 'end)))
+						(inner (void) on-insert start len))
 					      
-					      (define/override (can-delete? start len)
-						(and (super-can-delete? start len)
-						     (or (<= (+ start len) immutable-start)
-							 (>= start immutable-end))))
-					      (define/override (on-delete start len)
-						(super-on-delete start len)
+					      (define/augment (can-delete? start len)
+						(and (or (<= (+ start len) immutable-start)
+							 (>= start immutable-end))
+						     (inner #t can-delete? start len)))
+					      (define/augment (on-delete start len)
 						(if (<= start immutable-start)
 						    (begin
 						      (set! immutable-start (- immutable-start len))
 						      (set! immutable-end (- immutable-end len))
-						      (reset-region immutable-end 'end))))
+						      (reset-region immutable-end 'end)))
+						(inner (void) on-delete start len))
 					      
 					      (super-new))))
 	(define enclosure-list (make-object hierarchical-list% (send mailer-frame get-area-container)))

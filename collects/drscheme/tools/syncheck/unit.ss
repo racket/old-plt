@@ -2,7 +2,7 @@
     (import [mred : mred^]
 	    [mzlib : mzlib:core^]
 	    [print-convert : mzlib:print-convert^]
-	    drscheme:export^
+	    [drscheme : drscheme:export^]
 	    [zodiac : zodiac:system^]
             [params : plt:parameters^])
     

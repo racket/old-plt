@@ -24,6 +24,7 @@
       [(mzc) 10]
       [(tools) 30]
       [(insidemz) 50]
+
       [else 100]))
   
   ; Known manuals:
@@ -43,4 +44,5 @@
       ("mzc" . "PLT mzc: MzScheme Compiler Manual")
       ("insidemz" . "Inside PLT MzScheme")
       ("tools" . "PLT Tools: DrScheme Extension Manual")
-      ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days"))))
+      ("t-y-scheme" . "Teach Yourself Scheme in Fixnum Days")
+      ("tex2page" . "TeX2page"))))

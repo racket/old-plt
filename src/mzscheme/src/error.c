@@ -481,7 +481,7 @@ void scheme_init_error_config(void)
     Scheme_Object *edh;
     edh = scheme_make_prim_w_arity(def_error_display_proc,
 				   "default-error-display-handler",
-				   1, 1);
+				   2, 2);
     scheme_set_param(config, MZCONFIG_ERROR_DISPLAY_HANDLER, edh);
   }
 
@@ -509,9 +509,9 @@ scheme_inescapeable_error(const char *a, const char *b)
 #define RAISE_RETURNED "exception handler did not escape"
 
 static void
-call_error(char *buffer, int len)
+call_error(char *buffer, int len, Scheme_Object *exn)
 {
-  Scheme_Object *p[1];
+  Scheme_Object *p[2];
   mz_jmp_buf savebuf;
 
   if (scheme_current_thread->error_invoked == 5) {
@@ -525,13 +525,14 @@ call_error(char *buffer, int len)
   } else {
     scheme_current_thread->error_invoked = 1;
     p[0] = scheme_make_immutable_sized_string(buffer, len, 1);
+    p[1] = exn;
     memcpy(&savebuf, &scheme_error_buf, sizeof(mz_jmp_buf));
     if (scheme_setjmp(scheme_error_buf)) {
       scheme_current_thread->error_invoked = 0;
       scheme_longjmp(savebuf, 1);
     } else {
       if (buffer)
-	scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 1, p);
+	scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_DISPLAY_HANDLER), 2, p);
       scheme_current_thread->error_invoked = 2;
       /* Typically jumps out of here */
       scheme_apply_multi(scheme_get_param(scheme_config, MZCONFIG_ERROR_ESCAPE_HANDLER), 0, NULL);
@@ -612,7 +613,7 @@ scheme_signal_error (char *msg, ...)
 #ifndef SCHEME_NO_EXN
   scheme_raise_exn(MZEXN_MISC, "%t", buffer, len);
 #else
-  call_error(buffer, len);
+  call_error(buffer, len, scheme_false);
 #endif
 }
 
@@ -1574,6 +1575,7 @@ def_error_display_proc(int argc, Scheme_Object *argv[])
 
   if (!SCHEME_STRINGP(argv[0]))
     scheme_wrong_type("default-error-display-handler", "string", 0, argc, argv);
+  /* don't care about argv[1] */
 
   scheme_write_string(SCHEME_STR_VAL(argv[0]), 
 		      SCHEME_STRTAG_VAL(argv[0]),
@@ -1619,7 +1621,7 @@ error_display_handler(int argc, Scheme_Object *argv[])
   return scheme_param_config("error-display-handler", 
 			     scheme_make_integer(MZCONFIG_ERROR_DISPLAY_HANDLER),
 			     argc, argv,
-			     1, NULL, NULL, 0);
+			     2, NULL, NULL, 0);
 }
 
 static Scheme_Object *
@@ -1743,7 +1745,7 @@ scheme_raise_exn(int id, ...)
 				       c, eargs),
 	   0, 1);
 #else
-  call_error(buffer, alen);
+  call_error(buffer, alen, scheme_false);
 #endif
 }
 
@@ -1773,7 +1775,7 @@ def_exn_handler(int argc, Scheme_Object *argv[])
     len += 20;
   }
 
-  call_error(s, len);
+  call_error(s, len, argv[0]);
 
   return scheme_void;
 }
@@ -1840,7 +1842,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
        s = "exception raised [message field is not a string]";
    } else
      s = "raise called (with non-exception value)";
-   call_error(s, slen);
+   call_error(s, slen, arg);
  }
 
  if (scheme_current_thread->exn_raised) {
@@ -1870,7 +1872,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
 			 : "debug info handler",
 			 msg, mlen);
 
-   call_error(buffer, blen);
+   call_error(buffer, blen, scheme_false);
 
    return scheme_void;
  }
@@ -1888,7 +1890,7 @@ do_raise(Scheme_Object *arg, int return_ok, int need_debug)
  if (return_ok)
    return v;
 
- call_error(RAISE_RETURNED, -1);
+ call_error(RAISE_RETURNED, -1, scheme_false);
 
  return scheme_void;
 }

@@ -47,7 +47,8 @@
 	(if (or error-display error-result)
 	    (with-handlers ([void
 			     (lambda (exn)
-			       ((or error-display (error-display-handler))
+			       ((or error-display (lambda (x)
+						    ((error-display-handler) x exn)))
 				(exn-message exn))
 			       (if error-result
 				   (error-result)
@@ -73,7 +74,8 @@
 	(if error-display
 	    (with-handlers ([void
 			     (lambda (exn)
-			       ((or error-display (error-display-handler))
+			       ((or error-display (lambda (x)
+						    ((error-display-handler) x exn)))
 				(exn-message exn))
 			       (k (if error-result
 				      (error-result)

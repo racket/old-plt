@@ -418,7 +418,7 @@
                    (display (exn-message x) p)
                    (newline p)
                    (print-error-trace p x)
-		   ((error-display-handler) (get-output-string p))
+		   ((error-display-handler) (get-output-string p) x)
 		   ((error-escape-handler)))
                  (orig x)))])
      errortrace-exception-handler))

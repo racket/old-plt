@@ -232,7 +232,7 @@ $(OBJDIR)/vector.o: $(XSRCDIR)/vector.c
 $(OBJDIR)/main.o: $(XSRCDIR)/main.c
 	$(CC) $(CFLAGS) -c $(XSRCDIR)/main.c -o $(OBJDIR)/main.o
 
-$(OBJDIR)/gc2.o: gc2.c gc2.h
+$(OBJDIR)/gc2.o: gc2.c copy.c compact.c gc2.h
 	$(CC) $(CFLAGS) -c gc2.c -o $(OBJDIR)/gc2.o
 
 ../$(MZBUILDDIR)mzscheme2k: ctok $(OBJS)

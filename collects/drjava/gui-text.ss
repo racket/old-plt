@@ -2,6 +2,7 @@
 (unit/sig gui-text^
   (import mred^ repl^ jvm^ scanner^ split^ gjc^ goober^ mzlib:file^)
   
+  (define fixed (make-object style-delta% 'change-family 'modern))
   ;; This doesn't work for argument lists that span lines,
   ;; nor does it work when } are not at the front of the line.
   
@@ -115,7 +116,8 @@
                (unless (<= n 0)
                  (insert #\space start)
                  (loop (sub1 n))))))))
-      (sequence (super-init))))
+      (sequence (super-init)
+                (send this change-style fixed 'start 'end))))
   
   (define banner "Welcome to DrJava")
   (define prompt (format "~n> "))
@@ -290,6 +292,7 @@
                    (super-on-default-char event)))))))
       (sequence
         (super-init)
+        (send this change-style fixed 'start 'end)
         (let ([keymap (make-object keymap%)]
               [prev-name "hist-prev"]
               [next-name "hist-next"])

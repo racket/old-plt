@@ -17,9 +17,7 @@
            (lib "list.ss")
            (lib "string.ss")
            (lib "file.ss")
-           (lib "url.ss" "net")
-
-	   "../map.ss")
+           (lib "url.ss" "net"))
   
   (provide helpwin@)
   
@@ -743,7 +741,7 @@
                   (send editor insert "Searching...")
                   (send editor lock #t)
                   (set! searching-message-on? #t)
-                  (with-handlers ([exn:misc:user-break?
+                  (with-handlers ([exn:break?
                                    (lambda (x)
                                      (queue-callback
                                       (lambda ()

@@ -75,7 +75,6 @@ string=? ; exec mred -qvf $0
      ((open mred^)
       ,@interface-names)))
 
-
 (define new-unit-definition
   `(define mred-interfaces@
      (compound-unit/sig

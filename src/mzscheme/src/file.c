@@ -67,6 +67,14 @@
 #else
 # include <errno.h>
 #endif
+#ifdef MACINTOSH_EVENTS
+  #ifdef OS_X
+    #include <Carbon/HIToolbox/Processes.h>
+    #include <Carbon/HIToolbox/AEInteraction.h>
+    #include <ApplicationServices/AE/AppleEvents.h>
+    #include <CoreServices/CarbonCore/Aliases.h>
+  #endif
+#endif
 
 #if defined(S_IFDIR) && !defined(S_ISDIR)
 # define S_ISDIR(m) ((m) & S_IFDIR)
@@ -397,13 +405,18 @@ char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn)
     char nbuf[64];
     WDPBRec rec;
     FSSpec spec;
+    OSErr err;
     
     rec.ioNamePtr = (StringPtr)nbuf;
     PBHGetVol(&rec, 0);
-    spec.vRefNum = rec.ioVRefNum;
-    spec.parID = rec.ioWDDirID;
     
-    dir = scheme_build_mac_filename(&spec, 1);
+    err = FSMakeFSSpec(rec.ioVRefNum,rec.ioWDDirID,NULL,&spec);
+    
+    if (err != noErr) {
+      return NULL;
+    }
+    
+    dir = scheme_mac_spec_to_path(&spec);
 
     if (actlen)
       *actlen = strlen(dir) + 1;
@@ -536,15 +549,60 @@ Scheme_Object *scheme_remove_current_directory_prefix(Scheme_Object *fn)
   return fn;
 }
 
-#ifdef USE_CARBON_FILE_TOOLBOX
-char *scheme_carbon_spec_to_path(const FSSpec *spec)
+#if (defined (MACINTOSH_EVENTS) && defined(OS_X))
+
+int scheme_mac_path_to_spec(const char *filename, FSSpec *spec)
 {
+	FSRef fsref;
+	OSErr err;
+	
+	// first, convert to an FSRef
+	
+	err = FSPathMakeRef((const UInt8 *)filename,&fsref,NULL);
+	
+	if (err != noErr) {
+		return 0;
+	}
+	
+	// then, convert to an FSSpec
+	err = FSGetCatalogInfo(&fsref, kFSCatInfoNone, NULL, NULL, spec, NULL);
+	
+	if (err != noErr) {
+		return 0;
+	}
+	
+	return 1;
+}
+	
+
+char *scheme_mac_spec_to_path(FSSpec *spec)
+{
+    FSRef fileRef;
+    OSErr err;
+    int longEnough = FALSE;
+    int strLen = 256;
+    char *str;
+    
+    str = (char *)scheme_malloc_atomic(strLen);
+    
+    // first, convert to an FSRef
+    if (FSpMakeFSRef(spec,&fileRef) != noErr) {
+      return NULL;
+    }
+    
+    while (! longEnough) {
+      if (FSRefMakePath(&fileRef,(unsigned char *)str,strLen) == pathTooLongErr) {
+        strLen *= 2;
+        str = (char *)scheme_malloc_atomic(strLen);
+      } else {
+        longEnough = TRUE;
+      }
+    }
+    
+    return str;
 }
 
-FSSpec *scheme_carbon_path_to_spec(const char *path)
-{
-}
-#endif
+#endif // (defined (MACINTOSH_EVENTS) && defined(OS_X))
 
 #ifdef USE_MAC_FILE_TOOLBOX
 static int find_mac_file(const char *filename, int use_real_cwd,
@@ -810,7 +868,7 @@ static int find_mac_file(const char *filename, int use_real_cwd,
   return 1;
 }
 
-char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
+char *scheme_mac_spec_to_path(const FSSpec *spec)
 {
 #define QUICK_BUF_SIZE 256
 
@@ -821,10 +879,8 @@ char *scheme_build_mac_filename(FSSpec *spec, int given_dir)
   long dirID = spec->parID;
 
   s = qbuf;
-  if (!given_dir) {
-    for (i = spec->name[0]; i; i--) {
-      s[size++] = spec->name[i];
-    }
+  for (i = spec->name[0]; i; i--) {
+    s[size++] = spec->name[i];
   }
 
   while (1)  {
@@ -886,11 +942,11 @@ void scheme_file_create_hook(char *filename)
   }
 }
 
-int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type)
+int scheme_mac_path_to_spec(const char *filename, FSSpec *spec)
 {
   int wasdir;
   
-  if (find_mac_file(filename, 1, spec, 0, 0, NULL, &wasdir, NULL, NULL, NULL, type, NULL, NULL)) {
+  if (find_mac_file(filename, 1, spec, 0, 0, NULL, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL)) {
     if (wasdir) {
       CInfoPBRec pb;
       OSErr myErr;
@@ -1309,9 +1365,13 @@ static char *do_expand_filename(char* filename, int ilen, char *errorin,
     int dealiased, wasdir;
     
     if (find_mac_file(filename, 0, &spec, 0, 0, &dealiased, &wasdir, NULL, NULL, NULL, NULL, NULL, NULL)) {
+      if (wasdir) {
+      	// clean up broken FSSpec:
+      	FSMakeFSSpec(spec.vRefNum,spec.parID,NULL,&spec);
+      }
       if (dealiased) {
         char *s;
-        s = scheme_build_mac_filename(&spec, wasdir);
+        s = scheme_mac_spec_to_path(&spec);
 	if (s) {
 	  if (expanded)
 	    *expanded = 1;
@@ -3818,10 +3878,12 @@ find_system_path(int argc, Scheme_Object **argv)
 
 #ifdef MAC_FILE_SYSTEM
   {
-    OSType t;
-    FSSpec spec;
+    OSType	t;
+    FSSpec	spec;
     Scheme_Object *home;
-    int ends_in_colon;
+    int		ends_in_colon;
+    SInt16	vRefNum;
+    SInt32	dirID;
 
     switch (which) {
     case id_home_dir:
@@ -3839,8 +3901,9 @@ find_system_path(int argc, Scheme_Object **argv)
       break;
     }
 
-    if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &spec.vRefNum, &spec.parID))
-      home = scheme_make_string(scheme_build_mac_filename(&spec, 1));
+    if (!FindFolder(kOnSystemDisk, t, kCreateFolder, &vRefNum, &dirID)) {
+      FSMakeFSSpec(vRefNum,dirID,NULL,&spec);
+      home = scheme_make_string(scheme_mac_spec_to_path(&spec));
     else {
       if (which == id_temp_dir)
 	home = CURRENT_WD();
@@ -3914,6 +3977,8 @@ static long check_four(char *name, int which, int argc, Scheme_Object **argv)
   return *(long *)SCHEME_STR_VAL(o);
 }
 
+#ifdef MAC_FILE_SYSTEM
+  
 static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec *spec)
 {
   if (find_path) {
@@ -3958,7 +4023,7 @@ static int appl_name_to_spec(char *name, int find_path, Scheme_Object *o, FSSpec
   
   return 1;
 }
-  
+
 int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
 {
   FSSpec spec;
@@ -3976,6 +4041,8 @@ int scheme_mac_start_app(char *name, int find_path, Scheme_Object *o)
 
   return !LaunchApplication(&rec);
 }
+
+#endif // MAC_FILE_SYSTEM
 
 #ifndef FALSE
 # define FALSE 0
@@ -4031,7 +4098,7 @@ static int ae_marshall(AEDescList *ae, AEDescList *list_in, AEKeyword kw, Scheme
 	  char *s = SCHEME_STR_VAL(SCHEME_VEC_ELS(v)[1]);
 	  long l = SCHEME_STRTAG_VAL(SCHEME_VEC_ELS(v)[1]);
 	  if (!has_null(s, l)) {
-	    if (scheme_mac_path_to_spec(s, &x_fss, NULL)) {
+	    if (scheme_mac_path_to_spec(s, &x_fss)) {
 	      *err = NewAliasMinimal(&x_fss, (AliasHandle *)&alias);
 	      if (*err == -43) {
 	        /* Can't make alias; make FSSpec, instead */
@@ -4314,7 +4381,7 @@ static Scheme_Object *ae_unmarshall(AppleEvent *reply, AEDescList *list_in, int 
       result = scheme_make_sized_string(x_s, sz, 0);
       break;
     case typeFSS:
-      result = scheme_make_sized_string(scheme_build_mac_filename(&x_f, 0), -1, 0);
+      result = scheme_make_sized_string(scheme_mac_spec_to_path(&x_f), -1, 0);
       break;      
     }
   }
@@ -4365,7 +4432,7 @@ static pascal Boolean while_waiting(EventRecord *e, long *sleeptime, RgnHandle *
    return FALSE;
 }
 
-static pascal OSErr HandleAnswer(AppleEvent *evt, AppleEvent *rae, long k)
+static pascal OSErr HandleAnswer(const AppleEvent *evt, AppleEvent *rae, long k)
 {
   ReplyItem *r = MALLOC_ONE_RT(ReplyItem);
   DescType rtype;
@@ -4393,7 +4460,7 @@ static void wait_for_reply(AppleEvent *ae, AppleEvent *reply)
   
   if (!handlerInstalled) {
     handlerInstalled = TRUE;
-    AEInstallEventHandler(kCoreEventClass, kAEAnswer, NewAEEventHandlerProc(HandleAnswer), 0, 0);
+    AEInstallEventHandler(kCoreEventClass, kAEAnswer, NewAEEventHandlerUPP(HandleAnswer), 0, 0);
     REGISTER_SO(reply_queue);
 #ifdef MZ_PRECISE_GC
     GC_REG_TRAV(scheme_rt_reply_item, mark_reply_item);

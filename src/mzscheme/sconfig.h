@@ -619,7 +619,7 @@
 
   /************** Mac OS X  ****************/
 
-# if defined(__APPLE__) && defined(__ppc__) && (!defined(__MWERKS__) || defined(OS_X))
+# if defined(__APPLE__) && defined(__ppc__) && (defined(OS_X) || !defined(__MWERKS__))
   /* hard to believe we can't do better */
 
 # define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-macosx"
@@ -647,7 +647,6 @@
 
 # define USE_TM_GMTOFF_FIELD
 
-// events cause build problems in a framework world.  Deal with it later.
 # define MACINTOSH_EVENTS
 
 # define FLAGS_ALREADY_SET
@@ -672,6 +671,8 @@
 # define USE_MAC_FILE_TOOLBOX
 
 # define MACINTOSH_EVENTS
+# define MAC_MZ_GUI_ENABLED
+# define MAC_CLASSIC_PROCESS_CONTROL
 # define MACINTOSH_GIVE_TIME
 # define MACINTOSH_SIOUX
 
@@ -1201,8 +1202,13 @@
  /*   Macintosh Standalone    */
 /*****************************/
 
- /* MACINTOSH_EVENTS checks for a user break on the Mac. This should always
-     be defined for MacOS. */
+ /* MACINTOSH_EVENTS enables apple event sending/receiving on the Mac. */
+ 
+ /* MAC_MZ_GUI_ENABLED activates the windowed I/O code (use under classic) 
+     (should maybe use MACINTOSH_SIOUX instead?) */
+
+ /* MAC_CLASSIC_PROCESS_CONTROL swaps the UNIX process commands for the mac family 
+     (use under classic) */
 
  /* MACINTOSH_GIVE_TIME lets background processes run when checking for
      a user break. */

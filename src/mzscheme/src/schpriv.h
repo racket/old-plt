@@ -1724,8 +1724,10 @@ void scheme_do_format(const char *procname, Scheme_Object *port,
 
 Scheme_Object *scheme_load_with_clrd(int argc, Scheme_Object *argv[], char *who, int handler_param);
 
-#ifdef MACINTOSH_EVENTS
+#ifdef MAC_CLASSIC_PROCESS_CONTROL
 int scheme_mac_start_app(char *name, int find_path, Scheme_Object *s);
+#endif
+#ifdef MACINTOSH_EVENTS
 int scheme_mac_send_event(char *name, int argc, Scheme_Object **argv, Scheme_Object **result, OSErr *err, char **stage);
 #endif
 

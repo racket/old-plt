@@ -4237,7 +4237,7 @@ static int flush_fd(Scheme_Output_Port *op,
   }
 
   if (!bufstr) {
-    bufstr = fop->buffer;
+    bufstr = (char *)fop->buffer;
     buflen = fop->bufcount;
   }
 
@@ -4610,7 +4610,7 @@ static Scheme_Object *subprocess_status(int argc, Scheme_Object **argv)
   if (!SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_subprocess_type))
     scheme_wrong_type("subprocess-status", "subprocess", 0, argc, argv);
 
-#if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
+#if defined(PROCESS_FUNCTION) && !defined(MAC_CLASSIC_PROCESS_CONTROL)
   { 
     int going = 0, status = MZ_FAILURE_STATUS;
 
@@ -4889,7 +4889,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
      /* subprocess(out, in, err, exe, args...) */
 {
   const char *name = "subprocess";
-#if defined(PROCESS_FUNCTION) && !defined(MACINTOSH_EVENTS)
+#if defined(PROCESS_FUNCTION) && !defined(MAC_CLASSIC_PROCESS_CONTROL)
   char *command;
   int to_subprocess[2], from_subprocess[2], err_subprocess[2];
   int i, pid;
@@ -5324,7 +5324,7 @@ static Scheme_Object *subprocess(int c, Scheme_Object *args[])
   return scheme_values(4, a);
 
 #else
-# ifdef MACINTOSH_EVENTS
+# ifdef MAC_CLASSIC_PROCESS_CONTROL
 
   /*--------------------------------------*/
   /*            Macintosh hacks           */

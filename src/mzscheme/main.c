@@ -65,7 +65,9 @@
 # include <locale.h>
 #endif
 #ifdef MACINTOSH_EVENTS
-# include <Events.h>
+# ifndef OS_X
+#  include <Events.h>
+# endif
 #endif
 #ifdef MACINTOSH_SIOUX
 # include <console.h>
@@ -77,7 +79,9 @@
 # include <Memory.h>
 #endif
 #ifdef MACINTOSH_EVENTS
-# include "simpledrop.h"
+# ifndef OS_X
+#  include "simpledrop.h"
+# endif
 #endif
 
 #ifdef WIN32_THREADS
@@ -159,7 +163,7 @@ extern Scheme_Object *scheme_initialize(Scheme_Env *env);
 /*========================================================================*/
 
 #ifndef NO_USER_BREAK_HANDLER
-# ifndef MACINTOSH_EVENTS
+# ifndef MAC_MZ_GUI_ENABLED
 
 static void user_break_hit(int ignore)
 {
@@ -248,7 +252,7 @@ int actual_main(int argc, char *argv[])
   SetApplLimit((Ptr)((*(long *)zone)+sizeof(Zone)+calcLimit));
 #endif
 
-#ifdef MACINTOSH_EVENTS
+#ifdef MAC_MZ_GUI_ENABLED
   MaxApplZone();
 	
   InitGraf(&qd.thePort);		/* initialize Mac stuff */
@@ -274,7 +278,7 @@ int actual_main(int argc, char *argv[])
   GC_out_of_memory = MacOutOfMemory;
 
   Drop_GetArgs(&argc, &argv);
-#endif
+#endif // MAC_MZ_GUI_ENABLED
 
 #ifdef MACINTOSH_SIOUX
   { 
@@ -312,7 +316,7 @@ int actual_main(int argc, char *argv[])
 #endif
 
 #ifndef NO_USER_BREAK_HANDLER
-# ifndef MACINTOSH_EVENTS
+# ifndef MAC_MZ_GUI_ENABLED
   MZ_SIGSET(SIGINT, user_break_hit);
 # else
   scheme_check_for_break = check_break_flag;
@@ -336,7 +340,7 @@ static int cont_run(FinishArgs *f)
 static void do_scheme_rep(Scheme_Env *env)
 {
 #ifndef NO_USER_BREAK_HANDLER
-# ifdef MACINTOSH_EVENTS
+# ifdef MAC_MZ_GUI_ENABLED
   scheme_set_param(scheme_config, MZCONFIG_ENABLE_BREAK, scheme_true);
 # endif
 #endif

@@ -29,6 +29,12 @@
 # include "schsys.h"
 #endif
 
+#ifdef MACINTOSH_EVENTS
+  #ifdef OS_X
+    #include <CoreServices/CarbonCore/TextUtils.h>
+  #endif
+#endif
+
 /* globals */
 
 /* locals */

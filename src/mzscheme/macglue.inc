@@ -1,5 +1,5 @@
 #ifndef NO_USER_BREAK_HANDLER
-# ifdef MACINTOSH_EVENTS
+# ifdef MAC_MZ_GUI_ENABLED
 
 extern void (*GC_out_of_memory)(void);
 
@@ -86,7 +86,8 @@ static void MacSleep(float secs, void *fds)
 
 #endif
 
-#ifdef MACINTOSH_EVENTS
+#ifdef MAC_MZ_GUI_ENABLED
+
 void Drop_Runtime(char **argv, int argc)
 {
   int i;
@@ -101,6 +102,7 @@ void Drop_Quit()
 {
   ExitToShell();
 }
+
 #endif
 
 #ifndef DONT_PARSE_COMMAND_LINE

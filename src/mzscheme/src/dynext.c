@@ -603,7 +603,7 @@ Scheme_Object *scheme_load_extension(const char *filename, Scheme_Env *env)
 static Boolean get_ext_file_spec(FSSpec *spec, const char *filename)
 {
 #ifndef EXTENSIONS_WITHOUT_PATH
-	return scheme_mac_path_to_spec(filename, spec, NULL);
+	return scheme_mac_path_to_spec(filename, spec);
 #else
 	/* William Ng's code for always finding an extension in a particular place. */
 	/* This is a very Mac-like idea, but not MzScheme-like. */

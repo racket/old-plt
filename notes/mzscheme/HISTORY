@@ -2,6 +2,11 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.28
+Added H-expression mode to reader, triggered by #hx or #honu,
+ and escaped by #sx
+Added read-honu, read-honu-syntax, and print-honu
+
 Version 299.27
 Changed exp-time structure type info to allow #f in place
  of a mutator id

@@ -13,7 +13,7 @@
 	    init-vars
 	    clauses ...)
 	 (let ([se (lambda (msg expr)
-		     (raise-syntax-error 'class*/names msg stx expr))])
+		     (raise-syntax-error #f msg stx expr))])
 	   ;; Check this and super-init:
 	   (unless (identifier? (syntax this-id))
 	     (se "not an identifier" (syntax this-id)))
@@ -172,10 +172,10 @@
 	    init-vars
 	    clauses ...)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "bad this and super bindings"
-	  (syntax bad-this-super)
-	  stx)]
+	  stx
+	  (syntax bad-this-super))]
 	;; --
 	[(_ this-super
 	    super-expr
@@ -183,32 +183,32 @@
 	    init-vars
 	    clauses ...)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "expected sequence of interface expressions"
-	  (syntax bad-interface-seq)
-	  stx)]
+	  stx
+	  (syntax bad-interface-seq))]
 	;;
 	[(_ this-super
 	    super-expr
 	    interface-seq)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "missing initialization arguments"
-	  (syntax bad-this-super)
-	  stx)]
+	  stx
+	  (syntax bad-this-super))]
 	[(_ this-super
 	    super-expr)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "missing interface expressions"
-	  (syntax bad-this-super)
-	  stx)]
+	  stx
+	  (syntax bad-this-super))]
 	[(_ this-super)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "missing this and super-init bindings"
-	  (syntax bad-this-super)
-	  stx)])))
+	  stx
+	  (syntax bad-this-super))])))
   
   (define-syntax class100*
     (lambda (stx)

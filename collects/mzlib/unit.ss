@@ -44,7 +44,7 @@
 	 (let ([check-id (lambda (v)
 			   (unless (identifier? v)
 			     (raise-syntax-error
-			      'unit
+			      #f
 			      "import is not an identifier"
 			      stx
 			      v)))]
@@ -55,7 +55,7 @@
 		    [(lid eid) (and (identifier? (syntax lid))
 				    (identifier? (syntax eid))) 'ok]
 		    [else (raise-syntax-error
-			   'unit
+			   #f
 			   "export is not an identifier or renamed identifier"
 			   stx
 			   v)]))]
@@ -83,7 +83,7 @@
 	       (for-each (lambda (name)
 			   (when (hash-table-get ht (syntax-e name) (lambda () #f))
 			     (raise-syntax-error
-			      'unit
+			      #f
 			      "duplicate export"
 			      stx
 			      name))
@@ -113,9 +113,8 @@
 				  (let ([l (syntax->list (syntax l))])
 				    (unless l
 				      (raise-syntax-error
-				       'begin
+				       #f
 				       "bad syntax (illegal use of `.')"
-				       stx
 				       defn-or-expr))
 				    (expand-all l))]
 				 [else (list defn-or-expr)]))
@@ -140,9 +139,9 @@
 				  (for-each (lambda (i)
 					      (unless (identifier? i)
 						(raise-syntax-error
-						 'unit
+						 #f
 						 "not an identifier in definition"
-						 stx
+						 defn-or-expr
 						 i)))
 					    l)
 				  (let ([key (if (module-identifier=? (syntax dv) (quote-syntax define-syntaxes))
@@ -151,15 +150,13 @@
 				    (map (lambda (id) (cons key id)) l)))]
 			       [(define-values . l)
 				(raise-syntax-error
-				 'unit
+				 #f
 				 "bad definition form"
-				 stx
 				 defn-or-expr)]
 			       [(define-syntaxes . l)
 				(raise-syntax-error
-				 'unit
+				 #f
 				 "bad syntax definition form"
-				 stx
 				 defn-or-expr)]
 			       [else null]))
 			   all-expanded))]
@@ -172,7 +169,7 @@
 				(append imported-names all-defined-names))])
 		     (when name
 		       (raise-syntax-error 
-			'unit
+			#f
 			"variable imported and/or defined twice"
 			stx
 			name)))
@@ -195,12 +192,12 @@
 			    (let ([stx-v (hash-table-get stx-ht (syntax-e n) (lambda () null))])
 			      (if (ormap (lambda (i) (bound-identifier=? i n)) stx-v)
 				  (raise-syntax-error
-				   'unit
+				   #f
 				   "cannot export syntax from a unit"
 				   stx
 				   n)
 				  (raise-syntax-error
-				   'unit
+				   #f
 				   "exported variable is not defined"
 				   stx
 				   n))))))
@@ -368,14 +365,14 @@
 	 (let ([check-id (lambda (v)
 			   (unless (identifier? v)
 			     (raise-syntax-error
-			      'compound-unit
+			      #f
 			      "import is not an identifier"
 			      stx
 			      v)))]
 	       [check-tag (lambda (v)
 			   (unless (identifier? v)
 			     (raise-syntax-error
-			      'compound-unit
+			      #f
 			      "tag is not an identifier"
 			      stx
 			      v)))]
@@ -386,14 +383,14 @@
 				   (for-each (lambda (v)
 					       (unless (identifier? v)
 						 (raise-syntax-error
-						  'compound-unit
+						  #f
 						  "non-identifier in linkage"
 						  stx
 						  v)))
 					     (syntax->list v))]
 				  [else
 				   (raise-syntax-error
-				    'compound-unit
+				    #f
 				    "ill-formed linkage"
 				    stx
 				    v)]))]
@@ -403,7 +400,7 @@
 				     (begin
 				       (unless (identifier? (syntax tag))
 					 (raise-syntax-error
-					  'compound-unit
+					  #f
 					  "export tag is not an identifier"
 					  stx
 					  (syntax tag)))
@@ -415,19 +412,19 @@
 					     (begin
 					       (unless (identifier? (syntax iid))
 						 (raise-syntax-error
-						  'compound-unit
+						  #f
 						  "export internal name is not an identifier"
 						  stx
 						  (syntax iid)))
 					       (unless (identifier? (syntax eid))
 						 (raise-syntax-error
-						  'compound-unit
+						  #f
 						  "export internal name is not an identifier"
 						  stx
 						  (syntax eid))))]
 					    [else
 					     (raise-syntax-error
-					      'compound-unit
+					      #f
 					      (format "ill-formed export with tag ~a" 
 						      (syntax-e (syntax tag)))
 					      stx
@@ -435,7 +432,7 @@
 					(syntax->list (syntax (ex ...)))))]
 				    [else
 				     (raise-syntax-error
-				      'compound-unit
+				      #f
 				      "ill-formed export"
 				      stx
 				      v)]))]
@@ -452,7 +449,7 @@
 	   (let ([dup (check-duplicate-identifier imports)])
 	     (when dup
 	       (raise-syntax-error
-		'compound-unit
+		#f
 		"duplicate import"
 		stx
 		dup)))
@@ -460,7 +457,7 @@
 	   (let ([dup (check-duplicate-identifier tags)])
 	     (when dup
 	       (raise-syntax-error
-		'compound-unit
+		#f
 		"duplicate tag"
 		stx
 		dup)))
@@ -472,7 +469,7 @@
 							   (bound-identifier=? t (syntax tag)))
 							 tags)
 					    (raise-syntax-error
-					     'compound-unit
+					     #f
 					     "linkage tag is not bound"
 					     stx
 					     (syntax tag)))]
@@ -480,7 +477,7 @@
 							      (bound-identifier=? i (syntax id)))
 							    imports)
 					       (raise-syntax-error
-						'compound-unit
+						#f
 						"no imported identified for linkage"
 						stx
 						(syntax id)))]))]
@@ -491,7 +488,7 @@
 							  (bound-identifier=? t (syntax tag)))
 							tags)
 					   (raise-syntax-error
-					    'compound-unit
+					    #f
 					    "export tag is not bound"
 					    stx
 					    (syntax tag)))]))])
@@ -516,7 +513,7 @@
 	       (let ([dup (check-duplicate-identifier export-names)])
 		 (when dup
 		   (raise-syntax-error
-		    'compound-unit
+		    #f
 		    "duplicate export"
 		    stx
 		    dup)))
@@ -753,9 +750,7 @@
 		 [(_ exports unite . prefix+imports)
 		  (let* ([badsyntax (lambda (s why)
 				      (raise-syntax-error
-				       (if global?
-					   'namespace-variable-bind/invoke-unit
-					   'define-values/invoke-unit)
+				       #f
 				       (format "bad syntax (~a)" why)
 				       stx
 				       s))]

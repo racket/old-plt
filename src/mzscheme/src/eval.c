@@ -1364,7 +1364,7 @@ static Scheme_Object *compile_application(Scheme_Object *form, Scheme_Comp_Env *
   len = scheme_stx_proper_list_length(form);
 
   if (len < 0)
-    scheme_wrong_syntax("application", NULL, form, NULL);
+    scheme_wrong_syntax(scheme_application_stx_string, NULL, form, NULL);
   
   scheme_compile_rec_done_local(rec, drec);
   form = scheme_inner_compile_list(form, scheme_no_defines(env), rec, drec, 1);
@@ -1626,7 +1626,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  if (var == stop_expander)
 	    return form;
 	  else {
-	    scheme_wrong_syntax("compile", NULL, form, "bad syntax");
+	    scheme_wrong_syntax(NULL, NULL, form, "bad syntax");
 	    return NULL;
 	  }
 	} else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)) {
@@ -1745,7 +1745,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     }
   } else {
     /* Not allowed this context! */
-    scheme_wrong_syntax("compile", NULL, form, 
+    scheme_wrong_syntax(scheme_compile_stx_string, NULL, form, 
 			"bad syntax; %s is not allowed, "
 			"because no %S syntax transformer is bound",
 			not_allowed,
@@ -1866,7 +1866,7 @@ compile_expand_app(Scheme_Object *forms, Scheme_Comp_Env *env,
 						  env, rec, drec, depth, boundname, 0);
 	      } else {
 #if 0
- 		scheme_wrong_syntax("application", NULL, form, 
+ 		scheme_wrong_syntax(scheme_application_stx_string, NULL, form, 
 				    "procedure application: bad ((lambda (...) ...) ...) syntax");
 		return NULL
 #endif
@@ -1937,7 +1937,7 @@ datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object
   return form;
 }
 
-static Scheme_Object *check_top(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
+static Scheme_Object *check_top(const char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *c;
 
@@ -1948,7 +1948,7 @@ static Scheme_Object *check_top(char *when, Scheme_Object *form, Scheme_Comp_Env
     c = SCHEME_STX_CDR(form);
 
   if (!SCHEME_STX_SYMBOLP(c))
-    scheme_wrong_syntax("#%top", NULL, form, NULL);
+    scheme_wrong_syntax(NULL, NULL, form, NULL);
 
   if (env->genv->module) {
     Scheme_Object *modidx, *symbol = c;
@@ -1980,7 +1980,7 @@ top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, 
 {
   Scheme_Object *c;
 
-  c= check_top("compile", form, env);
+  c = check_top(scheme_compile_stx_string, form, env);
 
   if (env->genv->module && !rec[drec].resolve_module_ids) {
     /* Self-reference in a module; need to remember the modidx */
@@ -1995,7 +1995,7 @@ top_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
 {
   Scheme_Object *c;
 
-  check_top("expand", form, env);
+  check_top(scheme_expand_stx_string, form, env);
 
   c = SCHEME_STX_CDR(form);
 
@@ -2038,7 +2038,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
  try_again:
 
   if (!SCHEME_STX_PAIRP(forms)) {
-    scheme_wrong_syntax("begin", NULL, forms, "bad syntax (" IMPROPER_LIST_FORM ")");
+    scheme_wrong_syntax(scheme_begin_stx_string, NULL, forms, "bad syntax");
     return NULL;
   }
 
@@ -2062,7 +2062,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       content = SCHEME_STX_CDR(first);
 
       if (scheme_stx_proper_list_length(content) < 0)
-	scheme_wrong_syntax("begin", NULL, first, 
+	scheme_wrong_syntax(scheme_begin_stx_string, NULL, first, 
 			    "bad syntax (" IMPROPER_LIST_FORM ")");
 
       forms = SCHEME_STX_CDR(forms);
@@ -2070,7 +2070,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			    forms);
 
       if (SCHEME_STX_NULLP(forms)) {
-	scheme_wrong_syntax("begin", NULL, first, 
+	scheme_wrong_syntax(scheme_begin_stx_string, NULL, first, 
 			    "bad syntax (empty form)");
       }
 
@@ -2084,18 +2084,14 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
       Scheme_Object *l = scheme_null, *start = NULL;
       Scheme_Object *stx_l = scheme_null, *stx_start = NULL;
       int is_val;
-      GC_CAN_IGNORE char *dname;
 
       while (1) {
 	is_val = SAME_OBJ(gval, scheme_define_values_syntax);
-	dname = (is_val
-		 ? "define-values (internal)" 
-		 : "define-syntax (internal)");
-
+	
 	v = SCHEME_STX_CDR(first);
 	
 	if (!SCHEME_STX_PAIRP(v))
-	  scheme_wrong_syntax(dname, NULL, forms, 
+	  scheme_wrong_syntax(NULL, NULL, first, 
 			      "bad syntax (" IMPROPER_LIST_FORM ")");
 
 	var = NULL;
@@ -2103,7 +2099,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	while (SCHEME_STX_PAIRP(vars)) {
 	  var = SCHEME_STX_CAR(vars);
 	  if (!SCHEME_STX_SYMBOLP(var))
-	    scheme_wrong_syntax(dname, var, forms, 
+	    scheme_wrong_syntax(NULL, var, first, 
 				"name must be an identifier");
 	  vars = SCHEME_STX_CDR(vars);
 	}
@@ -2125,7 +2121,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
 	result = SCHEME_STX_CDR(result);
 	if (!SCHEME_STX_NULLP(result) && !SCHEME_STX_PAIRP(result))
-	  scheme_wrong_syntax(dname, NULL, forms, NULL);
+	  scheme_wrong_syntax(NULL, NULL, first, NULL);
 
       define_try_again:
 	if (!SCHEME_STX_NULLP(result)) {
@@ -2142,7 +2138,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	      content = SCHEME_STX_CDR(first);
 		
 	      if (scheme_stx_proper_list_length(content) < 0)
-		scheme_wrong_syntax("begin", NULL, first, 
+		scheme_wrong_syntax(NULL, NULL, first, 
 				    "bad syntax (" IMPROPER_LIST_FORM ")");
 		
 	      result = scheme_append(scheme_flatten_syntax_list(content, NULL), 
@@ -2170,7 +2166,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	more = 0;
       } else {
 	/* Empty body: illegal. */
-	scheme_wrong_syntax("begin (possibly implicit)", NULL, forms, 
+	scheme_wrong_syntax(scheme_begin_stx_string, NULL, forms, 
 			    "no expression after a sequence of internal definitions");
       }
     }
@@ -2222,6 +2218,8 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     forms = scheme_compile_expand_block(scheme_datum_to_syntax(rest, forms, forms, 0, 0), 
 					env, rec, drec, depth, boundname);
 #else
+    if (scheme_stx_proper_list_length(rest) < 0)
+      scheme_wrong_syntax(scheme_begin_stx_string, NULL, rest, "bad syntax");
     forms = scheme_expand_list(rest, env, depth, boundname);
 #endif
   }
@@ -2250,6 +2248,12 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
   if (SCHEME_STX_NULLP(form))
     return scheme_null;
 
+  if (scheme_stx_proper_list_length(form) < 0) {
+    /* This is already checked for anything but application */
+    scheme_wrong_syntax(scheme_application_stx_string, NULL, form, 
+			"bad syntax (" IMPROPER_LIST_FORM ")");
+  }
+
   fm = form;
   while (SCHEME_STX_PAIRP(fm)) {
     Scheme_Object *r, *p;
@@ -2269,10 +2273,6 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_
 
     fm = SCHEME_STX_CDR(fm);
   }
-
-  if (!SCHEME_STX_NULLP(fm))
-    scheme_wrong_syntax("expand", NULL, form, 
-			"bad syntax (" IMPROPER_LIST_FORM ")");
 
   return scheme_datum_to_syntax(first, form, form, 0, 0);
 }

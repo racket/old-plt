@@ -11,7 +11,7 @@
 		(lambda (msg . detail)
 		  (apply
 		   raise-syntax-error
-		   'command-line
+		   #f
 		   msg
 		   stx
 		   detail))])

@@ -1240,7 +1240,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	val = COMPILE_DATA(frame)->const_vals[i];
 	
 	if (!val) {
-	  scheme_wrong_syntax("compile", NULL, symbol,
+	  scheme_wrong_syntax(scheme_compile_stx_string, NULL, symbol,
 			      "variable used out of context");
 	  return NULL;
 	}
@@ -1250,7 +1250,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 	  else if (SAME_TYPE(SCHEME_TYPE(val), scheme_lazy_macro_type))
 	    return force_lazy_macro(val, phase);
 	  else
-	    scheme_wrong_syntax("set!", NULL, symbol,
+	    scheme_wrong_syntax(scheme_set_stx_string, NULL, symbol,
 				"local syntax identifier cannot be mutated");
 	  return NULL;
 	}
@@ -1268,7 +1268,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   /* Used out of context? */
   if (SAME_OBJ(modidx, scheme_undefined)) {
     if (!(flags & SCHEME_OUT_OF_CONTEXT_OK))
-      scheme_wrong_syntax("compile", NULL, symbol,
+      scheme_wrong_syntax(scheme_compile_stx_string, NULL, symbol,
 			  "identifier used out of context");
     return NULL;
   }
@@ -1308,7 +1308,7 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
     if (genv->module) {
       /* Free variable. Maybe don't continue. */
       if (flags & SCHEME_SETTING) {
-	scheme_wrong_syntax("set!", NULL, srcsym, "unbound variable in module");
+	scheme_wrong_syntax(scheme_set_stx_string, NULL, srcsym, "unbound variable in module");
 	return NULL;
       }
       if (flags & SCHEME_NULL_FOR_UNBOUND)
@@ -1341,14 +1341,14 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   if (modname && (flags & SCHEME_SETTING)) {
     if (SAME_OBJ(srcsym, symbol) || SAME_OBJ(SCHEME_STX_SYM(srcsym), symbol))
       symbol = NULL;
-    scheme_wrong_syntax("set!", symbol, srcsym, "cannot mutate module-required variable");
+    scheme_wrong_syntax(scheme_set_stx_string, symbol, srcsym, "cannot mutate module-required variable");
   }
 
   if (!modname && (flags & SCHEME_SETTING) && genv->module) {
     /* Check for set! of unbound variable: */
     
     if (!scheme_lookup_in_table(genv->toplevel, (const char *)symbol))
-      scheme_wrong_syntax("set!", NULL, srcsym, "unbound variable in module");
+      scheme_wrong_syntax(scheme_set_stx_string, NULL, srcsym, "unbound variable in module");
   }
 
   if (!modname && (flags & SCHEME_NULL_FOR_UNBOUND))
@@ -1720,10 +1720,9 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     if (argc > 1)
       return _scheme_tail_apply(argv[1], 0, NULL);
     else
-      scheme_wrong_syntax("syntax-local-value",
-			  NULL, 
-			  argv[0],
-			  "not defined as syntax");
+      scheme_arg_mismatch("syntax-local-value",
+			  "not defined as syntax: ",
+			  argv[0]);
   }
   
   return SCHEME_PTR_VAL(v);

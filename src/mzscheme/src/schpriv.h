@@ -1575,10 +1575,16 @@ void scheme_read_err(Scheme_Object *port,
 		     long line, long column, long pos, long span,
 		     int is_eof, const char *detail, ...);
 
-void scheme_wrong_syntax(const char *where, 
+void scheme_wrong_syntax(const char *where,
 			 Scheme_Object *local_form, 
 			 Scheme_Object *form, 
 			 const char *detail, ...);
+extern const char *scheme_compile_stx_string;
+extern const char *scheme_expand_stx_string;
+extern const char *scheme_application_stx_string;
+extern const char *scheme_set_stx_string;
+extern const char *scheme_begin_stx_string;
+
 void scheme_wrong_rator(Scheme_Object *rator, int argc, Scheme_Object **argv);
 
 void scheme_raise_out_of_memory(const char *where, const char *msg, ...);

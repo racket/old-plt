@@ -75,7 +75,7 @@
 				      . body))
 				  . rest))))]
 			   [_else (raise-syntax-error
-				   (quote-syntax awk)
+				   #f
 				   "bad range"
 				   stx
 				   body)]))]
@@ -153,7 +153,7 @@
 						  [else (void)])
 						 . rest)))]
 					    [_else (raise-syntax-error
-						    (quote-syntax awk)
+						    #f
 						    "bad / ... / clause"
 						    stx
 						    (car l))]))]
@@ -164,7 +164,7 @@
 						  [else (void)])
 					    . rest)))])))]
 				 [_else (raise-syntax-error
-					 (quote-syntax awk)
+					 #f
 					 "bad clause"
 					 stx
 					 (car l))]))))])

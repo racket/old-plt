@@ -42,13 +42,13 @@
 
   (define undef-sig-error
     (lambda (who expr what)
-      (syntax-error who expr 
+      (syntax-error #f expr 
 		    "signature not defined"
 		    what)))
 
   (define not-a-sig-error
     (lambda (who expr what)
-      (syntax-error who expr 
+      (syntax-error #f expr 
 		    "not a signature"
 		    what)))
 
@@ -120,7 +120,7 @@
 			 (syntax-case (syntax something) ()
 			   [:
 			    (literal? :)
-			    (syntax-error who expr
+			    (syntax-error #f expr
 					  "misplaced `:'"
 					  (syntax something))]
 			   [id
@@ -141,13 +141,13 @@
 						     (and (identifier? (syntax name))
 							  (identifier? (syntax super)))]
 						    [_else #f])))
-				(syntax-error who expr
+				(syntax-error #f expr
 					      "struct name is not an identifier" ;; " or a parenthesized name--super sequence of identifiers"
 					      name))
 			      (for-each
 			       (lambda (fld)
 				 (unless (identifier? fld)
-				   (syntax-error who expr
+				   (syntax-error #f expr
 						 "field name is not an identifier"
 						 fld)))
 			       fields)
@@ -173,7 +173,7 @@
 						       (loop rest (cons (syntax name) names)
 							     no-set? no-sel?)]
 						      [else
-						       (syntax-error who expr
+						       (syntax-error #f expr
 								     "bad struct omission"
 								     (car omissions))]))))]
 					   [(name super-name) (if (identifier? name)
@@ -204,7 +204,7 @@
 					      struct-accum)))))]
 			   [(struct . _)
 			    (literal? struct)
-			    (syntax-error who expr
+			    (syntax-error #f expr
 					  "bad `struct' clause form"
 					  (syntax something))]
 			   [(unit name : sig) 
@@ -216,7 +216,7 @@
 				    struct-accum))]
 			   [(unit . _)
 			    (literal? unit)
-			    (syntax-error who expr 
+			    (syntax-error #f expr 
 					  "bad `unit' clause form"
 					  (syntax something))]
 			   [(open sig)
@@ -227,13 +227,13 @@
 				    (append (signature-structs s) struct-accum)))]
 			   [(open . _)
 			    (literal? open)
-			    (syntax-error who expr 
+			    (syntax-error #f expr 
 					  "bad `open' clause form"
 					  (syntax something))]
 			   [else
-			    (syntax-error who expr "improper signature clause type"
+			    (syntax-error #f expr "improper signature clause type"
 					  (syntax something))])]
-			[_else (syntax-error who expr "ill-formed signature"
+			[_else (syntax-error #f expr "ill-formed signature"
 					     body)]))])
 	(check-unique (map
 		       (lambda (elem)
@@ -243,7 +243,7 @@
 			  [else (signature-name elem)]))
 		       elems)
 		      (lambda (name)
-			(syntax-error who expr
+			(syntax-error #f expr
 				      "duplicate name in signature"
 				      name)))
 	(make-signature (stx->sym name)
@@ -495,7 +495,7 @@
 	 (lambda (var)
 	   (let ([renamed (do-rename var renames)])
 	     (unless (memq renamed vars)
-		     (syntax-error who expr
+		     (syntax-error #f expr
 				   (format 
 				    "signature \"~s\" requires variable \"~s\"~a"
 				    (signature-src sig)
@@ -505,7 +505,7 @@
 					(format " renamed \"~s\"" renamed)))))))
 	 (signature-vars sig))
 	(unless (null? (signature-subsigs sig))
-		(syntax-error who expr
+		(syntax-error #f expr
 			      (format 
 			       "signature \"~s\" requires sub-units"
 			       (signature-src sig)))))))
@@ -515,7 +515,7 @@
       (let ([bad
 	     (lambda (why . rest)
 	       (apply
-		syntax-error who expr 
+		syntax-error #f expr 
 		(format (if really-import?
 			    "bad `import' clause~a" 
 			    "bad linkage specification~a")
@@ -546,11 +546,11 @@
     (lambda (expr body sig user-stx-forms dv-stx begin-stx)
       (let ([body (stx->list body)])
 	(unless body
-	  (syntax-error 'unit/sig expr "illegal use of `.'"))
+	  (syntax-error #f expr "illegal use of `.'"))
 	(unless (and (pair? body)
 		     (stx-pair? (car body))
 		     (eq? 'import (syntax-e (stx-car (car body)))))
-	  (syntax-error 'unit/sig expr 
+	  (syntax-error #f expr 
 			"expected `import' clause"))
 	(let* ([imports (parse-imports 'unit/sig #t #t expr (stx-cdr (car body)))]
 	       [imported-names (flatten-signatures imports)]
@@ -563,11 +563,11 @@
 			    (values (map syntax-object->datum (cdr (stx->list (car body)))) (cdr body))
 			    (values null body))])
 	    (unless renames
-	      (syntax-error 'unit/sig expr "illegal use of `.'" (car body)))
+	      (syntax-error #f expr "illegal use of `.'" (car body)))
 	    ;; Check renames:
 	    (let ([bad
 		   (lambda (why sub)
-		     (syntax-error 'unit/sig expr 
+		     (syntax-error #f expr 
 				   (format "bad `rename' clause~a" why)
 				   sub))])
 	      (for-each
@@ -584,7 +584,7 @@
 	       renames))
 	    (check-unique (map car renames)
 			  (lambda (name)
-			    (syntax-error 'unit/sig expr
+			    (syntax-error #f expr
 					  "id renamed twice"
 					  name)))
 	    (let* ([renamed-internals (map car renames)]
@@ -613,7 +613,7 @@
 				      ;; (make-struct-stx-decls sig #f #f src-stx #t)
 				      null))]
 		 [(and (null? pre-lines) (not port) (not (pair? lines)))
-		  (syntax-error 'unit/sig expr "improper body list form")]
+		  (syntax-error #f expr "improper body list form")]
 		 [else
 		  (let-values ([(line) (let ([s (cond
 						 [(pair? pre-lines) (car pre-lines)]
@@ -651,7 +651,7 @@
 			       (cons line body)
 			       (append (syntax->list (syntax (id ...))) vars))]
 			[else
-			 (syntax-error 'unit/sig expr 
+			 (syntax-error #f expr 
 				       "improper `define-values' clause form"
 				       line)])]
 		     [(and (stx-pair? line)
@@ -659,7 +659,7 @@
 			   (module-identifier=? (stx-car line) begin-stx))
 		      (let ([line-list (stx->list line)])
 			(unless line-list
-			  (syntax-error 'unit/sig expr 
+			  (syntax-error #f expr 
 					"improper `begin' clause form"
 					line))
 			(loop (append (cdr line-list) rest-pre-lines)
@@ -689,12 +689,12 @@
 	 (let* ([imports (parse-imports 'compound-unit/sig #f #t expr (syntax imports))])
 	   (let ([link-list (syntax->list (syntax links))])
 	     (unless link-list
-	       (syntax-error 'compound-unit/sig expr 
+	       (syntax-error #f expr 
 			     "improper `link' clause form"
 			     (syntax links)))
 	     (let* ([bad
 		     (lambda (why sub)
-		       (syntax-error 'compound-unit/sig expr 
+		       (syntax-error #f expr 
 				     (format "bad `link' element~a" why)
 				     sub))]
 		    [links
@@ -759,7 +759,7 @@
 				     (with-handlers ([exn:unit?
 						      (lambda (exn)
 							(syntax-error 
-							 'compound-unit/sig expr
+							 #f expr
 							 (exn-message exn)))])
 				       (verify-signature-match
 					'compound-unit/sig #f
@@ -777,7 +777,7 @@
 								sig))]
 				    [(or (not (stx-pair? p))
 					 (not (identifier? (stx-car p))))
-				     (syntax-error 'compound-unit/sig expr
+				     (syntax-error #f expr
 						   path)]
 				    [(memq (syntax-e (stx-car p)) (signature-vars sig))
 				     (if (and (stx-null? (stx-cdr p)) (not use-sig))
@@ -789,7 +789,7 @@
 									(symbol->string id-nopath)))
 							id-nopath)])
 					   (var-k base id id-nopath))
-					 (syntax-error 'compound-unit/sig expr
+					 (syntax-error #f expr
 						       (format 
 							"bad `~a' path: \"~a\" is a variable" 
 							clause
@@ -809,7 +809,7 @@
 							s
 							(stx-cdr p)))]
 				    [else
-				     (syntax-error 'compound-unit/sig expr
+				     (syntax-error #f expr
 						   (format 
 						    "bad `~a' path: \"~a\" not found"
 						    clause
@@ -844,7 +844,7 @@
 						 (syntax->list (syntax (elem1 elem ...))))
 					 (values path #f)]
 					[else
-					 (syntax-error 'compound-unit/sig expr
+					 (syntax-error #f expr
 						       (format 
 							"bad `~a' path"
 							clause)
@@ -868,7 +868,7 @@
 						     sig
 						     (stx-cdr p))))]
 			    [else
-			     (syntax-error 'compound-unit/sig expr
+			     (syntax-error #f expr
 					   (format 
 					    "bad `~a' path: \"~a\" not found"
 					    clause
@@ -876,16 +876,16 @@
 					   path)]))))])
 	       (check-unique (map link-name links)
 			     (lambda (name)
-			       (syntax-error 'compound-unit/sig expr
+			       (syntax-error #f expr
 					     (format "duplicate sub-unit tag \"~s\"" name))))
 	       (check-unique (map signature-name imports)
 			     (lambda (name)
-			       (syntax-error 'compound-unit/sig expr
+			       (syntax-error #f expr
 					     (format "duplicate import identifier \"~s\"" name))))
 	       (check-unique (append (map signature-name imports)
 				     (map link-name links))
 			     (lambda (name)
-			       (syntax-error 'compound-unit/sig expr
+			       (syntax-error #f expr
 					     (format 
 					      "name \"~s\" is both import and sub-unit identifier" 
 					      name))))
@@ -914,7 +914,7 @@
 		links)
 	       (let ([export-list (syntax->list (syntax exports))])
 		 (unless export-list
-		   (syntax-error 'compound-unit/sig expr 
+		   (syntax-error #f expr 
 				 "improper `export' clause form"
 				 (syntax exports)))
 		 (let* ([upath? (lambda (p)
@@ -939,14 +939,14 @@
 			       (literal? open)
 			       (begin
 				 (unless (spath? (syntax spath))
-				   (syntax-error 'compound-unit/sig expr 
+				   (syntax-error #f expr 
 						 "bad `open' sub-clause of `export'"
 						 export))
 				 (flatten-path 'export
 					       (syntax spath)
 					       (lambda (base var var-nopath)
 						 (syntax-error 
-						  'compound-unit/sig expr 
+						  #f expr 
 						  "`open' sub-clause path is a variable"
 						  (car export)))
 					       (lambda (base last name sig)
@@ -959,7 +959,7 @@
 							     (flatten-signature name sig)
 							     (flatten-signature #f sig))))
 						     (syntax-error 
-						      'compound-unit/sig expr 
+						      #f expr 
 						      "cannot export imported variables"
 						      export)))))]
 			      [(var (upath vname) . exname)
@@ -973,7 +973,7 @@
 						  (and (stx-pair? exname)
 						       (identifier? (stx-car exname))
 						       (stx-null? (stx-cdr exname)))))
-				   (syntax-error 'compound-unit/sig expr 
+				   (syntax-error #f expr 
 						 "bad `var' sub-clause of `export'"
 						 export))
 				 (flatten-path 'export
@@ -991,12 +991,12 @@
 								(list var var-nopath)
 								(list var (syntax-e (stx-car exname))))))
 						     (syntax-error 
-						      'compound-unit/sig expr 
+						      #f expr 
 						      "cannot export imported variables"
 						      export)))
 					       (lambda (base last name var)
 						 (syntax-error 
-						  'compound-unit/sig expr 
+						  #f expr 
 						  "`var' sub-clause path specifies a unit"
 						  export))))]
 			      [(unit spath . exname)
@@ -1008,14 +1008,14 @@
 						  (and (stx-pair? exname)
 						       (identifier? (stx-car exname))
 						       (stx-null? (stx-cdr exname)))))
-				   (syntax-error 'compound-unit/sig expr 
+				   (syntax-error #f expr 
 						 "bad `unit' sub-clause of `export'"
 						 export))
 				 (flatten-path 'export
 					       spath
 					       (lambda (base var var-nopath)
 						 (syntax-error 
-						  'compound-unit/sig expr 
+						  #f expr 
 						  "`unit' sub-clause path is a variable"
 						  export))
 					       (lambda (base last name sig)
@@ -1038,11 +1038,11 @@
 								     (syntax-e (stx-car exname))))
 								sig)))))
 						     (syntax-error 
-						      'compound-unit/sig expr 
+						      #f expr 
 						      "cannot export imported variables"
 						      export)))))]
 			      [_else
-			       (syntax-error 'compound-unit/sig expr 
+			       (syntax-error #f expr 
 					     (format 
 					      "bad `export' sub-clause")
 					     export)]))
@@ -1057,7 +1057,7 @@
 				   append
 				   (map sig-explode-pair-sigpart exports)))
 				 (lambda (name)
-				   (syntax-error 'compound-unit/sig expr
+				   (syntax-error #f expr
 						 "name is exported twice"
 						 name)))
 		   (values (map link-name links)
@@ -1090,7 +1090,7 @@
 			    interned-vectors)
 			   interned-vectors))))))]
 	[_else (raise-syntax-error 
-		'compound-unit/sig
+		#f
 		"bad syntax"
 		expr)])))
   

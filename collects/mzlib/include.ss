@@ -40,14 +40,14 @@
 		     ;; Current directory
 		     [(current-directory)]
 		     [else (raise-syntax-error
-			    'include
+			    #f
 			    "can't determine a base path"
 			    stx)])))])
 	  ;; Open the included file
 	  (let ([p (with-handlers ([not-break-exn?
 				    (lambda (exn)
 				      (raise-syntax-error
-				       'include
+				       #f
 				       (format
 					"can't open include file (~a)"
 					(if (exn? exn)
@@ -63,7 +63,7 @@
 		     (let ([r (with-handlers ([not-break-exn?
 					       (lambda (exn)
 						 (raise-syntax-error
-						  'include
+						  #f
 						  (format
 						   "read error (~a)"
 						   (if (exn? exn)

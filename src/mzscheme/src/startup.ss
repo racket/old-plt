@@ -238,9 +238,10 @@
 					  (((g35) (not (stx-pair? rest))))
 					(if g35 g35 (not (stx-null? (stx-cdr rest)))))
 				      (raise-syntax-error
-				       unquote-stx
-				       "takes exactly one expression"
-				       in-form))
+				       'unquote
+				       "expects exactly one expression"
+				       in-form
+				       x))
 				  (if (zero? level)
 				      (stx-car rest)
 				      (qq-list x (sub1 level))))
@@ -256,9 +257,10 @@
 					    (stx-list? x)
 					    #f)
 					(raise-syntax-error
-					 unquote-splicing-stx
+					 'unquote-splicing
 					 "invalid context within quasiquote"
-					 in-form)
+					 in-form
+					 x)
 					(if (if (stx-pair? first)
 						(if (identifier? (stx-car first))
 						    (if (module-identifier=? (stx-car first)
@@ -275,9 +277,10 @@
 							g34
 							(not (stx-null? (stx-cdr rest)))))
 						  (raise-syntax-error
-						   unquote-splicing-stx
-						   "takes exactly one expression"
-						   in-form))
+						   'unquote
+						   "expects exactly one expression"
+						   in-form
+						   x))
 					      (let-values
 						  (((uqsd) (stx-car rest))
 						   ((old-l) (stx-cdr x))
@@ -877,8 +880,8 @@
 	(list e de)))
 
 
-  (define syntax-case-stx (quote-syntax syntax-case))
-  (define syntax-stx (quote-syntax syntax))
+  (define syntax-case-stxsrc '(syntax-case syntax-case mzscheme))
+  (define syntax-stxsrc '(syntax syntax mzscheme))
 
   ;;----------------------------------------------------------------------
   ;; Input matcher
@@ -913,7 +916,7 @@
 	(unless (stx-null? (stx-cdr (stx-cdr p)))
 	  (apply
 	   raise-syntax-error 
-	   syntax-case-stx
+	   'syntax-case
 	   "misplaced ellipses in pattern"
 	   (pick-specificity
 	    top
@@ -953,7 +956,7 @@
 		    (m&e dp dp #f last? #f))
 		  (apply
 		   raise-syntax-error 
-		   syntax-case-stx
+		   syntax-case-stxsrc
 		   "misplaced ellipses in pattern"
 		   (pick-specificity
 		    top
@@ -1005,7 +1008,7 @@
 		     (eq? (syntax-e p) '...))
 		(apply
 		 raise-syntax-error 
-		 syntax-case-stx
+		 syntax-case-stxsrc
 		 "misplaced ellipses in pattern"
 		 (pick-specificity
 		  top
@@ -1039,7 +1042,7 @@
 		(let ([l (hash-table-get ht (syntax-e r) (lambda () null))])
 		  (when (ormap (lambda (i) (module-identifier=? i r)) l)
 		    (raise-syntax-error 
-		     syntax-case-stx
+		     syntax-case-stxsrc
 		     "variable used twice in pattern"
 		     top
 		     r))
@@ -1133,7 +1136,7 @@
 	  (when (null? nestings)
 	    (apply
 	     raise-syntax-error 
-	     syntax-stx
+	     syntax-stxsrc
 	     "no pattern variables before ellipses in template"
 	     (pick-specificity
 	      top
@@ -1160,7 +1163,7 @@
 		      (when (null? proto-rr-deep)
 			(apply
 			 raise-syntax-error 
-			 syntax-stx
+			 syntax-stxsrc
 			 "too many ellipses in template"
 			 (pick-specificity
 			  top
@@ -1202,7 +1205,7 @@
 		    (expander dp proto-r dp #f use-tail-pos hash!))
 		  (apply
 		   raise-syntax-error 
-		   syntax-stx
+		   syntax-stxsrc
 		   "misplaced ellipses in template"
 		   (pick-specificity
 		    top
@@ -1228,7 +1231,7 @@
 				   (eq? (syntax-e p) '...))
 			  (apply
 			   raise-syntax-error 
-			   syntax-stx
+			   syntax-stxsrc
 			   "misplaced ellipses in template"
 			   (pick-specificity
 			    top
@@ -1281,7 +1284,7 @@
 				   (if (exn:break? exn)
 				       (raise exn)
 				       (raise-syntax-error
-					'syntax
+					'(syntax syntax mzscheme)
 					"incompatible ellipsis match counts for template"
 					(quote ,p)
 					;; This is a trick to minimize the syntax structure we keep:
@@ -1406,7 +1409,7 @@
 	(unless v
 	  (apply
 	   raise-syntax-error 
-	   (quote-syntax syntax)
+	   syntax-stxsrc
 	   "too few ellipses for pattern variable in template"
 	   (pick-specificity
 	    src
@@ -1435,7 +1438,7 @@
 		     [(syntax? l)
 		      (when (module-identifier=? l ssym)
 			(raise-syntax-error 
-			 (quote-syntax syntax)
+			 syntax-stxsrc
 			 "missing ellipses with pattern variable in template"
 			 ssym))]
 		     [else (loop (car l))]))))
@@ -2530,7 +2533,7 @@
 	      (unless (string? filename)
 		(if stx
 		    (raise-syntax-error
-		     (quote-syntax standard-module-name-resolver)
+		     '(require require mzscheme)
 		     (format "bad module path~a" (if filename
 						     (car filename)
 						     ""))
@@ -2707,7 +2710,7 @@
 		   (require-for-syntax mzscheme))
 		  (stx-cdr stx))
 	   stx)
-	  (raise-syntax-error '#%module-begin "bad syntax" stx))))
+	  (raise-syntax-error #f "bad syntax" stx))))
 
   (provide mzscheme-in-stx-module-begin))
 

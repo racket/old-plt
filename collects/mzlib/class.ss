@@ -36,24 +36,24 @@
 					      (when (and (identifier? (stx-car s))
 							 (identifier? (stx-car s2)))
 						(raise-syntax-error
-						 'class*/names
-						 "extra forms following this, super-instantiate, and super-make-object"
+						 #f
+						 "extra forms following identifiers for this, super-instantiate, and super-make-object"
 						 stx)))))))))])
 	   (unless (identifier? this-id)
 	     (raise-syntax-error
-	      'class*/names
+	      #f
 	      "not an identifier for `this'"
 	      stx
 	      this-id))
 	   (unless (identifier? super-instantiate-id)
 	     (raise-syntax-error
-	      'class*/names
+	      #f
 	      "not an identifier for `super-instantiate'"
 	      stx
 	      super-instantiate-id))
 	   (unless (identifier? super-make-object-id)
 	     (raise-syntax-error
-	      'class*/names
+	      #f
 	      "not an identifier for `super-make-object'"
 	      stx
 	      super-make-object-id))
@@ -95,13 +95,12 @@
 						     (cdr l)))]
 					     [(begin . _)
 					      (raise-syntax-error 
-					       'class*
+					       #f
 					       "ill-formed begin expression"
-					       e
-					       stx)]
+					       e)]
 					     [_else (cons e (loop (cdr l)))])))))]
 		 [bad (lambda (msg expr)
-			(raise-syntax-error 'class* msg stx expr))]
+			(raise-syntax-error #f msg stx expr))]
 		 [class-name (let ([s (syntax-local-name)])
 			       (if (syntax? s)
 				   (syntax-e s)
@@ -842,7 +841,10 @@
 								 (lambda (stx)
 								   (syntax-case stx () 
 								     [(_ (arg (... ...)) (kw kwarg) (... ...))
-								      (syntax (-instantiate super-id _ #f (list arg (... ...)) (kw kwarg) (... ...)))]))])
+								      (with-syntax ([stx stx])
+									(syntax (-instantiate super-id stx #f 
+											      (list arg (... ...)) 
+											      (kw kwarg) (... ...))))]))])
 						  (let ([super-make-object-id
 							 (lambda args
 							   (super-id #f args null))])
@@ -895,7 +897,7 @@
 				    [_else
 				     (identifier? (syntax name))
 				     (raise-syntax-error
-				      who
+				      #f
 				      "expected an identifier and expression"
 				      stx
 				      binding)]))
@@ -935,7 +937,7 @@
 			   (and (identifier? (stx-car ids))
 				(loop (stx-cdr ids)))]
 			  [else (raise-syntax-error
-				 who
+				 #f
 				 "bad identifier"
 				 stx
 				 ids)])))
@@ -949,12 +951,12 @@
 		      (and (stx-pair? (syntax d))
 			   (identifier? (stx-car (syntax d)))))
 		  (raise-syntax-error
-		   who
+		   #f
 		   "bad syntax (wrong number of parts)"
 		   stx)]
 		 [(_ d . __)
 		  (raise-syntax-error
-		   who
+		   #f
 		   "bad syntax (no identifier for definition)"
 		   stx
 		   (syntax d))])))])
@@ -1342,14 +1344,14 @@
 	   (for-each
 	    (lambda (v)
 	      (unless (identifier? v)
-		(raise-syntax-error 'interface
+		(raise-syntax-error #f
 				    "not an identifier"
 				    stx
 				    v)))
 	    vars)
 	   (let ([dup (check-duplicate-identifier vars)])
 	     (when dup
-	       (raise-syntax-error 'interface
+	       (raise-syntax-error #f
 				   "duplicate name"
 				   stx
 				   dup)))
@@ -1484,20 +1486,21 @@
   (define-syntax instantiate
     (lambda (stx)
       (syntax-case stx ()
-	[(form class (arg ...) . x) 
-	 (syntax (-instantiate do-make-object form class (list arg ...) . x))])))
+	[(form class (arg ...) . x)
+	 (with-syntax ([stx stx])
+	   (syntax (-instantiate do-make-object stx class (list arg ...) . x)))])))
 
   ;; Helper; used by instantiate and super-instantiate
   (define-syntax -instantiate
     (lambda (stx)
       (syntax-case stx ()
-	[(_ do-make-object form class args (kw arg) ...)
+	[(_ do-make-object orig-stx class args (kw arg) ...)
 	 (andmap identifier? (syntax->list (syntax (kw ...))))
 	 (syntax (do-make-object class
 				 args
 				 (list (cons 'kw arg)
 				       ...)))]
-	[(_ super-make-object form class args kwarg ...)
+	[(_ super-make-object orig-stx class args kwarg ...)
 	 ;; some kwarg must be bad:
 	 (for-each (lambda (kwarg)
 		     (syntax-case kwarg ()
@@ -1506,13 +1509,15 @@
 			'ok]
 		       [(kw arg)
 			(raise-syntax-error
-			 (syntax-e (syntax form))
+			 #f
 			 "by-name argument does not start with an identifier"
+			 (syntax orig-stx)
 			 kwarg)]
 		       [_else
 			(raise-syntax-error
-			 (syntax-e (syntax form))
+			 #f
 			 "ill-formed by-name argument"
+			 (syntax orig-stx)
 			 kwarg)]))
 		   (syntax->list (syntax (kwarg ...))))])))
 
@@ -1662,7 +1667,7 @@
 	 (begin
 	   (unless (identifier? (syntax name))
 	     (raise-syntax-error
-	      'send
+	      #f
 	      "method name is not an identifier"
 	      stx
 	      (syntax name)))
@@ -1781,12 +1786,12 @@
 	       [names (syntax->list (syntax (id ...)))])
 	   (for-each (lambda (id name)
 		       (unless (identifier? id)
-			 (raise-syntax-error 'with-method
+			 (raise-syntax-error #f
 					     "not an identifier for binding"
 					     stx
 					     id))
 		       (unless (identifier? name)
-			 (raise-syntax-error 'with-method
+			 (raise-syntax-error #f
 					     "not an identifier for method name"
 					     stx
 					     name)))
@@ -1816,7 +1821,7 @@
 			  'ok]
 			 [_else
 			  (raise-syntax-error 
-			   'with-method
+			   #f
 			   "binding clause is not of the form (identifier (object-expr method-identifier))"
 			   stx
 			   clause)]))
@@ -1824,16 +1829,16 @@
 	   ;; If we get here, the body must be bad
 	   (if (stx-null? (syntax body))
 	       (raise-syntax-error 
-		'with-method
+		#f
 		"empty body"
 		stx)
 	       (raise-syntax-error 
-		'with-method
+		#f
 		"bad syntax (illegal use of `.')"
 		stx)))]
 	[(_ x . rest)
 	 (raise-syntax-error 
-	  'with-method
+	  #f
 	  "not a binding sequence"
 	  stx
 	  (syntax x))])))

@@ -592,7 +592,7 @@
 	    init-vars
 	    clauses ...)
 	 (let ([se (lambda (msg expr)
-		     (raise-syntax-error 'class*/names msg stx expr))])
+		     (raise-syntax-error #f msg stx expr))])
 	   ;; Check this and super-init:
 	   (unless (identifier? (syntax this-id))
 	     (se "not an identifier" (syntax this-id)))
@@ -845,7 +845,7 @@
 						  (syntax (unbox immutable-box-id))]
 					      [(set! vr val)
 					       (raise-syntax-error
-						'class*/names
+						#f
 						"cannot mutate an inherit or rename variable"
 						stx)]
 					      [(vr . args) (syntax ((unbox immutable-box-id) . args))])))]
@@ -876,10 +876,10 @@
 	    init-vars
 	    clauses ...)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "bad this and super bindings"
-	  (syntax bad-this-super)
-	  stx)]
+	  stx
+	  (syntax bad-this-super))]
 	;; --
 	[(_ this-super
 	    super-expr
@@ -887,32 +887,32 @@
 	    init-vars
 	    clauses ...)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "expected sequence of interface expressions"
-	  (syntax bad-interface-seq)
-	  stx)]
+	  stx
+	  (syntax bad-interface-seq))]
 	;;
 	[(_ this-super
 	    super-expr
 	    interface-seq)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "missing initialization arguments"
-	  (syntax bad-this-super)
-	  stx)]
+	  stx
+	  (syntax bad-this-super))]
 	[(_ this-super
 	    super-expr)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "missing interface expressions"
-	  (syntax bad-this-super)
-	  stx)]
+	  stx
+	  (syntax bad-this-super))]
 	[(_ this-super)
 	 (raise-syntax-error 
-	  'class*/names
+	  #f
 	  "missing this and super-init bindings"
-	  (syntax bad-this-super)
-	  stx)])))
+	  stx
+	  (syntax bad-this-super))])))
 
   (define-syntax class*
     (lambda (stx)
@@ -963,14 +963,14 @@
 	   (for-each
 	    (lambda (v)
 	      (unless (identifier? v)
-		(raise-syntax-error 'interface
+		(raise-syntax-error #f
 				    "not an identifier"
 				    stx
 				    v)))
 	    vars)
 	   (let ([dup (check-duplicate-identifier vars)])
 	     (when dup
-	       (raise-syntax-error 'interface
+	       (raise-syntax-error #f
 				   "duplicate name"
 				   stx
 				   dup)))

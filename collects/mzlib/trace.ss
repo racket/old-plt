@@ -157,7 +157,7 @@
 	   (for-each (lambda (id)
 		       (unless (identifier? id)
 			 (raise-syntax-error
-			  'trace
+			  #f
 			  "not an identifier"
 			  stx
 			  id)))
@@ -224,7 +224,7 @@
 	   (for-each (lambda (id)
 		       (unless (identifier? id)
 			 (raise-syntax-error
-			  'untrace
+			  #f
 			  "not an identifier"
 			  stx
 			  id)))

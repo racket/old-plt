@@ -359,7 +359,7 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 
     (define frame%
       (class drscheme:frame:frame% (fn frameset [snip #f] [show? #t])
-	(inherit show canvas edit)
+	(inherit show canvas edit show-menu panel)
 	(public
 	  [on-close
 	   (lambda ()
@@ -369,18 +369,31 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 			fn
 			"Untitled")])
 	  
-	(rename [super-make-menu-bar make-menu-bar])
+	(rename [super-make-menu-bar make-menu-bar]
+		[super-update-shown update-shown])
+	(private
+	  [evaluation-order-id #f])
 	(public
+	  [update-shown
+	   (lambda ()
+	     (super-update-shown)
+	     (send panel change-children
+		   (lambda (l)
+		     (let ([removed (mzlib:function@:remq eval-panel l)])
+		       (if (send show-menu checked? evaluation-order-id)
+			   (cons eval-panel removed)
+			   removed)))))]
 	  [make-menu-bar
 	   (lambda ()
 	     (let ([mb (super-make-menu-bar)]
-		   [add-menu (make-object mred:menu%)]
-		   [show-menu (make-object mred:menu%)])
-	       (send mb append show-menu "Show")
-	       (send show-menu append-item "Imports"
-		     (lambda () (void)))
-	       (send show-menu append-item "Evaluation Order"
-		     (lambda () (void)))
+		   [add-menu (make-object mred:menu%)])
+	       (set! evaluation-order-id
+		     (send show-menu append-item
+			   "Evaluation Order"
+			   (lambda () (update-shown))
+			   "Show or hide the evaluation order list"
+			   #t))
+	       (send show-menu check evaluation-order-id #t)
 
 	       (send mb append add-menu "Add")
 	       (send add-menu append-item "Unit..."
@@ -398,12 +411,20 @@ is-button? ~a  leaving? ~a  moving?~a~n"
 				 (make-object snip% name #f))))))
 	       mb))])
 	(public
-	  [get-panel% (lambda () mred:vertical-panel%)]
+	  [get-panel% (lambda () mred:horizontal-panel%)]
 	  [get-edit% (lambda () project-pasteboard%)])
 
 	(sequence
 	  (super-init filename snip))
+	(private
+	  [eval-panel (make-object mred:vertical-panel% panel)]
+	  [eval-msg (make-object mred:message% eval-panel "Evaluation Order")]
+	  [eval-list (make-object mred:list-box% eval-panel null "")])
+
 	(sequence
+	  (update-shown)
+	  (send eval-list stretchable-in-x #f)
+	  (send eval-panel stretchable-in-x #f)
 	  (send edit set-filename filename)
 	  (when (file-exists? filename)
 	    (send edit load-file filename))

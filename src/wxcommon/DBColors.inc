@@ -121,7 +121,7 @@
  
    ("Aquamarine" 112  216  144)
    ("Black" 0  0  0)
-   ("Blue" 80  80  248)
+   ("Blue" 0  0  255)
    ("Blue Violet" 138  43  226)
    ("Brown" 132  60  36)
    ("Cadet Blue" 96  160  160)
@@ -141,7 +141,7 @@
    ("Gold" 255  215  0)
    ("Goldenrod" 218  165  32)
    ("Gray" 190  190  190)
-   ("Green" 60  248  52)
+   ("Green" 0  255  0)
    ("Green Yellow" 173  255  47)
    ("Indian Red" 205  92  92)
    ("Khaki" 240  230  140)
@@ -172,7 +172,7 @@
    ("Pink" 255  192  203)
    ("Plum" 221  160  221)
    ("Purple" 160  32  240)
-   ("Red" 248  20  64)
+   ("Red" 255  0  0)
    ("Salmon" 250  128  114)
    ("Sea Green" 46  139  87)
    ("Sienna" 160  82  45)
@@ -351,7 +351,7 @@ APPEND_C("BEIGE", new wxColour(245, 245, 220));
 APPEND_C("BISQUE", new wxColour(255, 228, 196));
 APPEND_C("BLACK", new wxColour(0, 0, 0));
 APPEND_C("BLANCHEDALMOND", new wxColour(255, 235, 205));
-APPEND_C("BLUE", new wxColour(80, 80, 248));
+APPEND_C("BLUE", new wxColour(0, 0, 255));
 APPEND_C("BLUE VIOLET", new wxColour(138, 43, 226));
 APPEND_C("BLUEVIOLET", new wxColour(138, 43, 226));
 APPEND_C("BROWN", new wxColour(132, 60, 36));
@@ -405,7 +405,7 @@ APPEND_C("GHOSTWHITE", new wxColour(248, 248, 255));
 APPEND_C("GOLD", new wxColour(255, 215, 0));
 APPEND_C("GOLDENROD", new wxColour(218, 165, 32));
 APPEND_C("GRAY", new wxColour(190, 190, 190));
-APPEND_C("GREEN", new wxColour(60, 248, 52));
+APPEND_C("GREEN", new wxColour(0, 255, 0));
 APPEND_C("GREEN YELLOW", new wxColour(173, 255, 47));
 APPEND_C("GREENYELLOW", new wxColour(173, 255, 47));
 APPEND_C("HONEYDEW", new wxColour(240, 255, 240));
@@ -488,7 +488,7 @@ APPEND_C("PINK", new wxColour(255, 192, 203));
 APPEND_C("PLUM", new wxColour(221, 160, 221));
 APPEND_C("POWDERBLUE", new wxColour(176, 224, 230));
 APPEND_C("PURPLE", new wxColour(160, 32, 240));
-APPEND_C("RED", new wxColour(248, 20, 64));
+APPEND_C("RED", new wxColour(255, 0, 0));
 APPEND_C("ROSYBROWN", new wxColour(188, 143, 143));
 APPEND_C("ROYALBLUE", new wxColour(65, 105, 225));
 APPEND_C("SADDLEBROWN", new wxColour(139, 69, 19));

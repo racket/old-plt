@@ -14,14 +14,15 @@
 #include "wx_sbar.h"
 #include "wxScroll.h"
 #include "wx_frame.h"
-#ifndef WX_CARBON
-# include <QuickDraw.h>
-#endif 
 #include "wxScrollArea.h"
 #include "wxBorderArea.h"
 #include "wxRectBorder.h"
+#include <AGL/agl.h> 
 
 extern void MrEdQueuePaint(wxWindow *wx_window);
+
+static wxCanvas *current_gl_context = NULL;
+static int gl_registered;
 
 //=============================================================================
 // Public constructors
@@ -89,6 +90,19 @@ wxCanvas::wxCanvas // Constructor (given parentWindow)
 //-----------------------------------------------------------------------------
 wxCanvas::~wxCanvas(void)
 {
+  if (gl_ctx) {
+    AGLContext ctx; 
+    ctx = (AGLContext)gl_ctx;
+
+    if (this == current_gl_context) {
+      current_gl_context = NULL;
+      aglSetCurrentContext(NULL);
+    }
+
+    aglSetDrawable(ctx, NULL);
+    aglDestroyContext(ctx); 
+  }
+
   if (wx_dc) DELETE_OBJ wx_dc;
 }
 
@@ -150,6 +164,22 @@ void wxCanvas::InitDefaults(void)
   if (cStyle & wxINVISIBLE)
     Show(FALSE);
   InitInternalGray();
+
+  if (cStyle & wxGL_CONTEXT) {
+    GLint attrib[] = { AGL_RGBA, AGL_DOUBLEBUFFER, AGL_NONE };
+    AGLPixelFormat fmt;
+    AGLContext ctx; 
+    
+    fmt = aglChoosePixelFormat(NULL, 0, attrib); /* Choose pixel format */
+    ctx = aglCreateContext(fmt, NULL);  /* Create an AGL context */
+    aglDestroyPixelFormat(fmt); // pixel format is no longer needed
+    
+    aglSetDrawable(ctx, cMacDC->macGrafPort()); /* Attach the context to the window */ 
+
+    gl_ctx = (long)ctx;
+
+    ResetGLView();
+  }
 }
 
 void wxCanvas::AddWhiteRgn(RgnHandle rgn, RgnHandle noerasergn) 
@@ -211,6 +241,8 @@ void wxCanvas::OnClientAreaDSize(int dW, int dH, int dX, int dY)
 		  sd->GetValue(wxWhatScrollData::wxPositionH),
 		  sd->GetValue(wxWhatScrollData::wxPositionV));
   }
+
+  ResetGLView();
 }
 
 //-----------------------------------------------------------------------------
@@ -757,8 +789,55 @@ void wxCanvas::OnPaint(void)
 
 void wxCanvas::CanvasSwapBuffers(void)
 {
+  if (gl_ctx) {
+    aglSwapBuffers((AGLContext)gl_ctx);
+  }
 }
 
 void wxCanvas::ThisContextCurrent(void)
 {
+  if (gl_ctx) {
+    if (!gl_registered) {
+      wxREGGLOB(current_gl_context); 
+      gl_registered = 1;
+    }
+
+    aglSetCurrentContext((AGLContext)gl_ctx);
+    current_gl_context = this;
+  }
+}
+
+void wxCanvas::ResetGLView()
+{
+  if (gl_ctx) {
+    GLint bufferRect[4];
+    AGLContext ctx = (AGLContext)gl_ctx;
+    wxArea* clientArea;
+    Rect r;
+    int h, w;
+
+    SetCurrentMacDC();
+
+    clientArea = ClientArea();
+
+    w = clientArea->Width();
+    h = clientArea->Height();
+    GetPortBounds(cMacDC->macGrafPort(), &r);
+
+    bufferRect[0] = SetOriginX;
+    bufferRect[1] = ((r.bottom - r.top) - (SetOriginY + h));
+    bufferRect[2] = w;
+    bufferRect[3] = h;
+
+    aglSetInteger(ctx, AGL_BUFFER_RECT, bufferRect);
+    aglEnable(ctx, AGL_BUFFER_RECT);
+
+    aglSetCurrentContext(ctx);
+    glViewport(0, 0, (GLsizei)w, (GLsizei)h);
+    if (current_gl_context) {
+      aglSetCurrentContext((AGLContext)current_gl_context->gl_ctx);
+    } else {
+      aglSetCurrentContext(NULL);
+    }
+  }
 }

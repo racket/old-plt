@@ -341,6 +341,9 @@ static Scheme_Object *wxSchemeRegisterCollectingBitmap(int n, Scheme_Object **a)
 #ifdef wx_msw
 # define USE_GL
 #endif
+#ifdef wx_mac
+# define USE_GL
+#endif
 
 static int gl_param;
 

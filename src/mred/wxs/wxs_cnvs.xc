@@ -31,6 +31,9 @@ static void FillZero(int *a, int *b) {
 #ifdef wx_msw
 # define USE_GL
 #endif
+#ifdef wx_mac
+# define USE_GL
+#endif
 
 static void wxSwapBuffers(wxCanvas* c)
 {

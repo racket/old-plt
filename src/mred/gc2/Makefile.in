@@ -1365,7 +1365,7 @@ wx_mac_PLAIN_OBJS = \
 xform: $(XSRCS) xsrc/xcglue.c
 
 wx_xt_LIBS = ../../wxxt/contrib/xpm/lib/libXpm.a @JPEG_A@ @PNG_A@ @ZLIB_A@ $(LDLIBS)
-wx_mac_LIBS = -framework Carbon -framework QuickTime @JPEG_A@ @PNG_A@ -lz
+wx_mac_LIBS = -framework Carbon -framework QuickTime -framework AGL -framework OpenGL @JPEG_A@ @PNG_A@ -lz
 
 MREDLINKER = @MREDLINKER@
 

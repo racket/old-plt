@@ -135,6 +135,8 @@ scheme_hash_table (int size, int type, int has_const, int forever)
 
 typedef long hash_v_t;
 
+long high_count;
+
 static Scheme_Bucket *
 get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b)
 {
@@ -201,6 +203,25 @@ get_bucket (Scheme_Hash_Table *table, const char *key, int add, Scheme_Bucket *b
     int i, oldsize = table->size;
     size_t asize;
     Scheme_Bucket **old = table->buckets;
+
+    if (table->weak && (table->size > 4096)) {
+      int actual = 0;
+
+      /* Forced GC: so that the new table is as small as possible. */
+      scheme_collect_garbage();
+
+      /* Check actual count: */
+      for (i = 0; i < oldsize; i++) {
+	if (old[i] && old[i]->key && HT_EXTRACT_WEAK(old[i]->key)) {
+	  actual++;
+	}
+      }
+
+      if (actual * FILL_FACTOR < table->count) {
+	/* Decrement step so that the table won't actually grow. */
+	--table->step;
+      }
+    }
 
     table->size = scheme_hash_primes[++table->step];
     

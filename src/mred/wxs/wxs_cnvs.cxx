@@ -133,9 +133,6 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
-// #define DrawsForCanvas
-// @INCLUDE wxs_draw.xci
-
 class os_wxCanvas : public wxCanvas {
  public:
 

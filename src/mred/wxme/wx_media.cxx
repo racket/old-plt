@@ -392,9 +392,18 @@ void wxMediaEdit::OnEvent(wxMouseEvent *event)
 	|| (how_close < 0  && -how_close <= betweenThreshold))
       onit = FALSE;
 
-    if (onit)
+    if (onit) {
+      /* We're in the snip's horizontal region... */
+      float top, bottom, dummy;
+
       snip = FindSnip(now, +1);
-    else
+      
+      /* ... but maybe the mouse is above or below it. */
+      GetSnipLocation(snip, &dummy, &top, FALSE);
+      GetSnipLocation(snip, &dummy, &bottom, TRUE);
+      if ((top > y) || (y > bottom))
+	snip = NULL;
+    } else
       snip = NULL;
     sequenced = (PTRNE(snip, caretSnip));
     if (sequenced)
@@ -1599,7 +1608,8 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
     ir = new wxInsertRecord(start, addlen, 
 			    deleted || typingStreak || delayedStreak
 			    || insertForceStreak
-			    || !modified);
+			    || !modified,
+			    startpos, endpos);
     AddUndo(ir);
   }
 
@@ -1773,7 +1783,8 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
       AddUndo(ur);
     }
     rec = new wxDeleteRecord(start, end, deletionStreak || delayedStreak
-			     || deleteForceStreak || !modified);
+			     || deleteForceStreak || !modified,
+			     startpos, endpos);
   } else
     rec = NULL;
 

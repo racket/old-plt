@@ -111,11 +111,13 @@ void wxUnmodifyRecord::DropSetUnmodified(void)
   ok = 0;
 }
 
-wxInsertRecord::wxInsertRecord(long position, long length, Bool cont)
+wxInsertRecord::wxInsertRecord(long position, long length, Bool cont, long ss, long es)
 {
   start = position;
   end = position + length;
   continued = cont;
+  startsel = ss;
+  endsel = es;
 }
 
 Bool wxInsertRecord::Undo(wxMediaBuffer *buffer)
@@ -124,8 +126,8 @@ Bool wxInsertRecord::Undo(wxMediaBuffer *buffer)
   media = (wxMediaEdit *)buffer;
 
   media->Delete(start, end);
-  if (!continued)
-   media->SetPosition(start);
+
+  media->SetPosition(startsel, endsel);
 
   return continued;
 }
@@ -230,11 +232,13 @@ Bool wxDeleteSnipRecord::Undo(wxMediaBuffer *buffer)
   return continued;
 }
 
-wxDeleteRecord::wxDeleteRecord(long startpos, long endpos, Bool cont)
+wxDeleteRecord::wxDeleteRecord(long startpos, long endpos, Bool cont, long ss, long es)
 {
   continued = cont;
   start = startpos;
   end = endpos;
+  startsel = ss;
+  endsel = es;
   undid = FALSE;
   deletions = new wxcgList();
   clickbacks = NULL;
@@ -300,8 +304,7 @@ Bool wxDeleteRecord::Undo(wxMediaBuffer *buffer)
     }
   }
 
-  if (!continued)
-   media->SetPosition(end);
+  media->SetPosition(startsel, endsel);
 
   undid = TRUE;
 
@@ -315,11 +318,13 @@ class StyleChange /* : public wxObject  */
   wxStyle *style;
 };
 
-wxStyleChangeRecord::wxStyleChangeRecord(long startpos, long endpos, Bool cont)
+wxStyleChangeRecord::wxStyleChangeRecord(long startpos, long endpos, Bool cont, long ss, long es)
 {
   continued = cont;
   start = startpos;
   end = endpos;
+  startsel = ss;
+  endsel = es;
 
   changes = new wxcgList();
 }
@@ -367,8 +372,7 @@ Bool wxStyleChangeRecord::Undo(wxMediaBuffer *buffer)
     media->ChangeStyle(change->style, change->start, change->end);
   }
 
-  if (!continued)
-    media->SetPosition(start, end);
+  media->SetPosition(startsel, endsel);
 
   return continued;
 }

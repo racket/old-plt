@@ -1142,6 +1142,7 @@ int process_val_MARK(void *p) {
   
   gcMARK(pr->kill_data);
   gcMARK(pr->private_kill_data);
+  gcMARK(pr->private_kill_next);
   
   gcMARK(pr->user_tls);
   
@@ -1207,6 +1208,7 @@ int process_val_FIXUP(void *p) {
   
   gcFIXUP(pr->kill_data);
   gcFIXUP(pr->private_kill_data);
+  gcFIXUP(pr->private_kill_next);
   
   gcFIXUP(pr->user_tls);
   

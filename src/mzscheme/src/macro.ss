@@ -1193,14 +1193,14 @@
 		     [provided (#%car isig)])
 	       (#%verify-signature-match
 		who #t
-		(#%format "~a unit's ~s~s import (~a signature)" tag
+		(#%format "~a unit's ~s~s import (which is ~a)" tag
 			  pos (p-suffix pos)
 			  (#%car expected))
 		(#%cdr expected)
-		(#%format "~s~s linkage (~a signature) for ~a"
+		(#%format "~a's ~s~s linkage (which is ~a)"
+			  tag
 			  pos (p-suffix pos)
-			  (#%car provided)
-			  tag)
+			  (#%car provided))
 		(#%cdr provided))
 	       (loop (#%cdr isig) (#%cdr expecteds) (#%add1 pos))))))
        units tags isigs))))

@@ -37,10 +37,11 @@ class wxInsertRecord : public wxChangeRecord
 {
  private:
   long start, end;
+  long startsel, endsel;
   Bool continued;
 
  public:
-  wxInsertRecord(long position, long length, Bool cont);
+  wxInsertRecord(long position, long length, Bool cont, long startsel, long endsel);
 
   Bool Undo(wxMediaBuffer *media);
 };
@@ -62,12 +63,13 @@ class wxDeleteRecord : public wxChangeRecord
  private:
   Bool continued;
   long start, end;
+  long startsel, endsel;
   wxcgList *deletions;
   wxcgList *clickbacks;
   Bool undid;
 
  public:
-  wxDeleteRecord(long start, long end, Bool cont);
+  wxDeleteRecord(long start, long end, Bool cont, long startsel, long endsel);
   ~wxDeleteRecord();
 
   void InsertSnip(wxSnip *);
@@ -98,10 +100,11 @@ class wxStyleChangeRecord : public wxChangeRecord
  private:
   Bool continued;
   long start, end;
+  long startsel, endsel;
   wxcgList *changes;
 
  public:
-  wxStyleChangeRecord(long start, long end, Bool cont);
+  wxStyleChangeRecord(long start, long end, Bool cont, long startsel, long endsel);
   ~wxStyleChangeRecord();
 
   void AddStyleChange(long start, long end, wxStyle *style);

@@ -65,7 +65,4 @@ static void FillZero(int *a, int *b) {
 @SETMARK w = d
 @INCLUDE wxs_win.xci
 
-// #define DrawsForCanvas
-// @INCLUDE wxs_draw.xci
-
 @END

@@ -294,7 +294,7 @@ void wxMediaEdit::_ChangeStyle(long start, long end,
   }
 
   if (!noundomode)
-    rec = new wxStyleChangeRecord(start, end, delayedStreak || !modified);
+    rec = new wxStyleChangeRecord(start, end, delayedStreak || !modified, startpos, endpos);
   else
     rec = NULL;
 

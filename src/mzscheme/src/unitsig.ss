@@ -811,6 +811,10 @@
 			(lambda (name)
 			  (syntax-error cpd-unit/sig expr
 					(format "duplicate sub-unit tag \"~s\"" name))))
+	  (check-unique (map signature-name imports)
+			(lambda (name)
+			  (syntax-error cpd-unit/sig expr
+					(format "duplicate import identifier \"~s\"" name))))
 	  (check-unique (append (map signature-name imports)
 				(map link-name links))
 			(lambda (name)

@@ -155,31 +155,31 @@ static void* MyGetSize(wxDC *dc)
 #define CHECKTHISONE(x) 1
 #endif
 
-@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,nnfloat,nnfloat,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckOkFalse|CheckFalse[0] : : rFALSE <> with size
-@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL);
+@ m "draw-bitmap-section" : bool DrawBitmapRegion(wxBitmap!,float,float,float,float,nnfloat,nnfloat,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckFalse[0]|CheckOk[METHODNAME("dc<%>","draw-bitmap-section")] : : rFALSE <> with size
+@ m "draw-bitmap" : bool DrawBitmap(wxBitmap!,float,float,SYM[bitmapDrawStyle]=wxSOLID,wxColour!=NULL); : : /CheckOk[METHODNAME("dc<%>","draw-bitmap")]
 
-@ Q "try-color" : void TryColour(wxColour!,wxColour!);
+@ Q "try-color" : void TryColour(wxColour!,wxColour!); : : /CheckOk[METHODNAME("dc<%>","try-color")]
 
-@ Q "set-text-mode" : void SetBackgroundMode(SYM[textMode]); :  : /CheckOk
-@ Q "set-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk
-@ Q "set-origin" : void SetDeviceOrigin(float,float); : : /CheckOk
+@ Q "set-text-mode" : void SetBackgroundMode(SYM[textMode]); :  : /CheckOk[METHODNAME("dc<%>","set-text-mode")]
+@ Q "set-scale" : void SetUserScale(nnfloat,nnfloat); : : /CheckOk[METHODNAME("dc<%>","set-scale")]
+@ Q "set-origin" : void SetDeviceOrigin(float,float); : : /CheckOk[METHODNAME("dc<%>","set-origin")]
 
-@ q "get-background" : wxColour! GetBackground();
-@ q "get-text-mode" : SYM[textMode] GetBackgroundMode();
-@ q "get-brush" : wxBrush! GetBrush();
-@ q "get-font" : wxFont! GetFont();
-@ q "get-pen" : wxPen! GetPen();
-@ m "get-text-background" : wxColour! dcGetTextBackground();
-@ m "get-text-foreground" : wxColour! dcGetTextForeground();
+@ q "get-background" : wxColour! GetBackground(); : : /CheckOk[METHODNAME("dc<%>","get-background")]
+@ q "get-text-mode" : SYM[textMode] GetBackgroundMode(); : : /CheckOk[METHODNAME("dc<%>","get-text-mode")]
+@ q "get-brush" : wxBrush! GetBrush(); : : /CheckOk[METHODNAME("dc<%>","get-brush")]
+@ q "get-font" : wxFont! GetFont(); : : /CheckOk[METHODNAME("dc<%>","get-font")]
+@ q "get-pen" : wxPen! GetPen(); : : /CheckOk[METHODNAME("dc<%>","get-pen")]
+@ m "get-text-background" : wxColour! dcGetTextBackground(); : : /CheckOk[METHODNAME("dc<%>","get-text-background")]
+@ m "get-text-foreground" : wxColour! dcGetTextForeground(); : : /CheckOk[METHODNAME("dc<%>","get-text-foreground")]
 
-@ m "get-size" : void[]/CastToSO//spAnything MyGetSize();
+@ m "get-size" : void[]/CastToSO//spAnything MyGetSize(); : : /CheckOk[METHODNAME("dc<%>","get-size")]
 
 @ q "ok?" : bool Ok();
 
-@ Q "start-doc" : bool StartDoc(string); : : : rFALSE
-@ Q "start-page" : void StartPage();
-@ Q "end-doc" : void EndDoc();
-@ Q "end-page" : void EndPage();
+@ Q "start-doc" : bool StartDoc(string); : : /CheckOk[METHODNAME("dc<%>","start-doc")] : rFALSE
+@ Q "start-page" : void StartPage(); : : /CheckOk[METHODNAME("dc<%>","start-page")]
+@ Q "end-doc" : void EndDoc(); : : /CheckOk[METHODNAME("dc<%>","end-doc-line")]
+@ Q "end-page" : void EndPage(); : : /CheckOk[METHODNAME("dc<%>","end-page")]
 
 @END
 
@@ -189,8 +189,8 @@ static void* MyGetSize(wxDC *dc)
 
 @CREATOR ()
 
-@ "get-pixel" : bool GetPixel(float,float,wxColour^)
-@ "set-pixel" : void SetPixel(float,float,wxColour^)
+@ "get-pixel" : bool GetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","get-pixel")]
+@ "set-pixel" : void SetPixel(float,float,wxColour^) : : /CheckOk[METHODNAME("memory-dc%","set-pixel")]
 
 @ "set-bitmap" : void SelectObject(wxBitmap^);  : : /CHECKOKFORDC[0.METHODNAME("memory-dc%","set-bitmap")]
 @ "get-bitmap" : wxBitmap^ GetObject();

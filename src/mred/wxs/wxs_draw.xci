@@ -1,16 +1,10 @@
 
-#undef DO_OK_CHECK
-#ifdef DrawsForCanvas
-#define DO_OK_CHECK(v)
-#else
-#define DO_OK_CHECK(v) if (!((wxDC *)((Scheme_Class_Object *)obj)->primdata)->Ok()) return v;
-#endif
+#define DO_OK_CHECK(name) if (!((wxDC *)((Scheme_Class_Object *)obj)->primdata)->Ok()) WITH_VAR_STACK(scheme_arg_mismatch(name, "device context is not ok", obj));
 
-@MACRO CheckOkGen[ret] = DO_OK_CHECK(<ret>)
+@MACRO CheckOk[name] = DO_OK_CHECK(<name>)
+
 @MACRO CheckGen[p.ret] = if (!x<p>->Ok()) return <ret>;
-@MACRO CheckOk = $$CheckOkGen[scheme_void]
 @MACRO Check[p] = $$CheckGen[<p>.scheme_void]
-@MACRO CheckOkFalse = $$CheckOkGen[scheme_false]
 @MACRO CheckFalse[p] = $$CheckGen[<p>.scheme_false]
 
 extern Scheme_Object *objscheme_bundle_wxPoint(wxPoint *);

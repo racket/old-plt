@@ -16,6 +16,7 @@
    (struct label-struct-type (name parent parent-fields-nbr total-fields-nbr error?))
    )
   
+  ; parents = children = (listof label)
   ; type-var = (union type-var #f), trace = boolean, prim? = boolean
   ; term = syntax-object, set = (hash-table-of label (make-arrows (listof label) (listof label) (listof label)),
   ; edges = (hashtableof symbol edge))

@@ -32,6 +32,8 @@
    get-span-from-label
    get-errors-from-label
    get-source-from-label
+   get-parents-from-label
+   get-children-from-label
    get-arrows-from-labels
    )
   
@@ -4762,7 +4764,7 @@
                 (set-label-parents! label final-result)
                 final-result)))))
   
-  ; label -> (listof label)
+  ; label (listof label) -> (listof label)
   ; should be abstracted with the above...
   ; differences are arrows-in vs arrows-out and
   ; label-parents/set-label-parents! vs label-children/set-label-children!

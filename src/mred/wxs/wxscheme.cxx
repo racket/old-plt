@@ -1197,11 +1197,11 @@ static Scheme_Object *SetPSProcs(int, Scheme_Object *a[])
 }
 
 void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
-			  const char *text, int dt, int use16, 
+			  const char *text, int dt, Bool combine, int use16, 
 			  int font_size)
 {
   if (ps_draw_text) {
-    Scheme_Object *a[4], *v;
+    Scheme_Object *a[5], *v;
 
     v = scheme_make_utf8_string(fontname);
     a[0] = v;
@@ -1212,18 +1212,19 @@ void wxPostScriptDrawText(Scheme_Object *f, const char *fontname,
       v = scheme_make_sized_offset_utf8_string((char *)text, dt, -1);
     a[2] = v;
     a[3] = f;
+    a[4] = (combine ? scheme_true : scheme_false);
 
-    scheme_apply(ps_draw_text, 4, a);
+    scheme_apply(ps_draw_text, 5, a);
   }
 }
 
 extern void wxPostScriptGetTextExtent(const char *fontname, 
-				      const char *text, int dt, int use16, 
+				      const char *text, int dt, Bool combine, int use16, 
 				      int font_size,
 				      float *x, float *y, float *descent, float *topSpace)
 {
   if (ps_get_text_extent) {
-    Scheme_Object *a[3], *v;
+    Scheme_Object *a[4], *v;
 
     v = scheme_make_utf8_string(fontname);
     a[0] = v;
@@ -1233,8 +1234,9 @@ extern void wxPostScriptGetTextExtent(const char *fontname,
     else 
       v = scheme_make_sized_offset_utf8_string((char *)text, dt, -1);
     a[2] = v;
+    a[3] = (combine ? scheme_true : scheme_false);
 
-    v = scheme_apply_multi(ps_get_text_extent, 3, a);
+    v = scheme_apply_multi(ps_get_text_extent, 4, a);
     
     if (SAME_OBJ(v, SCHEME_MULTIPLE_VALUES)
 	&& (scheme_multiple_count == 4)) {

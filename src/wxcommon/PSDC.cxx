@@ -64,10 +64,10 @@
 #include "../mzscheme/include/scheme.h"
 
 extern void wxPostScriptDrawText(Scheme_Object *f, const char *fontname, 
-				 const char *text, int dt, int use16, 
+				 const char *text, int dt, Bool combine, int use16, 
 				 int font_size);
 extern void wxPostScriptGetTextExtent(const char *fontname, 
-				      const char *text, int dt, int use16, 
+				      const char *text, int dt, Bool combine, int use16, 
 				      int font_size,
 				      float *x, float *y, float *descent, float *topSpace);
 extern char *wxPostScriptFixupFontName(const char *fontname);
@@ -1336,7 +1336,7 @@ void wxPostScriptDC::DrawText(DRAW_TEXT_CONST char *text, float x, float y,
     pstream->Out(" moveto\n");
   }
 
-  wxPostScriptDrawText(pstream->f, name, text, dt, use16, size);
+  wxPostScriptDrawText(pstream->f, name, text, dt, combine, use16, size);
 
   if (angle != 0.0) {
     pstream->Out("grestore\n"); 
@@ -1892,7 +1892,7 @@ float wxPostScriptDC::GetCharWidth (void)
 
 void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
 				    float *descent, float *topSpace, wxFont *theFont,
-				    Bool WXUNUSED(combine), Bool use16, int dt)
+				    Bool combine, Bool use16, int dt)
 {
   wxFont *fontToUse = theFont;
   int family;
@@ -1913,7 +1913,7 @@ void wxPostScriptDC::GetTextExtent (const char *string, float *x, float *y,
   if (!name)
     name = "Times-Roman";
 
-  wxPostScriptGetTextExtent(name, string, dt, use16, size,
+  wxPostScriptGetTextExtent(name, string, dt, combine, use16, size,
 			    x, y, descent, topSpace);
 }
 

@@ -188,17 +188,50 @@
   ;; ----------------------------------------
   ;; AFM
 
-  (define make-achar cons)
+  ;; An achar is either
+  ;;  - (cons num-or-bytes num)
+  ;;  - (list num-or-bytes num ligature-assoc kern-assoc)
+
+  (define make-achar
+    (case-lambda
+     [(enc width ligatures)
+      (if (null? ligatures)
+	  (cons enc width)
+	  (list enc width ligatures null))]
+     [(enc width) (cons enc width)]))
   (define achar-enc car)   ; Number (unicode or CID) or bytes (Adobe char name)
-  (define achar-width cdr) ; Integer, 0 to 1000
+  (define achar-width ; Integer, 0 to 1000
+    (lambda (x)
+      (if (pair? (cdr x))
+	  (cadr x)
+	  (cdr x))))
+  (define achar-ligatures
+    (lambda (x)
+      (if (pair? (cdr x))
+	  (caddr x)
+	  null)))
+  (define achar-kerns
+    (lambda (x)
+      (if (pair? (cdr x))
+	  (cadddr x)
+	  null)))
+  (define (strip-ligatures-and-kerning achar)
+    (make-achar (achar-enc achar) (achar-width achar)))
+  (define (achar-add-kern! achar v amt)
+    (when (not (pair? (cdr achar)))
+      (set-cdr! achar (list (cdr achar) null null)))
+    (set-car! (cdddr achar) (cons (cons v amt) (cadddr achar))))
 
   (define-struct font (descent ascent achars is-cid? char-set-name))
+
+  (define re:hex #rx#"^<[0-9a-fA-F]>$")
 
   (define (parse-afm file)
     (let ([descender #f]
 	  [bbox-down #f]
 	  [cap-height #f]
 	  [achars (make-hash-table 'equal)]
+	  [kern-pairs null]
 	  [char-set #f]
 	  [char-set-name #f]
 	  [is-cid? #f])
@@ -255,15 +288,50 @@
 				      (if (= v -1)
 					  name
 					  v))
-				    (or (and wm (bytes->number (cadr wm))) 500)))))))
+				    (or (and wm (bytes->number (cadr wm))) 500)
+				    (extract-ligatures rest)))))))
+			  (loop)))))]
+		 [(startkernpairs)
+		  (let ([cnt (read i)])
+		    (let loop ()
+		      (let ([kp (read i)])
+			(when (or (eq? kp 'kp)
+				  (eq? kp 'kpx))
+			  (let ([v1 (parameterize ([read-case-sensitive #t])
+				      (read i))]
+				[v2 (parameterize ([read-case-sensitive #t])
+				      (read i))]
+				[amt (read i)])
+			    (read-bytes-line i)
+			    (let ([v1 (find-unicode (string->bytes/utf-8 (symbol->string v1)))]
+				  [v2 (find-unicode (string->bytes/utf-8 (symbol->string v2)))])
+			      (set! kern-pairs (cons (list v1 v2 amt) kern-pairs))))
 			  (loop)))))]
 		 [else (read-bytes-line i)])
 	       (loop))))))
+      (for-each (lambda (kp)
+		  (let ([c1 (car kp)]
+			[c2 (cadr kp)]
+			[amt (caddr kp)])
+		    (let ([achar (hash-table-get achars c1 (lambda () (make-achar 0 0)))])
+		      (achar-add-kern! achar c2 amt))))
+		kern-pairs)
       (make-font (- (or descender bbox-down 0))
 		 (or cap-height 1000)
 		 achars
 		 (and char-set #t)
 		 char-set-name)))
+
+  (define (extract-ligatures rest)
+    (let ([m (regexp-match #rx#"; *L +([a-zA-Z0-9-]+) +([a-zA-Z0-9-]+)(.*)$" rest)])
+      (if m
+	  (let ([next (cadr m)]
+		[ligature (caddr m)]
+		[rest (cadddr m)])
+	    (cons (cons (find-unicode next)
+			(find-unicode ligature))
+		  (extract-ligatures rest)))
+	  null)))
 
   (define fonts (make-hash-table 'equal))
 
@@ -299,31 +367,50 @@
   ;; ----------------------------------------
   ;; Draw/measure text
 
-  (define (afm-get-text-extent font-name size string)
+  (define (afm-get-text-extent font-name size string kern?)
     (let* ([font (or (get-font font-name)
 		     (make-font 0 1000 #hash() #f #f))]
 	   [scale (/ size 1000.0)]
 	   [descent (* scale (font-descent font))])
       (values (* scale
-		 (apply +
-			(map (lambda (c)
-			       (let ([achar (hash-table-get 
-					     (font-achars font)
-					     (char->integer c)
-					     (lambda ()
-					       (find-substitute 
-						c
-						(lambda (name font achar)
-						  achar)
-						(lambda ()
-						  (make-achar 0 500)))))])
-				 (achar-width achar)))
-			     (string->list string))))
+		 (let loop ([cl (string->list string)][width 0])
+		   (cond
+		    [(empty? cl) width]
+		    [else (let ([achar (hash-table-get 
+					(font-achars font)
+					(char->integer (car cl))
+					(lambda ()
+					  (find-substitute 
+					   (car cl)
+					   (lambda (name font achar)
+					     (strip-ligatures-and-kerning achar))
+					   (lambda ()
+					     (make-achar 0 500)))))])
+			    (cond
+			     [(and kern?
+				   (pair? (cdr cl))
+				   (assoc (char->integer (cadr cl))
+					  (achar-ligatures achar)))
+			      => (lambda (p)
+				   ;; Replace the first two characters with a
+				   ;; ligature and try again
+				   (loop (cons (integer->char (cdr p)) (cddr cl)) 
+					 width))]
+			     [(and kern?
+				   (pair? (cdr cl))
+				   (assoc (char->integer (cadr cl))
+					  (achar-kerns achar)))
+			      => (lambda (p)
+				   ;; Reduce width by kerning amount
+				   (loop (cdr cl)
+					 (+ width (achar-width achar) (cdr p))))]
+			     [else
+			      (loop (cdr cl) (+ width (achar-width achar)))]))])))
 	      (+ size descent)
 	      descent
 	      (* scale (- 1000 (font-ascent font))))))
 
-  (define (afm-draw-text font-name size string out)
+  (define (afm-draw-text font-name size string out kern?)
     (let* ([l (string->list string)]
 	   [font (or (get-font font-name)
 		     (make-font 0 0 #hash() #f #f))]
@@ -359,11 +446,36 @@
 		       (begin
 			 (show-simples simples special-font-name special-font)
 			 (loop (cdr l) (list (achar-enc achar)) #f #f))
-		       ;; Continue simple chain
-		       (loop (cdr l) 
-			     (cons (achar-enc achar) simples)
-			     #f
-			     #f))
+		       ;; Continue simple chain. Look ahead for ligatures and kerning:
+		       (cond
+			[(and kern?
+			      (pair? (cdr l))
+			      (assoc (char->integer (cadr l))
+				     (achar-ligatures achar)))
+			 => (lambda (p)
+			      ;; Substitute ligature
+			      (loop (cons (integer->char (cdr p)) (cddr l))
+				    simples
+				    #f
+				    #f))]
+			[(and kern?
+			      (pair? (cdr l))
+			      (assoc (char->integer (cadr l))
+				     (achar-kerns achar)))
+			 => (lambda (p)
+			      ;; Output result so far
+			      (show-simples (cons (achar-enc achar) simples)
+					    special-font-name special-font)
+			      ;; Kern
+			      (fprintf out "~a 0 rmoveto\n" (* size (/ (cdr p) 1000.0)))
+			      ;; Continue
+			      (loop (cdr l) null #f #f))]
+			[else
+			 ;; Normal additional character
+			 (loop (cdr l) 
+			       (cons (achar-enc achar) simples)
+			       #f
+			       #f)]))
 		   ;; Not simple... use glyphshow
 		   (begin
 		     (show-simples simples special-font-name special-font)
@@ -373,7 +485,7 @@
 	  (find-substitute
 	   (car l)
 	   (lambda (this-font-name this-font achar)
-	     ;; Found a substitute font
+	     ;; Found a substitute font. (Don't try to kern, though.)
 	     (if (and (equal? special-font-name this-font-name)
 		      (integer? (achar-enc achar)))
 		 ;; Continue special-font simple chain:
@@ -400,7 +512,7 @@
 	   (lambda ()
 	     ;; No mapping for the character anywhere.
 	     (show-simples simples special-font-name special-font)
-	     ;; Perhaps draw a box, one day
+	     ;; Future work: a box. For now, we just skip some space.
 	     (fprintf out "~a 0 rmoveto\n" (/ size 2))
 	     (loop (cdr l) null #f #f)))]))))
 

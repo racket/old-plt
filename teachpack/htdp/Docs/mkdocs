@@ -32,7 +32,7 @@ string=? ; exec mzscheme -qr $0 "$@"
          [trashy-path
           (or (testpath (format "~a/Packages/TrashyTeXTools/"
                                 (or (getenv "HOMESCHEME")
-                                    "/proj/scheme/")))
+                                    "/Users/matthias/")))
               (testpath (build-path (collection-path "mzlib") 'up 'up  'up "TrashyTeXTools")))])
     (unless trashy-path
       (error 'mkdocs "Couldn't find TrashyTeXTools"))

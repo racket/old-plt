@@ -80,7 +80,7 @@
    make-yes-no
    (rename make-check make-boolean)
    make-radio
-   make-button
+;   make-button
    
    form? 
    form-element?
@@ -153,10 +153,11 @@
   ; Form -> Bindings 
   ; to ask N questions with tags, receive N answers 
   ; assert: (lambda (result) (set-equal? (map car aloss) (map car result)))
-  (define (form-query f)
-    (check-arg 'form-query (form? f) "form" "first" f)
+  (define (form-query aloss)
+    (check-list-list 'form-query (form? aloss) "form" aloss)
     (map list (map first f)
          (conduct-query "Web Query" (map list (make-keys f) (map second f)))))
+
 
   ; extracting values from forms ----------------------------------------------
   
@@ -354,12 +355,25 @@
  ;   ;  ;   ;  ;   ;  ;   ;  ;  ;   ;   ; 
   ;;;  ;;; ;;;  ;;;    ;;;  ;;   ;;  ;;;  
 
-    ; _ -> Boolean 
+    ; _ -> (union true String) 
   (define (form? x)
-    (and (list? x)
-         (andmap list? x)
-         (andmap form-element? (map cadr x))
-         (andmap symbol? (map car x))))
+    (cond
+      [(not (list? x)) (format "list expected, given ~e" x)]
+      [(find-non list? x)
+       => 
+       (lambda (non-list)
+         (format "list of lists expected, give list with ~e" non-list))]
+      [(find-non 
+        (lambda (x)
+          (and (list? x)
+               (= (length x) 2)
+               (symbol? (car x))
+               (form-element? (cadr x))))
+        x)
+       => 
+       (lambda (non-tagged-fe)
+         (format "list of (list Symbol FormElement) expected, given ~s" non-tagged-fe))]
+      [else true]))
   
   ; _ -> Boolean 
   (define (form-element? x)

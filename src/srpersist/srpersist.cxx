@@ -322,7 +322,7 @@ void addToBufferTable(void *address,SRP_SQL_BUFFER *buffer) {
   unsigned short hashVal;
   SRP_BUFFER_TBL_ENTRY *pEntry,*p;
 
-  pEntry = (SRP_BUFFER_TBL_ENTRY *)scheme_malloc(sizeof(SRP_BUFFER_TBL_ENTRY));
+  pEntry = (SRP_BUFFER_TBL_ENTRY *)scheme_malloc_uncollectable(sizeof(SRP_BUFFER_TBL_ENTRY));
   pEntry->address = address;
   pEntry->buffer = buffer;
   

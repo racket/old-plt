@@ -2187,6 +2187,49 @@ if test "${enable_sgcdebug}" = "yes" ; then
   OPTIONS="$OPTIONS -DSGC_STD_DEBUGGING=1"
 fi
 
+############## C flags ################
+
+MZOPTIONS=
+
+ac_ext=c
+# CFLAGS is not in ac_cpp because -g, -O, etc. are not valid cpp options.
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='${CC-cc} -c $CFLAGS $CPPFLAGS conftest.$ac_ext 1>&5'
+ac_link='${CC-cc} -o conftest $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS 1>&5'
+cross_compiling=$ac_cv_prog_cc_cross
+
+
+ msg="for inline keyword" 
+echo $ac_n "checking $msg""... $ac_c" 1>&6
+echo "configure:2205: checking $msg" >&5
+if test "$cross_compiling" = yes; then
+  inline=no
+else
+  cat > conftest.$ac_ext <<EOF
+#line 2210 "configure"
+#include "confdefs.h"
+static inline int foo() { return 5; }
+   int main() {
+      return foo();
+   }
+EOF
+if { (eval echo configure:2217: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+then
+  inline=no
+else
+  echo "configure: failed program was:" >&5
+  cat conftest.$ac_ext >&5
+  rm -fr conftest*
+  inline=yes
+fi
+rm -fr conftest*
+fi
+
+if test "$inline" = "no" ; then
+  MZOPTIONS="$MZOPTIONS -DNO_INLINE_KEYWORD"
+fi
+echo "$ac_t""$inline" 1>&6 
+
 ############## C++ grunge ################
 
 MROPTIONS=
@@ -2203,12 +2246,12 @@ cross_compiling=$ac_cv_prog_cxx_cross
 
  msg="whether new and new[] are different"   
   echo $ac_n "checking $msg""... $ac_c" 1>&6
-echo "configure:2207: checking $msg" >&5
+echo "configure:2250: checking $msg" >&5
   if test "$cross_compiling" = yes; then
-    { echo "configure: error: can not run test program while cross compiling" 1>&2; exit 1; }
+  different=yes
 else
   cat > conftest.$ac_ext <<EOF
-#line 2212 "configure"
+#line 2255 "configure"
 #include "confdefs.h"
 #ifdef __cplusplus
 extern "C" void exit(int);
@@ -2221,7 +2264,7 @@ extern "C" void exit(int);
     return (new C) == (new C[10]);       
    }
 EOF
-if { (eval echo configure:2225: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
+if { (eval echo configure:2268: \"$ac_link\") 1>&5; (eval $ac_link) 2>&5; } && test -s conftest && (./conftest; exit) 2>/dev/null
 then
   different=yes
 else
@@ -2242,16 +2285,16 @@ fi
   #  then try adding -fpermissive
   if test "$CC" = "gcc" ; then
     echo $ac_n "checking whether need to use -fpermissive""... $ac_c" 1>&6
-echo "configure:2246: checking whether need to use -fpermissive" >&5
+echo "configure:2289: checking whether need to use -fpermissive" >&5
     cat > conftest.$ac_ext <<EOF
-#line 2248 "configure"
+#line 2291 "configure"
 #include "confdefs.h"
 #include "X11/Intrinsic.h"
 int main() {
 
 ; return 0; }
 EOF
-if { (eval echo configure:2255: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:2298: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   rm -rf conftest*
   addperm=no
 else
@@ -2271,6 +2314,7 @@ fi
 ############## final output ################
 
 LIBS="$LIBS $EXTRALIBS"
+
 
 
 
@@ -2518,6 +2562,7 @@ s%@WBUILD@%$WBUILD%g
 s%@x_includes@%$x_includes%g
 s%@x_libraries@%$x_libraries%g
 s%@OPTIONS@%$OPTIONS%g
+s%@MZOPTIONS@%$MZOPTIONS%g
 s%@MROPTIONS@%$MROPTIONS%g
 s%@GCDIR@%$GCDIR%g
 s%@MZBINTARGET@%$MZBINTARGET%g

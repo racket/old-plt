@@ -171,6 +171,11 @@ this is the lambda calculus:
 with non-terminals e for the expression language, c for the
 evaluation contexts and v for values.
 
+> compiled-lang? : (any? . -> . boolean?)
+
+Returns #t if its argument was produced by `language', #f
+otherwise.
+
 > (reduction language pattern bodies ...)       SYNTAX
 
 This form defines a reduction. The first position must
@@ -221,6 +226,11 @@ example is this:
       c
       ((lambda ((name x variable)) (name body e)) (name arg v))
       (lc-subst x arg body))
+
+> red? : (any? . -> . boolean?)
+
+Returns #t if its argument is a reduction (produced by `reduction',
+`reduction/context', etc.), #f otherwise.
 
 > compatible-closure : (red?
                         compiled-lang?

@@ -21,6 +21,8 @@
 
   (define mb (make-object menu-bar% f))
 
+  (define file-menu (make-object menu% "File" mb))
+
   (define scale-menu (make-object menu% "Scale" mb))
   (define (add-scale s)
     (make-object checkable-menu-item% (format "~a~n" s)
@@ -40,6 +42,13 @@
   (add-scale 4)
   (add-scale 8)
   (add-scale 16)
+
+  (make-object menu-item% "Quit" file-menu
+	       (lambda (i e)
+		 (when (send f can-close?)
+		   (send f show #f)
+		   (send f on-close)))
+	       #\Q)
 
   (send f show #t)
   (yield s))

@@ -12,8 +12,9 @@
 				(raise-type-error 'dc-for-parameter "dc<%> object or #f" x))
 			      x)))
 
-  (define (prog-picture f w h a d)
+  (define (dc f w h a d)
     (make-pict `(prog ,f ,h) w h a d null))
+  (define prog-picture dc)
 
   (define (memq* a l)
     (if (pair? l)

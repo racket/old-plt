@@ -4,8 +4,10 @@
 
 (define-signature mrpict-extra^
   (dc-for-text-size
+
    text
-   prog-picture
+   dc
+
    draw-pict))
 
 (define-signature mrpict^

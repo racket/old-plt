@@ -508,16 +508,16 @@
 (syntax-test #'(class-field-mutator ok% ok ok))
 (syntax-test #'(class-field-mutator ok% . ok))
 
-(syntax-test #'(declare-local-member-name . a))
-(syntax-test #'(declare-local-member-name 7))
-(syntax-test #'(declare-local-member-name a 7))
-(syntax-test #'(declare-local-member-name a a))
+(syntax-test #'(define-local-member-name . a))
+(syntax-test #'(define-local-member-name 7))
+(syntax-test #'(define-local-member-name a 7))
+(syntax-test #'(define-local-member-name a a))
 
 ;; ------------------------------------------------------
 ;; Private names
 
 (let ([o (let ()
-	   (declare-local-member-name priv)
+	   (define-local-member-name priv)
 	   (let ([o (make-object
 		     (class object%
 		       (define/public (priv) (let ([priv 73]) priv))
@@ -527,7 +527,7 @@
   (err/rt-test (send o priv) exn:object?))
 
 (let ([c% (let ()
-	    (declare-local-member-name priv)
+	    (define-local-member-name priv)
 	    (let ([c% (class object%
 			(init-field priv)
 			(super-make-object))])
@@ -539,7 +539,7 @@
   (err/rt-test (instantiate c% () [priv 10]) exn:object?))
 
 (let ([c% (let ()
-	    (declare-local-member-name priv)
+	    (define-local-member-name priv)
 	    (let ([c% (class object%
 			(init priv)
 			(define xpriv priv)
@@ -552,7 +552,7 @@
   (err/rt-test (instantiate c% () [priv 101]) exn:object?))
 
 (let ([c% (let ()
-	    (declare-local-member-name priv)
+	    (define-local-member-name priv)
 	    (let ([c% (class object%
 			(init xpriv)
 			(field [priv xpriv])
@@ -569,7 +569,7 @@
   (err/rt-test (instantiate c% () [priv 10]) exn:object?))
 
 (let ([c% (let ()
-	    (declare-local-member-name priv)
+	    (define-local-member-name priv)
 	    (let ([c% (class object%
 			(init-field val)
 			(define/public (priv) val)

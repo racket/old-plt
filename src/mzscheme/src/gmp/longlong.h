@@ -1033,7 +1033,7 @@ extern USItype __MPN(udiv_qrnnd) _PROTO ((USItype *, USItype, USItype, USItype))
 #endif
 #ifndef udiv_qrnnd
 #ifndef LONGLONG_STANDALONE
-#define udiv_qrnnd(q, r, n1, n0, d) \
+#define XXX_udiv_qrnnd(q, r, n1, n0, d) \
   do { USItype __r;							\
     (q) = __MPN(udiv_qrnnd) (&__r, (n1), (n0), (d));			\
     (r) = __r;								\

@@ -769,10 +769,13 @@ Scheme_Object *scheme_bignum_shift(const Scheme_Object *n, long shift)
 
     n_digs = NULL; /* Precise GC - might be mis-aligned */
 
-    shift_out = mpn_rshift(res_digs, res_digs, res_alloc, shift_bits);
+    if (shift_bits != 0)
+      shift_out = mpn_rshift(res_digs, res_digs, res_alloc, shift_bits);
+    else
+      shift_out = 0;
 
     SCHEME_BIGPOS(o) = SCHEME_BIGPOS(n);
-    if (!SCHEME_BIGPOS(n) && (shifted_off_one || !shift_out == 0)) {
+    if (!SCHEME_BIGPOS(n) && (shifted_off_one || shift_out)) {
       mpn_add_1(res_digs, res_digs, res_alloc, 1);
     }
     SCHEME_BIGLEN(o) = bigdig_length(res_digs, res_alloc);

@@ -46,60 +46,17 @@ the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 MA 02111-1307, USA.
 */
 
-/* Define to 1 if you have the declaration of `optarg', and to 0 if you don't.
-   */
-#define HAVE_DECL_OPTARG 0
-
-/* ./configure --enable-assert option, to enable some ASSERT()s */
-/* #undef WANT_ASSERT */
-
-/* Define if you have the <sys/sysctl.h> header file. */
-#define HAVE_SYS_SYSCTL_H 1
-
-/* Define if you have the `strtoul' function. */
-#define HAVE_STRTOUL 1
-
 /* Name of package */
 #define PACKAGE "gmp"
-
-/* Define if you have the `sysctlbyname' function. */
-#define HAVE_SYSCTLBYNAME 1
 
 /* Define if the system has the type `void'. */
 #define HAVE_VOID 1
 
-/* Define if you have the `popen' function. */
-#define HAVE_POPEN 1
-
-/* ./configure --disable-alloca option, to use stack-alloc.c, not alloca */
-/* #undef USE_STACK_ALLOC */
-
 /* Define if cpp supports the ANSI # stringizing operator. */
 #define HAVE_STRINGIZE 1
 
-/* Define if you have the <sys/time.h> header file. */
-#define HAVE_SYS_TIME_H 1
-
-/* Define if you have the `sysconf' function. */
-#define HAVE_SYSCONF 1
-
-/* Define if you have the `getpagesize' function. */
-#define HAVE_GETPAGESIZE 1
-
-/* Define if you have the `processor_info' function. */
-/* #undef HAVE_PROCESSOR_INFO */
-
 /* Version number of package */
 #define VERSION "3.1.1"
-
-/* Define if you have the `getopt_long' function. */
-/* #undef HAVE_GETOPT_LONG */
-
-/* Define if you have the <getopt.h> header file. */
-/* #undef HAVE_GETOPT_H */
-
-/* Define if you have the ANSI C header files. */
-#define STDC_HEADERS 1
 
 #include "gmp-mparam.h"
 /* #include "longlong.h" */

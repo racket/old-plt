@@ -5,6 +5,7 @@
            (lib "string-constant.ss" "string-constants")
 	   (lib "xml.ss" "xml")
            (lib "contract.ss")
+           (lib "getinfo.ss" "setup")
            "colldocs.ss"
            "docpos.ss"
            "path.ss"
@@ -166,8 +167,28 @@
   
   ;; find-doc-directories : -> (listof path)
   ;; constructs a list of directories where documentation may reside.
-  ;; it is the contents of all of the "doc" collections
   (define (find-doc-directories)
+    (append (find-info.ss-doc-directories)
+            (find-doc-directories-in-doc-collection)))
+  
+  (define (find-info.ss-doc-directories)
+    (let ([collections (find-relevant-collections '(html-docs))])
+      (let loop ([collections collections])
+        (cond
+          [(null? collections) null]
+          [else (let* ([collection (car collections)]
+                       [info (get-info collection)]
+                       [dir (apply collection-path collection)]
+                       [html-doc-paths (info 'html-docs)])
+                  (cond
+                    [(and (list? html-doc-paths)
+                          (andmap path-string? html-doc-paths))
+                     (append (map (lambda (x) (build-path dir x)) html-doc-paths)
+                             (loop (cdr collections)))]
+                    [else
+                     (loop (cdr collections))]))]))))
+  
+  (define (find-doc-directories-in-doc-collection)
     (let loop ([paths (current-library-collection-paths)]
                [acc null])
       (cond
@@ -189,7 +210,7 @@
   ;; finds the full path of the doc directory, if one exists
   ;; input is just the short name of the directory (as a path)
   (define (find-doc-directory doc)
-    (let loop ([dirs (find-doc-directories)])
+    (let loop ([dirs (find-doc-directories-in-doc-collection)])
       (cond
         [(null? dirs) #f]
         [else (let ([dir (car dirs)])

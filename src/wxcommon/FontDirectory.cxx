@@ -121,27 +121,22 @@ char *font_defaults[] = {
 
 #ifdef wx_mac
 # ifdef OS_X
-  "ScreenDefault__", "lucida grande",
-  "ScreenSystem__", "lucida grande",
+  "ScreenDefault__", "Lucida Grande",
+  "ScreenSystem__", "Lucida Grande",
+  "ScreenDecorative__", "Arial", /* "Geneva" looks bad at 12pt in Quartz with QD spacing */
+  "ScreenModern__", "Courier New", /* "Courier" is worse without Quartz */
+  "ScreenScript__", "Apple Chancery",
 # else
   "ScreenDefault__", "applicationfont",
   "ScreenSystem__", "systemfont",
+  "ScreenDecorative__", "Geneva",
+  "ScreenModern__", "Monaco", /* "courier" is also good */
+  "ScreenScript__", "Zapf Chancery",
 # endif
-  "ScreenRoman__", "times",
-  "ScreenDecorative__", "geneva",
-# ifdef OS_X
-  "ScreenModern__", "courier new",
-# else
-  "ScreenModern__", "monaco", /* "courier" is also good */
-# endif
+  "ScreenRoman__", "Times",
   "ScreenTeletype__", "${ScreenModern,$[weight],$[style]}",
-  "ScreenSwiss__", "helvetica",
-# ifdef OS_X
-  "ScreenScript__", "apple chancery",
-# else
-  "ScreenScript__", "zapf chancery",
-# endif
-  "ScreenSymbol__", "symbol",
+  "ScreenSwiss__", "Helvetica",
+  "ScreenSymbol__", "Symbol",
 #endif
 
   NULL

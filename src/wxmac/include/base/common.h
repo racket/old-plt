@@ -202,7 +202,12 @@ enum {
 
   wxCAP_ROUND =      130,
   wxCAP_PROJECTING,
-  wxCAP_BUTT
+  wxCAP_BUTT,
+
+  wxSMOOTHING_DEFAULT = 140,
+  wxSMOOTHING_PARTIAL,
+  wxSMOOTHING_ON,
+  wxSMOOTHING_OFF,
 };
 
 

@@ -163,14 +163,15 @@ wxFont::wxFont(void)
 {
   Create(10, wxDEFAULT, 
 	 wxDEFAULT, 
-	 wxNORMAL, wxNORMAL, FALSE);
+	 wxNORMAL, wxNORMAL, FALSE, 
+	 wxSMOOTHING_DEFAULT);
 }
 
 //-----------------------------------------------------------------------------
 // Constructor for a font. Note that the real construction is done
 // in wxDC::SetFont, when information is available about scaling etc.
 //-----------------------------------------------------------------------------
-wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool Underlined)
+wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool Underlined, int Smoothing)
 {
   int fam;
 
@@ -178,22 +179,22 @@ wxFont::wxFont(int PointSize, int FontOrFamilyId, int Style, int Weight, Bool Un
 
   Create(PointSize, FontOrFamilyId, 
 	 fam, 
-	 Style, Weight, Underlined);
+	 Style, Weight, Underlined, Smoothing);
 }
 
 wxFont::wxFont(int PointSize, const char *Face, int Family, int Style, int Weight, 
-	       Bool underlined)
+	       Bool underlined, int Smoothing)
 {
   int id, fam;
 
   id = wxTheFontNameDirectory->FindOrCreateFontId(Face, Family);
   fam = wxTheFontNameDirectory->GetFamily(id);
   
-  Create(PointSize, id, fam, Style, Weight, underlined);
+  Create(PointSize, id, fam, Style, Weight, underlined, Smoothing);
 }
 
 void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight, 
-		    Bool Underlined)
+		    Bool Underlined, int Smoothing)
 {
   int tried_once = 0;
 
@@ -203,6 +204,7 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
   weight = Weight;
   point_size = PointSize;
   underlined = Underlined;
+  smoothing = Smoothing;
 
   while (1) {
     char *name;
@@ -229,6 +231,16 @@ void wxFont::Create(int PointSize, int Font, int Family, int Style, int Weight,
       }
     }
   }
+}
+
+int wxFont::GetEffectiveSmoothing(float scale)
+{
+  if ((smoothing == wxSMOOTHING_DEFAULT)
+      && (family == wxMODERN)
+      && ((scale * point_size) < 14))
+    return wxSMOOTHING_PARTIAL;
+  else
+    return smoothing;
 }
 
 //-----------------------------------------------------------------------------

@@ -137,7 +137,8 @@ class wxCanvasDC: public wxbCanvasDC
 };
 
 long wxTextFontInfo(int font, int size, int face, FontInfo *finfo, char *str, int d = 0, int len = -1);
-void DrawLatin1Text(const char *text, int d, int len = -1, int bit16 = FALSE, Bool qd_spacing = FALSE);
+void DrawLatin1Text(const char *text, int d, int len = -1, int bit16 = FALSE, Bool qd_spacing = FALSE, 
+		    int smoothing = wxSMOOTHING_DEFAULT);
 void GetLatin1TextWidth(const char *text, int d, int theStrlen, 
 			short txFont, short txSize, short txFace,
 			int bit16, float scale,

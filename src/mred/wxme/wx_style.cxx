@@ -617,7 +617,7 @@ void wxStyle::Update(wxStyle *basic, wxStyle *target,
   smoothing = base->font->GetSmoothing();
   match = (smoothing == nonjoin_delta->smoothingOff);
   if (match)
-    smoothing = wxNORMAL;
+    smoothing = wxSMOOTHING_DEFAULT;
   if (!match || (match && nonjoin_delta->smoothingOn != nonjoin_delta->smoothingOff))
     if (nonjoin_delta->smoothingOn != wxBASE)
       smoothing = nonjoin_delta->smoothingOn;
@@ -1503,7 +1503,7 @@ static int SmoothingStandardToThis(int v)
   case wxBASE:
     return wxBASE;
   case 0:
-    return wxSMOOTHING_SYS_DEFAULT;
+    return wxSMOOTHING_PARTIAL;
   case 1:
     return wxSMOOTHING_ON;
   case 2:
@@ -1519,7 +1519,7 @@ static int SmoothingThisToStandard(int v)
   switch (v) {
   case wxBASE:
     return wxBASE;
-  case wxSMOOTHING_SYS_DEFAULT:
+  case wxSMOOTHING_PARTIAL:
     return 0;
   case wxSMOOTHING_ON:
     return 1;

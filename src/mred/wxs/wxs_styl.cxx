@@ -749,7 +749,7 @@ static Scheme_Object *bundle_symset_style(int v) {
 
 static Scheme_Object *smoothing_wxBASE_sym = NULL;
 static Scheme_Object *smoothing_wxSMOOTHING_DEFAULT_sym = NULL;
-static Scheme_Object *smoothing_wxSMOOTHING_SYS_DEFAULT_sym = NULL;
+static Scheme_Object *smoothing_wxSMOOTHING_PARTIAL_sym = NULL;
 static Scheme_Object *smoothing_wxSMOOTHING_ON_sym = NULL;
 static Scheme_Object *smoothing_wxSMOOTHING_OFF_sym = NULL;
 
@@ -758,9 +758,9 @@ static void init_symset_smoothing(void) {
   wxREGGLOB(smoothing_wxBASE_sym);
   smoothing_wxBASE_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("base"));
   wxREGGLOB(smoothing_wxSMOOTHING_DEFAULT_sym);
-  smoothing_wxSMOOTHING_DEFAULT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("family+size-default"));
-  wxREGGLOB(smoothing_wxSMOOTHING_SYS_DEFAULT_sym);
-  smoothing_wxSMOOTHING_SYS_DEFAULT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("system-default"));
+  smoothing_wxSMOOTHING_DEFAULT_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("default"));
+  wxREGGLOB(smoothing_wxSMOOTHING_PARTIAL_sym);
+  smoothing_wxSMOOTHING_PARTIAL_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("partly-smoothed"));
   wxREGGLOB(smoothing_wxSMOOTHING_ON_sym);
   smoothing_wxSMOOTHING_ON_sym = WITH_REMEMBERED_STACK(scheme_intern_symbol("smoothed"));
   wxREGGLOB(smoothing_wxSMOOTHING_OFF_sym);
@@ -774,7 +774,7 @@ static int unbundle_symset_smoothing(Scheme_Object *v, const char *where) {
   if (0) { }
   else if (v == smoothing_wxBASE_sym) { READY_TO_RETURN; return wxBASE; }
   else if (v == smoothing_wxSMOOTHING_DEFAULT_sym) { READY_TO_RETURN; return wxSMOOTHING_DEFAULT; }
-  else if (v == smoothing_wxSMOOTHING_SYS_DEFAULT_sym) { READY_TO_RETURN; return wxSMOOTHING_SYS_DEFAULT; }
+  else if (v == smoothing_wxSMOOTHING_PARTIAL_sym) { READY_TO_RETURN; return wxSMOOTHING_PARTIAL; }
   else if (v == smoothing_wxSMOOTHING_ON_sym) { READY_TO_RETURN; return wxSMOOTHING_ON; }
   else if (v == smoothing_wxSMOOTHING_OFF_sym) { READY_TO_RETURN; return wxSMOOTHING_OFF; }
   if (where) WITH_VAR_STACK(scheme_wrong_type(where, "smoothing symbol", -1, 0, &v));
@@ -787,7 +787,7 @@ static Scheme_Object *bundle_symset_smoothing(int v) {
   switch (v) {
   case wxBASE: return smoothing_wxBASE_sym;
   case wxSMOOTHING_DEFAULT: return smoothing_wxSMOOTHING_DEFAULT_sym;
-  case wxSMOOTHING_SYS_DEFAULT: return smoothing_wxSMOOTHING_SYS_DEFAULT_sym;
+  case wxSMOOTHING_PARTIAL: return smoothing_wxSMOOTHING_PARTIAL_sym;
   case wxSMOOTHING_ON: return smoothing_wxSMOOTHING_ON_sym;
   case wxSMOOTHING_OFF: return smoothing_wxSMOOTHING_OFF_sym;
   default: return NULL;

@@ -77,8 +77,8 @@ void wxCanvasDC::CrossHair(float x, float y)
   xx = XLOG2DEV(x);
   yy = YLOG2DEV(y);
   GetSize(&ww, &hh) ;
-  wxMacDrawLine(0, yy-dpy, ww, yy-dpy);
-  wxMacDrawLine(xx-dpx, 0, xx-dpx, hh);
+  wxMacDrawLine(0, yy-dpy, (int)floor(ww), yy-dpy);
+  wxMacDrawLine(xx-dpx, 0, xx-dpx, (int)floor(hh));
 
   ReleaseCurrentDC();
 }
@@ -164,7 +164,7 @@ void wxCanvasDC::DrawLine(float x1, float y1, float x2, float y2)
 static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
 {
   float x, y, w, h, bw, bh;
-  int xstart, xend, ystart, yend, i, j;
+  int xstart, xend, ystart, yend, i, j, ibw, ibh;
   wxRegion *old;
   int style;
   wxColour *c;
@@ -192,14 +192,17 @@ static void FillWithStipple(wxDC *dc, wxRegion *r, wxBrush *brush)
   ystart = (int)floor(y / bh);
   yend = (int)floor((y + h + bh - 0.00001) / bh);
 
+  ibw = (int)floor(bw);
+  ibh = (int)floor(bh);
+
   dc->SetClippingRegion(r);
 
   for (i = xstart; i < xend; i++) {
     for (j = ystart; j < yend; j++) {
-      dc->Blit(dc->DeviceToLogicalX(i * bw), 
-               dc->DeviceToLogicalY(j * bh), 
-               dc->DeviceToLogicalXRel(bw), 
-               dc->DeviceToLogicalYRel(bh),
+      dc->Blit(dc->DeviceToLogicalX(i * ibw), 
+               dc->DeviceToLogicalY(j * ibh), 
+               dc->DeviceToLogicalXRel(ibw), 
+               dc->DeviceToLogicalYRel(ibh),
                bm, 0, 0, style, c);
     }
   }

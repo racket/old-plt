@@ -37,8 +37,8 @@
 @ENDSYMBOLS
 
 @BEGINSYMBOLS smoothing > ONE > PRED
-@SYM "family+size-default" : wxSMOOTHING_DEFAULT
-@SYM "system-default" : wxSMOOTHING_SYS_DEFAULT
+@SYM "default" : wxSMOOTHING_DEFAULT
+@SYM "partly-smoothed" : wxSMOOTHING_PARTIAL
 @SYM "smoothed" : wxSMOOTHING_ON
 @SYM "unsmoothed" : wxSMOOTHING_OFF
 @ENDSYMBOLS

@@ -71,6 +71,9 @@ case $OS in
   OpenBSD)
     SYS=i386${SEP}openbsd
     ;;
+  NetBSD)
+    SYS=netbsd
+    ;;
   IRIX*)
     SYS=mips${SEP}irix
     ;;

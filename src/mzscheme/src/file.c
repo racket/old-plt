@@ -1488,6 +1488,7 @@ Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv)
 	newalloc = 2 * alloc + len + 1;
 	naya = (char *)scheme_malloc_atomic(newalloc);
 	memcpy(naya, str, pos);
+	alloc = newalloc;
 	
 	str = naya;
       }
@@ -3168,7 +3169,7 @@ static Scheme_Object *cwd_check(int argc, Scheme_Object **argv)
     s = SCHEME_STR_VAL(argv[0]);
     len = SCHEME_STRTAG_VAL(argv[0]);
 
-    expanded = scheme_expand_filename(s, len, "current-load-relative-directory", NULL);
+    expanded = scheme_expand_filename(s, len, "current-directory", NULL);
     ed = scheme_make_sized_string(expanded, strlen(expanded), 1);
     if (!scheme_directory_exists(expanded)) {
       scheme_raise_exn(MZEXN_I_O_FILESYSTEM,

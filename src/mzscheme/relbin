@@ -4,6 +4,7 @@
 # Please ignore it.
 
 RDIST=rdist
+HOMESCHEME=/home/scheme
 
 if [ "-r" = "$1" ] ; then
   shift
@@ -14,6 +15,10 @@ fi
 if [ "-self" = "$1" ] ; then
   shift
   FARHOST=`hostname`
+elif [ "-utah" = "$1" ] ; then
+  shift
+  FARHOST=`hostname`
+  HOMESCHEME=/home/mflatt/proj
 elif [ "-local" = "$1" ] ; then
   shift
   FARHOST=localhost
@@ -21,10 +26,10 @@ else
   FARHOST=asia.cs.rice.edu
 fi
 
-MZSYS=`/home/scheme/plt/bin/archsys -`$1
+MZSYS=`${HOMESCHEME}/plt/bin/archsys -`$1
 
-MZDEST=/home/scheme/plt/.bin/${MZSYS}/mzscheme
-MZDYNDEST=/home/scheme/plt/collects/mzscheme/lib/${MZSYS}
+MZDEST=${HOMESCHEME}/plt/.bin/${MZSYS}/mzscheme
+MZDYNDEST=${HOMESCHEME}/plt/collects/mzscheme/lib/${MZSYS}
 
 echo strip binary
 strip ${MZBUILDDIR}mzscheme

@@ -280,7 +280,7 @@
   (define current-vocabulary (make-parameter #f))
   
   ;; current-zodiac-namespace : (parameter (+ #f namespace))
-  ;; If another namespace is installed, drscheme-eval uses primitive-eval
+  ;; If an unfriendly namespace is installed, drscheme-eval uses primitive-eval
   (define current-zodiac-namespace (make-parameter #f))
   
   ;; syntax-checking-primitive-eval : sexp -> value
@@ -384,9 +384,7 @@
 			 (lambda () (zodiac:interface:set-zodiac-phase #f)))]
 		       ; Sometimes, we throw away source information and
 		       ;  expand with MzScheme
-		       [use-z-exp? (and (zodiac-vocabulary? (current-setting))
-					(or (eq? (current-namespace) (current-zodiac-namespace))
-					    (friendly-namespace? (current-namespace))))])
+		       [use-z-exp? (use-zodiac?)])
 		   (if (zodiac:eof? zodiac-read)
 		       (lambda () (cleanup #f))
 		       (let* ([evaluator
@@ -416,26 +414,32 @@
 			 (lambda () (f heading-out loop))))))])
 	  (next-iteration)))))
 
-  ;; friendly-namespace? : namespace -> bool
+  (define (use-zodiac?)
+    (and (zodiac-vocabulary? (current-setting))
+	 (or (eq? (current-namespace) (current-zodiac-namespace))
+	     (friendly-current-namespace?))))
+
+  ;; friendly-current-namespace? : -> bool
   ;;  Determines whether the namespace has enough keywords to
   ;;  support elaboration and debugging. Caches the result.
-  (define friendly-namespace?
+  (define friendly-current-namespace?
     (let ([cache (make-hash-table-weak)])
-      (lambda (ns)
-	(hash-table-get cache ns
-			(lambda ()
-			  (let ([kwds (parameterize ([current-namespace (current-zodiac-namespace)])
-					(let ([l (make-global-value-list)])
-					  (mzlib:function:filter (lambda (p) (keyword-name? (car p))) l)))])
-			    (let ([friendly?
-				   (with-handlers ([void (lambda (x) #f)])
-				     (andmap
-				      (lambda (n)
-					(and (keyword-name? (car n))
-					     (eq? (global-defined-value (car n)) (cdr n))))
-				      kwds))])
-			      (hash-table-put! cache ns friendly?)
-			      friendly?)))))))
+      (lambda ()
+	(let ([ns (current-namespace)])
+	  (hash-table-get cache ns
+			  (lambda ()
+			    (let ([kwds (parameterize ([current-namespace (current-zodiac-namespace)])
+					  (let ([l (make-global-value-list)])
+					    (mzlib:function:filter (lambda (p) (keyword-name? (car p))) l)))])
+			      (let ([friendly?
+				     (with-handlers ([void (lambda (x) #f)])
+				       (andmap
+					(lambda (n)
+					  (and (keyword-name? (car n))
+					       (eq? (global-defined-value (car n)) (cdr n))))
+					kwds))])
+				(hash-table-put! cache ns friendly?)
+				friendly?))))))))
   
   ;; process/no-zodiac : ( -> sexp) ((+ sexp process-finish) ( -> void) -> void) -> void
   (define (process/no-zodiac reader f)
@@ -539,7 +543,7 @@
         [zo-file?
          (parameterize ([current-eval primitive-eval])
            (primitive-load filename))]
-        [(zodiac-vocabulary? (current-setting))
+        [(use-zodiac?)
          (let* ([process-sexps
                  (let ([last (list (void))])
                    (lambda (sexp recur)
@@ -570,8 +574,7 @@
   
   ;; drscheme-eval : sexp ->* TST
   (define (drscheme-eval-handler sexp)
-    (if (and (zodiac-vocabulary? (current-setting))
-             (eq? (current-namespace) (current-zodiac-namespace)))
+    (if (use-zodiac?)
         (let* ([z (let ([continuation-stack (continuation-mark-set->list
                                              (current-continuation-marks)
                                              aries:w-c-m-key)])

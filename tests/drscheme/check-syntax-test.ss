@@ -11,7 +11,7 @@
 	(lambda (str expected)
 	  (clear-definitions drs-frame)
 	  (type-in-definitions drs-frame str)
-	  (let ([answer-begin (+ (get-int-pos) 3)])
+	  (let ([answer-begin (get-int-pos)])
 	    (mred:test:button-push (ivar drs-frame check-syntax-button))
 	    (let ([answer-end (- (get-int-pos) 1)])
 	      (let ([actual (send interactions-edit get-text

@@ -2048,6 +2048,8 @@ static Scheme_Object *port_count_lines(int argc, Scheme_Object *argv[])
     scheme_wrong_type("port-count-lines!", "input-port", 0, argc, argv);
 
   scheme_count_lines(argv[0]);
+
+  return scheme_void;
 }
 
 typedef struct {

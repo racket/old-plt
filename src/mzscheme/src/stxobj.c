@@ -128,7 +128,8 @@ Scheme_Object *scheme_add_mark(Scheme_Object *o, Scheme_Object *m)
     }
   }
 
-  stx->marks = scheme_make_pair(m, stx->marks);
+  marks = scheme_make_pair(m, stx->marks);
+  stx->marks = marks;
 
   return scheme_void;
 }
@@ -432,7 +433,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     result = o;
   }
 
-  if (SCHEME_FALSEP(stx))
+  if (SCHEME_FALSEP((Scheme_Object *)stx))
     result = scheme_make_stx(result, -1, -1, scheme_false);
   else
     result = scheme_make_stx(result, stx->line, stx->col, stx->src);

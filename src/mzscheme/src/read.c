@@ -1422,10 +1422,10 @@ read_quote(Scheme_Object *port,
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
-  ret = scheme_make_pair((stxsrc
-			  ? scheme_make_stx(quote_symbol, line, col, stxsrc)
-			  : quote_symbol), 
-			 scheme_make_pair(obj, scheme_null));
+  ret = (stxsrc
+	 ? scheme_make_stx(quote_symbol, line, col, stxsrc)
+	 : quote_symbol);
+  ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
   if (stxsrc)
     ret = scheme_make_stx(ret, line, col, stxsrc);
   return ret;
@@ -1440,10 +1440,10 @@ read_quasiquote(Scheme_Object *port,
   Scheme_Object *quoted_obj, *ret;
   
   quoted_obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
-  ret = scheme_make_pair((stxsrc
-			  ? scheme_make_stx(quasiquote_symbol, line, col, stxsrc)
-			  : quasiquote_symbol), 
-			 scheme_make_pair(quoted_obj, scheme_null));
+  ret = (stxsrc
+	 ? scheme_make_stx(quasiquote_symbol, line, col, stxsrc)
+	 : quasiquote_symbol);
+  ret = scheme_make_pair(ret, scheme_make_pair(quoted_obj, scheme_null));
   
   if (stxsrc)
     ret = scheme_make_stx(ret, line, col, stxsrc);
@@ -1459,10 +1459,11 @@ read_unquote(Scheme_Object *port,
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
-  ret = scheme_make_pair((stxsrc
-			  ? scheme_make_stx(unquote_symbol, line, col, stxsrc)
-			  : unquote_symbol), 
-			 scheme_make_pair (obj, scheme_null));
+  ret = (stxsrc
+	 ? scheme_make_stx(unquote_symbol, line, col, stxsrc)
+	 : unquote_symbol);
+  ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
+
   if (stxsrc)
     ret = scheme_make_stx(ret, line, col, stxsrc);
   return ret;
@@ -1477,10 +1478,10 @@ read_unquote_splicing(Scheme_Object *port,
   Scheme_Object *obj, *ret;
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
-  ret = scheme_make_pair((stxsrc
-			  ? scheme_make_stx(unquote_splicing_symbol, line, col, stxsrc)
-			  : unquote_splicing_symbol),
-			 scheme_make_pair (obj, scheme_null));
+  ret = (stxsrc
+	 ? scheme_make_stx(unquote_splicing_symbol, line, col, stxsrc)
+	 : unquote_splicing_symbol);
+  ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
   if (stxsrc)
     ret = scheme_make_stx(ret, line, col, stxsrc);
   return ret;

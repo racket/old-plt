@@ -402,6 +402,21 @@ scheme_make_compiled_syntax(Scheme_Syntax *proc,
   return syntax;
 }
 
+#if 1
+
+/* Not quite ready for syntax objects, yet. */
+#define SCHEME_STX_PAIRP(o) SCHEME_PAIRP(o)
+#define SCHEME_STX_SYMBOLP(o) SCHEME_SYMBOLP(o)
+#define SCHEME_STX_NULLP(o) SCHEME_NULLP(o)
+
+#define SCHEME_STX_CAR(o) SCHEME_CAR(o)
+#define SCHEME_STX_CDR(o) SCHEME_CDR(o)
+#define SCHEME_STX_CDDR(o) SCHEME_CDDR(o)
+#define SCHEME_STX_CADR(o) SCHEME_CADR(o)
+#define SCHEME_STX_SYM(o) o
+
+#else
+
 #define SCHEME_STX_PAIRP(o) (SCHEME_PAIRP(o) || (SCHEME_STXP(o) && SCHEME_PAIRP(SCHEME_STX_VAL(o))))
 #define SCHEME_STX_SYMBOLP(o) (SCHEME_SYMBOLP(o) || (SCHEME_STXP(o) && SCHEME_SYMBOLP(SCHEME_STX_VAL(o))))
 #define SCHEME_STX_NULLP(o) SCHEME_NULLP(o)
@@ -411,6 +426,8 @@ scheme_make_compiled_syntax(Scheme_Syntax *proc,
 #define SCHEME_STX_CDDR(o) (SCHEME_PAIRP(o) ? SCHEME_STX_CDR(SCHEME_CDR(o)) : SCHEME_STX_CDR(SCHEME_CDR(SCHEME_STX_VAL(o))))
 #define SCHEME_STX_CADR(o) (SCHEME_PAIRP(o) ? SCHEME_STX_CAR(SCHEME_CDR(o)) : SCHEME_STX_CAR(SCHEME_CDR(SCHEME_STX_VAL(o))))
 #define SCHEME_STX_SYM(o) (SCHEME_STXP(o) ? SCHEME_STX_VAL(o) : o)
+
+#endif
 
 static int check_form(char *name, Scheme_Object *form)
 {

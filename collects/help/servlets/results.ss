@@ -233,17 +233,20 @@
                   ,@hd-links
                   (TITLE "PLT Help Desk search results"))
             (BODY
-             (FONT ((SIZE "+2"))
-                   ,(color-with 
-                     "blue" 
-                     `(div
-                       ,(if lang-name
-                            `(b "Searched in manuals related to the language \""
-                                ,lang-name
-                                "\" for")
-                            `(b "Search results for"))
-                       ,@(map (lambda (sf) (format " \"~a\"" sf))
-                              string-finds))))
+             (h1 "Search Results")
+             (h2
+              ,@(if lang-name
+                    (list "Language: " (color-with "firebrick" lang-name) '(br))
+                    '())
+              ,@(let ([single-key
+                       (lambda (sf)
+                         (color-with "firebrick" (format " \"~a\"" sf)))])
+                  (cond
+                    [(null? string-finds) '()]
+                    [(null? (cdr string-finds))
+                     (list "Key: " (single-key (car string-finds)))]
+                    [else 
+                     (cons "Keys: " (map single-key string-finds))])))
              (BR)
              ,@items))))
       

@@ -80,7 +80,8 @@
        [web-server : web-server^ (web-server@ real-tcp config)]
        
        [ic-tcp : net:tcp^ (tcp-intercept@ web-server)]
-       [ic-url : net:url^ (url@ ic-tcp)]
+       [pre-ic-url : net:url^ (url@ ic-tcp)]
+       [ic-url : net:url^ (url-intercept@ pre-ic-url)]
        [browser : browser^ (browser@ plt-installer mred ic-tcp ic-url)]
        [gui : gui^ (gui@ browser ic-url)]
 

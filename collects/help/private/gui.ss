@@ -32,9 +32,13 @@
               net:url^)
       
       (define help-desk-frame<%>
-        (interface ()
-          ))
-      
+        (interface (frame:standard-menus<%>)
+          order-manuals
+          get-language-name
+          change-search-to-status
+          set-search-status-contents
+          change-status-to-search))
+
       (define bug-report/help-desk-mixin
         (mixin (frame:standard-menus<%>) ()
           (define/override (file-menu:create-open-recent?) #f)
@@ -299,7 +303,7 @@
           (frame:reorder-menus this)))
       
       (define make-search-button-mixin
-        (mixin (frame:basic<%> hyper-frame<%>) (help-desk-frame<%>)
+        (mixin (frame:basic<%> hyper-frame<%>) ()
           (field [search-panel #f])
           
           ;; order-manuals : as in drscheme:language:language<%>
@@ -441,37 +445,51 @@
             (send search-menu enable #f)
             (send search-field focus))))
       
+      (define addl-mixins (lambda (x) x))
+      (define (add-help-desk-mixin m)
+        (if addl-mixins
+            (set! addl-mixins (compose m addl-mixins))
+            (error 'add-help-desk-mixin "help desk frame has already been created")))
+      
       (define (make-help-desk-frame-mixin)
-        (compose
-         make-catch-url-frame-mixin
-         bug-report/help-desk-mixin
-         make-help-desk-framework-mixin
-         browser-scroll-frame-mixin
-         frame:searchable-mixin
-         frame:standard-menus-mixin
-         make-search-button-mixin))
+        (begin0
+          (compose
+           (lambda (x) (class* x (help-desk-frame<%>) (super-new)))
+           addl-mixins
+           make-catch-url-frame-mixin
+           bug-report/help-desk-mixin
+           make-help-desk-framework-mixin
+           browser-scroll-frame-mixin
+           frame:searchable-mixin
+           frame:standard-menus-mixin
+           make-search-button-mixin)
+          (set! addl-mixins #f)))
       
       (define new-help-desk
         (opt-lambda ([link home-page-url])
           (let ([f (new ((make-help-desk-frame-mixin) hyper-no-show-frame%))])
             (send f show #t)
-            (goto-url link f))))
+            (goto-url link f)
+            f)))
       
       (define (goto-hd-location sym) (goto-url (get-hd-location sym)))
       
       (define (search-for-docs search-string search-type match-type lucky? docs)
         (let ([fr (or (find-help-desk-frame)
                       (new-help-desk))])
-          (send fr show #t)
-          (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
-            (goto-url (make-results-url search-string
-                                        search-type 
-                                        match-type
-                                        lucky?
-                                        manuals
-                                        doc.txt?
-                                        (send fr get-language-name))
-                      fr))))
+          (search-for-docs/in-frame fr search-string search-type match-type lucky? docs)))
+      
+      (define (search-for-docs/in-frame fr search-string search-type match-type lucky? docs)
+        (send fr show #t)
+        (let-values ([(manuals doc.txt?) (send fr order-manuals docs)])
+          (goto-url (make-results-url search-string
+                                      search-type 
+                                      match-type
+                                      lucky?
+                                      manuals
+                                      doc.txt?
+                                      (send fr get-language-name))
+                    fr)))
       
       (define goto-url
         (opt-lambda (link [fr (find-help-desk-frame)])

@@ -1,11 +1,78 @@
 (module tcp-intercept mzscheme
-  (provide tcp-intercept@)
+  (provide tcp-intercept@ url-intercept@)
   
   (require (lib "unitsig.ss")
            (lib "etc.ss")
            (lib "sig.ss" "web-server")
            (lib "tcp-sig.ss" "net")
+           (lib "url-sig.ss" "net")
            "internal-hp.ss")
+  
+  (define-syntax (redefine stx)
+    (syntax-case stx ()
+      [(_ names ...)
+       (with-syntax ([(defs ...) (map (lambda (x)
+                                        (with-syntax ([orig-name x]
+                                                      [raw-name
+                                                       (datum->syntax-object
+                                                        x
+                                                        (string->symbol
+                                                         (string-append
+                                                          "raw:"
+                                                          (symbol->string (syntax-object->datum x)))))])
+                                          (syntax (define orig-name raw-name))))
+                                      (syntax->list (syntax (names ...))))])
+         (syntax (begin defs ...)))]))
+  
+  (define url-intercept@
+    (unit/sig net:url^
+      (import (raw : net:url^))
+      
+      (define (url->string url)
+        (cond
+          [(and (equal? (url-port url) internal-port)
+                (equal? (url-host url) internal-host))
+           (let* ([long
+                   (raw:url->string 
+                    (raw:make-url ""
+                                  (raw:url-user url)
+                                  ""
+                                  #f
+                                  (raw:url-path url)
+                                  (raw:url-query url)
+                                  (raw:url-fragment url)))])
+             (substring long 3 (string-length long)))]
+          [else (raw:url->string url)]))
+      
+      (redefine make-url
+                struct:url
+                url-scheme set-url-scheme!
+                url-user set-url-user!
+                url-host set-url-host!
+                url-port set-url-port!
+                url-path set-url-path!
+                url-query set-url-query!
+                url-fragment set-url-fragment!
+                url?
+                
+                struct:path/param
+                make-path/param
+                path/param-path set-path/param-path!
+                path/param-param set-path/param-param!
+                path/param?
+                
+                get-pure-port
+                get-impure-port
+                post-pure-port
+                post-impure-port
+                display-pure-port
+                purify-port
+                netscape/string->url
+                string->url
+                call/input-url
+                combine-url/relative
+                url-exception?
+                current-proxy-servers)))
   
   (define raw:tcp-abandon-port tcp-abandon-port)
   (define raw:tcp-accept tcp-accept) 

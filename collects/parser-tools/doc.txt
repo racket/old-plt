@@ -23,10 +23,10 @@ bound in the action.
 _lex.ss_
 A regular expression is one of the following
 symbol                             expand the lex abbreviation whose name 
-				   is symbol
+                                    is symbol
 character                          match the given character
-				   beware of mzscheme converting the 
-				   symbol to all lower case
+                                    beware of mzscheme converting the 
+                                    symbol to all lower case
 string                             match its sequence of characters
 (eof)				   match end of file
 (* re)                             match 0 or more occurrences of re
@@ -35,8 +35,8 @@ string                             match its sequence of characters
 (: re ...1)                        match one of the listed re (alternation)
 (@ re ...)                         match each re in succession (concatenation)
 (- char char)                      match any character between two (inclusive)
-				   (a single character symbol or string can
-				    be used as a character here)
+                                    (a single character symbol or string can
+                                    be used as a character here)
 (^ char_or_range ...1)             match any character not listed
 (the null concatenation `(@) and the empty string "" both mean epsilon)
 
@@ -92,11 +92,13 @@ eof-objects, custom input ports can return arbitrary values (specials)
 or raise an exception to indicate a non-textual comment
 (special-comments).  A special or special-comment can never be part of
 a lexeme with surrounding characters.  When the lexer is invoked with
-a special or special-comment next in the input port, the specified
-action if performed.  Instead of binding the identifier "lexeme" in
-the action, the variable "special" is bound in the case of a special.
-No variable is bound in the case of a special-comment.
-
+a special or special-comment as the next item in the input port the
+specified action if performed.  Instead of binding the identifier
+"lexeme" in the action, the variable "special" is bound in the case of
+a special.  No variable is bound in the case of a special-comment.  If
+no rule for special is given, the lexer returns void when a special is
+found.  If no rule for special-comment is given, the lexer skips the
+special-comment.
 
 > (lexer-src-pos (re action) ...) like a lexer, but the return of each
    match is (list action-result start-pos end-pos) instead of simply

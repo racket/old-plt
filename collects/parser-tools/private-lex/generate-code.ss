@@ -9,17 +9,17 @@
   
   (provide generate-table get-special-action filter-out-specials)
   
-  ;; get-special-action: (syntax-object list) symbol syntax-object -> syntax-object
+  ;; get-special-action: (syntax-object list) symbol 'a -> syntax-object or 'a
   ;; Returns the first action from a rule of the form ((which-special) action)
-  (define (get-special-action rules which-special stx)
+  (define (get-special-action rules which-special none)
     (cond
-      ((null? rules) (datum->syntax-object stx '(void)))
+      ((null? rules) none)
       (else
        (syntax-case (car rules) ()
          (((special) act)
           (eq? (syntax-e (syntax special)) which-special)
           (syntax act))
-         (_ (get-special-action (cdr rules) which-special stx))))))
+         (_ (get-special-action (cdr rules) which-special none))))))
   
   ;; filter-out-specials: (syntax-object list) (symbol list) -> (syntax-object list)
   ;; Returns a list missing all the rules of the form ((special) action)

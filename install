@@ -108,7 +108,7 @@ if [ -z "${RPM_INSTALL_PREFIX}" ] ; then
   echo 'PLT software starts up much faster with .zo files, but creating .zo'
   echo 'files now takes a few minutes and requires about 5MB of additional'
   echo 'disk space. Create .zo files later by running plt/bin/setup-plt.'
-  echo -n ' Create .zo files now (y/n)? [y] '
+  echo ' Create .zo files now (y/n)? [y] \c'
   read response
 else
   response="y"

@@ -83,8 +83,8 @@
 					     (if (pair? type)
 						 (values #f
 							 (format "(SCHEME_FALSEP(~~a) ~
-                                                                  || (SCHEME_CPTRP(~a) && !strcmp(SCHEME_CPTR_TYPE(~a), ~s)))"
-								 scheme-var scheme-var (cadr type))
+                                                                  || (SCHEME_CPTRP(~a) && SCHEME_STRINGP(SCHEME_CPTR_TYPE(~a)) && !strcmp(SCHEME_STR_VAL(SCHEME_CPTR_TYPE(~a)), ~s)))"
+								 scheme-var scheme-var scheme-var (cadr type))
 							 (format "(SCHEME_TRUEP(~~a) ? SCHEME_CPTR_VAL(~a) : NULL)"
 								 scheme-var)
 							 (format "cpointer of type ~s or #f"

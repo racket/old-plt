@@ -251,22 +251,47 @@
       
       ;; split: -> NAT * NAT * token-tree% * token-tree%
       ;; splits the tree into 2 trees, setting root to #f
-      ;; Returns the start and end position of the root
-      ;; the root's left subtree and the root's right subtree
-      (define/public (split)
+      ;; Returns the start and end position of the token at pos
+      ;; Returns all tokens before pos and after pos, not
+      ;; including any tokens adjacent to pos.  Thus is s
+      ;; pos is on a token boundary, 2 tokens will be dropped.
+      ;; In this case, the start will be for the first dropped
+      ;; token and the stop will be for the second.
+      (define/public (split pos)
+        (search! pos)
         (let ((t1 (new token-tree%))
               (t2 (new token-tree%)))
           (cond
             (root
-             (send t1 set-root (node-left root))
-             (send t2 set-root (node-right root))
-             (begin0
-               (values (node-left-subtree-length root)
-                       (+ (node-left-subtree-length root) (node-token-length root))
-                       t1
-                       t2)
-               (set! root #f)))
+             (let ((second-start (get-root-start-position))
+                   (second-stop (get-root-end-position)))
+               (send t1 set-root (node-left root))
+               (send t2 set-root (node-right root))
+               (set! root #f)
+               (cond
+                 ((= pos second-start)
+                  (send t1 search-max!)
+                  (let ((first-start (send t1 get-root-start-position)))
+                    (send t1 remove-root!)
+                    (values first-start second-stop t1 t2)))
+                 (else
+                  (values second-start second-stop t1 t2)))))
             (else (values 0 0 t1 t2)))))
+
+;;      (define/public (split)
+;;        (let ((t1 (new token-tree%))
+;;              (t2 (new token-tree%)))
+;;          (cond
+;;            (root
+;;             (send t1 set-root (node-left root))
+;;             (send t2 set-root (node-right root))
+;;             (begin0
+;;               (values (node-left-subtree-length root)
+;;                       (+ (node-left-subtree-length root) (node-token-length root))
+;;                       t1
+;;                       t2)
+;;               (set! root #f)))
+;;            (else (values 0 0 t1 t2)))))
       
       ;; split-after: -> token-tree% * token-tree%
       ;; splits the tree into 2 trees, setting root to #f

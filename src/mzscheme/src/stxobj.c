@@ -116,15 +116,15 @@ void scheme_init_stx(Scheme_Env *env)
 						      1, 1, 1),
 			     env);
 
-  scheme_add_global_constant("syntax->datum", 
+  scheme_add_global_constant("syntax-object->datum", 
 			     scheme_make_folding_prim(syntax_to_datum,
-						      "syntax->datum",
+						      "syntax-object->datum",
 						      1, 1 + STX_DEBUG, 1),
 			     env);
-  scheme_add_global_constant("datum->syntax", 
+  scheme_add_global_constant("datum->syntax-object", 
 			     scheme_make_folding_prim(datum_to_syntax,
-						      "datum->syntax",
-						      3, 3, 1),
+						      "datum->syntax-object",
+						      2, 3, 1),
 			     env);
 
   scheme_add_global_constant("syntax-e", 
@@ -2026,7 +2026,7 @@ static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv)
 static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STXP(argv[0]))
-    scheme_wrong_type("syntax->datum", "syntax", 0, argc, argv);
+    scheme_wrong_type("syntax-object->datum", "syntax", 0, argc, argv);
     
 #if STX_DEBUG
   if (argc == 2)
@@ -2039,12 +2039,15 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
 
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
-  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_STXP(argv[1]))
-    scheme_wrong_type("datum->syntax", "syntax or #f", 1, argc, argv);
-  if (!SCHEME_FALSEP(argv[2]) && !SCHEME_STXP(argv[2]))
-    scheme_wrong_type("datum->syntax", "syntax or #f", 2, argc, argv);
+  if (!SCHEME_FALSEP(argv[0]) && !SCHEME_STXP(argv[0]))
+    scheme_wrong_type("datum->syntax-object", "syntax or #f", 1, argc, argv);
+  if (argc > 2)
+    if (!SCHEME_FALSEP(argv[2]) && !SCHEME_STXP(argv[2]))
+      scheme_wrong_type("datum->syntax-object", "syntax or #f", 2, argc, argv);
     
-  return scheme_datum_to_syntax(argv[0], argv[1], argv[2], 1, 0);
+  return scheme_datum_to_syntax(argv[1], 
+				(argc > 2) ? argv[2] : scheme_false, 
+				argv[0], 1, 0);
 }
 
 

@@ -127,7 +127,8 @@
 	      (if (eq? x old)
 		  (if (stx-null? x) x (list (quote quote) x))
 		  x))))
-	(datum->syntax
+	(datum->syntax-object
+	 (quote-syntax here)
 	 (normal
 	  (letrec-values
 	      (((qq)
@@ -252,8 +253,7 @@
 				x)))))))
 	    (qq form 0))
 	  form)
-	 in-form
-	 (quote-syntax here)))))
+	 in-form))))
 
   (define-syntax and 
     (lambda (x)
@@ -266,14 +266,14 @@
 		    (stx-null? (stx-cdr e))
 		    #t)
 		(stx-car e)
-		(datum->syntax
+		(datum->syntax-object
+		 (quote-syntax here)
 		 (list (quote-syntax if)
 		       (stx-car e)
 		       (cons (quote-syntax and)
 			     (stx-cdr e))
 		       (quote-syntax #f))
-		 x
-		 (quote-syntax here)))))))
+		 x))))))
 
   (define-syntax or
     (lambda (x)
@@ -288,7 +288,8 @@
 		(stx-car e)
 		(if (stx-list? e)
 		    (let ([tmp 'or-part])
-		      (datum->syntax
+		      (datum->syntax-object
+		       (quote-syntax here)
 		       (list (quote-syntax let) (list
 						 (list
 						  tmp
@@ -298,8 +299,7 @@
 				   tmp
 				   (cons (quote-syntax or)
 					 (stx-cdr e))))
-		       x
-		       (quote-syntax here)))
+		       x))
 		    (raise-syntax-error 
 		     'or
 		     "bad syntax"
@@ -317,7 +317,8 @@
     (lambda (in-form)
       (if (identifier? in-form)
 	  (raise-syntax-error 'cond "bad syntax" in-form))
-      (datum->syntax
+      (datum->syntax-object
+       (quote-syntax here)
        (let ([form (stx-cdr in-form)]
 	     [serror
 	      (lambda (msg at)
@@ -365,8 +366,7 @@
 					'if test
 					(cons 'begin value)
 					(loop rest))))))))))))
-       in-form
-       (quote-syntax here))))
+       in-form)))
 
   (provide cond))
 
@@ -392,9 +392,10 @@
 	   [(identifier? first)
 	    (if (and (stx-pair? (stx-cdr body))
 		     (stx-null? (stx-cdr (stx-cdr body))))
-		(datum->syntax
+		(datum->syntax-object
+		 (quote-syntax here)
 		 `(define-values (,first) ,@(stx->list (stx-cdr body)))
-		 code (quote-syntax here))
+		 code)
 		(raise-syntax-error
 		 'define
 		 "bad syntax (zero or multiple expressions after identifier)"
@@ -413,10 +414,11 @@
 		      (bad-symbol (stx-car l)))]
 		 [(identifier? l) #f]
 		 [else (bad-symbol l)])))
-	    (datum->syntax
+	    (datum->syntax-object
+	     (quote-syntax here)
 	     `(define-values (,(stx-car first)) 
 		(lambda ,(stx-cdr first) ,@(stx->list (stx-cdr body))))
-	     code (quote-syntax here))]
+	     code)]
 	   [else
 	    (raise-syntax-error
 	     'define
@@ -429,14 +431,14 @@
       (let ([l (syntax->list x)])
 	(if (and l
 		 (> (length l) 2))
-	    (datum->syntax
+	    (datum->syntax-object
+	     (quote-syntax here)
 	     (list (quote-syntax if)
 		   (stx-car (stx-cdr x))
 		   (list*
 		    (quote-syntax begin)
 		    (stx-cdr (stx-cdr x))))
-	     x
-	     (quote-syntax here))
+	     x)
 	    (raise-syntax-error
 	     'when
 	     "bad syntax"
@@ -447,15 +449,15 @@
       (let ([l (syntax->list x)])
 	(if (and l
 		 (> (length l) 2))
-	    (datum->syntax
+	    (datum->syntax-object
+	     (quote-syntax here)
 	     (list (quote-syntax if)
 		   (cadr l)
 		   (quote-syntax (void))
 		   (list*
 		    (quote-syntax begin)
 		    (cddr l)))
-	     x
-	     (quote-syntax here))
+	     x)
 	    (raise-syntax-error
 	     'unless
 	     "bad syntax"
@@ -469,9 +471,10 @@
 		 (identifier? (cadr l)))
 	    (let ([var (cadr l)]
 		  [exprs (stx-cdr (stx-cdr code))])
-	      (datum->syntax
+	      (datum->syntax-object
+	       (quote-syntax here)
 	       `(call/ec (lambda (,var) ,@(stx->list exprs)))
-	       code (quote-syntax here)))
+	       code))
 	    (raise-syntax-error
 	     'let/ec
 	     "bad syntax"
@@ -534,9 +537,10 @@
 		[inspector (if (null? (cddr body))
 			       #f
 			       (caddr body))])
-	    (datum->syntax
+	    (datum->syntax-object
+	     (quote-syntax here)
 	     `(define-values
-		,(map (lambda (n) (datum->syntax n name name)) (build-struct-names name fields))
+		,(map (lambda (n) (datum->syntax-object name n name)) (build-struct-names name fields))
 		,(let ([core
 			`(let-values ([(type maker pred access mutate)
 				       (make-struct-type ',name
@@ -561,8 +565,7 @@
 			      (raise-type-error 'define-struct "inspector" inspector))
 			  ,core)
 		       core)))
-	     stx
-	     (quote-syntax here)))))))
+	     stx))))))
 
   (provide define when unless let/ec define-struct))
 
@@ -915,7 +918,7 @@
     (let ([l (expander p proto-r p #t)])
       (if proto-r
 	  `(lambda (r src)
-	     ,(let ([main `(datum->syntax ,(apply-to-r l) src (quote-syntax ,dest))])
+	     ,(let ([main `(datum->syntax-object (quote-syntax ,dest) ,(apply-to-r l) src)])
 		(if (multiple-ellipsis-vars? proto-r)
 		    `(let ([exnh #f])
 		       ((let/ec esc
@@ -1161,7 +1164,8 @@
 					(module-identifier=? 
 					 lit-comp
 					 (quote-syntax module-identifier=?)))])
-	    (datum->syntax
+	    (datum->syntax-object
+	     (quote-syntax here)
 	     (list (quote-syntax let) (list (list arg expr))
 		   (let loop ([patterns patterns]
 			      [fenders fenders]
@@ -1191,7 +1195,7 @@
 				  unflat-pattern-vars))
 			   (define temp-vars
 			     (map
-			      (lambda (p) (datum->syntax (gensym) #f p))
+			      (lambda (p) (datum->syntax-object p (gensym) #f))
 			      pattern-vars))
 			   ;; Here's the result expression for one match:
 			   (list
@@ -1205,13 +1209,13 @@
 			    (list (quote-syntax let)
 				  (list 
 				   (list rslt
-					 (list* (datum->syntax
+					 (list* (datum->syntax-object
+						 (quote-syntax here)
 						 (make-match&env
 						  pattern
 						  (stx->list kws)
 						  (not lit-comp-is-mod?))
-						 pattern 
-						 (quote-syntax here))
+						 pattern)
 						arg
 						(if lit-comp-is-mod?
 						    null
@@ -1256,8 +1260,7 @@
 					       (list (quote-syntax try-next)))
 					 answer)))
 				   (list (quote-syntax try-next)))))))])))
-	     x
-	     (quote-syntax here)))))))
+	     x))))))
 
   (define-syntax syntax
     (lambda (x)
@@ -1268,7 +1271,8 @@
 	 'syntax
 	 "bad form"
 	 x))
-      (datum->syntax
+      (datum->syntax-object
+       (quote-syntax here)
        (let ([pattern (stx-car (stx-cdr x))])
 	 (let ([unique-vars (make-pexpand pattern #f null #f)])
 	   (if (null? unique-vars)
@@ -1305,22 +1309,21 @@
 			    (cond
 			     [(null? bindings) null]
 			     [(car bindings) (cons 
-					      (datum->syntax
+					      (datum->syntax-object
+					       (car vars)
 					       (syntax-e 
 						(syntax-mapping-valvar (car bindings)))
-					       #f
-					       (car vars))
+					       #f)
 					      (loop (cdr vars) (cdr bindings)))]
 			     [else  (loop (cdr vars) (cdr bindings))]))])
-		   (list (datum->syntax
+		   (list (datum->syntax-object
+			  (quote-syntax here)
 			  (make-pexpand pattern proto-r non-pattern-vars pattern)
-			  pattern
-			  (quote-syntax here))
+			  pattern)
 			 (cons (quote-syntax list) r)
 			 (list (quote-syntax quote-syntax)
-			       (datum->syntax 'srctag x #f))))))))
-       x
-       (quote-syntax here))))
+			       (datum->syntax-object #f 'srctag x))))))))
+       x)))
 
   (provide syntax-case* syntax))
 
@@ -1346,10 +1349,10 @@
       (syntax-case* stx () module-identifier=?
 	[(_ loc pattern)
 	 (syntax (let ([stx (syntax pattern)])
-		   (datum->syntax
+		   (datum->syntax-object
+		    stx
 		    (syntax-e stx)
-		    loc
-		    stx)))])))
+		    loc)))])))
 
   (provide syntax/loc syntax-case))
 
@@ -1379,13 +1382,15 @@
        "syntax pair"
        sl))
     (let ([l (stx->list sl)])
-      (map (lambda (x) (datum->syntax (cond
-				       [(or (symbol? x) (string? x))
-					(gensym x)]
-				       [(identifier? x)
-					(gensym (syntax-e x))]
-				       [else (gensym)])
-				      #f #f)) l)))
+      (map (lambda (x) (datum->syntax-object
+			#f
+			(cond
+			 [(or (symbol? x) (string? x))
+			  (gensym x)]
+			 [(identifier? x)
+			  (gensym (syntax-e x))]
+			 [else (gensym)])
+			#f)) l)))
 
   (provide with-syntax generate-temporaries))
 
@@ -2163,13 +2168,13 @@
 
   (define-syntax mzscheme-in-stx-module-begin
     (lambda (stx)
-      (datum->syntax
+      (datum->syntax-object
+       (quote-syntax here)
        (list* (quote-syntax #%module-begin)
 	      (quote-syntax
 	       (require-for-syntax mzscheme))
 	      (stx-cdr stx))
-       stx
-       (quote-syntax here))))
+       stx)))
 
   (provide mzscheme-in-stx-module-begin))
 
@@ -2202,7 +2207,7 @@
 
 	   ;; We have to include the following MzScheme-isms to do anything,
 	   ;; but they're not legal R5RS names, anyway.
-	   #%app #%datum #%unbound))
+	   #%app #%datum #%top))
 
 ;;----------------------------------------------------------------------
 ;; init namespace

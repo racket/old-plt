@@ -118,7 +118,7 @@ int scheme_stack_grows_up;
 
 static Scheme_Object *app_symbol;
 static Scheme_Object *datum_symbol;
-static Scheme_Object *unbound_symbol;
+static Scheme_Object *top_symbol;
 
 static Scheme_Object *stop_expander;
 
@@ -138,8 +138,8 @@ static Scheme_Object *app_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Sche
 static Scheme_Object *app_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 static Scheme_Object *datum_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
 static Scheme_Object *datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
-static Scheme_Object *unbound_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
-static Scheme_Object *unbound_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
+static Scheme_Object *top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec);
+static Scheme_Object *top_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname);
 
 static Scheme_Object *write_application(Scheme_Object *obj);
 static Scheme_Object *read_application(Scheme_Object *obj);
@@ -305,11 +305,11 @@ scheme_init_eval (Scheme_Env *env)
 
   REGISTER_SO(app_symbol);
   REGISTER_SO(datum_symbol);
-  REGISTER_SO(unbound_symbol);
+  REGISTER_SO(top_symbol);
 
   app_symbol = scheme_intern_symbol("#%app");
   datum_symbol = scheme_intern_symbol("#%datum");
-  unbound_symbol = scheme_intern_symbol("#%unbound");
+  top_symbol = scheme_intern_symbol("#%top");
 
   scheme_add_global_keyword("#%app", 
 			    scheme_make_compiled_syntax(app_syntax,
@@ -319,9 +319,9 @@ scheme_init_eval (Scheme_Env *env)
 			    scheme_make_compiled_syntax(datum_syntax,
 							datum_expand), 
 			    env);
-  scheme_add_global_keyword("#%unbound", 
-			    scheme_make_compiled_syntax(unbound_syntax,
-							unbound_expand), 
+  scheme_add_global_keyword("#%top", 
+			    scheme_make_compiled_syntax(top_syntax,
+							top_expand), 
 			    env);
 }
 
@@ -1595,8 +1595,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 				      : 0));
       
       if (!var) {
-	/* Unbound variable */
-	stx = unbound_symbol;
+	/* Top variable */
+	stx = top_symbol;
 	not_allowed = "reference to top-level identifiers";
       } else {
 	if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
@@ -1665,7 +1665,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     not_allowed = "function application";
   }
 
-  /* Compile/expand as application, datum, or unbound: */
+  /* Compile/expand as application, datum, or top: */
   stx = scheme_datum_to_syntax(stx, scheme_false, form, 0, 0);
   var = scheme_static_distance(stx, env,
 			       SCHEME_NULL_FOR_UNBOUND
@@ -1866,14 +1866,14 @@ datum_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object
   return form;
 }
 
-static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
+static void check_top(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 {
   Scheme_Object *c;
 
   c = SCHEME_STX_CDR(form);
 
   if (!SCHEME_STX_SYMBOLP(c))
-    scheme_wrong_syntax("#%unbound", NULL, form, NULL);
+    scheme_wrong_syntax("#%top", NULL, form, NULL);
 
   if (env->genv->module) {
     Scheme_Object *modidx, *symbol = c;
@@ -1892,11 +1892,11 @@ static void check_unbound(char *when, Scheme_Object *form, Scheme_Comp_Env *env)
 }
 
 static Scheme_Object *
-unbound_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
+top_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *rec, int drec)
 {
   Scheme_Object *c;
 
-  check_unbound("compile", form, env);
+  check_top("compile", form, env);
 
   c = SCHEME_STX_CDR(form);
 
@@ -1916,11 +1916,11 @@ unbound_syntax(Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_Info *r
 }
 
 static Scheme_Object *
-unbound_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
+top_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *boundname)
 {
   Scheme_Object *c;
 
-  check_unbound("expand", form, env);
+  check_top("expand", form, env);
 
   c = SCHEME_STX_CDR(form);
 

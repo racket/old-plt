@@ -77,7 +77,7 @@ static Scheme_Object *require_for_syntax_stx;
 static Scheme_Object *provide_stx;
 static Scheme_Object *set_stx;
 static Scheme_Object *app_stx;
-static Scheme_Object *unbound_stx;
+static Scheme_Object *top_stx;
 
 static int num_initial_modules;
 static Scheme_Object **initial_modules;
@@ -263,7 +263,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   REGISTER_SO(provide_stx);
   REGISTER_SO(set_stx);
   REGISTER_SO(app_stx);
-  REGISTER_SO(unbound_stx);
+  REGISTER_SO(top_stx);
 
   w = scheme_sys_wraps0;
   begin_stx = scheme_datum_to_syntax(scheme_intern_symbol("begin"), scheme_false, w, 0, 0);
@@ -274,7 +274,7 @@ void scheme_finish_kernel(Scheme_Env *env)
   provide_stx = scheme_datum_to_syntax(scheme_intern_symbol("provide"), scheme_false, w, 0, 0);
   set_stx = scheme_datum_to_syntax(scheme_intern_symbol("set!"), scheme_false, w, 0, 0);
   app_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%app"), scheme_false, w, 0, 0);
-  unbound_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%unbound"), scheme_false, w, 0, 0);
+  top_stx = scheme_datum_to_syntax(scheme_intern_symbol("#%top"), scheme_false, w, 0, 0);
 
   REGISTER_SO(prefix_symbol);
   REGISTER_SO(rename_symbol);
@@ -1490,7 +1490,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
     scheme_set_local_syntax(5, provide_stx, stop, xenv);
     scheme_set_local_syntax(6, set_stx, stop, xenv);
     scheme_set_local_syntax(7, app_stx, stop, xenv);
-    scheme_set_local_syntax(8, unbound_stx, stop, xenv);
+    scheme_set_local_syntax(8, top_stx, stop, xenv);
   }
 
   first = scheme_null;

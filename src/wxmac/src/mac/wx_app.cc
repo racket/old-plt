@@ -483,6 +483,8 @@ static Bool doPreOnChar(wxWindow *in_win, wxWindow *win, wxKeyEvent *evt)
 }
 
 short wxMacDisableMods; /* If a modifier key is here, handle it specially */
+static short t2u_ready = 0;
+static TextToUnicodeInfo t2uinfo;
 
 void wxApp::doMacKeyUpDown(Bool down)
 {
@@ -616,6 +618,28 @@ void wxApp::doMacKeyUpDown(Bool down)
 	HUnlock(transH);
       } else 
 	key = cCurrentEvent.message & charCodeMask;
+
+      if ((key > 127) && (key < 256)) {
+	/* Translate to Latin-1 */
+	ByteCount ubytes, converted, usize;
+	unsigned char unicode[2], str[1];
+	UniCharCount ulen;
+	
+	if (!t2u_ready) {
+	  CreateTextToUnicodeInfoByEncoding(kTextEncodingMacRoman, &t2uinfo);
+	  t2u_ready = 1;
+	}
+	
+	str[0] = key;
+	
+	ConvertFromTextToUnicode(t2uinfo, 1, (char *)str, 0,
+				 0, NULL,
+				 NULL, NULL,
+				 2, &converted, &ubytes,
+				 (UniCharArrayPtr)unicode);
+	
+	key = unicode[1];
+      }
     } // end switch
   }
 

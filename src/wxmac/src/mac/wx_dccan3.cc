@@ -279,21 +279,21 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  OSStatus status = noErr;
  
  ATSUAttributeTag  theTags[] = { kATSUFontTag,
-           kATSUSizeTag,
-           kATSUQDBoldfaceTag,
-           kATSUQDItalicTag,
-           kATSUQDUnderlineTag,
-           kATSUQDCondensedTag,
-           kATSUQDExtendedTag,
-           kATSUColorTag };
+				 kATSUSizeTag,
+				 kATSUQDBoldfaceTag,
+				 kATSUQDItalicTag,
+				 kATSUQDUnderlineTag,
+				 kATSUQDCondensedTag,
+				 kATSUQDExtendedTag,
+				 kATSUColorTag };
  ByteCount    theSizes[] = { sizeof(ATSUFontID),
-           sizeof(Fixed),
-           sizeof(Boolean),
-           sizeof(Boolean),
-           sizeof(Boolean),
-           sizeof(Boolean),
-           sizeof(Boolean),
-           sizeof(RGBColor) };
+			     sizeof(Fixed),
+			     sizeof(Boolean),
+			     sizeof(Boolean),
+			     sizeof(Boolean),
+			     sizeof(Boolean),
+			     sizeof(Boolean),
+			     sizeof(RGBColor) };
  ATSUAttributeValuePtr theValues[ sizeof(theTags) / sizeof(ATSUAttributeTag) ];
  
  ATSUFontID   atsuFont;
@@ -301,7 +301,6 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  RGBColor   textColor;
  Boolean    isBold, isItalic, isUnderline, isCondensed, isExtended;
  SInt16    intrinsicStyle;
- 
  
  status = atsuFONDtoFontID( txFont, txFace, &atsuFont, &intrinsicStyle );
  apple_require( status == noErr, EXIT );
@@ -333,6 +332,9 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  theValues[7] = &textColor;
  
  status = ATSUSetAttributes( iStyle, sizeof(theTags) / sizeof(ATSUAttributeTag), theTags, theSizes, theValues );
+
+ if (status)
+   printf("%d\n", status);
 
  return status;
 }

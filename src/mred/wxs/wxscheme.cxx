@@ -1295,16 +1295,27 @@ extern short wxMacDisableMods;
 Scheme_Object *wxs_app_file_proc;
 Scheme_Object *wxs_app_quit_proc;
 
-static Scheme_Object *SpecialCtlKey(int, Scheme_Object *SCK_ARG[])
+static Scheme_Object *SpecialCtlKey(int c, Scheme_Object *SCK_ARG[])
 {
 #ifdef wx_mac
-  if (SCHEME_FALSEP(p[0]))
-    wxMacDisableMods = 0;
+  if (c) {
+    if (SCHEME_FALSEP(p[0]))
+      wxMacDisableMods = 0;
+    else
+      wxMacDisableMods = (controlKey | optionKey);
+    return scheme_void;
+  } else {
+    if (wxMacDisableMods)
+      return scheme_true;
+    else
+      return scheme_false;
+  }
+#else
+  if (c)
+    return scheme_void;
   else
-    wxMacDisableMods = 4096;
-#endif      
-
-  return scheme_void;
+    return scheme_false;
+#endif
 }
 
 
@@ -2213,7 +2224,7 @@ static void wxScheme_Install(Scheme_Env *global_env)
   scheme_install_xc_global("special-control-key", 
 			   scheme_make_prim_w_arity(CAST_SP SpecialCtlKey, 
 						    "special-control-key", 
-						    1, 1), 
+						    0, 1), 
 			   global_env);
   
   scheme_install_xc_global("application-file-handler",

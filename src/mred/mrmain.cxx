@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef wx_mac
-  wxMacDisableMods = 4096;
+  wxMacDisableMods = (controlKey | optionKey);
 
 # ifndef OS_X
   scheme_creator_id = 'MrEd';

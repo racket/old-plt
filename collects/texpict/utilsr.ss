@@ -183,4 +183,22 @@
 	 (send dc set-brush b)
 	 (send dc set-pen p)))
      w h 0 0))
+
+  (define add-line
+    (case-lambda
+     [(base src find-src dest find-dest)
+      (add-line base src find-src dest find-dest #f)]
+     [(base src find-src dest find-dest thickness)
+      (let-values ([(sx sy) (find-src base src)]
+		   [(dx dy) (find-dest base dest)])
+	(cc-superimpose
+	 base
+	 (let ([p (cons-picture
+		   (ghost (launder base))
+		   `((connect ,sx ,sy ,dx ,dy)))])
+	   (if thickness
+	       (linewidth thickness p)
+	       p))))]))
+	 
+
   )

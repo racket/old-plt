@@ -11,4 +11,6 @@
    disk
 
    cloud
-   file-icon))
+   file-icon
+
+   add-line))

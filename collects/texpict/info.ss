@@ -9,4 +9,6 @@
     [(compile-omit-files) (list "commons.ss" "texpicts.ss" "mrpicts.ss" "utilss.ss")]
     [(help-desk-message)
      (format "Mz/Mr: ~s" `(require-library "texpict.ss" "texpict"))]
+    [(mred-launcher-libraries) (list "slideshow.ss")]
+    [(mred-launcher-names) (list "Slideshow")]
     [else (fail)]))

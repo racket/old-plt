@@ -200,7 +200,9 @@
          
          (define my-break
            `(#%lambda ()
-              (,break (current-continuation-marks (#%quote ,debug-key))
+             (,break (continuation-mark-set->list
+                      (current-continuation-marks) 
+                      (#%quote ,debug-key))
                      ,all-defs-list-sym
                      ,current-def-sym)))
          

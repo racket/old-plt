@@ -58,6 +58,9 @@ _hierlist_ defines three classes:
 >  on-item-closed :: (send a-list on-item-closed i) - called when the
      arrow for `i' is turned up
 
+>  sort :: (send a-list sort less-than-proc) - sorts items in the list
+     by calling `less-than-proc' on pairs of items.
+
 --------------------------------------------------
 
 > hierarchical-list-item<%>, instantiate via new-item

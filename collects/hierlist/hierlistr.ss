@@ -1,5 +1,6 @@
 (unit/sig hierlist^
-  (import mred^)
+  (import mzlib:function^
+	  mred^)
 
   (define transparent (make-object brush% "WHITE" 'transparent))
   (define transparent-pen (make-object pen% "WHITE" 1 'transparent))
@@ -248,7 +249,7 @@
   ; Buffer for a compound list item (and the top-level list)
   (define (make-hierarchical-list-text% super%)
     (class super% (top top-select depth parent-snip)
-      (inherit set-max-undo-history hide-caret
+      (inherit set-max-undo-history hide-caret erase
 	       last-position insert delete line-start-position line-end-position
 	       begin-edit-sequence end-edit-sequence get-style-list)
       (private
@@ -292,6 +293,21 @@
 		     [e (line-end-position pos)])
 		 (delete (if (zero? s) s (sub1 s)) (if (zero? s) (add1 e) e)))]
 	      [else (loop (add1 pos) (cdr l) (cons (car l) others))])))]
+	[sort (lambda (less-than?)
+		(let ([l (quicksort children (lambda (a b)
+					       (less-than? (send a get-item)
+							   (send b get-item))))])
+		  (begin-edit-sequence)
+		  (erase)
+		  (for-each
+		   (lambda (s)
+		     (unless (is-a? s hierarchical-list-snip%)
+		       (insert (make-whitespace)))
+		     (insert s)
+		     (insert #\newline))
+		   l)
+		  (set! children l)
+		  (end-edit-sequence)))]
 	[reflow-items
 	 (lambda ()
 	   (for-each
@@ -487,6 +503,7 @@
 	[new-item (lambda x (apply (ivar top-buffer new-item) x))]
 	[new-list (lambda x (apply (ivar top-buffer new-list) x))]
 	[delete-item (lambda (i) (send top-buffer delete-item i))]
+	[sort (lambda (less-than?) (send top-buffer sort less-than?))]
 	[get-items (lambda () (send top-buffer get-items))]
 	[toggle-open/closed
 	 (lambda ()

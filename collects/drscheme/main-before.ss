@@ -40,6 +40,9 @@
 		     (basis:setting-name x)))
            basis:settings))
 
+  (fw:preferences:set-default 'drscheme:unit-window-size-percentage 1/2 
+                              (lambda (x) (and (number? x) (<= 0 x 1))))
+  
   (let ([frame-width 600]
 	[frame-height 650]
 	[window-trimming-upper-bound-width 20]

@@ -83,7 +83,7 @@
                 (else
                  (re-tokenize prefix get-token in input-start-pos (+ current-pos len))))))))
     
-      (define/public (do-insert/delete prefix get-token edit-start-pos change-length)
+      (define/public (do-insert/delete prefix get-token port-wrapper edit-start-pos change-length)
         (when should-color?
           (let ((buffer-start (get-prompt-position)))
             (unless (= last-prompt-position buffer-start)
@@ -94,7 +94,7 @@
                          (lambda ()
                            (let-values (((orig-token-start orig-token-end valid-tree invalid-tree)
                                          (split tokens (- edit-start-pos buffer-start))))
-                             (let ((in (open-input-text-editor this (+ buffer-start orig-token-start) 'end)))
+                             (let ((in (port-wrapper (open-input-text-editor this (+ buffer-start orig-token-start) 'end))))
                                (set! invalid-tokens invalid-tree)
                                (set! tokens valid-tree)
                                (set! invalid-tokens-start (+ orig-token-end change-length))
@@ -106,7 +106,7 @@
           (color)
           (end-edit-sequence)))
       
-      (define/public (start prefix get-token)
+      (define/public (start prefix get-token port-wrapper)
         (reset)
         (unless remove-prefs-callback-thunk
           (set! remove-prefs-callback-thunk
@@ -127,7 +127,7 @@
           (color)
           (end-edit-sequence)))
       
-      (define/public (stop prefix get-token)
+      (define/public (stop prefix get-token port-wrapper)
         (reset)
         (when remove-prefs-callback-thunk
           (remove-prefs-callback-thunk)
@@ -148,27 +148,27 @@
       ;; Data to be kept with the token
       ;; The token's starting offset
       ;; The token's ending offset
-      (init-field get-token prefix)
+      (init-field get-token prefix port-wrapper)
             
       (rename (super-on-disable-surrogate on-disable-surrogate))
       (define/override (on-disable-surrogate text)
         (super-on-disable-surrogate text)
-        (send text stop prefix get-token))
+        (send text stop prefix get-token port-wrapper))
       
       (rename (super-on-enable-surrogate on-enable-surrogate))
       (define/override (on-enable-surrogate text)
         (super-on-enable-surrogate text)
-        (send text start prefix get-token))
+        (send text start prefix get-token port-wrapper))
       
       (rename (super-after-insert after-insert))
       (define/override (after-insert text _ edit-start-pos change-length)
         (super-after-insert text _ edit-start-pos change-length)
-        (send text do-insert/delete prefix get-token edit-start-pos change-length))
+        (send text do-insert/delete prefix get-token port-wrapper edit-start-pos change-length))
       
       (rename (super-after-delete after-delete))
       (define/override (after-delete text _ edit-start-pos change-length)
         (super-after-delete text _ edit-start-pos change-length)
-        (send text do-insert/delete prefix get-token edit-start-pos (- change-length)))
+        (send text do-insert/delete prefix get-token port-wrapper edit-start-pos (- change-length)))
       
       (super-instantiate ())
       ))

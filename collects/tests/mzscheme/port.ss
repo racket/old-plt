@@ -415,19 +415,20 @@
      'accum
      lock-peek-evt
      (lambda (s start end non-block? breakable?)
-       (if (semaphore-try-wait? lock)
-           (begin
-             (set! accum-list
-                   (append accum-list
-		           (map integer->char
-                                (bytes->list (subbytes s start end)))))
-             (semaphore-post lock)
-             (- end start))
-	   ;; Cheap strategy: block until the list is unlocked,
-	   ;;   then return 0, so we get called again
-           (wrap-evt
-	    lock-peek
-	    (lambda (x) 0))))
+       (let loop ()
+	 (if (semaphore-try-wait? lock)
+	     (begin
+	       (set! accum-list
+		     (append accum-list
+			     (map integer->char
+				  (bytes->list (subbytes s start end)))))
+	       (semaphore-post lock)
+	       (- end start))
+	     ;; Cheap strategy: block until the list is unlocked,
+	     ;;   then try again
+	     (wrap-evt
+	      lock-peek
+	      (lambda (x) (loop))))))
      void)))
 (display "hello" accumulator)
 (test '(#\h #\e #\l #\l #\o) values accum-list)

@@ -992,20 +992,22 @@
 	    (semaphore-peek-evt s)
 	    (lambda (bytes start end non-block? breakable?)
 	      (define can-block? (not non-block?))
-	      (if (= start end)
-		  (begin
-		    (set! flushed? #t)
-		    0)
-		  (if (if can-block?
-			  (semaphore-wait s)
-			  (semaphore-try-wait? s))
-		      (let ([len (if can-block?
-				     (- end start)
-				     1)])
-			(set! l (append l
-					(list (subbytes bytes start (+ start len)))))
-			len)
-		      0)))
+	      (let loop ()
+		(if (= start end)
+		    (begin
+		      (set! flushed? #t)
+		      0)
+		    (if (if can-block?
+			    (semaphore-wait s)
+			    (semaphore-try-wait? s))
+			(let ([len (if can-block?
+				       (- end start)
+				       1)])
+			  (set! l (append l
+					  (list (subbytes bytes start (+ start len)))))
+			  len)
+			(wrap-evt (semaphore-peek-evt s)
+				  (lambda (x) (loop)))))))
 	    (lambda ()
 	      (set! l #f))
 	    (lambda (s non-block? breakable?)

@@ -104,7 +104,7 @@
 
  (url "URL")
  (url: "URL:")
- (open-url... "URL... öffnen")	; not sure how these are used, but I would prefer "URL x öffnen" in German
+ (open-url... "URL öffnen...")
  (open-url "URL öffnen")
  (browse... "Browsen...")	; pbliE
  (bad-url "Ungültiger URL")

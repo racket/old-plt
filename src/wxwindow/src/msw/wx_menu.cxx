@@ -398,7 +398,7 @@ BOOL wxMenu::MSWCommand(UINT WXUNUSED(param), WORD menuId)
     if (item->checkable)
       Check(item->itemId, !Checked(item->itemId));
     
-	event = new wxPopupEvent();
+    event = new wxPopupEvent();
     event->menuId = item->itemId;
     ProcessCommand(event);
     return TRUE;
@@ -422,7 +422,13 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
   wxCurrentPopupMenu = menu;
   wxwmTrackPopupMenu(hMenu, 0, point.x, point.y, 0, hWnd, NULL);
   wxYield();
-  wxCurrentPopupMenu = NULL;
+  if (wxCurrentPopupMenu) {
+    wxPopupEvent *event;
+    wxCurrentPopupMenu = NULL;
+    event = new wxPopupEvent();
+    event->menuId = 0;
+    menu->ProcessCommand(event);
+  }
   return TRUE;
 }
 

@@ -38,6 +38,7 @@ Changed MzLib's read-string and read-string-all to
  read-from-string and read-from-string-all
 Changed MzLib's with-semaphore to return the value returned
  by the thunk.
+Added a command-line macro to MzLib's cmdline.ss
 Inside MzScheme: current-directory, now a parameter, no
  longer sets the current directory as managed by the OS
 Inside MzScheme: added scheme_apply_eb

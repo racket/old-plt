@@ -1,4 +1,6 @@
 
+Inexact (i.e., floating-point) numbers are not write/read invariant
+
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax'

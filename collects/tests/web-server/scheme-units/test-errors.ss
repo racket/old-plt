@@ -49,7 +49,7 @@
               (open-input-string
                 (format
                   (string-append
-                    "Servlet didn't load.~ndefault-load-handler: cannot open "
+                    "Servlet didn't load.~nopen-input-file: cannot open "
                     "input file: \"~a\" (No such file or directory; "
                     "errno=2)")
                   (path->string

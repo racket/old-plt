@@ -84,6 +84,7 @@
   (define (input-port-equal? a b)
     (let ((a-line (read-line a))
           (b-line (read-line b)))
+      ;(printf "a-line = ~a~nb-line = ~a~n" a-line b-line)
       (cond
         ((eof-object? a-line) (eof-object? b-line))
         ((eof-object? b-line) (eof-object? a-line))

@@ -3,6 +3,8 @@
 
 (SECTION 'port)
 
+(define SLEEP-TIME 0.1)
+
 (require (lib "port.ss"))
 
 ;; pipe and pipe-with-specials commmit tests
@@ -22,14 +24,14 @@
 	   [th (thread
 		(lambda ()
 		  (set! r (port-commit-peeked 3 unless-evt never-evt in))))])
-      (sleep 0.01)
+      (sleep SLEEP-TIME)
       (test #t thread-running? th)
       (test #\b peek-char in)
-      (sleep 0.01)
+      (sleep SLEEP-TIME)
       (test #t thread-running? th)
       (test #f sync/timeout 0 unless-evt)
       (test #\b read-char in)
-      (sleep 0.01)
+      (sleep SLEEP-TIME)
       (test th sync th)
       (test #f values r))
     (test "anana" read-string 5 in)
@@ -46,29 +48,29 @@
 		       [th1 (thread
 			     (lambda ()
 			       (set! r1 (port-commit-peeked 1 unless-evt s1 in))))]
-		       [_ (sleep 0.01)]
+		       [_ (sleep SLEEP-TIME)]
 		       [th2 (thread
 			     (lambda ()
 			       (set! r2 (port-commit-peeked 2 unless-evt (semaphore-peek-evt s2) in))))])
-		  (sleep 0.01)
+		  (sleep SLEEP-TIME)
 		  (when suspend/kill
 		    (case suspend/kill
 		      [(suspend) (thread-suspend th1)]
 		      [(kill) (kill-thread th1)])
-		    (sleep 0.01))
+		    (sleep SLEEP-TIME))
 		  (test (eq? suspend/kill 'kill) thread-dead? th1)
 		  (test #f thread-dead? th2)
 		  (when peek?
 		    (test #"do" peek-bytes 2 0 in)
-		    (sleep 0.01))
+		    (sleep SLEEP-TIME))
 		  (unless (= which 3)
 		    (semaphore-post (if (= which 1) s1 s2)))
 		  (when (= which 3)
 		    (test #"do" read-bytes 2 in))
-		  (sleep 0.01)
+		  (sleep SLEEP-TIME)
 		  (test unless-evt sync/timeout 0 unless-evt)
 		  (test (not (eq? suspend/kill 'suspend)) thread-dead? th1)
-		  (sleep 0.01)
+		  (sleep SLEEP-TIME)
 		  (test #t thread-dead? th2)
 		  (test (if (= which 1) #t (if suspend/kill '? #f)) values r1)
 		  (test (= which 2) values r2)
@@ -88,6 +90,44 @@
 (test-pipe-commit make-pipe)
 (test-pipe-commit make-pipe-with-specials)
 
+;; pipe-with-specials and limit
+(let-values ([(in out) (make-pipe-with-specials 10)])
+  ;; Check that write events work
+  (test 5 sync (write-bytes-avail-evt #"12345" out))
+  (test #"12345" read-bytes 5 in)
+  (test #f char-ready? in)
+  (test #t sync (write-special-evt 'okay out))
+  (test 11 write-bytes-avail (make-bytes 11 65) out)
+  (test 'okay read-char-or-special in)
+  (test (make-bytes 11 65) read-bytes 11 in)
+
+  (let ()
+    (define (bg thunk runs? spec? exn?)
+      ;; Fill the pipe, again:
+      (test 10 write-bytes (make-bytes 10 66) out)
+      (let* ([ex #f]
+	     [th (thread 
+		  (lambda ()
+		    (with-handlers ([exn:fail? (lambda (x) 
+						 (set! ex #t)
+						 (raise x))])
+		      (sync (write-bytes-avail-evt #"x" out)))))])
+	(sleep SLEEP-TIME)
+	(test #t thread-running? th)
+	;; This thunk (and sometimes read) should go through the manager:
+	(thunk)
+	(sleep SLEEP-TIME)
+	(test (not runs?) thread-running? th)
+	(test (make-bytes 10 66) read-bytes 10 in)
+	(thread-wait th)
+	(test ex values exn?))
+      (when spec?
+	(test 'c read-char-or-special in))
+      (test (if exn? eof #"x") read-bytes 1 in))
+    
+    (bg (lambda () (test 0 write-bytes-avail* #"c" out)) #f #f #f)
+    (bg (lambda () (test #t write-special 'c out)) #t #t #f)
+    (bg (lambda () (test (void) close-output-port out)) #t #f #t)))
 
 ;; copy-port and make-pipe-with-specials tests
 (let ([s (let loop ([n 10000][l null])
@@ -182,25 +222,6 @@
     (go-stream #t #t #f #t)
     (go-stream #t #f #t #t)
     (go-stream #t #t #t #t)))
-
-;; pipe-with-specials and limit
-(let-values ([(in out) (make-pipe-with-specials 10)])
-  (test 10 write-bytes-avail #"1234567890ab" out)
-  (test #f sync/timeout 0 out)
-  (test #"1234" read-bytes 4 in)
-  (test out sync/timeout 0 out)
-  (test 4 write-bytes-avail #"xyzwqrst" out)
-  (test 0 write-bytes-avail* #"xyzwqrst" out)
-  (test #t write-special 'ok out)
-  ;; Now that we've written a special, text will go out, too
-  (test 8 write-bytes-avail* #"xyzwqrst" out)
-  (let ([s (make-bytes 40)])
-    (test 10 read-bytes-avail! s in)
-    (test #"567890xyzw" subbytes s 0 10))
-  (test 'ok read-char-or-special in)
-  (close-output-port out)
-  (test #"xyzwqrst" read-bytes 40 in)
-  (test eof read-bytes 40 in))
 
 ;; make-input-port/read-to-peek
 (define (make-list-port . l)

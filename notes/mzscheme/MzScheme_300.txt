@@ -25,8 +25,8 @@ in several significant ways:
    details.
 
  * The new "foreign.ss" library in MzLib provides access to foriegn
-   libraries dynamically and directly in Scheme. See the
-   foreign-interface manual for more information.
+   libraries dynamically and directly in Scheme. See "PLT Foreign
+   Interface Manual" for more information.
 
  * The class system has changed slightly. The `rename' keyword has
    been changed to `rename-super', but the new `super' expression form

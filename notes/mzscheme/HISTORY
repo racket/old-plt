@@ -2,6 +2,10 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.19
+Added locale-string-encoding
+Added pipe-content-length
+
 Version 299.18
 Changed permissive UTF-8 decoding to include a "?" for every
  ill-formed byte (instead of just those with high bits)

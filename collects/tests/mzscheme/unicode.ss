@@ -430,36 +430,66 @@
     (#(#f #f #f #f #f 32) error
      (#o375 #o203 #o203 #o203 #o203 #o40))
     ;; Sequences with last continuation byte missing, eol instead of space
-    (#(#f) aborts
+    (#(#f) error ; aborts
      (#o300))
-    (#(#f #f) aborts
+    (#(#f) aborts
+     (#o310))
+    (#(#f #f) error ; aborts
      (#o340 #o200))
+    (#(#f #f) aborts
+     (#o350 #o200))
+    (#(#f #f) aborts
+     (#o340 #o240))
     (#(#f) aborts
      (#o340))
-    (#(#f #f #f) aborts
+    (#(#f #f #f) error ; aborts
      (#o360 #o200 #o200))
-    (#(#f #f) aborts
+    (#(#f #f #f) aborts
+     (#o361 #o200 #o200))
+    (#(#f #f) error ; aborts
      (#o360 #o200))
     (#(#f #f) aborts
-     (#o360 #o200))
-    (#(#f #f #f #f) aborts
+     (#o361 #o200))
+    (#(#f) aborts
+     (#o360))
+    (#(#f) aborts
+     (#o361))
+    (#(#f #f #f #f) error ; aborts
      (#o370 #o200 #o200 #o200))
+    (#(#f #f #f #f) aborts
+     (#o371 #o200 #o200 #o200))
     (#(#f) aborts
      (#o370))
-    (#(#f #f) aborts
+    (#(#f) aborts
+     (#o371))
+    (#(#f #f) error ; aborts
      (#o370 #o200))
-    (#(#f #f #F) aborts
+    (#(#f #f) aborts
+     (#o371 #o200))
+    (#(#f #f #F) error ; aborts
      (#o370 #o200 #o200))
-    (#(#f #f #f #f #f) aborts
+    (#(#f #f #F) aborts
+     (#o371 #o200 #o200))
+    (#(#f #f #f #f #f) error ; aborts
      (#o374 #o200 #o200 #o200 #o200))
+    (#(#f #f #f #f #f) aborts
+     (#o375 #o200 #o200 #o200 #o200))
     (#(#f) aborts
      (#o374))
-    (#(#f #f) aborts
+    (#(#f) aborts
+     (#o375))
+    (#(#f #f) error ; aborts
      (#o374 #o200))
-    (#(#f #f #f) aborts
+    (#(#f #f) aborts
+     (#o375 #o200))
+    (#(#f #f #f) error ; aborts
      (#o374 #o200 #o200))
-    (#(#f #f #f #f) aborts
+    (#(#f #f #f) aborts
+     (#o375 #o200 #o200))
+    (#(#f #f #f #f) error ; aborts
      (#o374 #o200 #o200 #o200))
+    (#(#f #f #f #f) aborts
+     (#o375 #o200 #o200 #o200))
     (#(#f) aborts
      (#o337))
     (#(#f #f) aborts
@@ -695,29 +725,55 @@
 			(test (+ 5 (bytes-length s)) 'n n))))
 		;; Test byte reading and port positions
 		(let ([v (bytes-any->unicode-vector s #f)])
+		  (define (check-full-read read-all-bytes)
+		    (let ([p (open-input-bytes s)])
+		      (port-count-lines! p)
+		      (read-all-bytes p)
+		      (let-values ([(l c p) (port-next-location p)])
+			(test (vector-length v) 'c c)
+			(test (add1 (vector-length v)) 'p p)))
+		    (let ([p (open-input-string (format "\t~a\t" s))])
+		      (port-count-lines! p)
+		      (read-all-bytes p)
+		      (let-values ([(l c p) (port-next-location p)])
+			(test p 'p (add1 (+ 2 (vector-length v))))
+			(test c 'tab (+ 16
+					(- (vector-length v)
+					   (bitwise-and (vector-length v) 7))))))
+		    (let ([p (open-input-string (format "~a\t~a" s s))])
+		      (port-count-lines! p)
+		      (read-all-bytes p)
+		      (let-values ([(l c p) (port-next-location p)])
+			(test p 'p (add1 (+ 1 (* 2 (vector-length v)))))
+			(test c 'tab (+ 8
+					(- (vector-length v)
+					   (bitwise-and (vector-length v) 7))
+					(vector-length v)))))
+		    (let ([p (open-input-string (format "~a\n~a" s s))])
+		      (port-count-lines! p)
+		      (read-all-bytes p)
+		      (let-values ([(l c p) (port-next-location p)])
+			(test p 'p (+ 2 (* 2 (vector-length v))))
+			(test c 'cr (vector-length v)))))
+		  (check-full-read (lambda (p) (read-bytes 500 p)))
+		  (check-full-read (lambda (p)
+				     (let loop ()
+				       (unless (eof-object? (read-byte p))
+					 (loop)))))
+		  ;; Check result char-by-char:
 		  (let ([p (open-input-bytes s)])
 		    (port-count-lines! p)
-		    (read-bytes 500 p)
-		    (let-values ([(l c p) (port-next-location p)])
-		      (test (vector-length v) 'c c)
-		      (test (add1 (vector-length v)) 'p p)))
-		  (let ([p (open-input-string (format "\t~a\t" s))])
-		    (port-count-lines! p)
-		    (read-bytes 500 p)
-		    (let-values ([(l c p) (port-next-location p)])
-		      (test p 'p (add1 (+ 2 (vector-length v))))
-		      (test c 'tab (+ 16
-				      (- (vector-length v)
-					 (bitwise-and (vector-length v) 7))))))
-		  (let ([p (open-input-string (format "~a\t~a" s s))])
-		    (port-count-lines! p)
-		    (read-bytes 500 p)
-		    (let-values ([(l c p) (port-next-location p)])
-		      (test p 'p (add1 (+ 1 (* 2 (vector-length v)))))
-		      (test c 'tab (+ 8
-				      (- (vector-length v)
-					 (bitwise-and (vector-length v) 7))
-				      (vector-length v))))))
+		    (let loop ([old-c 0][old-p 1])
+		      (let ([i (read-char p)])
+			(let-values ([(l c p) (port-next-location p)])
+			  (if (eof-object? i)
+			      (begin
+				(test (cons s old-c) values (cons s c))
+				(test (cons s old-p) values (cons s p)))
+			      (begin
+				(test (cons s (add1 old-c)) values (cons s c))
+				(test (cons s (add1 old-p)) values (cons s p))
+				(loop c p))))))))
 		;; Test read-string decoding
 		(let ([us (apply string (map (lambda (i)
 					       (if i (integer->char i) #\?))
@@ -890,6 +946,8 @@
 (define known-locale? (and (regexp-match "mflatt|matthewf" (path->string (find-system-path 'home-dir)))
 			   (or (regexp-match "linux" (path->string (system-library-subpath)))
 			       (eq? 'macosx (system-type)))))
+
+(printf "Known locale?: ~a~n" known-locale?)
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; String comparison. Relies on the default locale knowing

@@ -1073,7 +1073,8 @@ struct Scheme_Input_Port
   Scheme_Object *special, *ungotten_special;
   long position, readpos, lineNumber, charsSinceNewline;
   long column, oldColumn; /* column tracking with one tab/newline ungetc */
-  char count_lines, was_cr, utf8state;
+  int utf8state;
+  char count_lines, was_cr;
   Scheme_Object *unless, *unless_cache;
   struct Scheme_Output_Port *output_half;
 };

@@ -7,7 +7,7 @@
 ; handle structs, vectors (done?)
 ; flip arguments in event-handling combinators (done)
 ; localized exception-handling mechanism
-;
+; precise depths even when switching, proper treatment of cycles
 ;
 ; generalize and improve notion of time
 ;  (e.g., combine seconds & milliseconds,
@@ -91,10 +91,13 @@
   
   (require-for-syntax (lib "list.ss"))
   
+  (define frtime-inspector (make-inspector))
+  
   ; also models events, where 'value' is all the events that
   ; haven't yet occurred (more specifically, an event-cons cell whose
   ; tail is *undefined*)
-  (define-values (make-signal
+  (define-values (signal
+                  make-signal
                   signal?
                   signal-value
                   signal-dependents
@@ -108,25 +111,26 @@
                   set-signal-depth!)
     (let-values ([(desc make-signal signal? acc mut)
                   (make-struct-type
-                   'signal #f 5 0 #f null (make-inspector)
+                   'signal #f 5 0 #f null frtime-inspector
                    (lambda (fn . args)
                      (unregister #f fn) ; clear out stale dependencies from previous apps
-                     (let* ([cur-fn (get-value fn)]
+                     (let* ([cur-fn (value-now fn)]
                             [cur-app (safe-eval (apply cur-fn args))]
                             [ret (proc->signal void fn cur-app)]
                             [thunk (lambda ()
-                                     (when (not (eq? cur-fn (get-value fn)))
+                                     (when (not (eq? cur-fn (value-now fn)))
                                        (unregister ret cur-app)
-                                       (set! cur-fn (get-value fn))
+                                       (set! cur-fn (value-now fn))
                                        (set! cur-app (safe-eval (apply cur-fn args)))
                                        (register ret cur-app))
-                                     (get-value cur-app))])
+                                     (value-now cur-app))])
                        (set-signal-thunk! ret thunk)
                        (set-signal-value! ret (thunk))
                        ret)))]
                  [(field-name-symbols) (list 'value 'dependents 'stale? 'thunk 'depth)]
                  [(0->4) (build-list 5 identity)])
       (apply values
+             desc
              make-signal
              signal?
              (append (map (lambda (idx name) (make-struct-field-accessor acc idx name))
@@ -142,8 +146,11 @@
   (define set-efirst! set-event-cons-head!)
   (define set-erest! set-event-cons-tail!)
   
-  (define (event-source? v)
-    (and (signal? v) (event-cons? (signal-value v))))
+  (define (event? v)
+    (and (signal? v)
+         (if (undefined? (signal-value v))
+             undefined
+             (event-cons? (signal-value v)))))
   
   (define (behavior? v)
     (and (signal? v) (not (event-cons? (signal-value v)))))
@@ -169,7 +176,7 @@
   (define-struct unreg (inf sup))
   
   ; an external event; val is passed to recip's thunk
-  (define-struct event (val recip))
+  (define-struct external-event (val recip))
   
   ; update the given signal at the given time
   (define-struct alarm (time signal))
@@ -182,7 +189,7 @@
                       [else (else-thunk)]))])
       (if (behavior? test)
           (switch
-           (if-fun (get-value test))
+           (if-fun (value-now test))
            ((changes test) . ==> .
                            if-fun))
           (if-fun test))))
@@ -203,13 +210,17 @@
       [(_ test then else)
        (frp:if-helper test (weakly-cache (lambda () then)) (weakly-cache (lambda () else)))]))
   
-  ; get-value : signal[a] -> a
-  (define (get-value val)
+  ; value-now : signal[a] -> a
+  (define (value-now val)
     (if (behavior? val)
-        (signal-value val)
+        (let ([v1 (signal-value val)])
+          (if (cons? v1)
+              (cons (value-now (first v1))
+                    (value-now (rest v1)))
+              v1))
         val))
   
-  (define (get-value/copy val)
+  (define (value-now/copy val)
     (if (behavior? val)
         (let ([v1 (signal-value val)])
           (if (vector? v1)
@@ -218,7 +229,7 @@
         val))
             
   
-  ;   (define get-value/copy
+  ;   (define value-now/copy
   ;     (frp:lambda (val)
   ;       (match val
   ;         [($ signal value _ _ _) (cond
@@ -291,38 +302,52 @@
   (define create-strict-thunk
     (case-lambda
       [(fn) fn]
-      [(fn arg1) (lambda () (if (undefined? arg1)
-                                undefined
-                                (fn (get-value arg1))))]
-      [(fn arg1 arg2) (lambda () (if (or (undefined? arg1) (undefined? arg2))
-                                     undefined
-                                     (fn (get-value arg1) (get-value arg2))))]
-      [(fn arg1 arg2 arg3) (lambda () (if (or (undefined? arg1) (undefined? arg2) (undefined? arg3))
-                                          undefined
-                                          (fn (get-value arg1)
-                                              (get-value arg2)
-                                              (get-value arg3))))]
-      [(fn . args) (lambda () (if (ormap undefined? args)
-                                  undefined
-                                  (apply fn (map get-value args))))]))
+      [(fn arg1) (lambda ()
+                   (let ([a1 (value-now arg1)])
+                     (if (undefined? a1)
+                         undefined
+                         (fn a1))))]
+      [(fn arg1 arg2) (lambda ()
+                        (let ([a1 (value-now arg1)]
+                              [a2 (value-now arg2)])
+                          (if (or (undefined? a1)
+                                  (undefined? a2))
+                              undefined
+                              (fn a1 a2))))]
+      [(fn arg1 arg2 arg3) (lambda ()
+                             (let ([a1 (value-now arg1)]
+                                   [a2 (value-now arg2)]
+                                   [a3 (value-now arg3)])
+                               (if (or (undefined? a1)
+                                       (undefined? a2)
+                                       (undefined? a3))
+                                   undefined
+                                   (fn a1 a2 a3))))]
+      [(fn . args) (lambda ()
+                     (let ([as (map value-now args)])
+                       (if (ormap undefined? as)
+                           undefined
+                           (apply fn as))))]))
   
   (define create-thunk
     (case-lambda
       [(fn) fn]
-      [(fn arg1) (lambda () (fn (get-value arg1)))]
-      [(fn arg1 arg2) (lambda () (fn (get-value arg1) (get-value arg2)))]
-      [(fn arg1 arg2 arg3) (lambda () (fn (get-value arg1)
-                                              (get-value arg2)
-                                              (get-value arg3)))]
-      [(fn . args) (lambda () (apply fn (map get-value args)))]))
+      [(fn arg1) (lambda () (fn (value-now arg1)))]
+      [(fn arg1 arg2) (lambda () (fn (value-now arg1) (value-now arg2)))]
+      [(fn arg1 arg2 arg3) (lambda () (fn (value-now arg1)
+                                              (value-now arg2)
+                                              (value-now arg3)))]
+      [(fn . args) (lambda () (apply fn (map value-now args)))]))
 
-  (define (lift-app strict? fn . args)
+  (define (lift strict? fn . args)
     (if (ormap behavior? args)
         (apply
          proc->signal
          (apply (if strict? create-strict-thunk create-thunk) fn args)
          args)
-        (apply fn args)))
+        (if (and strict? (ormap undefined? args))
+            undefined
+            (apply fn args))))
   
   (define (last)
     (let ([prev #f])
@@ -344,9 +369,9 @@
   ; until : behavior behavior -> behavior
   (define (b1 . until . b2)
     (proc->signal
-     (lambda () (if (undefined? (get-value b2))
-                    (get-value b1)
-                    (get-value b2)))
+     (lambda () (if (undefined? (value-now b2))
+                    (value-now b1)
+                    (value-now b2)))
      ; deps
      b1 b2))
   
@@ -399,18 +424,18 @@
   
   ; switch : behavior event[behavior] -> behavior
   (define (switch init e)
-    (let ([e-b (hold init e)])
+    (let ([e-b (hold e init)])
       (rec ret
         (proc->signal
          (case-lambda
            [()
-            (when (not (eq? init (get-value e-b)))
+            (when (not (eq? init (value-now e-b)))
               (unregister ret init)
-              (set! init (get-value e-b))
+              (set! init (value-now e-b))
               (register ret init)
               (set-signal-depth! ret (max (signal-depth ret)
                                           (add1 (safe-signal-depth init)))))
-            (get-value init)]
+            (value-now init)]
            [(msg) e])
          e-b init))))
   
@@ -431,7 +456,7 @@
   ; behavior[a] -> event[a]
   (define (changes b)
     (event-producer
-     (emit (get-value b))
+     (emit (value-now/copy b))
      b))
   
   (define (event-forwarder sym evt f+l)
@@ -447,9 +472,9 @@
   
   ; when-e : behavior[bool] -> event
   (define (when-e b)
-    (let* ([last (get-value b)])
+    (let* ([last (value-now b)])
       (event-producer
-       (let ([current (get-value b)])
+       (let ([current (value-now b)])
          (when (and (not last) current)
            (emit current))
          (set! last current))
@@ -458,8 +483,15 @@
   ; ==> : event[a] (a -> b) -> event[b]
   (define (e . ==> . f)
     (event-filter
-     (emit ((get-value f) the-event))
+     (emit ((value-now f) the-event))
      (list e)))
+  
+  #|
+  (define (e . =>! . f)
+    (event-filter
+     ((value-now f) the-event)
+     (list e)))
+  |#
   
   ; -=> : event[a] b -> event[b]
   (define-syntax -=>
@@ -475,11 +507,13 @@
   
   (define nothing (string->uninterned-symbol "nothing"))
   
+  (define (nothing? v) (eq? v nothing))
+
   ; =#=> : event[a] (a -> b U nothing) -> event[b]
   (define (e . =#=> . f)
     (event-filter
      (let ([x (f the-event)])
-       (when (not (eq? x nothing))
+       (unless (nothing? x)
          (emit x)))
      (list e)))
   
@@ -506,36 +540,38 @@
        (emit ret))
      (list e)))
   
+
+  ; event[a] b (a b -> b) -> signal[b]
+  (define (collect-b ev init trans)
+    (hold (collect-e ev init trans) init))
+  
+  ; event[(a -> a)] a -> signal[a]
+  (define (accum-b ev init)
+    (hold (accum-e ev init) init))
+  
+  ; hold : a event[a] -> signal[a]
+  (define hold 
+    (opt-lambda (e [init undefined])
+      (proc->signal
+       (let ([b true])
+         (lambda ()
+           (if b
+               (begin (set! b false) init)
+               (efirst (signal-value e)))))
+       e)))
+  
   ; event[a] signal[b]* -> event[(list a b*)]
   (define (snapshot-e e . bs)
     (event-filter
-     (emit (cons the-event (map get-value bs)))
+     (emit (cons the-event (map value-now bs)))
      (list e)))
   
   ; (a b* -> c) event[a] signal[b]* -> event[c]
   (define (snapshot-map-e fn ev . bs)
     (event-filter
-     (emit (apply fn the-event (map get-value bs)))
+     (emit (apply fn the-event (map value-now bs)))
      (list ev)))
-  
-  ; event[a] b (a b -> b) -> signal[b]
-  (define (collect-b ev init trans)
-    (hold init (collect-e ev init trans)))
-  
-  ; event[(a -> a)] a -> signal[a]
-  (define (accum-b ev init)
-    (hold init (accum-e ev init)))
-  
-  ; hold : a event[a] -> signal[a]
-  (define (hold v e)
-    (proc->signal
-     (let ([b true])
-       (lambda ()
-         (if b
-             (begin (set! b false) v)
-             (efirst (signal-value e)))))
-     e))
-  
+
   (define update
     (case-lambda
       [(b) (update0 b)]
@@ -666,7 +702,7 @@
        (let outer ()
          (with-handlers ([exn?
                           (lambda (exn)
-                            (! (self) (make-event (cons exn cur-beh) exceptions))
+                            (! (self) (make-external-event (list exn cur-beh) exceptions))
                             (when (behavior? cur-beh)
                               (undef cur-beh))
                             (outer))])
@@ -701,7 +737,7 @@
                      (set! cur-beh b)
                      (update0 b)
                      (set! cur-beh #f)]
-                    [($ event val recip)
+                    [($ external-event val recip)
                      ; should this really be here?
                      (set! cur-beh recip)
                      (update1 recip val)
@@ -773,7 +809,7 @@
       (set-signal-value! ret ((signal-thunk ret)))
       ret))
   
-  (define milliseconds (make-time-b 20))
+  (define milliseconds (make-time-b 10))
   (define time-b milliseconds)
   
   (define seconds
@@ -798,8 +834,8 @@
                [head last]
                [ret (proc->signal void)]
                [thunk (lambda () (let* ([now (current-milliseconds)]
-                                        [new (get-value/copy beh)]
-                                        [ms (get-value ms-b)])
+                                        [new (value-now/copy beh)]
+                                        [ms (value-now ms-b)])
                                    (when (not (equal? new (caar last)))
                                      (set-rest! last (cons (cons new now)
                                                            empty))
@@ -821,45 +857,44 @@
   ; (instead of milliseconds)
   ; integral : signal[num] signal[num] -> signal[num]
   (define integral
-    (case-lambda
-      [(b) (integral b 20)]
-      [(b ms-b) (let* ([accum 0]
-                       [last-time (current-milliseconds)]
-                       [last-val (get-value b)]
-                       [ret (proc->signal void)]
-                       [last-alarm 0]
-                       [thunk (lambda ()
-                                (let ([now (current-milliseconds)])
-                                  (if (> now (+ last-time 10))
-                                      (begin
-                                        (when (not (number? last-val))
-                                          (set! last-val 0))
-                                        (set! accum (+ accum
-                                                       (* last-val
-                                                          (- now last-time))))
-                                        (set! last-time now)
-                                        (set! last-val (get-value b))
-                                        (when (get-value ms-b)
-                                          (! man (make-alarm
-                                                  (+ last-time (get-value ms-b))
-                                                  ret))))
-                                      (when (or (>= now last-alarm)
-                                                (and (< now 0)
-                                                     (>= last-alarm 0)))
-                                        (set! last-alarm (+ now 20))
-                                        (! man (make-alarm last-alarm ret))))
-                                  accum))])
-                  (set-signal-thunk! ret thunk)
-                  (set-signal-value! ret (thunk))
-                  (register ret (list b ms-b)))]))
+    (opt-lambda (b [ms-b 10])
+      (let* ([accum 0]
+             [last-time (current-milliseconds)]
+             [last-val (value-now b)]
+             [ret (proc->signal void)]
+             [last-alarm 0]
+             [thunk (lambda ()
+                      (let ([now (current-milliseconds)])
+                        (if (> now (+ last-time 10))
+                            (begin
+                              (when (not (number? last-val))
+                                (set! last-val 0))
+                              (set! accum (+ accum
+                                             (* last-val
+                                                (- now last-time))))
+                              (set! last-time now)
+                              (set! last-val (value-now b))
+                              (when (value-now ms-b)
+                                (! man (make-alarm
+                                        (+ last-time (value-now ms-b))
+                                        ret))))
+                            (when (or (>= now last-alarm)
+                                      (and (< now 0)
+                                           (>= last-alarm 0)))
+                              (set! last-alarm (+ now 20))
+                              (! man (make-alarm last-alarm ret))))
+                        accum))])
+        (set-signal-thunk! ret thunk)
+        (set-signal-value! ret (thunk))
+        (register ret (list b ms-b)))))
   
   ; fix for accuracy
   ; derivative : signal[num] -> signal[num]
   (define (derivative b)
-    (let* ([last-value (get-value b)]
+    (let* ([last-value (value-now b)]
            [last-time (current-milliseconds)]
            [thunk (lambda ()
-                    (let* ([new-value (get-value b)]
+                    (let* ([new-value (value-now b)]
                            [new-time (current-milliseconds)]
                            [result (if (or (= new-value last-value)
                                            (= new-time last-time)
@@ -876,20 +911,16 @@
       (proc->signal thunk b)))
   
   ; new-cell : behavior[a] -> behavior[a] (cell)
-  (define (new-cell init)
-    (switch init (event-receiver)))
-  
+  (define new-cell
+    (opt-lambda ([init undefined])
+      (switch init (event-receiver))))
+    
   ; set-cell! : cell[a] a -> void
   (define (set-cell! ref beh)
-    (! man (make-event beh ((signal-thunk ref) #t))))
+    (! man (make-external-event beh ((signal-thunk ref) #t))))
   
   (define (send-event rcvr evt)
-    (! man (make-event evt rcvr)))
-  
-  (define c-v get-value)
-  
-  (define (cur-vals . args)
-    (apply values (map get-value args)))
+    (! man (make-external-event evt rcvr)))
   
   (define (curried-apply fn)
     (lambda (lis) (apply fn lis)))
@@ -901,18 +932,13 @@
   (define-syntax frp:letrec
     (syntax-rules ()
       [(_ ([id val] ...) expr ...)
-       (let ([id (new-cell undefined)] ...)
+       (let ([id (new-cell)] ...)
          (set-cell! id val) ...
          expr ...)]))
   
-  (define-syntax frp:rec
+  (define-syntax frp:match
     (syntax-rules ()
-      [(_ name value-expr)
-       (frp:letrec ([name value-expr]) name)]))
-  
-  (define-syntax match-b
-    (syntax-rules ()
-      [(_ expr clause ...) (lift-app #t (match-lambda clause ...) expr)]))
+      [(_ expr clause ...) (lift #t (match-lambda clause ...) expr)]))
   
   (define (geometric)
     (- (log (/ (random 2147483647) 2147483647.0))))
@@ -959,9 +985,10 @@
   
   (define (make-snip bhvr)
     (make-object string-snip%
-      (let ([tmp (if (signal? bhvr)
-                     (signal-value bhvr)
-                     bhvr)])
+      (let ([tmp (cond
+                   [(behavior? bhvr) (value-now bhvr)]
+                   [(event? bhvr) (signal-value bhvr)]
+                   [else bhvr])])
         (cond
           [(econs? tmp) (format "#<event (last: ~a)>" (efirst tmp))]
           [(undefined? tmp) "<undefined>"]
@@ -993,17 +1020,11 @@
       [(signal? beh) (make-object value-snip% beh)]
       [else beh]))
   
-  (define-syntax (lift-procs stx)
-    (syntax-case stx ()
-      [(src-lift-procs . ids)
-       (with-syntax ([(old-name ...) (syntax ids)]
-                     [(new-name ...) (generate-temporaries (syntax ids))])
-         (syntax
-          (begin
-            (define-values (new-name ...)
-              (values
-               (lambda args (apply lift-app #f old-name args)) ...))
-            (provide (rename new-name old-name) ...))))]))
+  (define (find pred lst)
+    (cond
+     [(empty? lst) #f]
+     [(pred (first lst)) (first lst)]
+     [else (find pred (rest lst))]))
 
   (define-syntax (frp:provide stx)
     (syntax-case stx ()
@@ -1023,7 +1044,7 @@
                    (begin
                      clause ...
                      (define (tmp-name . args)
-                        (apply lift-app true fun-name args))
+                        (apply lift true fun-name args))
                      ...
                      (provide (rename tmp-name fun-name) ...))))]
                [(lifted/nonstrict . ids)
@@ -1036,7 +1057,7 @@
                    (begin
                      clause ...
                      (define (tmp-name . args)
-                        (apply lift-app false fun-name args))
+                        (apply lift false fun-name args))
                      ...
                      (provide (rename tmp-name fun-name) ...))))]
                [provide-spec
@@ -1044,79 +1065,115 @@
         (syntax (begin))
         (syntax->list (syntax clauses)))]))  
 
+    
   (define-syntax (frp:require stx)
+    (define (generate-temporaries/loc st ids)
+      (map (lambda (id)
+             (datum->syntax-object stx (syntax-object->datum id)))
+           (generate-temporaries ids)))
     (syntax-case stx ()
       [(_ . clauses)
        (foldl
         (lambda (c prev)
           (syntax-case prev ()
             [(begin clause ...)
-             (syntax-case c (lifted lifted/nonstrict as-is)
+             (syntax-case c (lifted lifted/nonstrict as-is/unchecked as-is)
                [(lifted/nonstrict module . ids)
-                (with-syntax ([(fun-name ...) (syntax ids)]
-                              [(tmp-name ...)
-                               (map (lambda (id)
-                                      (datum->syntax-object stx (syntax-object->datum id)))
-                                    (generate-temporaries (syntax ids)))])
-                  (syntax
-                   (begin
-                     clause ...
-                     (require (rename module tmp-name fun-name) ...)
-                     (define (fun-name . args)
-                        (apply lift-app false tmp-name args))
-                     ...)))]
+                (with-syntax ([(fun-name ...) #'ids]
+                              [(tmp-name ...) (generate-temporaries/loc stx #'ids)])
+                  #'(begin
+                      clause ...
+                      (require (rename module tmp-name fun-name) ...)
+                      (define (fun-name . args)
+                        (apply lift false tmp-name args))
+                      ...))]
                [(lifted module . ids)
                 (with-syntax ([(fun-name ...) (syntax ids)]
-                              [(tmp-name ...)
-                               (map (lambda (id)
-                                      (datum->syntax-object stx (syntax-object->datum id)))
-                                    (generate-temporaries (syntax ids)))])
-                  (syntax
-                   (begin
-                     clause ...
-                     (require (rename module tmp-name fun-name) ...)
-                     (define (fun-name . args)
-                        (apply lift-app true tmp-name args))
-                     ...)))]
-               [(as-is module id ...)
+                              [(tmp-name ...) (generate-temporaries/loc stx #'ids)])
+                  #'(begin
+                      clause ...
+                      (require (rename module tmp-name fun-name) ...)
+                      (define (fun-name . args)
+                        (apply lift true tmp-name args))
+                      ...))]
+               [(as-is/unchecked module id ...)
                 (syntax (begin clause ... (require (rename module id id) ...)))]
+               [(as-is module . ids)
+                (with-syntax ([(fun-name ...) (syntax ids)]
+                              [(tmp-name ...) (generate-temporaries/loc stx #'ids)])
+                  #'(begin
+                      clause ...
+                      (require (rename module tmp-name fun-name) ...)
+                      (define fun-name
+                        (if (procedure? tmp-name)
+                            (lambda args
+                              (cond
+                               [(find signal? args) =>
+                                (lambda (v)
+                                  (raise-type-error 'fun-name "not time-varying"
+                                                    (if (event? v)
+                                                        (format "#<event (last: ~a)>" (efirst (signal-value v)))
+                                                        (format "#<behavior: ~a>" (signal-value v)))))]
+                               [else (apply tmp-name args)]))
+                            tmp-name))
+                      ...))]
                [require-spec
                 (syntax (begin clause ... (require require-spec)))])]))
         (syntax (begin))
         (syntax->list (syntax clauses)))]))
   
-  (lift-procs undefined?)
+  (define undefined?/lifted (lambda (arg) (lift true undefined? arg)))
+  (define frp:pair? (lambda (arg) (lift true pair? arg)))
+  (define frp:null? (lambda (arg) (lift true null? arg)))
+  (define frp:cons (lambda (a d) (lift false cons a d)))
+  (define frp:car (lambda (arg) (lift true car arg)))
+  (define frp:cdr (lambda (arg) (lift true cdr arg)))
   
-  (provide (rename frp:if if)
-           (rename frp:require require)
-           (rename frp:provide provide)
-           (rename frp:letrec letrec)
-           (rename match-b match)
-           (rename get-value cur-val)
-           (rename lift-app lift)
-           module
+#|
+  (define (frp:cons a d)
+    (if (or (behavior? a)
+            (behavior? d))
+        (proc->signal (let ([c (cons a d)])
+                        (lambda () c)) a d)
+        (cons a d)))
+  
+  (define (frp:car c)
+    (if (behavior? c)
+        (car (signal-value c))
+        (car c)))
+  
+  (define (frp:cdr c)
+    (if (behavior? c)
+        (cdr (signal-value c))
+        (cdr c)))
+|#  
+  (provide module
            #%app
            #%top
            #%datum
            #%plain-module-begin
            #%module-begin
-           lambda
-           case-lambda
-           define-values
-           define
-           let
-           let-values
-           let*
-           begin
-           begin0
-           quote
-           quasiquote
-           unquote
-           values
-           (all-defined-except undefined?
-                               lift-app
-                               frp:if
+           null
+           (rename frp:if if)
+           (rename frp:require require)
+           (rename frp:provide provide)
+           (rename frp:letrec letrec)
+           (rename frp:match match)
+           (rename frp:cons cons)
+           (rename frp:pair? pair?)
+           (rename frp:null? null?)
+           (rename frp:car car)
+           (rename frp:cdr cdr)
+           (rename undefined?/lifted undefined?)
+           (all-defined-except frp:if
                                frp:require
                                frp:provide
                                frp:letrec
-                               frp:rec)))
+                               frp:match
+                               frp:cons
+                               frp:pair?
+                               frp:null?
+                               frp:car
+                               frp:cdr
+                               undefined?
+                               undefined?/lifted)))

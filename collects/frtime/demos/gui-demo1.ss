@@ -1,6 +1,7 @@
 (module gui-demo1 (lib "frtime.ss" "frtime")
   
   (require (lib "gui.scm" "frtime"))
+  (provide (all-defined-except))
   
   (define kinds (list "New York" "Chicago" "California" "Hawaii"))
   (define sizes (list "small" "medium" "large" "Texas"))
@@ -18,8 +19,7 @@
     (make-button "Confirm"))
   
   (make-message
-   (hold ""
-         (snapshot-map-e
+   (hold (snapshot-map-e
           (lambda (_ c k s)
             (string-append c " ordered a "
                            (list-ref sizes s) " "

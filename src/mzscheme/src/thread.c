@@ -324,7 +324,7 @@ void scheme_init_thread(Scheme_Env *env)
   scheme_add_global_constant("dump-memory-stats",
 			     scheme_make_prim_w_arity(scheme_dump_gc_stats,
 						      "dump-memory-stats",
-						      0, 1), 
+						      0, -1), 
 			     env);
 
   scheme_add_global_constant("make-namespace",
@@ -911,7 +911,8 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
   if (!m)
     m = main_custodian;
 
-  /* Kill children first: */
+  /* Kill children first. */
+  /* FIXME: we might overflow the stack here! */
   for (c = CUSTODIAN_FAM(m->children); c; c = next) {
     next = CUSTODIAN_FAM(c->sibling);
     ks = scheme_do_close_managed(c, cf);
@@ -960,6 +961,42 @@ Scheme_Thread *scheme_do_close_managed(Scheme_Custodian *m, Scheme_Exit_Closer_F
   }
 
   return kill_self;
+}
+
+typedef void (*Scheme_For_Each_Func)(Scheme_Object *);
+
+static void for_each_managed(Scheme_Type type, Scheme_Custodian *m, Scheme_For_Each_Func cf)
+     /* This function must not allocate. */
+{
+  Scheme_Custodian *c, *next;
+  int i;
+
+  if (SAME_TYPE(type, scheme_thread_type))
+    type = scheme_thread_hop_type;
+  
+  /* Children first. */
+  /* FIXME: we might overflow the stack here! */
+  for (c = CUSTODIAN_FAM(m->children); c; c = next) {
+    next = CUSTODIAN_FAM(c->sibling);
+    for_each_managed(type, c, cf);
+  }
+
+  for (i = m->count; i--; ) {
+    if (m->boxes[i]) {
+      Scheme_Object *o;
+
+      o = xCUSTODIAN_FAM(m->boxes[i]);
+      
+      if (SAME_TYPE(SCHEME_TYPE(o), type)) {
+	if (SAME_TYPE(type, scheme_thread_hop_type)) {
+	  /* We've added an indirection and made it weak. See mr_hop note above. */
+	  o = (Scheme_Object *)WEAKIFIED(((Scheme_Thread_Custodian_Hop *)o)->p);
+	}
+
+	cf(o);
+      }
+    }
+  }
 }
 
 void scheme_close_managed(Scheme_Custodian *m)
@@ -3648,6 +3685,82 @@ void scheme_zero_unneeded_rands(Scheme_Thread *p)
      a thread's stack. */
 }
 
+static void prepare_thread_for_GC(Scheme_Object *t)
+{
+  Scheme_Thread *p = (Scheme_Thread *)t;
+
+  /* zero ununsed part of env stack in each thread */
+
+  if (!p->nestee) {
+    Scheme_Object **o, **e, **e2;
+    Scheme_Saved_Stack *saved;
+# define RUNSTACK_TUNE(x) /* x   - Used for performance tuning */
+    RUNSTACK_TUNE( long size; );
+
+    o = p->runstack_start;
+    e = p->runstack;
+    e2 = p->runstack_tmp_keep;
+
+    while (o < e && (o != e2)) {
+      *(o++) = NULL;
+    }
+
+    RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
+
+    for (saved = p->runstack_saved; saved; saved = saved->prev) {
+      o = saved->runstack_start;
+      e = saved->runstack;
+      RUNSTACK_TUNE( size += saved->runstack_size; );
+      while (o < e) {
+	*(o++) = NULL;
+      }
+    }
+
+    RUNSTACK_TUNE( printf("%ld\n", size); );
+
+    if (p->tail_buffer && (p->tail_buffer != p->runstack_tmp_keep)) {
+      int i;
+      for (i = 0; i < p->tail_buffer_size; i++) {
+	p->tail_buffer[i] = NULL;
+      }
+    }
+  }
+      
+  /* release unused cont mark stack segments */
+  {
+    int segcount, i;
+    if (p->cont_mark_stack)
+      segcount = ((long)(p->cont_mark_stack - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
+    else
+      segcount = 0;
+    for (i = segcount; i < p->cont_mark_seg_count; i++) {
+      p->cont_mark_stack_segments[i] = NULL;
+    }
+    if (segcount < p->cont_mark_seg_count)
+      p->cont_mark_seg_count = segcount;
+  }
+      
+  /* zero unused part of last mark stack segment */
+  {
+    int segpos = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE);
+	
+    if (segpos < p->cont_mark_seg_count) {
+      Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[segpos];
+      int stackpos = ((long)p->cont_mark_stack & SCHEME_MARK_SEGMENT_MASK), i;
+      for (i = stackpos; i < SCHEME_MARK_SEGMENT_SIZE; i++) {
+	seg[i].key = NULL;
+	seg[i].val = NULL;
+      }
+    }
+  }
+
+  if (p->values_buffer)
+    memset(p->values_buffer, 0, sizeof(Scheme_Object*) * p->values_buffer_size);
+
+  /* zero ununsed part of list stack */
+  scheme_clean_list_stack(p);
+}
+
 static void get_ready_for_GC()
 {
   start_this_gc_time = scheme_get_process_milliseconds();
@@ -3663,74 +3776,8 @@ static void get_ready_for_GC()
   scheme_current_thread->cont_mark_pos = MZ_CONT_MARK_POS;
 #endif
 
-# define RUNSTACK_TUNE(x) /* x   - Used for performance tuning */
   if (scheme_fuel_counter) {
-    Scheme_Thread *p;
-
-    /* zero ununsed part of env stack in each thread */
-    for (p = scheme_first_thread; p; p = p->next) {
-      if (!p->nestee) {
-	Scheme_Object **o, **e, **e2;
-	Scheme_Saved_Stack *saved;
-	RUNSTACK_TUNE( long size; );
-
-	o = p->runstack_start;
-	e = p->runstack;
-	e2 = p->runstack_tmp_keep;
-
-	while (o < e && (o != e2)) {
-	  *(o++) = NULL;
-	}
-
-	RUNSTACK_TUNE( size = p->runstack_size - (p->runstack - p->runstack_start); );
-
-	for (saved = p->runstack_saved; saved; saved = saved->prev) {
-	  o = saved->runstack_start;
-	  e = saved->runstack;
-	  RUNSTACK_TUNE( size += saved->runstack_size; );
-	  while (o < e) {
-	    *(o++) = NULL;
-	  }
-	}
-
-	RUNSTACK_TUNE( printf("%ld\n", size); );
-
-	if (p->tail_buffer && (p->tail_buffer != p->runstack_tmp_keep)) {
-	  int i;
-	  for (i = 0; i < p->tail_buffer_size; i++) {
-	    p->tail_buffer[i] = NULL;
-	  }
-	}
-      }
-      
-      /* release unused cont mark stack segments */
-      {
-	int segcount, i;
-	if (p->cont_mark_stack)
-	  segcount = ((long)(p->cont_mark_stack - 1) >> SCHEME_LOG_MARK_SEGMENT_SIZE) + 1;
-	else
-	  segcount = 0;
-	for (i = segcount; i < p->cont_mark_seg_count; i++) {
-	  p->cont_mark_stack_segments[i] = NULL;
-	}
-	if (segcount < p->cont_mark_seg_count)
-	  p->cont_mark_seg_count = segcount;
-      }
-      
-      /* zero unused part of last mark stack segment */
-      {
-	int segpos = ((long)p->cont_mark_stack >> SCHEME_LOG_MARK_SEGMENT_SIZE);
-	
-	if (segpos < p->cont_mark_seg_count) {
-	  Scheme_Cont_Mark *seg = p->cont_mark_stack_segments[segpos];
-	  int stackpos = ((long)p->cont_mark_stack & SCHEME_MARK_SEGMENT_MASK), i;
-	  for (i = stackpos; i < SCHEME_MARK_SEGMENT_SIZE; i++) {
-	    seg[i].key = NULL;
-	    seg[i].val = NULL;
-	  }
-	}
-      }
-    }
+    for_each_managed(scheme_thread_type, main_custodian, prepare_thread_for_GC);
   }
    
   scheme_fuel_counter = 0;

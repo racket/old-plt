@@ -817,38 +817,41 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 #ifdef USE_TAGGED_ALLOCATION
   trace_path_type = -1;
   obj_type = -1;
-  if (c && (SCHEME_SYMBOLP(p[0])
-	    || (SCHEME_PAIRP(p[0]) 
-		&& SCHEME_SYMBOLP(SCHEME_CAR(p[0])) 
-		&& SCHEME_NULLP(SCHEME_CDR(p[0]))))) {
+  GC_initial_trace_root = NULL;
+  if (c && SCHEME_SYMBOLP(p[0])) {
     Scheme_Object *sym;
     char *s;
-    int i, maxpos;
+    int i, maxpos, just_objects;
 
     sym = p[0];
-    if (SCHEME_PAIRP(sym))
-      sym = SCHEME_CAR(sym);
     s = scheme_symbol_val(sym);
 
     maxpos = scheme_num_types();
     if (maxpos > NUM_TYPE_SLOTS-1)
       maxpos = NUM_TYPE_SLOTS-1;
 
+    just_objects = ((c > 1)
+		    && SCHEME_SYMBOLP(p[1])
+		    && !strcmp(SCHEME_SYM_VAL(p[1]), "objects"));
+
     for (i = 0; i < maxpos; i++) {
       void *tn = scheme_get_type_name(i);
       if (tn && !strcmp(tn, s)) {
-	if (SCHEME_SYMBOLP(p[0]))
-	  trace_path_type = i;
-	else
+	if (just_objects)
 	  obj_type = i;
+	else
+	  trace_path_type = i;
 	break;
       }
     }
-    if (SCHEME_SYMBOLP(p[0])) {
-      if (SAME_OBJ(p[0], scheme_intern_symbol("stack"))) {
-	trace_path_type = -2;
-      }
+    if (SAME_OBJ(p[0], scheme_intern_symbol("stack"))) {
+      trace_path_type = -2;
     }
+
+    if ((c > 2)
+	&& SCHEME_SYMBOLP(p[1])
+	&& !strcmp(SCHEME_SYM_VAL(p[1]), "from"))
+      GC_initial_trace_root = p[2];
   }
 
   {
@@ -1043,12 +1046,27 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
 		    ((Scheme_Env *)v)->phase,
 		    (((Scheme_Env *)v)->module
 		     ? SCHEME_SYM_VAL(((Scheme_Env *)v)->module->modname)
-		     : "toplevel"));
+		     : "(toplevel)"));
 	    
 	    len2 = strlen(buffer);
 	    t2 = scheme_malloc_atomic(len + len2 + 1);
 	    memcpy(t2, type, len);
 	    memcpy(t2 + len, buffer, len2 + 1);
+	    len += len2;
+	    type = t2;
+	  }  else if (!scheme_strncmp(type, "#<global-variable-code", 22)) {
+	    Scheme_Bucket *b = (Scheme_Bucket *)v;
+	    Scheme_Object *bsym = (Scheme_Object *)b->key;
+	    char *t2;
+	    int len2;
+
+	    len2 = SCHEME_SYM_LEN(bsym);
+	    t2 = scheme_malloc_atomic(len + len2 + 3);
+	    memcpy(t2, type, len);
+	    memcpy(t2 + len + 1, SCHEME_SYM_VAL(bsym), len2);
+	    t2[len] = '[';
+	    t2[len + 1 + len2] = ']';
+	    t2[len + 1 + len2 + 1] = 0;
 	    len += len2;
 	    type = t2;
 	  }
@@ -1081,10 +1099,11 @@ Scheme_Object *scheme_dump_gc_stats(int c, Scheme_Object *p[])
   }
 
   scheme_console_printf("Begin Help\n");
-  scheme_console_printf(" (dump-memory-stats 'type) - prints paths to instances of type.\n");
+  scheme_console_printf(" (dump-memory-stats sym) - prints paths to instances of type named by sym.\n");
   scheme_console_printf("   Examples: (dump-memory-stats '<pair>), (dump-memory-stats 'frame).\n");
-  scheme_console_printf("   If 'type is 'stack, prints paths to thread stacks.\n");
-  /* scheme_console_printf(" (dump-memory-stats #t) - tries harder to find bad data.\n"); */
+  scheme_console_printf("   If sym is 'stack, prints paths to thread stacks.\n");
+  scheme_console_printf(" (dump-memory-stats sym 'objects) - prints all instances of type named by sym.\n");
+  scheme_console_printf(" (dump-memory-stats sym 'from from-v) - prints paths, paths through from-v first.\n");
   scheme_console_printf("End Help\n");
 
   if (obj_type >= 0) {

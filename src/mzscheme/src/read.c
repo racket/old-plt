@@ -253,16 +253,24 @@ void scheme_init_read(Scheme_Env *env)
 			     env);
 }
 
-void scheme_alloc_list_stack(Scheme_Thread *process)
+void scheme_alloc_list_stack(Scheme_Thread *p)
 {
   Scheme_Object *sa;
-  process->list_stack_pos = 0;
+  p->list_stack_pos = 0;
   sa = MALLOC_N_RT(Scheme_Object, NUM_CELLS_PER_STACK);
-  process->list_stack = sa;
+  p->list_stack = sa;
 #ifdef MZ_PRECISE_GC
   /* Must set the tag on the first element: */
-  process->list_stack[0].type = scheme_pair_type;
+  p->list_stack[0].type = scheme_pair_type;
 #endif
+}
+
+void scheme_clean_list_stack(Scheme_Thread *p)
+{
+  if (p->list_stack) {
+    memset(p->list_stack + p->list_stack_pos, 0, 
+	   (NUM_CELLS_PER_STACK - p->list_stack_pos) * sizeof(Scheme_Object));
+  }
 }
 
 /*========================================================================*/
@@ -1252,9 +1260,9 @@ read_vector (Scheme_Object *port,
 
   STACK_START(r);
   lresult = read_list(port, stxsrc, line, col, pos, closer, 1, 1, ht);
-  STACK_END(r);
 
   if (requestLength == -2) {
+    STACK_END(r);
     scheme_raise_out_of_memory("read", "making vector of size %s", reqBuffer);
     return NULL;
   }
@@ -1267,6 +1275,7 @@ read_vector (Scheme_Object *port,
   len = scheme_list_length(obj);
   if (requestLength >= 0 && len > requestLength) {
     char buffer[20];
+    STACK_END(r);
     sprintf(buffer, "%ld", requestLength);
     scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), 0,
 		    "read: vector length %ld is too small, "
@@ -1281,6 +1290,7 @@ read_vector (Scheme_Object *port,
     els[i] = SCHEME_CAR(obj);
     obj = SCHEME_CDR(obj);
   }
+  STACK_END(r);
   if (i < requestLength) {
     if (len) {
       obj = els[len - 1];
@@ -2419,17 +2429,22 @@ static Scheme_Object *read_marshalled(int type,
 
   STACK_START(r);
   l = read_compact(port, ht, symtab, 1);
-  STACK_END(r);
 
-  if ((type < 0) || (type >= _scheme_last_type_))
+  if ((type < 0) || (type >= _scheme_last_type_)) {
+    STACK_END(r);
     scheme_ill_formed_code(port);
+  }
 
   reader = scheme_type_readers[type];
 
-  if (!reader)
+  if (!reader) {
+    STACK_END(r);
     scheme_ill_formed_code(port);
+  }
   
   l = reader(l);
+
+  STACK_END(r);
 
   if (!l)
     scheme_ill_formed_code(port);

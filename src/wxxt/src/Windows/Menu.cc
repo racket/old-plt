@@ -548,6 +548,9 @@ void wxMenu::EventCallback(Widget WXUNUSED(w), XtPointer dclient, XtPointer dcal
 
     if (!item && menu->client_data) {
       /* Choice item. Throw away event. */
+#ifdef MZ_PRECISE_GC
+      XFORM_RESET_VAR_STACK;
+#endif
       return;
     }
 

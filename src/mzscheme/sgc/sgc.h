@@ -13,6 +13,8 @@ extern void (*GC_start_collect_callback)(void);
 extern void (*GC_end_collect_callback)(void);
 extern void (*GC_custom_finalize)(void);
 
+extern void *GC_initial_trace_root;
+
 void GC_set_stack_base(void *base);
 void *GC_get_stack_base(void);
 

@@ -713,6 +713,9 @@ typedef struct Scheme_Thread {
   Scheme_Object **tail_buffer;
   int tail_buffer_size;
 
+  /* values_buffer is used to avoid allocating for `values'
+     calls. When ku.multiple.array is not the same as
+     values_buffer, then it can be zeroed at GC points. */
   Scheme_Object **values_buffer;
   int values_buffer_size;
 

@@ -1409,6 +1409,7 @@ void scheme_wrong_return_arity(const char *where,
   if ((got != 1) && SAME_OBJ(scheme_current_thread->ku.multiple.array,
 			     scheme_current_thread->values_buffer))
     scheme_current_thread->values_buffer = NULL;
+  scheme_current_thread->ku.multiple.array = NULL;
     
   if (!detail) {
     s = NULL;

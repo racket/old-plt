@@ -442,6 +442,9 @@ typedef jmpbuf jmp_buf[1];
 # define PAD_BACKWARD(p) (p)
 #endif
 
+/* A root to start with, when non-zero. Useful for
+   tracing from a particular object. */
+void *GC_initial_trace_root;
 
 void (*GC_out_of_memory)(void);
 
@@ -4337,10 +4340,19 @@ static void do_GC_gcollect(void *stack_now)
   collect_stack = (unsigned long *)realloc_collect_temp(NULL,
 							0,
 							sizeof(unsigned long) 
-							* (collect_stack_size + 1));
+							* (collect_stack_size + 2));
+
   for (j = 0; j < roots_count; j += 2) {
     collect_stack[collect_stack_count++] = roots[j];
     collect_stack[collect_stack_count++] = roots[j + 1];
+# if KEEP_DETAIL_PATH
+    collect_stack[collect_stack_count++] = 0;
+# endif
+  }
+
+  if (GC_initial_trace_root) {
+    collect_stack[collect_stack_count++] = (unsigned long)&GC_initial_trace_root;
+    collect_stack[collect_stack_count++] = ((unsigned long)&GC_initial_trace_root) + 1;
 # if KEEP_DETAIL_PATH
     collect_stack[collect_stack_count++] = 0;
 # endif

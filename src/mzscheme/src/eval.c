@@ -3167,7 +3167,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    }
 
 	    /* Precise GC: values++ is ok because we exit the block
-	       before any GC can happen. */
+	       before any GC can happen. Also, GC would zero `values'
+	       if it turns out to be p->values_buffer. */
 
 	    values = p->ku.multiple.array;
 	    p->ku.multiple.array = NULL;

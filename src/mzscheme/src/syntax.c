@@ -514,6 +514,8 @@ define_execute(Scheme_Object *vars, Scheme_Object *vals, int defmacro,
     if (i == g) {
       values = scheme_current_thread->ku.multiple.array;
       scheme_current_thread->ku.multiple.array = NULL;
+      if (SAME_OBJ(values, scheme_current_thread->values_buffer))
+	scheme_current_thread->values_buffer = NULL;
       for (i = 0; i < g; i++, vars = SCHEME_CDR(vars)) {
 	if (defmacro) {
 	  b = scheme_global_keyword_bucket(SCHEME_CAR(vars), dm_env);
@@ -3162,6 +3164,8 @@ do_letrec_syntaxes(const char *where, int normal,
 
     results = scheme_current_thread->ku.multiple.array;
     scheme_current_thread->ku.multiple.array = NULL;
+    if (SAME_OBJ(results, scheme_current_thread->values_buffer))
+      scheme_current_thread->values_buffer = NULL;
 
     for (j = 0, l = names; SCHEME_STX_PAIRP(l); l = SCHEME_STX_CDR(l), j++) {
       Scheme_Object *name;

@@ -268,7 +268,8 @@ void scheme_start_itimer_thread(long usec);
 void scheme_block_child_signals(int block);
 #endif
 
-void scheme_alloc_list_stack(Scheme_Thread *process);
+void scheme_alloc_list_stack(Scheme_Thread *p);
+void scheme_clean_list_stack(Scheme_Thread *p);
 
 #ifdef WIN32_THREADS
 void *scheme_win32_get_break_semaphore(void *th);

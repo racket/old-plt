@@ -22,6 +22,12 @@ MA 02111-1307, USA. */
 #define _FORCE_INLINES
 #define _EXTERN_INLINE /* empty */
 
+/* We use malloc for now; this will have to change: */
+extern void *malloc(long);
+extern void free(void *);
+#define MALLOC malloc
+#define FREE(p, s) free(p)
+
 #include "gmp.h"
 #include "gmp-impl.h"
 #include "gmplonglong.h"
@@ -30,9 +36,6 @@ static const int mp_bits_per_limb = BITS_PER_MP_LIMB;
 static const int __gmp_0 = 0;
 static int __gmp_junk;
 static int gmp_errno = 0;
-
-#define MALLOC malloc
-#define FREE free
 
 /* Compare OP1_PTR/OP1_SIZE with OP2_PTR/OP2_SIZE.
    There are no restrictions on the relative sizes of

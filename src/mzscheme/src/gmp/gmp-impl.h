@@ -95,7 +95,7 @@ MA 02111-1307, USA.
 #endif
 
 #if ! defined (HAVE_ALLOCA) || USE_STACK_ALLOC
-#include "stack-alloc.h"
+#include "gmp-alloca.h"
 #else
 #define TMP_DECL(m)
 #define TMP_ALLOC(x) alloca(x)

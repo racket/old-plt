@@ -1262,7 +1262,7 @@ read_string(Scheme_Object *port,
   while ((ch = scheme_getc_special_ok(port)) != '"') {
     if (ch == EOF) {
       scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
-		      "read: expected a '\"'");
+		      "read: expected a closing '\"'");
       return NULL;
     } else if (ch == SCHEME_SPECIAL) {
       scheme_get_special(port, stxsrc,
@@ -1279,7 +1279,7 @@ read_string(Scheme_Object *port,
       ch = scheme_getc_special_ok(port);
       if (ch == EOF) {
 	scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos), EOF, indentation, 
-			"read: expected a '\"'");
+			"read: expected a closing '\"'");
 	return NULL;
       } else if (ch == SCHEME_SPECIAL) {
 	scheme_get_special(port, stxsrc,

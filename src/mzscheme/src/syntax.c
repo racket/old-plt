@@ -2803,6 +2803,7 @@ define_syntaxes_execute(Scheme_Object *form)
   Resolve_Prefix *rp;
   Scheme_Object *base_stack_depth, *dummy;
   int depth;
+  Scheme_Comp_Env *rhs_env;
 
   rp = (Resolve_Prefix *)SCHEME_CAR(form);
   base_stack_depth = SCHEME_CADR(form);
@@ -2817,7 +2818,9 @@ define_syntaxes_execute(Scheme_Object *form)
   dummy = SCHEME_CAR(form);
   form = SCHEME_CDR(form);
 
-  scheme_on_next_top(NULL, NULL, scheme_false);
+  rhs_env = scheme_new_comp_env(scheme_get_env(scheme_config), SCHEME_TOPLEVEL_FRAME);
+
+  scheme_on_next_top(rhs_env, NULL, scheme_false);
   return define_execute(SCHEME_CAR(form), SCHEME_CDR(form), 1, rp, dummy);
 }
 

@@ -1695,6 +1695,9 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Obj
     ivk(cenv, menv->phase, menv->link_midx, menv->module->body);
   } else {
     Resolve_Prefix *rp;
+    Scheme_Comp_Env *rhs_env;
+
+    rhs_env = scheme_new_comp_env(scheme_get_env(scheme_config), SCHEME_TOPLEVEL_FRAME);
 
     for (body = menv->module->et_body; !SCHEME_NULLP(body); body = SCHEME_CDR(body)) {
       e = SCHEME_CAR(body);
@@ -1704,7 +1707,7 @@ static void finish_expstart_module(Scheme_Env *menv, Scheme_Env *env, Scheme_Obj
       rp = (Resolve_Prefix *)SCHEME_VEC_ELS(e)[3];
       e = SCHEME_VEC_ELS(e)[1];
       
-      eval_defmacro(names, scheme_proper_list_length(names), e, exp_env, NULL,
+      eval_defmacro(names, scheme_proper_list_length(names), e, exp_env, rhs_env,
 		    rp, let_depth, 1, syntax);
     }
   }
@@ -2600,7 +2603,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 				      int depth, Scheme_Object *boundname)
 {
   Scheme_Object *fm, *first, *last, *p, *rn, *exp_body, *et_rn, *self_modidx;
-  Scheme_Comp_Env *xenv, *cenv;
+  Scheme_Comp_Env *xenv, *cenv, *rhs_env;
   Scheme_Hash_Table *et_required; /* just to avoid duplicates */
   Scheme_Hash_Table *required;    /* name -> (vector nominal-modidx modidx srcname var? origname) */
   Scheme_Hash_Table *provided;    /* exname -> locname-stx-or-sym */
@@ -2738,6 +2741,9 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
   num_to_compile = 0;
 
   self_modidx = env->genv->module->self_modidx;
+
+  /* For syntax-local-context, etc., in a d-s RHS: */
+  rhs_env = scheme_new_comp_env(scheme_get_env(scheme_config), SCHEME_TOPLEVEL_FRAME);
   
   /* Partially expand all expressions, and process definitions, requires,
      and provides. Also, flatten top-level `begin' expressions: */
@@ -2902,7 +2908,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  SCHEME_VEC_ELS(vec)[3] = (Scheme_Object *)rp;
 	  exp_body = scheme_make_pair(vec, exp_body);
 	
-	  eval_defmacro(names, count, m, eenv->genv, NULL, rp, mrec.max_let_depth, 0, env->genv->syntax);
+	  eval_defmacro(names, count, m, eenv->genv, rhs_env, rp, mrec.max_let_depth, 0, env->genv->syntax);
 
 	  /* Add a renaming for each name: */
 	  for (l= names; SCHEME_PAIRP(l); l = SCHEME_CDR(l)) {

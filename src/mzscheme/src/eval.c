@@ -4227,16 +4227,22 @@ local_expand(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(l))
     l = scheme_datum_to_syntax(l, scheme_false, scheme_false, 1, 0);
 
-  /* Since we have an expression from local context,
-     we need to remove the temporary mark... */
-  l = scheme_add_remove_mark(l, local_mark);
+  if (local_mark) {
+    /* Since we have an expression from local context,
+       we need to remove the temporary mark... */
+    l = scheme_add_remove_mark(l, local_mark);
+  }
 
   /* Expand the expression. depth = -2 means expand all the way, but
      preserve letrec-syntax. */
   l = _expand(l, env, -2, 0, 0, 0);
 
-  /* Put the temporary mark back: */
-  return scheme_add_remove_mark(l, local_mark);
+  if (local_mark) {
+    /* Put the temporary mark back: */
+    l = scheme_add_remove_mark(l, local_mark);
+  }
+
+  return l;
 }
 
 static Scheme_Object *

@@ -30,7 +30,7 @@
     "construction of such a script.  If you have questions or "
     "comments, send email to "
     (A ((HREF "mailto:sk@cs.brown.edu"))
-       "sk@cs.brown.edu")
+       "sk@cs.brown.edu") "."
     (P)
     (HR)
     (P)

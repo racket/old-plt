@@ -31,7 +31,6 @@
                                        (number-semi-colons 0))
                                    (let loop ((index 1) (char (send text get-character prompt-position)))
                                      (unless (eq? char #\nul)
-                                       (printf "~s~n" char)
                                        (cond 
                                          ((and (= index 1) 
                                                (eq? char #\i) 
@@ -58,9 +57,9 @@
                                           (loop (add1 index) (send text get-character (+ index prompt-position))))
                                          ((eq? char #\;)
                                           (set! number-semi-colons (add1 number-semi-colons))
+                                          (loop (add1 index) (send text get-character (+ index prompt-position))))
+                                         (else
                                           (loop (add1 index) (send text get-character (+ index prompt-position)))))))
-                                   (printf "is-if? ~a : open-parens ~a : number-semi-colons ~a~n"
-                                           is-if? open-parens number-semi-colons)
                                    (if (or (not (= open-parens 0))
                                            (not (= open-braces 0))
                                            (not (= open-curlies 0))

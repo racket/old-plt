@@ -215,7 +215,7 @@
   ;close-to-keyword? token (opt symbol )-> bool
   (define (close-to-keyword? t . args)
     (if (id-token? t)
-        (let ((s (token-value t)))
+        (let ((s (string-copy (token-value t))))
           (string-lowercase! s)
           (if (null? args)
               (keyword? (string->symbol s))

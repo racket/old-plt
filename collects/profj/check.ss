@@ -8,7 +8,8 @@
            "restrictions.ss"
            "profj-pref.ss"
            (lib "class.ss")
-           (lib "list.ss"))
+           (lib "list.ss")
+           (lib "string.ss"))
   (provide check-defs check-interactions-types)
   
   ;symbol-remove-last: symbol->symbol
@@ -1034,7 +1035,8 @@
                                         env
                                         type-recs
                                         ctor?
-                                        static?)))
+                                        static?
+                                        interactions?)))
         ((class-alloc? exp)
          (set-expr-type exp
                         (check-class-alloc exp
@@ -1279,9 +1281,13 @@
                    (else 
                     (let ((class? (member (id-string (car acc)) (send type-recs get-class-env)))
                           (method? (not (null? (get-method-records (id-string (car acc)) (lookup-this type-recs env))))))
-                      (variable-not-found-error (if class? 'class-name
-                                                    (if method? 'mehtod-name 'not-found)) 
-                                                (car acc) (id-src (car acc))))))))
+                      (cond
+                        ((or class? method?)
+                         (variable-not-found-error (if class? 'class-name 'method-name)) (car acc) (id-src (car acc)))
+                        ((close-to-keyword? (id-string (car acc)))
+                         (close-to-keyword-error 'field (car acc) (id-src (car acc))))
+                        (else
+                         (variable-not-found-error 'not-found) (car acc) (id-src (car acc)))))))))
            (set-access-name! exp new-acc)
            (check-sub-expr exp))))))
   
@@ -1374,7 +1380,7 @@
   ;;Skipping package access constraints
   ;; 15.12
   ;check-call: call (list type) (expr->type) (list string) symbol env type-records bool bool-> type
-  (define (check-call call args check-sub c-class level env type-recs ctor? static?)
+  (define (check-call call args check-sub c-class level env type-recs ctor? static? interact?)
     (let* ((this (unless static? (lookup-this type-recs env)))
            (src (expr-src call))
            (name (call-method-name call))
@@ -1470,8 +1476,14 @@
         (cond 
           ((eq? exp-type 'super) (no-method-error 'super sub-kind exp-type name src))
           (exp-type (no-method-error 'class sub-kind exp-type name src))
-          (else (no-method-error 'this sub-kind exp-type name src)))))
-      
+          (else 
+           (cond
+             ((close-to-keyword? (id-string name))
+              (close-to-keyword-error 'method name src))
+             (interact? (interaction-call-error name src level))
+             (else
+              (no-method-error 'this sub-kind exp-type name src)))))))
+                  
       (when (and (not ctor?)
                  (eq? (method-record-rtype (car methods)) 'ctor))
         (ctor-called-error exp-type name src))
@@ -1504,7 +1516,7 @@
                    (not (memq 'static mods))
                    (not expr))
           (non-static-called-error name c-class src level))
-        
+                
         (when (and (memq 'protected mods) (reference-type? exp-type) 
                    (not (is-eq-subclass? this exp-type)))
           (call-access-error 'pro name exp-type src))
@@ -1529,6 +1541,12 @@
         (set-call-method-record! call method-record)
         (method-record-rtype method-record))))
     
+  ;close-to-keyword: string -> bool
+  (define (close-to-keyword? str)
+    (let ((s (string-copy str)))
+      (string-lowercase! s)
+      (member s `("if" "return"))))
+  
   (define (error-file-exists? class type-recs) #f)
   (define (call-provided-error) null)
   
@@ -1910,6 +1928,22 @@
            n)))                     
        n src)))
   
+  ;close-to-keyword-error: symbol id src -> void
+  (define (close-to-keyword-error kind name src)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (case kind
+                     ((method) 
+                      (string-append
+                       (format "this method call uses an unfound method ~a, which is similar to a reserved word~n"
+                               n)
+                       "Perhaps it is miscapitalized or misspelled"))
+                     ((field)
+                       (string-append
+                        (format "this unknown variable, ~a, is similar to a reserved word.~n" n)
+                        "Perhaps it is miscaptialzed or misspelled")))
+                   n src)))
+  
   ;restricted-method-call id (list string) src -> void
   (define (restricted-method-call name class src)
     (let ((n (id->ext-name name)))
@@ -1933,6 +1967,15 @@
                        (format "Non-static method ~a from ~a cannot be called directly from a static context"
                                n (car class))
                        (format "Method ~a from ~a cannot be called here" n (car class)))
+                   n src)))
+  
+  ;interaction-call-error
+  (define (interaction-call-error name src level)
+    (let ((n (id->ext-name name)))
+      (raise-error n
+                   (string-append (format "method ~a cannot be called in the interactions window.~n" n)
+                                  (format "Only ~a methods or methods on objects may be called here" 
+                                          (if (memq level '(beginner intermediate)) "certain library" "static")))
                    n src)))
 
   

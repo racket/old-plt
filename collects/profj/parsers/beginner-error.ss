@@ -628,8 +628,11 @@
                  (parse-error (format "Expected if, found ~a which is perhaps miscapitalized or spelled" v) start end))
               ((close-to-keyword? tok 'return)
                (parse-error (format "Expected return, found ~a which is perhaps miscapitalized or spelled" v) start end))
-              (else cur-tok))))
-           (else cur-tok)))
+              (else
+               (parse-error (format "Expected a statement, found ~a. Statements begin with 'if' or 'return'" out) 
+                            start end)))))
+           (else 
+            (parse-error (format "Expected a statement, found ~a. Statements begin with 'if' or 'return'" out) start end))))
         ((if)
          (case kind
            ((EOF) (parse-error "Expected conditional test for if" ps pe))

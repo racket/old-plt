@@ -1,6 +1,6 @@
 
-MysterX
-=======
+_MysterX_
+=========
 
 MysterX is a toolkit for building Windows applications from
 ActiveX and COM components.  Dynamic HTML is used for
@@ -20,7 +20,7 @@ component presentation and event handling.
  A MysterX application consists of one or more documents, which are
  instances of the class mx-document%. 
 
-> (make-object mx-document% label width height x y style-list)
+> mx-document% :: (make-object mx-document% label width height x y style-list)
 
   Creates an instance of a MysterX document.  `label' is a string for the 
   document caption, with default "MysterX".  `width', `height', `x', and 
@@ -32,56 +32,56 @@ component presentation and event handling.
   Methods
   -------
 
-> (send an-mx-document show b)
+> show :: (send an-mx-document show b)
 
   If `b' is #f, the document window is hidden.  Otherwise, the window is shown.
 
-> (send an-mx-document insert-html html)
+> insert-html :: (send an-mx-document insert-html html)
 
   Inserts the specified HTML string at the beginning of the document.
 
-> (send an-mx-document append-html html)
+> append-html :: (send an-mx-document append-html html)
 
   Append the specified HTML string at the end of the document.
 
-> (send an-mx-document replace-html html)
+> replace-html :: (send an-mx-document replace-html html)
 
   Replace the current HTML in the document with the specified HTML string.
 
-> (send an-mx-document objects)
+> objects :: (send an-mx-document objects)
 
   Returns a list of COM objects, including ActiveX controls, that occur in the
   document.  The order of the objects is the same as in the document.
 
-> (send an-mx-document register-event-handler an-mx-element f)
+> register-event-handler :: (send an-mx-document register-event-handler an-mx-element f)
 
   Registers an event handler `f', a procedure of one argument, for the 
   HTML element `an-mx-element'. 
   
-> (send an-mx-document unregister-event-handler an-mx-element)
+> unregister-event-handler :: (send an-mx-document unregister-event-handler an-mx-element)
 
   Unregisters an event handler for an HTML element in the document.
 
-> (send an-mx-document handle-events)
+> handle-events :: (send an-mx-document handle-events)
 
   Handles events using the registered event handlers.  The event handlers
   are called in a thread separate from the main MzScheme REPL.
 
-> (send an-mx-document stop-handling-events)
+> stop-handling-events :: (send an-mx-document stop-handling-events)
 
   Kills the thread currently handling events for the document.
 
-> (send an-mx-document append-object coclass)
+> append-object :: (send an-mx-document append-object coclass)
 
   Append a COM object with class `coclass' to the end of the document.  An 
   instance of <com-object> is returned.
 
-> (send an-mx-document insert-object coclass)
+> insert-object :: (send an-mx-document insert-object coclass)
 
   Inserts a COM object with class `coclass' at the beginning of the 
   document.  An instance of <com-object> is returned.
 
-> (send an-mx-document find-element tag id)
+> find-element :: (send an-mx-document find-element tag id)
 
   Returns an instance of mx-element%, an object which encapsulates
   an HTML element.  `tag' is a string naming an HTML tag, and
@@ -95,60 +95,60 @@ component presentation and event handling.
   The action that generated an event can be determined by the following 
   predicates, only one of which may hold:
 
-> (send an-mx-event keypress?)
-> (send an-mx-event event-keydown?) 
-> (send an-mx-event keyup?)
-> (send an-mx-event mousedown?)
-> (send an-mx-event mousemove?)
-> (send an-mx-event mouseover?)
-> (send an-mx-event mouseout?)
-> (send an-mx-event mouseup?)
-> (send an-mx-event click?)
-> (send an-mx-event dblclick?)
-> (send an-mx-event error?)
+> keypress? :: (send an-mx-event keypress?)
+> keydown? :: (send an-mx-event event-keydown?) 
+> keyup? :: (send an-mx-event keyup?)
+> mousedown? :: (send an-mx-event mousedown?)
+> mousemove? :: (send an-mx-event mousemove?)
+> mouseover? :: (send an-mx-event mouseover?)
+> mouseout? :: (send an-mx-event mouseout?)
+> mouseup? :: (send an-mx-event mouseup?)
+> click? :: (send an-mx-event click?)
+> dblclick? :: (send an-mx-event dblclick?)
+> error? :: (send an-mx-event error?)
   
   Events have attributes that give detail about the event.
 
-> (send an-mx-event tag)
+> tag :: (send an-mx-event tag)
 
   Returns a string indicating the HTML tag of the element where the 
   event occurred.
 
-> (send an-mx-event id)
+> id :: (send an-mx-event id)
 
   Returns a string indicating the identifier of the HTML element where
   the event occurred.
 
-> (send an-mx-event from-tag)
+> from-tag :: (send an-mx-event from-tag)
 
   Returns a string indicating the tag of the HTML element where
   the mouse is being moved from.  Return value is valid only for
   events for which `event-mouseover' or `event-mouseout' hold.
 
-> (send an-mx-event from-id)
+> from-id :: (send an-mx-event from-id)
 
   Returns a string indicating the identifier of the HTML element where
   the mouse is being moved from.  Return value is valid only for
   events for which `event-mouseover' or `event-mouseout' hold.
 
-> (send an-mx-event to-tag)
+> to-tag :: (send an-mx-event to-tag)
 
   Returns a string indicating the tag of the target HTML element where
   the mouse is being moved to.  Return value is valid only for
   events for which `event-mouseover' or `event-mouseout' hold.
 
-> (send an-mx-event to-id)
+> to-id :: (send an-mx-event to-id)
 
   Returns a string indicating the identifier of the target HTML element 
   where the mouse is being moved from.  Return value is valid only for
   events for which `event-mouseover' or `event-mouseout' hold.
 
-> (send an-mx-event x)
+> x :: (send an-mx-event x)
 
   Returns an integer indicating the x-coordinate within the document 
   where the event occurred.
 
-> (send an-mx-event y)
+> y :: (send an-mx-event y)
 
   Returns an integer indicating the y-coordinate within the document 
   where the event occurred.
@@ -277,100 +277,107 @@ the ITypeInfo interface.
   such as D. Goodman, "Dynamic HTML" will have more complete
   information.
 
-> (send an-mx-element insert-html html)
+  In the following method descriptions, "CSS" refers to the 
+  Cascading Style Sheets specification.  A CSS length is string 
+  consisting of a decimal integer number followed by one of the 
+  units "px" (pixels), "em" (font height), "ex" (height of an "x"),
+  "in" (inches), "cm" (centimeters), "mm" (millimeters),
+  "pi" (picas), or "pt" (points).  A CSS percentage is a string 
+  consisting of a decimal real number followed by "%".
+
+> insert-html :: (send an-mx-element insert-html html)
 
   Places the HTML given by the string `html' before the element.
 
-> (send an-mx-element append-html html)
+> append-html :: (send an-mx-element append-html html)
 
   Places the HTML given by the string `html' after the element.
 
-> (send an-mx-element replace-html html)
+> replace-html :: (send an-mx-element replace-html html)
 
   Replaces the HTML in the element with the string `html'.  You must 
   use the `find-element' method of mx-document% to retrieve the
   updated element.
   
-> (send an-mx-element insert-text txt)
+> insert-text :: (send an-mx-element insert-text txt)
 
   Places the text given by the string `txt' before the HTML element.
   
-> (send an-mx-element append-text txt)
+> append-text :: (send an-mx-element append-text txt)
 
   Places the text given by the string `txt' after the HTML element.
   
-> (send an-mx-element attribute attr)
+> attribute :: (send an-mx-element attribute attr)
 
   Retrieves the attribute named by the string `attr'.  The return
   value has a type that depends on the attribute.
 
-> (send an-mx-element set-attribute! attr val)
+> set-attribute! :: (send an-mx-element set-attribute! attr val)
 
   Sets the attribute named by the string `attr'.  The new
   value `val' has a type that depends on the attribute,
   but must be either a string, an integer, a float, #t, or #f.
   
-> (send an-mx-element click)
+> click :: (send an-mx-element click)
 
   Simulates a mouse click on the element. 
 
-> (send an-mx-element tag)
+> tag :: (send an-mx-element tag)
 
   Retrieves the element's HTML tag, which is a string.
 
-> (send an-mx-element font-family)
+> font-family :: (send an-mx-element font-family)
 
   Returns a string representation of a priority list of 
   font families for the element.
 
-> (send an-mx-element set-font-family! ff)
+> set-font-family! :: (send an-mx-element set-font-family! ff)
 
   Sets the list of font families to the string `ff',
   which is a comma-delimited priority list.  List items may include 
   the generic families `serif', `sans-serif', `cursive', 
   `fantasy', and `monospace'.
 
-> (send an-mx-element font-style)
+> font-style :: (send an-mx-element font-style)
 
   Retrieves a string indicating the element's font style,
   which is one of "normal", "italic", and "oblique". 
 
-> (send an-mx-element set-font-style! fs)
+> set-font-style! :: (send an-mx-element set-font-style! fs)
 
   Set the element's font style to the string `fs', which 
   should be one of "normal", "italic", or "oblique". 
 
-> (send an-mx-element font-variant)
+> font-variant :: (send an-mx-element font-variant)
 
   Retrieves a string indicating the element's font variation,
   which is either "normal", "small-caps", or the empty string.
 
-> (send an-mx-element set-font-variant! fv)
+> set-font-variant! :: (send an-mx-element set-font-variant! fv)
 
   Sets the element's font variation to the string `fv', which should 
   be either "normal", "small-caps", or the empty string.
 
-> (send an-mx-element font-weight)
+> font-weight :: (send an-mx-element font-weight)
 
   Retrieves a string indicating the element's font weight,
   which is one of the following strings: "normal", "bold",  
   "bolder", "lighter", "100", "200", "300", "400", "500", 
   "600", "700", "800", "900".
 
-> (send an-mx-element set-font-weight! fw)
+> set-font-weight! :: (send an-mx-element set-font-weight! fw)
 
   Sets the element's font weight using the string `fw', 
   which is one of the following strings: "normal", "bold",  
   "bolder", "lighter", "100", "200", "300", "400", "500", 
   "600", "700", "800", "900".
 
-
-> (send an-mx-element font)
+> font :: (send an-mx-element font)
 
   Retrieves a string indicating the CSS font-style, font-variant, 
   font-weight, font-size, line-height, and font-family. 
 
-> (send an-mx-element set-font! f)
+> set-font! :: (send an-mx-element set-font! f)
 
   Sets the CSS font-style, font-variant, font-weight, font-size, 
   line-height, and font-family for the element from the string `f',
@@ -379,535 +386,535 @@ the ITypeInfo interface.
   [font-style | font-variant | font-weight] font-size / 
   [line-height] font-family
 
-> (send an-mx-element background)   
+> background :: (send an-mx-element background)   
 
   Retrieves a string indicating the CSS background-color, 
   background-image, background-repeat, background-attachment, and 
   background-position for the element.
 
-> (send an-mx-element set-background! b)   
+> set-background! :: (send an-mx-element set-background! b)   
 
   Sets the element's CSS background using the string `b'.
 
-> (send an-mx-element background-image)   
+> background-image :: (send an-mx-element background-image)   
 
   Retrieves a string indicating the CSS background-image for the
   element.
 
-> (send an-mx-element set-background-image! bi)   
+> set-background-image! :: (send an-mx-element set-background-image! bi)   
 
   Set the element's CSS background-image using the string `bi',
   which is either "none", or of the form "url{url-string}".
 
-> (send an-mx-element background-repeat)   
+> background-repeat :: (send an-mx-element background-repeat)   
 
   Retrieves a string indicating the CSS background-repeat for the
   element.
 
-> (send an-mx-element set-background-repeat! br)
+> set-background-repeat! :: (send an-mx-element set-background-repeat! br)
 
   Set the element's CSS background-repeat using the string `br',
   which is one of "norepeat", "repeaty", "repeat", and "repeatx".
 
-> (send an-mx-element background-position)   
+> background-position :: (send an-mx-element background-position)   
 
   Retrieves a string indicating the CSS background-position for the
   element.
 
-> (send an-mx-element set-background-position! bp)
+> set-background-position! :: (send an-mx-element set-background-position! bp)
 
   Set the element's CSSbackground-position using the string `bp',
   which is either: 1) one or two CSS percentages or lengths, 
   or 2) one of "top", "center", or "bottom", followed by one 
   of "left", "center", or "right".
 
-> (send an-mx-element text-decoration)
+> text-decoration :: (send an-mx-element text-decoration)
 
   Retrieves a string indicating the CSS text-decoration for the
   element.
 
-> (send an-mx-element set-text-decoration! td)
+> set-text-decoration! :: (send an-mx-element set-text-decoration! td)
 
   Set the element's CSS text-decoration using the string `td',
   which is one of "underline", "overline", or "line-through".
 
-> (send an-mx-element text-transform)
+> text-transform :: (send an-mx-element text-transform)
 
   Retrieves a string indicating the CSS text-decoration for the
   element.
 
-> (send an-mx-element set-text-transform! tt)
+> set-text-transform! :: (send an-mx-element set-text-transform! tt)
 
   Set the element's CSS text-transform using the string `tt',
   which is one of "capitalize", "lowercase", or "uppercase".
 
-> (send an-mx-element text-align)
+> text-align :: (send an-mx-element text-align)
 
   Retrieves a string indicating the CSS text-align for the
   element.
 
-> (send an-mx-element set-text-align! ta)
+> set-text-align! :: (send an-mx-element set-text-align! ta)
 
   Set the element's CSS text-transform using the string `ta',
   which is one of "left", "right", or "center", or "justify".
 
-> (send an-mx-element margin)
+> margin :: (send an-mx-element margin)
 
   Retrieves a string indicating the CSS margin for the
   element.
 
-> (send an-mx-element set-margin! marg)
+> set-margin! :: (send an-mx-element set-margin! marg)
 
   Set the element's CSS margin using the string `marg', which
   consists of one to four space-separated entries, each of 
   which contains a CSS length or percentage, or "auto".
 
-> (send an-mx-element padding)
+> padding :: (send an-mx-element padding)
 
   Retrieves a string indicating the CSS padding for the
   element.
 
-> (send an-mx-element set-padding! pad)
+> set-padding! :: (send an-mx-element set-padding! pad)
 
   Set the element's CSS padding using the string `pad', which
   consists of one to four space-separated entries, each of 
   which contains a CSS length or percentage.
 
-> (send an-mx-element border)
+> border :: (send an-mx-element border)
 
   Retrieves a string describing the CSS border for the
   element.
 
-> (send an-mx-element set-border! border)
+> set-border! :: (send an-mx-element set-border! border)
 
   Set the element's CSS border using the string `border', which
   consists of a border-width, a border-style, and a color.
   See the border-width and border-style entries for valid
   values.
 
-> (send an-mx-element border-top)
+> border-top :: (send an-mx-element border-top)
 
   Retrieves a string describing the CSS border-top for the
   element.
 
-> (send an-mx-element set-border-top! bt)
+> set-border-top! :: (send an-mx-element set-border-top! bt)
 
   Set the element's CSS border-top using the string `bt', which
   consists of a border-width, a border-style, and a color.
   See the border-width and border-style entries for valid
   values.
 
-> (send an-mx-element border-bottom)
+> border-bottom :: (send an-mx-element border-bottom)
 
   Retrieves a string describing the CSS border-bottom for the
   element.
 
-> (send an-mx-element set-border-bottom! bt)
+> set-border-bottom! :: (send an-mx-element set-border-bottom! bt)
 
   Set the element's CSS border-bottom using the string `bt', which
   consists of a border-width, a border-style, and a color.
   See the border-width and border-style entries for valid
   values.
 
-> (send an-mx-element border-left)
+> border-left :: (send an-mx-element border-left)
 
   Retrieves a string describing the CSS border-left for the
   element.
 
-> (send an-mx-element set-border-left! bt)
+> set-border-left! :: (send an-mx-element set-border-left! bt)
 
   Set the element's CSS border-left using the string `bt', which
   consists of a border-width, a border-style, and a color.
   See the border-width and border-style entries for valid
   values.
 
-> (send an-mx-element border-left)
+> border-right :: (send an-mx-element border-right)
 
-  Retrieves a string describing the CSS border-left for the
+  Retrieves a string describing the CSS border-right for the
   element.
 
-> (send an-mx-element set-border-right! bt)
+> set-border-right! :: (send an-mx-element set-border-right! bt)
 
   Set the element's CSS border-right using the string `bt', which
   consists of a border-width, a border-style, and a color.
   See the border-width and border-style entries for valid
   values.
 
-> (send an-mx-element border-color)
+> border-color :: (send an-mx-element border-color)
 
   Retrieves a string describing the CSS border-color for the
   element.
 
-> (send an-mx-element set-border-color! bc)
+> set-border-color! :: (send an-mx-element set-border-color! bc)
 
   Set the element's CSS border-color using the string `bc', which
   consists of one to four colors, separated by spaces.
 
-> (send an-mx-element border-width)
+> border-width :: (send an-mx-element border-width)
 
   Retrieves a string describing the CSS border-width for the
   element.
 
-> (send an-mx-element set-border-width! bw)
+> set-border-width! :: (send an-mx-element set-border-width! bw)
 
   Set the element's CSS border-color using the string `bw', which
   consists of one to four space-separated entries, each of
   which is a CSS length, or one of "thin", "medium", or "thick".
 
-> (send an-mx-element border-style)
+> border-style :: (send an-mx-element border-style)
 
   Retrieves a string describing the CSS border-style for the
   element.
 
-> (send an-mx-element set-border-style! bs)
+> set-border-style! :: (send an-mx-element set-border-style! bs)
 
   Set the element's CSS border-style using the string `bs', which
   is one of "none", "solid", "double", "groove", "ridge", "inset", or 
   "outset".  
 
-> (send an-mx-element border-top-style)
+> border-top-style :: (send an-mx-element border-top-style)
 
   Retrieves a string describing the CSS border-top-style for the
   element.
 
-> (send an-mx-element set-border-top-style! bts)
+> set-border-top-style! :: (send an-mx-element set-border-top-style! bts)
 
   Set the element's CSS border-top-style using the string `bts', which
   is one of "none", "solid", "double", "groove", "ridge", "inset", or 
   "outset".  
 
-> (send an-mx-element border-bottom-style)
+> border-bottom-style :: (send an-mx-element border-bottom-style)
 
   Retrieves a string describing the CSS border-bottom-style for the
   element.
 
-> (send an-mx-element set-border-bottom-style! bbs)
+> set-border-bottom-style! :: (send an-mx-element set-border-bottom-style! bbs)
 
   Set the element's CSS border-bottom-style using the string `bbs', which
   is one of "none", "solid", "double", "groove", "ridge", "inset", or 
   "outset".  
 
-> (send an-mx-element border-left-style)
+> border-left-style :: (send an-mx-element border-left-style)
 
   Retrieves a string describing the CSS border-left-style for the
   element.
 
-> (send an-mx-element set-border-left-style! bls)
+> set-border-left-style! :: (send an-mx-element set-border-left-style! bls)
 
   Set the element's CSS border-left-style using the string `bls', which
   is one of "none", "solid", "double", "groove", "ridge", "inset", or 
   "outset".  
 
-> (send an-mx-element border-right-style)
+> border-right-style :: (send an-mx-element border-right-style)
 
   Retrieves a string describing the CSS border-right-style for the
   element.
 
-> (send an-mx-element set-border-right-style! brs)
+> set-border-right-style! :: (send an-mx-element set-border-right-style! brs)
 
   Set the element's CSS border-right-style using the string `brs', which
   is one of "none", "solid", "double", "groove", "ridge", "inset", or 
   "outset".  
 
-> (send an-mx-element style-float)
+> style-float :: (send an-mx-element style-float)
 
   Retrieves a string describing the CSS style-float for the
   element.
 
-> (send an-mx-element set-style-float! sf)
+> set-style-float! :: (send an-mx-element set-style-float! sf)
 
   Set the element's CSS style-float using the string `sf', which
   is one of "none", "left", or "right".
 
-> (send an-mx-element clear)
+> clear :: (send an-mx-element clear)
 
   Retrieves a string describing the CSS clear for the
   element.
 
-> (send an-mx-element set-clear! clr)
+> set-clear! :: (send an-mx-element set-clear! clr)
 
   Set the element's CSS clear using the string `clr', which
   is one of "left", "right", or "both".
 
-> (send an-mx-element display)
+> display :: (send an-mx-element display)
 
   Retrieves a string describing the CSS clear for the
   element.
 
-> (send an-mx-element set-display! dpy)
+> set-display! :: (send an-mx-element set-display! dpy)
 
   Set the element's CSS display using the string `dpy', which
   is one of "none", "block", "inline", or "list-item".
 
-> (send an-mx-element visibility)
+> visibility :: (send an-mx-element visibility)
 
   Retrieves a string describing the CSS visibility for the
   element.
 
-> (send an-mx-element set-visibility! vis)
+> set-visibility! :: (send an-mx-element set-visibility! vis)
 
   Set the element's CSS visibility using the string `vis', which
   is one of "visible", "hidden", or "inherit".
 
-> (send an-mx-element list-style-type)
+> list-style-type :: (send an-mx-element list-style-type)
 
   Retrieves a string describing the CSS list-style-type for the
   element.
 
-> (send an-mx-element set-list-style-type! lst)
+> set-list-style-type! :: (send an-mx-element set-list-style-type! lst)
 
   Set the element's CSS list-style-type using the string `lst', which
   is one of "disk", "circle", "square", "decimal", "lower-roman",   
   "upper-roman", "lower-alpha", "upper-alpha", or "none".  
 
-> (send an-mx-element list-style-position)
+> list-style-position :: (send an-mx-element list-style-position)
 
   Retrieves a string describing the CSS list-style-position for the
   element.
 
-> (send an-mx-element set-list-style-position! pos)
+> set-list-style-position! :: (send an-mx-element set-list-style-position! pos)
 
   Set the element's CSS list-style-position using the string `pos', which
   is either "inside" or "outside".
 
-> (send an-mx-element list-style-image)
+> list-style-image :: (send an-mx-element list-style-image)
 
   Retrieves a string describing the CSS list-style-image for the
   element.
 
-> (send an-mx-element set-list-style-image! image)
+> set-list-style-image! :: (send an-mx-element set-list-style-image! image)
 
   Set the element's CSS list-style-image using the string `image', which
   is either "none" or of the form "url{url-string}".
 
-> (send an-mx-element list-style)
+> list-style :: (send an-mx-element list-style)
 
   Retrieves a string describing the CSS list-style for the
   element.
 
-> (send an-mx-element set-list-style! ls)
+> set-list-style! :: (send an-mx-element set-list-style! ls)
 
   Set the element's CSS list-style using the string `ls', which
   consists of a list-style-type, list-style-image, and list-style-position.
 
-> (send an-mx-element whitespace)
+> whitespace :: (send an-mx-element whitespace)
 
   Retrieves a string describing the CSS whitespace for the
   element.
 
-> (send an-mx-element set-whitespace! ws)
+> set-whitespace! :: (send an-mx-element set-whitespace! ws)
 
   Set the element's CSS whitespace using the string `ws', which
   is one of "normal", "nowrap", or "pre".
 
-> (send an-mx-element position)
+> position :: (send an-mx-element position)
 
   Retrieves a string describing the CSS position for the
   element, which is either "absolute", "relative", or "static".
 
-> (send an-mx-element overflow)
+> overflow :: (send an-mx-element overflow)
 
   Retrieves a string describing the CSS overflow for the
   element.
 
-> (send an-mx-element set-overflow! of)
+> set-overflow! :: (send an-mx-element set-overflow! of)
 
   Sets the element's CSS overflow using the string `of', 
   which is either "none", "clip", or "scroll".
 
-> (send an-mx-element pagebreak-before)
+> pagebreak-before :: (send an-mx-element pagebreak-before)
 
   Retrieves a string describing the CSS pagebreak-before for the
   element.
 
-> (send an-mx-element set-pagebreak-before! pbb)
+> set-pagebreak-before! :: (send an-mx-element set-pagebreak-before! pbb)
 
   Sets the element's CSS pagebreak-before using the string `pbb', 
   which is either "auto", "always", "left", or "right".
 
-> (send an-mx-element pagebreak-after)
+> pagebreak-after :: (send an-mx-element pagebreak-after)
 
   Retrieves a string describing the CSS pagebreak-after for the
   element.
 
-> (send an-mx-element set-pagebreak-after! pba)
+> set-pagebreak-after! :: (send an-mx-element set-pagebreak-after! pba)
 
   Sets the element's CSS pagebreak-after using the string `pbb', 
   which is either "auto", "always", "left", or "right".
 
-> (send an-mx-element css-text)
+> css-text :: (send an-mx-element css-text)
 
   Retrieves a string describing the CSS text for the
   element.
 
-> (send an-mx-element set-css-text! txt)
+> set-css-text! :: (send an-mx-element set-css-text! txt)
 
   Sets the element's CSS text using the string `txt'.
 
-> (send an-mx-element cursor)
+> cursor :: (send an-mx-element cursor)
 
   Retrieves a string describing the CSS cursor for the
   element.
 
-> (send an-mx-element set-cursor! csr)
+> set-cursor! :: (send an-mx-element set-cursor! csr)
 
   Sets the element's CSS cursor using the string `csr', which
   is one of "auto", "crosshair", "default", "hand", "move", 
   "*-resize", "text", or "wait".  
 
-> (send an-mx-element clip)
+> clip :: (send an-mx-element clip)
 
   Retrieves a string describing the CSS clip for the
   element.
 
-> (send an-mx-element set-clip! clp)
+> set-clip! :: (send an-mx-element set-clip! clp)
 
   Sets the element's CSS clip using the string `clp', which
   is either a CSS length or "auto".
 
-> (send an-mx-element filter)
+> filter :: (send an-mx-element filter)
 
   Retrieves a string describing the CSS filter for the
   element.
 
-> (send an-mx-element set-filter! flt)
+> set-filter! :: (send an-mx-element set-filter! flt)
 
   Sets the element's CSS filter using the string `flt'. A description
   of filters is beyond the scope of this documentation.  See 
   the Internet Explorer SDK for more information.
 
-> (send an-mx-element style-string)
+> style-string :: (send an-mx-element style-string)
 
   Retrieves a string describing the complete CSS description for the
   element.
 
-> (send an-mx-element text-decoration-none)
+> text-decoration-none :: (send an-mx-element text-decoration-none)
 
   Retrieves the CSS text-decoration-none for the element.
 
-> (send an-mx-element set-text-decoration-none! tdn)
+> set-text-decoration-none! :: (send an-mx-element set-text-decoration-none! tdn)
 
   Sets the element's CSS text-decoration-none using `tdn'.
   If `tdn' is #f, the value is false, otherwise it is 
   considered true.
 
-> (send an-mx-element text-decoration-underline)
+> text-decoration-underline :: (send an-mx-element text-decoration-underline)
 
   Retrieves the CSS text-decoration-underline for the element.
 
-> (send an-mx-element set-text-decoration-underline! tdu)
+> set-text-decoration-underline! :: (send an-mx-element set-text-decoration-underline! tdu)
 
   Sets the element's CSS text-decoration-underline using `tdu'.
   If `tdn' is #f, the value is false, otherwise it is 
   considered true.
 
-> (send an-mx-element text-decoration-overline)
+> text-decoration-overline :: (send an-mx-element text-decoration-overline)
 
   Retrieves the CSS text-decoration-overline for the element.
 
-> (send an-mx-element set-text-decoration-overline! tdo)
+> set-text-decoration-overline! :: (send an-mx-element set-text-decoration-overline! tdo)
 
   Sets the element's CSS text-decoration-overline using `tdo'.
   If `tdn' is #f, the value is false, otherwise it is 
   considered true.
 
-> (send an-mx-element text-decoration-linethrough)
+> text-decoration-linethrough :: (send an-mx-element text-decoration-linethrough)
 
   Retrieves the CSS text-decoration-linethrough for the element.
 
-> (send an-mx-element set-text-decoration-linethrough! tdlt)
+> set-text-decoration-linethrough! :: (send an-mx-element set-text-decoration-linethrough! tdlt)
 
   Sets the element's CSS text-decoration-linethrough using `tdlt'.
   If `tdn' is #f, the value is false, otherwise it is 
   considered true.
 
-> (send an-mx-element text-decoration-blink)
+> text-decoration-blink :: (send an-mx-element text-decoration-blink)
 
   Retrieves the CSS text-decoration-blink for the element.
 
-> (send an-mx-element set-text-decoration-blink! bl)
+> set-text-decoration-blink! :: (send an-mx-element set-text-decoration-blink! bl)
 
   Sets the element's CSS text-decoration-blink using `bl'.
   If `tdn' is #f, the value is false, otherwise it is 
   considered true.
 
-> (send an-mx-element pixel-top)
+> pixel-top :: (send an-mx-element pixel-top)
 
   Retrieves the CSS pixel-top for the element.
 
-> (send an-mx-element set-pixel-top! pt)
+> set-pixel-top! :: (send an-mx-element set-pixel-top! pt)
 
   Sets the element's CSS pixel-top using `pt', which is
   an integer.
 
-> (send an-mx-element pixel-left)
+> pixel-left :: (send an-mx-element pixel-left)
 
   Retrieves the CSS pixel-left for the element.
 
-> (send an-mx-element set-pixel-left! pl)
+> set-pixel-left! :: (send an-mx-element set-pixel-left! pl)
 
   Sets the element's CSS pixel-left using `pl', which is
   an integer.
 
-> (send an-mx-element pixel-width)
+> pixel-width :: (send an-mx-element pixel-width)
 
   Retrieves the CSS pixel-width for the element.
 
-> (send an-mx-element set-pixel-width! pw)
+> set-pixel-width! :: (send an-mx-element set-pixel-width! pw)
 
   Sets the element's CSS pixel-width using `pw', which is
   an integer.
 
-> (send an-mx-element pixel-height)
+> pixel-height :: (send an-mx-element pixel-height)
 
   Retrieves the CSS pixel-height for the element.
 
-> (send an-mx-element set-pixel-height! ph)
+> set-pixel-height! :: (send an-mx-element set-pixel-height! ph)
 
   Sets the element's CSS pixel-height using `ph', which is
   an integer.
 
-> (send an-mx-element pos-top)
+> pos-top :: (send an-mx-element pos-top)
 
   Retrieves the CSS pos-top for the element.
 
-> (send an-mx-element set-pos-top! pt)
+> set-pos-top! :: (send an-mx-element set-pos-top! pt)
 
   Sets the element's CSS pos-top using `pt', which is
   a floating-point value.
 
-> (send an-mx-element pos-left)
+> pos-left :: (send an-mx-element pos-left)
 
   Retrieves the CSS pos-left for the element.
 
-> (send an-mx-element set-pos-left! pl)
+> set-pos-left! :: (send an-mx-element set-pos-left! pl)
 
   Sets the element's CSS pos-left using `pl', which is
   a floating-point value.
 
-> (send an-mx-element pos-width)
+> pos-width :: (send an-mx-element pos-width)
 
   Retrieves the CSS pos-width for the element.
 
-> (send an-mx-element set-pos-width! pw)
+> set-pos-width! :: (send an-mx-element set-pos-width! pw)
 
   Sets the element's CSS pos-width using `pw', which is
   a floating-point value.
 
-> (send an-mx-element pos-height)
+> pos-height :: (send an-mx-element pos-height)
 
   Retrieves the CSS pos-height for the element.
 
-> (send an-mx-element set-pos-height! ph)
+> set-pos-height! :: (send an-mx-element set-pos-height! ph)
 
   Sets the element's CSS pos-height using `ph', which is
   a floating-point value.
 
-> (send an-mx-element font-size)
+> font-size :: (send an-mx-element font-size)
 
   Retrieves the CSS font-size for the element.
 
-> (send an-mx-element set-font-size! fs)
+> set-font-size! :: (send an-mx-element set-font-size! fs)
 
   Sets the element's CSS font-size using `fs', which may 
   be any of 1) a string indicating an absolute size, one
@@ -917,294 +924,294 @@ the ITypeInfo interface.
   4) a CSS percentage, considered relative to the parent element's
   font-size.
 
-> (send an-mx-element color)
+> color :: (send an-mx-element color)
 
   Retrieves the CSS color for the element.
 
-> (send an-mx-element set-color! col)
+> set-color! :: (send an-mx-element set-color! col)
 
   Sets the element's CSS color using `col', which may be 
   a string indicating a color name, an integer describing 
   an RGB value, or a string encoding an RGB value.
 
-> (send an-mx-element background-color)
+> background-color :: (send an-mx-element background-color)
 
   Retrieves the CSS background-color for the element.
 
-> (send an-mx-element set-background-color! bc)
+> set-background-color! :: (send an-mx-element set-background-color! bc)
 
   Sets the element's CSS background-color using `bc', which may be 
   a string indicating a color name, an integer describing 
   an RGB value, or a string encoding an RGB value.
 
-> (send an-mx-element background-position-x)
+> background-position-x :: (send an-mx-element background-position-x)
 
   Retrieves the CSS background-position-x for the element.
 
-> (send an-mx-element set-background-position-x! bpx)
+> set-background-position-x! :: (send an-mx-element set-background-position-x! bpx)
 
   Set the element's background-position-x using the string `bpx',
   which is either: 1) one or two CSS percentages or lengths, 
   or 2) one of "top", "center", or "bottom", followed by one 
   of "left", "center", or "right".
 
-> (send an-mx-element background-position-y)
+> background-position-y :: (send an-mx-element background-position-y)
 
   Retrieves the CSS background-position-y for the element.
 
-> (send an-mx-element set-background-position-y! bpy)
+> set-background-position-y! :: (send an-mx-element set-background-position-y! bpy)
 
   Set the element's background-position-y using the string `bpy',
   which is either: 1) one or two CSS percentages or lengths, 
   or 2) one of "top", "center", or "bottom", followed by one 
   of "left", "center", or "right".
 
-> (send an-mx-element word-spacing)
+> word-spacing :: (send an-mx-element word-spacing)
 
   Retrieves the CSS word-spacing for the element.
 
-> (send an-mx-element set-word-spacing! ws)
+> set-word-spacing! :: (send an-mx-element set-word-spacing! ws)
 
   Set the element's word-spacing using `ws', which 
   may be either "normal" or a CSS length.
 
-> (send an-mx-element letter-spacing)
+> letter-spacing :: (send an-mx-element letter-spacing)
 
   Retrieves the CSS letter-spacing for the element.
 
-> (send an-mx-element set-letter-spacing! ls)
+> set-letter-spacing! :: (send an-mx-element set-letter-spacing! ls)
 
   Set the element's letter-spacing using `ls', which 
   may be either "normal" or a CSS length.
 
-> (send an-mx-element vertical-align)
+> vertical-align :: (send an-mx-element vertical-align)
 
   Retrieves the CSS vertical-align for the element.
 
-> (send an-mx-element set-vertical-align! va)
+> set-vertical-align! :: (send an-mx-element set-vertical-align! va)
 
   Set the element's letter-spacing using `va', which 
   is one of "baseline", "middle", "sub", "super", "text-top",   
   "text-bottom", "top", or "bottom".
 
-> (send an-mx-element text-indent)
+> text-indent :: (send an-mx-element text-indent)
 
   Retrieves the CSS text-indent for the element.
 
-> (send an-mx-element set-text-indent! ti)
+> set-text-indent! :: (send an-mx-element set-text-indent! ti)
 
   Set the element's text-indent using `ti', which 
   is either a CSS length, or a CSS percentage relative
   to the parent element's text indent.
 
-> (send an-mx-element line-height)
+> line-height :: (send an-mx-element line-height)
 
   Retrieves the CSS line-height for the element.
 
-> (send an-mx-element set-line-height! lh)
+> set-line-height! :: (send an-mx-element set-line-height! lh)
 
   Sets the element's line-height using `lh', which 
   is either "normal", a CSS length, a floating-point number, or 
   a CSS percentage relative to the parent element's line height.
 
-> (send an-mx-element margin-top)
+> margin-top :: (send an-mx-element margin-top)
 
   Retrieves the CSS line-height for the element.
 
-> (send an-mx-element set-margin-top! mt)
+> set-margin-top! :: (send an-mx-element set-margin-top! mt)
 
   Sets the element's margin-top using `mt', which 
   is either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element margin-bottom)
+> margin-bottom :: (send an-mx-element margin-bottom)
 
   Retrieves the CSS line-height for the element.
 
-> (send an-mx-element set-margin-bottom! mb)
+> set-margin-bottom! :: (send an-mx-element set-margin-bottom! mb)
 
   Sets the element's margin-bottom using `mb', which 
   is either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element margin-left)
+> margin-left :: (send an-mx-element margin-left)
 
   Retrieves the CSS line-height for the element.
 
-> (send an-mx-element set-margin-left! ml)
+> set-margin-left! :: (send an-mx-element set-margin-left! ml)
 
   Sets the element's margin-left using `ml', which 
   is either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element margin-right)
+> margin-right :: (send an-mx-element margin-right)
 
   Retrieves the CSS line-height for the element.
 
-> (send an-mx-element set-margin-right! mr)
+> set-margin-right! :: (send an-mx-element set-margin-right! mr)
 
   Sets the element's margin-right using `mr', which 
   is either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element padding-top)
+> padding-top :: (send an-mx-element padding-top)
 
   Retrieves the CSS padding-top for the element.
 
-> (send an-mx-element set-padding-top! mt)
+> set-padding-top! :: (send an-mx-element set-padding-top! mt)
 
   Sets the element's padding-top using `mt', which 
   is either a CSS length or a CSS percentage.
 
-> (send an-mx-element padding-bottom)
+> padding-bottom :: (send an-mx-element padding-bottom)
 
   Retrieves the CSS padding-bottom for the element.
 
-> (send an-mx-element set-padding-bottom! mb)
+> set-padding-bottom! :: (send an-mx-element set-padding-bottom! mb)
 
   Sets the element's padding-bottom using `mb', which 
   is either a CSS length or a CSS percentage.
 
-> (send an-mx-element padding-left)
+> padding-left :: (send an-mx-element padding-left)
 
   Retrieves the CSS line-height for the element.
 
-> (send an-mx-element set-padding-left! ml)
+> set-padding-left! :: (send an-mx-element set-padding-left! ml)
 
   Sets the element's padding-left using `ml', which 
   is either a CSS length or a CSS percentage.
 
-> (send an-mx-element padding-right)
+> padding-right :: (send an-mx-element padding-right)
 
   Retrieves the CSS padding-right for the element.
 
-> (send an-mx-element set-padding-right! mr)
+> set-padding-right! :: (send an-mx-element set-padding-right! mr)
 
   Sets the element's padding-right using `mr', which 
   is either a CSS length or a CSS percentage.
 
-> (send an-mx-element border-top-color)
+> border-top-color :: (send an-mx-element border-top-color)
 
   Retrieves the CSS border-top-color for the element.
 
-> (send an-mx-element set-border-top-color! btc)
+> set-border-top-color! :: (send an-mx-element set-border-top-color! btc)
 
   Sets the element's border-top-color using `btc', which 
   may be a string giving the name of a color, an integer
   with an RGB value, or a string encoding of an RGB value.
 
-> (send an-mx-element border-bottom-color)
+> border-bottom-color :: (send an-mx-element border-bottom-color)
 
   Retrieves the CSS border-bottom-color for the element.
 
-> (send an-mx-element set-border-bottom-color! btc)
+> set-border-bottom-color! :: (send an-mx-element set-border-bottom-color! btc)
 
   Sets the element's border-bottom-color using `btc', which 
   may be a string giving the name of a color, an integer
   with an RGB value, or a string encoding of an RGB value.
 
-> (send an-mx-element border-left-color)
+> border-left-color :: (send an-mx-element border-left-color)
 
   Retrieves the CSS border-left-color for the element.
 
-> (send an-mx-element set-border-left-color! btc)
+> set-border-left-color! :: (send an-mx-element set-border-left-color! btc)
 
   Sets the element's border-left-color using `btc', which 
   may be a string giving the name of a color, an integer
   with an RGB value, or a string encoding of an RGB value.
 
-> (send an-mx-element border-right-color)
+> border-right-color :: (send an-mx-element border-right-color)
 
   Retrieves the CSS border-right-color for the element.
 
-> (send an-mx-element set-border-right-color! btc)
+> set-border-right-color! :: (send an-mx-element set-border-right-color! btc)
 
   Sets the element's border-right-color using `btc', which 
   may be a string giving the name of a color, an integer
   with an RGB value, or a string encoding of an RGB value.
 
-> (send an-mx-element border-top-width)
+> border-top-width :: (send an-mx-element border-top-width)
 
   Retrieves a string describing the CSS border-top-width for the
   element.
 
-> (send an-mx-element set-border-top-width! btw)
+> set-border-top-width! :: (send an-mx-element set-border-top-width! btw)
 
   Set the element's CSS border-top-width using the string `btw', 
   which is either a CSS length, or one of "thin", "medium", or "thick".
 
-> (send an-mx-element border-bottom-width)
+> border-bottom-width :: (send an-mx-element border-bottom-width)
 
   Retrieves a string describing the CSS border-bottom-width for the
   element.
 
-> (send an-mx-element set-border-bottom-width! bbw)
+> set-border-bottom-width! :: (send an-mx-element set-border-bottom-width! bbw)
 
   Set the element's CSS border-bottom-width using the string `bbw', 
   which is either a CSS length, or one of "thin", "medium", or "thick".
 
-> (send an-mx-element border-left-width)
+> border-left-width :: (send an-mx-element border-left-width)
 
   Retrieves a string describing the CSS border-left-width for the
   element.
 
-> (send an-mx-element set-border-left-width! blw)
+> set-border-left-width! :: (send an-mx-element set-border-left-width! blw)
 
   Set the element's CSS border-left-width using the string `blw', 
   which is either a CSS length, or one of "thin", "medium", or "thick".
 
-> (send an-mx-element border-right-width)
+> border-right-width :: (send an-mx-element border-right-width)
 
   Retrieves a string describing the CSS border-right-width for the
   element.
 
-> (send an-mx-element set-border-right-width! brw)
+> set-border-right-width! :: (send an-mx-element set-border-right-width! brw)
 
   Set the element's CSS border-right-width using the string `brw', 
   which is either a CSS length, or one of "thin", "medium", or "thick".
 
-> (send an-mx-element width)
+> width :: (send an-mx-element width)
 
   Retrieves a string describing the CSS width for the
   element.
 
-> (send an-mx-element set-width! w)
+> set-width! :: (send an-mx-element set-width! w)
 
   Set the element's CSS width using `w', which may be 
   either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element height)
+> height :: (send an-mx-element height)
 
   Retrieves a string describing the CSS height for the
   element.
 
-> (send an-mx-element set-height! h)
+> set-height! :: (send an-mx-element set-height! h)
 
   Set the element's CSS height using `h', which may be 
   either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element top)
+> top :: (send an-mx-element top)
 
   Retrieves a string describing the CSS top for the
   element.
 
-> (send an-mx-element set-top! t)
+> set-top! :: (send an-mx-element set-top! t)
 
   Set the element's CSS top using `t', which may be 
   either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element left)
+> left :: (send an-mx-element left)
 
   Retrieves a string describing the CSS left for the
   element.
 
-> (send an-mx-element set-left! l)
+> set-left! :: (send an-mx-element set-left! l)
 
   Set the element's CSS left using `l', which may be 
   either "auto", a CSS length, or a CSS percentage.
 
-> (send an-mx-element z-index)
+> z-index :: (send an-mx-element z-index)
 
   Retrieves a string describing the CSS z-index for the
   element.
 
-> (send an-mx-element set-z-index! zi)
+> set-z-index! :: (send an-mx-element set-z-index! zi)
 
   Set the element's CSS z-index using `zi', which may be 
   either "auto" or an integer.

@@ -10,7 +10,7 @@
    (parse-ml-port (input-port? string? . -> . false?)))
   
   (define (parse-ml-port ip f)
-    (let ((get-token (make-get-token #t)))
+    (let ((get-token (make-get-token #f)))
       (port-count-lines! ip)
       (file-path f)
       (parse-sml (lambda () (get-token ip)))))
@@ -39,6 +39,7 @@
   (define-lex-abbrevs
    (letter (: (- "a" "z") (- "A" "Z")))
    (digit (- "0" "9"))
+   (hex-digit (: (- "0" "9") (- "A" "F") (- "a" "f")))
    (letter-or-digit (: (letter) (digit)))
    (misc-idents (: "!" "%" "&" "$" "#" "+" "-" "/" ":" "<" "=" ">" "?" "@" "\\"
                    "~" "|" "*"))
@@ -138,17 +139,69 @@
                       (position-offset sp)
                       (- (position-offset ep) (position-offset sp))))
   
-  (define (process-sml-string s)
-    ())
-  
-  (define (make-get-token quotation)
+  (define (process-sml-string s sp)
+    (let ((ip (open-input-string s)))
+      (let loop ((i 0)
+                 (acc null))
+        (let-values (((num next-char) (get-char-from-string ip)))
+          (cond
+            ((char? next-char)
+             (loop (+ num i)
+                   (cons next-char acc)))
+            ((eq? 'skip next-char)
+             (loop (+ num i) acc))
+            ((eq? 'eof next-char)
+             (list->string (reverse acc)))
+            (else
+             (raise-read-error next-char
+                               (file-path)
+                               (position-line sp)
+                               (position-col sp)
+                               (+ i (position-offset sp))
+                               num)))))))
+
+  (define get-char-from-string
+    (lexer
+     ("\\a" (values 2 #\007))
+     ("\\b" (values 2 #\010))
+     ("\\t" (values 2 #\011))
+     ("\\n" (values 2 #\012))
+     ("\\v" (values 2 #\013))
+     ("\\f" (values 2 #\014))
+     ("\\r" (values 2 #\015))
+     ("\\\\" (values 2 #\\))
+     ("\\\"" (values 2 #\"))
+     ((@ "\\" (+ (: " " "\t" "\n" "\r")) "\\")
+      (values (string-length lexeme) 'skip))
+     ((@ "\\^" (- "@" "_"))
+      (values 2 (integer->char (- (char->integer (string-ref lexeme 2)) 64))))
+     ((@ "\\" (digit) (digit) (digit))
+      (let ((ascii-value (string->number (substring lexeme 1 4))))
+        (values 4 (if (> ascii-value 255) 
+                      "character code is too large"
+                      (integer->char ascii-value)))))
+     ((@ "\\u" (hex-digit) (hex-digit) (hex-digit) (hex-digit))
+      (let ((ascii-value (string->number (substring lexeme 2 6)  16)))
+        (values 6 (if (> ascii-value 255)
+                      "character code is too large"
+                      (integer->char ascii-value)))))
+     ("\\" (values 1 "ill-formed escape sequence"))
+     ((: "\n" "\r") (values 1 "newline not permitted in string"))
+     ((: #\177 #\377 (- #\001 #\032))
+      (values 1 "invalid character in string"))
+     ((- #\000 #\377) (values 1 (string-ref lexeme 0)))
+     ((eof) (values 0 'eof))))
+             
+     
+     
+  (define (make-get-token quotation?)
     (let ((lexing-mode 'normal)
           (comment-depth 0)
           (par-count null))
       (letrec ((token (lambda (ip)
                         (case lexing-mode
-                          ((normal) (if quotation (token-nq ip) (token-n ip)))
-                          ((quote) (void))
+                          ((normal) (if quotation? (token-nq ip) (token-n ip)))
+                          ((quote) (quotation ip))
                           ((antiquote) (anti-quotation ip)))))
                (token-n
                 (lexer-src-pos
@@ -161,22 +214,26 @@
                     (return-without-pos (token-n input-port))))
                  ("*)" (raise-error "*) not in comment" start-pos end-pos))
                  ((@ "'" (+ (: (letter-or-digit) "_" "'"))) (token-TYVAR lexeme))
-                 ("0" (token-ZDIGIT "0"))
-                 ((- "1" "9") (token-NZDIGIT lexeme))
-                 ((@ "0" (+ (digit))) (token-ZPOSINT2 lexeme))
-                 ((@ (- "1" "9") (+ (digit))) (token-NZPOSINT2 lexeme))
-                 ((@ "~" (+ (digit))) (token-NEGINT lexeme))
-                 ((@ "0w" (+ (digit))) (token-WORD lexeme))
-                 ((@ "0wx" (+ (: (digit) (- "a" "f") (- "A" "F")))) (token-WORD lexeme))
+                 ("0" (token-ZDIGIT 0))
+                 ((- "1" "9") (token-NZDIGIT (string->number lexeme)))
+                 ((@ "0" (+ (digit))) (token-ZPOSINT2 (string->number lexeme)))
+                 ((@ (- "1" "9") (+ (digit))) (token-NZPOSINT2 (string->number lexeme)))
+                 ((@ "~" (+ (digit)))
+                  (token-NEGINT (- (string->number (substring lexeme 1 (string-length lexeme))))))
+                 ((@ "0w" (+ (digit)))
+                  (token-WORD (string->number (substring lexeme 2 (string-length lexeme)))))
+                 ((@ "0wx" (+ (: (digit) (- "a" "f") (- "A" "F"))))
+                  (token-WORD (string->number (substring lexeme 3 (string-length lexeme)) 16)))
                  ((@ (? "~")
                      (+ (digit)) 
                      (? (@ "." (+ (digit))))
                      (? (@  (: "e" "E") (? "~") (+ (digit)))))
-                  (token-REAL lexeme))
+                  (token-REAL (exact->inexact
+                               (string->number (regexp-replace* "~" lexeme "-")))))
                  ((@ (? "#") "\"" (* (string-contents)) "\"")
                   (if (char=? #\# (string-ref lexeme 0))
-                      (token-CHAR lexeme)
-                      (token-STRING lexeme)))
+                      (token-CHAR (process-sml-string lexeme start-pos))
+                      (token-STRING (process-sml-string lexeme start-pos))))
                  ((@ (? "#") "\"" (* (string-contents)) (eof))
                   (raise-error "File ended inside of quotation" start-pos end-pos))
                  ("_" 'UNDERBAR)
@@ -213,30 +270,34 @@
                (token-nq
                 (lexer-src-pos
                  ((+ (: " " "\n" "\r" "\t" "\f")) 
-                  (return-without-pos (token-nq input-port)))
+                  (return-without-pos (token-n input-port)))
                  ("(*"
                   (begin
                     (set! comment-depth (add1 comment-depth))
                     (comment input-port)
-                    (return-without-pos (token-nq input-port))))
+                    (return-without-pos (token-n input-port))))
                  ("*)" (raise-error "*) not in comment" start-pos end-pos))
                  ((@ "'" (+ (: (letter-or-digit) "_" "'"))) (token-TYVAR lexeme))
-                 ("0" (token-ZDIGIT "0"))
-                 ((- "1" "9") (token-NZDIGIT lexeme))
-                 ((@ "0" (+ (digit))) (token-ZPOSINT2 lexeme))
-                 ((@ (- "1" "9") (+ (digit))) (token-NZPOSINT2 lexeme))
-                 ((@ "~" (+ (digit))) (token-NEGINT lexeme))
-                 ((@ "0w" (+ (digit))) (token-WORD lexeme))
-                 ((@ "0wx" (+ (: (digit) (- "a" "f") (- "A" "F")))) (token-WORD lexeme))
+                 ("0" (token-ZDIGIT 0))
+                 ((- "1" "9") (token-NZDIGIT (string->number lexeme)))
+                 ((@ "0" (+ (digit))) (token-ZPOSINT2 (string->number lexeme)))
+                 ((@ (- "1" "9") (+ (digit))) (token-NZPOSINT2 (string->number lexeme)))
+                 ((@ "~" (+ (digit)))
+                  (token-NEGINT (- (string->number (substring lexeme 1 (string-length lexeme))))))
+                 ((@ "0w" (+ (digit)))
+                  (token-WORD (string->number (substring lexeme 2 (string-length lexeme)))))
+                 ((@ "0wx" (+ (: (digit) (- "a" "f") (- "A" "F"))))
+                  (token-WORD (string->number (substring lexeme 3 (string-length lexeme)) 16)))
                  ((@ (? "~")
                      (+ (digit)) 
                      (? (@ "." (+ (digit))))
                      (? (@  (: "e" "E") (? "~") (+ (digit)))))
-                  (token-REAL lexeme))
+                  (token-REAL (exact->inexact
+                               (string->number (regexp-replace* "~" lexeme "-")))))
                  ((@ (? "#") "\"" (* (string-contents)) "\"")
                   (if (char=? #\# (string-ref lexeme 0))
-                      (token-CHAR lexeme)
-                      (token-STRING lexeme)))
+                      (token-CHAR (process-sml-string lexeme start-pos))
+                      (token-STRING (process-sml-string lexeme start-pos))))
                  ((@ (? "#") "\"" (* (string-contents)) (eof))
                   (raise-error "File ended inside of quotation" start-pos end-pos))
                  ("_" 'UNDERBAR)
@@ -317,7 +378,7 @@
          
   (define parse-sml
     (parser
-     (start TopDecFile)
+     (start ToplevelPhrase SigFile StructFile TopSpecFile TopDecFile)
      (end EOF)
      (error (lambda (tok-ok? tok-name tok-val spos epos)
               (cond
@@ -830,7 +891,7 @@
        ((AND WhereType) #f)
        (() #f)))))
   
-  (define files
+  (define mosml-files
     `("/home/sowens/mosml/examples/calc/calc.sml"
       "/home/sowens/mosml/examples/cgi/cgiex1.sml"
       "/home/sowens/mosml/examples/cgi/cgiex2.sml"
@@ -1187,6 +1248,681 @@
       "/home/sowens/mosml/src/toolssrc/Deppars.sml"
       "/home/sowens/mosml/src/toolssrc/Deplex.sml"
       "/home/sowens/mosml/src/toolssrc/Mosmldep.sml"))
-    
-    
-    )
+
+  (define hol-files
+    `("/home/sowens/hol/examples/Thery.sml"
+      "/home/sowens/hol/examples/MLsyntax/MLScript.sml"
+      "/home/sowens/hol/examples/autopilot.sml"
+      "/home/sowens/hol/examples/euclid.sml"
+      "/home/sowens/hol/examples/fol.sml"
+      "/home/sowens/hol/examples/root2.sml"
+      "/home/sowens/hol/examples/taut.sml"
+      "/home/sowens/hol/examples/tempScript.sml"
+      "/home/sowens/hol/examples/RSA/binomialScript.sml"
+      "/home/sowens/hol/examples/RSA/congruentScript.sml"
+      "/home/sowens/hol/examples/RSA/dividesScript.sml"
+      "/home/sowens/hol/examples/RSA/factorialScript.sml"
+      "/home/sowens/hol/examples/RSA/fermatScript.sml"
+      "/home/sowens/hol/examples/RSA/gcdScript.sml"
+      "/home/sowens/hol/examples/RSA/powerScript.sml"
+      "/home/sowens/hol/examples/RSA/primeScript.sml"
+      "/home/sowens/hol/examples/RSA/rsaScript.sml"
+      "/home/sowens/hol/examples/RSA/summationScript.sml"
+      "/home/sowens/hol/examples/Rijndael/RoundOpScript.sml"
+      "/home/sowens/hol/examples/Rijndael/sboxScript.sml"
+      "/home/sowens/hol/examples/Sugar2/PathScript.sml"
+      "/home/sowens/hol/examples/Sugar2/Sugar2Script.sml"
+      "/home/sowens/hol/examples/Sugar2/Sugar2SemanticsScript.sml"
+      "/home/sowens/hol/examples/arm6/armScript.sml"
+      "/home/sowens/hol/examples/arm6/coreScript.sml"
+      "/home/sowens/hol/examples/arm6/correctScript.sml"
+      "/home/sowens/hol/examples/arm6/lemmasLib.sml"
+      "/home/sowens/hol/examples/arm6/lemmasScript.sml"
+      "/home/sowens/hol/examples/arm6/onestepScript.sml"
+      "/home/sowens/hol/examples/bmark/Bmark.sml"
+      "/home/sowens/hol/examples/ind_def/algebraScript.sml"
+      "/home/sowens/hol/examples/ind_def/clScript.sml"
+      "/home/sowens/hol/examples/ind_def/milScript.sml"
+      "/home/sowens/hol/examples/ind_def/opsemScript.sml"
+      "/home/sowens/hol/examples/lambda/dBScript.sml"
+      "/home/sowens/hol/examples/lambda/ncScript.sml"
+      "/home/sowens/hol/examples/miller/RSA/binomialScript.sml"
+      "/home/sowens/hol/examples/miller/RSA/congruentScript.sml"
+      "/home/sowens/hol/examples/miller/RSA/fermatScript.sml"
+      "/home/sowens/hol/examples/miller/RSA/powerScript.sml"
+      "/home/sowens/hol/examples/miller/RSA/rsaScript.sml"
+      "/home/sowens/hol/examples/miller/RSA/summationScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/boolContext.sml"
+      "/home/sowens/hol/examples/miller/formalize/extra_boolScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/extra_listScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/extra_numScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/extra_pred_setScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/extra_pred_setTools.sml"
+      "/home/sowens/hol/examples/miller/formalize/extra_realScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/formalizeUseful.sml"
+      "/home/sowens/hol/examples/miller/formalize/listContext.sml"
+      "/home/sowens/hol/examples/miller/formalize/measureScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/numContext.sml"
+      "/home/sowens/hol/examples/miller/formalize/orderScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/pred_setContext.sml"
+      "/home/sowens/hol/examples/miller/formalize/probabilityScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/realContext.sml"
+      "/home/sowens/hol/examples/miller/formalize/sequenceScript.sml"
+      "/home/sowens/hol/examples/miller/formalize/sequenceTools.sml"
+      "/home/sowens/hol/examples/miller/groups/abelian_groupScript.sml"
+      "/home/sowens/hol/examples/miller/groups/arithContext.sml"
+      "/home/sowens/hol/examples/miller/groups/extra_arithScript.sml"
+      "/home/sowens/hol/examples/miller/groups/extra_binomialScript.sml"
+      "/home/sowens/hol/examples/miller/groups/finite_groupContext.sml"
+      "/home/sowens/hol/examples/miller/groups/finite_groupScript.sml"
+      "/home/sowens/hol/examples/miller/groups/ftaScript.sml"
+      "/home/sowens/hol/examples/miller/groups/groupContext.sml"
+      "/home/sowens/hol/examples/miller/groups/groupScript.sml"
+      "/home/sowens/hol/examples/miller/groups/mult_groupContext.sml"
+      "/home/sowens/hol/examples/miller/groups/mult_groupScript.sml"
+      "/home/sowens/hol/examples/miller/groups/num_polyScript.sml"
+      "/home/sowens/hol/examples/miller/ho_prover/ho_basicTools.sml"
+      "/home/sowens/hol/examples/miller/ho_prover/ho_discrimTools.sml"
+      "/home/sowens/hol/examples/miller/ho_prover/ho_proverTools.sml"
+      "/home/sowens/hol/examples/miller/ho_prover/ho_proverUseful.sml"
+      "/home/sowens/hol/examples/miller/ho_prover/skiScript.sml"
+      "/home/sowens/hol/examples/miller/ho_prover/skiTools.sml"
+      "/home/sowens/hol/examples/miller/ho_prover/unifyTools.sml"
+      "/home/sowens/hol/examples/miller/miller/miller_rabinScript.sml"
+      "/home/sowens/hol/examples/miller/miller/miller_rabinTools.sml"
+      "/home/sowens/hol/examples/miller/miller/miller_rabin_mlScript.sml"
+      "/home/sowens/hol/examples/miller/prob/probLib.sml"
+      "/home/sowens/hol/examples/miller/prob/probScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_algebraScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_bernoulliScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_binomialScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_canonScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_canonTools.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_diceScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_geometricScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_pseudoScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_pseudoTools.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_trichotomyScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_trichotomyTools.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_uniformScript.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_uniformTools.sml"
+      "/home/sowens/hol/examples/miller/prob/prob_walkScript.sml"
+      "/home/sowens/hol/examples/miller/subtypes/subtypeScript.sml"
+      "/home/sowens/hol/examples/miller/subtypes/subtypeTools.sml"
+      "/home/sowens/hol/examples/miller/subtypes/subtypeUseful.sml"
+      "/home/sowens/hol/examples/parity/PARITY.sml"
+      "/home/sowens/hol/help/src/Asynt.sml"
+      "/home/sowens/hol/help/src/Database.sml"
+      "/home/sowens/hol/help/src/Doc2Html.sml"
+      "/home/sowens/hol/help/src/Doc2Tex.sml"
+      "/home/sowens/hol/help/src/Doc2Txt.sml"
+      "/home/sowens/hol/help/src/Flash.sml"
+      "/home/sowens/hol/help/src/HOLPage.sml"
+      "/home/sowens/hol/help/src/Hasht.sml"
+      "/home/sowens/hol/help/src/Htmlsigs.sml"
+      "/home/sowens/hol/help/src/Keepers.sml"
+      "/home/sowens/hol/help/src/ParseDoc.sml"
+      "/home/sowens/hol/help/src/Parsspec.sml"
+      "/home/sowens/hol/help/src/Printbase.sml"
+      "/home/sowens/hol/help/src/Stack.sml"
+      "/home/sowens/hol/help/src/Symbolic.sml"
+      "/home/sowens/hol/help/src/Texsigs.sml"
+      "/home/sowens/hol/help/src/makebase.sml"
+      "/home/sowens/hol/help/src/Lexer.sml"
+      "/home/sowens/hol/help/src/Parser.sml"
+      "/home/sowens/hol/src/0/CoreKernel-sig.sml"
+      "/home/sowens/hol/src/0/Count.sml"
+      "/home/sowens/hol/src/0/Definition-sig.sml"
+      "/home/sowens/hol/src/0/Definition.sml"
+      "/home/sowens/hol/src/0/Feedback.sml"
+      "/home/sowens/hol/src/0/Globals.sml"
+      "/home/sowens/hol/src/0/HOLset.sml"
+      "/home/sowens/hol/src/0/HolKernel.sml"
+      "/home/sowens/hol/src/0/KernelTypes.sml"
+      "/home/sowens/hol/src/0/Lexis.sml"
+      "/home/sowens/hol/src/0/Lib.sml"
+      "/home/sowens/hol/src/0/Net-sig.sml"
+      "/home/sowens/hol/src/0/Net.sml"
+      "/home/sowens/hol/src/0/Overlay.sml"
+      "/home/sowens/hol/src/0/Profile.sml"
+      "/home/sowens/hol/src/0/Raw-sig.sml"
+      "/home/sowens/hol/src/0/Sig.sml"
+      "/home/sowens/hol/src/0/Subst.sml"
+      "/home/sowens/hol/src/0/Tag-sig.sml"
+      "/home/sowens/hol/src/0/Tag.sml"
+      "/home/sowens/hol/src/0/Term-sig.sml"
+      "/home/sowens/hol/src/0/Term.sml"
+      "/home/sowens/hol/src/0/Theory-sig.sml"
+      "/home/sowens/hol/src/0/Theory.sml"
+      "/home/sowens/hol/src/0/TheoryPP-sig.sml"
+      "/home/sowens/hol/src/0/TheoryPP.sml"
+      "/home/sowens/hol/src/0/Thm-sig.sml"
+      "/home/sowens/hol/src/0/Thm.sml"
+      "/home/sowens/hol/src/0/Type-sig.sml"
+      "/home/sowens/hol/src/0/Type.sml"
+      "/home/sowens/hol/src/HolBdd/Examples/KatiPuzzle/KatiPuzzleScript.sml"
+      "/home/sowens/hol/src/HolBdd/Examples/Solitaire/HexSolitaireScript.sml"
+      "/home/sowens/hol/src/HolBdd/Examples/Solitaire/MiniTLHexSolitaireScript.sml"
+      "/home/sowens/hol/src/HolBdd/Examples/Solitaire/SolitaireScript.sml"
+      "/home/sowens/hol/src/HolBdd/HolBddLib.sml"
+      "/home/sowens/hol/src/HolBdd/PrintBdd.sml"
+      "/home/sowens/hol/src/HolBdd/Varmap.sml"
+      "/home/sowens/hol/src/HolBdd/MachineTransitionScript.sml"
+      "/home/sowens/hol/src/HolBdd/MachineTransitionTheory.sml"
+      "/home/sowens/hol/src/HolBdd/DerivedBddRules.sml"
+      "/home/sowens/hol/src/HolBdd/PrimitiveBddRules.sml"
+      "/home/sowens/hol/src/HolSat/SatSolvers.sml"
+      "/home/sowens/hol/src/HolSat/normalFormsTest.sml"
+      "/home/sowens/hol/src/HolSat/HolSatLib.sml"
+      "/home/sowens/hol/src/HolSat/defCNFScript.sml"
+      "/home/sowens/hol/src/HolSat/defCNFTheory.sml"
+      "/home/sowens/hol/src/HolSat/defCNF.sml"
+      "/home/sowens/hol/src/HolSat/normalForms.sml"
+      "/home/sowens/hol/src/IndDef/IndDefLib.sml"
+      "/home/sowens/hol/src/IndDef/IndDefRules.sml"
+      "/home/sowens/hol/src/IndDef/InductiveDefinition.sml"
+      "/home/sowens/hol/src/IndDef/examples/algebraScript.sml"
+      "/home/sowens/hol/src/IndDef/examples/clScript.sml"
+      "/home/sowens/hol/src/IndDef/examples/milScript.sml"
+      "/home/sowens/hol/src/IndDef/examples/opsemScript.sml"
+      "/home/sowens/hol/src/bag/bagLib.sml"
+      "/home/sowens/hol/src/bag/bagSimps.sml"
+      "/home/sowens/hol/src/bag/bagSyntax.sml"
+      "/home/sowens/hol/src/bag/containerScript.sml"
+      "/home/sowens/hol/src/bag/mnUtils.sml"
+      "/home/sowens/hol/src/bag/bagScript.sml"
+      "/home/sowens/hol/src/bag/bagTheory.sml"
+      "/home/sowens/hol/src/bag/containerTheory.sml"
+      "/home/sowens/hol/src/basicProof/BasicProvers.sml"
+      "/home/sowens/hol/src/bool/Abbrev.sml"
+      "/home/sowens/hol/src/bool/Conv.sml"
+      "/home/sowens/hol/src/bool/DB.sml"
+      "/home/sowens/hol/src/bool/DefnBase.sml"
+      "/home/sowens/hol/src/bool/Drule.sml"
+      "/home/sowens/hol/src/bool/Ho_Net.sml"
+      "/home/sowens/hol/src/bool/Ho_Rewrite.sml"
+      "/home/sowens/hol/src/bool/Pmatch.sml"
+      "/home/sowens/hol/src/bool/Psyntax.sml"
+      "/home/sowens/hol/src/bool/QConv.sml"
+      "/home/sowens/hol/src/bool/Rewrite.sml"
+      "/home/sowens/hol/src/bool/Rsyntax.sml"
+      "/home/sowens/hol/src/bool/Tactic.sml"
+      "/home/sowens/hol/src/bool/Tactical.sml"
+      "/home/sowens/hol/src/bool/Thm_cont.sml"
+      "/home/sowens/hol/src/bool/TypeBase.sml"
+      "/home/sowens/hol/src/bool/TypeBasePure.sml"
+      "/home/sowens/hol/src/bool/boolLib.sml"
+      "/home/sowens/hol/src/bool/boolScript.sml"
+      "/home/sowens/hol/src/bool/boolSyntax.sml"
+      "/home/sowens/hol/src/bool/fastbuild.sml"
+      "/home/sowens/hol/src/bool/holmakebuild.sml"
+      "/home/sowens/hol/src/bool/boolTheory.sml"
+      "/home/sowens/hol/src/bool/Prim_rec.sml"
+      "/home/sowens/hol/src/boss/SingleStep.sml"
+      "/home/sowens/hol/src/boss/bossLib.sml"
+      "/home/sowens/hol/src/combin/combinScript.sml"
+      "/home/sowens/hol/src/combin/combinSyntax.sml"
+      "/home/sowens/hol/src/combin/combinTheory.sml"
+      "/home/sowens/hol/src/compute/examples/Arith.sml"
+      "/home/sowens/hol/src/compute/examples/MergeSort.sml"
+      "/home/sowens/hol/src/compute/examples/Sort.sml"
+      "/home/sowens/hol/src/compute/src/clauses.sml"
+      "/home/sowens/hol/src/compute/src/computeLib.sml"
+      "/home/sowens/hol/src/compute/src/compute_rules.sml"
+      "/home/sowens/hol/src/compute/src/equations.sml"
+      "/home/sowens/hol/src/datatype/basicrec/Define_type.sml"
+      "/home/sowens/hol/src/datatype/basicrec/rec_typeScript.sml"
+      "/home/sowens/hol/src/datatype/Datatype.sml"
+      "/home/sowens/hol/src/datatype/EnumType.sml"
+      "/home/sowens/hol/src/datatype/Mutual.sml"
+      "/home/sowens/hol/src/datatype/ind_types.sml"
+      "/home/sowens/hol/src/datatype/equiv/EquivType.sml"
+      "/home/sowens/hol/src/datatype/mutrec/examples/example.sml"
+      "/home/sowens/hol/src/datatype/mutrec/examples/test.sml"
+      "/home/sowens/hol/src/datatype/mutrec/examples/var_example.sml"
+      "/home/sowens/hol/src/datatype/mutrec/examples/var_example2.sml"
+      "/home/sowens/hol/src/datatype/mutrec/ConsThms.sml"
+      "/home/sowens/hol/src/datatype/mutrec/MutRecDef.sml"
+      "/home/sowens/hol/src/datatype/mutrec/MutRecMask.sml"
+      "/home/sowens/hol/src/datatype/mutrec/Recftn.sml"
+      "/home/sowens/hol/src/datatype/mutrec/TypeInfo.sml"
+      "/home/sowens/hol/src/datatype/mutrec/mutrecLib.sml"
+      "/home/sowens/hol/src/datatype/mutrec/utils/elsaUtils.sml"
+      "/home/sowens/hol/src/datatype/mutual/examples/assertion.sml"
+      "/home/sowens/hol/src/datatype/mutual/examples/pat.sml"
+      "/home/sowens/hol/src/datatype/mutual/examples/rectypes.sml"
+      "/home/sowens/hol/src/datatype/mutual/examples/smallML.sml"
+      "/home/sowens/hol/src/datatype/mutual/examples/test.sml"
+      "/home/sowens/hol/src/datatype/mutual/Def_MN_Func.sml"
+      "/home/sowens/hol/src/datatype/mutual/Def_MN_Type.sml"
+      "/home/sowens/hol/src/datatype/mutual/MutualIndThen.sml"
+      "/home/sowens/hol/src/datatype/mutual/mutualLib.sml"
+      "/home/sowens/hol/src/datatype/mutual/src/define_mutual_types.sml"
+      "/home/sowens/hol/src/datatype/mutual/src/load_nested_rec_lib.sml"
+      "/home/sowens/hol/src/datatype/mutual/src/mk_mutual_lib.sml"
+      "/home/sowens/hol/src/datatype/mutual/src/mutualLib.sml"
+      "/home/sowens/hol/src/datatype/mutual/src/mutual_induct_then.sml"
+      "/home/sowens/hol/src/datatype/mutual/src/recftn.sml"
+      "/home/sowens/hol/src/datatype/nestrec/examples/e1.sml"
+      "/home/sowens/hol/src/datatype/nestrec/examples/tmp.sml"
+      "/home/sowens/hol/src/datatype/nestrec/examples/tv.sml"
+      "/home/sowens/hol/src/datatype/nestrec/DefType.sml"
+      "/home/sowens/hol/src/datatype/nestrec/DefTypeInfo.sml"
+      "/home/sowens/hol/src/datatype/nestrec/ExistsFuns.sml"
+      "/home/sowens/hol/src/datatype/nestrec/GenFuns.sml"
+      "/home/sowens/hol/src/datatype/nestrec/NestedRecMask.sml"
+      "/home/sowens/hol/src/datatype/nestrec/StringTable.sml"
+      "/home/sowens/hol/src/datatype/nestrec/TypeOpTable.sml"
+      "/home/sowens/hol/src/datatype/nestrec/TypeTable.sml"
+      "/home/sowens/hol/src/datatype/nestrec/nested_recLib.sml"
+      "/home/sowens/hol/src/datatype/parse/ParseDatatype.sml"
+      "/home/sowens/hol/src/datatype/record/RecordType.sml"
+      "/home/sowens/hol/src/datatype/ind_typeScript.sml"
+      "/home/sowens/hol/src/datatype/ind_typeTheory.sml"
+      "/home/sowens/hol/src/finite_map/finite_mapScript.sml"
+      "/home/sowens/hol/src/finite_map/finite_mapTheory.sml"
+      "/home/sowens/hol/src/goalstack/Bwd.sml"
+      "/home/sowens/hol/src/goalstack/GoalstackPure.sml"
+      "/home/sowens/hol/src/goalstack/History.sml"
+      "/home/sowens/hol/src/goalstack/goalstackLib.sml"
+      "/home/sowens/hol/src/hol88/hol88Lib.sml"
+      "/home/sowens/hol/src/integer/testing/gen_bc_problem.sml"
+      "/home/sowens/hol/src/integer/testing/genproblem.sml"
+      "/home/sowens/hol/src/integer/testing/readproblemfile.sml"
+      "/home/sowens/hol/src/integer/testing/test_cases.sml"
+      "/home/sowens/hol/src/integer/testing/test_coopers.sml"
+      "/home/sowens/hol/src/integer/testing/test_omega.sml"
+      "/home/sowens/hol/src/integer/testing/testdp.sml"
+      "/home/sowens/hol/src/integer/CSimp.sml"
+      "/home/sowens/hol/src/integer/Cooper.sml"
+      "/home/sowens/hol/src/integer/CooperMath.sml"
+      "/home/sowens/hol/src/integer/CooperShell.sml"
+      "/home/sowens/hol/src/integer/CooperSyntax.sml"
+      "/home/sowens/hol/src/integer/OmegaSimple.sml"
+      "/home/sowens/hol/src/integer/IntDP_Munge.sml"
+      "/home/sowens/hol/src/integer/Omega.sml"
+      "/home/sowens/hol/src/integer/OmegaMLShadow.sml"
+      "/home/sowens/hol/src/integer/OmegaShell.sml"
+      "/home/sowens/hol/src/integer/OmegaTest.sml"
+      "/home/sowens/hol/src/integer/integerRingTheory.sml"
+      "/home/sowens/hol/src/integer/intSimps.sml"
+      "/home/sowens/hol/src/integer/intSyntax.sml"
+      "/home/sowens/hol/src/integer/integerRingLib.sml"
+      "/home/sowens/hol/src/integer/integerRingScript.sml"
+      "/home/sowens/hol/src/integer/jrhUtils.sml"
+      "/home/sowens/hol/src/integer/primeScript.sml"
+      "/home/sowens/hol/src/integer/dividesScript.sml"
+      "/home/sowens/hol/src/integer/dividesTheory.sml"
+      "/home/sowens/hol/src/integer/jrhCore.sml"
+      "/home/sowens/hol/src/integer/integerScript.sml"
+      "/home/sowens/hol/src/integer/integerTheory.sml"
+      "/home/sowens/hol/src/integer/CooperCore.sml"
+      "/home/sowens/hol/src/integer/primeTheory.sml"
+      "/home/sowens/hol/src/integer/DeepSyntaxScript.sml"
+      "/home/sowens/hol/src/integer/gcdScript.sml"
+      "/home/sowens/hol/src/integer/gcdTheory.sml"
+      "/home/sowens/hol/src/integer/CooperThms.sml"
+      "/home/sowens/hol/src/integer/int_arithScript.sml"
+      "/home/sowens/hol/src/integer/int_arithTheory.sml"
+      "/home/sowens/hol/src/integer/DeepSyntaxTheory.sml"
+      "/home/sowens/hol/src/integer/OmegaSymbolic.sml"
+      "/home/sowens/hol/src/integer/intLib.sml"
+      "/home/sowens/hol/src/integer/OmegaScript.sml"
+      "/home/sowens/hol/src/integer/OmegaTheory.sml"
+      "/home/sowens/hol/src/integer/OmegaMath.sml"
+      "/home/sowens/hol/src/list/examples/test.sml"
+      "/home/sowens/hol/src/list/src/ListConv1.sml"
+      "/home/sowens/hol/src/list/src/listLib.sml"
+      "/home/sowens/hol/src/list/src/listSimps.sml"
+      "/home/sowens/hol/src/list/src/listSyntax.sml"
+      "/home/sowens/hol/src/list/src/operatorScript.sml"
+      "/home/sowens/hol/src/list/src/rich_listSimps.sml"
+      "/home/sowens/hol/src/list/src/operatorTheory.sml"
+      "/home/sowens/hol/src/list/src/listScript.sml"
+      "/home/sowens/hol/src/list/src/listTheory.sml"
+      "/home/sowens/hol/src/list/src/rich_listScript.sml"
+      "/home/sowens/hol/src/list/src/rich_listTheory.sml"
+      "/home/sowens/hol/src/lite/liteLib.sml"
+      "/home/sowens/hol/src/llist/llistScript.sml"
+      "/home/sowens/hol/src/llist/llistTheory.sml"
+      "/home/sowens/hol/src/marker/markerLib.sml"
+      "/home/sowens/hol/src/marker/markerScript.sml"
+      "/home/sowens/hol/src/marker/markerTheory.sml"
+      "/home/sowens/hol/src/meson/test.sml"
+      "/home/sowens/hol/src/meson/src/Canon_Port.sml"
+      "/home/sowens/hol/src/meson/src/jrhTactics.sml"
+      "/home/sowens/hol/src/meson/src/mesonLib.sml"
+      "/home/sowens/hol/src/muddy/MuddyCore.sml"
+      "/home/sowens/hol/src/muddy/bdd.sml"
+      "/home/sowens/hol/src/muddy/bvec.sml"
+      "/home/sowens/hol/src/muddy/fdd.sml"
+      "/home/sowens/hol/src/num/arith/src/Arith.sml"
+      "/home/sowens/hol/src/num/arith/src/Arith_cons.sml"
+      "/home/sowens/hol/src/num/arith/src/Exists_arith.sml"
+      "/home/sowens/hol/src/num/arith/src/Gen_arith.sml"
+      "/home/sowens/hol/src/num/arith/src/Instance.sml"
+      "/home/sowens/hol/src/num/arith/src/Int_extra.sml"
+      "/home/sowens/hol/src/num/arith/src/Norm_arith.sml"
+      "/home/sowens/hol/src/num/arith/src/Norm_bool.sml"
+      "/home/sowens/hol/src/num/arith/src/Norm_ineqs.sml"
+      "/home/sowens/hol/src/num/arith/src/Prenex.sml"
+      "/home/sowens/hol/src/num/arith/src/RJBConv.sml"
+      "/home/sowens/hol/src/num/arith/src/Rationals.sml"
+      "/home/sowens/hol/src/num/arith/src/Sol_ranges.sml"
+      "/home/sowens/hol/src/num/arith/src/Solve.sml"
+      "/home/sowens/hol/src/num/arith/src/Solve_ineqs.sml"
+      "/home/sowens/hol/src/num/arith/src/Streams.sml"
+      "/home/sowens/hol/src/num/arith/src/Sub_and_cond.sml"
+      "/home/sowens/hol/src/num/arith/src/Sup_Inf.sml"
+      "/home/sowens/hol/src/num/arith/src/Term_coeffs.sml"
+      "/home/sowens/hol/src/num/arith/src/Theorems.sml"
+      "/home/sowens/hol/src/num/arith/src/Thm_convs.sml"
+      "/home/sowens/hol/src/num/arith/src/numSimps.sml"
+      "/home/sowens/hol/src/num/NonRecSize.sml"
+      "/home/sowens/hol/src/num/reduce/src/Arithconv.sml"
+      "/home/sowens/hol/src/num/reduce/src/Boolconv.sml"
+      "/home/sowens/hol/src/num/reduce/src/reduceLib.sml"
+      "/home/sowens/hol/src/num/theories/Num_conv.sml"
+      "/home/sowens/hol/src/num/theories/numScript.sml"
+      "/home/sowens/hol/src/num/theories/numSyntax.sml"
+      "/home/sowens/hol/src/num/theories/numeralScript.sml"
+      "/home/sowens/hol/src/num/theories/prim_recScript.sml"
+      "/home/sowens/hol/src/num/theories/numTheory.sml"
+      "/home/sowens/hol/src/num/theories/prim_recTheory.sml"
+      "/home/sowens/hol/src/num/theories/arithmeticScript.sml"
+      "/home/sowens/hol/src/num/theories/arithmeticTheory.sml"
+      "/home/sowens/hol/src/num/theories/numeralTheory.sml"
+      "/home/sowens/hol/src/num/numLib.sml"
+      "/home/sowens/hol/src/one/oneScript.sml"
+      "/home/sowens/hol/src/one/oneTheory.sml"
+      "/home/sowens/hol/src/option/optionLib.sml"
+      "/home/sowens/hol/src/option/optionSimps.sml"
+      "/home/sowens/hol/src/option/optionSyntax.sml"
+      "/home/sowens/hol/src/option/optionScript.sml"
+      "/home/sowens/hol/src/option/optionTheory.sml"
+      "/home/sowens/hol/src/pair/src/PairRules.sml"
+      "/home/sowens/hol/src/pair/src/PairedLambda.sml"
+      "/home/sowens/hol/src/pair/src/pairLib.sml"
+      "/home/sowens/hol/src/pair/src/pairScript.sml"
+      "/home/sowens/hol/src/pair/src/pairSimps.sml"
+      "/home/sowens/hol/src/pair/src/pairSyntax.sml"
+      "/home/sowens/hol/src/pair/src/pairTools.sml"
+      "/home/sowens/hol/src/pair/src/pairTheory.sml"
+      "/home/sowens/hol/src/parse/Absyn.sml"
+      "/home/sowens/hol/src/parse/GrammarSpecials.sml"
+      "/home/sowens/hol/src/parse/HOLgrammars.sml"
+      "/home/sowens/hol/src/parse/HOLtokens.sml"
+      "/home/sowens/hol/src/parse/Hol_pp.sml"
+      "/home/sowens/hol/src/parse/Literal.sml"
+      "/home/sowens/hol/src/parse/Overload.sml"
+      "/home/sowens/hol/src/parse/Parse.sml"
+      "/home/sowens/hol/src/parse/Parse_support.sml"
+      "/home/sowens/hol/src/parse/Preterm.sml"
+      "/home/sowens/hol/src/parse/Pretype.sml"
+      "/home/sowens/hol/src/parse/fragstr.sml"
+      "/home/sowens/hol/src/parse/monadic_parse.sml"
+      "/home/sowens/hol/src/parse/optmonad.sml"
+      "/home/sowens/hol/src/parse/parse_term.sml"
+      "/home/sowens/hol/src/parse/parse_type.sml"
+      "/home/sowens/hol/src/parse/seq.sml"
+      "/home/sowens/hol/src/parse/seqmonad.sml"
+      "/home/sowens/hol/src/parse/stmonad.sml"
+      "/home/sowens/hol/src/parse/term_grammar.sml"
+      "/home/sowens/hol/src/parse/term_pp.sml"
+      "/home/sowens/hol/src/parse/term_pp_types.sml"
+      "/home/sowens/hol/src/parse/term_tokens.sml"
+      "/home/sowens/hol/src/parse/type_grammar.sml"
+      "/home/sowens/hol/src/parse/type_pp.sml"
+      "/home/sowens/hol/src/parse/type_tokens.sml"
+      "/home/sowens/hol/src/portableML/Arbint.sml"
+      "/home/sowens/hol/src/portableML/Arbnum.sml"
+      "/home/sowens/hol/src/portableML/PIntMap.sml"
+      "/home/sowens/hol/src/portableML/Portable.sml"
+      "/home/sowens/hol/src/portableML/Redblackset.sml"
+      "/home/sowens/hol/src/pred_set/src/PFset_conv.sml"
+      "/home/sowens/hol/src/pred_set/src/PGspec.sml"
+      "/home/sowens/hol/src/pred_set/src/PSet_ind.sml"
+      "/home/sowens/hol/src/pred_set/src/pred_setLib.sml"
+      "/home/sowens/hol/src/pred_set/src/pred_setSyntax.sml"
+      "/home/sowens/hol/src/pred_set/src/pred_setScript.sml"
+      "/home/sowens/hol/src/pred_set/src/pred_setTheory.sml"
+      "/home/sowens/hol/src/pred_set/src/pred_setSimps.sml"
+      "/home/sowens/hol/src/pred_set/src/fixedPointScript.sml"
+      "/home/sowens/hol/src/pred_set/src/fixedPointTheory.sml"
+      "/home/sowens/hol/src/prob/boolean_sequenceTools.sml"
+      "/home/sowens/hol/src/prob/probLib.sml"
+      "/home/sowens/hol/src/prob/prob_uniformScript.sml"
+      "/home/sowens/hol/src/prob/prob_canonTools.sml"
+      "/home/sowens/hol/src/prob/prob_pseudoScript.sml"
+      "/home/sowens/hol/src/prob/prob_pseudoTools.sml"
+      "/home/sowens/hol/src/prob/probTools.sml"
+      "/home/sowens/hol/src/prob/prob_pseudoTheory.sml"
+      "/home/sowens/hol/src/prob/prob_extraScript.sml"
+      "/home/sowens/hol/src/prob/prob_extraTheory.sml"
+      "/home/sowens/hol/src/prob/probScript.sml"
+      "/home/sowens/hol/src/prob/prob_indepScript.sml"
+      "/home/sowens/hol/src/prob/boolean_sequenceScript.sml"
+      "/home/sowens/hol/src/prob/boolean_sequenceTheory.sml"
+      "/home/sowens/hol/src/prob/prob_extraTools.sml"
+      "/home/sowens/hol/src/prob/prob_uniformTheory.sml"
+      "/home/sowens/hol/src/prob/state_transformerScript.sml"
+      "/home/sowens/hol/src/prob/state_transformerTheory.sml"
+      "/home/sowens/hol/src/prob/prob_canonScript.sml"
+      "/home/sowens/hol/src/prob/prob_canonTheory.sml"
+      "/home/sowens/hol/src/prob/probUtil.sml"
+      "/home/sowens/hol/src/prob/probTheory.sml"
+      "/home/sowens/hol/src/prob/prob_algebraScript.sml"
+      "/home/sowens/hol/src/prob/prob_algebraTheory.sml"
+      "/home/sowens/hol/src/prob/prob_indepTheory.sml"
+      "/home/sowens/hol/src/prob/prob_uniformTools.sml"
+      "/home/sowens/hol/src/q/QLib.sml"
+      "/home/sowens/hol/src/q/Q.sml"
+      "/home/sowens/hol/src/real/Diff.sml"
+      "/home/sowens/hol/src/real/hratScript.sml"
+      "/home/sowens/hol/src/real/hrealScript.sml"
+      "/home/sowens/hol/src/real/netsScript.sml"
+      "/home/sowens/hol/src/real/polyScript.sml"
+      "/home/sowens/hol/src/real/powserScript.sml"
+      "/home/sowens/hol/src/real/realLib.sml"
+      "/home/sowens/hol/src/real/realSimps.sml"
+      "/home/sowens/hol/src/real/realaxScript.sml"
+      "/home/sowens/hol/src/real/seqScript.sml"
+      "/home/sowens/hol/src/real/topologyScript.sml"
+      "/home/sowens/hol/src/real/transcScript.sml"
+      "/home/sowens/hol/src/real/hratTheory.sml"
+      "/home/sowens/hol/src/real/hrealTheory.sml"
+      "/home/sowens/hol/src/real/realaxTheory.sml"
+      "/home/sowens/hol/src/real/realScript.sml"
+      "/home/sowens/hol/src/real/realTheory.sml"
+      "/home/sowens/hol/src/real/topologyTheory.sml"
+      "/home/sowens/hol/src/real/netsTheory.sml"
+      "/home/sowens/hol/src/real/seqTheory.sml"
+      "/home/sowens/hol/src/real/limScript.sml"
+      "/home/sowens/hol/src/real/limTheory.sml"
+      "/home/sowens/hol/src/real/RealArith.sml"
+      "/home/sowens/hol/src/real/polyTheory.sml"
+      "/home/sowens/hol/src/real/powserTheory.sml"
+      "/home/sowens/hol/src/real/transcTheory.sml"
+      "/home/sowens/hol/src/refute/AC.sml"
+      "/home/sowens/hol/src/refute/Canon.sml"
+      "/home/sowens/hol/src/refute/refuteLib.sml"
+      "/home/sowens/hol/src/relation/relationScript.sml"
+      "/home/sowens/hol/src/relation/relationTheory.sml"
+      "/home/sowens/hol/src/res_quan/src/Cond_rewrite.sml"
+      "/home/sowens/hol/src/res_quan/src/res_quanLib.sml"
+      "/home/sowens/hol/src/res_quan/src/res_quanScript.sml"
+      "/home/sowens/hol/src/res_quan/src/res_quanTheory.sml"
+      "/home/sowens/hol/src/res_quan/src/res_quanTools.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreClausalForm.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreDefinitions.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreEnvironment.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreEqualities.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreGeneralize.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreInduction.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreIrrelevance.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreLib.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreRewriteRules.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreShells.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreStructEqual.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreSupport.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreTermsAndClauses.sml"
+      "/home/sowens/hol/src/retired/BoyerMoore/BoyerMooreWaterfall.sml"
+      "/home/sowens/hol/src/retired/decision/examples.sml"
+      "/home/sowens/hol/src/retired/decision/src/CongruenceClosure.sml"
+      "/home/sowens/hol/src/retired/decision/src/CongruenceClosurePairs.sml"
+      "/home/sowens/hol/src/retired/decision/src/CongruenceClosureTypes.sml"
+      "/home/sowens/hol/src/retired/decision/src/Decide.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecideNum.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecidePair.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecideProp.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecideTypes.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecideUninterp.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecisionArithConvs.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecisionConv.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecisionNormConvs.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecisionSupport.sml"
+      "/home/sowens/hol/src/retired/decision/src/DecisionTheorems.sml"
+      "/home/sowens/hol/src/retired/decision/src/LazyRules.sml"
+      "/home/sowens/hol/src/retired/decision/src/LazyThm.sml"
+      "/home/sowens/hol/src/retired/decision/src/NormalizeBool.sml"
+      "/home/sowens/hol/src/retired/decision/src/NumArith.sml"
+      "/home/sowens/hol/src/retired/decision/src/NumArithCons.sml"
+      "/home/sowens/hol/src/retired/decision/src/NumHOLType.sml"
+      "/home/sowens/hol/src/retired/decision/src/NumInequalityCoeffs.sml"
+      "/home/sowens/hol/src/retired/decision/src/NumType.sml"
+      "/home/sowens/hol/src/retired/decision/src/Taut.sml"
+      "/home/sowens/hol/src/retired/decision/src/decisionLib.sml"
+      "/home/sowens/hol/src/retired/hol90/HOLScript.sml"
+      "/home/sowens/hol/src/retired/hol90/HOLSimps.sml"
+      "/home/sowens/hol/src/retired/hol90/hol90Lib.sml"
+      "/home/sowens/hol/src/retired/ind_def/examples/algebraScript.sml"
+      "/home/sowens/hol/src/retired/ind_def/examples/clScript.sml"
+      "/home/sowens/hol/src/retired/ind_def/examples/milScript.sml"
+      "/home/sowens/hol/src/retired/ind_def/examples/opsemScript.sml"
+      "/home/sowens/hol/src/retired/ind_def/src/ind_defLib.sml"
+      "/home/sowens/hol/src/retired/set/src/Fset_conv.sml"
+      "/home/sowens/hol/src/retired/set/src/Gspec.sml"
+      "/home/sowens/hol/src/retired/set/src/Set_ind.sml"
+      "/home/sowens/hol/src/retired/set/src/finsetScript.sml"
+      "/home/sowens/hol/src/retired/set/src/setLib.sml"
+      "/home/sowens/hol/src/retired/set/src/setSimps.sml"
+      "/home/sowens/hol/src/retired/tree/ltreeScript.sml"
+      "/home/sowens/hol/src/retired/tree/treeScript.sml"
+      "/home/sowens/hol/src/ring/examples/tests.sml"
+      "/home/sowens/hol/src/ring/src/abs_tools.sml"
+      "/home/sowens/hol/src/ring/src/abstraction.sml"
+      "/home/sowens/hol/src/ring/src/canonicalScript.sml"
+      "/home/sowens/hol/src/ring/src/numRingLib.sml"
+      "/home/sowens/hol/src/ring/src/numRingScript.sml"
+      "/home/sowens/hol/src/ring/src/prelimScript.sml"
+      "/home/sowens/hol/src/ring/src/quote.sml"
+      "/home/sowens/hol/src/ring/src/quoteScript.sml"
+      "/home/sowens/hol/src/ring/src/ringLib.sml"
+      "/home/sowens/hol/src/ring/src/ringNormScript.sml"
+      "/home/sowens/hol/src/ring/src/ringScript.sml"
+      "/home/sowens/hol/src/ring/src/semi_ringScript.sml"
+      "/home/sowens/hol/src/ring/src/prelimTheory.sml"
+      "/home/sowens/hol/src/ring/src/quoteTheory.sml"
+      "/home/sowens/hol/src/ring/src/semi_ringTheory.sml"
+      "/home/sowens/hol/src/ring/src/canonicalTheory.sml"
+      "/home/sowens/hol/src/ring/src/ringTheory.sml"
+      "/home/sowens/hol/src/ring/src/ringNormTheory.sml"
+      "/home/sowens/hol/src/ring/src/numRingTheory.sml"
+      "/home/sowens/hol/src/simp/test.sml"
+      "/home/sowens/hol/src/simp/src/Cache.sml"
+      "/home/sowens/hol/src/simp/src/Cond_rewr.sml"
+      "/home/sowens/hol/src/simp/src/Opening.sml"
+      "/home/sowens/hol/src/simp/src/Satisfy.sml"
+      "/home/sowens/hol/src/simp/src/SatisfySimps.sml"
+      "/home/sowens/hol/src/simp/src/Sequence.sml"
+      "/home/sowens/hol/src/simp/src/Trace.sml"
+      "/home/sowens/hol/src/simp/src/Traverse.sml"
+      "/home/sowens/hol/src/simp/src/Travrules.sml"
+      "/home/sowens/hol/src/simp/src/Unify.sml"
+      "/home/sowens/hol/src/simp/src/Unwind.sml"
+      "/home/sowens/hol/src/simp/src/boolSimps.sml"
+      "/home/sowens/hol/src/simp/src/combinSimps.sml"
+      "/home/sowens/hol/src/simp/src/pureSimps.sml"
+      "/home/sowens/hol/src/simp/src/simpLib.sml"
+      "/home/sowens/hol/src/string/stringLib.sml"
+      "/home/sowens/hol/src/string/stringScript.sml"
+      "/home/sowens/hol/src/string/stringSimps.sml"
+      "/home/sowens/hol/src/string/stringSyntax.sml"
+      "/home/sowens/hol/src/string/stringTheory.sml"
+      "/home/sowens/hol/src/sum/sumSimps.sml"
+      "/home/sowens/hol/src/sum/sumSyntax.sml"
+      "/home/sowens/hol/src/sum/sumScript.sml"
+      "/home/sowens/hol/src/sum/sumTheory.sml"
+      "/home/sowens/hol/src/taut/tautLib.sml"
+      "/home/sowens/hol/src/temporal/examples.sml"
+      "/home/sowens/hol/src/temporal/src/Omega_AutomataScript.sml"
+      "/home/sowens/hol/src/temporal/src/Past_Temporal_LogicScript.sml"
+      "/home/sowens/hol/src/temporal/src/Temporal_LogicScript.sml"
+      "/home/sowens/hol/src/temporal/src/schneiderUtils.sml"
+      "/home/sowens/hol/src/temporal/src/temporalLib.sml"
+      "/home/sowens/hol/src/temporal/src/Temporal_LogicTheory.sml"
+      "/home/sowens/hol/src/temporal/src/Past_Temporal_LogicTheory.sml"
+      "/home/sowens/hol/src/temporal/src/Omega_AutomataTheory.sml"
+      "/home/sowens/hol/src/tfl/examples/sorting/partitionScript.sml"
+      "/home/sowens/hol/src/tfl/examples/sorting/permScript.sml"
+      "/home/sowens/hol/src/tfl/examples/sorting/sortingScript.sml"
+      "/home/sowens/hol/src/tfl/src/test/test.97.sml"
+      "/home/sowens/hol/src/tfl/src/test/test.98.sml"
+      "/home/sowens/hol/src/tfl/src/test/test.sml"
+      "/home/sowens/hol/src/tfl/src/test/test1.sml"
+      "/home/sowens/hol/src/tfl/src/test/test2.sml"
+      "/home/sowens/hol/src/tfl/src/Defn.sml"
+      "/home/sowens/hol/src/tfl/src/Functional.sml"
+      "/home/sowens/hol/src/tfl/src/Induction.sml"
+      "/home/sowens/hol/src/tfl/src/RW.sml"
+      "/home/sowens/hol/src/tfl/src/Rules.sml"
+      "/home/sowens/hol/src/tfl/src/TotalDefn.sml"
+      "/home/sowens/hol/src/tfl/src/wfrecUtils.sml"
+      "/home/sowens/hol/src/unwind/unwindLib.sml"
+      "/home/sowens/hol/src/word/src/wordLib.sml"
+      "/home/sowens/hol/src/word/theories/Base.sml"
+      "/home/sowens/hol/src/word/theories/bword_bitopScript.sml"
+      "/home/sowens/hol/src/word/theories/wordScript.sml"
+      "/home/sowens/hol/src/word/theories/word_numScript.sml"
+      "/home/sowens/hol/src/word/theories/word_baseScript.sml"
+      "/home/sowens/hol/src/word/theories/word_baseTheory.sml"
+      "/home/sowens/hol/src/word/theories/word_bitopScript.sml"
+      "/home/sowens/hol/src/word/theories/word_bitopTheory.sml"
+      "/home/sowens/hol/src/word/theories/word_numTheory.sml"
+      "/home/sowens/hol/src/word/theories/bword_numScript.sml"
+      "/home/sowens/hol/src/word/theories/bword_numTheory.sml"
+      "/home/sowens/hol/src/word/theories/bword_arithScript.sml"
+      "/home/sowens/hol/src/word/theories/bword_arithTheory.sml"
+      "/home/sowens/hol/src/word/theories/bword_bitopTheory.sml"
+      "/home/sowens/hol/src/word/theories/wordTheory.sml"
+      "/home/sowens/hol/src/word32/abbrevUtil.sml"
+      "/home/sowens/hol/src/word32/selectUtil.sml"
+      "/home/sowens/hol/src/word32/word32Lib.sml"
+      "/home/sowens/hol/src/word32/word32Script.sml"
+      "/home/sowens/hol/src/word32/wordFunctor.sml"
+      "/home/sowens/hol/src/word32/bitsScript.sml"
+      "/home/sowens/hol/src/word32/bitsTheory.sml"
+      "/home/sowens/hol/src/word32/word32Theory.sml"
+      "/home/sowens/hol/tools/Holmake/Systeml.sml"
+      "/home/sowens/hol/tools/Holmake/Holdep.sml"
+      "/home/sowens/hol/tools/Holmake/Holmake.sml"
+      "/home/sowens/hol/tools/Holmake/Holmake_rules.sml"
+      "/home/sowens/hol/tools/Holmake/Holmake_types.sml"
+      "/home/sowens/hol/tools/Holmake/unix-systeml.sml"
+      "/home/sowens/hol/tools/Holmake/winNT-systeml.sml"
+      "/home/sowens/hol/tools/Holmake/Parser.sml"
+      "/home/sowens/hol/tools/Holmake/Lexer.sml"
+      "/home/sowens/hol/tools/Holmake/Holmake_parse.sml"
+      "/home/sowens/hol/tools/Holmake/Holmake_tokens.sml"
+      "/home/sowens/hol/tools/build.sml"
+      "/home/sowens/hol/tools/end-init-boss.sml"
+      "/home/sowens/hol/tools/end-init.sml"
+      "/home/sowens/hol/tools/make_iss.sml"
+      "/home/sowens/hol/tools/unquote-init.sml"
+      "/home/sowens/hol/tools/win-config.sml"
+      "/home/sowens/hol/tools/quote-filter/quote-filter.sml"
+      "/home/sowens/hol/tools/quote-filter/filter.sml"
+      "/home/sowens/hol/tools/configure.sml"))
+  
+  
+  )

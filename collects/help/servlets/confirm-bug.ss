@@ -263,7 +263,12 @@
 			 "and try sending it again.")
 	    (P)
 	    "If the problem continues, please send email to "
-	    (TT "scheme@plt-scheme.org") " describing the problem. "
+	    ,(let ([address "scheme@plt-scheme.org"])
+	       `(A ((HREF ,(string-append 
+			    "mailto:" address)))
+		   ,address))
+	    " describing the problem. "
+	    (P)
 	    "You can also submit your bug report on the Web at "
 	    ,(let ([bug-url "http://bugs.plt-scheme.org/"])
 	       `(A ((HREF ,bug-url)) ,bug-url)) ". "
@@ -301,5 +306,3 @@
      ([void (lambda (exn) (send/finish error-page))])
      (smtp-send-bug-report)
      (send/finish done-page))))
-
-

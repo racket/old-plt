@@ -24,7 +24,7 @@ extern "C" {
 static ATSUStyle theATSUstyle, theATSUqdstyle;
 
 #define MAX_WIDTH_MAPPINGS 1024
-static Scheme_Hash_Table *width_table, *old_width_table;
+static Scheme_Hash_Table *style_table, *width_table, *old_width_table;
 static Scheme_Object *table_key;
 
 typedef struct {
@@ -37,7 +37,6 @@ typedef struct {
 typedef void (*atomic_timeout_t)(void);
 
 static void init_ATSU_style(void);
-static OSStatus atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, double angle, double scale_y, int qd_spacing);
 static OSStatus atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SInt16 txFace, int smoothing, 
 					       double angle, double scale_y, int qd_spacing);
 static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int ucs4,
@@ -517,8 +516,6 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   if (!theATSUstyle)
     init_ATSU_style();
 
-  style = (qd_spacing ? theATSUqdstyle : theATSUstyle);
-
   START_TIME;
 
   /****************************************/
@@ -593,22 +590,24 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   if (!width_table) {
     char *s;
 
+    wxREGGLOB(style_table);
     wxREGGLOB(width_table);
     wxREGGLOB(old_width_table);
     wxREGGLOB(table_key);
 
+    style_table = scheme_make_hash_table_equal();
     width_table = scheme_make_hash_table_equal();
     old_width_table = scheme_make_hash_table_equal();
     s = new WXGC_ATOMIC char[sizeof(wxKey)];
     memset(s, 0, sizeof(wxKey));
     table_key = scheme_make_sized_byte_string(s, sizeof(wxKey), 0);
   }
-  if (!given_font && qd_spacing) {
+  if (!given_font) {
     txFont = GetPortTextFont(qdp);
     txSize = GetPortTextSize(qdp);
     txFace = GetPortTextFace(qdp);
   }
-  if (qd_spacing) {
+  {
     wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
     k->scale_x = scale_x;
     k->scale_y = scale_y;
@@ -682,14 +681,42 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
   /****************************************/
   /* Set up style                         */
 
-  if (given_font)
-    atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
-				  angle, (use_cgctx || just_meas) ? 1.0 : scale_y,
-				  qd_spacing);
-  else
-    atsuSetStyleFromGrafPtr(style, smoothing, angle, 
-			    (use_cgctx || just_meas) ? 1.0 : scale_y,
-			    qd_spacing);
+  /* We cache ATSUStyles using a hash table, and currently, we never
+     release them. (In case some adds relasing code later: check
+     whether it's ok to release a style that was provided to a
+     text-layout object. */
+
+  {
+    atomic_timeout_t old;
+
+    old = pre_scheme();
+
+    ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = 0;
+    val = scheme_hash_get(style_table, table_key);
+    if (val) {
+      style = *(ATSUStyle *)val;
+      /* set style color */
+      if (!just_meas){
+	GC_CAN_IGNORE ATSUAttributeTag theTags[] = { kATSUColorTag };
+	GC_CAN_IGNORE ByteCount theSizes[] = { sizeof(RGBColor) };
+	ATSUAttributeValuePtr theValues[1];
+	RGBColor textColor;
+	GetForeColor(&textColor);
+	theValues[0] = &textColor;
+	ATSUSetAttributes(style, 1, theTags, theSizes, theValues);
+      }
+    } else {
+      ATSUCreateAndCopyStyle((qd_spacing ? theATSUqdstyle : theATSUstyle), &style);
+      atsuSetStyleFromGrafPtrParams(style, txFont, txSize, txFace, smoothing, 
+				    angle, (use_cgctx || just_meas) ? 1.0 : scale_y,
+				    qd_spacing);
+      val = (Scheme_Object *)(new WXGC_ATOMIC char[sizeof(ATSUStyle)]);
+      *(ATSUStyle *)val = style;
+      scheme_hash_set(style_table, table_key, val);
+    }
+
+    post_scheme(old);
+  }
 
   END_TIME(style);
   START_TIME;
@@ -790,7 +817,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 	if (use_cgctx) {
 	  GC_CAN_IGNORE ATSUAttributeTag ll_theTags[1];
 	  GC_CAN_IGNORE ByteCount ll_theSizes[1];
-	  ATSUAttributeValuePtr ll_theValues[1];	  
+	  ATSUAttributeValuePtr ll_theValues[1];
 	  ll_theTags[0] = kATSUCGContextTag;
 	  ll_theSizes[0] = sizeof(CGContextRef);
 	  ll_theValues[0] =  &cgctx;
@@ -1245,20 +1272,4 @@ atsuSetStyleFromGrafPtrParams( ATSUStyle iStyle, short txFont, short txSize, SIn
  status = ATSUSetAttributes( iStyle, tag_count, theTags, theSizes, theValues );
 
  return status;
-}
-
-static OSStatus
-atsuSetStyleFromGrafPtr(ATSUStyle iStyle, int smoothing, double angle, double scale_y, int qd_spacing)
-{
- short    txFont, txSize;
- SInt16   txFace;
- GrafPtr iGrafPtr;
-
- GetPort( &iGrafPtr );
-
- txFont = GetPortTextFont(iGrafPtr);
- txSize = GetPortTextSize(iGrafPtr);
- txFace = GetPortTextFace(iGrafPtr);
- 
- return atsuSetStyleFromGrafPtrParams(iStyle, txFont, txSize, txFace, smoothing, angle, scale_y, qd_spacing);
 }

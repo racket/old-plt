@@ -66,7 +66,7 @@ static int Check(void *d)
 static char *GetCWD(char *buf, int maxl, int *size, int *drive)
 {
   char *d;
-  *drive = _getdrive();
+  // *drive = _getdrive();
   int needed = GetCurrentDirectory(maxl, buf);
   if (needed < maxl) {
     d = buf;
@@ -84,7 +84,7 @@ static char *GetCWD(char *buf, int maxl, int *size, int *drive)
 
 static void SetCWD(char *dir, int drive)
 {
-  _chdrive(drive);
+  // _chdrive(drive);
   SetCurrentDirectory(dir);
 }
 
@@ -94,6 +94,10 @@ extern int mred_do_prepost_gm;
 
 static HANDLE checker;
 static HANDLE main_thread_for_checker;
+static HANDLE deadlock_detector;
+static HANDLE deadlock_detector2;
+
+static int undeadlock_via_prims;
 
 void wxDoPreGM(void)
 {
@@ -101,6 +105,7 @@ void wxDoPreGM(void)
 
   SuspendThread(checker);
 
+  /* The checker can't have locked CWD, so no need for the deadlock checker */
   real_dir = GetCWD(real_dir, real_dir_size, &real_dir_size, &real_drive);
   if (ff_dir)
     SetCWD(ff_dir, ff_drive);
@@ -116,41 +121,101 @@ void wxDoPostGM(void)
   for (a = active_threads; a; a = a->next)
     SuspendThread(a->th);
 
+  /* Did we catch an active thread at a bad time? See
+     "This is insane", below. */
+  ResumeThread(deadlock_detector2);
   ff_dir = GetCWD(ff_dir, ff_dir_size, &ff_dir_size, &ff_drive);
+  SuspendThread(deadlock_detector2);
   if (real_dir)
     SetCWD(real_dir, real_drive);
 
   ResumeThread(checker);
 }
 
-static long Checker(void *data)
+static long DeadlockChecker(void *data)
+/* See "This is insane", below */
+{
+	ActiveThread *a;
+
+	while (1) {
+	  SuspendThread(checker);
+	  if (undeadlock_via_prims) {
+		  for (a = active_threads; a; a = a->next)
+            ResumeThread(a->th);
+		  for (a = active_threads; a; a = a->next)
+            SuspendThread(a->th);
+	  } else {
+          ResumeThread(main_thread_for_checker);
+          SuspendThread(main_thread_for_checker);
+	  }
+	  ResumeThread(checker);
+    }
+
+	return 0;
+}
+
+static long DeadlockChecker2(void *data)
+/* See "This is insane", below */
+{
+	ActiveThread *a;
+
+	while (1) {
+	  /* This is the reason that we have a Checker2 instead
+	     of parameterizing DeadlockChecker: with parameterization,
+		 there would be a race condition on reading the argument to
+		 SuspendThread and setting the parameterized argument. */
+	  SuspendThread(main_thread_for_checker);
+	  for (a = active_threads; a; a = a->next)
+         ResumeThread(a->th);
+	  for (a = active_threads; a; a = a->next)
+         SuspendThread(a->th);
+	  ResumeThread(main_thread_for_checker);
+    }
+
+	return 0;
+}
+
+static long PrimtimeChecker(void *data)
 {
   ActiveThread *a;
 
-  /* Why doesn't this chew up cycles? Because when the main
-     thread goes into the central WaintMessage(), it enables
+  /* Why doesn't this chew up cycles? First, because it runs
+     with low priority. Second, because when the main
+     thread goes into the central WaitMessage(), it enables
      all the prim threads and suspends this checker thread. */
   while (1) {
     /* Give the threads for prims some time, adjusting the
        directory, first. */
     SuspendThread(main_thread_for_checker);
     
+	/* This is insane. It's possible now to go into deadlock
+	   because the main thread may have a lock on getting/setting
+	   CWD. deadlock_detector detects this, and gives the main
+	   thread more time. The main thread will eventually give up
+	   the lock, and we'll be on our way. */
+    undeadlock_via_prims = 0;
+    ResumeThread(deadlock_detector);
     real_dir = GetCWD(real_dir, real_dir_size, &real_dir_size, &real_drive);
+    SuspendThread(deadlock_detector);
     if (ff_dir)
       SetCWD(ff_dir, ff_drive);
 
     for (a = active_threads; a; a = a->next)
       ResumeThread(a->th);
 
-    /* Those threads have a higher priority, so they should run until
-       they've done as much as they can for now. Then we suspend them
+    /* Those threads have a higher priority than the checker, so they run
+       unilt they've done as much as they can for now. Then we suspend them
        again. Kinda dangerous because the main thread will be swapped
        out indefinitely, but we trust the primitive dialogs. */
 
     for (a = active_threads; a; a = a->next)
       SuspendThread(a->th);
 
+	/* See "This is insane", above. */
+    undeadlock_via_prims = 1;
+    ResumeThread(deadlock_detector);
     ff_dir = GetCWD(ff_dir, ff_dir_size, &ff_dir_size, &ff_drive);
+    SuspendThread(deadlock_detector);
     if (real_dir)
       SetCWD(real_dir, real_drive);
 
@@ -256,12 +321,19 @@ BOOL wxPrimitiveDialog(wxPDF f, void *data, int strict)
 			 DUPLICATE_SAME_ACCESS,
 			 FALSE,
 			 0);
-	 checker = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Checker, NULL, 
+	 checker = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)PrimtimeChecker, NULL, 
 				CREATE_SUSPENDED, &id);
-	 SetThreadPriority(th, THREAD_PRIORITY_BELOW_NORMAL);
+	 SetThreadPriority(checker, THREAD_PRIORITY_BELOW_NORMAL);
+     deadlock_detector = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DeadlockChecker, NULL, 
+				CREATE_SUSPENDED, &id);
+	 SetThreadPriority(deadlock_detector, THREAD_PRIORITY_LOWEST);
+	 deadlock_detector2 = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)DeadlockChecker2, NULL, 
+				CREATE_SUSPENDED, &id);
+	 SetThreadPriority(deadlock_detector2, THREAD_PRIORITY_LOWEST);
        }
 
-       ResumeThread(checker);
+	   if (!active_threads->next)
+         ResumeThread(checker);
      }
 
      wxDispatchEventsUntil(Check, (void *)_data);

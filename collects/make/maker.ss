@@ -60,7 +60,7 @@
 						 (printf "make: ~amaking ~a~n"
 							 (if (make-print-checking) indent "")
 							 s)
-						 (with-handlers ([(lambda (x) #t)
+						 (with-handlers ([(lambda (x) (not (exn:misc:user-break? x)))
 								  (lambda (exn)
 								    (raise (make-exn:make (format "make: Failed to make ~a; ~a"
 												  (car line)

@@ -10,10 +10,11 @@ server by periodically sending it requests.  Both launchers support the
 -h or --help flags which describe other available options.
 
 The command line 
-  web-server [-p <port>] [-f <configuration-table-file>]
+  web-server [-p <port>] [-f <configuration-table-file>] [-a <ip-address>]
 starts the server on port 80 or <port> and uses the configuration options
 from the "configuration-table" file of the web-server collection or from
-the specified configuration file.
+the specified configuration file.  If <ip-address> is provided, the server
+accepts connections only from <ip-address>.
 
 The command line
   web-server-monitor [-p <port>]
@@ -32,12 +33,15 @@ To use the Web server without a launcher, require web-server.ss:
   (require (lib "web-server.ss" "web-server"))
 
 This provides one main function:
-> serve : configuration [nat] -> (-> void)
-  (define (serve configuration port) ...)
+> serve : configuration [nat] [str] -> (-> void)
+  (define (serve configuration port ip-address) ...)
   
   The serve function starts the Web server, just like the launcher does,
   but the configuration argument supplies the server's settings.  The
   optional port argument overrides the port supplied by the configuration.
+  The optional ip-address restricts accepted web requests to come only from
+  that address.
+
   The result of invoking serve is a function of no arguments that shuts down
   the server.
 

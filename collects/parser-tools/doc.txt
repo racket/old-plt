@@ -1,0 +1,120 @@
+_lex.ss_ _lex_
+A regular expression is one of the following
+character                          match the given character
+'_                                 match any character
+'eof                               match end of file
+symbol                             match the sequence of chars in the symbol
+				   beware of mzscheme converting the 
+				   symbol to all lower case
+string                             match its sequence of characters
+(symbol)                           expand the lex abbreviation named symbol
+(* re)                             match 0 or more occurances of re
+(+ re)                             match 1 or more occurances of re
+(? re)                             match 0 or 1 occurance of re
+(: re ...1)                        match one of the listed re (alternation)
+(@ re ...)                         match each re in succession (concatenation)
+(- char char)                      match any character between two (inclusive)
+				   (a single character symbol or string can
+				    be used as a character here)
+(^ char_or_range ...1)             match any character not listed
+(the null concatenation `(@) means epsilon)
+Support for more usual re's should come soon.
+
+To use the lexer generator you must (require "lex.ss" "parser-tools").
+This gives you the following syntatic forms:
+
+> (define-lex-abbrev name re) which associates a regular expression with name
+to be used in other regular expressions with the (name) form.  The definition 
+of name hash the same scoping properties as a normal mzscheme macro definition.
+In particular a (define-syntax name ...) could interfere.
+
+> (define-lex-abbrevs [name re]. ..) defines several lex-abbrevs
+
+> (lex (re action) ...) expands into a function that takes a lex-buf, matches
+ the re's against the buffer and returns the result of executing the 
+ corresponding action.  Each action is scheme code that can refer to any
+ variables that something in the position of the lex definition can.  
+ The variables get-start-pos, get-end-pos, get-lexeme and lex-buf are also
+ bound in the action (hiding any outside binding).
+ > (get-start-pos) returns a position struct for the first character of the 
+     match
+ > (get-end-pos) returns a position struct for the last character of the match
+ > (get-lexeme) returns a string of the match.
+ > lex-buf is the lex-buf passed into the function lex generates.
+
+Several values are also provided:
+> (make-lex-buf input-port) creates a lex-buf from an input-port
+> (get-position lex-buf) returns a position struct for the current position in
+   the lex buf
+> (position-offset position) extracts the number of characters read
+> (position-line position) extracts the number of newlines read
+> (position-col position) extracts the number of characters read in the 
+    current line
+> (position? x) the question associated with a position struct
+
+An example this read works for a subset of the R5RS scheme syntax:
+(the parser and define-tokens forms will be provided by the yacc module, when
+it is ready)
+
+(module read mzscheme
+
+  (require (lib "lex.ss" "parser-tools")
+	   "yacc/yacc.ss")
+
+  (provide (rename my-read read))
+
+  (define-tokens read-tokens (BOOL CHARACTER SYM STRNG OPEN CLOSE HASHOPEN IMPROPER EOF))
+
+  (define get-token
+    (lex
+     [(: #\newline #\space #\tab (comment)) 
+      (get-token lex-buf)]
+     ["#t" 
+      (make-BOOL #t)]
+     ["#f" 
+      (make-BOOL #f)]
+     [(@ "#\\" _) 
+      (make-CHARACTER (caddr (string->list (get-lexeme))))]
+     ["#\\space" 
+      (make-CHARACTER #\space)]
+     ["#\\newline" 
+      (make-CHARACTER #\newline)]
+     [(: (@ (initial) (* (subsequent))) + - "...")
+      (make-SYM (string->symbol (get-lexeme)))]
+     [#\" 
+      (make-STRNG (list->string (get-string-token lex-buf)))]
+     [#\(
+      (make-OPEN #f)]
+     [#\)
+      (make-CLOSE #f)]
+     ["#("
+      (make-HASHOPEN #f)]
+     ["."
+      (make-IMPROPER #f)]
+     [eof (make-EOF #f)]))
+
+  (define get-string-token
+    (lex
+     [(^ #\" #\\) (cons (car (string->list (get-lexeme)))
+			(get-string-token lex-buf))]
+     [(@ #\\ #\\) (cons #\\ (get-string-token lex-buf))]
+     [(@ #\\ #\") (cons #\" (get-string-token lex-buf))]
+     [#\" null]))
+
+
+  (define-lex-abbrevs
+    [initial (: (- a z) (- #\A #\Z) ! $ % & * / : < = > ? ^ #\_ ~)]
+    [subsequent (: (initial) (digit) + - #\. @)]
+    [digit (- #\0 #\9)]
+    [comment (@ #\; (^ #\newline) #\newline)])
+
+
+  (define my-read
+    (parser Sexp (read-tokens)
+      (sexp [(SYM) 3]
+	    [(OPEN sexp-list CLOSE) 5])
+      (sexp-list [() 6]
+		 [(sexp sexp-list) 7])))
+)
+
+

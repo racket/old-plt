@@ -9,7 +9,7 @@
   (provide translate-program translate-interactions (struct compilation-unit (contains code locations depends)))
   
   ;(make-compilation-unit (list string) (list syntax) (list location) (list (list string)))
-  (define-struct compilation-unit (contains code locations depends))
+  (define-struct compilation-unit (contains code locations depends) (make-inspector))
   
   ;File takes java AST as defined by ast.ss and produces
   ;semantically (hopefully) equivalent scheme code
@@ -236,7 +236,7 @@
 ;                (printf "find-cycle for def ~a with reqs ~a~n" (id-string (def-name def))
 ;                        (map req-class (def-uses def)))
 ;                (printf "find-cycle required defs found were ~a~n" 
-;                        (map id-string (map def-name (filter (lambda (x) x) (map find (def-uses def)))))) 
+;                       (map id-string (map def-name (filter (lambda (x) x) (map find (def-uses def)))))) 
                 (for-each (lambda (reqD)
                             (cond
                               ((or (completed? reqD) (in-cycle? reqD)) (void))
@@ -248,13 +248,16 @@
              ;exists-path-to-cycle: def -> bool
              (exists-path-to-cycle? 
               (lambda (def)
+;                (printf "exists-path-to-cycle? for ~a~n" (id-string (def-name def)))
                 (let ((reqs-in-cycle (filter (lambda (req)
-                                               (or (not (completed? req))
-                                                   (in-cycle? req)
-                                                   (and (dependence-on-cycle req)
-                                                        (hash-table-put! cycle req 'in-cycle))
-                                                   (exists-path-to-cycle? req)))
+                                               (and (not (completed? req))
+                                                    (or (in-cycle? req)
+                                                        (and (dependence-on-cycle req)
+                                                             (hash-table-put! cycle req 'in-cycle))
+                                                        (exists-path-to-cycle? req))))
                                              (filter (lambda (x) x) (map find (def-uses def))))))
+ ;                 (printf "exists-path-to-cycle? reqs-in-cycle for ~a is ~a~n" (id-string (def-name def))
+ ;                         (map id-string (map def-name reqs-in-cycle)))
                   (and (not (null? reqs-in-cycle))
                        (hash-table-put! cycle def 'in-cycle)))))
              
@@ -299,7 +302,9 @@
                                        (hash-table-map cycle (lambda (k v) k)))))
                       (for-each (lambda (c) (hash-table-put! completed c 'completed))
                                 cyc)
-;                      (printf "cycle for ~a is ~a~n" (id-string (def-name def)) (map id-string (map def-name cyc)))
+ ;                     (printf "cycle for ~a is ~a~n" (id-string (def-name def)) (map id-string (map def-name cyc)))
+ ;                     (printf "completed table after ~a is ~a" (id-string (def-name def))
+ ;                             (hash-table-map completed (lambda (k v) (list (id-string (def-name k)) v))))
                       (set! cycles (cons cyc cycles)))))
                 defs)
       cycles))

@@ -150,7 +150,7 @@
 	    [highlight-parens
 	     (let ([clear-old-location (lambda () (void))]
 		   [color (apply make-object wx:colour% 
-				 (map (lambda (x) (* (/ x 65535) 255))
+				 (map (lambda (x) (* (/ (- x 65535) 65535) 255))
 				      (if #t
 					  (list 48896 48896 48896)
 					  (list 65535 21437 18932))))])

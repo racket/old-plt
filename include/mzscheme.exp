@@ -45,6 +45,7 @@ scheme_call_enable_break
 scheme_close_should_force_port_closed
 scheme_push_kill_action
 scheme_pop_kill_action
+scheme_new_schedule_info
 scheme_signal_error
 scheme_raise_exn
 scheme_warning
@@ -299,6 +300,7 @@ scheme_is_struct_instance
 scheme_struct_ref
 scheme_struct_set
 scheme_make_struct_type_property
+scheme_make_struct_type_property_w_guard
 scheme_struct_type_property_ref
 scheme_eq
 scheme_eqv

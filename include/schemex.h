@@ -86,14 +86,15 @@ void (*scheme_close_managed)(Scheme_Custodian *m);
 void (*scheme_schedule_custodian_close)(Scheme_Custodian *c);
 void (*scheme_add_atexit_closer)(Scheme_Exit_Closer_Func f);
 void (*scheme_add_waitable)(Scheme_Type type,
-				   Scheme_Ready_Fun ready, 
+				   Scheme_Ready_Fun_FPC ready, 
 				   Scheme_Needs_Wakeup_Fun wakeup, 
-				   Scheme_Wait_Filter_Fun filter);
+				   Scheme_Wait_Filter_Fun filter,
+				   int can_redirect);
 void (*scheme_add_waitable_through_sema)(Scheme_Type type,
 						Scheme_Wait_Sema_Fun sema, 
 						Scheme_Wait_Filter_Fun filter);
 int (*scheme_is_waitable)(Scheme_Object *o);
-int (*scheme_wait_on_waitable)(Scheme_Object *o, int just_try);
+int (*scheme_wait_on_waitable)(Scheme_Object *o, int just_try, Scheme_Schedule_Info *sinfo);
 void (*scheme_waitable_needs_wakeup)(Scheme_Object *o, void *fds);
 Scheme_Object *(*scheme_object_wait_multiple)(int argc, Scheme_Object *argv[]);
 void (*scheme_add_swap_callback)(Scheme_Closure_Func f, Scheme_Object *data);
@@ -101,6 +102,7 @@ Scheme_Object *(*scheme_call_enable_break)(Scheme_Prim *prim, int argc, Scheme_O
 int (*scheme_close_should_force_port_closed)();
 void (*scheme_push_kill_action)(Scheme_Kill_Action_Func f, void *d);
 void (*scheme_pop_kill_action)();
+Scheme_Schedule_Info *(*scheme_new_schedule_info)(int false_pos_ok);
 /*========================================================================*/
 /*                              error handling                            */
 /*========================================================================*/
@@ -284,8 +286,8 @@ Scheme_Object *(*scheme_append_string)(Scheme_Object *, Scheme_Object *);
 Scheme_Object *(*scheme_make_vector)(int size, Scheme_Object *fill);
 Scheme_Object *(*scheme_make_integer_value)(long i);
 Scheme_Object *(*scheme_make_integer_value_from_unsigned)(unsigned long i);
-Scheme_Object *(*scheme_make_integer_value_from_long_long)(unsigned long lohalf, unsigned long hihalf);
-Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_long)(unsigned long lohalf, unsigned long hihalf);
+Scheme_Object *(*scheme_make_integer_value_from_long_long)(unsigned long lowhalf, unsigned long hihalf);
+Scheme_Object *(*scheme_make_integer_value_from_unsigned_long_long)(unsigned long lowhalf, unsigned long hihalf);
 Scheme_Object *(*scheme_make_double)(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
 Scheme_Object *(*scheme_make_float)(float f) ;
@@ -508,6 +510,7 @@ int (*scheme_is_struct_instance)(Scheme_Object *type, Scheme_Object *v);
 Scheme_Object *(*scheme_struct_ref)(Scheme_Object *s, int pos);
 void (*scheme_struct_set)(Scheme_Object *s, int pos, Scheme_Object *v);
 Scheme_Object *(*scheme_make_struct_type_property)(Scheme_Object *name);
+Scheme_Object *(*scheme_make_struct_type_property_w_guard)(Scheme_Object *name, Scheme_Object *guard);
 Scheme_Object *(*scheme_struct_type_property_ref)(Scheme_Object *prop, Scheme_Object *s);
 /*========================================================================*/
 /*                              utilities                                 */

@@ -629,7 +629,17 @@ typedef struct Scheme_Custodian *Scheme_Custodian_Reference;
 
 typedef struct Scheme_Custodian Scheme_Custodian;
 
+typedef struct {
+#ifdef MZTAG_REQUIRED
+  Scheme_Type type;
+#endif  
+  int false_positive_ok;
+  int potentially_false_positive;
+  Scheme_Object *target;
+} Scheme_Schedule_Info;
+
 typedef int (*Scheme_Ready_Fun)(Scheme_Object *o);
+typedef int (*Scheme_Ready_Fun_FPC)(Scheme_Object *o, Scheme_Schedule_Info *sinfo);
 typedef void (*Scheme_Needs_Wakeup_Fun)(Scheme_Object *, void *);
 typedef Scheme_Object *(*Scheme_Wait_Sema_Fun)(Scheme_Object *, int *repost);
 typedef int (*Scheme_Wait_Filter_Fun)(Scheme_Object *);
@@ -676,8 +686,8 @@ typedef struct Scheme_Thread {
   float sleep_time; /* blocker has starting sleep time */
   int block_descriptor;
   Scheme_Object *blocker; /* semaphore or port */
-  int (*block_check)(Scheme_Object *blocker);
-  void (*block_needs_wakeup)(Scheme_Object *blocker, void *fds);
+  Scheme_Ready_Fun_FPC block_check;
+  Scheme_Needs_Wakeup_Fun block_needs_wakeup;
   short ran_some;
 
   short overflow_set;

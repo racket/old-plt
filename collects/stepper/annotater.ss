@@ -129,11 +129,11 @@
   ;((z:parsed (union (list-of z:varref) 'all) (list-of z:varref) (list-of z:varref) symbol) ->
   ; debug-info)
   
-  (define (make-debug-info source tail-bound top-env free-vars label)
+  (define (make-debug-info source tail-bound free-vars label)
     (let* ([top-level-varrefs (filter z:top-level-varref? free-vars)]
            [bound-varrefs (filter z:bound-varref? free-vars)]
            [top-level-kept (if (eq? tail-bound 'all)
-                               (var-set-union top-level-varrefs top-env)
+                               top-level-varrefs 
                                null)]
            [lexical-kept (if (eq? tail-bound 'all)
                              bound-varrefs
@@ -181,16 +181,14 @@
           (set-closure-record-name! closure-record name))))
   
   
-  (define-struct env-package (top-defs top-defs-no-structs))
-
-  (define initial-env-package (make-env-package null null))
+  (define initial-env-package null)
   
   ; annotate takes a list of expressions to annotate, a list of previously-defined variables
   ; (in the form returned by annotate), and a break routine to be called at breakpoints in the
   ; annotated code and returns an annotated expression, along with a new pair
   ; of environments (to be passed back in etc.)
   
-  (define (annotate red-exprs parsed-exprs input-envs break)
+  (define (annotate red-exprs parsed-exprs input-struct-proc-names break)
     (local
 	(  
          (define (make-break kind)
@@ -252,36 +250,19 @@
                             (else (e:static-error "unknown expression type in sequence" expr)))))
                        (else (e:static-error "unknown read type" expr))))))))
   
-         ; find-defined-vars extracts a list of what variables an expression
-         ; defines.  In the case of a top-level expression which does not
-         ; introduce bindings, it lists the temporary variable which will
-         ; be introduced to hold that binding.
+         (define (struct-procs-defined expr)
+           (if (and (z:define-values-form? expr)
+                    (z:struct-form? (z:define-values-form-val expr)))
+               (map z:varref-var (z:define-values-form-vars expr))
+               null))
          
-         (define (find-defined-vars include-structs? expr)
-           (cond [(z:define-values-form? expr)
-                  (if (and (not include-structs?)
-                           (z:struct-form? (z:define-values-form-val expr)))
-                      null
-                      (map z:varref-var (z:define-values-form-vars expr)))]
-                 [else 
-                  (list (top-level-exp-gensym-source expr))]))
- 
-         (define (find-top-defs include-structs? exprs)
-           (map (lambda (expr) (find-defined-vars include-structs? expr)) exprs))
+         (define struct-proc-names (apply append input-struct-proc-names
+                                          (map struct-procs-defined parsed-exprs)))
          
-         (define (make-env defs)
-           (map create-bogus-top-level-varref (apply append defs)))
-         
-         (define top-defs (append (env-package-top-defs input-envs) 
-                                  (list (find-top-defs #t parsed-exprs))))
-         
-         (define top-env (make-env top-defs))
-         
-         (define top-defs-no-structs (append (env-package-top-defs-no-structs input-envs)
-                                             (list (find-top-defs #f parsed-exprs))))
-         
-         (define top-env-no-structs (make-env top-defs-no-structs))
-         
+         (define (non-annotated-proc? varref)
+           (let ([name (z:varref-var varref)])
+             (or (s:check-pre-defined-var name)
+                 (memq name struct-proc-names))))
          
          ; annotate/inner takes 
          ; a) a zodiac expression to annotate
@@ -307,17 +288,15 @@
                   [non-tail-recur (lambda (expr) (annotate/inner expr null #f))]
                   [lambda-body-recur (lambda (expr) (annotate/inner expr 'all #t))]
                   [make-debug-info-normal (lambda (free-vars)
-                                            (make-debug-info expr tail-bound top-env free-vars 'none))]
+                                            (make-debug-info expr tail-bound free-vars 'none))]
                   [make-debug-info-app (lambda (tail-bound free-vars label)
-                                         (make-debug-info expr tail-bound top-env free-vars label))]
+                                         (make-debug-info expr tail-bound free-vars label))]
                   [wcm-wrap (if pre-break?
                                 wcm-pre-break-wrap
                                 simple-wcm-wrap)]
                   [wcm-break-wrap (lambda (debug-info expr)
                                     (wcm-wrap debug-info (break-wrap expr)))]
-                  [non-local-ref 
-                   (lambda (varref)
-                     (s:check-pre-defined-var (z:varref-var varref)))]
+
 
                   
                   [translate-varref
@@ -377,11 +356,11 @@
 				      arg-temp-syms annotated-sub-exprs)]
                   [val new-tail-bound (var-set-union tail-bound arg-temps)]
 		  [val app-debug-info (make-debug-info-app new-tail-bound arg-temps 'called)]
-                  [val primitive-app? (let ([fun-exp (z:app-fun expr)])
+                  [val annotate-app? (let ([fun-exp (z:app-fun expr)])
                                         (and (z:top-level-varref? fun-exp)
-                                             (non-local-ref fun-exp)))]
+                                             (non-annotated-proc? fun-exp)))]
 		  [val final-app (break-wrap (simple-wcm-wrap app-debug-info 
-                                                              (if primitive-app?
+                                                              (if annotate-app?
                                                                   (return-value-wrap arg-temp-syms)
                                                                   arg-temp-syms)))]
 		  [val debug-info (make-debug-info-app new-tail-bound
@@ -538,7 +517,7 @@
                                    parsed-exprs)])
            
            (values annotated-exprs
-                   (make-env-package top-defs top-defs-no-structs))))))
+                   struct-proc-names)))))
 	 
     
   

@@ -9,7 +9,11 @@
           [r : stepper:reconstruct^]
           [f : framework^]
           stepper:shared^)
-  
+ 
+  (define (send-to-other-eventspace eventspace thunk)
+    (parameterize ([current-eventspace eventspace])
+      (queue-callback thunk)))
+       
   ;;;;;; copied from /plt/collects/drscheme/snip.ss :
   
   (define separator-snipclass
@@ -86,6 +90,9 @@
   
   (define drscheme-eventspace (current-eventspace))
 
+  (define (send-to-drscheme-eventspace thunk)
+    (send-to-other-eventspace drscheme-eventspace thunk))
+  
   (define par-constructor-style-printing #f)
   (define (constructor-style-printing?)
     par-constructor-style-printing)
@@ -128,25 +135,25 @@
     (let ([print-convert-space (make-eventspace)]
           [print-convert-result #f]
           [print-convert-semaphore (make-semaphore)])
-      (parameterize ([current-eventspace print-convert-space])
-        (queue-callback
-         (lambda ()
-           (d:basis:initialize-parameters (make-custodian) settings)
-           (d:rep:invoke-library)
-           (current-namespace user-namespace)
-           (p:current-print-convert-hook 
-               (lambda (v basic-convert sub-convert)
-                 (if (image? v)
-                     v
-                     (basic-convert v)))))))
+      (send-to-other-eventspace
+       print-convert-space
+       (lambda ()
+         (d:basis:initialize-parameters (make-custodian) settings)
+         (d:rep:invoke-library)
+         (current-namespace user-namespace)
+         (p:current-print-convert-hook 
+          (lambda (v basic-convert sub-convert)
+            (if (image? v)
+                v
+                (basic-convert v))))))
       (set! print-convert
             (lambda (val)
-              (parameterize ([current-eventspace print-convert-space])
-                (queue-callback
-                 (lambda ()
-                   (set! print-convert-result
-                         (p:print-convert val))
-                   (semaphore-post print-convert-semaphore))))
+              (send-to-other-eventspace
+               print-convert-space
+               (lambda ()
+                 (set! print-convert-result
+                       (p:print-convert val))
+                 (semaphore-post print-convert-semaphore)))
               (semaphore-wait print-convert-semaphore)
               print-convert-result))))
 
@@ -256,7 +263,8 @@
                  (erase)
                  (for-each
                   (lambda (expr)
-                    (format-sexp expr no-sexp #f))
+                    (format-sexp expr no-sexp #f)
+                    (insert #\newline))
                   now-finished-exprs)
                  (insert (make-object separator-snip%))
                  (when (not (eq? pre-sexp no-sexp))
@@ -302,57 +310,92 @@
          
          (define user-eventspace (make-eventspace))
          
+         (define (send-to-user-eventspace thunk)
+           (send-to-other-eventspace user-eventspace thunk))
+         
          (define user-primitive-eval #f)
          (define user-vocabulary #f)
          
          (define _1 ; install settings & library:
-             (parameterize ([current-eventspace user-eventspace])
-               (queue-callback
-                (lambda ()
-                  (set! user-primitive-eval (current-eval))
-                  (d:basis:initialize-parameters (make-custodian) settings)
-                  (d:rep:invoke-library)
-                  (set! user-namespace (current-namespace))
-                  (set! user-pre-defined-vars (map car (make-global-value-list)))
-                  (set! user-vocabulary (d:basis:current-vocabulary))
-                  (set! par-constructor-style-printing (p:constructor-style-printing))
-                  (set! par-abbreviate-cons-as-list (p:abbreviate-cons-as-list))
-                  (set! par-cons (global-defined-value 'cons))
-                  (set! par-vector (global-defined-value 'vector))
-                  (semaphore-post stepper-semaphore)))
-               (semaphore-wait stepper-semaphore)))
+           (begin
+             (send-to-user-eventspace 
+              (lambda ()
+                (set! user-primitive-eval (current-eval))
+                (d:basis:initialize-parameters (make-custodian) settings)
+                (d:rep:invoke-library)
+                (set! user-namespace (current-namespace))
+                (set! user-pre-defined-vars (map car (make-global-value-list)))
+                (set! user-vocabulary (d:basis:current-vocabulary))
+                (set! par-constructor-style-printing (p:constructor-style-printing))
+                (set! par-abbreviate-cons-as-list (p:abbreviate-cons-as-list))
+                (set! par-cons (global-defined-value 'cons))
+                (set! par-vector (global-defined-value 'vector))
+                (semaphore-post stepper-semaphore)))
+             (semaphore-wait stepper-semaphore)))
          
-         (define read-n-parse-next-expr
+         (define begin-next-expr
            (let* ([reader (z:read (f:gui-utils:read-snips/chars-from-buffer text)
                                   (z:make-location 1 1 0 "stepper-text"))]
                   [zodiac-eventspace (make-eventspace)]
-                  [zodiac-semaphore (make-semaphore)]
-                  [zodiac-read-expr #f]
-                  [zodiac-parsed-expr #f])
-             (parameterize ([current-eventspace zodiac-eventspace])
-               (queue-callback
-                (lambda ()
-                  (d:basis:initialize-parameters (make-custodian) settings)
-                  (d:rep:invoke-library)
-                  (semaphore-post zodiac-semaphore))))
+                  [send-to-zodiac-eventspace 
+                   (lambda (thunk)
+                     (send-to-other-eventspace zodiac-eventspace thunk))]
+                  [zodiac-semaphore (make-semaphore)])
+             (send-to-zodiac-eventspace
+              (lambda ()
+                (d:basis:initialize-parameters (make-custodian) settings)
+                (d:rep:invoke-library)
+                (semaphore-post zodiac-semaphore)))
              (semaphore-wait zodiac-semaphore)
-             (lambda (handler)
-               (parameterize ([current-eventspace zodiac-eventspace])
-                 (queue-callback
-                  (lambda ()
-                    (d:interface:set-zodiac-phase 'reader)
-                    (let ([new-expr (with-handlers
-                                        ((exn:read? handler))
-                                      (reader))])
-                      (set! zodiac-read-expr new-expr)
-                      (when (not (z:eof? new-expr))
-                        (begin
-                          (d:interface:set-zodiac-phase 'expander)
-                          (set! zodiac-parsed-expr 
-                                (z:scheme-expand new-expr 'previous user-vocabulary))))
-                      (semaphore-post zodiac-semaphore)))))
-               (semaphore-wait zodiac-semaphore)
-               (values zodiac-read-expr zodiac-parsed-expr))))
+             (lambda ()
+               (send-to-zodiac-eventspace
+                (lambda ()
+                  (let/ec k
+                    (let ([inner-handler
+                           (lambda (exn)
+                             (send-to-drscheme-eventspace
+                              (lambda ()
+                                (handle-exception exn)))
+                             (k))]
+                          [return-handler
+                           (lambda (read parsed)
+                             (send-to-drscheme-eventspace
+                              (lambda ()
+                                (continue-next-expr read parsed))))])
+                      (d:interface:set-zodiac-phase 'reader)
+                      (let* ([new-expr (with-handlers
+                                           ((exn:read? inner-handler))
+                                         (reader))])
+                        (return-handler new-expr
+                                        (if (z:eof? new-expr)
+                                            #f
+                                            (begin
+                                              (d:interface:set-zodiac-phase 'expander)
+                                              (with-handlers
+                                                  ((exn:syntax? inner-handler))
+                                                (z:scheme-expand new-expr 'previous user-vocabulary)))))))))))))
+
+         
+         (define (continue-next-expr read parsed)
+           (let/ec k
+             (let ([exn-handler (make-exception-handler k)])
+               (if (z:eof? read)
+                   (construct-final-step)
+                   (let*-values ([(annotated-list envs) (a:annotate (list read) (list parsed) packaged-envs break)]
+                                 [(annotated) (car annotated-list)])
+                     (set! packaged-envs envs)
+                     (set! current-expr parsed)
+                     (check-for-repeated-names parsed exn-handler)
+                     (send-to-user-eventspace
+                      (lambda ()
+                        (let/ec k
+                          (current-exception-handler (make-exception-handler k))
+                          (user-primitive-eval annotated)
+                          (send-to-drscheme-eventspace
+                           (lambda ()
+                             (add-finished-expr)
+                             (begin-next-expr)))))))))))
+         
          
          (define (check-for-repeated-names expr exn-handler)
            (with-handlers
@@ -367,29 +410,6 @@
          (define (add-finished-expr)
            (let ([reconstructed (r:reconstruct-completed current-expr)])
              (set! finished-exprs (append finished-exprs (list reconstructed)))))
-         
-         (define (move-on-to-next-expr)
-           (let/ec k
-             (let*-values ([(exn-handler) (make-exception-handler k)]
-                           [(read parsed) (read-n-parse-next-expr exn-handler)])
-               (if (z:eof? read)
-                   (construct-final-step)
-                   (let*-values ([(annotated-list envs) (a:annotate (list read) (list parsed) packaged-envs break)]
-                                 [(annotated) (car annotated-list)])
-                     (set! packaged-envs envs)
-                     (set! current-expr parsed)
-                     (check-for-repeated-names parsed exn-handler)
-                     (parameterize ([current-eventspace user-eventspace])
-                       (queue-callback
-                        (lambda ()
-                          (let/ec k
-                            (current-exception-handler (make-exception-handler k))
-                            (user-primitive-eval annotated)
-                            (parameterize ([current-eventspace drscheme-eventspace])
-                              (queue-callback
-                               (lambda ()
-                                 (add-finished-expr)
-                                 (move-on-to-next-expr)))))))))))))
          
          (define view-currently-updating #f)
          (define final-view #f)
@@ -482,18 +502,21 @@
              (set! final-view view-currently-updating)
              (update-view view-currently-updating)))
 
+         (define (handle-exception exn)
+           (let ([step-text (if held-expr
+                                (make-object stepper-text% held-expr held-redex no-sexp no-sexp #f (exn-message exn))
+                                (make-object stepper-text% no-sexp no-sexp no-sexp no-sexp #f (exn-message exn)))])
+             (set! history (append history (list step-text)))
+             (set! final-view view-currently-updating)
+             (update-view view-currently-updating)))
+         
+         
          (define (make-exception-handler k)
            (lambda (exn)
              (parameterize ([current-eventspace drscheme-eventspace])
                (queue-callback
                 (lambda ()
-                  (printf "beginning exception handler~n")
-                  (let ([step-text (if held-expr
-                                       (make-object stepper-text% held-expr held-redex no-sexp no-sexp #f (exn-message exn))
-                                       (make-object stepper-text% no-sexp no-sexp no-sexp no-sexp #f (exn-message exn)))])
-                    (set! history (append history (list step-text)))
-                    (set! final-view view-currently-updating)
-                    (update-view view-currently-updating)))))
+                  (handle-exception exn))))
              (k)))
              
              
@@ -504,7 +527,7 @@
       (setup-print-convert settings)
       (set! finished-exprs null)
       (set! view-currently-updating 0)
-      (move-on-to-next-expr)
+      (begin-next-expr)
       (send button-panel stretchable-width #f)
       (send button-panel stretchable-height #f)
       (send canvas stretchable-height #t)

@@ -264,10 +264,10 @@
 (parameterize ([read-square-bracket-as-paren #f]
 	       [read-curly-brace-as-paren #f]
 	       [read-accept-quasiquote #f])
-  (test '|[2| readstr "[2")
-  (test '|{2| readstr "{2")
-  (test '|}2| readstr "}2")
-  (test '|]2| readstr "]2")
+  (err/rt-test (readstr "[2") exn:fail:read?)
+  (err/rt-test (readstr "{2") exn:fail:read?)
+  (err/rt-test (readstr "}2") exn:fail:read?)
+  (err/rt-test (readstr "]2") exn:fail:read?)
   (err/rt-test (readstr "#{1}") exn:fail:read?)
   (err/rt-test (readstr "#[1]") exn:fail:read?)
   (err/rt-test (readstr "#2{1}") exn:fail:read?)

@@ -181,6 +181,48 @@
 	(eval `(require f))
 	(test finished values l)))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Check redundant import and re-provide
+
+(module m_cr mzscheme
+  (provide x_cr y_cr z_cr w_cr)
+  (define x_cr 12)
+  (define y_cr 14)
+  (define z_cr 16)
+  (define w_cr 18))
+
+(syntax-test #'(module n_cr mzscheme
+		 (require m_cr)
+		 (provide (all-from-except m_cr no-such-var))))
+(syntax-test #'(module n_cr mzscheme
+		 (require m_cr)
+		 (provide (all-from-except m_cr cons))))
+
+(module n_cr mzscheme
+  (require m_cr)
+  (provide (all-from-except m_cr x_cr)))
+
+(module p_cr mzscheme
+  (require n_cr m_cr)
+  (provide (all-from m_cr)))
+
+(require p_cr)
+(test 14 values y_cr)
+
+(module p2_cr mzscheme
+  (require m_cr n_cr)
+  (provide (all-from m_cr)))
+
+(require p2_cr)
+(test 16 values z_cr)
+
+(module p3_cr mzscheme
+  (require m_cr n_cr)
+  (provide (all-from n_cr)))
+
+(require p3_cr)
+(test 18 values w_cr)
+
+;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (report-errs)

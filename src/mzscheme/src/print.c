@@ -1953,7 +1953,7 @@ print_char_string(const char *str, int len,
       if (esc) {
 	if (esc == minibuf) {
 	  if (ustr[ui+delta] > 0xFFFF) {
-	    sprintf(minibuf, "\\U%.8X", ustr[ui+delta]);
+	    sprintf(minibuf, "\\U%.6X", ustr[ui+delta]);
 	  } else
 	    sprintf(minibuf, "\\u%.4X", ustr[ui+delta]);
 	}
@@ -2200,7 +2200,7 @@ print_char(Scheme_Object *charobj, int notdisplay, PrintParams *pp)
 	  minibuf[2 + ch] = 0;
 	} else {
 	  if (ch > 0xFFFF)
-	    sprintf(minibuf, "#\\U%.8X", ch);
+	    sprintf(minibuf, "#\\U%.6X", ch);
 	  else
 	    sprintf(minibuf, "#\\u%.4X", ch);
 	}

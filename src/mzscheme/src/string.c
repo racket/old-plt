@@ -1042,7 +1042,7 @@ static Scheme_Object *
 do_byte_string_to_char_string(const char *who,
 			      Scheme_Object *bstr,
 			      long istart, long ifinish,
-			      int perm)
+			      int perm, int as_locale)
 {
   int i, ulen;
   char *chars;
@@ -1050,9 +1050,16 @@ do_byte_string_to_char_string(const char *who,
 
   chars = SCHEME_BYTE_STR_VAL(bstr);
 
-  ulen = scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
-			    NULL, 0, -1,
-			    NULL, 0, (perm > -1) ? 0xFFFF : 0);
+  ulen = utf8_decode_x((unsigned char *)chars, istart, ifinish,
+		       NULL, 0, -1,
+		       NULL, NULL, 0,
+#ifdef WINDOWS_UNICODE_SUPPORT
+		       as_locale ? 1 : 0,
+#else
+		       0,
+#endif
+		       NULL, 0, 
+		       (perm > -1) ? 0xFFFF : 0);
   if (ulen < 0) {
     scheme_arg_mismatch(who,
 			STRING_IS_NOT_UTF_8,
@@ -1060,10 +1067,17 @@ do_byte_string_to_char_string(const char *who,
   }
 
   v = (unsigned int *)scheme_malloc_atomic((ulen + 1) * sizeof(unsigned int));
-  scheme_utf8_decode((unsigned char *)chars, istart, ifinish,
-		     v, 0, -1,
-		     NULL, 0, (perm > -1) ? 0xFFFF : 0);
-
+  utf8_decode_x((unsigned char *)chars, istart, ifinish,
+		v, 0, -1,
+		NULL, NULL, 0,
+#ifdef WINDOWS_UNICODE_SUPPORT
+		as_locale ? 1 : 0,
+#else
+		0,
+#endif
+		NULL, 0, 
+		(perm > -1) ? 0xFFFF : 0);
+  
   if (perm > 0) {
     for (i = 0; i < ulen; i++) {
       if (v[i] == 0xFFFF)
@@ -1088,7 +1102,7 @@ do_byte_string_to_char_string_locale(const char *who,
   if (!iconv_ready) init_iconv();
 
   if (mzLOCALE_IS_UTF_8(current_locale_name) || !locale_on)
-    return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm);
+    return do_byte_string_to_char_string(who, bstr, istart, ifinish, perm, 1);
 
   if (istart < ifinish) {
     us = string_to_from_locale(0, SCHEME_BYTE_STR_VAL(bstr),
@@ -1131,7 +1145,7 @@ do_string_to_vector(const char *who, int mode, int argc, Scheme_Object *argv[])
 			       &istart, &ifinish);
 
   if (mode == 0)
-    return do_byte_string_to_char_string(who, argv[0], istart, ifinish, permc);
+    return do_byte_string_to_char_string(who, argv[0], istart, ifinish, permc, 0);
   else if (mode == 1)
     return do_byte_string_to_char_string_locale(who, argv[0], istart, ifinish, permc);
   else {
@@ -1172,7 +1186,7 @@ byte_string_to_char_string_latin1 (int argc, Scheme_Object *argv[])
 
 Scheme_Object *scheme_byte_string_to_char_string(Scheme_Object *o)
 {
-  return do_byte_string_to_char_string("s->s", o, 0, SCHEME_BYTE_STRLEN_VAL(o), '?');
+  return do_byte_string_to_char_string("s->s", o, 0, SCHEME_BYTE_STRLEN_VAL(o), '?', 0);
 }
 
 Scheme_Object *scheme_byte_string_to_char_string_locale(Scheme_Object *o)
@@ -1182,7 +1196,8 @@ Scheme_Object *scheme_byte_string_to_char_string_locale(Scheme_Object *o)
 
 /************************* string->bytes *************************/
 
-static Scheme_Object *do_char_string_to_byte_string(Scheme_Object *s, long istart, long ifinish)
+static Scheme_Object *do_char_string_to_byte_string(Scheme_Object *s, long istart, long ifinish, 
+						    int as_locale)
 {
   char *bs;
   int slen;
@@ -1212,7 +1227,7 @@ do_char_string_to_byte_string_locale(const char *who,
   if (!iconv_ready) init_iconv();
 
   if (mzLOCALE_IS_UTF_8(current_locale_name) || !locale_on)
-    return do_char_string_to_byte_string(cstr, istart, ifinish);
+    return do_char_string_to_byte_string(cstr, istart, ifinish, 1);
 
   if (istart < ifinish) {
     s = string_to_from_locale(1, (char *)SCHEME_CHAR_STR_VAL(cstr),
@@ -1236,7 +1251,7 @@ do_char_string_to_byte_string_locale(const char *who,
 
 Scheme_Object *scheme_char_string_to_byte_string(Scheme_Object *s)
 {
-  return do_char_string_to_byte_string(s, 0, SCHEME_CHAR_STRLEN_VAL(s));
+  return do_char_string_to_byte_string(s, 0, SCHEME_CHAR_STRLEN_VAL(s), 0);
 }
 
 Scheme_Object *scheme_char_string_to_byte_string_locale(Scheme_Object *s)
@@ -1267,7 +1282,7 @@ static Scheme_Object *do_chars_to_bytes(const char *who, int mode,
   if (mode == 1)
     return do_char_string_to_byte_string_locale(who, argv[0], istart, ifinish, permc);
   else if (mode == 0)
-    return do_char_string_to_byte_string(argv[0], istart, ifinish);
+    return do_char_string_to_byte_string(argv[0], istart, ifinish, 0);
   else {
     /* Latin-1 */
     mzchar *us;
@@ -3445,12 +3460,10 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
     state = (*_state) & 0x7;
     init_doki = (((*_state) >> 3) & 0x7);
     nextbits = ((((*_state) >> 6) & 0xF) << 2);
-    if ((state + init_doki) == 3)
-      /* Need v to detect 0xD800, 0xFFFF, etc. */
-      v = ((*_state) >> 10);
-    else
-      /* Make sure we don't hit 0xD800, etc. */
-      v = -1;
+    /* Need v to detect 0xD800, 0xFFFF, etc. 
+       Note that we have 22 bits to work with, which is
+       is enough to detect > 0x10FFFF */
+    v = ((*_state) >> 10);
   } else {
     state = 0;
     init_doki = 0;
@@ -3507,7 +3520,17 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	    /* We finished. One last check: */
 	    if (((v >= 0xD800) && (v <= 0xDFFF))
 		|| (v == 0xFFFE)
-		|| (v == 0xFFFF)) {
+		|| (v == 0xFFFF)
+# ifdef WINDOWS_UNICODE_SUPPORT
+		|| ((v > 0x10FFFF)
+		    ? (utf16
+		       ? (((v >= 0x10FFFF) && (v < 0x11D800))
+			  || (v > 0x11FFFF))
+		       : 1))
+# else
+		|| (v > 0x10FFFF)
+# endif
+		) {
 	      /* UTF-16 surrogates or other illegal code units */
 	      if (permissive) {
 		v = permissive;
@@ -3564,28 +3587,27 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
 	  i++;
 	  continue;
 	} else if ((sc & 0xF8) == 0xF0) {
-	  state = 3;
 	  v = (sc & 0x7);
-	  if (!v)
-	    nextbits = 0x30;
-	  i++;
-	  continue;
-	} else if ((sc & 0xFC) == 0xF8) {
-	  state = 4;
-	  v = (sc & 0x3);
-	  if (!v)
-	    nextbits = 0x38;
-	  i++;
-	  continue;
-	} else if ((sc & 0xFE) == 0xFC) {
-	  state = 5;
-	  v = (sc & 0x1);
-	  if (!v)
-	    nextbits = 0x3C;
-	  i++;
-	  continue;
+	  if (v <= 4) {
+	    state = 3;
+	    if (!v)
+	      nextbits = 0x30;
+	    i++;
+	    continue;
+	  } 
+# ifdef WINDOWS_UNICODE_SUPPORT
+	  else if (utf16 && (v == 6)) {
+	    /* WIN-UTF-16 mode. We decode 0x11Dxxx as misplaced
+	       UTF-16 surrogate 0xDxxxx */
+	    state = 3;
+	    i++;
+	    continue;
+	  }
+# else
+	  /* Else will be larger than 0x10FFFF, so fail */
+# endif
 	}
-	/* Too small or 0xFF or 0xFe */
+	/* Too small, or 0xFF or 0xFe, or start of a 5- or 6-byte sequence */
 	if (permissive) {
 	  v = permissive;
 	} else {
@@ -3598,14 +3620,26 @@ static int utf8_decode_x(const unsigned char *s, int start, int end,
       if (compact) {
 	if (utf16) {
 	  if (v > 0xFFFF) {
-	    if (us) {
-	      v -= 0x10000;
-	      if (j + 1 >= dstart)
-		break;
-	      ((unsigned short *)us)[j] = 0xD800 | ((v >> 10) & 0x3FF);
-	      ((unsigned short *)us)[j+1] = 0xDC00 | (v & 0x3FF);
-	    }
-	    j++;
+# ifdef WINDOWS_UNICODE_SUPPORT
+	    if ((v >= 0x11D800) {
+	      /* 0x11Dxxx means misplaced surrogate 0xDxxx,
+		 so misplace it! */
+	      if (us) {
+		v -= 0x110000;
+		((unsigned short *)us)[j] =v;
+	      }
+	    } else
+# endif
+	      {
+		if (us) {
+		  v -= 0x10000;
+		  if (j + 1 >= dstart)
+		    break;
+		  ((unsigned short *)us)[j] = 0xD800 | ((v >> 10) & 0x3FF);
+		  ((unsigned short *)us)[j+1] = 0xDC00 | (v & 0x3FF);
+		}
+		j++;
+	      }
 	  } else if (us) {
 	    ((unsigned short *)us)[j] = v;
 	  }
@@ -3818,10 +3852,19 @@ int scheme_utf8_encode(const unsigned int *us, int start, int end,
 	wc = ((unsigned short *)us)[i];
 	if ((wc & 0xF800) == 0xD800) {
 	  /* Unparse surrogates. We assume that the surrogates are
-	     well formed. */
-	  i++;
-	  wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
-	  wc += 0x10000;
+	     well formed on non-Windows platforms. */
+# ifdef WINDOWS_UNICODE_SUPPORT
+	  if ((i + 1 >= end)
+	      || (((((unsigned short *)us)[i]) & 0xF800) != 0xD800)) {
+	    /* Bad encoding. We encode this into non-unicode area: */
+	    wc += 0x110000;
+	  } else
+# endif
+	    {
+	      i++;
+	      wc = ((wc & 0x3FF) << 10) + ((((unsigned short *)us)[i]) & 0x3FF);
+	      wc += 0x10000;
+	    }
 	}
       } else {
 	wc = us[i];

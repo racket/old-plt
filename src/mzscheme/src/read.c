@@ -1911,7 +1911,7 @@ read_string(int is_byte, Scheme_Object *port,
       case 'u':
       case 'U':
 	if (!is_byte) {
-	  int maxc = ((ch == 'u') ? 4 : 8);
+	  int maxc = ((ch == 'u') ? 4 : 6);
 	  ch = scheme_getc_special_ok(port);
 	  if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
 	    int count = 1;
@@ -1925,11 +1925,11 @@ read_string(int is_byte, Scheme_Object *port,
 	      } else
 		break;
 	    }
-	    /* overflow makes a negative character, but also disallow
-	       surrogate points */
+	    /* disallow surrogate points, etc */
 	    if (((n >= 0xD800) && (n <= 0xDFFF))
 		|| (n == 0xFFFE)
-		|| (n == 0xFFFF)) {
+		|| (n == 0xFFFF)
+		|| (n > 0x10FFFF)) {
 	      ch = -1;
 	    } else {
 	      ch = n;
@@ -2598,7 +2598,7 @@ read_character(Scheme_Object *port,
   }
 
   if (((ch == 'u') || (ch == 'U')) && NOT_EOF_OR_SPECIAL(next) && scheme_isxdigit(next)) {
-    int count = 0, n = 0, nbuf[8], maxc = ((ch == 'u') ? 4 : 8);
+    int count = 0, n = 0, nbuf[8], maxc = ((ch == 'u') ? 4 : 6);
     while (count < maxc) {
       ch = scheme_peekc_special_ok(port);
       if (NOT_EOF_OR_SPECIAL(ch) && scheme_isxdigit(ch)) {
@@ -2609,12 +2609,12 @@ read_character(Scheme_Object *port,
       } else
 	break;
     }
-    /* overflow makes a negative character; also, disallow
-       surrogate points */
+    /* disallow surrogate points, etc. */
     if ((n < 0)
 	|| ((n >= 0xD800) && (n <= 0xDFFF))
 	|| (n == 0xFFFE)
-	|| (n == 0xFFFF)) {
+	|| (n == 0xFFFF)
+	|| (n > 0x10FFFF)) {
       scheme_read_err(port, stxsrc, line, col, pos, count + 2, 0, indentation,
 		      "read: bad character constant #\\%u",
 		      nbuf, count);

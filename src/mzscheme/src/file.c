@@ -540,11 +540,11 @@ static char *mz_getcwd(char *s, int l)
  if (!need_l)
    return NULL;
  
- bl = scheme_utf8_encode((unsigned int *)wbuf, 0, need_l, NULL, 0, 1 /* utf16 */);
+ bl = scheme_utf8_encode((unsigned int *)wbuf, 0, need_l, NULL, 0, 1 /*UTF-16*/);
  if (bl + 1 > l) {
    s = (char *)scheme_malloc_atomic(bl + 1);
  }
- bl = scheme_utf8_encode((unsigned int *)wbuf, 0, need_l, s, 0, 1 /* utf16 */);
+ bl = scheme_utf8_encode((unsigned int *)wbuf, 0, need_l, s, 0, 1 /*UTF-16*/);
  s[bl] = 0;
 
  return s;

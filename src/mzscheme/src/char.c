@@ -254,7 +254,7 @@ Scheme_Object *scheme_make_char(mzchar ch)
 Scheme_Object *scheme_make_char_or_nul(mzchar v)
 {
   if ((v >= 0) 
-      && (v <= 0x7FFFFFFF)
+      && (v <= 0x10FFFF)
       && (v != 0xFFFE)
       && (v != 0xFFFF)
       && ((v < 0xD800) || (v > 0xDFFF)))
@@ -346,7 +346,7 @@ integer_to_char (int argc, Scheme_Object *argv[])
     long v;
     v = SCHEME_INT_VAL(argv[0]);
     if ((v >= 0) 
-	&& (v <= 0x7FFFFFFF)
+	&& (v <= 0x10FFFF)
 	&& (v != 0xFFFE)
 	&& (v != 0xFFFF)
 	&& ((v < 0xD800) || (v > 0xDFFF)))
@@ -356,13 +356,13 @@ integer_to_char (int argc, Scheme_Object *argv[])
     /* On 32-bit machines, there's still a chance... */
     long y;
     if (scheme_get_int_val(argv[0], &y)) {
-      if (y <= 0x7FFFFFFF)
+      if (y <= 0x10FFFF)
 	return _scheme_make_char(y);
     }
   }
 
   scheme_wrong_type("integer->char", 
-		    "exact integer in [0,#x7FFFFFFF], not in [#xD800,#xDFFF] or [#xFFFE,#xFFFF]", 
+		    "exact integer in [0,#x10FFFF], not in [#xD800,#xDFFF] or [#xFFFE,#xFFFF]", 
 		    0, argc, argv);
   return NULL;
 }

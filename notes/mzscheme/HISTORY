@@ -2,6 +2,11 @@
 >> See MzScheme_300.txt for information on major changes in
    MzScheme 299.X. Minor changes are listed below.
 
+Version 299.16
+Inside MzScheme: added scheme_set_type_printer, scheme_print_bytes,
+ and scheme_print_string
+Changed syntax-local-certify to syntax-local-certifier
+
 Version 299.15
 Removed syntax-recertify-constrained?, syntax-extend-certificate-env,
   make-syntax-certificate-env, and syntax-certificate-env?

@@ -19,15 +19,17 @@
    (goto-manual-link
     (hd-cookie? string? string? . -> . any?)))
 
-  (define index-format-prefix
-    "http://127.0.0.1:~a/servlets/index.ss?")
+  (define (index-format-prefix)
+    (if (use-frames?)
+	"http://127.0.0.1:~a/servlets/index.ss?"
+	"http://127.0.0.1:~a/servlets/results.ss?"))
 
   ; hd-cookie string string string any -> void
   ; shows search result in default browser
   (define (search-for-docs cookie search-string search-type match-type lucky?)
     (let* ([port (hd-cookie->port cookie)]
 	   [url (format 
-		 (string-append index-format-prefix
+		 (string-append (index-format-prefix)
 				"search-string=~a&"
 				"search-type=~a&"
 				"match-type=~a&"

@@ -858,6 +858,7 @@ static Scheme_Object *wxSchemeGetPanelBackground(int, Scheme_Object **)
   return objscheme_bundle_wxColour(c);
 }
 
+/*
 #ifdef wx_mac
 #include <Sound.h>
 typedef struct AsyncSoundRec {
@@ -896,10 +897,10 @@ void wxCheckFinishedSounds(void)
 
 static FilePlayCompletionUPP SoundFinishedProc = NewFilePlayCompletionProc(SoundFinished);
 #endif
-
+*/
 #ifndef wx_x
 
-# ifdef wx_mac
+/*# ifdef wx_mac
 static int IsFinished(void *r)
 {
   AsyncSoundRec *f = finished;
@@ -917,6 +918,21 @@ extern "C" {
   int scheme_mac_path_to_spec(const char *filename, FSSpec *spec, long *type);
 };
 # endif
+*/
+
+#ifdef wx_mac
+int MyIsFinished(void *movie)
+{
+  MoviesTask((Movie)movie,0);
+  return IsMovieDone((Movie)movie);
+}
+
+void my_signal_error(char *msg, char *filename, int err)
+{
+  scheme_signal_error("%s: \"%s\" (errno = %d)", msg, filename, err);
+}
+
+#endif
 
 static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
 {
@@ -937,6 +953,48 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
   ok = PlaySound(f, NULL, async ? SND_ASYNC : SND_SYNC);
 #endif
 #ifdef wx_mac
+  FSSpec spec;
+  short osErr;
+  long type;
+  short resRefNum;
+  Movie theMovie;
+  Handle soundHandle = NULL;
+  Track myTrack;
+  long trackCount;
+  
+  osErr = scheme_mac_path_to_spec(f,&spec,FALSE);
+  if (! osErr) 
+    scheme_signal_error("cannot find file: \"%s\"", SCHEME_STR_VAL(argv[0]));
+  
+  // load sound as "movie"
+  
+  osErr = OpenMovieFile(&spec,&resRefNum,fsRdPerm);
+  if (osErr != noErr)
+    my_signal_error("cannot open as movie file", SCHEME_STR_VAL(argv[0]), osErr);
+    
+  osErr = NewMovieFromFile(&theMovie, resRefNum, NULL, NULL, newMovieActive, NULL);
+  if (osErr != noErr)
+    my_signal_error("cannot create movie from file", SCHEME_STR_VAL(argv[0]), osErr);
+
+  // play the movie once thru
+  StartMovie(theMovie);
+  
+  if (async) {
+    wxDispatchEventsUntil(MyIsFinished,theMovie);
+  } else {
+    while (!IsMovieDone(theMovie))
+      MoviesTask(theMovie, 0);
+  }
+  DisposeMovie(theMovie);
+    
+  osErr = CloseMovieFile(resRefNum);
+  if (osErr != noErr)
+    my_signal_error("cannot close movie file", SCHEME_STR_VAL(argv[0]), osErr);
+      
+  ok = TRUE;
+     
+/*
+  // old play sound code
   Bool local_async = TRUE;
   SndChannelPtr snd;
   short file;
@@ -990,6 +1048,7 @@ static Scheme_Object *wxPlaySound(int argc, Scheme_Object **argv)
     SoundFinished(snd);
     wxCheckFinishedSounds();
   }
+  */
 #endif  
 
   return (ok ? scheme_true : scheme_false);

@@ -1,3 +1,4 @@
+
 (define mred:console@
   (unit/sig mred:console^
     (import [mred:debug : mred:debug^] 
@@ -84,35 +85,25 @@
 	(class super% args
 	  (inherit begin-edit-sequence end-edit-sequence
 		   position-line position-location
-		   line-location
-		   set-position
-		   clear-undos
-		   insert delete
+		   line-location get-admin
+		   set-position set-caret-owner
+		   clear-undos insert delete
 		   change-style styles-fixed? split-snip
 		   scroll-to-position
-		   last-position
-		   get-start-position
-		   get-end-position
-		   get-text
-		   get-snip-position
-		   get-character find-snip
-		   find-string
-		   erase
-		   set-mode
-		   get-canvas
+		   last-position get-start-position get-end-position
+		   get-text get-snip-position
+		   get-character find-snip find-string
+		   erase set-mode get-canvas
 		   invalidate-bitmap-cache
-		   get-extent
-		   get-style-list
-		   canvases)
+		   get-extent get-style-list canvases)
 	  (rename [super-on-local-char on-local-char]
 		  [super-on-paint on-paint]
 		  [super-after-set-size-constraint after-set-size-constraint]
 		  [super-after-insert after-insert]
 		  [super-after-delete after-delete])
-	  (private old-stdout
-		   old-stderr
-		   old-stdin)
-
+	  (public
+	    [orig-stdout (current-output-port)]
+	    [orig-stderr (current-error-port)])
 	  (public
 	    [CACHE-TIME 1] 
 	    [CACHE-WRITE-COUNT 100]
@@ -247,12 +238,6 @@
 		       (send transparent-edit
 			     change-style output-delta 
 			     start end))))]
-	    [this-result-write
-	     (lambda (s)
-	       (generic-write s 
-		     (lambda (start end)
-		       (change-style result-delta
-				     start end))))]
 	    [this-err-write
 	     (lambda (s)
 	       (generic-write s
@@ -269,32 +254,53 @@
 	    [cleanup-transparent-io
 	     (lambda ()
 	       (when transparent-edit
+		 (send transparent-edit flush-console-output)
 		 (send transparent-edit lock #t)
-		 (set! transparent-edit #f)
-		 (set-position (last-position))))]
+		 (set-position (last-position))
+		 (set-caret-owner null)
+		 (let ([a (get-admin)])
+		   (unless (null? a)
+		     (send a grab-caret)))		 
+		 (set! transparent-edit #f)))]
 	    [init-transparent-io
 	     (lambda ()
 	       (unless transparent-edit
+		 (when prompt-mode?
+		   (set! prompt-mode? #f)
+		   (insert #\newline))
 		 (set! transparent-edit (make-object transparent-io-edit%))
 		 (send transparent-edit enable-autoprompt #f)
 		 (for-each (lambda (c) (send c add-rep-snip transparent-edit))
 			   canvases)
-		 (let ([snip (make-object wx:media-snip% transparent-edit)])
-		   (insert snip)
-		   (insert #\newline))
+		 (dynamic-wind
+		  (lambda ()
+		    (begin-edit-sequence))
+		  (lambda ()		  
+		    (let ([snip (make-object wx:media-snip% transparent-edit)])
+		      (insert snip)
+		      (insert #\newline))
+		    (let ([a (send transparent-edit get-admin)])
+		      (unless (null? a)
+			(send a grab-caret))))
+		  (lambda ()
+		    (end-edit-sequence)))
 		 (set! prompt-position (last-position))))]
 	    [transparent-read
 	     (lambda ()
 	       (init-transparent-io)
 	       (send transparent-edit flush-console-output)
 	       (send transparent-edit set-position (send transparent-edit last-position))
-	       (read
-		(open-input-string
-		 (let loop ()
-		   (if (send transparent-edit ready?)
-		       (send transparent-edit get-data)
-		       (begin (wx:yield)
-			      (loop)))))))])
+	       (let/ec k
+		 (read 
+		  (open-input-string 
+		   (let loop ()
+		     (cond
+		       [(not transparent-edit) (k (void))]
+		       [(send transparent-edit ready?)
+			(send transparent-edit get-data)]
+		       [else
+			(wx:yield)
+			(loop)]))))))])
 	  (public
 	    [set-output-delta
 	     (lambda (delta)
@@ -371,14 +377,20 @@
 	       (ready-non-prompt))]
 	    [do-post-eval
 	     (lambda ()
-	       (insert-prompt)
-	       (cleanup-transparent-io))])
+	       (insert-prompt))])
 	    
 	    (public
 	      [eval-str mzlib:string:eval-string]
 	      [pretty-print-out
-	       (lambda (v)
-		 (mzlib:pretty-print:pretty-print v this-result))]
+	       (let* ([this-result-write
+		       (lambda (s)
+			 (generic-write s 
+					(lambda (start end)
+					  (change-style result-delta
+							start end))))]
+		      [this-result (make-output-port this-result-write generic-close)])
+		 (lambda (v)
+		   (mzlib:pretty-print:pretty-print v this-result)))]
 	      [display-result
 	       (lambda (v)
 		 (cond
@@ -397,11 +409,10 @@
 		     (lambda ()
 		       (call-with-values 
 			(lambda ()
-			  (add-tread)
-			  (parameterize ([current-output-port this-out]
-					 [current-error-port this-err]
-					 [current-input-port this-in])
-					(eval-str str)))
+			  (with-parameterization user-parameterization
+			    (lambda ()
+			      (add-tread)
+			      (eval-str str))))
 			(lambda v (map display-result v))))))))])
 	    
 	    (private
@@ -443,8 +454,8 @@
 		     [(and (< start end) (< end prompt-position)
 			   (not (eval-busy?)))
 		      (begin-edit-sequence)
-		      (if (not prompt-mode?)
-			  (insert-prompt))
+		      (when (not prompt-mode?)
+			(insert-prompt))
 		      (copy-to-end/set-position start end)
 		      (end-edit-sequence)]
 		     [(and (= start last) (not prompt-mode?)
@@ -471,31 +482,9 @@
 			    (super-on-local-char key)))]
 		     [else (super-on-local-char key)])))]
 	      
-	      [takeover-output
-	       (lambda ()
-		 (when (and (void? old-stdout)
-			    (not (eq? 'no-takeover mred:debug:on?))
-			    (not (and (list? mred:debug:on?)
-				      (member 'no-takeover mred:debug:on?))))
-		   (set! old-stdout (current-output-port))
-		   (set! old-stderr (current-error-port))
-		   (set! old-stdin (current-input-port))
-		   (current-output-port this-out)
-		   (current-error-port this-err)
-		   (current-input-port this-in)))]
-	      [release-output
-	       (lambda ()
-		 (if (not (void? old-stdout))
-		     (begin
-		       (current-output-port old-stdout)
-		       (current-error-port old-stderr)
-		       (current-input-port old-stdin)
-		       (set! old-stdout (void))
-		       (set! old-stderr (void))
-		       (set! old-stdin (void)))))]
-	      
 	      [insert-prompt
 	       (lambda ()
+		 (cleanup-transparent-io)
 		 (set! prompt-mode? #t)
 		 (let* ([last (last-position)]
 			[start-selection (get-start-position)]
@@ -607,24 +596,37 @@
 	      [initialize-console
 	       (lambda ()
 		 #t)]
+	      [make-this-in
+	       (lambda ()
+		 (make-input-port this-in-read
+				  this-in-char-ready?
+				  generic-close))]
 	      [make-this-out
 	       (lambda ()
 		 (make-output-port this-out-write generic-close))]
 	      [make-this-err
 	       (lambda ()
 		 (make-output-port this-err-write generic-close))])
-	    (sequence
-	      (mred:debug:printf 'super-init "before console-edit%")
-	      (apply super-init args)
-	      (mred:debug:printf 'super-init "after console-edit%")
-	      (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
-	    (public
-	      [this-in (make-input-port this-in-read
-					this-in-char-ready?
-					generic-close)]
-	      [this-out (make-this-out)]
-	      [this-result (make-output-port this-result-write generic-close)]
-	      [this-err (make-this-err)]))))
+	  (sequence
+	    (mred:debug:printf 'super-init "before console-edit%")
+	    (apply super-init args)
+	    (mred:debug:printf 'super-init "after console-edit%")
+	    (set-mode (make-object mred:scheme-mode:scheme-interaction-mode%)))
+	  (public [user-parameterization (make-parameterization)])
+	  (sequence
+	    (let ([out (make-this-out)]
+		  [in (make-this-in)]
+		  [err (make-this-err)])
+	      '(unless (eq? mred:debug:on? 'no-takeover)
+		(current-output-port out)
+		(current-input-port in)
+		(current-error-port err))
+	      (with-parameterization user-parameterization
+		(lambda ()
+		  (current-output-port out)
+		  (current-input-port in)
+		  (current-base-parameterization user-parameterization)
+		  (current-error-port err))))))))
       
     (define console-edit% (make-console-edit% mred:edit:edit%))
 
@@ -640,7 +642,7 @@
 	       (let ([width (box 0)])
 		 (send (send (get-media) get-admin)
 		       get-view null null width null)
-		 (send s set-min-width (- (unbox width) 10))))])
+		 (send s set-min-width (- (unbox width) 12))))])
 	  (public
 	    [add-rep-snip
 	     (lambda (snip)
@@ -769,15 +771,10 @@
 	    [file-menu:revert #f]
 	    [file-menu:close
 	     (cond
-	       [close-item?
+	       [(or close-item? mred:debug:on?)
 		(lambda ()
 		  (when (on-close)
-		    (send edit release-output)
 		    (show #f)))]
-	       [mred:debug:on?
-		(lambda ()
-		  (send (active-edit) release-output)
-		  (show #f))]
 	       [else #f])]
 	    [file-menu:close-string "DEBUG"]
 	    [file-menu:between-open-and-save
@@ -834,7 +831,6 @@
 			(send edit set-output-delta dd)))))))
 	      
 	      (send edit enable-autoprompt)
-	      (send edit takeover-output)
 	      (send edit insert-prompt)
 	      (send edit clear-undos)
 	      (when show?

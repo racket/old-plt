@@ -1293,7 +1293,8 @@ wxStyle *wxStyleList::MapIndexToStyle(int i)
 
 wxStyleList *wxReadStyleList(class wxMediaStreamIn *f)
 {
-  wxStyleList *l = new wxStyleList;
+  wxStyleList *l;
+  l = new wxStyleList;
 
   return wxmbReadStylesFromFile(l, f, 0);
 }

@@ -750,7 +750,8 @@ Bool wxLoadIntoBitmap(char *filename, wxBitmap *bitmap, wxColourMap **cmap)
 
 wxBitmap *wxLoadBitmap(char *s, wxColourMap **cmap)
 {
-  wxBitmap *bitmap = new wxBitmap;
+  wxBitmap *bitmap;
+  bitmap = new wxBitmap;
   if (wxLoadIntoBitmap(s, bitmap, cmap))
     return bitmap;
   else {

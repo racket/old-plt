@@ -102,7 +102,7 @@ class wxMediaSnipMediaAdmin : public wxMediaAdmin
   void RestoreState(wxMSMA_SnipDrawState *saved);
   void SaveState(wxMSMA_SnipDrawState *save, wxDC *dc, float x, float y);
 
-  wxMediaSnipMediaAdmin(wxMediaSnip *);
+  wxMediaSnipMediaAdmin(wxMediaSnip *s);
 
  public:
 

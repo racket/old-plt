@@ -94,7 +94,7 @@
      (close-output-port (current-output-port))
      (current-output-port (current-error-port))
      (when file-out
-       '(delete-file file-out))
+       (delete-file file-out))
      (eh))))
 
 (define exit-with-error? #f)
@@ -162,6 +162,7 @@
 (define END_XFORM_SKIP (string->symbol "END_XFORM_SKIP"))
 (define Scheme_Object (string->symbol "Scheme_Object"))
 (define sElF (string->symbol "sElF"))
+(define NULL_ (string->symbol "NULL"))
 (define gcMark (string->symbol "gcMark"))
 (define gcMARK_TYPED (string->symbol "gcMARK_TYPED"))
 (define Mark_Proc (string->symbol "Mark_Proc"))
@@ -904,14 +905,17 @@
 			       (list->seq
 				(make-mark-body (or super 'gc_marking)
 						(c++-class-top-vars cl)
+						init-vars
 						(car e))))))))))
 		     (cdr e)))
 	      (cons (car e) (loop (cdr e) (sub1 p)))))))))
 
-(define (make-mark-body super vars where-v)
-  (let ([pointers (filter (lambda (x)
-			    (not (non-pointer-type? (cdr x))))
-			  vars)])
+(define (make-mark-body super vars init-vars where-v)
+  (let ([pointers (append
+		   (filter (lambda (x)
+			     (not (non-pointer-type? (cdr x))))
+			   vars)
+		   init-vars)])
     (append
      (list
       (make-tok super #f #f)
@@ -1037,6 +1041,10 @@
 							       (and (equal? (cdar args) (cdr r))
 								    r))
 							     inits)])
+					       (unless r
+						 (error 'xform "~a in ~a: Couldn't find init mapping for ~a" 
+							(tok-line (car e)) (tok-file (car e))
+							(caar args)))
 					       (cons
 						r
 						(loop (cdr args) (filter (lambda (x) (not (eq? r x))) inits))))))))]
@@ -1135,6 +1143,12 @@
 					       (make-tok sElF #f #f)
 					       (make-tok '-> #f #f)
 					       (make-tok (car init) #f #f)
+					       (make-tok semi #f #f)
+					       (make-tok sElF #f #f)
+					       (make-tok '-> #f #f)
+					       (make-tok (car init) #f #f)
+					       (make-tok '= #f #f)
+					       (make-tok NULL_ #f #f)
 					       (make-tok semi #f #f)))
 					    arg-vars init-mapping))
 					  

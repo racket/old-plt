@@ -40,7 +40,7 @@ class wxKMFunc
   wxKMFunction f;
   void *data;
 
-  wxKMFunc(char *name, wxKMFunction, void *);
+  wxKMFunc(char *name, wxKMFunction f, void *data);
   Bool Call(UNKNOWN_OBJ , wxEvent *);
 };
 

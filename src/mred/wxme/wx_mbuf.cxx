@@ -1528,11 +1528,11 @@ int wxMediaBuffer::GetMaxUndoHistory()
 
 /****************************************************************/
 
-typedef struct {
+class  CopyRingElem {
   wxList *buffer1, *buffer2;
   wxStyleList *style;
   wxBufferData *data;
-} CopyRingElem;
+};
 
 static int copyDepth = 0;
 

@@ -271,7 +271,8 @@ void wxPushModalWindow(wxObject *w, wxWindow *win)
   c = MrEdGetContext(w);
 
   if (c->modal_window) {
-    MrEd_Saved_Modal *save = new MrEd_Saved_Modal;
+    MrEd_Saved_Modal *save;
+    save = new MrEd_Saved_Modal;
 
     save->next = c->modal_stack;
     save->win = c->modal_window;

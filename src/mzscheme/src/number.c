@@ -51,90 +51,94 @@
 
 #define IZI_REAL_PART(n) (((Scheme_Complex *)(n))->r)
 
+#ifdef PALMOS_STUFF
+# pragma far_code
+#endif
+
 /* globals */
 double scheme_infinity_val, scheme_minus_infinity_val;
 
 /* locals */
-STATIC Scheme_Object *number_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *complex_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *real_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *rational_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *integer_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *exact_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *inexact_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *eq (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *lt (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *gt (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *lt_eq (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *gt_eq (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *zero_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *positive_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *negative_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *even_p (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *sch_max (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *sch_min (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *plus (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *minus (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *mult (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *div_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *abs_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *quotient (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *rem_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *bitwise_and (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *bitwise_or (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *bitwise_xor (int argc, Scheme_Object *argv[]) PALM_FARPROC(number1);
-STATIC Scheme_Object *bitwise_not (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *bitwise_shift (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *gcd (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *lcm (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *floor_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *ceiling (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *sch_truncate (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *sch_round (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *numerator (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *denominator (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *exp_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *log_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *sin_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *cos_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *tan_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *asin_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *acos_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *atan_prim (int argc, Scheme_Object *argv[]) PALM_FARPROC(number2);
-STATIC Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *make_polar (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *real_part (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *imag_part (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *magnitude (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *angle (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *inexact_to_exact (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *exact_to_inexact (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *number_to_string (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *string_to_number (int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
+static Scheme_Object *number_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *complex_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *real_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *rational_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *integer_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *exact_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *inexact_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *eq (int argc, Scheme_Object *argv[]);
+static Scheme_Object *lt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *gt (int argc, Scheme_Object *argv[]);
+static Scheme_Object *lt_eq (int argc, Scheme_Object *argv[]);
+static Scheme_Object *gt_eq (int argc, Scheme_Object *argv[]);
+static Scheme_Object *zero_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *positive_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *negative_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *even_p (int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_max (int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_min (int argc, Scheme_Object *argv[]);
+static Scheme_Object *plus (int argc, Scheme_Object *argv[]);
+static Scheme_Object *minus (int argc, Scheme_Object *argv[]);
+static Scheme_Object *mult (int argc, Scheme_Object *argv[]);
+static Scheme_Object *div_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *abs_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *quotient (int argc, Scheme_Object *argv[]);
+static Scheme_Object *rem_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *bitwise_and (int argc, Scheme_Object *argv[]);
+static Scheme_Object *bitwise_or (int argc, Scheme_Object *argv[]);
+static Scheme_Object *bitwise_xor (int argc, Scheme_Object *argv[]);
+static Scheme_Object *bitwise_not (int argc, Scheme_Object *argv[]);
+static Scheme_Object *bitwise_shift (int argc, Scheme_Object *argv[]);
+static Scheme_Object *gcd (int argc, Scheme_Object *argv[]);
+static Scheme_Object *lcm (int argc, Scheme_Object *argv[]);
+static Scheme_Object *floor_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *ceiling (int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_truncate (int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_round (int argc, Scheme_Object *argv[]);
+static Scheme_Object *numerator (int argc, Scheme_Object *argv[]);
+static Scheme_Object *denominator (int argc, Scheme_Object *argv[]);
+static Scheme_Object *exp_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *log_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *sin_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *cos_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *tan_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *asin_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *acos_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *atan_prim (int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_polar (int argc, Scheme_Object *argv[]);
+static Scheme_Object *real_part (int argc, Scheme_Object *argv[]);
+static Scheme_Object *imag_part (int argc, Scheme_Object *argv[]);
+static Scheme_Object *magnitude (int argc, Scheme_Object *argv[]);
+static Scheme_Object *angle (int argc, Scheme_Object *argv[]);
+static Scheme_Object *inexact_to_exact (int argc, Scheme_Object *argv[]);
+static Scheme_Object *exact_to_inexact (int argc, Scheme_Object *argv[]);
+static Scheme_Object *number_to_string (int argc, Scheme_Object *argv[]);
+static Scheme_Object *string_to_number (int argc, Scheme_Object *argv[]);
 
-STATIC Scheme_Object *random_seed(int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *sch_random(int argc, Scheme_Object *argv[]) PALM_FARPROC(number5);
-STATIC Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv) PALM_FARPROC(number5);
-STATIC Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object **argv) PALM_FARPROC(number5);
-STATIC Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv) PALM_FARPROC(number5);
+static Scheme_Object *random_seed(int argc, Scheme_Object *argv[]);
+static Scheme_Object *sch_random(int argc, Scheme_Object *argv[]);
+static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv);
+static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object **argv);
+static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv);
 
-STATIC int double_to_int(const char *where, double d, long *v) PALM_FARPROC(number1);
+static int double_to_int(const char *where, double d, long *v);
 
-STATIC double not_a_number_val;
+static double not_a_number_val;
 
-STATIC char *infinity_str = "+inf.0";
-STATIC char *minus_infinity_str = "-inf.0";
-STATIC char *not_a_number_str = "+nan.0";
-STATIC char *other_not_a_number_str = "-nan.0";
+static char *infinity_str = "+inf.0";
+static char *minus_infinity_str = "-inf.0";
+static char *not_a_number_str = "+nan.0";
+static char *other_not_a_number_str = "-nan.0";
 
-STATIC Scheme_Object *inf_object, *minus_inf_object, *nan_object;
+static Scheme_Object *inf_object, *minus_inf_object, *nan_object;
 
 #define zeroi scheme_make_integer(0)
 
-STATIC Scheme_Object *zerod, *nzerod, *scheme_pi, *scheme_half_pi, *plus_i, *minus_i;
+static Scheme_Object *zerod, *nzerod, *scheme_pi, *scheme_half_pi, *plus_i, *minus_i;
 #ifdef MZ_USE_SINGLE_FLOATS
-STATIC Scheme_Object *zerof, *nzerof, *single_scheme_pi;
-STATIC Scheme_Object *single_inf_object, *single_minus_inf_object, *single_nan_object;
+static Scheme_Object *zerof, *nzerof, *single_scheme_pi;
+static Scheme_Object *single_inf_object, *single_minus_inf_object, *single_nan_object;
 #endif
 
 double scheme_floating_point_zero = 0.0;
@@ -733,35 +737,35 @@ Scheme_Object *scheme_make_float(float f)
 #define WRONG_TYPE(name, expected, value) \
   scheme_wrong_type(name, expected, -1, 0, (Scheme_Object **)&value)
 
-STATIC Scheme_Object *
+static Scheme_Object *
 number_p(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
   return (SCHEME_NUMBERP(o) ? scheme_true : scheme_false);
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 complex_p(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
   return (SCHEME_NUMBERP(o) ? scheme_true : scheme_false);
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 real_p(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
   return (SCHEME_REALP(o) ? scheme_true : scheme_false);
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 rational_p(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
   return (SCHEME_REALP(o) ? scheme_true : scheme_false);
 }
 	  
-STATIC int is_integer(const Scheme_Object *o)
+static int is_integer(const Scheme_Object *o)
 {
   if (SCHEME_INTP(o) || SCHEME_BIGNUMP(o))
     return 1;
@@ -784,7 +788,7 @@ STATIC int is_integer(const Scheme_Object *o)
 }
 
 
-STATIC Scheme_Object *
+static Scheme_Object *
 integer_p (int argc, Scheme_Object *argv[])
 {
   return is_integer(argv[0]) ? scheme_true : scheme_false;
@@ -816,7 +820,7 @@ int scheme_is_exact(Scheme_Object *n)
   }
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 exact_p (int argc, Scheme_Object *argv[])
 {
   return (scheme_is_exact(argv[0])
@@ -850,7 +854,7 @@ int scheme_is_inexact(Scheme_Object *n)
   }
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 inexact_p (int argc, Scheme_Object *argv[])
 {
   return (scheme_is_inexact(argv[0])
@@ -891,7 +895,7 @@ GEN_BIN_COMP(scheme_bin_gt, ">", GREATER_THAN, GREATER_THAN, scheme_bignum_gt, s
 GEN_BIN_COMP(scheme_bin_lt_eq, "<=", LESS_OR_EQUAL, fLESS_OR_EQUAL, scheme_bignum_le, scheme_rational_le, COMP_IZI_LT_EQ, 0, 1, positive_p, negative_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
 GEN_BIN_COMP(scheme_bin_gt_eq, ">=", GREATER_OR_EQUAL, GREATER_OR_EQUAL, scheme_bignum_ge, scheme_rational_ge, COMP_IZI_GT_EQ, 1, 0, negative_p, positive_p, GEN_IDENT_FOR_IZI, GEN_OMIT, REAL_NUMBER_STR)
 
-STATIC Scheme_Object *
+static Scheme_Object *
 zero_p (int argc, Scheme_Object *argv[])
 {
   Scheme_Type t;
@@ -934,7 +938,7 @@ zero_p (int argc, Scheme_Object *argv[])
   return NULL;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 positive_p (int argc, Scheme_Object *argv[])
 {
   Scheme_Type t;
@@ -976,7 +980,7 @@ positive_p (int argc, Scheme_Object *argv[])
   return NULL;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 negative_p (int argc, Scheme_Object *argv[])
 {
   Scheme_Type t;
@@ -1043,7 +1047,7 @@ scheme_odd_p (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 even_p (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v = argv[0];
@@ -1135,8 +1139,8 @@ scheme_sub1 (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-GEN_BIN_PROT(bin_max) PALM_FARPROC(number3);
-GEN_BIN_PROT(bin_min) PALM_FARPROC(number3);
+GEN_BIN_PROT(bin_max);
+GEN_BIN_PROT(bin_min);
 
 #define F_ADD(x,y) scheme_make_double(x + y)
 #define F_SUBTRACT(x,y) scheme_make_double(x - y)
@@ -1223,12 +1227,12 @@ GEN_BIN_OP(scheme_bin_minus, "-", SUBTRACT, F_SUBTRACT, FS_SUBTRACT, scheme_bign
 GEN_BIN_OP(scheme_bin_mult, "*", MULTIPLY, F_MULTIPLY, FS_MULTIPLY, scheme_bignum_multiply, scheme_rational_multiply, scheme_complex_multiply, GEN_RETURN_0, GEN_RETURN_0, NO_NAN_CHECK, NO_NAN_CHECK)
 GEN_BIN_DIV_OP(scheme_bin_div, "/", DIVIDE, F_DIVIDE, FS_DIVIDE, scheme_make_rational, scheme_rational_divide, scheme_complex_divide)
 
-STATIC GEN_BIN_OP(bin_max, "max", MAX, F_MAX, FS_MAX, scheme_bignum_max, scheme_rational_max, MAX_IZI, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
-STATIC GEN_BIN_OP(bin_min, "min", MIN, F_MIN, FS_MIN, scheme_bignum_min, scheme_rational_min, MIN_IZI, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_max, "max", MAX, F_MAX, FS_MAX, scheme_bignum_max, scheme_rational_max, MAX_IZI, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_min, "min", MIN, F_MIN, FS_MIN, scheme_bignum_min, scheme_rational_min, MIN_IZI, GEN_OMIT, GEN_OMIT, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
 
-GEN_BIN_PROT(bin_bitwise_and) PALM_FARPROC(number3);
-GEN_BIN_PROT(bin_bitwise_or) PALM_FARPROC(number3);
-GEN_BIN_PROT(bin_bitwise_xor) PALM_FARPROC(number3);
+GEN_BIN_PROT(bin_bitwise_and);
+GEN_BIN_PROT(bin_bitwise_or);
+GEN_BIN_PROT(bin_bitwise_xor);
 
 GEN_BIN_INT_OP(bin_bitwise_and, "bitwise-and", &, scheme_bignum_and)
 GEN_BIN_INT_OP(bin_bitwise_or, "bitwise-ior", |, scheme_bignum_or)
@@ -1243,7 +1247,7 @@ GEN_TWOARY_OP(sch_min, "min", bin_min, SCHEME_REALP, REAL_NUMBER_STR)
 GEN_NARY_OP(plus, "+", scheme_bin_plus, 0, SCHEME_NUMBERP, "number")
 GEN_NARY_OP(mult, "*", scheme_bin_mult, 1, SCHEME_NUMBERP, "number")
 
-STATIC Scheme_Object *
+static Scheme_Object *
 minus (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *ret;
@@ -1275,7 +1279,7 @@ minus (int argc, Scheme_Object *argv[])
   return ret;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 div_prim (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *ret;
@@ -1316,7 +1320,7 @@ div_prim (int argc, Scheme_Object *argv[])
 
 #define ABS(n)  ((n>0) ? n : -n)
 
-STATIC Scheme_Object *
+static Scheme_Object *
 abs_prim (int argc, Scheme_Object *argv[])
 {
   Scheme_Type t;
@@ -1356,7 +1360,7 @@ abs_prim (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *to_bignum(const Scheme_Object *o)
+static Scheme_Object *to_bignum(const Scheme_Object *o)
 {
   if (SCHEME_INTP(o))
     return scheme_make_bignum(SCHEME_INT_VAL(o));
@@ -1445,18 +1449,18 @@ scheme_bin_quotient (const Scheme_Object *n1, const Scheme_Object *n2)
   return q;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 quotient (int argc, Scheme_Object *argv[])
 {
   return scheme_bin_quotient(argv[0], argv[1]);
 }
 
 /* Declaration is for FARPROC: */
-STATIC Scheme_Object *
+static Scheme_Object *
 rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
-     PALM_FARPROC(number3);
+    ;
 
-STATIC Scheme_Object *
+static Scheme_Object *
 rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
 {
   Scheme_Object *n1, *n2, *r;
@@ -1626,7 +1630,7 @@ rem_mod (int argc, Scheme_Object *argv[], char *name, int first_sign)
   return r;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 rem_prim (int argc, Scheme_Object *argv[])
 {
   return rem_mod(argc, argv, "remainder", 1);
@@ -1638,7 +1642,7 @@ scheme_modulo(int argc, Scheme_Object *argv[])
   return rem_mod(argc, argv, "modulo", 0);
 }
 
-STATIC Scheme_Object *bin_lcm (Scheme_Object *n1, Scheme_Object *n2) PALM_FARPROC(number3);
+static Scheme_Object *bin_lcm (Scheme_Object *n1, Scheme_Object *n2);
 
 GEN_NARY_OP(gcd, "gcd", scheme_bin_gcd, 0, is_integer, "integer")
 GEN_NARY_OP(lcm, "lcm", bin_lcm, 1, is_integer, "integer")
@@ -1752,7 +1756,7 @@ scheme_bin_gcd (const Scheme_Object *n1, const Scheme_Object *n2)
   }
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 bin_lcm (Scheme_Object *n1, Scheme_Object *n2)
 {
   Scheme_Object *d, *ret;
@@ -1767,7 +1771,7 @@ bin_lcm (Scheme_Object *n1, Scheme_Object *n2)
   return abs_prim(1, &ret);
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 floor_prim (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -1796,7 +1800,7 @@ floor_prim (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 ceiling (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -1825,7 +1829,7 @@ ceiling (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 sch_truncate (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -1866,7 +1870,7 @@ sch_truncate (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 sch_round (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -1996,7 +2000,7 @@ double TO_DOUBLE_VAL(const Scheme_Object *n)
     return TO_DOUBLE_VAL(IZI_REAL_PART(n));
 }
 
-STATIC Scheme_Object *TO_DOUBLE(const Scheme_Object *n)
+static Scheme_Object *TO_DOUBLE(const Scheme_Object *n)
 {
   if (SCHEME_DBLP(n))
     return n;
@@ -2006,9 +2010,9 @@ STATIC Scheme_Object *TO_DOUBLE(const Scheme_Object *n)
 
 #else
 
-STATIC Scheme_Object *TO_DOUBLE(const Scheme_Object *n) PALM_FARPROC(number4);
+static Scheme_Object *TO_DOUBLE(const Scheme_Object *n);
 
-STATIC Scheme_Object *TO_DOUBLE(const Scheme_Object *n)
+static Scheme_Object *TO_DOUBLE(const Scheme_Object *n)
 {
   return exact_to_inexact(1, (Scheme_Object **)&n);
 }
@@ -2019,10 +2023,10 @@ double TO_DOUBLE_VAL(const Scheme_Object *n)
 
 #endif
 
-STATIC Scheme_Object *get_frac(char *name, int low_p, 
-			       int argc, Scheme_Object *argv[]) PALM_FARPROC(number4);
+static Scheme_Object *get_frac(char *name, int low_p, 
+			       int argc, Scheme_Object *argv[]);
 
-STATIC Scheme_Object *get_frac(char *name, int low_p, 
+static Scheme_Object *get_frac(char *name, int low_p, 
 			       int argc, Scheme_Object *argv[])
 {
   Scheme_Object *n = argv[0], *orig;
@@ -2071,32 +2075,32 @@ STATIC Scheme_Object *get_frac(char *name, int low_p,
     return n;
 }
 
-STATIC Scheme_Object *un_exp(Scheme_Object *o) PALM_FARPROC(number4);
-STATIC Scheme_Object *un_log(Scheme_Object *o) PALM_FARPROC(number4);
+static Scheme_Object *un_exp(Scheme_Object *o);
+static Scheme_Object *un_log(Scheme_Object *o);
 
-STATIC Scheme_Object *un_exp(Scheme_Object *o)
+static Scheme_Object *un_exp(Scheme_Object *o)
 {
   return exp_prim(1, &o);
 }
 
-STATIC Scheme_Object *un_log(Scheme_Object *o)
+static Scheme_Object *un_log(Scheme_Object *o)
 {
   return log_prim(1, &o);
 }
 
-STATIC Scheme_Object *numerator(int argc, Scheme_Object *argv[])
+static Scheme_Object *numerator(int argc, Scheme_Object *argv[])
 {
   return get_frac("numerator", 0, argc, argv);
 }
 
-STATIC Scheme_Object *denominator(int argc, Scheme_Object *argv[])
+static Scheme_Object *denominator(int argc, Scheme_Object *argv[])
 {
   return get_frac("denominator", 1, argc, argv);
 }
 
-STATIC Scheme_Object *complex_exp(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_exp(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_exp(Scheme_Object *c)
+static Scheme_Object *complex_exp(Scheme_Object *c)
 {
   Scheme_Object *r = _scheme_complex_real_part(c);
   Scheme_Object *i = _scheme_complex_imaginary_part(c);
@@ -2109,9 +2113,9 @@ STATIC Scheme_Object *complex_exp(Scheme_Object *c)
   return scheme_bin_mult(r, scheme_bin_plus(cos_a, scheme_bin_mult(sin_a, plus_i)));
 }
 
-STATIC Scheme_Object *complex_log(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_log(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_log(Scheme_Object *c)
+static Scheme_Object *complex_log(Scheme_Object *c)
 {
   Scheme_Object *m, *theta;
 
@@ -2121,9 +2125,9 @@ STATIC Scheme_Object *complex_log(Scheme_Object *c)
   return scheme_bin_plus(log_prim(1, &m), scheme_bin_mult(plus_i, theta));
 }
 
-STATIC Scheme_Object *complex_sin(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_sin(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_sin(Scheme_Object *c)
+static Scheme_Object *complex_sin(Scheme_Object *c)
 {
   Scheme_Object *i_c;
 
@@ -2134,9 +2138,9 @@ STATIC Scheme_Object *complex_sin(Scheme_Object *c)
 			scheme_bin_mult(scheme_make_integer(2), plus_i));
 }
 
-STATIC Scheme_Object *complex_cos(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_cos(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_cos(Scheme_Object *c)
+static Scheme_Object *complex_cos(Scheme_Object *c)
 {
   Scheme_Object *i_c;
 
@@ -2147,16 +2151,16 @@ STATIC Scheme_Object *complex_cos(Scheme_Object *c)
 			scheme_make_integer(2));
 }
 
-STATIC Scheme_Object *complex_tan(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_tan(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_tan(Scheme_Object *c)
+static Scheme_Object *complex_tan(Scheme_Object *c)
 {
   return scheme_bin_div(complex_sin(c), complex_cos(c));
 }
 
-STATIC Scheme_Object *complex_asin(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_asin(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_asin(Scheme_Object *c)
+static Scheme_Object *complex_asin(Scheme_Object *c)
 {
   Scheme_Object *one_minus_c_sq, *sqrt_1_minus_c_sq;
 
@@ -2169,9 +2173,9 @@ STATIC Scheme_Object *complex_asin(Scheme_Object *c)
 						sqrt_1_minus_c_sq)));
 }
 
-STATIC Scheme_Object *complex_acos(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_acos(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_acos(Scheme_Object *c)
+static Scheme_Object *complex_acos(Scheme_Object *c)
 {
   Scheme_Object *one_minus_c_sq, *sqrt_1_minus_c_sq;
 
@@ -2185,9 +2189,9 @@ STATIC Scheme_Object *complex_acos(Scheme_Object *c)
 								sqrt_1_minus_c_sq))));
 }
 
-STATIC Scheme_Object *complex_atan(Scheme_Object *c) PALM_FARPROC(number4);
+static Scheme_Object *complex_atan(Scheme_Object *c);
 
-STATIC Scheme_Object *complex_atan(Scheme_Object *c)
+static Scheme_Object *complex_atan(Scheme_Object *c)
 {
   if (scheme_complex_eq(c, plus_i) || scheme_complex_eq(c, minus_i))
     return minus_inf_object;
@@ -2217,7 +2221,7 @@ GEN_UNARY_OP(tan_prim, tan, tan, nan_object, nan_object, nan_object, complex_tan
 GEN_UNARY_OP(asin_prim, asin, asin, nan_object, nan_object, nan_object, complex_asin, GEN_ZERO_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 GEN_UNARY_OP(acos_prim, acos, acos, nan_object, nan_object, nan_object, complex_acos, GEN_ONE_IS_ZERO, OVER_ONE_MAG_USES_COMPLEX)
 
-STATIC Scheme_Object *
+static Scheme_Object *
 atan_prim (int argc, Scheme_Object *argv[])
 {
   double v;
@@ -2378,7 +2382,7 @@ static Scheme_Object *fixnum_expt(int x, int y)
 #ifdef POW_HANDLES_INF_CORRECTLY
 # define sch_pow pow
 #else
-STATIC double sch_pow(double x, double y)
+static double sch_pow(double x, double y)
 {
   if (MZ_IS_POS_INFINITY(y)) {
     return scheme_infinity_val;
@@ -2403,7 +2407,7 @@ STATIC double sch_pow(double x, double y)
 }
 #endif
 
-STATIC GEN_BIN_PROT(bin_expt) PALM_FARPROC(number4);
+GEN_BIN_PROT(bin_expt);
 
 # define F_EXPT(x, y) (((x < 0.0) && (y != floor(y))) \
                        ? scheme_complex_power(scheme_real_to_complex(scheme_make_double(x)), \
@@ -2414,7 +2418,7 @@ STATIC GEN_BIN_PROT(bin_expt) PALM_FARPROC(number4);
 				              scheme_real_to_complex(scheme_make_float(y))) \
                         : scheme_make_float(sch_pow((double)x, (double)y)))
 
-STATIC GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0_USUALLY, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
+static GEN_BIN_OP(bin_expt, "expt", fixnum_expt, F_EXPT, FS_EXPT, scheme_bignum_power, scheme_rational_power, scheme_complex_power, GEN_RETURN_0_USUALLY, GEN_RETURN_1, NAN_RETURNS_NAN, NAN_RETURNS_SNAN)
 
 Scheme_Object *
 scheme_expt(int argc, Scheme_Object *argv[])
@@ -2447,7 +2451,7 @@ scheme_expt(int argc, Scheme_Object *argv[])
 }
 
 
-STATIC Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[])
+static Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *a, *b;
   int af, bf;
@@ -2477,7 +2481,7 @@ STATIC Scheme_Object *make_rectangular (int argc, Scheme_Object *argv[])
   return scheme_make_complex(a, b);
 }
 
-STATIC Scheme_Object *make_polar (int argc, Scheme_Object *argv[])
+static Scheme_Object *make_polar (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *a, *b, *r, *i, *v;
 
@@ -2502,7 +2506,7 @@ STATIC Scheme_Object *make_polar (int argc, Scheme_Object *argv[])
   return scheme_make_complex(r, i);
 }
 
-STATIC Scheme_Object *real_part (int argc, Scheme_Object *argv[])
+static Scheme_Object *real_part (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
 
@@ -2515,7 +2519,7 @@ STATIC Scheme_Object *real_part (int argc, Scheme_Object *argv[])
     return argv[0];
 }
 
-STATIC Scheme_Object *imag_part (int argc, Scheme_Object *argv[])
+static Scheme_Object *imag_part (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
 
@@ -2528,7 +2532,7 @@ STATIC Scheme_Object *imag_part (int argc, Scheme_Object *argv[])
   return zeroi;
 }
 
-STATIC Scheme_Object *magnitude(int argc, Scheme_Object *argv[])
+static Scheme_Object *magnitude(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
 
@@ -2548,7 +2552,7 @@ STATIC Scheme_Object *magnitude(int argc, Scheme_Object *argv[])
     return abs_prim(1, argv);
 }
 
-STATIC Scheme_Object *angle (int argc, Scheme_Object *argv[])
+static Scheme_Object *angle (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
 
@@ -2601,7 +2605,7 @@ STATIC Scheme_Object *angle (int argc, Scheme_Object *argv[])
   }
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 exact_to_inexact (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -2647,7 +2651,7 @@ exact_to_inexact (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 inexact_to_exact (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -2695,7 +2699,7 @@ inexact_to_exact (int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 number_to_string (int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -2863,7 +2867,7 @@ int scheme_check_float(const char *where, float f, const char *dest)
 }
 #endif
 
-STATIC int double_to_int(const char *where, double d, long *v)
+static int double_to_int(const char *where, double d, long *v)
 {
   if (scheme_check_double(where, d, "small integer")) {
     if ((d != floor(d))
@@ -2909,7 +2913,7 @@ Scheme_Object *scheme_double_to_integer(const char *where, double d)
   return scheme_bignum_from_double(d);
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 string_to_number (int argc, Scheme_Object *argv[])
 {
   long radix;
@@ -4017,7 +4021,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
   return o;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 bitwise_not(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *o = argv[0];
@@ -4034,7 +4038,7 @@ bitwise_not(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 bitwise_shift(int argc, Scheme_Object *argv[])
 {
   Scheme_Object *v, *so;
@@ -4096,7 +4100,7 @@ bitwise_shift(int argc, Scheme_Object *argv[])
 
 #include "random.inc"
 
-STATIC Scheme_Object *
+static Scheme_Object *
 random_seed(int argc, Scheme_Object *argv[])
 {
   long i = -1;
@@ -4115,7 +4119,7 @@ random_seed(int argc, Scheme_Object *argv[])
   return scheme_void;
 }
 
-STATIC Scheme_Object *
+static Scheme_Object *
 sch_random(int argc, Scheme_Object *argv[])
 {
   long i = -1, v;
@@ -4134,7 +4138,7 @@ sch_random(int argc, Scheme_Object *argv[])
   return scheme_make_integer_value(v);
 }
 
-STATIC Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *argv[])
+static Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *argv[])
 {
   return scheme_param_config("current-pseudo-random-generator", 
 			     scheme_make_integer(MZCONFIG_RANDOM_STATE),
@@ -4142,12 +4146,12 @@ STATIC Scheme_Object *current_pseudo_random_generator(int argc, Scheme_Object *a
 			     -1, pseudo_random_generator_p, "pseudo-random-generator", 0);
 }
 
-STATIC Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv)
+static Scheme_Object *make_pseudo_random_generator(int argc, Scheme_Object **argv)
 {
   return scheme_make_random_state(scheme_get_milliseconds());
 }
 
-STATIC Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv)
+static Scheme_Object *pseudo_random_generator_p(int argc, Scheme_Object **argv)
 {
   return ((SAME_TYPE(SCHEME_TYPE(argv[0]), scheme_random_state_type)) 
 	  ? scheme_true 

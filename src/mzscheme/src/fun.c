@@ -2283,9 +2283,14 @@ long scheme_get_milliseconds(void)
   now = time(NULL);
   return difftime(now, base_time) * 1000;
 #  else
+#   ifdef PALMOS_STUFF
+  /* FIXME */
+  return 0;
+#   else
   struct timeval now;
   gettimeofday(&now, NULL);
   return now.tv_sec * 1000 + now.tv_usec / 1000;
+#   endif
 #  endif
 # endif
 #endif

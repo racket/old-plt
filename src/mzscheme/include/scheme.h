@@ -59,27 +59,16 @@
 # define MZ_HASH_KEY_EX /**/
 #endif
 
+#ifdef PALMOS_STUFF
+#include <Pilot.h>
+#endif
+
 #include <stdio.h>
 #include <setjmp.h>
 #include <stdarg.h>
-#ifndef PALMOS_STUFF
-# include <stdlib.h>
-#endif
+#include <stdlib.h>
 #include <string.h>
 #include <stddef.h>
-
-#ifdef PALMOS_STUFF
-#include <Pilot.h>
-typedef void FILE;
-#endif
-
-#ifdef PALMOS_STUFF
-# define PALM_FARPROC(n) __attribute__ ((section (#n)))
-# define STATIC /* empty */
-#else
-# define PALM_FARPROC(n) /* empty */
-# define STATIC static
-#endif
 
 #ifndef SCHEME_DIRECT_EMBEDDED
 #define SCHEME_DIRECT_EMBEDDED 1
@@ -375,11 +364,7 @@ typedef void Scheme_Instance_Init_Proc(Scheme_Object **init_boxes,
 #ifdef USE_MZ_SETJMP
 typedef long mz_jmp_buf[8];
 #else
-# ifdef JMP_BUF_IS_JMPBUF
-#  define mz_jmp_buf jmpbuf
-# else
-#  define mz_jmp_buf jmp_buf
-# endif
+# define mz_jmp_buf jmp_buf
 #endif
 
 /* Like setjmp & longjmp, but you can jmp to a deeper stack position */

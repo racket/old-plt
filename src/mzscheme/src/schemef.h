@@ -119,23 +119,23 @@ void scheme_remove_managed(Scheme_Manager_Reference *m, Scheme_Object *o);
 void scheme_close_managed(Scheme_Manager *m);
 
 /* error handling */
-void scheme_signal_error(char *msg, ...) PALM_FARPROC(error);
-void scheme_raise_exn(int exnid, ...) PALM_FARPROC(error);
-void scheme_warning(char *msg, ...) PALM_FARPROC(error);
+void scheme_signal_error(char *msg, ...);
+void scheme_raise_exn(int exnid, ...);
+void scheme_warning(char *msg, ...);
 
 void scheme_wrong_count(const char *name, int minc, int maxc, int argc,
-			Scheme_Object **argv) PALM_FARPROC(error);
+			Scheme_Object **argv);
 void scheme_case_lambda_wrong_count(const char *name, int argc, 
-				    Scheme_Object **argv, int count, ...) PALM_FARPROC(error);
+				    Scheme_Object **argv, int count, ...);
 void scheme_wrong_type(const char *name, const char *expected, 
 		       int which, int argc,
-		       Scheme_Object **argv) PALM_FARPROC(error);
-void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o) PALM_FARPROC(error);
+		       Scheme_Object **argv);
+void scheme_arg_mismatch(const char *name, const char *msg, Scheme_Object *o);
 void scheme_wrong_return_arity(const char *where, 
 			       int expected, int got,
 			       Scheme_Object **argv,
-			       const char *context_detail, ...) PALM_FARPROC(error);
-void scheme_unbound_global(Scheme_Object *name)  PALM_FARPROC(error);
+			       const char *context_detail, ...);
+void scheme_unbound_global(Scheme_Object *name) ;
 
 Scheme_Object *scheme_dynamic_wind(void (*pre)(void *),
 				   Scheme_Object *(*act)(void *),
@@ -228,10 +228,10 @@ Scheme_Object *scheme_do_eval_w_process(Scheme_Object *obj, int _num_rands, Sche
 /* Allocation */
 #ifndef SCHEME_NO_GC
 #ifndef SCHEME_NO_GC_PROTO
-void *GC_malloc(size_t size_in_bytes) PALM_FARPROC(gc);
-void *GC_malloc_atomic(size_t size_in_bytes) PALM_FARPROC(gc);
-void *GC_malloc_stubborn(size_t size_in_bytes) PALM_FARPROC(gc);
-void *GC_malloc_uncollectable(size_t size_in_bytes) PALM_FARPROC(gc);
+void *GC_malloc(size_t size_in_bytes);
+void *GC_malloc_atomic(size_t size_in_bytes);
+void *GC_malloc_stubborn(size_t size_in_bytes);
+void *GC_malloc_uncollectable(size_t size_in_bytes);
 #endif
 #endif
 
@@ -300,11 +300,11 @@ Scheme_Object *scheme_make_string_without_copying(char *chars);
 Scheme_Object *scheme_alloc_string(int size, char fill);
 Scheme_Object *scheme_append_string(Scheme_Object *, Scheme_Object *);
 Scheme_Object *scheme_make_vector(int size, Scheme_Object *fill);
-Scheme_Object *scheme_make_integer_value(long i) PALM_FARPROC(number);
-Scheme_Object *scheme_make_integer_value_from_unsigned(unsigned long i) PALM_FARPROC(number);
-Scheme_Object *scheme_make_double(double d) PALM_FARPROC(makedouble);
+Scheme_Object *scheme_make_integer_value(long i);
+Scheme_Object *scheme_make_integer_value_from_unsigned(unsigned long i);
+Scheme_Object *scheme_make_double(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
-Scheme_Object *scheme_make_float(float f)  PALM_FARPROC(number);
+Scheme_Object *scheme_make_float(float f) ;
 #endif
 Scheme_Object *scheme_make_char(char ch);
 Scheme_Object *scheme_make_promise(Scheme_Object *expr, Scheme_Env *env);
@@ -324,47 +324,47 @@ double scheme_real_to_double(Scheme_Object *r);
 const char *scheme_get_proc_name(Scheme_Object *p, int *len, int for_error);
 
 /* Bignums */
-Scheme_Object *scheme_make_bignum(long v) PALM_FARPROC(bignum0);
-Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v) PALM_FARPROC(bignum0);
-double scheme_bignum_to_double(const Scheme_Object *n) PALM_FARPROC(bignum0);
-Scheme_Object *scheme_bignum_from_double(double d) PALM_FARPROC(bignum0);
+Scheme_Object *scheme_make_bignum(long v);
+Scheme_Object *scheme_make_bignum_from_unsigned(unsigned long v);
+double scheme_bignum_to_double(const Scheme_Object *n);
+Scheme_Object *scheme_bignum_from_double(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
-float scheme_bignum_to_float(const Scheme_Object *n) PALM_FARPROC(bignum0);
-Scheme_Object *scheme_bignum_from_float(float d) PALM_FARPROC(bignum0);
+float scheme_bignum_to_float(const Scheme_Object *n);
+Scheme_Object *scheme_bignum_from_float(float d);
 #else
 # define scheme_bignum_to_float scheme_bignum_to_double
 # define scheme_bignum_from_float scheme_bignum_from_double
 #endif
-char *scheme_bignum_to_string(const Scheme_Object *n, int radix) PALM_FARPROC(bignum0);
-Scheme_Object *scheme_read_bignum(const char *str, int radix) PALM_FARPROC(bignum0);
-Scheme_Object *scheme_bignum_normalize(const Scheme_Object *n) PALM_FARPROC(bignum0);
+char *scheme_bignum_to_string(const Scheme_Object *n, int radix);
+Scheme_Object *scheme_read_bignum(const char *str, int radix);
+Scheme_Object *scheme_bignum_normalize(const Scheme_Object *n);
 
-long scheme_double_to_int(const char *where, double d)  PALM_FARPROC(number3);
+long scheme_double_to_int(const char *where, double d) ;
 
 /* Rationals */
-Scheme_Object *scheme_make_rational(const Scheme_Object *r, const Scheme_Object *d) PALM_FARPROC(rational);
-double scheme_rational_to_double(const Scheme_Object *n) PALM_FARPROC(rational);
-Scheme_Object *scheme_rational_from_double(double d) PALM_FARPROC(rational);
+Scheme_Object *scheme_make_rational(const Scheme_Object *r, const Scheme_Object *d);
+double scheme_rational_to_double(const Scheme_Object *n);
+Scheme_Object *scheme_rational_from_double(double d);
 #ifdef MZ_USE_SINGLE_FLOATS
-float scheme_rational_to_float(const Scheme_Object *n) PALM_FARPROC(rational);
-Scheme_Object *scheme_rational_from_float(float d) PALM_FARPROC(rational);
+float scheme_rational_to_float(const Scheme_Object *n);
+Scheme_Object *scheme_rational_from_float(float d);
 #else
 # define scheme_rational_to_float scheme_rational_to_double
 # define scheme_rational_from_float scheme_rational_from_double
 #endif
-Scheme_Object *scheme_rational_normalize(const Scheme_Object *n) PALM_FARPROC(rational);
-Scheme_Object *scheme_rational_numerator(const Scheme_Object *n) PALM_FARPROC(rational);
-Scheme_Object *scheme_rational_denominator(const Scheme_Object *n) PALM_FARPROC(rational);
+Scheme_Object *scheme_rational_normalize(const Scheme_Object *n);
+Scheme_Object *scheme_rational_numerator(const Scheme_Object *n);
+Scheme_Object *scheme_rational_denominator(const Scheme_Object *n);
 
 /* Complex */
-Scheme_Object *scheme_make_complex(const Scheme_Object *r, const Scheme_Object *i) PALM_FARPROC(complex);
-Scheme_Object *scheme_complex_normalize(const Scheme_Object *n) PALM_FARPROC(complex);
-Scheme_Object *scheme_complex_real_part(const Scheme_Object *n) PALM_FARPROC(complex);
-Scheme_Object *scheme_complex_imaginary_part(const Scheme_Object *n) PALM_FARPROC(complex);
+Scheme_Object *scheme_make_complex(const Scheme_Object *r, const Scheme_Object *i);
+Scheme_Object *scheme_complex_normalize(const Scheme_Object *n);
+Scheme_Object *scheme_complex_real_part(const Scheme_Object *n);
+Scheme_Object *scheme_complex_imaginary_part(const Scheme_Object *n);
 
 /* Exact/inexact: */
-int scheme_is_exact(Scheme_Object *n) PALM_FARPROC(number);
-int scheme_is_inexact(Scheme_Object *n) PALM_FARPROC(number);
+int scheme_is_exact(Scheme_Object *n);
+int scheme_is_inexact(Scheme_Object *n);
 
 /* Macro and syntax expansion */
 Scheme_Object *scheme_expand(Scheme_Object *form, Scheme_Env *env);

@@ -75,6 +75,13 @@ static void string_hash_indices(void *_key, long *_h, long *_h2)
   *_h2 = h2;
 }
 
+#ifdef PALMOS_STUFF
+int p_strcmp(char *a, char *b)
+{
+  return strcmp(a, b);
+}
+#endif
+
 Scheme_Hash_Table *
 scheme_hash_table (int size, int type, int has_const, int forever)
 {
@@ -112,7 +119,11 @@ scheme_hash_table (int size, int type, int has_const, int forever)
 
   if (type == SCHEME_hash_string) {
     table->make_hash_indices = string_hash_indices;
+#ifdef PALMOS_STUFF
+    table->compare = (Compare_Proc)p_strcmp;
+#else
     table->compare = (Compare_Proc)strcmp;
+#endif
   }
 
 #ifdef MZ_REAL_THREADS

@@ -730,7 +730,7 @@ int scheme_win32_semaphore_try_down(void *);
 
   /************ Macintosh with CodeWarrior *************/
 
-#if defined(__MWERKS__) && !defined(__BEOS__)
+#if defined(__MWERKS__) && !defined(__BEOS__) && !defined(__palmos__)
 
 # if defined(__POWERPC__)
 #  define SCHEME_PLATFORM_LIBRARY_SUBPATH "ppc-mac"
@@ -844,9 +844,12 @@ int scheme_win32_semaphore_try_down(void *);
 
 # define NO_FILE_SYSTEM_UTILS
 # define NO_TCP_SUPPORT
+# define MZSCHEME_SOMETHING_OMITTED
 
 # define PALMOS_STUFF
 # define NO_STAT_PROC
+# define NO_USER_BREAK_HANDLER
+# define NO_USLEEP
 
 # define STACK_GROWS_DOWN
 
@@ -856,15 +859,13 @@ int scheme_win32_semaphore_try_down(void *);
 
 # define TIME_SYNTAX
 # define USE_PALMTIME
-# define CLOCK_IS_USER_TIME
+# define USER_TIME_IS_CLOCK
 # define TIME_TYPE_IS_UNSIGNED
 
 # define DONT_IGNORE_PIPE_SIGNAL
 # define DONT_IGNORE_FPE_SIGNAL
 
 # define POW_HANDLES_INF_CORRECTLY
-
-# define JMP_BUF_IS_JMPBUF
 
 # define FLAGS_ALREADY_SET
 

@@ -386,10 +386,12 @@ int actual_main(int argc, char *argv[])
   setlocale( LC_ALL, "" );
 #endif
 
-#ifndef MACINTOSH_EVENTS
+#ifndef NO_USER_BREAK_HANDLER
+# ifndef MACINTOSH_EVENTS
   MZ_SIGSET(SIGINT, user_break_hit);
-#else
+# else
   scheme_check_for_break = check_break_flag;
+# endif
 #endif
 
   return run_from_cmd_line(argc, argv, scheme_basic_env, cont_run);
@@ -614,6 +616,10 @@ oskit_error_t oskit_get_call_context(const struct oskit_guid *iid, void **out_if
 
 #endif /* OSKIT */
 /**************** OSKIT stuff END **********************/
+
+#ifdef USE_SENORA_GC
+# include "sgc/sgc.h"
+#endif
 
 int main(int argc, char **argv)
 {

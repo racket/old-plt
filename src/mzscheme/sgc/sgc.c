@@ -25,10 +25,14 @@
 
  */
 
+#ifdef __palmos__
+# include <Pilot.h>
+#endif
 #include <stdlib.h>
 #include <setjmp.h>
 #include <stdio.h>
 #include <memory.h>
+#include <string.h>
 #include "../sconfig.h"
 #include "sgc.h"
 

@@ -37,10 +37,10 @@
 #endif
 
 #define GEN_BIN_COMP_PROT(name) \
-STATIC int name (Scheme_Object *n1, Scheme_Object *n2)
+static int name (Scheme_Object *n1, Scheme_Object *n2)
 
 #define GEN_NARY_COMP(name, scheme_name, bin_name, TYPEP, type) \
-STATIC Scheme_Object * \
+static Scheme_Object * \
 name (int argc, Scheme_Object *argv[]) \
 { \
   int i; \
@@ -67,7 +67,7 @@ name (int argc, Scheme_Object *argv[]) \
 }
 
 #define GEN_BIN_PROT(name) \
-STATIC Scheme_Object *name (const Scheme_Object *n1, const Scheme_Object *n2)
+static Scheme_Object *name (const Scheme_Object *n1, const Scheme_Object *n2)
 
 /* This macro is used to implement most all binary math and comparison functions (!): */
 #define GEN_BIN_THING(rettype, name, scheme_name, \
@@ -400,7 +400,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
                complexwrap, noniziwrap, GEN_OMIT, GEN_OMIT, numbertype)
 
 #define GEN_BIN_INT_OP(name, scheme_name, op, bigop) \
-STATIC Scheme_Object * \
+static Scheme_Object * \
 name (const Scheme_Object *n1, const Scheme_Object *n2) \
 { \
   Small_Bignum sb; \
@@ -427,7 +427,7 @@ name (const Scheme_Object *n1, const Scheme_Object *n2) \
 }
 
 #define GEN_NARY_OP(name, scheme_name, bin_name, ident, TYPEP, type) \
-STATIC Scheme_Object * \
+static Scheme_Object * \
 name (int argc, Scheme_Object *argv[]) \
 { \
   Scheme_Object *ret; \
@@ -451,7 +451,7 @@ name (int argc, Scheme_Object *argv[]) \
 }
 
 #define GEN_TWOARY_OP(name, scheme_name, bin_name, TYPEP, type) \
-STATIC Scheme_Object * \
+static Scheme_Object * \
 name (int argc, Scheme_Object *argv[]) \
 { \
   Scheme_Object *ret; \
@@ -474,7 +474,7 @@ name (int argc, Scheme_Object *argv[]) \
 }
 
 #define GEN_UNARY_OP(name, scheme_name, c_name, inf_val, neginf_val, nan_val, complex_fun, PRECHECK, USE_COMPLEX) \
-STATIC Scheme_Object * \
+static Scheme_Object * \
 name (int argc, Scheme_Object *argv[]) \
 { \
   Scheme_Type t; \

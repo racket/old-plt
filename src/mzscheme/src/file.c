@@ -1397,7 +1397,10 @@ static Scheme_Object *link_exists(int argc, Scheme_Object **argv)
 
 char *scheme_normal_path_case(char *si, int len)
 {
-#ifndef UNIX_FILE_SYSTEM
+#ifdef PALMOS_STUFF
+  return si;
+#else
+# ifndef UNIX_FILE_SYSTEM
   int i;
   char *s;
 
@@ -1406,15 +1409,16 @@ char *scheme_normal_path_case(char *si, int len)
 
   for (i = 0; i < len; i++) {
     s[i] = tolower(s[i]);
-#ifdef DOS_FILE_SYSTEM
+#  ifdef DOS_FILE_SYSTEM
     if (s[i] == '/')
       s[i] = '\\';
-#endif
+#  endif
   }
 
   return s;
-#else
+# else
   return si;
+# endif
 #endif
 }
 

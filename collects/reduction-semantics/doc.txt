@@ -488,11 +488,12 @@ by Felleisen and Flatt.
                                       any?
                                       (any? . -> . boolean?)
                                       . -> . (listof any?))
-                     First argument represents a set of reductions
+                     A poor-man's `gui' for test interaction. The
+                     first argument represents a set of reductions
                      that define a function; the second argument is
                      the starting expression; the last argument is
                      a predicate to recognize ending expressions.
                      The function applies the reductions repeatedly
                      until an ending expression os found, or the
                      reduction gets stuck. The result is the list of
-                     expressions leading to the endng expression.
+                     expressions leading to the ending expression.

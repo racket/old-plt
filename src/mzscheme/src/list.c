@@ -605,6 +605,11 @@ scheme_caddr (Scheme_Object *pair)
   return (SCHEME_CAR (SCHEME_CDR (SCHEME_CDR (pair))));
 }
 
+Scheme_Object *scheme_copy_list(Scheme_Object *l)
+{
+  return scheme_vector_to_list(scheme_list_to_vector(l));
+}
+
 /* local functions */
 
 static Scheme_Object *

@@ -1157,7 +1157,7 @@ scheme_apply_macro(Scheme_Object *name,
 		   Scheme_Object *rator, Scheme_Object *code,
 		   Scheme_Comp_Env *env, Scheme_Object *boundname)
 {
-  Scheme_Object *mark;
+  Scheme_Object *mark, *orig_code = code;
 
   mark = scheme_new_mark();
   code = scheme_add_remove_mark(code, mark);
@@ -1174,6 +1174,8 @@ scheme_apply_macro(Scheme_Object *name,
   }
 
   code = scheme_add_remove_mark(code, mark);
+
+  code = scheme_stx_track(code, orig_code, name);
 
   return code;
 }

@@ -635,8 +635,17 @@ define_values_syntax (Scheme_Object *form, Scheme_Comp_Env *env, Scheme_Compile_
 
     name = SCHEME_STX_CAR(var);
 
-    bucket = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name),
-						   globals);
+    if (rec[drec].resolve_module_ids && !env->genv->module) {
+      bucket = (Scheme_Object *)scheme_global_bucket(SCHEME_STX_SYM(name),
+						     globals);
+    } else {
+      /* Create a module variable reference, so that idx is preserved: */
+      bucket = scheme_alloc_object();
+      bucket->type = scheme_module_variable_type;
+      SCHEME_PTR1_VAL(bucket) = env->genv->module->self_modidx;
+      SCHEME_PTR2_VAL(bucket) = SCHEME_STX_SYM(name);
+    }
+
     pr = cons(bucket, scheme_null);
     if (last)
       SCHEME_STX_CDR(last) = pr;

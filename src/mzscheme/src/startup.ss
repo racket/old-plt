@@ -1919,15 +1919,19 @@
   (define (load/use-compiled f) (-core-load/use-compiled f #f))
 
   (define -re:dir (regexp "(.+?)/+(.*)"))
+  (define -re:auto (regexp "^,"))
   (define -module-hash-table-table (make-hash-table-weak)) ; weak map from namespace to module ht
   
   (define standard-module-name-resolver
     (lambda (s relto)
       (let ([get-dir (lambda ()
 		       (or (and relto
-				(let-values ([(base n d?)
-					      (split-path (symbol->string relto))])
-				  base))
+				(let ([rts (symbol->string relto)])
+				  (and (regexp-match -re:auto rts)
+				       (let-values ([(base n d?)
+						     (split-path 
+						      (substring rts 1 (string-length rts)))])
+					 base))))
 			   (current-load-relative-directory)
 			   (current-directory)))])
 	(let ([filename
@@ -1980,8 +1984,9 @@
 		    #f)))
 	  (let ([filename (normal-case-path (simplify-path (expand-path filename)))])
 	    (let-values ([(base name dir?) (split-path filename)])
-	      (let ([no-sfx (regexp-replace -re:suffix name "")])
-		(let ([modname (string->symbol (string-append base no-sfx))]
+	      (let ([no-sfx (regexp-replace -re:suffix name "")]
+		    [abase (format ",~a" base)])
+		(let ([modname (string->symbol (string-append abase no-sfx))]
 		      [ht (hash-table-get
 			   -module-hash-table-table
 			   (current-namespace)
@@ -1994,9 +1999,9 @@
 		  ;; unless it has been loaded already...
 		  (unless (hash-table-get ht modname (lambda () #f))
 		    (hash-table-put! ht modname #t)
-		    (let ([prefix (string->symbol base)])
+		    (let ([prefix (string->symbol abase)])
 		      (parameterize ([current-module-name-prefix prefix])
-			(load filename))))
+			(load/use-compiled filename))))
 		  ;; Result is the module name:
 		  modname))))))))
 

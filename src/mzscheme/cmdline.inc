@@ -45,6 +45,17 @@ static char *make_load_cd(char *file)
   return s;
 }
 
+static char *make_import(char *file)
+{
+  char *s;
+  
+  s = (char *)malloc(strlen(file) + 13);
+  strcpy(s, "(import \"");
+  strcat(s, file);
+  strcat(s, "\")");
+  return s;
+}
+
 static char *make_require_lib(const char *file, const char *coll)
 {
   char *s;
@@ -317,7 +328,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
     else if (!strcmp("--script", argv[0]))
       argv[0] = "-r";
     else if (!strcmp("--script-cd", argv[0]))
-      argv[0] = "-i";
+      argv[0] = "-t";
     else if (!strcmp("--no-lib-path", argv[0]))
       argv[0] = "-x";
     else if (!strcmp("--version", argv[0]))
@@ -394,7 +405,7 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  evals_and_loads[num_enl] = argv[0];
 	  is_load[num_enl++] = 1;
 	  break;
-	case 'i':
+	case 't':
 	  script_mode = 1;
 	  no_more_switches = 1;
 	case 'd':
@@ -406,6 +417,18 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	  argv++;
 	  --argc;
 	  se = make_load_cd(argv[0]);
+	  evals_and_loads[num_enl] = se;
+	  is_load[num_enl++] = 0;
+	  break;
+	case 'i':
+	  if (argc < 2) {
+	    PRINTF("%s: Missing file name after %s switch.\n", 
+		   prog, real_switch);
+	    goto show_need_help;
+	  }
+	  argv++;
+	  --argc;
+	  se = make_import(argv[0]);
 	  evals_and_loads[num_enl] = se;
 	  is_load[num_enl++] = 0;
 	  break;
@@ -422,6 +445,15 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	    argv++;
 	    --argc;
 	    se = make_load_cd(argv[0]);
+	    evals_and_loads[num_enl] = se;
+	    is_load[num_enl++] = 0;
+	  }
+	  break;
+	case 'I':
+	  while (argc > 1) {
+	    argv++;
+	    --argc;
+	    se = make_import(argv[0]);
 	    evals_and_loads[num_enl] = se;
 	    is_load[num_enl++] = 0;
 	  }
@@ -624,12 +656,14 @@ static int run_from_cmd_line(int argc, char *_argv[],
 	 "  -e <expr> : Evaluates <expr> after " PROGRAM " starts.\n"
 	 "  -f <file> : Loads <file> after " PROGRAM " starts.\n"
 	 "  -d <file> : Load/cds <file> after " PROGRAM " starts.\n"
+	 "  -i <file> : Imports <file> after " PROGRAM " starts.\n"
 	 "  -F : Loads all remaining arguments after " PROGRAM " starts.\n"
 	 "  -D : Load/cds all remaining arguments after " PROGRAM " starts.\n"
+	 "  -I : Imports all remaining arguments after " PROGRAM " starts.\n"
 	 "  -l <file> : Same as -e '(import (lib \"<file>\"))'.\n"
 	 "  -L <file> <coll> : Same as -e '(import (lib \"<file>\" \"<coll>\"))'.\n"
 	 "  -r, --script : Script mode: use as last switch for scripts. Same as -fmv-.\n" 
-	 "  -i, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
+	 "  -t, --script-cd : Like -r, but also sets the directory. Same as -dmv-.\n"
 # ifdef CMDLINE_STDIO_FLAG
 	 "  -z, --stdio : Use stdio REPL. Same as -ve '(read-eval-print-loop)'.\n"
 # endif

@@ -533,3 +533,12 @@ static Scheme_Object *gensym(int argc, Scheme_Object *argv[])
 
   return scheme_make_symbol(buffer);
 }
+
+Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2)
+{
+  char *s;
+  s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2) + 1);
+  memcpy(s, SCHEME_SYM_VAL(s1), SCHEME_SYM_LEN(s1));
+  memcpy(s + SCHEME_SYM_LEN(s1), SCHEME_SYM_VAL(s2), SCHEME_SYM_LEN(s2) + 1);
+  return scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(s1) + SCHEME_SYM_LEN(s2));
+}

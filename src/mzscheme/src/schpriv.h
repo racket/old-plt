@@ -390,11 +390,13 @@ typedef struct Scheme_Stx {
   Scheme_Object *src;
   Scheme_Object *wraps;
   long lazy_prefix; /* # if initial items in wraps to propagate */
+  Scheme_Object *extra;
 } Scheme_Stx;
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
 			       long line, long col, 
-			       Scheme_Object *src);
+			       Scheme_Object *src,
+			       Scheme_Object *extra);
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
 
@@ -402,6 +404,10 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src,
 				      Scheme_Object *stx_wraps, int cangraph);
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks,
 				      Scheme_Hash_Table *renames);
+
+Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
+				Scheme_Object *old, 
+				Scheme_Object *origin);
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
@@ -448,6 +454,8 @@ Scheme_Hash_Table *scheme_setup_datum_graph(Scheme_Object *o, int for_print);
 #define SCHEME_STX_SYM(o) (SCHEME_STXP(o) ? SCHEME_STX_VAL(o) : o)
 
 Scheme_Object *scheme_source_to_name(Scheme_Object *code);
+
+#define STX_SRCTAG scheme_false
 
 /*========================================================================*/
 /*                   syntax run-time structures                           */
@@ -1720,6 +1728,11 @@ void scheme_count_generic(Scheme_Object *o, long *s, long *e, Scheme_Hash_Table 
 #endif
 #endif
 
+/*========================================================================*/
+/*                           miscellaneous                                */
+/*========================================================================*/
 
+Scheme_Object *scheme_symbol_append(Scheme_Object *s1, Scheme_Object *s2);
+Scheme_Object *scheme_copy_list(Scheme_Object *l);
 
 #endif /* __mzscheme_private__ */

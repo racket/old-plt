@@ -503,16 +503,16 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    Scheme_Object *chr;
 	    chr = read_character(port CURRENTPROCARG);
 	    if (stxsrc)
-	      chr = scheme_make_stx(chr, line, col, stxsrc);
+	      chr = scheme_make_stx(chr, line, col, stxsrc, STX_SRCTAG);
 	    return chr;
 	  }
 	case 'T':
 	case 't': return (stxsrc 
-			  ? scheme_make_stx(scheme_true, line, col, stxsrc) 
+			  ? scheme_make_stx(scheme_true, line, col, stxsrc, STX_SRCTAG) 
 			  : scheme_true);
 	case 'F':
 	case 'f': return (stxsrc 
-			  ? scheme_make_stx(scheme_false, line, col, stxsrc) 
+			  ? scheme_make_stx(scheme_false, line, col, stxsrc, STX_SRCTAG) 
 			  : scheme_false);
 	case 'X':
 	case 'x': return read_number(port, stxsrc, line, col, 0, 0, 16, 1 CURRENTPROCARG);
@@ -532,7 +532,7 @@ read_inner(Scheme_Object *port, Scheme_Object *stxsrc, Scheme_Hash_Table **ht CU
 	    Scheme_Object *cpld;
 	    cpld = read_compiled(port, ht CURRENTPROCARG);
 	    if (stxsrc) 
-	      cpld = scheme_make_stx(cpld, line, col, stxsrc);
+	      cpld = scheme_make_stx(cpld, line, col, stxsrc, STX_SRCTAG);
 	    return cpld;
 	  } else {
 	    scheme_raise_exn(MZEXN_READ,
@@ -937,7 +937,7 @@ read_list(Scheme_Object *port,
       if (!list)
 	list = scheme_null;
       return (stxsrc
-	      ? scheme_make_stx(list, line, col, stxsrc)
+	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
 	      : list);
     }
 
@@ -971,7 +971,7 @@ read_list(Scheme_Object *port,
       else
 	SCHEME_CDR(last) = cdr;
       return (stxsrc
-	      ? scheme_make_stx(list, line, col, stxsrc)
+	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
 	      : list);
     } else if ((ch == '.')
 	       && (next = scheme_peekc(port),
@@ -1007,7 +1007,7 @@ read_list(Scheme_Object *port,
       else
 	SCHEME_CDR(last) = cdr;
       return (stxsrc
-	      ? scheme_make_stx(list, line, col, stxsrc)
+	      ? scheme_make_stx(list, line, col, stxsrc, STX_SRCTAG)
 	      : list);
     } else {
       scheme_ungetc(ch, port);
@@ -1066,7 +1066,7 @@ read_string(Scheme_Object *port,
 
   result = scheme_make_immutable_sized_string(buf, i, i <= 31);
   if (stxsrc)
-    result =  scheme_make_stx(result, line, col, stxsrc);
+    result =  scheme_make_stx(result, line, col, stxsrc, STX_SRCTAG);
   return result;
 }
 
@@ -1267,7 +1267,7 @@ read_number_or_symbol(Scheme_Object *port,
     o = scheme_intern_exact_symbol(buf, i);
 
   if (stxsrc)
-    o = scheme_make_stx(o, line, col, stxsrc);
+    o = scheme_make_stx(o, line, col, stxsrc, STX_SRCTAG);
 
   return o;
 }
@@ -1432,11 +1432,11 @@ read_quote(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   ret = (stxsrc
-	 ? scheme_make_stx(quote_symbol, line, col, stxsrc)
+	 ? scheme_make_stx(quote_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : quote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc);
+    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1450,12 +1450,12 @@ read_quasiquote(Scheme_Object *port,
   
   quoted_obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   ret = (stxsrc
-	 ? scheme_make_stx(quasiquote_symbol, line, col, stxsrc)
+	 ? scheme_make_stx(quasiquote_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : quasiquote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(quoted_obj, scheme_null));
   
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc);
+    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1469,12 +1469,12 @@ read_unquote(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   ret = (stxsrc
-	 ? scheme_make_stx(unquote_symbol, line, col, stxsrc)
+	 ? scheme_make_stx(unquote_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : unquote_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
 
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc);
+    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1488,11 +1488,11 @@ read_unquote_splicing(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   ret = (stxsrc
-	 ? scheme_make_stx(unquote_splicing_symbol, line, col, stxsrc)
+	 ? scheme_make_stx(unquote_splicing_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : unquote_splicing_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair (obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc);
+    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 
@@ -1509,7 +1509,7 @@ static Scheme_Object *read_box(Scheme_Object *port,
   bx = scheme_box(o);
 
   if (stxsrc)
-    bx = scheme_make_stx(bx, line, col, stxsrc);
+    bx = scheme_make_stx(bx, line, col, stxsrc, STX_SRCTAG);
 
   return bx;
 }
@@ -1524,11 +1524,11 @@ read_syntax_quote(Scheme_Object *port,
 
   obj = read_inner(port, stxsrc, ht CURRENTPROCARG);
   ret = (stxsrc
-	 ? scheme_make_stx(syntax_symbol, line, col, stxsrc)
+	 ? scheme_make_stx(syntax_symbol, line, col, stxsrc, STX_SRCTAG)
 	 : syntax_symbol);
   ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
   if (stxsrc)
-    ret = scheme_make_stx(ret, line, col, stxsrc);
+    ret = scheme_make_stx(ret, line, col, stxsrc, STX_SRCTAG);
   return ret;
 }
 

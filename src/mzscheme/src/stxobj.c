@@ -29,7 +29,9 @@ static Scheme_Object *graph_syntax_p(int argc, Scheme_Object **argv);
 
 static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv);
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv);
+#if STX_DEBUG
 static Scheme_Object *syntax_to_datum_wraps(int argc, Scheme_Object **argv);
+#endif
 
 static Scheme_Object *syntax_e(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_line(int argc, Scheme_Object **argv);
@@ -37,9 +39,14 @@ static Scheme_Object *syntax_col(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_src(int argc, Scheme_Object **argv);
 static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv);
 
+static Scheme_Object *syntax_origin(int argc, Scheme_Object **argv);
+
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *free_eq(int argc, Scheme_Object **argv);
 static Scheme_Object *module_eq(int argc, Scheme_Object **argv);
+
+static Scheme_Object *source_symbol;
+static Scheme_Object *origin_symbol;
 
 #ifdef MZ_PRECISE_GC
 static void register_traversers(void);
@@ -114,11 +121,13 @@ void scheme_init_stx(Scheme_Env *env)
 						      3, 3, 1),
 			     env);
 
+#if STX_DEBUG
   scheme_add_global_constant("syntax->datum/wraps", 
 			     scheme_make_folding_prim(syntax_to_datum_wraps,
 						      "syntax->datum/wraps",
 						      1, 1, 1),
 			     env);
+#endif
 
   scheme_add_global_constant("syntax-e", 
 			     scheme_make_folding_prim(syntax_e,
@@ -146,6 +155,12 @@ void scheme_init_stx(Scheme_Env *env)
 						      1, 1, 1),
 			     env);
 
+  scheme_add_global_constant("syntax-origin", 
+			     scheme_make_prim_w_arity(syntax_origin,
+						      "syntax-origin",
+						      2, 2),
+			     env);
+
   scheme_add_global_constant("bound-identifier=?", 
 			     scheme_make_folding_prim(bound_eq,
 						      "bound-identifier=?",
@@ -161,11 +176,15 @@ void scheme_init_stx(Scheme_Env *env)
 						      "module-identifier=?",
 						      2, 2, 1),
 			     env);
+
+  source_symbol = scheme_intern_symbol("source");
+  origin_symbol = scheme_intern_symbol("origin");
 }
 
 Scheme_Object *scheme_make_stx(Scheme_Object *val, 
 			       long line, long col, 
-			       Scheme_Object *src)
+			       Scheme_Object *src,
+			       Scheme_Object *extra)
 {
   Scheme_Stx *stx;
 
@@ -176,10 +195,94 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
   stx->col = col;
   stx->src = src;
   stx->wraps = scheme_null;
-  if (!HAS_SUBSTX(val))
-    stx->lazy_prefix = 1; /* so marks always cancel immediately */
+  stx->extra = extra;
 
   return (Scheme_Object *)stx;
+}
+
+Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
+				Scheme_Object *old,
+				Scheme_Object *origin)
+{
+  Scheme_Stx *nstx = (Scheme_Stx *)naya;
+  Scheme_Stx *ostx = (Scheme_Stx *)old;
+  Scheme_Object *ne, *oe;
+  Scheme_Object *wraps;
+  long lazy_prefix;
+  
+  if (nstx->extra) {
+    if (SAME_OBJ(nstx->extra, STX_SRCTAG)) {
+      /* Retain 'source tag. */
+      ne = scheme_make_pair(scheme_make_pair(source_symbol, 
+					     scheme_true),
+			    scheme_null);
+    } else
+      ne = nstx->extra;
+  } else
+    ne = scheme_null;
+  
+  if (ostx->extra) {
+    if (SAME_OBJ(ostx->extra, STX_SRCTAG)) {
+      /* Drop 'source, add 'origin. */
+      oe = NULL;
+    } else {
+      Scheme_Object *p;
+      int drop = 0, add = 1;
+
+      oe = ostx->extra;
+
+      /* Drop 'source, add 'origin if not there */
+      for (p = oe; SCHEME_PAIRP(p); p = SCHEME_CDR(p)) {
+	if (SAME_OBJ(SCHEME_CAR(SCHEME_CAR(p)), source_symbol))
+	  drop = 1;
+	else if (SAME_OBJ(p, origin_symbol))
+	  add = 0;
+      }
+
+      if (drop) {
+	Scheme_Object *first = scheme_null, *last = NULL;
+
+	for (; SCHEME_PAIRP(oe); oe = SCHEME_CDR(oe)) {
+	  if (!SAME_OBJ(SCHEME_CAR(SCHEME_CAR(oe)), source_symbol)) {
+	    p = scheme_make_pair(SCHEME_CAR(oe), scheme_null);
+	    if (last)
+	      SCHEME_CDR(last) = p;
+	    else
+	      first = p;
+	    last = p;
+	  }
+	}
+
+	oe = first;
+      } 
+      if (add) {
+	oe = scheme_make_pair(scheme_make_pair(origin_symbol, origin),
+			      scheme_null);
+      }
+    }
+  } else {
+    /* Add 'origin. */
+    oe = NULL;
+  }
+
+  if (!oe)
+    oe= scheme_make_pair(scheme_make_pair(origin_symbol, origin),
+			 scheme_null);
+
+  /* Append extra info */
+  ne = scheme_append(ne, oe);
+
+  /* Clone nstx, keeping wraps, changing extra to ne */
+
+  wraps = nstx->wraps;
+  lazy_prefix = nstx->lazy_prefix;
+
+  nstx = (Scheme_Stx *)scheme_make_stx(nstx->val, nstx->line, nstx->col, nstx->src, ne);
+
+  nstx->wraps = wraps;
+  nstx->lazy_prefix = lazy_prefix;
+
+  return (Scheme_Object *)nstx;
 }
 
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col)
@@ -229,7 +332,7 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
   lp = stx->lazy_prefix;
   wraps = add_remove_mark(stx->wraps, m, &lp);
 
-  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
+  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->extra);
   stx->wraps = wraps;
   stx->lazy_prefix = lp;
 
@@ -346,7 +449,7 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *rename)
   wraps = scheme_make_pair(rename, stx->wraps);
   lp = stx->lazy_prefix + 1;
 
-  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
+  stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->extra);
   stx->wraps = wraps;
   stx->lazy_prefix = lp;
 
@@ -387,7 +490,7 @@ static Scheme_Object *propagate_wraps(Scheme_Object *o,
     
     if (SAME_OBJ(stx->wraps, p1)) {
       long lp = stx->lazy_prefix + len;
-      stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src);
+      stx = (Scheme_Stx *)scheme_make_stx(stx->val, stx->line, stx->col, stx->src, stx->extra);
       stx->wraps = owner_wraps;
       stx->lazy_prefix = lp;
       return (Scheme_Object *)stx;
@@ -1377,11 +1480,10 @@ static Scheme_Object *datum_to_wraps(Scheme_Object *w,
 	name = SCHEME_VEC_ELS(a)[1+i];
 	marks = SCHEME_VEC_ELS(a)[1+c+i];
 
-	s = scheme_make_stx(name, -1, -1, scheme_false);
+	s = scheme_make_stx(name, -1, -1, scheme_false, NULL);
 	((Scheme_Stx *)s)->wraps = marks;
 
 	SCHEME_VEC_ELS(vec)[1+i] = s;
-
 	SCHEME_VEC_ELS(vec)[1+c+i] = SCHEME_VEC_ELS(a)[1+(2 * c)+i];
       }
 
@@ -1619,9 +1721,9 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   }
 
   if (SCHEME_FALSEP((Scheme_Object *)stx_src))
-    result = scheme_make_stx(result, -1, -1, scheme_false);
+    result = scheme_make_stx(result, -1, -1, scheme_false, NULL);
   else
-    result = scheme_make_stx(result, stx_src->line, stx_src->col, stx_src->src);
+    result = scheme_make_stx(result, stx_src->line, stx_src->col, stx_src->src, NULL);
 
   if (wraps) {
     if (HAS_SUBSTX(SCHEME_STX_VAL(result))) {
@@ -1703,6 +1805,7 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
   return scheme_syntax_to_datum(argv[0], 0, NULL);
 }
 
+#if STX_DEBUG
 static Scheme_Object *syntax_to_datum_wraps(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_STXP(argv[0]))
@@ -1710,6 +1813,7 @@ static Scheme_Object *syntax_to_datum_wraps(int argc, Scheme_Object **argv)
     
   return scheme_syntax_to_datum(argv[0], 2, scheme_hash_table(7, SCHEME_hash_ptr, 0, 0));
 }
+#endif
 
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
@@ -1785,6 +1889,45 @@ static Scheme_Object *syntax_to_list(int argc, Scheme_Object **argv)
       return scheme_false;
   } else
     return scheme_false;
+}
+
+static Scheme_Object *syntax_origin(int argc, Scheme_Object **argv)
+{
+  Scheme_Stx *stx;
+  Scheme_Object *key = argv[1];
+
+  if (!SCHEME_STXP(argv[0]))
+    scheme_wrong_type("syntax-origin", "syntax", 0, argc, argv);
+
+  stx = (Scheme_Stx *)argv[0];
+
+  if (stx->extra) {
+    if (SAME_OBJ(stx->extra, STX_SRCTAG)) {
+      if (SAME_OBJ(key, source_symbol))
+	return scheme_make_pair(scheme_true, scheme_null);
+      else
+	return scheme_null;
+    } else {
+      Scheme_Object *first = scheme_null, *last = NULL, *p, *e;
+
+      for (e = stx->extra; SCHEME_PAIRP(e); e = SCHEME_CDR(e)) {
+	if (SAME_OBJ(key, SCHEME_CAR(SCHEME_CAR(e)))) {
+	  p = scheme_make_pair(SCHEME_CDR(SCHEME_CAR(e)), scheme_null);
+	  if (last)
+	    SCHEME_CDR(last) = p;
+	  else
+	    first = p;
+	  last = p;
+	}
+      }
+      return first;
+    }
+  } else {
+    if (SAME_OBJ(key, source_symbol))
+      return scheme_make_pair(scheme_false, scheme_null);
+    else
+      return scheme_null;
+  }
 }
 
 static Scheme_Object *bound_eq(int argc, Scheme_Object **argv)

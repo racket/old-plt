@@ -994,13 +994,8 @@ static Scheme_Object *do_module(Scheme_Object *form, Scheme_Comp_Env *env,
     modname= SCHEME_STX_VAL(nm);
     prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
     
-    if (SCHEME_SYMBOLP(prefix)) {
-      char *s;
-      s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(modname) + 1);
-      memcpy(s, SCHEME_SYM_VAL(prefix), SCHEME_SYM_LEN(prefix));
-      memcpy(s + SCHEME_SYM_LEN(prefix), SCHEME_SYM_VAL(modname), SCHEME_SYM_LEN(modname) + 1);
-      modname = scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(modname));
-    }
+    if (SCHEME_SYMBOLP(prefix))
+      modname = scheme_symbol_append(prefix, modname);
       
     m->modname = modname; /* must set before calling new_module_env */
   }
@@ -1385,6 +1380,7 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 	  }
 
 	  mrec.dont_mark_local_use = 0;
+	  mrec.resolve_module_ids = 0;
 	  mrec.value_name = NULL;
 
 	  if (!eenv) {
@@ -2169,13 +2165,8 @@ Scheme_Object *parse_imports(Scheme_Object *form, Scheme_Object *ll,
 	if (!iname)
 	  iname = exs[j];
 
-	if (prefix) {
-	  char *s;
-	  s = MALLOC_N_ATOMIC(char, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(iname) + 1);
-	  memcpy(s, SCHEME_SYM_VAL(prefix), SCHEME_SYM_LEN(prefix));
-	  memcpy(s + SCHEME_SYM_LEN(prefix), SCHEME_SYM_VAL(iname), SCHEME_SYM_LEN(iname) + 1);
-	  iname = scheme_intern_exact_symbol(s, SCHEME_SYM_LEN(prefix) + SCHEME_SYM_LEN(iname));
-	}
+	if (prefix)
+	  iname = scheme_symbol_append(prefix, iname);
 	
 	ck(iname, idx, modidx, exsns[j], (j < var_count), data, i);
 	
@@ -2429,15 +2420,10 @@ static Scheme_Object *write_module(Scheme_Object *obj)
   return l;
 }
 
-static Scheme_Object *copy_list(Scheme_Object *l)
-{
-  return scheme_vector_to_list(scheme_list_to_vector(l));
-}
-
 static Scheme_Object *read_module(Scheme_Object *obj)
 {
   Scheme_Module *m;
-  Scheme_Object *ie, *nie;
+  Scheme_Object *ie, *nie, *prefix;
   Scheme_Object *esn, *es, *e, *nve, *ne, **v;
   int i, count;
 
@@ -2445,6 +2431,12 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   m->type = scheme_module_type;
   m->modname = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
+
+  prefix = scheme_get_param(scheme_config, MZCONFIG_CURRENT_MODULE_PREFIX);
+  if (SCHEME_SYMBOLP(prefix)) {
+    prefix = scheme_symbol_append(prefix, m->modname);
+    m->modname = prefix;
+  }
 
   m->self_modidx = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
@@ -2502,17 +2494,17 @@ static Scheme_Object *read_module(Scheme_Object *obj)
   }
   m->export_src_names = v;
 
-  e = copy_list(SCHEME_CAR(obj));
+  e = scheme_copy_list(SCHEME_CAR(obj));
   m->et_body = e;
   obj = SCHEME_CDR(obj);
-  e = copy_list(SCHEME_CAR(obj));
+  e = scheme_copy_list(SCHEME_CAR(obj));
   m->body = e;
   obj = SCHEME_CDR(obj);
 
-  e = copy_list(SCHEME_CAR(obj));
+  e = scheme_copy_list(SCHEME_CAR(obj));
   m->imports = e;
   obj = SCHEME_CDR(obj);
-  e = copy_list(obj);
+  e = scheme_copy_list(obj);
   m->et_imports = e;
 
   return (Scheme_Object *)m;

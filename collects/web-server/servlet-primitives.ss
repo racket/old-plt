@@ -9,7 +9,7 @@
            (lib "url.ss" "net")
            (lib "browser.ss" "net")
            ; more here - use contracts when they support suitable error messages
-           ;(lib "specs.ss" "framework")
+           ;(lib "contracts.ss" "framework")
            (lib "error.ss" "htdp")
            )
   (provide send/suspend

@@ -27,6 +27,7 @@ void scheme_init_jmpup_buf(Scheme_Jumpup_Buf *b);
 int scheme_setjmpup_relative(Scheme_Jumpup_Buf *b, void *start, 
 			     Scheme_Jumpup_Buf *cont);
 void scheme_longjmpup(Scheme_Jumpup_Buf *b);
+void scheme_reset_jmpup_buf(Scheme_Jumpup_Buf *b);
 
 #ifdef USE_MZ_SETJMP
 int scheme_setjmp(mz_jmp_buf b);
@@ -200,7 +201,9 @@ void *scheme_malloc_fail_ok(void *(*f)(size_t), size_t);
 void scheme_weak_reference(void **p);
 void scheme_weak_reference_indirect(void **p, void *v);
 void scheme_add_finalizer(void *p, void (*f)(void *p, void *data), void *data);
+void scheme_add_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_add_scheme_finalizer(void *p, void (*f)(void *p, void *data), void *data);
+void scheme_add_scheme_finalizer_once(void *p, void (*f)(void *p, void *data), void *data);
 void scheme_register_finalizer(void *p, 
 			       void (*f)(void *p, void *data), void *data,
 			       void (**oldf)(void *p, void *data), 
@@ -382,11 +385,11 @@ int scheme_file_exists(char *filename);
 int scheme_directory_exists(char *dirname);
 char *scheme_expand_filename(char* filename, int ilen, char *errorin, int *ex);
 
-char *scheme_getcwd(char *buf, int buflen, int *actlen, int noexn);
-int scheme_setcwd(char *buf, int noexn);
+char *scheme_os_getcwd(char *buf, int buflen, int *actlen, int noexn);
+int scheme_os_setcwd(char *buf, int noexn);
 char *scheme_getdrive(void);
 
-Scheme_Object *scheme_split_pathname(int argc, Scheme_Object **argv);
+Scheme_Object *scheme_split_pathname(const char *path, int len, Scheme_Object **base, int *isdir);
 Scheme_Object *scheme_build_pathname(int argc, Scheme_Object **argv);
 
 void *scheme_alloc_fdset_array(int count, int permanent);

@@ -83,10 +83,12 @@ enum {
 
   /* These reserved types will let us add types
      without forcing recompilation of compiled MzScheme code */
-  scheme_reserved_4_type,
+  scheme_reserved_1_type,
+  scheme_reserved_2_type, /* 70 */
+  scheme_reserved_3_type,
 
   /* more internal types: */
-  scheme_compilation_top_type, /* 70 */
+  scheme_compilation_top_type,
 
   scheme_envunbox_type,
   scheme_eval_waiting_type,
@@ -95,9 +97,8 @@ enum {
   scheme_undefined_type, 
   scheme_struct_info_type,
   scheme_multiple_values_type,
-  scheme_reserved_5_type,
-  scheme_placeholder_type,
-  scheme_case_lambda_sequence_type, /* 80 */
+  scheme_placeholder_type, /* 80 */
+  scheme_case_lambda_sequence_type,
   scheme_begin0_sequence_type,
 
   scheme_compiled_unit_type,

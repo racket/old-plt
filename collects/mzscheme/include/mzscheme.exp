@@ -2,6 +2,7 @@
 scheme_init_jmpup_buf
 scheme_setjmpup_relative
 scheme_longjmpup
+scheme_reset_jmpup_buf
 scheme_setjmp
 scheme_longjmp
 scheme_make_config
@@ -85,7 +86,9 @@ scheme_malloc_fail_ok
 scheme_weak_reference
 scheme_weak_reference_indirect
 scheme_add_finalizer
+scheme_add_finalizer_once
 scheme_add_scheme_finalizer
+scheme_add_scheme_finalizer_once
 scheme_register_finalizer
 scheme_dont_gc_ptr
 scheme_gc_ptr_ok
@@ -192,8 +195,8 @@ scheme_pipe
 scheme_file_exists
 scheme_directory_exists
 scheme_expand_filename
-scheme_getcwd
-scheme_setcwd
+scheme_os_getcwd
+scheme_os_setcwd
 scheme_getdrive
 scheme_split_pathname
 scheme_build_pathname

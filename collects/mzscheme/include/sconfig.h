@@ -181,6 +181,8 @@ int scheme_solaris_semaphore_try_down(void *);
 # define SIGSET_IS_SIGNAL
 # define SIGSET_NEEDS_REINSTALL
 
+# define USE_DYNAMIC_FDSET_SIZE
+
 # define FLAGS_ALREADY_SET
 
 #endif
@@ -229,7 +231,7 @@ int scheme_solaris_semaphore_try_down(void *);
 # define FREEBSD_CONTROL_387
 # define POW_HANDLES_INF_CORRECTLY
 
-# define UNIX_LIMIT_FDSET_SIZE
+# define USE_DYNAMIC_FDSET_SIZE
 
 # define SIGSET_IS_SIGNAL
 
@@ -566,6 +568,7 @@ int scheme_win32_semaphore_try_down(void *);
 
 # define TIME_SYNTAX
 # define USE_DIFFTIME
+# define CLOCK_IS_USER_TIME
 # define DIR_FUNCTION
 # define TIME_TYPE_IS_UNSIGNED
 
@@ -666,6 +669,8 @@ int scheme_win32_semaphore_try_down(void *);
  /* USE_FTIME uses ftime instead of gettimeofday; only for TIME_SYNTAX */
  
  /* USE_DIFFTIME uses time and difftime; only for TIME_SYNTAX */
+
+ /* CLOCK_IS_USER_TIME uses the system time for user milliseconds. */
 
  /* TIME_TYPE_IS_UNSIGNED converts time_t values as unsigned. */
 

@@ -16,9 +16,11 @@
   (unsafe!)
   (define gl-lib (case (system-type)
 		   [(windows) (ffi-lib "opengl32")]
+                   [(macosx) (ffi-lib "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL")]
 		   [else (ffi-lib "libGL")]))
   (define glu-lib (case (system-type)
 		   [(windows) (ffi-lib "glu32")]
+                   [(macosx) (ffi-lib "/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGLU")]
 		   [else (ffi-lib "libGLU")]))
   
   (define-syntax define-foreign-lib

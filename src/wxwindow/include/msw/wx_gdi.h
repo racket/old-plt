@@ -101,6 +101,7 @@ class wxBitmap: public wxObject
   int width;
   int height;
   int depth;
+  int is_dib;
   Bool ok;
   int numColors;
   wxColourMap *bitmapColourMap;
@@ -145,7 +146,8 @@ class wxBitmap: public wxObject
   inline void SetMask(wxBitmap *newmask) { mask = newmask; }
   inline wxBitmap *GetMask(void) { return mask; }
 
-  void *ChangeToDIBSection();
+  void *ChangeToDIBSection(Bool copy_old = FALSE);
+  Bool IsDIB();
 };
 
 // Cursor

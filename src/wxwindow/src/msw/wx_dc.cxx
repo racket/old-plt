@@ -44,6 +44,28 @@ static is_nt()
   return nt;
 }
 
+class wxWinGL : public wxGL {
+public:
+  wxWinGL();
+
+  int Ok();
+
+  void SwapBuffers(void);
+  void ThisContextCurrent(void);
+
+  void Reset(HDC dc, int offscreen);
+
+  void SetupPalette(PIXELFORMATDESCRIPTOR *pfd);
+  wxColourMap* CreateDefaultPalette(PIXELFORMATDESCRIPTOR *pfd);
+
+  HGLRC m_hGLRC;
+  HDC m_hDC;
+  wxColourMap *m_palette;
+  Bool m_deletePalette;
+};
+
+/******************************************************************/
+
 // Default constructor
 wxDC::wxDC(void)
 {
@@ -101,6 +123,11 @@ wxDC::~wxDC(void)
 
   if (filename)
     delete[] filename;
+
+  if (wx_gl) {
+    wx_gl->Reset(0, 0);
+    wx_gl = NULL;
+  }
 
   if (cdc)
   {
@@ -179,6 +206,18 @@ void wxDC::DoneDC(HDC dc)
     if (!cdc && wnd)
       wnd->ReleaseHDC();
   }
+}
+
+wxGL *wxDC::GetGL()
+{
+  if (!wx_gl) {
+    if (__type == wxTYPE_DC_CANVAS) {
+      wx_gl = new wxWinGL();
+      wx_gl->Reset(cdc, 0);
+    }
+  }
+
+  return wx_gl;
 }
 
 void wxDC::ShiftXY(float x, float y, int *ix, int *iy)
@@ -1465,14 +1504,14 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   }
 
   sel = (wxMemoryDC *)source->selectedInto;
-  if (sel) sel->SelectObject(NULL);
-  blit_dc->SelectObject(source);
-
-  dc_src = blit_dc->ThisDC();
+  if (sel) 
+    dc_src = sel->ThisDC();
+  else {
+    blit_dc->SelectObject(source);
+    dc_src = blit_dc->ThisDC();
+  }
 
   if (!dc_src) {
-    blit_dc->SelectObject(NULL);
-    if (sel) sel->SelectObject(source);
     DoneDC(dc);
     return FALSE;
   }
@@ -1497,15 +1536,17 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
       mdc = dc_src;
     } else {
       msel = (wxMemoryDC *)mask->selectedInto;
-      if (msel) msel->SelectObject(NULL);
-
-      if (!blit_mdc) {
-	wxREGGLOB(blit_mdc);
-	blit_mdc = new wxMemoryDC(1);
+      if (msel) {
+	mdc = msel->ThisDC();
+      } else {
+	if (!blit_mdc) {
+	  wxREGGLOB(blit_mdc);
+	  blit_mdc = new wxMemoryDC(1);
+	}
+	
+	blit_mdc->SelectObject(mask);
+	mdc = blit_mdc->ThisDC();
       }
-    
-      blit_mdc->SelectObject(mask);
-      mdc = blit_mdc->ThisDC();
     }
 
     mono_src = (source->GetDepth() == 1);
@@ -1604,13 +1645,19 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
 
     if (!invented_memdc) {
       /* Failed */
-      blit_mdc->DoneDC(mdc);
-      blit_mdc->SelectObject(NULL);
-      if (msel) msel->SelectObject(mask);
+      if (msel) 
+	msel->DoneDC(mdc);
+      else {
+	blit_mdc->DoneDC(mdc);
+	blit_mdc->SelectObject(NULL);
+      }
       DoneDC(dc);
-      blit_dc->DoneDC(dc_src);
-      blit_dc->SelectObject(NULL);
-      if (sel) sel->SelectObject(source);
+      if (sel)
+	sel->DoneDC(dc_src);
+      else {
+	blit_dc->DoneDC(dc_src);
+	blit_dc->SelectObject(NULL);
+      }
       return 0;
     }
   }
@@ -1691,13 +1738,19 @@ Bool wxDC::Blit(float xdest, float ydest, float width, float height,
   }
 
   DoneDC(dc);
-  blit_dc->DoneDC(dc_src);
-  blit_dc->SelectObject(NULL);
-  if (sel) sel->SelectObject(source);
+  if (sel)
+    sel->DoneDC(dc_src);
+  else {
+    blit_dc->DoneDC(dc_src);
+    blit_dc->SelectObject(NULL);
+  }
   if (mdc && (mdc != dc_src)) {
-    blit_mdc->DoneDC(mdc);
-    blit_mdc->SelectObject(NULL);
-    if (msel) msel->SelectObject(mask);
+    if (msel) {
+      msel->DoneDC(mdc);
+    } else {
+      blit_mdc->DoneDC(mdc);
+      blit_mdc->SelectObject(NULL);
+    }
   }
   if (invented_memdc) {
     invented_memdc->DoneDC(invented_dc);
@@ -1771,6 +1824,11 @@ wxCanvasDC::wxCanvasDC(wxCanvas *the_canvas) : wxbCanvasDC()
 
 wxCanvasDC::~wxCanvasDC(void)
 {
+  if (wx_gl) {
+    wx_gl->Reset(0, 0);
+    wx_gl = NULL;
+  }
+
   if (canvas)
     ((wxWnd *)canvas->handle)->ReleaseHDC();
 }
@@ -2038,6 +2096,9 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
   if (!cdc)
     return;
 
+  if (wx_gl)
+    wx_gl->Reset(0, 1);
+
   if (!bitmap)
   {
     // Selecting nothing means, select old bitmap
@@ -2069,14 +2130,15 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     return;
   }
 
-
-
   if (selected_bitmap) {
     if (!read_only) {
       selected_bitmap->selectedInto = NULL;
       selected_bitmap->selectedIntoDC = 0;
     }
   }
+
+  if (wx_gl)
+    bitmap->ChangeToDIBSection(TRUE);
   
   selected_bitmap = bitmap;
   if (!read_only) {
@@ -2116,6 +2178,9 @@ void wxMemoryDC::SelectObject(wxBitmap *bitmap)
     RealizePalette(cdc);
     old_palette = NULL;
   }
+
+  if (wx_gl && selected_bitmap)
+    wx_gl->Reset(cdc, 1);
 }
 
 wxBitmap* wxMemoryDC::GetObject(void)
@@ -2132,4 +2197,187 @@ void wxMemoryDC::GetSize(float *width, float *height)
   }
   *width = selected_bitmap->GetWidth();
   *height = selected_bitmap->GetHeight();
+}
+
+wxGL *wxMemoryDC::GetGL()
+{
+  if (!wx_gl) {
+    if (cdc) {
+      if (selected_bitmap && !selected_bitmap->IsDIB()) {
+	::SelectObject(cdc, old_bitmap);
+	selected_bitmap->ChangeToDIBSection(TRUE);
+	::SelectObject(cdc, selected_bitmap->ms_bitmap);
+      }
+
+      wx_gl = new wxWinGL();
+      wx_gl->Reset(cdc, 1);
+    }
+  }
+
+  return wx_gl;
+}
+
+/**************************************************/
+
+/*
+ * wxGL implementation
+ */
+
+#include <gl/gl.h>
+#include <gl/glu.h>
+#include <gl/glaux.h>
+
+static wxWinGL *current_gl_context;
+
+wxGL::wxGL()
+  : wxObject(WXGC_NO_CLEANUP)
+{
+}
+
+wxGL::~wxGL()
+{
+}
+
+wxWinGL::wxWinGL()
+{
+}
+
+void wxWinGL::Reset(HDC dc, int offscreen)
+{
+  if (current_gl_context == this) {
+    wglMakeCurrent(NULL, NULL);
+  }
+
+  if (m_hGLRC) {
+    wglDeleteContext(m_hGLRC);
+    m_hGLRC = NULL;
+  }
+  if (m_deletePalette) {
+    DELETE_OBJ m_palette;
+    m_palette = NULL;
+    m_deletePalette = 0;
+  }
+
+  if (dc) {
+    int pixelFormat;
+#ifdef MZ_PRECISE_GC
+    START_XFORM_SKIP;
+#endif
+    PIXELFORMATDESCRIPTOR pfd = {
+      sizeof(PIXELFORMATDESCRIPTOR),	/* size */
+      1,				/* version */
+      (PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER),
+      PFD_TYPE_RGBA,			/* color type */
+      16,				/* prefered color depth */
+      0, 0, 0, 0, 0, 0,		/* color bits (ignored) */
+      0,				/* no alpha buffer */
+      0,				/* alpha bits (ignored) */
+      0,				/* no accumulation buffer */
+      0, 0, 0, 0,			/* accum bits (ignored) */
+      16,				/* depth buffer */
+      0,				/* no stencil buffer */
+      0,				/* no auxiliary buffers */
+      PFD_MAIN_PLANE,			/* main layer */
+      0,				/* reserved */
+      0, 0, 0			/* no layer, visible, damage masks */
+    };
+#ifdef MZ_PRECISE_GC
+    END_XFORM_SKIP;
+#endif
+
+    if (offscreen) {
+      pfd.dwFlags = (PFD_SUPPORT_OPENGL 
+		     | PFD_DRAW_TO_BITMAP
+		     | PFD_SUPPORT_GDI);
+      pfd.cColorBits = 32;
+      pfd.cDepthBits = 32;
+    }
+    
+    pixelFormat = ChoosePixelFormat(dc, &pfd);
+    if (pixelFormat != 0) {
+      if (SetPixelFormat(dc, pixelFormat, &pfd)) {
+	DescribePixelFormat(dc, pixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd);
+	if (pfd.dwFlags & PFD_NEED_PALETTE)
+	  SetupPalette(&pfd);
+
+	m_hGLRC = wglCreateContext(dc);
+	m_hDC = dc;
+
+	if (current_gl_context == this)
+	  ThisContextCurrent();
+      }
+    }
+  }
+}
+
+int wxWinGL::Ok(void)
+{
+  return !!m_hGLRC;
+}
+
+void wxWinGL::SwapBuffers(void)
+{
+  if (m_hDC) {
+    ::SwapBuffers(m_hDC);
+  }
+}
+
+void wxWinGL::ThisContextCurrent(void)
+{
+  current_gl_context = this;
+  if (m_hGLRC && m_hDC)
+    wglMakeCurrent(m_hDC, m_hGLRC);
+  else
+    wglMakeCurrent(NULL, NULL);
+}
+
+void wxWinGL::SetupPalette(PIXELFORMATDESCRIPTOR *pfd)
+{
+  m_palette = CreateDefaultPalette(pfd);
+  m_deletePalette = TRUE;
+  
+  if (m_palette && m_palette->ms_palette) {
+    SelectPalette(m_hDC, m_palette->ms_palette, FALSE);
+    RealizePalette(m_hDC);
+  }
+}
+
+ wxColourMap* wxWinGL::CreateDefaultPalette(PIXELFORMATDESCRIPTOR *pfd)
+{
+  int paletteSize;
+  LOGPALETTE* pPal;
+  HPALETTE hPalette;
+  wxColourMap* cmap;
+
+  paletteSize = 1 << pfd->cColorBits;
+  
+  pPal = (LOGPALETTE*)new char[sizeof(LOGPALETTE) + paletteSize * sizeof(PALETTEENTRY)];
+  pPal->palVersion = 0x300;
+  pPal->palNumEntries = paletteSize;
+
+  /* build a simple RGB color palette */
+  {
+    int redMask = (1 << pfd->cRedBits) - 1;
+    int greenMask = (1 << pfd->cGreenBits) - 1;
+    int blueMask = (1 << pfd->cBlueBits) - 1;
+    int i;
+
+    for (i=0; i<paletteSize; ++i) {
+      pPal->palPalEntry[i].peRed =
+	(((i >> pfd->cRedShift) & redMask) * 255) / redMask;
+      pPal->palPalEntry[i].peGreen =
+	(((i >> pfd->cGreenShift) & greenMask) * 255) / greenMask;
+      pPal->palPalEntry[i].peBlue =
+	(((i >> pfd->cBlueShift) & blueMask) * 255) / blueMask;
+      pPal->palPalEntry[i].peFlags = 0;
+    }
+  }
+
+  hPalette = CreatePalette(pPal);
+  free(pPal);
+
+  cmap = new wxColourMap;
+  cmap->ms_palette = hPalette;
+  
+  return cmap;
 }

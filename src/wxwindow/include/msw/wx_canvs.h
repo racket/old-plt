@@ -14,14 +14,10 @@
 
 #include "wb_canvs.h"
 
-class wxGLContext;
-
 // Canvas subwindow for drawing on
 class wxCanvas: public wxbCanvas
 {
  public:
-   wxGLContext *m_wxglc;
-
   wxCanvas(void);
   wxCanvas(wxWindow *parent, int x=-1, int y=-1, int width=-1, int height=-1,
            long style = 0, char *name = "canvas");
@@ -59,9 +55,6 @@ class wxCanvas: public wxbCanvas
 
   virtual void WarpPointer(int x_pos, int y_pos) ;
   virtual wxWindow *FindFocusWindow();
-
-  void CanvasSwapBuffers(void);
-  void ThisContextCurrent(void);
 };
 
 #endif // wx_canvsh

@@ -1206,10 +1206,13 @@ Bool wxBitmap::Create(int w, int h, int d)
     ok = TRUE;
   else
     ok = FALSE;
+
+  is_dib = 0;
+
   return ok;
 }
 
-void *wxBitmap::ChangeToDIBSection()
+void *wxBitmap::ChangeToDIBSection(Bool copy_old)
 {
   /* Called only when the bitmap is not selected! */
   BITMAPINFO bmp = { { sizeof(BITMAPINFOHEADER), width, height, 1, 32 } };
@@ -1219,13 +1222,53 @@ void *wxBitmap::ChangeToDIBSection()
   bm = CreateDIBSection(NULL, &bmp, DIB_RGB_COLORS, &pBits, NULL, NULL);
   
   if (bm) {
-    if (ms_bitmap)
+    if (ms_bitmap) {
+      if (copy_old) {
+	int copied_ok = 0;
+	HDC src, dest;
+
+	src = CreateCompatibleDC(NULL);
+	if (src) {
+	  dest = CreateCompatibleDC(NULL);
+	  if (dest) {
+	    HANDLE src_old, dest_old;
+
+	    src_old = SelectObject(src, ms_bitmap);
+	    if (src_old != ERROR) {
+	      dest_old = SelectObject(dest, bm);
+	      if (dest_old != ERROR) {
+		BitBlt(dest, 0, 0, width, height,
+		       src, 0, 0,
+		       SRCCOPY);
+		copied_ok = 1;
+		SelectObject(dest, dest_old);
+	      }
+	      SelectObject(dest, src_old);
+	    }
+	    DeleteDC(dest);
+	  }
+	  DeleteDC(src);
+	}
+
+	if (!copied_ok) {
+	  DeleteObject(bm);
+	  return NULL;
+	}
+      }
+
       DeleteRegisteredGDIObject(ms_bitmap);
+    }
     ms_bitmap = bm;
     RegisterGDIObject(ms_bitmap);
+    is_dib = 1;
     return pBits;
   } else
     return NULL;
+}
+
+Bool wxBitmap::IsDIB()
+{
+  return is_dib;
 }
 
 extern int wxsGetImageType(char *fn);
@@ -1252,6 +1295,7 @@ Bool wxBitmap::LoadFile(char *bitmap_file, long flags, wxColour *bg)
   width = 0;
   height = 0;
   depth = 0;
+  is_dib = 0;
   
   if (oldSel)
     oldSel->SelectObject(NULL);

@@ -22,6 +22,7 @@ typedef       void    *wxPrinterDC;
 #else
 
 class wxRegion;
+class wxGL;
 
 // Since Windows handles DCs quite uniformly, we can have
 // a general wxWindowsDC, and derive canvas and printer DCs from this
@@ -54,6 +55,8 @@ class wxDC: public wxbDC
   HBRUSH  old_brush;
   HFONT   old_font;
   HPALETTE old_palette;
+
+  wxGL *wx_gl;
 
   wxDC(void);
   ~wxDC(void);
@@ -150,6 +153,8 @@ class wxDC: public wxbDC
   void DonePen(HDC dc);
 
   wxBitmap *StippleBrush();				   
+
+  virtual wxGL *GetGL();
 };
 
 // This class specific to Windows 3.1
@@ -215,6 +220,20 @@ HDC wxGetPrinterDC(void);
 #define MS_XDEV2LOGREL(x) ((x)/(logical_scale_x*user_scale_x*system_scale_x))
 //#define MS_YDEV2LOGREL(y) (int)((y)/(logical_scale_y*user_scale_y*system_scale_y))
 #define MS_YDEV2LOGREL(y) ((y)/(logical_scale_y*user_scale_y*system_scale_y))
+
+
+class wxGL : public wxObject {
+public:
+  wxGL();
+  virtual ~wxGL();
+
+  virtual int Ok() = 0;
+
+  virtual void Reset(HDC dc, int offscreen) = 0;
+
+  virtual void SwapBuffers(void) = 0;
+  virtual void ThisContextCurrent(void) = 0;
+};
 
 #endif // IN_CPROTO
 #endif // wx_dc.h

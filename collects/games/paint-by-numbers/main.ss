@@ -111,7 +111,7 @@
 	     (unless (string=? new-label (get-label))
 	       (set-label new-label))))])
       (public
-	[get-filename (lambda () filename)])
+	[get-pbn-filename (lambda () filename)])
 
       (public
 	[do-save void]
@@ -199,11 +199,11 @@
       (private
 	[problem _problem])
 
-      (inherit get-filename)
+      (inherit get-pbn-filename)
       (override
 	[do-save
 	 (lambda ()
-	   (call-with-output-file (get-filename)
+	   (call-with-output-file (get-pbn-filename)
 	     (lambda (port)
 	       (pretty-print
 		(list 'player
@@ -352,11 +352,11 @@
 
   (define editor-frame%
     (class generic-frame% (indicator)
-      (inherit get-filename)
+      (inherit get-pbn-filename)
       (override
        [do-save
 	(lambda ()
-	  (let ([fn (get-filename)])
+	  (let ([fn (get-pbn-filename)])
 	    (call-with-output-file fn
 	      (lambda (port)
 		(pretty-print

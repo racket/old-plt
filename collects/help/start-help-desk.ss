@@ -113,14 +113,16 @@
       (set! help-desk-frame (new-help-frame startup-url))
       (end-busy-cursor)]
      [(key) (help-desk key #t)]
-     [(key lucky?)
+     [(key lucky?) (help-desk key lucky? 'keyword+index)]
+     [(key lucky? type) (help-desk key lucky? type 'exact)]
+     [(key lucky? type mode)
       (let ([turn-cursor-off? (not help-desk-frame)])
         (if help-desk-frame
             (send help-desk-frame show #t)
             (begin (begin-busy-cursor)
                    (help-desk)))
 	(if lucky?
-	    (send help-desk-frame search-for-help/lucky key 'keyword+index 'exact)
-	    (send help-desk-frame search-for-help key 'keyword+index 'exact))
+	    (send help-desk-frame search-for-help/lucky key type mode)
+	    (send help-desk-frame search-for-help key type mode))
         (when turn-cursor-off?
           (end-busy-cursor)))])))

@@ -62,7 +62,8 @@
 	  ((require-relative-library "unit.ss")
 	   mred mzlib mzlib:date 
            framework
-           launcher basis app frame text rep
+           launcher basis help-desk
+	   app frame text rep
 	   language get/extend graph snip)]
 	[program : drscheme:program^ ((require-relative-library "prog.ss"))]
 	[get/extend : drscheme:get/extend^

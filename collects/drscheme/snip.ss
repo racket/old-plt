@@ -202,9 +202,15 @@
   (send whole/part-number-snipclass set-classname 
         "drscheme:whole/part-number-snip")
   (send (mred:get-the-snip-class-list) add whole/part-number-snipclass)
-  
+
   (define whole/part-number-snip%
     (class* mred:snip% (zodiac:expands<%> gui-utils:text-snip<%>) (number)
+      (override
+       [get-text
+	(case-lambda
+	 [(offset num) (get-text offset num #f)]
+	 [(offset num flattened?)
+	  (format "~a ~a/~a" wholes nums dens)])])
       (public
         [expand
          (lambda (obj)

@@ -1056,7 +1056,11 @@
                                                 (format "Show documentation for ~a" id)
                                                 m
                                                 (lambda x
-                                                  (drscheme:help-desk:help-desk (symbol->string id))))
+                                                  (drscheme:help-desk:help-desk
+						   (symbol->string id)
+						   #t
+						   'keyword
+						   'exact)))
                                               m)]
                                            [else #f])))))
                              (change-style

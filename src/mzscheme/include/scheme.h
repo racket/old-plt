@@ -229,7 +229,7 @@ typedef struct Scheme_Symbol {
 
 typedef struct Scheme_Vector {
   Scheme_Type type;
-  MZ_HASH_KEY_EX
+  short keyex; /* 1 in low bit indicates immutable */
   int size;
   Scheme_Object *els[1];
 } Scheme_Vector;

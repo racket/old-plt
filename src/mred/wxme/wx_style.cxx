@@ -1108,7 +1108,8 @@ wxStyle *wxStyleList::DoNamedStyle(char *name, wxStyle *plainStyle, Bool replac)
 
   style->Update();
 
-  Append(style);
+  if (!node)
+    Append(style);
 
   return style;
 }

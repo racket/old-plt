@@ -1291,7 +1291,7 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 	  || (gsnip->count + addlen > MAX_COUNT_FOR_SNIP)
 	  || (!stickyStyles
 	      && (gsnip->style != styleList->FindNamedStyle(STD_STYLE)))) {
-	snip = InsertTextSnip(start, 
+	snip = InsertTextSnip(start,
 			      caretStyle
 			      ? caretStyle
 			      : (stickyStyles

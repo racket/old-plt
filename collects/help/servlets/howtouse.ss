@@ -26,7 +26,14 @@
      (UL 
       (LI  "The " (B  (TT  "Help Desk home")) " link "
 	   "at the top of the page always takes "
-	   "you back to the starting page."))
+	   "you back to the starting page.")
+      (LI  "The " (B  (TT  "Show manuals")) " link "
+	   " displays a list "
+	   " of manuals and other documentation.")
+      (LI  "The " (B  (TT  "Send bug report")) " and "
+	   (B (TT  "Query bug reports")) " links "
+	   "allow you to submit bug reports to PLT and track their "
+           "status."))
      (P)
      (A ((NAME "helpsearch") (VALUE "Searching in Help Desk")))
      (A ((NAME "search")))
@@ -62,7 +69,7 @@
 	 "all relevant items.")
       (LI  "Expert users can adjust the search with the "
 	   "popdown menus below the "
-	   (TT "Search for") " field."))
+	   (B (TT "Search for")) " field."))
      (P)
      "Help Desk sorts search results according to their source, "
      "and then according to their (apparent) relevance.")))

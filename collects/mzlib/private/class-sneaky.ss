@@ -810,7 +810,7 @@ substitutability is checked properly.
                                           (make-rename-map (quote-syntax the-finder)
                                                            (quote the-obj)
                                                            (quote-syntax rename-orig)
-                                                           (quote rename-temp))
+                                                           (quote-syntax rename-temp))
                                           ...
                                           (make-method-map (quote-syntax the-finder)
                                                            (quote the-obj)

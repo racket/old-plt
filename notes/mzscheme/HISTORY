@@ -6,7 +6,79 @@ Version 199.21:
 
  * Changed `define-struct' ...
 
- * Changed result of `identifier-binding' in the module case: ...
+ * Changed loading to distinguish normal loads from module loads.
+
+   When `require' triggers a load to get a module definition, the
+   loaded file must contain a single `module' expression with the
+   expected name, otherwise a helpful error message is reported. (The
+   constraint on the file shape was always specified, but not directly
+   enforced.)
+
+   In addition, `module' in the loaded file is always mapped to the
+   primitive `module' form, independent of the `module' binding of the
+   current namespace. (Thus, loading a file from source reliably
+   mimics loading a compiled version of the file, and vice-versa.)
+
+   A load handler or load extension handler now takes two argument
+   instead of one: the filename and the expected module name. The
+   expected module name is either a symbol, indicating that a module
+   declaration is expected, or #f, indicating that the file need not
+   contain a module (though it may). If the expected name is a symbol,
+   the handler is responsible for checking that the file actually
+   contains a `module' declaration, and for mapping the loading
+   `module' identifier to the primitive `module' form.
+
+   Inside MzScheme: an extension is now obliged to define
+   scheme_module_name(), in addition to scheme_initialize() and
+   scheme_reload(). The scheme_module_name() function should return a
+   module name symbol if the extension declares a module, #f
+   otherwise.
+
+ * `define-syntax' is now allowed within `class' and `unit' bodies,
+   analogous to embedded `define-syntax'.  However, local macros in
+   `class' cannot currently expand to procedure expressions that serve
+   as methods.
+
+ * `unit/sig' struct type changed to `signed-unit' to aviod conflicts
+   (though it's not clear that the struct type needs to be exposed
+   anymore, anyway).
+
+ * Added `#cs' and `#ci' prefixes for controlling case-sentivity
+   during `read'. The sequence `#cs' can be used as a prefix for any
+   expression to make symbols within the expression case-sensitive.
+   The `#ci' prefix similarly makes symbols case-insensitive. For
+   example,
+
+      #cs(Apple #ciBanana Coconut)
+
+    is the same as
+
+     (|Apple| |banana| |Coconut|)
+
+    whether `read-case-sensitive' is set to #f or #t.
+
+    For example, `#cs' can be used in front of a `module' expression
+    so that the module body is implemented in a case-sensitive
+    variant of MzScheme:
+
+     > #cs(module m mzscheme (define Foo 1) (define foo 2) (provide foo Foo))
+     > (require m)
+     > foo
+     2
+     > |Foo|
+     1
+
+ * Changed result of `identifier-binding' in the module case. It's now
+   a list of four elements, including the "nominal" source module and
+   its export name for the identifier.
+
+ * Changed 'origin tracking so that starts with the empty and adds new
+   identifiers to the front of the list. See the manual for details.
+
+ * Added `cons-immutable', `list-immutable', and `list*-immutable', 
+   and removed `pair->immutable-pair'.
+
+ * Added `compiled-module-expression?' and `module-compiled-name'.
 
 Version 199.20:
 

@@ -545,7 +545,9 @@
 	 (add-file-suffix 
 	  (build-path l-home (sfx name))
 	  (current-launcher-variant))
-	 (if (eq? (system-type) 'macosx) ".app")))
+	 (if (eq? (system-type) 'macosx) 
+	     ".app" 
+	     "")))
       
       (define (mzscheme-program-launcher-path name)
 	(case (system-type)

@@ -182,7 +182,9 @@ static void sch_srand(long x, Scheme_Random_State *rs)
 
 Scheme_Object *scheme_make_random_state(long seed)
 {
-  Scheme_Random_State *rs = MALLOC_ONE_TAGGED(Scheme_Random_State);
+  Scheme_Random_State *rs;
+
+  rs = MALLOC_ONE_TAGGED(Scheme_Random_State);
   rs->type = scheme_random_state_type;
 
   sch_srand(seed, rs);

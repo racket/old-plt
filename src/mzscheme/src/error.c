@@ -157,11 +157,14 @@ void scheme_init_error(Scheme_Env *env)
 						    "default-exit-handler",
 						    1, 1);
     scheme_set_param(config, MZCONFIG_EXIT_HANDLER, scheme_def_exit_proc);
-    
-    scheme_set_param(config, MZCONFIG_ERROR_DISPLAY_HANDLER,
-		     scheme_make_prim_w_arity(def_error_display_proc,
-					      "default-error-display-handler",
-					      1, 1));
+
+    {
+      Scheme_Object *edh;
+      edh = scheme_make_prim_w_arity(def_error_display_proc,
+				     "default-error-display-handler",
+				     1, 1);
+      scheme_set_param(config, MZCONFIG_ERROR_DISPLAY_HANDLER, edh);
+    }
 
     REGISTER_SO(def_err_val_proc);
     def_err_val_proc = scheme_make_prim_w_arity(def_error_value_string_proc,

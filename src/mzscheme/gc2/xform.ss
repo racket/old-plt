@@ -844,9 +844,10 @@
 				(not (memq (tok-n (cadr assignee)) '(else :)))
 				(not (and (parens? (cadr assignee))
 					  (pair? (cddr assignee))
-					  (memq (tok-n (caddr assignee)) '(if while for until)))))))
+					  (memq (tok-n (caddr assignee)) '(if while for until))))))
+		       (not (eq? 'exn_table (tok-n (car (last-pair e-))))))
 	      (fprintf (current-error-port)
-		       "Suspicious assignment with a function call, line ~a, LHS ends ~s.~n"
+		       "Warning: suspicious assignment with a function call, line ~a, LHS ends ~s.~n"
 		       (tok-line (car e-))
 		       (tok-n (cadr e-))))))
 	(loop (cdr e-) (cons (car e-) result) live-vars)]

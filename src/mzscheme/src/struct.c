@@ -696,7 +696,11 @@ static Scheme_Object *_make_struct_type(const char *base, int blen,
   for (j = depth; j--; )
     struct_type->parent_types[j] = parent_type->parent_types[j];
 
-  struct_type->type_name = TYPE_NAME(base, blen);
+  {
+    Scheme_Object *tn;
+    tn = TYPE_NAME(base, blen);
+    struct_type->type_name = tn;
+  }
   struct_type->num_slots = num_fields + (parent_type ? parent_type->num_slots : 0);
 
   return (Scheme_Object *)struct_type;

@@ -169,9 +169,9 @@ static void do_handled_print(Scheme_Object *obj, Scheme_Object *port,
 
   a[0] = obj;
   
-  if (maxl > 0)
+  if (maxl > 0) {
     a[1] = scheme_make_string_output_port();
-  else
+  } else
     a[1] = port;
   
   scheme_apply_multi(scheme_write_proc, 2, a);

@@ -122,7 +122,11 @@ static Scheme_Object *symbol_bucket(Scheme_Hash_Table *table,
     newsize = scheme_hash_primes[++table->step];
     
     asize = (size_t)newsize * sizeof(Scheme_Bucket *);
-    table->buckets = MALLOC_N_WEAK(Scheme_Bucket *, newsize);
+    {
+      Scheme_Bucket **ba;
+      ba = MALLOC_N_WEAK(Scheme_Bucket *, newsize);
+      table->buckets = ba;
+    }
     table->size = newsize;
     memset((char *)table->buckets, 0, asize);
 

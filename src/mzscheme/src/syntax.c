@@ -1611,8 +1611,11 @@ gen_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env, char *formname,
 
   if (recursive) {
     lv = (Scheme_Compiled_Let_Value *)first;
-    for (i = 0; i < num_clauses; i++, lv = (Scheme_Compiled_Let_Value *)lv->body)
-      lv->value = scheme_compile_expr(lv->value, env, &recs[i]);
+    for (i = 0; i < num_clauses; i++, lv = (Scheme_Compiled_Let_Value *)lv->body) {
+      Scheme_Object *ce;
+      ce = scheme_compile_expr(lv->value, env, &recs[i]);
+      lv->value = ce;
+    }
   }
 
   recs[num_clauses].value_name = defname;

@@ -2865,7 +2865,8 @@ scheme_make_interface_assembly(const char *name, int n_supers, int n_names, Sche
 
   a->data.num_names = n_names;
   {
-    Scheme_Object **na = MALLOC_N(Scheme_Object *, n_names);
+    Scheme_Object **na;
+    na = MALLOC_N(Scheme_Object *, n_names);
     a->data.names = na;
   }
   for (i = n_names; i--; )
@@ -3023,9 +3024,11 @@ static void BuildObjectFrame(Internal_Object *obj,
     if (isprivref(cvar)) {
       Scheme_Class *superclass = sclass->superclass;
       short vp = sclass->ref_map[cvar->index];
+      Scheme_Object *iv;
       /* If the superclass's ivar is a cmethod, the box will contain
 	 #<undefined>. */
-      refs[cvar->index] = GetIvar(obj, irec, slots, oclass, superclass, vp, 1, 1);
+      iv = GetIvar(obj, irec, slots, oclass, superclass, vp, 1, 1);
+      refs[cvar->index] = iv;
     }
   }
 

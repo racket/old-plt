@@ -1151,7 +1151,11 @@ char *scheme_banner(void)
   if (embedding_banner)
     return embedding_banner;
   else
-    return "Welcome to MzScheme version " VERSION VERSION_SUFFIX
+    return "Welcome to MzScheme" 
+#ifdef MZ_PRECISE_GC
+      "2k"
+#endif      
+      " version " VERSION VERSION_SUFFIX
       ", Copyright (c) 1995-99 PLT (Matthew Flatt)\n";
 }
 

@@ -663,8 +663,11 @@ static Scheme_Object *resolve_references(Scheme_Object *obj,
 
     len = SCHEME_VEC_SIZE(obj);
     array = SCHEME_VEC_ELS(obj);
-    for (i = 0; i < len; i++)
-      array[i] = resolve_references(array[i], port, ht);
+    for (i = 0; i < len; i++) {
+      Scheme_Object *rr;
+      rr = resolve_references(array[i], port, ht);
+      array[i] = rr;
+    }
   }
 
   return obj;
@@ -1873,7 +1876,8 @@ static Scheme_Object *read_compiled(Scheme_Object *port,
 
 #if USE_BUFFERING_CPORT
   size = read_compact_number_from_port(port);
-  cp.s = cp.start = (unsigned char *)scheme_malloc_atomic(size);
+  cp.start = (unsigned char *)scheme_malloc_atomic(size);
+  cp.s = cp.start;
   cp.base = scheme_tell(port);
   if ((got = scheme_get_chars(port, size, (char *)cp.s)) != size)
     scheme_raise_exn(MZEXN_READ,

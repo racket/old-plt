@@ -909,7 +909,8 @@ Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags,
 #endif
 
   {
-    Scheme_Object **vals = MALLOC_N(Scheme_Object *, count);
+    Scheme_Object **vals;
+    vals = MALLOC_N(Scheme_Object *, count);
     frame->values = vals;
   }
 

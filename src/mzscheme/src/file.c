@@ -212,6 +212,8 @@ void scheme_init_file(Scheme_Env *env)
   exec_file_symbol = scheme_intern_symbol("exec-file");
   
 # ifdef MACINTOSH_EVENTS
+  REGISTER_SO(record_symbol);
+  REGISTER_SO(file_symbol);
   record_symbol = scheme_intern_symbol("record");
   file_symbol = scheme_intern_symbol("file");
 # endif

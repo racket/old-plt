@@ -2972,6 +2972,22 @@ int actual_main(int argc, char **argv)
 
 int main(int argc, char *argv[])
 {
+  void *stack_start;
+
+  stack_start = (void *)&stack_start;
+
+#if defined(MZ_PRECISE_GC)
+  stack_start = (void *)&__gc_var_stack__;
+  GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
+#endif
+
+  /* Set stack base and turn off auto-finding of static variables
+     --- unless this is MacOS, where wxWindows doesn't currently
+     register its static variables. */
+#ifndef MACOS_FIND_STACK_BOUNDS
+  scheme_set_stack_base(stack_start, 1);
+#endif
+
 #if defined(_IBMR2)
   signal(SIGDANGER, dangerdanger_gui);
 #endif
@@ -2981,18 +2997,8 @@ int main(int argc, char *argv[])
 # endif
 #endif
 
-#if defined(MZ_PRECISE_GC)
-  GC_set_stack_base(&__gc_var_stack__);
-  GC_init_type_tags(_scheme_last_type_, scheme_weak_box_type);
-#endif
-#ifdef USE_SENORA_GC
-  {
-    int dummy;
-    GC_set_stack_base(&dummy);
-  }
-# ifdef SGC_STD_DEBUGGING
+#ifdef SGC_STD_DEBUGGING
   fprintf(stderr, "Starting MrEd with sgc for debugging\n");
-# endif
 #endif
 
 #ifdef wx_mac

@@ -1537,24 +1537,25 @@ static Scheme_Object *procedure_arity_includes(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 apply(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *rands, *r;
+  Scheme_Object *rands;
   Scheme_Object **rand_vec;
   int i, num_rands;
   Scheme_Thread *p = scheme_current_thread;
 
-  if (!SCHEME_PROCP(argv[0]))
+  if (!SCHEME_PROCP(argv[0])) {
     scheme_wrong_type("apply", "procedure", 0, argc, argv);
+    return NULL;
+  }
 
   rands = argv[argc-1];
 
-  num_rands = (argc - 2);
-  r = rands;
-  while (!SCHEME_NULLP(r)) {
-    if (!SCHEME_PAIRP(r))
-      scheme_wrong_type("apply", "proper list", argc - 1, argc, argv);
-    r = SCHEME_CDR(r);
-    num_rands++;
+  num_rands = scheme_proper_list_length(rands);
+  if (num_rands < 0) {
+    scheme_wrong_type("apply", "proper list", argc - 1, argc, argv);
+    return NULL;
   }
+  num_rands += (argc - 2);
+
   rand_vec = MALLOC_N(Scheme_Object *, num_rands);
 
   for (i = argc - 2; i--; ) {

@@ -1,44 +1,38 @@
 
-Version 203.10
-Changed columns to count from 0 instead of 1
-Added vector->immutable-vector
-Added immutable-box
-
-Version 203.7
-Changed thread-resume to install a transitive resume
-Added current-wait-pseudo-random-generator, and made
- object-wait-multiple fair using the parameter's
- value for controllable randomness
-Added tcp-port?
-
-Version 203.6
+Version 204, May 2003
+Added UDP operations
 Added synchronous channels
 Added thread-suspend and thread-resume
 Added thread/suspend-to-kill
 Added thread-dead?
 Added thread-suspend-waitable, thread-resume-waitable, 
  and thread-dead-waitable
+Added make-wrapped-waitable, make-guard-waitable, and
+ make-nack-guard-waitable a la CML
+Added waitables->waitable-set, which is like CML's choose
 Renamed make-nack-waitable to make-nack-guard-waitable
  to claify its relation to make-guard-waitable
 Added make-poll-guard-waitable
+Added make-semaphore-peek
+Added current-wait-pseudo-random-generator
 Changed unreachable threads to be garbage-collected when
  blocked on any combination of otherwise unreachable
  waitables by object-wait-multiple, semaphore-wait, 
  channel-put, channge-get, or thread-wait; in addition,
  unreachable suspended threads are garbage-collected
 Added "async-channel.ss" to MzLib
-
-Version 203.5
 Changed make-custom-input-port to drop the initial
  waitable argument; instead, the read and peek
  functions should return a waitable instead of 0
 Changed make-custom-output-port so that the first
  argument is #f or a procedure to return a waitable
  (instead of #f or a waitable)
-Added make-semaphore-peek
-Added make-wrapped-waitable, make-guard-waitable, and
- make-nack-waitable a la CML
-Added waitables->waitable-set, which is like CML's choose
+Added tcp-port?
+Added port-file-identity
+Deprecated normal-case-path
+Changed the symbolic name for a file-based module to be
+ determined without using normal-case-path
+Fixed MzLib's regexp-split, etc., to work on input ports
 Changed make-struct-type-property to accept a guard
  procedure for the property
 Changed make-struct-type to accept a list of immutable
@@ -49,9 +43,6 @@ Changed proc-spec handling in make-struct-type; an integer
  value must be < init-field-k, and overriding is disallowed
  (for consistency with user-defined properties)
 Added prop:waitable
-Added vector-set-performance-stats!
-
-Version 203.4
 Changed handling of top-level and module top-level definitions
  of identifiers that originate from a macro expansion; such
  definitions now bind only the uses of the identifier with the
@@ -59,34 +50,25 @@ Changed handling of top-level and module top-level definitions
 Added make-syntax-introducer, for creating new macro origins
 Changed generate-temporaries so that it does not use gensym,
  but instead uses make-syntax-introducer to distinguish names
-Fixed parse problems with # in numbers, as in `1#/2' and
- `#e#x+e#s+e@-e#l-e'
-
-Version 203.3
 Added make-rename-transformer and rename-transformer?
 Changed syntax-local-value to cooperate specially with
  rename transformers
-
-Version 203.2
-Added UDP operations
+Fixed parse problems with # in numbers, as in `1#/2' and
+ `#e#x+e#s+e@-e#l-e'
 Added literal hashtable syntax #hash..., added support
  for immutable hash tables, and added print-hash-table
  parameter
 Added literal regexp syntax #rx... and changed the printer
  to use this notation for printing regexps
-Added port-file-identity
-Fixed MzLib's regexp-split, etc., to work on input ports
-
-Version 203.1
-Changed equal? to compare hash tables by determining whether
- they map the same keys to equal? values
 Changed hash-table? to accept 'weak and/or 'equal and return
  #t only if the first argument is a hash table created with
  the corresponding flag(s)
-Deprecated normal-case-path
-Changed the symbolic name for a file-based module to be
- determined without using normal-case-path
- 
+Changed equal? to compare hash tables by determining whether
+ they map the same keys to equal? values
+Added vector->immutable-vector
+Added immutable-box
+Added vector-set-performance-stats!
+Changed columns to count from 0 instead of 1 
 
 Version 203, December 2002
 Added support for structure types whose instances act as

@@ -58,13 +58,15 @@
 		     (build-path (collection-path "system") "invoke.ss")))
 
 	   (define (start-app collection info)
-	     (mred:startup-application
-	      collection info null
+	     (thread
 	      (lambda ()
-		(let ([mzos-exit-handler
-		       (lambda (code)
-			 (custodian-shutdown-all (current-custodian)))])
-		  (exit-handler mzos-exit-handler))))))]
+		(mred:startup-application
+		 collection info null
+		 (lambda ()
+		   (let ([mzos-exit-handler
+			  (lambda (code)
+			    (custodian-shutdown-all (current-custodian)))])
+		     (exit-handler mzos-exit-handler))))))))]
 	[main@
 	 (unit/sig ()
 	   (import (gui : (add-button open-gui))

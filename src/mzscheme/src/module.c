@@ -948,6 +948,9 @@ static Scheme_Object *_module_resolve(Scheme_Object *modidx, Scheme_Object *stx)
   if (SCHEME_SYMBOLP(modidx))
     return modidx;
 
+  if (SAME_OBJ(modidx, empty_self_modidx))
+    return scheme_false;
+
   if (SCHEME_FALSEP(((Scheme_Modidx *)modidx)->resolved)) {
     /* Need to resolve access path to a module name: */
     Scheme_Object *a[3];

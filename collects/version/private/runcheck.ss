@@ -96,7 +96,8 @@
 				(directory-exists?
 				 (build-path 
 				  curr-collects-dir d)))
-			      (directory-list curr-collects-dir))])
+			      (if (directory-exists? curr-collects-dir)
+                                (directory-list curr-collects-dir) '()))])
 		  (let inner-loop ([dirs dirs])
 		    (if (null? dirs)
 			(outer-loop (cdr collects-dirs))

@@ -4,6 +4,7 @@
            (lib "date.ss")
            (lib "string-constant.ss" "string-constants")
 	   (lib "xml.ss" "xml")
+           (lib "contract.ss")
            "colldocs.ss"
            "docpos.ss"
            "path.ss"
@@ -16,9 +17,12 @@
 	   findreldoc
            finddoc-page
 	   finddoc-page-anchor)
-  (provide find-manuals 
-           find-doc-directories
-           find-doc-directory)
+  
+  (provide/contract [find-doc-directories (-> (listof string?))]
+                    [find-doc-directory (string? . -> . (union false? string?))]
+                    [find-doc-names (-> (listof (cons/p string? string?)))])
+  
+  (provide find-manuals)
 
   
   ;; Creates a "file:" link into the indicated manual.
@@ -72,21 +76,20 @@
   (define (finddoc-page-anchor manual index-key)
     (finddoc-page-help manual index-key #t))
 
-  (define ht (make-hash-table))
-  
   ;; returns either a string (failure) or
   ;; (list docdir index-key filename anchor title)
+  (define finddoc-ht (make-hash-table))
   (define (finddoc-lookup manual index-key label)
     (let ([key (string->symbol manual)]
 	  [docdir (find-doc-directory manual)])
       (let ([l (hash-table-get
-		ht
+		finddoc-ht
 		key
 		(lambda ()
 		  (let ([f (build-path docdir "hdindex")])
                     (if (file-exists? f)
                         (let ([l (with-input-from-file f read)])
-                          (hash-table-put! ht key l)
+                          (hash-table-put! finddoc-ht key l)
                           l)
                         (error 'finddoc "manual index ~s not installed" manual)))))])
 	(let ([m (assoc index-key l)])
@@ -119,6 +122,21 @@
                               "]"))])
       `(A ((HREF ,(finddoc-page man ndx))) ,txt)))
   
+  (define (find-doc-names)
+    (let* ([dirs (find-doc-directories)]
+           [installed
+            (map (lambda (dir)
+                   (let-values ([(base name dir?) (split-path dir)])
+                     name))
+                 dirs)]
+           [uninstalled
+            (filter (lambda (x) (not (member (car x) installed)))
+                    known-docs)])
+      (append
+       (map (lambda (short-name long-name) (cons short-name (get-doc-name long-name)))
+            installed 
+            dirs)
+       uninstalled)))
   
   ;; find-doc-directories : -> (listof string[dir-path])
   ;; constructs a list of directories where documentation may reside.
@@ -293,8 +311,18 @@
 		(list "</UL>")))]))
 	  (list "</body></html>"))))))
   
+  (define cached-doc-names (make-hash-table 'equal))
   (define (get-doc-name doc-dir)
-    (let ([unknown-title "(Unknown title)"])
+    (hash-table-get
+     cached-doc-names
+     doc-dir
+     (lambda ()
+       (let ([res (compute-doc-name doc-dir)])
+         (hash-table-put! cached-doc-names doc-dir res)
+         res))))
+  
+  (define (compute-doc-name doc-dir)
+    (let ([unknown-title (let-values ([(base name dir?) (split-path doc-dir)]) name)])
       (or (get-known-doc-name doc-dir)
           (let ([main-file (get-index-file doc-dir)])
             (if main-file

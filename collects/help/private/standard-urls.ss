@@ -14,14 +14,16 @@
   (define (search-how? x)
     (member x '("exact-match" "containing-match" "regexp-match")))
   
-  (define (search-manuals? x)
-    (member x '("student-manuals" "professional-manuals" "all-manuals")))
-  
   (provide/contract 
-   (make-relative-results-url (string? search-type? search-how? search-manuals? any? . -> . string?))
-   (make-results-url (number? string? search-type? search-how? search-manuals? any? . -> . string?))
+   (make-relative-results-url (string? search-type? search-how? any? (listof symbol?) any?
+                                       (union false? string?) . -> . string?))
+   (make-results-url (number? 
+                      string?
+                      search-type? search-how? any? 
+                      (listof symbol?) any? (union false? string?) . -> . string?))
    (make-missing-manual-url (hd-cookie? string? string? string? . -> . string?))
-   (search-for-docs (hd-cookie? string? search-type? search-how? search-manuals? any? . -> . any?))
+   (search-for-docs (hd-cookie? string? search-type? search-how? any? (listof symbol?) any? 
+                                (union false? string?) . -> . any?))
    (goto-manual-link (hd-cookie? string? string? . -> . any?))
    (goto-hd-location (hd-cookie? (lambda (sym)
                                    (memq sym hd-location-syms))
@@ -48,33 +50,34 @@
             (hexify-string name)
             (hexify-string link)))
   
-  (define (make-relative-results-url search-string search-type match-type search-manuals lucky?)
-    (format 
-     (string-append relative-results-url-prefix
-                    "search-string=~a&"
-                    "search-type=~a&"
-                    "match-type=~a&"
-                    "lucky=~a")
-     (hexify-string search-string)
-     search-type
-     match-type
-     search-manuals
-     (if lucky? "true" "false")))
+  (define (make-relative-results-url search-string search-type match-type lucky? manuals doc.txt? lang-name)
+    (string-append
+     relative-results-url-prefix
+     (make-results-url-args search-string search-type match-type lucky? manuals doc.txt? lang-name)))
 
-  (define (make-results-url port search-string search-type match-type search-manuals lucky?)
-    (format 
-     (string-append results-url-prefix
-                    "search-string=~a&"
-                    "search-type=~a&"
-                    "match-type=~a&"
-                    "search-manuals=~a&"
-                    "lucky=~a")
-     port 
-     (hexify-string search-string)
-     search-type
-     match-type
-     search-manuals
-     (if lucky? "true" "false")))
+  (define (make-results-url port search-string search-type match-type lucky? manuals doc.txt? lang-name)
+    (string-append
+     (format results-url-prefix port)
+     (make-results-url-args search-string search-type match-type lucky? manuals doc.txt? lang-name)))
+  
+  (define (make-results-url-args search-string search-type match-type lucky? manuals doc.txt? language-name)
+    (let ([start
+           (format
+            (string-append "search-string=~a&"
+                           "search-type=~a&"
+                           "match-type=~a&"
+                           "lucky=~a&"
+                           "manuals=~a&"
+                           "doctxt=~a")
+            (hexify-string search-string)
+            search-type
+            match-type
+            (if lucky? "true" "false")
+            (hexify-string (format "~s" manuals))
+            (if doc.txt? "true" "false"))])
+      (if language-name
+          (string-append start (format "&langname=~a" (hexify-string language-name)))
+          start)))
   
   ; sym, string assoc list
   (define hd-locations
@@ -85,17 +88,17 @@
   
   (define hd-location-syms (map car hd-locations))
 
-  ; hd-cookie string string string any -> void
-  ; shows search result in default browser
-  (define (search-for-docs cookie search-string search-type match-type search-manuals lucky?)
+  (define (search-for-docs cookie search-string search-type match-type lucky? manuals doc.txt? manual-name)
     (unless (string=? search-string "")
       (let* ([port (hd-cookie-port cookie)]
              [url (make-results-url (hd-cookie-port cookie)
                                     search-string
                                     search-type
                                     match-type
-                                    search-manuals
-                                    lucky?)])
+                                    lucky?
+                                    manuals 
+                                    doc.txt?
+                                    manual-name)])
         (visit-url-in-browser cookie url))))
 
   (define (goto-manual-link cookie manual index-key)

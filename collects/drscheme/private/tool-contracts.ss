@@ -967,7 +967,8 @@
 ;                                   ;;;;                                                
 
   (drscheme:language-configuration:add-language
-   (language-object . -> . void?)
+   ((union (is-a?/c drscheme:language:language<%>) language-object)
+    . -> . void?)
    (language)
    
    "\\phase{2}"
@@ -985,9 +986,10 @@
    ".")
   
   (drscheme:language-configuration:make-language-settings
-   (language-object any?
-                    . -> .
-                    drscheme:language-configuration:language-settings?)
+   ((union (is-a?/c drscheme:language:language<%>) language-object)
+    any?
+    . -> .
+    drscheme:language-configuration:language-settings?)
    (language settings)
    
    "This is the constructor for a record consisting of two"
@@ -1013,7 +1015,7 @@
   (drscheme:language-configuration:language-settings-language
    (drscheme:language-configuration:language-settings?
     . -> .
-    language-object)
+    (union (is-a?/c drscheme:language:language<%>) language-object))
    (ls)
    
    "Extracts the language field of a language-settings.")
@@ -1027,10 +1029,12 @@
   (drscheme:language-configuration:language-dialog
    (opt->
     (boolean? drscheme:language-configuration:language-settings?)
-    ((union false? (is-a?/c top-level-window<%>)))
+    ((union false? (is-a?/c top-level-window<%>))
+     boolean?)
     drscheme:language-configuration:language-settings?)
    ((show-welcome? language-settings-to-show)
-    ((parent #t)))
+    ((parent #t)
+     (manuals? #f)))
    "Opens the language configuration dialog."
    "See also"
    "@flink drscheme:language-configuration:fill-language-dialog %"
@@ -1050,17 +1054,23 @@
    "\\end{schemedisplay}"
    ""
    "The \\var{parent} argument is used as the parent"
-   "to the dialog.")
+   "to the dialog."
+   ""
+   "The \\var{manuals?} argument is passed to"
+   "@flink drscheme:language-configuration:fill-language-dialog %"
+   ".")
   
   (drscheme:language-configuration:fill-language-dialog
    (opt->
     ((is-a?/c vertical-panel%)
      (is-a?/c area-container<%>)
      drscheme:language-configuration:language-settings?)
-    ((union false? (is-a?/c top-level-window<%>)))
+    ((union false? (is-a?/c top-level-window<%>))
+     boolean?)
     drscheme:language-configuration:language-settings?)
    ((panel button-panel language-setting)
-    ((re-center #f)))
+    ((re-center #f)
+     (manuals? #f)))
    "This procedure accepts two parent panels and"
    "fills them with the contents of the language dialog."
    "It is used to include language configuration controls"
@@ -1078,7 +1088,13 @@
    "The \\var{re-center} argument is used when the \\gui{Show Details}"
    "button is clicked. If that argument is a \\iscmintf{top-level-window},"
    "the \\gui{Show Details} callback will recenter the window each time"
-   "it is clicked. Otherwise, the argument is not used.")
+   "it is clicked. Otherwise, the argument is not used."
+   ""
+   "If \\var{manuals?} is \\scheme{#f} the usual language dialog (as seen"
+   "in the start up drscheme window and from the Choose Language dialog"
+   "created when drscheme is started up) is shown. If it isn't, the dialog"
+   "does not have the details and on the right-hand side shows the manual"
+   "ordering for the chosen language. This is used in Help Desk.")
 
 ;                                                           
 ;                                                           
@@ -1388,12 +1404,6 @@
   (drscheme:help-desk:help-desk
    (case->
     (-> void?)
-    (string? boolean? 
-             (symbols 'keyword 'keyword+index 'all)
-             (symbols 'exact 'contains 'regexp)
-             (symbols 'student 'professional 'all)
-             . -> .
-             void?)
     (string? boolean? (symbols 'keyword 'keyword+index 'all) (symbols 'exact 'contains 'regexp)
              . -> .
              void?)
@@ -1482,8 +1492,6 @@
   
   (define language-object
     
-    
-    ;; what about get-mrflow-primitives-filename?!
     (object-contract
      (config-panel ((is-a?/c area-container<%>)
                     . -> .
@@ -1495,6 +1503,7 @@
                          void?))
      (default-settings (-> any?))
      (default-settings? (any? . -> . boolean?))
+     (order-manuals ((listof string?) . -> . (values (listof string?) boolean?)))
      (front-end/complete-program (drscheme:language:text/pos?
                                   any?
                                   drscheme:teachpack:teachpack-cache?

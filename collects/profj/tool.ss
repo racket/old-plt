@@ -129,6 +129,8 @@
       (define (java-lang-mixin level name number one-line)
         (class* object% (drscheme:language:language<%>)
 
+          (define/public (order-manuals x) (values x #t))
+          
           ;default-settings: -> profj-settings
           (define/public (default-settings) 
             (if (memq level `(beginner intermediate))

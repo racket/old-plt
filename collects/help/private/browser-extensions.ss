@@ -333,7 +333,7 @@
         (preferences:set 'drscheme:help-desk:frame-width w)
         (preferences:set 'drscheme:help-desk:frame-height h)
         (super-on-size w h))
-      
+
       (super-instantiate ()
         (width (preferences:get 'drscheme:help-desk:frame-width))
         (height (preferences:get 'drscheme:help-desk:frame-height)))
@@ -343,6 +343,14 @@
   (define (make-search-button-mixin hd-cookie)
     (mixin (frame:basic<%>) ()
       (field [search-panel #f])
+
+      ;; order-manuals : as in drscheme:language:language<%>
+      ;; by default, search in all manuals
+      (define/public (order-manuals x) (values x #t))
+
+      ;; the name of the language to put in the top of the search results,
+      ;; or #f if nothing is to be put there.
+      (define/public (get-language-name) #f)
       
       (rename [super-make-root-area-container make-root-area-container])
       (define/override (make-root-area-container class parent)
@@ -387,7 +395,7 @@
         (define lucky-menu-item (instantiate menu:can-restore-menu-item% ()
                                   (label (string-constant plt:hd:feeling-lucky))
                                   (parent search-menu)
-                                  (shortcut #\l)
+                                  (shortcut #\u)
                                   (callback
                                    (lambda (x y) (search-callback #t)))))
         (define stupid-internal-define-syntax1
@@ -446,42 +454,29 @@
                                 (preferences:set 'drscheme:help-desk:search-how
                                                  (send search-how get-selection))))))
         
-        (define search-manuals (instantiate choice% ()
-                                 (label #f)
-                                 (parent choices-panel)
-                                 (selection 0)
-                                 (choices
-                                  (list
-                                   (string-constant plt:hd:teaching-manuals)
-                                   (string-constant plt:hd:professional-manuals)
-                                   (string-constant plt:hd:all-manuals)))
-                                  (callback
-                                   (lambda (x y)
-                                     (void)))))
-        
         (define grow-box-spacer (make-object grow-box-spacer-pane% choices-panel))
         (define (search-callback lucky?)
-          (let ([url (make-results-url
-                      (hd-cookie-port hd-cookie)
-                      (send search-field get-value)
-                      (case (send search-where get-selection)
-                        [(0) "keyword"]
-                        [(1) "keyword-index"]
-                        [(2) "keyword-index-text"])
-                      (case (send search-how get-selection)
-                        [(0) "exact-match"]
-                        [(1) "containing-match"]
-                        [(2) "regexp-match"])
-                      (case (send search-manuals get-selection)
-                        [(0) "student-manuals"]
-                        [(1) "professional-manuals"]
-                        [(2) "all-manuals"])
-                      lucky?)])
-            ;; have to use `send this' since I don't know yet
-            ;; *which* (unit) instantiation of the hyper panel I might
-            ;; be overriding and so I don't know the particular
-            ;; interface. I do however, know the name of the method.....
-            (send (send (send this get-hyper-panel) get-canvas) goto-url url #f)))
+          (let-values ([(manuals doc.txt?) (order-manuals (map car (find-doc-names)))])
+            (let ([url (make-results-url
+                        (hd-cookie-port hd-cookie)
+                        (send search-field get-value)
+                        (case (send search-where get-selection)
+                          [(0) "keyword"]
+                          [(1) "keyword-index"]
+                          [(2) "keyword-index-text"])
+                        (case (send search-how get-selection)
+                          [(0) "exact-match"]
+                          [(1) "containing-match"]
+                          [(2) "regexp-match"])
+                        lucky?
+                        (map string->symbol manuals)
+                        doc.txt?
+                        (get-language-name))])
+              ;; have to use `send this' since I don't know yet
+              ;; *which* (unit) instantiation of the hyper panel I might
+              ;; be overriding and so I don't know the particular
+              ;; interface. I do however, know the name of the method.....
+              (send (send (send this get-hyper-panel) get-canvas) goto-url url #f))))
         
         (send search-button enable #f)
         (send search-menu enable #f)

@@ -36,7 +36,7 @@
 
       (define (dromedary-lang-mixin level name position numbers one-line parser)
 	(class* object% (drscheme:language:language<%>)
-		
+          (define/public (order-manuals x) (values x #t))
       
 		(define current-type '("unit"))
 		

@@ -2,11 +2,13 @@
 (module results mzscheme
   (require (lib "file.ss")
            (lib "list.ss")
+           (lib "string.ss")
            (lib "servlet-sig.ss" "web-server")
            (lib "servlet-helpers.ss" "web-server")
            "../private/path.ss"
            "../private/docpos.ss"
            "../private/search.ss"
+           "../private/manuals.ss"
            (lib "string-constant.ss" "string-constants"))
   
   (require "private/util.ss")
@@ -231,7 +233,7 @@
           (set! search-responses
                 (cons entry search-responses))))
       
-      (define (make-results-page search-string items regexp? exact?)
+      (define (make-results-page search-string lang-name items regexp? exact?)
         (let-values ([(string-finds finds) (build-string-finds/finds search-string regexp? exact?)])
           `(HTML
             (HEAD ,hd-css
@@ -241,13 +243,18 @@
              (FONT ((SIZE "+2"))
                    ,(color-with 
                      "blue" 
-                     `(B "Search results for"
-                         ,@(map (lambda (sf) (format " \"~a\"" sf))
-                                string-finds))))
+                     `(div
+                       ,(if lang-name
+                            `(b "Searched in manuals related to the language \""
+                                ,lang-name
+                                "\" for")
+                            `(b "Search results for"))
+                       ,@(map (lambda (sf) (format " \"~a\"" sf))
+                              string-finds))))
              (BR)
              ,@items))))
       
-      (define (search-results lucky? search-string search-type match-type search-manuals)
+      (define (search-results lucky? search-string search-type match-type manuals doc-txt? lang-name)
         (semaphore-wait search-sem)
         (set! search-responses '())
         (set! max-reached #f)
@@ -260,6 +267,8 @@
                                     search-level
                                     regexp?
                                     exact-match?
+                                    manuals
+                                    doc-txt?
                                     key
                                     (build-maxxed-out k)
                                     add-header
@@ -267,6 +276,7 @@
                                     (if lucky? goto-lucky-entry add-entry)))]
                [html (make-results-page
                       search-string
+                      lang-name
                       (if (string? result) ; error message
                           `((H2 ((STYLE "color:red")) ,result))
                           (reverse search-responses))
@@ -283,8 +293,7 @@
            (H2 "Empty search string"))))
       
       (define (lucky-search? bindings)
-        (with-handlers
-            ([void (lambda _ #f)])
+        (with-handlers ([not-break-exn? (lambda _ #f)])
           (let ([result (extract-binding/single 'lucky bindings)])
             (not (string=? result "false")))))
       
@@ -292,22 +301,40 @@
         (unless (string=? s "")
           (set-box! b s)))
       
+      (define (convert-manuals manuals)
+        (cond
+          [manuals
+           (let ([parsed (read-from-string manuals)])
+             (cond
+               [(and (list? parsed)
+                     (andmap symbol? parsed))
+                (map symbol->string parsed)]
+               [else (map car (find-doc-names))]))]
+          [else (map car (find-doc-names))]))
+      
       (let* ([bindings (request-bindings initial-request)]
              [maybe-get (lambda (sym)
-                          (with-handlers ([not-break-exn? (lambda _ "")])
+                          (with-handlers ([not-break-exn? (lambda _ #f)])
                             (extract-binding/single sym bindings)))]
              [search-string (maybe-get 'search-string)]
              [search-type (maybe-get 'search-type)]
              [match-type (maybe-get 'match-type)]
-             [manuals (maybe-get 'search-manuals)])
+             [manuals (maybe-get 'manuals)]
+             [doc.txt (maybe-get 'doctxt)]
+             [lang-name (maybe-get 'langname)])
         (cond
-          [(= (string-length search-string) 0)
+          [(or (not search-string) (= (string-length search-string) 0))
            empty-search-page]
           [else
            (search-results 
             (lucky-search? bindings)
             search-string
-            search-type
-            match-type
-            manuals)])))))
+            (or search-type "keyword-index")
+            (or match-type "containing-match")
+            (convert-manuals manuals)
+            (cond
+              [(not doc.txt) #t]
+              [(equal? doc.txt "false") #f]
+              [else #t])
+            lang-name)])))))
 

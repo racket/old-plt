@@ -46,6 +46,7 @@
       ;; changes the default settings and sets a few more paramters during `on-execute'
       (define (module-based-language-extension super%)
         (class* super% ()
+          
           (rename [super-on-execute on-execute]
                   [super-render-value/format render-value/format]
                   [super-render-value render-value])
@@ -200,6 +201,7 @@
           (init-field sharing-printing
                       abbreviate-cons-as-list
                       allow-sharing?
+                      manual
                       (use-function-output-syntax? #f)
                       (accept-quasiquote? #t)
                       (read-accept-dot #f)
@@ -207,6 +209,7 @@
           (define/public (get-sharing-printing) sharing-printing)
           (define/public (get-abbreviate-cons-as-list) abbreviate-cons-as-list)
           (define/public (get-allow-sharing?) allow-sharing?)
+          (define/public (get-manual) manual)
           (define/public (get-use-function-output-syntax?) use-function-output-syntax?)
           (define/public (get-accept-quasiquote?) accept-quasiquote?)
           (define/public (get-read-accept-dot) read-accept-dot)
@@ -218,7 +221,9 @@
       
       (define (language-extension %)
         (class %
-          (inherit get-htdp-style-delta)
+          (inherit get-manual)
+          (define/override (order-manuals x) 
+            (values (list (get-manual) "drscheme" "tools" "help") #f))
           
           (inherit get-module get-transformer-module get-init-code
                    use-namespace-require/copy?)
@@ -238,7 +243,8 @@
                  (get-init-code setting)
                  #t
                  (use-namespace-require/copy?)))))
-          
+
+          (inherit get-htdp-style-delta)
           (define/override (get-style-delta)
             (get-htdp-style-delta))
           
@@ -614,6 +620,7 @@
          (instantiate htdp-language% ()
            (one-line-summary (string-constant advanced-one-line-summary))
            (module '(lib "htdp-advanced.ss" "lang"))
+           (manual "advanced")
            (language-position
             (list (string-constant teaching-languages)
                   (string-constant how-to-design-programs)
@@ -627,6 +634,7 @@
          (instantiate htdp-language% ()
            (one-line-summary (string-constant intermediate/lambda-one-line-summary))
            (module '(lib "htdp-intermediate-lambda.ss" "lang"))
+           (manual "intermediate-lambda")
            (language-position
             (list (string-constant teaching-languages)
                   (string-constant how-to-design-programs)
@@ -649,6 +657,7 @@
          (instantiate htdp-language% ()
            (one-line-summary (string-constant intermediate-one-line-summary))
            (module '(lib "htdp-intermediate.ss" "lang"))
+           (manual "intermediate")
            (language-position
             (list (string-constant teaching-languages)
                   (string-constant how-to-design-programs)
@@ -663,6 +672,7 @@
          (instantiate htdp-language% ()
            (one-line-summary (string-constant beginning/abbrev-one-line-summary))
            (module '(lib "htdp-beginner-abbr.ss" "lang"))
+           (manual "beginning-abbr")
            (language-position
             (list (string-constant teaching-languages)
                   (string-constant how-to-design-programs)
@@ -676,6 +686,7 @@
          (instantiate htdp-language% ()
            (one-line-summary (string-constant beginning-one-line-summary))
            (module '(lib "htdp-beginner.ss" "lang"))
+           (manual "beginning")
            (language-position
             (list (string-constant teaching-languages)
                   (string-constant how-to-design-programs)

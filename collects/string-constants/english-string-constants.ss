@@ -340,6 +340,9 @@ please adhere to these guidelines:
   (plt:hd:professional-manuals "Professional manuals")
   (plt:hd:all-manuals "All manuals")
 
+  ;; in the Help Desk language dialog, title on the right.
+  (plt:hd:manual-search-ordering "Manual Search Order")
+
 
  ;; Help desk htty proxy
  (http-proxy "HTTP Proxy")

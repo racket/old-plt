@@ -28,16 +28,21 @@
    set-doc-position!
    reset-doc-positions!
    known-docs
-   ;; search functions
-   do-search
+
    doc-collections-changed
+   
    ;; manuals
    find-manuals
+   find-doc-directories
+   find-doc-directory
+   find-doc-names
+   
    ;; manual search
    finddoc
    findreldoc
    finddoc-page
    finddoc-page-anchor
+   
    ;; supplemental
    set-bug-report-info!
    help-desk:installed-components

@@ -90,7 +90,7 @@
   (define send-mail-message
     (lambda (sender subject to-recipients cc-recipients bcc-recipients text
 	      . other-headers)
-      (let ((writer (send-mail-message/port sender subject
+      (let ((writer (apply send-mail-message/port sender subject
 		      to-recipients cc-recipients bcc-recipients
 		      other-headers)))
 	(for-each (lambda (s)

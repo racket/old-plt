@@ -203,12 +203,12 @@ void PSStream::Out(long l)
   Out(buf);
 }
 
-wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent, Bool usePaperBBox)
+wxPostScriptDC::wxPostScriptDC (Bool interactive, wxWindow *parent, Bool usePaperBBox, Bool asEPS)
 {
-  Create(interactive, parent, usePaperBBox);
+  Create(interactive, parent, usePaperBBox, asEPS);
 }
 
-Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBox)
+Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBox, Bool asEPS)
 {
   wxPrintSetupData *wxThePrintSetupData;
   char *paperType;
@@ -269,6 +269,7 @@ Bool wxPostScriptDC::Create(Bool interactive, wxWindow *parent, Bool usePaperBBo
   clipw = -1;
   cliph = -1;
 
+  as_eps = asEPS;
   ok = PrinterDialog(interactive, parent, usePaperBBox);
 
   /* We set these even if !ok, for use with text sizing: */
@@ -1442,7 +1443,11 @@ Bool wxPostScriptDC::StartDoc (char *message)
     ok = TRUE;
   }
 
-  pstream->Out("%!PS-Adobe-2.0 EPSF-2.0\n");	/* PostScript magic strings */
+  pstream->Out("%!PS-Adobe-2.0"); /* PostScript magic strings */
+  if (as_eps) {
+    pstream->Out(" EPSF-2.0\n"); /* EPS magic strings */
+  }
+  pstream->Out("\n");
   if (title) {
     pstream->Out("%%Title: "); pstream->Out(title); pstream->Out("\n");
   }
@@ -1586,6 +1591,8 @@ void wxPostScriptDC::StartPage (void)
   if (!pstream)
     return;
   pstream->Out("%%Page: "); pstream->Out(page_number++); pstream->Out("\n");
+  pstream->Out("%%BeginPageSetup\n");
+  pstream->Out("userdict /pgsave save put\n");
 
   pstream->Out((paper_x + paper_margin_x + (landscape ? (paper_h * paper_y_scale) : 0)));
   pstream->Out(" "); pstream->Out(paper_y + paper_margin_y); pstream->Out(" translate\n");
@@ -1596,6 +1603,7 @@ void wxPostScriptDC::StartPage (void)
     pstream->Out(paper_x_scale); pstream->Out(" "); pstream->Out(paper_y_scale); pstream->Out(" scale\n");
   }
   pstream->Out("2 setlinecap\n");
+  pstream->Out("%%EndPageSetup\n");
 
   resetFont = RESET_FONT | RESET_COLOR;
 
@@ -1607,6 +1615,7 @@ void wxPostScriptDC::EndPage (void)
 {
   if (!pstream)
     return;
+  pstream->Out("userdict /pgsave get restore\n");
   pstream->Out("showpage\n");
 }
 
@@ -1793,6 +1802,10 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 	printhex(pstream, red);
 	printhex(pstream, green);
 	printhex(pstream, blue);
+
+	/* Avoid making lines longer than 255 chars: */
+	if (i && !(i & 0x1F))
+	  pstream->Out("\n");
       } else {
 	float r, g, b;
 
@@ -1803,7 +1816,12 @@ Blit (float xdest, float ydest, float fwidth, float fheight,
 	pixel = (int)(255 * sqrt(((r * r) + (g * g) + (b * b)) / 3));
 	
 	printhex(pstream, pixel);
+
+	/* Avoid making lines longer than 255 chars: */
+	if (i && !(i & 0x3F))
+	  pstream->Out("\n");
       }
+
     }
     pstream->Out("\n");
   }

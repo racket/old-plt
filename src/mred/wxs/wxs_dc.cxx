@@ -2193,7 +2193,7 @@ class wxMemoryDC *objscheme_unbundle_wxMemoryDC(Scheme_Object *obj, const char *
 class os_wxPostScriptDC : public wxPostScriptDC {
  public:
 
-  os_wxPostScriptDC CONSTRUCTOR_ARGS((Bool x0 = TRUE, class wxWindow* x1 = NULL, Bool x2 = FALSE));
+  os_wxPostScriptDC CONSTRUCTOR_ARGS((Bool x0 = TRUE, class wxWindow* x1 = NULL, Bool x2 = FALSE, Bool x3 = TRUE));
   ~os_wxPostScriptDC();
 #ifdef MZ_PRECISE_GC
   void gcMark();
@@ -2212,8 +2212,8 @@ void os_wxPostScriptDC::gcFixup() {
 
 static Scheme_Object *os_wxPostScriptDC_class;
 
-os_wxPostScriptDC::os_wxPostScriptDC CONSTRUCTOR_ARGS((Bool x0, class wxWindow* x1, Bool x2))
-CONSTRUCTOR_INIT(: wxPostScriptDC(x0, x1, x2))
+os_wxPostScriptDC::os_wxPostScriptDC CONSTRUCTOR_ARGS((Bool x0, class wxWindow* x1, Bool x2, Bool x3))
+CONSTRUCTOR_INIT(: wxPostScriptDC(x0, x1, x2, x3))
 {
 }
 
@@ -2231,6 +2231,7 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
   Bool x0;
   class wxWindow* x1 INIT_NULLED_OUT;
   Bool x2;
+  Bool x3;
 
   SETUP_VAR_STACK_PRE_REMEMBERED(3);
   VAR_STACK_PUSH(0, p);
@@ -2238,8 +2239,8 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
   VAR_STACK_PUSH(2, x1);
 
   
-  if ((n > (POFFSET+3))) 
-    WITH_VAR_STACK(scheme_wrong_count_m("initialization in post-script-dc%", POFFSET+POFFSET, POFFSET+3, n, p, 1));
+  if ((n > (POFFSET+4))) 
+    WITH_VAR_STACK(scheme_wrong_count_m("initialization in post-script-dc%", POFFSET+POFFSET, POFFSET+4, n, p, 1));
   if (n > (POFFSET+0)) {
     x0 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+0], "initialization in post-script-dc%"));
   } else
@@ -2252,11 +2253,15 @@ static Scheme_Object *os_wxPostScriptDC_ConstructScheme(int n,  Scheme_Object *p
     x2 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+2], "initialization in post-script-dc%"));
   } else
     x2 = FALSE;
+  if (n > (POFFSET+3)) {
+    x3 = WITH_VAR_STACK(objscheme_unbundle_bool(p[POFFSET+3], "initialization in post-script-dc%"));
+  } else
+    x3 = TRUE;
 
   if (x1 && !wxSubType(((wxObject *)x1)->__type, wxTYPE_FRAME) && !wxSubType(((wxObject *)x1)->__type, wxTYPE_DIALOG_BOX)) scheme_wrong_type(METHODNAME("post-script-dc%","initialization"), "frame or dialog box", POFFSET+1, n, p);
-  realobj = WITH_VAR_STACK(new os_wxPostScriptDC CONSTRUCTOR_ARGS((x0, x1, x2)));
+  realobj = WITH_VAR_STACK(new os_wxPostScriptDC CONSTRUCTOR_ARGS((x0, x1, x2, x3)));
 #ifdef MZ_PRECISE_GC
-  WITH_VAR_STACK(realobj->gcInit_wxPostScriptDC(x0, x1, x2));
+  WITH_VAR_STACK(realobj->gcInit_wxPostScriptDC(x0, x1, x2, x3));
 #endif
   realobj->__gc_external = (void *)p[0];
   

@@ -1392,7 +1392,8 @@ void wxMediaPrintout::OnEndDocument()
 # define WXUNUSED_X(x) x
 #endif
 
-void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(output_mode), wxWindow *parent, Bool forcePageBBox)
+void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(output_mode), wxWindow *parent, 
+			  Bool forcePageBBox, Bool asEPS)
 {
   int ps;
 
@@ -1410,7 +1411,7 @@ void wxMediaBuffer::Print(Bool interactive, Bool fitToPage, int WXUNUSED_X(outpu
     wxDC *dc;
     void *data;
     
-    dc = new wxPostScriptDC(interactive, parent, forcePageBBox);
+    dc = new wxPostScriptDC(interactive, parent, forcePageBBox, asEPS);
 
     if (dc->Ok()) { 
       dc->StartDoc("Printing buffer");

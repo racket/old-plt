@@ -378,8 +378,8 @@ static wxBitmap *dc_target(Scheme_Object *obj)
 
 @INCLUDE wxs_dorf.xci
 
-@CREATOR (bool=TRUE,wxWindow^=NULL,bool=FALSE) : : /DLGORFRAME[1.METHODNAME("post-script-dc%","initialization")]
-@ARGNAMES [interactive? #t] [parent #f] [use-paper-bbox? #f]
+@CREATOR (bool=TRUE,wxWindow^=NULL,bool=FALSE,bool=TRUE) : : /DLGORFRAME[1.METHODNAME("post-script-dc%","initialization")]
+@ARGNAMES [interactive #t] [parent #f] [use-paper-bbox #f] [eps #t]
 
 @END
 

@@ -177,7 +177,7 @@ static void NoInsertFile(wxMediaBuffer *)
 @ "insert-box" : void InsertBox(SYM[bufferType]=wxEDIT_BUFFER);
 @ "insert-image" : void InsertImage(nxpathname=NULL,SYM[bitmapType]=0,bool=FALSE,bool=TRUE);
 
-@ "print" : void Print(bool=TRUE,bool=TRUE,SYM[printMethod]=0,wxWindow^=NULL,bool=TRUE);
+@ "print" : void Print(bool=TRUE,bool=TRUE,SYM[printMethod]=0,wxWindow^=NULL,bool=TRUE,bool=FALSE);
 /* : : /DLGORFRAME[3.METHODNAME("editor<%>","print")] */
 
 @ "begin-write-header-footer-to-file" : bool BeginWriteHeaderFooterToFile(wxMediaStreamOut!,string,long*);

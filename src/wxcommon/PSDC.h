@@ -72,15 +72,15 @@ class wxPostScriptDC: public wxDC
   Bool landscape, resetFont, level2ok;
   char *afm_path;
 
-  int mode, use_paper_bbox;
+  int mode, use_paper_bbox, as_eps;
   char *preview_cmd, *print_cmd, *print_opts;
 
   // Create a printer DC
-  wxPostScriptDC(Bool interactive = TRUE, wxWindow *parent = NULL, Bool usePaperBBox = FALSE);
+  wxPostScriptDC(Bool interactive = TRUE, wxWindow *parent = NULL, Bool usePaperBBox = FALSE, Bool asEPS = TRUE);
 
   ~wxPostScriptDC(void);
 
-  Bool Create(Bool interactive = TRUE, wxWindow *parent = NULL, Bool usePaperBBox = FALSE);
+  Bool Create(Bool interactive = TRUE, wxWindow *parent = NULL, Bool usePaperBBox = FALSE, Bool asEPS = TRUE);
 
   Bool PrinterDialog(Bool interactive, wxWindow *parent, Bool usePaperBBox);
 

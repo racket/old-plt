@@ -430,19 +430,28 @@
 						(reverse simples))))
 				 (let loop ([bytes (list->bytes (reverse simples))])
 				   (unless (bytes=? #"" bytes)
-				     (let ([m (regexp-match-positions #rx#"[^-a-z A-Z0-9!@#$%^&*_=+,.<>:;'\"`~|/?]+" bytes)])
-				       (if m
-					   (begin
-					     (loop (subbytes bytes 0 (caar m)))
-					     (fprintf out "<~a> show\n" 
-						      (apply string-append
-							     (map
-							      (lambda (c)
-								(let ([s (format "0~x" c)])
-								  (substring s (- (string-length s) 2))))
-							      (bytes->list (subbytes bytes (caar m) (cdar m))))))
-					     (loop (subbytes bytes (cdar m))))
-					   (fprintf out "(~a) show\n" bytes))))))
+				     (if ((bytes-length bytes) . > . 100)
+					 ;; > 100, so break up the string to avoid over-long lines:
+					 (begin
+					   (loop (subbytes bytes 0 100))
+					   (loop (subbytes bytes 100)))
+					 ;; <= 100, so try to write it, but look for unsafe chars
+					 (let ([m (regexp-match-positions #rx#"[^-a-z A-Z0-9!@#$%^&*_=+,.<>:;'\"`~|/?]+" 
+									  bytes)])
+					   (if m
+					       ;; Encode the unsafe chars in hex
+					       (begin
+						 (loop (subbytes bytes 0 (caar m)))
+						 (fprintf out "<~a> show\n" 
+							  (apply string-append
+								 (map
+								  (lambda (c)
+								    (let ([s (format "0~x" c)])
+								      (substring s (- (string-length s) 2))))
+								  (bytes->list (subbytes bytes (caar m) (cdar m))))))
+						 (loop (subbytes bytes (cdar m))))
+					       ;; All safe - write directly
+					       (fprintf out "(~a) show\n" bytes)))))))
 			     (when special-font
 			       (fprintf out "grestore~n"))))])
       (let loop ([l l][simples null][special-font-name #f][special-font #f])

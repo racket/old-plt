@@ -243,12 +243,9 @@
 		    (exports
 		      (map
 			(lambda (export-clause)
-			  (let ((tag (car export-clause))
-				 (exports (map (lambda (export)
-						 `(,(read->raw (car export))
-						    ,(read->raw (cdr export))))
-					    (cdr export-clause))))
-			    `(,(read->raw tag) ,@exports)))
+			  `(,(read->raw (car export-clause))
+			     (,(read->raw (cadr export-clause))
+			       ,(read->raw (cddr export-clause)))))
 			exports)))
 		  `(#%compound-unit
 		     (import ,@imports)

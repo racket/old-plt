@@ -41,7 +41,7 @@ wxTabChoice::wxTabChoice(wxPanel *panel, wxFunction func, char *label,
 
   panel->AddChild(this);
   wxWinType = wxTYPE_HWND;
-  windowStyle = 0;
+  windowStyle = (style & wxBORDER);
   cparent = (wxWnd *)panel->handle;
 
   panel->GetValidPosition(&x, &y);
@@ -160,6 +160,12 @@ void wxTabChoice::SetSize(int x, int y, int width, int height, int WXUNUSED(size
 
   if (width < 0)
     GetSize(&width, &height);
+
+  if (!(windowStyle & wxBORDER)) {
+    x -= 2;
+    width += 4;
+    height += 4;
+  }
 
   MoveWindow((HWND)ms_handle, x, y, width, height, TRUE);
 

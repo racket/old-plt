@@ -11,6 +11,7 @@
 
 #include "wx.h"
 
+#include <commctrl.h>
 #include <string.h>
 
 #include "fafa.h"
@@ -38,16 +39,16 @@ HICON wxSTD_FRAME_ICON = NULL;
 HFONT wxSTATUS_LINE_FONT = NULL;
 LRESULT APIENTRY wxWndProc(HWND, UINT, WPARAM, LPARAM);
 
-void RegisterNoCursor(HINSTANCE hInstance, char *src, char *dest)
+void RegisterNoCursor(HINSTANCE hInstance, wchar_t *src, wchar_t *dest)
 {
-  WNDCLASSEX c;
+  WNDCLASSEXW c;
 
   c.cbSize = sizeof(c);
-  if (!GetClassInfoEx(hInstance, src, &c))
+  if (!GetClassInfoExW(hInstance, src, &c))
     wxFatalError("Can't get info for cursorless class");
   c.lpszClassName = dest;
   c.hCursor = NULL;
-  if (!RegisterClassEx(&c))
+  if (!RegisterClassExW(&c))
     wxFatalError("Can't register cursorless class");
 }
 
@@ -159,11 +160,11 @@ void wxInitialize(HINSTANCE hInstance)
   if (!RegisterClass( &wndclass3))
    wxFatalError("Can't register Canvas class");
 
-  RegisterNoCursor(hInstance, "BUTTON", "wxBUTTON");
-  RegisterNoCursor(hInstance, "COMBOBOX", "wxCOMBOBOX");
-  RegisterNoCursor(hInstance, "LISTBOX", "wxLISTBOX");
-  RegisterNoCursor(hInstance, "EDIT", "wxEDIT");
-  RegisterNoCursor(hInstance, "STATIC", "wxSTATIC");
+  RegisterNoCursor(hInstance, L"BUTTON", L"wxBUTTON");
+  RegisterNoCursor(hInstance, L"COMBOBOX", L"wxCOMBOBOX");
+  RegisterNoCursor(hInstance, L"LISTBOX", L"wxLISTBOX");
+  RegisterNoCursor(hInstance, L"EDIT", L"wxEDIT");
+  RegisterNoCursor(hInstance, L"STATIC", L"wxSTATIC");
 
   wxREGGLOB(wxWinHandleList);
   wxREGGLOB(wxSliderList);
@@ -256,6 +257,8 @@ int wxWinMain(HINSTANCE hInstance, HINSTANCE WXUNUSED(hPrevInstance),
   scheme_set_stack_base(mzscheme_stack_start, 1);
 
   wxhInstance = hInstance;
+
+  InitCommonControls();
 
   wxInitialize(hInstance);
 

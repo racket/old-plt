@@ -1200,8 +1200,7 @@ set_expand(Scheme_Object *form, Scheme_Comp_Env *env, int depth, Scheme_Object *
       } else if (SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
 	Scheme_Object *new_name;
 	new_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
-	new_name = scheme_stx_track(new_name, find_name, find_name, 
-				    SCHEME_PTR2_VAL(SCHEME_PTR_VAL(var)));
+	new_name = scheme_stx_track(new_name, find_name, find_name);
 	find_name = new_name;
       } else
 	break;
@@ -2109,7 +2108,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
     body = scheme_datum_to_syntax(body, form, form, 0, 0);
 
     first = SCHEME_STX_CAR(form);
-    body = scheme_stx_track(body, form, first, NULL);
+    body = scheme_stx_track(body, form, first);
 
     if (depth > 0)
       --depth;
@@ -2269,7 +2268,7 @@ do_let_expand(Scheme_Object *form, Scheme_Comp_Env *origenv, int depth, Scheme_O
   v = scheme_datum_to_syntax(v, form, form, 0, multi);
   if (!multi) {
     name = SCHEME_STX_CAR(form);
-    v = scheme_stx_track(v, form, name, NULL);
+    v = scheme_stx_track(v, form, name);
   }
 
   return v;
@@ -2453,7 +2452,7 @@ named_let_syntax (Scheme_Object *form, Scheme_Comp_Env *env,
     return scheme_compile_expr(app, env, rec, drec);
   else {
     name = SCHEME_STX_CAR(form);
-    app = scheme_stx_track(app, form, name, NULL);
+    app = scheme_stx_track(app, form, name);
 
     if (depth > 0)
       --depth;

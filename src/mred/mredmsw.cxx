@@ -306,7 +306,7 @@ int wxEventTrampoline(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam,
   case WM_INITMENU:
   case WM_DROPFILES:
     tramp = 1;
-    *res = 1;
+    *res = 0;
     break;
     /* These three are for pre-emptive WM_INITMENU 
        and for on-pre-event over scrollbars plus interactive scrolling */

@@ -91,10 +91,10 @@ Bool wxButton::Create(wxPanel *panel, wxFunction Function,
   } else {
     wx_button =
       wxwmCreateWindowEx(0, "wxBUTTON", label, 
-			 BS_PUSHBUTTON | WS_CHILD | WS_CLIPSIBLINGS
-			 | ((style & 1) ? WS_BORDER : 0),
-			 0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
-			 wxhInstance, NULL);
+			 (((style & 1) ? BS_DEFPUSHBUTTON : BS_PUSHBUTTON)
+			  | WS_CHILD | WS_CLIPSIBLINGS),
+			  0, 0, 0, 0, cparent->handle, (HMENU)windows_id,
+			  wxhInstance, NULL);
   }
 
   ms_handle = (HANDLE)wx_button;

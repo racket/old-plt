@@ -57,7 +57,6 @@ static Scheme_Object *source_symbol; /* uninterned! */
 static Scheme_Object *share_symbol; /* uninterned! */
 static Scheme_Object *origin_symbol;
 static Scheme_Object *lexical_symbol;
-static Scheme_Object *bound_in_source_symbol;
 
 static Scheme_Object *nominal_ipair_cache;
 
@@ -364,12 +363,10 @@ void scheme_init_stx(Scheme_Env *env)
   REGISTER_SO(share_symbol);
   REGISTER_SO(origin_symbol);
   REGISTER_SO(lexical_symbol);
-  REGISTER_SO(bound_in_source_symbol);
   source_symbol = scheme_make_symbol("source"); /* not interned! */
   share_symbol = scheme_make_symbol("share"); /* not interned! */
   origin_symbol = scheme_intern_symbol("origin");
   lexical_symbol = scheme_intern_symbol("lexical");
-  bound_in_source_symbol = scheme_intern_symbol("bound-in-source");
 
   REGISTER_SO(mark_id);
 
@@ -476,8 +473,7 @@ Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx, long line, long col, lo
 
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
 				Scheme_Object *old,
-				Scheme_Object *origin,
-				Scheme_Object *source_binder)
+				Scheme_Object *origin)
      /* Maintain properties for an expanded expression */
 {
   Scheme_Stx *nstx = (Scheme_Stx *)naya;
@@ -645,16 +641,6 @@ Scheme_Object *scheme_stx_track(Scheme_Object *naya,
 
   if (graph)
     nstx->hash_code |= STX_GRAPH_FLAG;
-
-  /* Finally, if source_binder is supplied, add a 'bound-in-source
-     property. */
-  if (source_binder) {
-    ne = ICONS(source_binder, old);
-    oe = scheme_stx_property((Scheme_Object *)nstx,
-			     bound_in_source_symbol,
-			     ne);
-    nstx = (Scheme_Stx *)oe;
-  }
 
   return (Scheme_Object *)nstx;
 }

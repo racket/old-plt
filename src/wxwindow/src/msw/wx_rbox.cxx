@@ -13,6 +13,9 @@
 
 #define HAS_LABEL 1
 
+#define GROUP_CLASS      "wxBUTTON"
+#define GROUP_FLAGS      (BS_GROUPBOX|WS_CHILD|WS_VISIBLE)
+
 BOOL wxRadioBox::MSWCommand(UINT param, WORD id)
 {
   if (param == BN_CLICKED)  {
@@ -46,8 +49,9 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     return DLGC_WANTMESSAGE;
 
   /* See mredmsw.cxx: */
-  if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxRadioItemProc))
-    return res;
+  if (!tramp)
+    if (wxEventTrampoline(hWnd, message, wParam, lParam, &res, wxRadioItemProc))
+      return res;
 
   wxRBInfo *i = (wxRBInfo *)wxFindControlFromHandle(hWnd);
   
@@ -57,8 +61,8 @@ wxRadioItemProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
   if (!wxDoItemPres(i->item, hWnd, message, wParam, lParam, &r, tramp))
     return r;
 
-  if (message == WM_LBUTTONDOWN) {
-    /* assert: we've already trampolined, so no atomic lock needed */
+  if (tramp && (message == WM_LBUTTONDOWN)) {
+    /* we've already trampolined, so no atomic lock needed */
     wxRadioBox *rb = (wxRadioBox *)i->item;
     if (rb->buttonEnabled[i->which]) {
       rb->SetSelection(i->which);

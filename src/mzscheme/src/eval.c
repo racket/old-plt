@@ -1778,10 +1778,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
 	  /* It's a rename. Look up the target name and try again. */
 	  Scheme_Object *new_name;
-	  new_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
+	  new_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
 	  if (!rec) {
-	    new_name = scheme_stx_track(new_name, find_name, find_name,
-					SCHEME_PTR2_VAL(SCHEME_PTR_VAL(var)));
+	    new_name = scheme_stx_track(new_name, find_name, find_name);
 	  }
 	  find_name = new_name;
 	  SCHEME_USE_FUEL(1);
@@ -1848,10 +1847,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	    && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
 	  /* It's a rename. Look up the target name and try again. */
 	  Scheme_Object *new_name;
-	  new_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
+	  new_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
 	  if (!rec) {
-	    new_name = scheme_stx_track(new_name, find_name, find_name,
-					SCHEME_PTR2_VAL(SCHEME_PTR_VAL(var)));
+	    new_name = scheme_stx_track(new_name, find_name, find_name);
 	  }
 	  find_name = new_name;
 	  SCHEME_USE_FUEL(1);
@@ -1918,10 +1916,9 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 	  && SAME_TYPE(SCHEME_TYPE(SCHEME_PTR_VAL(var)), scheme_id_macro_type)) {
 	/* It's a rename. Look up the target name and try again. */
 	Scheme_Object *new_name;
-	new_name = SCHEME_PTR1_VAL(SCHEME_PTR_VAL(var));
+	new_name = SCHEME_PTR_VAL(SCHEME_PTR_VAL(var));
 	if (!rec) {
-	  new_name = scheme_stx_track(new_name, find_name, find_name,
-				      SCHEME_PTR2_VAL(SCHEME_PTR_VAL(var)));
+	  new_name = scheme_stx_track(new_name, find_name, find_name);
 	}
 	find_name = new_name;
 	SCHEME_USE_FUEL(1);

@@ -466,8 +466,7 @@ int scheme_syntax_is_graph(Scheme_Object *stx);
 
 Scheme_Object *scheme_stx_track(Scheme_Object *naya, 
 				Scheme_Object *old, 
-				Scheme_Object *origin,
-				Scheme_Object *source_binder);
+				Scheme_Object *origin);
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);

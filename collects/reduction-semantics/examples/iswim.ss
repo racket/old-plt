@@ -7,6 +7,7 @@
            iswim-subst
            beta_v delta
            ->v :->v
+	   function-reduce*
 
            if0 true false
            mkpair fst snd
@@ -20,9 +21,10 @@
 		 (o1 M)
 		 (o2 M M)
 		 V)
-	      (V variable
-		 (lambda variable M)
+	      (V X
+		 ("lam" variable M)
 		 b)
+	      (X variable)
 	      (b number)
 	      (o1 "add1" "sub1" "iszero")
 	      (o2 "+" "-" "*" "^")
@@ -53,9 +55,9 @@
     (subst
      [(? symbol?) (variable)]
      [(? number?) (constant)]
-     [`(lambda ,X ,M)
+     [`("lam" ,X ,M)
       (all-vars (list X))
-      (build (lambda (X-list M) `(lambda ,(car X-list) ,M)))
+      (build (lambda (X-list M) `("lam" ,(car X-list) ,M)))
       (subterm (list X) M)]
      [`(,(and o (or "add1" "sub1" "iszero")) ,M1)
       (all-vars '())
@@ -93,8 +95,8 @@
      (reduction iswim-grammar ("sub1" (name b1 b)) (sub1 b1))
      (reduction iswim-grammar ("iszero" (name b1 b))
                 (if (zero? b1) 
-                    '(lambda x (lambda y x))
-                    '(lambda x (lambda y y))))
+                    '("lam" x ("lam" y x))
+                    '("lam" x ("lam" y y))))
      (reduction iswim-grammar ("+" (name b1 b) (name b2 b)) (+ b1 b2))
      (reduction iswim-grammar ("-" (name b1 b) (name b2 b)) (- b1 b2))
      (reduction iswim-grammar ("*" (name b1 b) (name b2 b)) (* b1 b2))
@@ -113,23 +115,43 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Abbreviations:
   
+  ;; function-reduce*
+  (define (function-reduce* reds expr done?)
+    (cons 
+     expr
+     (if (done? expr)
+	 null
+	 (let ([l (reduce reds expr)])
+	   (cond
+	    [(null? l) null]
+	    [(= 1 (length l))
+	     (function-reduce* reds (car l) done?)]
+	    [else
+	     (error 'functon-reduce* 
+		    "found ~a possible steps from ~e"
+		    (length l)
+		    expr)])))))
+
+  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  ;; Abbreviations:
+  
   (define (if0 test then else)
     (let ([X (variable-not-in `(,then ,else) 'X)])
-      `(((("iszero" ,test) (lambda ,X ,then)) (lambda ,X ,else)) 77)))
+      `(((("iszero" ,test) ("lam" ,X ,then)) ("lam" ,X ,else)) 77)))
   
-  (define true '(lambda x (lambda y x)))
-  (define false '(lambda x (lambda y y)))
+  (define true '("lam" x ("lam" y x)))
+  (define false '("lam" x ("lam" y y)))
   
-  (define mkpair '(lambda x (lambda y (lambda s ((s x) y)))))
-  (define fst '(lambda p (p (lambda x (lambda y x)))))
-  (define snd '(lambda p (p (lambda x (lambda y y)))))
+  (define mkpair '("lam" x ("lam" y ("lam" s ((s x) y)))))
+  (define fst '("lam" p (p ("lam" x ("lam" y x)))))
+  (define snd '("lam" p (p ("lam" x ("lam" y y)))))
   
-  (define Y_v '(lambda f (lambda x
-                           (((lambda g (f (lambda x ((g g) x))))
-                             (lambda g (f (lambda x ((g g) x)))))
-                            x))))
+  (define Y_v '("lam" f ("lam" x
+			 ((("lam" g (f ("lam" x ((g g) x))))
+			   ("lam" g (f ("lam" x ((g g) x)))))
+			  x))))
   
-  (define mksum `(lambda s
-                   (lambda x 
-                     ,(if0 'x 0 '("+" x (s ("sub1" x)))))))
+  (define mksum `("lam" s
+		  ("lam" x 
+		   ,(if0 'x 0 '("+" x (s ("sub1" x)))))))
   (define sum `(,Y_v ,mksum)))

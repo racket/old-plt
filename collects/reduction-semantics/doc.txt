@@ -44,6 +44,17 @@ this tool:
   _iswim.ss_ : grammar and reductions from "Programming Languages
                and Lambda Calculi" by Felleisen and Flatt.
 
+       Example S-expression form of ISWIM expressions
+         Book                     S-expr
+         ----                     ------
+         (lambda x . x)           ("lam" x x)
+         (+ '1` '2`)              ("+" 1 2)
+         ((lambda y y) '7`)       (("lam" y y) 7)
+
+       See "iswim.ss" for the grammar.
+
+       Provided by "iswim.ss", where `any?' below typically
+       indicates an expression:
                Grammar and substitution:
 >                 iswim-grammar : compiled-lang?
 >                 is-in-V? : (any? . -> . boolean?)
@@ -62,6 +73,19 @@ this tool:
 >                 snd : any?
 >                 Y_v : any?
 >                 sum : any?
+               Helper:
+>                 function-reduce* : ((listof red?)
+                                      any?
+                                      (any? . -> . boolean?)
+                                      . -> . (listof any?))
+                     First argument represents a set of reductions
+                     that define a function; the second argument is
+                     the starting expression; the last argument is
+                     a predicate to recognize ending expressions.
+                     The function applies the reductions repeatedly
+                     until an ending expression os found, or the
+                     reduction gets stuck. The result is the list of
+                     expressions leading to the endng expression.
 
 ======================================================================
 

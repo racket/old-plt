@@ -323,12 +323,13 @@
 	    [get (lambda () the-dir)]
 	    [set-to-default 
 	     (lambda ()
-	       (let ([home-dir (getenv "PLTHOME")])
-		 (if home-dir
-		     (set! the-dir
-			   (build-path (getenv "PLTHOME") "lib"))
-		     (set! the-dir
-			   ()))))])
+	       (if (eq? wx:platform 'macintosh)
+		   (set! the-dir ())
+		   (let ([home-dir (getenv "PLTHOME")])
+		     (if home-dir
+			 (set! the-dir
+			       (build-path home-dir "lib"))
+			 (set! the-dir ())))))])
 	   (sequence
 	     (set-to-default))))
 

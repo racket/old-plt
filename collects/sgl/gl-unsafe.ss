@@ -1,6 +1,6 @@
 (module gl-unsafe mzscheme
   (require "gl-wrapper-helper.ss")
-  (provide (all-defined))
+  (provide (all-defined-except p))
 
   (define p '(lib "gl-prims-unsafe.ss" "sgl"))
   

@@ -1,6 +1,6 @@
 (module gl mzscheme
   (require "gl-wrapper-helper.ss")
-  (provide (all-defined))
+  (provide (all-defined-except p))
 
   (define p '(lib "gl-prims.ss" "sgl"))
 
@@ -1141,17 +1141,19 @@
   (r p gluPickMatrix)
   (r p gluNewQuadric)
   (r p gluQuadricNormals)
-  (r p gluQuadircOrientation)
-  (r p gluQuadircDrawStyle)
+  (r p gluQuadricOrientation)
+  (r p gluQuadricDrawStyle)
   (r p gluQuadricTexture)
   (r p gluCylinder)
   (r p gluDisk)
   (r p gluSphere)
   (r p gluPartialDisk)
+  (r p gluUnProject)
   (glu-r13f p gluBuild3DMipmaps)
   (glu-r13f p gluBuild1DMipmapLevels)
   (glu-r13f p gluBuild2DMipmapLevels)
   (glu-r13f p gluBuild3DMipmapLevels)
+  (glu-r13f p gluUnProject4)
   
   (r p GLU_SMOOTH)
   (r p GLU_VERSION)
@@ -1165,5 +1167,6 @@
   (r p GLU_NONE)
   (r p GLU_SILHOUETTE)
   (r p GLU_OUTSIDE)
+  (r p GLU_POINT)
 
   )

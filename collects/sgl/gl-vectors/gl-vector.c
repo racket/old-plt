@@ -94,6 +94,45 @@ static void length_mismatch(const char *name, int argc, Scheme_Object **argv, in
   return;
 }
 
+static Scheme_Object* scheme_make_gl_<type-name>_vector(int argc, Scheme_Object **argv)
+{
+  gl_<type-name>_vector *v;
+  long i, j;
+
+  if (!SCHEME_INTP(argv[0]))
+    scheme_wrong_type("make-gl-<type-name>-vector", "integer", 0, argc, argv);
+
+  i = SCHEME_INT_VAL(argv[0]);
+  if (i < 0)
+    scheme_wrong_type("make-gl-<type-name>-vector", "non-negative integer", 0, argc, argv);
+  
+  v = make_gl_<type-name>_vector(i);
+  if (argc == 2)
+  {
+    <type> n = <sreal-to-type>(argv[1]);
+    for (j = 0; j < i; ++j)
+    {
+      v->els[j] = n;
+    }
+  }
+  return (Scheme_Object*)v;
+}
+
+static Scheme_Object* scheme_gl_<type-name>_vector(int argc, Scheme_Object **argv)
+{
+  int i;
+  <type> val;
+  gl_<type-name>_vector* v = make_gl_<type-name>_vector(argc);
+  
+  for (i = 0; i < argc; ++i)
+  {
+    val = <sreal-to-type>(argv[i]);
+    v->els[i] = val;
+  }
+  return (Scheme_Object*)v;
+}
+
+
 /* 1 argument, a vector.
    assumes the values in the vector can be converted to <type>
 */
@@ -318,6 +357,8 @@ Scheme_Object *scheme_reload(Scheme_Env *env)
 
   mod_env = scheme_primitive_module(scheme_intern_symbol("gl-<type-name>-vector"), env);
   
+  add_func("make-gl-<type-name>-vector", mod_env, scheme_make_gl_<type-name>_vector, 1, 2);
+  add_func("gl-<type-name>-vector", mod_env, scheme_gl_<type-name>_vector, 0, -1);
   add_func("vector->gl-<type-name>-vector", mod_env, vector_to_gl_<type-name>_vector, 1, 1);
   add_func("gl-<type-name>-vector->vector", mod_env, gl_<type-name>_vector_to_vector, 1, 1);
   add_func("gl-<type-name>-vector-length", mod_env, gl_<type-name>_vector_length, 1, 1);

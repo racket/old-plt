@@ -58,10 +58,11 @@ static void scheme_load_prim(Scheme_Env *env, const struct scm_prim *scm_prim,
 	Scheme_Object *prim;
 	int i, N = s / sizeof (struct scm_prim);
 
-	/* printf("%d procedures\n", N - 45); */
+	 /*printf("%d procedures\n", N - 45); */
 
 	for (i = 0; i < N; i++)
 	{
+        /*printf("%s\n", scm_prim[i].name);*/
 		prim = scheme_make_closed_prim_w_arity(scm_prim[i].prim,
 						       scm_prim[i].name,
 						       scm_prim[i].name,

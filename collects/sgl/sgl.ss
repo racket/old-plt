@@ -248,6 +248,17 @@
            (rename glPopAttrib pop-attrib)
            (rename glPopClientAttrib pop-client-attrib)
            (rename glGenLists gen-lists)
+           (rename gluOrtho2D ortho-2d)
+           (rename gluPerspective perspective)
+           (rename gluLookAt look-at)
+           (rename gluPickMatrix pick-matrix)
+           (rename gluNewQuadric new-quadric)
+           (rename gluQuadricTexture quadric-texture)
+           (rename gluCylinder cylinder)
+           (rename gluDisk disk)
+           (rename gluSphere sphere)
+           (rename gluPartialDisk partial-disk)
+           (rename gluUnProject un-project)
            )
 
   (define get-error-table
@@ -579,7 +590,7 @@
             (raise-type-error 'light-model light-model-syms 0 pname num))))
 
   (define (light-model-v pname num-v)
-      (let ((v (light-model-table-lookup pname)))
+      (let ((v (light-model-v-table-lookup pname)))
         (if v
             (cond
               ((gl-int-vector? num-v)
@@ -717,7 +728,15 @@
   ;; map-grid
   ;; eval-mesh
   ;; eval-point
-  ;; render-mode
+
+  (define-values (render-mode-table render-mode-syms)
+    (make-enum-table GL_RENDER GL_SELECT GL_FEEDBACK))
+  (provide render-mode)
+  (define (render-mode x)
+    (let ((v (render-mode-table x)))
+      (if v
+          (glRenderMode v)
+          (raise-type-error 'render-mode render-mode-syms 0 x))))
   ;; feedback-buffer
 
   (provide new-list)
@@ -834,6 +853,46 @@
       (if v
           (glGetString v)
           (raise-type-error 'get-string get-string-syms 0 x))))
-  
 
+  (define-values (u-get-string-table-lookup u-get-string-syms)
+    (make-enum-table GLU_VERSION GLU_EXTENSIONS))
+  (provide u-get-string)
+  (define (u-get-string x)
+    (let ((v (u-get-string-table-lookup x)))
+      (if v
+          (gluGetString v)
+          (raise-type-error 'u-get-string u-get-string-syms 0 x))))
+
+  ;; scale-image
+  ;; build-1D-mipmaps
+  ;; build-2D-mipmaps
+
+  
+  (define-values (quadric-normals-table-lookup quadric-normals-syms)
+    (make-enum-table GLU_NONE GLU_FLAT GLU_SMOOTH))
+  (provide quadric-normals)
+  (define (quadric-normals q e)
+    (let ((v (quadric-normals-table-lookup e)))
+      (if v
+          (gluQuadricNormals q v)
+          (raise-type-error 'quadric-normals quadric-normals-syms 1 q e))))
+    
+  (define-values (quadric-orientation-table-lookup quadric-orientation-syms)
+    (make-enum-table GLU_INSIDE GLU_OUTSIDE))
+  (provide quadric-orientation)
+  (define (quadric-orientation q e)
+    (let ((v (quadric-orientation-table-lookup e)))
+      (if v
+          (gluQuadricOrientation q v)
+          (raise-type-error 'quadric-orientation quadric-orientation-syms 1 q e))))
+    
+  (define-values (quadric-draw-style-table-lookup quadric-draw-style-syms)
+    (make-enum-table GLU_POINT GLU_LINE GLU_SILHOUETTE GLU_FILL))
+  (provide quadric-draw-style)
+  (define (quadric-draw-style q e)
+    (let ((v (quadric-draw-style-table-lookup e)))
+      (if v
+          (gluQuadricDrawStyle q v)
+          (raise-type-error 'quadric-draw-style quadric-draw-style-syms 1 q e))))
+    
   ) 

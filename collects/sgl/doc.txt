@@ -31,12 +31,18 @@ examples subdirectory.
 _gl-vectors.ss_
 
 The gl-vectors module provides homogeneous vectors of the different
-kinds of numbers.  10 functions are provided for each of 9 kinds of
+kinds of numbers.  12 functions are provided for each of 9 kinds of
 vectors: gl-double-vector, gl-float-vector, gl-int-vector,
 gl-short-vector, gl-byte-vector, gl-uint-vector, gl-ushort-vector,
 gl-ubyte-vector, and gl-boolean-vector.
 
 The functions follow (replace [type] with double, float, etc.):
+
+(gl-[type]-vector n ...) returns a gl-[type]-vector containing the
+given numbers n.
+
+(make-gl-[type]-vector i n) returns a gl-[type]-vector of length i,
+with n at every index.  The n argument is optional.
 
 (vector->gl-[type]-vector v) takes a Scheme vector and converts it to
 a gl-[type]-vector.  It fails if v is not a vector containing only
@@ -149,6 +155,20 @@ Notational Example:
 See gears.ss in the examples subdirectory of the sgl collection
 (${PLT-HOME}/collects/sgl/examples/gears.ss) for a working example.
 
+
+Notes:
+In the C language GL API values are often returned by reference parameters.
+The gl and sgl modules instead directly return a value in the following 
+cases:
+
+gluUnProject: GLdouble GLdouble GLdouble GLdouble[16] GLdouble[16] GLint[4] ->
+              #f or GLdouble[3]
+
+gluUnProject4: GLdouble GLdouble GLdouble GLdouble GLdouble[16] GLdouble[16]
+               GLint[4] GLdouble GLdouble -> f or GLdouble[4]
+
+
+
 Function lists:
 
 -----------------------------  sgl: -------------------------------
@@ -172,12 +192,14 @@ color-mask
 color-material
 color-v
 cull-face
+cylinder
 delete-lists
 delete-textures
 depth-mask
 depth-range
 disable
 disable-client-state
+disk
 edge-flag
 edge-flag-v
 enable
@@ -211,16 +233,22 @@ load-identity
 load-matrix
 load-name
 load-transpose-matrix
+look-at
 material
 material-v
 matrix-mode
 mult-matrix
 mult-transpose-matrix
 new-list
+new-quadric
 normal
 normal-v
 ortho
+ortho-2D
+partial-disk
 pass-through
+perspective
+pick-matrix
 pixel-zoom
 point-size
 polygon-mode
@@ -233,19 +261,27 @@ pop-name
 prioritize-textures
 push-matrix
 push-name
+quadric-draw-style
+quadric-normals
+quadric-orientation
+quadric-texture
 raster-pos
 raster-pos-v
 rect
 rect-v
+render-mode
 rotate
 scale
 scissor
 select-buffer
 shade-model
+sphere
 stencil-mask
 tex-coord
 tex-coord-v
 translate
+u-get-string
+un-project
 vertex
 vertex-v
 viewport
@@ -654,6 +690,7 @@ glMultiTexCoord4sv
 glSampleCoverage
 gluBuild3DMipmaps
 gluBuild3DMipmapLevels
+gluUnProject4
 
 ------------------------------  gl-unsafe:  --------------------------
 Version 1.1

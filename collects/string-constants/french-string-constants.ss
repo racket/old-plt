@@ -1104,6 +1104,10 @@
   (program-is-still-running "Le programme dans la fenêtre de définition est toujours en cours d'exécution. Fermer la fenêtre quand même ?")
   (program-has-open-windows "Le programme dans la fenêtre de définition a d'autres fenêtres ouvertes. Fermer la fenêtre quand même ?")
   
+  ;; ml-command-line-arguments is for the command line arguments
+  ;; label in the module language details in the language dialog.
+  (ml-command-line-arguments "Arguments de ligne de commande, sous forme d'un vecteur de chaînes de caractères (syntaxe de read)")
+
   ;; ml-cp names are all for the module language collection path
   ;; configuration. See the details portion of the language dialog
   ;; for the module language (at the bottom).

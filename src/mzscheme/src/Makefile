@@ -117,8 +117,8 @@ schemex.inc : schemef.h makex
 	if [ "$(PERL)" = '' ] ; then touch ../include/gmzwin.def ; else $(PERL) -s -- ./makex -gwinex < schemef.h > ../include/gmzwin.def ; fi
 
 $(OBJDIR)/schsys.h : sysname
-	make objects
-	make $(OBJDIR)
+	$(MAKE) objects
+	$(MAKE) $(OBJDIR)
 	echo -n "#define SCHEME_PLATFORM_LIBRARY_SUBPATH " > $(OBJDIR)/schsys.h
 	./sysname >> $(OBJDIR)/schsys.h
 

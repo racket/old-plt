@@ -318,13 +318,13 @@
       
       ; plot a polygon in 3 space
       (define (plot-polygon x y z draw ifc)
-        (pl-poly3 (length x) x y z draw ifc))
+        (pl-poly3  x y z draw ifc))
       
       
       ; plot a line in 3 space
       ; x y and z are lists of equal length
       (define (plot-line x y z)
-        (pl-line3 (length x) x y z))
+        (pl-line3 x y z))
       
       
       (super-instantiate ())

@@ -1,5 +1,5 @@
 #ifndef lint
-static char *RCSid = "$Id: matrix.c,v 1.1 2003/08/15 22:17:50 cozmic Exp $";
+static char *RCSid = "$Id: matrix.c,v 1.2 2004/10/22 00:16:26 eli Exp $";
 #endif
 
 /*  NOTICE: Change of Copyright Status
@@ -35,9 +35,39 @@ static char *RCSid = "$Id: matrix.c,v 1.1 2003/08/15 22:17:50 cozmic Exp $";
  *	This software is provided "as is" without express or implied warranty.
  */
 
+#define NULL 0
+#define null 0
 
 #include "fit.h"
 #include "matrix.h"
+
+
+// create a simple gc malloc...
+typedef struct {
+  struct Node * next;
+  void * ptr;
+} Node;
+
+Node * head = null;
+
+void * my_gc_malloc(int size) {
+  void * ptr = malloc(size);
+  Node * n = (Node *)malloc(sizeof (Node));
+  n->ptr = ptr;
+  n->next = head;
+  head = n;
+  return ptr;
+}
+
+void gc_cleanup(){
+  while(head) {
+    Node * current = head;
+    head = current->next;
+    free(current->ptr);
+    free(current);
+  }
+}
+
 
 
 /*****************************************************************/
@@ -55,7 +85,7 @@ static int fsign (double x);
 /*****************************************************************
     first straightforward vector and matrix allocation functions
 *****************************************************************/
-MZ_DLLEXPORT
+//MZ_DLLEXPORT
 double *vec (n)
 int n;
 {
@@ -63,12 +93,12 @@ int n;
     double *dp;
     if( n < 1 )
 	return (double *) NULL;
-    dp = (double *) scheme_malloc (n * sizeof(double));
+    dp = (double *) my_gc_malloc (n * sizeof(double));
     return dp;
 }
 
 
-MZ_DLLEXPORT
+//MZ_DLLEXPORT
 double **matr (rows, cols)
 int rows;
 int cols;
@@ -80,8 +110,8 @@ int cols;
 
     if ( rows < 1  ||  cols < 1 )
         return NULL;
-    m = (double **) scheme_malloc (rows * sizeof(double *));
-    m[0] = (double *) scheme_malloc (rows * cols * sizeof(double));
+    m = (double **) my_gc_malloc (rows * sizeof(double *));
+    m[0] = (double *) my_gc_malloc (rows * cols * sizeof(double));
     for ( i = 1; i<rows ; i++ )
     	m[i] = m[i-1] + cols;
     return m;
@@ -96,7 +126,7 @@ double **m;
 }
 
 
-MZ_DLLEXPORT
+//MZ_DLLEXPORT
 double *redim_vec (v, n)
 double **v;
 int n;
@@ -104,11 +134,11 @@ int n;
     if ( n < 1 ) 
       *v = NULL;
     else       
-      *v = (double *) scheme_malloc( n * sizeof(double));
+      *v = (double *) my_gc_malloc( n * sizeof(double));
     return *v;
 }
 
-MZ_DLLEXPORT
+//MZ_DLLEXPORT
 void redim_ivec (v, n)
 int **v;
 int n;
@@ -117,7 +147,7 @@ int n;
 	*v = NULL;
 	return;
     }
-    *v = (int *) scheme_malloc ( n * sizeof(int));
+    *v = (int *) my_gc_malloc ( n * sizeof(int));
 }
 
 
@@ -147,7 +177,7 @@ static int fsign(x)
 
 *****************************************************************/
 
-MZ_DLLEXPORT
+//MZ_DLLEXPORT
 void Givens (C, d, x, r, N, n, want_r)
 double **C;
 double *d;
@@ -246,7 +276,7 @@ int want_r;
  * Will only calculate the lower triangle of I, as it is symmetric 
  */
 
-MZ_DLLEXPORT
+//MZ_DLLEXPORT
 void Invert_RtR ( R, I, n)
 double **R;
 double **I;

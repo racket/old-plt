@@ -1,5 +1,3 @@
-#include <scheme.h>
-
 /*  NOTICE: Change of Copyright Status
  *
  *  The author of this module, Carsten Grammes, has expressed in
@@ -58,6 +56,10 @@
 
 
 #define FIT_MAIN
+
+#define NULL 0
+
+//#include <scheme.h>
 
 
 
@@ -129,7 +131,7 @@ static double lambda_down_factor = LAMBDA_DOWN_FACTOR;
 static double lambda_up_factor = LAMBDA_UP_FACTOR;
 
 
-static Scheme_Object * current_fun;
+static void * current_fun;
 
 
 /*****************************************************************
@@ -141,16 +143,20 @@ double varience = 0;
 double *asym_error;
 double *asym_error_percent;
 
-MZ_DLLEXPORT double get_rms()
+//MZ_DLLEXPORT
+double get_rms()
 {return rms;}
 
-MZ_DLLEXPORT double get_varience()
+//MZ_DLLEXPORT
+double get_varience()
 {return varience;}
 
-MZ_DLLEXPORT double * get_asym_error()
+//MZ_DLLEXPORT
+double * get_asym_error()
 {return asym_error;}
 
-MZ_DLLEXPORT double * get_asym_error_percent()
+//MZ_DLLEXPORT
+double * get_asym_error_percent()
 {return asym_error_percent;}
 
 
@@ -168,8 +174,8 @@ static void calculate (double *zfunc, double **dzda, double a[]);
 static void call_scheme (double *par, double *data);
 
 static TBOOLEAN regress (double a[]);
-static void show_fit (int i, double chisq, double last_chisq, double *a, 
- 			      double lambda, FILE * device); 
+//static void show_fit (int i, double chisq, double last_chisq, double *a, 
+//			      double lambda, FILE * device); 
 
 
 /*****************************************************************
@@ -413,27 +419,58 @@ double *par;
 double *data;
 {
   int rators = 2 + num_params;
-  Scheme_Object ** rands = 
-    scheme_malloc(rators * sizeof(Scheme_Object));
+  double * rands =
+    (double *) malloc(rators * sizeof(double));
 
   int i;
 
   /* set up the constant params */
   for(i = 0 ; i< num_params; i++) {
-    rands[i+2] = scheme_make_double(par[i]);
+    rands[i+2] = par[i];
   }
 
   /* now calculate the function at the existing points */
-    for (i = 0; i < num_data; i++) {
-      rands[0] = scheme_make_double(fit_x[i]);
-      rands[1] = scheme_make_double(fit_y[i]);
+  for (i = 0; i < num_data; i++) {
+    rands[0] = fit_x[i];
+    rands[1] = fit_y[i];
 
-      data[i] = scheme_real_to_double(scheme_apply(current_fun, rators, rands));
-    }
+    data[i] = ((double (*) (int, double *) )current_fun) // ouch!
+               (rators, rands);
+  }
+
+  free(rands);
+
 }
 
+/* /\***************************************************************** */
+/*     evaluate the scheme function */
+/* *****************************************************************\/ */
+/* static void call_scheme(par, data) */
+/* double *par; */
+/* double *data; */
+/* { */
+/*   int rators = 2 + num_params; */
+/*   Scheme_Object ** rands =  */
+/*     scheme_malloc(rators * sizeof(Scheme_Object)); */
+
+/*   int i; */
+
+/*   /\* set up the constant params *\/ */
+/*   for(i = 0 ; i< num_params; i++) { */
+/*     rands[i+2] = scheme_make_double(par[i]); */
+/*   } */
+
+/*   /\* now calculate the function at the existing points *\/ */
+/*     for (i = 0; i < num_data; i++) { */
+/*       rands[0] = scheme_make_double(fit_x[i]); */
+/*       rands[1] = scheme_make_double(fit_y[i]); */
+
+/*       data[i] = scheme_real_to_double(scheme_apply(current_fun, rators, rands)); */
+/*     } */
+/* } */
+
 /*****************************************************************
-    frame routine for the marquardt-fit
+    Frame routine for the marquardt-fit
 *****************************************************************/
 static TBOOLEAN regress(a)
     double a[];
@@ -636,14 +673,14 @@ static TBOOLEAN regress(a)
 /*****************************************************************
     display actual state of the fit
 *****************************************************************/
-static void show_fit(i, chisq, last_chisq, a, lambda, device)
-int i;
-double chisq;
-double last_chisq;
-double *a;
-double lambda;
-FILE *device;
-{
+/* static void show_fit(i, chisq, last_chisq, a, lambda, device) */
+/* int i; */
+/* double chisq; */
+/* double last_chisq; */
+/* double *a; */
+/* double lambda; */
+/* FILE *device; */
+//{
   /*
     int k;
 
@@ -658,7 +695,7 @@ lambda	  : %g\n\n%s parameter values\n\n",
     for (k = 0; k < num_params; k++)
 	fprintf(device, "%-15.15s = %g\n", par_name[k], a[k]);
   */
-}
+//}
 
 
 
@@ -668,8 +705,8 @@ lambda	  : %g\n\n%s parameter values\n\n",
 /*****************************************************************
     Interface to scheme
 *****************************************************************/
-MZ_DLLEXPORT
-double * do_fit(Scheme_Object * function,
+//MZ_DLLEXPORT
+double * do_fit(void * function,
 		int n_values,
 		double * x_values,
 		double * y_values,
@@ -701,8 +738,12 @@ double * do_fit(Scheme_Object * function,
     }
   }
   
-  if(regress(a))
+  if(regress(a)) {
+    gc_cleanup();
     return a;
-  else
-    return NULL; /* something went wrong */
+  }
+  else { /* something went wrong */
+    gc_cleanup(); 
+    return NULL;
+  }
 }

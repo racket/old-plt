@@ -23,10 +23,12 @@
 
 (define spidey:frame%
   (class 
-    (mred:make-searchable-frame% mred:simple-menu-frame%)
+
+    mred:searchable-frame%
+
     (arg-main arg-filename summary-edit . init-locs)
 
-    (inherit show get-canvas ;; get-canvas%
+    (inherit show get-canvas get-canvas%
       make-menu create-status-line set-status-text
       get-position get-size set-icon panel
       set-title file-menu set-title-prefix
@@ -45,7 +47,6 @@
       ; [get-edit (lambda () program-edit)] ; MATTHEW asks: why was this here?
       [auto-set-wrap #f]
       [edit% flow-arrow:media-edit%]    
-      [get-canvas% (lambda () mred:wrapping-canvas%)]
       [on-close
         (lambda ignored
           (send main on-frame-close filename)
@@ -215,7 +216,7 @@
     ;; ----------
 
     (public
-      [main arg-main]                   ; parent containing the global state
+     [main arg-main]                   ; parent containing the global state
       program-canvas
       program-edit
       summary-canvas                   ; or #f if no summary
@@ -294,20 +295,18 @@
       (pretty-debug-gui '(setting summary-canvas))
       (set! summary-canvas
         (and summary-edit
-          (let ([c 
-                  ;(make-object (get-canvas%) panel)
-                  (make-object (class-asi mred:one-line-canvas%
-                                 (public
-                                   [lines 5]
-                                   [style-flags 0]))
+          (let ([c (make-object (class-asi mred:one-line-canvas%
+					   (public
+					    [lines 5]
+					    [style-flags 0]))
                     panel) 
                   ])
-            ;;(send c set-lines 2)
             (send c set-media summary-edit)
             c)))
+
       (assert (is-a? summary-canvas mred:connections-media-canvas%))
       (pretty-debug-gui '(setting program-canvas))
-      (set! program-canvas (get-canvas))
+      (set! program-canvas (make-object (get-canvas%) panel))
       (set-display-mode (car modes))
       (pretty-debug-gui '(done setting canvases))
 
@@ -330,7 +329,6 @@
 
       ;;(set-status-text 
       ;; "Mouse: Left-type/parents  Midde-Ancestors  Right-Close")
-
       ;; ------------------------------------------------------------
 
       ;;(set-display-mode display-mode)

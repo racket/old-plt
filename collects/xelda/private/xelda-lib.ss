@@ -12,8 +12,13 @@
    check-empty-units
    check-equal-units
    is-error-unit?
+   empty-unit?
    verify-equal-units)
-  
+    
+  (define (empty-unit? u)
+    (and (= (length u) 1)
+         (eq? (car (first u)) 'empty_unit)))
+
   (define (split-list lst p?)
     (let loop ([lst lst]
 	       [yes null]
@@ -85,6 +90,8 @@
            (cond [(eq? sym (second (first u2))) u2]
                  [else (list (list 'error/propagated
                                    (second (first u2))))])]
+          [(empty-unit? u1) u2]
+          [(empty-unit? u2) u1]
           [else
            (let ([raw-us (append u1 u2)])
              (let loop ([new-us raw-us]
@@ -112,6 +119,7 @@
            (cond [(eq? sym (second (first u2))) u2]
                  [else (list (list 'error/propagated
                                    (second (first u2))))])]
+          [(empty-unit? u2) u1]
           [else
            (gen-mult-units u1 (map (lambda (u)
                                      (let ([u-name (car u)]
@@ -119,14 +127,20 @@
                                        (list u-name (- 0 u-exp)))) u2) sym)]))
   
   (define (gen-exp-units u exp sym)
-    (if (not (integer? exp))
-	'((error/exponentiation sym))
-	(map (lambda (u)
-               (let ([u-name (car u)]
-                     [u-exp (cadr u)])
-                 (list u-name (inexact->exact 
-                               (* exp u-exp)))))
-	     u)))
+    (cond [(is-error-unit? u)
+           (cond [(eq? sym (second (first u))) u]
+                 [else (list (list 'error/propagated (second (first u))))])]
+          [else
+           (if (not (integer? exp))
+               '((error/exponentiation sym))
+               (cond [(empty-unit? u) u]
+                     [else
+                      (map (lambda (u_)
+                             (let ([u-name (car u_)]
+                                   [u-exp (cadr u_)])
+                               (list u-name (inexact->exact 
+                                             (* exp u-exp)))))
+                           u)]))]))
   
   (define (check-empty-units . us)
     (if (andmap null? us)

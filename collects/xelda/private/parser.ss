@@ -67,7 +67,7 @@
    [add-op (: "+" "-")]
    [mult-op (: "*" "/")]
    [exp-op "^"]
-   [bool-op (: "<" ">" "<=" ">=" "=")]
+   [bool-op (: "<" ">" "<=" ">=" "=" "<>")]
    [tbl-begin "=TABLE("]
    [function-name 
     (: "NOT"

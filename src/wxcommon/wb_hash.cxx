@@ -265,7 +265,7 @@ wxNonlockingHashTable::wxNonlockingHashTable()
   for (i = 0; i < numbuckets; i++) {
     buckets[i].widget = 0;
   }
-  numwidgets = 0;
+  numwidgets = numused = 0;
 }
 
 wxNonlockingHashTable::~wxNonlockingHashTable()
@@ -276,15 +276,21 @@ void wxNonlockingHashTable::Put(long widget, wxObject *object)
 {
   long i;
 
-  if (FILL_FACTOR * numwidgets >= numbuckets) {
+  if (FILL_FACTOR * numused >= numbuckets) {
     /* Rehash */
     Bucket *oldbuckets = buckets;
     long oldnumbuckets = numbuckets;
 
-    numbuckets = (numbuckets * FILL_FACTOR) + 1;
-    buckets = (Bucket *)GC_malloc_atomic(sizeof(Bucket) * numbuckets);
+    if (FILL_FACTOR * numwidgets >= numbuckets)
+      numbuckets = (numbuckets * FILL_FACTOR) + 1;
+    /* else, just need to rehash after many deletions */
 
-    numwidgets = 0;
+    buckets = (Bucket *)GC_malloc_atomic(sizeof(Bucket) * numbuckets);
+    for (i = 0; i < numbuckets; i++) {
+      buckets[i].widget = 0;
+    }
+
+    numwidgets = numused = 0;
     for (i = 0; i < oldnumbuckets; i++) {
       if (oldbuckets[i].widget && oldbuckets[i].object)
 	Put(oldbuckets[i].widget, oldbuckets[i].object);
@@ -292,14 +298,15 @@ void wxNonlockingHashTable::Put(long widget, wxObject *object)
   }
 
   i = HASH(widget);
-  /* MATTHEW: [10] Added equality check (shouldn't happen, though). */
   while (buckets[i].widget && buckets[i].object
 	 && (buckets[i].widget != widget)) {
     i = (i + 1) % numbuckets;
   }
+  if (!buckets[i].widget)
+    numused++;
   buckets[i].widget = widget;
   buckets[i].object = object;
-  numwidgets++; /* Fix counter */
+  numwidgets++;
 }
 
 wxObject *wxNonlockingHashTable::Get(long widget)
@@ -326,10 +333,11 @@ void wxNonlockingHashTable::Delete(long widget)
     i = (i + 1) % numbuckets;
   }
 
-  if (buckets[i].widget == widget)
-  {
+  if (buckets[i].widget == widget) {
     buckets[i].object = NULL;
-    --numwidgets; /* Fix counter */
+    --numwidgets;
+    /* Don't decrement numused, since the widget half is still set;
+       we should re-hash after enough deletions */
   }
 }
 

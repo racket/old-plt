@@ -78,7 +78,7 @@ private:
 class wxNonlockingHashTable
 {
   struct Bucket *buckets;
-  long numbuckets, numwidgets;
+  long numbuckets, numwidgets, numused;
  public:
   wxNonlockingHashTable(void);
   ~wxNonlockingHashTable();

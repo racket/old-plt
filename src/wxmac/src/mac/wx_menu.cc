@@ -131,6 +131,8 @@ wxMenu::wxMenu // Constructor (given objectType)
  ) :
   wxbMenu(Title, windowName)
 {
+  menuItems = new wxList();
+
   Callback(function);
 
   cMacMenuId = gMenuIdCounter++; // get next unique menuID

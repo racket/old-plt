@@ -793,7 +793,7 @@ Bool wxApp::doMacInMenuBar(long menuResult, Bool externOnly)
   }
   if (!theWxMenu) wxFatalError("No wxMenu for wxMenuBar.");
 
-  wxNode* node = theWxMenu->menuItems.Nth(macMenuItemNum - 1); // counting from 0
+  wxNode* node = theWxMenu->menuItems->Nth(macMenuItemNum - 1); // counting from 0
   if (!node) wxFatalError("No wxNode for Nth menuItem.");
 
   wxMenuItem* theWxMenuItem = (wxMenuItem*) node->Data();

@@ -1658,7 +1658,7 @@ Bool wxWindow::PopupMenu(wxMenu *menu, float x, float y)
 	theWxMenu = menu->wxMacFindSubmenu(macMenuId);
       if (!theWxMenu) wxFatalError("No submenu for menu id.");
       
-      wxNode* node = theWxMenu->menuItems.Nth(macMenuItemNum - 1); // counting from 0
+      wxNode* node = theWxMenu->menuItems->Nth(macMenuItemNum - 1); // counting from 0
       if (!node) wxFatalError("No wxNode for Nth menuItem.");
       
       wxMenuItem* theWxMenuItem = (wxMenuItem*) node->Data();

@@ -1380,7 +1380,7 @@
       (lambda (expr env)
 	(static-error expr "Unquote-splicing outside quasiquote")))
 
-    (add-macro-form 'quasiquote scheme-vocabulary
+'    (add-macro-form 'quasiquote scheme-vocabulary
       (lambda (expr env)
 	(structurize-syntax
 	  (apply

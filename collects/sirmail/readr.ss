@@ -38,7 +38,7 @@
 
   (require (lib "sendurl.ss" "net"))
 
-  (require (lib "openssl.ss" "openssl"))
+  (require (lib "mzssl.ss" "openssl"))
 
   ;; Constant for messages without a title:
   (define no-subject-string "<No subject>")
@@ -232,8 +232,13 @@
 									      (parse-server-name (IMAP-SERVER)
 										(if (get-pref 'sirmail:use-ssl?) 993 143))])
 								  (if (get-pref 'sirmail:use-ssl?)
-								      (let-values ([(in out) (ssl-connect server port-no)])
-									(imap-connect* in out (USERNAME) pw mailbox-name))
+								      (let ([c (ssl-make-client-context)])
+									(let ([cert (get-pref 'sirmail:server-certificate)])
+									  (when cert
+									    (ssl-set-verify! c #t)
+									    (ssl-load-verify-root-certificates! c cert)))
+									(let-values ([(in out) (ssl-connect server port-no c)])
+									  (imap-connect* in out (USERNAME) pw mailbox-name)))
 								      (parameterize ([imap-port-number port-no])
 									(imap-connect server (USERNAME) pw mailbox-name))))]
 					      [(uid-l) (imap-status imap mailbox-name '(uidnext uidvalidity))])
@@ -1672,14 +1677,16 @@
       ;; copied from framerok/private/frame.sss -- be sure to propogate fixes....
       ;; or establish single point of control.
       (define (format-number n)
-        (let loop ([n n])
-          (cond
-            [(<= n 1000) (number->string n)]
-            [else
-             (string-append 
-              (loop (quotient n 1000))
-              ","
-              (pad-to-3 (modulo n 1000)))])))
+	(if n
+	    (let loop ([n n])
+	      (cond
+	       [(<= n 1000) (number->string n)]
+	       [else
+		(string-append 
+		 (loop (quotient n 1000))
+		 ","
+		 (pad-to-3 (modulo n 1000)))]))
+	    "???"))
       
       (define (pad-to-3 n)
         (cond

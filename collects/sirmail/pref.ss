@@ -5,6 +5,7 @@
 	   (lib "mred.ss" "mred")
 	   (lib "list.ss")
 	   (lib "string.ss")
+	   (lib "etc.ss")
 	   (lib "head.ss" "net"))
 
   ;; IMPORTANT! All preferences operations outside this
@@ -17,8 +18,9 @@
   (define (string-or-false? x) (or (not x) (string? x)))
   (define (ip-string? x) (and (string? x)
 			      (positive? (string-length x))))
-
-
+  (define (abs-path-or-false? x) (or (not x)
+				     (and (string? x) (absolute-path? x))))
+  
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;;  Preference Definitions                                 ;;
   ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,6 +33,7 @@
 
   (preferences:set-default 'sirmail:imap-server "imap.plt-scheme.org" ip-string?)
   (preferences:set-default 'sirmail:use-ssl? #f boolean?)
+  (preferences:set-default 'sirmail:server-certificate #f abs-path-or-false?)
   (preferences:set-default 'sirmail:smtp-server "sendmail.plt-scheme.org" ip-string?)
 
   (preferences:set-default 'sirmail:local-directory 
@@ -69,11 +72,9 @@
   (preferences:set-default 'sirmail:wrap-lines #f boolean?)
 
   (preferences:set-default 'sirmail:aliases-file (build-path (find-system-path 'home-dir) ".sirmail.aliases")
-			   (lambda (x) (or (not x)
-					   (and (string? x) (absolute-path? x)))))
+			   abs-path-or-false?)
   (preferences:set-default 'sirmail:auto-file-table-file (build-path (find-system-path 'home-dir) ".sirmail.auto-file")
-			   (lambda (x) (or (not x)
-					   (and (string? x) (absolute-path? x)))))
+			   abs-path-or-false?)
 
   (preferences:set-default 'sirmail:self-addresses null
 			   (lambda (x) (and (list? x) (andmap string? x))))
@@ -261,15 +262,18 @@
 						  (or enabler button-label))])
 					  (when v
 					    (set-it v)))))
-      p))
+      p0))
 
-  (define (make-boolean label p pref)
-    (define c
-      (make-object check-box% label p (lambda (c e)
-					(preferences:set pref (send c get-value)))))
-    (send c set-value (preferences:get pref))
-    (preferences:add-callback pref (lambda (name val)
-				     (send c set-value val))))
+  (define make-boolean
+    (opt-lambda (label p pref [extra-action void])
+      (define c
+	(make-object check-box% label p (lambda (c e)
+					  (let ([v (send c get-value)])
+					    (extra-action v)
+					    (preferences:set pref v)))))
+      (send c set-value (preferences:get pref))
+      (preferences:add-callback pref (lambda (name val)
+				       (send c set-value val)))))
 
   (define (is-host-address? s)
     (regexp-match "^([-a-zA-Z0-9]+[.])*[-a-zA-Z0-9]+$" s))
@@ -461,10 +465,17 @@
       
       (make-text-field "Username" p 10 'sirmail:username #f check-id (lambda (x) x) (lambda (x) x))
       (let ([sp (instantiate group-box-panel% ("IMAP Server" p)
-			     [alignment '(left center)])])
+			     [alignment '(left center)])]
+	    [cert #f])
 	(make-text-field "Server" sp 20 'sirmail:imap-server #f check-host-address/port (lambda (x) x) (lambda (x) x))
-	(make-boolean "Encrypt connection using SSL" sp 'sirmail:use-ssl?)
-	(make-text-field "Folder List Root" sp 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x)))
+	(make-boolean "Encrypt connection using SSL" sp 'sirmail:use-ssl?
+		      (lambda (on?) (send cert enable on?)))
+	(set! cert (make-file/directory-button #f #f sp
+					       'sirmail:server-certificate
+					       "SSL Certificates to Verify Server"))
+	(make-text-field "Folder List Root" sp 20 'sirmail:root-mailbox-folder #t void (lambda (x) x) (lambda (x) x))
+
+	(send cert enable (preferences:get 'sirmail:use-ssl?)))
 
       (make-file/directory-button #t "Local Directory" p
 				  'sirmail:local-directory

@@ -611,7 +611,7 @@ Scheme_Object *srp_read_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_UTINYINT :
     return readUTinyIntBuffer((unsigned char *)buffer,numElts);
   case SQL_C_GUID :
-    return readGUIDBuffer((SQLGUID *)buffer,numElts);
+    return readGuidBuffer((SQLGUID *)buffer,numElts);
   }
 
   scheme_signal_error("Unknown buffer C data type: %X",CDataType);
@@ -637,189 +637,23 @@ BOOL schemeDoubleP(Scheme_Object *o) {
 }
 
 BOOL schemeNumericP(Scheme_Object *o) {
-  Scheme_Object *currList;
-  Scheme_Object *sign,*val,*scale,*precision;
-  char *signChar;
-  
-  if (scheme_proper_list_length(o) != 4) {
-    return FALSE;
-  }
-
-  currList = o;
-
-  precision = SCHEME_CAR(currList);
-
-  if (SCHEME_CHARP(precision) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  scale = SCHEME_CAR(currList);
-
-  if (SCHEME_CHARP(scale) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  sign = SCHEME_CAR(currList);
-
-  if (SCHEME_SYMBOLP(sign) == FALSE) {
-    return FALSE;
-  }
-
-  signChar = SCHEME_SYM_VAL(sign);
-
-  if (strcmp(signChar,"+") && strcmp(signChar,"-")) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  val = SCHEME_CAR(currList);
-
-  if (SCHEME_STRINGP(val) == FALSE) {
-    return FALSE;
-  }
-
-  return TRUE;
+  return (scheme_is_struct_instance(NUMERIC_STRUCT_TYPE,o));
 }
 
 BOOL schemeDateP(Scheme_Object *o) {
-  Scheme_Object *currList;
-  Scheme_Object *day,*month,*year;
-
-  if (scheme_proper_list_length(o) != 3) {
-    return FALSE;
-  }
-
-  currList = o;
-
-  year = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(year) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  month = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(month) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  day = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(day) == FALSE) {
-    return FALSE;
-  }
-
-  return TRUE;
+  return (scheme_is_struct_instance(DATE_STRUCT_TYPE,o));
 }
 
-
 BOOL schemeTimeP(Scheme_Object *o) {
-  Scheme_Object *currList;
-  Scheme_Object *hour,*minute,*second;
-
-  if (scheme_proper_list_length(o) != 3) {
-    return FALSE;
-  }
-
-  currList = o;
-
-  hour = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(hour) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  minute = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(minute) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  second = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(second) == FALSE) {
-    return FALSE;
-  }
-
-  return TRUE;
+  return (scheme_is_struct_instance(TIME_STRUCT_TYPE,o));
 }
 
 BOOL schemeTimeStampP(Scheme_Object *o) {
-  Scheme_Object *currList;
-  Scheme_Object *year,*month,*day,*hour,*minute,*second,*fraction;
+  return (scheme_is_struct_instance(TIMESTAMP_STRUCT_TYPE,o));
+}
 
-  if (scheme_proper_list_length(o) != 7) {
-    return FALSE;
-  }
-
-  currList = o;
-
-  year = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(year) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  month = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(month) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  day = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(day) == FALSE) {
-    return FALSE;
-  }
-
-  hour = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(hour) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  minute = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(minute) == FALSE) {
-    return FALSE;
-  }
-  
-  currList = SCHEME_CDR(currList);
-
-  second = SCHEME_CAR(currList);
-
-  if (isUnsignedSmallInt(second) == FALSE) {
-    return FALSE;
-  }
-
-  currList = SCHEME_CDR(currList);
-
-  fraction = SCHEME_CAR(currList);
-
-  if (SCHEME_EXACT_INTEGERP(fraction) == FALSE) {
-    return FALSE;
-  }
-
-  return TRUE;
+BOOL schemeGuidP(Scheme_Object *o) {
+  return (scheme_is_struct_instance(GUID_STRUCT_TYPE,o));
 }
 
 BOOL schemeIntervalIntegerP(Scheme_Object *o) {
@@ -864,7 +698,7 @@ BOOL checkIsPredList(Scheme_Object *o,BOOL (*p)(Scheme_Object *),long numElts) {
     currVal = SCHEME_CAR(currList);
 
     if (++count > numElts) {
-      scheme_signal_error("sql-write-buffer: too many elements");
+      scheme_signal_error("sql-write-buffer: too many elements to fit in buffer");
     }
 
     if ((*p)(currVal) == FALSE) {
@@ -879,7 +713,9 @@ BOOL checkIsPredList(Scheme_Object *o,BOOL (*p)(Scheme_Object *),long numElts) {
 
 void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
 			 SQLINTERVAL intervalType,
-			 unsigned long *(*fieldFromInterval)(SQL_INTERVAL_STRUCT *)) {
+			 unsigned long *(*fieldFromInterval)(SQL_INTERVAL_STRUCT *),
+			 Scheme_Object *signProc,
+			 Scheme_Object *intProc) {
   Scheme_Object *currVal;
   Scheme_Object *currSign,*currInt;
   char *signStr;
@@ -893,9 +729,9 @@ void writeIntervalToBuff(void *buffer,Scheme_Object *currList,long numElts,
     currVal = SCHEME_CAR(currList);
 
     pInterval = (SQL_INTERVAL_STRUCT *)buffer + i;
-      
-    currSign = SCHEME_CAR(currVal);
-    currInt = SCHEME_CADR(currVal);
+
+    currSign = scheme_apply(signProc,1,&currVal);
+    currInt = scheme_apply(intProc,1,&currVal);
 
     pInterval->interval_type = intervalType;
 
@@ -939,7 +775,7 @@ unsigned long *getIntervalSecond(SQL_INTERVAL_STRUCT *p) {
 
 Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   SQLSMALLINT CDataType;
-  Scheme_Object *currList,*currVal;
+  //  Scheme_Object *currList,*currVal;
   void *buffer;
   long numElts;
   long longVal;
@@ -955,47 +791,34 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   } 
 
   CDataType = SQL_BUFFER_CTYPE(argv[0]);
-
-  buffer = SQL_BUFFER_VAL(argv[1]);
-  numElts = SQL_BUFFER_NUMELTS(argv[1]);
+  buffer = SQL_BUFFER_VAL(argv[0]);
+  numElts = SQL_BUFFER_NUMELTS(argv[0]);
 
   memset(buffer,'\0',numElts * sizeofCDataType(CDataType));
+
+  // check that data to be written is of appropriate type, 
+  // then call specialized write routine
 
   switch(CDataType) {
   case SQL_C_CHAR :
 
-    if (SCHEME_STRINGP(argv[2]) == FALSE) {
+    if (SCHEME_STRINGP(argv[1]) == FALSE) {
       scheme_wrong_type("sql-write-buffer","string",2,argc,argv);
     }
 
-    if (SCHEME_STRLEN_VAL(argv[2]) >= numElts) {
+    if (SCHEME_STRLEN_VAL(argv[1]) >= numElts) {
       scheme_signal_error("sql-write-buffer: string too long for buffer");
     }
 
-    strcpy((char *)buffer,SCHEME_STR_VAL(argv[2]));
-
+    writeCharBuffer((char *)buffer,argv[1]);
     break;
 
-    
   case SQL_C_SLONG :
   case SQL_C_LONG :
 
-    checkIsPredList(argv[2],schemeExactIntegerP,numElts);
+    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
 
-    currList = argv[2];
-
-    for (i = 0;currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      if (scheme_get_int_val(currVal,&longVal) == 0) {
-	scheme_signal_error("sql-write-buffer: number too big");
-      } 
-
-      *((long *)buffer + i) = longVal;
-
-      currList = SCHEME_CDR(currList);
-    }
+    writeLongBuffer((long *)buffer,argv[1]); 
 
     break;
 
@@ -1003,210 +826,87 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
 
     // SQL_C_BOOKMARK is the same
 
-    checkIsPredList(argv[2],schemeExactIntegerP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      if (scheme_get_unsigned_int_val(currVal,&uLongVal) == 0) {
-	scheme_signal_error("sql-write-buffer: number too big");
-      }
-
-      *((unsigned long *)buffer + i) = uLongVal;
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeExactIntegerP,numElts);
+    writeULongBuffer((unsigned long *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_SSHORT :
   case SQL_C_SHORT :
 
-    checkIsPredList(argv[2],schemeIntP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      if (isSmallInt(currVal) == FALSE) {
-	scheme_signal_error("sql-write-buffer: number too big");
-      } 
-
-      *((short *)buffer + i) = (short)SCHEME_INT_VAL(currVal);
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeIntP,numElts);
+    writeShortBuffer((short *)buffer,argv[1]); 
 
     break;
 
+
   case SQL_C_USHORT :
 
-    checkIsPredList(argv[2],schemeIntP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      if (isUnsignedSmallInt(currVal) == FALSE) {
-	scheme_signal_error("sql-write-buffer: number too big");
-      } 
-
-      *((unsigned short *)buffer + i) = (unsigned short)SCHEME_INT_VAL(currVal);
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeIntP,numElts);
+    writeUShortBuffer((unsigned short *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_FLOAT :
 
-    checkIsPredList(argv[2],schemeFloatP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      *((float *)buffer + i) = (float)SCHEME_FLOAT_VAL(currVal);
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeFloatP,numElts);
+    writeFloatBuffer((float *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_DOUBLE :
 
-    checkIsPredList(argv[2],schemeDoubleP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      *((double *)buffer + i) = SCHEME_DBL_VAL(currVal);
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeDoubleP,numElts);
+    writeDoubleBuffer((double *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_NUMERIC :
 
-    checkIsPredList(argv[2],schemeNumericP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      pNumeric = (SQL_NUMERIC_STRUCT *)buffer + i;
-      pNumeric->precision = SCHEME_CHAR_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pNumeric->scale = SCHEME_CHAR_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pNumeric->sign = SCHEME_CHAR_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      strncpy((char *)(pNumeric->val),SCHEME_STR_VAL(SCHEME_CAR(currVal)),16);
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeNumericP,numElts);
+    writeNumericBuffer((SQL_NUMERIC_STRUCT *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_DATE :
   case SQL_C_TYPE_DATE :
 
-    checkIsPredList(argv[2],schemeDateP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      pDate = (SQL_DATE_STRUCT *)buffer + i;
-      pDate->year = (SQLSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pDate->month = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pDate->day = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeDateP,numElts);
+    writeDateBuffer((SQL_DATE_STRUCT *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_TIME :
   case SQL_C_TYPE_TIME :
 
-    checkIsPredList(argv[2],schemeTimeP,numElts);
-
-    currList = argv[2];
-
-    for (i = 0; currList != scheme_null; i++) {
-
-      currVal = SCHEME_CAR(currList);
-
-      pTime = (SQL_TIME_STRUCT *)buffer + i;
-      pTime->hour = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pTime->minute = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pTime->second = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeTimeP,numElts);
+    writeTimeBuffer((SQL_TIME_STRUCT *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_TIMESTAMP :
   case SQL_C_TYPE_TIMESTAMP :
 
-    checkIsPredList(argv[2],schemeTimeP,numElts);
+    checkIsPredList(argv[1],schemeTimeP,numElts);
+    writeTimeStampBuffer((SQL_TIMESTAMP_STRUCT *)buffer,argv[1]); 
 
-    currList = argv[2];
+    break;
 
-    for (i = 0; currList != scheme_null; i++) {
+  case SQL_C_GUID :
 
-      currVal = SCHEME_CAR(currList);
-
-      pTimeStamp = (SQL_TIMESTAMP_STRUCT *)buffer + i;
-      pTimeStamp->year = (SQLSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pTimeStamp->month = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pTimeStamp->day = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pTimeStamp->hour = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pTimeStamp->minute = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      pTimeStamp->second = (SQLUSMALLINT)SCHEME_INT_VAL(SCHEME_CAR(currVal));
-      currVal = SCHEME_CDR(currVal);
-      if (scheme_get_unsigned_int_val(currVal,&pTimeStamp->fraction) == 0) {
-	scheme_signal_error("sql-write-buffer: number too big");
-      }
-
-      currList = SCHEME_CDR(currList);
-    }
+    checkIsPredList(argv[1],schemeGuidP,numElts);
+    writeGuidBuffer((SQLGUID *)buffer,argv[1]); 
 
     break;
 
   case SQL_C_INTERVAL_YEAR :
 
-    writeIntervalToBuff(buffer,argv[2],numElts,SQL_IS_YEAR,getIntervalYear);
+    writeIntervalToBuff(buffer,argv[1],numElts,SQL_IS_YEAR,getIntervalYear,
+			YEAR_INTERVAL_SIGN,YEAR_INTERVAL_YEAR);
 
     break;
+
+    /*
 
   case SQL_C_INTERVAL_MONTH :
 
@@ -1256,9 +956,7 @@ Scheme_Object *srp_write_buffer(int argc,Scheme_Object **argv) {
   case SQL_C_STINYINT :
   case SQL_C_TINYINT :
   case SQL_C_UTINYINT :
-  case SQL_C_GUID :
-    ;
-
+    */
   }
 
   return scheme_void;
@@ -1352,6 +1050,44 @@ BOOL isUnsignedSmallInt(Scheme_Object *obj) {
   smallVal = (unsigned short)val;
 
   if (smallVal != val) {
+    return FALSE;
+  }
+    
+  return TRUE;
+}
+
+BOOL isCharInt(Scheme_Object *s) {
+  long val;
+  char charVal;
+
+  if (SCHEME_INTP(s) == FALSE) {
+    return FALSE;
+  }
+
+  val = SCHEME_INT_VAL(s);
+
+  charVal = (char)val;
+
+  if (charVal != val) {
+    return FALSE;
+  }
+    
+  return TRUE;
+}
+
+BOOL isUnsignedCharInt(Scheme_Object *s) {
+  unsigned long val;
+  unsigned char charVal;
+
+  if (SCHEME_INTP(s) == FALSE) {
+    return FALSE;
+  }
+
+  val = SCHEME_INT_VAL(s);
+
+  charVal = (unsigned char)val;
+
+  if (charVal != val) {
     return FALSE;
   }
     
@@ -5839,11 +5575,11 @@ Scheme_Object *scheme_initialize(Scheme_Env *env) {
   for (i = 0; i < sizeray(srpStructs); i++) {
     structNameSymbol = scheme_intern_symbol(srpStructs[i].name);
     structType = scheme_make_struct_type(structNameSymbol,NULL,srpStructs[i].numFields);
-    *(srpStructs[i].pStructType) = structType;
     structNames = scheme_make_struct_names(structNameSymbol,
 					   stringArrayToSchemeSymbolList(srpStructs[i].fields,srpStructs[i].numFields),
 					   0,&nameCount);
     structValues = scheme_make_struct_values(structType,structNames,nameCount,0);    
+    *(srpStructs[i].pStructFuns) = structValues;
     for (j = 0; j < nameCount; j++) {
       scheme_add_global(SCHEME_SYM_VAL(structNames[j]),structValues[j],env);
     }

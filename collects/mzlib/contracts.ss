@@ -204,14 +204,16 @@
                                               (build-constructor-contract field-contract-ids 
                                                                           predicate-id))]
                            [(field-contracts ...) field-contracts]
-                           [(field-contract-ids ...) field-contract-ids])
+                           [(field-contract-ids ...) field-contract-ids]
+                           [struct-name struct-name])
                (syntax 
                 (begin
                   (define field-contract-ids field-contracts) ...
                   selector-codes ...
                   mutator-codes ...
                   predicate-code
-                  constructor-code)))))
+                  constructor-code
+                  (provide struct-name))))))
          
          ;; build-constructor-contract : (listof syntax) syntax -> syntax
          (define (build-constructor-contract field-contract-ids predicate-id)

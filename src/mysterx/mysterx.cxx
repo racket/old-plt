@@ -3279,6 +3279,7 @@ short int buildMethodArgumentsUsingFuncDesc(FUNCDESC *pFuncDesc,
     
     methodArguments->rgdispidNamedArgs = &dispidPropPut;
     methodArguments->cNamedArgs = methodArguments->cArgs = 1;
+    methodArguments->cArgs = numParamsPassed; 
     break;
     
   case INVOKE_PROPERTYGET :

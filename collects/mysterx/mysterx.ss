@@ -165,7 +165,10 @@
       (error 'com-set-property!
 	     "Expected one or more property names (strings) and a value")]
      [(null? (cddr path-and-value))
-      (mxprims:com-set-property! obj (car path-and-value) (cadr path-and-value))]
+      (let ([item (car path-and-value)])
+	(if (list? item)
+	    (mxprims:com-set-property! obj (car item) (cadr item) (cadr path-and-value))
+	    (mxprims:com-set-property! obj item (cadr path-and-value))))]
      [else (apply com-set-property!
 		  (get-item-property obj (car path-and-value))
 		  (cdr path-and-value))]))

@@ -28,7 +28,7 @@ static BOOL html_event_available(MX_Browser_Object *browser) {
 }
 
 static void html_event_sem_fun(MX_Browser_Object *browser,void *fds) {
-  scheme_add_fd_eventmask(fds,QS_ALLEVENTS);
+  scheme_add_fd_eventmask(fds,QS_ALLINPUT);
   scheme_add_fd_handle(browser->readSem,fds,TRUE); 
 }
 
@@ -208,7 +208,7 @@ Scheme_Object *mx_event_type_pred(int argc,Scheme_Object **argv,WCHAR *evType) {
   pEvent->get_eventType(&actualType);
 
   if (wcscmp(evType,eventNames[actualType]) == 0) {
-    return scheme_true;
+      return scheme_true;
   }
   
   return scheme_false;

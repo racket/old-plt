@@ -156,7 +156,7 @@
                 
                 [font-name-control
                  (case (system-type)
-                   [(windows macos)
+                   [(windows macos macosx)
                     (let ([choice
                            (make-object choice% (string-constant font-name)
                              (get-fixed-faces)
@@ -167,7 +167,7 @@
                                 (send font-name get-string-selection))))])
                       (send choice set-string-selection (preferences:get 'drscheme:font-name))
                       choice)]
-                   [else
+                   [(unix)
                     (make-object button%
                       (string-constant set-font)
                       options-panel
@@ -179,7 +179,8 @@
                           (when choice
                             (preferences:set 
                              'drscheme:font-name 
-                             (list-ref (get-fixed-faces) (car choice)))))))])]
+                             (list-ref (get-fixed-faces) (car choice)))))))]
+                   [else (error 'font-name-control "unknown system type: ~s~n" (system-type))])]
                 
                 [text (make-object text%)]
                 [ex-panel (make-object horizontal-panel% main)]

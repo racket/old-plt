@@ -2057,15 +2057,13 @@ Bool wxMediaBuffer::GetLoadOverwritesStyles()
 
 /****************************************************************/
 
-#if USE_OLD_TYPE_SYSTEM
-#define __CHECK_TYPE(b) b->__type != wxTYPE_MEDIA_EDIT && b->__type != wxTYPE_MEDIA_PASTEBOARD
-#else
-#define __CHECK_TYPE(b) TRUE
-#endif
+typedef struct { short type; } Scheme_Object;
+extern wxMediaBuffer *objscheme_unbundle_wxMediaBuffer(Scheme_Object *, const char*, int);
 
 #define edf(name, action, kname) \
-     static Bool ed_##name(wxMediaBuffer *b, wxKeyEvent kname, void *) \
-     { if (__CHECK_TYPE(b)) \
+     static Bool ed_##name(void *vb, wxKeyEvent kname, void *) \
+     { wxMediaBuffer *b = objscheme_unbundle_wxMediaBuffer((Scheme_Object *)vb, NULL, 0); \
+       if (!b) \
         return FALSE; \
        b->action; \
        return TRUE; } \
@@ -2088,8 +2086,7 @@ void wxMediaBuffer::AddBufferFunctions(wxKeymap *tab)
 
 void wxAddMediaBufferFunctions(wxKeymap *tab)
 {
-#define setf(name, func) \
-  tab->AddKeyFunction(name, (wxKeyFunction)ed_##func, NULL)
+#define setf(name, func) tab->AddKeyFunction(name, ed_##func, NULL)
 
   setf("copy-clipboard", copy);
   setf("copy-append-clipboard", copyappend);

@@ -69,22 +69,25 @@
 		(lambda () 
 		  (let ([old-objects (mxprims:document-objects doc)])
 		    (mxprims:element-insert-html elt (coclass->html object))
-		       (let* ([new-objects (mxprims:document-objects doc)])
-			 (car (remove* old-objects
-				       new-objects
-				       com-object-eq?)))))
+		       (let* ([new-objects (mxprims:document-objects doc)]
+			      [obj (car (remove* old-objects new-objects
+						 com-object-eq?))])
+			 (mxprims:com-register-object obj)
+			 obj)))
 		html-post))]
 	    [append-object 
 	     (lambda (object)
 	       (dynamic-wind
 		html-wait
 		(lambda ()
-		  (let ([old-objects (mxprims:document-objects doc)])
+		  (let* ([old-objects (mxprims:document-objects doc)])
 		    (mxprims:element-append-html elt (coclass->html object))
-		       (let* ([new-objects (mxprims:document-objects doc)])
-			 (car (remove* old-objects
-				       new-objects
-				       com-object-eq?)))))
+		       (let* ([new-objects (mxprims:document-objects doc)]
+			      [obj (car (remove* old-objects
+						 new-objects
+						 com-object-eq?))])
+			 (mxprims:com-register-object obj)
+			 obj)))
 		html-post))]
 	    [attribute
 	     (lambda (s)

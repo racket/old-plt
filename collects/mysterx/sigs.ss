@@ -41,6 +41,7 @@
    coclass->html
    cocreate-instance
    com-object-eq?
+   com-register-object
    make-document
    document?
    document-insert-html
@@ -260,10 +261,6 @@
    block-until-event
    process-win-events
    com-omit))
-
-
-
-
 
 
 

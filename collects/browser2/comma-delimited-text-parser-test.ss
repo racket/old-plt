@@ -1,4 +1,4 @@
-(load "cdata-parser.ss")
+(require-library "browser2.ss" "browser")
 
 (define system-faces (get-face-list))
 

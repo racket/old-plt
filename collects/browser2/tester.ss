@@ -1,6 +1,8 @@
 (require-library "macro.ss")
 (require-library "function.ss")
 
+(require-library "browser.ss" "browser2")
+
 (define files (list ;"render-html-test.ss"
                     "render-table-test.ss"))
 

@@ -1,4 +1,4 @@
-(load "render-html.ss")
+(require-library "browser.ss" "browser2")
 
 ; Each HTML file represents a set of TEST CASES.
 (define ListofFiles

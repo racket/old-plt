@@ -329,7 +329,10 @@ static MSet *sets[NUM_SETS]; /* First one is tagged, last one is atomic */
 /********************* Statistics *********************/
 static long page_allocations = 0;
 static long page_reservations = 0;
-#define PAGE_ALLOC_STATS(x) x
+#define LOGICALLY_ALLOCATING_PAGES(len) (page_allocations += len)
+#define ACTUALLY_ALLOCATING_PAGES(len) (page_reservations += len)
+#define LOGICALLY_FREEING_PAGES(len) (page_allocations -= len)
+#define ACTUALLY_FREEING_PAGES(len) (page_reservations -= len)
 
 static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
 #if USE_FREELIST

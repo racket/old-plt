@@ -4,9 +4,12 @@
       determine_max_heap_size()
    Requires:
       my_qsort (for alloc_cache.c)
+      LOGICALLY_ALLOCATING_PAGES(len)
+      ACTUALLY_ALLOCATING_PAGES(len)
+      LOGICALLY_FREEING_PAGES(len)
+      ACTUALLY_FREEING_PAGES(len)
    Optional:
       CHECK_USED_AGAINST_MAX(len)
-      PAGE_ALLOC_STATS(expr)
       GCPRINT
       GCOUTF
       DONT_NEED_MAX_HEAP_SIZE --- to disable a provide
@@ -21,9 +24,6 @@
 #ifndef GCPRINT
 # define GCPRINT fprintf
 # define GCOUTF stderr
-#endif
-#ifndef PAGE_ALLOC_STATS
-# define PAGE_ALLOC_STATS(x) /* empty */
 #endif
 #ifndef CHECK_USED_AGAINST_MAX
 # define CHECK_USED_AGAINST_MAX(x) /* empty */
@@ -101,8 +101,8 @@ static void *malloc_pages(size_t len, size_t alignment)
     r = real_r;
   }
 
-  PAGE_ALLOC_STATS(page_allocations += len);
-  PAGE_ALLOC_STATS(page_reservations += len);
+  ACTUALLY_ALLOCATING_PAGES(len);
+  LOGICALLY_ALLOCATING_PAGES(len);
 
   return r;
 }

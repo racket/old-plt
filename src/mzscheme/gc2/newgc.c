@@ -2661,8 +2661,6 @@ static void garbage_collect(int force_full)
 /* OS-Specific allocation routines                                           */
 /*****************************************************************************/
 
-# define CHECK_USED_AGAINST_MAX check_used_against_max
-
 inline static void check_used_against_max(size_t len) 
 {
   used_pages += (len / MPAGE_SIZE) + (((len % MPAGE_SIZE) == 0) ? 0 : 1);
@@ -2685,6 +2683,12 @@ inline static void free_used_pages(size_t len)
 {
   used_pages -= (len / MPAGE_SIZE) + (((len % MPAGE_SIZE) == 0) ? 0 : 1);
 }
+
+#define CHECK_USED_AGAINST_MAX(len) check_used_against_max(len)
+#define LOGICALLY_ALLOCATING_PAGES(len) /* empty */
+#define ACTUALLY_ALLOCATING_PAGES(len) /* empty */
+#define LOGICALLY_FREEING_PAGES(len) free_used_pages(len)
+#define ACTUALLY_FREEING_PAGES(len) /* empty */
 
 /* Windows */
 
@@ -2716,5 +2720,5 @@ inline static void free_used_pages(size_t len)
 /* Default: mmap */
 
 #ifndef MALLOCATOR_DEFINED
-# include "vm_mmap.c"
+# include "old_mmap.c"
 #endif

@@ -7,7 +7,10 @@
       system_free_pages --- called with len already rounded up to page size
       page_size --- in bytes
       my_qsort --- possibyl from my_qsort.c
-      PAGE_ALLOC_STATS(expr)
+      LOGICALLY_ALLOCATING_PAGES(len)
+      ACTUALLY_ALLOCATING_PAGES(len)
+      LOGICALLY_FREEING_PAGES(len)
+      ACTUALLY_FREEING_PAGES(len)
 */
 
 typedef struct {
@@ -58,7 +61,7 @@ inline static void *find_cached_pages(size_t len, size_t alignment)
 	blockfree[i].start = NULL;
 	blockfree[i].len = 0;
 	memset(r, 0, len);
-	PAGE_ALLOC_STATS(page_allocations += len);
+	LOGICALLY_ALLOCATING_PAGES(len);
 	return r;
       }
     }
@@ -73,7 +76,7 @@ inline static void *find_cached_pages(size_t len, size_t alignment)
 	blockfree[i].start += len;
 	blockfree[i].len -= len;
 	memset(r, 0, len);
-	PAGE_ALLOC_STATS(page_allocations += len);
+	LOGICALLY_ALLOCATING_PAGES(len);
 	return r;
       }
 
@@ -82,7 +85,7 @@ inline static void *find_cached_pages(size_t len, size_t alignment)
       if (!((unsigned long)r & (alignment - 1))) {
 	blockfree[i].len -= len;
 	memset(r, 0, len);
-	PAGE_ALLOC_STATS(page_allocations += len);
+	LOGICALLY_ALLOCATING_PAGES(len);
 	return r;
       }
 
@@ -103,7 +106,7 @@ static void free_pages(void *p, size_t len)
   if (len & (page_size - 1))
     len += page_size - (len & (page_size - 1));
 
-  PAGE_ALLOC_STATS(page_allocations -= len);
+  LOGICALLY_FREEING_PAGES(len);
 
   /* Try to free pages in larger blocks, since the OS may be slow. */
 
@@ -133,7 +136,7 @@ static void free_pages(void *p, size_t len)
 
   system_free_pages(p, len);
 
-  PAGE_ALLOC_STATS(page_reservations -= len);
+  ACTUALLY_FREEING_PAGES(len);
 }
 
 static void flush_freed_pages(void)
@@ -146,7 +149,7 @@ static void flush_freed_pages(void)
     if (blockfree[i].start) {
       if (blockfree[i].age == BLOCKFREE_UNMAP_AGE) {
 	system_free_pages(blockfree[i].start, blockfree[i].len);
-	PAGE_ALLOC_STATS(page_reservations -= blockfree[i].len);
+	ACTUALLY_FREEING_PAGES(blockfree[i].len);
 	blockfree[i].start = NULL;
 	blockfree[i].len = 0;
       } else

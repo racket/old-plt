@@ -3,9 +3,12 @@
       allocator
       determine_max_heap_size()
    Requires:
+      LOGICALLY_ALLOCATING_PAGES(len)
+      ACTUALLY_ALLOCATING_PAGES(len)
+      LOGICALLY_FREEING_PAGES(len)
+      ACTUALLY_FREEING_PAGES(len)
    Optional:
       CHECK_USED_AGAINST_MAX(len)
-      PAGE_ALLOC_STATS(expr)
       GCPRINT
       GCOUTF
       DONT_NEED_MAX_HEAP_SIZE --- to disable a provide
@@ -17,20 +20,18 @@
 # define GCPRINT fprintf
 # define GCOUTF stderr
 #endif
-#ifndef PAGE_ALLOC_STATS
-# define PAGE_ALLOC_STATS(x) /* empty */
-#endif
 
 inline static void *malloc_pages(size_t len, size_t alignment)
 {
   void *p;
 
-  check_used_against_max(len);
+  CHECK_USED_AGAINST_MAX(len);
+
   p = smemalign(alignment, len);
   memset(p, 0, len);
 
-  PAGE_ALLOC_STATS(page_allocations += len);
-  PAGE_ALLOC_STATS(page_reservations += len);
+  ACTUALLY_ALLOCATING_PAGES(len);
+  LOGICALLY_ALLOCATING_PAGES(len);
 
   return p;
 }
@@ -40,8 +41,8 @@ static void free_pages(void *p, size_t len)
   free_used_pages(len);
   sfree(p, len);
 
-  PAGE_ALLOC_STATS(page_allocations -= len);
-  PAGE_ALLOC_STATS(page_reservations -= len);
+  LOGICALLY_FREEING_PAGES(len);
+  ACTUALLY_FREEING_PAGES(len);
 }
 
 static void flush_freed_pages(void)

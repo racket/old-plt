@@ -192,7 +192,7 @@
     (lexer
      ["#|" (values 1 end-pos)]
      ["|#" (values -1 end-pos)]
-     [(:or "#" "|" (complement (:: any-string (char-set "|#") any-string)))
+     [(:or "#" "|" (:* (:~ "|" "#")))
       (get-next-comment input-port)]
      [(eof) (values 'eof end-pos)]
      [(special)

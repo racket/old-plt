@@ -28,7 +28,7 @@ static Scheme_Hash_Table *style_table, *width_table, *old_width_table;
 static Scheme_Object *table_key;
 
 typedef struct {
-  double scale_x, scale_y;
+  double scale_x, scale_y, angle;
   int code;
   short txFont, txSize, txFace;
   char use_cgctx, smoothing;
@@ -608,6 +608,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     wxKey *k = (wxKey *)SCHEME_BYTE_STR_VAL(table_key);
     k->scale_x = scale_x;
     k->scale_y = scale_y;
+    k->angle = angle;
     k->txFont = txFont;
     k->txSize = txSize;
     k->txFace = txFace;
@@ -688,6 +689,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 
     old = pre_scheme();
 
+    ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->angle = 0.0;
     ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->code = 0;
     val = scheme_hash_get(style_table, table_key);
     if (val) {
@@ -703,6 +705,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       new_key = scheme_make_sized_byte_string(SCHEME_BYTE_STR_VAL(table_key), sizeof(wxKey), 1);
       scheme_hash_set(style_table, new_key, val);
     }
+    ((wxKey *)SCHEME_BYTE_STR_VAL(table_key))->angle = angle;
 
     post_scheme(old);
   } else {
@@ -918,8 +921,16 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
     if (need_size) {
       ATSTrapezoid bounds;
       ItemCount actual;
+      ATSUTextLayout meas_layout;
 
-      ATSUGetGlyphBounds(layout,
+      if (angle != 0.0) {
+	ATSUAttributeTag tag = kATSULineRotationTag;
+	ATSUCreateAndCopyTextLayout(layout, &meas_layout);
+	ATSUClearLayoutControls(meas_layout, 1, &tag);
+      } else
+	meas_layout = layout;
+
+      ATSUGetGlyphBounds(meas_layout,
 			 0, 0,
 			 kATSUFromTextBeginning,
 			 kATSUToTextEnd,
@@ -927,6 +938,9 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
 			 1,
 			 &bounds,
 			 &actual);
+
+      if (angle != 0.0)
+	ATSUDisposeTextLayout(meas_layout);
     
       one_res = (Fix2X(bounds.upperRight.x) - Fix2X(bounds.upperLeft.x));
       if (one_res < 0)
@@ -1040,7 +1054,7 @@ static double DrawMeasUnicodeText(const char *text, int d, int theStrlen, int uc
       start_x += one_res;
     } else {
       start_x += one_res * cos(angle);
-      start_y += one_res * sin(angle);
+      start_y -= one_res * sin(angle);
     }
 
     if (qd_spacing) {

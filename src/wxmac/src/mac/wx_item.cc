@@ -104,9 +104,17 @@ void wxItem::ChangeToGray(Bool gray)
   if (cMacControl) {
     SetCurrentDC();
     if (gray) {
+#ifdef OS_X
       DisableControl(cMacControl);
+#else
+      HiliteControl(cMacControl, 255);
+#endif
     } else {
+#ifdef OS_X
       EnableControl(cMacControl);
+#else
+      HiliteControl(cMacControl, 0);
+#endif
     }
   }
   

@@ -381,8 +381,11 @@ Scheme_Object *scheme_make_stx(Scheme_Object *val,
 Scheme_Object *scheme_make_graph_stx(Scheme_Object *stx,
 				     long line, long col);
 
-Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx);
+Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx_src, 
+				      Scheme_Object *stx_wraps);
 Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks);
+
+#define scheme_sys_wraps scheme_false
 
 Scheme_Object *scheme_new_mark();
 Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m);
@@ -1192,10 +1195,11 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 					    int depth,
 					    Scheme_Object **current_val);
 
-Scheme_Object *scheme_compile_expand_macro_app(Scheme_Object *macro,
+Scheme_Object *scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
 					       Scheme_Object *form, Scheme_Comp_Env *env,
 					       Scheme_Compile_Info *rec, int drec, int depth);
-Scheme_Object *scheme_apply_macro(Scheme_Object *f, Scheme_Object *code,
+Scheme_Object *scheme_apply_macro(Scheme_Object *name,
+				  Scheme_Object *f, Scheme_Object *code,
 				  Scheme_Comp_Env *env);
 
 Scheme_Comp_Env *scheme_new_compilation_frame(int num_bindings, int flags, Scheme_Comp_Env *env);

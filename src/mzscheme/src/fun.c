@@ -652,7 +652,7 @@ scheme_make_closure_compilation(Scheme_Comp_Env *env, Scheme_Object *code,
   if (SCHEME_STX_NULLP(forms))
     scheme_wrong_syntax("lambda", NULL, code, "bad syntax (empty body)");
 
-  forms = scheme_datum_to_syntax(forms, code);
+  forms = scheme_datum_to_syntax(forms, code, scheme_sys_wraps);
   forms = scheme_add_env_renames(forms, frame, env);
 
   data->name = rec[drec].value_name;
@@ -706,6 +706,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   mz_jmp_buf save, oversave;
   Scheme_Stack_State envss;
   Scheme_Comp_Env *save_current_local_env;
+  Scheme_Object *save_mark;
   Scheme_Process * volatile p = scheme_current_process;
   int set_overflow;
 #ifdef MZ_PRECISE_GC
@@ -747,6 +748,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   scheme_save_env_stack_w_process(envss, p);
 
   save_current_local_env = p->current_local_env;
+  save_mark = p->current_local_mark;
 
   /* We set up an overflow handler at the lowest point possible
      in the stack for each thread. When we create a thread,
@@ -854,6 +856,7 @@ void *scheme_top_level_do(void *(*k)(void), int eb)
   v = k();
 
   p->current_local_env = save_current_local_env;
+  p->current_local_mark = save_mark;
 
   memcpy(&p->error_buf, &save, sizeof(mz_jmp_buf));
 
@@ -1058,10 +1061,11 @@ _scheme_tail_apply_to_list (Scheme_Object *rator, Scheme_Object *rands)
 }
 
 Scheme_Object *
-scheme_apply_macro(Scheme_Object *rator, Scheme_Object *code,
+scheme_apply_macro(Scheme_Object *name, 
+		   Scheme_Object *rator, Scheme_Object *code,
 		   Scheme_Comp_Env *env)
 {
-  Scheme_Object *mark;
+  Scheme_Object *mark, *save_mark;
   Scheme_Comp_Env *save_env;
   Scheme_Process *p = scheme_current_process;
 
@@ -1069,17 +1073,26 @@ scheme_apply_macro(Scheme_Object *rator, Scheme_Object *code,
   code = scheme_add_remove_mark(code, mark);
 
   save_env = p->current_local_env;
+  save_mark = p->current_local_mark;
+
   p->current_local_env = env;
+  p->current_local_mark = mark;
+
   code = X_scheme_apply_to_list(rator, scheme_make_pair(code, scheme_null), 
 				1, 1, code);
+
   p->current_local_env = save_env;
+  p->current_local_mark = save_mark;
 
   if (!SCHEME_STXP(code)) {
     scheme_raise_exn(MZEXN_MISC,
-		     "macro: return value from expander was not syntax");
+		     "macro: return value was not syntax from expander: %S",
+		     SCHEME_STX_SYM(name));
   }
 
-  return scheme_add_remove_mark(code, mark);
+  code = scheme_add_remove_mark(code, mark);
+
+  return code;
 }
 
 /* locals */

@@ -1603,7 +1603,7 @@ global_defined_value(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 local_exp_time_value(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
+  Scheme_Object *v, *sym;
   Scheme_Comp_Env *env;
 
   env = scheme_current_process->current_local_env;
@@ -1611,11 +1611,16 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
     scheme_raise_exn(MZEXN_MISC, 
 		     "expansion-time-value: illegal at run-time");
 
-  if (!SCHEME_SYMBOLP(argv[0])
-      && !SCHEME_STX_SYMBOLP(argv[0]))
+  sym = argv[0];
+
+  if (!SCHEME_SYMBOLP(sym)
+      && !SCHEME_STX_SYMBOLP(sym))
     scheme_wrong_type("expansion-time-value", "syntax identifier", 0, argc, argv);
 
-  v = scheme_static_distance(argv[0], env,
+  if (SCHEME_STXP(sym))
+    sym = scheme_add_remove_mark(sym, scheme_current_process->current_local_mark);
+
+  v = scheme_static_distance(sym, env,
 			     (SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_ELIM_CONST));
 
@@ -1635,7 +1640,7 @@ local_exp_time_value(int argc, Scheme_Object *argv[])
 static Scheme_Object *
 local_exp_time_bound_p(int argc, Scheme_Object *argv[])
 {
-  Scheme_Object *v;
+  Scheme_Object *v, *sym;
   Scheme_Comp_Env *env;
 
   env = scheme_current_process->current_local_env;
@@ -1643,11 +1648,16 @@ local_exp_time_bound_p(int argc, Scheme_Object *argv[])
     scheme_raise_exn(MZEXN_MISC,
 		     "local-expansion-time-bound?: illegal at run-time");
 
-  if (!SCHEME_SYMBOLP(argv[0])
-      && !SCHEME_STX_SYMBOLP(argv[0]))
+  sym = argv[0];
+
+  if (!SCHEME_SYMBOLP(sym)
+      && !SCHEME_STX_SYMBOLP(sym))
     scheme_wrong_type("expansion-time-bound?", "syntax identifier", 0, argc, argv);
 
-  v = scheme_static_distance(argv[0], env,
+  if (SCHEME_STXP(sym))
+    sym = scheme_add_remove_mark(sym, scheme_current_process->current_local_mark);
+
+  v = scheme_static_distance(sym, env,
 			     (SCHEME_APP_POS + SCHEME_ENV_CONSTANTS_OK
 			      + SCHEME_ELIM_CONST));
 

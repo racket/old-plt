@@ -85,8 +85,9 @@
 			 (#%list
 			  '#%apply tmp
 			  '(#%cdr (#%syntax->datum mexpr)))
-			 'mexpr))))
-       expr))))
+			 'mexpr
+			 '(quote-syntax here)))))
+       expr #f))))
 
 > kstop define-macro <
 
@@ -104,7 +105,7 @@
             (#%if (stx-null? x) x (#%list (#%quote #%quote) x))
             x))))
       (datum->syntax
-      (normal
+       (normal
         (#%letrec-values
           (((qq)
             (#%lambda (x level)
@@ -228,7 +229,8 @@
                       x)))))))
           (qq form 0))
         form)
-      in-form))))
+      in-form
+      (quote-syntax here)))))
 
 > qstop quasiquote <
 
@@ -248,7 +250,8 @@
 			(cons (quote-syntax #%and)
 			      (stx-cdr e))
 			(quote-syntax #f))
-		  x)
+		  x
+		  (quote-syntax here))
 		 (syntax-error 
 		  'and
 		  "bad syntax"
@@ -277,7 +280,8 @@
 				tmp
 				(cons (quote-syntax #%or)
 				      (stx-cdr e))))
-		    x))
+		    x
+		    (quote-syntax here)))
 		 (syntax-error 
 		  'or
 		  "bad syntax"
@@ -337,7 +341,8 @@
 				     '#%if test
 				     (#%cons '#%begin value)
 				     (loop rest))))))))))))
-      in-form)))
+      in-form
+      (quote-syntax here))))
 
 > cstop cond <
 
@@ -471,7 +476,7 @@
 			 (stx-null? (stx-cdr (stx-cdr body))))
 		  (datum->syntax
 		   `(#%define-values (,first) ,@(stx-cdr body))
-		   code)
+		   code (quote-syntax here))
 		  (#%raise-syntax-error
 		   'define
 		   "bad syntax (zero or multiple expressions after identifier)"
@@ -493,7 +498,7 @@
 	    (datum->syntax
 	     `(#%define-values (,(stx-car first)) 
 			       (#%lambda ,(stx-cdr first) ,@(stx-cdr body)))
-	     code)]
+	     code (quote-syntax here))]
 	   [else
 	    (#%raise-syntax-error
 	     'define
@@ -561,7 +566,7 @@
 		[exprs (stx-cdr (stx-cdr code))])
 	    (datum->syntax
 	     `(#%call/ec (#%lambda (,var) ,@exprs))
-	     code))
+	     code (quote-syntax here)))
 	  (raise-syntax-error
 	   'let/ec
 	   "bad syntax"
@@ -577,9 +582,10 @@
          (list* (quote-syntax #%if)
 		(stx-car (stx-cdr x))
 		(stx-cdr (stx-cdr x)))
-	 x)
+	 x
+	 (quote-syntax here))
         (syntax-error
-         'unless
+         'when
          "bad syntax"
          x))))
 
@@ -593,8 +599,9 @@
          (list* (quote-syntax #%if)
 		(stx-car (stx-cdr x))
 		(quote-syntax (#%void))
-               (stx-cdr (stx-cdr x)))
-	 x)
+		(stx-cdr (stx-cdr x)))
+	 x
+	 (quote-syntax here))
         (syntax-error
          'unless
          "bad syntax"

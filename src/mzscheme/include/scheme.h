@@ -605,6 +605,7 @@ typedef struct Scheme_Process {
   mz_jmp_buf overflow_buf;
 
   struct Scheme_Comp_Env *current_local_env;
+  Scheme_Object *current_local_mark;
 
   /* These are used to lock in values during `read': */
   char quick_can_read_compiled;

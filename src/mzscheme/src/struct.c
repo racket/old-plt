@@ -879,7 +879,7 @@ do_struct_syntax (Scheme_Object *forms, Scheme_Comp_Env *env,
     return scheme_datum_to_syntax(cons(struct_symbol,
 				       cons(base,
 					    cons(field_symbols, scheme_null))),
-				  forms);
+				  forms, scheme_sys_wraps);
   }
 }
 

@@ -76,7 +76,7 @@ void scheme_init_stx(Scheme_Env *env)
   scheme_add_global_constant("datum->syntax", 
 			     scheme_make_folding_prim(datum_to_syntax,
 						      "datum->syntax",
-						      2, 2, 1),
+						      3, 3, 1),
 			     env);
 
   scheme_add_global_constant("syntax->datum/wraps", 
@@ -155,8 +155,10 @@ Scheme_Object *scheme_new_mark()
 
 Scheme_Object *add_remove_mark(Scheme_Object *wraps, Scheme_Object *m)
 {
+#if CHECK_STX
   if (!SCHEME_NUMBERP(m))
     scheme_signal_error("internal error: mark is not a number");
+#endif
 
   if (SCHEME_PAIRP(wraps) &&
       SAME_OBJ(m, SCHEME_CAR(wraps)))
@@ -169,6 +171,11 @@ Scheme_Object *scheme_add_remove_mark(Scheme_Object *o, Scheme_Object *m)
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *wraps;
+
+#if CHECK_STX
+  if (!SCHEME_STXP(o))
+    scheme_signal_error("internal error: not syntax");
+#endif
 
   if (HAS_SUBSTX(stx->val)) {
     Scheme_Object *here_wraps, *lazy_wraps;
@@ -194,6 +201,15 @@ Scheme_Object *scheme_add_rename(Scheme_Object *o, Scheme_Object *name, Scheme_O
 {
   Scheme_Stx *stx = (Scheme_Stx *)o;
   Scheme_Object *wraps;
+
+#if CHECK_STX
+  if (!SCHEME_STXP(o))
+    scheme_signal_error("internal error: not syntax");
+  if (!SCHEME_STXP(name))
+    scheme_signal_error("internal error: name not syntax");
+  if (!SCHEME_SYMBOLP(newname))
+    scheme_signal_error("internal error: new name not symbol");
+#endif
 
   if (HAS_SUBSTX(stx->val)) {
     Scheme_Object *here_wraps, *lazy_wraps;
@@ -257,11 +273,17 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
     }
 
     if (SCHEME_PAIRP(v)) {
-      Scheme_Object *last = NULL;
+      Scheme_Object *last = NULL, *first = NULL;
+
       while (SCHEME_PAIRP(v)) {
+	Scheme_Object *p;
 	result = propagate_wraps(SCHEME_CAR(v), ml);
-	SCHEME_CAR(v) = result;
-	last = v;
+	p = scheme_make_pair(result, scheme_null);
+	if (last)
+	  SCHEME_CDR(last) = p;
+	else
+	  first = p;
+	last = p;
 	v = SCHEME_CDR(v);
       }
       if (!SCHEME_NULLP(v)) {
@@ -269,20 +291,27 @@ Scheme_Object *scheme_stx_content(Scheme_Object *o)
 	if (last)
 	  SCHEME_CDR(last) = result;
 	else
-	  stx->val = result;
+	  first = result;
       }
+      v = first;
     } else if (SCHEME_BOXP(v)) {
       result = propagate_wraps(SCHEME_BOX_VAL(v), ml);
-      SCHEME_BOX_VAL(v) = result;
+      v = scheme_box(result);
     } else if (SCHEME_VECTORP(v)) {
+      Scheme_Object *v2;
       int size = SCHEME_VEC_SIZE(v), i;
+
+      v2 = scheme_make_vector(size, NULL);
 
       for (i = 0; i < size; i++) {
 	result = propagate_wraps(SCHEME_VEC_ELS(v)[i], ml);
-	SCHEME_VEC_ELS(v)[i] = result;
+	SCHEME_VEC_ELS(v2)[i] = result;
       }
+
+      v = v2;
     }
 
+    stx->val = v;
     stx->wraps = scheme_make_pair(here_wraps, scheme_null);
   }
 
@@ -618,26 +647,30 @@ Scheme_Object *scheme_syntax_to_datum(Scheme_Object *stx, int with_marks)
 
 #ifdef DO_STACK_CHECK
 static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o, 
-					    Scheme_Stx *stx,
+					    Scheme_Stx *stx_src,
+					    Scheme_Stx *stx_wraps,
 					    Scheme_Hash_Table *ht);
 
 static Scheme_Object *datum_to_syntax_k(void)
 {
   Scheme_Process *p = scheme_current_process;
   Scheme_Object *o = (Scheme_Object *)p->ku.k.p1;
-  Scheme_Stx *stx = (Scheme_Stx *)p->ku.k.p2;
-  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p3;
+  Scheme_Stx *stx_src = (Scheme_Stx *)p->ku.k.p2;
+  Scheme_Stx *stx_wraps = (Scheme_Stx *)p->ku.k.p3;
+  Scheme_Hash_Table *ht = (Scheme_Hash_Table *)p->ku.k.p4;
 
   p->ku.k.p1 = NULL;
   p->ku.k.p2 = NULL;
   p->ku.k.p3 = NULL;
+  p->ku.k.p4 = NULL;
 
-  return datum_to_syntax_inner(o, stx, ht);
+  return datum_to_syntax_inner(o, stx_src, stx_wraps, ht);
 }
 #endif
 
 static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o, 
-					    Scheme_Stx *stx,
+					    Scheme_Stx *stx_src,
+					    Scheme_Stx *stx_wraps,
 					    Scheme_Hash_Table *ht)
 {
   Scheme_Object *result, *ph = NULL;
@@ -653,8 +686,9 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
       Scheme_Process *p = scheme_current_process;
 # endif
       p->ku.k.p1 = (void *)o;
-      p->ku.k.p2 = (void *)stx;
-      p->ku.k.p3 = (void *)ht;
+      p->ku.k.p2 = (void *)stx_src;
+      p->ku.k.p3 = (void *)stx_wraps;
+      p->ku.k.p4 = (void *)ht;
       return scheme_handle_stack_overflow(datum_to_syntax_k);
     }
   }
@@ -692,7 +726,7 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
 	}
       }
 
-      a = datum_to_syntax_inner(SCHEME_CAR(o), stx, ht);
+      a = datum_to_syntax_inner(SCHEME_CAR(o), stx_src, stx_wraps, ht);
       
       p = scheme_make_pair(a, scheme_null);
       
@@ -704,13 +738,13 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
       o = SCHEME_CDR(o);
     }
     if (!SCHEME_NULLP(o)) {
-      o = datum_to_syntax_inner(o, stx, ht);
+      o = datum_to_syntax_inner(o, stx_src, stx_wraps, ht);
       SCHEME_CDR(last) = o;
     }
 
     result = first;
   } else if (SCHEME_BOXP(o)) {
-    o = datum_to_syntax_inner(SCHEME_PTR_VAL(o), stx, ht);
+    o = datum_to_syntax_inner(SCHEME_PTR_VAL(o), stx_src, stx_wraps, ht);
     result = scheme_box(o);
   } else if (SCHEME_VECTORP(o)) {
     int size = SCHEME_VEC_SIZE(o), i;
@@ -719,22 +753,46 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     result = scheme_make_vector(size, NULL);
     
     for (i = 0; i < size; i++) {
-      a = datum_to_syntax_inner(SCHEME_VEC_ELS(o)[i], stx, ht);
+      a = datum_to_syntax_inner(SCHEME_VEC_ELS(o)[i], stx_src, stx_wraps, ht);
       SCHEME_VEC_ELS(result)[i] = a;
     }
   } else {
     result = o;
   }
 
-  if (SCHEME_FALSEP((Scheme_Object *)stx))
+  if (SCHEME_FALSEP((Scheme_Object *)stx_src))
     result = scheme_make_stx(result, -1, -1, scheme_false);
   else
-    result = scheme_make_stx(result, stx->line, stx->col, stx->src);
-  
-  if (HAS_SUBSTX(SCHEME_STX_VAL(result)))
-    ((Scheme_Stx *)result)->wraps = scheme_false;
-  else
-    ((Scheme_Stx *)result)->wraps = scheme_null;
+    result = scheme_make_stx(result, stx_src->line, stx_src->col, stx_src->src);
+
+  if (SCHEME_FALSEP((Scheme_Object *)stx_wraps)) {
+    if (HAS_SUBSTX(SCHEME_STX_VAL(result)))
+      ((Scheme_Stx *)result)->wraps = scheme_false;
+    else
+      ((Scheme_Stx *)result)->wraps = scheme_null;
+  } else {
+    /* Copy wraps: */
+    Scheme_Object *stxwraps;
+
+    if (HAS_SUBSTX(stx_wraps->val))
+      stxwraps = SCHEME_FALSEP(stx_wraps->wraps) ? scheme_null : SCHEME_CAR(stx_wraps->wraps);
+    else
+      stxwraps = stx_wraps->wraps;
+    
+    if (HAS_SUBSTX(SCHEME_STX_VAL(result))) {
+      /* No propagation will be needed: */
+      Scheme_Object *wraps;
+      
+      if (SCHEME_NULLP(stxwraps))
+	wraps = scheme_false;
+      else
+	wraps = scheme_make_pair(stxwraps, scheme_null);
+      
+      ((Scheme_Stx *)result)->wraps = wraps;
+    } else {
+      ((Scheme_Stx *)result)->wraps = stxwraps;
+    }
+  }
   
   if (ph) {
     ((Scheme_Stx *)result)->hash_code |= STX_GRAPH_FLAG;
@@ -744,17 +802,22 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
   return result;
 }
 
-Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx)
+Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, 
+				      Scheme_Object *stx_src,
+				      Scheme_Object *stx_wraps)
 {
   Scheme_Hash_Table *ht;
   Scheme_Object *v;
 
-  if (!SCHEME_FALSEP(stx) && !SCHEME_STXP(stx))
+  if (!SCHEME_FALSEP(stx_src) && !SCHEME_STXP(stx_src))
     return o;
 
   ht = scheme_setup_datum_graph(o, 0);
 
-  v = datum_to_syntax_inner(o, (Scheme_Stx *)stx, ht);
+  v = datum_to_syntax_inner(o, 
+			    (Scheme_Stx *)stx_src, 
+			    (Scheme_Stx *)stx_wraps,
+			    ht);
 
   if (ht)
     v = scheme_resolve_placeholders(v, 1);
@@ -802,8 +865,10 @@ static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
   if (!SCHEME_FALSEP(argv[1]) && !SCHEME_STXP(argv[1]))
     scheme_wrong_type("datum->syntax", "syntax or #f", 1, argc, argv);
+  if (!SCHEME_FALSEP(argv[2]) && !SCHEME_STXP(argv[2]))
+    scheme_wrong_type("datum->syntax", "syntax or #f", 2, argc, argv);
     
-  return scheme_datum_to_syntax(argv[0], argv[1]);
+  return scheme_datum_to_syntax(argv[0], argv[1], argv[2]);
 }
 
 

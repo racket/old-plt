@@ -1135,7 +1135,7 @@ static void *compile_k(void)
   rec.value_name = NULL;
 
   if (!SCHEME_STXP(form))
-    form = scheme_datum_to_syntax(form, scheme_false);
+    form = scheme_datum_to_syntax(form, scheme_false, scheme_sys_wraps);
 
   o = scheme_link_expr(scheme_compile_expr(form, (Scheme_Comp_Env *)env, &rec, 0),
 		       scheme_link_info_create());
@@ -1250,7 +1250,7 @@ Scheme_Object *scheme_check_immediate_macro(Scheme_Object *first,
 }
 
 Scheme_Object *
-scheme_compile_expand_macro_app(Scheme_Object *macro,
+scheme_compile_expand_macro_app(Scheme_Object *name, Scheme_Object *macro,
 				Scheme_Object *form, Scheme_Comp_Env *env,
 				Scheme_Compile_Info *rec, int drec, int depth)
 {
@@ -1275,7 +1275,7 @@ scheme_compile_expand_macro_app(Scheme_Object *macro,
     return NULL;
   }
 
-  form = scheme_apply_macro(xformer, form, env);
+  form = scheme_apply_macro(name, xformer, form, env);
 
   if (rec)
     return scheme_compile_expr(form, env, rec, drec);
@@ -1408,7 +1408,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 			    "illegal use of a syntactic form name");
       else if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	       || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type))
-	return scheme_compile_expand_macro_app(var, form, env, rec, drec, depth);
+	return scheme_compile_expand_macro_app(form, var, form, env, rec, drec, depth);
 
 
       /* Check for global use within unit: */
@@ -1447,7 +1447,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
     } else {
       if (SAME_TYPE(SCHEME_TYPE(var), scheme_macro_type)
 	  || SAME_TYPE(SCHEME_TYPE(var), scheme_id_macro_type)) {
-	return scheme_compile_expand_macro_app(var, form, env, rec, drec, depth);
+	return scheme_compile_expand_macro_app(name, var, form, env, rec, drec, depth);
       } else if (SAME_TYPE(SCHEME_TYPE(var), scheme_syntax_compiler_type)) {
 	if (rec) {
 	  Scheme_Syntax *f;
@@ -1523,7 +1523,8 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
 		return scheme_compile_expand_expr(scheme_datum_to_syntax(cons(let_symbol,
 									      cons(bindings,
 										   body)),
-									 form),
+									 form, 
+									 scheme_sys_wraps),
 						  env, rec, drec, depth, 0);
 	      } else {
 #if 0
@@ -1538,7 +1539,7 @@ scheme_compile_expand_expr(Scheme_Object *form, Scheme_Comp_Env *env,
       }
 
       if (NOT_SAME_OBJ(name, origname))
-	form = scheme_datum_to_syntax(scheme_make_pair(name, rest), form);
+	form = scheme_datum_to_syntax(scheme_make_pair(name, rest), form, scheme_sys_wraps);
     }
     
     return compile_application(form, env, rec, drec);
@@ -1608,7 +1609,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			    "bad syntax (empty form)");
       }
 
-      forms = scheme_datum_to_syntax(forms, orig_forms);
+      forms = scheme_datum_to_syntax(forms, orig_forms, scheme_sys_wraps);
 
       goto try_again;
     } else if (SAME_OBJ(gval, scheme_define_values_syntax)) {
@@ -1650,7 +1651,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 	if (!SCHEME_STX_NULLP(result)) {
 	  first = SCHEME_STX_CAR(result);
 	  if (SCHEME_STX_PAIRP(first)) {
-	    first = scheme_datum_to_syntax(first, forms);
+	    first = scheme_datum_to_syntax(first, forms, scheme_sys_wraps);
 	    first = scheme_check_immediate_macro(first, env, rec, drec, depth, &gval);
 	    name = SCHEME_STX_CAR(first);
 	    if (NOT_SAME_OBJ(gval, scheme_define_values_syntax)) {
@@ -1675,7 +1676,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 
       if (SCHEME_STX_PAIRP(result)) {
 	result = scheme_make_pair(letrec_values_symbol, scheme_make_pair(start, result));
-	result = scheme_datum_to_syntax(result, forms);
+	result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps);
 
 	name = NULL;
       } else {
@@ -1714,7 +1715,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
 			cons(body,
 			     rest)));
 
-      result = scheme_datum_to_syntax(result, forms);
+      result = scheme_datum_to_syntax(result, forms, scheme_sys_wraps);
       
       name = NULL;
     }
@@ -1745,7 +1746,7 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
     else
       recs[1].value_name = vname;
 
-    rest = scheme_datum_to_syntax(rest, forms);
+    rest = scheme_datum_to_syntax(rest, forms, scheme_sys_wraps);
 
     first = scheme_compile_expr(first, env, recs, 0);
 #if EMBEDDED_DEFINES_START_ANYWHERE
@@ -1758,10 +1759,13 @@ scheme_compile_expand_block(Scheme_Object *forms, Scheme_Comp_Env *env,
   } else {
     first = scheme_expand_expr(first, env, depth);
 #if EMBEDDED_DEFINES_START_ANYWHERE
-    forms = scheme_compile_expand_block(scheme_datum_to_syntax(SCHEME_STX_CDR(forms), forms), 
+    forms = scheme_compile_expand_block(scheme_datum_to_syntax(SCHEME_STX_CDR(forms), 
+							       forms, scheme_sys_wraps), 
 					env, rec, drec, depth);
 #else
-    forms = scheme_expand_list(scheme_datum_to_syntax(SCHEME_STX_CDR(forms), forms), env, depth);
+    forms = scheme_expand_list(scheme_datum_to_syntax(SCHEME_STX_CDR(forms), forms, 
+						      scheme_sys_wraps), 
+			       env, depth);
 #endif
   }
 
@@ -1808,7 +1812,7 @@ scheme_expand_list(Scheme_Object *form, Scheme_Comp_Env *env, int depth)
     scheme_wrong_syntax("expand", NULL, form, 
 			"bad syntax (" IMPROPER_LIST_FORM ")");
 
-  return scheme_datum_to_syntax(first, form);
+  return scheme_datum_to_syntax(first, form, scheme_sys_wraps);
 }
 
 /*========================================================================*/
@@ -3044,7 +3048,7 @@ static void *expand_k(void)
   p->ku.k.p2 = NULL;
 
   if (!SCHEME_STXP(obj))
-    obj = scheme_datum_to_syntax(obj, scheme_false);
+    obj = scheme_datum_to_syntax(obj, scheme_false, scheme_false);
 
   return scheme_expand_expr(obj, env, p->ku.k.i1);
 }

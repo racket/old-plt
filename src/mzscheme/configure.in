@@ -331,12 +331,18 @@ case $OS in
 
     gcc_vers_three=`gcc -v 2>&1 | grep "version 3[.]"`
     if test "$gcc_vers_three" = "" ; then
-      MROPTIONS="$MROPTIONS -cpp-precomp"
+      # gcc 2.95.2
+      if test "${enable_quartz}" = "yes" ; then
+        MROPTIONS="$MROPTIONS -cpp-precomp"
+      else
     else
+      # gcc 3.x
       MROPTIONS="$MROPTIONS -fno-rtti"
       if test "${enable_quartz}" = "yes" ; then
         WXPRECOMP='$(WXPRECOMPDIR)/precomp.o'
         USE_WXPRECOMP='--load-pch $(WXPRECOMPDIR)'
+      else
+        MROPTIONS="$MROPTIONS -no-cpp-precomp"
       fi
     fi
 

@@ -949,7 +949,9 @@
 		 [(zodiac:module-form? ast)
 		  (let ([vm (make-vm:module-create
 			     (zodiac:zodiac-stx ast)
-			     ast)])
+			     ;; constant reprsenting the module form:
+			     (car (convert (zodiac:module-form-body ast) #f list #f #f #t))
+			     (varref:module-invoke-id (module-info-invoke (get-annotation ast))))])
 		    (if tail-pos
 			(leaf (tail-pos vm))
 			(leaf vm)))]

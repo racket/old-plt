@@ -1045,7 +1045,7 @@ read_number_or_symbol(Scheme_Object *port, int is_float, int is_not_float,
     o = scheme_read_number(buf, i, 
 			   is_float, is_not_float, decimal_inexact, 
 			   radix, radix_set,
-			   port, NULL);
+			   port, NULL, 0);
 
   if (SAME_OBJ(o, scheme_false)) {
 #ifdef NO_SEPARATE_HASH_PRECENT

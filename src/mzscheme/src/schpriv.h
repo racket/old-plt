@@ -284,7 +284,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  int decimal_means_float,
 				  int radix, int radix_set, 
 				  Scheme_Object *port,
-				  int *div_by_zero);
+				  int *div_by_zero,
+				  int test_only);
 
 typedef long bigdig;
 

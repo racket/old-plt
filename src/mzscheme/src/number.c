@@ -2906,7 +2906,8 @@ string_to_number (int argc, Scheme_Object *argv[])
   
   return scheme_read_number(str, len, 
 			    0, 0, decimal_inexact,
-			    radix, 0, NULL, NULL);
+			    radix, 0, NULL, NULL,
+			    0);
 }
 
 /* Don't bother reading more than the following number of digits in a
@@ -3034,7 +3035,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 				  int decimal_means_float,
 				  int radix, int radix_set, 
 				  Scheme_Object *complain,
-				  int *div_by_zero)
+				  int *div_by_zero,
+				  int test_only)
 {
   int i, has_decimal, must_parse, has_slash;
   int report;
@@ -3244,7 +3246,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       n1 = scheme_read_number(first, has_sign,
 			      is_float, is_not_float, decimal_means_float,
 			      radix, 1, next_complain,
-			      &fdbz);
+			      &fdbz, test_only);
     else
       n1 = zeroi;
 
@@ -3260,7 +3262,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       n2 = scheme_read_number(second, has_i - has_sign,
 			      is_float, is_not_float, decimal_means_float,
 			      radix, 1, next_complain,
-			      &sdbz);
+			      &sdbz, test_only);
     else if (str[has_sign] == '-')
       n2 = scheme_make_integer(-1);
     else
@@ -3321,7 +3323,7 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     n2 = scheme_read_number(second, len - has_at - 1,
 			    1, 0, 1,
 			    radix, 1, next_complain,
-			    &fdbz);
+			    &fdbz, test_only);
 
     if (!fdbz) {
       if (SCHEME_FALSEP(n2))
@@ -3337,12 +3339,14 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	return scheme_read_number(first, has_at,
 				  is_float, is_not_float, decimal_means_float,
 				  radix, 1, next_complain,
-				  div_by_zero);
+				  div_by_zero,
+				  test_only);
       
       n1 = scheme_read_number(first, has_at, 
 			      1, 0, 1,
 			      radix, 1, next_complain,
-			      &sdbz);
+			      &sdbz,
+			      test_only);
     } else {
       n1 = NULL;
       d2 = 0;
@@ -3576,7 +3580,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       mantissa = scheme_read_number(s, has_expt, 
 				    0, 0, 1,
 				    radix, 1, next_complain,
-				    &dbz);
+				    &dbz,
+				    test_only);
 
       if (SCHEME_FALSEP(mantissa)) {
 	if (dbz) {
@@ -3674,6 +3679,11 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       }
     }
 
+    /* This is the important use of test_only, because it's the one
+       place where the read calculation is not linear in the input. */
+    if (test_only)
+      return scheme_make_integer(1);
+
     args[0] = scheme_make_integer(radix);
     args[1] = exponent;
     power = scheme_expt(2, args);
@@ -3711,7 +3721,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
     n1 = scheme_read_number(first, has_slash,
 			    0, 0, 1,
 			    radix, 1, next_complain,
-			    div_by_zero);
+			    div_by_zero,
+			    test_only);
     if (SAME_OBJ(n1, scheme_false))
       return scheme_false;
 
@@ -3732,7 +3743,8 @@ Scheme_Object *scheme_read_number(const char *str, long len,
       n2 = scheme_read_number(substr, len - has_slash - 1,
 			      0, 0, 1,
 			      radix, 1, next_complain,
-			      div_by_zero);
+			      div_by_zero,
+			      test_only);
     }
 
     if (SAME_OBJ(n2, scheme_false))
@@ -3746,6 +3758,9 @@ Scheme_Object *scheme_read_number(const char *str, long len,
 	*div_by_zero = 1;
       return scheme_false;
     }
+
+    if (test_only)
+      return scheme_make_integer(1);
 
     n1 = scheme_bin_div(n1, n2);
 

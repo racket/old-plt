@@ -2,22 +2,22 @@
 ; Load core mzlib
 
 (reference-library "refer.ss")
-(reference-library "spidey.ss")
 
-(reference-library "macro.ss")
+(reference-relative-library "spidey.ss")
 
-(reference-library "prettyu.ss")
-(reference-library "match.ss")
-(reference-library "defstru.ss")
-(reference-library "fileu.ss")
-(reference-library "functiou.ss")
-(reference-library "compatu.ss")
-(reference-library "stringu.ss")
-(reference-library "compileu.ss")
-(reference-library "threadu.ss")
-(reference-library "shared.ss")
+(reference-relative-library "macro.ss")
 
-(reference-library "cores.ss")
+(reference-relative-library "prettyu.ss")
+(reference-relative-library "match.ss")
+(reference-relative-library "defstru.ss")
+(reference-relative-library "fileu.ss")
+(reference-relative-library "functiou.ss")
+(reference-relative-library "compatu.ss")
+(reference-relative-library "stringu.ss")
+(reference-relative-library "compileu.ss")
+(reference-relative-library "threadu.ss")
+(reference-relative-library "shared.ss")
 
-(define mzlib:core@ (reference-library-unit/sig "corer.ss"))
+(reference-relative-library "cores.ss")
 
+(define mzlib:core@ (reference-relative-library-unit/sig "corer.ss"))

@@ -16,12 +16,15 @@
    ; top-level begin-elaboration-time => begin-expansion-time
    ; nested begin-elaboration-time => begin
    ; reference-XXX => usual expansion w/o string check
-   (define -reference-library-unit/sig (make-reference-unit #f #t #t 'reference-library-unit/sig))
-   (define -reference-library-unit (make-reference-unit #f #t #f 'reference-library-unit))
-   (define -reference-unit/sig (make-reference-unit #f #f #t 'reference-unit/sig))
-   (define -reference-unit (make-reference-unit #f #f #f 'reference-unit))
-   (define -reference (make-reference #f #f))
-   (define -reference-library (make-reference #f #t))
+   (define -reference-library-unit/sig (make-reference-unit #f #t #f #t 'reference-library-unit/sig))
+   (define -reference-library-unit (make-reference-unit #f #t #f #f 'reference-library-unit))
+   (define -reference-relative-library-unit/sig (make-reference-unit #f #t #t #t 'reference-relative-library-unit/sig))
+   (define -reference-relative-library-unit (make-reference-unit #f #t #t #f 'reference-relative-library-unit))
+   (define -reference-unit/sig (make-reference-unit #f #f #f #t 'reference-unit/sig))
+   (define -reference-unit (make-reference-unit #f #f #f #f 'reference-unit))
+   (define -reference (make-reference #f #f #f))
+   (define -reference-library (make-reference #f #t #f))
+   (define -reference-relative-library (make-reference #f #t #t))
    (define -begin-elaboration-time
      (lambda body
        (let ([expr `(eval (eval (quote (begin ,@body))))])
@@ -48,6 +51,9 @@
 			  (define-macro reference-library-unit/sig ,-reference-library-unit/sig)
 			  (define-macro reference-library-unit ,-reference-library-unit)
 			  (define-macro reference-library ,-reference-library)
+			  (define-macro reference-relative-library-unit/sig ,-reference-relative-library-unit/sig)
+			  (define-macro reference-relative-library-unit ,-reference-relative-library-unit)
+			  (define-macro reference-relative-library ,-reference-relative-library)
 			  ,@(let ([e (if preserve-elab?
 					 `((define-macro begin-elaboration-time ,-begin-elaboration-time))
 					 null)]

@@ -5,7 +5,7 @@
   
   (define make-reference-unit
    ; reference-unit, etc.
-   (lambda (must-string? require? sig? sname)
+   (lambda (must-string? require? reqrel? sig? sname)
      (lambda names
        (let ([len (length names)]
 	     [expect (if require? +inf.0 1)])
@@ -27,7 +27,9 @@
 						s)))
 		  names))
 	 `(#%let ([result (,(if require?
-				'#%require-library
+				(if reqrel? 
+				    '#%require-relative-library
+				    '#%require-library)
 				'#%load/use-compiled) ,@names)])
 		 (#%unless (,(if sig?
 				 '#%unit/sig?
@@ -45,10 +47,12 @@
 
   (define make-reference
    ; reference
-   (lambda (must-string? require?)
+   (lambda (must-string? require? reqrel?)
      (lambda names
        (let ([sname (if require? 
-			'reference-library
+			(if reqrel?
+			    'reference-relative-library
+			    'reference-library)
 			'reference)]
 	     [len (length names)]
 	     [expect (if require? +inf.0 1)])
@@ -64,7 +68,11 @@
 		   (raise-syntax-error sname
 				       "filename is not a string"
 				       (list* sname names)))
-	   `(,(if require? 'require-library '#%load/use-compiled) 
+	   `(,(if require? 
+		  (if reqrel?
+		      'require-relative-library
+		      'require-library)
+		  '#%load/use-compiled) 
 	     ,@names))))))
 
   (values make-reference-unit make-reference))

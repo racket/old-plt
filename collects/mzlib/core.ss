@@ -1,14 +1,14 @@
 
 ; Load core mzlib
 
-(require-library "coreu.ss")
+(require-relative-library "coreu.ss")
 
-(require-library "pretty.ss")
-(require-library "defstru.ss")
-(require-library "file.ss")
-(require-library "function.ss")
-(require-library "compat.ss")
-(require-library "string.ss")
-(require-library "compile.ss")
-(require-library "thread.ss")
+(require-relative-library "pretty.ss")
+(require-relative-library "defstru.ss")
+(require-relative-library "file.ss")
+(require-relative-library "function.ss")
+(require-relative-library "compat.ss")
+(require-relative-library "string.ss")
+(require-relative-library "compile.ss")
+(require-relative-library "thread.ss")
 

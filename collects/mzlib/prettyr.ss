@@ -192,10 +192,6 @@
 
      (define-struct mark (str def))
 
-     (define max-expr-width (if (number? width)
-				width
-				+inf.0))
-
      (define found-cycle
        (or print-graph?
 	   (let loop ([obj obj])
@@ -469,7 +465,7 @@
 		 (let* ((result '())
 			(result-tail #f)
 			(new-def-box (box #t))
-			(left (min (+ (- (- width col) extra) 1) max-expr-width))
+			(left (+ (- (- width col) extra) 1))
 			(snoc (lambda (s len)
 				(let ([v (cons s null)])
 				  (if result-tail

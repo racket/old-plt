@@ -116,6 +116,21 @@ LINK32_OBJS= \
   $(LINK32_FLAGS) $(LINK32_OBJS)
 <<
 
+SOURCE="$(InputPath)"
+DS_POSTBUILD_DEP=$(INTDIR)\postbld.dep
+
+ALL : $(DS_POSTBUILD_DEP)
+
+# Begin Custom Macros
+OutDir=.\..\..\..\..\plt
+# End Custom Macros
+
+$(DS_POSTBUILD_DEP) : "mzsrc - Win32 Release" "gc - Win32 Release" "$(OUTDIR)\mzscheme.exe"
+   cd ..\..\mzscheme\dynsrc
+	mkmzdyn.bat
+	cd ..\..\worksp\mzscheme
+	echo Helper for Post-build step > "$(DS_POSTBUILD_DEP)"
+
 !ELSEIF  "$(CFG)" == "mzscheme - Win32 Debug"
 
 OUTDIR=.\..\..\..\..\plt

@@ -6,6 +6,16 @@ string=? ; exec mred -magqvf $0
 (require-library "pretty.ss")
 (require-library "macro.ss")
 
+(when (eq? argv (vector))
+  (error 'gen-mred-interfaces.ss "expected either interfaces or cdb on command line"))
+
+(define build-interfaces-file? (string=? "interfaces" (vector-ref argv 0)))
+(define build-cdb-file? (string=? "cdb" (vector-ref argv 0)))
+
+(unless (or build-interfaces-file?
+	    build-cdb-file?)
+  (error 'gen-mred-interfaces.ss "expected either interfaces or cdb on command line"))
+
 (load-relative "classhack.ss")
 
 (define (class-name->interface-name f)
@@ -119,24 +129,24 @@ string=? ; exec mred -magqvf $0
 	(length signature-names)
 	(+ (length signature-names) (length interface-names)))
 
-(define plt-home (or (getenv "PLTHOME")
-		     (build-path framework-dir 'up 'up)))
-(define cdb-file (build-path (collection-path "framework") "framework-mred-interfaces.cdb"))
-(fprintf (current-error-port) "building cdb file: ~a~n" cdb-file)
-(call-with-output-file cdb-file
-  (lambda (port)
-    (parameterize ([current-output-port port])
-      (printf "@external framework-mred.cdb~n")
-      (for-each (lambda (interface-name-sym)
-		  (let* ([interface-name (symbol->string interface-name-sym)]
-			 [len (string-length interface-name)]
-			 [short (substring interface-name 0 (- len 3))])
-		    (printf "@interface ~a~n" short)
-		    (printf "@super ~a~n" short)
-		    (printf "This interface was automatically generated in order to use mixins.~n")
-		    (printf "For documentation, refer to the corresponding class: \\iscmclass{~a}.~n~n" short)))
-		interface-names)))
-  'text 'truncate)
+(define cdb-file "framework-mred-interfaces.cdb")
+
+(when build-cdb-file?
+  (fprintf (current-error-port) "building cdb file: ~a~n" cdb-file)
+  (call-with-output-file cdb-file
+    (lambda (port)
+      (parameterize ([current-output-port port])
+	(printf "@external framework-mred.cdb~n")
+	(for-each (lambda (interface-name-sym)
+		    (let* ([interface-name (symbol->string interface-name-sym)]
+			   [len (string-length interface-name)]
+			   [short (substring interface-name 0 (- len 3))])
+		      (printf "@interface ~a~n" short)
+		      (printf "@super ~a~n" short)
+		      (printf "This interface was automatically generated in order to use mixins.~n")
+		      (printf "For documentation, refer to the corresponding class: \\iscmclass{~a}.~n~n" short)))
+		  interface-names)))
+    'text 'truncate))
 
 (define (version-check filename)
   `(unless (equal? (version) ,(version))
@@ -146,19 +156,22 @@ string=? ; exec mred -magqvf $0
 	     (version))
 	    (version))))
 
-(let ([fn (build-path framework-dir "mred-interfacess.ss")])
-  (call-with-output-file fn
-    (lambda (port)
-      (pretty-print (version-check fn) port)
-      (pretty-print new-signature-definition port)
-      (newline port))
-  'truncate))
+(when build-interfaces-file?
+  (fprintf (current-error-port) "building mred-interfacess.ss~n")
+  (let ([fn (build-path framework-dir "mred-interfacess.ss")])
+    (call-with-output-file fn
+      (lambda (port)
+	(pretty-print (version-check fn) port)
+	(pretty-print new-signature-definition port)
+	(newline port))
+      'truncate))
 
-(let ([fn (build-path framework-dir "mred-interfaces.ss")])
-  (call-with-output-file fn
-    (lambda (port)
-      (pretty-print (version-check fn) port)
-      (pretty-print '(require-library "mred-interfacess.ss" "framework") port)
-      (newline port)
-      (pretty-print new-unit-definition port))
-    'truncate))
+  (fprintf (current-error-port) "building mred-interfaces.ss~n")
+  (let ([fn (build-path framework-dir "mred-interfaces.ss")])
+    (call-with-output-file fn
+      (lambda (port)
+	(pretty-print (version-check fn) port)
+	(pretty-print '(require-library "mred-interfacess.ss" "framework") port)
+	(newline port)
+	(pretty-print new-unit-definition port))
+      'truncate)))

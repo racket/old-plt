@@ -91,8 +91,7 @@
                 (and (not (null? env))
                      (cond
 		      [(string=? name (var-type-var (car env))) 0]
-		      [(or (string=? "this" (var-type-var (car env)))
-                           (regexp-match "encl-this-" (var-type-var (car env))))
+		      [(regexp-match "encl-this-" (var-type-var (car env)))
 		       (add1 (lookup (cdr env)))]
 		      [else (lookup (cdr env))])))))
       (lookup (environment-types env))))
@@ -104,6 +103,8 @@
               (lambda (env)
                 (cond
                   ((null? env) null)
+                  ((equal? (var-type-var (car env)) "this") 
+                   (update-env (cdr env)))
                   ((regexp-match str (var-type-var (car env)))
                    (let* ((var (car env)))
                      (cons (make-var-type (format "encl-this-~a" 
@@ -1400,7 +1401,7 @@
                            (encl-type (unless interactions?
                                         (if (= encl-depth 0) 
                                             (var-type-type (lookup-var-in-env "this" env))
-                                            (lookup-var-in-env (format "encl-this-~a" encl-depth) env))))
+                                            (var-type-type (lookup-var-in-env (format "encl-this-~a" encl-depth) env)))))
                            (encl-class (unless interactions?
                                          (cons (ref-type-class/iface encl-type) (ref-type-path encl-type)))))
                       (if (properties-static? (var-type-properties first-binding))
@@ -1419,9 +1420,8 @@
                                              (if (= encl-depth 0)
                                                  (make-special-name #f #f "this")
                                                  (make-access #f (expr-src exp) 
-                                                              (make-id 
-                                                               (make-local-access (format "encl-this-~a" encl-depth))
-                                                               (expr-src exp))))
+                                                              (make-local-access (make-id (format "encl-this-~a" encl-depth)
+                                                                                          (expr-src exp)))))
                                              (car acc)
                                              #f))
                                (cdr acc))))))

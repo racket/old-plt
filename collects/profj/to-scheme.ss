@@ -1625,6 +1625,9 @@
     (cond
       ((not expr) #t)
       ((special-name? expr) #t)
+      ((and (access? expr)
+            (local-access? (access-name expr))
+            (regexp-match "encl-this-" (id-string (local-access-name (access-name expr))))) #t)
       (else #f)))
   
   (define (overridden? name)

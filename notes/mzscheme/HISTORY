@@ -1,8 +1,13 @@
 
 103/2:
 
- * Changed order of first two arguments to `process[*]/ports', and
-   fixed bugs.
+ * Changed order of first two arguments to `process[*]/ports' and
+   fixed bugs. (PR 1584)
+
+ * Unix: fixed interaction among signals, I/O, and process sleeping.
+
+ * Changed `set!-values' to require distinct variables for mutation,
+   matching new `define-values'.
 
 103/1:
 
@@ -47,11 +52,14 @@
 --------------------------------------------------
 
 Version 103, ??
-Changed define-values to require distinct variables for binding
+Changed define-values and set!-values to require distinct variables
+ for binding
 Windows: Fixed bug in close-output-port for TCP ports
 Closing a TCP output port always sends an EOF to the other
  end of the connection, even if the associated input port
  remains open
+Changed order of first two arguments to process[*]/ports and
+ fixed bugs
 Added an optional limit argument to make-pipe
 Added deflate.ss library to MzLib, providing gzip, etc.
 Added not-break-exn?, useful mainly as a predicate in a
@@ -62,6 +70,7 @@ Added check-parameter-procedure and changed parameterize
 Changed order of first two arguments to process[*]/ports, and
  fixed bugs
 Fixed bugs in (eval (compile e))
+Unix: fixed interaction among signals, I/O, and process sleeping
 
 Version 102, June 26, 2000
 Switched to configure-based makefiles (autoconf)

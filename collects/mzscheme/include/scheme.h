@@ -1180,6 +1180,7 @@ void GC_pre_init(void);
 
 void scheme_check_threads(void);
 void scheme_wake_up(void);
+int scheme_get_external_event_fd(void);
 
 /* image dump enabling startup: */
 int scheme_image_main(int argc, char **argv);

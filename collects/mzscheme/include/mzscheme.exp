@@ -310,3 +310,4 @@ scheme_make_provided_string
 scheme_make_args_string
 scheme_no_dumps
 scheme_system_library_subpath
+scheme_signal_received

@@ -559,6 +559,7 @@ char *(*scheme_make_provided_string)(Scheme_Object *o, int count, int *len);
 char *(*scheme_make_args_string)(char *s, int which, int argc, Scheme_Object **argv, long *len);
 void (*scheme_no_dumps)(char *why);
 const char *(*scheme_system_library_subpath)();
+void (*scheme_signal_received)(void);
 #ifndef SCHEME_EX_INLINE
 } Scheme_Extension_Table;
 #endif

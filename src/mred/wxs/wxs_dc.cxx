@@ -846,7 +846,7 @@ static Scheme_Object *os_wxDCDrawBitmap(int n,  Scheme_Object *p[])
   } else
     x4 = NULL;
   if (n > (POFFSET+5)) {
-    x5 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+5], "draw-bitmap in dc<%>", 0));
+    x5 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+5], "draw-bitmap in dc<%>", 1));
   } else
     x5 = NULL;
 
@@ -898,7 +898,7 @@ static Scheme_Object *os_wxDCDrawBitmapRegion(int n,  Scheme_Object *p[])
   } else
     x8 = NULL;
   if (n > (POFFSET+9)) {
-    x9 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+9], "draw-bitmap-section in dc<%>", 0));
+    x9 = WITH_VAR_STACK(objscheme_unbundle_wxBitmap(p[POFFSET+9], "draw-bitmap-section in dc<%>", 1));
   } else
     x9 = NULL;
 

@@ -3737,7 +3737,7 @@ static Scheme_Object *os_wxMediaPasteboardFindSnip(int n,  Scheme_Object *p[])
   x0 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+0], "find-snip in pasteboard%"));
   x1 = WITH_VAR_STACK(objscheme_unbundle_float(p[POFFSET+1], "find-snip in pasteboard%"));
   if (n > (POFFSET+2)) {
-    x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+2], "find-snip in pasteboard%", 0));
+    x2 = WITH_VAR_STACK(objscheme_unbundle_wxSnip(p[POFFSET+2], "find-snip in pasteboard%", 1));
   } else
     x2 = NULL;
 

@@ -13,7 +13,7 @@ clean :
 
 CPP=cl.exe
 CPP_FLAGS=/I"../../include" /I"./myspage" /I"./mysc" /I"./myssink" /I"$(SHELL32)\Include" \
-	/I"$(HTMLHELP)\include" /W3 /GX /MT /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D"NEWMSHTML=$(NEWMSHTML)" /c 
+	/I"$(HTMLHELP)\include" /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /D"NEWMSHTML=$(NEWMSHTML)" /c 
 
 .cxx.obj::
    $(CPP) $(CPP_FLAGS) $< 

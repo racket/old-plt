@@ -853,8 +853,8 @@
 	      (else
 		(static-error expr "Malformed ~a" form-name))))))))
 
-  (reference-unit-maker 'reference-unit #f #f)
-  (reference-unit-maker 'reference-unit/sig #f #t)
+  (reference-unit-maker 'reference-unit #f)
+  (reference-unit-maker 'reference-unit/sig #t)
 
   (define reference-library-unit-maker
     (lambda (form-name sig?)
@@ -876,7 +876,7 @@
 			p-env kwd)
 		      expr)
 		    env attributes vocab)))
-	      ((pat:match-against m&e expr env)
+	      ((pat:match-against m&e-2 expr env)
 		=>
 		(lambda (p-env)
 		  (let ((filename (pat:pexpand 'filename p-env kwd))
@@ -916,7 +916,7 @@
 	      (else
 		(static-error expr "Malformed ~a" form-name))))))))
 
-  (reference-library-unit-maker 'reference-library-unit #t #f)
-  (reference-library-unit-maker 'reference-library-unit/sig #t #t)
+  (reference-library-unit-maker 'reference-library-unit #f)
+  (reference-library-unit-maker 'reference-library-unit/sig #t)
 
   )

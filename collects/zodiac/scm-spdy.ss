@@ -5,7 +5,8 @@
     (z : zodiac:reader-code^)
     zodiac:sexp^ (pat : zodiac:pattern^) zodiac:scheme-core^
     zodiac:scheme-main^ zodiac:back-protocol^
-    zodiac:expander^ zodiac:interface^)
+    zodiac:expander^ zodiac:interface^
+    (mzlib : mzlib:file^))
 
   (define-struct (poly-form struct:parsed) (exp))
   (define-struct (:-form struct:parsed) (exp type))
@@ -259,7 +260,7 @@
 			      (close-input-port p))))))
 		    (static-error file "Does not yield a filename"))))))
 	  (else
-	    (static-error expr "Malformed ~a" form-name))))))
+	    (static-error expr "Malformed reference"))))))
 
   (add-primitivized-micro-form 'reference-library mrspidey-vocabulary
     (let* ((kwd '())
@@ -297,7 +298,7 @@
 			  (raw-filename
 			    (if (complete-path? raw-f)
 			      raw-f
-			      (or (find-library raw-f raw-c)
+			      (or (mzlib:find-library raw-f raw-c)
 				(static-error file
 				  "No such library file found")))))
 		    (if (member raw-f mzscheme-libraries-provided)
@@ -351,7 +352,7 @@
 			      (current-directory original-directory)
 			      (close-input-port p)))))))))))
 	  (else
-	    (static-error expr "Malformed ~a" form-name))))))
+	    (static-error expr "Malformed reference-library"))))))
 
   (define reference-unit-maker
     (lambda (form-name signed?)

@@ -1,5 +1,4 @@
-(reference-library "file.ss")
-(reference-library "prettyu.ss")
+(reference-library "coreu.ss")
 
 (reference-library "sparams.ss" "backward")
 
@@ -36,10 +35,12 @@
 	    (zodiac:default-interface@))
 	  (PARAMETERS : plt:parameters^
 	    (plt:mzscheme-parameters@))
-	  (PRETTY : mzlib:pretty-print^
-	    (mzlib:pretty-print@))
 	  (SYSTEM : zodiac:system^
-	    (zodiac:system@ INTERFACE PARAMETERS PRETTY)))
+	    (zodiac:system@ INTERFACE PARAMETERS
+	      (MZLIB-CORE pretty-print@)
+	      (MZLIB-CORE file@)))
+	  (MZLIB-CORE : mzlib:core^
+	    (mzlib:core@)))
 	(export (open SYSTEM) (open INTERFACE)))
       zodiac)))
 

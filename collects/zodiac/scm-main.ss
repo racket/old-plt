@@ -1540,7 +1540,7 @@
 		    p-env kwd)
 		  expr)
 		env attributes vocab)))
-	  ((pat:match-against m&e expr env)
+	  ((pat:match-against m&e-2 expr env)
 	    =>
 	    (lambda (p-env)
 	      (let ((filename (pat:pexpand 'filename p-env kwd))

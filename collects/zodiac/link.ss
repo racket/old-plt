@@ -2,7 +2,8 @@
   (import
     (INTERFACE : zodiac:interface^)
     (PARAMETERS : plt:parameters^)
-    (PRETTY : mzlib:pretty-print^))
+    (PRETTY : mzlib:pretty-print^)
+    (MZLIB-FILE : mzlib:file^))
   (link
     [MISC : zodiac:misc^
       ((reference-unit/sig "misc.ss") PRETTY)]
@@ -53,7 +54,8 @@
     [SCHEME-SPIDEY : zodiac:scheme-mrspidey^
       ((reference-unit/sig "scm-spdy.ss")
 	MISC TOP-STRUCTS SCAN-PARMS READ-STRUCTS READ-CODE SEXP PATTERN
-	SCHEME-CORE SCHEME-MAIN BACK-PROTOCOL EXPANDER INTERFACE)]
+	SCHEME-CORE SCHEME-MAIN BACK-PROTOCOL EXPANDER INTERFACE
+	MZLIB-FILE)]
     [SCHEME-OBJ : zodiac:scheme-objects^
       ((reference-unit/sig "scm-obj.ss")
 	MISC TOP-STRUCTS READ-STRUCTS SEXP

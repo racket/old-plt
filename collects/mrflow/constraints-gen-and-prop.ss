@@ -4011,7 +4011,7 @@
               (extend-edge-for-values sba-state (create-simple-edge rec-body-label)))
              rec-label)]
           [(type-empty? type)
-           (let ([empty-label (create-simple-prim-label)])
+           (let ([empty-label (create-simple-prim-label term)])
              ; propagation to such a label always works, so post checking is necessary
              ; note that propagation always works because we don't do any type-based
              ; filtering.

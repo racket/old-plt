@@ -94,12 +94,12 @@ mixin extends that text% class with two methods of no arguments:
   start the automatic display of arrows as well as to make the snips
   and arrows related mouse menus available to the user.
 - _remove-all-snips-and-arrows-and-colors_, to be called to terminate
-	the automatic display of arrows, make the snips and arrows related
-	mouse menus unavailable to the user, remove all inserted snips, and
-	optionally clear all colors (see below the last argument to
-	init-snips-and-arrows-gui and the last optional argument to
-	init-snips-and-arrows-gui-for-syntax-objects for details about this
-	last point).
+  the automatic display of arrows, make the snips and arrows related
+  mouse menus unavailable to the user, remove all inserted snips, and
+  optionally clear all colors (see below the last argument to
+  init-snips-and-arrows-gui and the last optional argument to
+  init-snips-and-arrows-gui-for-syntax-objects for details about this
+  last point).
 In the case of the DrScheme definitions window, using this mixin is
 simply done by giving it as argument to the
 drscheme:get/extend:extend-definitions-text function.
@@ -150,9 +150,9 @@ following order (with a mnemonic name and a type between parenthesis):
     a string representing the arrow color (see color-database<%> in
     the help-desk for a list of color names).
 6)  a function from label to style delta (get-style-delta-from-label:
-	  label -> style-delta%) indicating how the term corresponding to
-	  the label should be colored.  This function must return the same
-	  style delta for all the labels corresponding to a given term.
+    label -> style-delta%) indicating how the term corresponding to
+    the label should be colored.  This function must return the same
+    style delta for all the labels corresponding to a given term.
 7)  a function from popup menu and a list of labels to void
     (extend-menu-for-labels: popup-menu% (listof label) -> void) that
     can be used to add menu-item% objects to the menu that pops up

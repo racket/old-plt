@@ -1,11 +1,12 @@
 (unit/sig extra-xexpr^
-  (import reader^ mzlib:function^)
+  (import xml-structs^ mzlib:function^)
   ;; Xexpr ::= String
-  ;;        |  Processing-instruction
-  ;;        |  Symbol
-  ;;        |  Number
   ;;        |  (list* Symbol (listof Attribute-srep) (listof Xexpr))
   ;;        |  (cons Symbol (listof Xexpr))
+  ;;        |  Symbol
+  ;;        |  Number
+  ;;        |  Comment
+  ;;        |  Processing-instruction
   ;; Attribute-srep ::= (list Symbol String)
   
   ;; assoc-sort : (listof (list Symbol a)) -> (listof (list Symbol a))

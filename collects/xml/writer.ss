@@ -1,5 +1,5 @@
 (unit/sig writer^
-  (import reader^ mzlib:function^)
+  (import xml-structs^ mzlib:function^)
   
   (define empty-tag-shorthand (make-parameter #t))
   
@@ -40,8 +40,9 @@
     ((cond
        [(element? el) write-xml-element]
        [(pcdata? el) write-xml-pcdata]
-       [(pi? el) write-xml-pi]
        [(entity? el) write-xml-entity]
+       [(comment? el) write-xml-comment]
+       [(pi? el) write-xml-pi]
        [else (error 'write-xml-content "received ~a" el)])
      el over dent out))
   
@@ -72,7 +73,12 @@
     (write-xml-base (escape (pcdata-string str) escape-table) over dent out))
   
   ;; write-xml-pi : Processing-instruction Nat (Nat Output-Stream -> Void) Output-Stream -> Void
-  (define write-xml-pi void) ;; more here
+  (define (write-xml-pi pi over dent out)
+    (write-xml-base (format "<?~a ~a?>" (pi-target-name pi) (pi-instruction pi)) over dent out))
+  
+  ;; write-xml-comment : Comment Nat (Nat Output-Stream -> Void) Output-Stream -> Void
+  (define (write-xml-comment comment over dent out)
+    (write-xml-base (format "<!--~a-->" (comment-text comment)) over dent out))
   
   ;; write-xml-entity : Entity Nat (Nat Output-stream -> Void) Output-stream -> Void
   (define (write-xml-entity entity over dent out)

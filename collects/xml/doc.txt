@@ -89,50 +89,67 @@ Note: Xexpr is the only important one to understand.  Even then,
       Processing-instructions may be ignored.
 
 > Xexpr ::= String
-         |  Processing-instruction
-         |  Symbol ;; symbolic entities such as &nbsp;
-         |  Number ;; numeric entities like &#20;
          |  (list* Symbol (listof (list Symbol String)) (list Xexpr))
          |  (cons Symbol (listof Xexpr)) ;; an element with no attributes
+         |  Symbol ;; symbolic entities such as &nbsp;
+         |  Number ;; numeric entities like &20;
+         |  Comment
+         |  Processing-instruction
 
 > Processing-instruction ::= (make-pi Location Location String (list String))
+  (define-struct (pi struct:source) (target-name instruction))
 
 > Document ::= (make-document Prolog Element (listof Processing-instruction))
+  (define-struct document (prolog element misc))
 
 > Element ::= (make-element Location Location
-                            Symbol
-                            (listof Attribute)
-                            (listof Content))
+			    Symbol
+			    (listof Attribute)
+			    (listof Content))
+  (define-struct (element struct:source) (name attributes content))
 
 > Attribute ::= (make-attribute Location Location Symbol String)
+  (define-struct (attribute struct:source) (name value))
 
 > Content ::= Pcdata
-           |  Processing-instruction
-           |  Entity
            |  Element
+           |  Entity
+           |  Comment
+           |  Processing-instruction
 
 > Pcdata ::= (make-pcdata Location Location String)
+  (define-struct (pcdata struct:source) (string))
 
 > Entity ::= (make-entity (U Nat Symbol))
+  (define-struct entity (text))
+
+> Comment ::= (make-comment String)
+  (define-struct comment (text))
 
 > Source ::= (make-source Location Location)
+  (define-struct source (start stop))
 
 > Location ::= Nat
             |  Symbol
 
-Note:  The following structures are neither fully supported nor very useful:
+Note: The following structures are neither fully supported nor very useful:
 
 > Prolog ::= (make-prolog XMLDeclare (listof Processing-instruction) DocType
-                          (listof Processing-instruction))
+			  (listof Processing-instruction))
+  (define-struct prolog (xml before-dtd dtd before-element))
 
 > XMLDeclare ::= (make-xmlD String (U String #f) (U String #f))
               |  #f
+  (define-struct xmlD (version encoding standalone))
 
 > DocType ::= (make-doctype String ExtID Dtd)
            |  #f
+  (define-struct doctype (root ext-id dtd))
 
 > ExtID ::= (make-ext String String)
          |  #f
+  (define-struct ext (location file-name))
 
 > Dtd ::= (make-int (listof Char))
        |  #f
+  (define-struct int (content))

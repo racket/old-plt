@@ -17,6 +17,7 @@
 
 (define-signature xml-structs^
   ((struct document (prolog element misc))
+   (struct comment (text))
    (struct prolog (xml before-dtd dtd before-element))
    (struct xmlD (version encoding standalone))
    (struct doctype (root ext-id dtd))
@@ -27,13 +28,12 @@
    (struct pi (target-name instruction))
    (struct source (start stop))
    (struct pcdata (string))
-   (struct entity (text))
-   (struct xml-read:error ())))
+   (struct entity (text))))
 
 (define-signature writer^ (write-xml display-xml write-xml/content display-xml/content empty-tag-shorthand))
-(define-signature reader^ ((open xml-structs^) read-xml))
+(define-signature reader^ ((struct xml-read:error ()) read-xml))
 
 (define-signature xexpr^ (xml->xexpr xexpr->xml))
 (define-signature extra-xexpr^ ((open xexpr^) assoc-sort bcompose attribute->srep))
-(define-signature xml^ ((open reader^) (open writer^) (open xexpr^)))
+(define-signature xml^ ((open xml-structs^) (open reader^) (open writer^) (open xexpr^)))
 

@@ -4,7 +4,7 @@
  * Author:      Julian Smart
  * Created:     1993
  * Updated:     August 1994
- * RCS_ID:      $Id: wb_utils.cxx,v 1.2 1998/07/13 19:08:16 mflatt Exp $
+ * RCS_ID:      $Id: wb_utils.cxx,v 1.3 1998/07/15 02:38:01 mflatt Exp $
  * Copyright:   (c) 1993, AIAI, University of Edinburgh
  */
 
@@ -503,7 +503,7 @@ wxFindWindowByLabel1 (char *title, wxWindow * parent)
   if (parent)
     {
       char *lab = parent->GetLabel ();
-      if (lab && strcmp(title, lab))
+      if (lab && !strcmp(title, lab))
 	return parent;
     }
 
@@ -562,7 +562,7 @@ wxFindWindowByName1 (char *title, wxWindow * parent)
   if (parent)
     {
       char *lab = parent->GetName ();
-      if (lab && strcmp(title, lab))
+      if (lab && !strcmp(title, lab))
 	return parent;
     }
 

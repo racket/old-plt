@@ -910,6 +910,8 @@ static Scheme_Object *struct_to_vector(int argc, Scheme_Object *argv[])
 }
 
 int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos)
+     /* pos == -1 => sees any part
+	pos == -2 => sees all parts */
 {
   Scheme_Struct_Type *stype = ((Scheme_Structure *)s)->stype;
   int p;
@@ -929,6 +931,20 @@ int scheme_inspector_sees_part(Scheme_Object *s, Scheme_Object *insp, int pos)
     }
 
     return 0;
+  } else if (pos == -2) {
+    /* Check for all visible fields */
+    Scheme_Object *prev = NULL;
+    while (p > -1) {
+      if (!SAME_OBJ(stype->parent_types[p]->inspector, prev)) {
+	prev = stype->parent_types[p]->inspector;
+	if (!scheme_is_subinspector(prev, insp))
+	  return 0;
+      } else
+	return 0;
+      p--;
+    }
+
+    return 1;
   } else {
     /* Find struct containing position. */
     while (p && (stype->parent_types[p - 1]->num_slots > pos)) {

@@ -3287,7 +3287,7 @@ static Scheme_Object *syntax_src_module(int argc, Scheme_Object **argv)
   if (!SCHEME_STXP(argv[0]))
     scheme_wrong_type("syntax-source-module", "syntax", 0, argc, argv);
 
-  return scheme_stx_source_module(argv[0], 1);
+  return scheme_stx_source_module(argv[0], 0);
 }
 
 /**********************************************************************/

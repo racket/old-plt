@@ -751,24 +751,12 @@ long scheme_equal_hash_key(Scheme_Object *o)
     
     return k;
   } else  if (t == scheme_structure_type) {
-    Scheme_Structure *s = (Scheme_Structure *)o;
-    int len, i;
-#   include "mzhashchk.inc"
-
-    len = SCHEME_STRUCT_NUM_SLOTS(s);
-    k += PTR_TO_LONG((Scheme_Object *)s->stype);
-
-    if (!len)
-      return k;
-
-    --len;
-    for (i = 0; i < len; i++) {
-      SCHEME_USE_FUEL(1);
-      k += scheme_equal_hash_key(s->slots[i]);
-      k = (k << 1) + k;
-    }
-    
-    o = s->slots[len];
+    Scheme_Object *insp;
+    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    if (scheme_inspector_sees_part(o, insp, -2))
+      o = scheme_struct_to_vector(o, NULL, insp);
+    else
+      return k + (PTR_TO_LONG(o) >> 4);
   } else if (SCHEME_BOXP(o)) {
     SCHEME_USE_FUEL(1);
     k += 1;
@@ -822,18 +810,13 @@ long scheme_equal_hash_key2(Scheme_Object *o)
   } else if (t == scheme_string_type) {
     return SCHEME_STRLEN_VAL(o);
   } else  if (t == scheme_structure_type) {
-    Scheme_Structure *s = (Scheme_Structure *)o;
-    int len, i;
-    long k = 0;
-
-    len = SCHEME_STRUCT_NUM_SLOTS(s);
-
-    for (i = 0; i < len; i++) {
-      SCHEME_USE_FUEL(1);
-      k += scheme_equal_hash_key(s->slots[i]);
-    }
-    
-    return k;
+    Scheme_Object *insp;
+    insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);
+    if (scheme_inspector_sees_part(o, insp, -2)) {
+      o = scheme_struct_to_vector(o, NULL, insp);
+      goto top;
+    } else
+      return t;
   } else if (SCHEME_BOXP(o)) {
     o = SCHEME_BOX_VAL(o);
     goto top;

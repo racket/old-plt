@@ -93,9 +93,9 @@ exec mzscheme -r "$0" "$0" "$@"
             (loop (read)))))))
   'replace)
 
+(require (lib "compile.ss" "dynext") (lib "link.ss" "dynext"))
 (when #f
   ;; compile the result
-  (require (lib "compile.ss" "dynext") (lib "link.ss" "dynext"))
   (compile-extension #f c-file o-file '("libffi/include"))
   (link-extension #f (list o-file "./libffi/.libs/libffi.a") so-file)
   (delete-file o-file))

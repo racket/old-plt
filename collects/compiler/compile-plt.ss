@@ -1,30 +1,9 @@
-(define (delete-directory/files path)
-  (cond
-    [(directory-exists? path)
-     (and (andmap (lambda (e) (delete-directory/files (build-path path e)))
-		  (directory-list path))
-	  (delete-directory path))]
-    [(file-exists? path)
-     (delete-file path)]
-    [else (error 'delete-directory/files
-		 "encountered ~a, neither a file nor a directory"
-		 path)]))
 
-;; delete mzlib first...
-(when (member "--clean" (vector->list argv))
-  (let* ([collection-path (with-handlers ([(lambda (x) #t)
-					   (lambda (x) #f)])
-			    (collection-path "mzlib"))]
-	 [path (build-path collection-path "compiled")])
-    (when (directory-exists? path)
-      (printf "deleting ~a~n" path)
-      (delete-directory/files path))))
-
-(require-library "cmdline.ss")
-(require-library "make.ss" "make")
-(require-library "compile.ss" "compiler")
+(parameterize ([require-library-use-compiled #f])
+  (require-library "cmdline.ss"))
 
 (define verbose (make-parameter #f))
+(define compiler-verbose (make-parameter #f))
 (define search-collections (make-parameter #t))
 
 (define flags
@@ -34,7 +13,7 @@
    `((once-each
       [("--clean")
        ,(lambda (flag) 'clean)
-       ("Delete all existing compiled files")]
+       ("Delete existing compiled files")]
       [("-n" "--no-zo")
        ,(lambda (flag) 'no-zo)
        ("Do not produce .zo files.")]
@@ -44,7 +23,7 @@
       [("-r" "--so-verbose")
        ,(lambda (flag)
 	  (verbose #t)
-	  (compiler:option:verbose #t))
+	  (compiler-verbose #t))
        ("See make and compiler verbose messages")]
       [("-v" "--verbose")
        ,(lambda (flag)
@@ -83,7 +62,9 @@
 	    [(null? collection-paths) 
 	     (hash-table-map ht (lambda (k v) (list k)))]
 	    [else (let ([cp (car collection-paths)])
-		    (let loop ([collections (directory-list cp)])
+		    (let loop ([collections (if (directory-exists? cp)
+						(directory-list cp)
+						null)])
 		      (cond
 			[(null? collections) (void)]
 			[else (let ([collection (car collections)])
@@ -111,16 +92,33 @@
 	  (parameterize ([current-output-port op])
 	    (apply f args))))))
 
+(define (delete-files-in-directory path)
+  (cond
+    [(directory-exists? path)
+     (for-each (lambda (e) (delete-files-in-directory (build-path path e)))
+	       (directory-list path))]
+    [(file-exists? path)
+     (unless (delete-file path)
+       (error 'delete-files-in-directory
+	      "unable to delete file: ~a" path))]
+    [else (error 'delete-files-in-directory
+		 "encountered ~a, neither a file nor a directory"
+		 path)]))
+
 (when clean?
   (for-each (lambda (collection-list)
 	      (let* ([path (build-path (apply collection-path collection-list)
 				       "compiled")])
 		(when (directory-exists? path)
-		  (printf "deleting ~a~n" path)
-		  (delete-directory/files path))))
+		  (printf "deleting files in ~a~n" path)
+		  (delete-files-in-directory path))))
 	    collections-to-compile))
 
-(when zo?
+(when (or zo? so?)
+  (require-library "compile.ss" "compiler")
+  (compiler:option:verbose (compiler-verbose)))
+
+(when zo?  
   (for-each (lambda (collection-list)
 	      (printf "zo compiling ~a~n" (apply collection-path collection-list))
 	      (control-io-apply compile-collection-zos collection-list))

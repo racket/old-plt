@@ -215,7 +215,7 @@ void MrEdMSWSleep(float secs, void *fds)
     r = w = e = NULL;
     
   /* Block: use different stratgey if there are handles or fds to watch: */
-  if (fds && ((r->set.fd_count || w->set.fd_count || e->set.fd_count)
+  if (fds && ((r->added || w->added || e->added)
               || r->num_handles)) {
       
     int num_handles = r->num_handles, *rps, two_rps[2];

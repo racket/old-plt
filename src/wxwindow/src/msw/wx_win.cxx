@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994     
- * RCS_ID:      $Id: wx_win.cxx,v 1.24 1999/02/21 00:29:53 mflatt Exp $
+ * RCS_ID:      $Id: wx_win.cxx,v 1.25 1999/03/09 19:53:23 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -695,7 +695,8 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 
   SIZE sizeRect;
   TEXTMETRIC tm;
-  GetTextExtentPoint(dc, string, (int)strlen(string), &sizeRect);
+  int len = (int)strlen(string);
+  GetTextExtentPoint(dc, len ? string : " ", len ? len : 1, &sizeRect);
   GetTextMetrics(dc, &tm);
 
   if (fontToUse && fnt && was) 
@@ -703,7 +704,7 @@ void wxWindow::GetTextExtent(const char *string, float *x, float *y,
 
   wxwmReleaseDC(hWnd, dc);
 
-  *x = (float)sizeRect.cx;
+  *x = (len ? (float)sizeRect.cx : (float)0.0);
   *y = (float)sizeRect.cy;
   if (descent) *descent = (float)tm.tmDescent;
   if (externalLeading) *externalLeading = (float)tm.tmExternalLeading;

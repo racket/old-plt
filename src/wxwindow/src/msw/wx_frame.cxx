@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_frame.cxx,v 1.10 1999/02/23 18:27:46 mflatt Exp $
+ * RCS_ID:      $Id: wx_frame.cxx,v 1.11 1999/03/09 19:53:23 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -856,10 +856,6 @@ BOOL wxFrameWnd::OnClose(void)
       return FALSE;
 
     if (wx_window->GetEventHandler()->OnClose()) {
-      /* MATTHEW: [11] */
-#if !WXGARBAGE_COLLECTION_ON
-      delete wx_window;
-#endif
       return TRUE;
     } else return FALSE;
   }
@@ -958,25 +954,20 @@ wxMDIFrame::~wxMDIFrame(void)
 
 BOOL wxMDIFrame::OnDestroy(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIFrame::OnDestroy %d\n", handle);
-#endif
   return FALSE;
 }
 
 void wxMDIFrame::OnCreate(LPCREATESTRUCT WXUNUSED(cs))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIFrame::OnCreate %d\n", handle);
-#endif
   CLIENTCREATESTRUCT ccs;
 	
   ccs.hWindowMenu = window_menu;
   ccs.idFirstChild = wxFIRST_MDI_CHILD;
 
   client_hwnd = wxwmCreateWindowEx(0, "mdiclient", NULL,
-					 WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN, 0, 0, 0, 0, handle, NULL,
-					 wxhInstance, (LPSTR)(LPCLIENTCREATESTRUCT)&ccs);
+				   WS_VISIBLE | WS_CHILD | WS_CLIPCHILDREN, 0, 0, 0, 0, 
+				   handle, NULL,
+				   wxhInstance, (LPSTR)(LPCLIENTCREATESTRUCT)&ccs);
 }
 
 void wxMDIFrame::OnSize(int bad_x, int bad_y, UINT id)
@@ -1142,7 +1133,9 @@ extern wxNonlockingHashTable *wxWinHandleList;
 wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
                    int x, int y, int width, int height, long style)
 {
-  defaultIcon = (wxSTD_MDICHILDFRAME_ICON ? wxSTD_MDICHILDFRAME_ICON : wxDEFAULT_MDICHILDFRAME_ICON);
+  defaultIcon = (wxSTD_MDICHILDFRAME_ICON 
+		 ? wxSTD_MDICHILDFRAME_ICON
+		 : wxDEFAULT_MDICHILDFRAME_ICON);
   icon = NULL;
   iconized = FALSE;
   wx_window = wx_win;
@@ -1188,20 +1181,27 @@ wxMDIChild::wxMDIChild(wxMDIFrame *parent, wxWindow *wx_win, char *title,
 
   mcs.lParam = 0;
 
+  // turn off redrawing in the MDI client window
+  SendMessage(parent->client_hwnd, WM_SETREDRAW, FALSE, 0L);
+ 
   DWORD Return = SendMessage(parent->client_hwnd,
-		WM_MDICREATE, 0, (LONG)(LPSTR)&mcs);
-
+			     WM_MDICREATE, 0, (LONG)(LPSTR)&mcs);
+  
   //handle = (HWND)LOWORD(Return);
   // Must be the DWORRD for WIN32. And in 16 bits, HIWORD=0 (says Microsoft)
   handle = (HWND)Return;
 
   wxWndHook = NULL;
   wxWinHandleList->Append((long)handle, this);
-
   SetWindowLong(handle, 0, (long)this);
-#if DEBUG > 1
-  wxDebugMsg("End of wxMDIChild::wxMDIChild %d\n", handle);
-#endif
+  
+  ShowWindow(handle, SW_HIDE);
+
+  // turn redrawing in the MDI client back on,
+  // and force an immediate update
+  SendMessage(parent->client_hwnd, WM_SETREDRAW, TRUE, 0L);
+  InvalidateRect(parent->client_hwnd, NULL, TRUE);
+  UpdateWindow(parent->client_hwnd);
 }
 
 static HWND invalidHandle = 0;
@@ -1238,32 +1238,21 @@ void wxMDIChild::OnSize(int bad_x, int bad_y, UINT id)
 
 BOOL wxMDIChild::OnClose(void)
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIChild::OnClose %d\n", handle);
-#endif
-  if (wx_window && handle)
-  {
-    if (wx_window->GetEventHandler()->OnClose())
-    {
-      delete wx_window;
+  if (wx_window && handle) {
+    if (wx_window->GetEventHandler()->OnClose()) {
       return TRUE;
-    } else return FALSE;
+    } else 
+      return FALSE;
   }
   return FALSE;
 }
 
 BOOL wxMDIChild::OnCommand(WORD id, WORD cmd, HWND WXUNUSED(control))
 {
-#if DEBUG > 1
-  wxDebugMsg("wxMDIChild::OnCommand %d\n", handle);
-#endif
-//  (void)DefWindowProc(last_msg, last_wparam, last_lparam);
-  if ((cmd == 0) && handle)
-  {
+  if ((cmd == 0) && handle) {
     ((wxFrame *)wx_window)->Command(id);
     return TRUE;
-  }
-  else
+  } else
     return FALSE;
 }
 
@@ -1271,18 +1260,18 @@ long wxMDIChild::DefWindowProc(UINT message, UINT wParam, LONG lParam)
 {
   if (handle)
     return DefMDIChildProc(handle, message, wParam, lParam);
-  else return 0;
+  else
+    return 0;
 }
 
 BOOL wxMDIChild::ProcessMessage(MSG *msg)
 {
-  if (accelerator_table && handle)
-  {
+  if (accelerator_table && handle) {
     wxFrame *parent = (wxFrame *)wx_window->GetParent();
     HWND parent_hwnd = parent->GetHWND();
     return ::TranslateAccelerator(parent_hwnd, (HACCEL)accelerator_table, msg);
-  }
-  return FALSE;
+  } return
+    FALSE;
 }
 
 BOOL wxMDIChild::OnMDIActivate(BOOL bActivate, HWND WXUNUSED(one), HWND WXUNUSED(two))
@@ -1290,13 +1279,8 @@ BOOL wxMDIChild::OnMDIActivate(BOOL bActivate, HWND WXUNUSED(one), HWND WXUNUSED
   wxFrame *parent = (wxFrame *)wx_window->GetParent();
   wxFrame *child = (wxFrame *)wx_window;
   HMENU parent_menu = parent->GetWinMenu();
-#if DEBUG > 1
-  wxDebugMsg("Parent menu is %d\n", parent_menu);
-#endif
+
   HMENU child_menu = child->GetWinMenu();
-#if DEBUG > 1
-  wxDebugMsg("Child menu is %d\n", child_menu);
-#endif
 
   wxMDIFrame *cparent = (wxMDIFrame *)parent->handle;
   if (bActivate)

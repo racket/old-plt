@@ -4,7 +4,7 @@
  * Author:	Julian Smart
  * Created:	1993
  * Updated:	August 1994
- * RCS_ID:      $Id: wx_dc.cxx,v 1.18 1999/01/28 15:56:34 mflatt Exp $
+ * RCS_ID:      $Id: wx_dc.cxx,v 1.19 1999/02/23 18:27:46 mflatt Exp $
  * Copyright:	(c) 1993, AIAI, University of Edinburgh
  */
 
@@ -389,26 +389,7 @@ Bool wxDC::GetPixel(float x, float y, wxColour *col)
 
 void wxDC::IntDrawLine(int x1, int y1, int x2, int y2)
 {
-  HDC dc = ThisDC();
-
-  if (!dc) return;
-
-  int xx1, yy1, xx2, yy2;
-  
-  if (StartPen(dc)) {
-    ShiftXY(x1, y1, xx1, yy1);
-    ShiftXY(x2, y2, xx2, yy2);
-    
-    (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), NULL);
-    (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy2));
-
-    DonePen(dc);
-  }
-
-  DoneDC(dc);
- 
-  CalcBoundingBox((float)x1, (float)y1);
-  CalcBoundingBox((float)x2, (float)y2);
+  DrawLine(x1, y1, x2, y2);
 }
 
 void wxDC::CrossHair(float x, float y)
@@ -456,12 +437,56 @@ void wxDC::DrawLine(float x1, float y1, float x2, float y2)
     ShiftXY(x1, y1, xx1, yy1);
     ShiftXY(x2, y2, xx2, yy2);
     
+    /* Convention across platforms: line includes pixel on endpoint */
+    int pw = current_pen->GetWidth();
+    int forward = 0;
+    if (!pw)
+      forward = 1;
+    else if (pw == 1) {
+      if (current_pen->GetCap() != wxCAP_BUTT) {
+	/* Pen size 1: no need to forward under NT */
+	static int nt = -1;
+	if (nt < 0) {
+	  OSVERSIONINFO info;
+	  info.dwOSVersionInfoSize = sizeof(info);
+	  GetVersionEx(&info);
+	  if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
+	    nt = 1;
+	  else
+	    nt = 0;
+	}
+	forward = !nt;
+      } else
+	forward = 0;
+    }
+    if (forward) {
+      int dx = (xx2 - xx1);
+      int dy = (yy2 - yy1);
+
+      if (!dx && !dy) {
+	xx2++;
+      } else {
+	int adx = ((dx < 0) ? -dx : dx);
+	int ady = ((dy < 0) ? -dy : dy);
+
+	if (ady >= adx) {
+	  if (yy1 < yy2)
+	    yy2++;
+	  else
+	    --yy2;
+	}
+	
+	if (adx >= ady) {
+	  if (xx1 < xx2)
+	    xx2++;
+	  else
+	    --xx2;
+	}
+      }
+    }
+
     (void)MoveToEx(dc, XLOG2DEV(xx1), YLOG2DEV(yy1), NULL);
     (void)LineTo(dc, XLOG2DEV(xx2), YLOG2DEV(yy2));
-    if (current_pen  && !current_pen->GetWidth()) {
-      /* Convention across platforms: line includes pixel on endpoint */
-      ::SetPixelV(dc, XLOG2DEV(xx2), YLOG2DEV(yy2), current_pen->GetColour().pixel);
-    }
 
     DonePen(dc);
   }
@@ -1082,13 +1107,14 @@ void wxDC::GetTextExtent(const char *string, float *x, float *y,
   
   SIZE sizeRect;
   TEXTMETRIC tm;
+  int len = strlen(string);
 
-  GetTextExtentPoint(dc, string, strlen(string), &sizeRect);
+  GetTextExtentPoint(dc, len ? string : " ", len ? len : 1, &sizeRect);
   GetTextMetrics(dc, &tm);
 
   DoneDC(dc);
 
-  *x = (float)XDEV2LOGREL(sizeRect.cx);
+  *x = (len ? (float)XDEV2LOGREL(sizeRect.cx) : (float)0.0);
   *y = (float)YDEV2LOGREL(sizeRect.cy);
   if (descent) *descent = (float)tm.tmDescent;
   if (externalLeading) *externalLeading = (float)tm.tmExternalLeading;

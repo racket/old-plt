@@ -191,14 +191,16 @@
       (unless (send bm ok?)
 	(error (format "cannot make ~a x ~a image" w h)))
       (send dc clear)
-      (send dc set-brush (or (send the-brush-list find-or-create-brush (symbol->string color) brush)
-			     (error (format "unknown color: ~a" color))))
-      (send dc set-pen (or (send the-pen-list find-or-create-pen (symbol->string color) 1 pen)
-			   (error (format "unknown color: ~a" color))))
+      (send dc set-brush 
+	(or (send the-brush-list find-or-create-brush (symbol->string color) brush)
+	    (error who "color symbol expected, given ~e" color)))
+      (send dc set-pen
+	(or (send the-pen-list find-or-create-pen (symbol->string color) 1 pen)
+	    (error who "color symbol expected, given ~e" color)))
       dc))
 
   (define (line x y color)
-    (let ([dc (new-dc+bm 'color-line x y color 'transparent 'solid)])
+    (let ([dc (new-dc+bm 'line x y color 'transparent 'solid)])
       (send dc draw-line 0 0 x y)
       (dc->snip dc)))
 
@@ -210,7 +212,11 @@
       (let*-values ([(x y d s) (send dc get-text-extent str)]
                     [(dc) (new-dc+bm 'text (+ x 1) (+ y 1) 'black 'solid 'solid)])
         (send dc set-text-mode 'solid)
-        (send dc set-text-background (send the-color-database find-color (symbol->string color)))
+        (send dc set-text-background
+	  (or
+	    (send the-color-database find-color (symbol->string color))
+	    (error 'text "expected a color symbol as second argument, given: ~e" color)
+	    ))
         (send dc draw-text str 0 0)
         (dc->snip dc))))
 

@@ -1,10 +1,4 @@
 
-fix docs for constan.ss
-
-fix docs for parse-command-line's final proc
-
-fix docs for function: delete-directory/files
-
 (let loop ([x 0]) (call/cc loop)) accumulates memory
 
 "synrule.ss" is missing `let-syntax' and `letrec-syntax'
@@ -12,7 +6,7 @@ fix docs for function: delete-directory/files
 On Alpha machines, floating-point overflow is not handled properly
  (so +inf.0, -inf.0, and +nan.0 are messed up)
 
-Under MacOS, `tcp-listen' does not work reliably
+Under MacOS, server TCP (via `tcp-listen') does not work reliably
 
 Under MacOS, in the standalone MzScheme application, a blocking read 
  from stdin blocks all MzScheme threads

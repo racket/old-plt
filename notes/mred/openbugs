@@ -1,30 +1,35 @@
 
 MrEd Engine:
 
-* need to add wx:list-box% get-first-item and get-last-item to allow
-  more item alignments
+* motif: needs dialog box [non-]iconfication fix and force-focus
 
-* kill-focus
+* motif: needs x-flag restrictions
 
-* command-event: string for text events
+* macos: needs weak-holding pen, brush,and font lists
 
-* when an overridden function returns the wrong type,
-   bad error message (says "expects")
+* macos: crash on printing definitions
+
+* macos: drawing points, etc?
+
+* status of kill-focus event?
+
+* Mac and Motif check: drag outisde view => should keep going even 
+   if mouse is still
+
+  -------------------- ^- fix for 51   v- leave for later
 
 * MacOS needs way to control the 0-window menu bar
 
 * X Windows and drawing into b & w bitmaps: black and white
-  are reversed when using certain kinds of displays
+   are reversed when using certain kinds of displays
 
 * wx:dc%'s draw-arc is undefined when input isn't
-  consistent with a circle
+   consistent with a circle
 
 * Windows: set-user-scale with wx:memory-dc% doesn't work right
 
 * MacOS: busy-cursor state is wrong for new windows when the
    busy cursor is active
-
-* pasteboards: printing not yet implemented
 
 * need to penalize the current thread more for certain primitive
    operations that can take a long time (e.g., loading a bitmap
@@ -51,17 +56,13 @@ MrEd Engine:
 
 * Xt: out-of-colours - widgets use too much black
 
-* signature include: unbalanced parens => diverge?
+* hidden files cause problems - add a MzScheme predicate?
 
-* drag outisde view => should keep going even if mouse is still
-
-* hidden files - add a MzScheme predicate?
-
-* dragging selection shouldn't keep changing the auto-X-selection
+* optimization: dragging selection shouldn't keep changing the auto-X-selection
 
 * Xt: busy cursor not shown in the menu bar
 
-* editor buffers should show a blinking caret
+* blinking caret
 
 * Motif: menus don't work with multiple displays
 

@@ -5,8 +5,7 @@
 	  [zodiac:interface : drscheme:interface^]
 	  [aries : plt:aries^]
 	  [mzlib:print-convert : mzlib:print-convert^]
-	  [mzlib:pretty-print : mzlib:pretty-print^]
-	  [mzlib:function : mzlib:function^])
+	  [mzlib : mzlib:core^])
   (link
    [prims : plt:prims^ ((require-relative-library "prims.ss"))]
    [init-params : plt:init-params^ ((require-relative-library "init-paramr.ss")
@@ -17,13 +16,14 @@
 				    zodiac:interface
 				    aries
 				    mzlib:print-convert
-				    mzlib:pretty-print
-				    mzlib:function)]
+				    (mzlib pretty-print)
+				    (mzlib function)
+				    (mzlib thread))]
    [init-namespace : plt:init-namespace^ ((require-relative-library "init-namespacer.ss")
 					  import
 					  init-params
 					  prims
-					  mzlib:function)])
+					  (mzlib function))])
   (export
    (open init-params)
    (open init-namespace)))

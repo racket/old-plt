@@ -1637,8 +1637,10 @@
 			     (and canvas
 				  (send canvas get-top-level-window)))))))))
 	    
-	    (current-directory (or (send context get-directory) 
-				   drscheme:init:first-dir))
+	    (let ([dir (or (send context get-directory) 
+			   drscheme:init:first-dir)])
+	      (current-directory dir)
+	      (current-load-relative-directory dir))
 	    
 	    (exit-handler (lambda (arg) ; =User=
 			    (custodian-shutdown-all user-custodian)))

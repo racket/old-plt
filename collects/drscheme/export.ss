@@ -28,8 +28,7 @@
 		interface
 		aries
 		print-convert
-		(mzlib pretty-print)
-		(mzlib function))]
+		mzlib)]
 	[load-handler : drscheme:load-handler^
                       ((require-library "load-handler.ss" "drscheme")
 		       mred zodiac basis 

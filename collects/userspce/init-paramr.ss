@@ -7,7 +7,8 @@
 	  [aries : plt:aries^]
 	  [mzlib:print-convert : mzlib:print-convert^]
 	  [mzlib:pretty-print : mzlib:pretty-print^]
-	  [mzlib:function : mzlib:function^])
+	  [mzlib:function : mzlib:function^]
+	  [mzlib:thread : mzlib:thread^])
   
   (define initial-line 1)
   (define initial-column 1)
@@ -380,13 +381,19 @@
 			(lambda (term read-expr)
 			  (dynamic-wind
 			   (lambda () (zodiac:interface:set-zodiac-phase 'expander))
-			   (lambda () (aries:annotate term read-expr))
+			   (lambda ()
+			     (mzlib:thread:dynamic-enable-break
+			      (lambda ()
+				(aries:annotate term read-expr))))
 			   (lambda () (zodiac:interface:set-zodiac-phase #f))))]
 		       ; Always read with zodiac
 		       [zodiac-read
 			(dynamic-wind
 			 (lambda () (zodiac:interface:set-zodiac-phase 'reader))
-			 (lambda () (reader))
+			 (lambda ()
+			   (mzlib:thread:dynamic-enable-break
+			    (lambda ()
+			      (reader))))
 			 (lambda () (zodiac:interface:set-zodiac-phase #f)))]
 		       ; Sometimes, we throw away source information and
 		       ;  expand with MzScheme
@@ -405,10 +412,12 @@
 				    (lambda () (zodiac:interface:set-zodiac-phase 'expander))
 				    (lambda () (parameterize ([zodiac:user-macro-body-evaluator user-macro-body-evaluator]
 							      [zodiac:elaboration-evaluator evaluator])
-						 (zodiac:scheme-expand
-						  zodiac-read
-						  'previous
-						  vocab)))
+						 (mzlib:thread:dynamic-enable-break
+						  (lambda ()
+						    (zodiac:scheme-expand
+						     zodiac-read
+						     'previous
+						     vocab)))))
 				    (lambda () (zodiac:interface:set-zodiac-phase #f)))
 
 				   ;; call expand-defmacro here so errors

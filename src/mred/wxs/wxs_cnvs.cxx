@@ -122,7 +122,6 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
-
 // @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 
 
@@ -996,33 +995,6 @@ static Scheme_Object *os_wxCanvasGetDC(Scheme_Object *obj, int n,  Scheme_Object
   return WITH_REMEMBERED_STACK(objscheme_bundle_wxDC(r));
 }
 
-static Scheme_Object *os_wxCanvasPopupMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
-{
-  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
-  REMEMBER_VAR_STACK();
-  objscheme_check_valid(obj);
-  class wxMenu* x0 INIT_NULLED_OUT;
-  int x1;
-  int x2;
-
-  SETUP_VAR_STACK_REMEMBERED(3);
-  VAR_STACK_PUSH(0, p);
-  VAR_STACK_PUSH(1, obj);
-  VAR_STACK_PUSH(2, x0);
-
-  
-  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[0], "popup-menu in canvas%", 0));
-  x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 10000, "popup-menu in canvas%"));
-  x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 0, 10000, "popup-menu in canvas%"));
-
-  
-  WITH_VAR_STACK(((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2));
-
-  
-  
-  return scheme_void;
-}
-
 static Scheme_Object *os_wxCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
@@ -1192,7 +1164,7 @@ void objscheme_setup_wxCanvas(void *env)
 
   wxREGGLOB(os_wxCanvas_class);
 
-  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 24));
+  os_wxCanvas_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "canvas%", "window%", os_wxCanvas_ConstructScheme, 23));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-drop-file", os_wxCanvasOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "pre-on-event", os_wxCanvasPreOnEvent, 2, 2));
@@ -1213,7 +1185,6 @@ void objscheme_setup_wxCanvas(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "set-scrollbars", os_wxCanvasSetScrollbars, 6, 9));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-virtual-size", os_wxCanvasGetVirtualSize, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "get-dc", os_wxCanvasGetDC, 0, 0));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "popup-menu", os_wxCanvasPopupMenu, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-char", os_wxCanvasOnChar, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-event", os_wxCanvasOnEvent, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxCanvas_class, "on-paint", os_wxCanvasOnPaint, 0, 0));

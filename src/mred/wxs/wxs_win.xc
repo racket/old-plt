@@ -95,6 +95,8 @@ static int wxSchemeWindowGetY(wxWindow *w)
 @ "get-text-extent" : void GetTextExtent(string,float*,float*,float?=NULL,float?=NULL,wxFont^=NULL,bool=FALSE);
 @ "center" : void Center(SYM[direction]=wxBOTH);
 
+@ "popup-menu" : void PopupMenu(wxMenu!, rint[0|10000], rint[0|10000]);
+
 @ m "get-height" : int wxSchemeWindowGetHeight();
 @ m "get-width" : int wxSchemeWindowGetWidth();
 @ m "get-x" : int wxSchemeWindowGetX();

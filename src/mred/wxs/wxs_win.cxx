@@ -144,6 +144,7 @@ static int unbundle_symset_direction(Scheme_Object *v, const char *where) {
 
 
 
+
 class os_wxWindow : public wxWindow {
  public:
 
@@ -609,6 +610,33 @@ static Scheme_Object *os_wxWindowwxSchemeWindowGetHeight(Scheme_Object *obj, int
   
   
   return scheme_make_integer(r);
+}
+
+static Scheme_Object *os_wxWindowPopupMenu(Scheme_Object *obj, int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  objscheme_check_valid(obj);
+  class wxMenu* x0 INIT_NULLED_OUT;
+  int x1;
+  int x2;
+
+  SETUP_VAR_STACK_REMEMBERED(3);
+  VAR_STACK_PUSH(0, p);
+  VAR_STACK_PUSH(1, obj);
+  VAR_STACK_PUSH(2, x0);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_wxMenu(p[0], "popup-menu in window%", 0));
+  x1 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[1], 0, 10000, "popup-menu in window%"));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer_in(p[2], 0, 10000, "popup-menu in window%"));
+
+  
+  WITH_VAR_STACK(((wxWindow *)((Scheme_Class_Object *)obj)->primdata)->PopupMenu(x0, x1, x2));
+
+  
+  
+  return scheme_void;
 }
 
 static Scheme_Object *os_wxWindowCenter(Scheme_Object *obj, int n,  Scheme_Object *p[])
@@ -1160,7 +1188,7 @@ void objscheme_setup_wxWindow(void *env)
 
   wxREGGLOB(os_wxWindow_class);
 
-  os_wxWindow_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "window%", "object%", NULL, 30));
+  os_wxWindow_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "window%", "object%", NULL, 31));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "on-drop-file", os_wxWindowOnDropFile, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "pre-on-event", os_wxWindowPreOnEvent, 2, 2));
@@ -1172,6 +1200,7 @@ void objscheme_setup_wxWindow(void *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-x", os_wxWindowwxSchemeWindowGetX, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-width", os_wxWindowwxSchemeWindowGetWidth, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-height", os_wxWindowwxSchemeWindowGetHeight, 0, 0));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "popup-menu", os_wxWindowPopupMenu, 3, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "center", os_wxWindowCenter, 0, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-text-extent", os_wxWindowGetTextExtent, 3, 7));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxWindow_class, "get-parent", os_wxWindowGetParent, 0, 0));

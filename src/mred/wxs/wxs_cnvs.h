@@ -12,7 +12,6 @@ extern class wxWindow *objscheme_unbundle_wxWindow(Scheme_Object *, const char *
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxScrollEvent *objscheme_unbundle_wxScrollEvent(Scheme_Object *, const char *, int);
 extern Scheme_Object *objscheme_bundle_wxDC(class wxDC *);
-extern class wxMenu *objscheme_unbundle_wxMenu(Scheme_Object *, const char *, int);
 extern class wxKeyEvent *objscheme_unbundle_wxKeyEvent(Scheme_Object *, const char *, int);
 extern class wxMouseEvent *objscheme_unbundle_wxMouseEvent(Scheme_Object *, const char *, int);
 extern class wxPanel *objscheme_unbundle_wxPanel(Scheme_Object *, const char *, int);

@@ -138,8 +138,8 @@ Bool wxMenu::PopupMenu(Widget in_w, int root_x, int root_y)
 
     while (XtParent(in_w)) {
       in_w = XtParent(in_w);
-   }
-
+    }
+    
     X = new wxMenu_Widgets;
     X->shell = XtVaCreatePopupShell
 	("popup", overrideShellWidgetClass, in_w, 

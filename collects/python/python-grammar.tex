@@ -36,7 +36,7 @@ The following non-terminal ({\bf file\_{}input}) is the result of the parser in 
 
 \subsection{eval\_input}
 \label{evalzzzinputb}
-Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Only expressions (\ref{tuplezzzorzzztestb}) followed by newlines are allowed. \\
+Eval Input is used by the Python \verb+eval+ and \verb+input+ functions.  Only expressions (\ref{tuplezzzorzzztestb}), possibly followed by newlines, are allowed. \\
 
 \begin{tabular}{lcl}
 {\bf \verb+<+eval\_input\verb+>+} & ::=  & {\bf \verb+<+tuple\_or\_test~\ref{tuplezzzorzzztestb}\verb+>+}  \\
@@ -271,9 +271,7 @@ http://www.python.org/doc/current/ref/import.html
 
 The global statement means that the listed identifiers are to be interpreted as globals.
 Names listed in a global statement must not be used in the same code block 
-textually preceding that global statement. Names listed in a global statement 
-must not be defined as formal parameters or in a for loop control target, 
-class definition, function definition, or import statement.  
+textually preceding that global statement (not yet implemented). Names listed in a global statement must not be defined as formal parameters or in a for loop control target, class definition, function definition, or import statement (not yet implemented).
 
 Programmer's note: the global is a directive to the parser. 
 It applies only to code parsed at the same time as the global statement. 
@@ -425,13 +423,9 @@ The INDENT token indicates a new indentation level.  Similarly, the DEDENT token
 \newlength{\len}
 \setlength{\len}{\textwidth}
 \addtolength{\len}{-1\tw}
-%Yes, except that I didn't know \let existed (I use \newlength).  Also
-%I don't see why you need the \verb and the "+", and you should also
-%not forget that that are spaces added between the columns (see
-%\arraycolsep).
 \begin{tabular}{lcp{\len}}
 {\bf \verb+<+except\_clause\_list\_plus\verb+>+} & ::=  & {\bf \verb+<+except\_clause~\ref{exceptzzzclauseb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
- & \verb+|+  & {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  {\bf \verb+<+except\_clause~\ref{exceptzzzclauseb}\verb+>+}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
+ & \verb+|+  & {\bf \verb+<+except\_clause\_list\_plus~\ref{exceptzzzclausezzzlistzzzplusb}\verb+>+}  {\bf \verb{<}\mbox{except\_clause~\ref{exceptzzzclauseb}}\verb|>|}  \verb|:| {\bf \verb+<+suite~\ref{suiteb}\verb+>+}  \\
 \end{tabular}
 
 \subsection{except\_clause}
@@ -477,22 +471,8 @@ If the form ``**identifier'' is present, it is initialized to a new dictionary
 receiving any excess keyword arguments, defaulting to a new empty dictionary.
 
 If a parameter has a default value, all following parameters must also have a 
-default value -- this is a syntactic restriction that is not expressed by the grammar.   
-Default parameter values are evaluated when the function definition is executed. 
-This means that the expression is evaluated once, when the function is defined, 
-and that that same ``pre-computed'' value is used for each call. This is especially 
-important to understand when a default parameter is a mutable object, such as a list 
-or a dictionary: if the function modifies the object (e.g. by appending an item to 
-a list), the default value is in effect modified. This is generally not what was 
-intended. A way around this is to use None as the default, and explicitly test for 
-it in the body of the function, e.g.:
-\begin{verbatim}
-def whats_on_the_telly(penguin=None):
-    if penguin is None:
-         penguin = []    
-         penguin.append("property of the zoo")    
-         return penguin
-\end{verbatim}
+default value -- this is a syntactic restriction that is not expressed by the grammar, but is checked by the parser.   
+
 
 \subsection{fpdef}
 \label{fpdefb}
@@ -535,7 +515,7 @@ In the CPython interpreter, ``old-style'' classes are defined by
 are ``new-style'' classes.
 
 \section{Expressions}
-Expressions produce a value that can be used in an assignment or a boolean check.
+Expressions produce a value that can be used on the right hand side of a variable assignment or a conditional boolean check (\verb|if|, \verb|while|).
 
 \subsection{tuple\_or\_test}
 \label{tuplezzzorzzztestb}
@@ -550,7 +530,7 @@ Expressions produce a value that can be used in an assignment or a boolean check
 {\bf \verb+<+tuple\verb+>+} & ::=  & {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
 \end{tabular} \\
 
-A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the name ``tuple'' is more descriptiveDaniel sometimes.
+A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the name ``tuple'' is more descriptive sometimes.
 
 \subsection{test}
 \label{testb}
@@ -569,6 +549,8 @@ A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the na
  & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test\_list~\ref{testzzzlistb}\verb+>+}  \\
 \end{tabular}
 
+The usage of {\bf test\_{}list} depends on its context, so it never clashes with {\bf testlist~\ref{testlistb}} or {\bf testlist\_{}safe~\ref{testlistzzzsafeb}}.  A {\bf test\_{}list} is either the empty string, a {\bf test~\ref{testb}}, or a comma-separated list of tests, which may or may not end with a comma.
+
 \subsection{testlist}
 \label{testlistb}
 \begin{tabular}{lcl}
@@ -576,6 +558,8 @@ A tuple has the same syntactic rules as a testlist (\ref{testlistb}), but the na
  & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
  & \verb+|+  & {\bf \verb+<+test~\ref{testb}\verb+>+}  \verb|,| {\bf \verb+<+testlist~\ref{testlistb}\verb+>+}  \\
 \end{tabular}
+
+See note for {\bf test\_{}list~\ref{testzzzlistb}}.  A {\bf testlist} is never empty.
 
 \subsection{lambdef}
 \label{lambdefb}
@@ -819,6 +803,8 @@ A trailer is an indexing operator.  (e.g., the \verb|[7]| in \verb|x[7]|).
  & \verb+|+  & \verb|:| {\bf \verb+<+test~\ref{testb}\verb+>+}  \\
 \end{tabular}
 
+A {\bf sliceop} occurs inside of a {\bf subscript~\ref{subscriptb}}.
+
 \subsection{exprlist}
 \label{exprlistb}
 \begin{tabular}{lcl}
@@ -872,3 +858,23 @@ Used in list comprehensions (\ref{listzzzforb}).  A safe \verb|testlist| cannot 
 
 The NAME token is a valid Python identifier.  A valid Python identifier is an alphanumeric sequence of characters starting with a letter.  The underscore character (\_) counts as a letter.  The language is case-sensitive.
 \end{document}
+
+
+\section{Behavior}
+
+\subsection{Default Parameters}
+Default parameter values are evaluated when the function definition is executed. 
+This means that the expression is evaluated once, when the function is defined, 
+and that that same ``pre-computed'' value is used for each call. This is especially 
+important to understand when a default parameter is a mutable object, such as a list 
+or a dictionary: if the function modifies the object (e.g. by appending an item to 
+a list), the default value is in effect modified. This is generally not what was 
+intended. A way around this is to use None as the default, and explicitly test for 
+it in the body of the function, e.g.:
+\begin{verbatim}
+def whats_on_the_telly(penguin=None):
+    if penguin is None:
+         penguin = []    
+         penguin.append("property of the zoo")    
+         return penguin
+\end{verbatim}

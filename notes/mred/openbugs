@@ -5,13 +5,17 @@ MrEd Engine:
 
 * motif: needs x-flag restrictions
 
+* motif: needs activate fix
+
+* motif: list-box enhancements
+
 * macos: needs weak-holding pen, brush,and font lists
 
 * macos: crash on printing definitions
 
 * macos: drawing points, etc?
 
-* status of kill-focus event?
+* macos: list-box enhancements
 
 * Mac and Motif check: drag outisde view => should keep going even 
    if mouse is still

@@ -1396,7 +1396,7 @@ static void machine_details(char *s)
 
    err = Gestalt(gestaltSystemVersion, &lng);
    if (err != noErr) {
-     strcpy(sysver, "<unknown system>");
+     strcpy(sysvers, "<unknown system>");
    } else {
      sprintf(sysvers, "%d.%d.%d",
 	     (lng >> 16) & 0xff,
@@ -1413,7 +1413,7 @@ static void machine_details(char *s)
      memmove(machine_name, machine_name + 1, machine_name[0] + 1);
    }
 
-   sprintf(s, "%s %s", sysver, machine_name);
+   sprintf(s, "%s %s", sysvers, machine_name);
 }
 #endif
 

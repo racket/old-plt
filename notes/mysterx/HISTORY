@@ -2,7 +2,13 @@ Version 102:
 
 cocreate-instance renamed to 
  cocreate-instance-from-coclass;
- added cocreate-instance-from-progid
+ added cocreate-instance-from-progid;
+ both of these procedures support 
+ running remote servers
+for mx-document% and mx-element% classes, split
+ insert-object and append-object methods into
+ {insert,append}-object-from-coclass and  
+ {insert,append}-object-from-progid
 added Scheme-syntax property getters and 
  setters for HTML elements; old string versions
  are available as "-native" methods
@@ -20,8 +26,7 @@ for COM event-handling procedures, added
  procedures set-coclass! and 
  set-coclass-from-progid! to allow 
  explicit disambiguation; procedures 
- coclass and coclass-as-progid return 
- current value
+ coclass and progid return current value
 added find-element-by-id-or-name,
  elements-with-tag to mx-document%
 added methods selection and 

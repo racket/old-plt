@@ -561,26 +561,6 @@
    ()
    "Clears the current error highlighting.")
   
-  (drscheme:rep:exn:locs?
-   (any/c . -> . boolean?)
-   (val)
-   "Determines if \\var{val} is an exn:loc or not.")
-  (drscheme:rep:exn:locs-locs
-   (drscheme:rep:exn:locs? . -> . (listof (list/c (is-a?/c text:basic<%>) number? number?)))
-   (loc)
-   "Extracts the loc field from the exn.")
-  (drscheme:rep:make-exn:locs
-   (string?
-    continuation-mark-set?
-    (listof (list/c (is-a?/c text:basic<%>) number? number?))
-    . -> .
-    drscheme:rep:exn:locs?)
-   (message continuation-mark-set locs)
-   "Constructs an exn:loc."
-   "These exceptions are handled specially by DrScheme's"
-   "REPL. The source locations inside them are highlighted"
-   "by the default exception handler.")
-  
   (drscheme:rep:get-drs-bindings-keymap
    (-> (is-a?/c keymap%))
    ()

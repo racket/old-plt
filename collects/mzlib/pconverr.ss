@@ -205,6 +205,7 @@
 				   (not (eq? expr 'quasiquote))
 				   (not (eq? expr 'quote))
 				   (not (eq? expr 'unquote)))
+			      (type-symbol? expr)
 			      (char? expr)
 			      (string? expr)
 			      (not expr)

@@ -501,7 +501,7 @@
  (string?
   (union false? (is-a?/c mode:surrogate-text<%>))
   ((is-a?/c drscheme:rep:text%) number? . -> . boolean?)
-  (string? . -> . boolean?)
+  ((union false? string?) . -> . boolean?)
   . -> .
   drscheme:modes:mode?)
  (name surrogate repl-submit matches-filename)
@@ -581,7 +581,7 @@
  ".")
   
 (drscheme:modes:mode-matches-filename
- (drscheme:modes:mode? . -> . (string? . -> . boolean?))
+ (drscheme:modes:mode? . -> . ((union false? string?) . -> . boolean?))
  (mode)
  "Extracts the filename matching predicate of the mode."
  ""

@@ -74,7 +74,7 @@ to the original stdout of DrScheme.
                  (read-accept-quasiquote (get-accept-quasiquote?))
                  (namespace-attach-module drs-namespace 'drscheme-secrets)
                  (error-display-handler teaching-languages-error-display-handler)
-                 (current-eval (add-debugging (current-eval)))
+                 (current-eval (add-annotation (current-eval)))
                  (error-print-source-location #f)
                  (read-decimal-as-inexact #f)
                  (read-accept-dot (get-read-accept-dot)))))
@@ -271,31 +271,23 @@ to the original stdout of DrScheme.
       (namespace-require 'drscheme-secrets)
       
 
-      
-      
-      
-                                          
-  ;;;    ;;;  ;;  ;;  ; ;;;   ;;;    ;;;  
- ;   ;  ;   ;  ;   ;   ;     ;   ;  ;   ; 
-  ;;;   ;   ;  ;   ;   ;     ;      ;;;;; 
-     ;  ;   ;  ;   ;   ;     ;      ;     
- ;   ;  ;   ;  ;   ;   ;     ;   ;  ;   ; 
-  ;;;    ;;;    ;;; ; ;;;;    ;;;    ;;;  
-                                          
-                                          
-                                          
 
-                                                                             
-                                    ;;;                    ;                 
-                                      ;            ;                         
-                                      ;            ;                         
-  ;;;    ;;;   ; ;;;  ; ;;;   ;;;     ;    ;;;;   ;;;;;  ;;;     ;;;  ; ;;;  
- ;   ;  ;   ;   ;      ;     ;   ;    ;        ;   ;       ;    ;   ;  ;;  ; 
- ;      ;   ;   ;      ;     ;;;;;    ;     ;;;;   ;       ;    ;   ;  ;   ; 
- ;      ;   ;   ;      ;     ;        ;    ;   ;   ;       ;    ;   ;  ;   ; 
- ;   ;  ;   ;   ;      ;     ;   ;    ;    ;   ;   ;   ;   ;    ;   ;  ;   ; 
-  ;;;    ;;;   ;;;;   ;;;;    ;;;   ;;;;;;  ;;; ;   ;;;  ;;;;;   ;;;  ;;;  ;;
-                                                                             
+;                                                               
+;                                                               
+;                                                               
+;                                                               
+;                                                               
+;                                 ;                             
+;    ;;;   ; ;  ; ;   ;;;    ; ; ;;;;  ; ;  ;;;     ;;;    ;;;  
+;   ;   ;  ;;   ;;   ;   ;   ;;   ;    ;;  ;   ;   ;   ;  ;   ; 
+;  ;    ;  ;    ;   ;     ;  ;    ;    ;       ;  ;      ;    ; 
+;  ;;;;;;  ;    ;   ;     ;  ;    ;    ;    ;;;;  ;      ;;;;;; 
+;  ;       ;    ;   ;     ;  ;    ;    ;   ;   ;  ;      ;      
+;   ;      ;    ;    ;   ;   ;    ;    ;   ;   ;   ;   ;  ;     
+;    ;;;;  ;    ;     ;;;    ;     ;;  ;    ;;;;;   ;;;    ;;;; 
+;                                                               
+;                                                               
+;                                                               
                                                                              
                                                                              
       
@@ -365,12 +357,22 @@ to the original stdout of DrScheme.
                   expr))
               expr)))
       
-      ;; profiling infrastructure. Not used.
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;
+      ;;  profiling infrastructure. Not used.
+      ;;
+      
       (define profile-key (gensym))
       (define (profiling-enabled) #f)
       (define (initialize-profile-point . x) (void))
       (define (register-profile-start . x) #f)
       (define (register-profile-done . x) (void))
+      
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;;
+      ;;  test coverage
+      ;;
       
       (define test-coverage-enabled (make-parameter #t))
       (define current-test-coverage-info (make-parameter #f))
@@ -396,9 +398,9 @@ to the original stdout of DrScheme.
       
       (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
       
-      ;; add-debugging : (sexp -> value) -> sexp -> value
-      ;; adds debugging information to `sexp' and calls `oe'
-      (define (add-debugging oe)
+      ;; add-annotation : (sexp -> value) -> sexp -> value
+      ;; adds debugging and test coverage information to `sexp' and calls `oe'
+      (define (add-annotation oe)
         (let ([teaching-language-eval-handler
                (lambda (exp)
                  (let ([annotated

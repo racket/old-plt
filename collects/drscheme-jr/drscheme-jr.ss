@@ -147,16 +147,8 @@
 (reference-library "mzlib.ss")
 (reference-library "pretty.ss")
 
-(begin-elaboration-time
- (define plt-dir (or (getenv "PLTHOME") "/usr/local/lib/plt"))
- (define zodiac-dir (build-path plt-dir "zodiac")))
-
-(reference (begin-elaboration-time (build-path zodiac-dir "zsigs.ss")))
-(reference (begin-elaboration-time (build-path zodiac-dir "sigs.ss")))
-
-(current-library-collection-paths
- (cons (begin-elaboration-time (build-path plt-dir "mred" "collects"))
-       (current-library-collection-paths)))
+(reference-library "zsigs.ss" "zodiac")
+(reference-library "sigs.ss" "zodiac")
 
 (reference-library "sparams.ss" "backward")
 (reference-library "ariess.ss" "cogen")
@@ -165,9 +157,7 @@
 
 (reference-library "pconver.ss")
 
-(define zodiac@ (reference-unit/sig
-		 (begin-elaboration-time
-		  (build-path plt-dir "zodiac" "link.ss"))))
+(define zodiac@ (reference-library-unit/sig "link.ss" "zodiac"))
 
 (define aries@ (reference-library-unit/sig "ariesr.ss" "cogen"))
 

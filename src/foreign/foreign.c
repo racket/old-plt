@@ -73,7 +73,7 @@ END_XFORM_SKIP;
 
 static Scheme_Hash_Table *opened_libs;
 
-/* (ffi-lib filename) -> ffi-lib */
+/* (ffi-lib filename no-error?) -> ffi-lib */
 #undef MYNAME
 #define MYNAME "ffi-lib"
 static Scheme_Object *foreign_ffi_lib(int argc, Scheme_Object *argv[])
@@ -94,18 +94,23 @@ static Scheme_Object *foreign_ffi_lib(int argc, Scheme_Object *argv[])
     Scheme_Hash_Table *ht;
 #ifdef WINDOWS_DYNAMIC_LOAD
     handle = (name==NULL) ? GetModuleHandle(NULL) : LoadLibrary(name);
-    if (handle == NULL) {
-      long err;
-      err = GetLastError();
-      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-                       MYNAME": couldn't open %V (%E)", argv[0], err);
-    }
 #else
     handle = dlopen(name, RTLD_NOW | RTLD_GLOBAL);
-    if (handle == NULL)
-      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-                       MYNAME": couldn't OPEN %V (%s)", argv[0], dlerror());
 #endif
+    if (handle == NULL) {
+      if (argc > 1 && SCHEME_TRUEP(argv[1])) return scheme_false;
+      else {
+#ifdef WINDOWS_DYNAMIC_LOAD
+        long err;
+        err = GetLastError();
+        scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
+                         MYNAME": couldn't open %V (%E)", argv[0], err);
+#else
+        scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
+                         MYNAME": couldn't OPEN %V (%s)", argv[0], dlerror());
+#endif
+      }
+    }
     ht = scheme_make_hash_table(SCHEME_hash_string);
     lib = (ffi_lib_struct*)scheme_malloc_tagged(sizeof(ffi_lib_struct));
     lib->so.type = ffi_lib_tag;
@@ -1937,7 +1942,7 @@ void scheme_init_foreign(Scheme_Env *env)
   scheme_add_global("ffi-lib?",
     scheme_make_prim_w_arity(foreign_ffi_lib_p, "ffi-lib?", 1, 1), menv);
   scheme_add_global("ffi-lib",
-    scheme_make_prim_w_arity(foreign_ffi_lib, "ffi-lib", 1, 1), menv);
+    scheme_make_prim_w_arity(foreign_ffi_lib, "ffi-lib", 1, 2), menv);
   scheme_add_global("ffi-lib-name",
     scheme_make_prim_w_arity(foreign_ffi_lib_name, "ffi-lib-name", 1, 1), menv);
   scheme_add_global("ffi-obj?",

@@ -244,8 +244,8 @@ exec mzscheme -r "$0" "$0" "$@"
 
 static Scheme_Hash_Table *opened_libs;
 
-/* (ffi-lib filename) -> ffi-lib */
-{:(cdefine ffi-lib 1):}
+/* (ffi-lib filename no-error?) -> ffi-lib */
+{:(cdefine ffi-lib 1 2):}
 {
   char *name;
   Scheme_Object *path, *hashname;
@@ -263,18 +263,23 @@ static Scheme_Hash_Table *opened_libs;
     Scheme_Hash_Table *ht;
 #ifdef WINDOWS_DYNAMIC_LOAD
     handle = (name==NULL) ? GetModuleHandle(NULL) : LoadLibrary(name);
-    if (handle == NULL) {
-      long err;
-      err = GetLastError();
-      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-                       MYNAME": couldn't open %V (%E)", argv[0], err);
-    }
 #else
     handle = dlopen(name, RTLD_NOW | RTLD_GLOBAL);
-    if (handle == NULL)
-      scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
-                       MYNAME": couldn't OPEN %V (%s)", argv[0], dlerror());
 #endif
+    if (handle == NULL) {
+      if (argc > 1 && SCHEME_TRUEP(argv[1])) return scheme_false;
+      else {
+#ifdef WINDOWS_DYNAMIC_LOAD
+        long err;
+        err = GetLastError();
+        scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
+                         MYNAME": couldn't open %V (%E)", argv[0], err);
+#else
+        scheme_raise_exn(MZEXN_FAIL_FILESYSTEM,
+                         MYNAME": couldn't OPEN %V (%s)", argv[0], dlerror());
+#endif
+      }
+    }
     ht = scheme_make_hash_table(SCHEME_hash_string);
     {:(cmake-object "lib" ffi-lib
                     "handle" "argv[0]"

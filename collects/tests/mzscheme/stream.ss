@@ -118,13 +118,22 @@
       (values r w r2 w2)
       p))
 
-(define start-time 0)
+(define start-ms 0)
+(define start-ps-ms 0)
+(define start-gc-ms 0)
 (define (start s)
   (printf s)
-  (set! start-time (current-milliseconds)))
+  (set! start-ms (current-milliseconds))
+  (set! start-gc-ms (current-gc-milliseconds))
+  (set! start-ps-ms (current-process-milliseconds)))
 (define (end)
-  (printf "~a~n" (- (current-milliseconds) start-time)))
-
+  (let ([ps-ms (current-process-milliseconds)]
+	[gc-ms (current-gc-milliseconds)]
+	[ms (current-milliseconds)])
+    (printf "cpu: ~a real: ~a gc ~a~n" 
+	    (- ps-ms start-ps-ms)
+	    (- ms start-ms)
+	    (- gc-ms start-gc-ms))))
 
 (start "Quick check:~n")
 (define p (open-input-file test-file))

@@ -125,44 +125,39 @@
 	    [send-scheme
 	     (let ([s (make-semaphore 1)])
 	       (opt-lambda (expr [callback (lambda (error?) (void))])
-		 (letrec ([add-tread
-			   (lambda () 
-			     (eval `(#%define tread ,(ivar this transparent-read)))
-			     (set! add-tread void))])
-		   (let* ([user-code
-			   (lambda ()
-			     '(begin (printf "sending scheme:~n")
-				     (pretty-print expr))
-			     (call-with-values
-			      (lambda ()
-				(with-parameterization param
-				  (lambda ()
-				    (parameterize ([current-output-port this-out]
-						   [current-error-port this-err]
-						   [current-input-port this-in])
-						  (add-tread)
-						  (eval expr)))))
-			      (lambda anss
-				(for-each
-				 (lambda (ans)
-				   (unless (void? ans)
-				     (mzlib:pretty-print@:pretty-print
-				      (print-convert:print-convert ans)
-				      this-result)))
-				 anss))))])
-		     (thread
-		      (lambda ()
-			(let ([user-code-error? #t])
-			  (dynamic-wind (lambda () (semaphore-wait s))
-					(lambda ()
-					  (set! user-code-error? (let/ec k 
-								   (set-escape (lambda () (k #t)))
-								   (user-code)
-								   #f)))
-					(lambda () 
-					  (set-escape #f)
-					  (semaphore-post s)
-					  (callback user-code-error?))))))))))]
+		 (let* ([user-code
+			 (lambda ()
+			   '(begin (printf "sending scheme:~n")
+				   (pretty-print expr))
+			   (call-with-values
+			    (lambda ()
+			      (with-parameterization param
+				(lambda ()
+				  (parameterize ([current-output-port this-out]
+						 [current-error-port this-err]
+						 [current-input-port this-in])
+						(eval expr)))))
+			    (lambda anss
+			      (for-each
+			       (lambda (ans)
+				 (unless (void? ans)
+				   (mzlib:pretty-print@:pretty-print
+				    (print-convert:print-convert ans)
+				    this-result)))
+			       anss))))])
+		   (thread
+		    (lambda ()
+		      (let ([user-code-error? #t])
+			(dynamic-wind (lambda () (semaphore-wait s))
+				      (lambda ()
+					(set! user-code-error? (let/ec k 
+								 (set-escape (lambda () (k #t)))
+								 (user-code)
+								 #f)))
+				      (lambda () 
+					(set-escape #f)
+					(semaphore-post s)
+					(callback user-code-error?)))))))))]
 	    [do-many-aries-evals
 	     (lambda (edit start end pre post)
 	       (let ([post-done? #f]

@@ -2105,6 +2105,8 @@ typedef struct {
 #ifdef WIN32_FD_HANDLES
   int type; /* console or pipe? */
   OS_SEMAPHORE_TYPE interrupt;  /* hit when a char is ready */
+  int stupid_eof_check;
+  OS_SEMAPHORE_TYPE stupid_eof_check_going;
 #endif
   int need_wait;                 /* 1 => use ready_sema */
   OS_MUTEX_TYPE lock_mutex;      /* lock on remaining fields */
@@ -2226,6 +2228,8 @@ static void tested_file_close_input(Scheme_Input_Port *p)
     TerminateThread(tip->th, -1);
   }
   CloseHandle(tip->th);
+  if (tip->stupid_eof_check_going)
+    CloseHandle(tip->stupid_eof_check_going);
 #else
   WAIT_THREAD(tip->th);
 #endif
@@ -2278,6 +2282,20 @@ static BOOL CALLBACK that_was_a_break(DWORD x)
   return TRUE;
 }
 
+static long StupidEofCheck(Tested_Input_File *tip)
+{
+  DWORD got;
+
+  RELEASE_SEMAPHORE(tip->stupid_eof_check_going);
+  
+  if (ReadFile((HANDLE)_get_osfhandle(_fileno(tip->fp)), NULL, 0, &got, NULL))
+    tip->stupid_eof_check = 1;
+  
+  return 0;
+}
+
+static int stupid_windows_machine;
+
 #endif
 
 static long read_for_tested_file(void *data)
@@ -2321,6 +2339,27 @@ static long read_for_tested_file(void *data)
 	      break; /* let fgetc handle error */
 	    if (avail)
 	      break;
+
+	    /* Windows 98: PeekNamedPipe doesn't detect EOF! */
+	    if (stupid_windows_machine > 0) {
+	      DWORD id;
+	      HANDLE th;
+
+	      if (!tip->stupid_eof_check_going)
+		tip->stupid_eof_check_going = MAKE_SEMAPHORE();
+
+	      tip->stupid_eof_check = 0;
+	      th = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)StupidEofCheck, tip, 0, &id);
+	      WAIT_SEMAPHORE(tip->stupid_eof_check_going);
+
+	      WaitForSingleObject(th, 100);
+	      TerminateThread(th, 0);
+	      CloseHandle(th);
+
+	      if (tip->stupid_eof_check)
+		break;
+	    }
+
 	    Sleep(100); /* Yuck Yuck Yuck Yuck */
 	  }
 	}
@@ -2337,10 +2376,13 @@ static long read_for_tested_file(void *data)
 	    tip->err_no = 1;
 	} else {
 #ifdef WIN32_FD_HANDLES
-	  /* Unreliabale hack: */
-	  Sleep(100); /* Give the break thread time, if it's there */
-	  if (was_break)
-	    goto try_again;
+	  if (tip->type == FILE_TYPE_CHAR) {
+	    /* Console */
+	    /* Unreliabale hack: */
+	    Sleep(100); /* Give the break thread time, if it's there */
+	    if (was_break)
+	      goto try_again;
+	  }
 #endif
 	}
       }
@@ -2380,10 +2422,21 @@ static Scheme_Object *make_tested_file_input_port(FILE *fp, char *name, int test
 #ifdef WIN32_FD_HANDLES
   tip->type = GetFileType((HANDLE)_get_osfhandle(_fileno(tip->fp)));
   tip->interrupt = MAKE_SEMAPHORE();
+  tip->stupid_eof_check_going = NULL;
 #endif
   MAKE_MUTEX(tip->lock_mutex);
 
 #ifdef WIN32_FD_HANDLES
+  if (!stupid_windows_machine) {
+    OSVERSIONINFO info;
+    info.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
+    GetVersionEx(&info);
+    if (info.dwPlatformId == VER_PLATFORM_WIN32_NT)
+      stupid_windows_machine = -1; /* not as stupid */
+    else
+      stupid_windows_machine = 1;
+  }
+
   /* Remap stdin, so system and process* don't get hung up. */
   if (!_fileno(fp))
     tip->fp = _fdopen(_dup(0), "rt");
@@ -4600,25 +4653,30 @@ static Scheme_Object *sch_pipe(int argc, Scheme_Object **args)
 
 #ifdef PROCESS_FUNCTION
 
+# define USE_CREATE_PIPE
+
 #ifdef WINDOWS_PROCESSES
 # ifdef USE_CREATE_PIPE
 #  define _EXTRA_PIPE_ARGS
-static int pipe(int *ph) {
+static int MyPipe(int *ph) {
   HANDLE r, w;
   if (CreatePipe(&r, &w, NULL, 0)) {
-    ph[0] = (int)r;
-    ph[1] = (int)w;
+    ph[0] = _open_osfhandle((long)r, 0);
+    ph[1] = _open_osfhandle((long)w, 0);
     return 0;
   } else
     return 1;
 }
+#  define PIPE_FUNC MyPipe
 # else
 #  include <Process.h>
 #  include <fcntl.h>
+#  define PIPE_FUNC MSC_IZE(pipe)
 #  define _EXTRA_PIPE_ARGS , 256, _O_BINARY
 # endif
 #else
 # define _EXTRA_PIPE_ARGS
+# define PIPE_FUNC MSC_IZE(pipe)
 #endif
 
 #endif
@@ -4945,16 +5003,16 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 			 scheme_get_param(scheme_config, MZCONFIG_EXIT_HANDLER));
   
   if (!synchonous) {
-    if (MSC_IZE(pipe)(to_subprocess _EXTRA_PIPE_ARGS))
+    if (PIPE_FUNC(to_subprocess _EXTRA_PIPE_ARGS))
       scheme_raise_exn(MZEXN_MISC,
 		       "%s: pipe failed (too many ports open?)", name);
-    if (MSC_IZE(pipe)(from_subprocess _EXTRA_PIPE_ARGS)) {
+    if (PIPE_FUNC(from_subprocess _EXTRA_PIPE_ARGS)) {
       MSC_IZE(close)(to_subprocess[0]);
       MSC_IZE(close)(to_subprocess[1]);
       scheme_raise_exn(MZEXN_MISC,
 		       "%s: pipe failed (too many ports open?)", name);
     }
-    if (MSC_IZE(pipe)(err_subprocess _EXTRA_PIPE_ARGS)) {
+    if (PIPE_FUNC(err_subprocess _EXTRA_PIPE_ARGS)) {
       MSC_IZE(close)(to_subprocess[0]);
       MSC_IZE(close)(to_subprocess[1]);
       MSC_IZE(close)(from_subprocess[0]);
@@ -5169,7 +5227,7 @@ static Scheme_Object *process(int c, Scheme_Object *args[],
 
     in = make_tested_file_input_port(MSC_IZE(fdopen)(from_subprocess[0], "r"), "sub-stdout", 1);
     out = scheme_make_file_output_port(MSC_IZE(fdopen)(to_subprocess[1], "w"));
-    subpid = scheme_make_integer(pid);
+    subpid = scheme_make_integer_value(pid);
     err = make_tested_file_input_port(MSC_IZE(fdopen)(err_subprocess[0], "r"), "sub-stderr", 1);
     thunk = scheme_make_closed_prim_w_arity(get_process_status,
 					    sc, "control-process",

@@ -59,6 +59,7 @@
 #define IVAR_IN_CLASS "ivar-in-class?"
 #define IVAR_IN_INTERFACE "ivar-in-interface?"
 #define OBJECT_CLASS "object-class"
+#define CLASS_TO_INTERFACE "class->interface"
 #define NULL_CLASS "object%"
 
 #define SUPER_INIT "super-init"
@@ -90,7 +91,8 @@ enum {
 
 enum {
   generic_KIND_CLASS,
-  generic_KIND_INTERFACE
+  generic_KIND_INTERFACE,
+  generic_KIND_CINTERFACE
 };
 
 #define ispublic(c) (((c)->vartype == varPUBLIC) || ((c)->vartype == varOVERRIDE))
@@ -142,9 +144,11 @@ typedef char slotkind;
 typedef struct Scheme_Interface {
   Scheme_Type type;
   short num_names, num_supers;
+  short for_class; /* 1 => impl iff subclass, 0 => normal interface */
   Scheme_Object **names;
   short *name_map; /* position in names => interface slot position */
   struct Scheme_Interface **supers; /* all superinterfaces (flattened hierarchy) */
+  struct Scheme_Class *supclass;
   short *super_offsets; /* superinterface => super's slot position offset */
   Scheme_Object *defname;
 } Scheme_Interface;
@@ -179,6 +183,7 @@ typedef struct Scheme_Class {
   struct Scheme_Class **heritage;
   struct Scheme_Class *superclass; /* Redundant, but useful. */
   Scheme_Object *super_init_name;
+  Scheme_Interface *equiv_intf; /* interface implied by this class */
 
   short num_args, num_required_args, num_arg_vars;
   short num_ivar, num_private, num_ref;
@@ -380,6 +385,32 @@ void scheme_dup_symbol_check(DupCheckRecord *r, const char *where,
 
 #ifndef NO_OBJECT_SYSTEM
 
+void install_class_interface(Scheme_Class *sclass)
+{
+  Scheme_Interface *in;
+
+  in = MALLOC_ONE_TAGGED(Scheme_Interface);
+  in->type = scheme_interface_type;
+  in->num_supers = 0;
+  in->supers = NULL;
+  in->super_offsets = NULL;
+
+  if (sclass->defname) {
+    int len;
+    in->defname = scheme_intern_symbol(scheme_format("interface of ~a", 15, 1, &sclass->defname, &len));
+  } else
+    in->defname = NULL;
+
+  in->num_names = 0;
+  in->names = NULL;
+  in->name_map = NULL;
+  
+  in->for_class = 1;
+
+  in->supclass = sclass;
+  sclass->equiv_intf = in;
+}
+
 static Scheme_Object *NullClass(void) 
 {
   if (!null_class) {
@@ -414,6 +445,8 @@ static Scheme_Object *NullClass(void)
     null_class->closure_saved = NULL;
     null_class->closure_size = 0;
     null_class->max_let_depth = 0;
+
+    install_class_interface(null_class);
   }
 
   return (Scheme_Object *)null_class;
@@ -880,7 +913,9 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
   for (i = 0; i < num_supers; i++) {
     Scheme_Object *in;
     in = _scheme_eval_compiled_expr(data->super_exprs[i]);
-    if (!SCHEME_INTERFACEP(in)) {
+    if (SCHEME_INTERFACEP(in)) {
+      il = cons(in, il);
+    } else {
       scheme_raise_exn(MZEXN_OBJECT,
 		       "interface: interface expression returned "
 		       "a non-interface: %s%s%s",
@@ -889,7 +924,6 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
 		       data->defname ? scheme_symbol_name(data->defname) : "");
       return NULL;
     }
-    il = cons(in, il);
   }
 
   in = MALLOC_ONE_TAGGED(Scheme_Interface);
@@ -898,12 +932,33 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
   in->defname = data->defname;
 
   supers = MALLOC_N(Scheme_Interface*, num_supers);
-  for (i = data->num_supers; i--; ) {
+  for (i = num_supers; i--; ) {
     supers[i] = (Scheme_Interface *)SCHEME_CAR(il);
     il = SCHEME_CDR(il);
   }
   in->num_supers = num_supers;
   in->supers = supers;
+
+  /* Check consitency of superinterface classes: */
+  {
+    Scheme_Interface *source = NULL;
+    in->supclass = null_class;
+    for (i = 0; i < num_supers; i++) {
+      if (!scheme_is_subclass((Scheme_Object *)supers[i]->supclass, (Scheme_Object *)in->supclass)) {
+	if (!scheme_is_subclass((Scheme_Object *)in->supclass, (Scheme_Object *)supers[i]->supclass)) {
+	  scheme_raise_exn(MZEXN_OBJECT,
+			   "interface: inconsistent implementation requirements "
+			   "between superinterfaces: %s and %s",
+			   scheme_make_provided_string((Scheme_Object *)source, 2, NULL),
+			   scheme_make_provided_string((Scheme_Object *)supers[i], 2, NULL));
+	  return NULL;
+	}
+	in->supclass = supers[i]->supclass;
+	source = supers[i];
+      }
+    }
+  }
+  in->for_class = 0;
 
   if (num_supers) {
     Scheme_Object **nbanka, **nbankb;
@@ -928,7 +983,7 @@ static Scheme_Object *Interface_Execute(Scheme_Object *form)
     /* Merge superclasses, keeping duplicates.
        Merge name map in parallel.
        Offset name maps according to superinterface offsets. */
-    for (i = data->num_supers - 1; i--; ) {
+    for (i = num_supers - 1; i--; ) {
       int j, count;
       short *mbank;
 
@@ -1231,7 +1286,15 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
   if (num_interfaces) {
     interfaces = MALLOC_N(Scheme_Interface*, num_interfaces);
     for (i = num_local_interfaces; i--; ) {
-      interfaces[i] = (Scheme_Interface *)SCHEME_CAR(il);
+      Scheme_Interface *in = (Scheme_Interface *)SCHEME_CAR(il);
+      interfaces[i] = in;
+      if (!scheme_is_subclass((Scheme_Object *)superclass, (Scheme_Object *)in->supclass)) {
+	const char *inn = get_interface_name((Scheme_Object *)in, " for interface: ");
+	scheme_raise_exn(MZEXN_OBJECT,
+			 CLASS_STAR ": superclass doesn't satisfy implementation requirement of interface: %s%s", 
+			 scheme_symbol_name(superclass->defname),
+			 inn);
+      }
       il = SCHEME_CDR(il);
     }
     for (i = superclass->num_interfaces; i--; )
@@ -1456,6 +1519,8 @@ static Scheme_Object *_DefineClass_Execute(Scheme_Object *form, int already_eval
     while (i--)
       saved[i] = stack[map[i]];
   }
+
+  install_class_interface(sclass);
 
   return (Scheme_Object *)sclass;
 }
@@ -1979,7 +2044,7 @@ static ClassVariable *CV_Unbundle(Scheme_Object *l)
     cvar->name = SCHEME_CAR(l);
     l = SCHEME_CDR(l);
 
-    cvar->vartype = SCHEME_INT_VAL(SCHEME_CAR(l));
+    cvar->vartype = (short)SCHEME_INT_VAL(SCHEME_CAR(l));
     l = SCHEME_CDR(l);
 
     v = SCHEME_CAR(l);
@@ -2038,13 +2103,13 @@ static Scheme_Object *read_Class_Data(Scheme_Object *obj)
   data->super_init_name = SCHEME_CAR(obj);
   obj = SCHEME_CDR(obj);
   
-  data->num_args = SCHEME_INT_VAL(SCHEME_CAR(obj));
+  data->num_args = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
-  data->num_required_args = SCHEME_INT_VAL(SCHEME_CAR(obj));
+  data->num_required_args = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
-  data->num_arg_vars = SCHEME_INT_VAL(SCHEME_CAR(obj));
+  data->num_arg_vars = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
   data->max_let_depth = SCHEME_INT_VAL(SCHEME_CAR(obj));
@@ -2105,10 +2170,10 @@ static Scheme_Object *read_Interface_Data(Scheme_Object *obj)
   data = MALLOC_ONE_TAGGED(Interface_Data);
   data->type = scheme_interface_data_type;
 
-  data->num_names = SCHEME_INT_VAL(SCHEME_CAR(obj));
+  data->num_names = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
-  data->num_supers = SCHEME_INT_VAL(SCHEME_CAR(obj));
+  data->num_supers = (short)SCHEME_INT_VAL(SCHEME_CAR(obj));
   obj = SCHEME_CDR(obj);
 
   data->defname = SCHEME_CAR(obj);
@@ -2195,6 +2260,8 @@ Scheme_Object *scheme_make_class(const char *name, Scheme_Object *sup,
   sclass->max_let_depth = 0;
 
   sclass->defname = scheme_intern_exact_symbol(name, strlen(name));
+
+  install_class_interface(sclass);
 
   return (Scheme_Object *)sclass;
 }
@@ -2413,34 +2480,11 @@ void scheme_made_class(Scheme_Object *c)
 
 Scheme_Object* scheme_class_to_interface(Scheme_Object *c, char *name)
 {
-  Scheme_Class *sclass;
-  Scheme_Interface *in;
-  int i, num_methods;
+  Scheme_Class *sclass = (Scheme_Class *)c;
 
-  sclass = (Scheme_Class *)c;
-  num_methods = sclass->num_public;
+  sclass->equiv_intf->defname = scheme_intern_symbol(name);
   
-  in = MALLOC_ONE_TAGGED(Scheme_Interface);
-  in->type = scheme_interface_type;
-  in->num_supers = 0;
-  in->supers = NULL;
-  in->super_offsets = NULL;
-
-  in->defname = scheme_intern_symbol(name);
-
-  in->num_names = num_methods;
-
-  in->names = MALLOC_N(Scheme_Object*, num_methods);
-  in->name_map = MALLOC_N(short, num_methods);
-  
-  for (i = 0; i < num_methods; i++) {
-    in->name_map[i] = i;
-    in->names[i] = sclass->public_names[i];
-  }
-
-  InstallInterface(sclass, in);
-
-  return (Scheme_Object *)in;
+  return (Scheme_Object *)sclass->equiv_intf;
 }
 
 /**********************************************************************/
@@ -2711,7 +2755,7 @@ static void BuildObjectFrame(Internal_Object *obj,
   for (cvar = sclass->ivars; cvar; cvar = cvar->next) {
     if (isprivref(cvar)) {
       Scheme_Class *superclass = sclass->superclass;
-      int vp = sclass->ref_map[cvar->index];
+      short vp = sclass->ref_map[cvar->index];
       /* If the superclass's ivar is a cmethod, the box will contain
 	 #<undefined>. */
       refs[cvar->index] = GetIvar(obj, irec, slots, oclass, superclass, vp, 1, 1);
@@ -2993,9 +3037,9 @@ static Scheme_Object *find_ivar(Internal_Object *obj,
 				int force)
 {
   Scheme_Class *oclass = (Scheme_Class *)obj->o.sclass;
-  int sp, vp;
+  short sp, vp;
 
-  sp = FindName(oclass, name);
+  sp = (short)FindName(oclass, name);
   if (sp < 0)
     return NULL;
 
@@ -3244,11 +3288,17 @@ Scheme_Object *scheme_get_generic_data(Scheme_Object *clori,
     
     sp = DoFindName(in->num_names, in->names, name);
 
-    if (sp < 0)
-      return NULL;
-
-    vp = in->name_map[sp];
-    kind = generic_KIND_INTERFACE;
+    if (sp >= 0) {
+      vp = in->name_map[sp];
+      kind = generic_KIND_INTERFACE;
+    } else {
+      sp = FindName(in->supclass, name);
+      if (sp < 0)
+	return NULL;
+      
+      vp = sp;
+      kind = generic_KIND_CINTERFACE;
+    }
   }
   
   data = MALLOC_ONE_TAGGED(Generic_Data);
@@ -3269,7 +3319,7 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
   Internal_Object *obj;
   Scheme_Class *sclass;
   Generic_Data *data;
-  int vp;
+  short vp;
 
   data = (Generic_Data *)gdata;
 
@@ -3288,7 +3338,7 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
 	return NULL;
       }
     }
-    vp = data->vp;
+    vp = (short)data->vp;
   } else {
     short *map;
     int offset;
@@ -3303,7 +3353,10 @@ Scheme_Object *scheme_apply_generic_data(Scheme_Object *gdata,
       return NULL;
     }
 
-    vp = map[data->vp + offset];
+    if (data->kind == generic_KIND_CINTERFACE)
+      vp = (short)data->vp;
+    else
+      vp = map[data->vp + offset];
   }
 
   return GetIvar(obj, NULL, obj->slots, sclass, sclass, vp, 0, force);
@@ -3438,6 +3491,8 @@ int scheme_is_subclass(Scheme_Object *c, Scheme_Object *base)
   return (SAME_OBJ(dclass->heritage[bclass->pos], bclass));
 }
 
+static short dummy_map[1];
+
 static short *find_implementation(Scheme_Object *c, Scheme_Object *n, int *offset)
 {
   Scheme_Class *sclass;
@@ -3446,6 +3501,13 @@ static short *find_implementation(Scheme_Object *c, Scheme_Object *n, int *offse
 
   sclass = (Scheme_Class *)c;
   in = (Scheme_Interface *)n;
+
+  if (in->for_class) {
+    if (scheme_is_subclass(c, (Scheme_Object *)in->supclass))
+      return dummy_map;
+    else
+      return NULL;
+  }
 
   ins = sclass->interfaces;
   for (i = sclass->num_interfaces; i--; ) {
@@ -3574,6 +3636,7 @@ static Scheme_Object *IvarInClass(int c, Scheme_Object *p[])
 static Scheme_Object *IvarInInterface(int c, Scheme_Object *p[])
 {
   Scheme_Interface *in;
+  Scheme_Class *sclass;
 
   if (!SCHEME_SYMBOLP(p[0]))
     scheme_wrong_type(IVAR_IN_INTERFACE, "symbol", 0, c, p);
@@ -3585,7 +3648,19 @@ static Scheme_Object *IvarInInterface(int c, Scheme_Object *p[])
   if (DoFindName(in->num_names, in->names, p[0]) >= 0)
     return scheme_true;
 
+  sclass = in->supclass;
+  if (FindName(sclass, p[0]) >= 0)
+    return scheme_true;
+
   return scheme_false;
+}
+
+static Scheme_Object *ClassToInterface(int c, Scheme_Object *p[])
+{
+  if (!SCHEME_CLASSP(p[0]))
+    scheme_wrong_type(CLASS_TO_INTERFACE, "class", 0, c, p);
+
+  return (Scheme_Object *)((Scheme_Class *)p[0])->equiv_intf;
 }
 
 static Scheme_Object *ObjectClass(int c, Scheme_Object *p[])
@@ -3738,6 +3813,11 @@ void scheme_init_object(Scheme_Env *env)
 			     scheme_make_folding_prim(IvarInInterface,
 						      IVAR_IN_INTERFACE,
 						      2, 2, 1), 
+			     env);
+  scheme_add_global_constant(CLASS_TO_INTERFACE, 
+			     scheme_make_folding_prim(ClassToInterface, 
+						      CLASS_TO_INTERFACE,
+						      1, 1, 1), 
 			     env);
   scheme_add_global_constant(OBJECT_CLASS, 
 			     scheme_make_folding_prim(ObjectClass, 

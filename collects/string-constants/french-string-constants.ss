@@ -568,6 +568,11 @@
  (invalid-number "Nombre invalide: doit être un nombre réel exact non-entier.")
  (insert-fraction-menu-item-label "Insérer une fraction...")
  
+ ;; number snip popup menu
+ (show-decimal-expansion "Montrer l'expansion décimale")
+ (show-fraction-view "Montrer sous forme de fraction")
+ (show-more-decimal-places "Montrer plus de décimales")
+ 
  ;;; TeachPack messages
  (select-a-teachpack "Sélectionner un TeachPack")
  (clear-teachpack "Enlever le TeachPack ~a")

@@ -135,8 +135,6 @@ static Scheme_Object *bundle_symset_orientation(int v) {
 
 
 
-
-
 // @ "get-scroll-units" : void GetScrollUnitsPerPage(int*,int*); : : / PANELREDIRECT[ FillZero(x0,x1); return scheme_void]
 
 
@@ -979,7 +977,10 @@ static Scheme_Object *os_wxCanvasOnChar(Scheme_Object *obj, int n,  Scheme_Objec
   x0 = objscheme_unbundle_wxKeyEvent(p[0], "on-char in canvas%", 0);
 
   
-  ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
+  if (((Scheme_Class_Object *)obj)->primflag)
+    ((os_wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->wxCanvas::OnChar(*x0);
+  else
+    ((wxCanvas *)((Scheme_Class_Object *)obj)->primdata)->OnChar(*x0);
 
   
   

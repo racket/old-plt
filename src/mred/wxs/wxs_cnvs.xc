@@ -38,8 +38,6 @@ static void FillZero(int *a, int *b) {
 
 @ "allow-double-click" : void AllowDoubleClick(bool);
 
-@INCLUDE wxs_char.xci
-
 @SETMARK c = d
 @INCLUDE wxs_cnvs.xci
 

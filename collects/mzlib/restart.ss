@@ -120,7 +120,7 @@
 		("Not supported")]])])
       (parse-command-line
        "mzscheme"
-       argv
+       init-argv
        table
        void
        '("ignored"))
@@ -133,49 +133,51 @@
 	 (unless (null? rest)
 	   (set! args rest))
 	 ;(when args (set! rest args))
-	 (let ([n (make-namespace)])
-	   (thread-wait
-	    (thread
-	     (lambda ()
-	       (current-namespace n)
-	       (namespace-transformer-require 'mzscheme)
-	       (let ([program (find-system-path 'exec-file)])
-		 (read-case-sensitive case-sensitive?)
-		 (compile-allow-set!-undefined allow-set!-undefined?)
+	 (let ([n (make-namespace)]
+	       [argv (if args (list->vector args) (vector))])
+	   (parameterize ([current-command-line-arguments argv])
+	     (thread-wait
+	      (thread
+	       (lambda ()
+		 (current-namespace n)
+		 (namespace-transformer-require 'mzscheme)
+		 (let ([program (find-system-path 'exec-file)])
+		   (read-case-sensitive case-sensitive?)
+		   (compile-allow-set!-undefined allow-set!-undefined?)
+		   
+		   (unless mute-banner? (display (banner)))
+		   
+		   (unless no-define-argv?
+		     (eval `(define-values (argv) (quote ,argv)))
+		     (eval `(define-values (program) (quote ,program))))
+		   
+		   (find-library-collection-paths))
 		 
-		 (unless mute-banner? (display (banner)))
+		 (init-namespace)
 		 
-                 (unless no-define-argv?
-                   (eval `(define-values (argv) (quote ,(if args (list->vector args) (vector)))))
-                   (eval `(define-values (program) (quote ,program))))
+		 (unless no-init-file?
+		   (let ([f (find-system-path 'init-file)])
+		     (when (file-exists? f)
+		       (with-handlers ([void print-error])
+			 (load f)))))
 		 
-		 (find-library-collection-paths))
-	       
-	       (init-namespace)
-	       
-	       (unless no-init-file?
-		 (let ([f (find-system-path 'init-file)])
-		   (when (file-exists? f)
-		     (with-handlers ([void print-error])
-		       (load f)))))
-	       
-	       (let/ec k
-		 (exit-handler
-		  (lambda (status)
-		    (set! result status)
-		    (k #f)))
-		 (let/ec escape
-		   (for-each
-		    (lambda (e)
-		      (with-handlers ([void (lambda (e) 
-					      (print-error e) 
-					      (set! result #f)
-					      (escape #f))])
-                        (if (string? e)
-                            (eval (read (open-input-string e)))
-                            (e))))
-                    exprs))
-		 (unless no-rep? 
-		   (read-eval-print-loop))))))))
+		 (let/ec k
+		   (exit-handler
+		    (lambda (status)
+		      (set! result status)
+		      (k #f)))
+		   (let/ec escape
+		     (for-each
+		      (lambda (e)
+			(with-handlers ([void (lambda (e) 
+						(print-error e) 
+						(set! result #f)
+						(escape #f))])
+			  (if (string? e)
+			      (eval (read (open-input-string e)))
+			      (e))))
+		      exprs))
+		   (unless no-rep? 
+		     (read-eval-print-loop)))))))))
        `("arg"))
       result)))

@@ -4380,7 +4380,8 @@ Scheme_Object *mx_process_win_events(int argc,Scheme_Object **argv) {
   		     (void (*)(Scheme_Object *,void *))win_event_sem_fun,
   		     NULL,0.0F);
 
-  while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE)) {
+  while (PeekMessage(&msg,NULL,0x400,0x400,PM_REMOVE) ||
+	 PeekMessage(&msg,NULL,0x113,0x113,PM_REMOVE)) {
     TranslateMessage(&msg);
     DispatchMessage(&msg);
   }

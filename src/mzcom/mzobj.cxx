@@ -101,6 +101,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
   BSTR *pOutput;
   HRESULT *pHr;
   char *wrapper;
+  char dllBuff[260];
 
   // make sure all MzScheme calls in this thread
 
@@ -137,6 +138,10 @@ DWORD WINAPI evalLoop(LPVOID args) {
 
   // set up collection paths, based on MzScheme startup
 
+  GetModuleFileName(GetModuleHandle("mzcom.dll"),dllBuff,sizeof(dllBuff));
+
+  scheme_add_global("mzcom-dll",scheme_make_string(dllBuff),env);
+
   scheme_eval_string("(#%current-library-collection-paths "
 		     "(#%path-list-string->path-list "
 		     "(#%or (#%getenv \"PLTCOLLECTS\") \"\") "
@@ -147,6 +152,7 @@ DWORD WINAPI evalLoop(LPVOID args) {
 		     "(#%list"
 		     "(#%lambda () (#%let ((v (#%getenv \"PLTHOME\"))) "
 		     "(#%and v (#%build-path v \"collects\")))) "
+		     "(#%lambda () (#%find-executable-path mzcom-dll \"..\")) "
 		     "(#%lambda () \"c:\\Program Files\\PLT\\collects\") "
 		     ")) #%null)))",
 		     env);

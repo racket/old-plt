@@ -163,19 +163,32 @@
        (with-syntax (((sym ...)
                       (map translate-cname
                            (syntax-object->datum #'(const ...)))))
-         (quasisyntax/loc stx
-           (define name
-             (let ((ht (make-hash-table)))
-               (for-each (lambda (key value)
-                           (hash-table-put! ht key value))
-                         '(sym ...) (list const ...))
-               (lambda (enum-sym name)
-                 (let ((v (hash-table-get ht enum-sym (lambda () #f))))
-                   (unless v
-                     (raise-type-error name
-                                       (format "symbol in ~a" '(sym ...))
-                                       enum-sym))
-                   v)))))))))
+         (cond
+           ((< (length (syntax->list #'(const ...))) 12)
+            (quasisyntax/loc stx
+              (define name
+                (let ((l `((sym . ,const) ...)))
+                  (lambda (enum-sym name)
+                    (let ((v (assq enum-sym l)))
+                      (unless v
+                        (raise-type-error name
+                                          (format "symbol in ~a" '(sym ...))
+                                          enum-sym))
+                      (cdr v)))))))
+           (else
+            (quasisyntax/loc stx
+              (define name
+                (let ((ht (make-hash-table)))
+                  (for-each (lambda (key value)
+                              (hash-table-put! ht key value))
+                            '(sym ...) (list const ...))
+                  (lambda (enum-sym name)
+                    (let ((v (hash-table-get ht enum-sym (lambda () #f))))
+                      (unless v
+                        (raise-type-error name
+                                          (format "symbol in ~a" '(sym ...))
+                                          enum-sym))
+                      v)))))))))))
   
   (define-syntax (make-inv-enum-table stx)
     (syntax-case stx ()
@@ -185,12 +198,9 @@
                            (syntax-object->datum #'(const ...)))))
          (quasisyntax/loc stx
            (define name
-             (let ((ht (make-hash-table)))
-               (for-each (lambda (key value)
-                           (hash-table-put! ht key value))
-                         (list const ...) '(sym ...))
+             (let ((l `((,const . sym) ...)))
                (lambda (enum-val)
-                 (hash-table-get ht enum-val (lambda () #f))))))))))
+                 (cdr (assq enum-val l))))))))))
     
   (define check-length
     (case-lambda

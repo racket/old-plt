@@ -664,4 +664,7 @@
    (vc-details-format "~a~nDetails:~n~a")
    (vc-details-text "Details:~n")
    (vc-error-format "Fehler: ~a")
+   (inline-saved-program-in-executable? "Dürfen wir Ihr Programm in die ausführbare Datei einbauen?\n\nFalls ja, können Sie die ausführbare Datei auf einen anderen ~a Computer kopieren, aber die Datei wird sehr gross sein.\n\nFalls nein, dann können Sie die ausführbare Datei nicht auf einen anderen ~a Computer kopieren und es wird relative klein sein. Darüber hinaus wird die ausführbare Datei immer die neueste Version des Programms benutzen.")
+
+
  )

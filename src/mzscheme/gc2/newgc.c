@@ -633,14 +633,13 @@ static void dump_heap(void)
 # define INIT_DEBUG_FILE() init_debug_file()
 # define CLOSE_DEBUG_FILE() close_debug_file()
 # define DUMP_HEAP() dump_heap()
-# define GC_DEBUG(args...) { fprintf(dump, args); fflush(dump); }
+# define DEBUGOUTF dump
+# define GCDEBUG(args) { GCPRINT args; GCFLUSHOUT(); }
 #else
 # define INIT_DEBUG_FILE() /* */
 # define CLOSE_DEBUG_FILE() /* */
 # define DUMP_HEAP() /* */
-#include <stdarg.h>
-#include <ctype.h>
-inline static void GC_DEBUG(const char *c, ...) { }
+# define GCDEBUG(args) /* */
 #endif
 
 #define GCWARN(args) { GCPRINT args; GCFLUSHOUT(); }
@@ -935,8 +934,9 @@ inline static void check_finalizers(int level)
     if((work->eager_level == level) && !marked(work->p)) {
       struct finalizer *next = work->next;
 
-      GC_DEBUG("CFNL: Level %i finalizer %p on %p queued for finalization.\n",
-	       work->eager_level, work, work->p);
+      GCDEBUG((DEBUGOUTF, 
+	       "CFNL: Level %i finalizer %p on %p queued for finalization.\n",
+	       work->eager_level, work, work->p));
       gcMARK(work->p);
       if(prev) prev->next = next;
       if(!prev) finalizers = next;
@@ -955,7 +955,9 @@ inline static void do_ordered_level3(void)
 
   for(temp = finalizers; temp; temp = temp->next)
     if(!marked(temp->p)) {
-      GC_DEBUG("LVL3: %p is not marked. Marking payload (%p)\n", temp, temp->p);
+      GCDEBUG((DEBUGOUTF,
+	       "LVL3: %p is not marked. Marking payload (%p)\n", 
+	       temp, temp->p));
       if(temp->tagged) mark_table[*(unsigned short*)temp->p](temp->p);
       if(!temp->tagged) GC_mark_xtagged(temp->p);
     }
@@ -1271,7 +1273,7 @@ struct stacklet {
 
 static struct stacklet *istack = NULL;
 
-static void push_2ptr(void *ptr1, void *ptr2)
+inline static void push_2ptr(void *ptr1, void *ptr2)
 {
   if(!istack || (istack->cur == istack->end)) {
     struct stacklet *temp = (struct stacklet *)malloc(STACKLET_SIZE);
@@ -1290,7 +1292,7 @@ static void push_2ptr(void *ptr1, void *ptr2)
   *(istack->cur++) = ptr2;
 }
 
-static int pop_2ptr(void **ptr1, void **ptr2)
+inline static int pop_2ptr(void **ptr1, void **ptr2)
 {
   if(istack && (istack->cur == istack->start)) {
     void *temp = istack;
@@ -1466,7 +1468,7 @@ inline static void clear_old_owner_data(void)
 
 inline static void mark_for_accounting(struct mpage *page, void *ptr)
 {
-  GC_DEBUG("btc_account: %p/%p\n", page, ptr);
+  GCDEBUG((DEBUGOUTF, "btc_account: %p/%p\n", page, ptr));
   if(page->big_page) {
     struct objhead *info = (struct objhead *)((char*)page + HEADER_SIZEB);
     
@@ -1790,24 +1792,13 @@ void GC_fixup(void *pp)
 {
   void *p = *(void**)pp;
   
-  if(!p || ((long)p & 0x1)) return; else {
+  if(!p || (NUM(p) & 0x1)) return; else {
     struct mpage *page = find_page(p);
 
-    if(page) {
-      if(page->big_page) {
-	struct mpage *from_page = find_page(pp);
-
-	if(from_page && !from_page->back_pointers)
-	  if(from_page->generation > page->generation)
-	    from_page->back_pointers = 1;
-      } else if( ((struct objhead *)(NUM(p) - WORD_SIZE))->mark ) {
-	struct mpage *from_page = find_page(pp);
-	
-	p = *(void**)p; *(void**)pp = p; page = find_page(p);
-	if(from_page && !from_page->back_pointers)
-	  if(from_page->generation > page->generation)
-	    from_page->back_pointers = 1;
-      } 
+    if(page && !page->big_page 
+       && ((struct objhead *)(NUM(p) - WORD_SIZE))->mark) {
+      p = *(void**)p;
+      *(void**)pp = p;
     } 
   }
 }
@@ -1873,7 +1864,7 @@ inline static void repair_xtagged_page(struct mpage *page)
   void **start = PPTR(NUM(page) + HEADER_SIZEB);
   void **end = PPTR(NUM(page) + page->size);
 
-  GC_DEBUG("Repairing xtagged object at %p\n", start);
+  GCDEBUG((DEBUGOUTF, "Repairing xtagged object at %p\n", start));
   while(start < end) {
     GC_fixup_xtagged(start + 1);
     start += ((struct objhead *)start)->size;
@@ -1914,8 +1905,8 @@ inline static void mark_normal_object(struct mpage *page, void *p)
     work = to_pages[1][type]; size = ohead->size; 
     sizeb = gcWORDS_TO_BYTES(size);
 
-/*     while(work && ((work->size + sizeb) >= PAGE_SIZE)) */
-/*       work = work->next; */
+    while(work && ((work->size + sizeb) >= PAGE_SIZE))
+      work = work->next;
 
     if(work && ((work->size + sizeb) < PAGE_SIZE)) 
       newplace = PTR(NUM(work) + work->size); 
@@ -1933,10 +1924,10 @@ inline static void mark_normal_object(struct mpage *page, void *p)
       
     dest = PPTR(newplace); src = PPTR(ohead);
     while(size--) *(dest++) = *(src++);
-   *(void**)p = PTR(NUM(newplace) + WORD_SIZE);
+    *(void**)p = PTR(NUM(newplace) + WORD_SIZE);
     ohead->mark = 1;
-    GC_DEBUG("Marked/copid %i bytes from obj %p to %p\n", ohead->size,
-	     p, PTR(NUM(newplace) + WORD_SIZE));
+    GCDEBUG((DEBUGOUTF, "Marked/copid %i bytes from obj %p to %p\n", 
+	     ohead->size, p, PTR(NUM(newplace) + WORD_SIZE)));
   }
 }
 
@@ -2149,7 +2140,7 @@ static void repair_heap(void)
       work->next = pages[1][j]; work->prev = NULL;
       if(work->next) work->next->prev = work;
       pages[1][j] = work;
-      
+      work->back_pointers = 0;
       work = next;
     }
   }
@@ -2189,7 +2180,7 @@ static void garbage_collect(int force_full)
   static unsigned int since_last_full = 0;
   static unsigned int running_finalizers = 0;
 
-  gc_full = force_full || !generations_available || (since_last_full == 15);
+  gc_full = force_full || !generations_available || (since_last_full == 10);
   number++; if(gc_full) since_last_full = 0; else since_last_full++;
   INIT_DEBUG_FILE(); DUMP_HEAP();
   
@@ -2242,8 +2233,8 @@ static void garbage_collect(int force_full)
       f = run_queue; run_queue = run_queue->next;
       if(!run_queue) last_in_queue = NULL;
 
-      GC_DEBUG("Running finalizers %p for pointer %p (lvl %i)\n",
-		f, f->p, f->eager_level);
+      GCDEBUG((DEBUGOUTF, "Running finalizers %p for pointer %p (lvl %i)\n",
+	       f, f->p, f->eager_level));
       gcs = GC_variable_stack;
       f->f(f->p, f->data);
       GC_variable_stack = gcs;

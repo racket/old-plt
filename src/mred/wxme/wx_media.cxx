@@ -1283,9 +1283,11 @@ void wxMediaEdit::_Insert(wxSnip *isnip, long strlen, char *str,
 
   caretStyle = NULL;
 
-  if (insertedLine)
+  if (insertedLine) {
+    if (!graphicMaybeInvalid)
+      graphicMaybeInvalid = TRUE;
     NeedRefresh(start);
-  else
+  } else
     RefreshByLineDemand();
 
   if (!modified)
@@ -1541,9 +1543,11 @@ void wxMediaEdit::_Delete(long start, long end, Bool withUndo, Bool scrollOk)
     graphicMaybeInvalidForce = TRUE;
   }
 
-  if (deletedLine)
+  if (deletedLine) {
+    if (!graphicMaybeInvalid)
+      graphicMaybeInvalid = TRUE;
     NeedRefresh(start);
-  else
+  } else
     RefreshByLineDemand();
 
   if (!modified)
@@ -3185,7 +3189,7 @@ long wxMediaEdit::LineEndPosition(long i, Bool visibleOnly)
 
 long wxMediaEdit::LineLength(long i)
 {
-  if (readLocked)
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
 
   if (i < 0)
@@ -3198,7 +3202,7 @@ long wxMediaEdit::LineLength(long i)
 
 long wxMediaEdit::PositionParagraph(long i, Bool WXUNUSED(eol))
 {
-  if (readLocked)
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
 
   wxMediaLine *l;
@@ -3219,7 +3223,7 @@ long wxMediaEdit::PositionParagraph(long i, Bool WXUNUSED(eol))
 
 long wxMediaEdit::ParagraphStartPosition(long i, Bool visibleOnly)
 {
-  if (readLocked)
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
 
   wxMediaLine *l;
@@ -3246,7 +3250,7 @@ long wxMediaEdit::ParagraphStartPosition(long i, Bool visibleOnly)
 
 long wxMediaEdit::ParagraphEndPosition(long i, Bool visibleOnly)
 {
-  if (readLocked)
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
 
   wxMediaLine *l;
@@ -3334,12 +3338,15 @@ long wxMediaEdit::LastPosition(void)
 
 long wxMediaEdit::LastLine(void)
 {
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
+    return 0;
+
   return numValidLines - (extraLine ? 0 : 1);
 }
 
 long wxMediaEdit::LastParagraph(void)
 {
-  if (readLocked)
+  if (!CheckRecalc(maxWidth > 0, FALSE, TRUE))
     return 0;
 
   return lastLine->GetParagraph() + (extraLine ? 1 : 0);
@@ -3374,6 +3381,8 @@ float wxMediaEdit::ScrollLineLocation(long scroll)
   if (readLocked)
     return 0;
 
+  CheckRecalc(TRUE, FALSE);
+  
   wxMediaLine *line;
   long p;
   float y;
@@ -3402,6 +3411,8 @@ long wxMediaEdit::NumScrollLines()
   if (readLocked)
     return 0;
 
+  CheckRecalc(maxWidth > 0, FALSE, TRUE);
+
   return lastLine->GetScroll() + lastLine->numscrolls + (extraLine ? 1 : 0);
 }
 
@@ -3409,6 +3420,8 @@ long wxMediaEdit::FindScrollLine(float p)
 {
   if (readLocked)
     return 0;
+
+  CheckRecalc(TRUE, FALSE);
 
   wxMediaLine *line;
   float y;

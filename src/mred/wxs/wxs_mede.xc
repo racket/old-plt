@@ -95,7 +95,7 @@
 @ "paragraph-end-position" : long ParagraphEndPosition(long,bool=TRUE);
 @ "line-paragraph" : long LineParagraph(long);
 @ "paragraph-start-line" : long ParagraphStartLine(long);
-@ "pargraph-end-line" : long ParagraphEndLine(long);
+@ "paragraph-end-line" : long ParagraphEndLine(long);
 @ "last-paragraph" : long LastParagraph();
 
 @MACRO CHECKDIR[p] = if ((x<p> != 1) && (x<p> != -1)) scheme_signal_error("wx:media-edit%%::find-string: direction must be 1 or -1, given %d", x<p>);

@@ -3199,7 +3199,7 @@ static Scheme_Object *os_wxMediaEditParagraphEndLine(Scheme_Object *obj, int n, 
   long x0;
 
   
-  x0 = objscheme_unbundle_integer(p[0], "wx:media-edit%::pargraph-end-line");
+  x0 = objscheme_unbundle_integer(p[0], "wx:media-edit%::paragraph-end-line");
 
   
   r = ((wxMediaEdit *)((Scheme_Class_Object *)obj)->primdata)->ParagraphEndLine(x0);
@@ -5645,7 +5645,7 @@ if (os_wxMediaEdit_class) {
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string-all", os_wxMediaEditFindStringAll, 1, 6);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "find-string", os_wxMediaEditFindString, 1, 6);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "last-paragraph", os_wxMediaEditLastParagraph, 0, 0);
- scheme_add_method_w_arity(os_wxMediaEdit_class, "pargraph-end-line", os_wxMediaEditParagraphEndLine, 1, 1);
+ scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-line", os_wxMediaEditParagraphEndLine, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-start-line", os_wxMediaEditParagraphStartLine, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "line-paragraph", os_wxMediaEditLineParagraph, 1, 1);
  scheme_add_method_w_arity(os_wxMediaEdit_class, "paragraph-end-position", os_wxMediaEditParagraphEndPosition, 1, 2);

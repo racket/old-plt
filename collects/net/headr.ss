@@ -2,6 +2,8 @@
 (unit/sig mzlib:head^
   (import)
 
+  (define empty-header (string #\return #\newline))
+
   (define (string->ci-regexp s)
     (list->string
      (apply
@@ -24,17 +26,21 @@
   (define re:continue (regexp (format "^[~a~a~a]" #\space #\tab #\vtab)))
   
   (define (validate-header s)
-    (let loop ([offset 0])
-      (cond
-       [(= offset (string-length s)) (void)]
-       [(or (regexp-match re:field-start s offset)
-	    (regexp-match re:continue s offset))
-	(let ([m (regexp-match-positions (string #\return #\linefeed) s offset)])
-	  (if m
-	      (loop (+ offset (cdar m)))
-	      (error 'validate-header "missing ending CRLF")))]
-       [else (error 'validate-header "ill-formed header at ~s" 
-		    (substring s offset (string-length s)))])))
+    (let ([len (string-length s)])
+      (let loop ([offset 0])
+	(cond
+	 [(and (= (+ offset 2) len)
+	       (string=? empty-header (substring s offset len)))
+	  (void)] ; validated
+	 [(= offset len) (error 'validate-header "missing ending CRLF")]
+	 [(or (regexp-match re:field-start s offset)
+	      (regexp-match re:continue s offset))
+	  (let ([m (regexp-match-positions (string #\return #\linefeed) s offset)])
+	    (if m
+		(loop (+ offset (cdar m)))
+		(error 'validate-header "missing ending CRLF")))]
+	 [else (error 'validate-header "ill-formed header at ~s" 
+		      (substring s offset (string-length s)))]))))
   
   (define (make-field-start-regexp field)
     (format "(^|[~a][~a])(~a: *)" 
@@ -56,7 +62,10 @@
 		       s)])
 	       (if m
 		   (substring s 0 (caar m))
-		   s))))))
+		   ; Rest of header is this field, but strip trailing CRLFCRLF:
+		   (regexp-replace (format "~a~a~a~a$" #\return #\linefeed #\return #\linefeed)
+				   s
+				   "")))))))
 
   (define (remove-field field header)
     (let ([m (regexp-match-positions 
@@ -80,15 +89,39 @@
 		  pre)))
 	  header)))
 
-  (define (append-field field data header prefix?)
+  (define (insert-field field data header)
     (let ([field (format "~a: ~a~a~a"
 			 field
 			 data
 			 #\return #\linefeed)])
-      (if prefix?
-	  (string-append field header)
-	  (string-append header field))))
-	   
+      (string-append field header)))
+
+  (define (append-headers a b)
+    (let ([alen (string-length a)])
+      (if (> alen 1)
+	  (string-append (substring a 0 (- alen 2)) b)
+	  (error 'append-headers "first argument is not a header: ~a" a))))
+  
+  (define (standard-message-header from tos ccs bccs subject)
+    (let ([h (insert-field
+	      "Subject" subject
+	      empty-header)])
+       ; NOTE: bccs don't go into the header; that's why
+       ; they're "blind"
+      (let ([h (if (null? ccs)
+		   h
+		   (insert-field 
+		    "CC" (assemble-address-field ccs)
+		    h))])
+	(let ([h (if (null? tos)
+		     h
+		     (insert-field 
+		      "To" (assemble-address-field tos)
+		      h))])
+	  (insert-field 
+	   "From" from
+	   h)))))
+
   (define (splice l sep)
     (if (null? l)
 	""
@@ -108,7 +141,11 @@
   (define blank (format "[~a~a~a~a~a]" #\space #\tab #\newline #\return #\vtab))
   (define re:all-blank (regexp (format "^~a*$" blank)))
   
-  (define (extract-addresses s full?)
+  (define (extract-addresses s form)
+    (unless (memq form '(name address full all))
+      (raise-type-error 'extract-addresses 
+			"form: 'name, 'address, 'full, or 'all"
+			form))
     (if (or (not s) (regexp-match re:all-blank s))
 	null
 	(let loop ([prefix ""][s s])
@@ -124,40 +161,47 @@
 		; Normal comma parsing:
 		(let ([m (regexp-match "([^,]*),(.*)" s)])
 		  (if m
-		      (let ([n (extract-one-name (string-append prefix (cadr m)) full?)]
-			    [rest (extract-addresses (caddr m) full?)])
+		      (let ([n (extract-one-name (string-append prefix (cadr m)) form)]
+			    [rest (extract-addresses (caddr m) form)])
 			(cons n rest))
-		      (let ([n (extract-one-name (string-append prefix s) full?)])
+		      (let ([n (extract-one-name (string-append prefix s) form)])
 			(list n)))))))))
   
-  (define (extract-one-name s full?)
+  (define (select-result form name addr full)
+    (case form
+      [(name) name]
+      [(address) addr]
+      [(full) full]
+      [(all) (list name addr full)]))
+
+  (define (one-result form s)
+    (select-result form s s s))
+
+  (define (extract-one-name s form)
     (cond
      [(regexp-match (format "^~a*(\"[^\"]*\")(.*)" blank) s)
       => (lambda (m)
 	   (let ([name (cadr m)]
 		 [addr (extract-angle-addr (caddr m))])
-	     (if full?
-		 (format "~a <~a>" name addr)
-		 addr)))]
+	     (select-result form name addr
+			    (format "~a <~a>" name addr))))]
      ; ?!?!? Where does the "addr (name)" standard come from ?!?!?
      [(regexp-match (format "(.*)[(]([^)]*)[)]~a*$" blank) s)
       => (lambda (m)
 	   (let ([name (caddr m)]
 		 [addr (extract-simple-addr (cadr m))])
-	     (if full?
-		 (format "~a (~a)" addr name)
-		 addr)))]
+	     (select-result form name addr 
+			    (format "~a (~a)" addr name))))]
      [(regexp-match (format "^~a*(.*)(<.*>)~a*$" blank blank) s)
       => (lambda (m)
 	   (let ([name (regexp-replace (format "~a*$" blank) (cadr m) "")]
 		 [addr (extract-angle-addr (caddr m))])
-	     (if full?
-		 (format "~a <~a>" name addr)
-		 addr)))]
+	     (select-result form name addr 
+			    (format "~a <~a>" name addr))))]
      [(or (regexp-match "<" s) (regexp-match ">" s))
-      (extract-angle-addr s)]
+      (one-result form (extract-angle-addr s))]
      [else
-      (extract-simple-addr s)]))
+      (one-result form (extract-simple-addr s))]))
 
   (define (extract-angle-addr s)
     (if (or (regexp-match "<.*<" s) (regexp-match ">.*>" s))

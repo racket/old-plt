@@ -1,9 +1,12 @@
 
 (define-signature mzlib:head^
-  (validate-header
+  (empty-header
+   validate-header
    extract-field
    remove-field
-   append-field
+   insert-field
+   append-headers
+   standard-message-header
    data-lines->data
    extract-addresses
    assemble-address-field))

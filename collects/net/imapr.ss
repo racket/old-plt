@@ -24,6 +24,26 @@
      (list 'body (string->symbol "RFC822.TEXT"))
      (list 'flags (string->symbol "FLAGS"))))
 
+  (define flag-names
+    (list
+     (list 'seen (string->symbol "\\Seen"))
+     (list 'answered (string->symbol "\\Answered"))
+     (list 'flagged (string->symbol "\\Flagged"))
+     (list 'deleted (string->symbol "\\Deleted"))
+     (list 'draft (string->symbol "\\Draft"))
+     (list 'recent (string->symbol "\\Recent"))))
+
+  (define (imap-flag->symbol f)
+    (or (ormap (lambda (a) (and (tag-eq? f (cadr a)) (car a)))
+	       flag-names)
+	f))
+
+  (define (symbol->imap-flag s)
+    (let ([a (assoc s flag-names)])
+      (if a
+	  (cadr a)
+	  s)))
+
   (define (log-warning . args)
     '(apply printf args)
     (void))
@@ -153,22 +173,27 @@
 	      (error "username or password rejected by server")
 	      (check-ok reply)))
 	
-	(let ([init-count 0]
-	      [init-recent 0])
-	  (check-ok (imap-send r w (format "SELECT ~a" inbox)
-			       (lambda (i)
-				 (when (and (list? i) (= 2 (length i)))
-				   (cond
-				    [(tag-eq? (cadr i) 'EXISTS)
-				     (set! init-count (car i))]
-				    [(tag-eq? (cadr i) 'RECENT)
-				     (set! init-recent (car i))])))))
-	  
-	  (values (make-imap-connection r w)
-		  init-count
-		  init-recent)))))
-
-
+	(let ([imap (make-imap-connection r w)])
+	  (let-values ([(init-count init-recent) 
+			(imap-reselect imap inbox)])
+	    (values imap
+		    init-count
+		    init-recent))))))
+  
+  (define (imap-reselect imap inbox)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (let ([init-count 0]
+	    [init-recent 0])
+	(check-ok (imap-send r w (format "SELECT ~a" inbox)
+			     (lambda (i)
+			       (when (and (list? i) (= 2 (length i)))
+				 (cond
+				  [(tag-eq? (cadr i) 'EXISTS)
+				   (set! init-count (car i))]
+				  [(tag-eq? (cadr i) 'RECENT)
+				   (set! init-recent (car i))])))))
+	(values init-count init-recent))))
 
   (define (imap-disconnect imap)
     (let ([r (imap-connection-r imap)]
@@ -214,4 +239,27 @@
 			   [(tag-eq? (car d) fld) (cadr d)]
 			   [else (loop (cddr d))]))))
 		    field-list))))
-	     msgs))))))
+	     msgs)))))
+
+  (define (imap-store imap mode msgs flags)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (check-ok 
+       (imap-send r w 
+		  (format "STORE ~a ~a ~a"
+			  (splice msgs ",")
+			  (case mode
+			    [(+) "+FLAGS.SILENT"]
+			    [(-) "-FLAGS.SILENT"]
+			    [(!) "FLAGS.SILENT"]			    
+			    [else (raise-type-error
+				   'imap-store
+				   "mode: '!, '+, or '-")])
+			  flags)
+		  void))))
+
+  (define (imap-expunge imap)
+    (let ([r (imap-connection-r imap)]
+	  [w (imap-connection-w imap)])
+      (check-ok (imap-send r w "EXPUNGE" void)))))
+

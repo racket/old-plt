@@ -45,13 +45,14 @@
 
   (define send-message
     (case-lambda
-     [(from tos message server) (send-message from tos message server 25)]
-     [(from tos message server port)
-      (when (null? tos)
+     [(server sender recipients header message-lines)
+      (send-message server sender recipients header message-lines 25)]
+     [(server sender recipients header message-lines pos)
+      (when (null? recipients)
 	(error 'mysendmail "no recievers"))
       (let-values ([(r w) (if debug-via-stdio?
 			      (values (current-input-port) (current-output-port))
-			      (tcp-connect server 25))])
+			      (tcp-connect server pos))])
 	(with-handlers ([void (lambda (x)
 				(close-input-port r)
 				(close-output-port w)
@@ -62,21 +63,22 @@
 	  (fprintf w "HELO ~a~a" ID crlf)
 	  (check-reply r 250)
 	  
-	  (fprintf w "MAIL FROM:<~a>~a" from crlf)
+	  (fprintf w "MAIL FROM:<~a>~a" sender crlf)
 	  (check-reply r 250)
 	  
 	  (for-each
 	   (lambda (dest)
 	     (fprintf w "RCPT TO:<~a>~a" dest crlf)
 	     (check-reply r 250))
-	   tos)
+	   recipients)
 	  
 	  (fprintf w "DATA~a" crlf)
 	  (check-reply r 354)
+	  (fprintf w "~a" header)
 	  (for-each
 	   (lambda (l)
 	     (fprintf w "~a~a" (protect-line l) crlf))
-	   message)
+	   message-lines)
 	  (fprintf w "~a.~a" crlf crlf)
 	  (check-reply r 250)
 	  (fprintf w "QUIT~a" crlf)

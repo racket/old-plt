@@ -583,7 +583,7 @@
 			     (send edit get-start-position))])
 		    (set! anchor position)
 		    (set! old-highlight
-			  (send edit highlight-range position position color)))))]
+			  (send edit highlight-range position position color #f)))))]
 	     [replace-edit (make-object mred:edit:media-edit%)]
 	     [find-edit
 	      (make-object

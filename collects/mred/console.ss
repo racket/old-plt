@@ -845,8 +845,31 @@
 				 (cons (car l) (loop (cdr l))))))])
 		   (mred:preferences:set-preference 'mred:console-previous-exprs new-previous-exprs))
 		 (do-eval start end)))]
+
+	    [reset-pretty-print-width
+	     (lambda ()
+	       (let* ([standard (send (get-style-list) find-named-style "Standard")])
+		 (unless (null? standard)
+		   (let* ([admin (get-admin)]
+			  [width
+			   (let ([bw (box 0)]
+				 [b2 (box 0)])
+			     (send admin get-view b2 b2 bw b2)
+			     (unbox bw))]
+			  [dc (send admin get-dc)]
+			  [new-font (send standard get-font)]
+			  [old-font (send dc get-font)])
+		     (send dc set-font new-font)
+		     (let* ([char-width (send dc get-char-width)]
+			    [min-columns 50]
+			    [new-columns (max min-columns 
+					      (floor (/ width char-width)))])
+		       (send dc set-font old-font)
+		       (mzlib:pretty-print:pretty-print-columns new-columns))))))]
 	    [do-eval
 	     (lambda (start end)
+	       (with-parameterization user-parameterization
+		 (lambda () (reset-pretty-print-width)))
 	       (do-pre-eval)
 	       (mred:gui-utils:local-busy-cursor
 		(get-canvas)

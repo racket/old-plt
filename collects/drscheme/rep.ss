@@ -31,34 +31,27 @@
     (set-delta-foreground "BLACK")
     (set-delta-background "YELLOW"))
 
-  (define report-exception-error
-    (lambda (exn last-resort-edit)
-      (let ([uncaught-exn
-	     (lambda (obj)
-	       (let ([str (format "~a" obj)])
-		 (with-parameterization drscheme:init:system-parameterization
-		   (lambda ()
-		     (display str)
-		     (newline)))
-		 (mred:message-box str "Uncaught Exception")))])
-	(if (exn? exn)
-	    (let ([di (exn-debug-info exn)])
-	      (if (zodiac:zodiac? di)
-		  (let* ([start (zodiac:zodiac-start di)]
-			 [finish (zodiac:zodiac-finish di)]
-			 [file (zodiac:location-file start)]
-			 [edit (if (is-a? file wx:media-edit%)
-				   file
-				   last-resort-edit)]
-			 [frame (send edit get-frame)]
-			 [interactions (ivar frame interactions-edit)])
-		    (send interactions report-error start finish
-			  'dynamic (exn-message exn)))
-		  (uncaught-exn (exn-message exn))))
-	    (uncaught-exn (format "~s" exn))))))
+  (define exception-reporting-rep (make-parameter #f))
+
+  (define user-exception-handler
+    (lambda (exn)
+      (let ([rep (exception-reporting-rep)])
+	(if rep
+	    (with-parameterization drscheme:init:system-parameterization
+	      (lambda ()
+		(send rep report-exception-error exn)
+		(send rep escape)))
+	    (begin
+	      (with-parameterization drscheme:init:system-parameterization
+		(lambda ()
+		  (mred:message-box (if (exn? exn)
+					(exn-message exn)
+					(format "~e" exn))
+				    "Uncaught Exception")))
+	      ((error-escape-handler)))))))
 
   (define build-parameterization
-    (lambda (user-custodian last-resort-edit)
+    (lambda (user-custodian)
       (let* ([p (make-parameterization drscheme:init:eval-thread-parameterization)]
 	     [userspace-branch-handler
 	      (lambda ()
@@ -114,7 +107,7 @@
 	(drscheme:basis:add-basis n bottom-eventspace user-custodian)
 	p)))
 
-  (define-struct process/zodiac-finish (error?))
+  (define-struct process-finish (error?))
 
   (mred:set-preference-default 'drscheme:repl-always-active #f boolean?)
 
@@ -146,6 +139,7 @@
 		 get-frame
 		 begin-edit-sequence
 		 end-edit-sequence
+		 reset-pretty-print-width
 		 scroll-to-position)
 	(rename
 	  [super-initialize-console initialize-console]
@@ -173,13 +167,34 @@
 	(private
 	  [escape-fn #f])
 	(public
+	  [report-exception-error
+	   (lambda (exn)
+	     (if (exn? exn)
+		 (let ([di (exn-debug-info exn)])
+		   (if (and (zodiac:zodiac? di)
+			    (drscheme:language:use-zodiac))
+		       (let* ([start (zodiac:zodiac-start di)]
+			      [finish (zodiac:zodiac-finish di)])
+			 (report-error start finish 'dynamic (exn-message exn)))
+		       (report-unlocated-error (exn-message exn))))
+		 (report-unlocated-error (format "uncaught exception: ~e" exn))))]
+	  [report-unlocated-error
+	   (lambda (message)
+	     (let* ([frame (get-frame)]
+		    [interactions-edit (ivar frame interactions-edit)])
+	       (send frame ensure-interactions-shown)
+	       (let ([locked? (ivar interactions-edit locked?)])
+		 (send* interactions-edit
+		   (begin-edit-sequence)
+		   (lock #f)
+		   (this-err-write (string-append message (string #\newline)))
+		   (lock locked?)
+		   (end-edit-sequence)))))]
 	  [report-error
 	   (lambda (start-location end-location type input-string)
 	     (let* ([start (zodiac:location-offset start-location)]
 		    [finish (add1 (zodiac:location-offset end-location))]
 		    [file (zodiac:location-file start-location)]
-		    [frame (get-frame)]
-		    [interactions-edit (ivar frame interactions-edit)]
 		    [message
 		     (if (is-a? file wx:media-edit%)
 			 input-string
@@ -189,14 +204,7 @@
 				 (zodiac:location-line end-location)
 				 (zodiac:location-column end-location)
 				 input-string))])
-	       (send frame ensure-interactions-shown)
-	       (let ([locked? (ivar interactions-edit locked?)])
-		 (send* interactions-edit
-		   (begin-edit-sequence)
-		   (lock #f)
-		   (this-err-write (string-append message (string #\newline)))
-		   (lock locked?)
-		   (end-edit-sequence)))
+	       (report-unlocated-error message)
 	       (when (is-a? file wx:media-edit%)
 		 (send file begin-edit-sequence)
 		 (send file set-position start finish)
@@ -220,17 +228,11 @@
 		 (let* ([z (or (unbox aries:error-box)
 			       (let ([loc (zodiac:make-location 0 0 0 'eval)])
 				 (zodiac:make-zodiac 'mzrice-eval loc loc)))]
-			[reader
-			 (let ([gone #f])
-			   (lambda ()
-			     (or gone
-				 (begin (set! gone (zodiac:make-eof z))
-					(zodiac:structurize-syntax sexp z)))))]
 			[answer (list (void))]
 			[f
 			 (lambda (annotated recur)
-			   (if (process/zodiac-finish? annotated)
-			       (if (process/zodiac-finish-error? annotated)
+			   (if (process-finish? annotated)
+			       (if (process-finish-error? annotated)
 				   (escape)
 				   answer)
 			       (begin (set! answer
@@ -241,7 +243,7 @@
 						   (drscheme:init:primitive-eval annotated))))
 					     (lambda x x)))
 				      (recur))))])
-		   (apply values (process/zodiac reader f #t))))))]
+		   (apply values (process-sexp sexp z f #t))))))]
 	  [display-result
 	   (lambda (v)
 	     (unless (void? v)
@@ -252,7 +254,8 @@
 				 (lambda (x _ port) (and (is-a? x wx:snip%) 1))]
 				[mzlib:pretty-print@:pretty-print-print-hook
 				 (lambda (x _ port) (this-result-write x))])
-		   (mzlib:pretty-print@:pretty-print v this-result)))))]
+		   (mzlib:pretty-print@:pretty-print v this-result)))))])
+	(public
 	  [process-edit/zodiac
 	   (lambda (edit f start end annotate?)
 	     (process/zodiac
@@ -269,15 +272,24 @@
 			     (zodiac:make-location 0 0 0 filename)
 			     #t 1 user-param)
 		(lambda (x r)
-		  (when (process/zodiac-finish? x)
+		  (when (process-finish? x)
 		    (close-input-port port))
 		  (f x r))
 		annotate?)))]
+	  [process-sexp/zodiac
+	   (lambda (sexp z f annotate?)
+	     (let ([reader
+		    (let ([gone #f])
+		      (lambda ()
+			(or gone
+			    (begin (set! gone (zodiac:make-eof z))
+				   (zodiac:structurize-syntax sexp z)))))])
+	     (process/zodiac reader f annotate?)))]
 	  [process/zodiac
 	   (lambda (reader f annotate?)
 	     (let ([cleanup
 		    (lambda (error?)
-		      (f (make-process/zodiac-finish error?) void))])
+		      (f (make-process-finish error?) void))])
 	       (let loop ()
 		 (let ([next-iteration
 			(with-handlers ([zodiac:interface:zodiac-exn?
@@ -316,6 +328,78 @@
 						     (mzlib:pretty-print@:pretty-print heading-out))
 				    (lambda () (f heading-out loop)))))))])
 		   (next-iteration)))))])
+	(private
+	  [no-zodiac-vocab (make-namespace)])
+	(public
+	  [process-edit/no-zodiac
+	   (lambda (edit f start end)
+	     (let* ([buffer-thunk (mred:read-snips/chars-from-buffer edit start end)]
+		    [snip-string (string->list " 'image ")]
+		    [port-thunk (let ([from-snip null])
+				  (rec port-thunk
+				       (lambda ()
+					 (if (null? from-snip)
+					     (let ([next (buffer-thunk)])
+					       (if (or (char? next) (eof-object? next))
+						   next
+						   (begin (set! from-snip snip-string)
+							  (port-thunk))))
+					     (begin0 (car from-snip)
+						     (set! from-snip (cdr from-snip)))))))]
+		    [port (make-input-port port-thunk (lambda () #t) void)])
+	       (process/no-zodiac (lambda () (read port)) f)))]
+	  [process-file/no-zodiac
+	   (lambda (filename f)
+	     (call-with-input-file filename
+	       (lambda (port)
+		 (process/no-zodiac (lambda () (read port)) f))))]
+	  [process-sexp/no-zodiac
+	   (lambda (sexp f)
+	     (process/no-zodiac (let ([first? #t]) 
+				  (lambda ()
+				    (if first?
+					sexp
+					eof)))
+				f))]
+
+	  ;(report-unlocated-error (if (exn? expr) (exn-message expr) (format "~a" expr)))
+	  [process/no-zodiac
+	   (lambda (reader f)
+	     (let loop ()
+	       (let-values ([(expr error?) (with-handlers ([(lambda (x) #t)
+							    (lambda (exn) (values exn #t))])
+					     (let* ([unexpanded (reader)]
+						    [expanded (parameterize ([current-namespace no-zodiac-vocab])
+								(expand-defmacro unexpanded))])
+					       (values expanded #f)))])
+		 (if error?
+		     (begin
+		       (report-unlocated-error
+			(if (exn? expr)
+			    (exn-message expr)
+			    (format "uncaught exception: ~e" expr)))
+		       (f (make-process-finish #t) void))
+		     (if (eof-object? expr)
+			 (f (make-process-finish #f) void)
+			 (f expr loop))))))])
+	(public
+	  [process-edit
+	   (lambda (edit fn start end annotate?)
+	     (if (drscheme:language:use-zodiac)
+		 (process-edit/zodiac edit fn start end annotate?)
+		 (process-edit/no-zodiac edit fn start end)))]
+	  [process-file
+	   (lambda (filename fn annotate?)
+	     (if (drscheme:language:use-zodiac)
+		 (process-file/zodiac filename fn annotate?)
+		 (process-file/no-zodiac filename fn)))]
+	  [process-sexp
+	   (lambda (sexp z fn annotate?)
+	     (if (drscheme:language:use-zodiac)
+		 (process-sexp/zodiac sexp z fn annotate?)
+		 (process-sexp/no-zodiac sexp fn)))])
+
+
 	(private
 	  [in-evaluation? #f]
 	  [in-evaluation-semaphore (make-semaphore 1)]
@@ -397,11 +481,12 @@
 		 (begin
 		   (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.1")
 		   (semaphore-post in-evaluation-semaphore))
-		 (begin 
+		 (begin
 		   (set! in-evaluation? #t)
 		   (mred:debug:printf 'console-threading "do-many-buffer-evals: posting in-evaluation.2")
 		   (semaphore-post in-evaluation-semaphore)
 		   (send (get-frame) disable-evaluation)
+		   (reset-pretty-print-width)
 		   (ready-non-prompt)
 		   (mred:debug:printf 'console-threading "do-many-buffer-evals: turning on busy cursor")
 		   (wx:begin-busy-cursor)
@@ -456,21 +541,21 @@
 				     "thread-kill terminating (thread-grace running? ~s)"
 				     (thread-running? thread-grace))))))
 			 (lambda ()
-			   (process-edit/zodiac edit
-						(lambda (expr recur)
-						  (cond
-						    [(process/zodiac-finish? expr)
-						     (semaphore-post evaluation-sucessful)]
-						    [else
-						     (let-values ([(answers error?) (send-scheme expr)])
-						       (display-results answers)
-						       (if error?
-							   (semaphore-post
-							    evaluation-sucessful)
-							   (recur)))]))
-						start
-						end
-						#t))
+			   (process-edit edit
+					 (lambda (expr recur)
+					   (cond
+					     [(process-finish? expr)
+					      (semaphore-post evaluation-sucessful)]
+					     [else
+					      (let-values ([(answers error?) (send-scheme expr)])
+						(display-results answers)
+						(if error?
+						    (semaphore-post
+						     evaluation-sucessful)
+						    (recur)))]))
+					 start
+					 end
+					 #t))
 			 (lambda () (void)))))))))])
 	(public
 	  [reset-break-state (lambda () (set! ask-about-kill? #f))]
@@ -517,7 +602,7 @@
 		 ((error-escape-handler))))
 	     (mred:message-box "error-escape-handler didn't escape"
 			       "Error Escape")
-	     (error-escape-handler))]
+	     (escape-handler))]
 	  [exception-handler void]
 	  [error-escape-k void]
 	  [escape-handler
@@ -530,7 +615,7 @@
 		(lambda () 
 		  (current-directory current-thread-directory)
 		  (set! error-escape-k k)
-		  (set! exception-handler
+		  '(set! exception-handler
 			(lambda (exn)
 			  (with-parameterization drscheme:init:system-parameterization
 			    (lambda ()
@@ -594,8 +679,8 @@
 			     (let ([last (list (void))])
 			       (lambda (sexp recur)
 				 (cond
-				   [(process/zodiac-finish? sexp)
-				    (if (process/zodiac-finish-error? sexp)
+				   [(process-finish? sexp)
+				    (if (process-finish-error? sexp)
 					(escape)
 					last)]
 				   [else
@@ -614,10 +699,11 @@
 			      (if (equal? chars (list #\W #\X #\M #\E))
 				  (let ([edit (make-object drscheme:edit:edit%)])
 				    (send edit load-file filename)
-				    (process-edit/zodiac edit process-sexps
-							 0 (send edit last-position)
-							 #t))
-				  (process-file/zodiac filename process-sexps #t)))))
+				    (process-edit edit process-sexps
+						  0 
+						  (send edit last-position)
+						  #t))
+				  (process-file filename process-sexps #t)))))
 		    (lambda ()
 		      (user-load-relative-directory old-load-relative-directory)))))))])
 	(private 
@@ -646,16 +732,17 @@
 	       (set! should-collect-garbage? #t)
 	       (lock #f) ;; locked if the thread was killed
 	       (init-evaluation-thread)
-	       (let ([p (build-parameterization user-custodian this)])
+	       (let ([p (build-parameterization user-custodian)])
 		 (with-parameterization p
 		   (lambda ()
+		     (exception-reporting-rep this)
 		     (current-custodian user-custodian)
 		     (current-output-port this-out)
 		     (current-error-port this-err)
 		     (current-input-port this-in)
 		     (current-load userspace-load)
 		     (current-eval userspace-eval)
-		     (current-exception-handler (lambda (exn) (exception-handler exn)))
+		     (current-exception-handler user-exception-handler)
 		     (exit-handler (lambda (arg)
 				     (with-parameterization drscheme:init:system-parameterization
 				       (lambda ()

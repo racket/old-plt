@@ -25,6 +25,8 @@
     (send (drscheme:compound-unit:make-compound-unit #f)
 	  create-frame))
 
+  ;; the initial window doesn't set the 
+  ;; unit object's state correctly, yet.
   (define (make-basic)
     (let* ([unit (drscheme:unit:make-unit #f)]
 	   [_ (send unit create-frame #f)]

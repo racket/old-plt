@@ -1,7 +1,7 @@
 SYSTEM HISTORY
 --------------
 Version 51:
- - CACHE-WRITE-COUNT is no longer used.
+ - CACHE-WRITE-COUNT in a console-edit is no longer used.
 
  - do not use the frame method on-close anymore. Use can-close? and
    do-close.

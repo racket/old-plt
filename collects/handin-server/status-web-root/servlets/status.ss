@@ -70,10 +70,9 @@
 				    "inactive")
 				hi
 				user)]
-	       [l (filter (lambda (f)
-			    (file-exists? (build-path dir f)))
-			  (with-handlers ([not-break-exn? (lambda (x) null)])
-			    (directory-list dir)))])
+	       [l (with-handlers ([not-break-exn? (lambda (x) null)])
+                    (parameterize ([current-directory dir])
+                      (filter file-exists? (directory-list))))])
 	  (if (pair? l)
 	      (cdr
 	       (apply

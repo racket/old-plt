@@ -5,7 +5,8 @@
 (module errortrace-lib mzscheme
   (require "stacktrace.ss"
            (lib "list.ss") 
-           (lib "unitsig.ss"))
+           (lib "unitsig.ss")
+           (lib "marks.ss" "stepper" "private"))
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Profiling run-time support
@@ -65,24 +66,23 @@
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Stacktrace instrumenter
 
-  (define-struct loc (stx))
-
-  ;; with-mark : stx stx -> stx
-  (define (with-mark mark expr)
-    (with-syntax ([expr expr]
-		  [loc (make-loc mark)]
+  ;; with-mark : syntax? syntax? 
+  (define (with-mark src ann tail-bound free-vars)
+    (with-syntax ([expr ann]
+		  [mark (make-debug-info src tail-bound free-vars 'no-label #f)]
 		  [key key])
       (execute-point
-       mark
-       (syntax
-	(with-continuation-mark
-	    'key
-	    loc
-	  expr)))))
+       src
+       #`(with-continuation-mark
+          'key
+          mark
+	  expr))))
   
   (define key (gensym 'key))
   
   (define-values/invoke-unit/sig stacktrace^ stacktrace@ #f stacktrace-imports^)
+  
+  
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   ;; Execute counts
@@ -186,7 +186,7 @@
       (cond
         [(or (zero? n) (null? l)) (void)]
         [(pair? l)
-	 (let* ([stx (loc-stx (car l))]
+	 (let* ([stx (mark-source (car l))]
 		[file (cond
 		       [(string? (syntax-source stx))
 			(string->symbol (syntax-source stx))]
@@ -297,4 +297,11 @@
 	   annotate-executed-file
            
            annotate-top))
- 
+
+; pathetically inadequate quasi-test cases.  does it even _begin_ to work?
+; 
+;(require my-errortrace-lib)
+;
+;(annotate-top (expand #`(+ 3 4)) #f)
+;(annotate-top (expand #`(lambda (x y z) (let ([a 13])
+;                                          (begin0 (begin 3 4 5) 7 (if #f 3 4))))) #f)

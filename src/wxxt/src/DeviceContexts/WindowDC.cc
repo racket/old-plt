@@ -665,7 +665,7 @@ Bool wxWindowDC::Blit(double xdest, double ydest, double w, double h, wxBitmap *
 
       /* Mask case is more difficult if it's not 1 bit: */
       if (mask) {
-	if (mono_src) {
+	if (mask->GetDepth() == 1) {
 	  /* Easy: */
 # ifdef WX_OLD_XFT
 	  Pixmap mpm;

@@ -4099,7 +4099,7 @@ static Scheme_Object *os_wxMediaEditGetRevisionNumber(int n,  Scheme_Object *p[]
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  long r;
+  double r;
   objscheme_check_valid(os_wxMediaEdit_class, "get-revision-number in text%", n, p);
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -4113,7 +4113,7 @@ static Scheme_Object *os_wxMediaEditGetRevisionNumber(int n,  Scheme_Object *p[]
   
   
   READY_TO_RETURN;
-  return scheme_make_integer(r);
+  return WITH_REMEMBERED_STACK(scheme_make_double(r));
 }
 
 static Scheme_Object *os_wxMediaEditOnMergeSnips(int n,  Scheme_Object *p[])

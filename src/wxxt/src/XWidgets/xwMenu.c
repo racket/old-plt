@@ -991,7 +991,7 @@ static void DrawTextItem(MenuWidget mw, menu_state *ms, menu_item *item,
 	}
     }
 
-    on = (ms->selected==item);
+    on = ((ms->selected==item) && (item->enabled));
 
     width = (in_menubar? item->end-item->start : ms->w-2*mw->menu.shadow_width);
     height = (in_menubar? ms->h-2*mw->menu.shadow_width : item->end-item->start);
@@ -1045,14 +1045,16 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
 
     DrawTextItem(mw, ms, item, x, y);
     if ((!mw->menu.horizontal || ms->prev)
-    && (key=ResourcedText(mw, item, SUBRESOURCE_KEY)))
+	&& (key=ResourcedText(mw, item, SUBRESOURCE_KEY))) {
+      int on;
+      on = ((ms->selected==item) && (item->enabled));
       XfwfDrawString(XtDisplay(mw), ms->win,
 		     (wxEXT_FONT(mw->menu.xft_font)
-		      ? ((ms->selected==item)
+		      ? (on
 			 ? mw->menu.highlight_GC 
 			 : mw->menu.erase_GC)
 		      : (item->enabled 
-			 ? ((ms->selected==item)
+			 ? (on
 			    ? mw->menu.erase_GC 
 			    : mw->menu.normal_GC)
 			 : mw->menu.inactive_GC)),
@@ -1061,7 +1063,8 @@ static void DrawButtonItem(MenuWidget mw, menu_state *ms, menu_item *item,
 							       mw->menu.xft_font),
 		     key, strlen(key), NULL, mw->menu.font, 
 		     wxEXT_FONT(mw->menu.xft_font),
-		     ((ms->selected==item) ? -1 : item->enabled), 0, NULL);
+		     (on ? -1 : item->enabled), 0, NULL);
+    }
 }
 
 static void DrawRadioItem(MenuWidget mw, menu_state *ms, menu_item *item,

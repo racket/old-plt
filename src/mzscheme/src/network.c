@@ -1584,8 +1584,8 @@ static Scheme_Object *tcp_connect(int argc, Scheme_Object *argv[])
 	    }
 
 	    /* Old way to test for success.
-	     * This seems to cause a problem on later Linux kernels,
-	     * when 
+	     * This seems to cause a problem on later Linux kernels.
+	     * Thanks to John R. Hall for tracking down the problem.
 	     *
 	     *  do {
 	     *   status = recv(s, NULL, 0, 0); // test input

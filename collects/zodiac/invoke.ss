@@ -14,8 +14,9 @@
 		    (if (string? base)
 		      base
 		      (current-directory)))]))))))
-(require-library (build-path (begin-elaboration-time plt-home-directory)
-		   "lib" "require.ss"))
+(require-library (begin-elaboration-time
+		   (build-path plt-home-directory
+		     "lib" "require.ss")))
 (plt:require-library "sparams.ss")
 
 (reference "load.ss")

@@ -1,3 +1,6 @@
+(printf "Loading ...~n")
+(load "invoke.ss")
+
 (require-library "compile.ss")
 
 (define file-names
@@ -10,9 +13,6 @@
 (for-each (lambda (f)
 	    (delete-file (string-append f ".zo")))
   file-names)
-
-(printf "Loading ...~n")
-(load "load.ss")
 
 (for-each (lambda (f)
 	    (printf "Compiling ~a~n" f)

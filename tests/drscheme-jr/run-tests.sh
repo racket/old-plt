@@ -1,17 +1,17 @@
-#! /usr/bin/bash
+#!/bin/bash
 
 # test script for language levels
 # Author:  Paul Steckler
 # Revised: March 16 1998
 
-LEVELS="Beginner Intermediate Advanced R4RS+"
+LEVELS="Beginner Intermediate Advanced MzSchemeDebug"
 
 for level in $LEVELS
 do 
     echo -n "Running tests at $level level ... "
     echo "$level level tests of DrScheme Jr" > $level.out
     echo Date: `date` >> $level.out
-    drscheme-jr -x -l $level < the-tests.ss >> $level.out 2>&1
+    ~scheme/plt/bin/drscheme-jr -l $level < the-tests.ss >> $level.out 2>&1
     echo "done."
 done
 

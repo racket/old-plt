@@ -1,157 +1,157 @@
-R4RS+ level tests of DrScheme Jr
-Date: Tue May 26 11:46:20 CDT 1998
+MzSchemeDebug level tests of DrScheme Jr
+Date: Wed Nov 4 13:58:12 CST 1998
 DrScheme Jr is loading. Please wait...
-Welcome to DrScheme Jr version 52, Copyright (c) 1995-98 PLT
-Language: R4RS+
+Welcome to DrScheme Jr version 100/15, Copyright (c) 1995-98 PLT
+Language: MzSchemeDebug
 > > > > > > > > > define
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > > 5
 > lambda
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > #<procedure>
 > inexact
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > 3.14
 > app
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > > 5
 > cond-1
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > 5
 > cond-2
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > 5
 > cond-3
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > 5
 > cond-4
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > 5
 > if-1
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > 5
 > if-2
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > 5
 > quote-1
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > a
 > quote-2
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > a
 > local-1
-> ("Intermediate" "Advanced" "R4RS+")
-> 5
+> ("Intermediate" "Advanced" "Mz")
+> stdin: 74.2-74.7: reference to undefined identifier: local
 > local-2
-> ("Intermediate" "Advanced" "R4RS+")
-> 5
+> ("Intermediate" "Advanced" "Mz")
+> stdin: 4.9-4.21: Invalid position for internal definition
 > local-3
-> ("Intermediate" "Advanced" "R4RS+")
-> #t
+> ("Intermediate" "Advanced" "Mz")
+> stdin: 5.3-8.26: Invalid position for internal definition
 > local-4
-> ("Intermediate" "Advanced" "R4RS+")
-> #t
+> ("Intermediate" "Advanced" "Mz")
+> stdin: 6.3-10.29: Invalid position for internal definition
 > let-1
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > 5
 > let-2
 > ()
-> stdin: 124.22-124.23: reference to undefined identifier: x
+> stdin: 11.22-11.23: reference to undefined identifier: x
 > let-3
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > 5
 > let-4
 > ()
 > stdin: 12.23-12.24: reference to undefined identifier: x
 > letrec-1
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > #t
 > letrec-2
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > #t
 > letrec-3
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > 5
 > case-sense
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
-> #t
+> ("Beginner" "Intermediate" "Advanced" "Mz")
+> #f
 > set!
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > begin
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > begin0
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > recur-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > recur-2
-> ("Advanced" "R4RS+")
-> 5
+> ("Advanced" "Mz")
+> stdin: 59.2-59.7: reference to undefined identifier: recur
 > recur-3
-> ("Advanced" "R4RS+")
-> #t
+> ("Advanced" "Mz")
+> stdin: 4.11-4.14: reference to undefined identifier: rec
 > do-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > do-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > #(0 1 2 3 4)
 > call-cc-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > call-cc-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > let-cc-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > let-cc-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > when-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > when-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > > unless-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > unless-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > one-armed-if-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > one-armed-if-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > eq?-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > #t
 > quote-num-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > quote-num-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > if-3
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > cond-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > thunk
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > anonymous-fun-app
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > keyword-interface
 > ()
-> stdin: 174.1-174.12: Invalid use of keyword #%interface
+> stdin: 106.1-106.12: Invalid use of keyword #%interface
 > keyword-unit
 > ()
 > stdin: 4.1-4.7: Invalid use of keyword #%unit
@@ -185,9 +185,9 @@ Language: R4RS+
 > keyword-let*
 > ()
 > stdin: 4.1-4.7: Invalid use of keyword #%let*
-> keyword-letrec*
+> keyword-letrec
 > ()
-> stdin: 4.1-4.10: Invalid use of keyword #%letrec*
+> stdin: 4.1-4.9: Invalid use of keyword #%letrec
 > keyword-letrec
 > ()
 > stdin: 4.1-4.9: Invalid use of keyword #%letrec
@@ -230,9 +230,9 @@ Language: R4RS+
 > keyword-let*-values
 > ()
 > stdin: 4.1-4.14: Invalid use of keyword #%let*-values
-> keyword-letrec*-values
+> keyword-letrec-values
 > ()
-> stdin: 4.1-4.17: Invalid use of keyword #%letrec*-values
+> stdin: 4.1-4.16: Invalid use of keyword #%letrec-values
 > keyword-letrec-values
 > ()
 > stdin: 4.1-4.16: Invalid use of keyword #%letrec-values
@@ -246,7 +246,7 @@ Language: R4RS+
 > ()
 > stdin: 4.1-4.15: Invalid use of keyword #%class*/names
 > struct-1
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > > (#<struct-procedure:make-a>
  #<struct-procedure:a?>
  #<struct-procedure:a-b>
@@ -254,71 +254,71 @@ Language: R4RS+
  #<struct-procedure:set-a-b!>
  #<struct-procedure:set-a-c!>)
 > struct-2
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > > (#<struct-procedure:make-empty-testing-structure>
  #<struct-procedure:empty-testing-structure?>)
 > struct-3
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > > 5
 > struct-4
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > > 5
 > struct-5
-> ("Intermediate" "Advanced" "R4RS+")
+> ("Intermediate" "Advanced" "Mz")
 > > 5
 > delay-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > #<promise>
 > delay-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > #<promise>
 > delay-3
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > 5
 > quote-list-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > (a a a)
 > quote-list-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > (a a a)
 > empty-list-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > ()
 > empty-list-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > ()
 > back-quote-1
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > (a a a)
 > back-quote-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > (a a a)
 > back-quote-3
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > (a a a)
 > quasi-quote-1
-> ("Beginner" "Intermediate" "Advanced" "R4RS+")
+> ("Beginner" "Intermediate" "Advanced" "Mz")
 > a
 > quasi-quote-2
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > (a a a)
 > quasi-quote-3
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > (a a a)
 > quasi-quote-4
-> ("Advanced" "R4RS+")
+> ("Advanced" "Mz")
 > (a a a)
 > set!-id
 > ()
 > stdin: 96.1-96.35: set!: cannot set undefined identifier: some-undefined-identifier
 > stdin: 1.1-1.26: reference to undefined identifier: some-undefined-identifier
 > non-list
-> "R4RS+"
+> "Mz"
 > (3 . 4)
 > fallthrough-cond-1
 > ()
-> stdin: 8.8-8.22: no matching cond clause
+> #t
 > fallthrough-cond-2
 > ()
-> stdin: 4.8-4.28: no matching else clause
+> #t
 > 

@@ -4,151 +4,151 @@ DrScheme Jr is loading. Please wait...
 Welcome to DrScheme Jr version 52, Copyright (c) 1995-98 PLT
 Language: Intermediate
 > > > > > > > > > 'define
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > > 5
 > 'lambda
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > (lambda (a1) ...)
 > 'inexact
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > #i3.14
 > 'app
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > > 5
 > 'cond-1
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 5
 > 'cond-2
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 5
 > 'cond-3
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 5
 > 'cond-4
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 5
 > 'if-1
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 5
 > 'if-2
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 5
 > 'quote-1
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 'a
 > 'quote-2
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 'a
 > 'local-1
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > 5
 > 'local-2
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > 5
 > 'local-3
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > #t
 > 'local-4
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > #t
 > 'let-1
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > 5
 > 'let-2
 > empty
 > stdin: 124.22-124.23: reference to undefined identifier: x
 > 'let-3
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > 5
 > 'let-4
 > empty
 > stdin: 12.23-12.24: reference to undefined identifier: x
 > 'letrec-1
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > #t
 > 'letrec-2
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > #t
 > 'letrec-3
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > 5
 > 'case-sense
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > #t
 > 'set!
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 37.1-39.5: Malformed let
 > 'begin
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.2-4.7: reference to undefined identifier: begin
 > 'begin0
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.2-4.8: reference to undefined identifier: begin0
 > 'recur-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-8.30: Malformed let
 > 'recur-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 5.8-5.21: First term after parenthesis is illegal in an application
 > 'recur-3
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.11-4.14: reference to undefined identifier: rec
 > 'do-1
-> (list "Advanced" "R4RS+")
-> stdin: 4.10-4.22: '(list 1 3 5 7 9) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.10-4.22: '(1 3 5 7 9) is not a symbol
 > 'do-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.5-5.20: First term after parenthesis is illegal in an application
 > 'call-cc-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.10-6.52: Malformed lambda
 > 'call-cc-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > 5
 > 'let-cc-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 13.9-13.48: First term after parenthesis is illegal in an application
 > 'let-cc-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.11-4.17: reference to undefined identifier: let/cc
 > 'when-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.2-4.6: reference to undefined identifier: when
 > 'when-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 5.4-5.8: reference to undefined identifier: when
 > 'unless-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.2-4.8: reference to undefined identifier: unless
 > 'unless-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-6.5: Malformed let
 > 'one-armed-if-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-4.10: If must have an else clause
 > 'one-armed-if-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-6.5: Malformed let
 > 'eq?-1
-> (list "Advanced" "R4RS+")
-> stdin: 4.1-4.10: eq?: expected symbols as arguments, received 5, and 5
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.1-4.10: eq?: expected symbols as arguments, received 5 and 5
 > 'quote-num-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-4.3: '5 is not a symbol
 > 'quote-num-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-4.10: '5 is not a symbol
 > 'if-3
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.5-4.6: if: value 5 is neither #t nor #f
 > 'cond-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.8-4.9: if: value 5 is neither #t nor #f
 > 'thunk
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.18-4.20: All procedures must take at least one argument
 > 'anonymous-fun-app
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-4.20: First term after parenthesis is illegal in an application
 > 'keyword-interface
 > empty
@@ -186,9 +186,9 @@ Language: Intermediate
 > 'keyword-let*
 > empty
 > stdin: 4.1-4.7: Invalid use of keyword #%let*
-> 'keyword-letrec*
+> 'keyword-letrec
 > empty
-> stdin: 4.1-4.10: Invalid use of keyword #%letrec*
+> stdin: 4.1-4.9: Invalid use of keyword #%letrec
 > 'keyword-letrec
 > empty
 > stdin: 4.1-4.9: Invalid use of keyword #%letrec
@@ -231,9 +231,9 @@ Language: Intermediate
 > 'keyword-let*-values
 > empty
 > stdin: 4.1-4.14: Invalid use of keyword #%let*-values
-> 'keyword-letrec*-values
+> 'keyword-letrec-values
 > empty
-> stdin: 4.1-4.17: Invalid use of keyword #%letrec*-values
+> stdin: 4.1-4.16: Invalid use of keyword #%letrec-values
 > 'keyword-letrec-values
 > empty
 > stdin: 4.1-4.16: Invalid use of keyword #%letrec-values
@@ -247,68 +247,69 @@ Language: Intermediate
 > empty
 > stdin: 4.1-4.15: Invalid use of keyword #%class*/names
 > 'struct-1
-> (list "Intermediate" "Advanced" "R4RS+")
-> > (list make-a a? a-b a-c set-a-b! set-a-c!)
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
+> > (cons make-a
+      (cons a? (cons a-b (cons a-c (cons set-a-b! (cons set-a-c! empty))))))
 > 'struct-2
-> (list "Intermediate" "Advanced" "R4RS+")
-> > (list make-empty-testing-structure empty-testing-structure?)
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
+> > (cons make-empty-testing-structure (cons empty-testing-structure? empty))
 > 'struct-3
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > > 5
 > 'struct-4
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > > 5
 > 'struct-5
-> (list "Intermediate" "Advanced" "R4RS+")
+> (cons "Intermediate" (cons "Advanced" (cons "Mz" empty)))
 > > 5
 > 'delay-1
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 37.1-37.10: All procedures must take at least one argument
 > 'delay-2
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 4.1-5.17: All procedures must take at least one argument
 > 'delay-3
-> (list "Advanced" "R4RS+")
+> (cons "Advanced" (cons "Mz" empty))
 > stdin: 5.11-5.20: All procedures must take at least one argument
 > 'quote-list-1
-> (list "Advanced" "R4RS+")
-> stdin: 4.1-4.16: '(list 'a 'a 'a) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.1-4.16: '(a a a) is not a symbol
 > 'quote-list-2
-> (list "Advanced" "R4RS+")
-> stdin: 4.1-4.9: '(list 'a 'a 'a) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.1-4.9: '(a a a) is not a symbol
 > 'empty-list-1
-> (list "Advanced" "R4RS+")
-> stdin: 4.1-4.4: 'empty is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.1-4.4: '() is not a symbol
 > 'empty-list-2
-> (list "Advanced" "R4RS+")
-> stdin: 4.1-4.11: 'empty is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.1-4.11: '() is not a symbol
 > 'back-quote-1
-> (list "Advanced" "R4RS+")
-> stdin: 4.1-4.9: '(list 'a 'a 'a) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.1-4.9: '(a a a) is not a symbol
 > 'back-quote-2
-> (list "Advanced" "R4RS+")
-> stdin: 4.11-4.17: '(list 'a 'a) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.11-4.17: '(a a) is not a symbol
 > 'back-quote-3
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
-> (list 'a 'a 'a)
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
+> (cons 'a (cons 'a (cons 'a empty)))
 > 'quasi-quote-1
-> (list "Beginner" "Intermediate" "Advanced" "R4RS+")
+> (cons "Beginner" (cons "Intermediate" (cons "Advanced" (cons "Mz" empty))))
 > 'a
 > 'quasi-quote-2
-> (list "Advanced" "R4RS+")
-> stdin: 12.1-12.21: '(list 'a 'a 'a) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 12.1-12.21: '(a a a) is not a symbol
 > 'quasi-quote-3
-> (list "Advanced" "R4RS+")
-> stdin: 4.30-4.43: '(list 'a 'a) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.30-4.43: '(a a) is not a symbol
 > 'quasi-quote-4
-> (list "Advanced" "R4RS+")
-> stdin: 4.22-4.35: '(list 'a 'a) is not a symbol
+> (cons "Advanced" (cons "Mz" empty))
+> stdin: 4.22-4.35: '(a a) is not a symbol
 > 'set!-id
 > empty
 > stdin: 4.2-4.6: reference to undefined identifier: set!
 > stdin: 1.1-1.26: reference to undefined identifier: some-undefined-identifier
 > 'non-list
-> "R4RS+"
+> "Mz"
 > stdin: 4.1-4.11: cons: second argument must be of type <list>, given 3 and 4
 > 'fallthrough-cond-1
 > empty

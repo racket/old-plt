@@ -9,8 +9,8 @@
 (define beginner "Beginner")
 (define intermediate "Intermediate")
 (define advanced "Advanced")
-(define r4rs "R4RS+")
-(define all-levels (list beginner intermediate advanced r4rs))
+(define mzschemedebug "Mz")
+(define all-levels (list beginner intermediate advanced mzschemedebug))
 (define no-levels null)
 (define iar (cdr all-levels))
 (define ar  (cddr all-levels))
@@ -355,9 +355,9 @@ no-levels
 no-levels
 #%let*
 
-'keyword-letrec*
+'keyword-letrec
 no-levels
-#%letrec*
+#%letrec
 
 'keyword-letrec
 no-levels
@@ -415,9 +415,9 @@ no-levels
 no-levels
 #%let*-values
 
-'keyword-letrec*-values
+'keyword-letrec-values
 no-levels
-#%letrec*-values
+#%letrec-values
 
 'keyword-letrec-values
 no-levels
@@ -533,7 +533,7 @@ no-levels
 some-undefined-identifier
 
 'non-list
-r4rs
+mzschemedebug
 (cons 3 4)
 
 'fallthrough-cond-1

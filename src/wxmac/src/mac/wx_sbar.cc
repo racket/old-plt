@@ -378,8 +378,10 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 {
 	SetCurrentDC();
 
+#ifndef OS_X
 	Bool hideToPreventFlicker = (IsControlVisible(cMacControl) && (dX || dY) && (dW || dH));
 	if (hideToPreventFlicker) ::HideControl(cMacControl);
+#endif
 
 	if (dW || dH)
 	{
@@ -395,6 +397,7 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
 		::MoveControl(cMacControl, SetOriginX, SetOriginY);
 	}
 
+#ifndef OS_X
 	if (hideToPreventFlicker) ::ShowControl(cMacControl);
 
 	if (cHidden && (dW || dH || dX || dY))
@@ -405,4 +408,5 @@ void wxScrollBar::OnClientAreaDSize(int dW, int dH, int dX, int dY) // mac platf
                 OffsetRect(&clientRect,SetOriginX,SetOriginY);
 		::InvalWindowRect(GetWindowFromPort(cMacDC->macGrafPort()),&clientRect);
 	}
+#endif
 }

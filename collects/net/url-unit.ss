@@ -73,15 +73,7 @@
                                           args))))
             (raise (make-url-exception s (current-continuation-marks))))))
       
-      ;; scheme : str + #f
-      ;; host : str + #f
-      ;; port : num + #f
-      ;; path : str
-      ;; params : str + #f
-      ;; query : str + #f
-      ;; fragment : str + #f
-      (define-struct url (scheme host port path params query fragment))
-      (define-struct (url/user url) (user))
+      (define-struct url (scheme host port path params query fragment user))
       
       (define url->string 
         (lambda (url)
@@ -142,8 +134,11 @@
 		    (if proxy
 			url
 			(make-url #f #f #f
-				  (url-path url) (url-params url)
-				  (url-query url) (url-fragment url))))))
+				  (url-path url)
+                                  (url-params url)
+				  (url-query url)
+                                  (url-fragment url)
+                                  #f)))))
               (for-each (lambda (s)
                           (display s client->server)
                           (display "\r\n" client->server))
@@ -461,7 +456,8 @@
 				    path
 				    #f	; params
 				    #f	; query
-				    fragment)
+				    fragment
+                                    #f) ; user
 			  (url-error "scheme 'file' path ~s neither relative nor absolute" path))))
 		  ;; Other scheme:
 		  (let ((match (regexp-match-positions rx str)))
@@ -477,22 +473,22 @@
 					  (let ((s (get-str pos skip-left skip-right)))
 					    (if s (string->number s) #f))))
 			       (host (get-str 5  0 0)))
-			  (make-url/user (get-str 2  0 1) ; scheme
-					 host
-					 (get-num 6  1 0) ; port
-					 (let ([path (get-str 7  0 0)])
-					   ;; If path is "" and the input is an absolute URL 
-					   ;; with a hostname, then the intended path is "/", 
-					   ;; but the URL is missing a "/" at the end.
-					   (if (and (string=? path "")
-						    host)
-					       "/"
-					       path))
-					 (get-str 8  1 0) ; params
-					 (get-str 9  1 0) ; query
-					 (get-str 10 1 0) ; fragment
-					 (get-str 4  0 1) ; user
-					 ))
+			  (make-url (get-str 2  0 1) ; scheme
+                                    host
+                                    (get-num 6  1 0) ; port
+                                    (let ([path (get-str 7  0 0)])
+                                      ;; If path is "" and the input is an absolute URL 
+                                      ;; with a hostname, then the intended path is "/", 
+                                      ;; but the URL is missing a "/" at the end.
+                                      (if (and (string=? path "")
+                                               host)
+                                          "/"
+                                          path))
+                                    (get-str 8  1 0) ; params
+                                    (get-str 9  1 0) ; query
+                                    (get-str 10 1 0) ; fragment
+                                    (get-str 4  0 1) ; user
+                                    ))
 			(url-error "Invalid URL string: ~e" str))))))))
 	
       (define (decode-some-url-parts url)
@@ -500,16 +496,14 @@
 	       (lambda (f)
 		 ;; If #f, and leave unmolested any % that in't followed by hex digit
 		 (and f (uri-decode (regexp-replace* "%([^0-9a-fA-F])" f "%25\\1"))))])
-	  (make-url/user (uri-decode/maybe (url-scheme url))
-			 (uri-decode/maybe (url-host url))
-			 (uri-decode/maybe (url-port url))
-			 (uri-decode/maybe (url-path url))
-			 (url-params url)
-			 (url-query url)
-			 (uri-decode/maybe (url-fragment url))
-			 (if (url/user? url)
-			     (uri-decode/maybe (url/user-user url))
-			     #f))))
+	  (make-url (uri-decode/maybe (url-scheme url))
+                    (uri-decode/maybe (url-host url))
+                    (uri-decode/maybe (url-port url))
+                    (uri-decode/maybe (url-path url))
+                    (url-params url)
+                    (url-query url)
+                    (uri-decode/maybe (url-fragment url))
+                    (uri-decode/maybe (url-user url)))))
 
 #|
       Old version. See PR 6152 for information on its replacement.

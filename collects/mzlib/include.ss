@@ -1,6 +1,7 @@
 
 (module include mzscheme
-  (require-for-syntax (lib "stx.ss" "syntax"))
+  (require-for-syntax (lib "stx.ss" "syntax")
+		      "private/increader.ss")
   (require (lib "etc.ss"))
 
   (define-syntax-set (do-include ; private
@@ -8,7 +9,7 @@
 		      include
 		      include-at/relative-to/reader
 		      include/reader)
-		      
+
     (define (do-include/proc stx)
       (syntax-case stx ()
 	[(_ orig-stx ctx loc fn reader)
@@ -26,7 +27,14 @@
 	       [orig-stx (syntax orig-stx)])
 	   
 	   (let ([read-syntax (if (syntax-e reader)
-				  (syntax-local-value reader)
+                                  (reader-val
+                                   (let loop ([e (syntax-object->datum
+                                                  (local-expand reader 'expression null))])
+                                     (cond
+                                       [(reader? e) e]
+                                       [(pair? e) (or (loop (car e))
+                                                      (loop (cdr e)))]
+                                       [else #f])))
 				  read-syntax)])
 	     (unless (and (procedure? read-syntax)
 			  (procedure-arity-includes? read-syntax 2))
@@ -156,8 +164,12 @@
 	 ;; Expand to do-include:
 	 (with-syntax ([_stx stx])
 	   (syntax/loc stx 
-	     (let-syntax ([the-reader reader])
-	       (do-include _stx _stx _stx fn the-reader))))]))
+	     (do-include _stx _stx _stx fn 
+			 (letrec-syntax ([the-reader (lambda (stx)
+						       (datum->syntax-object
+							#'here
+							(make-reader reader)))])
+			   the-reader))))]))
     
     (define (include-at/relative-to/reader/proc stx)
       (syntax-case stx ()
@@ -165,8 +177,12 @@
 	 (check-fn-form (syntax fn) stx)
 	 (with-syntax ([_stx stx])
 	   (syntax/loc stx 
-	     (let-syntax ([the-reader reader])
-	       (do-include _stx _stx _stx fn the-reader))))])))
+	     (do-include _stx _stx _stx fn 
+			 (letrec-syntax ([the-reader (lambda (stx)
+						       (datum->syntax-object
+							#'here
+							(make-reader reader)))])
+			   the-reader))))])))
   
   (provide include
 	   include-at/relative-to

@@ -2494,7 +2494,10 @@ static Scheme_Object *do_module_begin(Scheme_Object *form, Scheme_Comp_Env *env,
 
   /* Expand each expression in form up to `begin', `define-values', `define-syntax', 
      `require', `provide', `#%app', etc. */
-  xenv = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME | SCHEME_MODULE_BEGIN_FRAME, env);
+  xenv = scheme_new_compilation_frame(0, (SCHEME_CAPTURE_WITHOUT_RENAME 
+					  | SCHEME_MODULE_BEGIN_FRAME
+					  | SCHEME_FOR_STOPS), 
+				      env);
   {
     Scheme_Object *stop;
     stop = scheme_get_stop_expander();

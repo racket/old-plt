@@ -3742,7 +3742,10 @@ local_expand(int argc, Scheme_Object **argv)
 
   (void)scheme_get_stop_expander();
 
-  env = scheme_new_compilation_frame(0, SCHEME_CAPTURE_WITHOUT_RENAME | kind, env);
+  env = scheme_new_compilation_frame(0, (SCHEME_CAPTURE_WITHOUT_RENAME 
+					 | SCHEME_FOR_STOPS
+					 | kind), 
+				     env);
   local_mark = scheme_current_thread->current_local_mark;
   
   cnt = scheme_stx_proper_list_length(argv[2]);

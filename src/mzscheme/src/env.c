@@ -1339,7 +1339,7 @@ Scheme_Object *
 scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
 {
   Scheme_Comp_Env *frame;
-  int j = 0, p = 0, modpos;
+  int j = 0, p = 0, modpos, skip_stops = 0;
   Scheme_Bucket *b;
   Scheme_Object *val, *modidx, *modname, *srcsym;
   Scheme_Env *genv;
@@ -1353,54 +1353,59 @@ scheme_lookup_binding(Scheme_Object *symbol, Scheme_Comp_Env *env, int flags)
   for (frame = env; frame->next != NULL; frame = frame->next) {
     int i;
     Scheme_Object *uid;
-    
-    if (frame->flags & SCHEME_LAMBDA_FRAME)
-      j++;
 
-    uid = env_frame_uid(frame);
+    if (frame->flags & SCHEME_LAMBDA_FRAME)
+      j++;      
     
-    for (i = frame->num_bindings; i--; ) {
-      if (frame->values[i]) {
-	if (SAME_OBJ(SCHEME_STX_VAL(symbol), SCHEME_STX_VAL(frame->values[i]))
-	    && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
-	  /* Found a lambda- or let-bound variable: */
-	  if (flags & SCHEME_DONT_MARK_USE)
-	    return scheme_make_local(scheme_local_type, 0);
-	  else
-	    return (Scheme_Object *)get_frame_loc(frame, i, j, p, flags);
+    if (!skip_stops || !(frame->flags & SCHEME_FOR_STOPS)) {
+      if (frame->flags & SCHEME_FOR_STOPS)
+	skip_stops = 1;
+
+      uid = env_frame_uid(frame);
+      
+      for (i = frame->num_bindings; i--; ) {
+	if (frame->values[i]) {
+	  if (SAME_OBJ(SCHEME_STX_VAL(symbol), SCHEME_STX_VAL(frame->values[i]))
+	      && scheme_stx_env_bound_eq(symbol, frame->values[i], uid, phase)) {
+	    /* Found a lambda- or let-bound variable: */
+	    if (flags & SCHEME_DONT_MARK_USE)
+	      return scheme_make_local(scheme_local_type, 0);
+	    else
+	      return (Scheme_Object *)get_frame_loc(frame, i, j, p, flags);
+	  }
 	}
       }
-    }
 
-    for (i = COMPILE_DATA(frame)->num_const; i--; ) {
-      int issame;
-      if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
-	issame = scheme_stx_module_eq(symbol, COMPILE_DATA(frame)->const_names[i], phase);
-      else
-	issame = (SAME_OBJ(SCHEME_STX_VAL(symbol), 
-			   SCHEME_STX_VAL(COMPILE_DATA(frame)->const_names[i]))
-		  && scheme_stx_env_bound_eq(symbol, COMPILE_DATA(frame)->const_names[i], uid, phase));
+      for (i = COMPILE_DATA(frame)->num_const; i--; ) {
+	int issame;
+	if (frame->flags & SCHEME_CAPTURE_WITHOUT_RENAME)
+	  issame = scheme_stx_module_eq(symbol, COMPILE_DATA(frame)->const_names[i], phase);
+	else
+	  issame = (SAME_OBJ(SCHEME_STX_VAL(symbol), 
+			     SCHEME_STX_VAL(COMPILE_DATA(frame)->const_names[i]))
+		    && scheme_stx_env_bound_eq(symbol, COMPILE_DATA(frame)->const_names[i], uid, phase));
       
-      if (issame) {
-	val = COMPILE_DATA(frame)->const_vals[i];
+	if (issame) {
+	  val = COMPILE_DATA(frame)->const_vals[i];
 	
-	if (!val) {
-	  scheme_wrong_syntax(scheme_compile_stx_string, NULL, symbol,
-			      "variable used out of context");
-	  return NULL;
-	}
-	if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
-	  if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))
-	    return val;
-	  else if (SAME_TYPE(SCHEME_TYPE(val), scheme_lazy_macro_type))
-	    return force_lazy_macro(val, phase);
-	  else
-	    scheme_wrong_syntax(scheme_set_stx_string, NULL, symbol,
-				"local syntax identifier cannot be mutated");
-	  return NULL;
-	}
+	  if (!val) {
+	    scheme_wrong_syntax(scheme_compile_stx_string, NULL, symbol,
+				"variable used out of context");
+	    return NULL;
+	  }
+	  if (!(flags & SCHEME_ENV_CONSTANTS_OK)) {
+	    if (SAME_TYPE(SCHEME_TYPE(val), scheme_macro_type))
+	      return val;
+	    else if (SAME_TYPE(SCHEME_TYPE(val), scheme_lazy_macro_type))
+	      return force_lazy_macro(val, phase);
+	    else
+	      scheme_wrong_syntax(scheme_set_stx_string, NULL, symbol,
+				  "local syntax identifier cannot be mutated");
+	    return NULL;
+	  }
 
-	return val;
+	  return val;
+	}
       }
     }
 

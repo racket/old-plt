@@ -1417,6 +1417,7 @@ int *scheme_env_get_flags(Scheme_Comp_Env *frame, int start, int count);
 #define SCHEME_INTDEF_FRAME 16
 #define SCHEME_NO_RENAME 32
 #define SCHEME_CAPTURE_WITHOUT_RENAME 64
+#define SCHEME_FOR_STOPS 128
 
 /* Flags used with scheme_static_distance */
 #define SCHEME_ELIM_CONST 1

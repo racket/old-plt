@@ -85,7 +85,6 @@
 						       a))))))
 	(cons exn:application:type? (cons exn:application:type-expected symbol?))
 	
-	(cons exn:read? (cons exn:read-port input-port?))
 	(cons exn:read? (cons exn:read-line (lambda (x) (if x (pos-exact? x) #t))))
 	(cons exn:read? (cons exn:read-column (lambda (x) (if x (pos-exact? x) #t))))
 	(cons exn:read? (cons exn:read-position (lambda (x) (if x (pos-exact? x) #t))))

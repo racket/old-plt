@@ -1,5 +1,5 @@
 (require-library "macro.ss")
-
+(require-library "errortrace.ss" "errortrace")
 (load-relative "value-turtles.ss")
 
 (define (regular-poly sides radius tv)
@@ -338,7 +338,10 @@
 
 (define test
   (let* ([f (make-object frame% "frame" #f 400 400)]
-	 [t (make-object text%)])
+	 [t (make-object text%)]
+	 [mb (make-object menu-bar% f)]
+	 [fm (make-object menu% "File" mb)])
+    (make-object menu-item% "Copy" fm (lambda x (send t copy)) #\c)
     (make-object editor-canvas% f t)
     (lambda (ttls)
       (send f show #t)
@@ -350,5 +353,5 @@
 ;(test (draw 20 (radial-turtles 5 (turtles 150 150))))
 ;(test (draw 20 (turn 90 (spaced-turtles 5 (turtles 150 150 10 75 0)))))
 ;(test (spokes))
-;(test (spyro-gyra))
+(test (spyro-gyra))
 ;(test (neato))

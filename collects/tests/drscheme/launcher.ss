@@ -3,7 +3,10 @@
 	      "launcher-test-tmp.ss"))
 (define tmp-launcher
   (build-path (collection-path "tests" "drscheme")
-	      "launcher-test-tmp"))
+	      (case (system-type)
+		[(unix) "launcher-test-tmp"]
+		[(windows) "launcher-test-tmp.exe"]
+		[else (error 'launcher.ss "cannot run this test under ~s" (system-type))])))
 
 (define-values (port-num listener)
   (let loop ([n 100])

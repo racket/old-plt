@@ -726,10 +726,9 @@ void wxCanvasDC::wxMacSetCurrentTool(wxMacToolType whichTool)
       pw = current_pen->GetWidthF();
       if (AlignSmoothing()) {
 	pw = (int)pw;
+	pw = (int)(pw * user_scale_x);
 	if (!pw)
 	  pw = 1;
-	else
-	  pw = (int)(pw * user_scale_x);
       } else {
 	if (!pw) {
 	  if (user_scale_x > user_scale_y)

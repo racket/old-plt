@@ -701,10 +701,9 @@ Pen *wxPen::GraphicsPen(Bool align, double xs)
     
     if (align) {
       pw = (int)width;
+      pw = (int)(pw * xs);
       if (!pw)
 	pw = 1;
-      else
-	pw = (int)(pw * xs);
     } else
       pw = width;
 

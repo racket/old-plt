@@ -92,7 +92,6 @@ wxFrame::wxFrame(void) : wxPanel()
     menubar         = NULL;
     status          = NULL;
     num_status      = 0;
-    being_destroyed = FALSE;
 
     SetShown(FALSE);
 }
@@ -106,7 +105,6 @@ wxFrame::wxFrame(wxFrame *parent, char *title,
     menubar         = NULL;
     status          = NULL;
     num_status      = 0;
-    being_destroyed = FALSE;
 
     Create(parent, title, x, y, width, height, style, name);
 
@@ -117,7 +115,6 @@ wxFrame::~wxFrame(void)
 {
     wxChildList *tlf;
 
-    being_destroyed = TRUE;
     // hide frame
     Show(FALSE);
     // destroy children first to popdown child frames

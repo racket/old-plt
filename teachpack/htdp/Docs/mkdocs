@@ -1,6 +1,9 @@
 #!/bin/sh
 string=? ; exec mzscheme -qr $0 "$@"
 
+; for john
+
+
 ; This list determines the order of libraries in the index file:
 (define libraries
   '("Convert"

@@ -43,7 +43,7 @@
 				(and (= 3 (length def))
 				     (list? (cadr def))
 				     (andmap symbol? (cadr def))
-				     (let-values ([(d kind) (local-expand-body-expression `(,(cadr def) (,(gensym)) 1))])
+				     (let-values ([(d kind) (local-expand-body-expression `(,(car def) (,(gensym)) 1))])
                                        (eq? kind '#%define-values)))]
 			       [(#%define define)
 				(and (or (and (= 3 (length def))

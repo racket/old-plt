@@ -318,11 +318,12 @@
     (polymorphic
      (lambda (l)
        (if (pair? l)
-           (if (pair? (cdr l))
-               (last-pair (cdr l))
-               l)
-           (raise-type-error 'last-pair "pair" l)))))
-  
+	   (let loop ((l l) (x (cdr l)))
+	     (if (pair? x)
+		 (loop x (cdr x))
+		 l))
+	   (raise-type-error 'last-pair "pair" l)))))
+
   (define cons? (lambda (x) (pair? x)))
   (define empty? (lambda (x) (null? x)))
   (define empty '()))

@@ -1,5 +1,5 @@
 /*								-*- C++ -*-
- * $Id: GDI.cc,v 1.2 1999/11/04 17:25:36 mflatt Exp $
+ * $Id: GDI.cc,v 1.3 2003/08/18 23:42:19 mflatt Exp $
  *
  * Purpose: common GDI routines
  *
@@ -38,7 +38,7 @@ Bool wxColourDisplay(void)
     return (wxDisplayDepth() > 1);
 }
 
-void wxDisplaySize(int *width, int *height)
+void wxDisplaySize(int *width, int *height, int flags)
 {
   if (wxTheApp) {
       *width = DisplayWidth(wxAPP_DISPLAY, DefaultScreen(wxAPP_DISPLAY));

@@ -82,12 +82,18 @@
 		  (send font get-face)
 		  (send font get-family)
 		  style
-		  weight)
+		  weight
+		  #f
+		  'default
+		  #t)
 	    (send the-font-list find-or-create-font
 		  size 
 		  (send font get-family)
 		  style
-		  weight)))
+		  weight
+		  #f
+		  'default
+		  #t)))
 
       (define text
 	(case-lambda
@@ -99,18 +105,18 @@
 		   (cond
 		    [(null? style) 
 		     (send the-font-list find-or-create-font
-			   size 'default 'normal 'normal)]
+			   size 'default 'normal 'normal #f 'default #t)]
 		    [(is-a? style font%)
 		     style]
 		    [(memq style '(default decorative roman script swiss modern symbol system))
 		     (send the-font-list find-or-create-font
-			   size style 'normal 'normal)]
+			   size style 'normal 'normal #f 'default #t)]
 		    [(string? style)
 		     (send the-font-list find-or-create-font
-			   size style 'default 'normal 'normal)]
+			   size style 'default 'normal 'normal #f 'default #t)]
 		    [(string? style)
 		     (send the-font-list find-or-create-font
-			   size style 'default 'normal 'normal)]
+			   size style 'default 'normal 'normal #f 'default #t)]
 		    [(and (pair? style)
 			  (memq (car style)
 				'(superscript 
@@ -183,7 +189,10 @@
 					   (floor (* 8/10 (send s get-point-size)))
 					   (send s get-family)
 					   (send s get-style)
-					   (send s get-weight))]
+					   (send s get-weight)
+					   (send s get-underlined?)
+					   (send s get-smoothing)
+					   (send s get-size-in-pixels?))]
 		    [else s]))]
 		[cap-size (floor (* 8/10 size))])
 	    (let ([picts

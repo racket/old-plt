@@ -329,7 +329,7 @@ extern Bool wxColourDisplay(void);
 // Returns depth of screen
 extern int wxDisplayDepth(void);
 
-extern void wxDisplaySize(int *width, int *height);
+extern void wxDisplaySize(int *width, int *height, int flags = 0);
 
 extern void wxSetCursor(wxCursor *cursor);
 

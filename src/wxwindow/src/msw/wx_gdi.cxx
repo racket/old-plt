@@ -1000,11 +1000,11 @@ int wxDisplayDepth(void)
 }
 
 // Get size of display
-void wxDisplaySize(int *width, int *height)
+void wxDisplaySize(int *width, int *height, int flags)
 {
   RECT r;
 
-  if (SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0)) {
+  if (!flags && SystemParametersInfo(SPI_GETWORKAREA, 0, &r, 0)) {
     *width = (r.right - r.left);
     *height = (r.bottom - r.top);
   } else {

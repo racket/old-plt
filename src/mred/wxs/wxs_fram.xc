@@ -32,6 +32,9 @@ static wxMenuBar *GetTheMenuBar(wxFrame *f)
 #ifndef wxTOOLBAR_BUTTON
 # define wxTOOLBAR_BUTTON 0
 #endif
+#ifndef wxHIDE_MENUBAR
+# define wxHIDE_MENUBAR 0
+#endif
 
 @BEGINSYMBOLS frameStyle > > PRED BUNDLE
 @SYM "no-caption" : wxNO_CAPTION
@@ -40,6 +43,7 @@ static wxMenuBar *GetTheMenuBar(wxFrame *f)
 @SYM "no-system-menu" : wxNO_SYSTEM_MENU
 @SYM "no-resize-border" : wxNO_RESIZE_BORDER
 @SYM "toolbar-button" : wxTOOLBAR_BUTTON
+@SYM "hide-menubar" : wxHIDE_MENUBAR
 @ENDSYMBOLS
 
 @BEGINSYMBOLS iconKind > ONE > PRED BUNDLE

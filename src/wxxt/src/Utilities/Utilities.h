@@ -73,7 +73,7 @@ char *wxStripMenuCodes(char *in, char *out);
 class wxCursor;
 Bool wxColourDisplay(void);
 int  wxDisplayDepth(void);
-void wxDisplaySize(int *width, int *height);
+void wxDisplaySize(int *width, int *height, int flags = 0);
 
 // busy cursor
 class wxCursor;

@@ -463,6 +463,7 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   int* x0 = &_x0;
   int _x1;
   int* x1 = &_x1;
+  int x2;
   Scheme_Object *sbox_tmp;
 
   SETUP_VAR_STACK_REMEMBERED(1);
@@ -471,9 +472,10 @@ static Scheme_Object *wxsGlobalwxDisplaySize(int n,  Scheme_Object *p[])
   
       *x0 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+0], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
       *x1 = (sbox_tmp = WITH_VAR_STACK(objscheme_unbox(p[0+1], "display-size")), WITH_VAR_STACK(objscheme_unbundle_integer(sbox_tmp, "display-size"", extracting boxed argument")));
+  x2 = WITH_VAR_STACK(objscheme_unbundle_integer(p[0+2], "display-size"));
 
   
-  WITH_VAR_STACK(wxDisplaySize(x0, x1));
+  WITH_VAR_STACK(wxDisplaySize(x0, x1, x2));
 
   
   if (n > (0+0))
@@ -717,7 +719,7 @@ void objscheme_setup_wxsGlobal(Scheme_Env *env)
   WITH_VAR_STACK(scheme_install_xc_global("get-resource", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxStripMenuCodes_Scheme, "label->plain-label", 1, 1));
   WITH_VAR_STACK(scheme_install_xc_global("label->plain-label", functmp, env));
-  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxDisplaySize, "display-size", 2, 2));
+  functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxDisplaySize, "display-size", 3, 3));
   WITH_VAR_STACK(scheme_install_xc_global("display-size", functmp, env));
   functmp = WITH_VAR_STACK(scheme_make_prim_w_arity((Scheme_Prim *)wxsGlobalwxBell, "bell", 0, 0));
   WITH_VAR_STACK(scheme_install_xc_global("bell", functmp, env));

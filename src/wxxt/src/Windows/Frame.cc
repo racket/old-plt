@@ -311,6 +311,20 @@ Bool wxFrame::Create(wxFrame *frame_parent, char *title,
     }
 
 
+    if ((x >= 0) && (y >= 0)) {
+      /* Tell the window manager that we really meant the initial position: */
+      XSizeHints hints;
+      hints.flags = PPosition;
+      if ((width >= 0) && (height >= 0))
+	hints.flags |= PSize;
+      hints.x = x;
+      hints.y = y;
+      hints.width = width;
+      hints.height = height;
+      XSetWMNormalHints(XtDisplay(X->frame), XtWindow(X->frame), &hints);
+
+    }
+
     if (!plt_mask) {
       plt_mask = XCreateBitmapFromData(wxAPP_DISPLAY, wxAPP_ROOT, plt_xbm, plt_width, plt_height);
     }

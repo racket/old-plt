@@ -156,6 +156,7 @@ STDMETHODIMP CSink::unregister_handler(DISPID dispId) {
 // VARIANT's, unlike VARIANTARG's, cannot have VT_BYREF bit
 
 Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
+  char errBuff[128];
 
   switch(pVariantArg->vt) {
 
@@ -279,9 +280,9 @@ Scheme_Object *CSink::variantToSchemeObject(VARIANTARG *pVariantArg) {
 
   default :
     
-    scheme_signal_error("Can't make Scheme value from VARIANT %X",
-			pVariantArg->vt);
-
+    wsprintf(errBuff,"Can't make Scheme value from VARIANT 0x%X",
+	     pVariantArg->vt);
+    scheme_signal_error(errBuff);
   }
 
   return NULL;

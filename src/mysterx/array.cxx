@@ -19,6 +19,7 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
 					      long *allIndices) {
   HRESULT hr;
   VARTYPE vt;
+  char errBuff[128];
 	
   hr = SafeArrayGetVartype(theArray,&vt);
 
@@ -105,8 +106,9 @@ Scheme_Object *safeArrayElementToSchemeObject(SAFEARRAY *theArray,
     
   default :
     
-    scheme_signal_error("Can't make Scheme value from array element with type %X",
-			vt);
+    sprintf(errBuff,
+	    "Can't make Scheme value from array element with type 0x%X",vt);
+    scheme_signal_error(errBuff);
     
   }
   

@@ -2765,7 +2765,8 @@ void marshallSchemeValueToVariant(Scheme_Object *val,VARIANTARG *pVariantArg) {
 }
 
 void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
-  
+  char errBuff[128];
+
   if (pVariantArg->vt & VT_ARRAY) {
     pVariantArg->parray = schemeVectorToSafeArray(val);
   }
@@ -2925,13 +2926,15 @@ void marshallSchemeValue(Scheme_Object *val,VARIANTARG *pVariantArg) {
     break;
     
   default :
-    scheme_signal_error("Unable to marshall Scheme value into VARIANT: 0x%X",
-			pVariantArg->vt);
-    
+    sprintf(errBuff,"Unable to marshall Scheme value into VARIANT: 0x%X",
+	    pVariantArg->vt);
+    scheme_signal_error(errBuff);
+
   }
 }
 
 Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
+  char errBuff[128];
 
   if (pVariantArg->vt & VT_ARRAY) {
     return safeArrayToSchemeVector(pVariantArg->parray);
@@ -2998,8 +3001,9 @@ Scheme_Object *variantToSchemeObject(VARIANTARG *pVariantArg) {
     
   default :
     
-    scheme_signal_error("Can't make Scheme value from VARIANT %X",
-			pVariantArg->vt);
+    sprintf(errBuff,"Can't make Scheme value from VARIANT 0x%X",
+	    pVariantArg->vt);
+    scheme_signal_error(errBuff);
     
   }
   

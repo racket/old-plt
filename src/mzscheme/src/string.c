@@ -317,7 +317,7 @@ scheme_init_string (Scheme_Env *env)
   scheme_add_global_constant("string-copy!", 
 			     scheme_make_prim_w_arity(string_copy_bang,
 						      "string-copy!",
-						      4, 5),
+						      3, 5),
 			     env);
   scheme_add_global_constant("string-fill!", 
 			     scheme_make_prim_w_arity(string_fill,
@@ -1217,24 +1217,24 @@ string_copy_bang(int argc, Scheme_Object *argv[])
     scheme_wrong_type("string-copy!", "string", 0, argc, argv);
 
   scheme_get_substring_indices("string-copy!", argv[0], 
-			       argc, argv, 1, 2, 
+			       argc, argv, 1, 4, 
 			       &istart, &ifinish);
 
-  if (!SCHEME_MUTABLE_STRINGP(argv[3]))
-    scheme_wrong_type("string-copy!", "mutable-string", 3, argc, argv);
+  if (!SCHEME_MUTABLE_STRINGP(argv[2]))
+    scheme_wrong_type("string-copy!", "mutable-string", 2, argc, argv);
 
-  scheme_get_substring_indices("string-copy!", argv[3], 
-			       argc, argv, 4, 5, 
+  scheme_get_substring_indices("string-copy!", argv[2], 
+			       argc, argv, 3, 5, 
 			       &ostart, &ofinish);
 
   if ((ofinish - ostart) < (ifinish - istart)) {
     scheme_arg_mismatch("string-copy!",
 			"not enough room in output string: ",
-			argv[3]);
+			argv[2]);
     return NULL;
   }
 
-  memmove(SCHEME_STR_VAL(argv[3]) + ostart,
+  memmove(SCHEME_STR_VAL(argv[2]) + ostart,
 	  SCHEME_STR_VAL(argv[0]) + istart,
 	  ifinish - istart);
   

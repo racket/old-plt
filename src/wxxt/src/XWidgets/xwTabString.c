@@ -60,14 +60,14 @@ static int xdoDraw(measure, font,
 	  v = '?';
 	else
 	  v = us[i];
-	((XChar2b *)us)[i].byte1 = v & 0xff;
-	((XChar2b *)us)[i].byte2 = v >> 8;
+	((XChar2b *)us)[i].byte2 = v & 0xff;
+	((XChar2b *)us)[i].byte1 = v >> 8;
       }
     }
 
   if (measure
 #ifdef WX_USE_XFT
-      || gc
+      || (xfont && gc)
 #endif
       ) {
 #ifdef WX_USE_XFT
@@ -109,9 +109,9 @@ static int xdoDraw(measure, font,
 }
 
 #ifdef WX_USE_XFT
-# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(0, 0, dpy, d, gc, x, y, s, len, i, xf, dw, c)
+# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(0, font, dpy, d, gc, x, y, s, len, i, xf, dw, c)
 #else
-# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(0, 0, dpy, d, gc, x, y, s, len, i)
+# define doDraw(dpy, d, gc, x, y, s, len, i, xf, dw, c) xdoDraw(0, font, dpy, d, gc, x, y, s, len, i)
 #endif
 
 #ifdef WX_USE_XFT

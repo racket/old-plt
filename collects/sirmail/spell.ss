@@ -4,7 +4,8 @@
            (lib "string.ss")
            (lib "list.ss")
            (lib "framework.ss" "framework")
-           (lib "contract.ss"))
+           (lib "contract.ss")
+	   (lib "file.ss"))
   
   (provide/contract [activate-spelling ((is-a?/c color:text<%>) . -> . void?)])
   
@@ -50,7 +51,7 @@
               (for-each (lambda (word) (hash-table-put! d word #t)) extra-words)
               (for-each 
                (lambda (good-file-name)
-                 (call-with-input-file good-file-name
+                 (call-with-input-file* good-file-name
                    (lambda (i)
                      (let loop ()
                        (let ((word (read-line i)))

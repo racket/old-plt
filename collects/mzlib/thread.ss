@@ -13,6 +13,7 @@
 	  merge-input
 	  copy-port
 	  input-port-append
+	  convert-stream
 
 	  run-server
 	  make-limited-input-port)
@@ -228,6 +229,42 @@
        (lambda ()
 	 (when close-orig?
 	   (map close-input-port ports))))))
+
+  (define (convert-stream from from-port
+			  to to-port)
+    (let ([c (string-open-converter from to)]
+	  [in (make-string 4096)]
+	  [out (make-string 4096)])
+      (unless c
+	(error 'convert-stream "could not create converter from ~e to ~e"
+	       from to))
+      (dynamic-wind
+	  void
+	  (lambda ()
+	    (let loop ([got 0])
+	      (let ([n (read-string-avail! in from-port got)])
+		(let ([got (+ got (if (eof-object? n)
+				      0
+				      n))])
+		  (let-values ([(wrote used ok?) (string-convert c in 0 got out)])
+		    (unless ok?
+		      (error 'convert-stream "conversion error"))
+		    (unless (zero? wrote)
+		      (write-string out to-port 0 wrote))
+		    (string-copy! in used in 0 got)
+		    (if (eof-object? n)
+			(begin
+			  (unless (= got used)
+			    (error 'convert-stream "input stream ended with a partial conversion"))
+			  (let-values ([(wrote ok?) (string-convert-end c out)])
+			    (unless ok?
+			      (error 'convert-stream "conversion-end error"))
+			    (unless (zero? wrote)
+			      (write-string out to-port 0 wrote))
+			    ;; Success
+			    (void)))
+			(loop (- got used))))))))
+	  (lambda () (string-close-converter c)))))
 
   ;; Helper for input-port-append; given a skip count
   ;;  and an input port, determine how many characters

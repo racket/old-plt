@@ -539,7 +539,7 @@ void _ALDrawListBorder(ALHandle hAL)
 #endif
 
 	// If we're not focused or not active, erase the focus rectangle first.
-	if ( BTST((*hAL)->features, alFDrawFocus) && ( !focused || !BTST((*hAL)->flags, alFActive) ) ) {
+	if ( 0 && BTST((*hAL)->features, alFDrawFocus) && ( !focused || !BTST((*hAL)->flags, alFActive) ) ) {
 #if ALIST_USEAPPEARANCEMGR
 		if (appearance)
 			status = DrawThemeFocusRect(&box, false);
@@ -584,9 +584,9 @@ void _ALDrawListBorder(ALHandle hAL)
 	// Lastly, draw the focus rectangle if we are focused and active.
 	if ( BTST((*hAL)->features, alFDrawFocus) && focused && BTST((*hAL)->flags, alFActive) ) {
 #if ALIST_USEAPPEARANCEMGR
-		if ( appearance && status == noErr )
+	  if ( appearance && status == noErr ) {
 			status = DrawThemeFocusRect( &box, true );
-		else
+	  } else
 #endif
 		{	GetForeColor( &saveColor );
 			// use color 8 from Apple's Grayscale Human Interface document
@@ -872,11 +872,13 @@ ALIST_API void ALUpdate( RgnHandle inUpdateRgn, ALHandle hAL )
 
 	DisposeRgn( auxRgn );
 
+#if 0
 	if (pAL->vScroll != nil)
 		DrawOneControl(pAL->vScroll);
 
 	if (pAL->hScroll != nil)
 		DrawOneControl(pAL->hScroll);
+#endif
 
 	// restore the port
 	SetGWorld(saveWorld, saveDevice);

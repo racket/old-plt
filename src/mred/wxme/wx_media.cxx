@@ -2635,6 +2635,16 @@ wxchar wxMediaEdit::GetCharacter(long start)
   return buffer[0];
 }
 
+char wxMediaEdit::GetTruncatedCharacter(long start)
+{
+  wxchar c;
+  c = GetCharacter(start);
+  if (c < 256)
+    return c;
+  else
+    return 255;
+}
+
 /****************************************************************/
 
 wxClickback::wxClickback() : wxObject(WXGC_NO_CLEANUP)

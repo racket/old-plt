@@ -277,6 +277,8 @@ int wxEntry(int argc, char *argv[])
 // initialize and destroy global data
 //-----------------------------------------------------------------------------
 
+extern int wxGetPreference(const char *name, int *len);
+
 void wxCommonInit(void)
 {
     Bool supported;
@@ -330,7 +332,8 @@ void wxCommonInit(void)
       fsize = 12;
 #else
     fsize = 12;
-#endif    
+#endif
+    wxGetPreference("controlFontSize", &fsize);
 
     wxREGGLOB(wxNORMAL_FONT);
     wxNORMAL_FONT = DEBUG_NEW wxFont (fsize, wxMODERN, wxNORMAL, wxNORMAL);

@@ -192,7 +192,8 @@
 @MACRO makeNoCopyString[len] = WITH_VAR_STACK(scheme_make_sized_string(r, <len>, 0))
 
 @ "get-text" : string/makeNoCopyString[_x4] GetTextUTF8(nnlong=0,nnls[eof]=-1,bool=FALSE,bool=FALSE,-long*=NULL);
-@ "get-character" : int GetCharacter(nnlong);
+@ "get-unicode" : int GetCharacter(nnlong);
+@ "get-character" : char GetTruncatedCharacter(nnlong);
 
 @ "read-from-file" : bool ReadFromFile(wxMediaStreamIn!,nnls[start],bool=FALSE); <> with position
 @ "write-to-file" : bool WriteToFile(wxMediaStreamOut!,nnlong,nnls[eof]=-1); <> with position

@@ -956,6 +956,7 @@ void wxWindowDC::Clear(void)
 		   &w, &h, &udummy, &udummy);
       
       XFillRectangle(DPY, DRAWABLE, BG_GC, 0, 0, w, h);
+
     }
 }
 
@@ -1760,9 +1761,11 @@ static unsigned int *convert_to_drawable_format(const char *s, int ds, long *_ul
 	v = '?';
       else
 	v = us[i];
-      dest[i].byte1 = v & 0xff;
-      dest[i].byte2 = v >> 8;
+      dest[i].byte2 = v & 0xff;
+      dest[i].byte1 = v >> 8;
     }
+
+    us = (unsigned int *)dest;
   }
 
   *_ulen = ulen;
@@ -2000,7 +2003,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 	    the_x = (int)((double)dev_x + offset * ca);
 	    the_y = (int)((double)dev_y - offset * sa);
 	    
-	    XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, (XChar2b *)text + dt, 1);
+	    XDrawString16(DPY, DRAWABLE, TEXT_GC, the_x, the_y, ((XChar2b *)text) + dt, 1);
 	    dt++;
 	  	    
 	    offset += (double)(zfontinfo->per_char ?
@@ -2010,7 +2013,7 @@ void wxWindowDC::DrawText(char *orig_text, float x, float y,
 
 	  XSetFont(DPY, TEXT_GC, zfontinfo->fid);
 	} else {
-	  XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, (XChar2b *)text + dt, textlen);
+	  XDrawString16(DPY, DRAWABLE, TEXT_GC, dev_x, dev_y+ascent, ((XChar2b *)text) + dt, textlen);
 	}
       }
     }

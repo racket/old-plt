@@ -4363,11 +4363,11 @@ static Scheme_Object *os_wxMediaEditReadFromFile(int n,  Scheme_Object *p[])
   return (r ? scheme_true : scheme_false);
 }
 
-static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
+static Scheme_Object *os_wxMediaEditGetTruncatedCharacter(int n,  Scheme_Object *p[])
 {
   WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
   REMEMBER_VAR_STACK();
-  int r;
+  char r;
   objscheme_check_valid(os_wxMediaEdit_class, "get-character in text%", n, p);
   nnlong x0;
 
@@ -4376,6 +4376,29 @@ static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
 
   
   x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "get-character in text%"));
+
+  
+  r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetTruncatedCharacter(x0));
+
+  
+  
+  READY_TO_RETURN;
+  return scheme_make_char(r);
+}
+
+static Scheme_Object *os_wxMediaEditGetCharacter(int n,  Scheme_Object *p[])
+{
+  WXS_USE_ARGUMENT(n) WXS_USE_ARGUMENT(p)
+  REMEMBER_VAR_STACK();
+  int r;
+  objscheme_check_valid(os_wxMediaEdit_class, "get-unicode in text%", n, p);
+  nnlong x0;
+
+  SETUP_VAR_STACK_REMEMBERED(1);
+  VAR_STACK_PUSH(0, p);
+
+  
+  x0 = WITH_VAR_STACK(objscheme_unbundle_nonnegative_integer(p[POFFSET+0], "get-unicode in text%"));
 
   
   r = WITH_VAR_STACK(((wxMediaEdit *)((Scheme_Class_Object *)p[0])->primdata)->GetCharacter(x0));
@@ -7871,7 +7894,7 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
 
   wxREGGLOB(os_wxMediaEdit_class);
 
-  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 140));
+  os_wxMediaEdit_class = WITH_VAR_STACK(objscheme_def_prim_class(env, "text%", "editor%", (Scheme_Method_Prim *)os_wxMediaEdit_ConstructScheme, 141));
 
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "call-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditCallClickback, 2, 2));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "remove-clickback" " method", (Scheme_Method_Prim *)os_wxMediaEditRemoveClickback, 2, 2));
@@ -7908,7 +7931,8 @@ void objscheme_setup_wxMediaEdit(Scheme_Env *env)
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-file-format" " method", (Scheme_Method_Prim *)os_wxMediaEditGetFileFormat, 0, 0));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "write-to-file" " method", (Scheme_Method_Prim *)os_wxMediaEditWriteToFile, 1, 3));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "read-from-file" " method", (Scheme_Method_Prim *)os_wxMediaEditReadFromFile, 1, 3));
-  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character" " method", (Scheme_Method_Prim *)os_wxMediaEditGetCharacter, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-character" " method", (Scheme_Method_Prim *)os_wxMediaEditGetTruncatedCharacter, 1, 1));
+  WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-unicode" " method", (Scheme_Method_Prim *)os_wxMediaEditGetCharacter, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-text" " method", (Scheme_Method_Prim *)os_wxMediaEditGetTextUTF8, 0, 4));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPosition, 1, 1));
   WITH_VAR_STACK(scheme_add_method_w_arity(os_wxMediaEdit_class, "get-snip-position-and-location" " method", (Scheme_Method_Prim *)os_wxMediaEditGetSnipPositionAndLocation, 2, 4));

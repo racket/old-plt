@@ -184,7 +184,7 @@ static pascal ControlPartCode local_ALUserPaneTrackProc(ControlHandle control, P
 		tempEvent.modifiers = GetCurrentKeyModifiers( );
 #endif
 
-		doubleClick = ALClick( startPt, tempEvent.modifiers, TickCount( ), hAL );
+		doubleClick = ALClick( startPt, startPt, tempEvent.modifiers, TickCount( ), hAL );
 
 		// Reset the supervisors so later clicks will be handled through here.
 		if ( vScroll != nil )

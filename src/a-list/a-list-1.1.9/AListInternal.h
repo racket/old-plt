@@ -250,7 +250,7 @@ enum {
 	kAL_nvalidOffset = -1, 			// used to flag an invalid or nonexistent offset
 	kAL_CellMargin = 4,			// width of border area surrounding the cell (in pixels)
 	kAL_MaxScrollDelta = 7,		// maximum scroll amount used by standard click loop
-	kScrollBarWidth = 16,		// width of a scroll bar in pixels
+	kScrollBarWidth = 15,		// width of a scroll bar in pixels
 	kAL_AutoScrollDelay = 10,		// delay before auto-scroll starts (in ticks)
 	kALType_Text = 'TEXT',			// The default drag type
 	kALType_ListData = 'ALST'		// The default group data type for the clipboard.
@@ -637,6 +637,7 @@ typedef struct	ALRec {
 	ALScrollUPP		scrollVertProc;			// scroll vertical callback 
 	ControlHandle		hScroll;				// horizontal scroll bar
 	ALScrollUPP		scrollHorzProc;		// scroll horizontal callback 
+        int                     scrolls_visible;
 
 	void				*refCon;				// reference value for client use 
 	Handle			*userHandle;			// handle for client use
@@ -726,7 +727,7 @@ ALIST_API void ALKey( SInt16 inCharCode,  EventModifiers inModifiers, unsigned l
 // Routines in ALMouse.c
 ALIST_API void		ALGetCellFromItemRef(ItemReference theItem, ALCell *theCell);
 ALIST_API Boolean	ALCanAcceptDrag(DragReference theDrag, ALHandle hAL);
-ALIST_API Boolean	ALClick(Point mouseLoc, EventModifiers modifiers, unsigned long clickTime, ALHandle hAL);
+  ALIST_API Boolean	ALClick(Point mouseLoc0, Point mouseLoc, EventModifiers modifiers, unsigned long clickTime, ALHandle hAL);
 ALIST_API void		ALLastClick(ALCellPtr theCell, ALHandle hAL);
 ALIST_API OSErr	ALReceiveDrag(DragReference theDrag, ALHandle hAL);
 ALIST_API OSErr	ALTrackDrag(DragTrackingMessage theMessage, DragReference theDrag, ALHandle hAL);

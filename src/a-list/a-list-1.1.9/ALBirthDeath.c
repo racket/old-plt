@@ -381,6 +381,22 @@ ALIST_API void ALDispose(ALHandle hAL)
 	_ALRemoveStandardHookUser( );
 } // ALDispose
 
+ALIST_API void ALShow(int on, ALHandle hAL)
+{
+  if (on) {
+    if ((*hAL)->vScroll != nil)
+      ShowControl((*hAL)->vScroll);
+    if ((*hAL)->hScroll != nil)
+      ShowControl((*hAL)->hScroll);
+  } else {
+    if ((*hAL)->vScroll != nil)
+      HideControl((*hAL)->vScroll);
+    if ((*hAL)->hScroll != nil)
+      HideControl((*hAL)->hScroll);
+  }
+  (*hAL)->scrolls_visible = on;
+}
+
 ALIST_API void ALSetViewRect(const Rect *viewRect, ALHandle hAL)
 {	short	temp;
 	Rect		box;
@@ -405,7 +421,8 @@ ALIST_API void ALSetViewRect(const Rect *viewRect, ALHandle hAL)
 
 	// Move and resize the vertical scroll bar.
 	if ((*hAL)->vScroll != nil) {
-		HideControl((*hAL)->vScroll);
+	        if ((*hAL)->scrolls_visible)
+		  HideControl((*hAL)->vScroll);
 		MoveControl((*hAL)->vScroll, box.right, box.top - 1);
 
 		// Calculate the hieght of the scroll bar.
@@ -414,12 +431,14 @@ ALIST_API void ALSetViewRect(const Rect *viewRect, ALHandle hAL)
 			temp -= kScrollBarWidth - 1;
 
 		SizeControl((*hAL)->vScroll, kScrollBarWidth, temp);
-		ShowControl((*hAL)->vScroll);
+		if ((*hAL)->scrolls_visible)
+		  ShowControl((*hAL)->vScroll);
 	}
 
 	// Move and resize the horizontal scroll bar.
 	if ((*hAL)->hScroll != nil) {
-		HideControl((*hAL)->hScroll);
+                if ((*hAL)->scrolls_visible)
+		  HideControl((*hAL)->hScroll);
 		MoveControl((*hAL)->hScroll, box.left - 1, box.bottom);
 
 		// Calculate the hieght of the scroll bar.
@@ -428,7 +447,8 @@ ALIST_API void ALSetViewRect(const Rect *viewRect, ALHandle hAL)
 			temp -= kScrollBarWidth - 1;
 
 		SizeControl((*hAL)->hScroll, temp, kScrollBarWidth);
-		ShowControl((*hAL)->hScroll);
+		if ((*hAL)->scrolls_visible)
+		  ShowControl((*hAL)->hScroll);
 	}
 
 	_ALCalcVisibleCells(hAL);

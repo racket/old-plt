@@ -389,7 +389,7 @@ void Drop_GetArgs(int *argc, char ***argv, int *in_terminal)
       int i, new_argc;
       char **new_argv;
       *in_terminal = 0;
-      new_argc = (scheme_mac_argc - 1) + (*argc - 2) + 1;
+      new_argc = (scheme_mac_argc - 1) + ((*argc) - 2) + 1;
       new_argv = (char **)malloc(new_argc * sizeof(char *));
       new_argv[0] = (*argv)[0];
       for (i = 2; i < (*argc); i++) {

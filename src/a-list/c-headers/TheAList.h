@@ -551,7 +551,7 @@ ALIST_API OSErr	ALNew(const WindowPtr wr, const Rect *viewRect, const LongRect *
 ALIST_API void		ALDispose(ALReference hAL);
 ALIST_API void		ALSetViewRect(const Rect *viewRect, ALReference hAL);
 ALIST_API void		ALGetViewRect(Rect *viewRect, ALReference hAL);
-
+ALIST_API void          ALShow(int on, ALReference hAL);
 
 /* Routines for getting and setting data in a list. */
 ALIST_API OSErr	ALClearCell(const ALCellPtr theCell, ALReference hAL);
@@ -608,7 +608,7 @@ ALIST_API void		ALKey( SInt16 inCharCode,  EventModifiers inModifiers, unsigned 
 /* Routines for mouse support. */
 ALIST_API void		ALGetCellFromItemRef(ItemReference theItem, ALCell *theCell);
 ALIST_API Boolean	ALCanAcceptDrag(DragReference theDrag, ALReference hAL);
-ALIST_API Boolean	ALClick(Point mouseLoc, EventModifiers modifiers, unsigned long clickTime, ALReference hAL);
+  ALIST_API Boolean	ALClick(Point mouseLoc0, Point mouseLoc, EventModifiers modifiers, unsigned long clickTime, ALReference hAL);
 ALIST_API void		ALLastClick( ALCell *theCell, ALReference hAL );
 ALIST_API OSErr	ALReceiveDrag(DragReference theDrag, ALReference hAL);
 ALIST_API OSErr	ALTrackDrag(DragTrackingMessage theMessage, DragReference theDrag, ALReference hAL);

@@ -336,6 +336,7 @@ class wxMediaEdit : public wxMediaBuffer
 		    Bool flattened = FALSE, Bool forceCR = FALSE,
 		    long *got = NULL);
   wxchar GetCharacter(long start);
+  char GetTruncatedCharacter(long start);
 
   Bool SaveFile(char *filename = NULL, int format = wxMEDIA_FF_SAME, Bool showErrors = TRUE);
   int InsertPort(Scheme_Object *port, int format = wxMEDIA_FF_GUESS, Bool replaceStyles = TRUE);

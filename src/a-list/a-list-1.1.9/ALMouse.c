@@ -1125,7 +1125,7 @@ cleanup:
 	return retval;
 } // ALCanAcceptDrag
 
-ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned long clickTime, ALHandle hAL)
+ALIST_API Boolean ALClick(Point mouseLoc0, Point mouseLoc, EventModifiers modifiers, unsigned long clickTime, ALHandle hAL)
 {	ALPtr			pAL;
 	short			edge;
 	ALCell			theCell, oldLastClickCell;
@@ -1152,11 +1152,27 @@ ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned lon
 	oldLastClickCell.v = pAL->lastClickCell.v;
 	pAL->lastClickCell.h = pAL->lastClickCell.v = -1;
 
+	part = 0;
+	whichControl = NULL;
+
+	if (pAL->hScroll) {
+	  part = TestControl(pAL->hScroll, mouseLoc0);
+	  if (part)
+	    whichControl = pAL->hScroll;
+	}
+	if (!part && pAL->vScroll) {
+	  part = TestControl(pAL->vScroll, mouseLoc0);
+	  if (part)
+	    whichControl = pAL->vScroll;
+	}
+
+	if (!part) {
 #if ALIST_FOR_WX_WINDOWS
-	part = local_ALFindControl( mouseLoc, pAL, &whichControl );
+	  part = local_ALFindControl( mouseLoc0, pAL, &whichControl );
 #else
-	part = FindControl( mouseLoc, pAL->winRef, &whichControl );
+	  part = FindControl( mouseLoc0, pAL->winRef, &whichControl );
 #endif
+	}
 
 	if ( part != kControlListBoxPart && whichControl != nil && part != kControlNoPart ) {
 
@@ -1179,17 +1195,17 @@ ALIST_API Boolean ALClick(Point mouseLoc, EventModifiers modifiers, unsigned lon
 				dynamicCntl = whichControl;
 				dynamicOriginalValue = value;
 				local_ALDisableDrawing();
-				TrackControl(whichControl, mouseLoc, (ControlActionUPP)thumbTracker);
+				TrackControl(whichControl, mouseLoc0, (ControlActionUPP)thumbTracker);
 				local_ALEnableDrawing();
 
 				DisposeRoutineDescriptor( thumbTracker );
 			} else
 #endif
 				// Don't use the actionProc that we installed for the scroll bar.
-				TrackControl( whichControl, mouseLoc, nil );
+				TrackControl( whichControl, mouseLoc0, nil );
 		} else
 			// Use the actionProc installed for the scroll bar.
-			TrackControl( whichControl, mouseLoc, (ControlActionUPP)-1L );
+			TrackControl( whichControl, mouseLoc0, (ControlActionUPP)-1L );
 
 		// Almost all of the redrawing is done in the tracking procedure, but this case needs to be done here.
 		if ( part == kControlIndicatorPart && BTST((*hAL)->flags, alFHasLiveScrollbars) == 0 ) {

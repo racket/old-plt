@@ -67,12 +67,10 @@
                                    [snd (to-digit (cadr chars))])
                                (cons
                                 (+ (* fst 16) snd)
-                                (loop (cddr chars))))]))]
-                  [str (apply string (map integer->char loc))]
-                  [ip (open-input-string str)]
-                  [op (open-output-string)])
-             (inflate ip op)
-             (read-from-string (get-output-string op))))
+                                (loop (cddr chars))))]))])
+             (let-values ([(p-in p-out) (make-pipe)])
+               (inflate (open-input-bytes (apply bytes loc)) p-out)
+               (read p-in))))
          
          (define (to-digit char)
            (cond

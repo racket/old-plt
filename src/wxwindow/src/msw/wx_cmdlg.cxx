@@ -72,12 +72,13 @@ char *wxFileSelector(char *message,
   title_buffer = new WXGC_ATOMIC char[50];
   title_buffer[0] = 0;
 
-  char *filter_buffer;
-  filter_buffer = new WXGC_ATOMIC char[200];
-
   if (!wildcard)
     wildcard = "*.*";
   
+  int wcl = strlen(wildcard);
+  char *filter_buffer;
+  filter_buffer = new WXGC_ATOMIC char[(wcl * 2) + 10];
+
   /* Alejandro Sierra's wildcard modification
 
      In wxFileSelector you can put, instead of a single wild_card, pairs of
@@ -90,24 +91,21 @@ char *wxFileSelector(char *message,
   */
   
   // Here begin my changes (Alex)              ******************************
-  if (wildcard)                               
-    {
-         if (!strchr(wildcard, '|'))         // No '|'s, I leave it as it was
-                sprintf(filter_buffer, "Files (%s)|%s",wildcard, wildcard);
-         else
-                strcpy(filter_buffer, wildcard);
 
-         int len = strlen(filter_buffer);
-
-         int i;
-         for (i = 0; i < len; i++)
-                if (filter_buffer[i]=='|')
-                  filter_buffer[i] = '\0';
-
-         filter_buffer[len+1] = '\0';
-
+  if (!strchr(wildcard, '|'))         // No '|'s, I leave it as it was
+    sprintf(filter_buffer, "Files (%s)|%s",wildcard, wildcard);
+  else
+    strcpy(filter_buffer, wildcard);
+  
+  int len = strlen(filter_buffer);
+  
+  int i;
+  for (i = 0; i < len; i++) {
+    if (filter_buffer[i]=='|')
+      filter_buffer[i] = '\0';  
   }
-
+  filter_buffer[len+1] = '\0';
+  
   if (!set_init_dir) {
     set_init_dir = 1;
     MrEdSyncCurrentDir();
@@ -131,13 +129,8 @@ char *wxFileSelector(char *message,
     }
   }
 
-  if (wildcard) {
-    of->lpstrFilter = (LPSTR)filter_buffer;
-    of->nFilterIndex = 1L;
-  } else {
-    of->lpstrFilter = NULL;
-    of->nFilterIndex = 0L;
-  }
+  of->lpstrFilter = (LPSTR)filter_buffer;
+  of->nFilterIndex = 1L;
   of->lpstrCustomFilter = NULL;
   of->nMaxCustFilter = 0L;
   of->lpstrFile = file_buffer;

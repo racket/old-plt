@@ -65,7 +65,7 @@
 	    [text : framework:text^
 		  (text@ mred icon editor preferences keymap color-model frame scheme)]
             [color : framework:color^ (color@ preferences icon mode text color-prefs)]
-            [color-prefs : framework:color-prefs^ (color-prefs@ preferences editor)]      
+            [color-prefs : framework:color-prefs^ (color-prefs@ preferences editor panel)]
             [comment-box : framework:comment-box^
                          (comment-box@ text scheme keymap)]
 	    [finder : framework:finder^ (finder@ mred preferences keymap)]

@@ -1150,7 +1150,23 @@ Check Syntax separates four classes of identifiers:
         (send keymap map-function "c:x;n" "jump to next bound occurrence")
         (send keymap map-function "c:x;d" "jump to definition (in other file)"))
         
-      
+      (define (syncheck-add-to-preferences-panel parent)
+        (fw:color-prefs:build-color-selection-panel parent
+                                                    (string->symbol lexically-bound-variable-style-str)
+                                                    lexically-bound-variable-style-str
+                                                    lexically-bound-variable-style-str)
+        (fw:color-prefs:build-color-selection-panel parent
+                                                    (string->symbol lexically-bound-syntax-style-str)
+                                                    lexically-bound-syntax-style-str
+                                                    lexically-bound-syntax-style-str)
+        (fw:color-prefs:build-color-selection-panel parent
+                                                    (string->symbol imported-variable-style-str)
+                                                    lexically-bound-variable-style-str
+                                                    lexically-bound-variable-style-str)
+        (fw:color-prefs:build-color-selection-panel parent
+                                                    (string->symbol imported-syntax-style-str)
+                                                    imported-syntax-style-str
+                                                    imported-syntax-style-str))
 
       ;; prefix-style : (union symbol string) -> string
       (define (prefix-style x) (format "syntax-coloring:Scheme:~a" x))      
@@ -2234,24 +2250,25 @@ Check Syntax separates four classes of identifiers:
 
       
       ;                                                 
-;                                                 
-;                                                 
-;  ;    ;    ; ;                                  
-;  ;    ;    ;                                    
-;  ;   ; ;   ;                                    
-;   ;  ; ;  ;  ;   ; ;   ;;;       ;   ;   ; ;;   
-;   ;  ; ;  ;  ;   ;;   ;   ;      ;   ;   ;;  ;  
-;   ; ;   ; ;  ;   ;   ;    ;      ;   ;   ;    ; 
-;   ; ;   ; ;  ;   ;   ;;;;;;      ;   ;   ;    ; 
-;   ; ;   ; ;  ;   ;   ;           ;   ;   ;    ; 
-;    ;     ;   ;   ;    ;          ;  ;;   ;;  ;  
-;    ;     ;   ;   ;     ;;;;       ;; ;   ; ;;   
-;                                          ;      
-;                                          ;      
-;                                          ;      
+      ;                                                 
+      ;                                                 
+      ;  ;    ;    ; ;                                  
+      ;  ;    ;    ;                                    
+      ;  ;   ; ;   ;                                    
+      ;   ;  ; ;  ;  ;   ; ;   ;;;       ;   ;   ; ;;   
+      ;   ;  ; ;  ;  ;   ;;   ;   ;      ;   ;   ;;  ;  
+      ;   ; ;   ; ;  ;   ;   ;    ;      ;   ;   ;    ; 
+      ;   ; ;   ; ;  ;   ;   ;;;;;;      ;   ;   ;    ; 
+      ;   ; ;   ; ;  ;   ;   ;           ;   ;   ;    ; 
+      ;    ;     ;   ;   ;    ;          ;  ;;   ;;  ;  
+      ;    ;     ;   ;   ;     ;;;;       ;; ;   ; ;;   
+      ;                                          ;      
+      ;                                          ;      
+      ;                                          ;      
 
       
       (add-check-syntax-key-bindings (drscheme:rep:get-drs-bindings-keymap))
-      
+      (fw:color-prefs:add-to-preferences-panel (string-constant check-syntax)
+                                               syncheck-add-to-preferences-panel)
       (drscheme:get/extend:extend-definitions-text make-graphics-text%)
       (drscheme:get/extend:extend-unit-frame make-new-unit-frame% #f))))

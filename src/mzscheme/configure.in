@@ -165,6 +165,9 @@ GCDIR=gc
 MZBINTARGET=normal-bin
 MZINSTALLTARGET=normal-install
 
+MZOPTIONS=
+GC2OPTIONS=
+
 LIBS=
 
 WXVARIANT="wx_xt"
@@ -298,7 +301,7 @@ AC_CHECK_LIB(dl, dlopen)
 PROFFLAGS=""
 
 if test "${enable_gprof}" = "yes" ; then
-  PREFLAGS="$PREFLAGS -DDONT_ITIMER"
+  MZOPTIONS="$MZOPTIONS -DDONT_ITIMER"
   PROFFLAGS="$PROFFLAGS -pg"
   LIBS="$LIBS -pg"
 fi
@@ -496,9 +499,6 @@ fi
 
 ############## C flags ################
 
-MZOPTIONS=
-GC2OPTIONS=
-
 AC_LANG_C
 
 [ msg="for inline keyword" ]
@@ -550,8 +550,23 @@ AC_MSG_CHECKING($msg)
 iconv_usage_result="$enable_iconv$iconv_lib_flag"
 AC_MSG_RESULT($iconv_usage_result)
 if test "${enable_iconv}" = "no" ; then
-  PREFLAGS="$PREFLAGS -DMZ_NO_ICONV"  
+  MZOPTIONS="$MZOPTIONS -DMZ_NO_ICONV"  
 fi
+
+[ msg="for mbsrtowcs" ]
+AC_MSG_CHECKING($msg)
+AC_TRY_RUN(
+[  #include <wchar.h> ]
+   int main() {
+     mbstate_t state;
+[    char *src = "X";]
+[    mbsrtowcs(0, &src, 0, &state);]
+     return 0;
+   }, mbsrtowcs=yes, mbsrtowcs=no, mbsrtowcs=no)
+if test "$mbsrtowcs" = "no" ; then
+  MZOPTIONS="$MZOPTIONS -DNO_MBTOWC_FUNCTIONS"
+fi
+AC_MSG_RESULT($mbsrtowcs)
 
 if test "${enable_compact}" = "yes" ; then
   GC2OPTIONS="$GC2OPTIONS -DUSE_COMPACT_3M_GC"

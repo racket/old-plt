@@ -2226,7 +2226,31 @@ static char *locale_recase(int to_up,
      /* Assumes that reset_locale() has been called */
 {
 #ifdef NO_MBTOWC_FUNCTIONS
-  return NULL;
+  /* No wide-char functions...
+     The C library's toupper and tolower is supposed to be
+     locale-sensitive. It can't be right for characters that are
+     encoded in multiple bytes, but probably it will do the right
+     thing in common cases. */
+  int i;
+
+  /* First, copy "in" to "out" */
+  if (iilen + 1 >= (unsigned int)iolen) {
+    out = (char *)scheme_malloc_atomic(iilen + 1);
+    od = 0;
+  }
+  memcpy(out + od, in + id, iilen); 
+  out[od + iilen] = 0;
+  *oolen = iilen;
+
+  /* Re-case chars in "out" */
+  for (i = 0; i < iilen; i++) {
+    if (to_up)
+      out[od + i] = toupper(out[od + i]);
+    else
+      out[od + i] = tolower(out[od + i]);
+  }
+
+  return out;
 #else
   /* To change the case, convert the string to multibyte, re-case the
      multibyte, then convert back. */

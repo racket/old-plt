@@ -81,6 +81,8 @@
 #define WORD_SIZE (1 << LOG_WORD_SIZE)
 #define WORD_BIT_COUNT (WORD_SIZE << 3)
 
+#define INCREMENT_CYCLE_COUNT_GROWTH 1048576
+
 typedef short Type_Tag;
 
 #include "gc2.h"
@@ -341,6 +343,7 @@ static long page_reservations = 0;
 #define ACTUALLY_FREEING_PAGES(len) (page_reservations -= len)
 
 static long memory_in_use, gc_threshold = GROW_ADDITION, max_memory_use;
+static int prev_memory_in_use, memory_use_growth;
 #if USE_FREELIST
 static long on_free_list;
 # define FREE_LIST_DELTA (on_free_list << LOG_WORD_SIZE)
@@ -3313,9 +3316,7 @@ static void gcollect(int full)
 
   INITTIME();
   PRINTTIME((STDERR, "gc: << start with %ld [%d]: %ld\n", 
-	     memory_in_use, cycle_count + 1, GETTIMEREL()));
-
-  cycle_count++;
+	     memory_in_use, cycle_count, GETTIMEREL()));
 
   if (memory_in_use > max_memory_use)
     max_memory_use = memory_in_use;
@@ -3350,13 +3351,13 @@ static void gcollect(int full)
 
   if (full)
     young = 15;
-  else if (!(cycle_count & 0xF))
+  else if ((cycle_count & 0xF) == 0xF)
     young = 15;
-  else if (!(cycle_count & 0x7))
+  else if ((cycle_count & 0x7) == 0x7)
     young = 7;
-  else if (!(cycle_count & 0x3))
+  else if ((cycle_count & 0x3) == 0x3)
     young = 3;
-  else if (!(cycle_count & 0x1))
+  else if ((cycle_count & 0x1) == 0x1)
     young = 1;
   else
     young = 0;
@@ -3852,12 +3853,25 @@ static void gcollect(int full)
   getrusage(RUSAGE_SELF, &post);
 #endif
 
-  PRINTTIME((STDERR, "gc: done with %ld (free:%d cheap:%d) [%ld/%ld faults]: %ld >>\n",
-	     memory_in_use, skipped_pages, scanned_pages,
+  memory_use_growth += (memory_in_use - prev_memory_in_use);
+  prev_memory_in_use = memory_in_use;
+
+  PRINTTIME((STDERR, "gc: done with %ld delta=%ld (free:%d cheap:%d) [%ld/%ld faults]: %ld >>\n",
+	     memory_in_use, memory_use_growth, skipped_pages, scanned_pages,
 	     post.ru_minflt - pre.ru_minflt, post.ru_majflt - pre.ru_majflt,
 	     GETTIMEREL()));
 
   during_gc = 0;
+
+  if (young == 15) {
+    cycle_count = 0;
+    memory_use_growth = 0;
+  } else {
+    if ((cycle_count & 0x1) 
+	|| (memory_use_growth > INCREMENT_CYCLE_COUNT_GROWTH))
+      cycle_count++;
+  }
+
 
   if (GC_collect_start_callback)
     GC_collect_end_callback();

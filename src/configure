@@ -1546,6 +1546,9 @@ GCDIR=gc
 MZBINTARGET=normal-bin
 MZINSTALLTARGET=normal-install
 
+MZOPTIONS=
+GC2OPTIONS=
+
 LIBS=
 
 WXVARIANT="wx_xt"
@@ -4771,7 +4774,7 @@ fi
 PROFFLAGS=""
 
 if test "${enable_gprof}" = "yes" ; then
-  PREFLAGS="$PREFLAGS -DDONT_ITIMER"
+  MZOPTIONS="$MZOPTIONS -DDONT_ITIMER"
   PROFFLAGS="$PROFFLAGS -pg"
   LIBS="$LIBS -pg"
 fi
@@ -4968,9 +4971,6 @@ if test "${enable_sgcdebug}" = "yes" ; then
 fi
 
 ############## C flags ################
-
-MZOPTIONS=
-GC2OPTIONS=
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -5501,8 +5501,57 @@ iconv_usage_result="$enable_iconv$iconv_lib_flag"
 echo "$as_me:$LINENO: result: $iconv_usage_result" >&5
 echo "${ECHO_T}$iconv_usage_result" >&6
 if test "${enable_iconv}" = "no" ; then
-  PREFLAGS="$PREFLAGS -DMZ_NO_ICONV"
+  MZOPTIONS="$MZOPTIONS -DMZ_NO_ICONV"
 fi
+
+ msg="for mbsrtowcs"
+echo "$as_me:$LINENO: checking $msg" >&5
+echo $ECHO_N "checking $msg... $ECHO_C" >&6
+if test "$cross_compiling" = yes; then
+  mbsrtowcs=no
+else
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+  #include <wchar.h>
+   int main() {
+     mbstate_t state;
+    char *src = "X";
+    mbsrtowcs(0, &src, 0, &state);
+     return 0;
+   }
+_ACEOF
+rm -f conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  mbsrtowcs=yes
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+mbsrtowcs=no
+fi
+rm -f core core.* *.core gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+if test "$mbsrtowcs" = "no" ; then
+  MZOPTIONS="$MZOPTIONS -DNO_MBTOWC_FUNCTIONS"
+fi
+echo "$as_me:$LINENO: result: $mbsrtowcs" >&5
+echo "${ECHO_T}$mbsrtowcs" >&6
 
 if test "${enable_compact}" = "yes" ; then
   GC2OPTIONS="$GC2OPTIONS -DUSE_COMPACT_3M_GC"

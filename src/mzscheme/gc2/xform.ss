@@ -3644,7 +3644,7 @@
        [(and (eq? '|,| (tok-n (car e))) comma-sep?)
 	(values (reverse! (cons (car e) result)) (cdr e))]
        [(and (braces? (car e))
-	     (not (memq first '(typedef struct union enum __extension__))))
+	     (not (memq first '(typedef struct union enum extern __extension__))))
 	(let ([rest (cdr e)])
 	  (if (or (null? rest)
 		  (pragma? (car rest))

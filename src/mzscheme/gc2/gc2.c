@@ -8,7 +8,7 @@
 #endif
 
 #ifdef USE_ACCT_3M_GC
-#define NEWGC_ACCNT
+# define NEWGC_ACCNT
 # include "newgc.c"
 #endif
 

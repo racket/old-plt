@@ -21,14 +21,11 @@ reported to the user.  Otherwise, the status of each
 package is reported.  The determination of whether a 
 package is up-to-date is made on the server side.
 
-Two files are used to support launchers that obtain 
-version information:
+Two files may be used to run version checks from 
+MrEd and MzScheme:
 
-> check-gui.ss
-  creates a MrEd launcher `Check version' for version-checking
-
-> check-text.ss
-  creates a MzScheme launcher `Check version-nw' for version-checking
+> check-gui.ss (for MrEd)
+> check-text.ss (for MrEd or MzScheme)
 
 These files contain modules, so they can be run with
 
@@ -38,16 +35,22 @@ and
 
  (require (lib "check-text.ss" "version"))
 
-The launchers created from these files accept one or more 
+These files may be used to create launchers that accept one or more 
 collection arguments on the command-line, using the `-l' flag.  
-If no collections are specified, all collections with version 
-information are checked.  Otherwise, only the specified collections 
-are checked.
+Currently, the info.ss file in the version collection does not 
+create launchers from these files.
 
 Another file 
 
 > version.ss
 
-works like check-gui.ss, except that it is meant to be 
-invoked with load, and always checks all collections with
-release information.
+works like check-gui.ss, except that it exports a thunk allowing
+version checks to be made repeatedly.  To call the checker,
+run
+
+ (require (lib "version.ss" "version"))
+
+then
+
+ (check-version)
+

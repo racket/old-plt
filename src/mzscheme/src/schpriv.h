@@ -1514,7 +1514,15 @@ void scheme_validate_toplevel(Scheme_Object *expr, Mz_CPort *port,
 			      char *stack, int depth, int delta, int num_toplevels);
 void scheme_validate_boxenv(int pos, Mz_CPort *port,
 			    char *stack, int depth, int delta);
-void scheme_ill_formed_code(Mz_CPort *port);
+
+#define TRACK_ILL_FORMED_CATCH_LINES 0
+#if TRACK_ILL_FORMED_CATCH_LINES
+void scheme_ill_formed(Mz_CPort *port, const char *file, int line);
+# define scheme_ill_formed_code(port) scheme_ill_formed(port, __FILE__, __LINE__)
+#else
+void scheme_ill_formed(Mz_CPort *port);
+# define scheme_ill_formed_code(port) scheme_ill_formed(port) 
+#endif
 
 /*========================================================================*/
 /*                         namespaces and modules                         */

@@ -709,7 +709,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
     bigdig *d = SCHEME_BIGDIG(o);
     
     while (i--) {
-      k += d[i];
+      k = (k << 3) + d[i];
     }
     
     return k;
@@ -744,7 +744,7 @@ long scheme_equal_hash_key(Scheme_Object *o)
     char *s = SCHEME_STR_VAL(o);
     
     while (i--) {
-      k += s[i];
+      k = (k << 5) + s[i];
     }
     
     return k;
@@ -820,7 +820,14 @@ long scheme_equal_hash_key2(Scheme_Object *o)
     
     return k;
   } else if (t == scheme_string_type) {
-    return SCHEME_STRLEN_VAL(o);
+    int k = 0, i = SCHEME_STRLEN_VAL(o);
+    char *s = SCHEME_STR_VAL(o);
+    
+    while (i--) {
+      k += s[i];
+    }
+    
+    return k;
   } else  if (t == scheme_structure_type)  {
     Scheme_Object *insp;
     insp = scheme_get_param(scheme_config, MZCONFIG_INSPECTOR);

@@ -1829,10 +1829,18 @@ static Scheme_Object *read_compact_quote(CPort *port,
 					 Scheme_Object **symtab,
 					 int embedded);
 
-void scheme_ill_formed_code(struct CPort *port)
+void scheme_ill_formed(struct CPort *port
+#if TRACK_ILL_FORMED_CATCH_LINES
+		       , const char *file, int line
+#endif
+		       )
 {
   scheme_read_err(port->orig_port, NULL, -1, -1, CP_TELL(port), -1, 0,
-		  "read (compiled): ill-formed code");
+		  "read (compiled): ill-formed code"
+#if TRACK_ILL_FORMED_CATCH_LINES
+		  " [%s:%d]", file, line
+#endif
+		  );
 }
 
 static long read_compact_number(CPort *port)
@@ -2056,7 +2064,7 @@ static Scheme_Object *read_compact(CPort *port,
 	Scheme_Object *vec;
 	int i;
 
-	l = read_compact_number(port);
+	l = read_compact_number(port);	
 	vec = scheme_make_vector(l, NULL);
       
 	for (i = 0; i < l; i++) {

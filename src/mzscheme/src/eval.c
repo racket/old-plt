@@ -3936,13 +3936,11 @@ void scheme_pop_prefix(Scheme_Object **rs)
 
 /* Bytecode validation is an abstract interpretation on the stack,
    where the abstract values are "not available", "value", "boxed
-   value", "boxed not available", "syntax object", or "global
-   array". */
+   value", "syntax object", or "global array". */
 
 #define VALID_NOT 0
 #define VALID_VAL 1
 #define VALID_BOX 2
-#define VALID_BOX_NOT 3
 #define VALID_STX 4
 #define VALID_TOPLEVELS 5
 
@@ -4096,6 +4094,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
   case scheme_let_value_type:
     {
       Scheme_Let_Value *lv = (Scheme_Let_Value *)expr;
+      Scheme_Object *rhs;
       int p, c, i;
 
       scheme_validate_expr(port, lv->value, stack, depth, delta, num_toplevels);
@@ -4106,11 +4105,25 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 
       for (i = 0; i < c; i++, p++) {
 	if ((p < 0) || (p >= depth)
-	    || (lv->autobox && (stack[p] != VALID_BOX) && (stack[p] != VALID_BOX_NOT))
+	    || (lv->autobox && (stack[p] != VALID_BOX))
 	    || (!lv->autobox && (stack[p] != VALID_VAL) && (stack[p] != VALID_NOT)))
 	  scheme_ill_formed_code(port);
-	
-	stack[p] = (lv->autobox ? VALID_BOX : VALID_VAL);
+
+	if (!lv->autobox) {
+	  stack[p] = VALID_VAL;
+
+	  /* Check for wrappers on the RHS that box the `i'th result: */
+	  for (rhs = lv->value; 
+	       SAME_TYPE(SCHEME_TYPE(rhs), scheme_syntax_type) && (SCHEME_PINT_VAL(expr) == BOXVAL_EXPD);
+	       rhs = SCHEME_CDR((Scheme_Object *)SCHEME_IPTR_VAL(expr))) {
+	    int j = SCHEME_INT_VAL(SCHEME_CAR((Scheme_Object *)SCHEME_IPTR_VAL(expr)));
+
+	    if (j == i) {
+	      stack[p] = VALID_BOX;
+	      break;
+	    }
+	  }
+	}
       }
 
       expr = lv->body;
@@ -4129,7 +4142,7 @@ void scheme_validate_expr(Mz_CPort *port, Scheme_Object *expr, char *stack, int 
 
       if (lv->autobox) {
 	for (i = 0; i < c; i++) {
-	  stack[--delta] = VALID_BOX_NOT;
+	  stack[--delta] = VALID_BOX;
 	}
       } else
 	delta -= c;

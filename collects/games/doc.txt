@@ -113,7 +113,7 @@ Showing Help
 The _show-help.ss_ library provides a `show-help' function for
 displaying a help window.
 
-> (show-help collections frame-title-str verbatim?)
+> (show-help collection frame-title-str verbatim?)
 
   Returns a thunk for showing a help window. Multiple invocations
   of the thunk bring the same window to the foreground (until the

@@ -1374,8 +1374,6 @@
 	    (in-pattern `(_ macro-name macro-handler))
 	    (m&e (pat:make-match&env in-pattern kwd)))
       (lambda (expr env attributes vocab)
-	(unless (at-top-level? attributes)
-	  (static-error expr "Not at top-level"))
 	(cond
 	  ((pat:match-against m&e expr env)
 	    =>
@@ -1409,6 +1407,48 @@
 		    env attributes vocab)))))
 	  (else
 	    (static-error expr "Malformed define-macro"))))))
+
+  (add-primitivized-micro-form 'let-macro scheme-vocabulary
+    (let* ((kwd '())
+	    (in-pattern `(_ macro-name macro-handler b0 b1 ...))
+	    (m&e (pat:make-match&env in-pattern kwd)))
+      (lambda (expr env attributes vocab)
+	(cond
+	  ((pat:match-against m&e expr env)
+	    =>
+	    (lambda (p-env)
+	      (let ((macro-name (pat:pexpand 'macro-name p-env kwd))
+		     (macro-handler (pat:pexpand 'macro-handler p-env kwd))
+		     (body (pat:pexpand '(begin b0 b1 ...) p-env kwd)))
+		(valid-syntactic-id? macro-name)
+		(let* ((top-level? (get-top-level-status
+				     attributes))
+			(_ (set-top-level-status attributes))
+			(real-name (sexp->raw macro-name))
+			(raw-handler (sexp->raw macro-handler))
+			(real-handler (with-parameterization
+					zodiac-user-parameterization
+					(lambda ()
+					  (eval raw-handler))))
+			(cache-table (make-hash-table)))
+		  (set-top-level-status attributes top-level?)
+		  (unless (procedure? real-handler)
+		    (static-error expr "Expander is not a procedure"))
+		  (let ((extended-vocab
+			  (create-vocabulary 'user-macro-extended-vocab
+			    vocab)))
+		    (add-user-macro-form real-name extended-vocab
+		      (lambda (m-expr m-env)
+			(structurize-syntax
+			  (apply real-handler
+			    (let ((in (cdr (sexp->raw m-expr cache-table))))
+			      in))
+			  m-expr '() cache-table)))
+		    (expand-expr
+		      (structurize-syntax body expr)
+		      env attributes extended-vocab))))))
+	  (else
+	    (static-error expr "Malformed let-macro"))))))
 
   (add-micro-form 'begin-elaboration-time scheme-vocabulary
     (let* ((kwd '(begin-elaboration-time))

@@ -674,8 +674,6 @@ typedef struct Scheme_Process {
 
   int eof_on_error; /* For port operations */
 
-  int tail_buffer_set;
-
   /* MzScheme client can use: */
   void (*on_kill)(struct Scheme_Process *p);
   void *kill_data;

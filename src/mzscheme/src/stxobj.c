@@ -432,7 +432,11 @@ static Scheme_Object *datum_to_syntax_inner(Scheme_Object *o,
     result = o;
   }
 
-  result = scheme_make_stx(result, stx->line, stx->col, stx->src);
+  if (SCHEME_FALSEP(stx))
+    result = scheme_make_stx(result, -1, -1, scheme_false);
+  else
+    result = scheme_make_stx(result, stx->line, stx->col, stx->src);
+
   ((Scheme_Stx *)result)->marks = stx->marks;
   if (ph) {
     ((Scheme_Stx *)result)->hash_code |= STX_GRAPH_FLAG;
@@ -447,7 +451,7 @@ Scheme_Object *scheme_datum_to_syntax(Scheme_Object *o, Scheme_Object *stx)
   Scheme_Hash_Table *ht;
   Scheme_Object *v;
 
-  if (!SCHEME_STXP(stx))
+  if (!SCHEME_FALSEP(stx) && !SCHEME_STXP(stx))
     return o;
 
   ht = scheme_setup_datum_graph(o, 0);
@@ -490,8 +494,8 @@ static Scheme_Object *syntax_to_datum(int argc, Scheme_Object **argv)
 
 static Scheme_Object *datum_to_syntax(int argc, Scheme_Object **argv)
 {
-  if (!SCHEME_STXP(argv[1]))
-    scheme_wrong_type("datum->syntax", "syntax", 1, argc, argv);
+  if (!SCHEME_FALSEP(argv[1]) && !SCHEME_STXP(argv[1]))
+    scheme_wrong_type("datum->syntax", "syntax or #f", 1, argc, argv);
     
   return scheme_datum_to_syntax(argv[0], argv[1]);
 }

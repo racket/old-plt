@@ -1092,7 +1092,6 @@ static Scheme_Process *make_process(Scheme_Process *after, Scheme_Config *config
     process->tail_buffer = tb;
   }
   process->tail_buffer_size = buffer_init_size;
-  process->tail_buffer_set = 0;
   SCHEME_RELEASE_LOCK();
 
   process->runstack_size = INIT_SCHEME_STACK_SIZE;
@@ -3387,9 +3386,9 @@ static void get_ready_for_GC()
 
 	RUNSTACK_TUNE( printf("%ld\n", size); );
 
-	{
+	if (p->tail_buffer && (p->tail_buffer != p->runstack_tmp_keep)) {
 	  int i;
-	  for (i = p->tail_buffer_set; i < p->tail_buffer_size; i++) {
+	  for (i = 0; i < p->tail_buffer_size; i++) {
 	    p->tail_buffer[i] = NULL;
 	  }
 	}

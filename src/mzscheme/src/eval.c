@@ -2169,6 +2169,19 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 
   apply_top:
 
+    /* DANGER: if rands == p->tail_buffer, we have to be careful to
+       get the arguments out of the buffer before a GC occurs.
+       (Otherwise, they'll be zeroed.) One way to make things safe for
+       GC is to let rands have the buffer and create a new one. */
+
+# define MAKE_TAIL_BUFFER_SAFE()                               \
+       {                                                       \
+	  GC_CAN_IGNORE Scheme_Object **tb;                    \
+	  p->tail_buffer = NULL; /* so args aren't zeroed */   \
+	  tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size); \
+	  p->tail_buffer = tb;                                 \
+	}
+
     if (SCHEME_INTP(obj)) {
       UPDATE_THREAD_RSPTR();
       scheme_wrong_rator(obj, num_rands, rands);
@@ -2194,13 +2207,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  {
-	    GC_CAN_IGNORE Scheme_Object **tb;
-	    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
-	    p->tail_buffer = tb;
-	  }
+	  MAKE_TAIL_BUFFER_SAFE();
 	}
-	p->tail_buffer_set = 0;
       } 
 
       UPDATE_THREAD_RSPTR();
@@ -2227,6 +2235,11 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
       data = (Scheme_Closure_Compilation_Data *)SCHEME_COMPILED_CLOS_CODE(obj);
 
       if ((RUNSTACK - RUNSTACK_START) < data->max_let_depth) {
+	if (rands == p->tail_buffer) {
+	  UPDATE_THREAD_RSPTR_FOR_GC();
+	  MAKE_TAIL_BUFFER_SAFE();
+	}
+
 	p->ku.k.p1 = (void *)obj;
 	p->ku.k.i1 = num_rands;
 	p->ku.k.p2 = (void *)rands;
@@ -2268,7 +2281,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    /* This is a special case: GC may be triggered, but
 	       p->runstack does not point at everything that needs
 	       to be kept if args are lower on the stack. 
-	       That's what runstack_tmp_keep is for. */
+	       That's what runstack_tmp_keep is for. Also, if
+	       runstack_tmp_keep == tail_buffer, then the buffer
+	       won't be zeroed. */
 	    UPDATE_THREAD_RSPTR_FOR_GC();
 	    p->runstack_tmp_keep = rands;
 
@@ -2332,8 +2347,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	    }
 	  }
 	}
-	if (rands == p->tail_buffer)
-	  p->tail_buffer_set = 0;
       } else {
 	if (num_rands) {
 	  UPDATE_THREAD_RSPTR_FOR_ERROR();
@@ -2381,13 +2394,8 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	  rands = quick_rands;
 	} else {
 	  UPDATE_THREAD_RSPTR_FOR_GC();
-	  {
-	    GC_CAN_IGNORE Scheme_Object **tb;
-	    tb = MALLOC_N(Scheme_Object *, p->tail_buffer_size);
-	    p->tail_buffer = tb;
-	  }
+	  MAKE_TAIL_BUFFER_SAFE();
 	}
-	p->tail_buffer_set = 0;
       }
 
       UPDATE_THREAD_RSPTR();
@@ -2436,6 +2444,10 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	int i;
 
 	UPDATE_THREAD_RSPTR_FOR_GC();
+
+	if (rands == p->tail_buffer)
+	  MAKE_TAIL_BUFFER_SAFE();
+
 	vals = MALLOC_N(Scheme_Object *, num_rands);
 	for (i = num_rands; i--; ) {
 	  vals[i] = rands[i];
@@ -2444,8 +2456,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	value = (Scheme_Object *)vals;
       } else
 	value = rands[0];
-      if (rands == p->tail_buffer)
-	p->tail_buffer_set = 0;
       
       c = (Scheme_Cont *)obj;
       
@@ -2509,6 +2519,9 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	int i;
 
 	UPDATE_THREAD_RSPTR_FOR_GC();
+	if (rands == p->tail_buffer)
+	  MAKE_TAIL_BUFFER_SAFE();
+
 	vals = MALLOC_N(Scheme_Object *, num_rands);
 	for (i = num_rands; i--; ) {
 	  vals[i] = rands[i];
@@ -2520,9 +2533,6 @@ scheme_do_eval(Scheme_Object *obj, int num_rands, Scheme_Object **rands,
 	value = rands[0];
 	p->cjs.num_vals = 1;
       }
-
-      if (rands == p->tail_buffer)
-	p->tail_buffer_set = 0;
 
       if (!SCHEME_CONT_HOME(obj)) {
 	UPDATE_THREAD_RSPTR_FOR_ERROR();

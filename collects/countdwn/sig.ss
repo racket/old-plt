@@ -1,3 +1,5 @@
+(require-library "sig.ss" "mred")
+
 (define-signature countdown^
   (main-edit%))
 
@@ -5,4 +7,4 @@
   (edit frame))
 
 (define-signature during^
-  (remember))
+  (remember remember-around))

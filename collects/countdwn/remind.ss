@@ -1,9 +1,15 @@
 (unit/sig countdown^
-  (import mzlib:date^
+  (import [wx : wx^]
+	  mzlib:date^
 	  mzlib:thread^
 	  mzlib:function^
 	  mzlib:pretty-print^
 	  [mred : mred^])
+
+  (define init-params
+    (lambda ()
+      (date-display-format 'american)))
+  (init-params)
 
   (define seconds->delta
     (let ([seconds-per-minute 60]
@@ -32,8 +38,26 @@
 		  weeks
 		  total-years)))))
   
+  (define label-delta (make-object wx:style-delta% wx:const-change-bold))
+  (define date-delta (make-object wx:style-delta% wx:const-change-italic))
+
+  (define y-inset 0)
+  (define x-inset 0)
+  (define show-border? #f)
+
+  (define make-hidden-edit%
+    (lambda (super%)
+      (class super% args
+	(inherit hide-caret set-max-undo-history)
+	(sequence
+	  (apply super-init args)
+	  (set-max-undo-history 0)
+	  (hide-caret #t)))))
+
+  (define inner-edit% (make-hidden-edit% wx:media-edit%))
+
   (define date%
-    (class wx:media-snip% (main-edit i-second i-minute i-hour i-day i-month i-year)
+    (class wx:media-snip% (date-edit main-edit i-second i-minute i-hour i-day i-month i-year)
       (private
 	[TMP-date (seconds->date (current-seconds))]
 	[second i-second]
@@ -42,9 +66,9 @@
 	[day (or i-day (date-day TMP-date))]
 	[month (or i-month (date-month TMP-date))]
 	[year (or i-year (date-year TMP-date))]
-	[seconds 0])
+	[seconds (find-seconds second minute hour day month year)])
       (private
-	[edit (make-object wx:media-edit%)]
+	[edit (make-object inner-edit%)]
 	[redisplay
 	 (lambda (delta d-second d-minute d-hour d-day d-week d-year)
 	   (let* ([hit-non-zero? #f]
@@ -60,6 +84,7 @@
 				(send edit get-start-position)
 				-1
 				#f)))])
+	     (send edit lock #f)
 	     (send edit delete 0 (send edit last-position) #f)
 	     (do d-year "year")
 	     (do d-week "week")
@@ -71,7 +96,17 @@
 		 (let ([last (send edit last-position)])
 		   (send edit insert (if (< delta 0) "until" "ago")
 			 last last #f))
-		 (send edit insert "NOW" (send edit get-start-position) -1 #f))))]
+		 (send edit insert "NOW" (send edit get-start-position) -1 #f))
+	     (send edit lock #t)))]
+	[update-date-edit
+	 (lambda ()
+	   (send* date-edit
+	     (lock #f)
+	     (delete 0 (send date-edit last-position) #f)
+	     (insert (date->string (seconds->date seconds) #t)
+		     (send date-edit get-start-position) -1 #f)
+	     (change-style date-delta 0 (send date-edit last-position))
+	     (lock #t)))]
 	[init-seconds
 	 (lambda (current-secs)
 	   (let* ([leap?
@@ -93,7 +128,7 @@
 		  [c-day day]
 		  [c-month month]
 		  [c-year year]
-		  [c-seconds (find-seconds c-second c-minute c-hour c-day c-month c-year)]
+		  [c-seconds seconds]
 		  [increment-year
 		   (lambda ()
 		     (set! c-year (+ 1 c-year)))]
@@ -111,14 +146,14 @@
 			 (set! c-day (+ 1 c-day))))]
 		  [increment-hour
 		   (lambda ()
-		     (if (= c-hour 24)
-			 (begin (set! c-hour 1)
+		     (if (= c-hour 23)
+			 (begin (set! c-hour 0)
 				(increment-day))
 			 (set! c-hour (+ 1 c-hour))))]
 		  [increment-minute
 		   (lambda ()
-		     (if (= c-minute 60)
-			 (begin (set! c-minute 1)
+		     (if (= c-minute 59)
+			 (begin (set! c-minute 0)
 				(increment-hour))
 			 (set! c-minute (+ 1 c-minute))))])
 	     (when (<= c-seconds current-secs)
@@ -143,7 +178,10 @@
       (public
 	[get-seconds
 	 (lambda ()
-	   seconds)]
+	   seconds)])
+      (private
+	[last-time-before-current? #f])
+      (public
 	[update
 	 (lambda ()
 	   (let ([current (current-seconds)])
@@ -153,22 +191,42 @@
 		 (when (< seconds current)
 		   (init-seconds current)
 		   (loop)))
+	       (update-date-edit)
+	       (send main-edit sort-lines))
+	     (when (and last-time-before-current?
+			(< seconds current))
+	       (set! last-time-before-current? #f)
 	       (send main-edit sort-lines))
 	     (let ([delta (- current seconds)])
 	       (let-values ([(d-seconds d-minutes d-hours d-days d-weeks d-years)
 			     (seconds->delta (abs delta))])
 		 (redisplay delta d-seconds d-minutes d-hours d-days d-weeks d-years)))))])
-      (sequence (super-init edit #f)
-		(init-seconds (current-seconds)))))
-
-  (define label-delta (make-object wx:style-delta% wx:const-change-bold))
+      (sequence (super-init edit show-border? x-inset y-inset x-inset y-inset)
+		(let ([current (current-seconds)])
+		  (init-seconds current)
+		  (set! last-time-before-current? (< current seconds)))
+		(update-date-edit))))
   
+  (define paren-snip%
+    (class-asi wx:media-snip%
+      (private
+	[what 'not-paren])
+      (public
+	[set-open (lambda () (set! what 'open))]
+	[set-close (lambda () (set! what 'close))]
+	[get-paren (lambda () what)])))
+
   (define main-edit%
-    (class mred:media-edit% args
+    (class (make-hidden-edit% mred:media-edit%) args
       (inherit begin-edit-sequence end-edit-sequence
-	       insert get-admin delete
-	       last-position
+	       insert get-admin delete get-canvas
+	       last-position lock hide-caret
 	       get-start-position)
+      (private
+	[bx (box 0)]
+	[by (box 0)]
+	[bw (box 0)]
+	[bh (box 0)])
       (private
 	[lines null]
 	[counters null]
@@ -179,9 +237,23 @@
 	    sema
 	    (lambda ()
 	      (begin-edit-sequence)
+	      (lock #f)
 	      (for-each (lambda (x) (send x update)) counters)
+	      (lock #t)
 	      (end-edit-sequence))))])
       (public
+	[clear-events
+	 (lambda ()
+	   (with-semaphore 
+	    sema
+	    (lambda ()
+	      (begin-edit-sequence)
+	      (lock #f)
+	      (delete 0 (last-position) #f)
+	      (set! counters null)
+	      (set! lines null)
+	      (lock #t)	   
+	      (end-edit-sequence))))]
 	[shutdown
 	 (lambda ()
 	   (kill-thread thread-id))]
@@ -193,49 +265,104 @@
 			   [last (send media last-position)]
 			   [first (send media find-snip last wx:const-snip-before)]
 			   [seconds (send first get-seconds)])
-		      seconds))])
-	     (for-each (lambda (outer)
-			 (let ([admin (send outer get-admin)])
-			   (unless (null? admin)
-			     (send admin release-snip outer))))
-		       lines)
+		      seconds))]
+		 [admin (get-admin)])
+	     (lock #f)
 	     (delete 0 (last-position) #f)
-	     (for-each (lambda (outer)
-			 (insert outer (get-start-position) -1 #f)
-			 (insert (string #\newline) (get-start-position) -1 #f))
-		       (quicksort lines
-				  (lambda (x y) (<= (get-seconds x)
-						    (get-seconds y)))))))]
+	     (let ([current (current-seconds)]
+		   [step (string #\tab)])
+	       (let loop ([lines (quicksort lines
+					    (lambda (x y)
+					      (<= (get-seconds x)
+						  (get-seconds y))))]
+			  [first? #t]
+			  [crossed-line? #f]
+			  [this-inset ""])
+		 (cond
+		   [(null? lines) (void)]
+		   [else (let* ([outer (car lines)]
+				[this-above-line? (< (get-seconds outer) current)]
+				[insert-separator?
+				 (and (not this-above-line?)
+				      (not crossed-line?)
+				      (not first?))]
+				[next-inset (case (send outer get-paren)
+					      [(not-paren) this-inset]
+					      [(open) (string-append this-inset step)]
+					      [(close) (substring this-inset
+								   0
+								   (- (string-length this-inset)
+								      (string-length step)))])]
+				[inset (if (eq? (send outer get-paren) 'close)
+					   next-inset
+					   this-inset)])
+			   (when insert-separator?
+			     (insert (string #\newline) (get-start-position) -1 #f)
+			     (insert (make-object mred:separator-snip%) (get-start-position) -1 #f))
+			   (when (and (not first?) 
+				      (not insert-separator?))
+			     (insert (string #\newline) (get-start-position) -1 #f))
+			   (insert inset (get-start-position) -1 #f)
+			   (insert outer (get-start-position) -1 #f)
+			   (loop (cdr lines)
+				 #f
+				 (or crossed-line? insert-separator?)
+				 next-inset))])))
+	     (lock #t)))]
 	
 	[new-counter
-	 (lambda (name second minute hour day month year)
-	   (let* ([display (make-object date% this second minute hour day month year)]
-		  [label-edit (make-object wx:media-edit%)]
-		  [label (make-object wx:media-snip% label-edit #f)]
-		  [main (make-object wx:media-edit%)]
-		  [outer (make-object wx:media-snip% main #t)])
-	     (set! counters (cons display counters))
-	     (set! lines (cons outer lines))
-	     (insert outer (get-start-position) -1 #f)
-	     (insert (string #\newline) (get-start-position) -1 #f)
-	     (send* label-edit
-	       (insert name 0 0 #f)
-	       (change-style label-delta 0 (string-length name)))
-	     (send* main
-	       (insert label (send main get-start-position) -1 #f)
-	       (insert (string #\newline) (send main get-start-position) -1 #f)
-	       (insert display (send main get-start-position) -1 #f))))]
+	 (let ([first-time? #t])
+	   (lambda (name second minute hour day month year)
+	     (lock #f)
+	     (let* ([date-edit (make-object inner-edit%)]
+		    [make-snip
+		     (lambda (edit)
+		       (make-object wx:media-snip% edit show-border?
+				    x-inset y-inset x-inset y-inset))]
+		    [date-snip (make-snip date-edit)]
+		    [display (make-object date% date-edit this second minute hour day month year)]
+		    [label-edit (make-object inner-edit%)]
+		    [label (make-snip label-edit)]
+		    [main (make-object inner-edit%)]
+		    [outer (make-object paren-snip% main #t 4 4 4 4)])
+	       (set! counters (cons display counters))
+	       (set! lines (cons outer lines))
+	       (if first-time?
+		   (set! first-time? #f)
+		   (insert (string #\newline) (get-start-position) -1 #f))
+	       (insert outer (get-start-position) -1 #f)
+	       (cond
+		[(string? name)
+		 (send label-edit insert name 0 0 #f)
+		 (send label-edit change-style label-delta 0 (send label-edit last-position))]
+		[(procedure? name)
+		 (name label-edit)]
+		[else (error 'remember "expected procedure or string as first argument, got: ~a~n")])
+	       (send* main
+		 (insert label (send main get-start-position) -1 #f)
+		 (insert (string #\newline) (send main get-start-position) -1 #f)
+		 (insert date-snip (send main get-start-position) -1 #f)
+		 (insert (string #\newline) (send main get-start-position) -1 #f)
+		 (insert display (send main get-start-position) -1 #f))
+	       (for-each (lambda (e) (send e lock #t))
+			 (list date-edit label-edit main))
+	       (send (get-canvas) add-wide-snip outer)
+	       (lock #t)
+	       outer)))]
 	[sync
 	 (lambda ()
 	   (sort-lines)
 	   (update-counters))])
       (sequence
-	(apply super-init args))
+	(apply super-init args)
+	(lock #f))
       (private
 	[thread-id
 	 (thread
-	  (rec f
-	       (lambda ()
-		 (time (update-counters))
-		 (sleep 1/2)
-		 (f))))]))))
+	  (lambda ()
+	    (init-params)
+	    (let loop ()
+	      (update-counters)
+	      (sleep 5)
+	      (loop))))]))))
+

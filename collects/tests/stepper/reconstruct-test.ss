@@ -41,7 +41,7 @@
 
 (define (test-expr stx lang num-steps selector)
   (let/ec k
-    (eval (selector (annotate-expr stx lang num-steps k)))))
+    (map eval (selector (annotate-expr stx lang num-steps k)))))
 
 (define (test-sequence source lang result-list oper)
   (for-each (lambda (result step-num)
@@ -50,9 +50,9 @@
             (build-list (length result-list) (lambda (x) x))))
 
 (define (test-mz-sequence source result-list)
-  (test-sequence source 'mzscheme result-list cadr))
+  (test-sequence source 'mzscheme result-list cdr))
 
-(test `((,highlight-placeholder) (+)) test-expr #'+ 'mzscheme 0 cadr)
+(test `((,highlight-placeholder) (+)) test-expr #'+ 'mzscheme 0 cdr)
 (test-mz-sequence #'(+ 3 4)
                   `((((,highlight-placeholder 3 4)) (+))            
                     (((,highlight-placeholder 3 4)) (+))
@@ -133,6 +133,9 @@
                     ((,highlight-placeholder) ((+ 9 29)))
                     ((,highlight-placeholder) (38))))
 
+;(test-mz-sequence #'(begin (define g 3) g)
+;                  `(((,highlight-placeholder) (g))
+;                    ((,highlight-placeholder) 3)))
 
 ;(syntax-object->datum (cadr (annotate-expr test2 'mzscheme 0 (lambda (x) x))))
 

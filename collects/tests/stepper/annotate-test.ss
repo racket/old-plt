@@ -144,9 +144,27 @@
               break-proc-1
               (#%datum . 3)))
            #t])))
-        
-     
-     
+
+(define (strip-return-value-wrap stx)
+  (syntax-case stx (let*)
+    [(let* ([result-var-0 expr])
+       break-0
+       result-var-1)
+     (begin
+       (test 'result syntax-e (syntax result-var-0))
+       (test 'result syntax-e (syntax result-var-1))
+       (syntax expr))]))
+
+(test 'a syntax-e
+      (strip-return-value-wrap 
+       (syntax-case (car (annotate-expr #'a #f)) (with-continuation-mark begin)
+         [(with-continuation-mark
+           key-0
+           mark-0
+           (begin
+             break-0
+             expr))
+          (syntax expr)])))
      
 ; test notes to myself:
 ; the never-undefined property can only be tested in the non-foot-wrap modes
@@ -328,16 +346,15 @@
                      (test (void) check-mark (syntax debug-mark-then) '(a c ) 'all))])))
         
         ; top-level begin
-        (list #'(begin (define a 3) a (begin a a)) #f car
+        (list #'(begin (define a 3) (begin (begin a))) #f car
               (lambda (stx)
                 (syntax-case stx (begin with-continuation-mark define-values)
                   [(begin
                      (define-values . rest)
-                     (with-continuation-mark key-2 mark-2 (begin var-break-0 a-exp-2))
                      (begin
-                       (with-continuation-mark key-3 mark-3 (begin var-break-1 a-exp-3))
-                       (with-continuation-mark key-4 mark-4 (begin var-break-2 a-exp-4))))
-                   (test 'a syntax-e (syntax a-exp-2))])))
+                       (begin
+                         (with-continuation-mark key-3 mark-3 (begin var-break-1 a-exp-3)))))
+                   (test 'a syntax-e (strip-return-value-wrap (syntax a-exp-3)))])))
         
         ; begin0
         (list #'(lambda (a b) (begin0 a b)) 'mzscheme cadr
@@ -433,7 +450,7 @@
                     (set! var val))
                    (begin
                      (test (void) check-mark (syntax mark-0) '(a) 'all)
-                     (test 'a syntax-object->datum (syntax var)))])))
+                     (test 'a syntax-e (syntax var)))])))
         
         ; quote
         (list #'(quote a) 'mzscheme cadr
@@ -508,16 +525,13 @@
                           (with-continuation-mark 
                            key-3
                            mark-3
-                           (let ([result-var-0 (var-4 var-5 var-6)])
-                             (break-1 result-var-1)
-                             result-var-2))))))
-                   (begin
-                     (test 'result syntax-e (syntax result-var-0))
-                     (test 'result syntax-e (syntax result-var-1))
-                     (test 'result syntax-e (syntax result-var-2))
-                     (test "arg0" substring (symbol->string (syntax-e (syntax var-4))) 0 4)
-                     (test "arg1" substring (symbol->string (syntax-e (syntax var-5))) 0 4)
-                     (test "arg2" substring (symbol->string (syntax-e (syntax var-6))) 0 4))])))
+                           result-expr)))))
+                   (syntax-case (strip-return-value-wrap (syntax result-expr)) ()
+                     [(var-4 var-5 var-6)
+                      (begin
+                        (test "arg0" substring (symbol->string (syntax-e (syntax var-4))) 0 4)
+                        (test "arg1" substring (symbol->string (syntax-e (syntax var-5))) 0 4)
+                        (test "arg2" substring (symbol->string (syntax-e (syntax var-6))) 0 4))])])))
         
          ; application with non-var in fun pos
         (list #'(4 3 4) 'mzscheme cadr
@@ -571,11 +585,11 @@
                     key-0
                     mark-0
                     (begin 
-                      var-break-0 
-                      sym-0))
+                      break-0
+                      body))
                    (begin
                      (test (void) check-mark (syntax mark-0) '(a) 'all)
-                     (test 'a syntax-e (syntax sym-0)))])))
+                     (test 'a syntax-e (strip-return-value-wrap (syntax body))))])))
         
         ; lexical vars
         (list #'(lambda (a b) a) 'mzscheme cadr
@@ -616,10 +630,10 @@
                                  (with-continuation-mark key-3 mark-3 (begin pre-break-1 b-var-0))))))))))
                    (begin
                      (test 'a syntax-e (syntax a-var-0))
-                     (test 'a syntax-e (syntax a-var-1))
+                     (test 'a syntax-e (strip-return-value-wrap (syntax a-var-1)))
                      (test 'b syntax-e (syntax b-var-0))
                      (test 'let-bound syntax-property (syntax a-var-0) 'stepper-binding-type)
-                     (test 'let-bound syntax-property (syntax a-var-1) 'stepper-binding-type)
+                     (test 'let-bound syntax-property (strip-return-value-wrap (syntax a-var-1)) 'stepper-binding-type)
                      (test 'lambda-bound syntax-property (syntax b-var-0) 'stepper-binding-type)
                      )])))
                         

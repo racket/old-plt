@@ -224,7 +224,9 @@
 #   define MACOS
 #   define mach_type_known
 # endif
-# if defined(__MWERKS__) && defined(__powerc)
+// PLTSCHEME: added !MACH test to prevent this clause from being
+// evaluated when compiling using Metrowerks with OS X
+# if defined(__MWERKS__) && defined(__powerc) && !defined(__MACH__)
 #   define POWERPC
 #   define MACOS
 #   define mach_type_known

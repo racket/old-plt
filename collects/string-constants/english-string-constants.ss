@@ -483,6 +483,7 @@
  (bring-frame-to-front... "Bring Frame to Front...") ;;; corresponding title of menu item
  (next-window "Next Window")
  (previous-window "Previous Window")
+ (most-recent-window "Most Recent Window")
 
  (show-menu-label "&Show")
  (show-overview "Show Program Contour") 

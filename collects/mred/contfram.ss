@@ -118,7 +118,7 @@
 		       (- client-h (* 2 WX-BORDER-SIZE))))
 	       (self-redraw-request))]
 	    
-	    [get-panel
+	    [get-top-panel
 	     (lambda ()
 	       panel)]
 
@@ -193,7 +193,7 @@
 			       (= width correct-w))
 			  (and (same-dimension? height (get-height))
 			       (= height correct-h)))
-		     (unless (null? (get-panel))
+		     (unless (null? (get-top-panel))
 		       (let-values ([(f-client-w f-client-h)
 				     (get-two-int-values get-client-size)])
 			 (let ([panel-w (- f-client-w (* 2 WX-BORDER-SIZE))]

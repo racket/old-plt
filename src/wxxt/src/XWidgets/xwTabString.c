@@ -13,6 +13,18 @@
 #include "wxAllocColor.h"
 
 extern int scheme_utf8_decode_all(unsigned char *, int, unsigned int *, int);
+extern int scheme_utf8_decode(const unsigned char *s, int start, int end, 
+			      unsigned int *us, int dstart, int dend,
+			      long *ipos, char utf16, int permissive);
+
+static int leading_utf8_len(char *s, int len)
+{
+  long ipos;
+  scheme_utf8_decode(s, 0, len, 
+		     NULL, 0, 1,
+		     &ipos, 0, '?');
+  return ipos;
+}
 
 static int xdoDraw(measure, font,
 		   display, drawable, gc, x, y, string, length, image
@@ -219,8 +231,12 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, xfont
 	if (length) {
 	  /* Underline next */
 	  int ww;
-	  ww = wxXftTextWidth(display, font, p, 1, xfont);
-	  doDraw(display, drawable, gc, x+tx, y, p, 1, image, xfont, draw, &col);
+	  int csize;
+	  
+	  csize = leading_utf8_len(p, length);
+
+	  ww = wxXftTextWidth(display, font, p, csize, xfont);
+	  doDraw(display, drawable, gc, x+tx, y, p, csize, image, xfont, draw, &col);
 	  if (line && (*p != '&')) {
 #ifdef WX_USE_XFT	
 	    if (xfont)
@@ -229,9 +245,9 @@ doDrawImageString(display, drawable, gc, x, y, string, length, tabs, font, xfont
 #endif
 	      XDrawLine(display, drawable, gc, x+tx, y+1, x+tx+ww, y+1);
 	  }
-	  length -= 1;
+	  length -= csize;
 	  tx += ww;
-	  p += 1;
+	  p += csize;
 	}
       } else {
 	doDraw(display, drawable, gc, x+tx, y, p, length, image, xfont, draw, &col);

@@ -567,7 +567,7 @@
 	      [(mred-debug) (zodiac:get-mred-vocabulary)]
 	      [else (error 'init "bad vocabulary spec: ~a ~e"
 			   (setting-vocabulary-symbol setting) setting)])))
-	  (zodiac:reset-previous-attribute))
+	  (zodiac:reset-previous-attribute #t))
 	
 	(read-case-sensitive (setting-case-sensitive? setting))
 
